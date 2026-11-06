@@ -1,10 +1,10 @@
-## The widget for the Safari tutorial's setting sun. Dragging across the canvas
-## sets the ride's clock, and each frame is worked out from that clock alone, so
-## the sun sets and rises again under the pointer. The picture is the ride's own
-## sky, looking straight at the sun, drawn by Backdrop at two thirds of its
-## size. Below it, a ruler shows the clock, four lines of text read out the calls
-## to Sky, and a small chart plots their answers over the whole sunset. The
-## book opens it at one of three jobs, and each job adds a call.
+## The widget for the Safari tutorial's setting sun. Five buttons, like a video
+## recorder's, run the ride's clock forward and back, and each frame is worked
+## out from that clock alone. A click anywhere else does nothing. The picture is
+## the ride's own sky, looking straight at the sun, drawn by Backdrop at two
+## thirds of its size. Below it, lines of text read out the calls to Sky, and a
+## small chart plots their answers over the whole sunset. The book opens it at
+## one of three jobs, and each job adds a call.
 import game.Clock
 import game.Lens
 import game.Pixels
@@ -13,6 +13,7 @@ import lib.Brush
 import lib.CanvasApp
 import lib.Font
 import lib.Input
+import lib.Mouse
 import lib.Shapes
 import widget.ScrubWidget
 
@@ -21,34 +22,211 @@ SkyWidgetApp :: [].{
 	## How much of the sunset the widget does.
 	Job : [SunSets, SkyDarkens, HorizonWarms]
 
-	## The whole state of the widget: the ride's clock, and the job.
-	Model : { clock : Clock, job : SkyWidgetApp.Job }
+	## Which way the clock is running.
+	Motion : [Stopped, Forward, Backward]
+
+	## What a button does.
+	Control : [ToStart, PlayBack, Pause, Play, ToEnd]
+
+	## The whole state of the widget: the ride's clock, the job, and which way
+	## the clock is running.
+	Model : {
+		clock : Clock,
+		job : SkyWidgetApp.Job,
+		motion : SkyWidgetApp.Motion,
+	}
 
 	canvas_app : CanvasApp.CanvasApp(SkyWidgetApp.Model)
 	canvas_app = {
 		..ScrubWidget.canvas_app({
 			title: "The sun going down",
-			init: { clock: Clock.start, job: SunSets },
-			model_at: |share| { clock: ScrubWidget.clock_at(share, clock_range), job: SunSets },
-			frame: |model| frame_at(model.job, model.clock),
+			init: {
+				clock: Clock.start,
+				job: SunSets,
+				motion: Stopped,
+			},
+			model_at: |_share| {
+				clock: Clock.start,
+				job: SunSets,
+				motion: Stopped,
+			},
+			frame: frame_at,
 		}),
 		advance: |model, input, _seconds| next_model(model, input),
 	}
 }
 
-## The model after one step: a pointer held down sets the clock, and the Right
-## key, which is how the page opens at a job, moves on to the next job.
+## How far the clock moves in a frame while it runs: a sunset in twelve seconds.
+steps_a_frame : F64
+steps_a_frame = 8.0
+
+## The clock at the far end of the sunset.
+last_clock : Clock
+last_clock = Clock.at_step(6000)
+
+## The model after one frame: a click on a button, then the clock's own run. The
+## Right key is how the page opens at a job.
 next_model : SkyWidgetApp.Model, Input.Snapshot -> SkyWidgetApp.Model
 next_model = |model, input| {
-	clock: ScrubWidget.followed_pointer(
-		model.clock,
-		{ input, model_at: |share| ScrubWidget.clock_at(share, clock_range) },
-	),
-	job: if input.key_pressed(KeyRight) {
-		next_job(model.job)
+	clicked =
+		if input.mouse.button_pressed(Left) {
+			position = input.mouse.position()
+			after_click(model, { x: position.x.to_f64(), y: position.y.to_f64() })
+		} else {
+			model
+		}
+	job =
+		if input.key_pressed(KeyRight) {
+			next_job(clicked.job)
+		} else {
+			clicked.job
+		}
+	run_on({ ..clicked, job })
+}
+
+## The model after one frame of the clock's run. It stops at either end.
+run_on : SkyWidgetApp.Model -> SkyWidgetApp.Model
+run_on = |model|
+	match model.motion {
+		Stopped => model
+		Forward => clock_moved_by(model, steps_a_frame)
+		Backward => clock_moved_by(model, -steps_a_frame)
+	}
+
+clock_moved_by : SkyWidgetApp.Model, F64 -> SkyWidgetApp.Model
+clock_moved_by = |model, steps| {
+	step = model.clock.to_f64() + steps
+	if step <= 0.0 {
+		{ ..model, clock: Clock.start, motion: Stopped }
+	} else if step >= last_clock.to_f64() {
+		{ ..model, clock: last_clock, motion: Stopped }
 	} else {
-		model.job
-	},
+		{ ..model, clock: Clock.at_step(step.to_u32_wrap()) }
+	}
+}
+
+## The model after a press of `control`.
+pressed : SkyWidgetApp.Model, SkyWidgetApp.Control -> SkyWidgetApp.Model
+pressed = |model, control|
+	match control {
+		ToStart => { ..model, clock: Clock.start, motion: Stopped }
+		PlayBack => { ..model, motion: Backward }
+		Pause => { ..model, motion: Stopped }
+		Play =>
+			if model.clock == last_clock {
+				{ ..model, clock: Clock.start, motion: Forward }
+			} else {
+				{ ..model, motion: Forward }
+			}
+		ToEnd => { ..model, clock: last_clock, motion: Stopped }
+	}
+
+## `model` after a click at `spot`, which does nothing off the buttons.
+after_click : SkyWidgetApp.Model, { x : F64, y : F64 } -> SkyWidgetApp.Model
+after_click = |model, spot|
+	match buttons.keep_if(|button| is_on(button, spot)) {
+		[button, ..] => pressed(model, button.control)
+		[] => model
+	}
+
+## A button, and how far it is from the canvas's left edge.
+Button : { control : SkyWidgetApp.Control, left : F64 }
+
+buttons : List(Button)
+buttons = [
+	{ control: ToStart, left: 24.0 },
+	{ control: PlayBack, left: 74.0 },
+	{ control: Pause, left: 124.0 },
+	{ control: Play, left: 174.0 },
+	{ control: ToEnd, left: 224.0 },
+]
+
+button_width : F64
+button_width = 44.0
+
+button_top : F64
+button_top = 222.0
+
+button_height : F64
+button_height = 24.0
+
+is_on : Button, { x : F64, y : F64 } -> Bool
+is_on = |button, { x, y }|
+	x >= button.left
+		and x < button.left + button_width
+		and y >= button_top
+		and y < button_top + button_height
+
+## The control that shows as lit while the clock runs this way.
+lit_control : SkyWidgetApp.Motion -> SkyWidgetApp.Control
+lit_control = |motion|
+	match motion {
+		Stopped => Pause
+		Forward => Play
+		Backward => PlayBack
+	}
+
+## A triangle pointing right when `reach` is positive, and left when it's not.
+triangle : F64, F64 -> Shapes.Shape
+triangle = |tip_x, reach|
+	Poly({
+		pts: [
+			tip_x - reach,
+			button_middle_y - 7.0,
+			tip_x,
+			button_middle_y,
+			tip_x - reach,
+			button_middle_y + 7.0,
+		],
+		fill: ScrubWidget.flat(icon_color),
+	})
+
+## A bar across a button's height, for a pause or a stop at either end.
+bar : F64 -> Shapes.Shape
+bar = |x|
+	Rect({
+		x,
+		y: button_middle_y - 7.0,
+		w: 3.0,
+		h: 14.0,
+		fill: ScrubWidget.flat(icon_color),
+	})
+
+button_middle_y : F64
+button_middle_y = button_top + button_height / 2.0
+
+icon_color : I64
+icon_color = 0xf7f5f0
+
+## What a button shows, around `middle`.
+icon : SkyWidgetApp.Control, F64 -> List(Shapes.Shape)
+icon = |control, middle|
+	match control {
+		ToStart => [bar(middle - 9.0), triangle(middle - 5.0, -11.0)]
+		PlayBack => [triangle(middle - 6.0, -12.0)]
+		Pause => [bar(middle - 5.0), bar(middle + 2.0)]
+		Play => [triangle(middle + 6.0, 12.0)]
+		ToEnd => [triangle(middle + 5.0, 11.0), bar(middle + 6.0)]
+	}
+
+## A button on the canvas, lit if it matches `motion`.
+button_shapes : Button, SkyWidgetApp.Motion -> List(Shapes.Shape)
+button_shapes = |button, motion| {
+	color =
+		if button.control == lit_control(motion) {
+			0xd0603a
+		} else {
+			0x303030
+		}
+	[
+		Rect({
+			x: button.left,
+			y: button_top,
+			w: button_width,
+			h: button_height,
+			fill: ScrubWidget.flat(color),
+		}),
+	].concat(icon(button.control, button.left + button_width / 2.0))
 }
 
 next_job : SkyWidgetApp.Job -> SkyWidgetApp.Job
@@ -63,28 +241,17 @@ next_job = |job|
 clock_range : ScrubWidget.ClockRange
 clock_range = { first_step: 0.0, last_step: 6000.0 }
 
-## Everything on the canvas at `clock`.
-frame_at : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
-frame_at = |job, clock|
+## Everything on the canvas.
+frame_at : SkyWidgetApp.Model -> List(Shapes.Shape)
+frame_at = |{ clock, job, motion }|
 	[
-		ScrubWidget.frame_shapes({
-			picture: picture(job, clock),
-			dot_at: ScrubWidget.step_share(clock.to_f64(), clock_range),
-			marked: marked_stretches(job),
-			status: [],
-		}),
+		ScrubWidget.still_frame_shapes({ picture: picture(job, clock), status: [] }),
+		buttons.join_map(|button| button_shapes(button, motion)),
 		call_lines(job, clock),
 		chart(job),
 		chart_cursor(job, clock),
-		hint(clock),
+		hint(clock, motion),
 	].join()
-
-marked_stretches : SkyWidgetApp.Job -> List(ScrubWidget.Stretch)
-marked_stretches = |job|
-	match job {
-		SunSets | SkyDarkens => []
-		HorizonWarms => [warmth_stretch]
-	}
 
 ## The two colors of the sky, as far as `job` goes.
 sky_colors : SkyWidgetApp.Job, Clock -> { top : Sky.Rgb, horizon : Sky.Rgb }
@@ -117,17 +284,6 @@ picture = |job, clock| {
 			}),
 		},
 	)
-}
-
-## The step at which the sun stands `height` pixels up.
-step_at_height : Pixels -> F64
-step_at_height = |height| Sky.sun_start_px.minus(height).ratio_to(Sky.sun_drop_px_per_step)
-
-## The stretch of the ruler with any warmth in the sunset.
-warmth_stretch : ScrubWidget.Stretch
-warmth_stretch = {
-	from: ScrubWidget.step_share(step_at_height(Sky.warmth_falloff_px), clock_range),
-	to: ScrubWidget.step_share(step_at_height(Sky.warmth_falloff_px.opposite()), clock_range),
 }
 
 ## The calls this widget makes at `clock`, and their answers, a line each.
@@ -297,27 +453,19 @@ curve_dot = |{ x, y }, color|
 	})
 
 ## A word for a reader who hasn't touched the widget yet.
-hint : Clock -> List(Shapes.Shape)
-hint = |clock|
-	if clock == Clock.start {
+hint : Clock, SkyWidgetApp.Motion -> List(Shapes.Shape)
+hint = |clock, motion|
+	if clock == Clock.start and motion == Stopped {
 		Font.text(
-			"Drag me",
-			16.0,
-			16.0,
-			16.0,
-			Brush.opaque(0xffffff),
+			"Press play",
+			300.0,
+			227.0,
+			13.0,
+			Brush.opaque(0x202020),
 		)
 	} else {
 		[]
 	}
-
-expect warmth_stretch.from.to_f64() < warmth_stretch.to.to_f64()
-
-expect step_at_height(Sky.sun_start_px) == 0.0
-expect {
-	at_horizon = Clock.at_step(step_at_height(Pixels.zero).to_u32_wrap())
-	Sky.sun_height_px(at_horizon).abs() < Pixels.of(0.1)
-}
 
 expect
 	status_lines(HorizonWarms, Clock.start)
@@ -372,22 +520,72 @@ expect {
 	warm.top != warm.horizon
 }
 
-# The warmth is marked on the ruler only once it's a job.
-expect marked_stretches(HorizonWarms).len() == 1
-expect marked_stretches(SunSets).len() == 0
-expect marked_stretches(SkyDarkens).len() == 0
+## A model at the start of the first job, and a click on one spot.
+at_start : SkyWidgetApp.Model
+at_start = {
+	clock: Clock.start,
+	job: SunSets,
+	motion: Stopped,
+}
+
+## What a press at (`x`, `y`) on `model` does, after that frame.
+clicked_at : SkyWidgetApp.Model, { x : F64, y : F64 } -> SkyWidgetApp.Model
+clicked_at = |model, { x, y }|
+	next_model(model, Input.none.with_mouse(Mouse.of(1, 1, x.to_f32_wrap(), y.to_f32_wrap(), 0.0)))
+
+## The middle of the button for `control`, and the same model with it pressed.
+pressed_on : SkyWidgetApp.Model, F64 -> SkyWidgetApp.Model
+pressed_on = |model, left| clicked_at(model, { x: left + button_width / 2.0, y: button_middle_y })
+
+# Every button does its job, and nothing else on the canvas does anything.
+expect pressed_on(at_start, 174.0).motion == Forward
+expect pressed_on(at_start, 174.0).clock == Clock.at_step(8)
+expect pressed_on({ ..at_start, clock: Clock.at_step(100) }, 74.0).motion == Backward
+expect pressed_on({ ..at_start, clock: Clock.at_step(100) }, 74.0).clock == Clock.at_step(92)
+expect pressed_on({ ..at_start, motion: Forward }, 124.0).motion == Stopped
+expect pressed_on({ ..at_start, clock: Clock.at_step(100) }, 24.0).clock == Clock.start
+expect pressed_on(at_start, 224.0).clock == last_clock
+expect clicked_at(at_start, { x: 320.0, y: 100.0 }) == at_start
+expect clicked_at(at_start, { x: 320.0, y: 300.0 }) == at_start
+expect clicked_at(at_start, { x: 70.0, y: button_middle_y }) == at_start
+expect clicked_at(at_start, { x: 196.0, y: button_top - 1.0 }) == at_start
+
+# A held button isn't a new click.
+expect
+	next_model(at_start, Input.none.with_mouse(Mouse.of(1, 0, 196.0, 234.0, 0.0)))
+		== at_start
+
+# The clock stops at either end, and play from the end starts over.
+expect run_on({
+	..at_start,
+	clock: Clock.at_step(4),
+	motion: Backward,
+}) == at_start
+expect run_on({
+	..at_start,
+	clock: Clock.at_step(5996),
+	motion: Forward,
+}) == { ..at_start, clock: last_clock }
+expect run_on(at_start) == at_start
+expect pressed({ ..at_start, clock: last_clock }, Play) == { ..at_start, motion: Forward }
+
+# The lit button says which way the clock runs.
+expect lit_control(Stopped) == Pause
+expect lit_control(Forward) == Play
+expect lit_control(Backward) == PlayBack
+
+# Each button shows an icon, and a button is its square and that icon.
+expect buttons.all(|button| button_shapes(button, Stopped).len() > 1)
+expect buttons.len() == 5
 
 # The Right key moves through the jobs, and the pointer leaves them alone.
 expect next_job(SunSets) == SkyDarkens
 expect next_job(SkyDarkens) == HorizonWarms
 expect next_job(HorizonWarms) == SunSets
-expect next_model(
-	{ clock: Clock.start, job: SunSets },
-	Input.none.with_key_pressed(KeyRight),
-).job == SkyDarkens
-expect next_model({ clock: Clock.start, job: SkyDarkens }, Input.none).job == SkyDarkens
+expect next_model(at_start, Input.none.with_key_pressed(KeyRight)).job == SkyDarkens
+expect next_model({ ..at_start, job: SkyDarkens }, Input.none).job == SkyDarkens
 
-# The chart's two ends are the ruler's two ends.
+# The chart's two ends are the sunset's two ends.
 expect chart_point(Clock.start, dusk_level).x == chart_left
 expect chart_point(Clock.at_step(6000), dusk_level).x == chart_right
 expect chart_point(Clock.start, dusk_level).y == chart_bottom
@@ -397,10 +595,11 @@ expect chart_point(Clock.start, sun_level).y == chart_top
 expect chart_cursor(HorizonWarms, Clock.at_step(3000)).len() == 4
 expect chart_cursor(SunSets, Clock.at_step(3000)).len() == 2
 
-# The hint shows until the clock has moved, and the frame carries it.
-expect hint(Clock.start).len() > 0
-expect hint(Clock.at_step(1)).len() == 0
-expect frame_at(HorizonWarms, Clock.start).len() > frame_at(HorizonWarms, Clock.at_step(1)).len()
+# The hint shows until the clock has moved or started to.
+expect hint(Clock.start, Stopped).len() > 0
+expect hint(Clock.start, Forward).len() == 0
+expect hint(Clock.at_step(1), Stopped).len() == 0
+expect frame_at(at_start).len() > frame_at({ ..at_start, clock: Clock.at_step(1) }).len()
 
 # Two view marks around the sky, the grass, the glow and the sun.
 expect picture(HorizonWarms, Clock.start).len() == 6

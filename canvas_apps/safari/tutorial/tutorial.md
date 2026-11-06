@@ -917,29 +917,6 @@ The concept is three jobs:
 
 All three come from the clock, and the game stores none of them.
 
-The sunset, from the top
-```dot
-digraph sunset {
-  node [shape=box, fontname="Helvetica"];
-  frame [label="each frame"];
-  frame -> sun_sighting;
-  frame -> sky_top_color;
-  frame -> sky_horizon_color;
-  sun_sighting -> sun_place;
-  sky_top_color -> dusk_at;
-  sky_horizon_color -> sky_top_color;
-  sky_horizon_color -> sunset_warmth;
-  sun_place -> sun_height_px;
-  dusk_at -> sun_height_px;
-  sunset_warmth -> sun_height_px;
-  sun_height_px [style=bold];
-  clock [label="the clock"];
-  sun_height_px -> clock;
-}
-```
-
-A box is a function, and an arrow is a call. The three boxes under the frame are the three jobs, more or less, and they all end at `sun_height_px`. That's the one number in the sunset.
-
 ### Get the types right
 
 Most of Safari Ride is plain functions, so there's no new Roc in this chapter. The types do the work, and a sunset needs four:
@@ -965,6 +942,29 @@ Every one is a `->`, and every one starts from a `Clock`. That's most of the des
 
 ### The functions
 
+The sunset, from the top
+```dot
+digraph sunset {
+  node [shape=box, fontname="Helvetica"];
+  frame [label="each frame"];
+  frame -> sun_sighting;
+  frame -> sky_top_color;
+  frame -> sky_horizon_color;
+  sun_sighting -> sun_place;
+  sky_top_color -> dusk_at;
+  sky_horizon_color -> sky_top_color;
+  sky_horizon_color -> sunset_warmth;
+  sun_place -> sun_height_px;
+  dusk_at -> sun_height_px;
+  sunset_warmth -> sun_height_px;
+  sun_height_px [style=bold];
+  clock [label="the clock"];
+  sun_height_px -> clock;
+}
+```
+
+A box is a function, and an arrow is a call. The three boxes under the frame are the three jobs, more or less, and they all end at `sun_height_px`. That's the one number in the sunset.
+
 Here's the top of that diagram in code. Each frame, the game asks for three things and hands them to `Backdrop`:
 
 {{code SafariApp.frame from "Backdrop.behind(" to "sun_sighting: Tour.sun(tour),"}}
@@ -974,7 +974,7 @@ Let's take the three jobs in order.
 ### Job one: the sun goes down
 
 ```widget sky sun
-Drag to set the clock.
+Press play.
 ```
 
 This widget does only the first job, so the sky stays blue. The line under the picture is the call it makes.
@@ -990,10 +990,10 @@ That's the gold line: one multiplication and one subtraction! It says `.minus` a
 ### Job two: the sky darkens
 
 ```widget sky sky
-Drag to set the clock. Now the sky darkens too.
+Press play. Now the sky darkens too.
 ```
 
-This widget adds one call. The top of the sky blends day into dusk, by a `Fraction`:
+This widget adds one call, and the sky finally does something. The top of the sky blends day into dusk, by a `Fraction`:
 
 {{code Sky.sky_top_color}}
 
@@ -1012,7 +1012,7 @@ Both sit below `Sky`'s block. Anything outside a module's block is private, so a
 ### Job three: the horizon warms
 
 ```widget sky warmth
-Drag to set the clock. This is the whole sunset.
+Press play. This is the whole sunset.
 ```
 
 This job is polish. A sunset without it is still a sunset, just a sad one.
@@ -1021,15 +1021,17 @@ The horizon is the same sky, warmed toward red:
 
 {{code Sky.sky_horizon_color}}
 
-Guess what the warmth asks for first.
+Guess what `sunset_warmth` takes.
 
 {{code Sky.sunset_warmth}}
+
+Yes, `sunset_warmth` takes a clock, like everything else in this chapter. Then it asks for the sun's height, just as dusk did.
 
 The horizon is warmest when the sun's height is zero, and the warmth has gone by the time the sun is 110 pixels away, on either side. `abs` makes the two sides match, which gives the red line its tent.
 
 ### Going backwards
 
-Drag any of those widgets back, and the sun rises. Look for the code that did it. There isn't any. `Sky` has no code for going backwards. It doesn't know it was going forwards.
+Play any of those widgets backward, and the sun rises. Look for the code that did it. There isn't any. `Sky` has no code for going backwards. It doesn't know it was going forwards.
 
 A `->` promises one thing: same arguments, same answer. Which arguments is up to us, and we picked the clock. A game could nudge the sun down a little each frame instead, with `->` functions too. They'd take the last frame's sun as an argument, and going back would need more code.
 
