@@ -1596,7 +1596,7 @@ Finding the stretch that's playing shows one more Roc idea. In `playing_at`, `va
 
 🌳 {{code Animation.playing_at}}
 
-`Timeline.at_beat` calls it once for each track, which is what lets the two tracks cut wherever they like. `Animation.Timeline.(score)` in a parameter list opens the nominal type, the way `Clock.(n)` opens an opaque one. `pose_of` and `path_spot` turn what's playing into a pose and a spot, and the bird chapter reads `path_spot`.
+`Timeline.at_beat` calls it once for each track, which is what lets the two tracks cut wherever they like. `Animation.Timeline.(timeline)` in a parameter list opens the nominal type, the way `Clock.(n)` opens an opaque one. `pose_of` and `path_spot` turn what's playing into a pose and a spot, and the bird chapter reads `path_spot`.
 
 🌳 {{code Animation.Timeline from "## The critter at `beat`" to "path_spot(path.plays, fraction)"}}
 
@@ -1604,7 +1604,7 @@ Finding the stretch that's playing shows one more Roc idea. In `playing_at`, `va
 
 {{code Animation.Instant}}
 
-🌳 {{code Animation.Timeline from "## The critter at `stage`." to "Past(_) => score.after"}}
+🌳 {{code Animation.Timeline from "## The critter at `stage`." to "Past(_) => timeline.after"}}
 
 Back at the top, nothing in `instant_at` is unknown any more.
 
