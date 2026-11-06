@@ -5,6 +5,7 @@ import Across
 import Along
 import DepthSort
 import Distance
+import Fraction
 import Geom
 import lib.Trig
 import TruckShape
@@ -51,7 +52,7 @@ TruckBody :: [].{
 			back_pair.plus(half_gap),
 			front_pair.minus(half_gap),
 			front_pair.plus(half_gap),
-			box.trailer_front.plus(TruckShape.cab_length.times(cab_axle_fraction)),
+			box.trailer_front.plus(TruckShape.cab_length.times(cab_axle_fraction.to_f64())),
 		]
 	}
 }
@@ -78,8 +79,8 @@ axle_pair_gap = Distance.metres(1.2)
 
 ## How far forward of the trailer the cab's axle is, as a fraction of the
 ## cab's length.
-cab_axle_fraction : F64
-cab_axle_fraction = 0.55
+cab_axle_fraction : Fraction
+cab_axle_fraction = Fraction.of(0.55)
 
 ## Where the windshield meets the nose: half the truck's height.
 hood_height : Distance

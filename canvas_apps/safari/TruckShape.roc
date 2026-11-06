@@ -6,6 +6,7 @@ import Along
 import Camera
 import Distance
 import Chain
+import Fraction
 import Geom
 import Paint
 import lib.Trig
@@ -73,7 +74,7 @@ TruckShape :: [].{
 		{
 			rear: center.along.minus(trailer_length.divided_by(2.0)),
 			trailer_front,
-			roof_front: trailer_front.plus(cab_length.times(cab_roof_fraction)),
+			roof_front: trailer_front.plus(cab_length.times(cab_roof_fraction.to_f64())),
 			nose: trailer_front.plus(cab_length),
 			left: center.across.minus(truck_width.divided_by(2.0)),
 			right: center.across.plus(truck_width.divided_by(2.0)),
@@ -118,8 +119,8 @@ TruckShape :: [].{
 
 ## How far forward of the trailer the cab's flat roof reaches, as a fraction
 ## of the cab's length.
-cab_roof_fraction : F64
-cab_roof_fraction = 0.3
+cab_roof_fraction : Fraction
+cab_roof_fraction = Fraction.of(0.3)
 
 centered_box : TruckShape.TruckBox
 centered_box = TruckShape.truck_box({ along: Along.metres(0.0), across: Across.metres(0.0) })
