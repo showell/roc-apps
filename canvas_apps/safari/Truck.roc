@@ -69,7 +69,7 @@ Truck :: [].{
 		rider_distance.plus(finish_lead).plus(start_lead.minus(finish_lead).times(fraction_left))
 	}
 
-	## The truck a frame on: where the rider is along the route, the world's
+	## The truck one step on: where the rider is along the route, the world's
 	## segments, and the route's whole length decide its pace.
 	advance : Truck.TruckState,
 	{
@@ -118,7 +118,7 @@ next_bend_on = |segments, { route_position, segment_start }|
 		}
 	}
 
-## The truck a frame on, slowing for `turn`, so that it reaches the turn at a
+## The truck one step on, slowing for `turn`, so that it reaches the turn at a
 ## cautious speed.
 advance_braking : Truck.TruckState, Truck.ComingBend -> Truck.TruckState
 advance_braking = |truck, turn| {
@@ -141,7 +141,7 @@ advance_braking = |truck, turn| {
 	}
 }
 
-## The truck a frame on with no turn close: it speeds up while it is short of
+## The truck one step on with no turn close: it speeds up while it is short of
 ## `schedule`, and otherwise holds its speed.
 advance_on_schedule : Truck.TruckState, Distance -> Truck.TruckState
 advance_on_schedule = |truck, schedule| {
