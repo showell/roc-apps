@@ -303,22 +303,6 @@ picture_color = 0xf7f5ef
 ink : Brush.Rgba
 ink = Brush.opaque(0x202020)
 
-## A count as the book writes it, with commas.
-count_text : U64 -> Str
-count_text = |count| {
-	thousands = count // 1000
-	rest = count % 1000
-	if thousands == 0 {
-		rest.to_str()
-	} else if rest < 10 {
-		"${count_text(thousands)},00${rest.to_str()}"
-	} else if rest < 100 {
-		"${count_text(thousands)},0${rest.to_str()}"
-	} else {
-		"${count_text(thousands)},${rest.to_str()}"
-	}
-}
-
 point_count : List(Stills.StillPolygon) -> U64
 point_count = |polygons| polygons.fold(0, |sum, polygon| sum + polygon.points.len())
 
@@ -326,8 +310,8 @@ point_count = |polygons| polygons.fold(0, |sum, polygon| sum + polygon.points.le
 read_out : StillsWidgetApp.PoseStill -> List(Str)
 read_out = |still| [
 	still.name,
-	"${count_text(still.polygons.len())} polygons",
-	"${count_text(point_count(still.polygons))} points",
+	"${ScrubWidget.count_text(still.polygons.len())} polygons",
+	"${ScrubWidget.count_text(point_count(still.polygons))} points",
 ]
 
 read_out_size : F64
@@ -733,14 +717,6 @@ expect {
 
 expect toggled_outlines(Hidden) == Shown
 expect toggled_outlines(Shown) == Hidden
-
-expect count_text(0) == "0"
-expect count_text(999) == "999"
-expect count_text(1000) == "1,000"
-expect count_text(1005) == "1,005"
-expect count_text(1050) == "1,050"
-expect count_text(2198) == "2,198"
-expect count_text(1000000) == "1,000,000"
 
 # The read-out is the data's, as CatStills and BirdStills hold their own counts.
 expect read_out(cat_still(Rest)) == ["Rest", "46 polygons", "2,198 points"]

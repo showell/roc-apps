@@ -3,7 +3,7 @@
 Small interactive Roc programs that run two ways from one set of files: as a
 native program on roc-ray, and as a page in a browser.
 
-Seventeen of them, covering a few different kinds of program. `safari` is a
+Nineteen of them, covering a few different kinds of program. `safari` is a
 driving screensaver. `snake`, `pong` and `breakout` are arcade games.
 `particles` is a fountain of four thousand sprites that follows the pointer.
 `camera` is a world larger than the window, with a camera over it and a HUD
@@ -17,10 +17,11 @@ walks the route's records on a map, `bends_widget` turns one bend,
 `step_widget` plays the ride forward and reads it back, `rehearsal_widget`
 clicks through one step's twelve tries at a lean, `stills_widget` lays out
 every pose of the cat and the bird and shows the one clicked large, with its
-polygons counted, and `gaze_widget` drags the rider past the pig that catches
-the eye.
+polygons counted, `gaze_widget` drags the rider past the pig that catches
+the eye, and `frame_widget` holds step 1,570 of the ride and switches its
+shapes on a layer at a time.
 
-Six of the eighteen — all but `safari`, `trick_or_treat` and the widgets — are
+Six of the nineteen — all but `safari`, `trick_or_treat` and the widgets — are
 roc-ray's own examples, by Luke Boswell, taken with only small changes to fit this scheme.
 
 **The native side runs on roc-ray 0.12.0** (`23eec6e`), with the
@@ -121,7 +122,11 @@ A canvas app goes in a page of prose as an iframe of its own page, sized by an
 comes near. `widget_kit/embed.js` makes the canvas fill the frame, passes the
 wheel on to the prose, gives a clicked or tapped frame the keyboard, and stops a
 frame that's off the screen. `canvas_app_runner.js` is unchanged, and each app is
-still a page of its own. `widget_kit/embed_trial.html` tries it with the ride
+still a page of its own. A page that opens partway lists the words its address
+may name as `opensAt` in `window.SHOW`: `?start=grass` hands the app Right as
+many times as `grass` is places down that list, before the first frame. A book
+fence says it as ```` ```widget frame grass ````, and `SEARCH=` gives
+`page_check.mjs` the address. `widget_kit/embed_trial.html` tries it with the ride
 and two widgets; copied with `embed.js` to `~/build/roc-apps/next/embed_trial/`
 it shows on the dev channel, beside the apps it frames.
 

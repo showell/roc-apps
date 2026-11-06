@@ -13,6 +13,7 @@
 //   KEYS=5:Space,40:ArrowRight FRAMES=200 …            press keys while it runs
 //   DRAG=80,80,500,500 …                               hold and drag the pointer
 //   SHOT=snake.png …                                   and save the last frame
+//   SEARCH='?start=trees' …                            open at this address
 //
 // **A CHECK THAT CANNOT PRESS A KEY CHECKS THE ATTRACT SCREEN.** Breakout
 // waits in Ready until SPACE, so without KEYS this ran 31 frames of a game
@@ -195,6 +196,7 @@ let parked = null;
 const sandbox = {
   console, performance: { now: () => virtualNow }, WebAssembly, fetch: async () => ({}), TextDecoder,
   document: document_, window: {},
+  location: { search: process.env.SEARCH ?? "" }, URLSearchParams,
   requestAnimationFrame: (fn) => {
     if (frames++ >= limit) { parked = fn; return; }
     setImmediate(() => {
