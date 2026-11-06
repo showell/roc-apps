@@ -44,7 +44,7 @@ CatSighting := {
 	## its position in `cats`.
 	depth_keys : List(CatSighting) -> List(DepthSort.DepthKey)
 	depth_keys = |cats| cats.map_with_index(
-		|cat, i| { forward: cat.forward, subject: Cat(i.to_u32_wrap()) },
+		|cat, i| { forward: Distance.metres(cat.forward), subject: Cat(i.to_u32_wrap()) },
 	)
 }
 

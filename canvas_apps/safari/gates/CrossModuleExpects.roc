@@ -215,7 +215,7 @@ expect BirdSighting.depth_keys(two_segments).map(bird_place) == [0, 1]
 
 expect
 	match BirdSighting.depth_keys(two_segments).map(|key| key.forward) {
-		[near, far] => near == 100.0 and near < far
+		[near, far] => near == Distance.metres(100.0) and near < far
 		_ => crash "CrossModuleExpects: each of two segments has a bird in view"
 	}
 

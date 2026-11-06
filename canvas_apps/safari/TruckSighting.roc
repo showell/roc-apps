@@ -51,7 +51,9 @@ TruckSighting := [
 	depth_keys : TruckSighting -> List(DepthSort.DepthKey)
 	depth_keys = |truck|
 		match truck {
-			Ahead(truck_ahead) => [{ forward: truck_ahead.forward, subject: Truck }]
+			Ahead(truck_ahead) => [
+				{ forward: Distance.metres(truck_ahead.forward), subject: Truck },
+			]
 			NoTruck => []
 		}
 }

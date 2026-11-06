@@ -32,7 +32,7 @@ RailSighting :: [].{
 	## place in the list.
 	depth_keys : List(GuardRail.RailQuad) -> List(DepthSort.DepthKey)
 	depth_keys = |quads| quads.map_with_index(
-		|quad, i| { forward: quad.forward, subject: Rail(i.to_u32_wrap()) },
+		|quad, i| { forward: Distance.metres(quad.forward), subject: Rail(i.to_u32_wrap()) },
 	)
 
 	## How many pieces a leg `distance` long is cut into: one a metre, and at

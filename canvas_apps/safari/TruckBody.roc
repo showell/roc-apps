@@ -28,7 +28,7 @@ TruckBody :: [].{
 	## The truck's body, its farthest faces painted first.
 	draw : TruckShape.TruckInView -> List(Shapes.Shape)
 	draw = |truck|
-		DepthSort.sort_by(faces(truck), |face| face.depth)
+		DepthSort.sort_by(faces(truck), |face| Distance.metres(face.depth))
 			.join_map(
 				|face| TruckShape.polygon(truck, { color: face.color, corners: face.corners }),
 			)
@@ -348,7 +348,10 @@ marked_face = |{ color, depth }| { color, depth, corners: [] }
 
 colors_by_depth : List({ color : I64, depth : F64 }) -> List(I64)
 colors_by_depth = |marks|
-	DepthSort.sort_by(marks.map(marked_face), |face| face.depth).map(|face| face.color)
+	DepthSort.sort_by(
+		marks.map(marked_face),
+		|face| Distance.metres(face.depth),
+	).map(|face| face.color)
 
 expect
 	colors_by_depth([

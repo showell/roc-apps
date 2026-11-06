@@ -401,8 +401,8 @@ expect tree_place_at(27) == 27
 expect TreeSighting.depth_keys([]).len() == 0
 expect
 	[
-		(key_at(0).forward, 6.0),
-		(key_at(2).forward, 36.0),
+		(key_at(0).forward.to_metres(), 6.0),
+		(key_at(2).forward.to_metres(), 36.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 expect
@@ -514,4 +514,4 @@ expect TruckSighting.depth_keys(lead_of(100.0)).len() == 1
 expect TruckSighting.depth_keys(lead_of(2000.0)).len() == 0
 expect TruckSighting.depth_keys(NoTruck).len() == 0
 expect TruckSighting.depth_keys(lead_of(100.0)).count_if(|key| key.subject == Truck) == 1
-expect (key_of(499.0).forward - 499.0).abs() <= 0.0001
+expect (key_of(499.0).forward.to_metres() - 499.0).abs() <= 0.0001

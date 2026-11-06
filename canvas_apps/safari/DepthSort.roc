@@ -2,6 +2,7 @@
 ## painted over the ones behind it. Things about as far away as each other
 ## keep the order they came in.
 import lib.DeviceMath
+import Distance
 
 DepthSort :: [].{
 
@@ -18,12 +19,12 @@ DepthSort :: [].{
 		Bird(U32),
 	]
 
-	## A thing to draw, as the sort sees it: how far ahead it is, and which
-	## thing it is.
-	DepthKey : { forward : F64, subject : DepthSort.Subject }
+	## A thing to draw, as the sort sees it: how far ahead it is, negative for
+	## what is behind the rider, and which thing it is.
+	DepthKey : { forward : Distance, subject : DepthSort.Subject }
 
 	## `items` from far to near, by `depth_of`: a stable merge sort.
-	sort_by : List(item), (item -> F64) -> List(item)
+	sort_by : List(item), (item -> Distance) -> List(item)
 	sort_by = |items, depth_of|
 		if items.len() <= 1 {
 			items
@@ -39,10 +40,10 @@ DepthSort :: [].{
 	## Whether depth `this` is farther than `that` by more than a tie's
 	## slack. The slack is relative to `that`, but never less than it is at
 	## a depth of 1.
-	is_farther : { this : F64, that : F64 } -> Bool
+	is_farther : { this : Distance, that : Distance } -> Bool
 	is_farther = |{ this, that }| {
-		slack = tie_slack * DeviceMath.real_max(DeviceMath.real_abs(that), 1.0)
-		(this - that) > slack
+		slack = tie_slack * DeviceMath.real_max(DeviceMath.real_abs(that.to_metres()), 1.0)
+		this.minus(that).to_metres() > slack
 	}
 }
 
@@ -55,7 +56,7 @@ tie_slack = F64.from_bits(4499125899939309867)
 merge : {
 	first : List(item),
 	second : List(item),
-	depth_of : (item -> F64),
+	depth_of : (item -> Distance),
 } -> List(item)
 merge = |{ first, second, depth_of }|
 	merge_onto(
@@ -75,7 +76,7 @@ merge_onto : List(item),
 {
 	first : List(item),
 	second : List(item),
-	depth_of : (item -> F64),
+	depth_of : (item -> Distance),
 	at_first : U64,
 	at_second : U64,
 } -> List(item)
@@ -115,36 +116,39 @@ merge_onto = |merged, { first, second, depth_of, at_first, at_second }|
 expect
 	DepthSort.sort_by(
 		[
-			{ forward: 30.0, subject: Tree(0) },
-			{ forward: 10.0, subject: Cutout(1) },
-			{ forward: 30.0, subject: Rail(2) },
-			{ forward: 50.0, subject: Tower(3) },
-			{ forward: 10.0, subject: Cat(4) },
-			{ forward: 20.0, subject: Bird(5) },
-			{ forward: 30.0, subject: Tree(6) },
-			{ forward: 40.0, subject: Rail(7) },
-			{ forward: 10.0, subject: Cutout(8) },
-			{ forward: 5.0, subject: Cat(9) },
+			{ forward: Distance.metres(30.0), subject: Tree(0) },
+			{ forward: Distance.metres(10.0), subject: Cutout(1) },
+			{ forward: Distance.metres(30.0), subject: Rail(2) },
+			{ forward: Distance.metres(50.0), subject: Tower(3) },
+			{ forward: Distance.metres(10.0), subject: Cat(4) },
+			{ forward: Distance.metres(20.0), subject: Bird(5) },
+			{ forward: Distance.metres(30.0), subject: Tree(6) },
+			{ forward: Distance.metres(40.0), subject: Rail(7) },
+			{ forward: Distance.metres(10.0), subject: Cutout(8) },
+			{ forward: Distance.metres(5.0), subject: Cat(9) },
 		],
 		|key| key.forward,
 	)
 		== [
-			{ forward: 50.0, subject: Tower(3) },
-			{ forward: 40.0, subject: Rail(7) },
-			{ forward: 30.0, subject: Tree(0) },
-			{ forward: 30.0, subject: Rail(2) },
-			{ forward: 30.0, subject: Tree(6) },
-			{ forward: 20.0, subject: Bird(5) },
-			{ forward: 10.0, subject: Cutout(1) },
-			{ forward: 10.0, subject: Cat(4) },
-			{ forward: 10.0, subject: Cutout(8) },
-			{ forward: 5.0, subject: Cat(9) },
+			{ forward: Distance.metres(50.0), subject: Tower(3) },
+			{ forward: Distance.metres(40.0), subject: Rail(7) },
+			{ forward: Distance.metres(30.0), subject: Tree(0) },
+			{ forward: Distance.metres(30.0), subject: Rail(2) },
+			{ forward: Distance.metres(30.0), subject: Tree(6) },
+			{ forward: Distance.metres(20.0), subject: Bird(5) },
+			{ forward: Distance.metres(10.0), subject: Cutout(1) },
+			{ forward: Distance.metres(10.0), subject: Cat(4) },
+			{ forward: Distance.metres(10.0), subject: Cutout(8) },
+			{ forward: Distance.metres(5.0), subject: Cat(9) },
 		]
 
 ## A pair of trees at these depths, as the sort orders them.
 sorted_pair : { first : F64, second : F64 } -> List(DepthSort.Subject)
 sorted_pair = |{ first, second }| {
-	keys = [{ forward: first, subject: Tree(0) }, { forward: second, subject: Tree(1) }]
+	keys = [
+		{ forward: Distance.metres(first), subject: Tree(0) },
+		{ forward: Distance.metres(second), subject: Tree(1) },
+	]
 	DepthSort.sort_by(keys, |key| key.forward).map(|key| key.subject)
 }
 

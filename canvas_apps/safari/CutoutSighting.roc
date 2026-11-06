@@ -6,6 +6,7 @@
 import Along
 import Cutouts
 import DepthSort
+import Distance
 import Chain
 import Pond
 import Wildlife
@@ -113,7 +114,10 @@ CutoutSighting :: [].{
 	depth_keys : List(Cutouts.Cutout) -> List(DepthSort.DepthKey)
 	depth_keys = |cutouts|
 		cutouts.map_with_index(
-			|cutout, i| { forward: cutout.forward, subject: Cutout(i.to_u32_wrap()) },
+			|cutout, i| {
+				forward: Distance.metres(cutout.forward),
+				subject: Cutout(i.to_u32_wrap()),
+			},
 		)
 }
 

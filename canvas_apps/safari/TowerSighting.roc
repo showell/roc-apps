@@ -151,7 +151,7 @@ TowerSighting := {
 	## its position in `towers`.
 	depth_keys : List(TowerSighting) -> List(DepthSort.DepthKey)
 	depth_keys = |towers| towers.map_with_index(
-		|tower, i| { forward: tower.forward, subject: Tower(i.to_u32_wrap()) },
+		|tower, i| { forward: Distance.metres(tower.forward), subject: Tower(i.to_u32_wrap()) },
 	)
 }
 

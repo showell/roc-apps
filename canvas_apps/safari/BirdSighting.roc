@@ -38,7 +38,7 @@ BirdSighting := {
 	## it is.
 	depth_keys : List(BirdSighting) -> List(DepthSort.DepthKey)
 	depth_keys = |birds| birds.map_with_index(
-		|bird, i| { forward: bird.forward, subject: Bird(i.to_u32_wrap()) },
+		|bird, i| { forward: Distance.metres(bird.forward), subject: Bird(i.to_u32_wrap()) },
 	)
 }
 
