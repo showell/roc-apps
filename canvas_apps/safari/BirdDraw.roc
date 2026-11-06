@@ -2,6 +2,7 @@
 ## and flying off as the rider comes. BirdFlight says where a bird is and how
 ## it looks, BirdSighting finds the birds in view, and BirdStills holds their
 ## drawings. This module draws one.
+import Pixels
 import BirdSighting
 import BirdStills
 import Camera
@@ -14,7 +15,7 @@ BirdDraw :: [].{
 
 	## A bird on screen, its feet where it is. Its still is unflipped: a bird
 	## from a left-hand tree crosses the road toward +x, the way its beak points.
-	draw : BirdSighting, F64 -> List(Shapes.Shape)
+	draw : BirdSighting, Pixels -> List(Shapes.Shape)
 	draw = |bird, cam_focal| {
 		feet = Camera.project(
 			{
@@ -28,7 +29,7 @@ BirdDraw :: [].{
 			{
 				feet,
 				flip: AsDrawn,
-				height_px: BirdSighting.height_px({ forward: bird.forward, cam_focal }),
+				height_px: BirdSighting.height_px({ forward: bird.forward, cam_focal }).to_f64(),
 			},
 			BirdStills.pose_polygons(bird.pose),
 		)
@@ -48,9 +49,9 @@ level_bird = {
 expect
 	[
 		(BirdSighting.bird_height.to_metres(), 2.2),
-		(BirdSighting.height_px({ forward: 110.0, cam_focal: 500.0 }), 10.0),
-		(BirdSighting.height_px({ forward: 220.0, cam_focal: 500.0 }), 5.0),
-		(BirdSighting.height_px({ forward: 110.0, cam_focal: 1000.0 }), 20.0),
+		(BirdSighting.height_px({ forward: 110.0, cam_focal: Pixels.of(500.0) }).to_f64(), 10.0),
+		(BirdSighting.height_px({ forward: 220.0, cam_focal: Pixels.of(500.0) }).to_f64(), 5.0),
+		(BirdSighting.height_px({ forward: 110.0, cam_focal: Pixels.of(1000.0) }).to_f64(), 20.0),
 	].all(|(got, want)| (got - want).abs() <= 0.000000001)
 
 # The perched still's first corner is (-0.0344, 0.5715), at a height of 10 px
@@ -58,7 +59,7 @@ expect
 # 110 m, is 50 px each way.
 expect {
 	first_corner = |bird|
-		match BirdDraw.draw(bird, 500.0) {
+		match BirdDraw.draw(bird, Pixels.of(500.0)) {
 			[Poly(polygon), ..] => polygon.pts.take_first(2)
 			_ => crash "a bird draws polygons"
 		}
@@ -83,7 +84,7 @@ expect {
 			_ => crash "a bird's still is polygons"
 		}
 	drawn = [Side(WingsDown), Diving].join_map(
-		|pose| BirdDraw.draw({ ..level_bird, pose }, 500.0).map(fill_of),
+		|pose| BirdDraw.draw({ ..level_bird, pose }, Pixels.of(500.0)).map(fill_of),
 	)
 	stills = List.concat(BirdStills.side_wings_down, BirdStills.diving)
 	drawn == stills.map(|poly| Flat(Brush.opaque(poly.color)))

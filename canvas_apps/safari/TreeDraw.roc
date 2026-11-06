@@ -2,6 +2,7 @@
 ## tiers are flat triangles on the screen. A near one's are cones seen from
 ## the rider: the outline of a ring of points round each tier's base and its
 ## apex, so the tiers fatten as the rider passes under them.
+import Pixels
 import Camera
 import Fraction
 import Paint
@@ -20,7 +21,7 @@ TreeDraw :: [].{
 		forward : F64,
 		height : F64,
 		color : I64,
-		cam_focal : F64,
+		cam_focal : Pixels,
 		trunk : [RoundCorners, SharpCorners],
 		crown : [Cones, Triangles],
 		shade : Fraction,
@@ -139,7 +140,7 @@ TreeDraw :: [].{
 		right : F64,
 		forward : F64,
 		height : F64,
-		cam_focal : F64,
+		cam_focal : Pixels,
 	} -> TreeDraw.TreeOnScreen
 	on_screen = |{ right, forward, height, cam_focal }| {
 		base = Camera.project({ right, forward, height: 0.0 }, cam_focal)
@@ -335,7 +336,7 @@ sample_on_screen = TreeDraw.on_screen({
 	right: 0.0,
 	forward: 2.0,
 	height: 4.0,
-	cam_focal: 500.0,
+	cam_focal: Pixels.of(500.0),
 })
 
 expect sample_on_screen.base_x == 480.0

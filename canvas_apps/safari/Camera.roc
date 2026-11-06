@@ -1,5 +1,6 @@
 ## The rider's camera: a pinhole at eye height, looking straight ahead. It
 ## puts a point in the rider's view onto the screen.
+import Pixels
 import Geom
 import Screen
 
@@ -11,18 +12,18 @@ Camera :: [].{
 
 	## Where a point in front of the camera lands on the screen, through a
 	## lens of focal length `cam_focal` in pixels.
-	project : Geom.RaisedPoint, F64 -> Screen.Point
+	project : Geom.RaisedPoint, Pixels -> Screen.Point
 	project = |p, cam_focal| {
-		x: (Screen.center_x + ((p.right / p.forward) * cam_focal)),
-		y: (Screen.horizon_y - (((p.height - eye_h) / p.forward) * cam_focal)),
+		x: (Screen.center_x + ((p.right / p.forward) * cam_focal.to_f64())),
+		y: (Screen.horizon_y - (((p.height - eye_h) / p.forward) * cam_focal.to_f64())),
 	}
 
-	project_all : List(Geom.RaisedPoint), F64 -> List(Screen.Point)
+	project_all : List(Geom.RaisedPoint), Pixels -> List(Screen.Point)
 	project_all = |points, cam_focal| points.map(|p| project(p, cam_focal))
 }
 
 at : Geom.RaisedPoint -> Screen.Point
-at = |point| Camera.project(point, 800.0)
+at = |point| Camera.project(point, Pixels.of(800.0))
 
 expect at({
 	right: 0.0,
@@ -123,7 +124,7 @@ expect
 				height: 11.2,
 			},
 		],
-		800.0,
+		Pixels.of(800.0),
 	)
 		== [
 			{ x: 480.0, y: 300.0 },
@@ -131,4 +132,4 @@ expect
 			{ x: 480.0, y: -500.0 },
 		]
 
-expect Camera.project_all([], 800.0).len() == 0
+expect Camera.project_all([], Pixels.of(800.0)).len() == 0

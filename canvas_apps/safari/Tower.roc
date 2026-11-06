@@ -3,6 +3,7 @@
 ## crossed braces in the lowest two storeys) with a blinking beacon on top.
 ## The earth curves away under a far tower, so it sinks below the horizon
 ## from the bottom up.
+import Pixels
 import Across
 import Along
 import Angle
@@ -64,7 +65,7 @@ Tower :: [].{
 	}
 
 	## How a rod is drawn: its width on screen, and the camera.
-	RodView : { rod_width_px : F64, cam_focal : F64 }
+	RodView : { rod_width_px : F64, cam_focal : Pixels }
 
 	## One tower, ready to draw: where it stands, how far the earth's curve
 	## has sunk it, and how its rods are drawn.
@@ -255,7 +256,7 @@ Tower :: [].{
 		})
 
 	## How many pixels one metre across spans at distance `forward`.
-	metre_px : { forward : F64, cam_focal : F64 } -> F64
+	metre_px : { forward : F64, cam_focal : Pixels } -> F64
 	metre_px = |{ forward, cam_focal }| {
 		p1 = Camera.project(
 			{
@@ -277,7 +278,7 @@ Tower :: [].{
 	}
 
 	## A rod's width on screen at distance `forward`.
-	rod_width_at : { forward : F64, cam_focal : F64 } -> F64
+	rod_width_at : { forward : F64, cam_focal : Pixels } -> F64
 	rod_width_at = |camera| rod_w * metre_px(camera)
 
 	## The four legs, from the footprint's corners up to the apex.
@@ -420,7 +421,7 @@ Tower :: [].{
 	draw : {
 		footprint : Tower.Footprint,
 		center : Geom.RiderPoint,
-		cam_focal : F64,
+		cam_focal : Pixels,
 		beacon_brightness : Fraction,
 	} -> List(Shapes.Shape)
 	draw = |{ footprint, center, cam_focal, beacon_brightness }| {
@@ -484,7 +485,7 @@ expect {
 }
 
 sample_rod_view : Tower.RodView
-sample_rod_view = { rod_width_px: 4.0, cam_focal: 500.0 }
+sample_rod_view = { rod_width_px: 4.0, cam_focal: Pixels.of(500.0) }
 
 # A tower 12 m square, centred 100 m ahead, sunk 1 m.
 sample_tower : Tower.TowerInView
@@ -587,9 +588,9 @@ expect
 			}),
 		]
 
-expect Tower.rod_width_at({ forward: 10.0, cam_focal: 500.0 }) == 12.0
-expect Tower.rod_width_at({ forward: 25.0, cam_focal: 500.0 }) == 4.8
-expect Tower.rod_width_at({ forward: 50.0, cam_focal: 500.0 }) == 2.4
+expect Tower.rod_width_at({ forward: 10.0, cam_focal: Pixels.of(500.0) }) == 12.0
+expect Tower.rod_width_at({ forward: 25.0, cam_focal: Pixels.of(500.0) }) == 4.8
+expect Tower.rod_width_at({ forward: 50.0, cam_focal: Pixels.of(500.0) }) == 2.4
 
 rod_along_road : F64, F64 -> List(Shapes.Shape)
 rod_along_road = |start, end|

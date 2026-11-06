@@ -3,6 +3,7 @@
 ## of both. Each is a silhouette across the screen whose height depends only on
 ## the bearing it is seen at, so the skyline turns with the rider but never
 ## comes nearer. The rock darkens at dusk, and the snow goes blue.
+import Pixels
 import Angle
 import Clock
 import lib.DeviceMath
@@ -18,7 +19,7 @@ import lib.Shapes
 Mountains :: [].{
 
 	## How the skyline is seen: the rider's heading, and the camera.
-	Sight : { heading : Angle.Bearing, cam_focal : F64 }
+	Sight : { heading : Angle.Bearing, cam_focal : Pixels }
 
 	rock : I64
 	rock = 0x5B6A8F
@@ -121,7 +122,8 @@ Mountains :: [].{
 	## The bearing seen at `x` across the screen.
 	bearing_at : Mountains.Sight, F64 -> Angle.Bearing
 	bearing_at = |sight, x| {
-		off_center = Angle.Turn.radians(Trig.r_atan((x - Screen.center_x) / sight.cam_focal))
+		slope = (x - Screen.center_x) / sight.cam_focal.to_f64()
+		off_center = Angle.Turn.radians(Trig.r_atan(slope))
 		sight.heading.plus(off_center)
 	}
 
@@ -145,7 +147,7 @@ Mountains :: [].{
 	draw : {
 		heading : Angle.Bearing,
 		dusk : Fraction,
-		cam_focal : F64,
+		cam_focal : Pixels,
 	} -> List(Shapes.Shape)
 	draw = |{ heading, dusk, cam_focal }| {
 		sight = { heading, cam_focal }
@@ -229,7 +231,7 @@ horizon_y = Screen.horizon_y
 
 ## The screen's y for a height on the skyline.
 height_y : Mountains.Sight, F64 -> F64
-height_y = |sight, height| horizon_y - (height * (sight.cam_focal / Lens.focal))
+height_y = |sight, height| horizon_y - (height * sight.cam_focal.ratio_to(Lens.focal))
 
 ## The columns sampled, every `column_step` pixels from `from` up to `to`.
 columns : { from : F64, to : F64 } -> List(F64)
@@ -360,7 +362,7 @@ expect Mountains.snow_peak_height < 150.0
 # The bearing seen at `x` across a 960-pixel screen.
 seen_bearing : {
 	heading : F64,
-	cam_focal : F64,
+	cam_focal : Pixels,
 	x : F64,
 } -> F64
 seen_bearing = |{ heading, cam_focal, x }|
@@ -369,21 +371,21 @@ seen_bearing = |{ heading, cam_focal, x }|
 expect
 	seen_bearing({
 		heading: 0.0,
-		cam_focal: 500.0,
+		cam_focal: Pixels.of(500.0),
 		x: 480.0,
 	})
 		== 0.0
 expect
 	seen_bearing({
 		heading: 1.25,
-		cam_focal: 500.0,
+		cam_focal: Pixels.of(500.0),
 		x: 480.0,
 	})
 		== 1.25
 expect
 	seen_bearing({
 		heading: 1.25,
-		cam_focal: 100.0,
+		cam_focal: Pixels.of(100.0),
 		x: 480.0,
 	})
 		== 1.25
@@ -392,34 +394,34 @@ expect
 expect
 	seen_bearing({
 		heading: 0.0,
-		cam_focal: 500.0,
+		cam_focal: Pixels.of(500.0),
 		x: 0.0,
 	})
 		< seen_bearing({
 			heading: 0.0,
-			cam_focal: 500.0,
+			cam_focal: Pixels.of(500.0),
 			x: 480.0,
 		})
 expect
 	seen_bearing({
 		heading: 0.0,
-		cam_focal: 500.0,
+		cam_focal: Pixels.of(500.0),
 		x: 480.0,
 	})
 		< seen_bearing({
 			heading: 0.0,
-			cam_focal: 500.0,
+			cam_focal: Pixels.of(500.0),
 			x: 960.0,
 		})
 expect
 	seen_bearing({
 		heading: 0.0,
-		cam_focal: 100.0,
+		cam_focal: Pixels.of(100.0),
 		x: 960.0,
 	})
 		> seen_bearing({
 			heading: 0.0,
-			cam_focal: 500.0,
+			cam_focal: Pixels.of(500.0),
 			x: 960.0,
 		})
 

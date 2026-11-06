@@ -1,5 +1,6 @@
 ## SceneDraw paints the things beside the road in depth order, far to near,
 ## each by its own kind's module.
+import Pixels
 import CatDraw
 import Across
 import Along
@@ -49,7 +50,11 @@ SceneDraw :: [].{
 	## A tree, drawn in more detail the nearer it is: its trunk is round when
 	## few of `trees` are nearer, and its crown is cones when it is nearer
 	## than Detail.full_detail_reach.
-	draw_tree : TreeSighting, { trees : List(TreeSighting), cam_focal : F64 } -> List(Shapes.Shape)
+	draw_tree : TreeSighting,
+	{
+		trees : List(TreeSighting),
+		cam_focal : Pixels,
+	} -> List(Shapes.Shape)
 	draw_tree = |tree, { trees, cam_focal }| {
 		nearer_trees = SceneDraw.nearer_tree_count(trees, tree.forward)
 		TreeDraw.draw({
@@ -145,7 +150,7 @@ thing_at = |things, place|
 	things.get(place.to_u64())
 		?? crash "SceneDraw.thing_at: the depth order names only places in its lists"
 
-draw_cat : CatSighting, F64 -> List(Shapes.Shape)
+draw_cat : CatSighting, Pixels -> List(Shapes.Shape)
 draw_cat = |cat, cam_focal|
 	CatDraw.draw({
 		right: cat.right,
@@ -219,7 +224,7 @@ start_view = {
 			half_width: Distance.metres(2.0),
 		},
 	},
-	cam_focal: 500.0,
+	cam_focal: Pixels.of(500.0),
 }
 
 # A tower `along` metres down the first segment, 20 m right of the lane's middle.
@@ -252,7 +257,7 @@ tree_cluster = [10.0, 11.0, 12.0, 13.0, 14.0].map(tree_at)
 
 clustered_tree : F64 -> List(Shapes.Shape)
 clustered_tree = |forward|
-	SceneDraw.draw_tree(tree_at(forward), { trees: tree_cluster, cam_focal: 500.0 })
+	SceneDraw.draw_tree(tree_at(forward), { trees: tree_cluster, cam_focal: Pixels.of(500.0) })
 
 second_shape_points : List(Shapes.Shape) -> U64
 second_shape_points = |shapes|
@@ -292,7 +297,7 @@ up_road = {
 
 ## The first three segments, seen from `vantage` through a camera of focal
 ## length `cam_focal`.
-view_from : Geom.Vantage, F64 -> Chain.Viewpoint
+view_from : Geom.Vantage, Pixels -> Chain.Viewpoint
 view_from = |vantage, cam_focal| {
 	road: {
 		route: route,
@@ -303,7 +308,7 @@ view_from = |vantage, cam_focal| {
 }
 
 from_origin : Chain.Viewpoint
-from_origin = view_from(origin, 500.0)
+from_origin = view_from(origin, Pixels.of(500.0))
 
 ## A green tree `along` metres into the first segment, 3.5 m right of the
 ## road's middle.
@@ -340,15 +345,15 @@ expect
 	[
 		(TreeSighting.tree_in_view(from_origin, green_tree_at(0.4)), 0),
 		(TreeSighting.tree_in_view(from_origin, green_tree_at(0.5)), 1),
-		(TreeSighting.tree_in_view(view_from(origin, 1.0), green_tree_at(120.0)), 0),
+		(TreeSighting.tree_in_view(view_from(origin, Pixels.of(1.0)), green_tree_at(120.0)), 0),
 		(TreeSighting.tree_in_view(from_origin, green_tree_at(2000.0)), 0),
 	].all(|(seen, want)| seen.len().to_i64_wrap() == want)
 
 expect
 	[
 		(from_origin, 28),
-		(view_from(up_road, 500.0), 20),
-		(view_from(origin, 1.0), 0),
+		(view_from(up_road, Pixels.of(500.0)), 20),
+		(view_from(origin, Pixels.of(1.0)), 0),
 	].all(
 		|(view, want)| {
 			trees = TreeSighting.segment_trees(view, Chain.Position.first)

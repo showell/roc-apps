@@ -1,6 +1,7 @@
 ## The camera's lens: a 70° view across the screen at rest. The view
 ## widens as the rider leans into a turn, and as something catches the
 ## rider's attention; the camera takes the wider of the two.
+import Pixels
 import Angle
 import Attention
 import Fraction
@@ -13,8 +14,8 @@ Lens :: [].{
 	field_of_view = Angle.Turn.degrees(70.0)
 
 	## The focal length at rest, in pixels.
-	focal : F64
-	focal = ((Screen.width / 2.0) / Trig.r_tan(field_of_view.times(0.5).to_radians()))
+	focal : Pixels
+	focal = Pixels.of((Screen.width / 2.0) / Trig.r_tan(field_of_view.times(0.5).to_radians()))
 
 	min_focal_factor : F64
 	min_focal_factor = 0.35
@@ -23,20 +24,20 @@ Lens :: [].{
 	min_gaze_focal_factor = 0.61
 
 	## The focal length for a lean, from 0 (upright) to 1 (the deepest lean).
-	focal_for_lean : Fraction -> F64
+	focal_for_lean : Fraction -> Pixels
 	focal_for_lean = |lean_fraction| {
 		lean = lean_fraction.to_f64()
-		focal * (1.0 - (((1.0 - min_focal_factor) * lean) * lean))
+		focal.times(1.0 - (((1.0 - min_focal_factor) * lean) * lean))
 	}
 
 	## The focal length for the rider's attention.
-	focal_for_gaze : Attention -> F64
+	focal_for_gaze : Attention -> Pixels
 	focal_for_gaze = |attention|
-		focal * (1.0 - ((1.0 - min_gaze_focal_factor) * attention.to_f64()))
+		focal.times(1.0 - ((1.0 - min_gaze_focal_factor) * attention.to_f64()))
 
 	## The focal length the camera uses: the shorter of the two, which
 	## gives the wider view.
-	cam_focal : { lean_fraction : Fraction, attention : Attention } -> F64
+	cam_focal : { lean_fraction : Fraction, attention : Attention } -> Pixels
 	cam_focal = |{ lean_fraction, attention }| {
 		for_lean = focal_for_lean(lean_fraction)
 		for_gaze = focal_for_gaze(attention)
@@ -56,7 +57,7 @@ expect
 	[
 		(Screen.width, 960.0),
 		(Lens.field_of_view.to_radians() / Trig.deg, 70.0),
-		(Lens.focal, 685.5110432362151),
+		(Lens.focal.to_f64(), 685.5110432362151),
 	].all(|(got, want)| is_close(got, want))
 
 expect
@@ -66,7 +67,7 @@ expect
 		(0.5, 574.1154987103301),
 		(0.75, 434.8710680529739),
 		(1.0, 239.92886513267527),
-	].all(|(lean, want)| is_close(Lens.focal_for_lean(Fraction.of(lean)), want))
+	].all(|(lean, want)| is_close(Lens.focal_for_lean(Fraction.of(lean)).to_f64(), want))
 
 expect
 	[
@@ -74,7 +75,7 @@ expect
 		(0.5, 551.8363898051531),
 		(1.0, 418.16173637409116),
 		(1.5, 284.4870829430293),
-	].all(|(look, want)| is_close(Lens.focal_for_gaze(Attention.of(look)), want))
+	].all(|(look, want)| is_close(Lens.focal_for_gaze(Attention.of(look)).to_f64(), want))
 
 expect
 	[
@@ -90,6 +91,6 @@ expect
 				lean_fraction: Fraction.of(lean),
 				attention: Attention.of(look),
 			})
-			is_close(got, want)
+			is_close(got.to_f64(), want)
 		},
 	)

@@ -1,6 +1,7 @@
 ## The sky through the ride: the sun sinks a little with every step, the
 ## sky darkens toward dusk as it goes, and the horizon warms red while the
 ## sun is near it. The sun is drawn only while the rider faces it.
+import Pixels
 import Angle
 import Clock
 import Fraction
@@ -144,7 +145,7 @@ Sky :: [].{
 	sun_sighting : {
 		heading : Angle.Bearing,
 		clock : Clock,
-		cam_focal : F64,
+		cam_focal : Pixels,
 	} -> Sky.SunSighting
 	sun_sighting = |{ heading, clock, cam_focal }| {
 		turn_from_view = sun_bearing.turn_from(heading)
@@ -185,12 +186,12 @@ sky_at = |clock| Sky.color_between({
 sun_place : {
 	turn_from_view : Angle.Turn,
 	clock : Clock,
-	cam_focal : F64,
+	cam_focal : Pixels,
 } -> Sky.SunPlace
 sun_place = |{ turn_from_view, clock, cam_focal }| {
-	scale = (cam_focal / Lens.focal)
+	scale = cam_focal.ratio_to(Lens.focal)
 	{
-		x: (Screen.center_x + (Trig.r_tan(turn_from_view.to_radians()) * cam_focal)),
+		x: (Screen.center_x + (Trig.r_tan(turn_from_view.to_radians()) * cam_focal.to_f64())),
 		y: (Screen.horizon_y - (Sky.sun_height_px(clock) * scale)),
 		scale,
 	}

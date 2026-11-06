@@ -1,5 +1,6 @@
 ## CatDraw draws the cat: the still for the pose it is in, scaled to its
 ## height on screen and raised as it leaps.
+import Pixels
 import Camera
 import Cat
 import CatStills
@@ -52,7 +53,7 @@ CatDraw :: [].{
 		height : F64,
 		pose : Cat.Pose,
 		lift : F64,
-		cam_focal : F64,
+		cam_focal : Pixels,
 	} -> List(Shapes.Shape)
 	draw = |
 		{
@@ -180,7 +181,7 @@ cat_shapes = |{ forward, pose, lift }|
 		height: 1.7,
 		pose,
 		lift,
-		cam_focal: 500.0,
+		cam_focal: Pixels.of(500.0),
 	}).len()
 
 expect
