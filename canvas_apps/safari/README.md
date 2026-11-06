@@ -68,6 +68,12 @@ them, in three tiers, each run from the roc-apps root:
     nice -n 19 shale canvas_apps/safari/gates/run.shale        before a push
     nice -n 19 shale canvas_apps/safari/gates/publish.shale    before the site moves
 
+| Tier | Runs | Time |
+|---|---|---|
+| `fast.shale` | `roc check`, one test root, the one-file lints on changed files, one frame; stops at the first failure | about 10 s, or a minute and a half on a checkout's first run |
+| `run.shale` | every lint, every expect, the tutorial, the proof tools, the dev page; reports every failure | two to three minutes |
+| `publish.shale` | the merge gate and `check.shale` from cold caches, then safari's page and every widget's as release wasm | about six minutes |
+
 An agent runs the fast tier, and one merge gate runs at a time, because the box
 has two cores. Each tier ends by naming what it didn't run.
 
