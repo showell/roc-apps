@@ -132,7 +132,7 @@ draw_subject = |scene, { view, depth_key }| {
 			SceneDraw.draw_tree(thing_at(scene.trees, place), { trees: scene.trees, cam_focal })
 		Tower(place) => SceneDraw.draw_tower(view, thing_at(scene.towers, place))
 		Rail(place) => GuardRail.draw(thing_at(scene.rails, place), cam_focal)
-		Critter(place) => StillDraw.draw(thing_at(scene.critters, place), cam_focal)
+		Cutout(place) => StillDraw.draw(thing_at(scene.cutouts, place), cam_focal)
 		Cat(place) => draw_cat(thing_at(scene.cats, place), cam_focal)
 		Truck => draw_truck(view, scene.truck)
 		Bird(place) => RocBird.draw(thing_at(scene.birds, place), cam_focal)
@@ -391,7 +391,7 @@ tree_place_at : U64 -> I64
 tree_place_at = |i|
 	match key_at(i).subject {
 		Tree(position) => position.to_i64()
-		Tower(_) | Critter(_) | Cat(_) | Truck | Rail(_) | Bird(_) =>
+		Tower(_) | Cutout(_) | Cat(_) | Truck | Rail(_) | Bird(_) =>
 			crash "SceneDraw: a tree's key names a tree"
 	}
 

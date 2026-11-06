@@ -194,7 +194,7 @@ A piece of the world can be just a value. Here's the second whole module, and it
 
 Above its `expect`s, there are no functions here at all. The ducks are read where the critters are sighted:
 
-{{code CritterSighting.pond_sightings from "if Scenery.is_pond" to "Pond.ducks.map("}}
+{{code CutoutSighting.pond_sightings from "if Scenery.is_pond" to "Pond.ducks.map("}}
 
 `World` turns a route, a plain list of records, into segments of road. A plan for a segment shows how much tag unions can do with no declaration. `[WithBull, NoBull]` is written right in the field's type, and it says more than a boolean would at every place a segment is written down.
 

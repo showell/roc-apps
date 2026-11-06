@@ -1,4 +1,4 @@
-## CritterSighting sights every critter on the road ahead from where the rider
+## CutoutSighting sights every critter on the road ahead from where the rider
 ## is: the farm animals of the nearest segments, the safari animal and its
 ## baby at each bend, and the ducks on each pond. The critters of the
 ## segment before the rider's are sighted too, so the bend the rider has
@@ -12,7 +12,7 @@ import SafariCritter
 import Scenery
 import World
 
-CritterSighting :: [].{
+CutoutSighting :: [].{
 
 	## Farm animals are sighted on this many segments of the chain.
 	farm_reach : U32
@@ -32,26 +32,26 @@ CritterSighting :: [].{
 	in_view = |road|
 		match Chain.segment_behind(road) {
 			Previous(segment_behind) =>
-				CritterSighting.sightings_ahead(road).concat(
-					CritterSighting.sightings_behind(road, segment_behind),
+				CutoutSighting.sightings_ahead(road).concat(
+					CutoutSighting.sightings_behind(road, segment_behind),
 				)
-			AtRouteStart => CritterSighting.sightings_ahead(road)
+			AtRouteStart => CutoutSighting.sightings_ahead(road)
 		}
 
 	## The critters of every segment in the chain, nearest first.
 	sightings_ahead : Chain.RoadView -> List(Cutouts.Placement)
 	sightings_ahead = |road|
 		Chain.Position.all_in(road.chain)
-			.join_map(|position| CritterSighting.sightings_at(road, position))
+			.join_map(|position| CutoutSighting.sightings_at(road, position))
 
 	## The critters of the segment at `position` in the chain: its farm
 	## animals, its bend's animals, then its pond's ducks.
 	sightings_at : Chain.RoadView, Chain.Position -> List(Cutouts.Placement)
 	sightings_at = |road, position|
 		[
-			CritterSighting.farm_sightings(road, position),
-			CritterSighting.safari_sightings(road, position),
-			CritterSighting.duck_sightings(road, position),
+			CutoutSighting.farm_sightings(road, position),
+			CutoutSighting.safari_sightings(road, position),
+			CutoutSighting.duck_sightings(road, position),
 		].join()
 
 	## The cows, then the pigs, of the segment at `position` in the chain.
@@ -98,7 +98,7 @@ CritterSighting :: [].{
 		bend_sightings(
 			road,
 			{ place: Chain.place_behind(segment), segment },
-		).concat(CritterSighting.ducks_behind(road, segment))
+		).concat(CutoutSighting.ducks_behind(road, segment))
 	}
 
 	## The ducks of `segment`, the one before the rider's, if it has a pond.
@@ -113,7 +113,7 @@ CritterSighting :: [].{
 	depth_keys : List(Cutouts.Cutout) -> List(DepthSort.DepthKey)
 	depth_keys = |cutouts|
 		cutouts.map_with_index(
-			|cutout, i| { forward: cutout.forward, subject: Critter(i.to_u32_wrap()) },
+			|cutout, i| { forward: cutout.forward, subject: Cutout(i.to_u32_wrap()) },
 		)
 }
 
@@ -181,5 +181,5 @@ pond_sightings = |road, { place, segment }|
 		[]
 	}
 
-expect CritterSighting.farm_reach.to_i64() == 3
-expect CritterSighting.safari_reach.to_i64() == 5
+expect CutoutSighting.farm_reach.to_i64() == 3
+expect CutoutSighting.safari_reach.to_i64() == 5

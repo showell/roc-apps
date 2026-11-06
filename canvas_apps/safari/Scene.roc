@@ -1,11 +1,11 @@
 ## Scene gathers what one frame shows beside the road: the trees, masts,
-## critters, cats, guard rails, the truck and the birds in view, each kind
+## cutouts, cats, guard rails, the truck and the birds in view, each kind
 ## found by its own sighting, and the order to paint them in, far to near.
 import Cutouts
 import BirdSighting
 import CatSighting
 import Clock
-import CritterSighting
+import CutoutSighting
 import DepthSort
 import Distance
 import Chain
@@ -24,7 +24,7 @@ import World
 Scene := {
 	trees : List(TreeSighting),
 	towers : List(TowerSighting),
-	critters : List(Cutouts.Cutout),
+	cutouts : List(Cutouts.Cutout),
 	cats : List(CatSighting),
 	rails : List(GuardRail.RailPoly),
 	truck : TruckSighting,
@@ -48,9 +48,9 @@ Scene := {
 		towers =
 			TowerSighting.in_view({ road, clock })
 				.take_first(TowerSighting.max_vis_towers.to_u64_wrap())
-		critters =
-			Cutouts.cutouts_in_view(CritterSighting.in_view(road))
-				.take_first(CritterSighting.max_vis_critters.to_u64_wrap())
+		cutouts =
+			Cutouts.cutouts_in_view(CutoutSighting.in_view(road))
+				.take_first(CutoutSighting.max_vis_critters.to_u64_wrap())
 		cats = CatSighting.in_view(view, speed).take_first(CatSighting.max_vis_cats.to_u64_wrap())
 		rails = RailSighting.in_view(road)
 		rider_distance = World.distance_along_route(
@@ -70,7 +70,7 @@ Scene := {
 			BirdSighting.depth_keys(birds),
 			TreeSighting.depth_keys(trees),
 			TowerSighting.depth_keys(towers),
-			CritterSighting.depth_keys(critters),
+			CutoutSighting.depth_keys(cutouts),
 			CatSighting.depth_keys(cats),
 			TruckSighting.depth_keys(truck_at),
 			RailSighting.depth_keys(rails),
@@ -78,7 +78,7 @@ Scene := {
 		{
 			trees,
 			towers,
-			critters,
+			cutouts,
 			cats,
 			rails,
 			truck: truck_at,

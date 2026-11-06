@@ -14,7 +14,7 @@ import game.BirdSighting
 import game.Cat
 import game.CatSighting
 import game.Clock
-import game.CritterSighting
+import game.CutoutSighting
 import game.DepthSort
 import game.Distance
 import game.Fraction
@@ -207,7 +207,7 @@ bird_place : DepthSort.DepthKey -> I64
 bird_place = |key|
 	match key.subject {
 		Bird(place) => place.to_i64()
-		Tree(_) | Tower(_) | Critter(_) | Cat(_) | Truck | Rail(_) =>
+		Tree(_) | Tower(_) | Cutout(_) | Cat(_) | Truck | Rail(_) =>
 			crash "CrossModuleExpects: a bird's key names a bird"
 	}
 
@@ -328,7 +328,7 @@ expect cats_on_chain([World.SegmentIndex.first]).len() == 0
 expect CatSighting.depth_keys(seen).map(|key| key.subject) == [Cat(0)]
 expect CatSighting.depth_keys([]).len() == 0
 
-# CritterSighting: how far along the chain each kind of critter is sighted.
+# CutoutSighting: how far along the chain each kind of critter is sighted.
 ## The first six segments, chained in order.
 six_segments : Chain.RoadView
 six_segments = {
@@ -346,17 +346,14 @@ lone = |index| {
 }
 
 farm_at : U32 -> I64
-farm_at = |number| CritterSighting.farm_sightings(
+farm_at = |number| CutoutSighting.farm_sightings(
 	six_segments,
 	Chain.Position.number(number),
 ).len().to_i64_wrap()
 
 safari_at : U32 -> I64
 safari_at = |number|
-	CritterSighting.safari_sightings(
-		six_segments,
-		Chain.Position.number(number),
-	).len().to_i64_wrap()
+	CutoutSighting.safari_sightings(six_segments, Chain.Position.number(number)).len().to_i64_wrap()
 
 expect farm_at(0) > 0
 expect farm_at(2) > 0
@@ -366,23 +363,23 @@ expect farm_at(5) == 0
 expect safari_at(3) > 0
 expect safari_at(4) > 0
 expect safari_at(5) == 0
-expect CritterSighting.safari_sightings(lone(18), Chain.Position.first).len() == 0
-expect CritterSighting.safari_sightings(lone(0), Chain.Position.first).len() > 0
+expect CutoutSighting.safari_sightings(lone(18), Chain.Position.first).len() == 0
+expect CutoutSighting.safari_sightings(lone(0), Chain.Position.first).len() > 0
 
 duck_count : U32 -> I64
 duck_count = |index|
-	CritterSighting.duck_sightings(lone(index), Chain.Position.first).len().to_i64_wrap()
+	CutoutSighting.duck_sightings(lone(index), Chain.Position.first).len().to_i64_wrap()
 
 expect duck_count(12) > 0
 expect duck_count(0) == 0
 expect duck_count(4) == 0
 expect duck_count(18) == 0
-expect CritterSighting.duck_sightings(six_segments, Chain.Position.number(5)).len() == 0
+expect CutoutSighting.duck_sightings(six_segments, Chain.Position.number(5)).len() == 0
 expect duck_count(12) == 6
 expect {
 	first = Chain.Position.first
-	whole = CritterSighting.sightings_at(six_segments, first).len().to_i64_wrap()
-	ducks = CritterSighting.duck_sightings(six_segments, first).len().to_i64_wrap()
+	whole = CutoutSighting.sightings_at(six_segments, first).len().to_i64_wrap()
+	ducks = CutoutSighting.duck_sightings(six_segments, first).len().to_i64_wrap()
 	whole == farm_at(0) + safari_at(0) + ducks
 }
 
@@ -391,22 +388,22 @@ count_from : U32 -> I64
 count_from = |position|
 	List.from_iter(U32.until(position, 6))
 		.map(
-			|number| CritterSighting.sightings_at(six_segments, Chain.Position.number(number))
+			|number| CutoutSighting.sightings_at(six_segments, Chain.Position.number(number))
 				.len()
 				.to_i64_wrap(),
 		)
 		.sum()
 
-expect CritterSighting.sightings_ahead({ ..six_segments, chain: [] }).len() == 0
+expect CutoutSighting.sightings_ahead({ ..six_segments, chain: [] }).len() == 0
 expect
-	CritterSighting.sightings_ahead(lone(0)).len()
-		== CritterSighting.sightings_at(lone(0), Chain.Position.first).len()
-expect CritterSighting.sightings_ahead(six_segments).len().to_i64_wrap() == count_from(0)
+	CutoutSighting.sightings_ahead(lone(0)).len()
+		== CutoutSighting.sightings_at(lone(0), Chain.Position.first).len()
+expect CutoutSighting.sightings_ahead(six_segments).len().to_i64_wrap() == count_from(0)
 expect count_from(0) >= count_from(1)
 expect count_from(1) >= count_from(2)
-expect CritterSighting.sightings_behind(six_segments, World.SegmentIndex.number(4)).len() > 0
-expect CritterSighting.ducks_behind(six_segments, World.route_segment(12)).len() > 0
-expect CritterSighting.ducks_behind(six_segments, World.route_segment(0)).len() == 0
+expect CutoutSighting.sightings_behind(six_segments, World.SegmentIndex.number(4)).len() > 0
+expect CutoutSighting.ducks_behind(six_segments, World.route_segment(12)).len() > 0
+expect CutoutSighting.ducks_behind(six_segments, World.route_segment(0)).len() == 0
 
 # RailSighting's run up to a bend and out of it.
 rail_point_at : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
@@ -459,7 +456,7 @@ expect {
 	kind_counts = [
 		TreeSighting.depth_keys(scene.trees).len(),
 		TowerSighting.depth_keys(scene.towers).len(),
-		CritterSighting.depth_keys(scene.critters).len(),
+		CutoutSighting.depth_keys(scene.cutouts).len(),
 		CatSighting.depth_keys(scene.cats).len(),
 		TruckSighting.depth_keys(scene.truck).len(),
 		RailSighting.depth_keys(scene.rails).len(),
@@ -470,12 +467,12 @@ expect {
 
 expect scene.trees.len() > 0
 expect scene.towers.len() > 0
-expect scene.critters.len() > 0
+expect scene.cutouts.len() > 0
 expect scene.rails.len() > 0
 expect scene.order.len() > 0
 expect scene.trees.len().to_i64_wrap() <= TreeSighting.max_vis_trees
 expect scene.towers.len().to_i64_wrap() <= TowerSighting.max_vis_towers
-expect scene.critters.len().to_i64_wrap() <= CritterSighting.max_vis_critters
+expect scene.cutouts.len().to_i64_wrap() <= CutoutSighting.max_vis_critters
 expect scene.cats.len().to_i64_wrap() <= CatSighting.max_vis_cats
 
 ## Whether no key in `keys` is farther than the one before it.
