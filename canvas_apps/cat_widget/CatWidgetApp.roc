@@ -132,7 +132,7 @@ cat_shapes = |gap| {
 			height_px: crossing.height.to_metres() * pixels_a_metre,
 			lift: instant.spot.lift,
 		},
-		CatStills.pose_polys(instant.pose),
+		CatStills.pose_polygons(instant.pose),
 	)
 }
 

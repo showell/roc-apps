@@ -32,16 +32,16 @@ CatDraw :: [].{
 	}
 
 	## One polygon of the still, on screen.
-	polygon : CatDraw.Anchor, Stills.StillPoly -> List(Shapes.Shape)
+	polygon : CatDraw.Anchor, Stills.StillPolygon -> List(Shapes.Shape)
 	polygon = |anchor, poly|
-		if poly.pts.len().to_i64_wrap() > max_cat_pts {
+		if poly.points.len().to_i64_wrap() > max_cat_pts {
 			[]
 		} else {
-			Paint.push_poly(poly.color, poly.pts.map(|pt| screen_point(anchor, pt)))
+			Paint.push_poly(poly.color, poly.points.map(|pt| screen_point(anchor, pt)))
 		}
 
 	## A still's polygons on screen, in order.
-	polygons : CatDraw.Anchor, List(Stills.StillPoly) -> List(Shapes.Shape)
+	polygons : CatDraw.Anchor, List(Stills.StillPolygon) -> List(Shapes.Shape)
 	polygons = |anchor, polys| polys.join_map(|poly| polygon(anchor, poly))
 
 	## The cat standing `right` and `forward` of the camera, `height` tall,
@@ -70,7 +70,7 @@ CatDraw :: [].{
 		if height_px < 1.0 {
 			[]
 		} else {
-			polygons({ feet, height_px, lift }, CatStills.pose_polys(pose))
+			polygons({ feet, height_px, lift }, CatStills.pose_polygons(pose))
 		}
 	}
 }
@@ -117,11 +117,11 @@ expect
 		== [{ x: 100.0, y: 200.0 }, { x: 125.0, y: 180.0 }]
 
 # A polygon of colour 9 with `count` corners, all at the feet.
-poly_of : U64 -> Stills.StillPoly
+poly_of : U64 -> Stills.StillPolygon
 poly_of = |count| {
 	color: 9,
-	grad: [],
-	pts: List.repeat({ x: 0.0, y: 0.0 }, count),
+	gradient: [],
+	points: List.repeat({ x: 0.0, y: 0.0 }, count),
 }
 
 expect CatDraw.max_cat_pts == 256
@@ -132,7 +132,19 @@ expect CatDraw.polygon(standing, poly_of(2)).len() == 0
 
 expect
 	CatDraw.polygon(standing, poly_of(3))
-		== [Poly({ pts: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0], fill: Flat(Brush.opaque(9)) })]
+		== [
+			Poly({
+				pts: [
+					100.0,
+					200.0,
+					100.0,
+					200.0,
+					100.0,
+					200.0,
+				],
+				fill: Flat(Brush.opaque(9)),
+			}),
+		]
 
 expect
 	CatDraw.polygons(
@@ -177,7 +189,7 @@ expect
 		pose: Rest,
 		lift: 0.0,
 	})
-		== CatStills.pose_polys(Rest).len()
+		== CatStills.pose_polygons(Rest).len()
 expect
 	cat_shapes({
 		forward: 851.0,
@@ -199,21 +211,21 @@ expect
 		pose: Rest,
 		lift: 0.0,
 	})
-		== CatStills.pose_polys(Rest).len()
+		== CatStills.pose_polygons(Rest).len()
 expect
 	cat_shapes({
 		forward: 100.0,
 		pose: Rest,
 		lift: 0.3,
 	})
-		== CatStills.pose_polys(Rest).len()
+		== CatStills.pose_polygons(Rest).len()
 expect
 	cat_shapes({
 		forward: 100.0,
 		pose: Frozen,
 		lift: 0.0,
 	})
-		== CatStills.pose_polys(Frozen).len()
+		== CatStills.pose_polygons(Frozen).len()
 
 expect
 	[
@@ -224,4 +236,4 @@ expect
 		Flight,
 		Land,
 		Collapse,
-	].all(|pose| CatStills.pose_polys(pose).len() > 0)
+	].all(|pose| CatStills.pose_polygons(pose).len() > 0)

@@ -57,20 +57,20 @@ StillDraw :: [].{
 	screen_points = |anchor, points| points.map(|point| StillDraw.screen_point(anchor, point))
 
 	## One polygon of a still, filled with its colour or its gradient.
-	draw_poly : StillDraw.Anchor, Stills.StillPoly -> List(Shapes.Shape)
+	draw_poly : StillDraw.Anchor, Stills.StillPolygon -> List(Shapes.Shape)
 	draw_poly = |anchor, poly|
-		if poly.pts.len() > max_still_points {
+		if poly.points.len() > max_still_points {
 			[]
 		} else {
-			points = StillDraw.screen_points(anchor, poly.pts)
-			match poly.grad.first() {
+			points = StillDraw.screen_points(anchor, poly.points)
+			match poly.gradient.first() {
 				Ok(gradient) => draw_gradient_poly(anchor, { gradient, points })
 				Err(ListWasEmpty) => Paint.push_poly(poly.color, points)
 			}
 		}
 
 	## A whole still, its polygons in order.
-	draw_still : StillDraw.Anchor, List(Stills.StillPoly) -> List(Shapes.Shape)
+	draw_still : StillDraw.Anchor, List(Stills.StillPolygon) -> List(Shapes.Shape)
 	draw_still = |anchor, polys| polys.join_map(|poly| StillDraw.draw_poly(anchor, poly))
 
 	## A critter in view. An emoji faces left, so a critter facing right is
@@ -100,7 +100,7 @@ StillDraw :: [].{
 }
 
 ## A still's gradient is linear when its kind is 1, and radial otherwise.
-gradient_shape : Stills.StillGrad -> [Linear, Radial]
+gradient_shape : Stills.StillGradient -> [Linear, Radial]
 gradient_shape = |gradient| if gradient.kind == 1 {
 	Linear
 } else {
@@ -108,7 +108,7 @@ gradient_shape = |gradient| if gradient.kind == 1 {
 }
 
 ## A still's gradient colours and their offsets, as Paint takes them.
-stops_of : Stills.StillGrad -> Paint.ColorStops
+stops_of : Stills.StillGradient -> Paint.ColorStops
 stops_of = |gradient| {
 	start_rgba: gradient.rgba0,
 	end_rgba: gradient.rgba1,
@@ -118,7 +118,7 @@ stops_of = |gradient| {
 
 draw_gradient_poly : StillDraw.Anchor,
 {
-	gradient : Stills.StillGrad,
+	gradient : Stills.StillGradient,
 	points : List(Screen.Point),
 } -> List(Shapes.Shape)
 draw_gradient_poly = |anchor, { gradient, points }|
@@ -204,11 +204,11 @@ expect
 		]
 
 # A solid polygon of colour 7 with `count` points, all at the feet.
-flat_poly : U64 -> Stills.StillPoly
+flat_poly : U64 -> Stills.StillPolygon
 flat_poly = |count| {
 	color: 7,
-	grad: [],
-	pts: List.repeat({ x: 0.0, y: 0.0 }, count),
+	gradient: [],
+	points: List.repeat({ x: 0.0, y: 0.0 }, count),
 }
 
 expect StillDraw.max_still_points == 512
@@ -219,7 +219,19 @@ expect StillDraw.draw_poly(upright, flat_poly(2)).len() == 0
 
 expect
 	StillDraw.draw_poly(upright, flat_poly(3))
-		== [Poly({ pts: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0], fill: Flat(Brush.opaque(7)) })]
+		== [
+			Poly({
+				pts: [
+					100.0,
+					200.0,
+					100.0,
+					200.0,
+					100.0,
+					200.0,
+				],
+				fill: Flat(Brush.opaque(7)),
+			}),
+		]
 
 # How many shapes draw a critter of `height` metres, `forward` metres ahead.
 shape_count : {

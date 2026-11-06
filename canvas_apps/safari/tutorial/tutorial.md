@@ -821,7 +821,7 @@ That `Arc` is a tag. `path_spot` is where it's played. `{ ..on_line, lift: ... }
 
 The stills are data too. Nested tags get checked all the way down, so a `match` that forgets `Away(WingsDown)` is a compile-time error. The function reads as a table, and there's nothing else in it:
 
-{{code BirdStills.pose_polys}}
+{{code BirdStills.pose_polygons}}
 
 `BirdDraw.draw` hands that to `StillDraw.draw_still`, which is what a cow uses, and a bird's feet go through the same `Camera.project` as a tree's top. That's the drawing.
 

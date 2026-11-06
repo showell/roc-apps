@@ -30,7 +30,7 @@ BirdDraw :: [].{
 				flip: AsDrawn,
 				height_px: BirdSighting.height_px({ forward: bird.forward, cam_focal }),
 			},
-			BirdStills.pose_polys(bird.pose),
+			BirdStills.pose_polygons(bird.pose),
 		)
 	}
 }
