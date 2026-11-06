@@ -8,7 +8,7 @@ import Clock
 import CritterSighting
 import DepthSort
 import Distance
-import Frame
+import Chain
 import GuardRail
 import RailSighting
 import TowerSighting
@@ -43,7 +43,7 @@ Render :: [].{
 	}
 
 	## Everything in view from `view`, each kind cut to its sighting's cap.
-	collect : Frame.Viewpoint, Render.MovingParts -> Render.Scene
+	collect : Chain.Viewpoint, Render.MovingParts -> Render.Scene
 	collect = |view, { speed, truck, clock }| {
 		road = view.road
 		trees = TreeSighting.in_view(view).take_first(TreeSighting.max_vis_trees.to_u64_wrap())
@@ -57,7 +57,7 @@ Render :: [].{
 		rails = RailSighting.all_rails(road)
 		rider_distance = World.distance_along_route(
 			road.world,
-			{ index: Frame.rider_segment(road), along: road.pose.along },
+			{ index: Chain.rider_segment(road), along: road.pose.along },
 		)
 		truck_at = TruckSighting.in_view({
 			road,

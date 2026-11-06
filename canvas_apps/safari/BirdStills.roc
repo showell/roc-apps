@@ -1,6 +1,6 @@
 ## The Roc bird's drawings, in the two purples of roc-lang.org's logo. The
-## perched bird is the logo itself. All of them are in the same unit frame as
-## the other stills (the bottom at y 0, y up, height 1). A flying bird is wider
+## perched bird is the logo itself. All of them are in units of their height, as
+## the other stills are (the bottom at y 0, y up, height 1). A flying bird is wider
 ## than a perched one, so x runs from -1 to 1.
 ##
 ## From the side the beak points toward +x, as the perched bird's does. The
@@ -154,9 +154,9 @@ every_still = [
 	BirdStills.toward_us,
 ]
 
-# Whether every corner of a still is in the unit frame.
-is_in_frame : List(Stills.StillPoly) -> Bool
-is_in_frame = |polys|
+# Whether every corner of a still has x from -1 to 1 and y from 0 to 1.
+is_within_bounds : List(Stills.StillPoly) -> Bool
+is_within_bounds = |polys|
 	polys.all(
 		|poly| poly.pts.all(|pt| pt.x >= -1.0 and pt.x <= 1.0 and pt.y >= 0.0 and pt.y <= 1.0),
 	)
@@ -165,9 +165,9 @@ is_in_frame = |polys|
 is_logo_coloured : List(Stills.StillPoly) -> Bool
 is_logo_coloured = |polys| polys.all(|poly| poly.color == 6368222 or poly.color == 8542181)
 
-expect every_still.all(is_in_frame)
+expect every_still.all(is_within_bounds)
 expect
-	!is_in_frame([
+	!is_within_bounds([
 		{
 			color: 6368222,
 			grad: [],

@@ -11,7 +11,7 @@ import Rider
 import CanvasRoll
 import RideFocal
 import ViewYaw
-import Frame
+import Chain
 import Lens
 import lib.Shapes
 

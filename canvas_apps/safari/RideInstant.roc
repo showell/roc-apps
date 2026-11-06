@@ -1,7 +1,7 @@
 # RideInstant -- originally emitted from Codex by rocemit; the Roc is the
 # program now and this file is edited here (safari/README.md).
 import Clock
-import Frame
+import Chain
 import Ground
 import GroundSighting
 import ItemDraw
@@ -77,7 +77,7 @@ RideInstant := {
 		view = {
 			road: {
 				world: w,
-				chain: Frame.chain_ahead(w, s.segment),
+				chain: Chain.chain_ahead(w, s.segment),
 				pose: ViewYaw.pose_for(s),
 			},
 			cam_focal: RideFocal.ride_focal(w, s),

@@ -18,7 +18,7 @@ import game.CritterSighting
 import game.DepthSort
 import game.Distance
 import game.Fraction
-import game.Frame
+import game.Chain
 import game.Geom
 import game.Ground
 import game.GroundSighting
@@ -42,7 +42,7 @@ main! = |_args| Ok({})
 
 ## The rider at the start of a segment, in the middle of the lane, looking
 ## straight down it.
-origin : Frame.Pose
+origin : Chain.Pose
 origin = {
 	along: Along.metres(0.0),
 	across: Across.metres(0.0),
@@ -51,7 +51,7 @@ origin = {
 }
 
 ## The first three segments, the rider at the start of the first.
-road : Frame.RoadView
+road : Chain.RoadView
 road = {
 	world: [
 		World.route_segment(0),
@@ -228,7 +228,7 @@ cat_segments : List(World.Segment)
 cat_segments = [World.route_segment(0), cat_segment, World.route_segment(2)]
 
 ## The first three segments seen from the origin, at 1 m a step.
-cats_from_origin : Frame.Viewpoint
+cats_from_origin : Chain.Viewpoint
 cats_from_origin = {
 	road: {
 		world: cat_segments,
@@ -252,7 +252,7 @@ cats_on_chain = |chain| CatSighting.in_view(
 cat_at : U32 -> List(CatSighting.CatItem)
 cat_at = |number| CatSighting.segment_cat(
 	cats_from_origin,
-	{ position: Frame.ChainPosition.number(number), speed: metre_a_step },
+	{ position: Chain.Position.number(number), speed: metre_a_step },
 )
 
 expect cat_segments.map(has_cat) == [False, True, False]
@@ -277,9 +277,9 @@ expect
 		|
 			(along, number, want),
 		| {
-			gap = Frame.gap_to_segment(
+			gap = Chain.gap_to_segment(
 				{ ..cats_from_origin.road, pose: { ..origin, along: Along.metres(along) } },
-				Frame.ChainPosition.number(number),
+				Chain.Position.number(number),
 			)
 			gap.to_metres() == want
 		},
@@ -330,7 +330,7 @@ expect CatSighting.depth_keys([]).len() == 0
 
 # CritterSighting: how far along the chain each kind of critter is sighted.
 ## The first six segments, chained in order.
-six_segments : Frame.RoadView
+six_segments : Chain.RoadView
 six_segments = {
 	world: [0, 1, 2, 3, 4, 5].map(World.route_segment),
 	chain: [0, 1, 2, 3, 4, 5].map(World.SegmentIndex.number),
@@ -338,7 +338,7 @@ six_segments = {
 }
 
 ## The world's segment `index` alone.
-lone : U32 -> Frame.RoadView
+lone : U32 -> Chain.RoadView
 lone = |index| {
 	world: [World.route_segment(index)],
 	chain: [0].map(World.SegmentIndex.number),
@@ -348,14 +348,14 @@ lone = |index| {
 farm_at : U32 -> I64
 farm_at = |number| CritterSighting.farm_sightings(
 	six_segments,
-	Frame.ChainPosition.number(number),
+	Chain.Position.number(number),
 ).len().to_i64_wrap()
 
 safari_at : U32 -> I64
 safari_at = |number|
 	CritterSighting.safari_sightings(
 		six_segments,
-		Frame.ChainPosition.number(number),
+		Chain.Position.number(number),
 	).len().to_i64_wrap()
 
 expect farm_at(0) > 0
@@ -366,21 +366,21 @@ expect farm_at(5) == 0
 expect safari_at(3) > 0
 expect safari_at(4) > 0
 expect safari_at(5) == 0
-expect CritterSighting.safari_sightings(lone(18), Frame.ChainPosition.first).len() == 0
-expect CritterSighting.safari_sightings(lone(0), Frame.ChainPosition.first).len() > 0
+expect CritterSighting.safari_sightings(lone(18), Chain.Position.first).len() == 0
+expect CritterSighting.safari_sightings(lone(0), Chain.Position.first).len() > 0
 
 duck_count : U32 -> I64
 duck_count = |index|
-	CritterSighting.duck_sightings(lone(index), Frame.ChainPosition.first).len().to_i64_wrap()
+	CritterSighting.duck_sightings(lone(index), Chain.Position.first).len().to_i64_wrap()
 
 expect duck_count(12) > 0
 expect duck_count(0) == 0
 expect duck_count(4) == 0
 expect duck_count(18) == 0
-expect CritterSighting.duck_sightings(six_segments, Frame.ChainPosition.number(5)).len() == 0
+expect CritterSighting.duck_sightings(six_segments, Chain.Position.number(5)).len() == 0
 expect duck_count(12) == 6
 expect {
-	first = Frame.ChainPosition.first
+	first = Chain.Position.first
 	whole = CritterSighting.sightings_at(six_segments, first).len().to_i64_wrap()
 	ducks = CritterSighting.duck_sightings(six_segments, first).len().to_i64_wrap()
 	whole == farm_at(0) + safari_at(0) + ducks
@@ -391,7 +391,7 @@ count_from : U32 -> I64
 count_from = |position|
 	List.from_iter(U32.until(position, 6))
 		.map(
-			|number| CritterSighting.sightings_at(six_segments, Frame.ChainPosition.number(number))
+			|number| CritterSighting.sightings_at(six_segments, Chain.Position.number(number))
 				.len()
 				.to_i64_wrap(),
 		)
@@ -400,7 +400,7 @@ count_from = |position|
 expect CritterSighting.sightings_ahead({ ..six_segments, chain: [] }).len() == 0
 expect
 	CritterSighting.sightings_ahead(lone(0)).len()
-		== CritterSighting.sightings_at(lone(0), Frame.ChainPosition.first).len()
+		== CritterSighting.sightings_at(lone(0), Chain.Position.first).len()
 expect CritterSighting.sightings_ahead(six_segments).len().to_i64_wrap() == count_from(0)
 expect count_from(0) >= count_from(1)
 expect count_from(1) >= count_from(2)
@@ -417,7 +417,7 @@ run_up_to_bend : List(Geom.RiderPoint)
 run_up_to_bend = RailSighting.run_up(
 	road,
 	{
-		place: InChain(Frame.ChainPosition.first),
+		place: InChain(Chain.Position.first),
 		length: Distance.metres(500.0),
 		across: Across.metres(2.0),
 	},
@@ -425,7 +425,7 @@ run_up_to_bend = RailSighting.run_up(
 
 expect RailSighting.run_out(
 	road,
-	{ place: InChain(Frame.ChainPosition.first), across: Across.metres(2.0) },
+	{ place: InChain(Chain.Position.first), across: Across.metres(2.0) },
 ).len() == 10
 expect run_up_to_bend.len() == 11
 expect
@@ -440,7 +440,7 @@ scene = Render.collect(
 	{
 		road: {
 			world: World.segments,
-			chain: Frame.chain_ahead(World.segments, World.SegmentIndex.first),
+			chain: Chain.chain_ahead(World.segments, World.SegmentIndex.first),
 			pose: origin,
 		},
 		cam_focal: 500.0,
@@ -501,7 +501,7 @@ chunk_of_first : U32 -> List(Geom.RiderPoint)
 chunk_of_first = |chunk_number| GroundSighting.chunk_corners(
 	road,
 	{
-		position: Frame.ChainPosition.first,
+		position: Chain.Position.first,
 		segment_length: Distance.metres(500.0),
 		chunk_count: 20,
 		chunk_number,
@@ -544,14 +544,14 @@ expect {
 }
 
 strip : List(Shapes.Shape)
-strip = patch_shapes(GroundSighting.segment_road(road, Frame.ChainPosition.first))
+strip = patch_shapes(GroundSighting.segment_road(road, Chain.Position.first))
 
 expect strip.len() > 0
 expect strip.len().to_u32_wrap() <= GroundSighting.chunks_along(Distance.metres(500.0))
 expect patch_shapes(
 	GroundSighting.segment_road(
 		{ ..road, pose: { ..origin, along: Along.metres(5000.0) } },
-		Frame.ChainPosition.first,
+		Chain.Position.first,
 	),
 ).len() == 0
 last_shape : Shapes.Shape

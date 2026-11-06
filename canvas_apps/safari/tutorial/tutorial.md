@@ -602,7 +602,7 @@ digraph screen {
   ItemDraw -> CatSighting;
   Render -> CatSighting;
   CatSighting -> Cat;
-  CatSighting -> Frame;
+  CatSighting -> Chain;
   CatSighting -> DepthSort;
   CatDraw -> Cat;
   CatDraw -> CatStills;
@@ -1047,7 +1047,7 @@ The lean comes at the end of this chapter, on top of everything else in it.
 New in this chapter:
 
 - Roc: records as coordinate systems, `fold`, `fold_rev` and `map2`, two functions that call each other
-- Modules: `Geom`, `Frame`, `Camera`, `Lens`, `Arc`, `LeanSearch`, `Num_`
+- Modules: `Geom`, `Chain`, `Camera`, `Lens`, `Arc`, `LeanSearch`, `Num_`
 
 A lot of Safari Ride is math and physics, and this is the chapter that goes through the floor of the tour and looks at what's holding it up. Most of it is geometry a reader could do on paper. It's here because this kind of code suits a compiled functional language unusually well, for a short list of reasons that each get a section:
 
@@ -1071,11 +1071,11 @@ Safari Ride has 79 modules, not counting `web.roc`, `main.roc` and `game.roc`. T
 | `Fraction` | 17 | 92 | A ratio from 0 to 1 |
 | `Geom` | 17 | 185 | Road points, rider points, and how to turn one into the other |
 | `World` | 17 | 411 | The route |
-| `Frame` | 16 | 188 | Where the road lies from where the rider is |
+| `Chain` | 16 | 188 | Where the road lies from where the rider is |
 
 After those nine the count drops to 12, for `Screen`, 11 for `Speed` and 10 for `DepthSort`. Most modules are imported by one, two or three others. `lib`'s `Shapes`, `Trig` and `DeviceMath` are imported about as widely, and they're shared with the other canvas apps.
 
-These are the workhorses, and there being so few says something about the program. Everything else is a small module that takes one of these and adds a single idea. Five of the nine are nothing but numbers with rules, and the top three are under 80 lines each. Composable is the right word for this, and it isn't a slogan: a cat, a mast and a truck are all found on the road through `Frame`, and all reach the screen through `Camera`.
+These are the workhorses, and there being so few says something about the program. Everything else is a small module that takes one of these and adds a single idea. Five of the nine are nothing but numbers with rules, and the top three are under 80 lines each. Composable is the right word for this, and it isn't a slogan: a cat, a mast and a truck are all found on the road through `Chain`, and all reach the screen through `Camera`.
 
 The modules of the math layer
 ```dot
@@ -1086,7 +1086,7 @@ digraph math {
   Arc -> Bike;
   Arc -> Angle;
   Bike -> Angle;
-  Frame -> Geom;
+  Chain -> Geom;
   Camera -> Geom;
   Camera -> Screen;
   Lens -> Angle;
@@ -1095,7 +1095,7 @@ digraph math {
 }
 ```
 
-Two families share `Angle` and don't otherwise meet: `Geom`, `Frame`, `Camera` and `Lens` say how the world looks from the bike, and `Bike`, `Arc` and `LeanSearch` say where it's going.
+Two families share `Angle` and don't otherwise meet: `Geom`, `Chain`, `Camera` and `Lens` say how the world looks from the bike, and `Bike`, `Arc` and `LeanSearch` say where it's going.
 
 ### Numbers with units
 
@@ -1117,7 +1117,7 @@ Fifteen small opaque types run through Safari Ride, and the tour has met most of
 | `Fraction` | `F64` | A ratio from 0 to 1 |
 | `Attention` | `F64` | How strongly something holds the eye, from 0 up |
 | `World.SegmentIndex` | `U32` | A place in the route |
-| `Frame.ChainPosition` | `U32` | A place in the view ahead |
+| `Chain.Position` | `U32` | A place in the view ahead |
 
 This is the opaque type doing the job of a unit. The block after each type is a small statement of dimensional analysis. `Speed.distance_in` takes `Beats` and gives a `Distance`. `Along.plus` takes a `Distance`, and two `Along`s give one back. `Lean.steer` takes a rate and gives a `Turn`. There's no `Bearing.plus(Bearing)`, because that sum has no meaning, and the omission is a feature with a compiler behind it.
 
@@ -1171,13 +1171,13 @@ The road has no map. A point on it is measured within one segment, `along` and `
 
 So to see something three segments ahead, a point has to be carried back round each bend between it and the rider, one at a time. That's one rotation per bend, and `fold_rev` is the shape of it. The accumulator is a `RoadPoint`, it starts on the far segment, and each step moves it onto the segment before. `before_in` gives the segments between, and the closure is the only thing the loop does. The last line does the one translation and rotation from above:
 
-{{code Frame.rider_point_ahead from "on_rider_segment =" to "Geom.to_rider_point(on_rider_segment, road.pose)"}}
+{{code Chain.rider_point_ahead from "on_rider_segment =" to "Geom.to_rider_point(on_rider_segment, road.pose)"}}
 
 The rotation itself is plain, with two cases, because a right-hand bend pivots on the far side of the lane:
 
 {{code Geom.in_segment_before}}
 
-This is what lets `CatSighting`, `BirdSighting`, `TowerSighting`, `TreeSighting` and the rest not care where a segment is. They name a position in the chain and a point on that segment, and they get back a `RiderPoint`. That's a workhorse doing its job, and it's why `Frame` has sixteen importers.
+This is what lets `CatSighting`, `BirdSighting`, `TowerSighting`, `TreeSighting` and the rest not care where a segment is. They name a position in the chain and a point on that segment, and they get back a `RiderPoint`. That's a workhorse doing its job, and it's why `Chain` has sixteen importers.
 
 The ground also curves away. That's one line, the small-angle formula for the drop of a sphere, with a record destructured in the parameter list and `right` and `forward` squared where they stand. There are two radii in the program, and neither is the earth's. `Geom.ground_curve_radius`, 100 km, is the surface the road and the truck stand on, and it puts the horizon 490 metres out. `Tower.sink_radius`, 20 km, only sets how soon a far tower goes: a tower is gone at 1.8 km, where the ground's curve would leave it in view to 4 km.
 
@@ -1435,7 +1435,7 @@ The rider's lean is one of those marks. The whole picture banks into a turn, bac
 
 Early on, the tour said the game has no effectful functions. It's fair to ask where they went, and the answer is that they never got as far as Roc. The wasm platform asks for a record of functions over a boxed model:
 
-`init`, `advance`, `frame`, `release`, `sounds`, `width`, `height` and `fps`, with the tones' `tone_count`, `tone_freq` and `tone_ms`. Every one has a thin arrow, `->`. The host in `web/platform/host.zig` keeps the box, and all that crosses is numbers and a list of shapes. Wasm's edge has no records, so the input is flattened into seven numbers, and `Input.of` rebuilds it. `roc glue` generates `roc_glue.js`, which knows the layout of a frame in wasm memory, from `Frame.roc`, so that file is never edited.
+`init`, `advance`, `frame`, `release`, `sounds`, `width`, `height` and `fps`, with the tones' `tone_count`, `tone_freq` and `tone_ms`. Every one has a thin arrow, `->`. The host in `web/platform/host.zig` keeps the box, and all that crosses is numbers and a list of shapes. Wasm's edge has no records, so the input is flattened into seven numbers, and `Input.of` rebuilds it. `roc glue` generates `roc_glue.js`, which knows the layout of a frame in wasm memory, from `Chain.roc`, so that file is never edited.
 
 Each tick goes like this. `canvas_app_runner.js` paces the clock and gathers the keys. It calls `advance`, then `frame`, in Roc. It reads the shapes back through the generated glue, and `shapes_canvas.js` paints them on a canvas. The host keeps the list until the next frame, then hands it back so that Roc can drop it. That's `release`, a function whose body is `{}`: Roc knows the layout of what it's dropping, and the host shouldn't have to.
 

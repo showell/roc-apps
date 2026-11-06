@@ -5,7 +5,7 @@ import Across
 import Along
 import DepthSort
 import Distance
-import Frame
+import Chain
 import Geom
 import Truck
 
@@ -17,7 +17,7 @@ TruckSighting :: [].{
 	TruckAt : [
 		Ahead(
 			{
-				position : Frame.ChainPosition,
+				position : Chain.Position,
 				along : Along,
 				across : Across,
 				forward : F64,
@@ -30,7 +30,7 @@ TruckSighting :: [].{
 	## What the truck is seen from: the road in view, how far ahead of the
 	## rider the truck is, and which of its lights are on.
 	View : {
-		road : Frame.RoadView,
+		road : Chain.RoadView,
 		lead : Distance,
 		lights : Truck.Lights,
 	}
@@ -42,10 +42,7 @@ TruckSighting :: [].{
 		if view.lead > Distance.zero {
 			truck_from(
 				view,
-				{
-					remaining: view.road.pose.along.plus(view.lead),
-					position: Frame.ChainPosition.first,
-				},
+				{ remaining: view.road.pose.along.plus(view.lead), position: Chain.Position.first },
 			)
 		} else {
 			NoTruck
@@ -67,7 +64,7 @@ TruckSighting :: [].{
 truck_from : TruckSighting.View,
 {
 	remaining : Along,
-	position : Frame.ChainPosition,
+	position : Chain.Position,
 } -> TruckSighting.TruckAt
 truck_from = |view, { remaining, position }|
 	if position.is_past_end_of(view.road.chain) {
@@ -89,11 +86,11 @@ truck_from = |view, { remaining, position }|
 truck_on_segment : TruckSighting.View,
 {
 	along : Along,
-	position : Frame.ChainPosition,
+	position : Chain.Position,
 } -> TruckSighting.TruckAt
 truck_on_segment = |view, { along, position }| {
 	across = Across.middle
-	center = Frame.rider_point_ahead(view.road, { position: position, along: along, across })
+	center = Chain.rider_point_ahead(view.road, { position: position, along: along, across })
 	if center.forward > Geom.near_plane {
 		Ahead({
 			position,

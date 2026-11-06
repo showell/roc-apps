@@ -10,7 +10,7 @@ import CatSighting
 import Critter
 import DepthSort
 import Fraction
-import Frame
+import Chain
 import GuardRail
 import Render
 import SceneLimits
@@ -31,7 +31,7 @@ ItemDraw :: [].{
 	round_trunk_limit = 4
 
 	## The scene's things, painted far to near.
-	draw : Render.Scene, Frame.Viewpoint -> List(Shapes.Shape)
+	draw : Render.Scene, Chain.Viewpoint -> List(Shapes.Shape)
 	draw = |scene, view|
 		scene.order.join_map(|depth_key| draw_subject(scene, { view, depth_key }))
 
@@ -76,7 +76,7 @@ ItemDraw :: [].{
 	}
 
 	## Where a mast's four footprint corners stand in the rider's view.
-	tower_footprint : Frame.Viewpoint, TowerSighting.TowerItem -> Tower.Footprint
+	tower_footprint : Chain.Viewpoint, TowerSighting.TowerItem -> Tower.Footprint
 	tower_footprint = |view, tower| {
 		corner_point = |corner| {
 			on_road = Tower.base_corner_on_road(
@@ -87,7 +87,7 @@ ItemDraw :: [].{
 					yaw: tower.yaw,
 				},
 			)
-			Frame.rider_point_at(
+			Chain.rider_point_at(
 				view.road,
 				{
 					place: tower.place,
@@ -105,11 +105,11 @@ ItemDraw :: [].{
 	}
 
 	## A mast, its beacon as bright as its sighting says.
-	draw_tower : Frame.Viewpoint, TowerSighting.TowerItem -> List(Shapes.Shape)
+	draw_tower : Chain.Viewpoint, TowerSighting.TowerItem -> List(Shapes.Shape)
 	draw_tower = |view, tower|
 		Tower.draw({
 			footprint: ItemDraw.tower_footprint(view, tower),
-			center: Frame.rider_point_at(
+			center: Chain.rider_point_at(
 				view.road,
 				{
 					place: tower.place,
@@ -125,7 +125,7 @@ ItemDraw :: [].{
 ## One thing in the depth order, looked up in its kind's list and drawn.
 draw_subject : Render.Scene,
 {
-	view : Frame.Viewpoint,
+	view : Chain.Viewpoint,
 	depth_key : DepthSort.DepthKey,
 } -> List(Shapes.Shape)
 draw_subject = |scene, { view, depth_key }| {
@@ -161,7 +161,7 @@ draw_cat = |cat, cam_focal|
 
 ## The truck, where its sighting found it and with the lights its sighting
 ## gives it.
-draw_truck : Frame.Viewpoint, TruckSighting.TruckAt -> List(Shapes.Shape)
+draw_truck : Chain.Viewpoint, TruckSighting.TruckAt -> List(Shapes.Shape)
 draw_truck = |view, truck_at|
 	match truck_at {
 		Ahead(truck) =>
@@ -210,7 +210,7 @@ expect ItemDraw.crown_shade(200.0).to_f64() == 0.0
 expect ItemDraw.crown_shade(-50.0).to_f64() == 1.0
 
 # The rider at the start of the route, at the ride's first step.
-start_view : Frame.Viewpoint
+start_view : Chain.Viewpoint
 start_view = {
 	road: {
 		world: [0, 1, 2].map(World.route_segment),
@@ -228,7 +228,7 @@ start_view = {
 # A mast `along` metres down the first segment, 20 m right of the lane's middle.
 tower_along : F64 -> TowerSighting.TowerItem
 tower_along = |along| {
-	place: InChain(Frame.ChainPosition.first),
+	place: InChain(Chain.Position.first),
 	along: Along.metres(along),
 	across: Across.metres(20.0),
 	yaw: Angle.straight_ahead,
@@ -277,7 +277,7 @@ segs = [
 	World.route_segment(2),
 ]
 
-origin : Frame.Pose
+origin : Chain.Pose
 origin = {
 	along: Along.metres(0.0),
 	across: Across.metres(0.0),
@@ -285,7 +285,7 @@ origin = {
 	half_width: Distance.metres(2.0),
 }
 
-up_road : Frame.Pose
+up_road : Chain.Pose
 up_road = {
 	along: Along.metres(100.0),
 	across: Across.metres(0.0),
@@ -295,7 +295,7 @@ up_road = {
 
 ## The first three segments, seen from `pose` through a camera of focal
 ## length `cam_focal`.
-view_from : Frame.Pose, F64 -> Frame.Viewpoint
+view_from : Chain.Pose, F64 -> Chain.Viewpoint
 view_from = |pose, cam_focal| {
 	road: {
 		world: segs,
@@ -305,13 +305,13 @@ view_from = |pose, cam_focal| {
 	cam_focal,
 }
 
-from_origin : Frame.Viewpoint
+from_origin : Chain.Viewpoint
 from_origin = view_from(origin, 500.0)
 
 ## A green tree `along` metres into the first segment, 3.5 m right of the
 ## road's middle.
 green_tree_at = |along| {
-	position: Frame.ChainPosition.first,
+	position: Chain.Position.first,
 	tree: {
 		along: Along.metres(along),
 		across: Across.metres(3.5),
@@ -354,13 +354,13 @@ expect
 		(view_from(origin, 1.0), 0),
 	].all(
 		|(view, want)| {
-			trees = TreeSighting.segment_trees(view, Frame.ChainPosition.first)
+			trees = TreeSighting.segment_trees(view, Chain.Position.first)
 			trees.len().to_i64_wrap() == want
 		},
 	)
 
 first_segment : List(TreeSighting.TreeItem)
-first_segment = TreeSighting.segment_trees(from_origin, Frame.ChainPosition.first)
+first_segment = TreeSighting.segment_trees(from_origin, Chain.Position.first)
 
 ## The first segment's tree at `i`, in planting order.
 planted_tree : U64 -> TreeSighting.TreeItem
@@ -414,7 +414,7 @@ expect
 
 ## What a truck `lead` metres ahead of a rider at the start of the chain is
 ## seen from, from `pose`, with its lights off.
-truck_view : Frame.Pose, F64 -> TruckSighting.View
+truck_view : Chain.Pose, F64 -> TruckSighting.View
 truck_view = |pose, lead| {
 	road: {
 		world: segs,
@@ -425,7 +425,7 @@ truck_view = |pose, lead| {
 	lights: { headlights: Off, brake_lights: Off },
 }
 
-truck_seen_from : Frame.Pose, F64 -> TruckSighting.TruckAt
+truck_seen_from : Chain.Pose, F64 -> TruckSighting.TruckAt
 truck_seen_from = |pose, lead| TruckSighting.in_view(truck_view(pose, lead))
 
 lead_of : F64 -> TruckSighting.TruckAt

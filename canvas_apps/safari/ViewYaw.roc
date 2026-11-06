@@ -1,7 +1,7 @@
 ## Where the camera looks. It turns with the rider's gaze, and a little with
 ## the bike's lean, as a rider's head turns into a bend.
 import Angle
-import Frame
+import Chain
 import Pose
 import Scenery
 
@@ -20,7 +20,7 @@ ViewYaw :: [].{
 	heading_for = |s| s.heading.plus(view_yaw_for(s))
 
 	## Where the camera stands on the rider's segment, and which way it faces.
-	pose_for : Pose.RiderState -> Frame.Pose
+	pose_for : Pose.RiderState -> Chain.Pose
 	pose_for = |s| {
 		along: s.along,
 		across: s.across,

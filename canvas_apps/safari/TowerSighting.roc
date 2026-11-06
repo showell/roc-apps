@@ -10,7 +10,7 @@ import Clock
 import DepthSort
 import Distance
 import Fraction
-import Frame
+import Chain
 import Geom
 import Steps
 import lib.Trig
@@ -22,7 +22,7 @@ TowerSighting :: [].{
 	## stands in that segment and how it is turned, how far ahead it is, and
 	## how bright its beacon is.
 	TowerItem : {
-		place : Frame.SegmentPlace,
+		place : Chain.SegmentPlace,
 		along : Along,
 		across : Across,
 		yaw : Angle.Turn,
@@ -31,7 +31,7 @@ TowerSighting :: [].{
 	}
 
 	## What the masts are seen from: the road in view, and the ride's clock.
-	View : { road : Frame.RoadView, clock : Clock }
+	View : { road : Chain.RoadView, clock : Clock }
 
 	## How far past the end of its segment a mast stands.
 	tower_beyond : Distance
@@ -79,7 +79,7 @@ TowerSighting :: [].{
 	## the segment behind the rider.
 	in_view : TowerSighting.View -> List(TowerSighting.TowerItem)
 	in_view = |view|
-		match Frame.segment_behind(view.road) {
+		match Chain.segment_behind(view.road) {
 			Previous(segment_behind) => along_chain(view).concat(tower_behind(view, segment_behind))
 			AtRouteStart => along_chain(view)
 		}
@@ -87,13 +87,13 @@ TowerSighting :: [].{
 	## The masts in view along the chain, the nearest segment's first.
 	along_chain : TowerSighting.View -> List(TowerSighting.TowerItem)
 	along_chain = |view| {
-		positions = Frame.ChainPosition.all_in(view.road.chain)
+		positions = Chain.Position.all_in(view.road.chain)
 		positions.join_map(|position| segment_towers(view, position))
 	}
 
 	## The masts in view on the segment at `position` in the chain: the one past
 	## its end, then the one halfway along.
-	segment_towers : TowerSighting.View, Frame.ChainPosition -> List(TowerSighting.TowerItem)
+	segment_towers : TowerSighting.View, Chain.Position -> List(TowerSighting.TowerItem)
 	segment_towers = |view, position| {
 		index = position.index_in(view.road.chain)
 		segment = index.segment_in(view.road.world)
@@ -112,7 +112,7 @@ TowerSighting :: [].{
 
 	## The mast halfway along the segment at `position` in the chain, if it has
 	## one and it is in view.
-	mid_tower : TowerSighting.View, Frame.ChainPosition -> List(TowerSighting.TowerItem)
+	mid_tower : TowerSighting.View, Chain.Position -> List(TowerSighting.TowerItem)
 	mid_tower = |view, position| {
 		index = position.index_in(view.road.chain)
 		segment = index.segment_in(view.road.world)
@@ -140,7 +140,7 @@ TowerSighting :: [].{
 		tower_if_ahead(
 			view,
 			{
-				place: Frame.place_behind(behind),
+				place: Chain.place_behind(behind),
 				along: Along.at(behind.length.plus(tower_beyond)),
 				across: Across.right_of_middle(tower_right),
 				yaw: tower_yaw,
@@ -168,14 +168,14 @@ mid_tower_beacon_step = 60
 ## if it is in front of the camera: one item, or none.
 tower_if_ahead : TowerSighting.View,
 {
-	place : Frame.SegmentPlace,
+	place : Chain.SegmentPlace,
 	along : Along,
 	across : Across,
 	yaw : Angle.Turn,
 	beacon_key : U32,
 } -> List(TowerSighting.TowerItem)
 tower_if_ahead = |view, { place, along, across, yaw, beacon_key }| {
-	center = Frame.rider_point_at(view.road, { place: place, along, across })
+	center = Chain.rider_point_at(view.road, { place: place, along, across })
 	if center.forward <= Geom.near_plane {
 		[]
 	} else {
@@ -208,7 +208,7 @@ segs = [
 	World.route_segment(2),
 ]
 
-origin : Frame.Pose
+origin : Chain.Pose
 origin = {
 	along: Along.metres(0.0),
 	across: Across.metres(0.0),
@@ -232,8 +232,8 @@ from_origin : TowerSighting.View
 from_origin = short_view(0)
 
 expect TowerSighting.along_chain(from_origin).len() == 3
-expect TowerSighting.segment_towers(from_origin, Frame.ChainPosition.first).len() == 1
-expect TowerSighting.mid_tower(from_origin, Frame.ChainPosition.first).len() == 0
+expect TowerSighting.segment_towers(from_origin, Chain.Position.first).len() == 1
+expect TowerSighting.mid_tower(from_origin, Chain.Position.first).len() == 0
 expect TowerSighting.in_view(from_origin).len() == 3
 expect segs.all(|seg| !(has_mid_tower(seg)))
 
@@ -249,7 +249,7 @@ has_mid_tower = |seg|
 first_tower_on : U32 -> TowerSighting.TowerItem
 first_tower_on = |number| TowerSighting.segment_towers(
 	from_origin,
-	Frame.ChainPosition.number(number),
+	Chain.Position.number(number),
 ).first() ?? crash "TowerSighting: the first two segments' masts are in view"
 
 expect first_tower_on(0).along.to_metres() == 660.0
@@ -269,7 +269,7 @@ long_view = {
 }
 
 expect TowerSighting.along_chain(long_view).len() == 2
-expect TowerSighting.mid_tower(long_view, Frame.ChainPosition.first).len() == 1
+expect TowerSighting.mid_tower(long_view, Chain.Position.first).len() == 1
 
 long_towers : List(TowerSighting.TowerItem)
 long_towers = TowerSighting.along_chain(long_view)

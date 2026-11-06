@@ -2,7 +2,7 @@
 ## then its body, then its brake lights, so each paints over the one before.
 import Across
 import Along
-import Frame
+import Chain
 import Truck
 import TruckBody
 import TruckLights
@@ -14,8 +14,8 @@ TruckDraw :: [].{
 	## The truck on the segment at `position` in the chain, seen from `view`,
 	## with its trailer centred at `center` on that segment.
 	draw : {
-		view : Frame.Viewpoint,
-		position : Frame.ChainPosition,
+		view : Chain.Viewpoint,
+		position : Chain.Position,
 		center : { along : Along, across : Across },
 		lights : Truck.Lights,
 	} -> List(Shapes.Shape)

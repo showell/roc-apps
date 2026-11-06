@@ -4,7 +4,7 @@
 import Cat
 import DepthSort
 import Distance
-import Frame
+import Chain
 import Geom
 import SceneLimits
 import Speed
@@ -26,17 +26,17 @@ CatSighting :: [].{
 	max_vis_cats = 8
 
 	## The cats in view of a rider at `speed`, the nearest segment's first.
-	in_view : Frame.Viewpoint, Speed -> List(CatSighting.CatItem)
+	in_view : Chain.Viewpoint, Speed -> List(CatSighting.CatItem)
 	in_view = |view, speed| {
-		positions = Frame.ChainPosition.all_in(view.road.chain)
+		positions = Chain.Position.all_in(view.road.chain)
 		positions.join_map(|position| segment_cat(view, { position, speed }))
 	}
 
 	## The cat waiting on the segment at `position` in the chain, if it has one
 	## and it is in view.
-	segment_cat : Frame.Viewpoint,
+	segment_cat : Chain.Viewpoint,
 	{
-		position : Frame.ChainPosition,
+		position : Chain.Position,
 		speed : Speed,
 	} -> List(CatSighting.CatItem)
 	segment_cat = |view, { position, speed }|
@@ -57,16 +57,16 @@ CatSighting :: [].{
 ## The cat crossing the segment at `position` in the chain, as far through its
 ## crossing as the rider's approach has brought it, if it is in view: one
 ## item, or none.
-cat_in_view : Frame.Viewpoint,
+cat_in_view : Chain.Viewpoint,
 {
-	position : Frame.ChainPosition,
+	position : Chain.Position,
 	crossing : Cat.Crossing,
 	speed : Speed,
 } -> List(CatSighting.CatItem)
 cat_in_view = |view, { position, crossing, speed }| {
-	gap = Frame.gap_to_segment(view.road, position)
+	gap = Chain.gap_to_segment(view.road, position)
 	instant = Cat.instant_at(crossing, { gap: gap.plus(crossing.along.from_start()), speed })
-	seen = Frame.rider_point_ahead(
+	seen = Chain.rider_point_ahead(
 		view.road,
 		{
 			position: position,

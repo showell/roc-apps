@@ -1,6 +1,6 @@
 ## Critter draws a still, a picture made of polygons, standing on screen.
-## A still is drawn in a unit frame: its feet at the origin, y up, and its
-## height 1. Critter scales it to its height in pixels, stands it on its feet,
+## A still is drawn in units of its height: its feet at the origin, y up, and
+## its height 1. Critter scales it to its height in pixels, stands it on its feet,
 ## and mirrors it when asked. A critter in view is drawn from the emoji still
 ## for its codepoint.
 import Billboards

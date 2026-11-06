@@ -3,7 +3,7 @@
 ## camera and are tall enough on screen to draw.
 import DepthSort
 import Distance
-import Frame
+import Chain
 import Geom
 import SceneLimits
 import Scenery
@@ -25,14 +25,14 @@ TreeSighting :: [].{
 
 	## The trees in view, the nearest segment's first, and each segment's in
 	## the order it plants them.
-	in_view : Frame.Viewpoint -> List(TreeSighting.TreeItem)
+	in_view : Chain.Viewpoint -> List(TreeSighting.TreeItem)
 	in_view = |view| {
-		positions = Frame.ChainPosition.all_in(view.road.chain)
+		positions = Chain.Position.all_in(view.road.chain)
 		positions.join_map(|position| segment_trees(view, position))
 	}
 
 	## The trees in view on the segment at `position` in the chain.
-	segment_trees : Frame.Viewpoint, Frame.ChainPosition -> List(TreeSighting.TreeItem)
+	segment_trees : Chain.Viewpoint, Chain.Position -> List(TreeSighting.TreeItem)
 	segment_trees = |view, position| {
 		segment = position.index_in(view.road.chain).segment_in(view.road.world)
 		segment.trees.join_map(|tree| tree_in_view(view, { position, tree }))
@@ -40,13 +40,13 @@ TreeSighting :: [].{
 
 	## A tree on the segment at `position` in the chain, if it is in view: one
 	## item, or none.
-	tree_in_view : Frame.Viewpoint,
+	tree_in_view : Chain.Viewpoint,
 	{
-		position : Frame.ChainPosition,
+		position : Chain.Position,
 		tree : Scenery.Tree,
 	} -> List(TreeSighting.TreeItem)
 	tree_in_view = |view, { position, tree }| {
-		seen = Frame.rider_point_ahead(
+		seen = Chain.rider_point_ahead(
 			view.road,
 			{
 				position: position,
