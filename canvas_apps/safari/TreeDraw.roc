@@ -180,10 +180,18 @@ crown_height_share = Fraction.of(0.648)
 crown_half_width_share : Fraction
 crown_half_width_share = Fraction.of(0.288)
 
-## A cone whose near edge is closer than this is drawn as a triangle: the
-## camera would see it from inside.
-min_cone_forward : Distance
-min_cone_forward = Distance.metres(0.4)
+## The trunk's width, as a fraction of the tree's height.
+trunk_width_share : Fraction
+trunk_width_share = Fraction.of(0.08)
+
+## However far off a tree is, its trunk is this wide.
+min_trunk_width : Pixels
+min_trunk_width = Pixels.of(1.0)
+
+## How far the trunk runs up inside the crown, as a fraction of the tree's
+## height, so that no sky shows between them.
+trunk_overlap_share : Fraction
+trunk_overlap_share = Fraction.of(0.05)
 
 ## A cone's base is a ring of this many points.
 ring_points : U64
@@ -205,13 +213,9 @@ crown_of = |forward|
 
 draw_trunk : TreeDraw.TreeOnScreen, [Shaded, Flat] -> List(Shapes.Shape)
 draw_trunk = |screen_tree, finish| {
-	width = if screen_tree.height_px.times(0.08) > Pixels.of(1.0) {
-		screen_tree.height_px.times(0.08)
-	} else {
-		Pixels.of(1.0)
-	}
+	width = screen_tree.height_px.times(trunk_width_share.to_f64()).max(min_trunk_width)
 	below_crown = screen_tree.height_px.times(trunk_height_share.to_f64())
-	height = below_crown.plus(screen_tree.height_px.times(0.05))
+	height = below_crown.plus(screen_tree.height_px.times(trunk_overlap_share.to_f64()))
 	left = screen_tree.base_x.minus(width.divided_by(2.0))
 	top = screen_tree.base_y.minus(height)
 	points = [
@@ -302,23 +306,22 @@ trim_hull = |hull, point|
 ring_angles : List(F64)
 ring_angles = {
 	step = F64.tau / ring_points.to_f64()
-	walked = List.repeat(step, ring_points - 1).fold(
-		{ angle: 0.0, angles: [0.0] },
-		|so_far, turn| {
-			angle = so_far.angle + turn
-			{ angle, angles: so_far.angles.append(angle) }
-		},
-	)
-	walked.angles
+	var $angle = 0.0
+	var $angles = []
+	for _ in 0..<ring_points {
+		$angles = $angles.append($angle)
+		$angle = $angle + step
+	}
+	$angles
 }
 
-## A tier, as a cone when the tree is near and the cone is in front of the
-## camera, else as a triangle.
+## A tier, as a cone when the tree is near and the whole cone is past the near
+## plane, else as a triangle: the camera can't see a cone from inside.
 draw_tier : TreeDraw.Tier, TreeLook -> List(Shapes.Shape)
 draw_tier = |tier, look| {
 	cone_radius = look.point.height.times(crown_half_width_share.to_f64() * tier.width.to_f64())
 	match look.crown {
-		Cones(_) if look.point.forward.minus(cone_radius) < min_cone_forward =>
+		Cones(_) if look.point.forward.minus(cone_radius) < Geom.near_plane =>
 			tier_triangle(look.screen_tree, { tier, color: look.color })
 		Cones({ shade }) => tier_cone(tier, { look, cone_radius, shade })
 		Triangles => tier_triangle(look.screen_tree, { tier, color: look.color })
@@ -381,7 +384,6 @@ expect conifer_color(Conifer.Red) == 0xB23A2A
 expect trunk_height_share.to_f64() == 0.44
 expect crown_height_share.to_f64() == 0.648
 expect crown_half_width_share.to_f64() == 0.288
-expect min_cone_forward.to_metres() == 0.4
 
 expect crown_shade(Distance.metres(0.0)).to_f64() == 1.0
 expect crown_shade(Distance.metres(20.0)).to_f64() == 0.75
