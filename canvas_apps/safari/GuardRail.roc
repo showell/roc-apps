@@ -12,7 +12,7 @@ GuardRail :: [].{
 
 	## A quad of the rail: its corners, its colour, and how far ahead it
 	## is, the mean of its corners' distances, for the depth sort.
-	RailPoly : {
+	RailQuad : {
 		corners : List(Geom.SpacePoint),
 		color : I64,
 		forward : F64,
@@ -39,8 +39,8 @@ GuardRail :: [].{
 	rail_runout = 10
 
 	## The most quads one rail draws.
-	max_rail_polys : U64
-	max_rail_polys = 3072
+	max_rail_quads : U64
+	max_rail_quads = 3072
 
 	bar_top : F64
 	bar_top = (rail_height + (rail_thickness / 2.0))
@@ -52,24 +52,24 @@ GuardRail :: [].{
 	half_post = (rail_post_width / 2.0)
 
 	## The rail along `path`: the bars, then the posts, at most
-	## `max_rail_polys` quads in all. A path of fewer than two points has
+	## `max_rail_quads` quads in all. A path of fewer than two points has
 	## no rail.
-	quads_along : List(Geom.RiderPoint) -> List(GuardRail.RailPoly)
+	quads_along : List(Geom.RiderPoint) -> List(GuardRail.RailQuad)
 	quads_along = |path|
 		if path.len() < 2 {
 			[]
 		} else {
-			GuardRail.bars(path).concat(GuardRail.posts(path)).take_first(max_rail_polys)
+			GuardRail.bars(path).concat(GuardRail.posts(path)).take_first(max_rail_quads)
 		}
 
 	## A stretch of bar between each two neighbouring points of `path`.
-	bars : List(Geom.RiderPoint) -> List(GuardRail.RailPoly)
+	bars : List(Geom.RiderPoint) -> List(GuardRail.RailQuad)
 	bars = |path| path.map2(path.drop_first(1), |from, to| bar({ from, to }))
 
 	## A post at each point of `path`, turned to face along the path from
 	## the point before it to the point after it. A post at an end of the
 	## path takes its own point in place of the one it lacks.
-	posts : List(Geom.RiderPoint) -> List(GuardRail.RailPoly)
+	posts : List(Geom.RiderPoint) -> List(GuardRail.RailQuad)
 	posts = |path| {
 		before = path.take_first(1).concat(path.drop_last(1))
 		after = path.drop_first(1).concat(path.take_last(1))
@@ -82,7 +82,7 @@ GuardRail :: [].{
 
 	## A quad on screen, cut at the camera's near plane; a quad with fewer
 	## than three corners left in front of the camera draws nothing.
-	draw : GuardRail.RailPoly, F64 -> List(Shapes.Shape)
+	draw : GuardRail.RailQuad, F64 -> List(Shapes.Shape)
 	draw = |quad, cam_focal| {
 		in_front = Geom.clip_near(quad.corners)
 		if in_front.len() < 3 {
@@ -94,7 +94,7 @@ GuardRail :: [].{
 }
 
 ## A quad with these corners, in `color`.
-rail_quad : List(Geom.SpacePoint), I64 -> GuardRail.RailPoly
+rail_quad : List(Geom.SpacePoint), I64 -> GuardRail.RailQuad
 rail_quad = |corners, color| { corners, color, forward: mean_forward(corners) }
 
 ## The mean of the corners' distances ahead, summed from the first corner
@@ -111,7 +111,7 @@ at_height : Geom.RiderPoint, F64 -> Geom.SpacePoint
 at_height = |point, height| { right: point.right, forward: point.forward, height }
 
 ## The bar from `from` to `to`, bottom edge first.
-bar : { from : Geom.RiderPoint, to : Geom.RiderPoint } -> GuardRail.RailPoly
+bar : { from : Geom.RiderPoint, to : Geom.RiderPoint } -> GuardRail.RailQuad
 bar = |{ from, to }|
 	rail_quad(
 		[
@@ -126,7 +126,7 @@ bar = |{ from, to }|
 ## The post at `at`, half its width to each side of it along the path from
 ## `previous` to `next`, from the ground to the top of the bar. Two points
 ## at one place give no direction, and the post then has no width.
-post : Geom.RiderPoint, { previous : Geom.RiderPoint, next : Geom.RiderPoint } -> GuardRail.RailPoly
+post : Geom.RiderPoint, { previous : Geom.RiderPoint, next : Geom.RiderPoint } -> GuardRail.RailQuad
 post = |at, { previous, next }| {
 	dr = (next.right - previous.right)
 	df = (next.forward - previous.forward)
@@ -161,12 +161,12 @@ expect GuardRail.half_post == 0.01
 expect GuardRail.rail_metal == 12765135
 expect GuardRail.rail_post_metal == 10133672
 expect GuardRail.rail_runout == 10
-expect GuardRail.max_rail_polys == 3072
+expect GuardRail.max_rail_quads == 3072
 
-first_post : List(Geom.RiderPoint) -> GuardRail.RailPoly
+first_post : List(Geom.RiderPoint) -> GuardRail.RailQuad
 first_post = |route| GuardRail.posts(route).first() ?? crash "a route of two points has posts"
 
-corner_at : GuardRail.RailPoly, U64 -> Geom.SpacePoint
+corner_at : GuardRail.RailQuad, U64 -> Geom.SpacePoint
 corner_at = |quad, i| quad.corners.get(i) ?? crash "a quad has four corners"
 
 straight_route : List(Geom.RiderPoint)
@@ -176,10 +176,10 @@ straight_route = [
 	{ right: 0.0, forward: 30.0 },
 ]
 
-straight_rail : List(GuardRail.RailPoly)
+straight_rail : List(GuardRail.RailQuad)
 straight_rail = GuardRail.quads_along(straight_route)
 
-first_bar : GuardRail.RailPoly
+first_bar : GuardRail.RailQuad
 first_bar = straight_rail.first() ?? crash "a straight route has a rail"
 
 expect straight_rail.len() == 5
@@ -203,7 +203,7 @@ expect corner_at(first_post(straight_route), 2).height == 0.55
 expect corner_at(first_post(straight_route), 0).right == 0.0
 expect corner_at(first_post(straight_route), 1).right == 0.0
 
-diagonal_post : GuardRail.RailPoly
+diagonal_post : GuardRail.RailQuad
 diagonal_post = first_post([{ right: 0.0, forward: 10.0 }, { right: 30.0, forward: 50.0 }])
 
 expect corner_at(diagonal_post, 0).right == -0.006
@@ -214,7 +214,7 @@ expect corner_at(diagonal_post, 1).forward == 10.008
 doubled_route : List(Geom.RiderPoint)
 doubled_route = [{ right: 0.0, forward: 10.0 }, { right: 0.0, forward: 10.0 }]
 
-doubled_post : GuardRail.RailPoly
+doubled_post : GuardRail.RailQuad
 doubled_post = first_post(doubled_route)
 
 # A path that goes nowhere keeps its posts, each with no width.

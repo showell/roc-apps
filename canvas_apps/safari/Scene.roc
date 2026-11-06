@@ -26,7 +26,7 @@ Scene := {
 	towers : List(TowerSighting),
 	cutouts : List(Cutouts.Cutout),
 	cats : List(CatSighting),
-	rails : List(GuardRail.RailPoly),
+	rails : List(GuardRail.RailQuad),
 	truck : TruckSighting,
 	birds : List(BirdSighting),
 	order : List(DepthSort.DepthKey),

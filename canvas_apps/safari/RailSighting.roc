@@ -18,7 +18,7 @@ RailSighting :: [].{
 
 	## The rails at every bend in view: the bends along the chain ahead, then
 	## the bend from the segment behind.
-	in_view : Chain.RoadView -> List(GuardRail.RailPoly)
+	in_view : Chain.RoadView -> List(GuardRail.RailQuad)
 	in_view = |road| {
 		bends_ahead = Chain.Position.all_in(road.chain).drop_last(1)
 		ahead = bends_ahead.join_map(|position| rails_at(road, bend_after(road, position)))
@@ -30,7 +30,7 @@ RailSighting :: [].{
 
 	## The depth sort's key for each rail quad: how far ahead it is, and its
 	## place in the list.
-	depth_keys : List(GuardRail.RailPoly) -> List(DepthSort.DepthKey)
+	depth_keys : List(GuardRail.RailQuad) -> List(DepthSort.DepthKey)
 	depth_keys = |quads| quads.map_with_index(
 		|quad, i| { forward: quad.forward, subject: Rail(i.to_u32_wrap()) },
 	)
@@ -129,7 +129,7 @@ bend_after = |road, position|
 	)
 
 ## The rails at the bend into the rider's segment from the segment at `index`.
-rails_behind : Chain.RoadView, World.SegmentIndex -> List(GuardRail.RailPoly)
+rails_behind : Chain.RoadView, World.SegmentIndex -> List(GuardRail.RailQuad)
 rails_behind = |road, index| {
 	segment = index.segment_in(road.route)
 	before = Chain.place_behind(segment)
@@ -137,7 +137,7 @@ rails_behind = |road, index| {
 	rails_at(road, BendView.of_segment(segment, { before, after }))
 }
 
-rails_at : Chain.RoadView, BendView -> List(GuardRail.RailPoly)
+rails_at : Chain.RoadView, BendView -> List(GuardRail.RailQuad)
 rails_at = |road, bend| GuardRail.quads_along(rail_path(road, bend))
 
 ## The path of the rail at a bend, along the road's outer edge: up to the
