@@ -1,0 +1,163 @@
+-- budget: steps=200000000 arena_bytes=900000000 read_bytes=200000000 output_bytes=200000 call_bytes=2000000
+-- This makes the copy of the book that a cold reviewer reads, in
+-- build/review/. It starts from build/tutorial.md, so run book.shale or
+-- build.shale first.
+--
+--   cd <roc-apps checkout> && shale canvas_apps/safari/tutorial/review_copy.shale
+--
+-- The manuscript isn't what a reader sees: its widgets are a caption in a
+-- fence, its diagrams are Graphviz source, its parts live in Book.roc, and most
+-- of the lines that start `## ` are Roc doc comments. So each widget becomes a
+-- bracketed line saying the reader plays with it, each diagram becomes its
+-- title, Book.roc's dividers become `# ` headings, and the `[check: ...]` notes
+-- go. chapters.txt lists each chapter with its line range, which also tells a
+-- reviewer how far a read has to go.
+const SOURCE = "canvas_apps/safari/tutorial/build/tutorial.md"
+const BOOK = "canvas_apps/safari/tutorial/Book.roc"
+const OUT = "canvas_apps/safari/tutorial/build/review"
+const TUTORIAL_HTML = "scratch:roc-tutorial/tutorial.html"
+
+-- Book.roc's dividers in order: the chapter each stands above, and its title.
+function dividers()
+  local found = {}
+  local before = nil
+  local level = nil
+  for l in lines(read(BOOK)) do
+    local t = trim(l)
+    if starts_with(t, "before: \"") then before = sub(t, 10, #t - 2) end
+    if starts_with(t, "level: ") then level = sub(t, 8, #t - 1) end
+    if starts_with(t, "title: \"") and before ~= nil then
+      push(found, {before = before, level = level, title = sub(t, 9, #t - 2)})
+      before = nil
+    end
+  end
+  if #found == 0 then fail("review_copy: no dividers in " .. BOOK) end
+  return found
+end
+
+function headings_before(found, title)
+  local out = {}
+  for d in found do
+    if d.before == title then
+      if d.level == "Part" then push(out, "# PART: " .. d.title) else push(out, "# CATEGORY: " .. d.title) end
+      push(out, "")
+    end
+  end
+  return out
+end
+
+-- The line without its [check: ...] notes. A note holds no closing bracket
+-- but its own, and the notes the book has are all on one line.
+function without_checks(l)
+  local text = l
+  local at = find(text, "[check:")
+  while at ~= nil do
+    local rest = sub(text, at)
+    local close = find(rest, "]")
+    if close == nil then fail("review_copy: a check note doesn't close: " .. sub(l, 1, 80)) end
+    text = trim_end(sub(text, 1, at - 1)) .. sub(rest, close + 1)
+    at = find(text, "[check:")
+  end
+  return text
+end
+
+function trim_end(s)
+  local out = s
+  while #out > 0 and sub(out, #out) == " " do out = sub(out, 1, #out - 1) end
+  return out
+end
+
+-- The fence kinds this copy rewrites. Code stays as it is.
+function review_lines(text, found)
+  local out = {}
+  local fence = nil
+  local caption = {}
+  local last_prose = ""
+  local chapters = {}
+  for l in split(text, "\n") do
+    if fence == nil then
+      if l == "```dot" or starts_with(l, "```dot ") then
+        fence = "dot"
+      elseif starts_with(l, "```widget ") then
+        fence = "widget"
+        caption = {}
+      elseif starts_with(l, "```") then
+        fence = "code"
+        push(out, l)
+      elseif starts_with(l, "## ") then
+        local title = sub(l, 4)
+        for h in headings_before(found, title) do push(out, h) end
+        push(chapters, {title = title, line = #out + 1})
+        push(out, l)
+      else
+        local kept = without_checks(l)
+        push(out, kept)
+        if trim(kept) ~= "" then last_prose = kept end
+      end
+    elseif l == "```" then
+      if fence == "dot" then
+        -- The title line sits just above the fence, so it's already in place.
+        push(out, "[DIAGRAM: the line above is its title; the reader sees a drawing here]")
+      elseif fence == "widget" then
+        push(out, "[LIVE WIDGET, the reader plays with this here: " .. join(caption, " ") .. "]")
+      else
+        push(out, l)
+      end
+      fence = nil
+    elseif fence == "widget" then
+      push(caption, l)
+    elseif fence == "code" then
+      push(out, l)
+    end
+  end
+  if fence ~= nil then fail("review_copy: a fence never closes") end
+  return {lines = out, chapters = chapters}
+end
+
+function chapter_list(copy)
+  local rows = {}
+  local i = 1
+  for c in copy.chapters do
+    local last = #copy.lines
+    if i < #copy.chapters then last = copy.chapters[i + 1].line - 1 end
+    push(rows, c.line .. "-" .. last .. ": " .. c.title)
+    i = i + 1
+  end
+  return join(rows, "\n") .. "\n"
+end
+
+-- The official tutorial's text, from the copy roc_tutorial_code.shale saved.
+function plain_text(html)
+  local out = {}
+  local inside = false
+  local piece = {}
+  for part in split(html, "<") do
+    local close = find(part, ">")
+    if close ~= nil then push(piece, sub(part, close + 1)) else push(piece, part) end
+  end
+  local text = join(piece, "")
+  for pair in {{"&lt;", "<"}, {"&gt;", ">"}, {"&quot;", "\""}, {"&#39;", "'"}, {"&amp;", "&"}} do
+    text = substitute(text, pair[1], pair[2])
+  end
+  for l in lines(text) do
+    if trim(l) ~= "" then push(out, l) end
+  end
+  return join(out, "\n") .. "\n"
+end
+
+function main()
+  if not exists(SOURCE) then fail("review_copy: run build.shale first, for " .. SOURCE) end
+  mkdir(OUT)
+  local copy = review_lines(read(SOURCE), dividers())
+  replace(OUT .. "/book.md", join(copy.lines, "\n") .. "\n")
+  replace(OUT .. "/chapters.txt", chapter_list(copy))
+  if exists(TUTORIAL_HTML) then
+    replace(OUT .. "/roc_tutorial.txt", plain_text(read(TUTORIAL_HTML)))
+  else
+    print("review_copy: no saved tutorial; run roc_tutorial_code.shale for " .. TUTORIAL_HTML)
+  end
+  print("review_copy: " .. #copy.chapters .. " chapters, " .. #copy.lines .. " lines in " .. real(OUT))
+  return nil
+end
+
+main()

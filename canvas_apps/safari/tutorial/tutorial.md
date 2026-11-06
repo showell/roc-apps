@@ -14,7 +14,7 @@ This is Safari Ride. A rider cycles down a long road through open country, past 
 
 Safari Ride has the important parts of a game's world: terrain, physics, a camera, things that react to the player, and a day that ends. It doesn't have game mechanics yet. Nothing keeps score.
 
-A safari is a guided tour, so this is a tour of a tour. We'll start with the big picture, hold one frame still to see what's in it, let it move, and zoom back out at the end. Safari Ride has about eighty modules of Roc, so you'll get to see how Roc holds up in a program with a lot going on.
+A safari is a guided tour, so this is a tour of a tour. We'll start with the big picture, hold one frame still to see what's in it, let it move, and zoom back out at the end. You'll get to see how Roc holds up in a program with a lot going on.
 
 We assume you can already read Roc. If you can't yet, the official tutorial is the place to start. We'll point out a few Roc ideas in each chapter as they come up.
 
@@ -89,7 +89,7 @@ That's one module out of about eighty. In the next chapter, we'll see how the re
 
 ## The modules
 
-Safari Ride is about eighty modules of Roc. This chapter shows how they fit together, starting with the whole system, simplified.
+This chapter shows how the modules fit together, starting with the whole system, simplified.
 
 Each arrow points from a module to a module it imports. A dashed box stands for a family of modules. Roc doesn't allow import cycles, so no arrow can point back up the diagram.
 
