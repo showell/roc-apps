@@ -136,6 +136,8 @@ A sighting answers one question each frame: which of these can the rider see rig
 
 `Scene` gathers every sighting's answer, a depth sort puts them in order, and `SceneDraw` hands each one to the module that paints it. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. The rule is simple: a sighting decides, and drawing paints.
 
+Cows, pigs and the other animals by the road are all sighted the same way, by `CutoutSighting`, and `Cutouts` decides which of them get drawn. `Detail` holds the thresholds behind that kind of decision: how near a tree shows its full detail, and how few pixels tall something may be and still be drawn.
+
 All of that is about one frame, and a frame is gone by the next one. What lasts from one step to the next hasn't come up yet.
 
 ## The ride instant
@@ -868,6 +870,8 @@ Lamps are to the truck what a pose is to a cat. The sighting carries them, and t
 
 {{code TruckDraw.draw from "beams =" to "].join()"}}
 
+`TruckDraw` leaves the painting to two modules. `TruckBody` paints the trailer, the cab and the tyres, far to near, and `TruckLights` paints the beams and the brake lights, each with its glow.
+
 That's the clock-driven things. Each is a function with a `Clock` in its arguments, and nothing about them outlives the frame.
 
 The rider-driven kind still has only one member, and one cat can't say whether `Animation` was written for critters or just for cats.
@@ -1075,6 +1079,8 @@ When the rider leans, the whole picture leans with it. This is all of that:
 A lean inside the deadband leaves the canvas level, and any other lean passes straight through. The last `expect` is a table of pairs, on both sides of the deadband and at its edge. It's called once a frame:
 
 🌳 {{code Tour.roll}}
+
+The camera turns as well. `ViewYaw` follows the rider's gaze, and turns a little with the lean, as a rider's head turns into a bend.
 
 ### The bike
 

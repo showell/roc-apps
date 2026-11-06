@@ -51,6 +51,12 @@
 -- line, and no output is left behind. Any line holding `{{` must be an
 -- include, alone on its line, so a mistyped one can't reach the page.
 --
+-- Every module beside safari's others has to be named somewhere in the source,
+-- as a whole word, in prose, a diagram or an include. A module the book never
+-- names stops the build. NOT_NAMED and NOT_NAMED_ENDINGS are the exceptions:
+-- the app roots and the package say nothing about the game, and a picture's
+-- data or an app's shim is named by what it serves.
+--
 -- `self_test=1` proves both sides of each failure on a module written here,
 -- and safari's gate runs it.
 const SAFARI = "canvas_apps/safari"
@@ -68,6 +74,8 @@ const KEY_HEADER = "| Marker | What it says |"
 const NO_TITLE = "a diagram needs a title line directly above it"
 const STRAY_ICON = "an icon belongs only at the start of a title line or an include, or in a row of the key table"
 const CUT = "# ..."
+const NOT_NAMED = {"web", "main", "game"}
+const NOT_NAMED_ENDINGS = {"Stills", "App"}
 
 function stop(entry, why)
   fail(entry.source .. ":" .. entry.line .. ": " .. entry.text .. ": " .. why)
@@ -507,6 +515,29 @@ const MARKED_BAD = "app [main!] {}\n\n# A marker: 🍃\nmain! = |_args| 1\n"
 const DIAGRAM = "```dot\ndigraph x {}\n```"
 const KEY_TOP = "| Marker | What it says |\n|---|---|\n"
 
+-- Whether a module needn't be named in the book.
+function excused(module)
+  for name in NOT_NAMED do
+    if module == name then return true end
+  end
+  for ending in NOT_NAMED_ENDINGS do
+    if ends_with(module, ending) then return true end
+  end
+  return false
+end
+
+-- Stops the build on any module beside the others in `folder` that `text`
+-- doesn't name as a whole word.
+function check_modules_named(folder, text)
+  local unnamed = {}
+  for path in glob(folder .. "/*.roc") do
+    local module = sub(basename(path), 1, #basename(path) - 4)
+    if not excused(module) and re_find(text, "\\b" .. module .. "\\b") == nil then push(unnamed, module) end
+  end
+  if #unnamed > 0 then fail("tutorial: the book never names " .. join(sort(unnamed), ", ")) end
+  return nil
+end
+
 -- The source's include is on its line 3, for the messages to name.
 function attempt_include(folder, include)
   replace(folder .. "/doc.md", "prose\n\n" .. include .. "\n")
@@ -615,6 +646,29 @@ function check_icon_rule(checks, folder)
   expect_stop(checks, folder, "{{fails marked}}", "its text holds an icon")
 end
 
+-- Both sides of the rule that the book names every module.
+function check_named_rule(checks, folder)
+  local modules = folder .. "/modules"
+  mkdir(modules)
+  for file in {"Named", "Other", "web", "main", "game", "CatStills", "SafariApp"} do
+    replace(modules .. "/" .. file .. ".roc", "")
+  end
+  if not attempt(check_modules_named, modules, "`Named` beside `Other.go`").ok then fail("self_test: every module named still stopped") end
+  push(checks, "every module named, and the exceptions unnamed")
+  if not attempt(check_modules_named, modules, "```dot\nNamed -> Other;\n```").ok then fail("self_test: a diagram didn't count as naming") end
+  push(checks, "a module named in a diagram")
+  local one_missing = attempt(check_modules_named, modules, "`Named` alone")
+  if one_missing.ok or one_missing.error ~= "tutorial: the book never names Other" then fail("self_test: a missing module gave " .. json_write(one_missing)) end
+  push(checks, "a module the book never names")
+  local inside_a_word = attempt(check_modules_named, modules, "`Named` beside Otherwise and NotOther")
+  if inside_a_word.ok or inside_a_word.error ~= "tutorial: the book never names Other" then fail("self_test: a name inside a word gave " .. json_write(inside_a_word)) end
+  push(checks, "a name only inside a longer word")
+  local two_missing = attempt(check_modules_named, modules, "nothing")
+  if two_missing.ok or two_missing.error ~= "tutorial: the book never names Named, Other" then fail("self_test: two missing modules gave " .. json_write(two_missing)) end
+  push(checks, "two modules the book never names")
+  return nil
+end
+
 function self_test()
   local folder = fresh_dir("scratch:", "safari-tutorial")
   mkdir(folder .. "/out")
@@ -705,6 +759,7 @@ function self_test()
 
   check_title_rule(checks, folder)
   check_icon_rule(checks, folder)
+  check_named_rule(checks, folder)
 
   local no_file = attempt(pinned_roc, folder .. "/no-pin")
   if no_file.ok or no_file.error ~= "tutorial: no " .. folder .. "/no-pin: run from the roc-apps root" then fail("self_test: no pin file gave " .. json_write(no_file)) end
@@ -726,5 +781,6 @@ if arg("self_test", "") == "1" then
   self_test()
 else
   local expanded = build(SOURCE, OUTPUT, SAFARI)
+  check_modules_named(SAFARI, read(SOURCE))
   print("tutorial: " .. expanded .. " includes expanded into " .. OUTPUT)
 end
