@@ -56,8 +56,8 @@ SafariApp :: [].{
 		Backdrop.behind(
 			Tour.shapes(tour),
 			{
-				sky_top_color: Tour.sky_top(tour),
-				sky_horizon_color: Tour.sky_horizon(tour),
+				sky_top_color: Tour.sky_top_color(tour),
+				sky_horizon_color: Tour.sky_horizon_color(tour),
 				sun_sighting: Tour.sun(tour),
 			},
 		).prepend(lean)

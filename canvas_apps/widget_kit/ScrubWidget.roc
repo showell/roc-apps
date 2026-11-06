@@ -140,8 +140,8 @@ ScrubWidget :: [].{
 		ride = Backdrop.behind(
 			shapes,
 			{
-				sky_top_color: Sky.sky_color(clock),
-				sky_horizon_color: Sky.horizon_color(clock),
+				sky_top_color: Sky.sky_top_color(clock),
+				sky_horizon_color: Sky.sky_horizon_color(clock),
 				sun_sighting: sun,
 			},
 		)

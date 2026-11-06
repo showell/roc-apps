@@ -77,21 +77,14 @@ Backdrop :: [].{
 		sky_horizon_color : I64,
 		sun_sighting : Sky.SunSighting,
 	} -> List(Shapes.Shape)
-	behind = |
-		ride_shapes,
-		{
-			sky_top_color: sky_top,
-			sky_horizon_color: sky_horizon,
-			sun_sighting: sun,
-		},
-	| {
+	behind = |ride_shapes, { sky_top_color, sky_horizon_color, sun_sighting: sun }| {
 		var $out = List.with_capacity(List.len(ride_shapes) + 8)
 		# Oversized, so the rolled frame's corners stay filled: the top colour to
 		# a fifth of the way down to the horizon at y 300, then the fade; the
 		# grass from a pixel above the horizon.
 		sky = Linear({
-			c0: Brush.opaque(sky_top),
-			c1: Brush.opaque(sky_horizon),
+			c0: Brush.opaque(sky_top_color),
+			c1: Brush.opaque(sky_horizon_color),
 			o0: sky_top_stop,
 			o1: 1.0,
 			ax: 0.0,

@@ -126,13 +126,13 @@ Sky :: [].{
 	}
 
 	## The sky's colour at the top of the frame, as 0xRRGGBB.
-	sky_color : Clock -> I64
-	sky_color = |clock| pack(sky_at(clock))
+	sky_top_color : Clock -> I64
+	sky_top_color = |clock| pack(sky_at(clock))
 
 	## The sky's colour at the horizon, as 0xRRGGBB: the sky warmed toward
 	## sunset red.
-	horizon_color : Clock -> I64
-	horizon_color = |clock| pack(
+	sky_horizon_color : Clock -> I64
+	sky_horizon_color = |clock| pack(
 		color_between({
 			from: sky_at(clock),
 			to: sunset_red,
@@ -209,20 +209,20 @@ expect Sky.sunset_warmth(Clock.at_step(6000)).to_f64() == 0.0
 expect Sky.sunset_glow.to_f64() == 0.85
 
 # The sky and the horizon at each thousandth step of the ride.
-expect Sky.sky_color(Clock.at_step(0)) == 9358054
-expect Sky.sky_color(Clock.at_step(1000)) == 9160418
-expect Sky.sky_color(Clock.at_step(2000)) == 8633304
-expect Sky.sky_color(Clock.at_step(3000)) == 7710918
-expect Sky.sky_color(Clock.at_step(4000)) == 6393260
-expect Sky.sky_color(Clock.at_step(5000)) == 4219010
-expect Sky.sky_color(Clock.at_step(6000)) == 2374238
-expect Sky.horizon_color(Clock.at_step(0)) == 9358054
-expect Sky.horizon_color(Clock.at_step(1000)) == 9160418
-expect Sky.horizon_color(Clock.at_step(2000)) == 8633304
-expect Sky.horizon_color(Clock.at_step(3000)) == 10324366
-expect Sky.horizon_color(Clock.at_step(4000)) == 13262919
-expect Sky.horizon_color(Clock.at_step(5000)) == 8019301
-expect Sky.horizon_color(Clock.at_step(6000)) == 2374238
+expect Sky.sky_top_color(Clock.at_step(0)) == 9358054
+expect Sky.sky_top_color(Clock.at_step(1000)) == 9160418
+expect Sky.sky_top_color(Clock.at_step(2000)) == 8633304
+expect Sky.sky_top_color(Clock.at_step(3000)) == 7710918
+expect Sky.sky_top_color(Clock.at_step(4000)) == 6393260
+expect Sky.sky_top_color(Clock.at_step(5000)) == 4219010
+expect Sky.sky_top_color(Clock.at_step(6000)) == 2374238
+expect Sky.sky_horizon_color(Clock.at_step(0)) == 9358054
+expect Sky.sky_horizon_color(Clock.at_step(1000)) == 9160418
+expect Sky.sky_horizon_color(Clock.at_step(2000)) == 8633304
+expect Sky.sky_horizon_color(Clock.at_step(3000)) == 10324366
+expect Sky.sky_horizon_color(Clock.at_step(4000)) == 13262919
+expect Sky.sky_horizon_color(Clock.at_step(5000)) == 8019301
+expect Sky.sky_horizon_color(Clock.at_step(6000)) == 2374238
 expect Sky.pack(Sky.day_sky) == 9358054
 expect Sky.pack(Sky.dusk_sky) == 2374238
 expect Sky.pack(Sky.sunset_red) == 14571572

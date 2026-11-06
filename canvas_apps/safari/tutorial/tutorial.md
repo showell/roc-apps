@@ -257,9 +257,9 @@ Drag across it from left to right, and the clock runs from step 0 to step 6,000.
 
 Every function in this chapter has a `->` arrow, not `=>`. In Roc that's a promise the compiler holds: no effects, so the same clock always gives the same sky. If a function has no `=>` and no `$` in sight, there's nothing behind it to think about.
 
-Here's one of the questions being asked. `Tour.sky_top` takes the clock from the current instant and hands it to `Sky`.
+Here's one of the questions being asked. `Tour.sky_top_color` takes the clock from the current instant and hands it to `Sky`.
 
-🌳 {{code Tour.sky_top}}
+🌳 {{code Tour.sky_top_color}}
 
 Here's what happens behind that call. In this diagram a box is a function, not a module, and an arrow is a call. Only `Sky`'s own functions are shown, without the two helpers of `dusk_at`.
 
@@ -267,12 +267,12 @@ The calls inside `Sky`
 ```dot
 digraph sky_calls {
   node [shape=box, fontname="Helvetica"];
-  sky_color -> sky_at;
-  sky_color -> pack;
-  horizon_color -> sky_at;
-  horizon_color -> color_between;
-  horizon_color -> sunset_warmth;
-  horizon_color -> pack;
+  sky_top_color -> sky_at;
+  sky_top_color -> pack;
+  sky_horizon_color -> sky_at;
+  sky_horizon_color -> color_between;
+  sky_horizon_color -> sunset_warmth;
+  sky_horizon_color -> pack;
   sky_at -> dusk_at;
   sky_at -> color_between;
   dusk_at -> sun_height_px;
@@ -331,11 +331,11 @@ A colour ends up as one integer. `pack` gets there with method calls on plain nu
 
 🌳 {{code Sky.sky_at}}
 
-The top of the tree is two calls. `sky_color` is the one `Tour.sky_top` asked at the start of this chapter, and `horizon_color` is the same sky, warmed toward red by `sunset_warmth`.
+The top of the tree is two calls. `sky_top_color` is the one `Tour.sky_top_color` asked at the start of this chapter, and `sky_horizon_color` is the same sky, warmed toward red by `sunset_warmth`.
 
-🌳 {{code Sky.sky_color}}
+🌳 {{code Sky.sky_top_color}}
 
-🌳 {{code Sky.horizon_color}}
+🌳 {{code Sky.sky_horizon_color}}
 
 ### Angles that can't be mixed up
 

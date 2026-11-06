@@ -18,10 +18,10 @@ BackdropPixels :: [].{
 	## the horizon, then fades to the horizon colour; the grass is below it.
 	## The fade divides by the horizon rather than shading a Linear brush,
 	## whose arithmetic rounds differently.
-	paint : ScreenRoll, { sky_top : I64, sky_horizon : I64 } -> List(U32)
-	paint = |roll, { sky_top, sky_horizon }| {
-		top_color = Brush.opaque(sky_top)
-		horizon_color = Brush.opaque(sky_horizon)
+	paint : ScreenRoll, { sky_top_color : I64, sky_horizon_color : I64 } -> List(U32)
+	paint = |roll, { sky_top_color, sky_horizon_color }| {
+		top_color = Brush.opaque(sky_top_color)
+		horizon_color = Brush.opaque(sky_horizon_color)
 		width = roll.width_px()
 		height = roll.height_px()
 		var $px = List.with_capacity(width.to_u64() * height.to_u64())

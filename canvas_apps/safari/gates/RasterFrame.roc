@@ -41,8 +41,8 @@ paint : Tour -> List(U32)
 paint = |tour| SafariFrame.paint({
 	shapes: Tour.shapes(tour),
 	roll: Tour.roll(tour),
-	sky_top: Tour.sky_top(tour),
-	sky_horizon: Tour.sky_horizon(tour),
+	sky_top_color: Tour.sky_top_color(tour),
+	sky_horizon_color: Tour.sky_horizon_color(tour),
 	sun: Tour.sun(tour),
 })
 
