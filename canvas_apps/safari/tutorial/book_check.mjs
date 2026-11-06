@@ -149,8 +149,8 @@ const PICTURE_OF_FRAME = (i) => `(() => {
   return hash;
 })()`;
 
-// Where the frame stands now against where the drag aimed, for a failure's line.
-const WHERE_THE_DRAG_WENT = (i, frame, y) => `(() => {
+// Where the frame stands now against where the click aimed, for a failure's line.
+const WHERE_THE_CLICK_WENT = (i, frame, y) => `(() => {
   const element = document.querySelectorAll('iframe.canvas-app')[${i}];
   const box = element.getBoundingClientRect();
   const under = document.elementFromPoint(${frame.left + frame.width / 2}, ${y});
@@ -175,38 +175,45 @@ async function pictureChanges(page, i, before) {
   return false;
 }
 
-// Where a widget that's clicked and not dragged wants its click, as shares of
-// the frame: rehearsal's third mark, the first bird among the stills, and the
-// frame's Next button, which goes round from the last layer to the first.
+// The play button of VcrButtons, and the step forward of a widget with no play,
+// as shares of the frame.
+const PLAY = { x: 0.384, y: 0.65 };
+const STEP_FORWARD_WITHOUT_PLAY = { x: 0.228, y: 0.65 };
+
+// Where a widget wants its click, as shares of the frame: the buttons, rehearsal's
+// third mark, the first bird among the stills, and the frame's Next button, which
+// goes round from the last layer to the first.
 const CLICKED_AT = {
+  "../beacon_widget/": PLAY,
+  "../bends_widget/": PLAY,
+  "../bird_widget/": PLAY,
+  "../cat_widget/": PLAY,
   "../frame_widget/": { x: 0.91, y: 0.93 },
-  "../sky_widget/": { x: 0.384, y: 0.65 },
+  "../gaze_widget/": PLAY,
   "../rehearsal_widget/": { x: 0.12, y: 0.644 },
+  "../route_widget/": STEP_FORWARD_WITHOUT_PLAY,
+  "../sky_widget/": PLAY,
+  "../step_widget/": PLAY,
   "../stills_widget/": { x: 0.114, y: 0.883 },
 };
 
-// A widget proves it runs by changing its picture: a drag moves a widget, a
-// click moves one that's clicked, and the ride moves by itself. A widget reads a held pointer once a frame, so the
-// drag stays held until the picture answers, however slow the box is.
+// A widget proves it runs by changing its picture: a click moves a widget, and the
+// ride moves by itself. A widget reads a press once a frame, so the button stays
+// held until the picture answers, however slow the box is.
 async function checkFrame(page, file, i) {
   const frame = await evaluate(page, SEE_FRAME(i));
   if (frame.missing) { fail(file, `the widget ${frame.src} drew nothing`); return frame.src; }
   if (Math.abs(frame.canvasWidth - frame.width) > 2) fail(file, `the widget ${frame.src} is ${frame.canvasWidth} wide in a frame ${frame.width} wide`);
   const before = await evaluate(page, PICTURE_OF_FRAME(i));
+  const isRide = frame.src === "../safari/";
   const clicked = CLICKED_AT[frame.src.split("?")[0]];
+  if (!isRide && !clicked) { fail(file, `CLICKED_AT doesn't say where to click ${frame.src}`); return frame.src; }
   const y = frame.top + frame.height * (clicked?.y ?? 0.5);
   const mouse = (type, share, buttons) => page.send("Input.dispatchMouseEvent",
     { type, x: frame.left + frame.width * share, y, button: "left", buttons, clickCount: 1 }, page.session);
-  const isRide = frame.src === "../safari/";
-  if (clicked) {
-    await mouse("mousePressed", clicked.x, 1);
-  } else if (!isRide) {
-    await mouse("mousePressed", 0.2, 1);
-    await mouse("mouseMoved", 0.5, 1);
-    await mouse("mouseMoved", 0.8, 1);
-  }
-  if (!(await pictureChanges(page, i, before))) fail(file, `the widget ${frame.src} didn't move: ${await evaluate(page, WHERE_THE_DRAG_WENT(i, frame, y))}`);
-  if (!isRide) await mouse("mouseReleased", 0.8, 0);
+  if (!isRide) await mouse("mousePressed", clicked.x, 1);
+  if (!(await pictureChanges(page, i, before))) fail(file, `the widget ${frame.src} didn't move: ${await evaluate(page, WHERE_THE_CLICK_WENT(i, frame, y))}`);
+  if (!isRide) await mouse("mouseReleased", clicked.x, 0);
   return frame.src;
 }
 

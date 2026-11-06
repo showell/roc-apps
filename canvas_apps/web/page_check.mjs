@@ -29,8 +29,7 @@
 //
 // After the run, and after its hash, the page goes through checkPointer: drags
 // by mouse and by finger, each ended by pointerup and by pointercancel. What
-// the runner tells `advance` is judged on every page. With
-// STILL_BETWEEN_DRAGS=1 in an app's shot.env the picture is judged too.
+// the runner tells `advance` is judged on every page.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import vm from "node:vm";
 
@@ -357,7 +356,6 @@ const step = () => {
 };
 
 const checkPointer = () => {
-  const still = process.env.STILL_BETWEEN_DRAGS === "1";
   const { width, height } = pageCanvas;
   const near = (a, b) => Math.abs(a - b) < 0.01;
   const spot = (x, y) => ({ clientX: x, clientY: y, x, y });
@@ -366,8 +364,6 @@ const checkPointer = () => {
   const off = spot(width + 50, -50);
   const down = { button: 0, buttons: 1 };
   const secondFinger = { pointerId: 9, pointerType: "touch" };
-
-  if (still) expect(step().picture === step().picture, "the picture does not hold still");
 
   // Both ways of ending, by both devices. `device` is what every event in the
   // drag carries.
@@ -382,7 +378,6 @@ const checkPointer = () => {
     point("pointermove", { ...device, ...to, buttons: 1 });
     const moved = step();
     expect(moved.held === 1 && near(moved.x, to.x), `${says}: the move reached the app as held ${moved.held} at ${moved.x}`);
-    if (still) expect(moved.picture !== pressed.picture, `${says}: the drag did not move the widget`);
 
     point("pointermove", { ...device, ...off, buttons: 1 });
     const outside = step();
@@ -395,7 +390,7 @@ const checkPointer = () => {
     expect(ignored.held === 1 && near(ignored.x, off.x), `${says}: a second finger took over the drag`);
 
     point("pointermove", { ...device, ...to, buttons: 1 });
-    const back = step();
+    step();
     point(ending, { ...device, ...to, button: ending === "pointerup" ? 0 : -1 });
     const left = step();
     expect(left.held === 0, `${says}: the button is still held after it`);
@@ -404,7 +399,6 @@ const checkPointer = () => {
     point("pointermove", { ...device, ...from, buttons: 1 });
     const after = step();
     expect(after.held === 0 && after.struck === 0, `${says}: a move after it reached the app as held ${after.held}`);
-    if (still) expect(after.picture === left.picture && left.picture === back.picture, `${says}: a move after it moved the widget`);
     point("pointermove", { ...device, ...to });
     step();
   };
@@ -435,7 +429,7 @@ const checkPointer = () => {
   point("pointerup", { ...to, button: 0 });
   step();
 
-  console.log(`${name}: pointer checked by mouse and finger, ending by pointerup and pointercancel, touch-action ${pageCanvas.style.touchAction}, ${still ? "picture and " : ""}advance judged`);
+  console.log(`${name}: pointer checked by mouse and finger, ending by pointerup and pointercancel, touch-action ${pageCanvas.style.touchAction}, advance judged`);
 };
 
 // The runner is shared, so the apps that read the pointer prove it for all of
