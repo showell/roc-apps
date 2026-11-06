@@ -29,7 +29,7 @@ Rider :: [].{
 	## it leans so.
 	decide : RiderState, World.Segment -> Rider.Decision
 	decide = |state, seg| {
-		lean_step = LeanSearch.best_tilt_correction(state).minus(state.lean)
+		lean_step = LeanSearch.best_lean(state).minus(state.lean)
 		{
 			lean_step,
 			accel: Throttle.get_forward_accel_decel(
@@ -140,8 +140,8 @@ expect {
 	upright = Rider.decide(rider_at(0.0, 0.0), first_segment)
 	leaning = Rider.decide(rider_at(0.0, 0.5), first_segment)
 	most_accel = VehicleLimits.a_accel.to_metres_a_step_each_step() + 0.000001
-	upright.lean_step.abs() <= LeanSearch.max_tilt_correction
-		and leaning.lean_step.abs() <= LeanSearch.max_tilt_correction
+	upright.lean_step.abs() <= LeanSearch.max_lean_change
+		and leaning.lean_step.abs() <= LeanSearch.max_lean_change
 		and upright.accel.to_metres_a_step_each_step() <= most_accel
 }
 
@@ -241,14 +241,14 @@ expect one_step_on.speed <= VehicleLimits.v_max
 ## The lean the search picks for a rider at the start of the segment, in radians.
 searched_lean : F64, F64 -> F64
 searched_lean = |across, lean_radians|
-	LeanSearch.best_tilt_correction({
+	LeanSearch.best_lean({
 		..RiderState.initial,
 		across: Across.metres(across),
 		lean: Angle.Lean.radians(lean_radians),
 	}).to_radians()
 
 max_correction : F64
-max_correction = LeanSearch.max_tilt_correction.to_radians()
+max_correction = LeanSearch.max_lean_change.to_radians()
 
 centred : F64
 centred = searched_lean(0.0, 0.0)

@@ -1225,7 +1225,7 @@ The decision about which way to go is a `match` on what the rehearsal found. Run
 
 Its caller gives the search its bounds, at most a degree either side of the current lean. That's what stops the bike flicking from one lean to another:
 
-{{code LeanSearch.best_tilt_correction}}
+{{code LeanSearch.best_lean}}
 
 And `Rider.decide` calls that, on its first line. The walk up the stack ends there.
 

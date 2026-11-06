@@ -36,8 +36,8 @@ LeanSearch :: [].{
 		}
 
 	## The most the lean changes in one step.
-	max_tilt_correction : Angle.Lean
-	max_tilt_correction = Angle.Lean.degrees(1.0)
+	max_lean_change : Angle.Lean
+	max_lean_change = Angle.Lean.degrees(1.0)
 
 	lean_search_iters : I64
 	lean_search_iters = 12
@@ -79,14 +79,14 @@ LeanSearch :: [].{
 	}
 
 	## The lean for the next step: within the most one step can change it.
-	best_tilt_correction : Bike.Motion(others) -> Angle.Lean
-	best_tilt_correction = |state|
+	best_lean : Bike.Motion(others) -> Angle.Lean
+	best_lean = |state|
 		search_lean_from(
 			state,
 			{
 				target: lean_target(state.across),
-				low: state.lean.minus(max_tilt_correction),
-				high: state.lean.plus(max_tilt_correction),
+				low: state.lean.minus(max_lean_change),
+				high: state.lean.plus(max_lean_change),
 				at: 0,
 			},
 		)
@@ -113,7 +113,7 @@ expect target_of(0.0) > 0.0
 
 expect LeanSearch.asymptote_tuning == 0.3
 expect LeanSearch.center_lane_epsilon.to_metres() == 0.04
-expect LeanSearch.max_tilt_correction.to_radians() == 0.017453292519943295
+expect LeanSearch.max_lean_change.to_radians() == 0.017453292519943295
 expect LeanSearch.lean_search_iters == 12
 
 ## A coast ending at `end_across`, leaving by `exit` or not.
