@@ -5,13 +5,13 @@
 --   cd <roc-apps checkout> && nice -n 19 shale canvas_apps/safari/gates/publish.shale
 --
 -- It runs the merge gate from cold caches, then check.shale from a cold cache,
--- then builds safari's page and every widget's as release wasm, each from a cold
--- cache, into the dev channel, where site/publish.sh takes them. Safari's page
--- must draw the hash the dev page draws. It moves nothing to staging. It takes
--- about six minutes.
+-- then builds the book, which builds safari's page and every widget's as
+-- release wasm, each from a cold cache, into the dev channel, where
+-- site/publish.sh takes them. Safari's page must draw the hash the dev page
+-- draws. It moves nothing to staging. It takes about six minutes.
 
 const RUN = "canvas_apps/safari/gates/run.shale"
-const PAGE_WANT = "script: canvas_apps/build.sh builds and checks a page, and refuses another Roc"
+const BOOK = "canvas_apps/safari/tutorial/book.shale"
 
 function say(r, what)
   for l in lines(trim(r.out)) do
@@ -27,11 +27,7 @@ function main()
   local cache = fresh_dir("scratch:", "safari-check-cache")
   say(run({"shale", "--root", ".", "check.shale"}, {timeout_ms = 1800000, tail = 40, env = {XDG_CACHE_HOME = real(cache)}}), "check.shale, cold")
   remove_tree(cache)
-  say(run({"shale", "--root", ".", RUN, "part=page", "release=1"}, {timeout_ms = 600000, tail = 40}), "safari's page, release")
-  for page in glob("canvas_apps/*_widget/page.html") do
-    local app = basename(dirname(page))
-    say(run({"bash", "canvas_apps/build.sh", app, "release"}, {timeout_ms = 600000, tail = 4, want = PAGE_WANT}), app .. ", release")
-  end
+  say(run({"shale", "--root", ".", BOOK}, {timeout_ms = 1800000, tail = 60}), "the book, with safari's page and every widget's as release")
   print("safari publish: every stage passed; site/publish.sh takes each page from the dev channel")
   return nil
 end

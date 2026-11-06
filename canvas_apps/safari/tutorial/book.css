@@ -51,7 +51,10 @@ body.chapter main { padding: 3rem 3rem 4rem 4rem; }
 body.front main { max-width: calc(var(--measure) + 4rem); margin: 0 auto; padding: 4rem 2rem; }
 
 article > * { max-width: var(--measure); }
-article > pre, article > table, article > svg { max-width: var(--wide); }
+article > table, article > svg { max-width: var(--wide); }
+
+/* A code block matches the prose, and widens only for the lines that need it. */
+article > pre { width: fit-content; min-width: min(100%, var(--measure)); max-width: var(--wide); }
 
 /* Headings */
 
@@ -75,7 +78,7 @@ li { margin: 0.25rem 0; }
 /* Code */
 
 code { font-family: var(--mono); font-size: 0.82em; }
-:not(pre) > code { background: var(--shade); border-radius: 3px; padding: 0.08em 0.28em; }
+:not(pre) > code { background: var(--shade); border-radius: 2px; padding: 0.05em 0.12em; }
 
 pre {
   margin: 0 0 1.6rem;
@@ -97,6 +100,7 @@ p:has(+ pre), p:has(+ svg) {
   color: var(--quiet);
   font: 0.72rem/1.4 var(--plain);
 }
+p:has(+ pre) code, p:has(+ svg) code { background: none; padding: 0; }
 
 /* Diagrams come from Graphviz. Its colours are attributes, so these rules win,
    and a diagram follows the page into dark mode. */
@@ -104,6 +108,7 @@ p:has(+ pre), p:has(+ svg) {
 svg.diagram { display: block; height: auto; margin: 0 0 1.6rem; }
 svg.diagram text { fill: var(--ink); }
 svg.diagram .graph > polygon { fill: none; stroke: none; }
+svg.diagram .cluster polygon { fill: none; stroke: var(--quiet); }
 svg.diagram .node polygon, svg.diagram .node ellipse { fill: none; stroke: var(--ink); }
 svg.diagram .edge path { stroke: var(--quiet); }
 svg.diagram .edge polygon { fill: var(--quiet); stroke: var(--quiet); }
@@ -132,6 +137,7 @@ th, td { padding: 0.35rem 1rem 0.35rem 0; vertical-align: top; }
 .draft-note { background: var(--draft); color: var(--draft-ink); font: 0.74rem/1.5 var(--plain); }
 span.draft-note { padding: 0.1em 0.3em; border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 p.draft-note { padding: 0.5rem 0.8rem; border-radius: 3px; }
+.draft-note code { background: none; padding: 0; }
 .draft-note::before { content: 'Draft note: '; font-weight: 600; }
 
 /* The chapters beside the page */
@@ -151,16 +157,17 @@ p.draft-note { padding: 0.5rem 0.8rem; border-radius: 3px; }
 .book-nav ol { list-style: none; margin: 0; padding: 0; }
 .book-nav li { margin: 0; }
 .book-nav .here > a { color: var(--ink); font-weight: 600; }
-.book-nav .sections { margin: 0.1rem 0 0.5rem; padding-left: 1.3em; border: 0; }
-.number { display: inline-block; min-width: 1.3em; color: var(--quiet); font-variant-numeric: tabular-nums; font-weight: 400; }
+.book-nav .sections { margin: 0.1rem 0 0.5rem; padding-left: 1.7em; }
+.number { display: inline-block; width: 1.7em; color: var(--quiet); font-variant-numeric: tabular-nums; font-weight: 400; text-indent: 0; }
+a:has(> .number) { padding-left: 1.7em; text-indent: -1.7em; }
 
 /* The table of contents */
 
 ol.contents { max-width: none; columns: 2; column-gap: 2.5rem; margin: 0; padding: 0; list-style: none; font: 0.82rem/1.35 var(--plain); }
 ol.contents > li { break-inside: avoid; margin: 0 0 0.9rem; }
-ol.contents > li > a { color: var(--ink); font-weight: 600; text-decoration: none; }
+ol.contents > li > a { display: block; color: var(--ink); font-weight: 600; text-decoration: none; }
 ol.contents a:hover { color: var(--accent); }
-ol.contents .sections { margin: 0.15rem 0 0; padding-left: 1.45em; list-style: none; }
+ol.contents .sections { margin: 0.15rem 0 0; padding-left: 1.7em; list-style: none; }
 ol.contents .sections li { margin: 0.1rem 0; }
 ol.contents .sections a { color: var(--quiet); text-decoration: none; }
 

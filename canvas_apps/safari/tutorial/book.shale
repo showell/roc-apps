@@ -58,7 +58,7 @@ end
 -- The drawing of one diagram, ready to sit in a page. Graphviz's comments and
 -- titles are dropped, because a title shows as a tooltip on hover.
 function diagram_svg(path)
-  local r = must(run({"dot", "-Tsvg", real(path)}, {timeout_ms = 30000, whole = 2000000, want = DOT_WANT}), "dot on " .. path .. " (Graphviz)")
+  local r = must(run({"dot", "-Tsvg", "-Nfontsize=12", "-Efontsize=11", real(path)}, {timeout_ms = 30000, whole = 2000000, want = DOT_WANT}), "dot on " .. path .. " (Graphviz)")
   local at = find(r.out, "<svg ")
   if at == nil or not starts_with(r.out, "<?xml") then fail("book: dot said more than a drawing for " .. path .. ": " .. r.out) end
   local kept = {}
