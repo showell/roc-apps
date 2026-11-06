@@ -322,11 +322,9 @@ So the job is a short chain of signatures:
 
 ### The functions
 
-The top of it is `draw`. It picks a crown, and hands the rest to `draw_crowned`, which reads like the concept: find the tree on the screen, then paint a trunk and eight tiers.
+The top of it is `draw`, and it reads like the concept: find the tree on the screen, then paint a trunk and eight tiers.
 
 {{code TreeDraw.draw}}
-
-{{code TreeDraw.draw_crowned}}
 
 `nearer_trees` and `crown` are for near trees, and they can wait. For now, every tier is a triangle.
 

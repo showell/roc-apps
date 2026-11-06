@@ -18,8 +18,8 @@ walks the route's records on a map, `bends_widget` turns one bend,
 clicks through one step's twelve tries at a lean, `stills_widget` lays out
 every pose of the cat and the bird and shows the one clicked large, with its
 polygons counted, `gaze_widget` drags the rider past the pig that catches
-the eye, `tree_widget` brings one conifer up to the camera with its crown as
-flat triangles or as cones, `frame_widget` holds step 1,570 of the ride and
+the eye, `tree_widget` is a still picture of three conifers at the three
+distances where their crowns differ, `frame_widget` holds step 1,570 of the ride and
 switches its shapes on a layer at a time, and `shapes_widget` is a still picture
 of a triangle and a rectangle, for the book to quote the code under it.
 

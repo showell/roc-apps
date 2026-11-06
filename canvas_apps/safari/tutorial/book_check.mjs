@@ -200,7 +200,7 @@ const CLICKED_AT = {
   "../sky_widget/": PLAY,
   "../step_widget/": PLAY,
   "../stills_widget/": { x: 0.114, y: 0.883 },
-  "../tree_widget/": PLAY,
+  "../tree_widget/": STILL,
 };
 
 // A widget proves it runs by changing its picture: a click moves a widget, and the

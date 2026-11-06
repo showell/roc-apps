@@ -50,28 +50,7 @@ TreeDraw :: [].{
 	## nearest trees have a shaded trunk. The crown is cones, shaded by how near
 	## they are, within Detail.cone_reach, and triangles beyond it.
 	draw : { tree : TreeDraw.TreeAhead(others), nearer_trees : U64 }, Pixels -> List(Shapes.Shape)
-	draw = |scene, cam_focal|
-		draw_crowned(scene, { cam_focal, crown: crown_of(scene.tree.forward) })
-
-	## How a crown is drawn: cones, shaded by how near they are, or flat triangles.
-	Crown : [Cones({ shade : Fraction }), Triangles]
-
-	## How a tree's crown is drawn at distance `forward`.
-	crown_of : Distance -> TreeDraw.Crown
-	crown_of = |forward|
-		if forward < Detail.cone_reach {
-			Cones({ shade: crown_shade(forward) })
-		} else {
-			Triangles
-		}
-
-	## `draw`, with the crown the caller chooses in place of `crown_of`'s.
-	draw_crowned : { tree : TreeDraw.TreeAhead(others), nearer_trees : U64 },
-	{
-		cam_focal : Pixels,
-		crown : TreeDraw.Crown,
-	} -> List(Shapes.Shape)
-	draw_crowned = |{ tree, nearer_trees }, { cam_focal, crown }| {
+	draw = |{ tree, nearer_trees }, cam_focal| {
 		point = {
 			right: tree.right,
 			forward: tree.forward,
@@ -88,10 +67,22 @@ TreeDraw :: [].{
 			cam_focal,
 			screen_tree,
 			color: conifer_color(tree.conifer),
-			crown,
+			crown: crown_of(tree.forward),
 		}
 		draw_trunk(screen_tree, trunk).concat(tiers.join_map(|tier| draw_tier(tier, look)))
 	}
+
+	## How a crown is drawn: cones, shaded by how near they are, or flat triangles.
+	Crown : [Cones({ shade : Fraction }), Triangles]
+
+	## How a tree's crown is drawn at distance `forward`.
+	crown_of : Distance -> TreeDraw.Crown
+	crown_of = |forward|
+		if forward < Detail.cone_reach {
+			Cones({ shade: crown_shade(forward) })
+		} else {
+			Triangles
+		}
 
 	## Where a tree whose foot is at `point`, and `point.height` tall, is on the
 	## screen, through a lens of focal length `cam_focal`.
