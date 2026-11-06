@@ -12,7 +12,6 @@ import Float
 import Paint
 import Screen
 import Sky
-import lib.Trig
 import lib.Shapes
 
 Mountains :: [].{
@@ -119,7 +118,7 @@ Mountains :: [].{
 	bearing_at : Mountains.Sight, Pixels -> Angle.Bearing
 	bearing_at = |sight, x| {
 		slope = x.minus(Screen.center_x).ratio_to(sight.cam_focal)
-		off_center = Angle.Turn.radians(Trig.r_atan(slope))
+		off_center = Angle.Turn.radians(slope.atan())
 		sight.heading.plus(off_center)
 	}
 

@@ -87,7 +87,10 @@ Gaze :: [].{
 	} -> Gaze.PigLook
 	pig_in_sight = |state, { gaze_pig: pig, distance_ahead: dist }| {
 		toward_pig = Angle.Turn.radians(
-			Trig.r_atan2(pig.across.distance_from(state.across).to_metres(), dist.to_metres()),
+			F64.atan2({
+				x: dist.to_metres(),
+				y: pig.across.distance_from(state.across).to_metres(),
+			}),
 		).minus(state.yaw)
 		if toward_pig.abs() >= gaze_release_angle {
 			NotLooking
@@ -107,10 +110,10 @@ Gaze :: [].{
 
 	desired_gaze_at : RiderState, Scenery.Critter -> Angle.Turn
 	desired_gaze_at = |state, pig| Angle.Turn.radians(
-		Trig.r_atan2(
-			pig.across.distance_from(state.across).to_metres(),
-			pig.along.distance_from(state.along).to_metres(),
-		),
+		F64.atan2({
+			x: pig.along.distance_from(state.along).to_metres(),
+			y: pig.across.distance_from(state.across).to_metres(),
+		}),
 	).minus(state.yaw)
 
 	## The gaze one step on. It swivels toward a pig at no more than the
