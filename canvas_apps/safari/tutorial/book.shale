@@ -5,8 +5,11 @@
 --
 -- It runs on demand and at publish, and never in the fast tier. It expands
 -- tutorial.md with build.shale, splits the result at each chapter heading, and
--- draws each ```dot fence with Graphviz. make_book.roc then renders every page
--- in one run, and its fence hook stops the build on a widget with no folder.
+-- draws each ```dot fence with Graphviz. A diagram's title is the line above its
+-- fence, which goes with the drawing to be set as its caption. A diagram wider
+-- than a phone is drawn a second way for a phone, turned and tightened, and
+-- book.css shows one of the two. make_book.roc then renders every page in one
+-- run, and its fence hook stops the build on a widget with no folder.
 -- A chapter's `##` headings become `#`, so a page has one top heading and its
 -- sections are level two.
 --
@@ -20,15 +23,15 @@
 -- check leaves a full-page shot of each page in build/book/shots/. Before that,
 -- color_roc.shale colors the pages' Roc code, and says how many blocks it left
 -- plain.
-const TUTORIAL = "canvas_apps/safari/tutorial"
-const WORK = "canvas_apps/safari/tutorial/build/book"
-const EXPANDED = "canvas_apps/safari/tutorial/build/tutorial.md"
 --
 -- `stage=tutorial.mine` builds the book into that folder of the channel and
 -- checks it there, for a look at a draft or a change to the book's own tools. It
 -- leaves the channel's book and the widgets' builds alone, and it leaves the
 -- folder for whoever asked to read and then remove. `looks=1` beside it skips
 -- driving the widgets, so a pass over the pages' looks takes a couple of minutes.
+const TUTORIAL = "canvas_apps/safari/tutorial"
+const WORK = "canvas_apps/safari/tutorial/build/book"
+const EXPANDED = "canvas_apps/safari/tutorial/build/tutorial.md"
 const NEXT = "build:roc-apps/next"
 const STAGE = arg("stage", "")
 const LOOKS = arg("looks", "") == "1"
@@ -44,6 +47,7 @@ const ROC_WANT = "roc-pin: roc-apps' pinned nightly, for the book's page step"
 const DOT_WANT = "graphviz: the tutorial's diagrams, drawn at build time"
 const PAGE_WANT = "script: canvas_apps/build.sh builds and checks a page, and refuses another Roc"
 const CHECK_WANT = "script: book_check.mjs drives the staged pages in headless Chromium"
+const PHONE_POINTS = 300
 const MOVE_WANT = "move: the staged book takes the channel's place in one rename"
 const INPUTS = {"canvas_apps", ":(exclude)canvas_apps/safari/tutorial", ":(exclude)canvas_apps/safari/gates", ":(exclude,glob)**/*.md", "roc-version", "pinned-roc.sh"}
 
@@ -67,38 +71,83 @@ function pinned_roc()
   return real(roc)
 end
 
--- The drawing of one diagram, ready to sit in a page. Graphviz's comments and
--- titles are dropped, because a title shows as a tooltip on hover.
-function diagram_svg(path)
-  local r = must(run({"dot", "-Tsvg", "-Nfontsize=12", "-Efontsize=11", real(path)}, {timeout_ms = 30000, whole = 2000000, want = DOT_WANT}), "dot on " .. path .. " (Graphviz)")
+-- The drawing of one diagram, ready to sit in a page, and how wide it is in
+-- points. Graphviz's comments and titles are dropped, because a title shows as a
+-- tooltip on hover.
+function drawing(path, options, class)
+  local argv = {"dot", "-Tsvg", "-Gfontsize=12", "-Nfontsize=12", "-Efontsize=11", "-Nmargin=0.13,0.06"}
+  for option in options do push(argv, option) end
+  push(argv, real(path))
+  local r = must(run(argv, {timeout_ms = 30000, whole = 2000000, want = DOT_WANT}), "dot on " .. path .. " (Graphviz)")
   local at = find(r.out, "<svg ")
   if at == nil or not starts_with(r.out, "<?xml") then fail("book: dot said more than a drawing for " .. path .. ": " .. r.out) end
   local kept = {}
   for l in lines(sub(r.out, at + 5)) do
     if not starts_with(l, "<!--") and not starts_with(l, "<title>") then push(kept, l) end
   end
-  return "<svg class=\"diagram\" role=\"img\" " .. join(kept, "\n")
+  local width = re_find(r.out, "<svg width=\"([0-9]+)pt\"")
+  if width == nil then fail("book: no width in the drawing of " .. path) end
+  return {svg = "<svg class=\"" .. class .. "\" role=\"img\" " .. join(kept, "\n"), width = tonumber(width.groups[1])}
+end
+
+-- A line of a diagram with the list in its label down the page, a name a line.
+function label_list_down(l)
+  local open = find(l, "label=\"")
+  if open == nil then return l end
+  local close = find(l, "\"", open + 7)
+  if close == nil then return l end
+  local label = join(split(sub(l, open + 7, close - 1), ", "), ",\\n")
+  return sub(l, 1, open + 6) .. label .. sub(l, close)
+end
+
+-- A diagram's source for a phone: a row of boxes runs down the page instead, and
+-- a label's list does too. A record's fields are side by side, so a record
+-- diagram turns the other way, for `phone_options` to say.
+function phone_source(source)
+  local kept = {}
+  for l in source do
+    if trim(l) ~= "rankdir=LR;" then push(kept, label_list_down(l)) end
+  end
+  return join(kept, "\n") .. "\n"
+end
+
+function phone_options(source)
+  local options = {"-Gnodesep=0.12", "-Granksep=0.3", "-Nmargin=0.06,0.04"}
+  if contains(join(source, "\n"), "shape=record") then push(options, "-Grankdir=LR") end
+  return options
+end
+
+-- A diagram's drawing, and a phone's beside it if it needs one.
+function diagram_svg(id, source)
+  local path = WORK .. "/" .. id .. ".dot"
+  replace(path, join(source, "\n") .. "\n")
+  local plain = drawing(path, {}, "diagram")
+  if plain.width <= PHONE_POINTS then return plain.svg end
+  local phone_path = WORK .. "/" .. id .. "-phone.dot"
+  replace(phone_path, phone_source(source))
+  local wide = join(split(plain.svg, "<svg class=\"diagram\""), "<svg class=\"diagram diagram-wide\"")
+  return wide .. drawing(phone_path, phone_options(source), "diagram diagram-phone").svg
 end
 
 -- The pages of the expanded tutorial and its diagrams. Each ```dot fence gets
--- an id as its argument, for the Roc hook to find its drawing by. This reads
--- fences by line, as build.shale writes them, and make_book.roc's checks stop
--- the build if that ever disagrees with the renderer.
+-- an id as its argument, for the Roc hook to find its drawing by, and takes the
+-- title line above it along. This reads fences by line, as build.shale writes
+-- them, and make_book.roc's checks stop the build if that ever disagrees with
+-- the renderer.
 function manuscript(text)
   local pages = {}
   local diagrams = {}
   local page = {}
   local in_fence = false
   local dot = nil
+  local title = ""
   for l in split(text, "\n") do
     if in_fence then
       if l == "```" then
         in_fence = false
         if dot ~= nil then
           local id = "diagram-" .. (#diagrams + 1)
-          local path = WORK .. "/" .. id .. ".dot"
-          replace(path, join(dot, "\n") .. "\n")
-          push(diagrams, {id = id, svg = diagram_svg(path)})
+          push(diagrams, {id = id, title = title, svg = diagram_svg(id, dot)})
           dot = nil
         end
       elseif dot ~= nil then
@@ -108,6 +157,8 @@ function manuscript(text)
     elseif l == "```dot" then
       in_fence = true
       dot = {}
+      title = page[#page]
+      page = take(page, #page - 1)
       push(page, "```dot diagram-" .. (#diagrams + 1))
     elseif starts_with(l, "```") then
       in_fence = true
@@ -141,6 +192,7 @@ function make_book_argv(tool, book, folders)
   for diagram in book.diagrams do
     push(argv, "diagram")
     push(argv, diagram.id)
+    push(argv, diagram.title)
     push(argv, diagram.svg)
   end
   for folder in folders do

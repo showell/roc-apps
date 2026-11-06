@@ -96,11 +96,18 @@ const READ_PAGE = `(() => ({
   ids: [...document.querySelectorAll('[id]')].map((e) => e.id),
   scrollWidth: document.documentElement.scrollWidth,
   clientWidth: document.documentElement.clientWidth,
-  diagrams: [...document.querySelectorAll('svg.diagram')].map((svg) => ({
-    width: svg.getBoundingClientRect().width,
-    height: svg.getBoundingClientRect().height,
-    shapes: svg.querySelectorAll('.node').length,
-  })),
+  diagrams: [...document.querySelectorAll('figure.diagram')].map((figure) => {
+    const shown = [...figure.querySelectorAll('svg.diagram')].filter((svg) => getComputedStyle(svg).display !== 'none');
+    const box = shown[0]?.getBoundingClientRect();
+    const sizes = [...(shown[0]?.querySelectorAll('text') ?? [])].map((text) => parseFloat(text.getAttribute('font-size')));
+    return {
+      drawings: shown.length,
+      width: box?.width ?? 0,
+      height: box?.height ?? 0,
+      shapes: shown[0]?.querySelectorAll('.node').length ?? 0,
+      textPixels: shown[0] ? Math.min(...sizes) * box.width / shown[0].viewBox.baseVal.width : 0,
+    };
+  }),
   frames: document.querySelectorAll('iframe.canvas-app').length,
   draftNotes: document.querySelectorAll('.draft-note').length,
   pres: [...document.querySelectorAll('pre')].filter((pre) => pre.scrollWidth > pre.clientWidth + 1).length,
@@ -203,13 +210,6 @@ async function checkFrame(page, file, i) {
   return frame.src;
 }
 
-async function checkPage(link, file, seen) {
-  const { targetId } = await link.send("Target.createTarget", { url: "about:blank" });
-  const { sessionId } = await link.send("Target.attachToTarget", { targetId, flatten: true });
-  const page = { send: link.send, session: sessionId };
-  const hear = (method, handle) => link.on(method, handle);
-  hear("Runtime.exceptionThrown", ({ exceptionDetails }) => fail(file, `exception: ${exceptionDetails.exception?.description ?? exceptionDetails.text}`));
-  hear("Runtime.consoleAPICalled", ({ type, args }) => {
 const shotName = (file) => file.replace(/\.html$/, ".png");
 
 async function shoot(page, path) {
@@ -234,6 +234,13 @@ async function checkView(page, file, view) {
   return held;
 }
 
+async function checkPage(link, file, seen) {
+  const { targetId } = await link.send("Target.createTarget", { url: "about:blank" });
+  const { sessionId } = await link.send("Target.attachToTarget", { targetId, flatten: true });
+  const page = { send: link.send, session: sessionId };
+  const hear = (method, handle) => link.on(method, handle);
+  hear("Runtime.exceptionThrown", ({ exceptionDetails }) => fail(file, `exception: ${exceptionDetails.exception?.description ?? exceptionDetails.text}`));
+  hear("Runtime.consoleAPICalled", ({ type, args }) => {
     if (type === "error" || type === "warning") fail(file, `console ${type}: ${args.map((a) => a.value ?? a.description).join(" ")}`);
   });
   hear("Log.entryAdded", ({ entry }) => {
@@ -256,14 +263,14 @@ async function checkView(page, file, view) {
   seen.set(file, held);
   if (held.scrollWidth > held.clientWidth) fail(file, `the page scrolls sideways: ${held.scrollWidth} in ${held.clientWidth}`);
   if (held.overflowingBlocks > 0) fail(file, `${held.overflowingBlocks} blocks run past the window`);
+  if (held.pres > 0) fail(file, `${held.pres} code blocks scroll`);
   for (const diagram of held.diagrams) {
-    if (diagram.width < 50 || diagram.height < 20 || diagram.shapes === 0) fail(file, `a diagram didn't draw: ${JSON.stringify(diagram)}`);
+    if (diagram.drawings !== 1 || diagram.width < 50 || diagram.height < 20 || diagram.shapes === 0) fail(file, `a diagram didn't draw: ${JSON.stringify(diagram)}`);
   }
   const widgets = [];
   if (mode !== "looks") for (let i = 0; i < held.frames; i++) widgets.push(await checkFrame(page, file, i));
   await evaluate(page, "scrollTo(0, 0)");
   await sleep(200);
-  if (held.pres > 0) fail(file, `${held.pres} code blocks scroll`);
   await shoot(page, join(shots, shotName(file)));
   for (const view of VIEWS) await checkView(page, file, view);
   await link.send("Target.closeTarget", { targetId });
