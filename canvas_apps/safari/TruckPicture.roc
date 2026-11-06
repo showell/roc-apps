@@ -1,4 +1,4 @@
-## TruckDraw draws the truck ahead on the road: its headlight beams first,
+## TruckPicture draws the truck ahead on the road: its headlight beams first,
 ## then its body, then its brake lights, so each paints over the one before.
 import Across
 import Along
@@ -9,7 +9,7 @@ import TruckLights
 import TruckShape
 import lib.Shapes
 
-TruckDraw :: [].{
+TruckPicture :: [].{
 
 	## The truck on the segment at `position` in the chain, seen from `view`,
 	## with its trailer centred at `center` on that segment.

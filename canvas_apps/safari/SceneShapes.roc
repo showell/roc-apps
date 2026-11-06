@@ -1,7 +1,7 @@
-## SceneDraw paints the things beside the road in depth order, far to near,
+## SceneShapes paints the things beside the road in depth order, far to near,
 ## each by its own kind's module.
 import Pixels
-import CatDraw
+import CatShapes
 import Across
 import Along
 import Angle
@@ -9,7 +9,7 @@ import Distance
 import Geom
 import World
 import CatSighting
-import StillDraw
+import StillShapes
 import DepthSort
 import Fraction
 import Chain
@@ -18,14 +18,14 @@ import GuardRail
 import Scene
 import Tower
 import TowerSighting
-import TreeDraw
+import TreeShapes
 import TreeSighting
-import TruckDraw
+import TruckPicture
 import TruckSighting
-import BirdDraw
+import BirdShapes
 import lib.Shapes
 
-SceneDraw :: [].{
+SceneShapes :: [].{
 
 	## The scene's things, painted far to near.
 	scene_shapes : Scene, Chain.Viewpoint -> List(Shapes.Shape)
@@ -44,8 +44,8 @@ SceneDraw :: [].{
 		cam_focal : Pixels,
 	} -> List(Shapes.Shape)
 	tree_shapes = |tree, { trees, cam_focal }|
-		TreeDraw.tree_shapes(
-			{ tree, nearer_trees: SceneDraw.nearer_tree_count(trees, tree.forward) },
+		TreeShapes.tree_shapes(
+			{ tree, nearer_trees: SceneShapes.nearer_tree_count(trees, tree.forward) },
 			cam_focal,
 		)
 
@@ -82,7 +82,7 @@ SceneDraw :: [].{
 	tower_shapes : Chain.Viewpoint, TowerSighting -> List(Shapes.Shape)
 	tower_shapes = |view, tower|
 		Tower.tower_shapes({
-			footprint: SceneDraw.tower_footprint(view, tower),
+			footprint: SceneShapes.tower_footprint(view, tower),
 			center: Chain.rider_point_at(
 				view.road,
 				{
@@ -106,13 +106,13 @@ subject_shapes = |scene, { view, depth_key }| {
 	cam_focal = view.cam_focal
 	match depth_key.subject {
 		Tree(place) =>
-			SceneDraw.tree_shapes(thing_at(scene.trees, place), { trees: scene.trees, cam_focal })
-		Tower(place) => SceneDraw.tower_shapes(view, thing_at(scene.towers, place))
+			SceneShapes.tree_shapes(thing_at(scene.trees, place), { trees: scene.trees, cam_focal })
+		Tower(place) => SceneShapes.tower_shapes(view, thing_at(scene.towers, place))
 		Rail(place) => GuardRail.quad_shapes(thing_at(scene.rails, place), cam_focal)
-		Cutout(place) => StillDraw.cutout_shapes(thing_at(scene.cutouts, place), cam_focal)
-		Cat(place) => CatDraw.cat_shapes(thing_at(scene.cats, place), cam_focal)
+		Cutout(place) => StillShapes.cutout_shapes(thing_at(scene.cutouts, place), cam_focal)
+		Cat(place) => CatShapes.cat_shapes(thing_at(scene.cats, place), cam_focal)
 		Truck => truck_shapes(view, scene.truck)
-		Bird(place) => BirdDraw.bird_shapes(thing_at(scene.birds, place), cam_focal)
+		Bird(place) => BirdShapes.bird_shapes(thing_at(scene.birds, place), cam_focal)
 	}
 }
 
@@ -120,7 +120,7 @@ subject_shapes = |scene, { view, depth_key }| {
 thing_at : List(thing), U32 -> thing
 thing_at = |things, place|
 	things.get(place.to_u64())
-		?? crash "SceneDraw.thing_at: the depth order names only places in its lists"
+		?? crash "SceneShapes.thing_at: the depth order names only places in its lists"
 
 ## The truck, where its sighting found it and with the lights its sighting
 ## gives it.
@@ -128,13 +128,13 @@ truck_shapes : Chain.Viewpoint, TruckSighting -> List(Shapes.Shape)
 truck_shapes = |view, truck_at|
 	match truck_at {
 		Ahead(truck) =>
-			TruckDraw.truck_shapes({
+			TruckPicture.truck_shapes({
 				view,
 				position: truck.position,
 				center: { along: truck.along, across: truck.across },
 				lights: truck.lights,
 			})
-		NoTruck => crash "SceneDraw.draw_truck: the truck is in the depth order only in view"
+		NoTruck => crash "SceneShapes.draw_truck: the truck is in the depth order only in view"
 	}
 
 tree_at : F64 -> TreeSighting
@@ -147,19 +147,19 @@ tree_at = |forward| {
 spread_trees : List(TreeSighting)
 spread_trees = [10.0, 20.0, 30.0, 40.0, 50.0].map(tree_at)
 
-expect SceneDraw.nearer_tree_count(spread_trees, Distance.metres(10.0)) == 0
-expect SceneDraw.nearer_tree_count(spread_trees, Distance.metres(30.0)) == 2
-expect SceneDraw.nearer_tree_count(spread_trees, Distance.metres(50.0)) == 4
-expect SceneDraw.nearer_tree_count(spread_trees, Distance.metres(60.0)) == 5
-expect SceneDraw.nearer_tree_count(spread_trees, Distance.metres(5.0)) == 0
-expect SceneDraw.nearer_tree_count([], Distance.metres(10.0)) == 0
+expect SceneShapes.nearer_tree_count(spread_trees, Distance.metres(10.0)) == 0
+expect SceneShapes.nearer_tree_count(spread_trees, Distance.metres(30.0)) == 2
+expect SceneShapes.nearer_tree_count(spread_trees, Distance.metres(50.0)) == 4
+expect SceneShapes.nearer_tree_count(spread_trees, Distance.metres(60.0)) == 5
+expect SceneShapes.nearer_tree_count(spread_trees, Distance.metres(5.0)) == 0
+expect SceneShapes.nearer_tree_count([], Distance.metres(10.0)) == 0
 
 tied_trees : List(TreeSighting)
 tied_trees = List.repeat(tree_at(20.0), 4)
 
-expect SceneDraw.nearer_tree_count(tied_trees, Distance.metres(20.0)) == 0
-expect SceneDraw.nearer_tree_count(tied_trees, Distance.metres(20.1)) == 4
-expect SceneDraw.nearer_tree_count(tied_trees, Distance.metres(19.9)) == 0
+expect SceneShapes.nearer_tree_count(tied_trees, Distance.metres(20.0)) == 0
+expect SceneShapes.nearer_tree_count(tied_trees, Distance.metres(20.1)) == 4
+expect SceneShapes.nearer_tree_count(tied_trees, Distance.metres(19.9)) == 0
 
 # The rider at the start of the route, at the ride's first step.
 start_view : Chain.Viewpoint
@@ -189,7 +189,7 @@ tower_along = |along| {
 }
 
 expect {
-	footprint = SceneDraw.tower_footprint(start_view, tower_along(200.0))
+	footprint = SceneShapes.tower_footprint(start_view, tower_along(200.0))
 	[
 		(footprint.back_left.forward.to_metres(), 194.0),
 		(footprint.front_right.forward.to_metres(), 206.0),
@@ -198,16 +198,16 @@ expect {
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 }
 
-expect SceneDraw.tower_shapes(start_view, tower_along(200.0)).len() > 0
-expect SceneDraw.tower_shapes(start_view, tower_along(1000.0)).len() > 0
-expect SceneDraw.tower_shapes(start_view, tower_along(-100.0)).len() == 0
+expect SceneShapes.tower_shapes(start_view, tower_along(200.0)).len() > 0
+expect SceneShapes.tower_shapes(start_view, tower_along(1000.0)).len() > 0
+expect SceneShapes.tower_shapes(start_view, tower_along(-100.0)).len() == 0
 
 cluster_sightings : List(TreeSighting)
 cluster_sightings = [10.0, 11.0, 12.0, 13.0, 14.0].map(tree_at)
 
 cluster_shapes : F64 -> List(Shapes.Shape)
 cluster_shapes = |forward|
-	SceneDraw.tree_shapes(
+	SceneShapes.tree_shapes(
 		tree_at(forward),
 		{ trees: cluster_sightings, cam_focal: Pixels.of(500.0) },
 	)
@@ -278,7 +278,7 @@ lone_tree : TreeSighting
 lone_tree = TreeSighting.sighting_of(
 	from_origin,
 	green_tree_at(120.0),
-) ?? crash "SceneDraw: a tree 120 m ahead is in view"
+) ?? crash "SceneShapes: a tree 120 m ahead is in view"
 
 expect
 	[
@@ -314,7 +314,7 @@ first_sightings = TreeSighting.segment_sightings(from_origin, Chain.Position.fir
 ## The first segment's tree at `i`, in planting order.
 planted_tree : U64 -> TreeSighting
 planted_tree = |i|
-	first_sightings.get(i) ?? crash "SceneDraw: the first segment has 28 trees in view"
+	first_sightings.get(i) ?? crash "SceneShapes: the first segment has 28 trees in view"
 
 expect
 	[
@@ -333,7 +333,7 @@ keys = TreeSighting.depth_keys(first_sightings)
 
 ## The depth key at `i`.
 key_at : U64 -> DepthSort.DepthKey
-key_at = |i| keys.get(i) ?? crash "SceneDraw: the first segment has 28 keys"
+key_at = |i| keys.get(i) ?? crash "SceneShapes: the first segment has 28 keys"
 
 ## The position in the tree list that the key at `i` names.
 tree_place_at : U64 -> I64
@@ -341,7 +341,7 @@ tree_place_at = |i|
 	match key_at(i).subject {
 		Tree(position) => position.to_i64()
 		Tower(_) | Cutout(_) | Cat(_) | Truck | Rail(_) | Bird(_) =>
-			crash "SceneDraw: a tree's key names a tree"
+			crash "SceneShapes: a tree's key names a tree"
 	}
 
 expect keys.len() == 28
@@ -389,7 +389,7 @@ is_ahead = |truck|
 truck_ahead_of = |lead|
 	match lead_of(lead) {
 		Ahead(truck) => truck
-		NoTruck => crash "SceneDraw: this lead puts the truck in view"
+		NoTruck => crash "SceneShapes: this lead puts the truck in view"
 	}
 
 expect
@@ -431,7 +431,7 @@ expect
 lights_shown = |lights|
 	match TruckSighting.truck_in_view({ ..truck_view(origin, 100.0), lights }) {
 		Ahead(truck) => truck.lights
-		NoTruck => crash "SceneDraw: this lead puts the truck in view"
+		NoTruck => crash "SceneShapes: this lead puts the truck in view"
 	}
 
 expect
@@ -457,7 +457,7 @@ expect is_ahead(truck_seen_from({ ..origin, along: Along.metres(100.0) }, 1.0))
 key_of : F64 -> DepthSort.DepthKey
 key_of = |lead|
 	TruckSighting.depth_keys(lead_of(lead)).first()
-		?? crash "SceneDraw: a truck in view has a depth key"
+		?? crash "SceneShapes: a truck in view has a depth key"
 
 expect TruckSighting.depth_keys(lead_of(100.0)).len() == 1
 expect TruckSighting.depth_keys(lead_of(2000.0)).len() == 0

@@ -16,7 +16,7 @@ import Screen
 import lib.Brush
 import lib.Shapes
 
-TreeDraw :: [].{
+TreeShapes :: [].{
 
 	## A tree in front of the camera, so of its lengths only `right` can be
 	## negative. A record with more in it can be handed to `tree_shapes` as it is.
@@ -50,7 +50,7 @@ TreeDraw :: [].{
 	## nearest trees have a shaded trunk. The crown is cones, shaded by how near
 	## they are, within Detail.cone_reach, and triangles beyond it.
 	tree_shapes :
-		{ tree : TreeDraw.TreeAhead(others), nearer_trees : U64 }, Pixels -> List(Shapes.Shape)
+		{ tree : TreeShapes.TreeAhead(others), nearer_trees : U64 }, Pixels -> List(Shapes.Shape)
 	tree_shapes = |{ tree, nearer_trees }, cam_focal| {
 		point = {
 			right: tree.right,
@@ -77,7 +77,7 @@ TreeDraw :: [].{
 	Crown : [Cones({ shade : Fraction }), Triangles]
 
 	## How a tree's crown is drawn at distance `forward`.
-	crown_of : Distance -> TreeDraw.Crown
+	crown_of : Distance -> TreeShapes.Crown
 	crown_of = |forward|
 		if forward < Detail.cone_reach {
 			Cones({ shade: crown_shade(forward) })
@@ -87,7 +87,7 @@ TreeDraw :: [].{
 
 	## Where a tree whose foot is at `point`, and `point.height` tall, is on the
 	## screen, through a lens of focal length `cam_focal`.
-	tree_on_screen : Geom.RaisedPoint, Pixels -> TreeDraw.TreeOnScreen
+	tree_on_screen : Geom.RaisedPoint, Pixels -> TreeShapes.TreeOnScreen
 	tree_on_screen = |point, cam_focal| {
 		base = Camera.project({ ..point, height: Distance.zero }, cam_focal)
 		top = Camera.project(point, cam_focal)
@@ -109,13 +109,13 @@ TreeDraw :: [].{
 TreeLook : {
 	point : Geom.RaisedPoint,
 	cam_focal : Pixels,
-	screen_tree : TreeDraw.TreeOnScreen,
+	screen_tree : TreeShapes.TreeOnScreen,
 	color : I64,
 	crown : [Cones({ shade : Fraction }), Triangles],
 }
 
 ## The tiers, top to bottom. Each overlaps the next.
-tiers : List(TreeDraw.Tier)
+tiers : List(TreeShapes.Tier)
 tiers = [
 	{
 		top: Fraction.of(0.0),
@@ -216,7 +216,7 @@ ring_points = 16
 crown_shade : Distance -> Fraction
 crown_shade = |forward| Fraction.clamp(1.0 - forward.ratio_to(Detail.crown_shade_reach))
 
-trunk_shape : TreeDraw.TreeOnScreen, [Shaded, Flat] -> Shapes.Shape
+trunk_shape : TreeShapes.TreeOnScreen, [Shaded, Flat] -> Shapes.Shape
 trunk_shape = |screen_tree, finish| {
 	width = screen_tree.height_px.times(trunk_width_share.to_f64()).max(min_trunk_width)
 	below_crown = screen_tree.height_px.times(trunk_height_share.to_f64())
@@ -238,7 +238,7 @@ trunk_shape = |screen_tree, finish| {
 
 ## A tier as a flat triangle: its apex at the tier's top, its base across its
 ## bottom.
-tier_triangle : TreeDraw.TreeOnScreen, { tier : TreeDraw.Tier, color : I64 } -> Shapes.Shape
+tier_triangle : TreeShapes.TreeOnScreen, { tier : TreeShapes.Tier, color : I64 } -> Shapes.Shape
 tier_triangle = |screen_tree, { tier, color }| {
 	bottom_y = screen_tree.crown_top_y.plus(screen_tree.crown_height_px.times(tier.bottom.to_f64()))
 	top_y = screen_tree.crown_top_y.plus(screen_tree.crown_height_px.times(tier.top.to_f64()))
@@ -320,7 +320,7 @@ ring_angles = {
 
 ## A tier, as a cone when the tree is near and the whole cone is past the near
 ## plane, else as a triangle: the camera can't see a cone from inside.
-tier_shape : TreeDraw.Tier, TreeLook -> Shapes.Shape
+tier_shape : TreeShapes.Tier, TreeLook -> Shapes.Shape
 tier_shape = |tier, look| {
 	cone_radius = look.point.height.times(crown_half_width_share.to_f64() * tier.width.to_f64())
 	match look.crown {
@@ -332,7 +332,7 @@ tier_shape = |tier, look| {
 }
 
 ## A tier as a cone: the outline of the ring round its base and its apex.
-tier_cone : TreeDraw.Tier,
+tier_cone : TreeShapes.Tier,
 {
 	look : TreeLook,
 	cone_radius : Distance,
@@ -393,12 +393,12 @@ expect crown_shade(Distance.metres(80.0)).to_f64() == 0.0
 expect crown_shade(Distance.metres(200.0)).to_f64() == 0.0
 expect crown_shade(Distance.metres(-50.0)).to_f64() == 1.0
 
-expect TreeDraw.crown_of(Distance.metres(40.0)) == Cones({ shade: Fraction.of(0.5) })
-expect TreeDraw.crown_of(Distance.metres(199.0)) == Cones({ shade: Fraction.zero })
-expect TreeDraw.crown_of(Distance.metres(200.0)) == Triangles
+expect TreeShapes.crown_of(Distance.metres(40.0)) == Cones({ shade: Fraction.of(0.5) })
+expect TreeShapes.crown_of(Distance.metres(199.0)) == Cones({ shade: Fraction.zero })
+expect TreeShapes.crown_of(Distance.metres(200.0)) == Triangles
 
-sample_on_screen : TreeDraw.TreeOnScreen
-sample_on_screen = TreeDraw.tree_on_screen(
+sample_on_screen : TreeShapes.TreeOnScreen
+sample_on_screen = TreeShapes.tree_on_screen(
 	{
 		right: Distance.metres(0.0),
 		forward: Distance.metres(2.0),

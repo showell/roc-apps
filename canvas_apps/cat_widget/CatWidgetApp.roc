@@ -10,7 +10,7 @@ import game.Distance
 import game.Pixels
 import game.Scenery
 import game.Speed
-import game.StillDraw
+import game.StillShapes
 import game.World
 import lib.CanvasApp
 import lib.Shapes
@@ -122,7 +122,7 @@ road_shapes = {
 cat_shapes : Distance -> List(Shapes.Shape)
 cat_shapes = |gap| {
 	instant = Cat.instant_at(crossing, { gap, speed: rider_speed })
-	StillDraw.still_shapes(
+	StillShapes.still_shapes(
 		{
 			feet: {
 				x: Pixels.of(road_middle_x + instant.spot.across.to_metres() * pixels_a_metre),

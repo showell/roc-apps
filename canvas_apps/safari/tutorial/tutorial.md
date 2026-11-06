@@ -100,7 +100,7 @@ digraph system {
   subgraph cluster_view {
     label="the view";
     sky [label="the sky\nSky, Mountains", style=dashed];
-    drawing [label="the drawing\nSceneDraw, CatDraw, BirdDraw, TreeDraw, ...", style=dashed];
+    drawing [label="the drawing\nSceneDraw, CatShapes, BirdShapes, TreeShapes, ...", style=dashed];
     sightings [label="the sightings\nScene, CatSighting, BirdSighting, TreeSighting, ...", style=dashed];
   }
   app -> RideInstant;
@@ -120,7 +120,7 @@ digraph system {
 New in this chapter:
 
 - Roc: imports that can't form a cycle
-- Modules: `SafariApp`, `Scene`, `SceneDraw`, `CatSighting`
+- Modules: `SafariApp`, `Scene`, `SceneShapes`, `CatSighting`
 
 There are two halves. The ride is `Rider`, `Truck` and `World`. `World` puts the route together from its scenery and critters. Nothing in the ride knows anything about drawing.
 
@@ -166,13 +166,13 @@ At step 1,570 of the ride, a cat is frozen in the lane. This is what `CatSightin
 
 That's a sighting: where the rider sees something, and how it should look.
 
-Most things in the view come in pairs, and the names say which half is which: `CatSighting` and `CatDraw`, `TreeSighting` and `TreeDraw`, `TowerSighting` and `Tower`, `TruckSighting` and `TruckDraw`.
+Most things in the view come in pairs, and the names say which half is which: `CatSighting` and `CatShapes`, `TreeSighting` and `TreeShapes`, `TowerSighting` and `Tower`, `TruckSighting` and `TruckPicture`.
 
 A sighting answers one question each frame: which of these can the rider see right now, and how should each one look? `CatSighting` goes through the stretches of road ahead, which Safari Ride calls segments, asks `Cat` where it is, works out where that lands in the rider's view, and drops any cat behind the camera or too small to matter. What it hands back is a plain record with no drawing in it:
 
 {{code CatSighting.CatSighting}}
 
-`Scene` gathers every sighting's answer, a depth sort puts them in order, and `SceneDraw` hands each one to the module that paints it. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. So a sighting decides what's visible, and the drawing code only paints what it's told.
+`Scene` gathers every sighting's answer, a depth sort puts them in order, and `SceneShapes` hands each one to the module that paints it. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. So a sighting decides what's visible, and the drawing code only paints what it's told.
 
 Cows, pigs and the other animals by the road are all sighted the same way, by `CutoutSighting`, and `Cutouts` decides which of them get drawn. `Detail` holds the thresholds behind that kind of decision: how near a tree shows its full detail, and how few pixels tall something may be and still be drawn.
 
@@ -295,7 +295,7 @@ The concept is small. A tree is a trunk under eight tiers of foliage, and a tier
 
 New in this chapter:
 
-- Modules: `Conifer`, `TreeDraw`, `Distance`
+- Modules: `Conifer`, `TreeShapes`, `Distance`
 
 ### Get the types right
 
@@ -309,36 +309,36 @@ Four more types carry a tree to the screen:
 
 | Type | What it is |
 |---|---|
-| `TreeDraw.TreeAhead(others)` | Any record with a `right`, a `forward` and a `conifer`, and `others` stands for whatever else is in it |
+| `TreeShapes.TreeAhead(others)` | Any record with a `right`, a `forward` and a `conifer`, and `others` stands for whatever else is in it |
 | `Geom.RaisedPoint` | A point measured from the camera: right, forward and up |
-| `TreeDraw.Tier` | One layer of the crown, as fractions of the crown |
-| `TreeDraw.TreeOnScreen` | Where a tree landed, and how big it looks, in `Pixels` |
+| `TreeShapes.Tier` | One layer of the crown, as fractions of the crown |
+| `TreeShapes.TreeOnScreen` | Where a tree landed, and how big it looks, in `Pixels` |
 
 So the job is a short chain of signatures:
 
 | Job | Function | Its type |
 |---|---|---|
 {{types row Conifer.height Know how tall it is}}
-{{types row TreeDraw.tree_on_screen Find it on the screen}}
-{{types row TreeDraw.tree_shapes Paint it}}
+{{types row TreeShapes.tree_on_screen Find it on the screen}}
+{{types row TreeShapes.tree_shapes Paint it}}
 
 ### The functions
 
 The top of it is `tree_shapes`, and it reads like the concept: find the tree on the screen, then paint a trunk and eight tiers.
 
-{{code TreeDraw.tree_shapes}}
+{{code TreeShapes.tree_shapes}}
 
 `nearer_trees` and `crown` are for near trees, and they can wait. For now, every tier is a triangle.
 
 `tree_on_screen` makes two calls to `Camera.project`, one for the tree's foot and one for its tip. The difference between them is how tall the tree looks.
 
-{{code TreeDraw.tree_on_screen}}
+{{code TreeShapes.tree_on_screen}}
 
 The trunk and the crown split the tree's height between them:
 
-{{code TreeDraw.trunk_height_share}}
+{{code TreeShapes.trunk_height_share}}
 
-{{code TreeDraw.crown_height_share}}
+{{code TreeShapes.crown_height_share}}
 
 The crown's share is the trunk's `complement`, so the two add up to 1 by construction.
 
@@ -346,11 +346,11 @@ The crown's share is the trunk's `complement`, so the two add up to 1 by constru
 
 Each tier is a line in a table:
 
-{{code TreeDraw.Tier}}
+{{code TreeShapes.Tier}}
 
 `tiers` is a list of eight of these, and each overlaps the next. A tier is one triangle, worked out in pixels:
 
-{{code TreeDraw.tier_triangle}}
+{{code TreeShapes.tier_triangle}}
 
 That's a tree, and from a distance nobody can tell it's flat. Ride close to one, though, and it looks like cardboard.
 
@@ -367,7 +367,7 @@ New in this chapter:
 
 The whole decision is one type, and it's worth reading slowly:
 
-{{code TreeDraw.Crown}}
+{{code TreeShapes.Crown}}
 
 The square brackets list everything a `Crown` can be. Roc calls this a tag union, and `Cones` and `Triangles` are its tags. A tag is a capitalized name, and it needs no other declaration. So far that's close to a Python `Enum` with two members.
 
@@ -382,33 +382,33 @@ In Python you might write a class with a `kind` and a `shade`, set `shade` to `N
 
 This function answers with that type:
 
-{{code TreeDraw.crown_of}}
+{{code TreeShapes.crown_of}}
 
 `Detail` holds the distances that decide how much of a thing gets drawn, and `cone_reach` is 200 metres.
 
 ```widget tree
-Three gold trees at three distances, each drawn by `TreeDraw.tree_shapes`. Under each tree is what `crown_of` said.
+Three gold trees at three distances, each drawn by `TreeShapes.tree_shapes`. Under each tree is what `crown_of` said.
 ```
 
 ### The functions
 
 `tier_shape` acts on that decision:
 
-{{code TreeDraw.tier_shape}}
+{{code TreeShapes.tier_shape}}
 
 The first branch is the one surprise. A camera can't see a cone from inside, so a tier that's too close falls back to the flat triangle. The `if` after the pattern is a guard, and it adds a condition to a branch.
 
 What goes to the screen is still a flat polygon, so a cone is something we work out. We leave pixels behind for a moment and work in metres. `base_height` and `apex_height` are how high the tier's bottom and top stand, measured up the trunk and then down the crown. We take a ring of 16 points around the base and one point at the top, and we project them all onto the screen:
 
-{{code TreeDraw.tier_cone}}
+{{code TreeShapes.tier_cone}}
 
 What's left is a handful of dots on the screen, and a cone's outline is whatever wraps around them. That's a convex hull:
 
-{{code TreeDraw.convex_hull_points}}
+{{code TreeShapes.convex_hull_points}}
 
 This is Andrew's monotone chain. Sort the points from left to right, walk along the top, and walk back along the bottom. One step does both walks: add a point, and first drop any recent point that would make a dent. `[.., a, b]` is a list pattern that takes the last two items.
 
-{{code TreeDraw.trim_hull}}
+{{code TreeShapes.trim_hull}}
 
 That's a cone, as one flat polygon! The ring gets wider on the screen as it gets nearer, so the tree fattens by itself. It's just perspective.
 
@@ -422,7 +422,7 @@ Here's the other tree problem. Safari Ride plants 392 trees along its road, and 
 Step 1,570 of the ride, with only the trees on.
 ```
 
-This is step 1,570, with the cat frozen in the lane. Each tree here is a sighting from `TreeSighting.trees_in_view`, painted by `TreeDraw.tree_shapes`. They make up 1,656 of the 2,713 shapes in that frame, more than everything else put together.
+This is step 1,570, with the cat frozen in the lane. Each tree here is a sighting from `TreeSighting.trees_in_view`, painted by `TreeShapes.tree_shapes`. They make up 1,656 of the 2,713 shapes in that frame, more than everything else put together.
 
 So a tree has two lives. It's planted once, and that lasts the whole ride. It's seen again every frame, and that lasts one frame. This chapter takes them in that order.
 
@@ -442,7 +442,7 @@ Those two lives are two records, and each says where the tree stands in a differ
 
 `Along` is a place along a segment, and `Across` is a place across the road. Both are opaque, and by now you can guess what the compiler says if you pass one as the other. Reading any function, the field names tell you which world you're in.
 
-A `TreeSighting` also fits `TreeDraw.TreeAhead`, so `TreeDraw` doesn't import it. The problems really are separate.
+A `TreeSighting` also fits `TreeShapes.TreeAhead`, so `TreeShapes` doesn't import it. The problems really are separate.
 
 | Job | Function | Its type |
 |---|---|---|
@@ -477,9 +477,9 @@ From here on, things are measured from the rider. We don't need to know much abo
 
 Most of that 1,656 is far off, and far trees are cheap. They get eight triangles and a plain trunk. A cone costs a ring of 16 points and a hull, so only trees within 200 metres get cones, and only the nearest few get a shaded trunk.
 
-"The nearest few" is the one thing a tree can't work out by itself, because it depends on the other trees. So `SceneDraw` counts them, and that's the `nearer_trees` from A simple tree:
+"The nearest few" is the one thing a tree can't work out by itself, because it depends on the other trees. So `SceneShapes` counts them, and that's the `nearer_trees` from A simple tree:
 
-{{code SceneDraw.tree_shapes}}
+{{code SceneShapes.tree_shapes}}
 
 So the world remembers where it planted each tree, and no frame remembers anything. Every sighting is thrown away, and the next frame makes them all again.
 
@@ -833,7 +833,7 @@ Every pose of the cat and the bird. Click one to see it large, and click it agai
 New in this chapter:
 
 - Roc: a large table of plain data
-- Modules: `Stills`, `StillDraw`, `CatStills`, `BirdStills`, `EmojiStills`
+- Modules: `Stills`, `StillShapes`, `CatStills`, `BirdStills`, `EmojiStills`
 
 The stills are the least readable code in Safari Ride, and nobody is meant to read them. They're generated data, encoded as Roc, and this chapter ends with how they got made. Here's how much data each set holds:
 
@@ -853,15 +853,15 @@ The bird is the smallest set, because the perched bird is Roc's logo, and the lo
 
 Every point is measured in units of the still's height. Its feet are at `y` 0, and a standing critter is about 1 tall. That's why no pixels or metres appear here. The same numbers draw a cat in the distance and a cat in the lane.
 
-`StillDraw` does the rest. An `Anchor` says where a still stands on screen, which way it faces and how tall it is:
+`StillShapes` does the rest. An `Anchor` says where a still stands on screen, which way it faces and how tall it is:
 
-{{code StillDraw.Anchor}}
+{{code StillShapes.Anchor}}
 
 Drawing a still is then one sum for each point. The height in pixels scales the point, and the feet place it:
 
-{{code StillDraw.screen_point}}
+{{code StillShapes.screen_point}}
 
-That's all there is to drawing a critter. Each set of stills has a `pose_polygons` function that turns a pose into its polygons, and `StillDraw.still_shapes` puts them on screen.
+That's all there is to drawing a critter. Each set of stills has a `pose_polygons` function that turns a pose into its polygons, and `StillShapes.still_shapes` puts them on screen.
 
 ### How the stills got made
 
@@ -900,7 +900,7 @@ A segment's `bend_life` field says what's at its bend. `Wildlife.bend_critters` 
 
 `Quiet` and `DuckPond` have no animals, so they answer with an empty list. An `Animal` answers with a list of two. `inward` is 1 or -1, so one line of arithmetic places the grown animal on either side of the road.
 
-An elephant has no state. It's a plain record, with a place, an emoji, a height and a way to face. `StillDraw` looks up the emoji's still and draws it at that height. The baby is the same still at half the height.
+An elephant has no state. It's a plain record, with a place, an emoji, a height and a way to face. `StillShapes` looks up the emoji's still and draws it at that height. The baby is the same still at half the height.
 
 Nothing in that function says "elephant". That's what makes the next chapter short.
 
@@ -1041,9 +1041,9 @@ The modules behind a beacon
 digraph beacon {
   node [shape=box, fontname="Helvetica"];
   TowerSighting [style=bold];
-  SceneDraw -> Scene;
-  SceneDraw -> TowerSighting;
-  SceneDraw -> Tower;
+  SceneShapes -> Scene;
+  SceneShapes -> TowerSighting;
+  SceneShapes -> Tower;
   Scene -> TowerSighting;
   TowerSighting -> Clock;
   TowerSighting -> Steps;
@@ -1075,7 +1075,7 @@ Its caller gives each tower its key, the segment's index. Records with named fie
 
 A tower halfway along a segment takes the key plus 60. That's a small piece of number theory hiding in a constant: 60 staggers of 37 steps come to 2,220, which is 18 periods of 120 and 60 left over, so the mid-tower blinks exactly opposite the end tower.
 
-Notice where the clock stops. `beacon_brightness` on a `TowerSighting` is a `Fraction`, and neither `Tower` nor `SceneDraw` imports `Clock`. A beacon's blink is decided in the same place as whether the tower is in view at all.
+Notice where the clock stops. `beacon_brightness` on a `TowerSighting` is a `Fraction`, and neither `Tower` nor `SceneShapes` imports `Clock`. A beacon's blink is decided in the same place as whether the tower is in view at all.
 
 There's no blink abstraction, because nothing else in the game blinks.
 
@@ -1558,7 +1558,7 @@ The truck stays ahead of the rider all the way:
 New in this chapter:
 
 - Roc: list patterns
-- Modules: `Truck`, `TruckDraw`
+- Modules: `Truck`, `TruckPicture`
 
 The modules around `Truck`
 ```dot
@@ -1568,7 +1568,7 @@ digraph truck {
   RideInstant -> Truck;
   Scene -> Truck;
   TruckSighting -> Truck;
-  TruckDraw -> Truck;
+  TruckPicture -> Truck;
   Truck -> World;
   Truck -> VehicleLimits;
   Truck -> Speed;
@@ -1626,12 +1626,12 @@ digraph headlights {
   RideInstant -> Mountains;
   RideInstant -> Sky;
   RideInstant -> Truck;
-  RideInstant -> SceneDraw;
+  RideInstant -> SceneShapes;
   Mountains -> Sky;
   Mountains -> Clock;
   Sky -> Clock;
-  SceneDraw -> TruckDraw;
-  TruckDraw -> Truck;
+  SceneShapes -> TruckPicture;
+  TruckPicture -> Truck;
 }
 ```
 
@@ -1649,9 +1649,9 @@ The truck's headlights come on once the sun has gone behind the mountains, at st
 
 Lamps are plain data. The sighting carries them, and the drawing does what they say, with each `match` covering both tags:
 
-{{code TruckDraw.truck_shapes from "beams =" to "].join()"}}
+{{code TruckPicture.truck_shapes from "beams =" to "].join()"}}
 
-`TruckDraw` leaves the painting to two modules. `TruckBody` paints the trailer, the cab and the tires, far to near, and `TruckLights` paints the beams and the brake lights, each with its glow.
+`TruckPicture` leaves the painting to two modules. `TruckBody` paints the trailer, the cab and the tires, far to near, and `TruckLights` paints the beams and the brake lights, each with its glow.
 
 The sun and the beacons follow the clock alone. The cat has a more nuanced rule: the timing of its crossing depends on the rider's position.
 
@@ -1681,8 +1681,8 @@ digraph cat {
   CrossingReaction -> Cat;
   CrossingReaction -> World;
   CatSighting -> Cat;
-  CatDraw -> Cat;
-  CatDraw -> CatStills;
+  CatShapes -> Cat;
+  CatShapes -> CatStills;
   CatStills -> Cat;
   Cat -> Animation;
   Cat -> Easing;
@@ -1845,21 +1845,21 @@ The modules that put a cat on screen
 digraph screen {
   node [shape=box, fontname="Helvetica"];
   CatSighting [style=bold];
-  CatDraw [style=bold];
-  SceneDraw -> Scene;
-  SceneDraw -> CatDraw;
-  SceneDraw -> CatSighting;
+  CatShapes [style=bold];
+  SceneShapes -> Scene;
+  SceneShapes -> CatShapes;
+  SceneShapes -> CatSighting;
   Scene -> CatSighting;
   CatSighting -> Cat;
   CatSighting -> Chain;
   CatSighting -> DepthSort;
-  CatDraw -> Cat;
-  CatDraw -> CatStills;
+  CatShapes -> Cat;
+  CatShapes -> CatStills;
   CatStills -> Cat;
 }
 ```
 
-`CatSighting` and `CatDraw` never import each other. `SceneDraw` is what carries a sighting's answer to the drawing.
+`CatSighting` and `CatShapes` never import each other. `SceneShapes` is what carries a sighting's answer to the drawing.
 
 `cat_in_view` places the cat and decides whether it's big enough to draw. An empty list or a list of one is how it says "maybe".
 
@@ -1888,7 +1888,7 @@ Play it, and the gap falls from 75 metres to 0. The bird sits on the tip of the 
 New in this chapter:
 
 - Roc: record update, tags inside tags, opening a `Try` by hand, `match` as an expression
-- Modules: `BirdFlight`, `BirdSighting`, `BirdDraw`
+- Modules: `BirdFlight`, `BirdSighting`, `BirdShapes`
 
 The modules around `BirdFlight`
 ```dot
@@ -1897,19 +1897,19 @@ digraph bird {
   BirdFlight [style=bold];
   World -> BirdFlight;
   BirdSighting -> BirdFlight;
-  BirdSighting -> BirdDraw;
+  BirdSighting -> BirdShapes;
   BirdSighting -> Animation;
-  BirdDraw -> BirdFlight;
-  BirdDraw -> BirdStills;
-  BirdDraw -> StillDraw;
+  BirdShapes -> BirdFlight;
+  BirdShapes -> BirdStills;
+  BirdShapes -> StillShapes;
   BirdStills -> BirdFlight;
   BirdStills -> Stills;
-  StillDraw -> Stills;
+  StillShapes -> Stills;
   BirdFlight -> Animation;
 }
 ```
 
-The family has the cat's shape. `BirdFlight` says what a bird does and imports nothing that draws it. `BirdSighting` finds it, `BirdDraw` draws it, and `BirdStills` holds its pictures. `Animation` is underneath, and most of what the bird does is ask `Animation` for something.
+The family has the cat's shape. `BirdFlight` says what a bird does and imports nothing that draws it. `BirdSighting` finds it, `BirdShapes` draws it, and `BirdStills` holds its pictures. `Animation` is underneath, and most of what the bird does is ask `Animation` for something.
 
 `BirdFlight` does one addition, a tree's place plus `shortest_hop`, the shortest flight a bird will make. The rest is constants, tags and one timeline.
 
@@ -1975,7 +1975,7 @@ The stills are data too. Nested tags get checked all the way down, so a `match` 
 
 {{code BirdStills.pose_polygons}}
 
-`BirdDraw.bird_shapes` hands that to `StillDraw.still_shapes`, the function that also draws a cow. A bird's feet reach the screen through `Camera.project`, as a tree's top does, and the math layer chapter shows how. That's the drawing.
+`BirdShapes.bird_shapes` hands that to `StillShapes.still_shapes`, the function that also draws a cow. A bird's feet reach the screen through `Camera.project`, as a tree's top does, and the math layer chapter shows how. That's the drawing.
 
 ### Finding a tree
 
@@ -2246,9 +2246,9 @@ From there to the screen is a pinhole camera, which is similar triangles. Dividi
 
 {{code Camera.project}}
 
-`BirdDraw.bird_shapes` calls it with a record built on the spot for the bird's feet:
+`BirdShapes.bird_shapes` calls it with a record built on the spot for the bird's feet:
 
-{{code BirdDraw.bird_shapes from "feet = Camera.project(" to "cam_focal,"}}
+{{code BirdShapes.bird_shapes from "feet = Camera.project(" to "cam_focal,"}}
 
 The focal length comes from a lens. `focal` is a value computed from other values, with no function in sight, and `field_of_view` is a `Turn`, so taking half of it needs no comment about radians. [check: whether a value like this inside a `.{ }` block is evaluated at compile time, as top-level values are.]
 

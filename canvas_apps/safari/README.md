@@ -38,7 +38,7 @@ The rest have been rewritten by hand.
 | `HexColor.roc` | a colour as one whole number: its channels, packing them, and shading |
 | `SafariFrame.roc` | a frame painted into pixels in Roc, for the proof tools below |
 | `RideInstant.roc` and the chapter modules | one instant of the ride, the world, the route, the rider, the animals, the scenery, and how each is drawn |
-| `BirdDraw.roc` | the bird, the first thing here that was never Codex, with `BirdFlight.roc`, `BirdSighting.roc` and `BirdStills.roc` |
+| `BirdShapes.roc` | the bird, the first thing here that was never Codex, with `BirdFlight.roc`, `BirdSighting.roc` and `BirdStills.roc` |
 | `Animation.roc` | what the cat and the bird share: a rule that turns where the rider is into a stage, and a timeline that turns a stage into an instant |
 | `CrossingReaction.roc` | what a segment's crossing does to the rider, the one place that matches on it for `Throttle` and `RideFocal` |
 | `gates/` | test code the game never runs: the tiers `fast.shale`, `run.shale` and `publish.shale`, and the lints; `CrossModuleExpects.roc`, the expects that need more than the module they check imports; the proof tools and the modules only they use. They reach the game's modules through the package `game.roc` |
@@ -100,7 +100,7 @@ The fast and merge tiers keep their Roc caches under
 
 An `expect` sits below the block of the module it checks. Where it needs a
 module that one doesn't import, it sits in a module that sees both, such as
-`BendView.roc` or `SceneDraw.roc`, or else in `gates/CrossModuleExpects.roc`.
+`BendView.roc` or `SceneShapes.roc`, or else in `gates/CrossModuleExpects.roc`.
 
 `emitted.sh` and `retest.sh`, which emitted the Roc from Codex, refuse to run:
 the modules they would rewrite are source now.

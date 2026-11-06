@@ -1,7 +1,7 @@
 ## The widget for the Safari tutorial's chapter on the conifer: a still picture of
-## three trees of one kind at three distances, with no controls. TreeDraw draws
+## three trees of one kind at three distances, with no controls. TreeShapes draws
 ## each one and picks its crown, and under each tree are its distance and the
-## crown `TreeDraw.crown_of` gives there.
+## crown `TreeShapes.crown_of` gives there.
 import game.Clock
 import game.Conifer
 import game.Distance
@@ -9,7 +9,7 @@ import game.Fraction
 import game.Lens
 import game.Pixels
 import game.Screen
-import game.TreeDraw
+import game.TreeShapes
 import lib.Brush
 import lib.CanvasApp
 import lib.Shapes
@@ -65,7 +65,7 @@ right_of = |{ forward, canvas_x }| {
 
 tree_shapes : Stand -> List(Shapes.Shape)
 tree_shapes = |stand|
-	TreeDraw.tree_shapes(
+	TreeShapes.tree_shapes(
 		{
 			tree: {
 				right: right_of(stand),
@@ -77,10 +77,10 @@ tree_shapes = |stand|
 		Lens.focal,
 	)
 
-## What `TreeDraw.crown_of` says at `forward`, as Roc would write it.
+## What `TreeShapes.crown_of` says at `forward`, as Roc would write it.
 crown_text : Distance -> Str
 crown_text = |forward|
-	match TreeDraw.crown_of(forward) {
+	match TreeShapes.crown_of(forward) {
 		Cones({ shade }) => "Cones({ shade: ${ScrubWidget.tenths_text(shade.to_f64())} })"
 		Triangles => "Triangles"
 	}
@@ -123,7 +123,7 @@ is_plain_to_see = |stand| {
 		forward: stand.forward,
 		height: conifer.height(),
 	}
-	on_screen = TreeDraw.tree_on_screen(point, Lens.focal)
+	on_screen = TreeShapes.tree_on_screen(point, Lens.focal)
 	foot_y = on_screen.base_y.to_f64() * canvas_per_screen
 	tip_y = foot_y - on_screen.height_px.to_f64() * canvas_per_screen
 	x = on_screen.base_x.to_f64() * canvas_per_screen
@@ -134,9 +134,9 @@ is_plain_to_see = |stand| {
 }
 
 # Each tree shows one of the three things `crown_of` can say.
-expect TreeDraw.crown_of(far_stand.forward) == Triangles
-expect TreeDraw.crown_of(middle_stand.forward) == Cones({ shade: Fraction.zero })
-expect TreeDraw.crown_of(near_stand.forward) == Cones({ shade: Fraction.of(0.5) })
+expect TreeShapes.crown_of(far_stand.forward) == Triangles
+expect TreeShapes.crown_of(middle_stand.forward) == Cones({ shade: Fraction.zero })
+expect TreeShapes.crown_of(near_stand.forward) == Cones({ shade: Fraction.of(0.5) })
 
 # A caption reads the distance and the crown.
 expect caption_lines(far_stand.forward) == ["forward = 210.0 m", "Triangles"]

@@ -1,4 +1,4 @@
-## CatDraw draws the cat: the still for the pose it is in, standing where its
+## CatShapes draws the cat: the still for the pose it is in, standing where its
 ## sighting found it, its feet raised as it leaps.
 import Pixels
 import Camera
@@ -6,10 +6,10 @@ import Cat
 import CatSighting
 import CatStills
 import Distance
-import StillDraw
+import StillShapes
 import lib.Shapes
 
-CatDraw :: [].{
+CatShapes :: [].{
 
 	## A cat on screen, its feet where it is.
 	cat_shapes : CatSighting, Pixels -> List(Shapes.Shape)
@@ -19,7 +19,7 @@ CatDraw :: [].{
 			cam_focal,
 		)
 		feet = projected(cat.lift)
-		StillDraw.still_shapes(
+		StillShapes.still_shapes(
 			{
 				feet,
 				flip: AsDrawn,
@@ -41,7 +41,7 @@ near_cat = {
 }
 
 sample_cat_shapes : CatSighting -> List(Shapes.Shape)
-sample_cat_shapes = |cat| CatDraw.cat_shapes(cat, Pixels.of(500.0))
+sample_cat_shapes = |cat| CatShapes.cat_shapes(cat, Pixels.of(500.0))
 
 ## The first corner `cat` draws: its still's first corner, on screen.
 first_corner_coordinates : CatSighting -> List(F64)

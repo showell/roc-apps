@@ -17,7 +17,7 @@ import game.RideFocal
 import game.RideInstant
 import game.SafariApp
 import game.Scene
-import game.SceneDraw
+import game.SceneShapes
 import game.Screen
 import game.Sky
 import game.Tour
@@ -169,7 +169,7 @@ ride_pieces = |tour| {
 		scene.order_keys.map(
 			|depth_key| {
 				layer: subject_layer(depth_key.subject),
-				shapes: SceneDraw.scene_shapes({ ..scene, order_keys: [depth_key] }, view),
+				shapes: SceneShapes.scene_shapes({ ..scene, order_keys: [depth_key] }, view),
 			},
 		),
 	].join()

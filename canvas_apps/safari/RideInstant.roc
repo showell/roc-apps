@@ -2,7 +2,7 @@ import Clock
 import Chain
 import Ground
 import GroundSighting
-import SceneDraw
+import SceneShapes
 import Mountains
 import RiderState
 import Scene
@@ -103,7 +103,7 @@ RideInstant := {
 				cam_focal: view.cam_focal,
 			}),
 			ground.join_map(|patch| Ground.patch_shapes(patch, view.cam_focal)),
-			SceneDraw.scene_shapes(scene, view),
+			SceneShapes.scene_shapes(scene, view),
 		].join()
 	}
 

@@ -1,7 +1,7 @@
 ## A still is a small picture made of polygons, each filled with a flat
 ## colour or a gradient. Its points are in units of its height: x across,
 ## and y up from its feet. EmojiStills, CatStills and BirdStills hold the
-## pictures, and StillDraw puts them on screen.
+## pictures, and StillShapes puts them on screen.
 
 Stills :: [].{
 	StillPt : { x : F64, y : F64 }
@@ -36,7 +36,7 @@ Stills :: [].{
 	}
 
 	## Whether a polygon can be drawn: it has three corners, and a linear
-	## gradient of its has a length. StillDraw crashes on anything less.
+	## gradient of its has a length. StillShapes crashes on anything less.
 	is_drawable : Stills.StillPolygon -> Bool
 	is_drawable = |polygon| polygon.points.len() >= 3 and !polygon.gradients.any(has_no_length)
 }

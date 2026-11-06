@@ -6,12 +6,12 @@ import Pixels
 import BirdSighting
 import BirdStills
 import Camera
-import StillDraw
+import StillShapes
 import Distance
 import lib.Brush
 import lib.Shapes
 
-BirdDraw :: [].{
+BirdShapes :: [].{
 
 	## A bird on screen, its feet where it is. Its still is unflipped: a bird
 	## from a left-hand tree crosses the road toward +x, the way its beak points.
@@ -25,7 +25,7 @@ BirdDraw :: [].{
 			},
 			cam_focal,
 		)
-		StillDraw.still_shapes(
+		StillShapes.still_shapes(
 			{
 				feet,
 				flip: AsDrawn,
@@ -63,7 +63,7 @@ expect
 # 110 m, is 50 px each way.
 expect {
 	first_corner = |bird|
-		match BirdDraw.bird_shapes(bird, Pixels.of(500.0)) {
+		match BirdShapes.bird_shapes(bird, Pixels.of(500.0)) {
 			[Poly(polygon), ..] => polygon.points.take_first(2)
 			_ => crash "a bird draws polygons"
 		}
@@ -88,7 +88,7 @@ expect {
 			_ => crash "a bird's still is polygons"
 		}
 	drawn = [Side(WingsDown), Diving].join_map(
-		|pose| BirdDraw.bird_shapes({ ..level_bird, pose }, Pixels.of(500.0)).map(fill_of),
+		|pose| BirdShapes.bird_shapes({ ..level_bird, pose }, Pixels.of(500.0)).map(fill_of),
 	)
 	stills = BirdStills.side_wings_down.concat(BirdStills.diving_polygons)
 	drawn == stills.map(|poly| Flat(Brush.opaque(poly.color)))

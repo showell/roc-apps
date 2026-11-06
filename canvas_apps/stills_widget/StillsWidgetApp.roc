@@ -1,5 +1,5 @@
 ## The widget for the Safari tutorial's chapter on the stills. Every pose of the
-## cat and the bird stands in a grid, drawn by the real StillDraw, and one of them
+## cat and the bird stands in a grid, drawn by the real StillShapes, and one of them
 ## stands large with its polygons and points counted. Nothing here moves, so
 ## there are no video recorder buttons. A click on a small still makes it the large one, and a click
 ## on the large one shows or hides the outline of each polygon.
@@ -9,7 +9,7 @@ import game.Cat
 import game.CatStills
 import game.Pixels
 import game.Screen
-import game.StillDraw
+import game.StillShapes
 import game.Stills
 import lib.Brush
 import lib.CanvasApp
@@ -66,7 +66,7 @@ StillExtent : {
 StillCell : {
 	still : StillsWidgetApp.PoseStill,
 	area : Area,
-	anchor : StillDraw.Anchor,
+	anchor : StillShapes.Anchor,
 }
 
 cat_pose_name : Cat.Pose -> Str
@@ -184,7 +184,7 @@ standing_at : List(Stills.StillPolygon),
 	mid_x : F64,
 	ground_y : F64,
 	height_px : F64,
-} -> StillDraw.Anchor
+} -> StillShapes.Anchor
 standing_at = |polygons, { mid_x, ground_y, height_px }| {
 	extent = extent_of(polygons)
 	{
@@ -247,7 +247,7 @@ large_area = {
 }
 
 ## A still as large as `large_area` holds it, in the middle of that area.
-large_anchor : List(Stills.StillPolygon) -> StillDraw.Anchor
+large_anchor : List(Stills.StillPolygon) -> StillShapes.Anchor
 large_anchor = |polygons| {
 	extent = extent_of(polygons)
 	height_px = F64.min(
@@ -346,9 +346,9 @@ hint_line = |text, row|
 
 ## The lines round one polygon. A still repeats a point here and there, and the
 ## line between two such points is empty.
-outline_shapes : StillDraw.Anchor, Stills.StillPolygon -> List(Shapes.Shape)
+outline_shapes : StillShapes.Anchor, Stills.StillPolygon -> List(Shapes.Shape)
 outline_shapes = |anchor, polygon| {
-	corners = StillDraw.screen_points(anchor, polygon.points)
+	corners = StillShapes.screen_points(anchor, polygon.points)
 	corners.map2(
 		corners.drop_first(1).concat(corners.take_first(1)),
 		|from, to|
@@ -367,7 +367,7 @@ outline_shapes = |anchor, polygon| {
 large_shapes : StillsWidgetApp.Model -> List(Shapes.Shape)
 large_shapes = |{ large_still, outlines }| {
 	anchor = large_anchor(large_still.polygons)
-	drawn = StillDraw.still_shapes(anchor, large_still.polygons)
+	drawn = StillShapes.still_shapes(anchor, large_still.polygons)
 	match outlines {
 		Hidden => drawn
 		Shown => {
@@ -398,7 +398,7 @@ picture_shapes = |model|
 ## One small still with its pose's name under it.
 cell_shapes : StillCell -> List(Shapes.Shape)
 cell_shapes = |{ still, area, anchor }|
-	StillDraw.still_shapes(anchor, still.polygons).append(
+	StillShapes.still_shapes(anchor, still.polygons).append(
 		Text({
 			text: still.name,
 			x: area.left + area.width / 2.0,
@@ -436,14 +436,14 @@ shapes_at = |model|
 		.concat(grid_shapes)
 
 ## Where a point of a still lands, as plain numbers.
-landing_spot : StillDraw.Anchor, Stills.StillPt -> { x : F64, y : F64 }
+landing_spot : StillShapes.Anchor, Stills.StillPt -> { x : F64, y : F64 }
 landing_spot = |anchor, point| {
-	on_screen = StillDraw.screen_point(anchor, point)
+	on_screen = StillShapes.screen_point(anchor, point)
 	{ x: on_screen.x.to_f64(), y: on_screen.y.to_f64() }
 }
 
 ## Whether every point of a still lands in `area`.
-stays_in : StillDraw.Anchor, { polygons : List(Stills.StillPolygon), area : Area } -> Bool
+stays_in : StillShapes.Anchor, { polygons : List(Stills.StillPolygon), area : Area } -> Bool
 stays_in = |anchor, { polygons, area }|
 	polygons.all(|polygon| polygon.points.all(|point| is_inside(area, landing_spot(anchor, point))))
 
@@ -732,12 +732,12 @@ expect read_out_lines(bird_still(Side(WingsUp))) == ["Side up", "6 polygons", "2
 expect read_out_lines(bird_still(Away(WingsDown))) == ["Away down", "4 polygons", "17 points"]
 expect read_out_lines(bird_still(Diving)) == ["Diving", "6 polygons", "22 points"]
 
-# StillDraw leaves out what it won't draw, so the counts would lie if it left
+# StillShapes leaves out what it won't draw, so the counts would lie if it left
 # out a polygon of these. It draws every one.
 expect
 	cells.all(
 		|{ still, anchor, .. }| {
-			drawn = StillDraw.still_shapes(anchor, still.polygons)
+			drawn = StillShapes.still_shapes(anchor, still.polygons)
 			drawn.len() == still.polygons.len()
 		},
 	)

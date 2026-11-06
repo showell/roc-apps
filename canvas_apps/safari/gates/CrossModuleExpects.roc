@@ -29,7 +29,7 @@ import game.Scene
 import game.RideInstant
 import game.Rider
 import game.RiderState
-import game.BirdDraw
+import game.BirdShapes
 import game.Scenery
 import game.Speed
 import game.TowerSighting
