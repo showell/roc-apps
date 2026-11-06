@@ -6,7 +6,6 @@ import Angle
 import Clock
 import Fraction
 import Lens
-import Float
 import Screen
 
 Sky :: [].{
@@ -102,6 +101,15 @@ Sky :: [].{
 	sunset_glow : Fraction
 	sunset_glow = Fraction.of(0.85)
 
+	## A colour channel rounded to a whole value, half up. The channel stays a
+	## float, because a blend reads it again, and F64's builtins round only into
+	## an integer type.
+	whole_channel : F64 -> F64
+	whole_channel = |channel| {
+		rounded = channel.round_to_i64_try() ?? crash "Sky.whole_channel: a channel is a finite number"
+		rounded.to_f64()
+	}
+
 	## The colour `fraction` of the way from `from` to `to`, each channel
 	## rounded to a whole value.
 	color_between : {
@@ -112,9 +120,9 @@ Sky :: [].{
 	color_between = |{ from, to, fraction }| {
 		share = fraction.to_f64()
 		{
-			r: Float.round((from.r + ((to.r - from.r) * share))),
-			g: Float.round((from.g + ((to.g - from.g) * share))),
-			b: Float.round((from.b + ((to.b - from.b) * share))),
+			r: whole_channel(from.r + ((to.r - from.r) * share)),
+			g: whole_channel(from.g + ((to.g - from.g) * share)),
+			b: whole_channel(from.b + ((to.b - from.b) * share)),
 		}
 	}
 
@@ -197,6 +205,19 @@ sun_place = |{ turn_from_view, clock, cam_focal }| {
 		scale,
 	}
 }
+
+expect
+	[
+		(0.0, 0.0),
+		(0.25, 0.0),
+		(0.5, 1.0),
+		(1.5, 2.0),
+		(2.5, 3.0),
+		(49.5, 50.0),
+		(127.5, 128.0),
+		(254.5, 255.0),
+		(255.0, 255.0),
+	].all(|(channel, want)| Sky.whole_channel(channel) == want)
 
 expect Sky.sun_height_px(Clock.at_step(0)).to_f64() == 244.0
 expect Sky.sun_start_px.to_f64() == 244.0

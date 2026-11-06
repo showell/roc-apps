@@ -8,7 +8,6 @@ import Angle
 import Clock
 import Fraction
 import Lens
-import Float
 import Paint
 import Screen
 import Sky
@@ -51,9 +50,9 @@ Mountains :: [].{
 	color_at_dusk = |color, dusk| {
 		light = rock_night_dim.times(dusk).complement().to_f64()
 		Sky.pack({
-			r: Float.round(Paint.red_of(color).to_f64() * light),
-			g: Float.round(Paint.green_of(color).to_f64() * light),
-			b: Float.round(Paint.blue_of(color).to_f64() * light),
+			r: Sky.whole_channel(Paint.red_of(color).to_f64() * light),
+			g: Sky.whole_channel(Paint.green_of(color).to_f64() * light),
+			b: Sky.whole_channel(Paint.blue_of(color).to_f64() * light),
 		})
 	}
 

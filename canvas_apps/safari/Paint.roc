@@ -4,7 +4,6 @@
 ## nothing to draw, so a drawing module can join what it builds.
 import Pixels
 import Fraction
-import Float
 import Screen
 import lib.Brush
 import lib.Shapes
@@ -39,7 +38,9 @@ Paint :: [].{
 	## One channel scaled by `factor`, rounded, and held at 255 at most.
 	shade_channel : I64, F64 -> I64
 	shade_channel = |channel, factor| {
-		scaled = Float.round((channel.to_f64() * factor)).to_i64_wrap()
+		scaled =
+			(channel.to_f64() * factor).round_to_i64_try()
+				?? crash "Paint.shade_channel: a shaded channel is a finite number"
 		if scaled > 255 {
 			255
 		} else {
