@@ -33,7 +33,7 @@ BirdWidgetApp :: [].{
 	canvas_app : CanvasApp.CanvasApp(BirdWidgetApp.Model)
 	canvas_app = VcrButtons.canvas_app({
 		title: "The bird taking off",
-		run: closing_gap,
+		range: closing_gap,
 		opens_at: closing_gap.first,
 		frame: frame_at,
 	})
@@ -41,8 +41,8 @@ BirdWidgetApp :: [].{
 
 ## The rider's approach, from a gap past where the bird takes off down to zero, in
 ## ten seconds.
-closing_gap : VcrButtons.Run(Distance)
-closing_gap = VcrButtons.gap_run({ farthest: Distance.metres(75.0), metres_a_frame: 0.125 })
+closing_gap : VcrButtons.NumberRange(Distance)
+closing_gap = VcrButtons.gap_range({ farthest: Distance.metres(75.0), metres_a_frame: 0.125 })
 
 ## The bird's flight on a segment that has one.
 segment_flight : World.Segment -> Try(BirdFlight.Flight, [NoFlight])
@@ -81,7 +81,7 @@ frame_at : BirdWidgetApp.Model -> List(Shapes.Shape)
 frame_at = |transport|
 	VcrButtons.frame_shapes(
 		transport,
-		{ run: closing_gap, picture: picture(transport.at), status: status_lines(transport.at) },
+		{ range: closing_gap, picture: picture(transport.at), status: status_lines(transport.at) },
 	)
 
 ## The road and the two trees, far things first, and the bird at `gap`.
@@ -183,7 +183,7 @@ beat_name = |beat|
 expect forward_of(flight.from.along).to_metres() == 18.0
 expect forward_of(flight.to.along).to_metres() == 48.0
 
-# The whole flight is on the run, with some road to spare at the far end.
+# The whole flight is on the range, with some road to spare at the far end.
 expect BirdFlight.takeoff_gap < closing_gap.first
 expect BirdFlight.landing_gap > closing_gap.last
 

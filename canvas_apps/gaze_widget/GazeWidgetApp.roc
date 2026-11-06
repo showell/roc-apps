@@ -60,8 +60,8 @@ look_end_step : U32
 look_end_step = 1046
 
 ## The whole stretch, in about eight seconds.
-stretch : VcrButtons.Run(Clock)
-stretch = VcrButtons.clock_run({ first_step, last_step, steps_a_frame: 1.0 })
+stretch : VcrButtons.NumberRange(Clock)
+stretch = VcrButtons.clock_range({ first_step, last_step, steps_a_frame: 1.0 })
 
 ## How many states the whole stretch holds.
 stretch_length : U64
@@ -105,8 +105,8 @@ gaze_pig = Pigs.gaze_pig(pig_segment.length)
 with_buttons : GazeWidgetApp.Model, Input.Snapshot -> GazeWidgetApp.Model
 with_buttons = |model, input| {
 	shown = Clock.at_step(first_step + shown_offset(model).to_u32_wrap())
-	caught_up = VcrButtons.catch_up(model.transport, { input, run: stretch, shown })
-	{ ..model, transport: VcrButtons.next_transport(caught_up, { input, run: stretch }) }
+	caught_up = VcrButtons.catch_up(model.transport, { input, range: stretch, shown })
+	{ ..model, transport: VcrButtons.next_transport(caught_up, { input, range: stretch }) }
 }
 
 ## `model` a frame on, with a few more steps played until the stretch is.
@@ -154,7 +154,11 @@ frame_at = |model| {
 	step = first_step.to_f64() + offset.to_f64()
 	VcrButtons.frame_shapes(
 		model.transport,
-		{ run: stretch, picture: picture(rider), status: status_lines(rider, step) },
+		{
+			range: stretch,
+			picture: picture(rider),
+			status: status_lines(rider, step),
+		},
 	)
 }
 

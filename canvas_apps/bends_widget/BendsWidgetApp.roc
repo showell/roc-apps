@@ -29,13 +29,13 @@ BendsWidgetApp :: [].{
 	canvas_app : CanvasApp.CanvasApp(BendsWidgetApp.Model)
 	canvas_app = VcrButtons.canvas_app({
 		title: "A bend in the road",
-		run: turning,
+		range: turning,
 		opens_at: 50.0,
 		frame: frame_at,
 	})
 }
 
-## The buttons run from this far left to this far right. The route's sharpest bend
+## The buttons range from this far left to this far right. The route's sharpest bend
 ## is 80 degrees.
 widest_turn : F64
 widest_turn = 80.0
@@ -47,7 +47,7 @@ gentlest_turn = 5.0
 
 ## The turn from hard left to hard right in five seconds. A step is five degrees,
 ## so the steps stop on every bend of the route.
-turning : VcrButtons.Run(F64)
+turning : VcrButtons.NumberRange(F64)
 turning = {
 	first: -widest_turn,
 	last: widest_turn,
@@ -57,7 +57,7 @@ turning = {
 	playing: Plays(0.5),
 }
 
-## How far along the turning a turn of `degrees` is. The run closes the gap around
+## How far along the turning a turn of `degrees` is. The range closes the gap around
 ## straight, so it goes from just left of the gentlest turn left to the gentlest
 ## turn right.
 place_of_turn : F64 -> F64
@@ -118,10 +118,7 @@ bend_of : Chain.RoadView -> BendView
 bend_of = |road|
 	BendView.of_segment(
 		Chain.Position.first.index_in(road.chain).segment_in(road.route),
-		{
-			before: InChain(Chain.Position.first),
-			after: InChain(Chain.Position.first.next()),
-		},
+		{ before: InChain(Chain.Position.first), after: InChain(Chain.Position.first.next()) },
 	)
 
 ## How many pixels a metre takes up.
@@ -263,7 +260,11 @@ frame_at : BendsWidgetApp.Model -> List(Shapes.Shape)
 frame_at = |transport|
 	VcrButtons.frame_shapes(
 		transport,
-		{ run: turning, picture: picture(transport.at), status: status_lines(transport.at) },
+		{
+			range: turning,
+			picture: picture(transport.at),
+			status: status_lines(transport.at),
+		},
 	)
 
 ## What a press of `control` does at a turn of `degrees`, after that frame.
@@ -271,7 +272,7 @@ turn_after_press : F64, VcrButtons.Control -> F64
 turn_after_press = |degrees, control|
 	VcrButtons.next_transport(
 		VcrButtons.transport_at(degrees),
-		{ input: VcrButtons.click_on(control, turning.playing), run: turning },
+		{ input: VcrButtons.click_on(control, turning.playing), range: turning },
 	).at
 
 # The buttons reach both ends, and a step is five degrees.
@@ -334,7 +335,10 @@ expect RailSighting.in_view(road_with(-widest_turn)).len() > 0
 expect turn_text(50.0) == "50 deg right"
 expect turn_text(-50.0) == "50 deg left"
 
-expect apex_text({ right: Distance.metres(-2.0), forward: Distance.metres(27.5) }) == "Apex: 2.5 m past the segment end"
+expect apex_text({
+	right: Distance.metres(-2.0),
+	forward: Distance.metres(27.5),
+}) == "Apex: 2.5 m past the segment end"
 
 expect picture(50.0) == picture(50.0)
 expect picture(50.0) != picture(51.0)

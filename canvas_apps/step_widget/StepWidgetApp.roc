@@ -38,10 +38,14 @@ StepWidgetApp :: [].{
 played_a_frame : F64
 played_a_frame = 8.0
 
-## The run stops short of the cap on a Tour's history, so all of it can be read
+## The range stops short of the cap on a Tour's history, so all of it can be read
 ## back. Play goes as fast as the ride can be worked out.
-journey : VcrButtons.Run(Clock)
-journey = VcrButtons.clock_run({ first_step: 0, last_step: 2000, steps_a_frame: played_a_frame })
+journey : VcrButtons.NumberRange(Clock)
+journey = VcrButtons.clock_range({
+	first_step: 0,
+	last_step: 2000,
+	steps_a_frame: played_a_frame,
+})
 
 ## How many instants are taken back off the list in one frame of the widget.
 read_back_a_frame : F64
@@ -53,9 +57,9 @@ aimed : StepWidgetApp.Model, Input.Snapshot -> StepWidgetApp.Model
 aimed = |model, input| {
 	caught_up = VcrButtons.catch_up(
 		model.transport,
-		{ input, run: journey, shown: model.tour.instant.clock },
+		{ input, range: journey, shown: model.tour.instant.clock },
 	)
-	{ ..model, transport: VcrButtons.next_transport(caught_up, { input, run: journey }) }
+	{ ..model, transport: VcrButtons.next_transport(caught_up, { input, range: journey }) }
 }
 
 ## `step_once` applied `count` times.
@@ -99,7 +103,11 @@ frame_at : StepWidgetApp.Model -> List(Shapes.Shape)
 frame_at = |model|
 	VcrButtons.frame_shapes(
 		model.transport,
-		{ run: journey, picture: picture(model.tour), status: status_lines(model) },
+		{
+			range: journey,
+			picture: picture(model.tour),
+			status: status_lines(model),
+		},
 	)
 
 ground_color : I64
@@ -180,7 +188,12 @@ route_bar = {
 }
 
 ## A disc on the bar with its name above or below it.
-marker : { at : Distance, color : I64, name : Str, name_y : F64 } -> List(Shapes.Shape)
+marker : {
+	at : Distance,
+	color : I64,
+	name : Str,
+	name_y : F64,
+} -> List(Shapes.Shape)
 marker = |{ at, color, name, name_y }|
 	[
 		Disc({
@@ -190,7 +203,11 @@ marker = |{ at, color, name, name_y }|
 			fill: ScrubWidget.flat(color),
 			clip: Anywhere,
 		}),
-		ScrubWidget.label({ text: name, x: route_x(at) - 16.0, y: name_y + 12.0 }),
+		ScrubWidget.label({
+			text: name,
+			x: route_x(at) - 16.0,
+			y: name_y + 12.0,
+		}),
 	]
 
 ## The road's surface in the view from behind the rider.
@@ -219,7 +236,13 @@ from_behind = |{ across, lean }| {
 	head_x = foot + rider_height * (lean * lean_shown_at).sin()
 	head_y = surface_y - rider_height * (lean * lean_shown_at).cos()
 	[
-		[ScrubWidget.label({ text: "from behind, lean x3", x: 20.0, y: surface_y - 12.0 })],
+		[
+			ScrubWidget.label({
+				text: "from behind, lean x3",
+				x: 20.0,
+				y: surface_y - 12.0,
+			}),
+		],
 		[
 			Rect({
 				x: middle - lane,
@@ -364,7 +387,9 @@ expect {
 	playing = pressed_on(heading_for_step(0), Play)
 	on = moved(aimed(playing, Input.none))
 	paused = pressed_on(on, Play)
-	clock_of(on) == 2.0 * played_a_frame and clock_of(paused) == clock_of(on) and paused.transport.motion == Stopped
+	clock_of(on) == 2.0 * played_a_frame
+		and clock_of(paused) == clock_of(on)
+		and paused.transport.motion == Stopped
 }
 
 # A step moves the ride exactly one, either way.

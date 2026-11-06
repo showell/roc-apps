@@ -23,14 +23,14 @@ RouteWidgetApp :: [].{
 	canvas_app : CanvasApp.CanvasApp(RouteWidgetApp.Model)
 	canvas_app = VcrButtons.canvas_app({
 		title: "The route",
-		run: segment_steps,
+		range: segment_steps,
 		opens_at: segment_steps.first,
 		frame: frame_at,
 	})
 }
 
 ## A step is one segment, from the first to the last.
-segment_steps : VcrButtons.Run(U64)
+segment_steps : VcrButtons.NumberRange(U64)
 segment_steps = {
 	first: 1,
 	last: segments.len(),
@@ -67,10 +67,7 @@ start_heading = 150.0 * Trig.deg
 laid_onto : Layout, World.SegmentPlan -> Layout
 laid_onto = |{ laid, at, heading }, plan| {
 	metres = plan.length.to_metres()
-	end = {
-		east: at.east + metres * heading.sin(),
-		north: at.north + metres * heading.cos(),
-	}
+	end = { east: at.east + metres * heading.sin(), north: at.north + metres * heading.cos() }
 	{
 		laid: laid.append({
 			plan,
@@ -99,7 +96,12 @@ corners : List(MapPoint)
 corners = segments.map(|segment| segment.end).prepend({ east: 0.0, north: 0.0 })
 
 ## The extent of the road on the map.
-Extent : { west : F64, east : F64, south : F64, north : F64 }
+Extent : {
+	west : F64,
+	east : F64,
+	south : F64,
+	north : F64,
+}
 
 extent : Extent
 extent =
@@ -222,7 +224,11 @@ crossing_mark = |segment|
 	}
 
 ## A coloured spot and the word for it, in the picture's empty corner.
-legend_row : { y : F64, color : I64, word : Str } -> List(Shapes.Shape)
+legend_row : {
+	y : F64,
+	color : I64,
+	word : Str,
+} -> List(Shapes.Shape)
 legend_row = |{ y, color, word }|
 	[
 		Disc({
@@ -232,14 +238,26 @@ legend_row = |{ y, color, word }|
 			fill: ScrubWidget.flat(color),
 			clip: Anywhere,
 		}),
-		ScrubWidget.label({ text: word, x: 482.0, y: y + 5.0 }),
+		ScrubWidget.label({
+			text: word,
+			x: 482.0,
+			y: y + 5.0,
+		}),
 	]
 
 legend : List(Shapes.Shape)
 legend =
 	[
-		legend_row({ y: 178.0, color: cat_color, word: "a cat crosses" }),
-		legend_row({ y: 196.0, color: bird_color, word: "a bird flies" }),
+		legend_row({
+			y: 178.0,
+			color: cat_color,
+			word: "a cat crosses",
+		}),
+		legend_row({
+			y: 196.0,
+			color: bird_color,
+			word: "a bird flies",
+		}),
 	].join()
 
 ## The map with `segment` picked out.
@@ -259,7 +277,11 @@ frame_at = |transport| {
 	segment = segment_numbered(transport.at)
 	VcrButtons.frame_shapes(
 		transport,
-		{ run: segment_steps, picture: picture(segment), status: status_lines(segment) },
+		{
+			range: segment_steps,
+			picture: picture(segment),
+			status: status_lines(segment),
+		},
 	)
 }
 
@@ -352,7 +374,7 @@ number_after_press : U64, VcrButtons.Control -> U64
 number_after_press = |number, control|
 	VcrButtons.next_transport(
 		VcrButtons.transport_at(number),
-		{ input: VcrButtons.click_on(control, segment_steps.playing), run: segment_steps },
+		{ input: VcrButtons.click_on(control, segment_steps.playing), range: segment_steps },
 	).at
 
 # A step is a segment, and the buttons stop at the route's two ends.

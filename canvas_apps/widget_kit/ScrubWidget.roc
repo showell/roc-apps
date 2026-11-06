@@ -66,7 +66,11 @@ ScrubWidget :: [].{
 	label_size = 14.0
 
 	## A line of what the widget reads out, on row `row` of the panel.
-	readout : { text : Str, color : I64, row : U64 } -> Shapes.Shape
+	readout : {
+		text : Str,
+		color : I64,
+		row : U64,
+	} -> Shapes.Shape
 	readout = |{ text, color, row }|
 		Text({
 			text,
@@ -79,7 +83,11 @@ ScrubWidget :: [].{
 		})
 
 	## A few words beside what they name, with their baseline at `y`.
-	label : { text : Str, x : F64, y : F64 } -> Shapes.Shape
+	label : {
+		text : Str,
+		x : F64,
+		y : F64,
+	} -> Shapes.Shape
 	label = |{ text, x, y }|
 		Text({
 			text,
@@ -99,11 +107,7 @@ ScrubWidget :: [].{
 	## The ride's sky and grass with `shapes` over them, at two thirds of
 	## Safari's screen, so a widget's picture is what the ride's frame shows.
 	## The sky is `clock`'s, and `sun` is where the sun stands in it.
-	ride_picture : List(Shapes.Shape),
-	{
-		clock : Clock,
-		sun : Sun.Sighting,
-	} -> List(Shapes.Shape)
+	ride_picture : List(Shapes.Shape), { clock : Clock, sun : Sun.Sighting } -> List(Shapes.Shape)
 	ride_picture = |shapes, { clock, sun }|
 		ride_picture_in(
 			shapes,
@@ -241,7 +245,11 @@ expect ScrubWidget.frame_shapes({ picture: [], status: ["I"] }).len() == 2
 
 # Each row of the readout sits under the last, in monospace.
 expect
-	ScrubWidget.readout({ text: "I", color: 0x202020, row: 1 })
+	ScrubWidget.readout({
+		text: "I",
+		color: 0x202020,
+		row: 1,
+	})
 		== Text({
 			text: "I",
 			x: ScrubWidget.side_margin,
@@ -254,7 +262,11 @@ expect
 
 # A label is words, set where it is asked.
 expect
-	ScrubWidget.label({ text: "I", x: 3.0, y: 4.0 })
+	ScrubWidget.label({
+		text: "I",
+		x: 3.0,
+		y: 4.0,
+	})
 		== Text({
 			text: "I",
 			x: 3.0,

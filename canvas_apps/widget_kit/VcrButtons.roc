@@ -20,14 +20,14 @@ VcrButtons :: [].{
 	## What a button does.
 	Control : [ToStart, PlayBack, StepBack, StepForward, Play, ToEnd]
 
-	## Whether the number plays by itself, and how far along its run a frame of
+	## Whether the number plays by itself, and how far along its range a frame of
 	## play moves it.
 	Playing : [Plays(F64), StepsOnly]
 
-	## What a widget says about its number. `place_of` says how far along the run
+	## What a widget says about its number. `place_of` says how far along the range
 	## a number is, growing from `first` to `last`, and `number_at` is its inverse.
-	## `one_step` is how far along the run a step moves.
-	Run(number) : {
+	## `one_step` is how far along the range a step moves.
+	NumberRange(number) : {
 		first : number,
 		last : number,
 		place_of : number -> F64,
@@ -39,13 +39,13 @@ VcrButtons :: [].{
 	## The whole state of the buttons: the number, and which way it's running.
 	Transport(number) : { at : number, motion : VcrButtons.Motion }
 
-	## A run over the ride's clock, where one step is one step of the ride.
-	clock_run : {
+	## A range over the ride's clock, where one step is one step of the ride.
+	clock_range : {
 		first_step : U32,
 		last_step : U32,
 		steps_a_frame : F64,
-	} -> VcrButtons.Run(Clock)
-	clock_run = |{ first_step, last_step, steps_a_frame }| {
+	} -> VcrButtons.NumberRange(Clock)
+	clock_range = |{ first_step, last_step, steps_a_frame }| {
 		first: Clock.at_step(first_step),
 		last: Clock.at_step(last_step),
 		place_of: Clock.to_f64,
@@ -54,10 +54,10 @@ VcrButtons :: [].{
 		playing: Plays(steps_a_frame),
 	}
 
-	## A run over the gap to something the rider is nearing, from `farthest` down
+	## A range over the gap to something the rider is nearing, from `farthest` down
 	## to zero, where one step is a metre.
-	gap_run : { farthest : Distance, metres_a_frame : F64 } -> VcrButtons.Run(Distance)
-	gap_run = |{ farthest, metres_a_frame }| {
+	gap_range : { farthest : Distance, metres_a_frame : F64 } -> VcrButtons.NumberRange(Distance)
+	gap_range = |{ farthest, metres_a_frame }| {
 		first: farthest,
 		last: Distance.zero,
 		place_of: |gap| farthest.minus(gap).to_metres(),
@@ -73,15 +73,15 @@ VcrButtons :: [].{
 	## A canvas app for a widget that is its buttons and a page drawn from them.
 	canvas_app : {
 		title : Str,
-		run : VcrButtons.Run(number),
+		range : VcrButtons.NumberRange(number),
 		opens_at : number,
 		frame : VcrButtons.Transport(number) -> List(Shapes.Shape),
 	} -> CanvasApp.CanvasApp(VcrButtons.Transport(number))
-	canvas_app = |{ title, run, opens_at, frame }|
+	canvas_app = |{ title, range, opens_at, frame }|
 		ScrubWidget.canvas_app({
 			title,
 			init: VcrButtons.transport_at(opens_at),
-			advance: |transport, input| VcrButtons.next_transport(transport, { input, run }),
+			advance: |transport, input| VcrButtons.next_transport(transport, { input, range }),
 			frame,
 		})
 
@@ -89,15 +89,15 @@ VcrButtons :: [].{
 	next_transport : VcrButtons.Transport(number),
 	{
 		input : Input.Snapshot,
-		run : VcrButtons.Run(number),
+		range : VcrButtons.NumberRange(number),
 	} -> VcrButtons.Transport(number)
-	next_transport = |transport, { input, run }| {
+	next_transport = |transport, { input, range }| {
 		pressed =
-			match pressed_control(input, run.playing) {
-				Ok(control) => transport_after_press(transport, { control, run })
+			match pressed_control(input, range.playing) {
+				Ok(control) => transport_after_press(transport, { control, range })
 				Err(NoButton) => transport
 			}
-		transport_run_on(pressed, run)
+		run_on(pressed, range)
 	}
 
 	## `transport` with a press this frame counting from `shown`. A widget whose
@@ -106,11 +106,11 @@ VcrButtons :: [].{
 	catch_up : VcrButtons.Transport(number),
 	{
 		input : Input.Snapshot,
-		run : VcrButtons.Run(number),
+		range : VcrButtons.NumberRange(number),
 		shown : number,
 	} -> VcrButtons.Transport(number)
-	catch_up = |transport, { input, run, shown }|
-		match pressed_control(input, run.playing) {
+	catch_up = |transport, { input, range, shown }|
+		match pressed_control(input, range.playing) {
 			Ok(_) => { ..transport, at: shown }
 			Err(NoButton) => transport
 		}
@@ -119,29 +119,32 @@ VcrButtons :: [].{
 	## widget's expects.
 	click_on : VcrButtons.Control, VcrButtons.Playing -> Input.Snapshot
 	click_on = |control, playing| {
-		button = buttons_of(playing).find_first(|each| each.control == control) ?? crash "VcrButtons.click_on: this widget has no such button"
+		button = buttons_of(playing).find_first(|each| each.control == control)
+			?? crash "VcrButtons.click_on: this widget has no such button"
 		middle_x = button.left + button_width / 2.0
-		Input.none.with_mouse(Mouse.of(1, 1, middle_x.to_f32_wrap(), button_middle_y.to_f32_wrap(), 0.0))
+		Input.none.with_mouse(
+			Mouse.of(1, 1, middle_x.to_f32_wrap(), button_middle_y.to_f32_wrap(), 0.0),
+		)
 	}
 
 	## Everything on the canvas: the page, with the buttons on it.
 	frame_shapes : VcrButtons.Transport(number),
 	{
-		run : VcrButtons.Run(number),
+		range : VcrButtons.NumberRange(number),
 		picture : List(Shapes.Shape),
 		status : List(Str),
 	} -> List(Shapes.Shape)
-	frame_shapes = |transport, { run, picture, status }|
+	frame_shapes = |transport, { range, picture, status }|
 		[
 			ScrubWidget.frame_shapes({ picture, status }),
-			buttons_of(run.playing).join_map(|button| button_shapes(button, transport.motion)),
-			hint(transport, run),
+			buttons_of(range.playing).join_map(|button| button_shapes(button, transport.motion)),
+			hint(transport, range),
 		].join()
 }
 
-## How far along `run` a number is.
-place_in : VcrButtons.Run(number), number -> F64
-place_in = |run, number| (run.place_of)(number)
+## How far along `range` a number is.
+place_in : VcrButtons.NumberRange(number), number -> F64
+place_in = |range, number| (range.place_of)(number)
 
 ## Whether `control` is the one that's running the number.
 is_lit : VcrButtons.Control, VcrButtons.Motion -> Bool
@@ -160,32 +163,32 @@ toggle = |motion, wanted|
 		wanted
 	}
 
-## `transport` with its number `by` farther along the run. It stops at either end.
+## `transport` with its number `by` farther along the range. It stops at either end.
 transport_moved_by : VcrButtons.Transport(number),
 {
 	by : F64,
-	run : VcrButtons.Run(number),
+	range : VcrButtons.NumberRange(number),
 } -> VcrButtons.Transport(number)
-transport_moved_by = |transport, { by, run }| {
-	place = place_in(run, transport.at) + by
-	if place <= place_in(run, run.first) {
-		{ at: run.first, motion: Stopped }
-	} else if place >= place_in(run, run.last) {
-		{ at: run.last, motion: Stopped }
+transport_moved_by = |transport, { by, range }| {
+	place = place_in(range, transport.at) + by
+	if place <= place_in(range, range.first) {
+		{ at: range.first, motion: Stopped }
+	} else if place >= place_in(range, range.last) {
+		{ at: range.last, motion: Stopped }
 	} else {
-		{ ..transport, at: (run.number_at)(place) }
+		{ ..transport, at: (range.number_at)(place) }
 	}
 }
 
 ## `transport` after a frame of its own run.
-transport_run_on : VcrButtons.Transport(number), VcrButtons.Run(number) -> VcrButtons.Transport(number)
-transport_run_on = |transport, run|
-	match (transport.motion, run.playing) {
+run_on : VcrButtons.Transport(number), VcrButtons.NumberRange(number) -> VcrButtons.Transport(number)
+run_on = |transport, range|
+	match (transport.motion, range.playing) {
 		(Stopped, _) => transport
-		(Forward, Plays(reach)) => transport_moved_by(transport, { by: reach, run })
-		(Backward, Plays(reach)) => transport_moved_by(transport, { by: -reach, run })
+		(Forward, Plays(reach)) => transport_moved_by(transport, { by: reach, range })
+		(Backward, Plays(reach)) => transport_moved_by(transport, { by: -reach, range })
 		(Forward, StepsOnly) | (Backward, StepsOnly) =>
-			crash "VcrButtons.transport_run_on: a run that doesn't play has no button to start it"
+			crash "VcrButtons.run_on: a range that doesn't play has no button to start it"
 	}
 
 ## `transport` after a press of `control`. A lit play button pauses, a step stops
@@ -193,21 +196,27 @@ transport_run_on = |transport, run|
 transport_after_press : VcrButtons.Transport(number),
 {
 	control : VcrButtons.Control,
-	run : VcrButtons.Run(number),
+	range : VcrButtons.NumberRange(number),
 } -> VcrButtons.Transport(number)
-transport_after_press = |transport, { control, run }|
+transport_after_press = |transport, { control, range }|
 	match control {
-		ToStart => VcrButtons.transport_at(run.first)
+		ToStart => VcrButtons.transport_at(range.first)
 		PlayBack => { ..transport, motion: toggle(transport.motion, Backward) }
-		StepBack => transport_moved_by({ ..transport, motion: Stopped }, { by: -run.one_step, run })
-		StepForward => transport_moved_by({ ..transport, motion: Stopped }, { by: run.one_step, run })
+		StepBack => transport_moved_by(
+			{ ..transport, motion: Stopped },
+			{ by: -range.one_step, range },
+		)
+		StepForward => transport_moved_by(
+			{ ..transport, motion: Stopped },
+			{ by: range.one_step, range },
+		)
 		Play =>
-			if place_in(run, transport.at) == place_in(run, run.last) {
-				{ at: run.first, motion: Forward }
+			if place_in(range, transport.at) == place_in(range, range.last) {
+				{ at: range.first, motion: Forward }
 			} else {
 				{ ..transport, motion: toggle(transport.motion, Forward) }
 			}
-		ToEnd => VcrButtons.transport_at(run.last)
+		ToEnd => VcrButtons.transport_at(range.last)
 	}
 
 ## A button, and how far it is from the canvas's left edge.
@@ -221,7 +230,12 @@ buttons_of = |playing| {
 			Plays(_) => [ToStart, PlayBack, StepBack, StepForward, Play, ToEnd]
 			StepsOnly => [ToStart, StepBack, StepForward, ToEnd]
 		}
-	controls.map_with_index(|control, index| { control, left: ScrubWidget.side_margin + index.to_f64() * button_spacing })
+	controls.map_with_index(
+		|control, index| {
+			control,
+			left: ScrubWidget.side_margin + index.to_f64() * button_spacing,
+		},
+	)
 }
 
 button_spacing : F64
@@ -332,30 +346,44 @@ button_shapes = |button, motion| {
 }
 
 ## A word for a reader who hasn't touched the widget yet, right of the buttons.
-hint : VcrButtons.Transport(number), VcrButtons.Run(number) -> List(Shapes.Shape)
-hint = |transport, run|
-	if transport.motion == Stopped and place_in(run, transport.at) == place_in(run, run.first) {
-		last_button_right = ScrubWidget.side_margin + (buttons_of(run.playing).len() - 1).to_f64() * button_spacing + button_width
+hint : VcrButtons.Transport(number), VcrButtons.NumberRange(number) -> List(Shapes.Shape)
+hint = |transport, range|
+	if transport.motion == Stopped and place_in(
+		range,
+		transport.at,
+	) == place_in(range, range.first) {
+		gaps_before_last = (buttons_of(range.playing).len() - 1).to_f64()
+		last_button_right = ScrubWidget.side_margin + gaps_before_last * button_spacing + button_width
 		text =
-			match run.playing {
+			match range.playing {
 				Plays(_) => "Press play"
 				StepsOnly => "Press a step button"
 			}
-		[ScrubWidget.label({ text, x: last_button_right + 14.0, y: 239.0 })]
+		[
+			ScrubWidget.label({
+				text,
+				x: last_button_right + 14.0,
+				y: 239.0,
+			}),
+		]
 	} else {
 		[]
 	}
 
-## A run over steps 0 to 6000, eight steps a frame.
-sample_clock_run : VcrButtons.Run(Clock)
-sample_clock_run = VcrButtons.clock_run({ first_step: 0, last_step: 6000, steps_a_frame: 8.0 })
+## A range over steps 0 to 6000, eight steps a frame.
+sample_clock_run : VcrButtons.NumberRange(Clock)
+sample_clock_run = VcrButtons.clock_range({
+	first_step: 0,
+	last_step: 6000,
+	steps_a_frame: 8.0,
+})
 
-## A run over a gap of 50 metres, a quarter of a metre a frame.
-sample_gap_run : VcrButtons.Run(Distance)
-sample_gap_run = VcrButtons.gap_run({ farthest: Distance.metres(50.0), metres_a_frame: 0.25 })
+## A range over a gap of 50 metres, a quarter of a metre a frame.
+sample_gap_run : VcrButtons.NumberRange(Distance)
+sample_gap_run = VcrButtons.gap_range({ farthest: Distance.metres(50.0), metres_a_frame: 0.25 })
 
-## A run over the numbers 1 to 5 that doesn't play.
-sample_stepped_run : VcrButtons.Run(U64)
+## A range over the numbers 1 to 5 that doesn't play.
+sample_stepped_run : VcrButtons.NumberRange(U64)
 sample_stepped_run = {
 	first: 1,
 	last: 5,
@@ -378,7 +406,7 @@ clock_after_press : VcrButtons.Transport(Clock), VcrButtons.Control -> VcrButton
 clock_after_press = |transport, control|
 	VcrButtons.next_transport(
 		transport,
-		{ input: VcrButtons.click_on(control, sample_clock_run.playing), run: sample_clock_run },
+		{ input: VcrButtons.click_on(control, sample_clock_run.playing), range: sample_clock_run },
 	)
 
 ## What a click at (`x`, `y`) on the sample clock does, after that frame.
@@ -386,13 +414,13 @@ clock_after_click : VcrButtons.Transport(Clock), { x : F32, y : F32 } -> VcrButt
 clock_after_click = |transport, { x, y }|
 	VcrButtons.next_transport(
 		transport,
-		{ input: Input.none.with_mouse(Mouse.of(1, 1, x, y, 0.0)), run: sample_clock_run },
+		{ input: Input.none.with_mouse(Mouse.of(1, 1, x, y, 0.0)), range: sample_clock_run },
 	)
 
 ## What a frame with nothing pressed does to the sample clock.
 clock_left_alone : VcrButtons.Transport(Clock) -> VcrButtons.Transport(Clock)
 clock_left_alone = |transport|
-	VcrButtons.next_transport(transport, { input: Input.none, run: sample_clock_run })
+	VcrButtons.next_transport(transport, { input: Input.none, range: sample_clock_run })
 
 # Every button does its job.
 expect clock_after_press(stopped_at(0), Play) == running_at(8, Forward)
@@ -415,7 +443,10 @@ expect clock_after_click(stopped_at(100), { x: 196.0, y: 222.0 }) == stopped_at(
 expect clock_after_click(stopped_at(100), { x: 174.0, y: 245.0 }) == stopped_at(101)
 
 # A click off the buttons leaves a running number running.
-expect clock_after_click(running_at(100, Forward), { x: 320.0, y: 100.0 }) == running_at(108, Forward)
+expect clock_after_click(
+	running_at(100, Forward),
+	{ x: 320.0, y: 100.0 },
+) == running_at(108, Forward)
 
 # A lit play button pauses, the other one turns the number round, and a step stops
 # it.
@@ -430,7 +461,7 @@ expect clock_after_press(running_at(100, Backward), StepBack) == stopped_at(99)
 expect clock_after_press(running_at(100, Forward), ToStart) == stopped_at(0)
 expect clock_after_press(running_at(100, Backward), ToEnd) == stopped_at(6000)
 
-# A step stays on the run at both ends.
+# A step stays on the range at both ends.
 expect clock_after_press(stopped_at(0), StepBack) == stopped_at(0)
 expect clock_after_press(stopped_at(6000), StepForward) == stopped_at(6000)
 expect clock_after_press(stopped_at(1), StepBack) == stopped_at(0)
@@ -440,7 +471,10 @@ expect clock_after_press(stopped_at(5999), StepForward) == stopped_at(6000)
 expect
 	VcrButtons.next_transport(
 		stopped_at(100),
-		{ input: Input.none.with_mouse(Mouse.of(1, 0, 196.0, 234.0, 0.0)), run: sample_clock_run },
+		{
+			input: Input.none.with_mouse(Mouse.of(1, 0, 196.0, 234.0, 0.0)),
+			range: sample_clock_run,
+		},
 	)
 		== stopped_at(100)
 
@@ -456,8 +490,14 @@ expect clock_left_alone(running_at(5992, Forward)) == stopped_at(6000)
 expect clock_left_alone(running_at(5991, Forward)) == running_at(5999, Forward)
 
 # Play from the end starts over, and play back from the start has nowhere to go.
-expect transport_after_press(stopped_at(6000), { control: Play, run: sample_clock_run }) == running_at(0, Forward)
-expect transport_after_press(stopped_at(5999), { control: Play, run: sample_clock_run }) == running_at(5999, Forward)
+expect transport_after_press(
+	stopped_at(6000),
+	{ control: Play, range: sample_clock_run },
+) == running_at(0, Forward)
+expect transport_after_press(
+	stopped_at(5999),
+	{ control: Play, range: sample_clock_run },
+) == running_at(5999, Forward)
 expect clock_after_press(stopped_at(0), PlayBack) == stopped_at(0)
 
 # The lit button is the one running the number, and nothing is lit at rest.
@@ -477,9 +517,12 @@ expect buttons_of(Plays(1.0)).all(|button| button_shapes(button, Stopped).len() 
 expect buttons_of(StepsOnly).all(|button| button_shapes(button, Stopped).len() > 1)
 expect button_shapes({ control: Play, left: 24.0 }, Forward).len() == 3
 expect button_shapes({ control: Play, left: 24.0 }, Stopped).len() == 2
-expect button_shapes({ control: Play, left: 24.0 }, Forward) != button_shapes({ control: Play, left: 24.0 }, Backward)
+expect button_shapes({ control: Play, left: 24.0 }, Forward) != button_shapes(
+	{ control: Play, left: 24.0 },
+	Backward,
+)
 
-# A gap's run falls from its farthest to zero, and a metre is a step.
+# A gap's range falls from its farthest to zero, and a metre is a step.
 expect VcrButtons.transport_at(Distance.metres(50.0)).at == sample_gap_run.first
 expect sample_gap_run.last == Distance.zero
 expect place_in(sample_gap_run, Distance.metres(50.0)) == 0.0
@@ -491,7 +534,7 @@ gap_after_press : Distance, VcrButtons.Control -> VcrButtons.Transport(Distance)
 gap_after_press = |gap, control|
 	VcrButtons.next_transport(
 		VcrButtons.transport_at(gap),
-		{ input: VcrButtons.click_on(control, sample_gap_run.playing), run: sample_gap_run },
+		{ input: VcrButtons.click_on(control, sample_gap_run.playing), range: sample_gap_run },
 	)
 
 expect gap_after_press(Distance.metres(20.0), StepForward).at == Distance.metres(19.0)
@@ -502,15 +545,15 @@ expect gap_after_press(Distance.metres(20.0), ToEnd).at == Distance.zero
 expect gap_after_press(Distance.metres(50.0), StepBack).at == Distance.metres(50.0)
 expect gap_after_press(Distance.zero, StepForward).at == Distance.zero
 
-## What a press of `control` on the sample run that doesn't play does.
+## What a press of `control` on the sample range that doesn't play does.
 stepped_after_press : U64, VcrButtons.Control -> VcrButtons.Transport(U64)
 stepped_after_press = |number, control|
 	VcrButtons.next_transport(
 		VcrButtons.transport_at(number),
-		{ input: VcrButtons.click_on(control, StepsOnly), run: sample_stepped_run },
+		{ input: VcrButtons.click_on(control, StepsOnly), range: sample_stepped_run },
 	)
 
-# A run that doesn't play has four buttons, side by side, and they step.
+# A range that doesn't play has four buttons, side by side, and they step.
 expect stepped_after_press(3, StepForward) == VcrButtons.transport_at(4)
 expect stepped_after_press(3, StepBack) == VcrButtons.transport_at(2)
 expect stepped_after_press(3, ToStart) == VcrButtons.transport_at(1)
@@ -525,13 +568,24 @@ expect control_at(Plays(1.0), { x: 240.0, y: 234.0 }) == Ok(Play)
 ## The sample clock caught up with a picture at step 40.
 caught_up_to_forty : Input.Snapshot -> VcrButtons.Transport(Clock)
 caught_up_to_forty = |input|
-	VcrButtons.catch_up(stopped_at(6000), { input, run: sample_clock_run, shown: Clock.at_step(40) })
+	VcrButtons.catch_up(
+		stopped_at(6000),
+		{
+			input,
+			range: sample_clock_run,
+			shown: Clock.at_step(40),
+		},
+	)
 
 # A press counts from what's on show, and only a press on a button does.
 expect caught_up_to_forty(VcrButtons.click_on(StepBack, Plays(1.0))) == stopped_at(40)
 expect caught_up_to_forty(Input.none) == stopped_at(6000)
-expect caught_up_to_forty(Input.none.with_mouse(Mouse.of(1, 1, 320.0, 100.0, 0.0))) == stopped_at(6000)
-expect caught_up_to_forty(Input.none.with_mouse(Mouse.of(1, 0, 196.0, 234.0, 0.0))) == stopped_at(6000)
+expect caught_up_to_forty(
+	Input.none.with_mouse(Mouse.of(1, 1, 320.0, 100.0, 0.0)),
+) == stopped_at(6000)
+expect caught_up_to_forty(
+	Input.none.with_mouse(Mouse.of(1, 0, 196.0, 234.0, 0.0)),
+) == stopped_at(6000)
 
 # The hint shows until the number has moved or started to, and says what the
 # widget's buttons can do.
@@ -544,17 +598,26 @@ expect hint(stopped_at(0), sample_clock_run) != hint(VcrButtons.transport_at(1),
 
 # The page is the panel, then each button's square and icon, then the hint.
 expect
-	VcrButtons.frame_shapes(stopped_at(1), { run: sample_clock_run, picture: [], status: [] }).len()
+	VcrButtons.frame_shapes(
+		stopped_at(1),
+		{ range: sample_clock_run, picture: [], status: [] },
+	).len()
 		> ScrubWidget.frame_shapes({ picture: [], status: [] }).len()
 expect
-	VcrButtons.frame_shapes(stopped_at(0), { run: sample_clock_run, picture: [], status: [] }).len()
-		== VcrButtons.frame_shapes(stopped_at(1), { run: sample_clock_run, picture: [], status: [] }).len() + 1
+	VcrButtons.frame_shapes(
+		stopped_at(0),
+		{ range: sample_clock_run, picture: [], status: [] },
+	).len()
+		== VcrButtons.frame_shapes(
+			stopped_at(1),
+			{ range: sample_clock_run, picture: [], status: [] },
+		).len() + 1
 
 # A canvas app opens where the widget says, at rest.
 expect
 	VcrButtons.canvas_app({
 		title: "I",
-		run: sample_clock_run,
+		range: sample_clock_run,
 		opens_at: Clock.at_step(7),
 		frame: |_transport| [],
 	}).init

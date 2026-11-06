@@ -40,8 +40,12 @@ at_start = { transport: VcrButtons.transport_at(sunset.first), job: SunSets }
 
 ## The sunset, in twelve seconds, from the ride's start to a little after full
 ## dusk.
-sunset : VcrButtons.Run(Clock)
-sunset = VcrButtons.clock_run({ first_step: 0, last_step: 6000, steps_a_frame: 8.0 })
+sunset : VcrButtons.NumberRange(Clock)
+sunset = VcrButtons.clock_range({
+	first_step: 0,
+	last_step: 6000,
+	steps_a_frame: 8.0,
+})
 
 ## The model after one frame: the buttons, and the Right key, which is how the
 ## page opens at a job.
@@ -53,7 +57,7 @@ next_model = |model, input| {
 		} else {
 			model.job
 		}
-	{ transport: VcrButtons.next_transport(model.transport, { input, run: sunset }), job }
+	{ transport: VcrButtons.next_transport(model.transport, { input, range: sunset }), job }
 }
 
 next_job : SkyWidgetApp.Job -> SkyWidgetApp.Job
@@ -69,7 +73,14 @@ frame_at : SkyWidgetApp.Model -> List(Shapes.Shape)
 frame_at = |{ transport, job }| {
 	clock = transport.at
 	[
-		VcrButtons.frame_shapes(transport, { run: sunset, picture: picture(job, clock), status: [] }),
+		VcrButtons.frame_shapes(
+			transport,
+			{
+				range: sunset,
+				picture: picture(job, clock),
+				status: [],
+			},
+		),
 		call_lines(job, clock),
 		chart(job),
 		chart_cursor(job, clock),

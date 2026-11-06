@@ -23,16 +23,20 @@ BeaconWidgetApp :: [].{
 	canvas_app : CanvasApp.CanvasApp(BeaconWidgetApp.Model)
 	canvas_app = VcrButtons.canvas_app({
 		title: "Two beacons",
-		run: blinks,
+		range: blinks,
 		opens_at: blinks.first,
 		frame: frame_at,
 	})
 }
 
 ## Two whole blinks, late in the ride, a blink in two seconds. The first step is a
-## whole number of blinks in, so the run starts where a blink starts.
-blinks : VcrButtons.Run(Clock)
-blinks = VcrButtons.clock_run({ first_step: 5400, last_step: 5640, steps_a_frame: 1.0 })
+## whole number of blinks in, so the range starts where a blink starts.
+blinks : VcrButtons.NumberRange(Clock)
+blinks = VcrButtons.clock_range({
+	first_step: 5400,
+	last_step: 5640,
+	steps_a_frame: 1.0,
+})
 
 ## The beacon keys of a tower past a segment's end, and of the tower halfway along
 ## the same segment, which blinks opposite it.
@@ -62,7 +66,11 @@ frame_at : BeaconWidgetApp.Model -> List(Shapes.Shape)
 frame_at = |transport|
 	VcrButtons.frame_shapes(
 		transport,
-		{ run: blinks, picture: picture(transport.at), status: status_lines(transport.at) },
+		{
+			range: blinks,
+			picture: picture(transport.at),
+			status: status_lines(transport.at),
+		},
 	)
 
 ## The two towers in the ride's sky at `clock`.
@@ -136,32 +144,17 @@ expect
 
 expect
 	status_lines(Clock.at_step(5400))
-		== [
-			"Clock: step 5400",
-			"Blink: 0 of 120 steps",
-			"First tower: 0%",
-			"Second tower: 100%",
-		]
+		== ["Clock: step 5400", "Blink: 0 of 120 steps", "First tower: 0%", "Second tower: 100%"]
 
 expect
 	status_lines(Clock.at_step(5415))
-		== [
-			"Clock: step 5415",
-			"Blink: 15 of 120 steps",
-			"First tower: 14%",
-			"Second tower: 85%",
-		]
+		== ["Clock: step 5415", "Blink: 15 of 120 steps", "First tower: 14%", "Second tower: 85%"]
 
 expect
 	status_lines(Clock.at_step(5520))
-		== [
-			"Clock: step 5520",
-			"Blink: 0 of 120 steps",
-			"First tower: 0%",
-			"Second tower: 100%",
-		]
+		== ["Clock: step 5520", "Blink: 0 of 120 steps", "First tower: 0%", "Second tower: 100%"]
 
-# The run opens at the start of a blink and ends at the end of the second.
+# The range opens at the start of a blink and ends at the end of the second.
 expect blinks.first == Clock.at_step(5400)
 expect blinks.last == Clock.at_step(5640)
 expect blinks.last.minus(blinks.first).to_f64() == 2.0 * TowerSighting.beacon_period.to_f64()
@@ -176,4 +169,6 @@ expect picture(Clock.at_step(5430)) != picture(Clock.at_step(5431))
 expect brightness_at(Clock.at_step(5430), 0) == brightness_at(Clock.at_step(5550), 0)
 
 # The picture follows the buttons' clock.
-expect frame_at(VcrButtons.transport_at(Clock.at_step(5430))) != frame_at(VcrButtons.transport_at(Clock.at_step(5431)))
+expect
+	frame_at(VcrButtons.transport_at(Clock.at_step(5430)))
+		!= frame_at(VcrButtons.transport_at(Clock.at_step(5431)))

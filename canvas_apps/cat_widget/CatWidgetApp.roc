@@ -26,15 +26,15 @@ CatWidgetApp :: [].{
 	canvas_app : CanvasApp.CanvasApp(CatWidgetApp.Model)
 	canvas_app = VcrButtons.canvas_app({
 		title: "The cat crossing",
-		run: closing_gap,
+		range: closing_gap,
 		opens_at: closing_gap.first,
 		frame: frame_at,
 	})
 }
 
 ## The rider's approach, in about seven seconds.
-closing_gap : VcrButtons.Run(Distance)
-closing_gap = VcrButtons.gap_run({ farthest: Distance.metres(50.0), metres_a_frame: 0.125 })
+closing_gap : VcrButtons.NumberRange(Distance)
+closing_gap = VcrButtons.gap_range({ farthest: Distance.metres(50.0), metres_a_frame: 0.125 })
 
 ## A typical speed on the ride. At one metre a step, a step of the buttons is a
 ## step of the ride, and the crossing's beats read as metres.
@@ -64,7 +64,7 @@ frame_at = |transport|
 	VcrButtons.frame_shapes(
 		transport,
 		{
-			run: closing_gap,
+			range: closing_gap,
 			picture: road.concat(cat_shapes(transport.at)),
 			status: status_lines(transport.at),
 		},
@@ -172,33 +172,18 @@ throttle_text = |throttle|
 		NoAcceleration => "The rider may not accelerate"
 	}
 
-# The whole crossing is on the run, with some road to spare at the far end.
+# The whole crossing is on the range, with some road to spare at the far end.
 expect Cat.road_buffer.plus(rider_speed.distance_in(Cat.crossing_beats)) < closing_gap.first
 expect Cat.road_buffer > closing_gap.last
 
 expect
 	status_lines(Distance.metres(50.0))
-		== [
-			"Waiting",
-			"Pose: Rest",
-			"Gap: 50.0 m",
-			"The rider may accelerate",
-		]
+		== ["Waiting", "Pose: Rest", "Gap: 50.0 m", "The rider may accelerate"]
 
 expect
 	status_lines(Distance.metres(21.0))
-		== [
-			"Playing: 52%",
-			"Pose: Frozen",
-			"Gap: 21.0 m",
-			"The rider may not accelerate",
-		]
+		== ["Playing: 52%", "Pose: Frozen", "Gap: 21.0 m", "The rider may not accelerate"]
 
 expect
 	status_lines(Distance.metres(1.5))
-		== [
-			"Past",
-			"Pose: Collapse",
-			"Gap: 1.5 m",
-			"The rider may accelerate",
-		]
+		== ["Past", "Pose: Collapse", "Gap: 1.5 m", "The rider may accelerate"]
