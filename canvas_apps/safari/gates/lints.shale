@@ -43,7 +43,7 @@ const LINTS = {
   {recipe = "name_types", args = {"table=name_types.txt"}, budget = {}, counts = {{"name_type", 6}, {"bare_beside_unit", 55}, {"no_value", 1}},
     whole_tree = {"bare_beside_unit"}},
   {recipe = "families", args = {}, budget = {}, counts = {{"family", 2}, {"twin_name", 4}}, whole_tree = {"family", "twin_name"}},
-  {recipe = "plain_names", args = {}, budget = {}, counts = {{"pure_mutator", 11}, {"abbreviation", 46}, {"module_doc", 10}}},
+  {recipe = "plain_names", args = {}, budget = {}, counts = {{"pure_mutator", 11}, {"abbreviation", 45}, {"module_doc", 10}}},
 }
 
 -- The command that runs `lint` over `glob`, in safari's folder.

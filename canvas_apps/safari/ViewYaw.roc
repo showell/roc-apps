@@ -9,12 +9,12 @@ import Scenery
 ViewYaw :: [].{
 
 	## How far the head turns for each radian of lean.
-	head_yaw_frac : F64
-	head_yaw_frac = 0.15
+	head_turn_per_lean : F64
+	head_turn_per_lean = 0.15
 
 	## The camera's turn from the way the bike points.
 	view_yaw_for : RiderState -> Angle.Turn
-	view_yaw_for = |s| s.gaze_yaw.plus(s.lean.steer(head_yaw_frac))
+	view_yaw_for = |s| s.gaze_yaw.plus(s.lean.steer(head_turn_per_lean))
 
 	## The camera's bearing in the world.
 	heading_for : RiderState -> Angle.Bearing
@@ -30,7 +30,7 @@ ViewYaw :: [].{
 	}
 }
 
-expect ViewYaw.head_yaw_frac == 0.15
+expect ViewYaw.head_turn_per_lean == 0.15
 
 level : RiderState
 level = RiderState.initial
