@@ -1507,3 +1507,5 @@ The patterns say what works. This page says what bites, sorted by what shows up 
 ## Credits
 
 Safari Ride was designed by Steve Howell. Claude wrote most of the code and this tutorial under his direction.
+
+The way these chapters open and close, the predictions under the widgets and the page of surprises are ideas from Braeden Foster's [Rocco tutorial](https://github.com/Pixelsprout/rocco-engine).
