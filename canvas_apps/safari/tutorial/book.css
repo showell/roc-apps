@@ -149,8 +149,6 @@ iframe.canvas-app { display: block; width: 100%; border: 0; border-radius: 4px; 
 /* Tables */
 
 table {
-  display: block;
-  overflow-x: auto;
   margin: 0 0 1.6rem;
 svg.diagram .edge text { fill: var(--quiet); }
   border-collapse: collapse;
@@ -161,10 +159,12 @@ td { border-bottom: 1px solid var(--rule); }
 th, td { padding: 0.35rem 1rem 0.35rem 0; vertical-align: top; }
 
 /* Draft notes stay in sight, and they look like notes rather than the book. */
+  font-variant-numeric: tabular-nums;
 
 .draft-note { background: var(--draft); color: var(--draft-ink); font: 0.74rem/1.5 var(--plain); }
 span.draft-note { padding: 0.1em 0.3em; border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 p.draft-note { padding: 0.5rem 0.8rem; border-radius: 3px; }
+th:last-child, td:last-child { padding-right: 0; }
 .draft-note code { background: none; padding: 0; }
 .draft-note::before { content: 'Draft note: '; font-weight: 600; }
 

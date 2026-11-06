@@ -5,6 +5,7 @@
 import md.Md
 import md.MdDocument
 import BookFence
+import BookTable
 import BookText
 import DraftNotes
 import Manuscript
@@ -151,7 +152,7 @@ chapter_of = |text, fence| {
 				file: "${BookText.from_bytes(top.id)}.html",
 				title: BookText.from_bytes(top.text),
 				number: Unnumbered,
-				body: with_section_links(DraftNotes.highlight(html)),
+				body: BookTable.with_break_points(with_section_links(DraftNotes.highlight(html))),
 				sections: rest.map(section_of),
 				opening: "",
 			}
