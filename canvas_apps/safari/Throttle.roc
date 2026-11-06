@@ -23,14 +23,14 @@ Throttle :: [].{
 
 	bend_brake : RiderState,
 	{
-		road_segment : World.Segment,
+		segment : World.Segment,
 		exit_speed : Speed,
 		offered_accel : Acceleration,
 	} -> Acceleration
 	bend_brake = |
 		state,
 		{
-			road_segment: seg,
+			segment: seg,
 			exit_speed: v_end,
 			offered_accel: a,
 		},
@@ -53,21 +53,17 @@ Throttle :: [].{
 	## may not accelerate. It stops the rider speeding up, and never brakes.
 	crossing_gate : RiderState,
 	{
-		road_segment : World.Segment,
+		segment : World.Segment,
 		offered_accel : Acceleration,
 	} -> Acceleration
-	crossing_gate = |state, { road_segment: seg, offered_accel: a }|
+	crossing_gate = |state, { segment: seg, offered_accel: a }|
 		match CrossingReaction.reaction_to(seg, state).throttle {
 			NoAcceleration if a > Acceleration.steady => Acceleration.steady
 			NoAcceleration | MayAccelerate => a
 		}
 
-	pig_gate : RiderState,
-	{
-		road_segment : World.Segment,
-		offered_accel : Acceleration,
-	} -> Acceleration
-	pig_gate = |state, { road_segment: seg, offered_accel: a }| {
+	pig_gate : RiderState, { segment : World.Segment, offered_accel : Acceleration } -> Acceleration
+	pig_gate = |state, { segment: seg, offered_accel: a }| {
 		b = Gaze.pig_gaze_brake(state, seg)
 		if b.engaged {
 			if b.accel < a {
@@ -122,7 +118,7 @@ Throttle :: [].{
 
 	clamp_v : RiderState,
 	{
-		road_segment : World.Segment,
+		segment : World.Segment,
 		exit_speed : Speed,
 		next_speed : Speed,
 		is_near_end : Bool,
@@ -130,7 +126,7 @@ Throttle :: [].{
 	clamp_v = |
 		state,
 		{
-			road_segment: seg,
+			segment: seg,
 			exit_speed: v_end,
 			next_speed: v0,
 			is_near_end: near,
@@ -183,7 +179,7 @@ Throttle :: [].{
 				bend_brake(
 					state,
 					{
-						road_segment: seg,
+						segment: seg,
 						exit_speed: v_end,
 						offered_accel: a0,
 					},
@@ -191,13 +187,13 @@ Throttle :: [].{
 			} else {
 				a0
 			}
-		a2 = crossing_gate(state, { road_segment: seg, offered_accel: a1 })
-		a3 = pig_gate(state, { road_segment: seg, offered_accel: a2 })
+		a2 = crossing_gate(state, { segment: seg, offered_accel: a1 })
+		a3 = pig_gate(state, { segment: seg, offered_accel: a2 })
 		a4 = shoulder_brake(state, a3)
 		clamp_v(
 			state,
 			{
-				road_segment: seg,
+				segment: seg,
 				exit_speed: v_end,
 				next_speed: state.speed.accelerated_by(a4),
 				is_near_end: near,
@@ -234,7 +230,7 @@ bend_brake_at = |rider, offered|
 	Throttle.bend_brake(
 		rider,
 		{
-			road_segment: first_segment,
+			segment: first_segment,
 			exit_speed: Speed.metres_a_step(0.222),
 			offered_accel: Acceleration.metres_a_step_each_step(offered),
 		},
@@ -252,19 +248,19 @@ expect {
 	fast < slow
 }
 
-## What the crossing gate lets through for a rider at `along` on `road_segment`.
-gate_at : { road_segment : World.Segment, along : F64 }, F64 -> F64
-gate_at = |{ road_segment, along }, offered|
+## What the crossing gate lets through for a rider at `along` on `segment`.
+gate_at : { segment : World.Segment, along : F64 }, F64 -> F64
+gate_at = |{ segment, along }, offered|
 	Throttle.crossing_gate(
 		centred_rider(along, 0.3),
-		{ road_segment, offered_accel: Acceleration.metres_a_step_each_step(offered) },
+		{ segment, offered_accel: Acceleration.metres_a_step_each_step(offered) },
 	).to_metres_a_step_each_step()
 
-expect gate_at({ road_segment: first_segment, along: 0.0 }, 0.01) == 0.01
-expect gate_at({ road_segment: first_segment, along: 0.0 }, -5.0) == -5.0
-expect gate_at({ road_segment: cat_segment, along: 120.0 }, 0.01) == 0.0
-expect gate_at({ road_segment: cat_segment, along: 120.0 }, -5.0) == -5.0
-expect gate_at({ road_segment: cat_segment, along: 0.0 }, 0.01) == 0.01
+expect gate_at({ segment: first_segment, along: 0.0 }, 0.01) == 0.01
+expect gate_at({ segment: first_segment, along: 0.0 }, -5.0) == -5.0
+expect gate_at({ segment: cat_segment, along: 120.0 }, 0.01) == 0.0
+expect gate_at({ segment: cat_segment, along: 120.0 }, -5.0) == -5.0
+expect gate_at({ segment: cat_segment, along: 0.0 }, 0.01) == 0.01
 
 ## Throttle doesn't import Distance or Across, so these places and lengths come
 ## from what it does see.
@@ -311,7 +307,7 @@ clamped_speed = |{ next_speed, is_near_end }|
 	Throttle.clamp_v(
 		centred_rider(0.0, 0.3),
 		{
-			road_segment: first_segment,
+			segment: first_segment,
 			exit_speed: Speed.metres_a_step(0.222),
 			next_speed: Speed.metres_a_step(next_speed),
 			is_near_end,
