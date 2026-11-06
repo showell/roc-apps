@@ -42,6 +42,8 @@ It works like a flipbook, the little stack of drawings that seems to move when y
 
 The middle box is the heart of it. On a real safari, a guide scans the land and calls out what's there: a cat by the third tree, a bird on the far side. Each of those is a sighting, true for that instant and gone the next. Safari Ride takes its sightings the same way, fresh on every page.
 
+So far that's all boxes and arrows. What a box looks like in Roc is still missing.
+
 ## One whole module
 
 Before the map, here's a whole module, so you know what the boxes on it look like up close. This is the clock from the second box above, all of it.
@@ -56,9 +58,11 @@ It's called like this, once a step:
 
 `instant.clock.next()` is static dispatch: `next` comes from the type of `instant.clock`, so the call needs no import.
 
+That's one module of about eighty, and nothing yet says how the rest fit together.
+
 ## The modules
 
-Here's the whole system, simplified. An arrow points from a module to one it imports, so a module is composed of what it points at. Dashed boxes each stand for a family of modules. Roc doesn't allow import cycles, so nothing here can point back up.
+Here's how they fit: the whole system, simplified. An arrow points from a module to one it imports, so a module is composed of what it points at. Dashed boxes each stand for a family of modules. Roc doesn't allow import cycles, so nothing here can point back up.
 
 The whole system, simplified
 ```dot
@@ -108,7 +112,11 @@ A sighting answers one question each frame: which of these can the rider see rig
 
 `Render` gathers every sighting's items, a depth sort puts them in order, and `ItemDraw` hands each one to the module that paints it. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. The rule is simple: a sighting decides, and drawing paints.
 
+All of that is about one frame, and a frame is gone by the next one. What lasts from one step to the next hasn't come up yet.
+
 ## All that's stored
+
+What lasts from step to step fits in one record.
 
 A record is the plainest shape in Roc, and it's nearly all this needs. `RideInstant := { ... }.{ ... }` makes the module's own type out of one. That's a nominal type, which can carry a block of definitions, and unlike an opaque type it leaves its fields readable.
 
@@ -130,9 +138,11 @@ Purity makes some things free. `Tour`, the whole journey, is little more than a 
 
 The game itself has no effectful functions at all. It has no `!` names, no `=>` arrows, no `?` and no `where`. Effects live in the platform.
 
+Four kinds of thing have been named, and so far none has been shown.
+
 ## What never changes
 
-Trees, cows, the pond and the road are built once and only read after that.
+The fourth kind is the easiest, so it goes first. Trees, cows, the pond and the road are built once and only read after that.
 
 The modules around `World`
 ```dot
@@ -175,6 +185,8 @@ Here's where it's called, picking the colour for a pair of small trees:
 `SegmentIndex` is another small opaque type, a `U32` for a segment's place in the route. A place in the route can't be confused with a count of trees, because nothing outside can do arithmetic on it. `crash` appears here too. It isn't for error handling: an index that isn't in the world is a bug in Safari Ride, not a case to handle.
 
 {{code World.SegmentIndex from "## The segment of `world`" to "?? crash"}}
+
+Nothing in this chapter moves, and the ride does.
 
 ## The sky
 
@@ -312,9 +324,11 @@ Its caller, `RideInstant.sun`, is short enough to read whole:
 
 That's every box on the diagram: one number goes in, and colours and a place for the sun come out, with nothing kept from one frame to the next.
 
+The sun would set the same way on an empty road. A clock can't tell that a rider is coming.
+
 ## The cat
 
-The cat is the best scene in Safari Ride. It walks out, freezes in the lane as the rider bears down on it, and leaps clear at the last possible instant.
+The cat reacts to the rider, which no clock can do. It's the best scene in Safari Ride. It walks out, freezes in the lane as the rider bears down on it, and leaps clear at the last possible instant.
 
 From a distance, the cat is one function in two halves, with a shared module underneath.
 
@@ -564,9 +578,11 @@ Looking back over the chapter, notice what isn't in it: a cat in `RideInstant`, 
 
 Roc doesn't force that, but pure functions make the stateless version the easy one to write, and every `->` shows it stayed that way.
 
+One thing about time is still missing. The sun only goes one way, and nothing so far repeats on the clock.
+
 ## The beacons and the headlights
 
-The cat walked out of its place in the order. Two clock-driven things were left behind when it did, and both are brief.
+The cat walked out of its place in the order. Two clock-driven things were left behind when it did, and both are brief. One of them comes round again, and the other switches once.
 
 ### A blink
 
@@ -654,9 +670,11 @@ Lamps are to the truck what a pose is to a cat. The sighting carries them, and t
 
 That's the clock-driven things. Each is a function with a `Clock` in its arguments, and nothing about them outlives the frame.
 
+The rider-driven kind still has only one member, and one cat can't say whether `Animation` was written for critters or just for cats.
+
 ## The bird
 
-The bird is Roc's logo, sitting on a treetop. As the rider comes near it takes off, flies across the road and ahead, and drops onto a tree on the far side. It's a rider-driven thing like the cat, and it cost much less, which is the point of this chapter.
+A second critter settles that. The bird is Roc's logo, sitting on a treetop. As the rider comes near it takes off, flies across the road and ahead, and drops onto a tree on the far side. It's a rider-driven thing like the cat, and it cost much less, which is the point of this chapter.
 
 The modules around `BirdFlight`
 ```dot
@@ -767,9 +785,11 @@ Each frame, a sighting reads the route back. `|` in a pattern covers two tags wi
 
 Nothing in this chapter is new machinery, and that's what it shows. Above their `expect`s, the four bird modules come to about 450 lines, a quarter of them coordinates for the stills, and `Animation` has nothing in it about birds.
 
+Everything so far can be asked about any instant, cold. Hand `Cat.instant_at` a gap and it answers. The rider and the truck can't do that.
+
 ## The stepped things
 
-Everything so far can be asked about any instant, cold. Hand `Cat.instant_at` a gap and it answers. The rider and the truck can't do that. Where each of them is depends on where it was, so their state has to be kept, and it's the only state there is. This chapter is about the two fields of `RideInstant` that aren't a clock.
+Where the rider and the truck are depends on where they were, so their state has to be kept, and it's the only state there is. This chapter is about the two fields of `RideInstant` that aren't a clock.
 
 The modules that do the stepping
 ```dot
@@ -956,6 +976,8 @@ The truck has no `Animation`, and it's worth saying why. A timeline has a known 
 The rider's lean has been passed over twice now, with `LeanSearch` doing something the last few sections kept pointing at. That needs the math.
 
 ## The math layer
+
+The lean comes at the end of this chapter, on top of everything else in it.
 
 A lot of Safari Ride is math and physics, and this is the chapter that goes through the floor of the tour and looks at what's holding it up. Most of it is geometry a reader could do on paper. It's here because this kind of code suits a compiled functional language unusually well, for a short list of reasons that each get a section:
 
@@ -1155,7 +1177,7 @@ The floor of this layer is lower than it needs to be. `lib/DeviceMath.roc` compu
 
 `Throttle.shoulder_brake_at` is the caller, so a rehearsed arc's length decays into a braking force through this. [check: why these are hand-written rather than builtins. They came with the Codex port, and the reason is probably that the same bits come out on every target. Ask Steve before saying so.]
 
-Top to bottom, then: a rider chooses a lean by simulating physics, and the physics is plain arithmetic on opaque numbers, from the frame down to the polynomial. There's no effect anywhere in that sentence, and that's the reason for the next chapter.
+Top to bottom, then: a rider chooses a lean by simulating physics, and the physics is plain arithmetic on opaque numbers, from the frame down to the polynomial. There's no effect anywhere in that sentence. What that's worth when the program has to change is still an open question.
 
 ## Proving it
 
@@ -1269,6 +1291,8 @@ This tutorial is built from the code. Every fenced snippet here came through Roc
 
 Lints round it out: shale's Roc lints run first, with each count held exactly, and every count is at zero. A name that's vague or a boolean parameter that should be a tag fails before a single hash is computed.
 
+All of that runs without a screen. The tour still hasn't said how a list of shapes reaches one, or where the effects went.
+
 ## The platform
 
 The rest of the program is what puts this on a screen, and Safari Ride has very little to say about that, on purpose. The tour touched this early on. Here it is with the code.
@@ -1339,7 +1363,11 @@ The JS is about 490 lines for every canvas app there is. It knows nothing of cat
 
 The same modules are compiled three ways, which is about the strongest statement of the line between the game and the platform that a program can make. The page builds them to wasm. The gates build them natively. And `main.roc` hands the same `SafariApp.canvas_app` to `native/CanvasAppRunner.roc` on roc-ray. That third one is the spike that proved the idea and it isn't kept current, as the README says, so the page is the maintained side. The first two run on every gate.
 
+That's the last of the parts. Each has been seen alone, and the first diagram hasn't been looked at since.
+
 ## Zooming back out
+
+Every box on the first diagram has now been opened.
 
 *[This chapter ties the tour together once the stepped things, the proof and the platform are written. It returns to the flipbook and the first diagram: the clock ticks, and everything composes from three stored fields.]*
 
