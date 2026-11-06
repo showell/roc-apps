@@ -1,25 +1,25 @@
-# VehicleLimits -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## VehicleLimits holds the speeds and accelerations that the rider and the truck
+## keep to, and how fast each turn may be taken.
 import Acceleration
 import Angle
 import Distance
-import Num_
+import Float
 import Speed
 import lib.Trig
 
 VehicleLimits :: [].{
 
-	a_accel : Acceleration
-	a_accel = Acceleration.metres_a_step_each_step(0.01)
+	cruise_acceleration : Acceleration
+	cruise_acceleration = Acceleration.metres_a_step_each_step(0.01)
 
-	v_base : Speed
-	v_base = Speed.metres_a_step(0.3)
+	base_speed : Speed
+	base_speed = Speed.metres_a_step(0.3)
 
-	v_max : Speed
-	v_max = Speed.metres_a_step(2.5)
+	top_speed : Speed
+	top_speed = Speed.metres_a_step(2.5)
 
-	approach_intersection_dist : Distance
-	approach_intersection_dist = Distance.metres(60.0)
+	bend_approach : Distance
+	bend_approach = Distance.metres(60.0)
 
 	## The braking for a turn is worked out over the distance left to it, so a
 	## turn closer than this counts as reached, and no division is by zero.
@@ -43,7 +43,7 @@ VehicleLimits :: [].{
 	## degree it rounds to, and that must be one in `turn_speeds`.
 	turn_speed : Angle.Turn -> Speed
 	turn_speed = |turn| {
-		degrees = Num_.round_real(((turn.to_radians() * 180.0) / Trig.pi))
+		degrees = Float.round(((turn.to_radians() * 180.0) / Trig.pi))
 		match turn_speeds.find_first(|row| row.degrees == degrees) {
 			Ok(row) => row.speed
 			Err(NotFound) => crash "VehicleLimits.turn_speed: no speed for a turn of ${degrees.to_str()} degrees"
@@ -51,9 +51,9 @@ VehicleLimits :: [].{
 	}
 }
 
-expect VehicleLimits.a_accel.to_metres_a_step_each_step() == 0.01
-expect VehicleLimits.v_max.to_metres_a_step() == 2.5
-expect VehicleLimits.approach_intersection_dist.to_metres() == 60.0
+expect VehicleLimits.cruise_acceleration.to_metres_a_step_each_step() == 0.01
+expect VehicleLimits.top_speed.to_metres_a_step() == 2.5
+expect VehicleLimits.bend_approach.to_metres() == 60.0
 
 ## The speed for a turn of this many degrees.
 speed_for_turn : F64 -> F64

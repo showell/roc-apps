@@ -1,4 +1,4 @@
-## Tour is the whole journey, for any platform that draws it. It keeps the
+## Tour is the whole ride, for any platform that draws it. It keeps the
 ## current instant of the ride and the instants behind it for stepping back, and
 ## it says what a frame shows in the terms a painter needs: the shapes, the
 ## camera roll, the two sky colours and the sun. SafariApp turns it into a
@@ -11,13 +11,13 @@ import Rider
 import CanvasRoll
 import RideFocal
 import ViewYaw
-import Frame
+import Chain
 import Lens
 import lib.Shapes
 
 ## The route, the instant the ride has reached, and the instants before it.
 Tour := {
-	world : List(World.Segment),
+	route : List(World.Segment),
 	instant : RideInstant,
 	past_instants : List(RideInstant),
 }.{
@@ -28,11 +28,11 @@ Tour := {
 	past_instants_cap = 2048
 
 	initial : Tour
-	initial = { world: World.segments, instant: RideInstant.initial, past_instants: [] }
+	initial = { route: World.segments, instant: RideInstant.initial, past_instants: [] }
 
-	advance : Tour -> Tour
-	advance = |tour| {
-		finished = Rider.is_finished(tour.instant.rider, tour.world)
+	step_forward : Tour -> Tour
+	step_forward = |tour| {
+		finished = Rider.is_finished(tour.instant.rider, tour.route)
 		# Dropping one instant per step would copy the whole list every step, so
 		# half of it goes at once and the copy falls on one step in a thousand.
 		# The list is therefore between half a cap and a cap deep, never empty,
@@ -46,17 +46,17 @@ Tour := {
 				tour.past_instants.drop_first(past_instants_cap // 2).append(tour.instant)
 			}
 		{
-			world: tour.world,
-			instant: RideInstant.next(tour.world, tour.instant),
+			route: tour.route,
+			instant: RideInstant.next_or_restart(tour.route, tour.instant),
 			past_instants,
 		}
 	}
 
-	back : Tour -> Tour
-	back = |tour| {
+	step_back : Tour -> Tour
+	step_back = |tour| {
 		match tour.past_instants.last() {
 			Ok(prev) => {
-				world: tour.world,
+				route: tour.route,
 				instant: prev,
 				past_instants: tour.past_instants.drop_last(1),
 			}
@@ -67,20 +67,20 @@ Tour := {
 	## The frame's shapes in paint order. A bird is sorted by depth with
 	## everything else, so a nearer tree hides it.
 	shapes : Tour -> List(Shapes.Shape)
-	shapes = |tour| RideInstant.frame(tour.world, tour.instant)
+	shapes = |tour| RideInstant.shapes(tour.route, tour.instant)
 
 	# The camera roll: the whole frame, backdrop and shapes, turns
 	# by minus this about the screen's centre.
 	roll : Tour -> Angle.Lean
-	roll = |tour| CanvasRoll.rider_roll(tour.instant.rider.tilt)
+	roll = |tour| CanvasRoll.rider_roll(tour.instant.rider.lean)
 
 	# The sky at the top of the frame and at the horizon, as 0xRRGGBB.
-	sky_top : Tour -> I64
-	sky_top = |tour| Sky.sky_color(tour.instant.clock)
+	sky_top_color : Tour -> I64
+	sky_top_color = |tour| Sky.sky_top_color(tour.instant.clock)
 
-	sky_horizon : Tour -> I64
-	sky_horizon = |tour| Sky.horizon_color(tour.instant.clock)
+	sky_horizon_color : Tour -> I64
+	sky_horizon_color = |tour| Sky.sky_horizon_color(tour.instant.clock)
 
-	sun : Tour -> Sky.SunPos
-	sun = |tour| RideInstant.sun(tour.world, tour.instant)
+	sun : Tour -> Sky.SunSighting
+	sun = |tour| RideInstant.sun(tour.route, tour.instant)
 }

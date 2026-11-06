@@ -1,21 +1,16 @@
-# SafariApp -- the drive, as a value the canvas apps can run.
-#
-# Hand-written: the shim between the ride Safari actually is and the value a
-# runner wants. Tour holds the journey and its history; SafariShapes says
-# what a frame looks like. This says which keys move it and how the camera
-# leans.
-#
-# The drive plays on its own. Space pauses it. Left steps back through the
-# ride's history and Right forward, a frame at a time while paused and faster
-# while it runs. J jumps to the next of the route's nineteen segments, and R
-# starts the drive again.
-#
-# SafariFrame paints a frame into pixels for the native proof tools
-# (README.md); no runner paints that way.
+## SafariApp is the ride as a value the canvas apps can run. It sits between the
+## ride and what a runner wants: Tour holds the ride and its history, Backdrop
+## says what is behind it, and this module says which keys move it and how the
+## camera leans.
+##
+## The ride plays on its own. Space pauses it. Left steps back through the ride's
+## history and Right forward, a frame at a time while paused and faster while it
+## runs. J jumps to the next of the route's nineteen segments, and R starts the
+## ride again.
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
-import SafariShapes
+import Backdrop
 import Screen
 import Tour
 
@@ -25,8 +20,8 @@ SafariApp :: [].{
 	canvas_app : CanvasApp.CanvasApp(SafariApp.Model)
 	canvas_app = {
 		size: { width: Screen.width, height: Screen.height },
-		# **THIRTY, BY EYE.** The drive's motion is written per tick, and
-		# thirty is the speed it is meant to look like.
+		# The ride's motion is written per step, and thirty steps a second is the
+		# speed it is meant to look like, chosen by eye.
 		fps: 30,
 		init: { tour: Tour.initial, paused: Bool.False },
 		advance: CanvasApp.untimed_advance(step),
@@ -53,12 +48,12 @@ SafariApp :: [].{
 				zoom: 1.0,
 			}),
 		)
-		SafariShapes.frame(
+		Backdrop.behind(
 			Tour.shapes(tour),
 			{
-				sky_top_color: Tour.sky_top(tour),
-				sky_horizon_color: Tour.sky_horizon(tour),
-				sun_position: Tour.sun(tour),
+				sky_top_color: Tour.sky_top_color(tour),
+				sky_horizon_color: Tour.sky_horizon_color(tour),
+				sun_sighting: Tour.sun(tour),
 			},
 		).prepend(lean)
 	}
@@ -86,7 +81,7 @@ SafariApp :: [].{
 							} else {
 								4
 							},
-							step_once: Tour.advance,
+							step_once: Tour.step_forward,
 						},
 					)
 				} else if input.key_down(KeyLeft) {
@@ -98,13 +93,13 @@ SafariApp :: [].{
 							} else {
 								4
 							},
-							step_once: Tour.back,
+							step_once: Tour.step_back,
 						},
 					)
 				} else if paused {
 					m.tour
 				} else {
-					Tour.advance(m.tour)
+					Tour.step_forward(m.tour)
 				}
 			tour = if input.key_pressed(KeyJ) {
 				next_segment(moved)
@@ -130,11 +125,11 @@ SafariApp :: [].{
 	# stepping until the segment changes.
 	next_segment : Tour -> Tour
 	next_segment = |tour| {
-		from = tour.instant.rider.segment
-		var $tour = Tour.advance(tour)
+		from = tour.instant.rider.segment_index
+		var $tour = Tour.step_forward(tour)
 		var $guard = 0
-		while $tour.instant.rider.segment == from and $guard < step_guard {
-			$tour = Tour.advance($tour)
+		while $tour.instant.rider.segment_index == from and $guard < step_guard {
+			$tour = Tour.step_forward($tour)
 			$guard = $guard + 1
 		}
 		$tour

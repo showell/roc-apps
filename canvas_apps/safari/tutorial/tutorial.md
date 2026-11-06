@@ -4,7 +4,7 @@
 The ride, running as you read. Click it to give it the keyboard: Space pauses, and the arrows step.
 ```
 
-This is Safari Ride. A rider cycles down a long road through open country, past trees, cows and pigs, with a truck somewhere ahead. Radio masts blink in the distance. A bird takes off as the rider comes near. A cat walks into the lane, freezes, and leaps for the far verge. The sun goes down behind the mountains, and the truck turns on its headlights.
+This is Safari Ride. A rider cycles down a long road through open country, past trees, cows and pigs, with a truck somewhere ahead. Radio towers blink in the distance. A bird takes off as the rider comes near. A cat walks into the lane, freezes, and leaps for the far verge. The sun goes down behind the mountains, and the truck turns on its headlights.
 
 Safari Ride has the important parts of a game's world: terrain, physics, a camera, things that react to the player, and a day that ends. It doesn't have game mechanics yet. Nothing keeps score.
 
@@ -21,22 +21,22 @@ Each chapter zooms too, on a smaller scale. A title line sits above each block o
 
 ## The problem
 
-The problem is simple to state. Design a world once. Then, each time the clock ticks, move what moves, find everything near enough to see, and draw it against the backdrop.
+The problem is simple to state. Design a world once. Then, each time the clock steps, move what moves, find everything near enough to see, and draw it against the backdrop.
 
 The problem, as a loop
 ```dot
 digraph problem {
   node [shape=box, fontname="Helvetica"];
   world [label="design the world\n(once)"];
-  tick [label="the clock ticks"];
+  step [label="the clock steps"];
   move [label="move the rider and the truck"];
   look [label="look around:\nwhat's near enough to see?"];
   draw [label="draw it against the backdrop"];
-  world -> tick;
-  tick -> move;
+  world -> step;
+  step -> move;
   move -> look;
   look -> draw;
-  draw -> tick [label="  next step"];
+  draw -> step [label="  next step"];
 }
 ```
 
@@ -63,7 +63,7 @@ Most of Safari Ride's small modules have this shape: a comment saying what the t
 
 It's called like this, once a step:
 
-{{code RideInstant.step from "clock: instant.clock.next()," to "clock: instant.clock.next(),"}}
+{{code RideInstant.next from "clock: instant.clock.next()," to "clock: instant.clock.next(),"}}
 
 `instant.clock.next()` is static dispatch: `next` comes from the type of `instant.clock`, so the call needs no import.
 
@@ -78,7 +78,7 @@ Here's how they fit: the whole system, simplified.
 New in this chapter:
 
 - Roc: imports that can't form a cycle
-- Modules: `SafariApp`, `Render`, `ItemDraw`, `CatSighting`
+- Modules: `SafariApp`, `Scene`, `SceneDraw`, `CatSighting`
 
 An arrow points from a module to one it imports, so a module is composed of what it points at. Dashed boxes each stand for a family of modules. Roc doesn't allow import cycles, so nothing here can point back up.
 
@@ -92,13 +92,13 @@ digraph system {
     label="the ride";
     Rider; Truck; World;
     critters [label="the critters\nCat, BirdFlight, Animation", style=dashed];
-    scenery [label="the scenery\nTrees, Herd, Pigs", style=dashed];
+    scenery [label="the scenery\nTrees, Cows, Pigs", style=dashed];
   }
   subgraph cluster_view {
     label="the view";
     sky [label="the sky\nSky, Mountains", style=dashed];
-    drawing [label="the drawing\nItemDraw, CatDraw, RocBird, Tree, ...", style=dashed];
-    sightings [label="the sightings\nRender, CatSighting, BirdSighting, TreeSighting, ...", style=dashed];
+    drawing [label="the drawing\nItemDraw, CatDraw, BirdDraw, TreeDraw, ...", style=dashed];
+    sightings [label="the sightings\nScene, CatSighting, BirdSighting, TreeSighting, ...", style=dashed];
   }
   app -> RideInstant;
   RideInstant -> Rider;
@@ -118,7 +118,7 @@ There are two halves. The ride is `Rider`, `Truck` and `World`, with `World` com
 
 ### The part that isn't Roc
 
-Safari Ride runs in a browser, and that takes a thin layer of JavaScript. The Roc compiles to wasm. Each tick, the JS keeps the clock, gathers the keys, and calls into Roc. Roc answers with a list of shapes, and the JS paints them on a canvas. The JS knows nothing of cats, and the Roc knows nothing of canvases. The whole game is on the Roc side of that line, and the same app also runs natively. `canvas_apps/ARCHITECTURE.md` has the details, and the platform chapter comes back to it.
+Safari Ride runs in a browser, and that takes a thin layer of JavaScript. The Roc compiles to wasm. Each step, the JS keeps the clock, gathers the keys, and calls into Roc. Roc answers with a list of shapes, and the JS paints them on a canvas. The JS knows nothing of cats, and the Roc knows nothing of canvases. The whole game is on the Roc side of that line, and the same app also runs natively. `canvas_apps/ARCHITECTURE.md` has the details, and the platform chapter comes back to it.
 
 ### What's a sighting?
 
@@ -126,9 +126,9 @@ Most things in the view come in pairs, and the names say which half is which: `C
 
 A sighting answers one question each frame: which of these can the rider see right now, and how should each one look? `CatSighting` goes through the segments ahead, asks `Cat` where it is, works out where that lands in the rider's view, and drops any cat behind the camera or too small to matter. What it hands back is a plain record with no drawing in it:
 
-{{code CatSighting.CatItem}}
+{{code CatSighting.CatSighting}}
 
-`Render` gathers every sighting's items, a depth sort puts them in order, and `ItemDraw` hands each one to the module that paints it. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. The rule is simple: a sighting decides, and drawing paints.
+`Scene` gathers every sighting's answer, a depth sort puts them in order, and `SceneDraw` hands each one to the module that paints it. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. The rule is simple: a sighting decides, and drawing paints.
 
 All of that is about one frame, and a frame is gone by the next one. What lasts from one step to the next hasn't come up yet.
 
@@ -157,7 +157,7 @@ That gives three kinds of moving thing, and the tour is organized around them:
 
 Trees and cows are a fourth kind, the easiest of all: they never change.
 
-Purity makes some things free. `Tour`, the whole journey, is little more than a list of past instants, so stepping back only needs an older one. The cat follows along, since it was never anywhere but where the rider's position puts it, and the sun rises again.
+Purity makes some things free. `Tour`, the whole ride, is little more than a list of past instants, so stepping back only needs an older one. The cat follows along, since it was never anywhere but where the rider's position puts it, and the sun rises again.
 
 The game itself has no effectful functions at all. It has no `!` names, no `=>` arrows, no `?` and no `where`. Effects live in the platform.
 
@@ -178,13 +178,13 @@ digraph world {
   node [shape=box, fontname="Helvetica"];
   World [style=bold];
   World -> Trees;
-  World -> Herd;
+  World -> Cows;
   World -> Pigs;
   World -> Scenery;
   World -> Cat;
   World -> BirdFlight;
-  Herd -> Trees;
-  Herd -> Scenery;
+  Cows -> Trees;
+  Cows -> Scenery;
   Trees -> Scenery;
   Pigs -> Scenery;
 }
@@ -196,7 +196,7 @@ A piece of the world can be just a value. Here's the second whole module, and it
 
 Above its `expect`s, there are no functions here at all. The ducks are read where the critters are sighted:
 
-{{code CritterSighting.pond_sightings from "if Scenery.is_pond" to "Pond.ducks.map("}}
+{{code CutoutSighting.pond_sightings from "if Scenery.is_pond" to "Pond.ducks.map("}}
 
 `World` turns a route, a plain list of records, into segments of road. A plan for a segment shows how much tag unions can do with no declaration. `[WithBull, NoBull]` is written right in the field's type, and it says more than a boolean would at every place a segment is written down.
 
@@ -212,7 +212,7 @@ Here's where it's called, picking the colour for a pair of small trees:
 
 `SegmentIndex` is another small opaque type, a `U32` for a segment's place in the route. A place in the route can't be confused with a count of trees, because nothing outside can do arithmetic on it. `crash` appears here too. It isn't for error handling: an index that isn't in the world is a bug in Safari Ride, not a case to handle.
 
-{{code World.SegmentIndex from "## The segment of `world`" to "?? crash"}}
+{{code World.SegmentIndex from "## The segment of `route`" to "?? crash"}}
 
 A value that never changes can be checked once, whole. `Pond`'s one function is below its block, and it's there for a test:
 
@@ -240,7 +240,7 @@ digraph sky {
   Sky [style=bold];
   RideInstant -> Sky;
   Tour -> Sky;
-  SafariShapes -> Sky;
+  Backdrop -> Sky;
   Mountains -> Sky;
   Sky -> Angle;
   Sky -> Fraction;
@@ -261,9 +261,9 @@ Drag across it from left to right, and the clock runs from step 0 to step 6,000.
 
 Every function in this chapter has a `->` arrow, not `=>`. In Roc that's a promise the compiler holds: no effects, so the same clock always gives the same sky. If a function has no `=>` and no `$` in sight, there's nothing behind it to think about.
 
-Here's one of the questions being asked. `Tour.sky_top` takes the clock from the current instant and hands it to `Sky`.
+Here's one of the questions being asked. `Tour.sky_top_color` takes the clock from the current instant and hands it to `Sky`.
 
-🌳 {{code Tour.sky_top}}
+🌳 {{code Tour.sky_top_color}}
 
 Here's what happens behind that call. In this diagram a box is a function, not a module, and an arrow is a call. Only `Sky`'s own functions are shown, without the two helpers of `dusk_at`.
 
@@ -271,17 +271,17 @@ The calls inside `Sky`
 ```dot
 digraph sky_calls {
   node [shape=box, fontname="Helvetica"];
-  sky_color -> sky_at;
-  sky_color -> pack;
-  horizon_color -> sky_at;
-  horizon_color -> color_between;
-  horizon_color -> sunset_warmth;
-  horizon_color -> pack;
+  sky_top_color -> sky_at;
+  sky_top_color -> pack;
+  sky_horizon_color -> sky_at;
+  sky_horizon_color -> color_between;
+  sky_horizon_color -> sunset_warmth;
+  sky_horizon_color -> pack;
   sky_at -> dusk_at;
   sky_at -> color_between;
   dusk_at -> sun_height_px;
   sunset_warmth -> sun_height_px;
-  sun_pos -> sun_place;
+  sun_sighting -> sun_place;
   sun_place -> sun_height_px;
   sun_height_px [style=bold];
 }
@@ -313,9 +313,9 @@ Dusk is a curve and then a line, which means two cases, `dusk_while_up` and `dus
 
 🌳 {{code Sky.dusk_at}}
 
-And here's the walk up the stack: each frame, `RideInstant.frame` hands the answer to the mountains, whose rock and snow go dark with it.
+And here's the walk up the stack: each frame, `RideInstant.shapes` hands the answer to the mountains, whose rock and snow go dark with it.
 
-🌳 {{code RideInstant.frame from "Mountains.draw({" to "}),"}}
+🌳 {{code RideInstant.shapes from "Mountains.draw({" to "}),"}}
 
 The horizon's warmth is a third shape, a tent centred on the instant the sun touches the horizon. Three curves come off one number, and they're plain functions rather than anything more general. Nothing else in the game needs them. Here's `sunset_warmth`:
 
@@ -335,11 +335,11 @@ A colour ends up as one integer. `pack` gets there with method calls on plain nu
 
 🌳 {{code Sky.sky_at}}
 
-The top of the tree is two calls. `sky_color` is the one `Tour.sky_top` asked at the start of this chapter, and `horizon_color` is the same sky, warmed toward red by `sunset_warmth`.
+The top of the tree is two calls. `sky_top_color` is the one `Tour.sky_top_color` asked at the start of this chapter, and `sky_horizon_color` is the same sky, warmed toward red by `sunset_warmth`.
 
-🌳 {{code Sky.sky_color}}
+🌳 {{code Sky.sky_top_color}}
 
-🌳 {{code Sky.horizon_color}}
+🌳 {{code Sky.sky_horizon_color}}
 
 ### Angles that can't be mixed up
 
@@ -347,15 +347,15 @@ One trail on the diagram is left, the sun's place, and it starts at the bottom a
 
 The sun is the one thing here that also depends on where the rider is looking. Two tags say the two answers, so there's no `null` and no off-screen sentinel value. A caller has to handle `OutOfView`, because `match` must cover every tag.
 
-🐾 {{code Sky.SunPos}}
+🐾 {{code Sky.SunSighting}}
 
 Opaque types do the most work from here on. `Angle.Bearing` is a direction in the world and `Angle.Turn` is a change of direction. Both are floats underneath, but only the `Angle` module can build or open one. `sun_place` is the first code to want a plain number, because `r_tan` takes a float, and it's another caller of `sun_height_px`.
 
 🌳 {{code Sky.sun_place from "scale =" to "y: (Screen.horizon_y"}}
 
-`sun_pos` calls it once the sun is known to be in view. It also takes one record argument, destructured in its parameter list.
+`sun_sighting` calls it once the sun is known to be in view. It also takes one record argument, destructured in its parameter list.
 
-🌳 {{code Sky.sun_pos}}
+🌳 {{code Sky.sun_sighting}}
 
 Its caller, `RideInstant.sun`, is short enough to read whole:
 
@@ -376,7 +376,7 @@ The cat reacts to the rider, which no clock can do. It's the best scene in Safar
 New in this chapter:
 
 - Roc: type parameters, operators on opaque types, `var`, `for` and `return` in a pure function, `|` and `_` in patterns, open records
-- Modules: `Cat`, `Animation`, `Beats`, `Distance`, `Speed`, `CrossingReaction`
+- Modules: `Cat`, `Animation`, `Beat`, `Beats`, `Distance`, `Speed`, `CrossingReaction`
 
 From a distance, the cat is one function in two halves, with a shared module underneath.
 
@@ -524,11 +524,11 @@ There are two tracks because a cat's looks and its movement change at different 
 
 {{code Animation.Timeline from "## A whole animation" to "}.{"}}
 
-That's the score. The other strand is `Animation` playing it, and its trail starts at an operator. `Beats.is_lte` opens two `Beats` and compares the floats inside.
+That's the score. The other strand is `Animation` playing it, and its trail starts at an operator. `Beat.is_lte` opens two `Beat`s and compares the floats inside.
 
-🍃 {{code Beats.is_lte}}
+🍃 {{code Beat.is_lte}}
 
-`is_short_of` is one `match`, and it looks like a leaf. It's a branch, because `<=` on two `Beats` is a call to `is_lte`, and `<` is a call to `is_lt`. An operator on an opaque type runs code of Safari Ride's own.
+`is_short_of` is one `match`, and it looks like a leaf. It's a branch, because `<=` on two `Beat`s is a call to `is_lte`, and `<` is a call to `is_lt`. An operator on an opaque type runs code of Safari Ride's own.
 
 🌳 {{code Animation.is_short_of}}
 
@@ -575,11 +575,11 @@ This trail starts back in `Cat`, at two small questions about the same `Stage`.
 
 🐾 🌳 {{code Cat.is_in_danger}}
 
-`focus` is where `Past`'s payload is used. `beyond` is how far past the end of the crossing the rider has come, and the cat's hold on the rider's eye fades over that distance, counted in beats. `beats_to_cover` divides by the speed, so a rider at a standstill gets an answer first. `Attention` is another opaque type.
+`attention` is where `Past`'s payload is used. `beyond` is how far past the end of the crossing the rider has come, and the cat's hold on the rider's eye fades over that distance, counted in beats. `beats_to_cover` divides by the speed, so a rider at a standstill gets an answer first. `Attention` is another opaque type.
 
-🌳 {{code Cat.focus}}
+🌳 {{code Cat.attention}}
 
-`CrossingReaction.reaction_to` calls both. `..` in the argument's type makes it an open record: this function needs `along` and `speed`, and accepts any record that has them, so it doesn't depend on `Pose.RiderState`. `speed` here is the opaque `Speed` again, and `match` on `segment.crossing` has to name every tag.
+`CrossingReaction.reaction_to` calls both. `..` in the argument's type makes it an open record: this function needs `along` and `speed`, and accepts any record that has them, so it doesn't depend on `RiderState`. `speed` here is the opaque `Speed` again, and `match` on `segment.crossing` has to name every tag.
 
 🌳 {{code CrossingReaction.reaction_to}}
 
@@ -591,7 +591,7 @@ A cat in the lane stops the rider opening the throttle, without braking, and wid
 
 This is the only loop in the design. The rider's speed decides where the cat has got to, and the cat holds the rider's speed down. It settles, and it's also why `over_beats` has to stay the cat's rule. A bird asks nothing of the rider, so it falls through to the same answer as an empty road.
 
-Each stretch of road has exactly one `crossing`: `CatCrosses`, `BirdFlies` or `QuietRoad`. A cat and a bird in the same place can't be written down.
+Each stretch of road has exactly one `crossing`: `CatCrosses`, `BirdHere` or `QuietRoad`. A cat and a bird in the same place can't be written down.
 
 ### Getting it on screen
 
@@ -603,12 +603,12 @@ digraph screen {
   node [shape=box, fontname="Helvetica"];
   CatSighting [style=bold];
   CatDraw [style=bold];
-  ItemDraw -> Render;
-  ItemDraw -> CatDraw;
-  ItemDraw -> CatSighting;
-  Render -> CatSighting;
+  SceneDraw -> Scene;
+  SceneDraw -> CatDraw;
+  SceneDraw -> CatSighting;
+  Scene -> CatSighting;
   CatSighting -> Cat;
-  CatSighting -> Frame;
+  CatSighting -> Chain;
   CatSighting -> DepthSort;
   CatDraw -> Cat;
   CatDraw -> CatStills;
@@ -616,7 +616,7 @@ digraph screen {
 }
 ```
 
-`CatSighting` and `CatDraw` never import each other. `ItemDraw` is what carries a sighting's answer to the drawing.
+`CatSighting` and `CatDraw` never import each other. `SceneDraw` is what carries a sighting's answer to the drawing.
 
 `cat_in_view` places the cat and decides whether it's big enough to draw. An empty list or a list of one is how it says "maybe".
 
@@ -648,10 +648,10 @@ The modules behind a beacon
 digraph beacon {
   node [shape=box, fontname="Helvetica"];
   TowerSighting [style=bold];
-  ItemDraw -> Render;
-  ItemDraw -> TowerSighting;
-  ItemDraw -> Tower;
-  Render -> TowerSighting;
+  SceneDraw -> Scene;
+  SceneDraw -> TowerSighting;
+  SceneDraw -> Tower;
+  Scene -> TowerSighting;
   TowerSighting -> Clock;
   TowerSighting -> Steps;
   TowerSighting -> Fraction;
@@ -663,10 +663,10 @@ digraph beacon {
 A beacon is the only thing in Safari Ride that repeats on the clock, so it's the first thing that needs to ask how far into a cycle it is. That question isn't about an instant of the ride. It's about a length of time, and Safari Ride keeps those two apart.
 
 ```widget beacon
-Drag the clock and watch the masts blink out of step.
+Drag the clock and watch the towers blink out of step.
 ```
 
-Drag across it from left to right, and the clock runs through two whole blinks, from step 5,400 to step 5,640. The left mast starts dark and the right one at full brightness. At step 5,430, where the first marked stretch starts, both read 49%, and by step 5,460 they've changed places. Each marked stretch is where the left mast is more than half bright. At the far end of the ruler the masts are back where they began.
+Drag across it from left to right, and the clock runs through two whole blinks, from step 5,400 to step 5,640. The left tower starts dark and the right one at full brightness. At step 5,430, where the first marked stretch starts, both read 49%, and by step 5,460 they've changed places. Each marked stretch is where the left tower is more than half bright. At the far end of the ruler the towers are back where they began.
 
 `Clock` says which step it is. `Steps` says how long something lasts. Both are opaque `U32`s, and `Clock.minus` turns two clocks into `Steps`, the same way two `Angle.Bearing`s make an `Angle.Turn`. Adding two clocks means nothing, so `Clock` has no `plus`, and no code can. Call this *places and distances*: one opaque type for where something is, a second for how far apart two of them are, and only the sums that make sense.
 
@@ -674,7 +674,7 @@ Here, `wrapped_to` is `Steps`'s one way to reach `%`. The result is a `Fraction`
 
 {{code TowerSighting.beacon_brightness}}
 
-Each mast starts somewhere else in the cycle, so the masts along a road don't blink together. This function is one line of method calls, and every call in it is on a `Steps`:
+Each tower starts somewhere else in the cycle, so the towers along a road don't blink together. This function is one line of method calls, and every call in it is on a `Steps`:
 
 {{code TowerSighting.beacon_offset_for}}
 
@@ -682,13 +682,13 @@ The sighting calls both, adding the two `Steps`. `view.clock.minus(Clock.start)`
 
 {{code TowerSighting.tower_if_ahead from "if center.forward <= Geom.near_plane" to "view.clock.minus(Clock.start)"}}
 
-Its caller gives each mast its key, the segment's index. Records with named fields stand in for what would otherwise be five arguments in a row, and `InChain(position)` is a tag carrying a payload, saying where the segment lies from the rider:
+Its caller gives each tower its key, the segment's index. Records with named fields stand in for what would otherwise be five arguments in a row, and `InChain(position)` is a tag carrying a payload, saying where the segment lies from the rider:
 
 {{code TowerSighting.segment_towers from "end_tower = tower_if_ahead(" to "end_tower.concat(mid_tower(view, position))"}}
 
-A mast halfway along a segment takes the key plus 60. That's a small piece of number theory hiding in a constant: 60 staggers of 37 steps come to 2,220, which is 18 periods of 120 and 60 left over, so the mid-mast blinks exactly opposite the end mast.
+A tower halfway along a segment takes the key plus 60. That's a small piece of number theory hiding in a constant: 60 staggers of 37 steps come to 2,220, which is 18 periods of 120 and 60 left over, so the mid-tower blinks exactly opposite the end tower.
 
-Notice where the clock stops. `TowerItem.beacon_brightness` is a `Fraction`, and neither `Tower` nor `ItemDraw` imports `Clock`. A sighting decides, and drawing paints. A beacon's blink is decided in the same place as whether the mast is in view at all.
+Notice where the clock stops. `beacon_brightness` on a `TowerSighting` is a `Fraction`, and neither `Tower` nor `SceneDraw` imports `Clock`. A sighting decides, and drawing paints. A beacon's blink is decided in the same place as whether the tower is in view at all.
 
 There's no blink abstraction. `Animation.Alternates` also follows a wave, and the resemblance ends there: it picks a pose, and this picks a brightness. Nothing else in the game blinks.
 
@@ -704,11 +704,11 @@ digraph headlights {
   RideInstant -> Mountains;
   RideInstant -> Sky;
   RideInstant -> Truck;
-  RideInstant -> ItemDraw;
+  RideInstant -> SceneDraw;
   Mountains -> Sky;
   Mountains -> Clock;
   Sky -> Clock;
-  ItemDraw -> TruckDraw;
+  SceneDraw -> TruckDraw;
   TruckDraw -> Truck;
 }
 ```
@@ -740,7 +740,7 @@ A second critter settles that. The bird is Roc's logo, sitting on a treetop. As 
 New in this chapter:
 
 - Roc: record update, tags inside tags, closures, opening a `Try` by hand, `match` as an expression
-- Modules: `BirdFlight`, `BirdSighting`, `RocBird`, `BirdStills`
+- Modules: `BirdFlight`, `BirdSighting`, `BirdDraw`, `BirdStills`
 
 The modules around `BirdFlight`
 ```dot
@@ -749,19 +749,19 @@ digraph bird {
   BirdFlight [style=bold];
   World -> BirdFlight;
   BirdSighting -> BirdFlight;
-  BirdSighting -> RocBird;
+  BirdSighting -> BirdDraw;
   BirdSighting -> Animation;
-  RocBird -> BirdFlight;
-  RocBird -> BirdStills;
-  RocBird -> Critter;
+  BirdDraw -> BirdFlight;
+  BirdDraw -> BirdStills;
+  BirdDraw -> StillDraw;
   BirdStills -> BirdFlight;
   BirdStills -> Stills;
-  Critter -> Stills;
+  StillDraw -> Stills;
   BirdFlight -> Animation;
 }
 ```
 
-The family has the cat's shape. `BirdFlight` says what a bird does and imports nothing that draws it. `BirdSighting` finds it, `RocBird` draws it, and `BirdStills` holds its pictures. `Animation` is underneath, and most of what the bird does is ask `Animation` for something.
+The family has the cat's shape. `BirdFlight` says what a bird does and imports nothing that draws it. `BirdSighting` finds it, `BirdDraw` draws it, and `BirdStills` holds its pictures. `Animation` is underneath, and most of what the bird does is ask `Animation` for something.
 
 The only sum in `BirdFlight` is a tree's place plus the shortest hop. The rest is constants, tags and one timeline.
 
@@ -815,7 +815,7 @@ The bird needs one small helper. It sits below the block, so it's private, and i
 
 {{code BirdFlight.wings_beating}}
 
-Then the score. `Animation.Timeline.( ... )` wraps a record in the nominal type, and `Side(WingsUp)` is a tag whose payload is another tag. `flight_beats.portion(takeoff_share)` is a method on the opaque `Beats`, and `landing_share.complement()` is one on the opaque `Fraction`. It reads almost like configuration, and most of it is:
+Then the score. `Animation.Timeline.( ... )` wraps a record in the nominal type, and `Side(WingsUp)` is a tag whose payload is another tag. `flight_beats.portion(takeoff_share)` is a method on the opaque `Beats`, and `Beat.at` makes a place of the length it gives. It reads almost like configuration, and most of it is:
 
 {{code BirdFlight.flight_timeline from "length: flight_beats," to "finally: Holds(Diving),"}}
 
@@ -825,27 +825,27 @@ The path track shows why a `Track` has `finally`. A flight is one unbroken curve
 
 {{code BirdFlight.flight_timeline from "path: {" to "rise: flight_arc.to_metres(),"}}
 
-That `Arc` is a tag, and has nothing to do with the `Arc` module that comes later. `path_spot` is where it's played. `{ ..on_line, lift: ... }` is record update: the spot on the straight line, with one field replaced. The curve is `4t(1 - t)`, a parabola that's 0 at both ends and 1 at the middle, so `rise` means what its comment says. This is the polite end of the math chapter.
+That `Arc` is a tag. `path_spot` is where it's played. `{ ..on_line, lift: ... }` is record update: the spot on the straight line, with one field replaced. The curve is `4t(1 - t)`, a parabola that's 0 at both ends and 1 at the middle, so `rise` means what its comment says. This is the polite end of the math chapter.
 
 {{code Animation.path_spot}}
 
 The stills are data too. Nested tags get checked all the way down, so a `match` that forgets `Away(WingsDown)` is a compile-time error. The function reads as a table, and there's nothing else in it:
 
-{{code BirdStills.pose_polys}}
+{{code BirdStills.pose_polygons}}
 
-`RocBird.draw` hands that to `Critter.draw_still`, which is what a cow uses, and a bird's feet go through the same `Camera.project` as a tree's top. That's the drawing.
+`BirdDraw.draw` hands that to `StillDraw.draw_still`, which is what a cow uses, and a bird's feet go through the same `Camera.project` as a tree's top. That's the drawing.
 
 ### Finding a tree
 
-Where a bird flies is decided once, when the world is built. `route_from` shows the plain end of Roc's list functions. `keep_if` takes a closure, and `is_far_enough` is one, closing over `from`. `first()` answers a `Try`, which is one of the few that Safari Ride opens by hand. A route is a tag union with two tags: a bird with no tree to fly to `Sits`, which beats a flight of length zero.
+Where a bird flies is decided once, when the world is built. `habit_from` shows the plain end of Roc's list functions. `keep_if` takes a closure, and `is_far_enough` is one, closing over `from`. `first()` answers a `Try`, which is one of the few that Safari Ride opens by hand. A route is a tag union with two tags: a bird with no tree to fly to `Sits`, which beats a flight of length zero.
 
-{{code BirdFlight.route_from}}
+{{code BirdFlight.habit_from}}
 
 The caller's return type is written in place, a tag union that exists for this one function and fits straight into the `crossing` field of a segment:
 
 {{code BirdFlight.crossing_among}}
 
-And that's called from a `match` in the middle of a record, which is a reminder that `match` is an expression. The plan's plain `BirdCrosses` tag comes in, and `BirdFlies(route)` goes out:
+And that's called from a `match` in the middle of a record, which is a reminder that `match` is an expression. The plan's plain `BirdHere` tag comes in, and `BirdHere(route)` goes out:
 
 {{code World.built_segment from "crossing: match plan.crossing {" to "QuietRoad => QuietRoad"}}
 
@@ -864,7 +864,7 @@ Where the rider and the truck are depends on where they were, so their state has
 New in this chapter:
 
 - Roc: a named open record, guards, list patterns, recursion
-- Modules: `Rider`, `Pose`, `Bike`, `Throttle`, `Truck`, `Acceleration`
+- Modules: `Rider`, `RiderState`, `Bike`, `Throttle`, `Truck`, `Acceleration`
 
 The modules that do the stepping
 ```dot
@@ -873,12 +873,12 @@ digraph stepped {
   RideInstant [style=bold];
   RideInstant -> Rider;
   RideInstant -> Truck;
-  RideInstant -> Pose;
+  RideInstant -> RiderState;
   Rider -> Bike;
   Rider -> Throttle;
   Rider -> LeanSearch;
   Rider -> Gaze;
-  Rider -> Pose;
+  Rider -> RiderState;
   Rider -> VehicleLimits;
   Truck -> VehicleLimits;
   Throttle -> Gaze;
@@ -889,7 +889,7 @@ digraph stepped {
 
 Here's the step again, this time whole. Its body is a block: names, then a record, which is the value of the block. The rider moves first, and the truck reads where the rider has just got to, so the order of those lines is a rule of the game, and `dist` is what carries it.
 
-{{code RideInstant.step}}
+{{code RideInstant.next}}
 
 `Clock.next`, `Rider.advance` and `Truck.advance` all have the same shape: a value goes in, and the next value comes out. Call that *the step function*. There's no mutable rider being nudged. There's a rider, and another rider one step on, and the old one is still a perfectly good value, which `Tour` keeps in a list.
 
@@ -897,7 +897,7 @@ Stepping has a price, and it's worth stating against the cat:
 
 - A cat can be asked about any gap. A truck at step 4,000 has to be played there, or written down by hand.
 - A wrong critter rule is wrong in the frames it touches. A wrong step moves the rider for the rest of the ride.
-- `RideInstant.step` has an order, and frames don't.
+- `RideInstant.next` has an order, and frames don't.
 
 *[The step widget goes here: pause the ride, step back and forward, and watch the three stored fields change.]*
 
@@ -905,19 +905,19 @@ Stepping has a price, and it's worth stating against the cat:
 
 A plain record alias holds the rider, and `RideInstant` stores one. Count the opaque types: `SegmentIndex`, `Along`, `Across`, `Turn`, `Speed`, `Lean`, `Bearing` and `Fraction`. Nothing in it is a bare float. Four fields of this one record are angles, of three different types, and passing one type where another is wanted is a compile-time error.
 
-{{code Pose.RiderState}}
+{{code RiderState.RiderState}}
 
 The step is four things in order, which is close to how it reads. Static dispatch finds `segment_in` on the `SegmentIndex`. The `match` on `seg.ending` has two tags, and `Continues(_)` ignores its payload:
 
 {{code Rider.advance}}
 
-A decision is a record of two opaque values. There's something to notice in the last line of this next function. `Throttle` is asked about a bike that doesn't exist yet: the rider as it would be with the new lean, which `Bike.with_tilt` makes by building a new record. The real rider isn't touched, because nothing can touch it.
+A decision is a record of two opaque values. There's something to notice in the last line of this next function. `Throttle` is asked about a bike that doesn't exist yet: the rider as it would be with the new lean, which `Bike.with_lean` makes by building a new record. The real rider isn't touched, because nothing can touch it.
 
 {{code Rider.decide}}
 
-That idea gets larger soon. A small version of it decides what happens at the end of a segment. `resolve_cross` works out the rider on the next segment and keeps that only if it lands inside the lane. The rejected rider simply stops being referred to, and nothing has to be undone:
+That idea gets larger soon. A small version of it decides what happens at the end of a segment. `cross_if_on_road` works out the rider on the next segment and keeps that only if it lands inside the lane. The rejected rider simply stops being referred to, and nothing has to be undone:
 
-{{code Rider.resolve_cross}}
+{{code Rider.cross_if_on_road}}
 
 Record update does most of the writing in this module. Its plainest use is stopping dead, where `..s` keeps everything but the two fields named:
 
@@ -932,9 +932,9 @@ digraph bike {
   Bike [style=bold];
   Rider -> Bike;
   Rider -> LeanSearch;
-  Arc -> Bike;
+  Coast -> Bike;
   LeanSearch -> Bike;
-  LeanSearch -> Arc;
+  LeanSearch -> Coast;
   RideFocal -> Bike;
   Bike -> Angle;
   Bike -> Speed;
@@ -946,17 +946,17 @@ digraph bike {
 
 {{code Bike.Motion}}
 
-A structural type like this has to be named when it appears twice. Here it appears in the argument and in the result, and that's the promise: what goes in comes out with the same other fields. A `Pose.RiderState` goes in, with its `segment`, `gaze_yaw` and `focus`, and a `Pose.RiderState` comes out, though `Bike` has never heard of a gaze. Compare `CrossingReaction.reaction_to`, whose open record is only read, and which hands nothing back.
+A structural type like this has to be named when it appears twice. Here it appears in the argument and in the result, and that's the promise: what goes in comes out with the same other fields. A `RiderState` goes in, with its `segment`, `gaze_yaw` and `attention`, and a `RiderState` comes out, though `Bike` has never heard of a gaze. Compare `CrossingReaction.reaction_to`, whose open record is only read, and which hands nothing back.
 
 Call this *a narrow view of a wide record*. A module says exactly which fields it cares about, and the compiler takes care of the rest, with no base class and no copying fields across by hand. The smallest example in the program is a function with one job:
 
-{{code Bike.with_tilt}}
+{{code Bike.with_lean}}
 
-`{ ..s, tilt }` is record update with a shorthand: the field and the local have the same name. `Rider.decide` called it above. Here's the step, which `Rider.advance` called:
+`{ ..s, lean }` is record update with a shorthand: the field and the local have the same name. `Rider.decide` called it above. Here's the step, which `Rider.advance` called:
 
-{{code Bike.simulate_rider_step}}
+{{code Bike.advance}}
 
-Reading down, the types do their share of explaining. A `Lean` can't be added to anything but a `Lean`, and it only reaches direction through `tilt.steer(yaw_per_tilt)`, which is the single door from roll to yaw. The bike then moves along the middle of the step's turn, which is what `s.yaw.plus(turn.times(0.5))` means. `speed.step_length()` is a `Distance`, and `Along.plus` takes one, so the move itself is places and distances. `to_radians()` appears at the last line that can do without it: `r_cos` wants a float.
+Reading down, the types do their share of explaining. A `Lean` can't be added to anything but a `Lean`, and it only reaches direction through `lean.steer(turn_per_lean)`, which is the single door from roll to yaw. The bike then moves along the middle of the step's turn, which is what `s.yaw.plus(turn.times(0.5))` means. `speed.step_length()` is a `Distance`, and `Along.plus` takes one, so the move itself is places and distances. `to_radians()` appears at the last line that can do without it: `r_cos` wants a float.
 
 ### The throttle
 
@@ -966,7 +966,7 @@ digraph throttle {
   node [shape=box, fontname="Helvetica"];
   Throttle [style=bold];
   Rider -> Throttle;
-  Throttle -> Arc;
+  Throttle -> Coast;
   Throttle -> CrossingReaction;
   Throttle -> Gaze;
   Throttle -> VehicleLimits;
@@ -978,7 +978,7 @@ digraph throttle {
 
 The rider has several reasons to slow down, and they don't know about each other. A turn is coming. A cat is in the lane. There's a pig to look at. The road is about to run out. `Throttle` writes them as a line of gates. An `Acceleration` goes in, a gate lets it through or lowers it, and the next gate gets what's left:
 
-{{code Throttle.get_forward_accel_decel from "a2 = crossing_gate(" to "a4 = shoulder_brake(state, a3)"}}
+{{code Throttle.acceleration from "a2 = crossing_gate(" to "a4 = shoulder_brake(state, a3)"}}
 
 Call this *the gate chain*. Each gate has the same shape and can be read alone, and adding a reason is one more line. It reads like a list of rules because that's what it is.
 
@@ -992,9 +992,9 @@ Each gate compares two opaque `Acceleration`s with an ordinary `<`, which works 
 
 The first gate calls it, for the distance left to the point where the rider commits to the turn. Three modules use that one line of physics: this one, `Gaze` to slow for a pig, and `Truck`.
 
-{{code Throttle.corner_brake from "corner_a =" to "state.speed.acceleration_to({ target: v_end, within: d })"}}
+{{code Throttle.bend_brake from "bend_a =" to "state.speed.acceleration_to({ target: v_end, within: d })"}}
 
-After the gates, `clamp_v` holds the speed between rest and the limit, and the function's last move is a small piece of bookkeeping. The chain works in accelerations and the limits are speeds, so the answer is taken back with `.change_from(state.speed)`, the other half of the same pair of types.
+After the gates, `allowed_speed` holds the speed between rest and the limit, and the function's last move is a small piece of bookkeeping. The chain works in accelerations and the limits are speeds, so the answer is taken back with `.change_from(state.speed)`, the other half of the same pair of types.
 
 The rest of `Throttle` is plainer than this section makes it sound.
 
@@ -1006,7 +1006,7 @@ digraph truck {
   node [shape=box, fontname="Helvetica"];
   Truck [style=bold];
   RideInstant -> Truck;
-  Render -> Truck;
+  Scene -> Truck;
   TruckSighting -> Truck;
   TruckDraw -> Truck;
   Truck -> World;
@@ -1024,19 +1024,19 @@ The schedule is a straight line, and a pure function of the rider's progress, de
 
 {{code Truck.scheduled_position}}
 
-Its one caller is the truck's step function, the same shape as the rider's. `NextTurn` is a tag union with a payload on one side, so the only way to read a `distance` is to be inside the branch where there is one:
+Its one caller is the truck's step function, the same shape as the rider's. `NextBend` is a tag union with a payload on one side, so the only way to read a `distance` is to be inside the branch where there is one:
 
-{{code Truck.advance from "schedule = scheduled_position(" to "NoTurnAhead => advance_on_schedule(truck, schedule)"}}
+{{code Truck.advance from "schedule = scheduled_position(" to "NoBendAhead => advance_on_schedule(truck, schedule)"}}
 
-And that's called from `RideInstant.step`, above, with the rider's distance as the only thing the truck knows of the rider. Nothing in `Rider` imports `Truck`, and nothing in `Truck` imports `Rider`. The chase is one record literal in `RideInstant`.
+And that's called from `RideInstant.next`, above, with the rider's distance as the only thing the truck knows of the rider. Nothing in `Rider` imports `Truck`, and nothing in `Truck` imports `Rider`. The chase is one record literal in `RideInstant`.
 
 Finding the next turn shows a list pattern. `[]` is the end of the route, and `[segment, .. as later_segments]` takes the first segment and names the rest. Recursion walks the list, carrying where the current segment starts. Only `Truck` and `Paint` use a list pattern. Elsewhere the same walk is a `fold`.
 
-{{code Truck.next_turn_on from "match segments {" to "next_turn_on(later_segments, { route_position, segment_start: segment_end })"}}
+{{code Truck.next_bend_on from "match segments {" to "next_bend_on(later_segments, { route_position, segment_start: segment_end })"}}
 
 It's called through a smaller function, which supplies the 0 so nobody else has to:
 
-{{code Truck.next_turn}}
+{{code Truck.next_bend}}
 
 Then the two ways to take a step. Both sit below the block, private, and both are arithmetic on `Speed` by name. `target_speed.max(...)` keeps braking from undershooting, and `speed < truck.speed` is the whole of what turns on the brake lights. They're on while the truck is slowing down, and they go off when it's settled at the speed for the turn, even with the turn still ahead.
 
@@ -1044,7 +1044,7 @@ Then the two ways to take a step. Both sit below the block, private, and both ar
 
 {{code Truck.advance_on_schedule}}
 
-`brake_lights` is state because it's a fact about the last step. Headlights aren't, and they stay out of `TruckState`. That's the three kinds of moving thing in one vehicle: the place and speed are stepped, the headlights are clock-driven, and the tyres don't change.
+`brake_lights` is state because it's a fact about the last step. Headlights aren't, and they stay out of `TruckState`. That's the three kinds of moving thing in one vehicle: the place and speed are stepped, the headlights are clock-driven, and the tires don't change.
 
 The truck has no `Animation`, and it's worth saying why. A timeline has a known length and can answer for any point along it. The truck has neither. Its next step depends on its last, and its route depends on the rider. `TruckSighting`'s `lead` is the same quantity as an `Approach`'s `gap`, and it has a different name because it's being chased.
 
@@ -1057,7 +1057,7 @@ The lean comes at the end of this chapter, on top of everything else in it.
 New in this chapter:
 
 - Roc: records as coordinate systems, `fold`, `fold_rev` and `map2`, two functions that call each other
-- Modules: `Geom`, `Frame`, `Camera`, `Lens`, `Arc`, `LeanSearch`, `Num_`
+- Modules: `Geom`, `Chain`, `Camera`, `Lens`, `Coast`, `LeanSearch`, `Float`
 
 A lot of Safari Ride is math and physics, and this is the chapter that goes through the floor of the tour and looks at what's holding it up. Most of it is geometry a reader could do on paper. It's here because this kind of code suits a compiled functional language unusually well, for a short list of reasons that each get a section:
 
@@ -1081,22 +1081,22 @@ Safari Ride has 79 modules, not counting `web.roc`, `main.roc` and `game.roc`. T
 | `Fraction` | 17 | 92 | A ratio from 0 to 1 |
 | `Geom` | 17 | 185 | Road points, rider points, and how to turn one into the other |
 | `World` | 17 | 411 | The route |
-| `Frame` | 16 | 188 | Where the road lies from where the rider is |
+| `Chain` | 16 | 188 | Where the road lies from where the rider is |
 
 After those nine the count drops to 12, for `Screen`, 11 for `Speed` and 10 for `DepthSort`. Most modules are imported by one, two or three others. `lib`'s `Shapes`, `Trig` and `DeviceMath` are imported about as widely, and they're shared with the other canvas apps.
 
-These are the workhorses, and there being so few says something about the program. Everything else is a small module that takes one of these and adds a single idea. Five of the nine are nothing but numbers with rules, and the top three are under 80 lines each. Composable is the right word for this, and it isn't a slogan: a cat, a mast and a truck are all found on the road through `Frame`, and all reach the screen through `Camera`.
+These are the workhorses, and there being so few says something about the program. Everything else is a small module that takes one of these and adds a single idea. Five of the nine are nothing but numbers with rules, and the top three are under 80 lines each. Composable is the right word for this, and it isn't a slogan: a cat, a tower and a truck are all found on the road through `Chain`, and all reach the screen through `Camera`.
 
 The modules of the math layer
 ```dot
 digraph math {
   node [shape=box, fontname="Helvetica"];
-  LeanSearch -> Arc;
+  LeanSearch -> Coast;
   LeanSearch -> Bike;
-  Arc -> Bike;
-  Arc -> Angle;
+  Coast -> Bike;
+  Coast -> Angle;
   Bike -> Angle;
-  Frame -> Geom;
+  Chain -> Geom;
   Camera -> Geom;
   Camera -> Screen;
   Lens -> Angle;
@@ -1105,7 +1105,7 @@ digraph math {
 }
 ```
 
-Two families share `Angle` and don't otherwise meet: `Geom`, `Frame`, `Camera` and `Lens` say how the world looks from the bike, and `Bike`, `Arc` and `LeanSearch` say where it's going.
+Two families share `Angle` and don't otherwise meet: `Geom`, `Chain`, `Camera` and `Lens` say how the world looks from the bike, and `Bike`, `Coast` and `LeanSearch` say where it's going.
 
 ### Numbers with units
 
@@ -1115,7 +1115,8 @@ Fifteen small opaque types run through Safari Ride, and the tour has met most of
 |---|---|---|
 | `Clock` | `U32` | A place in the ride |
 | `Steps` | `U32` | A length of time |
-| `Beats` | `F64` | A place in an animation, or a length of one |
+| `Beat` | `F64` | A place in an animation |
+| `Beats` | `F64` | A length of an animation |
 | `Angle.Bearing` | `F64` | A place on the compass |
 | `Angle.Turn` | `F64` | The angle between two bearings |
 | `Angle.Lean` | `F64` | Roll, which only reaches direction through a rate |
@@ -1127,7 +1128,7 @@ Fifteen small opaque types run through Safari Ride, and the tour has met most of
 | `Fraction` | `F64` | A ratio from 0 to 1 |
 | `Attention` | `F64` | How strongly something holds the eye, from 0 up |
 | `World.SegmentIndex` | `U32` | A place in the route |
-| `Frame.ChainPosition` | `U32` | A place in the view ahead |
+| `Chain.Position` | `U32` | A place in the view ahead |
 
 This is the opaque type doing the job of a unit. The block after each type is a small statement of dimensional analysis. `Speed.distance_in` takes `Beats` and gives a `Distance`. `Along.plus` takes a `Distance`, and two `Along`s give one back. `Lean.steer` takes a rate and gives a `Turn`. There's no `Bearing.plus(Bearing)`, because that sum has no meaning, and the omission is a feature with a compiler behind it.
 
@@ -1145,7 +1146,7 @@ A point in Safari Ride is in one of four spaces, and the record's fields say whi
 
 {{code Geom.RiderPoint}}
 
-{{code Geom.SpacePoint}}
+{{code Geom.RaisedPoint}}
 
 {{code Screen.Point}}
 
@@ -1159,9 +1160,9 @@ From there to the screen is a pinhole camera, which is similar triangles. Dividi
 
 {{code Camera.project}}
 
-`RocBird.draw` calls it with a record built on the spot for the bird's feet:
+`BirdDraw.draw` calls it with a record built on the spot for the bird's feet:
 
-{{code RocBird.draw from "feet = Camera.project(" to "cam_focal,"}}
+{{code BirdDraw.draw from "feet = Camera.project(" to "cam_focal,"}}
 
 The focal length comes from a lens. `focal` is a value computed from other values, with no function in sight, and `field_of_view` is a `Turn`, so taking half of it needs no comment about radians. [check: whether a value like this inside a `.{ }` block is evaluated at compile time, as top-level values are.]
 
@@ -1175,19 +1176,19 @@ The view widens as the rider leans. One `Fraction` goes in, and a focal length c
 
 ### Round the bends
 
-The road has no map. A point on it is measured within one segment, `along` and `across`, and nothing in the game holds a world coordinate for it. Each segment knows only its length and the turn at its end. `World.route` is nineteen records like this one, and it reads like configuration: a list of plain values, with the tags declared by `SegmentPlan` and an opaque `Distance` and `Turn` built from their units. It's checked like any other Roc, so a misspelled tag is a compile-time error.
+The road has no map. A point on it is measured within one segment, `along` and `across`, and nothing in the game holds a world coordinate for it. Each segment knows only its length and the turn at its end. `World.plans` is nineteen records like this one, and it reads like configuration: a list of plain values, with the tags declared by `SegmentPlan` and an opaque `Distance` and `Turn` built from their units. It's checked like any other Roc, so a misspelled tag is a compile-time error.
 
-{{code World.route from "length: Distance.metres(1200.0)," to "creature: Rhino,"}}
+{{code World.plans from "length: Distance.metres(1200.0)," to "bend_life: Animal(Rhino),"}}
 
 So to see something three segments ahead, a point has to be carried back round each bend between it and the rider, one at a time. That's one rotation per bend, and `fold_rev` is the shape of it. The accumulator is a `RoadPoint`, it starts on the far segment, and each step moves it onto the segment before. `before_in` gives the segments between, and the closure is the only thing the loop does. The last line does the one translation and rotation from above:
 
-{{code Frame.rider_point_ahead from "on_rider_segment =" to "Geom.to_rider_point(on_rider_segment, road.pose)"}}
+{{code Chain.rider_point_ahead from "on_rider_segment =" to "Geom.to_rider_point(on_rider_segment, road.vantage)"}}
 
 The rotation itself is plain, with two cases, because a right-hand bend pivots on the far side of the lane:
 
 {{code Geom.in_segment_before}}
 
-This is what lets `CatSighting`, `BirdSighting`, `TowerSighting`, `TreeSighting` and the rest not care where a segment is. They name a position in the chain and a point on that segment, and they get back a `RiderPoint`. That's a workhorse doing its job, and it's why `Frame` has sixteen importers.
+This is what lets `CatSighting`, `BirdSighting`, `TowerSighting`, `TreeSighting` and the rest not care where a segment is. They name a position in the chain and a point on that segment, and they get back a `RiderPoint`. That's a workhorse doing its job, and it's why `Chain` has sixteen importers.
 
 The ground also curves away. That's one line, the small-angle formula for the drop of a sphere, with a record destructured in the parameter list and `right` and `forward` squared where they stand. There are two radii in the program, and neither is the earth's. `Geom.ground_curve_radius`, 100 km, is the surface the road and the truck stand on, and it puts the horizon 490 metres out. `Tower.sink_radius`, 20 km, only sets how soon a far tower goes: a tower is gone at 1.8 km, where the ground's curve would leave it in view to 4 km.
 
@@ -1203,9 +1204,9 @@ A fold's step is a plain function of the list so far and one edge:
 
 {{code Geom.clip_edge_onto}}
 
-`Ground`, `GuardRail` and `TruckShape` call it the same way. `patch.corners.map(...)` makes the `SpacePoint`s, and what comes back is a shorter or longer list of the same type:
+`Ground`, `GuardRail` and `TruckShape` call it the same way. `patch.corners.map(...)` makes the `RaisedPoint`s, and what comes back is a shorter or longer list of the same type:
 
-{{code Ground.draw from "in_front = Geom.clip_near(" to "Paint.push_poly(patch.color, Camera.project_all(in_front, cam_focal))"}}
+{{code Ground.draw from "in_front = Geom.clip_near(" to "Paint.polygon(patch.color, Camera.project_all(in_front, cam_focal))"}}
 
 ### Rehearsal
 
@@ -1213,49 +1214,49 @@ The rider has no steering wheel. Nothing tells it where to go. Each step, it has
 
 *[The rehearsal widget goes here: pause, and draw the coasting arcs the search tried on this step.]*
 
-`Arc` answers one question. If the rider stopped changing anything now, and coasted, what would happen? It takes the rider, and it runs the physics. The call is the same `Bike.simulate_rider_step` that moves the real rider, with no lean change and steady speed. That's the whole trick, and it's why `Bike` has to be a function and not a method that writes to a bike.
+`Coast` answers one question. If the rider stopped changing anything now, and coasted, what would happen? It takes the rider, and it runs the physics. The call is the same `Bike.advance` that moves the real rider, with no lean change and steady speed. That's the whole trick, and it's why `Bike` has to be a function and not a method that writes to a bike.
 
-{{code Arc.sim_from from "sim_step(" to "{ lean_step: Angle.upright, accel: Acceleration.steady },"}}
+{{code Coast.coast_from from "judge_place(" to "{ lean_step: Angle.upright, acceleration: Acceleration.steady },"}}
 
-`Arc.ArcProgress(others)` carries a `Bike.Motion(others)`: a narrow view of a wide record again, so `Arc` can take the whole rider without knowing what's in it. `sim_from` and its partner `sim_step` call each other until the arc reaches the shoulder, makes 25 metres of progress, or runs for 2,000 steps. The answer is a record saying which of those happened:
+`Coast.Progress(others)` carries a `Bike.Motion(others)`: a narrow view of a wide record again, so `Coast` can take the whole rider without knowing what's in it. `coast_from` moves the bike and its partner `judge_place` says where it got to, and the two call each other until the coast reaches the shoulder, makes 25 metres of progress, or runs for 2,000 steps. The answer is a record saying which of those happened:
 
-{{code Arc.ArcOutcome}}
+{{code Coast.Outcome}}
 
-`project_arc` sets it going, with the road's edges as bounds:
+`Coast.project` sets it going, with the road's edges as bounds:
 
-{{code Arc.project_arc}}
+{{code Coast.project}}
 
-`LeanSearch` asks `Arc` that question at a dozen different leans. The rider wants the arc to end somewhere near the middle of the lane, and more lean to the right moves the end of an arc to the right, so this is a bisection. It's a recursive function with its whole state in one record argument, `low` and `high` closing in on each other. `Bike.with_tilt(state, mid)` is a rider who doesn't exist, handed to `Arc`, who gets a future that didn't happen:
+`LeanSearch` asks `Coast` that question at a dozen different leans. The rider wants the coast to end somewhere near the middle of the lane, and more lean to the right moves the end of a coast to the right, so this is a bisection. It's a recursive function with its whole state in one record argument, `low` and `high` closing in on each other. `Bike.with_lean(state, mid)` is a rider who doesn't exist, handed to `Coast`, who gets a future that didn't happen:
 
 {{code LeanSearch.search_lean_from from "mid = low.halfway_to(high)" to "low: mid,"}}
 
-The decision about which way to go is a `match` on what the rehearsal found. Running off the left means more right, running off the right means less, and staying on the road compares the end of the arc with the target:
+The decision about which way to go is a `match` on what the rehearsal found. Running off the left means more right, running off the right means less, and staying on the road compares the end of the coast with the target:
 
 {{code LeanSearch.want_more_right}}
 
 Its caller gives the search its bounds, at most a degree either side of the current lean. That's what stops the bike flicking from one lean to another:
 
-{{code LeanSearch.best_tilt_correction}}
+{{code LeanSearch.best_lean}}
 
 And `Rider.decide` calls that, on its first line. The walk up the stack ends there.
 
-Call this *rehearsal*: run the real rules on a pretend copy, read the result, and throw it away. The numbers are worth stating. Twelve arcs for the lean and one more in `Throttle`, which uses `Arc` to ask whether the road is about to run out. Over the whole ride, an arc averages about 44 simulated steps. So each real step of the ride runs about 570 steps of bike physics that never happen, and the 7,040 steps of the ride come to about four million. With no drawing, on the dev backend, the whole ride takes about three seconds: under half a millisecond a step, against a budget of 33. [check: the 44 is `forward / speed` from one arc per step, measured at 9aa3814, not a counter inside `sim_from`; the three seconds is one native run, and the page runs wasm.]
+Call this *rehearsal*: run the real rules on a pretend copy, read the result, and throw it away. The numbers are worth stating. Twelve coasts for the lean and one more in `Throttle`, which uses `Coast` to ask whether the road is about to run out. Over the whole ride, a coast averages about 44 simulated steps. So each real step of the ride runs about 570 steps of bike physics that never happen, and the 7,040 steps of the ride come to about four million. With no drawing, on the dev backend, the whole ride takes about three seconds: under half a millisecond a step, against a budget of 33. [check: the 44 is `forward / speed` from one coast per step, measured at 9aa3814, not a counter inside `coast_from`; the three seconds is one native run, and the page runs wasm.]
 
-In a language with mutable objects, this function has a problem to solve before it starts. It needs to copy the rider, or save it and restore it, and it needs to be sure the copy really is one, all the way down. It needs to know that the physics doesn't quietly update something global, like a scoreboard or a random number generator. Here, those worries have nowhere to live. `Bike.simulate_rider_step` has a `->`, so it can't reach anything but its arguments. The old rider is intact because every rider is. Being wrong about a future costs nothing, and `LeanSearch` is 105 lines.
+In a language with mutable objects, this function has a problem to solve before it starts. It needs to copy the rider, or save it and restore it, and it needs to be sure the copy really is one, all the way down. It needs to know that the physics doesn't quietly update something global, like a scoreboard or a random number generator. Here, those worries have nowhere to live. `Bike.advance` has a `->`, so it can't reach anything but its arguments. The old rider is intact because every rider is. Being wrong about a future costs nothing, and `LeanSearch` is 105 lines.
 
-The last gate of the throttle is the same idea with one rehearsal in it. It runs the arc, and brakes only if the arc leaves the road:
+The last gate of the throttle is the same idea with one rehearsal in it. It runs the coast, and brakes only if the coast leaves the road:
 
 {{code Throttle.shoulder_brake}}
 
 ### Arithmetic all the way down
 
-The floor of this layer is lower than it needs to be. `lib/DeviceMath.roc` computes `sin`, `cos`, `sqrt` and `atan` in Roc, with no call to a math library. `Num_` does the same for `exp`, which is a Taylor series after a range reduction. It's nothing but names and multiplications, and it's the kind of code that looks exactly as it does in a textbook:
+The floor of this layer is lower than it needs to be. `lib/DeviceMath.roc` computes `sin`, `cos`, `sqrt` and `atan` in Roc, with no call to a math library. `Float` does the same for `exp`, which is a Taylor series after a range reduction. It's nothing but names and multiplications, and it's the kind of code that looks exactly as it does in a textbook:
 
-{{code Num_.exp_poly}}
+{{code Float.exp_series}}
 
-{{code Num_.exp_real}}
+{{code Float.exp}}
 
-`Throttle.shoulder_brake_at` is the caller, so a rehearsed arc's length decays into a braking force through this. [check: why these are hand-written rather than builtins. They came with the Codex port, and the reason is probably that the same bits come out on every target. Ask Steve before saying so.]
+`Throttle.shoulder_brake_at` is the caller, so a rehearsed coast's length decays into a braking force through this. [check: why these are hand-written rather than builtins. They came with the Codex port, and the reason is probably that the same bits come out on every target. Ask Steve before saying so.]
 
 Top to bottom, then: a rider chooses a lean by simulating physics, and the physics is plain arithmetic on opaque numbers, from the frame down to the polynomial. There's no effect anywhere in that sentence. What that's worth when the program has to change is still an open question.
 
@@ -1292,15 +1293,15 @@ Everything here lives in `gates/`, and the game never runs any of it. The gate p
 
 ### A fixture is a value
 
-Getting a test to step 1,570 of a game normally takes some doing. Here it takes a loop. `Tour.initial` is a value, and `Tour.advance` is a step function, the one at the very top, wrapped around `RideInstant.next`. The `if` chain is the only management a history needs, and its comment says why half of the list goes at once:
+Getting a test to step 1,570 of a game normally takes some doing. Here it takes a loop. `Tour.initial` is a value, and `Tour.step_forward` is a step function, the one at the very top, wrapped around `RideInstant.next_or_restart`. The `if` chain is the only management a history needs, and its comment says why half of the list goes at once:
 
-{{code Tour.advance}}
+{{code Tour.step_forward}}
 
 There's nothing to mock, because nothing was injected. No clock has to be faked, because the clock is a field. There's no browser to start, no window to open and no delay to wait out, and two runs can't disagree. A step of the ride takes nothing from outside it.
 
-`RideInstant.next` is one `if`, and it's worth seeing because it puts the end of the ride in one place. A ride that's finished starts again, so `Tour` needs no notion of game over:
+`RideInstant.next_or_restart` is one `if`, and it's worth seeing because it puts the end of the ride in one place. A ride that's finished starts again, so `Tour` needs no notion of game over:
 
-{{code RideInstant.next}}
+{{code RideInstant.next_or_restart}}
 
 ### The frame hash
 
@@ -1338,15 +1339,15 @@ The limit, stated flatly: the hash proves `ShapesPixels`'s pixels, and the page'
 
 `ShapesFrame` paints each frame twice: once with its polygons whole, as the browser gets them, and once cut into triangles, as the native runner gets them. It counts the pixels that differ, and the gate requires zero of 576,000, at every step in the table.
 
-`StepBack` checks that one step back goes back exactly one step, at depths either side of the history's cap. It's in the gate because the answer was once no, and its header says how: the list stopped recording when full, so a step back from frame 3,000 landed on 2,047. Holding the first 2,048 instants was a perfectly consistent thing for a list to do. The test works by asking `Tour.back` and comparing clocks, and since `Tour.back` is this small, there isn't much else to ask:
+`StepBack` checks that one step back goes back exactly one step, at depths either side of the history's cap. It's in the gate because the answer was once no, and its header says how: the list stopped recording when full, so a step back from frame 3,000 landed on 2,047. Holding the first 2,048 instants was a perfectly consistent thing for a list to do. The test works by asking `Tour.step_back` and comparing clocks, and since `Tour.step_back` is this small, there isn't much else to ask:
 
-{{code Tour.back}}
+{{code Tour.step_back}}
 
 ### `expect`
 
-Below the frames, the proving is plain. An `expect` sits at the top level of a module, under the code it checks, and `roc test` runs it. There are over a thousand, and they're Safari Ride's only other tests. The tour has already shown twenty-six of them, in the whole of `Clock` and `Pond`. A pure function needs nothing else: literal arguments, literal answer. Each `expect` asserts one thing, and they cover both sides. `Clock`'s check that a clock equals itself one step on is false, so it's written with `!`. `Num_.round_real` has a run of its boundaries, from `-0.5000000000000001` up through `0.49999999999999994`, on both sides of each. [check: those two numbers are quoted by hand, since an `expect` has no name for an include to find. It wants an include form of its own.]
+Below the frames, the proving is plain. An `expect` sits at the top level of a module, under the code it checks, and `roc test` runs it. There are over a thousand, and they're Safari Ride's only other tests. The tour has already shown twenty-six of them, in the whole of `Clock` and `Pond`. A pure function needs nothing else: literal arguments, literal answer. Each `expect` asserts one thing, and they cover both sides. `Clock`'s check that a clock equals itself one step on is false, so it's written with `!`. `Float.round` has a run of its boundaries, from `-0.5000000000000001` up through `0.49999999999999994`, on both sides of each. [check: those two numbers are quoted by hand, since an `expect` has no name for an include to find. It wants an include form of its own.]
 
-A test's data can sit beside it as a plain definition. `Bike` doesn't import `Pose`, and `Motion` is open, so its fixture is a record that has the six fields and makes up the rest. `segment` and `focus` are bare numbers here, because `Bike` carries them through and never looks. A narrow view of a wide record pays off twice: the test needs nothing the module doesn't.
+A test's data can sit beside it as a plain definition. `Bike` doesn't import `RiderState`, and `Motion` is open, so its fixture is a record that has the six fields and makes up the rest. `segment` and `attention` are bare numbers here, because `Bike` carries them through and never looks. A narrow view of a wide record pays off twice: the test needs nothing the module doesn't.
 
 {{code Bike.riding}}
 
@@ -1354,7 +1355,7 @@ It's called like any other value, and the steps that follow are named, so three 
 
 {{code Bike.first_step}}
 
-The gate makes `expect` honest in one further way. The source is the count: every line that starts `expect`, in a module any root reaches, has to print `PASS` exactly once. An `expect` that nothing compiles fails, and so does one that's indented out of reach. One more consequence: an `expect` can only name what its module imports, so a check sits where its test data can be seen, and a module doesn't take on an import for a test's sake. `Arc`'s projections are checked in `Throttle`, which can see a `Speed`, and `LeanSearch`'s search in `Rider`, which can see a `Pose`.
+The gate makes `expect` honest in one further way. The source is the count: every line that starts `expect`, in a module any root reaches, has to print `PASS` exactly once. An `expect` that nothing compiles fails, and so does one that's indented out of reach. One more consequence: an `expect` can only name what its module imports, so a check sits where its test data can be seen, and a module doesn't take on an import for a test's sake. `Coast`'s projections are checked in `Throttle`, which can see a `Speed`, and `LeanSearch`'s search in `Rider`, which can see a `RiderState`.
 
 Even a truck can be checked this way, though it can't be asked about step 4,000 cold. A `TruckState` is a record, so a test writes one down and calls `Truck.advance` once.
 
@@ -1399,13 +1400,13 @@ digraph platform {
   SafariApp -> CanvasApp;
   SafariApp -> Input;
   SafariApp -> Tour;
-  SafariApp -> SafariShapes;
+  SafariApp -> Backdrop;
   SafariApp -> Screen;
   SafariApp -> Shapes;
   CanvasApp -> Input;
   CanvasApp -> Shapes;
   Tour -> Shapes;
-  SafariShapes -> Shapes;
+  Backdrop -> Shapes;
 }
 ```
 
@@ -1427,11 +1428,11 @@ Input comes as a value too. `Input.Snapshot` says which keys are down and which 
 
 {{code SafariApp.repeat}}
 
-`Tour.advance` and `Tour.back` are plain values to pass here:
+`Tour.step_forward` and `Tour.step_back` are plain values to pass here:
 
-{{code SafariApp.step from "if input.key_down(KeyRight) {" to "step_once: Tour.advance,"}}
+{{code SafariApp.step from "if input.key_down(KeyRight) {" to "step_once: Tour.step_forward,"}}
 
-Stepping back through the ride is a keypress because `Tour.back` is a list lookup, and nothing else in the game knows it happens.
+Stepping back through the ride is a keypress because `Tour.step_back` is a list lookup, and nothing else in the game knows it happens.
 
 ### A frame is a list
 
@@ -1445,9 +1446,9 @@ The rider's lean is one of those marks. The whole picture banks into a turn, bac
 
 Early on, the tour said the game has no effectful functions. It's fair to ask where they went, and the answer is that they never got as far as Roc. The wasm platform asks for a record of functions over a boxed model:
 
-`init`, `advance`, `frame`, `release`, `sounds`, `width`, `height` and `fps`, with the tones' `tone_count`, `tone_freq` and `tone_ms`. Every one has a thin arrow, `->`. The host in `web/platform/host.zig` keeps the box, and all that crosses is numbers and a list of shapes. Wasm's edge has no records, so the input is flattened into seven numbers, and `Input.of` rebuilds it. `roc glue` generates `roc_glue.js`, which knows the layout of a frame in wasm memory, from `Frame.roc`, so that file is never edited.
+`init`, `advance`, `frame`, `release`, `sounds`, `width`, `height` and `fps`, with the tones' `tone_count`, `tone_freq` and `tone_ms`. Every one has a thin arrow, `->`. The host in `web/platform/host.zig` keeps the box, and all that crosses is numbers and a list of shapes. Wasm's edge has no records, so the input is flattened into seven numbers, and `Input.of` rebuilds it. `roc glue` generates `roc_glue.js`, which knows the layout of a frame in wasm memory, from `Chain.roc`, so that file is never edited.
 
-Each tick goes like this. `canvas_app_runner.js` paces the clock and gathers the keys. It calls `advance`, then `frame`, in Roc. It reads the shapes back through the generated glue, and `shapes_canvas.js` paints them on a canvas. The host keeps the list until the next frame, then hands it back so that Roc can drop it. That's `release`, a function whose body is `{}`: Roc knows the layout of what it's dropping, and the host shouldn't have to.
+Each step goes like this. `canvas_app_runner.js` paces the clock and gathers the keys. It calls `advance`, then `frame`, in Roc. It reads the shapes back through the generated glue, and `shapes_canvas.js` paints them on a canvas. The host keeps the list until the next frame, then hands it back so that Roc can drop it. That's `release`, a function whose body is `{}`: Roc knows the layout of what it's dropping, and the host shouldn't have to.
 
 The JS is about 490 lines for every canvas app there is. It knows nothing of cats. The only `!` names near Safari Ride are the `main!` and `echo!` of the gate programs, which are ordinary command-line apps, and the proof tools need them to print a hash.
 
@@ -1459,7 +1460,7 @@ That's the last of the parts. Each has been seen alone, and the first diagram ha
 
 Every box on the first diagram has now been opened.
 
-*[This chapter ties the tour together once the stepped things, the proof and the platform are written. It returns to the flipbook and the first diagram: the clock ticks, and everything composes from three stored fields.]*
+*[This chapter ties the tour together once the stepped things, the proof and the platform are written. It returns to the flipbook and the first diagram: the clock steps, and everything composes from three stored fields.]*
 
 ## Appendix: the patterns
 
@@ -1471,13 +1472,13 @@ The tour named these in passing. They're patterns in the loose sense: shapes tha
 | A sighting decides, drawing paints | A pure function answers with plain data, and something else draws it | `CatSighting`, `TowerSighting` |
 | Places and distances | One opaque type for where, a second for how far apart, and only the sums that make sense | `Clock` and `Steps`, `Bearing` and `Turn`, `Along` and `Distance`, `Speed` and `Acceleration` |
 | Rule and score | One function says how far along, and one piece of data says what that looks like | `over_gap` and `flight_timeline` |
-| The step function | A value goes in, and the next value comes out | `Rider.advance`, `Truck.advance`, `Tour.advance` |
+| The step function | A value goes in, and the next value comes out | `Rider.advance`, `Truck.advance`, `Tour.step_forward` |
 | A narrow view of a wide record | An open record names the fields it uses and carries the rest through | `Bike.Motion(others)` |
-| The gate chain | One value passes through independent rules, each of which can only lower it | `Throttle.get_forward_accel_decel` |
-| One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `SpacePoint`, `Screen.Point` |
-| Rehearsal | Run the real rules on a pretend copy, read the result, and throw it away | `Arc`, `LeanSearch`, `Rider.resolve_cross` |
+| The gate chain | One value passes through independent rules, each of which can only lower it | `Throttle.acceleration` |
+| One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `RaisedPoint`, `Screen.Point` |
+| Rehearsal | Run the real rules on a pretend copy, read the result, and throw it away | `Coast`, `LeanSearch`, `Rider.cross_if_on_road` |
 
-Code that reads like configuration deserves a line of its own, because the tour kept stopping to admire it: `Pond`, `World.route`, the timelines, and `SafariApp.canvas_app`. None of them is a config format. They're ordinary Roc values, so the compiler checks them, and a tag that's misspelled is a compile-time error.
+Code that reads like configuration deserves a line of its own, because the tour kept stopping to admire it: `Pond`, `World.plans`, the timelines, and `SafariApp.canvas_app`. None of them is a config format. They're ordinary Roc values, so the compiler checks them, and a tag that's misspelled is a compile-time error.
 
 ## Appendix: what catches you out
 
@@ -1492,14 +1493,13 @@ The patterns say what works. This page says what bites, sorted by what shows up 
 | A `match` that looks like a leaf and isn't | `<=` on an opaque type is a call to its `is_lte`, so an operator can run code of the program's own | The cat |
 | `var` and `for` under a `->` | A local that nothing outside can see, with `$` marking what changes. The function is still pure | The cat |
 | `?? crash` on a lookup | It isn't error handling. It states a belief about the program, and every gate run tests it | The world, Proving it |
-| `Arc` meaning two things | A tag on a timeline's path, and a module in the math layer | The bird |
 
 ### Getting it to compile
 
 | What you see | What's going on | Chapter |
 |---|---|---|
 | An open record that has to be named | `..others` needs a name when it appears twice, because the name promises that the same fields come out as went in | The stepped things |
-| An `expect` that can't see a type | It can only name what its module imports, so `Arc`'s projections are checked in `Throttle` | Proving it |
+| An `expect` that can't see a type | It can only name what its module imports, so `Coast`'s projections are checked in `Throttle` | Proving it |
 
 ### Running it
 

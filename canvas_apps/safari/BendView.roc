@@ -1,34 +1,32 @@
-## Joint knows where two segments meet: where each lies from the rider, and
+## BendView knows where two segments meet: where each lies from the rider, and
 ## the apex where the outer edges of the road meet at the bend. The road's
 ## paving and the guard rail both follow it.
 import Across
 import Along
 import Angle
 import Distance
-import Frame
+import Chain
 import Geom
 import Scenery
 import World
 
-Joint :: [].{
-
-	## A bend as the rider sees it: where the segments before and after it lie,
-	## the length of the one before, and the turn the road makes, positive to
-	## the right.
-	PlacedBend : {
-		before : Frame.SegmentPlace,
-		after : Frame.SegmentPlace,
-		length_before : Distance,
-		turn : Angle.Turn,
-	}
+## A bend as the rider sees it: where the segments before and after it lie,
+## the length of the one before, and the turn the road makes, positive to
+## the right.
+BendView := {
+	before : Chain.SegmentPlace,
+	after : Chain.SegmentPlace,
+	length_before : Distance,
+	turn : Angle.Turn,
+}.{
 
 	## The bend at the end of `segment`, which lies at `before`.
-	bend_out_of : World.Segment,
+	of_segment : World.Segment,
 	{
-		before : Frame.SegmentPlace,
-		after : Frame.SegmentPlace,
-	} -> Joint.PlacedBend
-	bend_out_of = |segment, { before, after }| {
+		before : Chain.SegmentPlace,
+		after : Chain.SegmentPlace,
+	} -> BendView
+	of_segment = |segment, { before, after }| {
 		before,
 		after,
 		length_before: segment.length,
@@ -45,12 +43,12 @@ Joint :: [].{
 	}
 
 	## Where the outer edges of the two segments at a bend meet.
-	joint_apex : Frame.RoadView, Joint.PlacedBend -> Geom.RiderPoint
-	joint_apex = |road, bend| {
+	apex : Chain.RoadView, BendView -> Geom.RiderPoint
+	apex = |road, bend| {
 		across = outer_edge(bend.turn)
 		end_before = Along.at(bend.length_before)
-		point_before = |along| Frame.rider_point_at(road, { place: bend.before, along, across })
-		point_after = |along| Frame.rider_point_at(road, { place: bend.after, along, across })
+		point_before = |along| Chain.rider_point_at(road, { place: bend.before, along, across })
+		point_after = |along| Chain.rider_point_at(road, { place: bend.after, along, across })
 		Geom.line_crossing({
 			first_line: {
 				start_point: point_before(end_before),
@@ -70,17 +68,17 @@ right_turn = Angle.Turn.radians(0.8726646259971648)
 left_turn : Angle.Turn
 left_turn = Angle.Turn.radians(0.0 - 1.2217304763960306)
 
-expect Joint.outer_edge(right_turn) == Scenery.left_edge
-expect Joint.outer_edge(left_turn) == Scenery.right_edge
+expect BendView.outer_edge(right_turn) == Scenery.left_edge
+expect BendView.outer_edge(left_turn) == Scenery.right_edge
 
 ## The apex of a bend from a segment 300 m long, just behind the rider's.
 apex_after_turn : Angle.Turn -> Geom.RiderPoint
 apex_after_turn = |turn|
-	Joint.joint_apex(
+	BendView.apex(
 		{
-			world: [],
+			route: [],
 			chain: [],
-			pose: {
+			vantage: {
 				along: Along.metres(100.0),
 				across: Across.metres(1.0),
 				yaw: Angle.Turn.radians(0.2),
@@ -91,9 +89,9 @@ apex_after_turn = |turn|
 			before: JustBehind({
 				segment_length: Distance.metres(300.0),
 				turn,
-				lane_width: Distance.metres(4.0),
+				road_width: Distance.metres(4.0),
 			}),
-			after: InChain(Frame.ChainPosition.first),
+			after: InChain(Chain.Position.first),
 			length_before: Distance.metres(300.0),
 			turn,
 		},
@@ -108,54 +106,54 @@ expect
 		(apex_after_turn(left_turn).forward, -100.55298847633645),
 	].all(|(got, want)| (got - want).abs() <= 0.0000001 * want.abs().max(1.0))
 
-pose : Frame.Pose
-pose = {
+vantage : Geom.Vantage
+vantage = {
 	along: Along.metres(100.0),
 	across: Across.metres(1.0),
 	yaw: Angle.Turn.radians(0.2),
 	half_width: Distance.metres(2.0),
 }
 
-m_chain : Frame.SegmentPlace
-m_chain = InChain(Frame.ChainPosition.number(3))
+m_chain : Chain.SegmentPlace
+m_chain = InChain(Chain.Position.number(3))
 
-m_prev_left : Frame.SegmentPlace
+m_prev_left : Chain.SegmentPlace
 m_prev_left = JustBehind({
 	segment_length: Distance.metres(300.0),
 	turn: Angle.Turn.radians(0.0 - 1.2217304763960306),
-	lane_width: Distance.metres(4.0),
+	road_width: Distance.metres(4.0),
 })
 
-m_prev_right : Frame.SegmentPlace
+m_prev_right : Chain.SegmentPlace
 m_prev_right = JustBehind({
 	segment_length: Distance.metres(300.0),
 	turn: Angle.Turn.radians(0.8726646259971648),
-	lane_width: Distance.metres(4.0),
+	road_width: Distance.metres(4.0),
 })
 
 ## The bend of a place behind the rider.
-bend_of : Frame.SegmentPlace -> Geom.Bend
+bend_of : Chain.SegmentPlace -> Geom.Bend
 bend_of = |place|
 	match place {
 		JustBehind(bend) => bend
-		InChain(_) => crash "Joint.bend_of: only a place behind the rider has a bend"
+		InChain(_) => crash "BendView.bend_of: only a place behind the rider has a bend"
 	}
 
-is_in_chain : Frame.SegmentPlace -> Bool
+is_in_chain : Chain.SegmentPlace -> Bool
 is_in_chain = |place|
 	match place {
 		InChain(_) => True
 		JustBehind(_) => False
 	}
 
-turns_right : Frame.SegmentPlace -> Bool
+turns_right : Chain.SegmentPlace -> Bool
 turns_right = |place| bend_of(place).turn.is_right()
 
 expect bend_of(m_prev_left).segment_length.to_metres() == 300.0
-expect bend_of(m_prev_left).lane_width.to_metres() == 4.0
+expect bend_of(m_prev_left).road_width.to_metres() == 4.0
 expect bend_of(m_prev_right).segment_length.to_metres() == 300.0
-expect bend_of(m_prev_right).lane_width.to_metres() == 4.0
-expect bend_of(Frame.place_behind(World.route_segment(0))).segment_length.to_metres() == 500.0
+expect bend_of(m_prev_right).road_width.to_metres() == 4.0
+expect bend_of(Chain.place_behind(World.route_segment(0))).segment_length.to_metres() == 500.0
 expect is_in_chain(m_chain)
 expect !(is_in_chain(m_prev_left))
 expect !(is_in_chain(m_prev_right))
@@ -163,24 +161,24 @@ expect !(turns_right(m_prev_left))
 expect turns_right(m_prev_right)
 
 ## A road along `chain`, the route's segments by number.
-road_along : List(U32) -> Frame.RoadView
+road_along : List(U32) -> Chain.RoadView
 road_along = |chain| {
-	world: World.segments,
+	route: World.segments,
 	chain: chain.map(World.SegmentIndex.number),
-	pose,
+	vantage,
 }
 
 expect
 	[
 		([0, 1], 0),
 		([3, 4], 3),
-	].all(|(chain, want)| Frame.rider_segment(road_along(chain)).to_i64() == want)
+	].all(|(chain, want)| Chain.rider_segment(road_along(chain)).to_i64() == want)
 
 ## The route's number of the segment behind the rider's, or -1 at the route's
 ## start.
 number_behind : List(U32) -> I64
 number_behind = |chain|
-	match Frame.segment_behind(road_along(chain)) {
+	match Chain.segment_behind(road_along(chain)) {
 		Previous(index) => index.to_i64()
 		AtRouteStart => -1
 	}
@@ -193,24 +191,24 @@ expect
 	].all(|(input, want)| number_behind(input) == want)
 
 at_d0 : Geom.RiderPoint
-at_d0 = Frame.rider_point_ahead(
-	{ world: [], chain: [], pose },
+at_d0 = Chain.rider_point_ahead(
+	{ route: [], chain: [], vantage },
 	{
-		position: Frame.ChainPosition.first,
+		position: Chain.Position.first,
 		along: Along.metres(50.0),
 		across: Across.metres(1.0),
 	},
 )
 
 at_d1 : List(World.Segment) -> Geom.RiderPoint
-at_d1 = |w| Frame.rider_point_ahead(
+at_d1 = |route| Chain.rider_point_ahead(
 	{
-		world: w,
-		chain: Frame.chain_ahead(w, World.SegmentIndex.first),
-		pose,
+		route: route,
+		chain: Chain.chain_ahead(route, World.SegmentIndex.first),
+		vantage,
 	},
 	{
-		position: Frame.ChainPosition.number(1),
+		position: Chain.Position.number(1),
 		along: Along.metres(50.0),
 		across: Across.metres(1.0),
 	},
@@ -227,9 +225,9 @@ expect {
 }
 
 ## The point 50 m along the segment at `place`, which is behind the rider.
-behind_at : Frame.SegmentPlace -> Geom.RiderPoint
-behind_at = |place| Frame.rider_point_at(
-	{ world: [], chain: [], pose },
+behind_at : Chain.SegmentPlace -> Geom.RiderPoint
+behind_at = |place| Chain.rider_point_at(
+	{ route: [], chain: [], vantage },
 	{
 		place,
 		along: Along.metres(50.0),

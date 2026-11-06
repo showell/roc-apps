@@ -1,4 +1,5 @@
-## A place along a segment of the road, in metres from the segment's start.
+## A place along the road, in metres from an origin its holder names, most often
+## the start of a segment.
 ## `Along` and `Across` mirror `Angle.Bearing` and `Angle.Turn`: a distance added
 ## to a place gives a place, and two places give the distance between them, but
 ## two places can't be added. A place along the road can't be passed as a place

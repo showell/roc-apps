@@ -8,7 +8,7 @@ import Clock
 import lib.DeviceMath
 import Fraction
 import Lens
-import Num_
+import Float
 import Paint
 import Screen
 import Sky
@@ -56,9 +56,9 @@ Mountains :: [].{
 	color_at_dusk = |color, dusk| {
 		light = rock_night_dim.times(dusk).complement().to_f64()
 		Sky.pack({
-			r: Num_.round_real((channel(color, 16) * light)),
-			g: Num_.round_real((channel(color, 8) * light)),
-			b: Num_.round_real((channel(color, 0) * light)),
+			r: Float.round((channel(color, 16) * light)),
+			g: Float.round((channel(color, 8) * light)),
+			b: Float.round((channel(color, 0) * light)),
 		})
 	}
 
@@ -82,9 +82,9 @@ Mountains :: [].{
 	snow_dip : F64
 	snow_dip = 10.0
 
-	## The silhouettes are sampled every `col_step` pixels across the screen.
-	col_step : F64
-	col_step = 2.0
+	## The silhouettes are sampled every `column_step` pixels across the screen.
+	column_step : F64
+	column_step = 2.0
 
 	## How far past each side of the screen the silhouettes reach, so the
 	## rider's roll never shows their ends.
@@ -192,7 +192,7 @@ west = {
 range_height : MountainRange, Angle.Bearing -> F64
 range_height = |range, bearing| {
 	from_center = bearing.turn_from(range.center)
-	fraction = from_center.fraction_of(range.half_width)
+	fraction = from_center.ratio_to(range.half_width)
 	if DeviceMath.real_abs(fraction) >= 1.0 {
 		0.0
 	} else {
@@ -231,7 +231,7 @@ horizon_y = Screen.horizon_y
 height_y : Mountains.Sight, F64 -> F64
 height_y = |sight, height| horizon_y - (height * (sight.cam_focal / Lens.focal))
 
-## The columns sampled, every `col_step` pixels from `from` up to `to`.
+## The columns sampled, every `column_step` pixels from `from` up to `to`.
 columns : { from : F64, to : F64 } -> List(F64)
 columns = |{ from, to }| columns_onto([], { at: from, to })
 
@@ -240,7 +240,7 @@ columns_onto = |sampled, { at, to }|
 	if at > to {
 		sampled
 	} else {
-		columns_onto(sampled.append(at), { at: (at + Mountains.col_step), to })
+		columns_onto(sampled.append(at), { at: (at + Mountains.column_step), to })
 	}
 
 ## A silhouette across the screen, its top at `height_at` each bearing, closed
@@ -256,7 +256,7 @@ silhouette = |sight, { height_at, color }| {
 	crest = columns({ from: left, to: right }).map(
 		|x| { x, y: height_y(sight, height_at(Mountains.bearing_at(sight, x))) },
 	)
-	Paint.push_poly(color, crest.concat([{ x: right, y: horizon_y }, { x: left, y: horizon_y }]))
+	Paint.polygon(color, crest.concat([{ x: right, y: horizon_y }, { x: left, y: horizon_y }]))
 }
 
 ## The north range's snow: along its crest where the range is above the
@@ -282,7 +282,7 @@ snow = |sight, color| {
 				y: height_y(sight, Mountains.snowline(Mountains.bearing_at(sight, x))),
 			}),
 		)
-		Paint.push_poly(color, crest.concat(snowline))
+		Paint.polygon(color, crest.concat(snowline))
 	}
 }
 
@@ -342,7 +342,7 @@ expect Mountains.west_range(Mountains.west_range_bearing) > 0.0
 expect Mountains.west_range_bearing.to_radians() == -2.0416
 expect Mountains.snow_threshold == 124.0
 expect Mountains.snow_dip == 10.0
-expect Mountains.col_step == 2.0
+expect Mountains.column_step == 2.0
 expect Mountains.roll_margin == 200.0
 expect Mountains.rock_night_dim.to_f64() == 0.5
 

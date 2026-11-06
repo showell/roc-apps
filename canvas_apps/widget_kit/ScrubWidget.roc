@@ -8,7 +8,7 @@ import game.Animation
 import game.Clock
 import game.Distance
 import game.Fraction
-import game.SafariShapes
+import game.Backdrop
 import game.Sky
 import lib.Brush
 import lib.CanvasApp
@@ -134,15 +134,15 @@ ScrubWidget :: [].{
 	## The ride's sky and grass with `shapes` over them, at two thirds of
 	## Safari's screen, so a widget's picture is what the ride's frame shows.
 	## The sky is `clock`'s, and `sun` is where the sun stands in it.
-	ride_picture : List(Shapes.Shape), { clock : Clock, sun : Sky.SunPos } -> List(Shapes.Shape)
+	ride_picture : List(Shapes.Shape), { clock : Clock, sun : Sky.SunSighting } -> List(Shapes.Shape)
 	ride_picture = |shapes, { clock, sun }| {
 		corner = { x: 0.0, y: 0.0 }
-		ride = SafariShapes.frame(
+		ride = Backdrop.behind(
 			shapes,
 			{
-				sky_top_color: Sky.sky_color(clock),
-				sky_horizon_color: Sky.horizon_color(clock),
-				sun_position: sun,
+				sky_top_color: Sky.sky_top_color(clock),
+				sky_horizon_color: Sky.sky_horizon_color(clock),
+				sun_sighting: sun,
 			},
 		)
 		[

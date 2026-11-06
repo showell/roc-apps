@@ -20,7 +20,7 @@ Geom :: [].{
 	RiderPoint : { right : F64, forward : F64 }
 
 	## A point in the rider's view, at a height above the level of the rider.
-	SpacePoint : {
+	RaisedPoint : {
 		right : F64,
 		forward : F64,
 		height : F64,
@@ -36,7 +36,7 @@ Geom :: [].{
 
 	## Where the camera stands on the current segment, and which way it faces.
 	## The middle of the lane is `half_width` from its left edge.
-	Pose : {
+	Vantage : {
 		along : Along,
 		across : Across,
 		yaw : Angle.Turn,
@@ -49,7 +49,7 @@ Geom :: [].{
 	Bend : {
 		segment_length : Distance,
 		turn : Angle.Turn,
-		lane_width : Distance,
+		road_width : Distance,
 	}
 
 	## A line through two points.
@@ -65,14 +65,14 @@ Geom :: [].{
 	ground_drop = |{ right, forward }|
 		(right * right + forward * forward) / (2.0 * ground_curve_radius)
 
-	## A point on the current segment, as the camera at `pose` sees it.
-	to_rider_point : Geom.EdgePoint, Geom.Pose -> Geom.RiderPoint
-	to_rider_point = |{ along, from_left }, pose| {
-		ahead = along.distance_from(pose.along).to_metres()
-		rider_from_left = pose.across.distance_from(Across.left_of_middle(pose.half_width))
+	## A point on the current segment, as the camera at `vantage` sees it.
+	to_rider_point : Geom.EdgePoint, Geom.Vantage -> Geom.RiderPoint
+	to_rider_point = |{ along, from_left }, vantage| {
+		ahead = along.distance_from(vantage.along).to_metres()
+		rider_from_left = vantage.across.distance_from(Across.left_of_middle(vantage.half_width))
 		aside = from_left.minus(rider_from_left).to_metres()
-		cos_yaw = Trig.r_cos(pose.yaw.to_radians())
-		sin_yaw = Trig.r_sin(pose.yaw.to_radians())
+		cos_yaw = Trig.r_cos(vantage.yaw.to_radians())
+		sin_yaw = Trig.r_sin(vantage.yaw.to_radians())
 		{
 			forward: ahead * cos_yaw + aside * sin_yaw,
 			right: (0.0 - ahead) * sin_yaw + aside * cos_yaw,
@@ -85,7 +85,7 @@ Geom :: [].{
 		along = point.along.to_metres()
 		from_left = point.from_left.to_metres()
 		length = bend.segment_length.to_metres()
-		width = bend.lane_width.to_metres()
+		width = bend.road_width.to_metres()
 		turn_size = bend.turn.abs().to_radians()
 		cos_turn = Trig.r_cos(turn_size)
 		sin_turn = Trig.r_sin(turn_size)
@@ -104,7 +104,7 @@ Geom :: [].{
 	## A point on the segment before `bend`, measured on the segment after it.
 	in_segment_after : Geom.EdgePoint, Geom.Bend -> Geom.EdgePoint
 	in_segment_after = |point, bend| {
-		left_edge = Across.left_of_middle(bend.lane_width.divided_by(2.0))
+		left_edge = Across.left_of_middle(bend.road_width.divided_by(2.0))
 		centred = centred_point_after(
 			{ along: point.along, across: left_edge.plus(point.from_left) },
 			bend,
@@ -117,7 +117,7 @@ Geom :: [].{
 	centred_point_after : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
 	centred_point_after = |point, bend| {
 		across = point.across.to_metres()
-		half_width = bend.lane_width.to_metres() / 2.0
+		half_width = bend.road_width.to_metres() / 2.0
 		cos_turn = Trig.r_cos(bend.turn.to_radians())
 		sin_turn = Trig.r_sin(bend.turn.to_radians())
 		corner_shift = half_width * (1.0 - cos_turn)
@@ -159,7 +159,7 @@ Geom :: [].{
 	near_plane = 0.4
 
 	## The polygon cut to what lies at or past the near plane.
-	clip_near : List(Geom.SpacePoint) -> List(Geom.SpacePoint)
+	clip_near : List(Geom.RaisedPoint) -> List(Geom.RaisedPoint)
 	clip_near = |polygon| {
 		next_corners = polygon.drop_first(1).concat(polygon.take_first(1))
 		edges = polygon.map2(next_corners, |from, to| { from, to })
@@ -170,11 +170,11 @@ Geom :: [].{
 ## `clipped` with what one edge of a polygon adds to it: the edge's first
 ## corner if that is in view, then the point where the edge crosses the near
 ## plane if it does.
-clip_edge_onto : List(Geom.SpacePoint),
+clip_edge_onto : List(Geom.RaisedPoint),
 {
-	from : Geom.SpacePoint,
-	to : Geom.SpacePoint,
-} -> List(Geom.SpacePoint)
+	from : Geom.RaisedPoint,
+	to : Geom.RaisedPoint,
+} -> List(Geom.RaisedPoint)
 clip_edge_onto = |clipped, { from, to }| {
 	is_from_in_view = from.forward >= Geom.near_plane
 	is_to_in_view = to.forward >= Geom.near_plane
@@ -191,7 +191,7 @@ clip_edge_onto = |clipped, { from, to }| {
 }
 
 ## Where an edge that has one end on each side crosses the near plane.
-near_plane_crossing : { from : Geom.SpacePoint, to : Geom.SpacePoint } -> Geom.SpacePoint
+near_plane_crossing : { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> Geom.RaisedPoint
 near_plane_crossing = |{ from, to }| {
 	fraction = (Geom.near_plane - from.forward) / (to.forward - from.forward)
 	{
@@ -339,7 +339,7 @@ bend_of : F64 -> Geom.Bend
 bend_of = |degrees| {
 	segment_length: Distance.metres(300.0),
 	turn: Angle.Turn.degrees(degrees),
-	lane_width: Distance.metres(4.0),
+	road_width: Distance.metres(4.0),
 }
 
 # A point carried round a bend one way and back lands where it started.

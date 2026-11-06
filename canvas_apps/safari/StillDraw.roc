@@ -1,9 +1,9 @@
-## Critter draws a still, a picture made of polygons, standing on screen.
-## A still is drawn in a unit frame: its feet at the origin, y up, and its
-## height 1. Critter scales it to its height in pixels, stands it on its feet,
+## StillDraw draws a still, a picture made of polygons, standing on screen.
+## A still is drawn in units of its height: its feet at the origin, y up, and
+## its height 1. StillDraw scales it to its height in pixels, stands it on its feet,
 ## and mirrors it when asked. A critter in view is drawn from the emoji still
 ## for its codepoint.
-import Billboards
+import Cutouts
 import Distance
 import Camera
 import EmojiStills
@@ -13,7 +13,7 @@ import Stills
 import Screen
 import lib.Shapes
 
-Critter :: [].{
+StillDraw :: [].{
 
 	## Which way a still is drawn: as its polygons are, or mirrored left to
 	## right.
@@ -23,7 +23,7 @@ Critter :: [].{
 	## its height in pixels.
 	Anchor : {
 		feet : Screen.Point,
-		flip : Critter.Flip,
+		flip : StillDraw.Flip,
 		height_px : F64,
 	}
 
@@ -32,7 +32,7 @@ Critter :: [].{
 	max_still_points = 512
 
 	## The sign that a still's x is multiplied by.
-	x_sign : Critter.Flip -> F64
+	x_sign : StillDraw.Flip -> F64
 	x_sign = |flip|
 		match flip {
 			AsDrawn => 1.0
@@ -40,42 +40,42 @@ Critter :: [].{
 		}
 
 	## Where a point of the still lands on screen.
-	screen_point : Critter.Anchor, Stills.StillPt -> Screen.Point
+	screen_point : StillDraw.Anchor, Stills.StillPt -> Screen.Point
 	screen_point = |anchor, point| {
 		x: (anchor.feet.x + ((x_sign(anchor.flip) * point.x) * anchor.height_px)),
 		y: (anchor.feet.y - (point.y * anchor.height_px)),
 	}
 
 	## How far, and which way, a step in the still goes on screen.
-	screen_vector : Critter.Anchor, Stills.StillPt -> Screen.Point
+	screen_vector : StillDraw.Anchor, Stills.StillPt -> Screen.Point
 	screen_vector = |anchor, step| {
 		x: ((x_sign(anchor.flip) * step.x) * anchor.height_px),
 		y: (0.0 - (step.y * anchor.height_px)),
 	}
 
-	screen_points : Critter.Anchor, List(Stills.StillPt) -> List(Screen.Point)
-	screen_points = |anchor, points| points.map(|point| Critter.screen_point(anchor, point))
+	screen_points : StillDraw.Anchor, List(Stills.StillPt) -> List(Screen.Point)
+	screen_points = |anchor, points| points.map(|point| StillDraw.screen_point(anchor, point))
 
 	## One polygon of a still, filled with its colour or its gradient.
-	draw_poly : Critter.Anchor, Stills.StillPoly -> List(Shapes.Shape)
-	draw_poly = |anchor, poly|
-		if poly.pts.len() > max_still_points {
+	draw_polygon : StillDraw.Anchor, Stills.StillPolygon -> List(Shapes.Shape)
+	draw_polygon = |anchor, poly|
+		if poly.points.len() > max_still_points {
 			[]
 		} else {
-			points = Critter.screen_points(anchor, poly.pts)
-			match poly.grad.first() {
-				Ok(gradient) => draw_gradient_poly(anchor, { gradient, points })
-				Err(ListWasEmpty) => Paint.push_poly(poly.color, points)
+			points = StillDraw.screen_points(anchor, poly.points)
+			match poly.gradient.first() {
+				Ok(gradient) => draw_gradient_polygon(anchor, { gradient, points })
+				Err(ListWasEmpty) => Paint.polygon(poly.color, points)
 			}
 		}
 
 	## A whole still, its polygons in order.
-	draw_still : Critter.Anchor, List(Stills.StillPoly) -> List(Shapes.Shape)
-	draw_still = |anchor, polys| polys.join_map(|poly| Critter.draw_poly(anchor, poly))
+	draw_still : StillDraw.Anchor, List(Stills.StillPolygon) -> List(Shapes.Shape)
+	draw_still = |anchor, polys| polys.join_map(|poly| StillDraw.draw_polygon(anchor, poly))
 
 	## A critter in view. An emoji faces left, so a critter facing right is
 	## its still mirrored. A critter less than a pixel tall isn't drawn.
-	draw : Billboards.Billboard, F64 -> List(Shapes.Shape)
+	draw : Cutouts.Cutout, F64 -> List(Shapes.Shape)
 	draw = |critter, cam_focal| {
 		on_screen = |height| Camera.project(
 			{ right: critter.right, forward: critter.forward, height },
@@ -91,7 +91,7 @@ Critter :: [].{
 					FacesLeft => AsDrawn
 					FacesRight => Mirrored
 				}
-			Critter.draw_still(
+			StillDraw.draw_still(
 				{ feet, flip, height_px },
 				EmojiStills.emoji_polys_for(critter.codepoint),
 			)
@@ -100,7 +100,7 @@ Critter :: [].{
 }
 
 ## A still's gradient is linear when its kind is 1, and radial otherwise.
-gradient_shape : Stills.StillGrad -> [Linear, Radial]
+gradient_shape : Stills.StillGradient -> [Linear, Radial]
 gradient_shape = |gradient| if gradient.kind == 1 {
 	Linear
 } else {
@@ -108,7 +108,7 @@ gradient_shape = |gradient| if gradient.kind == 1 {
 }
 
 ## A still's gradient colours and their offsets, as Paint takes them.
-stops_of : Stills.StillGrad -> Paint.ColorStops
+stops_of : Stills.StillGradient -> Paint.ColorStops
 stops_of = |gradient| {
 	start_rgba: gradient.rgba0,
 	end_rgba: gradient.rgba1,
@@ -116,17 +116,17 @@ stops_of = |gradient| {
 	end_offset: gradient.off1,
 }
 
-draw_gradient_poly : Critter.Anchor,
+draw_gradient_polygon : StillDraw.Anchor,
 {
-	gradient : Stills.StillGrad,
+	gradient : Stills.StillGradient,
 	points : List(Screen.Point),
 } -> List(Shapes.Shape)
-draw_gradient_poly = |anchor, { gradient, points }|
+draw_gradient_polygon = |anchor, { gradient, points }|
 	match gradient_shape(gradient) {
 		Linear => {
-			start = Critter.screen_point(anchor, { x: gradient.ax, y: gradient.ay })
-			stop = Critter.screen_point(anchor, { x: gradient.bx, y: gradient.by })
-			Paint.push_linear_grad_poly(
+			start = StillDraw.screen_point(anchor, { x: gradient.ax, y: gradient.ay })
+			stop = StillDraw.screen_point(anchor, { x: gradient.bx, y: gradient.by })
+			Paint.linear_gradient_polygon(
 				points,
 				{
 					color_stops: stops_of(gradient),
@@ -136,10 +136,10 @@ draw_gradient_poly = |anchor, { gradient, points }|
 			)
 		}
 		Radial => {
-			center = Critter.screen_point(anchor, { x: gradient.cx, y: gradient.cy })
-			u = Critter.screen_vector(anchor, { x: gradient.ux, y: gradient.uy })
-			v = Critter.screen_vector(anchor, { x: gradient.vx, y: gradient.vy })
-			Paint.push_radial_grad_poly(
+			center = StillDraw.screen_point(anchor, { x: gradient.cx, y: gradient.cy })
+			u = StillDraw.screen_vector(anchor, { x: gradient.ux, y: gradient.uy })
+			v = StillDraw.screen_vector(anchor, { x: gradient.vx, y: gradient.vy })
+			Paint.radial_gradient_polygon(
 				points,
 				{
 					color_stops: stops_of(gradient),
@@ -155,7 +155,7 @@ sample_feet : Screen.Point
 sample_feet = { x: 100.0, y: 200.0 }
 
 # A still 50 pixels tall, standing on the feet, as drawn.
-upright : Critter.Anchor
+upright : StillDraw.Anchor
 upright = {
 	feet: sample_feet,
 	flip: AsDrawn,
@@ -163,33 +163,33 @@ upright = {
 }
 
 # The same still, mirrored.
-mirrored : Critter.Anchor
+mirrored : StillDraw.Anchor
 mirrored = {
 	feet: sample_feet,
 	flip: Mirrored,
 	height_px: 50.0,
 }
 
-expect Critter.x_sign(Mirrored) == -1.0
-expect Critter.x_sign(AsDrawn) == 1.0
+expect StillDraw.x_sign(Mirrored) == -1.0
+expect StillDraw.x_sign(AsDrawn) == 1.0
 
-expect Critter.screen_point(upright, { x: 0.5, y: 0.4 }) == { x: 125.0, y: 180.0 }
-expect Critter.screen_point(mirrored, { x: 0.5, y: 0.4 }) == { x: 75.0, y: 180.0 }
-expect Critter.screen_point(upright, { x: 0.0, y: 0.0 }) == { x: 100.0, y: 200.0 }
+expect StillDraw.screen_point(upright, { x: 0.5, y: 0.4 }) == { x: 125.0, y: 180.0 }
+expect StillDraw.screen_point(mirrored, { x: 0.5, y: 0.4 }) == { x: 75.0, y: 180.0 }
+expect StillDraw.screen_point(upright, { x: 0.0, y: 0.0 }) == { x: 100.0, y: 200.0 }
 
-expect Critter.screen_vector(upright, { x: 0.5, y: 0.4 }) == { x: 25.0, y: -20.0 }
-expect Critter.screen_vector(mirrored, { x: 0.5, y: 0.4 }) == { x: -25.0, y: -20.0 }
-expect Critter.screen_vector(upright, { x: 0.0, y: 0.0 }) == { x: 0.0, y: 0.0 }
+expect StillDraw.screen_vector(upright, { x: 0.5, y: 0.4 }) == { x: 25.0, y: -20.0 }
+expect StillDraw.screen_vector(mirrored, { x: 0.5, y: 0.4 }) == { x: -25.0, y: -20.0 }
+expect StillDraw.screen_vector(upright, { x: 0.0, y: 0.0 }) == { x: 0.0, y: 0.0 }
 
 # A point is the feet plus its vector.
 expect {
-	point = Critter.screen_point(upright, { x: 0.5, y: 0.4 })
-	vector = Critter.screen_vector(upright, { x: 0.5, y: 0.4 })
+	point = StillDraw.screen_point(upright, { x: 0.5, y: 0.4 })
+	vector = StillDraw.screen_vector(upright, { x: 0.5, y: 0.4 })
 	point.x - vector.x == 100.0 and point.y - vector.y == 200.0
 }
 
 expect
-	Critter.screen_points(
+	StillDraw.screen_points(
 		upright,
 		[
 			{ x: 0.0, y: 0.0 },
@@ -204,22 +204,34 @@ expect
 		]
 
 # A solid polygon of colour 7 with `count` points, all at the feet.
-flat_poly : U64 -> Stills.StillPoly
-flat_poly = |count| {
+flat_polygon : U64 -> Stills.StillPolygon
+flat_polygon = |count| {
 	color: 7,
-	grad: [],
-	pts: List.repeat({ x: 0.0, y: 0.0 }, count),
+	gradient: [],
+	points: List.repeat({ x: 0.0, y: 0.0 }, count),
 }
 
-expect Critter.max_still_points == 512
-expect Critter.draw_poly(upright, flat_poly(3)).len() == 1
-expect Critter.draw_poly(upright, flat_poly(512)).len() == 1
-expect Critter.draw_poly(upright, flat_poly(513)).len() == 0
-expect Critter.draw_poly(upright, flat_poly(2)).len() == 0
+expect StillDraw.max_still_points == 512
+expect StillDraw.draw_polygon(upright, flat_polygon(3)).len() == 1
+expect StillDraw.draw_polygon(upright, flat_polygon(512)).len() == 1
+expect StillDraw.draw_polygon(upright, flat_polygon(513)).len() == 0
+expect StillDraw.draw_polygon(upright, flat_polygon(2)).len() == 0
 
 expect
-	Critter.draw_poly(upright, flat_poly(3))
-		== [Poly({ pts: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0], fill: Flat(Brush.opaque(7)) })]
+	StillDraw.draw_polygon(upright, flat_polygon(3))
+		== [
+			Poly({
+				pts: [
+					100.0,
+					200.0,
+					100.0,
+					200.0,
+					100.0,
+					200.0,
+				],
+				fill: Flat(Brush.opaque(7)),
+			}),
+		]
 
 # How many shapes draw a critter of `height` metres, `forward` metres ahead.
 shape_count : {
@@ -228,7 +240,7 @@ shape_count : {
 	codepoint : I64,
 } -> U64
 shape_count = |{ forward, height, codepoint }|
-	Critter.draw(
+	StillDraw.draw(
 		{
 			right: 0.0,
 			forward,

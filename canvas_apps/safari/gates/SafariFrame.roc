@@ -39,21 +39,21 @@ import lib.Shapes
 SafariFrame :: [].{
 
 	## What a frame shows, in Tour's terms.
-	Scene : {
+	Picture : {
 		shapes : List(Shapes.Shape),
 		roll : Angle.Lean,
-		sky_top : I64,
-		sky_horizon : I64,
-		sun : Sky.SunPos,
+		sky_top_color : I64,
+		sky_horizon_color : I64,
+		sun : Sky.SunSighting,
 	}
 
 	## The frame: the sky and the grass, the sun, then every shape.
-	paint : SafariFrame.Scene -> List(U32)
+	paint : SafariFrame.Picture -> List(U32)
 	paint = |scene| {
 		roll = SafariFrame.screen_roll(scene.roll)
 		var $px = BackdropPixels.paint(
 			roll,
-			{ sky_top: scene.sky_top, sky_horizon: scene.sky_horizon },
+			{ sky_top_color: scene.sky_top_color, sky_horizon_color: scene.sky_horizon_color },
 		)
 		$px = SunPixels.paint($px, { roll, sun: scene.sun })
 		ShapesPixels.paint($px, { roll, shapes: scene.shapes })

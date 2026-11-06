@@ -7,22 +7,22 @@ import Along
 import DepthSort
 import lib.DeviceMath
 import Distance
-import Frame
+import Chain
 import Geom
 import GuardRail
-import Joint
-import Num_
+import BendView
+import Float
 import World
 
 RailSighting :: [].{
 
 	## The rails at every bend in view: the bends along the chain ahead, then
 	## the bend from the segment behind.
-	all_rails : Frame.RoadView -> List(GuardRail.RailPoly)
-	all_rails = |road| {
-		bends_ahead = Frame.ChainPosition.all_in(road.chain).drop_last(1)
+	in_view : Chain.RoadView -> List(GuardRail.RailQuad)
+	in_view = |road| {
+		bends_ahead = Chain.Position.all_in(road.chain).drop_last(1)
 		ahead = bends_ahead.join_map(|position| rails_at(road, bend_after(road, position)))
-		match Frame.segment_behind(road) {
+		match Chain.segment_behind(road) {
 			Previous(segment_behind) => ahead.concat(rails_behind(road, segment_behind))
 			AtRouteStart => ahead
 		}
@@ -30,37 +30,37 @@ RailSighting :: [].{
 
 	## The depth sort's key for each rail quad: how far ahead it is, and its
 	## place in the list.
-	depth_keys : List(GuardRail.RailPoly) -> List(DepthSort.DepthKey)
+	depth_keys : List(GuardRail.RailQuad) -> List(DepthSort.DepthKey)
 	depth_keys = |quads| quads.map_with_index(
 		|quad, i| { forward: quad.forward, subject: Rail(i.to_u32_wrap()) },
 	)
 
-	## How many steps a leg `distance` long is cut into: one a metre, and at
+	## How many pieces a leg `distance` long is cut into: one a metre, and at
 	## least one.
-	leg_steps : F64 -> U32
-	leg_steps = |distance| {
-		steps = Num_.round_real(distance)
+	leg_pieces : F64 -> U32
+	leg_pieces = |distance| {
+		pieces = Float.round(distance)
 		(
-			if steps < 1.0 {
+			if pieces < 1.0 {
 				1.0
 			} else {
-				steps
+				pieces
 			}
 		).to_u32_wrap()
 	}
 
-	## `steps` + 1 points evenly spaced from `from` to `to`, both included.
+	## `pieces` + 1 points evenly spaced from `from` to `to`, both included.
 	evenly_spaced : {
 		from : Geom.RiderPoint,
 		to : Geom.RiderPoint,
-		steps : U32,
+		pieces : U32,
 	} -> List(Geom.RiderPoint)
-	evenly_spaced = |{ from, to, steps }| {
+	evenly_spaced = |{ from, to, pieces }| {
 		rightward = to.right - from.right
 		forward = to.forward - from.forward
-		List.from_iter(U32.to(0, steps)).map(
+		List.from_iter(U32.to(0, pieces)).map(
 			|step| {
-				fraction = step.to_f64() / steps.to_f64()
+				fraction = step.to_f64() / pieces.to_f64()
 				{
 					right: from.right + rightward * fraction,
 					forward: from.forward + forward * fraction,
@@ -76,16 +76,16 @@ RailSighting :: [].{
 		rightward = to.right - from.right
 		forward = to.forward - from.forward
 		distance = DeviceMath.real_sqrt(rightward * rightward + forward * forward)
-		steps = RailSighting.leg_steps(distance)
-		RailSighting.evenly_spaced({ from, to, steps }).drop_first(1)
+		pieces = RailSighting.leg_pieces(distance)
+		RailSighting.evenly_spaced({ from, to, pieces }).drop_first(1)
 	}
 
 	## The rail along the last `rail_runout` metres of a segment `length`
 	## long, which lies at `place`, at `across`: a point a
 	## metre, ending at the segment's end.
-	run_up : Frame.RoadView,
+	run_up : Chain.RoadView,
 	{
-		place : Frame.SegmentPlace,
+		place : Chain.SegmentPlace,
 		length : Distance,
 		across : Across,
 	} -> List(Geom.RiderPoint)
@@ -93,7 +93,7 @@ RailSighting :: [].{
 		List.from_iter(U32.to(0, GuardRail.rail_runout)).map(
 			|metres_in| {
 				metres_left = Distance.metres((GuardRail.rail_runout - metres_in).to_f64())
-				Frame.rider_point_at(
+				Chain.rider_point_at(
 					road,
 					{
 						place,
@@ -106,14 +106,14 @@ RailSighting :: [].{
 
 	## The rail along the first `rail_runout` metres of a segment at `place`,
 	## at `across`: a point a metre, the first a metre in.
-	run_out : Frame.RoadView,
+	run_out : Chain.RoadView,
 	{
-		place : Frame.SegmentPlace,
+		place : Chain.SegmentPlace,
 		across : Across,
 	} -> List(Geom.RiderPoint)
 	run_out = |road, { place, across }|
 		List.from_iter(U32.to(1, GuardRail.rail_runout)).map(
-			|metres_in| Frame.rider_point_at(
+			|metres_in| Chain.rider_point_at(
 				road,
 				{ place, along: Along.metres(metres_in.to_f64()), across },
 			),
@@ -121,32 +121,32 @@ RailSighting :: [].{
 }
 
 ## The bend at the end of the segment at `position` in the chain.
-bend_after : Frame.RoadView, Frame.ChainPosition -> Joint.PlacedBend
+bend_after : Chain.RoadView, Chain.Position -> BendView
 bend_after = |road, position|
-	Joint.bend_out_of(
-		position.index_in(road.chain).segment_in(road.world),
+	BendView.of_segment(
+		position.index_in(road.chain).segment_in(road.route),
 		{ before: InChain(position), after: InChain(position.next()) },
 	)
 
 ## The rails at the bend into the rider's segment from the segment at `index`.
-rails_behind : Frame.RoadView, World.SegmentIndex -> List(GuardRail.RailPoly)
+rails_behind : Chain.RoadView, World.SegmentIndex -> List(GuardRail.RailQuad)
 rails_behind = |road, index| {
-	segment = index.segment_in(road.world)
-	before = Frame.place_behind(segment)
-	after = InChain(Frame.ChainPosition.first)
-	rails_at(road, Joint.bend_out_of(segment, { before, after }))
+	segment = index.segment_in(road.route)
+	before = Chain.place_behind(segment)
+	after = InChain(Chain.Position.first)
+	rails_at(road, BendView.of_segment(segment, { before, after }))
 }
 
-rails_at : Frame.RoadView, Joint.PlacedBend -> List(GuardRail.RailPoly)
+rails_at : Chain.RoadView, BendView -> List(GuardRail.RailQuad)
 rails_at = |road, bend| GuardRail.quads_along(rail_path(road, bend))
 
 ## The path of the rail at a bend, along the road's outer edge: up to the
 ## bend, out to where the two outer edges meet, back to the next segment,
 ## and along it.
-rail_path : Frame.RoadView, Joint.PlacedBend -> List(Geom.RiderPoint)
+rail_path : Chain.RoadView, BendView -> List(Geom.RiderPoint)
 rail_path = |road, bend| {
-	outer_edge = Joint.outer_edge(bend.turn)
-	end_before = Frame.rider_point_at(
+	outer_edge = BendView.outer_edge(bend.turn)
+	end_before = Chain.rider_point_at(
 		road,
 		{
 			place: bend.before,
@@ -154,7 +154,7 @@ rail_path = |road, bend| {
 			across: outer_edge,
 		},
 	)
-	start_after = Frame.rider_point_at(
+	start_after = Chain.rider_point_at(
 		road,
 		{
 			place: bend.after,
@@ -162,7 +162,7 @@ rail_path = |road, bend| {
 			across: outer_edge,
 		},
 	)
-	apex = Joint.joint_apex(road, bend)
+	apex = BendView.apex(road, bend)
 	[
 		RailSighting.run_up(
 			road,
@@ -190,7 +190,7 @@ expect
 		(10.0, 10),
 		(49.6, 50),
 		(50.0, 50),
-	].all(|(distance, want)| RailSighting.leg_steps(distance).to_i64() == want)
+	].all(|(distance, want)| RailSighting.leg_pieces(distance).to_i64() == want)
 
 origin_pt : Geom.RiderPoint
 origin_pt = { right: 0.0, forward: 0.0 }
@@ -228,7 +228,7 @@ expect {
 	spaced = RailSighting.evenly_spaced({
 		from: origin_pt,
 		to: { right: 0.0, forward: 10.0 },
-		steps: 10,
+		pieces: 10,
 	})
 	spaced.len() == 11
 		and point_at(spaced, 0).forward == 0.0

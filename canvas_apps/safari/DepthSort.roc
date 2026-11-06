@@ -11,7 +11,7 @@ DepthSort :: [].{
 	Subject : [
 		Tree(U32),
 		Tower(U32),
-		Critter(U32),
+		Cutout(U32),
 		Cat(U32),
 		Truck,
 		Rail(U32),
@@ -116,14 +116,14 @@ expect
 	DepthSort.sort_by(
 		[
 			{ forward: 30.0, subject: Tree(0) },
-			{ forward: 10.0, subject: Critter(1) },
+			{ forward: 10.0, subject: Cutout(1) },
 			{ forward: 30.0, subject: Rail(2) },
 			{ forward: 50.0, subject: Tower(3) },
 			{ forward: 10.0, subject: Cat(4) },
 			{ forward: 20.0, subject: Bird(5) },
 			{ forward: 30.0, subject: Tree(6) },
 			{ forward: 40.0, subject: Rail(7) },
-			{ forward: 10.0, subject: Critter(8) },
+			{ forward: 10.0, subject: Cutout(8) },
 			{ forward: 5.0, subject: Cat(9) },
 		],
 		|key| key.forward,
@@ -135,9 +135,9 @@ expect
 			{ forward: 30.0, subject: Rail(2) },
 			{ forward: 30.0, subject: Tree(6) },
 			{ forward: 20.0, subject: Bird(5) },
-			{ forward: 10.0, subject: Critter(1) },
+			{ forward: 10.0, subject: Cutout(1) },
 			{ forward: 10.0, subject: Cat(4) },
-			{ forward: 10.0, subject: Critter(8) },
+			{ forward: 10.0, subject: Cutout(8) },
 			{ forward: 5.0, subject: Cat(9) },
 		]
 

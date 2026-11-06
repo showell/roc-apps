@@ -6,7 +6,7 @@ import Clock
 import Fraction
 import lib.DeviceMath
 import Lens
-import Num_
+import Float
 import Screen
 import lib.Trig
 
@@ -27,7 +27,7 @@ Sky :: [].{
 
 	## The sun in a frame: in view at its place, or out of view, too far to
 	## the side of where the rider faces.
-	SunPos : [InView(Sky.SunPlace), OutOfView]
+	SunSighting : [InView(Sky.SunPlace), OutOfView]
 
 	sun_bearing : Angle.Bearing
 	sun_bearing = Angle.Bearing.radians(0.0 - 2.2176)
@@ -111,9 +111,9 @@ Sky :: [].{
 	color_between = |{ from, to, fraction }| {
 		share = fraction.to_f64()
 		{
-			r: Num_.round_real((from.r + ((to.r - from.r) * share))),
-			g: Num_.round_real((from.g + ((to.g - from.g) * share))),
-			b: Num_.round_real((from.b + ((to.b - from.b) * share))),
+			r: Float.round((from.r + ((to.r - from.r) * share))),
+			g: Float.round((from.g + ((to.g - from.g) * share))),
+			b: Float.round((from.b + ((to.b - from.b) * share))),
 		}
 	}
 
@@ -126,13 +126,13 @@ Sky :: [].{
 	}
 
 	## The sky's colour at the top of the frame, as 0xRRGGBB.
-	sky_color : Clock -> I64
-	sky_color = |clock| pack(sky_at(clock))
+	sky_top_color : Clock -> I64
+	sky_top_color = |clock| pack(sky_at(clock))
 
 	## The sky's colour at the horizon, as 0xRRGGBB: the sky warmed toward
 	## sunset red.
-	horizon_color : Clock -> I64
-	horizon_color = |clock| pack(
+	sky_horizon_color : Clock -> I64
+	sky_horizon_color = |clock| pack(
 		color_between({
 			from: sky_at(clock),
 			to: sunset_red,
@@ -141,12 +141,12 @@ Sky :: [].{
 	)
 
 	## The sun in a frame, for a rider facing `heading`.
-	sun_pos : {
+	sun_sighting : {
 		heading : Angle.Bearing,
 		clock : Clock,
 		cam_focal : F64,
-	} -> Sky.SunPos
-	sun_pos = |{ heading, clock, cam_focal }| {
+	} -> Sky.SunSighting
+	sun_sighting = |{ heading, clock, cam_focal }| {
 		turn_from_view = sun_bearing.turn_from(heading)
 		if turn_from_view.abs() >= visible_turn_limit {
 			OutOfView
@@ -209,20 +209,20 @@ expect Sky.sunset_warmth(Clock.at_step(6000)).to_f64() == 0.0
 expect Sky.sunset_glow.to_f64() == 0.85
 
 # The sky and the horizon at each thousandth step of the ride.
-expect Sky.sky_color(Clock.at_step(0)) == 9358054
-expect Sky.sky_color(Clock.at_step(1000)) == 9160418
-expect Sky.sky_color(Clock.at_step(2000)) == 8633304
-expect Sky.sky_color(Clock.at_step(3000)) == 7710918
-expect Sky.sky_color(Clock.at_step(4000)) == 6393260
-expect Sky.sky_color(Clock.at_step(5000)) == 4219010
-expect Sky.sky_color(Clock.at_step(6000)) == 2374238
-expect Sky.horizon_color(Clock.at_step(0)) == 9358054
-expect Sky.horizon_color(Clock.at_step(1000)) == 9160418
-expect Sky.horizon_color(Clock.at_step(2000)) == 8633304
-expect Sky.horizon_color(Clock.at_step(3000)) == 10324366
-expect Sky.horizon_color(Clock.at_step(4000)) == 13262919
-expect Sky.horizon_color(Clock.at_step(5000)) == 8019301
-expect Sky.horizon_color(Clock.at_step(6000)) == 2374238
+expect Sky.sky_top_color(Clock.at_step(0)) == 9358054
+expect Sky.sky_top_color(Clock.at_step(1000)) == 9160418
+expect Sky.sky_top_color(Clock.at_step(2000)) == 8633304
+expect Sky.sky_top_color(Clock.at_step(3000)) == 7710918
+expect Sky.sky_top_color(Clock.at_step(4000)) == 6393260
+expect Sky.sky_top_color(Clock.at_step(5000)) == 4219010
+expect Sky.sky_top_color(Clock.at_step(6000)) == 2374238
+expect Sky.sky_horizon_color(Clock.at_step(0)) == 9358054
+expect Sky.sky_horizon_color(Clock.at_step(1000)) == 9160418
+expect Sky.sky_horizon_color(Clock.at_step(2000)) == 8633304
+expect Sky.sky_horizon_color(Clock.at_step(3000)) == 10324366
+expect Sky.sky_horizon_color(Clock.at_step(4000)) == 13262919
+expect Sky.sky_horizon_color(Clock.at_step(5000)) == 8019301
+expect Sky.sky_horizon_color(Clock.at_step(6000)) == 2374238
 expect Sky.pack(Sky.day_sky) == 9358054
 expect Sky.pack(Sky.dusk_sky) == 2374238
 expect Sky.pack(Sky.sunset_red) == 14571572
@@ -265,7 +265,7 @@ expect
 
 # The rider faces the sun, then away from it.
 expect
-	Sky.sun_pos({
+	Sky.sun_sighting({
 		heading: Angle.Bearing.radians(0.0 - 2.2176),
 		clock: Clock.start,
 		cam_focal: Lens.focal,
@@ -277,7 +277,7 @@ expect
 		})
 
 expect
-	Sky.sun_pos({
+	Sky.sun_sighting({
 		heading: Angle.north,
 		clock: Clock.start,
 		cam_focal: Lens.focal,

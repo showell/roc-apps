@@ -3,7 +3,7 @@
 ## each frame is worked out from that gap alone, so the flight plays forward and
 ## backward under the pointer. The picture stays still, looking up the road from
 ## a place short of the first tree, so the bird shrinks as it flies off. It is
-## drawn by Safari's own Tree and RocBird. Below it, a ruler shows the gap, and
+## drawn by Safari's own Tree and BirdDraw. Below it, a ruler shows the gap, and
 ## four lines of text say what BirdFlight makes of it.
 import game.Along
 import game.Animation
@@ -12,13 +12,13 @@ import game.Camera
 import game.Clock
 import game.Distance
 import game.Fraction
-import game.ItemDraw
+import game.SceneDraw
 import game.Lens
 import game.Paint
-import game.RocBird
+import game.BirdDraw
 import game.Scenery
 import game.Screen
-import game.Tree
+import game.TreeDraw
 import game.World
 import lib.CanvasApp
 import lib.Shapes
@@ -48,8 +48,8 @@ farthest_gap = Distance.metres(75.0)
 segment_flight : World.Segment -> Try(BirdFlight.Flight, [NoFlight])
 segment_flight = |segment|
 	match segment.crossing {
-		BirdFlies(Flies(flight)) => Ok(flight)
-		BirdFlies(Sits(_)) | CatCrosses(_) | QuietRoad => Err(NoFlight)
+		BirdHere(Flies(flight)) => Ok(flight)
+		BirdHere(Sits(_)) | CatCrosses(_) | QuietRoad => Err(NoFlight)
 	}
 
 ## The first flight on the route.
@@ -102,7 +102,7 @@ picture = |gap|
 ## The lane, running up the picture from under the eye.
 lane : List(Shapes.Shape)
 lane = {
-	half = Scenery.lane_width.to_metres() / 2.0
+	half = Scenery.road_width.to_metres() / 2.0
 	on_ground = |right, forward|
 		Camera.project(
 			{
@@ -112,7 +112,7 @@ lane = {
 			},
 			Lens.focal,
 		)
-	Paint.push_poly(
+	Paint.polygon(
 		0x8a8a8a,
 		[
 			on_ground(0.0 - half, 1.0),
@@ -126,7 +126,7 @@ lane = {
 tree_shapes : Scenery.Tree -> List(Shapes.Shape)
 tree_shapes = |tree| {
 	forward = forward_of(tree.along)
-	Tree.draw({
+	TreeDraw.draw({
 		right: tree.across.to_metres(),
 		forward,
 		height: tree.height.to_metres(),
@@ -134,7 +134,7 @@ tree_shapes = |tree| {
 		cam_focal: Lens.focal,
 		trunk: RoundCorners,
 		crown: Cones,
-		shade: ItemDraw.crown_shade(forward),
+		shade: SceneDraw.crown_shade(forward),
 	})
 }
 
@@ -142,7 +142,7 @@ tree_shapes = |tree| {
 bird_shapes : Distance -> List(Shapes.Shape)
 bird_shapes = |gap| {
 	instant = BirdFlight.instant_at(flight, gap)
-	RocBird.draw(
+	BirdDraw.draw(
 		{
 			right: instant.spot.across.to_metres(),
 			forward: forward_of(instant.spot.along),

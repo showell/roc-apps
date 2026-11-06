@@ -11,7 +11,7 @@ ProofRide :: [].{
 	ride_on = |tour, steps| if steps <= 0 {
 		tour
 	} else {
-		ride_on(Tour.advance(tour), steps - 1)
+		ride_on(Tour.step_forward(tour), steps - 1)
 	}
 
 	## The number a tool was given on its command line.

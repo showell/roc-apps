@@ -92,8 +92,8 @@ Angle :: [].{
 		)
 
 		## How many of `whole` this turn is: negative for a turn to the left.
-		fraction_of : Angle.Turn, Angle.Turn -> F64
-		fraction_of = |Angle.Turn.(t), Angle.Turn.(whole)| t / whole
+		ratio_to : Angle.Turn, Angle.Turn -> F64
+		ratio_to = |Angle.Turn.(t), Angle.Turn.(whole)| t / whole
 
 		## Whether this turn goes right. Straight ahead counts as right, so
 		## every turn lies on one side or the other.

@@ -5,7 +5,8 @@ import Across
 import Along
 import Camera
 import Distance
-import Frame
+import Chain
+import Fraction
 import Geom
 import Paint
 import lib.Trig
@@ -29,14 +30,14 @@ TruckShape :: [].{
 	## A truck ready to draw: what it is seen from, its segment's position in
 	## the chain, and the box it fills.
 	TruckInView : {
-		view : Frame.Viewpoint,
-		position : Frame.ChainPosition,
+		view : Chain.Viewpoint,
+		position : Chain.Position,
 		box : TruckShape.TruckBox,
 	}
 
 	## A point on the truck: how far along the road, how far across it, and
 	## how high above it.
-	RoadPoint : {
+	TruckPoint : {
 		along : Along,
 		across : Across,
 		height : Distance,
@@ -57,7 +58,7 @@ TruckShape :: [].{
 	tire_radius : Distance
 	tire_radius = Distance.metres(0.5)
 
-	## The trailer's floor clears the top of its tyres by 12 cm.
+	## The trailer's floor clears the top of its tires by 12 cm.
 	trailer_bottom : Distance
 	trailer_bottom = tire_radius.times(2.0).plus(Distance.metres(0.12))
 
@@ -73,7 +74,7 @@ TruckShape :: [].{
 		{
 			rear: center.along.minus(trailer_length.divided_by(2.0)),
 			trailer_front,
-			roof_front: trailer_front.plus(cab_length.times(cab_roof_fraction)),
+			roof_front: trailer_front.plus(cab_length.times(cab_roof_fraction.to_f64())),
 			nose: trailer_front.plus(cab_length),
 			left: center.across.minus(truck_width.divided_by(2.0)),
 			right: center.across.plus(truck_width.divided_by(2.0)),
@@ -83,9 +84,9 @@ TruckShape :: [].{
 	## Where a point on the truck lands in the rider's view. The ground
 	## curves away from the rider, so the point is lowered by how far the
 	## ground has dropped beneath it.
-	point : TruckShape.TruckInView, TruckShape.RoadPoint -> Geom.SpacePoint
+	point : TruckShape.TruckInView, TruckShape.TruckPoint -> Geom.RaisedPoint
 	point = |truck, { along, across, height }| {
-		on_ground = Frame.rider_point_ahead(
+		on_ground = Chain.rider_point_ahead(
 			truck.view.road,
 			{ position: truck.position, along, across },
 		)
@@ -105,12 +106,12 @@ TruckShape :: [].{
 
 	## A flat-coloured polygon on the truck, cut at the near plane and
 	## projected.
-	fill : TruckShape.TruckInView,
+	polygon : TruckShape.TruckInView,
 	{
 		color : I64,
-		corners : List(Geom.SpacePoint),
+		corners : List(Geom.RaisedPoint),
 	} -> List(Shapes.Shape)
-	fill = |truck, { color, corners }| Paint.push_poly(
+	polygon = |truck, { color, corners }| Paint.polygon(
 		color,
 		Camera.project_all(Geom.clip_near(corners), truck.view.cam_focal),
 	)
@@ -118,8 +119,8 @@ TruckShape :: [].{
 
 ## How far forward of the trailer the cab's flat roof reaches, as a fraction
 ## of the cab's length.
-cab_roof_fraction : F64
-cab_roof_fraction = 0.3
+cab_roof_fraction : Fraction
+cab_roof_fraction = Fraction.of(0.3)
 
 centered_box : TruckShape.TruckBox
 centered_box = TruckShape.truck_box({ along: Along.metres(0.0), across: Across.metres(0.0) })

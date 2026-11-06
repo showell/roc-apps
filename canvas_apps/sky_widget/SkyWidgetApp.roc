@@ -1,7 +1,7 @@
 ## The widget for the Safari tutorial's sky. Dragging across the canvas sets
 ## the ride's clock, and each frame is worked out from that clock alone, so the
 ## sun sets and rises again under the pointer. The picture is the ride's own
-## sky, looking straight at the sun, drawn by SafariShapes at two thirds of its
+## sky, looking straight at the sun, drawn by Backdrop at two thirds of its
 ## size. Below it, a ruler shows the clock, and four lines of text read out
 ## what Sky makes of it.
 import game.Clock
@@ -49,7 +49,7 @@ picture = |clock|
 		[],
 		{
 			clock,
-			sun: Sky.sun_pos({
+			sun: Sky.sun_sighting({
 				heading: Sky.sun_bearing,
 				clock,
 				cam_focal: Lens.focal,

@@ -1,6 +1,6 @@
 # safari
 
-The driving screensaver, as a canvas app: a rider on a motorcycle, a route of
+A screensaver of a ride, as a canvas app: a rider on a motorcycle, a route of
 nineteen segments through fields, forests and towns, and animals that cross
 when they like. It runs as a page and as a native program on roc-ray, like the
 other canvas apps (`../README.md`). **The page is the maintained side**; the
@@ -13,7 +13,7 @@ is not kept current.
 
 Space pauses. Left and Right step back and forward through the ride's history —
 a frame at a time while paused, faster while it runs. J jumps to the next
-intersection. R starts the drive again.
+bend. R starts the ride again.
 
 ## Where it came from
 
@@ -32,12 +32,12 @@ The rest have been rewritten by hand.
 | | |
 |---|---|
 | `SafariApp.roc` | the `CanvasApp` value: the keys, the pause, and the frame leaned by the rider's roll |
-| `Tour.roc` | the whole journey for any platform: the current instant, the instants behind it for stepping back, and what a frame shows — the shapes, the roll, the sky colours, the sun |
-| `SafariShapes.roc` | a frame as shapes: the sky's gradient, the grass, the sun and its glow, and the ride's shapes |
+| `Tour.roc` | the whole ride for any platform: the current instant, the instants behind it for stepping back, and what a frame shows — the shapes, the roll, the sky colours, the sun |
+| `Backdrop.roc` | a frame as shapes: the sky's gradient, the grass, the sun and its glow, and the ride's shapes |
 | `Paint.roc` | builders that turn screen points and colours into `Shapes.Shape`s, for the drawing modules |
 | `SafariFrame.roc` | a frame painted into pixels in Roc, for the proof tools below |
 | `RideInstant.roc` and the chapter modules | one instant of the ride, the world, the route, the rider, the animals, the scenery, and how each is drawn |
-| `RocBird.roc` | the bird, the first thing here that was never Codex, with `BirdFlight.roc`, `BirdSighting.roc` and `BirdStills.roc` |
+| `BirdDraw.roc` | the bird, the first thing here that was never Codex, with `BirdFlight.roc`, `BirdSighting.roc` and `BirdStills.roc` |
 | `Animation.roc` | what the cat and the bird share: a rule that turns where the rider is into a stage, and a timeline that turns a stage into an instant |
 | `CrossingReaction.roc` | what a segment's crossing does to the rider, the one place that matches on it for `Throttle` and `RideFocal` |
 | `gates/` | test code the game never runs: the tiers `fast.shale`, `run.shale` and `publish.shale`, and the lints; `CrossModuleExpects.roc`, the expects that need more than the module they check imports; the proof tools and the modules only they use. They reach the game's modules through the package `game.roc` |
@@ -98,7 +98,7 @@ The fast and merge tiers keep their Roc caches under
 
 An `expect` sits below the block of the module it checks. Where it needs a
 module that one doesn't import, it sits in a module that sees both, such as
-`Joint.roc` or `ItemDraw.roc`, or else in `gates/CrossModuleExpects.roc`.
+`BendView.roc` or `SceneDraw.roc`, or else in `gates/CrossModuleExpects.roc`.
 
 `emitted.sh` and `retest.sh`, which emitted the Roc from Codex, refuse to run:
 the modules they would rewrite are source now.

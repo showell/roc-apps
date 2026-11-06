@@ -11,17 +11,17 @@ Camera :: [].{
 
 	## Where a point in front of the camera lands on the screen, through a
 	## lens of focal length `cam_focal` in pixels.
-	project : Geom.SpacePoint, F64 -> Screen.Point
+	project : Geom.RaisedPoint, F64 -> Screen.Point
 	project = |p, cam_focal| {
 		x: (Screen.center_x + ((p.right / p.forward) * cam_focal)),
 		y: (Screen.horizon_y - (((p.height - eye_h) / p.forward) * cam_focal)),
 	}
 
-	project_all : List(Geom.SpacePoint), F64 -> List(Screen.Point)
+	project_all : List(Geom.RaisedPoint), F64 -> List(Screen.Point)
 	project_all = |points, cam_focal| points.map(|p| project(p, cam_focal))
 }
 
-at : Geom.SpacePoint -> Screen.Point
+at : Geom.RaisedPoint -> Screen.Point
 at = |point| Camera.project(point, 800.0)
 
 expect at({
