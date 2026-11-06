@@ -15,7 +15,6 @@ import lib.CanvasApp
 import lib.Font
 import lib.Input
 import lib.Shapes
-import lib.Trig
 import widget.ScrubWidget
 
 StepWidgetApp :: [].{
@@ -249,8 +248,8 @@ from_behind = |{ across, lean }| {
 	lane = Scenery.road_half_width.to_metres() * pixels_a_metre
 	middle = ScrubWidget.canvas_width / 2.0
 	foot = middle + across.to_metres() * pixels_a_metre
-	head_x = foot + rider_height * Trig.r_sin(lean * lean_shown_at)
-	head_y = surface_y - rider_height * Trig.r_cos(lean * lean_shown_at)
+	head_x = foot + rider_height * (lean * lean_shown_at).sin()
+	head_y = surface_y - rider_height * (lean * lean_shown_at).cos()
 	[
 		Font.text(
 			"from behind, lean x3",

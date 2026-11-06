@@ -5,7 +5,6 @@
 ## Each operation does the plain float arithmetic its name says, so code
 ## moved onto this type computes exactly what it did before.
 import Fraction
-import lib.DeviceMath
 
 Attention :: F64.{
 
@@ -28,7 +27,7 @@ Attention :: F64.{
 
 	## The stronger of this attention and `other`.
 	max : Attention, Attention -> Attention
-	max = |Attention.(a), Attention.(other)| Attention.(DeviceMath.real_max(a, other))
+	max = |Attention.(a), Attention.(other)| Attention.(a.max(other))
 
 	is_eq : _
 }

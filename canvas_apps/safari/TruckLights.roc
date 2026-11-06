@@ -6,11 +6,9 @@
 import Pixels
 import Across
 import Camera
-import lib.DeviceMath
 import Distance
 import Geom
 import Paint
-import lib.Trig
 import TruckShape
 import Screen
 import lib.Shapes
@@ -66,7 +64,7 @@ TruckLights :: [].{
 	distance = |{ from, to }| {
 		dx = from.x.minus(to.x).to_f64()
 		dy = from.y.minus(to.y).to_f64()
-		Pixels.of(DeviceMath.real_sqrt(dx * dx + dy * dy))
+		Pixels.of((dx * dx + dy * dy).sqrt())
 	}
 
 	## How far the farthest of `points` is from `center`.
@@ -99,8 +97,8 @@ TruckLights :: [].{
 	glow_outline = |{ center, outline_radius }|
 		TruckShape.circle_angles(TruckLights.glow_sides).map(
 			|angle| {
-				x: center.x.plus(outline_radius.times(Trig.r_cos(angle))),
-				y: center.y.plus(outline_radius.times(Trig.r_sin(angle))),
+				x: center.x.plus(outline_radius.times(angle.cos())),
+				y: center.y.plus(outline_radius.times(angle.sin())),
 			},
 		)
 }

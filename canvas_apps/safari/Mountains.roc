@@ -6,14 +6,11 @@
 import Pixels
 import Angle
 import Clock
-import lib.DeviceMath
 import Fraction
 import Lens
-import Float
 import Paint
 import Screen
 import Sky
-import lib.Trig
 import lib.Shapes
 
 Mountains :: [].{
@@ -53,9 +50,9 @@ Mountains :: [].{
 	color_at_dusk = |color, dusk| {
 		light = rock_night_dim.times(dusk).complement().to_f64()
 		Sky.pack({
-			r: Float.round(Paint.red_of(color).to_f64() * light),
-			g: Float.round(Paint.green_of(color).to_f64() * light),
-			b: Float.round(Paint.blue_of(color).to_f64() * light),
+			r: Sky.whole_channel(Paint.red_of(color).to_f64() * light),
+			g: Sky.whole_channel(Paint.green_of(color).to_f64() * light),
+			b: Sky.whole_channel(Paint.blue_of(color).to_f64() * light),
 		})
 	}
 
@@ -91,7 +88,7 @@ Mountains :: [].{
 	## The rolling land: low, and all the way round.
 	ground_base : Angle.Bearing -> Pixels
 	ground_base = |bearing|
-		Pixels.of(18.0 + 12.0 * Trig.r_sin(bearing.turn_from_north().to_radians() * 0.9 + 1.9))
+		Pixels.of(18.0 + 12.0 * (bearing.turn_from_north().to_radians() * 0.9 + 1.9).sin())
 
 	north_range : Angle.Bearing -> Pixels
 	north_range = |bearing| range_height(north, bearing)
@@ -126,7 +123,7 @@ Mountains :: [].{
 	bearing_at : Mountains.Sight, Pixels -> Angle.Bearing
 	bearing_at = |sight, x| {
 		slope = x.minus(Screen.center_x).ratio_to(sight.cam_focal)
-		off_center = Angle.Turn.radians(Trig.r_atan(slope))
+		off_center = Angle.Turn.radians(slope.atan())
 		sight.heading.plus(off_center)
 	}
 
@@ -198,13 +195,13 @@ range_height : MountainRange, Angle.Bearing -> Pixels
 range_height = |range, bearing| {
 	from_center = bearing.turn_from(range.center)
 	fraction = from_center.ratio_to(range.half_width)
-	if DeviceMath.real_abs(fraction) >= 1.0 {
+	if fraction.abs() >= 1.0 {
 		Pixels.zero
 	} else {
-		envelope = Trig.r_cos(fraction * Trig.pi / 2.0)
+		envelope = (fraction * F64.pi / 2.0).cos()
 		radians = from_center.to_radians()
-		first_wave = 0.24 * Trig.r_cos(radians * range.ridge_a)
-		second_wave = 0.16 * Trig.r_cos(radians * range.ridge_b + 1.0)
+		first_wave = 0.24 * (radians * range.ridge_a).cos()
+		second_wave = 0.16 * (radians * range.ridge_b + 1.0).cos()
 		ridge = 0.6 + first_wave + second_wave
 		range.peak.times(envelope).times(ridge)
 	}

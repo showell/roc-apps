@@ -1,7 +1,6 @@
 ## DepthSort orders the things in a frame from far to near, so each is
 ## painted over the ones behind it. Things about as far away as each other
 ## keep the order they came in.
-import lib.DeviceMath
 import Distance
 
 DepthSort :: [].{
@@ -42,7 +41,7 @@ DepthSort :: [].{
 	## a depth of 1.
 	is_farther : { this : Distance, that : Distance } -> Bool
 	is_farther = |{ this, that }| {
-		slack = tie_slack * DeviceMath.real_max(DeviceMath.real_abs(that.to_metres()), 1.0)
+		slack = tie_slack * that.to_metres().abs().max(1.0)
 		this.minus(that).to_metres() > slack
 	}
 }

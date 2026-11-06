@@ -10,9 +10,7 @@
 import Across
 import Along
 import Angle
-import lib.DeviceMath
 import Distance
-import lib.Trig
 
 Geom :: [].{
 
@@ -80,8 +78,8 @@ Geom :: [].{
 		ahead = along.distance_from(vantage.along).to_metres()
 		rider_from_left = vantage.across.distance_from(Across.left_of_middle(vantage.half_width))
 		aside = from_left.minus(rider_from_left).to_metres()
-		cos_yaw = Trig.r_cos(vantage.yaw.to_radians())
-		sin_yaw = Trig.r_sin(vantage.yaw.to_radians())
+		cos_yaw = vantage.yaw.to_radians().cos()
+		sin_yaw = vantage.yaw.to_radians().sin()
 		{
 			forward: Distance.metres(ahead * cos_yaw + aside * sin_yaw),
 			right: Distance.metres((0.0 - ahead) * sin_yaw + aside * cos_yaw),
@@ -96,8 +94,8 @@ Geom :: [].{
 		length = bend.segment_length.to_metres()
 		width = bend.road_width.to_metres()
 		turn_size = bend.turn.abs().to_radians()
-		cos_turn = Trig.r_cos(turn_size)
-		sin_turn = Trig.r_sin(turn_size)
+		cos_turn = turn_size.cos()
+		sin_turn = turn_size.sin()
 		if bend.turn.is_right() {
 			turned_along = along * cos_turn - from_left * sin_turn + width * sin_turn + length
 			turned_from_left = from_left * cos_turn + along * sin_turn + width * (1.0 - cos_turn)
@@ -127,10 +125,10 @@ Geom :: [].{
 	centred_point_after = |point, bend| {
 		across = point.across.to_metres()
 		half_width = bend.road_width.to_metres() / 2.0
-		cos_turn = Trig.r_cos(bend.turn.to_radians())
-		sin_turn = Trig.r_sin(bend.turn.to_radians())
+		cos_turn = bend.turn.to_radians().cos()
+		sin_turn = bend.turn.to_radians().sin()
 		corner_shift = half_width * (1.0 - cos_turn)
-		corner_along = bend.segment_length.to_metres() + half_width * DeviceMath.real_abs(sin_turn)
+		corner_along = bend.segment_length.to_metres() + half_width * sin_turn.abs()
 		past_corner = point.along.to_metres() - corner_along
 		past_middle = if bend.turn.is_right() {
 			across - corner_shift

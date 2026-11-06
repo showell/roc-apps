@@ -5,7 +5,6 @@ import Across
 import Along
 import Angle
 import Speed
-import lib.Trig
 
 Bike :: [].{
 
@@ -43,8 +42,8 @@ Bike :: [].{
 		mid = s.yaw.plus(turn.times(0.5)).to_radians()
 		{
 			..s,
-			along: s.along.plus(step_length.times(Trig.r_cos(mid))),
-			across: s.across.plus(step_length.times(Trig.r_sin(mid))),
+			along: s.along.plus(step_length.times(mid.cos())),
+			across: s.across.plus(step_length.times(mid.sin())),
 			yaw: s.yaw.plus(turn),
 			speed,
 			lean,

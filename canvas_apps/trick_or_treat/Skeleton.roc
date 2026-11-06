@@ -17,12 +17,8 @@
 # waves on one phase.
 import lib.Shapes
 import lib.Brush
-import lib.Trig
 
 Skeleton :: [].{
-	tau : F64
-	tau = 6.283185307179586
-
 	bone : Brush.Rgba
 	bone = Brush.opaque(0xf2f0e6)
 	night : Brush.Rgba
@@ -31,7 +27,7 @@ Skeleton :: [].{
 	# Where a bone of length `len` ends, leaving (x, y) at `angle` from straight
 	# down. y is down, so this is the screen's own arithmetic.
 	end_of : F64, F64, F64, F64 -> { x : F64, y : F64 }
-	end_of = |x, y, angle, len| { x: x + Trig.r_sin(angle) * len, y: y + Trig.r_cos(angle) * len }
+	end_of = |x, y, angle, len| { x: x + angle.sin() * len, y: y + angle.cos() * len }
 
 	rib : F64, F64, F64, F64, F64 -> Shapes.Shape
 	rib = |x0, y0, x1, y1, w| Shapes.line(x0, y0, x1, y1, w, Flat(bone))
@@ -48,16 +44,16 @@ Skeleton :: [].{
 	figure = |t, base, feet_y, s| {
 		# The dance: a bob on the double beat, a sway on the beat, and the
 		# limbs alternating about it.
-		bob = Trig.r_cos(2.0 * t) * 7.0 * s
-		sway = Trig.r_sin(t) * 14.0 * s
-		swing = Trig.r_sin(t)
+		bob = (2.0 * t).cos() * 7.0 * s
+		sway = t.sin() * 14.0 * s
+		swing = t.sin()
 
 		cx = base + sway
 		pelvis_y = feet_y - 92.0 * s + bob
 
 		# The spine, and the skull on top of it.
 		shoulder_y = pelvis_y - 78.0 * s
-		lean = Trig.r_sin(t) * 0.10
+		lean = t.sin() * 0.10
 		neck = end_of(cx, shoulder_y, lean, -16.0 * s)
 		skull = end_of(neck.x, neck.y, lean, -26.0 * s)
 
@@ -80,7 +76,7 @@ Skeleton :: [].{
 		$out = List.append($out, joint(skull.x, skull.y, 26.0 * s))
 		$out = List.append($out, Disc({ x: skull.x - 9.0 * s, y: skull.y - 4.0 * s, r: 6.0 * s, fill: Flat(night), clip: Anywhere }))
 		$out = List.append($out, Disc({ x: skull.x + 9.0 * s, y: skull.y - 4.0 * s, r: 6.0 * s, fill: Flat(night), clip: Anywhere }))
-		gape = (3.0 + 3.0 * (1.0 + Trig.r_cos(2.0 * t)) / 2.0) * s
+		gape = (3.0 + 3.0 * (1.0 + (2.0 * t).cos()) / 2.0) * s
 		$out = List.append($out, Rect({ x: skull.x - 11.0 * s, y: skull.y + 12.0 * s, w: 22.0 * s, h: gape, fill: Flat(night) }))
 
 		# The arms, alternating: one up while the other is down.

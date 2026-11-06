@@ -9,7 +9,6 @@
 ##
 ## Each operation does the plain float arithmetic its name says, so code
 ## moved onto this type computes exactly what it did before.
-import lib.DeviceMath
 
 Fraction :: F64.{
 
@@ -60,7 +59,7 @@ Fraction :: F64.{
 
 	## The larger of this fraction and `other`.
 	max : Fraction, Fraction -> Fraction
-	max = |Fraction.(f), Fraction.(other)| Fraction.(DeviceMath.real_max(f, other))
+	max = |Fraction.(f), Fraction.(other)| Fraction.(f.max(other))
 
 	is_lt : Fraction, Fraction -> Bool
 	is_lt = |Fraction.(f), Fraction.(other)| f < other

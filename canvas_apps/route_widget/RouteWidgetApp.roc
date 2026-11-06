@@ -63,8 +63,8 @@ laid_onto : Layout, World.SegmentPlan -> Layout
 laid_onto = |{ laid, reached, at, heading }, plan| {
 	metres = plan.length.to_metres()
 	end = {
-		east: at.east + metres * Trig.r_sin(heading),
-		north: at.north + metres * Trig.r_cos(heading),
+		east: at.east + metres * heading.sin(),
+		north: at.north + metres * heading.cos(),
 	}
 	to = reached.plus(plan.length)
 	{

@@ -354,7 +354,7 @@ built_segment = |plan, index| {
 		exit_turn: plan.turn,
 		commit_along: match plan.ending {
 			Continues => {
-				exit_tan = Trig.r_tan(plan.turn.abs().to_radians())
+				exit_tan = plan.turn.abs().to_radians().tan()
 				Along.at(plan.length.minus(Scenery.road_half_width.divided_by(exit_tan)))
 			}
 			Terminates => Along.at(plan.length)

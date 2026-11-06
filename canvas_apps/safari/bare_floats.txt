@@ -14,7 +14,6 @@ Distance: a unit type
 Fraction: a unit type
 Pixels: a unit type
 Speed: a unit type
-Float: the float arithmetic the standard library doesn't give the same way on every target
 Clock.to_f64: a whole count's way into float sums
 Steps.to_f64: a whole count's way into float sums
 
@@ -36,6 +35,7 @@ Animation.line_spot: `times` in the where clause takes a plain factor
 
 # Numbers with a meaning no unit type here holds.
 Sky.Rgb: a colour's channels, part way through a blend
+Sky.whole_channel: one of a colour's channels, part way through a blend
 Paint.min_ellipse_determinant: square pixels, the plain number two axes' determinant gives
 VehicleLimits.turn_speeds: whole degrees, a key looked up by equality after a turn rounds to it
 Stills: traced pictures, in units of the still's own height

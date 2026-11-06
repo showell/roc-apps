@@ -17,7 +17,6 @@
 # sun's glow and disc clipped to the sky, the glow as a rectangle that is the
 # clip and the disc carrying the same rectangle as its own.
 import Brush
-import Trig
 
 Shapes :: [].{
 	Shape : [
@@ -111,7 +110,7 @@ Shapes :: [].{
 	line = |x0, y0, x1, y1, w, fill| {
 		dx = x1 - x0
 		dy = y1 - y0
-		len = sqrt(dx * dx + dy * dy)
+		len = (dx * dx + dy * dy).sqrt()
 		if len == 0.0 {
 			Poly({ pts: [], fill })
 		} else {
@@ -136,10 +135,10 @@ Shapes :: [].{
 		}
 		var $out = List.with_capacity(n)
 		for k in 0..<n {
-			a0 = Trig.two_pi * k.to_f64() / n.to_f64()
-			a1 = Trig.two_pi * (k + 1).to_f64() / n.to_f64()
+			a0 = F64.tau * k.to_f64() / n.to_f64()
+			a1 = F64.tau * (k + 1).to_f64() / n.to_f64()
 			$out = $out.append(
-				line(x + r * Trig.r_cos(a0), y + r * Trig.r_sin(a0), x + r * Trig.r_cos(a1), y + r * Trig.r_sin(a1), w, fill),
+				line(x + r * a0.cos(), y + r * a0.sin(), x + r * a1.cos(), y + r * a1.sin(), w, fill),
 			)
 		}
 		$out
@@ -243,7 +242,7 @@ Shapes :: [].{
 	}
 
 	half_pi : F64
-	half_pi = 1.5707963267948966
+	half_pi = F64.pi / 2.0
 
 	# One quarter turn about (cx, cy), from `from` through a right angle.
 	corner : List(F64), F64, F64, F64, F64, I64 -> List(F64)
@@ -251,16 +250,9 @@ Shapes :: [].{
 		var $out = pts
 		for k in 0..=segments {
 			a = from + half_pi * k.to_f64() / segments.to_f64()
-			$out = $out.concat([cx + r * Trig.r_cos(a), cy + r * Trig.r_sin(a)])
+			$out = $out.concat([cx + r * a.cos(), cy + r * a.sin()])
 		}
 		$out
-	}
-
-	sqrt : F64 -> F64
-	sqrt = |v| if v <= 0.0 {
-		0.0
-	} else {
-		v.sqrt()
 	}
 
 	# Where a shape is allowed to paint, when it is not allowed everywhere.

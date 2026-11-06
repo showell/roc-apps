@@ -17,7 +17,6 @@ import CatHeights
 import Distance
 import Easing
 import Fraction
-import Float
 
 Cat :: [].{
 
@@ -171,8 +170,10 @@ Cat :: [].{
 	## least one.
 	strides_in : Beats -> U32
 	strides_in = |length| {
-		strides = Float.round(length.ratio_to(stride_beats))
-		if strides < 1.0 {
+		strides =
+			length.ratio_to(stride_beats).round_to_i64_try()
+				?? crash "Cat.strides_in: a walk's length is a finite number of beats"
+		if strides < 1 {
 			1
 		} else {
 			strides.to_u32_wrap()

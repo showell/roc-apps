@@ -52,8 +52,8 @@ step_shown = 370
 ## there and compares.
 rider : Bike.Motion({})
 rider = {
-	along: Along.metres(4.908686737878971),
-	across: Across.metres(-1.9308976324243619),
+	along: Along.metres(4.90868673787897),
+	across: Across.metres(-1.930897632424363),
 	yaw: Angle.Turn.radians(0.04392681817843164),
 	speed: Speed.metres_a_step(0.08377159378729097),
 	lean: Angle.Lean.radians(0.006118878920566433),

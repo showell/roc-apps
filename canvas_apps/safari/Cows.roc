@@ -6,7 +6,6 @@ import Along
 import Distance
 import Scenery
 import Trees
-import lib.Trig
 
 Cows :: [].{
 
@@ -99,9 +98,9 @@ cow_at = |i| {
 	in_line = column_place.plus(Cows.herd_row_stagger.times(row - 1.0))
 	road_edge = Scenery.road_half_width.plus(Scenery.herd_road_offset)
 	row_place = road_edge.plus(Cows.herd_row_depth.times(row))
-	out_from_road = row_place.plus(Cows.herd_jitter_across.times(Trig.r_cos(fi * 1.9)))
+	out_from_road = row_place.plus(Cows.herd_jitter_across.times((fi * 1.9).cos()))
 	{
-		along: in_line.plus(Cows.herd_jitter_along.times(Trig.r_sin(fi * 2.7))),
+		along: in_line.plus(Cows.herd_jitter_along.times((fi * 2.7).sin())),
 		across: Across.left_of_middle(out_from_road),
 		codepoint: Cows.cow_codepoint,
 		height: if i.rem_by(4) == 1 {

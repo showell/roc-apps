@@ -8,12 +8,10 @@ import Across
 import Along
 import Angle
 import Camera
-import lib.DeviceMath
 import Distance
 import Fraction
 import Geom
 import Paint
-import lib.Trig
 import lib.Brush
 import Screen
 import lib.Shapes
@@ -123,8 +121,8 @@ Tower :: [].{
 		half = tower_half.to_metres()
 		du = offset.across * half
 		dv = offset.along * half
-		cy = Trig.r_cos(yaw.to_radians())
-		sy = Trig.r_sin(yaw.to_radians())
+		cy = yaw.to_radians().cos()
+		sy = yaw.to_radians().sin()
 		{
 			along: along.plus(Distance.metres(du * sy + dv * cy)),
 			across: across.plus(Distance.metres(du * cy - dv * sy)),
@@ -183,7 +181,7 @@ Tower :: [].{
 		dx = to.x.minus(from.x).to_f64()
 		dy = to.y.minus(from.y).to_f64()
 		width = width_px.to_f64()
-		raw = DeviceMath.real_sqrt(dx * dx + dy * dy)
+		raw = (dx * dx + dy * dy).sqrt()
 		len = if raw < 0.0001 {
 			1.0
 		} else {

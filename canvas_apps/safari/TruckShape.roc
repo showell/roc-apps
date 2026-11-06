@@ -9,7 +9,6 @@ import Chain
 import Fraction
 import Geom
 import Paint
-import lib.Trig
 import lib.Shapes
 
 TruckShape :: [].{
@@ -102,7 +101,7 @@ TruckShape :: [].{
 	circle_angles : I64 -> List(F64)
 	circle_angles = |sides| List.from_iter(
 		I64.until(0, sides),
-	).map(|corner| corner.to_f64() / sides.to_f64() * Trig.two_pi)
+	).map(|corner| corner.to_f64() / sides.to_f64() * F64.tau)
 
 	## A flat-coloured polygon on the truck, cut at the near plane and
 	## projected.

@@ -13,7 +13,6 @@ import Fraction
 import Chain
 import Geom
 import Steps
-import lib.Trig
 import World
 
 ## A tower to draw: how its segment maps to the rider's view, where it
@@ -69,8 +68,8 @@ TowerSighting := {
 	beacon_brightness : Steps -> Fraction
 	beacon_brightness = |phase| {
 		wrapped = phase.wrapped_to(beacon_period).to_f64()
-		angle = 2.0 * Trig.pi * wrapped / beacon_period.to_f64()
-		Fraction.of((1.0 - Trig.r_cos(angle)) / 2.0)
+		angle = 2.0 * F64.pi * wrapped / beacon_period.to_f64()
+		Fraction.of((1.0 - angle.cos()) / 2.0)
 	}
 
 	## The towers in view: those along the chain, then the one past the end of

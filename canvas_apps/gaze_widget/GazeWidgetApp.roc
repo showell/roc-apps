@@ -83,7 +83,7 @@ first_rider : RiderState
 first_rider = {
 	segment_index: World.SegmentIndex.number(2),
 	along: Along.metres(140.3590433880225),
-	across: Across.metres(-0.027010758256703522),
+	across: Across.metres(-0.027010758256703966),
 	yaw: Angle.Turn.radians(-0.00037326865836414446),
 	speed: Speed.metres_a_step(1.6528903626175844),
 	lean: Angle.Lean.radians(-0.00020453077171767937),
@@ -288,8 +288,8 @@ sight_line = |rider| {
 	Shapes.line(
 		x,
 		y,
-		x + reach * Trig.r_cos(turn),
-		y + reach * Trig.r_sin(turn),
+		x + reach * turn.cos(),
+		y + reach * turn.sin(),
 		2.0,
 		ScrubWidget.flat(sight_color),
 	)

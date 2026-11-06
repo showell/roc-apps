@@ -5,13 +5,11 @@
 import Across
 import Along
 import DepthSort
-import lib.DeviceMath
 import Distance
 import Chain
 import Geom
 import GuardRail
 import BendView
-import Float
 import World
 
 RailSighting :: [].{
@@ -39,14 +37,10 @@ RailSighting :: [].{
 	## least one.
 	leg_pieces : Distance -> U32
 	leg_pieces = |distance| {
-		pieces = Float.round(distance.to_metres())
-		(
-			if pieces < 1.0 {
-				1.0
-			} else {
-				pieces
-			}
-		).to_u32_wrap()
+		pieces =
+			distance.to_metres().round_to_i64_try()
+				?? crash "RailSighting.leg_pieces: a leg's length is finite"
+		pieces.max(1).to_u32_wrap()
 	}
 
 	## `pieces` + 1 points evenly spaced from `from` to `to`, both included.
@@ -75,7 +69,7 @@ RailSighting :: [].{
 	rail_leg = |{ from, to }| {
 		rightward = to.right.minus(from.right).to_metres()
 		forward = to.forward.minus(from.forward).to_metres()
-		distance = DeviceMath.real_sqrt(rightward * rightward + forward * forward)
+		distance = (rightward * rightward + forward * forward).sqrt()
 		pieces = RailSighting.leg_pieces(Distance.metres(distance))
 		RailSighting.evenly_spaced({ from, to, pieces }).drop_first(1)
 	}

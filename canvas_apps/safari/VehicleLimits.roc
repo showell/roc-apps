@@ -3,9 +3,7 @@
 import Acceleration
 import Angle
 import Distance
-import Float
 import Speed
-import lib.Trig
 
 VehicleLimits :: [].{
 
@@ -43,7 +41,10 @@ VehicleLimits :: [].{
 	## degree it rounds to, and that must be one in `turn_speeds`.
 	turn_speed : Angle.Turn -> Speed
 	turn_speed = |turn| {
-		degrees = Float.round(turn.to_radians() * 180.0 / Trig.pi)
+		whole_degrees =
+			(turn.to_radians() * 180.0 / F64.pi).round_to_i64_try()
+				?? crash "VehicleLimits.turn_speed: a turn is a finite angle"
+		degrees = whole_degrees.to_f64()
 		match turn_speeds.find_first(|row| row.degrees == degrees) {
 			Ok(row) => row.speed
 			Err(NotFound) => crash "VehicleLimits.turn_speed: no speed for a turn of ${degrees.to_str()} degrees"

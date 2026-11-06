@@ -7,7 +7,6 @@ import DepthSort
 import Distance
 import Fraction
 import Geom
-import lib.Trig
 import TruckShape
 import lib.Shapes
 
@@ -293,9 +292,9 @@ tire = |truck, { axle, across }| {
 			color: tire_color,
 			corners: TruckShape.circle_angles(TruckBody.tire_sides).map(
 				|angle| {
-					along: axle.plus(radius.times(Trig.r_cos(angle))),
+					along: axle.plus(radius.times(angle.cos())),
 					across,
-					height: radius.plus(radius.times(Trig.r_sin(angle))),
+					height: radius.plus(radius.times(angle.sin())),
 				},
 			),
 		},

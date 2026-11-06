@@ -1,7 +1,6 @@
 ## The sums for moving smoothly between two values. A fraction runs from 0 at
 ## the start of a move to 1 at its end.
 import Fraction
-import lib.DeviceMath
 
 Easing :: [].{
 
@@ -25,7 +24,7 @@ Easing :: [].{
 	three_quarter_power : Fraction -> Fraction
 	three_quarter_power = |fraction| {
 		t = fraction.to_f64()
-		Fraction.of(DeviceMath.real_sqrt(t * DeviceMath.real_sqrt(t)))
+		Fraction.of((t * t.sqrt()).sqrt())
 	}
 }
 

@@ -344,7 +344,7 @@ Roc's own rules are in the langref's
   # This:
   w = width.to_metres()
   h = height.to_metres()
-  Distance.metres(Float.sqrt(w * w + h * h))
+  Distance.metres((w * w + h * h).sqrt())
   ```
 - **A closed set that needs no checking is nominal, not opaque.** Every
   value of `Script := [Palette, Chrome, Compose, Feed]` is valid, so there
@@ -1009,7 +1009,7 @@ is the base; these rules sharpen it.
   	[
   		(0.5, 0.479425538604203),
   		(1.0, 0.8414709848078965),
-  	].all(|(angle, sine)| (Trig.r_sin(angle) - sine).abs() <= 0.0000001)
+  	].all(|(angle, sine)| (angle.sin() - sine).abs() <= 0.0000001)
   ```
 - **An `expect` keeps each input beside its expected answer.** A list of
   inputs mapped and compared to a separate list of answers makes the

@@ -6,7 +6,6 @@ import Across
 import Along
 import Angle
 import Bike
-import lib.DeviceMath
 import Gaze
 import Geom
 import LeanSearch
@@ -14,7 +13,6 @@ import RiderState
 import Scenery
 import Speed
 import Throttle
-import lib.Trig
 import VehicleLimits
 import World
 
@@ -265,8 +263,8 @@ expect offset >= -max_correction
 expect offset <= max_correction
 expect held >= 0.5 - max_correction
 expect held <= 0.5 + max_correction
-expect DeviceMath.real_abs(held - 0.5) <= max_correction
-expect DeviceMath.real_abs(centred) <= max_correction
+expect (held - 0.5).abs() <= max_correction
+expect centred.abs() <= max_correction
 expect held > centred
 
 # The search gives the same lean every time.

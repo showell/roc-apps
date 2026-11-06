@@ -6,7 +6,6 @@
 ## Each operation does the plain float arithmetic its name says, so code
 ## moved onto this type computes exactly what it did before.
 import Distance
-import lib.DeviceMath
 
 Across :: F64.{
 
@@ -30,7 +29,7 @@ Across :: F64.{
 
 	## How far this place is from the middle of the lane, to either side.
 	distance_from_middle : Across -> Distance
-	distance_from_middle = |Across.(a)| Distance.metres(DeviceMath.real_abs(a))
+	distance_from_middle = |Across.(a)| Distance.metres(a.abs())
 
 	## The place `distance` further right.
 	plus : Across, Distance -> Across
@@ -51,11 +50,11 @@ Across :: F64.{
 
 	## The place further left of this one and `other`.
 	min : Across, Across -> Across
-	min = |Across.(a), Across.(other)| Across.(DeviceMath.real_min(a, other))
+	min = |Across.(a), Across.(other)| Across.(a.min(other))
 
 	## The place further right of this one and `other`.
 	max : Across, Across -> Across
-	max = |Across.(a), Across.(other)| Across.(DeviceMath.real_max(a, other))
+	max = |Across.(a), Across.(other)| Across.(a.max(other))
 
 	is_gt : Across, Across -> Bool
 	is_gt = |Across.(a), Across.(other)| a > other

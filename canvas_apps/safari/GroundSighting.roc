@@ -9,7 +9,6 @@ import Chain
 import Geom
 import Ground
 import BendView
-import Float
 import Pond
 import Scenery
 import World
@@ -53,14 +52,10 @@ GroundSighting :: [].{
 	## at least one.
 	chunks_along : Distance -> U32
 	chunks_along = |length| {
-		chunks = Float.ceil(length.ratio_to(GroundSighting.road_chunk_length))
-		(
-			if chunks < 1.0 {
-				1.0
-			} else {
-				chunks
-			}
-		).to_u32_wrap()
+		chunks =
+			length.ratio_to(GroundSighting.road_chunk_length).ceiling_to_i64_try()
+				?? crash "GroundSighting.chunks_along: a segment's length is finite"
+		chunks.max(1).to_u32_wrap()
 	}
 
 	## The road along the segment at `position` in the chain, chunk by chunk.

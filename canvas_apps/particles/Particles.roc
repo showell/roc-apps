@@ -15,7 +15,6 @@
 # across is not visible anyway.
 import lib.Shapes
 import lib.Brush
-import lib.Trig
 
 Particles :: [].{
 	# Their window.
@@ -48,7 +47,7 @@ Particles :: [].{
 	emitter : I64 -> { x : F64, y : F64 }
 	emitter = |tick| {
 		phase = I64.to_f64(tick) * 0.055
-		{ x: 400.0 + Trig.r_sin(phase) * 170.0, y: 205.0 + Trig.r_cos(phase * 0.7) * 45.0 }
+		{ x: 400.0 + phase.sin() * 170.0, y: 205.0 + (phase * 0.7).cos() * 45.0 }
 	}
 
 	# Their two spreads: the wide one while Space is held, and in recording.
@@ -64,12 +63,7 @@ Particles :: [].{
 	# thousands of them onto a handful of trajectories.
 	unit_hash : I64, I64 -> F64
 	unit_hash = |index, salt|
-		I64.to_f64(rem(index * (2654435761 + salt * 40503) + salt * 7919 + 1, 65521)) / 65521.0
-
-	# This Roc has no remainder, and the rest of this repository does it the
-	# same way (see Trees.roc).
-	rem : I64, I64 -> I64
-	rem = |a, b| a - I64.div_trunc_by(a, b) * b
+		I64.to_f64((index * (2654435761 + salt * 40503) + salt * 7919 + 1).rem_by(65521)) / 65521.0
 
 	initial : I64, List(Particles.Particle) -> List(Particles.Particle)
 	initial = |i, acc|
@@ -91,7 +85,7 @@ Particles :: [].{
 						life: seed * 2.8,
 						seed: seed,
 						phase: unit_hash(i, 1),
-						tint: rem(i, 4),
+						tint: i.rem_by(4),
 					},
 				),
 			)
@@ -111,14 +105,14 @@ Particles :: [].{
 		if life > 0.0 {
 			{ ..p, x: p.x + p.vx * dt, y: p.y + p.vy * dt, vy: p.vy + 420.0 * dt, life: life }
 		} else {
-			angle = p.phase * 6.2831855
+			angle = p.phase * F64.tau
 			speed = 90.0 + 150.0 * p.seed
 			{
 				..p,
 				x: at.x,
 				y: at.y,
-				vx: Trig.r_cos(angle) * speed * spread,
-				vy: Trig.r_sin(angle) * speed - 210.0,
+				vx: angle.cos() * speed * spread,
+				vy: angle.sin() * speed - 210.0,
 				life: 1.1 + p.seed * 1.7,
 			}
 		}

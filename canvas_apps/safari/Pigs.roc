@@ -5,7 +5,6 @@ import Across
 import Along
 import Distance
 import Scenery
-import lib.Trig
 
 Pigs :: [].{
 
@@ -163,9 +162,9 @@ herd_pig = |herd_along, { row, column }| {
 	in_line = in_column.plus(Pigs.pig_row_depth.times(fr))
 	edge = Scenery.road_half_width.plus(Scenery.herd_road_offset)
 	in_row = edge.plus(Pigs.pig_row_depth.times(fr))
-	out_from_middle = in_row.plus(Pigs.pig_jitter_across.times(Trig.r_cos(i * 1.7)))
+	out_from_middle = in_row.plus(Pigs.pig_jitter_across.times((i * 1.7).cos()))
 	pig({
-		along: in_line.plus(Pigs.pig_jitter_along.times(Trig.r_sin(i * 2.3))),
+		along: in_line.plus(Pigs.pig_jitter_along.times((i * 2.3).sin())),
 		across: Across.right_of_middle(out_from_middle),
 	})
 }

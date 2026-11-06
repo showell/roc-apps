@@ -5,7 +5,6 @@ import Pixels
 import Attention
 import Bike
 import CrossingReaction
-import lib.DeviceMath
 import Fraction
 import Gaze
 import Lens
@@ -22,9 +21,7 @@ RideFocal :: [].{
 	## The camera's focal length for where the rider is and how they ride.
 	ride_focal : List(World.Segment), RiderState -> Pixels
 	ride_focal = |route, rider| {
-		lean_fraction = Fraction.clamp(
-			DeviceMath.real_abs(rider.lean.to_radians()) / Bike.max_lean.to_radians(),
-		)
+		lean_fraction = Fraction.clamp(rider.lean.to_radians().abs() / Bike.max_lean.to_radians())
 		attention = crossing_attention(route, rider).max(Gaze.gaze_attention(rider.attention))
 		Lens.cam_focal({ lean_fraction, attention })
 	}
@@ -125,9 +122,9 @@ expect both <= lean_only
 expect both <= gaze_only
 expect
 	both.to_f64().to_bits()
-		== DeviceMath.real_min(lean_only.to_f64(), gaze_only.to_f64()).to_bits()
+		== lean_only.to_f64().min(gaze_only.to_f64()).to_bits()
 expect lean_only.plus(gaze_only) > both
-expect both.to_f64() - DeviceMath.real_min(lean_only.to_f64(), gaze_only.to_f64()) == 0.0
+expect both.to_f64() - lean_only.to_f64().min(gaze_only.to_f64()) == 0.0
 expect Lens.cam_focal({
 	lean_fraction: Fraction.whole,
 	attention: Attention.none,
