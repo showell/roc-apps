@@ -10,7 +10,7 @@ import Distance
 import Chain
 import Geom
 import GuardRail
-import Joint
+import BendView
 import Num_
 import World
 
@@ -121,9 +121,9 @@ RailSighting :: [].{
 }
 
 ## The bend at the end of the segment at `position` in the chain.
-bend_after : Chain.RoadView, Chain.Position -> Joint.PlacedBend
+bend_after : Chain.RoadView, Chain.Position -> BendView
 bend_after = |road, position|
-	Joint.bend_out_of(
+	BendView.of_segment(
 		position.index_in(road.chain).segment_in(road.world),
 		{ before: InChain(position), after: InChain(position.next()) },
 	)
@@ -134,18 +134,18 @@ rails_behind = |road, index| {
 	segment = index.segment_in(road.world)
 	before = Chain.place_behind(segment)
 	after = InChain(Chain.Position.first)
-	rails_at(road, Joint.bend_out_of(segment, { before, after }))
+	rails_at(road, BendView.of_segment(segment, { before, after }))
 }
 
-rails_at : Chain.RoadView, Joint.PlacedBend -> List(GuardRail.RailPoly)
+rails_at : Chain.RoadView, BendView -> List(GuardRail.RailPoly)
 rails_at = |road, bend| GuardRail.quads_along(rail_path(road, bend))
 
 ## The path of the rail at a bend, along the road's outer edge: up to the
 ## bend, out to where the two outer edges meet, back to the next segment,
 ## and along it.
-rail_path : Chain.RoadView, Joint.PlacedBend -> List(Geom.RiderPoint)
+rail_path : Chain.RoadView, BendView -> List(Geom.RiderPoint)
 rail_path = |road, bend| {
-	outer_edge = Joint.outer_edge(bend.turn)
+	outer_edge = BendView.outer_edge(bend.turn)
 	end_before = Chain.rider_point_at(
 		road,
 		{
@@ -162,7 +162,7 @@ rail_path = |road, bend| {
 			across: outer_edge,
 		},
 	)
-	apex = Joint.joint_apex(road, bend)
+	apex = BendView.apex(road, bend)
 	[
 		RailSighting.run_up(
 			road,

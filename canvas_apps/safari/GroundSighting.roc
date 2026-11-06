@@ -7,7 +7,7 @@ import Distance
 import Chain
 import Geom
 import Ground
-import Joint
+import BendView
 import Num_
 import Pond
 import Scenery
@@ -116,7 +116,7 @@ segment_ground = |road, position| {
 		} else {
 			bend_ground(
 				road,
-				Joint.bend_out_of(segment, { before: place, after: InChain(position.next()) }),
+				BendView.of_segment(segment, { before: place, after: InChain(position.next()) }),
 			)
 		}
 	[
@@ -135,16 +135,16 @@ ground_behind = |road, index| {
 	after = InChain(Chain.Position.first)
 	bend_ground(
 		road,
-		Joint.bend_out_of(segment, { before, after }),
+		BendView.of_segment(segment, { before, after }),
 	).concat(pond_ground(road, { segment, place: before }))
 }
 
 ## A bend's paving: the road just before it, then the corner it cuts.
-bend_ground : Chain.RoadView, Joint.PlacedBend -> List(Ground.Patch)
+bend_ground : Chain.RoadView, BendView -> List(Ground.Patch)
 bend_ground = |road, bend| [road_patch(approach(road, bend)), road_patch(bend_corner(road, bend))]
 
 ## The last `approach_length` of the road before a bend.
-approach : Chain.RoadView, Joint.PlacedBend -> List(Geom.RiderPoint)
+approach : Chain.RoadView, BendView -> List(Geom.RiderPoint)
 approach = |road, bend| {
 	corner = |along, across| Chain.rider_point_at(road, { place: bend.before, along, across })
 	end = Along.at(bend.length_before)
@@ -160,14 +160,14 @@ approach = |road, bend| {
 ## The corner a bend cuts: from the inner edge where the segment before
 ## ends, to its outer edge there, out to where the two outer edges meet,
 ## and back to the outer edge where the segment after starts.
-bend_corner : Chain.RoadView, Joint.PlacedBend -> List(Geom.RiderPoint)
+bend_corner : Chain.RoadView, BendView -> List(Geom.RiderPoint)
 bend_corner = |road, bend| {
 	inner_edge = if bend.turn.is_right() {
 		Scenery.right_edge
 	} else {
 		Scenery.left_edge
 	}
-	outer_edge = Joint.outer_edge(bend.turn)
+	outer_edge = BendView.outer_edge(bend.turn)
 	end_at = |across| Chain.rider_point_at(
 		road,
 		{
@@ -179,7 +179,7 @@ bend_corner = |road, bend| {
 	[
 		end_at(inner_edge),
 		end_at(outer_edge),
-		Joint.joint_apex(road, bend),
+		BendView.apex(road, bend),
 		Chain.rider_point_at(
 			road,
 			{

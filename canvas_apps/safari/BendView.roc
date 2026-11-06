@@ -1,4 +1,4 @@
-## Joint knows where two segments meet: where each lies from the rider, and
+## BendView knows where two segments meet: where each lies from the rider, and
 ## the apex where the outer edges of the road meet at the bend. The road's
 ## paving and the guard rail both follow it.
 import Across
@@ -10,25 +10,23 @@ import Geom
 import Scenery
 import World
 
-Joint :: [].{
-
-	## A bend as the rider sees it: where the segments before and after it lie,
-	## the length of the one before, and the turn the road makes, positive to
-	## the right.
-	PlacedBend : {
-		before : Chain.SegmentPlace,
-		after : Chain.SegmentPlace,
-		length_before : Distance,
-		turn : Angle.Turn,
-	}
+## A bend as the rider sees it: where the segments before and after it lie,
+## the length of the one before, and the turn the road makes, positive to
+## the right.
+BendView := {
+	before : Chain.SegmentPlace,
+	after : Chain.SegmentPlace,
+	length_before : Distance,
+	turn : Angle.Turn,
+}.{
 
 	## The bend at the end of `segment`, which lies at `before`.
-	bend_out_of : World.Segment,
+	of_segment : World.Segment,
 	{
 		before : Chain.SegmentPlace,
 		after : Chain.SegmentPlace,
-	} -> Joint.PlacedBend
-	bend_out_of = |segment, { before, after }| {
+	} -> BendView
+	of_segment = |segment, { before, after }| {
 		before,
 		after,
 		length_before: segment.length,
@@ -45,8 +43,8 @@ Joint :: [].{
 	}
 
 	## Where the outer edges of the two segments at a bend meet.
-	joint_apex : Chain.RoadView, Joint.PlacedBend -> Geom.RiderPoint
-	joint_apex = |road, bend| {
+	apex : Chain.RoadView, BendView -> Geom.RiderPoint
+	apex = |road, bend| {
 		across = outer_edge(bend.turn)
 		end_before = Along.at(bend.length_before)
 		point_before = |along| Chain.rider_point_at(road, { place: bend.before, along, across })
@@ -70,13 +68,13 @@ right_turn = Angle.Turn.radians(0.8726646259971648)
 left_turn : Angle.Turn
 left_turn = Angle.Turn.radians(0.0 - 1.2217304763960306)
 
-expect Joint.outer_edge(right_turn) == Scenery.left_edge
-expect Joint.outer_edge(left_turn) == Scenery.right_edge
+expect BendView.outer_edge(right_turn) == Scenery.left_edge
+expect BendView.outer_edge(left_turn) == Scenery.right_edge
 
 ## The apex of a bend from a segment 300 m long, just behind the rider's.
 apex_after_turn : Angle.Turn -> Geom.RiderPoint
 apex_after_turn = |turn|
-	Joint.joint_apex(
+	BendView.apex(
 		{
 			world: [],
 			chain: [],
@@ -138,7 +136,7 @@ bend_of : Chain.SegmentPlace -> Geom.Bend
 bend_of = |place|
 	match place {
 		JustBehind(bend) => bend
-		InChain(_) => crash "Joint.bend_of: only a place behind the rider has a bend"
+		InChain(_) => crash "BendView.bend_of: only a place behind the rider has a bend"
 	}
 
 is_in_chain : Chain.SegmentPlace -> Bool
