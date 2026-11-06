@@ -93,7 +93,7 @@ The fast and merge tiers keep their Roc caches under
 
 An `expect` sits below the block of the module it checks. Where it needs a
 module that one doesn't import, it sits in a module that sees both, such as
-`BendView.roc` or `ItemDraw.roc`, or else in `gates/CrossModuleExpects.roc`.
+`BendView.roc` or `SceneDraw.roc`, or else in `gates/CrossModuleExpects.roc`.
 
 `emitted.sh` and `retest.sh`, which emitted the Roc from Codex, refuse to run:
 the modules they would rewrite are source now.

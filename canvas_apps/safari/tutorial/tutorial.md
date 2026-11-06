@@ -76,7 +76,7 @@ Here's how they fit: the whole system, simplified.
 New in this chapter:
 
 - Roc: imports that can't form a cycle
-- Modules: `SafariApp`, `Scene`, `ItemDraw`, `CatSighting`
+- Modules: `SafariApp`, `Scene`, `SceneDraw`, `CatSighting`
 
 An arrow points from a module to one it imports, so a module is composed of what it points at. Dashed boxes each stand for a family of modules. Roc doesn't allow import cycles, so nothing here can point back up.
 
@@ -126,7 +126,7 @@ A sighting answers one question each frame: which of these can the rider see rig
 
 {{code CatSighting.CatSighting}}
 
-`Scene` gathers every sighting's items, a depth sort puts them in order, and `ItemDraw` hands each one to the module that paints it. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. The rule is simple: a sighting decides, and drawing paints.
+`Scene` gathers every sighting's items, a depth sort puts them in order, and `SceneDraw` hands each one to the module that paints it. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. The rule is simple: a sighting decides, and drawing paints.
 
 All of that is about one frame, and a frame is gone by the next one. What lasts from one step to the next hasn't come up yet.
 
@@ -597,9 +597,9 @@ digraph screen {
   node [shape=box, fontname="Helvetica"];
   CatSighting [style=bold];
   CatDraw [style=bold];
-  ItemDraw -> Scene;
-  ItemDraw -> CatDraw;
-  ItemDraw -> CatSighting;
+  SceneDraw -> Scene;
+  SceneDraw -> CatDraw;
+  SceneDraw -> CatSighting;
   Scene -> CatSighting;
   CatSighting -> Cat;
   CatSighting -> Chain;
@@ -610,7 +610,7 @@ digraph screen {
 }
 ```
 
-`CatSighting` and `CatDraw` never import each other. `ItemDraw` is what carries a sighting's answer to the drawing.
+`CatSighting` and `CatDraw` never import each other. `SceneDraw` is what carries a sighting's answer to the drawing.
 
 `cat_in_view` places the cat and decides whether it's big enough to draw. An empty list or a list of one is how it says "maybe".
 
@@ -642,9 +642,9 @@ The modules behind a beacon
 digraph beacon {
   node [shape=box, fontname="Helvetica"];
   TowerSighting [style=bold];
-  ItemDraw -> Scene;
-  ItemDraw -> TowerSighting;
-  ItemDraw -> Tower;
+  SceneDraw -> Scene;
+  SceneDraw -> TowerSighting;
+  SceneDraw -> Tower;
   Scene -> TowerSighting;
   TowerSighting -> Clock;
   TowerSighting -> Steps;
@@ -680,7 +680,7 @@ Its caller gives each mast its key, the segment's index. Records with named fiel
 
 A mast halfway along a segment takes the key plus 60. That's a small piece of number theory hiding in a constant: 60 staggers of 37 steps come to 2,220, which is 18 periods of 120 and 60 left over, so the mid-mast blinks exactly opposite the end mast.
 
-Notice where the clock stops. `beacon_brightness` on a `TowerSighting` is a `Fraction`, and neither `Tower` nor `ItemDraw` imports `Clock`. A sighting decides, and drawing paints. A beacon's blink is decided in the same place as whether the mast is in view at all.
+Notice where the clock stops. `beacon_brightness` on a `TowerSighting` is a `Fraction`, and neither `Tower` nor `SceneDraw` imports `Clock`. A sighting decides, and drawing paints. A beacon's blink is decided in the same place as whether the mast is in view at all.
 
 There's no blink abstraction. `Animation.Alternates` also follows a wave, and the resemblance ends there: it picks a pose, and this picks a brightness. Nothing else in the game blinks.
 
@@ -696,11 +696,11 @@ digraph headlights {
   RideInstant -> Mountains;
   RideInstant -> Sky;
   RideInstant -> Truck;
-  RideInstant -> ItemDraw;
+  RideInstant -> SceneDraw;
   Mountains -> Sky;
   Mountains -> Clock;
   Sky -> Clock;
-  ItemDraw -> TruckDraw;
+  SceneDraw -> TruckDraw;
   TruckDraw -> Truck;
 }
 ```

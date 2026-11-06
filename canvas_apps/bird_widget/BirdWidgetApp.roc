@@ -12,7 +12,7 @@ import game.Camera
 import game.Clock
 import game.Distance
 import game.Fraction
-import game.ItemDraw
+import game.SceneDraw
 import game.Lens
 import game.Paint
 import game.RocBird
@@ -134,7 +134,7 @@ tree_shapes = |tree| {
 		cam_focal: Lens.focal,
 		trunk: RoundCorners,
 		crown: Cones,
-		shade: ItemDraw.crown_shade(forward),
+		shade: SceneDraw.crown_shade(forward),
 	})
 }
 
