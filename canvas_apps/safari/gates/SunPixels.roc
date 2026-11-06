@@ -39,35 +39,11 @@ paint_glow_and_disc = |pixels, { roll, sun }| {
 		for column in columns.start.until(columns.end) {
 			p = roll.to_scene(ScreenRoll.pixel_point({ row, column }))
 			$px = if p.x >= 0.0 and p.x < Screen.width and p.y >= 0.0 and p.y < Screen.horizon_y {
-				at = PixelGrid.pixel_index({
-					row,
-					column,
-					width: roll.width_px(),
-				})
-				lit = PixelGrid.blend(
-					$px,
-					{
-						at,
-						color: Brush.shade(
-							fills.glow,
-							p.x,
-							p.y,
-						),
-					},
-				)
+				at = PixelGrid.pixel_index({ row, column, width: roll.width_px() })
+				lit = PixelGrid.blend($px, { at, color: Brush.shade(fills.glow, p.x, p.y) })
 				distance = F64.sqrt((p.x - sun.x) * (p.x - sun.x) + (p.y - sun.y) * (p.y - sun.y))
 				if distance < fills.disc_radius {
-					PixelGrid.blend(
-						lit,
-						{
-							at,
-							color: Brush.shade(
-								fills.disc,
-								p.x,
-								p.y,
-							),
-						},
-					)
+					PixelGrid.blend(lit, { at, color: Brush.shade(fills.disc, p.x, p.y) })
 				} else {
 					lit
 				}

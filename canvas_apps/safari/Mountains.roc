@@ -18,10 +18,7 @@ import lib.Shapes
 Mountains :: [].{
 
 	## How the skyline is seen: the rider's heading, and the camera.
-	Sight : {
-		heading : Angle.Bearing,
-		cam_focal : F64,
-	}
+	Sight : { heading : Angle.Bearing, cam_focal : F64 }
 
 	rock : I64
 	rock = 0x5B6A8F
@@ -150,17 +147,8 @@ Mountains :: [].{
 		dusk : Fraction,
 		cam_focal : F64,
 	} -> List(Shapes.Shape)
-	draw = |
-		{
-			heading,
-			dusk,
-			cam_focal,
-		},
-	| {
-		sight = {
-			heading,
-			cam_focal,
-		}
+	draw = |{ heading, dusk, cam_focal }| {
+		sight = { heading, cam_focal }
 		[
 			silhouette(sight, { height_at: west_range, color: color_at_dusk(rock_west, dusk) }),
 			silhouette(sight, { height_at: north_range, color: color_at_dusk(rock, dusk) }),
@@ -266,10 +254,7 @@ silhouette = |sight, { height_at, color }| {
 	left = (0.0 - Mountains.roll_margin)
 	right = (Screen.width + Mountains.roll_margin)
 	crest = columns({ from: left, to: right }).map(
-		|x| {
-			x,
-			y: height_y(sight, height_at(Mountains.bearing_at(sight, x))),
-		},
+		|x| { x, y: height_y(sight, height_at(Mountains.bearing_at(sight, x))) },
 	)
 	Paint.push_poly(color, crest.concat([{ x: right, y: horizon_y }, { x: left, y: horizon_y }]))
 }
@@ -288,10 +273,7 @@ snow = |sight, color| {
 		[]
 	} else {
 		crest = snowy.map(
-			|x| {
-				x,
-				y: height_y(sight, Mountains.north_range(Mountains.bearing_at(sight, x))),
-			},
+			|x| { x, y: height_y(sight, Mountains.north_range(Mountains.bearing_at(sight, x))) },
 		)
 		snowline = snowy.fold_rev(
 			[],
@@ -381,20 +363,8 @@ seen_bearing : {
 	cam_focal : F64,
 	x : F64,
 } -> F64
-seen_bearing = |
-	{
-		heading,
-		cam_focal,
-		x,
-	},
-|
-	Mountains.bearing_at(
-		{
-			heading: north_by(heading),
-			cam_focal,
-		},
-		x,
-	).to_radians()
+seen_bearing = |{ heading, cam_focal, x }|
+	Mountains.bearing_at({ heading: north_by(heading), cam_focal }, x).to_radians()
 
 expect
 	seen_bearing({

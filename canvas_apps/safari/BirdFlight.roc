@@ -206,10 +206,7 @@ trees = [
 ]
 
 flight : BirdFlight.Flight
-flight = {
-	from: left_tree,
-	to: { ..tree_at(140.0, 6.0), height: Distance.metres(12.0) },
-}
+flight = { from: left_tree, to: { ..tree_at(140.0, 6.0), height: Distance.metres(12.0) } }
 
 ## A left and a right tree at each of `alongs`.
 pairs_at : List(F64) -> List(Scenery.Tree)

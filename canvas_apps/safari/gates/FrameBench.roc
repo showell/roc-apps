@@ -4,10 +4,7 @@
 ## build, where the wasm module has no names; the gate doesn't run it.
 ##
 ##   roc build --opt=speed FrameBench.roc --output=<bin>; <bin> 60
-app [main!] {
-	game: "../game.roc",
-	lib: "../../lib/main.roc",
-}
+app [main!] { game: "../game.roc", lib: "../../lib/main.roc" }
 
 import game.World
 import game.RideInstant
@@ -44,10 +41,7 @@ main! = |args| {
 	world = World.segments
 	done = ride_frames(
 		world,
-		{
-			bench_run: { instant: RideInstant.initial, shapes: 0 },
-			steps_left: steps,
-		},
+		{ bench_run: { instant: RideInstant.initial, shapes: 0 }, steps_left: steps },
 	)
 	finished = if Rider.is_finished(done.instant.rider, world) {
 		"yes"

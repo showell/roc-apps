@@ -559,7 +559,7 @@ one.
   the audit is a record of what happened, not the request's work. That is
   a reason the code can't show; a restatement of the code is not.
 - **A file's top comment says what the file does, in plain, complete
-  sentences for a reader who arrives cold.** gopher-roc
+  sentences for a reader who arrives cold.** roc-chat
   `app/ConversationRoute.roc` opens: "This module moves data between the web
   interface and the file system. It doesn't do any heavy lifting itself."
   No caps headline: a count in one goes stale, and a fragment's "its"
@@ -708,11 +708,11 @@ crosses it.)
   same rule: it asks the Roc to judge a request's head (origin and size
   allowance) before reading its body, and caps the bytes in flight across
   all connections, so a hostile page can't fill memory with bodies that
-  will only be refused (gopher-roc `app/main.roc`, `admission`).
+  will only be refused (roc-chat `app/main.roc`, `admission`).
 - **A cross-site GET is a request too.** A page's stream, image or script
   can be fetched by another site's page in the viewer's browser. Refuse a
   foreign `Origin` on every method, and a cross-site `Sec-Fetch-Site` on a
-  GET that isn't a top-level navigation (gopher-roc `app/RequestOrigin.roc`).
+  GET that isn't a top-level navigation (roc-chat `app/RequestOrigin.roc`).
 - **Decode at the door into an opaque type.** Only its own module can
   build one, so the checks are the only way in (`docs/roc-style.md`, "Make
   wrong values impossible to build"). roc-chat `app/Principal.roc`'s ids

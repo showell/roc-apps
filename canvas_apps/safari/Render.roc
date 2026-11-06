@@ -44,14 +44,7 @@ Render :: [].{
 
 	## Everything in view from `view`, each kind cut to its sighting's cap.
 	collect : Frame.Viewpoint, Render.MovingParts -> Render.Scene
-	collect = |
-		view,
-		{
-			speed,
-			truck,
-			clock,
-		},
-	| {
+	collect = |view, { speed, truck, clock }| {
 		road = view.road
 		trees = TreeSighting.in_view(view).take_first(TreeSighting.max_vis_trees.to_u64_wrap())
 		towers =

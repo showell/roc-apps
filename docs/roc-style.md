@@ -947,7 +947,7 @@ is the base; these rules sharpen it.
 - **An `expect` sits at the top level of its file, below the block.** Roc
   also runs one inside the block, but a gate counts the lines that start
   `expect`, so the source is the count, and each must pass exactly once
-  (safari's `gates/run.shale`, gopher-roc's `tools/verify.shale`). Below the
+  (safari's `gates/run.shale`, roc-chat's `tools/verify.shale`). Below the
   block it names members as a caller does (`Herd.cows`) and helpers bare.
 - **An `expect` that no one module can write goes in a gates-only app.** A
   check may need two modules that don't import each other, and a production

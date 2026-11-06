@@ -108,13 +108,7 @@ Sky :: [].{
 		to : Sky.Rgb,
 		fraction : Fraction,
 	} -> Sky.Rgb
-	color_between = |
-		{
-			from,
-			to,
-			fraction,
-		},
-	| {
+	color_between = |{ from, to, fraction }| {
 		share = fraction.to_f64()
 		{
 			r: Num_.round_real((from.r + ((to.r - from.r) * share))),
@@ -152,24 +146,12 @@ Sky :: [].{
 		clock : Clock,
 		cam_focal : F64,
 	} -> Sky.SunPos
-	sun_pos = |
-		{
-			heading,
-			clock,
-			cam_focal,
-		},
-	| {
+	sun_pos = |{ heading, clock, cam_focal }| {
 		turn_from_view = sun_bearing.turn_from(heading)
 		if turn_from_view.abs() >= visible_turn_limit {
 			OutOfView
 		} else {
-			InView(
-				sun_place({
-					turn_from_view,
-					clock,
-					cam_focal,
-				}),
-			)
+			InView(sun_place({ turn_from_view, clock, cam_focal }))
 		}
 	}
 }
@@ -205,13 +187,7 @@ sun_place : {
 	clock : Clock,
 	cam_focal : F64,
 } -> Sky.SunPlace
-sun_place = |
-	{
-		turn_from_view,
-		clock,
-		cam_focal,
-	},
-| {
+sun_place = |{ turn_from_view, clock, cam_focal }| {
 	scale = (cam_focal / Lens.focal)
 	{
 		x: (Screen.center_x + (Trig.r_tan(turn_from_view.to_radians()) * cam_focal)),

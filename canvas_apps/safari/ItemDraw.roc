@@ -132,10 +132,7 @@ draw_subject = |scene, { view, depth_key }| {
 	cam_focal = view.cam_focal
 	match depth_key.subject {
 		Tree(place) =>
-			ItemDraw.draw_tree(
-				thing_at(scene.trees, place),
-				{ trees: scene.trees, cam_focal },
-			)
+			ItemDraw.draw_tree(thing_at(scene.trees, place), { trees: scene.trees, cam_focal })
 		Tower(place) => ItemDraw.draw_tower(view, thing_at(scene.towers, place))
 		Rail(place) => GuardRail.draw(thing_at(scene.rails, place), cam_focal)
 		Critter(place) => Critter.draw(thing_at(scene.critters, place), cam_focal)
@@ -324,10 +321,7 @@ green_tree_at = |along| {
 }
 
 expect
-	List.concat(
-		segs.map(|seg| seg.trees.len().to_i64_wrap()),
-		[TreeSighting.max_vis_trees],
-	)
+	List.concat(segs.map(|seg| seg.trees.len().to_i64_wrap()), [TreeSighting.max_vis_trees])
 		== [28, 16, 22, 640]
 
 lone_tree : TreeSighting.TreeItem

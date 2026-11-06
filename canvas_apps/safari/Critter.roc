@@ -78,11 +78,7 @@ Critter :: [].{
 	draw : Billboards.Billboard, F64 -> List(Shapes.Shape)
 	draw = |critter, cam_focal| {
 		on_screen = |height| Camera.project(
-			{
-				right: critter.right,
-				forward: critter.forward,
-				height,
-			},
+			{ right: critter.right, forward: critter.forward, height },
 			cam_focal,
 		)
 		feet = on_screen(0.0)
@@ -96,11 +92,7 @@ Critter :: [].{
 					FacesRight => Mirrored
 				}
 			Critter.draw_still(
-				{
-					feet,
-					flip,
-					height_px,
-				},
+				{ feet, flip, height_px },
 				EmojiStills.emoji_polys_for(critter.codepoint),
 			)
 		}
@@ -227,12 +219,7 @@ expect Critter.draw_poly(upright, flat_poly(2)).len() == 0
 
 expect
 	Critter.draw_poly(upright, flat_poly(3))
-		== [
-			Poly({
-				pts: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0],
-				fill: Flat(Brush.opaque(7)),
-			}),
-		]
+		== [Poly({ pts: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0], fill: Flat(Brush.opaque(7)) })]
 
 # How many shapes draw a critter of `height` metres, `forward` metres ahead.
 shape_count : {
@@ -240,13 +227,7 @@ shape_count : {
 	height : Distance,
 	codepoint : I64,
 } -> U64
-shape_count = |
-	{
-		forward,
-		height,
-		codepoint,
-	},
-|
+shape_count = |{ forward, height, codepoint }|
 	Critter.draw(
 		{
 			right: 0.0,

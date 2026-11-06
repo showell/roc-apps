@@ -95,11 +95,7 @@ GuardRail :: [].{
 
 ## A quad with these corners, in `color`.
 rail_quad : List(Geom.SpacePoint), I64 -> GuardRail.RailPoly
-rail_quad = |corners, color| {
-	corners,
-	color,
-	forward: mean_forward(corners),
-}
+rail_quad = |corners, color| { corners, color, forward: mean_forward(corners) }
 
 ## The mean of the corners' distances ahead, summed from the first corner
 ## to the last; a float sum's rounding depends on its order.
@@ -112,11 +108,7 @@ mean_forward = |corners| {
 
 ## A point of the path, at `height` above the ground.
 at_height : Geom.RiderPoint, F64 -> Geom.SpacePoint
-at_height = |point, height| {
-	right: point.right,
-	forward: point.forward,
-	height,
-}
+at_height = |point, height| { right: point.right, forward: point.forward, height }
 
 ## The bar from `from` to `to`, bottom edge first.
 bar : { from : Geom.RiderPoint, to : Geom.RiderPoint } -> GuardRail.RailPoly

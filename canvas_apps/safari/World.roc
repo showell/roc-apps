@@ -90,11 +90,7 @@ World :: [].{
 		## What crosses the road here, at most one thing, so that the rider has
 		## one experience at a time. Most of the road is quiet, so that a crossing
 		## stands out.
-		crossing : [
-			CatCrosses(Cat.Crossing),
-			BirdFlies(BirdFlight.Route),
-			QuietRoad,
-		],
+		crossing : [CatCrosses(Cat.Crossing), BirdFlies(BirdFlight.Route), QuietRoad],
 		ending : [Continues({ next : World.SegmentIndex }), Terminates],
 		exit_creature : Scenery.Creature,
 	}

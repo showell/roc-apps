@@ -90,10 +90,7 @@ Gaze :: [].{
 	} -> Gaze.PigLook
 	pig_in_sight = |state, { gaze_pig: pig, distance_ahead: dist }| {
 		toward_pig = Angle.Turn.radians(
-			Trig.r_atan2(
-				pig.across.distance_from(state.across).to_metres(),
-				dist.to_metres(),
-			),
+			Trig.r_atan2(pig.across.distance_from(state.across).to_metres(), dist.to_metres()),
 		).minus(state.yaw)
 		if toward_pig.abs() >= gaze_release_angle {
 			no_look
@@ -255,10 +252,7 @@ expect Gaze.desired_gaze(rider(100.0, 0.0), distracting) == OnRoad
 
 ## A rider looking `gaze_yaw` from straight ahead.
 head : F64, F64 -> Pose.RiderState
-head = |gaze_yaw, along| {
-	..rider(along, 0.0),
-	gaze_yaw: Angle.Turn.radians(gaze_yaw),
-}
+head = |gaze_yaw, along| { ..rider(along, 0.0), gaze_yaw: Angle.Turn.radians(gaze_yaw) }
 
 ## The gaze one step after `state`, wanting a pig `want` radians off.
 gaze_after : Pose.RiderState, F64 -> F64
@@ -301,10 +295,7 @@ expect gaze_after(head((2.0 * Trig.deg), 200.0), 0.0) == 0.0
 
 ## A rider with this focus, looking `gaze_yaw` from straight ahead.
 rider_with_focus : F64, F64 -> Pose.RiderState
-rider_with_focus = |focus, gaze_yaw| {
-	..head(gaze_yaw, 200.0),
-	focus: Fraction.of(focus),
-}
+rider_with_focus = |focus, gaze_yaw| { ..head(gaze_yaw, 200.0), focus: Fraction.of(focus) }
 
 expect {
 	rising = focus_after(rider_with_focus(0.0, (20.0 * Trig.deg)), (20.0 * Trig.deg))

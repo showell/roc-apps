@@ -24,10 +24,7 @@ BirdSighting :: [].{
 	## it is.
 	depth_keys : List(RocBird.PlacedBird) -> List(DepthSort.DepthKey)
 	depth_keys = |birds| birds.map_with_index(
-		|bird, i| {
-			forward: bird.forward,
-			subject: Bird(i.to_u32_wrap()),
-		},
+		|bird, i| { forward: bird.forward, subject: Bird(i.to_u32_wrap()) },
 	)
 }
 
@@ -55,11 +52,7 @@ bird_in_view : Frame.Viewpoint,
 bird_in_view = |view, { position, instant }| {
 	seen = Frame.rider_point_ahead(
 		view.road,
-		{
-			position,
-			along: instant.spot.along,
-			across: instant.spot.across,
-		},
+		{ position, along: instant.spot.along, across: instant.spot.across },
 	)
 	height_px = RocBird.height_px({ forward: seen.forward, cam_focal: view.cam_focal })
 	if seen.forward <= Geom.near_plane {

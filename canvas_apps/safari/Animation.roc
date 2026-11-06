@@ -29,11 +29,7 @@ Animation :: [].{
 
 	## Where an animation has got to: not begun, playing and this far through,
 	## or over, with the rider this far beyond its end.
-	Stage : [
-		Waiting,
-		Playing(Fraction),
-		Past(Distance),
-	]
+	Stage : [Waiting, Playing(Fraction), Past(Distance)]
 
 	## A rider this slow is standing still.
 	standstill : Speed
@@ -162,10 +158,7 @@ Animation :: [].{
 			looks = playing_at(score.looks, { beat, length: score.length })
 			path = playing_at(score.path, { beat, length: score.length })
 			fraction = Fraction.of(beat.minus(path.from).ratio_to(path.to.minus(path.from)))
-			{
-				pose: pose_of(looks.plays, beat),
-				spot: path_spot(path.plays, fraction),
-			}
+			{ pose: pose_of(looks.plays, beat), spot: path_spot(path.plays, fraction) }
 		}
 	}
 }
@@ -187,11 +180,7 @@ playing_at = |track, { beat, length }| {
 				Through(cut) | Before(cut) => cut
 			}
 		if is_short_of(beat, stretch.until) {
-			return {
-				plays: stretch.plays,
-				from: $from,
-				to,
-			}
+			return { plays: stretch.plays, from: $from, to }
 		}
 		$from = to
 	}
@@ -214,14 +203,7 @@ pose_of : Animation.Looks(pose), Beats -> pose
 pose_of = |looks, beat|
 	match looks {
 		Holds(pose) => pose
-		Alternates(
-			{
-				up,
-				down,
-				count,
-				over,
-			},
-		) =>
+		Alternates({ up, down, count, over }) =>
 			if Trig.r_sin(beat.ratio_to(over) * count * Trig.two_pi) > 0.0 {
 				up
 			} else {
@@ -485,19 +467,11 @@ smooth_arc = Arc({ line: line(Smooth), rise: 5.0 })
 spot_numbers : Animation.Path, F64 -> List(F64)
 spot_numbers = |path, beat| {
 	spot = path_timeline(path).at_beat(Beats.of(beat)).spot
-	[
-		spot.along.to_metres(),
-		spot.across.to_metres(),
-		spot.lift,
-	]
+	[spot.along.to_metres(), spot.across.to_metres(), spot.lift]
 }
 
 line : Animation.Ease -> Animation.Line
-line = |ease| {
-	from: start_spot,
-	to: end_spot,
-	ease,
-}
+line = |ease| { from: start_spot, to: end_spot, ease }
 
 expect
 	[

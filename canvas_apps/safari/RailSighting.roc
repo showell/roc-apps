@@ -32,10 +32,7 @@ RailSighting :: [].{
 	## place in the list.
 	depth_keys : List(GuardRail.RailPoly) -> List(DepthSort.DepthKey)
 	depth_keys = |quads| quads.map_with_index(
-		|quad, i| {
-			forward: quad.forward,
-			subject: Rail(i.to_u32_wrap()),
-		},
+		|quad, i| { forward: quad.forward, subject: Rail(i.to_u32_wrap()) },
 	)
 
 	## How many steps a leg `distance` long is cut into: one a metre, and at
@@ -58,13 +55,7 @@ RailSighting :: [].{
 		to : Geom.RiderPoint,
 		steps : U32,
 	} -> List(Geom.RiderPoint)
-	evenly_spaced = |
-		{
-			from,
-			to,
-			steps,
-		},
-	| {
+	evenly_spaced = |{ from, to, steps }| {
 		rightward = to.right - from.right
 		forward = to.forward - from.forward
 		List.from_iter(U32.to(0, steps)).map(
@@ -86,11 +77,7 @@ RailSighting :: [].{
 		forward = to.forward - from.forward
 		distance = DeviceMath.real_sqrt(rightward * rightward + forward * forward)
 		steps = RailSighting.leg_steps(distance)
-		RailSighting.evenly_spaced({
-			from,
-			to,
-			steps,
-		}).drop_first(1)
+		RailSighting.evenly_spaced({ from, to, steps }).drop_first(1)
 	}
 
 	## The rail along the last `rail_runout` metres of a segment `length`
@@ -102,14 +89,7 @@ RailSighting :: [].{
 		length : Distance,
 		across : Across,
 	} -> List(Geom.RiderPoint)
-	run_up = |
-		road,
-		{
-			place,
-			length,
-			across,
-		},
-	|
+	run_up = |road, { place, length, across }|
 		List.from_iter(U32.to(0, GuardRail.rail_runout)).map(
 			|metres_in| {
 				metres_left = Distance.metres((GuardRail.rail_runout - metres_in).to_f64())
@@ -135,11 +115,7 @@ RailSighting :: [].{
 		List.from_iter(U32.to(1, GuardRail.rail_runout)).map(
 			|metres_in| Frame.rider_point_at(
 				road,
-				{
-					place,
-					along: Along.metres(metres_in.to_f64()),
-					across,
-				},
+				{ place, along: Along.metres(metres_in.to_f64()), across },
 			),
 		)
 }

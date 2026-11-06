@@ -272,10 +272,7 @@ across_at = |metres| Pose.initial_rider_state.across.plus(Speed.metres_a_step(me
 
 ## A rider steering hard left at `speed`.
 rider_off_left : F64 -> Pose.RiderState
-rider_off_left = |speed| {
-	..centred_rider(0.0, speed),
-	yaw: Angle.Turn.radians(-1.5),
-}
+rider_off_left = |speed| { ..centred_rider(0.0, speed), yaw: Angle.Turn.radians(-1.5) }
 
 expect Arc.project_arc(rider_off_left(0.048)).shoulder == ShoulderLeft(Steps.of(40))
 expect Arc.project_arc(rider_off_left(0.7)).shoulder == ShoulderLeft(Steps.of(2))
@@ -333,11 +330,7 @@ expect clamped_speed({ next_speed: 0.1, is_near_end: False }) == 0.1
 decide : Speed, F64 -> Acceleration
 decide = |speed, tilt|
 	Throttle.get_forward_accel_decel(
-		{
-			..Pose.initial_rider_state,
-			speed,
-			tilt: Angle.Lean.radians(tilt),
-		},
+		{ ..Pose.initial_rider_state, speed, tilt: Angle.Lean.radians(tilt) },
 		first_segment,
 	)
 

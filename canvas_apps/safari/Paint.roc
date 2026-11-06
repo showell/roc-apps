@@ -28,13 +28,7 @@ Paint :: [].{
 		green : I64,
 		blue : I64,
 	} -> I64
-	pack_rgb = |
-		{
-			red,
-			green,
-			blue,
-		},
-	| {
+	pack_rgb = |{ red, green, blue }| {
 		red_bits = red.shl_wrap(16)
 		green_bits = green.shl_wrap(8)
 		red_bits.bitwise_or(green_bits).bitwise_or(blue)
@@ -142,14 +136,7 @@ Paint :: [].{
 		beacon_radius : F64,
 		beacon_alpha : Fraction,
 	} -> List(Shapes.Shape)
-	push_beacon = |
-		{
-			beacon_color,
-			beacon_center,
-			beacon_radius,
-			beacon_alpha,
-		},
-	| {
+	push_beacon = |{ beacon_color, beacon_center, beacon_radius, beacon_alpha }| {
 		opaque = Brush.opaque(beacon_color)
 		[
 			Disc({
@@ -181,15 +168,7 @@ Paint :: [].{
 		gradient_center : Screen.Point,
 		gradient_radius : F64,
 	} -> List(Shapes.Shape)
-	push_grad_poly = |
-		ps,
-		{
-			center_rgba,
-			edge_rgba,
-			gradient_center,
-			gradient_radius,
-		},
-	|
+	push_grad_poly = |ps, { center_rgba, edge_rgba, gradient_center, gradient_radius }|
 		if gradient_radius < min_gradient_radius {
 			[]
 		} else {
@@ -213,14 +192,7 @@ Paint :: [].{
 		start_point : Screen.Point,
 		end_point : Screen.Point,
 	} -> List(Shapes.Shape)
-	push_linear_grad_poly = |
-		ps,
-		{
-			color_stops,
-			start_point,
-			end_point,
-		},
-	| {
+	push_linear_grad_poly = |ps, { color_stops, start_point, end_point }| {
 		dx = end_point.x - start_point.x
 		dy = end_point.y - start_point.y
 		if dx * dx + dy * dy == 0.0 {
@@ -253,15 +225,7 @@ Paint :: [].{
 		axis_u : Screen.Point,
 		axis_v : Screen.Point,
 	} -> List(Shapes.Shape)
-	push_radial_grad_poly = |
-		ps,
-		{
-			color_stops,
-			center_point,
-			axis_u,
-			axis_v,
-		},
-	| {
+	push_radial_grad_poly = |ps, { color_stops, center_point, axis_u, axis_v }| {
 		det = axis_u.x * axis_v.y - axis_u.y * axis_v.x
 		first_color = Brush.with_alpha(color_stops.start_rgba)
 		fill =
@@ -424,10 +388,7 @@ expect
 		== 1
 
 expect Paint.push_poly(111, triangle) == [
-	Poly({
-		pts: triangle_pts,
-		fill: Flat(Brush.opaque(111)),
-	}),
+	Poly({ pts: triangle_pts, fill: Flat(Brush.opaque(111)) }),
 ]
 
 expect
@@ -548,11 +509,7 @@ offset_linear = |{ start_offset, end_offset }|
 	Paint.push_linear_grad_poly(
 		triangle,
 		{
-			color_stops: {
-				..inner_stops,
-				start_offset,
-				end_offset,
-			},
+			color_stops: { ..inner_stops, start_offset, end_offset },
 			start_point: { x: 1.0, y: 2.0 },
 			end_point: { x: 3.0, y: 4.0 },
 		},

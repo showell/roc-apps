@@ -37,9 +37,9 @@ const LINTS = {
   {recipe = "boundaries", args = {}, budget = {}, counts = {
     {"single", 0}, {"fixed", 0}, {"entry", 0}, {"constant", 0}, {"bool_param", 0},
   }, whole_tree = {"single", "fixed", "entry", "constant", "bool_param"}},
-  {recipe = "stack", args = {}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 0}, {"long", 0}},
+  {recipe = "stack", args = {}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 0}, {"to unstack", 0}, {"long", 0}},
     skip = {"BirdStills.roc", "CatStills.roc", "EmojiStills.roc"}},
-  {recipe = "vocabulary", args = {"words=vocabulary.txt"}, budget = {}, counts = {{"retired_name", 173}, {"retired_comment", 46}}},
+  {recipe = "vocabulary", args = {"words=vocabulary.txt"}, budget = {}, counts = {{"retired_name", 172}, {"retired_comment", 46}}},
   {recipe = "name_types", args = {"table=name_types.txt"}, budget = {}, counts = {{"name_type", 12}, {"bare_beside_unit", 55}, {"no_value", 1}},
     whole_tree = {"bare_beside_unit"}},
   {recipe = "families", args = {}, budget = {}, counts = {{"family", 5}, {"twin_name", 9}}, whole_tree = {"family", "twin_name"}},
@@ -91,7 +91,7 @@ end
 
 -- The lines of `out` that are findings of `check`.
 function findings_of(out, check)
-  local mark = ": " .. substitute(check, "to stack", "stack") .. ":"
+  local mark = ": " .. substitute(substitute(check, "to stack", "stack"), "to unstack", "unstack") .. ":"
   local found = {}
   for l in lines(out) do
     if contains(l, mark) then push(found, l) end

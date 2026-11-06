@@ -472,7 +472,7 @@ Finding the stretch that's playing shows one more Roc idea. In `playing_at`, `va
 
 `Timeline.at_beat` calls it once for each track, which is what lets the two tracks cut wherever they like. `Animation.Timeline.(score)` in a parameter list opens the nominal type, the way `Speed.(s)` opens an opaque one. `pose_of` and `path_spot` turn what's playing into a pose and a spot, and the bird chapter reads `path_spot`.
 
-🌳 {{code Animation.Timeline from "## The critter at `beat`" to "spot: path_spot(path.plays, fraction),"}}
+🌳 {{code Animation.Timeline from "## The critter at `beat`" to "path_spot(path.plays, fraction)"}}
 
 `Timeline.instant` is the one place in this half that knows about stages. Its `match` covers all three tags, and `portion` turns a `Fraction` of the way through into a beat.
 

@@ -29,13 +29,7 @@ ScreenRoll :: {
 		width : PixelGrid.Coordinate,
 		height : PixelGrid.Coordinate,
 	} -> ScreenRoll
-	of = |
-		{
-			roll,
-			width,
-			height,
-		},
-	|
+	of = |{ roll, width, height }|
 		ScreenRoll.(
 			{
 				cos: F64.cos(roll),
@@ -59,10 +53,7 @@ ScreenRoll :: {
 	} -> ScreenRoll.ScreenPoint
 	pixel_point = |{ row, column }|
 		ScreenRoll.ScreenPoint.(
-			{
-				x: PixelGrid.pixel_center(column),
-				y: PixelGrid.pixel_center(row),
-			},
+			{ x: PixelGrid.pixel_center(column), y: PixelGrid.pixel_center(row) },
 		)
 
 	to_screen : ScreenRoll, ScreenRoll.ScenePoint -> ScreenRoll.ScreenPoint

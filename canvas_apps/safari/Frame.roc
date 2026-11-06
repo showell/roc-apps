@@ -122,14 +122,7 @@ Frame :: [].{
 		along : Along,
 		across : Across,
 	} -> Geom.RiderPoint
-	rider_point_ahead = |
-		road,
-		{
-			position,
-			along,
-			across,
-		},
-	| {
+	rider_point_ahead = |road, { position, along, across }| {
 		on_rider_segment = position.before_in(road.chain).fold_rev(
 			edge_point({ along, across }),
 			|index, point| Geom.in_segment_before(point, bend_out_of(index.segment_in(road.world))),
@@ -144,24 +137,10 @@ Frame :: [].{
 		along : Along,
 		across : Across,
 	} -> Geom.RiderPoint
-	rider_point_at = |
-		road,
-		{
-			place,
-			along,
-			across,
-		},
-	|
+	rider_point_at = |road, { place, along, across }|
 		match place {
 			InChain(position) =>
-				rider_point_ahead(
-					road,
-					{
-						position,
-						along,
-						across,
-					},
-				)
+				rider_point_ahead(road, { position, along, across })
 			JustBehind(bend) => {
 				on_segment_behind = edge_point({ along, across })
 				Geom.to_rider_point(Geom.in_segment_after(on_segment_behind, bend), road.pose)

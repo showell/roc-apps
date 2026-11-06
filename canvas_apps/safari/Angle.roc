@@ -88,10 +88,7 @@ Angle :: [].{
 		## This turn, held to no more than `limit` either way.
 		within : Angle.Turn, Angle.Turn -> Angle.Turn
 		within = |Angle.Turn.(t), Angle.Turn.(limit)| Angle.Turn.(
-			DeviceMath.real_max(
-				0.0 - limit,
-				DeviceMath.real_min(limit, t),
-			),
+			DeviceMath.real_max(0.0 - limit, DeviceMath.real_min(limit, t)),
 		)
 
 		## How many of `whole` this turn is: negative for a turn to the left.

@@ -48,6 +48,4 @@ package
 		VehicleLimits,
 		World,
 	]
-	{
-		lib: "../lib/main.roc",
-	}
+	{ lib: "../lib/main.roc" }

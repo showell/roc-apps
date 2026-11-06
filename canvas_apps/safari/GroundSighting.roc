@@ -71,12 +71,7 @@ GroundSighting :: [].{
 			|chunk_number| road_patch(
 				GroundSighting.chunk_corners(
 					road,
-					{
-						position,
-						segment_length,
-						chunk_count,
-						chunk_number,
-					},
+					{ position, segment_length, chunk_count, chunk_number },
 				),
 			),
 		)
@@ -84,27 +79,12 @@ GroundSighting :: [].{
 
 	## A chunk's corners: across its near end, then back across its far end.
 	chunk_corners : Frame.RoadView, GroundSighting.RoadChunk -> List(Geom.RiderPoint)
-	chunk_corners = |
-		road,
-		{
-			position,
-			segment_length,
-			chunk_count,
-			chunk_number,
-		},
-	| {
+	chunk_corners = |road, { position, segment_length, chunk_count, chunk_number }| {
 		end_of_chunk = |number|
 			Along.at(segment_length.times(number.to_f64()).divided_by(chunk_count.to_f64()))
 		near_end = end_of_chunk(chunk_number)
 		far_end = end_of_chunk(chunk_number + 1)
-		corner = |along, across| Frame.rider_point_ahead(
-			road,
-			{
-				position,
-				along,
-				across,
-			},
-		)
+		corner = |along, across| Frame.rider_point_ahead(road, { position, along, across })
 		[
 			corner(near_end, Scenery.left_edge),
 			corner(near_end, Scenery.right_edge),
@@ -161,22 +141,12 @@ ground_behind = |road, index| {
 
 ## A bend's paving: the road just before it, then the corner it cuts.
 bend_ground : Frame.RoadView, Joint.PlacedBend -> List(Ground.Patch)
-bend_ground = |road, bend| [
-	road_patch(approach(road, bend)),
-	road_patch(bend_corner(road, bend)),
-]
+bend_ground = |road, bend| [road_patch(approach(road, bend)), road_patch(bend_corner(road, bend))]
 
 ## The last `approach_length` of the road before a bend.
 approach : Frame.RoadView, Joint.PlacedBend -> List(Geom.RiderPoint)
 approach = |road, bend| {
-	corner = |along, across| Frame.rider_point_at(
-		road,
-		{
-			place: bend.before,
-			along,
-			across,
-		},
-	)
+	corner = |along, across| Frame.rider_point_at(road, { place: bend.before, along, across })
 	end = Along.at(bend.length_before)
 	start = Along.at(bend.length_before.minus(GroundSighting.approach_length))
 	[

@@ -64,10 +64,7 @@ Tower :: [].{
 	}
 
 	## How a rod is drawn: its width on screen, and the camera.
-	RodView : {
-		rod_width_px : F64,
-		cam_focal : F64,
-	}
+	RodView : { rod_width_px : F64, cam_focal : F64 }
 
 	## One mast, ready to draw: where it stands, how far the earth's curve
 	## has sunk it, and how its rods are drawn.
@@ -120,14 +117,7 @@ Tower :: [].{
 		across : Across,
 		yaw : Angle.Turn,
 	} -> Geom.RoadPoint
-	base_corner_on_road = |
-		corner,
-		{
-			along,
-			across,
-			yaw,
-		},
-	| {
+	base_corner_on_road = |corner, { along, across, yaw }| {
 		offset = corner_offset(corner)
 		du = (offset.across * tower_half)
 		dv = (offset.along * tower_half)
@@ -150,13 +140,7 @@ Tower :: [].{
 		to : Geom.SpacePoint,
 		fraction : Fraction,
 	} -> Geom.SpacePoint
-	point_between = |
-		{
-			from,
-			to,
-			fraction,
-		},
-	| {
+	point_between = |{ from, to, fraction }| {
 		share = fraction.to_f64()
 		{
 			right: (from.right + ((to.right - from.right) * share)),
@@ -184,13 +168,7 @@ Tower :: [].{
 		to : Screen.Point,
 		width_px : F64,
 	} -> List(Shapes.Shape)
-	screen_rod = |
-		{
-			from,
-			to,
-			width_px,
-		},
-	| {
+	screen_rod = |{ from, to, width_px }| {
 		dx = (to.x - from.x)
 		dy = (to.y - from.y)
 		raw = DeviceMath.real_sqrt(((dx * dx) + (dy * dy)))
@@ -302,10 +280,7 @@ Tower :: [].{
 	legs = |mast, apex| corners.join_map(
 		|corner| rod(
 			mast.view,
-			{
-				from: corner_at(mast, { corner, height_on_mast: mast.sunk }),
-				to: apex,
-			},
+			{ from: corner_at(mast, { corner, height_on_mast: mast.sunk }), to: apex },
 		),
 	)
 
@@ -328,10 +303,7 @@ Tower :: [].{
 		|h| if h <= mast.sunk {
 			[]
 		} else {
-			ring(
-				mast,
-				h,
-			)
+			ring(mast, h)
 		},
 	)
 
@@ -339,9 +311,7 @@ Tower :: [].{
 	ring_heights_from = |h| if h >= tower_height {
 		[]
 	} else {
-		[h].concat(
-			ring_heights_from((h + stage_height)),
-		)
+		[h].concat(ring_heights_from((h + stage_height)))
 	}
 
 	## The crossed braces of the lowest stages, bottom first. A stage the
@@ -353,9 +323,7 @@ Tower :: [].{
 	brace_stages_from = |stage| if stage >= brace_stages {
 		[]
 	} else {
-		[stage].concat(
-			brace_stages_from((stage + 1)),
-		)
+		[stage].concat(brace_stages_from((stage + 1)))
 	}
 
 	brace_stage : Tower.Mast, I64 -> List(Shapes.Shape)
@@ -368,15 +336,7 @@ Tower :: [].{
 			hidden_height = DeviceMath.real_max(stage_bottom, mast.sunk) - stage_bottom
 			hidden_fraction = Fraction.of(hidden_height / stage_height)
 			corners.join_map(
-				|corner| brace_pair(
-					mast,
-					{
-						corner,
-						stage_bottom,
-						stage_top,
-						hidden_fraction,
-					},
-				),
+				|corner| brace_pair(mast, { corner, stage_bottom, stage_top, hidden_fraction }),
 			)
 		}
 	}
@@ -390,15 +350,7 @@ Tower :: [].{
 		stage_top : F64,
 		hidden_fraction : Fraction,
 	} -> List(Shapes.Shape)
-	brace_pair = |
-		mast,
-		{
-			corner,
-			stage_bottom,
-			stage_top,
-			hidden_fraction,
-		},
-	| {
+	brace_pair = |mast, { corner, stage_bottom, stage_top, hidden_fraction }| {
 		next = next_corner(corner)
 		brace_up = rod(
 			mast.view,
@@ -429,10 +381,7 @@ Tower :: [].{
 	## isn't drawn.
 	beacon : Tower.Mast, { apex : Geom.SpacePoint, brightness : Fraction } -> List(Shapes.Shape)
 	beacon = |mast, { apex, brightness }| {
-		apex_on_screen = Camera.project(
-			apex,
-			mast.view.cam_focal,
-		)
+		apex_on_screen = Camera.project(apex, mast.view.cam_focal)
 		if brightness < Fraction.of(0.02) {
 			[]
 		} else {
@@ -462,28 +411,13 @@ Tower :: [].{
 		cam_focal : F64,
 		beacon_brightness : Fraction,
 	} -> List(Shapes.Shape)
-	draw = |
-		{
-			footprint,
-			center,
-			cam_focal,
-			beacon_brightness,
-		},
-	| {
+	draw = |{ footprint, center, cam_focal, beacon_brightness }| {
 		sunk = sunk_below_horizon(center)
 		if center.forward < Geom.near_plane or sunk >= tower_height {
 			[]
 		} else {
-			view = {
-				rod_width_px: rod_width_at({ forward: center.forward, cam_focal }),
-				cam_focal,
-			}
-			mast = {
-				footprint,
-				center,
-				sunk,
-				view,
-			}
+			view = { rod_width_px: rod_width_at({ forward: center.forward, cam_focal }), cam_focal }
+			mast = { footprint, center, sunk, view }
 			apex = {
 				right: center.right,
 				forward: center.forward,
@@ -538,10 +472,7 @@ expect {
 }
 
 sample_rod_view : Tower.RodView
-sample_rod_view = {
-	rod_width_px: 4.0,
-	cam_focal: 500.0,
-}
+sample_rod_view = { rod_width_px: 4.0, cam_focal: 500.0 }
 
 # A mast 12 m square, centred 100 m ahead, sunk 1 m.
 sample_mast : Tower.Mast

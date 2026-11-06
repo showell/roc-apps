@@ -51,15 +51,7 @@ LeanSearch :: [].{
 		high : Angle.Lean,
 		at : I64,
 	} -> Angle.Lean
-	search_lean_from = |
-		state,
-		{
-			target,
-			low,
-			high,
-			at,
-		},
-	| {
+	search_lean_from = |state, { target, low, high, at }| {
 		mid = low.halfway_to(high)
 		if at >= lean_search_iters {
 			mid

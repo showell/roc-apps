@@ -19,19 +19,8 @@ TruckDraw :: [].{
 		center : { along : Along, across : Across },
 		lights : Truck.Lights,
 	} -> List(Shapes.Shape)
-	draw = |
-		{
-			view,
-			position,
-			center,
-			lights,
-		},
-	| {
-		truck = {
-			view,
-			position,
-			box: TruckShape.truck_box(center),
-		}
+	draw = |{ view, position, center, lights }| {
+		truck = { view, position, box: TruckShape.truck_box(center) }
 		beams =
 			match lights.headlights {
 				On => TruckLights.headlight_beams(truck)
@@ -42,10 +31,6 @@ TruckDraw :: [].{
 				On => TruckLights.brake_lights(truck)
 				Off => []
 			}
-		[
-			beams,
-			TruckBody.draw(truck),
-			brake_lights,
-		].join()
+		[beams, TruckBody.draw(truck), brake_lights].join()
 	}
 }

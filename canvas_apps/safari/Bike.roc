@@ -77,10 +77,7 @@ riding = {
 
 first_step = Bike.simulate_rider_step(
 	riding,
-	{
-		lean_step: Angle.Lean.radians(0.05),
-		accel: Acceleration.metres_a_step_each_step(0.01),
-	},
+	{ lean_step: Angle.Lean.radians(0.05), accel: Acceleration.metres_a_step_each_step(0.01) },
 )
 
 second_step = Bike.simulate_rider_step(
@@ -97,11 +94,7 @@ third_step = Bike.simulate_rider_step(
 )
 
 expect
-	[
-		first_step,
-		second_step,
-		third_step,
-	].join_map(
+	[first_step, second_step, third_step].join_map(
 		|s| [
 			s.yaw.to_radians(),
 			s.speed.to_metres_a_step(),
@@ -156,10 +149,7 @@ expect {
 	a = Bike.simulate_rider_step(at_start, { lean_step: Angle.upright, accel: Acceleration.steady })
 	b = Bike.simulate_rider_step(
 		at_start,
-		{
-			lean_step: Angle.Lean.radians(0.5),
-			accel: Acceleration.metres_a_step_each_step(0.25),
-		},
+		{ lean_step: Angle.Lean.radians(0.5), accel: Acceleration.metres_a_step_each_step(0.25) },
 	)
 	[
 		a.across.to_metres(),

@@ -59,13 +59,7 @@ Truck :: [].{
 	## The next turn of `world` past `route_position`.
 	next_turn : List(World.Segment), Distance -> Truck.NextTurn
 	next_turn = |world, route_position|
-		next_turn_on(
-			world,
-			{
-				route_position,
-				segment_start: Distance.zero,
-			},
-		)
+		next_turn_on(world, { route_position, segment_start: Distance.zero })
 
 	## Where the truck should be along the route, when the rider is
 	## `rider_distance` along it.
@@ -83,14 +77,7 @@ Truck :: [].{
 		world : List(World.Segment),
 		route_length : Distance,
 	} -> Truck.TruckState
-	advance = |
-		truck,
-		{
-			rider_distance,
-			world,
-			route_length,
-		},
-	| {
+	advance = |truck, { rider_distance, world, route_length }| {
 		schedule = scheduled_position({ rider_distance, route_length })
 		match next_turn(world, truck.route_position) {
 			TurnAhead(turn) =>

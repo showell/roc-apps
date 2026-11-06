@@ -20,10 +20,7 @@ TruckLights :: [].{
 	headlight_beams : TruckShape.TruckInView -> List(Shapes.Shape)
 	headlight_beams = |truck|
 		beam(truck, truck.box.left.plus(headlight_inset)).concat(
-			beam(
-				truck,
-				truck.box.right.minus(headlight_inset),
-			),
+			beam(truck, truck.box.right.minus(headlight_inset)),
 		)
 
 	## The two brake lights, one in from each side of the trailer's back.
@@ -176,39 +173,20 @@ glow_reach = 3.2
 ## with a corner behind the camera is not drawn.
 beam : TruckShape.TruckInView, Across -> List(Shapes.Shape)
 beam = |truck, across| {
-	at_lamp = |height| TruckShape.point(
-		truck,
-		{
-			along: truck.box.nose,
-			across,
-			height,
-		},
-	)
+	at_lamp = |height| TruckShape.point(truck, { along: truck.box.nose, across, height })
 	at_far_end = |height| TruckShape.point(
 		truck,
-		{
-			along: truck.box.nose.plus(beam_length),
-			across,
-			height,
-		},
+		{ along: truck.box.nose.plus(beam_length), across, height },
 	)
 	lamp_bottom = at_lamp(headlight_height.minus(beam_half_height_at_lamp))
 	lamp_top = at_lamp(headlight_height.plus(beam_half_height_at_lamp))
 	far_top = at_far_end(beam_far_center.plus(beam_far_half_height))
 	far_bottom = at_far_end(beam_far_center.minus(beam_far_half_height))
-	corners = [
-		lamp_bottom,
-		lamp_top,
-		far_top,
-		far_bottom,
-	]
+	corners = [lamp_bottom, lamp_top, far_top, far_bottom]
 	if TruckLights.has_point_behind_camera(corners) {
 		[]
 	} else {
-		on_screen = Camera.project_all(
-			corners,
-			truck.view.cam_focal,
-		)
+		on_screen = Camera.project_all(corners, truck.view.cam_focal)
 		lamp = Camera.project(
 			TruckLights.midpoint({ from: lamp_bottom, to: lamp_top }),
 			truck.view.cam_focal,
@@ -302,11 +280,7 @@ expect TruckLights.glow_outline({ center: { x: 0.0, y: 0.0 }, radius: 10.0 }).le
 expect TruckLights.glow_sides == 16
 
 point_ahead : F64 -> Geom.SpacePoint
-point_ahead = |forward| {
-	right: 0.0,
-	forward,
-	height: 0.0,
-}
+point_ahead = |forward| { right: 0.0, forward, height: 0.0 }
 
 expect
 	!TruckLights.has_point_behind_camera([

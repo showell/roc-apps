@@ -68,12 +68,7 @@ Pigs :: [].{
 	## Where the pigs of the front and back rows are along the road, from the
 	## pigs' place.
 	pig_row_front : List(Distance)
-	pig_row_front = [
-		-6.0,
-		-2.0,
-		2.0,
-		6.0,
-	].map(Distance.metres)
+	pig_row_front = [-6.0, -2.0, 2.0, 6.0].map(Distance.metres)
 
 	pig_row_back : List(Distance)
 	pig_row_back = [
@@ -109,13 +104,7 @@ Pigs :: [].{
 		attention : Pigs.PigAttention,
 		length : Distance,
 	} -> List(Scenery.Critter)
-	pigs_along = |
-		{
-			presence,
-			attention,
-			length,
-		},
-	|
+	pigs_along = |{ presence, attention, length }|
 		match (presence, attention) {
 			(WithPigs, Distracting) => fill_pig_herd(length)
 			(WithPigs, Unnoticed) => fill_pig_row(length)

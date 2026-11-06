@@ -75,9 +75,6 @@ TreeSighting :: [].{
 	## its position in `trees`.
 	depth_keys : List(TreeSighting.TreeItem) -> List(DepthSort.DepthKey)
 	depth_keys = |trees| trees.map_with_index(
-		|tree, i| {
-			forward: tree.forward,
-			subject: Tree(i.to_u32_wrap()),
-		},
+		|tree, i| { forward: tree.forward, subject: Tree(i.to_u32_wrap()) },
 	)
 }

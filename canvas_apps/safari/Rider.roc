@@ -83,11 +83,7 @@ Rider :: [].{
 	}
 
 	stopped_at : Pose.RiderState, Along -> Pose.RiderState
-	stopped_at = |s, at| {
-		..s,
-		along: at,
-		speed: Speed.at_rest,
-	}
+	stopped_at = |s, at| { ..s, along: at, speed: Speed.at_rest }
 
 	resolve_cross : Pose.RiderState, List(World.Segment) -> Pose.RiderState
 	resolve_cross = |moved, segs| {

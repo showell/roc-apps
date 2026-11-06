@@ -132,41 +132,13 @@ side = |truck, across| {
 		{
 			color: side_color,
 			corners: [
-				{
-					along: box.rear,
-					across,
-					height: TruckShape.trailer_bottom,
-				},
-				{
-					along: box.rear,
-					across,
-					height: TruckShape.truck_height,
-				},
-				{
-					along: box.roof_front,
-					across,
-					height: TruckShape.truck_height,
-				},
-				{
-					along: box.nose,
-					across,
-					height: hood_height,
-				},
-				{
-					along: box.nose,
-					across,
-					height: TruckShape.cab_bottom,
-				},
-				{
-					along: box.trailer_front,
-					across,
-					height: TruckShape.cab_bottom,
-				},
-				{
-					along: box.trailer_front,
-					across,
-					height: TruckShape.trailer_bottom,
-				},
+				{ along: box.rear, across, height: TruckShape.trailer_bottom },
+				{ along: box.rear, across, height: TruckShape.truck_height },
+				{ along: box.roof_front, across, height: TruckShape.truck_height },
+				{ along: box.nose, across, height: hood_height },
+				{ along: box.nose, across, height: TruckShape.cab_bottom },
+				{ along: box.trailer_front, across, height: TruckShape.cab_bottom },
+				{ along: box.trailer_front, across, height: TruckShape.trailer_bottom },
 			],
 		},
 	)
@@ -337,11 +309,7 @@ expect
 expect axles_at({ along: Along.metres(0.0), across: Across.metres(0.0) }).len() == 5
 
 point_ahead : F64 -> Geom.SpacePoint
-point_ahead = |forward| {
-	right: 0.0,
-	forward,
-	height: 0.0,
-}
+point_ahead = |forward| { right: 0.0, forward, height: 0.0 }
 
 quad_face : TruckBody.TruckFace
 quad_face = TruckBody.face(
@@ -373,11 +341,7 @@ expect triangle_face.corners.len() == 3
 
 # A face that is only a colour and a depth, for the sort.
 marked_face : { color : I64, depth : F64 } -> TruckBody.TruckFace
-marked_face = |{ color, depth }| {
-	color,
-	depth,
-	corners: [],
-}
+marked_face = |{ color, depth }| { color, depth, corners: [] }
 
 colors_by_depth : List({ color : I64, depth : F64 }) -> List(I64)
 colors_by_depth = |marks|

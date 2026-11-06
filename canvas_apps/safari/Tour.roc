@@ -28,11 +28,7 @@ Tour := {
 	past_instants_cap = 2048
 
 	initial : Tour
-	initial = {
-		world: World.segments,
-		instant: RideInstant.initial,
-		past_instants: [],
-	}
+	initial = { world: World.segments, instant: RideInstant.initial, past_instants: [] }
 
 	advance : Tour -> Tour
 	advance = |tour| {

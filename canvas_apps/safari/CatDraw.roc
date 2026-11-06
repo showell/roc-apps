@@ -64,34 +64,13 @@ CatDraw :: [].{
 			cam_focal,
 		},
 	| {
-		feet = Camera.project(
-			{
-				right,
-				forward,
-				height: 0.0,
-			},
-			cam_focal,
-		)
-		top = Camera.project(
-			{
-				right,
-				forward,
-				height,
-			},
-			cam_focal,
-		)
+		feet = Camera.project({ right, forward, height: 0.0 }, cam_focal)
+		top = Camera.project({ right, forward, height }, cam_focal)
 		height_px = (feet.y - top.y)
 		if height_px < 1.0 {
 			[]
 		} else {
-			polygons(
-				{
-					feet,
-					height_px,
-					lift,
-				},
-				CatStills.pose_polys(pose),
-			)
+			polygons({ feet, height_px, lift }, CatStills.pose_polys(pose))
 		}
 	}
 }
@@ -153,12 +132,7 @@ expect CatDraw.polygon(standing, poly_of(2)).len() == 0
 
 expect
 	CatDraw.polygon(standing, poly_of(3))
-		== [
-			Poly({
-				pts: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0],
-				fill: Flat(Brush.opaque(9)),
-			}),
-		]
+		== [Poly({ pts: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0], fill: Flat(Brush.opaque(9)) })]
 
 expect
 	CatDraw.polygons(
@@ -187,13 +161,7 @@ cat_shapes : {
 	pose : Cat.Pose,
 	lift : F64,
 } -> U64
-cat_shapes = |
-	{
-		forward,
-		pose,
-		lift,
-	},
-|
+cat_shapes = |{ forward, pose, lift }|
 	CatDraw.draw({
 		right: 0.0,
 		forward,

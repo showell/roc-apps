@@ -84,10 +84,7 @@ expect {
 		right: 11.0,
 		lift: Distance.metres(Camera.eye_h + 11.0),
 	}
-	[
-		(level_bird, [479.656, 294.285]),
-		(moved_bird, [529.656, 244.285]),
-	].all(
+	[(level_bird, [479.656, 294.285]), (moved_bird, [529.656, 244.285])].all(
 		|(bird, want)| {
 			got = first_corner(bird)
 			got.len() == 2 and got.map2(want, |x, y| (x - y).abs()).all(|miss| miss <= 0.000000001)

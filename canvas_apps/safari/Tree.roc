@@ -128,12 +128,7 @@ Tree :: [].{
 			[]
 		} else {
 			draw_trunk(seen, tree.trunk).concat(
-				tiers.join_map(
-					|tier| draw_tier(
-						tree,
-						{ seen, tier },
-					),
-				),
+				tiers.join_map(|tier| draw_tier(tree, { seen, tier })),
 			)
 		}
 	}
@@ -146,30 +141,9 @@ Tree :: [].{
 		height : F64,
 		cam_focal : F64,
 	} -> Tree.Outline
-	outline = |
-		{
-			right,
-			forward,
-			height,
-			cam_focal,
-		},
-	| {
-		base = Camera.project(
-			{
-				right,
-				forward,
-				height: 0.0,
-			},
-			cam_focal,
-		)
-		top = Camera.project(
-			{
-				right,
-				forward,
-				height,
-			},
-			cam_focal,
-		)
+	outline = |{ right, forward, height, cam_focal }| {
+		base = Camera.project({ right, forward, height: 0.0 }, cam_focal)
+		top = Camera.project({ right, forward, height }, cam_focal)
 		height_px = (base.y - top.y)
 		foliage_px = (height_px * crown_height)
 		crown_bottom_y = (base.y - (height_px * visible_trunk))
@@ -246,11 +220,7 @@ Tree :: [].{
 			[],
 			|sorted, point|
 				match sorted.find_first_index(|placed| is_before(point, placed)) {
-					Ok(at) => [
-						sorted.take_first(at),
-						[point],
-						sorted.drop_first(at),
-					].join()
+					Ok(at) => [sorted.take_first(at), [point], sorted.drop_first(at)].join()
 					Err(NotFound) => sorted.append(point)
 				},
 		)
@@ -265,11 +235,7 @@ is_before = |a, b| a.x < b.x or (a.x.to_bits() == b.x.to_bits() and a.y < b.y)
 trim_hull : List(Screen.Point), Screen.Point -> List(Screen.Point)
 trim_hull = |hull, point|
 	match hull {
-		[
-			..,
-			a,
-			b,
-		] => {
+		[.., a, b] => {
 			turn = (((b.x - a.x) * (point.y - a.y)) - ((b.y - a.y) * (point.x - a.x)))
 			if turn <= 0.0 {
 				trim_hull(hull.drop_last(1), point)
@@ -337,10 +303,7 @@ tier_cone = |tree, { tier, radius }| {
 	if hull.len() < 3 {
 		[]
 	} else {
-		Paint.push_round_poly(
-			hull,
-			{ fill_color: tree.color, round_strength: tree.shade },
-		)
+		Paint.push_round_poly(hull, { fill_color: tree.color, round_strength: tree.shade })
 	}
 }
 

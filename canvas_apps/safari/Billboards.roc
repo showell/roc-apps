@@ -20,11 +20,7 @@ Billboards :: [].{
 	}
 
 	## What became of a critter placed in the rider's view.
-	Sighting : [
-		InView(Billboards.Billboard),
-		BehindCamera,
-		TooSmall,
-	]
+	Sighting : [InView(Billboards.Billboard), BehindCamera, TooSmall]
 
 	## A critter shorter than this many pixels is too small to draw.
 	min_critter_px : F64
@@ -37,14 +33,7 @@ Billboards :: [].{
 		codepoint : I64,
 		facing : Billboards.Facing,
 	} -> Billboards.Sighting
-	sighting = |
-		{
-			at,
-			height,
-			codepoint,
-			facing,
-		},
-	|
+	sighting = |{ at, height, codepoint, facing }|
 		if at.forward <= Geom.near_plane {
 			BehindCamera
 		} else if ((height.to_metres() / at.forward) * Lens.focal) < min_critter_px {

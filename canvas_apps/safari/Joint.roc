@@ -49,22 +49,8 @@ Joint :: [].{
 	joint_apex = |road, bend| {
 		across = outer_edge(bend.turn)
 		end_before = Along.at(bend.length_before)
-		point_before = |along| Frame.rider_point_at(
-			road,
-			{
-				place: bend.before,
-				along,
-				across,
-			},
-		)
-		point_after = |along| Frame.rider_point_at(
-			road,
-			{
-				place: bend.after,
-				along,
-				across,
-			},
-		)
+		point_before = |along| Frame.rider_point_at(road, { place: bend.before, along, across })
+		point_after = |along| Frame.rider_point_at(road, { place: bend.after, along, across })
 		Geom.line_crossing({
 			first_line: {
 				start_point: point_before(end_before),
@@ -208,11 +194,7 @@ expect
 
 at_d0 : Geom.RiderPoint
 at_d0 = Frame.rider_point_ahead(
-	{
-		world: [],
-		chain: [],
-		pose,
-	},
+	{ world: [], chain: [], pose },
 	{
 		position: Frame.ChainPosition.first,
 		along: Along.metres(50.0),
@@ -247,11 +229,7 @@ expect {
 ## The point 50 m along the segment at `place`, which is behind the rider.
 behind_at : Frame.SegmentPlace -> Geom.RiderPoint
 behind_at = |place| Frame.rider_point_at(
-	{
-		world: [],
-		chain: [],
-		pose,
-	},
+	{ world: [], chain: [], pose },
 	{
 		place,
 		along: Along.metres(50.0),

@@ -4,10 +4,7 @@
 ## again. No module of the game sees all of what these checks do, and the game
 ## shouldn't import a module for a test, so they sit here, where the gate reaches
 ## them as one of its roots.
-app [main!] {
-	game: "../game.roc",
-	lib: "../../lib/main.roc",
-}
+app [main!] { game: "../game.roc", lib: "../../lib/main.roc" }
 
 import game.Across
 import game.Along
@@ -145,11 +142,7 @@ bird_at = |rider_along|
 
 ## How far off a bird is, across the road and up.
 place_of : RocBird.PlacedBird -> List(F64)
-place_of = |bird| [
-	bird.right,
-	bird.forward,
-	bird.lift.to_metres(),
-]
+place_of = |bird| [bird.right, bird.forward, bird.lift.to_metres()]
 
 expect place_of(bird_at(0.0)) == [-6.0, 100.0, 10.0]
 expect place_of(bird_at(40.0)) == [-6.0, 60.0, 10.0]
@@ -173,11 +166,7 @@ expect bird_at(85.0).pose == Perched
 # the rider is.
 expect {
 	stays = birds_on(left_trees, { rider_along: 62.5, cam_focal: 500.0 })
-	stays.join_map(place_of) == [
-		-6.0,
-		37.5,
-		10.0,
-	]
+	stays.join_map(place_of) == [-6.0, 37.5, 10.0]
 }
 
 ## How many birds there are on `trees` for each rider and focal length.
@@ -236,11 +225,7 @@ cat_segment : World.Segment
 cat_segment = { ..World.route_segment(1), crossing: World.route_segment(3).crossing }
 
 cat_segments : List(World.Segment)
-cat_segments = [
-	World.route_segment(0),
-	cat_segment,
-	World.route_segment(2),
-]
+cat_segments = [World.route_segment(0), cat_segment, World.route_segment(2)]
 
 ## The first three segments seen from the origin, at 1 m a step.
 cats_from_origin : Frame.Viewpoint
@@ -290,11 +275,7 @@ expect
 		(120.0, 2, 700.0),
 	].all(
 		|
-			(
-				along,
-				number,
-				want,
-			),
+			(along, number, want),
 		| {
 			gap = Frame.gap_to_segment(
 				{ ..cats_from_origin.road, pose: { ..origin, along: Along.metres(along) } },

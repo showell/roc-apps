@@ -30,11 +30,7 @@ RideFocal :: [].{
 }
 
 segs : List(World.Segment)
-segs = [
-	World.route_segment(0),
-	cat_segment,
-	World.route_segment(2),
-]
+segs = [World.route_segment(0), cat_segment, World.route_segment(2)]
 
 ## The second segment, with a cat crossing it.
 cat_segment : World.Segment
@@ -113,14 +109,7 @@ expect RideFocal.ride_focal(
 expect Gaze.gaze_focus(Fraction.whole).to_f64() > Gaze.gaze_focus(Fraction.zero).to_f64()
 
 both : F64
-both = RideFocal.ride_focal(
-	segs,
-	{
-		..upright,
-		tilt: Bike.max_lean,
-		focus: Fraction.whole,
-	},
-)
+both = RideFocal.ride_focal(segs, { ..upright, tilt: Bike.max_lean, focus: Fraction.whole })
 
 lean_only : F64
 lean_only = RideFocal.ride_focal(segs, { ..upright, tilt: Bike.max_lean })

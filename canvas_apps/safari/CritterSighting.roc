@@ -33,10 +33,7 @@ CritterSighting :: [].{
 		match Frame.segment_behind(road) {
 			Previous(segment_behind) =>
 				CritterSighting.sightings_ahead(road).concat(
-					CritterSighting.sightings_behind(
-						road,
-						segment_behind,
-					),
+					CritterSighting.sightings_behind(road, segment_behind),
 				)
 			AtRouteStart => CritterSighting.sightings_ahead(road)
 		}
@@ -88,10 +85,7 @@ CritterSighting :: [].{
 	duck_sightings : Frame.RoadView, Frame.ChainPosition -> List(Billboards.Sighting)
 	duck_sightings = |road, position|
 		if position.is_within_first(safari_reach) {
-			pond_sightings(
-				road,
-				{ place: InChain(position), segment: segment_at(road, position) },
-			)
+			pond_sightings(road, { place: InChain(position), segment: segment_at(road, position) })
 		} else {
 			[]
 		}
@@ -119,10 +113,7 @@ CritterSighting :: [].{
 	cow_items : List(Billboards.Billboard) -> List(DepthSort.DepthKey)
 	cow_items = |billboards|
 		billboards.map_with_index(
-			|billboard, i| {
-				forward: billboard.forward,
-				subject: Critter(i.to_u32_wrap()),
-			},
+			|billboard, i| { forward: billboard.forward, subject: Critter(i.to_u32_wrap()) },
 		)
 }
 
@@ -137,14 +128,7 @@ sight_critter : Frame.RoadView,
 } -> Billboards.Sighting
 sight_critter = |road, { place, critter }|
 	Billboards.sighting({
-		at: Frame.rider_point_at(
-			road,
-			{
-				place,
-				along: critter.along,
-				across: critter.across,
-			},
-		),
+		at: Frame.rider_point_at(road, { place, along: critter.along, across: critter.across }),
 		height: critter.height,
 		codepoint: critter.codepoint,
 		facing: if critter.face_right {

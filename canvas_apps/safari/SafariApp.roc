@@ -115,11 +115,7 @@ SafariApp :: [].{
 		}
 
 	## The tour after `step_once` has moved it `step_count` times.
-	repeat : Tour,
-	{
-		step_count : I64,
-		step_once : Tour -> Tour,
-	} -> Tour
+	repeat : Tour, { step_count : I64, step_once : Tour -> Tour } -> Tour
 	repeat = |tour, { step_count: n, step_once: move }| {
 		var $tour = tour
 		var $i = 0

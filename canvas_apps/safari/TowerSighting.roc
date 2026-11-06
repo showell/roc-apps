@@ -153,10 +153,7 @@ TowerSighting :: [].{
 	## its position in `towers`.
 	depth_keys : List(TowerSighting.TowerItem) -> List(DepthSort.DepthKey)
 	depth_keys = |towers| towers.map_with_index(
-		|tower, i| {
-			forward: tower.forward,
-			subject: Tower(i.to_u32_wrap()),
-		},
+		|tower, i| { forward: tower.forward, subject: Tower(i.to_u32_wrap()) },
 	)
 }
 
@@ -177,24 +174,8 @@ tower_if_ahead : TowerSighting.View,
 	yaw : Angle.Turn,
 	beacon_key : U32,
 } -> List(TowerSighting.TowerItem)
-tower_if_ahead = |
-	view,
-	{
-		place,
-		along,
-		across,
-		yaw,
-		beacon_key,
-	},
-| {
-	center = Frame.rider_point_at(
-		view.road,
-		{
-			place: place,
-			along,
-			across,
-		},
-	)
+tower_if_ahead = |view, { place, along, across, yaw, beacon_key }| {
+	center = Frame.rider_point_at(view.road, { place: place, along, across })
 	if center.forward <= Geom.near_plane {
 		[]
 	} else {
@@ -241,11 +222,7 @@ short_view : U32 -> TowerSighting.View
 short_view = |rider_number| {
 	road: {
 		world: [0, 1, 2, 3, 4].map(World.route_segment),
-		chain: [
-			rider_number,
-			rider_number + 1,
-			rider_number + 2,
-		].map(World.SegmentIndex.number),
+		chain: [rider_number, rider_number + 1, rider_number + 2].map(World.SegmentIndex.number),
 		pose: origin,
 	},
 	clock: Clock.start,

@@ -57,13 +57,7 @@ merge : {
 	second : List(item),
 	depth_of : (item -> F64),
 } -> List(item)
-merge = |
-	{
-		first,
-		second,
-		depth_of,
-	},
-|
+merge = |{ first, second, depth_of }|
 	merge_onto(
 		[],
 		{
@@ -85,16 +79,7 @@ merge_onto : List(item),
 	at_first : U64,
 	at_second : U64,
 } -> List(item)
-merge_onto = |
-	merged,
-	{
-		first,
-		second,
-		depth_of,
-		at_first,
-		at_second,
-	},
-|
+merge_onto = |merged, { first, second, depth_of, at_first, at_second }|
 	match (first.get(at_first), second.get(at_second)) {
 		(Ok(from_first), Ok(from_second)) =>
 			if DepthSort.is_farther({ this: depth_of(from_second), that: depth_of(from_first) }) {

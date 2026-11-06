@@ -13,11 +13,7 @@ Arc :: [].{
 
 	## Where an arc ends up: off a shoulder after this many frames, or still
 	## on the road.
-	Shoulder : [
-		ShoulderLeft(Steps),
-		ShoulderNone,
-		ShoulderRight(Steps),
-	]
+	Shoulder : [ShoulderLeft(Steps), ShoulderNone, ShoulderRight(Steps)]
 
 	ArcOutcome : {
 		shoulder : Arc.Shoulder,
@@ -44,19 +40,10 @@ Arc :: [].{
 
 	## Where a projected arc has reached: how many frames it has run, and the
 	## coasting rider.
-	ArcProgress(others) : {
-		frame_count : Steps,
-		coasting_rider : Bike.Motion(others),
-	}
+	ArcProgress(others) : { frame_count : Steps, coasting_rider : Bike.Motion(others) }
 
 	sim_from : Arc.ArcCourse, Arc.ArcProgress(others) -> Arc.ArcOutcome
-	sim_from = |
-		course,
-		{
-			frame_count: i,
-			coasting_rider: phys,
-		},
-	|
+	sim_from = |course, { frame_count: i, coasting_rider: phys }|
 		if i >= turn_danger_steps {
 			{
 				shoulder: ShoulderNone,
@@ -77,13 +64,7 @@ Arc :: [].{
 		}
 
 	sim_step : Arc.ArcCourse, Arc.ArcProgress(others) -> Arc.ArcOutcome
-	sim_step = |
-		course,
-		{
-			frame_count: i,
-			coasting_rider: phys,
-		},
-	| {
+	sim_step = |course, { frame_count: i, coasting_rider: phys }| {
 		across = phys.across
 		forward = phys.along.distance_from(course.start_along)
 		if across < course.left_bound {
@@ -111,13 +92,7 @@ Arc :: [].{
 				end_across: across,
 			}
 		} else {
-			sim_from(
-				course,
-				{
-					frame_count: i.plus(Steps.one_step),
-					coasting_rider: phys,
-				},
-			)
+			sim_from(course, { frame_count: i.plus(Steps.one_step), coasting_rider: phys })
 		}
 	}
 
@@ -127,15 +102,8 @@ Arc :: [].{
 		right_bound = Across.right_of_middle(inset_hw).max(state.across)
 		left_bound = Across.left_of_middle(inset_hw).min(state.across)
 		sim_from(
-			{
-				left_bound,
-				right_bound,
-				start_along: state.along,
-			},
-			{
-				frame_count: Steps.zero,
-				coasting_rider: state,
-			},
+			{ left_bound, right_bound, start_along: state.along },
+			{ frame_count: Steps.zero, coasting_rider: state },
 		)
 	}
 }

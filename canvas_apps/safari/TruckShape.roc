@@ -84,21 +84,10 @@ TruckShape :: [].{
 	## curves away from the rider, so the point is lowered by how far the
 	## ground has dropped beneath it.
 	point : TruckShape.TruckInView, TruckShape.RoadPoint -> Geom.SpacePoint
-	point = |
-		truck,
-		{
-			along,
-			across,
-			height,
-		},
-	| {
+	point = |truck, { along, across, height }| {
 		on_ground = Frame.rider_point_ahead(
 			truck.view.road,
-			{
-				position: truck.position,
-				along,
-				across,
-			},
+			{ position: truck.position, along, across },
 		)
 		{
 			right: on_ground.right,
@@ -111,10 +100,7 @@ TruckShape :: [].{
 	## corners, going round from angle 0.
 	circle_angles : I64 -> List(F64)
 	circle_angles = |sides| List.from_iter(
-		I64.until(
-			0,
-			sides,
-		),
+		I64.until(0, sides),
 	).map(|corner| (corner.to_f64() / sides.to_f64()) * Trig.two_pi)
 
 	## A flat-coloured polygon on the truck, cut at the near plane and
@@ -126,10 +112,7 @@ TruckShape :: [].{
 	} -> List(Shapes.Shape)
 	fill = |truck, { color, corners }| Paint.push_poly(
 		color,
-		Camera.project_all(
-			Geom.clip_near(corners),
-			truck.view.cam_focal,
-		),
+		Camera.project_all(Geom.clip_near(corners), truck.view.cam_focal),
 	)
 }
 

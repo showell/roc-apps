@@ -60,13 +60,7 @@ PixelGrid :: [].{
 		to : F64,
 		count : PixelGrid.Coordinate,
 	} -> PixelGrid.CoordinateRange
-	pixels_between = |
-		{
-			from,
-			to,
-			count: PixelGrid.Coordinate.(count),
-		},
-	| {
+	pixels_between = |{ from, to, count: PixelGrid.Coordinate.(count) }| {
 		length = U16.to_i64(count)
 		{
 			start: nearest_coordinate({ place: first_pixel_past(from), length }),
@@ -81,13 +75,7 @@ PixelGrid :: [].{
 		column : PixelGrid.Coordinate,
 		width : PixelGrid.Coordinate,
 	} -> U64
-	pixel_index = |
-		{
-			row,
-			column,
-			width,
-		},
-	| row.to_u64() * width.to_u64() + column.to_u64()
+	pixel_index = |{ row, column, width }| row.to_u64() * width.to_u64() + column.to_u64()
 
 	## `color` laid over the pixel at `at`.
 	blend : List(U32), { at : U64, color : Brush.Rgba } -> List(U32)

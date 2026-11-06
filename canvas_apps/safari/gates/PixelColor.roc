@@ -12,13 +12,7 @@ PixelColor :: [].{
 	}
 
 	pack : PixelColor.Rgb -> U32
-	pack = |
-		{
-			r,
-			g,
-			b,
-		},
-	| {
+	pack = |{ r, g, b }| {
 		red = channel_byte(r).shl_wrap(16)
 		green = channel_byte(g).shl_wrap(8)
 		red.bitwise_or(green).bitwise_or(channel_byte(b))

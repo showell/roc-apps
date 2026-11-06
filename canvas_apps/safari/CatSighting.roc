@@ -42,14 +42,7 @@ CatSighting :: [].{
 	segment_cat = |view, { position, speed }|
 		match position.index_in(view.road.chain).segment_in(view.road.world).crossing {
 			CatCrosses(crossing) =>
-				cat_in_view(
-					view,
-					{
-						position,
-						crossing,
-						speed,
-					},
-				)
+				cat_in_view(view, { position, crossing, speed })
 			BirdFlies(_) | QuietRoad => []
 		}
 
@@ -57,10 +50,7 @@ CatSighting :: [].{
 	## its position in `cats`.
 	depth_keys : List(CatSighting.CatItem) -> List(DepthSort.DepthKey)
 	depth_keys = |cats| cats.map_with_index(
-		|cat, i| {
-			forward: cat.forward,
-			subject: Cat(i.to_u32_wrap()),
-		},
+		|cat, i| { forward: cat.forward, subject: Cat(i.to_u32_wrap()) },
 	)
 }
 
@@ -73,14 +63,7 @@ cat_in_view : Frame.Viewpoint,
 	crossing : Cat.Crossing,
 	speed : Speed,
 } -> List(CatSighting.CatItem)
-cat_in_view = |
-	view,
-	{
-		position,
-		crossing,
-		speed,
-	},
-| {
+cat_in_view = |view, { position, crossing, speed }| {
 	gap = Frame.gap_to_segment(view.road, position)
 	instant = Cat.instant_at(crossing, { gap: gap.plus(crossing.along.from_start()), speed })
 	seen = Frame.rider_point_ahead(

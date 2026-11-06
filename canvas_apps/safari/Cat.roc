@@ -70,13 +70,7 @@ Cat :: [].{
 		tree_offset : Distance,
 		tree_along : Along,
 	} -> Cat.Crossing
-	crossing = |
-		{
-			lane_half_width,
-			tree_offset,
-			tree_along,
-		},
-	| {
+	crossing = |{ lane_half_width, tree_offset, tree_along }| {
 		tree_across = lane_half_width.plus(tree_offset)
 		far_verge = Across.left_of_middle(lane_half_width.plus(grass_toehold))
 		{
@@ -271,11 +265,7 @@ Cat :: [].{
 
 ## The spot `across` the road, on the ground where the cat crosses.
 spot_across : Across -> Animation.Spot
-spot_across = |across| {
-	along: Along.start,
-	across,
-	lift: 0.0,
-}
+spot_across = |across| { along: Along.start, across, lift: 0.0 }
 
 the_cat : Cat.Crossing
 the_cat = Cat.crossing({
