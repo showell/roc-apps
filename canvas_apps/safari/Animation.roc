@@ -14,6 +14,7 @@
 ## critters with different homes can share a timeline.
 import Across
 import Along
+import Beat
 import Beats
 import Distance
 import Easing
@@ -118,7 +119,7 @@ Animation :: [].{
 	## Where a stretch ends, in beats from the timeline's start: the cut's own
 	## beat belongs to the stretch that ends `Through` it, and to the next one
 	## after a stretch that ends `Before` it.
-	Cut : [Through(Beats), Before(Beats)]
+	Cut : [Through(Beat), Before(Beat)]
 
 	## One stretch of a track, and what plays over it. It begins where the
 	## stretch before it ended, or at the timeline's start.
@@ -147,17 +148,18 @@ Animation :: [].{
 			Animation.Timeline.(score) = timeline
 			match stage {
 				Waiting => score.before
-				Playing(progress) => timeline.at_beat(score.length.portion(progress))
+				Playing(progress) => timeline.at_beat(Beat.at(score.length.portion(progress)))
 				Past(_) => score.after
 			}
 		}
 
 		## The critter at `beat` of the animation.
-		at_beat : Animation.Timeline(pose), Beats -> Animation.Instant(pose)
+		at_beat : Animation.Timeline(pose), Beat -> Animation.Instant(pose)
 		at_beat = |Animation.Timeline.(score), beat| {
 			looks = playing_at(score.looks, { beat, length: score.length })
 			path = playing_at(score.path, { beat, length: score.length })
-			fraction = Fraction.of(beat.minus(path.from).ratio_to(path.to.minus(path.from)))
+			played = beat.beats_from(path.from)
+			fraction = Fraction.of(played.ratio_to(path.to.beats_from(path.from)))
 			{ pose: pose_of(looks.plays, beat), spot: path_spot(path.plays, fraction) }
 		}
 	}
@@ -166,14 +168,14 @@ Animation :: [].{
 ## What a track plays over one stretch, and the beats it begins and ends at.
 StretchPlaying(kind) : {
 	plays : kind,
-	from : Beats,
-	to : Beats,
+	from : Beat,
+	to : Beat,
 }
 
 ## What a track plays at `beat`, of a timeline `length` long.
-playing_at : Animation.Track(kind), { beat : Beats, length : Beats } -> StretchPlaying(kind)
+playing_at : Animation.Track(kind), { beat : Beat, length : Beats } -> StretchPlaying(kind)
 playing_at = |track, { beat, length }| {
-	var $from = Beats.zero
+	var $from = Beat.start
 	for stretch in track.stretches {
 		to =
 			match stretch.until {
@@ -187,11 +189,11 @@ playing_at = |track, { beat, length }| {
 	{
 		plays: track.finally,
 		from: $from,
-		to: length,
+		to: Beat.at(length),
 	}
 }
 
-is_short_of : Beats, Animation.Cut -> Bool
+is_short_of : Beat, Animation.Cut -> Bool
 is_short_of = |beat, cut|
 	match cut {
 		Through(last) => beat <= last
@@ -199,12 +201,12 @@ is_short_of = |beat, cut|
 	}
 
 ## The pose `looks` shows at `beat` of the timeline.
-pose_of : Animation.Looks(pose), Beats -> pose
+pose_of : Animation.Looks(pose), Beat -> pose
 pose_of = |looks, beat|
 	match looks {
 		Holds(pose) => pose
 		Alternates({ up, down, count, over }) =>
-			if Trig.r_sin(beat.ratio_to(over) * count.to_f64() * Trig.two_pi) > 0.0 {
+			if Trig.r_sin(beat.from_start().ratio_to(over) * count.to_f64() * Trig.two_pi) > 0.0 {
 				up
 			} else {
 				down
@@ -334,16 +336,16 @@ cut_timeline = Animation.Timeline.(
 		after: { pose: AfterIt, spot: at_spot(99.0) },
 		looks: {
 			stretches: [
-				{ until: Through(Beats.of(2.0)), plays: Holds(First) },
-				{ until: Before(Beats.of(5.0)), plays: Holds(Second) },
-				{ until: Through(Beats.of(7.0)), plays: Holds(Third) },
+				{ until: Through(Beat.of(2.0)), plays: Holds(First) },
+				{ until: Before(Beat.of(5.0)), plays: Holds(Second) },
+				{ until: Through(Beat.of(7.0)), plays: Holds(Third) },
 			],
 			finally: Holds(Fourth),
 		},
 		path: {
 			stretches: [
-				{ until: Before(Beats.of(4.0)), plays: StaysAt(at_spot(1.0)) },
-				{ until: Through(Beats.of(8.0)), plays: StaysAt(at_spot(2.0)) },
+				{ until: Before(Beat.of(4.0)), plays: StaysAt(at_spot(1.0)) },
+				{ until: Through(Beat.of(8.0)), plays: StaysAt(at_spot(2.0)) },
 			],
 			finally: StaysAt(at_spot(3.0)),
 		},
@@ -363,7 +365,7 @@ expect
 		(7.0, Third),
 		(7.01, Fourth),
 		(10.0, Fourth),
-	].all(|(beat, note)| cut_timeline.at_beat(Beats.of(beat)).pose == note)
+	].all(|(beat, note)| cut_timeline.at_beat(Beat.of(beat)).pose == note)
 
 expect
 	[
@@ -375,7 +377,7 @@ expect
 		(8.0, 2.0),
 		(8.01, 3.0),
 		(10.0, 3.0),
-	].all(|(beat, want)| cut_timeline.at_beat(Beats.of(beat)).spot.across.to_metres() == want)
+	].all(|(beat, want)| cut_timeline.at_beat(Beat.of(beat)).spot.across.to_metres() == want)
 
 # The instant at each stage: a stage's rest is the timeline's own, and playing
 # reaches a beat by `progress` times the timeline's length.
@@ -407,7 +409,7 @@ alternating_timeline = {
 			before: { pose: BeforeIt, spot: at_spot(0.0) },
 			after: { pose: AfterIt, spot: at_spot(0.0) },
 			looks: {
-				stretches: [{ until: Before(Beats.of(3.0)), plays: alternating(First, Second) }],
+				stretches: [{ until: Before(Beat.of(3.0)), plays: alternating(First, Second) }],
 				finally: alternating(Third, Fourth),
 			},
 			path: { stretches: [], finally: StaysAt(at_spot(0.0)) },
@@ -425,7 +427,7 @@ expect
 		(7.0, Fourth),
 		(9.0, Third),
 		(11.0, Fourth),
-	].all(|(beat, note)| alternating_timeline.at_beat(Beats.of(beat)).pose == note)
+	].all(|(beat, note)| alternating_timeline.at_beat(Beat.of(beat)).pose == note)
 
 ## A timeline four beats long that plays `path` between beats 2 and 4.
 path_timeline : Animation.Path -> Animation.Timeline(Note)
@@ -437,7 +439,7 @@ path_timeline = |path|
 			after: { pose: AfterIt, spot: at_spot(0.0) },
 			looks: { stretches: [], finally: Holds(First) },
 			path: {
-				stretches: [{ until: Before(Beats.of(2.0)), plays: StaysAt(at_spot(0.0)) }],
+				stretches: [{ until: Before(Beat.of(2.0)), plays: StaysAt(at_spot(0.0)) }],
 				finally: path,
 			},
 		},
@@ -466,7 +468,7 @@ smooth_arc = Arc({ line: line(Smooth), rise: 5.0 })
 ## The spot's three parts, at `beat` of `path`'s timeline.
 spot_numbers : Animation.Path, F64 -> List(F64)
 spot_numbers = |path, beat| {
-	spot = path_timeline(path).at_beat(Beats.of(beat)).spot
+	spot = path_timeline(path).at_beat(Beat.of(beat)).spot
 	[spot.along.to_metres(), spot.across.to_metres(), spot.lift]
 }
 

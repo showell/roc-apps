@@ -372,7 +372,7 @@ The cat reacts to the rider, which no clock can do. It's the best scene in Safar
 New in this chapter:
 
 - Roc: type parameters, operators on opaque types, `var`, `for` and `return` in a pure function, `|` and `_` in patterns, open records
-- Modules: `Cat`, `Animation`, `Beats`, `Distance`, `Speed`, `CrossingReaction`
+- Modules: `Cat`, `Animation`, `Beat`, `Beats`, `Distance`, `Speed`, `CrossingReaction`
 
 From a distance, the cat is one function in two halves, with a shared module underneath.
 
@@ -518,11 +518,11 @@ There are two tracks because a cat's looks and its movement change at different 
 
 {{code Animation.Timeline from "## A whole animation" to "}.{"}}
 
-That's the score. The other strand is `Animation` playing it, and its trail starts at an operator. `Beats.is_lte` opens two `Beats` and compares the floats inside.
+That's the score. The other strand is `Animation` playing it, and its trail starts at an operator. `Beat.is_lte` opens two `Beat`s and compares the floats inside.
 
-🍃 {{code Beats.is_lte}}
+🍃 {{code Beat.is_lte}}
 
-`is_short_of` is one `match`, and it looks like a leaf. It's a branch, because `<=` on two `Beats` is a call to `is_lte`, and `<` is a call to `is_lt`. An operator on an opaque type runs code of Safari Ride's own.
+`is_short_of` is one `match`, and it looks like a leaf. It's a branch, because `<=` on two `Beat`s is a call to `is_lte`, and `<` is a call to `is_lt`. An operator on an opaque type runs code of Safari Ride's own.
 
 🌳 {{code Animation.is_short_of}}
 
@@ -805,7 +805,7 @@ The bird needs one small helper. It sits below the block, so it's private, and i
 
 {{code BirdFlight.wings_beating}}
 
-Then the score. `Animation.Timeline.( ... )` wraps a record in the nominal type, and `Side(WingsUp)` is a tag whose payload is another tag. `flight_beats.portion(takeoff_share)` is a method on the opaque `Beats`, and `landing_share.complement()` is one on the opaque `Fraction`. It reads almost like configuration, and most of it is:
+Then the score. `Animation.Timeline.( ... )` wraps a record in the nominal type, and `Side(WingsUp)` is a tag whose payload is another tag. `flight_beats.portion(takeoff_share)` is a method on the opaque `Beats`, and `Beat.at` makes a place of the length it gives. It reads almost like configuration, and most of it is:
 
 {{code BirdFlight.flight_timeline from "length: flight_beats," to "finally: Holds(Diving),"}}
 
@@ -1105,7 +1105,8 @@ Fifteen small opaque types run through Safari Ride, and the tour has met most of
 |---|---|---|
 | `Clock` | `U32` | A place in the ride |
 | `Steps` | `U32` | A length of time |
-| `Beats` | `F64` | A place in an animation, or a length of one |
+| `Beat` | `F64` | A place in an animation |
+| `Beats` | `F64` | A length of an animation |
 | `Angle.Bearing` | `F64` | A place on the compass |
 | `Angle.Turn` | `F64` | The angle between two bearings |
 | `Angle.Lean` | `F64` | Roll, which only reaches direction through a rate |

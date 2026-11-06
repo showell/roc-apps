@@ -1,5 +1,5 @@
-## A place along an animation, or a length of one, counted in beats. Beats are
-## fractional and tied to no clock: the cat freezes at beat 10 on whichever
+## A length of an animation, counted in beats, where a `Beat` is a place in one.
+## Beats are fractional and tied to no clock: the cat freezes at beat 10 on whichever
 ## step of the ride that falls, and a rule in `Animation` says how the rider's
 ## approach moves through them.
 ##
@@ -15,14 +15,8 @@ Beats :: F64.{
 	to_f64 : Beats -> F64
 	to_f64 = |Beats.(b)| b
 
-	zero : Beats
-	zero = Beats.(0.0)
-
 	plus : Beats, Beats -> Beats
 	plus = |Beats.(b), Beats.(other)| Beats.(b + other)
-
-	minus : Beats, Beats -> Beats
-	minus = |Beats.(b), Beats.(other)| Beats.(b - other)
 
 	times : Beats, F64 -> Beats
 	times = |Beats.(b), factor| Beats.(b * factor)
@@ -35,18 +29,10 @@ Beats :: F64.{
 	ratio_to : Beats, Beats -> F64
 	ratio_to = |Beats.(b), Beats.(whole)| b / whole
 
-	is_lt : Beats, Beats -> Bool
-	is_lt = |Beats.(b), Beats.(other)| b < other
-
-	is_lte : Beats, Beats -> Bool
-	is_lte = |Beats.(b), Beats.(other)| b <= other
-
 	is_eq : _
 }
 
-expect Beats.zero.to_f64() == 0.0
 expect Beats.of(1.5).plus(Beats.of(2.25)).to_f64() == 3.75
-expect Beats.of(1.5).minus(Beats.of(2.25)).to_f64() == -0.75
 expect Beats.of(38.0).times(0.5).to_f64() == 19.0
 expect Beats.of(38.0).portion(Fraction.of(0.25)).to_f64() == 9.5
 
@@ -55,9 +41,5 @@ expect Beats.of(2.0).ratio_to(Beats.of(8.0)) == 0.25
 expect Beats.of(8.0).ratio_to(Beats.of(8.0)) == 1.0
 expect Beats.of(12.0).ratio_to(Beats.of(8.0)) == 1.5
 
-expect Beats.of(2.0) < Beats.of(2.5)
-expect !(Beats.of(2.5) < Beats.of(2.5))
-expect Beats.of(2.5) <= Beats.of(2.5)
-expect !(Beats.of(3.0) <= Beats.of(2.5))
 expect Beats.of(2.5) == Beats.of(2.5)
 expect !(Beats.of(2.5) == Beats.of(3.0))

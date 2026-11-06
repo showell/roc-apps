@@ -11,6 +11,7 @@ import Across
 import Along
 import Animation
 import Attention
+import Beat
 import Beats
 import Distance
 import Easing
@@ -96,8 +97,8 @@ Cat :: [].{
 	crossing_beats = enters_road_beats.plus(frozen_beats).plus(escapes_beats)
 
 	## The beat the cat's escape starts after.
-	escape_at : Beats
-	escape_at = enters_road_beats.plus(frozen_beats)
+	escape_at : Beat
+	escape_at = Beat.at(enters_road_beats.plus(frozen_beats))
 
 	## How many beats into its escape the cat leaves the ground, and lands.
 	leaves_ground_beats : Beats
@@ -211,7 +212,7 @@ Cat :: [].{
 				looks: {
 					stretches: [
 						{
-							until: Through(enters_road_beats),
+							until: Through(Beat.at(enters_road_beats)),
 							plays: Alternates({
 								up: Stride,
 								down: Rest,
@@ -229,7 +230,7 @@ Cat :: [].{
 				path: {
 					stretches: [
 						{
-							until: Through(enters_road_beats),
+							until: Through(Beat.at(enters_road_beats)),
 							plays: Line({
 								from: start,
 								to: middle,
@@ -358,7 +359,7 @@ expect Cat.stride_beats.to_f64() == 5.0
 
 ## The cat at `beat` of its crossing.
 crossing_at : F64 -> Animation.Instant(Cat.Pose)
-crossing_at = |beat| Cat.crossing_timeline(the_cat).at_beat(Beats.of(beat))
+crossing_at = |beat| Cat.crossing_timeline(the_cat).at_beat(Beat.of(beat))
 
 expect
 	[Rest, Stride, Frozen, Coil, Flight, Land, Collapse].map(Cat.pose_index)
