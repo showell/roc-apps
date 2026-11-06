@@ -84,7 +84,7 @@ first_rider = {
 	lean: Angle.Lean.radians(-0.00020453077171767937),
 	heading: Angle.Bearing.radians(-0.3494391190572302),
 	gaze_yaw: Angle.straight_ahead,
-	attention: RiderState.initial.attention,
+	look_depth: RiderState.initial.look_depth,
 }
 
 starting_model : GazeWidgetApp.Model
@@ -323,7 +323,7 @@ status_lines = |rider, step|
 		phase_text(phase_of(rider)),
 		"Step ${step.to_u64_wrap().to_str()}: speed ${ScrubWidget.tenths_text(rider.speed.to_metres_a_step())} m a step",
 		"Gaze yaw: ${ScrubWidget.tenths_text(gaze_degrees(rider))} degrees",
-		"Attention: ${ScrubWidget.percent_text(rider.attention)}",
+		"Look depth: ${ScrubWidget.percent_text(rider.look_depth)}",
 	]
 
 ## The whole stretch, played, for the expects. As a constant it's ridden once, at
@@ -362,7 +362,7 @@ expect {
 		and real.lean == first_rider.lean
 		and real.heading == first_rider.heading
 		and real.gaze_yaw == first_rider.gaze_yaw
-		and real.attention == first_rider.attention
+		and real.look_depth == first_rider.look_depth
 }
 
 # This stretch is on the route's first distracting segment.
@@ -371,7 +371,7 @@ expect World.segments.take_first(2).all(|segment| segment.pig_interest == NoPigs
 expect pig_segment.length == Distance.metres(400.0)
 
 # The steps the book's table quotes, each with its speed in metres a step, its
-# gaze_yaw in degrees and its attention, to the table's precision.
+# gaze_yaw in degrees and its look depth, to the table's precision.
 expect {
 	played = whole_stretch
 	[
@@ -379,32 +379,32 @@ expect {
 			step: 889,
 			speed: 1.9429,
 			gaze: 4.0,
-			attention: 0.1143,
+			look_depth: 0.1143,
 		},
 		{
 			step: 1045,
 			speed: 0.2000,
 			gaze: 34.9397,
-			attention: 0.9983,
+			look_depth: 0.9983,
 		},
 		{
 			step: 1046,
 			speed: 0.2000,
 			gaze: 34.7397,
-			attention: 0.9983,
+			look_depth: 0.9983,
 		},
 		{
 			step: 1304,
 			speed: 0.2000,
 			gaze: 0.0,
-			attention: 0.9971,
+			look_depth: 0.9971,
 		},
 	].all(
-		|{ step, speed, gaze, attention }| {
+		|{ step, speed, gaze, look_depth }| {
 			rider = state_at_step(played, step)
 			(rider.speed.to_metres_a_step() - speed).abs() <= 0.00005
 				and (gaze_degrees(rider) - gaze).abs() <= 0.00005
-				and (rider.attention.to_f64() - attention).abs() <= 0.00005
+				and (rider.look_depth.to_f64() - look_depth).abs() <= 0.00005
 		},
 	)
 }
@@ -533,7 +533,7 @@ expect
 			"Eyes on the road",
 			"Step 860: speed 1.7 m a step",
 			"Gaze yaw: 0.0 degrees",
-			"Attention: 0%",
+			"Look depth: 0%",
 		]
 
 expect {
@@ -543,7 +543,7 @@ expect {
 			"Looking at the pig, and slowing",
 			"Step 1045: speed 0.2 m a step",
 			"Gaze yaw: 34.9 degrees",
-			"Attention: 99%",
+			"Look depth: 99%",
 		]
 }
 

@@ -22,7 +22,7 @@ RideFocal :: [].{
 	ride_focal : List(World.Segment), RiderState -> Pixels
 	ride_focal = |route, rider| {
 		lean_fraction = Fraction.clamp(rider.lean.to_radians().abs() / Bike.max_lean.to_radians())
-		attention = crossing_attention(route, rider).max(Gaze.gaze_attention(rider.attention))
+		attention = crossing_attention(route, rider).max(Gaze.gaze_attention(rider.look_depth))
 		Lens.cam_focal({ lean_fraction, attention })
 	}
 }
@@ -101,22 +101,22 @@ expect !(RideFocal.crossing_attention(route, near_cat_on(0)).to_f64() > 0.0)
 expect RideFocal.ride_focal(route, near_cat_on(1)) < RideFocal.ride_focal(route, near_cat_on(0))
 expect RideFocal.ride_focal(
 	route,
-	{ ..upright, attention: Fraction.whole },
+	{ ..upright, look_depth: Fraction.whole },
 ) < RideFocal.ride_focal(route, upright)
 expect RideFocal.ride_focal(
 	route,
-	{ ..upright, attention: Fraction.whole },
-) < RideFocal.ride_focal(route, { ..upright, attention: Fraction.of(0.5) })
+	{ ..upright, look_depth: Fraction.whole },
+) < RideFocal.ride_focal(route, { ..upright, look_depth: Fraction.of(0.5) })
 expect Gaze.gaze_attention(Fraction.whole).to_f64() > Gaze.gaze_attention(Fraction.zero).to_f64()
 
 both : Pixels
-both = RideFocal.ride_focal(route, { ..upright, lean: Bike.max_lean, attention: Fraction.whole })
+both = RideFocal.ride_focal(route, { ..upright, lean: Bike.max_lean, look_depth: Fraction.whole })
 
 lean_only : Pixels
 lean_only = RideFocal.ride_focal(route, { ..upright, lean: Bike.max_lean })
 
 gaze_only : Pixels
-gaze_only = RideFocal.ride_focal(route, { ..upright, attention: Fraction.whole })
+gaze_only = RideFocal.ride_focal(route, { ..upright, look_depth: Fraction.whole })
 
 expect both <= lean_only
 expect both <= gaze_only

@@ -42,8 +42,8 @@ Gaze :: [].{
 	gaze_return_snap : Angle.Turn
 	gaze_return_snap = Angle.Turn.degrees(0.02)
 
-	attention_decay : Fraction
-	attention_decay = Fraction.of(0.0012)
+	look_depth_decay : Fraction
+	look_depth_decay = Fraction.of(0.0012)
 
 	pig_gaze_speed : Speed
 	pig_gaze_speed = Speed.metres_a_step(0.2)
@@ -60,8 +60,9 @@ Gaze :: [].{
 	pig_gaze_least_distance : Distance
 	pig_gaze_least_distance = Distance.metres(1.0)
 
+	## How strongly a look of this depth holds the rider's eye.
 	gaze_attention : Fraction -> Attention
-	gaze_attention = |attention| Attention.from_fraction(Easing.smoothstep(attention))
+	gaze_attention = |look_depth| Attention.from_fraction(Easing.smoothstep(look_depth))
 
 	## Where the rider wants to look: at a distracting pig that is near enough
 	## to notice and less than the release angle from the way the bike points,
@@ -101,14 +102,14 @@ Gaze :: [].{
 		}
 	}
 
-	## The rider's attention after the gaze moves to `gaze_yaw`: it fades while
+	## The rider's look depth after the gaze moves to `gaze_yaw`: it fades while
 	## the gaze rests, and rises with how far the gaze has turned.
-	next_attention : RiderState, Angle.Turn -> Fraction
-	next_attention = |state, gaze_yaw|
+	next_look_depth : RiderState, Angle.Turn -> Fraction
+	next_look_depth = |state, gaze_yaw|
 		if gaze_yaw == Angle.straight_ahead {
-			Fraction.clamp(state.attention.to_f64() - attention_decay.to_f64())
+			Fraction.clamp(state.look_depth.to_f64() - look_depth_decay.to_f64())
 		} else {
-			state.attention.max(Fraction.clamp(gaze_yaw.abs().ratio_to(gaze_release_angle)))
+			state.look_depth.max(Fraction.clamp(gaze_yaw.abs().ratio_to(gaze_release_angle)))
 		}
 
 	next_rider_gaze : RiderState, List(World.Segment) -> RiderState
@@ -118,7 +119,7 @@ Gaze :: [].{
 		{
 			..state,
 			gaze_yaw,
-			attention: next_attention(state, gaze_yaw),
+			look_depth: next_look_depth(state, gaze_yaw),
 		}
 	}
 
@@ -160,7 +161,7 @@ turn_to = |state, pig| Angle.Turn.radians(
 expect
 	[
 		(Gaze.gaze_look_distance.to_metres(), 150.0),
-		(Gaze.attention_decay.to_f64(), 0.0012),
+		(Gaze.look_depth_decay.to_f64(), 0.0012),
 		(Gaze.pig_gaze_speed.to_metres_a_step(), 0.2),
 		(Gaze.pig_gaze_settle_distance.to_metres(), 25.0),
 		(Gaze.pig_gaze_least_distance.to_metres(), 1.0),
@@ -261,9 +262,9 @@ gaze_after = |state, want| Gaze.next_gaze_yaw(state, OnPig(Angle.Turn.radians(wa
 gaze_returning : RiderState -> F64
 gaze_returning = |state| Gaze.next_gaze_yaw(state, OnRoad).to_radians()
 
-## The attention after the gaze moves to `gaze` radians.
-attention_after : RiderState, F64 -> F64
-attention_after = |state, gaze| Gaze.next_attention(state, Angle.Turn.radians(gaze)).to_f64()
+## The look depth after the gaze moves to `gaze` radians.
+depth_after : RiderState, F64 -> F64
+depth_after = |state, gaze| Gaze.next_look_depth(state, Angle.Turn.radians(gaze)).to_f64()
 
 swivel_rate : F64
 swivel_rate = Gaze.gaze_swivel_rate.to_radians()
@@ -292,22 +293,22 @@ expect gaze_returning(head(0.0, 200.0)) == 0.0
 # A pig dead ahead is still a pig: the gaze swivels to it, and doesn't ease.
 expect gaze_after(head(2.0 * Trig.deg, 200.0), 0.0) == 0.0
 
-## A rider with this attention, looking `gaze_yaw` from straight ahead.
-rider_with_attention : F64, F64 -> RiderState
-rider_with_attention = |attention, gaze_yaw| {
+## A rider with this look depth, looking `gaze_yaw` from straight ahead.
+rider_at_depth : F64, F64 -> RiderState
+rider_at_depth = |look_depth, gaze_yaw| {
 	..head(gaze_yaw, 200.0),
-	attention: Fraction.of(attention),
+	look_depth: Fraction.of(look_depth),
 }
 
 expect {
-	rising = attention_after(rider_with_attention(0.0, 20.0 * Trig.deg), 20.0 * Trig.deg)
-	held = attention_after(rider_with_attention(0.9, 1.0 * Trig.deg), 1.0 * Trig.deg)
-	easing = attention_after(rider_with_attention(0.9, 0.0), 0.0)
+	rising = depth_after(rider_at_depth(0.0, 20.0 * Trig.deg), 20.0 * Trig.deg)
+	held = depth_after(rider_at_depth(0.9, 1.0 * Trig.deg), 1.0 * Trig.deg)
+	easing = depth_after(rider_at_depth(0.9, 0.0), 0.0)
 	rising > 0.0 and held >= 0.9 and easing < 0.9 and easing > 0.0
 }
 
-expect attention_after(rider_with_attention(0.0, 0.0), 0.0) == 0.0
-expect attention_after(rider_with_attention(0.0, 90.0 * Trig.deg), 90.0 * Trig.deg) == 1.0
+expect depth_after(rider_at_depth(0.0, 0.0), 0.0) == 0.0
+expect depth_after(rider_at_depth(0.0, 90.0 * Trig.deg), 90.0 * Trig.deg) == 1.0
 expect !Gaze.is_gawking(rider(200.0, 0.0), plain)
 expect !Gaze.is_gawking(rider(100.0, 0.0), distracting)
 expect Gaze.is_gawking(rider(200.0, 0.0), distracting)

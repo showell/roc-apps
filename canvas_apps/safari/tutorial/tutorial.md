@@ -1291,7 +1291,7 @@ So when the rider looks right, the road slides left on the page, and the bike ke
 
 ### Attention
 
-{{code Gaze.next_attention}}
+{{code Gaze.next_look_depth}}
 
 While the gaze is off the road, attention rises with how far it has turned, and it doesn't drop. Once the gaze is straight ahead, attention fades by 0.0012 a step, so it takes hundreds of steps to go. That's why the table in the rider chapter has an `attention` of 0.68 at step 1,570, with no pig in sight.
 

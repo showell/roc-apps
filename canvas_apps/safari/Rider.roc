@@ -154,11 +154,11 @@ expect {
 	chosen.to_bits() == same.to_metres_a_step_each_step().to_bits()
 }
 
-## Rider doesn't import Fraction, so this attention comes from Gaze.
+## Rider doesn't import Fraction, so this depth comes from Gaze.
 attentive_rider : RiderState
 attentive_rider = {
 	..RiderState.initial,
-	attention: Gaze.next_attention(RiderState.initial, Gaze.gaze_release_angle.times(0.4)),
+	look_depth: Gaze.next_look_depth(RiderState.initial, Gaze.gaze_release_angle.times(0.4)),
 }
 
 at_seam : RiderState
@@ -178,7 +178,7 @@ crossed = Rider.on_next_segment(at_seam, first_segments)
 
 expect crossed.speed.to_metres_a_step() == 1.25
 expect crossed.lean.to_radians() == 0.05
-expect crossed.attention.to_f64() == 0.4
+expect crossed.look_depth.to_f64() == 0.4
 expect crossed.gaze_yaw.to_radians() == 0.0
 expect crossed.heading.to_radians() - 0.7 == 0.0
 expect crossed.yaw.to_radians() - (0.1 - first_segment.exit_turn.to_radians()) == 0.0
