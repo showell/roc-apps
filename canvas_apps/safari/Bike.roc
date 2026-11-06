@@ -30,12 +30,12 @@ Bike :: [].{
 
 	## The bike one step on, after leaning by `lean_step` and speeding up by
 	## `accel`.
-	simulate_rider_step : Bike.Motion(others),
+	advance : Bike.Motion(others),
 	{
 		lean_step : Angle.Lean,
 		accel : Acceleration,
 	} -> Bike.Motion(others)
-	simulate_rider_step = |s, { lean_step, accel }| {
+	advance = |s, { lean_step, accel }| {
 		lean = s.lean.plus(lean_step)
 		speed = s.speed.accelerated_by(accel)
 		step_length = speed.step_length()
@@ -75,12 +75,12 @@ riding = {
 	attention: 0.25,
 }
 
-first_step = Bike.simulate_rider_step(
+first_step = Bike.advance(
 	riding,
 	{ lean_step: Angle.Lean.radians(0.05), accel: Acceleration.metres_a_step_each_step(0.01) },
 )
 
-second_step = Bike.simulate_rider_step(
+second_step = Bike.advance(
 	first_step,
 	{
 		lean_step: Angle.Lean.radians(0.0 - 0.02),
@@ -88,10 +88,7 @@ second_step = Bike.simulate_rider_step(
 	},
 )
 
-third_step = Bike.simulate_rider_step(
-	second_step,
-	{ lean_step: Angle.upright, accel: Acceleration.steady },
-)
+third_step = Bike.advance(second_step, { lean_step: Angle.upright, accel: Acceleration.steady })
 
 expect
 	[first_step, second_step, third_step].join_map(
@@ -146,8 +143,8 @@ expect {
 		lean: Angle.upright,
 		heading: Angle.north,
 	}
-	a = Bike.simulate_rider_step(at_start, { lean_step: Angle.upright, accel: Acceleration.steady })
-	b = Bike.simulate_rider_step(
+	a = Bike.advance(at_start, { lean_step: Angle.upright, accel: Acceleration.steady })
+	b = Bike.advance(
 		at_start,
 		{ lean_step: Angle.Lean.radians(0.5), accel: Acceleration.metres_a_step_each_step(0.25) },
 	)

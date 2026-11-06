@@ -55,7 +55,7 @@ Coast :: [].{
 				course,
 				{
 					steps_run: i,
-					coasting_rider: Bike.simulate_rider_step(
+					coasting_rider: Bike.advance(
 						phys,
 						{ lean_step: Angle.upright, accel: Acceleration.steady },
 					),

@@ -96,7 +96,7 @@ Rider :: [].{
 	advance = |state, route| {
 		seg = state.segment_index.segment_in(route)
 		dec = decide(state, seg)
-		moved = Bike.simulate_rider_step(state, { lean_step: dec.lean_step, accel: dec.accel })
+		moved = Bike.advance(state, { lean_step: dec.lean_step, accel: dec.accel })
 		resolved =
 			match seg.ending {
 				Continues(_) => resolve_cross(moved, route)
