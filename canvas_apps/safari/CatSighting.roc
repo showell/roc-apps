@@ -34,7 +34,7 @@ CatSighting := {
 	## and it is in view.
 	segment_cat : Chain.Viewpoint, { position : Chain.Position, speed : Speed } -> List(CatSighting)
 	segment_cat = |view, { position, speed }|
-		match position.index_in(view.road.chain).segment_in(view.road.world).crossing {
+		match position.index_in(view.road.chain).segment_in(view.road.route).crossing {
 			CatCrosses(crossing) =>
 				cat_in_view(view, { position, crossing, speed })
 			BirdHere(_) | QuietRoad => []

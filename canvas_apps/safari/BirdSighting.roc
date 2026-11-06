@@ -46,7 +46,7 @@ BirdSighting := {
 ## and it is in view: one item, or none.
 segment_bird : Chain.Viewpoint, Chain.Position -> List(BirdSighting)
 segment_bird = |view, position|
-	match position.index_in(view.road.chain).segment_in(view.road.world).crossing {
+	match position.index_in(view.road.chain).segment_in(view.road.route).crossing {
 		BirdHere(habit) => {
 			gap_to_segment = Chain.gap_to_segment(view.road, position)
 			gap_to_tree = gap_to_segment.plus(BirdFlight.start_along(habit).from_start())

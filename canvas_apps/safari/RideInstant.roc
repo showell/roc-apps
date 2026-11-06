@@ -34,25 +34,25 @@ RideInstant := {
 	}
 
 	next_or_restart : List(World.Segment), RideInstant -> RideInstant
-	next_or_restart = |w, instant|
-		if Rider.is_finished(instant.rider, w) {
+	next_or_restart = |route, instant|
+		if Rider.is_finished(instant.rider, route) {
 			initial
 		} else {
-			next(w, instant)
+			next(route, instant)
 		}
 
 	next : List(World.Segment), RideInstant -> RideInstant
-	next = |w, instant| {
-		nx = Rider.advance(instant.rider, w)
-		dist = World.distance_along_route(w, { index: nx.segment, along: nx.along })
+	next = |route, instant| {
+		nx = Rider.advance(instant.rider, route)
+		dist = World.distance_along_route(route, { index: nx.segment, along: nx.along })
 		{
 			rider: nx,
 			truck: Truck.advance(
 				instant.truck,
 				{
 					rider_distance: dist,
-					world: w,
-					route_length: World.route_length(w),
+					route: route,
+					route_length: World.route_length(route),
 				},
 			),
 			clock: instant.clock.next(),
@@ -72,15 +72,15 @@ RideInstant := {
 	}
 
 	shapes : List(World.Segment), RideInstant -> List(Shapes.Shape)
-	shapes = |w, instant| {
+	shapes = |route, instant| {
 		s = instant.rider
 		view = {
 			road: {
-				world: w,
-				chain: Chain.chain_ahead(w, s.segment),
+				route: route,
+				chain: Chain.chain_ahead(route, s.segment),
 				vantage: ViewYaw.vantage_for(s),
 			},
-			cam_focal: RideFocal.ride_focal(w, s),
+			cam_focal: RideFocal.ride_focal(route, s),
 		}
 		scene = Scene.in_view(
 			view,
@@ -106,8 +106,8 @@ RideInstant := {
 	}
 
 	sun : List(World.Segment), RideInstant -> Sky.SunSighting
-	sun = |w, instant| {
-		cf = RideFocal.ride_focal(w, instant.rider)
+	sun = |route, instant| {
+		cf = RideFocal.ride_focal(route, instant.rider)
 		Sky.sun_sighting({
 			heading: ViewYaw.heading_for(instant.rider),
 			clock: instant.clock,
@@ -151,7 +151,7 @@ expect {
 		RideInstant.initial.truck,
 		{
 			rider_distance: new_dist,
-			world: World.segments,
+			route: World.segments,
 			route_length: World.route_length(World.segments),
 		},
 	)
@@ -159,7 +159,7 @@ expect {
 		RideInstant.initial.truck,
 		{
 			rider_distance: old_dist,
-			world: World.segments,
+			route: World.segments,
 			route_length: World.route_length(World.segments),
 		},
 	)

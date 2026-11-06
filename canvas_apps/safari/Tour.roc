@@ -17,7 +17,7 @@ import lib.Shapes
 
 ## The route, the instant the ride has reached, and the instants before it.
 Tour := {
-	world : List(World.Segment),
+	route : List(World.Segment),
 	instant : RideInstant,
 	past_instants : List(RideInstant),
 }.{
@@ -28,11 +28,11 @@ Tour := {
 	past_instants_cap = 2048
 
 	initial : Tour
-	initial = { world: World.segments, instant: RideInstant.initial, past_instants: [] }
+	initial = { route: World.segments, instant: RideInstant.initial, past_instants: [] }
 
 	step_forward : Tour -> Tour
 	step_forward = |tour| {
-		finished = Rider.is_finished(tour.instant.rider, tour.world)
+		finished = Rider.is_finished(tour.instant.rider, tour.route)
 		# Dropping one instant per step would copy the whole list every step, so
 		# half of it goes at once and the copy falls on one step in a thousand.
 		# The list is therefore between half a cap and a cap deep, never empty,
@@ -46,8 +46,8 @@ Tour := {
 				tour.past_instants.drop_first(past_instants_cap // 2).append(tour.instant)
 			}
 		{
-			world: tour.world,
-			instant: RideInstant.next_or_restart(tour.world, tour.instant),
+			route: tour.route,
+			instant: RideInstant.next_or_restart(tour.route, tour.instant),
 			past_instants,
 		}
 	}
@@ -56,7 +56,7 @@ Tour := {
 	step_back = |tour| {
 		match tour.past_instants.last() {
 			Ok(prev) => {
-				world: tour.world,
+				route: tour.route,
 				instant: prev,
 				past_instants: tour.past_instants.drop_last(1),
 			}
@@ -67,7 +67,7 @@ Tour := {
 	## The frame's shapes in paint order. A bird is sorted by depth with
 	## everything else, so a nearer tree hides it.
 	shapes : Tour -> List(Shapes.Shape)
-	shapes = |tour| RideInstant.shapes(tour.world, tour.instant)
+	shapes = |tour| RideInstant.shapes(tour.route, tour.instant)
 
 	# The camera roll: the whole frame, backdrop and shapes, turns
 	# by minus this about the screen's centre.
@@ -82,5 +82,5 @@ Tour := {
 	sky_horizon = |tour| Sky.horizon_color(tour.instant.clock)
 
 	sun : Tour -> Sky.SunSighting
-	sun = |tour| RideInstant.sun(tour.world, tour.instant)
+	sun = |tour| RideInstant.sun(tour.route, tour.instant)
 }

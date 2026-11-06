@@ -12,10 +12,10 @@ import World
 
 Chain :: [].{
 
-	## The road in view: the world's segments, the chain of them ahead of
+	## The road in view: the route's segments, the chain of them ahead of
 	## the rider, and the rider's vantage.
 	RoadView : {
-		world : List(World.Segment),
+		route : List(World.Segment),
 		chain : List(World.SegmentIndex),
 		vantage : Geom.Vantage,
 	}
@@ -93,13 +93,13 @@ Chain :: [].{
 	gap_to_segment = |road, position|
 		position.before_in(road.chain).fold(
 			road.vantage.along.from_start().opposite(),
-			|gap, index| gap.plus(index.segment_in(road.world).length),
+			|gap, index| gap.plus(index.segment_in(road.route).length),
 		)
 
 	## The chain from the segment at `start`: as far as the rider can see, or
 	## to the route's end.
 	chain_ahead : List(World.Segment), World.SegmentIndex -> List(World.SegmentIndex)
-	chain_ahead = |world, start| chain_onto(world, { index: start, chain: [] })
+	chain_ahead = |route, start| chain_onto(route, { index: start, chain: [] })
 
 	## The bend at the end of `segment`.
 	bend_out_of : World.Segment -> Geom.Bend
@@ -123,7 +123,7 @@ Chain :: [].{
 	rider_point_ahead = |road, { position, along, across }| {
 		on_rider_segment = position.before_in(road.chain).fold_rev(
 			edge_point({ along, across }),
-			|index, point| Geom.in_segment_before(point, bend_out_of(index.segment_in(road.world))),
+			|index, point| Geom.in_segment_before(point, bend_out_of(index.segment_in(road.route))),
 		)
 		Geom.to_rider_point(on_rider_segment, road.vantage)
 	}
@@ -158,13 +158,13 @@ chain_onto : List(World.Segment),
 	index : World.SegmentIndex,
 	chain : List(World.SegmentIndex),
 } -> List(World.SegmentIndex)
-chain_onto = |world, { index, chain }|
+chain_onto = |route, { index, chain }|
 	if chain.len() >= Chain.max_length.to_u64() {
 		chain
 	} else {
 		longer_chain = chain.append(index)
-		match index.segment_in(world).ending {
-			Continues({ next }) => chain_onto(world, { index: next, chain: longer_chain })
+		match index.segment_in(route).ending {
+			Continues({ next }) => chain_onto(route, { index: next, chain: longer_chain })
 			Terminates => longer_chain
 		}
 	}

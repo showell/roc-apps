@@ -101,7 +101,7 @@ road_patch = |corners| { corners, color: GroundSighting.road_color }
 ## The segment at `position` in the chain.
 segment_in_chain : Chain.RoadView, Chain.Position -> World.Segment
 segment_in_chain = |road, position|
-	position.index_in(road.chain).segment_in(road.world)
+	position.index_in(road.chain).segment_in(road.route)
 
 ## The ground along the segment at `position` in the chain: its road, the
 ## bend into the next segment if the chain goes on, and its pond if it
@@ -130,7 +130,7 @@ segment_ground = |road, position| {
 ## pond that segment ends at, if it has one.
 ground_behind : Chain.RoadView, World.SegmentIndex -> List(Ground.Patch)
 ground_behind = |road, index| {
-	segment = index.segment_in(road.world)
+	segment = index.segment_in(road.route)
 	before = Chain.place_behind(segment)
 	after = InChain(Chain.Position.first)
 	bend_ground(

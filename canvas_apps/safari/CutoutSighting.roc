@@ -94,7 +94,7 @@ CutoutSighting :: [].{
 	## `index`, the one before the rider's.
 	sightings_behind : Chain.RoadView, World.SegmentIndex -> List(Cutouts.Placement)
 	sightings_behind = |road, index| {
-		segment = index.segment_in(road.world)
+		segment = index.segment_in(road.route)
 		bend_sightings(
 			road,
 			{ place: Chain.place_behind(segment), segment },
@@ -118,7 +118,7 @@ CutoutSighting :: [].{
 }
 
 segment_at : Chain.RoadView, Chain.Position -> World.Segment
-segment_at = |road, position| position.index_in(road.chain).segment_in(road.world)
+segment_at = |road, position| position.index_in(road.chain).segment_in(road.route)
 
 ## A critter, placed through `place` on the road's map, as the rider sees it.
 sight_critter : Chain.RoadView,

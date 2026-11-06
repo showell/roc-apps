@@ -40,8 +40,8 @@ Rider :: [].{
 	}
 
 	rider_state_for_next_segment : RiderState, List(World.Segment) -> RiderState
-	rider_state_for_next_segment = |rs, segs| {
-		seg = rs.segment.segment_in(segs)
+	rider_state_for_next_segment = |rs, route| {
+		seg = rs.segment.segment_in(route)
 		next =
 			match seg.ending {
 				Continues({ next: index }) => index
@@ -86,8 +86,8 @@ Rider :: [].{
 	stopped_at = |s, at| { ..s, along: at, speed: Speed.at_rest }
 
 	resolve_cross : RiderState, List(World.Segment) -> RiderState
-	resolve_cross = |moved, segs| {
-		on_next = rider_state_for_next_segment(moved, segs)
+	resolve_cross = |moved, route| {
+		on_next = rider_state_for_next_segment(moved, route)
 		if on_next.across.distance_from_middle() < Scenery.lane_half_width {
 			on_next
 		} else {
@@ -96,21 +96,21 @@ Rider :: [].{
 	}
 
 	advance : RiderState, List(World.Segment) -> RiderState
-	advance = |state, segs| {
-		seg = state.segment.segment_in(segs)
+	advance = |state, route| {
+		seg = state.segment.segment_in(route)
 		dec = decide(state, seg)
 		moved = Bike.simulate_rider_step(state, { lean_step: dec.lean_step, accel: dec.accel })
 		resolved =
 			match seg.ending {
-				Continues(_) => resolve_cross(moved, segs)
+				Continues(_) => resolve_cross(moved, route)
 				Terminates => finish_clamp(moved, seg)
 			}
-		Gaze.next_rider_gaze(resolved, segs)
+		Gaze.next_rider_gaze(resolved, route)
 	}
 
 	is_finished : RiderState, List(World.Segment) -> Bool
-	is_finished = |s, segs| {
-		seg = s.segment.segment_in(segs)
+	is_finished = |s, route| {
+		seg = s.segment.segment_in(route)
 		match seg.ending {
 			Continues(_) => False
 			Terminates => s.along >= Along.at(seg.length)

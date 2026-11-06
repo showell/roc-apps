@@ -146,8 +146,8 @@ Gaze :: [].{
 		}
 
 	next_rider_gaze : RiderState, List(World.Segment) -> RiderState
-	next_rider_gaze = |state, segs| {
-		seg = state.segment.segment_in(segs)
+	next_rider_gaze = |state, route| {
+		seg = state.segment.segment_in(route)
 		gaze_yaw = next_gaze_yaw(state, desired_gaze(state, seg))
 		{
 			..state,

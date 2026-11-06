@@ -210,7 +210,7 @@ Here's where it's called, picking the colour for a pair of small trees:
 
 `SegmentIndex` is another small opaque type, a `U32` for a segment's place in the route. A place in the route can't be confused with a count of trees, because nothing outside can do arithmetic on it. `crash` appears here too. It isn't for error handling: an index that isn't in the world is a bug in Safari Ride, not a case to handle.
 
-{{code World.SegmentIndex from "## The segment of `world`" to "?? crash"}}
+{{code World.SegmentIndex from "## The segment of `route`" to "?? crash"}}
 
 A value that never changes can be checked once, whole. `Pond`'s one function is below its block, and it's there for a test:
 

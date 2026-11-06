@@ -71,7 +71,7 @@ truck_from = |view, { remaining, position }|
 	if position.is_past_end_of(view.road.chain) {
 		NoTruck
 	} else {
-		segment = position.index_in(view.road.chain).segment_in(view.road.world)
+		segment = position.index_in(view.road.chain).segment_in(view.road.route)
 		if remaining > Along.at(segment.length) {
 			truck_from(
 				view,

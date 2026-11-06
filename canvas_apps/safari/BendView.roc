@@ -76,7 +76,7 @@ apex_after_turn : Angle.Turn -> Geom.RiderPoint
 apex_after_turn = |turn|
 	BendView.apex(
 		{
-			world: [],
+			route: [],
 			chain: [],
 			vantage: {
 				along: Along.metres(100.0),
@@ -163,7 +163,7 @@ expect turns_right(m_prev_right)
 ## A road along `chain`, the route's segments by number.
 road_along : List(U32) -> Chain.RoadView
 road_along = |chain| {
-	world: World.segments,
+	route: World.segments,
 	chain: chain.map(World.SegmentIndex.number),
 	vantage,
 }
@@ -192,7 +192,7 @@ expect
 
 at_d0 : Geom.RiderPoint
 at_d0 = Chain.rider_point_ahead(
-	{ world: [], chain: [], vantage },
+	{ route: [], chain: [], vantage },
 	{
 		position: Chain.Position.first,
 		along: Along.metres(50.0),
@@ -201,10 +201,10 @@ at_d0 = Chain.rider_point_ahead(
 )
 
 at_d1 : List(World.Segment) -> Geom.RiderPoint
-at_d1 = |w| Chain.rider_point_ahead(
+at_d1 = |route| Chain.rider_point_ahead(
 	{
-		world: w,
-		chain: Chain.chain_ahead(w, World.SegmentIndex.first),
+		route: route,
+		chain: Chain.chain_ahead(route, World.SegmentIndex.first),
 		vantage,
 	},
 	{
@@ -227,7 +227,7 @@ expect {
 ## The point 50 m along the segment at `place`, which is behind the rider.
 behind_at : Chain.SegmentPlace -> Geom.RiderPoint
 behind_at = |place| Chain.rider_point_at(
-	{ world: [], chain: [], vantage },
+	{ route: [], chain: [], vantage },
 	{
 		place,
 		along: Along.metres(50.0),

@@ -124,14 +124,14 @@ RailSighting :: [].{
 bend_after : Chain.RoadView, Chain.Position -> BendView
 bend_after = |road, position|
 	BendView.of_segment(
-		position.index_in(road.chain).segment_in(road.world),
+		position.index_in(road.chain).segment_in(road.route),
 		{ before: InChain(position), after: InChain(position.next()) },
 	)
 
 ## The rails at the bend into the rider's segment from the segment at `index`.
 rails_behind : Chain.RoadView, World.SegmentIndex -> List(GuardRail.RailPoly)
 rails_behind = |road, index| {
-	segment = index.segment_in(road.world)
+	segment = index.segment_in(road.route)
 	before = Chain.place_behind(segment)
 	after = InChain(Chain.Position.first)
 	rails_at(road, BendView.of_segment(segment, { before, after }))

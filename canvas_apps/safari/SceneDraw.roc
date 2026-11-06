@@ -210,7 +210,7 @@ expect SceneDraw.crown_shade(-50.0).to_f64() == 1.0
 start_view : Chain.Viewpoint
 start_view = {
 	road: {
-		world: [0, 1, 2].map(World.route_segment),
+		route: [0, 1, 2].map(World.route_segment),
 		chain: [0, 1, 2].map(World.SegmentIndex.number),
 		vantage: {
 			along: Along.metres(0.0),
@@ -267,8 +267,8 @@ expect clustered_tree(14.0).len() > 0
 expect second_shape_points(clustered_tree(10.0)) > second_shape_points(clustered_tree(14.0))
 expect second_shape_points(clustered_tree(14.0)) >= 6
 
-segs : List(World.Segment)
-segs = [
+route : List(World.Segment)
+route = [
 	World.route_segment(0),
 	World.route_segment(1),
 	World.route_segment(2),
@@ -295,7 +295,7 @@ up_road = {
 view_from : Geom.Vantage, F64 -> Chain.Viewpoint
 view_from = |vantage, cam_focal| {
 	road: {
-		world: segs,
+		route: route,
 		chain: [0, 1, 2].map(World.SegmentIndex.number),
 		vantage,
 	},
@@ -318,7 +318,7 @@ green_tree_at = |along| {
 }
 
 expect
-	List.concat(segs.map(|seg| seg.trees.len().to_i64_wrap()), [TreeSighting.max_vis_trees])
+	List.concat(route.map(|seg| seg.trees.len().to_i64_wrap()), [TreeSighting.max_vis_trees])
 		== [28, 16, 22, 640]
 
 lone_tree : TreeSighting
@@ -406,7 +406,7 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 expect
-	segs.map(|seg| seg.length.to_metres())
+	route.map(|seg| seg.length.to_metres())
 		== [500.0, 320.0, 400.0]
 
 ## What a truck `lead` metres ahead of a rider at the start of the chain is
@@ -414,7 +414,7 @@ expect
 truck_view : Geom.Vantage, F64 -> TruckSighting.Viewpoint
 truck_view = |vantage, lead| {
 	road: {
-		world: segs,
+		route: route,
 		chain: [0, 1, 2].map(World.SegmentIndex.number),
 		vantage,
 	},

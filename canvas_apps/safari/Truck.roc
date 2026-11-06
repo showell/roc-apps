@@ -56,10 +56,10 @@ Truck :: [].{
 		brake_lights: Off,
 	}
 
-	## The next turn of `world` past `route_position`.
+	## The next turn of `route` past `route_position`.
 	next_bend : List(World.Segment), Distance -> Truck.NextBend
-	next_bend = |world, route_position|
-		next_bend_on(world, { route_position, segment_start: Distance.zero })
+	next_bend = |route, route_position|
+		next_bend_on(route, { route_position, segment_start: Distance.zero })
 
 	## Where the truck should be along the route, when the rider is
 	## `rider_distance` along it.
@@ -74,12 +74,12 @@ Truck :: [].{
 	advance : Truck.TruckState,
 	{
 		rider_distance : Distance,
-		world : List(World.Segment),
+		route : List(World.Segment),
 		route_length : Distance,
 	} -> Truck.TruckState
-	advance = |truck, { rider_distance, world, route_length }| {
+	advance = |truck, { rider_distance, route, route_length }| {
 		schedule = scheduled_position({ rider_distance, route_length })
-		match next_bend(world, truck.route_position) {
+		match next_bend(route, truck.route_position) {
 			BendAhead(bend) =>
 				if bend.distance <= brake_distance {
 					advance_braking(truck, bend)
@@ -199,15 +199,15 @@ one_seg : List(World.Segment)
 one_seg = [World.route_segment(0)]
 
 turn_dist : List(World.Segment), F64 -> F64
-turn_dist = |segs, route_position|
-	match Truck.next_bend(segs, Distance.metres(route_position)) {
+turn_dist = |route, route_position|
+	match Truck.next_bend(route, Distance.metres(route_position)) {
 		BendAhead(t) => t.distance.to_metres()
 		NoBendAhead => 0.0 - 1.0
 	}
 
 turn_v : List(World.Segment), F64 -> F64
-turn_v = |segs, route_position|
-	match Truck.next_bend(segs, Distance.metres(route_position)) {
+turn_v = |route, route_position|
+	match Truck.next_bend(route, Distance.metres(route_position)) {
 		BendAhead(t) => t.turn_speed.to_metres_a_step()
 		NoBendAhead => 0.0 - 1.0
 	}
@@ -234,12 +234,12 @@ expect turn_dist(two_seg, 820.0) == -1.0
 ## A rider at the start of a route 1000 m long, on the route's first segment.
 on_one_seg : {
 	rider_distance : Distance,
-	world : List(World.Segment),
+	route : List(World.Segment),
 	route_length : Distance,
 }
 on_one_seg = {
 	rider_distance: Distance.zero,
-	world: one_seg,
+	route: one_seg,
 	route_length: Distance.metres(1000.0),
 }
 

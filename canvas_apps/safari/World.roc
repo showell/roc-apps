@@ -50,11 +50,11 @@ World :: [].{
 		count_before : World.SegmentIndex -> U64
 		count_before = |World.SegmentIndex.(n)| n.to_u64()
 
-		## The segment of `world` at this index.
+		## The segment of `route` at this index.
 		segment_in : World.SegmentIndex, List(World.Segment) -> World.Segment
-		segment_in = |index, world|
-			world.get(index.count_before())
-				?? crash "World.SegmentIndex.segment_in: the world has no segment there"
+		segment_in = |index, route|
+			route.get(index.count_before())
+				?? crash "World.SegmentIndex.segment_in: the route has no segment there"
 
 		is_eq : _
 	}
@@ -320,7 +320,7 @@ World :: [].{
 	## the first: a float sum's rounding depends on its order, and another
 	## order can move a pixel.
 	route_length : List(World.Segment) -> Distance
-	route_length = |world| world.fold_rev(Distance.zero, |segment, sum| segment.length.plus(sum))
+	route_length = |route| route.fold_rev(Distance.zero, |segment, sum| segment.length.plus(sum))
 
 	## How far along the route the point at `along` on the segment at `index`
 	## is.
@@ -329,8 +329,8 @@ World :: [].{
 		index : World.SegmentIndex,
 		along : Along,
 	} -> Distance
-	distance_along_route = |world, { index, along }|
-		route_length(world.take_first(index.count_before())).plus(along.from_start())
+	distance_along_route = |route, { index, along }|
+		route_length(route.take_first(index.count_before())).plus(along.from_start())
 }
 
 ## The segment at `index` of the route, built from its plan.

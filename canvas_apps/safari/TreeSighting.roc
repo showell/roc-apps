@@ -32,7 +32,7 @@ TreeSighting := {
 	## The trees in view on the segment at `position` in the chain.
 	segment_trees : Chain.Viewpoint, Chain.Position -> List(TreeSighting)
 	segment_trees = |view, position| {
-		segment = position.index_in(view.road.chain).segment_in(view.road.world)
+		segment = position.index_in(view.road.chain).segment_in(view.road.route)
 		segment.trees.join_map(|tree| tree_in_view(view, { position, tree }))
 	}
 

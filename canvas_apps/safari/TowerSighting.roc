@@ -94,7 +94,7 @@ TowerSighting := {
 	segment_towers : TowerSighting.Viewpoint, Chain.Position -> List(TowerSighting)
 	segment_towers = |view, position| {
 		index = position.index_in(view.road.chain)
-		segment = index.segment_in(view.road.world)
+		segment = index.segment_in(view.road.route)
 		end_tower = tower_if_ahead(
 			view,
 			{
@@ -113,7 +113,7 @@ TowerSighting := {
 	mid_tower : TowerSighting.Viewpoint, Chain.Position -> List(TowerSighting)
 	mid_tower = |view, position| {
 		index = position.index_in(view.road.chain)
-		segment = index.segment_in(view.road.world)
+		segment = index.segment_in(view.road.route)
 		match segment.mid_tower {
 			MidTower =>
 				tower_if_ahead(
@@ -134,7 +134,7 @@ TowerSighting := {
 	## rider, if it is in view.
 	tower_behind : TowerSighting.Viewpoint, World.SegmentIndex -> List(TowerSighting)
 	tower_behind = |view, index| {
-		behind = index.segment_in(view.road.world)
+		behind = index.segment_in(view.road.route)
 		tower_if_ahead(
 			view,
 			{
@@ -199,8 +199,8 @@ expect TowerSighting.beacon_period.to_f64() == 120.0
 expect TowerSighting.beacon_stagger.to_f64() == 37.0
 expect TowerSighting.max_vis_towers == 16
 
-segs : List(World.Segment)
-segs = [
+route : List(World.Segment)
+route = [
 	World.route_segment(0),
 	World.route_segment(1),
 	World.route_segment(2),
@@ -219,7 +219,7 @@ origin = {
 short_view : U32 -> TowerSighting.Viewpoint
 short_view = |rider_number| {
 	road: {
-		world: [0, 1, 2, 3, 4].map(World.route_segment),
+		route: [0, 1, 2, 3, 4].map(World.route_segment),
 		chain: [rider_number, rider_number + 1, rider_number + 2].map(World.SegmentIndex.number),
 		vantage: origin,
 	},
@@ -233,7 +233,7 @@ expect TowerSighting.along_chain(from_origin).len() == 3
 expect TowerSighting.segment_towers(from_origin, Chain.Position.first).len() == 1
 expect TowerSighting.mid_tower(from_origin, Chain.Position.first).len() == 0
 expect TowerSighting.in_view(from_origin).len() == 3
-expect segs.all(|seg| !(has_mid_tower(seg)))
+expect route.all(|seg| !(has_mid_tower(seg)))
 
 ## Whether a segment has a tower halfway along.
 has_mid_tower : World.Segment -> Bool
@@ -259,7 +259,7 @@ expect first_tower_on(1).across.to_metres() == 20.0
 long_view : TowerSighting.Viewpoint
 long_view = {
 	road: {
-		world: [World.route_segment(6)],
+		route: [World.route_segment(6)],
 		chain: [0].map(World.SegmentIndex.number),
 		vantage: origin,
 	},

@@ -53,7 +53,7 @@ origin = {
 ## The first three segments, the rider at the start of the first.
 road : Chain.RoadView
 road = {
-	world: [
+	route: [
 		World.route_segment(0),
 		World.route_segment(1),
 		World.route_segment(2),
@@ -126,7 +126,7 @@ birds_on_segment : World.Segment, { rider_along : F64, cam_focal : F64 } -> List
 birds_on_segment = |segment, { rider_along, cam_focal }|
 	BirdSighting.in_view({
 		road: {
-			world: [segment],
+			route: [segment],
 			chain: [World.SegmentIndex.first],
 			vantage: { ..origin, along: Along.metres(rider_along) },
 		},
@@ -190,7 +190,7 @@ expect birds_on_segment(segment_with_cat, { rider_along: 0.0, cam_focal: 500.0 }
 two_segments : List(BirdSighting)
 two_segments = BirdSighting.in_view({
 	road: {
-		world: [segment_of(left_trees), segment_of(left_trees)],
+		route: [segment_of(left_trees), segment_of(left_trees)],
 		chain: [0, 1].map(World.SegmentIndex.number),
 		vantage: {
 			along: Along.metres(0.0),
@@ -231,7 +231,7 @@ cat_segments = [World.route_segment(0), cat_segment, World.route_segment(2)]
 cats_from_origin : Chain.Viewpoint
 cats_from_origin = {
 	road: {
-		world: cat_segments,
+		route: cat_segments,
 		chain: [0, 1, 2].map(World.SegmentIndex.number),
 		vantage: origin,
 	},
@@ -332,7 +332,7 @@ expect CatSighting.depth_keys([]).len() == 0
 ## The first six segments, chained in order.
 six_segments : Chain.RoadView
 six_segments = {
-	world: [0, 1, 2, 3, 4, 5].map(World.route_segment),
+	route: [0, 1, 2, 3, 4, 5].map(World.route_segment),
 	chain: [0, 1, 2, 3, 4, 5].map(World.SegmentIndex.number),
 	vantage: origin,
 }
@@ -340,7 +340,7 @@ six_segments = {
 ## The world's segment `index` alone.
 lone : U32 -> Chain.RoadView
 lone = |index| {
-	world: [World.route_segment(index)],
+	route: [World.route_segment(index)],
 	chain: [0].map(World.SegmentIndex.number),
 	vantage: origin,
 }
@@ -439,7 +439,7 @@ scene : Scene
 scene = Scene.in_view(
 	{
 		road: {
-			world: World.segments,
+			route: World.segments,
 			chain: Chain.chain_ahead(World.segments, World.SegmentIndex.first),
 			vantage: origin,
 		},
