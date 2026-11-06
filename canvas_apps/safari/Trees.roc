@@ -49,10 +49,6 @@ Trees :: [].{
 	tree_end_inset : Distance
 	tree_end_inset = Distance.metres(85.0)
 
-	## At most this many trees stand on a segment.
-	max_trees : I64
-	max_trees = 96
-
 	## The conifer that sets off a scheme's green.
 	accent : Scenery.Scheme -> Trees.Conifer
 	accent = |scheme|
@@ -119,8 +115,6 @@ plant_onto : List(Scenery.Tree),
 plant_onto = |planted, { scheme, length, along, size }|
 	if along > Along.at(length.minus(Trees.tree_end_inset)) {
 		planted
-	} else if planted.len().to_i64_wrap() + 2 > Trees.max_trees {
-		planted
 	} else {
 		conifer =
 			match size {
@@ -161,7 +155,6 @@ plant_onto = |planted, { scheme, length, along, size }|
 expect Trees.conifer_green == 0x1C5A22
 expect Trees.conifer_gold == 0xCF9A18
 expect Trees.conifer_red == 0xB23A2A
-expect Trees.max_trees == 96
 
 expect Trees.small_height == Distance.metres(4.5)
 expect Trees.big_height == Distance.metres(5.8500000000000005)
@@ -267,5 +260,4 @@ expect
 
 expect yellow_green_trees.len() == 14
 expect Trees.plant({ scheme: AllGreen, length: Distance.metres(100.0) }).len() == 2
-expect Trees.plant({ scheme: AllGreen, length: Distance.metres(5000.0) }).len() == 96
 expect Trees.plant({ scheme: AllGreen, length: Distance.metres(50.0) }).len() == 0

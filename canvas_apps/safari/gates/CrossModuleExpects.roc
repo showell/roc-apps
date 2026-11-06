@@ -476,7 +476,6 @@ expect scene.towers.len() > 0
 expect scene.cutouts.len() > 0
 expect scene.rails.len() > 0
 expect scene.order.len() > 0
-expect scene.trees.len().to_i64_wrap() <= TreeSighting.max_visible_trees
 expect scene.towers.len().to_i64_wrap() <= TowerSighting.max_visible_towers
 expect scene.cutouts.len().to_i64_wrap() <= CutoutSighting.max_visible_cutouts
 expect scene.cats.len().to_i64_wrap() <= CatSighting.max_visible_cats

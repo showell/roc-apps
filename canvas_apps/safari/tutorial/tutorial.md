@@ -273,7 +273,7 @@ Planting a segment starts at the first place a tree can go:
 
 {{code Trees.plant}}
 
-From there, `plant_onto` calls itself. Each call plants one pair, then calls itself again with the next place and the other size. It stops 85 metres short of the segment's end, or at 96 trees.
+From there, `plant_onto` calls itself. Each call plants one pair, then calls itself again with the next place and the other size. It stops 85 metres short of the segment's end.
 
 {{code Trees.plant_onto}}
 

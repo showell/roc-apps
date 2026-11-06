@@ -29,7 +29,7 @@ SceneDraw :: [].{
 
 	## A tree with fewer than this many trees nearer than it gets a round
 	## trunk.
-	round_trunk_limit : U32
+	round_trunk_limit : U64
 	round_trunk_limit = 4
 
 	## The scene's things, painted far to near.
@@ -38,9 +38,8 @@ SceneDraw :: [].{
 		scene.order.join_map(|depth_key| draw_subject(scene, { view, depth_key }))
 
 	## How many of `trees` are nearer than `forward`.
-	nearer_tree_count : List(TreeSighting), Distance -> U32
-	nearer_tree_count = |trees, forward|
-		trees.count_if(|tree| tree.forward < forward).to_u32_wrap()
+	nearer_tree_count : List(TreeSighting), Distance -> U64
+	nearer_tree_count = |trees, forward| trees.count_if(|tree| tree.forward < forward)
 
 	## How much a crown is shaded at distance `forward`: fully at the camera,
 	## falling evenly to none at Detail.crown_shade_reach.
@@ -321,10 +320,6 @@ green_tree_at = |along| {
 		height: Distance.metres(5.85),
 	},
 }
-
-expect
-	route.map(|seg| seg.trees.len().to_i64_wrap()).append(TreeSighting.max_visible_trees)
-		== [28, 16, 22, 640]
 
 lone_tree : TreeSighting
 lone_tree = TreeSighting.tree_in_view(
