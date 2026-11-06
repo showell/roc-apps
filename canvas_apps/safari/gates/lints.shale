@@ -28,6 +28,7 @@ const LINTS = {
     {"noun_effect", 0}, {"command_tense", 0}, {"mixed_tense", 0}, {"container", 0},
     {"preposition_split", 0}, {"short_name", 0}, {"worker_name", 0}, {"stacked_preposition", 0},
     {"taken_word", 0}, {"bare_participle", 0},
+    {"phrase_name", 0},
   }, whole_tree = {"command_tense", "mixed_tense", "preposition_split"}},
   {recipe = "errors", args = {}, budget = {}, counts = {
     {"error_alias", 0}, {"optional_tag", 0}, {"set_fallback", 0}, {"placeholder", 0},

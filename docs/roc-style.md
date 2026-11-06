@@ -1063,7 +1063,8 @@ is the base; these rules sharpen it.
     `[Pinned, Unpinned]`), and `preposition_split` (one noun given
     different trailing prepositions in one file, `blocks_of` beside
     `blocks_in`; a matched opposite pair and the `_from` recursion worker
-    are fine). An effect that starts with a preposition (`of!`) is a
+    are fine), and `phrase_name` (a pure function named as a bare phrase,
+    `in_view`, that gives no Bool and isn't a constructor). An effect that starts with a preposition (`of!`) is a
     `noun_effect`. The words are shared files in Shale's `cookbook/words/`,
     and `words=1` lists every first word an effect starts with, for a
     reader to scan. Beside the names, `mixed_tense` (an effect handed a
