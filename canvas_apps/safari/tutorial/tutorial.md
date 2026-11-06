@@ -1,5 +1,11 @@
 # Safari Ride: a tour of a real Roc program
 
+A long walk through one program of about eighty Roc modules: the big picture, the details, and the big picture again.
+
+## Introduction
+
+Safari Ride is a program written in Roc, and it runs in the page below. It takes a moment to load. When it's ready, a ride starts by itself.
+
 ```widget ride
 The ride, running as you read. Click it to give it the keyboard: Space pauses, and the arrows step.
 ```
