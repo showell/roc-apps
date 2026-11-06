@@ -79,10 +79,6 @@ Angle :: [].{
 		abs : Angle.Turn -> Angle.Turn
 		abs = |Angle.Turn.(t)| Angle.Turn.(t.abs())
 
-		## The smaller of this turn and `other`.
-		min : Angle.Turn, Angle.Turn -> Angle.Turn
-		min = |Angle.Turn.(t), Angle.Turn.(other)| Angle.Turn.(t.min(other))
-
 		## This turn, held to no more than `limit` either way.
 		within : Angle.Turn, Angle.Turn -> Angle.Turn
 		within = |Angle.Turn.(t), Angle.Turn.(limit)| Angle.Turn.((0.0 - limit).max(limit.min(t)))

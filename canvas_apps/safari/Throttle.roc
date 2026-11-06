@@ -99,6 +99,9 @@ Throttle :: [].{
 		a.min(sa)
 	}
 
+	## The speed the rider may reach: `next_speed`, held between rest and the top
+	## speed. Near the end of the segment a rider below the exit speed is lifted
+	## to it, unless they are gawking.
 	allowed_speed : RiderState,
 	{
 		segment : World.Segment,

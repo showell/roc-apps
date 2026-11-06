@@ -1,5 +1,5 @@
 ## Trig holds the angle arithmetic that F64's builtins don't have: degrees, a turn
-## wrapped into one circle, a sign and a pulse.
+## wrapped into one circle and a pulse.
 Trig :: [].{
 
 	## Radians in a degree.
@@ -24,20 +24,7 @@ Trig :: [].{
 	## waiting prompt and a piece of food both do.
 	pulse : F64 -> F64
 	pulse = |t| 0.5 + 0.5 * (t * 3.4).sin()
-
-	## One for a positive `x`, minus one for a negative one, and nought for nought.
-	sign : F64 -> F64
-	sign = |x|
-		if x > 0.0 {
-			1.0
-		} else if x < 0.0 {
-			-1.0
-		} else {
-			0.0
-		}
 }
-
-expect [(-0.5, -1.0), (0.0, 0.0), (0.5, 1.0)].all(|(x, want)| Trig.sign(x) == want)
 
 expect
 	[

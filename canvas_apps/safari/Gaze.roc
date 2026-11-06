@@ -28,30 +28,44 @@ Gaze :: [].{
 	## way the bike points, or at the road.
 	GazeTarget : [OnPig(Angle.Turn), OnRoad]
 
+	## How far short of a pig the rider notices it, measured along the road.
+	## The look and the gawking both start here.
 	notice_distance : Distance
 	notice_distance = Distance.metres(150.0)
 
+	## How far from the way the bike points the rider will look. A pig this far
+	## round, or further, is out of sight.
 	look_release_angle : Angle.Turn
 	look_release_angle = Angle.Turn.degrees(35.0)
 
+	## The most the gaze swivels toward a pig in one step.
 	look_swivel_rate : Angle.Turn
 	look_swivel_rate = Angle.Turn.degrees(4.0)
 
+	## The most the gaze turns back toward the road in one step.
 	look_return_rate : Angle.Turn
 	look_return_rate = Angle.Turn.degrees(0.2)
 
+	## The share of its angle the gaze gives back in one step on its way to the
+	## road, up to the return rate.
 	look_return_ease : Fraction
 	look_return_ease = Fraction.of(0.05)
 
+	## How near straight ahead the gaze has to be to go all the way there in one
+	## step, so that a return ends.
 	look_return_snap : Angle.Turn
 	look_return_snap = Angle.Turn.degrees(0.02)
 
+	## How much look depth fades in one step. It is subtracted from the depth,
+	## and is no share of it, so the fade runs at one rate all the way down.
 	look_depth_decay : Fraction
 	look_depth_decay = Fraction.of(0.0012)
 
+	## The speed a gawking rider brakes down to.
 	gawk_speed : Speed
 	gawk_speed = Speed.metres_a_step(0.2)
 
+	## How far short of the pig a gawking rider aims to reach `gawk_speed`.
 	gawk_settle_distance : Distance
 	gawk_settle_distance = Distance.metres(25.0)
 
@@ -64,7 +78,8 @@ Gaze :: [].{
 	gawk_least_distance : Distance
 	gawk_least_distance = Distance.metres(1.0)
 
-	## How strongly a look of this depth holds the rider's eye.
+	## How strongly a look of this depth holds the rider's eye. The easing keeps
+	## a shallow look from widening the view much.
 	gaze_attention : Fraction -> Attention
 	gaze_attention = |look_depth| Attention.from_fraction(Easing.smoothstep(look_depth))
 
@@ -87,27 +102,28 @@ Gaze :: [].{
 			Unnoticed | NoPigs => OnRoad
 		}
 
-	## The gaze one step on. It swivels toward a pig at no more than the
-	## swivel rate; with only the road to look at it eases back, and snaps
-	## there once it is close.
+	## The gaze one step on. It swivels toward a pig by at most the swivel rate.
+	## With only the road to look at, it gives back a share of its angle, up to
+	## the return rate, and snaps home once it is close.
 	next_gaze_yaw : RiderState, Gaze.GazeTarget -> Angle.Turn
 	next_gaze_yaw = |state, target| {
 		gaze = state.gaze_yaw
 		match target {
-			OnPig(want) => gaze.plus(want.minus(gaze).within(look_swivel_rate))
+			OnPig(turn) => gaze.plus(turn.minus(gaze).within(look_swivel_rate))
 			OnRoad =>
 				if gaze.abs() <= look_return_snap {
 					Angle.straight_ahead
 				} else {
-					easing = look_return_rate.min(gaze.abs().times(look_return_ease.to_f64()))
-					direction = Trig.sign(gaze.to_radians())
-					gaze.minus(easing.times(direction))
+					gaze.minus(gaze.times(look_return_ease.to_f64()).within(look_return_rate))
 				}
 		}
 	}
 
-	## The rider's look depth after the gaze moves to `gaze_yaw`: it fades while
-	## the gaze rests, and rises with how far the gaze has turned.
+	## The rider's look depth after the gaze moves to `gaze_yaw`. It rises with
+	## how far the gaze has turned, and it holds while the gaze is off straight
+	## ahead by any amount, so it holds all through the return. It fades only
+	## once the snap has put the gaze exactly straight ahead, which makes
+	## `look_return_snap` the setting that starts the fade.
 	next_look_depth : RiderState, Angle.Turn -> Fraction
 	next_look_depth = |state, gaze_yaw|
 		if gaze_yaw == Angle.straight_ahead {
@@ -116,6 +132,8 @@ Gaze :: [].{
 			state.look_depth.max(Fraction.clamp(gaze_yaw.abs().ratio_to(look_release_angle)))
 		}
 
+	## This rider with the eyes moved on a step: the gaze, and the look depth it
+	## leaves.
 	next_rider_gaze : RiderState, List(World.Segment) -> RiderState
 	next_rider_gaze = |state, route| {
 		seg = state.segment_index.segment_in(route)
@@ -127,6 +145,13 @@ Gaze :: [].{
 		}
 	}
 
+	## Whether the rider is gawking at this segment's pig. It starts where the
+	## pig is noticed and asks only where the rider is, so it stays true past the
+	## pig to the end of the segment: the rider brakes for the pig and doesn't
+	## open the throttle until the next segment. Two things depend on that.
+	## `gawk_brake` holds the rider down for as long as this is true, and
+	## `Throttle.allowed_speed` leaves a gawking rider below the segment's exit
+	## speed, where it lifts any other rider near the end up to it.
 	is_gawking : RiderState, World.Segment -> Bool
 	is_gawking = |state, seg|
 		match seg.pig_interest {
@@ -189,12 +214,11 @@ expect distracting.pig_interest == Distracting
 
 ## A rider on the distracting segment, at rest in every other way. Gaze doesn't
 ## import Along, so `along` is a distance from the segment's start.
-rider : F64, F64 -> RiderState
-rider = |along, yaw| {
+rider : F64 -> RiderState
+rider = |along| {
 	..RiderState.initial,
 	segment_index: World.SegmentIndex.number(2),
 	along: RiderState.initial.along.plus(Distance.metres(along)),
-	yaw: Angle.Turn.radians(yaw),
 }
 
 ## How far this rider on the distracting segment wants to turn to the pig.
@@ -206,14 +230,14 @@ turn_to_pig = |state|
 	}
 
 expect {
-	far = turn_to_pig(rider(200.0, 0.0))
-	near = turn_to_pig(rider(320.0, 0.0))
+	far = turn_to_pig(rider(200.0))
+	near = turn_to_pig(rider(320.0))
 	far > 0.0 and near > far
 }
 
-expect Gaze.desired_gaze(rider(200.0, 0.0), plain) == OnRoad
-expect Gaze.desired_gaze(rider(100.0, 0.0), distracting) == OnRoad
-expect Gaze.desired_gaze(rider(341.0, 0.0), distracting) == OnRoad
+expect Gaze.desired_gaze(rider(200.0), plain) == OnRoad
+expect Gaze.desired_gaze(rider(100.0), distracting) == OnRoad
+expect Gaze.desired_gaze(rider(341.0), distracting) == OnRoad
 
 ## The pig that catches the eye on the distracting segment.
 watched_pig : Scenery.Critter
@@ -221,10 +245,7 @@ watched_pig = Pigs.gaze_pig(distracting.length)
 
 ## A rider on the distracting segment, `metres` short of the pig.
 short_of_pig : F64 -> RiderState
-short_of_pig = |metres| {
-	..rider(0.0, 0.0),
-	along: watched_pig.along.minus(Distance.metres(metres)),
-}
+short_of_pig = |metres| { ..rider(0.0), along: watched_pig.along.minus(Distance.metres(metres)) }
 
 # The look starts where the pig is noticed, and not a centimetre sooner.
 expect turn_to_pig(short_of_pig(Gaze.notice_distance.to_metres())) > 0.0
@@ -256,7 +277,7 @@ is_looking = |state|
 
 ## A rider looking `gaze_yaw` from straight ahead.
 head : F64, F64 -> RiderState
-head = |gaze_yaw, along| { ..rider(along, 0.0), gaze_yaw: Angle.Turn.radians(gaze_yaw) }
+head = |gaze_yaw, along| { ..rider(along), gaze_yaw: Angle.Turn.radians(gaze_yaw) }
 
 ## The gaze one step after `state`, wanting a pig `want` radians off.
 gaze_after : RiderState, F64 -> F64
@@ -290,6 +311,21 @@ expect {
 		and 30.0 * Trig.deg - big > 2.0 * Trig.deg - small
 }
 
+# Each is within 1e-12 of its want, in degrees. A far gaze moves at the return
+# rate and a near one by its share, and 4 degrees is where they meet.
+expect
+	[
+		(30.0, 29.8),
+		(-30.0, -29.8),
+		(4.0, 3.8),
+		(-4.0, -3.8),
+		(2.0, 1.9),
+		(-2.0, -1.9),
+	].all(
+		|(from, to)|
+			(gaze_returning(head(from * Trig.deg, 200.0)) / Trig.deg - to).abs() <= 0.000000000001,
+	)
+
 expect gaze_returning(head(return_snap, 200.0)) == 0.0
 expect gaze_returning(head(-return_snap, 200.0)) == 0.0
 expect gaze_returning(head(0.0, 200.0)) == 0.0
@@ -311,15 +347,19 @@ expect {
 	rising > 0.0 and held >= 0.9 and easing < 0.9 and easing > 0.0
 }
 
+# The depth holds until the gaze is exactly straight ahead, and fades from there.
+expect depth_after(rider_at_depth(0.9, 0.0), Gaze.look_return_snap.to_radians()) == 0.9
+expect (depth_after(rider_at_depth(0.9, 0.0), 0.0) - 0.8988).abs() <= 0.000000000001
+
 expect depth_after(rider_at_depth(0.0, 0.0), 0.0) == 0.0
 expect depth_after(rider_at_depth(0.0, 90.0 * Trig.deg), 90.0 * Trig.deg) == 1.0
-expect !Gaze.is_gawking(rider(200.0, 0.0), plain)
-expect !Gaze.is_gawking(rider(100.0, 0.0), distracting)
-expect Gaze.is_gawking(rider(200.0, 0.0), distracting)
-expect Gaze.is_gawking(rider(341.0, 0.0), distracting)
+expect !Gaze.is_gawking(rider(200.0), plain)
+expect !Gaze.is_gawking(rider(100.0), distracting)
+expect Gaze.is_gawking(rider(200.0), distracting)
+expect Gaze.is_gawking(rider(341.0), distracting)
 
-expect Gaze.gawk_brake(rider(200.0, 0.0), plain) == NoLimit
-expect Gaze.gawk_brake(rider(100.0, 0.0), distracting) == NoLimit
+expect Gaze.gawk_brake(rider(200.0), plain) == NoLimit
+expect Gaze.gawk_brake(rider(100.0), distracting) == NoLimit
 
 ## The brake for a rider `metres` short of the pig, going `speed` metres a step.
 brake_short_of_pig : F64, F64 -> F64
@@ -351,5 +391,5 @@ expect
 	)
 
 # The gawking outlasts the look.
-expect !is_looking(rider(341.0, 0.0))
-expect Gaze.is_gawking(rider(341.0, 0.0), distracting)
+expect !is_looking(rider(341.0))
+expect Gaze.is_gawking(rider(341.0), distracting)
