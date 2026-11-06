@@ -87,7 +87,7 @@ TowerSighting := {
 	## The towers in view along the chain, the nearest segment's first.
 	towers_along_chain : TowerSighting.Viewpoint -> List(TowerSighting)
 	towers_along_chain = |view| {
-		positions = Chain.Position.all_in(view.road.chain)
+		positions = Chain.Position.positions_in(view.road.chain_indices)
 		positions.join_map(|position| segment_towers(view, position))
 	}
 
@@ -95,8 +95,8 @@ TowerSighting := {
 	## its end, then the one halfway along.
 	segment_towers : TowerSighting.Viewpoint, Chain.Position -> List(TowerSighting)
 	segment_towers = |view, position| {
-		index = position.index_in(view.road.chain)
-		segment = index.segment_in(view.road.route)
+		index = position.index_in(view.road.chain_indices)
+		segment = index.segment_in(view.road.route_segments)
 		end_tower = tower_if_ahead(
 			view,
 			{
@@ -115,8 +115,8 @@ TowerSighting := {
 	mid_tower :
 		TowerSighting.Viewpoint, Chain.Position -> Try(TowerSighting, [BehindCamera, NoMidTower])
 	mid_tower = |view, position| {
-		index = position.index_in(view.road.chain)
-		segment = index.segment_in(view.road.route)
+		index = position.index_in(view.road.chain_indices)
+		segment = index.segment_in(view.road.route_segments)
 		match segment.mid_tower {
 			MidTower =>
 				tower_if_ahead(
@@ -137,7 +137,7 @@ TowerSighting := {
 	## rider, if it is in view.
 	tower_behind : TowerSighting.Viewpoint, World.SegmentIndex -> Try(TowerSighting, [BehindCamera])
 	tower_behind = |view, index| {
-		behind = index.segment_in(view.road.route)
+		behind = index.segment_in(view.road.route_segments)
 		tower_if_ahead(
 			view,
 			{
@@ -200,8 +200,8 @@ expect TowerSighting.beacon_period.to_f64() == 120.0
 expect TowerSighting.beacon_stagger.to_f64() == 37.0
 expect TowerSighting.max_visible_towers == 16
 
-route : List(World.Segment)
-route = [
+route_segments : List(World.Segment)
+route_segments = [
 	World.route_segment(0),
 	World.route_segment(1),
 	World.route_segment(2),
@@ -220,8 +220,8 @@ origin = {
 short_view : U32 -> TowerSighting.Viewpoint
 short_view = |rider_number| {
 	road: {
-		route: [0, 1, 2, 3, 4].map(World.route_segment),
-		chain: [rider_number, rider_number + 1, rider_number + 2].map(World.SegmentIndex.number),
+		route_segments: [0, 1, 2, 3, 4].map(World.route_segment),
+		chain_indices: [rider_number, rider_number + 1, rider_number + 2].map(World.SegmentIndex.number),
 		vantage: origin,
 	},
 	clock: Clock.start,
@@ -234,7 +234,7 @@ expect TowerSighting.towers_along_chain(from_origin).len() == 3
 expect TowerSighting.segment_towers(from_origin, Chain.Position.first).len() == 1
 expect TowerSighting.mid_tower(from_origin, Chain.Position.first).is_err()
 expect TowerSighting.towers_in_view(from_origin).len() == 3
-expect route.all(|seg| !has_mid_tower(seg))
+expect route_segments.all(|seg| !has_mid_tower(seg))
 
 ## Whether a segment has a tower halfway along.
 has_mid_tower : World.Segment -> Bool
@@ -260,8 +260,8 @@ expect first_tower_on(1).across.to_metres() == 20.0
 long_view : TowerSighting.Viewpoint
 long_view = {
 	road: {
-		route: [World.route_segment(6)],
-		chain: [0].map(World.SegmentIndex.number),
+		route_segments: [World.route_segment(6)],
+		chain_indices: [0].map(World.SegmentIndex.number),
 		vantage: origin,
 	},
 	clock: Clock.start,
@@ -311,29 +311,29 @@ expect
 
 ## How bright the towers on the long segment are at `clock`: its end tower,
 ## then its mid tower.
-long_brightness_at : Clock -> List(F64)
-long_brightness_at = |clock|
+long_brightnesses_at : Clock -> List(F64)
+long_brightnesses_at = |clock|
 	TowerSighting.towers_along_chain({
 		..long_view,
 		clock,
 	}).map(|tower| tower.beacon_brightness.to_f64())
 
 expect {
-	got = long_brightness_at(Clock.start).concat(long_brightness_at(Clock.at_step(60)))
+	got = long_brightnesses_at(Clock.start).concat(long_brightnesses_at(Clock.at_step(60)))
 	wanted_list = [0.0, 1.0, 1.0, 0.0]
 	closeness = got.map2(wanted_list, |one, wanted| (one - wanted).abs() <= 0.0000001)
 	got.len() == wanted_list.len() and closeness.all(|is_close| is_close)
 }
 
 ## How bright the first three segments' towers are at `clock`.
-spread_at : Clock -> List(F64)
-spread_at = |clock| {
+brightnesses_at : Clock -> List(F64)
+brightnesses_at = |clock| {
 	towers = TowerSighting.towers_along_chain({ ..from_origin, clock })
 	towers.map(|tower| tower.beacon_brightness.to_f64())
 }
 
 expect
-	spread_at(Clock.start).concat(spread_at(Clock.at_step(30)))
+	brightnesses_at(Clock.start).concat(brightnesses_at(Clock.at_step(30)))
 		== [0, 37, 74, 30, 67, 104].map(brightness_at)
 
 brightness_at : U32 -> F64
@@ -349,7 +349,7 @@ expect TowerSighting.towers_along_chain({
 }).len() == 0
 expect TowerSighting.towers_along_chain({
 	..from_origin,
-	road: { ..from_origin.road, chain: [] },
+	road: { ..from_origin.road, chain_indices: [] },
 }).len() == 0
 keys : List(DepthSort.DepthKey)
 keys = TowerSighting.depth_keys(TowerSighting.towers_along_chain(from_origin))

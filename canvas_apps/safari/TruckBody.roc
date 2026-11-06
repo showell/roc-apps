@@ -30,7 +30,7 @@ TruckBody :: [].{
 	draw = |truck|
 		DepthSort.sort_by(faces(truck), |face| face.depth)
 			.join_map(
-				|face| TruckShape.polygon(truck, { color: face.color, corners: face.corners }),
+				|face| TruckShape.polygon_shapes(truck, { color: face.color, corners: face.corners }),
 			)
 
 	## A face of `color` with these corners.

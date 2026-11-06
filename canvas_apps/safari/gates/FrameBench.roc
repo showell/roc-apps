@@ -17,14 +17,14 @@ main! = |args| {
 			Ok(text) => I64.from_str(text) ?? crash "FrameBench: steps must be a whole number"
 			Err(OutOfBounds) => 60
 		}
-	route = World.segments
+	route_segments = World.segments
 	var $instant = RideInstant.initial
 	var $shapes = 0
 	for _ in 0..<steps {
-		$shapes = $shapes + RideInstant.shapes(route, $instant).len()
-		$instant = RideInstant.next_or_restart(route, $instant)
+		$shapes = $shapes + RideInstant.shapes(route_segments, $instant).len()
+		$instant = RideInstant.next_or_restart(route_segments, $instant)
 	}
-	finished = if Rider.is_finished($instant.rider, route) {
+	finished = if Rider.is_finished($instant.rider, route_segments) {
 		"yes"
 	} else {
 		"no"

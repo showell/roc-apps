@@ -22,7 +22,7 @@ CatSighting := {
 	## The cats in view of a rider at `speed`, the nearest segment's first.
 	cats_in_view : Chain.Viewpoint, Speed -> List(CatSighting)
 	cats_in_view = |view, speed| {
-		positions = Chain.Position.all_in(view.road.chain)
+		positions = Chain.Position.positions_in(view.road.chain_indices)
 		positions.keep_oks(|position| segment_cat(view, { position, speed }))
 	}
 
@@ -34,7 +34,7 @@ CatSighting := {
 		speed : Speed,
 	} -> Try(CatSighting, [NoCat, OutOfView])
 	segment_cat = |view, { position, speed }|
-		match position.index_in(view.road.chain).segment_in(view.road.route).crossing {
+		match position.index_in(view.road.chain_indices).segment_in(view.road.route_segments).crossing {
 			CatCrosses(crossing) =>
 				cat_in_view(view, { position, crossing, speed })
 			BirdHere(_) | QuietRoad => Err(NoCat)

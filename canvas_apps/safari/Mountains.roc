@@ -158,7 +158,7 @@ Mountains :: [].{
 				silhouette(sight, { height_at: west_range, color: color_at_dusk(rock_west, dusk) }),
 				silhouette(sight, { height_at: north_range, color: color_at_dusk(rock, dusk) }),
 			],
-			snow(sight, snow_color(dusk)),
+			snow_shapes(sight, snow_color(dusk)),
 			[silhouette(sight, { height_at: ground_base, color: land })],
 		].join()
 	}
@@ -255,8 +255,8 @@ silhouette = |sight, { height_at, color }| {
 
 ## The north range's snow: along its crest where the range is above the
 ## snowline, then back along the snowline.
-snow : Mountains.Sight, I64 -> List(Shapes.Shape)
-snow = |sight, color| {
+snow_shapes : Mountains.Sight, I64 -> List(Shapes.Shape)
+snow_shapes = |sight, color| {
 	snowy = columns({ from: Pixels.zero, to: Screen.width }).keep_if(
 		|x| {
 			bearing = Mountains.bearing_at(sight, x)

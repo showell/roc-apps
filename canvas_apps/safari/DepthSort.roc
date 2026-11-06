@@ -142,8 +142,8 @@ expect
 		]
 
 ## A pair of trees at these depths, as the sort orders them.
-sorted_pair : { first : F64, second : F64 } -> List(DepthSort.Subject)
-sorted_pair = |{ first, second }| {
+sorted_subjects : { first : F64, second : F64 } -> List(DepthSort.Subject)
+sorted_subjects = |{ first, second }| {
 	keys = [
 		{ forward: Distance.metres(first), subject: Tree(0) },
 		{ forward: Distance.metres(second), subject: Tree(1) },
@@ -153,7 +153,7 @@ sorted_pair = |{ first, second }| {
 
 # At each depth the first pair is within the tie's slack and keeps its order;
 # the second is not, and its farther tree goes first.
-expect sorted_pair({ first: 100.0, second: 100.000004 }) == [Tree(0), Tree(1)]
-expect sorted_pair({ first: 100.0, second: 100.00001 }) == [Tree(1), Tree(0)]
-expect sorted_pair({ first: 0.5, second: 0.50000004 }) == [Tree(0), Tree(1)]
-expect sorted_pair({ first: 0.5, second: 0.5000001 }) == [Tree(1), Tree(0)]
+expect sorted_subjects({ first: 100.0, second: 100.000004 }) == [Tree(0), Tree(1)]
+expect sorted_subjects({ first: 100.0, second: 100.00001 }) == [Tree(1), Tree(0)]
+expect sorted_subjects({ first: 0.5, second: 0.50000004 }) == [Tree(0), Tree(1)]
+expect sorted_subjects({ first: 0.5, second: 0.5000001 }) == [Tree(1), Tree(0)]

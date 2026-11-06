@@ -10,8 +10,8 @@ Pond :: [].{
 	PondPt : { along : Along, across : Across }
 	Duck : { at : Pond.PondPt, facing : Cutouts.Facing }
 
-	water_outline : List(Pond.PondPt)
-	water_outline = [
+	water_outline_points : List(Pond.PondPt)
+	water_outline_points = [
 		{ along: Along.metres(3.0), across: Across.metres(-4.0) },
 		{ along: Along.metres(3.0), across: Across.metres(-30.0) },
 		{ along: Along.metres(14.0), across: Across.metres(-33.0) },
@@ -24,8 +24,8 @@ Pond :: [].{
 	water_color : I64
 	water_color = 0x2F7E8C
 
-	bank : List(Pond.PondPt)
-	bank = [
+	bank_points : List(Pond.PondPt)
+	bank_points = [
 		{ along: Along.metres(29.0), across: Across.metres(-7.0) },
 		{ along: Along.metres(32.0), across: Across.metres(-17.0) },
 		{ along: Along.metres(28.0), across: Across.metres(-28.0) },
@@ -54,17 +54,17 @@ Pond :: [].{
 	]
 }
 
-expect Pond.water_outline.len() == 7
-expect Pond.bank.len() == 6
+expect Pond.water_outline_points.len() == 7
+expect Pond.bank_points.len() == 6
 expect Pond.ducks.len() == 6
 expect Pond.water_color == 0x2F7E8C
 expect Pond.bank_color == 0xC2B280
 expect Pond.duck_codepoint == 129414
 expect Pond.duck_height.to_metres() == 0.9
 
-expect Pond.water_outline.get(0) == Ok({ along: Along.metres(3.0), across: Across.metres(-4.0) })
-expect Pond.water_outline.get(4) == Ok({ along: Along.metres(32.0), across: Across.metres(-17.0) })
-expect Pond.bank.get(0) == Ok({ along: Along.metres(29.0), across: Across.metres(-7.0) })
+expect Pond.water_outline_points.get(0) == Ok({ along: Along.metres(3.0), across: Across.metres(-4.0) })
+expect Pond.water_outline_points.get(4) == Ok({ along: Along.metres(32.0), across: Across.metres(-17.0) })
+expect Pond.bank_points.get(0) == Ok({ along: Along.metres(29.0), across: Across.metres(-7.0) })
 
 is_on_water : Pond.Duck -> Bool
 is_on_water = |duck|

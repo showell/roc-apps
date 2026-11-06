@@ -22,14 +22,14 @@ TreeSighting := {
 	## the order it plants them.
 	trees_in_view : Chain.Viewpoint -> List(TreeSighting)
 	trees_in_view = |view| {
-		positions = Chain.Position.all_in(view.road.chain)
+		positions = Chain.Position.positions_in(view.road.chain_indices)
 		positions.join_map(|position| segment_sightings(view, position))
 	}
 
 	## The trees in view on the segment at `position` in the chain.
 	segment_sightings : Chain.Viewpoint, Chain.Position -> List(TreeSighting)
 	segment_sightings = |view, position| {
-		segment = position.index_in(view.road.chain).segment_in(view.road.route)
+		segment = position.index_in(view.road.chain_indices).segment_in(view.road.route_segments)
 		segment.trees.keep_oks(|tree| sighting_of(view, { position, tree }))
 	}
 

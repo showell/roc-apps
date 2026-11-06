@@ -30,7 +30,7 @@ BirdSighting := {
 	## The birds in view, the nearest segment's first.
 	birds_in_view : Chain.Viewpoint -> List(BirdSighting)
 	birds_in_view = |view| {
-		positions = Chain.Position.all_in(view.road.chain)
+		positions = Chain.Position.positions_in(view.road.chain_indices)
 		positions.keep_oks(|position| segment_bird(view, position))
 	}
 
@@ -47,7 +47,7 @@ BirdSighting := {
 ## and it is in view.
 segment_bird : Chain.Viewpoint, Chain.Position -> Try(BirdSighting, [NoBird, OutOfView])
 segment_bird = |view, position|
-	match position.index_in(view.road.chain).segment_in(view.road.route).crossing {
+	match position.index_in(view.road.chain_indices).segment_in(view.road.route_segments).crossing {
 		BirdHere(habit) => {
 			gap_to_segment = Chain.gap_to_segment(view.road, position)
 			gap_to_tree = gap_to_segment.plus(BirdFlight.start_along(habit).from_start())

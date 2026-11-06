@@ -23,8 +23,8 @@ Camera :: [].{
 		}
 	}
 
-	project_all : List(Geom.RaisedPoint), Pixels -> List(Screen.Point)
-	project_all = |points, cam_focal| points.map(|p| project(p, cam_focal))
+	projected_points : List(Geom.RaisedPoint), Pixels -> List(Screen.Point)
+	projected_points = |points, cam_focal| points.map(|p| project(p, cam_focal))
 }
 
 screen_point : Geom.RaisedPoint -> Screen.Point
@@ -111,7 +111,7 @@ expect Screen.height.to_f64() == 600.0
 expect Camera.eye_h.to_metres() == 1.2
 
 expect
-	Camera.project_all(
+	Camera.projected_points(
 		[
 			{
 				right: Distance.metres(0.0),
@@ -137,4 +137,4 @@ expect
 			Screen.point(480.0, -500.0),
 		]
 
-expect Camera.project_all([], Pixels.of(800.0)).len() == 0
+expect Camera.projected_points([], Pixels.of(800.0)).len() == 0

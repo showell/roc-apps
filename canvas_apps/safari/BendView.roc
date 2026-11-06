@@ -77,8 +77,8 @@ apex_after_turn : Angle.Turn -> Geom.RiderPoint
 apex_after_turn = |turn|
 	BendView.apex(
 		{
-			route: [],
-			chain: [],
+			route_segments: [],
+			chain_indices: [],
 			vantage: {
 				along: Along.metres(100.0),
 				across: Across.metres(1.0),
@@ -161,11 +161,11 @@ expect !is_in_chain(m_prev_right)
 expect !turns_right(m_prev_left)
 expect turns_right(m_prev_right)
 
-## A road along `chain`, the route's segments by number.
+## A road along `chain_indices`, the route's segments by number.
 road_along : List(U32) -> Chain.RoadView
-road_along = |chain| {
-	route: World.segments,
-	chain: chain.map(World.SegmentIndex.number),
+road_along = |chain_indices| {
+	route_segments: World.segments,
+	chain_indices: chain_indices.map(World.SegmentIndex.number),
 	vantage,
 }
 
@@ -173,13 +173,13 @@ expect
 	[
 		([0, 1], 0),
 		([3, 4], 3),
-	].all(|(chain, want)| Chain.rider_segment(road_along(chain)).to_i64() == want)
+	].all(|(chain_indices, want)| Chain.rider_segment(road_along(chain_indices)).to_i64() == want)
 
 ## The route's number of the segment behind the rider's, or -1 at the route's
 ## start.
 number_behind : List(U32) -> I64
-number_behind = |chain|
-	match Chain.segment_behind(road_along(chain)) {
+number_behind = |chain_indices|
+	match Chain.segment_behind(road_along(chain_indices)) {
 		Previous(index) => index.to_i64()
 		AtRouteStart => -1
 	}
@@ -193,7 +193,7 @@ expect
 
 at_d0 : Geom.RiderPoint
 at_d0 = Chain.rider_point_ahead(
-	{ route: [], chain: [], vantage },
+	{ route_segments: [], chain_indices: [], vantage },
 	{
 		position: Chain.Position.first,
 		along: Along.metres(50.0),
@@ -202,10 +202,10 @@ at_d0 = Chain.rider_point_ahead(
 )
 
 point_at_d1 : List(World.Segment) -> Geom.RiderPoint
-point_at_d1 = |route| Chain.rider_point_ahead(
+point_at_d1 = |route_segments| Chain.rider_point_ahead(
 	{
-		route,
-		chain: Chain.chain_ahead(route, World.SegmentIndex.first),
+		route_segments,
+		chain_indices: Chain.indices_ahead(route_segments, World.SegmentIndex.first),
 		vantage,
 	},
 	{
@@ -228,7 +228,7 @@ expect {
 ## The point 50 m along the segment at `place`, which is behind the rider.
 rider_point_behind : Chain.SegmentPlace -> Geom.RiderPoint
 rider_point_behind = |place| Chain.rider_point_at(
-	{ route: [], chain: [], vantage },
+	{ route_segments: [], chain_indices: [], vantage },
 	{
 		place,
 		along: Along.metres(50.0),

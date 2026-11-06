@@ -54,7 +54,7 @@ Scene := {
 		cats = CatSighting.cats_in_view(view, speed)
 		rails = RailSighting.rails_in_view(road)
 		rider_distance = World.distance_along_route(
-			road.route,
+			road.route_segments,
 			{ index: Chain.rider_segment(road), along: road.vantage.along },
 		)
 		truck_at = TruckSighting.truck_in_view({

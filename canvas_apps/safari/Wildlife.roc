@@ -98,8 +98,8 @@ expect Wildlife.baby_beyond.to_metres() == 14.0
 
 ## An animal and its baby at each of four bends, the first and third turning
 ## right and the second and fourth left.
-all_four : List(Scenery.Critter)
-all_four = [
+four_critters : List(Scenery.Critter)
+four_critters = [
 	Wildlife.bend_critters({
 		bend_life: Animal(Elephant),
 		bend_along: Along.metres(100.0),
@@ -127,7 +127,7 @@ all_four = [
 ].join()
 
 expect
-	all_four.map(|critter| critter.across.to_metres())
+	four_critters.map(|critter| critter.across.to_metres())
 		== [
 			-4.9,
 			0.0,
@@ -140,7 +140,7 @@ expect
 		]
 
 expect
-	all_four.map(|critter| critter.along.to_metres())
+	four_critters.map(|critter| critter.along.to_metres())
 		== [
 			100.0,
 			114.0,
@@ -153,7 +153,7 @@ expect
 		]
 
 expect
-	all_four.map(|critter| critter.height.to_metres())
+	four_critters.map(|critter| critter.height.to_metres())
 		== [
 			2.8,
 			1.4,
@@ -166,7 +166,7 @@ expect
 		]
 
 expect
-	all_four.map(|critter| critter.codepoint)
+	four_critters.map(|critter| critter.codepoint)
 		== [
 			128024,
 			128024,
@@ -179,7 +179,7 @@ expect
 		]
 
 expect
-	all_four.map(|critter| critter.facing)
+	four_critters.map(|critter| critter.facing)
 		== [
 			FacesRight,
 			FacesRight,

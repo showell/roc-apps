@@ -15,13 +15,13 @@ ScanlineFill :: [].{
 
 	## A polygon, as scene coordinates x0, y0, x1, y1, ..., filled by the
 	## nonzero rule.
-	fill_polygon : List(U32),
+	polygon_pixels : List(U32),
 	{
 		roll : ScreenRoll,
 		pts : List(F64),
 		fill : Brush.Fill,
 	} -> List(U32)
-	fill_polygon = |pixels, { roll, pts, fill }| {
+	polygon_pixels = |pixels, { roll, pts, fill }| {
 		corners = pts.chunks_of(2).map(
 			|pair|
 				match pair {
@@ -41,7 +41,7 @@ ScanlineFill :: [].{
 				var $px = pixels
 				for row in rows.start.until(rows.end) {
 					edge_crossings = row_edge_crossings(edges, PixelGrid.pixel_center(row))
-					$px = fill_row($px, { roll, fill, row, edge_crossings })
+					$px = row_pixels($px, { roll, fill, row, edge_crossings })
 				}
 				$px
 			}
@@ -51,14 +51,14 @@ ScanlineFill :: [].{
 	}
 
 	## A disc of one colour: the pixels whose centres are strictly inside.
-	fill_disc : List(U32),
+	disc_pixels : List(U32),
 	{
 		roll : ScreenRoll,
 		center : ScreenRoll.ScenePoint,
 		radius : F64,
 		color : Brush.Rgba,
 	} -> List(U32)
-	fill_disc = |pixels, { roll, center, radius, color }| {
+	disc_pixels = |pixels, { roll, center, radius, color }| {
 		on_screen = roll.to_screen(center)
 		rows = PixelGrid.pixels_between({
 			from: on_screen.y - radius,
@@ -107,7 +107,7 @@ WindingWalk : { winding : I64, spans : List(RowSpan) }
 ## holds its upper end and not its lower.
 row_edge_crossings : List(Edge), F64 -> List(EdgeCrossing)
 row_edge_crossings = |edges, y|
-	edges.join_map(|edge| edge_crossing(edge, y)).sort_with(
+	edges.join_map(|edge| edge_crossings(edge, y)).sort_with(
 		|a, b|
 			if a.x < b.x {
 				Before
@@ -119,8 +119,8 @@ row_edge_crossings = |edges, y|
 	)
 
 ## Where the row at `y` crosses this one edge, if it does.
-edge_crossing : Edge, F64 -> List(EdgeCrossing)
-edge_crossing = |edge, y|
+edge_crossings : Edge, F64 -> List(EdgeCrossing)
+edge_crossings = |edge, y|
 	if edge.from.y <= y and y < edge.to.y {
 		[{ x: edge_x_at(edge, y), direction: Down }]
 	} else if edge.to.y <= y and y < edge.from.y {
@@ -136,14 +136,14 @@ edge_x_at = |{ from, to }, y| from.x + (y - from.y) * (to.x - from.x) / (to.y - 
 
 ## One row of a polygon: the spans between its edge crossings where the
 ## winding is not zero.
-fill_row : List(U32),
+row_pixels : List(U32),
 {
 	roll : ScreenRoll,
 	fill : Brush.Fill,
 	row : PixelGrid.Coordinate,
 	edge_crossings : List(EdgeCrossing),
 } -> List(U32)
-fill_row = |pixels, { roll, fill, row, edge_crossings }| {
+row_pixels = |pixels, { roll, fill, row, edge_crossings }| {
 	var $px = pixels
 	for row_span in inside_spans(edge_crossings) {
 		$px = paint_span(
@@ -209,7 +209,7 @@ paint_span = |pixels, { roll, fill, row, from, to }| {
 			}
 			Skip => crash "ScanlineFill.paint_span: no caller fills with a Skip brush"
 		}
-		$px = PixelGrid.blend($px, { at, color })
+		$px = PixelGrid.blended_pixels($px, { at, color })
 	}
 	$px
 }

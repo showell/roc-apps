@@ -134,8 +134,8 @@ Gaze :: [].{
 	## This rider with the eyes moved on a step: the gaze, and the look depth it
 	## leaves.
 	next_rider_gaze : RiderState, List(World.Segment) -> RiderState
-	next_rider_gaze = |state, route| {
-		seg = state.segment_index.segment_in(route)
+	next_rider_gaze = |state, route_segments| {
+		seg = state.segment_index.segment_in(route_segments)
 		gaze_yaw = next_gaze_yaw(state, desired_gaze(state, seg))
 		{
 			..state,

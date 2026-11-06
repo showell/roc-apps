@@ -30,7 +30,7 @@ SceneDraw :: [].{
 	## The scene's things, painted far to near.
 	draw : Scene, Chain.Viewpoint -> List(Shapes.Shape)
 	draw = |scene, view|
-		scene.order.join_map(|depth_key| draw_subject(scene, { view, depth_key }))
+		scene.order.join_map(|depth_key| subject_shapes(scene, { view, depth_key }))
 
 	## How many of `trees` are nearer than `forward`.
 	nearer_tree_count : List(TreeSighting), Distance -> U64
@@ -38,12 +38,12 @@ SceneDraw :: [].{
 
 	## A tree, told how many of `trees` are nearer, which is all it needs of
 	## the others.
-	draw_tree : TreeSighting,
+	tree_shapes : TreeSighting,
 	{
 		trees : List(TreeSighting),
 		cam_focal : Pixels,
 	} -> List(Shapes.Shape)
-	draw_tree = |tree, { trees, cam_focal }|
+	tree_shapes = |tree, { trees, cam_focal }|
 		TreeDraw.draw(
 			{ tree, nearer_trees: SceneDraw.nearer_tree_count(trees, tree.forward) },
 			cam_focal,
@@ -79,8 +79,8 @@ SceneDraw :: [].{
 	}
 
 	## A tower, its beacon as bright as its sighting says.
-	draw_tower : Chain.Viewpoint, TowerSighting -> List(Shapes.Shape)
-	draw_tower = |view, tower|
+	tower_shapes : Chain.Viewpoint, TowerSighting -> List(Shapes.Shape)
+	tower_shapes = |view, tower|
 		Tower.draw({
 			footprint: SceneDraw.tower_footprint(view, tower),
 			center: Chain.rider_point_at(
@@ -97,21 +97,21 @@ SceneDraw :: [].{
 }
 
 ## One thing in the depth order, looked up in its kind's list and drawn.
-draw_subject : Scene,
+subject_shapes : Scene,
 {
 	view : Chain.Viewpoint,
 	depth_key : DepthSort.DepthKey,
 } -> List(Shapes.Shape)
-draw_subject = |scene, { view, depth_key }| {
+subject_shapes = |scene, { view, depth_key }| {
 	cam_focal = view.cam_focal
 	match depth_key.subject {
 		Tree(place) =>
-			SceneDraw.draw_tree(thing_at(scene.trees, place), { trees: scene.trees, cam_focal })
-		Tower(place) => SceneDraw.draw_tower(view, thing_at(scene.towers, place))
+			SceneDraw.tree_shapes(thing_at(scene.trees, place), { trees: scene.trees, cam_focal })
+		Tower(place) => SceneDraw.tower_shapes(view, thing_at(scene.towers, place))
 		Rail(place) => GuardRail.draw(thing_at(scene.rails, place), cam_focal)
 		Cutout(place) => StillDraw.draw(thing_at(scene.cutouts, place), cam_focal)
 		Cat(place) => CatDraw.draw(thing_at(scene.cats, place), cam_focal)
-		Truck => draw_truck(view, scene.truck)
+		Truck => truck_shapes(view, scene.truck)
 		Bird(place) => BirdDraw.draw(thing_at(scene.birds, place), cam_focal)
 	}
 }
@@ -124,8 +124,8 @@ thing_at = |things, place|
 
 ## The truck, where its sighting found it and with the lights its sighting
 ## gives it.
-draw_truck : Chain.Viewpoint, TruckSighting -> List(Shapes.Shape)
-draw_truck = |view, truck_at|
+truck_shapes : Chain.Viewpoint, TruckSighting -> List(Shapes.Shape)
+truck_shapes = |view, truck_at|
 	match truck_at {
 		Ahead(truck) =>
 			TruckDraw.draw({
@@ -165,8 +165,8 @@ expect SceneDraw.nearer_tree_count(tied_trees, Distance.metres(19.9)) == 0
 start_view : Chain.Viewpoint
 start_view = {
 	road: {
-		route: [0, 1, 2].map(World.route_segment),
-		chain: [0, 1, 2].map(World.SegmentIndex.number),
+		route_segments: [0, 1, 2].map(World.route_segment),
+		chain_indices: [0, 1, 2].map(World.SegmentIndex.number),
 		vantage: {
 			along: Along.metres(0.0),
 			across: Across.metres(0.0),
@@ -198,16 +198,16 @@ expect {
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 }
 
-expect SceneDraw.draw_tower(start_view, tower_along(200.0)).len() > 0
-expect SceneDraw.draw_tower(start_view, tower_along(1000.0)).len() > 0
-expect SceneDraw.draw_tower(start_view, tower_along(-100.0)).len() == 0
+expect SceneDraw.tower_shapes(start_view, tower_along(200.0)).len() > 0
+expect SceneDraw.tower_shapes(start_view, tower_along(1000.0)).len() > 0
+expect SceneDraw.tower_shapes(start_view, tower_along(-100.0)).len() == 0
 
-tree_cluster : List(TreeSighting)
-tree_cluster = [10.0, 11.0, 12.0, 13.0, 14.0].map(tree_at)
+cluster_sightings : List(TreeSighting)
+cluster_sightings = [10.0, 11.0, 12.0, 13.0, 14.0].map(tree_at)
 
-clustered_tree : F64 -> List(Shapes.Shape)
-clustered_tree = |forward|
-	SceneDraw.draw_tree(tree_at(forward), { trees: tree_cluster, cam_focal: Pixels.of(500.0) })
+cluster_shapes : F64 -> List(Shapes.Shape)
+cluster_shapes = |forward|
+	SceneDraw.tree_shapes(tree_at(forward), { trees: cluster_sightings, cam_focal: Pixels.of(500.0) })
 
 second_shape_points : List(Shapes.Shape) -> U64
 second_shape_points = |shapes|
@@ -217,13 +217,13 @@ second_shape_points = |shapes|
 	}
 
 # A near tree's tiers are cones, in more detail than a far tree's triangles.
-expect clustered_tree(10.0).len() > 0
-expect clustered_tree(14.0).len() > 0
-expect second_shape_points(clustered_tree(10.0)) > second_shape_points(clustered_tree(14.0))
-expect second_shape_points(clustered_tree(14.0)) >= 6
+expect cluster_shapes(10.0).len() > 0
+expect cluster_shapes(14.0).len() > 0
+expect second_shape_points(cluster_shapes(10.0)) > second_shape_points(cluster_shapes(14.0))
+expect second_shape_points(cluster_shapes(14.0)) >= 6
 
-route : List(World.Segment)
-route = [
+route_segments : List(World.Segment)
+route_segments = [
 	World.route_segment(0),
 	World.route_segment(1),
 	World.route_segment(2),
@@ -250,8 +250,8 @@ up_road = {
 view_from : Geom.Vantage, Pixels -> Chain.Viewpoint
 view_from = |vantage, cam_focal| {
 	road: {
-		route,
-		chain: [0, 1, 2].map(World.SegmentIndex.number),
+		route_segments,
+		chain_indices: [0, 1, 2].map(World.SegmentIndex.number),
 		vantage,
 	},
 	cam_focal,
@@ -305,13 +305,13 @@ expect
 		},
 	)
 
-first_segment : List(TreeSighting)
-first_segment = TreeSighting.segment_sightings(from_origin, Chain.Position.first)
+first_sightings : List(TreeSighting)
+first_sightings = TreeSighting.segment_sightings(from_origin, Chain.Position.first)
 
 ## The first segment's tree at `i`, in planting order.
 planted_tree : U64 -> TreeSighting
 planted_tree = |i|
-	first_segment.get(i) ?? crash "SceneDraw: the first segment has 28 trees in view"
+	first_sightings.get(i) ?? crash "SceneDraw: the first segment has 28 trees in view"
 
 expect
 	[
@@ -326,7 +326,7 @@ expect planted_tree(0).conifer == Conifer.BigGreen
 expect planted_tree(2).conifer == Conifer.SmallGreen
 
 keys : List(DepthSort.DepthKey)
-keys = TreeSighting.depth_keys(first_segment)
+keys = TreeSighting.depth_keys(first_sightings)
 
 ## The depth key at `i`.
 key_at : U64 -> DepthSort.DepthKey
@@ -352,7 +352,7 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 expect
-	route.map(|seg| seg.length.to_metres())
+	route_segments.map(|seg| seg.length.to_metres())
 		== [500.0, 320.0, 400.0]
 
 ## What a truck `lead` metres ahead of a rider at the start of the chain is
@@ -360,8 +360,8 @@ expect
 truck_view : Geom.Vantage, F64 -> TruckSighting.Viewpoint
 truck_view = |vantage, lead| {
 	road: {
-		route,
-		chain: [0, 1, 2].map(World.SegmentIndex.number),
+		route_segments,
+		chain_indices: [0, 1, 2].map(World.SegmentIndex.number),
 		vantage,
 	},
 	lead: Distance.metres(lead),

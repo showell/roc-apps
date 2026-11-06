@@ -2,7 +2,7 @@
 ## or a column covers, where a pixel's centre is, and where a pixel sits in
 ## the list. A pixel belongs to a shape when its centre is inside the shape.
 ##
-## `blend` writes in place. Its fallbacks `crash` rather than name the list,
+## `blended_pixels` writes in place. Its fallbacks `crash` rather than name the list,
 ## which would copy the whole list on every store (docs/roc-notes.md, "Speed
 ## and copying").
 import lib.Brush
@@ -78,8 +78,8 @@ PixelGrid :: [].{
 	pixel_index = |{ row, column, width }| row.to_u64() * width.to_u64() + column.to_u64()
 
 	## `color` laid over the pixel at `at`.
-	blend : List(U32), { at : U64, color : Brush.Rgba } -> List(U32)
-	blend = |pixels, { at, color }| {
+	blended_pixels : List(U32), { at : U64, color : Brush.Rgba } -> List(U32)
+	blended_pixels = |pixels, { at, color }| {
 		pixel = pixels.get(at) ?? crash "PixelGrid.blend: a pixel off the grid"
 		new_pixel = PixelColor.blended_pixel(pixel, color)
 		pixels.set(at, new_pixel) ?? crash "PixelGrid.blend: a pixel off the grid"

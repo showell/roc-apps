@@ -1,5 +1,5 @@
 ## The ride's world: the route, a line of road segments, each built once from
-## its entry in `route`. A segment holds its scenery (trees, cows, pigs, a cat
+## its entry in `route_segments`. A segment holds its scenery (trees, cows, pigs, a cat
 ## by a tree), how it turns into the next, where the rider commits to that
 ## turn, and what lives at its end.
 import Across
@@ -50,10 +50,10 @@ World :: [].{
 		count_before : World.SegmentIndex -> U64
 		count_before = |World.SegmentIndex.(n)| n.to_u64()
 
-		## The segment of `route` at this index.
+		## The segment of `route_segments` at this index.
 		segment_in : World.SegmentIndex, List(World.Segment) -> World.Segment
-		segment_in = |index, route|
-			route.get(index.count_before())
+		segment_in = |index, route_segments|
+			route_segments.get(index.count_before())
 				?? crash "World.SegmentIndex.segment_in: the route has no segment there"
 
 		is_eq : _
@@ -320,7 +320,7 @@ World :: [].{
 	## the first: a float sum's rounding depends on its order, and another
 	## order can move a pixel.
 	route_length : List(World.Segment) -> Distance
-	route_length = |route| route.fold_rev(Distance.zero, |segment, sum| segment.length.plus(sum))
+	route_length = |route_segments| route_segments.fold_rev(Distance.zero, |segment, sum| segment.length.plus(sum))
 
 	## How far along the route the point at `along` on the segment at `index`
 	## is.
@@ -329,14 +329,14 @@ World :: [].{
 		index : World.SegmentIndex,
 		along : Along,
 	} -> Distance
-	distance_along_route = |route, { index, along }|
-		route_length(route.take_first(index.count_before())).plus(along.from_start())
+	distance_along_route = |route_segments, { index, along }|
+		route_length(route_segments.take_first(index.count_before())).plus(along.from_start())
 }
 
 ## The segment at `index` of the route, built from its plan.
 built_segment : World.SegmentPlan, World.SegmentIndex -> World.Segment
 built_segment = |plan, index| {
-	trees = Trees.plant({ scheme: plan.scheme, length: plan.length })
+	trees = Trees.plant_trees({ scheme: plan.scheme, length: plan.length })
 	pig_interest = Pigs.interest_of({
 		presence: plan.pigs,
 		pig_segments_so_far: World.pig_segments_through(index),
@@ -345,7 +345,7 @@ built_segment = |plan, index| {
 	{
 		length: plan.length,
 		trees,
-		cows: Cows.herd(plan.bull),
+		cows: Cows.herd_cows(plan.bull),
 		pigs: Pigs.pigs_along({ interest: pig_interest, length: plan.length }),
 		pig_interest,
 		exit_turn: plan.turn,

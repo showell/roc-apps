@@ -49,23 +49,23 @@ GuardRail :: [].{
 	half_post : Distance
 	half_post = rail_post_width.divided_by(2.0)
 
-	## The rail along `path`: the bars, then the posts.
+	## The rail along `path_points`: the bars, then the posts.
 	quads_along : List(Geom.RiderPoint) -> List(GuardRail.RailQuad)
-	quads_along = |path| GuardRail.bars(path).concat(GuardRail.posts(path))
+	quads_along = |path_points| GuardRail.bars(path_points).concat(GuardRail.posts(path_points))
 
-	## A stretch of bar between each two neighbouring points of `path`.
+	## A stretch of bar between each two neighbouring points of `path_points`.
 	bars : List(Geom.RiderPoint) -> List(GuardRail.RailQuad)
-	bars = |path| path.map2(path.drop_first(1), |from, to| bar({ from, to }))
+	bars = |path_points| path_points.map2(path_points.drop_first(1), |from, to| bar({ from, to }))
 
-	## A post at each point of `path`, turned to face along the path from
+	## A post at each point of `path_points`, turned to face along the path from
 	## the point before it to the point after it. A post at an end of the
 	## path takes its own point in place of the one it lacks.
 	posts : List(Geom.RiderPoint) -> List(GuardRail.RailQuad)
-	posts = |path| {
-		before = path.take_first(1).concat(path.drop_last(1))
-		after = path.drop_first(1).concat(path.take_last(1))
+	posts = |path_points| {
+		before = path_points.take_first(1).concat(path_points.drop_last(1))
+		after = path_points.drop_first(1).concat(path_points.take_last(1))
 		before.map3(
-			path,
+			path_points,
 			after,
 			|previous, at, next| post(at, { previous, next }),
 		)
@@ -75,11 +75,11 @@ GuardRail :: [].{
 	## the camera draws nothing.
 	draw : GuardRail.RailQuad, Pixels -> List(Shapes.Shape)
 	draw = |quad, cam_focal| {
-		in_front = Geom.clip_near(quad.corners)
+		in_front = Geom.near_points(quad.corners)
 		if in_front.is_empty() {
 			[]
 		} else {
-			[Polygon.flat_polygon(quad.color, Camera.project_all(in_front, cam_focal))]
+			[Polygon.flat_polygon(quad.color, Camera.projected_points(in_front, cam_focal))]
 		}
 	}
 }
@@ -154,33 +154,33 @@ expect GuardRail.rail_post_metal == 0x9AA0A8
 expect GuardRail.rail_runout == 10
 
 first_post : List(Geom.RiderPoint) -> GuardRail.RailQuad
-first_post = |route| GuardRail.posts(route).first() ?? crash "a route of two points has posts"
+first_post = |route_points| GuardRail.posts(route_points).first() ?? crash "a route of two points has posts"
 
 corner_at : GuardRail.RailQuad, U64 -> Geom.RaisedPoint
 corner_at = |quad, i| quad.corners.get(i) ?? crash "a quad has four corners"
 
-straight_route : List(Geom.RiderPoint)
-straight_route = [
+straight_points : List(Geom.RiderPoint)
+straight_points = [
 	{ right: Distance.metres(0.0), forward: Distance.metres(10.0) },
 	{ right: Distance.metres(0.0), forward: Distance.metres(20.0) },
 	{ right: Distance.metres(0.0), forward: Distance.metres(30.0) },
 ]
 
-straight_rail : List(GuardRail.RailQuad)
-straight_rail = GuardRail.quads_along(straight_route)
+straight_quads : List(GuardRail.RailQuad)
+straight_quads = GuardRail.quads_along(straight_points)
 
 first_bar : GuardRail.RailQuad
-first_bar = straight_rail.first() ?? crash "a straight route has a rail"
+first_bar = straight_quads.first() ?? crash "a straight route has a rail"
 
-expect straight_rail.len() == 5
-expect GuardRail.bars(straight_route).len() == 2
-expect GuardRail.posts(straight_route).len() == 3
-expect straight_rail.all(|quad| quad.corners.len() == 4)
+expect straight_quads.len() == 5
+expect GuardRail.bars(straight_points).len() == 2
+expect GuardRail.posts(straight_points).len() == 3
+expect straight_quads.all(|quad| quad.corners.len() == 4)
 
 expect
-	straight_rail.map(|quad| quad.color)
+	straight_quads.map(|quad| quad.color)
 		== [0xC2C7CF, 0xC2C7CF, 0x9AA0A8, 0x9AA0A8, 0x9AA0A8]
-expect straight_rail.map(|quad| quad.forward.to_metres()) == [15.0, 25.0, 10.0, 20.0, 30.0]
+expect straight_quads.map(|quad| quad.forward.to_metres()) == [15.0, 25.0, 10.0, 20.0, 30.0]
 
 # The first bar runs from one post to the next, between the bar's two heights.
 expect first_bar.corners.map(|corner| corner.forward.to_metres()) == [10.0, 20.0, 20.0, 10.0]
@@ -188,12 +188,12 @@ expect first_bar.corners.map(|corner| corner.height.to_metres()) == [0.45, 0.45,
 
 # A post is square to the path, and stands from the ground to the bar's top.
 expect
-	first_post(straight_route).corners.map(|corner| corner.forward.to_metres())
+	first_post(straight_points).corners.map(|corner| corner.forward.to_metres())
 		== [9.99, 10.01, 10.01, 9.99]
-expect corner_at(first_post(straight_route), 0).height.to_metres() == 0.0
-expect corner_at(first_post(straight_route), 2).height.to_metres() == 0.55
-expect corner_at(first_post(straight_route), 0).right.to_metres() == 0.0
-expect corner_at(first_post(straight_route), 1).right.to_metres() == 0.0
+expect corner_at(first_post(straight_points), 0).height.to_metres() == 0.0
+expect corner_at(first_post(straight_points), 2).height.to_metres() == 0.55
+expect corner_at(first_post(straight_points), 0).right.to_metres() == 0.0
+expect corner_at(first_post(straight_points), 1).right.to_metres() == 0.0
 
 diagonal_post : GuardRail.RailQuad
 diagonal_post = first_post([
@@ -206,17 +206,17 @@ expect corner_at(diagonal_post, 1).right.to_metres() == 0.006
 expect corner_at(diagonal_post, 0).forward.to_metres() == 9.992
 expect corner_at(diagonal_post, 1).forward.to_metres() == 10.008
 
-doubled_route : List(Geom.RiderPoint)
-doubled_route = [
+doubled_points : List(Geom.RiderPoint)
+doubled_points = [
 	{ right: Distance.metres(0.0), forward: Distance.metres(10.0) },
 	{ right: Distance.metres(0.0), forward: Distance.metres(10.0) },
 ]
 
 doubled_post : GuardRail.RailQuad
-doubled_post = first_post(doubled_route)
+doubled_post = first_post(doubled_points)
 
 # A path that goes nowhere keeps its posts, each with no width.
-expect GuardRail.quads_along(doubled_route).len() == 3
+expect GuardRail.quads_along(doubled_points).len() == 3
 expect corner_at(doubled_post, 0).right.to_metres() == 0.0
 expect corner_at(doubled_post, 1).right.to_metres() == 0.0
 expect corner_at(doubled_post, 0).forward.to_metres() == 10.0

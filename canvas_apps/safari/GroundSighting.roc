@@ -40,10 +40,10 @@ GroundSighting :: [].{
 	## turn, then the bend from the segment behind.
 	patches_in_view : Chain.RoadView -> List(Ground.Patch)
 	patches_in_view = |road| {
-		positions = Chain.Position.all_in(road.chain)
-		ahead = positions.join_map(|position| segment_ground(road, position))
+		positions = Chain.Position.positions_in(road.chain_indices)
+		ahead = positions.join_map(|position| ground_patches(road, position))
 		match Chain.segment_behind(road) {
-			Previous(segment_behind) => ahead.concat(ground_behind(road, segment_behind))
+			Previous(segment_behind) => ahead.concat(patches_behind(road, segment_behind))
 			AtRouteStart => ahead
 		}
 	}
@@ -59,8 +59,8 @@ GroundSighting :: [].{
 	}
 
 	## The road along the segment at `position` in the chain, chunk by chunk.
-	segment_road : Chain.RoadView, Chain.Position -> List(Ground.Patch)
-	segment_road = |road, position| {
+	road_patches : Chain.RoadView, Chain.Position -> List(Ground.Patch)
+	road_patches = |road, position| {
 		segment_length = segment_in_chain(road, position).length
 		chunk_count = GroundSighting.chunks_along(segment_length)
 		List.from_iter(U32.until(0, chunk_count)).map(
@@ -97,51 +97,51 @@ road_patch = |corners| { corners, color: GroundSighting.road_color }
 ## The segment at `position` in the chain.
 segment_in_chain : Chain.RoadView, Chain.Position -> World.Segment
 segment_in_chain = |road, position|
-	position.index_in(road.chain).segment_in(road.route)
+	position.index_in(road.chain_indices).segment_in(road.route_segments)
 
 ## The ground along the segment at `position` in the chain: its road, the
 ## bend into the next segment if the chain goes on, and its pond if it
 ## ends at one.
-segment_ground : Chain.RoadView, Chain.Position -> List(Ground.Patch)
-segment_ground = |road, position| {
+ground_patches : Chain.RoadView, Chain.Position -> List(Ground.Patch)
+ground_patches = |road, position| {
 	segment = segment_in_chain(road, position)
 	place = InChain(position)
 	bend =
-		if position.is_last_in(road.chain) {
+		if position.is_last_in(road.chain_indices) {
 			[]
 		} else {
-			bend_ground(
+			bend_patches(
 				road,
 				BendView.of_segment(segment, { before: place, after: InChain(position.next()) }),
 			)
 		}
 	[
-		GroundSighting.segment_road(road, position),
+		GroundSighting.road_patches(road, position),
 		bend,
-		pond_ground(road, { segment, place }),
+		pond_patches(road, { segment, place }),
 	].join()
 }
 
 ## The bend into the rider's segment from the segment at `index`, and the
 ## pond that segment ends at, if it has one.
-ground_behind : Chain.RoadView, World.SegmentIndex -> List(Ground.Patch)
-ground_behind = |road, index| {
-	segment = index.segment_in(road.route)
+patches_behind : Chain.RoadView, World.SegmentIndex -> List(Ground.Patch)
+patches_behind = |road, index| {
+	segment = index.segment_in(road.route_segments)
 	before = Chain.place_behind(segment)
 	after = InChain(Chain.Position.first)
-	bend_ground(
+	bend_patches(
 		road,
 		BendView.of_segment(segment, { before, after }),
-	).concat(pond_ground(road, { segment, place: before }))
+	).concat(pond_patches(road, { segment, place: before }))
 }
 
 ## A bend's paving: the road just before it, then the corner it cuts.
-bend_ground : Chain.RoadView, BendView -> List(Ground.Patch)
-bend_ground = |road, bend| [road_patch(lead_in(road, bend)), road_patch(bend_corner(road, bend))]
+bend_patches : Chain.RoadView, BendView -> List(Ground.Patch)
+bend_patches = |road, bend| [road_patch(lead_points(road, bend)), road_patch(bend_corners(road, bend))]
 
 ## The last `lead_in_length` of the road before a bend.
-lead_in : Chain.RoadView, BendView -> List(Geom.RiderPoint)
-lead_in = |road, bend| {
+lead_points : Chain.RoadView, BendView -> List(Geom.RiderPoint)
+lead_points = |road, bend| {
 	corner = |along, across| Chain.rider_point_at(road, { place: bend.before, along, across })
 	end = Along.at(bend.length_before)
 	start = Along.at(bend.length_before.minus(GroundSighting.lead_in_length))
@@ -156,8 +156,8 @@ lead_in = |road, bend| {
 ## The corner a bend cuts: from the inner edge where the segment before
 ## ends, to its outer edge there, out to where the two outer edges meet,
 ## and back to the outer edge where the segment after starts.
-bend_corner : Chain.RoadView, BendView -> List(Geom.RiderPoint)
-bend_corner = |road, bend| {
+bend_corners : Chain.RoadView, BendView -> List(Geom.RiderPoint)
+bend_corners = |road, bend| {
 	inner_edge = if bend.turn.is_right() {
 		Scenery.right_edge
 	} else {
@@ -189,12 +189,12 @@ bend_corner = |road, bend| {
 
 ## The pond past the end of `segment`, which lies at `place`: its water, then
 ## its bank. A segment that ends at no pond has none.
-pond_ground : Chain.RoadView,
+pond_patches : Chain.RoadView,
 {
 	segment : World.Segment,
 	place : Chain.SegmentPlace,
 } -> List(Ground.Patch)
-pond_ground = |road, { segment, place }|
+pond_patches = |road, { segment, place }|
 	if Scenery.is_pond(segment.bend_life) {
 		on_map = |outline|
 			outline.map(
@@ -208,8 +208,8 @@ pond_ground = |road, { segment, place }|
 				),
 			)
 		[
-			{ corners: on_map(Pond.water_outline), color: Pond.water_color },
-			{ corners: on_map(Pond.bank), color: Pond.bank_color },
+			{ corners: on_map(Pond.water_outline_points), color: Pond.water_color },
+			{ corners: on_map(Pond.bank_points), color: Pond.bank_color },
 		]
 	} else {
 		[]

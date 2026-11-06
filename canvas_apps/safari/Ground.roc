@@ -26,11 +26,11 @@ Ground :: [].{
 	## the camera draws nothing.
 	draw : Ground.Patch, Pixels -> List(Shapes.Shape)
 	draw = |patch, cam_focal| {
-		in_front = Geom.clip_near(patch.corners.map(Ground.ground_point))
+		in_front = Geom.near_points(patch.corners.map(Ground.ground_point))
 		if in_front.is_empty() {
 			[]
 		} else {
-			[Polygon.flat_polygon(patch.color, Camera.project_all(in_front, cam_focal))]
+			[Polygon.flat_polygon(patch.color, Camera.projected_points(in_front, cam_focal))]
 		}
 	}
 }
@@ -61,8 +61,8 @@ expect
 patch_shapes : List(Geom.RiderPoint) -> List(Shapes.Shape)
 patch_shapes = |corners| Ground.draw({ corners, color: 0x2F7E8C }, Pixels.of(685.5110432362151))
 
-patch_ahead : List(Geom.RiderPoint)
-patch_ahead = [
+patch_corners_ahead : List(Geom.RiderPoint)
+patch_corners_ahead = [
 	{ right: Distance.metres(-5.0), forward: Distance.metres(10.0) },
 	{ right: Distance.metres(5.0), forward: Distance.metres(10.0) },
 	{ right: Distance.metres(5.0), forward: Distance.metres(20.0) },
@@ -79,7 +79,7 @@ corners_ahead = |count|
 		},
 	)
 
-expect patch_shapes(patch_ahead).len() == 1
+expect patch_shapes(patch_corners_ahead).len() == 1
 expect patch_shapes(corners_ahead(8)).len() == 1
 expect patch_shapes(corners_ahead(9)).len() == 1
 
@@ -93,7 +93,7 @@ expect
 		== 0
 
 expect {
-	match patch_shapes(patch_ahead) {
+	match patch_shapes(patch_corners_ahead) {
 		[Poly(polygon)] => polygon.fill == Flat(Brush.opaque(0x2F7E8C)) and polygon.pts.len() == 8
 		_ => False
 	}

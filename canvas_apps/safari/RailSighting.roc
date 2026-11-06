@@ -18,7 +18,7 @@ RailSighting :: [].{
 	## the bend from the segment behind.
 	rails_in_view : Chain.RoadView -> List(GuardRail.RailQuad)
 	rails_in_view = |road| {
-		bends_ahead = Chain.Position.all_in(road.chain).drop_last(1)
+		bends_ahead = Chain.Position.positions_in(road.chain_indices).drop_last(1)
 		ahead = bends_ahead.join_map(|position| rails_at(road, bend_after(road, position)))
 		match Chain.segment_behind(road) {
 			Previous(segment_behind) => ahead.concat(rails_behind(road, segment_behind))
@@ -65,8 +65,8 @@ RailSighting :: [].{
 
 	## A leg of rail from `from` to `to`: a point about every metre, the
 	## last at `to`, and none at `from`, which ends the leg before it.
-	rail_leg : { from : Geom.RiderPoint, to : Geom.RiderPoint } -> List(Geom.RiderPoint)
-	rail_leg = |{ from, to }| {
+	leg_points : { from : Geom.RiderPoint, to : Geom.RiderPoint } -> List(Geom.RiderPoint)
+	leg_points = |{ from, to }| {
 		rightward = to.right.minus(from.right).to_metres()
 		forward = to.forward.minus(from.forward).to_metres()
 		distance = (rightward * rightward + forward * forward).sqrt()
@@ -77,13 +77,13 @@ RailSighting :: [].{
 	## The rail along the last `rail_runout` metres of a segment `length`
 	## long, which lies at `place`, at `across`: a point a
 	## metre, ending at the segment's end.
-	run_up : Chain.RoadView,
+	runup_points : Chain.RoadView,
 	{
 		place : Chain.SegmentPlace,
 		length : Distance,
 		across : Across,
 	} -> List(Geom.RiderPoint)
-	run_up = |road, { place, length, across }|
+	runup_points = |road, { place, length, across }|
 		List.from_iter(U32.to(0, GuardRail.rail_runout)).map(
 			|metres_in| {
 				metres_left = Distance.metres((GuardRail.rail_runout - metres_in).to_f64())
@@ -100,12 +100,12 @@ RailSighting :: [].{
 
 	## The rail along the first `rail_runout` metres of a segment at `place`,
 	## at `across`: a point a metre, the first a metre in.
-	run_out : Chain.RoadView,
+	run_out_points : Chain.RoadView,
 	{
 		place : Chain.SegmentPlace,
 		across : Across,
 	} -> List(Geom.RiderPoint)
-	run_out = |road, { place, across }|
+	run_out_points = |road, { place, across }|
 		List.from_iter(U32.to(1, GuardRail.rail_runout)).map(
 			|metres_in| Chain.rider_point_at(
 				road,
@@ -118,27 +118,27 @@ RailSighting :: [].{
 bend_after : Chain.RoadView, Chain.Position -> BendView
 bend_after = |road, position|
 	BendView.of_segment(
-		position.index_in(road.chain).segment_in(road.route),
+		position.index_in(road.chain_indices).segment_in(road.route_segments),
 		{ before: InChain(position), after: InChain(position.next()) },
 	)
 
 ## The rails at the bend into the rider's segment from the segment at `index`.
 rails_behind : Chain.RoadView, World.SegmentIndex -> List(GuardRail.RailQuad)
 rails_behind = |road, index| {
-	segment = index.segment_in(road.route)
+	segment = index.segment_in(road.route_segments)
 	before = Chain.place_behind(segment)
 	after = InChain(Chain.Position.first)
 	rails_at(road, BendView.of_segment(segment, { before, after }))
 }
 
 rails_at : Chain.RoadView, BendView -> List(GuardRail.RailQuad)
-rails_at = |road, bend| GuardRail.quads_along(rail_path(road, bend))
+rails_at = |road, bend| GuardRail.quads_along(rail_points(road, bend))
 
 ## The path of the rail at a bend, along the road's outer edge: up to the
 ## bend, out to where the two outer edges meet, back to the next segment,
 ## and along it.
-rail_path : Chain.RoadView, BendView -> List(Geom.RiderPoint)
-rail_path = |road, bend| {
+rail_points : Chain.RoadView, BendView -> List(Geom.RiderPoint)
+rail_points = |road, bend| {
 	outer_edge = BendView.outer_edge(bend.turn)
 	end_before = Chain.rider_point_at(
 		road,
@@ -158,7 +158,7 @@ rail_path = |road, bend| {
 	)
 	apex = BendView.apex(road, bend)
 	[
-		RailSighting.run_up(
+		RailSighting.runup_points(
 			road,
 			{
 				place: bend.before,
@@ -166,9 +166,9 @@ rail_path = |road, bend| {
 				across: outer_edge,
 			},
 		),
-		RailSighting.rail_leg({ from: end_before, to: apex }),
-		RailSighting.rail_leg({ from: apex, to: start_after }),
-		RailSighting.run_out(road, { place: bend.after, across: outer_edge }),
+		RailSighting.leg_points({ from: end_before, to: apex }),
+		RailSighting.leg_points({ from: apex, to: start_after }),
+		RailSighting.run_out_points(road, { place: bend.after, across: outer_edge }),
 	].join()
 }
 
@@ -192,32 +192,32 @@ origin_pt = { right: Distance.metres(0.0), forward: Distance.metres(0.0) }
 point_at : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
 point_at = |points, i| points.get(i) ?? crash "RailSighting: an index past the leg's end"
 
-straight : List(Geom.RiderPoint)
-straight = RailSighting.rail_leg({
+straight_points : List(Geom.RiderPoint)
+straight_points = RailSighting.leg_points({
 	from: origin_pt,
 	to: { right: Distance.metres(0.0), forward: Distance.metres(10.0) },
 })
 
-expect straight.len() == 10
-expect point_at(straight, 0).forward.to_metres() == 1.0
-expect point_at(straight, 4).forward.to_metres() == 5.0
-expect point_at(straight, 9).forward.to_metres() == 10.0
-expect point_at(straight, 0).right.to_metres() == 0.0
-expect point_at(straight, 9).right.to_metres() == 0.0
+expect straight_points.len() == 10
+expect point_at(straight_points, 0).forward.to_metres() == 1.0
+expect point_at(straight_points, 4).forward.to_metres() == 5.0
+expect point_at(straight_points, 9).forward.to_metres() == 10.0
+expect point_at(straight_points, 0).right.to_metres() == 0.0
+expect point_at(straight_points, 9).right.to_metres() == 0.0
 
-diagonal : List(Geom.RiderPoint)
-diagonal = RailSighting.rail_leg({
+diagonal_points : List(Geom.RiderPoint)
+diagonal_points = RailSighting.leg_points({
 	from: origin_pt,
 	to: { right: Distance.metres(30.0), forward: Distance.metres(40.0) },
 })
 
-expect diagonal.len() == 50
-expect point_at(diagonal, 49).right.to_metres() == 30.0
-expect point_at(diagonal, 49).forward.to_metres() == 40.0
-expect point_at(diagonal, 24).right.to_metres() == 15.0
-expect point_at(diagonal, 24).forward.to_metres() == 20.0
+expect diagonal_points.len() == 50
+expect point_at(diagonal_points, 49).right.to_metres() == 30.0
+expect point_at(diagonal_points, 49).forward.to_metres() == 40.0
+expect point_at(diagonal_points, 24).right.to_metres() == 15.0
+expect point_at(diagonal_points, 24).forward.to_metres() == 20.0
 expect {
-	in_place = RailSighting.rail_leg({
+	in_place = RailSighting.leg_points({
 		from: { right: Distance.metres(3.0), forward: Distance.metres(4.0) },
 		to: { right: Distance.metres(3.0), forward: Distance.metres(4.0) },
 	})

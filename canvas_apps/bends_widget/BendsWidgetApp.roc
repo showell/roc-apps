@@ -79,8 +79,8 @@ two_segments = |turn|
 ## The road as seen from the first segment, looking along it.
 road_with : Angle.Turn -> Chain.RoadView
 road_with = |turn| {
-	route: two_segments(turn),
-	chain: [World.SegmentIndex.number(0), World.SegmentIndex.number(1)],
+	route_segments: two_segments(turn),
+	chain_indices: [World.SegmentIndex.number(0), World.SegmentIndex.number(1)],
 	vantage: {
 		along: Along.at(segment_length.minus(rider_before_bend)),
 		across: Across.middle,
@@ -93,7 +93,7 @@ road_with = |turn| {
 bend_of : Chain.RoadView -> BendView
 bend_of = |road|
 	BendView.of_segment(
-		Chain.Position.first.index_in(road.chain).segment_in(road.route),
+		Chain.Position.first.index_in(road.chain_indices).segment_in(road.route_segments),
 		{ before: InChain(Chain.Position.first), after: InChain(Chain.Position.first.next()) },
 	)
 

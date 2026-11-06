@@ -63,11 +63,11 @@ Pigs :: [].{
 
 	## Where the pigs of the front and back rows are along the road, from the
 	## pigs' place.
-	pig_row_front : List(Distance)
-	pig_row_front = [-6.0, -2.0, 2.0, 6.0].map(Distance.metres)
+	front_row_offsets : List(Distance)
+	front_row_offsets = [-6.0, -2.0, 2.0, 6.0].map(Distance.metres)
 
-	pig_row_back : List(Distance)
-	pig_row_back = [
+	back_row_offsets : List(Distance)
+	back_row_offsets = [
 		-10.0,
 		-6.0,
 		-2.0,
@@ -104,14 +104,14 @@ Pigs :: [].{
 	pigs_along : { interest : Pigs.PigInterest, length : Distance } -> List(Scenery.Critter)
 	pigs_along = |{ interest, length }|
 		match interest {
-			Distracting(_) => big_herd(length)
+			Distracting(_) => big_herd_pigs(length)
 			Unnoticed => two_rows(length)
 			NoPigs => []
 		}
 
 	## The big herd on a segment `length` long, row by row from the road.
-	big_herd : Distance -> List(Scenery.Critter)
-	big_herd = |length| {
+	big_herd_pigs : Distance -> List(Scenery.Critter)
+	big_herd_pigs = |length| {
 		herd_along = pigs_place(length)
 		columns = List.from_iter(I64.until(0, big_herd_columns))
 		List.from_iter(I64.until(0, big_herd_rows))
@@ -125,8 +125,8 @@ Pigs :: [].{
 		edge = Scenery.road_half_width.plus(Scenery.herd_road_offset)
 		front_across = Across.right_of_middle(edge)
 		back_across = Across.right_of_middle(edge.plus(pig_back_row_offset))
-		pig_row(herd_along, { across: front_across, offsets: pig_row_front })
-			.concat(pig_row(herd_along, { across: back_across, offsets: pig_row_back }))
+		row_pigs(herd_along, { across: front_across, offsets: front_row_offsets })
+			.concat(row_pigs(herd_along, { across: back_across, offsets: back_row_offsets }))
 	}
 }
 
@@ -160,8 +160,8 @@ herd_pig = |herd_along, { row, column }| {
 	})
 }
 
-pig_row : Along, { across : Across, offsets : List(Distance) } -> List(Scenery.Critter)
-pig_row = |herd_along, { across, offsets }|
+row_pigs : Along, { across : Across, offsets : List(Distance) } -> List(Scenery.Critter)
+row_pigs = |herd_along, { across, offsets }|
 	offsets.map(|offset| pig({ along: herd_along.plus(offset), across }))
 
 ## How a 1000 m segment's pigs strike the rider.
@@ -205,16 +205,16 @@ expect Pigs.big_herd_columns == 7
 expect Pigs.big_herd_rows == 7
 expect eye_catcher.facing == FacesLeft
 
-whole_herd : List(Scenery.Critter)
-whole_herd = Pigs.big_herd(Distance.metres(1000.0))
+all_pigs : List(Scenery.Critter)
+all_pigs = Pigs.big_herd_pigs(Distance.metres(1000.0))
 
 herd_pig_at : U64 -> Scenery.Critter
-herd_pig_at = |i| whole_herd.get(i) ?? crash "Pigs: the big herd has 49 pigs"
+herd_pig_at = |i| all_pigs.get(i) ?? crash "Pigs: the big herd has 49 pigs"
 
-expect whole_herd.len() == 49
+expect all_pigs.len() == 49
 expect herd_pig_at(2) == eye_catcher
-expect whole_herd.count_if(|herd_member| herd_member == eye_catcher) == 1
-expect Pigs.big_herd(Distance.metres(500.0)).len() == 49
+expect all_pigs.count_if(|herd_member| herd_member == eye_catcher) == 1
+expect Pigs.big_herd_pigs(Distance.metres(500.0)).len() == 49
 expect herd_pig_at(0).codepoint == 128022
 expect herd_pig_at(48).codepoint == 128022
 
@@ -262,8 +262,8 @@ both_rows : List(Scenery.Critter)
 both_rows = Pigs.two_rows(Distance.metres(1000.0))
 
 expect both_rows.len() == 10
-expect Pigs.pig_row_front.len() == 4
-expect Pigs.pig_row_back.len() == 6
+expect Pigs.front_row_offsets.len() == 4
+expect Pigs.back_row_offsets.len() == 6
 
 expect
 	both_rows.map(|critter| critter.along.to_metres())
@@ -295,8 +295,8 @@ expect
 			18.0,
 		]
 
-expect Pigs.pig_row_front.map(Distance.to_metres) == [-6.0, -2.0, 2.0, 6.0]
-expect Pigs.pig_row_back.map(Distance.to_metres) == [-10.0, -6.0, -2.0, 2.0, 6.0, 10.0]
+expect Pigs.front_row_offsets.map(Distance.to_metres) == [-6.0, -2.0, 2.0, 6.0]
+expect Pigs.back_row_offsets.map(Distance.to_metres) == [-10.0, -6.0, -2.0, 2.0, 6.0, 10.0]
 expect Pigs.pig_back_row_offset.to_metres() == 6.0
 expect Pigs.pig_herd_first_column.to_metres() == -6.0
 expect Pigs.pig_column_spacing.to_metres() == 4.0

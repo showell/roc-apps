@@ -61,10 +61,10 @@ TruckSighting := [
 ## past.
 truck_from : TruckSighting.Viewpoint, { along : Along, position : Chain.Position } -> TruckSighting
 truck_from = |view, { along, position }|
-	if position.is_past_end_of(view.road.chain) {
+	if position.is_past_end_of(view.road.chain_indices) {
 		NoTruck
 	} else {
-		segment = position.index_in(view.road.chain).segment_in(view.road.route)
+		segment = position.index_in(view.road.chain_indices).segment_in(view.road.route_segments)
 		if along > Along.at(segment.length) {
 			truck_from(view, { along: along.minus(segment.length), position: position.next() })
 		} else {

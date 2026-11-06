@@ -367,7 +367,7 @@ polygon_outline = |anchor, polygon| {
 large_shapes : StillsWidgetApp.Model -> List(Shapes.Shape)
 large_shapes = |{ large_still, outlines }| {
 	anchor = large_anchor(large_still.polygons)
-	drawn = StillDraw.draw_still(anchor, large_still.polygons)
+	drawn = StillDraw.still_shapes(anchor, large_still.polygons)
 	match outlines {
 		Hidden => drawn
 		Shown => {
@@ -398,7 +398,7 @@ picture = |model|
 ## One small still with its pose's name under it.
 cell_shapes : StillCell -> List(Shapes.Shape)
 cell_shapes = |{ still, area, anchor }|
-	StillDraw.draw_still(anchor, still.polygons).append(
+	StillDraw.still_shapes(anchor, still.polygons).append(
 		Text({
 			text: still.name,
 			x: area.left + area.width / 2.0,
@@ -513,7 +513,7 @@ expect
 		(Diving, "Diving"),
 	].all(|(pose, name)| bird_pose_name(pose) == name)
 expect cat_still(Frozen).polygons.len() == CatStills.pose_polygons(Frozen).len()
-expect point_count(bird_still(Diving).polygons) == point_count(BirdStills.diving)
+expect point_count(bird_still(Diving).polygons) == point_count(BirdStills.diving_polygons)
 
 # The rows fill the space between the side margins, end to end.
 expect first_cell.area.left == ScrubWidget.side_margin
@@ -737,7 +737,7 @@ expect read_out(bird_still(Diving)) == ["Diving", "6 polygons", "22 points"]
 expect
 	cells.all(
 		|{ still, anchor, .. }| {
-			drawn = StillDraw.draw_still(anchor, still.polygons)
+			drawn = StillDraw.still_shapes(anchor, still.polygons)
 			drawn.len() == still.polygons.len()
 		},
 	)

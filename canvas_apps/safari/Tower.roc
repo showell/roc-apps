@@ -223,8 +223,8 @@ Tower :: [].{
 	## A rod between two points in the rider's view. A rod with one end
 	## behind the near plane is cut there; one with both ends behind it is
 	## not drawn.
-	rod : Tower.RodView, { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> List(Shapes.Shape)
-	rod = |view, { from, to }|
+	rod_shapes : Tower.RodView, { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> List(Shapes.Shape)
+	rod_shapes = |view, { from, to }|
 		match (sight_of(from), sight_of(to)) {
 			(InView, InView) => [rod_on_screen(view, { from, to })]
 			(InView, BehindCamera) => [rod_on_screen(view, { from, to: cut_at_near({ from, to }) })]
@@ -281,16 +281,16 @@ Tower :: [].{
 	## The four legs, from the footprint's corners up to the apex.
 	legs : Tower.TowerInView, Geom.RaisedPoint -> List(Shapes.Shape)
 	legs = |tower, apex| corners.join_map(
-		|corner| rod(
+		|corner| rod_shapes(
 			tower.view,
 			{ from: corner_at(tower, { corner, height_on_tower: tower.sunk }), to: apex },
 		),
 	)
 
 	## The ring of rods round the tower at height `h`.
-	ring : Tower.TowerInView, Distance -> List(Shapes.Shape)
-	ring = |tower, h| corners.join_map(
-		|corner| rod(
+	ring_shapes : Tower.TowerInView, Distance -> List(Shapes.Shape)
+	ring_shapes = |tower, h| corners.join_map(
+		|corner| rod_shapes(
 			tower.view,
 			{
 				from: corner_at(tower, { corner, height_on_tower: h }),
@@ -307,7 +307,7 @@ Tower :: [].{
 			if h <= tower.sunk {
 				[]
 			} else {
-				ring(tower, h)
+				ring_shapes(tower, h)
 			},
 	)
 
@@ -327,10 +327,10 @@ Tower :: [].{
 	## earth has partly hidden starts its braces at the horizon.
 	braces : Tower.TowerInView -> List(Shapes.Shape)
 	braces = |tower|
-		List.from_iter(I64.until(0, brace_storeys)).join_map(|storey| brace_storey(tower, storey))
+		List.from_iter(I64.until(0, brace_storeys)).join_map(|storey| storey_shapes(tower, storey))
 
-	brace_storey : Tower.TowerInView, I64 -> List(Shapes.Shape)
-	brace_storey = |tower, storey| {
+	storey_shapes : Tower.TowerInView, I64 -> List(Shapes.Shape)
+	storey_shapes = |tower, storey| {
 		storey_bottom = storey_height.times(storey.to_f64())
 		storey_top = storey_bottom.plus(storey_height)
 		if storey_top <= tower.sunk {
@@ -339,23 +339,23 @@ Tower :: [].{
 			hidden_height = storey_bottom.max(tower.sunk).minus(storey_bottom)
 			hidden_fraction = Fraction.of(hidden_height.ratio_to(storey_height))
 			corners.join_map(
-				|corner| brace_pair(tower, { corner, storey_bottom, storey_top, hidden_fraction }),
+				|corner| brace_shapes(tower, { corner, storey_bottom, storey_top, hidden_fraction }),
 			)
 		}
 	}
 
 	## The two braces crossing the face from `corner` to the next corner: one
 	## rising each way.
-	brace_pair : Tower.TowerInView,
+	brace_shapes : Tower.TowerInView,
 	{
 		corner : Tower.Corner,
 		storey_bottom : Distance,
 		storey_top : Distance,
 		hidden_fraction : Fraction,
 	} -> List(Shapes.Shape)
-	brace_pair = |tower, { corner, storey_bottom, storey_top, hidden_fraction }| {
+	brace_shapes = |tower, { corner, storey_bottom, storey_top, hidden_fraction }| {
 		next = next_corner(corner)
-		brace_up = rod(
+		brace_up = rod_shapes(
 			tower.view,
 			{
 				from: point_between({
@@ -366,7 +366,7 @@ Tower :: [].{
 				to: corner_at(tower, { corner: next, height_on_tower: storey_top }),
 			},
 		)
-		brace_down = rod(
+		brace_down = rod_shapes(
 			tower.view,
 			{
 				from: point_between({
@@ -382,12 +382,12 @@ Tower :: [].{
 
 	## The beacon on the apex, at its brightness; too dim or too small, it
 	## isn't drawn.
-	beacon : Tower.TowerInView,
+	beacon_shapes : Tower.TowerInView,
 	{
 		apex : Geom.RaisedPoint,
 		brightness : Fraction,
 	} -> List(Shapes.Shape)
-	beacon = |tower, { apex, brightness }| {
+	beacon_shapes = |tower, { apex, brightness }| {
 		apex_on_screen = Camera.project(apex, tower.view.cam_focal)
 		if brightness < Fraction.of(0.02) {
 			[]
@@ -400,7 +400,7 @@ Tower :: [].{
 			if radius < Pixels.of(0.5) {
 				[]
 			} else {
-				beacon_disc({
+				disc_shapes({
 					beacon_color,
 					beacon_center: apex_on_screen,
 					beacon_radius: radius,
@@ -434,7 +434,7 @@ Tower :: [].{
 				legs(tower, apex),
 				rings(tower),
 				braces(tower),
-				beacon(tower, { apex, brightness: beacon_brightness }),
+				beacon_shapes(tower, { apex, brightness: beacon_brightness }),
 			].join()
 		}
 	}
@@ -442,13 +442,13 @@ Tower :: [].{
 
 ## A beacon's disc, as a value: a list of one shape, seen through as far as
 ## `beacon_alpha` says.
-beacon_disc : {
+disc_shapes : {
 	beacon_color : I64,
 	beacon_center : Screen.Point,
 	beacon_radius : Pixels,
 	beacon_alpha : Fraction,
 } -> List(Shapes.Shape)
-beacon_disc = |{ beacon_color, beacon_center, beacon_radius, beacon_alpha }| {
+disc_shapes = |{ beacon_color, beacon_center, beacon_radius, beacon_alpha }| {
 	opaque = Brush.opaque(beacon_color)
 	[
 		Disc({
@@ -462,7 +462,7 @@ beacon_disc = |{ beacon_color, beacon_center, beacon_radius, beacon_alpha }| {
 }
 
 expect
-	beacon_disc({
+	disc_shapes({
 		beacon_color: 7,
 		beacon_center: Screen.point(1.0, 2.0),
 		beacon_radius: Pixels.of(3.0),
@@ -471,7 +471,7 @@ expect
 		== 1
 
 expect
-	beacon_disc({
+	disc_shapes({
 		beacon_color: 333,
 		beacon_center: Screen.point(10.0, 20.0),
 		beacon_radius: Pixels.of(30.0),
@@ -644,9 +644,9 @@ expect
 	Tower.rod_width_at({ forward: Distance.metres(50.0), cam_focal: Pixels.of(500.0) }).to_f64()
 		== 2.4
 
-rod_along_road : F64, F64 -> List(Shapes.Shape)
-rod_along_road = |start, end|
-	Tower.rod(
+rod_shapes_along_road : F64, F64 -> List(Shapes.Shape)
+rod_shapes_along_road = |start, end|
+	Tower.rod_shapes(
 		sample_rod_view,
 		{
 			from: {
@@ -664,7 +664,7 @@ rod_along_road = |start, end|
 
 # A rod is cut at the near plane, and one wholly behind it draws nothing.
 expect
-	Tower.rod(
+	Tower.rod_shapes(
 		sample_rod_view,
 		{
 			from: {
@@ -680,9 +680,9 @@ expect
 		},
 	).len()
 		== 1
-expect rod_along_road(0.0, 0.8).len() == 1
-expect rod_along_road(0.8, 0.0).len() == 1
-expect rod_along_road(0.0, 0.2).len() == 0
+expect rod_shapes_along_road(0.0, 0.8).len() == 1
+expect rod_shapes_along_road(0.8, 0.0).len() == 1
+expect rod_shapes_along_road(0.0, 0.2).len() == 0
 
 expect
 	Tower.cut_at_near({

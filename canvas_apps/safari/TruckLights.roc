@@ -18,22 +18,22 @@ TruckLights :: [].{
 	## The two headlight beams, each a little in from its side.
 	headlight_beams : TruckShape.TruckInView -> List(Shapes.Shape)
 	headlight_beams = |truck|
-		beam(truck, truck.box.left.plus(headlight_inset)).concat(
-			beam(truck, truck.box.right.minus(headlight_inset)),
+		beam_shapes(truck, truck.box.left.plus(headlight_inset)).concat(
+			beam_shapes(truck, truck.box.right.minus(headlight_inset)),
 		)
 
 	## The two brake lights, one in from each side of the trailer's back.
 	brake_lights : TruckShape.TruckInView -> List(Shapes.Shape)
 	brake_lights = |truck| {
 		box = truck.box
-		brake_light(
+		brake_shapes(
 			truck,
 			{
 				left: box.left.plus(brake_lamp_outer_edge),
 				right: box.left.plus(brake_lamp_inner_edge),
 			},
 		).concat(
-			brake_light(
+			brake_shapes(
 				truck,
 				{
 					left: box.right.minus(brake_lamp_inner_edge),
@@ -90,11 +90,11 @@ TruckLights :: [].{
 	## How far a brake light's glow reaches from `center`, the lamp's
 	## center.
 	glow_radius : List(Screen.Point), Screen.Point -> Pixels
-	glow_radius = |lamp, center| TruckLights.farthest_from(lamp, center).times(glow_reach)
+	glow_radius = |lamp_points, center| TruckLights.farthest_from(lamp_points, center).times(glow_reach)
 
 	## A circle round `center`, as a polygon of `glow_sides` corners.
-	glow_outline : { center : Screen.Point, outline_radius : Pixels } -> List(Screen.Point)
-	glow_outline = |{ center, outline_radius }|
+	outline_points : { center : Screen.Point, outline_radius : Pixels } -> List(Screen.Point)
+	outline_points = |{ center, outline_radius }|
 		TruckShape.circle_angles(TruckLights.glow_sides).map(
 			|angle| {
 				x: center.x.plus(outline_radius.times(angle.cos())),
@@ -167,8 +167,8 @@ glow_reach = 3.2
 
 ## The beam of the headlight at `across`, brightest at the lamp. A beam
 ## with a corner behind the camera is not drawn.
-beam : TruckShape.TruckInView, Across -> List(Shapes.Shape)
-beam = |truck, across| {
+beam_shapes : TruckShape.TruckInView, Across -> List(Shapes.Shape)
+beam_shapes = |truck, across| {
 	at_lamp = |height| TruckShape.point(truck, { along: truck.box.nose, across, height })
 	at_far_end = |height| TruckShape.point(
 		truck,
@@ -182,8 +182,8 @@ beam = |truck, across| {
 	if TruckLights.has_point_behind_camera(corners) {
 		[]
 	} else {
-		on_screen = Camera.project_all(corners, truck.view.cam_focal)
-		lamp = Camera.project(
+		on_screen = Camera.projected_points(corners, truck.view.cam_focal)
+		lamp_points = Camera.project(
 			TruckLights.midpoint({ from: lamp_bottom, to: lamp_top }),
 			truck.view.cam_focal,
 		)
@@ -192,8 +192,8 @@ beam = |truck, across| {
 			{
 				center_rgba: beam_core,
 				edge_rgba: beam_edge,
-				gradient_center: lamp,
-				gradient_radius: TruckLights.farthest_from(on_screen, lamp),
+				gradient_center: lamp_points,
+				gradient_radius: TruckLights.farthest_from(on_screen, lamp_points),
 			},
 		)
 		match beam_polygon {
@@ -205,10 +205,10 @@ beam = |truck, across| {
 
 ## A brake light on the back of the trailer, from `left` to `right` across
 ## it: its glow, then the lamp over the glow.
-brake_light : TruckShape.TruckInView, { left : Across, right : Across } -> List(Shapes.Shape)
-brake_light = |truck, { left, right }| {
+brake_shapes : TruckShape.TruckInView, { left : Across, right : Across } -> List(Shapes.Shape)
+brake_shapes = |truck, { left, right }| {
 	rear = truck.box.rear
-	lamp =
+	lamp_points =
 		[
 			{
 				along: rear,
@@ -231,21 +231,21 @@ brake_light = |truck, { left, right }| {
 				height: brake_lamp_top,
 			},
 		].map(|corner| TruckShape.point(truck, corner))
-	glow(truck, lamp).concat(TruckShape.polygon(truck, { color: brake_color, corners: lamp }))
+	glow_shapes(truck, lamp_points).concat(TruckShape.polygon_shapes(truck, { color: brake_color, corners: lamp_points }))
 }
 
 ## The glow round a brake lamp. A lamp with a corner behind the camera has
 ## no glow; the lamp itself is cut at the near plane like the body's faces.
-glow : TruckShape.TruckInView, List(Geom.RaisedPoint) -> List(Shapes.Shape)
-glow = |truck, lamp|
-	if TruckLights.has_point_behind_camera(lamp) {
+glow_shapes : TruckShape.TruckInView, List(Geom.RaisedPoint) -> List(Shapes.Shape)
+glow_shapes = |truck, lamp_points|
+	if TruckLights.has_point_behind_camera(lamp_points) {
 		[]
 	} else {
-		on_screen = Camera.project_all(lamp, truck.view.cam_focal)
+		on_screen = Camera.projected_points(lamp_points, truck.view.cam_focal)
 		center = TruckLights.center_of(on_screen)
 		radius = TruckLights.glow_radius(on_screen, center)
 		glow_polygon = Polygon.gradient_polygon(
-			TruckLights.glow_outline({ center, outline_radius: radius }),
+			TruckLights.outline_points({ center, outline_radius: radius }),
 			{
 				center_rgba: glow_core,
 				edge_rgba: glow_edge,
@@ -259,16 +259,16 @@ glow = |truck, lamp|
 		}
 	}
 
-sample_panel : List(Screen.Point)
-sample_panel = [
+panel_points : List(Screen.Point)
+panel_points = [
 	Screen.point(3.0, 4.0),
 	Screen.point(6.0, 8.0),
 	Screen.point(0.0, 0.0),
 	Screen.point(7.0, 4.0),
 ]
 
-sample_triangle : List(Screen.Point)
-sample_triangle = [
+triangle_points : List(Screen.Point)
+triangle_points = [
 	Screen.point(0.0, 0.0),
 	Screen.point(3.0, 0.0),
 	Screen.point(0.0, 6.0),
@@ -277,8 +277,8 @@ sample_triangle = [
 origin : Screen.Point
 origin = Screen.point(0.0, 0.0)
 
-expect TruckLights.center_of(sample_panel) == Screen.point(4.0, 4.0)
-expect TruckLights.center_of(sample_triangle) == Screen.point(1.0, 2.0)
+expect TruckLights.center_of(panel_points) == Screen.point(4.0, 4.0)
+expect TruckLights.center_of(triangle_points) == Screen.point(1.0, 2.0)
 expect
 	TruckLights.distance({ from: Screen.point(3.0, 4.0), to: Screen.point(0.0, 0.0) }).to_f64()
 		== 5.0
@@ -286,11 +286,11 @@ expect TruckLights.distance({ from: origin, to: Screen.point(3.0, 4.0) }).to_f64
 expect TruckLights.distance({ from: Screen.point(3.0, 4.0), to: origin }).to_f64() == 5.0
 expect TruckLights.distance({ from: origin, to: origin }).to_f64() == 0.0
 
-expect TruckLights.farthest_from(sample_panel, Screen.point(0.0, 0.0)).to_f64() == 10.0
-expect TruckLights.glow_radius(sample_panel, Screen.point(0.0, 0.0)).to_f64() == 32.0
+expect TruckLights.farthest_from(panel_points, Screen.point(0.0, 0.0)).to_f64() == 10.0
+expect TruckLights.glow_radius(panel_points, Screen.point(0.0, 0.0)).to_f64() == 32.0
 
 expect
-	TruckLights.glow_outline({
+	TruckLights.outline_points({
 		center: Screen.point(0.0, 0.0),
 		outline_radius: Pixels.of(10.0),
 	}).len()

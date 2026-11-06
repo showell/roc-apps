@@ -57,12 +57,12 @@ origin = {
 ## The first three segments, the rider at the start of the first.
 road : Chain.RoadView
 road = {
-	route: [
+	route_segments: [
 		World.route_segment(0),
 		World.route_segment(1),
 		World.route_segment(2),
 	],
-	chain: [0, 1, 2].map(World.SegmentIndex.number),
+	chain_indices: [0, 1, 2].map(World.SegmentIndex.number),
 	vantage: origin,
 }
 
@@ -136,8 +136,8 @@ birds_on_segment : World.Segment, { rider_along : F64, cam_focal : Pixels } -> L
 birds_on_segment = |segment, { rider_along, cam_focal }|
 	BirdSighting.birds_in_view({
 		road: {
-			route: [segment],
-			chain: [World.SegmentIndex.first],
+			route_segments: [segment],
+			chain_indices: [World.SegmentIndex.first],
 			vantage: { ..origin, along: Along.metres(rider_along) },
 		},
 		cam_focal,
@@ -151,11 +151,11 @@ bird_at = |rider_along|
 		?? crash "CrossModuleExpects: this rider sees a bird"
 
 ## How far off a bird is, across the road and up.
-place_of : BirdSighting -> List(F64)
-place_of = |bird| [bird.right.to_metres(), bird.forward.to_metres(), bird.lift.to_metres()]
+place_numbers : BirdSighting -> List(F64)
+place_numbers = |bird| [bird.right.to_metres(), bird.forward.to_metres(), bird.lift.to_metres()]
 
-expect place_of(bird_at(0.0)) == [-6.0, 100.0, left_top]
-expect place_of(bird_at(40.0)) == [-6.0, 60.0, left_top]
+expect place_numbers(bird_at(0.0)) == [-6.0, 100.0, left_top]
+expect place_numbers(bird_at(40.0)) == [-6.0, 60.0, left_top]
 
 # Halfway through its flight, with the rider 37.5 m from the tree it left.
 expect {
@@ -167,7 +167,7 @@ expect {
 	].all(|(got, want)| (got - want).abs() <= 0.000000001)
 }
 
-expect place_of(bird_at(85.0)) == [6.0, 45.0, far_top]
+expect place_numbers(bird_at(85.0)) == [6.0, 45.0, far_top]
 expect bird_at(40.0).pose == Perched
 expect bird_at(62.5).pose != Perched
 expect bird_at(85.0).pose == Perched
@@ -176,7 +176,7 @@ expect bird_at(85.0).pose == Perched
 # the rider is.
 expect {
 	stays = birds_on(left_trees, { rider_along: 62.5, cam_focal: Pixels.of(500.0) })
-	stays.join_map(place_of) == [-6.0, 37.5, left_top]
+	stays.join_map(place_numbers) == [-6.0, 37.5, left_top]
 }
 
 ## How many birds there are on `trees` for each rider and focal length.
@@ -202,8 +202,8 @@ expect
 two_segments : List(BirdSighting)
 two_segments = BirdSighting.birds_in_view({
 	road: {
-		route: [segment_of(left_trees), segment_of(left_trees)],
-		chain: [0, 1].map(World.SegmentIndex.number),
+		route_segments: [segment_of(left_trees), segment_of(left_trees)],
+		chain_indices: [0, 1].map(World.SegmentIndex.number),
 		vantage: {
 			along: Along.metres(0.0),
 			across: Across.metres(0.0),
@@ -243,8 +243,8 @@ cat_segments = [World.route_segment(0), cat_segment, World.route_segment(2)]
 cats_from_origin : Chain.Viewpoint
 cats_from_origin = {
 	road: {
-		route: cat_segments,
-		chain: [0, 1, 2].map(World.SegmentIndex.number),
+		route_segments: cat_segments,
+		chain_indices: [0, 1, 2].map(World.SegmentIndex.number),
 		vantage: origin,
 	},
 	cam_focal: Pixels.of(500.0),
@@ -253,10 +253,10 @@ cats_from_origin = {
 metre_a_step : Speed
 metre_a_step = Speed.metres_a_step(1.0)
 
-## The cats seen from the origin on a road of only `chain`.
+## The cats seen from the origin on a road of only `chain_indices`.
 cats_on_chain : List(World.SegmentIndex) -> List(CatSighting)
-cats_on_chain = |chain| CatSighting.cats_in_view(
-	{ ..cats_from_origin, road: { ..cats_from_origin.road, chain } },
+cats_on_chain = |chain_indices| CatSighting.cats_in_view(
+	{ ..cats_from_origin, road: { ..cats_from_origin.road, chain_indices } },
 	metre_a_step,
 )
 
@@ -298,8 +298,8 @@ expect
 	)
 
 ## The cats in view for a rider `along` metres into the first segment.
-riding : F64 -> List(CatSighting)
-riding = |along| CatSighting.cats_in_view(
+ride_sightings : F64 -> List(CatSighting)
+ride_sightings = |along| CatSighting.cats_in_view(
 	{
 		..cats_from_origin,
 		road: { ..cats_from_origin.road, vantage: { ..origin, along: Along.metres(along) } },
@@ -308,12 +308,12 @@ riding = |along| CatSighting.cats_in_view(
 )
 
 seen : List(CatSighting)
-seen = riding(300.0)
+seen = ride_sightings(300.0)
 
 ## The first cat in view for a rider `along` metres in.
 first_cat : F64 -> CatSighting
 first_cat = |along|
-	riding(along).first() ?? crash "CrossModuleExpects: the second segment's cat is in view"
+	ride_sightings(along).first() ?? crash "CrossModuleExpects: the second segment's cat is in view"
 
 expect seen.len() == 1
 expect cat_at(0).is_err()
@@ -327,10 +327,10 @@ expect
 		(first_cat(300.0).right.minus(first_cat(200.0).right).to_metres(), 0.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
-expect riding(0.0).len() == 0
-expect riding(200.0).len() == 1
-expect riding(500.0).len() == 1
-expect riding(600.0).len() == 0
+expect ride_sightings(0.0).len() == 0
+expect ride_sightings(200.0).len() == 1
+expect ride_sightings(500.0).len() == 1
+expect ride_sightings(600.0).len() == 0
 expect cats_on_chain([]).len() == 0
 expect cats_on_chain([World.SegmentIndex.first]).len() == 0
 
@@ -383,16 +383,16 @@ expect
 ## The first six segments, chained in order.
 six_segments : Chain.RoadView
 six_segments = {
-	route: [0, 1, 2, 3, 4, 5].map(World.route_segment),
-	chain: [0, 1, 2, 3, 4, 5].map(World.SegmentIndex.number),
+	route_segments: [0, 1, 2, 3, 4, 5].map(World.route_segment),
+	chain_indices: [0, 1, 2, 3, 4, 5].map(World.SegmentIndex.number),
 	vantage: origin,
 }
 
 ## The world's segment `index` alone.
 lone : U32 -> Chain.RoadView
 lone = |index| {
-	route: [World.route_segment(index)],
-	chain: [0].map(World.SegmentIndex.number),
+	route_segments: [World.route_segment(index)],
+	chain_indices: [0].map(World.SegmentIndex.number),
 	vantage: origin,
 }
 
@@ -448,7 +448,7 @@ count_from = |position|
 		)
 		.sum()
 
-expect CutoutSighting.sightings_ahead({ ..six_segments, chain: [] }).len() == 0
+expect CutoutSighting.sightings_ahead({ ..six_segments, chain_indices: [] }).len() == 0
 expect
 	CutoutSighting.sightings_ahead(lone(0)).len()
 		== CutoutSighting.sightings_at(lone(0), Chain.Position.first).len()
@@ -464,8 +464,8 @@ rail_point_at : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
 rail_point_at = |points, i|
 	points.get(i) ?? crash "CrossModuleExpects: an index past the rail's end"
 
-run_up_to_bend : List(Geom.RiderPoint)
-run_up_to_bend = RailSighting.run_up(
+runup_points_to_bend : List(Geom.RiderPoint)
+runup_points_to_bend = RailSighting.runup_points(
 	road,
 	{
 		place: InChain(Chain.Position.first),
@@ -474,15 +474,15 @@ run_up_to_bend = RailSighting.run_up(
 	},
 )
 
-expect RailSighting.run_out(
+expect RailSighting.run_out_points(
 	road,
 	{ place: InChain(Chain.Position.first), across: Across.metres(2.0) },
 ).len() == 10
-expect run_up_to_bend.len() == 11
+expect runup_points_to_bend.len() == 11
 expect
 	[
-		(rail_point_at(run_up_to_bend, 0).forward.to_metres(), 490.0),
-		(rail_point_at(run_up_to_bend, 10).forward.to_metres(), 500.0),
+		(rail_point_at(runup_points_to_bend, 0).forward.to_metres(), 490.0),
+		(rail_point_at(runup_points_to_bend, 10).forward.to_metres(), 500.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 # Scene, on the scene from the start of the route.
@@ -490,8 +490,8 @@ scene : Scene
 scene = Scene.scene_in_view(
 	{
 		road: {
-			route: World.segments,
-			chain: Chain.chain_ahead(World.segments, World.SegmentIndex.first),
+			route_segments: World.segments,
+			chain_indices: Chain.indices_ahead(World.segments, World.SegmentIndex.first),
 			vantage: origin,
 		},
 		cam_focal: Pixels.of(500.0),
@@ -545,8 +545,8 @@ patch_shapes : List(Ground.Patch) -> List(Shapes.Shape)
 patch_shapes = |patches| patches.join_map(|patch| Ground.draw(patch, Pixels.of(500.0)))
 
 ## Chunk `chunk_number` of the first segment's 20, which is 500 m long.
-chunk_of_first : U32 -> List(Geom.RiderPoint)
-chunk_of_first = |chunk_number| GroundSighting.chunk_corners(
+corners_of_chunk : U32 -> List(Geom.RiderPoint)
+corners_of_chunk = |chunk_number| GroundSighting.chunk_corners(
 	road,
 	{
 		position: Chain.Position.first,
@@ -559,51 +559,51 @@ chunk_of_first = |chunk_number| GroundSighting.chunk_corners(
 corner : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
 corner = |corners, i| corners.get(i) ?? crash "CrossModuleExpects: a chunk has four corners"
 
-first_chunk : List(Geom.RiderPoint)
-first_chunk = chunk_of_first(0)
+first_chunk_corners : List(Geom.RiderPoint)
+first_chunk_corners = corners_of_chunk(0)
 
-last_chunk : List(Geom.RiderPoint)
-last_chunk = chunk_of_first(19)
+last_chunk_corners : List(Geom.RiderPoint)
+last_chunk_corners = corners_of_chunk(19)
 
-expect first_chunk.len() == 4
-expect last_chunk.len() == 4
+expect first_chunk_corners.len() == 4
+expect last_chunk_corners.len() == 4
 expect
 	[
 		(0, -2.0),
 		(1, 2.0),
 		(2, 2.0),
 		(3, -2.0),
-	].all(|(i, want)| (corner(first_chunk, i).right.to_metres() - want).abs() <= 0.0001)
+	].all(|(i, want)| (corner(first_chunk_corners, i).right.to_metres() - want).abs() <= 0.0001)
 
 expect
 	[
-		(corner(first_chunk, 0).forward.to_metres(), 0.0),
-		(corner(first_chunk, 3).forward.to_metres(), 25.0),
-		(corner(last_chunk, 0).forward.to_metres(), 475.0),
-		(corner(last_chunk, 3).forward.to_metres(), 500.0),
+		(corner(first_chunk_corners, 0).forward.to_metres(), 0.0),
+		(corner(first_chunk_corners, 3).forward.to_metres(), 25.0),
+		(corner(last_chunk_corners, 0).forward.to_metres(), 475.0),
+		(corner(last_chunk_corners, 3).forward.to_metres(), 500.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 expect {
-	before = chunk_of_first(3)
-	after = chunk_of_first(4)
+	before = corners_of_chunk(3)
+	after = corners_of_chunk(4)
 	corner(before, 3).forward == corner(after, 0).forward
 		and corner(before, 2).forward == corner(after, 1).forward
 		and corner(before, 3).right == corner(after, 0).right
 }
 
-strip : List(Shapes.Shape)
-strip = patch_shapes(GroundSighting.segment_road(road, Chain.Position.first))
+strip_shapes : List(Shapes.Shape)
+strip_shapes = patch_shapes(GroundSighting.road_patches(road, Chain.Position.first))
 
-expect strip.len() > 0
-expect strip.len().to_u32_wrap() <= GroundSighting.chunks_along(Distance.metres(500.0))
+expect strip_shapes.len() > 0
+expect strip_shapes.len().to_u32_wrap() <= GroundSighting.chunks_along(Distance.metres(500.0))
 expect patch_shapes(
-	GroundSighting.segment_road(
+	GroundSighting.road_patches(
 		{ ..road, vantage: { ..origin, along: Along.metres(5000.0) } },
 		Chain.Position.first,
 	),
 ).len() == 0
 last_shape : Shapes.Shape
-last_shape = strip.last() ?? crash "CrossModuleExpects: the road draws"
+last_shape = strip_shapes.last() ?? crash "CrossModuleExpects: the road draws"
 
 expect flat_color_of(last_shape) == 0x34353C
 expect {

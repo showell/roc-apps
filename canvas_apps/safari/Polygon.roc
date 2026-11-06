@@ -160,8 +160,8 @@ Polygon :: [].{
 	}
 
 	## The flat list of numbers that lib.Shapes takes for a polygon's corners.
-	flatten_screen : List(Screen.Point) -> List(F64)
-	flatten_screen = |corners| {
+	flat_coordinates : List(Screen.Point) -> List(F64)
+	flat_coordinates = |corners| {
 		var $flat = List.with_capacity(2 * corners.len())
 		for corner in corners {
 			$flat = $flat.append(corner.x.to_f64()).append(corner.y.to_f64())
@@ -177,7 +177,7 @@ polygon_points = |maker, corners|
 	if corners.len() < 3 {
 		crash "${maker}: a polygon needs three corners"
 	} else {
-		Polygon.flatten_screen(corners)
+		Polygon.flat_coordinates(corners)
 	}
 
 ## A radial gradient smaller than this is too small to see.
@@ -306,8 +306,8 @@ radial_polygon = |corners, gradient_radius|
 		},
 	)
 
-expect Polygon.flatten_screen(three_corners) == triangle_points
-expect Polygon.flatten_screen([]) == []
+expect Polygon.flat_coordinates(three_corners) == triangle_points
+expect Polygon.flat_coordinates([]) == []
 
 # A triangle keeps its corners in the order given.
 expect

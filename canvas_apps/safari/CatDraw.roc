@@ -19,7 +19,7 @@ CatDraw :: [].{
 			cam_focal,
 		)
 		feet = projected(cat.lift)
-		StillDraw.draw_still(
+		StillDraw.still_shapes(
 			{
 				feet,
 				flip: AsDrawn,
@@ -44,8 +44,8 @@ cat_shapes : CatSighting -> List(Shapes.Shape)
 cat_shapes = |cat| CatDraw.draw(cat, Pixels.of(500.0))
 
 ## The first corner `cat` draws: its still's first corner, on screen.
-first_corner : CatSighting -> List(F64)
-first_corner = |cat|
+first_corner_coordinates : CatSighting -> List(F64)
+first_corner_coordinates = |cat|
 	match cat_shapes(cat) {
 		[Poly(polygon), ..] => polygon.pts.take_first(2)
 		_ => crash "a cat draws polygons"
@@ -63,7 +63,7 @@ expect
 	[
 		(near_cat, [480.0782, 302.16395]),
 		({ ..near_cat, lift: Distance.metres(1.0) }, [480.0782, 297.16395]),
-	].all(|(cat, want)| is_near(first_corner(cat), want))
+	].all(|(cat, want)| is_near(first_corner_coordinates(cat), want))
 
 # Each pose draws every polygon of its still.
 expect

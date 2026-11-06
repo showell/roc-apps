@@ -136,11 +136,11 @@ ride_pieces = |tour| {
 	rider = instant.rider
 	view = {
 		road: {
-			route: tour.route,
-			chain: Chain.chain_ahead(tour.route, rider.segment_index),
+			route_segments: tour.route_segments,
+			chain_indices: Chain.indices_ahead(tour.route_segments, rider.segment_index),
 			vantage: ViewYaw.vantage_for(rider),
 		},
-		cam_focal: RideFocal.ride_focal(tour.route, rider),
+		cam_focal: RideFocal.ride_focal(tour.route_segments, rider),
 	}
 	scene = Scene.scene_in_view(
 		view,

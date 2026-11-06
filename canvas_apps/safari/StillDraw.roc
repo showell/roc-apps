@@ -64,8 +64,8 @@ StillDraw :: [].{
 	}
 
 	## A whole still, its polygons in order.
-	draw_still : StillDraw.Anchor, List(Stills.StillPolygon) -> List(Shapes.Shape)
-	draw_still = |anchor, polys| polys.map(|poly| StillDraw.draw_polygon(anchor, poly))
+	still_shapes : StillDraw.Anchor, List(Stills.StillPolygon) -> List(Shapes.Shape)
+	still_shapes = |anchor, polys| polys.map(|poly| StillDraw.draw_polygon(anchor, poly))
 
 	## A critter in view. An emoji faces left, so a critter facing right is
 	## its still mirrored. A critter less than a pixel tall isn't drawn.
@@ -85,7 +85,7 @@ StillDraw :: [].{
 					FacesLeft => AsDrawn
 					FacesRight => Mirrored
 				}
-			StillDraw.draw_still(
+			StillDraw.still_shapes(
 				{ feet, flip, height_px },
 				EmojiStills.emoji_polys_for(critter.codepoint),
 			)

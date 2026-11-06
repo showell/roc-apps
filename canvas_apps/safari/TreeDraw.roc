@@ -255,8 +255,8 @@ tier_triangle = |screen_tree, { tier, color }| {
 ## The convex hull of `points`, clockwise on the screen from the leftmost:
 ## Andrew's monotone chain, along the hull's top and back along its bottom.
 ## Fewer than three points are their own hull.
-convex_hull : List(Screen.Point) -> List(Screen.Point)
-convex_hull = |points|
+convex_hull_points : List(Screen.Point) -> List(Screen.Point)
+convex_hull_points = |points|
 	if points.len() < 3 {
 		points
 	} else {
@@ -357,7 +357,7 @@ tier_cone = |tier, { look, cone_radius, shade }| {
 		},
 	)
 	Polygon.shaded_polygon(
-		convex_hull(ring.append(apex)),
+		convex_hull_points(ring.append(apex)),
 		{ fill_color: look.color, strength: shade },
 	)
 }
@@ -471,10 +471,10 @@ expect !is_before(Screen.point(1.0, 3.0), Screen.point(1.0, 2.0))
 expect !is_before(Screen.point(1.0, 2.0), Screen.point(1.0, 2.0))
 
 hull_points : List(Screen.Point) -> List(F64)
-hull_points = |points| Polygon.flatten_screen(convex_hull(points))
+hull_points = |points| Polygon.flat_coordinates(convex_hull_points(points))
 
-square_with_inside_points : List(Screen.Point)
-square_with_inside_points = [
+square_and_inside_points : List(Screen.Point)
+square_and_inside_points = [
 	Screen.point(0.0, 0.0),
 	Screen.point(4.0, 0.0),
 	Screen.point(4.0, 4.0),
@@ -483,48 +483,48 @@ square_with_inside_points = [
 	Screen.point(2.0, 0.0),
 ]
 
-hull_triangle : List(Screen.Point)
-hull_triangle = [
+triangle_points : List(Screen.Point)
+triangle_points = [
 	Screen.point(0.0, 0.0),
 	Screen.point(4.0, 0.0),
 	Screen.point(2.0, 3.0),
 ]
 
-hull_line : List(Screen.Point)
-hull_line = [
+line_points : List(Screen.Point)
+line_points = [
 	Screen.point(0.0, 0.0),
 	Screen.point(1.0, 1.0),
 	Screen.point(2.0, 2.0),
 	Screen.point(3.0, 3.0),
 ]
 
-hull_pair : List(Screen.Point)
-hull_pair = [Screen.point(1.0, 2.0), Screen.point(0.0, 0.0)]
+pair_points : List(Screen.Point)
+pair_points = [Screen.point(1.0, 2.0), Screen.point(0.0, 0.0)]
 
-hull_with_a_repeat : List(Screen.Point)
-hull_with_a_repeat = [
+repeated_points : List(Screen.Point)
+repeated_points = [
 	Screen.point(0.0, 0.0),
 	Screen.point(0.0, 0.0),
 	Screen.point(4.0, 0.0),
 	Screen.point(4.0, 4.0),
 ]
 
-expect hull_points(square_with_inside_points) == [0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0]
-expect hull_points(hull_triangle) == [0.0, 0.0, 4.0, 0.0, 2.0, 3.0]
-expect hull_points(hull_line) == [0.0, 0.0, 3.0, 3.0]
-expect hull_points(hull_pair) == [1.0, 2.0, 0.0, 0.0]
+expect hull_points(square_and_inside_points) == [0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0]
+expect hull_points(triangle_points) == [0.0, 0.0, 4.0, 0.0, 2.0, 3.0]
+expect hull_points(line_points) == [0.0, 0.0, 3.0, 3.0]
+expect hull_points(pair_points) == [1.0, 2.0, 0.0, 0.0]
 expect hull_points([Screen.point(9.0, 9.0)]) == [9.0, 9.0]
 expect hull_points([]) == []
-expect hull_points(hull_with_a_repeat) == [0.0, 0.0, 4.0, 0.0, 4.0, 4.0]
+expect hull_points(repeated_points) == [0.0, 0.0, 4.0, 0.0, 4.0, 4.0]
 
-expect convex_hull(square_with_inside_points).len() == 4
-expect convex_hull(hull_triangle).len() == 3
-expect convex_hull(hull_line).len() == 2
-expect convex_hull(hull_pair).len() == 2
-expect convex_hull(hull_with_a_repeat).len() == 3
+expect convex_hull_points(square_and_inside_points).len() == 4
+expect convex_hull_points(triangle_points).len() == 3
+expect convex_hull_points(line_points).len() == 2
+expect convex_hull_points(pair_points).len() == 2
+expect convex_hull_points(repeated_points).len() == 3
 
 expect
-	Polygon.flatten_screen(square_with_inside_points.sort_with(left_to_right))
+	Polygon.flat_coordinates(square_and_inside_points.sort_with(left_to_right))
 		== [0.0, 0.0, 0.0, 4.0, 2.0, 0.0, 2.0, 2.0, 4.0, 0.0, 4.0, 4.0]
 
 expect left_to_right(Screen.point(1.0, 9.0), Screen.point(2.0, 0.0)) == Before

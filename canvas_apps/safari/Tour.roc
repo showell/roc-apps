@@ -18,7 +18,7 @@ import lib.Shapes
 
 ## The route, the instant the ride has reached, and the instants before it.
 Tour := {
-	route : List(World.Segment),
+	route_segments : List(World.Segment),
 	instant : RideInstant,
 	past_instants : List(RideInstant),
 }.{
@@ -29,11 +29,11 @@ Tour := {
 	past_instants_cap = 2048
 
 	initial : Tour
-	initial = { route: World.segments, instant: RideInstant.initial, past_instants: [] }
+	initial = { route_segments: World.segments, instant: RideInstant.initial, past_instants: [] }
 
 	step_forward : Tour -> Tour
 	step_forward = |tour| {
-		finished = Rider.is_finished(tour.instant.rider, tour.route)
+		finished = Rider.is_finished(tour.instant.rider, tour.route_segments)
 		# Dropping one instant per step would copy the whole list every step, so
 		# half of it goes at once and the copy falls on one step in a thousand.
 		# The list is therefore between half a cap and a cap deep, never empty,
@@ -47,8 +47,8 @@ Tour := {
 				tour.past_instants.drop_first(past_instants_cap // 2).append(tour.instant)
 			}
 		{
-			route: tour.route,
-			instant: RideInstant.next_or_restart(tour.route, tour.instant),
+			route_segments: tour.route_segments,
+			instant: RideInstant.next_or_restart(tour.route_segments, tour.instant),
 			past_instants,
 		}
 	}
@@ -57,7 +57,7 @@ Tour := {
 	step_back = |tour| {
 		match tour.past_instants.last() {
 			Ok(prev) => {
-				route: tour.route,
+				route_segments: tour.route_segments,
 				instant: prev,
 				past_instants: tour.past_instants.drop_last(1),
 			}
@@ -68,7 +68,7 @@ Tour := {
 	## The frame's shapes in paint order. A bird is sorted by depth with
 	## everything else, so a nearer tree hides it.
 	shapes : Tour -> List(Shapes.Shape)
-	shapes = |tour| RideInstant.shapes(tour.route, tour.instant)
+	shapes = |tour| RideInstant.shapes(tour.route_segments, tour.instant)
 
 	# The camera roll: the whole frame, backdrop and shapes, turns
 	# by minus this about the screen's centre.
@@ -83,5 +83,5 @@ Tour := {
 	sky_horizon_color = |tour| Sky.sky_horizon_color(tour.instant.clock)
 
 	sun : Tour -> Sun.Sighting
-	sun = |tour| RideInstant.sun(tour.route, tour.instant)
+	sun = |tour| RideInstant.sun(tour.route_segments, tour.instant)
 }

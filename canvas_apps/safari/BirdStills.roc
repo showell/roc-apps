@@ -21,7 +21,7 @@ BirdStills :: [].{
 			Side(WingsDown) => side_wings_down
 			Away(WingsUp) => away_wings_up
 			Away(WingsDown) => away_wings_down
-			Diving => diving
+			Diving => diving_polygons
 		}
 
 	## Sitting on a treetop: the logo, beak toward +x.
@@ -59,8 +59,8 @@ BirdStills :: [].{
 
 	## Flying toward us: head on, wings spread, beak in the middle. No pose
 	## shows it yet.
-	toward_us : List(Stills.StillPolygon)
-	toward_us = [
+	toward_us_polygons : List(Stills.StillPolygon)
+	toward_us_polygons = [
 		{ color: logo_light, gradient: [], points: [{ x: -0.08, y: 0.54 }, { x: -0.86, y: 0.82 }, { x: -0.98, y: 0.62 }, { x: -0.08, y: 0.38 }] },
 		{ color: logo_dark, gradient: [], points: [{ x: 0.08, y: 0.54 }, { x: 0.86, y: 0.82 }, { x: 0.98, y: 0.62 }, { x: 0.08, y: 0.38 }] },
 		{ color: logo_dark, gradient: [], points: [{ x: -0.1, y: 0.56 }, { x: 0.1, y: 0.56 }, { x: 0.06, y: 0.28 }, { x: -0.06, y: 0.28 }] },
@@ -88,8 +88,8 @@ BirdStills :: [].{
 	]
 
 	## Diving: seen from the side, beak down and wings swept back.
-	diving : List(Stills.StillPolygon)
-	diving = [
+	diving_polygons : List(Stills.StillPolygon)
+	diving_polygons = [
 		{ color: logo_dark, gradient: [], points: [{ x: -0.2, y: 0.9 }, { x: 0.0, y: 0.96 }, { x: -0.16, y: 1.0 }, { x: -0.3, y: 1.0 }] },
 		{ color: logo_dark, gradient: [], points: [{ x: -0.04, y: 0.68 }, { x: 0.08, y: 0.5 }, { x: -0.5, y: 0.94 }, { x: -0.62, y: 0.8 }] },
 		{ color: logo_light, gradient: [], points: [{ x: -0.2, y: 0.9 }, { x: 0.0, y: 0.96 }, { x: 0.22, y: 0.3 }, { x: 0.08, y: 0.24 }] },
@@ -121,12 +121,12 @@ expect
 		(BirdStills.pose_polygons(Away(WingsUp)), [4, 17, 0]),
 		(BirdStills.pose_polygons(Away(WingsDown)), [4, 17, 0]),
 		(BirdStills.pose_polygons(Diving), [6, 22, 0]),
-		(BirdStills.toward_us, [6, 21, 0]),
+		(BirdStills.toward_us_polygons, [6, 21, 0]),
 	].all(|(polys, want)| still_counts(polys) == want)
 
 # The first corner of a still's first polygon, which tells the drawings apart.
-first_corner : List(Stills.StillPolygon) -> List(F64)
-first_corner = |polys| {
+first_corner_coordinates : List(Stills.StillPolygon) -> List(F64)
+first_corner_coordinates = |polys| {
 	first_poly = polys.first() ?? crash "every still has polygons"
 	first_pt = first_poly.points.first() ?? crash "every polygon has corners"
 	[first_pt.x, first_pt.y]
@@ -140,18 +140,18 @@ expect
 		(BirdStills.pose_polygons(Away(WingsUp)), [-0.06, 0.58]),
 		(BirdStills.pose_polygons(Away(WingsDown)), [-0.06, 0.56]),
 		(BirdStills.pose_polygons(Diving), [-0.2, 0.9]),
-		(BirdStills.toward_us, [-0.08, 0.54]),
-	].all(|(polys, want)| first_corner(polys) == want)
+		(BirdStills.toward_us_polygons, [-0.08, 0.54]),
+	].all(|(polys, want)| first_corner_coordinates(polys) == want)
 
-every_still : List(List(Stills.StillPolygon))
-every_still = [
+all_stills : List(List(Stills.StillPolygon))
+all_stills = [
 	BirdStills.pose_polygons(Perched),
 	BirdStills.pose_polygons(Side(WingsUp)),
 	BirdStills.pose_polygons(Side(WingsDown)),
 	BirdStills.pose_polygons(Away(WingsUp)),
 	BirdStills.pose_polygons(Away(WingsDown)),
 	BirdStills.pose_polygons(Diving),
-	BirdStills.toward_us,
+	BirdStills.toward_us_polygons,
 ]
 
 # Whether every corner of a still has x from -1 to 1 and y from 0 to 1.
@@ -165,8 +165,8 @@ is_within_bounds = |polys|
 is_logo_coloured : List(Stills.StillPolygon) -> Bool
 is_logo_coloured = |polys| polys.all(|poly| poly.color == 6368222 or poly.color == 8542181)
 
-expect every_still.all(|polys| polys.all(Stills.is_drawable))
-expect every_still.all(is_within_bounds)
+expect all_stills.all(|polys| polys.all(Stills.is_drawable))
+expect all_stills.all(is_within_bounds)
 expect
 	!is_within_bounds([
 		{
@@ -176,7 +176,7 @@ expect
 		},
 	])
 
-expect every_still.all(is_logo_coloured)
+expect all_stills.all(is_logo_coloured)
 expect
 	!is_logo_coloured([
 		{

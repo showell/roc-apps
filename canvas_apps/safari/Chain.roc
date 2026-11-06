@@ -16,8 +16,8 @@ Chain :: [].{
 	## The road in view: the route's segments, the chain of them ahead of
 	## the rider, and the rider's vantage.
 	RoadView : {
-		route : List(World.Segment),
-		chain : List(World.SegmentIndex),
+		route_segments : List(World.Segment),
+		chain_indices : List(World.SegmentIndex),
 		vantage : Geom.Vantage,
 	}
 
@@ -43,27 +43,27 @@ Chain :: [].{
 		next : Chain.Position -> Chain.Position
 		next = |Chain.Position.(n)| Chain.Position.(n + 1)
 
-		## Every position in `chain`, the rider's own first.
-		all_in : List(World.SegmentIndex) -> List(Chain.Position)
-		all_in = |chain|
-			List.from_iter(U32.until(0, chain.len().to_u32_wrap())).map(Chain.Position.number)
+		## Every position in `chain_indices`, the rider's own first.
+		positions_in : List(World.SegmentIndex) -> List(Chain.Position)
+		positions_in = |chain_indices|
+			List.from_iter(U32.until(0, chain_indices.len().to_u32_wrap())).map(Chain.Position.number)
 
-		## The segment at this position in `chain`.
+		## The segment at this position in `chain_indices`.
 		index_in : Chain.Position, List(World.SegmentIndex) -> World.SegmentIndex
-		index_in = |Chain.Position.(n), chain|
-			chain.get(n.to_u64()) ?? crash "Chain.Position.index_in: past the chain's end"
+		index_in = |Chain.Position.(n), chain_indices|
+			chain_indices.get(n.to_u64()) ?? crash "Chain.Position.index_in: past the chain's end"
 
-		## The segments of `chain` before this position, the rider's own first.
+		## The segments of `chain_indices` before this position, the rider's own first.
 		segments_before : Chain.Position, List(World.SegmentIndex) -> List(World.SegmentIndex)
-		segments_before = |Chain.Position.(n), chain| chain.take_first(n.to_u64())
+		segments_before = |Chain.Position.(n), chain_indices| chain_indices.take_first(n.to_u64())
 
-		## Whether this position is the last one in `chain`.
+		## Whether this position is the last one in `chain_indices`.
 		is_last_in : Chain.Position, List(World.SegmentIndex) -> Bool
-		is_last_in = |Chain.Position.(n), chain| n.to_u64() + 1 >= chain.len()
+		is_last_in = |Chain.Position.(n), chain_indices| n.to_u64() + 1 >= chain_indices.len()
 
-		## Whether `chain` stops before this position.
+		## Whether `chain_indices` stops before this position.
 		is_past_end_of : Chain.Position, List(World.SegmentIndex) -> Bool
-		is_past_end_of = |Chain.Position.(n), chain| n.to_u64() >= chain.len()
+		is_past_end_of = |Chain.Position.(n), chain_indices| n.to_u64() >= chain_indices.len()
 
 		## Whether this position is among the first `count` of a chain.
 		is_within_first : Chain.Position, U32 -> Bool
@@ -82,7 +82,7 @@ Chain :: [].{
 
 	## The segment the rider is on, which is the chain's first.
 	rider_segment : Chain.RoadView -> World.SegmentIndex
-	rider_segment = |road| Chain.Position.first.index_in(road.chain)
+	rider_segment = |road| Chain.Position.first.index_in(road.chain_indices)
 
 	## The segment behind the rider's, unless the rider's is the route's first.
 	segment_behind : Chain.RoadView -> [Previous(World.SegmentIndex), AtRouteStart]
@@ -92,15 +92,15 @@ Chain :: [].{
 	## The segments' lengths are added nearest first.
 	gap_to_segment : Chain.RoadView, Chain.Position -> Distance
 	gap_to_segment = |road, position|
-		position.segments_before(road.chain).fold(
+		position.segments_before(road.chain_indices).fold(
 			road.vantage.along.from_start().opposite(),
-			|gap, index| gap.plus(index.segment_in(road.route).length),
+			|gap, index| gap.plus(index.segment_in(road.route_segments).length),
 		)
 
 	## The chain from the segment at `start`: as far as the rider can see, or
 	## to the route's end.
-	chain_ahead : List(World.Segment), World.SegmentIndex -> List(World.SegmentIndex)
-	chain_ahead = |route, start| chain_onto(route, { index: start, chain: [] })
+	indices_ahead : List(World.Segment), World.SegmentIndex -> List(World.SegmentIndex)
+	indices_ahead = |route_segments, start| indices_onto(route_segments, { index: start, chain_indices: [] })
 
 	## The bend at the end of `segment`.
 	bend_out_of : World.Segment -> Geom.Bend
@@ -122,11 +122,11 @@ Chain :: [].{
 		across : Across,
 	} -> Geom.RiderPoint
 	rider_point_ahead = |road, { position, along, across }| {
-		on_rider_segment = position.segments_before(road.chain).fold_rev(
+		on_rider_segment = position.segments_before(road.chain_indices).fold_rev(
 			edge_point({ along, across }),
 			|index, point| Geom.point_in_segment_before(
 				point,
-				bend_out_of(index.segment_in(road.route)),
+				bend_out_of(index.segment_in(road.route_segments)),
 			),
 		)
 		Geom.to_rider_point(on_rider_segment, road.vantage)
@@ -157,34 +157,34 @@ Chain :: [].{
 edge_point : Geom.RoadPoint -> Geom.EdgePoint
 edge_point = |{ along, across }| { along, from_left: across.distance_from(Scenery.left_edge) }
 
-## `chain` with the segment at `index` and those after it added, up to the
+## `chain_indices` with the segment at `index` and those after it added, up to the
 ## limit. An accumulator is linear, where appending a recursive call's answer
 ## is quadratic.
-chain_onto : List(World.Segment),
+indices_onto : List(World.Segment),
 {
 	index : World.SegmentIndex,
-	chain : List(World.SegmentIndex),
+	chain_indices : List(World.SegmentIndex),
 } -> List(World.SegmentIndex)
-chain_onto = |route, { index, chain }|
-	if chain.len() >= Chain.max_length.to_u64() {
-		chain
+indices_onto = |route_segments, { index, chain_indices }|
+	if chain_indices.len() >= Chain.max_length.to_u64() {
+		chain_indices
 	} else {
-		longer_chain = chain.append(index)
-		match index.segment_in(route).ending {
-			Continues({ next }) => chain_onto(route, { index: next, chain: longer_chain })
+		longer_chain = chain_indices.append(index)
+		match index.segment_in(route_segments).ending {
+			Continues({ next }) => indices_onto(route_segments, { index: next, chain_indices: longer_chain })
 			Terminates => longer_chain
 		}
 	}
 
 expect Chain.max_length.to_i64() == 7
-expect Chain.chain_ahead(World.segments, World.SegmentIndex.first).len() == 7
+expect Chain.indices_ahead(World.segments, World.SegmentIndex.first).len() == 7
 
 route_facts : List(World.Segment) -> List(U64)
 route_facts = |segments| [
 	segments.len(),
-	Chain.chain_ahead(segments, World.SegmentIndex.first).len(),
-	Chain.chain_ahead(segments, World.SegmentIndex.number(15)).len(),
-	Chain.chain_ahead(segments, World.SegmentIndex.number(18)).len(),
+	Chain.indices_ahead(segments, World.SegmentIndex.first).len(),
+	Chain.indices_ahead(segments, World.SegmentIndex.number(15)).len(),
+	Chain.indices_ahead(segments, World.SegmentIndex.number(18)).len(),
 ]
 
 expect route_facts(World.segments) == [19, 7, 4, 1]

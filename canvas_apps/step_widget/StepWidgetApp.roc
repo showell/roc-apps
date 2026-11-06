@@ -140,7 +140,7 @@ route_x = |distance| route_left_x + route_width * distance.ratio_to(route_length
 rider_distance : Tour -> Distance
 rider_distance = |tour| {
 	rider = tour.instant.rider
-	World.distance_along_route(tour.route, { index: rider.segment_index, along: rider.along })
+	World.distance_along_route(tour.route_segments, { index: rider.segment_index, along: rider.along })
 }
 
 ground : Shapes.Shape

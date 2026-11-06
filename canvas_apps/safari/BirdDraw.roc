@@ -25,7 +25,7 @@ BirdDraw :: [].{
 			},
 			cam_focal,
 		)
-		StillDraw.draw_still(
+		StillDraw.still_shapes(
 			{
 				feet,
 				flip: AsDrawn,
@@ -90,6 +90,6 @@ expect {
 	drawn = [Side(WingsDown), Diving].join_map(
 		|pose| BirdDraw.draw({ ..level_bird, pose }, Pixels.of(500.0)).map(fill_of),
 	)
-	stills = BirdStills.side_wings_down.concat(BirdStills.diving)
+	stills = BirdStills.side_wings_down.concat(BirdStills.diving_polygons)
 	drawn == stills.map(|poly| Flat(Brush.opaque(poly.color)))
 }

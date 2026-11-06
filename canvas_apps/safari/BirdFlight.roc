@@ -67,8 +67,8 @@ BirdFlight :: [].{
 	## lands within an eighth of a metre of where the bird should be.
 	flight_poses : List(BirdFlight.Pose)
 	flight_poses = [
-		flap(Side(WingsUp), Side(WingsDown)),
-		List.repeat(flap(Away(WingsUp), Away(WingsDown)), 7).join(),
+		flap_poses(Side(WingsUp), Side(WingsDown)),
+		List.repeat(flap_poses(Away(WingsUp), Away(WingsDown)), 7).join(),
 		List.repeat(Diving, frames_a_flap),
 	].join()
 
@@ -163,8 +163,8 @@ tree_top = |tree| {
 }
 
 ## One flap of the wings: `up` for half its frames and `down` for the rest.
-flap : BirdFlight.Pose, BirdFlight.Pose -> List(BirdFlight.Pose)
-flap = |up, down| {
+flap_poses : BirdFlight.Pose, BirdFlight.Pose -> List(BirdFlight.Pose)
+flap_poses = |up, down| {
 	half = BirdFlight.frames_a_flap // 2
 	List.repeat(up, half).concat(List.repeat(down, half))
 }
