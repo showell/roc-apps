@@ -26,7 +26,7 @@ StepWidgetApp :: [].{
 	}
 
 	canvas_app : CanvasApp.CanvasApp(StepWidgetApp.Model)
-	canvas_app = ScrubWidget.app_with_advance({
+	canvas_app = ScrubWidget.canvas_app({
 		title: "Three stored fields",
 		init: heading_for_step(0),
 		advance: |model, input| moved(aimed(model, input)),

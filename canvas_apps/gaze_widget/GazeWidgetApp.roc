@@ -32,7 +32,7 @@ GazeWidgetApp :: [].{
 	Model : { played : List(RiderState), transport : VcrButtons.Transport(Clock) }
 
 	canvas_app : CanvasApp.CanvasApp(GazeWidgetApp.Model)
-	canvas_app = ScrubWidget.app_with_advance({
+	canvas_app = ScrubWidget.canvas_app({
 		title: "The rider's gaze",
 		init: starting_model,
 		advance: |model, input| played_on(with_buttons(model, input)),

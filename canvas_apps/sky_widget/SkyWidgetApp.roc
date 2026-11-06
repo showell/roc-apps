@@ -26,7 +26,7 @@ SkyWidgetApp :: [].{
 	Model : { transport : VcrButtons.Transport(Clock), job : SkyWidgetApp.Job }
 
 	canvas_app : CanvasApp.CanvasApp(SkyWidgetApp.Model)
-	canvas_app = ScrubWidget.app_with_advance({
+	canvas_app = ScrubWidget.canvas_app({
 		title: "The sun going down",
 		init: at_start,
 		advance: next_model,

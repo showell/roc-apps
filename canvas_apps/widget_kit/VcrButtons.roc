@@ -78,7 +78,7 @@ VcrButtons :: [].{
 		frame : VcrButtons.Transport(number) -> List(Shapes.Shape),
 	} -> CanvasApp.CanvasApp(VcrButtons.Transport(number))
 	canvas_app = |{ title, run, opens_at, frame }|
-		ScrubWidget.app_with_advance({
+		ScrubWidget.canvas_app({
 			title,
 			init: VcrButtons.transport_at(opens_at),
 			advance: |transport, input| VcrButtons.next_transport(transport, { input, run }),
@@ -133,7 +133,7 @@ VcrButtons :: [].{
 	} -> List(Shapes.Shape)
 	frame_shapes = |transport, { run, picture, status }|
 		[
-			ScrubWidget.still_frame_shapes({ picture, status }),
+			ScrubWidget.frame_shapes({ picture, status }),
 			buttons_of(run.playing).join_map(|button| button_shapes(button, transport.motion)),
 			hint(transport, run),
 		].join()
@@ -545,7 +545,7 @@ expect hint(stopped_at(0), sample_clock_run) != hint(VcrButtons.transport_at(1),
 # The page is the panel, then each button's square and icon, then the hint.
 expect
 	VcrButtons.frame_shapes(stopped_at(1), { run: sample_clock_run, picture: [], status: [] }).len()
-		> ScrubWidget.still_frame_shapes({ picture: [], status: [] }).len()
+		> ScrubWidget.frame_shapes({ picture: [], status: [] }).len()
 expect
 	VcrButtons.frame_shapes(stopped_at(0), { run: sample_clock_run, picture: [], status: [] }).len()
 		== VcrButtons.frame_shapes(stopped_at(1), { run: sample_clock_run, picture: [], status: [] }).len() + 1

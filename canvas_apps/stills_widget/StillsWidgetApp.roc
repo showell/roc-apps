@@ -1,7 +1,7 @@
 ## The widget for the Safari tutorial's chapter on the stills. Every pose of the
 ## cat and the bird stands in a grid, drawn by the real StillDraw, and one of them
 ## stands large with its polygons and points counted. Nothing here moves, so
-## there's no ruler. A click on a small still makes it the large one, and a click
+## there are no video recorder buttons. A click on a small still makes it the large one, and a click
 ## on the large one shows or hides the outline of each polygon.
 import game.BirdFlight
 import game.BirdStills
@@ -197,7 +197,7 @@ standing_at = |polygons, { mid_x, ground_y, height_px }| {
 ## A row of stills across the canvas, between its side margins.
 row_cells : List(StillsWidgetApp.PoseStill), F64 -> List(StillCell)
 row_cells = |stills, row_top| {
-	cell_width = ScrubWidget.ruler_length / stills.len().to_f64()
+	cell_width = ScrubWidget.panel_width / stills.len().to_f64()
 	height_px = row_height_px(stills, cell_width)
 	stills.map_with_index(
 		|still, column| {
@@ -431,7 +431,7 @@ large_still_mark = |large_still|
 ## Everything on the canvas.
 frame_at : StillsWidgetApp.Model -> List(Shapes.Shape)
 frame_at = |model|
-	ScrubWidget.still_frame_shapes({ picture: picture(model), status: [] })
+	ScrubWidget.frame_shapes({ picture: picture(model), status: [] })
 		.concat(large_still_mark(model.large_still))
 		.concat(grid)
 
