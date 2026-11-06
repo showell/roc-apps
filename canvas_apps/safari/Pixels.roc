@@ -5,9 +5,6 @@
 ##
 ## Pixels stop at the edge of `lib.Shapes`, which takes plain numbers, and at
 ## trigonometry.
-##
-## Each operation does the plain float arithmetic its name says, so code
-## moved onto this type computes exactly what it did before.
 
 Pixels :: F64.{
 

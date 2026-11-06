@@ -4,9 +4,6 @@
 ## to a place gives a place, and two places give the distance between them, but
 ## two places can't be added. A place along the road can't be passed as a place
 ## across it.
-##
-## Each operation does the plain float arithmetic its name says, so code
-## moved onto this type computes exactly what it did before.
 import Distance
 
 Along :: F64.{

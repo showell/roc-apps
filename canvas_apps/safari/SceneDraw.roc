@@ -110,7 +110,7 @@ draw_subject = |scene, { view, depth_key }| {
 		Tower(place) => SceneDraw.draw_tower(view, thing_at(scene.towers, place))
 		Rail(place) => GuardRail.draw(thing_at(scene.rails, place), cam_focal)
 		Cutout(place) => StillDraw.draw(thing_at(scene.cutouts, place), cam_focal)
-		Cat(place) => draw_cat(thing_at(scene.cats, place), cam_focal)
+		Cat(place) => CatDraw.draw(thing_at(scene.cats, place), cam_focal)
 		Truck => draw_truck(view, scene.truck)
 		Bird(place) => BirdDraw.draw(thing_at(scene.birds, place), cam_focal)
 	}
@@ -121,17 +121,6 @@ thing_at : List(thing), U32 -> thing
 thing_at = |things, place|
 	things.get(place.to_u64())
 		?? crash "SceneDraw.thing_at: the depth order names only places in its lists"
-
-draw_cat : CatSighting, Pixels -> List(Shapes.Shape)
-draw_cat = |cat, cam_focal|
-	CatDraw.draw({
-		right: cat.right,
-		forward: cat.forward,
-		height: cat.height,
-		pose: cat.pose,
-		lift: cat.lift,
-		cam_focal,
-	})
 
 ## The truck, where its sighting found it and with the lights its sighting
 ## gives it.
@@ -188,7 +177,7 @@ start_view = {
 	cam_focal: Pixels.of(500.0),
 }
 
-# A tower `along` metres down the first segment, 20 m right of the lane's middle.
+# A tower `along` metres down the first segment, 20 m right of the road's middle.
 tower_along : F64 -> TowerSighting
 tower_along = |along| {
 	place: InChain(Chain.Position.first),

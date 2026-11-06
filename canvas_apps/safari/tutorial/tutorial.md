@@ -1696,29 +1696,19 @@ digraph tracks {
 
 A timeline is data, so the cat's whole performance reads in one place. This is the part of `crossing_timeline` that says how the cat looks:
 
-{{code Cat.crossing_timeline from "looks:" to "finally: Holds(Collapse),"}}
-
 The words are tags. `Through` and `Before` say where a stretch ends, and `Holds` and `Alternates` say how the cat looks. The poses are a closed tag union, so a `match` that misses one is a compile-time error.
 
 {{code Cat.Pose}}
 
 A timeline is divided into stretches, and a cut is where one stretch ends and the next begins. A cut has to say which stretch its own beat belongs to, and two tags say that better than a boolean would. `crossing_timeline`'s comment says why it matters: the beats of the leap add up to a float just under the beat they stand for.
 
-{{code Animation.Cut}}
-
 There are two tracks because a cat's looks and its movement change at different instants. Its body moves just ahead of its path, so the `looks` track above cuts at 0.8, 2.8 and 3.8 beats into the escape, while the `path` track cuts at 1 and 3. One list of phases tying them together wouldn't fit the cat or the bird.
 
 The `path` track needs three places on the road. `spot_across` makes one, as a single record. It sits below `Cat`'s block, so it's private. `Along.start`, the first place on a segment, is a value and not a call, so this function calls nothing of Safari Ride's.
 
-{{code Cat.spot_across}}
-
 `crossing_timeline` calls it three times before the timeline starts:
 
-{{code Cat.crossing_timeline from "## The whole of a crossing" to "end = spot_across"}}
-
 Here's the `path` track:
-
-{{code Cat.crossing_timeline from "path:" to "finally: StaysAt(end),"}}
 
 `Timeline` is nominal, the middle ground: unlike an alias it can carry methods, and unlike an opaque type anyone can build one, which is right for data that needs no guarding. `Timeline(pose, lift)` takes two type parameters, which is how a cat and a bird share it. A cat fills the first with its own poses and the second with `CatHeights`, because a cat's lift off the ground is measured in its own height.
 
@@ -1731,19 +1721,11 @@ A timeline is data, so something has to play it. This section shows how, and it'
 The code that plays a timeline is in `Animation`, and we'll start at an operator. `Beat.is_lte` opens two `Beat`s and compares the floats inside.
 
 
-{{code Beat.is_lte}}
-
 `is_short_of` is one `match`, and it looks like a leaf. It isn't, because `<=` on two `Beat`s is a call to `is_lte`, and `<` is a call to `is_lt`. An operator on an opaque type runs code of Safari Ride's own.
-
-{{code Animation.is_short_of}}
 
 Finding the stretch that's playing shows one more Roc idea. In `playing_at`, `var $from` is a local variable that a `for` loop reassigns, inside a pure function. Roc allows that because nothing outside can see it: `playing_at` still has a `->` arrow, and the `$` marks what changes. An early `return` ends the loop.
 
-{{code Animation.playing_at}}
-
 `Timeline.at_beat` calls it once for each track, which is what lets the two tracks cut wherever they like. `Animation.Timeline.(timeline)` in a parameter list opens the nominal type, the way `Clock.(n)` opens an opaque one. `pose_of` and `path_spot` turn what's playing into a pose and a spot, and the bird chapter reads `path_spot`.
-
-{{code Animation.Timeline from "## The critter at `beat`" to "path_spot(path.plays, fraction)"}}
 
 `Timeline.instant` is the one place that knows about stages. Its `match` covers all three tags, and `portion` turns a `Fraction` of the way through into a beat. It answers with an `Instant`, the cat at that point:
 
@@ -1882,25 +1864,15 @@ digraph flight_score {
 
 `BirdFlight` sets the length of a flight to one beat, so that a cut on the timeline is simply a share of the flight:
 
-{{code BirdFlight.flight_beats}}
-
 The bird needs one small helper. It sits below the block, so it's private, and it builds an `Alternates` from two poses. `Animation.Looks(BirdFlight.Pose)` is `Looks(pose)` with the type parameter filled in, which is how the cat's timeline type came to fit a bird:
 
-{{code BirdFlight.wings_beating}}
-
 Then the timeline. `Animation.Timeline.( ... )` wraps a record in the nominal type, and `Side(WingsUp)` is a tag whose payload is another tag. `flight_beats.portion(takeoff_share)` is a method on the opaque `Beats`, and `Beat.at` makes a place of the length it gives. It reads almost like configuration, and most of it is:
-
-{{code BirdFlight.flight_timeline from "length: flight_beats," to "finally: Holds(Diving),"}}
 
 Wings beat all the way through the first two stretches. `count` runs from the start of the timeline, so the wing beat carries on across the cut from side-on to from-behind without restarting.
 
 The path track shows why a `Track` has `finally`. A flight is one unbroken curve, so it has no cuts at all:
 
-{{code BirdFlight.flight_timeline from "path: {" to "rise: flight_arc,"}}
-
 That `Arc` is a tag. `path_spot` is where it's played. `{ ..on_line, lift: ... }` is record update: the spot on the straight line, with one field replaced. The curve is `4t(1 - t)`, a parabola that's 0 at both ends and 1 at the middle, so `rise` means what its comment says.
-
-{{code Animation.path_spot}}
 
 The stills are data too. Nested tags get checked all the way down, so a `match` that forgets `Away(WingsDown)` is a compile-time error. The function reads as a table, and there's nothing else in it:
 
@@ -1968,9 +1940,9 @@ digraph reaction {
 
 Let's follow this back to `Cat`, to two small questions about the same `Stage`.
 
-`is_in_danger` asks whether the crossing is playing. `_` ignores a payload.
+`is_crossing` asks whether the crossing is playing. `_` ignores a payload.
 
-{{code Cat.is_in_danger}}
+{{code Cat.is_crossing}}
 
 `attention` is where `Past`'s payload is used. A cat in the lane also draws the rider's attention, which widens the view. `beyond` is how far past the end of the crossing the rider has come, and that attention fades over that distance, counted in beats. `beats_to_cover` divides by the speed, so a rider at a standstill gets an answer first. `Attention` is another opaque type.
 

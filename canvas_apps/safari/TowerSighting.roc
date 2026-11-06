@@ -34,11 +34,11 @@ TowerSighting := {
 	tower_beyond : Distance
 	tower_beyond = Distance.metres(160.0)
 
-	## How far right of the lane's middle a tower past a segment's end stands.
+	## How far right of the road's middle a tower past a segment's end stands.
 	tower_right : Distance
 	tower_right = Distance.metres(20.0)
 
-	## How far left of the lane's middle a tower halfway along a segment stands.
+	## How far left of the road's middle a tower halfway along a segment stands.
 	mid_tower_left : Distance
 	mid_tower_left = Distance.metres(100.0)
 

@@ -1,9 +1,6 @@
 ## How strongly something holds the rider's eye, from 0 upward. A look to the
-## side at its fullest is 1, and a cat in the lane holds the eye harder than
+## side at its fullest is 1, and a cat in the road holds the eye harder than
 ## that, so this is no `Fraction`.
-##
-## Each operation does the plain float arithmetic its name says, so code
-## moved onto this type computes exactly what it did before.
 import Fraction
 
 Attention :: F64.{

@@ -20,12 +20,6 @@ Easing :: [].{
 		Fraction.of(t * t * (3.0 - 2.0 * t))
 	}
 
-	## A fraction that starts fast and slows: `t` to the power of three quarters.
-	three_quarter_power : Fraction -> Fraction
-	three_quarter_power = |fraction| {
-		t = fraction.to_f64()
-		Fraction.of((t * t.sqrt()).sqrt())
-	}
 }
 
 expect

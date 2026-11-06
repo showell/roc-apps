@@ -1,9 +1,6 @@
 ## A length in metres: how long a segment is, how tall a tree stands, how far
 ## the rider is from a cat. A length measured toward something can run past it,
 ## so a gap goes negative once the rider is beyond what it is measured to.
-##
-## Each operation does the plain float arithmetic its name says, so code
-## moved onto this type computes exactly what it did before.
 
 Distance :: F64.{
 

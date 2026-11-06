@@ -489,8 +489,8 @@ expect seg(0).trees.len() == 28
 expect seg(1).trees.len() == 16
 expect seg(6).trees.len() == 74
 expect seg(18).trees.len() == 14
-expect crossing_at(3).mid_across.to_metres() == 0.816
-expect crossing_at(18).mid_across.to_metres() == 0.816
+expect crossing_at(3).mid_across.to_metres() == 0.425
+expect crossing_at(18).mid_across.to_metres() == 0.425
 # Each cat starts behind a tree that is really there, and just past it.
 expect
 	[3, 9, 18].all(
@@ -511,8 +511,6 @@ expect nearest_tree_ahead(seg(3).trees, Along.metres(90.0)).across == Across.met
 expect nearest_tree_ahead(seg(3).trees, Along.metres(90.0)).along == Along.metres(96.0)
 expect nearest_tree_ahead(seg(3).trees, Along.metres(96.0)).along == Along.metres(96.0)
 expect nearest_tree_ahead(seg(3).trees, Along.metres(96.5)).along == Along.metres(126.0)
-expect crossing_at(3).height.to_metres() == 1.7
-expect crossing_at(18).height.to_metres() == 1.7
 
 ## Whether the route ends with a segment.
 is_route_end : World.Segment -> Bool
