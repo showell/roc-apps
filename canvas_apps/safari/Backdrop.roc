@@ -1,6 +1,7 @@
 ## Backdrop builds what is behind the ride, as shapes. The vocabulary is in
 ## lib/Shapes.roc, which every canvas app shares. This module knows what is
 ## behind the ride: the sky's gradient, the grass, and the sun's glow and disc.
+import Pixels
 import Sky
 import lib.Brush
 import Screen
@@ -21,16 +22,16 @@ Backdrop :: [].{
 	## `disc_radius`.
 	SunFills : {
 		glow : Brush.Fill,
-		glow_radius : F64,
+		glow_radius : Pixels,
 		disc : Brush.Fill,
-		disc_radius : F64,
+		disc_radius : Pixels,
 	}
 
 	## The sun's glow and disc where it stands, sized by its scale.
 	sun_fills : Sky.SunPlace -> Backdrop.SunFills
 	sun_fills = |sun| {
-		glow_radius = 340.0 * sun.scale
-		disc_radius = Sky.sun_radius_px * sun.scale
+		glow_radius = Pixels.of(340.0).times(sun.scale)
+		disc_radius = Sky.sun_radius_px.times(sun.scale)
 		{
 			glow: Glow({
 				c0: {
@@ -54,7 +55,7 @@ Backdrop :: [].{
 				x: sun.x,
 				y: sun.y,
 				r0: 8.0 * sun.scale,
-				r1: glow_radius,
+				r1: glow_radius.to_f64(),
 			}),
 			glow_radius,
 			disc: Radial({
@@ -63,7 +64,7 @@ Backdrop :: [].{
 				x: sun.x,
 				y: sun.y,
 				r0: 4.0 * sun.scale,
-				r1: disc_radius,
+				r1: disc_radius.to_f64(),
 			}),
 			disc_radius,
 		}
@@ -129,7 +130,7 @@ Backdrop :: [].{
 							Disc({
 								x: place.x,
 								y: place.y,
-								r: fills.disc_radius,
+								r: fills.disc_radius.to_f64(),
 								fill: fills.disc,
 								clip: Within({
 									x: 0.0,

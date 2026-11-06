@@ -5,7 +5,6 @@ import Pixels
 import Angle
 import Clock
 import Fraction
-import lib.DeviceMath
 import Lens
 import Float
 import Screen
@@ -33,32 +32,34 @@ Sky :: [].{
 	sun_bearing : Angle.Bearing
 	sun_bearing = Angle.Bearing.radians(0.0 - 2.2176)
 
-	sun_radius_px : F64
-	sun_radius_px = 46.0
+	sun_radius_px : Pixels
+	sun_radius_px = Pixels.of(46.0)
 
-	sun_start_px : F64
-	sun_start_px = 244.0
+	sun_start_px : Pixels
+	sun_start_px = Pixels.of(244.0)
 
-	sun_drop_px_per_step : F64
-	sun_drop_px_per_step = ((0.41616 * (2.0 * sun_radius_px)) / 625.0)
+	sun_drop_px_per_step : Pixels
+	sun_drop_px_per_step = sun_radius_px.times(2.0).times(0.41616).divided_by(625.0)
 
-	sun_fully_set_px : F64
-	sun_fully_set_px = (0.0 - sun_radius_px)
+	sun_fully_set_px : Pixels
+	sun_fully_set_px = sun_radius_px.opposite()
 
-	warmth_falloff_px : F64
-	warmth_falloff_px = 110.0
+	warmth_falloff_px : Pixels
+	warmth_falloff_px = Pixels.of(110.0)
 
 	visible_turn_limit : Angle.Turn
 	visible_turn_limit = Angle.Turn.radians(1.4)
 
 	## How high the sun stands above the horizon at `clock`, in pixels at
 	## rest; below it once negative.
-	sun_height_px : Clock -> F64
-	sun_height_px = |clock| sun_start_px - (sun_drop_px_per_step * clock.to_f64())
+	sun_height_px : Clock -> Pixels
+	sun_height_px = |clock| sun_start_px.minus(sun_drop_px_per_step.times(clock.to_f64()))
 
 	## How far toward dusk the sky is when the sun has just set.
 	dusk_at_set : Fraction
-	dusk_at_set = Fraction.of(((0.5 * (sun_start_px - sun_fully_set_px)) / sun_start_px))
+	dusk_at_set = Fraction.of(
+		sun_start_px.minus(sun_fully_set_px).times(0.5).ratio_to(sun_start_px),
+	)
 
 	## How far toward dusk the sky is at `clock`, from 0 (day) to 1 (dusk).
 	dusk_at : Clock -> Fraction
@@ -75,7 +76,7 @@ Sky :: [].{
 	## once the sun is `warmth_falloff_px` above or below.
 	sunset_warmth : Clock -> Fraction
 	sunset_warmth = |clock| Fraction.clamp(
-		(1.0 - (DeviceMath.real_abs(sun_height_px(clock)) / warmth_falloff_px)),
+		(1.0 - sun_height_px(clock).abs().ratio_to(warmth_falloff_px)),
 	)
 
 	day_sky : Sky.Rgb
@@ -159,18 +160,18 @@ Sky :: [].{
 
 ## How far toward dusk the sky is while the sun, `height` pixels up, is
 ## still above the line where it has fully set.
-dusk_while_up : F64 -> Fraction
+dusk_while_up : Pixels -> Fraction
 dusk_while_up = |height| {
-	whole_fall = (Sky.sun_start_px - Sky.sun_fully_set_px)
-	set_so_far = Fraction.of(((Sky.sun_start_px - height) / whole_fall))
+	whole_fall = Sky.sun_start_px.minus(Sky.sun_fully_set_px)
+	set_so_far = Fraction.of(Sky.sun_start_px.minus(height).ratio_to(whole_fall))
 	Sky.dusk_at_set.times(set_so_far).times(set_so_far)
 }
 
 ## How far toward dusk the sky is once the sun has fully set, darkening on
 ## to full dusk as it sinks a further radius.
-dusk_after_set : F64 -> Fraction
+dusk_after_set : Pixels -> Fraction
 dusk_after_set = |height| {
-	sunk_past_set = ((Sky.sun_fully_set_px - height) / Sky.sun_radius_px)
+	sunk_past_set = Sky.sun_fully_set_px.minus(height).ratio_to(Sky.sun_radius_px)
 	Fraction.clamp(
 		(Sky.dusk_at_set.to_f64() + (sunk_past_set * Sky.dusk_at_set.complement().to_f64())),
 	)
@@ -192,16 +193,16 @@ sun_place = |{ turn_from_view, clock, cam_focal }| {
 	scale = cam_focal.ratio_to(Lens.focal)
 	{
 		x: (Screen.center_x + (Trig.r_tan(turn_from_view.to_radians()) * cam_focal.to_f64())),
-		y: (Screen.horizon_y - (Sky.sun_height_px(clock) * scale)),
+		y: (Screen.horizon_y - Sky.sun_height_px(clock).times(scale).to_f64()),
 		scale,
 	}
 }
 
-expect Sky.sun_height_px(Clock.at_step(0)) == 244.0
-expect Sky.sun_start_px == 244.0
-expect Sky.sun_radius_px == 46.0
-expect Sky.sun_fully_set_px == -46.0
-expect Sky.warmth_falloff_px == 110.0
+expect Sky.sun_height_px(Clock.at_step(0)).to_f64() == 244.0
+expect Sky.sun_start_px.to_f64() == 244.0
+expect Sky.sun_radius_px.to_f64() == 46.0
+expect Sky.sun_fully_set_px.to_f64() == -46.0
+expect Sky.warmth_falloff_px.to_f64() == 110.0
 expect Sky.visible_turn_limit.to_radians() == 1.4
 expect Sky.dusk_at(Clock.at_step(0)).to_f64() == 0.0
 expect Sky.sunset_warmth(Clock.at_step(0)).to_f64() == 0.0
