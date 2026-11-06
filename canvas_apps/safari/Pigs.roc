@@ -13,7 +13,7 @@ Pigs :: [].{
 	PigPresence : [WithPigs, NoPigs]
 
 	## Whether a segment's pigs catch the rider's eye.
-	PigAttention : [Distracting, Unnoticed]
+	PigInterest : [Distracting, Unnoticed]
 
 	pig_codepoint : I64
 	pig_codepoint = 128022
@@ -89,8 +89,8 @@ Pigs :: [].{
 
 	## How a segment's pigs strike the rider, when `pig_segments_so_far` of
 	## the route's segments, this one included, have pigs.
-	attention_of : { presence : Pigs.PigPresence, pig_segments_so_far : U32 } -> Pigs.PigAttention
-	attention_of = |{ presence, pig_segments_so_far }|
+	interest_of : { presence : Pigs.PigPresence, pig_segments_so_far : U32 } -> Pigs.PigInterest
+	interest_of = |{ presence, pig_segments_so_far }|
 		if has_pigs(presence) and pig_segments_so_far <= pig_novelty_count {
 			Distracting
 		} else {
@@ -101,11 +101,11 @@ Pigs :: [].{
 	## rider's eye, and two rows elsewhere.
 	pigs_along : {
 		presence : Pigs.PigPresence,
-		attention : Pigs.PigAttention,
+		interest : Pigs.PigInterest,
 		length : Distance,
 	} -> List(Scenery.Critter)
-	pigs_along = |{ presence, attention, length }|
-		match (presence, attention) {
+	pigs_along = |{ presence, interest, length }|
+		match (presence, interest) {
 			(WithPigs, Distracting) => fill_pig_herd(length)
 			(WithPigs, Unnoticed) => fill_pig_row(length)
 			(NoPigs, Distracting) | (NoPigs, Unnoticed) => []

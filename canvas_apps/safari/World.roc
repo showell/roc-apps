@@ -79,7 +79,7 @@ World :: [].{
 		trees : List(Scenery.Tree),
 		cows : List(Scenery.Critter),
 		pigs : List(Scenery.Critter),
-		pig_attention : Pigs.PigAttention,
+		pig_attention : Pigs.PigInterest,
 
 		## The turn into the next segment: positive to the right, negative to
 		## the left.
@@ -337,7 +337,7 @@ World :: [].{
 built_segment : World.SegmentPlan, World.SegmentIndex -> World.Segment
 built_segment = |plan, index| {
 	trees = Trees.plant({ scheme: plan.scheme, length: plan.length })
-	pig_attention = Pigs.attention_of({
+	pig_attention = Pigs.interest_of({
 		presence: plan.pigs,
 		pig_segments_so_far: World.pig_segments_through(index),
 	})
@@ -347,7 +347,7 @@ built_segment = |plan, index| {
 		cows: Cows.fill_cows(plan.bull),
 		pigs: Pigs.pigs_along({
 			presence: plan.pigs,
-			attention: pig_attention,
+			interest: pig_attention,
 			length: plan.length,
 		}),
 		pig_attention,
