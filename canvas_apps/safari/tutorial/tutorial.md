@@ -250,6 +250,105 @@ Drag to turn the bend, and watch the rail change sides.
 
 The road here is two segments, seen from above, and the white dot is where the view is from. The rail runs along the outer edge of the bend, and the yellow dot is the apex, where the outer edges of the two segments meet. The marks on the ruler are the route's own bends. Dragging past the middle swaps the outer edge from one side to the other. A road with no turn has no apex, so the ruler skips the last five degrees either side of straight.
 
+New in this chapter:
+
+- Roc: a closure that gives a repeated call a short name
+- Modules: `BendView`, `GroundSighting`, `RailSighting`
+
+`BendView` knows where two segments meet. `GroundSighting` and `RailSighting` each ask it about a bend, and each answers with plain data for another module to draw.
+
+🔭 The modules around `BendView`
+```dot
+digraph road {
+  node [shape=box, fontname="Helvetica"];
+  BendView [style=bold];
+  GroundSighting -> BendView;
+  RailSighting -> BendView;
+  GroundSighting -> Ground;
+  RailSighting -> GuardRail;
+  GroundSighting -> Chain;
+  RailSighting -> Chain;
+  BendView -> Chain;
+  BendView -> Geom;
+  BendView -> World;
+}
+```
+
+Everything in this chapter is measured from the rider, as a `Geom.RiderPoint`: so many metres to the right, and so many ahead. `Chain` finds where a point on the road lies from the rider, and the math layer chapter shows how. On the road itself, `Along` is a place along a segment and `Across` is a place across the road, and both are opaque types.
+
+### Where two segments meet
+
+A bend is a small record.
+
+🐾 {{code BendView.BendView from "A bend as the rider sees it" to "}.{"}}
+
+`before` and `after` say where the two segments lie from the rider. The turn is positive to the right.
+
+🌳 {{code BendView.outer_edge}}
+
+A bend to the right has its outer edge on the left. That's the swap at the middle of the ruler.
+
+🌳 {{code BendView.apex}}
+
+`point_before` and `point_after` are closures. Each gives a call with four arguments a short name, so the two lines below them read alike. Each line runs along the outer edge of one segment, and `Geom.line_crossing` finds where the two cross. That's the yellow dot.
+
+The road is 4 metres wide, so at a turn of 45 degrees the apex lies 4 × tan(22.5°) past the end of the first segment, which is the 1.7 metres the widget shows. Two parallel lines never cross, so a road with no turn has no apex, and nothing asks for one.
+
+### Paving a corner
+
+A piece of ground is a list of corners and a colour.
+
+🐾 🍃 {{code GroundSighting.road_patch}}
+
+That's what `Ground` paints. It's plain data, so it can be checked with numbers.
+
+🌳 {{code GroundSighting.bend_corner}}
+
+Four points cut the corner: the two ends of the first segment, the apex, and the place where the second segment's outer edge starts.
+
+🌳 {{code GroundSighting.lead_in}}
+
+The last 40 metres before a bend get a patch of their own, laid after the road's chunks and before the corner.
+
+🌳 {{code GroundSighting.bend_ground}}
+
+The road along a segment is laid in chunks of up to 25 metres. The widget's two segments are 60 metres each, which makes three chunks each, and `bend_ground` adds two patches. That's the widget's count of 8.
+
+🌳 {{code GroundSighting.pond_ground}}
+
+A pond is ground too. A segment that ends at a pond gets two more patches, the water and its bank, and their outlines come from `Pond`. `on_map` is another closure, and it moves an outline from the pond's own record onto the road.
+
+### The rail at a bend
+
+The rail is a path along the outer edge, out to the apex, and back.
+
+The path of a guard rail
+```dot
+digraph rail {
+  rankdir=LR;
+  node [shape=box, fontname="Helvetica"];
+  up [label="run_up:\n10 metres along\nthe first segment"];
+  out [label="rail_leg:\nout to the apex"];
+  back [label="rail_leg:\nback to the\nsecond segment"];
+  on [label="run_out:\n10 metres along\nthe second segment"];
+  up -> out -> back -> on;
+}
+```
+
+🌳 {{code RailSighting.rail_path}}
+
+The four parts of the list are the four boxes.
+
+🌳 {{code RailSighting.rail_leg}}
+
+A leg gets a point about every metre. It leaves out its first point, which is the last point of the leg before it.
+
+🌳 {{code RailSighting.rails_at}}
+
+`GuardRail.quads_along` turns the path into rails and posts for the depth sort. At a turn of 45 degrees, that's the widget's 49 pieces.
+
+All of this is worked out again on every frame, from the route and the rider. A bend is kept nowhere.
+
 ## The sky
 
 The sky is the simplest thing that moves, because it depends on one number.
