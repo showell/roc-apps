@@ -582,7 +582,7 @@ Drag across it from left to right, and the gap falls from 50 metres to 0, with t
 New in this chapter:
 
 - Roc: type parameters, operators on opaque types, `var`, `for` and `return` in a pure function, `|` and `_` in patterns, open records
-- Modules: `Cat`, `Animation`, `Beat`, `Beats`, `Distance`, `Speed`, `CrossingReaction`
+- Modules: `Cat`, `Animation`, `Beat`, `Beats`, `CatHeights`, `Distance`, `Speed`, `CrossingReaction`
 
 The cat is one function, `Cat.instant_at`, with two jobs: work out how far along the crossing is, and look up what the cat does at that point. The module `Animation` sits under both.
 
@@ -617,7 +617,7 @@ A crossing and an approach go in, and the cat at that instant comes out. The sam
 
 🌳 {{code CatSighting.cat_in_view from "gap =" to "instant ="}}
 
-What `Cat` gets from `Animation` comes down to three types. The first and last are plain record aliases, and `Instant(pose)` takes a type parameter, which a cat fills with its own poses.
+What `Cat` gets from `Animation` comes down to three types. The first and last are plain record aliases, and `Instant(pose, lift)` takes two type parameters. A cat fills the first with its own poses and the second with `CatHeights`, because a cat's lift off the ground is measured in its own height, whatever size it stands on screen.
 
 {{code Animation.Approach}}
 
@@ -740,7 +740,7 @@ There are two tracks because a cat's looks and its movement change at different 
 
 🌳 {{code Cat.crossing_timeline from "path:" to "finally: StaysAt(end),"}}
 
-`Timeline` is nominal, the middle ground: unlike an alias it can carry methods, and unlike an opaque type anyone can build one, which is right for data that needs no guarding. `Timeline(pose)` takes a type parameter, which is how a cat and a bird share it.
+`Timeline` is nominal, the middle ground: unlike an alias it can carry methods, and unlike an opaque type anyone can build one, which is right for data that needs no guarding. `Timeline(pose, lift)` takes the same two type parameters, which is how a cat and a bird share it.
 
 {{code Animation.Timeline from "## A whole animation" to "}.{"}}
 
@@ -1423,7 +1423,7 @@ Here we add a speed to a length:
 
 {{fails speed_as_distance}}
 
-Seventeen small opaque types run through Safari Ride, and the tour has met most of them one at a time. Set side by side, they're a system:
+Eighteen small opaque types run through Safari Ride, and the tour has met most of them one at a time. Set side by side, they're a system:
 
 | Type | Under it | What it measures |
 |---|---|---|
@@ -1438,6 +1438,7 @@ Seventeen small opaque types run through Safari Ride, and the tour has met most 
 | `Along` | `F64` | A place along a segment |
 | `Across` | `F64` | A place across the road |
 | `Pixels` | `F64` | A length on screen |
+| `CatHeights` | `F64` | A length measured in the cat's own height |
 | `Speed` | `F64` | Metres a step |
 | `Acceleration` | `F64` | Metres a step, each step |
 | `Fraction` | `F64` | A ratio from 0 to 1 |
