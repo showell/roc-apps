@@ -187,7 +187,7 @@ Some of Safari Ride never changes. Trees, cows, the pond and the road are built 
 Step along the route and read each segment's record.
 ```
 
-Each stretch of this map is one record of a list called `World.plans`, and the lines under the ruler read it out. The marks on the ruler are the six segments with a cat or a bird. We drew the map for this page: the ride itself never has one.
+Each stretch of this map is one record of a list called `World.plans`, and the lines under the map read it out. The marks on the map are the six segments with a cat or a bird. We drew the map for this page: the ride itself never has one.
 
 New in this chapter:
 
@@ -489,7 +489,7 @@ A road of straight segments still has to get round its bends. Where two segments
 Press play to turn the bend, and watch the rail change sides.
 ```
 
-The road here is two segments, seen from above, and the white dot is where the view is from. The rail runs along the outer edge of the bend, and the yellow dot is the apex, where the outer edges of the two segments meet. The marks on the ruler are the route's own bends. Playing past straight swaps the outer edge from one side to the other. A road with no turn has no apex, so the ruler skips the last five degrees either side of straight.
+The road here is two segments, seen from above, and the white dot is where the view is from. The rail runs along the outer edge of the bend, and the yellow dot is the apex, where the outer edges of the two segments meet. Playing past straight swaps the outer edge from one side to the other. A road with no turn has no apex, so the widget skips straight.
 
 New in this chapter:
 
@@ -527,7 +527,7 @@ A bend is a small record.
 
 {{code BendView.outer_edge}}
 
-A bend to the right has its outer edge on the left. That's the swap at the middle of the ruler.
+A bend to the right has its outer edge on the left. That's the swap you saw at straight.
 
 {{code BendView.apex}}
 
@@ -796,7 +796,7 @@ We've held one frame still for a long time. Now it's time to turn the page. Each
 Press play to run the ride, and the outer buttons to go to either end.
 ```
 
-The first three lines under the ruler are that record's three fields, read from a real ride. Press the last button, and the ride plays up to step 2,000, eight steps a frame. Press the first, and it's back at the start almost at once, because the steps it has been through are kept in a list.
+The first three lines under the picture are that record's three fields, read from a real ride. Press the last button, and the ride plays up to step 2,000, eight steps a frame. Press the first, and it's back at the start almost at once, because the steps it has been through are kept in a list.
 
 New in this chapter:
 
@@ -847,7 +847,7 @@ Some things in Safari Ride are worked out from the clock alone, with nothing sto
 Press play and watch the towers blink out of step.
 ```
 
-Play it, and the clock runs through two whole blinks, from step 5,400 to step 5,640. The left tower starts dark and the right one at full brightness. At step 5,430, where the first marked stretch starts, both read 49%, and by step 5,460 they've changed places. Each marked stretch is where the left tower is more than half bright. At the far end of the ruler the towers are back where they began.
+Play it, and the clock runs through two whole blinks, from step 5,400 to step 5,640. The left tower starts dark and the right one at full brightness. At step 5,430 both read 49%, and by step 5,460 they've changed places. By the end the towers are back where they began.
 
 New in this chapter:
 
@@ -1444,7 +1444,7 @@ A cat walks out into the lane, freezes as the rider bears down on it, and leaps 
 Press play and watch the crossing.
 ```
 
-Play it, and the gap falls from 50 metres to 0, with the rider held at a metre a step. The cat rests on the right verge until 41 metres, where the marked stretch of the ruler starts and the last line changes to "The rider may not accelerate". It walks out, and at 31 metres it freezes in the lane. It stays frozen down to 7 metres, coils, and is in the air from 6 metres to 4. At 3 metres, where the marked stretch ends, it has collapsed on the far verge and the rider may accelerate again. Below that, nothing changes.
+Play it, and the gap falls from 50 metres to 0, with the rider held at a metre a step. The cat rests on the right verge until 41 metres, where the last line changes to "The rider may not accelerate". It walks out, and at 31 metres it freezes in the lane. It stays frozen down to 7 metres, coils, and is in the air from 6 metres to 4. At 3 metres it has collapsed on the far verge and the rider may accelerate again. Below that, nothing changes.
 
 New in this chapter:
 
@@ -1474,7 +1474,7 @@ digraph cat {
 
 `Cat` says what a cat does, and `Animation` holds what a cat shares with a bird. Everything that uses a cat imports it, and `Cat` imports none of them: it doesn't know it's drawn, sighted or reacted to.
 
-The slider isn't scrubbing a video. Every position of it is a call to `Cat.instant_at`. The arrow is `->` again, so the type already says there's no hidden cat being updated somewhere. A timeline is a record of what the cat does at each point. Method syntax chains the two jobs: `.instant(...)` is defined on the `Timeline` that `crossing_timeline` returns.
+The widget isn't playing a video. Every gap it shows is a call to `Cat.instant_at`. The arrow is `->` again, so the type already says there's no hidden cat being updated somewhere. A timeline is a record of what the cat does at each point. Method syntax chains the two jobs: `.instant(...)` is defined on the `Timeline` that `crossing_timeline` returns.
 
 {{code Cat.instant_at}}
 
@@ -1682,7 +1682,7 @@ The cat is built on a shared module, `Animation`, and one critter can't show whe
 Press play and watch the bird fly.
 ```
 
-Play it, and the gap falls from 75 metres to 0. The bird sits on the left tree, 5.9 metres up, until 60 metres, where the marked stretch of the ruler starts. It takes off side on, turns away at about 55 metres, and reaches 10.2 metres near the middle of the stretch, shrinking as it goes. It dives from 20 metres, and at 15, where the marked stretch ends, it's perched on the far tree, 4.5 metres up. Below that, the picture stays as it is.
+Play it, and the gap falls from 75 metres to 0. The bird sits on the left tree, 5.9 metres up, until 60 metres. It takes off side on, turns away at about 55 metres, and reaches 10.2 metres near the middle of its flight, shrinking as it goes. It dives from 20 metres, and at 15 it's perched on the far tree, 4.5 metres up. Below that, the picture stays as it is.
 
 New in this chapter:
 
