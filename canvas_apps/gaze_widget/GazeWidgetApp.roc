@@ -337,10 +337,10 @@ status_lines = |rider, step|
 		"Attention: ${ScrubWidget.percent_text(rider.attention)}",
 	]
 
-## The whole stretch, played. It's a function because a constant is worked out at
-## compile time, and this rides hundreds of steps.
-whole_stretch : {} -> List(RiderState)
-whole_stretch = |{}| {
+## The whole stretch, played, for the expects. As a constant it's ridden once, at
+## compile time, which adds under half a second to a check.
+whole_stretch : List(RiderState)
+whole_stretch = {
 	var $model = starting_model
 	while $model.played.len() < stretch_length {
 		$model = played_on($model)
@@ -384,7 +384,7 @@ expect pig_segment.length == Distance.metres(400.0)
 # The steps the book's table quotes, each with its speed in metres a step, its
 # gaze_yaw in degrees and its attention, to the table's precision.
 expect {
-	played = whole_stretch({})
+	played = whole_stretch
 	[
 		{
 			step: 889,
@@ -422,7 +422,7 @@ expect {
 
 # Each phase starts at the step the book says, and not one step before it.
 expect {
-	played = whole_stretch({})
+	played = whole_stretch
 	[
 		(first_step, EyesOnRoad),
 		(look_first_step - 1, EyesOnRoad),
@@ -438,7 +438,7 @@ expect {
 # The gawking and the look start on one step, because both start the same
 # distance from the pig. The brake bites a step later.
 expect {
-	played = whole_stretch({})
+	played = whole_stretch
 	before = state_at_step(played, 888)
 	first = state_at_step(played, 889)
 	next = state_at_step(played, 890)
@@ -451,7 +451,7 @@ expect {
 # The gaze is at its widest on the look's last step, and the look ends short of
 # the release angle, because the next step would pass it.
 expect {
-	played = whole_stretch({})
+	played = whole_stretch
 	widest = gaze_degrees(state_at_step(played, look_end_step - 1))
 	played.all(|rider| gaze_degrees(rider) <= widest)
 		and gaze_degrees(state_at_step(played, look_end_step)) < widest
@@ -460,11 +460,11 @@ expect {
 }
 
 # The gaze never turns left on this stretch, as `gaze_degrees` says.
-expect whole_stretch({}).all(|rider| gaze_degrees(rider) >= 0.0)
+expect whole_stretch.all(|rider| gaze_degrees(rider) >= 0.0)
 
 # The whole stretch stays on the canvas, and on the one segment.
 expect
-	whole_stretch({}).all(
+	whole_stretch.all(
 		|rider|
 			rider.segment_index == first_rider.segment_index
 				and screen_x(rider.along) > 0.0
@@ -544,7 +544,7 @@ expect
 		]
 
 expect {
-	widest_gaze = state_at_step(whole_stretch({}), 1045)
+	widest_gaze = state_at_step(whole_stretch, 1045)
 	status_lines(widest_gaze, 1045.0)
 		== [
 			"Looking at the pig, and slowing",
