@@ -246,40 +246,39 @@ tier_triangle = |screen_tree, { tier, color }| {
 	)
 }
 
-## The convex hull of `points`, going round from the leftmost: Andrew's
-## monotone chain, its lower chain and then its upper. Fewer than three
-## points are their own hull.
+## The convex hull of `points`, clockwise on the screen from the leftmost:
+## Andrew's monotone chain, along the hull's top and back along its bottom.
+## Fewer than three points are their own hull.
 convex_hull : List(Screen.Point) -> List(Screen.Point)
 convex_hull = |points|
 	if points.len() < 3 {
 		points
 	} else {
-		sorted = sorted_points(points)
-		lower = sorted.fold([], |hull, point| trim_hull(hull, point).append(point))
-		upper = sorted.fold_rev([], |point, hull| trim_hull(hull, point).append(point))
-		lower.drop_last(1).concat(upper.drop_last(1))
+		sorted = points.sort_with(left_to_right)
+		top_chain = sorted.fold([], |hull, point| trim_hull(hull, point).append(point))
+		bottom_chain = sorted.fold_rev([], |point, hull| trim_hull(hull, point).append(point))
+		top_chain.drop_last(1).concat(bottom_chain.drop_last(1))
 	}
 
-## The points left to right, and top to bottom where they share an x. Each
-## goes in after the ones it doesn't come before, so points that tie keep
-## their order.
-sorted_points : List(Screen.Point) -> List(Screen.Point)
-sorted_points = |points|
-	points.fold(
-		[],
-		|sorted, point|
-			match sorted.find_first_index(|placed| is_before(point, placed)) {
-				Ok(at) => [sorted.take_first(at), [point], sorted.drop_first(at)].join()
-				Err(NotFound) => sorted.append(point)
-			},
-	)
+## The order the hull walks points in: left to right, and top to bottom where
+## they share an x.
+left_to_right : Screen.Point, Screen.Point -> [Before, Same, After]
+left_to_right = |a, b|
+	if is_before(a, b) {
+		Before
+	} else if is_before(b, a) {
+		After
+	} else {
+		Same
+	}
 
 ## Whether `a` comes before `b`: left of it, or above it at the same x.
 is_before : Screen.Point, Screen.Point -> Bool
 is_before = |a, b| a.x < b.x or (a.x == b.x and a.y < b.y)
 
-## The hull with its last points taken off while they don't turn left on the
-## way to `point`.
+## The hull with its last points taken off while they don't turn clockwise on
+## the way to `point`. The screen's y grows downward, so a positive `turn` is
+## clockwise as the eye sees it.
 trim_hull : List(Screen.Point), Screen.Point -> List(Screen.Point)
 trim_hull = |hull, point|
 	match hull {
@@ -519,5 +518,9 @@ expect convex_hull(hull_pair).len() == 2
 expect convex_hull(hull_with_a_repeat).len() == 3
 
 expect
-	Paint.flatten_screen(sorted_points(square_with_inside_points))
+	Paint.flatten_screen(square_with_inside_points.sort_with(left_to_right))
 		== [0.0, 0.0, 0.0, 4.0, 2.0, 0.0, 2.0, 2.0, 4.0, 0.0, 4.0, 4.0]
+
+expect left_to_right(Screen.point(1.0, 9.0), Screen.point(2.0, 0.0)) == Before
+expect left_to_right(Screen.point(2.0, 0.0), Screen.point(1.0, 9.0)) == After
+expect left_to_right(Screen.point(1.0, 2.0), Screen.point(1.0, 2.0)) == Same
