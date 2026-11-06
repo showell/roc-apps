@@ -913,9 +913,7 @@ Pigs graze on the right of the road, near the end of a segment. The first two se
 
 {{code Pigs.pigs_along}}
 
-As with the tower's rods, the `match` is on a pair. The last line joins the two with no pigs.
-
-`Distracting` is the one thing here that a cow doesn't have. One pig in a big herd catches the rider's eye, and the rider slows down to look. That's about the rider more than the pig, so it waits for the rider's chapters.
+The `match` has three branches, because a segment's pigs can be three things to the rider. `Distracting` is the one a cow doesn't have. One pig in a big herd catches the rider's eye, and the rider slows down to look. That's about the rider more than the pig, so it waits for the rider's chapters.
 
 That's every critter that stands still, and the end of what we can say about one frame.
 
@@ -1313,7 +1311,6 @@ The rider is always deciding whether to accelerate, brake or hold steady. `Throt
 
 New in this chapter:
 
-- Roc: guards
 - Modules: `Throttle`, `Acceleration`
 
 The modules around `Throttle`
@@ -1348,7 +1345,7 @@ The rider has several reasons to slow down, and they don't know about each other
 
 Call this *the chain of limits*. Each limit has the same shape and can be read alone, and adding a reason is one more line. It reads like a list of rules because that's what it is.
 
-Each limit compares two opaque `Acceleration`s with an ordinary `<`, which works because `Acceleration` defines `is_lt`. `crossing_limit` shows one more thing about patterns. A guard, `if a > Acceleration.steady`, adds a condition to a branch. When the guard fails, `NoAcceleration` falls through to the last branch. `NoAcceleration` comes from the cat: it stops the rider opening the throttle, and a rider already braking stays braking. We'll see how once we've met the cat.
+Each limit takes the lower of two opaque `Acceleration`s with `min`. `NoAcceleration` comes from the cat: it stops the rider opening the throttle, and a rider already braking stays braking. We'll see how once we've met the cat.
 
 {{code Throttle.crossing_limit}}
 
@@ -1368,69 +1365,110 @@ The two limits in the middle come from what the rider sees. `crossing_limit` is 
 
 ## The rider's gaze
 
-The herds chapter left one pig waiting. On the first two segments with pigs, a pig in the big herd catches the rider's eye. The rider turns to look and slows down, and the picture turns too.
+The herds chapter left one pig waiting. On the first two segments with pigs, one pig in the big herd catches the rider's eye. The rider turns to look and slows down, and the picture turns too.
+
+Those are two different things, and they don't last the same time. The eyes follow the pig, and they give up once it's too far round. The speed drops for the pig, and it stays down until the segment ends. So `Gaze` has two words. A *look* is what the eyes do, and *gawking* is what the speed does. This chapter takes them in that order.
 
 ```widget gaze
-Press play to ride the stretch around the first distracting pig: the sight line follows the pig until it's 35 degrees off, then eases back to the road.
+Press play to ride the stretch around the first distracting pig. Each step is one call to `Rider.advance`, and the lines under the picture read the rider's `speed`, `gaze_yaw` and `look_depth`.
 ```
 
-Here's that first pig, on the third segment of the route:
+### Get the types right
 
-| Step | What happens | Speed | `gaze_yaw` | `attention` |
-|---|---|---|---|---|
-| 889 | The rider looks, with the pig 150 metres off | 1.94 metres a step | 4.0 degrees | 0.114 |
-| 1,045 | The gaze is at its widest | 0.2 metres a step | 34.9 degrees | 0.998 |
-| 1,046 | The rider lets the pig go | 0.2 metres a step | 34.7 degrees | 0.998 |
-| 1,304 | The gaze is back on the road | 0.2 metres a step | 0 degrees | 0.997 |
+The rider's record has two fields we skipped:
 
-The look takes 157 steps, and getting the eyes back takes 258. The rider is still crawling when the segment ends, at step 1,394.
+| Field | Type | What it is |
+|---|---|---|
+| `gaze_yaw` | `Angle.Turn` | How far the rider looks from the way the bike points |
+| `look_depth` | `Fraction` | How far a look went, from 0 to 1, fading once it's over |
 
-New in this chapter:
+Mind what `gaze_yaw` is measured from. The road has a direction, `yaw` is how far the bike points from the road, and `gaze_yaw` is how far the eyes point from the bike. Each angle only knows about the one before it, and that's why they're both a `Turn`.
 
-- Roc: comparing a tag with `==`
-- Modules: `Gaze`, `ViewYaw`
+Three small types say what a pig can do to the rider. Each one carries its payload only where it means something. A segment's `pig_interest` says what its pigs are to the rider, and only `Distracting` has a pig in it:
 
-### Where the rider looks
+{{code Pigs.PigInterest}}
 
-The rider's record has two fields we skipped. `gaze_yaw` is the angle between where the bike points and where the rider looks. `attention` says how much a look still holds the rider, from 0 to 1. They're stepped like everything else in that record, and the last line of `Rider.advance` does it, after the bike has moved:
-
-{{code Gaze.next_rider_gaze}}
-
-The rider looks either at a pig or at the road. An angle only means something for a pig, so only `OnPig` carries one:
+The rider looks at a pig or at the road, and only a pig has an angle:
 
 {{code Gaze.GazeTarget}}
 
+A pig asks something of the throttle, or it doesn't:
+
+{{code Gaze.GawkBrake}}
+
+So the job is a short list:
+
+| Job | Function | Its type |
+|---|---|---|
+{{types row Gaze.desired_gaze Choose where to look}}
+{{types row Gaze.next_gaze_yaw Turn the head}}
+{{types row Gaze.next_look_depth Keep the depth of the look}}
+{{types row Gaze.is_gawking Know whether the rider is gawking}}
+{{types row Gaze.gawk_brake Ask the throttle to brake}}
+
+One step of the gaze
+```dot
+digraph gaze {
+  rankdir=LR;
+  node [shape=box, fontname="Helvetica"];
+  desired_gaze -> next_gaze_yaw -> next_look_depth;
+  next_gaze_yaw -> camera;
+  next_look_depth -> "width of the view";
+  is_gawking -> gawk_brake -> pig_limit -> speed;
+}
+```
+
+The top row is the look, and the bottom row is the gawking. Nothing joins them. Both ask about the same pig, and neither asks about the other.
+
+### The look
+
+`Rider.advance` moves the eyes last, after the bike has moved:
+
+{{code Gaze.next_rider_gaze}}
+
+Choosing where to look comes first:
+
 {{code Gaze.desired_gaze}}
 
-`pig_ahead` answers with `Looking` or `NotLooking`. There's only one thing to ask of that, so `==` does the job of a `match`.
+The pig has to be near, and it has to be in sight. Near means within 150 metres, measured along the road. In sight is an angle:
 
-`Distracting` is the tag from the herds chapter. `yaw` is the bike's angle to the road, so a rider who's steering hard keeps its eyes where it's going. Then there are two more conditions. The pig has to be within 150 metres:
+{{code Gaze.turn_to}}
 
-And it has to be less than 35 degrees from the way the bike points. The pig stands beside the road, so the angle to it grows as the rider comes closer. At 35 degrees the rider lets it go.
-
-`Pigs.gaze_pig` is the third pig of the front row, at the place it would stand if it didn't stray.
+That's the direction to the pig, less the way the bike points. The pig stands beside the road, so the angle grows as the rider comes closer. At 35 degrees the rider lets it go. There's no timer and no flag saying the look is over. The first pig reaches 35 degrees when it's still 15.8 metres ahead, and that falls out of where it stands.
 
 ### Turning the head
 
 {{code Gaze.next_gaze_yaw}}
 
-Toward a pig, the gaze turns by at most 4 degrees a step, and `within` holds the change to that limit on either side. On the way back it moves a twentieth of the way each step, and never more than 0.2 degrees. Once it's within 0.02 degrees it snaps to straight ahead, so a look comes to a real end. If the segment ends first, `Rider.on_next_segment` puts the gaze straight ahead.
+Toward a pig, the gaze turns by at most 4 degrees a step, and `within` holds the change to that limit on either side. On the way back it gives up a twentieth of its angle each step, and never more than 0.2 degrees.
+
+A twentieth of what's left never gets to zero, so the `OnRoad` branch tests for that first. Once the gaze is within 0.02 degrees, it snaps to straight ahead, and a look comes to a real end.
 
 Nothing here turns the bike. The gaze goes to the camera, and to nothing else that moves:
 
 {{code ViewYaw.view_yaw_for}}
 
-So when the rider looks right, the road slides left on the page, and the bike keeps going where it was going.
+The second term is the rider's head going with the lean. So when the rider looks right, the road slides left on the page, and the bike keeps going where it was going.
 
-### Attention
+### The depth of a look
 
 {{code Gaze.next_look_depth}}
 
-While the gaze is off the road, attention rises with how far it has turned, and it doesn't drop. Once the gaze is straight ahead, attention fades by 0.0012 a step, so it takes hundreds of steps to go. That's why the table in the rider chapter has a `look_depth` of 0.67 at step 1,570, with no pig in sight.
+While the gaze is off straight ahead, the depth rises with how far it has turned, and it doesn't drop. Once the gaze is home, the depth fades by 0.0012 a step. That's why the table in the rider chapter has a `look_depth` of 0.67 at step 1,570, with no pig in sight. The gaze came home 262 steps before.
 
-`RideFocal.ride_focal`, which sets how wide the view is, takes the stronger of the cat's attention and this one. So a pig widens the view the way a cat does, and it stays wide for a while after.
+The depth has one job. It widens the view:
 
-### Slowing down
+{{code Gaze.gaze_attention}}
+
+`RideFocal.ride_focal`, which sets how wide the view is, takes the stronger of this and the cat's attention. So a pig widens the view the way a cat does, and it stays wide for a while after.
+
+### Gawking
+
+Whether the rider is gawking is a plainer question than whether it's looking:
+
+{{code Gaze.is_gawking}}
+
+It starts at the same 150 metres, but it only asks where the rider is. There's no angle in it, so it outlasts the look.
 
 `pig_limit` is the third link in the throttle's chain. It asks `Gaze` for a brake, and takes it if that's harder than what it was offered:
 
@@ -1438,13 +1476,20 @@ While the gaze is off the road, attention rises with how far it has turned, and 
 
 {{code Gaze.gawk_brake}}
 
-The sum is the one the throttle uses for a bend, with a pig for a bend. The rider aims to be down to 0.2 metres a step by 25 metres before the pig. `d.max(...)` keeps the distance positive once the rider gets there.
+The sum is the one the throttle uses for a bend, with a pig for a bend. The rider aims to be down to 0.2 metres a step by 25 metres before the pig. Past that point `room` would go below zero, so `gawk_least_distance` holds it at a metre and the brake stays on.
 
-Whether the rider is gawking is a plainer question than whether it's looking:
+### The first pig
 
-{{code Gaze.is_gawking}}
+Here's all of that on the third segment of the route:
 
-It starts 150 metres before the pig, and only asks where the rider is. So it outlasts the look. The rider crawls past the pig and on to the end of the segment, long after its eyes have moved on.
+| Step | What happens | Speed | `gaze_yaw` | `look_depth` |
+|---|---|---|---|---|
+| 889 | The rider looks, with the pig 150 metres off | 1.94 metres a step | 4.0 degrees | 0.114 |
+| 1,050 | The gaze is at its widest | 0.2 metres a step | 34.7 degrees | 0.991 |
+| 1,051 | The rider lets the pig go | 0.2 metres a step | 34.5 degrees | 0.991 |
+| 1,308 | The gaze is back on the road | 0.2 metres a step | 0 degrees | 0.989 |
+
+The look takes 162 steps, and getting the eyes back takes 257. The rider crawls for 90 steps more with nothing to look at, and the segment ends at step 1,398. The gaze is home at every one of the ride's 18 crossings, and an expect holds that, so a new segment has nothing to reset.
 
 That's the rider's step, apart from the lean. The other stepped thing is up ahead.
 
