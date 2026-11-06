@@ -1,4 +1,4 @@
-## Tour is the whole journey, for any platform that draws it. It keeps the
+## Tour is the whole ride, for any platform that draws it. It keeps the
 ## current instant of the ride and the instants behind it for stepping back, and
 ## it says what a frame shows in the terms a painter needs: the shapes, the
 ## camera roll, the two sky colours and the sun. SafariApp turns it into a

@@ -1,6 +1,6 @@
 # safari
 
-The driving screensaver, as a canvas app: a rider on a motorcycle, a route of
+A screensaver of a ride, as a canvas app: a rider on a motorcycle, a route of
 nineteen segments through fields, forests and towns, and animals that cross
 when they like. It runs as a page and as a native program on roc-ray, like the
 other canvas apps (`../README.md`). **The page is the maintained side**; the
@@ -13,7 +13,7 @@ is not kept current.
 
 Space pauses. Left and Right step back and forward through the ride's history —
 a frame at a time while paused, faster while it runs. J jumps to the next
-intersection. R starts the drive again.
+intersection. R starts the ride again.
 
 ## Where it came from
 
@@ -32,7 +32,7 @@ The rest have been rewritten by hand.
 | | |
 |---|---|
 | `SafariApp.roc` | the `CanvasApp` value: the keys, the pause, and the frame leaned by the rider's roll |
-| `Tour.roc` | the whole journey for any platform: the current instant, the instants behind it for stepping back, and what a frame shows — the shapes, the roll, the sky colours, the sun |
+| `Tour.roc` | the whole ride for any platform: the current instant, the instants behind it for stepping back, and what a frame shows — the shapes, the roll, the sky colours, the sun |
 | `SafariShapes.roc` | a frame as shapes: the sky's gradient, the grass, the sun and its glow, and the ride's shapes |
 | `Paint.roc` | builders that turn screen points and colours into `Shapes.Shape`s, for the drawing modules |
 | `SafariFrame.roc` | a frame painted into pixels in Roc, for the proof tools below |
