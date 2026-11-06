@@ -35,32 +35,32 @@ RailSighting :: [].{
 		|quad, i| { forward: quad.forward, subject: Rail(i.to_u32_wrap()) },
 	)
 
-	## How many steps a leg `distance` long is cut into: one a metre, and at
+	## How many pieces a leg `distance` long is cut into: one a metre, and at
 	## least one.
-	leg_steps : F64 -> U32
-	leg_steps = |distance| {
-		steps = Num_.round_real(distance)
+	leg_pieces : F64 -> U32
+	leg_pieces = |distance| {
+		pieces = Num_.round_real(distance)
 		(
-			if steps < 1.0 {
+			if pieces < 1.0 {
 				1.0
 			} else {
-				steps
+				pieces
 			}
 		).to_u32_wrap()
 	}
 
-	## `steps` + 1 points evenly spaced from `from` to `to`, both included.
+	## `pieces` + 1 points evenly spaced from `from` to `to`, both included.
 	evenly_spaced : {
 		from : Geom.RiderPoint,
 		to : Geom.RiderPoint,
-		steps : U32,
+		pieces : U32,
 	} -> List(Geom.RiderPoint)
-	evenly_spaced = |{ from, to, steps }| {
+	evenly_spaced = |{ from, to, pieces }| {
 		rightward = to.right - from.right
 		forward = to.forward - from.forward
-		List.from_iter(U32.to(0, steps)).map(
+		List.from_iter(U32.to(0, pieces)).map(
 			|step| {
-				fraction = step.to_f64() / steps.to_f64()
+				fraction = step.to_f64() / pieces.to_f64()
 				{
 					right: from.right + rightward * fraction,
 					forward: from.forward + forward * fraction,
@@ -76,8 +76,8 @@ RailSighting :: [].{
 		rightward = to.right - from.right
 		forward = to.forward - from.forward
 		distance = DeviceMath.real_sqrt(rightward * rightward + forward * forward)
-		steps = RailSighting.leg_steps(distance)
-		RailSighting.evenly_spaced({ from, to, steps }).drop_first(1)
+		pieces = RailSighting.leg_pieces(distance)
+		RailSighting.evenly_spaced({ from, to, pieces }).drop_first(1)
 	}
 
 	## The rail along the last `rail_runout` metres of a segment `length`
@@ -190,7 +190,7 @@ expect
 		(10.0, 10),
 		(49.6, 50),
 		(50.0, 50),
-	].all(|(distance, want)| RailSighting.leg_steps(distance).to_i64() == want)
+	].all(|(distance, want)| RailSighting.leg_pieces(distance).to_i64() == want)
 
 origin_pt : Geom.RiderPoint
 origin_pt = { right: 0.0, forward: 0.0 }
@@ -228,7 +228,7 @@ expect {
 	spaced = RailSighting.evenly_spaced({
 		from: origin_pt,
 		to: { right: 0.0, forward: 10.0 },
-		steps: 10,
+		pieces: 10,
 	})
 	spaced.len() == 11
 		and point_at(spaced, 0).forward == 0.0
