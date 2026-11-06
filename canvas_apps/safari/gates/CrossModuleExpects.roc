@@ -118,11 +118,11 @@ segment_of = |trees| {
 
 ## The birds on one segment of `trees`, for a rider `rider_along` metres into
 ## it, seen through a focal length of `cam_focal`.
-birds_on : List(Scenery.Tree), { rider_along : F64, cam_focal : F64 } -> List(RocBird.PlacedBird)
+birds_on : List(Scenery.Tree), { rider_along : F64, cam_focal : F64 } -> List(BirdSighting)
 birds_on = |trees, seen_from| birds_on_segment(segment_of(trees), seen_from)
 
 ## The birds on `segment`, for a rider `rider_along` metres into it.
-birds_on_segment : World.Segment, { rider_along : F64, cam_focal : F64 } -> List(RocBird.PlacedBird)
+birds_on_segment : World.Segment, { rider_along : F64, cam_focal : F64 } -> List(BirdSighting)
 birds_on_segment = |segment, { rider_along, cam_focal }|
 	BirdSighting.in_view({
 		road: {
@@ -135,13 +135,13 @@ birds_on_segment = |segment, { rider_along, cam_focal }|
 
 ## The one bird that a rider `rider_along` metres in sees on the segment with
 ## a far tree.
-bird_at : F64 -> RocBird.PlacedBird
+bird_at : F64 -> BirdSighting
 bird_at = |rider_along|
 	birds_on(left_trees.append(far_tree), { rider_along, cam_focal: 500.0 }).first()
 		?? crash "CrossModuleExpects: this rider sees a bird"
 
 ## How far off a bird is, across the road and up.
-place_of : RocBird.PlacedBird -> List(F64)
+place_of : BirdSighting -> List(F64)
 place_of = |bird| [bird.right, bird.forward, bird.lift.to_metres()]
 
 expect place_of(bird_at(0.0)) == [-6.0, 100.0, 10.0]
@@ -187,7 +187,7 @@ expect bird_count(left_trees, { rider_along: 0.0, cam_focal: 90.0 }) == 0
 expect birds_on_segment(segment_with_cat, { rider_along: 0.0, cam_focal: 500.0 }).len() == 0
 
 ## Two segments in the chain, the rider at the start of the first.
-two_segments : List(RocBird.PlacedBird)
+two_segments : List(BirdSighting)
 two_segments = BirdSighting.in_view({
 	road: {
 		world: [segment_of(left_trees), segment_of(left_trees)],

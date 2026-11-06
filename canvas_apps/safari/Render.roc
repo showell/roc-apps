@@ -30,7 +30,7 @@ Render :: [].{
 		cats : List(CatSighting),
 		rails : List(GuardRail.RailPoly),
 		truck : TruckSighting,
-		birds : List(RocBird.PlacedBird),
+		birds : List(BirdSighting),
 		order : List(DepthSort.DepthKey),
 	}
 
