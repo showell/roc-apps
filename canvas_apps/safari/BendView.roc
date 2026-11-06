@@ -201,8 +201,8 @@ at_d0 = Chain.rider_point_ahead(
 	},
 )
 
-at_d1 : List(World.Segment) -> Geom.RiderPoint
-at_d1 = |route| Chain.rider_point_ahead(
+point_at_d1 : List(World.Segment) -> Geom.RiderPoint
+point_at_d1 = |route| Chain.rider_point_ahead(
 	{
 		route,
 		chain: Chain.chain_ahead(route, World.SegmentIndex.first),
@@ -216,7 +216,7 @@ at_d1 = |route| Chain.rider_point_ahead(
 )
 
 expect {
-	second_segment_point = at_d1(World.segments)
+	second_segment_point = point_at_d1(World.segments)
 	[
 		(at_d0.right.to_metres(), 9.933466539753061),
 		(at_d0.forward.to_metres(), -49.00332889206208),
@@ -226,8 +226,8 @@ expect {
 }
 
 ## The point 50 m along the segment at `place`, which is behind the rider.
-behind_at : Chain.SegmentPlace -> Geom.RiderPoint
-behind_at = |place| Chain.rider_point_at(
+rider_point_behind : Chain.SegmentPlace -> Geom.RiderPoint
+rider_point_behind = |place| Chain.rider_point_at(
 	{ route: [], chain: [], vantage },
 	{
 		place,
@@ -238,8 +238,8 @@ behind_at = |place| Chain.rider_point_at(
 
 expect
 	[
-		(behind_at(m_prev_left).right.to_metres(), -194.76069932822074),
-		(behind_at(m_prev_left).forward.to_metres(), -231.63435691739767),
-		(behind_at(m_prev_right).right.to_metres(), 239.9883995667414),
-		(behind_at(m_prev_right).forward.to_metres(), -218.13274420105967),
+		(rider_point_behind(m_prev_left).right.to_metres(), -194.76069932822074),
+		(rider_point_behind(m_prev_left).forward.to_metres(), -231.63435691739767),
+		(rider_point_behind(m_prev_right).right.to_metres(), 239.9883995667414),
+		(rider_point_behind(m_prev_right).forward.to_metres(), -218.13274420105967),
 	].all(|(got, want)| (got - want).abs() <= 0.0000001 * want.abs().max(1.0))

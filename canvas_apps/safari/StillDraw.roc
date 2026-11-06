@@ -8,7 +8,7 @@ import Cutouts
 import Distance
 import Camera
 import EmojiStills
-import Paint
+import Polygon
 import lib.Brush
 import Stills
 import Screen
@@ -66,7 +66,7 @@ StillDraw :: [].{
 			points = StillDraw.screen_points(anchor, poly.points)
 			match poly.gradient.first() {
 				Ok(gradient) => draw_gradient_polygon(anchor, { gradient, points })
-				Err(ListWasEmpty) => Paint.polygon(poly.color, points)
+				Err(ListWasEmpty) => Polygon.flat_polygon(poly.color, points)
 			}
 		}
 
@@ -109,8 +109,8 @@ gradient_shape = |gradient|
 		Radial
 	}
 
-## A still's gradient colours and their offsets, as Paint takes them.
-stops_of : Stills.StillGradient -> Paint.ColorStops
+## A still's gradient colours and their offsets, as Polygon takes them.
+stops_of : Stills.StillGradient -> Polygon.ColorStops
 stops_of = |gradient| {
 	start_rgba: gradient.rgba0,
 	end_rgba: gradient.rgba1,
@@ -128,7 +128,7 @@ draw_gradient_polygon = |anchor, { gradient, points }|
 		Linear => {
 			start = StillDraw.screen_point(anchor, { x: gradient.ax, y: gradient.ay })
 			stop = StillDraw.screen_point(anchor, { x: gradient.bx, y: gradient.by })
-			Paint.linear_gradient_polygon(
+			Polygon.linear_gradient_polygon(
 				points,
 				{
 					color_stops: stops_of(gradient),
@@ -141,7 +141,7 @@ draw_gradient_polygon = |anchor, { gradient, points }|
 			center = StillDraw.screen_point(anchor, { x: gradient.cx, y: gradient.cy })
 			u = StillDraw.screen_vector(anchor, { x: gradient.ux, y: gradient.uy })
 			v = StillDraw.screen_vector(anchor, { x: gradient.vx, y: gradient.vy })
-			Paint.radial_gradient_polygon(
+			Polygon.radial_gradient_polygon(
 				points,
 				{
 					color_stops: stops_of(gradient),

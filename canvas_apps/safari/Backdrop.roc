@@ -75,13 +75,13 @@ Backdrop :: [].{
 
 	## The frame in paint order: the sky, the grass, the sun, then the ride's
 	## shapes.
-	behind : List(Shapes.Shape),
+	frame_shapes : List(Shapes.Shape),
 	{
 		sky_top_color : Sky.Rgb,
 		sky_horizon_color : Sky.Rgb,
 		sun_sighting : Sun.Sighting,
 	} -> List(Shapes.Shape)
-	behind = |ride_shapes, { sky_top_color, sky_horizon_color, sun_sighting: sun }| {
+	frame_shapes = |ride_shapes, { sky_top_color, sky_horizon_color, sun_sighting: sun }| {
 		var $out = List.with_capacity(ride_shapes.len() + 8)
 		# Oversized, so the rolled frame's corners stay filled: the top colour to
 		# a fifth of the way down to the horizon at y 300, then the fade; the

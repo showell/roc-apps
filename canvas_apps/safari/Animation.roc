@@ -1,6 +1,6 @@
 ## How a critter plays out as the rider comes. A rule turns an `Approach` into a
 ## `Stage`, and a timeline turns a `Stage` into an `Instant`. The two know nothing
-## of each other: `over_gap` or `over_beats` says how far along an animation is,
+## of each other: `stage_over_gap` or `stage_over_step_span` says how far along an animation is,
 ## and a timeline looks up the frame that far through its list.
 ##
 ## A timeline is a list of frames, each a pose and a spot, so a critter's whole
@@ -28,11 +28,14 @@ Animation :: [].{
 	## The gaps an animation plays between.
 	GapSpan : { starts_at : Distance, ends_at : Distance }
 
+	## How many steps an animation plays for, and the gap it ends at.
+	StepSpan : { length : Steps, ends_at : Distance }
+
 	## An animation that plays while the rider closes from a gap of `starts_at`
 	## to `ends_at`, however fast. It is playing only strictly between the two,
 	## so a critter is at rest at both ends.
-	over_gap : Animation.GapSpan, { gap : Distance, .. } -> Animation.Stage
-	over_gap = |{ starts_at, ends_at }, { gap, .. }|
+	stage_over_gap : Animation.GapSpan, { gap : Distance, .. } -> Animation.Stage
+	stage_over_gap = |{ starts_at, ends_at }, { gap, .. }|
 		if gap <= ends_at {
 			Past(ends_at.minus(gap))
 		} else if gap >= starts_at {
@@ -41,18 +44,18 @@ Animation :: [].{
 			Playing(Fraction.of(starts_at.minus(gap).ratio_to(starts_at.minus(ends_at))))
 		}
 
-	## An animation that plays a beat, one frame, a step, and ends with the rider
-	## `ends_at` short: `over_gap`, starting however far off the rider's speed
+	## An animation that plays one frame a step, and ends with the rider
+	## `ends_at` short: `stage_over_gap`, starting however far off the rider's speed
 	## covers `length` from there. A faster rider starts it sooner, so it
 	## finishes in time however fast the rider comes.
 	##
 	## It takes the speed to be steady. A rider who slows mid-animation shortens
 	## what is left to cover, so the animation falls back a little, and one who
 	## stands still has set nothing going: they are `Waiting`.
-	over_beats : { length : Steps, ends_at : Distance }, Animation.Approach -> Animation.Stage
-	over_beats = |{ length, ends_at }, approach| {
+	stage_over_step_span : Animation.StepSpan, Animation.Approach -> Animation.Stage
+	stage_over_step_span = |{ length, ends_at }, approach| {
 		starts_at = ends_at.plus(approach.speed.distance_in(length))
-		over_gap({ starts_at, ends_at }, approach)
+		stage_over_gap({ starts_at, ends_at }, approach)
 	}
 
 	## A place on a critter's segment, and how high it is off the ground.
@@ -129,7 +132,7 @@ stage_numbers = |stage|
 
 gap_stage : F64 -> Animation.Stage
 gap_stage = |gap|
-	Animation.over_gap(
+	Animation.stage_over_gap(
 		{ starts_at: Distance.metres(60.0), ends_at: Distance.metres(20.0) },
 		{ gap: Distance.metres(gap) },
 	)
@@ -147,7 +150,7 @@ expect
 
 beat_stage : F64, F64 -> Animation.Stage
 beat_stage = |gap, speed|
-	Animation.over_beats(
+	Animation.stage_over_step_span(
 		{ length: Steps.of(10), ends_at: Distance.metres(3.0) },
 		{ gap: Distance.metres(gap), speed: Speed.metres_a_step(speed) },
 	)
@@ -185,19 +188,19 @@ expect
 		|gap| {
 			start_and_end = { starts_at: Distance.metres(7.0), ends_at: Distance.metres(3.0) }
 			approach = { gap: Distance.metres(gap), speed: Speed.metres_a_step(0.4) }
-			rule_by_gap = Animation.over_gap(start_and_end, approach)
-			rule_by_beats = Animation.over_beats(
+			rule_by_gap = Animation.stage_over_gap(start_and_end, approach)
+			rule_by_steps = Animation.stage_over_step_span(
 				{ length: Steps.of(10), ends_at: Distance.metres(3.0) },
 				approach,
 			)
-			is_near(stage_numbers(rule_by_gap), stage_numbers(rule_by_beats))
+			is_near(stage_numbers(rule_by_gap), stage_numbers(rule_by_steps))
 		},
 	)
 
 Note : [First, Second, Third, Fourth, BeforeIt, AfterIt]
 
-at_spot : F64 -> Animation.Spot
-at_spot = |across| {
+spot_at : F64 -> Animation.Spot
+spot_at = |across| {
 	along: Along.metres(0.0),
 	across: Across.metres(across),
 	lift: Distance.zero,
@@ -207,14 +210,14 @@ at_spot = |across| {
 four_frames : Animation.Timeline(Note)
 four_frames = Animation.Timeline.(
 	{
-		before: { pose: BeforeIt, spot: at_spot(-1.0) },
+		before: { pose: BeforeIt, spot: spot_at(-1.0) },
 		frames: [
-			{ pose: First, spot: at_spot(1.0) },
-			{ pose: Second, spot: at_spot(2.0) },
-			{ pose: Third, spot: at_spot(3.0) },
-			{ pose: Fourth, spot: at_spot(4.0) },
+			{ pose: First, spot: spot_at(1.0) },
+			{ pose: Second, spot: spot_at(2.0) },
+			{ pose: Third, spot: spot_at(3.0) },
+			{ pose: Fourth, spot: spot_at(4.0) },
 		],
-		after: { pose: AfterIt, spot: at_spot(99.0) },
+		after: { pose: AfterIt, spot: spot_at(99.0) },
 	},
 )
 
@@ -245,9 +248,9 @@ expect four_frames.instant(Past(Distance.metres(5.0))).spot.across.to_metres() =
 empty_timeline : Animation.Timeline(Note)
 empty_timeline = Animation.Timeline.(
 	{
-		before: { pose: BeforeIt, spot: at_spot(0.0) },
+		before: { pose: BeforeIt, spot: spot_at(0.0) },
 		frames: [],
-		after: { pose: AfterIt, spot: at_spot(0.0) },
+		after: { pose: AfterIt, spot: spot_at(0.0) },
 	},
 )
 

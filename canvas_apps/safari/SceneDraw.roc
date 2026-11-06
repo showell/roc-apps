@@ -369,7 +369,7 @@ truck_view = |vantage, lead| {
 }
 
 truck_seen_from : Geom.Vantage, F64 -> TruckSighting
-truck_seen_from = |vantage, lead| TruckSighting.in_view(truck_view(vantage, lead))
+truck_seen_from = |vantage, lead| TruckSighting.truck_in_view(truck_view(vantage, lead))
 
 lead_of : F64 -> TruckSighting
 lead_of = |lead| truck_seen_from(origin, lead)
@@ -383,7 +383,7 @@ is_ahead = |truck|
 	}
 
 ## Where the truck is, for a lead that puts it in view.
-ahead_of = |lead|
+truck_ahead_of = |lead|
 	match lead_of(lead) {
 		Ahead(truck) => truck
 		NoTruck => crash "SceneDraw: this lead puts the truck in view"
@@ -406,7 +406,7 @@ expect
 		(499.0, 0),
 		(600.0, 1),
 		(900.0, 2),
-	].all(|(lead, want)| ahead_of(lead).position.to_i64() == want)
+	].all(|(lead, want)| truck_ahead_of(lead).position.to_i64() == want)
 
 expect
 	[
@@ -414,7 +414,7 @@ expect
 		(499.0, 499.0),
 		(600.0, 100.0),
 		(900.0, 80.0),
-	].all(|(lead, want)| ahead_of(lead).along.to_metres() == want)
+	].all(|(lead, want)| truck_ahead_of(lead).along.to_metres() == want)
 
 expect
 	[
@@ -422,11 +422,11 @@ expect
 		(499.0, 0.0),
 		(600.0, 0.0),
 		(900.0, 0.0),
-	].all(|(lead, want)| ahead_of(lead).across.to_metres() == want)
+	].all(|(lead, want)| truck_ahead_of(lead).across.to_metres() == want)
 
 ## The lights a truck in view shows, when it has `lights` on.
 lights_shown = |lights|
-	match TruckSighting.in_view({ ..truck_view(origin, 100.0), lights }) {
+	match TruckSighting.truck_in_view({ ..truck_view(origin, 100.0), lights }) {
 		Ahead(truck) => truck.lights
 		NoTruck => crash "SceneDraw: this lead puts the truck in view"
 	}
@@ -441,8 +441,8 @@ expect
 
 expect
 	[
-		(ahead_of(100.0).forward.to_metres(), 100.0),
-		(ahead_of(499.0).forward.to_metres(), 499.0),
+		(truck_ahead_of(100.0).forward.to_metres(), 100.0),
+		(truck_ahead_of(499.0).forward.to_metres(), 499.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 expect !is_ahead(NoTruck)

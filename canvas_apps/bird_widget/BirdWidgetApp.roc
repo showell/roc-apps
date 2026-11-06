@@ -12,7 +12,7 @@ import game.Camera
 import game.Clock
 import game.Distance
 import game.Lens
-import game.Paint
+import game.Polygon
 import game.BirdDraw
 import game.Scenery
 import game.Trees
@@ -111,7 +111,7 @@ road = {
 			},
 			Lens.focal,
 		)
-	Paint.polygon(
+	Polygon.flat_polygon(
 		0x8a8a8a,
 		[
 			on_ground(half.opposite(), road_start),

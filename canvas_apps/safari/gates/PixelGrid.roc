@@ -81,7 +81,7 @@ PixelGrid :: [].{
 	blend : List(U32), { at : U64, color : Brush.Rgba } -> List(U32)
 	blend = |pixels, { at, color }| {
 		pixel = pixels.get(at) ?? crash "PixelGrid.blend: a pixel off the grid"
-		new_pixel = PixelColor.over(pixel, color)
+		new_pixel = PixelColor.blended_pixel(pixel, color)
 		pixels.set(at, new_pixel) ?? crash "PixelGrid.blend: a pixel off the grid"
 	}
 }

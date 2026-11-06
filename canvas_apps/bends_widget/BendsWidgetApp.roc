@@ -118,8 +118,8 @@ rider_y = 198.0
 
 ## Where `point` falls on the canvas. The rider faces up the picture, so the
 ## rider's right is the reader's right.
-on_canvas : ShownBend, Geom.RiderPoint -> { x : F64, y : F64 }
-on_canvas = |{ canvas_x, .. }, { right, forward }| {
+canvas_point : ShownBend, Geom.RiderPoint -> { x : F64, y : F64 }
+canvas_point = |{ canvas_x, .. }, { right, forward }| {
 	x: canvas_x + right.to_metres() * pixels_a_metre,
 	y: rider_y - forward.to_metres() * pixels_a_metre,
 }
@@ -154,7 +154,7 @@ patch_shape = |bend, corners|
 	Poly({
 		pts: corners.join_map(
 			|corner| {
-				{ x, y } = on_canvas(bend, corner)
+				{ x, y } = canvas_point(bend, corner)
 				[x, y]
 			},
 		),
@@ -166,8 +166,8 @@ rail_foot : ShownBend, List(Geom.RaisedPoint) -> List(Shapes.Shape)
 rail_foot = |bend, corners|
 	match corners {
 		[a, b, ..] => {
-			from = on_canvas(bend, { right: a.right, forward: a.forward })
-			to = on_canvas(bend, { right: b.right, forward: b.forward })
+			from = canvas_point(bend, { right: a.right, forward: a.forward })
+			to = canvas_point(bend, { right: b.right, forward: b.forward })
 			[
 				Shapes.line(
 					from.x,
@@ -185,7 +185,7 @@ rail_foot = |bend, corners|
 ## A disc at a place on the road.
 spot : ShownBend, { at : Geom.RiderPoint, color : I64 } -> Shapes.Shape
 spot = |bend, { at, color }| {
-	{ x, y } = on_canvas(bend, at)
+	{ x, y } = canvas_point(bend, at)
 	Disc({
 		x,
 		y,
@@ -201,8 +201,8 @@ bend_shapes : ShownBend -> List(Shapes.Shape)
 bend_shapes = |bend| {
 	road = road_with(bend.turn)
 	[
-		GroundSighting.in_view(road).map(|patch| patch_shape(bend, patch.corners)),
-		RailSighting.in_view(road).join_map(|rail| rail_foot(bend, rail.corners)),
+		GroundSighting.patches_in_view(road).map(|patch| patch_shape(bend, patch.corners)),
+		RailSighting.rails_in_view(road).join_map(|rail| rail_foot(bend, rail.corners)),
 		[
 			spot(bend, { at: apex_of(bend.turn), color: apex_color }),
 			spot(bend, { at: rider, color: rider_color }),
@@ -243,7 +243,7 @@ caption_lines = |turn| {
 		turn_text(turn),
 		"rail on the ${edge_text(turn)} edge",
 		"apex ${ScrubWidget.tenths_text(apex_past_end(apex_of(turn)))} m past the end",
-		"${GroundSighting.in_view(road).len().to_str()} patches, ${RailSighting.in_view(road).len().to_str()} rail pieces",
+		"${GroundSighting.patches_in_view(road).len().to_str()} patches, ${RailSighting.rails_in_view(road).len().to_str()} rail pieces",
 	]
 }
 
@@ -294,8 +294,8 @@ expect (apex_of(right_bend.turn).right.to_metres() - Scenery.left_edge.to_metres
 expect
 	shown_bends.all(
 		|bend| {
-			apex = on_canvas(bend, apex_of(bend.turn))
-			rider_on_canvas = on_canvas(bend, rider)
+			apex = canvas_point(bend, apex_of(bend.turn))
+			rider_on_canvas = canvas_point(bend, rider)
 			third = ScrubWidget.canvas_width / 3.0
 			(apex.x - bend.canvas_x).abs() < third / 2.0
 				and apex.y > 0.0

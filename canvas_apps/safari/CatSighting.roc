@@ -20,8 +20,8 @@ CatSighting := {
 }.{
 
 	## The cats in view of a rider at `speed`, the nearest segment's first.
-	in_view : Chain.Viewpoint, Speed -> List(CatSighting)
-	in_view = |view, speed| {
+	cats_in_view : Chain.Viewpoint, Speed -> List(CatSighting)
+	cats_in_view = |view, speed| {
 		positions = Chain.Position.all_in(view.road.chain)
 		positions.join_map(|position| segment_cat(view, { position, speed }))
 	}

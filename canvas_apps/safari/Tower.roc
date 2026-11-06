@@ -11,7 +11,7 @@ import Camera
 import Distance
 import Fraction
 import Geom
-import Paint
+import Polygon
 import lib.Brush
 import Screen
 import lib.Shapes
@@ -210,7 +210,7 @@ Tower :: [].{
 			offset_x: ox,
 			offset_y: oy,
 		},
-	| Paint.polygon(
+	| Polygon.flat_polygon(
 		tower_metal,
 		[
 			{ x: a.x.plus(ox), y: a.y.plus(oy) },
@@ -400,7 +400,7 @@ Tower :: [].{
 			if radius < Pixels.of(0.5) {
 				[]
 			} else {
-				Paint.beacon({
+				beacon_disc({
 					beacon_color,
 					beacon_center: apex_on_screen,
 					beacon_radius: radius,
@@ -439,6 +439,53 @@ Tower :: [].{
 		}
 	}
 }
+
+## A beacon's disc, as a value: a list of one shape, seen through as far as
+## `beacon_alpha` says.
+beacon_disc : {
+	beacon_color : I64,
+	beacon_center : Screen.Point,
+	beacon_radius : Pixels,
+	beacon_alpha : Fraction,
+} -> List(Shapes.Shape)
+beacon_disc = |{ beacon_color, beacon_center, beacon_radius, beacon_alpha }| {
+	opaque = Brush.opaque(beacon_color)
+	[
+		Disc({
+			x: beacon_center.x.to_f64(),
+			y: beacon_center.y.to_f64(),
+			r: beacon_radius.to_f64(),
+			fill: Flat({ ..opaque, a: beacon_alpha.to_f64() }),
+			clip: Anywhere,
+		}),
+	]
+}
+
+expect
+	beacon_disc({
+		beacon_color: 7,
+		beacon_center: Screen.point(1.0, 2.0),
+		beacon_radius: Pixels.of(3.0),
+		beacon_alpha: Fraction.of(0.5),
+	}).len()
+		== 1
+
+expect
+	beacon_disc({
+		beacon_color: 333,
+		beacon_center: Screen.point(10.0, 20.0),
+		beacon_radius: Pixels.of(30.0),
+		beacon_alpha: Fraction.of(0.25),
+	})
+		== [
+			Disc({
+				x: 10.0,
+				y: 20.0,
+				r: 30.0,
+				fill: Flat({ ..Brush.opaque(333), a: 0.25 }),
+				clip: Anywhere,
+			}),
+		]
 
 expect Tower.tower_height.to_metres() == 80.0
 expect Tower.tower_half.to_metres() == 6.0

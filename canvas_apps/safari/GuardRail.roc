@@ -6,7 +6,7 @@ import Pixels
 import Camera
 import Distance
 import Geom
-import Paint
+import Polygon
 import lib.Shapes
 
 GuardRail :: [].{
@@ -90,7 +90,7 @@ GuardRail :: [].{
 		if in_front.len() < 3 {
 			[]
 		} else {
-			Paint.polygon(quad.color, Camera.project_all(in_front, cam_focal))
+			Polygon.flat_polygon(quad.color, Camera.project_all(in_front, cam_focal))
 		}
 	}
 }
@@ -109,18 +109,18 @@ mean_forward = |corners| {
 }
 
 ## A point of the path, at `height` above the ground.
-at_height : Geom.RiderPoint, Distance -> Geom.RaisedPoint
-at_height = |point, height| { right: point.right, forward: point.forward, height }
+raised_point : Geom.RiderPoint, Distance -> Geom.RaisedPoint
+raised_point = |point, height| { right: point.right, forward: point.forward, height }
 
 ## The bar from `from` to `to`, bottom edge first.
 bar : { from : Geom.RiderPoint, to : Geom.RiderPoint } -> GuardRail.RailQuad
 bar = |{ from, to }|
 	rail_quad(
 		[
-			at_height(from, GuardRail.bar_bot),
-			at_height(to, GuardRail.bar_bot),
-			at_height(to, GuardRail.bar_top),
-			at_height(from, GuardRail.bar_top),
+			raised_point(from, GuardRail.bar_bot),
+			raised_point(to, GuardRail.bar_bot),
+			raised_point(to, GuardRail.bar_top),
+			raised_point(from, GuardRail.bar_top),
 		],
 		GuardRail.rail_metal,
 	)
@@ -144,10 +144,10 @@ post = |at, { previous, next }| {
 	front = { right: at.right.plus(half_right), forward: at.forward.plus(half_forward) }
 	rail_quad(
 		[
-			at_height(back, Distance.zero),
-			at_height(front, Distance.zero),
-			at_height(front, GuardRail.bar_top),
-			at_height(back, GuardRail.bar_top),
+			raised_point(back, Distance.zero),
+			raised_point(front, Distance.zero),
+			raised_point(front, GuardRail.bar_top),
+			raised_point(back, GuardRail.bar_top),
 		],
 		GuardRail.rail_post_metal,
 	)

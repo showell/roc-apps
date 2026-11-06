@@ -116,8 +116,8 @@ map_scale = F64.min(
 )
 
 ## Where `point` falls on the canvas, with the road centred in the picture.
-on_canvas : MapPoint -> { x : F64, y : F64 }
-on_canvas = |{ east, north }| {
+canvas_point : MapPoint -> { x : F64, y : F64 }
+canvas_point = |{ east, north }| {
 	x: ScrubWidget.canvas_width / 2.0 + (east - (extent.west + extent.east) / 2.0) * map_scale,
 	y: ScrubWidget.picture_bottom_y / 2.0 - (north - (extent.south + extent.north) / 2.0) * map_scale,
 }
@@ -149,7 +149,7 @@ ground = Rect({
 ## A disc on the map.
 spot : MapPoint, { r : F64, color : I64 } -> Shapes.Shape
 spot = |point, { r, color }| {
-	{ x, y } = on_canvas(point)
+	{ x, y } = canvas_point(point)
 	Disc({
 		x,
 		y,
@@ -162,8 +162,8 @@ spot = |point, { r, color }| {
 ## One segment of road, `width` pixels wide with a round end at each corner.
 road_piece : LaidSegment, { width : F64, color : I64 } -> List(Shapes.Shape)
 road_piece = |{ start, end, .. }, { width, color }| {
-	a = on_canvas(start)
-	b = on_canvas(end)
+	a = canvas_point(start)
+	b = canvas_point(end)
 	[
 		Shapes.line(
 			a.x,
@@ -300,10 +300,10 @@ expect {
 expect segments.map(|segment| segment.start).drop_first(1) == segments.map(|segment| segment.end).drop_last(1)
 
 # The road stays inside the picture, on all four sides.
-expect corners.all(|corner| on_canvas(corner).x >= 0.0)
-expect corners.all(|corner| on_canvas(corner).x <= ScrubWidget.canvas_width)
-expect corners.all(|corner| on_canvas(corner).y >= 0.0)
-expect corners.all(|corner| on_canvas(corner).y <= ScrubWidget.picture_bottom_y)
+expect corners.all(|corner| canvas_point(corner).x >= 0.0)
+expect corners.all(|corner| canvas_point(corner).x <= ScrubWidget.canvas_width)
+expect corners.all(|corner| canvas_point(corner).y >= 0.0)
+expect corners.all(|corner| canvas_point(corner).y <= ScrubWidget.picture_bottom_y)
 
 expect turn_text(Angle.Turn.degrees(80.0)) == "80 deg right"
 expect turn_text(Angle.Turn.degrees(-70.0)) == "70 deg left"

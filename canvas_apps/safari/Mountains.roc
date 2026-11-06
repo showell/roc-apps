@@ -8,7 +8,8 @@ import Angle
 import Clock
 import Fraction
 import Lens
-import Paint
+import HexColor
+import Polygon
 import Screen
 import Sky
 import Sun
@@ -51,9 +52,9 @@ Mountains :: [].{
 	color_at_dusk = |color, dusk| {
 		light = rock_night_dim.times(dusk).complement().to_f64()
 		Sky.pack({
-			r: Sky.whole_channel(Paint.red_of(color).to_f64() * light),
-			g: Sky.whole_channel(Paint.green_of(color).to_f64() * light),
-			b: Sky.whole_channel(Paint.blue_of(color).to_f64() * light),
+			r: Sky.whole_channel(HexColor.red_of(color).to_f64() * light),
+			g: Sky.whole_channel(HexColor.green_of(color).to_f64() * light),
+			b: Sky.whole_channel(HexColor.blue_of(color).to_f64() * light),
 		})
 	}
 
@@ -248,7 +249,10 @@ silhouette = |sight, { height_at, color }| {
 	crest = columns({ from: left, to: right }).map(
 		|x| { x, y: height_y(sight, height_at(Mountains.bearing_at(sight, x))) },
 	)
-	Paint.polygon(color, crest.concat([{ x: right, y: horizon_y }, { x: left, y: horizon_y }]))
+	Polygon.flat_polygon(
+		color,
+		crest.concat([{ x: right, y: horizon_y }, { x: left, y: horizon_y }]),
+	)
 }
 
 ## The north range's snow: along its crest where the range is above the
@@ -274,7 +278,7 @@ snow = |sight, color| {
 				y: height_y(sight, Mountains.snowline(Mountains.bearing_at(sight, x))),
 			}),
 		)
-		Paint.polygon(color, crest.concat(snowline))
+		Polygon.flat_polygon(color, crest.concat(snowline))
 	}
 }
 

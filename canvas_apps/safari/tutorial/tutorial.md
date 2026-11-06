@@ -247,7 +247,7 @@ Nothing in this chapter moves, and that's true of the next few chapters too, as 
 
 Our Roc app doesn't draw anything. We said that back in the modules chapter, and it's worth saying again before we start drawing things. Roc answers with a list of shapes, and something else paints them.
 
-So when you see `Paint.polygon` in the chapters ahead, nothing is being painted. It makes a value. That's as close to the metal as Safari Ride gets, and the metal could be JavaScript on a canvas, or a wasm painter written in Odin or Zig. The Roc is the same either way.
+So a function like `Polygon.triangle` makes a value, and that's as close to the metal as Safari Ride gets. The metal could be JavaScript on a canvas, or a wasm painter written in Odin or Zig. The Roc is the same either way.
 
 Here's a frame with two shapes in it:
 
@@ -271,17 +271,17 @@ Every frame is a list of this:
 
 That's more than we need today. Almost all of a frame is `Poly`: step 1,570 of the ride has 2,713 shapes, and 2,706 of them are polygons. We'll get to the rest when something asks for them.
 
-`Shapes` is shared with the other canvas apps, so it deals in plain `F64`s. Safari Ride talks to it through `Paint`, which takes screen points and a color:
+`Shapes` is shared with the other canvas apps, so it deals in plain `F64`s. Safari Ride's own `Polygon` takes a color and screen points. `triangle` and `rectangle` are handy forms of this one, which takes any number of corners:
 
-{{code Paint.polygon}}
+{{code Polygon.flat_polygon}}
 
 ### Lists all the way down
 
-`Paint.polygon` gives back a list, even though it only ever makes one shape. That's how a drawing function can say "nothing to draw", with an empty list. Lists join without any fuss, so nobody has to check. A tree joins its trunk and tiers, a frame joins its trees and everything else, and the empty ones disappear.
+Everything in `Polygon` gives back a list, even a triangle, which only ever makes one shape. That's how a drawing function can say "nothing to draw", with an empty list. Lists join without any fuss, so nobody has to check. A tree joins its trunk and tiers, a frame joins its trees and everything else, and the empty ones disappear.
 
 The list is also the order of painting. A shape goes over whatever came before it, so the rectangle is on top of the triangle because it comes later. A frame paints far things first and near things last.
 
-The work from here on is deciding which corners go in the list, and in what order. That starts with a tree.
+The work from here on is deciding which corners to hand to `Polygon`, and in what order. That starts with a tree.
 
 ## A simple tree
 
@@ -420,7 +420,7 @@ Here's the other tree problem. Safari Ride plants 392 trees along its road, and 
 Step 1,570 of the ride, with only the trees on.
 ```
 
-This is step 1,570, with the cat frozen in the lane. Each tree here is a sighting from `TreeSighting.in_view`, painted by `TreeDraw.draw`. They make up 1,656 of the 2,713 shapes in that frame, more than everything else put together.
+This is step 1,570, with the cat frozen in the lane. Each tree here is a sighting from `TreeSighting.trees_in_view`, painted by `TreeDraw.draw`. They make up 1,656 of the 2,713 shapes in that frame, more than everything else put together.
 
 So a tree has two lives. It's planted once, and that lasts the whole ride. It's seen again every frame, and that lasts one frame. This chapter takes them in that order.
 
@@ -445,7 +445,7 @@ A `TreeSighting` also fits `TreeDraw.TreeAhead`, so `TreeDraw` doesn't import it
 | Job | Function | Its type |
 |---|---|---|
 {{types row Trees.plant Plant a segment, once}}
-{{types row TreeSighting.in_view Find the trees in view, each frame}}
+{{types row TreeSighting.trees_in_view Find the trees in view, each frame}}
 
 ### Planting
 
@@ -461,7 +461,7 @@ Trees stand in pairs, one each side of the road, every 30 metres. The pairs take
 
 Each frame starts with the road ahead, and asks about every tree on it:
 
-{{code TreeSighting.in_view}}
+{{code TreeSighting.trees_in_view}}
 
 {{code TreeSighting.segment_sightings}}
 
@@ -498,7 +498,7 @@ New in this chapter:
 
 Its list of shapes starts with the sky and the grass, and this is the grass:
 
-{{code Backdrop.behind from "y: Screen.grass_top_y.to_f64()," to "fill: Flat(Brush.opaque(grass_color)),"}}
+{{code Backdrop.frame_shapes from "y: Screen.grass_top_y.to_f64()," to "fill: Flat(Brush.opaque(grass_color)),"}}
 
 It starts a pixel above the horizon, so no seam shows between the grass and the sky:
 
@@ -523,7 +523,7 @@ New in this chapter:
 
 A frame is a list of shapes, and a circle is one of them. `Disc` is a tag from `lib.Shapes`. This is the sun's, from the same list as the grass:
 
-{{code Backdrop.behind from "Disc({" to "clip: Within({"}}
+{{code Backdrop.frame_shapes from "Disc({" to "clip: Within({"}}
 
 A `Disc` has a center, a radius and a fill. `clip` cuts off whatever falls below the horizon, so the sun can sink behind the land with no more code.
 
@@ -620,7 +620,7 @@ Every color in the sky is a blend of two others, and a blend needs a ratio. `Fra
 
 `Backdrop` paints the two as a gradient, down to the horizon. It stays on the top color for the first fifth of the way, then fades:
 
-{{code Backdrop.behind from "sky = Linear({" to "dy: Screen.horizon_y.to_f64(),"}}
+{{code Backdrop.frame_shapes from "sky = Linear({" to "dy: Screen.horizon_y.to_f64(),"}}
 
 That's where a color finally becomes one integer, because a `Brush` wants `0xRRGGBB`. `pack` gets there with method calls on plain numbers. Static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `pack` a leaf: it calls nothing of Safari Ride's own.
 
@@ -635,7 +635,7 @@ However far the rider goes, the mountains never get any closer. They only turn a
 New in this chapter:
 
 - Roc: a function in a record field
-- Modules: `Mountains`
+- Modules: `Mountains`, `HexColor`
 
 There are two ranges, one to the north with snow on its peaks, and a lower one to the west. A range is a record:
 
@@ -1143,7 +1143,7 @@ A box is a function, and an arrow is a call. The three boxes under the frame are
 
 Here's the top of that diagram in code. Each frame, the game asks for three things and hands them to `Backdrop`:
 
-{{code SafariApp.frame from "Backdrop.behind(" to "sun_sighting: Tour.sun(tour),"}}
+{{code SafariApp.frame from "Backdrop.frame_shapes(" to "sun_sighting: Tour.sun(tour),"}}
 
 `Tour` holds the clock and hands it straight to `Sun` and `Sky`, so everything from here on is in those two. Let's take the three jobs in order.
 
@@ -1489,7 +1489,7 @@ That's the direction to the pig, less the way the bike points. The pig stands be
 
 {{code Gaze.next_gaze_yaw}}
 
-Toward a pig, the gaze turns by at most 4 degrees a step, and `within` holds the change to that limit on either side. On the way back it gives up a twentieth of its angle each step, and never more than 0.2 degrees.
+Toward a pig, the gaze turns by at most 4 degrees a step, and `clamped_within` holds the change to that limit on either side. On the way back it gives up a twentieth of its angle each step, and never more than 0.2 degrees.
 
 A twentieth of what's left never gets to zero, so the `OnRoad` branch tests for that first. Once the gaze is within 0.02 degrees, it snaps to straight ahead, and a look comes to a real end.
 
@@ -1726,7 +1726,7 @@ digraph cat_calls {
   }
   subgraph cluster_animation {
     label="Animation";
-    over_beats;
+    stage_over_step_span;
     instant [label="Timeline.instant"];
     at_beat [label="Timeline.at_beat"];
     playing_at;
@@ -1736,7 +1736,7 @@ digraph cat_calls {
   instant_at -> crossing_stage;
   instant_at -> crossing_timeline;
   instant_at -> instant;
-  crossing_stage -> over_beats;
+  crossing_stage -> stage_over_step_span;
   instant -> at_beat;
   at_beat -> playing_at;
   at_beat -> pose_of;
@@ -1768,14 +1768,14 @@ The rule lives in `Animation`. It takes the cat's numbers and an `Approach`, whi
 
 {{code Animation.Approach}}
 
-`over_beats` destructures its first argument in place, and the `Approach` after it, so the body reads in plain names:
+`stage_over_step_span` destructures its first argument in place, and the `Approach` after it, so the body reads in plain names:
 
-{{code Animation.over_beats}}
+{{code Animation.stage_over_step_span}}
 
 Neither field of an `Approach` is a plain number. `Distance`, `Speed` and `Beats` are opaque types, like `Clock` and `Angle`. A distance can't be passed as a speed, and a place in an animation can't be passed as a step of the ride. `distance_in`, on the second line, multiplies a speed by some beats and gives a `Distance`. `Speed` also defines `is_lte`, which is what lets `speed <= standstill` work with an ordinary operator.
 
 
-The cat plays over beats rather than over a stretch of road because it has to finish before the rider reaches it, however fast the rider comes. A faster rider makes it start earlier. The bird uses `over_gap`, because a bird simply reacts to how close the rider is. Each critter picks the rule that suits it.
+The cat plays over beats rather than over a stretch of road because it has to finish before the rider reaches it, however fast the rider comes. A faster rider makes it start earlier. The bird uses `stage_over_gap`, because a bird simply reacts to how close the rider is. Each critter picks the rule that suits it.
 
 ### What it looks like
 
@@ -1863,9 +1863,9 @@ digraph screen {
 
 {{code CatSighting.cat_in_view}}
 
-`segment_cat` calls it for a segment with a cat, and `in_view` flattens the answers with `join_map`, so a "no" simply disappears:
+`segment_cat` calls it for a segment with a cat, and `cats_in_view` flattens the answers with `join_map`, so a "no" simply disappears:
 
-{{code CatSighting.in_view}}
+{{code CatSighting.cats_in_view}}
 
 Looking back over the chapter, notice what isn't in it: a cat in `RideInstant`, an update loop, or a flag saying the cat has already crossed.
 
@@ -1913,9 +1913,9 @@ The family has the cat's shape. `BirdFlight` says what a bird does and imports n
 
 ### Two rules
 
-A rule turns where the rider is into a `Stage`. The cat's rule was `over_beats`, and the bird's is `over_gap`. They say different things about the same road:
+A rule turns where the rider is into a `Stage`. The cat's rule was `stage_over_step_span`, and the bird's is `stage_over_gap`. They say different things about the same road:
 
-| | `over_gap` | `over_beats` |
+| | `stage_over_gap` | `stage_over_step_span` |
 |---|---|---|
 | It reads | The gap | The gap and the speed |
 | It starts | 60 metres off, always | Earlier for a faster rider |
@@ -1923,9 +1923,9 @@ A rule turns where the rider is into a `Stage`. The cat's rule was `over_beats`,
 | It's for | Something that reacts to how close the rider is | Something that has to finish in time |
 | A stopped rider | Leaves the bird hanging where the gap puts it | Holds the cat at the start of its crossing |
 
-The first argument of each is destructured in place, and both answer the same tag union. `over_gap` has a shorter job, so here it is first. `Fraction.clamp` fits here because a rider far off gives a ratio well outside 0 to 1, and `<=` works on a `Fraction` because `Fraction` defines `is_lte`:
+The first argument of each is destructured in place, and both answer the same tag union. `stage_over_gap` has a shorter job, so here it is first. `Fraction.clamp` fits here because a rider far off gives a ratio well outside 0 to 1, and `<=` works on a `Fraction` because `Fraction` defines `is_lte`:
 
-{{code Animation.over_gap}}
+{{code Animation.stage_over_gap}}
 
 The bird calls it with two constants, and passes no speed, since this rule doesn't take one:
 
@@ -1933,9 +1933,9 @@ The bird calls it with two constants, and passes no speed, since this rule doesn
 
 Beside it, again, is the cat's rule. Its second argument is the whole `Approach`:
 
-{{code Animation.over_beats}}
+{{code Animation.stage_over_step_span}}
 
-The extra case in `over_beats` is there because its ratio divides by a stretch that a stopped rider makes zero. `over_gap` divides only by constants, so it has no such case. That hanging bird is real: nothing in `over_gap` knows a bird can't hover. The rider never drops below 1.1 metres a step inside a bird's 45 metres on this route, so it doesn't come up.
+The extra case in `stage_over_step_span` is there because its ratio divides by a stretch that a stopped rider makes zero. `stage_over_gap` divides only by constants, so it has no such case. That hanging bird is real: nothing in `stage_over_gap` knows a bird can't hover. The rider never drops below 1.1 metres a step inside a bird's 45 metres on this route, so it doesn't come up.
 
 Now the one-liners, side by side. A bird's and a cat's `instant_at` have the same shape:
 
@@ -2053,7 +2053,7 @@ A cat in the lane stops the rider opening the throttle, without braking, and wid
 
 {{code RideFocal.ride_focal}}
 
-This is the only feedback loop in the design. The rider's speed decides where the cat has got to, and the cat holds the rider's speed down. The loop settles, and it's why `over_beats` has to stay the cat's rule. A bird asks nothing of the rider, so it falls through to the same answer as an empty road.
+This is the only feedback loop in the design. The rider's speed decides where the cat has got to, and the cat holds the rider's speed down. The loop settles, and it's why `stage_over_step_span` has to stay the cat's rule. A bird asks nothing of the rider, so it falls through to the same answer as an empty road.
 
 Each stretch of road has exactly one `crossing`: `CatCrosses`, `BirdHere` or `QuietRoad`. A cat and a bird in the same place can't be written down.
 
@@ -2268,13 +2268,13 @@ The road has no global coordinates. A point on it is measured within one segment
 
 {{code World.plans from "length: Distance.metres(1200.0)," to "bend_life: Animal(Rhino),"}}
 
-So to see something three segments ahead, a point has to be carried back round each bend between it and the rider, one at a time. That's one rotation per bend, and `fold_rev` is the shape of it. The accumulator is a `RoadPoint`, it starts on the far segment, and each step moves it onto the segment before. `before_in` gives the segments between, and the closure is the only thing the loop does. The last line does the one translation and rotation from above:
+So to see something three segments ahead, a point has to be carried back round each bend between it and the rider, one at a time. That's one rotation per bend, and `fold_rev` is the shape of it. The accumulator is a `RoadPoint`, it starts on the far segment, and each step moves it onto the segment before. `segments_before` gives the segments between, and the closure is the only thing the loop does. The last line does the one translation and rotation from above:
 
 {{code Chain.rider_point_ahead from "on_rider_segment =" to "Geom.to_rider_point(on_rider_segment, road.vantage)"}}
 
 The rotation itself is plain, with two cases, because a right-hand bend pivots on the far side of the lane:
 
-{{code Geom.in_segment_before}}
+{{code Geom.point_in_segment_before}}
 
 This is what lets `CatSighting`, `BirdSighting`, `TowerSighting`, `TreeSighting` and the rest not care where a segment is. They name a position in the chain and a point on that segment, and they get back a `RiderPoint`. That's why `Chain` has sixteen importers.
 
@@ -2303,7 +2303,7 @@ A fold's step is a plain function of the list so far and one edge:
 
 `Ground`, `GuardRail` and `TruckShape` call it the same way. `patch.corners.map(...)` makes the `RaisedPoint`s, and what comes back is a shorter or longer list of the same type:
 
-{{code Ground.draw from "in_front = Geom.clip_near(" to "Paint.polygon(patch.color, Camera.project_all(in_front, cam_focal))"}}
+{{code Ground.draw from "in_front = Geom.clip_near(" to "Polygon.flat_polygon(patch.color, Camera.project_all(in_front, cam_focal))"}}
 
 ### Arithmetic all the way down
 
@@ -2572,7 +2572,7 @@ The tour named nine patterns in passing. They're patterns in the loose sense: sh
 | Worked out, not stored | Keep the few things that must persist, and derive the rest each frame | `RideInstant`, `Cat`, `Sky` |
 | A sighting decides, drawing paints | A pure function answers with plain data, and something else draws it | `CatSighting`, `TowerSighting` |
 | Places and distances | One opaque type for where, a second for how far apart, and only the sums that make sense | `Clock` and `Steps`, `Bearing` and `Turn`, `Along` and `Distance`, `Speed` and `Acceleration` |
-| Rule and timeline | One function says how far along, and one piece of data says what that looks like | `over_gap` and `flight_timeline` |
+| Rule and timeline | One function says how far along, and one piece of data says what that looks like | `stage_over_gap` and `flight_timeline` |
 | The step function | A value goes in, and the next value comes out | `Rider.advance`, `Truck.advance`, `Tour.step_forward` |
 | A narrow view of a wide record | An open record names the fields it uses and carries the rest through | `Bike.Motion(others)` |
 | The chain of limits | One value passes through independent rules, each of which can only lower it | `Throttle.acceleration` |
@@ -2609,7 +2609,7 @@ This page lists what catches a reader of Roc out in Safari Ride, sorted by what 
 | A crash with a sentence about a sum | `Fraction.of` takes a ratio that can only be in range. A ratio that can rightly fall outside wants `Fraction.clamp` | The sky, Proving it |
 | A pose cut on the wrong side of its beat | The leap's beats sum to a float just under the beat they stand for, so a cut says `Through` or `Before` | The cat |
 | The first frame of an animation shown too soon | `Waiting` and `Past` aren't progress of 0 and 1, because a critter can rest where no part of its animation reaches | The cat |
-| A bird hanging in the air | `over_gap` doesn't know a bird can't hover. A stopped rider would leave one there, and on this route the rider doesn't stop inside a bird's 45 metres | The bird |
+| A bird hanging in the air | `stage_over_gap` doesn't know a bird can't hover. A stopped rider would leave one there, and on this route the rider doesn't stop inside a bird's 45 metres | The bird |
 | Beacons that stop, or run backward | The clock counts steps, not seconds, so pausing freezes them and stepping back reverses them | The beacons |
 | A frame hash that moves after a sum was reordered | Float addition isn't associative, so a sum's order is part of its meaning | Proving it |
 | A green gate over a wrong brake light | The gate is blind to whatever no listed frame shows | Proving it |
