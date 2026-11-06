@@ -46,7 +46,14 @@ So far that's all boxes and arrows. What a box looks like in Roc is still missin
 
 ## One whole module
 
-Before the map, here's a whole module, so you know what the boxes on it look like up close. This is the clock from the second box above, all of it.
+Before the map, here's a whole module, so you know what the boxes on it look like up close.
+
+New in this chapter:
+
+- Roc: opaque types, `is_eq : _`, `expect`, static dispatch
+- Modules: `Clock`
+
+This is the clock from the second box above, all of it.
 
 {{module Clock}}
 
@@ -62,7 +69,14 @@ That's one module of about eighty, and nothing yet says how the rest fit togethe
 
 ## The modules
 
-Here's how they fit: the whole system, simplified. An arrow points from a module to one it imports, so a module is composed of what it points at. Dashed boxes each stand for a family of modules. Roc doesn't allow import cycles, so nothing here can point back up.
+Here's how they fit: the whole system, simplified.
+
+New in this chapter:
+
+- Roc: imports that can't form a cycle
+- Modules: `SafariApp`, `Render`, `ItemDraw`, `CatSighting`
+
+An arrow points from a module to one it imports, so a module is composed of what it points at. Dashed boxes each stand for a family of modules. Roc doesn't allow import cycles, so nothing here can point back up.
 
 The whole system, simplified
 ```dot
@@ -118,6 +132,11 @@ All of that is about one frame, and a frame is gone by the next one. What lasts 
 
 What lasts from step to step fits in one record.
 
+New in this chapter:
+
+- Roc: nominal types, code with no effects in it
+- Modules: `RideInstant`, `Tour`
+
 A record is the plainest shape in Roc, and it's nearly all this needs. `RideInstant := { ... }.{ ... }` makes the module's own type out of one. That's a nominal type, which can carry a block of definitions, and unlike an opaque type it leaves its fields readable.
 
 {{code RideInstant.RideInstant from "One instant of the ride" to "}.{"}}
@@ -143,6 +162,11 @@ Four kinds of thing have been named, and so far none has been shown.
 ## What never changes
 
 The fourth kind is the easiest, so it goes first. Trees, cows, the pond and the road are built once and only read after that.
+
+New in this chapter:
+
+- Roc: void modules, tag unions written in a field's type, `match` that has to cover every tag, `crash`
+- Modules: `World`, `Pond`, `Trees`
 
 The modules around `World`
 ```dot
@@ -191,6 +215,11 @@ Nothing in this chapter moves, and the ride does.
 ## The sky
 
 The sky is the simplest thing that moves, because it depends on one number.
+
+New in this chapter:
+
+- Roc: `->` as a promise, privacy without a keyword, records destructured in a parameter list, tags in place of `null`, code that doesn't compile
+- Modules: `Sky`, `Fraction`, `Angle`
 
 From a distance, the sky is a few questions put to a clock.
 
@@ -329,6 +358,11 @@ The sun would set the same way on an empty road. A clock can't tell that a rider
 ## The cat
 
 The cat reacts to the rider, which no clock can do. It's the best scene in Safari Ride. It walks out, freezes in the lane as the rider bears down on it, and leaps clear at the last possible instant.
+
+New in this chapter:
+
+- Roc: type parameters, operators on opaque types, `var`, `for` and `return` in a pure function, `|` and `_` in patterns, open records
+- Modules: `Cat`, `Animation`, `Beats`, `Distance`, `Speed`, `CrossingReaction`
 
 From a distance, the cat is one function in two halves, with a shared module underneath.
 
@@ -584,6 +618,11 @@ One thing about time is still missing. The sun only goes one way, and nothing so
 
 The cat walked out of its place in the order. Two clock-driven things were left behind when it did, and both are brief. One of them comes round again, and the other switches once.
 
+New in this chapter:
+
+- Roc: a pair of opaque types with only the sums that make sense, records of tag unions written in place
+- Modules: `Steps`, `TowerSighting`, `Tower`, `Mountains`, `TruckDraw`
+
 ### A blink
 
 The modules behind a beacon
@@ -675,6 +714,11 @@ The rider-driven kind still has only one member, and one cat can't say whether `
 ## The bird
 
 A second critter settles that. The bird is Roc's logo, sitting on a treetop. As the rider comes near it takes off, flies across the road and ahead, and drops onto a tree on the far side. It's a rider-driven thing like the cat, and it cost much less, which is the point of this chapter.
+
+New in this chapter:
+
+- Roc: record update, tags inside tags, closures, opening a `Try` by hand, `match` as an expression
+- Modules: `BirdFlight`, `BirdSighting`, `RocBird`, `BirdStills`
 
 The modules around `BirdFlight`
 ```dot
@@ -790,6 +834,11 @@ Everything so far can be asked about any instant, cold. Hand `Cat.instant_at` a 
 ## The stepped things
 
 Where the rider and the truck are depends on where they were, so their state has to be kept, and it's the only state there is. This chapter is about the two fields of `RideInstant` that aren't a clock.
+
+New in this chapter:
+
+- Roc: a named open record, guards, list patterns, recursion
+- Modules: `Rider`, `Pose`, `Bike`, `Throttle`, `Truck`, `Acceleration`
 
 The modules that do the stepping
 ```dot
@@ -978,6 +1027,11 @@ The rider's lean has been passed over twice now, with `LeanSearch` doing somethi
 ## The math layer
 
 The lean comes at the end of this chapter, on top of everything else in it.
+
+New in this chapter:
+
+- Roc: records as coordinate systems, `fold`, `fold_rev` and `map2`, two functions that call each other
+- Modules: `Geom`, `Frame`, `Camera`, `Lens`, `Arc`, `LeanSearch`, `Num_`
 
 A lot of Safari Ride is math and physics, and this is the chapter that goes through the floor of the tour and looks at what's holding it up. Most of it is geometry a reader could do on paper. It's here because this kind of code suits a compiled functional language unusually well, for a short list of reasons that each get a section:
 
@@ -1183,6 +1237,11 @@ Top to bottom, then: a rider chooses a lean by simulating physics, and the physi
 
 There are no animals in this chapter. It's about what happens to a program of this size when something has to change, which is the question a reader who cares whether Roc scales should ask.
 
+New in this chapter:
+
+- Roc: `expect` with its data beside it, `crash` as an assertion, a fold whose direction matters
+- Modules: `RasterFrame`, `ShapesFrame`, `StepBack`, `SafariFrame`, `ShapesPixels`
+
 The answer rests on one fact, which the tour has been repeating since the first table. Three fields decide a frame, and a frame is a value. So a frame can be compared, exactly, with the same frame from an hour ago.
 
 The proof tools and what they read
@@ -1296,6 +1355,11 @@ All of that runs without a screen. The tour still hasn't said how a list of shap
 ## The platform
 
 The rest of the program is what puts this on a screen, and Safari Ride has very little to say about that, on purpose. The tour touched this early on. Here it is with the code.
+
+New in this chapter:
+
+- Roc: an app as a record, functions in record fields, `var` and `while`, `roc glue`
+- Modules: `WasmApp`, `CanvasApp`, `Input`, `Shapes`
 
 The modules around `SafariApp`
 ```dot
