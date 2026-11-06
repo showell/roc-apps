@@ -152,8 +152,11 @@ async function pictureChanges(page, i, before) {
 }
 
 // Where a widget that's clicked and not dragged wants its click, as shares of
-// the frame. This is rehearsal's third mark.
-const CLICKED_AT = { "../rehearsal_widget/": { x: 0.12, y: 0.644 } };
+// the frame: rehearsal's third mark, and the first bird among the stills.
+const CLICKED_AT = {
+  "../rehearsal_widget/": { x: 0.12, y: 0.644 },
+  "../stills_widget/": { x: 0.114, y: 0.883 },
+};
 
 // A widget proves it runs by changing its picture: a drag moves a widget, a
 // click moves one that's clicked, and the ride moves by itself. A widget reads a held pointer once a frame, so the
