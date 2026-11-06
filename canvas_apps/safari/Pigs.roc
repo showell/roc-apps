@@ -26,8 +26,8 @@ Pigs :: [].{
 	pig_novelty_count = 2
 
 	## How far before the end of its segment the pigs are.
-	pig_dist_before_end : Distance
-	pig_dist_before_end = Distance.metres(60.0)
+	pig_distance_before_end : Distance
+	pig_distance_before_end = Distance.metres(60.0)
 
 	## How far past that the pig that catches the rider's eye stands.
 	gaze_pig_along_offset : Distance
@@ -144,7 +144,7 @@ Pigs :: [].{
 
 ## Where the pigs are on a segment `length` long.
 pigs_place : Distance -> Along
-pigs_place = |length| Along.at(length.minus(Pigs.pig_dist_before_end))
+pigs_place = |length| Along.at(length.minus(Pigs.pig_distance_before_end))
 
 pig : { along : Along, across : Across } -> Scenery.Critter
 pig = |{ along, across }| {
@@ -182,7 +182,7 @@ expect eye_catcher.along.to_metres() == 942.0
 expect eye_catcher.across.to_metres() == 12.0
 expect eye_catcher.height.to_metres() == 1.1
 expect Pigs.pig_height.to_metres() == 1.1
-expect Pigs.pig_dist_before_end.to_metres() == 60.0
+expect Pigs.pig_distance_before_end.to_metres() == 60.0
 expect Pigs.gaze_pig_along_offset.to_metres() == 2.0
 expect eye_catcher.codepoint == 128022
 expect Pigs.pig_codepoint == 128022

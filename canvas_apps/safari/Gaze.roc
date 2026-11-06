@@ -22,8 +22,8 @@ Gaze :: [].{
 	## way the bike points, or at the road.
 	GazeTarget : [OnPig(Angle.Turn), OnRoad]
 
-	gaze_look_dist : Distance
-	gaze_look_dist = Distance.metres(150.0)
+	gaze_look_distance : Distance
+	gaze_look_distance = Distance.metres(150.0)
 
 	gaze_release_angle : Angle.Turn
 	gaze_release_angle = Angle.Turn.degrees(35.0)
@@ -46,8 +46,8 @@ Gaze :: [].{
 	pig_gaze_speed : Speed
 	pig_gaze_speed = Speed.metres_a_step(0.2)
 
-	pig_gaze_settle_dist : Distance
-	pig_gaze_settle_dist = Distance.metres(25.0)
+	pig_gaze_settle_distance : Distance
+	pig_gaze_settle_distance = Distance.metres(25.0)
 
 	eyes_on_road_yaw : Angle.Turn
 	eyes_on_road_yaw = Angle.Turn.degrees(6.0)
@@ -71,7 +71,7 @@ Gaze :: [].{
 	pig_ahead_near = |state, seg| {
 		pig = Pigs.gaze_pig(seg.length)
 		dist = pig.along.distance_from(state.along)
-		if dist > gaze_look_dist {
+		if dist > gaze_look_distance {
 			NotLooking
 		} else {
 			pig_in_sight(state, { gaze_pig: pig, distance_ahead: dist })
@@ -156,7 +156,7 @@ Gaze :: [].{
 	is_gawking : RiderState, World.Segment -> Bool
 	is_gawking = |state, seg|
 		match seg.pig_attention {
-			Distracting => state.along >= Pigs.gaze_pig(seg.length).along.minus(gaze_look_dist)
+			Distracting => state.along >= Pigs.gaze_pig(seg.length).along.minus(gaze_look_distance)
 			Unnoticed => False
 		}
 
@@ -173,7 +173,7 @@ Gaze :: [].{
 	pig_gaze_brake_easing : RiderState, World.Segment -> Gaze.GazeBrake
 	pig_gaze_brake_easing = |state, seg| {
 		pig = Pigs.gaze_pig(seg.length)
-		d = pig.along.distance_from(state.along).minus(pig_gaze_settle_dist)
+		d = pig.along.distance_from(state.along).minus(pig_gaze_settle_distance)
 		{
 			is_gawking: True,
 			acceleration: state.speed.acceleration_to({
@@ -187,10 +187,10 @@ Gaze :: [].{
 # Each is within 1e-12 of its want.
 expect
 	[
-		(Gaze.gaze_look_dist.to_metres(), 150.0),
+		(Gaze.gaze_look_distance.to_metres(), 150.0),
 		(Gaze.attention_decay, 0.0012),
 		(Gaze.pig_gaze_speed.to_metres_a_step(), 0.2),
-		(Gaze.pig_gaze_settle_dist.to_metres(), 25.0),
+		(Gaze.pig_gaze_settle_distance.to_metres(), 25.0),
 		(Gaze.gaze_release_angle.to_radians() / Trig.deg, 35.0),
 		(Gaze.gaze_swivel_rate.to_radians() / Trig.deg, 4.0),
 		(Gaze.gaze_return_rate.to_radians() / Trig.deg, 0.2),

@@ -198,8 +198,8 @@ expect schedule(0.0) - 0.0 == 500.0
 one_seg : List(World.Segment)
 one_seg = [World.route_segment(0)]
 
-turn_dist : List(World.Segment), F64 -> F64
-turn_dist = |route, route_position|
+turn_distance : List(World.Segment), F64 -> F64
+turn_distance = |route, route_position|
 	match Truck.next_bend(route, Distance.metres(route_position)) {
 		BendAhead(t) => t.distance.to_metres()
 		NoBendAhead => 0.0 - 1.0
@@ -212,24 +212,24 @@ turn_v = |route, route_position|
 		NoBendAhead => 0.0 - 1.0
 	}
 
-expect turn_dist(one_seg, 0.0) == 500.0
-expect turn_dist(one_seg, 450.0) == 50.0
-expect turn_dist(one_seg, 499.0) == 1.0
+expect turn_distance(one_seg, 0.0) == 500.0
+expect turn_distance(one_seg, 450.0) == 50.0
+expect turn_distance(one_seg, 499.0) == 1.0
 expect turn_v(one_seg, 0.0) == 0.222
 expect turn_v(one_seg, 450.0) == 0.222
 expect VehicleLimits.turn_speed(World.route_segment(0).exit_turn.abs()).to_metres_a_step() == 0.222
-expect turn_dist(one_seg, 500.0) == -1.0
-expect turn_dist(one_seg, 900.0) == -1.0
-expect turn_dist([World.route_segment(18)], 0.0) == -1.0
-expect turn_dist([], 0.0) == -1.0
+expect turn_distance(one_seg, 500.0) == -1.0
+expect turn_distance(one_seg, 900.0) == -1.0
+expect turn_distance([World.route_segment(18)], 0.0) == -1.0
+expect turn_distance([], 0.0) == -1.0
 
 two_seg : List(World.Segment)
 two_seg = [World.route_segment(0), World.route_segment(1)]
 
-expect turn_dist(two_seg, 0.0) == 500.0
-expect turn_dist(two_seg, 500.0) == 320.0
-expect turn_dist(two_seg, 800.0) == 20.0
-expect turn_dist(two_seg, 820.0) == -1.0
+expect turn_distance(two_seg, 0.0) == 500.0
+expect turn_distance(two_seg, 500.0) == 320.0
+expect turn_distance(two_seg, 800.0) == 20.0
+expect turn_distance(two_seg, 820.0) == -1.0
 
 ## A rider at the start of a route 1000 m long, on the route's first segment.
 on_one_seg : {
