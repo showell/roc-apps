@@ -15,7 +15,6 @@ import lib.Trig
 import World
 
 Gaze :: [].{
-	PigLook : [Looking, NotLooking]
 	GazeBrake : { is_gawking : Bool, acceleration : Acceleration }
 
 	## Where the rider wants to look: at the pig in sight, this far from the
@@ -49,72 +48,27 @@ Gaze :: [].{
 	pig_gaze_settle_distance : Distance
 	pig_gaze_settle_distance = Distance.metres(25.0)
 
-	eyes_on_road_yaw : Angle.Turn
-	eyes_on_road_yaw = Angle.Turn.degrees(6.0)
-
 	gaze_attention : Fraction -> Attention
 	gaze_attention = |attention| Attention.from_fraction(Easing.smoothstep(attention))
 
-	pig_ahead : RiderState, World.Segment -> Gaze.PigLook
-	pig_ahead = |state, seg|
-		match seg.pig_attention {
-			Distracting =>
-				if state.yaw.abs() > eyes_on_road_yaw {
-					NotLooking
-				} else {
-					pig_ahead_near(state, seg)
-				}
-			Unnoticed => NotLooking
-		}
-
-	pig_ahead_near : RiderState, World.Segment -> Gaze.PigLook
-	pig_ahead_near = |state, seg| {
-		pig = Pigs.gaze_pig(seg.length)
-		dist = pig.along.distance_from(state.along)
-		if dist > gaze_look_distance {
-			NotLooking
-		} else {
-			pig_in_sight(state, { gaze_pig: pig, distance_ahead: dist })
-		}
-	}
-
-	## The pig `distance_ahead` up the road is in sight while it is less
-	## than the release angle from the way the bike points.
-	pig_in_sight : RiderState,
-	{
-		gaze_pig : Scenery.Critter,
-		distance_ahead : Distance,
-	} -> Gaze.PigLook
-	pig_in_sight = |state, { gaze_pig: pig, distance_ahead: dist }| {
-		toward_pig = Angle.Turn.radians(
-			F64.atan2({
-				x: dist.to_metres(),
-				y: pig.across.distance_from(state.across).to_metres(),
-			}),
-		).minus(state.yaw)
-		if toward_pig.abs() >= gaze_release_angle {
-			NotLooking
-		} else {
-			Looking
-		}
-	}
-
-	## Where the rider wants to look: the pig in sight, or else the road.
+	## Where the rider wants to look: at a distracting pig that is near enough
+	## to notice and less than the release angle from the way the bike points,
+	## or else at the road.
 	desired_gaze : RiderState, World.Segment -> Gaze.GazeTarget
 	desired_gaze = |state, seg|
-		if pig_ahead(state, seg) == Looking {
-			OnPig(desired_gaze_at(state, Pigs.gaze_pig(seg.length)))
-		} else {
-			OnRoad
+		match seg.pig_attention {
+			Distracting => {
+				pig = Pigs.gaze_pig(seg.length)
+				turn = turn_to(state, pig)
+				is_near = pig.along.distance_from(state.along) <= gaze_look_distance
+				if is_near and turn.abs() < gaze_release_angle {
+					OnPig(turn)
+				} else {
+					OnRoad
+				}
+			}
+			Unnoticed => OnRoad
 		}
-
-	desired_gaze_at : RiderState, Scenery.Critter -> Angle.Turn
-	desired_gaze_at = |state, pig| Angle.Turn.radians(
-		F64.atan2({
-			x: pig.along.distance_from(state.along).to_metres(),
-			y: pig.across.distance_from(state.across).to_metres(),
-		}),
-	).minus(state.yaw)
 
 	## The gaze one step on. It swivels toward a pig at no more than the
 	## swivel rate; with only the road to look at it eases back, and snaps
@@ -187,6 +141,15 @@ Gaze :: [].{
 	}
 }
 
+## How far `pig` stands from the way the bike points.
+turn_to : RiderState, Scenery.Critter -> Angle.Turn
+turn_to = |state, pig| Angle.Turn.radians(
+	F64.atan2({
+		x: pig.along.distance_from(state.along).to_metres(),
+		y: pig.across.distance_from(state.across).to_metres(),
+	}),
+).minus(state.yaw)
+
 # Each is within 1e-12 of its want.
 expect
 	[
@@ -198,7 +161,6 @@ expect
 		(Gaze.gaze_swivel_rate.to_radians() / Trig.deg, 4.0),
 		(Gaze.gaze_return_rate.to_radians() / Trig.deg, 0.2),
 		(Gaze.gaze_return_snap.to_radians() / Trig.deg, 0.02),
-		(Gaze.eyes_on_road_yaw.to_radians() / Trig.deg, 6.0),
 		(Gaze.gaze_return_ease.to_f64(), 0.05),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 
@@ -223,12 +185,6 @@ rider = |along, yaw| {
 	yaw: Angle.Turn.radians(yaw),
 }
 
-expect Gaze.pig_ahead(rider(200.0, 0.0), plain) == NotLooking
-expect Gaze.pig_ahead(rider(200.0, 10.0 * Trig.deg), distracting) == NotLooking
-expect Gaze.pig_ahead(rider(100.0, 0.0), distracting) == NotLooking
-expect Gaze.pig_ahead(rider(341.0, 0.0), distracting) == NotLooking
-expect Gaze.pig_ahead(rider(200.0, 0.0), distracting) == Looking
-
 ## How far this rider on the distracting segment wants to turn to the pig.
 turn_to_pig : RiderState -> F64
 turn_to_pig = |state|
@@ -245,6 +201,46 @@ expect {
 
 expect Gaze.desired_gaze(rider(200.0, 0.0), plain) == OnRoad
 expect Gaze.desired_gaze(rider(100.0, 0.0), distracting) == OnRoad
+expect Gaze.desired_gaze(rider(341.0, 0.0), distracting) == OnRoad
+
+## The pig that catches the eye on the distracting segment.
+watched_pig : Scenery.Critter
+watched_pig = Pigs.gaze_pig(distracting.length)
+
+## A rider on the distracting segment, `metres` short of the pig.
+short_of_pig : F64 -> RiderState
+short_of_pig = |metres| {
+	..rider(0.0, 0.0),
+	along: watched_pig.along.minus(Distance.metres(metres)),
+}
+
+# The look starts where the pig is noticed, and not a centimetre sooner.
+expect turn_to_pig(short_of_pig(Gaze.gaze_look_distance.to_metres())) > 0.0
+expect Gaze.desired_gaze(short_of_pig(150.01), distracting) == OnRoad
+
+## A rider 100 m short of the pig, turned so the pig is `degrees` off.
+with_pig_off : F64 -> RiderState
+with_pig_off = |degrees| {
+	straight = short_of_pig(100.0)
+	{ ..straight, yaw: turn_to(straight, watched_pig).minus(Angle.Turn.degrees(degrees)) }
+}
+
+# The pig stays in sight up to the release angle, on either side of the bike.
+expect
+	[
+		(34.99, True),
+		(-34.99, True),
+		(35.01, False),
+		(-35.01, False),
+	].all(|(degrees, is_in_sight)| is_looking(with_pig_off(degrees)) == is_in_sight)
+
+## Whether this rider on the distracting segment wants to look at the pig.
+is_looking : RiderState -> Bool
+is_looking = |state|
+	match Gaze.desired_gaze(state, distracting) {
+		OnPig(_) => True
+		OnRoad => False
+	}
 
 ## A rider looking `gaze_yaw` from straight ahead.
 head : F64, F64 -> RiderState
@@ -311,5 +307,5 @@ expect Gaze.is_gawking(rider(200.0, 0.0), distracting)
 expect Gaze.is_gawking(rider(341.0, 0.0), distracting)
 
 # The gawking outlasts the look.
-expect Gaze.pig_ahead(rider(341.0, 0.0), distracting) == NotLooking
+expect !is_looking(rider(341.0, 0.0))
 expect Gaze.is_gawking(rider(341.0, 0.0), distracting)

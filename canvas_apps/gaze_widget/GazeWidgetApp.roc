@@ -138,12 +138,12 @@ phase_of : RiderState -> GazePhase
 phase_of = |rider|
 	if !Gaze.is_gawking(rider, pig_segment) {
 		EyesOnRoad
-	} else if Gaze.pig_ahead(rider, pig_segment) == Looking {
-		LookingAtPig
-	} else if rider.gaze_yaw == Angle.straight_ahead {
-		EyesBack
 	} else {
-		EasingBack
+		match Gaze.desired_gaze(rider, pig_segment) {
+			OnPig(_) => LookingAtPig
+			OnRoad if rider.gaze_yaw == Angle.straight_ahead => EyesBack
+			OnRoad => EasingBack
+		}
 	}
 
 ## Everything on the canvas.

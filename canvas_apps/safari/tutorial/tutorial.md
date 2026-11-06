@@ -1271,15 +1271,9 @@ The rider looks either at a pig or at the road. An angle only means something fo
 
 `pig_ahead` answers with `Looking` or `NotLooking`. There's only one thing to ask of that, so `==` does the job of a `match`.
 
-{{code Gaze.pig_ahead}}
-
 `Distracting` is the tag from the herds chapter. `yaw` is the bike's angle to the road, so a rider who's steering hard keeps its eyes where it's going. Then there are two more conditions. The pig has to be within 150 metres:
 
-{{code Gaze.pig_ahead_near}}
-
 And it has to be less than 35 degrees from the way the bike points. The pig stands beside the road, so the angle to it grows as the rider comes closer. At 35 degrees the rider lets it go.
-
-{{code Gaze.pig_in_sight}}
 
 `Pigs.gaze_pig` is the third pig of the front row, at the place it would stand if it didn't stray.
 
