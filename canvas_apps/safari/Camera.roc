@@ -27,82 +27,82 @@ Camera :: [].{
 	project_all = |points, cam_focal| points.map(|p| project(p, cam_focal))
 }
 
-at : Geom.RaisedPoint -> Screen.Point
-at = |point| Camera.project(point, Pixels.of(800.0))
+screen_point : Geom.RaisedPoint -> Screen.Point
+screen_point = |point| Camera.project(point, Pixels.of(800.0))
 
-expect at({
+expect screen_point({
 	right: Distance.metres(0.0),
 	forward: Distance.metres(10.0),
 	height: Distance.metres(1.2),
 }).x.to_f64() == 480.0
-expect at({
+expect screen_point({
 	right: Distance.metres(10.0),
 	forward: Distance.metres(10.0),
 	height: Distance.metres(1.2),
 }).x.to_f64() == 1280.0
-expect at({
+expect screen_point({
 	right: Distance.metres(-5.0),
 	forward: Distance.metres(10.0),
 	height: Distance.metres(1.2),
 }).x.to_f64() == 80.0
-expect at({
+expect screen_point({
 	right: Distance.metres(10.0),
 	forward: Distance.metres(5.0),
 	height: Distance.metres(1.2),
 }).x.to_f64() == 2080.0
-expect at({
+expect screen_point({
 	right: Distance.metres(0.0),
 	forward: Distance.metres(10.0),
 	height: Distance.metres(1.2),
 }).y.to_f64() == 300.0
-expect at({
+expect screen_point({
 	right: Distance.metres(0.0),
 	forward: Distance.metres(10.0),
 	height: Distance.metres(11.2),
 }).y.to_f64() == -500.0
-expect at({
+expect screen_point({
 	right: Distance.metres(0.0),
 	forward: Distance.metres(10.0),
 	height: Distance.metres(6.2),
 }).y.to_f64() == -100.0
-expect at({
+expect screen_point({
 	right: Distance.metres(0.0),
 	forward: Distance.metres(10.0),
 	height: Distance.metres(0.2),
 }).y.to_f64() == 380.0
-expect at({
+expect screen_point({
 	right: Distance.metres(0.0),
 	forward: Distance.metres(4.0),
 	height: Distance.metres(3.2),
 }).y.to_f64() == -100.0
 
 # The same point twice as far off is half as far from the screen's middle.
-expect at({
+expect screen_point({
 	right: Distance.metres(4.0),
 	forward: Distance.metres(4.0),
 	height: Distance.metres(1.2),
 }).x.to_f64() == 1280.0
-expect at({
+expect screen_point({
 	right: Distance.metres(4.0),
 	forward: Distance.metres(8.0),
 	height: Distance.metres(1.2),
 }).x.to_f64() == 880.0
-expect at({
+expect screen_point({
 	right: Distance.metres(4.0),
 	forward: Distance.metres(16.0),
 	height: Distance.metres(1.2),
 }).x.to_f64() == 680.0
-expect at({
+expect screen_point({
 	right: Distance.metres(0.0),
 	forward: Distance.metres(4.0),
 	height: Distance.metres(5.2),
 }).y.to_f64() == -500.0
-expect at({
+expect screen_point({
 	right: Distance.metres(0.0),
 	forward: Distance.metres(8.0),
 	height: Distance.metres(5.2),
 }).y.to_f64() == -100.0
-expect at({
+expect screen_point({
 	right: Distance.metres(0.0),
 	forward: Distance.metres(16.0),
 	height: Distance.metres(5.2),

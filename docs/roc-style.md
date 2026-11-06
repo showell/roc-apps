@@ -77,6 +77,11 @@ Roc's own rules are in the langref's
   without opening it; what the caller wants it for stays in the caller.
   `item_at(cart, i)` answers the item at an index, and crashes past the
   end; named `in_cart` it reads as a question.
+- **A function is not named as a bare phrase; it names what it gives, even
+  if that repeats its module.** `Tree.in_view` reads as a yes or no and
+  hides what it gives, and a reader of a definition often forgets which
+  module it's in, so write `Tree.trees_in_view`. A constructor or conversion
+  that reads as one keeps its short form: `Clock.at_step`, `Fraction.from_ratio`.
 - **A pure function is named by a noun for what it gives, or a verb for
   what it does; never by an adjective or a bare past participle.** A lone
   participle (`added`, `joined`, `named`, `escaped`) reads as a Bool:

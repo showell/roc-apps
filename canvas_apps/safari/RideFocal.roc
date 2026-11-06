@@ -41,8 +41,8 @@ upright = RiderState.initial
 
 ## A rider 120 m along a segment: near enough to its cat, if it has one, to
 ## notice it.
-near_cat_on : U32 -> RiderState
-near_cat_on = |number| {
+rider_near_cat_on : U32 -> RiderState
+rider_near_cat_on = |number| {
 	..upright,
 	segment_index: World.SegmentIndex.number(number),
 	along: Along.metres(120.0),
@@ -88,15 +88,17 @@ expect {
 		and focal_at_lean(ten_times).minus(focal_at_lean(Bike.max_lean)) == Pixels.zero
 }
 
-expect RideFocal.crossing_attention(route, near_cat_on(1)).to_f64() > 0.0
+expect RideFocal.crossing_attention(route, rider_near_cat_on(1)).to_f64() > 0.0
 expect !(
 	RideFocal.crossing_attention(
 		route,
 		{ ..upright, segment_index: World.SegmentIndex.number(1) },
 	).to_f64() > 0.0
 )
-expect !(RideFocal.crossing_attention(route, near_cat_on(0)).to_f64() > 0.0)
-expect RideFocal.ride_focal(route, near_cat_on(1)) < RideFocal.ride_focal(route, near_cat_on(0))
+expect !(RideFocal.crossing_attention(route, rider_near_cat_on(0)).to_f64() > 0.0)
+expect
+	RideFocal.ride_focal(route, rider_near_cat_on(1))
+		< RideFocal.ride_focal(route, rider_near_cat_on(0))
 expect RideFocal.ride_focal(
 	route,
 	{ ..upright, look_depth: Fraction.whole },

@@ -114,7 +114,7 @@ BirdFlight :: [].{
 	## left.
 	flight_stage : { gap : Distance, .. } -> Animation.Stage
 	flight_stage = |approach|
-		Animation.over_gap({ starts_at: takeoff_gap, ends_at: landing_gap }, approach)
+		Animation.stage_over_gap({ starts_at: takeoff_gap, ends_at: landing_gap }, approach)
 
 	## The bird with `habit`, with the rider `gap` from the tree it starts on.
 	habit_instant_at : BirdFlight.Habit, { gap : Distance, .. } -> BirdFlight.Bird

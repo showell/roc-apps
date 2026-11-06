@@ -234,12 +234,12 @@ expect turn_distance(two_seg, 800.0) == 20.0
 expect turn_distance(two_seg, 820.0) == -1.0
 
 ## A rider at the start of a route 1000 m long, on the route's first segment.
-on_one_seg : {
+rider_on_one_segment : {
 	rider_distance : Distance,
 	route : List(World.Segment),
 	route_length : Distance,
 }
-on_one_seg = {
+rider_on_one_segment = {
 	rider_distance: Distance.zero,
 	route: one_seg,
 	route_length: Distance.metres(1000.0),
@@ -252,7 +252,7 @@ free = Truck.advance(
 		speed: Speed.metres_a_step(0.3),
 		brake_lights: Off,
 	},
-	on_one_seg,
+	rider_on_one_segment,
 )
 
 expect
@@ -269,7 +269,7 @@ ahead = Truck.advance(
 		speed: Speed.metres_a_step(0.5),
 		brake_lights: Off,
 	},
-	on_one_seg,
+	rider_on_one_segment,
 )
 
 behind : Truck.TruckState
@@ -279,7 +279,7 @@ behind = Truck.advance(
 		speed: Speed.metres_a_step(0.5),
 		brake_lights: Off,
 	},
-	on_one_seg,
+	rider_on_one_segment,
 )
 
 expect
@@ -296,7 +296,7 @@ capped = Truck.advance(
 		speed: Truck.top_speed,
 		brake_lights: Off,
 	},
-	on_one_seg,
+	rider_on_one_segment,
 )
 
 expect capped.speed.to_metres_a_step() == 2.75
@@ -311,7 +311,7 @@ braking = Truck.advance(
 		speed: Speed.metres_a_step(0.3),
 		brake_lights: Off,
 	},
-	on_one_seg,
+	rider_on_one_segment,
 )
 
 expect
@@ -331,7 +331,7 @@ settled = Truck.advance(
 		speed: Speed.metres_a_step(0.1776),
 		brake_lights: On,
 	},
-	on_one_seg,
+	rider_on_one_segment,
 )
 
 expect settled.brake_lights == Off
@@ -342,7 +342,7 @@ expect Truck.advance(
 		speed: Speed.metres_a_step(0.3),
 		brake_lights: Off,
 	},
-	on_one_seg,
+	rider_on_one_segment,
 ).speed < Speed.metres_a_step(0.3)
 expect !(
 	Truck.advance(
@@ -351,6 +351,6 @@ expect !(
 			speed: Speed.metres_a_step(0.3),
 			brake_lights: Off,
 		},
-		on_one_seg,
+		rider_on_one_segment,
 	).speed < Speed.metres_a_step(0.3)
 )

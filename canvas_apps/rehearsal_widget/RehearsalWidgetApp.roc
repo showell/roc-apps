@@ -240,8 +240,8 @@ road_middle_y : F64
 road_middle_y = ScrubWidget.picture_bottom_y / 2.0
 
 ## The right of the road is down the canvas, for a rider heading across it.
-on_canvas : ArcPoint -> { x : F64, y : F64 }
-on_canvas = |{ forward, across }| {
+canvas_point : ArcPoint -> { x : F64, y : F64 }
+canvas_point = |{ forward, across }| {
 	x: rider_x + forward * pixels_a_metre_along,
 	y: road_middle_y + across * pixels_a_metre_across,
 }
@@ -258,7 +258,7 @@ ground = Rect({
 ## A line right along the road, `across` metres from its middle.
 road_line : { across : F64, color : I64, width : F64 } -> Shapes.Shape
 road_line = |{ across, color, width }| {
-	y = on_canvas({ forward: 0.0, across }).y
+	y = canvas_point({ forward: 0.0, across }).y
 	Shapes.line(
 		0.0,
 		y,
@@ -277,7 +277,7 @@ road = {
 		ground,
 		Rect({
 			x: 0.0,
-			y: on_canvas({ forward: 0.0, across: -half_lane }).y,
+			y: canvas_point({ forward: 0.0, across: -half_lane }).y,
 			w: ScrubWidget.canvas_width,
 			h: 2.0 * half_lane * pixels_a_metre_across,
 			fill: ScrubWidget.flat(road_color),
@@ -308,7 +308,7 @@ drawn_points = |path| {
 arc_shapes : List(ArcPoint), { color : I64, width : F64 } -> List(Shapes.Shape)
 arc_shapes = |path, { color, width }| {
 	start = { forward: 0.0, across: rider.across.to_metres() }
-	points = drawn_points(path).prepend(start).map(on_canvas)
+	points = drawn_points(path).prepend(start).map(canvas_point)
 	points.map2(
 		points.drop_first(1),
 		|a, b|
@@ -339,7 +339,7 @@ tries_shapes = |tries, width|
 
 rider_mark : Shapes.Shape
 rider_mark = {
-	{ x, y } = on_canvas({ forward: 0.0, across: rider.across.to_metres() })
+	{ x, y } = canvas_point({ forward: 0.0, across: rider.across.to_metres() })
 	Disc({
 		x,
 		y,

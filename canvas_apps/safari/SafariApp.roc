@@ -48,7 +48,7 @@ SafariApp :: [].{
 				zoom: 1.0,
 			}),
 		)
-		Backdrop.behind(
+		Backdrop.frame_shapes(
 			Tour.shapes(tour),
 			{
 				sky_top_color: Tour.sky_top_color(tour),

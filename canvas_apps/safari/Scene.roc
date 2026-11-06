@@ -41,28 +41,28 @@ Scene := {
 	}
 
 	## Everything in view from `view`, each kind that has a cap cut to it.
-	in_view : Chain.Viewpoint, Scene.RideFacts -> Scene
-	in_view = |view, { speed, truck, clock }| {
+	scene_in_view : Chain.Viewpoint, Scene.RideFacts -> Scene
+	scene_in_view = |view, { speed, truck, clock }| {
 		road = view.road
-		trees = TreeSighting.in_view(view)
+		trees = TreeSighting.trees_in_view(view)
 		towers =
-			TowerSighting.in_view({ road, clock })
+			TowerSighting.towers_in_view({ road, clock })
 				.take_first(TowerSighting.max_visible_towers.to_u64_wrap())
 		cutouts =
-			Cutouts.cutouts_in_view(CutoutSighting.in_view(road))
+			Cutouts.cutouts_in_view(CutoutSighting.critter_placements(road))
 				.take_first(CutoutSighting.max_visible_cutouts.to_u64_wrap())
-		cats = CatSighting.in_view(view, speed)
-		rails = RailSighting.in_view(road)
+		cats = CatSighting.cats_in_view(view, speed)
+		rails = RailSighting.rails_in_view(road)
 		rider_distance = World.distance_along_route(
 			road.route,
 			{ index: Chain.rider_segment(road), along: road.vantage.along },
 		)
-		truck_at = TruckSighting.in_view({
+		truck_at = TruckSighting.truck_in_view({
 			road,
 			lead: truck.route_position.minus(rider_distance),
 			lights: truck.lights,
 		})
-		birds = BirdSighting.in_view(view)
+		birds = BirdSighting.birds_in_view(view)
 		# Keys about as far away as each other keep the order they are joined
 		# in, so this order decides which of two tied things is painted over
 		# the other.

@@ -28,8 +28,8 @@ BirdSighting := {
 	height_px = |{ forward, cam_focal }| cam_focal.times(bird_height.ratio_to(forward))
 
 	## The birds in view, the nearest segment's first.
-	in_view : Chain.Viewpoint -> List(BirdSighting)
-	in_view = |view| {
+	birds_in_view : Chain.Viewpoint -> List(BirdSighting)
+	birds_in_view = |view| {
 		positions = Chain.Position.all_in(view.road.chain)
 		positions.join_map(|position| segment_bird(view, position))
 	}

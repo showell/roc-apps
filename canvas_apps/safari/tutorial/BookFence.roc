@@ -17,17 +17,20 @@ BookFence := [].{
 	hook : Manuscript.Contents -> MdDocument.FenceHook
 	hook = |manuscript| |{ tag, args, body }|
 		if tag == "widget".to_utf8() {
-			fence = { words: BookText.from_bytes(args), caption: BookText.from_bytes(body).trim() }
+			fence = {
+				words: BookText.text_from_bytes(args),
+				caption: BookText.text_from_bytes(body).trim(),
+			}
 			Html(widget_html(manuscript.widget_folders, fence).to_utf8())
 		} else if tag == "dot".to_utf8() {
-			Html(diagram_html(manuscript.diagrams, BookText.from_bytes(args)).to_utf8())
+			Html(diagram_html(manuscript.diagrams, BookText.text_from_bytes(args)).to_utf8())
 		} else if args.is_empty() {
 			Pass
 		} else {
 			listing = {
-				language: BookText.from_bytes(tag),
-				title: BookText.from_bytes(args),
-				code: BookText.from_bytes(body),
+				language: BookText.text_from_bytes(tag),
+				title: BookText.text_from_bytes(args),
+				code: BookText.text_from_bytes(body),
 			}
 			Html(listing_html(listing).to_utf8())
 		}

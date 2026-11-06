@@ -35,8 +35,8 @@ TruckSighting := [
 
 	## The truck, if it is ahead of the rider, on the chain, and in front of
 	## the camera.
-	in_view : TruckSighting.Viewpoint -> TruckSighting
-	in_view = |view|
+	truck_in_view : TruckSighting.Viewpoint -> TruckSighting
+	truck_in_view = |view|
 		if view.lead > Distance.zero {
 			truck_from(
 				view,

@@ -207,8 +207,8 @@ picture = |degrees| {
 	road = road_with(degrees)
 	[
 		[ground],
-		GroundSighting.in_view(road).map(|patch| patch_shape(patch.corners)),
-		RailSighting.in_view(road).join_map(|rail| rail_foot(rail.corners)),
+		GroundSighting.patches_in_view(road).map(|patch| patch_shape(patch.corners)),
+		RailSighting.rails_in_view(road).join_map(|rail| rail_foot(rail.corners)),
 		[
 			spot(BendView.apex(road, bend_of(road)), { r: 5.0, color: apex_color }),
 			spot({ right: Distance.zero, forward: Distance.zero }, { r: 6.0, color: rider_color }),
@@ -251,7 +251,7 @@ status_lines = |degrees| {
 		"Turn: ${turn_text(degrees)}",
 		"Rail on the outer edge: ${edge_text(bend.turn)}",
 		apex_text(BendView.apex(road, bend)),
-		"${GroundSighting.in_view(road).len().to_str()} patches, ${RailSighting.in_view(road).len().to_str()} pieces of rail",
+		"${GroundSighting.patches_in_view(road).len().to_str()} patches, ${RailSighting.rails_in_view(road).len().to_str()} pieces of rail",
 	]
 }
 
@@ -327,10 +327,10 @@ expect apex_past_end(apex_of(70.0)) > apex_past_end(apex_of(20.0))
 expect apex_past_end(apex_of(-70.0)) > apex_past_end(apex_of(-20.0))
 
 # The bend's paving and its rail are both there, at both ends of the turning.
-expect GroundSighting.in_view(road_with(widest_turn)).len() > 2
-expect GroundSighting.in_view(road_with(-widest_turn)).len() > 2
-expect RailSighting.in_view(road_with(widest_turn)).len() > 0
-expect RailSighting.in_view(road_with(-widest_turn)).len() > 0
+expect GroundSighting.patches_in_view(road_with(widest_turn)).len() > 2
+expect GroundSighting.patches_in_view(road_with(-widest_turn)).len() > 2
+expect RailSighting.rails_in_view(road_with(widest_turn)).len() > 0
+expect RailSighting.rails_in_view(road_with(-widest_turn)).len() > 0
 
 expect turn_text(50.0) == "50 deg right"
 expect turn_text(-50.0) == "50 deg left"

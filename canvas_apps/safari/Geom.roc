@@ -87,8 +87,8 @@ Geom :: [].{
 	}
 
 	## A point on the segment after `bend`, measured on the segment before it.
-	in_segment_before : Geom.EdgePoint, Geom.Bend -> Geom.EdgePoint
-	in_segment_before = |point, bend| {
+	point_in_segment_before : Geom.EdgePoint, Geom.Bend -> Geom.EdgePoint
+	point_in_segment_before = |point, bend| {
 		along = point.along.to_metres()
 		from_left = point.from_left.to_metres()
 		length = bend.segment_length.to_metres()
@@ -109,8 +109,8 @@ Geom :: [].{
 	}
 
 	## A point on the segment before `bend`, measured on the segment after it.
-	in_segment_after : Geom.EdgePoint, Geom.Bend -> Geom.EdgePoint
-	in_segment_after = |point, bend| {
+	point_in_segment_after : Geom.EdgePoint, Geom.Bend -> Geom.EdgePoint
+	point_in_segment_after = |point, bend| {
 		left_edge = Across.left_of_middle(bend.road_width.divided_by(2.0))
 		centred = centred_point_after(
 			{ along: point.along, across: left_edge.plus(point.from_left) },
@@ -119,7 +119,7 @@ Geom :: [].{
 		{ along: centred.along, from_left: centred.across.distance_from(left_edge) }
 	}
 
-	## `in_segment_after` for a point measured from the middle of the road, as
+	## `point_in_segment_after` for a point measured from the middle of the road, as
 	## the rider is.
 	centred_point_after : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
 	centred_point_after = |point, bend| {
@@ -376,7 +376,7 @@ expect
 		|degrees| {
 			start = { along: Along.metres(12.0), from_left: Distance.metres(3.0) }
 			bend = bend_of(degrees)
-			back = Geom.in_segment_before(Geom.in_segment_after(start, bend), bend)
+			back = Geom.point_in_segment_before(Geom.point_in_segment_after(start, bend), bend)
 			along_miss = back.along.distance_from(start.along).to_metres().abs()
 			across_miss = back.from_left.minus(start.from_left).to_metres().abs()
 			along_miss <= 0.000000001 and across_miss <= 0.000000001
@@ -389,7 +389,10 @@ expect
 		|degrees| {
 			along = Along.metres(12.0)
 			bend = bend_of(degrees)
-			from_edge = Geom.in_segment_after({ along, from_left: Distance.metres(3.0) }, bend)
+			from_edge = Geom.point_in_segment_after(
+				{ along, from_left: Distance.metres(3.0) },
+				bend,
+			)
 			from_middle = Geom.centred_point_after({ along, across: Across.metres(1.0) }, bend)
 			along_miss = from_edge.along.distance_from(from_middle.along).to_metres().abs()
 			across_on_edge = Across.metres(from_edge.from_left.to_metres() - 2.0)

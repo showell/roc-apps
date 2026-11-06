@@ -74,16 +74,17 @@ TowerSighting := {
 
 	## The towers in view: those along the chain, then the one past the end of
 	## the segment behind the rider.
-	in_view : TowerSighting.Viewpoint -> List(TowerSighting)
-	in_view = |view|
+	towers_in_view : TowerSighting.Viewpoint -> List(TowerSighting)
+	towers_in_view = |view|
 		match Chain.segment_behind(view.road) {
-			Previous(segment_behind) => along_chain(view).concat(tower_behind(view, segment_behind))
-			AtRouteStart => along_chain(view)
+			Previous(segment_behind) =>
+				towers_along_chain(view).concat(tower_behind(view, segment_behind))
+			AtRouteStart => towers_along_chain(view)
 		}
 
 	## The towers in view along the chain, the nearest segment's first.
-	along_chain : TowerSighting.Viewpoint -> List(TowerSighting)
-	along_chain = |view| {
+	towers_along_chain : TowerSighting.Viewpoint -> List(TowerSighting)
+	towers_along_chain = |view| {
 		positions = Chain.Position.all_in(view.road.chain)
 		positions.join_map(|position| segment_towers(view, position))
 	}
@@ -228,10 +229,10 @@ short_view = |rider_number| {
 from_origin : TowerSighting.Viewpoint
 from_origin = short_view(0)
 
-expect TowerSighting.along_chain(from_origin).len() == 3
+expect TowerSighting.towers_along_chain(from_origin).len() == 3
 expect TowerSighting.segment_towers(from_origin, Chain.Position.first).len() == 1
 expect TowerSighting.mid_tower(from_origin, Chain.Position.first).len() == 0
-expect TowerSighting.in_view(from_origin).len() == 3
+expect TowerSighting.towers_in_view(from_origin).len() == 3
 expect route.all(|seg| !has_mid_tower(seg))
 
 ## Whether a segment has a tower halfway along.
@@ -265,11 +266,11 @@ long_view = {
 	clock: Clock.start,
 }
 
-expect TowerSighting.along_chain(long_view).len() == 2
+expect TowerSighting.towers_along_chain(long_view).len() == 2
 expect TowerSighting.mid_tower(long_view, Chain.Position.first).len() == 1
 
 long_towers : List(TowerSighting)
-long_towers = TowerSighting.along_chain(long_view)
+long_towers = TowerSighting.towers_along_chain(long_view)
 
 ## The long segment's tower at `i`: its end tower, then its mid tower.
 long_tower : U64 -> TowerSighting
@@ -311,7 +312,10 @@ expect
 ## then its mid tower.
 long_brightness_at : Clock -> List(F64)
 long_brightness_at = |clock|
-	TowerSighting.along_chain({ ..long_view, clock }).map(|tower| tower.beacon_brightness.to_f64())
+	TowerSighting.towers_along_chain({
+		..long_view,
+		clock,
+	}).map(|tower| tower.beacon_brightness.to_f64())
 
 expect {
 	got = long_brightness_at(Clock.start).concat(long_brightness_at(Clock.at_step(60)))
@@ -323,7 +327,7 @@ expect {
 ## How bright the first three segments' towers are at `clock`.
 spread_at : Clock -> List(F64)
 spread_at = |clock| {
-	towers = TowerSighting.along_chain({ ..from_origin, clock })
+	towers = TowerSighting.towers_along_chain({ ..from_origin, clock })
 	towers.map(|tower| tower.beacon_brightness.to_f64())
 }
 
@@ -334,20 +338,20 @@ expect
 brightness_at : U32 -> F64
 brightness_at = |phase| TowerSighting.beacon_brightness(Steps.of(phase)).to_f64()
 
-expect TowerSighting.in_view(short_view(0)).len() == 3
-expect TowerSighting.in_view(short_view(1)).len() == 4
-expect TowerSighting.in_view(short_view(2)).len() == 4
+expect TowerSighting.towers_in_view(short_view(0)).len() == 3
+expect TowerSighting.towers_in_view(short_view(1)).len() == 4
+expect TowerSighting.towers_in_view(short_view(2)).len() == 4
 expect TowerSighting.tower_behind(short_view(1), World.SegmentIndex.first).len() == 1
-expect TowerSighting.along_chain({
+expect TowerSighting.towers_along_chain({
 	..from_origin,
 	road: { ..from_origin.road, vantage: { ..origin, along: Along.metres(5000.0) } },
 }).len() == 0
-expect TowerSighting.along_chain({
+expect TowerSighting.towers_along_chain({
 	..from_origin,
 	road: { ..from_origin.road, chain: [] },
 }).len() == 0
 keys : List(DepthSort.DepthKey)
-keys = TowerSighting.depth_keys(TowerSighting.along_chain(from_origin))
+keys = TowerSighting.depth_keys(TowerSighting.towers_along_chain(from_origin))
 
 ## The depth key at `i`.
 key_at : U64 -> DepthSort.DepthKey

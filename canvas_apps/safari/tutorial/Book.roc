@@ -145,12 +145,12 @@ Neighbour : Try(Chapter, [OutOfBounds])
 chapter_of : Str, MdDocument.FenceHook -> Chapter
 chapter_of = |text, fence| {
 	rendered = Md.render_document(text.to_utf8(), { fence, images: AsLinks })
-	html = BookText.from_bytes(rendered.html)
+	html = BookText.text_from_bytes(rendered.html)
 	match rendered.headings {
 		[top, .. as rest] if top.level == 1 and rest.all(|heading| heading.level == 2) => {
 			{
-				file: "${BookText.from_bytes(top.id)}.html",
-				title: BookText.from_bytes(top.text),
+				file: "${BookText.text_from_bytes(top.id)}.html",
+				title: BookText.text_from_bytes(top.text),
 				number: Unnumbered,
 				body: BookTable.with_break_points(with_section_links(DraftNotes.highlight(html))),
 				sections: rest.map(section_of),
@@ -158,7 +158,10 @@ chapter_of = |text, fence| {
 			}
 		}
 		headings => {
-			titles = Str.join_with(headings.map(|heading| BookText.from_bytes(heading.text)), ", ")
+			titles = Str.join_with(
+				headings.map(|heading| BookText.text_from_bytes(heading.text)),
+				", ",
+			)
 			crash "book: a page needs one top heading and only sections under it: ${titles}"
 		}
 	}
@@ -191,8 +194,8 @@ section_with_link = |piece| match piece.split_first("\">") {
 
 section_of : MdDocument.Heading -> Section
 section_of = |heading| {
-	title = BookText.from_bytes(heading.text)
-	{ id: BookText.from_bytes(heading.id), title }
+	title = BookText.text_from_bytes(heading.text)
+	{ id: BookText.text_from_bytes(heading.id), title }
 }
 
 ## The chapters count from one. An appendix and the credits have no number.

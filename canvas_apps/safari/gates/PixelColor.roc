@@ -19,8 +19,8 @@ PixelColor :: [].{
 	}
 
 	## `color` laid over the opaque `pixel`.
-	over : U32, Brush.Rgba -> U32
-	over = |pixel, color|
+	blended_pixel : U32, Brush.Rgba -> U32
+	blended_pixel = |pixel, color|
 		if color.a >= 1.0 {
 			PixelColor.pack({
 				r: color.r,
