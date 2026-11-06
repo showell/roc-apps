@@ -244,60 +244,167 @@ The `expect` under it, in the module above, runs that over all six ducks. One li
 
 Nothing in this chapter moves, and that's true of the next few chapters too, as we go through what's on one page of the flipbook. Nature comes first, starting with the trees.
 
-## Trees
+## A simple tree
 
-Trees are the easiest thing to put in a frame, so we'll use them to see how anything gets there. It takes three stages. The world plants a tree once. Each frame, a sighting asks whether the rider can see it. Then the drawing paints it.
+Let's draw a tree. Forget the road for now, and the rider, and the ride.
+
+Drawing one tree and lining trees up along a road are two nearly unrelated problems, so they get a chapter each. This one takes a kind of tree and a place in front of a camera, and paints it. The next one doesn't care what a tree looks like.
+
+The concept is small. A conifer is a trunk under eight tiers of foliage. From far off, a tier is a flat triangle. Up close, a triangle looks like cardboard, so a near tier is a cone.
 
 New in this chapter:
 
-- Roc: a function that calls itself, `|` in a `match` branch
-- Modules: `Scenery`, `Conifer`, `Distance`, `Along`, `Across`, `TreeSighting`, `TreeDraw`
+- Roc: a payload that exists only where it means something, a list pattern that takes from the end
+- Modules: `Conifer`, `TreeDraw`, `Detail`, `Distance`
 
-### Planting a tree
+### Get the types right
 
-A tree is a plain record:
+There are only four kinds of tree, and the kind decides how tall it is. That's a whole module:
 
-{{code Trees.Tree}}
+{{module Conifer}}
 
-`along` says how far along its segment a tree stands, and `across` says how far it is from the middle of the road. `height` is a `Distance`, a length in metres. All three are opaque types, like `Clock`. A place along the road can't be passed as a place across it, and neither can be passed as a plain length.
+`Distance` is a length in metres, and it's opaque like `Clock`. A tree doesn't store its height, because a stored copy could disagree with its kind.
 
-Trees stand in pairs, one each side of the road, every 30 metres. The pairs take turns, big and small. A big pair is green, and a small pair takes the accent color we saw in the last chapter. Gold and red trees are much taller than green ones:
+Three more types carry a tree to the screen:
 
-{{code Conifer.height}}
+| Type | What it is |
+|---|---|
+| `Geom.RaisedPoint` | A point measured from the camera: right, forward and up |
+| `TreeDraw.Tier` | One layer of the crown, as fractions of the crown |
+| `TreeDraw.TreeOnScreen` | Where a tree landed, and how big it looks, in `Pixels` |
 
-A gold tree also stands further from the road. `Green | Red` is one branch for two tags:
+So the job is a short chain of signatures:
 
-{{code Trees.distance_from_middle}}
+| Job | Function | Its type |
+|---|---|---|
+{{types row Conifer.height Know how tall it is}}
+{{types row TreeDraw.on_screen Find it on the screen}}
+{{types row TreeDraw.draw Paint it}}
 
-Planting a segment starts at the first place a tree can go:
+### The functions
 
-{{code Trees.plant}}
-
-Each turn of the loop plants one pair, then moves on to the next place and the next kind. It stops 85 metres short of the segment's end.
-
-That all happens once, when the world is built. No frame ever plants a tree.
-
-### Seeing a tree
-
-From here on, things are measured from the rider. We don't need to know much about the rider yet. It's just where we're standing. A `Geom.RiderPoint` says how far right something is and how far ahead.
-
-{{code TreeSighting.sighting_of}}
-
-`Chain.rider_point_ahead` finds where a point on the road lies from the rider, and the math layer chapter shows how. After that, there are two ways to lose a tree. It can be behind the camera, or it can be so far off that it's too short to bother with. The line for `height_px` is perspective: a tree twice as far away looks half as tall.
-
-The answer is a list of one, or an empty list. `TreeSighting.in_view` asks that about every tree on the road ahead, and joins the answers.
-
-### Drawing a tree
-
-A conifer is a trunk under eight tiers of foliage. Each tier is one record. Its numbers are `Fraction`s, ratios from 0 to 1, and the sky chapter has more to say about those.
-
-{{code TreeDraw.Tier}}
-
-Drawing a tree means working out where it lands on screen, then painting the trunk and each tier:
+The top of it is `draw`, and it reads like the concept: find the tree on the screen, then paint a trunk and eight tiers.
 
 {{code TreeDraw.draw}}
 
-A far tree's tiers are flat triangles. A near tree's are cones, so a tree fattens as the rider passes under it. From far off, a triangle looks just like a cone, and it's cheaper.
+`nearer_trees` is the one thing here that comes from outside, and the next chapter explains it.
+
+`on_screen` makes two calls to `Camera.project`, one for the tree's foot and one for its tip. The difference between them is how tall the tree looks.
+
+{{code TreeDraw.on_screen}}
+
+The trunk and the crown split the tree's height between them:
+
+{{code TreeDraw.trunk_height_share}}
+
+{{code TreeDraw.crown_height_share}}
+
+The crown's share is the trunk's `complement`, so the two add up to 1 by construction. They used to be two separate numbers, and they added up to 1.088. Nothing failed. A bird just perched a metre below the tip of a gold tree, inside the foliage, and nobody noticed until this book had to say how tall a tree is.
+
+### Triangles
+
+Each tier is a line in a table:
+
+{{code TreeDraw.Tier}}
+
+`tiers` is a list of eight of these, and each overlaps the next. A far tier is one triangle, worked out in pixels:
+
+{{code TreeDraw.tier_triangle}}
+
+### Cones
+
+Safari Ride has no 3-D models. A near tier still has to look round, and it has to fatten as you ride past it. So we work in metres for a moment. We take a ring of 16 points around the tier's base and one point at its tip, and we project them all onto the screen:
+
+{{code TreeDraw.tier_cone}}
+
+What's left is a handful of dots on the screen, and a cone's outline is whatever wraps around them. That's a convex hull:
+
+{{code TreeDraw.convex_hull}}
+
+This is Andrew's monotone chain. Sort the points from left to right, walk along the top, and walk back along the bottom. One step does both walks: add a point, and first drop any recent point that would make a dent. `[.., a, b]` is a list pattern that takes the last two items.
+
+{{code TreeDraw.trim_hull}}
+
+That's a cone with no 3-D anywhere! The ring gets wider on the screen as it gets nearer, so the tree fattens by itself. It's just perspective.
+
+Which one a tree gets depends on how far away it is:
+
+{{code TreeDraw.crown_of}}
+
+Look at that return type. A cone carries a `shade`, and a triangle doesn't. Triangles are never shaded, so a triangle has nowhere to put a shade by mistake.
+
+There's one more case. A camera can't see a cone from inside, so a tier that's too close falls back to a triangle. The `if` after the pattern is a guard, and it adds a condition to a branch:
+
+{{code TreeDraw.draw_tier}}
+
+That's one tree. There are 392 more to go.
+
+## Roadside trees
+
+Here's the other tree problem. Safari Ride plants 392 trees along its road, and most of them are out of sight at any moment. Nothing in this chapter knows what a tree looks like.
+
+```widget frame trees
+Step 1,570 of the ride, with only the trees on. Next adds the layers that come after.
+```
+
+This is step 1,570, with the cat frozen in the lane. Trees are 1,656 of the 2,712 shapes in that frame, more than everything else put together. So the question for this chapter is how to show that many trees without doing too much work.
+
+New in this chapter:
+
+- Roc: `var` and `while` in a pure function
+- Modules: `Trees`, `TreeSighting`, `Scenery`, `Along`, `Across`
+
+### Get the types right
+
+A tree has two records, and each says where it stands in a different way:
+
+| Type | Where the tree is | Lasts |
+|---|---|---|
+| `Trees.Tree` | `along` and `across` its segment | The whole ride |
+| `TreeSighting` | `right` of the rider and `forward` of the rider | One frame |
+
+`Along` is a place along a segment, and `Across` is a place across the road. Both are opaque, so one can't be passed as the other. Reading any function, the field names tell you which world you're in.
+
+A `TreeSighting` also fits what `TreeDraw.draw` asks for, which is any record with a `right`, a `forward` and a `conifer`. So `TreeDraw` doesn't import it. The two chapters really are separate.
+
+| Job | Function | Its type |
+|---|---|---|
+{{types row Trees.plant Plant a segment, once}}
+{{types row TreeSighting.in_view Find the trees in view, each frame}}
+
+### Seeing the trees
+
+Each frame starts with the road ahead, and asks about every tree on it:
+
+{{code TreeSighting.in_view}}
+
+{{code TreeSighting.segment_sightings}}
+
+From here on, things are measured from the rider. We don't need to know much about the rider yet. It's just where we're standing.
+
+{{code TreeSighting.sighting_of}}
+
+`Chain.rider_point_ahead` finds where a point on the road lies from the rider, and the math layer chapter shows how. After that, there are two ways to lose a tree. It can be behind the camera, or it can be under 2 pixels tall. The answer is a list of one, or an empty list, and `join_map` flattens them, so a "no" simply disappears.
+
+### Spending the detail
+
+Most of that 1,656 is far off, and far trees are cheap. They get eight triangles and a plain trunk. A cone costs a ring of 16 points and a hull, so only trees within 200 metres get cones, and only the nearest few get a shaded trunk.
+
+"The nearest few" is the one thing a tree can't work out by itself, because it depends on the other trees. So `SceneDraw` counts them, and that's the `nearer_trees` from the last chapter:
+
+{{code SceneDraw.draw_tree}}
+
+### Planting
+
+None of that plants a tree. That happens once, when the world is built:
+
+{{code Trees.plant}}
+
+`var` and `while` look imperative, but `plant` has a `->`, and nothing outside can see `$along` change. Trees stand in pairs, one each side of the road, every 30 metres. The pairs take turns: a big green pair, then the segment's accent, then big green again. A gold pair stands further from the road, because it's so much taller:
+
+{{code Trees.distance_from_middle}}
+
+So the world remembers where it planted each tree, and no frame remembers anything. Every sighting is thrown away, and the next frame makes them all again.
 
 That's the shape of most things in a frame: a plain record, a sighting and a drawing. The next thing in nature needs none of that.
 

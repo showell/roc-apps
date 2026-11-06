@@ -35,7 +35,7 @@ Book := [].{
 			title: "One frame",
 		},
 		{
-			before: "Trees",
+			before: "A simple tree",
 			level: Category,
 			title: "Nature",
 		},
