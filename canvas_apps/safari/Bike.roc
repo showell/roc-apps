@@ -59,7 +59,7 @@ Bike :: [].{
 expect Bike.yaw_per_tilt == 0.1
 expect Bike.max_lean.to_radians() == 0.3490658503988659
 
-# Bike doesn't import Pose, and `Motion` is open, so the records here stand in
+# Bike doesn't import RiderState, and `Motion` is open, so the records here stand in
 # for it: `segment`, `gaze_yaw` and `focus` are the caller's own fields.
 
 ## A rider well along a segment, leaning a little to the right.

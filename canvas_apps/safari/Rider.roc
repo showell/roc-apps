@@ -10,7 +10,7 @@ import lib.DeviceMath
 import Gaze
 import Geom
 import LeanSearch
-import Pose
+import RiderState
 import Scenery
 import Speed
 import Throttle
@@ -27,7 +27,7 @@ Rider :: [].{
 
 	## The lean toward the best line, and the throttle for the bike once
 	## it leans so.
-	decide : Pose.RiderState, World.Segment -> Rider.Decision
+	decide : RiderState, World.Segment -> Rider.Decision
 	decide = |state, seg| {
 		tilt_step = LeanSearch.best_tilt_correction(state).minus(state.tilt)
 		{
@@ -39,7 +39,7 @@ Rider :: [].{
 		}
 	}
 
-	rider_state_for_next_segment : Pose.RiderState, List(World.Segment) -> Pose.RiderState
+	rider_state_for_next_segment : RiderState, List(World.Segment) -> RiderState
 	rider_state_for_next_segment = |rs, segs| {
 		seg = rs.segment.segment_in(segs)
 		next =
@@ -65,7 +65,7 @@ Rider :: [].{
 		}
 	}
 
-	finish_clamp : Pose.RiderState, World.Segment -> Pose.RiderState
+	finish_clamp : RiderState, World.Segment -> RiderState
 	finish_clamp = |moved, seg| {
 		end = Along.at(seg.length)
 		in_zone = end.distance_from(moved.along) < VehicleLimits.approach_intersection_dist
@@ -82,10 +82,10 @@ Rider :: [].{
 		}
 	}
 
-	stopped_at : Pose.RiderState, Along -> Pose.RiderState
+	stopped_at : RiderState, Along -> RiderState
 	stopped_at = |s, at| { ..s, along: at, speed: Speed.at_rest }
 
-	resolve_cross : Pose.RiderState, List(World.Segment) -> Pose.RiderState
+	resolve_cross : RiderState, List(World.Segment) -> RiderState
 	resolve_cross = |moved, segs| {
 		on_next = rider_state_for_next_segment(moved, segs)
 		if on_next.across.distance_from_middle() < Scenery.lane_half_width {
@@ -95,7 +95,7 @@ Rider :: [].{
 		}
 	}
 
-	advance : Pose.RiderState, List(World.Segment) -> Pose.RiderState
+	advance : RiderState, List(World.Segment) -> RiderState
 	advance = |state, segs| {
 		seg = state.segment.segment_in(segs)
 		dec = decide(state, seg)
@@ -108,7 +108,7 @@ Rider :: [].{
 		Gaze.next_rider_gaze(resolved, segs)
 	}
 
-	is_finished : Pose.RiderState, List(World.Segment) -> Bool
+	is_finished : RiderState, List(World.Segment) -> Bool
 	is_finished = |s, segs| {
 		seg = s.segment.segment_in(segs)
 		match seg.ending {
@@ -129,9 +129,9 @@ first_segment : World.Segment
 first_segment = World.route_segment(0)
 
 ## A rider on the centre line of the first segment, going the base speed.
-rider_at : F64, F64 -> Pose.RiderState
+rider_at : F64, F64 -> RiderState
 rider_at = |along, tilt_radians| {
-	..Pose.initial_rider_state,
+	..RiderState.initial,
 	along: Along.metres(along),
 	tilt: Angle.Lean.radians(tilt_radians),
 }
@@ -157,13 +157,13 @@ expect {
 }
 
 ## Rider doesn't import Fraction, so this focus comes from Gaze.
-focused_rider : Pose.RiderState
+focused_rider : RiderState
 focused_rider = {
-	..Pose.initial_rider_state,
-	focus: Gaze.next_focus(Pose.initial_rider_state, Gaze.gaze_release_angle.times(0.4)),
+	..RiderState.initial,
+	focus: Gaze.next_focus(RiderState.initial, Gaze.gaze_release_angle.times(0.4)),
 }
 
-at_seam : Pose.RiderState
+at_seam : RiderState
 at_seam = {
 	..focused_rider,
 	along: Along.metres(499.0),
@@ -175,7 +175,7 @@ at_seam = {
 	gaze_yaw: Angle.Turn.radians(0.3),
 }
 
-crossed : Pose.RiderState
+crossed : RiderState
 crossed = Rider.rider_state_for_next_segment(at_seam, first_segments)
 
 expect crossed.speed.to_metres_a_step() == 1.25
@@ -199,11 +199,11 @@ expect Rider.resolve_cross(rider_at(499.0, 0.0), first_segments).segment.to_i64(
 last_seg : World.Segment
 last_seg = World.route_segment(18)
 
-clamped_at_finish : F64, F64 -> Pose.RiderState
+clamped_at_finish : F64, F64 -> RiderState
 clamped_at_finish = |along, speed|
 	Rider.finish_clamp(
 		{
-			..Pose.initial_rider_state,
+			..RiderState.initial,
 			along: Along.metres(along),
 			speed: Speed.metres_a_step(speed),
 		},
@@ -226,8 +226,8 @@ expect !Rider.is_finished({ ..rider_at(299.0, 0.0), speed: Speed.at_rest }, [las
 expect last_seg.ending == Terminates
 expect !Rider.is_finished(rider_at(499.0, 0.0), first_segments)
 
-one_step_on : Pose.RiderState
-one_step_on = Rider.advance(Pose.initial_rider_state, first_segments)
+one_step_on : RiderState
+one_step_on = Rider.advance(RiderState.initial, first_segments)
 
 expect one_step_on.along > Along.start
 expect one_step_on.speed > Speed.at_rest
@@ -242,7 +242,7 @@ expect one_step_on.speed <= VehicleLimits.v_max
 best_lean : F64, F64 -> F64
 best_lean = |across, tilt_radians|
 	LeanSearch.best_tilt_correction({
-		..Pose.initial_rider_state,
+		..RiderState.initial,
 		across: Across.metres(across),
 		tilt: Angle.Lean.radians(tilt_radians),
 	}).to_radians()

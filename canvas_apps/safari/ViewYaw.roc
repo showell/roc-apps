@@ -2,7 +2,7 @@
 ## the bike's lean, as a rider's head turns into a bend.
 import Angle
 import Chain
-import Pose
+import RiderState
 import Scenery
 
 ViewYaw :: [].{
@@ -12,15 +12,15 @@ ViewYaw :: [].{
 	head_yaw_frac = 0.15
 
 	## The camera's turn from the way the bike points.
-	view_yaw_for : Pose.RiderState -> Angle.Turn
+	view_yaw_for : RiderState -> Angle.Turn
 	view_yaw_for = |s| s.gaze_yaw.plus(s.tilt.steer(head_yaw_frac))
 
 	## The camera's bearing in the world.
-	heading_for : Pose.RiderState -> Angle.Bearing
+	heading_for : RiderState -> Angle.Bearing
 	heading_for = |s| s.heading.plus(view_yaw_for(s))
 
 	## Where the camera stands on the rider's segment, and which way it faces.
-	pose_for : Pose.RiderState -> Chain.Pose
+	pose_for : RiderState -> Chain.Pose
 	pose_for = |s| {
 		along: s.along,
 		across: s.across,
@@ -31,10 +31,10 @@ ViewYaw :: [].{
 
 expect ViewYaw.head_yaw_frac == 0.15
 
-level : Pose.RiderState
-level = Pose.initial_rider_state
+level : RiderState
+level = RiderState.initial
 
-looking_right : Pose.RiderState
+looking_right : RiderState
 looking_right = {
 	..level,
 	tilt: Angle.Lean.radians(0.125),
@@ -42,7 +42,7 @@ looking_right = {
 	gaze_yaw: Angle.Turn.radians(0.375),
 }
 
-looking_left : Pose.RiderState
+looking_left : RiderState
 looking_left = {
 	..level,
 	tilt: Angle.Lean.radians(0.5),
@@ -50,7 +50,7 @@ looking_left = {
 	gaze_yaw: Angle.Turn.radians(-0.25),
 }
 
-leaning_left : Pose.RiderState
+leaning_left : RiderState
 leaning_left = {
 	..level,
 	tilt: Angle.Lean.radians(-0.75),
@@ -58,7 +58,7 @@ leaning_left = {
 	gaze_yaw: Angle.Turn.radians(0.125),
 }
 
-leaning_hard : Pose.RiderState
+leaning_hard : RiderState
 leaning_hard = {
 	..level,
 	tilt: Angle.Lean.radians(1.25),

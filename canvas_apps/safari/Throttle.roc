@@ -8,7 +8,7 @@ import CrossingReaction
 import lib.DeviceMath
 import Gaze
 import Num_
-import Pose
+import RiderState
 import Speed
 import Steps
 import lib.Trig
@@ -21,7 +21,7 @@ Throttle :: [].{
 	tilt_hold : Angle.Lean
 	tilt_hold = Angle.Lean.degrees(2.0)
 
-	corner_brake : Pose.RiderState,
+	corner_brake : RiderState,
 	{
 		road_segment : World.Segment,
 		exit_speed : Speed,
@@ -51,7 +51,7 @@ Throttle :: [].{
 
 	## The acceleration `a`, or none while the segment's crossing says the rider
 	## may not accelerate. It stops the rider speeding up, and never brakes.
-	crossing_gate : Pose.RiderState,
+	crossing_gate : RiderState,
 	{
 		road_segment : World.Segment,
 		offered_accel : Acceleration,
@@ -62,7 +62,7 @@ Throttle :: [].{
 			NoAcceleration | MayAccelerate => a
 		}
 
-	pig_gate : Pose.RiderState,
+	pig_gate : RiderState,
 	{
 		road_segment : World.Segment,
 		offered_accel : Acceleration,
@@ -86,7 +86,7 @@ Throttle :: [].{
 	## The acceleration `a`, unless the arc ahead leaves the road; then the
 	## brake for the shoulder it reaches. One of the gates `get_forward_accel_decel`
 	## passes the acceleration through in turn.
-	shoulder_brake : Pose.RiderState, Acceleration -> Acceleration
+	shoulder_brake : RiderState, Acceleration -> Acceleration
 	shoulder_brake = |state, a|
 		match Arc.project_arc(state).shoulder {
 			ShoulderNone => a
@@ -96,7 +96,7 @@ Throttle :: [].{
 
 	## The acceleration `a`, or the brake for an arc that leaves the road in
 	## `steps_to_shoulder`, whichever is harder.
-	shoulder_brake_at : Pose.RiderState,
+	shoulder_brake_at : RiderState,
 	{
 		steps_to_shoulder : Steps,
 		offered_accel : Acceleration,
@@ -120,7 +120,7 @@ Throttle :: [].{
 		}
 	}
 
-	clamp_v : Pose.RiderState,
+	clamp_v : RiderState,
 	{
 		road_segment : World.Segment,
 		exit_speed : Speed,
@@ -163,7 +163,7 @@ Throttle :: [].{
 		}
 	}
 
-	get_forward_accel_decel : Pose.RiderState, World.Segment -> Acceleration
+	get_forward_accel_decel : RiderState, World.Segment -> Acceleration
 	get_forward_accel_decel = |state, seg| {
 		a0 =
 			if state.tilt.abs() >= tilt_hold {
@@ -221,15 +221,15 @@ cat_segment : World.Segment
 cat_segment = World.route_segment(3)
 
 ## A rider on the centre line, upright.
-centred_rider : F64, F64 -> Pose.RiderState
+centred_rider : F64, F64 -> RiderState
 centred_rider = |along, speed| {
-	..Pose.initial_rider_state,
+	..RiderState.initial,
 	along: Along.metres(along),
 	speed: Speed.metres_a_step(speed),
 }
 
 ## The corner brake for this rider, offered `offered`.
-corner_brake_at : Pose.RiderState, F64 -> F64
+corner_brake_at : RiderState, F64 -> F64
 corner_brake_at = |rider, offered|
 	Throttle.corner_brake(
 		rider,
@@ -268,10 +268,10 @@ expect gate_at({ road_segment: cat_segment, along: 0.0 }, 0.01) == 0.01
 
 ## Throttle doesn't import Distance or Across, so these places and lengths come
 ## from what it does see.
-across_at = |metres| Pose.initial_rider_state.across.plus(Speed.metres_a_step(metres).step_length())
+across_at = |metres| RiderState.initial.across.plus(Speed.metres_a_step(metres).step_length())
 
 ## A rider steering hard left at `speed`.
-rider_off_left : F64 -> Pose.RiderState
+rider_off_left : F64 -> RiderState
 rider_off_left = |speed| { ..centred_rider(0.0, speed), yaw: Angle.Turn.radians(-1.5) }
 
 expect Arc.project_arc(rider_off_left(0.048)).shoulder == ShoulderLeft(Steps.of(40))
@@ -330,7 +330,7 @@ expect clamped_speed({ next_speed: 0.1, is_near_end: False }) == 0.1
 decide : Speed, F64 -> Acceleration
 decide = |speed, tilt|
 	Throttle.get_forward_accel_decel(
-		{ ..Pose.initial_rider_state, speed, tilt: Angle.Lean.radians(tilt) },
+		{ ..RiderState.initial, speed, tilt: Angle.Lean.radians(tilt) },
 		first_segment,
 	)
 
@@ -371,7 +371,7 @@ expect decide(Speed.metres_a_step(0.3), 0.0 - (hold_radians - 0.001)) < Accelera
 arc_from : F64, F64 -> Arc.ArcOutcome
 arc_from = |across, tilt_radians|
 	Arc.project_arc({
-		..Pose.initial_rider_state,
+		..RiderState.initial,
 		across: across_at(across),
 		tilt: Angle.Lean.radians(tilt_radians),
 	})
@@ -383,7 +383,7 @@ wide : Arc.ArcOutcome
 wide = arc_from(3.0, 0.0)
 
 stopped : Arc.ArcOutcome
-stopped = Arc.project_arc({ ..Pose.initial_rider_state, speed: Speed.at_rest })
+stopped = Arc.project_arc({ ..RiderState.initial, speed: Speed.at_rest })
 
 leaning : Arc.ArcOutcome
 leaning = arc_from(0.0, 0.2)
@@ -416,8 +416,8 @@ expect other_way.shoulder == ShoulderLeft(steps_off_road(other_way))
 expect steps_off_road(leaning) < Arc.turn_danger_steps
 expect steps_off_road(leaning) > Steps.zero
 expect leaning.forward <= Arc.min_forward_progress
-expect leaning.end_across > Pose.initial_rider_state.across
-expect other_way.end_across < Pose.initial_rider_state.across
+expect leaning.end_across > RiderState.initial.across
+expect other_way.end_across < RiderState.initial.across
 expect steps_off_road(leaning) == steps_off_road(other_way)
 expect leaning.end_across.to_metres() + other_way.end_across.to_metres() == 0.0
 

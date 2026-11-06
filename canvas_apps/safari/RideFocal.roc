@@ -8,18 +8,18 @@ import lib.DeviceMath
 import Fraction
 import Gaze
 import Lens
-import Pose
+import RiderState
 import World
 
 RideFocal :: [].{
 
 	## How strongly the crossing on the rider's segment holds their attention.
-	crossing_attention : List(World.Segment), Pose.RiderState -> Attention
+	crossing_attention : List(World.Segment), RiderState -> Attention
 	crossing_attention = |world, rider|
 		CrossingReaction.reaction_to(rider.segment.segment_in(world), rider).eye_pull
 
 	## The camera's focal length for where the rider is and how they ride.
-	ride_focal : List(World.Segment), Pose.RiderState -> F64
+	ride_focal : List(World.Segment), RiderState -> F64
 	ride_focal = |world, rider| {
 		lean_frac = Fraction.clamp(
 			(DeviceMath.real_abs(rider.tilt.to_radians()) / Bike.max_lean.to_radians()),
@@ -37,13 +37,13 @@ cat_segment : World.Segment
 cat_segment = { ..World.route_segment(1), crossing: World.route_segment(3).crossing }
 
 ## A rider at the start of the first segment, upright and looking ahead.
-upright : Pose.RiderState
-upright = Pose.initial_rider_state
+upright : RiderState
+upright = RiderState.initial
 
 ## A rider 120 m along a segment: near enough to its cat, if it has one, to
 ## notice it. RideFocal doesn't import Along or Distance, so the place is made
 ## from Gaze's distance.
-near_cat_on : U32 -> Pose.RiderState
+near_cat_on : U32 -> RiderState
 near_cat_on = |number| {
 	..upright,
 	segment: World.SegmentIndex.number(number),

@@ -6,7 +6,7 @@ import Ground
 import GroundSighting
 import ItemDraw
 import Mountains
-import Pose
+import RiderState
 import Render
 import RideFocal
 import Rider
@@ -21,14 +21,14 @@ import lib.Shapes
 ## clock, which counts the steps. Everything else that changes is worked out
 ## from these three.
 RideInstant := {
-	rider : Pose.RiderState,
+	rider : RiderState,
 	truck : Truck.TruckState,
 	clock : Clock,
 }.{
 
 	initial : RideInstant
 	initial = {
-		rider: Pose.initial_rider_state,
+		rider: RiderState.initial,
 		truck: Truck.initial_truck,
 		clock: Clock.start,
 	}
