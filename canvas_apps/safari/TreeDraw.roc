@@ -69,7 +69,7 @@ TreeDraw :: [].{
 			color: conifer_color(tree.conifer),
 			crown: crown_of(tree.forward),
 		}
-		draw_trunk(screen_tree, trunk).concat(tiers.join_map(|tier| draw_tier(tier, look)))
+		[draw_trunk(screen_tree, trunk)].concat(tiers.map(|tier| draw_tier(tier, look)))
 	}
 
 	## How a crown is drawn: cones, shaded by how near they are, or flat triangles.
@@ -215,7 +215,7 @@ ring_points = 16
 crown_shade : Distance -> Fraction
 crown_shade = |forward| Fraction.clamp(1.0 - forward.ratio_to(Detail.crown_shade_reach))
 
-draw_trunk : TreeDraw.TreeOnScreen, [Shaded, Flat] -> List(Shapes.Shape)
+draw_trunk : TreeDraw.TreeOnScreen, [Shaded, Flat] -> Shapes.Shape
 draw_trunk = |screen_tree, finish| {
 	width = screen_tree.height_px.times(trunk_width_share.to_f64()).max(min_trunk_width)
 	below_crown = screen_tree.height_px.times(trunk_height_share.to_f64())
@@ -237,7 +237,7 @@ draw_trunk = |screen_tree, finish| {
 
 ## A tier as a flat triangle: its apex at the tier's top, its base across its
 ## bottom.
-tier_triangle : TreeDraw.TreeOnScreen, { tier : TreeDraw.Tier, color : I64 } -> List(Shapes.Shape)
+tier_triangle : TreeDraw.TreeOnScreen, { tier : TreeDraw.Tier, color : I64 } -> Shapes.Shape
 tier_triangle = |screen_tree, { tier, color }| {
 	bottom_y = screen_tree.crown_top_y.plus(screen_tree.crown_height_px.times(tier.bottom.to_f64()))
 	top_y = screen_tree.crown_top_y.plus(screen_tree.crown_height_px.times(tier.top.to_f64()))
@@ -319,7 +319,7 @@ ring_angles = {
 
 ## A tier, as a cone when the tree is near and the whole cone is past the near
 ## plane, else as a triangle: the camera can't see a cone from inside.
-draw_tier : TreeDraw.Tier, TreeLook -> List(Shapes.Shape)
+draw_tier : TreeDraw.Tier, TreeLook -> Shapes.Shape
 draw_tier = |tier, look| {
 	cone_radius = look.point.height.times(crown_half_width_share.to_f64() * tier.width.to_f64())
 	match look.crown {
@@ -336,7 +336,7 @@ tier_cone : TreeDraw.Tier,
 	look : TreeLook,
 	cone_radius : Distance,
 	shade : Fraction,
-} -> List(Shapes.Shape)
+} -> Shapes.Shape
 tier_cone = |tier, { look, cone_radius, shade }| {
 	point = look.point
 	trunk_part = trunk_height_share.to_f64()
@@ -432,7 +432,7 @@ expect
 
 expect
 	match draw_trunk(sample_on_screen, Flat) {
-		[Poly(polygon)] =>
+		Poly(polygon) =>
 			polygon.fill == Flat(Brush.opaque(0x5A3E22))
 				and is_near(polygon.pts, [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0])
 		_ => False
@@ -441,7 +441,7 @@ expect
 # A shaded trunk is the same colour, lighter in the middle of its width.
 expect
 	match draw_trunk(sample_on_screen, Shaded) {
-		[Poly({ pts, fill: Span({ edge, middle, x0, x1 }) })] =>
+		Poly({ pts, fill: Span({ edge, middle, x0, x1 }) }) =>
 			edge == Brush.opaque(0x362514)
 				and middle == Brush.opaque(0x714E2B)
 				and is_near([x0, x1], [440.0, 520.0])
@@ -452,7 +452,7 @@ expect
 expect {
 	corners_of = |tier|
 		match tier_triangle(sample_on_screen, { tier, color: 7 }) {
-			[Poly(polygon)] => polygon.pts
+			Poly(polygon) => polygon.pts
 			_ => crash "a tier is one polygon"
 		}
 	top_tier = tiers.first() ?? crash "a tree has tiers"

@@ -187,15 +187,22 @@ beam = |truck, across| {
 			TruckLights.midpoint({ from: lamp_bottom, to: lamp_top }),
 			truck.view.cam_focal,
 		)
-		Polygon.gradient_polygon(
-			on_screen,
-			{
-				center_rgba: beam_core,
-				edge_rgba: beam_edge,
-				gradient_center: lamp,
-				gradient_radius: TruckLights.farthest_from(on_screen, lamp),
-			},
-		)
+		radius = TruckLights.farthest_from(on_screen, lamp)
+		if radius < Polygon.min_gradient_radius {
+			[]
+		} else {
+			[
+				Polygon.gradient_polygon(
+					on_screen,
+					{
+						center_rgba: beam_core,
+						edge_rgba: beam_edge,
+						gradient_center: lamp,
+						gradient_radius: radius,
+					},
+				),
+			]
+		}
 	}
 }
 
@@ -240,15 +247,21 @@ glow = |truck, lamp|
 		on_screen = Camera.project_all(lamp, truck.view.cam_focal)
 		center = TruckLights.center_of(on_screen)
 		radius = TruckLights.glow_radius(on_screen, center)
-		Polygon.gradient_polygon(
-			TruckLights.glow_outline({ center, outline_radius: radius }),
-			{
-				center_rgba: glow_core,
-				edge_rgba: glow_edge,
-				gradient_center: center,
-				gradient_radius: radius,
-			},
-		)
+		if radius < Polygon.min_gradient_radius {
+			[]
+		} else {
+			[
+				Polygon.gradient_polygon(
+					TruckLights.glow_outline({ center, outline_radius: radius }),
+					{
+						center_rgba: glow_core,
+						edge_rgba: glow_edge,
+						gradient_center: center,
+						gradient_radius: radius,
+					},
+				),
+			]
+		}
 	}
 
 sample_panel : List(Screen.Point)

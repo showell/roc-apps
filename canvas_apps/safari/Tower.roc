@@ -176,7 +176,7 @@ Tower :: [].{
 		from : Screen.Point,
 		to : Screen.Point,
 		width_px : Pixels,
-	} -> List(Shapes.Shape)
+	} -> Shapes.Shape
 	screen_rod = |{ from, to, width_px }| {
 		dx = to.x.minus(from.x).to_f64()
 		dy = to.y.minus(from.y).to_f64()
@@ -202,7 +202,7 @@ Tower :: [].{
 		to : Screen.Point,
 		offset_x : Pixels,
 		offset_y : Pixels,
-	} -> List(Shapes.Shape)
+	} -> Shapes.Shape
 	rod_quad = |
 		{
 			from: a,
@@ -226,9 +226,9 @@ Tower :: [].{
 	rod : Tower.RodView, { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> List(Shapes.Shape)
 	rod = |view, { from, to }|
 		match (sight_of(from), sight_of(to)) {
-			(InView, InView) => rod_on_screen(view, { from, to })
-			(InView, BehindCamera) => rod_on_screen(view, { from, to: cut_at_near({ from, to }) })
-			(BehindCamera, InView) => rod_on_screen(view, { from: cut_at_near({ from, to }), to })
+			(InView, InView) => [rod_on_screen(view, { from, to })]
+			(InView, BehindCamera) => [rod_on_screen(view, { from, to: cut_at_near({ from, to }) })]
+			(BehindCamera, InView) => [rod_on_screen(view, { from: cut_at_near({ from, to }), to })]
 			(BehindCamera, BehindCamera) => []
 		}
 
@@ -251,7 +251,7 @@ Tower :: [].{
 	{
 		from : Geom.RaisedPoint,
 		to : Geom.RaisedPoint,
-	} -> List(Shapes.Shape)
+	} -> Shapes.Shape
 	rod_on_screen = |view, { from, to }|
 		screen_rod({
 			from: Camera.project(from, view.cam_focal),
@@ -617,12 +617,10 @@ expect
 		to: Screen.point(30.0, 40.0),
 		width_px: Pixels.of(10.0),
 	})
-		== [
-			Poly({
-				pts: [-4.0, 3.0, 26.0, 43.0, 34.0, 37.0, 4.0, -3.0],
-				fill: Flat(Brush.opaque(Tower.tower_metal)),
-			}),
-		]
+		== Poly({
+			pts: [-4.0, 3.0, 26.0, 43.0, 34.0, 37.0, 4.0, -3.0],
+			fill: Flat(Brush.opaque(Tower.tower_metal)),
+		})
 
 # A rod of no length is still one quad, all at its one point.
 expect
@@ -631,12 +629,10 @@ expect
 		to: Screen.point(5.0, 6.0),
 		width_px: Pixels.of(10.0),
 	})
-		== [
-			Poly({
-				pts: [5.0, 6.0, 5.0, 6.0, 5.0, 6.0, 5.0, 6.0],
-				fill: Flat(Brush.opaque(Tower.tower_metal)),
-			}),
-		]
+		== Poly({
+			pts: [5.0, 6.0, 5.0, 6.0, 5.0, 6.0, 5.0, 6.0],
+			fill: Flat(Brush.opaque(Tower.tower_metal)),
+		})
 
 expect
 	Tower.rod_width_at({ forward: Distance.metres(10.0), cam_focal: Pixels.of(500.0) }).to_f64()

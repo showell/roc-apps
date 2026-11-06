@@ -7,10 +7,10 @@ import lib.Shapes
 TwoShapes :: [].{
 
 	shapes : List(Shapes.Shape)
-	shapes = triangle.concat(rectangle)
+	shapes = [triangle, rectangle]
 }
 
-triangle : List(Shapes.Shape)
+triangle : Shapes.Shape
 triangle = Polygon.triangle(
 	0x2e8b57,
 	{
@@ -20,11 +20,11 @@ triangle = Polygon.triangle(
 	},
 )
 
-rectangle : List(Shapes.Shape)
+rectangle : Shapes.Shape
 rectangle = Polygon.rectangle(
 	0xe8a33d,
 	{ top_left: Screen.point(270.0, 120.0), bottom_right: Screen.point(520.0, 250.0) },
 )
 
 expect TwoShapes.shapes.len() == 2
-expect TwoShapes.shapes.drop_first(1) == rectangle
+expect TwoShapes.shapes.last() == Ok(rectangle)

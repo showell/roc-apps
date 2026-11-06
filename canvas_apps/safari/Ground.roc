@@ -22,21 +22,17 @@ Ground :: [].{
 		height: Geom.ground_drop(point).opposite(),
 	}
 
-	## A patch on screen, cut at the camera's near plane. A patch with more
-	## than eight corners, or with fewer than three left in front of the
-	## camera, draws nothing.
+	## A patch on screen, cut at the camera's near plane. A patch wholly behind
+	## the camera draws nothing.
 	draw : Ground.Patch, Pixels -> List(Shapes.Shape)
-	draw = |patch, cam_focal|
-		if patch.corners.len() > 8 {
+	draw = |patch, cam_focal| {
+		in_front = Geom.clip_near(patch.corners.map(Ground.ground_point))
+		if in_front.is_empty() {
 			[]
 		} else {
-			in_front = Geom.clip_near(patch.corners.map(Ground.ground_point))
-			if in_front.len() < 3 {
-				[]
-			} else {
-				Polygon.flat_polygon(patch.color, Camera.project_all(in_front, cam_focal))
-			}
+			[Polygon.flat_polygon(patch.color, Camera.project_all(in_front, cam_focal))]
 		}
+	}
 }
 
 expect Ground.ground_point({
@@ -85,7 +81,7 @@ corners_ahead = |count|
 
 expect patch_shapes(patch_ahead).len() == 1
 expect patch_shapes(corners_ahead(8)).len() == 1
-expect patch_shapes(corners_ahead(9)).len() == 0
+expect patch_shapes(corners_ahead(9)).len() == 1
 
 expect
 	patch_shapes([
@@ -95,11 +91,6 @@ expect
 		{ right: Distance.metres(-5.0), forward: Distance.metres(-20.0) },
 	]).len()
 		== 0
-
-expect patch_shapes([
-	{ right: Distance.metres(-5.0), forward: Distance.metres(10.0) },
-	{ right: Distance.metres(5.0), forward: Distance.metres(10.0) },
-]).len() == 0
 
 expect {
 	match patch_shapes(patch_ahead) {

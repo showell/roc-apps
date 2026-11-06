@@ -154,10 +154,12 @@ Mountains :: [].{
 	draw = |{ heading, dusk, cam_focal }| {
 		sight = { heading, cam_focal }
 		[
-			silhouette(sight, { height_at: west_range, color: color_at_dusk(rock_west, dusk) }),
-			silhouette(sight, { height_at: north_range, color: color_at_dusk(rock, dusk) }),
+			[
+				silhouette(sight, { height_at: west_range, color: color_at_dusk(rock_west, dusk) }),
+				silhouette(sight, { height_at: north_range, color: color_at_dusk(rock, dusk) }),
+			],
 			snow(sight, snow_color(dusk)),
-			silhouette(sight, { height_at: ground_base, color: land }),
+			[silhouette(sight, { height_at: ground_base, color: land })],
 		].join()
 	}
 }
@@ -242,7 +244,7 @@ silhouette : Mountains.Sight,
 {
 	height_at : Angle.Bearing -> Pixels,
 	color : I64,
-} -> List(Shapes.Shape)
+} -> Shapes.Shape
 silhouette = |sight, { height_at, color }| {
 	left = Mountains.roll_margin.opposite()
 	right = Screen.width.plus(Mountains.roll_margin)
@@ -278,7 +280,7 @@ snow = |sight, color| {
 				y: height_y(sight, Mountains.snowline(Mountains.bearing_at(sight, x))),
 			}),
 		)
-		Polygon.flat_polygon(color, crest.concat(snowline))
+		[Polygon.flat_polygon(color, crest.concat(snowline))]
 	}
 }
 

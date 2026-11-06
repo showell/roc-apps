@@ -28,10 +28,6 @@ StillDraw :: [].{
 		height_px : Pixels,
 	}
 
-	## A polygon with more points than this is not drawn.
-	max_still_points : U64
-	max_still_points = 512
-
 	## The sign that a still's x is multiplied by.
 	x_sign : StillDraw.Flip -> F64
 	x_sign = |flip|
@@ -58,21 +54,18 @@ StillDraw :: [].{
 	screen_points = |anchor, points| points.map(|point| StillDraw.screen_point(anchor, point))
 
 	## One polygon of a still, filled with its colour or its gradient.
-	draw_polygon : StillDraw.Anchor, Stills.StillPolygon -> List(Shapes.Shape)
-	draw_polygon = |anchor, poly|
-		if poly.points.len() > max_still_points {
-			[]
-		} else {
-			points = StillDraw.screen_points(anchor, poly.points)
-			match poly.gradient.first() {
-				Ok(gradient) => draw_gradient_polygon(anchor, { gradient, points })
-				Err(ListWasEmpty) => Polygon.flat_polygon(poly.color, points)
-			}
+	draw_polygon : StillDraw.Anchor, Stills.StillPolygon -> Shapes.Shape
+	draw_polygon = |anchor, poly| {
+		points = StillDraw.screen_points(anchor, poly.points)
+		match poly.gradient.first() {
+			Ok(gradient) => draw_gradient_polygon(anchor, { gradient, points })
+			Err(ListWasEmpty) => Polygon.flat_polygon(poly.color, points)
 		}
+	}
 
 	## A whole still, its polygons in order.
 	draw_still : StillDraw.Anchor, List(Stills.StillPolygon) -> List(Shapes.Shape)
-	draw_still = |anchor, polys| polys.join_map(|poly| StillDraw.draw_polygon(anchor, poly))
+	draw_still = |anchor, polys| polys.map(|poly| StillDraw.draw_polygon(anchor, poly))
 
 	## A critter in view. An emoji faces left, so a critter facing right is
 	## its still mirrored. A critter less than a pixel tall isn't drawn.
@@ -122,7 +115,7 @@ draw_gradient_polygon : StillDraw.Anchor,
 {
 	gradient : Stills.StillGradient,
 	points : List(Screen.Point),
-} -> List(Shapes.Shape)
+} -> Shapes.Shape
 draw_gradient_polygon = |anchor, { gradient, points }|
 	match gradient_shape(gradient) {
 		Linear => {
@@ -213,27 +206,12 @@ flat_polygon = |count| {
 	points: List.repeat({ x: 0.0, y: 0.0 }, count),
 }
 
-expect StillDraw.max_still_points == 512
-expect StillDraw.draw_polygon(upright, flat_polygon(3)).len() == 1
-expect StillDraw.draw_polygon(upright, flat_polygon(512)).len() == 1
-expect StillDraw.draw_polygon(upright, flat_polygon(513)).len() == 0
-expect StillDraw.draw_polygon(upright, flat_polygon(2)).len() == 0
-
 expect
 	StillDraw.draw_polygon(upright, flat_polygon(3))
-		== [
-			Poly({
-				pts: [
-					100.0,
-					200.0,
-					100.0,
-					200.0,
-					100.0,
-					200.0,
-				],
-				fill: Flat(Brush.opaque(7)),
-			}),
-		]
+		== Poly({
+			pts: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0],
+			fill: Flat(Brush.opaque(7)),
+		})
 
 # How many shapes draw a critter of `height` metres, `forward` metres ahead.
 shape_count : {

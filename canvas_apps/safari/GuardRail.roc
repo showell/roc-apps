@@ -82,15 +82,15 @@ GuardRail :: [].{
 		)
 	}
 
-	## A quad on screen, cut at the camera's near plane; a quad with fewer
-	## than three corners left in front of the camera draws nothing.
+	## A quad on screen, cut at the camera's near plane; a quad wholly behind
+	## the camera draws nothing.
 	draw : GuardRail.RailQuad, Pixels -> List(Shapes.Shape)
 	draw = |quad, cam_focal| {
 		in_front = Geom.clip_near(quad.corners)
-		if in_front.len() < 3 {
+		if in_front.is_empty() {
 			[]
 		} else {
-			Polygon.flat_polygon(quad.color, Camera.project_all(in_front, cam_focal))
+			[Polygon.flat_polygon(quad.color, Camera.project_all(in_front, cam_focal))]
 		}
 	}
 }

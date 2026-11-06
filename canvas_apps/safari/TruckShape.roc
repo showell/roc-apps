@@ -104,16 +104,20 @@ TruckShape :: [].{
 	).map(|corner| corner.to_f64() / sides.to_f64() * F64.tau)
 
 	## A flat-coloured polygon on the truck, cut at the near plane and
-	## projected.
+	## projected. One wholly behind the camera draws nothing.
 	polygon : TruckShape.TruckInView,
 	{
 		color : I64,
 		corners : List(Geom.RaisedPoint),
 	} -> List(Shapes.Shape)
-	polygon = |truck, { color, corners }| Polygon.flat_polygon(
-		color,
-		Camera.project_all(Geom.clip_near(corners), truck.view.cam_focal),
-	)
+	polygon = |truck, { color, corners }| {
+		in_front = Geom.clip_near(corners)
+		if in_front.is_empty() {
+			[]
+		} else {
+			[Polygon.flat_polygon(color, Camera.project_all(in_front, truck.view.cam_focal))]
+		}
+	}
 }
 
 ## How far forward of the trailer the cab's flat roof reaches, as a fraction
