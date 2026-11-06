@@ -3,7 +3,7 @@
 import Acceleration
 import Along
 import Angle
-import Arc
+import Coast
 import CrossingReaction
 import lib.DeviceMath
 import Gaze
@@ -83,18 +83,18 @@ Throttle :: [].{
 	brake_decay : F64
 	brake_decay = 20.0
 
-	## The acceleration `a`, unless the arc ahead leaves the road; then the
+	## The acceleration `a`, unless a coast from here leaves the road; then the
 	## brake for the shoulder it reaches. One of the gates `get_forward_accel_decel`
 	## passes the acceleration through in turn.
 	shoulder_brake : RiderState, Acceleration -> Acceleration
 	shoulder_brake = |state, a|
-		match Arc.project_arc(state).shoulder {
+		match Coast.project(state).shoulder {
 			ShoulderNone => a
 			ShoulderLeft(steps_to_shoulder) | ShoulderRight(steps_to_shoulder) =>
 				shoulder_brake_at(state, { steps_to_shoulder, offered_accel: a })
 		}
 
-	## The acceleration `a`, or the brake for an arc that leaves the road in
+	## The acceleration `a`, or the brake for a coast that leaves the road in
 	## `steps_to_shoulder`, whichever is harder.
 	shoulder_brake_at : RiderState,
 	{
@@ -274,10 +274,10 @@ across_at = |metres| RiderState.initial.across.plus(Speed.metres_a_step(metres).
 rider_off_left : F64 -> RiderState
 rider_off_left = |speed| { ..centred_rider(0.0, speed), yaw: Angle.Turn.radians(-1.5) }
 
-expect Arc.project_arc(rider_off_left(0.048)).shoulder == ShoulderLeft(Steps.of(40))
-expect Arc.project_arc(rider_off_left(0.7)).shoulder == ShoulderLeft(Steps.of(2))
+expect Coast.project(rider_off_left(0.048)).shoulder == ShoulderLeft(Steps.of(40))
+expect Coast.project(rider_off_left(0.7)).shoulder == ShoulderLeft(Steps.of(2))
 
-# An arc that stays on the road takes what is offered, and one that leaves it
+# A coast that stays on the road takes what is offered, and one that leaves it
 # brakes.
 expect {
 	offered = VehicleLimits.a_accel
@@ -302,7 +302,7 @@ expect
 	brake_after(40, 0.0 - 9.0)
 		< Acceleration.metres_a_step_each_step(0.0 - 8.999)
 
-# An arc that leaves the road at once still brakes.
+# A coast that leaves the road at once still brakes.
 expect brake_after(0, 0.01) < Acceleration.steady
 
 ## The speed the clamp allows.
@@ -364,32 +364,32 @@ expect decide(Speed.metres_a_step(0.3), hold_radians - 0.001) < Acceleration.ste
 expect decide(Speed.metres_a_step(0.3), 0.001) > Acceleration.steady
 expect decide(Speed.metres_a_step(0.3), 0.0 - (hold_radians - 0.001)) < Acceleration.steady
 
-# These are Arc's projections. They sit here because Arc imports neither Speed
+# These are Coast's projections. They sit here because Coast imports neither Speed
 # nor VehicleLimits, and Throttle sees both.
 
-## The arc of a rider at the start of the segment, going the base speed.
-arc_from : F64, F64 -> Arc.ArcOutcome
-arc_from = |across, tilt_radians|
-	Arc.project_arc({
+## The coast of a rider at the start of the segment, going the base speed.
+coast_of : F64, F64 -> Coast.Outcome
+coast_of = |across, tilt_radians|
+	Coast.project({
 		..RiderState.initial,
 		across: across_at(across),
 		tilt: Angle.Lean.radians(tilt_radians),
 	})
 
-straight : Arc.ArcOutcome
-straight = arc_from(0.0, 0.0)
+straight : Coast.Outcome
+straight = coast_of(0.0, 0.0)
 
-wide : Arc.ArcOutcome
-wide = arc_from(3.0, 0.0)
+wide : Coast.Outcome
+wide = coast_of(3.0, 0.0)
 
-stopped : Arc.ArcOutcome
-stopped = Arc.project_arc({ ..RiderState.initial, speed: Speed.at_rest })
+stopped : Coast.Outcome
+stopped = Coast.project({ ..RiderState.initial, speed: Speed.at_rest })
 
-leaning : Arc.ArcOutcome
-leaning = arc_from(0.0, 0.2)
+leaning : Coast.Outcome
+leaning = coast_of(0.0, 0.2)
 
-other_way : Arc.ArcOutcome
-other_way = arc_from(0.0, 0.0 - 0.2)
+other_way : Coast.Outcome
+other_way = coast_of(0.0, 0.0 - 0.2)
 
 expect straight.forward.to_metres() == 25.0
 expect straight.end_across.to_metres() == 0.0
@@ -402,20 +402,20 @@ expect straight.shoulder == ShoulderNone
 expect wide.shoulder == ShoulderNone
 expect stopped.shoulder == ShoulderNone
 
-## How many steps an arc runs before it leaves the road.
-steps_off_road : Arc.ArcOutcome -> Steps
-steps_off_road = |arc|
-	match arc.shoulder {
+## How many steps a coast runs before it leaves the road.
+steps_off_road : Coast.Outcome -> Steps
+steps_off_road = |coast|
+	match coast.shoulder {
 		ShoulderLeft(steps_to_shoulder) | ShoulderRight(steps_to_shoulder) => steps_to_shoulder
-		ShoulderNone => crash "Throttle's expects: this arc stays on the road"
+		ShoulderNone => crash "Throttle's expects: this coast stays on the road"
 	}
 
 expect leaning.shoulder == ShoulderRight(steps_off_road(leaning))
 expect other_way.shoulder == ShoulderLeft(steps_off_road(other_way))
 
-expect steps_off_road(leaning) < Arc.turn_danger_steps
+expect steps_off_road(leaning) < Coast.turn_danger_steps
 expect steps_off_road(leaning) > Steps.zero
-expect leaning.forward <= Arc.min_forward_progress
+expect leaning.forward <= Coast.min_forward_progress
 expect leaning.end_across > RiderState.initial.across
 expect other_way.end_across < RiderState.initial.across
 expect steps_off_road(leaning) == steps_off_road(other_way)

@@ -1,5 +1,5 @@
-# Arc -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## Coast rehearses the rider's next few seconds: it runs the bike's real physics
+## with no change of lean or speed, and says where the rider would end up.
 import Acceleration
 import Across
 import Along
@@ -9,14 +9,14 @@ import Distance
 import Scenery
 import Steps
 
-Arc :: [].{
+Coast :: [].{
 
-	## Where an arc ends up: off a shoulder after this many frames, or still
+	## Where a coast ends up: off a shoulder after this many steps, or still
 	## on the road.
 	Shoulder : [ShoulderLeft(Steps), ShoulderNone, ShoulderRight(Steps)]
 
-	ArcOutcome : {
-		shoulder : Arc.Shoulder,
+	Outcome : {
+		shoulder : Coast.Shoulder,
 		forward : Distance,
 		end_across : Across,
 	}
@@ -30,19 +30,19 @@ Arc :: [].{
 	min_forward_progress : Distance
 	min_forward_progress = Distance.metres(25.0)
 
-	## What holds for the whole of one projected arc: the road's edges, and
+	## What holds for the whole of one coast: the road's edges, and
 	## the distance along the road the rider started from.
-	ArcCourse : {
+	Bounds : {
 		left_bound : Across,
 		right_bound : Across,
 		start_along : Along,
 	}
 
-	## Where a projected arc has reached: how many frames it has run, and the
-	## coasting rider.
-	ArcProgress(others) : { frame_count : Steps, coasting_rider : Bike.Motion(others) }
+	## Where a coast has reached: how many steps it has run, and the coasting
+	## rider.
+	Progress(others) : { frame_count : Steps, coasting_rider : Bike.Motion(others) }
 
-	sim_from : Arc.ArcCourse, Arc.ArcProgress(others) -> Arc.ArcOutcome
+	sim_from : Coast.Bounds, Coast.Progress(others) -> Coast.Outcome
 	sim_from = |course, { frame_count: i, coasting_rider: phys }|
 		if i >= turn_danger_steps {
 			{
@@ -63,7 +63,7 @@ Arc :: [].{
 			)
 		}
 
-	sim_step : Arc.ArcCourse, Arc.ArcProgress(others) -> Arc.ArcOutcome
+	sim_step : Coast.Bounds, Coast.Progress(others) -> Coast.Outcome
 	sim_step = |course, { frame_count: i, coasting_rider: phys }| {
 		across = phys.across
 		forward = phys.along.distance_from(course.start_along)
@@ -96,8 +96,8 @@ Arc :: [].{
 		}
 	}
 
-	project_arc : Bike.Motion(others) -> Arc.ArcOutcome
-	project_arc = |state| {
+	project : Bike.Motion(others) -> Coast.Outcome
+	project = |state| {
 		inset_hw = Scenery.lane_half_width.minus(straighten_margin)
 		right_bound = Across.right_of_middle(inset_hw).max(state.across)
 		left_bound = Across.left_of_middle(inset_hw).min(state.across)
@@ -108,6 +108,6 @@ Arc :: [].{
 	}
 }
 
-expect Arc.straighten_margin.to_metres() == 0.05
-expect Arc.min_forward_progress.to_metres() == 25.0
-expect Arc.turn_danger_steps.to_f64() == 2000.0
+expect Coast.straighten_margin.to_metres() == 0.05
+expect Coast.min_forward_progress.to_metres() == 25.0
+expect Coast.turn_danger_steps.to_f64() == 2000.0

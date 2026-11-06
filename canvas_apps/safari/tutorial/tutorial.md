@@ -815,7 +815,7 @@ The path track shows why a `Track` has `finally`. A flight is one unbroken curve
 
 {{code BirdFlight.flight_timeline from "path: {" to "rise: flight_arc.to_metres(),"}}
 
-That `Arc` is a tag, and has nothing to do with the `Arc` module that comes later. `path_spot` is where it's played. `{ ..on_line, lift: ... }` is record update: the spot on the straight line, with one field replaced. The curve is `4t(1 - t)`, a parabola that's 0 at both ends and 1 at the middle, so `rise` means what its comment says. This is the polite end of the math chapter.
+That `Arc` is a tag. `path_spot` is where it's played. `{ ..on_line, lift: ... }` is record update: the spot on the straight line, with one field replaced. The curve is `4t(1 - t)`, a parabola that's 0 at both ends and 1 at the middle, so `rise` means what its comment says. This is the polite end of the math chapter.
 
 {{code Animation.path_spot}}
 
@@ -922,9 +922,9 @@ digraph bike {
   Bike [style=bold];
   Rider -> Bike;
   Rider -> LeanSearch;
-  Arc -> Bike;
+  Coast -> Bike;
   LeanSearch -> Bike;
-  LeanSearch -> Arc;
+  LeanSearch -> Coast;
   RideFocal -> Bike;
   Bike -> Angle;
   Bike -> Speed;
@@ -956,7 +956,7 @@ digraph throttle {
   node [shape=box, fontname="Helvetica"];
   Throttle [style=bold];
   Rider -> Throttle;
-  Throttle -> Arc;
+  Throttle -> Coast;
   Throttle -> CrossingReaction;
   Throttle -> Gaze;
   Throttle -> VehicleLimits;
@@ -1047,7 +1047,7 @@ The lean comes at the end of this chapter, on top of everything else in it.
 New in this chapter:
 
 - Roc: records as coordinate systems, `fold`, `fold_rev` and `map2`, two functions that call each other
-- Modules: `Geom`, `Chain`, `Camera`, `Lens`, `Arc`, `LeanSearch`, `Num_`
+- Modules: `Geom`, `Chain`, `Camera`, `Lens`, `Coast`, `LeanSearch`, `Num_`
 
 A lot of Safari Ride is math and physics, and this is the chapter that goes through the floor of the tour and looks at what's holding it up. Most of it is geometry a reader could do on paper. It's here because this kind of code suits a compiled functional language unusually well, for a short list of reasons that each get a section:
 
@@ -1081,10 +1081,10 @@ The modules of the math layer
 ```dot
 digraph math {
   node [shape=box, fontname="Helvetica"];
-  LeanSearch -> Arc;
+  LeanSearch -> Coast;
   LeanSearch -> Bike;
-  Arc -> Bike;
-  Arc -> Angle;
+  Coast -> Bike;
+  Coast -> Angle;
   Bike -> Angle;
   Chain -> Geom;
   Camera -> Geom;
@@ -1095,7 +1095,7 @@ digraph math {
 }
 ```
 
-Two families share `Angle` and don't otherwise meet: `Geom`, `Chain`, `Camera` and `Lens` say how the world looks from the bike, and `Bike`, `Arc` and `LeanSearch` say where it's going.
+Two families share `Angle` and don't otherwise meet: `Geom`, `Chain`, `Camera` and `Lens` say how the world looks from the bike, and `Bike`, `Coast` and `LeanSearch` say where it's going.
 
 ### Numbers with units
 
@@ -1203,23 +1203,23 @@ The rider has no steering wheel. Nothing tells it where to go. Each step, it has
 
 *[The rehearsal widget goes here: pause, and draw the coasting arcs the search tried on this step.]*
 
-`Arc` answers one question. If the rider stopped changing anything now, and coasted, what would happen? It takes the rider, and it runs the physics. The call is the same `Bike.simulate_rider_step` that moves the real rider, with no lean change and steady speed. That's the whole trick, and it's why `Bike` has to be a function and not a method that writes to a bike.
+`Coast` answers one question. If the rider stopped changing anything now, and coasted, what would happen? It takes the rider, and it runs the physics. The call is the same `Bike.simulate_rider_step` that moves the real rider, with no lean change and steady speed. That's the whole trick, and it's why `Bike` has to be a function and not a method that writes to a bike.
 
-{{code Arc.sim_from from "sim_step(" to "{ lean_step: Angle.upright, accel: Acceleration.steady },"}}
+{{code Coast.sim_from from "sim_step(" to "{ lean_step: Angle.upright, accel: Acceleration.steady },"}}
 
-`Arc.ArcProgress(others)` carries a `Bike.Motion(others)`: a narrow view of a wide record again, so `Arc` can take the whole rider without knowing what's in it. `sim_from` and its partner `sim_step` call each other until the arc reaches the shoulder, makes 25 metres of progress, or runs for 2,000 steps. The answer is a record saying which of those happened:
+`Coast.Progress(others)` carries a `Bike.Motion(others)`: a narrow view of a wide record again, so `Coast` can take the whole rider without knowing what's in it. `sim_from` and its partner `sim_step` call each other until the coast reaches the shoulder, makes 25 metres of progress, or runs for 2,000 steps. The answer is a record saying which of those happened:
 
-{{code Arc.ArcOutcome}}
+{{code Coast.Outcome}}
 
-`project_arc` sets it going, with the road's edges as bounds:
+`Coast.project` sets it going, with the road's edges as bounds:
 
-{{code Arc.project_arc}}
+{{code Coast.project}}
 
-`LeanSearch` asks `Arc` that question at a dozen different leans. The rider wants the arc to end somewhere near the middle of the lane, and more lean to the right moves the end of an arc to the right, so this is a bisection. It's a recursive function with its whole state in one record argument, `low` and `high` closing in on each other. `Bike.with_tilt(state, mid)` is a rider who doesn't exist, handed to `Arc`, who gets a future that didn't happen:
+`LeanSearch` asks `Coast` that question at a dozen different leans. The rider wants the coast to end somewhere near the middle of the lane, and more lean to the right moves the end of a coast to the right, so this is a bisection. It's a recursive function with its whole state in one record argument, `low` and `high` closing in on each other. `Bike.with_tilt(state, mid)` is a rider who doesn't exist, handed to `Coast`, who gets a future that didn't happen:
 
 {{code LeanSearch.search_lean_from from "mid = low.halfway_to(high)" to "low: mid,"}}
 
-The decision about which way to go is a `match` on what the rehearsal found. Running off the left means more right, running off the right means less, and staying on the road compares the end of the arc with the target:
+The decision about which way to go is a `match` on what the rehearsal found. Running off the left means more right, running off the right means less, and staying on the road compares the end of the coast with the target:
 
 {{code LeanSearch.want_more_right}}
 
@@ -1229,11 +1229,11 @@ Its caller gives the search its bounds, at most a degree either side of the curr
 
 And `Rider.decide` calls that, on its first line. The walk up the stack ends there.
 
-Call this *rehearsal*: run the real rules on a pretend copy, read the result, and throw it away. The numbers are worth stating. Twelve arcs for the lean and one more in `Throttle`, which uses `Arc` to ask whether the road is about to run out. Over the whole ride, an arc averages about 44 simulated steps. So each real step of the ride runs about 570 steps of bike physics that never happen, and the 7,040 steps of the ride come to about four million. With no drawing, on the dev backend, the whole ride takes about three seconds: under half a millisecond a step, against a budget of 33. [check: the 44 is `forward / speed` from one arc per step, measured at 9aa3814, not a counter inside `sim_from`; the three seconds is one native run, and the page runs wasm.]
+Call this *rehearsal*: run the real rules on a pretend copy, read the result, and throw it away. The numbers are worth stating. Twelve coasts for the lean and one more in `Throttle`, which uses `Coast` to ask whether the road is about to run out. Over the whole ride, a coast averages about 44 simulated steps. So each real step of the ride runs about 570 steps of bike physics that never happen, and the 7,040 steps of the ride come to about four million. With no drawing, on the dev backend, the whole ride takes about three seconds: under half a millisecond a step, against a budget of 33. [check: the 44 is `forward / speed` from one coast per step, measured at 9aa3814, not a counter inside `sim_from`; the three seconds is one native run, and the page runs wasm.]
 
 In a language with mutable objects, this function has a problem to solve before it starts. It needs to copy the rider, or save it and restore it, and it needs to be sure the copy really is one, all the way down. It needs to know that the physics doesn't quietly update something global, like a scoreboard or a random number generator. Here, those worries have nowhere to live. `Bike.simulate_rider_step` has a `->`, so it can't reach anything but its arguments. The old rider is intact because every rider is. Being wrong about a future costs nothing, and `LeanSearch` is 105 lines.
 
-The last gate of the throttle is the same idea with one rehearsal in it. It runs the arc, and brakes only if the arc leaves the road:
+The last gate of the throttle is the same idea with one rehearsal in it. It runs the coast, and brakes only if the coast leaves the road:
 
 {{code Throttle.shoulder_brake}}
 
@@ -1245,7 +1245,7 @@ The floor of this layer is lower than it needs to be. `lib/DeviceMath.roc` compu
 
 {{code Num_.exp_real}}
 
-`Throttle.shoulder_brake_at` is the caller, so a rehearsed arc's length decays into a braking force through this. [check: why these are hand-written rather than builtins. They came with the Codex port, and the reason is probably that the same bits come out on every target. Ask Steve before saying so.]
+`Throttle.shoulder_brake_at` is the caller, so a rehearsed coast's length decays into a braking force through this. [check: why these are hand-written rather than builtins. They came with the Codex port, and the reason is probably that the same bits come out on every target. Ask Steve before saying so.]
 
 Top to bottom, then: a rider chooses a lean by simulating physics, and the physics is plain arithmetic on opaque numbers, from the frame down to the polynomial. There's no effect anywhere in that sentence. What that's worth when the program has to change is still an open question.
 
@@ -1344,7 +1344,7 @@ It's called like any other value, and the steps that follow are named, so three 
 
 {{code Bike.first_step}}
 
-The gate makes `expect` honest in one further way. The source is the count: every line that starts `expect`, in a module any root reaches, has to print `PASS` exactly once. An `expect` that nothing compiles fails, and so does one that's indented out of reach. One more consequence: an `expect` can only name what its module imports, so a check sits where its test data can be seen, and a module doesn't take on an import for a test's sake. `Arc`'s projections are checked in `Throttle`, which can see a `Speed`, and `LeanSearch`'s search in `Rider`, which can see a `RiderState`.
+The gate makes `expect` honest in one further way. The source is the count: every line that starts `expect`, in a module any root reaches, has to print `PASS` exactly once. An `expect` that nothing compiles fails, and so does one that's indented out of reach. One more consequence: an `expect` can only name what its module imports, so a check sits where its test data can be seen, and a module doesn't take on an import for a test's sake. `Coast`'s projections are checked in `Throttle`, which can see a `Speed`, and `LeanSearch`'s search in `Rider`, which can see a `RiderState`.
 
 Even a truck can be checked this way, though it can't be asked about step 4,000 cold. A `TruckState` is a record, so a test writes one down and calls `Truck.advance` once.
 
@@ -1465,7 +1465,7 @@ The tour named these in passing. They're patterns in the loose sense: shapes tha
 | A narrow view of a wide record | An open record names the fields it uses and carries the rest through | `Bike.Motion(others)` |
 | The gate chain | One value passes through independent rules, each of which can only lower it | `Throttle.get_forward_accel_decel` |
 | One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `SpacePoint`, `Screen.Point` |
-| Rehearsal | Run the real rules on a pretend copy, read the result, and throw it away | `Arc`, `LeanSearch`, `Rider.resolve_cross` |
+| Rehearsal | Run the real rules on a pretend copy, read the result, and throw it away | `Coast`, `LeanSearch`, `Rider.resolve_cross` |
 
 Code that reads like configuration deserves a line of its own, because the tour kept stopping to admire it: `Pond`, `World.route`, the timelines, and `SafariApp.canvas_app`. None of them is a config format. They're ordinary Roc values, so the compiler checks them, and a tag that's misspelled is a compile-time error.
 
@@ -1482,14 +1482,13 @@ The patterns say what works. This page says what bites, sorted by what shows up 
 | A `match` that looks like a leaf and isn't | `<=` on an opaque type is a call to its `is_lte`, so an operator can run code of the program's own | The cat |
 | `var` and `for` under a `->` | A local that nothing outside can see, with `$` marking what changes. The function is still pure | The cat |
 | `?? crash` on a lookup | It isn't error handling. It states a belief about the program, and every gate run tests it | What never changes, Proving it |
-| `Arc` meaning two things | A tag on a timeline's path, and a module in the math layer | The bird |
 
 ### Getting it to compile
 
 | What you see | What's going on | Chapter |
 |---|---|---|
 | An open record that has to be named | `..others` needs a name when it appears twice, because the name promises that the same fields come out as went in | The stepped things |
-| An `expect` that can't see a type | It can only name what its module imports, so `Arc`'s projections are checked in `Throttle` | Proving it |
+| An `expect` that can't see a type | It can only name what its module imports, so `Coast`'s projections are checked in `Throttle` | Proving it |
 
 ### Running it
 

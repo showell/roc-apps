@@ -1,20 +1,20 @@
 ## How far the rider leans. A bisection over leans near the current one
-## finds the lean whose coasting arc ends nearest the line the rider wants.
+## finds the lean whose coast ends nearest the line the rider wants.
 import Across
 import Angle
-import Arc
+import Coast
 import Bike
 import Distance
 import Steps
 
 LeanSearch :: [].{
 
-	want_more_right : Arc.ArcOutcome, Across -> Bool
-	want_more_right = |sim, target|
-		match sim.shoulder {
+	want_more_right : Coast.Outcome, Across -> Bool
+	want_more_right = |coast, target|
+		match coast.shoulder {
 			ShoulderLeft(_) => True
 			ShoulderRight(_) => False
-			ShoulderNone => sim.end_across < target
+			ShoulderNone => coast.end_across < target
 		}
 
 	asymptote_tuning : F64
@@ -42,7 +42,7 @@ LeanSearch :: [].{
 	lean_search_iters : I64
 	lean_search_iters = 12
 
-	## The lean between `low` and `high` whose arc ends nearest `target`
+	## The lean between `low` and `high` whose coast ends nearest `target`
 	## across the road, after the bisection's remaining steps from `at`.
 	search_lean_from : Bike.Motion(others),
 	{
@@ -55,7 +55,7 @@ LeanSearch :: [].{
 		mid = low.halfway_to(high)
 		if at >= lean_search_iters {
 			mid
-		} else if want_more_right(Arc.project_arc(Bike.with_tilt(state, mid)), target) {
+		} else if want_more_right(Coast.project(Bike.with_tilt(state, mid)), target) {
 			search_lean_from(
 				state,
 				{
@@ -116,18 +116,18 @@ expect LeanSearch.center_lane_epsilon.to_metres() == 0.04
 expect LeanSearch.max_tilt_correction.to_radians() == 0.017453292519943295
 expect LeanSearch.lean_search_iters == 12
 
-## An arc ending at `end_across`, on `shoulder` or not.
-outcome : Arc.Shoulder, F64 -> Arc.ArcOutcome
+## A coast ending at `end_across`, on `shoulder` or not.
+outcome : Coast.Shoulder, F64 -> Coast.Outcome
 outcome = |shoulder, end_across| {
 	shoulder,
 	forward: Distance.metres(10.0),
 	end_across: Across.metres(end_across),
 }
 
-off_left : Arc.Shoulder
+off_left : Coast.Shoulder
 off_left = ShoulderLeft(Steps.one_step)
 
-off_right : Arc.Shoulder
+off_right : Coast.Shoulder
 off_right = ShoulderRight(Steps.one_step)
 
 expect LeanSearch.want_more_right(outcome(off_left, 99.0), Across.metres(0.5))
