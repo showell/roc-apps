@@ -67,7 +67,7 @@ Tour := {
 	## The frame's shapes in paint order. A bird is sorted by depth with
 	## everything else, so a nearer tree hides it.
 	shapes : Tour -> List(Shapes.Shape)
-	shapes = |tour| RideInstant.frame(tour.world, tour.instant)
+	shapes = |tour| RideInstant.shapes(tour.world, tour.instant)
 
 	# The camera roll: the whole frame, backdrop and shapes, turns
 	# by minus this about the screen's centre.

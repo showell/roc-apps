@@ -309,9 +309,9 @@ Dusk is a curve and then a line, which means two cases, `dusk_while_up` and `dus
 
 🌳 {{code Sky.dusk_at}}
 
-And here's the walk up the stack: each frame, `RideInstant.frame` hands the answer to the mountains, whose rock and snow go dark with it.
+And here's the walk up the stack: each frame, `RideInstant.shapes` hands the answer to the mountains, whose rock and snow go dark with it.
 
-🌳 {{code RideInstant.frame from "Mountains.draw({" to "}),"}}
+🌳 {{code RideInstant.shapes from "Mountains.draw({" to "}),"}}
 
 The horizon's warmth is a third shape, a tent centred on the instant the sun touches the horizon. Three curves come off one number, and they're plain functions rather than anything more general. Nothing else in the game needs them. Here's `sunset_warmth`:
 

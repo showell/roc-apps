@@ -71,8 +71,8 @@ RideInstant := {
 		brake_lights: instant.truck.brake_lights,
 	}
 
-	frame : List(World.Segment), RideInstant -> List(Shapes.Shape)
-	frame = |w, instant| {
+	shapes : List(World.Segment), RideInstant -> List(Shapes.Shape)
+	shapes = |w, instant| {
 		s = instant.rider
 		view = {
 			road: {

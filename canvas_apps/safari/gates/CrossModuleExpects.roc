@@ -599,12 +599,12 @@ expect RideInstant.next_or_restart(World.segments, done).truck.brake_lights == O
 
 # A frame of the ride draws.
 expect {
-	frame = RideInstant.frame(World.segments, RideInstant.initial)
+	frame = RideInstant.shapes(World.segments, RideInstant.initial)
 	first_shape = frame.first() ?? crash "CrossModuleExpects: a frame draws"
 	points_of(first_shape).len() >= 6
 }
 
 expect {
 	after_one_step = RideInstant.next_or_restart(World.segments, RideInstant.initial)
-	RideInstant.frame(World.segments, after_one_step).len() > 0
+	RideInstant.shapes(World.segments, after_one_step).len() > 0
 }

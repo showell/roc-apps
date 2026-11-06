@@ -18,7 +18,7 @@ ride_frames = |world, { bench_run, steps_left: steps }|
 	if steps <= 0 {
 		bench_run
 	} else {
-		frame_shapes = RideInstant.frame(world, bench_run.instant)
+		frame_shapes = RideInstant.shapes(world, bench_run.instant)
 		ride_frames(
 			world,
 			{
