@@ -1,84 +1,45 @@
-# Shapes -- what a frame is made of: convex and concave polygons, discs and
-# rectangles, each with the Brush it is filled with, in scene coordinates
-# before the camera roll.
-#
-# **EVERY APP'S.** Building one app's own frame -- Safari's sky, grass and sun,
-# say -- is in that app's directory (safari/SafariShapes.roc); what is here is
-# the vocabulary they all share.
-#
-# Hand-written, for roc-ray, where roc-ray draws the frame and Roc does not
-# paint pixels. roc-ray fills only convex polygons, so a concave one is cut into
-# triangles by ear clipping; the pieces share the polygon's brush. A triangle
-# comes out in the order raylib keeps: roc-ray's convex fill reverses a polygon
-# whose signed area is positive, and its triangle passes the points through as
-# given.
-#
-# The backdrop is the runner's: the sky's linear gradient, the grass, and the
-# sun's glow and disc clipped to the sky, the glow as a rectangle that is the
-# clip and the disc carrying the same rectangle as its own.
+## Shapes is the vocabulary every app's frame is written in. A frame is a list
+## of these shapes in the app's own coordinates, and each painter draws the list
+## in order. What one app draws is built in that app's own folder.
 import Brush
 
 Shapes :: [].{
+
+	## One thing in a frame. A later shape in the list paints over an earlier one.
 	Shape : [
-		# A polygon, x0, y0, x1, y1, ... — any polygon, as a movie describes
-		# it. **After `cut` it is convex**, which is the only kind some
-		# platforms will fill.
+		## A polygon, as x0, y0, x1, y1 and so on. It can be any polygon, until `cut`
+		## leaves only convex ones for a painter that fills nothing else.
 		Poly({ pts : List(F64), fill : Brush.Fill }),
-		# The triangles of one concave polygon, six numbers each. Only `cut`
-		# makes these, for a platform that asked to be spared a concave one.
+
+		## The triangles of one concave polygon, six numbers each. Only `cut` makes these.
 		Pieces({ tris : List(F64), fill : Brush.Fill }),
-		# A disc, kept to `clip` if it names a rectangle. **A CLIP IS A
-		# RECTANGLE, NOT A PLACE**: this used to be `sky_only`, which meant
-		# "(0, 0) to (960, 300)" and put one movie's sky into every painter
-		# that drew a disc, the fragment shader included.
+
+		## A disc, kept inside `clip`. A clip is a rectangle, not a named place, so no
+		## painter has to know about one app's picture.
 		Disc({ x : F64, y : F64, r : F64, fill : Brush.Fill, clip : Shapes.Clip }),
 		Rect({ x : F64, y : F64, w : F64, h : F64, fill : Brush.Fill }),
-		# **NOT A SHAPE: HOW THE SHAPES AFTER IT ARE COMBINED.** A glow is
-		# light added to what is already there, not paint laid over it, and
-		# every game so far has apologised in its own comments for faking one
-		# with a translucent fill. A frame is a list, so the cheapest way to
-		# say this is a mark in the list that changes the mode until the next
-		# mark -- which is what both painters do underneath anyway
-		# (`globalCompositeOperation` on a canvas, `BeginBlendMode` on
-		# roc-ray). A frame that never mentions it paints exactly as before.
+
+		## A mark, not a shape: how the shapes after it combine, until the next `Blend`.
+		## Both painters hold this as a mode, so a mark in the list says it directly.
 		Blend(Shapes.Mode),
-		# **NOT A SHAPE: WHERE THE SHAPES AFTER IT ARE.** Until the next one,
-		# coordinates are read through this space instead of as screen pixels.
-		# The same mark as Blend, for the same reason: both painters already
-		# take this as a scope rather than a flag (`setTransform` on a canvas,
-		# `BeginMode2D` on roc-ray), and a frame is a list, so the cheapest way
-		# to say it is a mark that holds until the next one.
+
+		## A mark, not a shape: the space the shapes after it are in, until the next
+		## `View`. It is a mark for the same reason `Blend` is.
 		View(Shapes.Space),
-		# **A PICTURE, IN THE FRAME.** `cols` x `rows` pixels stretched over
-		# the rectangle without smoothing, so a 16 x 16 canvas drawn at 448
-		# pixels is 28-pixel cells with hard edges.
-		#
-		# **IT CARRIES THE PIXELS, NOT A HANDLE**, which is the whole reason
-		# roc-ray's Pixel Workshop shrank when it was ported. There, the
-		# picture lives twice -- once in the model and once on the GPU -- and
-		# every branch that changes the model has to remember to emit the
-		# matching upload; upstream says so in its own comment, and has an
-		# `Edit` type to carry them. A frame that is a VALUE computed from the
-		# model cannot have a second copy to keep in step, so the upload, the
-		# handle and the `Edit` all go away together.
-		#
-		# The trade is bandwidth: the whole picture crosses every frame rather
-		# than one changed pixel. That is the same trade this design makes
-		# everywhere, and at 256 pixels beside the nine thousand words a frame
-		# already carries it is not close. **A LOADED IMAGE IS A DIFFERENT
-		# THING** -- a tileset is not re-sent sixty times a second -- and it
-		# still wants a handle, and a way to load one, which is the wall.
+
+		## `cols` by `rows` pixels stretched over the box without smoothing. It carries
+		## the pixels, not a handle, so there is no second copy of them to keep in step.
 		Image({ x : F64, y : F64, w : F64, h : F64, cols : U64, rows : U64, pixels : List(Brush.Rgba) }),
-		# A line of words set in a real typeface, for a painter that has one.
-		# Font.plotted gives the strokes of the same line to one that hasn't.
+
+		## A line of words in a real typeface. `Font.plotted` gives a painter that has
+		## no typefaces the strokes of the same line.
 		Text(Shapes.Line),
 	]
 
-	# A line of type. `y` is its baseline, `x` its left end or its middle as
-	# `align` says, and `size` the height of its em square, as in CSS. The
-	# viewer's machine chooses the typeface and measures the words, so nothing
-	# in Roc knows how wide the line came out: Font.room_for is the room to
-	# leave for it.
+	## A line of type. `y` is its baseline, `x` its left end or its middle as `align`
+	## says, and `size` the height of its em square, as in CSS. The viewer's machine
+	## chooses the typeface and measures the words, so nothing in Roc knows how wide
+	## the line came out: `Font.room_for` is the room to leave for it.
 	Line : {
 		text : Str,
 		x : F64,
@@ -89,47 +50,30 @@ Shapes :: [].{
 		color : Brush.Rgba,
 	}
 
-	# `Prose` is the viewer's own sans serif, for words. `Code` is a monospace,
-	# for what a program says.
+	## `Prose` is the viewer's own sans serif, for words. `Code` is a monospace, for
+	## what a program says.
 	Face : [Prose, Code]
 
 	Align : [Left, Center]
 
-	# `Over` paints; `Add` lights.
+	## `Over` paints over what is there. `Add` adds light to it, which is what a glow
+	## is.
 	Mode : [Over, Add]
 
-	# Which coordinate space the shapes after a `View` mark are in. `Screen` is
-	# the game's own pixels, which is where every frame starts, so a frame that
-	# never says `View` paints exactly as it did before.
-	#
-	# **IT IS NOT CALLED A LENS.** It was, because a camera lens is what you
-	# see a world through, and in a language with Roc's audience that word is
-	# already taken: a lens in functional programming is a getter and a setter
-	# paired into a value, and nothing here is one. A name that needs a
-	# disclaimer is a name to change.
-	#
-	# **A LENS CARRIES NUMBERS, NOT A CAMERA.** Camera.roc builds one and names
-	# the same four settings roc-ray's `Camera2D` does, but a mark that crossed
-	# the wire carrying that type would need the type on the far side, and the
-	# far side is JavaScript.
+	## The space the shapes after a `View` mark are in. `Screen` is the game's own
+	## pixels, where every frame starts. `World` carries plain numbers rather than a
+	## Camera, because the mark crosses to JavaScript, which has no such type.
 	Space : [
 		Screen,
 		World({ target : { x : F64, y : F64 }, offset : { x : F64, y : F64 }, rotation : F64, zoom : F64 }),
 	]
 
-	# Back to the game's own pixels: what a HUD is drawn in.
+	## The mark back to the game's own pixels, which a HUD is drawn in.
 	screen : Shapes.Shape
 	screen = View(Screen)
 
-	# ── what a polygon can be, given a little arithmetic ────────────────────
-	#
-	# **A THICK LINE AND A ROUNDED RECTANGLE ARE POLYGONS**, so they are built
-	# here rather than added to the vocabulary every painter has to learn. A
-	# second movie (roc-ray's capture_plot) wanted both: gridlines with a
-	# thickness, and a progress bar with a radius.
-
-	# A line of `w` pixels between two points: the quad it actually is. Exact
-	# at any angle; it has no cap and no join, which is what a gridline wants.
+	## A line `w` pixels wide between two points, as the quad it is, so no painter
+	## has to learn a stroke. It has no cap and no join, which suits a gridline.
 	line : F64, F64, F64, F64, F64, Brush.Fill -> Shapes.Shape
 	line = |x0, y0, x1, y1, w, fill| {
 		dx = x1 - x0
@@ -145,11 +89,8 @@ Shapes :: [].{
 		}
 	}
 
-	# A circle's OUTLINE, as the strokes it actually is: `sides` quads around
-	# the rim. **NOT A NEW SHAPE** -- the same trick Font plays with a letter,
-	# so a hollow circle needs nothing new on any wire and no painter learns a
-	# stroke. A filled disc under a smaller one is the other way to get a ring,
-	# and it only works where the background is a known flat colour.
+	## A circle's outline, as `sides` quads around the rim. A disc under a smaller
+	## disc makes a ring too, but only on a background of a known flat color.
 	ring : F64, F64, F64, F64, U64, Brush.Fill -> List(Shapes.Shape)
 	ring = |x, y, r, w, sides, fill| {
 		n = if sides < 3 {
@@ -168,12 +109,10 @@ Shapes :: [].{
 		$out
 	}
 
-	# **A FIGURE TURNED AWAY FROM US IS THE SAME FIGURE, NARROWER.** Every x is
-	# pulled toward `axis` by `k`, so a drawing made face-on reads as one yawed
-	# by the angle whose cosine is `k`; a negative `k` mirrors it as well, which
-	# is how a pair flanking a path can face each other. A disc keeps its
-	# radius -- a skull turned forty-five degrees is still round, and an
-	# ellipse is not in the vocabulary.
+	## Every x pulled toward `axis` by `k`, so a figure drawn face-on reads as one
+	## turned away by the angle whose cosine is `k`. A negative `k` mirrors it as
+	## well, so a pair beside a path can face each other. A disc keeps its radius,
+	## because no shape here is an ellipse.
 	squash_x : List(Shapes.Shape), F64, F64 -> List(Shapes.Shape)
 	squash_x = |shapes, axis, k| shapes.map(
 		|shape|
@@ -181,8 +120,8 @@ Shapes :: [].{
 				Poly(p) => Poly({ pts: pulled(p.pts, axis, k), fill: p.fill })
 				Pieces(p) => Pieces({ tris: pulled(p.tris, axis, k), fill: p.fill })
 				Disc(d) => Disc({ x: axis + (d.x - axis) * k, y: d.y, r: d.r, fill: d.fill, clip: d.clip })
-				# A mirror sends a rectangle's left edge to its right, and a
-				# width is never negative.
+				# A mirror sends a rectangle's left edge to its right, and a width is never
+				# negative.
 				Rect(r) => {
 					a = axis + (r.x - axis) * k
 					b = axis + (r.x + r.w - axis) * k
@@ -198,11 +137,9 @@ Shapes :: [].{
 						fill: r.fill,
 					})
 				}
-				# A mark is not geometry; turning a figure does not touch it.
 				Blend(m) => Blend(m)
 				View(l) => View(l)
-				# A picture pulled toward the axis is the same picture,
-				# narrower; a mirror sends its left edge to its right.
+				# A mirror sends a picture's left edge to its right, as it does a rectangle's.
 				Image(i) => {
 					a = axis + (i.x - axis) * k
 					b = axis + (i.x + i.w - axis) * k
@@ -221,7 +158,6 @@ Shapes :: [].{
 			},
 	)
 
-	# The x of every point pulled toward `axis`; the y of each left alone.
 	pulled : List(F64), F64, F64 -> List(F64)
 	pulled = |xs, axis, k| {
 		n = xs.len()
@@ -235,8 +171,7 @@ Shapes :: [].{
 		$out
 	}
 
-	# **A HALO**: light that fades to nothing at `r`. Three games drew one by
-	# hand, each spelling out the same radial fill.
+	## Light that fades to nothing at `r`.
 	halo : F64, F64, F64, Brush.Rgba, F64 -> Shapes.Shape
 	halo = |x, y, r, colour, alpha|
 		Disc({
@@ -247,9 +182,9 @@ Shapes :: [].{
 			clip: Anywhere,
 		})
 
-	# A rectangle whose corners are rounded by `r`, each corner drawn with
-	# `segments` steps -- the same two numbers roc-ray's own rounded_rectangle
-	# takes. A radius of zero, or one too big for the box, gives the box.
+	## A rectangle whose corners are rounded by `r`, each corner drawn in `segments`
+	## steps. A radius of zero gives the plain box, and a radius too big for the box
+	## is held to half its shorter side.
 	rounded_rect : F64, F64, F64, F64, F64, I64, Brush.Fill -> Shapes.Shape
 	rounded_rect = |x, y, w, h, r, segments, fill| {
 		rr = r.min((w / 2.0).min(h / 2.0))
@@ -257,8 +192,7 @@ Shapes :: [].{
 			Poly({ pts: [x, y, x + w, y, x + w, y + h, x, y + h], fill })
 		} else {
 			var $pts = List.with_capacity((8 * (segments + 1)).to_u64_wrap())
-			# Clockwise from the top-left corner's arc, each corner swept from
-			# its own start angle.
+			# Clockwise from the top-left corner, each swept from its own start angle.
 			$pts = corner($pts, x + rr, y + rr, rr, half_pi * 2.0, segments)
 			$pts = corner($pts, x + w - rr, y + rr, rr, -half_pi, segments)
 			$pts = corner($pts, x + w - rr, y + h - rr, rr, 0.0, segments)
@@ -270,7 +204,7 @@ Shapes :: [].{
 	half_pi : F64
 	half_pi = F64.pi / 2.0
 
-	# One quarter turn about (cx, cy), from `from` through a right angle.
+	## The points of a quarter turn about (cx, cy), starting at the angle `from`.
 	corner : List(F64), F64, F64, F64, F64, I64 -> List(F64)
 	corner = |pts, cx, cy, r, from, segments| {
 		var $out = pts
@@ -281,9 +215,11 @@ Shapes :: [].{
 		$out
 	}
 
-	# Where a shape is allowed to paint, when it is not allowed everywhere.
+	## Where a shape may paint.
 	Clip : [Anywhere, Within({ x : F64, y : F64, w : F64, h : F64 })]
 
+	## A polygon from its flat list of points. Fewer than three points enclose
+	## nothing, so the answer is an empty list, which joins with the rest of a frame.
 	polygon : List(F64), Brush.Fill -> List(Shapes.Shape)
 	polygon = |pts, fill| {
 		n = pts.len() // 2
@@ -294,12 +230,10 @@ Shapes :: [].{
 		}
 	}
 
-	# **CUTTING IS THE PLATFORM'S BUSINESS, NOT THE MOVIE'S.** A canvas fills a
-	# concave polygon itself and would rather have the polygon; roc-ray fills
-	# only convex ones, so it asks for this, which leaves a convex polygon
-	# alone and cuts a concave one into triangles wound the way its own convex
-	# fill winds them. A frame that has been through here paints the same as
-	# one that has not -- that is what ShapesFrame checks.
+	## The frame with each concave polygon cut into triangles, for a painter that
+	## fills only convex polygons, as roc-ray does. A canvas fills a concave polygon
+	## itself and doesn't ask for this. A frame paints the same either way, which the
+	## gates' ShapesFrame checks.
 	cut : List(Shapes.Shape) -> List(Shapes.Shape)
 	cut = |shapes| shapes.join_map(
 		|shape|
@@ -314,8 +248,8 @@ Shapes :: [].{
 			},
 	)
 
-	# Each triangle wound as roc-ray's convex fill winds one: its second and
-	# third corners swapped when its signed area is positive.
+	## Each triangle wound as roc-ray's convex fill winds one: its second and third
+	## corners swapped when its signed area is positive.
 	wound : List(F64) -> List(F64)
 	wound = |tris| {
 		m = tris.len() // 6
@@ -337,15 +271,13 @@ Shapes :: [].{
 		$out
 	}
 
-	# --- Geometry -------------------------------------------------------------
-
 	at : List(F64), U64 -> F64
 	at = |xs, i| xs.get(i) ?? 0.0
 
 	cross3 : F64, F64, F64, F64, F64, F64 -> F64
 	cross3 = |ax, ay, bx, by, cx, cy| (bx - ax) * (cy - ay) - (by - ay) * (cx - ax)
 
-	# Twice the signed area, summed as roc-ray's host sums it.
+	## Twice the signed area, summed as roc-ray's host sums it.
 	twice_area : List(F64) -> F64
 	twice_area = |pts| {
 		n = pts.len() // 2
@@ -361,14 +293,13 @@ Shapes :: [].{
 		$sum
 	}
 
-	# A convex boundary reverses its horizontal and vertical direction at most
-	# twice each.
+	## A convex boundary reverses its horizontal and vertical direction at most twice
+	## each.
 	flip_limit : U64
 	flip_limit = 2
 
-	# Convex when every corner turns the same way and the boundary reverses its
-	# horizontal and vertical direction at most twice each, which rules out a
-	# star whose corners all turn one way.
+	## Convex when every corner turns the same way and the boundary stays within
+	## `flip_limit`, which rules out a star whose corners all turn one way.
 	is_convex : List(F64) -> Bool
 	is_convex = |pts| {
 		n = pts.len() // 2
@@ -428,9 +359,9 @@ Shapes :: [].{
 		!$bad and $xflips <= flip_limit and $yflips <= flip_limit
 	}
 
-	# The polygon cut into triangles by ear clipping, six numbers a triangle. A
-	# corner in line with its neighbours is dropped without a triangle. A polygon
-	# that crosses itself can run out of ears; what is left is fanned.
+	## The polygon cut into triangles by ear clipping, six numbers a triangle. A
+	## corner in line with its neighbors is dropped without a triangle. A polygon
+	## that crosses itself can run out of ears, and what is left is fanned.
 	triangulate : List(F64) -> List(F64)
 	triangulate = |pts| {
 		n = pts.len() // 2
@@ -494,8 +425,8 @@ Shapes :: [].{
 		fan(pts, $idx, $out)
 	}
 
-	# Whether a remaining corner other than a, b and c lies strictly inside the
-	# triangle a b c.
+	## Whether a remaining corner other than a, b and c lies strictly inside the
+	## triangle a b c.
 	any_inside : List(F64), List(U64), U64, U64, U64, F64 -> Bool
 	any_inside = |pts, idx, a, b, c, orient| {
 		ax = at(pts, 2 * a)
@@ -513,7 +444,7 @@ Shapes :: [].{
 		)
 	}
 
-	# The remaining corners as a fan from the first, onto `out`.
+	## The remaining corners as a fan from the first, onto `out`.
 	fan : List(F64), List(U64), List(F64) -> List(F64)
 	fan = |pts, idx, out| {
 		m = idx.len()
