@@ -106,8 +106,8 @@ Pigs :: [].{
 	} -> List(Scenery.Critter)
 	pigs_along = |{ presence, interest, length }|
 		match (presence, interest) {
-			(WithPigs, Distracting) => fill_pig_herd(length)
-			(WithPigs, Unnoticed) => fill_pig_row(length)
+			(WithPigs, Distracting) => big_herd(length)
+			(WithPigs, Unnoticed) => two_rows(length)
 			(NoPigs, Distracting) | (NoPigs, Unnoticed) => []
 		}
 
@@ -120,8 +120,8 @@ Pigs :: [].{
 		})
 
 	## The big herd on a segment `length` long, row by row from the road.
-	fill_pig_herd : Distance -> List(Scenery.Critter)
-	fill_pig_herd = |length| {
+	big_herd : Distance -> List(Scenery.Critter)
+	big_herd = |length| {
 		herd_along = pigs_place(length)
 		columns = List.from_iter(I64.until(0, big_herd_columns))
 		List.from_iter(I64.until(0, big_herd_rows))
@@ -129,8 +129,8 @@ Pigs :: [].{
 	}
 
 	## The two rows of pigs on a segment `length` long, front row first.
-	fill_pig_row : Distance -> List(Scenery.Critter)
-	fill_pig_row = |length| {
+	two_rows : Distance -> List(Scenery.Critter)
+	two_rows = |length| {
 		herd_along = pigs_place(length)
 		edge = Scenery.road_half_width.plus(Scenery.herd_road_offset)
 		front_across = Across.right_of_middle(edge)
@@ -192,14 +192,14 @@ expect Pigs.big_herd_columns == 7
 expect Pigs.big_herd_rows == 7
 expect eye_catcher.facing == FacesLeft
 
-big_herd : List(Scenery.Critter)
-big_herd = Pigs.fill_pig_herd(Distance.metres(1000.0))
+whole_herd : List(Scenery.Critter)
+whole_herd = Pigs.big_herd(Distance.metres(1000.0))
 
 herd_pig_at : U64 -> Scenery.Critter
-herd_pig_at = |i| big_herd.get(i) ?? crash "Pigs: the big herd has 49 pigs"
+herd_pig_at = |i| whole_herd.get(i) ?? crash "Pigs: the big herd has 49 pigs"
 
-expect big_herd.len() == 49
-expect Pigs.fill_pig_herd(Distance.metres(500.0)).len() == 49
+expect whole_herd.len() == 49
+expect Pigs.big_herd(Distance.metres(500.0)).len() == 49
 expect herd_pig_at(0).codepoint == 128022
 expect herd_pig_at(48).codepoint == 128022
 
@@ -243,15 +243,15 @@ expect
 		(48, 48.0),
 	].all(|(i, across)| (herd_pig_at(i).across.to_metres() - across).abs() <= 1.0)
 
-two_rows : List(Scenery.Critter)
-two_rows = Pigs.fill_pig_row(Distance.metres(1000.0))
+both_rows : List(Scenery.Critter)
+both_rows = Pigs.two_rows(Distance.metres(1000.0))
 
-expect two_rows.len() == 10
+expect both_rows.len() == 10
 expect Pigs.pig_row_front.len() == 4
 expect Pigs.pig_row_back.len() == 6
 
 expect
-	two_rows.map(|critter| critter.along.to_metres())
+	both_rows.map(|critter| critter.along.to_metres())
 		== [
 			934.0,
 			938.0,
@@ -266,7 +266,7 @@ expect
 		]
 
 expect
-	two_rows.map(|critter| critter.across.to_metres())
+	both_rows.map(|critter| critter.across.to_metres())
 		== [
 			12.0,
 			12.0,
