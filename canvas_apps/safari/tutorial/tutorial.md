@@ -18,14 +18,6 @@ A safari is a guided tour, so this is a tour of a tour. We'll start with the big
 
 We assume you can already read Roc. If you can't yet, the official tutorial is the place to start. We'll point out a few Roc ideas in each chapter as they come up.
 
-Each block of code and each diagram has a title line above it. A title line can carry one of these markers:
-
-| Marker | What it says |
-|---|---|
-| 🔭 | Looking out over the whole |
-| 🐾 | Following the trail down to the details |
-| 🌳 | A branch, which calls others of Safari Ride's own |
-| 🍃 | A leaf, which calls none of them |
 
 ## The problem
 
@@ -369,19 +361,19 @@ The sun stands in one direction, and the rider may not be facing it. That needs 
 
 Two tags say whether the sun is in view, so there's no `null` and no off-screen sentinel value. A caller has to handle `OutOfView`, because `match` must cover every tag.
 
-🐾 {{code Sky.SunSighting}}
+{{code Sky.SunSighting}}
 
 Opaque types do the most work from here on. A `Bearing` and a `Turn` are both floats underneath, but only the `Angle` module can build or open one. `sun_sighting` also takes one record argument, destructured in its parameter list.
 
-🌳 {{code Sky.sun_sighting}}
+{{code Sky.sun_sighting}}
 
 `turn_from_view.abs() >= visible_turn_limit` compares two `Turn`s. The code never touches radians until `sun_place` has to do trigonometry, because `r_tan` takes a float.
 
-🌳 {{code Sky.sun_place from "scale =" to "y: Screen.horizon_y"}}
+{{code Sky.sun_place from "scale =" to "y: Screen.horizon_y"}}
 
 Its caller, `RideInstant.sun`, is short enough to read whole:
 
-🌳 {{code RideInstant.sun}}
+{{code RideInstant.sun}}
 
 Those functions all take a `clock`, and that's the hard part. The sun sinks a little with every step, and the sky's colors, the mountains and the truck's headlights all follow it. That's a lot of heavy lifting for a circle. It gets a chapter of its own, The setting sun, once things start to move.
 
@@ -396,7 +388,7 @@ New in this chapter:
 
 `Sky` is a set of functions that each take a clock and answer with a color or the sun's place.
 
-🔭 The modules around `Sky`
+The modules around `Sky`
 ```dot
 digraph sky {
   node [shape=box, fontname="Helvetica"];
@@ -420,7 +412,7 @@ Every function in this chapter has a `->` arrow, not `=>`. That tells you the fu
 
 Here's one of the questions being asked. `Tour` holds the ride, and we'll come back to it. `Tour.sky_top_color` takes the clock from the current instant and hands it to `Sky`.
 
-🌳 {{code Tour.sky_top_color}}
+{{code Tour.sky_top_color}}
 
 ### Two colors
 
@@ -434,27 +426,27 @@ The sky is two colors, the top of the sky and the horizon. Here they are at five
 | 4,730 | `0x4f7595` | `0x966765` |
 | 6,000 | `0x243a5e` | `0x243a5e` |
 
-A color ends up as one integer. `pack` gets there with method calls on plain numbers. Static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `pack` a leaf.
+A color ends up as one integer. `pack` gets there with method calls on plain numbers. Static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `pack` a leaf: it calls nothing of Safari Ride's own.
 
-🍃 {{code Sky.pack}}
+{{code Sky.pack}}
 
 Every color in the sky is a blend of two others, and a blend needs a ratio. `Fraction` is another small opaque type, a ratio from 0 to 1, and only its own block can build one, so a `Fraction` is always in range. It has two ways in. `Fraction.of` takes a ratio that can only be in range and crashes on anything else, because that would be a bug in the sum. `Fraction.clamp` takes a ratio that can rightly fall outside, and holds it at the nearest end.
 
 `color_between` takes one record argument, destructured in its parameter list, so callers name every field. Each channel moves the same share of the way. `Sky.Rgb` is a plain record alias: three floats with nothing to guard.
 
-🌳 {{code Sky.color_between}}
+{{code Sky.color_between}}
 
 `sky_at` calls it to blend day into dusk. It sits below the block. Anything outside `Sky :: [].{ ... }` is private to the module, so a helper stays a helper without any keyword.
 
-🌳 {{code Sky.sky_at}}
+{{code Sky.sky_at}}
 
 `dusk_at` says how far the day has gone. That's a `Fraction` too, and The setting sun works it out.
 
 The two questions at the top are short. `sky_top_color` is the one `Tour.sky_top_color` asked at the start of this chapter, and `sky_horizon_color` is the same sky, warmed toward red near sunset.
 
-🌳 {{code Sky.sky_top_color}}
+{{code Sky.sky_top_color}}
 
-🌳 {{code Sky.sky_horizon_color}}
+{{code Sky.sky_horizon_color}}
 
 `Backdrop` paints the two as a gradient, down to the horizon. It stays on the top color for the first fifth of the way, then fades:
 
@@ -512,7 +504,7 @@ New in this chapter:
 
 `BendView` knows where two segments meet. `GroundSighting` and `RailSighting` each ask it about a bend, and each answers with plain data for another module to draw.
 
-🔭 The modules around `BendView`
+The modules around `BendView`
 ```dot
 digraph road {
   node [shape=box, fontname="Helvetica"];
@@ -535,15 +527,15 @@ Everything in this chapter is measured from the rider, as the trees were.
 
 A bend is a small record.
 
-🐾 {{code BendView.BendView from "A bend as the rider sees it" to "}.{"}}
+{{code BendView.BendView from "A bend as the rider sees it" to "}.{"}}
 
 `before` and `after` say where the two segments lie from the rider. The turn is positive to the right.
 
-🌳 {{code BendView.outer_edge}}
+{{code BendView.outer_edge}}
 
 A bend to the right has its outer edge on the left. That's the swap at the middle of the ruler.
 
-🌳 {{code BendView.apex}}
+{{code BendView.apex}}
 
 `point_before` and `point_after` are closures. Each gives a call with four arguments a short name, so the two lines below them read alike. Each line runs along the outer edge of one segment, and `Geom.line_crossing` finds where the two cross. That's the yellow dot.
 
@@ -553,23 +545,23 @@ The road is 4 metres wide, so at a turn of 45 degrees the apex lies 4 × tan(22.
 
 A piece of ground is a list of corners and a color.
 
-🐾 🍃 {{code GroundSighting.road_patch}}
+{{code GroundSighting.road_patch}}
 
 That's what `Ground` paints. It's plain data, so it can be checked with numbers.
 
-🌳 {{code GroundSighting.bend_corner}}
+{{code GroundSighting.bend_corner}}
 
 Four points cut the corner: the two ends of the first segment, the apex, and the place where the second segment's outer edge starts.
 
-🌳 {{code GroundSighting.lead_in}}
+{{code GroundSighting.lead_in}}
 
 The last 40 metres before a bend get a patch of their own, laid after the road's chunks and before the corner.
 
-🌳 {{code GroundSighting.bend_ground}}
+{{code GroundSighting.bend_ground}}
 
 The road along a segment is laid in chunks of up to 25 metres. The widget's two segments are 60 metres each, which makes three chunks each, and `bend_ground` adds two patches. That's the widget's count of 8.
 
-🌳 {{code GroundSighting.pond_ground}}
+{{code GroundSighting.pond_ground}}
 
 A pond is ground too. A segment that ends at a pond gets two more patches, the water and its bank, and their outlines come from `Pond`. `on_map` is another closure, and it moves an outline from the pond's own record onto the road.
 
@@ -597,15 +589,15 @@ digraph rail {
 }
 ```
 
-🌳 {{code RailSighting.rail_path}}
+{{code RailSighting.rail_path}}
 
 The four parts of the list are the four boxes.
 
-🌳 {{code RailSighting.rail_leg}}
+{{code RailSighting.rail_leg}}
 
 A leg gets a point about every metre. It leaves out its first point, which is the last point of the leg before it.
 
-🌳 {{code RailSighting.rails_at}}
+{{code RailSighting.rails_at}}
 
 `GuardRail.quads_along` turns the path into rails and posts for the depth sort. At a turn of 45 degrees, that's the 49 pieces in the last chapter's widget.
 
@@ -821,7 +813,7 @@ A record is the plainest shape in Roc, and it's nearly all this needs. `RideInst
 
 {{code RideInstant.RideInstant from "One instant of the ride" to "}.{"}}
 
-Those three fields are the whole of what Safari Ride keeps from one step to the next. The cat has no state, and neither does the bird, the sun or the beacons. Each frame works them all out again from the rider, the truck and the clock.
+Those three fields are the whole of what Safari Ride keeps from one step to the next. The cat has no state, and neither does the bird, the sun or the beacons. Each frame works them all out again from the rider, the truck and the clock. Call this *worked out, not stored*: keep the few things that have to last, and work out the rest. We'll see it everywhere from here on.
 
 That gives three kinds of moving thing, and the rest of the tour is organized around them:
 
@@ -956,7 +948,7 @@ digraph sky_calls {
 
 Everything on this diagram that changes with the clock comes down to the box in bold, which is the only one that turns the clock into a number. The rest is color on one side and the sun's place on the other.
 
-We've read the top of this diagram already. This chapter reads the bottom, from where the clock becomes a number. Together the calls form a tree. A function that calls none of Safari Ride's own is a leaf, and a walk through the tree is a trail.
+We've read the top of this diagram already. This chapter reads the bottom, from where the clock becomes a number.
 
 ### A function of the clock
 
@@ -974,31 +966,31 @@ These are the three numbers that come off the clock, at seven steps:
 
 The sun's column falls in a straight line, the dusk column is a curve and then a line, and the warmth column is a tent.
 
-We start at the bottom of the tree, which isn't on the diagram, because the diagram shows only `Sky`. It's back in `Clock`. `Clock.to_f64` opens the opaque type and calls `U32`'s own `to_f64`, which comes with Roc. It calls nothing else in Safari Ride, so it's a leaf.
+We start just below the diagram, which shows only `Sky`. The clock becomes a number back in `Clock`. `Clock.to_f64` opens the opaque type and calls `U32`'s own `to_f64`, which comes with Roc. It calls nothing else in Safari Ride, so it's a leaf.
 
-🐾 🍃 {{code Clock.to_f64}}
+{{code Clock.to_f64}}
 
 `sun_height_px` calls it. The sun's height is a straight line. It starts at 244 pixels, reaches the horizon around step 3,980, and has fully set around step 4,730. `to_f64` is the clock's one door to a float, and this is the only place that uses it.
 
-🌳 {{code Sky.sun_height_px}}
+{{code Sky.sun_height_px}}
 
 The next answers are `Fraction`s. Dusk is a curve and then a line, which means two cases, `dusk_while_up` and `dusk_after_set`. Both sit below `Sky`'s block, so they're private.
 
-🌳 {{code Sky.dusk_while_up}}
+{{code Sky.dusk_while_up}}
 
-🌳 {{code Sky.dusk_after_set}}
+{{code Sky.dusk_after_set}}
 
 `dusk_at` calls `sun_height_px`, then one of those two:
 
-🌳 {{code Sky.dusk_at}}
+{{code Sky.dusk_at}}
 
 And here's the walk up the stack: each frame, `RideInstant.shapes` hands the answer to the mountains, whose rock and snow go dark with it.
 
-🌳 {{code RideInstant.shapes from "Mountains.draw({" to "}),"}}
+{{code RideInstant.shapes from "Mountains.draw({" to "}),"}}
 
 The horizon's warmth is a third shape, a tent centered on the instant the sun touches the horizon. A sun far below the horizon gives a ratio well outside 0 to 1, so this one uses `Fraction.clamp`. That makes three curves from one number. They're plain functions, because nothing else in the game needs them. Here's `sunset_warmth`:
 
-🌳 {{code Sky.sunset_warmth}}
+{{code Sky.sunset_warmth}}
 
 That's every box on the diagram: one number goes in, and colors and a place for the sun come out, with nothing kept from one frame to the next.
 
@@ -1087,7 +1079,7 @@ The rider steers by leaning, so a decision is a record of two opaque values: a c
 
 {{code Rider.decide}}
 
-The math layer chapter takes that idea much further. A small version of it decides what happens at the end of a segment. `cross_if_on_road` works out the rider on the next segment and keeps that only if it lands inside the lane. The rejected rider simply stops being referred to, and nothing has to be undone:
+The Rehearsal chapter takes that idea much further. A small version of it decides what happens at the end of a segment. `cross_if_on_road` works out the rider on the next segment and keeps that only if it lands inside the lane. The rejected rider simply stops being referred to, and nothing has to be undone:
 
 {{code Rider.cross_if_on_road}}
 
@@ -1103,7 +1095,7 @@ When the rider leans, the whole picture leans with it. This is all of that:
 
 A lean inside the deadband leaves the canvas level, and any other lean passes straight through. The last `expect` is a table of pairs, on both sides of the deadband and at its edge. It's called once a frame:
 
-🌳 {{code Tour.roll}}
+{{code Tour.roll}}
 
 The camera turns as well. `ViewYaw` follows the rider's gaze, and turns a little with the lean, as a rider's head turns into a bend.
 
@@ -1151,7 +1143,7 @@ Call this *a narrow view of a wide record*. A module says exactly which fields i
 
 Reading down, the types do their share of explaining. A `Lean` can't be added to anything but a `Lean`, and it only reaches direction through `lean.steer(turn_per_lean)`, which is the single door from roll to yaw. The bike then moves along the middle of the step's turn, which is what `s.yaw.plus(turn.times(0.5))` means. `speed.step_length()` is a `Distance`, and `Along.plus` takes one, so the move itself is places and distances. `to_radians()` appears at the last line that can do without it: `r_cos` wants a float.
 
-A bike does what it's told. Choosing the lean has to wait for the math layer chapter. Choosing the acceleration is the throttle's job.
+A bike does what it's told. Choosing the lean has to wait for the Rehearsal chapter. Choosing the acceleration is the throttle's job.
 
 ## The throttle
 
@@ -1208,7 +1200,7 @@ The first limit, `bend_brake`, makes the `a1` that the chain above starts from. 
 
 After the limits, `Throttle.acceleration` hands its result to `allowed_speed`, not quoted here, which holds the speed between rest and the top speed. The chain works in accelerations and that step works in speeds, so the answer is taken back with `.change_from(state.speed)`, the other half of the same pair of types.
 
-The last limit, `shoulder_brake`, has to wait for the math layer chapter, because it simulates the bike ahead of itself.
+The last limit, `shoulder_brake`, comes back in the Rehearsal chapter, because it simulates the bike ahead of itself.
 
 The two limits in the middle come from what the rider sees. `crossing_limit` is the cat's, and `pig_limit` is the pig's. The cat's has to wait until we've met the cat, so we'll take the pig first.
 
@@ -1430,7 +1422,7 @@ New in this chapter:
 
 The cat is one function, `Cat.instant_at`, with two jobs: work out how far along the crossing is, and look up what the cat does at that point. The module `Animation` sits under both.
 
-🔭 The modules around `Cat`
+The modules around `Cat`
 ```dot
 digraph cat {
   node [shape=box, fontname="Helvetica"];
@@ -1453,13 +1445,13 @@ digraph cat {
 
 The slider isn't scrubbing a video. Every position of it is a call to `Cat.instant_at`. The arrow is `->` again, so the type already says there's no hidden cat being updated somewhere. A timeline is a record of what the cat does at each point. Method syntax chains the two jobs: `.instant(...)` is defined on the `Timeline` that `crossing_timeline` returns.
 
-🌳 {{code Cat.instant_at}}
+{{code Cat.instant_at}}
 
 A crossing and an approach go in, and the cat at that instant comes out. The same crossing at the same approach gives the same cat, a thousand frames apart.
 
 `CatSighting.cat_in_view` calls it, adding the distance to the segment to get the gap:
 
-🌳 {{code CatSighting.cat_in_view from "gap =" to "instant ="}}
+{{code CatSighting.cat_in_view from "gap =" to "instant ="}}
 
 What `Cat` gets from `Animation` comes down to one type, `Stage`:
 
@@ -1522,7 +1514,7 @@ A faster rider sets the cat off sooner, so it's clear of the lane in time.
 
 `Cat.crossing_stage` calls the rule with the cat's own numbers. A crossing takes 38 beats: 10 to walk out, 24 frozen, and 4 for the escape. A beat is the animation's own unit of progress, and it's tied to no clock.
 
-🐾 🌳 {{code Cat.crossing_stage}}
+{{code Cat.crossing_stage}}
 
 The rule lives in `Animation`. It takes the cat's numbers and an `Approach`, which says how the rider is coming:
 
@@ -1530,7 +1522,7 @@ The rule lives in `Animation`. It takes the cat's numbers and an `Approach`, whi
 
 `over_beats` destructures its first argument in place, and the `Approach` after it, so the body reads in plain names:
 
-🌳 {{code Animation.over_beats}}
+{{code Animation.over_beats}}
 
 Neither field of an `Approach` is a plain number. `Distance`, `Speed` and `Beats` are opaque types, like `Clock` and `Angle`. A distance can't be passed as a speed, and a place in an animation can't be passed as a step of the ride. `distance_in`, on the second line, multiplies a speed by some beats and gives a `Distance`. `Speed` also defines `is_lte`, which is what lets `speed <= standstill` work with an ordinary operator.
 
@@ -1551,7 +1543,7 @@ digraph tracks {
 
 A timeline is data, so the cat's whole performance reads in one place. This is the part of `crossing_timeline` that says how the cat looks:
 
-🌳 {{code Cat.crossing_timeline from "looks:" to "finally: Holds(Collapse),"}}
+{{code Cat.crossing_timeline from "looks:" to "finally: Holds(Collapse),"}}
 
 The words are tags. `Through` and `Before` say where a stretch ends, and `Holds` and `Alternates` say how the cat looks. The poses are a closed tag union, so a `match` that misses one is a compile-time error.
 
@@ -1565,15 +1557,15 @@ There are two tracks because a cat's looks and its movement change at different 
 
 The `path` track needs three places on the road. `spot_across` makes one, as a single record. It sits below `Cat`'s block, so it's private. `Along.start`, the first place on a segment, is a value and not a call, so this function calls nothing of Safari Ride's.
 
-🍃 {{code Cat.spot_across}}
+{{code Cat.spot_across}}
 
 `crossing_timeline` calls it three times before the timeline starts:
 
-🌳 {{code Cat.crossing_timeline from "## The whole of a crossing" to "end = spot_across"}}
+{{code Cat.crossing_timeline from "## The whole of a crossing" to "end = spot_across"}}
 
 Here's the `path` track:
 
-🌳 {{code Cat.crossing_timeline from "path:" to "finally: StaysAt(end),"}}
+{{code Cat.crossing_timeline from "path:" to "finally: StaysAt(end),"}}
 
 `Timeline` is nominal, the middle ground: unlike an alias it can carry methods, and unlike an opaque type anyone can build one, which is right for data that needs no guarding. `Timeline(pose, lift)` takes two type parameters, which is how a cat and a bird share it. A cat fills the first with its own poses and the second with `CatHeights`, because a cat's lift off the ground is measured in its own height.
 
@@ -1583,32 +1575,32 @@ Here's the `path` track:
 
 A timeline is data, so something has to play it. This section shows how, and it's where Roc's `var` and `for` appear inside a pure function. If you'd rather get back to the cat, you can skip to "Getting it on screen".
 
-The code that plays a timeline is in `Animation`, and its trail starts at an operator. `Beat.is_lte` opens two `Beat`s and compares the floats inside.
+The code that plays a timeline is in `Animation`, and we'll start at an operator. `Beat.is_lte` opens two `Beat`s and compares the floats inside.
 
 
-🍃 {{code Beat.is_lte}}
+{{code Beat.is_lte}}
 
-`is_short_of` is one `match`, and it looks like a leaf. It's a branch, because `<=` on two `Beat`s is a call to `is_lte`, and `<` is a call to `is_lt`. An operator on an opaque type runs code of Safari Ride's own.
+`is_short_of` is one `match`, and it looks like a leaf. It isn't, because `<=` on two `Beat`s is a call to `is_lte`, and `<` is a call to `is_lt`. An operator on an opaque type runs code of Safari Ride's own.
 
-🌳 {{code Animation.is_short_of}}
+{{code Animation.is_short_of}}
 
 Finding the stretch that's playing shows one more Roc idea. In `playing_at`, `var $from` is a local variable that a `for` loop reassigns, inside a pure function. Roc allows that because nothing outside can see it: `playing_at` still has a `->` arrow, and the `$` marks what changes. An early `return` ends the loop.
 
-🌳 {{code Animation.playing_at}}
+{{code Animation.playing_at}}
 
 `Timeline.at_beat` calls it once for each track, which is what lets the two tracks cut wherever they like. `Animation.Timeline.(score)` in a parameter list opens the nominal type, the way `Clock.(n)` opens an opaque one. `pose_of` and `path_spot` turn what's playing into a pose and a spot, and the bird chapter reads `path_spot`.
 
-🌳 {{code Animation.Timeline from "## The critter at `beat`" to "path_spot(path.plays, fraction)"}}
+{{code Animation.Timeline from "## The critter at `beat`" to "path_spot(path.plays, fraction)"}}
 
 `Timeline.instant` is the one place that knows about stages. Its `match` covers all three tags, and `portion` turns a `Fraction` of the way through into a beat. It answers with an `Instant`, the cat at that point:
 
 {{code Animation.Instant}}
 
-🌳 {{code Animation.Timeline from "## The critter at `stage`." to "Past(_) => score.after"}}
+{{code Animation.Timeline from "## The critter at `stage`." to "Past(_) => score.after"}}
 
 Back at the top, nothing in `instant_at` is unknown any more.
 
-🔭 🌳 {{code Cat.instant_at}}
+{{code Cat.instant_at}}
 
 `crossing_stage(approach)` is the rule with the cat's numbers, `crossing_timeline(cat)` is the timeline, and `.instant` plays the one at the other. A `Stage` is all that passes between them.
 
@@ -1639,11 +1631,11 @@ digraph screen {
 
 `cat_in_view` places the cat and decides whether it's big enough to draw. An empty list or a list of one is how it says "maybe".
 
-🌳 {{code CatSighting.cat_in_view}}
+{{code CatSighting.cat_in_view}}
 
 `segment_cat` calls it for a segment with a cat, and `in_view` flattens the answers with `join_map`, so a "no" simply disappears:
 
-🌳 {{code CatSighting.in_view}}
+{{code CatSighting.in_view}}
 
 Looking back over the chapter, notice what isn't in it: a cat in `RideInstant`, an update loop, or a flag saying the cat has already crossed.
 
@@ -1821,35 +1813,35 @@ digraph reaction {
 
 `Throttle` sets the rider's acceleration, and `RideFocal` sets how wide the rider's view is. Neither knows anything of cats. They ask `CrossingReaction`, which is the only part of the rider's code that does.
 
-This trail starts back in `Cat`, at two small questions about the same `Stage`.
+Let's follow this back to `Cat`, to two small questions about the same `Stage`.
 
 `is_in_danger` asks whether the crossing is playing. `_` ignores a payload.
 
-🐾 🌳 {{code Cat.is_in_danger}}
+{{code Cat.is_in_danger}}
 
 `attention` is where `Past`'s payload is used. A cat in the lane also draws the rider's attention, which widens the view. `beyond` is how far past the end of the crossing the rider has come, and that attention fades over that distance, counted in beats. `beats_to_cover` divides by the speed, so a rider at a standstill gets an answer first. `Attention` is another opaque type.
 
-🌳 {{code Cat.attention}}
+{{code Cat.attention}}
 
 `CrossingReaction.reaction_to` calls both. `..` in the argument's type makes it an open record, like `Bike.Motion`, though this one is only read and nothing comes back. This function needs `along` and `speed`, and accepts any record that has them, so it doesn't depend on `RiderState`, the rider's record. `speed` here is the opaque `Speed` again, and `match` on `segment.crossing` has to name every tag.
 
-🌳 {{code CrossingReaction.reaction_to}}
+{{code CrossingReaction.reaction_to}}
 
 A cat in the lane stops the rider opening the throttle, without braking, and widens the view as it pulls the rider's eye. Two tags, `MayAccelerate` and `NoAcceleration`, stand where a boolean might have gone. The next call up, `crossing_attention`, is one line, and its caller, `ride_focal`, works out the view's focal length:
 
-🌳 {{code RideFocal.crossing_attention}}
+{{code RideFocal.crossing_attention}}
 
-🌳 {{code RideFocal.ride_focal}}
+{{code RideFocal.ride_focal}}
 
 This is the only feedback loop in the design. The rider's speed decides where the cat has got to, and the cat holds the rider's speed down. The loop settles, and it's why `over_beats` has to stay the cat's rule. A bird asks nothing of the rider, so it falls through to the same answer as an empty road.
 
 Each stretch of road has exactly one `crossing`: `CatCrosses`, `BirdHere` or `QuietRoad`. A cat and a bird in the same place can't be written down.
 
-One question about the rider is still open: how `Rider.decide` picks a lean. The module that answers it is `LeanSearch`, and it rests on the geometry and physics in the next chapter.
+One question about the rider is still open: how `Rider.decide` picks a lean.
 
-## The math layer
+## Rehearsal
 
-Safari Ride's rider steers by rehearsing. Each step it tries twelve leans, and keeps one. That rests on a layer of math, and this chapter works up to it from the floor.
+Safari Ride's rider steers by rehearsing. Each step it tries twelve leans, and keeps one.
 
 ```widget rehearsal
 Click a mark to see that try at a lean.
@@ -1859,16 +1851,77 @@ Each try lets a rider who doesn't exist coast down the road with one lean, and t
 
 New in this chapter:
 
-- Roc: records as coordinate systems, `fold`, `fold_rev` and `map2`, two functions that call each other
-- Modules: `Geom`, `Chain`, `Camera`, `Lens`, `Coast`, `LeanSearch`, `Float`
+- Roc: two functions that call each other
+- Modules: `Coast`, `LeanSearch`
 
-A lot of Safari Ride is math and physics, and most of it is geometry a reader could do on paper. It's here because this kind of code suits a compiled functional language unusually well, for a short list of reasons that each get a section:
+The rider has no steering wheel. Nothing tells it where to go. Each step, it has to choose a lean, and it does that by working out what would happen.
+
+The calls of one rehearsal
+```dot
+digraph rehearsal {
+  rankdir=LR;
+  node [shape=box, fontname="Helvetica"];
+  decide [label="Rider.decide"];
+  best [label="LeanSearch.best_lean"];
+  project [label="Coast.project"];
+  advance [label="Bike.advance"];
+  decide -> best;
+  best -> project [label="  12 tries  "];
+  project -> advance [label="  a step at a time  "];
+}
+```
+
+`Coast` answers one question. If the rider stopped changing anything now, and coasted, what would happen? It takes the rider, and it runs the physics. The call is the same `Bike.advance` that moves the real rider, with no lean change and steady speed. That's why `Bike` has to be a function. A method that changed a bike in place couldn't be tried out like this.
+
+{{code Coast.coast_from from "judge_place(" to "{ lean_step: Angle.upright, acceleration: Acceleration.steady },"}}
+
+`Coast.Progress(others)` carries a `Bike.Motion(others)`: a narrow view of a wide record again, so `Coast` can take the whole rider without knowing what's in it. `coast_from` moves the bike and its partner `judge_place` says where it got to, and the two call each other until the coast reaches the shoulder, makes 25 metres of progress, or runs for 2,000 steps. The answer is a record saying which of those happened:
+
+{{code Coast.Outcome}}
+
+`Coast.project` sets it going, with the road's edges as bounds:
+
+{{code Coast.project}}
+
+`LeanSearch` asks `Coast` that question at a dozen different leans. The rider wants the coast to end somewhere near the middle of the lane, and more lean to the right moves the end of a coast to the right, so this is a bisection. It's a recursive function with its whole state in one record argument, `low` and `high` closing in on each other. `Bike.with_lean(state, mid)` is a rider who doesn't exist, handed to `Coast`, who gets a future that didn't happen:
+
+{{code LeanSearch.search_lean_from from "mid = low.halfway_to(high)" to "low: mid,"}}
+
+The decision about which way to go is a `match` on what the rehearsal found. Running off the left means more right, running off the right means less, and staying on the road compares the end of the coast with the target:
+
+{{code LeanSearch.want_more_right}}
+
+Its caller gives the search its bounds, at most a degree either side of the current lean. That's what stops the bike flicking from one lean to another:
+
+{{code LeanSearch.best_lean}}
+
+And `Rider.decide` calls that, on its first line. The walk up the stack ends there.
+
+Call this *rehearsal*: run the real rules on a pretend copy, read the result, and throw it away. The numbers are worth stating. Twelve coasts for the lean and one more in `Throttle`, which uses `Coast` to ask whether the road is about to run out. Over the whole ride, a coast averages about 44 simulated steps. So each real step of the ride runs about 570 steps of bike physics that never happen, and the 7,040 steps of the ride come to about four million. With no drawing, on the dev backend, the whole ride takes about three seconds: under half a millisecond a step, against a budget of 33. [check: the 44 is `forward / speed` from one coast per step, measured at 9aa3814, not a counter inside `coast_from`; the three seconds is one native run, and the page runs wasm.]
+
+In a language with mutable objects, a rehearsal has a problem to solve before it starts. It needs to copy the rider, or save it and restore it, and it needs to be sure the copy really is one, all the way down. It needs to know that the physics doesn't quietly update something global, like a scoreboard or a random number generator. In Roc, none of that comes up. `Bike.advance` has a `->`, so it can't reach anything but its arguments. The old rider stays intact because every rider does. A rehearsal that goes wrong costs nothing, and all of `LeanSearch` is 105 lines.
+
+The last limit of the throttle is the same idea with one rehearsal in it. It runs the coast, and brakes only if the coast leaves the road:
+
+{{code Throttle.shoulder_brake}}
+
+That's the last of the rider.
+
+## The math layer
+
+All this time, a layer of math has been doing the measuring. This chapter works up from the floor.
+
+New in this chapter:
+
+- Roc: records as coordinate systems, `fold`, `fold_rev` and `map2`
+- Modules: `Geom`, `Chain`, `Camera`, `Lens`, `Float`
+
+A lot of Safari Ride is math and physics, and most of it is geometry a reader could do on paper. It's here because this kind of code suits a compiled functional language unusually well, for a short list of reasons:
 
 - A formula is an expression, and a function with no effects is the same thing with a name.
 - Units can be types, for no runtime cost. [check: confirm a `::` wrapper around `F64` costs nothing at runtime, in the dev and wasm builds.]
 - A coordinate system can be a record, so the fields say which one a point is in.
-- Physics that's a pure function can be run for pretend, which is the best thing in this chapter.
-- It's compiled, so running it for pretend hundreds of times per frame is affordable.
+- It's compiled, so even the last chapter's rehearsals are affordable.
 
 ### The most imported modules
 
@@ -2034,61 +2087,6 @@ A fold's step is a plain function of the list so far and one edge:
 `Ground`, `GuardRail` and `TruckShape` call it the same way. `patch.corners.map(...)` makes the `RaisedPoint`s, and what comes back is a shorter or longer list of the same type:
 
 {{code Ground.draw from "in_front = Geom.clip_near(" to "Paint.polygon(patch.color, Camera.project_all(in_front, cam_focal))"}}
-
-### Rehearsal
-
-The rider has no steering wheel. Nothing tells it where to go. Each step, it has to choose a lean, and it does that by working out what would happen.
-
-The calls of one rehearsal
-```dot
-digraph rehearsal {
-  rankdir=LR;
-  node [shape=box, fontname="Helvetica"];
-  decide [label="Rider.decide"];
-  best [label="LeanSearch.best_lean"];
-  project [label="Coast.project"];
-  advance [label="Bike.advance"];
-  decide -> best;
-  best -> project [label="  12 tries  "];
-  project -> advance [label="  a step at a time  "];
-}
-```
-
-The widget at the top of this chapter is this section at work.
-
-`Coast` answers one question. If the rider stopped changing anything now, and coasted, what would happen? It takes the rider, and it runs the physics. The call is the same `Bike.advance` that moves the real rider, with no lean change and steady speed. That's why `Bike` has to be a function. A method that changed a bike in place couldn't be tried out like this.
-
-{{code Coast.coast_from from "judge_place(" to "{ lean_step: Angle.upright, acceleration: Acceleration.steady },"}}
-
-`Coast.Progress(others)` carries a `Bike.Motion(others)`: a narrow view of a wide record again, so `Coast` can take the whole rider without knowing what's in it. `coast_from` moves the bike and its partner `judge_place` says where it got to, and the two call each other until the coast reaches the shoulder, makes 25 metres of progress, or runs for 2,000 steps. The answer is a record saying which of those happened:
-
-{{code Coast.Outcome}}
-
-`Coast.project` sets it going, with the road's edges as bounds:
-
-{{code Coast.project}}
-
-`LeanSearch` asks `Coast` that question at a dozen different leans. The rider wants the coast to end somewhere near the middle of the lane, and more lean to the right moves the end of a coast to the right, so this is a bisection. It's a recursive function with its whole state in one record argument, `low` and `high` closing in on each other. `Bike.with_lean(state, mid)` is a rider who doesn't exist, handed to `Coast`, who gets a future that didn't happen:
-
-{{code LeanSearch.search_lean_from from "mid = low.halfway_to(high)" to "low: mid,"}}
-
-The decision about which way to go is a `match` on what the rehearsal found. Running off the left means more right, running off the right means less, and staying on the road compares the end of the coast with the target:
-
-{{code LeanSearch.want_more_right}}
-
-Its caller gives the search its bounds, at most a degree either side of the current lean. That's what stops the bike flicking from one lean to another:
-
-{{code LeanSearch.best_lean}}
-
-And `Rider.decide` calls that, on its first line. The walk up the stack ends there.
-
-Call this *rehearsal*: run the real rules on a pretend copy, read the result, and throw it away. The numbers are worth stating. Twelve coasts for the lean and one more in `Throttle`, which uses `Coast` to ask whether the road is about to run out. Over the whole ride, a coast averages about 44 simulated steps. So each real step of the ride runs about 570 steps of bike physics that never happen, and the 7,040 steps of the ride come to about four million. With no drawing, on the dev backend, the whole ride takes about three seconds: under half a millisecond a step, against a budget of 33. [check: the 44 is `forward / speed` from one coast per step, measured at 9aa3814, not a counter inside `coast_from`; the three seconds is one native run, and the page runs wasm.]
-
-In a language with mutable objects, a rehearsal has a problem to solve before it starts. It needs to copy the rider, or save it and restore it, and it needs to be sure the copy really is one, all the way down. It needs to know that the physics doesn't quietly update something global, like a scoreboard or a random number generator. In Roc, none of that comes up. `Bike.advance` has a `->`, so it can't reach anything but its arguments. The old rider stays intact because every rider does. A rehearsal that goes wrong costs nothing, and all of `LeanSearch` is 105 lines.
-
-The last limit of the throttle is the same idea with one rehearsal in it. It runs the coast, and brakes only if the coast leaves the road:
-
-{{code Throttle.shoulder_brake}}
 
 ### Arithmetic all the way down
 
@@ -2347,7 +2345,7 @@ digraph opened {
   node [shape=box, fontname="Helvetica"];
   world [label="design the world (once)\nThe world, The road"];
   tick [label="the clock ticks\nOne whole module"];
-  move [label="move the rider and the truck\nStepping through the ride to The truck,\nThe math layer"];
+  move [label="move the rider and the truck\nStepping through the ride to The truck,\nRehearsal"];
   look [label="look around\nThe modules, The cat, The bird"];
   draw [label="draw it against the backdrop\nThe sky, The platform"];
   world -> tick;
