@@ -229,7 +229,7 @@ A `match` on a closed union has to cover it: leaving out a tag is a compile-time
 
 Here's where it's called, picking the color for a pair of small trees:
 
-{{code Trees.plant_trees from "match $conifer {" to "BigGreen => accent(scheme)"}}
+{{code Trees.planted_trees from "match $conifer {" to "BigGreen => accent(scheme)"}}
 
 `SegmentIndex` is another small opaque type, a `U32` for a segment's place in the route. A place in the route can't be confused with a count of trees, because nothing outside can do arithmetic on it. `crash` appears here too. It isn't for error handling: an index that isn't in the world is a bug in Safari Ride, not a case to handle.
 
@@ -279,7 +279,7 @@ Safari Ride's own `Polygon` takes a color and screen points. `triangle` and `rec
 
 A function in `Polygon` gives back one shape. A polygon with fewer than three corners is a bug in Safari Ride, so `flat_polygon` crashes rather than quietly draw nothing.
 
-A whole thing in the picture is a list. A tree is a trunk and eight tiers, and a frame is its trees and everything else. An empty list is an honest answer here, but only from code that knows why: a patch of ground behind the camera has nothing to draw, and `Ground.draw` says so.
+A whole thing in the picture is a list. A tree is a trunk and eight tiers, and a frame is its trees and everything else. An empty list is an honest answer here, but only from code that knows why: a patch of ground behind the camera has nothing to draw, and `Ground.patch_shapes` says so.
 
 The list is also the order of painting. A shape goes over whatever came before it, so the rectangle is on top of the triangle because it comes later. A frame paints far things first and near things last.
 
@@ -320,13 +320,13 @@ So the job is a short chain of signatures:
 |---|---|---|
 {{types row Conifer.height Know how tall it is}}
 {{types row TreeDraw.tree_on_screen Find it on the screen}}
-{{types row TreeDraw.draw Paint it}}
+{{types row TreeDraw.tree_shapes Paint it}}
 
 ### The functions
 
-The top of it is `draw`, and it reads like the concept: find the tree on the screen, then paint a trunk and eight tiers.
+The top of it is `tree_shapes`, and it reads like the concept: find the tree on the screen, then paint a trunk and eight tiers.
 
-{{code TreeDraw.draw}}
+{{code TreeDraw.tree_shapes}}
 
 `nearer_trees` and `crown` are for near trees, and they can wait. For now, every tier is a triangle.
 
@@ -387,14 +387,14 @@ This function answers with that type:
 `Detail` holds the distances that decide how much of a thing gets drawn, and `cone_reach` is 200 metres.
 
 ```widget tree
-Three gold trees at three distances, each drawn by `TreeDraw.draw`. Under each tree is what `crown_of` said.
+Three gold trees at three distances, each drawn by `TreeDraw.tree_shapes`. Under each tree is what `crown_of` said.
 ```
 
 ### The functions
 
-`draw_tier` acts on that decision:
+`tier_shape` acts on that decision:
 
-{{code TreeDraw.draw_tier}}
+{{code TreeDraw.tier_shape}}
 
 The first branch is the one surprise. A camera can't see a cone from inside, so a tier that's too close falls back to the flat triangle. The `if` after the pattern is a guard, and it adds a condition to a branch.
 
@@ -422,7 +422,7 @@ Here's the other tree problem. Safari Ride plants 392 trees along its road, and 
 Step 1,570 of the ride, with only the trees on.
 ```
 
-This is step 1,570, with the cat frozen in the lane. Each tree here is a sighting from `TreeSighting.trees_in_view`, painted by `TreeDraw.draw`. They make up 1,656 of the 2,713 shapes in that frame, more than everything else put together.
+This is step 1,570, with the cat frozen in the lane. Each tree here is a sighting from `TreeSighting.trees_in_view`, painted by `TreeDraw.tree_shapes`. They make up 1,656 of the 2,713 shapes in that frame, more than everything else put together.
 
 So a tree has two lives. It's planted once, and that lasts the whole ride. It's seen again every frame, and that lasts one frame. This chapter takes them in that order.
 
@@ -446,14 +446,14 @@ A `TreeSighting` also fits `TreeDraw.TreeAhead`, so `TreeDraw` doesn't import it
 
 | Job | Function | Its type |
 |---|---|---|
-{{types row Trees.plant_trees Plant a segment, once}}
+{{types row Trees.planted_trees Plant a segment, once}}
 {{types row TreeSighting.trees_in_view Find the trees in view, each frame}}
 
 ### Planting
 
 Planting walks along a segment and keeps a list, and a loop says that best. `$` marks the names that change. The function still has a `->`, because nothing outside it can see them change.
 
-{{code Trees.plant_trees}}
+{{code Trees.planted_trees}}
 
 Trees stand in pairs, one each side of the road, every 30 metres. The pairs take turns: a big green pair, then the segment's accent, then big green again. A gold pair stands further from the road, because it's so much taller:
 
@@ -653,9 +653,9 @@ To draw a range, we go across the screen two pixels at a time and ask how high t
 
 {{code Mountains.silhouette}}
 
-`Mountains.draw` paints them back to front:
+`Mountains.mountain_shapes` paints them back to front:
 
-{{code Mountains.draw}}
+{{code Mountains.mountain_shapes}}
 
 The rock darkens with `dusk`, the same `Fraction` that darkens the sky, and the snow goes blue. `snow_color` uses the sky's own `color_between`:
 
@@ -1649,7 +1649,7 @@ The truck's headlights come on once the sun has gone behind the mountains, at st
 
 Lamps are plain data. The sighting carries them, and the drawing does what they say, with each `match` covering both tags:
 
-{{code TruckDraw.draw from "beams =" to "].join()"}}
+{{code TruckDraw.truck_shapes from "beams =" to "].join()"}}
 
 `TruckDraw` leaves the painting to two modules. `TruckBody` paints the trailer, the cab and the tires, far to near, and `TruckLights` paints the beams and the brake lights, each with its glow.
 
@@ -1975,7 +1975,7 @@ The stills are data too. Nested tags get checked all the way down, so a `match` 
 
 {{code BirdStills.pose_polygons}}
 
-`BirdDraw.draw` hands that to `StillDraw.still_shapes`, the function that also draws a cow. A bird's feet reach the screen through `Camera.project`, as a tree's top does, and the math layer chapter shows how. That's the drawing.
+`BirdDraw.bird_shapes` hands that to `StillDraw.still_shapes`, the function that also draws a cow. A bird's feet reach the screen through `Camera.project`, as a tree's top does, and the math layer chapter shows how. That's the drawing.
 
 ### Finding a tree
 
@@ -2246,9 +2246,9 @@ From there to the screen is a pinhole camera, which is similar triangles. Dividi
 
 {{code Camera.project}}
 
-`BirdDraw.draw` calls it with a record built on the spot for the bird's feet:
+`BirdDraw.bird_shapes` calls it with a record built on the spot for the bird's feet:
 
-{{code BirdDraw.draw from "feet = Camera.project(" to "cam_focal,"}}
+{{code BirdDraw.bird_shapes from "feet = Camera.project(" to "cam_focal,"}}
 
 The focal length comes from a lens. `focal` is a value computed from other values, with no function in sight, and `field_of_view` is a `Turn`, so taking half of it needs no comment about radians. [check: whether a value like this inside a `.{ }` block is evaluated at compile time, as top-level values are.]
 
@@ -2305,7 +2305,7 @@ A fold's step is a plain function of the list so far and one edge:
 
 `Ground`, `GuardRail` and `TruckShape` call it the same way. `patch.corners.map(...)` makes the `RaisedPoint`s, and what comes back is a shorter or longer list of the same type:
 
-{{code Ground.draw from "in_front = Geom.near_points(" to "Polygon.flat_polygon(patch.color, Camera.projected_points(in_front, cam_focal))"}}
+{{code Ground.patch_shapes from "in_front = Geom.near_points(" to "Polygon.flat_polygon(patch.color, Camera.projected_points(in_front, cam_focal))"}}
 
 ### Arithmetic all the way down
 

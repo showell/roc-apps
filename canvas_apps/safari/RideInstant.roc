@@ -97,13 +97,13 @@ RideInstant := {
 		)
 		ground = GroundSighting.patches_in_view(view.road)
 		[
-			Mountains.draw({
+			Mountains.mountain_shapes({
 				heading: ViewYaw.heading_for(s),
 				dusk: Sky.dusk_at(instant.clock),
 				cam_focal: view.cam_focal,
 			}),
-			ground.join_map(|patch| Ground.draw(patch, view.cam_focal)),
-			SceneDraw.draw(scene, view),
+			ground.join_map(|patch| Ground.patch_shapes(patch, view.cam_focal)),
+			SceneDraw.scene_shapes(scene, view),
 		].join()
 	}
 

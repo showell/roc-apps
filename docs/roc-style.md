@@ -82,6 +82,11 @@ Roc's own rules are in the langref's
   hides what it gives, and a reader of a definition often forgets which
   module it's in, so write `Tree.trees_in_view`. A constructor or conversion
   that reads as one keeps its short form: `Clock.at_step`, `Fraction.from_ratio`.
+- **A pure function's verb says what happens to its argument, and a function
+  that only makes a value is named for that value.** `plus`, `clamp` and
+  `trim_hull` say what happens to what they are given. `draw_tree` claims to
+  act on something outside, and all it does is give shapes, so it is
+  `tree_shapes`. The name hunt's `world_verb` holds this.
 - **A list's name says many: it ends in a plural of what the list holds, or
   says `list`.** `triangle : List(Shape)` would have to be `triangles` or
   `triangle_list`. A collective noun doesn't do it: a herd of cows is
@@ -266,10 +271,10 @@ Roc's own rules are in the langref's
   the index is passed: `find(s, { needle })` calls
   `find_from(s, { needle, at: 0 })`.
 - **The entry function takes the plain name; the worker is named for what
-  it adds.** Callers call `count`, `render`, `find`. The worker's suffix is
+  it adds.** Callers call `count`, `sorted`, `find`. The worker's suffix is
   a preposition naming its extra parameter, so a call reads as a sentence:
   `_from` for a start point (`count_from(xs, at)`), `_onto` for an output
-  being built (`render_onto(out, node)`), `_with` for other carried state
+  being built (`html_onto(out, node)`), `_with` for other carried state
   (`walk_with(tree, seen)`). A suffix that only says "I'm the helper"
   (`_acc`, `_loop`, `_inner`, `_helper`, `_rec`) names nothing; a `_step`,
   `_walk` or `_go` that calls itself is one too. The name hunt's
@@ -1082,7 +1087,8 @@ is the base; these rules sharpen it.
     `blocks_in`; a matched opposite pair and the `_from` recursion worker
     are fine), and `phrase_name` (a pure function named as a bare phrase,
     `in_view`, that gives no Bool and isn't a constructor), and `singular_list`
-    (a list named as one thing, `triangle : List(Shape)`). An effect that starts with a preposition (`of!`) is a
+    (a list named as one thing, `triangle : List(Shape)`), and `world_verb` (a
+    pure function that pretends to an effect, `draw_tree`). An effect that starts with a preposition (`of!`) is a
     `noun_effect`. The words are shared files in Shale's `cookbook/words/`,
     and `words=1` lists every first word an effect starts with, for a
     reader to scan. Beside the names, `mixed_tense` (an effect handed a

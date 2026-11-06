@@ -419,13 +419,13 @@ Tower :: [].{
 
 	## The whole tower: legs, rings, braces and beacon, in that order. A tower
 	## behind the camera, or sunk wholly below the horizon, draws nothing.
-	draw : {
+	tower_shapes : {
 		footprint : Tower.Footprint,
 		center : Geom.RiderPoint,
 		cam_focal : Pixels,
 		beacon_brightness : Fraction,
 	} -> List(Shapes.Shape)
-	draw = |{ footprint, center, cam_focal, beacon_brightness }| {
+	tower_shapes = |{ footprint, center, cam_focal, beacon_brightness }| {
 		sunk = sunk_below_horizon(center)
 		if center.forward < Geom.near_plane or sunk >= tower_height {
 			[]

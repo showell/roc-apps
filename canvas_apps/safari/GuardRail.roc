@@ -73,8 +73,8 @@ GuardRail :: [].{
 
 	## A quad on screen, cut at the camera's near plane; a quad wholly behind
 	## the camera draws nothing.
-	draw : GuardRail.RailQuad, Pixels -> List(Shapes.Shape)
-	draw = |quad, cam_focal| {
+	quad_shapes : GuardRail.RailQuad, Pixels -> List(Shapes.Shape)
+	quad_shapes = |quad, cam_focal| {
 		in_front = Geom.near_points(quad.corners)
 		if in_front.is_empty() {
 			[]

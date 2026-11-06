@@ -24,8 +24,8 @@ Ground :: [].{
 
 	## A patch on screen, cut at the camera's near plane. A patch wholly behind
 	## the camera draws nothing.
-	draw : Ground.Patch, Pixels -> List(Shapes.Shape)
-	draw = |patch, cam_focal| {
+	patch_shapes : Ground.Patch, Pixels -> List(Shapes.Shape)
+	patch_shapes = |patch, cam_focal| {
 		in_front = Geom.near_points(patch.corners.map(Ground.ground_point))
 		if in_front.is_empty() {
 			[]
@@ -58,8 +58,11 @@ expect
 			height: Distance.metres(-0.05078125),
 		}
 
-patch_shapes : List(Geom.RiderPoint) -> List(Shapes.Shape)
-patch_shapes = |corners| Ground.draw({ corners, color: 0x2F7E8C }, Pixels.of(685.5110432362151))
+sample_patch_shapes : List(Geom.RiderPoint) -> List(Shapes.Shape)
+sample_patch_shapes = |corners| Ground.patch_shapes(
+	{ corners, color: 0x2F7E8C },
+	Pixels.of(685.5110432362151),
+)
 
 patch_corners_ahead : List(Geom.RiderPoint)
 patch_corners_ahead = [
@@ -79,12 +82,12 @@ corners_ahead = |count|
 		},
 	)
 
-expect patch_shapes(patch_corners_ahead).len() == 1
-expect patch_shapes(corners_ahead(8)).len() == 1
-expect patch_shapes(corners_ahead(9)).len() == 1
+expect sample_patch_shapes(patch_corners_ahead).len() == 1
+expect sample_patch_shapes(corners_ahead(8)).len() == 1
+expect sample_patch_shapes(corners_ahead(9)).len() == 1
 
 expect
-	patch_shapes([
+	sample_patch_shapes([
 		{ right: Distance.metres(-5.0), forward: Distance.metres(-10.0) },
 		{ right: Distance.metres(5.0), forward: Distance.metres(-10.0) },
 		{ right: Distance.metres(5.0), forward: Distance.metres(-20.0) },
@@ -93,7 +96,7 @@ expect
 		== 0
 
 expect {
-	match patch_shapes(patch_corners_ahead) {
+	match sample_patch_shapes(patch_corners_ahead) {
 		[Poly(polygon)] =>
 			polygon.fill == Flat(Brush.opaque(0x2F7E8C)) and polygon.points.len() == 8
 		_ => False

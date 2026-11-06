@@ -542,7 +542,7 @@ expect is_far_to_near([])
 # GroundSighting's road, chunk by chunk.
 ## A list of patches as a camera the drawing checks read paints them.
 patch_shapes : List(Ground.Patch) -> List(Shapes.Shape)
-patch_shapes = |patches| patches.join_map(|patch| Ground.draw(patch, Pixels.of(500.0)))
+patch_shapes = |patches| patches.join_map(|patch| Ground.patch_shapes(patch, Pixels.of(500.0)))
 
 ## Chunk `chunk_number` of the first segment's 20, which is 500 m long.
 corners_of_chunk : U32 -> List(Geom.RiderPoint)

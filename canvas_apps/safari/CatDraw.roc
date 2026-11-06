@@ -12,8 +12,8 @@ import lib.Shapes
 CatDraw :: [].{
 
 	## A cat on screen, its feet where it is.
-	draw : CatSighting, Pixels -> List(Shapes.Shape)
-	draw = |cat, cam_focal| {
+	cat_shapes : CatSighting, Pixels -> List(Shapes.Shape)
+	cat_shapes = |cat, cam_focal| {
 		projected = |height| Camera.project(
 			{ right: cat.right, forward: cat.forward, height },
 			cam_focal,
@@ -40,13 +40,13 @@ near_cat = {
 	pose: Rest,
 }
 
-cat_shapes : CatSighting -> List(Shapes.Shape)
-cat_shapes = |cat| CatDraw.draw(cat, Pixels.of(500.0))
+sample_cat_shapes : CatSighting -> List(Shapes.Shape)
+sample_cat_shapes = |cat| CatDraw.cat_shapes(cat, Pixels.of(500.0))
 
 ## The first corner `cat` draws: its still's first corner, on screen.
 first_corner_coordinates : CatSighting -> List(F64)
 first_corner_coordinates = |cat|
-	match cat_shapes(cat) {
+	match sample_cat_shapes(cat) {
 		[Poly(polygon), ..] => polygon.points.take_first(2)
 		_ => crash "a cat draws polygons"
 	}
@@ -75,4 +75,6 @@ expect
 		Flight,
 		Land,
 		Collapse,
-	].all(|pose| cat_shapes({ ..near_cat, pose }).len() == CatStills.pose_polygons(pose).len())
+	].all(
+		|pose| sample_cat_shapes({ ..near_cat, pose }).len() == CatStills.pose_polygons(pose).len(),
+	)

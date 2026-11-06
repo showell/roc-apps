@@ -49,15 +49,15 @@ SafariFrame :: [].{
 	}
 
 	## The frame: the sky and the grass, the sun, then every shape.
-	paint : SafariFrame.Picture -> List(U32)
-	paint = |scene| {
+	picture_pixels : SafariFrame.Picture -> List(U32)
+	picture_pixels = |scene| {
 		roll = SafariFrame.screen_roll(scene.roll)
-		var $px = BackdropPixels.paint(
+		var $px = BackdropPixels.backdrop_pixels(
 			roll,
 			{ sky_top_color: scene.sky_top_color, sky_horizon_color: scene.sky_horizon_color },
 		)
-		$px = SunPixels.paint($px, { roll, sun: scene.sun })
-		ShapesPixels.paint($px, { roll, shapes: scene.shapes })
+		$px = SunPixels.pixels_with_sun($px, { roll, sun: scene.sun })
+		ShapesPixels.pixels_with_shapes($px, { roll, shapes: scene.shapes })
 	}
 
 	## Safari's screen, seen through the camera's roll.

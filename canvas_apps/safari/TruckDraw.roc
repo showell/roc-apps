@@ -13,13 +13,13 @@ TruckDraw :: [].{
 
 	## The truck on the segment at `position` in the chain, seen from `view`,
 	## with its trailer centred at `center` on that segment.
-	draw : {
+	truck_shapes : {
 		view : Chain.Viewpoint,
 		position : Chain.Position,
 		center : { along : Along, across : Across },
 		lights : Truck.Lights,
 	} -> List(Shapes.Shape)
-	draw = |{ view, position, center, lights }| {
+	truck_shapes = |{ view, position, center, lights }| {
 		truck = { view, position, box: TruckShape.truck_box(center) }
 		beams =
 			match lights.headlights {
@@ -31,6 +31,6 @@ TruckDraw :: [].{
 				On => TruckLights.brake_lights(truck)
 				Off => []
 			}
-		[beams, TruckBody.draw(truck), brake_lights].join()
+		[beams, TruckBody.body_shapes(truck), brake_lights].join()
 	}
 }

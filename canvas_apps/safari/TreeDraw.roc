@@ -19,7 +19,7 @@ import lib.Shapes
 TreeDraw :: [].{
 
 	## A tree in front of the camera, so of its lengths only `right` can be
-	## negative. A record with more in it can be handed to `draw` as it is.
+	## negative. A record with more in it can be handed to `tree_shapes` as it is.
 	TreeAhead(others) : {
 		right : Distance,
 		forward : Distance,
@@ -49,8 +49,9 @@ TreeDraw :: [].{
 	## The tree on the screen: its trunk, then its tiers top to bottom. The
 	## nearest trees have a shaded trunk. The crown is cones, shaded by how near
 	## they are, within Detail.cone_reach, and triangles beyond it.
-	draw : { tree : TreeDraw.TreeAhead(others), nearer_trees : U64 }, Pixels -> List(Shapes.Shape)
-	draw = |{ tree, nearer_trees }, cam_focal| {
+	tree_shapes :
+		{ tree : TreeDraw.TreeAhead(others), nearer_trees : U64 }, Pixels -> List(Shapes.Shape)
+	tree_shapes = |{ tree, nearer_trees }, cam_focal| {
 		point = {
 			right: tree.right,
 			forward: tree.forward,
@@ -69,7 +70,7 @@ TreeDraw :: [].{
 			color: conifer_color(tree.conifer),
 			crown: crown_of(tree.forward),
 		}
-		[draw_trunk(screen_tree, trunk)].concat(tiers.map(|tier| draw_tier(tier, look)))
+		[trunk_shape(screen_tree, trunk)].concat(tiers.map(|tier| tier_shape(tier, look)))
 	}
 
 	## How a crown is drawn: cones, shaded by how near they are, or flat triangles.
@@ -215,8 +216,8 @@ ring_points = 16
 crown_shade : Distance -> Fraction
 crown_shade = |forward| Fraction.clamp(1.0 - forward.ratio_to(Detail.crown_shade_reach))
 
-draw_trunk : TreeDraw.TreeOnScreen, [Shaded, Flat] -> Shapes.Shape
-draw_trunk = |screen_tree, finish| {
+trunk_shape : TreeDraw.TreeOnScreen, [Shaded, Flat] -> Shapes.Shape
+trunk_shape = |screen_tree, finish| {
 	width = screen_tree.height_px.times(trunk_width_share.to_f64()).max(min_trunk_width)
 	below_crown = screen_tree.height_px.times(trunk_height_share.to_f64())
 	height = below_crown.plus(screen_tree.height_px.times(trunk_overlap_share.to_f64()))
@@ -319,8 +320,8 @@ ring_angles = {
 
 ## A tier, as a cone when the tree is near and the whole cone is past the near
 ## plane, else as a triangle: the camera can't see a cone from inside.
-draw_tier : TreeDraw.Tier, TreeLook -> Shapes.Shape
-draw_tier = |tier, look| {
+tier_shape : TreeDraw.Tier, TreeLook -> Shapes.Shape
+tier_shape = |tier, look| {
 	cone_radius = look.point.height.times(crown_half_width_share.to_f64() * tier.width.to_f64())
 	match look.crown {
 		Cones(_) if look.point.forward.minus(cone_radius) < Geom.near_plane =>
@@ -434,7 +435,7 @@ expect
 	)
 
 expect
-	match draw_trunk(sample_on_screen, Flat) {
+	match trunk_shape(sample_on_screen, Flat) {
 		Poly(polygon) =>
 			polygon.fill == Flat(Brush.opaque(0x5A3E22))
 				and is_near(
@@ -455,7 +456,7 @@ expect
 
 # A shaded trunk is the same colour, lighter in the middle of its width.
 expect
-	match draw_trunk(sample_on_screen, Shaded) {
+	match trunk_shape(sample_on_screen, Shaded) {
 		Poly({ points, fill: Span({ edge, middle, x0, x1 }) }) =>
 			edge == Brush.opaque(0x362514)
 				and middle == Brush.opaque(0x714E2B)

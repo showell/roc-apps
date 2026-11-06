@@ -146,12 +146,12 @@ Mountains :: [].{
 
 	## The skyline, back to front: the west range, the north range, the
 	## north's snow, then the land.
-	draw : {
+	mountain_shapes : {
 		heading : Angle.Bearing,
 		dusk : Fraction,
 		cam_focal : Pixels,
 	} -> List(Shapes.Shape)
-	draw = |{ heading, dusk, cam_focal }| {
+	mountain_shapes = |{ heading, dusk, cam_focal }| {
 		sight = { heading, cam_focal }
 		[
 			[

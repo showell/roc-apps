@@ -65,7 +65,7 @@ right_of = |{ forward, canvas_x }| {
 
 tree_shapes : Stand -> List(Shapes.Shape)
 tree_shapes = |stand|
-	TreeDraw.draw(
+	TreeDraw.tree_shapes(
 		{
 			tree: {
 				right: right_of(stand),

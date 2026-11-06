@@ -339,7 +339,7 @@ World :: [].{
 ## The segment at `index` of the route, built from its plan.
 built_segment : World.SegmentPlan, World.SegmentIndex -> World.Segment
 built_segment = |plan, index| {
-	trees = Trees.plant_trees({ scheme: plan.scheme, length: plan.length })
+	trees = Trees.planted_trees({ scheme: plan.scheme, length: plan.length })
 	pig_interest = Pigs.interest_of({
 		presence: plan.pigs,
 		pig_segments_so_far: World.pig_segments_through(index),

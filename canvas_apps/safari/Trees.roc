@@ -53,8 +53,8 @@ Trees :: [].{
 
 	## A segment's trees, in pairs from its start, each pair's left tree
 	## first.
-	plant_trees : { scheme : Scenery.Scheme, length : Distance } -> List(Trees.Tree)
-	plant_trees = |{ scheme, length }| {
+	planted_trees : { scheme : Scenery.Scheme, length : Distance } -> List(Trees.Tree)
+	planted_trees = |{ scheme, length }| {
 		last_along = Along.at(length.minus(tree_end_inset))
 		var $along = Along.at(tree_start_inset)
 		var $conifer = Conifer.BigGreen
@@ -95,7 +95,7 @@ expect Trees.distance_from_middle(Conifer.Gold).to_metres() == 8.0
 
 ## Seven pairs, alternating big green and gold.
 gold_green_trees : List(Trees.Tree)
-gold_green_trees = Trees.plant_trees({ scheme: GoldGreen, length: Distance.metres(300.0) })
+gold_green_trees = Trees.planted_trees({ scheme: GoldGreen, length: Distance.metres(300.0) })
 
 expect
 	gold_green_trees.map(|tree| tree.along.to_metres())
@@ -155,5 +155,5 @@ expect
 		]
 
 expect gold_green_trees.len() == 14
-expect Trees.plant_trees({ scheme: AllGreen, length: Distance.metres(100.0) }).len() == 2
-expect Trees.plant_trees({ scheme: AllGreen, length: Distance.metres(50.0) }).len() == 0
+expect Trees.planted_trees({ scheme: AllGreen, length: Distance.metres(100.0) }).len() == 2
+expect Trees.planted_trees({ scheme: AllGreen, length: Distance.metres(50.0) }).len() == 0

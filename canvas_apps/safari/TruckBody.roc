@@ -26,8 +26,8 @@ TruckBody :: [].{
 	tire_sides = 16
 
 	## The truck's body, its farthest faces painted first.
-	draw : TruckShape.TruckInView -> List(Shapes.Shape)
-	draw = |truck|
+	body_shapes : TruckShape.TruckInView -> List(Shapes.Shape)
+	body_shapes = |truck|
 		DepthSort.sort_by(faces(truck), |face| face.depth)
 			.join_map(
 				|face| TruckShape.polygon_shapes(

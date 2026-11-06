@@ -71,7 +71,7 @@ ScanlineFill :: [].{
 			half_squared = radius * radius - dy * dy
 			$px = if half_squared > 0.0 {
 				half = half_squared.sqrt()
-				paint_span(
+				pixels_with_span(
 					$px,
 					{
 						roll,
@@ -146,7 +146,7 @@ row_pixels : List(U32),
 row_pixels = |pixels, { roll, fill, row, edge_crossings }| {
 	var $px = pixels
 	for row_span in inside_spans(edge_crossings) {
-		$px = paint_span(
+		$px = pixels_with_span(
 			$px,
 			{
 				roll,
@@ -187,7 +187,7 @@ walk_edge_crossing = |so_far, { left, right }| {
 }
 
 ## The pixels of `row` whose centres fall in [from, to).
-paint_span : List(U32),
+pixels_with_span : List(U32),
 {
 	roll : ScreenRoll,
 	fill : Brush.Fill,
@@ -195,7 +195,7 @@ paint_span : List(U32),
 	from : F64,
 	to : F64,
 } -> List(U32)
-paint_span = |pixels, { roll, fill, row, from, to }| {
+pixels_with_span = |pixels, { roll, fill, row, from, to }| {
 	columns = PixelGrid.pixels_between({ from, to, extent: roll.width_px() })
 	width = roll.width_px()
 	var $px = pixels

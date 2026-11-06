@@ -54,23 +54,23 @@ StillDraw :: [].{
 	screen_points = |anchor, points| points.map(|point| StillDraw.screen_point(anchor, point))
 
 	## One polygon of a still, filled with its colour or its gradient.
-	draw_polygon : StillDraw.Anchor, Stills.StillPolygon -> Shapes.Shape
-	draw_polygon = |anchor, poly| {
+	still_polygon : StillDraw.Anchor, Stills.StillPolygon -> Shapes.Shape
+	still_polygon = |anchor, poly| {
 		points = StillDraw.screen_points(anchor, poly.points)
 		match poly.gradients.first() {
-			Ok(gradient) => draw_gradient_polygon(anchor, { gradient, points })
+			Ok(gradient) => still_gradient_polygon(anchor, { gradient, points })
 			Err(ListWasEmpty) => Polygon.flat_polygon(poly.color, points)
 		}
 	}
 
 	## A whole still, its polygons in order.
 	still_shapes : StillDraw.Anchor, List(Stills.StillPolygon) -> List(Shapes.Shape)
-	still_shapes = |anchor, polys| polys.map(|poly| StillDraw.draw_polygon(anchor, poly))
+	still_shapes = |anchor, polys| polys.map(|poly| StillDraw.still_polygon(anchor, poly))
 
 	## A critter in view. An emoji faces left, so a critter facing right is
 	## its still mirrored. A critter less than a pixel tall isn't drawn.
-	draw : Cutouts.Cutout, Pixels -> List(Shapes.Shape)
-	draw = |critter, cam_focal| {
+	cutout_shapes : Cutouts.Cutout, Pixels -> List(Shapes.Shape)
+	cutout_shapes = |critter, cam_focal| {
 		projected = |height| Camera.project(
 			{ right: critter.right, forward: critter.forward, height },
 			cam_focal,
@@ -111,12 +111,12 @@ stops_of = |gradient| {
 	end_offset: gradient.off1,
 }
 
-draw_gradient_polygon : StillDraw.Anchor,
+still_gradient_polygon : StillDraw.Anchor,
 {
 	gradient : Stills.StillGradient,
 	points : List(Screen.Point),
 } -> Shapes.Shape
-draw_gradient_polygon = |anchor, { gradient, points }|
+still_gradient_polygon = |anchor, { gradient, points }|
 	match gradient_shape(gradient) {
 		Linear => {
 			start = StillDraw.screen_point(anchor, { x: gradient.ax, y: gradient.ay })
@@ -207,7 +207,7 @@ flat_polygon = |count| {
 }
 
 expect
-	StillDraw.draw_polygon(upright, flat_polygon(3))
+	StillDraw.still_polygon(upright, flat_polygon(3))
 		== Poly({ points: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0], fill: Flat(Brush.opaque(7)) })
 
 # How many shapes draw a critter of `height` metres, `forward` metres ahead.
@@ -217,7 +217,7 @@ shape_count : {
 	codepoint : I64,
 } -> U64
 shape_count = |{ forward, height, codepoint }|
-	StillDraw.draw(
+	StillDraw.cutout_shapes(
 		{
 			right: Distance.metres(0.0),
 			forward,

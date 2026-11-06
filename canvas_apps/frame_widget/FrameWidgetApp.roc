@@ -153,13 +153,13 @@ ride_pieces = |tour| {
 			clock: instant.clock,
 		},
 	)
-	skyline = Mountains.draw({
+	skyline = Mountains.mountain_shapes({
 		heading: ViewYaw.heading_for(rider),
 		dusk: Sky.dusk_at(instant.clock),
 		cam_focal: view.cam_focal,
 	})
 	ground = GroundSighting.patches_in_view(view.road).join_map(
-		|patch| Ground.draw(
+		|patch| Ground.patch_shapes(
 			patch,
 			view.cam_focal,
 		),
@@ -169,7 +169,7 @@ ride_pieces = |tour| {
 		scene.order_keys.map(
 			|depth_key| {
 				layer: subject_layer(depth_key.subject),
-				shapes: SceneDraw.draw({ ..scene, order_keys: [depth_key] }, view),
+				shapes: SceneDraw.scene_shapes({ ..scene, order_keys: [depth_key] }, view),
 			},
 		),
 	].join()

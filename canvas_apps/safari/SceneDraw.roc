@@ -28,8 +28,8 @@ import lib.Shapes
 SceneDraw :: [].{
 
 	## The scene's things, painted far to near.
-	draw : Scene, Chain.Viewpoint -> List(Shapes.Shape)
-	draw = |scene, view|
+	scene_shapes : Scene, Chain.Viewpoint -> List(Shapes.Shape)
+	scene_shapes = |scene, view|
 		scene.order_keys.join_map(|depth_key| subject_shapes(scene, { view, depth_key }))
 
 	## How many of `trees` are nearer than `forward`.
@@ -44,7 +44,7 @@ SceneDraw :: [].{
 		cam_focal : Pixels,
 	} -> List(Shapes.Shape)
 	tree_shapes = |tree, { trees, cam_focal }|
-		TreeDraw.draw(
+		TreeDraw.tree_shapes(
 			{ tree, nearer_trees: SceneDraw.nearer_tree_count(trees, tree.forward) },
 			cam_focal,
 		)
@@ -81,7 +81,7 @@ SceneDraw :: [].{
 	## A tower, its beacon as bright as its sighting says.
 	tower_shapes : Chain.Viewpoint, TowerSighting -> List(Shapes.Shape)
 	tower_shapes = |view, tower|
-		Tower.draw({
+		Tower.tower_shapes({
 			footprint: SceneDraw.tower_footprint(view, tower),
 			center: Chain.rider_point_at(
 				view.road,
@@ -108,11 +108,11 @@ subject_shapes = |scene, { view, depth_key }| {
 		Tree(place) =>
 			SceneDraw.tree_shapes(thing_at(scene.trees, place), { trees: scene.trees, cam_focal })
 		Tower(place) => SceneDraw.tower_shapes(view, thing_at(scene.towers, place))
-		Rail(place) => GuardRail.draw(thing_at(scene.rails, place), cam_focal)
-		Cutout(place) => StillDraw.draw(thing_at(scene.cutouts, place), cam_focal)
-		Cat(place) => CatDraw.draw(thing_at(scene.cats, place), cam_focal)
+		Rail(place) => GuardRail.quad_shapes(thing_at(scene.rails, place), cam_focal)
+		Cutout(place) => StillDraw.cutout_shapes(thing_at(scene.cutouts, place), cam_focal)
+		Cat(place) => CatDraw.cat_shapes(thing_at(scene.cats, place), cam_focal)
 		Truck => truck_shapes(view, scene.truck)
-		Bird(place) => BirdDraw.draw(thing_at(scene.birds, place), cam_focal)
+		Bird(place) => BirdDraw.bird_shapes(thing_at(scene.birds, place), cam_focal)
 	}
 }
 
@@ -128,7 +128,7 @@ truck_shapes : Chain.Viewpoint, TruckSighting -> List(Shapes.Shape)
 truck_shapes = |view, truck_at|
 	match truck_at {
 		Ahead(truck) =>
-			TruckDraw.draw({
+			TruckDraw.truck_shapes({
 				view,
 				position: truck.position,
 				center: { along: truck.along, across: truck.across },

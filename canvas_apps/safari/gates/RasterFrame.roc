@@ -36,8 +36,8 @@ hash = |pixels| pixels.fold(
 	},
 )
 
-paint : Tour -> List(U32)
-paint = |tour| SafariFrame.paint({
+frame_pixels : Tour -> List(U32)
+frame_pixels = |tour| SafariFrame.picture_pixels({
 	shapes: Tour.shapes(tour),
 	roll: Tour.roll(tour),
 	sky_top_color: Tour.sky_top_color(tour),
@@ -51,13 +51,13 @@ hash_line = |pixels| Hex.append_digits("hash ".to_utf8(), { number: hash(pixels)
 
 held_line : I64, Tour -> Str
 held_line = |depth, tour| {
-	line = Str.from_utf8_lossy(hash_line(paint(tour)))
+	line = Str.from_utf8_lossy(hash_line(frame_pixels(tour)))
 	"RasterFrame ${depth.to_str()}: ${line}"
 }
 
 print_picture! : I64 => {}
 print_picture! = |steps| {
-	pixels = paint(ProofRide.ride_on(Tour.initial, steps))
+	pixels = frame_pixels(ProofRide.ride_on(Tour.initial, steps))
 	var $out = List.with_capacity(pixels.len() * 6 + 32)
 	$out = $out.concat(hash_line(pixels))
 	$out = $out.concat("\n${Screen.width_px.to_str()} ${Screen.height_px.to_str()}\n".to_utf8())

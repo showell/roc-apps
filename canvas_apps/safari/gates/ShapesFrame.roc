@@ -51,9 +51,12 @@ compare = |tour| {
 		sun: Tour.sun(tour),
 	}
 	cut_shapes = Shapes.cut_shapes(instant_shapes)
-	a = SafariFrame.paint(scene)
-	backdrop = SafariFrame.paint({ ..scene, shapes: [] })
-	b = ShapesPixels.paint(backdrop, { roll: SafariFrame.screen_roll(roll), shapes: cut_shapes })
+	a = SafariFrame.picture_pixels(scene)
+	backdrop = SafariFrame.picture_pixels({ ..scene, shapes: [] })
+	b = ShapesPixels.pixels_with_shapes(
+		backdrop,
+		{ roll: SafariFrame.screen_roll(roll), shapes: cut_shapes },
+	)
 	n = a.len()
 	var $differ = 0
 	for k in 0..<n {

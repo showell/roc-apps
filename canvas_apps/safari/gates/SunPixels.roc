@@ -12,16 +12,16 @@ import game.Sun
 SunPixels :: [].{
 
 	## The sun, if it is in view.
-	paint : List(U32), { roll : ScreenRoll, sun : Sun.Sighting } -> List(U32)
-	paint = |pixels, { roll, sun }|
+	pixels_with_sun : List(U32), { roll : ScreenRoll, sun : Sun.Sighting } -> List(U32)
+	pixels_with_sun = |pixels, { roll, sun }|
 		match sun {
-			InView(place) => paint_glow_and_disc(pixels, { roll, sun: place })
+			InView(place) => pixels_with_glow_and_disc(pixels, { roll, sun: place })
 			OutOfView => pixels
 		}
 }
 
-paint_glow_and_disc : List(U32), { roll : ScreenRoll, sun : Sun.Place } -> List(U32)
-paint_glow_and_disc = |pixels, { roll, sun }| {
+pixels_with_glow_and_disc : List(U32), { roll : ScreenRoll, sun : Sun.Place } -> List(U32)
+pixels_with_glow_and_disc = |pixels, { roll, sun }| {
 	fills = Backdrop.sun_fills(sun)
 	sun_x = sun.x.to_f64()
 	sun_y = sun.y.to_f64()

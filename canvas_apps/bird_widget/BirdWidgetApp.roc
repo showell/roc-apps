@@ -124,7 +124,7 @@ road = {
 
 tree_shapes : Trees.Tree -> List(Shapes.Shape)
 tree_shapes = |tree|
-	TreeDraw.draw(
+	TreeDraw.tree_shapes(
 		{
 			tree: {
 				right: Distance.metres(tree.across.to_metres()),
@@ -140,7 +140,7 @@ tree_shapes = |tree|
 bird_shapes : Distance -> List(Shapes.Shape)
 bird_shapes = |gap| {
 	instant = BirdFlight.instant_at(flight, { gap: gap })
-	BirdDraw.draw(
+	BirdDraw.bird_shapes(
 		{
 			right: Distance.metres(instant.spot.across.to_metres()),
 			forward: forward_of(instant.spot.along),

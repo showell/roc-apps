@@ -95,7 +95,7 @@ tower_shapes = |right, brightness| {
 			forward: tower_forward.plus(Tower.tower_half.times(offset.along)),
 		}
 	}
-	Tower.draw({
+	Tower.tower_shapes({
 		footprint: {
 			back_left: corner_point(BackLeft),
 			back_right: corner_point(BackRight),
