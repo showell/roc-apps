@@ -15,7 +15,7 @@ import Beats
 import Distance
 import Easing
 import Fraction
-import Num_
+import Float
 
 Cat :: [].{
 
@@ -169,7 +169,7 @@ Cat :: [].{
 	## least one.
 	strides_in : Beats -> U32
 	strides_in = |length| {
-		strides = Num_.round_real(length.ratio_to(stride_beats))
+		strides = Float.round(length.ratio_to(stride_beats))
 		if strides < 1.0 {
 			1
 		} else {

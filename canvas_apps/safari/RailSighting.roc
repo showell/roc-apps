@@ -11,7 +11,7 @@ import Chain
 import Geom
 import GuardRail
 import BendView
-import Num_
+import Float
 import World
 
 RailSighting :: [].{
@@ -39,7 +39,7 @@ RailSighting :: [].{
 	## least one.
 	leg_pieces : F64 -> U32
 	leg_pieces = |distance| {
-		pieces = Num_.round_real(distance)
+		pieces = Float.round(distance)
 		(
 			if pieces < 1.0 {
 				1.0

@@ -7,7 +7,7 @@ import Coast
 import CrossingReaction
 import lib.DeviceMath
 import Gaze
-import Num_
+import Float
 import RiderState
 import Speed
 import Steps
@@ -107,7 +107,7 @@ Throttle :: [].{
 						1.0,
 					)
 				)
-			) * Num_.exp_real(((0.0 - n) / brake_decay)),
+			) * Float.exp(((0.0 - n) / brake_decay)),
 		)
 		if sa < a {
 			sa

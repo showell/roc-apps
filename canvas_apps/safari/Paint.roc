@@ -3,7 +3,7 @@
 ## 0xAARRGGBB for a gradient. Each builder answers a list, empty when there is
 ## nothing to draw, so a drawing module can join what it builds.
 import Fraction
-import Num_
+import Float
 import Screen
 import lib.Brush
 import lib.Shapes
@@ -37,7 +37,7 @@ Paint :: [].{
 	## One channel scaled by `factor`, rounded, and held at 255 at most.
 	shade_channel : I64, F64 -> I64
 	shade_channel = |channel, factor| {
-		scaled = Num_.round_real((channel.to_f64() * factor)).to_i64_wrap()
+		scaled = Float.round((channel.to_f64() * factor)).to_i64_wrap()
 		if scaled > 255 {
 			255
 		} else {

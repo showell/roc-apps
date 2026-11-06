@@ -8,7 +8,7 @@ import Chain
 import Geom
 import Ground
 import BendView
-import Num_
+import Float
 import Pond
 import Scenery
 import World
@@ -52,7 +52,7 @@ GroundSighting :: [].{
 	## at least one.
 	chunks_along : Distance -> U32
 	chunks_along = |length| {
-		chunks = Num_.ceil_real(length.ratio_to(GroundSighting.road_chunk_length))
+		chunks = Float.ceil(length.ratio_to(GroundSighting.road_chunk_length))
 		(
 			if chunks < 1.0 {
 				1.0

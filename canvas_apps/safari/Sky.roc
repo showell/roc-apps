@@ -6,7 +6,7 @@ import Clock
 import Fraction
 import lib.DeviceMath
 import Lens
-import Num_
+import Float
 import Screen
 import lib.Trig
 
@@ -111,9 +111,9 @@ Sky :: [].{
 	color_between = |{ from, to, fraction }| {
 		share = fraction.to_f64()
 		{
-			r: Num_.round_real((from.r + ((to.r - from.r) * share))),
-			g: Num_.round_real((from.g + ((to.g - from.g) * share))),
-			b: Num_.round_real((from.b + ((to.b - from.b) * share))),
+			r: Float.round((from.r + ((to.r - from.r) * share))),
+			g: Float.round((from.g + ((to.g - from.g) * share))),
+			b: Float.round((from.b + ((to.b - from.b) * share))),
 		}
 	}
 
