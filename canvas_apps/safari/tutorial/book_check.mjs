@@ -175,10 +175,8 @@ async function pictureChanges(page, i, before) {
   return false;
 }
 
-// The play button of VcrButtons, and the step forward of a widget with no play,
-// as shares of the frame.
+// The play button of VcrButtons, as shares of the frame.
 const PLAY = { x: 0.384, y: 0.65 };
-const STEP_FORWARD_WITHOUT_PLAY = { x: 0.228, y: 0.65 };
 
 // A widget that is a still picture has nothing to click, so it proves it runs
 // by having drawn at all.
@@ -189,13 +187,13 @@ const STILL = "still";
 // goes round from the last layer to the first.
 const CLICKED_AT = {
   "../beacon_widget/": PLAY,
-  "../bends_widget/": PLAY,
+  "../bends_widget/": STILL,
   "../bird_widget/": PLAY,
   "../cat_widget/": PLAY,
   "../frame_widget/": { x: 0.91, y: 0.93 },
   "../gaze_widget/": PLAY,
   "../rehearsal_widget/": { x: 0.12, y: 0.644 },
-  "../route_widget/": STEP_FORWARD_WITHOUT_PLAY,
+  "../route_widget/": STILL,
   "../shapes_widget/": STILL,
   "../sky_widget/": PLAY,
   "../step_widget/": PLAY,

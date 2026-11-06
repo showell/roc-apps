@@ -183,7 +183,7 @@ Everything in this chapter happens within a single frame, and none of it survive
 Some of Safari Ride never changes. Trees, cows, the pond and the road are built once and only read after that, which makes them the easiest part of the program to read, so the tour starts there.
 
 ```widget route
-Step along the route and read each segment's record.
+The whole route in one picture. The white stretch is segment 7, and the lines under the map read out its record.
 ```
 
 Each stretch of this map is one record of a list called `World.plans`, and the lines under the map read it out. The marks on the map are the six segments with a cat or a bird. We drew the map for this page: the ride itself never has one.
@@ -666,7 +666,7 @@ That's nature. Next come the things people built.
 A road of straight segments still has to get round its bends. Where two segments meet, something has to pave the corner and put up a rail.
 
 ```widget bends
-Press play to turn the bend, and watch the rail change sides.
+Three bends from above. The rail changes sides with the bend, and a sharper bend pushes the apex further out.
 ```
 
 The road here is two segments, seen from above, and the white dot is where the view is from. The rail runs along the outer edge of the bend, and the yellow dot is the apex, where the outer edges of the two segments meet. Playing past straight swaps the outer edge from one side to the other. A road with no turn has no apex, so the widget skips straight.
@@ -2261,7 +2261,7 @@ The view widens as the rider leans. One `Fraction` goes in, and a focal length c
 ### Round the bends
 
 ```widget route
-The route again. This map comes from adding up the turns, which the ride itself never does.
+The route again. This map comes from adding up the turns, which the ride itself never does. The white stretch is the record quoted below.
 ```
 
 The road has no global coordinates. A point on it is measured within one segment, `along` and `across`, and nothing in the game holds a world coordinate for it. Each segment knows only its length and the turn at its end. `World.plans` is nineteen records like this one, and it reads like configuration: a list of plain values, with the tags declared by `SegmentPlan` and an opaque `Distance` and `Turn` built from their units. It's checked like any other Roc, so a misspelled tag is a compile-time error.

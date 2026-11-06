@@ -1,8 +1,8 @@
-## The widget for the Safari tutorial's chapter on the road. Video recorder
-## buttons turn one bend, from hard left to hard right. The paving and the guard
-## rail come from GroundSighting and RailSighting, asked about a two-segment road
-## with that bend in it, and they're drawn from above. The rail swaps sides as the
-## bend does, because it follows the outer edge.
+## The widget for the Safari tutorial's chapter on the road: a still picture of
+## three bends side by side, with no controls. Each is a two-segment road seen
+## from above, with the rider's way up the picture. The paving and the guard rail
+## come from GroundSighting and RailSighting, and the apex from BendView, and the
+## lines under each bend read out what those three say of it.
 import game.Across
 import game.Along
 import game.Angle
@@ -14,68 +14,44 @@ import game.BendView
 import game.RailSighting
 import game.Scenery
 import game.World
+import lib.Brush
 import lib.CanvasApp
 import lib.Shapes
-import lib.Trig
 import widget.ScrubWidget
-import widget.VcrButtons
 
 BendsWidgetApp :: [].{
 
-	## The whole state of the widget: the buttons, which hold how far the bend
-	## turns, in degrees, positive to the right.
-	Model : VcrButtons.Transport(F64)
+	## A still picture has no state.
+	Model : {}
 
 	canvas_app : CanvasApp.CanvasApp(BendsWidgetApp.Model)
-	canvas_app = VcrButtons.canvas_app({
-		title: "A bend in the road",
-		range: turning,
-		opens_at: 50.0,
-		frame: frame_at,
+	canvas_app = ScrubWidget.canvas_app({
+		title: "Three bends in the road",
+		init: {},
+		advance: |model, _input| model,
+		frame: |_model| still_frame,
 	})
 }
 
-## The buttons range from this far left to this far right. The route's sharpest bend
-## is 80 degrees.
-widest_turn : F64
-widest_turn = 80.0
+## A bend in the picture: how far it turns, and the x on the canvas of the
+## middle of its third.
+ShownBend : { turn : Angle.Turn, canvas_x : F64 }
 
-## The gentlest bend. Two edges that don't turn at all never meet, so a road with
-## no bend has no apex.
-gentlest_turn : F64
-gentlest_turn = 5.0
+## The bend the book works through, turned the other way, to show the rail swap
+## sides.
+left_bend : ShownBend
+left_bend = { turn: Angle.Turn.degrees(-45.0), canvas_x: 107.0 }
 
-## The turn from hard left to hard right in five seconds. A step is five degrees,
-## so the steps stop on every bend of the route.
-turning : VcrButtons.NumberRange(F64)
-turning = {
-	first: -widest_turn,
-	last: widest_turn,
-	place_of: place_of_turn,
-	number_at: turn_at,
-	one_step: 5.0,
-	playing: Plays(0.5),
-}
+## The bend whose numbers the book works through.
+right_bend : ShownBend
+right_bend = { turn: Angle.Turn.degrees(45.0), canvas_x: 320.0 }
 
-## How far along the turning a turn of `degrees` is. The range closes the gap around
-## straight, so it goes from just left of the gentlest turn left to the gentlest
-## turn right.
-place_of_turn : F64 -> F64
-place_of_turn = |degrees|
-	if degrees < 0.0 {
-		degrees + gentlest_turn
-	} else {
-		degrees - gentlest_turn
-	}
+## The sharpest bend on the route, whose apex lies furthest out.
+sharp_bend : ShownBend
+sharp_bend = { turn: Angle.Turn.degrees(80.0), canvas_x: 533.0 }
 
-## The turn at a place along the turning.
-turn_at : F64 -> F64
-turn_at = |place|
-	if place < 0.0 {
-		place - gentlest_turn
-	} else {
-		place + gentlest_turn
-	}
+shown_bends : List(ShownBend)
+shown_bends = [left_bend, right_bend, sharp_bend]
 
 ## How long each of the two segments is.
 segment_length : Distance
@@ -85,15 +61,15 @@ segment_length = Distance.metres(60.0)
 rider_before_bend : Distance
 rider_before_bend = Distance.metres(25.0)
 
-## Two segments of the route, cut to length, with a bend of `degrees` between.
-two_segments : F64 -> List(World.Segment)
-two_segments = |degrees|
+## Two segments of the route, cut to length, with `turn` between.
+two_segments : Angle.Turn -> List(World.Segment)
+two_segments = |turn|
 	World.segments.take_first(2).map_with_index(
 		|segment, index| {
 			..segment,
 			length: segment_length,
 			exit_turn: if index == 0 {
-				Angle.Turn.degrees(degrees)
+				turn
 			} else {
 				Angle.Turn.degrees(0.0)
 			},
@@ -101,9 +77,9 @@ two_segments = |degrees|
 	)
 
 ## The road as seen from the first segment, looking along it.
-road_with : F64 -> Chain.RoadView
-road_with = |degrees| {
-	route: two_segments(degrees),
+road_with : Angle.Turn -> Chain.RoadView
+road_with = |turn| {
+	route: two_segments(turn),
 	chain: [World.SegmentIndex.number(0), World.SegmentIndex.number(1)],
 	vantage: {
 		along: Along.at(segment_length.minus(rider_before_bend)),
@@ -121,20 +97,32 @@ bend_of = |road|
 		{ before: InChain(Chain.Position.first), after: InChain(Chain.Position.first.next()) },
 	)
 
+## The apex of a bend of `turn`.
+apex_of : Angle.Turn -> Geom.RiderPoint
+apex_of = |turn| {
+	road = road_with(turn)
+	BendView.apex(road, bend_of(road))
+}
+
+## Where the view is from, and so where every point is measured from.
+rider : Geom.RiderPoint
+rider = { right: Distance.zero, forward: Distance.zero }
+
 ## How many pixels a metre takes up.
 pixels_a_metre : F64
-pixels_a_metre = 11.0
+pixels_a_metre = 5.0
 
-## Where the rider sits on the canvas.
-rider_x : F64
-rider_x = 40.0
+## Where the rider sits on the canvas, near the foot of the picture.
+rider_y : F64
+rider_y = 198.0
 
-## The road runs left to right from above, so the rider's right is down.
-canvas_x : Geom.RiderPoint -> F64
-canvas_x = |{ forward, .. }| rider_x + forward.to_metres() * pixels_a_metre
-
-canvas_y : Geom.RiderPoint -> F64
-canvas_y = |{ right, .. }| ScrubWidget.picture_bottom_y / 2.0 + right.to_metres() * pixels_a_metre
+## Where `point` falls on the canvas. The rider faces up the picture, so the
+## rider's right is the reader's right.
+on_canvas : ShownBend, Geom.RiderPoint -> { x : F64, y : F64 }
+on_canvas = |{ canvas_x, .. }, { right, forward }| {
+	x: canvas_x + right.to_metres() * pixels_a_metre,
+	y: rider_y - forward.to_metres() * pixels_a_metre,
+}
 
 ground_color : I64
 ground_color = 0x6f9a55
@@ -161,27 +149,32 @@ ground = Rect({
 })
 
 ## A patch of paving, as a polygon on the canvas.
-patch_shape : List(Geom.RiderPoint) -> Shapes.Shape
-patch_shape = |corners|
+patch_shape : ShownBend, List(Geom.RiderPoint) -> Shapes.Shape
+patch_shape = |bend, corners|
 	Poly({
-		pts: corners.join_map(|corner| [canvas_x(corner), canvas_y(corner)]),
+		pts: corners.join_map(
+			|corner| {
+				{ x, y } = on_canvas(bend, corner)
+				[x, y]
+			},
+		),
 		fill: ScrubWidget.flat(road_color),
 	})
 
 ## The first two corners of a rail's quad, which lie along the ground.
-rail_foot : List(Geom.RaisedPoint) -> List(Shapes.Shape)
-rail_foot = |corners|
+rail_foot : ShownBend, List(Geom.RaisedPoint) -> List(Shapes.Shape)
+rail_foot = |bend, corners|
 	match corners {
 		[a, b, ..] => {
-			from = { right: a.right, forward: a.forward }
-			to = { right: b.right, forward: b.forward }
+			from = on_canvas(bend, { right: a.right, forward: a.forward })
+			to = on_canvas(bend, { right: b.right, forward: b.forward })
 			[
 				Shapes.line(
-					canvas_x(from),
-					canvas_y(from),
-					canvas_x(to),
-					canvas_y(to),
-					3.0,
+					from.x,
+					from.y,
+					to.x,
+					to.y,
+					2.0,
 					ScrubWidget.flat(rail_color),
 				),
 			]
@@ -190,40 +183,44 @@ rail_foot = |corners|
 	}
 
 ## A disc at a place on the road.
-spot : Geom.RiderPoint, { r : F64, color : I64 } -> Shapes.Shape
-spot = |point, { r, color }|
+spot : ShownBend, { at : Geom.RiderPoint, color : I64 } -> Shapes.Shape
+spot = |bend, { at, color }| {
+	{ x, y } = on_canvas(bend, at)
 	Disc({
-		x: canvas_x(point),
-		y: canvas_y(point),
-		r,
+		x,
+		y,
+		r: 4.0,
 		fill: ScrubWidget.flat(color),
 		clip: Anywhere,
 	})
+}
 
-## The bend from above: what GroundSighting and RailSighting say of it, the apex
+## One bend from above: what GroundSighting and RailSighting say of it, the apex
 ## BendView finds, and where the view is from.
-picture : F64 -> List(Shapes.Shape)
-picture = |degrees| {
-	road = road_with(degrees)
+bend_shapes : ShownBend -> List(Shapes.Shape)
+bend_shapes = |bend| {
+	road = road_with(bend.turn)
 	[
-		[ground],
-		GroundSighting.in_view(road).map(|patch| patch_shape(patch.corners)),
-		RailSighting.in_view(road).join_map(|rail| rail_foot(rail.corners)),
+		GroundSighting.in_view(road).map(|patch| patch_shape(bend, patch.corners)),
+		RailSighting.in_view(road).join_map(|rail| rail_foot(bend, rail.corners)),
 		[
-			spot(BendView.apex(road, bend_of(road)), { r: 5.0, color: apex_color }),
-			spot({ right: Distance.zero, forward: Distance.zero }, { r: 6.0, color: rider_color }),
+			spot(bend, { at: apex_of(bend.turn), color: apex_color }),
+			spot(bend, { at: rider, color: rider_color }),
 		],
 	].join()
 }
 
 ## A whole number of degrees and which way.
-turn_text : F64 -> Str
-turn_text = |degrees|
-	if degrees < 0.0 {
-		"${(0.5 - degrees).to_i64_wrap().to_str()} deg left"
+turn_text : Angle.Turn -> Str
+turn_text = |turn| {
+	degrees = turn.abs().ratio_to(Angle.Turn.degrees(1.0))
+	side = if turn.is_right() {
+		"right"
 	} else {
-		"${(degrees + 0.5).to_i64_wrap().to_str()} deg right"
+		"left"
 	}
+	"${(degrees + 0.5).to_i64_wrap().to_str()} deg ${side}"
+}
 
 ## Which edge a bend's outer edge is, in words.
 edge_text : Angle.Turn -> Str
@@ -238,107 +235,73 @@ edge_text = |turn|
 apex_past_end : Geom.RiderPoint -> F64
 apex_past_end = |apex| apex.forward.minus(rider_before_bend).to_metres()
 
-## Where the apex lies, in words.
-apex_text : Geom.RiderPoint -> Str
-apex_text = |apex| "Apex: ${ScrubWidget.tenths_text(apex_past_end(apex))} m past the segment end"
-
-## What the three modules say of this bend, a line each.
-status_lines : F64 -> List(Str)
-status_lines = |degrees| {
-	road = road_with(degrees)
-	bend = bend_of(road)
+## What the three modules say of a bend, a line each.
+caption_lines : Angle.Turn -> List(Str)
+caption_lines = |turn| {
+	road = road_with(turn)
 	[
-		"Turn: ${turn_text(degrees)}",
-		"Rail on the outer edge: ${edge_text(bend.turn)}",
-		apex_text(BendView.apex(road, bend)),
-		"${GroundSighting.in_view(road).len().to_str()} patches, ${RailSighting.in_view(road).len().to_str()} pieces of rail",
+		turn_text(turn),
+		"rail on the ${edge_text(turn)} edge",
+		"apex ${ScrubWidget.tenths_text(apex_past_end(apex_of(turn)))} m past the end",
+		"${GroundSighting.in_view(road).len().to_str()} patches, ${RailSighting.in_view(road).len().to_str()} rail pieces",
 	]
 }
 
-## Everything on the canvas.
-frame_at : BendsWidgetApp.Model -> List(Shapes.Shape)
-frame_at = |transport|
-	VcrButtons.frame_shapes(
-		transport,
-		{
-			range: turning,
-			picture: picture(transport.at),
-			status: status_lines(transport.at),
-		},
-	)
+## A line of a caption, centered under its bend, on row `row` of the panel.
+caption_line : ShownBend, { text : Str, row : U64 } -> Shapes.Shape
+caption_line = |bend, { text, row }|
+	Text({
+		text,
+		x: bend.canvas_x,
+		y: 246.0 + row.to_f64() * 26.0,
+		size: 13.0,
+		face: Code,
+		align: Center,
+		color: Brush.opaque(0x202020),
+	})
 
-## What a press of `control` does at a turn of `degrees`, after that frame.
-turn_after_press : F64, VcrButtons.Control -> F64
-turn_after_press = |degrees, control|
-	VcrButtons.next_transport(
-		VcrButtons.transport_at(degrees),
-		{ input: VcrButtons.click_on(control, turning.playing), range: turning },
-	).at
+caption : ShownBend -> List(Shapes.Shape)
+caption = |bend|
+	caption_lines(bend.turn).map_with_index(|text, row| caption_line(bend, { text, row }))
 
-# The buttons reach both ends, and a step is five degrees.
-expect turn_after_press(50.0, ToStart) == -widest_turn
-expect turn_after_press(50.0, ToEnd) == widest_turn
-expect turn_after_press(50.0, StepForward) == 55.0
-expect turn_after_press(50.0, StepBack) == 45.0
-expect turn_after_press(-50.0, StepForward) == -45.0
-expect turn_after_press(-50.0, StepBack) == -55.0
-expect turn_after_press(widest_turn, StepForward) == widest_turn
-expect turn_after_press(-widest_turn, StepBack) == -widest_turn
-
-# Steps and play go over the bend that has no apex, either way, and stop short of
-# nothing else.
-expect turn_after_press(-10.0, StepForward) == gentlest_turn
-expect turn_after_press(gentlest_turn, StepBack) == -10.0
-expect turn_after_press(-5.5, Play) == gentlest_turn
-expect turn_after_press(gentlest_turn, PlayBack) == -5.5
-expect turn_after_press(10.0, StepBack) == gentlest_turn
-
-# A place and its turn are inverses on either side of straight.
-expect [-80.0, -10.0, 5.0, 80.0].all(|degrees| turn_at(place_of_turn(degrees)) == degrees)
-
-# A step stops on every bend of the route, from the buttons' left end.
-expect
-	World.plans.keep_if(|plan| plan.turn.to_radians().abs() > 0.0).all(
-		|plan| {
-			place = place_of_turn(plan.turn.to_radians() / Trig.deg)
-			steps_from_left = (place - place_of_turn(-widest_turn)) / turning.one_step
-			(steps_from_left - (steps_from_left + 0.5).to_i64_wrap().to_f64()).abs() < 0.000001
-		},
-	)
-
-# The rail follows the outer edge, on either side.
-expect edge_text(Angle.Turn.degrees(50.0)) == "left"
-expect edge_text(Angle.Turn.degrees(-50.0)) == "right"
-
-## The apex of a bend of `degrees`.
-apex_of : F64 -> Geom.RiderPoint
-apex_of = |degrees| {
-	road = road_with(degrees)
-	BendView.apex(road, bend_of(road))
+still_frame : List(Shapes.Shape)
+still_frame = {
+	picture = [ground].concat(shown_bends.join_map(bend_shapes))
+	ScrubWidget.frame_shapes({ picture, status: [] }).concat(shown_bends.join_map(caption))
 }
 
+# The captions read what the modules say: the rail swaps sides with the turn, the
+# apex goes out as the turn sharpens, and the middle bend has the book's numbers.
+expect
+	caption_lines(left_bend.turn)
+		== ["45 deg left", "rail on the right edge", "apex 1.7 m past the end", "8 patches, 49 rail pieces"]
+expect
+	caption_lines(right_bend.turn)
+		== ["45 deg right", "rail on the left edge", "apex 1.7 m past the end", "8 patches, 49 rail pieces"]
+expect
+	caption_lines(sharp_bend.turn)
+		== ["80 deg right", "rail on the left edge", "apex 3.4 m past the end", "8 patches, 53 rail pieces"]
+
+# The sharp bend is on the route, and nothing on the route is sharper.
+expect World.plans.any(|plan| plan.turn == sharp_bend.turn)
+expect World.plans.all(|plan| plan.turn.abs() <= sharp_bend.turn)
+
 # The apex lies on the outer edge carried straight on, on either side.
-expect (apex_of(50.0).right.to_metres() - Scenery.left_edge.to_metres()).abs() < 0.000001
-expect (apex_of(-50.0).right.to_metres() - Scenery.right_edge.to_metres()).abs() < 0.000001
+expect (apex_of(left_bend.turn).right.to_metres() - Scenery.right_edge.to_metres()).abs() < 0.000001
+expect (apex_of(right_bend.turn).right.to_metres() - Scenery.left_edge.to_metres()).abs() < 0.000001
 
-# A sharper bend pushes the apex further past the segment's end.
-expect apex_past_end(apex_of(20.0)) > 0.0
-expect apex_past_end(apex_of(70.0)) > apex_past_end(apex_of(20.0))
-expect apex_past_end(apex_of(-70.0)) > apex_past_end(apex_of(-20.0))
+# Each bend's rider and apex are in the picture, in the bend's own third.
+expect
+	shown_bends.all(
+		|bend| {
+			apex = on_canvas(bend, apex_of(bend.turn))
+			rider_on_canvas = on_canvas(bend, rider)
+			third = ScrubWidget.canvas_width / 3.0
+			(apex.x - bend.canvas_x).abs() < third / 2.0
+				and apex.y > 0.0
+				and rider_on_canvas.y < ScrubWidget.picture_bottom_y
+		},
+	)
 
-# The bend's paving and its rail are both there, at both ends of the turning.
-expect GroundSighting.in_view(road_with(widest_turn)).len() > 2
-expect GroundSighting.in_view(road_with(-widest_turn)).len() > 2
-expect RailSighting.in_view(road_with(widest_turn)).len() > 0
-expect RailSighting.in_view(road_with(-widest_turn)).len() > 0
-
-expect turn_text(50.0) == "50 deg right"
-expect turn_text(-50.0) == "50 deg left"
-
-expect apex_text({
-	right: Distance.metres(-2.0),
-	forward: Distance.metres(27.5),
-}) == "Apex: 2.5 m past the segment end"
-
-expect picture(50.0) == picture(50.0)
-expect picture(50.0) != picture(51.0)
+# The captions go down last, so they show over the panel.
+expect still_frame.ends_with(shown_bends.join_map(caption))
