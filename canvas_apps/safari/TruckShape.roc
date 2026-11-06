@@ -93,7 +93,7 @@ TruckShape :: [].{
 		{
 			right: on_ground.right,
 			forward: on_ground.forward,
-			height: (height.to_metres() - Geom.ground_drop(on_ground)),
+			height: height.minus(Geom.ground_drop(on_ground)),
 		}
 	}
 

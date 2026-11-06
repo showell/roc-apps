@@ -55,9 +55,9 @@ TruckLights :: [].{
 	## The point halfway between `from` and `to`.
 	midpoint : { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> Geom.RaisedPoint
 	midpoint = |{ from, to }| {
-		right: ((from.right + to.right) / 2.0),
-		forward: ((from.forward + to.forward) / 2.0),
-		height: ((from.height + to.height) / 2.0),
+		right: from.right.plus(to.right).divided_by(2.0),
+		forward: from.forward.plus(to.forward).divided_by(2.0),
+		height: from.height.plus(to.height).divided_by(2.0),
 	}
 
 	## The distance between two points on screen.
@@ -280,7 +280,11 @@ expect TruckLights.glow_outline({ center: { x: 0.0, y: 0.0 }, radius: 10.0 }).le
 expect TruckLights.glow_sides == 16
 
 point_ahead : F64 -> Geom.RaisedPoint
-point_ahead = |forward| { right: 0.0, forward, height: 0.0 }
+point_ahead = |forward| {
+	right: Distance.zero,
+	forward: Distance.metres(forward),
+	height: Distance.zero,
+}
 
 expect
 	!TruckLights.has_point_behind_camera([
@@ -306,18 +310,18 @@ expect !TruckLights.has_point_behind_camera([])
 expect
 	TruckLights.midpoint({
 		from: {
-			right: 1.0,
-			forward: 2.0,
-			height: 3.0,
+			right: Distance.metres(1.0),
+			forward: Distance.metres(2.0),
+			height: Distance.metres(3.0),
 		},
 		to: {
-			right: 5.0,
-			forward: 8.0,
-			height: 11.0,
+			right: Distance.metres(5.0),
+			forward: Distance.metres(8.0),
+			height: Distance.metres(11.0),
 		},
 	})
 		== {
-			right: 3.0,
-			forward: 5.0,
-			height: 7.0,
+			right: Distance.metres(3.0),
+			forward: Distance.metres(5.0),
+			height: Distance.metres(7.0),
 		}

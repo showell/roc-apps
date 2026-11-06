@@ -14,10 +14,11 @@ import lib.Shapes
 TruckBody :: [].{
 
 	## A flat face of the truck, and its depth: the mean of its corners'
-	## distances ahead, by which the faces are ordered for painting.
+	## distances ahead, by which the faces are ordered for painting. That mean
+	## is negative for a face behind the rider.
 	TruckFace : {
 		color : I64,
-		depth : F64,
+		depth : Distance,
 		corners : List(Geom.RaisedPoint),
 	}
 
@@ -28,7 +29,7 @@ TruckBody :: [].{
 	## The truck's body, its farthest faces painted first.
 	draw : TruckShape.TruckInView -> List(Shapes.Shape)
 	draw = |truck|
-		DepthSort.sort_by(faces(truck), |face| Distance.metres(face.depth))
+		DepthSort.sort_by(faces(truck), |face| face.depth)
 			.join_map(
 				|face| TruckShape.polygon(truck, { color: face.color, corners: face.corners }),
 			)
@@ -37,7 +38,7 @@ TruckBody :: [].{
 	face : I64, List(Geom.RaisedPoint) -> TruckBody.TruckFace
 	face = |color, corners| {
 		color,
-		depth: (sum_of_forward(corners) / corners.len().to_f64()),
+		depth: sum_of_forward(corners).divided_by(corners.len().to_f64()),
 		corners,
 	}
 
@@ -90,8 +91,9 @@ hood_height = TruckShape.truck_height.divided_by(2.0)
 
 ## Summed from the last corner to the first. A float sum's rounding depends
 ## on its order, and another order can move a pixel.
-sum_of_forward : List(Geom.RaisedPoint) -> F64
-sum_of_forward = |corners| corners.fold_rev(0.0, |corner, sum| corner.forward + sum)
+sum_of_forward : List(Geom.RaisedPoint) -> Distance
+sum_of_forward = |corners|
+	corners.fold_rev(Distance.zero, |corner, sum| corner.forward.plus(sum))
 
 ## The truck's faces: its two sides, its back, its roof, its windshield, its
 ## nose, then its tires, the left side's and then the right's.
@@ -312,7 +314,11 @@ expect
 expect axles_at({ along: Along.metres(0.0), across: Across.metres(0.0) }).len() == 5
 
 point_ahead : F64 -> Geom.RaisedPoint
-point_ahead = |forward| { right: 0.0, forward, height: 0.0 }
+point_ahead = |forward| {
+	right: Distance.zero,
+	forward: Distance.metres(forward),
+	height: Distance.zero,
+}
 
 quad_face : TruckBody.TruckFace
 quad_face = TruckBody.face(
@@ -335,44 +341,41 @@ triangle_face = TruckBody.face(
 	],
 )
 
-expect quad_face.depth == 25.0
-expect triangle_face.depth == 3.0
+expect quad_face.depth.to_metres() == 25.0
+expect triangle_face.depth.to_metres() == 3.0
 expect quad_face.color == 1846886
 expect quad_face.corners.len() == 4
 expect triangle_face.color == 1381658
 expect triangle_face.corners.len() == 3
 
 # A face that is only a colour and a depth, for the sort.
-marked_face : { color : I64, depth : F64 } -> TruckBody.TruckFace
+marked_face : { color : I64, depth : Distance } -> TruckBody.TruckFace
 marked_face = |{ color, depth }| { color, depth, corners: [] }
 
-colors_by_depth : List({ color : I64, depth : F64 }) -> List(I64)
+colors_by_depth : List({ color : I64, depth : Distance }) -> List(I64)
 colors_by_depth = |marks|
-	DepthSort.sort_by(
-		marks.map(marked_face),
-		|face| Distance.metres(face.depth),
-	).map(|face| face.color)
+	DepthSort.sort_by(marks.map(marked_face), |face| face.depth).map(|face| face.color)
 
 expect
 	colors_by_depth([
-		{ color: 1, depth: 30.0 },
-		{ color: 2, depth: 10.0 },
-		{ color: 3, depth: 30.0 },
-		{ color: 4, depth: 20.0 },
-		{ color: 5, depth: 30.0 },
+		{ color: 1, depth: Distance.metres(30.0) },
+		{ color: 2, depth: Distance.metres(10.0) },
+		{ color: 3, depth: Distance.metres(30.0) },
+		{ color: 4, depth: Distance.metres(20.0) },
+		{ color: 5, depth: Distance.metres(30.0) },
 	])
 		== [1, 3, 5, 4, 2]
 
 expect
 	colors_by_depth([
-		{ color: 1, depth: 20.0 },
-		{ color: 2, depth: 20.000001 },
-		{ color: 3, depth: 20.01 },
-		{ color: 4, depth: 19.0 },
+		{ color: 1, depth: Distance.metres(20.0) },
+		{ color: 2, depth: Distance.metres(20.000001) },
+		{ color: 3, depth: Distance.metres(20.01) },
+		{ color: 4, depth: Distance.metres(19.0) },
 	])
 		== [3, 1, 2, 4]
 
 expect colors_by_depth([]).len() == 0
-expect colors_by_depth([{ color: 7, depth: 1.0 }]) == [7]
+expect colors_by_depth([{ color: 7, depth: Distance.metres(1.0) }]) == [7]
 
 expect TruckBody.tire_sides == 16

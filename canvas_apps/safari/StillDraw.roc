@@ -78,11 +78,15 @@ StillDraw :: [].{
 	draw : Cutouts.Cutout, F64 -> List(Shapes.Shape)
 	draw = |critter, cam_focal| {
 		on_screen = |height| Camera.project(
-			{ right: critter.right, forward: critter.forward, height },
+			{
+				right: Distance.metres(critter.right),
+				forward: Distance.metres(critter.forward),
+				height,
+			},
 			cam_focal,
 		)
-		feet = on_screen(0.0)
-		height_px = (feet.y - on_screen(critter.height.to_metres()).y)
+		feet = on_screen(Distance.zero)
+		height_px = (feet.y - on_screen(critter.height).y)
 		if height_px < 1.0 {
 			[]
 		} else {

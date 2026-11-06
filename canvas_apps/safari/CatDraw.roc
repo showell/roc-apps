@@ -3,6 +3,7 @@
 import Camera
 import Cat
 import CatStills
+import Distance
 import Paint
 import lib.Brush
 import Stills
@@ -64,8 +65,13 @@ CatDraw :: [].{
 			cam_focal,
 		},
 	| {
-		feet = Camera.project({ right, forward, height: 0.0 }, cam_focal)
-		top = Camera.project({ right, forward, height }, cam_focal)
+		at_height = |metres| {
+			right: Distance.metres(right),
+			forward: Distance.metres(forward),
+			height: Distance.metres(metres),
+		}
+		feet = Camera.project(at_height(0.0), cam_focal)
+		top = Camera.project(at_height(height), cam_focal)
 		height_px = (feet.y - top.y)
 		if height_px < 1.0 {
 			[]

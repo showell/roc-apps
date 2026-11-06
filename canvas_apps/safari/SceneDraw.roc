@@ -236,10 +236,10 @@ tower_along = |along| {
 expect {
 	footprint = SceneDraw.tower_footprint(start_view, tower_along(200.0))
 	[
-		(footprint.back_left.forward, 194.0),
-		(footprint.front_right.forward, 206.0),
-		(footprint.back_left.right, 14.0),
-		(footprint.back_right.right, 26.0),
+		(footprint.back_left.forward.to_metres(), 194.0),
+		(footprint.front_right.forward.to_metres(), 206.0),
+		(footprint.back_left.right.to_metres(), 14.0),
+		(footprint.back_right.right.to_metres(), 26.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 }
 

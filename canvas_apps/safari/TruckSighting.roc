@@ -89,7 +89,7 @@ truck_on_segment = |view, { along, position }| {
 			position,
 			along,
 			across,
-			forward: center.forward,
+			forward: center.forward.to_metres(),
 			lights: view.lights,
 		})
 	} else {

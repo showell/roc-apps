@@ -18,9 +18,9 @@ BirdDraw :: [].{
 	draw = |bird, cam_focal| {
 		feet = Camera.project(
 			{
-				right: bird.right,
-				forward: bird.forward,
-				height: bird.lift.to_metres(),
+				right: Distance.metres(bird.right),
+				forward: Distance.metres(bird.forward),
+				height: bird.lift,
 			},
 			cam_focal,
 		)
@@ -41,7 +41,7 @@ level_bird : BirdSighting
 level_bird = {
 	right: 0.0,
 	forward: 110.0,
-	lift: Distance.metres(Camera.eye_h),
+	lift: Camera.eye_h,
 	pose: Perched,
 }
 
@@ -65,7 +65,7 @@ expect {
 	moved_bird = {
 		..level_bird,
 		right: 11.0,
-		lift: Distance.metres(Camera.eye_h + 11.0),
+		lift: Camera.eye_h.plus(Distance.metres(11.0)),
 	}
 	[(level_bird, [479.656, 294.285]), (moved_bird, [529.656, 244.285])].all(
 		|(bird, want)| {

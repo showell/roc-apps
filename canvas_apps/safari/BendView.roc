@@ -101,10 +101,10 @@ apex_after_turn = |turn|
 # Each is within 1e-7 of its want, scaled up by a want past 1.
 expect
 	[
-		(apex_after_turn(right_turn).right, 17.297297467543466),
-		(apex_after_turn(right_turn).forward, -100.43071597950589),
-		(apex_after_turn(left_turn).right, 21.403438709482494),
-		(apex_after_turn(left_turn).forward, -100.55298847633645),
+		(apex_after_turn(right_turn).right.to_metres(), 17.297297467543466),
+		(apex_after_turn(right_turn).forward.to_metres(), -100.43071597950589),
+		(apex_after_turn(left_turn).right.to_metres(), 21.403438709482494),
+		(apex_after_turn(left_turn).forward.to_metres(), -100.55298847633645),
 	].all(|(got, want)| (got - want).abs() <= 0.0000001 * want.abs().max(1.0))
 
 vantage : Geom.Vantage
@@ -218,10 +218,10 @@ at_d1 = |route| Chain.rider_point_ahead(
 expect {
 	second_segment_point = at_d1(World.segments)
 	[
-		(at_d0.right, 9.933466539753061),
-		(at_d0.forward, -49.00332889206208),
-		(second_segment_point.right, -48.11621135085446),
-		(second_segment_point.forward, 431.95658232777186),
+		(at_d0.right.to_metres(), 9.933466539753061),
+		(at_d0.forward.to_metres(), -49.00332889206208),
+		(second_segment_point.right.to_metres(), -48.11621135085446),
+		(second_segment_point.forward.to_metres(), 431.95658232777186),
 	].all(|(got, want)| (got - want).abs() <= 0.00000005 * want.abs().max(1.0))
 }
 
@@ -238,8 +238,8 @@ behind_at = |place| Chain.rider_point_at(
 
 expect
 	[
-		(behind_at(m_prev_left).right, -194.76069932822074),
-		(behind_at(m_prev_left).forward, -231.63435691739767),
-		(behind_at(m_prev_right).right, 239.9883995667414),
-		(behind_at(m_prev_right).forward, -218.13274420105967),
+		(behind_at(m_prev_left).right.to_metres(), -194.76069932822074),
+		(behind_at(m_prev_left).forward.to_metres(), -231.63435691739767),
+		(behind_at(m_prev_right).right.to_metres(), 239.9883995667414),
+		(behind_at(m_prev_right).forward.to_metres(), -218.13274420105967),
 	].all(|(got, want)| (got - want).abs() <= 0.0000001 * want.abs().max(1.0))

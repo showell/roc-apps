@@ -32,14 +32,14 @@ RailSighting :: [].{
 	## place in the list.
 	depth_keys : List(GuardRail.RailQuad) -> List(DepthSort.DepthKey)
 	depth_keys = |quads| quads.map_with_index(
-		|quad, i| { forward: Distance.metres(quad.forward), subject: Rail(i.to_u32_wrap()) },
+		|quad, i| { forward: quad.forward, subject: Rail(i.to_u32_wrap()) },
 	)
 
 	## How many pieces a leg `distance` long is cut into: one a metre, and at
 	## least one.
-	leg_pieces : F64 -> U32
+	leg_pieces : Distance -> U32
 	leg_pieces = |distance| {
-		pieces = Float.round(distance)
+		pieces = Float.round(distance.to_metres())
 		(
 			if pieces < 1.0 {
 				1.0
@@ -56,14 +56,14 @@ RailSighting :: [].{
 		pieces : U32,
 	} -> List(Geom.RiderPoint)
 	evenly_spaced = |{ from, to, pieces }| {
-		rightward = to.right - from.right
-		forward = to.forward - from.forward
+		rightward = to.right.minus(from.right)
+		forward = to.forward.minus(from.forward)
 		List.from_iter(U32.to(0, pieces)).map(
 			|step| {
 				fraction = step.to_f64() / pieces.to_f64()
 				{
-					right: from.right + rightward * fraction,
-					forward: from.forward + forward * fraction,
+					right: from.right.plus(rightward.times(fraction)),
+					forward: from.forward.plus(forward.times(fraction)),
 				}
 			},
 		)
@@ -73,10 +73,10 @@ RailSighting :: [].{
 	## last at `to`, and none at `from`, which ends the leg before it.
 	rail_leg : { from : Geom.RiderPoint, to : Geom.RiderPoint } -> List(Geom.RiderPoint)
 	rail_leg = |{ from, to }| {
-		rightward = to.right - from.right
-		forward = to.forward - from.forward
+		rightward = to.right.minus(from.right).to_metres()
+		forward = to.forward.minus(from.forward).to_metres()
 		distance = DeviceMath.real_sqrt(rightward * rightward + forward * forward)
-		pieces = RailSighting.leg_pieces(distance)
+		pieces = RailSighting.leg_pieces(Distance.metres(distance))
 		RailSighting.evenly_spaced({ from, to, pieces }).drop_first(1)
 	}
 
@@ -190,49 +190,58 @@ expect
 		(10.0, 10),
 		(49.6, 50),
 		(50.0, 50),
-	].all(|(distance, want)| RailSighting.leg_pieces(distance).to_i64() == want)
+	].all(|(distance, want)| RailSighting.leg_pieces(Distance.metres(distance)).to_i64() == want)
 
 origin_pt : Geom.RiderPoint
-origin_pt = { right: 0.0, forward: 0.0 }
+origin_pt = { right: Distance.metres(0.0), forward: Distance.metres(0.0) }
 
 point_at : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
 point_at = |points, i| points.get(i) ?? crash "RailSighting: an index past the leg's end"
 
 straight : List(Geom.RiderPoint)
-straight = RailSighting.rail_leg({ from: origin_pt, to: { right: 0.0, forward: 10.0 } })
+straight = RailSighting.rail_leg({
+	from: origin_pt,
+	to: { right: Distance.metres(0.0), forward: Distance.metres(10.0) },
+})
 
 expect straight.len() == 10
-expect point_at(straight, 0).forward == 1.0
-expect point_at(straight, 4).forward == 5.0
-expect point_at(straight, 9).forward == 10.0
-expect point_at(straight, 0).right == 0.0
-expect point_at(straight, 9).right == 0.0
+expect point_at(straight, 0).forward.to_metres() == 1.0
+expect point_at(straight, 4).forward.to_metres() == 5.0
+expect point_at(straight, 9).forward.to_metres() == 10.0
+expect point_at(straight, 0).right.to_metres() == 0.0
+expect point_at(straight, 9).right.to_metres() == 0.0
 
 diagonal : List(Geom.RiderPoint)
-diagonal = RailSighting.rail_leg({ from: origin_pt, to: { right: 30.0, forward: 40.0 } })
+diagonal = RailSighting.rail_leg({
+	from: origin_pt,
+	to: { right: Distance.metres(30.0), forward: Distance.metres(40.0) },
+})
 
 expect diagonal.len() == 50
-expect point_at(diagonal, 49).right == 30.0
-expect point_at(diagonal, 49).forward == 40.0
-expect point_at(diagonal, 24).right == 15.0
-expect point_at(diagonal, 24).forward == 20.0
+expect point_at(diagonal, 49).right.to_metres() == 30.0
+expect point_at(diagonal, 49).forward.to_metres() == 40.0
+expect point_at(diagonal, 24).right.to_metres() == 15.0
+expect point_at(diagonal, 24).forward.to_metres() == 20.0
 expect {
 	in_place = RailSighting.rail_leg({
-		from: { right: 3.0, forward: 4.0 },
-		to: { right: 3.0, forward: 4.0 },
+		from: { right: Distance.metres(3.0), forward: Distance.metres(4.0) },
+		to: { right: Distance.metres(3.0), forward: Distance.metres(4.0) },
 	})
-	in_place.len() == 1 and point_at(in_place, 0) == { right: 3.0, forward: 4.0 }
+	in_place.len() == 1 and point_at(in_place, 0) == {
+		right: Distance.metres(3.0),
+		forward: Distance.metres(4.0),
+	}
 }
 
 expect {
 	spaced = RailSighting.evenly_spaced({
 		from: origin_pt,
-		to: { right: 0.0, forward: 10.0 },
+		to: { right: Distance.metres(0.0), forward: Distance.metres(10.0) },
 		pieces: 10,
 	})
 	spaced.len() == 11
-		and point_at(spaced, 0).forward == 0.0
-		and point_at(spaced, 10).forward == 10.0
+		and point_at(spaced, 0).forward.to_metres() == 0.0
+		and point_at(spaced, 10).forward.to_metres() == 10.0
 }
 
 expect GuardRail.rail_runout.to_i64() == 10

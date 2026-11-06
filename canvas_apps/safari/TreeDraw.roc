@@ -3,6 +3,7 @@
 ## the rider: the outline of a ring of points round each tier's base and its
 ## apex, so the tiers fatten as the rider passes under them.
 import Camera
+import Distance
 import Fraction
 import Paint
 import lib.Trig
@@ -142,8 +143,13 @@ TreeDraw :: [].{
 		cam_focal : F64,
 	} -> TreeDraw.TreeOnScreen
 	on_screen = |{ right, forward, height, cam_focal }| {
-		base = Camera.project({ right, forward, height: 0.0 }, cam_focal)
-		top = Camera.project({ right, forward, height }, cam_focal)
+		at_height = |metres| {
+			right: Distance.metres(right),
+			forward: Distance.metres(forward),
+			height: Distance.metres(metres),
+		}
+		base = Camera.project(at_height(0.0), cam_focal)
+		top = Camera.project(at_height(height), cam_focal)
 		height_px = (base.y - top.y)
 		foliage_px = (height_px * crown_height)
 		crown_bottom_y = (base.y - (height_px * visible_trunk))
@@ -293,18 +299,18 @@ tier_cone = |tree, { tier, radius }| {
 	apex_height = ((trunk + (crown * (1.0 - tier.top))) * tree.height)
 	apex = Camera.project(
 		{
-			right: tree.right,
-			forward: tree.forward,
-			height: apex_height,
+			right: Distance.metres(tree.right),
+			forward: Distance.metres(tree.forward),
+			height: Distance.metres(apex_height),
 		},
 		tree.cam_focal,
 	)
 	ring = ring_angles.map(
 		|angle| {
 			on_ring = {
-				right: (tree.right + (radius * Trig.r_cos(angle))),
-				forward: (tree.forward + (radius * Trig.r_sin(angle))),
-				height: base_height,
+				right: Distance.metres(tree.right + (radius * Trig.r_cos(angle))),
+				forward: Distance.metres(tree.forward + (radius * Trig.r_sin(angle))),
+				height: Distance.metres(base_height),
 			}
 			Camera.project(on_ring, tree.cam_focal)
 		},

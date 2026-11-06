@@ -36,12 +36,12 @@ Cutouts :: [].{
 	placement = |{ at, height, codepoint, facing }|
 		if at.forward <= Geom.near_plane {
 			BehindCamera
-		} else if ((height.to_metres() / at.forward) * Lens.focal) < min_critter_px {
+		} else if (height.ratio_to(at.forward) * Lens.focal) < min_critter_px {
 			TooSmall
 		} else {
 			InView({
-				right: at.right,
-				forward: at.forward,
+				right: at.right.to_metres(),
+				forward: at.forward.to_metres(),
 				height,
 				codepoint,
 				facing,
@@ -78,7 +78,7 @@ Cutouts :: [].{
 cow_placement : { forward : F64, height : F64 } -> Cutouts.Placement
 cow_placement = |{ forward, height }|
 	Cutouts.placement({
-		at: { right: 2.5, forward },
+		at: { right: Distance.metres(2.5), forward: Distance.metres(forward) },
 		height: Distance.metres(height),
 		codepoint: 128004,
 		facing: FacesRight,
@@ -137,7 +137,7 @@ near_cow = cutout_of(cow_placement({ forward: 0.5, height: 1.0 }))
 left_bull : Cutouts.Cutout
 left_bull = cutout_of(
 	Cutouts.placement({
-		at: { right: -1.5, forward: 50.0 },
+		at: { right: Distance.metres(-1.5), forward: Distance.metres(50.0) },
 		height: Distance.metres(1.6),
 		codepoint: 128002,
 		facing: FacesLeft,

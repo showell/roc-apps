@@ -183,7 +183,7 @@ tower_if_ahead = |view, { place, along, across, yaw, beacon_key }| {
 				along,
 				across,
 				yaw,
-				forward: center.forward,
+				forward: center.forward.to_metres(),
 				beacon_brightness: TowerSighting.beacon_brightness(
 					view.clock.minus(Clock.start).plus(TowerSighting.beacon_offset_for(beacon_key)),
 				),

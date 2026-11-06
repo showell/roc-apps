@@ -133,8 +133,9 @@ Tower :: [].{
 	## How far the earth's curve hides the bottom of a tower standing at `p`.
 	sunk_below_horizon : Geom.RiderPoint -> Distance
 	sunk_below_horizon = |p| {
-		squared = (p.right * p.right) + (p.forward * p.forward)
-		Distance.metres(squared / (2.0 * sink_radius.to_metres()))
+		r = p.right.to_metres()
+		f = p.forward.to_metres()
+		Distance.metres(((r * r) + (f * f)) / (2.0 * sink_radius.to_metres()))
 	}
 
 	## The point `fraction` of the way from `from` to `to`.
@@ -145,10 +146,11 @@ Tower :: [].{
 	} -> Geom.RaisedPoint
 	point_between = |{ from, to, fraction }| {
 		share = fraction.to_f64()
+		part_way = |start, end| start.plus(end.minus(start).times(share))
 		{
-			right: (from.right + ((to.right - from.right) * share)),
-			forward: (from.forward + ((to.forward - from.forward) * share)),
-			height: (from.height + ((to.height - from.height) * share)),
+			right: part_way(from.right, to.right),
+			forward: part_way(from.forward, to.forward),
+			height: part_way(from.height, to.height),
 		}
 	}
 
@@ -162,10 +164,11 @@ Tower :: [].{
 	corner_at = |tower, { corner, height_on_tower }| {
 		t = height_on_tower.ratio_to(tower_height)
 		bottom = footprint_corner(tower.footprint, corner)
+		tapered = |start, end| start.plus(end.minus(start).times(t))
 		{
-			right: (bottom.right + ((tower.center.right - bottom.right) * t)),
-			forward: (bottom.forward + ((tower.center.forward - bottom.forward) * t)),
-			height: height_on_tower.minus(tower.sunk).to_metres(),
+			right: tapered(bottom.right, tower.center.right),
+			forward: tapered(bottom.forward, tower.center.forward),
+			height: height_on_tower.minus(tower.sunk),
 		}
 	}
 
@@ -239,11 +242,10 @@ Tower :: [].{
 
 	## Where the line from `from` to `to` crosses the near plane.
 	cut_at_near : { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> Geom.RaisedPoint
-	cut_at_near = |{ from, to }| point_between({
-		from,
-		to,
-		fraction: Fraction.of(((Geom.near_plane - from.forward) / (to.forward - from.forward))),
-	})
+	cut_at_near = |{ from, to }| {
+		share = Geom.near_plane.minus(from.forward).ratio_to(to.forward.minus(from.forward))
+		point_between({ from, to, fraction: Fraction.of(share) })
+	}
 
 	rod_on_screen : Tower.RodView,
 	{
@@ -258,21 +260,21 @@ Tower :: [].{
 		})
 
 	## How many pixels one metre across spans at distance `forward`.
-	metre_px : { forward : F64, cam_focal : F64 } -> F64
+	metre_px : { forward : Distance, cam_focal : F64 } -> F64
 	metre_px = |{ forward, cam_focal }| {
 		p1 = Camera.project(
 			{
-				right: 1.0,
+				right: Distance.metres(1.0),
 				forward: forward,
-				height: 0.0,
+				height: Distance.zero,
 			},
 			cam_focal,
 		)
 		p0 = Camera.project(
 			{
-				right: 0.0,
+				right: Distance.zero,
 				forward: forward,
-				height: 0.0,
+				height: Distance.zero,
 			},
 			cam_focal,
 		)
@@ -280,7 +282,7 @@ Tower :: [].{
 	}
 
 	## A rod's width on screen at distance `forward`.
-	rod_width_at : { forward : F64, cam_focal : F64 } -> F64
+	rod_width_at : { forward : Distance, cam_focal : F64 } -> F64
 	rod_width_at = |camera| rod_w.to_metres() * metre_px(camera)
 
 	## The four legs, from the footprint's corners up to the apex.
@@ -436,7 +438,7 @@ Tower :: [].{
 			apex = {
 				right: center.right,
 				forward: center.forward,
-				height: tower_height.minus(sunk).to_metres(),
+				height: tower_height.minus(sunk),
 			}
 			[
 				legs(tower, apex),
@@ -493,12 +495,12 @@ sample_rod_view = { rod_width_px: 4.0, cam_focal: 500.0 }
 sample_tower : Tower.TowerInView
 sample_tower = {
 	footprint: {
-		back_left: { right: -6.0, forward: 94.0 },
-		back_right: { right: 6.0, forward: 94.0 },
-		front_right: { right: 6.0, forward: 106.0 },
-		front_left: { right: -6.0, forward: 106.0 },
+		back_left: { right: Distance.metres(-6.0), forward: Distance.metres(94.0) },
+		back_right: { right: Distance.metres(6.0), forward: Distance.metres(94.0) },
+		front_right: { right: Distance.metres(6.0), forward: Distance.metres(106.0) },
+		front_left: { right: Distance.metres(-6.0), forward: Distance.metres(106.0) },
 	},
-	center: { right: 0.0, forward: 100.0 },
+	center: { right: Distance.metres(0.0), forward: Distance.metres(100.0) },
 	sunk: Distance.metres(1.0),
 	view: sample_rod_view,
 }
@@ -506,61 +508,70 @@ sample_tower = {
 expect
 	Tower.corner_at(sample_tower, { corner: BackLeft, height_on_tower: Distance.metres(0.0) })
 		== {
-			right: -6.0,
-			forward: 94.0,
-			height: -1.0,
+			right: Distance.metres(-6.0),
+			forward: Distance.metres(94.0),
+			height: Distance.metres(-1.0),
 		}
 expect
 	Tower.corner_at(sample_tower, { corner: BackLeft, height_on_tower: Distance.metres(40.0) })
 		== {
-			right: -3.0,
-			forward: 97.0,
-			height: 39.0,
+			right: Distance.metres(-3.0),
+			forward: Distance.metres(97.0),
+			height: Distance.metres(39.0),
 		}
 expect
 	Tower.corner_at(sample_tower, { corner: BackLeft, height_on_tower: Distance.metres(80.0) })
 		== {
-			right: 0.0,
-			forward: 100.0,
-			height: 79.0,
+			right: Distance.metres(0.0),
+			forward: Distance.metres(100.0),
+			height: Distance.metres(79.0),
 		}
 expect
 	Tower.corner_at(sample_tower, { corner: FrontRight, height_on_tower: Distance.metres(40.0) })
 		== {
-			right: 3.0,
-			forward: 103.0,
-			height: 39.0,
+			right: Distance.metres(3.0),
+			forward: Distance.metres(103.0),
+			height: Distance.metres(39.0),
 		}
 expect
 	Tower.corner_at(sample_tower, { corner: FrontRight, height_on_tower: Distance.metres(80.0) })
 		== {
-			right: 0.0,
-			forward: 100.0,
-			height: 79.0,
+			right: Distance.metres(0.0),
+			forward: Distance.metres(100.0),
+			height: Distance.metres(79.0),
 		}
 
-expect Tower.sunk_below_horizon({ right: 0.0, forward: 200.0 }).to_metres() == 1.0
-expect Tower.sunk_below_horizon({ right: 100.0, forward: 100.0 }).to_metres() == 0.5
-expect Tower.sunk_below_horizon({ right: 0.0, forward: 0.0 }).to_metres() == 0.0
+expect Tower.sunk_below_horizon({
+	right: Distance.metres(0.0),
+	forward: Distance.metres(200.0),
+}).to_metres() == 1.0
+expect Tower.sunk_below_horizon({
+	right: Distance.metres(100.0),
+	forward: Distance.metres(100.0),
+}).to_metres() == 0.5
+expect Tower.sunk_below_horizon({
+	right: Distance.metres(0.0),
+	forward: Distance.metres(0.0),
+}).to_metres() == 0.0
 
 expect
 	Tower.point_between({
 		from: {
-			right: 0.0,
-			forward: 10.0,
-			height: 20.0,
+			right: Distance.metres(0.0),
+			forward: Distance.metres(10.0),
+			height: Distance.metres(20.0),
 		},
 		to: {
-			right: 8.0,
-			forward: 30.0,
-			height: 0.0,
+			right: Distance.metres(8.0),
+			forward: Distance.metres(30.0),
+			height: Distance.metres(0.0),
 		},
 		fraction: Fraction.of(0.25),
 	})
 		== {
-			right: 2.0,
-			forward: 15.0,
-			height: 15.0,
+			right: Distance.metres(2.0),
+			forward: Distance.metres(15.0),
+			height: Distance.metres(15.0),
 		}
 
 expect
@@ -590,9 +601,9 @@ expect
 			}),
 		]
 
-expect Tower.rod_width_at({ forward: 10.0, cam_focal: 500.0 }) == 12.0
-expect Tower.rod_width_at({ forward: 25.0, cam_focal: 500.0 }) == 4.8
-expect Tower.rod_width_at({ forward: 50.0, cam_focal: 500.0 }) == 2.4
+expect Tower.rod_width_at({ forward: Distance.metres(10.0), cam_focal: 500.0 }) == 12.0
+expect Tower.rod_width_at({ forward: Distance.metres(25.0), cam_focal: 500.0 }) == 4.8
+expect Tower.rod_width_at({ forward: Distance.metres(50.0), cam_focal: 500.0 }) == 2.4
 
 rod_along_road : F64, F64 -> List(Shapes.Shape)
 rod_along_road = |start, end|
@@ -600,14 +611,14 @@ rod_along_road = |start, end|
 		sample_rod_view,
 		{
 			from: {
-				right: 0.0,
-				forward: start,
-				height: 0.0,
+				right: Distance.metres(0.0),
+				forward: Distance.metres(start),
+				height: Distance.metres(0.0),
 			},
 			to: {
-				right: 0.0,
-				forward: end,
-				height: 0.0,
+				right: Distance.metres(0.0),
+				forward: Distance.metres(end),
+				height: Distance.metres(0.0),
 			},
 		},
 	)
@@ -618,14 +629,14 @@ expect
 		sample_rod_view,
 		{
 			from: {
-				right: 0.0,
-				forward: 10.0,
-				height: 0.0,
+				right: Distance.metres(0.0),
+				forward: Distance.metres(10.0),
+				height: Distance.metres(0.0),
 			},
 			to: {
-				right: 1.0,
-				forward: 20.0,
-				height: 0.0,
+				right: Distance.metres(1.0),
+				forward: Distance.metres(20.0),
+				height: Distance.metres(0.0),
 			},
 		},
 	).len()
@@ -637,18 +648,18 @@ expect rod_along_road(0.0, 0.2).len() == 0
 expect
 	Tower.cut_at_near({
 		from: {
-			right: 0.0,
-			forward: 0.0,
-			height: 10.0,
+			right: Distance.metres(0.0),
+			forward: Distance.metres(0.0),
+			height: Distance.metres(10.0),
 		},
 		to: {
-			right: 8.0,
-			forward: 0.8,
-			height: 30.0,
+			right: Distance.metres(8.0),
+			forward: Distance.metres(0.8),
+			height: Distance.metres(30.0),
 		},
 	})
 		== {
-			right: 4.0,
-			forward: 0.4,
-			height: 20.0,
+			right: Distance.metres(4.0),
+			forward: Distance.metres(0.4),
+			height: Distance.metres(20.0),
 		}

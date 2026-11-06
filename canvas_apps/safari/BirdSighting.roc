@@ -68,7 +68,10 @@ bird_in_view = |view, { position, instant }| {
 		view.road,
 		{ position, along: instant.spot.along, across: instant.spot.across },
 	)
-	height_px = BirdSighting.height_px({ forward: seen.forward, cam_focal: view.cam_focal })
+	height_px = BirdSighting.height_px({
+		forward: seen.forward.to_metres(),
+		cam_focal: view.cam_focal,
+	})
 	if seen.forward <= Geom.near_plane {
 		[]
 	} else if height_px < Detail.min_scenery_px {
@@ -76,8 +79,8 @@ bird_in_view = |view, { position, instant }| {
 	} else {
 		[
 			{
-				right: seen.right,
-				forward: seen.forward,
+				right: seen.right.to_metres(),
+				forward: seen.forward.to_metres(),
 				lift: Distance.metres(instant.spot.lift),
 				pose: instant.pose,
 			},

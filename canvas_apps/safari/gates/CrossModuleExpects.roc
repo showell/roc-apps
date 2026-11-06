@@ -430,8 +430,8 @@ expect RailSighting.run_out(
 expect run_up_to_bend.len() == 11
 expect
 	[
-		(rail_point_at(run_up_to_bend, 0).forward, 490.0),
-		(rail_point_at(run_up_to_bend, 10).forward, 500.0),
+		(rail_point_at(run_up_to_bend, 0).forward.to_metres(), 490.0),
+		(rail_point_at(run_up_to_bend, 10).forward.to_metres(), 500.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 # Scene, on the scene from the start of the route.
@@ -525,14 +525,14 @@ expect
 		(1, 2.0),
 		(2, 2.0),
 		(3, -2.0),
-	].all(|(i, want)| (corner(first_chunk, i).right - want).abs() <= 0.0001)
+	].all(|(i, want)| (corner(first_chunk, i).right.to_metres() - want).abs() <= 0.0001)
 
 expect
 	[
-		(corner(first_chunk, 0).forward, 0.0),
-		(corner(first_chunk, 3).forward, 25.0),
-		(corner(last_chunk, 0).forward, 475.0),
-		(corner(last_chunk, 3).forward, 500.0),
+		(corner(first_chunk, 0).forward.to_metres(), 0.0),
+		(corner(first_chunk, 3).forward.to_metres(), 25.0),
+		(corner(last_chunk, 0).forward.to_metres(), 475.0),
+		(corner(last_chunk, 3).forward.to_metres(), 500.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 expect {
