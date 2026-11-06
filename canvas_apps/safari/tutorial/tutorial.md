@@ -471,7 +471,7 @@ From here on, things are measured from the rider. We don't need to know much abo
 
 {{code TreeSighting.sighting_of}}
 
-`Chain.rider_point_ahead` finds where a point on the road lies from the rider, and the math layer chapter shows how. After that, there are two ways to lose a tree. It can be behind the camera, or it can be under 2 pixels tall. The answer is a list of one, or an empty list, and `join_map` flattens them, so a "no" simply disappears.
+`Chain.rider_point_ahead` finds where a point on the road lies from the rider, and the math layer chapter shows how. After that, there are two ways to lose a tree. It can be behind the camera, or it can be under 2 pixels tall. The answer is a `Try`, either a sighting or `OutOfView`, and `keep_oks` keeps the sightings.
 
 ### Spending the detail
 
