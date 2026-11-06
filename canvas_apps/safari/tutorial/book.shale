@@ -33,7 +33,7 @@ const DOT_WANT = "graphviz: the tutorial's diagrams, drawn at build time"
 const PAGE_WANT = "script: canvas_apps/build.sh builds and checks a page, and refuses another Roc"
 const CHECK_WANT = "script: book_check.mjs drives the staged pages in headless Chromium"
 const MOVE_WANT = "move: the staged book takes the channel's place in one rename"
-const INPUTS = {"canvas_apps", ":(exclude)canvas_apps/safari/tutorial", "roc-version", "pinned-roc.sh"}
+const INPUTS = {"canvas_apps", ":(exclude)canvas_apps/safari/tutorial", ":(exclude)canvas_apps/safari/gates", ":(exclude,glob)**/*.md", "roc-version", "pinned-roc.sh"}
 
 function must(r, what)
   if r.ended ~= "exit" or get(r, "code", -1) ~= 0 then

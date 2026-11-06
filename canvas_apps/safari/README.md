@@ -72,7 +72,12 @@ them, in three tiers, each run from the roc-apps root:
 |---|---|---|
 | `fast.shale` | `roc check`, one test root, the one-file lints on changed files, one frame; stops at the first failure | about 10 s, or a minute and a half on a checkout's first run |
 | `run.shale` | every lint, every expect, the tutorial, the proof tools, the dev page; reports every failure | two to three minutes |
-| `publish.shale` | the merge gate and `check.shale` from cold caches, then safari's page and every widget's as release wasm | about six minutes |
+| `publish.shale` | the merge gate and `check.shale` from cold caches, then the book, which builds safari's page and every widget's as release wasm | about six minutes |
+
+The book of the tutorial, one page a chapter, builds into the dev channel at
+`/tutorial/` with `nice -n 19 shale canvas_apps/safari/tutorial/book.shale`. It
+runs on demand and at publish, and it needs roc-markdown beside this checkout.
+It takes under a minute unless a widget's page needs rebuilding.
 
 An agent runs the fast tier, and one merge gate runs at a time, because the box
 has two cores. Each tier ends by naming what it didn't run.
