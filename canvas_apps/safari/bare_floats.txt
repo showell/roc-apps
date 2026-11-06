@@ -7,9 +7,6 @@ Across: a unit type
 Along: a unit type
 Angle: the unit types for bearings, turns and leans
 Attention: a unit type
-Beat: a unit type
-Beats: a unit type
-CatHeights: a unit type
 Distance: a unit type
 Fraction: a unit type
 Pixels: a unit type
@@ -29,9 +26,6 @@ StillDraw.x_sign: a sign, 1 or -1, multiplied into a still's x
 Tower.corner_offset: a sign, 1 or -1, for each way a corner lies from the centre
 Mountains.MountainRange: how many ridge waves fit a whole turn, a frequency
 Easing.lerp: the sum behind blending any unit, which a caller unwraps once
-Animation.Timeline: `times` in the where clause takes a plain factor
-Animation.path_spot: `times` in the where clause takes a plain factor
-Animation.line_spot: `times` in the where clause takes a plain factor
 
 # Numbers with a meaning no unit type here holds.
 Sky.Rgb: a colour's channels, part way through a blend

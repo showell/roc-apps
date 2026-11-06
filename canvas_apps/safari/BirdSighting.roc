@@ -2,7 +2,6 @@
 ## segment of the chain ahead, placed where its flight has got to, if it is in
 ## front of the camera and tall enough on screen to draw.
 import Pixels
-import Animation
 import BirdFlight
 import DepthSort
 import Distance
@@ -63,7 +62,7 @@ segment_bird = |view, position|
 bird_in_view : Chain.Viewpoint,
 {
 	position : Chain.Position,
-	instant : Animation.Instant(BirdFlight.Pose, Distance),
+	instant : BirdFlight.Bird,
 } -> List(BirdSighting)
 bird_in_view = |view, { position, instant }| {
 	seen = Chain.rider_point_ahead(

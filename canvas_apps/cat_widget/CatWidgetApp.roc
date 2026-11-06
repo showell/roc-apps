@@ -4,13 +4,13 @@
 ## the road at the cat, with the road's width to scale. Below it, the buttons and
 ## four lines of text that say what Cat and CrossingReaction make of the gap.
 import game.Cat
-import game.CatDraw
 import game.CatStills
 import game.CrossingReaction
 import game.Distance
 import game.Pixels
 import game.Scenery
 import game.Speed
+import game.StillDraw
 import game.World
 import lib.CanvasApp
 import lib.Shapes
@@ -122,14 +122,14 @@ road = {
 cat_shapes : Distance -> List(Shapes.Shape)
 cat_shapes = |gap| {
 	instant = Cat.instant_at(crossing, { gap, speed: rider_speed })
-	CatDraw.polygons(
+	StillDraw.draw_still(
 		{
 			feet: {
 				x: Pixels.of(lane_middle_x + instant.spot.across.to_metres() * pixels_a_metre),
-				y: Pixels.of(feet_y),
+				y: Pixels.of(feet_y - instant.spot.lift.to_metres() * pixels_a_metre),
 			},
-			height_px: Pixels.of(crossing.height.to_metres() * pixels_a_metre),
-			lift: instant.spot.lift,
+			flip: AsDrawn,
+			height_px: Pixels.of(Cat.cat_height.to_metres() * pixels_a_metre),
 		},
 		CatStills.pose_polygons(instant.pose),
 	)
@@ -173,7 +173,7 @@ throttle_text = |throttle|
 	}
 
 # The whole crossing is on the range, with some road to spare at the far end.
-expect Cat.road_buffer.plus(rider_speed.distance_in(Cat.crossing_beats)) < closing_gap.first
+expect Cat.road_buffer.plus(rider_speed.distance_in(Cat.crossing_steps)) < closing_gap.first
 expect Cat.road_buffer > closing_gap.last
 
 expect

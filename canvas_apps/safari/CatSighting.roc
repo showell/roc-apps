@@ -2,7 +2,6 @@
 ## on a segment of the chain ahead, placed where its crossing has got to,
 ## if it is in front of the camera and tall enough on screen to draw.
 import Cat
-import CatHeights
 import DepthSort
 import Distance
 import Chain
@@ -10,20 +9,15 @@ import Geom
 import Detail
 import Speed
 
-## A cat to draw: where it stands in the rider's view, its height, its
-## pose, and how high its leap has raised it, in cat heights. A cat in view
-## is ahead of the rider, so of its lengths only `right` can be negative.
+## A cat to draw: where it stands in the rider's view, its pose, and how high
+## its leap has raised it. A cat in view is ahead of the rider, so of its
+## lengths only `right` can be negative.
 CatSighting := {
 	right : Distance,
 	forward : Distance,
-	height : Distance,
 	pose : Cat.Pose,
-	lift : CatHeights,
+	lift : Distance,
 }.{
-
-	## At most this many cats are drawn in a frame.
-	max_visible_cats : I64
-	max_visible_cats = 8
 
 	## The cats in view of a rider at `speed`, the nearest segment's first.
 	in_view : Chain.Viewpoint, Speed -> List(CatSighting)
@@ -64,13 +58,9 @@ cat_in_view = |view, { position, crossing, speed }| {
 	instant = Cat.instant_at(crossing, { gap: gap.plus(crossing.along.from_start()), speed })
 	seen = Chain.rider_point_ahead(
 		view.road,
-		{
-			position,
-			along: crossing.along.plus(instant.spot.along.from_start()),
-			across: instant.spot.across,
-		},
+		{ position, along: instant.spot.along, across: instant.spot.across },
 	)
-	height_px = view.cam_focal.times(crossing.height.ratio_to(seen.forward))
+	height_px = view.cam_focal.times(Cat.cat_height.ratio_to(seen.forward))
 	if seen.forward <= Geom.near_plane {
 		[]
 	} else if height_px < Detail.min_scenery_px {
@@ -80,7 +70,6 @@ cat_in_view = |view, { position, crossing, speed }| {
 			{
 				right: seen.right,
 				forward: seen.forward,
-				height: crossing.height,
 				pose: instant.pose,
 				lift: instant.spot.lift,
 			},

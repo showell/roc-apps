@@ -51,10 +51,7 @@ Scene := {
 		cutouts =
 			Cutouts.cutouts_in_view(CutoutSighting.in_view(road))
 				.take_first(CutoutSighting.max_visible_cutouts.to_u64_wrap())
-		cats = CatSighting.in_view(
-			view,
-			speed,
-		).take_first(CatSighting.max_visible_cats.to_u64_wrap())
+		cats = CatSighting.in_view(view, speed)
 		rails = RailSighting.in_view(road)
 		rider_distance = World.distance_along_route(
 			road.route,
@@ -92,4 +89,3 @@ Scene := {
 }
 
 expect TowerSighting.max_visible_towers == 16
-expect CatSighting.max_visible_cats == 8

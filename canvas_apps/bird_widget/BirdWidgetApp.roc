@@ -208,7 +208,7 @@ expect
 	status_lines(Distance.metres(30.0))
 		== [
 			"Playing: 66%",
-			"Pose: Flying away, wings down",
+			"Pose: Flying away, wings up",
 			"Gap: 30.0 m",
 			"Height: 9.7 m",
 		]
@@ -227,6 +227,23 @@ expect pose_name(Away(WingsUp)) == "Flying away, wings up"
 expect pose_name(Diving) == "Diving"
 
 expect BirdFlight.instant_at(flight, { gap: Distance.metres(16.0) }).pose == Diving
+
+## How far along the bird is with the rider at each step of the buttons through
+## the flight.
+alongs_through_flight : List(Along)
+alongs_through_flight = {
+	gaps = List.from_iter(U64.until(1, BirdFlight.flight_poses.len())).map(
+		|step| BirdFlight.takeoff_gap.minus(Distance.metres(step.to_f64() / 8.0)),
+	)
+	gaps.map(|gap| BirdFlight.instant_at(flight, { gap: gap }).spot.along)
+}
+
+# Every step of the buttons shows a frame of its own, so the bird never stalls
+# or jumps however slowly the flight is played.
+expect alongs_through_flight.len() == 359
+expect
+	alongs_through_flight.map2(alongs_through_flight.drop_first(1), |before, after| before < after)
+		.all(|is_on_the_way| is_on_the_way)
 
 # The picture depends on the gap, and it doesn't change once the bird is down.
 expect picture(Distance.metres(30.0)) != picture(Distance.metres(31.0))

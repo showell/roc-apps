@@ -511,8 +511,6 @@ expect nearest_tree_ahead(seg(3).trees, Along.metres(90.0)).across == Across.met
 expect nearest_tree_ahead(seg(3).trees, Along.metres(90.0)).along == Along.metres(96.0)
 expect nearest_tree_ahead(seg(3).trees, Along.metres(96.0)).along == Along.metres(96.0)
 expect nearest_tree_ahead(seg(3).trees, Along.metres(96.5)).along == Along.metres(126.0)
-expect crossing_at(3).height.to_metres() == 1.7
-expect crossing_at(18).height.to_metres() == 1.7
 
 ## Whether the route ends with a segment.
 is_route_end : World.Segment -> Bool
