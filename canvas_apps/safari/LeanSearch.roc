@@ -39,8 +39,8 @@ LeanSearch :: [].{
 	max_lean_change : Angle.Lean
 	max_lean_change = Angle.Lean.degrees(1.0)
 
-	lean_search_steps : I64
-	lean_search_steps = 12
+	lean_search_rounds : I64
+	lean_search_rounds = 12
 
 	## The lean between `low` and `high` whose coast ends nearest `target`
 	## across the road, after the bisection's remaining steps from `at`.
@@ -53,7 +53,7 @@ LeanSearch :: [].{
 	} -> Angle.Lean
 	search_lean_from = |state, { target, low, high, at }| {
 		mid = low.halfway_to(high)
-		if at >= lean_search_steps {
+		if at >= lean_search_rounds {
 			mid
 		} else if want_more_right(Coast.project(Bike.with_lean(state, mid)), target) {
 			search_lean_from(
@@ -114,7 +114,7 @@ expect target_of(0.0) > 0.0
 expect LeanSearch.asymptote_tuning == 0.3
 expect LeanSearch.center_lane_epsilon.to_metres() == 0.04
 expect LeanSearch.max_lean_change.to_radians() == 0.017453292519943295
-expect LeanSearch.lean_search_steps == 12
+expect LeanSearch.lean_search_rounds == 12
 
 ## A coast ending at `end_across`, leaving by `exit` or not.
 outcome : Coast.Exit, F64 -> Coast.Outcome
