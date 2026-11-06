@@ -56,11 +56,7 @@ Polygon :: [].{
 
 	## Makes a polygon shaded across its width, darker at its edges and lighter in
 	## its middle, or a solid one where it has no strength or is too narrow.
-	shaded_polygon : List(Screen.Point),
-	{
-		fill_color : I64,
-		strength : Fraction,
-	} -> Shapes.Shape
+	shaded_polygon : List(Screen.Point), { fill_color : I64, strength : Fraction } -> Shapes.Shape
 	shaded_polygon = |corners, { fill_color, strength }| {
 		pts = polygon_points("Polygon.shaded_polygon", corners)
 		Poly({ pts, fill: width_shade(corners, { color: fill_color, strength: strength }) })
@@ -507,14 +503,8 @@ ellipse_of_height = |height|
 	)
 
 # An ellipse just under the limit is flat, and one just over it is not.
-expect ellipse_of_height(0.009) == Poly({
-	pts: triangle_points,
-	fill: Flat(Brush.with_alpha(666)),
-})
-expect ellipse_of_height(0.011) != Poly({
-	pts: triangle_points,
-	fill: Flat(Brush.with_alpha(666)),
-})
+expect ellipse_of_height(0.009) == Poly({ pts: triangle_points, fill: Flat(Brush.with_alpha(666)) })
+expect ellipse_of_height(0.011) != Poly({ pts: triangle_points, fill: Flat(Brush.with_alpha(666)) })
 
 sample_color : I64
 sample_color = 0x804020
@@ -569,14 +559,8 @@ expect
 # No strength, or too narrow a polygon, is a solid fill.
 expect
 	Polygon.shaded_polygon(wide_corners, { fill_color: sample_color, strength: Fraction.zero })
-		== Poly({
-			pts: [10.0, 1.0, 30.0, 2.0, 20.0, 3.0],
-			fill: Flat(Brush.opaque(sample_color)),
-		})
+		== Poly({ pts: [10.0, 1.0, 30.0, 2.0, 20.0, 3.0], fill: Flat(Brush.opaque(sample_color)) })
 
 expect
 	Polygon.shaded_polygon(narrow_corners, { fill_color: sample_color, strength: Fraction.whole })
-		== Poly({
-			pts: [10.0, 1.0, 10.5, 2.0, 10.2, 3.0],
-			fill: Flat(Brush.opaque(sample_color)),
-		})
+		== Poly({ pts: [10.0, 1.0, 10.5, 2.0, 10.2, 3.0], fill: Flat(Brush.opaque(sample_color)) })

@@ -240,11 +240,7 @@ columns = |{ from, to }| {
 
 ## A silhouette across the screen, its top at `height_at` each bearing, closed
 ## along the horizon.
-silhouette : Mountains.Sight,
-{
-	height_at : Angle.Bearing -> Pixels,
-	color : I64,
-} -> Shapes.Shape
+silhouette : Mountains.Sight, { height_at : Angle.Bearing -> Pixels, color : I64 } -> Shapes.Shape
 silhouette = |sight, { height_at, color }| {
 	left = Mountains.roll_margin.opposite()
 	right = Screen.width.plus(Mountains.roll_margin)

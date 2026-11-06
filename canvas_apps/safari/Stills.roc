@@ -46,11 +46,16 @@ has_no_length : Stills.StillGradient -> Bool
 has_no_length = |gradient|
 	gradient.kind == 1 and gradient.ax == gradient.bx and gradient.ay == gradient.by
 
-corners : U64 -> List(Stills.StillPt)
-corners = |count| List.repeat({ x: 0.0, y: 0.0 }, count)
+# A flat polygon of `count` corners, all at one point.
+polygon_of : U64 -> Stills.StillPolygon
+polygon_of = |count| {
+	color: 7,
+	gradient: [],
+	points: List.repeat({ x: 0.0, y: 0.0 }, count),
+}
 
-expect Stills.is_drawable({ color: 7, gradient: [], points: corners(3) })
-expect !Stills.is_drawable({ color: 7, gradient: [], points: corners(2) })
+expect Stills.is_drawable(polygon_of(3))
+expect !Stills.is_drawable(polygon_of(2))
 
 sample_point : Stills.StillPt
 sample_point = { x: 0.5, y: 1.5 }
@@ -74,16 +79,21 @@ sample_gradient = {
 	vy: 11.5,
 }
 
+# A linear gradient that ends where it starts.
+gradient_in_place : Stills.StillGradient
+gradient_in_place = {
+	..sample_gradient,
+	kind: 1,
+	bx: 2.5,
+	by: 3.5,
+}
+
 # A linear gradient needs a length, and only a linear one has `a` and `b`.
-expect !has_no_length({ ..sample_gradient, kind: 1 })
-expect has_no_length({ ..sample_gradient, kind: 1, bx: 2.5, by: 3.5 })
-expect !has_no_length({ ..sample_gradient, kind: 1, bx: 2.5 })
-expect !has_no_length({ ..sample_gradient, kind: 2, bx: 2.5, by: 3.5 })
-expect !Stills.is_drawable({
-	color: 7,
-	gradient: [{ ..sample_gradient, kind: 1, bx: 2.5, by: 3.5 }],
-	points: corners(3),
-})
+expect has_no_length(gradient_in_place)
+expect !has_no_length({ ..gradient_in_place, bx: 4.5 })
+expect !has_no_length({ ..gradient_in_place, by: 5.5 })
+expect !has_no_length({ ..gradient_in_place, kind: 2 })
+expect !Stills.is_drawable({ ..polygon_of(3), gradient: [gradient_in_place] })
 
 solid_polygon : Stills.StillPolygon
 solid_polygon = {
