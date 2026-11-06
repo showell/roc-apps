@@ -1,0 +1,119 @@
+-- The code of the official Roc tutorial, without its prose.
+--
+-- Run it from anywhere, with no settings:
+--
+--   shale canvas_apps/safari/tutorial/roc_tutorial_code.shale
+--
+-- It reads a saved copy of the page, scratch:roc-tutorial/tutorial.html, and
+-- fetches that copy only when it is missing. Delete the copy to read the page
+-- as it stands today.
+--
+-- Each section prints its heading, its code blocks, and a line of the terms
+-- its prose marks as code. A block is numbered in page order and has a kind:
+-- roc (the page highlighted it as Roc), shell, or plain (no highlighting, so
+-- usually a program's output). The last line counts them, and the run stops
+-- if that count disagrees with the page's own <pre> tags.
+
+const PAGE_URL = "https://www.roc-lang.org/tutorial/"
+const SAVED_PAGE = "scratch:roc-tutorial/tutorial.html"
+
+function saved_page()
+  if not exists(SAVED_PAGE) then
+    local answer = http_get(PAGE_URL, {timeout_ms = 60000})
+    if answer.status ~= 200 then fail(PAGE_URL .. " answered " .. answer.status) end
+    mkdir("scratch:roc-tutorial")
+    replace(SAVED_PAGE, answer.body)
+  end
+  return read(SAVED_PAGE)
+end
+
+function plain_text(html)
+  local text = re_replace(html, "<[^>]+>", "")
+  text = re_replace(text, "&lt;", "<")
+  text = re_replace(text, "&gt;", ">")
+  text = re_replace(text, "&quot;", "\"")
+  text = re_replace(text, "&#39;", "'")
+  text = re_replace(text, "&#x27;", "'")
+  return re_replace(text, "&amp;", "&")
+end
+
+function block_kind(html)
+  if contains(html, "source shell") then return "shell" end
+  if contains(html, "<span class=") then return "roc" end
+  return "plain"
+end
+
+-- The text from `start` up to the next `closing`, and where it ends.
+function up_to(page, start, closing)
+  local stop = find(page, closing, start)
+  if stop == nil then fail("no " .. closing .. " after byte " .. start) end
+  return {html = sub(page, start, stop - 1), after = stop + #closing}
+end
+
+function section_trail(open_titles)
+  local named = {}
+  for title in open_titles do
+    if title ~= "" then push(named, title) end
+  end
+  return join(named, " > ")
+end
+
+function print_section(section)
+  print("")
+  print("== " .. section.trail)
+  for block in section.blocks do
+    print("[" .. block.number .. " " .. block.kind .. "]")
+    print(trim(block.text))
+  end
+  if #section.terms > 0 then print("terms: " .. join(unique(section.terms), "  ")) end
+end
+
+local page = saved_page()
+local sections = {}
+local section = {trail = "(before the first heading)", blocks = {}, terms = {}}
+push(sections, section)
+local open_titles = {"", "", "", ""}
+local counts = {roc = 0, shell = 0, plain = 0}
+local block_count = 0
+local at = 1
+local tag = re_find(page, "<h([1-4])[ >]|<pre><samp>|<code>", {from = at})
+
+while tag ~= nil do
+  if tag.text == "<pre><samp>" then
+    local body = up_to(page, tag.at + #tag.text, "</samp></pre>")
+    block_count = block_count + 1
+    local kind = block_kind(body.html)
+    counts[kind] = counts[kind] + 1
+    push(section.blocks, {number = block_count, kind = kind, text = plain_text(body.html)})
+    at = body.after
+  elseif tag.text == "<code>" then
+    local body = up_to(page, tag.at + #tag.text, "</code>")
+    push(section.terms, plain_text(body.html))
+    at = body.after
+  else
+    local level = parse_int(tag.group)
+    local open_end = find(page, ">", tag.at)
+    local body = up_to(page, open_end + 1, "</h" .. level .. ">")
+    open_titles[level] = plain_text(body.html)
+    local deeper = level + 1
+    while deeper <= 4 do
+      open_titles[deeper] = ""
+      deeper = deeper + 1
+    end
+    section = {trail = section_trail(open_titles), blocks = {}, terms = {}}
+    push(sections, section)
+    at = body.after
+  end
+  tag = re_find(page, "<h([1-4])[ >]|<pre><samp>|<code>", {from = at})
+end
+
+if #sections[1].blocks == 0 and #sections[1].terms == 0 then sections = drop(sections, 1) end
+for each in sections do print_section(each) end
+
+local pre_tags = #find_all(page, "<pre")
+if pre_tags ~= block_count then
+  fail("found " .. block_count .. " blocks, but the page has " .. pre_tags .. " <pre> tags")
+end
+print("")
+print(block_count .. " blocks in " .. #sections .. " sections: " .. counts.roc .. " roc, "
+  .. counts.shell .. " shell, " .. counts.plain .. " plain")

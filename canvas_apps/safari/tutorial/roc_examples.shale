@@ -1,0 +1,555 @@
+-- Finds examples of a Roc feature in Safari's code, by reading Roc's own
+-- syntax tree. Run it from the root of roc-apps:
+--
+--   shale canvas_apps/safari/tutorial/roc_examples.shale
+--   shale canvas_apps/safari/tutorial/roc_examples.shale feature=guard
+--   shale canvas_apps/safari/tutorial/roc_examples.shale feature=all
+--
+-- With no setting it lists the features it knows, and reads no code.
+-- `feature=<name>` prints path:line and the source line of each example in
+-- canvas_apps/safari and canvas_apps/lib, then a count and the first five from
+-- roc-chat and roc-markdown. `feature=all` prints a table of counts.
+--
+-- A count is of tree nodes, so two examples on one line count as two and print
+-- as two lines. Safari prints at most 200 lines, and says so when it stops; the
+-- count stays exact. A node that has no position of its own, such as a record
+-- shorthand field, prints the nearest line that does. A file roc-ast refuses
+-- fails the run, after the counts, naming the file.
+--
+-- budget: steps=2000000000 arena_bytes=3000000000 reads=20000 read_bytes=400000000 output_bytes=200000 call_entries=4000000
+
+use("cookbook:roc/parsed.shale")
+
+const SHOWN_FOR_SAFARI = 200
+const SHOWN_FOR_SIBLING = 5
+const WIDEST_LINE = 120
+
+function feature_table()
+  return {
+    {"if", "an `if` with an `else`"},
+    {"if-value", "an `if` whose answer is named"},
+    {"if-no-else", "an `if` statement with no `else`"},
+    {"else-if", "an `else if`"},
+    {"match", "any `match`"},
+    {"match-pair", "a `match` on a tuple of two or more"},
+    {"guard", "a `match` branch with an `if` guard"},
+    {"alternatives", "a branch of `a | b` patterns"},
+    {"for", "a `for` loop"},
+    {"while", "a `while` loop"},
+    {"var", "a `var $name` declaration"},
+    {"reassign", "a `$name = ...` reassignment"},
+    {"return", "a `return` statement"},
+    {"crash", "a `crash`"},
+    {"default-crash", "`?? crash`"},
+    {"dbg", "a `dbg`"},
+    {"expect", "a top-level `expect`"},
+    {"expect-inline", "an `expect` inside a block"},
+    {"question", "the `?` postfix operator"},
+    {"default", "the `??` operator"},
+    {"range", "a `..=` or `..<` range"},
+    {"pipe", "the `|>` operator"},
+    {"value-block", "a `{ ... }` block used as a value, not a function's body"},
+    {"method-call", "`value.method(...)`"},
+    {"qualified-call", "`Module.function(...)`"},
+    {"field-access", "`value.field`"},
+    {"tuple-access", "`value.0`"},
+    {"bang-name", "a name ending in `!`"},
+    {"lambda", "any `|args| ...`"},
+    {"lambda-argument", "a lambda passed straight to a call"},
+    {"closure", "a lambda that uses a local of its enclosing function"},
+    {"named-closure", "a closure given a name with `=`"},
+    {"recursion", "a named function that calls itself by name"},
+    {"interpolation", "a string with `${...}`"},
+    {"multiline-string", "a multi-line string"},
+    {"single-quote", "a `'a'` character"},
+    {"hex", "a `0x` number"},
+    {"not", "the `!` prefix operator"},
+    {"negate", "the `-` prefix operator"},
+    {"and-or", "`and` or `or`"},
+    {"equals", "`==` or `!=`"},
+    {"modulo", "the `%` operator"},
+    {"int-divide", "the `//` operator"},
+    {"record", "a record literal"},
+    {"record-update", "`{ ..base, field: value }`"},
+    {"record-shorthand", "a record field written by name alone"},
+    {"record-pattern", "any record pattern"},
+    {"record-param", "a record destructured in a parameter list"},
+    {"record-destructure", "`{ a, b } = value`"},
+    {"tuple", "a tuple of two or more"},
+    {"tuple-pattern", "a tuple pattern"},
+    {"list", "a list literal"},
+    {"list-pattern", "a list pattern"},
+    {"list-rest", "`..` in a list pattern"},
+    {"list-rest-named", "`.. as name` in a list pattern"},
+    {"tag", "a tag expression"},
+    {"tag-payload", "a tag applied to a payload"},
+    {"tag-pattern", "a tag pattern"},
+    {"nested-tag-pattern", "a tag pattern inside a tag pattern"},
+    {"underscore", "a `_` pattern"},
+    {"as-pattern", "`pattern as name`, not in a list"},
+    {"int-pattern", "an integer pattern"},
+    {"string-pattern", "a string pattern"},
+    {"discard", "`_ = value`"},
+    {"alias", "`Name : ...`"},
+    {"nominal", "`Name := ...`"},
+    {"opaque", "`Name :: ...`"},
+    {"void-module", "`Name :: [].{ ... }`"},
+    {"type-block", "a `.{ ... }` block on a type"},
+    {"derive", "`is_eq : _` and the like"},
+    {"wrap", "`Type.(value)`, which wraps a value in a nominal or opaque type"},
+    {"unwrap", "`Type.(name)` in a pattern"},
+    {"annotation", "a `name : type` line"},
+    {"thin-arrow", "a `->` function type"},
+    {"thick-arrow", "a `=>` function type"},
+    {"type-var", "a lowercase type variable"},
+    {"type-parameter", "a type declared with parameters"},
+    {"type-apply", "`List(Str)` and the like"},
+    {"where", "a `where` clause"},
+    {"inline-union", "a tag union written in place, not as a declaration's whole body"},
+    {"open-union", "a tag union with `..`"},
+    {"open-record", "a record type with `..`"},
+    {"named-open-record", "a record type with `..name`"},
+    {"tuple-type", "a tuple type"},
+    {"import", "an `import`"},
+    {"import-as", "`import X as Y`"},
+    {"import-exposing", "`import X exposing [...]`"},
+    {"app-header", "an `app` header"},
+    {"package-header", "a `package` header"},
+    {"doc-comment", "a `##` line (the tree holds no comments, so this one reads the source)"},
+  }
+end
+
+function first_line_below(nodes, i)
+  local node = nodes[i]
+  if node.line > 0 then return node.line end
+  for kid in node.kids do
+    local below = first_line_below(nodes, kid)
+    if below > 0 then return below end
+  end
+  return 0
+end
+
+function nearest_line(nodes, i)
+  local at = i
+  while at > 0 do
+    local below = first_line_below(nodes, at)
+    if below > 0 then return below end
+    at = nodes[at].parent
+  end
+  return 0
+end
+
+function has_ancestor(nodes, i, kind)
+  local at = nodes[i].parent
+  while at > 0 do
+    if nodes[at].kind == kind then return true end
+    at = nodes[at].parent
+  end
+  return false
+end
+
+function outermost_lambda(nodes, i)
+  local found = 0
+  local at = nodes[i].parent
+  while at > 0 do
+    if nodes[at].kind == "e-lambda" then found = at end
+    at = nodes[at].parent
+  end
+  return found
+end
+
+function subtree_stop(nodes, i)
+  local stop = i + 1
+  local depth = nodes[i].depth
+  while stop <= #nodes and nodes[stop].depth > depth do stop = stop + 1 end
+  return stop
+end
+
+function names_bound(nodes, from, stop)
+  local bound = {}
+  local at = from
+  while at < stop do
+    if nodes[at].kind == "p-ident" then bound[nodes[at].raw] = true end
+    at = at + 1
+  end
+  return bound
+end
+
+function is_closure(nodes, i)
+  local outer = outermost_lambda(nodes, i)
+  if outer == 0 then return false end
+  local stop = subtree_stop(nodes, i)
+  local own = names_bound(nodes, i, stop)
+  local around = names_bound(nodes, outer, subtree_stop(nodes, outer))
+  local at = i
+  while at < stop do
+    if nodes[at].kind == "e-ident" then
+      local name = nodes[at].raw
+      if has_key(around, name) and not has_key(own, name) then return true end
+    end
+    at = at + 1
+  end
+  return false
+end
+
+function calls_itself(nodes, decl)
+  local kids = nodes[decl].kids
+  if #kids < 2 or nodes[kids[1]].kind ~= "p-ident" or nodes[kids[2]].kind ~= "e-lambda" then return false end
+  local name = nodes[kids[1]].raw
+  local suffix = "." .. name
+  local at = kids[2]
+  local stop = subtree_stop(nodes, kids[2])
+  while at < stop do
+    local node = nodes[at]
+    if node.kind == "e-ident" and (node.raw == name or ends_with(node.raw, suffix)) then return true end
+    if node.kind == "e-method-call" and node.method == suffix then return true end
+    at = at + 1
+  end
+  return false
+end
+
+-- The source from the end of one node to the start of the next, on one line
+-- or across several.
+function text_between(source, from_node, to_node)
+  if from_node.end_line == 0 or to_node.line == 0 then return "" end
+  if from_node.end_line == to_node.line then
+    return sub(source[to_node.line], from_node.end_col, to_node.col - 1)
+  end
+  local text = sub(source[from_node.end_line], from_node.end_col, #source[from_node.end_line])
+  local at = from_node.end_line + 1
+  while at <= to_node.line do
+    text = text .. "\n" .. source[at]
+    at = at + 1
+  end
+  return text
+end
+
+function type_decl_features(nodes, i, source, found)
+  local kids = nodes[i].kids
+  local header = nodes[kids[1]]
+  local rest = trim(sub(source[header.end_line], header.end_col, #source[header.end_line]))
+  if starts_with(rest, ":=") then
+    push(found, "nominal")
+  elseif starts_with(rest, "::") then
+    push(found, "opaque")
+    if starts_with(rest, ":: [].") then push(found, "void-module") end
+  elseif starts_with(rest, ":") then
+    push(found, "alias")
+  else
+    fail("a type declaration with no `:`, `:=` or `::` at line " .. header.line .. ": " .. rest)
+  end
+  if #nodes[header.kids[1]].kids > 0 then push(found, "type-parameter") end
+end
+
+function binop_features(node, found)
+  local op = node.op
+  if op == "??" then push(found, "default") end
+  if op == "..=" or op == "..<" then push(found, "range") end
+  if op == "and" or op == "or" then push(found, "and-or") end
+  if op == "==" or op == "!=" then push(found, "equals") end
+  if op == "%" then push(found, "modulo") end
+  if op == "//" then push(found, "int-divide") end
+end
+
+function apply_features(nodes, i, found)
+  local callee = nodes[nodes[i].kids[1]]
+  if callee.kind == "e-tag" then push(found, "tag-payload") end
+  if callee.kind == "e-ident" then
+    if contains(callee.raw, ".") then push(found, "qualified-call") end
+  end
+end
+
+function pattern_features(nodes, i, source, found)
+  local node = nodes[i]
+  local kind = node.kind
+  if kind == "p-tag" then
+    if sub(source[node.line], node.col + #node.raw, node.col + #node.raw + 1) == ".(" then
+      push(found, "unwrap")
+    else
+      push(found, "tag-pattern")
+      if nodes[node.parent].kind == "p-tag" then push(found, "nested-tag-pattern") end
+    end
+  elseif kind == "p-record" then
+    push(found, "record-pattern")
+    local parent = nodes[node.parent]
+    if parent.kind == "args" and nodes[parent.parent].kind == "e-lambda" then push(found, "record-param") end
+    if parent.kind == "s-decl" then push(found, "record-destructure") end
+  elseif kind == "p-list" then
+    push(found, "list-pattern")
+  elseif kind == "p-list-rest" then
+    push(found, "list-rest")
+    if get(node, "name", "") ~= "" then push(found, "list-rest-named") end
+  elseif kind == "p-tuple" then
+    push(found, "tuple-pattern")
+  elseif kind == "p-underscore" then
+    push(found, "underscore")
+    if nodes[node.parent].kind == "s-decl" then push(found, "discard") end
+  elseif kind == "p-as" then
+    push(found, "as-pattern")
+  elseif kind == "p-int" then
+    push(found, "int-pattern")
+  elseif kind == "p-string" then
+    push(found, "string-pattern")
+  elseif kind == "p-alternatives" then
+    push(found, "alternatives")
+  end
+end
+
+function lambda_features(nodes, i, found)
+  push(found, "lambda")
+  local parent = nodes[nodes[i].parent]
+  if parent.kind == "args" or parent.kind == "e-apply" then push(found, "lambda-argument") end
+  if is_closure(nodes, i) then
+    push(found, "closure")
+    if parent.kind == "s-decl" then push(found, "named-closure") end
+  end
+end
+
+function type_features(nodes, i, source, found)
+  local node = nodes[i]
+  local kind = node.kind
+  if kind == "ty-fn" then
+    local kids = node.kids
+    local arrow = text_between(source, nodes[kids[#kids - 1]], nodes[kids[#kids]])
+    if contains(arrow, "=>") then
+      push(found, "thick-arrow")
+    else
+      push(found, "thin-arrow")
+    end
+  elseif kind == "ty-var" then
+    if nodes[node.parent].kind ~= "ty-record-ext" then push(found, "type-var") end
+  elseif kind == "ty-apply" then
+    if nodes[node.parent].kind ~= "tags" then push(found, "type-apply") end
+  elseif kind == "ty-tag-union" then
+    if nodes[node.parent].kind ~= "s-type-decl" then push(found, "inline-union") end
+    if get(node, "value", "") == ".." then push(found, "open-union") end
+  elseif kind == "ty-record-ext" then
+    push(found, "open-record")
+    if #node.kids > 0 then push(found, "named-open-record") end
+  elseif kind == "ty-tuple" then
+    push(found, "tuple-type")
+  end
+end
+
+function expression_features(nodes, i, found)
+  local node = nodes[i]
+  local kind = node.kind
+  if kind == "e-if-then-else" then
+    push(found, "if")
+    local parent = nodes[node.parent]
+    if parent.kind == "s-decl" then push(found, "if-value") end
+    if parent.kind == "e-if-then-else" and parent.kids[#parent.kids] == i then push(found, "else-if") end
+  elseif kind == "e-if-without-else" then
+    push(found, "if-no-else")
+  elseif kind == "e-match" then
+    push(found, "match")
+    local subject = nodes[node.kids[1]]
+    if subject.kind == "e-tuple" and #subject.kids > 1 then push(found, "match-pair") end
+  elseif kind == "e-crash" then
+    push(found, "crash")
+    if nodes[node.parent].kind == "e-binop" and nodes[node.parent].op == "??" then push(found, "default-crash") end
+  elseif kind == "e-question-suffix" then
+    push(found, "question")
+  elseif kind == "e-arrow-call" then
+    push(found, "pipe")
+  elseif kind == "e-block" then
+    local parent = nodes[node.parent].kind
+    if parent == "s-decl" or parent == "args" or parent == "e-apply" or parent == "field" then push(found, "value-block") end
+  elseif kind == "e-method-call" then
+    push(found, "method-call")
+    if ends_with(node.method, "!") then push(found, "bang-name") end
+  elseif kind == "e-ident" then
+    if ends_with(node.raw, "!") then push(found, "bang-name") end
+  elseif kind == "e-field-access" then
+    push(found, "field-access")
+  elseif kind == "e-tuple-access" then
+    push(found, "tuple-access")
+  elseif kind == "e-string" then
+    if #node.kids > 1 then push(found, "interpolation") end
+  elseif kind == "e-multiline-string" then
+    push(found, "multiline-string")
+  elseif kind == "e-single-quote" then
+    push(found, "single-quote")
+  elseif kind == "e-int" then
+    if starts_with(node.raw, "0x") then push(found, "hex") end
+  elseif kind == "unary" then
+    if node.value == "!" then push(found, "not") else push(found, "negate") end
+  elseif kind == "e-record" then
+    push(found, "record")
+    if #node.kids > 0 and nodes[node.kids[1]].kind == "ext" then push(found, "record-update") end
+  elseif kind == "field" then
+    if #node.kids == 0 and nodes[node.parent].kind == "e-record" then push(found, "record-shorthand") end
+  elseif kind == "e-tuple" then
+    if #node.kids > 1 then push(found, "tuple") end
+  elseif kind == "e-list" then
+    push(found, "list")
+  elseif kind == "e-tag" then
+    push(found, "tag")
+  elseif kind == "e-nominal-apply" then
+    push(found, "wrap")
+  end
+end
+
+function statement_features(nodes, i, source, found)
+  local node = nodes[i]
+  local kind = node.kind
+  if kind == "s-var" then
+    push(found, "var")
+  elseif kind == "s-for" then
+    push(found, "for")
+  elseif kind == "s-while" then
+    push(found, "while")
+  elseif kind == "s-return" then
+    push(found, "return")
+  elseif kind == "s-dbg" then
+    push(found, "dbg")
+  elseif kind == "s-expect" then
+    if has_ancestor(nodes, i, "e-block") then push(found, "expect-inline") else push(found, "expect") end
+  elseif kind == "s-decl" then
+    local target = nodes[node.kids[1]]
+    if target.kind == "p-ident" then
+      if starts_with(target.raw, "$") then push(found, "reassign") end
+      if ends_with(target.raw, "!") then push(found, "bang-name") end
+    end
+    if calls_itself(nodes, i) then push(found, "recursion") end
+  elseif kind == "s-type-decl" then
+    type_decl_features(nodes, i, source, found)
+  elseif kind == "s-type-anno" then
+    push(found, "annotation")
+    if #node.kids > 0 and nodes[node.kids[1]].kind == "_" then push(found, "derive") end
+  elseif kind == "s-import" then
+    push(found, "import")
+    if get(node, "alias", "") ~= "" then push(found, "import-as") end
+    for kid in node.kids do
+      if nodes[kid].kind == "exposing" then push(found, "import-exposing") end
+    end
+  elseif kind == "app" then
+    push(found, "app-header")
+  elseif kind == "package" then
+    push(found, "package-header")
+  elseif kind == "guard" then
+    push(found, "guard")
+  elseif kind == "associated" then
+    push(found, "type-block")
+  elseif kind == "where" then
+    push(found, "where")
+  end
+end
+
+function features_of(nodes, i, source)
+  local found = {}
+  local kind = nodes[i].kind
+  if kind == "e-lambda" then
+    lambda_features(nodes, i, found)
+  elseif kind == "e-binop" then
+    binop_features(nodes[i], found)
+  elseif kind == "e-apply" then
+    apply_features(nodes, i, found)
+  elseif starts_with(kind, "p-") then
+    pattern_features(nodes, i, source, found)
+  elseif starts_with(kind, "ty") then
+    type_features(nodes, i, source, found)
+  elseif starts_with(kind, "e-") or kind == "unary" or kind == "field" then
+    expression_features(nodes, i, found)
+  else
+    statement_features(nodes, i, source, found)
+  end
+  return found
+end
+
+function record_hit(place, path, line_number, source, wanted, name)
+  incr(place.counts, name)
+  if name == wanted then
+    local text = trim(source[line_number])
+    if #text > WIDEST_LINE then text = sub(text, 1, WIDEST_LINE) .. " ..." end
+    push(place.hits, {path = path, line = line_number, text = text})
+  end
+end
+
+function scan_file(place, file, wanted, known)
+  local source = lines(read(file.path))
+  local nodes = file.nodes
+  local i = 1
+  while i <= #nodes do
+    for name in features_of(nodes, i, source) do
+      if not has_key(known, name) then fail("`features_of` gave `" .. name .. "`, which `feature_table` does not list") end
+      record_hit(place, file.path, nearest_line(nodes, i), source, wanted, name)
+    end
+    i = i + 1
+  end
+  local number = 1
+  for line in source do
+    if starts_with(trim(line), "##") then record_hit(place, file.path, number, source, wanted, "doc-comment") end
+    number = number + 1
+  end
+end
+
+function scan_place(name, patterns, wanted, known)
+  local place = {name = name, counts = {}, hits = {}, files = 0, refused = {}}
+  local paths = {}
+  for pattern in patterns do
+    for path in glob(pattern) do push(paths, path) end
+  end
+  local parsed = parse_roc_files(paths)
+  place.refused = parsed.refused
+  for file in parsed.files do
+    place.files = place.files + 1
+    scan_file(place, file, wanted, known)
+  end
+  return place
+end
+
+function print_hits(place, limit)
+  local shown = 0
+  for hit in place.hits do
+    if shown < limit then print(hit.path .. ":" .. hit.line .. ": " .. hit.text) end
+    shown = shown + 1
+  end
+  local line = place.name .. ": " .. #place.hits .. " examples in " .. place.files .. " files"
+  if #place.hits > limit then line = line .. ", the first " .. limit .. " shown" end
+  print(line)
+end
+
+function print_counts(places, table_rows)
+  local rows = {}
+  for row in table_rows do
+    local name = row[1]
+    push(rows, {
+      feature = name,
+      safari = get(places[1].counts, name, 0),
+      chat = get(places[2].counts, name, 0),
+      markdown = get(places[3].counts, name, 0),
+    })
+  end
+  print(table(rows, {"feature", "safari", "chat", "markdown"}))
+  print("files read: " .. places[1].files .. " safari, " .. places[2].files .. " chat, " .. places[3].files .. " markdown")
+end
+
+local wanted = arg("feature", "")
+local table_rows = feature_table()
+
+if wanted == "" then
+  for row in table_rows do print(row[1], row[2]) end
+  print(#table_rows .. " features; run with feature=<name>, or feature=all for counts")
+else
+  local known = {}
+  for row in table_rows do known[row[1]] = true end
+  if wanted ~= "all" and not has_key(known, wanted) then
+    fail("no feature `" .. wanted .. "`: run with no setting to list them")
+  end
+  local safari = scan_place("safari", {"canvas_apps/safari/**/*.roc", "canvas_apps/lib/**/*.roc"}, wanted, known)
+  local chat = scan_place("roc-chat", {"repos:roc-chat/**/*.roc"}, wanted, known)
+  local markdown = scan_place("roc-markdown", {"repos:roc-markdown/**/*.roc"}, wanted, known)
+  if wanted == "all" then
+    print_counts({safari, chat, markdown}, table_rows)
+  else
+    print_hits(safari, SHOWN_FOR_SAFARI)
+    print_hits(chat, SHOWN_FOR_SIBLING)
+    print_hits(markdown, SHOWN_FOR_SIBLING)
+  end
+  local refused = {}
+  for place in {safari, chat, markdown} do
+    for line in place.refused do push(refused, line) end
+  end
+  fail_if_refused("roc_examples", refused)
+end
