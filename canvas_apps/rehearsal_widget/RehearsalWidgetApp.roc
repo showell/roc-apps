@@ -1,8 +1,8 @@
 ## The widget for the Safari tutorial's section on rehearsal. It takes one real
 ## step of the ride, just after the first bend, and walks through the search
-## that step ran. The tries are separate things and not a motion, so a click
-## or the right arrow shows the next one, and the left arrow goes back. Each
-## try draws its coasting arc on the road, seen from above: the bike's own
+## that step ran. The tries are separate things and not a motion, so there's a
+## mark for each, and a click on one goes to it. The arrow keys go one at a time.
+## Each try draws its coasting arc on the road, seen from above: the bike's own
 ## physics run on a rider who doesn't exist. After the twelfth, the picture
 ## shows the lean the real rider took.
 import game.Acceleration
@@ -185,10 +185,14 @@ previous_stop = |tries_shown|
 		tries_shown - 1
 	}
 
-## The stop after this step's clicks and keys.
+## The stop after this step's clicks and keys. A click that isn't on a mark
+## leaves the stop as it was.
 stepped : U64, Input.Snapshot -> U64
 stepped = |tries_shown, input|
-	if input.mouse.button_pressed(Left) or input.key_pressed(KeyRight) {
+	if input.mouse.button_pressed(Left) {
+		{ x, y } = input.mouse.position()
+		mark_under(x.to_f64(), y.to_f64()) ?? tries_shown
+	} else if input.key_pressed(KeyRight) {
 		next_stop(tries_shown)
 	} else if input.key_pressed(KeyLeft) {
 		previous_stop(tries_shown)
@@ -450,14 +454,14 @@ status_lines = |tries_shown|
 			"Step ${step_shown.to_str()}, just after a bend",
 			"Leaning ${lean_text(rider.tilt)}",
 			"Aiming for ${across_text(target)}",
-			"Click to try a lean",
+			"Each mark is one try at a lean",
 		]
 	} else if is_past_the_tries(tries_shown) {
 		[
 			"Chosen: ${lean_text(chosen_lean)}",
 			"${rehearsals.len().to_str()} rehearsals, ${steps_rehearsed.to_str()} steps of physics",
 			"None of them happened",
-			"Click to start again",
+			"The real rider takes one step",
 		]
 	} else {
 		match rehearsals.get(tries_shown - 1) {
@@ -472,29 +476,98 @@ status_lines = |tries_shown|
 		}
 	}
 
-## How far apart the marks for the tries are.
+## How far apart the marks are.
 mark_spacing : F64
-mark_spacing = 20.0
+mark_spacing = 22.0
 
-## A mark for each try, filled in once it has been made.
-try_marks : U64 -> List(Shapes.Shape)
-try_marks = |tries_shown|
-	rehearsals.map_with_index(
-		|_rehearsal, index|
-			Disc({
-				x: ScrubWidget.side_margin + 6.0 + index.to_f64() * mark_spacing,
-				y: 232.0,
-				r: 6.0,
-				fill: ScrubWidget.flat(
-					if index < tries_shown {
-						0x303030
-					} else {
-						0xb8b8b8
-					},
-				),
-				clip: Anywhere,
-			}),
+marks_y : F64
+marks_y = 232.0
+
+## How far from the row of marks a click still counts as on it.
+marks_reach : F64
+marks_reach = 12.0
+
+## Where the mark for stop `stop` sits. Stop 1 is the first, and there's one
+## for each try and one for the choice.
+mark_x : U64 -> F64
+mark_x = |stop| ScrubWidget.side_margin + 8.0 + (stop.to_f64() - 1.0) * mark_spacing
+
+## The stop whose mark is at (`x`, `y`). Each mark's reach ends halfway to the
+## next one, so no click is on two.
+mark_under : F64, F64 -> Try(U64, [NoMark])
+mark_under = |x, y| {
+	stop = ((x - mark_x(1)) / mark_spacing + 1.5).to_i64_wrap()
+	if (y - marks_y).abs() > marks_reach or stop < 1 or stop > last_stop.to_i64_wrap() {
+		Err(NoMark)
+	} else {
+		Ok(stop.to_u64_wrap())
+	}
+}
+
+## The colour of the mark for `stop`: the current one stands out, those before
+## it are filled in, and the rest are still to come.
+mark_color : U64, U64 -> I64
+mark_color = |stop, tries_shown|
+	if stop == tries_shown {
+		current_color
+	} else if stop < tries_shown {
+		0x303030
+	} else {
+		0xb8b8b8
+	}
+
+current_color : I64
+current_color = 0xd0603a
+
+## The mark for one try: a disc, larger when it's the current one.
+try_mark : U64, U64 -> Shapes.Shape
+try_mark = |stop, tries_shown|
+	Disc({
+		x: mark_x(stop),
+		y: marks_y,
+		r: if stop == tries_shown {
+			9.0
+		} else {
+			6.0
+		},
+		fill: ScrubWidget.flat(mark_color(stop, tries_shown)),
+		clip: Anywhere,
+	})
+
+## The mark for the choice, which isn't a try, so it's a square.
+choice_mark : U64 -> Shapes.Shape
+choice_mark = |tries_shown| {
+	half = if last_stop == tries_shown {
+		8.0
+	} else {
+		6.0
+	}
+	Rect({
+		x: mark_x(last_stop) - half,
+		y: marks_y - half,
+		w: 2.0 * half,
+		h: 2.0 * half,
+		fill: ScrubWidget.flat(mark_color(last_stop, tries_shown)),
+	})
+}
+
+## What to do, beside the marks.
+hint : List(Shapes.Shape)
+hint =
+	Font.text(
+		"Click a mark to see that try",
+		mark_x(last_stop) + 24.0,
+		marks_y - 5.0,
+		10.0,
+		Brush.opaque(0x202020),
 	)
+
+## The row of marks and what to do with them.
+marks : U64 -> List(Shapes.Shape)
+marks = |tries_shown|
+	rehearsals.map_with_index(|_rehearsal, index| try_mark(index + 1, tries_shown))
+		.append(choice_mark(tries_shown))
+		.concat(hint)
 
 ## Everything on the canvas with `tries_shown` tries on show.
 frame_at : U64 -> List(Shapes.Shape)
@@ -502,7 +575,7 @@ frame_at = |tries_shown|
 	ScrubWidget.still_frame_shapes({
 		picture: picture(tries_shown),
 		status: status_lines(tries_shown),
-	}).concat(try_marks(tries_shown))
+	}).concat(marks(tries_shown))
 
 ## The ride at `step`, played from its start.
 ridden_to : U32 -> Tour
@@ -554,22 +627,46 @@ expect previous_stop(13) == 12
 expect previous_stop(1) == 0
 expect previous_stop(0) == 0
 
-## A snapshot with the left button just pressed, or held from before.
-pointer_with : U32 -> Input.Snapshot
-pointer_with = |struck| Input.none.with_mouse(
+## A snapshot with the pointer at (`x`, `y`) and the left button just pressed,
+## or held from before.
+pointer_at : { x : F32, y : F32, struck : U32 } -> Input.Snapshot
+pointer_at = |{ x, y, struck }| Input.none.with_mouse(
 	Mouse.of(
 		1,
 		struck,
-		320.0,
-		0.0,
+		x,
+		y,
 		0.0,
 	),
 )
 
-# A click moves on once, and holding the button doesn't.
-expect stepped(3, pointer_with(1)) == 4
-expect stepped(3, pointer_with(0)) == 3
+## The stop after a click at (`x`, `y`) from stop 3.
+clicked_from_three : F32, F32 -> U64
+clicked_from_three = |x, y| stepped(3, pointer_at({ x, y, struck: 1 }))
+
+# A click on a mark goes straight to that stop, either way along the row.
+expect clicked_from_three(mark_x(9).to_f32_wrap(), 232.0) == 9
+expect clicked_from_three(mark_x(1).to_f32_wrap(), 232.0) == 1
+expect clicked_from_three(mark_x(13).to_f32_wrap(), 232.0) == 13
+expect clicked_from_three(mark_x(3).to_f32_wrap(), 232.0) == 3
+
+# A click anywhere else leaves it alone: on the picture, on the text, past
+# either end of the row.
+expect clicked_from_three(320.0, 100.0) == 3
+expect clicked_from_three(320.0, 300.0) == 3
+expect clicked_from_three(2.0, 232.0) == 3
+expect clicked_from_three(620.0, 232.0) == 3
+
+# Holding the button on another mark isn't a click, and nor is nothing at all.
+expect stepped(3, pointer_at({ x: mark_x(9).to_f32_wrap(), y: 232.0, struck: 0 })) == 3
 expect stepped(3, Input.none) == 3
+
+# Each mark reaches halfway to the next, and the row's reach ends above and below.
+expect mark_under(mark_x(5) + 10.0, marks_y) == Ok(5)
+expect mark_under(mark_x(5) + 12.0, marks_y) == Ok(6)
+expect mark_under(mark_x(5), marks_y + marks_reach) == Ok(5)
+expect mark_under(mark_x(5), marks_y + marks_reach + 1.0) == Err(NoMark)
+expect mark_under(mark_x(5), marks_y - marks_reach - 1.0) == Err(NoMark)
 
 expect !is_past_the_tries(12)
 expect is_past_the_tries(13)
@@ -583,9 +680,15 @@ expect
 		},
 	)
 
-# Each try's mark fills in as it's made.
-expect try_marks(0).len() == 12
-expect try_marks(0) != try_marks(1)
+# The current mark stands apart from those before and after it.
+expect mark_color(5, 5) == current_color
+expect mark_color(4, 5) != current_color
+expect mark_color(6, 5) != current_color
+expect mark_color(4, 5) != mark_color(6, 5)
+
+# A mark for each try and one for the choice, then the words.
+expect marks(0).len() > 13
+expect marks(1) != marks(2)
 
 expect lean_text(Angle.Lean.degrees(12.0)) == "12.00 right"
 expect lean_text(Angle.Lean.degrees(12.05)) == "12.05 right"
