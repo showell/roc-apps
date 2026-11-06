@@ -251,7 +251,7 @@ Each stretch of this map is one record of a list called `World.plans`, and the l
 New in this chapter:
 
 - Roc: void modules, tag unions written in a field's type, `match` that has to cover every tag, `crash`
-- Modules: `World`, `Pond`, `Trees`, `Wildlife`
+- Modules: `World`, `Pond`, `Trees`
 
 The modules around `World`
 ```dot
@@ -300,18 +300,6 @@ A value that never changes can be checked once, whole. `Pond`'s one function is 
 {{code Pond.is_on_water}}
 
 The `expect` under it, in the module above, runs that over all six ducks. One line covers the whole pond.
-
-### The animal at each bend
-
-Most bends have an animal: a grown one beyond the rail on the outside of the bend, and its baby in the middle of the road a little further on. A segment's `bend_life` field says which, and the widget at the top of this chapter reads it out.
-
-{{code Wildlife.species_of}}
-
-Each animal is a tag, and each answers with its emoji and how tall it stands. The `match` has to cover all four.
-
-{{code Wildlife.bend_critters}}
-
-`Quiet` and `DuckPond` have no animals, so they answer with an empty list. An `Animal` answers with a list of two. `inward` is 1 or -1, so one line of arithmetic places the grown animal on either side of the road.
 
 Nothing in this chapter moves, but the ride does. Next, we'll look at the simplest thing that moves: the sky.
 
@@ -604,7 +592,7 @@ New in this chapter:
 - Roc: a large table of plain data
 - Modules: `Stills`, `StillDraw`, `CatStills`, `BirdStills`, `EmojiStills`
 
-The stills are the least readable code in Safari Ride, and nobody is meant to read them. An agent built them once and encoded them as Roc. Here's what each one comes to:
+The stills are the least readable code in Safari Ride, and nobody is meant to read them. They're generated data, encoded as Roc, and this chapter ends with how they got made. Here's how much data each set holds:
 
 | Stills | Pictures | Polygons | Points |
 |---|---|---|---|
@@ -616,7 +604,7 @@ A polygon is one record. It has a color, an optional gradient and a list of poin
 
 {{code Stills.StillPolygon}}
 
-The bird is the smallest set, because the perched bird is Roc's logo, and the logo is made of a few straight-edged shapes. The cat has far more points because its outline is curved. Its seven stills fit in a 73-line file, and those lines are very long.
+The bird is the smallest set, because the perched bird is Roc's logo, and the logo is made of a few straight-edged shapes. The cat has far more points, because its curves are made of many short straight lines. Its seven stills fit in a 73-line file, and those lines are very long.
 
 Every point is measured in units of the still's height. Its feet are at `y` 0, and the top of it is at `y` 1. That's why no pixels or metres appear here. The same numbers draw a cat in the distance and a cat in the lane.
 
@@ -628,7 +616,27 @@ Drawing a still is then one sum for each point. The height in pixels scales the 
 
 {{code StillDraw.screen_point}}
 
-That's all there is to drawing a critter. Each set of stills has a `pose_polygons` function that turns a pose into its polygons, and `StillDraw.draw_still` puts them on screen. What's left is deciding which pose to show. For the cat, that's the next chapter.
+That's all there is to drawing a critter. Each set of stills has a `pose_polygons` function that turns a pose into its polygons, and `StillDraw.draw_still` puts them on screen.
+
+### How the stills got made
+
+That's all the Roc in this chapter. If you came for the Roc, you can skip ahead to [The cat](the-cat.html). The rest of this chapter is the story of where the pictures came from.
+
+At a larger company, a picture like these would pass through three people. An artist would draw it. A software developer would build the tools that get it into the game. A project manager would look at the result and decide whether it's good enough. On Safari Ride, Claude played the first two roles, and Steve played the third.
+
+The artist's cat was a program. An early version of Safari Ride drew the cat in TypeScript, with splines for its body, tapered capsules for its limbs, chains of joints for its legs, and strokes for its whiskers. That's a lot of code to carry from language to language, and a game only ever shows seven poses.
+
+So the developer wrote a baker, a small program that ran the real drawing code once for each pose. A recorder stood in for the canvas. It kept every filled shape as a polygon and turned every stroke into a thin filled quad, and the result was a flat table of polygons. The drawing code stayed behind, and the table moved on.
+
+The animals by the road took a different route. They come from Microsoft's Fluent Emoji, in its Flat style. That set draws every animal whole and from the side, where another set draws a rhino as a face, which looks like a bug beside a road. A second baker read each SVG file, walked its shapes in painting order, and cut each curve into short straight lines.
+
+The Roc bird came last. Its perched pose is the logo, and Claude drew the five flight poses to match, directly as polygons, in the logo's two purples.
+
+The project manager's tool was a contact sheet: every still, side by side, in one image. Each bake wrote one, and Steve looked at it. No test can say whether a cat looks like a cat. The comment in the emoji baker puts the standard well: "an elephant is an elephant".
+
+The bakers belong to the older versions of Safari Ride, in TypeScript and Zig. The polygons they made have been carried along ever since, which is why these files look like generated data. They are.
+
+Now that we can draw a cat in any pose, we can work out which pose to show.
 
 ## The cat
 
@@ -866,119 +874,6 @@ Roc doesn't force that, but pure functions make the stateless version the easy o
 
 The cat also has an effect on the rider. A cat in the lane stops the rider speeding up, and that holds the rider back while the crossing plays. It makes more sense once we've seen how the rider is always deciding whether to accelerate, brake or hold steady, so it waits for that chapter.
 
-One thing about time is still missing. The sun only goes one way, and nothing so far repeats on the clock.
-
-## The beacons and the headlights
-
-Some things in Safari Ride are worked out from the clock alone, with nothing stored. The sky is the largest of them. This chapter covers the other two: the beacons on the radio towers, which blink over and over, and the truck's headlights, which switch on once.
-
-```widget beacon
-Drag the clock and watch the towers blink out of step.
-```
-
-Drag across it from left to right, and the clock runs through two whole blinks, from step 5,400 to step 5,640. The left tower starts dark and the right one at full brightness. At step 5,430, where the first marked stretch starts, both read 49%, and by step 5,460 they've changed places. Each marked stretch is where the left tower is more than half bright. At the far end of the ruler the towers are back where they began.
-
-New in this chapter:
-
-- Roc: a pair of opaque types with only the sums that make sense, records of tag unions written in place
-- Modules: `Steps`, `TowerSighting`, `Tower`, `Mountains`, `TruckDraw`
-
-### A blink
-
-The modules behind a beacon
-```dot
-digraph beacon {
-  node [shape=box, fontname="Helvetica"];
-  TowerSighting [style=bold];
-  SceneDraw -> Scene;
-  SceneDraw -> TowerSighting;
-  SceneDraw -> Tower;
-  Scene -> TowerSighting;
-  TowerSighting -> Clock;
-  TowerSighting -> Steps;
-  TowerSighting -> Fraction;
-  Clock -> Steps;
-  Tower -> Fraction;
-}
-```
-
-A beacon is the only thing in Safari Ride that repeats on the clock, so it's the first thing that needs to ask how far into a cycle it is. That question isn't about an instant of the ride. It's about a length of time, and Safari Ride keeps those two apart.
-
-`Clock` says which step it is. `Steps` says how long something lasts. Both are opaque `U32`s, and `Clock.minus` turns two clocks into `Steps`, the same way two `Angle.Bearing`s make an `Angle.Turn`. Adding two clocks means nothing, so `Clock` has no `plus`, and no other code can add one. Call this *places and distances*: one opaque type for where something is, a second for how far apart two of them are, and only the sums that make sense.
-
-Here, `wrapped_to` is `Steps`'s one way to reach `%`. The result is a `Fraction` built with `of`, because `(1 - cos) / 2` can only be in range:
-
-{{code TowerSighting.beacon_brightness}}
-
-Each tower starts somewhere else in the cycle, so the towers along a road don't blink together. This function is one line of method calls, and every call in it is on a `Steps`:
-
-{{code TowerSighting.beacon_offset_for}}
-
-The sighting calls both, adding the two `Steps`. `view.clock.minus(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride.
-
-{{code TowerSighting.tower_if_ahead from "if center.forward <= Geom.near_plane" to "view.clock.minus(Clock.start)"}}
-
-Its caller gives each tower its key, the segment's index. Records with named fields stand in for what would otherwise be five arguments in a row, and `InChain(position)` is a tag carrying a payload, saying where the segment lies from the rider:
-
-{{code TowerSighting.segment_towers from "end_tower = tower_if_ahead(" to "end_tower.concat(mid_tower(view, position))"}}
-
-A tower halfway along a segment takes the key plus 60. That's a small piece of number theory hiding in a constant: 60 staggers of 37 steps come to 2,220, which is 18 periods of 120 and 60 left over, so the mid-tower blinks exactly opposite the end tower.
-
-Notice where the clock stops. `beacon_brightness` on a `TowerSighting` is a `Fraction`, and neither `Tower` nor `SceneDraw` imports `Clock`. A beacon's blink is decided in the same place as whether the tower is in view at all.
-
-There's no blink abstraction. `Animation.Alternates` also follows a wave, and the resemblance ends there: it picks a pose, and this picks a brightness. Nothing else in the game blinks.
-
-The clock counts steps, not seconds, so pausing the ride freezes the beacons, and stepping back runs them backwards.
-
-### One switch
-
-Here are the truck's lights at three frames of the ride:
-
-| Step | Headlights | Brake lights |
-|---|---|---|
-| 3,742 | `Off` | `On` |
-| 5,700 | `On` | `Off` |
-| 6,520 | `On` | `On` |
-
-The modules behind the headlights
-```dot
-digraph headlights {
-  node [shape=box, fontname="Helvetica"];
-  RideInstant [style=bold];
-  RideInstant -> Mountains;
-  RideInstant -> Sky;
-  RideInstant -> Truck;
-  RideInstant -> SceneDraw;
-  Mountains -> Sky;
-  Mountains -> Clock;
-  Sky -> Clock;
-  SceneDraw -> TruckDraw;
-  TruckDraw -> Truck;
-}
-```
-
-The truck's headlights come on once the sun has gone behind the mountains, at step 4,039 of a ride that lasts 7,040. `Mountains` knows the skyline and already imports `Sky`, so the question is asked there. The argument is an opaque `Clock`, and the answer is a plain `Bool`, which is about to be turned into something better:
-
-{{code Mountains.is_sun_behind_mountains}}
-
-`Truck.Lights` is a record of two tag unions, written in place. `[On, Off]` needs no declaration, and two independent lamps aren't one state with four values, so they're two fields:
-
-{{code Truck.Lights}}
-
-`RideInstant` puts it together. It's the only place that can. `Truck` is in the ride half of the system and `Mountains` is in the view, and no arrow goes from the first to the second. `RideInstant` imports both.
-
-{{code RideInstant.truck_lights}}
-
-Lamps are to the truck what a pose is to a cat. The sighting carries them, and the drawing does what they say, with each `match` covering both tags:
-
-{{code TruckDraw.draw from "beams =" to "].join()"}}
-
-`TruckDraw` leaves the painting to two modules. `TruckBody` paints the trailer, the cab and the tires, far to near, and `TruckLights` paints the beams and the brake lights, each with its glow.
-
-That covers the clock-driven things. Each is a function with a `Clock` in its arguments, and nothing about them outlives the frame.
-
-The rider-driven kind still has only one member, and one cat can't say whether `Animation` was written for critters or just for cats.
-
 ## The bird
 
 The cat is built on a shared module, `Animation`, and one critter can't show whether that module was written for critters in general or just for cats. The bird is the second critter. It's Roc's logo, sitting on a treetop. As the rider comes near it takes off, flies across the road and ahead, and drops onto a tree on the far side. It's a rider-driven thing like the cat, and it cost much less.
@@ -1110,6 +1005,146 @@ Each frame, a sighting reads the route back. `|` in a pattern covers two tags wi
 {{code BirdSighting.segment_bird}}
 
 We didn't need any new machinery for the bird. Above their `expect`s, the four bird modules come to about 450 lines, a quarter of them coordinates for the stills. `Animation` has nothing in it about birds.
+
+## The elephant
+
+The cat and the bird both move. The elephant doesn't. It stands at 14 of the route's 19 bends, so it's the animal you'll see most, and what's new about it is where it stands. A grown elephant waits beyond the guard rail on the outside of the bend, and its baby stands in the middle of the road a little further on.
+
+New in this chapter:
+
+- Roc: a `match` that answers with a list
+- Modules: `Wildlife`
+
+A segment's `bend_life` field says what's at its bend. `Wildlife.bend_critters` turns that into critters:
+
+{{code Wildlife.bend_critters}}
+
+`Quiet` and `DuckPond` have no animals, so they answer with an empty list. An `Animal` answers with a list of two. `inward` is 1 or -1, so one line of arithmetic places the grown animal on either side of the road.
+
+An elephant has no timeline and no state. It's a plain record, with a place, an emoji, a height and a way to face. `StillDraw` looks up the emoji's still and draws it at that height. The baby is the same still at half the height.
+
+Nothing in that function says "elephant". That's what makes the next chapter short.
+
+## Rhinos, giraffes and the other corner critters
+
+An elephant stands at 14 of the route's 19 bends. A giraffe, a rhino and a zebra have one bend each. They all use the same code as the elephant, and they differ by one row:
+
+{{code Wildlife.species_of}}
+
+Each animal is a tag, and each answers with its emoji and how tall it stands. The `match` has to cover all four.
+
+To add a lion, we'd add a tag, a row here and a still in `EmojiStills`. The compiler would point at every `match` that needs the new tag.
+
+All of these critters either react to the rider or stand still. The sun only goes one way, and nothing so far repeats on the clock. The beacons do.
+
+## The beacons and the headlights
+
+Some things in Safari Ride are worked out from the clock alone, with nothing stored. The sky is the largest of them. This chapter covers the other two: the beacons on the radio towers, which blink over and over, and the truck's headlights, which switch on once.
+
+```widget beacon
+Drag the clock and watch the towers blink out of step.
+```
+
+Drag across it from left to right, and the clock runs through two whole blinks, from step 5,400 to step 5,640. The left tower starts dark and the right one at full brightness. At step 5,430, where the first marked stretch starts, both read 49%, and by step 5,460 they've changed places. Each marked stretch is where the left tower is more than half bright. At the far end of the ruler the towers are back where they began.
+
+New in this chapter:
+
+- Roc: a pair of opaque types with only the sums that make sense, records of tag unions written in place
+- Modules: `Steps`, `TowerSighting`, `Tower`, `Mountains`, `TruckDraw`
+
+### A blink
+
+The modules behind a beacon
+```dot
+digraph beacon {
+  node [shape=box, fontname="Helvetica"];
+  TowerSighting [style=bold];
+  SceneDraw -> Scene;
+  SceneDraw -> TowerSighting;
+  SceneDraw -> Tower;
+  Scene -> TowerSighting;
+  TowerSighting -> Clock;
+  TowerSighting -> Steps;
+  TowerSighting -> Fraction;
+  Clock -> Steps;
+  Tower -> Fraction;
+}
+```
+
+A beacon is the only thing in Safari Ride that repeats on the clock, so it's the first thing that needs to ask how far into a cycle it is. That question isn't about an instant of the ride. It's about a length of time, and Safari Ride keeps those two apart.
+
+`Clock` says which step it is. `Steps` says how long something lasts. Both are opaque `U32`s, and `Clock.minus` turns two clocks into `Steps`, the same way two `Angle.Bearing`s make an `Angle.Turn`. Adding two clocks means nothing, so `Clock` has no `plus`, and no other code can add one. Call this *places and distances*: one opaque type for where something is, a second for how far apart two of them are, and only the sums that make sense.
+
+Here, `wrapped_to` is `Steps`'s one way to reach `%`. The result is a `Fraction` built with `of`, because `(1 - cos) / 2` can only be in range:
+
+{{code TowerSighting.beacon_brightness}}
+
+Each tower starts somewhere else in the cycle, so the towers along a road don't blink together. This function is one line of method calls, and every call in it is on a `Steps`:
+
+{{code TowerSighting.beacon_offset_for}}
+
+The sighting calls both, adding the two `Steps`. `view.clock.minus(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride.
+
+{{code TowerSighting.tower_if_ahead from "if center.forward <= Geom.near_plane" to "view.clock.minus(Clock.start)"}}
+
+Its caller gives each tower its key, the segment's index. Records with named fields stand in for what would otherwise be five arguments in a row, and `InChain(position)` is a tag carrying a payload, saying where the segment lies from the rider:
+
+{{code TowerSighting.segment_towers from "end_tower = tower_if_ahead(" to "end_tower.concat(mid_tower(view, position))"}}
+
+A tower halfway along a segment takes the key plus 60. That's a small piece of number theory hiding in a constant: 60 staggers of 37 steps come to 2,220, which is 18 periods of 120 and 60 left over, so the mid-tower blinks exactly opposite the end tower.
+
+Notice where the clock stops. `beacon_brightness` on a `TowerSighting` is a `Fraction`, and neither `Tower` nor `SceneDraw` imports `Clock`. A beacon's blink is decided in the same place as whether the tower is in view at all.
+
+There's no blink abstraction. `Animation.Alternates` also follows a wave, and the resemblance ends there: it picks a pose, and this picks a brightness. Nothing else in the game blinks.
+
+The clock counts steps, not seconds, so pausing the ride freezes the beacons, and stepping back runs them backwards.
+
+### One switch
+
+Here are the truck's lights at three frames of the ride:
+
+| Step | Headlights | Brake lights |
+|---|---|---|
+| 3,742 | `Off` | `On` |
+| 5,700 | `On` | `Off` |
+| 6,520 | `On` | `On` |
+
+The modules behind the headlights
+```dot
+digraph headlights {
+  node [shape=box, fontname="Helvetica"];
+  RideInstant [style=bold];
+  RideInstant -> Mountains;
+  RideInstant -> Sky;
+  RideInstant -> Truck;
+  RideInstant -> SceneDraw;
+  Mountains -> Sky;
+  Mountains -> Clock;
+  Sky -> Clock;
+  SceneDraw -> TruckDraw;
+  TruckDraw -> Truck;
+}
+```
+
+The truck's headlights come on once the sun has gone behind the mountains, at step 4,039 of a ride that lasts 7,040. `Mountains` knows the skyline and already imports `Sky`, so the question is asked there. The argument is an opaque `Clock`, and the answer is a plain `Bool`, which is about to be turned into something better:
+
+{{code Mountains.is_sun_behind_mountains}}
+
+`Truck.Lights` is a record of two tag unions, written in place. `[On, Off]` needs no declaration, and two independent lamps aren't one state with four values, so they're two fields:
+
+{{code Truck.Lights}}
+
+`RideInstant` puts it together. It's the only place that can. `Truck` is in the ride half of the system and `Mountains` is in the view, and no arrow goes from the first to the second. `RideInstant` imports both.
+
+{{code RideInstant.truck_lights}}
+
+Lamps are to the truck what a pose is to a cat. The sighting carries them, and the drawing does what they say, with each `match` covering both tags:
+
+{{code TruckDraw.draw from "beams =" to "].join()"}}
+
+`TruckDraw` leaves the painting to two modules. `TruckBody` paints the trailer, the cab and the tires, far to near, and `TruckLights` paints the beams and the brake lights, each with its glow.
+
+That covers the clock-driven things. Each is a function with a `Clock` in its arguments, and nothing about them outlives the frame.
 
 Everything so far can be asked about any instant, cold. Hand `Cat.instant_at` a gap and it answers. The rider and the truck can't do that.
 
@@ -1990,5 +2025,7 @@ This page lists what catches a reader of Roc out in Safari Ride, sorted by what 
 ## Credits
 
 Safari Ride was designed by Steve Howell. Claude wrote most of the code and this tutorial under his direction.
+
+The animals by the road are drawn from Microsoft's [Fluent Emoji](https://github.com/microsoft/fluentui-emoji), in its Flat style, under the MIT license.
 
 The way these chapters open and close, the predictions under the widgets and the page of surprises are ideas from Braeden Foster's [Rocco tutorial](https://github.com/Pixelsprout/rocco-engine).
