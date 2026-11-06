@@ -1,9 +1,15 @@
 // This drives the staged book in headless Chromium, the way a reader would,
-// and exits non-zero if any page is wrong. It holds every page to five things:
+// and exits non-zero if any page is wrong. It holds every page to six things:
 // no console errors, no failed requests, every widget running in its frame,
-// every diagram drawn, and every link in the book reaching a real place.
+// every diagram drawn, every link in the book reaching a real place, and at each
+// of VIEWS, a phone's width among them, nothing running past the window, no code
+// block scrolling, and a phone's diagrams legible.
 //
 //   node book_check.mjs http://127.0.0.1:9210/tutorial.staging/ <shots folder>
+//
+// A shot of each page goes in the shots folder, and one for each view in the
+// folder named for it. A third argument, `looks`, reads and shoots the pages
+// without driving their widgets, for a quick look at a change to the styling.
 //
 // There is no Playwright package on the box, so this speaks the browser's
 // DevTools protocol over the WebSocket that Node has built in.
@@ -15,9 +21,20 @@ import { join } from "node:path";
 const CHROME = `${process.env.HOME}/.cache/ms-playwright/chromium-1140/chrome-linux/chrome`;
 const WIDTH = 1400;
 const HEIGHT = 900;
-const [base, shots] = process.argv.slice(2);
-if (!base || !shots) { console.error("usage: book_check.mjs <book url> <shots folder>"); process.exit(2); }
-mkdirSync(shots, { recursive: true });
+// The ways a reader sees a page besides the desktop window it's driven in.
+const VIEWS = [
+  { name: "phone", width: 390, height: 844, mobile: true },
+  { name: "phone-dark", width: 390, height: 844, mobile: true, scheme: "dark" },
+  { name: "tablet", width: 820, height: 1100 },
+  { name: "narrow", width: 1000, height: 800 },
+  { name: "dark", width: WIDTH, height: HEIGHT, scheme: "dark" },
+  { name: "print", width: 794, height: 1123, media: "print" },
+];
+// A phone's diagram must keep its labels at least this many pixels tall.
+const SMALLEST_TEXT = 10;
+const [base, shots, mode] = process.argv.slice(2);
+if (!base || !shots || (mode && mode !== "looks")) { console.error("usage: book_check.mjs <book url> <shots folder> [looks]"); process.exit(2); }
+for (const folder of [shots, ...VIEWS.map((view) => join(shots, view.name))]) mkdirSync(folder, { recursive: true });
 
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 const failures = [];
@@ -193,6 +210,30 @@ async function checkPage(link, file, seen) {
   const hear = (method, handle) => link.on(method, handle);
   hear("Runtime.exceptionThrown", ({ exceptionDetails }) => fail(file, `exception: ${exceptionDetails.exception?.description ?? exceptionDetails.text}`));
   hear("Runtime.consoleAPICalled", ({ type, args }) => {
+const shotName = (file) => file.replace(/\.html$/, ".png");
+
+async function shoot(page, path) {
+  const { data } = await page.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true }, page.session);
+  writeFileSync(path, Buffer.from(data, "base64"));
+}
+
+// One view of a page that's already loaded: what overflows, and a shot of it.
+async function checkView(page, file, view) {
+  await page.send("Emulation.setDeviceMetricsOverride", { width: view.width, height: view.height, deviceScaleFactor: 1, mobile: view.mobile ?? false }, page.session);
+  await page.send("Emulation.setEmulatedMedia", { media: view.media ?? "", features: [{ name: "prefers-color-scheme", value: view.scheme ?? "light" }] }, page.session);
+  await sleep(100);
+  const held = await evaluate(page, READ_PAGE);
+  if (held.scrollWidth > held.clientWidth) fail(file, `the page scrolls sideways in ${view.name}: ${held.scrollWidth} in ${held.clientWidth}`);
+  if (held.overflowingBlocks > 0) fail(file, `${held.overflowingBlocks} blocks run past the window in ${view.name}`);
+  if (held.pres > 0) fail(file, `${held.pres} code blocks scroll in ${view.name}`);
+  for (const diagram of held.diagrams) {
+    if (diagram.drawings !== 1) fail(file, `${diagram.drawings} drawings of a diagram show in ${view.name}`);
+    if (view.mobile && diagram.textPixels < SMALLEST_TEXT) fail(file, `a diagram's text is ${diagram.textPixels.toFixed(1)} pixels in ${view.name}`);
+  }
+  await shoot(page, join(shots, view.name, shotName(file)));
+  return held;
+}
+
     if (type === "error" || type === "warning") fail(file, `console ${type}: ${args.map((a) => a.value ?? a.description).join(" ")}`);
   });
   hear("Log.entryAdded", ({ entry }) => {
@@ -219,13 +260,14 @@ async function checkPage(link, file, seen) {
     if (diagram.width < 50 || diagram.height < 20 || diagram.shapes === 0) fail(file, `a diagram didn't draw: ${JSON.stringify(diagram)}`);
   }
   const widgets = [];
-  for (let i = 0; i < held.frames; i++) widgets.push(await checkFrame(page, file, i));
+  if (mode !== "looks") for (let i = 0; i < held.frames; i++) widgets.push(await checkFrame(page, file, i));
   await evaluate(page, "scrollTo(0, 0)");
   await sleep(200);
-  const { data } = await page.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true }, page.session);
-  writeFileSync(join(shots, file.replace(/\.html$/, ".png")), Buffer.from(data, "base64"));
+  if (held.pres > 0) fail(file, `${held.pres} code blocks scroll`);
+  await shoot(page, join(shots, shotName(file)));
+  for (const view of VIEWS) await checkView(page, file, view);
   await link.send("Target.closeTarget", { targetId });
-  console.log(`${file}: ${held.diagrams.length} diagrams, ${held.frames} widgets ${widgets.join(" ")}, ${held.draftNotes} draft notes, ${held.pres} code blocks that scroll`);
+  console.log(`${file}: ${held.diagrams.length} diagrams, ${held.frames} widgets ${widgets.join(" ")}, ${held.draftNotes} draft notes`);
   return held;
 }
 
