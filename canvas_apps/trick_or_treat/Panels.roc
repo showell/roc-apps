@@ -17,7 +17,14 @@ Panels :: [].{
 	# A polygon whose corners are wherever they are: the door leaf turns out of
 	# its own plane on its hinge, and a floor lies flat.
 	world : View.View, List(View.At), Brush.Fill -> List(Shapes.Shape)
-	world = |v, ats, fill| Shapes.polygon_shapes(View.seen(v, ats), fill)
+	world = |v, ats, fill| {
+		points = View.seen(v, ats)
+		if points.len() < 6 {
+			[]
+		} else {
+			[Poly({ points, fill })]
+		}
+	}
 
 	# A polygon given as metres on one plane `fwd` away: right, height, right,
 	# height. Everything on the house's face is one of these.

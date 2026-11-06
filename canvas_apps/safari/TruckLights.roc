@@ -234,9 +234,11 @@ brake_shapes = |truck, { left, right }| {
 				height: brake_lamp_top,
 			},
 		].map(|corner| TruckShape.point(truck, corner))
-	glow_shapes(truck, lamp).concat(
-		TruckShape.polygon_shapes(truck, { color: brake_color, corners: lamp }),
-	)
+	glow = glow_shapes(truck, lamp)
+	match TruckShape.truck_polygon(truck, { color: brake_color, corners: lamp }) {
+		Ok(lamp_polygon) => glow.append(lamp_polygon)
+		Err(BehindCamera) => glow
+	}
 }
 
 ## The glow round a brake lamp. A lamp with a corner behind the camera has

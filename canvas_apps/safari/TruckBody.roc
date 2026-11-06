@@ -29,8 +29,8 @@ TruckBody :: [].{
 	body_shapes : TruckShape.TruckInView -> List(Shapes.Shape)
 	body_shapes = |truck|
 		DepthSort.sort_by(faces(truck), |face| face.depth)
-			.join_map(
-				|face| TruckShape.polygon_shapes(
+			.keep_oks(
+				|face| TruckShape.truck_polygon(
 					truck,
 					{ color: face.color, corners: face.corners },
 				),

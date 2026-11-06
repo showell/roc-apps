@@ -218,18 +218,6 @@ Shapes :: [].{
 	## Where a shape may paint.
 	Clip : [Anywhere, Within({ x : F64, y : F64, w : F64, h : F64 })]
 
-	## A polygon from its flat list of points. Fewer than three points enclose
-	## nothing, so the answer is an empty list, which joins with the rest of a frame.
-	polygon_shapes : List(F64), Brush.Fill -> List(Shapes.Shape)
-	polygon_shapes = |points, fill| {
-		n = points.len() // 2
-		if n < 3 {
-			[]
-		} else {
-			[Poly({ points, fill })]
-		}
-	}
-
 	## The frame with each concave polygon cut into triangles, for a painter that
 	## fills only convex polygons, as roc-ray does. A canvas fills a concave polygon
 	## itself and doesn't ask for this. A frame paints the same either way, which the

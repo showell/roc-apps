@@ -104,18 +104,18 @@ TruckShape :: [].{
 	).map(|corner| corner.to_f64() / sides.to_f64() * F64.tau)
 
 	## A flat-coloured polygon on the truck, cut at the near plane and
-	## projected. One wholly behind the camera draws nothing.
-	polygon_shapes : TruckShape.TruckInView,
+	## projected, unless it's wholly behind the camera.
+	truck_polygon : TruckShape.TruckInView,
 	{
 		color : I64,
 		corners : List(Geom.RaisedPoint),
-	} -> List(Shapes.Shape)
-	polygon_shapes = |truck, { color, corners }| {
+	} -> Try(Shapes.Shape, [BehindCamera])
+	truck_polygon = |truck, { color, corners }| {
 		in_front = Geom.near_points(corners)
 		if in_front.is_empty() {
-			[]
+			Err(BehindCamera)
 		} else {
-			[Polygon.flat_polygon(color, Camera.projected_points(in_front, truck.view.cam_focal))]
+			Ok(Polygon.flat_polygon(color, Camera.projected_points(in_front, truck.view.cam_focal)))
 		}
 	}
 }
