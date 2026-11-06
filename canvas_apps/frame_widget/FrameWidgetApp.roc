@@ -297,8 +297,8 @@ one_layer_off = |{ layers_on }|
 	}
 
 ## `model` after a click at `spot`, which does nothing off the buttons.
-clicked : FrameWidgetApp.Model, { x : F64, y : F64 } -> FrameWidgetApp.Model
-clicked = |model, spot|
+after_click : FrameWidgetApp.Model, { x : F64, y : F64 } -> FrameWidgetApp.Model
+after_click = |model, spot|
 	if is_inside(next_area, spot) {
 		one_layer_on(model)
 	} else if is_inside(back_area, spot) {
@@ -315,7 +315,7 @@ next_model = |model, input|
 		one_layer_off(model)
 	} else if input.mouse.button_pressed(Left) {
 		position = input.mouse.position()
-		clicked(model, { x: position.x.to_f64(), y: position.y.to_f64() })
+		after_click(model, { x: position.x.to_f64(), y: position.y.to_f64() })
 	} else {
 		model
 	}
@@ -365,7 +365,13 @@ status_lines = |{ layers_on }| {
 
 status_line : Str, U64 -> List(Shapes.Shape)
 status_line = |text, row|
-	Font.text(text, 24.0, 620.0 + row.to_f64() * 36.0, 20.0, Brush.opaque(0x202020))
+	Font.text(
+		text,
+		24.0,
+		620.0 + row.to_f64() * 36.0,
+		20.0,
+		Brush.opaque(0x202020),
+	)
 
 ## The layers on, in the game's paint order.
 picture : List(Layer) -> List(Shapes.Shape)
