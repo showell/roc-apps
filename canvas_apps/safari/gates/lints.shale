@@ -39,11 +39,11 @@ const LINTS = {
   }, whole_tree = {"single", "fixed", "entry", "constant", "bool_param", "dead"}},
   {recipe = "stack", args = {}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 0}, {"to unstack", 0}, {"long", 0}},
     skip = {"BirdStills.roc", "CatStills.roc", "EmojiStills.roc"}},
-  {recipe = "vocabulary", args = {"words=vocabulary.txt"}, budget = {}, counts = {{"retired_name", 0}, {"retired_comment", 1}}},
+  {recipe = "vocabulary", args = {"words=vocabulary.txt"}, budget = {}, counts = {{"retired_name", 0}, {"retired_comment", 0}}},
   {recipe = "name_types", args = {"table=name_types.txt"}, budget = {}, counts = {{"name_type", 3}, {"bare_beside_unit", 55}, {"no_value", 0}},
     whole_tree = {"bare_beside_unit"}},
   {recipe = "families", args = {}, budget = {}, counts = {{"family", 2}, {"twin_name", 4}}, whole_tree = {"family", "twin_name"}},
-  {recipe = "plain_names", args = {}, budget = {}, counts = {{"pure_mutator", 10}, {"abbreviation", 41}, {"module_doc", 8}}},
+  {recipe = "plain_names", args = {}, budget = {}, counts = {{"pure_mutator", 10}, {"abbreviation", 7}, {"module_doc", 0}}},
 }
 
 -- The command that runs `lint` over `glob`, in safari's folder.
