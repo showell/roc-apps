@@ -157,7 +157,7 @@ expect {
 attentive_rider : RiderState
 attentive_rider = {
 	..RiderState.initial,
-	look_depth: Gaze.next_look_depth(RiderState.initial, Gaze.gaze_release_angle.times(0.4)),
+	look_depth: Gaze.next_look_depth(RiderState.initial, Gaze.look_release_angle.times(0.4)),
 }
 
 at_seam : RiderState

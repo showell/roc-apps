@@ -45,7 +45,7 @@ near_cat_on : U32 -> RiderState
 near_cat_on = |number| {
 	..upright,
 	segment_index: World.SegmentIndex.number(number),
-	along: upright.along.plus(Gaze.gaze_look_distance.times(0.8)),
+	along: upright.along.plus(Gaze.notice_distance.times(0.8)),
 }
 
 expect near_cat_on(1).along.to_metres() == 120.0

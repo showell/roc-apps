@@ -1303,7 +1303,7 @@ While the gaze is off the road, attention rises with how far it has turned, and 
 
 {{code Throttle.pig_limit}}
 
-{{code Gaze.pig_gaze_brake}}
+{{code Gaze.gawk_brake}}
 
 The sum is the one the throttle uses for a bend, with a pig for a bend. The rider aims to be down to 0.2 metres a step by 25 metres before the pig. `d.max(...)` keeps the distance positive once the rider gets there.
 

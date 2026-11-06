@@ -273,7 +273,7 @@ sight_line = |rider| {
 	x = screen_x(rider.along)
 	y = screen_y(rider.across)
 	turn = rider.yaw.plus(rider.gaze_yaw).to_radians()
-	reach = Gaze.gaze_look_distance.to_metres() * pixels_a_metre
+	reach = Gaze.notice_distance.to_metres() * pixels_a_metre
 	Shapes.line(
 		x,
 		y,
@@ -445,7 +445,7 @@ expect {
 	played.all(|rider| gaze_degrees(rider) <= widest)
 		and gaze_degrees(state_at_step(played, look_end_step)) < widest
 		and gaze_degrees(state_at_step(played, look_end_step - 2)) < widest
-		and widest < Gaze.gaze_release_angle.to_radians() / Trig.deg
+		and widest < Gaze.look_release_angle.to_radians() / Trig.deg
 }
 
 # The gaze never turns left on this stretch, as `gaze_degrees` says.

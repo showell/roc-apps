@@ -64,7 +64,7 @@ Throttle :: [].{
 		offered_acceleration : Acceleration,
 	} -> Acceleration
 	pig_limit = |state, { segment: seg, offered_acceleration: a }|
-		match Gaze.pig_gaze_brake(state, seg) {
+		match Gaze.gawk_brake(state, seg) {
 			AtMost(brake) => a.min(brake)
 			NoLimit => a
 		}
