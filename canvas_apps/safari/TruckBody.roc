@@ -101,7 +101,7 @@ faces : TruckShape.TruckInView -> List(TruckBody.TruckFace)
 faces = |truck| {
 	box = truck.box
 	axles = TruckBody.axles(box)
-	List.join([
+	[
 		[
 			side(truck, box.left),
 			side(truck, box.right),
@@ -112,7 +112,7 @@ faces = |truck| {
 		],
 		axles.map(|axle| tire(truck, { axle, across: box.left })),
 		axles.map(|axle| tire(truck, { axle, across: box.right })),
-	])
+	].join()
 }
 
 ## A face of `color` whose corners are the truck's points `corners`.
@@ -322,7 +322,7 @@ point_ahead = |forward| {
 
 quad_face : TruckBody.TruckFace
 quad_face = TruckBody.face(
-	1846886,
+	0x1C2E66,
 	[
 		point_ahead(10.0),
 		point_ahead(20.0),
@@ -333,7 +333,7 @@ quad_face = TruckBody.face(
 
 triangle_face : TruckBody.TruckFace
 triangle_face = TruckBody.face(
-	1381658,
+	0x15151A,
 	[
 		point_ahead(1.0),
 		point_ahead(2.0),
@@ -343,9 +343,9 @@ triangle_face = TruckBody.face(
 
 expect quad_face.depth.to_metres() == 25.0
 expect triangle_face.depth.to_metres() == 3.0
-expect quad_face.color == 1846886
+expect quad_face.color == 0x1C2E66
 expect quad_face.corners.len() == 4
-expect triangle_face.color == 1381658
+expect triangle_face.color == 0x15151A
 expect triangle_face.corners.len() == 3
 
 # A face that is only a colour and a depth, for the sort.

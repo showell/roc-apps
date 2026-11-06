@@ -43,51 +43,36 @@ LeanSearch :: [].{
 	lean_search_rounds = 12
 
 	## The lean between `low` and `high` whose coast ends nearest `target`
-	## across the road, after the bisection's remaining steps from `at`.
-	search_lean_from : Bike.Motion(others),
+	## across the road, by bisection.
+	search_lean : Bike.Motion(others),
 	{
 		target : Across,
 		low : Angle.Lean,
 		high : Angle.Lean,
-		at : I64,
 	} -> Angle.Lean
-	search_lean_from = |state, { target, low, high, at }| {
-		mid = low.halfway_to(high)
-		if at >= lean_search_rounds {
-			mid
-		} else if want_more_right(Coast.project(Bike.with_lean(state, mid)), target) {
-			search_lean_from(
-				state,
-				{
-					target,
-					low: mid,
-					high,
-					at: at + 1,
-				},
-			)
-		} else {
-			search_lean_from(
-				state,
-				{
-					target,
-					low,
-					high: mid,
-					at: at + 1,
-				},
-			)
+	search_lean = |state, { target, low, high }| {
+		var $low = low
+		var $high = high
+		for _ in 0..<lean_search_rounds {
+			mid = $low.halfway_to($high)
+			if want_more_right(Coast.project(Bike.with_lean(state, mid)), target) {
+				$low = mid
+			} else {
+				$high = mid
+			}
 		}
+		$low.halfway_to($high)
 	}
 
 	## The lean for the next step: within the most one step can change it.
 	best_lean : Bike.Motion(others) -> Angle.Lean
 	best_lean = |state|
-		search_lean_from(
+		search_lean(
 			state,
 			{
 				target: lean_target(state.across),
 				low: state.lean.minus(max_lean_change),
 				high: state.lean.plus(max_lean_change),
-				at: 0,
 			},
 		)
 }
@@ -97,18 +82,18 @@ target_of : F64 -> F64
 target_of = |across| LeanSearch.lean_target(Across.metres(across)).to_metres()
 
 expect target_of(0.5) == 0.15
-expect target_of((0.0 - 0.5)) == -0.15
+expect target_of(-0.5) == -0.15
 expect target_of(2.0) == 0.6
-expect target_of((0.0 - 2.0)) == -0.6
+expect target_of(-2.0) == -0.6
 expect target_of(0.04) == 0.012
-expect target_of((0.0 - 0.04)) == -0.012
+expect target_of(-0.04) == -0.012
 expect target_of(0.0) == 0.04
 expect target_of(0.039) == 0.04
-expect target_of((0.0 - 0.039)) == -0.04
+expect target_of(-0.039) == -0.04
 expect target_of(2.0) > 0.0
 expect target_of(2.0) < 2.0
-expect target_of((0.0 - 2.0)) < 0.0
-expect target_of((0.0 - 2.0)) > (0.0 - 2.0)
+expect target_of(-2.0) < 0.0
+expect target_of(-2.0) > -2.0
 expect target_of(0.0) > 0.0
 
 expect LeanSearch.asymptote_tuning == 0.3
@@ -131,9 +116,9 @@ off_right : Coast.Exit
 off_right = Leaves({ side: Right, after: Steps.one_step })
 
 expect LeanSearch.want_more_right(outcome(off_left, 99.0), Across.metres(0.5))
-expect LeanSearch.want_more_right(outcome(off_left, (0.0 - 99.0)), Across.metres(0.5))
-expect !(LeanSearch.want_more_right(outcome(off_right, 99.0), Across.metres(0.5)))
-expect !(LeanSearch.want_more_right(outcome(off_right, (0.0 - 99.0)), Across.metres(0.5)))
+expect LeanSearch.want_more_right(outcome(off_left, -99.0), Across.metres(0.5))
+expect !LeanSearch.want_more_right(outcome(off_right, 99.0), Across.metres(0.5))
+expect !LeanSearch.want_more_right(outcome(off_right, -99.0), Across.metres(0.5))
 expect LeanSearch.want_more_right(outcome(StaysOn, 0.4), Across.metres(0.5))
-expect !(LeanSearch.want_more_right(outcome(StaysOn, 0.6), Across.metres(0.5)))
-expect !(LeanSearch.want_more_right(outcome(StaysOn, 0.5), Across.metres(0.5)))
+expect !LeanSearch.want_more_right(outcome(StaysOn, 0.6), Across.metres(0.5))
+expect !LeanSearch.want_more_right(outcome(StaysOn, 0.5), Across.metres(0.5))

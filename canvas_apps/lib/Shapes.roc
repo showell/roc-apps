@@ -135,21 +135,15 @@ Shapes :: [].{
 			sides
 		}
 		var $out = List.with_capacity(n)
-		var $k = 0
-		while $k < n {
-			a0 = Trig.two_pi * count($k) / count(n)
-			a1 = Trig.two_pi * count($k + 1) / count(n)
-			$out = List.append(
-				$out,
+		for k in 0..<n {
+			a0 = Trig.two_pi * k.to_f64() / n.to_f64()
+			a1 = Trig.two_pi * (k + 1).to_f64() / n.to_f64()
+			$out = $out.append(
 				line(x + r * Trig.r_cos(a0), y + r * Trig.r_sin(a0), x + r * Trig.r_cos(a1), y + r * Trig.r_sin(a1), w, fill),
 			)
-			$k = $k + 1
 		}
 		$out
 	}
-
-	count : U64 -> F64
-	count = |n| I64.to_f64(U64.to_i64_wrap(n))
 
 	# **A FIGURE TURNED AWAY FROM US IS THE SAME FIGURE, NARROWER.** Every x is
 	# pulled toward `axis` by `k`, so a drawing made face-on reads as one yawed
@@ -158,68 +152,59 @@ Shapes :: [].{
 	# radius -- a skull turned forty-five degrees is still round, and an
 	# ellipse is not in the vocabulary.
 	squash_x : List(Shapes.Shape), F64, F64 -> List(Shapes.Shape)
-	squash_x = |shapes, axis, k| {
-		n = List.len(shapes)
-		var $out = List.with_capacity(n)
-		var $i = 0
-		while $i < n {
-			$out = List.append(
-				$out,
-				match List.get(shapes, $i) ?? crash ("shape out of range") {
-					Poly(p) => Poly({ pts: pulled(p.pts, axis, k), fill: p.fill })
-					Pieces(p) => Pieces({ tris: pulled(p.tris, axis, k), fill: p.fill })
-					Disc(d) => Disc({ x: axis + (d.x - axis) * k, y: d.y, r: d.r, fill: d.fill, clip: d.clip })
-					# A mirror sends a rectangle's left edge to its right, and a
-					# width is never negative.
-					Rect(r) => {
-						a = axis + (r.x - axis) * k
-						b = axis + (r.x + r.w - axis) * k
-						Rect({
-							x: F64.min(a, b),
-							y: r.y,
-							w: if b < a {
-								a - b
-							} else {
-								b - a
-							},
-							h: r.h,
-							fill: r.fill,
-						})
-					}
-					# A mark is not geometry; turning a figure does not touch it.
-					Blend(m) => Blend(m)
-					View(l) => View(l)
-					# A picture pulled toward the axis is the same picture,
-					# narrower; a mirror sends its left edge to its right.
-					Image(i) => {
-						a = axis + (i.x - axis) * k
-						b = axis + (i.x + i.w - axis) * k
-						Image({
-							..i,
-							x: F64.min(a, b),
-							w: if b < a {
-								a - b
-							} else {
-								b - a
-							},
-						})
-					}
-				},
-			)
-			$i = $i + 1
-		}
-		$out
-	}
+	squash_x = |shapes, axis, k| shapes.map(
+		|shape|
+			match shape {
+				Poly(p) => Poly({ pts: pulled(p.pts, axis, k), fill: p.fill })
+				Pieces(p) => Pieces({ tris: pulled(p.tris, axis, k), fill: p.fill })
+				Disc(d) => Disc({ x: axis + (d.x - axis) * k, y: d.y, r: d.r, fill: d.fill, clip: d.clip })
+				# A mirror sends a rectangle's left edge to its right, and a
+				# width is never negative.
+				Rect(r) => {
+					a = axis + (r.x - axis) * k
+					b = axis + (r.x + r.w - axis) * k
+					Rect({
+						x: a.min(b),
+						y: r.y,
+						w: if b < a {
+							a - b
+						} else {
+							b - a
+						},
+						h: r.h,
+						fill: r.fill,
+					})
+				}
+				# A mark is not geometry; turning a figure does not touch it.
+				Blend(m) => Blend(m)
+				View(l) => View(l)
+				# A picture pulled toward the axis is the same picture,
+				# narrower; a mirror sends its left edge to its right.
+				Image(i) => {
+					a = axis + (i.x - axis) * k
+					b = axis + (i.x + i.w - axis) * k
+					Image({
+						..i,
+						x: a.min(b),
+						w: if b < a {
+							a - b
+						} else {
+							b - a
+						},
+					})
+				}
+			},
+	)
 
 	# The x of every point pulled toward `axis`; the y of each left alone.
 	pulled : List(F64), F64, F64 -> List(F64)
 	pulled = |xs, axis, k| {
-		n = List.len(xs)
+		n = xs.len()
 		var $out = List.with_capacity(n)
 		var $i = 0
 		while $i + 1 < n {
-			$out = List.append($out, axis + (at(xs, $i) - axis) * k)
-			$out = List.append($out, at(xs, $i + 1))
+			$out = $out.append(axis + (at(xs, $i) - axis) * k)
+			$out = $out.append(at(xs, $i + 1))
 			$i = $i + 2
 		}
 		$out
@@ -242,15 +227,15 @@ Shapes :: [].{
 	# takes. A radius of zero, or one too big for the box, gives the box.
 	rounded_rect : F64, F64, F64, F64, F64, I64, Brush.Fill -> Shapes.Shape
 	rounded_rect = |x, y, w, h, r, segments, fill| {
-		rr = F64.min(r, F64.min(w / 2.0, h / 2.0))
+		rr = r.min((w / 2.0).min(h / 2.0))
 		if rr <= 0.0 or segments < 1 {
 			Poly({ pts: [x, y, x + w, y, x + w, y + h, x, y + h], fill })
 		} else {
-			var $pts = List.with_capacity(I64.to_u64_wrap(8 * (segments + 1)))
+			var $pts = List.with_capacity((8 * (segments + 1)).to_u64_wrap())
 			# Clockwise from the top-left corner's arc, each corner swept from
 			# its own start angle.
 			$pts = corner($pts, x + rr, y + rr, rr, half_pi * 2.0, segments)
-			$pts = corner($pts, x + w - rr, y + rr, rr, 0.0 - half_pi, segments)
+			$pts = corner($pts, x + w - rr, y + rr, rr, -half_pi, segments)
 			$pts = corner($pts, x + w - rr, y + h - rr, rr, 0.0, segments)
 			$pts = corner($pts, x + rr, y + h - rr, rr, half_pi, segments)
 			Poly({ pts: $pts, fill })
@@ -264,11 +249,9 @@ Shapes :: [].{
 	corner : List(F64), F64, F64, F64, F64, I64 -> List(F64)
 	corner = |pts, cx, cy, r, from, segments| {
 		var $out = pts
-		var $k = 0
-		while $k <= segments {
-			a = from + half_pi * I64.to_f64($k) / I64.to_f64(segments)
-			$out = List.concat($out, [cx + r * Trig.r_cos(a), cy + r * Trig.r_sin(a)])
-			$k = $k + 1
+		for k in 0..=segments {
+			a = from + half_pi * k.to_f64() / segments.to_f64()
+			$out = $out.concat([cx + r * Trig.r_cos(a), cy + r * Trig.r_sin(a)])
 		}
 		$out
 	}
@@ -277,7 +260,7 @@ Shapes :: [].{
 	sqrt = |v| if v <= 0.0 {
 		0.0
 	} else {
-		F64.sqrt(v)
+		v.sqrt()
 	}
 
 	# Where a shape is allowed to paint, when it is not allowed everywhere.
@@ -285,7 +268,7 @@ Shapes :: [].{
 
 	polygon : List(F64), Brush.Fill -> List(Shapes.Shape)
 	polygon = |pts, fill| {
-		n = List.len(pts) // 2
+		n = pts.len() // 2
 		if n < 3 {
 			[]
 		} else {
@@ -300,37 +283,27 @@ Shapes :: [].{
 	# fill winds them. A frame that has been through here paints the same as
 	# one that has not -- that is what ShapesFrame checks.
 	cut : List(Shapes.Shape) -> List(Shapes.Shape)
-	cut = |shapes| {
-		n = List.len(shapes)
-		var $out = List.with_capacity(n)
-		var $k = 0
-		while $k < n {
-			$out = List.concat(
-				$out,
-				match List.get(shapes, $k) ?? crash ("shape out of range") {
-					Poly(p) =>
-						if is_convex(p.pts) {
-							[Poly(p)]
-						} else {
-							[Pieces({ tris: wound(triangulate(p.pts)), fill: p.fill })]
-						}
-					other => [other]
-				},
-			)
-			$k = $k + 1
-		}
-		$out
-	}
+	cut = |shapes| shapes.join_map(
+		|shape|
+			match shape {
+				Poly(p) =>
+					if is_convex(p.pts) {
+						[Poly(p)]
+					} else {
+						[Pieces({ tris: wound(triangulate(p.pts)), fill: p.fill })]
+					}
+				other => [other]
+			},
+	)
 
 	# Each triangle wound as roc-ray's convex fill winds one: its second and
 	# third corners swapped when its signed area is positive.
 	wound : List(F64) -> List(F64)
 	wound = |tris| {
-		m = List.len(tris) // 6
+		m = tris.len() // 6
 		var $out = List.with_capacity(6 * m)
-		var $k = 0
-		while $k < m {
-			b = 6 * $k
+		for k in 0..<m {
+			b = 6 * k
 			ax = at(tris, b)
 			ay = at(tris, b + 1)
 			bx = at(tris, b + 2)
@@ -338,11 +311,10 @@ Shapes :: [].{
 			cx = at(tris, b + 4)
 			cy = at(tris, b + 5)
 			$out = if cross3(ax, ay, bx, by, cx, cy) > 0.0 {
-				List.concat($out, [ax, ay, cx, cy, bx, by])
+				$out.concat([ax, ay, cx, cy, bx, by])
 			} else {
-				List.concat($out, [ax, ay, bx, by, cx, cy])
+				$out.concat([ax, ay, bx, by, cx, cy])
 			}
-			$k = $k + 1
 		}
 		$out
 	}
@@ -350,7 +322,7 @@ Shapes :: [].{
 	# --- Geometry -------------------------------------------------------------
 
 	at : List(F64), U64 -> F64
-	at = |xs, i| List.get(xs, i) ?? 0.0
+	at = |xs, i| xs.get(i) ?? 0.0
 
 	cross3 : F64, F64, F64, F64, F64, F64 -> F64
 	cross3 = |ax, ay, bx, by, cx, cy| (bx - ax) * (cy - ay) - (by - ay) * (cx - ax)
@@ -358,17 +330,15 @@ Shapes :: [].{
 	# Twice the signed area, summed as roc-ray's host sums it.
 	twice_area : List(F64) -> F64
 	twice_area = |pts| {
-		n = List.len(pts) // 2
+		n = pts.len() // 2
 		var $sum = 0.0
-		var $k = 0
-		while $k < n {
-			k1 = if $k + 1 == n {
+		for k in 0..<n {
+			k1 = if k + 1 == n {
 				0
 			} else {
-				$k + 1
+				k + 1
 			}
-			$sum = $sum + at(pts, 2 * $k) * at(pts, 2 * k1 + 1) - at(pts, 2 * k1) * at(pts, 2 * $k + 1)
-			$k = $k + 1
+			$sum = $sum + at(pts, 2 * k) * at(pts, 2 * k1 + 1) - at(pts, 2 * k1) * at(pts, 2 * k + 1)
 		}
 		$sum
 	}
@@ -383,9 +353,9 @@ Shapes :: [].{
 	# star whose corners all turn one way.
 	is_convex : List(F64) -> Bool
 	is_convex = |pts| {
-		n = List.len(pts) // 2
+		n = pts.len() // 2
 		var $sign = 0.0
-		var $bad = Bool.False
+		var $bad = False
 		var $xflips = 0
 		var $yflips = 0
 		var $xdir = 0.0
@@ -445,23 +415,18 @@ Shapes :: [].{
 	# that crosses itself can run out of ears; what is left is fanned.
 	triangulate : List(F64) -> List(F64)
 	triangulate = |pts| {
-		n = List.len(pts) // 2
+		n = pts.len() // 2
 		orient = if twice_area(pts) >= 0.0 {
 			1.0
 		} else {
 			-1.0
 		}
-		var $idx = List.with_capacity(n)
-		var $k = 0
-		while $k < n {
-			$idx = List.append($idx, $k)
-			$k = $k + 1
-		}
+		var $idx = List.from_iter(U64.until(0, n))
 		var $out = List.with_capacity(6 * n)
 		var $i = 0
 		var $misses = 0
-		while List.len($idx) > 3 and $misses < List.len($idx) {
-			m = List.len($idx)
+		while $idx.len() > 3 and $misses < $idx.len() {
+			m = $idx.len()
 			ip = if $i == 0 {
 				m - 1
 			} else {
@@ -472,9 +437,9 @@ Shapes :: [].{
 			} else {
 				$i + 1
 			}
-			a = List.get($idx, ip) ?? crash ("vertex out of range")
-			b = List.get($idx, $i) ?? crash ("vertex out of range")
-			c = List.get($idx, inx) ?? crash ("vertex out of range")
+			a = $idx.get(ip) ?? crash "vertex out of range"
+			b = $idx.get($i) ?? crash "vertex out of range"
+			c = $idx.get(inx) ?? crash "vertex out of range"
 			ax = at(pts, 2 * a)
 			ay = at(pts, 2 * a + 1)
 			bx = at(pts, 2 * b)
@@ -484,12 +449,12 @@ Shapes :: [].{
 			turn = cross3(ax, ay, bx, by, cx, cy) * orient
 			ear = turn >= 0.0 and !any_inside(pts, $idx, a, b, c, orient)
 			$out = if ear and turn > 0.0 {
-				List.concat($out, [ax, ay, bx, by, cx, cy])
+				$out.concat([ax, ay, bx, by, cx, cy])
 			} else {
 				$out
 			}
 			$idx = if ear {
-				List.drop_at($idx, $i)
+				$idx.drop_at($i)
 			} else {
 				$idx
 			}
@@ -499,13 +464,11 @@ Shapes :: [].{
 				$misses + 1
 			}
 			$i = if ear {
-				(
-					if $i >= List.len($idx) {
-						0
-					} else {
-						$i
-					}
-				)
+				if $i >= $idx.len() {
+					0
+				} else {
+					$i
+				}
 			} else {
 				inx
 			}
@@ -523,30 +486,26 @@ Shapes :: [].{
 		by = at(pts, 2 * b + 1)
 		cx = at(pts, 2 * c)
 		cy = at(pts, 2 * c + 1)
-		m = List.len(idx)
-		var $found = Bool.False
-		var $k = 0
-		while $k < m and !$found {
-			p = List.get(idx, $k) ?? crash ("vertex out of range")
-			px = at(pts, 2 * p)
-			py = at(pts, 2 * p + 1)
-			$found = p != a and p != b and p != c and cross3(ax, ay, bx, by, px, py) * orient > 0.0 and cross3(bx, by, cx, cy, px, py) * orient > 0.0 and cross3(cx, cy, ax, ay, px, py) * orient > 0.0
-			$k = $k + 1
-		}
-		$found
+		idx.any(
+			|p| {
+				px = at(pts, 2 * p)
+				py = at(pts, 2 * p + 1)
+				p != a and p != b and p != c and cross3(ax, ay, bx, by, px, py) * orient > 0.0 and cross3(bx, by, cx, cy, px, py) * orient > 0.0 and cross3(cx, cy, ax, ay, px, py) * orient > 0.0
+			},
+		)
 	}
 
 	# The remaining corners as a fan from the first, onto `out`.
 	fan : List(F64), List(U64), List(F64) -> List(F64)
 	fan = |pts, idx, out| {
-		m = List.len(idx)
-		first = List.get(idx, 0) ?? 0
+		m = idx.len()
+		first = idx.get(0) ?? 0
 		var $out = out
 		var $k = 1
 		while $k + 1 < m {
-			p = List.get(idx, $k) ?? crash ("vertex out of range")
-			q = List.get(idx, $k + 1) ?? crash ("vertex out of range")
-			$out = List.concat($out, [at(pts, 2 * first), at(pts, 2 * first + 1), at(pts, 2 * p), at(pts, 2 * p + 1), at(pts, 2 * q), at(pts, 2 * q + 1)])
+			p = idx.get($k) ?? crash "vertex out of range"
+			q = idx.get($k + 1) ?? crash "vertex out of range"
+			$out = $out.concat([at(pts, 2 * first), at(pts, 2 * first + 1), at(pts, 2 * p), at(pts, 2 * p + 1), at(pts, 2 * q), at(pts, 2 * q + 1)])
 			$k = $k + 1
 		}
 		$out

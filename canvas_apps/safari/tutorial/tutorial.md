@@ -1602,7 +1602,7 @@ Finding the stretch that's playing shows one more Roc idea. In `playing_at`, `va
 
 {{code Animation.playing_at}}
 
-`Timeline.at_beat` calls it once for each track, which is what lets the two tracks cut wherever they like. `Animation.Timeline.(score)` in a parameter list opens the nominal type, the way `Clock.(n)` opens an opaque one. `pose_of` and `path_spot` turn what's playing into a pose and a spot, and the bird chapter reads `path_spot`.
+`Timeline.at_beat` calls it once for each track, which is what lets the two tracks cut wherever they like. `Animation.Timeline.(timeline)` in a parameter list opens the nominal type, the way `Clock.(n)` opens an opaque one. `pose_of` and `path_spot` turn what's playing into a pose and a spot, and the bird chapter reads `path_spot`.
 
 {{code Animation.Timeline from "## The critter at `beat`" to "path_spot(path.plays, fraction)"}}
 
@@ -1610,7 +1610,7 @@ Finding the stretch that's playing shows one more Roc idea. In `playing_at`, `va
 
 {{code Animation.Instant}}
 
-{{code Animation.Timeline from "## The critter at `stage`." to "Past(_) => score.after"}}
+{{code Animation.Timeline from "## The critter at `stage`." to "Past(_) => timeline.after"}}
 
 Back at the top, nothing in `instant_at` is unknown any more.
 
@@ -1897,9 +1897,9 @@ digraph rehearsal {
 
 {{code Coast.project}}
 
-`LeanSearch` asks `Coast` that question at a dozen different leans. The rider wants the coast to end somewhere near the middle of the lane, and more lean to the right moves the end of a coast to the right, so this is a bisection. It's a recursive function with its whole state in one record argument, `low` and `high` closing in on each other. `Bike.with_lean(state, mid)` is a rider who doesn't exist, handed to `Coast`, who gets a future that didn't happen:
+`LeanSearch` asks `Coast` that question at a dozen different leans. The rider wants the coast to end somewhere near the middle of the lane, and more lean to the right moves the end of a coast to the right, so this is a bisection. It's a `for` loop, with `$low` and `$high` closing in on each other. `Bike.with_lean(state, mid)` is a rider who doesn't exist, handed to `Coast`, who gets a future that didn't happen:
 
-{{code LeanSearch.search_lean_from from "mid = low.halfway_to(high)" to "low: mid,"}}
+{{code LeanSearch.search_lean from "mid = $low.halfway_to($high)" to "$low = mid"}}
 
 The decision about which way to go is a `match` on what the rehearsal found. Running off the left means more right, running off the right means less, and staying on the road compares the end of the coast with the target:
 
@@ -2272,7 +2272,7 @@ digraph platform {
 
 New in this chapter:
 
-- Roc: an app as a record, `var` and `while`, `roc glue`
+- Roc: an app as a record, `roc glue`
 - Modules: `WasmApp`, `CanvasApp`, `Input`, `Shapes`
 
 `WasmApp`, `CanvasApp`, `Input` and `Shapes` are in `lib/`, and they're the same for every canvas app.
@@ -2295,7 +2295,7 @@ An app here is a record, handed to a runner. `CanvasApp(model)` has a type param
 
 ### Keys
 
-The ride instant chapter showed `SafariApp.step` reading a snapshot of the keys. A snapshot is a value, so a test could write one down. Everything the keys do is a function from `Tour` to `Tour`, so moving four steps or one, forward or back, is one helper with a function in a record field. `var` is back, this time with `while`, in a function that's still pure. `$tour` and `$i` can't be seen from outside.
+The ride instant chapter showed `SafariApp.step` reading a snapshot of the keys. A snapshot is a value, so a test could write one down. Everything the keys do is a function from `Tour` to `Tour`, so moving four steps or one, forward or back, is one helper with a function in a record field. `var` is back, in a function that's still pure. `$tour` can't be seen from outside.
 
 {{code SafariApp.repeat}}
 

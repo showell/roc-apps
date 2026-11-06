@@ -69,8 +69,8 @@ TowerSighting := {
 	beacon_brightness : Steps -> Fraction
 	beacon_brightness = |phase| {
 		wrapped = phase.wrapped_to(beacon_period).to_f64()
-		angle = (((2.0 * Trig.pi) * wrapped) / beacon_period.to_f64())
-		Fraction.of(((1.0 - Trig.r_cos(angle)) / 2.0))
+		angle = 2.0 * Trig.pi * wrapped / beacon_period.to_f64()
+		Fraction.of((1.0 - Trig.r_cos(angle)) / 2.0)
 	}
 
 	## The towers in view: those along the chain, then the one past the end of
@@ -173,7 +173,7 @@ tower_if_ahead : TowerSighting.Viewpoint,
 	beacon_key : U32,
 } -> List(TowerSighting)
 tower_if_ahead = |view, { place, along, across, yaw, beacon_key }| {
-	center = Chain.rider_point_at(view.road, { place: place, along, across })
+	center = Chain.rider_point_at(view.road, { place, along, across })
 	if center.forward <= Geom.near_plane {
 		[]
 	} else {
@@ -233,7 +233,7 @@ expect TowerSighting.along_chain(from_origin).len() == 3
 expect TowerSighting.segment_towers(from_origin, Chain.Position.first).len() == 1
 expect TowerSighting.mid_tower(from_origin, Chain.Position.first).len() == 0
 expect TowerSighting.in_view(from_origin).len() == 3
-expect route.all(|seg| !(has_mid_tower(seg)))
+expect route.all(|seg| !has_mid_tower(seg))
 
 ## Whether a segment has a tower halfway along.
 has_mid_tower : World.Segment -> Bool
@@ -315,7 +315,7 @@ long_brightness_at = |clock|
 	TowerSighting.along_chain({ ..long_view, clock }).map(|tower| tower.beacon_brightness.to_f64())
 
 expect {
-	got = List.concat(long_brightness_at(Clock.start), long_brightness_at(Clock.at_step(60)))
+	got = long_brightness_at(Clock.start).concat(long_brightness_at(Clock.at_step(60)))
 	wanted_list = [0.0, 1.0, 1.0, 0.0]
 	closeness = got.map2(wanted_list, |one, wanted| (one - wanted).abs() <= 0.0000001)
 	got.len() == wanted_list.len() and closeness.all(|is_close| is_close)
@@ -329,7 +329,7 @@ spread_at = |clock| {
 }
 
 expect
-	List.concat(spread_at(Clock.start), spread_at(Clock.at_step(30)))
+	spread_at(Clock.start).concat(spread_at(Clock.at_step(30)))
 		== [0, 37, 74, 30, 67, 104].map(brightness_at)
 
 brightness_at : U32 -> F64

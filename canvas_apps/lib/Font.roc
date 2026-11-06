@@ -33,23 +33,14 @@ Font :: [].{
 	# plotter would give you.
 	text : Str, F64, F64, F64, Brush.Rgba -> List(Shapes.Shape)
 	text = |str, x, y, size, color| {
-		bytes = Str.to_utf8(str)
 		u = size / units
-		w = F64.max(size / 14.0, 1.0)
-		n = List.len(bytes)
-		var $out = List.with_capacity(4 * n)
-		var $i = 0
-		while $i < n {
-			b = List.get(bytes, $i) ?? 32
-			$out = List.concat($out, glyph(b, x + I64.to_f64(U64.to_i64_wrap($i)) * advance * u, y, u, w, color))
-			$i = $i + 1
-		}
-		$out
+		w = (size / 14.0).max(1.0)
+		str.to_utf8().map_with_index(|b, i| glyph(b, x + i.to_f64() * advance * u, y, u, w, color)).join()
 	}
 
 	# How wide a string is, for a caller that wants to place one.
 	width_of : Str, F64 -> F64
-	width_of = |str, size| I64.to_f64(U64.to_i64_wrap(List.len(Str.to_utf8(str)))) * advance * (size / units)
+	width_of = |str, size| str.to_utf8().len().to_f64() * advance * (size / units)
 
 	## A string centred on `mid`, which is what a title, a banner and a hint
 	## all want and each game was working out for itself.
@@ -60,34 +51,26 @@ Font :: [].{
 	glyph : U8, F64, F64, F64, F64, Brush.Rgba -> List(Shapes.Shape)
 	glyph = |b, x, y, u, w, color| {
 		strokes = strokes_for(b)
-		n = List.len(strokes)
-		var $out = List.with_capacity(n)
-		var $k = 0
-		while $k < n {
-			pts = List.get(strokes, $k) ?? []
-			m = List.len(pts) // 2
-			var $j = 1
-			while $j < m {
-				$out = List.append(
-					$out,
+		var $out = List.with_capacity(strokes.len())
+		for pts in strokes {
+			for j in 1..<(pts.len() // 2) {
+				$out = $out.append(
 					Shapes.line(
-						x + at(pts, 2 * ($j - 1)) * u,
-						y + at(pts, 2 * ($j - 1) + 1) * u,
-						x + at(pts, 2 * $j) * u,
-						y + at(pts, 2 * $j + 1) * u,
+						x + at(pts, 2 * (j - 1)) * u,
+						y + at(pts, 2 * (j - 1) + 1) * u,
+						x + at(pts, 2 * j) * u,
+						y + at(pts, 2 * j + 1) * u,
 						w,
 						Flat(color),
 					),
 				)
-				$j = $j + 1
 			}
-			$k = $k + 1
 		}
 		$out
 	}
 
 	at : List(F64), U64 -> F64
-	at = |xs, i| List.get(xs, i) ?? 0.0
+	at = |xs, i| xs.get(i) ?? crash "Font.at: an index past the end of the stroke"
 
 	# **THE ALPHABET.** Each glyph is a list of strokes; each stroke is a
 	# polyline, x and y alternating, on the grid above. A curve is a few

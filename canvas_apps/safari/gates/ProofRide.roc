@@ -8,12 +8,13 @@ ProofRide :: [].{
 
 	## The tour `steps` steps past `tour`.
 	ride_on : Tour, I64 -> Tour
-	ride_on = |tour, steps|
-		if steps <= 0 {
-			tour
-		} else {
-			ride_on(Tour.step_forward(tour), steps - 1)
+	ride_on = |tour, steps| {
+		var $tour = tour
+		for _ in 0..<steps {
+			$tour = Tour.step_forward($tour)
 		}
+		$tour
+	}
 
 	## The number a tool was given on its command line.
 	depth_of : Str -> I64
@@ -32,7 +33,7 @@ ProofRide :: [].{
 			}
 			$tour = ride_on($tour, depth - $at)
 			$at = depth
-			$out = Str.concat($out, "${held_line(depth, $tour)}\n")
+			$out = $out.concat("${held_line(depth, $tour)}\n")
 		}
 		$out
 	}

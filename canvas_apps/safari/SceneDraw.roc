@@ -184,7 +184,7 @@ tree_at = |forward| {
 	right: Distance.metres(0.0),
 	forward: Distance.metres(forward),
 	height: Distance.metres(5.85),
-	color: 1858082,
+	color: 0x1C5A22,
 }
 
 spread_trees : List(TreeSighting)
@@ -300,7 +300,7 @@ up_road = {
 view_from : Geom.Vantage, Pixels -> Chain.Viewpoint
 view_from = |vantage, cam_focal| {
 	road: {
-		route: route,
+		route,
 		chain: [0, 1, 2].map(World.SegmentIndex.number),
 		vantage,
 	},
@@ -317,13 +317,13 @@ green_tree_at = |along| {
 	tree: {
 		along: Along.metres(along),
 		across: Across.metres(3.5),
-		color: 1858082,
+		color: 0x1C5A22,
 		height: Distance.metres(5.85),
 	},
 }
 
 expect
-	List.concat(route.map(|seg| seg.trees.len().to_i64_wrap()), [TreeSighting.max_visible_trees])
+	route.map(|seg| seg.trees.len().to_i64_wrap()).append(TreeSighting.max_visible_trees)
 		== [28, 16, 22, 640]
 
 lone_tree : TreeSighting
@@ -340,7 +340,7 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 expect TreeSighting.tree_in_view(from_origin, green_tree_at(120.0)).len() == 1
-expect lone_tree.color == 1858082
+expect lone_tree.color == 0x1C5A22
 expect
 	[
 		(TreeSighting.tree_in_view(from_origin, green_tree_at(0.4)), 0),
@@ -419,7 +419,7 @@ expect
 truck_view : Geom.Vantage, F64 -> TruckSighting.Viewpoint
 truck_view = |vantage, lead| {
 	road: {
-		route: route,
+		route,
 		chain: [0, 1, 2].map(World.SegmentIndex.number),
 		vantage,
 	},
@@ -456,7 +456,7 @@ expect
 		(900.0, True),
 		(2000.0, False),
 		(0.0, False),
-		((0.0 - 50.0), False),
+		(-50.0, False),
 	].all(|(lead, want)| is_ahead(lead_of(lead)) == want)
 
 expect
@@ -504,9 +504,9 @@ expect
 		(ahead_of(499.0).forward.to_metres(), 499.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
-expect !(is_ahead(NoTruck))
-expect !(is_ahead(lead_of(2000.0)))
-expect !(is_ahead(truck_seen_from({ ..origin, along: Along.metres(100.0) }, 0.25)))
+expect !is_ahead(NoTruck)
+expect !is_ahead(lead_of(2000.0))
+expect !is_ahead(truck_seen_from({ ..origin, along: Along.metres(100.0) }, 0.25))
 expect is_ahead(truck_seen_from({ ..origin, along: Along.metres(100.0) }, 1.0))
 
 ## The depth key of a truck in view.

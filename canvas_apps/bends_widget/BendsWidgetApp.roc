@@ -50,9 +50,9 @@ degrees_at : Fraction -> F64
 degrees_at = |share| {
 	degrees = (share.to_f64() - 0.5) * 2.0 * widest_turn
 	if degrees >= 0.0 {
-		F64.max(degrees, gentlest_turn)
+		degrees.max(gentlest_turn)
 	} else {
-		F64.min(degrees, 0.0 - gentlest_turn)
+		degrees.min(-gentlest_turn)
 	}
 }
 
@@ -265,13 +265,13 @@ frame_at = |degrees|
 	})
 
 # The ruler reaches both ends, and steps over the bend that has no apex.
-expect degrees_at(Fraction.zero) == 0.0 - widest_turn
+expect degrees_at(Fraction.zero) == -widest_turn
 expect degrees_at(Fraction.whole) == widest_turn
 expect degrees_at(Fraction.of(0.5)) == gentlest_turn
-expect degrees_at(Fraction.of(0.49)) == 0.0 - gentlest_turn
+expect degrees_at(Fraction.of(0.49)) == -gentlest_turn
 expect degrees_at(Fraction.of(0.75)) == 40.0
 
-expect share_of(0.0 - widest_turn) == Fraction.zero
+expect share_of(-widest_turn) == Fraction.zero
 expect share_of(widest_turn) == Fraction.whole
 
 # The rail follows the outer edge, on either side.
@@ -296,9 +296,9 @@ expect apex_past_end(apex_of(-70.0)) > apex_past_end(apex_of(-20.0))
 
 # The bend's paving and its rail are both there, at both ends of the ruler.
 expect GroundSighting.in_view(road_with(widest_turn)).len() > 2
-expect GroundSighting.in_view(road_with(0.0 - widest_turn)).len() > 2
+expect GroundSighting.in_view(road_with(-widest_turn)).len() > 2
 expect RailSighting.in_view(road_with(widest_turn)).len() > 0
-expect RailSighting.in_view(road_with(0.0 - widest_turn)).len() > 0
+expect RailSighting.in_view(road_with(-widest_turn)).len() > 0
 
 expect turn_text(50.0) == "50 deg right"
 expect turn_text(-50.0) == "50 deg left"

@@ -10,27 +10,6 @@ import game.World
 import game.RideInstant
 import game.Rider
 
-## The instant after `steps` more frames, and the shapes counted so far.
-BenchRun : { instant : RideInstant, shapes : U64 }
-
-ride_on : List(World.Segment), { bench_run : BenchRun, steps_left : I64 } -> BenchRun
-ride_on = |route, { bench_run, steps_left: steps }|
-	if steps <= 0 {
-		bench_run
-	} else {
-		frame_shapes = RideInstant.shapes(route, bench_run.instant)
-		ride_on(
-			route,
-			{
-				bench_run: {
-					instant: RideInstant.next_or_restart(route, bench_run.instant),
-					shapes: bench_run.shapes + List.len(frame_shapes),
-				},
-				steps_left: steps - 1,
-			},
-		)
-	}
-
 main! = |args| {
 	# With no argument, the run takes its usual number of steps.
 	steps =
@@ -39,15 +18,17 @@ main! = |args| {
 			Err(OutOfBounds) => 60
 		}
 	route = World.segments
-	done = ride_on(
-		route,
-		{ bench_run: { instant: RideInstant.initial, shapes: 0 }, steps_left: steps },
-	)
-	finished = if Rider.is_finished(done.instant.rider, route) {
+	var $instant = RideInstant.initial
+	var $shapes = 0
+	for _ in 0..<steps {
+		$shapes = $shapes + RideInstant.shapes(route, $instant).len()
+		$instant = RideInstant.next_or_restart(route, $instant)
+	}
+	finished = if Rider.is_finished($instant.rider, route) {
 		"yes"
 	} else {
 		"no"
 	}
-	echo!("${done.shapes.to_str()} shapes over the frames; finished ${finished}\n")
+	echo!("${$shapes.to_str()} shapes over the frames; finished ${finished}\n")
 	Ok({})
 }

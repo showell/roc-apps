@@ -86,7 +86,7 @@ first_step = Bike.advance(
 second_step = Bike.advance(
 	first_step,
 	{
-		lean_step: Angle.Lean.radians(0.0 - 0.02),
+		lean_step: Angle.Lean.radians(-0.02),
 		acceleration: Acceleration.metres_a_step_each_step(0.005),
 	},
 )

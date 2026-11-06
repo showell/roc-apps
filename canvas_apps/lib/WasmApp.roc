@@ -31,7 +31,7 @@ WasmApp :: [].{
 	}
 	program = |game| {
 		# The step a tick covers, which is the rate the game asked to be run at.
-		dt = 1.0 / I32.to_f32(game.fps)
+		dt = 1.0 / game.fps.to_f32()
 		advance = game.advance
 		frame_of = game.frame
 		sounds = game.sounds
@@ -47,17 +47,17 @@ WasmApp :: [].{
 			# frame, it returns it.
 			release: |_frame| {},
 			sounds: |b| sounds(Box.unbox(b)),
-			tone_count: |_b| U64.to_u32_wrap(List.len(game.tones)),
+			tone_count: |_b| game.tones.len().to_u32_wrap(),
 			# A tone is a pitch and a length, which is all either runner needs
 			# to make the sound the game says it made.
-			tone_freq: |_b, i| I32.to_u32_wrap(tone_at(game.tones, i).freq),
-			tone_ms: |_b, i| I32.to_u32_wrap(tone_at(game.tones, i).ms),
-			width: |_b| F64.to_u32_wrap(game.size.width),
-			height: |_b| F64.to_u32_wrap(game.size.height),
-			fps: |_b| I32.to_u32_wrap(game.fps),
+			tone_freq: |_b, i| tone_at(game.tones, i).freq.to_u32_wrap(),
+			tone_ms: |_b, i| tone_at(game.tones, i).ms.to_u32_wrap(),
+			width: |_b| game.size.width.to_u32_wrap(),
+			height: |_b| game.size.height.to_u32_wrap(),
+			fps: |_b| game.fps.to_u32_wrap(),
 		}
 	}
 
 	tone_at : List({ freq : I32, ms : I32 }), U32 -> { freq : I32, ms : I32 }
-	tone_at = |tones, i| List.get(tones, U32.to_u64(i)) ?? { freq: 0, ms: 0 }
+	tone_at = |tones, i| tones.get(i.to_u64()) ?? { freq: 0, ms: 0 }
 }

@@ -81,7 +81,7 @@ truck_on_segment : TruckSighting.Viewpoint,
 } -> TruckSighting
 truck_on_segment = |view, { along, position }| {
 	across = Across.middle
-	center = Chain.rider_point_ahead(view.road, { position: position, along: along, across })
+	center = Chain.rider_point_ahead(view.road, { position, along, across })
 	if center.forward > Geom.near_plane {
 		Ahead({
 			position,

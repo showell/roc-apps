@@ -90,6 +90,6 @@ expect {
 	drawn = [Side(WingsDown), Diving].join_map(
 		|pose| BirdDraw.draw({ ..level_bird, pose }, Pixels.of(500.0)).map(fill_of),
 	)
-	stills = List.concat(BirdStills.side_wings_down, BirdStills.diving)
+	stills = BirdStills.side_wings_down.concat(BirdStills.diving)
 	drawn == stills.map(|poly| Flat(Brush.opaque(poly.color)))
 }

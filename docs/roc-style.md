@@ -265,6 +265,13 @@ Roc's own rules are in the langref's
   each reads once, the entry for what it gives (`tail`) and the worker for
   what it adds (`tail_onto`), never `tail_from_onto`. The hunt's
   `stacked_preposition` flags them.
+- **A loop is a `for`, over a list or a range; a `while` is for a condition.**
+  `for pixel in pixels` has no counter, no increment and no `List.get` with
+  a placeholder, and `for _ in 0..<n` says "n times". A `while` stays for a
+  stop that isn't a count, an early exit, or a step other than one, and a
+  stepped float (above) stays a `var` and a `while`. Recursion stays where it
+  says more than a loop: walking a list by pattern, or a merge. Recursion
+  that only counts or only builds a list is a loop, and needs no worker.
 - **A pure function that takes only `{}` is a constant.** `empty_cart : Cart`
   says what it is; `empty_cart : {} -> Cart` makes every caller write
   `empty_cart({})` for a value that never changes. Two stay functions. A
@@ -315,6 +322,11 @@ Roc's own rules are in the langref's
   that was right-nested stays a `fold_rev`, and a value stepped by
   `+ step` stays an accumulation, never `i * step`: each rounds
   differently, and a picture or a hash changes.
+- **A negative number is written negative: `-1.0`, `-half_pi`. `0.0 - x`
+  stays where `x` is worked out as the program runs and can be zero.** The
+  subtraction gives +0.0 there and `-x` gives -0.0, and a later sum can see
+  the sign, so a unit's `opposite` is a subtraction with an `expect` that
+  says so.
 - **A float lives inside a unit type or the trigonometry.** Anywhere else, a
   bare `F64` in a signature or a type is named with its reason in a table,
   safari's `bare_floats.txt`, which `cookbook:roc/bare_floats.shale` holds at
@@ -415,7 +427,10 @@ Roc's own rules are in the langref's
     `Str.join_with(pieces, sep)`);
   - a builder makes a value from parts rather than reading one;
   - a module calls its own functions in its own body;
-  - the step is the right side of a `|>`.
+  - the step is the right side of a `|>`;
+  - the value is a bare numeral, or a name that only numerals type:
+    `I64.to_str(steps)` over `[10, 1000]` prints `10`, and `steps.to_str()`
+    defaults to `Dec` and prints `10.0`.
 
   Shale's `cookbook/roc/methods.shale` (`glob=app/*.roc root=app/main.roc`)
   finds the rest and rewrites them where `roc check` and `roc test` agree: a
@@ -497,6 +512,11 @@ Roc's own rules are in the langref's
   (`Try(Str, [Missing, Failed, NotUtf8])`). Inside a collection, the
   [damaged-entry rule](#errors-and-failure) applies instead:
   the entry is skipped and counted.
+- **A color is written in hex, in code and in the `expect` that holds it:**
+  `0x1C5A22`, not `1858082`. Each channel can be read off the number.
+- **A Bool is `True` or `False`, without the module.** The tags are short and
+  unambiguous, and `!x` says what `x == False` says. A `crash` takes no
+  parentheses: `crash "..."`.
 - **Character literals (`'_'`, `c - 'A' + 'a'`) are for the byte-level
   parsing at the door.** A number left in the code should be an honest number
   (a minute, a length limit), not a byte in disguise.
@@ -917,6 +937,10 @@ is the base; these rules sharpen it.
   both of an emitter's habits, and adds the parentheses to a braceless `if`
   itself, so `if (x) a else b` is the layout it gives a form we don't write.
   Parentheses that group an operand stay: a float's order rests on them.
+  Parentheses that group nothing go: `a * b + c * d`, not
+  `(a * b) + (c * d)`, and `f(a * b)`, not `f((a * b))`. Roc's tutorial
+  writes `($num * 10) + digit`; ours is shorter, and every reader knows the
+  precedence of `*` and `+`.
   This is our taste, not Roc's: other guides keep a short `if (x) a else b`
   on one line, and we find the stacked branches easier to read.
   Safari holds this at zero; older trees still carry the braceless form.

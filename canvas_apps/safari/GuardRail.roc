@@ -133,7 +133,7 @@ post : Geom.RiderPoint, { previous : Geom.RiderPoint, next : Geom.RiderPoint } -
 post = |at, { previous, next }| {
 	dr = next.right.minus(previous.right).to_metres()
 	df = next.forward.minus(previous.forward).to_metres()
-	length = DeviceMath.real_sqrt(((dr * dr) + (df * df)))
+	length = DeviceMath.real_sqrt(dr * dr + df * df)
 	run = if length.to_bits() == 0 {
 		1.0
 	} else {
@@ -161,8 +161,8 @@ expect GuardRail.bar_top.to_metres() == 0.55
 expect GuardRail.bar_bot.to_metres() == 0.45
 expect GuardRail.half_post.to_metres() == 0.01
 
-expect GuardRail.rail_metal == 12765135
-expect GuardRail.rail_post_metal == 10133672
+expect GuardRail.rail_metal == 0xC2C7CF
+expect GuardRail.rail_post_metal == 0x9AA0A8
 expect GuardRail.rail_runout == 10
 expect GuardRail.max_rail_quads == 3072
 
@@ -192,7 +192,7 @@ expect straight_rail.all(|quad| quad.corners.len() == 4)
 
 expect
 	straight_rail.map(|quad| quad.color)
-		== [12765135, 12765135, 10133672, 10133672, 10133672]
+		== [0xC2C7CF, 0xC2C7CF, 0x9AA0A8, 0x9AA0A8, 0x9AA0A8]
 expect straight_rail.map(|quad| quad.forward.to_metres()) == [15.0, 25.0, 10.0, 20.0, 30.0]
 
 # The first bar runs from one post to the next, between the bar's two heights.

@@ -39,7 +39,7 @@ Tower :: [].{
 	rod_w = rod_half.times(2.0)
 
 	tower_metal : I64
-	tower_metal = 10133672
+	tower_metal = 0x9AA0A8
 
 	## The radius a far tower sinks over, which hides it wholly at 1.8 km. It
 	## is tighter than `Geom.ground_curve_radius`, so a tower sinks visibly as
@@ -51,7 +51,7 @@ Tower :: [].{
 	beacon_radius = Distance.metres(3.0)
 
 	beacon_color : I64
-	beacon_color = 16723942
+	beacon_color = 0xFF2FE6
 
 	## A corner of the tower's square footprint, as seen along the route.
 	Corner : [BackLeft, BackRight, FrontRight, FrontLeft]
@@ -121,13 +121,13 @@ Tower :: [].{
 	base_corner_on_road = |corner, { along, across, yaw }| {
 		offset = corner_offset(corner)
 		half = tower_half.to_metres()
-		du = (offset.across * half)
-		dv = (offset.along * half)
+		du = offset.across * half
+		dv = offset.along * half
 		cy = Trig.r_cos(yaw.to_radians())
 		sy = Trig.r_sin(yaw.to_radians())
 		{
-			along: along.plus(Distance.metres((du * sy) + (dv * cy))),
-			across: across.plus(Distance.metres((du * cy) - (dv * sy))),
+			along: along.plus(Distance.metres(du * sy + dv * cy)),
+			across: across.plus(Distance.metres(du * cy - dv * sy)),
 		}
 	}
 
@@ -136,7 +136,7 @@ Tower :: [].{
 	sunk_below_horizon = |p| {
 		r = p.right.to_metres()
 		f = p.forward.to_metres()
-		Distance.metres(((r * r) + (f * f)) / (2.0 * sink_radius.to_metres()))
+		Distance.metres((r * r + f * f) / (2.0 * sink_radius.to_metres()))
 	}
 
 	## The point `fraction` of the way from `from` to `to`.
@@ -183,7 +183,7 @@ Tower :: [].{
 		dx = to.x.minus(from.x).to_f64()
 		dy = to.y.minus(from.y).to_f64()
 		width = width_px.to_f64()
-		raw = DeviceMath.real_sqrt((dx * dx) + (dy * dy))
+		raw = DeviceMath.real_sqrt(dx * dx + dy * dy)
 		len = if raw < 0.0001 {
 			1.0
 		} else {
@@ -267,19 +267,12 @@ Tower :: [].{
 		p1 = Camera.project(
 			{
 				right: Distance.metres(1.0),
-				forward: forward,
+				forward,
 				height: Distance.zero,
 			},
 			cam_focal,
 		)
-		p0 = Camera.project(
-			{
-				right: Distance.zero,
-				forward: forward,
-				height: Distance.zero,
-			},
-			cam_focal,
-		)
+		p0 = Camera.project({ right: Distance.zero, forward, height: Distance.zero }, cam_focal)
 		p1.x.minus(p0.x)
 	}
 
@@ -311,7 +304,7 @@ Tower :: [].{
 	## A ring at every storey below the top, bottom first, leaving out those
 	## the earth has hidden.
 	rings : Tower.TowerInView -> List(Shapes.Shape)
-	rings = |tower| ring_heights_from(storey_height).join_map(
+	rings = |tower| ring_heights.join_map(
 		|h|
 			if h <= tower.sunk {
 				[]
@@ -320,26 +313,23 @@ Tower :: [].{
 			},
 	)
 
-	ring_heights_from : Distance -> List(Distance)
-	ring_heights_from = |h|
-		if h >= tower_height {
-			[]
-		} else {
-			[h].concat(ring_heights_from(h.plus(storey_height)))
+	## The height of each ring: a storey up, and a storey more, to the top.
+	ring_heights : List(Distance)
+	ring_heights = {
+		var $heights = []
+		var $height = storey_height
+		while $height < tower_height {
+			$heights = $heights.append($height)
+			$height = $height.plus(storey_height)
 		}
+		$heights
+	}
 
 	## The crossed braces of the lowest storeys, bottom first. A storey the
 	## earth has partly hidden starts its braces at the horizon.
 	braces : Tower.TowerInView -> List(Shapes.Shape)
-	braces = |tower| brace_storeys_from(0).join_map(|storey| brace_storey(tower, storey))
-
-	brace_storeys_from : I64 -> List(I64)
-	brace_storeys_from = |storey|
-		if storey >= brace_storeys {
-			[]
-		} else {
-			[storey].concat(brace_storeys_from((storey + 1)))
-		}
+	braces = |tower|
+		List.from_iter(I64.until(0, brace_storeys)).join_map(|storey| brace_storey(tower, storey))
 
 	brace_storey : Tower.TowerInView, I64 -> List(Shapes.Shape)
 	brace_storey = |tower, storey| {
@@ -461,8 +451,8 @@ expect Tower.sink_radius.to_metres() == 20000.0
 expect Tower.beacon_radius.to_metres() == 3.0
 
 expect Tower.brace_storeys == 2
-expect Tower.tower_metal == 10133672
-expect Tower.beacon_color == 16723942
+expect Tower.tower_metal == 0x9AA0A8
+expect Tower.beacon_color == 0xFF2FE6
 
 expect Tower.corners.map(|corner| Tower.corner_offset(corner).across) == [-1.0, 1.0, 1.0, -1.0]
 expect Tower.corners.map(|corner| Tower.corner_offset(corner).along) == [-1.0, -1.0, 1.0, 1.0]

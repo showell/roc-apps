@@ -80,9 +80,9 @@ flat_color_of : Shapes.Shape -> I64
 flat_color_of = |shape|
 	match polygon_of(shape).fill {
 		Flat(color) => {
-			red = F64.to_i64_wrap(color.r)
-			green = F64.to_i64_wrap(color.g)
-			blue = F64.to_i64_wrap(color.b)
+			red = color.r.to_i64_wrap()
+			green = color.g.to_i64_wrap()
+			blue = color.b.to_i64_wrap()
 			red * 65536 + green * 256 + blue
 		}
 		Skip | Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) =>
@@ -484,8 +484,7 @@ expect scene.cats.len().to_i64_wrap() <= CatSighting.max_visible_cats
 ## Whether no key in `keys` is farther than the one before it.
 is_far_to_near : List(DepthSort.DepthKey) -> Bool
 is_far_to_near = |keys|
-	List.map2(
-		keys,
+	keys.map2(
 		keys.drop_first(1),
 		|before, after| DepthSort.is_farther({ this: after.forward, that: before.forward }),
 	)
@@ -560,7 +559,7 @@ expect patch_shapes(
 last_shape : Shapes.Shape
 last_shape = strip.last() ?? crash "CrossModuleExpects: the road draws"
 
-expect flat_color_of(last_shape) == 3421500
+expect flat_color_of(last_shape) == 0x34353C
 expect {
 	point_count = points_of(last_shape).len()
 	point_count >= 6 and point_count <= 10

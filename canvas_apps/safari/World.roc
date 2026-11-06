@@ -472,10 +472,10 @@ expect
 
 expect
 	[
-		((seg(0).exit_turn.abs().to_radians() / Trig.deg), 50.0),
-		((seg(1).exit_turn.abs().to_radians() / Trig.deg), 70.0),
-		((seg(6).exit_turn.abs().to_radians() / Trig.deg), 80.0),
-		((seg(18).exit_turn.abs().to_radians() / Trig.deg), 0.0),
+		(seg(0).exit_turn.abs().to_radians() / Trig.deg, 50.0),
+		(seg(1).exit_turn.abs().to_radians() / Trig.deg, 70.0),
+		(seg(6).exit_turn.abs().to_radians() / Trig.deg, 80.0),
+		(seg(18).exit_turn.abs().to_radians() / Trig.deg, 0.0),
 		(seg(18).commit_along.to_metres(), 300.0),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 

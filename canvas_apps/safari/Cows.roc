@@ -86,7 +86,7 @@ Cows :: [].{
 
 	## The bull, if there is one, then the cows.
 	herd : [WithBull, NoBull] -> List(Scenery.Critter)
-	herd = |bull| List.concat(Cows.bull_of(bull), Cows.cows)
+	herd = |bull| Cows.bull_of(bull).concat(Cows.cows)
 }
 
 cow_at : I64 -> Scenery.Critter
@@ -99,9 +99,9 @@ cow_at = |i| {
 	in_line = column_place.plus(Cows.herd_row_stagger.times(row - 1.0))
 	road_edge = Scenery.road_half_width.plus(Scenery.herd_road_offset)
 	row_place = road_edge.plus(Cows.herd_row_depth.times(row))
-	out_from_road = row_place.plus(Cows.herd_jitter_across.times(Trig.r_cos((fi * 1.9))))
+	out_from_road = row_place.plus(Cows.herd_jitter_across.times(Trig.r_cos(fi * 1.9)))
 	{
-		along: in_line.plus(Cows.herd_jitter_along.times(Trig.r_sin((fi * 2.7)))),
+		along: in_line.plus(Cows.herd_jitter_along.times(Trig.r_sin(fi * 2.7))),
 		across: Across.left_of_middle(out_from_road),
 		codepoint: Cows.cow_codepoint,
 		height: if i.rem_by(4) == 1 {

@@ -259,13 +259,13 @@ offset = searched_lean(1.0, 0.0)
 held : F64
 held = searched_lean(0.0, 0.5)
 
-expect centred >= (0.0 - max_correction)
+expect centred >= -max_correction
 expect centred <= max_correction
-expect offset >= (0.0 - max_correction)
+expect offset >= -max_correction
 expect offset <= max_correction
-expect held >= (0.5 - max_correction)
-expect held <= (0.5 + max_correction)
-expect DeviceMath.real_abs((held - 0.5)) <= max_correction
+expect held >= 0.5 - max_correction
+expect held <= 0.5 + max_correction
+expect DeviceMath.real_abs(held - 0.5) <= max_correction
 expect DeviceMath.real_abs(centred) <= max_correction
 expect held > centred
 
