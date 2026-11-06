@@ -1,4 +1,4 @@
-## The duck pond past the corner at a segment's end: its water, its bank, and
+## The duck pond past the bend at a segment's end: its water, its bank, and
 ## the ducks on it. A point on the pond is measured along the road from the
 ## end of the segment, and across it from the middle of the lane, in metres.
 import Across

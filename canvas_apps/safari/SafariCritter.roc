@@ -1,6 +1,6 @@
-## At a corner where the road turns, a safari animal stands on the outside of
+## At a bend in the road, a safari animal stands on the outside of
 ## the bend, beyond the guard rail, and its baby stands in the middle of the
-## road a little past the corner. Both face the way the road turns.
+## road a little past the bend. Both face the way the road turns.
 import Across
 import Along
 import Angle
@@ -20,11 +20,11 @@ SafariCritter :: [].{
 	baby_ratio : F64
 	baby_ratio = 0.5
 
-	## How far past the corner the baby stands.
+	## How far past the bend the baby stands.
 	baby_beyond : Distance
 	baby_beyond = Distance.metres(14.0)
 
-	## The animal a corner's creature is. A pond's ducks are placed with the
+	## The animal a bend's creature is. A pond's ducks are placed with the
 	## pond, not here.
 	species_of : Scenery.Creature -> [Species(SafariCritter.Species), NoSpecies]
 	species_of = |creature|
@@ -37,15 +37,15 @@ SafariCritter :: [].{
 			NoCreature => NoSpecies
 		}
 
-	## The animal and its baby at a corner at `corner_along` on its segment, on
+	## The animal and its baby at a bend at `bend_along` on its segment, on
 	## a road `lane_half_width` either side of its middle.
-	corner_critters : {
+	bend_critters : {
 		creature : Scenery.Creature,
-		corner_along : Along,
+		bend_along : Along,
 		turn : Angle.Turn,
 		lane_half_width : Distance,
 	} -> List(Scenery.Critter)
-	corner_critters = |{ creature, corner_along, turn, lane_half_width }|
+	bend_critters = |{ creature, bend_along, turn, lane_half_width }|
 		match species_of(creature) {
 			NoSpecies => []
 			Species(species) => {
@@ -59,14 +59,14 @@ SafariCritter :: [].{
 				out_from_middle = clear_of_rail.plus(species.adult_height.divided_by(2.0))
 				[
 					{
-						along: corner_along,
+						along: bend_along,
 						across: Across.right_of_middle(out_from_middle.times(0.0 - inward)),
 						codepoint: species.codepoint,
 						height: species.adult_height,
 						face_right,
 					},
 					{
-						along: corner_along.plus(baby_beyond),
+						along: bend_along.plus(baby_beyond),
 						across: Across.middle,
 						codepoint: species.codepoint,
 						height: species.adult_height.times(baby_ratio),
@@ -100,31 +100,31 @@ expect SafariCritter.adult_rail_buffer.to_metres() == 1.5
 expect SafariCritter.baby_ratio == 0.5
 expect SafariCritter.baby_beyond.to_metres() == 14.0
 
-## An animal and its baby at each of four corners, the first and third turning
+## An animal and its baby at each of four bends, the first and third turning
 ## right and the second and fourth left.
 all_four : List(Scenery.Critter)
 all_four = List.join([
-	SafariCritter.corner_critters({
+	SafariCritter.bend_critters({
 		creature: Elephant,
-		corner_along: Along.metres(100.0),
+		bend_along: Along.metres(100.0),
 		turn: Angle.Turn.degrees(50.0),
 		lane_half_width: Distance.metres(2.0),
 	}),
-	SafariCritter.corner_critters({
+	SafariCritter.bend_critters({
 		creature: Giraffe,
-		corner_along: Along.metres(50.0),
+		bend_along: Along.metres(50.0),
 		turn: Angle.Turn.degrees(-70.0),
 		lane_half_width: Distance.metres(2.0),
 	}),
-	SafariCritter.corner_critters({
+	SafariCritter.bend_critters({
 		creature: Zebra,
-		corner_along: Along.metres(10.0),
+		bend_along: Along.metres(10.0),
 		turn: Angle.Turn.degrees(50.0),
 		lane_half_width: Distance.metres(2.5),
 	}),
-	SafariCritter.corner_critters({
+	SafariCritter.bend_critters({
 		creature: Rhino,
-		corner_along: Along.metres(0.0),
+		bend_along: Along.metres(0.0),
 		turn: Angle.Turn.degrees(-70.0),
 		lane_half_width: Distance.metres(2.0),
 	}),
@@ -195,16 +195,16 @@ expect
 			False,
 		]
 
-## How many critters a right turn's corner has for this creature.
-corner_count : Scenery.Creature -> U64
-corner_count = |creature|
-	SafariCritter.corner_critters({
+## How many critters a right bend has for this creature.
+bend_count : Scenery.Creature -> U64
+bend_count = |creature|
+	SafariCritter.bend_critters({
 		creature,
-		corner_along: Along.metres(100.0),
+		bend_along: Along.metres(100.0),
 		turn: Angle.Turn.degrees(50.0),
 		lane_half_width: Distance.metres(2.0),
 	}).len()
 
-expect corner_count(Elephant) == 2
-expect corner_count(DuckPond) == 0
-expect corner_count(NoCreature) == 0
+expect bend_count(Elephant) == 2
+expect bend_count(DuckPond) == 0
+expect bend_count(NoCreature) == 0

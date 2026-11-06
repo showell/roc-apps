@@ -21,13 +21,13 @@ Throttle :: [].{
 	tilt_hold : Angle.Lean
 	tilt_hold = Angle.Lean.degrees(2.0)
 
-	corner_brake : RiderState,
+	bend_brake : RiderState,
 	{
 		road_segment : World.Segment,
 		exit_speed : Speed,
 		offered_accel : Acceleration,
 	} -> Acceleration
-	corner_brake = |
+	bend_brake = |
 		state,
 		{
 			road_segment: seg,
@@ -36,14 +36,14 @@ Throttle :: [].{
 		},
 	| {
 		d = seg.commit_along.distance_from(state.along)
-		corner_a =
+		bend_a =
 			if d <= VehicleLimits.least_braking_distance {
 				Acceleration.steady
 			} else {
 				state.speed.acceleration_to({ target: v_end, within: d })
 			}
-		if corner_a < a {
-			corner_a
+		if bend_a < a {
+			bend_a
 		} else {
 			a
 		}
@@ -180,7 +180,7 @@ Throttle :: [].{
 		near = left <= VehicleLimits.approach_intersection_dist
 		a1 =
 			if near {
-				corner_brake(
+				bend_brake(
 					state,
 					{
 						road_segment: seg,
@@ -228,10 +228,10 @@ centred_rider = |along, speed| {
 	speed: Speed.metres_a_step(speed),
 }
 
-## The corner brake for this rider, offered `offered`.
-corner_brake_at : RiderState, F64 -> F64
-corner_brake_at = |rider, offered|
-	Throttle.corner_brake(
+## The bend brake for this rider, offered `offered`.
+bend_brake_at : RiderState, F64 -> F64
+bend_brake_at = |rider, offered|
+	Throttle.bend_brake(
 		rider,
 		{
 			road_segment: first_segment,
@@ -240,15 +240,15 @@ corner_brake_at = |rider, offered|
 		},
 	).to_metres_a_step_each_step()
 
-expect corner_brake_at(centred_rider(498.4, 0.3), 0.01) == 0.0
-expect corner_brake_at(centred_rider(600.0, 0.3), 0.01) == 0.0
-expect corner_brake_at(centred_rider(0.0, 0.3), -5.0) == -5.0
+expect bend_brake_at(centred_rider(498.4, 0.3), 0.01) == 0.0
+expect bend_brake_at(centred_rider(600.0, 0.3), 0.01) == 0.0
+expect bend_brake_at(centred_rider(0.0, 0.3), -5.0) == -5.0
 
-expect corner_brake_at(centred_rider(0.0, 0.3), 0.01) <= 0.01
-expect corner_brake_at(centred_rider(0.0, 0.3), -5.0) <= -5.0
+expect bend_brake_at(centred_rider(0.0, 0.3), 0.01) <= 0.01
+expect bend_brake_at(centred_rider(0.0, 0.3), -5.0) <= -5.0
 expect {
-	fast = corner_brake_at(centred_rider(0.0, 2.0), 0.01)
-	slow = corner_brake_at(centred_rider(0.0, 0.3), 0.01)
+	fast = bend_brake_at(centred_rider(0.0, 2.0), 0.01)
+	slow = bend_brake_at(centred_rider(0.0, 0.3), 0.01)
 	fast < slow
 }
 

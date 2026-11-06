@@ -1,7 +1,7 @@
 ## CritterSighting sights every critter on the road ahead from where the rider
 ## is: the farm animals of the nearest segments, the safari animal and its
-## baby at each corner, and the ducks on each pond. The critters of the
-## segment before the rider's are sighted too, so the corner the rider has
+## baby at each bend, and the ducks on each pond. The critters of the
+## segment before the rider's are sighted too, so the bend the rider has
 ## just turned keeps its animals.
 import Along
 import Billboards
@@ -45,7 +45,7 @@ CritterSighting :: [].{
 			.join_map(|position| CritterSighting.sightings_at(road, position))
 
 	## The critters of the segment at `position` in the chain: its farm
-	## animals, its corner's animals, then its pond's ducks.
+	## animals, its bend's animals, then its pond's ducks.
 	sightings_at : Chain.RoadView, Chain.Position -> List(Billboards.Sighting)
 	sightings_at = |road, position|
 		[
@@ -65,15 +65,15 @@ CritterSighting :: [].{
 			[]
 		}
 
-	## The animals at the corner that ends the segment at `position` in the
-	## chain. The road's last segment ends with no corner.
+	## The animals at the bend that ends the segment at `position` in the
+	## chain. The road's last segment ends with no bend.
 	safari_sightings : Chain.RoadView, Chain.Position -> List(Billboards.Sighting)
 	safari_sightings = |road, position| {
 		segment = segment_at(road, position)
 		match segment.ending {
 			Continues(_) =>
 				if position.is_within_first(safari_reach) {
-					corner_sightings(road, { place: InChain(position), segment })
+					bend_sightings(road, { place: InChain(position), segment })
 				} else {
 					[]
 				}
@@ -90,12 +90,12 @@ CritterSighting :: [].{
 			[]
 		}
 
-	## The corner's animals and the pond's ducks of the world's segment at
+	## The bend's animals and the pond's ducks of the world's segment at
 	## `index`, the one before the rider's.
 	sightings_behind : Chain.RoadView, World.SegmentIndex -> List(Billboards.Sighting)
 	sightings_behind = |road, index| {
 		segment = index.segment_in(road.world)
-		corner_sightings(
+		bend_sightings(
 			road,
 			{ place: Chain.place_behind(segment), segment },
 		).concat(CritterSighting.ducks_behind(road, segment))
@@ -138,22 +138,22 @@ sight_critter = |road, { place, critter }|
 		},
 	})
 
-corner_sightings : Chain.RoadView,
+bend_sightings : Chain.RoadView,
 {
 	place : Chain.SegmentPlace,
 	segment : World.Segment,
 } -> List(Billboards.Sighting)
-corner_sightings = |road, { place, segment }|
-	SafariCritter.corner_critters({
+bend_sightings = |road, { place, segment }|
+	SafariCritter.bend_critters({
 		creature: segment.exit_creature,
-		corner_along: Along.at(segment.length),
+		bend_along: Along.at(segment.length),
 		turn: segment.exit_turn,
 		lane_half_width: Scenery.lane_half_width,
 	})
 		.map(|critter| sight_critter(road, { place, critter }))
 
 ## The ducks on `segment`'s pond, if it has one. A duck's place is measured
-## from the corner at the segment's end.
+## from the bend at the segment's end.
 pond_sightings : Chain.RoadView,
 {
 	place : Chain.SegmentPlace,
