@@ -60,7 +60,7 @@ expect Bike.turn_per_lean == 0.1
 expect Bike.max_lean.to_radians() == 0.3490658503988659
 
 # Bike doesn't import RiderState, and `Motion` is open, so the records here stand in
-# for it: `segment`, `gaze_yaw` and `focus` are the caller's own fields.
+# for it: `segment`, `gaze_yaw` and `attention` are the caller's own fields.
 
 ## A rider well along a segment, leaning a little to the right.
 riding = {
@@ -72,7 +72,7 @@ riding = {
 	lean: Angle.Lean.radians(0.125),
 	heading: Angle.Bearing.radians(4.5),
 	gaze_yaw: Angle.Turn.radians(0.625),
-	focus: 0.25,
+	attention: 0.25,
 }
 
 first_step = Bike.simulate_rider_step(
@@ -119,9 +119,9 @@ expect
 
 # A step keeps the caller's own fields.
 expect first_step.gaze_yaw.to_radians() == 0.625
-expect first_step.focus == 0.25
+expect first_step.attention == 0.25
 expect third_step.gaze_yaw.to_radians() == 0.625
-expect third_step.focus == 0.25
+expect third_step.attention == 0.25
 expect first_step.segment == 3
 expect second_step.segment == 3
 expect third_step.segment == 3
@@ -186,7 +186,7 @@ probe = {
 	lean: Angle.Lean.radians(0.125),
 	heading: Angle.Bearing.radians(4.5),
 	gaze_yaw: Angle.Turn.radians(0.375),
-	focus: 0.75,
+	attention: 0.75,
 }
 
 numbers_of = |s| [
@@ -197,7 +197,7 @@ numbers_of = |s| [
 	s.lean.to_radians(),
 	s.heading.to_radians(),
 	s.gaze_yaw.to_radians(),
-	s.focus,
+	s.attention,
 ]
 
 leaned_once = Bike.with_lean(probe, Angle.Lean.radians(1.5))

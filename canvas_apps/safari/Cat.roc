@@ -137,26 +137,26 @@ Cat :: [].{
 		}
 
 	## How hard the cat holds the rider's eye at its strongest.
-	focus_peak : Attention
-	focus_peak = Attention.of(1.8)
+	peak_attention : Attention
+	peak_attention = Attention.of(1.8)
 
 	## Over how many beats, after the rider reaches the cat, its hold fades.
-	focus_ramp_down : Beats
-	focus_ramp_down = Beats.of(83.0)
+	attention_fade : Beats
+	attention_fade = Beats.of(83.0)
 
 	## How hard the cat holds the rider's eye: rising as it crosses, then
 	## fading once the rider is past.
-	focus : Animation.Approach -> Attention
-	focus = |approach|
+	attention : Animation.Approach -> Attention
+	attention = |approach|
 		if approach.speed <= Animation.standstill {
 			Attention.none
 		} else {
 			match crossing_stage(approach) {
 				Waiting => Attention.none
-				Playing(progress) => focus_peak.portion(Easing.smoothstep(progress))
+				Playing(progress) => peak_attention.portion(Easing.smoothstep(progress))
 				Past(beyond) => {
-					faded = approach.speed.beats_to_cover(beyond).ratio_to(focus_ramp_down)
-					focus_peak.portion(Easing.smoothstep(Fraction.clamp(faded)).complement())
+					faded = approach.speed.beats_to_cover(beyond).ratio_to(attention_fade)
+					peak_attention.portion(Easing.smoothstep(Fraction.clamp(faded)).complement())
 				}
 			}
 		}
@@ -335,14 +335,14 @@ expect
 		(coming(41.0, 0.0), 0.0),
 	].all(|(input, want)| progress_of(input) == want)
 
-expect Cat.focus(coming(41.0, 1.0)).to_f64() == 0.0
-expect Cat.focus(coming(22.0, 1.0)).to_f64() == 0.9
-expect Cat.focus(coming(3.0, 1.0)).to_f64() == 1.8
-expect Cat.focus(coming(0.0 - 38.5, 1.0)).to_f64() == 0.9
-expect Cat.focus(coming(0.0 - 80.0, 1.0)).to_f64() == 0.0
-expect Cat.focus(coming(22.0, 0.0)).to_f64() == 0.0
-expect Cat.focus_peak.to_f64() == 1.8
-expect Cat.focus_ramp_down.to_f64() == 83.0
+expect Cat.attention(coming(41.0, 1.0)).to_f64() == 0.0
+expect Cat.attention(coming(22.0, 1.0)).to_f64() == 0.9
+expect Cat.attention(coming(3.0, 1.0)).to_f64() == 1.8
+expect Cat.attention(coming(0.0 - 38.5, 1.0)).to_f64() == 0.9
+expect Cat.attention(coming(0.0 - 80.0, 1.0)).to_f64() == 0.0
+expect Cat.attention(coming(22.0, 0.0)).to_f64() == 0.0
+expect Cat.peak_attention.to_f64() == 1.8
+expect Cat.attention_fade.to_f64() == 83.0
 
 ## How many strides of a walk `length` beats long are done `progress` through it.
 turns : F64, F64 -> F64

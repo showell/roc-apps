@@ -14,7 +14,7 @@ CrossingReaction :: [].{
 
 	## What a crossing does to the rider now: whether they may open the
 	## throttle, and how hard it holds their eye.
-	Reaction : { throttle : [MayAccelerate, NoAcceleration], eye_pull : Attention }
+	Reaction : { throttle : [MayAccelerate, NoAcceleration], attention : Attention }
 
 	## The reaction to `segment`'s crossing of a rider on that segment.
 	reaction_to : World.Segment, { along : Along, speed : Speed, .. } -> CrossingReaction.Reaction
@@ -28,10 +28,10 @@ CrossingReaction :: [].{
 					} else {
 						MayAccelerate
 					},
-					eye_pull: Cat.focus(approach),
+					attention: Cat.attention(approach),
 				}
 			}
-			BirdHere(_) | QuietRoad => { throttle: MayAccelerate, eye_pull: Attention.none }
+			BirdHere(_) | QuietRoad => { throttle: MayAccelerate, attention: Attention.none }
 		}
 }
 
@@ -72,13 +72,13 @@ expect to_cat(22.0, 0.0).throttle == MayAccelerate
 
 expect
 	[
-		(to_cat(42.0, 1.0).eye_pull.to_f64(), 0.0),
-		(to_cat(41.0, 1.0).eye_pull.to_f64(), 0.0),
-		(to_cat(22.0, 1.0).eye_pull.to_f64(), 0.9),
-		(to_cat(3.0, 1.0).eye_pull.to_f64(), 1.8),
-		(to_cat(-38.5, 1.0).eye_pull.to_f64(), 0.9),
-		(to_cat(-80.0, 1.0).eye_pull.to_f64(), 0.0),
-		(to_cat(22.0, 0.0).eye_pull.to_f64(), 0.0),
+		(to_cat(42.0, 1.0).attention.to_f64(), 0.0),
+		(to_cat(41.0, 1.0).attention.to_f64(), 0.0),
+		(to_cat(22.0, 1.0).attention.to_f64(), 0.9),
+		(to_cat(3.0, 1.0).attention.to_f64(), 1.8),
+		(to_cat(-38.5, 1.0).attention.to_f64(), 0.9),
+		(to_cat(-80.0, 1.0).attention.to_f64(), 0.0),
+		(to_cat(22.0, 0.0).attention.to_f64(), 0.0),
 	].all(|(got, want)| (got - want).abs() <= 0.000000001)
 
 # A bird or a quiet road at each place on it, and at each speed.
@@ -89,7 +89,7 @@ expect
 				|speed| {
 					rider = rider_at(Along.metres(along), speed)
 					reaction = CrossingReaction.reaction_to(segment, rider)
-					reaction.throttle == MayAccelerate and reaction.eye_pull == Attention.none
+					reaction.throttle == MayAccelerate and reaction.attention == Attention.none
 				},
 			),
 		),

@@ -575,7 +575,7 @@ done = {
 		lean: Angle.Lean.radians(0.0),
 		heading: Angle.Bearing.radians(0.0),
 		gaze_yaw: Angle.Turn.radians(0.0),
-		focus: Fraction.of(0.9),
+		attention: Fraction.of(0.9),
 	},
 	truck: {
 		route_position: Distance.metres(9000.0),
@@ -591,7 +591,7 @@ expect {
 		and instant.rider.along.to_metres() == 0.0
 		and instant.rider.speed.to_metres_a_step() == 0.3
 		and instant.truck.route_position.to_metres() == 500.0
-		and instant.rider.focus.to_f64() == 0.0
+		and instant.rider.attention.to_f64() == 0.0
 }
 
 expect Rider.is_finished(done.rider, World.segments)
