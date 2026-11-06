@@ -181,7 +181,7 @@ Camera :: [].{
 		if zoom.is_finite() and zoom != 0 {
 			zoom
 		} else if zoom < 0 {
-			0 - fallback_zoom
+			-fallback_zoom
 		} else {
 			fallback_zoom
 		}

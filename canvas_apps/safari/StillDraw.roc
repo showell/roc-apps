@@ -37,7 +37,7 @@ StillDraw :: [].{
 	x_sign = |flip|
 		match flip {
 			AsDrawn => 1.0
-			Mirrored => 0.0 - 1.0
+			Mirrored => -1.0
 		}
 
 	## Where a point of the still lands on screen.

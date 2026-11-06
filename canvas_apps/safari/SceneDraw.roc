@@ -456,7 +456,7 @@ expect
 		(900.0, True),
 		(2000.0, False),
 		(0.0, False),
-		(0.0 - 50.0, False),
+		(-50.0, False),
 	].all(|(lead, want)| is_ahead(lead_of(lead)) == want)
 
 expect

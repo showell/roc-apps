@@ -291,7 +291,7 @@ expect ScrubWidget.share_under(ScrubWidget.side_margin) == Fraction.zero
 expect ScrubWidget.share_under(ruler_right_x) == Fraction.whole
 expect ScrubWidget.share_under(ScrubWidget.side_margin - 1.0) == Fraction.zero
 expect ScrubWidget.share_under(ruler_right_x + 1.0) == Fraction.whole
-expect ScrubWidget.share_under(0.0 - 5.0) == Fraction.zero
+expect ScrubWidget.share_under(-5.0) == Fraction.zero
 expect ScrubWidget.share_under(ScrubWidget.canvas_width + 5.0) == Fraction.whole
 
 # Just inside either end isn't the end, and the middle is the canvas's.
@@ -344,7 +344,7 @@ expect gap_on_ruler(Fraction.whole) == Distance.zero
 expect gap_on_ruler(Fraction.of(0.5)) == Distance.metres(25.0)
 expect share_on_ruler(37.5) == Fraction.of(0.25)
 expect share_on_ruler(60.0) == Fraction.zero
-expect share_on_ruler(0.0 - 1.0) == Fraction.whole
+expect share_on_ruler(-1.0) == Fraction.whole
 
 ## A ruler over steps 100 to 300.
 sample_range : ScrubWidget.ClockRange

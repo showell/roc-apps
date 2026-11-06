@@ -235,7 +235,7 @@ Shapes :: [].{
 			# Clockwise from the top-left corner's arc, each corner swept from
 			# its own start angle.
 			$pts = corner($pts, x + rr, y + rr, rr, half_pi * 2.0, segments)
-			$pts = corner($pts, x + w - rr, y + rr, rr, 0.0 - half_pi, segments)
+			$pts = corner($pts, x + w - rr, y + rr, rr, -half_pi, segments)
 			$pts = corner($pts, x + w - rr, y + h - rr, rr, 0.0, segments)
 			$pts = corner($pts, x + rr, y + h - rr, rr, half_pi, segments)
 			Poly({ pts: $pts, fill })

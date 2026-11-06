@@ -41,7 +41,7 @@ expect at({
 	height: Distance.metres(1.2),
 }).x.to_f64() == 1280.0
 expect at({
-	right: Distance.metres(0.0 - 5.0),
+	right: Distance.metres(-5.0),
 	forward: Distance.metres(10.0),
 	height: Distance.metres(1.2),
 }).x.to_f64() == 80.0

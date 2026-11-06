@@ -67,7 +67,7 @@ right_turn : Angle.Turn
 right_turn = Angle.Turn.radians(0.8726646259971648)
 
 left_turn : Angle.Turn
-left_turn = Angle.Turn.radians(0.0 - 1.2217304763960306)
+left_turn = Angle.Turn.radians(-1.2217304763960306)
 
 expect BendView.outer_edge(right_turn) == Scenery.left_edge
 expect BendView.outer_edge(left_turn) == Scenery.right_edge
@@ -121,7 +121,7 @@ m_chain = InChain(Chain.Position.number(3))
 m_prev_left : Chain.SegmentPlace
 m_prev_left = JustBehind({
 	segment_length: Distance.metres(300.0),
-	turn: Angle.Turn.radians(0.0 - 1.2217304763960306),
+	turn: Angle.Turn.radians(-1.2217304763960306),
 	road_width: Distance.metres(4.0),
 })
 

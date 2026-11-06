@@ -204,14 +204,14 @@ turn_distance : List(World.Segment), F64 -> F64
 turn_distance = |route, route_position|
 	match Truck.next_bend(route, Distance.metres(route_position)) {
 		BendAhead(t) => t.distance.to_metres()
-		NoBendAhead => 0.0 - 1.0
+		NoBendAhead => -1.0
 	}
 
 turn_v : List(World.Segment), F64 -> F64
 turn_v = |route, route_position|
 	match Truck.next_bend(route, Distance.metres(route_position)) {
 		BendAhead(t) => t.turn_speed.to_metres_a_step()
-		NoBendAhead => 0.0 - 1.0
+		NoBendAhead => -1.0
 	}
 
 expect turn_distance(one_seg, 0.0) == 500.0

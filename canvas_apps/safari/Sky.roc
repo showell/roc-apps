@@ -30,7 +30,7 @@ Sky :: [].{
 	SunSighting : [InView(Sky.SunPlace), OutOfView]
 
 	sun_bearing : Angle.Bearing
-	sun_bearing = Angle.Bearing.radians(0.0 - 2.2176)
+	sun_bearing = Angle.Bearing.radians(-2.2176)
 
 	sun_radius_px : Pixels
 	sun_radius_px = Pixels.of(46.0)
@@ -267,7 +267,7 @@ expect
 # The rider faces the sun, then away from it.
 expect
 	Sky.sun_sighting({
-		heading: Angle.Bearing.radians(0.0 - 2.2176),
+		heading: Angle.Bearing.radians(-2.2176),
 		clock: Clock.start,
 		cam_focal: Lens.focal,
 	})
@@ -280,7 +280,7 @@ expect
 # A lens at half its focal length draws the sun at half its size.
 expect
 	Sky.sun_sighting({
-		heading: Angle.Bearing.radians(0.0 - 2.2176),
+		heading: Angle.Bearing.radians(-2.2176),
 		clock: Clock.start,
 		cam_focal: Lens.focal.times(0.5),
 	})

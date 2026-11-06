@@ -266,7 +266,7 @@ return_snap : F64
 return_snap = Gaze.gaze_return_snap.to_radians()
 
 expect gaze_after(head(0.0, 200.0), 1.0) - swivel_rate == 0.0
-expect gaze_after(head(0.0, 200.0), 0.0 - 1.0) + swivel_rate == 0.0
+expect gaze_after(head(0.0, 200.0), -1.0) + swivel_rate == 0.0
 expect gaze_after(head(0.0, 200.0), swivel_rate / 2.0) - swivel_rate / 2.0 == 0.0
 
 expect {
@@ -280,7 +280,7 @@ expect {
 }
 
 expect gaze_returning(head(return_snap, 200.0)) == 0.0
-expect gaze_returning(head(0.0 - return_snap, 200.0)) == 0.0
+expect gaze_returning(head(-return_snap, 200.0)) == 0.0
 expect gaze_returning(head(0.0, 200.0)) == 0.0
 
 # A pig dead ahead is still a pig: the gaze swivels to it, and doesn't ease.
