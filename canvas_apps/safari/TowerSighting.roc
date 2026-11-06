@@ -123,7 +123,7 @@ TowerSighting := {
 						along: Along.at(segment.length.divided_by(2.0)),
 						across: Across.left_of_middle(mid_tower_left),
 						yaw: Angle.straight_ahead,
-						beacon_key: index.to_u32() + mid_tower_beacon_step,
+						beacon_key: index.to_u32() + mid_tower_key_offset,
 					},
 				)
 			NoMidTower => []
@@ -159,8 +159,8 @@ TowerSighting := {
 ## far past its segment's. That many staggers come to half a period past a
 ## whole number of periods, so it blinks exactly opposite the tower at the
 ## segment's end.
-mid_tower_beacon_step : U32
-mid_tower_beacon_step = 60
+mid_tower_key_offset : U32
+mid_tower_key_offset = 60
 
 ## A tower standing at `along` and `across` in the segment that `place` maps,
 ## if it is in front of the camera: one item, or none.
