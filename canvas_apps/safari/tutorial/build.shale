@@ -22,17 +22,31 @@
 --
 -- `{{module Clock}}` becomes one fenced block holding all of Clock.roc.
 --
--- Each block gets a title line directly above its fence: `from Cat.roc` for a
--- `{{code ...}}`, `Clock.roc (entire)` for a `{{module ...}}`, and for a
+-- `{{signatures Sky.dusk_while_up Sky.dusk_after_set}}` becomes one fenced block
+-- holding those functions' annotations and nothing else, in the order given. They
+-- come from one module, because a block has one title. A name without an
+-- annotation stops the build.
+--
+-- `{{types row Sky.dusk_at Darken the sky}}` becomes a row of a table: the words,
+-- the function's name, and its type as its annotation says, on one line. The
+-- words may be left out, for a row that goes on with the job of the row above.
+--
+-- Each block gets a title, which rides on its fence for the book to set over the
+-- block: `Cat.roc` for a whole definition, `Cat.roc, in crossing_timeline` for
+-- part of one, `Clock.roc, the whole file` for a `{{module ...}}`, and for a
 -- `{{fails ...}}` `turn_as_bearing.roc (doesn't compile)` over the program and
 -- `roc check on turn_as_bearing.roc` over the message. The source has no copy
 -- of a title, so a title can't go stale.
 --
--- `Module.name` looks in Module.roc, beside safari's other modules: at the
--- file's top level, and in the block of the type named for the module. The
--- spans come from Roc's parser through roc_tree, so a local in a function
--- body or a member of another type is not found. The tree holds no comments,
--- so the doc comment is the run of `##` lines directly above the definition.
+-- `Module.name` looks in Module.roc: beside safari's other modules, then in
+-- gates/, then in the other folders of canvas_apps, such as lib/ and the widgets.
+-- A module in two of those other folders stops the build, and the app's own
+-- `web` can be named too, as `{{module web}}`. A block's title spells out the
+-- folder of anything not beside the game. In the file, a name is looked for at
+-- the top level, and in the block of the type named for the module. The spans
+-- come from Roc's parser through roc_tree, so a local in a function body or a
+-- member of another type is not found. The tree holds no comments, so the doc
+-- comment is the run of `##` lines directly above the definition.
 --
 -- A ```dot fence is written by hand, so its title is too: a line directly
 -- above the fence, with a blank line above that, which isn't a heading, a table
@@ -60,13 +74,16 @@ const SOURCE = "canvas_apps/safari/tutorial/tutorial.md"
 const OUTPUT = "canvas_apps/safari/tutorial/build/tutorial.md"
 const PIN_FILE = "roc-version"
 const WANT = "roc-pin: roc-apps' pinned nightly, for the tutorial's failing programs"
-const INCLUDE = "^\\{\\{code ([A-Z][A-Za-z0-9_]*)\\.([A-Za-z_][A-Za-z0-9_]*!?)(?: from \"([^\"]+)\" to \"([^\"]+)\")?\\}\\}$"
+const INCLUDE = "^\\{\\{code ([A-Z][A-Za-z0-9_]*|web)\\.([A-Za-z_][A-Za-z0-9_]*!?)(?: from \"([^\"]+)\" to \"([^\"]+)\")?\\}\\}$"
+const SIGNATURES = "^\\{\\{signatures ([A-Z][A-Za-z0-9_.! ]*[a-zA-Z0-9_!])\\}\\}$"
+const SIGNATURE_NAME = "^([A-Z][A-Za-z0-9_]*)\\.([a-z_][A-Za-z0-9_]*!?)$"
+const TYPES_ROW = "^\\{\\{types row ([A-Z][A-Za-z0-9_]*)\\.([a-z_][A-Za-z0-9_]*!?)(?: ([^}]+))?\\}\\}$"
 const FAILS = "^\\{\\{fails ([a-z][a-z0-9_]*)\\}\\}$"
-const WHOLE_MODULE = "^\\{\\{module ([A-Z][A-Za-z0-9_]*)\\}\\}$"
+const WHOLE_MODULE = "^\\{\\{module ([A-Z][A-Za-z0-9_]*|web)\\}\\}$"
 const PROOF_ROW = "^\\{\\{proof row ([0-9]+) ([^}]+)\\}\\}$"
 const PROOF_HASH = "^RasterFrame ([0-9]+): hash ([0-9a-f]+)$"
 const PROOF_SHAPES = "^ShapesFrame ([0-9]+): differ 0 of [0-9]+, triangles [0-9]+, shapes ([0-9]+)$"
-const NOT_AN_INCLUDE = "not a line of the form {{code Module.name}}, {{code Module.name from \"text\" to \"text\"}}, {{module Name}}, {{proof row N words}} or {{fails name}}"
+const NOT_AN_INCLUDE = "not a line of the form {{code Module.name}}, {{code Module.name from \"text\" to \"text\"}}, {{module Name}}, {{signatures Module.name Module.name}}, {{types row Module.name words}}, {{proof row N words}} or {{fails name}}"
 const NO_TITLE = "a diagram needs a title line directly above it"
 const CUT = "# ..."
 const PROOF_FILE = "/gates/proof.expected"
@@ -77,17 +94,43 @@ function stop(entry, why)
   fail(entry.source .. ":" .. entry.line .. ": " .. entry.text .. ": " .. why)
 end
 
--- A module of the game, or else of a widget: the book explains its widgets too.
-function module_path(folder, module)
-  local path = folder .. "/" .. module .. ".roc"
-  if exists(path) then return path end
-  for widget in glob("canvas_apps/*/" .. module .. ".roc") do return widget end
-  return path
+-- The module's file: the game's, then a gate's, then a folder's beside the game.
+-- A name is the game's if it can be, so only the other folders can disagree.
+function module_path(entry, folder, module)
+  local file = module .. ".roc"
+  for near in {folder .. "/" .. file, folder .. "/gates/" .. file} do
+    if exists(near) then return near end
+  end
+  local found = glob(dirname(folder) .. "/*/" .. file)
+  if #found == 0 then stop(entry, "no module file " .. folder .. "/" .. file) end
+  if #found > 1 then stop(entry, "two modules of that name: " .. join(found, ", ")) end
+  return found[1]
+end
+
+-- The module's path as a reader finds it, from the game's folder or else from
+-- canvas_apps.
+function shown_path(folder, path)
+  if starts_with(path, folder .. "/") then return sub(path, #folder + 2, #path) end
+  return sub(path, #dirname(folder) + 2, #path)
+end
+
+-- The names in a signatures include, which all have the module of the first.
+function signature_names(entry, list)
+  local names = {}
+  for word in split(list, " ") do
+    local m = re_find(word, SIGNATURE_NAME)
+    if m == nil then stop(entry, NOT_AN_INCLUDE) end
+    if #names == 0 then entry.module = m.groups[1] end
+    if m.groups[1] ~= entry.module then stop(entry, "a block of signatures comes from one module, and this has " .. entry.module .. " and " .. m.groups[1]) end
+    push(names, m.groups[2])
+  end
+  return names
 end
 
 -- The source's lines, in order. A code include's entry has its module, its name
--- and its module's path, and its anchors if it has them. A fails include's has
--- its program's path.
+-- and its module's path, and its anchors if it has them. A signatures or types
+-- include's has its module and path, with its names or its name. A fails
+-- include's has its program's path.
 function read_entries(source, text, folder)
   local entries = {}
   local number = 0
@@ -105,8 +148,7 @@ function read_entries(source, text, folder)
         entry.program = dirname(source) .. "/fails/" .. failing.groups[1] .. ".roc"
         if not exists(entry.program) then stop(entry, "no program " .. entry.program) end
       elseif whole ~= nil then
-        entry.whole_module = folder .. "/" .. whole.groups[1] .. ".roc"
-        if not exists(entry.whole_module) then stop(entry, "no module file " .. entry.whole_module) end
+        entry.whole_module = module_path(entry, folder, whole.groups[1])
       else
         local m = re_find(l, INCLUDE)
         if m == nil then stop(entry, NOT_AN_INCLUDE) end
@@ -116,8 +158,7 @@ function read_entries(source, text, folder)
           entry.from = m.groups[3]
           entry.to = m.groups[4]
         end
-        entry.path = module_path(folder, entry.module)
-        if not exists(entry.path) then stop(entry, "no module file " .. entry.path) end
+        entry.path = module_path(entry, folder, entry.module)
       end
     end
     push(entries, entry)
@@ -290,10 +331,10 @@ function check_quoted(entry, text)
 end
 
 function titled_block(title, language, text)
-  return title .. "\n```" .. language .. "\n" .. text .. "\n```"
+  return "```" .. language .. " " .. title .. "\n" .. text .. "\n```"
 end
 
-function fenced_definition(entry, tree)
+function fenced_definition(entry, tree, folder)
   if tree.err ~= "" then stop(entry, "roc-ast refused " .. entry.path .. ": " .. tree.err) end
   local places = places_of(tree.nodes, entry.module, entry.name)
   if #places == 0 then stop(entry, "no such name in " .. entry.path) end
@@ -304,16 +345,22 @@ function fenced_definition(entry, tree)
   end
   local kept = definition_lines(entry, places[1])
   local shown = {}
-  if has_key(entry, "from") then shown = elided_lines(entry, kept) else shown = whole_lines(kept) end
+  local title = shown_path(folder, entry.path)
+  if has_key(entry, "from") then
+    shown = elided_lines(entry, kept)
+    title = title .. ", in " .. entry.name
+  else
+    shown = whole_lines(kept)
+  end
   local text = join(shown, "\n")
   check_quoted(entry, text)
-  return titled_block("from " .. entry.module .. ".roc", "roc", text)
+  return titled_block(title, "roc", text)
 end
 
-function fenced_module(entry)
+function fenced_module(entry, folder)
   local text = trim(read(entry.whole_module))
   check_quoted(entry, text)
-  return titled_block(basename(entry.whole_module) .. " (entire)", "roc", text)
+  return titled_block(shown_path(folder, entry.whole_module) .. ", the whole file", "roc", text)
 end
 
 function check_version(roc, pin, said)
@@ -350,7 +397,7 @@ function fenced_failure(entry, roc)
   local message = trim(join(split(said, real(".") .. "/"), ""))
   check_quoted(entry, program .. message)
   local file = basename(entry.program)
-  return titled_block(file .. " (doesn't compile)", "roc", program) .. "\n\n" .. titled_block("roc check on " .. file, "", message)
+  return titled_block(file .. " (doesn't compile)", "roc", program) .. "\n\n" .. titled_block("roc check on " .. file, "text", message)
 end
 
 function needs_roc(entries)
@@ -429,13 +476,13 @@ function build(source, output, folder)
       push(kept, proof_table_row(e, numbers))
       expanded = expanded + 1
     elseif has_key(e, "path") then
-      push(kept, fenced_definition(e, trees[e.path]))
+      push(kept, fenced_definition(e, trees[e.path], folder))
       expanded = expanded + 1
     elseif has_key(e, "program") then
       push(kept, fenced_failure(e, roc))
       expanded = expanded + 1
     elseif has_key(e, "whole_module") then
-      push(kept, fenced_module(e))
+      push(kept, fenced_module(e, folder))
       expanded = expanded + 1
     else
       push(kept, e.text)
@@ -558,7 +605,7 @@ function expect_block(checks, folder, include, title, block)
   local r = attempt_include(folder, include)
   if not r.ok then fail("self_test: " .. include .. " stopped: " .. r.error) end
   local got = read(folder .. "/out/doc.md")
-  local want = "prose\n\n" .. title .. "\n```roc\n" .. block .. "\n```\n"
+  local want = "prose\n\n```roc " .. title .. "\n" .. block .. "\n```\n"
   if got ~= want then fail("self_test: " .. include .. " gave [" .. got .. "], not [" .. want .. "]") end
   push(checks, include)
 end
@@ -569,7 +616,7 @@ function expect_failure(checks, folder, name, message)
   local r = attempt_include(folder, include)
   if not r.ok then fail("self_test: " .. include .. " stopped: " .. r.error) end
   local got = read(folder .. "/out/doc.md")
-  local want = "prose\n\n" .. name .. ".roc (doesn't compile)\n```roc\n" .. trim(read(folder .. "/fails/" .. name .. ".roc")) .. "\n```\n\nroc check on " .. name .. ".roc\n```\n" .. message .. "\n```\n"
+  local want = "prose\n\n```roc " .. name .. ".roc (doesn't compile)\n" .. trim(read(folder .. "/fails/" .. name .. ".roc")) .. "\n```\n\n```text roc check on " .. name .. ".roc\n" .. message .. "\n```\n"
   if got ~= want then fail("self_test: " .. include .. " gave [" .. got .. "], not [" .. want .. "]") end
   push(checks, include)
 end
@@ -672,7 +719,8 @@ function check_named_rule(checks, folder)
 end
 
 function self_test()
-  local folder = fresh_dir("scratch:", "safari-tutorial")
+  local top = fresh_dir("scratch:", "safari-tutorial")
+  local folder = top .. "/safari"
   mkdir(folder .. "/out")
   replace(folder .. "/Zoo.roc", ZOO)
   replace(folder .. "/Tight.roc", TIGHT)
@@ -685,12 +733,12 @@ function self_test()
   local zoo = folder .. "/Zoo.roc"
   local checks = {}
 
-  expect_block(checks, folder, "{{code Zoo.feed}}", "from Zoo.roc", "## How much to feed,\n## over two lines.\nfeed : Cage -> F64\nfeed = |cage| {\n\tamount = cage.size\n\n\tamount * 2.0\n}")
-  expect_block(checks, folder, "{{code Zoo.Cage}}", "from Zoo.roc", "## A cage.\nCage : {\n\tsize : F64,\n}")
-  expect_block(checks, folder, "{{code Zoo.bare}}", "from Zoo.roc", "bare = 1.0")
-  expect_block(checks, folder, "{{code Zoo.top_function}}", "from Zoo.roc", "top_function : F64 -> F64\ntop_function = |x| x")
-  expect_block(checks, folder, "{{code Zoo.top_constant}}", "from Zoo.roc", "## A constant.\ntop_constant = 2.0")
-  expect_block(checks, folder, "{{code Zoo.TopType}}", "from Zoo.roc", "## A type.\nTopType : { a : F64 }")
+  expect_block(checks, folder, "{{code Zoo.feed}}", "Zoo.roc", "## How much to feed,\n## over two lines.\nfeed : Cage -> F64\nfeed = |cage| {\n\tamount = cage.size\n\n\tamount * 2.0\n}")
+  expect_block(checks, folder, "{{code Zoo.Cage}}", "Zoo.roc", "## A cage.\nCage : {\n\tsize : F64,\n}")
+  expect_block(checks, folder, "{{code Zoo.bare}}", "Zoo.roc", "bare = 1.0")
+  expect_block(checks, folder, "{{code Zoo.top_function}}", "Zoo.roc", "top_function : F64 -> F64\ntop_function = |x| x")
+  expect_block(checks, folder, "{{code Zoo.top_constant}}", "Zoo.roc", "## A constant.\ntop_constant = 2.0")
+  expect_block(checks, folder, "{{code Zoo.TopType}}", "Zoo.roc", "## A type.\nTopType : { a : F64 }")
 
   expect_stop(checks, folder, "{{code Zoo.nope}}", "no such name in " .. zoo)
   expect_stop(checks, folder, "{{code Zoo.amount}}", "no such name in " .. zoo)
@@ -699,17 +747,17 @@ function self_test()
   expect_stop(checks, folder, "{{code Zoo.both}}", "found 2 times in " .. zoo .. ", at lines 25, 45")
   expect_stop(checks, folder, "{{code Gone.feed}}", "no module file " .. folder .. "/Gone.roc")
   expect_stop(checks, folder, "{{module Gone}}", "no module file " .. folder .. "/Gone.roc")
-  expect_block(checks, folder, "{{module Tight}}", "Tight.roc (entire)", trim(TIGHT))
+  expect_block(checks, folder, "{{module Tight}}", "Tight.roc, the whole file", trim(TIGHT))
   expect_stop(checks, folder, "{{code Zoo.fenced}}", "its text holds a Markdown fence")
   expect_stop(checks, folder, "{{code Tight.squeezed}}", folder .. "/Tight.roc:1 is not indented as the definition is")
 
-  expect_block(checks, folder, "{{code Zoo.feed from \"amount = cage.size\" to \"amount * 2.0\"}}", "from Zoo.roc", "# ...\namount = cage.size\n\namount * 2.0\n# ...")
-  expect_block(checks, folder, "{{code Zoo.feed from \"amount * 2.0\" to \"amount * 2.0\"}}", "from Zoo.roc", "# ...\namount * 2.0\n# ...")
-  expect_block(checks, folder, "{{code Zoo.feed from \"feed =\" to \"amount = cage.size\"}}", "from Zoo.roc", "# ...\nfeed = |cage| {\n\tamount = cage.size\n\t# ...")
-  expect_block(checks, folder, "{{code Zoo.feed from \"amount * 2.0\" to \"}\"}}", "from Zoo.roc", "\t# ...\n\tamount * 2.0\n}")
-  expect_block(checks, folder, "{{code Zoo.feed from \"How much\" to \"feed :\"}}", "from Zoo.roc", "## How much to feed,\n## over two lines.\nfeed : Cage -> F64\n# ...")
-  expect_block(checks, folder, "{{code Zoo.feed from \"How much\" to \"}\"}}", "from Zoo.roc", "## How much to feed,\n## over two lines.\nfeed : Cage -> F64\nfeed = |cage| {\n\tamount = cage.size\n\n\tamount * 2.0\n}")
-  expect_block(checks, folder, "{{code Zoo.fenced from \"fenced =\" to \"fenced =\"}}", "from Zoo.roc", "# ...\nfenced = 1.0")
+  expect_block(checks, folder, "{{code Zoo.feed from \"amount = cage.size\" to \"amount * 2.0\"}}", "Zoo.roc, in feed", "# ...\namount = cage.size\n\namount * 2.0\n# ...")
+  expect_block(checks, folder, "{{code Zoo.feed from \"amount * 2.0\" to \"amount * 2.0\"}}", "Zoo.roc, in feed", "# ...\namount * 2.0\n# ...")
+  expect_block(checks, folder, "{{code Zoo.feed from \"feed =\" to \"amount = cage.size\"}}", "Zoo.roc, in feed", "# ...\nfeed = |cage| {\n\tamount = cage.size\n\t# ...")
+  expect_block(checks, folder, "{{code Zoo.feed from \"amount * 2.0\" to \"}\"}}", "Zoo.roc, in feed", "\t# ...\n\tamount * 2.0\n}")
+  expect_block(checks, folder, "{{code Zoo.feed from \"How much\" to \"feed :\"}}", "Zoo.roc, in feed", "## How much to feed,\n## over two lines.\nfeed : Cage -> F64\n# ...")
+  expect_block(checks, folder, "{{code Zoo.feed from \"How much\" to \"}\"}}", "Zoo.roc, in feed", "## How much to feed,\n## over two lines.\nfeed : Cage -> F64\nfeed = |cage| {\n\tamount = cage.size\n\n\tamount * 2.0\n}")
+  expect_block(checks, folder, "{{code Zoo.fenced from \"fenced =\" to \"fenced =\"}}", "Zoo.roc, in fenced", "# ...\nfenced = 1.0")
 
   expect_stop(checks, folder, "{{code Zoo.feed from \"nope\" to \"}\"}}", "\"nope\" is not in the definition")
   expect_stop(checks, folder, "{{code Zoo.feed from \"feed =\" to \"nope\"}}", "\"nope\" is not in the definition")
@@ -726,7 +774,7 @@ function self_test()
   replace(folder .. "/fails/pathy.roc", "app [main!] {}\n\nmain! = |_args| \"" .. root .. "/Some.roc\" + 1\n")
   local pathy = attempt_include(folder, "{{fails pathy}}")
   if not pathy.ok then fail("self_test: {{fails pathy}} stopped: " .. pathy.error) end
-  local message = split(read(folder .. "/out/doc.md"), "```\n\nroc check on pathy.roc\n```\n")[2]
+  local message = split(read(folder .. "/out/doc.md"), "```\n\n```text roc check on pathy.roc\n")[2]
   if contains(message, root) or not contains(message, "\"Some.roc\" + 1") then fail("self_test: the checkout's path stayed in [" .. message .. "]") end
   push(checks, "{{fails pathy}}")
 
@@ -762,7 +810,7 @@ function self_test()
   if wrong.ok or wrong.error ~= "tutorial: r is Roc compiler version q, not p" then fail("self_test: the wrong compiler gave " .. json_write(wrong)) end
   push(checks, "the pinned version, and another")
 
-  remove_tree(folder)
+  remove_tree(top)
   print("tutorial self_test: PASS, " .. #checks .. " checks")
 end
 

@@ -1,7 +1,9 @@
 ## This module is the hook that turns a chapter's own fences into HTML. A
 ## ```widget fence becomes a live frame and a ```dot fence becomes its drawing.
-## Every other fence stays code. A ```widget fence names its widget and, for a
-## widget that opens partway, the word it opens at: ```widget frame trees.
+## A code fence with a title after its language, as build.shale writes them,
+## becomes a listing with that title over it, and any other fence stays code. A
+## ```widget fence names its widget and, for a widget that opens partway, the
+## word it opens at: ```widget frame trees.
 import md.MdDocument
 import BookText
 import Manuscript
@@ -19,8 +21,15 @@ BookFence := [].{
 			Html(widget_html(manuscript.widget_folders, fence).to_utf8())
 		} else if tag == "dot".to_utf8() {
 			Html(diagram_html(manuscript.diagrams, BookText.from_bytes(args)).to_utf8())
-		} else {
+		} else if args.is_empty() {
 			Pass
+		} else {
+			listing = {
+				language: BookText.from_bytes(tag),
+				title: BookText.from_bytes(args),
+				code: BookText.from_bytes(body),
+			}
+			Html(listing_html(listing).to_utf8())
 		}
 }
 
@@ -96,5 +105,20 @@ expect widget_html(["sky_widget"], { words: "sky", caption: "a <b>" }).contains(
 expect widget_html(["sky_widget"], { words: "sky", caption: "a" }).contains("src=\"../sky_widget/\"")
 expect
 	widget_html(["frame_widget"], { words: "frame trees", caption: "a" })
+## The renderer's own markup for code, with the title over it. color_roc.shale
+## reads the file's name from the caption.
+listing_html : {
+	language : Str,
+	title : Str,
+	code : Str,
+} -> Str
+listing_html = |{ language, title, code }| {
+	safe_title = BookText.escaped_text(title)
+	safe_code = BookText.escaped_text(code)
+	listing =
+		\\<figure class="listing"><figcaption>${safe_title}</figcaption><pre><code class="language-${language}">${safe_code}</code></pre></figure>
+	listing
+}
+
 		.contains("src=\"../frame_widget/?start=trees\"")
 expect diagram_html([{ id: "d1", svg: "<svg>" }], "d1") == "<svg>"

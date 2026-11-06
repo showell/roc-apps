@@ -57,8 +57,10 @@ body.front main { max-width: calc(var(--measure) + 4rem); margin: 0 auto; paddin
 article > * { max-width: var(--measure); }
 article > table, article > svg { max-width: var(--wide); }
 
-/* A code block matches the prose, and widens only for the lines that need it. */
-article > pre { width: fit-content; min-width: min(100%, var(--measure)); max-width: var(--wide); }
+/* A code listing matches the prose, and widens only for the lines that need it. */
+article > figure.listing { width: fit-content; min-width: min(100%, var(--measure)); max-width: var(--wide); }
+
+.book-bar { display: none; }
 
 /* Headings */
 
@@ -104,15 +106,14 @@ pre code { font-size: inherit; }
 .syn-type { color: var(--code-type); }
 .syn-name { font-weight: 600; }
 
-/* The title line above a block belongs to the block, so it sits close to it,
-   small and quiet. */
+/* A listing's title sits inside the block it names, small and quiet. */
 
-p:has(+ pre), p:has(+ svg) {
-  margin: 1.6rem 0 0.3rem;
-  color: var(--quiet);
-  font: 0.72rem/1.4 var(--plain);
-}
-p:has(+ pre) code, p:has(+ svg) code { background: none; padding: 0; }
+figure { margin: 1.6rem 0; }
+figure.listing { background: var(--shade); border-radius: 4px; }
+figure.listing figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.66rem/1.4 var(--mono); }
+figure.listing pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; }
+
+/* A figure's caption reads as a caption: under it, in the plain face. */
 
 /* Diagrams come from Graphviz. Its colours are attributes, so these rules win,
    and a diagram follows the page into dark mode. */
