@@ -835,7 +835,7 @@ Stepping forward is the ordinary step. Stepping back is more interesting, becaus
 
 {{code Tour.step_back}}
 
-Nothing has to be undone. An old `RideInstant` is still a perfectly good value. The cat ends up in the right place because its position was only ever worked out from the rider's, and the sun ends up in the right place because it was only ever worked out from the clock. Neither one needs any code for going backwards.
+Nothing has to be undone. An old `RideInstant` is still a perfectly good value. The cat ends up in the right place because its position was only ever worked out from the rider's, and the sun ends up in the right place because it was only ever worked out from the clock. Neither one needs any code for going backward.
 
 We've seen the things that never change. The beacons are next, because they follow the clock alone.
 
@@ -899,7 +899,7 @@ Notice where the clock stops. `beacon_brightness` on a `TowerSighting` is a `Fra
 
 There's no blink abstraction, because nothing else in the game blinks.
 
-The clock counts steps, not seconds, so pausing the ride freezes the beacons, and stepping back runs them backwards.
+The clock counts steps, not seconds, so pausing the ride freezes the beacons, and stepping back runs them backward.
 
 A beacon repeats. The sun only goes one way, and a lot more hangs on it.
 
@@ -922,7 +922,7 @@ The types do the work, and a sunset needs four:
 | Type | What it is | Under it |
 |---|---|---|
 | `Clock` | A step of the ride | A `U32` |
-| `Pixels` | A length on screen, like the sun's height | An `F64` |
+| `Pixels` | A length on screen, like the sun's height | An `F64`, because a shape can sit between two pixels |
 | `Fraction` | A ratio from 0 to 1, like how far toward dusk we are | An `F64` |
 | `Sky.Rgb` | A color | A record of three floats |
 
@@ -972,18 +972,14 @@ Here's the top of that diagram in code. Each frame, the game asks for three thin
 ### Job one: the sun goes down
 
 ```widget sky sun
-Press play.
+Press play. The two middle buttons step one frame at a time, for the patient.
 ```
 
-This widget does only the first job, so the sky stays blue. Each frame it calls `Sun.height_px`, reads out the answer, and marks it on the chart's gold line.
+This widget does only the first job, so the sky stays blue. For each frame it calls `Sun.height_px`, reads out the answer, and marks it on the chart's gold line.
 
 The sun chapter showed how `Sun.sighting` places a sun. All it needs from the clock is a height:
 
 {{code Sun.height_px}}
-
-That's the gold line on the chart: one multiplication and one subtraction! It says `.minus` and `.times` because `Pixels` is opaque, which is the same reason you can't add 7 to a clock. Under that, the clock unwraps itself:
-
-{{code Clock.to_f64}}
 
 ### Job two: the sky darkens
 
@@ -1027,11 +1023,9 @@ The horizon is the same sky, warmed toward red:
 
 The horizon is warmest when the sun's height is zero. `ratio_to` says how far away the sun is, as a share of 110 pixels, and `abs` makes the two sides match, which gives the red line its tent. `Fraction.clamp` holds everything past 110 pixels at no warmth at all.
 
-### Going backwards
+### Going backward
 
-Play any of those widgets backward, and the sun rises. Look for the code that did it. There isn't any. `Sun` has no code for going backwards. It doesn't know it was going forwards.
-
-A `->` promises one thing: same arguments, same answer. Which arguments is up to us, and we picked the clock. A game could nudge the sun down a little each frame instead, with `->` functions too. They'd take the last frame's sun as an argument, and going back would need more code.
+Play any of those widgets backward, and the sun rises. No code does that. Every function here takes a clock and answers, so it doesn't matter which way the clock runs.
 
 The sun and the beacons can be asked about any step, cold. Hand `Sky.dusk_at` a clock and it answers. The rider and the truck can't do that.
 
@@ -2432,7 +2426,7 @@ This page lists what catches a reader of Roc out in Safari Ride, sorted by what 
 | A pose cut on the wrong side of its beat | The leap's beats sum to a float just under the beat they stand for, so a cut says `Through` or `Before` | The cat |
 | The first frame of an animation shown too soon | `Waiting` and `Past` aren't progress of 0 and 1, because a critter can rest where no part of its animation reaches | The cat |
 | A bird hanging in the air | `over_gap` doesn't know a bird can't hover. A stopped rider would leave one there, and on this route the rider doesn't stop inside a bird's 45 metres | The bird |
-| Beacons that stop, or run backwards | The clock counts steps, not seconds, so pausing freezes them and stepping back reverses them | The beacons |
+| Beacons that stop, or run backward | The clock counts steps, not seconds, so pausing freezes them and stepping back reverses them | The beacons |
 | A frame hash that moves after a sum was reordered | Float addition isn't associative, so a sum's order is part of its meaning | Proving it |
 | A green gate over a wrong brake light | The gate is blind to whatever no listed frame shows | Proving it |
 | A page that differs from the hashed frame | The hash proves `ShapesPixels`'s pixels. The page's come from the browser's canvas, with anti-aliasing | Proving it |

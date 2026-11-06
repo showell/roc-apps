@@ -156,7 +156,7 @@ async function pictureChanges(page, i, before) {
 // frame's Next button, which goes round from the last layer to the first.
 const CLICKED_AT = {
   "../frame_widget/": { x: 0.91, y: 0.93 },
-  "../sky_widget/": { x: 0.306, y: 0.65 },
+  "../sky_widget/": { x: 0.384, y: 0.65 },
   "../rehearsal_widget/": { x: 0.12, y: 0.644 },
   "../stills_widget/": { x: 0.114, y: 0.883 },
 };

@@ -1,5 +1,5 @@
-## The widget for the Safari tutorial's setting sun. Five buttons, like a video
-## recorder's, run the ride's clock forward and back, and each frame is worked
+## The widget for the Safari tutorial's setting sun. Six buttons, like a video
+## recorder's, run the ride's clock forward and back or step it one at a time, and each frame is worked
 ## out from that clock alone. A click anywhere else does nothing. The picture is
 ## the ride's own sky, looking straight at the sun, drawn by Backdrop at two
 ## thirds of its size. Below it, lines of text read out the calls to Sky, and a
@@ -27,7 +27,7 @@ SkyWidgetApp :: [].{
 	Motion : [Stopped, Forward, Backward]
 
 	## What a button does.
-	Control : [ToStart, PlayBack, Pause, Play, ToEnd]
+	Control : [ToStart, PlayBack, StepBack, StepForward, Play, ToEnd]
 
 	## The whole state of the widget: the ride's clock, the job, and which way
 	## the clock is running.
@@ -106,20 +106,31 @@ clock_moved_by = |model, steps| {
 	}
 }
 
-## The model after a press of `control`.
+## The model after a press of `control`. A lit play button pauses, and a step
+## stops the clock wherever it was running.
 pressed : SkyWidgetApp.Model, SkyWidgetApp.Control -> SkyWidgetApp.Model
 pressed = |model, control|
 	match control {
 		ToStart => { ..model, clock: Clock.start, motion: Stopped }
-		PlayBack => { ..model, motion: Backward }
-		Pause => { ..model, motion: Stopped }
+		PlayBack => { ..model, motion: toggled(model.motion, Backward) }
+		StepBack => clock_moved_by({ ..model, motion: Stopped }, -1.0)
+		StepForward => clock_moved_by({ ..model, motion: Stopped }, 1.0)
 		Play =>
 			if model.clock == last_clock {
 				{ ..model, clock: Clock.start, motion: Forward }
 			} else {
-				{ ..model, motion: Forward }
+				{ ..model, motion: toggled(model.motion, Forward) }
 			}
 		ToEnd => { ..model, clock: last_clock, motion: Stopped }
+	}
+
+## `wanted`, or stopped if the clock is already running that way.
+toggled : SkyWidgetApp.Motion, SkyWidgetApp.Motion -> SkyWidgetApp.Motion
+toggled = |motion, wanted|
+	if motion == wanted {
+		Stopped
+	} else {
+		wanted
 	}
 
 ## `model` after a click at `spot`, which does nothing off the buttons.
@@ -137,9 +148,10 @@ buttons : List(Button)
 buttons = [
 	{ control: ToStart, left: 24.0 },
 	{ control: PlayBack, left: 74.0 },
-	{ control: Pause, left: 124.0 },
-	{ control: Play, left: 174.0 },
-	{ control: ToEnd, left: 224.0 },
+	{ control: StepBack, left: 124.0 },
+	{ control: StepForward, left: 174.0 },
+	{ control: Play, left: 224.0 },
+	{ control: ToEnd, left: 274.0 },
 ]
 
 button_width : F64
@@ -158,13 +170,12 @@ is_on = |button, { x, y }|
 		and y >= button_top
 		and y < button_top + button_height
 
-## The control that shows as lit while the clock runs this way.
-lit_control : SkyWidgetApp.Motion -> SkyWidgetApp.Control
-lit_control = |motion|
-	match motion {
-		Stopped => Pause
-		Forward => Play
-		Backward => PlayBack
+## Whether `control` is the one that's running the clock.
+is_lit : SkyWidgetApp.Control, SkyWidgetApp.Motion -> Bool
+is_lit = |control, motion|
+	match (control, motion) {
+		(Play, Forward) | (PlayBack, Backward) => True
+		_ => False
 	}
 
 ## A triangle pointing right when `reach` is positive, and left when it's not.
@@ -199,22 +210,28 @@ button_middle_y = button_top + button_height / 2.0
 icon_color : I64
 icon_color = 0xf7f5f0
 
-## What a button shows, around `middle`.
-icon : SkyWidgetApp.Control, F64 -> List(Shapes.Shape)
-icon = |control, middle|
-	match control {
-		ToStart => [bar(middle - 9.0), triangle(middle - 5.0, -11.0)]
-		PlayBack => [triangle(middle - 6.0, -12.0)]
-		Pause => [bar(middle - 5.0), bar(middle + 2.0)]
-		Play => [triangle(middle + 6.0, 12.0)]
-		ToEnd => [triangle(middle + 5.0, 11.0), bar(middle + 6.0)]
+## What a button shows, around `middle`. A lit play button shows a pause.
+icon : SkyWidgetApp.Control, { middle : F64, lit : Bool } -> List(Shapes.Shape)
+icon = |control, { middle, lit }|
+	if lit {
+		[bar(middle - 5.0), bar(middle + 2.0)]
+	} else {
+		match control {
+			ToStart => [bar(middle - 9.0), triangle(middle - 5.0, -11.0)]
+			PlayBack => [triangle(middle - 6.0, -12.0)]
+			StepBack => [triangle(middle - 2.0, -9.0), bar(middle + 2.0)]
+			StepForward => [bar(middle - 5.0), triangle(middle + 2.0, 9.0)]
+			Play => [triangle(middle + 6.0, 12.0)]
+			ToEnd => [triangle(middle + 5.0, 11.0), bar(middle + 6.0)]
+		}
 	}
 
-## A button on the canvas, lit if it matches `motion`.
+## A button on the canvas, lit if it's running the clock.
 button_shapes : Button, SkyWidgetApp.Motion -> List(Shapes.Shape)
 button_shapes = |button, motion| {
+	lit = is_lit(button.control, motion)
 	color =
-		if button.control == lit_control(motion) {
+		if lit {
 			0xd0603a
 		} else {
 			0x303030
@@ -227,7 +244,7 @@ button_shapes = |button, motion| {
 			h: button_height,
 			fill: ScrubWidget.flat(color),
 		}),
-	].concat(icon(button.control, button.left + button_width / 2.0))
+	].concat(icon(button.control, { middle: button.left + button_width / 2.0, lit }))
 }
 
 next_job : SkyWidgetApp.Job -> SkyWidgetApp.Job
@@ -278,11 +295,7 @@ picture = |job, clock| {
 		{
 			sky_top_color: colors.top,
 			sky_horizon_color: colors.horizon,
-			sun_sighting: Sun.sighting({
-				heading: Sun.bearing,
-				clock,
-				cam_focal: Lens.focal,
-			}),
+			sun_sighting: Sun.sighting({ heading: Sun.bearing, clock, cam_focal: Lens.focal }),
 		},
 	)
 }
@@ -459,7 +472,7 @@ hint = |clock, motion|
 	if clock == Clock.start and motion == Stopped {
 		Font.text(
 			"Press play",
-			300.0,
+			332.0,
 			227.0,
 			13.0,
 			Brush.opaque(0x202020),
@@ -539,17 +552,64 @@ pressed_on : SkyWidgetApp.Model, F64 -> SkyWidgetApp.Model
 pressed_on = |model, left| clicked_at(model, { x: left + button_width / 2.0, y: button_middle_y })
 
 # Every button does its job, and nothing else on the canvas does anything.
-expect pressed_on(at_start, 174.0).motion == Forward
-expect pressed_on(at_start, 174.0).clock == Clock.at_step(8)
+expect pressed_on(at_start, 224.0).motion == Forward
+expect pressed_on(at_start, 224.0).clock == Clock.at_step(8)
 expect pressed_on({ ..at_start, clock: Clock.at_step(100) }, 74.0).motion == Backward
 expect pressed_on({ ..at_start, clock: Clock.at_step(100) }, 74.0).clock == Clock.at_step(92)
-expect pressed_on({ ..at_start, motion: Forward }, 124.0).motion == Stopped
+expect pressed_on({ ..at_start, clock: Clock.at_step(100) }, 124.0).clock == Clock.at_step(99)
+expect pressed_on({ ..at_start, clock: Clock.at_step(100) }, 174.0).clock == Clock.at_step(101)
 expect pressed_on({ ..at_start, clock: Clock.at_step(100) }, 24.0).clock == Clock.start
-expect pressed_on(at_start, 224.0).clock == last_clock
+expect pressed_on(at_start, 274.0).clock == last_clock
 expect clicked_at(at_start, { x: 320.0, y: 100.0 }) == at_start
 expect clicked_at(at_start, { x: 320.0, y: 300.0 }) == at_start
 expect clicked_at(at_start, { x: 70.0, y: button_middle_y }) == at_start
 expect clicked_at(at_start, { x: 196.0, y: button_top - 1.0 }) == at_start
+
+# A lit play button pauses, and a step stops the clock.
+expect pressed_on(
+	{
+		..at_start,
+		clock: Clock.at_step(100),
+		motion: Forward,
+	},
+	224.0,
+).motion == Stopped
+expect pressed_on(
+	{
+		..at_start,
+		clock: Clock.at_step(100),
+		motion: Backward,
+	},
+	74.0,
+).motion == Stopped
+expect pressed_on(
+	{
+		..at_start,
+		clock: Clock.at_step(100),
+		motion: Forward,
+	},
+	74.0,
+).motion == Backward
+expect pressed_on(
+	{
+		..at_start,
+		clock: Clock.at_step(100),
+		motion: Forward,
+	},
+	174.0,
+).motion == Stopped
+expect pressed_on(
+	{
+		..at_start,
+		clock: Clock.at_step(100),
+		motion: Backward,
+	},
+	124.0,
+).motion == Stopped
+
+# A step stays on the sunset at both ends.
+expect pressed_on(at_start, 124.0) == at_start
+expect pressed_on({ ..at_start, clock: last_clock }, 174.0) == { ..at_start, clock: last_clock }
 
 # A held button isn't a new click.
 expect
@@ -570,14 +630,17 @@ expect run_on({
 expect run_on(at_start) == at_start
 expect pressed({ ..at_start, clock: last_clock }, Play) == { ..at_start, motion: Forward }
 
-# The lit button says which way the clock runs.
-expect lit_control(Stopped) == Pause
-expect lit_control(Forward) == Play
-expect lit_control(Backward) == PlayBack
+# The lit button is the one running the clock, and nothing is lit at rest.
+expect is_lit(Play, Forward)
+expect is_lit(PlayBack, Backward)
+expect !is_lit(Play, Stopped)
+expect !is_lit(PlayBack, Stopped)
+expect !is_lit(Play, Backward)
+expect !is_lit(ToEnd, Forward)
 
 # Each button shows an icon, and a button is its square and that icon.
 expect buttons.all(|button| button_shapes(button, Stopped).len() > 1)
-expect buttons.len() == 5
+expect buttons.len() == 6
 
 # The Right key moves through the jobs, and the pointer leaves them alone.
 expect next_job(SunSets) == SkyDarkens
