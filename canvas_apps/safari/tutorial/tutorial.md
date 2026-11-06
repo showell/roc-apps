@@ -247,7 +247,7 @@ Nothing in this chapter moves, and that's true of the next few chapters too, as 
 
 Our Roc app doesn't draw anything. We said that back in the modules chapter, and it's worth saying again before we start drawing things. Roc answers with a list of shapes, and something else paints them.
 
-So when you see `Polygon.flat_polygon` in the chapters ahead, nothing is being painted. It makes a value. That's as close to the metal as Safari Ride gets, and the metal could be JavaScript on a canvas, or a wasm painter written in Odin or Zig. The Roc is the same either way.
+So a function like `Polygon.triangle` makes a value, and that's as close to the metal as Safari Ride gets. The metal could be JavaScript on a canvas, or a wasm painter written in Odin or Zig. The Roc is the same either way.
 
 Here's a frame with two shapes in it:
 
@@ -271,17 +271,17 @@ Every frame is a list of this:
 
 That's more than we need today. Almost all of a frame is `Poly`: step 1,570 of the ride has 2,713 shapes, and 2,706 of them are polygons. We'll get to the rest when something asks for them.
 
-`Shapes` is shared with the other canvas apps, so it deals in plain `F64`s. Safari Ride talks to it through `Polygon`, which takes screen points and a color:
+`Shapes` is shared with the other canvas apps, so it deals in plain `F64`s. Safari Ride's own `Polygon` takes a color and screen points. `triangle` and `rectangle` are handy forms of this one, which takes any number of corners:
 
 {{code Polygon.flat_polygon}}
 
 ### Lists all the way down
 
-`Polygon.flat_polygon` gives back a list, even though it only ever makes one shape. That's how a drawing function can say "nothing to draw", with an empty list. Lists join without any fuss, so nobody has to check. A tree joins its trunk and tiers, a frame joins its trees and everything else, and the empty ones disappear.
+Everything in `Polygon` gives back a list, even a triangle, which only ever makes one shape. That's how a drawing function can say "nothing to draw", with an empty list. Lists join without any fuss, so nobody has to check. A tree joins its trunk and tiers, a frame joins its trees and everything else, and the empty ones disappear.
 
 The list is also the order of painting. A shape goes over whatever came before it, so the rectangle is on top of the triangle because it comes later. A frame paints far things first and near things last.
 
-The work from here on is deciding which corners go in the list, and in what order. That starts with a tree.
+The work from here on is deciding which corners to hand to `Polygon`, and in what order. That starts with a tree.
 
 ## A simple tree
 
