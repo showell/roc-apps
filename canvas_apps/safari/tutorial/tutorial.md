@@ -186,7 +186,7 @@ Some of Safari Ride never changes. Trees, cows, the pond and the road are built 
 The whole route in one picture. The white stretch is segment 7, and the lines under the map read out its record.
 ```
 
-Each stretch of this map is one record of a list called `World.plans`, and the lines under the map read it out. The marks on the map are the six segments with a cat or a bird. We drew the map for this page: the ride itself never has one.
+Each stretch of this map is one record of a list called `World.plans`, and the lines under the map read out the one in white. The marks on the map are the six segments with a cat or a bird. We drew the map for this page: the ride itself never has one.
 
 New in this chapter:
 
@@ -669,7 +669,7 @@ A road of straight segments still has to get round its bends. Where two segments
 Three bends from above. The rail changes sides with the bend, and a sharper bend pushes the apex further out.
 ```
 
-The road here is two segments, seen from above, and the white dot is where the view is from. The rail runs along the outer edge of the bend, and the yellow dot is the apex, where the outer edges of the two segments meet. Playing past straight swaps the outer edge from one side to the other. A road with no turn has no apex, so the widget skips straight.
+Each road here is two segments, seen from above, and the white dot is where the view is from. The rail runs along the outer edge of the bend, and the yellow dot is the apex, where the outer edges of the two segments meet. The left bend and the right bend have their outer edges on opposite sides. A road with no turn has no apex, so none is shown.
 
 New in this chapter:
 
@@ -707,7 +707,7 @@ A bend is a small record.
 
 {{code BendView.outer_edge}}
 
-A bend to the right has its outer edge on the left. That's the swap you saw at straight.
+A bend to the right has its outer edge on the left. That's why the rail changes sides between the first two bends.
 
 {{code BendView.apex}}
 
