@@ -182,7 +182,7 @@ Everything in this chapter happens within a single frame, and none of it survive
 
 Some of Safari Ride never changes. Trees, cows, the pond and the road are built once and only read after that, which makes them the easiest part of the program to read, so the tour starts there.
 
-```widget route_segments
+```widget route
 The whole route in one picture. The white stretch is segment 7, and the lines under the map read out its record.
 ```
 
@@ -2262,7 +2262,7 @@ The view widens as the rider leans. One `Fraction` goes in, and a focal length c
 
 ### Round the bends
 
-```widget route_segments
+```widget route
 The route again. This map comes from adding up the turns, which the ride itself never does. The white stretch is the record quoted below.
 ```
 
