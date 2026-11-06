@@ -8,7 +8,7 @@ import Angle
 import BirdFlight
 import Cat
 import Distance
-import Herd
+import Cows
 import Pigs
 import Scenery
 import Trees
@@ -344,7 +344,7 @@ built_segment = |plan, index| {
 	{
 		length: plan.length,
 		trees,
-		cows: Herd.fill_cows(plan.bull),
+		cows: Cows.fill_cows(plan.bull),
 		pigs: Pigs.pigs_along({
 			presence: plan.pigs,
 			attention: pig_attention,

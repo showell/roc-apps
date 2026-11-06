@@ -90,7 +90,7 @@ digraph system {
     label="the ride";
     Rider; Truck; World;
     critters [label="the critters\nCat, BirdFlight, Animation", style=dashed];
-    scenery [label="the scenery\nTrees, Herd, Pigs", style=dashed];
+    scenery [label="the scenery\nTrees, Cows, Pigs", style=dashed];
   }
   subgraph cluster_view {
     label="the view";
@@ -176,13 +176,13 @@ digraph world {
   node [shape=box, fontname="Helvetica"];
   World [style=bold];
   World -> Trees;
-  World -> Herd;
+  World -> Cows;
   World -> Pigs;
   World -> Scenery;
   World -> Cat;
   World -> BirdFlight;
-  Herd -> Trees;
-  Herd -> Scenery;
+  Cows -> Trees;
+  Cows -> Scenery;
   Trees -> Scenery;
   Pigs -> Scenery;
 }

@@ -8,7 +8,7 @@ import Scenery
 import Trees
 import lib.Trig
 
-Herd :: [].{
+Cows :: [].{
 
 	bull_codepoint : I64
 	bull_codepoint = 128002
@@ -86,7 +86,7 @@ Herd :: [].{
 
 	## The bull, if there is one, then the cows.
 	fill_cows : [WithBull, NoBull] -> List(Scenery.Critter)
-	fill_cows = |bull| List.concat(Herd.bull_of(bull), Herd.cows)
+	fill_cows = |bull| List.concat(Cows.bull_of(bull), Cows.cows)
 }
 
 cow_at : I64 -> Scenery.Critter
@@ -94,52 +94,52 @@ cow_at = |i| {
 	fi = i.to_f64()
 	column = i.div_trunc_by(3).to_f64()
 	row = i.rem_by(3).to_f64()
-	herd_front = Herd.bull_dist.plus(Herd.herd_gap_behind_bull)
-	column_place = herd_front.plus(Herd.herd_col_spacing.times(column))
-	in_line = column_place.plus(Herd.herd_row_stagger.times(row - 1.0))
+	herd_front = Cows.bull_dist.plus(Cows.herd_gap_behind_bull)
+	column_place = herd_front.plus(Cows.herd_col_spacing.times(column))
+	in_line = column_place.plus(Cows.herd_row_stagger.times(row - 1.0))
 	road_edge = Scenery.lane_half_width.plus(Scenery.herd_road_offset)
-	row_place = road_edge.plus(Herd.herd_row_depth.times(row))
-	out_from_road = row_place.plus(Herd.herd_jitter_across.times(Trig.r_cos((fi * 1.9))))
+	row_place = road_edge.plus(Cows.herd_row_depth.times(row))
+	out_from_road = row_place.plus(Cows.herd_jitter_across.times(Trig.r_cos((fi * 1.9))))
 	{
-		along: in_line.plus(Herd.herd_jitter_along.times(Trig.r_sin((fi * 2.7)))),
+		along: in_line.plus(Cows.herd_jitter_along.times(Trig.r_sin((fi * 2.7)))),
 		across: Across.left_of_middle(out_from_road),
-		codepoint: Herd.cow_codepoint,
+		codepoint: Cows.cow_codepoint,
 		height: if i.rem_by(4) == 1 {
-			Herd.calf_height
+			Cows.calf_height
 		} else {
-			Herd.cow_height
+			Cows.cow_height
 		},
 		facing: FacesRight,
 	}
 }
 
-expect Herd.bull_codepoint == 128002
-expect Herd.cow_codepoint == 128004
+expect Cows.bull_codepoint == 128002
+expect Cows.cow_codepoint == 128004
 
-expect Herd.bull_of(WithBull).map(|bull| bull.codepoint) == [128002]
-expect Herd.bull_of(NoBull).len() == 0
-expect Herd.fill_cows(WithBull).len() == 15
-expect Herd.fill_cows(NoBull).len() == 14
+expect Cows.bull_of(WithBull).map(|bull| bull.codepoint) == [128002]
+expect Cows.bull_of(NoBull).len() == 0
+expect Cows.fill_cows(WithBull).len() == 15
+expect Cows.fill_cows(NoBull).len() == 14
 
 # The bull faces left and the cows right.
-expect Herd.fill_cows(WithBull).take_first(2).map(|critter| critter.facing) == [
+expect Cows.fill_cows(WithBull).take_first(2).map(|critter| critter.facing) == [
 	FacesLeft,
 	FacesRight,
 ]
 
-expect Herd.bull_of(WithBull).map(|bull| bull.along) == [Along.metres(24.0)]
-expect Herd.bull_of(WithBull).map(|bull| bull.across) == [Across.metres(-4.805)]
-expect Herd.bull_dist == Along.metres(24.0)
-expect Herd.bull_tree_gap == Distance.metres(0.5)
+expect Cows.bull_of(WithBull).map(|bull| bull.along) == [Along.metres(24.0)]
+expect Cows.bull_of(WithBull).map(|bull| bull.across) == [Across.metres(-4.805)]
+expect Cows.bull_dist == Along.metres(24.0)
+expect Cows.bull_tree_gap == Distance.metres(0.5)
 
-expect Herd.cow_height == Distance.metres(1.4)
-expect Herd.calf_height == Distance.metres(0.7)
+expect Cows.cow_height == Distance.metres(1.4)
+expect Cows.calf_height == Distance.metres(0.7)
 
-expect (Herd.bull_height.to_metres() - 1.61).abs() <= 0.000000000001
-expect Herd.bull_of(WithBull).all(|bull| (bull.height.to_metres() - 1.61).abs() <= 0.000000000001)
+expect (Cows.bull_height.to_metres() - 1.61).abs() <= 0.000000000001
+expect Cows.bull_of(WithBull).all(|bull| (bull.height.to_metres() - 1.61).abs() <= 0.000000000001)
 
 expect
-	Herd.cows.map(|cow| cow.height.to_metres())
+	Cows.cows.map(|cow| cow.height.to_metres())
 		== [
 			1.4,
 			0.7,
@@ -157,19 +157,19 @@ expect
 			0.7,
 		]
 
-expect Herd.cows.len() == 14
-expect Herd.cows.all(|cow| cow.codepoint == 128004)
+expect Cows.cows.len() == 14
+expect Cows.cows.all(|cow| cow.codepoint == 128004)
 
 # The bull leads, and the cows follow him in their own order.
-expect Herd.fill_cows(WithBull).take_first(1).map(|bull| bull.along) == [Along.metres(24.0)]
-expect Herd.fill_cows(WithBull).drop_first(1) == Herd.cows
+expect Cows.fill_cows(WithBull).take_first(1).map(|bull| bull.along) == [Along.metres(24.0)]
+expect Cows.fill_cows(WithBull).drop_first(1) == Cows.cows
 
-expect Herd.herd_gap_behind_bull == Distance.metres(6.0)
-expect Herd.herd_col_spacing == Distance.metres(6.0)
-expect Herd.herd_row_stagger == Distance.metres(2.0)
-expect Herd.herd_row_depth == Distance.metres(5.0)
-expect Herd.herd_jitter_along == Distance.metres(1.5)
-expect Herd.herd_jitter_across == Distance.metres(1.2)
+expect Cows.herd_gap_behind_bull == Distance.metres(6.0)
+expect Cows.herd_col_spacing == Distance.metres(6.0)
+expect Cows.herd_row_stagger == Distance.metres(2.0)
+expect Cows.herd_row_depth == Distance.metres(5.0)
+expect Cows.herd_jitter_along == Distance.metres(1.5)
+expect Cows.herd_jitter_across == Distance.metres(1.2)
 
 # Each cow strays from its place by no more than the jitter.
 expect {
@@ -189,7 +189,7 @@ expect {
 		52.0,
 		54.0,
 	]
-	misses = Herd.cows.map2(places, |cow, place| (cow.along.to_metres() - place).abs())
+	misses = Cows.cows.map2(places, |cow, place| (cow.along.to_metres() - place).abs())
 	misses.all(|miss| miss <= 1.5)
 }
 
@@ -210,6 +210,6 @@ expect {
 		-12.0,
 		-17.0,
 	]
-	misses = Herd.cows.map2(places, |cow, place| (cow.across.to_metres() - place).abs())
+	misses = Cows.cows.map2(places, |cow, place| (cow.across.to_metres() - place).abs())
 	misses.all(|miss| miss <= 1.2)
 }
