@@ -3,7 +3,7 @@
 Small interactive Roc programs that run two ways from one set of files: as a
 native program on roc-ray, and as a page in a browser.
 
-Twenty of them, covering a few different kinds of program. `safari` is a
+Twenty-one of them, covering a few different kinds of program. `safari` is a
 driving screensaver. `snake`, `pong` and `breakout` are arcade games.
 `particles` is a fountain of four thousand sprites that follows the pointer.
 `camera` is a world larger than the window, with a camera over it and a HUD
@@ -19,10 +19,11 @@ clicks through one step's twelve tries at a lean, `stills_widget` lays out
 every pose of the cat and the bird and shows the one clicked large, with its
 polygons counted, `gaze_widget` drags the rider past the pig that catches
 the eye, `tree_widget` brings one conifer up to the camera with its crown as
-flat triangles or as cones, and `frame_widget` holds step 1,570 of the ride and
-switches its shapes on a layer at a time.
+flat triangles or as cones, `frame_widget` holds step 1,570 of the ride and
+switches its shapes on a layer at a time, and `shapes_widget` is a still picture
+of a triangle and a rectangle, for the book to quote the code under it.
 
-Six of the twenty — all but `safari`, `trick_or_treat` and the widgets — are
+Six of the twenty-one — all but `safari`, `trick_or_treat` and the widgets — are
 roc-ray's own examples, by Luke Boswell, taken with only small changes to fit this scheme.
 
 **The native side runs on roc-ray 0.12.0** (`23eec6e`), with the

@@ -180,6 +180,10 @@ async function pictureChanges(page, i, before) {
 const PLAY = { x: 0.384, y: 0.65 };
 const STEP_FORWARD_WITHOUT_PLAY = { x: 0.228, y: 0.65 };
 
+// A widget that is a still picture has nothing to click, so it proves it runs
+// by having drawn at all.
+const STILL = "still";
+
 // Where a widget wants its click, as shares of the frame: the buttons, rehearsal's
 // third mark, the first bird among the stills, and the frame's Next button, which
 // goes round from the last layer to the first.
@@ -192,6 +196,7 @@ const CLICKED_AT = {
   "../gaze_widget/": PLAY,
   "../rehearsal_widget/": { x: 0.12, y: 0.644 },
   "../route_widget/": STEP_FORWARD_WITHOUT_PLAY,
+  "../shapes_widget/": STILL,
   "../sky_widget/": PLAY,
   "../step_widget/": PLAY,
   "../stills_widget/": { x: 0.114, y: 0.883 },
@@ -209,6 +214,7 @@ async function checkFrame(page, file, i) {
   const isRide = frame.src === "../safari/";
   const clicked = CLICKED_AT[frame.src.split("?")[0]];
   if (!isRide && !clicked) { fail(file, `CLICKED_AT doesn't say where to click ${frame.src}`); return frame.src; }
+  if (clicked === STILL) return frame.src;
   const y = frame.top + frame.height * (clicked?.y ?? 0.5);
   const mouse = (type, share, buttons) => page.send("Input.dispatchMouseEvent",
     { type, x: frame.left + frame.width * share, y, button: "left", buttons, clickCount: 1 }, page.session);
