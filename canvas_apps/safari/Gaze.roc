@@ -11,7 +11,6 @@ import Attention
 import Distance
 import Easing
 import Fraction
-import Pigs
 import RiderState
 import Scenery
 import Speed
@@ -20,8 +19,8 @@ import World
 
 Gaze :: [].{
 
-	## What a pig asks of the throttle: nothing, or to go no faster than this
-	## acceleration.
+	## What a pig asks of the throttle: nothing, or to accelerate no harder than
+	## this.
 	GawkBrake : [NoLimit, AtMost(Acceleration)]
 
 	## Where the rider wants to look: at the pig in sight, this far from the
@@ -89,8 +88,7 @@ Gaze :: [].{
 	desired_gaze : RiderState, World.Segment -> Gaze.GazeTarget
 	desired_gaze = |state, seg|
 		match seg.pig_interest {
-			Distracting => {
-				pig = Pigs.gaze_pig(seg.length)
+			Distracting(pig) => {
 				turn = turn_to(state, pig)
 				is_near = pig.along.distance_from(state.along) <= notice_distance
 				if is_near and turn.abs() < look_release_angle {
@@ -155,7 +153,7 @@ Gaze :: [].{
 	is_gawking : RiderState, World.Segment -> Bool
 	is_gawking = |state, seg|
 		match seg.pig_interest {
-			Distracting => state.along >= Pigs.gaze_pig(seg.length).along.minus(notice_distance)
+			Distracting(pig) => state.along >= pig.along.minus(notice_distance)
 			Unnoticed | NoPigs => False
 		}
 
@@ -163,17 +161,17 @@ Gaze :: [].{
 	## the settle distance before the pig.
 	gawk_brake : RiderState, World.Segment -> Gaze.GawkBrake
 	gawk_brake = |state, seg|
-		if is_gawking(state, seg) {
-			pig = Pigs.gaze_pig(seg.length)
-			room = pig.along.distance_from(state.along).minus(gawk_settle_distance)
-			AtMost(
-				state.speed.acceleration_to({
-					target: gawk_speed,
-					within: room.max(gawk_least_distance),
-				}),
-			)
-		} else {
-			NoLimit
+		match seg.pig_interest {
+			Distracting(pig) if is_gawking(state, seg) => {
+				room = pig.along.distance_from(state.along).minus(gawk_settle_distance)
+				AtMost(
+					state.speed.acceleration_to({
+						target: gawk_speed,
+						within: room.max(gawk_least_distance),
+					}),
+				)
+			}
+			Distracting(_) | Unnoticed | NoPigs => NoLimit
 		}
 }
 
@@ -210,7 +208,6 @@ distracting : World.Segment
 distracting = World.route_segment(2)
 
 expect plain.pig_interest == NoPigs
-expect distracting.pig_interest == Distracting
 
 ## A rider on the distracting segment, at rest in every other way. Gaze doesn't
 ## import Along, so `along` is a distance from the segment's start.
@@ -241,7 +238,14 @@ expect Gaze.desired_gaze(rider(341.0), distracting) == OnRoad
 
 ## The pig that catches the eye on the distracting segment.
 watched_pig : Scenery.Critter
-watched_pig = Pigs.gaze_pig(distracting.length)
+watched_pig =
+	match distracting.pig_interest {
+		Distracting(pig) => pig
+		NoPigs | Unnoticed => crash "Gaze's expects: this segment's pigs catch the eye"
+	}
+
+# The rider watches a pig of the herd.
+expect distracting.pigs.count_if(|pig| pig == watched_pig) == 1
 
 ## A rider on the distracting segment, `metres` short of the pig.
 short_of_pig : F64 -> RiderState

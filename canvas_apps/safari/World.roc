@@ -340,6 +340,7 @@ built_segment = |plan, index| {
 	pig_interest = Pigs.interest_of({
 		presence: plan.pigs,
 		pig_segments_so_far: World.pig_segments_through(index),
+		length: plan.length,
 	})
 	{
 		length: plan.length,
@@ -550,7 +551,7 @@ has_cat = |segment|
 is_distracting : World.Segment -> Bool
 is_distracting = |segment|
 	match segment.pig_interest {
-		Distracting => True
+		Distracting(_) => True
 		Unnoticed | NoPigs => False
 	}
 

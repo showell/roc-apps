@@ -1,6 +1,6 @@
 ## Pigs graze on the right of the road near the end of a segment. On the
-## first few segments with pigs they are a big herd, and one of them catches
-## the rider's eye; after that, they stand in two short rows.
+## first few segments with pigs they are a big herd, and one pig of that herd
+## catches the rider's eye. After that, they stand in two short rows.
 import Across
 import Along
 import Distance
@@ -12,8 +12,8 @@ Pigs :: [].{
 	PigPresence : [WithPigs, NoPigs]
 
 	## What a built segment's pigs are to the rider: there are none, the rider
-	## passes them by, or one of them catches the eye.
-	PigInterest : [NoPigs, Unnoticed, Distracting]
+	## passes them by, or this one of them catches the eye.
+	PigInterest : [NoPigs, Unnoticed, Distracting(Scenery.Critter)]
 
 	pig_codepoint : I64
 	pig_codepoint = 128022
@@ -28,10 +28,6 @@ Pigs :: [].{
 	## How far before the end of its segment the pigs are.
 	pig_distance_before_end : Distance
 	pig_distance_before_end = Distance.metres(60.0)
-
-	## How far past that the pig that catches the rider's eye stands.
-	gaze_pig_along_offset : Distance
-	gaze_pig_along_offset = Distance.metres(2.0)
 
 	big_herd_columns : I64
 	big_herd_columns = 7
@@ -87,13 +83,19 @@ Pigs :: [].{
 			NoPigs => False
 		}
 
-	## How a segment's pigs strike the rider, when `pig_segments_so_far` of
-	## the route's segments, this one included, have pigs.
-	interest_of : { presence : Pigs.PigPresence, pig_segments_so_far : U32 } -> Pigs.PigInterest
-	interest_of = |{ presence, pig_segments_so_far }|
+	## How the pigs of a segment `length` long strike the rider, when
+	## `pig_segments_so_far` of the route's segments, this one included, have pigs.
+	## The pig that catches the eye is the third in the row nearest the road.
+	interest_of : {
+		presence : Pigs.PigPresence,
+		pig_segments_so_far : U32,
+		length : Distance,
+	} -> Pigs.PigInterest
+	interest_of = |{ presence, pig_segments_so_far, length }|
 		match presence {
 			NoPigs => NoPigs
-			WithPigs if pig_segments_so_far <= pig_novelty_count => Distracting
+			WithPigs if pig_segments_so_far <= pig_novelty_count =>
+				Distracting(herd_pig(pigs_place(length), { row: 0, column: 2 }))
 			WithPigs => Unnoticed
 		}
 
@@ -102,18 +104,10 @@ Pigs :: [].{
 	pigs_along : { interest : Pigs.PigInterest, length : Distance } -> List(Scenery.Critter)
 	pigs_along = |{ interest, length }|
 		match interest {
-			Distracting => big_herd(length)
+			Distracting(_) => big_herd(length)
 			Unnoticed => two_rows(length)
 			NoPigs => []
 		}
-
-	## The pig that catches the rider's eye, on a segment `length` long.
-	gaze_pig : Distance -> Scenery.Critter
-	gaze_pig = |length|
-		pig({
-			along: pigs_place(length).plus(gaze_pig_along_offset),
-			across: Across.right_of_middle(Scenery.road_half_width.plus(Scenery.herd_road_offset)),
-		})
 
 	## The big herd on a segment `length` long, row by row from the road.
 	big_herd : Distance -> List(Scenery.Critter)
@@ -170,19 +164,27 @@ pig_row : Along, { across : Across, offsets : List(Distance) } -> List(Scenery.C
 pig_row = |herd_along, { across, offsets }|
 	offsets.map(|offset| pig({ along: herd_along.plus(offset), across }))
 
-expect
-	[
-		({ presence: NoPigs, pig_segments_so_far: 1 }, NoPigs),
-		({ presence: WithPigs, pig_segments_so_far: 1 }, Distracting),
-		({ presence: WithPigs, pig_segments_so_far: 2 }, Distracting),
-		({ presence: WithPigs, pig_segments_so_far: 3 }, Unnoticed),
-	].all(|(segment, interest)| Pigs.interest_of(segment) == interest)
+## How a 1000 m segment's pigs strike the rider.
+interest_on_long_segment : Pigs.PigPresence, U32 -> Pigs.PigInterest
+interest_on_long_segment = |presence, pig_segments_so_far|
+	Pigs.interest_of({ presence, pig_segments_so_far, length: Distance.metres(1000.0) })
+
+eye_catcher : Scenery.Critter
+eye_catcher =
+	match interest_on_long_segment(WithPigs, 1) {
+		Distracting(eye_catching_pig) => eye_catching_pig
+		NoPigs | Unnoticed => crash "Pigs' expects: the first pigs catch the eye"
+	}
+
+expect interest_on_long_segment(NoPigs, 1) == NoPigs
+expect interest_on_long_segment(WithPigs, 2) == Distracting(eye_catcher)
+expect interest_on_long_segment(WithPigs, 3) == Unnoticed
 
 expect
 	[
 		(NoPigs, 0),
 		(Unnoticed, 10),
-		(Distracting, 49),
+		(Distracting(eye_catcher), 49),
 	].all(
 		|(interest, count)| Pigs.pigs_along({
 			interest,
@@ -190,15 +192,12 @@ expect
 		}).len() == count,
 	)
 
-eye_catcher : Scenery.Critter
-eye_catcher = Pigs.gaze_pig(Distance.metres(1000.0))
-
-expect eye_catcher.along.to_metres() == 942.0
-expect eye_catcher.across.to_metres() == 12.0
+# The third pig of the row nearest the road, strayed from its place.
+expect (eye_catcher.along.to_metres() - 940.80757).abs() <= 0.00001
+expect (eye_catcher.across.to_metres() - 11.0332).abs() <= 0.00001
 expect eye_catcher.height.to_metres() == 1.1
 expect Pigs.pig_height.to_metres() == 1.1
 expect Pigs.pig_distance_before_end.to_metres() == 60.0
-expect Pigs.gaze_pig_along_offset.to_metres() == 2.0
 expect eye_catcher.codepoint == 128022
 expect Pigs.pig_codepoint == 128022
 expect Pigs.pig_novelty_count.to_i64() == 2
@@ -213,6 +212,8 @@ herd_pig_at : U64 -> Scenery.Critter
 herd_pig_at = |i| whole_herd.get(i) ?? crash "Pigs: the big herd has 49 pigs"
 
 expect whole_herd.len() == 49
+expect herd_pig_at(2) == eye_catcher
+expect whole_herd.count_if(|herd_member| herd_member == eye_catcher) == 1
 expect Pigs.big_herd(Distance.metres(500.0)).len() == 49
 expect herd_pig_at(0).codepoint == 128022
 expect herd_pig_at(48).codepoint == 128022

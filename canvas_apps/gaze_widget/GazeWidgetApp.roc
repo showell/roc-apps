@@ -11,7 +11,6 @@ import game.Angle
 import game.Clock
 import game.Distance
 import game.Gaze
-import game.Pigs
 import game.Rider
 import game.RiderState
 import game.Scenery
@@ -57,7 +56,7 @@ look_first_step : U32
 look_first_step = 889
 
 look_end_step : U32
-look_end_step = 1046
+look_end_step = 1051
 
 ## The whole stretch, in about eight seconds.
 stretch : VcrButtons.NumberRange(Clock)
@@ -93,12 +92,24 @@ starting_model = { played: [first_rider], transport: VcrButtons.transport_at(str
 ## The first segment of the route whose pigs catch the rider's eye.
 pig_segment : World.Segment
 pig_segment =
-	World.segments.find_first(|segment| segment.pig_interest == Distracting)
+	World.segments.find_first(is_distracting)
 		?? crash "GazeWidgetApp.pig_segment: the route has a distracting pig"
+
+## Whether a segment's pigs catch the rider's eye.
+is_distracting : World.Segment -> Bool
+is_distracting = |segment|
+	match segment.pig_interest {
+		Distracting(_) => True
+		Unnoticed | NoPigs => False
+	}
 
 ## The pig that catches the rider's eye.
 gaze_pig : Scenery.Critter
-gaze_pig = Pigs.gaze_pig(pig_segment.length)
+gaze_pig =
+	match pig_segment.pig_interest {
+		Distracting(pig) => pig
+		Unnoticed | NoPigs => crash "GazeWidgetApp.gaze_pig: this segment's pigs catch the eye"
+	}
 
 ## `model` after a frame of its buttons. A press counts from the step on show,
 ## which the ride may not have reached the one asked for.
@@ -237,34 +248,37 @@ plan_disc = |{ along, across, radius, color }|
 		clip: Anywhere,
 	})
 
-## The segment's whole herd, the pig that catches the eye, and its name.
+## One pig of the herd, the one that catches the eye drawn larger.
+pig_disc : Scenery.Critter -> Shapes.Shape
+pig_disc = |pig|
+	if pig == gaze_pig {
+		plan_disc({
+			along: pig.along,
+			across: pig.across,
+			radius: 6.0,
+			color: gaze_pig_color,
+		})
+	} else {
+		plan_disc({
+			along: pig.along,
+			across: pig.across,
+			radius: 3.0,
+			color: herd_color,
+		})
+	}
+
+## The segment's whole herd, and the name of the pig that catches the eye.
 pigs : List(Shapes.Shape)
 pigs =
-	[
-		pig_segment.pigs.map(
-			|pig| plan_disc({
-				along: pig.along,
-				across: pig.across,
-				radius: 3.0,
-				color: herd_color,
-			}),
-		),
-		[
-			plan_disc({
-				along: gaze_pig.along,
-				across: gaze_pig.across,
-				radius: 6.0,
-				color: gaze_pig_color,
-			}),
-		],
-		[
+	pig_segment.pigs
+		.map(pig_disc)
+		.append(
 			ScrubWidget.label({
 				text: "the pig",
 				x: screen_x(gaze_pig.along) - 62.0,
 				y: screen_y(gaze_pig.across) + 20.0,
 			}),
-		],
-	].join()
+		)
 
 ## The way the rider looks: as far as a pig can catch the eye, turned from the
 ## road by the bike's yaw and the rider's gaze.
@@ -366,7 +380,7 @@ expect {
 }
 
 # This stretch is on the route's first distracting segment.
-expect first_rider.segment_index.segment_in(World.segments).pig_interest == Distracting
+expect is_distracting(first_rider.segment_index.segment_in(World.segments))
 expect World.segments.take_first(2).all(|segment| segment.pig_interest == NoPigs)
 expect pig_segment.length == Distance.metres(400.0)
 
@@ -382,22 +396,22 @@ expect {
 			look_depth: 0.1143,
 		},
 		{
-			step: 1045,
+			step: 1050,
 			speed: 0.2000,
-			gaze: 34.9397,
-			look_depth: 0.9983,
+			gaze: 34.6686,
+			look_depth: 0.9905,
 		},
 		{
-			step: 1046,
+			step: 1051,
 			speed: 0.2000,
-			gaze: 34.7397,
-			look_depth: 0.9983,
+			gaze: 34.4686,
+			look_depth: 0.9905,
 		},
 		{
-			step: 1304,
+			step: 1308,
 			speed: 0.2000,
 			gaze: 0.0,
-			look_depth: 0.9971,
+			look_depth: 0.9893,
 		},
 	].all(
 		|{ step, speed, gaze, look_depth }| {
@@ -418,8 +432,8 @@ expect {
 		(look_first_step, LookingAtPig),
 		(look_end_step - 1, LookingAtPig),
 		(look_end_step, EasingBack),
-		(1303, EasingBack),
-		(1304, EyesBack),
+		(1307, EasingBack),
+		(1308, EyesBack),
 		(last_step, EyesBack),
 	].all(|(step, phase)| phase_of(state_at_step(played, step)) == phase)
 }
@@ -522,6 +536,10 @@ expect screen_y(gaze_pig.across) < ScrubWidget.picture_bottom_y
 
 expect pig_segment.pigs.len() == 49
 
+# Each pig of the herd is one disc, and the one that catches the eye is among them.
+expect pigs.len() == 50
+expect pig_segment.pigs.count_if(|pig| pig == gaze_pig) == 1
+
 expect phase_text(EyesOnRoad) == "Eyes on the road"
 expect phase_text(LookingAtPig) == "Looking at the pig, and slowing"
 expect phase_text(EasingBack) == "Too far round: the gaze eases back"
@@ -537,12 +555,12 @@ expect
 		]
 
 expect {
-	widest_gaze = state_at_step(whole_stretch, 1045)
-	status_lines(widest_gaze, 1045.0)
+	widest_gaze = state_at_step(whole_stretch, 1050)
+	status_lines(widest_gaze, 1050.0)
 		== [
 			"Looking at the pig, and slowing",
-			"Step 1045: speed 0.2 m a step",
-			"Gaze yaw: 34.9 degrees",
+			"Step 1050: speed 0.2 m a step",
+			"Gaze yaw: 34.7 degrees",
 			"Look depth: 99%",
 		]
 }
