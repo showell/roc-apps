@@ -963,13 +963,13 @@ digraph sunset {
 }
 ```
 
-A box is a function, and an arrow is a call. The three boxes under the frame are the three jobs, more or less, and they all end at `sun_height_px`. That's the one number in the sunset.
+A box is a function, and an arrow is a call. The three boxes under the frame are the three jobs: the sun, the top of the sky and the horizon. They all end at `sun_height_px`. That's the one number in the sunset.
 
 Here's the top of that diagram in code. Each frame, the game asks for three things and hands them to `Backdrop`:
 
 {{code SafariApp.frame from "Backdrop.behind(" to "sun_sighting: Tour.sun(tour),"}}
 
-Let's take the three jobs in order.
+`Tour` holds the clock and hands it straight to `Sky`, so everything from here on is in `Sky`. Let's take the three jobs in order.
 
 ### Job one: the sun goes down
 
@@ -977,13 +977,13 @@ Let's take the three jobs in order.
 Press play.
 ```
 
-This widget does only the first job, so the sky stays blue. The line under the picture is the call it makes.
+This widget does only the first job, so the sky stays blue. Each frame it calls `Sky.sun_height_px`, reads out the answer, and marks it on the chart's gold line.
 
 The sun chapter showed how `sun_sighting` places a sun. All it needs from the clock is a height:
 
 {{code Sky.sun_height_px}}
 
-That's the gold line: one multiplication and one subtraction! It says `.minus` and `.times` because `Pixels` is opaque. Under that, the clock unwraps itself:
+That's the gold line on the chart: one multiplication and one subtraction! It says `.minus` and `.times` because `Pixels` is opaque, which is the same reason you can't add 7 to a clock. Under that, the clock unwraps itself:
 
 {{code Clock.to_f64}}
 
@@ -993,7 +993,7 @@ That's the gold line: one multiplication and one subtraction! It says `.minus` a
 Press play. Now the sky darkens too.
 ```
 
-This widget adds one call, and the sky finally does something. The top of the sky blends day into dusk, by a `Fraction`:
+This widget adds one call, `Sky.dusk_at`, and the sky finally does something. Its answer is the blue line. The top of the sky blends day into dusk, by that `Fraction`:
 
 {{code Sky.sky_top_color}}
 
@@ -1001,13 +1001,15 @@ This widget adds one call, and the sky finally does something. The top of the sk
 
 {{code Sky.dusk_at}}
 
-It asks for the sun's height, then picks one of two shapes, which meet when the sun has fully set, one radius below the horizon. Before that, dusk grows with the square of how far the sun has fallen. After that, it runs on in a straight line to full dark.
+It asks for the sun's height, then picks one of two shapes. They meet when the sun has fully set, one radius below the horizon, and you can see the join in the blue line near step 4,730. Before that, dusk grows with the square of how far the sun has fallen. After that, it runs on in a straight line to full dark.
 
 {{code Sky.dusk_while_up from "dusk_while_up : Pixels" to "dusk_while_up : Pixels"}}
 
 {{code Sky.dusk_after_set from "dusk_after_set : Pixels" to "dusk_after_set : Pixels"}}
 
-Both sit below `Sky`'s block. Anything outside a module's block is private, so a helper stays a helper without any keyword. Neither has heard of the clock. We gave them a height, because that's what dusk depends on, and now that's all it can depend on.
+As always, anything outside a module's block is private, so these two are helpers without any keyword.
+
+Neither has heard of the clock. The outer functions take a clock, because that's what the frame has to give. The helpers take a height, because that's what dusk depends on, and now that's all it can depend on.
 
 ### Job three: the horizon warms
 
@@ -1015,7 +1017,7 @@ Both sit below `Sky`'s block. Anything outside a module's block is private, so a
 Press play. This is the whole sunset.
 ```
 
-This job is polish. A sunset without it is still a sunset, just a sad one.
+This widget adds `Sky.sunset_warmth`, the red line. This job is polish. A sunset without it is still a sunset, just a sad one.
 
 The horizon is the same sky, warmed toward red:
 
@@ -1027,7 +1029,7 @@ Guess what `sunset_warmth` takes.
 
 Yes, `sunset_warmth` takes a clock, like everything else in this chapter. Then it asks for the sun's height, just as dusk did.
 
-The horizon is warmest when the sun's height is zero, and the warmth has gone by the time the sun is 110 pixels away, on either side. `abs` makes the two sides match, which gives the red line its tent.
+The horizon is warmest when the sun's height is zero. `ratio_to` says how far away the sun is, as a share of 110 pixels, and `abs` makes the two sides match, which gives the red line its tent. `Fraction.clamp` holds everything past 110 pixels at no warmth at all.
 
 ### Going backwards
 
