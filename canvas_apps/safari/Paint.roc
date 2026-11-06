@@ -121,17 +121,17 @@ Paint :: [].{
 
 	## A polygon shaded across its width, darker at its edges and lighter in
 	## its middle, or a solid one where it has no strength or is too narrow.
-	round_polygon : List(Screen.Point),
+	shaded_polygon : List(Screen.Point),
 	{
 		fill_color : I64,
-		round_strength : Fraction,
+		strength : Fraction,
 	} -> List(Shapes.Shape)
-	round_polygon = |ps, { fill_color, round_strength }|
+	shaded_polygon = |ps, { fill_color, strength }|
 		if ps.len() < 3 {
 			[]
 		} else {
 			pts = flatten_screen(ps)
-			[Poly({ pts, fill: width_shade(ps, { color: fill_color, strength: round_strength }) })]
+			[Poly({ pts, fill: width_shade(ps, { color: fill_color, strength: strength }) })]
 		}
 
 	beacon : {
@@ -358,11 +358,8 @@ expect Paint.flatten_screen([]) == []
 expect Paint.polygon(7, triangle).len() == 1
 expect Paint.polygon(7, line_ends).len() == 0
 expect Paint.polygon(7, []).len() == 0
-expect Paint.round_polygon(triangle, { fill_color: 7, round_strength: Fraction.of(0.5) }).len() == 1
-expect Paint.round_polygon(
-	line_ends,
-	{ fill_color: 7, round_strength: Fraction.of(0.5) },
-).len() == 0
+expect Paint.shaded_polygon(triangle, { fill_color: 7, strength: Fraction.of(0.5) }).len() == 1
+expect Paint.shaded_polygon(line_ends, { fill_color: 7, strength: Fraction.of(0.5) }).len() == 0
 expect radial_polygon(triangle, Pixels.of(1.0)).len() == 1
 expect radial_polygon(line_ends, Pixels.of(1.0)).len() == 0
 expect radial_polygon(triangle, Pixels.of(0.5)).len() == 1
@@ -386,7 +383,7 @@ expect Paint.polygon(111, triangle) == [
 ]
 
 expect
-	Paint.round_polygon(triangle, { fill_color: 222, round_strength: Fraction.of(0.75) })
+	Paint.shaded_polygon(triangle, { fill_color: 222, strength: Fraction.of(0.75) })
 		== [
 			Poly({
 				pts: triangle_points,
@@ -639,7 +636,7 @@ narrow_corners = [
 ]
 
 expect
-	Paint.round_polygon(wide_corners, { fill_color: sample_color, round_strength: Fraction.whole })
+	Paint.shaded_polygon(wide_corners, { fill_color: sample_color, strength: Fraction.whole })
 		== [
 			Poly({
 				pts: [10.0, 1.0, 30.0, 2.0, 20.0, 3.0],
@@ -654,7 +651,7 @@ expect
 
 # No strength, or too narrow a polygon, is a solid fill.
 expect
-	Paint.round_polygon(wide_corners, { fill_color: sample_color, round_strength: Fraction.zero })
+	Paint.shaded_polygon(wide_corners, { fill_color: sample_color, strength: Fraction.zero })
 		== [
 			Poly({
 				pts: [
@@ -670,10 +667,7 @@ expect
 		]
 
 expect
-	Paint.round_polygon(
-		narrow_corners,
-		{ fill_color: sample_color, round_strength: Fraction.whole },
-	)
+	Paint.shaded_polygon(narrow_corners, { fill_color: sample_color, strength: Fraction.whole })
 		== [
 			Poly({
 				pts: [

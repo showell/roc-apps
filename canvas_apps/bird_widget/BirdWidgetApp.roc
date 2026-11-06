@@ -12,7 +12,6 @@ import game.Camera
 import game.Clock
 import game.Distance
 import game.Fraction
-import game.SceneDraw
 import game.Lens
 import game.Paint
 import game.BirdDraw
@@ -126,19 +125,18 @@ lane = {
 }
 
 tree_shapes : Trees.Tree -> List(Shapes.Shape)
-tree_shapes = |tree| {
-	forward = forward_of(tree.along)
-	TreeDraw.draw({
-		right: Distance.metres(tree.across.to_metres()),
-		forward,
-		height: tree.conifer.height(),
-		color: TreeDraw.conifer_color(tree.conifer),
-		cam_focal: Lens.focal,
-		trunk: RoundCorners,
-		crown: Cones,
-		shade: SceneDraw.crown_shade(forward),
-	})
-}
+tree_shapes = |tree|
+	TreeDraw.draw(
+		{
+			tree: {
+				right: Distance.metres(tree.across.to_metres()),
+				forward: forward_of(tree.along),
+				conifer: tree.conifer,
+			},
+			nearer_trees: 0,
+		},
+		Lens.focal,
+	)
 
 ## The bird as `gap` finds it, drawn by Safari's own stills.
 bird_shapes : Distance -> List(Shapes.Shape)

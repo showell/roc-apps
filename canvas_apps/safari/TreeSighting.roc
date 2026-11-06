@@ -23,38 +23,38 @@ TreeSighting := {
 	in_view : Chain.Viewpoint -> List(TreeSighting)
 	in_view = |view| {
 		positions = Chain.Position.all_in(view.road.chain)
-		positions.join_map(|position| segment_trees(view, position))
+		positions.join_map(|position| segment_sightings(view, position))
 	}
 
 	## The trees in view on the segment at `position` in the chain.
-	segment_trees : Chain.Viewpoint, Chain.Position -> List(TreeSighting)
-	segment_trees = |view, position| {
+	segment_sightings : Chain.Viewpoint, Chain.Position -> List(TreeSighting)
+	segment_sightings = |view, position| {
 		segment = position.index_in(view.road.chain).segment_in(view.road.route)
-		segment.trees.join_map(|tree| tree_in_view(view, { position, tree }))
+		segment.trees.join_map(|tree| sighting_of(view, { position, tree }))
 	}
 
 	## A tree on the segment at `position` in the chain, if it is in view: one
 	## item, or none.
-	tree_in_view : Chain.Viewpoint,
+	sighting_of : Chain.Viewpoint,
 	{
 		position : Chain.Position,
 		tree : Trees.Tree,
 	} -> List(TreeSighting)
-	tree_in_view = |view, { position, tree }| {
-		seen = Chain.rider_point_ahead(
+	sighting_of = |view, { position, tree }| {
+		rider_point = Chain.rider_point_ahead(
 			view.road,
 			{ position, along: tree.along, across: tree.across },
 		)
-		height_px = view.cam_focal.times(tree.conifer.height().ratio_to(seen.forward))
-		if seen.forward <= Geom.near_plane {
+		height_px = view.cam_focal.times(tree.conifer.height().ratio_to(rider_point.forward))
+		if rider_point.forward <= Geom.near_plane {
 			[]
 		} else if height_px < Detail.min_scenery_px {
 			[]
 		} else {
 			[
 				{
-					right: seen.right,
-					forward: seen.forward,
+					right: rider_point.right,
+					forward: rider_point.forward,
 					conifer: tree.conifer,
 				},
 			]

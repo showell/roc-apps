@@ -281,7 +281,7 @@ That all happens once, when the world is built. No frame ever plants a tree.
 
 From here on, things are measured from the rider. We don't need to know much about the rider yet. It's just where we're standing. A `Geom.RiderPoint` says how far right something is and how far ahead.
 
-{{code TreeSighting.tree_in_view}}
+{{code TreeSighting.sighting_of}}
 
 `Chain.rider_point_ahead` finds where a point on the road lies from the rider, and the math layer chapter shows how. After that, there are two ways to lose a tree. It can be behind the camera, or it can be so far off that it's too short to bother with. The line for `height_px` is perspective: a tree twice as far away looks half as tall.
 

@@ -1,32 +1,30 @@
-## A conifer by the road: a trunk under eight tiers of foliage. A far tree's
-## tiers are flat triangles on the screen. A near one's are cones seen from
-## the rider: the outline of a ring of points round each tier's base and its
-## apex, so the tiers fatten as the rider passes under them.
-import Pixels
+## A conifer: a trunk under eight tiers of foliage. A far tree's tiers are flat
+## triangles on the screen. A near one's are cones seen from the camera: the
+## outline of a ring of points round each tier's base and its apex, so the
+## tiers fatten as the camera passes under them. It draws from what it is
+## handed: a tree's kind, where it stands from the camera, how many trees are
+## nearer, and the lens.
 import Camera
 import Conifer
+import Detail
 import Distance
 import Fraction
+import Geom
 import Paint
-import lib.Brush
+import Pixels
 import Screen
+import lib.Brush
 import lib.Shapes
 
 TreeDraw :: [].{
 
-	## A tree to draw, where it stands in the rider's view and how. Of the
-	## nearest trees, the trunk's corners are rounded; the crown is cones
-	## within the detail distance, and triangles beyond it. A tree in view is
-	## ahead of the rider, so of its lengths only `right` can be negative.
-	TreeInView : {
+	## A tree in front of the camera, so of its lengths only `right` can be
+	## negative. A record with more in it can be handed to `draw` as it is.
+	TreeAhead(others) : {
 		right : Distance,
 		forward : Distance,
-		height : Distance,
-		color : I64,
-		cam_focal : Pixels,
-		trunk : [RoundCorners, SharpCorners],
-		crown : [Cones, Triangles],
-		shade : Fraction,
+		conifer : Conifer,
+		..others,
 	}
 
 	## Where a tree stands on the screen, and how big it looks there.
@@ -35,12 +33,12 @@ TreeDraw :: [].{
 		base_y : Pixels,
 		height_px : Pixels,
 		crown_top_y : Pixels,
-		foliage_px : Pixels,
+		crown_height_px : Pixels,
 		crown_half_width : Pixels,
 	}
 
 	## One tier of the crown: where its top and its bottom are, as fractions of
-	## the foliage down from the crown's top, and how wide its bottom is, as a
+	## the crown's height down from its top, and how wide its bottom is, as a
 	## fraction of the crown's width.
 	Tier : {
 		top : Fraction,
@@ -48,211 +46,233 @@ TreeDraw :: [].{
 		width : Fraction,
 	}
 
-	## The tiers, top to bottom. Each overlaps the next.
-	tiers : List(TreeDraw.Tier)
-	tiers = [
-		{
-			top: Fraction.of(0.0),
-			bottom: Fraction.of(0.3),
-			width: Fraction.of(0.35),
-		},
-		{
-			top: Fraction.of(0.1),
-			bottom: Fraction.of(0.4),
-			width: Fraction.of(0.44),
-		},
-		{
-			top: Fraction.of(0.2),
-			bottom: Fraction.of(0.5),
-			width: Fraction.of(0.53),
-		},
-		{
-			top: Fraction.of(0.3),
-			bottom: Fraction.of(0.6),
-			width: Fraction.of(0.63),
-		},
-		{
-			top: Fraction.of(0.4),
-			bottom: Fraction.of(0.7),
-			width: Fraction.of(0.72),
-		},
-		{
-			top: Fraction.of(0.5),
-			bottom: Fraction.of(0.8),
-			width: Fraction.of(0.81),
-		},
-		{
-			top: Fraction.of(0.6),
-			bottom: Fraction.of(0.9),
-			width: Fraction.of(0.91),
-		},
-		{
-			top: Fraction.of(0.7),
-			bottom: Fraction.of(1.0),
-			width: Fraction.of(1.0),
-		},
-	]
-
-	trunk_color : I64
-	trunk_color = 0x5A3E22
-
-	green_color : I64
-	green_color = 0x1C5A22
-
-	gold_color : I64
-	gold_color = 0xCF9A18
-
-	red_color : I64
-	red_color = 0xB23A2A
-
-	## A conifer's foliage colour.
-	conifer_color : Conifer -> I64
-	conifer_color = |conifer|
-		match conifer {
-			BigGreen | SmallGreen => green_color
-			Gold => gold_color
-			Red => red_color
-		}
-
-	## How much of the tree's height is trunk below the crown.
-	visible_trunk : Fraction
-	visible_trunk = Fraction.of(0.44)
-
-	## The crown's height, and its widest half-width, as fractions of the
-	## tree's height.
-	crown_height : Fraction
-	crown_height = Fraction.of(0.648)
-
-	crown_width : Fraction
-	crown_width = Fraction.of(0.288)
-
-	## A cone whose near edge is closer than this is drawn as a triangle: the
-	## camera would see it from inside.
-	min_cone_forward : Distance
-	min_cone_forward = Distance.metres(0.4)
-
-	## A cone's base is a ring of this many points.
-	ring_n : U64
-	ring_n = 16
-
-	## The tree on the screen: its trunk, then its tiers top to bottom. A tree
-	## less than a pixel tall isn't drawn.
-	draw : TreeDraw.TreeInView -> List(Shapes.Shape)
-	draw = |tree| {
-		seen = on_screen({
+	## The tree on the screen: its trunk, then its tiers top to bottom. The
+	## nearest trees have a shaded trunk. The crown is cones, shaded by how near
+	## they are, within Detail.cone_reach, and triangles beyond it.
+	draw : { tree : TreeDraw.TreeAhead(others), nearer_trees : U64 }, Pixels -> List(Shapes.Shape)
+	draw = |{ tree, nearer_trees }, cam_focal| {
+		point = {
 			right: tree.right,
 			forward: tree.forward,
-			height: tree.height,
-			cam_focal: tree.cam_focal,
-		})
-		if seen.height_px < Pixels.of(1.0) {
-			[]
-		} else {
-			draw_trunk(seen, tree.trunk).concat(
-				tiers.join_map(|tier| draw_tier(tree, { seen, tier })),
-			)
+			height: tree.conifer.height(),
 		}
+		screen_tree = on_screen(point, cam_focal)
+		trunk = if nearer_trees < Detail.round_trunk_limit {
+			Shaded
+		} else {
+			Flat
+		}
+		look = {
+			point,
+			cam_focal,
+			screen_tree,
+			color: conifer_color(tree.conifer),
+			crown: crown_of(tree.forward),
+		}
+		draw_trunk(screen_tree, trunk).concat(tiers.join_map(|tier| draw_tier(tier, look)))
 	}
 
-	## Where a tree `height` tall, standing `right` and `forward` of the
-	## rider, is on the screen.
-	on_screen : {
-		right : Distance,
-		forward : Distance,
-		height : Distance,
-		cam_focal : Pixels,
-	} -> TreeDraw.TreeOnScreen
-	on_screen = |{ right, forward, height, cam_focal }| {
-		base = Camera.project({ right, forward, height: Distance.zero }, cam_focal)
-		top = Camera.project({ right, forward, height }, cam_focal)
+	## Where a tree whose foot is at `point`, and `point.height` tall, is on the
+	## screen, through a lens of focal length `cam_focal`.
+	on_screen : Geom.RaisedPoint, Pixels -> TreeDraw.TreeOnScreen
+	on_screen = |point, cam_focal| {
+		base = Camera.project({ ..point, height: Distance.zero }, cam_focal)
+		top = Camera.project(point, cam_focal)
 		height_px = base.y.minus(top.y)
-		foliage_px = height_px.times(crown_height.to_f64())
-		crown_bottom_y = base.y.minus(height_px.times(visible_trunk.to_f64()))
+		crown_height_px = height_px.times(crown_height_share.to_f64())
+		crown_bottom_y = base.y.minus(height_px.times(trunk_height_share.to_f64()))
 		{
 			base_x: base.x,
 			base_y: base.y,
 			height_px,
-			crown_top_y: crown_bottom_y.minus(foliage_px),
-			foliage_px,
-			crown_half_width: height_px.times(crown_width.to_f64()),
+			crown_top_y: crown_bottom_y.minus(crown_height_px),
+			crown_height_px,
+			crown_half_width: height_px.times(crown_half_width_share.to_f64()),
 		}
 	}
-
-	draw_trunk : TreeDraw.TreeOnScreen, [RoundCorners, SharpCorners] -> List(Shapes.Shape)
-	draw_trunk = |seen, corners| {
-		width = if seen.height_px.times(0.08) > Pixels.of(1.0) {
-			seen.height_px.times(0.08)
-		} else {
-			Pixels.of(1.0)
-		}
-		below_crown = seen.height_px.times(visible_trunk.to_f64())
-		height = below_crown.plus(seen.height_px.times(0.05))
-		left = seen.base_x.minus(width.divided_by(2.0))
-		top = seen.base_y.minus(height)
-		points = [
-			{ x: left, y: top },
-			{ x: left.plus(width), y: top },
-			{ x: left.plus(width), y: seen.base_y },
-			{ x: left, y: seen.base_y },
-		]
-		match corners {
-			RoundCorners => Paint.round_polygon(
-				points,
-				{ fill_color: trunk_color, round_strength: Fraction.whole },
-			)
-			SharpCorners => Paint.polygon(trunk_color, points)
-		}
-	}
-
-	## A tier as a flat triangle: its apex at the tier's top, its base across
-	## its bottom.
-	tier_triangle : TreeDraw.TreeOnScreen,
-	{
-		tier : TreeDraw.Tier,
-		color : I64,
-	} -> List(Shapes.Shape)
-	tier_triangle = |seen, { tier, color }| {
-		bottom_y = seen.crown_top_y.plus(seen.foliage_px.times(tier.bottom.to_f64()))
-		top_y = seen.crown_top_y.plus(seen.foliage_px.times(tier.top.to_f64()))
-		half_base = seen.crown_half_width.times(tier.width.to_f64())
-		Paint.polygon(
-			color,
-			[
-				{ x: seen.base_x, y: top_y },
-				{ x: seen.base_x.plus(half_base), y: bottom_y },
-				{ x: seen.base_x.minus(half_base), y: bottom_y },
-			],
-		)
-	}
-
-	## The convex hull of `points`, going round from the leftmost: Andrew's
-	## monotone chain, its lower chain and then its upper. Fewer than three
-	## points are their own hull.
-	convex_hull : List(Screen.Point) -> List(Screen.Point)
-	convex_hull = |points|
-		if points.len() < 3 {
-			points
-		} else {
-			sorted = sorted_points(points)
-			lower = sorted.fold([], |hull, point| trim_hull(hull, point).append(point))
-			upper = sorted.fold_rev([], |point, hull| trim_hull(hull, point).append(point))
-			lower.drop_last(1).concat(upper.drop_last(1))
-		}
-
-	## The points left to right, and top to bottom where they share an x. Each
-	## goes in after the ones it doesn't come before, so points that tie keep
-	## their order.
-	sorted_points : List(Screen.Point) -> List(Screen.Point)
-	sorted_points = |points|
-		points.fold(
-			[],
-			|sorted, point|
-				match sorted.find_first_index(|placed| is_before(point, placed)) {
-					Ok(at) => [sorted.take_first(at), [point], sorted.drop_first(at)].join()
-					Err(NotFound) => sorted.append(point)
-				},
-		)
 }
+
+## What every tier of one tree is drawn from.
+TreeLook : {
+	point : Geom.RaisedPoint,
+	cam_focal : Pixels,
+	screen_tree : TreeDraw.TreeOnScreen,
+	color : I64,
+	crown : [Cones({ shade : Fraction }), Triangles],
+}
+
+## The tiers, top to bottom. Each overlaps the next.
+tiers : List(TreeDraw.Tier)
+tiers = [
+	{
+		top: Fraction.of(0.0),
+		bottom: Fraction.of(0.3),
+		width: Fraction.of(0.35),
+	},
+	{
+		top: Fraction.of(0.1),
+		bottom: Fraction.of(0.4),
+		width: Fraction.of(0.44),
+	},
+	{
+		top: Fraction.of(0.2),
+		bottom: Fraction.of(0.5),
+		width: Fraction.of(0.53),
+	},
+	{
+		top: Fraction.of(0.3),
+		bottom: Fraction.of(0.6),
+		width: Fraction.of(0.63),
+	},
+	{
+		top: Fraction.of(0.4),
+		bottom: Fraction.of(0.7),
+		width: Fraction.of(0.72),
+	},
+	{
+		top: Fraction.of(0.5),
+		bottom: Fraction.of(0.8),
+		width: Fraction.of(0.81),
+	},
+	{
+		top: Fraction.of(0.6),
+		bottom: Fraction.of(0.9),
+		width: Fraction.of(0.91),
+	},
+	{
+		top: Fraction.of(0.7),
+		bottom: Fraction.of(1.0),
+		width: Fraction.of(1.0),
+	},
+]
+
+trunk_color : I64
+
+trunk_color = 0x5A3E22
+
+green_color : I64
+green_color = 0x1C5A22
+
+gold_color : I64
+gold_color = 0xCF9A18
+
+red_color : I64
+red_color = 0xB23A2A
+
+## A conifer's foliage colour.
+conifer_color : Conifer -> I64
+conifer_color = |conifer|
+	match conifer {
+		BigGreen | SmallGreen => green_color
+		Gold => gold_color
+		Red => red_color
+	}
+
+## How much of the tree's height is trunk below the crown.
+trunk_height_share : Fraction
+trunk_height_share = Fraction.of(0.44)
+
+## The crown's height, and its widest half-width, as fractions of the tree's
+## height.
+crown_height_share : Fraction
+crown_height_share = Fraction.of(0.648)
+
+crown_half_width_share : Fraction
+crown_half_width_share = Fraction.of(0.288)
+
+## A cone whose near edge is closer than this is drawn as a triangle: the
+## camera would see it from inside.
+min_cone_forward : Distance
+min_cone_forward = Distance.metres(0.4)
+
+## A cone's base is a ring of this many points.
+ring_points : U64
+ring_points = 16
+
+## How much a crown is shaded at distance `forward`: fully at the camera,
+## falling evenly to none at Detail.crown_shade_reach.
+crown_shade : Distance -> Fraction
+crown_shade = |forward| Fraction.clamp(1.0 - forward.ratio_to(Detail.crown_shade_reach))
+
+## How a tree's crown is drawn at distance `forward`.
+crown_of : Distance -> [Cones({ shade : Fraction }), Triangles]
+crown_of = |forward|
+	if forward < Detail.cone_reach {
+		Cones({ shade: crown_shade(forward) })
+	} else {
+		Triangles
+	}
+
+draw_trunk : TreeDraw.TreeOnScreen, [Shaded, Flat] -> List(Shapes.Shape)
+draw_trunk = |screen_tree, finish| {
+	width = if screen_tree.height_px.times(0.08) > Pixels.of(1.0) {
+		screen_tree.height_px.times(0.08)
+	} else {
+		Pixels.of(1.0)
+	}
+	below_crown = screen_tree.height_px.times(trunk_height_share.to_f64())
+	height = below_crown.plus(screen_tree.height_px.times(0.05))
+	left = screen_tree.base_x.minus(width.divided_by(2.0))
+	top = screen_tree.base_y.minus(height)
+	points = [
+		{ x: left, y: top },
+		{ x: left.plus(width), y: top },
+		{ x: left.plus(width), y: screen_tree.base_y },
+		{ x: left, y: screen_tree.base_y },
+	]
+	match finish {
+		Shaded => Paint.shaded_polygon(
+			points,
+			{ fill_color: trunk_color, strength: Fraction.whole },
+		)
+		Flat => Paint.polygon(trunk_color, points)
+	}
+}
+
+## A tier as a flat triangle: its apex at the tier's top, its base across its
+## bottom.
+tier_triangle : TreeDraw.TreeOnScreen, { tier : TreeDraw.Tier, color : I64 } -> List(Shapes.Shape)
+tier_triangle = |screen_tree, { tier, color }| {
+	bottom_y = screen_tree.crown_top_y.plus(screen_tree.crown_height_px.times(tier.bottom.to_f64()))
+	top_y = screen_tree.crown_top_y.plus(screen_tree.crown_height_px.times(tier.top.to_f64()))
+	half_base = screen_tree.crown_half_width.times(tier.width.to_f64())
+	Paint.polygon(
+		color,
+		[
+			{ x: screen_tree.base_x, y: top_y },
+			{ x: screen_tree.base_x.plus(half_base), y: bottom_y },
+			{ x: screen_tree.base_x.minus(half_base), y: bottom_y },
+		],
+	)
+}
+
+## The convex hull of `points`, going round from the leftmost: Andrew's
+## monotone chain, its lower chain and then its upper. Fewer than three
+## points are their own hull.
+convex_hull : List(Screen.Point) -> List(Screen.Point)
+convex_hull = |points|
+	if points.len() < 3 {
+		points
+	} else {
+		sorted = sorted_points(points)
+		lower = sorted.fold([], |hull, point| trim_hull(hull, point).append(point))
+		upper = sorted.fold_rev([], |point, hull| trim_hull(hull, point).append(point))
+		lower.drop_last(1).concat(upper.drop_last(1))
+	}
+
+## The points left to right, and top to bottom where they share an x. Each
+## goes in after the ones it doesn't come before, so points that tie keep
+## their order.
+sorted_points : List(Screen.Point) -> List(Screen.Point)
+sorted_points = |points|
+	points.fold(
+		[],
+		|sorted, point|
+			match sorted.find_first_index(|placed| is_before(point, placed)) {
+				Ok(at) => [sorted.take_first(at), [point], sorted.drop_first(at)].join()
+				Err(NotFound) => sorted.append(point)
+			},
+	)
 
 ## Whether `a` comes before `b`: left of it, or above it at the same x.
 is_before : Screen.Point, Screen.Point -> Bool
@@ -282,8 +302,8 @@ trim_hull = |hull, point|
 ## before plus a step, not a multiple of the step: the two round differently.
 ring_angles : List(F64)
 ring_angles = {
-	step = F64.tau / TreeDraw.ring_n.to_f64()
-	walked = List.repeat(step, TreeDraw.ring_n - 1).fold(
+	step = F64.tau / ring_points.to_f64()
+	walked = List.repeat(step, ring_points - 1).fold(
 		{ angle: 0.0, angles: [0.0] },
 		|so_far, turn| {
 			angle = so_far.angle + turn
@@ -295,63 +315,52 @@ ring_angles = {
 
 ## A tier, as a cone when the tree is near and the cone is in front of the
 ## camera, else as a triangle.
-draw_tier : TreeDraw.TreeInView,
-{
-	seen : TreeDraw.TreeOnScreen,
-	tier : TreeDraw.Tier,
-} -> List(Shapes.Shape)
-draw_tier = |tree, { seen, tier }| {
-	cone_radius = tree.height.times(TreeDraw.crown_width.to_f64() * tier.width.to_f64())
-	match tree.crown {
-		Cones if tree.forward.minus(cone_radius) < TreeDraw.min_cone_forward =>
-			TreeDraw.tier_triangle(seen, { tier, color: tree.color })
-		Cones => tier_cone(tree, { tier, cone_radius })
-		Triangles => TreeDraw.tier_triangle(seen, { tier, color: tree.color })
+draw_tier : TreeDraw.Tier, TreeLook -> List(Shapes.Shape)
+draw_tier = |tier, look| {
+	cone_radius = look.point.height.times(crown_half_width_share.to_f64() * tier.width.to_f64())
+	match look.crown {
+		Cones(_) if look.point.forward.minus(cone_radius) < min_cone_forward =>
+			tier_triangle(look.screen_tree, { tier, color: look.color })
+		Cones({ shade }) => tier_cone(tier, { look, cone_radius, shade })
+		Triangles => tier_triangle(look.screen_tree, { tier, color: look.color })
 	}
 }
 
 ## A tier as a cone: the outline of the ring round its base and its apex.
-tier_cone : TreeDraw.TreeInView,
+tier_cone : TreeDraw.Tier,
 {
-	tier : TreeDraw.Tier,
+	look : TreeLook,
 	cone_radius : Distance,
+	shade : Fraction,
 } -> List(Shapes.Shape)
-tier_cone = |tree, { tier, cone_radius }| {
-	trunk = TreeDraw.visible_trunk.to_f64()
-	crown = TreeDraw.crown_height.to_f64()
+tier_cone = |tier, { look, cone_radius, shade }| {
+	point = look.point
+	trunk_part = trunk_height_share.to_f64()
+	crown_part = crown_height_share.to_f64()
 	bottom = tier.bottom.to_f64()
 	top = tier.top.to_f64()
-	base_height = tree.height.times(trunk + crown * (1.0 - bottom))
-	apex_height = tree.height.times(trunk + crown * (1.0 - top))
-	apex = Camera.project(
-		{
-			right: tree.right,
-			forward: tree.forward,
-			height: apex_height,
-		},
-		tree.cam_focal,
-	)
+	base_height = point.height.times(trunk_part + crown_part * (1.0 - bottom))
+	apex_height = point.height.times(trunk_part + crown_part * (1.0 - top))
+	apex = Camera.project({ ..point, height: apex_height }, look.cam_focal)
 	ring = ring_angles.map(
 		|angle| {
 			on_ring = {
-				right: tree.right.plus(cone_radius.times(angle.cos())),
-				forward: tree.forward.plus(cone_radius.times(angle.sin())),
+				right: point.right.plus(cone_radius.times(angle.cos())),
+				forward: point.forward.plus(cone_radius.times(angle.sin())),
 				height: base_height,
 			}
-			Camera.project(on_ring, tree.cam_focal)
+			Camera.project(on_ring, look.cam_focal)
 		},
 	)
-	hull = TreeDraw.convex_hull(ring.append(apex))
-	if hull.len() < 3 {
-		[]
-	} else {
-		Paint.round_polygon(hull, { fill_color: tree.color, round_strength: tree.shade })
-	}
+	Paint.shaded_polygon(
+		convex_hull(ring.append(apex)),
+		{ fill_color: look.color, strength: shade },
+	)
 }
 
-expect TreeDraw.tiers.map(|tier| tier.top.to_f64()) == [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
-expect TreeDraw.tiers.map(|tier| tier.bottom.to_f64()) == [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-expect TreeDraw.tiers.map(|tier| tier.width.to_f64()) == [
+expect tiers.map(|tier| tier.top.to_f64()) == [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+expect tiers.map(|tier| tier.bottom.to_f64()) == [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+expect tiers.map(|tier| tier.width.to_f64()) == [
 	0.35,
 	0.44,
 	0.53,
@@ -362,36 +371,49 @@ expect TreeDraw.tiers.map(|tier| tier.width.to_f64()) == [
 	1.0,
 ]
 
-expect TreeDraw.tiers.len() == 8
-expect TreeDraw.ring_n == 16
-expect TreeDraw.trunk_color == 0x5A3E22
-expect TreeDraw.conifer_color(Conifer.BigGreen) == 0x1C5A22
-expect TreeDraw.conifer_color(Conifer.SmallGreen) == 0x1C5A22
-expect TreeDraw.conifer_color(Conifer.Gold) == 0xCF9A18
-expect TreeDraw.conifer_color(Conifer.Red) == 0xB23A2A
+expect tiers.len() == 8
+expect ring_points == 16
+expect trunk_color == 0x5A3E22
+expect conifer_color(Conifer.BigGreen) == 0x1C5A22
+expect conifer_color(Conifer.SmallGreen) == 0x1C5A22
+expect conifer_color(Conifer.Gold) == 0xCF9A18
+expect conifer_color(Conifer.Red) == 0xB23A2A
 
-expect TreeDraw.visible_trunk.to_f64() == 0.44
-expect TreeDraw.crown_height.to_f64() == 0.648
-expect TreeDraw.crown_width.to_f64() == 0.288
-expect TreeDraw.min_cone_forward.to_metres() == 0.4
+expect trunk_height_share.to_f64() == 0.44
+expect crown_height_share.to_f64() == 0.648
+expect crown_half_width_share.to_f64() == 0.288
+expect min_cone_forward.to_metres() == 0.4
+
+expect crown_shade(Distance.metres(0.0)).to_f64() == 1.0
+expect crown_shade(Distance.metres(20.0)).to_f64() == 0.75
+expect crown_shade(Distance.metres(40.0)).to_f64() == 0.5
+expect crown_shade(Distance.metres(80.0)).to_f64() == 0.0
+expect crown_shade(Distance.metres(200.0)).to_f64() == 0.0
+expect crown_shade(Distance.metres(-50.0)).to_f64() == 1.0
+
+expect crown_of(Distance.metres(40.0)) == Cones({ shade: Fraction.of(0.5) })
+expect crown_of(Distance.metres(199.0)) == Cones({ shade: Fraction.zero })
+expect crown_of(Distance.metres(200.0)) == Triangles
 
 sample_on_screen : TreeDraw.TreeOnScreen
-sample_on_screen = TreeDraw.on_screen({
-	right: Distance.metres(0.0),
-	forward: Distance.metres(2.0),
-	height: Distance.metres(4.0),
-	cam_focal: Pixels.of(500.0),
-})
+sample_on_screen = TreeDraw.on_screen(
+	{
+		right: Distance.metres(0.0),
+		forward: Distance.metres(2.0),
+		height: Distance.metres(4.0),
+	},
+	Pixels.of(500.0),
+)
 
 expect sample_on_screen.base_x.to_f64() == 480.0
 expect sample_on_screen.base_y.to_f64() == 600.0
 expect sample_on_screen.height_px.to_f64() == 1000.0
-expect sample_on_screen.foliage_px.to_f64() == 648.0
+expect sample_on_screen.crown_height_px.to_f64() == 648.0
 expect sample_on_screen.crown_top_y.to_f64() == -488.0
 expect sample_on_screen.crown_half_width.to_f64() == 288.0
 
 expect
-	TreeDraw.draw_trunk(sample_on_screen, SharpCorners)
+	draw_trunk(sample_on_screen, Flat)
 		== [
 			Poly({
 				pts: [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0],
@@ -399,9 +421,9 @@ expect
 			}),
 		]
 
-# A round trunk is the same colour, shaded across its width.
+# A shaded trunk is the same colour, lighter in the middle of its width.
 expect
-	TreeDraw.draw_trunk(sample_on_screen, RoundCorners)
+	draw_trunk(sample_on_screen, Shaded)
 		== [
 			Poly({
 				pts: [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0],
@@ -416,12 +438,12 @@ expect
 
 expect {
 	corners_of = |tier|
-		match TreeDraw.tier_triangle(sample_on_screen, { tier, color: 7 }) {
+		match tier_triangle(sample_on_screen, { tier, color: 7 }) {
 			[Poly(polygon)] => polygon.pts
 			_ => crash "a tier is one polygon"
 		}
-	top_tier = TreeDraw.tiers.first() ?? crash "a tree has tiers"
-	bottom_tier = TreeDraw.tiers.last() ?? crash "a tree has tiers"
+	top_tier = tiers.first() ?? crash "a tree has tiers"
+	bottom_tier = tiers.last() ?? crash "a tree has tiers"
 	[
 		(top_tier, [480.0, -488.0, 580.8, -293.6, 379.2, -293.6]),
 		(bottom_tier, [480.0, -34.4, 768.0, 160.0, 192.0, 160.0]),
@@ -444,7 +466,7 @@ expect !is_before(Screen.point(1.0, 3.0), Screen.point(1.0, 2.0))
 expect !is_before(Screen.point(1.0, 2.0), Screen.point(1.0, 2.0))
 
 hull_points : List(Screen.Point) -> List(F64)
-hull_points = |points| Paint.flatten_screen(TreeDraw.convex_hull(points))
+hull_points = |points| Paint.flatten_screen(convex_hull(points))
 
 square_with_inside_points : List(Screen.Point)
 square_with_inside_points = [
@@ -490,12 +512,12 @@ expect hull_points([Screen.point(9.0, 9.0)]) == [9.0, 9.0]
 expect hull_points([]) == []
 expect hull_points(hull_with_a_repeat) == [0.0, 0.0, 4.0, 0.0, 4.0, 4.0]
 
-expect TreeDraw.convex_hull(square_with_inside_points).len() == 4
-expect TreeDraw.convex_hull(hull_triangle).len() == 3
-expect TreeDraw.convex_hull(hull_line).len() == 2
-expect TreeDraw.convex_hull(hull_pair).len() == 2
-expect TreeDraw.convex_hull(hull_with_a_repeat).len() == 3
+expect convex_hull(square_with_inside_points).len() == 4
+expect convex_hull(hull_triangle).len() == 3
+expect convex_hull(hull_line).len() == 2
+expect convex_hull(hull_pair).len() == 2
+expect convex_hull(hull_with_a_repeat).len() == 3
 
 expect
-	Paint.flatten_screen(TreeDraw.sorted_points(square_with_inside_points))
+	Paint.flatten_screen(sorted_points(square_with_inside_points))
 		== [0.0, 0.0, 0.0, 4.0, 2.0, 0.0, 2.0, 2.0, 4.0, 0.0, 4.0, 4.0]
