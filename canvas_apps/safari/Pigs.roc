@@ -33,15 +33,15 @@ Pigs :: [].{
 	gaze_pig_along_offset : Distance
 	gaze_pig_along_offset = Distance.metres(2.0)
 
-	big_herd_cols : I64
-	big_herd_cols = 7
+	big_herd_columns : I64
+	big_herd_columns = 7
 
 	big_herd_rows : I64
 	big_herd_rows = 7
 
 	## The distance between the big herd's columns, along the road.
-	pig_col_spacing : Distance
-	pig_col_spacing = Distance.metres(4.0)
+	pig_column_spacing : Distance
+	pig_column_spacing = Distance.metres(4.0)
 
 	## The distance between rows of pigs, away from the road. Each row of the
 	## big herd is also moved this far along the road.
@@ -58,8 +58,8 @@ Pigs :: [].{
 
 	## Where the big herd's first column is, along the road, from the pigs'
 	## place.
-	pig_herd_first_col : Distance
-	pig_herd_first_col = Distance.metres(-6.0)
+	pig_herd_first_column : Distance
+	pig_herd_first_column = Distance.metres(-6.0)
 
 	## How much farther from the road the back row stands than the front.
 	pig_back_row_offset : Distance
@@ -123,7 +123,7 @@ Pigs :: [].{
 	fill_pig_herd : Distance -> List(Scenery.Critter)
 	fill_pig_herd = |length| {
 		herd_along = pigs_place(length)
-		columns = List.from_iter(I64.until(0, big_herd_cols))
+		columns = List.from_iter(I64.until(0, big_herd_columns))
 		List.from_iter(I64.until(0, big_herd_rows))
 			.join_map(|row| columns.map(|column| herd_pig(herd_along, { row, column })))
 	}
@@ -157,11 +157,12 @@ pig = |{ along, across }| {
 
 herd_pig : Along, { row : I64, column : I64 } -> Scenery.Critter
 herd_pig = |herd_along, { row, column }| {
-	i = ((row * Pigs.big_herd_cols) + column).to_f64()
+	i = ((row * Pigs.big_herd_columns) + column).to_f64()
 	fr = row.to_f64()
 	fc = column.to_f64()
-	first_column = herd_along.plus(Pigs.pig_herd_first_col)
-	in_line = first_column.plus(Pigs.pig_col_spacing.times(fc)).plus(Pigs.pig_row_depth.times(fr))
+	first_column = herd_along.plus(Pigs.pig_herd_first_column)
+	in_column = first_column.plus(Pigs.pig_column_spacing.times(fc))
+	in_line = in_column.plus(Pigs.pig_row_depth.times(fr))
 	edge = Scenery.road_half_width.plus(Scenery.herd_road_offset)
 	in_row = edge.plus(Pigs.pig_row_depth.times(fr))
 	out_from_middle = in_row.plus(Pigs.pig_jitter_across.times(Trig.r_cos((i * 1.7))))
@@ -187,7 +188,7 @@ expect Pigs.gaze_pig_along_offset.to_metres() == 2.0
 expect eye_catcher.codepoint == 128022
 expect Pigs.pig_codepoint == 128022
 expect Pigs.pig_novelty_count.to_i64() == 2
-expect Pigs.big_herd_cols == 7
+expect Pigs.big_herd_columns == 7
 expect Pigs.big_herd_rows == 7
 expect eye_catcher.facing == FacesLeft
 
@@ -282,8 +283,8 @@ expect
 expect Pigs.pig_row_front.map(Distance.to_metres) == [-6.0, -2.0, 2.0, 6.0]
 expect Pigs.pig_row_back.map(Distance.to_metres) == [-10.0, -6.0, -2.0, 2.0, 6.0, 10.0]
 expect Pigs.pig_back_row_offset.to_metres() == 6.0
-expect Pigs.pig_herd_first_col.to_metres() == -6.0
-expect Pigs.pig_col_spacing.to_metres() == 4.0
+expect Pigs.pig_herd_first_column.to_metres() == -6.0
+expect Pigs.pig_column_spacing.to_metres() == 4.0
 expect Pigs.pig_row_depth.to_metres() == 6.0
 expect Pigs.pig_jitter_along.to_metres() == 1.2
 expect Pigs.pig_jitter_across.to_metres() == 1.0

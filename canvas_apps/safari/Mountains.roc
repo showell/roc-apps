@@ -82,9 +82,9 @@ Mountains :: [].{
 	snow_dip : F64
 	snow_dip = 10.0
 
-	## The silhouettes are sampled every `col_step` pixels across the screen.
-	col_step : F64
-	col_step = 2.0
+	## The silhouettes are sampled every `column_step` pixels across the screen.
+	column_step : F64
+	column_step = 2.0
 
 	## How far past each side of the screen the silhouettes reach, so the
 	## rider's roll never shows their ends.
@@ -231,7 +231,7 @@ horizon_y = Screen.horizon_y
 height_y : Mountains.Sight, F64 -> F64
 height_y = |sight, height| horizon_y - (height * (sight.cam_focal / Lens.focal))
 
-## The columns sampled, every `col_step` pixels from `from` up to `to`.
+## The columns sampled, every `column_step` pixels from `from` up to `to`.
 columns : { from : F64, to : F64 } -> List(F64)
 columns = |{ from, to }| columns_onto([], { at: from, to })
 
@@ -240,7 +240,7 @@ columns_onto = |sampled, { at, to }|
 	if at > to {
 		sampled
 	} else {
-		columns_onto(sampled.append(at), { at: (at + Mountains.col_step), to })
+		columns_onto(sampled.append(at), { at: (at + Mountains.column_step), to })
 	}
 
 ## A silhouette across the screen, its top at `height_at` each bearing, closed
@@ -342,7 +342,7 @@ expect Mountains.west_range(Mountains.west_range_bearing) > 0.0
 expect Mountains.west_range_bearing.to_radians() == -2.0416
 expect Mountains.snow_threshold == 124.0
 expect Mountains.snow_dip == 10.0
-expect Mountains.col_step == 2.0
+expect Mountains.column_step == 2.0
 expect Mountains.roll_margin == 200.0
 expect Mountains.rock_night_dim.to_f64() == 0.5
 

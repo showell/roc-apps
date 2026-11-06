@@ -41,8 +41,8 @@ Cows :: [].{
 	herd_size = 14
 
 	## The distance between the herd's columns, along the road.
-	herd_col_spacing : Distance
-	herd_col_spacing = Distance.metres(6.0)
+	herd_column_spacing : Distance
+	herd_column_spacing = Distance.metres(6.0)
 
 	## How far along the road each row back is moved from the one in front.
 	herd_row_stagger : Distance
@@ -95,7 +95,7 @@ cow_at = |i| {
 	column = i.div_trunc_by(3).to_f64()
 	row = i.rem_by(3).to_f64()
 	herd_front = Cows.bull_along.plus(Cows.herd_gap_behind_bull)
-	column_place = herd_front.plus(Cows.herd_col_spacing.times(column))
+	column_place = herd_front.plus(Cows.herd_column_spacing.times(column))
 	in_line = column_place.plus(Cows.herd_row_stagger.times(row - 1.0))
 	road_edge = Scenery.road_half_width.plus(Scenery.herd_road_offset)
 	row_place = road_edge.plus(Cows.herd_row_depth.times(row))
@@ -165,7 +165,7 @@ expect Cows.fill_cows(WithBull).take_first(1).map(|bull| bull.along) == [Along.m
 expect Cows.fill_cows(WithBull).drop_first(1) == Cows.cows
 
 expect Cows.herd_gap_behind_bull == Distance.metres(6.0)
-expect Cows.herd_col_spacing == Distance.metres(6.0)
+expect Cows.herd_column_spacing == Distance.metres(6.0)
 expect Cows.herd_row_stagger == Distance.metres(2.0)
 expect Cows.herd_row_depth == Distance.metres(5.0)
 expect Cows.herd_jitter_along == Distance.metres(1.5)
