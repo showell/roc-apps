@@ -71,7 +71,7 @@ them, in three tiers, each run from the roc-apps root:
 | Tier | Runs | Time |
 |---|---|---|
 | `fast.shale` | `roc check`, one test root, the one-file lints on changed files, one frame; stops at the first failure | about 10 s, or a minute and a half on a checkout's first run |
-| `run.shale` | every lint, every expect, the tutorial, the proof tools, the dev page; reports every failure | two to three minutes |
+| `run.shale` | every lint, every expect, every widget's check and expects, the tutorial, the proof tools, the dev page; reports every failure | two to three minutes |
 | `publish.shale` | the merge gate and `check.shale` from cold caches, then the book, which builds safari's page and every widget's as release wasm | about six minutes |
 
 The book of the tutorial, one page a chapter, builds into the dev channel at
@@ -88,10 +88,11 @@ the whole tree. A count held above zero is reported there and doesn't fail.
 
 On roc-apps' pinned nightly (`roc-version`, installed at
 `~/tools/roc-<pin>/roc`), the merge gate runs the lints, then `roc test` so that
-every `expect` in the modules, and in `lib/`, passes exactly once. Then it builds
-the tutorial, runs StepBack, ShapesFrame and RasterFrame at the depths its script
-lists, and builds the page. `part=expects`, `part=tutorial`, `part=proof` or
-`part=page` runs one piece. The script's header has the rest.
+every `expect` in the modules, and in `lib/`, passes exactly once. Then it checks
+and tests every widget, builds the tutorial, runs StepBack, ShapesFrame and
+RasterFrame at the depths its script lists, and builds the page. `part=expects`,
+`part=widgets`, `part=tutorial`, `part=proof` or `part=page` runs one piece. The
+script's header has the rest.
 
 The fast and merge tiers keep their Roc caches under
 `~/build/roc-apps/safari-gate-caches/`, and `publish.shale` runs on empty ones.
