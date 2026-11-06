@@ -20,7 +20,7 @@ Geom :: [].{
 	RiderPoint : { right : F64, forward : F64 }
 
 	## A point in the rider's view, at a height above the level of the rider.
-	SpacePoint : {
+	RaisedPoint : {
 		right : F64,
 		forward : F64,
 		height : F64,
@@ -159,7 +159,7 @@ Geom :: [].{
 	near_plane = 0.4
 
 	## The polygon cut to what lies at or past the near plane.
-	clip_near : List(Geom.SpacePoint) -> List(Geom.SpacePoint)
+	clip_near : List(Geom.RaisedPoint) -> List(Geom.RaisedPoint)
 	clip_near = |polygon| {
 		next_corners = polygon.drop_first(1).concat(polygon.take_first(1))
 		edges = polygon.map2(next_corners, |from, to| { from, to })
@@ -170,11 +170,11 @@ Geom :: [].{
 ## `clipped` with what one edge of a polygon adds to it: the edge's first
 ## corner if that is in view, then the point where the edge crosses the near
 ## plane if it does.
-clip_edge_onto : List(Geom.SpacePoint),
+clip_edge_onto : List(Geom.RaisedPoint),
 {
-	from : Geom.SpacePoint,
-	to : Geom.SpacePoint,
-} -> List(Geom.SpacePoint)
+	from : Geom.RaisedPoint,
+	to : Geom.RaisedPoint,
+} -> List(Geom.RaisedPoint)
 clip_edge_onto = |clipped, { from, to }| {
 	is_from_in_view = from.forward >= Geom.near_plane
 	is_to_in_view = to.forward >= Geom.near_plane
@@ -191,7 +191,7 @@ clip_edge_onto = |clipped, { from, to }| {
 }
 
 ## Where an edge that has one end on each side crosses the near plane.
-near_plane_crossing : { from : Geom.SpacePoint, to : Geom.SpacePoint } -> Geom.SpacePoint
+near_plane_crossing : { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> Geom.RaisedPoint
 near_plane_crossing = |{ from, to }| {
 	fraction = (Geom.near_plane - from.forward) / (to.forward - from.forward)
 	{

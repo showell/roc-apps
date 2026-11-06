@@ -136,10 +136,10 @@ Tower :: [].{
 
 	## The point `fraction` of the way from `from` to `to`.
 	point_between : {
-		from : Geom.SpacePoint,
-		to : Geom.SpacePoint,
+		from : Geom.RaisedPoint,
+		to : Geom.RaisedPoint,
 		fraction : Fraction,
-	} -> Geom.SpacePoint
+	} -> Geom.RaisedPoint
 	point_between = |{ from, to, fraction }| {
 		share = fraction.to_f64()
 		{
@@ -155,7 +155,7 @@ Tower :: [].{
 	{
 		corner : Tower.Corner,
 		height_on_tower : F64,
-	} -> Geom.SpacePoint
+	} -> Geom.RaisedPoint
 	corner_at = |tower, { corner, height_on_tower: h }| {
 		t = (h / tower_height)
 		bottom = footprint_corner(tower.footprint, corner)
@@ -217,7 +217,7 @@ Tower :: [].{
 	## A rod between two points in the rider's view. A rod with one end
 	## behind the near plane is cut there; one with both ends behind it is
 	## not drawn.
-	rod : Tower.RodView, { from : Geom.SpacePoint, to : Geom.SpacePoint } -> List(Shapes.Shape)
+	rod : Tower.RodView, { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> List(Shapes.Shape)
 	rod = |view, { from, to }|
 		match (sight_of(from), sight_of(to)) {
 			(InView, InView) => rod_on_screen(view, { from, to })
@@ -226,7 +226,7 @@ Tower :: [].{
 			(BehindCamera, BehindCamera) => []
 		}
 
-	sight_of : Geom.SpacePoint -> [InView, BehindCamera]
+	sight_of : Geom.RaisedPoint -> [InView, BehindCamera]
 	sight_of = |point| if point.forward >= Geom.near_plane {
 		InView
 	} else {
@@ -234,7 +234,7 @@ Tower :: [].{
 	}
 
 	## Where the line from `from` to `to` crosses the near plane.
-	cut_at_near : { from : Geom.SpacePoint, to : Geom.SpacePoint } -> Geom.SpacePoint
+	cut_at_near : { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> Geom.RaisedPoint
 	cut_at_near = |{ from, to }| point_between({
 		from,
 		to,
@@ -243,8 +243,8 @@ Tower :: [].{
 
 	rod_on_screen : Tower.RodView,
 	{
-		from : Geom.SpacePoint,
-		to : Geom.SpacePoint,
+		from : Geom.RaisedPoint,
+		to : Geom.RaisedPoint,
 	} -> List(Shapes.Shape)
 	rod_on_screen = |view, { from, to }|
 		screen_rod({
@@ -280,7 +280,7 @@ Tower :: [].{
 	rod_width_at = |camera| rod_w * metre_px(camera)
 
 	## The four legs, from the footprint's corners up to the apex.
-	legs : Tower.TowerInView, Geom.SpacePoint -> List(Shapes.Shape)
+	legs : Tower.TowerInView, Geom.RaisedPoint -> List(Shapes.Shape)
 	legs = |tower, apex| corners.join_map(
 		|corner| rod(
 			tower.view,
@@ -385,7 +385,7 @@ Tower :: [].{
 	## isn't drawn.
 	beacon : Tower.TowerInView,
 	{
-		apex : Geom.SpacePoint,
+		apex : Geom.RaisedPoint,
 		brightness : Fraction,
 	} -> List(Shapes.Shape)
 	beacon = |tower, { apex, brightness }| {

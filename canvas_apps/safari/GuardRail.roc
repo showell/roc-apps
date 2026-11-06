@@ -13,7 +13,7 @@ GuardRail :: [].{
 	## A quad of the rail: its corners, its colour, and how far ahead it
 	## is, the mean of its corners' distances, for the depth sort.
 	RailQuad : {
-		corners : List(Geom.SpacePoint),
+		corners : List(Geom.RaisedPoint),
 		color : I64,
 		forward : F64,
 	}
@@ -94,12 +94,12 @@ GuardRail :: [].{
 }
 
 ## A quad with these corners, in `color`.
-rail_quad : List(Geom.SpacePoint), I64 -> GuardRail.RailQuad
+rail_quad : List(Geom.RaisedPoint), I64 -> GuardRail.RailQuad
 rail_quad = |corners, color| { corners, color, forward: mean_forward(corners) }
 
 ## The mean of the corners' distances ahead, summed from the first corner
 ## to the last; a float sum's rounding depends on its order.
-mean_forward : List(Geom.SpacePoint) -> F64
+mean_forward : List(Geom.RaisedPoint) -> F64
 mean_forward = |corners| {
 	first = corners.first() ?? crash "GuardRail: a quad has corners"
 	sum = corners.drop_first(1).fold(first.forward, |total, corner| total + corner.forward)
@@ -107,7 +107,7 @@ mean_forward = |corners| {
 }
 
 ## A point of the path, at `height` above the ground.
-at_height : Geom.RiderPoint, F64 -> Geom.SpacePoint
+at_height : Geom.RiderPoint, F64 -> Geom.RaisedPoint
 at_height = |point, height| { right: point.right, forward: point.forward, height }
 
 ## The bar from `from` to `to`, bottom edge first.
@@ -166,7 +166,7 @@ expect GuardRail.max_rail_quads == 3072
 first_post : List(Geom.RiderPoint) -> GuardRail.RailQuad
 first_post = |route| GuardRail.posts(route).first() ?? crash "a route of two points has posts"
 
-corner_at : GuardRail.RailQuad, U64 -> Geom.SpacePoint
+corner_at : GuardRail.RailQuad, U64 -> Geom.RaisedPoint
 corner_at = |quad, i| quad.corners.get(i) ?? crash "a quad has four corners"
 
 straight_route : List(Geom.RiderPoint)

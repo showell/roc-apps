@@ -13,7 +13,7 @@ Ground :: [].{
 	Patch : { corners : List(Geom.RiderPoint), color : I64 }
 
 	## A point on the ground, lowered by the earth's curve.
-	ground_point : Geom.RiderPoint -> Geom.SpacePoint
+	ground_point : Geom.RiderPoint -> Geom.RaisedPoint
 	ground_point = |point| {
 		right: point.right,
 		forward: point.forward,

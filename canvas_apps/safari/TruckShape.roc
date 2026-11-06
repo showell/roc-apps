@@ -83,7 +83,7 @@ TruckShape :: [].{
 	## Where a point on the truck lands in the rider's view. The ground
 	## curves away from the rider, so the point is lowered by how far the
 	## ground has dropped beneath it.
-	point : TruckShape.TruckInView, TruckShape.TruckPoint -> Geom.SpacePoint
+	point : TruckShape.TruckInView, TruckShape.TruckPoint -> Geom.RaisedPoint
 	point = |truck, { along, across, height }| {
 		on_ground = Chain.rider_point_ahead(
 			truck.view.road,
@@ -108,7 +108,7 @@ TruckShape :: [].{
 	fill : TruckShape.TruckInView,
 	{
 		color : I64,
-		corners : List(Geom.SpacePoint),
+		corners : List(Geom.RaisedPoint),
 	} -> List(Shapes.Shape)
 	fill = |truck, { color, corners }| Paint.push_poly(
 		color,

@@ -1135,7 +1135,7 @@ A point in Safari Ride is in one of four spaces, and the record's fields say whi
 
 {{code Geom.RiderPoint}}
 
-{{code Geom.SpacePoint}}
+{{code Geom.RaisedPoint}}
 
 {{code Screen.Point}}
 
@@ -1193,7 +1193,7 @@ A fold's step is a plain function of the list so far and one edge:
 
 {{code Geom.clip_edge_onto}}
 
-`Ground`, `GuardRail` and `TruckShape` call it the same way. `patch.corners.map(...)` makes the `SpacePoint`s, and what comes back is a shorter or longer list of the same type:
+`Ground`, `GuardRail` and `TruckShape` call it the same way. `patch.corners.map(...)` makes the `RaisedPoint`s, and what comes back is a shorter or longer list of the same type:
 
 {{code Ground.draw from "in_front = Geom.clip_near(" to "Paint.push_poly(patch.color, Camera.project_all(in_front, cam_focal))"}}
 
@@ -1464,7 +1464,7 @@ The tour named these in passing. They're patterns in the loose sense: shapes tha
 | The step function | A value goes in, and the next value comes out | `Rider.advance`, `Truck.advance`, `Tour.step_forward` |
 | A narrow view of a wide record | An open record names the fields it uses and carries the rest through | `Bike.Motion(others)` |
 | The gate chain | One value passes through independent rules, each of which can only lower it | `Throttle.get_forward_accel_decel` |
-| One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `SpacePoint`, `Screen.Point` |
+| One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `RaisedPoint`, `Screen.Point` |
 | Rehearsal | Run the real rules on a pretend copy, read the result, and throw it away | `Coast`, `LeanSearch`, `Rider.resolve_cross` |
 
 Code that reads like configuration deserves a line of its own, because the tour kept stopping to admire it: `Pond`, `World.plans`, the timelines, and `SafariApp.canvas_app`. None of them is a config format. They're ordinary Roc values, so the compiler checks them, and a tag that's misspelled is a compile-time error.

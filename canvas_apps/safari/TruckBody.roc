@@ -17,7 +17,7 @@ TruckBody :: [].{
 	TruckFace : {
 		color : I64,
 		depth : F64,
-		corners : List(Geom.SpacePoint),
+		corners : List(Geom.RaisedPoint),
 	}
 
 	## A tire is drawn as a polygon with this many corners.
@@ -31,7 +31,7 @@ TruckBody :: [].{
 			.join_map(|face| TruckShape.fill(truck, { color: face.color, corners: face.corners }))
 
 	## A face of `color` with these corners.
-	face : I64, List(Geom.SpacePoint) -> TruckBody.TruckFace
+	face : I64, List(Geom.RaisedPoint) -> TruckBody.TruckFace
 	face = |color, corners| {
 		color,
 		depth: (sum_of_forward(corners) / corners.len().to_f64()),
@@ -87,7 +87,7 @@ hood_height = TruckShape.truck_height.divided_by(2.0)
 
 ## Summed from the last corner to the first. A float sum's rounding depends
 ## on its order, and another order can move a pixel.
-sum_of_forward : List(Geom.SpacePoint) -> F64
+sum_of_forward : List(Geom.RaisedPoint) -> F64
 sum_of_forward = |corners| corners.fold_rev(0.0, |corner, sum| corner.forward + sum)
 
 ## The truck's faces: its two sides, its back, its roof, its windshield, its
@@ -308,7 +308,7 @@ expect
 		== [36.8, 38.0, 42.0, 43.2, 46.125]
 expect axles_at({ along: Along.metres(0.0), across: Across.metres(0.0) }).len() == 5
 
-point_ahead : F64 -> Geom.SpacePoint
+point_ahead : F64 -> Geom.RaisedPoint
 point_ahead = |forward| { right: 0.0, forward, height: 0.0 }
 
 quad_face : TruckBody.TruckFace

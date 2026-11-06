@@ -49,11 +49,11 @@ TruckLights :: [].{
 	glow_sides = 16
 
 	## Whether any of `points` is at or behind the camera's near plane.
-	has_point_behind_camera : List(Geom.SpacePoint) -> Bool
+	has_point_behind_camera : List(Geom.RaisedPoint) -> Bool
 	has_point_behind_camera = |points| points.any(|point| point.forward <= Geom.near_plane)
 
 	## The point halfway between `from` and `to`.
-	midpoint : { from : Geom.SpacePoint, to : Geom.SpacePoint } -> Geom.SpacePoint
+	midpoint : { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> Geom.RaisedPoint
 	midpoint = |{ from, to }| {
 		right: ((from.right + to.right) / 2.0),
 		forward: ((from.forward + to.forward) / 2.0),
@@ -236,7 +236,7 @@ brake_light = |truck, { left, right }| {
 
 ## The glow round a brake lamp. A lamp with a corner behind the camera has
 ## no glow; the lamp itself is cut at the near plane like the body's faces.
-glow : TruckShape.TruckInView, List(Geom.SpacePoint) -> List(Shapes.Shape)
+glow : TruckShape.TruckInView, List(Geom.RaisedPoint) -> List(Shapes.Shape)
 glow = |truck, lamp|
 	if TruckLights.has_point_behind_camera(lamp) {
 		[]
@@ -279,7 +279,7 @@ expect TruckLights.glow_radius(sample_panel, { x: 0.0, y: 0.0 }) == 32.0
 expect TruckLights.glow_outline({ center: { x: 0.0, y: 0.0 }, radius: 10.0 }).len() == 16
 expect TruckLights.glow_sides == 16
 
-point_ahead : F64 -> Geom.SpacePoint
+point_ahead : F64 -> Geom.RaisedPoint
 point_ahead = |forward| { right: 0.0, forward, height: 0.0 }
 
 expect
