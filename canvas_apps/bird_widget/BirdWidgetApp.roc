@@ -62,19 +62,19 @@ flight = {
 
 ## How far the picture's eye stands short of the first tree: far enough for
 ## the bird perched on top of it to fit.
-eye_to_first_tree : F64
-eye_to_first_tree = 18.0
+eye_to_first_tree : Distance
+eye_to_first_tree = Distance.metres(18.0)
 
 ## How far ahead of the picture's eye a place on the road is.
-forward_of : Along -> F64
+forward_of : Along -> Distance
 forward_of = |along| {
 	past_first_tree = along.from_start().minus(flight.from.along.from_start())
-	eye_to_first_tree + past_first_tree.to_metres()
+	eye_to_first_tree.plus(past_first_tree)
 }
 
 ## How far ahead the road is drawn.
-road_end_forward : F64
-road_end_forward = 2000.0
+road_end_forward : Distance
+road_end_forward = Distance.metres(2000.0)
 
 ## Everything on the canvas at `gap`.
 frame_at : Distance -> List(Shapes.Shape)
@@ -102,23 +102,24 @@ picture = |gap|
 ## The lane, running up the picture from under the eye.
 lane : List(Shapes.Shape)
 lane = {
-	half = Scenery.road_width.to_metres() / 2.0
+	half = Scenery.road_width.divided_by(2.0)
+	lane_start = Distance.metres(1.0)
 	on_ground = |right, forward|
 		Camera.project(
 			{
 				right,
 				forward,
-				height: 0.0,
+				height: Distance.zero,
 			},
 			Lens.focal,
 		)
 	Paint.polygon(
 		0x8a8a8a,
 		[
-			on_ground(0.0 - half, 1.0),
-			on_ground(half, 1.0),
+			on_ground(half.opposite(), lane_start),
+			on_ground(half, lane_start),
 			on_ground(half, road_end_forward),
-			on_ground(0.0 - half, road_end_forward),
+			on_ground(half.opposite(), road_end_forward),
 		],
 	)
 }
@@ -127,9 +128,9 @@ tree_shapes : Scenery.Tree -> List(Shapes.Shape)
 tree_shapes = |tree| {
 	forward = forward_of(tree.along)
 	TreeDraw.draw({
-		right: tree.across.to_metres(),
+		right: Distance.metres(tree.across.to_metres()),
 		forward,
-		height: tree.height.to_metres(),
+		height: tree.height,
 		color: tree.color,
 		cam_focal: Lens.focal,
 		trunk: RoundCorners,
@@ -144,7 +145,7 @@ bird_shapes = |gap| {
 	instant = BirdFlight.instant_at(flight, gap)
 	BirdDraw.draw(
 		{
-			right: instant.spot.across.to_metres(),
+			right: Distance.metres(instant.spot.across.to_metres()),
 			forward: forward_of(instant.spot.along),
 			lift: Distance.metres(instant.spot.lift),
 			pose: instant.pose,
@@ -188,8 +189,8 @@ beat_name = |beat|
 		WingsDown => "wings down"
 	}
 
-expect forward_of(flight.from.along) == 18.0
-expect forward_of(flight.to.along) == 48.0
+expect forward_of(flight.from.along).to_metres() == 18.0
+expect forward_of(flight.to.along).to_metres() == 48.0
 
 expect
 	[

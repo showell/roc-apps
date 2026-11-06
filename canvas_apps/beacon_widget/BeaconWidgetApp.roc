@@ -5,6 +5,7 @@
 ## comes from TowerSighting. Below them, a ruler shows the clock, with the first
 ## tower's bright stretches marked, and four lines of text read it out.
 import game.Clock
+import game.Distance
 import game.Fraction
 import game.Lens
 import game.Steps
@@ -52,12 +53,12 @@ brightness_at = |clock, key| {
 }
 
 ## How far ahead of the picture's eye the towers stand, so that their tops fit.
-tower_forward : F64
-tower_forward = 200.0
+tower_forward : Distance
+tower_forward = Distance.metres(200.0)
 
 ## How far to each side of the road a tower stands.
-tower_right : F64
-tower_right = 70.0
+tower_right : Distance
+tower_right = Distance.metres(70.0)
 
 ## Everything on the canvas at `clock`.
 frame_at : Clock -> List(Shapes.Shape)
@@ -74,21 +75,21 @@ picture : Clock -> List(Shapes.Shape)
 picture = |clock|
 	ScrubWidget.ride_picture(
 		[
-			tower(0.0 - tower_right, brightness_at(clock, first_tower_key)),
+			tower(tower_right.opposite(), brightness_at(clock, first_tower_key)),
 			tower(tower_right, brightness_at(clock, second_tower_key)),
 		].join(),
 		{ clock, sun: OutOfView },
 	)
 
 ## A tower standing `right` of the road, its beacon at `brightness`.
-tower : F64, Fraction -> List(Shapes.Shape)
+tower : Distance, Fraction -> List(Shapes.Shape)
 tower = |right, brightness| {
 	center = { right, forward: tower_forward }
 	corner_point = |corner| {
 		offset = Tower.corner_offset(corner)
 		{
-			right: right + offset.across * Tower.tower_half,
-			forward: tower_forward + offset.along * Tower.tower_half,
+			right: right.plus(Tower.tower_half.times(offset.across)),
+			forward: tower_forward.plus(Tower.tower_half.times(offset.along)),
 		}
 	}
 	Tower.draw({
