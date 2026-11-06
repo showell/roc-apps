@@ -152,8 +152,10 @@ async function pictureChanges(page, i, before) {
 }
 
 // Where a widget that's clicked and not dragged wants its click, as shares of
-// the frame: rehearsal's third mark, and the first bird among the stills.
+// the frame: rehearsal's third mark, the first bird among the stills, and the
+// frame's Next button, which goes round from the last layer to the first.
 const CLICKED_AT = {
+  "../frame_widget/": { x: 0.91, y: 0.93 },
   "../rehearsal_widget/": { x: 0.12, y: 0.644 },
   "../stills_widget/": { x: 0.114, y: 0.883 },
 };
@@ -166,7 +168,7 @@ async function checkFrame(page, file, i) {
   if (frame.missing) { fail(file, `the widget ${frame.src} drew nothing`); return frame.src; }
   if (Math.abs(frame.canvasWidth - frame.width) > 2) fail(file, `the widget ${frame.src} is ${frame.canvasWidth} wide in a frame ${frame.width} wide`);
   const before = await evaluate(page, PICTURE_OF_FRAME(i));
-  const clicked = CLICKED_AT[frame.src];
+  const clicked = CLICKED_AT[frame.src.split("?")[0]];
   const y = frame.top + frame.height * (clicked?.y ?? 0.5);
   const mouse = (type, share, buttons) => page.send("Input.dispatchMouseEvent",
     { type, x: frame.left + frame.width * share, y, button: "left", buttons, clickCount: 1 }, page.session);

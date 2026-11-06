@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>one frame of the ride</title>
+</head>
+<body>
+<script>
+window.SHOW = {
+  wasm: 'frame_widget.wasm',
+  loading: 'Pausing the ride…',
+  readsPointer: false,
+  opensAt: ['trees', 'grass', 'sun', 'sky', 'mountains', 'road', 'rails', 'towers', 'critters', 'moving'],
+};
+</script>
+<script src="roc_glue.js"></script>
+<script src="shapes_canvas.js"></script>
+<script src="canvas_app_runner.js"></script>
+</body>
+</html>

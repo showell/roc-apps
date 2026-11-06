@@ -15,6 +15,9 @@
 //
 //   window.SHOW = { wasm: 'snake.wasm', loading: '…', readsPointer: true }
 //
+// A page that opens partway lists the words its address may name, as
+// `opensAt: ['trees', 'grass']`, and `?start=grass` opens it at the second.
+//
 // No hint: every game draws the keys it reads in its own HUD, which is the
 // only place that cannot drift from the keys it actually reads.
 
@@ -243,6 +246,17 @@ function bindApp(exports) {
 
 const CATCH_UP = 4; // steps one animation frame may take before time is dropped
 
+// How many times the app hears Right before its first frame: the place in
+// `opensAt` of the word the address names. An app has no way to hear an address,
+// so it hears the keys a reader would press to get there.
+function pressesToOpen(show) {
+  const word = new URLSearchParams(location.search).get('start');
+  if (word === null) return 0;
+  const presses = (show.opensAt ?? []).indexOf(word);
+  if (presses < 0) throw new Error(`canvas_app_runner: this page can't start at ${word}`);
+  return presses;
+}
+
 async function main(show) {
   document.body.style.cssText =
     'margin:0;background:#06080f;height:100vh;display:flex;flex-direction:column;' +
@@ -329,6 +343,10 @@ async function main(show) {
     document.body.textContent = `${show.wasm} stopped: ${error.message}`;
     throw error; // and again into the console, with its stack
   };
+
+  for (let press = pressesToOpen(show); press > 0; press--) {
+    game.advance(0, KEY_BIT.ArrowRight, 0, 0, 0, 0, 0);
+  }
 
   loading.remove();
   document.body.appendChild(canvas);

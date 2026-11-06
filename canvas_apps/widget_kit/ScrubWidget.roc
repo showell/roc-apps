@@ -197,6 +197,22 @@ ScrubWidget :: [].{
 	## A fraction as a whole percentage, rounded down.
 	percent_text : Fraction -> Str
 	percent_text = |fraction| "${(fraction.to_f64() * 100.0).to_i64_wrap().to_str()}%"
+
+	## A count as the book writes it, with commas.
+	count_text : U64 -> Str
+	count_text = |count| {
+		thousands = count // 1000
+		rest = count % 1000
+		if thousands == 0 {
+			rest.to_str()
+		} else if rest < 10 {
+			"${count_text(thousands)},00${rest.to_str()}"
+		} else if rest < 100 {
+			"${count_text(thousands)},0${rest.to_str()}"
+		} else {
+			"${count_text(thousands)},${rest.to_str()}"
+		}
+	}
 }
 
 panel_color : I64
@@ -387,6 +403,14 @@ expect ScrubWidget.tenths_text(9.96) == "10.0"
 expect ScrubWidget.percent_text(Fraction.zero) == "0%"
 expect ScrubWidget.percent_text(Fraction.of(0.529)) == "52%"
 expect ScrubWidget.percent_text(Fraction.whole) == "100%"
+
+expect ScrubWidget.count_text(0) == "0"
+expect ScrubWidget.count_text(999) == "999"
+expect ScrubWidget.count_text(1000) == "1,000"
+expect ScrubWidget.count_text(1005) == "1,005"
+expect ScrubWidget.count_text(1050) == "1,050"
+expect ScrubWidget.count_text(2198) == "2,198"
+expect ScrubWidget.count_text(1000000) == "1,000,000"
 
 ## A page with `count` lines of text and `stretches` marked stretches.
 page_of : { lines : List(Str), stretches : List(ScrubWidget.Stretch) } -> List(Shapes.Shape)
