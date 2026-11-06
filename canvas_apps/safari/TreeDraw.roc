@@ -222,18 +222,16 @@ draw_trunk = |screen_tree, finish| {
 	height = below_crown.plus(screen_tree.height_px.times(trunk_overlap_share.to_f64()))
 	left = screen_tree.base_x.minus(width.divided_by(2.0))
 	top = screen_tree.base_y.minus(height)
-	points = [
-		{ x: left, y: top },
-		{ x: left.plus(width), y: top },
-		{ x: left.plus(width), y: screen_tree.base_y },
-		{ x: left, y: screen_tree.base_y },
-	]
+	trunk = {
+		top_left: { x: left, y: top },
+		bottom_right: { x: left.plus(width), y: screen_tree.base_y },
+	}
 	match finish {
 		Shaded => Polygon.shaded_polygon(
-			points,
+			Polygon.rectangle_corners(trunk),
 			{ fill_color: trunk_color, strength: Fraction.whole },
 		)
-		Flat => Polygon.flat_polygon(trunk_color, points)
+		Flat => Polygon.rectangle(trunk_color, trunk)
 	}
 }
 
@@ -244,13 +242,13 @@ tier_triangle = |screen_tree, { tier, color }| {
 	bottom_y = screen_tree.crown_top_y.plus(screen_tree.crown_height_px.times(tier.bottom.to_f64()))
 	top_y = screen_tree.crown_top_y.plus(screen_tree.crown_height_px.times(tier.top.to_f64()))
 	half_base = screen_tree.crown_half_width.times(tier.width.to_f64())
-	Polygon.flat_polygon(
+	Polygon.triangle(
 		color,
-		[
-			{ x: screen_tree.base_x, y: top_y },
-			{ x: screen_tree.base_x.plus(half_base), y: bottom_y },
-			{ x: screen_tree.base_x.minus(half_base), y: bottom_y },
-		],
+		{
+			first_corner: { x: screen_tree.base_x, y: top_y },
+			second_corner: { x: screen_tree.base_x.plus(half_base), y: bottom_y },
+			third_corner: { x: screen_tree.base_x.minus(half_base), y: bottom_y },
+		},
 	)
 }
 

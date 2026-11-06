@@ -401,10 +401,10 @@ Tower :: [].{
 				[]
 			} else {
 				beacon_disc({
-					color: beacon_color,
-					center: apex_on_screen,
-					radius,
-					alpha: brightness,
+					beacon_color,
+					beacon_center: apex_on_screen,
+					beacon_radius: radius,
+					beacon_alpha: brightness,
 				})
 			}
 		}
@@ -441,21 +441,21 @@ Tower :: [].{
 }
 
 ## A beacon's disc, as a value: a list of one shape, seen through as far as
-## `alpha` says.
+## `beacon_alpha` says.
 beacon_disc : {
-	color : I64,
-	center : Screen.Point,
-	radius : Pixels,
-	alpha : Fraction,
+	beacon_color : I64,
+	beacon_center : Screen.Point,
+	beacon_radius : Pixels,
+	beacon_alpha : Fraction,
 } -> List(Shapes.Shape)
-beacon_disc = |{ color, center, radius, alpha }| {
-	opaque = Brush.opaque(color)
+beacon_disc = |{ beacon_color, beacon_center, beacon_radius, beacon_alpha }| {
+	opaque = Brush.opaque(beacon_color)
 	[
 		Disc({
-			x: center.x.to_f64(),
-			y: center.y.to_f64(),
-			r: radius.to_f64(),
-			fill: Flat({ ..opaque, a: alpha.to_f64() }),
+			x: beacon_center.x.to_f64(),
+			y: beacon_center.y.to_f64(),
+			r: beacon_radius.to_f64(),
+			fill: Flat({ ..opaque, a: beacon_alpha.to_f64() }),
 			clip: Anywhere,
 		}),
 	]
@@ -463,19 +463,19 @@ beacon_disc = |{ color, center, radius, alpha }| {
 
 expect
 	beacon_disc({
-		color: 7,
-		center: Screen.point(1.0, 2.0),
-		radius: Pixels.of(3.0),
-		alpha: Fraction.of(0.5),
+		beacon_color: 7,
+		beacon_center: Screen.point(1.0, 2.0),
+		beacon_radius: Pixels.of(3.0),
+		beacon_alpha: Fraction.of(0.5),
 	}).len()
 		== 1
 
 expect
 	beacon_disc({
-		color: 333,
-		center: Screen.point(10.0, 20.0),
-		radius: Pixels.of(30.0),
-		alpha: Fraction.of(0.25),
+		beacon_color: 333,
+		beacon_center: Screen.point(10.0, 20.0),
+		beacon_radius: Pixels.of(30.0),
+		beacon_alpha: Fraction.of(0.25),
 	})
 		== [
 			Disc({

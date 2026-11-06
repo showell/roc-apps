@@ -635,7 +635,7 @@ However far the rider goes, the mountains never get any closer. They only turn a
 New in this chapter:
 
 - Roc: a function in a record field
-- Modules: `Mountains`
+- Modules: `Mountains`, `HexColor`
 
 There are two ranges, one to the north with snow on its peaks, and a lower one to the west. A range is a record:
 

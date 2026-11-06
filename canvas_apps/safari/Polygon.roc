@@ -26,6 +26,33 @@ Polygon :: [].{
 	flat_polygon = |color, corners|
 		Shapes.polygon(flatten_screen(corners), Flat(Brush.opaque(color)))
 
+	## Makes a triangle of one flat color, as a list of one shape.
+	triangle : I64,
+	{
+		first_corner : Screen.Point,
+		second_corner : Screen.Point,
+		third_corner : Screen.Point,
+	} -> List(Shapes.Shape)
+	triangle = |color, { first_corner, second_corner, third_corner }|
+		flat_polygon(color, [first_corner, second_corner, third_corner])
+
+	## Makes a rectangle of one flat color, as a list of one shape. Its sides run
+	## along the screen's edges.
+	rectangle : I64, { top_left : Screen.Point, bottom_right : Screen.Point } -> List(Shapes.Shape)
+	rectangle = |color, opposite_corners| flat_polygon(color, rectangle_corners(opposite_corners))
+
+	## A rectangle's four corners, clockwise on the screen from its top left.
+	rectangle_corners : {
+		top_left : Screen.Point,
+		bottom_right : Screen.Point,
+	} -> List(Screen.Point)
+	rectangle_corners = |{ top_left, bottom_right }| [
+		top_left,
+		{ x: bottom_right.x, y: top_left.y },
+		bottom_right,
+		{ x: top_left.x, y: bottom_right.y },
+	]
+
 	## Makes a polygon shaded across its width, darker at its edges and lighter in
 	## its middle, or a solid one where it has no strength or is too narrow. The
 	## value is a list of one shape, or an empty list with fewer than three corners.
@@ -306,7 +333,41 @@ ellipse_polygon = |corners|
 expect Polygon.flatten_screen(three_corners) == triangle_points
 expect Polygon.flatten_screen([]) == []
 
-# A builder given too few points, or too small a gradient, draws nothing.
+# A triangle keeps its corners in the order given.
+expect
+	Polygon.triangle(
+		111,
+		{
+			first_corner: Screen.point(1.0, 2.0),
+			second_corner: Screen.point(3.0, 4.0),
+			third_corner: Screen.point(5.0, 6.0),
+		},
+	)
+		== [Poly({ pts: triangle_points, fill: Flat(Brush.opaque(111)) })]
+
+sample_rectangle : { top_left : Screen.Point, bottom_right : Screen.Point }
+sample_rectangle = { top_left: Screen.point(1.0, 2.0), bottom_right: Screen.point(5.0, 8.0) }
+
+expect Polygon.rectangle_corners(sample_rectangle) == [
+	Screen.point(1.0, 2.0),
+	Screen.point(5.0, 2.0),
+	Screen.point(5.0, 8.0),
+	Screen.point(1.0, 8.0),
+]
+
+expect Polygon.rectangle(111, sample_rectangle) == [
+	Poly({ pts: [1.0, 2.0, 5.0, 2.0, 5.0, 8.0, 1.0, 8.0], fill: Flat(Brush.opaque(111)) }),
+]
+
+# A rectangle of no size still has its four corners.
+expect
+	Polygon.rectangle(
+		111,
+		{ top_left: Screen.point(1.0, 2.0), bottom_right: Screen.point(1.0, 2.0) },
+	).len()
+		== 1
+
+# A maker given too few corners, or too small a gradient, draws nothing.
 expect Polygon.flat_polygon(7, three_corners).len() == 1
 expect Polygon.flat_polygon(7, line_ends).len() == 0
 expect Polygon.flat_polygon(7, []).len() == 0
