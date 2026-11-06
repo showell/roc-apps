@@ -15,7 +15,7 @@ import lib.Trig
 import World
 
 Gaze :: [].{
-	PigLook : { looking : Bool, dist : Distance }
+	PigLook : [Looking, NotLooking]
 	GazeBrake : { is_gawking : Bool, accel : Acceleration }
 
 	## Where the rider wants to look: at the pig in sight, this far from the
@@ -55,19 +55,16 @@ Gaze :: [].{
 	gaze_attention : Fraction -> Attention
 	gaze_attention = |attention| Attention.from_fraction(Easing.smoothstep(attention))
 
-	no_look : Gaze.PigLook
-	no_look = { looking: False, dist: Distance.zero }
-
 	pig_ahead : RiderState, World.Segment -> Gaze.PigLook
 	pig_ahead = |state, seg|
 		match seg.pig_attention {
 			Distracting =>
 				if state.yaw.abs() > eyes_on_road_yaw {
-					no_look
+					NotLooking
 				} else {
 					pig_ahead_near(state, seg)
 				}
-			Unnoticed => no_look
+			Unnoticed => NotLooking
 		}
 
 	pig_ahead_near : RiderState, World.Segment -> Gaze.PigLook
@@ -75,7 +72,7 @@ Gaze :: [].{
 		pig = Pigs.gaze_pig(seg.length)
 		dist = pig.along.distance_from(state.along)
 		if dist > gaze_look_dist {
-			no_look
+			NotLooking
 		} else {
 			pig_in_sight(state, { gaze_pig: pig, distance_ahead: dist })
 		}
@@ -93,16 +90,16 @@ Gaze :: [].{
 			Trig.r_atan2(pig.across.distance_from(state.across).to_metres(), dist.to_metres()),
 		).minus(state.yaw)
 		if toward_pig.abs() >= gaze_release_angle {
-			no_look
+			NotLooking
 		} else {
-			{ looking: True, dist }
+			Looking
 		}
 	}
 
 	## Where the rider wants to look: the pig in sight, or else the road.
 	desired_gaze : RiderState, World.Segment -> Gaze.GazeTarget
 	desired_gaze = |state, seg|
-		if pig_ahead(state, seg).looking {
+		if pig_ahead(state, seg) == Looking {
 			OnPig(desired_gaze_at(state, Pigs.gaze_pig(seg.length)))
 		} else {
 			OnRoad
@@ -223,15 +220,11 @@ rider = |along, yaw| {
 	yaw: Angle.Turn.radians(yaw),
 }
 
-expect !(Gaze.pig_ahead(rider(200.0, 0.0), plain).looking)
-expect !(Gaze.pig_ahead(rider(200.0, (10.0 * Trig.deg)), distracting).looking)
-expect !(Gaze.pig_ahead(rider(100.0, 0.0), distracting).looking)
-expect !(Gaze.pig_ahead(rider(341.0, 0.0), distracting).looking)
-expect Gaze.pig_ahead(rider(200.0, 0.0), distracting).looking
-expect !Gaze.no_look.looking
-expect Gaze.pig_ahead(rider(200.0, 0.0), distracting).dist.to_metres() == 142.0
-expect Gaze.pig_ahead(rider(100.0, 0.0), distracting).dist.to_metres() == 0.0
-expect Gaze.no_look.dist.to_metres() == 0.0
+expect Gaze.pig_ahead(rider(200.0, 0.0), plain) == NotLooking
+expect Gaze.pig_ahead(rider(200.0, (10.0 * Trig.deg)), distracting) == NotLooking
+expect Gaze.pig_ahead(rider(100.0, 0.0), distracting) == NotLooking
+expect Gaze.pig_ahead(rider(341.0, 0.0), distracting) == NotLooking
+expect Gaze.pig_ahead(rider(200.0, 0.0), distracting) == Looking
 
 ## How far this rider on the distracting segment wants to turn to the pig.
 turn_to_pig : RiderState -> F64
@@ -315,5 +308,5 @@ expect Gaze.is_gawking(rider(200.0, 0.0), distracting)
 expect Gaze.is_gawking(rider(341.0, 0.0), distracting)
 
 # The gawking outlasts the look.
-expect !Gaze.pig_ahead(rider(341.0, 0.0), distracting).looking
+expect Gaze.pig_ahead(rider(341.0, 0.0), distracting) == NotLooking
 expect Gaze.is_gawking(rider(341.0, 0.0), distracting)
