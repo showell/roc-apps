@@ -5,7 +5,7 @@
 import BirdSighting
 import BirdStills
 import Camera
-import Critter
+import StillDraw
 import Distance
 import lib.Brush
 import lib.Shapes
@@ -24,7 +24,7 @@ RocBird :: [].{
 			},
 			cam_focal,
 		)
-		Critter.draw_still(
+		StillDraw.draw_still(
 			{
 				feet,
 				flip: AsDrawn,

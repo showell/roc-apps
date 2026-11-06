@@ -745,10 +745,10 @@ digraph bird {
   BirdSighting -> Animation;
   RocBird -> BirdFlight;
   RocBird -> BirdStills;
-  RocBird -> Critter;
+  RocBird -> StillDraw;
   BirdStills -> BirdFlight;
   BirdStills -> Stills;
-  Critter -> Stills;
+  StillDraw -> Stills;
   BirdFlight -> Animation;
 }
 ```
@@ -823,7 +823,7 @@ The stills are data too. Nested tags get checked all the way down, so a `match` 
 
 {{code BirdStills.pose_polys}}
 
-`RocBird.draw` hands that to `Critter.draw_still`, which is what a cow uses, and a bird's feet go through the same `Camera.project` as a tree's top. That's the drawing.
+`RocBird.draw` hands that to `StillDraw.draw_still`, which is what a cow uses, and a bird's feet go through the same `Camera.project` as a tree's top. That's the drawing.
 
 ### Finding a tree
 

@@ -8,7 +8,7 @@ import Distance
 import Geom
 import World
 import CatSighting
-import Critter
+import StillDraw
 import DepthSort
 import Fraction
 import Chain
@@ -132,7 +132,7 @@ draw_subject = |scene, { view, depth_key }| {
 			SceneDraw.draw_tree(thing_at(scene.trees, place), { trees: scene.trees, cam_focal })
 		Tower(place) => SceneDraw.draw_tower(view, thing_at(scene.towers, place))
 		Rail(place) => GuardRail.draw(thing_at(scene.rails, place), cam_focal)
-		Critter(place) => Critter.draw(thing_at(scene.critters, place), cam_focal)
+		Critter(place) => StillDraw.draw(thing_at(scene.critters, place), cam_focal)
 		Cat(place) => draw_cat(thing_at(scene.cats, place), cam_focal)
 		Truck => draw_truck(view, scene.truck)
 		Bird(place) => RocBird.draw(thing_at(scene.birds, place), cam_focal)
