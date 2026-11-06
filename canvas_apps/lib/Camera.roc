@@ -71,8 +71,8 @@ Camera :: [].{
 		world_to_screen : Camera2D, Math.Vec2 -> Math.Vec2
 		world_to_screen = |camera, world| {
 			radians = camera.rotation * degree
-			cosine = F32.cos(radians)
-			sine = F32.sin(radians)
+			cosine = radians.cos()
+			sine = radians.sin()
 			dx = world.x - camera.target.x
 			dy = world.y - camera.target.y
 			{
@@ -90,8 +90,8 @@ Camera :: [].{
 		screen_to_world : Camera2D, Math.Vec2 -> Math.Vec2
 		screen_to_world = |camera, screen| {
 			radians = 0 - camera.rotation * degree
-			cosine = F32.cos(radians)
-			sine = F32.sin(radians)
+			cosine = radians.cos()
+			sine = radians.sin()
 			dx = (screen.x - camera.offset.x) / camera.zoom
 			dy = (screen.y - camera.offset.y) / camera.zoom
 			{
@@ -109,10 +109,10 @@ Camera :: [].{
 			top_right = camera.screen_to_world({ x: screen.x, y: 0 })
 			bottom_left = camera.screen_to_world({ x: 0, y: screen.y })
 			bottom_right = camera.screen_to_world(screen)
-			left = F32.min(F32.min(top_left.x, top_right.x), F32.min(bottom_left.x, bottom_right.x))
-			right = F32.max(F32.max(top_left.x, top_right.x), F32.max(bottom_left.x, bottom_right.x))
-			top = F32.min(F32.min(top_left.y, top_right.y), F32.min(bottom_left.y, bottom_right.y))
-			bottom = F32.max(F32.max(top_left.y, top_right.y), F32.max(bottom_left.y, bottom_right.y))
+			left = top_left.x.min(top_right.x).min(bottom_left.x.min(bottom_right.x))
+			right = top_left.x.max(top_right.x).max(bottom_left.x.max(bottom_right.x))
+			top = top_left.y.min(top_right.y).min(bottom_left.y.min(bottom_right.y))
+			bottom = top_left.y.max(top_right.y).max(bottom_left.y.max(bottom_right.y))
 			Math.rect(left, top, right - left, bottom - top)
 		}
 
@@ -122,10 +122,10 @@ Camera :: [].{
 		view = |camera|
 			View(
 				World({
-					target: { x: F32.to_f64(camera.target.x), y: F32.to_f64(camera.target.y) },
-					offset: { x: F32.to_f64(camera.offset.x), y: F32.to_f64(camera.offset.y) },
-					rotation: F32.to_f64(camera.rotation),
-					zoom: F32.to_f64(camera.zoom),
+					target: { x: camera.target.x.to_f64(), y: camera.target.y.to_f64() },
+					offset: { x: camera.offset.x.to_f64(), y: camera.offset.y.to_f64() },
+					rotation: camera.rotation.to_f64(),
+					zoom: camera.zoom.to_f64(),
 				}),
 			)
 	}
@@ -167,7 +167,7 @@ Camera :: [].{
 	fallback_zoom = 0.000001
 
 	sane_scalar : F32 -> F32
-	sane_scalar = |value| if F32.is_finite(value) {
+	sane_scalar = |value| if value.is_finite() {
 		value
 	} else {
 		0
@@ -178,7 +178,7 @@ Camera :: [].{
 
 	sane_zoom : F32 -> F32
 	sane_zoom = |zoom|
-		if F32.is_finite(zoom) and zoom != 0 {
+		if zoom.is_finite() and zoom != 0 {
 			zoom
 		} else if zoom < 0 {
 			0 - fallback_zoom
@@ -192,7 +192,7 @@ expect {
 	camera = Camera.new({ target: { x: 120, y: -40 }, offset: { x: 400, y: 300 }, rotation: 37, zoom: 2.5 })
 	there = camera.screen_to_world({ x: 210, y: 160 })
 	back = camera.world_to_screen(there)
-	F32.abs(back.x - 210) < 0.01 and F32.abs(back.y - 160) < 0.01
+	(back.x - 210).abs() < 0.01 and (back.y - 160).abs() < 0.01
 }
 
 # A follow camera puts its target under the middle of the screen.

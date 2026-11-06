@@ -44,7 +44,7 @@ Brush :: [].{
 				}
 			}
 			Radial(p) => {
-				d = F64.sqrt((x - p.x) * (x - p.x) + (y - p.y) * (y - p.y))
+				d = ((x - p.x) * (x - p.x) + (y - p.y) * (y - p.y)).sqrt()
 				mix(
 					p.inner,
 					p.outer,
@@ -61,10 +61,10 @@ Brush :: [].{
 				qy = y - p.y
 				ux = p.ia * qx + p.ib * qy
 				uy = p.ic * qx + p.id * qy
-				two_stop(p.c0, p.o0, p.c1, p.o1, clamp01(F64.sqrt(ux * ux + uy * uy)))
+				two_stop(p.c0, p.o0, p.c1, p.o1, clamp01((ux * ux + uy * uy).sqrt()))
 			}
 			Glow(p) => {
-				d = F64.sqrt((x - p.x) * (x - p.x) + (y - p.y) * (y - p.y))
+				d = ((x - p.x) * (x - p.x) + (y - p.y) * (y - p.y)).sqrt()
 				t = if p.r1 > p.r0 {
 					clamp01((d - p.r0) / (p.r1 - p.r0))
 				} else {
@@ -78,11 +78,8 @@ Brush :: [].{
 			}
 		}
 
-	at : List(F64), U64 -> F64
-	at = |xs, i| List.get(xs, i) ?? 0.0
-
 	chan : I64, U8 -> F64
-	chan = |c, shift| I64.to_f64(I64.bitwise_and(I64.shr_wrap(c, shift), 255))
+	chan = |c, shift| c.shr_wrap(shift).bitwise_and(255).to_f64()
 
 	# 0xRRGGBB, opaque.
 	opaque : I64 -> Brush.Rgba

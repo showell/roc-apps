@@ -19,9 +19,9 @@ Color :: [].{
 
 	from_hex_rgb : I64 -> Color.Rgba
 	from_hex_rgb = |hex| {
-		r: I64.to_u8_wrap(I64.bitwise_and(I64.shr_wrap(hex, 16), 255)),
-		g: I64.to_u8_wrap(I64.bitwise_and(I64.shr_wrap(hex, 8), 255)),
-		b: I64.to_u8_wrap(I64.bitwise_and(hex, 255)),
+		r: hex.shr_wrap(16).bitwise_and(255).to_u8_wrap(),
+		g: hex.shr_wrap(8).bitwise_and(255).to_u8_wrap(),
+		b: hex.bitwise_and(255).to_u8_wrap(),
 		a: 255,
 	}
 
@@ -33,5 +33,5 @@ Color :: [].{
 
 	## As the canvas apps' painting wants it.
 	brush : Color.Rgba -> Brush.Rgba
-	brush = |c| { r: U8.to_f64(c.r), g: U8.to_f64(c.g), b: U8.to_f64(c.b), a: U8.to_f64(c.a) / 255.0 }
+	brush = |c| { r: c.r.to_f64(), g: c.g.to_f64(), b: c.b.to_f64(), a: c.a.to_f64() / 255.0 }
 }
