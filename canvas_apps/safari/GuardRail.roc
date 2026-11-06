@@ -6,7 +6,7 @@ import Pixels
 import Camera
 import Distance
 import Geom
-import Paint
+import Polygon
 import lib.Shapes
 
 GuardRail :: [].{
@@ -90,7 +90,7 @@ GuardRail :: [].{
 		if in_front.len() < 3 {
 			[]
 		} else {
-			Paint.polygon(quad.color, Camera.project_all(in_front, cam_focal))
+			Polygon.flat_polygon(quad.color, Camera.project_all(in_front, cam_focal))
 		}
 	}
 }

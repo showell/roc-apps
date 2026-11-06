@@ -1,6 +1,6 @@
 ## A frame is a list of shapes, painted first to last. The rectangle comes second
 ## in the list, so where the two overlap it paints over the triangle.
-import game.Paint
+import game.Polygon
 import game.Screen
 import lib.Shapes
 
@@ -11,10 +11,10 @@ TwoShapes :: [].{
 }
 
 triangle : List(Shapes.Shape)
-triangle = Paint.polygon(0x2e8b57, triangle_corners)
+triangle = Polygon.flat_polygon(0x2e8b57, triangle_corners)
 
 rectangle : List(Shapes.Shape)
-rectangle = Paint.polygon(0xe8a33d, rectangle_corners)
+rectangle = Polygon.flat_polygon(0xe8a33d, rectangle_corners)
 
 triangle_corners : List(Screen.Point)
 triangle_corners = [

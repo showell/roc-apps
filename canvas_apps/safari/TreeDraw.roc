@@ -10,7 +10,7 @@ import Detail
 import Distance
 import Fraction
 import Geom
-import Paint
+import Polygon
 import Pixels
 import Screen
 import lib.Brush
@@ -229,11 +229,11 @@ draw_trunk = |screen_tree, finish| {
 		{ x: left, y: screen_tree.base_y },
 	]
 	match finish {
-		Shaded => Paint.shaded_polygon(
+		Shaded => Polygon.shaded_polygon(
 			points,
 			{ fill_color: trunk_color, strength: Fraction.whole },
 		)
-		Flat => Paint.polygon(trunk_color, points)
+		Flat => Polygon.flat_polygon(trunk_color, points)
 	}
 }
 
@@ -244,7 +244,7 @@ tier_triangle = |screen_tree, { tier, color }| {
 	bottom_y = screen_tree.crown_top_y.plus(screen_tree.crown_height_px.times(tier.bottom.to_f64()))
 	top_y = screen_tree.crown_top_y.plus(screen_tree.crown_height_px.times(tier.top.to_f64()))
 	half_base = screen_tree.crown_half_width.times(tier.width.to_f64())
-	Paint.polygon(
+	Polygon.flat_polygon(
 		color,
 		[
 			{ x: screen_tree.base_x, y: top_y },
@@ -358,7 +358,7 @@ tier_cone = |tier, { look, cone_radius, shade }| {
 			Camera.project(on_ring, look.cam_focal)
 		},
 	)
-	Paint.shaded_polygon(
+	Polygon.shaded_polygon(
 		convex_hull(ring.append(apex)),
 		{ fill_color: look.color, strength: shade },
 	)
@@ -473,7 +473,7 @@ expect !is_before(Screen.point(1.0, 3.0), Screen.point(1.0, 2.0))
 expect !is_before(Screen.point(1.0, 2.0), Screen.point(1.0, 2.0))
 
 hull_points : List(Screen.Point) -> List(F64)
-hull_points = |points| Paint.flatten_screen(convex_hull(points))
+hull_points = |points| Polygon.flatten_screen(convex_hull(points))
 
 square_with_inside_points : List(Screen.Point)
 square_with_inside_points = [
@@ -526,7 +526,7 @@ expect convex_hull(hull_pair).len() == 2
 expect convex_hull(hull_with_a_repeat).len() == 3
 
 expect
-	Paint.flatten_screen(square_with_inside_points.sort_with(left_to_right))
+	Polygon.flatten_screen(square_with_inside_points.sort_with(left_to_right))
 		== [0.0, 0.0, 0.0, 4.0, 2.0, 0.0, 2.0, 2.0, 4.0, 0.0, 4.0, 4.0]
 
 expect left_to_right(Screen.point(1.0, 9.0), Screen.point(2.0, 0.0)) == Before

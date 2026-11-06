@@ -8,7 +8,7 @@ import Distance
 import Chain
 import Fraction
 import Geom
-import Paint
+import Polygon
 import lib.Shapes
 
 TruckShape :: [].{
@@ -110,7 +110,7 @@ TruckShape :: [].{
 		color : I64,
 		corners : List(Geom.RaisedPoint),
 	} -> List(Shapes.Shape)
-	polygon = |truck, { color, corners }| Paint.polygon(
+	polygon = |truck, { color, corners }| Polygon.flat_polygon(
 		color,
 		Camera.project_all(Geom.clip_near(corners), truck.view.cam_focal),
 	)
