@@ -1,5 +1,6 @@
-/* The Safari Ride book, set for a desktop screen. The prose keeps a reading
-   measure, and code, tables and diagrams may run wider into the right margin. */
+/* The Safari Ride book. The prose keeps a reading measure, and code, tables and
+   diagrams may run wider into the right margin. A narrow window takes the chapter
+   list out of the way, and a printed page drops whatever only a screen can use. */
 :root {
   color-scheme: light dark;
   --paper: #fbfaf6;
@@ -20,7 +21,7 @@
   font-size: 18px;
 }
 
-@media (prefers-color-scheme: dark) {
+@media screen and (prefers-color-scheme: dark) {
   :root {
     --paper: #1b1a18;
     --ink: #e4e1d8;
@@ -39,6 +40,8 @@
 
 body {
   margin: 0;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   background: var(--paper);
   color: var(--ink);
   font-family: var(--prose);
@@ -64,14 +67,11 @@ article > figure.listing { width: fit-content; min-width: min(100%, var(--measur
 
 /* Headings */
 
-h1, h2, h3 { line-height: 1.2; font-weight: 600; scroll-margin-top: 1.5rem; }
+h1, h2, h3 { line-height: 1.2; font-weight: 600; scroll-margin-top: 1.5rem; text-wrap: balance; }
 h1 { font-size: 2.1rem; letter-spacing: -0.01em; margin: 0 0 1.5rem; }
 h2 { font-size: 1.4rem; margin: 2.8rem 0 0.8rem; }
 h3 { font-size: 1.1rem; margin: 2rem 0 0.6rem; }
 
-.chapter-number {
-  margin: 0 0 0.3rem;
-  color: var(--quiet);
 /* A section links to itself, for a reader to copy. It keeps out of the way until
    the heading is pointed at, and a touch screen shows it faintly. */
 .section-link { margin-left: 0.2em; color: var(--quiet); font-size: 0.75em; font-weight: 400; text-decoration: none; opacity: 0; }
@@ -79,6 +79,9 @@ h2:hover .section-link, .section-link:focus { opacity: 1; }
 .section-link:hover { color: var(--accent); }
 @media (hover: none) { .section-link { opacity: 0.5; } }
 
+.chapter-number {
+  margin: 0 0 0.3rem;
+  color: var(--quiet);
   font: 0.75rem/1.4 var(--plain);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -93,15 +96,18 @@ li { margin: 0.25rem 0; }
 code { font-family: var(--mono); font-size: 0.82em; }
 :not(pre) > code { background: var(--shade); border-radius: 2px; padding: 0.05em 0.12em; }
 
+/* A line too long for the column wraps, so no block scrolls and none hides its end. */
+
 pre {
   margin: 0 0 1.6rem;
   padding: 0.75rem 1rem;
-  overflow-x: auto;
   background: var(--shade);
   border-radius: 4px;
   font-size: 0.78rem;
   line-height: 1.5;
   tab-size: 4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 pre code { font-size: inherit; }
 
@@ -141,6 +147,7 @@ svg.diagram .node [stroke-width] { stroke: var(--accent); }
 svg.diagram .node [stroke-dasharray] { fill: none; }
 svg.diagram .edge path { stroke: var(--quiet); }
 svg.diagram .edge polygon { fill: var(--quiet); stroke: var(--quiet); }
+svg.diagram .edge text { fill: var(--quiet); }
 
 /* Widgets */
 
@@ -150,21 +157,20 @@ iframe.canvas-app { display: block; width: 100%; border: 0; border-radius: 4px; 
 
 table {
   margin: 0 0 1.6rem;
-svg.diagram .edge text { fill: var(--quiet); }
   border-collapse: collapse;
   font: 0.8rem/1.45 var(--plain);
+  font-variant-numeric: tabular-nums;
 }
 th { text-align: left; border-bottom: 1px solid var(--quiet); }
 td { border-bottom: 1px solid var(--rule); }
 th, td { padding: 0.35rem 1rem 0.35rem 0; vertical-align: top; }
+th:last-child, td:last-child { padding-right: 0; }
 
 /* Draft notes stay in sight, and they look like notes rather than the book. */
-  font-variant-numeric: tabular-nums;
 
 .draft-note { background: var(--draft); color: var(--draft-ink); font: 0.74rem/1.5 var(--plain); }
 span.draft-note { padding: 0.1em 0.3em; border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 p.draft-note { padding: 0.5rem 0.8rem; border-radius: 3px; }
-th:last-child, td:last-child { padding-right: 0; }
 .draft-note code { background: none; padding: 0; }
 .draft-note::before { content: 'Draft note: '; font-weight: 600; }
 
@@ -220,11 +226,12 @@ ol.contents .sections a { color: var(--quiet); text-decoration: none; }
 .turn-page a[rel='next'] { text-align: right; }
 .turn-page small { display: block; color: var(--quiet); font-size: 0.72rem; }
 
-/* A narrow window keeps the book readable, with the chapters above the page. */
+/* A narrow window puts the chapter first. A bar at the top leads to the book's
+   front and down to the chapter list, which follows the page. */
 
 @media (max-width: 60rem) {
-  body.chapter { display: block; }
-  body.chapter main { padding: 2rem 1rem; }
+  body.chapter { display: flex; flex-direction: column; }
+  body.chapter main { padding: 1rem 1rem 2rem; }
   body.front main { padding: 2rem 1rem; }
   .book-nav { order: 2; position: static; height: auto; padding: 1rem; border-right: 0; border-top: 1px solid var(--rule); }
   .book-nav a { padding-block: 0.35rem; }
