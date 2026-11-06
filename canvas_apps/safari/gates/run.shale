@@ -7,7 +7,12 @@
 --
 -- Run from the roc-apps root: every path is the checkout's, so a worktree
 -- gates its own tree. One merge gate runs at a time, on the one cache folder.
--- It takes about two minutes, half of that the lints.
+-- It takes about a minute, half of that the proof tools.
+--
+-- Each stage has a CPU budget, about twice its warm time, in CPU_BUDGET_MS. A
+-- stage over it stops the run, since a slow gate is a fault to find, and a cold
+-- run has no budgets. Stage times go in `build:times/safari.tsv`, and a large
+-- change from the recent ones prints a line (cookbook/times.shale).
 --
 -- The gates run as child runs of this script, `part=expects`, `part=tutorial`,
 -- `part=proof` and `part=page`, one program of this run's each. A child runs
@@ -55,6 +60,8 @@
 --
 -- Each child's binaries and outputs go in a folder of its own under `scratch:`
 -- (`fresh_dir`), removed when the child passes and kept, named, when it fails.
+use("cookbook:times.shale")
+
 const SAFARI = "canvas_apps/safari"
 const PROOF_EXPECTED = "canvas_apps/safari/gates/proof.expected"
 const PAGE_EXPECTED = "canvas_apps/safari/gates/page.expected"
@@ -137,6 +144,7 @@ const TUTORIAL = "canvas_apps/safari/tutorial/build.shale"
 const EXPECT_ROOTS = {"gates/CrossModuleExpects.roc", "web.roc", "../lib/main.roc"}
 const DEPTHS = {"0", "100", "1570", "1586", "3000", "3742", "5700", "6520", "9000"}
 const CACHE_CEILING_MB = 4000
+const CPU_BUDGET_MS = {lints = 25000, expects = 20000, tutorial = 5000, proof = 60000, page = 25000}
 const COLD = arg("cold", "") == "1"
 const RELEASE = arg("release", "") == "1"
 
@@ -152,14 +160,22 @@ function drop_child_cache(cache)
 end
 
 function clear_full_caches()
-  if not exists(CACHES) then return nil end
+  if not exists(CACHES) then return true end
   local du = run({"du", "-sm", real(CACHES)}, {timeout_ms = 60000, whole = 4000, want = "tool: the caches' size"})
   local size = tonumber(split(trim(du.out), "\t")[1])
   if size > CACHE_CEILING_MB then
     print("safari gates: the caches hold " .. size .. " MB, over " .. CACHE_CEILING_MB .. ": cleared, so this run is cold")
     remove_tree(CACHES)
+    return true
   end
-  return nil
+  return false
+end
+
+-- `run`'s options for a stage, with its budget when the caches are warm.
+function stage_opts(stage, tail, is_cold)
+  local opts = {timeout_ms = 1800000, tail = tail}
+  if not is_cold then opts.cpu_budget_ms = CPU_BUDGET_MS[stage] end
+  return opts
 end
 
 -- One root's run: what it passed goes in `passed`, and the answer is how many
@@ -316,10 +332,10 @@ end
 -- still run.
 function all()
   roc_path()
-  clear_full_caches()
+  local is_cold = clear_full_caches() or COLD
   local bad = {}
   local times = {}
-  local lints = run({"shale", "--root", ".", SAFARI .. "/gates/lints.shale"}, {timeout_ms = 1800000, tail = 40})
+  local lints = timed_run("safari", "lints", {"shale", "--root", ".", SAFARI .. "/gates/lints.shale"}, stage_opts("lints", 40, is_cold))
   for l in lines(lints.out) do
     if not starts_with(l, "── ") then print(l) end
   end
@@ -329,7 +345,7 @@ function all()
     -- A child, and every roc under it, inherits this run's niceness.
     local argv = {"shale", "--root", ".", SELF_PATH, "part=" .. part}
     if COLD then push(argv, "cold=1") end
-    local r = run(argv, {timeout_ms = 1800000, tail = 200})
+    local r = timed_run("safari", "part=" .. part, argv, stage_opts(part, 200, is_cold))
     for l in lines(r.out) do
       if not starts_with(l, "── budgets") then print(l) end
     end
