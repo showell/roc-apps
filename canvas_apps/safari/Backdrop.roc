@@ -76,8 +76,8 @@ Backdrop :: [].{
 	## shapes.
 	behind : List(Shapes.Shape),
 	{
-		sky_top_color : I64,
-		sky_horizon_color : I64,
+		sky_top_color : Sky.Rgb,
+		sky_horizon_color : Sky.Rgb,
 		sun_sighting : Sky.SunSighting,
 	} -> List(Shapes.Shape)
 	behind = |ride_shapes, { sky_top_color, sky_horizon_color, sun_sighting: sun }| {
@@ -86,8 +86,8 @@ Backdrop :: [].{
 		# a fifth of the way down to the horizon at y 300, then the fade; the
 		# grass from a pixel above the horizon.
 		sky = Linear({
-			c0: Brush.opaque(sky_top_color),
-			c1: Brush.opaque(sky_horizon_color),
+			c0: Brush.opaque(Sky.pack(sky_top_color)),
+			c1: Brush.opaque(Sky.pack(sky_horizon_color)),
 			o0: sky_top_stop.to_f64(),
 			o1: 1.0,
 			ax: 0.0,

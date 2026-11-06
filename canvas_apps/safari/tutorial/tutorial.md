@@ -383,7 +383,7 @@ The sky changes all through the ride, but a frame only has to ask one question: 
 
 New in this chapter:
 
-- Roc: `->` as a promise, privacy without a keyword, records destructured in a parameter list
+- Roc: `->` as a promise, records destructured in a parameter list
 - Modules: `Fraction`
 
 `Sky` is a set of functions that each take a clock and answer with a color or the sun's place.
@@ -426,31 +426,27 @@ The sky is two colors, the top of the sky and the horizon. Here they are at five
 | 4,730 | `0x4f7595` | `0x966765` |
 | 6,000 | `0x243a5e` | `0x243a5e` |
 
-A color ends up as one integer. `pack` gets there with method calls on plain numbers. Static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `pack` a leaf: it calls nothing of Safari Ride's own.
-
-{{code Sky.pack}}
-
 Every color in the sky is a blend of two others, and a blend needs a ratio. `Fraction` is another small opaque type, a ratio from 0 to 1, and only its own block can build one, so a `Fraction` is always in range. It has two ways in. `Fraction.of` takes a ratio that can only be in range and crashes on anything else, because that would be a bug in the sum. `Fraction.clamp` takes a ratio that can rightly fall outside, and holds it at the nearest end.
 
 `color_between` takes one record argument, destructured in its parameter list, so callers name every field. Each channel moves the same share of the way. `Sky.Rgb` is a plain record alias: three floats with nothing to guard.
 
 {{code Sky.color_between}}
 
-`sky_at` calls it to blend day into dusk. It sits below the block. Anything outside `Sky :: [].{ ... }` is private to the module, so a helper stays a helper without any keyword.
-
-{{code Sky.sky_at}}
-
-`dusk_at` says how far the day has gone. That's a `Fraction` too, and The setting sun works it out.
-
-The two questions at the top are short. `sky_top_color` is the one `Tour.sky_top_color` asked at the start of this chapter, and `sky_horizon_color` is the same sky, warmed toward red near sunset.
+`sky_top_color`, the one `Tour.sky_top_color` asked at the start of this chapter, calls it to blend day into dusk. `dusk_at` says how far the day has gone. That's a `Fraction` too, and The setting sun works it out.
 
 {{code Sky.sky_top_color}}
+
+`sky_horizon_color` is the same sky, warmed toward red near sunset.
 
 {{code Sky.sky_horizon_color}}
 
 `Backdrop` paints the two as a gradient, down to the horizon. It stays on the top color for the first fifth of the way, then fades:
 
 {{code Backdrop.behind from "sky = Linear({" to "dy: Screen.horizon_y.to_f64(),"}}
+
+That's where a color finally becomes one integer, because a `Brush` wants `0xRRGGBB`. `pack` gets there with method calls on plain numbers. Static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `pack` a leaf: it calls nothing of Safari Ride's own.
+
+{{code Sky.pack}}
 
 One more thing in the frame goes dark with the sky: the mountains.
 
@@ -911,7 +907,9 @@ A beacon repeats. The sun only goes one way, and a lot more hangs on it.
 
 ## The setting sun
 
-Safari Ride needs a sunset. That's three jobs:
+Safari Ride needs a sunset. We'll build it the way we build everything here: concepts, then types, then functions.
+
+The concept is three jobs:
 
 1. Move the sun down the sky.
 2. Darken the sky.
@@ -928,10 +926,9 @@ digraph sunset {
   frame -> sky_top_color;
   frame -> sky_horizon_color;
   sun_sighting -> sun_place;
-  sky_top_color -> sky_at;
-  sky_horizon_color -> sky_at;
+  sky_top_color -> dusk_at;
+  sky_horizon_color -> sky_top_color;
   sky_horizon_color -> sunset_warmth;
-  sky_at -> dusk_at;
   sun_place -> sun_height_px;
   dusk_at -> sun_height_px;
   sunset_warmth -> sun_height_px;
@@ -943,10 +940,30 @@ digraph sunset {
 
 A box is a function, and an arrow is a call. The three boxes under the frame are the three jobs, more or less, and they all end at `sun_height_px`. That's the one number in the sunset.
 
-New in this chapter:
+### Get the types right
 
-- Roc: nothing new, which is normal here. Most of Safari Ride is plain functions. Two old ideas do the work: `->` functions, and the opaque types `Pixels` and `Fraction`.
-- Modules: none new
+Most of Safari Ride is plain functions, so there's no new Roc in this chapter. The types do the work, and a sunset needs four:
+
+| Type | What it is | Under it |
+|---|---|---|
+| `Clock` | A step of the ride | A `U32` |
+| `Pixels` | A length on screen, like the sun's height | An `F64` |
+| `Fraction` | A ratio from 0 to 1, like how far toward dusk we are | An `F64` |
+| `Sky.Rgb` | A color | A record of three floats |
+
+The first three are opaque, so none of them can be mixed up with a plain number, or with each other. With those in hand, each job is a signature:
+
+| Job | Function | Its type |
+|---|---|---|
+| Move the sun | `sun_height_px` | `Clock -> Pixels` |
+| Darken the sky | `dusk_at` | `Clock -> Fraction` |
+| | `sky_top_color` | `Clock -> Sky.Rgb` |
+| Warm the horizon | `sunset_warmth` | `Clock -> Fraction` |
+| | `sky_horizon_color` | `Clock -> Sky.Rgb` |
+
+Every one is a `->`, and every one starts from a `Clock`. That's most of the design, before we've read a line of code.
+
+### The functions
 
 Here's the top of that diagram in code. Each frame, the game asks for three things and hands them to `Backdrop`:
 
@@ -966,7 +983,7 @@ The sun chapter showed how `sun_sighting` places a sun. All it needs from the cl
 
 {{code Sky.sun_height_px}}
 
-That's the gold line: one multiplication and one subtraction! It says `.minus` and `.times` because `Pixels` is opaque, so a height can't be mixed up with a plain number. Under that, the clock unwraps itself:
+That's the gold line: one multiplication and one subtraction! It says `.minus` and `.times` because `Pixels` is opaque. Under that, the clock unwraps itself:
 
 {{code Clock.to_f64}}
 
@@ -976,15 +993,11 @@ That's the gold line: one multiplication and one subtraction! It says `.minus` a
 Drag to set the clock. Now the sky darkens too.
 ```
 
-This widget adds one call. The top of the sky is a color:
+This widget adds one call. The top of the sky blends day into dusk, by a `Fraction`:
 
 {{code Sky.sky_top_color}}
 
-`sky_at` blends day into dusk, by a `Fraction`:
-
-{{code Sky.sky_at}}
-
-And `dusk_at` works out that `Fraction`:
+`dusk_at` works out that `Fraction`:
 
 {{code Sky.dusk_at}}
 
@@ -994,7 +1007,7 @@ It asks for the sun's height, then picks one of two shapes, which meet when the 
 
 {{code Sky.dusk_after_set from "dusk_after_set : Pixels" to "dusk_after_set : Pixels"}}
 
-Neither helper has heard of the clock. We gave them a height, because that's what dusk depends on, and now that's all it can depend on.
+Both sit below `Sky`'s block. Anything outside a module's block is private, so a helper stays a helper without any keyword. Neither has heard of the clock. We gave them a height, because that's what dusk depends on, and now that's all it can depend on.
 
 ### Job three: the horizon warms
 
@@ -2399,7 +2412,7 @@ This page lists what catches a reader of Roc out in Safari Ride, sorted by what 
 | What you see | What's going on | Chapter |
 |---|---|---|
 | A method call with no import | Static dispatch finds `next` from the type of the value | One whole module |
-| A helper with no keyword to say it's private | Anything outside the module's block is private | The sky |
+| A helper with no keyword to say it's private | Anything outside the module's block is private | The setting sun |
 | A `match` that looks like a leaf and isn't | `<=` on an opaque type is a call to its `is_lte`, so an operator can run code of the program's own | The cat |
 | `var` and `for` under a `->` | A local that nothing outside can see, with `$` marking what changes. The function is still pure | The cat |
 | `?? crash` on a lookup | It isn't error handling. It states a belief about the program, and every gate run tests it | The world, Proving it |

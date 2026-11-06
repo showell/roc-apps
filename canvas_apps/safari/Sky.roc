@@ -134,20 +134,21 @@ Sky :: [].{
 		red_bits.bitwise_or(green_bits).bitwise_or(c.b.to_i64_wrap())
 	}
 
-	## The sky's colour at the top of the frame, as 0xRRGGBB.
-	sky_top_color : Clock -> I64
-	sky_top_color = |clock| pack(sky_at(clock))
+	## The sky's colour at the top of the frame.
+	sky_top_color : Clock -> Sky.Rgb
+	sky_top_color = |clock| color_between({
+		from: day_sky,
+		to: dusk_sky,
+		fraction: dusk_at(clock),
+	})
 
-	## The sky's colour at the horizon, as 0xRRGGBB: the sky warmed toward
-	## sunset red.
-	sky_horizon_color : Clock -> I64
-	sky_horizon_color = |clock| pack(
-		color_between({
-			from: sky_at(clock),
-			to: sunset_red,
-			fraction: sunset_warmth(clock).times(sunset_glow),
-		}),
-	)
+	## The sky's colour at the horizon: the sky warmed toward sunset red.
+	sky_horizon_color : Clock -> Sky.Rgb
+	sky_horizon_color = |clock| color_between({
+		from: sky_top_color(clock),
+		to: sunset_red,
+		fraction: sunset_warmth(clock).times(sunset_glow),
+	})
 
 	## The sun in a frame, for a rider facing `heading`.
 	sun_sighting : {
@@ -181,13 +182,6 @@ dusk_after_set = |height| {
 	sunk_past_set = Sky.sun_fully_set_px.minus(height).ratio_to(Sky.sun_radius_px)
 	Fraction.clamp(Sky.dusk_at_set.to_f64() + sunk_past_set * Sky.dusk_at_set.complement().to_f64())
 }
-
-sky_at : Clock -> Sky.Rgb
-sky_at = |clock| Sky.color_between({
-	from: Sky.day_sky,
-	to: Sky.dusk_sky,
-	fraction: Sky.dusk_at(clock),
-})
 
 sun_place : {
 	turn_from_view : Angle.Turn,
@@ -230,20 +224,20 @@ expect Sky.sunset_warmth(Clock.at_step(6000)).to_f64() == 0.0
 expect Sky.sunset_glow.to_f64() == 0.85
 
 # The sky and the horizon at each thousandth step of the ride.
-expect Sky.sky_top_color(Clock.at_step(0)) == 0x8ECAE6
-expect Sky.sky_top_color(Clock.at_step(1000)) == 0x8BC6E2
-expect Sky.sky_top_color(Clock.at_step(2000)) == 0x83BBD8
-expect Sky.sky_top_color(Clock.at_step(3000)) == 0x75A8C6
-expect Sky.sky_top_color(Clock.at_step(4000)) == 0x618DAC
-expect Sky.sky_top_color(Clock.at_step(5000)) == 0x406082
-expect Sky.sky_top_color(Clock.at_step(6000)) == 0x243A5E
-expect Sky.sky_horizon_color(Clock.at_step(0)) == 0x8ECAE6
-expect Sky.sky_horizon_color(Clock.at_step(1000)) == 0x8BC6E2
-expect Sky.sky_horizon_color(Clock.at_step(2000)) == 0x83BBD8
-expect Sky.sky_horizon_color(Clock.at_step(3000)) == 0x9D898E
-expect Sky.sky_horizon_color(Clock.at_step(4000)) == 0xCA6047
-expect Sky.sky_horizon_color(Clock.at_step(5000)) == 0x7A5D65
-expect Sky.sky_horizon_color(Clock.at_step(6000)) == 0x243A5E
+expect Sky.pack(Sky.sky_top_color(Clock.at_step(0))) == 0x8ECAE6
+expect Sky.pack(Sky.sky_top_color(Clock.at_step(1000))) == 0x8BC6E2
+expect Sky.pack(Sky.sky_top_color(Clock.at_step(2000))) == 0x83BBD8
+expect Sky.pack(Sky.sky_top_color(Clock.at_step(3000))) == 0x75A8C6
+expect Sky.pack(Sky.sky_top_color(Clock.at_step(4000))) == 0x618DAC
+expect Sky.pack(Sky.sky_top_color(Clock.at_step(5000))) == 0x406082
+expect Sky.pack(Sky.sky_top_color(Clock.at_step(6000))) == 0x243A5E
+expect Sky.pack(Sky.sky_horizon_color(Clock.at_step(0))) == 0x8ECAE6
+expect Sky.pack(Sky.sky_horizon_color(Clock.at_step(1000))) == 0x8BC6E2
+expect Sky.pack(Sky.sky_horizon_color(Clock.at_step(2000))) == 0x83BBD8
+expect Sky.pack(Sky.sky_horizon_color(Clock.at_step(3000))) == 0x9D898E
+expect Sky.pack(Sky.sky_horizon_color(Clock.at_step(4000))) == 0xCA6047
+expect Sky.pack(Sky.sky_horizon_color(Clock.at_step(5000))) == 0x7A5D65
+expect Sky.pack(Sky.sky_horizon_color(Clock.at_step(6000))) == 0x243A5E
 expect Sky.pack(Sky.day_sky) == 0x8ECAE6
 expect Sky.pack(Sky.dusk_sky) == 0x243A5E
 expect Sky.pack(Sky.sunset_red) == 0xDE5834

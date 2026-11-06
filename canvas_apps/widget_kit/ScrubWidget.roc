@@ -147,8 +147,8 @@ ScrubWidget :: [].{
 	## The same picture under any sky, for a widget that shows part of a sunset.
 	ride_picture_in : List(Shapes.Shape),
 	{
-		sky_top_color : I64,
-		sky_horizon_color : I64,
+		sky_top_color : Sky.Rgb,
+		sky_horizon_color : Sky.Rgb,
 		sun_sighting : Sky.SunSighting,
 	} -> List(Shapes.Shape)
 	ride_picture_in = |shapes, sky| {

@@ -7,21 +7,22 @@ import PixelColor
 import PixelGrid
 import game.Backdrop
 import game.Screen
+import game.Sky
 import ScreenRoll
 
 BackdropPixels :: [].{
 
 	## The sky and the grass, given the sky's colour at the top of the screen
-	## and at the horizon, as 0xRRGGBB.
+	## and at the horizon.
 	##
 	## The sky holds its top colour to Backdrop's stop on the way down to
 	## the horizon, then fades to the horizon colour; the grass is below it.
 	## The fade divides by the horizon rather than shading a Linear brush,
 	## whose arithmetic rounds differently.
-	paint : ScreenRoll, { sky_top_color : I64, sky_horizon_color : I64 } -> List(U32)
+	paint : ScreenRoll, { sky_top_color : Sky.Rgb, sky_horizon_color : Sky.Rgb } -> List(U32)
 	paint = |roll, { sky_top_color, sky_horizon_color }| {
-		top_color = Brush.opaque(sky_top_color)
-		horizon_color = Brush.opaque(sky_horizon_color)
+		top_color = Brush.opaque(Sky.pack(sky_top_color))
+		horizon_color = Brush.opaque(Sky.pack(sky_horizon_color))
 		width = roll.width_px()
 		height = roll.height_px()
 		var $px = List.with_capacity(width.to_u64() * height.to_u64())

@@ -42,8 +42,8 @@ SafariFrame :: [].{
 	Picture : {
 		shapes : List(Shapes.Shape),
 		roll : Angle.Lean,
-		sky_top_color : I64,
-		sky_horizon_color : I64,
+		sky_top_color : Sky.Rgb,
+		sky_horizon_color : Sky.Rgb,
 		sun : Sky.SunSighting,
 	}
 

@@ -87,7 +87,7 @@ marked_stretches = |job|
 	}
 
 ## The two colors of the sky, as far as `job` goes.
-sky_colors : SkyWidgetApp.Job, Clock -> { top : I64, horizon : I64 }
+sky_colors : SkyWidgetApp.Job, Clock -> { top : Sky.Rgb, horizon : Sky.Rgb }
 sky_colors = |job, clock|
 	match job {
 		SunSets => {
