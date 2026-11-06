@@ -67,7 +67,8 @@ Truck :: [].{
 	scheduled_position : { rider_distance : Distance, route_length : Distance } -> Distance
 	scheduled_position = |{ rider_distance, route_length }| {
 		fraction_left = 1.0 - rider_distance.ratio_to(route_length)
-		rider_distance.plus(finish_lead).plus(start_lead.minus(finish_lead).times(fraction_left))
+		extra_lead = start_lead.minus(finish_lead).times(fraction_left)
+		rider_distance.plus(finish_lead).plus(extra_lead)
 	}
 
 	## The truck one step on: where the rider is along the route, the world's

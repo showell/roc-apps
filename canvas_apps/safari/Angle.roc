@@ -127,6 +127,10 @@ Angle :: [].{
 		to_radians : Angle.Lean -> F64
 		to_radians = |Angle.Lean.(r)| r
 
+		## This lean in degrees, as a canvas takes a rotation.
+		to_degrees : Angle.Lean -> F64
+		to_degrees = |Angle.Lean.(r)| r * degrees_per_radian
+
 		plus : Angle.Lean, Angle.Lean -> Angle.Lean
 		plus = |Angle.Lean.(l), Angle.Lean.(other)| Angle.Lean.(l + other)
 
@@ -170,3 +174,10 @@ Angle :: [].{
 	upright : Angle.Lean
 	upright = Angle.Lean.(0.0)
 }
+
+degrees_per_radian : F64
+degrees_per_radian = 57.29577951308232
+
+expect Angle.upright.to_degrees() == 0.0
+expect Angle.Lean.radians(1.0).to_degrees() == 57.29577951308232
+expect Angle.Lean.radians(-1.0).to_degrees() == -57.29577951308232

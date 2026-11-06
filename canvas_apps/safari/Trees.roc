@@ -29,9 +29,9 @@ Trees :: [].{
 	small_height : Distance
 	small_height = Distance.metres(4.5)
 
-	## How much taller a tree in a big pair is.
-	big_scale : F64
-	big_scale = 1.3
+	## A big green tree's height.
+	big_height : Distance
+	big_height = small_height.times(1.3)
 
 	tree_spacing : Distance
 	tree_spacing = Distance.metres(30.0)
@@ -75,7 +75,7 @@ Trees :: [].{
 	height = |{ conifer, size }| {
 		base =
 			match size {
-				Big => small_height.times(big_scale)
+				Big => big_height
 				Small => small_height
 			}
 		match conifer {
@@ -164,7 +164,7 @@ expect Trees.conifer_red == 11680298
 expect Trees.max_trees == 96
 
 expect Trees.small_height == Distance.metres(4.5)
-expect Trees.big_scale == 1.3
+expect Trees.big_height == Distance.metres(5.8500000000000005)
 expect Trees.tree_spacing == Distance.metres(30.0)
 expect Trees.tree_road_offset == Distance.metres(1.5)
 expect Trees.tree_start_inset == Distance.metres(6.0)

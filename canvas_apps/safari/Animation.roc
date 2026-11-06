@@ -236,6 +236,7 @@ path_spot = |path, fraction|
 		Arc({ line, rise }) => {
 			on_line = line_spot(line, fraction)
 			through = fraction.to_f64()
+			# 4t(1 - t) is 0 at both ends and 1 halfway, so the arc tops out at `rise`.
 			above_line = rise.times(4.0).times(through).times(1.0 - through)
 			{ ..on_line, lift: on_line.lift.plus(above_line) }
 		}
@@ -256,10 +257,11 @@ line_spot = |line, fraction| {
 			to: end,
 			fraction: eased,
 		})
+	lift_change = line.to.lift.minus(line.from.lift)
 	{
 		along: Along.metres(between(line.from.along.to_metres(), line.to.along.to_metres())),
 		across: Across.metres(between(line.from.across.to_metres(), line.to.across.to_metres())),
-		lift: line.from.lift.plus(line.to.lift.minus(line.from.lift).times(eased.to_f64())),
+		lift: line.from.lift.plus(lift_change.times(eased.to_f64())),
 	}
 }
 

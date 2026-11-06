@@ -48,18 +48,14 @@ Mountains :: [].{
 		b: 104.0,
 	}
 
-	## One of a colour's channels: 16 is red, 8 green and 0 blue.
-	channel : I64, U8 -> F64
-	channel = |color, shift| color.shr_wrap(shift).bitwise_and(255).to_f64()
-
 	## A rock colour at `dusk`, from 0 (day) to 1 (night).
 	color_at_dusk : I64, Fraction -> I64
 	color_at_dusk = |color, dusk| {
 		light = rock_night_dim.times(dusk).complement().to_f64()
 		Sky.pack({
-			r: Float.round((channel(color, 16) * light)),
-			g: Float.round((channel(color, 8) * light)),
-			b: Float.round((channel(color, 0) * light)),
+			r: Float.round(Paint.red_of(color).to_f64() * light),
+			g: Float.round(Paint.green_of(color).to_f64() * light),
+			b: Float.round(Paint.blue_of(color).to_f64() * light),
 		})
 	}
 
@@ -163,7 +159,7 @@ Mountains :: [].{
 
 ## A mountain range: the bearing of its middle, how far it reaches either
 ## side, its height there, and the two frequencies of the ridges along it.
-## The ridge frequencies are cycles per radian of turn from the middle.
+## Each ridge frequency is how many waves would fit a whole turn.
 MountainRange : {
 	center : Angle.Bearing,
 	half_width : Angle.Turn,
@@ -232,7 +228,10 @@ horizon_y = Screen.horizon_y
 
 ## The screen's y for a height on the skyline.
 height_y : Mountains.Sight, Pixels -> Pixels
-height_y = |sight, height| horizon_y.minus(height.times(sight.cam_focal.ratio_to(Lens.focal)))
+height_y = |sight, height| {
+	scale = sight.cam_focal.ratio_to(Lens.focal)
+	horizon_y.minus(height.times(scale))
+}
 
 ## The columns sampled, every `column_step` pixels from `from` up to `to`.
 columns : { from : Pixels, to : Pixels } -> List(Pixels)
@@ -301,11 +300,15 @@ expect Mountains.rock == 5991055
 expect Mountains.rock_west == 3752799
 expect Mountains.land == 4886339
 
-expect Mountains.channel(Mountains.rock, 16) == 91.0
-expect Mountains.channel(Mountains.rock, 8) == 106.0
-expect Mountains.channel(Mountains.rock, 0) == 143.0
-expect Mountains.channel(16777215, 16) == 255.0
-expect Mountains.channel(0, 0) == 0.0
+sight_at_rest : Mountains.Sight
+sight_at_rest = { heading: Angle.north, cam_focal: Lens.focal }
+
+expect height_y(sight_at_rest, Pixels.of(100.0)) == Pixels.of(200.0)
+expect height_y(sight_at_rest, Pixels.zero) == Pixels.of(300.0)
+expect height_y(sight_at_rest, Pixels.of(-40.0)) == Pixels.of(340.0)
+expect
+	height_y({ ..sight_at_rest, cam_focal: Lens.focal.times(0.5) }, Pixels.of(100.0))
+		== Pixels.of(250.0)
 
 expect Mountains.color_at_dusk(Mountains.rock, Fraction.zero) == 5991055
 expect Mountains.color_at_dusk(Mountains.rock_west, Fraction.zero) == 3752799

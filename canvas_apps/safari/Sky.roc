@@ -18,11 +18,11 @@ Sky :: [].{
 	}
 
 	## Where the sun stands on the screen, and how large it is drawn beside
-	## its size at rest.
+	## its size at rest. The lens only ever widens, so that is never larger.
 	SunPlace : {
 		x : Pixels,
 		y : Pixels,
-		scale : F64,
+		scale : Fraction,
 	}
 
 	## The sun in a frame: in view at its place, or out of view, too far to
@@ -190,11 +190,11 @@ sun_place : {
 	cam_focal : Pixels,
 } -> Sky.SunPlace
 sun_place = |{ turn_from_view, clock, cam_focal }| {
-	scale = cam_focal.ratio_to(Lens.focal)
+	scale = Fraction.of(cam_focal.ratio_to(Lens.focal))
 	slope = Trig.r_tan(turn_from_view.to_radians())
 	{
 		x: Screen.center_x.plus(cam_focal.times(slope)),
-		y: Screen.horizon_y.minus(Sky.sun_height_px(clock).times(scale)),
+		y: Screen.horizon_y.minus(Sky.sun_height_px(clock).times(scale.to_f64())),
 		scale,
 	}
 }
@@ -276,7 +276,20 @@ expect
 		== InView({
 			x: Pixels.of(480.0),
 			y: Pixels.of(56.0),
-			scale: 1.0,
+			scale: Fraction.whole,
+		})
+
+# A lens at half its focal length draws the sun at half its size.
+expect
+	Sky.sun_sighting({
+		heading: Angle.Bearing.radians(0.0 - 2.2176),
+		clock: Clock.start,
+		cam_focal: Lens.focal.times(0.5),
+	})
+		== InView({
+			x: Pixels.of(480.0),
+			y: Pixels.of(178.0),
+			scale: Fraction.of(0.5),
 		})
 
 expect

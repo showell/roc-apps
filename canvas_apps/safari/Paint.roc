@@ -196,9 +196,9 @@ Paint :: [].{
 		end_point : Screen.Point,
 	} -> List(Shapes.Shape)
 	linear_gradient_polygon = |ps, { color_stops, start_point, end_point }| {
-		dx = end_point.x.minus(start_point.x)
-		dy = end_point.y.minus(start_point.y)
-		if dx.area_with(dx) + dy.area_with(dy) == 0.0 {
+		dx = end_point.x.minus(start_point.x).to_f64()
+		dy = end_point.y.minus(start_point.y).to_f64()
+		if dx * dx + dy * dy == 0.0 {
 			[]
 		} else {
 			offsets = offsets_of(color_stops)
@@ -211,8 +211,8 @@ Paint :: [].{
 					o1: offsets.last,
 					ax: start_point.x.to_f64(),
 					ay: start_point.y.to_f64(),
-					dx: dx.to_f64(),
-					dy: dy.to_f64(),
+					dx,
+					dy,
 				}),
 			)
 		}
@@ -229,7 +229,11 @@ Paint :: [].{
 		axis_v : Screen.Point,
 	} -> List(Shapes.Shape)
 	radial_gradient_polygon = |ps, { color_stops, center_point, axis_u, axis_v }| {
-		det = axis_u.x.area_with(axis_v.y) - axis_u.y.area_with(axis_v.x)
+		ux = axis_u.x.to_f64()
+		uy = axis_u.y.to_f64()
+		vx = axis_v.x.to_f64()
+		vy = axis_v.y.to_f64()
+		det = ux * vy - uy * vx
 		first_color = Brush.with_alpha(color_stops.start_rgba)
 		fill =
 			if det.abs() < min_ellipse_determinant {
@@ -243,10 +247,10 @@ Paint :: [].{
 					o1: offsets.last,
 					x: center_point.x.to_f64(),
 					y: center_point.y.to_f64(),
-					ia: axis_v.y.to_f64() / det,
-					ib: axis_v.x.opposite().to_f64() / det,
-					ic: axis_u.y.opposite().to_f64() / det,
-					id: axis_u.x.to_f64() / det,
+					ia: vy / det,
+					ib: (0.0 - vx) / det,
+					ic: (0.0 - uy) / det,
+					id: ux / det,
 				})
 			}
 		Shapes.polygon(flatten_screen(ps), fill)

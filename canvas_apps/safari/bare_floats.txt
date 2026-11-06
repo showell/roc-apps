@@ -23,25 +23,20 @@ Bike.turn_per_lean: a turn per radian of lean, an angle over an angle
 ViewYaw.head_turn_per_lean: a turn per radian of lean, an angle over an angle
 LeanSearch.asymptote_tuning: a tuning factor on a length
 DepthSort.tie_slack: a relative tolerance, scaled by the length it is compared with
-Trees.big_scale: a factor that passes 1
 TruckLights.glow_reach: a factor that passes 1
-Sky.SunPlace.scale: a factor that passes 1
 Paint.shade_channel: a factor that passes 1 on a colour channel
 Paint.shade_color: a factor that passes 1 on a colour
 StillDraw.x_sign: a sign, 1 or -1, multiplied into a still's x
 Tower.corner_offset: a sign, 1 or -1, for each way a corner lies from the centre
-SafariApp.degrees: degrees per radian, an angle over an angle
-Mountains.MountainRange: how many ridge waves fit a radian, a frequency
+Mountains.MountainRange: how many ridge waves fit a whole turn, a frequency
 Easing.lerp: the sum behind blending any unit, which a caller unwraps once
-Animation.Timeline.instant: `times` in the where clause takes a plain factor
-Animation.Timeline.at_beat: `times` in the where clause takes a plain factor
+Animation.Timeline: `times` in the where clause takes a plain factor
 Animation.path_spot: `times` in the where clause takes a plain factor
 Animation.line_spot: `times` in the where clause takes a plain factor
 
 # Numbers with a meaning no unit type here holds.
 Sky.Rgb: a colour's channels, part way through a blend
-Mountains.channel: a colour's channel, ready to blend
-Paint.min_ellipse_determinant: square pixels, which `Pixels.area_with` gives as a plain number
+Paint.min_ellipse_determinant: square pixels, the plain number two axes' determinant gives
 VehicleLimits.turn_speeds: whole degrees, a key looked up by equality after a turn rounds to it
 Stills: traced pictures, in units of the still's own height
 

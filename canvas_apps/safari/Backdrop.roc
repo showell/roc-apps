@@ -31,8 +31,9 @@ Backdrop :: [].{
 	## The sun's glow and disc where it stands, sized by its scale.
 	sun_fills : Sky.SunPlace -> Backdrop.SunFills
 	sun_fills = |sun| {
-		glow_radius = Pixels.of(340.0).times(sun.scale)
-		disc_radius = Sky.sun_radius_px.times(sun.scale)
+		scale = sun.scale.to_f64()
+		glow_radius = Pixels.of(340.0).times(scale)
+		disc_radius = Sky.sun_radius_px.times(scale)
 		{
 			glow: Glow({
 				c0: {
@@ -55,7 +56,7 @@ Backdrop :: [].{
 				},
 				x: sun.x.to_f64(),
 				y: sun.y.to_f64(),
-				r0: 8.0 * sun.scale,
+				r0: 8.0 * scale,
 				r1: glow_radius.to_f64(),
 			}),
 			glow_radius,
@@ -64,7 +65,7 @@ Backdrop :: [].{
 				outer: Brush.opaque(0xff9d5c),
 				x: sun.x.to_f64(),
 				y: sun.y.to_f64(),
-				r0: 4.0 * sun.scale,
+				r0: 4.0 * scale,
 				r1: disc_radius.to_f64(),
 			}),
 			disc_radius,

@@ -44,7 +44,7 @@ SafariApp :: [].{
 			World({
 				target: centre,
 				offset: centre,
-				rotation: 0.0 - Tour.roll(tour).to_radians() * degrees,
+				rotation: 0.0 - Tour.roll(tour).to_degrees(),
 				zoom: 1.0,
 			}),
 		)
@@ -57,9 +57,6 @@ SafariApp :: [].{
 			},
 		).prepend(lean)
 	}
-
-	degrees : F64
-	degrees = 57.29577951308232
 
 	step : SafariApp.Model, Input.Snapshot -> SafariApp.Model
 	step = |m, input|
