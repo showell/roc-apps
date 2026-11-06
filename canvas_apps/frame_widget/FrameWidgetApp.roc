@@ -158,7 +158,12 @@ ride_pieces = |tour| {
 		dusk: Sky.dusk_at(instant.clock),
 		cam_focal: view.cam_focal,
 	})
-	ground = GroundSighting.patches_in_view(view.road).join_map(|patch| Ground.draw(patch, view.cam_focal))
+	ground = GroundSighting.patches_in_view(view.road).join_map(
+		|patch| Ground.draw(
+			patch,
+			view.cam_focal,
+		),
+	)
 	[
 		[{ layer: Mountains, shapes: skyline }, { layer: Road, shapes: ground }],
 		scene.order.map(
@@ -382,7 +387,10 @@ right_press = Input.none.with_key_pressed(KeyRight)
 ## The model once the page has pressed Right `count` times and a frame has gone
 ## by.
 opened_after : U64 -> FrameWidgetApp.Model
-opened_after = |count| next_model(List.repeat(right_press, count).fold(start, next_model), Input.none)
+opened_after = |count| next_model(
+	List.repeat(right_press, count).fold(start, next_model),
+	Input.none,
+)
 
 # An address with no word opens on the trees alone, and the last word opens on
 # every layer.

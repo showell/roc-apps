@@ -274,13 +274,28 @@ still_frame = {
 # apex goes out as the turn sharpens, and the middle bend has the book's numbers.
 expect
 	caption_lines(left_bend.turn)
-		== ["45 deg left", "rail on the right edge", "apex 1.7 m past the end", "8 patches, 49 rail pieces"]
+		== [
+			"45 deg left",
+			"rail on the right edge",
+			"apex 1.7 m past the end",
+			"8 patches, 49 rail pieces",
+		]
 expect
 	caption_lines(right_bend.turn)
-		== ["45 deg right", "rail on the left edge", "apex 1.7 m past the end", "8 patches, 49 rail pieces"]
+		== [
+			"45 deg right",
+			"rail on the left edge",
+			"apex 1.7 m past the end",
+			"8 patches, 49 rail pieces",
+		]
 expect
 	caption_lines(sharp_bend.turn)
-		== ["80 deg right", "rail on the left edge", "apex 3.4 m past the end", "8 patches, 53 rail pieces"]
+		== [
+			"80 deg right",
+			"rail on the left edge",
+			"apex 3.4 m past the end",
+			"8 patches, 53 rail pieces",
+		]
 
 # The sharp bend is on the route, and nothing on the route is sharper.
 expect World.plans.any(|plan| plan.turn == sharp_bend.turn)

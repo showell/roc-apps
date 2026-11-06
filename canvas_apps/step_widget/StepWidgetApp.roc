@@ -55,10 +55,7 @@ read_back_a_frame = 200.0
 ## where the ride is, which may not have reached the step it was heading for.
 aimed : StepWidgetApp.Model, Input.Snapshot -> StepWidgetApp.Model
 aimed = |model, input| {
-	caught_up = VcrButtons.catch_up(
-		model.transport,
-		{ input, range: journey, shown: model.tour.instant.clock },
-	)
+	caught_up = VcrButtons.catch_up(model.transport, { input, shown: model.tour.instant.clock })
 	{ ..model, transport: VcrButtons.next_transport(caught_up, { input, range: journey }) }
 }
 
@@ -339,7 +336,7 @@ heading_on_to = |model, step| { ..model, transport: VcrButtons.transport_at(Cloc
 
 ## A frame of `model` with a press of `control`.
 pressed_on : StepWidgetApp.Model, VcrButtons.Control -> StepWidgetApp.Model
-pressed_on = |model, control| moved(aimed(model, VcrButtons.click_on(control, journey.playing)))
+pressed_on = |model, control| moved(aimed(model, VcrButtons.click_on(control)))
 
 ## `model` after `frames` frames with nobody touching it.
 left_alone : StepWidgetApp.Model, U64 -> StepWidgetApp.Model

@@ -331,7 +331,7 @@ stopped_at = |step| { ..at_start, transport: VcrButtons.transport_at(Clock.at_st
 
 ## What a press of `control` does, after that frame.
 pressed_on : SkyWidgetApp.Model, VcrButtons.Control -> SkyWidgetApp.Model
-pressed_on = |model, control| next_model(model, VcrButtons.click_on(control, sunset.playing))
+pressed_on = |model, control| next_model(model, VcrButtons.click_on(control))
 
 # The buttons run over the sunset, eight steps a frame and one step at a press.
 expect pressed_on(at_start, Play).transport == { at: Clock.at_step(8), motion: Forward }

@@ -116,7 +116,7 @@ gaze_pig =
 with_buttons : GazeWidgetApp.Model, Input.Snapshot -> GazeWidgetApp.Model
 with_buttons = |model, input| {
 	shown = Clock.at_step(first_step + shown_offset(model).to_u32_wrap())
-	caught_up = VcrButtons.catch_up(model.transport, { input, range: stretch, shown })
+	caught_up = VcrButtons.catch_up(model.transport, { input, shown })
 	{ ..model, transport: VcrButtons.next_transport(caught_up, { input, range: stretch }) }
 }
 
@@ -478,10 +478,6 @@ expect
 asking_for : U32 -> GazeWidgetApp.Model
 asking_for = |step| { ..starting_model, transport: VcrButtons.transport_at(Clock.at_step(step)) }
 
-## A click on `control`.
-click_on : VcrButtons.Control -> Input.Snapshot
-click_on = |control| VcrButtons.click_on(control, stretch.playing)
-
 ## `model` after `frames` frames with nobody touching it.
 left_alone : GazeWidgetApp.Model, U64 -> GazeWidgetApp.Model
 left_alone = |model, frames| {
@@ -503,10 +499,19 @@ expect left_alone(starting_model, 59).played.len() == stretch_length
 
 # The buttons ask for a step, at either end of the stretch or one on, and a frame
 # with nothing pressed leaves it alone.
-expect with_buttons(starting_model, click_on(ToEnd)).transport.at == Clock.at_step(last_step)
-expect with_buttons(asking_for(1000), click_on(ToStart)).transport.at == Clock.at_step(first_step)
-expect with_buttons(starting_model, click_on(StepForward)).transport.at == Clock.at_step(861)
-expect with_buttons(starting_model, click_on(Play)).transport.at == Clock.at_step(861)
+expect with_buttons(
+	starting_model,
+	VcrButtons.click_on(ToEnd),
+).transport.at == Clock.at_step(last_step)
+expect with_buttons(
+	asking_for(1000),
+	VcrButtons.click_on(ToStart),
+).transport.at == Clock.at_step(first_step)
+expect with_buttons(
+	starting_model,
+	VcrButtons.click_on(StepForward),
+).transport.at == Clock.at_step(861)
+expect with_buttons(starting_model, VcrButtons.click_on(Play)).transport.at == Clock.at_step(861)
 expect with_buttons(starting_model, Input.none).transport.at == Clock.at_step(first_step)
 
 # The state on show waits for the ride, then matches the buttons.
@@ -519,7 +524,7 @@ expect shown_offset(left_alone(asking_for(870), 1)) == 8
 # A step while the ride is catching up counts from the step on show.
 expect {
 	catching_up = left_alone(asking_for(last_step), 2)
-	stepped = with_buttons(catching_up, click_on(StepForward))
+	stepped = with_buttons(catching_up, VcrButtons.click_on(StepForward))
 	stepped.transport == { at: Clock.at_step(first_step + 2 * 8 + 1), motion: Stopped }
 }
 
