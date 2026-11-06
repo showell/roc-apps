@@ -2,6 +2,7 @@
 ## and as the rider's attention is caught, by a crossing on the road or by a
 ## look to the side.
 import Pixels
+import Along
 import Attention
 import Bike
 import CrossingReaction
@@ -39,16 +40,13 @@ upright : RiderState
 upright = RiderState.initial
 
 ## A rider 120 m along a segment: near enough to its cat, if it has one, to
-## notice it. RideFocal doesn't import Along or Distance, so the place is made
-## from Gaze's distance.
+## notice it.
 near_cat_on : U32 -> RiderState
 near_cat_on = |number| {
 	..upright,
 	segment_index: World.SegmentIndex.number(number),
-	along: upright.along.plus(Gaze.notice_distance.times(0.8)),
+	along: Along.metres(120.0),
 }
-
-expect near_cat_on(1).along.to_metres() == 120.0
 
 ## Whether a segment has a cat waiting by the road.
 has_cat : World.Segment -> Bool

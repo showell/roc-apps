@@ -201,7 +201,7 @@ expect
 		(Gaze.look_return_ease.to_f64(), 0.05),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 
-expect Gaze.gaze_attention(Fraction.of(0.5)).to_f64() == 0.5
+expect Gaze.gaze_attention(Fraction.of(0.25)).to_f64() == 0.15625
 
 plain : World.Segment
 plain = World.route_segment(0)

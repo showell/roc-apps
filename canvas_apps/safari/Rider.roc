@@ -6,6 +6,7 @@ import Across
 import Along
 import Angle
 import Bike
+import Fraction
 import Gaze
 import Geom
 import LeanSearch
@@ -153,16 +154,10 @@ expect {
 	chosen.to_bits() == same.to_metres_a_step_each_step().to_bits()
 }
 
-## Rider doesn't import Fraction, so this depth comes from Gaze.
-attentive_rider : RiderState
-attentive_rider = {
-	..RiderState.initial,
-	look_depth: Gaze.next_look_depth(RiderState.initial, Gaze.look_release_angle.times(0.4)),
-}
-
 at_seam : RiderState
 at_seam = {
-	..attentive_rider,
+	..RiderState.initial,
+	look_depth: Fraction.of(0.4),
 	along: Along.metres(499.0),
 	across: Across.metres(0.5),
 	yaw: Angle.Turn.radians(0.1),
