@@ -411,7 +411,7 @@ expect
 
 ## What a truck `lead` metres ahead of a rider at the start of the chain is
 ## seen from, from `vantage`, with its lights off.
-truck_view : Geom.Vantage, F64 -> TruckSighting.View
+truck_view : Geom.Vantage, F64 -> TruckSighting.Viewpoint
 truck_view = |vantage, lead| {
 	road: {
 		world: segs,

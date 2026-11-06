@@ -27,7 +27,7 @@ TruckSighting := [
 
 	## What the truck is seen from: the road in view, how far ahead of the
 	## rider the truck is, and which of its lights are on.
-	View : {
+	Viewpoint : {
 		road : Chain.RoadView,
 		lead : Distance,
 		lights : Truck.Lights,
@@ -35,7 +35,7 @@ TruckSighting := [
 
 	## The truck, if it is ahead of the rider, on the chain, and in front of
 	## the camera.
-	in_view : TruckSighting.View -> TruckSighting
+	in_view : TruckSighting.Viewpoint -> TruckSighting
 	in_view = |view|
 		if view.lead > Distance.zero {
 			truck_from(
@@ -62,7 +62,11 @@ TruckSighting := [
 ## The truck at `remaining` measured from the start of the segment at
 ## `position` in the chain, found by walking on through the segments it is
 ## past.
-truck_from : TruckSighting.View, { remaining : Along, position : Chain.Position } -> TruckSighting
+truck_from : TruckSighting.Viewpoint,
+{
+	remaining : Along,
+	position : Chain.Position,
+} -> TruckSighting
 truck_from = |view, { remaining, position }|
 	if position.is_past_end_of(view.road.chain) {
 		NoTruck
@@ -80,7 +84,11 @@ truck_from = |view, { remaining, position }|
 
 ## The truck at `along` on the segment at `position` in the chain, in the
 ## middle of the lane, if it is in front of the camera.
-truck_on_segment : TruckSighting.View, { along : Along, position : Chain.Position } -> TruckSighting
+truck_on_segment : TruckSighting.Viewpoint,
+{
+	along : Along,
+	position : Chain.Position,
+} -> TruckSighting
 truck_on_segment = |view, { along, position }| {
 	across = Across.middle
 	center = Chain.rider_point_ahead(view.road, { position: position, along: along, across })

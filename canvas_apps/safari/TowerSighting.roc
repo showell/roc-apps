@@ -29,7 +29,7 @@ TowerSighting := {
 }.{
 
 	## What the masts are seen from: the road in view, and the ride's clock.
-	View : { road : Chain.RoadView, clock : Clock }
+	Viewpoint : { road : Chain.RoadView, clock : Clock }
 
 	## How far past the end of its segment a mast stands.
 	tower_beyond : Distance
@@ -75,7 +75,7 @@ TowerSighting := {
 
 	## The masts in view: those along the chain, then the one past the end of
 	## the segment behind the rider.
-	in_view : TowerSighting.View -> List(TowerSighting)
+	in_view : TowerSighting.Viewpoint -> List(TowerSighting)
 	in_view = |view|
 		match Chain.segment_behind(view.road) {
 			Previous(segment_behind) => along_chain(view).concat(tower_behind(view, segment_behind))
@@ -83,7 +83,7 @@ TowerSighting := {
 		}
 
 	## The masts in view along the chain, the nearest segment's first.
-	along_chain : TowerSighting.View -> List(TowerSighting)
+	along_chain : TowerSighting.Viewpoint -> List(TowerSighting)
 	along_chain = |view| {
 		positions = Chain.Position.all_in(view.road.chain)
 		positions.join_map(|position| segment_towers(view, position))
@@ -91,7 +91,7 @@ TowerSighting := {
 
 	## The masts in view on the segment at `position` in the chain: the one past
 	## its end, then the one halfway along.
-	segment_towers : TowerSighting.View, Chain.Position -> List(TowerSighting)
+	segment_towers : TowerSighting.Viewpoint, Chain.Position -> List(TowerSighting)
 	segment_towers = |view, position| {
 		index = position.index_in(view.road.chain)
 		segment = index.segment_in(view.road.world)
@@ -110,7 +110,7 @@ TowerSighting := {
 
 	## The mast halfway along the segment at `position` in the chain, if it has
 	## one and it is in view.
-	mid_tower : TowerSighting.View, Chain.Position -> List(TowerSighting)
+	mid_tower : TowerSighting.Viewpoint, Chain.Position -> List(TowerSighting)
 	mid_tower = |view, position| {
 		index = position.index_in(view.road.chain)
 		segment = index.segment_in(view.road.world)
@@ -132,7 +132,7 @@ TowerSighting := {
 
 	## The mast past the end of the segment at `index`, the one behind the
 	## rider, if it is in view.
-	tower_behind : TowerSighting.View, World.SegmentIndex -> List(TowerSighting)
+	tower_behind : TowerSighting.Viewpoint, World.SegmentIndex -> List(TowerSighting)
 	tower_behind = |view, index| {
 		behind = index.segment_in(view.road.world)
 		tower_if_ahead(
@@ -164,7 +164,7 @@ mid_tower_beacon_step = 60
 
 ## A mast standing at `along` and `across` in the segment that `place` maps,
 ## if it is in front of the camera: one item, or none.
-tower_if_ahead : TowerSighting.View,
+tower_if_ahead : TowerSighting.Viewpoint,
 {
 	place : Chain.SegmentPlace,
 	along : Along,
@@ -216,7 +216,7 @@ origin = {
 
 ## Three segments seen from the origin, the rider on the first of them, the
 ## route's segment `rider_number`.
-short_view : U32 -> TowerSighting.View
+short_view : U32 -> TowerSighting.Viewpoint
 short_view = |rider_number| {
 	road: {
 		world: [0, 1, 2, 3, 4].map(World.route_segment),
@@ -226,7 +226,7 @@ short_view = |rider_number| {
 	clock: Clock.start,
 }
 
-from_origin : TowerSighting.View
+from_origin : TowerSighting.Viewpoint
 from_origin = short_view(0)
 
 expect TowerSighting.along_chain(from_origin).len() == 3
@@ -256,7 +256,7 @@ expect first_tower_on(1).along.to_metres() == 480.0
 expect first_tower_on(1).across.to_metres() == 20.0
 
 ## The 1200 m segment alone, seen from the origin.
-long_view : TowerSighting.View
+long_view : TowerSighting.Viewpoint
 long_view = {
 	road: {
 		world: [World.route_segment(6)],
