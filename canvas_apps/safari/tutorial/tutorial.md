@@ -54,14 +54,16 @@ So far that's all boxes and arrows. What a box looks like in Roc is still missin
 
 ## One whole module
 
-A module of Safari Ride is one file of Roc. This chapter shows one from top to bottom.
+A module of Safari Ride is one file of Roc. This chapter shows one from top to bottom, and it starts with a line that doesn't compile. Here we try to add 7 to the ride's clock:
+
+{{fails clock_plus_seven}}
 
 New in this chapter:
 
 - Roc: opaque types, `is_eq : _`, `expect`, static dispatch
 - Modules: `Clock`
 
-This is the clock from the second box above, all of it.
+This is the module that stops that line, all of it.
 
 {{module Clock}}
 
@@ -80,11 +82,6 @@ That's one module of about eighty, and nothing yet says how the rest fit togethe
 ## The modules
 
 Safari Ride is about eighty modules of Roc. This chapter shows how they fit together, starting with the whole system, simplified.
-
-New in this chapter:
-
-- Roc: imports that can't form a cycle
-- Modules: `SafariApp`, `Scene`, `SceneDraw`, `CatSighting`
 
 An arrow points from a module to one it imports, so a module is composed of what it points at. Dashed boxes each stand for a family of modules. Roc doesn't allow import cycles, so nothing here can point back up.
 
@@ -120,9 +117,35 @@ digraph system {
 }
 ```
 
+New in this chapter:
+
+- Roc: imports that can't form a cycle
+- Modules: `SafariApp`, `Scene`, `SceneDraw`, `CatSighting`
+
 There are two halves. The ride is `Rider`, `Truck` and `World`, with `World` composing the route from its scenery and critters. It knows nothing of drawing. The view is everything that turns the ride into a picture: the sightings find what's in sight, and the drawing paints it. The dotted arrow is the view reading the ride, and no arrow goes the other way. `RideInstant` sits over both, holding one instant of the ride and stepping to the next, and the browser only sees `SafariApp`, which hands it a list of shapes each frame.
 
 ### The part that isn't Roc
+
+One tick across the line between JavaScript and Roc
+```dot
+digraph tick {
+  node [shape=box, fontname="Helvetica"];
+  fontname="Helvetica";
+  subgraph cluster_js {
+    label="JavaScript";
+    runner [label="keeps the clock,\ngathers the keys"];
+    paint [label="paints the canvas"];
+  }
+  subgraph cluster_roc {
+    label="Roc, compiled to wasm";
+    advance [label="the next step"];
+    frame [label="this frame's shapes"];
+  }
+  runner -> advance;
+  advance -> frame;
+  frame -> paint [label="  a list of shapes"];
+}
+```
 
 Safari Ride runs in a browser, and that takes a thin layer of JavaScript. The Roc compiles to wasm. Each step, the JS keeps the clock, gathers the keys, and calls into Roc. Roc answers with a list of shapes, and the JS paints them on a canvas. The JS knows nothing of cats, and the Roc knows nothing of canvases. The whole game is on the Roc side of that line, and the same app also runs natively. `canvas_apps/ARCHITECTURE.md` has the details, and the platform chapter comes back to it.
 
@@ -484,13 +507,15 @@ The top of the tree is two calls. `sky_top_color` is the one `Tour.sky_top_color
 
 ### Angles that can't be mixed up
 
-One trail on the diagram is left, the sun's place, and it starts at the bottom again.
+One trail on the diagram is left, the sun's place, and it needs angles. `Angle.Bearing` is a direction in the world and `Angle.Turn` is a change of direction. Here we pass a `Turn` where a `Bearing` is wanted:
+
+{{fails turn_as_bearing}}
 
 The sun is the one thing here that also depends on where the rider is looking. Two tags say the two answers, so there's no `null` and no off-screen sentinel value. A caller has to handle `OutOfView`, because `match` must cover every tag.
 
 🐾 {{code Sky.SunSighting}}
 
-Opaque types do the most work from here on. `Angle.Bearing` is a direction in the world and `Angle.Turn` is a change of direction. Both are floats underneath, but only the `Angle` module can build or open one. `sun_place` is the first code to want a plain number, because `r_tan` takes a float, and it's another caller of `sun_height_px`.
+Opaque types do the most work from here on. A `Bearing` and a `Turn` are both floats underneath, but only the `Angle` module can build or open one. `sun_place` is the first code to want a plain number, because `r_tan` takes a float, and it's another caller of `sun_height_px`.
 
 🌳 {{code Sky.sun_place from "scale =" to "y: Screen.horizon_y"}}
 
@@ -502,9 +527,7 @@ Its caller, `RideInstant.sun`, is short enough to read whole:
 
 🌳 {{code RideInstant.sun}}
 
-`turn_from_view.abs() >= visible_turn_limit` compares two `Turn`s. The code never touches radians until `sun_place` has to do trigonometry. Passing a `Turn` where a `Bearing` is wanted is a compile-time error:
-
-{{fails turn_as_bearing}}
+`turn_from_view.abs() >= visible_turn_limit` compares two `Turn`s. The code never touches radians until `sun_place` has to do trigonometry.
 
 That's every box on the diagram: one number goes in, and colours and a place for the sun come out, with nothing kept from one frame to the next.
 
@@ -635,6 +658,16 @@ The cat plays over beats rather than over a stretch of road because it has to fi
 
 ### What it looks like
 
+The two tracks of a crossing, in beats
+```dot
+digraph score {
+  node [shape=record, fontname="Helvetica"];
+  looks [label="looks|Stride and Rest\nto 10|Frozen\nto 34|Coil\nto 34.8|Flight\nto 36.8|Land\nto 37.8|Collapse"];
+  path [label="path|Line across\nto 10|StaysAt\nto 35|Arc\nto 37|StaysAt"];
+  looks -> path [style=invis];
+}
+```
+
 A timeline is data, so the cat's whole performance reads in one place, like a score. This half has two strands: the score, which is `Cat`'s, and the code that plays it, which is `Animation`'s. The score comes first, from its smallest function up.
 
 `spot_across` sits below `Cat`'s block, so it's private, and it's a single record. `Along.start`, the first place on a segment, is a value rather than a call, which leaves nothing of Safari Ride's being called.
@@ -692,6 +725,18 @@ Back at the top, nothing in `instant_at` is unknown any more.
 `crossing_stage(approach)` is the rule with the cat's numbers, `crossing_timeline(cat)` is the score, and `.instant` plays the one at the other. A `Stage` is all that passes between them.
 
 ### What it does to the rider
+
+The loop between the cat and the rider
+```dot
+digraph reaction_loop {
+  rankdir=LR;
+  node [shape=box, fontname="Helvetica"];
+  speed [label="the rider's speed"];
+  cat [label="where the cat\nhas got to"];
+  speed -> cat [label="  Cat.crossing_stage  "];
+  cat -> speed [label="  CrossingReaction  "];
+}
+```
 
 So far the cat only moves itself. What it does to the rider's speed and view is a separate question, and `CrossingReaction` answers it.
 
@@ -916,7 +961,17 @@ The family has the cat's shape. `BirdFlight` says what a bird does and imports n
 
 ### Two rules
 
-A rule turns where the rider is into a `Stage`. The cat's rule was `over_beats`, and the bird's is `over_gap`. The first argument of each is destructured in place, and both answer the same tag union. `over_gap` has a shorter job, so here it is first. `Fraction.clamp` is the right door because a rider far off gives a ratio well outside 0 to 1, and `<=` works on a `Fraction` because `Fraction` defines `is_lte`:
+A rule turns where the rider is into a `Stage`. The cat's rule was `over_beats`, and the bird's is `over_gap`. They say different things about the same road:
+
+| | `over_gap` | `over_beats` |
+|---|---|---|
+| It reads | The gap | The gap and the speed |
+| It starts | 60 metres off, always | Earlier for a faster rider |
+| It ends | 15 metres off, always | `buffer` metres short, always |
+| It's for | Something that reacts to how close the rider is | Something that has to finish in time |
+| A stopped rider | Leaves the bird hanging where the gap puts it | Holds the cat at the start of its crossing |
+
+The first argument of each is destructured in place, and both answer the same tag union. `over_gap` has a shorter job, so here it is first. `Fraction.clamp` is the right door because a rider far off gives a ratio well outside 0 to 1, and `<=` works on a `Fraction` because `Fraction` defines `is_lte`:
 
 {{code Animation.over_gap}}
 
@@ -927,16 +982,6 @@ The bird calls it with two constants, and passes no speed, since this rule doesn
 Beside it, again, is the cat's rule. Its second argument is the whole `Approach`:
 
 {{code Animation.over_beats}}
-
-The two say different things about the same road:
-
-| | `over_gap` | `over_beats` |
-|---|---|---|
-| It reads | The gap | The gap and the speed |
-| It starts | 60 metres off, always | Earlier for a faster rider |
-| It ends | 15 metres off, always | `buffer` metres short, always |
-| It's for | Something that reacts to how close the rider is | Something that has to finish in time |
-| A stopped rider | Leaves the bird hanging where the gap puts it | Holds the cat at the start of its crossing |
 
 The extra case in `over_beats` is there because its ratio divides by a stretch that a stopped rider makes zero. `over_gap` divides only by constants, so it has no such case. That hanging bird is real: nothing in `over_gap` knows a bird can't hover. The rider never drops below 1.1 metres a step inside a bird's 45 metres on this route, so it doesn't come up.
 
@@ -949,6 +994,16 @@ Now the one-liners, side by side. A bird's and a cat's `instant_at` have the sam
 Each is a rule's `Stage` handed to a timeline's `instant`. Neither half knows which other half it's been paired with. Call this *rule and score*: one function says how far along things are, and one piece of data says what that looks like. It's composable in the plain sense, because a third critter can take either rule with a timeline of its own, and a new rule would work with both timelines already written.
 
 ### A score one beat long
+
+The two tracks of a flight, in shares of one beat
+```dot
+digraph flight_score {
+  node [shape=record, fontname="Helvetica"];
+  looks [label="looks|Side, wings beating\nto 0.12|Away, wings beating\nto 0.88|Diving"];
+  path [label="path|Arc, from tree to tree"];
+  looks -> path [style=invis];
+}
+```
 
 `BirdFlight` sets the length of a flight to one beat, so that a cut on the timeline is simply a share of the flight:
 
@@ -1135,6 +1190,16 @@ digraph throttle {
 }
 ```
 
+The chain of limits
+```dot
+digraph limits {
+  rankdir=LR;
+  node [shape=box, fontname="Helvetica"];
+  bend_brake -> crossing_limit -> pig_limit -> shoulder_brake;
+  shoulder_brake -> allowed_speed;
+}
+```
+
 The rider has several reasons to slow down, and they don't know about each other. A turn is coming. A cat is in the lane. There's a pig to look at. The road is about to run out. `Throttle` writes them as a line of limits. An `Acceleration` goes in, a limit lets it through or lowers it, and the next limit gets what's left:
 
 {{code Throttle.acceleration from "a2 = crossing_limit(" to "a4 = shoulder_brake(state, a3)"}}
@@ -1275,6 +1340,10 @@ Two families share `Angle` and don't otherwise meet: `Geom`, `Chain`, `Camera` a
 
 ### Numbers with units
 
+Here we add a speed to a length:
+
+{{fails speed_as_distance}}
+
 Seventeen small opaque types run through Safari Ride, and the tour has met most of them one at a time. Set side by side, they're a system:
 
 | Type | Under it | What it measures |
@@ -1307,7 +1376,11 @@ The units run from the road to the screen. Once a point is measured from the rid
 
 ### One record per space
 
-A point in Safari Ride is in one of four spaces, and the record's fields say which. The points are plain records. They don't need to be opaque, since a record's type is its fields, and a `RoadPoint`'s fields are opaque already.
+A point in Safari Ride is in one of four spaces, and the record's fields say which. Here we hand a point measured from the rider to a function that wants a point on the road:
+
+{{fails rider_point_as_road_point}}
+
+The points are plain records. They don't need to be opaque, since a record's type is its fields, and a `RoadPoint`'s fields are opaque already.
 
 {{code Geom.RoadPoint}}
 
@@ -1317,7 +1390,7 @@ A point in Safari Ride is in one of four spaces, and the record's fields say whi
 
 {{code Screen.Point}}
 
-Passing a `RoadPoint` where a `RiderPoint` is wanted is a compile-time error, and the message names the fields. [check: a `fails/` program would prove this, and show the message.] Structural records give *one record per space* for nothing: `along` and `across` are on the road, `right` and `forward` are from the rider, and `x` and `y` are pixels. Reading any function, the field names say where it is.
+Structural records give *one record per space* for nothing: `along` and `across` are on the road, `right` and `forward` are from the rider, and `x` and `y` are pixels. Reading any function, the field names say where it is.
 
 Going from the road to the rider is a translation and a rotation, and this is the function where the opaque places give way to floats. `distance_from` makes the translation, and the rotation is written the way it would be on paper:
 
@@ -1342,6 +1415,10 @@ The view widens as the rider leans. One `Fraction` goes in, and a focal length c
 {{code Lens.cam_focal}}
 
 ### Round the bends
+
+```widget route
+The route again. This map comes from adding up the turns, which the ride itself never does.
+```
 
 The road has no global coordinates. A point on it is measured within one segment, `along` and `across`, and nothing in the game holds a world coordinate for it. Each segment knows only its length and the turn at its end. `World.plans` is nineteen records like this one, and it reads like configuration: a list of plain values, with the tags declared by `SegmentPlan` and an opaque `Distance` and `Turn` built from their units. It's checked like any other Roc, so a misspelled tag is a compile-time error.
 
@@ -1378,6 +1455,21 @@ A fold's step is a plain function of the list so far and one edge:
 ### Rehearsal
 
 The rider has no steering wheel. Nothing tells it where to go. Each step, it has to choose a lean, and it does that by working out what would happen.
+
+The calls of one rehearsal
+```dot
+digraph rehearsal {
+  rankdir=LR;
+  node [shape=box, fontname="Helvetica"];
+  decide [label="Rider.decide"];
+  best [label="LeanSearch.best_lean"];
+  project [label="Coast.project"];
+  advance [label="Bike.advance"];
+  decide -> best;
+  best -> project [label="  12 tries  "];
+  project -> advance [label="  a step at a time  "];
+}
+```
 
 The widget at the top of this chapter is this section at work.
 
@@ -1431,11 +1523,6 @@ Top to bottom, then: a rider chooses a lean by simulating physics, and the physi
 
 There are no animals in this chapter. It's about what happens to a program of this size when something has to change, which is the question a reader who cares whether Roc scales should ask.
 
-New in this chapter:
-
-- Roc: `expect` with its data beside it, `crash` as an assertion, a fold whose direction matters
-- Modules: `RasterFrame`, `ShapesFrame`, `StepBack`, `SafariFrame`, `ShapesPixels`
-
 The answer rests on one fact from the ride instant chapter. Three fields decide a frame, and a frame is a value. So a frame can be compared, exactly, with the same frame from an hour ago.
 
 | Step | What the frame shows | Hash of its pixels | Shapes |
@@ -1451,6 +1538,11 @@ The answer rests on one fact from the ride instant chapter. Three fields decide 
 {{proof row 9000 Past the end, on the second lap}}
 
 Each row is one frame of the ride. Run the ride to that step today and you get that hash and that many shapes, and a change to the program has to leave every row as it is. This page's numbers come from the same file the check reads, `gates/proof.expected`.
+
+New in this chapter:
+
+- Roc: `expect` with its data beside it, `crash` as an assertion, a fold whose direction matters
+- Modules: `RasterFrame`, `ShapesFrame`, `StepBack`, `SafariFrame`, `ShapesPixels`
 
 The proof tools and what they read
 ```dot
@@ -1548,11 +1640,6 @@ All of that runs without a screen. The tour still hasn't said how a list of shap
 
 The platform is what puts the list of shapes on a screen: the host, the JavaScript, and the modules every canvas app shares. Safari Ride has very little to say about it, on purpose. "The part that isn't Roc", in the modules chapter, gave the outline, and this chapter adds the code.
 
-New in this chapter:
-
-- Roc: an app as a record, functions in record fields, `var` and `while`, `roc glue`
-- Modules: `WasmApp`, `CanvasApp`, `Input`, `Shapes`
-
 The modules around `SafariApp`
 ```dot
 digraph platform {
@@ -1575,13 +1662,18 @@ digraph platform {
 }
 ```
 
+New in this chapter:
+
+- Roc: an app as a record, functions in record fields, `var` and `while`, `roc glue`
+- Modules: `WasmApp`, `CanvasApp`, `Input`, `Shapes`
+
 `WasmApp`, `CanvasApp`, `Input` and `Shapes` are in `lib/`, and they're the same for every canvas app.
 
 ### An app is a value
 
-An app here is a record, handed to a runner. `CanvasApp(model)` has a type parameter for whatever the app keeps. Safari Ride's model is its `Tour` and a pause flag, and the app reads like configuration, because almost all of it is:
-
 {{code SafariApp.canvas_app}}
+
+An app here is a record, handed to a runner. `CanvasApp(model)` has a type parameter for whatever the app keeps. Safari Ride's model is its `Tour` and a pause flag, and the app reads like configuration, because almost all of it is.
 
 `CanvasApp.untimed_advance(step)` takes a function and answers a function, the same one with a seconds argument to ignore. Safari Ride counts steps, and this is the place that says so: a runner offers the seconds, and they go nowhere.
 
@@ -1609,6 +1701,21 @@ The rider's lean is one of those marks. The whole picture banks into a turn, bac
 
 ### Where the effects went
 
+One tick, in order
+```dot
+digraph one_tick {
+  rankdir=LR;
+  node [shape=box, fontname="Helvetica"];
+  pace [label="canvas_app_runner.js\npaces the clock"];
+  advance [label="advance\n(Roc)", style=bold];
+  frame [label="frame\n(Roc)", style=bold];
+  read [label="roc_glue.js\nreads the shapes"];
+  paint [label="shapes_canvas.js\npaints them"];
+  release [label="release\n(Roc)", style=bold];
+  pace -> advance -> frame -> read -> paint -> release;
+}
+```
+
 Early on, the tour said the game has no effectful functions. It's fair to ask where they went, and the answer is that they never got as far as Roc. The wasm platform asks for a record of functions over a boxed model:
 
 `init`, `advance`, `frame`, `release`, `sounds`, `width`, `height` and `fps`, and for sound, which Safari Ride leaves empty, `tone_count`, `tone_freq` and `tone_ms`. Every one has a thin arrow, `->`. The host in `web/platform/host.zig` keeps the box, and all that crosses is numbers and a list of shapes. Wasm's edge has no records, so the input is flattened into seven numbers, and `Input.of` rebuilds it. `roc glue` generates `roc_glue.js`, which knows the layout of a frame in wasm memory, from `web/platform/Frame.roc`, so `roc_glue.js` is never edited.
@@ -1624,6 +1731,27 @@ That's the last of the parts. Each has been seen alone, and the loop from the st
 ## Zooming back out
 
 Safari Ride is a loop. It designs a world once, and each time the clock ticks, it moves what moves, finds what's near enough to see, and draws it. Every box on that loop has now been opened.
+
+```widget ride
+The ride again, with nothing in it left unexplained.
+```
+
+The loop, and the chapters that opened it
+```dot
+digraph opened {
+  node [shape=box, fontname="Helvetica"];
+  world [label="design the world (once)\nThe world, The road"];
+  tick [label="the clock ticks\nOne whole module"];
+  move [label="move the rider and the truck\nThe stepped things, The math layer"];
+  look [label="look around\nThe modules, The cat, The bird"];
+  draw [label="draw it against the backdrop\nThe sky, The platform"];
+  world -> tick;
+  tick -> move;
+  move -> look;
+  look -> draw;
+  draw -> tick [label="  next step"];
+}
+```
 
 *[This chapter ties the tour together once the stepped things, the proof and the platform are written. It returns to the flipbook and the first diagram: the clock steps, and everything composes from three stored fields.]*
 
