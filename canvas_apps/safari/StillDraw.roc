@@ -78,12 +78,12 @@ StillDraw :: [].{
 	## its still mirrored. A critter less than a pixel tall isn't drawn.
 	draw : Cutouts.Cutout, Pixels -> List(Shapes.Shape)
 	draw = |critter, cam_focal| {
-		on_screen = |height| Camera.project(
+		projected = |height| Camera.project(
 			{ right: critter.right, forward: critter.forward, height },
 			cam_focal,
 		)
-		feet = on_screen(Distance.zero)
-		height_px = feet.y.minus(on_screen(critter.height).y)
+		feet = projected(Distance.zero)
+		height_px = feet.y.minus(projected(critter.height).y)
 		if height_px < Pixels.of(1.0) {
 			[]
 		} else {

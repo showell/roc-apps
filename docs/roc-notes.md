@@ -82,7 +82,7 @@ reduced program, `findings/` holds it.
   `Dec`.
 - F64 has no `exp` or `log`; `F64.e.pow(x)` is its `exp`. It rounds only into an integer type (`round_to_i64_try`, `floor_to_i64_try`, `ceiling_to_i64_try`), and `round` is `floor(x + 0.5)`, so 0.49999999999999994 rounds to 1.
 - F64's `sin`, `cos`, `tan`, `atan`, `atan2` and `pow` are Roc's own fdlibm port, so they give the same bits on every target and backend.
-- A helper defined outside a module's `X :: [].{ }` block must qualify the block's members (`TreeDraw.on_screen`); a bare name is "not in scope".
+- A helper defined outside a module's `X :: [].{ }` block must qualify the block's members (`TreeDraw.tree_on_screen`); a bare name is "not in scope".
 - `List.reverse` doesn't exist at the 09-22 nightly; `fold_rev` with `append` does the job.
 - A plain record literal type-checks where a nominal record (`P := { x : F64, y : F64 }`) is expected, even from another module; only a different nominal type is refused. So a nominal record stops a mix-up between two nominal types, not a hand-written literal. Use an opaque type (`::`) where no literal may pass. (Checked at the 09-22 nightly, 2026-11-03.)
 - `List.set` answers a `Try`. `List.sort_with` takes a comparator answering

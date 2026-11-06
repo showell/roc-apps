@@ -77,7 +77,7 @@ TreeDraw :: [].{
 			forward: tree.forward,
 			height: tree.conifer.height(),
 		}
-		screen_tree = on_screen(point, cam_focal)
+		screen_tree = tree_on_screen(point, cam_focal)
 		trunk = if nearer_trees < Detail.round_trunk_limit {
 			Shaded
 		} else {
@@ -95,8 +95,8 @@ TreeDraw :: [].{
 
 	## Where a tree whose foot is at `point`, and `point.height` tall, is on the
 	## screen, through a lens of focal length `cam_focal`.
-	on_screen : Geom.RaisedPoint, Pixels -> TreeDraw.TreeOnScreen
-	on_screen = |point, cam_focal| {
+	tree_on_screen : Geom.RaisedPoint, Pixels -> TreeDraw.TreeOnScreen
+	tree_on_screen = |point, cam_focal| {
 		base = Camera.project({ ..point, height: Distance.zero }, cam_focal)
 		top = Camera.project(point, cam_focal)
 		height_px = base.y.minus(top.y)
@@ -408,7 +408,7 @@ expect TreeDraw.crown_of(Distance.metres(199.0)) == Cones({ shade: Fraction.zero
 expect TreeDraw.crown_of(Distance.metres(200.0)) == Triangles
 
 sample_on_screen : TreeDraw.TreeOnScreen
-sample_on_screen = TreeDraw.on_screen(
+sample_on_screen = TreeDraw.tree_on_screen(
 	{
 		right: Distance.metres(0.0),
 		forward: Distance.metres(2.0),

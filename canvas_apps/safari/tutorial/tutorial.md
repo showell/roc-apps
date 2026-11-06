@@ -277,7 +277,7 @@ So the job is a short chain of signatures:
 | Job | Function | Its type |
 |---|---|---|
 {{types row Conifer.height Know how tall it is}}
-{{types row TreeDraw.on_screen Find it on the screen}}
+{{types row TreeDraw.tree_on_screen Find it on the screen}}
 {{types row TreeDraw.draw Paint it}}
 
 ### The functions
@@ -290,9 +290,9 @@ The top of it is `draw`. It picks a crown, and hands the rest to `draw_crowned`,
 
 `nearer_trees` and `crown` are for near trees, and they can wait. For now, every tier is a triangle.
 
-`on_screen` makes two calls to `Camera.project`, one for the tree's foot and one for its tip. The difference between them is how tall the tree looks.
+`tree_on_screen` makes two calls to `Camera.project`, one for the tree's foot and one for its tip. The difference between them is how tall the tree looks.
 
-{{code TreeDraw.on_screen}}
+{{code TreeDraw.tree_on_screen}}
 
 The trunk and the crown split the tree's height between them:
 

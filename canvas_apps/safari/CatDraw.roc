@@ -14,16 +14,16 @@ CatDraw :: [].{
 	## A cat on screen, its feet where it is.
 	draw : CatSighting, Pixels -> List(Shapes.Shape)
 	draw = |cat, cam_focal| {
-		on_screen = |height| Camera.project(
+		projected = |height| Camera.project(
 			{ right: cat.right, forward: cat.forward, height },
 			cam_focal,
 		)
-		feet = on_screen(cat.lift)
+		feet = projected(cat.lift)
 		StillDraw.draw_still(
 			{
 				feet,
 				flip: AsDrawn,
-				height_px: feet.y.minus(on_screen(cat.lift.plus(Cat.cat_height)).y),
+				height_px: feet.y.minus(projected(cat.lift.plus(Cat.cat_height)).y),
 			},
 			CatStills.pose_polygons(cat.pose),
 		)
