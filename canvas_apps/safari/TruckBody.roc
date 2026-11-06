@@ -29,7 +29,9 @@ TruckBody :: [].{
 	draw : TruckShape.TruckInView -> List(Shapes.Shape)
 	draw = |truck|
 		DepthSort.sort_by(faces(truck), |face| face.depth)
-			.join_map(|face| TruckShape.fill(truck, { color: face.color, corners: face.corners }))
+			.join_map(
+				|face| TruckShape.polygon(truck, { color: face.color, corners: face.corners }),
+			)
 
 	## A face of `color` with these corners.
 	face : I64, List(Geom.RaisedPoint) -> TruckBody.TruckFace
