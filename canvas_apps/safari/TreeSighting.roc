@@ -5,7 +5,7 @@ import DepthSort
 import Distance
 import Chain
 import Geom
-import SceneLimits
+import Detail
 import Scenery
 
 ## A tree to draw: where it stands in the rider's view, its height and
@@ -55,7 +55,7 @@ TreeSighting := {
 		height_px = (tree.height.to_metres() / seen.forward) * view.cam_focal
 		if seen.forward <= Geom.near_plane {
 			[]
-		} else if height_px < SceneLimits.min_scenery_px {
+		} else if height_px < Detail.min_scenery_px {
 			[]
 		} else {
 			[

@@ -7,7 +7,7 @@ import DepthSort
 import Distance
 import Chain
 import Geom
-import SceneLimits
+import Detail
 
 ## A bird placed in the rider's view: where it is, how high its feet are,
 ## and how it looks.
@@ -71,7 +71,7 @@ bird_in_view = |view, { position, instant }| {
 	height_px = BirdSighting.height_px({ forward: seen.forward, cam_focal: view.cam_focal })
 	if seen.forward <= Geom.near_plane {
 		[]
-	} else if height_px < SceneLimits.min_scenery_px {
+	} else if height_px < Detail.min_scenery_px {
 		[]
 	} else {
 		[

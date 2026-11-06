@@ -6,7 +6,7 @@ import DepthSort
 import Distance
 import Chain
 import Geom
-import SceneLimits
+import Detail
 import Speed
 
 ## A cat to draw: where it stands in the rider's view, its height, its
@@ -71,7 +71,7 @@ cat_in_view = |view, { position, crossing, speed }| {
 	height_px = (crossing.height.to_metres() / seen.forward) * view.cam_focal
 	if seen.forward <= Geom.near_plane {
 		[]
-	} else if height_px < SceneLimits.min_scenery_px {
+	} else if height_px < Detail.min_scenery_px {
 		[]
 	} else {
 		[

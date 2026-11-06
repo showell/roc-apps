@@ -14,7 +14,7 @@ import Fraction
 import Chain
 import GuardRail
 import Scene
-import SceneLimits
+import Detail
 import Tower
 import TowerSighting
 import Tree
@@ -42,13 +42,13 @@ SceneDraw :: [].{
 		trees.count_if(|tree| tree.forward < forward).to_u32_wrap()
 
 	## How much a crown is shaded at distance `forward`: fully at the camera,
-	## falling evenly to none at SceneLimits.crown_shade_dist.
+	## falling evenly to none at Detail.crown_shade_reach.
 	crown_shade : F64 -> Fraction
-	crown_shade = |forward| Fraction.clamp((1.0 - (forward / SceneLimits.crown_shade_dist)))
+	crown_shade = |forward| Fraction.clamp((1.0 - (forward / Detail.crown_shade_reach)))
 
 	## A tree, drawn in more detail the nearer it is: its trunk is round when
 	## few of `trees` are nearer, and its crown is cones when it is nearer
-	## than SceneLimits.detail_dist.
+	## than Detail.full_detail_reach.
 	draw_tree : TreeSighting, { trees : List(TreeSighting), cam_focal : F64 } -> List(Shapes.Shape)
 	draw_tree = |tree, { trees, cam_focal }| {
 		nearer_trees = SceneDraw.nearer_tree_count(trees, tree.forward)
@@ -63,7 +63,7 @@ SceneDraw :: [].{
 			} else {
 				SharpCorners
 			},
-			crown: if tree.forward < SceneLimits.detail_dist {
+			crown: if tree.forward < Detail.full_detail_reach {
 				Cones
 			} else {
 				Triangles
@@ -171,8 +171,8 @@ draw_truck = |view, truck_at|
 		NoTruck => crash "SceneDraw.draw_truck: the truck is in the depth order only in view"
 	}
 
-expect SceneLimits.crown_shade_dist == 80.0
-expect SceneLimits.detail_dist == 200.0
+expect Detail.crown_shade_reach == 80.0
+expect Detail.full_detail_reach == 200.0
 
 tree_at : F64 -> TreeSighting
 tree_at = |forward| {
