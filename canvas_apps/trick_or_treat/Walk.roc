@@ -110,7 +110,7 @@ Walk :: [].{
 	bobs_per_metre = 4.0
 
 	eye : I64 -> F64
-	eye = |tick| 1.05 + stride(tick) * (travelled(tick) * bobs_per_metre * tau).sin() * 0.009
+	eye = |tick| 1.05 + stride(tick) * (travelled(tick) * bobs_per_metre * F64.tau).sin() * 0.009
 
 	# How much walking is going on, from the walking itself.
 	stride : I64 -> F64
@@ -157,6 +157,4 @@ Walk :: [].{
 	smooth : F64 -> F64
 	smooth = |u| u * u * (3.0 - 2.0 * u)
 
-	tau : F64
-	tau = 6.283185307179586
 }

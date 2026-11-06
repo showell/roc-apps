@@ -63,12 +63,7 @@ Particles :: [].{
 	# thousands of them onto a handful of trajectories.
 	unit_hash : I64, I64 -> F64
 	unit_hash = |index, salt|
-		I64.to_f64(rem(index * (2654435761 + salt * 40503) + salt * 7919 + 1, 65521)) / 65521.0
-
-	# This Roc has no remainder, and the rest of this repository does it the
-	# same way (see Trees.roc).
-	rem : I64, I64 -> I64
-	rem = |a, b| a - I64.div_trunc_by(a, b) * b
+		I64.to_f64((index * (2654435761 + salt * 40503) + salt * 7919 + 1).rem_by(65521)) / 65521.0
 
 	initial : I64, List(Particles.Particle) -> List(Particles.Particle)
 	initial = |i, acc|
@@ -90,7 +85,7 @@ Particles :: [].{
 						life: seed * 2.8,
 						seed: seed,
 						phase: unit_hash(i, 1),
-						tint: rem(i, 4),
+						tint: i.rem_by(4),
 					},
 				),
 			)

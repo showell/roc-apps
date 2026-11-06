@@ -19,9 +19,6 @@ import lib.Shapes
 import lib.Brush
 
 Skeleton :: [].{
-	tau : F64
-	tau = 6.283185307179586
-
 	bone : Brush.Rgba
 	bone = Brush.opaque(0xf2f0e6)
 	night : Brush.Rgba

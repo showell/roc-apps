@@ -51,6 +51,6 @@ Random :: [].{
 		# The high bits are the well-mixed ones in an LCG, so the draw comes
 		# from the top of the word rather than the bottom.
 		drawn = U64.to_i64_wrap(U64.shr_wrap(turned.bits, 8))
-		{ value: lo + I64.to_i32_wrap(drawn - I64.div_trunc_by(drawn, span) * span), state: turned }
+		{ value: lo + I64.to_i32_wrap(drawn.rem_by(span)), state: turned }
 	}
 }

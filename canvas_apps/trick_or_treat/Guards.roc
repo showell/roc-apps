@@ -40,23 +40,20 @@ Guards :: [].{
 	lag_frames : I64
 	lag_frames = 30
 
-	tau : F64
-	tau = 6.283185307179586
-
 	# All six, farthest first, so a nearer one paints over it. `now` is where
 	# the child is and `lag` is where they were; `tilt` is how far off facing
 	# the child each one stands, which goes to nothing while the child is
 	# stopped.
 	shapes : View.View, I64, F64, F64, F64 -> List(Shapes.Shape)
 	shapes = |v, tick, now, lag, tilt| {
-		beat = I64.to_f64(tick) / dance_frames * tau
+		beat = I64.to_f64(tick) / dance_frames * F64.tau
 		var $out = List.with_capacity(120)
 		var $k = files - 1
 		while $k >= 0 {
 			z = first_at + I64.to_f64($k) * spacing
-			phase = I64.to_f64($k) * tau / 4.0
+			phase = I64.to_f64($k) * F64.tau / 4.0
 			$out = List.concat($out, one(v, 0.0 - flank, z, now, lag, beat + phase, tilt, 1.0))
-			$out = List.concat($out, one(v, flank, z, now, lag, beat + phase + tau / 2.0, tilt, 0.0 - 1.0))
+			$out = List.concat($out, one(v, flank, z, now, lag, beat + phase + F64.tau / 2.0, tilt, 0.0 - 1.0))
 			$k = $k - 1
 		}
 		$out
