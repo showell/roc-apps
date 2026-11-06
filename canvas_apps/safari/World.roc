@@ -368,8 +368,7 @@ built_segment = |plan, index| {
 			CatCrosses => CatCrosses(
 				Cat.crossing({
 					road_half_width: Scenery.road_half_width,
-					tree_offset: Trees.tree_road_offset,
-					tree_along: nearest_tree_ahead(trees, Cat.cat_along),
+					tree: nearest_tree_ahead(trees, Cat.cat_along),
 				}),
 			)
 			BirdHere => BirdFlight.crossing_among(trees)
@@ -386,32 +385,13 @@ built_segment = |plan, index| {
 	}
 }
 
-## The nearest tree along the road at or past `along`, on the right; `along`
-## itself when there is none. A segment's cat waits by it.
-nearest_tree_ahead : List(Trees.Tree), Along -> Along
-nearest_tree_ahead = |trees, along| {
-	nearest = trees.fold(
-		NoTreeYet,
-		|best, tree|
-			if tree.across > Across.middle and tree.along >= along {
-				match best {
-					NearestAlong(nearest_along) =>
-						if tree.along < nearest_along {
-							NearestAlong(tree.along)
-						} else {
-							best
-						}
-					NoTreeYet => NearestAlong(tree.along)
-				}
-			} else {
-				best
-			},
-	)
-	match nearest {
-		NearestAlong(nearest_along) => nearest_along
-		NoTreeYet => along
-	}
-}
+## The nearest tree on the right at or past `along`, which a segment's cat waits
+## by. A segment's trees are planted in order along the road, so the first found
+## is the nearest.
+nearest_tree_ahead : List(Trees.Tree), Along -> Trees.Tree
+nearest_tree_ahead = |trees, along|
+	trees.find_first(|tree| tree.across > Across.middle and tree.along >= along)
+		?? crash "World.nearest_tree_ahead: a segment with a cat is long enough to have its tree"
 
 expect World.plans.len() == 19
 
@@ -511,6 +491,26 @@ expect seg(6).trees.len() == 74
 expect seg(18).trees.len() == 14
 expect crossing_at(3).mid_across.to_metres() == 0.816
 expect crossing_at(18).mid_across.to_metres() == 0.816
+# Each cat starts behind a tree that is really there, and just past it.
+expect
+	[3, 9, 18].all(
+		|index| {
+			crossing = crossing_at(index)
+			seg(index).trees.any(
+				|tree|
+					tree.along.plus(Cat.cat_beyond_tree) == crossing.along
+						and tree.across.plus(Cat.cat_behind_tree) == crossing.start_across,
+			)
+		},
+	)
+
+# On a gold segment the pairs differ. The tree found is whichever comes next, near
+# the road or far from it, and never one on the left.
+expect nearest_tree_ahead(seg(3).trees, Cat.cat_along).across == Across.metres(3.5)
+expect nearest_tree_ahead(seg(3).trees, Along.metres(90.0)).across == Across.metres(8.0)
+expect nearest_tree_ahead(seg(3).trees, Along.metres(90.0)).along == Along.metres(96.0)
+expect nearest_tree_ahead(seg(3).trees, Along.metres(96.0)).along == Along.metres(96.0)
+expect nearest_tree_ahead(seg(3).trees, Along.metres(96.5)).along == Along.metres(126.0)
 expect crossing_at(3).height.to_metres() == 1.7
 expect crossing_at(18).height.to_metres() == 1.7
 

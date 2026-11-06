@@ -3,6 +3,7 @@
 ## front of the herd, by the trees.
 import Across
 import Along
+import Conifer
 import Distance
 import Scenery
 import Trees
@@ -63,7 +64,7 @@ Cows :: [].{
 	bull_of = |bull|
 		match bull {
 			WithBull => {
-				tree_line = Scenery.road_half_width.plus(Trees.tree_road_offset)
+				tree_line = Trees.distance_from_middle(Conifer.BigGreen)
 				bull_middle = tree_line.plus(bull_height.divided_by(2.0))
 				[
 					{
