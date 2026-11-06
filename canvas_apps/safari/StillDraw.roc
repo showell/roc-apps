@@ -101,11 +101,12 @@ StillDraw :: [].{
 
 ## A still's gradient is linear when its kind is 1, and radial otherwise.
 gradient_shape : Stills.StillGradient -> [Linear, Radial]
-gradient_shape = |gradient| if gradient.kind == 1 {
-	Linear
-} else {
-	Radial
-}
+gradient_shape = |gradient|
+	if gradient.kind == 1 {
+		Linear
+	} else {
+		Radial
+	}
 
 ## A still's gradient colours and their offsets, as Paint takes them.
 stops_of : Stills.StillGradient -> Paint.ColorStops

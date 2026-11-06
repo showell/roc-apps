@@ -1,5 +1,5 @@
 ## Throttle decides how hard the rider speeds up or brakes. The acceleration
-## passes through a chain of gates, each of which can only lower it.
+## passes through a chain of limits, each of which can only lower it.
 import Acceleration
 import Along
 import Angle
@@ -51,23 +51,23 @@ Throttle :: [].{
 
 	## The acceleration `a`, or none while the segment's crossing says the rider
 	## may not accelerate. It stops the rider speeding up, and never brakes.
-	crossing_gate : RiderState,
+	crossing_limit : RiderState,
 	{
 		segment : World.Segment,
 		offered_acceleration : Acceleration,
 	} -> Acceleration
-	crossing_gate = |state, { segment: seg, offered_acceleration: a }|
+	crossing_limit = |state, { segment: seg, offered_acceleration: a }|
 		match CrossingReaction.reaction_to(seg, state).throttle {
 			NoAcceleration if a > Acceleration.steady => Acceleration.steady
 			NoAcceleration | MayAccelerate => a
 		}
 
-	pig_gate : RiderState,
+	pig_limit : RiderState,
 	{
 		segment : World.Segment,
 		offered_acceleration : Acceleration,
 	} -> Acceleration
-	pig_gate = |state, { segment: seg, offered_acceleration: a }| {
+	pig_limit = |state, { segment: seg, offered_acceleration: a }| {
 		b = Gaze.pig_gaze_brake(state, seg)
 		if b.is_gawking {
 			if b.acceleration < a {
@@ -84,7 +84,7 @@ Throttle :: [].{
 	brake_decay = 20.0
 
 	## The acceleration `a`, unless a coast from here leaves the road; then the
-	## brake for the shoulder it reaches. One of the gates `acceleration`
+	## brake for the shoulder it reaches. One of the limits `acceleration`
 	## passes the acceleration through in turn.
 	shoulder_brake : RiderState, Acceleration -> Acceleration
 	shoulder_brake = |state, a|
@@ -191,8 +191,8 @@ Throttle :: [].{
 			} else {
 				a0
 			}
-		a2 = crossing_gate(state, { segment: seg, offered_acceleration: a1 })
-		a3 = pig_gate(state, { segment: seg, offered_acceleration: a2 })
+		a2 = crossing_limit(state, { segment: seg, offered_acceleration: a1 })
+		a3 = pig_limit(state, { segment: seg, offered_acceleration: a2 })
 		a4 = shoulder_brake(state, a3)
 		allowed_speed(
 			state,
@@ -252,19 +252,19 @@ expect {
 	fast < slow
 }
 
-## What the crossing gate lets through for a rider at `along` on `segment`.
-gate_at : { segment : World.Segment, along : F64 }, F64 -> F64
-gate_at = |{ segment, along }, offered|
-	Throttle.crossing_gate(
+## What the crossing limit lets through for a rider at `along` on `segment`.
+limit_at : { segment : World.Segment, along : F64 }, F64 -> F64
+limit_at = |{ segment, along }, offered|
+	Throttle.crossing_limit(
 		centred_rider(along, 0.3),
 		{ segment, offered_acceleration: Acceleration.metres_a_step_each_step(offered) },
 	).to_metres_a_step_each_step()
 
-expect gate_at({ segment: first_segment, along: 0.0 }, 0.01) == 0.01
-expect gate_at({ segment: first_segment, along: 0.0 }, -5.0) == -5.0
-expect gate_at({ segment: cat_segment, along: 120.0 }, 0.01) == 0.0
-expect gate_at({ segment: cat_segment, along: 120.0 }, -5.0) == -5.0
-expect gate_at({ segment: cat_segment, along: 0.0 }, 0.01) == 0.01
+expect limit_at({ segment: first_segment, along: 0.0 }, 0.01) == 0.01
+expect limit_at({ segment: first_segment, along: 0.0 }, -5.0) == -5.0
+expect limit_at({ segment: cat_segment, along: 120.0 }, 0.01) == 0.0
+expect limit_at({ segment: cat_segment, along: 120.0 }, -5.0) == -5.0
+expect limit_at({ segment: cat_segment, along: 0.0 }, 0.01) == 0.01
 
 ## Throttle doesn't import Distance or Across, so these places and lengths come
 ## from what it does see.

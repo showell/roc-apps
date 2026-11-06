@@ -85,19 +85,21 @@ Paint :: [].{
 			[first, .. as rest] => {
 				min_x: rest.fold(
 					first,
-					|least, x| if x < least {
-						x
-					} else {
-						least
-					},
+					|least, x|
+						if x < least {
+							x
+						} else {
+							least
+						},
 				),
 				max_x: rest.fold(
 					first,
-					|most, x| if x > most {
-						x
-					} else {
-						most
-					},
+					|most, x|
+						if x > most {
+							x
+						} else {
+							most
+						},
 				),
 			}
 			[] => crash "Paint.x_span: a polygon has a point"

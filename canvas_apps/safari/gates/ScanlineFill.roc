@@ -108,13 +108,14 @@ WindingWalk : { winding : I64, spans : List(RowSpan) }
 row_edge_crossings : List(Edge), F64 -> List(EdgeCrossing)
 row_edge_crossings = |edges, y|
 	edges.join_map(|edge| edge_crossing(edge, y)).sort_with(
-		|a, b| if a.x < b.x {
-			Before
-		} else if a.x > b.x {
-			After
-		} else {
-			Same
-		},
+		|a, b|
+			if a.x < b.x {
+				Before
+			} else if a.x > b.x {
+				After
+			} else {
+				Same
+			},
 	)
 
 ## Where the row at `y` crosses this one edge, if it does.

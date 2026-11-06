@@ -227,11 +227,12 @@ Tower :: [].{
 		}
 
 	sight_of : Geom.RaisedPoint -> [InView, BehindCamera]
-	sight_of = |point| if point.forward >= Geom.near_plane {
-		InView
-	} else {
-		BehindCamera
-	}
+	sight_of = |point|
+		if point.forward >= Geom.near_plane {
+			InView
+		} else {
+			BehindCamera
+		}
 
 	## Where the line from `from` to `to` crosses the near plane.
 	cut_at_near : { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> Geom.RaisedPoint
@@ -304,19 +305,21 @@ Tower :: [].{
 	## the earth has hidden.
 	rings : Tower.TowerInView -> List(Shapes.Shape)
 	rings = |tower| ring_heights_from(storey_height).join_map(
-		|h| if h <= tower.sunk {
-			[]
-		} else {
-			ring(tower, h)
-		},
+		|h|
+			if h <= tower.sunk {
+				[]
+			} else {
+				ring(tower, h)
+			},
 	)
 
 	ring_heights_from : F64 -> List(F64)
-	ring_heights_from = |h| if h >= tower_height {
-		[]
-	} else {
-		[h].concat(ring_heights_from((h + storey_height)))
-	}
+	ring_heights_from = |h|
+		if h >= tower_height {
+			[]
+		} else {
+			[h].concat(ring_heights_from((h + storey_height)))
+		}
 
 	## The crossed braces of the lowest storeys, bottom first. A storey the
 	## earth has partly hidden starts its braces at the horizon.
@@ -324,11 +327,12 @@ Tower :: [].{
 	braces = |tower| brace_storeys_from(0).join_map(|storey| brace_storey(tower, storey))
 
 	brace_storeys_from : I64 -> List(I64)
-	brace_storeys_from = |storey| if storey >= brace_storeys {
-		[]
-	} else {
-		[storey].concat(brace_storeys_from((storey + 1)))
-	}
+	brace_storeys_from = |storey|
+		if storey >= brace_storeys {
+			[]
+		} else {
+			[storey].concat(brace_storeys_from((storey + 1)))
+		}
 
 	brace_storey : Tower.TowerInView, I64 -> List(Shapes.Shape)
 	brace_storey = |tower, storey| {
