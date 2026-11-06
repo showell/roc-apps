@@ -10,8 +10,8 @@ import lib.Trig
 Bike :: [].{
 
 	## How far the bike turns in a step for each radian of lean.
-	yaw_per_tilt : F64
-	yaw_per_tilt = 0.1
+	turn_per_lean : F64
+	turn_per_lean = 0.1
 
 	max_lean : Angle.Lean
 	max_lean = Angle.Lean.degrees(20.0)
@@ -39,7 +39,7 @@ Bike :: [].{
 		lean = s.lean.plus(lean_step)
 		speed = s.speed.accelerated_by(accel)
 		step_length = speed.step_length()
-		turn = lean.steer(yaw_per_tilt)
+		turn = lean.steer(turn_per_lean)
 		mid = s.yaw.plus(turn.times(0.5)).to_radians()
 		{
 			..s,
@@ -56,7 +56,7 @@ Bike :: [].{
 	with_lean = |s, lean| { ..s, lean }
 }
 
-expect Bike.yaw_per_tilt == 0.1
+expect Bike.turn_per_lean == 0.1
 expect Bike.max_lean.to_radians() == 0.3490658503988659
 
 # Bike doesn't import RiderState, and `Motion` is open, so the records here stand in
@@ -161,7 +161,7 @@ expect {
 		b.speed.to_metres_a_step(),
 		b.yaw.to_radians(),
 		b.heading.to_radians(),
-		Bike.yaw_per_tilt,
+		Bike.turn_per_lean,
 	]
 		== [
 			0.0,
