@@ -48,7 +48,7 @@ TreeSighting := {
 		height_px = view.cam_focal.times(tree.conifer.height().ratio_to(rider_point.forward))
 		if rider_point.forward <= Geom.near_plane {
 			[]
-		} else if height_px < Detail.min_tree_px {
+		} else if height_px < Detail.min_scenery_px {
 			[]
 		} else {
 			[
