@@ -29,7 +29,7 @@ Render :: [].{
 		critters : List(Billboards.Billboard),
 		cats : List(CatSighting),
 		rails : List(GuardRail.RailPoly),
-		truck : TruckSighting.TruckAt,
+		truck : TruckSighting,
 		birds : List(RocBird.PlacedBird),
 		order : List(DepthSort.DepthKey),
 	}

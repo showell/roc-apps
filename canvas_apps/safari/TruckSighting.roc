@@ -9,23 +9,21 @@ import Chain
 import Geom
 import Truck
 
-TruckSighting :: [].{
-
-	## The truck, if it is in view: the position in the chain of the segment it
-	## is on, how far along and across that segment it is, how far ahead of the
-	## rider, and which of its lights are on.
-	TruckAt : [
-		Ahead(
-			{
-				position : Chain.Position,
-				along : Along,
-				across : Across,
-				forward : F64,
-				lights : Truck.Lights,
-			},
-		),
-		NoTruck,
-	]
+## The truck, if it is in view: the position in the chain of the segment it
+## is on, how far along and across that segment it is, how far ahead of the
+## rider, and which of its lights are on.
+TruckSighting := [
+	Ahead(
+		{
+			position : Chain.Position,
+			along : Along,
+			across : Across,
+			forward : F64,
+			lights : Truck.Lights,
+		},
+	),
+	NoTruck,
+].{
 
 	## What the truck is seen from: the road in view, how far ahead of the
 	## rider the truck is, and which of its lights are on.
@@ -37,7 +35,7 @@ TruckSighting :: [].{
 
 	## The truck, if it is ahead of the rider, on the chain, and in front of
 	## the camera.
-	in_view : TruckSighting.View -> TruckSighting.TruckAt
+	in_view : TruckSighting.View -> TruckSighting
 	in_view = |view|
 		if view.lead > Distance.zero {
 			truck_from(
@@ -53,7 +51,7 @@ TruckSighting :: [].{
 
 	## The truck as the depth sort sees it: its distance ahead, if it is in
 	## view.
-	depth_keys : TruckSighting.TruckAt -> List(DepthSort.DepthKey)
+	depth_keys : TruckSighting -> List(DepthSort.DepthKey)
 	depth_keys = |truck|
 		match truck {
 			Ahead(truck_ahead) => [{ forward: truck_ahead.forward, subject: Truck }]
@@ -64,11 +62,7 @@ TruckSighting :: [].{
 ## The truck at `remaining` measured from the start of the segment at
 ## `position` in the chain, found by walking on through the segments it is
 ## past.
-truck_from : TruckSighting.View,
-{
-	remaining : Along,
-	position : Chain.Position,
-} -> TruckSighting.TruckAt
+truck_from : TruckSighting.View, { remaining : Along, position : Chain.Position } -> TruckSighting
 truck_from = |view, { remaining, position }|
 	if position.is_past_end_of(view.road.chain) {
 		NoTruck
@@ -86,11 +80,7 @@ truck_from = |view, { remaining, position }|
 
 ## The truck at `along` on the segment at `position` in the chain, in the
 ## middle of the lane, if it is in front of the camera.
-truck_on_segment : TruckSighting.View,
-{
-	along : Along,
-	position : Chain.Position,
-} -> TruckSighting.TruckAt
+truck_on_segment : TruckSighting.View, { along : Along, position : Chain.Position } -> TruckSighting
 truck_on_segment = |view, { along, position }| {
 	across = Across.middle
 	center = Chain.rider_point_ahead(view.road, { position: position, along: along, across })

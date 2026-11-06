@@ -158,7 +158,7 @@ draw_cat = |cat, cam_focal|
 
 ## The truck, where its sighting found it and with the lights its sighting
 ## gives it.
-draw_truck : Chain.Viewpoint, TruckSighting.TruckAt -> List(Shapes.Shape)
+draw_truck : Chain.Viewpoint, TruckSighting -> List(Shapes.Shape)
 draw_truck = |view, truck_at|
 	match truck_at {
 		Ahead(truck) =>
@@ -422,14 +422,14 @@ truck_view = |vantage, lead| {
 	lights: { headlights: Off, brake_lights: Off },
 }
 
-truck_seen_from : Geom.Vantage, F64 -> TruckSighting.TruckAt
+truck_seen_from : Geom.Vantage, F64 -> TruckSighting
 truck_seen_from = |vantage, lead| TruckSighting.in_view(truck_view(vantage, lead))
 
-lead_of : F64 -> TruckSighting.TruckAt
+lead_of : F64 -> TruckSighting
 lead_of = |lead| truck_seen_from(origin, lead)
 
 ## Whether the truck is in view.
-is_ahead : TruckSighting.TruckAt -> Bool
+is_ahead : TruckSighting -> Bool
 is_ahead = |truck|
 	match truck {
 		Ahead(_) => True
