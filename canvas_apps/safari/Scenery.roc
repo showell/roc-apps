@@ -1,5 +1,5 @@
-# Scenery -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## Scenery holds the words the world is built from: the kinds of trees and
+## animals, a critter's place by the road, and how wide the road is.
 import Across
 import Along
 import Cutouts

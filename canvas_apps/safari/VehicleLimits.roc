@@ -1,5 +1,5 @@
-# VehicleLimits -- originally emitted from Codex by rocemit; the Roc is the program now
-# and this file is edited here (safari/README.md).
+## VehicleLimits holds the speeds and accelerations that the rider and the truck
+## keep to, and how fast each turn may be taken.
 import Acceleration
 import Angle
 import Distance

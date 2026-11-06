@@ -1,5 +1,3 @@
-# RideInstant -- originally emitted from Codex by rocemit; the Roc is the
-# program now and this file is edited here (safari/README.md).
 import Clock
 import Chain
 import Ground

@@ -1,17 +1,12 @@
-# SafariApp -- the ride, as a value the canvas apps can run.
-#
-# Hand-written: the shim between the ride Safari actually is and the value a
-# runner wants. Tour holds the ride and its history; Backdrop says
-# what a frame looks like. This says which keys move it and how the camera
-# leans.
-#
-# The ride plays on its own. Space pauses it. Left steps back through the
-# ride's history and Right forward, a frame at a time while paused and faster
-# while it runs. J jumps to the next of the route's nineteen segments, and R
-# starts the ride again.
-#
-# SafariFrame paints a frame into pixels for the native proof tools
-# (README.md); no runner paints that way.
+## SafariApp is the ride as a value the canvas apps can run. It sits between the
+## ride and what a runner wants: Tour holds the ride and its history, Backdrop
+## says what is behind it, and this module says which keys move it and how the
+## camera leans.
+##
+## The ride plays on its own. Space pauses it. Left steps back through the ride's
+## history and Right forward, a frame at a time while paused and faster while it
+## runs. J jumps to the next of the route's nineteen segments, and R starts the
+## ride again.
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
@@ -25,8 +20,8 @@ SafariApp :: [].{
 	canvas_app : CanvasApp.CanvasApp(SafariApp.Model)
 	canvas_app = {
 		size: { width: Screen.width, height: Screen.height },
-		# **THIRTY, BY EYE.** The ride's motion is written per tick, and
-		# thirty is the speed it is meant to look like.
+		# The ride's motion is written per step, and thirty steps a second is the
+		# speed it is meant to look like, chosen by eye.
 		fps: 30,
 		init: { tour: Tour.initial, paused: Bool.False },
 		advance: CanvasApp.untimed_advance(step),
