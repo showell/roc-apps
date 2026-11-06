@@ -34,16 +34,7 @@ Trig :: [].{
 	## Nought to one and back, once every `tau / 3.4` seconds: the breathing a
 	## waiting prompt and a piece of food both do.
 	pulse : F64 -> F64
-	pulse = |t| 0.5 + 0.5 * r_sin(t * 3.4)
-
-	r_sin : F64 -> F64
-	r_sin = |x| DeviceMath.real_sin(x)
-
-	r_cos : F64 -> F64
-	r_cos = |x| DeviceMath.real_cos(x)
-
-	r_tan : F64 -> F64
-	r_tan = |x| (DeviceMath.real_sin(x) / DeviceMath.real_cos(x))
+	pulse = |t| 0.5 + 0.5 * (t * 3.4).sin()
 
 	atan_half_step : F64 -> F64
 	atan_half_step = |t| (t / (1.0 + DeviceMath.real_sqrt((1.0 + (t * t)))))
@@ -136,32 +127,6 @@ Trig :: [].{
 		}
 	)
 }
-
-expect
-	[
-		(0.0, 0.0),
-		(0.3, 0.29552020666133955),
-		(0.7, 0.644217687237691),
-		(1.0, 0.8414709848078965),
-		(1.5, 0.9974949866040544),
-		(2.0, 0.9092974268256817),
-		(3.0, 0.1411200080598672),
-		(4.5, -0.977530117665097),
-		(6.0, -0.27941549819892586),
-	].all(|(angle, sine)| (Trig.r_sin(angle) - sine).abs() <= 0.0000001)
-
-expect
-	[
-		(0.0, 1.0),
-		(0.3, 0.955336489125606),
-		(0.7, 0.7648421872844885),
-		(1.0, 0.5403023058681398),
-		(1.5, 0.0707372016677029),
-		(2.0, -0.4161468365471424),
-		(3.0, -0.9899924966004454),
-		(4.5, -0.2107957994307797),
-		(6.0, 0.960170286650366),
-	].all(|(angle, cosine)| (Trig.r_cos(angle) - cosine).abs() <= 0.0000002)
 
 expect
 	[

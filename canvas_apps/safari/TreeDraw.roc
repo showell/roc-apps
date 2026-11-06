@@ -7,7 +7,6 @@ import Camera
 import Distance
 import Fraction
 import Paint
-import lib.Trig
 import lib.Brush
 import Screen
 import lib.Shapes
@@ -316,8 +315,8 @@ tier_cone = |tree, { tier, cone_radius }| {
 	ring = ring_angles.map(
 		|angle| {
 			on_ring = {
-				right: tree.right.plus(cone_radius.times(Trig.r_cos(angle))),
-				forward: tree.forward.plus(cone_radius.times(Trig.r_sin(angle))),
+				right: tree.right.plus(cone_radius.times(angle.cos())),
+				forward: tree.forward.plus(cone_radius.times(angle.sin())),
 				height: base_height,
 			}
 			Camera.project(on_ring, tree.cam_focal)

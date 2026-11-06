@@ -11,7 +11,6 @@
 import lib.Shapes
 import lib.View
 import Skeleton
-import lib.Trig
 
 Guards :: [].{
 	# A skeleton is this tall, and Skeleton's own figure is this many pixels
@@ -93,8 +92,8 @@ Guards :: [].{
 	facing = |sx, sz, now, lag, tilt, side| {
 		u = unit(0.0 - sx, now - sz)
 		was = unit(0.0 - sx, lag - sz)
-		c = Trig.r_cos(tilt * side)
-		s = Trig.r_sin(tilt * side)
+		c = (tilt * side).cos()
+		s = (tilt * side).sin()
 		nx = was.x * c - was.z * s
 		nz = was.x * s + was.z * c
 		side * (nx * u.x + nz * u.z)

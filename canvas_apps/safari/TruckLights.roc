@@ -10,7 +10,6 @@ import lib.DeviceMath
 import Distance
 import Geom
 import Paint
-import lib.Trig
 import TruckShape
 import Screen
 import lib.Shapes
@@ -99,8 +98,8 @@ TruckLights :: [].{
 	glow_outline = |{ center, outline_radius }|
 		TruckShape.circle_angles(TruckLights.glow_sides).map(
 			|angle| {
-				x: center.x.plus(outline_radius.times(Trig.r_cos(angle))),
-				y: center.y.plus(outline_radius.times(Trig.r_sin(angle))),
+				x: center.x.plus(outline_radius.times(angle.cos())),
+				y: center.y.plus(outline_radius.times(angle.sin())),
 			},
 		)
 }

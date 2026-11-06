@@ -13,7 +13,6 @@
 # all the way down the hall at twelve; the child brakes from the moment she
 # appears, stands still for half a second, turns over two, and goes back down
 # the path half again as fast.
-import lib.Trig
 
 Walk :: [].{
 	walk_frames : I64
@@ -111,7 +110,7 @@ Walk :: [].{
 	bobs_per_metre = 4.0
 
 	eye : I64 -> F64
-	eye = |tick| 1.05 + stride(tick) * Trig.r_sin(travelled(tick) * bobs_per_metre * tau) * 0.009
+	eye = |tick| 1.05 + stride(tick) * (travelled(tick) * bobs_per_metre * tau).sin() * 0.009
 
 	# How much walking is going on, from the walking itself.
 	stride : I64 -> F64

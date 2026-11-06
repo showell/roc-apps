@@ -17,7 +17,7 @@ Lens :: [].{
 	focal : Pixels
 	focal = {
 		half_view = field_of_view.times(0.5)
-		Screen.width.divided_by(2.0).divided_by(Trig.r_tan(half_view.to_radians()))
+		Screen.width.divided_by(2.0).divided_by(half_view.to_radians().tan())
 	}
 
 	min_focal_factor : Fraction

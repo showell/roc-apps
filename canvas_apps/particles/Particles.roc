@@ -15,7 +15,6 @@
 # across is not visible anyway.
 import lib.Shapes
 import lib.Brush
-import lib.Trig
 
 Particles :: [].{
 	# Their window.
@@ -48,7 +47,7 @@ Particles :: [].{
 	emitter : I64 -> { x : F64, y : F64 }
 	emitter = |tick| {
 		phase = I64.to_f64(tick) * 0.055
-		{ x: 400.0 + Trig.r_sin(phase) * 170.0, y: 205.0 + Trig.r_cos(phase * 0.7) * 45.0 }
+		{ x: 400.0 + phase.sin() * 170.0, y: 205.0 + (phase * 0.7).cos() * 45.0 }
 	}
 
 	# Their two spreads: the wide one while Space is held, and in recording.
@@ -117,8 +116,8 @@ Particles :: [].{
 				..p,
 				x: at.x,
 				y: at.y,
-				vx: Trig.r_cos(angle) * speed * spread,
-				vy: Trig.r_sin(angle) * speed - 210.0,
+				vx: angle.cos() * speed * spread,
+				vy: angle.sin() * speed - 210.0,
 				life: 1.1 + p.seed * 1.7,
 			}
 		}

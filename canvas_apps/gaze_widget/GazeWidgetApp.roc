@@ -288,8 +288,8 @@ sight_line = |rider| {
 	Shapes.line(
 		x,
 		y,
-		x + reach * Trig.r_cos(turn),
-		y + reach * Trig.r_sin(turn),
+		x + reach * turn.cos(),
+		y + reach * turn.sin(),
 		2.0,
 		ScrubWidget.flat(sight_color),
 	)

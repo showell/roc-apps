@@ -45,118 +45,8 @@ DeviceMath :: [].{
 		}
 	)
 
-	dm_two_pi : F64
-	dm_two_pi = 6.283185307179586
-
-	dm_pi : F64
-	dm_pi = 3.141592653589793
-
 	dm_half_pi : F64
 	dm_half_pi = 1.570796326794897
-
-	dm_reduce : F64 -> F64
-	dm_reduce = |x| (
-		{
-			k = I64.to_f64(F64.to_i64_wrap((x / dm_two_pi)))
-			r = (x - (k * dm_two_pi))
-			(
-				if r > dm_pi {
-					(r - dm_two_pi)
-				} else {
-					(
-						if r < (0.0 - dm_pi) {
-							(r + dm_two_pi)
-						} else {
-							r
-						}
-					)
-				}
-			)
-		}
-	)
-
-	dm_quarter_pi : F64
-	dm_quarter_pi = 0.785398163397448
-
-	dm_three_quarter_pi : F64
-	dm_three_quarter_pi = 2.356194490192345
-
-	dm_sin_poly : F64 -> F64
-	dm_sin_poly = |r| (
-		{
-			r2 = (r * r)
-			r3 = (r2 * r)
-			r5 = (r3 * r2)
-			r7 = (r5 * r2)
-			r9 = (r7 * r2)
-			r11 = (r9 * r2)
-			r13 = (r11 * r2)
-			r15 = (r13 * r2)
-			(((((((r - (r3 / 6.0)) + (r5 / 120.0)) - (r7 / 5040.0)) + (r9 / 362880.0)) - (r11 / 39916800.0)) + (r13 / 6227020800.0)) - (r15 / 1307674368000.0))
-		}
-	)
-
-	dm_cos_poly : F64 -> F64
-	dm_cos_poly = |r| (
-		{
-			r2 = (r * r)
-			r4 = (r2 * r2)
-			r6 = (r4 * r2)
-			r8 = (r6 * r2)
-			r10 = (r8 * r2)
-			r12 = (r10 * r2)
-			r14 = (r12 * r2)
-			r16 = (r14 * r2)
-			((((((((1.0 - (r2 / 2.0)) + (r4 / 24.0)) - (r6 / 720.0)) + (r8 / 40320.0)) - (r10 / 3628800.0)) + (r12 / 479001600.0)) - (r14 / 87178291200.0)) + (r16 / 20922789888000.0))
-		}
-	)
-
-	dm_sin_octant : F64 -> F64
-	dm_sin_octant = |a| (
-		if a <= dm_quarter_pi {
-			dm_sin_poly(a)
-		} else {
-			(
-				if a <= dm_three_quarter_pi {
-					dm_cos_poly((a - dm_half_pi))
-				} else {
-					dm_sin_poly((dm_pi - a))
-				}
-			)
-		}
-	)
-
-	dm_cos_octant : F64 -> F64
-	dm_cos_octant = |a| (
-		if a <= dm_quarter_pi {
-			dm_cos_poly(a)
-		} else {
-			(
-				if a <= dm_three_quarter_pi {
-					dm_sin_poly((dm_half_pi - a))
-				} else {
-					(0.0 - dm_cos_poly((dm_pi - a)))
-				}
-			)
-		}
-	)
-
-	real_sin : F64 -> F64
-	real_sin = |x| (
-		{
-			r = dm_reduce(x)
-			(
-				if r < 0.0 {
-					(0.0 - dm_sin_octant((0.0 - r)))
-				} else {
-					dm_sin_octant(r)
-				}
-			)
-		}
-	)
-
-	real_cos : F64 -> F64
-	real_cos = |x| dm_cos_octant(dm_reduce(x).abs())
 
 	dm_atan_half_step : F64 -> F64
 	dm_atan_half_step = |t| (t / (1.0 + real_sqrt((1.0 + (t * t)))))
@@ -210,9 +100,9 @@ DeviceMath :: [].{
 				if x < 0.0 {
 					(
 						if y >= 0.0 {
-							(real_atan((y / x)) + dm_pi)
+							(real_atan((y / x)) + F64.pi)
 						} else {
-							(real_atan((y / x)) - dm_pi)
+							(real_atan((y / x)) - F64.pi)
 						}
 					)
 				} else {

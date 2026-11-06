@@ -17,7 +17,6 @@
 # quarter turn puts half the world behind the eye, where the arithmetic that
 # divides by `forward` says nothing useful, so a polygon is cut against the
 # near plane on its way to the screen rather than trusted to it.
-import Trig
 
 View :: [].{
 	View : { width : F64, height : F64, eye : F64, focal : F64, heading : F64 }
@@ -33,8 +32,8 @@ View :: [].{
 	# path".
 	turn : View.View, View.At -> View.At
 	turn = |v, p| {
-		c = Trig.r_cos(v.heading)
-		s = Trig.r_sin(v.heading)
+		c = v.heading.cos()
+		s = v.heading.sin()
 		{ right: p.right * c - p.forward * s, forward: p.right * s + p.forward * c, height: p.height }
 	}
 

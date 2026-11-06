@@ -17,7 +17,6 @@
 # sun's glow and disc clipped to the sky, the glow as a rectangle that is the
 # clip and the disc carrying the same rectangle as its own.
 import Brush
-import Trig
 
 Shapes :: [].{
 	Shape : [
@@ -141,7 +140,7 @@ Shapes :: [].{
 			a1 = F64.tau * count($k + 1) / count(n)
 			$out = List.append(
 				$out,
-				line(x + r * Trig.r_cos(a0), y + r * Trig.r_sin(a0), x + r * Trig.r_cos(a1), y + r * Trig.r_sin(a1), w, fill),
+				line(x + r * a0.cos(), y + r * a0.sin(), x + r * a1.cos(), y + r * a1.sin(), w, fill),
 			)
 			$k = $k + 1
 		}
@@ -267,7 +266,7 @@ Shapes :: [].{
 		var $k = 0
 		while $k <= segments {
 			a = from + half_pi * I64.to_f64($k) / I64.to_f64(segments)
-			$out = List.concat($out, [cx + r * Trig.r_cos(a), cy + r * Trig.r_sin(a)])
+			$out = List.concat($out, [cx + r * a.cos(), cy + r * a.sin()])
 			$k = $k + 1
 		}
 		$out

@@ -90,7 +90,7 @@ Mountains :: [].{
 	## The rolling land: low, and all the way round.
 	ground_base : Angle.Bearing -> Pixels
 	ground_base = |bearing|
-		Pixels.of(18.0 + 12.0 * Trig.r_sin(bearing.turn_from_north().to_radians() * 0.9 + 1.9))
+		Pixels.of(18.0 + 12.0 * (bearing.turn_from_north().to_radians() * 0.9 + 1.9).sin())
 
 	north_range : Angle.Bearing -> Pixels
 	north_range = |bearing| range_height(north, bearing)
@@ -194,10 +194,10 @@ range_height = |range, bearing| {
 	if fraction.abs() >= 1.0 {
 		Pixels.zero
 	} else {
-		envelope = Trig.r_cos(fraction * F64.pi / 2.0)
+		envelope = (fraction * F64.pi / 2.0).cos()
 		radians = from_center.to_radians()
-		first_wave = 0.24 * Trig.r_cos(radians * range.ridge_a)
-		second_wave = 0.16 * Trig.r_cos(radians * range.ridge_b + 1.0)
+		first_wave = 0.24 * (radians * range.ridge_a).cos()
+		second_wave = 0.16 * (radians * range.ridge_b + 1.0).cos()
 		ridge = 0.6 + first_wave + second_wave
 		range.peak.times(envelope).times(ridge)
 	}

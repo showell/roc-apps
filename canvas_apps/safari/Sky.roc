@@ -8,7 +8,6 @@ import Fraction
 import Lens
 import Float
 import Screen
-import lib.Trig
 
 Sky :: [].{
 	Rgb : {
@@ -191,7 +190,7 @@ sun_place : {
 } -> Sky.SunPlace
 sun_place = |{ turn_from_view, clock, cam_focal }| {
 	scale = Fraction.of(cam_focal.ratio_to(Lens.focal))
-	slope = Trig.r_tan(turn_from_view.to_radians())
+	slope = turn_from_view.to_radians().tan()
 	{
 		x: Screen.center_x.plus(cam_focal.times(slope)),
 		y: Screen.horizon_y.minus(Sky.sun_height_px(clock).times(scale.to_f64())),

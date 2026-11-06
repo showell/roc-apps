@@ -8,7 +8,6 @@ import lib.Shapes
 import lib.Brush
 import lib.View
 import Panels
-import lib.Trig
 
 House :: [].{
 	house_c : Brush.Rgba
@@ -82,8 +81,8 @@ House :: [].{
 	leaf : View.View, F64, F64 -> List(Shapes.Shape)
 	leaf = |v, hf, open| {
 		a = open * leaf_swing
-		fx = hinge_at + leaf_wide * Trig.r_cos(a)
-		ff = hf + leaf_wide * Trig.r_sin(a)
+		fx = hinge_at + leaf_wide * a.cos()
+		ff = hf + leaf_wide * a.sin()
 		Panels.world(
 			v,
 			[
