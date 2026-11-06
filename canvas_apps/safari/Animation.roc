@@ -70,31 +70,30 @@ Animation :: [].{
 		}
 	}
 
-	## A place, relative to a critter's home. `lift` is a plain number because
-	## its unit is the critter's own affair: cat heights for a cat, and metres
-	## for a bird. Each owner turns it into what it means at its own edge.
-	Spot : {
+	## A place, relative to a critter's home. How high it is, its `lift`, is in
+	## the unit its owner states: `CatHeights` for a cat, `Distance` for a bird.
+	Spot(lift) : {
 		along : Along,
 		across : Across,
-		lift : F64,
+		lift : lift,
 	}
 
 	## How a move spreads over its stretch.
 	Ease : [Steady, Smooth, ThreeQuarterPower]
 
 	## A move in a straight line.
-	Line : {
-		from : Animation.Spot,
-		to : Animation.Spot,
+	Line(lift) : {
+		from : Animation.Spot(lift),
+		to : Animation.Spot(lift),
 		ease : Animation.Ease,
 	}
 
 	## Where a critter goes over one stretch of a timeline. An arc's top is
 	## `rise` above its line, halfway through the stretch, however it is eased.
-	Path : [
-		StaysAt(Animation.Spot),
-		Line(Animation.Line),
-		Arc({ line : Animation.Line, rise : F64 }),
+	Path(lift) : [
+		StaysAt(Animation.Spot(lift)),
+		Line(Animation.Line(lift)),
+		Arc({ line : Animation.Line(lift), rise : lift }),
 	]
 
 	## How a critter looks over one stretch of a timeline: one pose held still,
@@ -130,20 +129,25 @@ Animation :: [].{
 	Track(kind) : { stretches : List(Animation.Stretch(kind)), finally : kind }
 
 	## A critter at one instant: how it looks, and where it is.
-	Instant(pose) : { pose : pose, spot : Animation.Spot }
+	Instant(pose, lift) : { pose : pose, spot : Animation.Spot(lift) }
 
 	## A whole animation: how many beats long it is, the critter at rest before
 	## and after, how it looks, and where it goes.
-	Timeline(pose) := {
+	Timeline(pose, lift) := {
 		length : Beats,
-		before : Animation.Instant(pose),
-		after : Animation.Instant(pose),
+		before : Animation.Instant(pose, lift),
+		after : Animation.Instant(pose, lift),
 		looks : Animation.Track(Animation.Looks(pose)),
-		path : Animation.Track(Animation.Path),
+		path : Animation.Track(Animation.Path(lift)),
 	}.{
 
 		## The critter at `stage`.
-		instant : Animation.Timeline(pose), Animation.Stage -> Animation.Instant(pose)
+		instant : Animation.Timeline(pose, lift), Animation.Stage -> Animation.Instant(pose, lift)
+			where [
+				lift.plus : lift, lift -> lift,
+				lift.minus : lift, lift -> lift,
+				lift.times : lift, F64 -> lift,
+			]
 		instant = |timeline, stage| {
 			Animation.Timeline.(score) = timeline
 			match stage {
@@ -154,7 +158,12 @@ Animation :: [].{
 		}
 
 		## The critter at `beat` of the animation.
-		at_beat : Animation.Timeline(pose), Beat -> Animation.Instant(pose)
+		at_beat : Animation.Timeline(pose, lift), Beat -> Animation.Instant(pose, lift)
+			where [
+				lift.plus : lift, lift -> lift,
+				lift.minus : lift, lift -> lift,
+				lift.times : lift, F64 -> lift,
+			]
 		at_beat = |Animation.Timeline.(score), beat| {
 			looks = playing_at(score.looks, { beat, length: score.length })
 			path = playing_at(score.path, { beat, length: score.length })
@@ -214,7 +223,12 @@ pose_of = |looks, beat|
 	}
 
 ## The spot `fraction` of the way through a stretch of `path`.
-path_spot : Animation.Path, Fraction -> Animation.Spot
+path_spot : Animation.Path(lift), Fraction -> Animation.Spot(lift)
+	where [
+		lift.plus : lift, lift -> lift,
+		lift.minus : lift, lift -> lift,
+		lift.times : lift, F64 -> lift,
+	]
 path_spot = |path, fraction|
 	match path {
 		StaysAt(spot) => spot
@@ -222,12 +236,18 @@ path_spot = |path, fraction|
 		Arc({ line, rise }) => {
 			on_line = line_spot(line, fraction)
 			through = fraction.to_f64()
-			{ ..on_line, lift: on_line.lift + rise * 4.0 * through * (1.0 - through) }
+			above_line = rise.times(4.0).times(through).times(1.0 - through)
+			{ ..on_line, lift: on_line.lift.plus(above_line) }
 		}
 	}
 
 ## The spot `fraction` of the way along `line`.
-line_spot : Animation.Line, Fraction -> Animation.Spot
+line_spot : Animation.Line(lift), Fraction -> Animation.Spot(lift)
+	where [
+		lift.plus : lift, lift -> lift,
+		lift.minus : lift, lift -> lift,
+		lift.times : lift, F64 -> lift,
+	]
 line_spot = |line, fraction| {
 	eased = eased_fraction(line.ease, fraction)
 	between = |start, end|
@@ -239,7 +259,7 @@ line_spot = |line, fraction| {
 	{
 		along: Along.metres(between(line.from.along.to_metres(), line.to.along.to_metres())),
 		across: Across.metres(between(line.from.across.to_metres(), line.to.across.to_metres())),
-		lift: between(line.from.lift, line.to.lift),
+		lift: line.from.lift.plus(line.to.lift.minus(line.from.lift).times(eased.to_f64())),
 	}
 }
 
@@ -320,15 +340,15 @@ expect
 
 Note : [First, Second, Third, Fourth, BeforeIt, AfterIt]
 
-at_spot : F64 -> Animation.Spot
+at_spot : F64 -> Animation.Spot(Distance)
 at_spot = |across| {
 	along: Along.metres(0.0),
 	across: Across.metres(across),
-	lift: 0.0,
+	lift: Distance.zero,
 }
 
 ## A timeline ten beats long with both kinds of cut on each track.
-cut_timeline : Animation.Timeline(Note)
+cut_timeline : Animation.Timeline(Note, Distance)
 cut_timeline = Animation.Timeline.(
 	{
 		length: Beats.of(10.0),
@@ -394,7 +414,7 @@ expect cut_timeline.instant(Playing(Fraction.of(0.5))).spot.across.to_metres() =
 ## Looks that alternate through two cycles over eight beats and cross a cut at
 ## beat 3, on a timeline twelve beats long. Past its eight beats they go on
 ## alternating.
-alternating_timeline : Animation.Timeline(Note)
+alternating_timeline : Animation.Timeline(Note, Distance)
 alternating_timeline = {
 	alternating = |up, down|
 		Alternates({
@@ -430,7 +450,7 @@ expect
 	].all(|(beat, note)| alternating_timeline.at_beat(Beat.of(beat)).pose == note)
 
 ## A timeline four beats long that plays `path` between beats 2 and 4.
-path_timeline : Animation.Path -> Animation.Timeline(Note)
+path_timeline : Animation.Path(Distance) -> Animation.Timeline(Note, Distance)
 path_timeline = |path|
 	Animation.Timeline.(
 		{
@@ -445,34 +465,34 @@ path_timeline = |path|
 		},
 	)
 
-start_spot : Animation.Spot
+start_spot : Animation.Spot(Distance)
 start_spot = {
 	along: Along.metres(10.0),
 	across: Across.metres(20.0),
-	lift: 30.0,
+	lift: Distance.metres(30.0),
 }
 
-end_spot : Animation.Spot
+end_spot : Animation.Spot(Distance)
 end_spot = {
 	along: Along.metres(18.0),
 	across: Across.metres(4.0),
-	lift: 46.0,
+	lift: Distance.metres(46.0),
 }
 
-steady_arc : Animation.Path
-steady_arc = Arc({ line: line(Steady), rise: 5.0 })
+steady_arc : Animation.Path(Distance)
+steady_arc = Arc({ line: line(Steady), rise: Distance.metres(5.0) })
 
-smooth_arc : Animation.Path
-smooth_arc = Arc({ line: line(Smooth), rise: 5.0 })
+smooth_arc : Animation.Path(Distance)
+smooth_arc = Arc({ line: line(Smooth), rise: Distance.metres(5.0) })
 
 ## The spot's three parts, at `beat` of `path`'s timeline.
-spot_numbers : Animation.Path, F64 -> List(F64)
+spot_numbers : Animation.Path(Distance), F64 -> List(F64)
 spot_numbers = |path, beat| {
 	spot = path_timeline(path).at_beat(Beat.of(beat)).spot
-	[spot.along.to_metres(), spot.across.to_metres(), spot.lift]
+	[spot.along.to_metres(), spot.across.to_metres(), spot.lift.to_metres()]
 }
 
-line : Animation.Ease -> Animation.Line
+line : Animation.Ease -> Animation.Line(Distance)
 line = |ease| { from: start_spot, to: end_spot, ease }
 
 expect

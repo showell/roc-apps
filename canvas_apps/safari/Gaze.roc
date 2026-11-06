@@ -34,14 +34,14 @@ Gaze :: [].{
 	gaze_return_rate : Angle.Turn
 	gaze_return_rate = Angle.Turn.degrees(0.2)
 
-	gaze_return_ease : F64
-	gaze_return_ease = 0.05
+	gaze_return_ease : Fraction
+	gaze_return_ease = Fraction.of(0.05)
 
 	gaze_return_snap : Angle.Turn
 	gaze_return_snap = Angle.Turn.degrees(0.02)
 
-	attention_decay : F64
-	attention_decay = 0.0012
+	attention_decay : Fraction
+	attention_decay = Fraction.of(0.0012)
 
 	pig_gaze_speed : Speed
 	pig_gaze_speed = Speed.metres_a_step(0.2)
@@ -125,7 +125,7 @@ Gaze :: [].{
 				if gaze.abs() <= gaze_return_snap {
 					Angle.straight_ahead
 				} else {
-					easing = gaze_return_rate.min(gaze.abs().times(gaze_return_ease))
+					easing = gaze_return_rate.min(gaze.abs().times(gaze_return_ease.to_f64()))
 					direction = Trig.r_sign(gaze.to_radians())
 					gaze.minus(easing.times(direction))
 				}
@@ -137,7 +137,7 @@ Gaze :: [].{
 	next_attention : RiderState, Angle.Turn -> Fraction
 	next_attention = |state, gaze_yaw|
 		if gaze_yaw == Angle.straight_ahead {
-			Fraction.clamp(state.attention.to_f64() - attention_decay)
+			Fraction.clamp(state.attention.to_f64() - attention_decay.to_f64())
 		} else {
 			state.attention.max(Fraction.clamp(gaze_yaw.abs().ratio_to(gaze_release_angle)))
 		}
@@ -188,7 +188,7 @@ Gaze :: [].{
 expect
 	[
 		(Gaze.gaze_look_distance.to_metres(), 150.0),
-		(Gaze.attention_decay, 0.0012),
+		(Gaze.attention_decay.to_f64(), 0.0012),
 		(Gaze.pig_gaze_speed.to_metres_a_step(), 0.2),
 		(Gaze.pig_gaze_settle_distance.to_metres(), 25.0),
 		(Gaze.gaze_release_angle.to_radians() / Trig.deg, 35.0),
@@ -196,7 +196,7 @@ expect
 		(Gaze.gaze_return_rate.to_radians() / Trig.deg, 0.2),
 		(Gaze.gaze_return_snap.to_radians() / Trig.deg, 0.02),
 		(Gaze.eyes_on_road_yaw.to_radians() / Trig.deg, 6.0),
-		(Gaze.gaze_return_ease, 0.05),
+		(Gaze.gaze_return_ease.to_f64(), 0.05),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 
 expect Gaze.gaze_attention(Fraction.of(0.5)).to_f64() == 0.5

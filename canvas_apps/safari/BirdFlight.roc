@@ -112,7 +112,7 @@ BirdFlight :: [].{
 	flight_stage = |gap| Animation.over_gap({ starts_at: takeoff_gap, ends_at: landing_gap }, gap)
 
 	## The bird with `habit`, with the rider `gap` from the tree it starts on.
-	habit_instant_at : BirdFlight.Habit, Distance -> Animation.Instant(BirdFlight.Pose)
+	habit_instant_at : BirdFlight.Habit, Distance -> Animation.Instant(BirdFlight.Pose, Distance)
 	habit_instant_at = |habit, gap|
 		match habit {
 			Flies(flight) => instant_at(flight, gap)
@@ -120,11 +120,11 @@ BirdFlight :: [].{
 		}
 
 	## The bird with the rider `gap` from the tree it left.
-	instant_at : BirdFlight.Flight, Distance -> Animation.Instant(BirdFlight.Pose)
+	instant_at : BirdFlight.Flight, Distance -> Animation.Instant(BirdFlight.Pose, Distance)
 	instant_at = |flight, gap| flight_timeline(flight).instant(flight_stage(gap))
 
 	## The bird as it sits on top of `tree`.
-	sitting_on : Scenery.Tree -> Animation.Instant(BirdFlight.Pose)
+	sitting_on : Scenery.Tree -> Animation.Instant(BirdFlight.Pose, Distance)
 	sitting_on = |tree| { pose: Perched, spot: tree_top(tree) }
 
 	## A flight's timeline is one beat long, so a cut on it is a share of the
@@ -135,7 +135,7 @@ BirdFlight :: [].{
 	## The whole of a flight: side on as it takes off, then seen from behind,
 	## beating its wings all the way until it dives, on one smooth path that
 	## rises in the middle.
-	flight_timeline : BirdFlight.Flight -> Animation.Timeline(BirdFlight.Pose)
+	flight_timeline : BirdFlight.Flight -> Animation.Timeline(BirdFlight.Pose, Distance)
 	flight_timeline = |{ from, to }|
 		Animation.Timeline.(
 			{
@@ -163,19 +163,19 @@ BirdFlight :: [].{
 							to: tree_top(to),
 							ease: Smooth,
 						},
-						rise: flight_arc.to_metres(),
+						rise: flight_arc,
 					}),
 				},
 			},
 		)
 }
 
-## The spot on top of `tree`, its lift in metres.
-tree_top : Scenery.Tree -> Animation.Spot
+## The spot on top of `tree`.
+tree_top : Scenery.Tree -> Animation.Spot(Distance)
 tree_top = |tree| {
 	along: tree.along,
 	across: tree.across,
-	lift: tree.height.to_metres(),
+	lift: tree.height,
 }
 
 ## A bird that shows `up` and `down` in turn, as its wings beat through the
@@ -201,8 +201,8 @@ left_tree : Scenery.Tree
 left_tree = tree_at(100.0, -6.0)
 
 ## A tree on the far side too near to fly to, and two far enough.
-trees : List(Scenery.Tree)
-trees = [
+sample_trees : List(Scenery.Tree)
+sample_trees = [
 	left_tree,
 	tree_at(100.0, 6.0),
 	tree_at(140.0, -6.0),
@@ -210,8 +210,8 @@ trees = [
 	tree_at(180.0, 6.0),
 ]
 
-flight : BirdFlight.Flight
-flight = { from: left_tree, to: { ..tree_at(140.0, 6.0), height: Distance.metres(12.0) } }
+sample_flight : BirdFlight.Flight
+sample_flight = { from: left_tree, to: { ..tree_at(140.0, 6.0), height: Distance.metres(12.0) } }
 
 ## A left and a right tree at each of `alongs`.
 pairs_at : List(F64) -> List(Scenery.Tree)
@@ -238,7 +238,7 @@ chosen_along = |choices|
 		Sits(_) => []
 	}
 
-expect chosen_along(trees) == [140.0, 6.0]
+expect chosen_along(sample_trees) == [140.0, 6.0]
 expect chosen_along([left_tree, tree_at(124.0, 6.0)]) == []
 expect chosen_along([left_tree, tree_at(125.0, 6.0)]) == [125.0, 6.0]
 expect chosen_along([left_tree, tree_at(140.0, -6.0)]) == []
@@ -266,26 +266,30 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.000000001)
 
 expect {
-	spot = BirdFlight.instant_at(flight, Distance.metres(100.0)).spot
-	spot.along.to_metres() == 100.0 and spot.across.to_metres() == -6.0 and spot.lift == 10.0
+	spot = BirdFlight.instant_at(sample_flight, Distance.metres(100.0)).spot
+	spot.along.to_metres() == 100.0
+	and spot.across.to_metres() == -6.0
+	and spot.lift.to_metres() == 10.0
 }
 
 expect {
-	spot = BirdFlight.instant_at(flight, Distance.zero).spot
-	spot.along.to_metres() == 140.0 and spot.across.to_metres() == 6.0 and spot.lift == 12.0
+	spot = BirdFlight.instant_at(sample_flight, Distance.zero).spot
+	spot.along.to_metres() == 140.0
+	and spot.across.to_metres() == 6.0
+	and spot.lift.to_metres() == 12.0
 }
 
 expect {
-	spot = BirdFlight.instant_at(flight, halfway_gap).spot
+	spot = BirdFlight.instant_at(sample_flight, halfway_gap).spot
 	[
 		(spot.along.to_metres(), 120.0),
 		(spot.across.to_metres(), 0.0),
-		(spot.lift, 16.0),
+		(spot.lift.to_metres(), 16.0),
 	].all(|(got, want)| (got - want).abs() <= 0.000000001)
 }
 
-expect BirdFlight.instant_at(flight, Distance.metres(100.0)).pose == Perched
-expect BirdFlight.instant_at(flight, Distance.zero).pose == Perched
+expect BirdFlight.instant_at(sample_flight, Distance.metres(100.0)).pose == Perched
+expect BirdFlight.instant_at(sample_flight, Distance.zero).pose == Perched
 
 expect
 	[
@@ -300,5 +304,5 @@ expect
 		(0.95, Diving),
 	].all(
 		|(progress, pose)|
-			BirdFlight.flight_timeline(flight).at_beat(Beat.of(progress)).pose == pose,
+			BirdFlight.flight_timeline(sample_flight).at_beat(Beat.of(progress)).pose == pose,
 	)

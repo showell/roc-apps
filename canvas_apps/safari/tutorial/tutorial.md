@@ -823,7 +823,7 @@ Wings beat all the way through the first two stretches. `count` runs from the st
 
 The path track shows why a `Track` has `finally`. A flight is one unbroken curve, so it has no cuts at all:
 
-{{code BirdFlight.flight_timeline from "path: {" to "rise: flight_arc.to_metres(),"}}
+{{code BirdFlight.flight_timeline from "path: {" to "rise: flight_arc,"}}
 
 That `Arc` is a tag. `path_spot` is where it's played. `{ ..on_line, lift: ... }` is record update: the spot on the straight line, with one field replaced. The curve is `4t(1 - t)`, a parabola that's 0 at both ends and 1 at the middle, so `rise` means what its comment says. This is the polite end of the math chapter.
 

@@ -3,6 +3,7 @@
 ## when it is behind the schedule, and slows for a turn when one is close.
 import Acceleration
 import Distance
+import Fraction
 import Speed
 import VehicleLimits
 import World
@@ -36,8 +37,8 @@ Truck :: [].{
 	finish_lead = Distance.metres(100.0)
 
 	## The truck takes a turn at this fraction of the speed the turn allows.
-	turn_caution : F64
-	turn_caution = 0.8
+	turn_caution : Fraction
+	turn_caution = Fraction.of(0.8)
 
 	## The truck starts to brake when a turn is this close.
 	brake_distance : Distance
@@ -122,7 +123,7 @@ next_bend_on = |segments, { route_position, segment_start }|
 ## cautious speed.
 advance_braking : Truck.TruckState, Truck.ComingBend -> Truck.TruckState
 advance_braking = |truck, turn| {
-	target_speed = turn.turn_speed.times(Truck.turn_caution)
+	target_speed = turn.turn_speed.times(Truck.turn_caution.to_f64())
 	acceleration =
 		if turn.distance > VehicleLimits.least_braking_distance {
 			truck.speed.acceleration_to({ target: target_speed, within: turn.distance })
@@ -160,7 +161,7 @@ advance_on_schedule = |truck, schedule| {
 
 expect Truck.start_lead.to_metres() == 500.0
 expect Truck.finish_lead.to_metres() == 100.0
-expect Truck.turn_caution == 0.8
+expect Truck.turn_caution.to_f64() == 0.8
 expect Truck.brake_distance.to_metres() == 60.0
 expect Truck.top_speed.to_metres_a_step() == 2.75
 
@@ -181,19 +182,19 @@ expect !(Truck.initial_truck.brake_lights == On)
 
 ## Where the schedule puts the truck, with the rider this far along a route
 ## 1000 m long.
-schedule : F64 -> F64
-schedule = |rider_distance|
+schedule_at : F64 -> F64
+schedule_at = |rider_distance|
 	Truck.scheduled_position({
 		rider_distance: Distance.metres(rider_distance),
 		route_length: Distance.metres(1000.0),
 	}).to_metres()
 
-expect schedule(0.0) == 500.0
-expect schedule(250.0) == 650.0
-expect schedule(500.0) == 800.0
-expect schedule(1000.0) == 1100.0
-expect schedule(1000.0) - 1000.0 == 100.0
-expect schedule(0.0) - 0.0 == 500.0
+expect schedule_at(0.0) == 500.0
+expect schedule_at(250.0) == 650.0
+expect schedule_at(500.0) == 800.0
+expect schedule_at(1000.0) == 1100.0
+expect schedule_at(1000.0) - 1000.0 == 100.0
+expect schedule_at(0.0) - 0.0 == 500.0
 
 one_seg : List(World.Segment)
 one_seg = [World.route_segment(0)]

@@ -13,6 +13,7 @@ import Animation
 import Attention
 import Beat
 import Beats
+import CatHeights
 import Distance
 import Easing
 import Fraction
@@ -53,8 +54,8 @@ Cat :: [].{
 
 	## Where the cat's head is across its body, in cat heights; it freezes
 	## with its head in the middle of the lane.
-	cat_head_x : F64
-	cat_head_x = (0.0 - 0.48)
+	cat_head_x : CatHeights
+	cat_head_x = CatHeights.of(0.0 - 0.48)
 
 	## How far the cat's hind feet land past the grass's edge.
 	land_hind_reach : Distance
@@ -77,7 +78,7 @@ Cat :: [].{
 		{
 			along: tree_along.plus(cat_beyond_tree),
 			start_across: Across.right_of_middle(tree_across.plus(cat_road_gap)),
-			mid_across: Across.right_of_middle(cat_height.times(0.0 - cat_head_x)),
+			mid_across: Across.right_of_middle(cat_height.times(0.0 - cat_head_x.to_f64())),
 			end_across: far_verge.minus(land_hind_reach),
 			height: cat_height,
 		}
@@ -192,14 +193,14 @@ Cat :: [].{
 		}
 
 	## The top of the leap, in cat heights.
-	leap_height : F64
-	leap_height = 0.18
+	leap_height : CatHeights
+	leap_height = CatHeights.of(0.18)
 
 	## The whole of a crossing: the cat walks out to the middle of the lane,
 	## freezes there, and leaps clear to the far verge. Each leap pose's cut
 	## sums to a float just under the beat it stands for, so that float goes
 	## with the pose before it, which is why those cuts are `Through`.
-	crossing_timeline : Cat.Crossing -> Animation.Timeline(Cat.Pose)
+	crossing_timeline : Cat.Crossing -> Animation.Timeline(Cat.Pose, CatHeights)
 	crossing_timeline = |cat| {
 		start = spot_across(cat.start_across)
 		middle = spot_across(cat.mid_across)
@@ -260,13 +261,13 @@ Cat :: [].{
 	}
 
 	## The cat as the rider comes on it.
-	instant_at : Cat.Crossing, Animation.Approach -> Animation.Instant(Cat.Pose)
+	instant_at : Cat.Crossing, Animation.Approach -> Animation.Instant(Cat.Pose, CatHeights)
 	instant_at = |cat, approach| crossing_timeline(cat).instant(crossing_stage(approach))
 }
 
 ## The spot `across` the road, on the ground where the cat crosses.
-spot_across : Across -> Animation.Spot
-spot_across = |across| { along: Along.start, across, lift: 0.0 }
+spot_across : Across -> Animation.Spot(CatHeights)
+spot_across = |across| { along: Along.start, across, lift: CatHeights.zero }
 
 the_cat : Cat.Crossing
 the_cat = Cat.crossing({
@@ -299,7 +300,7 @@ expect Cat.cat_height.to_metres() == 1.7
 expect Cat.cat_along.to_metres() == 105.0
 expect Cat.cat_road_gap.to_metres() == 1.5
 expect Cat.cat_beyond_tree.to_metres() == 2.0
-expect Cat.cat_head_x == -0.48
+expect Cat.cat_head_x.to_f64() == -0.48
 expect Cat.land_hind_reach.to_metres() == 1.19
 expect Cat.grass_toehold.to_metres() == 0.3
 expect Cat.enters_road_beats.to_f64() == 10.0
@@ -358,7 +359,7 @@ expect turns(1.0, 0.0) == 1.0
 expect Cat.stride_beats.to_f64() == 5.0
 
 ## The cat at `beat` of its crossing.
-crossing_at : F64 -> Animation.Instant(Cat.Pose)
+crossing_at : F64 -> Animation.Instant(Cat.Pose, CatHeights)
 crossing_at = |beat| Cat.crossing_timeline(the_cat).at_beat(Beat.of(beat))
 
 expect
@@ -396,7 +397,7 @@ expect
 		(just_past(cut_after_escape(Cat.land_ends_beats)), 6),
 	].all(|(beat, want)| Cat.pose_index(crossing_at(beat).pose) == want)
 
-phase_of : F64 -> Animation.Instant(Cat.Pose)
+phase_of : F64 -> Animation.Instant(Cat.Pose, CatHeights)
 phase_of = |gap| Cat.instant_at(the_cat, coming(gap, 1.0))
 
 expect
@@ -416,8 +417,8 @@ expect crossing_at(1.25).spot.across.to_metres() == 4.0395
 expect crossing_at(3.75).spot.across.to_metres() == 3.1185
 expect crossing_at(6.25).spot.across.to_metres() == 2.1975
 expect crossing_at(8.75).spot.across.to_metres() == 1.2765
-expect crossing_at(0.0).spot.lift == 0.0
-expect crossing_at(8.75).spot.lift == 0.0
+expect crossing_at(0.0).spot.lift.to_f64() == 0.0
+expect crossing_at(8.75).spot.lift.to_f64() == 0.0
 expect
 	[
 		(0.0, 0),
@@ -429,18 +430,18 @@ expect
 
 expect phase_of(30.0).spot.across.to_metres() == 0.816
 expect phase_of(7.0).spot.across.to_metres() == 0.816
-expect phase_of(30.0).spot.lift == 0.0
+expect phase_of(30.0).spot.lift.to_f64() == 0.0
 expect phase_of(6.5).spot.across.to_metres() == 0.816
-expect phase_of(6.5).spot.lift == 0.0
+expect phase_of(6.5).spot.lift.to_f64() == 0.0
 expect phase_of(6.0).spot.across.to_metres() == 0.816
-expect phase_of(6.0).spot.lift == 0.0
+expect phase_of(6.0).spot.lift.to_f64() == 0.0
 expect Easing.three_quarter_power(Fraction.zero).to_f64() == 0.0
 expect Easing.three_quarter_power(Fraction.whole).to_f64() == 1.0
 expect Easing.three_quarter_power(Fraction.of(0.0625)).to_f64() == 0.125
-expect Cat.leap_height == 0.18
+expect Cat.leap_height.to_f64() == 0.18
 expect
 	[
 		(phase_of(5.875).spot.across.to_metres(), 0.27775),
-		(phase_of(5.875).spot.lift, 0.0421875),
+		(phase_of(5.875).spot.lift.to_f64(), 0.0421875),
 		(phase_of(4.0).spot.across.to_metres(), -3.49),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)

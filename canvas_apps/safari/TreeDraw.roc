@@ -43,53 +43,53 @@ TreeDraw :: [].{
 	## the foliage down from the crown's top, and how wide its bottom is, as a
 	## fraction of the crown's width.
 	Tier : {
-		top : F64,
-		bottom : F64,
-		width : F64,
+		top : Fraction,
+		bottom : Fraction,
+		width : Fraction,
 	}
 
 	## The tiers, top to bottom. Each overlaps the next.
 	tiers : List(TreeDraw.Tier)
 	tiers = [
 		{
-			top: 0.0,
-			bottom: 0.3,
-			width: 0.35,
+			top: Fraction.of(0.0),
+			bottom: Fraction.of(0.3),
+			width: Fraction.of(0.35),
 		},
 		{
-			top: 0.1,
-			bottom: 0.4,
-			width: 0.44,
+			top: Fraction.of(0.1),
+			bottom: Fraction.of(0.4),
+			width: Fraction.of(0.44),
 		},
 		{
-			top: 0.2,
-			bottom: 0.5,
-			width: 0.53,
+			top: Fraction.of(0.2),
+			bottom: Fraction.of(0.5),
+			width: Fraction.of(0.53),
 		},
 		{
-			top: 0.3,
-			bottom: 0.6,
-			width: 0.63,
+			top: Fraction.of(0.3),
+			bottom: Fraction.of(0.6),
+			width: Fraction.of(0.63),
 		},
 		{
-			top: 0.4,
-			bottom: 0.7,
-			width: 0.72,
+			top: Fraction.of(0.4),
+			bottom: Fraction.of(0.7),
+			width: Fraction.of(0.72),
 		},
 		{
-			top: 0.5,
-			bottom: 0.8,
-			width: 0.81,
+			top: Fraction.of(0.5),
+			bottom: Fraction.of(0.8),
+			width: Fraction.of(0.81),
 		},
 		{
-			top: 0.6,
-			bottom: 0.9,
-			width: 0.91,
+			top: Fraction.of(0.6),
+			bottom: Fraction.of(0.9),
+			width: Fraction.of(0.91),
 		},
 		{
-			top: 0.7,
-			bottom: 1.0,
-			width: 1.0,
+			top: Fraction.of(0.7),
+			bottom: Fraction.of(1.0),
+			width: Fraction.of(1.0),
 		},
 	]
 
@@ -97,16 +97,16 @@ TreeDraw :: [].{
 	trunk_color = 0x5A3E22
 
 	## How much of the tree's height is trunk below the crown.
-	visible_trunk : F64
-	visible_trunk = 0.44
+	visible_trunk : Fraction
+	visible_trunk = Fraction.of(0.44)
 
 	## The crown's height, and its widest half-width, as fractions of the
 	## tree's height.
-	crown_height : F64
-	crown_height = 0.648
+	crown_height : Fraction
+	crown_height = Fraction.of(0.648)
 
-	crown_width : F64
-	crown_width = 0.288
+	crown_width : Fraction
+	crown_width = Fraction.of(0.288)
 
 	## A cone whose near edge is closer than this is drawn as a triangle: the
 	## camera would see it from inside.
@@ -148,15 +148,15 @@ TreeDraw :: [].{
 		base = Camera.project({ right, forward, height: Distance.zero }, cam_focal)
 		top = Camera.project({ right, forward, height }, cam_focal)
 		height_px = base.y.minus(top.y)
-		foliage_px = height_px.times(crown_height)
-		crown_bottom_y = base.y.minus(height_px.times(visible_trunk))
+		foliage_px = height_px.times(crown_height.to_f64())
+		crown_bottom_y = base.y.minus(height_px.times(visible_trunk.to_f64()))
 		{
 			base_x: base.x,
 			base_y: base.y,
 			height_px,
 			crown_top_y: crown_bottom_y.minus(foliage_px),
 			foliage_px,
-			crown_half_width: height_px.times(crown_width),
+			crown_half_width: height_px.times(crown_width.to_f64()),
 		}
 	}
 
@@ -167,7 +167,7 @@ TreeDraw :: [].{
 		} else {
 			Pixels.of(1.0)
 		}
-		height = seen.height_px.times(visible_trunk).plus(seen.height_px.times(0.05))
+		height = seen.height_px.times(visible_trunk.to_f64()).plus(seen.height_px.times(0.05))
 		left = seen.base_x.minus(width.divided_by(2.0))
 		top = seen.base_y.minus(height)
 		points = [
@@ -193,13 +193,15 @@ TreeDraw :: [].{
 		color : I64,
 	} -> List(Shapes.Shape)
 	tier_triangle = |seen, { tier, color }| {
-		bottom_y = seen.crown_top_y.plus(seen.foliage_px.times(tier.bottom))
+		bottom_y = seen.crown_top_y.plus(seen.foliage_px.times(tier.bottom.to_f64()))
+		top_y = seen.crown_top_y.plus(seen.foliage_px.times(tier.top.to_f64()))
+		half_base = seen.crown_half_width.times(tier.width.to_f64())
 		Paint.polygon(
 			color,
 			[
-				{ x: seen.base_x, y: seen.crown_top_y.plus(seen.foliage_px.times(tier.top)) },
-				{ x: seen.base_x.plus(seen.crown_half_width.times(tier.width)), y: bottom_y },
-				{ x: seen.base_x.minus(seen.crown_half_width.times(tier.width)), y: bottom_y },
+				{ x: seen.base_x, y: top_y },
+				{ x: seen.base_x.plus(half_base), y: bottom_y },
+				{ x: seen.base_x.minus(half_base), y: bottom_y },
 			],
 		)
 	}
@@ -278,7 +280,7 @@ draw_tier : TreeDraw.TreeInView,
 	tier : TreeDraw.Tier,
 } -> List(Shapes.Shape)
 draw_tier = |tree, { seen, tier }| {
-	cone_radius = tree.height.times(TreeDraw.crown_width * tier.width)
+	cone_radius = tree.height.times(TreeDraw.crown_width.to_f64() * tier.width.to_f64())
 	match tree.crown {
 		Cones if tree.forward.minus(cone_radius) < TreeDraw.min_cone_forward =>
 			TreeDraw.tier_triangle(seen, { tier, color: tree.color })
@@ -294,10 +296,12 @@ tier_cone : TreeDraw.TreeInView,
 	cone_radius : Distance,
 } -> List(Shapes.Shape)
 tier_cone = |tree, { tier, cone_radius }| {
-	trunk = TreeDraw.visible_trunk
-	crown = TreeDraw.crown_height
-	base_height = tree.height.times(trunk + (crown * (1.0 - tier.bottom)))
-	apex_height = tree.height.times(trunk + (crown * (1.0 - tier.top)))
+	trunk = TreeDraw.visible_trunk.to_f64()
+	crown = TreeDraw.crown_height.to_f64()
+	bottom = tier.bottom.to_f64()
+	top = tier.top.to_f64()
+	base_height = tree.height.times(trunk + (crown * (1.0 - bottom)))
+	apex_height = tree.height.times(trunk + (crown * (1.0 - top)))
 	apex = Camera.project(
 		{
 			right: tree.right,
@@ -324,17 +328,26 @@ tier_cone = |tree, { tier, cone_radius }| {
 	}
 }
 
-expect TreeDraw.tiers.map(|tier| tier.top) == [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
-expect TreeDraw.tiers.map(|tier| tier.bottom) == [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-expect TreeDraw.tiers.map(|tier| tier.width) == [0.35, 0.44, 0.53, 0.63, 0.72, 0.81, 0.91, 1.0]
+expect TreeDraw.tiers.map(|tier| tier.top.to_f64()) == [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+expect TreeDraw.tiers.map(|tier| tier.bottom.to_f64()) == [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+expect TreeDraw.tiers.map(|tier| tier.width.to_f64()) == [
+	0.35,
+	0.44,
+	0.53,
+	0.63,
+	0.72,
+	0.81,
+	0.91,
+	1.0,
+]
 
 expect TreeDraw.tiers.len() == 8
 expect TreeDraw.ring_n == 16
 expect TreeDraw.trunk_color == 5914146
 
-expect TreeDraw.visible_trunk == 0.44
-expect TreeDraw.crown_height == 0.648
-expect TreeDraw.crown_width == 0.288
+expect TreeDraw.visible_trunk.to_f64() == 0.44
+expect TreeDraw.crown_height.to_f64() == 0.648
+expect TreeDraw.crown_width.to_f64() == 0.288
 expect TreeDraw.min_cone_forward.to_metres() == 0.4
 
 sample_on_screen : TreeDraw.TreeOnScreen

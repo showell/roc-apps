@@ -3,6 +3,7 @@
 import Pixels
 import Camera
 import Cat
+import CatHeights
 import CatStills
 import Distance
 import Paint
@@ -19,7 +20,7 @@ CatDraw :: [].{
 	Anchor : {
 		feet : Screen.Point,
 		height_px : Pixels,
-		lift : F64,
+		lift : CatHeights,
 	}
 
 	## A polygon with more corners than this is not drawn.
@@ -30,7 +31,7 @@ CatDraw :: [].{
 	screen_point : CatDraw.Anchor, Stills.StillPt -> Screen.Point
 	screen_point = |anchor, pt| {
 		x: anchor.feet.x.plus(anchor.height_px.times(pt.x)),
-		y: anchor.feet.y.minus(anchor.height_px.times(pt.y + anchor.lift)),
+		y: anchor.feet.y.minus(anchor.height_px.times(pt.y + anchor.lift.to_f64())),
 	}
 
 	## One polygon of the still, on screen.
@@ -55,7 +56,7 @@ CatDraw :: [].{
 		forward : Distance,
 		height : Distance,
 		pose : Cat.Pose,
-		lift : F64,
+		lift : CatHeights,
 		cam_focal : Pixels,
 	} -> List(Shapes.Shape)
 	draw = |
@@ -87,7 +88,7 @@ standing : CatDraw.Anchor
 standing = {
 	feet: sample_feet,
 	height_px: Pixels.of(50.0),
-	lift: 0.0,
+	lift: CatHeights.zero,
 }
 
 expect CatDraw.screen_point(standing, { x: 0.5, y: 0.4 }) == Screen.point(125.0, 180.0)
@@ -98,7 +99,7 @@ expect CatDraw.screen_point(standing, { x: -1.0, y: 1.0 }) == Screen.point(50.0,
 # across.
 expect {
 	on_ground = CatDraw.screen_point(standing, { x: 0.5, y: 0.4 })
-	lifted = CatDraw.screen_point({ ..standing, lift: 0.2 }, { x: 0.5, y: 0.4 })
+	lifted = CatDraw.screen_point({ ..standing, lift: CatHeights.of(0.2) }, { x: 0.5, y: 0.4 })
 	lifted == Screen.point(125.0, 170.0)
 		and on_ground.y.minus(lifted.y).to_f64() == 10.0
 		and lifted.x.minus(on_ground.x).to_f64() == 0.0
@@ -109,7 +110,7 @@ expect
 		{
 			feet: sample_feet,
 			height_px: Pixels.of(100.0),
-			lift: 0.2,
+			lift: CatHeights.of(0.2),
 		},
 		{ x: 0.5, y: 0.4 },
 	).y.to_f64()
@@ -174,7 +175,7 @@ expect
 cat_shapes : {
 	forward : Distance,
 	pose : Cat.Pose,
-	lift : F64,
+	lift : CatHeights,
 } -> U64
 cat_shapes = |{ forward, pose, lift }|
 	CatDraw.draw({
@@ -190,21 +191,21 @@ expect
 	cat_shapes({
 		forward: Distance.metres(850.0),
 		pose: Rest,
-		lift: 0.0,
+		lift: CatHeights.zero,
 	})
 		== CatStills.pose_polygons(Rest).len()
 expect
 	cat_shapes({
 		forward: Distance.metres(851.0),
 		pose: Rest,
-		lift: 0.0,
+		lift: CatHeights.zero,
 	})
 		== 0
 expect
 	cat_shapes({
 		forward: Distance.metres(2000.0),
 		pose: Rest,
-		lift: 0.0,
+		lift: CatHeights.zero,
 	})
 		== 0
 
@@ -212,21 +213,21 @@ expect
 	cat_shapes({
 		forward: Distance.metres(100.0),
 		pose: Rest,
-		lift: 0.0,
+		lift: CatHeights.zero,
 	})
 		== CatStills.pose_polygons(Rest).len()
 expect
 	cat_shapes({
 		forward: Distance.metres(100.0),
 		pose: Rest,
-		lift: 0.3,
+		lift: CatHeights.of(0.3),
 	})
 		== CatStills.pose_polygons(Rest).len()
 expect
 	cat_shapes({
 		forward: Distance.metres(100.0),
 		pose: Frozen,
-		lift: 0.0,
+		lift: CatHeights.zero,
 	})
 		== CatStills.pose_polygons(Frozen).len()
 
