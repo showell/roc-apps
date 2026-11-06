@@ -136,6 +136,12 @@ All of that is about one frame, and a frame is gone by the next one. What lasts 
 
 What lasts from step to step fits in one record.
 
+```widget step
+Click the ruler to play the ride to that step, or to go back to it.
+```
+
+The first three lines under the ruler are that record's three fields, read from a real ride. Click to the right of the dot, and the ride plays up to that step, eight steps a frame, with what's left to play marked on the ruler. Click to the left, and it's there almost at once, because the steps it has been through are kept in a list.
+
 New in this chapter:
 
 - Roc: nominal types, code with no effects in it
@@ -166,6 +172,12 @@ Four kinds of thing have been named, and so far none has been shown.
 ## The world
 
 The fourth kind is the easiest, so it goes first. Trees, cows, the pond and the road are built once and only read after that.
+
+```widget route
+Drag along the route and read each segment's record.
+```
+
+Each stretch of this map is one record of a list called `World.plans`, and the lines under the ruler read it out. The marks on the ruler are the six segments with a cat or a bird. We drew the map for this page: the ride itself never has one.
 
 New in this chapter:
 
@@ -222,9 +234,25 @@ The `expect` under it, in the module above, runs that over all six ducks. One li
 
 Nothing in this chapter moves, and the ride does.
 
+## The road
+
+A road of straight segments still has to get round its bends. Where two segments meet, something has to pave the corner and put up a rail.
+
+```widget bends
+Drag to turn the bend, and watch the rail change sides.
+```
+
+The road here is two segments, seen from above, and the white dot is where the view is from. The rail runs along the outer edge of the bend, and the yellow dot is the apex, where the outer edges of the two segments meet. The marks on the ruler are the route's own bends. Dragging past the middle swaps the outer edge from one side to the other. A road with no turn has no apex, so the ruler skips the last five degrees either side of straight.
+
 ## The sky
 
 The sky is the simplest thing that moves, because it depends on one number.
+
+```widget sky
+Drag the clock and watch the sun set.
+```
+
+Drag across it from left to right, and the clock runs from step 0 to step 6,000. The sun sinks steadily, and near step 3,980 its centre meets the horizon: the sun line reads 0.0 px, and the warmth line tops out at 99%, since it rounds down. The marked stretch of the ruler is where the horizon has any warmth at all. The disc is gone near step 4,730, and the dusk line reaches 100% near step 5,490, before the marked stretch ends. Dragging back raises the sun along the same path.
 
 New in this chapter:
 
@@ -252,12 +280,6 @@ digraph sky {
 ```
 
 `Sky` sits near the bottom of the system. Leaving out small math helpers, it imports only the angle and fraction types and the lens and screen geometry, and it knows nothing of the rider, the road or the drawing. Those above it each ask for a colour or a sun at a given clock.
-
-```widget sky
-Drag the clock and watch the sun set.
-```
-
-Drag across it from left to right, and the clock runs from step 0 to step 6,000. The sun sinks steadily, and near step 3,980 its centre meets the horizon: the sun line reads 0.0 px, and the warmth line tops out at 99%, since it rounds down. The marked stretch of the ruler is where the horizon has any warmth at all. The disc is gone near step 4,730, and the dusk line reaches 100% near step 5,490, before the marked stretch ends. Dragging back raises the sun along the same path.
 
 Every function in this chapter has a `->` arrow, not `=>`. In Roc that's a promise the compiler holds: no effects, so the same clock always gives the same sky. If a function has no `=>` and no `$` in sight, there's nothing behind it to think about.
 
@@ -373,6 +395,12 @@ The sun would set the same way on an empty road. A clock can't tell that a rider
 
 The cat reacts to the rider, which no clock can do. It's the best scene in Safari Ride. It walks out, freezes in the lane as the rider bears down on it, and leaps clear at the last possible instant.
 
+```widget cat
+Drag the rider's gap and watch the crossing play.
+```
+
+Drag across it from left to right, and the gap falls from 50 metres to 0, with the rider held at a metre a step. The cat rests on the right verge until 41 metres, where the marked stretch of the ruler starts and the last line changes to "The rider may not accelerate". It walks out, and at 31 metres it freezes in the lane. It stays frozen down to 7 metres, coils, and is in the air from 6 metres to 4. At 3 metres, where the marked stretch ends, it has collapsed on the far verge and the rider may accelerate again. Below that, nothing changes.
+
 New in this chapter:
 
 - Roc: type parameters, operators on opaque types, `var`, `for` and `return` in a pure function, `|` and `_` in patterns, open records
@@ -400,12 +428,6 @@ digraph cat {
 ```
 
 `Cat` says what a cat does, and `Animation` holds what a cat shares with a bird. Everything that uses a cat imports it, and `Cat` imports none of them: it doesn't know it's drawn, sighted or reacted to.
-
-```widget cat
-Drag the rider's gap and watch the crossing play.
-```
-
-Drag across it from left to right, and the gap falls from 50 metres to 0, with the rider held at a metre a step. The cat rests on the right verge until 41 metres, where the marked stretch of the ruler starts and the last line changes to "The rider may not accelerate". It walks out, and at 31 metres it freezes in the lane. It stays frozen down to 7 metres, coils, and is in the air from 6 metres to 4. At 3 metres, where the marked stretch ends, it has collapsed on the far verge and the rider may accelerate again. Below that, nothing changes.
 
 The slider isn't scrubbing a video. Every position of it is a call to `Cat.instant_at`. The arrow is `->` again, so the type already says there's no hidden cat being updated somewhere. Method syntax chains the two halves of the job: `.instant(...)` is defined on the `Timeline` that `crossing_timeline` returns.
 
@@ -636,6 +658,12 @@ One thing about time is still missing. The sun only goes one way, and nothing so
 
 The cat walked out of its place in the order. Two clock-driven things were left behind when it did, and both are brief. One of them comes round again, and the other switches once.
 
+```widget beacon
+Drag the clock and watch the towers blink out of step.
+```
+
+Drag across it from left to right, and the clock runs through two whole blinks, from step 5,400 to step 5,640. The left tower starts dark and the right one at full brightness. At step 5,430, where the first marked stretch starts, both read 49%, and by step 5,460 they've changed places. Each marked stretch is where the left tower is more than half bright. At the far end of the ruler the towers are back where they began.
+
 New in this chapter:
 
 - Roc: a pair of opaque types with only the sums that make sense, records of tag unions written in place
@@ -661,12 +689,6 @@ digraph beacon {
 ```
 
 A beacon is the only thing in Safari Ride that repeats on the clock, so it's the first thing that needs to ask how far into a cycle it is. That question isn't about an instant of the ride. It's about a length of time, and Safari Ride keeps those two apart.
-
-```widget beacon
-Drag the clock and watch the towers blink out of step.
-```
-
-Drag across it from left to right, and the clock runs through two whole blinks, from step 5,400 to step 5,640. The left tower starts dark and the right one at full brightness. At step 5,430, where the first marked stretch starts, both read 49%, and by step 5,460 they've changed places. Each marked stretch is where the left tower is more than half bright. At the far end of the ruler the towers are back where they began.
 
 `Clock` says which step it is. `Steps` says how long something lasts. Both are opaque `U32`s, and `Clock.minus` turns two clocks into `Steps`, the same way two `Angle.Bearing`s make an `Angle.Turn`. Adding two clocks means nothing, so `Clock` has no `plus`, and no code can. Call this *places and distances*: one opaque type for where something is, a second for how far apart two of them are, and only the sums that make sense.
 
@@ -737,6 +759,12 @@ The rider-driven kind still has only one member, and one cat can't say whether `
 
 A second critter settles that. The bird is Roc's logo, sitting on a treetop. As the rider comes near it takes off, flies across the road and ahead, and drops onto a tree on the far side. It's a rider-driven thing like the cat, and it cost much less, which is the point of this chapter.
 
+```widget bird
+Drag the rider's gap and watch the bird fly.
+```
+
+Drag across it from left to right, and the gap falls from 75 metres to 0. The bird sits on the left tree, 5.9 metres up, until 60 metres, where the marked stretch of the ruler starts. It takes off side on, turns away at about 55 metres, and reaches 10.2 metres near the middle of the stretch, shrinking as it goes. It dives from 20 metres, and at 15, where the marked stretch ends, it's perched on the far tree, 4.5 metres up. Below that, the picture stays as it is.
+
 New in this chapter:
 
 - Roc: record update, tags inside tags, closures, opening a `Try` by hand, `match` as an expression
@@ -764,12 +792,6 @@ digraph bird {
 The family has the cat's shape. `BirdFlight` says what a bird does and imports nothing that draws it. `BirdSighting` finds it, `BirdDraw` draws it, and `BirdStills` holds its pictures. `Animation` is underneath, and most of what the bird does is ask `Animation` for something.
 
 The only sum in `BirdFlight` is a tree's place plus the shortest hop. The rest is constants, tags and one timeline.
-
-```widget bird
-Drag the rider's gap and watch the bird fly.
-```
-
-Drag across it from left to right, and the gap falls from 75 metres to 0. The bird sits on the left tree, 5.9 metres up, until 60 metres, where the marked stretch of the ruler starts. It takes off side on, turns away at about 55 metres, and reaches 10.2 metres near the middle of the stretch, shrinking as it goes. It dives from 20 metres, and at 15, where the marked stretch ends, it's perched on the far tree, 4.5 metres up. Below that, the picture stays as it is.
 
 ### Two rules
 
@@ -861,6 +883,12 @@ Everything so far can be asked about any instant, cold. Hand `Cat.instant_at` a 
 
 Where the rider and the truck are depends on where they were, so their state has to be kept, and it's the only state there is. This chapter is about the two fields of `RideInstant` that aren't a clock.
 
+```widget step
+Click far to the right of the dot, then far to the left.
+```
+
+Going forward, the ride has to be played, because each step starts from the one before. Going back, it only reads a list. The rider and the truck are the reason for that difference.
+
 New in this chapter:
 
 - Roc: a named open record, guards, list patterns, recursion
@@ -898,8 +926,6 @@ Stepping has a price, and it's worth stating against the cat:
 - A cat can be asked about any gap. A truck at step 4,000 has to be played there, or written down by hand.
 - A wrong critter rule is wrong in the frames it touches. A wrong step moves the rider for the rest of the ride.
 - `RideInstant.next` has an order, and frames don't.
-
-*[The step widget goes here: pause the ride, step back and forward, and watch the three stored fields change.]*
 
 ### The rider
 
@@ -1052,7 +1078,13 @@ The rider's lean has been passed over twice now, with `LeanSearch` doing somethi
 
 ## The math layer
 
-The lean comes at the end of this chapter, on top of everything else in it.
+Safari Ride's rider steers by rehearsing. Each step it tries twelve leans, and keeps one. That rests on a layer of math, and this chapter works up to it from the floor.
+
+```widget rehearsal
+Click a mark to see that try at a lean.
+```
+
+Each try lets a rider who doesn't exist coast down the road with one lean, and the white arc is where that rider goes. The yellow line is where the real rider wants to end up. A try that ends on the wrong side of it sends the next try the other way, and by the twelfth they've closed in. This is step 370 of the ride, just after the first bend.
 
 New in this chapter:
 
@@ -1212,7 +1244,7 @@ A fold's step is a plain function of the list so far and one edge:
 
 The rider has no steering wheel. Nothing tells it where to go. Each step, it has to choose a lean, and it does that by working out what would happen.
 
-*[The rehearsal widget goes here: pause, and draw the coasting arcs the search tried on this step.]*
+The widget at the top of this chapter is this section at work.
 
 `Coast` answers one question. If the rider stopped changing anything now, and coasted, what would happen? It takes the rider, and it runs the physics. The call is the same `Bike.advance` that moves the real rider, with no lean change and steady speed. That's the whole trick, and it's why `Bike` has to be a function and not a method that writes to a bike.
 
