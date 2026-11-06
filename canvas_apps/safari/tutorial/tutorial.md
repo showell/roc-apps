@@ -261,7 +261,7 @@ And here's the code that answers with that frame:
 
 ### Get the types right
 
-The screen is 960 pixels wide and 600 pixels tall. A place on it is two `Pixels`, measured from the top left corner, so `y` grows downward:
+Safari Ride writes to a canvas 960 pixels wide and 600 pixels tall. A place on it is two `Pixels`, measured from the top left corner, so `y` grows downward:
 
 {{code Screen.Point}}
 
@@ -269,9 +269,9 @@ Every frame is a list of this:
 
 {{code Shapes.Shape}}
 
-That's more than we need today. Almost all of a frame is `Poly`: step 1,570 of the ride has 2,713 shapes, and 2,706 of them are polygons. We'll get to the rest when something asks for them.
+This one type serves every canvas app in the repository, so some tags are there for the others: `Image` is for a pixel paint program. A frame of Safari Ride has a couple of thousand shapes, and nearly all of them are `Poly`.
 
-`Shapes` is shared with the other canvas apps, so it deals in plain `F64`s. Safari Ride's own `Polygon` takes a color and screen points. `triangle` and `rectangle` are handy forms of this one, which takes any number of corners:
+Safari Ride's own `Polygon` takes a color and screen points. `triangle` and `rectangle` are handy forms of this one, which takes any number of corners:
 
 {{code Polygon.flat_polygon}}
 
