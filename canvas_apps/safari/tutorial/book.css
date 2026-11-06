@@ -10,6 +10,8 @@
   --shade: #f3f1ea;
   --draft: #fbefc6;
   --draft-ink: #5e4706;
+  --code-literal: #4d6b33;
+  --code-type: #2f5d7c;
   --prose: 'Iowan Old Style', Charter, 'Bitstream Charter', 'Sitka Text', Cambria, Georgia, serif;
   --plain: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
@@ -28,6 +30,8 @@
     --shade: #26241f;
     --draft: #443612;
     --draft-ink: #f0d98f;
+    --code-literal: #a9c08a;
+    --code-type: #8fb8d4;
   }
 }
 
@@ -91,6 +95,14 @@ pre {
   tab-size: 4;
 }
 pre code { font-size: inherit; }
+
+/* color_roc.shale marks Roc's code. A few quiet colors are enough to read by. */
+
+.syn-comment { color: var(--quiet); }
+.syn-string, .syn-number { color: var(--code-literal); }
+.syn-keyword { color: var(--accent); }
+.syn-type { color: var(--code-type); }
+.syn-name { font-weight: 600; }
 
 /* The title line above a block belongs to the block, so it sits close to it,
    small and quiet. */

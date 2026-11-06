@@ -1,0 +1,562 @@
+-- budget: steps=500000000 arena_bytes=1500000000 reads=20000 read_bytes=400000000 output_bytes=200000 call_entries=4000000
+-- This colors the Roc code in the book's rendered pages, and book.shale runs it
+-- on the staged pages. The renderer knows nothing of Roc: a ```roc fence reaches
+-- this as a <pre><code class="language-roc"> holding escaped text, and each one
+-- comes out with spans around what it colors, and book.css says what they look
+-- like. A page's text must stay the same byte for byte once the spans are taken
+-- away, or the build stops.
+--
+--   cd <roc-apps checkout> && shale canvas_apps/safari/tutorial/color_roc.shale
+--
+-- A block is often part of a definition, which Roc can't parse alone. Every
+-- block comes from a file, though, so the file is parsed whole and the block is
+-- found in it. The title above the block names the file, and the block's lines
+-- are the file's, less a common indent, with a `# ...` line at a cut. A last
+-- line may stop short of its file line, at the end of a definition.
+--
+-- Roc's tree places strings, numbers, type names, tags and top-level names
+-- exactly. It holds no comments and no keywords, so those are read from the text
+-- the tree doesn't claim, where a `#` can only start a comment.
+--
+-- A block that can't be placed comes out plain, and the last line of the run
+-- says how many did, with one line for each.
+--
+-- `self_test=1` proves both sides of each rule on a module written here.
+const PAGES = "build:roc-apps/next/tutorial.staging"
+const SOURCES = "canvas_apps/**/*.roc"
+const OPEN = "<pre><code class=\"language-roc\">"
+const CLOSE = "</code></pre>"
+const TITLE = "([A-Za-z0-9_]+\\.roc)[^<]*</p>\\n$"
+const TITLE_REACH = 300
+const CUT = "# ..."
+const KEYWORD = "\\b(?:and|as|break|crash|dbg|else|expect|exposing|for|if|import|in|match|or|return|var|where|while)\\b"
+const OUR_SPANS = "<span class=\"syn-[a-z]+\">|</span>"
+
+function escaped(text)
+  local s = join(split(text, "&"), "&amp;")
+  s = join(split(s, "<"), "&lt;")
+  s = join(split(s, ">"), "&gt;")
+  s = join(split(s, "\""), "&quot;")
+  return join(split(s, "'"), "&#39;")
+end
+
+function unescaped(html)
+  local s = join(split(html, "&lt;"), "<")
+  s = join(split(s, "&gt;"), ">")
+  s = join(split(s, "&quot;"), "\"")
+  s = join(split(s, "&#39;"), "'")
+  return join(split(s, "&amp;"), "&")
+end
+
+-- A span that touches the last one, of the same class, extends it.
+function add_token(tokens, from, to, class)
+  if to <= from then return nil end
+  if #tokens > 0 then
+    local before = tokens[#tokens]
+    if before.to == from and before.class == class then
+      before.to = to
+      return nil
+    end
+  end
+  push(tokens, {from = from, to = to, class = class})
+  return nil
+end
+
+-- An empty string part, as a string ending in `${...}` has, marks nothing.
+function mark(spans, line, from, to, class)
+  if to > from then push(spans[line], {from = from, to = to, class = class}) end
+  return nil
+end
+
+-- A name that the tree gives by its text and where it starts. A tree's span can
+-- run past the name, as a tag's runs over its payload.
+function mark_name(spans, lines_of, line, col, name, class)
+  if sub(lines_of[line], col, col + #name - 1) == name then mark(spans, line, col, col + #name, class) end
+  return nil
+end
+
+function mark_whole(spans, node, class)
+  if node.line == node.end_line then mark(spans, node.line, node.col, node.end_col, class) end
+  return nil
+end
+
+function mark_quotes(spans, node)
+  mark(spans, node.line, node.col, node.col + 1, "syn-string")
+  mark(spans, node.end_line, node.end_col - 1, node.end_col, "syn-string")
+  return nil
+end
+
+-- A multi-line string's text starts two bytes later, after its `\\`.
+function mark_string_part(spans, lines_of, nodes, node)
+  local from = node.col
+  if nodes[node.parent].kind == "e-multiline-string" and trim(sub(lines_of[node.line], 1, from - 3)) == "" then from = from - 2 end
+  mark(spans, node.line, from, node.end_col, "syn-string")
+  return nil
+end
+
+-- `Clock.to_f64` starts with a type, and `to_f64` starts with nothing.
+function mark_qualifier(spans, lines_of, node)
+  local m = re_find(node.raw, "^([A-Z][A-Za-z0-9_.]*)\\.")
+  if m ~= nil then mark_name(spans, lines_of, node.line, node.col, m.groups[1], "syn-type") end
+  return nil
+end
+
+function mark_import(spans, lines_of, node)
+  local line = lines_of[node.line]
+  local at = find(line, node.raw)
+  local module = re_find(node.raw, "[A-Z][A-Za-z0-9_]*$")
+  if at ~= nil and module ~= nil then
+    local from = at + module.at - 1
+    mark(spans, node.line, from, from + #module.text, "syn-type")
+  end
+  return nil
+end
+
+function is_top_level(nodes, i)
+  local block = nodes[nodes[i].parent]
+  return block.kind == "associated" or (block.kind == "statements" and nodes[block.parent].kind == "file")
+end
+
+function mark_definition(spans, lines_of, nodes, i)
+  local target = nodes[nodes[i].kids[1]]
+  if target.kind == "p-ident" and is_top_level(nodes, i) then
+    mark_name(spans, lines_of, target.line, target.col, target.raw, "syn-name")
+  end
+  return nil
+end
+
+function mark_node(spans, lines_of, nodes, i)
+  local node = nodes[i]
+  local kind = node.kind
+  if kind == "e-string" or kind == "p-string" then
+    mark_quotes(spans, node)
+  elseif kind == "e-string-part" then
+    mark_string_part(spans, lines_of, nodes, node)
+  elseif kind == "p-string-text" or kind == "e-single-quote" or kind == "p-single-quote" then
+    mark_whole(spans, node, "syn-string")
+  elseif kind == "e-int" or kind == "e-frac" or kind == "p-int" or kind == "e-typed-int" or kind == "e-typed-frac" then
+    mark_whole(spans, node, "syn-number")
+  elseif kind == "e-tag" or kind == "p-tag" then
+    mark_name(spans, lines_of, node.line, node.col, node.raw, "syn-type")
+  elseif kind == "ty" or kind == "header" then
+    mark_name(spans, lines_of, node.line, node.col, node.name, "syn-type")
+  elseif kind == "exposed-upper-ident" then
+    mark_name(spans, lines_of, node.line, node.col, node.text, "syn-type")
+  elseif kind == "e-ident" then
+    mark_qualifier(spans, lines_of, node)
+  elseif kind == "s-import" then
+    mark_import(spans, lines_of, node)
+  elseif kind == "s-type-anno" then
+    mark_name(spans, lines_of, node.line, node.col, node.name, "syn-name")
+  elseif kind == "s-decl" then
+    mark_definition(spans, lines_of, nodes, i)
+  elseif kind == "app" or kind == "package" or kind == "platform" then
+    mark_name(spans, lines_of, node.line, node.col, kind, "syn-keyword")
+  end
+  return nil
+end
+
+-- What the tree says of each line of a file: a list of spans for each.
+function tree_spans(lines_of, nodes)
+  local spans = {}
+  for l in lines_of do push(spans, {}) end
+  local i = 1
+  while i <= #nodes do
+    mark_node(spans, lines_of, nodes, i)
+    i = i + 1
+  end
+  return spans
+end
+
+-- The keywords and any comment in text the tree doesn't claim. It says whether
+-- a comment started, which runs to the end of the line.
+function gap_tokens(text, from, to, tokens)
+  local gap = sub(text, from, to)
+  local hash = find(gap, "#")
+  local code = gap
+  if hash ~= nil then code = sub(gap, 1, hash - 1) end
+  for word in re_find_all(code, KEYWORD) do
+    local at = from + word.at - 1
+    local before = ""
+    if at > 1 then before = sub(text, at - 1, at - 1) end
+    if before ~= "." and before ~= "$" then add_token(tokens, at, at + #word.text, "syn-keyword") end
+  end
+  if hash ~= nil then add_token(tokens, from + hash - 1, #text + 1, "syn-comment") end
+  return hash ~= nil
+end
+
+-- A line's tokens in order, or nil if the tree's spans contradict each other or
+-- a comment.
+function line_tokens(file, number)
+  local text = file.lines[number]
+  local tokens = {}
+  local at = 1
+  for span in sort(file.spans[number], "from") do
+    if span.from < at then return nil end
+    if gap_tokens(text, at, span.from - 1, tokens) then return nil end
+    add_token(tokens, span.from, span.to, span.class)
+    at = span.to
+  end
+  gap_tokens(text, at, #text, tokens)
+  return tokens
+end
+
+-- A line of a block in HTML, from its file line's tokens. The block's line sits
+-- `indent` bytes along the file's, and may stop before it does.
+function colored_line(shown, tokens, indent)
+  local pieces = {}
+  local at = 1
+  for token in tokens do
+    local from = token.from - indent
+    local to = token.to - indent
+    if to > #shown + 1 then to = #shown + 1 end
+    if from <= #shown then
+      push(pieces, escaped(sub(shown, at, from - 1)))
+      push(pieces, "<span class=\"" .. token.class .. "\">" .. escaped(sub(shown, from, to - 1)) .. "</span>")
+      at = to
+    end
+  end
+  push(pieces, escaped(sub(shown, at, #shown)))
+  return join(pieces, "")
+end
+
+function cut_line(shown)
+  local at = find(shown, CUT)
+  return escaped(sub(shown, 1, at - 1)) .. "<span class=\"syn-comment\">" .. CUT .. "</span>"
+end
+
+function is_cut(shown)
+  return trim(shown) == CUT
+end
+
+-- Whether `kept` lies in the file from line `at`, `indent` bytes in.
+function lies_at(lines_of, at, indent, kept)
+  if at + #kept - 1 > #lines_of then return false end
+  local i = 1
+  while i <= #kept do
+    local line = lines_of[at + i - 1]
+    local shown = kept[i]
+    if shown == "" then
+      if trim(line) ~= "" then return false end
+    elseif i == #kept then
+      if sub(line, indent + 1, indent + #shown) ~= shown then return false end
+    elseif sub(line, indent + 1, #line) ~= shown then
+      return false
+    end
+    i = i + 1
+  end
+  return true
+end
+
+-- Where a block's kept lines are in a file, or nil. Identical stretches of a
+-- file read the same, so the first that fits is as good as any.
+function place_in(file, kept)
+  local number = 1
+  for line in file.lines do
+    local at = find(line, kept[1])
+    if at ~= nil and trim(sub(line, 1, at - 1)) == "" and lies_at(file.lines, number, at - 1, kept) then
+      return {first = number, indent = at - 1}
+    end
+    number = number + 1
+  end
+  return nil
+end
+
+function colored_lines(file, place, kept)
+  local html = {}
+  local i = 1
+  while i <= #kept do
+    local tokens = line_tokens(file, place.first + i - 1)
+    if tokens == nil then return nil end
+    push(html, colored_line(kept[i], tokens, place.indent))
+    i = i + 1
+  end
+  return html
+end
+
+-- The block's lines, less a `# ...` at either end.
+function kept_lines(shown)
+  local from = 1
+  local to = #shown
+  if is_cut(shown[from]) then from = from + 1 end
+  if to > from and is_cut(shown[to]) then to = to - 1 end
+  return slice(shown, from, to)
+end
+
+-- A block's HTML from one file, or nil where it isn't there.
+function block_from(file, shown)
+  local kept = kept_lines(shown)
+  if #kept == 0 then return nil end
+  local place = place_in(file, kept)
+  if place == nil then return nil end
+  local middle = colored_lines(file, place, kept)
+  if middle == nil then return nil end
+  local html = {}
+  if is_cut(shown[1]) then push(html, cut_line(shown[1])) end
+  for line in middle do push(html, line) end
+  if #shown > 1 and is_cut(shown[#shown]) then push(html, cut_line(shown[#shown])) end
+  return join(html, "\n") .. "\n"
+end
+
+function title_file(before)
+  local from = 1
+  if #before > TITLE_REACH then from = #before - TITLE_REACH end
+  local m = re_find(sub(before, from, #before), TITLE)
+  if m == nil then return "" end
+  return m.groups[1]
+end
+
+-- The block's HTML, or nil with its reason in `tally`.
+function colored_block(body, name, sources, files, tally, page)
+  local text = unescaped(body)
+  if name == "" then
+    push(tally.plain, page .. ": no title names a file, above [" .. sub(text, 1, 40) .. "]")
+    return nil
+  end
+  local refused = ""
+  local shown = split(sub(text, 1, #text - 1), "\n")
+  for path in get(sources, name, {}) do
+    local file = files[path]
+    if file.err ~= "" then
+      refused = file.err
+    else
+      local html = block_from(file, shown)
+      if html ~= nil then return html end
+    end
+  end
+  if refused ~= "" then
+    push(tally.plain, page .. ": " .. refused)
+  else
+    push(tally.plain, page .. ": can't be placed in " .. name .. ": [" .. sub(text, 1, 40) .. "]")
+  end
+  return nil
+end
+
+function colored_page(page, sources, files, tally)
+  local pieces = split(read(page), OPEN)
+  local out = {pieces[1]}
+  local i = 2
+  while i <= #pieces do
+    local piece = pieces[i]
+    local close = find(piece, CLOSE)
+    if close == nil then fail("color_roc: a block with no end in " .. page) end
+    local body = sub(piece, 1, close - 1)
+    local html = colored_block(body, title_file(pieces[i - 1]), sources, files, tally, basename(page))
+    if html == nil then
+      push(out, piece)
+    else
+      tally.colored = tally.colored + 1
+      push(out, html .. sub(piece, close, #piece))
+    end
+    i = i + 1
+  end
+  return join(out, OPEN)
+end
+
+function without_our_spans(html)
+  return re_replace(html, OUR_SPANS, "")
+end
+
+function check_text(page, before, after)
+  if without_our_spans(before) ~= without_our_spans(after) then fail("color_roc: coloring changed the text of " .. page) end
+  return nil
+end
+
+function sources_by_name(pattern)
+  local sources = {}
+  for path in glob(pattern) do push_at(sources, basename(path), path) end
+  return sources
+end
+
+function titled_names(page, names)
+  local pieces = split(read(page), OPEN)
+  local i = 1
+  while i < #pieces do
+    local name = title_file(pieces[i])
+    if name ~= "" then names[name] = true end
+    i = i + 1
+  end
+  return nil
+end
+
+-- Each file the pages' titles name, parsed in one run of roc-ast.
+function parsed_files(pages, sources)
+  local names = {}
+  for page in pages do titled_names(page, names) end
+  local paths = {}
+  for name in keys(names) do
+    for path in get(sources, name, {}) do push(paths, path) end
+  end
+  local files = {}
+  if #paths == 0 then return files end
+  for tree in roc_tree(paths) do
+    local lines_of = split(read(tree.path), "\n")
+    if tree.err == "" then
+      files[tree.path] = {err = "", lines = lines_of, spans = tree_spans(lines_of, tree.nodes)}
+    else
+      files[tree.path] = {err = tree.err}
+    end
+  end
+  return files
+end
+
+-- Colors the pages in `folder`, and gives the count of each outcome.
+function color_pages(folder, pattern)
+  local pages = glob(folder .. "/*.html")
+  local sources = sources_by_name(pattern)
+  local files = parsed_files(pages, sources)
+  local tally = {colored = 0, plain = {}}
+  for page in pages do
+    local before = read(page)
+    if contains(before, OPEN) then
+      local after = colored_page(page, sources, files, tally)
+      check_text(page, before, after)
+      replace(page, after)
+    end
+  end
+  return tally
+end
+
+const ZOO = [=[## A "quoted" doc: it's fine.
+import pf.Stdout
+import Other exposing [Thing]
+
+Zoo :: [].{
+	## A cage.
+	Cage : { size : F64, name : Str }
+
+	## How much to feed.
+	feed : Cage -> F64
+	feed = |cage| {
+		amount = cage.size # never "quoted" here
+		iffy = amount < 2.0 and amount > 1.0
+		label = "a # b ${cage.name} & 'c' if"
+		Clock.seconds(amount)
+		if iffy { Fed(0x10) } else { Hungry }
+	}
+
+	bare = 1 # A trailing comment.
+
+	wide = ("é", 3, Cage.(4))
+
+	tail = |x| ["${x}", "b ${x}", "c ${Inner.show(x)}"]
+
+	long = |x| {
+		note =
+			\\one # two
+			\\three ${x}
+		note
+	}
+}
+]=]
+
+const WRAPPED = "<p>prose</p>\n"
+
+function page_with(title, block)
+  return WRAPPED .. title .. "\n" .. OPEN .. escaped(block) .. "\n" .. CLOSE .. "\n<p>after</p>\n"
+end
+
+function color_one(folder, title, block)
+  replace(folder .. "/page.html", page_with(title, block))
+  local tally = color_pages(folder, folder .. "/*.roc")
+  return {tally = tally, html = read(folder .. "/page.html")}
+end
+
+function span(class, text)
+  return "<span class=\"syn-" .. class .. "\">" .. text .. "</span>"
+end
+
+function expect_block(checks, folder, what, block, want)
+  local got = color_one(folder, "<p>from Zoo.roc</p>", block)
+  local page = WRAPPED .. "<p>from Zoo.roc</p>\n" .. OPEN .. want .. "\n" .. CLOSE .. "\n<p>after</p>\n"
+  if got.tally.colored ~= 1 or #got.tally.plain ~= 0 then fail("self_test: " .. what .. " came out plain: " .. join(got.tally.plain, ", ")) end
+  if got.html ~= page then fail("self_test: " .. what .. " gave [" .. got.html .. "], not [" .. page .. "]") end
+  push(checks, what)
+  return nil
+end
+
+function expect_plain(checks, folder, what, title, block, why)
+  local got = color_one(folder, title, block)
+  if got.tally.colored ~= 0 or #got.tally.plain ~= 1 then fail("self_test: " .. what .. " counted " .. json_write(got.tally)) end
+  if not contains(got.tally.plain[1], why) then fail("self_test: " .. what .. " said [" .. got.tally.plain[1] .. "]") end
+  if got.html ~= page_with(title, block) then fail("self_test: " .. what .. " changed the page") end
+  push(checks, what)
+  return nil
+end
+
+function self_test()
+  local folder = fresh_dir("scratch:", "color-roc")
+  replace(folder .. "/Zoo.roc", ZOO)
+  replace(folder .. "/Broken.roc", "Broken :: [].{\n\tx = = 1\n")
+  local checks = {}
+
+  expect_block(checks, folder, "a `#` in a string, and a quote in a comment",
+    "amount = cage.size # never \"quoted\" here\niffy = amount < 2.0 and amount > 1.0\nlabel = \"a # b ${cage.name} & 'c' if\"",
+    "amount = cage.size " .. span("comment", "# never &quot;quoted&quot; here") .. "\n"
+    .. "iffy = amount &lt; " .. span("number", "2.0") .. " " .. span("keyword", "and") .. " amount &gt; " .. span("number", "1.0") .. "\n"
+    .. "label = " .. span("string", "&quot;a # b ") .. "${cage.name}" .. span("string", " &amp; &#39;c&#39; if&quot;"))
+
+  expect_block(checks, folder, "a fragment that can't parse alone, with its cuts",
+    "\t# ...\n\tClock.seconds(amount)\n\tif iffy { Fed(0x10) } else { Hungry }\n}",
+    "\t" .. span("comment", "# ...") .. "\n"
+    .. "\t" .. span("type", "Clock") .. ".seconds(amount)\n"
+    .. "\t" .. span("keyword", "if") .. " iffy { " .. span("type", "Fed") .. "(" .. span("number", "0x10") .. ") } " .. span("keyword", "else") .. " { " .. span("type", "Hungry") .. " }\n}")
+
+  expect_block(checks, folder, "a whole definition, its doc and its name",
+    "## How much to feed.\nfeed : Cage -> F64\nfeed = |cage| {\n\t# ...",
+    span("comment", "## How much to feed.") .. "\n"
+    .. span("name", "feed") .. " : " .. span("type", "Cage") .. " -&gt; " .. span("type", "F64") .. "\n"
+    .. span("name", "feed") .. " = |cage| {\n\t" .. span("comment", "# ..."))
+
+  expect_block(checks, folder, "a definition cut before its line ends", "bare = 1", span("name", "bare") .. " = " .. span("number", "1"))
+
+  expect_block(checks, folder, "a multi-line string, and a local that is no definition",
+    "note =\n\t\\\\one # two\n\t\\\\three ${x}\nnote",
+    "note =\n\t" .. span("string", "\\\\one # two") .. "\n\t" .. span("string", "\\\\three ") .. "${x}\nnote")
+
+  expect_block(checks, folder, "a comment's quote opens no string, and imports name a type",
+    "## A \"quoted\" doc: it's fine.\nimport pf.Stdout\nimport Other exposing [Thing]",
+    span("comment", "## A &quot;quoted&quot; doc: it&#39;s fine.") .. "\n"
+    .. span("keyword", "import") .. " pf." .. span("type", "Stdout") .. "\n"
+    .. span("keyword", "import") .. " " .. span("type", "Other") .. " " .. span("keyword", "exposing") .. " [" .. span("type", "Thing") .. "]")
+
+  expect_block(checks, folder, "columns count bytes, and a wrapped value names its type",
+    "wide = (\"é\", 3, Cage.(4))",
+    span("name", "wide") .. " = (" .. span("string", "&quot;é&quot;") .. ", " .. span("number", "3") .. ", " .. span("type", "Cage") .. ".(" .. span("number", "4") .. "))")
+
+  expect_block(checks, folder, "strings that end in an interpolation",
+    "tail = |x| [\"${x}\", \"b ${x}\", \"c ${Inner.show(x)}\"]",
+    span("name", "tail") .. " = |x| [" .. span("string", "&quot;") .. "${x}" .. span("string", "&quot;") .. ", "
+    .. span("string", "&quot;b ") .. "${x}" .. span("string", "&quot;") .. ", "
+    .. span("string", "&quot;c ") .. "${" .. span("type", "Inner") .. ".show(x)}" .. span("string", "&quot;") .. "]")
+
+  expect_plain(checks, folder, "a block not in its file", "<p>from Zoo.roc</p>", "gone = 1", "can't be placed in Zoo.roc")
+  expect_plain(checks, folder, "a file there is none of", "<p>from Nowhere.roc</p>", "bare = 1", "can't be placed in Nowhere.roc")
+  expect_plain(checks, folder, "no title", "<p>Some prose.</p>", "bare = 1", "no title names a file")
+  expect_plain(checks, folder, "a file roc-ast refuses", "<p>from Broken.roc</p>", "x = = 1", "parse problem")
+
+  replace(folder .. "/page.html", "<p>from Zoo.roc</p>\n<pre><code class=\"language-zig\">bare = 1\n</code></pre>\n")
+  local other = color_pages(folder, folder .. "/*.roc")
+  if other.colored ~= 0 or #other.plain ~= 0 or not contains(read(folder .. "/page.html"), ">bare = 1\n<") then fail("self_test: a Zig block was touched") end
+  push(checks, "a block in another language")
+
+  local same = "<p>a " .. span("type", "B") .. " c</p>"
+  if not attempt(check_text, "p", "<p>a B c</p>", same).ok then fail("self_test: added spans changed the text") end
+  local changed = attempt(check_text, "p", "<p>a B c</p>", "<p>a " .. span("type", "B") .. " d</p>")
+  if changed.ok or changed.error ~= "color_roc: coloring changed the text of p" then fail("self_test: changed text gave " .. json_write(changed)) end
+  local lost = attempt(check_text, "p", "<p>&lt;</p>", "<p>" .. span("type", "<") .. "</p>")
+  if lost.ok then fail("self_test: a lost escape passed") end
+  push(checks, "the text check, both sides")
+
+  remove_tree(folder)
+  print("color_roc self_test: PASS, " .. #checks .. " checks")
+  return nil
+end
+
+if arg("self_test", "") == "1" then
+  self_test()
+else
+  local tally = color_pages(arg("pages", PAGES), SOURCES)
+  for line in tally.plain do print("color_roc: plain, " .. line) end
+  print("color_roc: " .. tally.colored .. " blocks colored, " .. #tally.plain .. " plain")
+end

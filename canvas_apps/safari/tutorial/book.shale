@@ -17,7 +17,9 @@
 --
 -- The pages are staged beside their widgets and book_check.mjs drives them in a
 -- real browser, so the channel's book is replaced only by one that passed. The
--- check leaves a full-page shot of each page in build/book/shots/.
+-- check leaves a full-page shot of each page in build/book/shots/. Before that,
+-- color_roc.shale colors the pages' Roc code, and says how many blocks it left
+-- plain.
 const TUTORIAL = "canvas_apps/safari/tutorial"
 const WORK = "canvas_apps/safari/tutorial/build/book"
 const EXPANDED = "canvas_apps/safari/tutorial/build/tutorial.md"
@@ -28,6 +30,7 @@ const CHANNEL_URL = "http://127.0.0.1:9210/tutorial.staging/"
 const CACHE = "build:roc-apps/book-cache"
 const STAMP = "BOOK_INPUTS"
 const PAGE_MARK = "<!-- book page: "
+const COLOR = "canvas_apps/safari/tutorial/color_roc.shale"
 const ROC_WANT = "roc-pin: roc-apps' pinned nightly, for the book's page step"
 const DOT_WANT = "graphviz: the tutorial's diagrams, drawn at build time"
 const PAGE_WANT = "script: canvas_apps/build.sh builds and checks a page, and refuses another Roc"
@@ -141,7 +144,7 @@ end
 function write_pages(output)
   remove_if_there(STAGING)
   mkdir(STAGING)
-  local sizes = {}
+  local files = {}
   local pieces = split(output, PAGE_MARK)
   if trim(pieces[1]) ~= "" then fail("book: make_book said something before its first page: " .. pieces[1]) end
   for piece in drop(pieces, 1) do
@@ -149,10 +152,16 @@ function write_pages(output)
     local file = sub(piece, 1, close - 1)
     local html = sub(piece, close + 5)
     replace(STAGING .. "/" .. file, html)
-    push(sizes, file .. " " .. (#html // 1024) .. " KB")
+    push(files, file)
   end
   replace(STAGING .. "/book.css", read(TUTORIAL .. "/book.css"))
   replace(STAGING .. "/embed.js", read("canvas_apps/widget_kit/embed.js"))
+  return files
+end
+
+function page_sizes(files)
+  local sizes = {}
+  for file in files do push(sizes, file .. " " .. (#read(STAGING .. "/" .. file) // 1024) .. " KB") end
   return sizes
 end
 
@@ -224,7 +233,10 @@ function main()
   local book = manuscript(read(EXPANDED))
   local folders = widget_folders()
   local rendered = must(run(make_book_argv(tool, book, folders), {timeout_ms = 60000, whole = 20000000, want = ROC_WANT}), "make_book")
-  local sizes = write_pages(rendered.out)
+  local files = write_pages(rendered.out)
+  must(run({"shale", "--root", ".", COLOR, "self_test=1"}, {timeout_ms = 30000, tail = 20}), "color_roc's self test")
+  print(trim(must(run({"shale", "--root", ".", COLOR}, {timeout_ms = 30000, tail = 300}), "color_roc").out))
+  local sizes = page_sizes(files)
 
   build_widgets(folders)
   print(trim(must(run({"nice", "-n", "19", "node", TUTORIAL .. "/book_check.mjs", CHANNEL_URL, real(WORK) .. "/shots"}, {timeout_ms = 600000, tail = 60, want = CHECK_WANT}), "book_check").out))
