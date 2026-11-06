@@ -15,11 +15,12 @@ are three more: drag the clock and the sun sets, drag the gap and the bird
 flies, drag the clock and two masts blink opposite each other. `route_widget`
 walks the route's records on a map, `bends_widget` turns one bend,
 `step_widget` plays the ride forward and reads it back, `rehearsal_widget`
-clicks through one step's twelve tries at a lean, and `stills_widget` lays out
+clicks through one step's twelve tries at a lean, `stills_widget` lays out
 every pose of the cat and the bird and shows the one clicked large, with its
-polygons counted.
+polygons counted, and `gaze_widget` drags the rider past the pig that catches
+the eye.
 
-Six of the seventeen — all but `safari`, `trick_or_treat` and the widgets — are
+Six of the eighteen — all but `safari`, `trick_or_treat` and the widgets — are
 roc-ray's own examples, by Luke Boswell, taken with only small changes to fit this scheme.
 
 **The native side runs on roc-ray 0.12.0** (`23eec6e`), with the
