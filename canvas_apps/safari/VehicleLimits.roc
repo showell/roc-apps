@@ -9,14 +9,14 @@ import lib.Trig
 
 VehicleLimits :: [].{
 
-	a_accel : Acceleration
-	a_accel = Acceleration.metres_a_step_each_step(0.01)
+	cruise_acceleration : Acceleration
+	cruise_acceleration = Acceleration.metres_a_step_each_step(0.01)
 
-	v_base : Speed
-	v_base = Speed.metres_a_step(0.3)
+	base_speed : Speed
+	base_speed = Speed.metres_a_step(0.3)
 
-	v_max : Speed
-	v_max = Speed.metres_a_step(2.5)
+	top_speed : Speed
+	top_speed = Speed.metres_a_step(2.5)
 
 	bend_approach : Distance
 	bend_approach = Distance.metres(60.0)
@@ -51,8 +51,8 @@ VehicleLimits :: [].{
 	}
 }
 
-expect VehicleLimits.a_accel.to_metres_a_step_each_step() == 0.01
-expect VehicleLimits.v_max.to_metres_a_step() == 2.5
+expect VehicleLimits.cruise_acceleration.to_metres_a_step_each_step() == 0.01
+expect VehicleLimits.top_speed.to_metres_a_step() == 2.5
 expect VehicleLimits.bend_approach.to_metres() == 60.0
 
 ## The speed for a turn of this many degrees.

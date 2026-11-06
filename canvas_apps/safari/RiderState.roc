@@ -32,7 +32,7 @@ RiderState := {
 		along: Along.start,
 		across: Across.middle,
 		yaw: Angle.straight_ahead,
-		speed: VehicleLimits.v_base,
+		speed: VehicleLimits.base_speed,
 		lean: Angle.upright,
 		heading: Angle.north,
 		gaze_yaw: Angle.straight_ahead,

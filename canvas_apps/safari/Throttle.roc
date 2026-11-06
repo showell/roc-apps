@@ -133,8 +133,8 @@ Throttle :: [].{
 		},
 	| {
 		v1 =
-			if v0 > VehicleLimits.v_max {
-				VehicleLimits.v_max
+			if v0 > VehicleLimits.top_speed {
+				VehicleLimits.top_speed
 			} else {
 				v0
 			}
@@ -165,7 +165,7 @@ Throttle :: [].{
 			if state.lean.abs() >= lean_hold {
 				Acceleration.steady
 			} else {
-				VehicleLimits.a_accel
+				VehicleLimits.cruise_acceleration
 			}
 		v_end =
 			match seg.ending {
@@ -276,7 +276,7 @@ expect Coast.project(rider_off_left(0.7)).exit == Leaves({ side: Left, after: St
 # A coast that stays on the road takes what is offered, and one that leaves it
 # brakes.
 expect {
-	offered = VehicleLimits.a_accel
+	offered = VehicleLimits.cruise_acceleration
 	Throttle.shoulder_brake(centred_rider(0.0, 0.3), offered) == offered
 		and Throttle.shoulder_brake(rider_off_left(0.7), offered) < Acceleration.steady
 }
@@ -349,7 +349,7 @@ hold_radians = Throttle.lean_hold.to_radians()
 expect
 	[
 		(decide(Speed.metres_a_step(0.3), 0.0), 0.01),
-		(decide(VehicleLimits.v_max, 0.0), 0.0),
+		(decide(VehicleLimits.top_speed, 0.0), 0.0),
 		(decide(Speed.at_rest, 0.0), 0.01),
 		(wide_of_road(0.0 - 0.001), 0.01),
 		(wide_of_road(0.0 - hold_radians), 0.0),

@@ -139,7 +139,7 @@ rider_at = |along, lean_radians| {
 expect {
 	upright = Rider.decide(rider_at(0.0, 0.0), first_segment)
 	leaning = Rider.decide(rider_at(0.0, 0.5), first_segment)
-	most_accel = VehicleLimits.a_accel.to_metres_a_step_each_step() + 0.000001
+	most_accel = VehicleLimits.cruise_acceleration.to_metres_a_step_each_step() + 0.000001
 	upright.lean_step.abs() <= LeanSearch.max_lean_change
 		and leaning.lean_step.abs() <= LeanSearch.max_lean_change
 		and upright.accel.to_metres_a_step_each_step() <= most_accel
@@ -233,7 +233,7 @@ expect one_step_on.along > Along.start
 expect one_step_on.speed > Speed.at_rest
 expect one_step_on.segment_index == World.SegmentIndex.first
 expect one_step_on.across.distance_from_middle() < Scenery.road_half_width
-expect one_step_on.speed <= VehicleLimits.v_max
+expect one_step_on.speed <= VehicleLimits.top_speed
 
 # These are LeanSearch's search. They sit here because LeanSearch imports
 # neither Pose nor Speed, and Rider sees both.

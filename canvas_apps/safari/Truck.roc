@@ -44,15 +44,15 @@ Truck :: [].{
 	brake_distance = VehicleLimits.bend_approach
 
 	chase_acceleration : Acceleration
-	chase_acceleration = VehicleLimits.a_accel.times(1.1)
+	chase_acceleration = VehicleLimits.cruise_acceleration.times(1.1)
 
 	top_speed : Speed
-	top_speed = VehicleLimits.v_max.times(1.1)
+	top_speed = VehicleLimits.top_speed.times(1.1)
 
 	initial_truck : Truck.TruckState
 	initial_truck = {
 		route_position: start_lead,
-		speed: VehicleLimits.v_base,
+		speed: VehicleLimits.base_speed,
 		brake_lights: Off,
 	}
 
@@ -171,8 +171,8 @@ expect
 	[
 		(chase_metres, 0.011),
 		(Truck.top_speed.to_metres_a_step(), 2.75),
-		((chase_metres / VehicleLimits.a_accel.to_metres_a_step_each_step()), 1.1),
-		((Truck.top_speed.to_metres_a_step() / VehicleLimits.v_max.to_metres_a_step()), 1.1),
+		((chase_metres / VehicleLimits.cruise_acceleration.to_metres_a_step_each_step()), 1.1),
+		((Truck.top_speed.to_metres_a_step() / VehicleLimits.top_speed.to_metres_a_step()), 1.1),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 
 expect Truck.initial_truck.route_position.to_metres() == 500.0

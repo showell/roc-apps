@@ -446,7 +446,7 @@ scene = Scene.in_view(
 		cam_focal: 500.0,
 	},
 	{
-		speed: VehicleLimits.v_base,
+		speed: VehicleLimits.base_speed,
 		truck: {
 			route_position: Distance.metres(500.0),
 			lights: { headlights: Off, brake_lights: Off },
