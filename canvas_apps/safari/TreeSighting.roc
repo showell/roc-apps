@@ -47,11 +47,7 @@ TreeSighting := {
 	tree_in_view = |view, { position, tree }| {
 		seen = Chain.rider_point_ahead(
 			view.road,
-			{
-				position: position,
-				along: tree.along,
-				across: tree.across,
-			},
+			{ position, along: tree.along, across: tree.across },
 		)
 		height_px = view.cam_focal.times(tree.height.ratio_to(seen.forward))
 		if seen.forward <= Geom.near_plane {

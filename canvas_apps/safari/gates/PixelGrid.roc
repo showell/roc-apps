@@ -38,10 +38,10 @@ PixelGrid :: [].{
 			U16.until(start, end).map(|place| PixelGrid.Coordinate.(place))
 
 		to_f64 : PixelGrid.Coordinate -> F64
-		to_f64 = |PixelGrid.Coordinate.(place)| U16.to_f64(place)
+		to_f64 = |PixelGrid.Coordinate.(place)| place.to_f64()
 
 		to_u64 : PixelGrid.Coordinate -> U64
-		to_u64 = |PixelGrid.Coordinate.(place)| U16.to_u64(place)
+		to_u64 = |PixelGrid.Coordinate.(place)| place.to_u64()
 	}
 
 	## Pixels from `start` up to but not including `end`; none when `end` is not
@@ -61,7 +61,7 @@ PixelGrid :: [].{
 		extent : PixelGrid.Coordinate,
 	} -> PixelGrid.CoordinateRange
 	pixels_between = |{ from, to, extent: PixelGrid.Coordinate.(extent) }| {
-		length = U16.to_i64(extent)
+		length = extent.to_i64()
 		{
 			start: nearest_coordinate({ place: first_pixel_past(from), length }),
 			end: nearest_coordinate({ place: first_pixel_past(to), length }),
@@ -89,8 +89,8 @@ PixelGrid :: [].{
 ## The coordinate on a row or a column `length` long nearest `place`.
 nearest_coordinate : { place : I64, length : I64 } -> PixelGrid.Coordinate
 nearest_coordinate = |{ place, length }| {
-	on_or_after_first = I64.max(0, place)
-	PixelGrid.Coordinate.from_i64(I64.min(length, on_or_after_first))
+	on_or_after_first = place.max(0)
+	PixelGrid.Coordinate.from_i64(length.min(on_or_after_first))
 }
 
 ## The first pixel whose centre is at or past `x`. A coordinate far off the
@@ -114,8 +114,8 @@ first_pixel_past = |x| {
 ## already unless `x` is above it.
 ceiling : F64 -> I64
 ceiling = |x| {
-	toward_zero = F64.to_i64_wrap(x)
-	if I64.to_f64(toward_zero) < x {
+	toward_zero = x.to_i64_wrap()
+	if toward_zero.to_f64() < x {
 		toward_zero + 1
 	} else {
 		toward_zero

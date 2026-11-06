@@ -28,7 +28,7 @@ Sky :: [].{
 	SunSighting : [InView(Sky.SunPlace), OutOfView]
 
 	sun_bearing : Angle.Bearing
-	sun_bearing = Angle.Bearing.radians(0.0 - 2.2176)
+	sun_bearing = Angle.Bearing.radians(-2.2176)
 
 	sun_radius_px : Pixels
 	sun_radius_px = Pixels.of(46.0)
@@ -74,7 +74,7 @@ Sky :: [].{
 	## once the sun is `warmth_falloff_px` above or below.
 	sunset_warmth : Clock -> Fraction
 	sunset_warmth = |clock| Fraction.clamp(
-		(1.0 - sun_height_px(clock).abs().ratio_to(warmth_falloff_px)),
+		1.0 - sun_height_px(clock).abs().ratio_to(warmth_falloff_px),
 	)
 
 	day_sky : Sky.Rgb
@@ -120,9 +120,9 @@ Sky :: [].{
 	color_between = |{ from, to, fraction }| {
 		share = fraction.to_f64()
 		{
-			r: whole_channel(from.r + ((to.r - from.r) * share)),
-			g: whole_channel(from.g + ((to.g - from.g) * share)),
-			b: whole_channel(from.b + ((to.b - from.b) * share)),
+			r: whole_channel(from.r + (to.r - from.r) * share),
+			g: whole_channel(from.g + (to.g - from.g) * share),
+			b: whole_channel(from.b + (to.b - from.b) * share),
 		}
 	}
 
@@ -179,9 +179,7 @@ dusk_while_up = |height| {
 dusk_after_set : Pixels -> Fraction
 dusk_after_set = |height| {
 	sunk_past_set = Sky.sun_fully_set_px.minus(height).ratio_to(Sky.sun_radius_px)
-	Fraction.clamp(
-		(Sky.dusk_at_set.to_f64() + (sunk_past_set * Sky.dusk_at_set.complement().to_f64())),
-	)
+	Fraction.clamp(Sky.dusk_at_set.to_f64() + sunk_past_set * Sky.dusk_at_set.complement().to_f64())
 }
 
 sky_at : Clock -> Sky.Rgb
@@ -232,23 +230,23 @@ expect Sky.sunset_warmth(Clock.at_step(6000)).to_f64() == 0.0
 expect Sky.sunset_glow.to_f64() == 0.85
 
 # The sky and the horizon at each thousandth step of the ride.
-expect Sky.sky_top_color(Clock.at_step(0)) == 9358054
-expect Sky.sky_top_color(Clock.at_step(1000)) == 9160418
-expect Sky.sky_top_color(Clock.at_step(2000)) == 8633304
-expect Sky.sky_top_color(Clock.at_step(3000)) == 7710918
-expect Sky.sky_top_color(Clock.at_step(4000)) == 6393260
-expect Sky.sky_top_color(Clock.at_step(5000)) == 4219010
-expect Sky.sky_top_color(Clock.at_step(6000)) == 2374238
-expect Sky.sky_horizon_color(Clock.at_step(0)) == 9358054
-expect Sky.sky_horizon_color(Clock.at_step(1000)) == 9160418
-expect Sky.sky_horizon_color(Clock.at_step(2000)) == 8633304
-expect Sky.sky_horizon_color(Clock.at_step(3000)) == 10324366
-expect Sky.sky_horizon_color(Clock.at_step(4000)) == 13262919
-expect Sky.sky_horizon_color(Clock.at_step(5000)) == 8019301
-expect Sky.sky_horizon_color(Clock.at_step(6000)) == 2374238
-expect Sky.pack(Sky.day_sky) == 9358054
-expect Sky.pack(Sky.dusk_sky) == 2374238
-expect Sky.pack(Sky.sunset_red) == 14571572
+expect Sky.sky_top_color(Clock.at_step(0)) == 0x8ECAE6
+expect Sky.sky_top_color(Clock.at_step(1000)) == 0x8BC6E2
+expect Sky.sky_top_color(Clock.at_step(2000)) == 0x83BBD8
+expect Sky.sky_top_color(Clock.at_step(3000)) == 0x75A8C6
+expect Sky.sky_top_color(Clock.at_step(4000)) == 0x618DAC
+expect Sky.sky_top_color(Clock.at_step(5000)) == 0x406082
+expect Sky.sky_top_color(Clock.at_step(6000)) == 0x243A5E
+expect Sky.sky_horizon_color(Clock.at_step(0)) == 0x8ECAE6
+expect Sky.sky_horizon_color(Clock.at_step(1000)) == 0x8BC6E2
+expect Sky.sky_horizon_color(Clock.at_step(2000)) == 0x83BBD8
+expect Sky.sky_horizon_color(Clock.at_step(3000)) == 0x9D898E
+expect Sky.sky_horizon_color(Clock.at_step(4000)) == 0xCA6047
+expect Sky.sky_horizon_color(Clock.at_step(5000)) == 0x7A5D65
+expect Sky.sky_horizon_color(Clock.at_step(6000)) == 0x243A5E
+expect Sky.pack(Sky.day_sky) == 0x8ECAE6
+expect Sky.pack(Sky.dusk_sky) == 0x243A5E
+expect Sky.pack(Sky.sunset_red) == 0xDE5834
 
 expect
 	Sky.color_between({
@@ -289,7 +287,7 @@ expect
 # The rider faces the sun, then away from it.
 expect
 	Sky.sun_sighting({
-		heading: Angle.Bearing.radians(0.0 - 2.2176),
+		heading: Angle.Bearing.radians(-2.2176),
 		clock: Clock.start,
 		cam_focal: Lens.focal,
 	})
@@ -302,7 +300,7 @@ expect
 # A lens at half its focal length draws the sun at half its size.
 expect
 	Sky.sun_sighting({
-		heading: Angle.Bearing.radians(0.0 - 2.2176),
+		heading: Angle.Bearing.radians(-2.2176),
 		clock: Clock.start,
 		cam_focal: Lens.focal.times(0.5),
 	})

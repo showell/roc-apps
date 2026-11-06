@@ -133,10 +133,10 @@ extent_of = |polygons|
 					top: first.y,
 				},
 				|extent, point| {
-					left: F64.min(extent.left, point.x),
-					right: F64.max(extent.right, point.x),
-					bottom: F64.min(extent.bottom, point.y),
-					top: F64.max(extent.top, point.y),
+					left: extent.left.min(point.x),
+					right: extent.right.max(point.x),
+					bottom: extent.bottom.min(point.y),
+					top: extent.top.max(point.y),
 				},
 			)
 		[] => crash "StillsWidgetApp.extent_of: every still has points"
@@ -169,8 +169,8 @@ name_size = 10.0
 row_height_px : List(StillsWidgetApp.PoseStill), F64 -> F64
 row_height_px = |stills, cell_width| {
 	extents = stills.map(|still| extent_of(still.polygons))
-	widest = extents.fold(0.0, |most, extent| F64.max(most, extent_width(extent)))
-	tallest = extents.fold(0.0, |most, extent| F64.max(most, extent.top))
+	widest = extents.fold(0.0, |most, extent| most.max(extent_width(extent)))
+	tallest = extents.fold(0.0, |most, extent| most.max(extent.top))
 	F64.min((cell_width - 2.0 * cell_padding) / widest, (cell_ground - cell_padding) / tallest)
 }
 
@@ -361,8 +361,7 @@ hint_line = |text, row|
 polygon_outline : StillDraw.Anchor, Stills.StillPolygon -> List(Shapes.Shape)
 polygon_outline = |anchor, polygon| {
 	corners = StillDraw.screen_points(anchor, polygon.points)
-	List.map2(
-		corners,
+	corners.map2(
 		corners.drop_first(1).concat(corners.take_first(1)),
 		|from, to|
 			Shapes.line(
@@ -608,7 +607,7 @@ expect
 			height = large_anchor(still.polygons).height_px.to_f64()
 			wide_room = large_area.width - height * extent_width(extent)
 			tall_room = large_area.height - height * (extent.top - extent.bottom)
-			F64.min(wide_room, tall_room).abs() <= 0.000001
+			wide_room.min(tall_room).abs() <= 0.000001
 		},
 	)
 

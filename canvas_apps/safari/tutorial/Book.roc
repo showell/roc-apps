@@ -69,6 +69,11 @@ Book := [].{
 			title: "Critter motion",
 		},
 		{
+			before: "Rehearsal",
+			level: Category,
+			title: "How the rider steers",
+		},
+		{
 			before: "The math layer",
 			level: Part,
 			title: "Under the hood",
@@ -138,7 +143,7 @@ Neighbour : Try(Chapter, [OutOfBounds])
 ## sections. Anything else means the split went wrong, so it stops the build.
 chapter_of : Str, MdDocument.FenceHook -> Chapter
 chapter_of = |text, fence| {
-	rendered = Md.render_document(text.to_utf8(), { fence: fence, images: AsLinks })
+	rendered = Md.render_document(text.to_utf8(), { fence, images: AsLinks })
 	match rendered.headings {
 		[top, .. as rest] if top.level == 1 and rest.all(|heading| heading.level == 2) => {
 			{

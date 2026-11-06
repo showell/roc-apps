@@ -41,18 +41,7 @@ PixelColor :: [].{
 }
 
 channel_byte : F64 -> U32
-channel_byte = |v| {
-	n = F64.to_i64_wrap(v + 0.5)
-	I64.to_u32_wrap(
-		if n < 0 {
-			0
-		} else if n > 255 {
-			255
-		} else {
-			n
-		},
-	)
-}
+channel_byte = |v| (v + 0.5).to_i64_wrap().max(0).min(255).to_u32_wrap()
 
 ## A pixel's channels: the mirror of `pack`.
 unpack : U32 -> PixelColor.Rgb

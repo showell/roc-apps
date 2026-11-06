@@ -45,7 +45,7 @@ paint_glow_and_disc = |pixels, { roll, sun }| {
 			$px = if p.x >= 0.0 and p.x < screen_width and p.y >= 0.0 and p.y < horizon_y {
 				at = PixelGrid.pixel_index({ row, column, width: roll.width_px() })
 				lit = PixelGrid.blend($px, { at, color: Brush.shade(fills.glow, p.x, p.y) })
-				distance = F64.sqrt((p.x - sun_x) * (p.x - sun_x) + (p.y - sun_y) * (p.y - sun_y))
+				distance = ((p.x - sun_x) * (p.x - sun_x) + (p.y - sun_y) * (p.y - sun_y)).sqrt()
 				if distance < fills.disc_radius.to_f64() {
 					PixelGrid.blend(lit, { at, color: Brush.shade(fills.disc, p.x, p.y) })
 				} else {

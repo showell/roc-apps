@@ -85,7 +85,7 @@ Cows :: [].{
 
 	## The bull, if there is one, then the cows.
 	herd : [WithBull, NoBull] -> List(Scenery.Critter)
-	herd = |bull| List.concat(Cows.bull_of(bull), Cows.cows)
+	herd = |bull| Cows.bull_of(bull).concat(Cows.cows)
 }
 
 cow_at : I64 -> Scenery.Critter

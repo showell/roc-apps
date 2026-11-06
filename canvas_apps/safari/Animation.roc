@@ -2,7 +2,7 @@
 ## know nothing of each other. A rule, `over_gap` or `over_beats`, turns where
 ## the rider is into a stage: waiting, playing, or past. A timeline turns a
 ## stage into an instant: how the critter looks and where it is. A timeline is
-## data, so a critter's whole animation reads in one place, as a score.
+## data, so a critter's whole animation reads in one place.
 ##
 ## A timeline runs on two tracks, one for how the critter looks and one for
 ## where it goes, because the two change at different points. Each track's
@@ -147,12 +147,12 @@ Animation :: [].{
 				lift.minus : lift, lift -> lift,
 				lift.times : lift, F64 -> lift,
 			]
-		instant = |timeline, stage| {
-			Animation.Timeline.(score) = timeline
+		instant = |animation, stage| {
+			Animation.Timeline.(timeline) = animation
 			match stage {
-				Waiting => score.before
-				Playing(progress) => timeline.at_beat(Beat.at(score.length.portion(progress)))
-				Past(_) => score.after
+				Waiting => timeline.before
+				Playing(progress) => animation.at_beat(Beat.at(timeline.length.portion(progress)))
+				Past(_) => timeline.after
 			}
 		}
 
@@ -163,9 +163,9 @@ Animation :: [].{
 				lift.minus : lift, lift -> lift,
 				lift.times : lift, F64 -> lift,
 			]
-		at_beat = |Animation.Timeline.(score), beat| {
-			looks = playing_at(score.looks, { beat, length: score.length })
-			path = playing_at(score.path, { beat, length: score.length })
+		at_beat = |Animation.Timeline.(timeline), beat| {
+			looks = playing_at(timeline.looks, { beat, length: timeline.length })
+			path = playing_at(timeline.path, { beat, length: timeline.length })
 			played = beat.beats_from(path.from)
 			fraction = Fraction.of(played.ratio_to(path.to.beats_from(path.from)))
 			{ pose: pose_of(looks.plays, beat), spot: path_spot(path.plays, fraction) }

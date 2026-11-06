@@ -34,8 +34,8 @@ ScanlineFill :: [].{
 				next_corners = corners.drop_first(1).concat(corners.take_first(1))
 				edges = corners.map2(next_corners, |from, to| { from, to })
 				rows = PixelGrid.pixels_between({
-					from: corners.fold(first.y, |top, corner| F64.min(top, corner.y)),
-					to: corners.fold(first.y, |bottom, corner| F64.max(bottom, corner.y)),
+					from: corners.fold(first.y, |top, corner| top.min(corner.y)),
+					to: corners.fold(first.y, |bottom, corner| bottom.max(corner.y)),
 					extent: roll.height_px(),
 				})
 				var $px = pixels
@@ -70,7 +70,7 @@ ScanlineFill :: [].{
 			dy = PixelGrid.pixel_center(row) - on_screen.y
 			half_squared = radius * radius - dy * dy
 			$px = if half_squared > 0.0 {
-				half = F64.sqrt(half_squared)
+				half = half_squared.sqrt()
 				paint_span(
 					$px,
 					{

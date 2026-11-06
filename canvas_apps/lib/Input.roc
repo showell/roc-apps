@@ -33,20 +33,20 @@ Input :: [].{
 
 		## Whether a key is held down now, however long it has been.
 		key_down : Snapshot, Keys.Key -> Bool
-		key_down = |snapshot, key| U32.bitwise_and(snapshot.held, Keys.bit(key)) != 0
+		key_down = |snapshot, key| snapshot.held.bitwise_and(Keys.bit(key)) != 0
 
 		## Whether a key went down since the last tick.
 		key_pressed : Snapshot, Keys.Key -> Bool
-		key_pressed = |snapshot, key| U32.bitwise_and(snapshot.struck, Keys.bit(key)) != 0
+		key_pressed = |snapshot, key| snapshot.struck.bitwise_and(Keys.bit(key)) != 0
 
 		## Say that a key is held, as `Input.none.with_key_down(KeyW)`.
 		with_key_down : Snapshot, Keys.Key -> Snapshot
-		with_key_down = |s, key| Snapshot.{ held: U32.bitwise_or(s.held, Keys.bit(key)), struck: s.struck, mouse: s.mouse }
+		with_key_down = |s, key| Snapshot.{ held: s.held.bitwise_or(Keys.bit(key)), struck: s.struck, mouse: s.mouse }
 
 		## Say that a key was struck, which is also held.
 		with_key_pressed : Snapshot, Keys.Key -> Snapshot
 		with_key_pressed = |s, key|
-			Snapshot.{ held: U32.bitwise_or(s.held, Keys.bit(key)), struck: U32.bitwise_or(s.struck, Keys.bit(key)), mouse: s.mouse }
+			Snapshot.{ held: s.held.bitwise_or(Keys.bit(key)), struck: s.struck.bitwise_or(Keys.bit(key)), mouse: s.mouse }
 
 		## Give a snapshot its pointer, as roc-ray's `with_mouse_*` do.
 		with_mouse : Snapshot, Mouse.Snapshot -> Snapshot
@@ -60,5 +60,5 @@ Input :: [].{
 
 	## What a runner packs a tick's input into.
 	of : U32, U32, Mouse.Snapshot -> Input.Snapshot
-	of = |held, struck, mouse| Snapshot.{ held: U32.bitwise_or(held, struck), struck, mouse }
+	of = |held, struck, mouse| Snapshot.{ held: held.bitwise_or(struck), struck, mouse }
 }

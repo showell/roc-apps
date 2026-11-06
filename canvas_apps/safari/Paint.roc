@@ -15,10 +15,10 @@ Paint :: [].{
 	Span : { min_x : Pixels, max_x : Pixels }
 
 	red_of : I64 -> I64
-	red_of = |color| color.shr_wrap(I64.to_u8_wrap(16)).bitwise_and(255)
+	red_of = |color| color.shr_wrap(16).bitwise_and(255)
 
 	green_of : I64 -> I64
-	green_of = |color| color.shr_wrap(I64.to_u8_wrap(8)).bitwise_and(255)
+	green_of = |color| color.shr_wrap(8).bitwise_and(255)
 
 	blue_of : I64 -> I64
 	blue_of = |color| color.bitwise_and(255)
@@ -65,13 +65,13 @@ Paint :: [].{
 	## A shaded polygon's colour at its edges.
 	width_shade_edge : I64, Fraction -> I64
 	width_shade_edge = |color, strength|
-		shade_color(color, (1.0 - (shade_edge_darken.to_f64() * strength.to_f64())))
+		shade_color(color, 1.0 - shade_edge_darken.to_f64() * strength.to_f64())
 
 	## A shaded polygon's colour in its middle.
 	width_shade_middle : I64, Fraction -> I64
 	width_shade_middle = |color, strength| shade_color(
 		color,
-		(1.0 + (shade_middle_lift.to_f64() * strength.to_f64())),
+		1.0 + shade_middle_lift.to_f64() * strength.to_f64(),
 	)
 
 	min_shade_width : Pixels
@@ -569,7 +569,7 @@ expect ellipse_of_height(0.011) != [
 ]
 
 sample_color : I64
-sample_color = 8405024
+sample_color = 0x804020
 
 expect Paint.red_of(sample_color) == 128
 expect Paint.green_of(sample_color) == 64
@@ -579,9 +579,9 @@ expect Paint.pack_rgb({
 	green: 64,
 	blue: 32,
 }) == sample_color
-expect Paint.red_of(16777215) == 255
-expect Paint.green_of(16777215) == 255
-expect Paint.blue_of(16777215) == 255
+expect Paint.red_of(0xFFFFFF) == 255
+expect Paint.green_of(0xFFFFFF) == 255
+expect Paint.blue_of(0xFFFFFF) == 255
 expect Paint.red_of(0) == 0
 expect Paint.pack_rgb({
 	red: 0,
@@ -592,7 +592,7 @@ expect Paint.pack_rgb({
 	red: 255,
 	green: 255,
 	blue: 255,
-}) == 16777215
+}) == 0xFFFFFF
 
 expect Paint.shade_channel(128, 0.6) == 77
 expect Paint.shade_channel(64, 0.6) == 38
@@ -601,17 +601,17 @@ expect Paint.shade_channel(250, 1.25) == 255
 expect Paint.shade_channel(255, 1.0) == 255
 expect Paint.shade_channel(255, 2.0) == 255
 expect Paint.shade_channel(0, 1.25) == 0
-expect Paint.shade_color(sample_color, 0.6) == 5056019
+expect Paint.shade_color(sample_color, 0.6) == 0x4D2613
 
-expect Paint.width_shade_edge(sample_color, Fraction.whole) == 5056019
-expect Paint.width_shade_middle(sample_color, Fraction.whole) == 10506280
-expect Paint.width_shade_edge(sample_color, Fraction.of(0.5)) == 6697754
-expect Paint.width_shade_middle(sample_color, Fraction.of(0.5)) == 9455652
+expect Paint.width_shade_edge(sample_color, Fraction.whole) == 0x4D2613
+expect Paint.width_shade_middle(sample_color, Fraction.whole) == 0xA05028
+expect Paint.width_shade_edge(sample_color, Fraction.of(0.5)) == 0x66331A
+expect Paint.width_shade_middle(sample_color, Fraction.of(0.5)) == 0x904824
 expect Paint.width_shade_edge(sample_color, Fraction.zero) == sample_color
 expect Paint.width_shade_middle(sample_color, Fraction.zero) == sample_color
 
 # A lift past 255 holds at white.
-expect Paint.width_shade_middle(16448250, Fraction.whole) == 16777215
+expect Paint.width_shade_middle(0xFAFAFA, Fraction.whole) == 0xFFFFFF
 
 expect Paint.is_too_narrow_to_shade({ min_x: Pixels.of(10.0), max_x: Pixels.of(10.5) })
 expect !Paint.is_too_narrow_to_shade({ min_x: Pixels.of(10.0), max_x: Pixels.of(11.0) })
@@ -644,8 +644,8 @@ expect
 			Poly({
 				pts: [10.0, 1.0, 30.0, 2.0, 20.0, 3.0],
 				fill: Span({
-					edge: Brush.opaque(5056019),
-					middle: Brush.opaque(10506280),
+					edge: Brush.opaque(0x4D2613),
+					middle: Brush.opaque(0xA05028),
 					x0: 10.0,
 					x1: 30.0,
 				}),

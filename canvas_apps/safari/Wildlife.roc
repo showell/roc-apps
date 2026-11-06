@@ -52,14 +52,14 @@ Wildlife :: [].{
 					if turn.is_right() {
 						{ inward: 1.0, facing: FacesRight }
 					} else {
-						{ inward: (0.0 - 1.0), facing: FacesLeft }
+						{ inward: -1.0, facing: FacesLeft }
 					}
 				clear_of_rail = road_half_width.plus(adult_rail_buffer)
 				out_from_middle = clear_of_rail.plus(species.adult_height.divided_by(2.0))
 				[
 					{
 						along: bend_along,
-						across: Across.right_of_middle(out_from_middle.times(0.0 - inward)),
+						across: Across.right_of_middle(out_from_middle.times(-inward)),
 						codepoint: species.codepoint,
 						height: species.adult_height,
 						facing,
@@ -99,7 +99,7 @@ expect Wildlife.baby_beyond.to_metres() == 14.0
 ## An animal and its baby at each of four bends, the first and third turning
 ## right and the second and fourth left.
 all_four : List(Scenery.Critter)
-all_four = List.join([
+all_four = [
 	Wildlife.bend_critters({
 		bend_life: Animal(Elephant),
 		bend_along: Along.metres(100.0),
@@ -124,7 +124,7 @@ all_four = List.join([
 		turn: Angle.Turn.degrees(-70.0),
 		road_half_width: Distance.metres(2.0),
 	}),
-])
+].join()
 
 expect
 	all_four.map(|critter| critter.across.to_metres())

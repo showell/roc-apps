@@ -263,11 +263,11 @@ trim_hull = |hull, point|
 ## before plus a step, not a multiple of the step: the two round differently.
 ring_angles : List(F64)
 ring_angles = {
-	step = (F64.tau / TreeDraw.ring_n.to_f64())
+	step = F64.tau / TreeDraw.ring_n.to_f64()
 	walked = List.repeat(step, (TreeDraw.ring_n - 1).to_u64_wrap()).fold(
 		{ angle: 0.0, angles: [0.0] },
 		|so_far, turn| {
-			angle = (so_far.angle + turn)
+			angle = so_far.angle + turn
 			{ angle, angles: so_far.angles.append(angle) }
 		},
 	)
@@ -302,8 +302,8 @@ tier_cone = |tree, { tier, cone_radius }| {
 	crown = TreeDraw.crown_height.to_f64()
 	bottom = tier.bottom.to_f64()
 	top = tier.top.to_f64()
-	base_height = tree.height.times(trunk + (crown * (1.0 - bottom)))
-	apex_height = tree.height.times(trunk + (crown * (1.0 - top)))
+	base_height = tree.height.times(trunk + crown * (1.0 - bottom))
+	apex_height = tree.height.times(trunk + crown * (1.0 - top))
 	apex = Camera.project(
 		{
 			right: tree.right,
@@ -345,7 +345,7 @@ expect TreeDraw.tiers.map(|tier| tier.width.to_f64()) == [
 
 expect TreeDraw.tiers.len() == 8
 expect TreeDraw.ring_n == 16
-expect TreeDraw.trunk_color == 5914146
+expect TreeDraw.trunk_color == 0x5A3E22
 
 expect TreeDraw.visible_trunk.to_f64() == 0.44
 expect TreeDraw.crown_height.to_f64() == 0.648
@@ -372,7 +372,7 @@ expect
 		== [
 			Poly({
 				pts: [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0],
-				fill: Flat(Brush.opaque(5914146)),
+				fill: Flat(Brush.opaque(0x5A3E22)),
 			}),
 		]
 
@@ -383,8 +383,8 @@ expect
 			Poly({
 				pts: [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0],
 				fill: Span({
-					edge: Brush.opaque(3548436),
-					middle: Brush.opaque(7425579),
+					edge: Brush.opaque(0x362514),
+					middle: Brush.opaque(0x714E2B),
 					x0: 440.0,
 					x1: 520.0,
 				}),

@@ -101,9 +101,10 @@ Throttle :: [].{
 	} -> Acceleration
 	shoulder_brake_at = |state, { steps_to_shoulder, offered_acceleration: a }| {
 		n = steps_to_shoulder.to_f64()
-		brake = (0.0 - state.speed.to_metres_a_step()) / (2.0 * n.max(1.0))
-		decay = F64.e.pow((0.0 - n) / brake_decay.to_f64())
-		sa = Acceleration.metres_a_step_each_step(brake * decay)
+		even_braking = (0.0 - state.speed.to_metres_a_step()) / (2.0 * n.max(1.0))
+		sa = Acceleration.metres_a_step_each_step(
+			even_braking * F64.e.pow((0.0 - n) / brake_decay.to_f64()),
+		)
 		if sa < a {
 			sa
 		} else {
@@ -290,8 +291,8 @@ brake_after = |steps_to_shoulder, offered|
 expect brake_after(40, 0.01) < Acceleration.steady
 expect brake_after(40, 0.01) > brake_after(2, 0.01)
 expect
-	brake_after(40, 0.0 - 9.0)
-		< Acceleration.metres_a_step_each_step(0.0 - 8.999)
+	brake_after(40, -9.0)
+		< Acceleration.metres_a_step_each_step(-8.999)
 
 # A coast that leaves the road at once still brakes.
 expect brake_after(0, 0.01) < Acceleration.steady
@@ -346,14 +347,14 @@ expect
 		(decide(Speed.metres_a_step(0.3), 0.0), 0.01),
 		(decide(VehicleLimits.top_speed, 0.0), 0.0),
 		(decide(Speed.at_rest, 0.0), 0.01),
-		(wide_of_road(0.0 - 0.001), 0.01),
-		(wide_of_road(0.0 - hold_radians), 0.0),
-		(wide_of_road((0.0 - hold_radians) - 0.5), 0.0),
+		(wide_of_road(-0.001), 0.01),
+		(wide_of_road(-hold_radians), 0.0),
+		(wide_of_road(-hold_radians - 0.5), 0.0),
 	].all(|(got, want)| (got.to_metres_a_step_each_step() - want).abs() <= 0.000000000001)
 
 expect decide(Speed.metres_a_step(0.3), hold_radians - 0.001) < Acceleration.steady
 expect decide(Speed.metres_a_step(0.3), 0.001) > Acceleration.steady
-expect decide(Speed.metres_a_step(0.3), 0.0 - (hold_radians - 0.001)) < Acceleration.steady
+expect decide(Speed.metres_a_step(0.3), -(hold_radians - 0.001)) < Acceleration.steady
 
 # These are Coast's projections. They sit here because Coast imports neither Speed
 # nor VehicleLimits, and Throttle sees both.
@@ -380,7 +381,7 @@ leaning : Coast.Outcome
 leaning = coast_of(0.0, 0.2)
 
 other_way : Coast.Outcome
-other_way = coast_of(0.0, 0.0 - 0.2)
+other_way = coast_of(0.0, -0.2)
 
 expect straight.forward.to_metres() == 25.0
 expect straight.end_across.to_metres() == 0.0

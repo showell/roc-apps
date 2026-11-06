@@ -134,10 +134,8 @@ Pigs :: [].{
 		edge = Scenery.road_half_width.plus(Scenery.herd_road_offset)
 		front_across = Across.right_of_middle(edge)
 		back_across = Across.right_of_middle(edge.plus(pig_back_row_offset))
-		List.concat(
-			pig_row(herd_along, { across: front_across, offsets: pig_row_front }),
-			pig_row(herd_along, { across: back_across, offsets: pig_row_back }),
-		)
+		pig_row(herd_along, { across: front_across, offsets: pig_row_front })
+			.concat(pig_row(herd_along, { across: back_across, offsets: pig_row_back }))
 	}
 }
 
@@ -156,7 +154,7 @@ pig = |{ along, across }| {
 
 herd_pig : Along, { row : I64, column : I64 } -> Scenery.Critter
 herd_pig = |herd_along, { row, column }| {
-	i = ((row * Pigs.big_herd_columns) + column).to_f64()
+	i = (row * Pigs.big_herd_columns + column).to_f64()
 	fr = row.to_f64()
 	fc = column.to_f64()
 	first_column = herd_along.plus(Pigs.pig_herd_first_column)

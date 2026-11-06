@@ -217,7 +217,7 @@ pond_ground = |road, { segment, place }|
 
 expect GroundSighting.road_chunk_length.to_metres() == 25.0
 expect GroundSighting.lead_in_length.to_metres() == 40.0
-expect GroundSighting.road_color == 3421500
+expect GroundSighting.road_color == 0x34353C
 expect
 	[
 		(25.0, 1),

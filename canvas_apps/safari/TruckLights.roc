@@ -64,7 +64,7 @@ TruckLights :: [].{
 	distance = |{ from, to }| {
 		dx = from.x.minus(to.x).to_f64()
 		dy = from.y.minus(to.y).to_f64()
-		Pixels.of(((dx * dx) + (dy * dy)).sqrt())
+		Pixels.of((dx * dx + dy * dy).sqrt())
 	}
 
 	## How far the farthest of `points` is from `center`.

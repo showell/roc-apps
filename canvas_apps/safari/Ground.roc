@@ -63,7 +63,7 @@ expect
 		}
 
 patch_shapes : List(Geom.RiderPoint) -> List(Shapes.Shape)
-patch_shapes = |corners| Ground.draw({ corners, color: 3112588 }, Pixels.of(685.5110432362151))
+patch_shapes = |corners| Ground.draw({ corners, color: 0x2F7E8C }, Pixels.of(685.5110432362151))
 
 patch_ahead : List(Geom.RiderPoint)
 patch_ahead = [
@@ -103,7 +103,7 @@ expect patch_shapes([
 
 expect {
 	match patch_shapes(patch_ahead) {
-		[Poly(polygon)] => polygon.fill == Flat(Brush.opaque(3112588)) and polygon.pts.len() == 8
+		[Poly(polygon)] => polygon.fill == Flat(Brush.opaque(0x2F7E8C)) and polygon.pts.len() == 8
 		_ => False
 	}
 }

@@ -121,8 +121,8 @@ gaze_only = RideFocal.ride_focal(route, { ..upright, attention: Fraction.whole }
 expect both <= lean_only
 expect both <= gaze_only
 expect
-	F64.to_bits(both.to_f64())
-		== F64.to_bits(lean_only.to_f64().min(gaze_only.to_f64()))
+	both.to_f64().to_bits()
+		== lean_only.to_f64().min(gaze_only.to_f64()).to_bits()
 expect lean_only.plus(gaze_only) > both
 expect both.to_f64() - lean_only.to_f64().min(gaze_only.to_f64()) == 0.0
 expect Lens.cam_focal({

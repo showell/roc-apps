@@ -54,7 +54,7 @@ Cat :: [].{
 	## Where the cat's head is across its body, in cat heights; it freezes
 	## with its head in the middle of the lane.
 	cat_head_x : CatHeights
-	cat_head_x = CatHeights.of(0.0 - 0.48)
+	cat_head_x = CatHeights.of(-0.48)
 
 	## How far the cat's hind feet land past the grass's edge.
 	land_hind_reach : Distance
@@ -77,7 +77,7 @@ Cat :: [].{
 		{
 			along: tree_along.plus(cat_beyond_tree),
 			start_across: Across.right_of_middle(tree_across.plus(cat_road_gap)),
-			mid_across: Across.right_of_middle(cat_height.times(0.0 - cat_head_x.to_f64())),
+			mid_across: Across.right_of_middle(cat_height.times(-cat_head_x.to_f64())),
 			end_across: far_verge.minus(land_hind_reach),
 			height: cat_height,
 		}
@@ -341,8 +341,8 @@ expect
 expect Cat.attention(coming(41.0, 1.0)).to_f64() == 0.0
 expect Cat.attention(coming(22.0, 1.0)).to_f64() == 0.9
 expect Cat.attention(coming(3.0, 1.0)).to_f64() == 1.8
-expect Cat.attention(coming(0.0 - 38.5, 1.0)).to_f64() == 0.9
-expect Cat.attention(coming(0.0 - 80.0, 1.0)).to_f64() == 0.0
+expect Cat.attention(coming(-38.5, 1.0)).to_f64() == 0.9
+expect Cat.attention(coming(-80.0, 1.0)).to_f64() == 0.0
 expect Cat.attention(coming(22.0, 0.0)).to_f64() == 0.0
 expect Cat.peak_attention.to_f64() == 1.8
 expect Cat.attention_fade.to_f64() == 83.0

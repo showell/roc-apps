@@ -62,29 +62,16 @@ View :: [].{
 	seen : View.View, List(View.At) -> List(F64)
 	seen = |v, pts| {
 		kept = clipped(turned(v, pts))
-		n = List.len(kept)
-		var $out = List.with_capacity(2 * n)
-		var $i = 0
-		while $i < n {
-			p = flat(v, List.get(kept, $i) ?? { right: 0.0, forward: 1.0, height: 0.0 })
-			$out = List.append($out, p.x)
-			$out = List.append($out, p.y)
-			$i = $i + 1
+		var $out = List.with_capacity(2 * kept.len())
+		for point in kept {
+			p = flat(v, point)
+			$out = $out.append(p.x).append(p.y)
 		}
 		$out
 	}
 
 	turned : View.View, List(View.At) -> List(View.At)
-	turned = |v, pts| {
-		n = List.len(pts)
-		var $out = List.with_capacity(n)
-		var $i = 0
-		while $i < n {
-			$out = List.append($out, turn(v, List.get(pts, $i) ?? { right: 0.0, forward: 1.0, height: 0.0 }))
-			$i = $i + 1
-		}
-		$out
-	}
+	turned = |v, pts| pts.map(|p| turn(v, p))
 
 	# **A POLYGON IS CUT, NOT DROPPED.** Dropping one the moment a corner goes
 	# behind the eye pops a whole house off the screen while most of it is
@@ -92,32 +79,17 @@ View :: [].{
 	# near plane wherever an edge crosses it.
 	clipped : List(View.At) -> List(View.At)
 	clipped = |pts| {
-		n = List.len(pts)
-		var $out = List.with_capacity(n + 2)
-		var $i = 0
-		while $i < n {
-			a = List.get(pts, $i) ?? { right: 0.0, forward: 1.0, height: 0.0 }
-			b = List.get(
-				pts,
-				if $i + 1 == n {
-					0
-				} else {
-					$i + 1
-				},
-			) ?? { right: 0.0, forward: 1.0, height: 0.0 }
+		neighbours = pts.drop_first(1).concat(pts.take_first(1))
+		var $out = List.with_capacity(pts.len() + 2)
+		for (a, b) in pts.map2(neighbours, |a, b| (a, b)) {
 			a_in = a.forward > near
 			b_in = b.forward > near
-			$out = if a_in {
-				List.append($out, a)
-			} else {
-				$out
+			if a_in {
+				$out = $out.append(a)
 			}
-			$out = if a_in == b_in {
-				$out
-			} else {
-				List.append($out, crossing(a, b))
+			if a_in != b_in {
+				$out = $out.append(crossing(a, b))
 			}
-			$i = $i + 1
 		}
 		$out
 	}

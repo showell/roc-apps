@@ -42,7 +42,7 @@ VehicleLimits :: [].{
 	turn_speed : Angle.Turn -> Speed
 	turn_speed = |turn| {
 		whole_degrees =
-			((turn.to_radians() * 180.0) / F64.pi).round_to_i64_try()
+			(turn.to_radians() * 180.0 / F64.pi).round_to_i64_try()
 				?? crash "VehicleLimits.turn_speed: a turn is a finite angle"
 		degrees = whole_degrees.to_f64()
 		match turn_speeds.find_first(|row| row.degrees == degrees) {

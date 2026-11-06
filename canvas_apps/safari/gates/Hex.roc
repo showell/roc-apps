@@ -12,15 +12,15 @@ Hex :: [].{
 		var $k = digits
 		while $k > 0 {
 			$k = $k - 1
-			shift = U64.to_u8_wrap(4 * $k)
-			nibble = I64.bitwise_and(I64.shr_wrap(number, shift), 15)
+			shift = ($k * 4).to_u8_wrap()
+			nibble = number.shr_wrap(shift).bitwise_and(15)
 			# 48 is '0', and 87 is 'a' less ten.
 			code = if nibble < 10 {
 				nibble + 48
 			} else {
 				nibble + 87
 			}
-			$out = $out.append(I64.to_u8_wrap(code))
+			$out = $out.append(code.to_u8_wrap())
 		}
 		$out
 	}

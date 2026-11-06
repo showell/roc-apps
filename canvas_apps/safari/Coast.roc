@@ -80,11 +80,7 @@ Coast :: [].{
 				end_across: across,
 			}
 		} else if forward < Distance.zero {
-			{
-				exit: StaysOn,
-				forward: forward,
-				end_across: across,
-			}
+			{ exit: StaysOn, forward, end_across: across }
 		} else if forward >= clear_distance {
 			{
 				exit: StaysOn,

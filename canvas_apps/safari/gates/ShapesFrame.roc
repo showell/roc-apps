@@ -26,12 +26,11 @@ import Hex
 import ProofRide
 
 triangles : List(Shapes.Shape) -> U64
-triangles = |shapes| List.fold(
-	shapes,
+triangles = |shapes| shapes.fold(
 	0,
 	|n, s|
 		match s {
-			Pieces(p) => n + List.len(p.tris) // 6
+			Pieces(p) => n + p.tris.len() // 6
 			_ => n
 		},
 )
@@ -55,16 +54,12 @@ compare = |tour| {
 	a = SafariFrame.paint(scene)
 	backdrop = SafariFrame.paint({ ..scene, shapes: [] })
 	b = ShapesPixels.paint(backdrop, { roll: SafariFrame.screen_roll(roll), shapes: cut_shapes })
-	n = List.len(a)
+	n = a.len()
 	var $differ = 0
-	var $k = 0
-	while $k < n {
-		$differ = if List.get(a, $k) == List.get(b, $k) {
-			$differ
-		} else {
-			$differ + 1
+	for k in 0..<n {
+		if a.get(k) != b.get(k) {
+			$differ = $differ + 1
 		}
-		$k = $k + 1
 	}
 	differing = "differ ${U64.to_str($differ)} of ${U64.to_str(n)}"
 	totals = "triangles ${triangles(cut_shapes).to_str()}, shapes ${instant_shapes.len().to_str()}"
@@ -78,16 +73,13 @@ print_picture! : I64 => {}
 print_picture! = |steps| {
 	comparison = compare(ProofRide.ride_on(Tour.initial, steps))
 	pixels = comparison.pixels
-	n = List.len(pixels)
-	var $out = List.with_capacity(n * 6 + 64)
+	var $out = List.with_capacity(pixels.len() * 6 + 64)
 	size = "${Screen.width_px.to_str()} ${Screen.height_px.to_str()}"
-	$out = List.concat($out, Str.to_utf8("${comparison.counts}\nhash 00000000\n${size}\n"))
-	var $k = 0
-	while $k < n {
-		$out = Hex.append_digits($out, { number: U32.to_i64(List.get(pixels, $k) ?? 0), digits: 6 })
-		$k = $k + 1
+	$out = $out.concat("${comparison.counts}\nhash 00000000\n${size}\n".to_utf8())
+	for pixel in pixels {
+		$out = Hex.append_digits($out, { number: pixel.to_i64(), digits: 6 })
 	}
-	echo!(Str.from_utf8_lossy(List.append($out, 10)))
+	echo!(Str.from_utf8_lossy($out.append(10)))
 }
 
 main! = |args| {

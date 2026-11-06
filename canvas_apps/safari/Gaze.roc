@@ -165,7 +165,7 @@ Gaze :: [].{
 
 	pig_gaze_brake : RiderState, World.Segment -> Gaze.GazeBrake
 	pig_gaze_brake = |state, seg|
-		if is_gawking(state, seg) == False {
+		if !is_gawking(state, seg) {
 			{ is_gawking: False, acceleration: Acceleration.steady }
 		} else if state.speed <= pig_gaze_speed {
 			{ is_gawking: True, acceleration: Acceleration.steady }
@@ -224,7 +224,7 @@ rider = |along, yaw| {
 }
 
 expect Gaze.pig_ahead(rider(200.0, 0.0), plain) == NotLooking
-expect Gaze.pig_ahead(rider(200.0, (10.0 * Trig.deg)), distracting) == NotLooking
+expect Gaze.pig_ahead(rider(200.0, 10.0 * Trig.deg), distracting) == NotLooking
 expect Gaze.pig_ahead(rider(100.0, 0.0), distracting) == NotLooking
 expect Gaze.pig_ahead(rider(341.0, 0.0), distracting) == NotLooking
 expect Gaze.pig_ahead(rider(200.0, 0.0), distracting) == Looking
@@ -269,25 +269,25 @@ return_snap : F64
 return_snap = Gaze.gaze_return_snap.to_radians()
 
 expect gaze_after(head(0.0, 200.0), 1.0) - swivel_rate == 0.0
-expect gaze_after(head(0.0, 200.0), (0.0 - 1.0)) + swivel_rate == 0.0
-expect gaze_after(head(0.0, 200.0), (swivel_rate / 2.0)) - (swivel_rate / 2.0) == 0.0
+expect gaze_after(head(0.0, 200.0), -1.0) + swivel_rate == 0.0
+expect gaze_after(head(0.0, 200.0), swivel_rate / 2.0) - swivel_rate / 2.0 == 0.0
 
 expect {
-	big = gaze_returning(head((30.0 * Trig.deg), 200.0))
-	small = gaze_returning(head((2.0 * Trig.deg), 200.0))
-	big < (30.0 * Trig.deg)
+	big = gaze_returning(head(30.0 * Trig.deg, 200.0))
+	small = gaze_returning(head(2.0 * Trig.deg, 200.0))
+	big < 30.0 * Trig.deg
 		and big > 0.0
-		and small < (2.0 * Trig.deg)
+		and small < 2.0 * Trig.deg
 		and small > 0.0
-		and ((30.0 * Trig.deg) - big) > ((2.0 * Trig.deg) - small)
+		and 30.0 * Trig.deg - big > 2.0 * Trig.deg - small
 }
 
 expect gaze_returning(head(return_snap, 200.0)) == 0.0
-expect gaze_returning(head((0.0 - return_snap), 200.0)) == 0.0
+expect gaze_returning(head(-return_snap, 200.0)) == 0.0
 expect gaze_returning(head(0.0, 200.0)) == 0.0
 
 # A pig dead ahead is still a pig: the gaze swivels to it, and doesn't ease.
-expect gaze_after(head((2.0 * Trig.deg), 200.0), 0.0) == 0.0
+expect gaze_after(head(2.0 * Trig.deg, 200.0), 0.0) == 0.0
 
 ## A rider with this attention, looking `gaze_yaw` from straight ahead.
 rider_with_attention : F64, F64 -> RiderState
@@ -297,16 +297,16 @@ rider_with_attention = |attention, gaze_yaw| {
 }
 
 expect {
-	rising = attention_after(rider_with_attention(0.0, (20.0 * Trig.deg)), (20.0 * Trig.deg))
-	held = attention_after(rider_with_attention(0.9, (1.0 * Trig.deg)), (1.0 * Trig.deg))
+	rising = attention_after(rider_with_attention(0.0, 20.0 * Trig.deg), 20.0 * Trig.deg)
+	held = attention_after(rider_with_attention(0.9, 1.0 * Trig.deg), 1.0 * Trig.deg)
 	easing = attention_after(rider_with_attention(0.9, 0.0), 0.0)
 	rising > 0.0 and held >= 0.9 and easing < 0.9 and easing > 0.0
 }
 
 expect attention_after(rider_with_attention(0.0, 0.0), 0.0) == 0.0
-expect attention_after(rider_with_attention(0.0, (90.0 * Trig.deg)), (90.0 * Trig.deg)) == 1.0
-expect !(Gaze.is_gawking(rider(200.0, 0.0), plain))
-expect !(Gaze.is_gawking(rider(100.0, 0.0), distracting))
+expect attention_after(rider_with_attention(0.0, 90.0 * Trig.deg), 90.0 * Trig.deg) == 1.0
+expect !Gaze.is_gawking(rider(200.0, 0.0), plain)
+expect !Gaze.is_gawking(rider(100.0, 0.0), distracting)
 expect Gaze.is_gawking(rider(200.0, 0.0), distracting)
 expect Gaze.is_gawking(rider(341.0, 0.0), distracting)
 

@@ -68,19 +68,16 @@ paint_pieces : List(U32),
 	fill : Brush.Fill,
 } -> List(U32)
 paint_pieces = |pixels, { roll, tris, fill }| {
-	count = tris.len() // 6
 	var $px = pixels
-	var $k = 0
-	while $k < count {
+	for k in 0..<(tris.len() // 6) {
 		$px = ScanlineFill.fill_polygon(
 			$px,
 			{
 				roll,
-				pts: tris.sublist({ start: 6 * $k, len: 6 }),
+				pts: tris.sublist({ start: 6 * k, len: 6 }),
 				fill,
 			},
 		)
-		$k = $k + 1
 	}
 	$px
 }
