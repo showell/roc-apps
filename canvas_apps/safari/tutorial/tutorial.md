@@ -1232,25 +1232,26 @@ A lot of Safari Ride is math and physics, and most of it is geometry a reader co
 - Physics that's a pure function can be run for pretend, which is the best thing in this chapter.
 - It's compiled, so running it for pretend hundreds of times per frame is affordable.
 
-### The workhorses
+### The most imported modules
 
 Safari Ride has 79 modules, not counting `web.roc`, `main.roc` and `game.roc`. The import graph is lopsided in a good way. Counting who imports what, leaving out the test programs, a handful stand out, and the lines here are the ones above each module's `expect`s:
 
 | Module | Imported by | Lines | What it is |
 |---|---|---|---|
-| `Distance` | 37 | 63 | A length in metres |
+| `Distance` | 44 | 62 | A length in metres |
 | `Along` | 29 | 57 | A place along a segment |
-| `Across` | 27 | 79 | A place across the road |
-| `Angle` | 21 | 176 | Three opaque types for rotation |
-| `Scenery` | 19 | 124 | The record types of what stands by the road, and the lane's width |
-| `Fraction` | 17 | 92 | A ratio from 0 to 1 |
-| `Geom` | 17 | 185 | Road points, rider points, and how to turn one into the other |
-| `World` | 17 | 411 | The route |
-| `Chain` | 16 | 188 | Where the road lies from where the rider is |
+| `Across` | 27 | 73 | A place across the road |
+| `Angle` | 21 | 172 | Three opaque types for rotation |
+| `Pixels` | 21 | 86 | A length on screen |
+| `Geom` | 20 | 213 | Road points, rider points, and how to turn one into the other |
+| `Fraction` | 19 | 92 | A ratio from 0 to 1 |
+| `World` | 17 | 415 | The route |
+| `Chain` | 16 | 172 | Where the road lies from where the rider is |
+| `Scenery` | 15 | 48 | The words the world is built from, and the road's width |
 
-After those nine the count drops to 12, for `Screen`, 11 for `Speed` and 10 for `DepthSort`. Most modules are imported by one, two or three others. `Shapes`, `Trig` and `DeviceMath` are imported about as widely. They're in `lib/`, a folder of modules shared with the repository's other canvas apps.
+After those ten the count drops to 12, for `Screen`, 11 for `Speed` and 10 for `DepthSort`. Most modules are imported by one, two or three others. `Shapes`, `Trig` and `DeviceMath` are imported about as widely. They're in `lib/`, a folder of modules shared with the repository's other canvas apps.
 
-These are the workhorses, and there being so few says something about the program. Everything else is a small module that takes one of these and adds a single idea. Five of the nine are nothing but numbers with rules, and the top three are under 80 lines each. Composable is the right word for this, and it isn't a slogan: a cat, a tower and a truck are all found on the road through `Chain`, and all reach the screen through `Camera`.
+These are the core utility modules, and there being so few says something about the program. Everything else is a small module that takes one of these and adds a single idea. Six of the ten are nothing but numbers with rules, and the top three are under 80 lines each. Composable is the right word for this, and it isn't a slogan: a cat, a tower and a truck are all found on the road through `Chain`, and all reach the screen through `Camera`.
 
 The modules of the math layer
 ```dot
@@ -1274,7 +1275,7 @@ Two families share `Angle` and don't otherwise meet: `Geom`, `Chain`, `Camera` a
 
 ### Numbers with units
 
-Fifteen small opaque types run through Safari Ride, and the tour has met most of them one at a time. Set side by side, they're a system:
+Seventeen small opaque types run through Safari Ride, and the tour has met most of them one at a time. Set side by side, they're a system:
 
 | Type | Under it | What it measures |
 |---|---|---|
@@ -1288,6 +1289,7 @@ Fifteen small opaque types run through Safari Ride, and the tour has met most of
 | `Distance` | `F64` | A length in metres |
 | `Along` | `F64` | A place along a segment |
 | `Across` | `F64` | A place across the road |
+| `Pixels` | `F64` | A length on screen |
 | `Speed` | `F64` | Metres a step |
 | `Acceleration` | `F64` | Metres a step, each step |
 | `Fraction` | `F64` | A ratio from 0 to 1 |
@@ -1301,7 +1303,7 @@ The bug these prevent is the most common one in this kind of code: a correct for
 
 The price is a long list of short methods, and a certain amount of `.to_radians()`. The headers of the float ones all say the same thing: "Each operation does the plain float arithmetic its name says." That sentence is there for a reason that belongs to the proving chapter.
 
-The units run from the road to the screen. Once a point is measured from the rider, its `right` and `forward` are `Distance`s, and a length on screen is `Pixels`. A formula wants floats, so `.to_metres()` is the door out, used at the top of a function that's about to do trigonometry, and the answer goes back in at the end. `Along` can't be passed as `Across`, which rules out the classic swap in a function with both.
+The units run from the road to the screen. Once a point is measured from the rider, its `right` and `forward` are `Distance`s, and a length on screen is `Pixels`. `Pixels` is signed, because a place on screen is measured from the corner, so a point off the left of the screen is negative, and so is the height of a sun below the horizon. It stops at the edge of `lib.Shapes`, which takes plain numbers. A formula wants floats, so `.to_metres()` is the door out, used at the top of a function that's about to do trigonometry, and the answer goes back in at the end. `Along` can't be passed as `Across`, which rules out the classic swap in a function with both.
 
 ### One record per space
 
@@ -1353,7 +1355,7 @@ The rotation itself is plain, with two cases, because a right-hand bend pivots o
 
 {{code Geom.in_segment_before}}
 
-This is what lets `CatSighting`, `BirdSighting`, `TowerSighting`, `TreeSighting` and the rest not care where a segment is. They name a position in the chain and a point on that segment, and they get back a `RiderPoint`. That's a workhorse doing its job, and it's why `Chain` has sixteen importers.
+This is what lets `CatSighting`, `BirdSighting`, `TowerSighting`, `TreeSighting` and the rest not care where a segment is. They name a position in the chain and a point on that segment, and they get back a `RiderPoint`. That's why `Chain` has sixteen importers.
 
 The ground also curves away. That's one formula, the small-angle drop of a sphere, with a record destructured in the parameter list and `right` and `forward` taken out to metres before they're squared. There are two radii in the program, and neither is the earth's. `Geom.ground_curve_radius`, 100 km, is the surface the road and the truck stand on, and it puts the horizon 490 metres out. `Tower.sink_radius`, 20 km, only sets how soon a far tower goes: a tower is gone at 1.8 km, where the ground's curve would leave it in view to 4 km.
 
