@@ -275,7 +275,7 @@ lone_tree : TreeSighting
 lone_tree = TreeSighting.sighting_of(
 	from_origin,
 	green_tree_at(120.0),
-).first() ?? crash "SceneDraw: a tree 120 m ahead is in view"
+) ?? crash "SceneDraw: a tree 120 m ahead is in view"
 
 expect
 	[
@@ -283,15 +283,15 @@ expect
 		(lone_tree.forward.to_metres(), 120.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
-expect TreeSighting.sighting_of(from_origin, green_tree_at(120.0)).len() == 1
+expect TreeSighting.sighting_of(from_origin, green_tree_at(120.0)).is_ok()
 expect lone_tree.conifer == Conifer.BigGreen
 expect
 	[
-		(TreeSighting.sighting_of(from_origin, green_tree_at(0.4)), 0),
-		(TreeSighting.sighting_of(from_origin, green_tree_at(0.5)), 1),
-		(TreeSighting.sighting_of(view_from(origin, Pixels.of(1.0)), green_tree_at(120.0)), 0),
-		(TreeSighting.sighting_of(from_origin, green_tree_at(2000.0)), 0),
-	].all(|(seen, want)| seen.len().to_i64_wrap() == want)
+		(TreeSighting.sighting_of(from_origin, green_tree_at(0.4)), False),
+		(TreeSighting.sighting_of(from_origin, green_tree_at(0.5)), True),
+		(TreeSighting.sighting_of(view_from(origin, Pixels.of(1.0)), green_tree_at(120.0)), False),
+		(TreeSighting.sighting_of(from_origin, green_tree_at(2000.0)), False),
+	].all(|(seen, want)| seen.is_ok() == want)
 
 expect
 	[

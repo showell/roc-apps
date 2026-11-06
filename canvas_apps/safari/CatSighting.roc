@@ -23,17 +23,21 @@ CatSighting := {
 	cats_in_view : Chain.Viewpoint, Speed -> List(CatSighting)
 	cats_in_view = |view, speed| {
 		positions = Chain.Position.all_in(view.road.chain)
-		positions.join_map(|position| segment_cat(view, { position, speed }))
+		positions.keep_oks(|position| segment_cat(view, { position, speed }))
 	}
 
 	## The cat waiting on the segment at `position` in the chain, if it has one
 	## and it is in view.
-	segment_cat : Chain.Viewpoint, { position : Chain.Position, speed : Speed } -> List(CatSighting)
+	segment_cat : Chain.Viewpoint,
+	{
+		position : Chain.Position,
+		speed : Speed,
+	} -> Try(CatSighting, [NoCat, OutOfView])
 	segment_cat = |view, { position, speed }|
 		match position.index_in(view.road.chain).segment_in(view.road.route).crossing {
 			CatCrosses(crossing) =>
 				cat_in_view(view, { position, crossing, speed })
-			BirdHere(_) | QuietRoad => []
+			BirdHere(_) | QuietRoad => Err(NoCat)
 		}
 
 	## The cats as the depth sort sees them: each one's distance ahead, and
@@ -45,14 +49,13 @@ CatSighting := {
 }
 
 ## The cat crossing the segment at `position` in the chain, as far through its
-## crossing as the rider's approach has brought it, if it is in view: one
-## item, or none.
+## crossing as the rider's approach has brought it, if it is in view.
 cat_in_view : Chain.Viewpoint,
 {
 	position : Chain.Position,
 	crossing : Cat.Crossing,
 	speed : Speed,
-} -> List(CatSighting)
+} -> Try(CatSighting, [OutOfView])
 cat_in_view = |view, { position, crossing, speed }| {
 	gap = Chain.gap_to_segment(view.road, position)
 	instant = Cat.instant_at(crossing, { gap: gap.plus(crossing.along.from_start()), speed })
@@ -62,17 +65,15 @@ cat_in_view = |view, { position, crossing, speed }| {
 	)
 	height_px = view.cam_focal.times(Cat.cat_height.ratio_to(seen.forward))
 	if seen.forward <= Geom.near_plane {
-		[]
+		Err(OutOfView)
 	} else if height_px < Detail.min_scenery_px {
-		[]
+		Err(OutOfView)
 	} else {
-		[
-			{
-				right: seen.right,
-				forward: seen.forward,
-				pose: instant.pose,
-				lift: instant.spot.lift,
-			},
-		]
+		Ok({
+			right: seen.right,
+			forward: seen.forward,
+			pose: instant.pose,
+			lift: instant.spot.lift,
+		})
 	}
 }

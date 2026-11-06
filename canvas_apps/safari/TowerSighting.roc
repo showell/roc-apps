@@ -78,7 +78,9 @@ TowerSighting := {
 	towers_in_view = |view|
 		match Chain.segment_behind(view.road) {
 			Previous(segment_behind) =>
-				towers_along_chain(view).concat(tower_behind(view, segment_behind))
+				towers_along_chain(view).concat(
+					[tower_behind(view, segment_behind)].keep_oks(|tower| tower),
+				)
 			AtRouteStart => towers_along_chain(view)
 		}
 
@@ -105,12 +107,13 @@ TowerSighting := {
 				beacon_key: index.to_u32(),
 			},
 		)
-		end_tower.concat(mid_tower(view, position))
+		[end_tower, mid_tower(view, position)].keep_oks(|tower| tower)
 	}
 
 	## The tower halfway along the segment at `position` in the chain, if it has
 	## one and it is in view.
-	mid_tower : TowerSighting.Viewpoint, Chain.Position -> List(TowerSighting)
+	mid_tower :
+		TowerSighting.Viewpoint, Chain.Position -> Try(TowerSighting, [BehindCamera, NoMidTower])
 	mid_tower = |view, position| {
 		index = position.index_in(view.road.chain)
 		segment = index.segment_in(view.road.route)
@@ -126,13 +129,13 @@ TowerSighting := {
 						beacon_key: index.to_u32() + mid_tower_key_offset,
 					},
 				)
-			NoMidTower => []
+			NoMidTower => Err(NoMidTower)
 		}
 	}
 
 	## The tower past the end of the segment at `index`, the one behind the
 	## rider, if it is in view.
-	tower_behind : TowerSighting.Viewpoint, World.SegmentIndex -> List(TowerSighting)
+	tower_behind : TowerSighting.Viewpoint, World.SegmentIndex -> Try(TowerSighting, [BehindCamera])
 	tower_behind = |view, index| {
 		behind = index.segment_in(view.road.route)
 		tower_if_ahead(
@@ -163,7 +166,7 @@ mid_tower_key_offset : U32
 mid_tower_key_offset = 60
 
 ## A tower standing at `along` and `across` in the segment that `place` maps,
-## if it is in front of the camera: one item, or none.
+## if it is in front of the camera.
 tower_if_ahead : TowerSighting.Viewpoint,
 {
 	place : Chain.SegmentPlace,
@@ -171,24 +174,22 @@ tower_if_ahead : TowerSighting.Viewpoint,
 	across : Across,
 	yaw : Angle.Turn,
 	beacon_key : U32,
-} -> List(TowerSighting)
+} -> Try(TowerSighting, [BehindCamera])
 tower_if_ahead = |view, { place, along, across, yaw, beacon_key }| {
 	center = Chain.rider_point_at(view.road, { place, along, across })
 	if center.forward <= Geom.near_plane {
-		[]
+		Err(BehindCamera)
 	} else {
-		[
-			{
-				place,
-				along,
-				across,
-				yaw,
-				forward: center.forward,
-				beacon_brightness: TowerSighting.beacon_brightness(
-					view.clock.minus(Clock.start).plus(TowerSighting.beacon_offset_for(beacon_key)),
-				),
-			},
-		]
+		Ok({
+			place,
+			along,
+			across,
+			yaw,
+			forward: center.forward,
+			beacon_brightness: TowerSighting.beacon_brightness(
+				view.clock.minus(Clock.start).plus(TowerSighting.beacon_offset_for(beacon_key)),
+			),
+		})
 	}
 }
 
@@ -231,7 +232,7 @@ from_origin = short_view(0)
 
 expect TowerSighting.towers_along_chain(from_origin).len() == 3
 expect TowerSighting.segment_towers(from_origin, Chain.Position.first).len() == 1
-expect TowerSighting.mid_tower(from_origin, Chain.Position.first).len() == 0
+expect TowerSighting.mid_tower(from_origin, Chain.Position.first).is_err()
 expect TowerSighting.towers_in_view(from_origin).len() == 3
 expect route.all(|seg| !has_mid_tower(seg))
 
@@ -267,7 +268,7 @@ long_view = {
 }
 
 expect TowerSighting.towers_along_chain(long_view).len() == 2
-expect TowerSighting.mid_tower(long_view, Chain.Position.first).len() == 1
+expect TowerSighting.mid_tower(long_view, Chain.Position.first).is_ok()
 
 long_towers : List(TowerSighting)
 long_towers = TowerSighting.towers_along_chain(long_view)
@@ -341,7 +342,7 @@ brightness_at = |phase| TowerSighting.beacon_brightness(Steps.of(phase)).to_f64(
 expect TowerSighting.towers_in_view(short_view(0)).len() == 3
 expect TowerSighting.towers_in_view(short_view(1)).len() == 4
 expect TowerSighting.towers_in_view(short_view(2)).len() == 4
-expect TowerSighting.tower_behind(short_view(1), World.SegmentIndex.first).len() == 1
+expect TowerSighting.tower_behind(short_view(1), World.SegmentIndex.first).is_ok()
 expect TowerSighting.towers_along_chain({
 	..from_origin,
 	road: { ..from_origin.road, vantage: { ..origin, along: Along.metres(5000.0) } },

@@ -261,7 +261,7 @@ cats_on_chain = |chain| CatSighting.cats_in_view(
 )
 
 ## The cat on the segment at `number` in the chain, if it is in view.
-cat_at : U32 -> List(CatSighting)
+cat_at : U32 -> Try(CatSighting, [NoCat, OutOfView])
 cat_at = |number| CatSighting.segment_cat(
 	cats_from_origin,
 	{ position: Chain.Position.number(number), speed: metre_a_step },
@@ -316,8 +316,8 @@ first_cat = |along|
 	riding(along).first() ?? crash "CrossModuleExpects: the second segment's cat is in view"
 
 expect seen.len() == 1
-expect cat_at(0).len() == 0
-expect cat_at(2).len() == 0
+expect cat_at(0).is_err()
+expect cat_at(2).is_err()
 expect first_cat(300.0).lift.to_metres() == 0.0
 expect first_cat(300.0).pose == Rest
 expect

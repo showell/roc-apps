@@ -60,23 +60,21 @@ Cows :: [].{
 	herd_jitter_across = Distance.metres(1.2)
 
 	## The bull, when the herd has one.
-	bull_of : [WithBull, NoBull] -> List(Scenery.Critter)
+	bull_of : [WithBull, NoBull] -> Try(Scenery.Critter, [NoBull])
 	bull_of = |bull|
 		match bull {
 			WithBull => {
 				tree_line = Trees.distance_from_middle(Conifer.BigGreen)
 				bull_middle = tree_line.plus(bull_height.divided_by(2.0))
-				[
-					{
-						along: bull_along,
-						across: Across.left_of_middle(bull_middle.plus(bull_tree_gap)),
-						codepoint: bull_codepoint,
-						height: bull_height,
-						facing: FacesLeft,
-					},
-				]
+				Ok({
+					along: bull_along,
+					across: Across.left_of_middle(bull_middle.plus(bull_tree_gap)),
+					codepoint: bull_codepoint,
+					height: bull_height,
+					facing: FacesLeft,
+				})
 			}
-			NoBull => []
+			NoBull => Err(NoBull)
 		}
 
 	## The herd's cows, column by column from the front. Every fourth cow,
@@ -86,7 +84,7 @@ Cows :: [].{
 
 	## The bull, if there is one, then the cows.
 	herd : [WithBull, NoBull] -> List(Scenery.Critter)
-	herd = |bull| Cows.bull_of(bull).concat(Cows.cows)
+	herd = |bull| [Cows.bull_of(bull)].keep_oks(|critter| critter).concat(Cows.cows)
 }
 
 cow_at : I64 -> Scenery.Critter
@@ -116,16 +114,16 @@ cow_at = |i| {
 expect Cows.bull_codepoint == 128002
 expect Cows.cow_codepoint == 128004
 
-expect Cows.bull_of(WithBull).map(|bull| bull.codepoint) == [128002]
-expect Cows.bull_of(NoBull).len() == 0
+expect Cows.bull_of(WithBull).map_ok(|bull| bull.codepoint) == Ok(128002)
+expect Cows.bull_of(NoBull).is_err()
 expect Cows.herd(WithBull).len() == 15
 expect Cows.herd(NoBull).len() == 14
 
 # The bull faces left and the cows right.
 expect Cows.herd(WithBull).take_first(2).map(|critter| critter.facing) == [FacesLeft, FacesRight]
 
-expect Cows.bull_of(WithBull).map(|bull| bull.along) == [Along.metres(24.0)]
-expect Cows.bull_of(WithBull).map(|bull| bull.across) == [Across.metres(-4.805)]
+expect Cows.bull_of(WithBull).map_ok(|bull| bull.along) == Ok(Along.metres(24.0))
+expect Cows.bull_of(WithBull).map_ok(|bull| bull.across) == Ok(Across.metres(-4.805))
 expect Cows.bull_along == Along.metres(24.0)
 expect Cows.bull_tree_gap == Distance.metres(0.5)
 
@@ -133,7 +131,10 @@ expect Cows.cow_height == Distance.metres(1.4)
 expect Cows.calf_height == Distance.metres(0.7)
 
 expect (Cows.bull_height.to_metres() - 1.61).abs() <= 0.000000000001
-expect Cows.bull_of(WithBull).all(|bull| (bull.height.to_metres() - 1.61).abs() <= 0.000000000001)
+expect {
+	bull = Cows.bull_of(WithBull) ?? crash "Cows: WithBull gives the bull"
+	(bull.height.to_metres() - 1.61).abs() <= 0.000000000001
+}
 
 expect
 	Cows.cows.map(|cow| cow.height.to_metres())

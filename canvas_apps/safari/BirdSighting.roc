@@ -31,7 +31,7 @@ BirdSighting := {
 	birds_in_view : Chain.Viewpoint -> List(BirdSighting)
 	birds_in_view = |view| {
 		positions = Chain.Position.all_in(view.road.chain)
-		positions.join_map(|position| segment_bird(view, position))
+		positions.keep_oks(|position| segment_bird(view, position))
 	}
 
 	## The birds as the depth sort sees them: each one's distance ahead, and
@@ -44,8 +44,8 @@ BirdSighting := {
 }
 
 ## The bird of the segment at `position` in the chain, if that segment has one
-## and it is in view: one item, or none.
-segment_bird : Chain.Viewpoint, Chain.Position -> List(BirdSighting)
+## and it is in view.
+segment_bird : Chain.Viewpoint, Chain.Position -> Try(BirdSighting, [NoBird, OutOfView])
 segment_bird = |view, position|
 	match position.index_in(view.road.chain).segment_in(view.road.route).crossing {
 		BirdHere(habit) => {
@@ -54,16 +54,16 @@ segment_bird = |view, position|
 			instant = BirdFlight.habit_instant_at(habit, { gap: gap_to_tree })
 			bird_in_view(view, { position, instant })
 		}
-		CatCrosses(_) | QuietRoad => []
+		CatCrosses(_) | QuietRoad => Err(NoBird)
 	}
 
 ## The bird at `instant` on the segment at `position` in the chain, if it is in
-## view: one item, or none.
+## view.
 bird_in_view : Chain.Viewpoint,
 {
 	position : Chain.Position,
 	instant : BirdFlight.Bird,
-} -> List(BirdSighting)
+} -> Try(BirdSighting, [OutOfView])
 bird_in_view = |view, { position, instant }| {
 	seen = Chain.rider_point_ahead(
 		view.road,
@@ -71,17 +71,15 @@ bird_in_view = |view, { position, instant }| {
 	)
 	height_px = BirdSighting.height_px({ forward: seen.forward, cam_focal: view.cam_focal })
 	if seen.forward <= Geom.near_plane {
-		[]
+		Err(OutOfView)
 	} else if height_px < Detail.min_scenery_px {
-		[]
+		Err(OutOfView)
 	} else {
-		[
-			{
-				right: seen.right,
-				forward: seen.forward,
-				lift: instant.spot.lift,
-				pose: instant.pose,
-			},
-		]
+		Ok({
+			right: seen.right,
+			forward: seen.forward,
+			lift: instant.spot.lift,
+			pose: instant.pose,
+		})
 	}
 }

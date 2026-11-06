@@ -214,19 +214,19 @@ gold_top = Conifer.Gold.height().to_metres()
 pairs_at : List(F64) -> List(Trees.Tree)
 pairs_at = |alongs| alongs.join_map(|along| [tree_at(along, -6.0), tree_at(along, 6.0)])
 
-## How far along the fifth left tree of `choices` is: one number, or none.
-fifth_along : List(Trees.Tree) -> List(F64)
+## How far along the fifth left tree of `choices` is, if there is one.
+fifth_along : List(Trees.Tree) -> Try(F64, [NoTree])
 fifth_along = |choices|
 	match BirdFlight.fifth_left_tree(choices) {
-		Found(tree) => [tree.along.to_metres()]
-		NoTree => []
+		Found(tree) => Ok(tree.along.to_metres())
+		NoTree => Err(NoTree)
 	}
 
-expect fifth_along([]) == []
-expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0])) == []
-expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0])) == [50.0]
-expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0, 60.0])) == [50.0]
-expect fifth_along([50.0, 60.0, 70.0, 80.0, 90.0].map(|along| tree_at(along, 6.0))) == []
+expect fifth_along([]) == Err(NoTree)
+expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0])) == Err(NoTree)
+expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0])) == Ok(50.0)
+expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0, 60.0])) == Ok(50.0)
+expect fifth_along([50.0, 60.0, 70.0, 80.0, 90.0].map(|along| tree_at(along, 6.0))) == Err(NoTree)
 
 chosen_along : List(Trees.Tree) -> List(F64)
 chosen_along = |choices|
