@@ -385,7 +385,7 @@ This function answers with that type:
 `Detail` holds the distances that decide how much of a thing gets drawn, and `cone_reach` is 200 metres.
 
 ```widget tree
-Bring one tree up to the camera, and switch its crown between flat triangles and cones to see where the difference starts to show.
+Three gold trees at three distances, each drawn by `TreeDraw.draw`. Under each tree is what `crown_of` said.
 ```
 
 ### The functions
@@ -396,7 +396,7 @@ Bring one tree up to the camera, and switch its crown between flat triangles and
 
 The first branch is the one surprise. A camera can't see a cone from inside, so a tier that's too close falls back to the flat triangle. The `if` after the pattern is a guard, and it adds a condition to a branch.
 
-Safari Ride has no 3-D models, so a cone is something we work out. We leave pixels behind for a moment and work in metres. `base_height` and `apex_height` are how high the tier's bottom and top stand, measured up the trunk and then down the crown. We take a ring of 16 points around the base and one point at the top, and we project them all onto the screen:
+What goes to the screen is still a flat polygon, so a cone is something we work out. We leave pixels behind for a moment and work in metres. `base_height` and `apex_height` are how high the tier's bottom and top stand, measured up the trunk and then down the crown. We take a ring of 16 points around the base and one point at the top, and we project them all onto the screen:
 
 {{code TreeDraw.tier_cone}}
 
@@ -408,7 +408,7 @@ This is Andrew's monotone chain. Sort the points from left to right, walk along 
 
 {{code TreeDraw.trim_hull}}
 
-That's a cone with no 3-D anywhere! The ring gets wider on the screen as it gets nearer, so the tree fattens by itself. It's just perspective.
+That's a cone, as one flat polygon! The ring gets wider on the screen as it gets nearer, so the tree fattens by itself. It's just perspective.
 
 That's one tree. There are 392 more to go.
 
