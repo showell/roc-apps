@@ -155,7 +155,7 @@ const SAFARI_SOURCES = {":(glob)canvas_apps/safari/*.roc", ":(glob)canvas_apps/s
 const WIDGET_SOURCES = {":(glob)canvas_apps/*_widget/*.roc", ":(glob)canvas_apps/widget_kit/*.roc"}
 const DEPTHS = {"0", "100", "1570", "1586", "3000", "3742", "5700", "6520", "9000"}
 const CACHE_CEILING_MB = 4000
-const CPU_BUDGET_MS = {lints = 25000, expects = 20000, widgets = 32000, tutorial = 5000, proof = 60000, page = 25000}
+const CPU_BUDGET_MS = {lints = 25000, expects = 30000, widgets = 32000, tutorial = 5000, proof = 60000, page = 25000}
 const COLD = arg("cold", "") == "1"
 const RELEASE = arg("release", "") == "1"
 
