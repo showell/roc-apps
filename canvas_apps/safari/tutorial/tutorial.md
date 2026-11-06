@@ -245,6 +245,8 @@ digraph sky {
 
 *[The sky widget goes here: drag the clock and watch the sun set.]*
 
+Drag across it from left to right, and the clock runs from step 0 to step 6,000. The sun sinks steadily, and near step 3,980 its centre meets the horizon: the sun line reads 0.0 px, and the warmth line tops out at 99%, since it rounds down. The marked stretch of the ruler is where the horizon has any warmth at all. The disc is gone near step 4,730, and the dusk line reaches 100% near step 5,490, before the marked stretch ends. Dragging back raises the sun along the same path.
+
 Every function in this chapter has a `->` arrow, not `=>`. In Roc that's a promise the compiler holds: no effects, so the same clock always gives the same sky. If a function has no `=>` and no `$` in sight, there's nothing behind it to think about.
 
 Here's one of the questions being asked. `Tour.sky_top` takes the clock from the current instant and hands it to `Sky`.
@@ -388,6 +390,8 @@ digraph cat {
 `Cat` says what a cat does, and `Animation` holds what a cat shares with a bird. Everything that uses a cat imports it, and `Cat` imports none of them: it doesn't know it's drawn, sighted or reacted to.
 
 *[The cat widget goes here: drag the rider's gap and watch the crossing play.]*
+
+Drag across it from left to right, and the gap falls from 50 metres to 0, with the rider held at a metre a step. The cat rests on the right verge until 41 metres, where the marked stretch of the ruler starts and the last line changes to "The rider may not accelerate". It walks out, and at 31 metres it freezes in the lane. It stays frozen down to 7 metres, coils, and is in the air from 6 metres to 4. At 3 metres, where the marked stretch ends, it has collapsed on the far verge and the rider may accelerate again. Below that, nothing changes.
 
 The slider isn't scrubbing a video. Every position of it is a call to `Cat.instant_at`. The arrow is `->` again, so the type already says there's no hidden cat being updated somewhere. Method syntax chains the two halves of the job: `.instant(...)` is defined on the `Timeline` that `crossing_timeline` returns.
 
@@ -646,6 +650,8 @@ A beacon is the only thing in Safari Ride that repeats on the clock, so it's the
 
 *[The beacon widget goes here: drag the clock and watch the masts blink out of step.]*
 
+Drag across it from left to right, and the clock runs through two whole blinks, from step 5,400 to step 5,640. The left mast starts dark and the right one at full brightness. At step 5,430, where the first marked stretch starts, both read 49%, and by step 5,460 they've changed places. Each marked stretch is where the left mast is more than half bright. At the far end of the ruler the masts are back where they began.
+
 `Clock` says which step it is. `Steps` says how long something lasts. Both are opaque `U32`s, and `Clock.minus` turns two clocks into `Steps`, the same way two `Angle.Bearing`s make an `Angle.Turn`. Adding two clocks means nothing, so `Clock` has no `plus`, and no code can. Call this *places and distances*: one opaque type for where something is, a second for how far apart two of them are, and only the sums that make sense.
 
 Here, `wrapped_to` is `Steps`'s one way to reach `%`. The result is a `Fraction` built with `of`, because `(1 - cos) / 2` can only be in range:
@@ -744,6 +750,8 @@ The family has the cat's shape. `BirdFlight` says what a bird does and imports n
 The only sum in `BirdFlight` is a tree's place plus the shortest hop. The rest is constants, tags and one timeline.
 
 *[The bird widget goes here: drag the rider's gap and watch the bird fly.]*
+
+Drag across it from left to right, and the gap falls from 75 metres to 0. The bird sits on the left tree, 5.9 metres up, until 60 metres, where the marked stretch of the ruler starts. It takes off side on, turns away at about 55 metres, and reaches 10.2 metres near the middle of the stretch, shrinking as it goes. It dives from 20 metres, and at 15, where the marked stretch ends, it's perched on the far tree, 4.5 metres up. Below that, the picture stays as it is.
 
 ### Two rules
 
