@@ -40,10 +40,7 @@ TruckSighting := [
 		if view.lead > Distance.zero {
 			truck_from(
 				view,
-				{
-					remaining: view.road.vantage.along.plus(view.lead),
-					position: Chain.Position.first,
-				},
+				{ along: view.road.vantage.along.plus(view.lead), position: Chain.Position.first },
 			)
 		} else {
 			NoTruck
@@ -59,26 +56,19 @@ TruckSighting := [
 		}
 }
 
-## The truck at `remaining` measured from the start of the segment at
+## The truck at `along` measured from the start of the segment at
 ## `position` in the chain, found by walking on through the segments it is
 ## past.
-truck_from : TruckSighting.Viewpoint,
-{
-	remaining : Along,
-	position : Chain.Position,
-} -> TruckSighting
-truck_from = |view, { remaining, position }|
+truck_from : TruckSighting.Viewpoint, { along : Along, position : Chain.Position } -> TruckSighting
+truck_from = |view, { along, position }|
 	if position.is_past_end_of(view.road.chain) {
 		NoTruck
 	} else {
 		segment = position.index_in(view.road.chain).segment_in(view.road.route)
-		if remaining > Along.at(segment.length) {
-			truck_from(
-				view,
-				{ remaining: remaining.minus(segment.length), position: position.next() },
-			)
+		if along > Along.at(segment.length) {
+			truck_from(view, { along: along.minus(segment.length), position: position.next() })
 		} else {
-			truck_on_segment(view, { along: remaining, position })
+			truck_on_segment(view, { along, position })
 		}
 	}
 
