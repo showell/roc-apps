@@ -10,9 +10,11 @@
 --
 -- A block is often part of a definition, which Roc can't parse alone. Every
 -- block comes from a file, though, so the file is parsed whole and the block is
--- found in it. The title above the block names the file, and the block's lines
+-- found in it. The caption over the block names the file, and the block's lines
 -- are the file's, less a common indent, with a `# ...` line at a cut. A last
--- line may stop short of its file line, at the end of a definition.
+-- line may stop short of its file line, at the end of a definition. A block may
+-- also be several runs of lines from around the file, as a block of signatures
+-- is, and each run is placed alone.
 --
 -- Roc's tree places strings, numbers, type names, tags and top-level names
 -- exactly. It holds no comments and no keywords, so those are read from the text
@@ -26,7 +28,7 @@ const PAGES = "build:roc-apps/next/tutorial.staging"
 const SOURCES = "canvas_apps/**/*.roc"
 const OPEN = "<pre><code class=\"language-roc\">"
 const CLOSE = "</code></pre>"
-const TITLE = "([A-Za-z0-9_]+\\.roc)[^<]*</p>\\n$"
+const TITLE = "([A-Za-z0-9_]+\\.roc)[^<]*</figcaption>$"
 const TITLE_REACH = 300
 const CUT = "# ..."
 const KEYWORD = "\\b(?:and|as|break|crash|dbg|else|expect|exposing|for|if|import|in|match|or|return|var|where|while)\\b"
@@ -262,14 +264,41 @@ function place_in(file, kept)
   return nil
 end
 
-function colored_lines(file, place, kept)
+-- The longest run of `kept` from line `from` that lies in the file, or nil.
+function longest_run(file, kept, from)
+  if kept[from] == "" then return nil end
+  local to = #kept
+  while to >= from do
+    local place = place_in(file, slice(kept, from, to))
+    if place ~= nil then return {from = from, to = to, place = place} end
+    to = to - 1
+  end
+  return nil
+end
+
+-- Where each stretch of `kept` is in the file, or nil if one isn't there.
+function runs_of(file, kept)
+  local runs = {}
+  local from = 1
+  while from <= #kept do
+    local run_here = longest_run(file, kept, from)
+    if run_here == nil then return nil end
+    push(runs, run_here)
+    from = run_here.to + 1
+  end
+  return runs
+end
+
+function colored_lines(file, runs, kept)
   local html = {}
-  local i = 1
-  while i <= #kept do
-    local tokens = line_tokens(file, place.first + i - 1)
-    if tokens == nil then return nil end
-    push(html, colored_line(kept[i], tokens, place.indent))
-    i = i + 1
+  for stretch in runs do
+    local i = stretch.from
+    while i <= stretch.to do
+      local tokens = line_tokens(file, stretch.place.first + i - stretch.from)
+      if tokens == nil then return nil end
+      push(html, colored_line(kept[i], tokens, stretch.place.indent))
+      i = i + 1
+    end
   end
   return html
 end
@@ -287,9 +316,9 @@ end
 function block_from(file, shown)
   local kept = kept_lines(shown)
   if #kept == 0 then return nil end
-  local place = place_in(file, kept)
-  if place == nil then return nil end
-  local middle = colored_lines(file, place, kept)
+  local runs = runs_of(file, kept)
+  if runs == nil then return nil end
+  local middle = colored_lines(file, runs, kept)
   if middle == nil then return nil end
   local html = {}
   if is_cut(shown[1]) then push(html, cut_line(shown[1])) end
@@ -453,7 +482,11 @@ Zoo :: [].{
 const WRAPPED = "<p>prose</p>\n"
 
 function page_with(title, block)
-  return WRAPPED .. title .. "\n" .. OPEN .. escaped(block) .. "\n" .. CLOSE .. "\n<p>after</p>\n"
+  return WRAPPED .. title .. OPEN .. escaped(block) .. "\n" .. CLOSE .. "\n<p>after</p>\n"
+end
+
+function caption(title)
+  return "<figure class=\"listing\"><figcaption>" .. title .. "</figcaption>"
 end
 
 function color_one(folder, title, block)
@@ -467,8 +500,8 @@ function span(class, text)
 end
 
 function expect_block(checks, folder, what, block, want)
-  local got = color_one(folder, "<p>from Zoo.roc</p>", block)
-  local page = WRAPPED .. "<p>from Zoo.roc</p>\n" .. OPEN .. want .. "\n" .. CLOSE .. "\n<p>after</p>\n"
+  local got = color_one(folder, caption("Zoo.roc"), block)
+  local page = WRAPPED .. caption("Zoo.roc") .. OPEN .. want .. "\n" .. CLOSE .. "\n<p>after</p>\n"
   if got.tally.colored ~= 1 or #got.tally.plain ~= 0 then fail("self_test: " .. what .. " came out plain: " .. join(got.tally.plain, ", ")) end
   if got.html ~= page then fail("self_test: " .. what .. " gave [" .. got.html .. "], not [" .. page .. "]") end
   push(checks, what)
@@ -530,12 +563,19 @@ function self_test()
     .. span("string", "&quot;b ") .. "${x}" .. span("string", "&quot;") .. ", "
     .. span("string", "&quot;c ") .. "${" .. span("type", "Inner") .. ".show(x)}" .. span("string", "&quot;") .. "]")
 
-  expect_plain(checks, folder, "a block not in its file", "<p>from Zoo.roc</p>", "gone = 1", "can't be placed in Zoo.roc")
-  expect_plain(checks, folder, "a file there is none of", "<p>from Nowhere.roc</p>", "bare = 1", "can't be placed in Nowhere.roc")
-  expect_plain(checks, folder, "no title", "<p>Some prose.</p>", "bare = 1", "no title names a file")
-  expect_plain(checks, folder, "a file roc-ast refuses", "<p>from Broken.roc</p>", "x = = 1", "parse problem")
+  expect_block(checks, folder, "lines from around the file, each run placed alone",
+    "feed : Cage -> F64\nbare = 1\nnote =\n\t\\\\one # two",
+    span("name", "feed") .. " : " .. span("type", "Cage") .. " -&gt; " .. span("type", "F64") .. "\n"
+    .. span("name", "bare") .. " = " .. span("number", "1") .. "\n"
+    .. "note =\n\t" .. span("string", "\\\\one # two"))
 
-  replace(folder .. "/page.html", "<p>from Zoo.roc</p>\n<pre><code class=\"language-zig\">bare = 1\n</code></pre>\n")
+  expect_plain(checks, folder, "a block not in its file", caption("Zoo.roc"), "gone = 1", "can't be placed in Zoo.roc")
+  expect_plain(checks, folder, "a block with one line not in its file", caption("Zoo.roc"), "bare = 1\ngone = 1", "can't be placed in Zoo.roc")
+  expect_plain(checks, folder, "a file there is none of", caption("Nowhere.roc"), "bare = 1", "can't be placed in Nowhere.roc")
+  expect_plain(checks, folder, "no title", "<p>Zoo.roc</p>\n", "bare = 1", "no title names a file")
+  expect_plain(checks, folder, "a file roc-ast refuses", caption("Broken.roc"), "x = = 1", "parse problem")
+
+  replace(folder .. "/page.html", caption("Zoo.roc") .. "<pre><code class=\"language-zig\">bare = 1\n</code></pre>\n")
   local other = color_pages(folder, folder .. "/*.roc")
   if other.colored ~= 0 or #other.plain ~= 0 or not contains(read(folder .. "/page.html"), ">bare = 1\n<") then fail("self_test: a Zig block was touched") end
   push(checks, "a block in another language")

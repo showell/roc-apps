@@ -1,5 +1,6 @@
-/* The Safari Ride book, set for a desktop screen. The prose keeps a reading
-   measure, and code, tables and diagrams may run wider into the right margin. */
+/* The Safari Ride book. The prose keeps a reading measure, and code, tables and
+   diagrams may run wider into the right margin. A narrow window takes the chapter
+   list out of the way, and a printed page drops whatever only a screen can use. */
 :root {
   color-scheme: light dark;
   --paper: #fbfaf6;
@@ -20,7 +21,7 @@
   font-size: 18px;
 }
 
-@media (prefers-color-scheme: dark) {
+@media screen and (prefers-color-scheme: dark) {
   :root {
     --paper: #1b1a18;
     --ink: #e4e1d8;
@@ -39,6 +40,8 @@
 
 body {
   margin: 0;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   background: var(--paper);
   color: var(--ink);
   font-family: var(--prose);
@@ -55,17 +58,26 @@ body.chapter main { padding: 3rem 3rem 4rem 4rem; }
 body.front main { max-width: calc(var(--measure) + 4rem); margin: 0 auto; padding: 4rem 2rem; }
 
 article > * { max-width: var(--measure); }
-article > table, article > svg { max-width: var(--wide); }
+article > table, article > figure.diagram { max-width: var(--wide); }
 
-/* A code block matches the prose, and widens only for the lines that need it. */
-article > pre { width: fit-content; min-width: min(100%, var(--measure)); max-width: var(--wide); }
+/* A code listing matches the prose, and widens only for the lines that need it. */
+article > figure.listing { width: fit-content; min-width: min(100%, var(--measure)); max-width: var(--wide); }
+
+.book-bar { display: none; }
 
 /* Headings */
 
-h1, h2, h3 { line-height: 1.2; font-weight: 600; scroll-margin-top: 1.5rem; }
+h1, h2, h3 { line-height: 1.2; font-weight: 600; scroll-margin-top: 1.5rem; text-wrap: balance; }
 h1 { font-size: 2.1rem; letter-spacing: -0.01em; margin: 0 0 1.5rem; }
 h2 { font-size: 1.4rem; margin: 2.8rem 0 0.8rem; }
 h3 { font-size: 1.1rem; margin: 2rem 0 0.6rem; }
+
+/* A section links to itself, for a reader to copy. It keeps out of the way until
+   the heading is pointed at, and a touch screen shows it faintly. */
+.section-link { margin-left: 0.2em; color: var(--quiet); font-size: 0.75em; font-weight: 400; text-decoration: none; opacity: 0; }
+h2:hover .section-link, .section-link:focus { opacity: 1; }
+.section-link:hover { color: var(--accent); }
+@media (hover: none) { .section-link { opacity: 0.5; } }
 
 .chapter-number {
   margin: 0 0 0.3rem;
@@ -84,15 +96,18 @@ li { margin: 0.25rem 0; }
 code { font-family: var(--mono); font-size: 0.82em; }
 :not(pre) > code { background: var(--shade); border-radius: 2px; padding: 0.05em 0.12em; }
 
+/* A line too long for the column wraps, so no block scrolls and none hides its end. */
+
 pre {
   margin: 0 0 1.6rem;
   padding: 0.75rem 1rem;
-  overflow-x: auto;
   background: var(--shade);
   border-radius: 4px;
   font-size: 0.78rem;
   line-height: 1.5;
   tab-size: 4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 pre code { font-size: inherit; }
 
@@ -104,45 +119,52 @@ pre code { font-size: inherit; }
 .syn-type { color: var(--code-type); }
 .syn-name { font-weight: 600; }
 
-/* The title line above a block belongs to the block, so it sits close to it,
-   small and quiet. */
+/* A listing's title sits inside the block it names, small and quiet. */
 
-p:has(+ pre), p:has(+ svg) {
-  margin: 1.6rem 0 0.3rem;
-  color: var(--quiet);
-  font: 0.72rem/1.4 var(--plain);
-}
-p:has(+ pre) code, p:has(+ svg) code { background: none; padding: 0; }
+figure { margin: 1.6rem 0; }
+figure.listing { background: var(--shade); border-radius: 4px; }
+figure.listing figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.66rem/1.4 var(--mono); }
+figure.listing pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; }
 
-/* Diagrams come from Graphviz. Its colours are attributes, so these rules win,
-   and a diagram follows the page into dark mode. */
+/* A figure's caption reads as a caption: under it, in the plain face. */
 
-svg.diagram { display: block; height: auto; margin: 0 0 1.6rem; }
-svg.diagram text { fill: var(--ink); }
+figure.widget figcaption, figure.diagram figcaption { margin-top: 0.5rem; color: var(--quiet); font: 0.76rem/1.45 var(--plain); }
+figcaption code { background: none; padding: 0; }
+
+/* Diagrams come from Graphviz. Its colours are attributes, so these rules win, and
+   a diagram takes the book's type and follows the page into dark mode. A dashed box
+   stands for a family and a bold one is the diagram's subject. */
+
+svg.diagram { display: block; max-width: 100%; height: auto; }
+svg.diagram-phone { display: none; }
+svg.diagram text { fill: var(--ink); font-family: var(--plain); }
 svg.diagram .graph > polygon { fill: none; stroke: none; }
-svg.diagram .cluster polygon { fill: none; stroke: var(--quiet); }
-svg.diagram .node polygon, svg.diagram .node ellipse { fill: none; stroke: var(--ink); }
+svg.diagram .cluster polygon { fill: none; stroke: var(--rule); }
+svg.diagram .cluster text { fill: var(--quiet); font-style: italic; }
+svg.diagram .node polygon, svg.diagram .node ellipse { fill: var(--shade); stroke: var(--quiet); }
+svg.diagram .node polyline { stroke: var(--quiet); }
+svg.diagram .node [stroke-width] { stroke: var(--accent); }
+svg.diagram .node [stroke-dasharray] { fill: none; }
 svg.diagram .edge path { stroke: var(--quiet); }
 svg.diagram .edge polygon { fill: var(--quiet); stroke: var(--quiet); }
+svg.diagram .edge text { fill: var(--quiet); }
 
 /* Widgets */
 
-figure.widget { margin: 1.6rem 0; }
-iframe.canvas-app { display: block; width: 100%; border: 0; border-radius: 4px; background: #dcecf5; }
-figcaption { margin-top: 0.4rem; color: var(--quiet); font: 0.72rem/1.4 var(--plain); }
+iframe.canvas-app { display: block; width: 100%; border: 0; border-radius: 4px; background: var(--shade); }
 
 /* Tables */
 
 table {
-  display: block;
-  overflow-x: auto;
   margin: 0 0 1.6rem;
   border-collapse: collapse;
   font: 0.8rem/1.45 var(--plain);
+  font-variant-numeric: tabular-nums;
 }
 th { text-align: left; border-bottom: 1px solid var(--quiet); }
 td { border-bottom: 1px solid var(--rule); }
 th, td { padding: 0.35rem 1rem 0.35rem 0; vertical-align: top; }
+th:last-child, td:last-child { padding-right: 0; }
 
 /* Draft notes stay in sight, and they look like notes rather than the book. */
 
@@ -204,11 +226,55 @@ ol.contents .sections a { color: var(--quiet); text-decoration: none; }
 .turn-page a[rel='next'] { text-align: right; }
 .turn-page small { display: block; color: var(--quiet); font-size: 0.72rem; }
 
-/* A narrow window keeps the book readable, with the chapters above the page. */
+/* A narrow window puts the chapter first. A bar at the top leads to the book's
+   front and down to the chapter list, which follows the page. */
 
 @media (max-width: 60rem) {
-  body.chapter { display: block; }
-  body.chapter main { padding: 2rem 1rem; }
+  body.chapter { display: flex; flex-direction: column; }
+  body.chapter main { padding: 1rem 1rem 2rem; }
   body.front main { padding: 2rem 1rem; }
-  .book-nav { position: static; height: auto; padding: 1rem; border-right: 0; border-bottom: 1px solid var(--rule); }
+  .book-nav { order: 2; position: static; height: auto; padding: 1rem; border-right: 0; border-top: 1px solid var(--rule); }
+  .book-nav a { padding-block: 0.35rem; }
+  .book-bar {
+    display: flex;
+    justify-content: space-between;
+    max-width: none;
+    margin: 0 0 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--rule);
+    font: 0.8rem/1.4 var(--plain);
+  }
+  .book-bar a { text-decoration: none; }
+}
+
+/* A phone: the diagrams drawn for it, a widget as wide as the window, and code and
+   tables that wrap, so nothing on the page scrolls sideways. */
+
+@media (max-width: 45rem) {
+  :root { font-size: 17px; }
+  svg.diagram-phone { display: block; }
+  svg.diagram-wide { display: none; }
+  figure.widget { margin-inline: -1rem; }
+  figure.widget figcaption { padding-inline: 1rem; }
+  iframe.canvas-app { border-radius: 0; }
+  ol.contents { columns: 1; }
+  figure.listing { margin-inline: -0.5rem; }
+  figure.listing figcaption { padding-inline: 0.6rem; }
+  figure.listing pre { padding-inline: 0.6rem; font-size: 0.72rem; tab-size: 2; }
+  article > table { width: 100%; font-size: 0.76rem; }
+  th, td { padding-right: 0.6rem; }
+}
+
+/* A printed book: black on white, with no navigation and nothing split that can
+   stay whole. */
+
+@media print {
+  :root { font-size: 11pt; --paper: #fff; --ink: #000; --quiet: #444; --accent: #000; }
+  body.chapter { display: block; }
+  body.chapter main, body.front main { max-width: none; padding: 0; }
+  .book-nav, .book-bar, .turn-page, .section-link { display: none; }
+  article > *, article > table, article > figure.diagram, article > figure.listing { max-width: 100%; }
+  h1, h2, h3 { break-after: avoid; }
+  figure, tr { break-inside: avoid; }
+  a { text-decoration: none; }
 }

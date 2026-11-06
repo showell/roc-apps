@@ -13,7 +13,17 @@ BookText := [].{
 	## Text made safe for a page, an element's content or an attribute's value.
 	escaped_text : Str -> Str
 	escaped_text = |text| BookText.from_bytes(Md.escape(text.to_utf8()))
+
+	## A line of Markdown as HTML that can sit inside a caption, so without the
+	## paragraph the renderer puts around it.
+	inline_html : Str -> Str
+	inline_html = |text| {
+		rendered = Md.render_document(text.to_utf8(), { fence: |_| Pass, images: AsLinks })
+		BookText.from_bytes(rendered.html).replace_each("<p>", "").replace_each("</p>", "").trim()
+	}
 }
 
 expect BookText.from_bytes([97]) == "a"
 expect BookText.escaped_text("a <b> \"c\"") == "a &lt;b&gt; &quot;c&quot;"
+expect BookText.inline_html("plain") == "plain"
+expect BookText.inline_html("around `Sky` & <b>") == "around <code>Sky</code> &amp; &lt;b&gt;"

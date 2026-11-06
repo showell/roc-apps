@@ -1,7 +1,9 @@
 ## This module is the hook that turns a chapter's own fences into HTML. A
 ## ```widget fence becomes a live frame and a ```dot fence becomes its drawing.
-## Every other fence stays code. A ```widget fence names its widget and, for a
-## widget that opens partway, the word it opens at: ```widget frame trees.
+## A code fence with a title after its language, as build.shale writes them,
+## becomes a listing with that title over it, and any other fence stays code. A
+## ```widget fence names its widget and, for a widget that opens partway, the
+## word it opens at: ```widget frame trees.
 import md.MdDocument
 import BookText
 import Manuscript
@@ -19,8 +21,15 @@ BookFence := [].{
 			Html(widget_html(manuscript.widget_folders, fence).to_utf8())
 		} else if tag == "dot".to_utf8() {
 			Html(diagram_html(manuscript.diagrams, BookText.from_bytes(args)).to_utf8())
-		} else {
+		} else if args.is_empty() {
 			Pass
+		} else {
+			listing = {
+				language: BookText.from_bytes(tag),
+				title: BookText.from_bytes(args),
+				code: BookText.from_bytes(body),
+			}
+			Html(listing_html(listing).to_utf8())
 		}
 }
 
@@ -77,24 +86,79 @@ widget_html = |folders, { words, caption }| {
 		crash "book: the widget `${word}` needs a caption in its fence"
 	}
 	safe_caption = BookText.escaped_text(caption)
+	caption_html = BookText.inline_html(caption)
 	figure =
-		\\<figure class="widget"><iframe class="canvas-app" src="../${frame.folder}/${address_end}" title="${safe_caption}" loading="${frame.loading}" style="aspect-ratio: ${frame.aspect}"></iframe><figcaption>${safe_caption}</figcaption></figure>
+		\\<figure class="widget"><iframe class="canvas-app" src="../${frame.folder}/${address_end}" title="${safe_caption}" loading="${frame.loading}" style="aspect-ratio: ${frame.aspect}"></iframe><figcaption>${caption_html}</figcaption></figure>
 	figure
 }
 
+## The drawing, or a phone's and a desktop's for a wide diagram, over its title.
 diagram_html : List(Manuscript.Diagram), Str -> Str
 diagram_html = |diagrams, id| match diagrams.find_first(|diagram| diagram.id == id) {
-	Ok(diagram) => diagram.svg
+	Ok({ title, svg, .. }) => {
+		named = svg.replace_each(
+			"role=\"img\"",
+			"role=\"img\" aria-label=\"${BookText.escaped_text(title)}\"",
+		)
+		"<figure class=\"diagram\">${named}<figcaption>${BookText.inline_html(title)}</figcaption></figure>"
+	}
 	Err(NotFound) => crash "book: no drawing for the diagram `${id}`"
+}
+
+## The renderer's own markup for code, with the title over it. color_roc.shale
+## reads the file's name from the caption.
+listing_html : {
+	language : Str,
+	title : Str,
+	code : Str,
+} -> Str
+listing_html = |{ language, title, code }| {
+	safe_title = BookText.escaped_text(title)
+	safe_code = BookText.escaped_text(code)
+	listing =
+		\\<figure class="listing"><figcaption>${safe_title}</figcaption><pre><code class="language-${language}">${safe_code}</code></pre></figure>
+	listing
 }
 
 expect frame_of("ride").folder == "safari"
 expect frame_of("sky").folder == "sky_widget"
 expect frame_of("frame").folder == "frame_widget"
 expect frame_of("frame").aspect == "960 / 700"
-expect widget_html(["sky_widget"], { words: "sky", caption: "a <b>" }).contains("title=\"a &lt;b&gt;\"")
-expect widget_html(["sky_widget"], { words: "sky", caption: "a" }).contains("src=\"../sky_widget/\"")
+expect widget_html(
+	["sky_widget"],
+	{ words: "sky", caption: "a <b>" },
+).contains("title=\"a &lt;b&gt;\"")
+expect widget_html(
+	["sky_widget"],
+	{ words: "sky", caption: "a" },
+).contains("src=\"../sky_widget/\"")
 expect
 	widget_html(["frame_widget"], { words: "frame trees", caption: "a" })
 		.contains("src=\"../frame_widget/?start=trees\"")
-expect diagram_html([{ id: "d1", svg: "<svg>" }], "d1") == "<svg>"
+expect
+	diagram_html(
+		[
+			{
+				id: "d1",
+				title: "Around `Sky`",
+				svg: "<svg role=\"img\">",
+			},
+		],
+		"d1",
+	)
+		== "<figure class=\"diagram\"><svg role=\"img\" aria-label=\"Around `Sky`\"><figcaption>Around <code>Sky</code></figcaption></figure>"
+expect
+	listing_html({
+		language: "roc",
+		title: "A.roc, in b",
+		code: "a < b\n",
+	})
+		== "<figure class=\"listing\"><figcaption>A.roc, in b</figcaption><pre><code class=\"language-roc\">a &lt; b\n</code></pre></figure>"
+expect widget_html(
+	["sky_widget"],
+	{ words: "sky", caption: "Press `play`." },
+).contains("<figcaption>Press <code>play</code>.</figcaption>")
+expect widget_html(
+	["sky_widget"],
+	{ words: "sky", caption: "Press `play`." },
+).contains("title=\"Press `play`.\"")

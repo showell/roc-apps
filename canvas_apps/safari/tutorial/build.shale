@@ -22,30 +22,35 @@
 --
 -- `{{module Clock}}` becomes one fenced block holding all of Clock.roc.
 --
--- Each block gets a title line directly above its fence: `from Cat.roc` for a
--- `{{code ...}}`, `Clock.roc (entire)` for a `{{module ...}}`, and for a
+-- `{{signatures Sky.dusk_while_up Sky.dusk_after_set}}` becomes one fenced block
+-- holding those functions' annotations and nothing else, in the order given. They
+-- come from one module, because a block has one title. A name without an
+-- annotation stops the build.
+--
+-- `{{types row Sky.dusk_at Darken the sky}}` becomes a row of a table: the words,
+-- the function's name, and its type as its annotation says, on one line. The
+-- words may be left out, for a row that goes on with the job of the row above.
+--
+-- Each block gets a title, which rides on its fence for the book to set over the
+-- block: `Cat.roc` for a whole definition, `Cat.roc, in crossing_timeline` for
+-- part of one, `Clock.roc, the whole file` for a `{{module ...}}`, and for a
 -- `{{fails ...}}` `turn_as_bearing.roc (doesn't compile)` over the program and
 -- `roc check on turn_as_bearing.roc` over the message. The source has no copy
 -- of a title, so a title can't go stale.
 --
--- An include may start with icons, each followed by one space: first a change
--- of direction, 🔭 or 🐾, then a call, 🌳 or 🍃, either or both. They lead its
--- title, so `🐾 🍃 {{code Clock.to_f64}}` is titled `🐾 🍃 from Clock.roc`.
---
--- `Module.name` looks in Module.roc, beside safari's other modules: at the
--- file's top level, and in the block of the type named for the module. The
--- spans come from Roc's parser through roc_tree, so a local in a function
--- body or a member of another type is not found. The tree holds no comments,
--- so the doc comment is the run of `##` lines directly above the definition.
+-- `Module.name` looks in Module.roc: beside safari's other modules, then in
+-- gates/, then in the other folders of canvas_apps, such as lib/ and the widgets.
+-- A module in two of those other folders stops the build, and the app's own
+-- `web` can be named too, as `{{module web}}`. A block's title spells out the
+-- folder of anything not beside the game. In the file, a name is looked for at
+-- the top level, and in the block of the type named for the module. The spans
+-- come from Roc's parser through roc_tree, so a local in a function body or a
+-- member of another type is not found. The tree holds no comments, so the doc
+-- comment is the run of `##` lines directly above the definition.
 --
 -- A ```dot fence is written by hand, so its title is too: a line directly
 -- above the fence, with a blank line above that, which isn't a heading, a table
 -- row or a sentence ending in `.` or `:`. A diagram without one stops the build.
---
--- An icon may stand only at the start of a title line or an include, so one
--- anywhere else stops the build, and so does one in quoted text. The exception
--- is the key table, the table under KEY_HEADER, whose rows say what each icon
--- means: its rows may start with one icon in their first cell.
 --
 -- An include that can't be expanded stops the build, naming the source's
 -- line, and no output is left behind. Any line holding `{{` must be an
@@ -69,18 +74,17 @@ const SOURCE = "canvas_apps/safari/tutorial/tutorial.md"
 const OUTPUT = "canvas_apps/safari/tutorial/build/tutorial.md"
 const PIN_FILE = "roc-version"
 const WANT = "roc-pin: roc-apps' pinned nightly, for the tutorial's failing programs"
-const INCLUDE = "^\\{\\{code ([A-Z][A-Za-z0-9_]*)\\.([A-Za-z_][A-Za-z0-9_]*!?)(?: from \"([^\"]+)\" to \"([^\"]+)\")?\\}\\}$"
+const INCLUDE = "^\\{\\{code ([A-Z][A-Za-z0-9_]*|web)\\.([A-Za-z_][A-Za-z0-9_]*!?)(?: from \"([^\"]+)\" to \"([^\"]+)\")?\\}\\}$"
+const SIGNATURES = "^\\{\\{signatures ([A-Z][A-Za-z0-9_.! ]*[a-zA-Z0-9_!])\\}\\}$"
+const SIGNATURE_NAME = "^([A-Z][A-Za-z0-9_]*)\\.([a-z_][A-Za-z0-9_]*!?)$"
+const TYPES_ROW = "^\\{\\{types row ([A-Z][A-Za-z0-9_]*)\\.([a-z_][A-Za-z0-9_]*!?)(?: ([^}]+))?\\}\\}$"
 const FAILS = "^\\{\\{fails ([a-z][a-z0-9_]*)\\}\\}$"
-const WHOLE_MODULE = "^\\{\\{module ([A-Z][A-Za-z0-9_]*)\\}\\}$"
+const WHOLE_MODULE = "^\\{\\{module ([A-Z][A-Za-z0-9_]*|web)\\}\\}$"
 const PROOF_ROW = "^\\{\\{proof row ([0-9]+) ([^}]+)\\}\\}$"
 const PROOF_HASH = "^RasterFrame ([0-9]+): hash ([0-9a-f]+)$"
 const PROOF_SHAPES = "^ShapesFrame ([0-9]+): differ 0 of [0-9]+, triangles [0-9]+, shapes ([0-9]+)$"
-const NOT_AN_INCLUDE = "not a line of the form {{code Module.name}}, {{code Module.name from \"text\" to \"text\"}}, {{module Name}}, {{proof row N words}} or {{fails name}}, after at most a direction icon and a call icon"
-const DIRECTION_ICONS = {"🔭", "🐾"}
-const CALL_ICONS = {"🌳", "🍃"}
-const KEY_HEADER = "| Marker | What it says |"
+const NOT_AN_INCLUDE = "not a line of the form {{code Module.name}}, {{code Module.name from \"text\" to \"text\"}}, {{module Name}}, {{signatures Module.name Module.name}}, {{types row Module.name words}}, {{proof row N words}} or {{fails name}}"
 const NO_TITLE = "a diagram needs a title line directly above it"
-const STRAY_ICON = "an icon belongs only at the start of a title line or an include, or in a row of the key table"
 const CUT = "# ..."
 const PROOF_FILE = "/gates/proof.expected"
 const NOT_NAMED = {"web", "main", "game"}
@@ -90,41 +94,43 @@ function stop(entry, why)
   fail(entry.source .. ":" .. entry.line .. ": " .. entry.text .. ": " .. why)
 end
 
--- The one of `icons` that `l` starts with, with its space, or nothing.
-function leading_icon(l, icons)
-  for icon in icons do
-    if starts_with(l, icon .. " ") then return icon .. " " end
+-- The module's file: the game's, then a gate's, then a folder's beside the game.
+-- A name is the game's if it can be, so only the other folders can disagree.
+function module_path(entry, folder, module)
+  local file = module .. ".roc"
+  for near in {folder .. "/" .. file, folder .. "/gates/" .. file} do
+    if exists(near) then return near end
   end
-  return ""
+  local found = glob(dirname(folder) .. "/*/" .. file)
+  if #found == 0 then stop(entry, "no module file " .. folder .. "/" .. file) end
+  if #found > 1 then stop(entry, "two modules of that name: " .. join(found, ", ")) end
+  return found[1]
 end
 
--- The icons `l` starts with, each with its space.
-function leading_icons(l)
-  local direction = leading_icon(l, DIRECTION_ICONS)
-  return direction .. leading_icon(sub(l, #direction + 1, #l), CALL_ICONS)
+-- The module's path as a reader finds it, from the game's folder or else from
+-- canvas_apps.
+function shown_path(folder, path)
+  if starts_with(path, folder .. "/") then return sub(path, #folder + 2, #path) end
+  return sub(path, #dirname(folder) + 2, #path)
 end
 
-function holds_icon(text)
-  for icon in DIRECTION_ICONS do
-    if contains(text, icon) then return true end
+-- The names in a signatures include, which all have the module of the first.
+function signature_names(entry, list)
+  local names = {}
+  for word in split(list, " ") do
+    local m = re_find(word, SIGNATURE_NAME)
+    if m == nil then stop(entry, NOT_AN_INCLUDE) end
+    if #names == 0 then entry.module = m.groups[1] end
+    if m.groups[1] ~= entry.module then stop(entry, "a block of signatures comes from one module, and this has " .. entry.module .. " and " .. m.groups[1]) end
+    push(names, m.groups[2])
   end
-  for icon in CALL_ICONS do
-    if contains(text, icon) then return true end
-  end
-  return false
+  return names
 end
 
--- The source's lines, in order. An include's entry has the icons that lead
--- it. A code include's also has its module, its name and its module's path,
--- and its anchors if it has them. A fails include's has its program's path.
--- A module of the game, or else of a widget: the book explains its widgets too.
-function module_path(folder, module)
-  local path = folder .. "/" .. module .. ".roc"
-  if exists(path) then return path end
-  for widget in glob("canvas_apps/*/" .. module .. ".roc") do return widget end
-  return path
-end
-
+-- The source's lines, in order. A code include's entry has its module, its name
+-- and its module's path, and its anchors if it has them. A signatures or types
+-- include's has its module and path, with its names or its name. A fails
+-- include's has its program's path.
 function read_entries(source, text, folder)
   local entries = {}
   local number = 0
@@ -132,22 +138,29 @@ function read_entries(source, text, folder)
     number = number + 1
     local entry = {source = source, line = number, text = l}
     if contains(l, "{{") then
-      entry.icons = leading_icons(l)
-      local include = sub(l, #entry.icons + 1, #l)
-      local failing = re_find(include, FAILS)
-      local whole = re_find(include, WHOLE_MODULE)
-      local proof_row = re_find(include, PROOF_ROW)
-      if proof_row ~= nil then
+      local failing = re_find(l, FAILS)
+      local whole = re_find(l, WHOLE_MODULE)
+      local proof_row = re_find(l, PROOF_ROW)
+      local signatures = re_find(l, SIGNATURES)
+      local types_row = re_find(l, TYPES_ROW)
+      if signatures ~= nil then
+        entry.signatures = signature_names(entry, signatures.groups[1])
+        entry.path = module_path(entry, folder, entry.module)
+      elseif types_row ~= nil then
+        entry.module = types_row.groups[1]
+        entry.types_name = types_row.groups[2]
+        entry.types_words = types_row.groups[3]
+        entry.path = module_path(entry, folder, entry.module)
+      elseif proof_row ~= nil then
         entry.proof_step = proof_row.groups[1]
         entry.proof_words = proof_row.groups[2]
       elseif failing ~= nil then
         entry.program = dirname(source) .. "/fails/" .. failing.groups[1] .. ".roc"
         if not exists(entry.program) then stop(entry, "no program " .. entry.program) end
       elseif whole ~= nil then
-        entry.whole_module = folder .. "/" .. whole.groups[1] .. ".roc"
-        if not exists(entry.whole_module) then stop(entry, "no module file " .. entry.whole_module) end
+        entry.whole_module = module_path(entry, folder, whole.groups[1])
       else
-        local m = re_find(include, INCLUDE)
+        local m = re_find(l, INCLUDE)
         if m == nil then stop(entry, NOT_AN_INCLUDE) end
         entry.module = m.groups[1]
         entry.name = m.groups[2]
@@ -155,8 +168,7 @@ function read_entries(source, text, folder)
           entry.from = m.groups[3]
           entry.to = m.groups[4]
         end
-        entry.path = module_path(folder, entry.module)
-        if not exists(entry.path) then stop(entry, "no module file " .. entry.path) end
+        entry.path = module_path(entry, folder, entry.module)
       end
     end
     push(entries, entry)
@@ -176,37 +188,13 @@ function has_title(entries, fence_at)
   return fence_at == 2 or trim(entries[fence_at - 2].text) == ""
 end
 
-function is_one_icon(text)
-  local spaced = text .. " "
-  return leading_icon(spaced, DIRECTION_ICONS) == spaced or leading_icon(spaced, CALL_ICONS) == spaced
-end
-
-function is_key_row(l)
-  local cells = split(l, " | ")
-  if #cells < 2 or holds_icon(join(drop(cells, 1), " | ")) then return false end
-  return starts_with(l, "| ") and is_one_icon(sub(cells[1], 3, #cells[1]))
-end
-
-function icon_allowed(entries, at, fenced, in_key_table)
-  if fenced then return false end
-  local l = entries[at].text
-  if in_key_table then return is_key_row(l) end
-  if holds_icon(sub(l, #leading_icons(l) + 1, #l)) then return false end
-  if has_key(entries[at], "icons") then return true end
-  return at < #entries and entries[at + 1].text == "```dot" and has_title(entries, at + 1)
-end
-
-function check_titles_and_icons(entries)
+function check_titles(entries)
   local fenced = false
-  local in_key_table = false
   local at = 1
   while at <= #entries do
-    local entry = entries[at]
-    local l = entry.text
-    in_key_table = l == KEY_HEADER or (in_key_table and starts_with(l, "|"))
-    if holds_icon(l) and not icon_allowed(entries, at, fenced, in_key_table) then stop(entry, STRAY_ICON) end
+    local l = entries[at].text
     if starts_with(l, "```") then
-      if l == "```dot" and not fenced and not has_title(entries, at) then stop(entry, NO_TITLE) end
+      if l == "```dot" and not fenced and not has_title(entries, at) then stop(entries[at], NO_TITLE) end
       fenced = not fenced
     end
     at = at + 1
@@ -264,18 +252,24 @@ function places_of(nodes, module, name)
   return places
 end
 
+function whole_lines(kept)
+  local shown = {}
+  for k in kept do push(shown, k.text) end
+  return shown
+end
+
 function doc_comment_start(source_lines, line)
   local first = line
   while first > 1 and starts_with(trim(source_lines[first - 1]), "##") do first = first - 1 end
   return first
 end
 
--- The definition's lines, dedented, each with its line in the module.
-function definition_lines(entry, place)
-  local source_lines = split(read(entry.path), "\n")
+-- The lines from `first` to the end of `place`, dedented, each with its line in
+-- the module.
+function span_lines(entry, source_lines, first, place)
   local indent = place.col - 1
   local kept = {}
-  local at = doc_comment_start(source_lines, place.line)
+  local at = first
   while at <= place.end_line do
     local l = source_lines[at]
     if at == place.end_line then l = sub(l, 1, place.end_col - 1) end
@@ -286,6 +280,26 @@ function definition_lines(entry, place)
     at = at + 1
   end
   return kept
+end
+
+function definition_lines(entry, place)
+  local source_lines = split(read(entry.path), "\n")
+  return span_lines(entry, source_lines, doc_comment_start(source_lines, place.line), place)
+end
+
+-- The lines of the annotation of `name`, dedented.
+function annotation_lines(entry, tree, name)
+  if tree.err ~= "" then stop(entry, "roc-ast refused " .. entry.path .. ": " .. tree.err) end
+  local found = {}
+  for block in searched_blocks(tree.nodes, entry.module) do
+    for k in block.kids do
+      local s = tree.nodes[k]
+      if s.kind == "s-type-anno" and s.name == name then push(found, s) end
+    end
+  end
+  if #found == 0 then stop(entry, "no annotation of " .. name .. " in " .. entry.path) end
+  if #found > 1 then stop(entry, name .. " has " .. #found .. " annotations in " .. entry.path) end
+  return whole_lines(span_lines(entry, split(read(entry.path), "\n"), found[1].line, found[1]))
 end
 
 -- Where in `kept` the one line holding `anchor` is.
@@ -342,22 +356,15 @@ function elided_lines(entry, kept)
   return shown
 end
 
-function whole_lines(kept)
-  local shown = {}
-  for k in kept do push(shown, k.text) end
-  return shown
-end
-
 function check_quoted(entry, text)
   if contains(text, "```") then stop(entry, "its text holds a Markdown fence") end
-  if holds_icon(text) then stop(entry, "its text holds an icon") end
 end
 
 function titled_block(title, language, text)
-  return title .. "\n```" .. language .. "\n" .. text .. "\n```"
+  return "```" .. language .. " " .. title .. "\n" .. text .. "\n```"
 end
 
-function fenced_definition(entry, tree)
+function fenced_definition(entry, tree, folder)
   if tree.err ~= "" then stop(entry, "roc-ast refused " .. entry.path .. ": " .. tree.err) end
   local places = places_of(tree.nodes, entry.module, entry.name)
   if #places == 0 then stop(entry, "no such name in " .. entry.path) end
@@ -368,16 +375,22 @@ function fenced_definition(entry, tree)
   end
   local kept = definition_lines(entry, places[1])
   local shown = {}
-  if has_key(entry, "from") then shown = elided_lines(entry, kept) else shown = whole_lines(kept) end
+  local title = shown_path(folder, entry.path)
+  if has_key(entry, "from") then
+    shown = elided_lines(entry, kept)
+    title = title .. ", in " .. entry.name
+  else
+    shown = whole_lines(kept)
+  end
   local text = join(shown, "\n")
   check_quoted(entry, text)
-  return titled_block(entry.icons .. "from " .. entry.module .. ".roc", "roc", text)
+  return titled_block(title, "roc", text)
 end
 
-function fenced_module(entry)
+function fenced_module(entry, folder)
   local text = trim(read(entry.whole_module))
   check_quoted(entry, text)
-  return titled_block(entry.icons .. basename(entry.whole_module) .. " (entire)", "roc", text)
+  return titled_block(shown_path(folder, entry.whole_module) .. ", the whole file", "roc", text)
 end
 
 function check_version(roc, pin, said)
@@ -414,7 +427,7 @@ function fenced_failure(entry, roc)
   local message = trim(join(split(said, real(".") .. "/"), ""))
   check_quoted(entry, program .. message)
   local file = basename(entry.program)
-  return titled_block(entry.icons .. file .. " (doesn't compile)", "roc", program) .. "\n\n" .. titled_block("roc check on " .. file, "", message)
+  return titled_block(file .. " (doesn't compile)", "roc", program) .. "\n\n" .. titled_block("roc check on " .. file, "text", message)
 end
 
 function needs_roc(entries)
@@ -424,7 +437,24 @@ function needs_roc(entries)
   return false
 end
 
--- The number of includes expanded.
+function fenced_signatures(entry, tree, folder)
+  local shown = {}
+  for name in entry.signatures do
+    for l in annotation_lines(entry, tree, name) do push(shown, l) end
+  end
+  local text = join(shown, "\n")
+  check_quoted(entry, text)
+  return titled_block(shown_path(folder, entry.path), "roc", text)
+end
+
+function types_table_row(entry, tree)
+  local name = entry.types_name
+  local pieces = {}
+  for l in annotation_lines(entry, tree, name) do push(pieces, trim(l)) end
+  local annotation = join(pieces, " ")
+  return "| " .. entry.types_words .. " | `" .. name .. "` | `" .. sub(annotation, #name + 4, #annotation) .. "` |"
+end
+
 -- A step as the book writes a number, with a comma past the thousands.
 function step_text(step)
   if #step <= 3 then return step end
@@ -474,10 +504,11 @@ function needs_proof(entries)
   return false
 end
 
+-- The number of includes expanded.
 function build(source, output, folder)
   if exists(output) then remove(output) end
   local entries = read_entries(source, read(source), folder)
-  check_titles_and_icons(entries)
+  check_titles(entries)
   local trees = parse_modules(entries)
   local roc = ""
   if needs_roc(entries) then roc = pinned_roc(PIN_FILE) end
@@ -492,14 +523,20 @@ function build(source, output, folder)
     if has_key(e, "proof_step") then
       push(kept, proof_table_row(e, numbers))
       expanded = expanded + 1
+    elseif has_key(e, "signatures") then
+      push(kept, fenced_signatures(e, trees[e.path], folder))
+      expanded = expanded + 1
+    elseif has_key(e, "types_name") then
+      push(kept, types_table_row(e, trees[e.path]))
+      expanded = expanded + 1
     elseif has_key(e, "path") then
-      push(kept, fenced_definition(e, trees[e.path]))
+      push(kept, fenced_definition(e, trees[e.path], folder))
       expanded = expanded + 1
     elseif has_key(e, "program") then
       push(kept, fenced_failure(e, roc))
       expanded = expanded + 1
     elseif has_key(e, "whole_module") then
-      push(kept, fenced_module(e))
+      push(kept, fenced_module(e, folder))
       expanded = expanded + 1
     else
       push(kept, e.text)
@@ -556,8 +593,15 @@ TopType : { a : F64 }
 
 both = 2.0
 
-## A marker: 🌳
-marked = 1.0
+## A long one.
+wide_type :
+	F64,
+	{ size : F64 } -> F64
+wide_type = |a, b| a + b.size
+
+twice : F64
+twice : F64
+
 ]=]
 
 const TIGHT = "Tight :: [].{ squeezed = 1.0 }\n"
@@ -589,10 +633,7 @@ The type was determined to be:
 const CLEAN = "app [main!] {}\n\nmain! = |_args| Ok({})\n"
 const WARNS = "app [main!] {}\n\nmain! = |_args| {\n\tunused = 1.0\n\tOk({})\n}\n"
 const FENCED_BAD = "app [main!] {}\n\n# A fence: ```\nmain! = |_args| 1\n"
-const MARKED_BAD = "app [main!] {}\n\n# A marker: 🍃\nmain! = |_args| 1\n"
 const DIAGRAM = "```dot\ndigraph x {}\n```"
-const KEY_TOP = "| Marker | What it says |\n|---|---|\n"
-
 -- Whether a module needn't be named in the book.
 function excused(module)
   for name in NOT_NAMED do
@@ -627,19 +668,18 @@ function expect_block(checks, folder, include, title, block)
   local r = attempt_include(folder, include)
   if not r.ok then fail("self_test: " .. include .. " stopped: " .. r.error) end
   local got = read(folder .. "/out/doc.md")
-  local want = "prose\n\n" .. title .. "\n```roc\n" .. block .. "\n```\n"
+  local want = "prose\n\n```roc " .. title .. "\n" .. block .. "\n```\n"
   if got ~= want then fail("self_test: " .. include .. " gave [" .. got .. "], not [" .. want .. "]") end
   push(checks, include)
 end
 
--- A failing program's two blocks, the program as written. `icons` lead the
--- first title, and the second has none.
-function expect_failure(checks, folder, icons, name, message)
-  local include = icons .. "{{fails " .. name .. "}}"
+-- A failing program's two blocks, the program as written.
+function expect_failure(checks, folder, name, message)
+  local include = "{{fails " .. name .. "}}"
   local r = attempt_include(folder, include)
   if not r.ok then fail("self_test: " .. include .. " stopped: " .. r.error) end
   local got = read(folder .. "/out/doc.md")
-  local want = "prose\n\n" .. icons .. name .. ".roc (doesn't compile)\n```roc\n" .. trim(read(folder .. "/fails/" .. name .. ".roc")) .. "\n```\n\nroc check on " .. name .. ".roc\n```\n" .. message .. "\n```\n"
+  local want = "prose\n\n```roc " .. name .. ".roc (doesn't compile)\n" .. trim(read(folder .. "/fails/" .. name .. ".roc")) .. "\n```\n\n```text roc check on " .. name .. ".roc\n" .. message .. "\n```\n"
   if got ~= want then fail("self_test: " .. include .. " gave [" .. got .. "], not [" .. want .. "]") end
   push(checks, include)
 end
@@ -694,36 +734,6 @@ function check_title_rule(checks, folder)
   push(checks, "a title on line 1")
 end
 
-function check_icon_rule(checks, folder)
-  for icon in {"🔭", "🐾", "🌳", "🍃"} do
-    expect_prose(checks, folder, icon .. " A title\n" .. DIAGRAM)
-    expect_prose(checks, folder, KEY_TOP .. "| " .. icon .. " | What it says |")
-    expect_stop(checks, folder, icon .. " From a distance, a sentence.", STRAY_ICON)
-    expect_stop(checks, folder, "It calls " .. icon .. " `x` here.", STRAY_ICON)
-    expect_stop(checks, folder, "| " .. icon .. " | What it says |", STRAY_ICON)
-    expect_stop_at(checks, folder, "A title\n```dot\n" .. icon .. " in a diagram\n```", 5, icon .. " in a diagram", STRAY_ICON)
-  end
-  expect_prose(checks, folder, "🐾 🌳 A title\n" .. DIAGRAM)
-  expect_prose(checks, folder, KEY_TOP .. "| 🔭 | One |\n| 🍃 | Two |\n\nplain")
-  expect_stop(checks, folder, "🌳 🐾 A title out of order", STRAY_ICON)
-  expect_stop_at(checks, folder, "A 🌳 title\n" .. DIAGRAM, 3, "A 🌳 title", STRAY_ICON)
-  expect_stop_at(checks, folder, "🌳 A title 🍃\n" .. DIAGRAM, 3, "🌳 A title 🍃", STRAY_ICON)
-  expect_stop_at(checks, folder, "🔭 A title\n\n" .. DIAGRAM, 3, "🔭 A title", STRAY_ICON)
-  expect_stop_at(checks, folder, "more prose\n🔭 A title\n" .. DIAGRAM, 4, "🔭 A title", STRAY_ICON)
-  expect_stop_at(checks, folder, "🔭 A title\n{{code Zoo.bare}}", 3, "🔭 A title", STRAY_ICON)
-  expect_stop_at(checks, folder, "| Kind | What |\n|---|---|\n| 🔭 | One |", 5, "| 🔭 | One |", STRAY_ICON)
-  expect_stop_at(checks, folder, KEY_TOP .. "| 🔭 | One 🐾 |", 5, "| 🔭 | One 🐾 |", STRAY_ICON)
-  expect_stop_at(checks, folder, KEY_TOP .. "| One | 🔭 |", 5, "| One | 🔭 |", STRAY_ICON)
-  expect_stop_at(checks, folder, KEY_TOP .. "| 🔭 🐾 | Two at once |", 5, "| 🔭 🐾 | Two at once |", STRAY_ICON)
-  expect_stop_at(checks, folder, KEY_TOP .. "| 🔭 | One |\n\n🌳 after the table", 7, "🌳 after the table", STRAY_ICON)
-  expect_stop(checks, folder, "{{code Zoo.feed from \"🌳\" to \"}\"}}", STRAY_ICON)
-
-  expect_stop(checks, folder, "{{code Zoo.marked}}", "its text holds an icon")
-  expect_block(checks, folder, "{{code Zoo.marked from \"marked =\" to \"marked =\"}}", "from Zoo.roc", "# ...\nmarked = 1.0")
-  expect_stop(checks, folder, "{{module Marked}}", "its text holds an icon")
-  expect_stop(checks, folder, "{{fails marked}}", "its text holds an icon")
-end
-
 -- Both sides of the proof table's rows.
 function check_proof_rule(checks, folder)
   mkdir(folder .. "/gates")
@@ -744,6 +754,68 @@ function check_proof_rule(checks, folder)
 
   replace(folder .. "/gates/proof.expected", "RasterFrame 7: hash 2335ee33\n")
   expect_stop(checks, folder, "{{proof row 7 A start}}", "the proof file has only half of step 7")
+  remove_tree(folder .. "/gates")
+  return nil
+end
+
+function expect_row(checks, folder, include, row)
+  local r = attempt_include(folder, include)
+  if not r.ok then fail("self_test: " .. include .. " stopped: " .. r.error) end
+  local got = read(folder .. "/out/doc.md")
+  if got ~= "prose\n\n" .. row .. "\n" then fail("self_test: " .. include .. " gave [" .. got .. "], not [" .. row .. "]") end
+  push(checks, include)
+end
+
+-- Both sides of the block of signatures and the table's types.
+function check_annotation_rules(checks, folder)
+  local zoo = folder .. "/Zoo.roc"
+  expect_block(checks, folder, "{{signatures Zoo.feed}}", "Zoo.roc", "feed : Cage -> F64")
+  expect_block(checks, folder, "{{signatures Zoo.feed Zoo.top_function}}", "Zoo.roc", "feed : Cage -> F64\ntop_function : F64 -> F64")
+  expect_block(checks, folder, "{{signatures Zoo.top_function Zoo.feed}}", "Zoo.roc", "top_function : F64 -> F64\nfeed : Cage -> F64")
+  expect_block(checks, folder, "{{signatures Zoo.wide_type Zoo.feed}}", "Zoo.roc", "wide_type :\n\tF64,\n\t{ size : F64 } -> F64\nfeed : Cage -> F64")
+  expect_stop(checks, folder, "{{signatures Zoo.bare}}", "no annotation of bare in " .. zoo)
+  expect_stop(checks, folder, "{{signatures Zoo.feed Zoo.nope}}", "no annotation of nope in " .. zoo)
+  expect_stop(checks, folder, "{{signatures Zoo.twice}}", "twice has 2 annotations in " .. zoo)
+  expect_stop(checks, folder, "{{signatures Gone.x}}", "no module file " .. folder .. "/Gone.roc")
+  expect_stop(checks, folder, "{{signatures Zoo.feed Wild.x}}", "a block of signatures comes from one module, and this has Zoo and Wild")
+  for bad in {"{{signatures}}", "{{signatures Zoo}}", "{{signatures Zoo.Cage}}", "{{signatures zoo.feed}}", "{{signatures Zoo.feed feed}}", "{{signatures Zoo.feed  Zoo.bare}}", "{{signatures Zoo.feed,Zoo.bare}}"} do
+    expect_stop(checks, folder, bad, NOT_AN_INCLUDE)
+  end
+
+  expect_row(checks, folder, "{{types row Zoo.feed Feed them}}", "| Feed them | `feed` | `Cage -> F64` |")
+  expect_row(checks, folder, "{{types row Zoo.feed}}", "|  | `feed` | `Cage -> F64` |")
+  expect_row(checks, folder, "{{types row Zoo.wide_type Two lines}}", "| Two lines | `wide_type` | `F64, { size : F64 } -> F64` |")
+  expect_stop(checks, folder, "{{types row Zoo.bare Words}}", "no annotation of bare in " .. zoo)
+  expect_stop(checks, folder, "{{types row Zoo.nope}}", "no annotation of nope in " .. zoo)
+  expect_stop(checks, folder, "{{types row Gone.x}}", "no module file " .. folder .. "/Gone.roc")
+  for bad in {"{{types row}}", "{{types row Zoo}}", "{{types row zoo.feed}}", "{{types row Zoo.Cage}}", "{{types  row Zoo.feed}}"} do
+    expect_stop(checks, folder, bad, NOT_AN_INCLUDE)
+  end
+  return nil
+end
+
+-- Both sides of where an include finds its module, and how its title says so.
+function check_reach_rule(checks, top, folder)
+  mkdir(folder .. "/gates")
+  for dir in {"lib", "one", "two"} do mkdir(top .. "/" .. dir) end
+  replace(folder .. "/gates/Gate.roc", "Gate :: [].{\n\tshut = 1.0\n}\n")
+  replace(top .. "/lib/Libbed.roc", "Libbed :: [].{\n\tkept = 1.0\n}\n")
+  replace(top .. "/lib/Near.roc", "Near :: [].{\n\tspot = 1.0\n}\n")
+  replace(folder .. "/Near.roc", "Near :: [].{\n\tspot = 2.0\n}\n")
+  replace(folder .. "/gates/Both.roc", "Both :: [].{\n\tspot = 3.0\n}\n")
+  replace(top .. "/one/Both.roc", "Both :: [].{\n\tspot = 4.0\n}\n")
+  replace(top .. "/one/Twin.roc", "Twin :: [].{\n\tx = 1.0\n}\n")
+  replace(top .. "/two/Twin.roc", "Twin :: [].{\n\tx = 1.0\n}\n")
+  replace(folder .. "/web.roc", "app [main!] {}\n\nmain! = |_args| Ok({})\n")
+  expect_block(checks, folder, "{{code Gate.shut}}", "gates/Gate.roc", "shut = 1.0")
+  expect_block(checks, folder, "{{code Libbed.kept}}", "lib/Libbed.roc", "kept = 1.0")
+  expect_block(checks, folder, "{{code Near.spot}}", "Near.roc", "spot = 2.0")
+  expect_block(checks, folder, "{{code Both.spot}}", "gates/Both.roc", "spot = 3.0")
+  expect_block(checks, folder, "{{code web.main!}}", "web.roc", "main! = |_args| Ok({})")
+  expect_block(checks, folder, "{{module Libbed}}", "lib/Libbed.roc, the whole file", "Libbed :: [].{\n\tkept = 1.0\n}")
+  expect_block(checks, folder, "{{module web}}", "web.roc, the whole file", "app [main!] {}\n\nmain! = |_args| Ok({})")
+  expect_stop(checks, folder, "{{code Twin.x}}", "two modules of that name: " .. top .. "/one/Twin.roc, " .. top .. "/two/Twin.roc")
+  expect_stop(checks, folder, "{{module Twin}}", "two modules of that name: " .. top .. "/one/Twin.roc, " .. top .. "/two/Twin.roc")
   remove_tree(folder .. "/gates")
   return nil
 end
@@ -772,7 +844,8 @@ function check_named_rule(checks, folder)
 end
 
 function self_test()
-  local folder = fresh_dir("scratch:", "safari-tutorial")
+  local top = fresh_dir("scratch:", "safari-tutorial")
+  local folder = top .. "/safari"
   mkdir(folder .. "/out")
   replace(folder .. "/Zoo.roc", ZOO)
   replace(folder .. "/Tight.roc", TIGHT)
@@ -782,17 +855,15 @@ function self_test()
   replace(folder .. "/fails/clean.roc", CLEAN)
   replace(folder .. "/fails/warns.roc", WARNS)
   replace(folder .. "/fails/fenced.roc", FENCED_BAD)
-  replace(folder .. "/fails/marked.roc", MARKED_BAD)
-  replace(folder .. "/Marked.roc", "Marked :: [].{ note = \"🍃\" }\n")
   local zoo = folder .. "/Zoo.roc"
   local checks = {}
 
-  expect_block(checks, folder, "{{code Zoo.feed}}", "from Zoo.roc", "## How much to feed,\n## over two lines.\nfeed : Cage -> F64\nfeed = |cage| {\n\tamount = cage.size\n\n\tamount * 2.0\n}")
-  expect_block(checks, folder, "{{code Zoo.Cage}}", "from Zoo.roc", "## A cage.\nCage : {\n\tsize : F64,\n}")
-  expect_block(checks, folder, "{{code Zoo.bare}}", "from Zoo.roc", "bare = 1.0")
-  expect_block(checks, folder, "{{code Zoo.top_function}}", "from Zoo.roc", "top_function : F64 -> F64\ntop_function = |x| x")
-  expect_block(checks, folder, "{{code Zoo.top_constant}}", "from Zoo.roc", "## A constant.\ntop_constant = 2.0")
-  expect_block(checks, folder, "{{code Zoo.TopType}}", "from Zoo.roc", "## A type.\nTopType : { a : F64 }")
+  expect_block(checks, folder, "{{code Zoo.feed}}", "Zoo.roc", "## How much to feed,\n## over two lines.\nfeed : Cage -> F64\nfeed = |cage| {\n\tamount = cage.size\n\n\tamount * 2.0\n}")
+  expect_block(checks, folder, "{{code Zoo.Cage}}", "Zoo.roc", "## A cage.\nCage : {\n\tsize : F64,\n}")
+  expect_block(checks, folder, "{{code Zoo.bare}}", "Zoo.roc", "bare = 1.0")
+  expect_block(checks, folder, "{{code Zoo.top_function}}", "Zoo.roc", "top_function : F64 -> F64\ntop_function = |x| x")
+  expect_block(checks, folder, "{{code Zoo.top_constant}}", "Zoo.roc", "## A constant.\ntop_constant = 2.0")
+  expect_block(checks, folder, "{{code Zoo.TopType}}", "Zoo.roc", "## A type.\nTopType : { a : F64 }")
 
   expect_stop(checks, folder, "{{code Zoo.nope}}", "no such name in " .. zoo)
   expect_stop(checks, folder, "{{code Zoo.amount}}", "no such name in " .. zoo)
@@ -801,17 +872,17 @@ function self_test()
   expect_stop(checks, folder, "{{code Zoo.both}}", "found 2 times in " .. zoo .. ", at lines 25, 45")
   expect_stop(checks, folder, "{{code Gone.feed}}", "no module file " .. folder .. "/Gone.roc")
   expect_stop(checks, folder, "{{module Gone}}", "no module file " .. folder .. "/Gone.roc")
-  expect_block(checks, folder, "{{module Tight}}", "Tight.roc (entire)", trim(TIGHT))
+  expect_block(checks, folder, "{{module Tight}}", "Tight.roc, the whole file", trim(TIGHT))
   expect_stop(checks, folder, "{{code Zoo.fenced}}", "its text holds a Markdown fence")
   expect_stop(checks, folder, "{{code Tight.squeezed}}", folder .. "/Tight.roc:1 is not indented as the definition is")
 
-  expect_block(checks, folder, "{{code Zoo.feed from \"amount = cage.size\" to \"amount * 2.0\"}}", "from Zoo.roc", "# ...\namount = cage.size\n\namount * 2.0\n# ...")
-  expect_block(checks, folder, "{{code Zoo.feed from \"amount * 2.0\" to \"amount * 2.0\"}}", "from Zoo.roc", "# ...\namount * 2.0\n# ...")
-  expect_block(checks, folder, "{{code Zoo.feed from \"feed =\" to \"amount = cage.size\"}}", "from Zoo.roc", "# ...\nfeed = |cage| {\n\tamount = cage.size\n\t# ...")
-  expect_block(checks, folder, "{{code Zoo.feed from \"amount * 2.0\" to \"}\"}}", "from Zoo.roc", "\t# ...\n\tamount * 2.0\n}")
-  expect_block(checks, folder, "{{code Zoo.feed from \"How much\" to \"feed :\"}}", "from Zoo.roc", "## How much to feed,\n## over two lines.\nfeed : Cage -> F64\n# ...")
-  expect_block(checks, folder, "{{code Zoo.feed from \"How much\" to \"}\"}}", "from Zoo.roc", "## How much to feed,\n## over two lines.\nfeed : Cage -> F64\nfeed = |cage| {\n\tamount = cage.size\n\n\tamount * 2.0\n}")
-  expect_block(checks, folder, "{{code Zoo.fenced from \"fenced =\" to \"fenced =\"}}", "from Zoo.roc", "# ...\nfenced = 1.0")
+  expect_block(checks, folder, "{{code Zoo.feed from \"amount = cage.size\" to \"amount * 2.0\"}}", "Zoo.roc, in feed", "# ...\namount = cage.size\n\namount * 2.0\n# ...")
+  expect_block(checks, folder, "{{code Zoo.feed from \"amount * 2.0\" to \"amount * 2.0\"}}", "Zoo.roc, in feed", "# ...\namount * 2.0\n# ...")
+  expect_block(checks, folder, "{{code Zoo.feed from \"feed =\" to \"amount = cage.size\"}}", "Zoo.roc, in feed", "# ...\nfeed = |cage| {\n\tamount = cage.size\n\t# ...")
+  expect_block(checks, folder, "{{code Zoo.feed from \"amount * 2.0\" to \"}\"}}", "Zoo.roc, in feed", "\t# ...\n\tamount * 2.0\n}")
+  expect_block(checks, folder, "{{code Zoo.feed from \"How much\" to \"feed :\"}}", "Zoo.roc, in feed", "## How much to feed,\n## over two lines.\nfeed : Cage -> F64\n# ...")
+  expect_block(checks, folder, "{{code Zoo.feed from \"How much\" to \"}\"}}", "Zoo.roc, in feed", "## How much to feed,\n## over two lines.\nfeed : Cage -> F64\nfeed = |cage| {\n\tamount = cage.size\n\n\tamount * 2.0\n}")
+  expect_block(checks, folder, "{{code Zoo.fenced from \"fenced =\" to \"fenced =\"}}", "Zoo.roc, in fenced", "# ...\nfenced = 1.0")
 
   expect_stop(checks, folder, "{{code Zoo.feed from \"nope\" to \"}\"}}", "\"nope\" is not in the definition")
   expect_stop(checks, folder, "{{code Zoo.feed from \"feed =\" to \"nope\"}}", "\"nope\" is not in the definition")
@@ -823,23 +894,12 @@ function self_test()
   expect_stop(checks, folder, "{{code Zoo.fenced from \"A fence\" to \"fenced =\"}}", "its text holds a Markdown fence")
   expect_stop(checks, folder, "{{code Zoo.nope from \"a\" to \"b\"}}", "no such name in " .. zoo)
 
-  expect_block(checks, folder, "🌳 {{code Zoo.bare}}", "🌳 from Zoo.roc", "bare = 1.0")
-  expect_block(checks, folder, "🍃 {{code Zoo.bare}}", "🍃 from Zoo.roc", "bare = 1.0")
-  expect_block(checks, folder, "🔭 {{code Zoo.bare}}", "🔭 from Zoo.roc", "bare = 1.0")
-  expect_block(checks, folder, "🐾 {{code Zoo.bare}}", "🐾 from Zoo.roc", "bare = 1.0")
-  expect_block(checks, folder, "🐾 🍃 {{code Zoo.bare}}", "🐾 🍃 from Zoo.roc", "bare = 1.0")
-  expect_block(checks, folder, "🔭 🌳 {{code Zoo.feed from \"amount * 2.0\" to \"amount * 2.0\"}}", "🔭 🌳 from Zoo.roc", "# ...\namount * 2.0\n# ...")
-  expect_block(checks, folder, "🌳 {{module Tight}}", "🌳 Tight.roc (entire)", trim(TIGHT))
-  expect_block(checks, folder, "🔭 🌳 {{module Tight}}", "🔭 🌳 Tight.roc (entire)", trim(TIGHT))
-  expect_stop(checks, folder, "🌳 {{code Zoo.nope}}", "no such name in " .. zoo)
-
-  expect_failure(checks, folder, "", "bad", BAD_MESSAGE)
-  expect_failure(checks, folder, "🐾 ", "bad", BAD_MESSAGE)
+  expect_failure(checks, folder, "bad", BAD_MESSAGE)
   local root = real(".")
   replace(folder .. "/fails/pathy.roc", "app [main!] {}\n\nmain! = |_args| \"" .. root .. "/Some.roc\" + 1\n")
   local pathy = attempt_include(folder, "{{fails pathy}}")
   if not pathy.ok then fail("self_test: {{fails pathy}} stopped: " .. pathy.error) end
-  local message = split(read(folder .. "/out/doc.md"), "```\n\nroc check on pathy.roc\n```\n")[2]
+  local message = split(read(folder .. "/out/doc.md"), "```\n\n```text roc check on pathy.roc\n")[2]
   if contains(message, root) or not contains(message, "\"Some.roc\" + 1") then fail("self_test: the checkout's path stayed in [" .. message .. "]") end
   push(checks, "{{fails pathy}}")
 
@@ -852,7 +912,7 @@ function self_test()
   if refused.ok or not contains(refused.error, ":3: {{code Broken.x}}: roc-ast refused ") then fail("self_test: Broken.roc gave " .. json_write(refused)) end
   push(checks, "{{code Broken.x}}")
 
-  for bad in {"{{", "{{code}}", "{{code Zoo}}", "{{code Zoo.a.b}}", "{{code zoo.feed}}", "{{cod Zoo.feed}}", "{{ code Zoo.feed }}", " {{code Zoo.feed}}", "{{code Zoo.feed}} ", "see {{code Zoo.feed}}", "{{code Zoo.feed}} and {{code Zoo.bare}}", "{{code Zoo.feed from \"a\"}}", "{{code Zoo.feed to \"a\"}}", "{{code Zoo.feed from \"a\" to \"\"}}", "{{code Zoo.feed from a to b}}", "{{code Zoo.feed from \"a\"b\" to \"c\"}}", "{{fails}}", "{{fails Bad}}", "{{fails a b}}", "{{fails a.b}}", "{{fails ../bad}}", "{{fails bad }}", "🌳{{code Zoo.feed}}", "🌳  {{code Zoo.feed}}", " 🌳 {{code Zoo.feed}}", "🦁 {{code Zoo.feed}}", "🌳 🔭 {{code Zoo.feed}}", "🌳 🍃 {{code Zoo.feed}}", "🔭 🐾 {{code Zoo.feed}}", "🌳 🌳 {{code Zoo.feed}}", "{{code Zoo.feed}} 🌳", "🌳 see {{code Zoo.feed}}"} do
+  for bad in {"{{", "{{code}}", "{{code Zoo}}", "{{code Zoo.a.b}}", "{{code zoo.feed}}", "{{cod Zoo.feed}}", "{{ code Zoo.feed }}", " {{code Zoo.feed}}", "{{code Zoo.feed}} ", "see {{code Zoo.feed}}", "{{code Zoo.feed}} and {{code Zoo.bare}}", "{{code Zoo.feed from \"a\"}}", "{{code Zoo.feed to \"a\"}}", "{{code Zoo.feed from \"a\" to \"\"}}", "{{code Zoo.feed from a to b}}", "{{code Zoo.feed from \"a\"b\" to \"c\"}}", "{{fails}}", "{{fails Bad}}", "{{fails a b}}", "{{fails a.b}}", "{{fails ../bad}}", "{{fails bad }}", "🌳 {{code Zoo.feed}}"} do
     expect_stop(checks, folder, bad, NOT_AN_INCLUDE)
   end
   for prose in {"plain", "{ {code Zoo.feed}}", "{code Zoo.feed}", "}}"} do
@@ -860,9 +920,10 @@ function self_test()
   end
 
   check_title_rule(checks, folder)
-  check_icon_rule(checks, folder)
   check_named_rule(checks, folder)
   check_proof_rule(checks, folder)
+  check_annotation_rules(checks, folder)
+  check_reach_rule(checks, top, folder)
 
   local no_file = attempt(pinned_roc, folder .. "/no-pin")
   if no_file.ok or no_file.error ~= "tutorial: no " .. folder .. "/no-pin: run from the roc-apps root" then fail("self_test: no pin file gave " .. json_write(no_file)) end
@@ -876,7 +937,7 @@ function self_test()
   if wrong.ok or wrong.error ~= "tutorial: r is Roc compiler version q, not p" then fail("self_test: the wrong compiler gave " .. json_write(wrong)) end
   push(checks, "the pinned version, and another")
 
-  remove_tree(folder)
+  remove_tree(top)
   print("tutorial self_test: PASS, " .. #checks .. " checks")
 end
 
