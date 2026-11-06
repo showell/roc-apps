@@ -88,9 +88,9 @@ Throttle :: [].{
 	## passes the acceleration through in turn.
 	shoulder_brake : RiderState, Acceleration -> Acceleration
 	shoulder_brake = |state, a|
-		match Coast.project(state).shoulder {
-			ShoulderNone => a
-			ShoulderLeft(steps_to_shoulder) | ShoulderRight(steps_to_shoulder) =>
+		match Coast.project(state).exit {
+			StaysOn => a
+			Leaves({ after: steps_to_shoulder, .. }) =>
 				shoulder_brake_at(state, { steps_to_shoulder, offered_accel: a })
 		}
 
@@ -274,8 +274,8 @@ across_at = |metres| RiderState.initial.across.plus(Speed.metres_a_step(metres).
 rider_off_left : F64 -> RiderState
 rider_off_left = |speed| { ..centred_rider(0.0, speed), yaw: Angle.Turn.radians(-1.5) }
 
-expect Coast.project(rider_off_left(0.048)).shoulder == ShoulderLeft(Steps.of(40))
-expect Coast.project(rider_off_left(0.7)).shoulder == ShoulderLeft(Steps.of(2))
+expect Coast.project(rider_off_left(0.048)).exit == Leaves({ side: Left, after: Steps.of(40) })
+expect Coast.project(rider_off_left(0.7)).exit == Leaves({ side: Left, after: Steps.of(2) })
 
 # A coast that stays on the road takes what is offered, and one that leaves it
 # brakes.
@@ -398,20 +398,20 @@ expect wide.end_across.to_metres() == 3.0
 expect stopped.forward.to_metres() == 0.0
 expect stopped.end_across.to_metres() == 0.0
 
-expect straight.shoulder == ShoulderNone
-expect wide.shoulder == ShoulderNone
-expect stopped.shoulder == ShoulderNone
+expect straight.exit == StaysOn
+expect wide.exit == StaysOn
+expect stopped.exit == StaysOn
 
 ## How many steps a coast runs before it leaves the road.
 steps_off_road : Coast.Outcome -> Steps
 steps_off_road = |coast|
-	match coast.shoulder {
-		ShoulderLeft(steps_to_shoulder) | ShoulderRight(steps_to_shoulder) => steps_to_shoulder
-		ShoulderNone => crash "Throttle's expects: this coast stays on the road"
+	match coast.exit {
+		Leaves({ after, .. }) => after
+		StaysOn => crash "Throttle's expects: this coast stays on the road"
 	}
 
-expect leaning.shoulder == ShoulderRight(steps_off_road(leaning))
-expect other_way.shoulder == ShoulderLeft(steps_off_road(other_way))
+expect leaning.exit == Leaves({ side: Right, after: steps_off_road(leaning) })
+expect other_way.exit == Leaves({ side: Left, after: steps_off_road(other_way) })
 
 expect steps_off_road(leaning) < Coast.turn_danger_steps
 expect steps_off_road(leaning) > Steps.zero

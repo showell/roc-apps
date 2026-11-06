@@ -11,10 +11,10 @@ LeanSearch :: [].{
 
 	want_more_right : Coast.Outcome, Across -> Bool
 	want_more_right = |coast, target|
-		match coast.shoulder {
-			ShoulderLeft(_) => True
-			ShoulderRight(_) => False
-			ShoulderNone => coast.end_across < target
+		match coast.exit {
+			Leaves({ side: Left, .. }) => True
+			Leaves({ side: Right, .. }) => False
+			StaysOn => coast.end_across < target
 		}
 
 	asymptote_tuning : F64
@@ -116,24 +116,24 @@ expect LeanSearch.center_lane_epsilon.to_metres() == 0.04
 expect LeanSearch.max_tilt_correction.to_radians() == 0.017453292519943295
 expect LeanSearch.lean_search_iters == 12
 
-## A coast ending at `end_across`, on `shoulder` or not.
-outcome : Coast.Shoulder, F64 -> Coast.Outcome
-outcome = |shoulder, end_across| {
-	shoulder,
+## A coast ending at `end_across`, leaving by `exit` or not.
+outcome : Coast.Exit, F64 -> Coast.Outcome
+outcome = |exit, end_across| {
+	exit,
 	forward: Distance.metres(10.0),
 	end_across: Across.metres(end_across),
 }
 
-off_left : Coast.Shoulder
-off_left = ShoulderLeft(Steps.one_step)
+off_left : Coast.Exit
+off_left = Leaves({ side: Left, after: Steps.one_step })
 
-off_right : Coast.Shoulder
-off_right = ShoulderRight(Steps.one_step)
+off_right : Coast.Exit
+off_right = Leaves({ side: Right, after: Steps.one_step })
 
 expect LeanSearch.want_more_right(outcome(off_left, 99.0), Across.metres(0.5))
 expect LeanSearch.want_more_right(outcome(off_left, (0.0 - 99.0)), Across.metres(0.5))
 expect !(LeanSearch.want_more_right(outcome(off_right, 99.0), Across.metres(0.5)))
 expect !(LeanSearch.want_more_right(outcome(off_right, (0.0 - 99.0)), Across.metres(0.5)))
-expect LeanSearch.want_more_right(outcome(ShoulderNone, 0.4), Across.metres(0.5))
-expect !(LeanSearch.want_more_right(outcome(ShoulderNone, 0.6), Across.metres(0.5)))
-expect !(LeanSearch.want_more_right(outcome(ShoulderNone, 0.5), Across.metres(0.5)))
+expect LeanSearch.want_more_right(outcome(StaysOn, 0.4), Across.metres(0.5))
+expect !(LeanSearch.want_more_right(outcome(StaysOn, 0.6), Across.metres(0.5)))
+expect !(LeanSearch.want_more_right(outcome(StaysOn, 0.5), Across.metres(0.5)))

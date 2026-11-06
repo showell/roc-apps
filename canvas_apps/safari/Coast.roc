@@ -13,10 +13,10 @@ Coast :: [].{
 
 	## Where a coast ends up: off a shoulder after this many steps, or still
 	## on the road.
-	Shoulder : [ShoulderLeft(Steps), ShoulderNone, ShoulderRight(Steps)]
+	Exit : [StaysOn, Leaves({ side : [Left, Right], after : Steps })]
 
 	Outcome : {
-		shoulder : Coast.Shoulder,
+		exit : Coast.Exit,
 		forward : Distance,
 		end_across : Across,
 	}
@@ -46,7 +46,7 @@ Coast :: [].{
 	sim_from = |course, { frame_count: i, coasting_rider: phys }|
 		if i >= turn_danger_steps {
 			{
-				shoulder: ShoulderNone,
+				exit: StaysOn,
 				forward: phys.along.distance_from(course.start_along),
 				end_across: phys.across,
 			}
@@ -69,25 +69,25 @@ Coast :: [].{
 		forward = phys.along.distance_from(course.start_along)
 		if across < course.left_bound {
 			{
-				shoulder: ShoulderLeft(i),
+				exit: Leaves({ side: Left, after: i }),
 				forward: forward.min(min_forward_progress),
 				end_across: across,
 			}
 		} else if across > course.right_bound {
 			{
-				shoulder: ShoulderRight(i),
+				exit: Leaves({ side: Right, after: i }),
 				forward: forward.min(min_forward_progress),
 				end_across: across,
 			}
 		} else if forward < Distance.zero {
 			{
-				shoulder: ShoulderNone,
+				exit: StaysOn,
 				forward: forward,
 				end_across: across,
 			}
 		} else if forward >= min_forward_progress {
 			{
-				shoulder: ShoulderNone,
+				exit: StaysOn,
 				forward: min_forward_progress,
 				end_across: across,
 			}
