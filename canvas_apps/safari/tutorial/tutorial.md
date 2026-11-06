@@ -65,6 +65,8 @@ It's called like this, once a step:
 
 `instant.clock.next()` is static dispatch: `next` comes from the type of `instant.clock`, so the call needs no import.
 
+A claim about a clock is one line, because a clock is a value. The `expect` that starts at step 5,699 gets there with `Clock.at_step`, and nothing has to ride that far.
+
 That's one module of about eighty, and nothing yet says how the rest fit together.
 
 ## The modules
@@ -190,7 +192,7 @@ A piece of the world can be just a value. Here's the second whole module, and it
 
 {{module Pond}}
 
-There are no functions here at all. The ducks are read where the critters are sighted:
+Above its `expect`s, there are no functions here at all. The ducks are read where the critters are sighted:
 
 {{code CritterSighting.pond_sightings from "if Scenery.is_pond" to "Pond.ducks.map("}}
 
@@ -209,6 +211,12 @@ Here's where it's called, picking the colour for a pair of small trees:
 `SegmentIndex` is another small opaque type, a `U32` for a segment's place in the route. A place in the route can't be confused with a count of trees, because nothing outside can do arithmetic on it. `crash` appears here too. It isn't for error handling: an index that isn't in the world is a bug in Safari Ride, not a case to handle.
 
 {{code World.SegmentIndex from "## The segment of `world`" to "?? crash"}}
+
+A value that never changes can be checked once, whole. `Pond`'s one function is below its block, and it's there for a test:
+
+{{code Pond.is_on_water}}
+
+The `expect` under it, in the module above, runs that over all six ducks. One line covers the whole pond.
 
 Nothing in this chapter moves, and the ride does.
 
@@ -1326,7 +1334,7 @@ The limit, stated flatly: the hash proves `ShapesPixels`'s pixels, and the page'
 
 ### `expect`
 
-Below the frames, the proving is plain. An `expect` sits at the top level of a module, under the code it checks, and `roc test` runs it. There are over a thousand, and they're Safari Ride's only other tests. The tour has already shown fourteen of them, in the whole of `Clock`. A pure function needs nothing else: literal arguments, literal answer. Each `expect` asserts one thing, and they cover both sides. `Clock`'s check that a clock equals itself one step on is false, so it's written with `!`. `Num_.round_real` has a run of its boundaries, from `-0.5000000000000001` up through `0.49999999999999994`, on both sides of each. [check: those two numbers are quoted by hand, since an `expect` has no name for an include to find. It wants an include form of its own.]
+Below the frames, the proving is plain. An `expect` sits at the top level of a module, under the code it checks, and `roc test` runs it. There are over a thousand, and they're Safari Ride's only other tests. The tour has already shown twenty-six of them, in the whole of `Clock` and `Pond`. A pure function needs nothing else: literal arguments, literal answer. Each `expect` asserts one thing, and they cover both sides. `Clock`'s check that a clock equals itself one step on is false, so it's written with `!`. `Num_.round_real` has a run of its boundaries, from `-0.5000000000000001` up through `0.49999999999999994`, on both sides of each. [check: those two numbers are quoted by hand, since an `expect` has no name for an include to find. It wants an include form of its own.]
 
 A test's data can sit beside it as a plain definition. `Bike` doesn't import `Pose`, and `Motion` is open, so its fixture is a record that has the six fields and makes up the rest. `segment` and `focus` are bare numbers here, because `Bike` carries them through and never looks. A narrow view of a wide record pays off twice: the test needs nothing the module doesn't.
 
