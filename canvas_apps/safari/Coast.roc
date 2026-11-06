@@ -40,10 +40,10 @@ Coast :: [].{
 
 	## Where a coast has reached: how many steps it has run, and the coasting
 	## rider.
-	Progress(others) : { frame_count : Steps, coasting_rider : Bike.Motion(others) }
+	Progress(others) : { steps_run : Steps, coasting_rider : Bike.Motion(others) }
 
 	sim_from : Coast.Bounds, Coast.Progress(others) -> Coast.Outcome
-	sim_from = |course, { frame_count: i, coasting_rider: phys }|
+	sim_from = |course, { steps_run: i, coasting_rider: phys }|
 		if i >= turn_danger_steps {
 			{
 				exit: StaysOn,
@@ -54,7 +54,7 @@ Coast :: [].{
 			sim_step(
 				course,
 				{
-					frame_count: i,
+					steps_run: i,
 					coasting_rider: Bike.simulate_rider_step(
 						phys,
 						{ lean_step: Angle.upright, accel: Acceleration.steady },
@@ -64,7 +64,7 @@ Coast :: [].{
 		}
 
 	sim_step : Coast.Bounds, Coast.Progress(others) -> Coast.Outcome
-	sim_step = |course, { frame_count: i, coasting_rider: phys }| {
+	sim_step = |course, { steps_run: i, coasting_rider: phys }| {
 		across = phys.across
 		forward = phys.along.distance_from(course.start_along)
 		if across < course.left_bound {
@@ -92,7 +92,7 @@ Coast :: [].{
 				end_across: across,
 			}
 		} else {
-			sim_from(course, { frame_count: i.plus(Steps.one_step), coasting_rider: phys })
+			sim_from(course, { steps_run: i.plus(Steps.one_step), coasting_rider: phys })
 		}
 	}
 
@@ -103,7 +103,7 @@ Coast :: [].{
 		left_bound = Across.left_of_middle(inset_hw).min(state.across)
 		sim_from(
 			{ left_bound, right_bound, start_along: state.along },
-			{ frame_count: Steps.zero, coasting_rider: state },
+			{ steps_run: Steps.zero, coasting_rider: state },
 		)
 	}
 }
