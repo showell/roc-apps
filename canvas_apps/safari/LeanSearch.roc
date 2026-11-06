@@ -97,18 +97,18 @@ target_of : F64 -> F64
 target_of = |across| LeanSearch.lean_target(Across.metres(across)).to_metres()
 
 expect target_of(0.5) == 0.15
-expect target_of((0.0 - 0.5)) == -0.15
+expect target_of(0.0 - 0.5) == -0.15
 expect target_of(2.0) == 0.6
-expect target_of((0.0 - 2.0)) == -0.6
+expect target_of(0.0 - 2.0) == -0.6
 expect target_of(0.04) == 0.012
-expect target_of((0.0 - 0.04)) == -0.012
+expect target_of(0.0 - 0.04) == -0.012
 expect target_of(0.0) == 0.04
 expect target_of(0.039) == 0.04
-expect target_of((0.0 - 0.039)) == -0.04
+expect target_of(0.0 - 0.039) == -0.04
 expect target_of(2.0) > 0.0
 expect target_of(2.0) < 2.0
-expect target_of((0.0 - 2.0)) < 0.0
-expect target_of((0.0 - 2.0)) > (0.0 - 2.0)
+expect target_of(0.0 - 2.0) < 0.0
+expect target_of(0.0 - 2.0) > 0.0 - 2.0
 expect target_of(0.0) > 0.0
 
 expect LeanSearch.asymptote_tuning == 0.3
@@ -131,9 +131,9 @@ off_right : Coast.Exit
 off_right = Leaves({ side: Right, after: Steps.one_step })
 
 expect LeanSearch.want_more_right(outcome(off_left, 99.0), Across.metres(0.5))
-expect LeanSearch.want_more_right(outcome(off_left, (0.0 - 99.0)), Across.metres(0.5))
-expect !(LeanSearch.want_more_right(outcome(off_right, 99.0), Across.metres(0.5)))
-expect !(LeanSearch.want_more_right(outcome(off_right, (0.0 - 99.0)), Across.metres(0.5)))
+expect LeanSearch.want_more_right(outcome(off_left, 0.0 - 99.0), Across.metres(0.5))
+expect !LeanSearch.want_more_right(outcome(off_right, 99.0), Across.metres(0.5))
+expect !LeanSearch.want_more_right(outcome(off_right, 0.0 - 99.0), Across.metres(0.5))
 expect LeanSearch.want_more_right(outcome(StaysOn, 0.4), Across.metres(0.5))
-expect !(LeanSearch.want_more_right(outcome(StaysOn, 0.6), Across.metres(0.5)))
-expect !(LeanSearch.want_more_right(outcome(StaysOn, 0.5), Across.metres(0.5)))
+expect !LeanSearch.want_more_right(outcome(StaysOn, 0.6), Across.metres(0.5))
+expect !LeanSearch.want_more_right(outcome(StaysOn, 0.5), Across.metres(0.5))

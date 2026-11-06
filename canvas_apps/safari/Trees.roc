@@ -119,7 +119,7 @@ plant_onto : List(Scenery.Tree),
 plant_onto = |planted, { scheme, length, along, size }|
 	if along > Along.at(length.minus(Trees.tree_end_inset)) {
 		planted
-	} else if (planted.len().to_i64_wrap() + 2) > Trees.max_trees {
+	} else if planted.len().to_i64_wrap() + 2 > Trees.max_trees {
 		planted
 	} else {
 		conifer =

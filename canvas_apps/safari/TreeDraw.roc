@@ -264,11 +264,11 @@ trim_hull = |hull, point|
 ## before plus a step, not a multiple of the step: the two round differently.
 ring_angles : List(F64)
 ring_angles = {
-	step = (Trig.two_pi / TreeDraw.ring_n.to_f64())
+	step = Trig.two_pi / TreeDraw.ring_n.to_f64()
 	walked = List.repeat(step, (TreeDraw.ring_n - 1).to_u64_wrap()).fold(
 		{ angle: 0.0, angles: [0.0] },
 		|so_far, turn| {
-			angle = (so_far.angle + turn)
+			angle = so_far.angle + turn
 			{ angle, angles: so_far.angles.append(angle) }
 		},
 	)
@@ -303,8 +303,8 @@ tier_cone = |tree, { tier, cone_radius }| {
 	crown = TreeDraw.crown_height.to_f64()
 	bottom = tier.bottom.to_f64()
 	top = tier.top.to_f64()
-	base_height = tree.height.times(trunk + (crown * (1.0 - bottom)))
-	apex_height = tree.height.times(trunk + (crown * (1.0 - top)))
+	base_height = tree.height.times(trunk + crown * (1.0 - bottom))
+	apex_height = tree.height.times(trunk + crown * (1.0 - top))
 	apex = Camera.project(
 		{
 			right: tree.right,

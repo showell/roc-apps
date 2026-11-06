@@ -52,7 +52,7 @@ Wildlife :: [].{
 					if turn.is_right() {
 						{ inward: 1.0, facing: FacesRight }
 					} else {
-						{ inward: (0.0 - 1.0), facing: FacesLeft }
+						{ inward: 0.0 - 1.0, facing: FacesLeft }
 					}
 				clear_of_rail = road_half_width.plus(adult_rail_buffer)
 				out_from_middle = clear_of_rail.plus(species.adult_height.divided_by(2.0))

@@ -156,9 +156,9 @@ expect bend_of(m_prev_right).segment_length.to_metres() == 300.0
 expect bend_of(m_prev_right).road_width.to_metres() == 4.0
 expect bend_of(Chain.place_behind(World.route_segment(0))).segment_length.to_metres() == 500.0
 expect is_in_chain(m_chain)
-expect !(is_in_chain(m_prev_left))
-expect !(is_in_chain(m_prev_right))
-expect !(turns_right(m_prev_left))
+expect !is_in_chain(m_prev_left)
+expect !is_in_chain(m_prev_right)
+expect !turns_right(m_prev_left)
 expect turns_right(m_prev_right)
 
 ## A road along `chain`, the route's segments by number.

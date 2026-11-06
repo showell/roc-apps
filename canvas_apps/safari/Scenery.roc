@@ -55,11 +55,11 @@ expect Across.middle.distance_from(Scenery.left_edge).to_metres() == 2.0
 expect Across.metres(-2.0).distance_from(Scenery.left_edge).to_metres() == 0.0
 expect Across.metres(2.0).distance_from(Scenery.left_edge).to_metres() == 4.0
 expect Scenery.is_pond(DuckPond)
-expect !(Scenery.is_pond(Quiet))
-expect !(Scenery.is_pond(Animal(Zebra)))
-expect !(Scenery.is_pond(Animal(Elephant)))
-expect !(Scenery.is_pond(Animal(Giraffe)))
-expect !(Scenery.is_pond(Animal(Rhino)))
+expect !Scenery.is_pond(Quiet)
+expect !Scenery.is_pond(Animal(Zebra))
+expect !Scenery.is_pond(Animal(Elephant))
+expect !Scenery.is_pond(Animal(Giraffe))
+expect !Scenery.is_pond(Animal(Rhino))
 
 scheme_code : Scenery.Scheme -> I64
 scheme_code = |s|

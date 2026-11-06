@@ -39,7 +39,7 @@ Paint :: [].{
 	## One channel scaled by `factor`, rounded, and held at 255 at most.
 	shade_channel : I64, F64 -> I64
 	shade_channel = |channel, factor| {
-		scaled = Float.round((channel.to_f64() * factor)).to_i64_wrap()
+		scaled = Float.round(channel.to_f64() * factor).to_i64_wrap()
 		if scaled > 255 {
 			255
 		} else {
@@ -64,13 +64,13 @@ Paint :: [].{
 	## A shaded polygon's colour at its edges.
 	width_shade_edge : I64, Fraction -> I64
 	width_shade_edge = |color, strength|
-		shade_color(color, (1.0 - (shade_edge_darken.to_f64() * strength.to_f64())))
+		shade_color(color, 1.0 - shade_edge_darken.to_f64() * strength.to_f64())
 
 	## A shaded polygon's colour in its middle.
 	width_shade_middle : I64, Fraction -> I64
 	width_shade_middle = |color, strength| shade_color(
 		color,
-		(1.0 + (shade_middle_lift.to_f64() * strength.to_f64())),
+		1.0 + shade_middle_lift.to_f64() * strength.to_f64(),
 	)
 
 	min_shade_width : Pixels

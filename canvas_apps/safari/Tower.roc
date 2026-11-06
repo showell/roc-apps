@@ -121,13 +121,13 @@ Tower :: [].{
 	base_corner_on_road = |corner, { along, across, yaw }| {
 		offset = corner_offset(corner)
 		half = tower_half.to_metres()
-		du = (offset.across * half)
-		dv = (offset.along * half)
+		du = offset.across * half
+		dv = offset.along * half
 		cy = Trig.r_cos(yaw.to_radians())
 		sy = Trig.r_sin(yaw.to_radians())
 		{
-			along: along.plus(Distance.metres((du * sy) + (dv * cy))),
-			across: across.plus(Distance.metres((du * cy) - (dv * sy))),
+			along: along.plus(Distance.metres(du * sy + dv * cy)),
+			across: across.plus(Distance.metres(du * cy - dv * sy)),
 		}
 	}
 
@@ -136,7 +136,7 @@ Tower :: [].{
 	sunk_below_horizon = |p| {
 		r = p.right.to_metres()
 		f = p.forward.to_metres()
-		Distance.metres(((r * r) + (f * f)) / (2.0 * sink_radius.to_metres()))
+		Distance.metres((r * r + f * f) / (2.0 * sink_radius.to_metres()))
 	}
 
 	## The point `fraction` of the way from `from` to `to`.
@@ -183,7 +183,7 @@ Tower :: [].{
 		dx = to.x.minus(from.x).to_f64()
 		dy = to.y.minus(from.y).to_f64()
 		width = width_px.to_f64()
-		raw = DeviceMath.real_sqrt((dx * dx) + (dy * dy))
+		raw = DeviceMath.real_sqrt(dx * dx + dy * dy)
 		len = if raw < 0.0001 {
 			1.0
 		} else {
@@ -338,7 +338,7 @@ Tower :: [].{
 		if storey >= brace_storeys {
 			[]
 		} else {
-			[storey].concat(brace_storeys_from((storey + 1)))
+			[storey].concat(brace_storeys_from(storey + 1))
 		}
 
 	brace_storey : Tower.TowerInView, I64 -> List(Shapes.Shape)

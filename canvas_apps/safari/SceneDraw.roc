@@ -456,7 +456,7 @@ expect
 		(900.0, True),
 		(2000.0, False),
 		(0.0, False),
-		((0.0 - 50.0), False),
+		(0.0 - 50.0, False),
 	].all(|(lead, want)| is_ahead(lead_of(lead)) == want)
 
 expect
@@ -504,9 +504,9 @@ expect
 		(ahead_of(499.0).forward.to_metres(), 499.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
-expect !(is_ahead(NoTruck))
-expect !(is_ahead(lead_of(2000.0)))
-expect !(is_ahead(truck_seen_from({ ..origin, along: Along.metres(100.0) }, 0.25)))
+expect !is_ahead(NoTruck)
+expect !is_ahead(lead_of(2000.0))
+expect !is_ahead(truck_seen_from({ ..origin, along: Along.metres(100.0) }, 0.25))
 expect is_ahead(truck_seen_from({ ..origin, along: Along.metres(100.0) }, 1.0))
 
 ## The depth key of a truck in view.

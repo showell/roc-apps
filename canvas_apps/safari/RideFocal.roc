@@ -23,7 +23,7 @@ RideFocal :: [].{
 	ride_focal : List(World.Segment), RiderState -> Pixels
 	ride_focal = |route, rider| {
 		lean_fraction = Fraction.clamp(
-			(DeviceMath.real_abs(rider.lean.to_radians()) / Bike.max_lean.to_radians()),
+			DeviceMath.real_abs(rider.lean.to_radians()) / Bike.max_lean.to_radians(),
 		)
 		attention = crossing_attention(route, rider).max(Gaze.gaze_attention(rider.attention))
 		Lens.cam_focal({ lean_fraction, attention })

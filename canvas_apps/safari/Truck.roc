@@ -173,8 +173,8 @@ expect
 	[
 		(chase_metres, 0.011),
 		(Truck.top_speed.to_metres_a_step(), 2.75),
-		((chase_metres / VehicleLimits.cruise_acceleration.to_metres_a_step_each_step()), 1.1),
-		((Truck.top_speed.to_metres_a_step() / VehicleLimits.top_speed.to_metres_a_step()), 1.1),
+		(chase_metres / VehicleLimits.cruise_acceleration.to_metres_a_step_each_step(), 1.1),
+		(Truck.top_speed.to_metres_a_step() / VehicleLimits.top_speed.to_metres_a_step(), 1.1),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 
 expect Truck.initial_truck.route_position.to_metres() == 500.0
@@ -317,7 +317,7 @@ braking = Truck.advance(
 expect
 	[
 		(braking.speed.to_metres_a_step(), 0.2994154176),
-		((braking.route_position.to_metres() - 450.0), 0.2994154176),
+		(braking.route_position.to_metres() - 450.0, 0.2994154176),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 
 expect braking.brake_lights == On

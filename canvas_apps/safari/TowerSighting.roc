@@ -69,8 +69,8 @@ TowerSighting := {
 	beacon_brightness : Steps -> Fraction
 	beacon_brightness = |phase| {
 		wrapped = phase.wrapped_to(beacon_period).to_f64()
-		angle = (((2.0 * Trig.pi) * wrapped) / beacon_period.to_f64())
-		Fraction.of(((1.0 - Trig.r_cos(angle)) / 2.0))
+		angle = 2.0 * Trig.pi * wrapped / beacon_period.to_f64()
+		Fraction.of((1.0 - Trig.r_cos(angle)) / 2.0)
 	}
 
 	## The towers in view: those along the chain, then the one past the end of
@@ -233,7 +233,7 @@ expect TowerSighting.along_chain(from_origin).len() == 3
 expect TowerSighting.segment_towers(from_origin, Chain.Position.first).len() == 1
 expect TowerSighting.mid_tower(from_origin, Chain.Position.first).len() == 0
 expect TowerSighting.in_view(from_origin).len() == 3
-expect route.all(|seg| !(has_mid_tower(seg)))
+expect route.all(|seg| !has_mid_tower(seg))
 
 ## Whether a segment has a tower halfway along.
 has_mid_tower : World.Segment -> Bool

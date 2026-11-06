@@ -122,7 +122,7 @@ expect RideInstant.initial.truck.route_position.to_metres() == 500.0
 expect RideInstant.initial.truck.speed.to_metres_a_step() == 0.3
 expect RideInstant.initial.rider.segment_index.to_i64() == 0
 expect RideInstant.initial.truck.brake_lights == Off
-expect !(Rider.is_finished(RideInstant.initial.rider, World.segments))
+expect !Rider.is_finished(RideInstant.initial.rider, World.segments)
 
 after_one_step : RideInstant
 after_one_step = RideInstant.next_or_restart(World.segments, RideInstant.initial)
@@ -169,7 +169,7 @@ expect {
 }
 
 expect after_one_step.clock != Clock.start
-expect !(Rider.is_finished(after_one_step.rider, World.segments))
+expect !Rider.is_finished(after_one_step.rider, World.segments)
 
 # The ride starts facing away from the sun.
 expect RideInstant.sun(World.segments, RideInstant.initial) == OutOfView

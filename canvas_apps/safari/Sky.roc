@@ -76,7 +76,7 @@ Sky :: [].{
 	## once the sun is `warmth_falloff_px` above or below.
 	sunset_warmth : Clock -> Fraction
 	sunset_warmth = |clock| Fraction.clamp(
-		(1.0 - sun_height_px(clock).abs().ratio_to(warmth_falloff_px)),
+		1.0 - sun_height_px(clock).abs().ratio_to(warmth_falloff_px),
 	)
 
 	day_sky : Sky.Rgb
@@ -113,9 +113,9 @@ Sky :: [].{
 	color_between = |{ from, to, fraction }| {
 		share = fraction.to_f64()
 		{
-			r: Float.round((from.r + ((to.r - from.r) * share))),
-			g: Float.round((from.g + ((to.g - from.g) * share))),
-			b: Float.round((from.b + ((to.b - from.b) * share))),
+			r: Float.round(from.r + (to.r - from.r) * share),
+			g: Float.round(from.g + (to.g - from.g) * share),
+			b: Float.round(from.b + (to.b - from.b) * share),
 		}
 	}
 
@@ -172,9 +172,7 @@ dusk_while_up = |height| {
 dusk_after_set : Pixels -> Fraction
 dusk_after_set = |height| {
 	sunk_past_set = Sky.sun_fully_set_px.minus(height).ratio_to(Sky.sun_radius_px)
-	Fraction.clamp(
-		(Sky.dusk_at_set.to_f64() + (sunk_past_set * Sky.dusk_at_set.complement().to_f64())),
-	)
+	Fraction.clamp(Sky.dusk_at_set.to_f64() + sunk_past_set * Sky.dusk_at_set.complement().to_f64())
 }
 
 sky_at : Clock -> Sky.Rgb

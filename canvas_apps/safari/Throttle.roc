@@ -111,7 +111,7 @@ Throttle :: [].{
 						1.0,
 					)
 				)
-			) * Float.exp(((0.0 - n) / brake_decay.to_f64())),
+			) * Float.exp((0.0 - n) / brake_decay.to_f64()),
 		)
 		if sa < a {
 			sa
@@ -357,7 +357,7 @@ expect
 		(decide(Speed.at_rest, 0.0), 0.01),
 		(wide_of_road(0.0 - 0.001), 0.01),
 		(wide_of_road(0.0 - hold_radians), 0.0),
-		(wide_of_road((0.0 - hold_radians) - 0.5), 0.0),
+		(wide_of_road(0.0 - hold_radians - 0.5), 0.0),
 	].all(|(got, want)| (got.to_metres_a_step_each_step() - want).abs() <= 0.000000000001)
 
 expect decide(Speed.metres_a_step(0.3), hold_radians - 0.001) < Acceleration.steady
