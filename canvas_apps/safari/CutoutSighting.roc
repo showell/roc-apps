@@ -131,11 +131,7 @@ sight_critter = |road, { place, critter }|
 		at: Chain.rider_point_at(road, { place, along: critter.along, across: critter.across }),
 		height: critter.height,
 		codepoint: critter.codepoint,
-		facing: if critter.face_right {
-			FacesRight
-		} else {
-			FacesLeft
-		},
+		facing: critter.facing,
 	})
 
 bend_sightings : Chain.RoadView,

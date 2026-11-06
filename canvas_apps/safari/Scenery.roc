@@ -2,6 +2,7 @@
 # and this file is edited here (safari/README.md).
 import Across
 import Along
+import Cutouts
 import Distance
 
 Scenery :: [].{
@@ -19,7 +20,7 @@ Scenery :: [].{
 		across : Across,
 		codepoint : I64,
 		height : Distance,
-		face_right : Bool,
+		facing : Cutouts.Facing,
 	}
 
 	lane_width : Distance
@@ -103,7 +104,7 @@ a_critter = {
 	across: Across.metres(-6.5),
 	codepoint: 128004,
 	height: Distance.metres(1.375),
-	face_right: True,
+	facing: FacesRight,
 }
 
 expect a_tree.along.to_metres() == 120.5
@@ -114,4 +115,4 @@ expect a_critter.across.to_metres() == -6.5
 expect a_critter.height.to_metres() == 1.375
 expect a_tree.color == 9066271
 expect a_critter.codepoint == 128004
-expect a_critter.face_right
+expect a_critter.facing == FacesRight

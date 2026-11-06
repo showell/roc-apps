@@ -47,11 +47,11 @@ Wildlife :: [].{
 			Quiet | DuckPond => []
 			Animal(animal) => {
 				species = species_of(animal)
-				{ inward, face_right } =
+				{ inward, facing } =
 					if turn.is_right() {
-						{ inward: 1.0, face_right: True }
+						{ inward: 1.0, facing: FacesRight }
 					} else {
-						{ inward: (0.0 - 1.0), face_right: False }
+						{ inward: (0.0 - 1.0), facing: FacesLeft }
 					}
 				clear_of_rail = lane_half_width.plus(adult_rail_buffer)
 				out_from_middle = clear_of_rail.plus(species.adult_height.divided_by(2.0))
@@ -61,14 +61,14 @@ Wildlife :: [].{
 						across: Across.right_of_middle(out_from_middle.times(0.0 - inward)),
 						codepoint: species.codepoint,
 						height: species.adult_height,
-						face_right,
+						facing,
 					},
 					{
 						along: bend_along.plus(baby_beyond),
 						across: Across.middle,
 						codepoint: species.codepoint,
 						height: species.adult_height.times(baby_ratio),
-						face_right,
+						facing,
 					},
 				]
 			}
@@ -178,16 +178,16 @@ expect
 		]
 
 expect
-	all_four.map(|critter| critter.face_right)
+	all_four.map(|critter| critter.facing)
 		== [
-			True,
-			True,
-			False,
-			False,
-			True,
-			True,
-			False,
-			False,
+			FacesRight,
+			FacesRight,
+			FacesLeft,
+			FacesLeft,
+			FacesRight,
+			FacesRight,
+			FacesLeft,
+			FacesLeft,
 		]
 
 ## How many critters a right bend has for this life.

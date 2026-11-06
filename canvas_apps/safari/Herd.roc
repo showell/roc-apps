@@ -72,7 +72,7 @@ Herd :: [].{
 						across: Across.left_of_middle(bull_middle.plus(bull_tree_gap)),
 						codepoint: bull_codepoint,
 						height: bull_height,
-						face_right: False,
+						facing: FacesLeft,
 					},
 				]
 			}
@@ -109,7 +109,7 @@ cow_at = |i| {
 		} else {
 			Herd.cow_height
 		},
-		face_right: True,
+		facing: FacesRight,
 	}
 }
 
@@ -122,7 +122,10 @@ expect Herd.fill_cows(WithBull).len() == 15
 expect Herd.fill_cows(NoBull).len() == 14
 
 # The bull faces left and the cows right.
-expect Herd.fill_cows(WithBull).take_first(2).map(|critter| critter.face_right) == [False, True]
+expect Herd.fill_cows(WithBull).take_first(2).map(|critter| critter.facing) == [
+	FacesLeft,
+	FacesRight,
+]
 
 expect Herd.bull_of(WithBull).map(|bull| bull.along) == [Along.metres(24.0)]
 expect Herd.bull_of(WithBull).map(|bull| bull.across) == [Across.metres(-4.805)]

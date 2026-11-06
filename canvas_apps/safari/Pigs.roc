@@ -155,7 +155,7 @@ pig = |{ along, across }| {
 	across,
 	codepoint: Pigs.pig_codepoint,
 	height: Pigs.pig_height,
-	face_right: False,
+	facing: FacesLeft,
 }
 
 herd_pig : Along, { row : I64, column : I64 } -> Scenery.Critter
@@ -191,7 +191,7 @@ expect Pigs.pig_codepoint == 128022
 expect Pigs.pig_novelty_count.to_i64() == 2
 expect Pigs.big_herd_cols == 7
 expect Pigs.big_herd_rows == 7
-expect !eye_catcher.face_right
+expect eye_catcher.facing == FacesLeft
 
 big_herd : List(Scenery.Critter)
 big_herd = Pigs.fill_pig_herd(Distance.metres(1000.0))
