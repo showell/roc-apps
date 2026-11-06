@@ -5,7 +5,7 @@
 import lib.Brush
 import PixelColor
 import PixelGrid
-import game.SafariShapes
+import game.Backdrop
 import game.Screen
 import ScreenRoll
 
@@ -14,7 +14,7 @@ BackdropPixels :: [].{
 	## The sky and the grass, given the sky's colour at the top of the screen
 	## and at the horizon, as 0xRRGGBB.
 	##
-	## The sky holds its top colour to SafariShapes' stop on the way down to
+	## The sky holds its top colour to Backdrop's stop on the way down to
 	## the horizon, then fades to the horizon colour; the grass is below it.
 	## The fade divides by the horizon rather than shading a Linear brush,
 	## whose arithmetic rounds differently.
@@ -32,7 +32,7 @@ BackdropPixels :: [].{
 					grass_pixel
 				} else {
 					t = Brush.clamp01(y / Screen.horizon_y)
-					stop = SafariShapes.sky_top_stop
+					stop = Backdrop.sky_top_stop
 					color = if t <= stop {
 						top_color
 					} else {
@@ -56,4 +56,4 @@ BackdropPixels :: [].{
 }
 
 grass_pixel : U32
-grass_pixel = I64.to_u32_wrap(SafariShapes.grass_color)
+grass_pixel = I64.to_u32_wrap(Backdrop.grass_color)

@@ -33,7 +33,7 @@ The rest have been rewritten by hand.
 |---|---|
 | `SafariApp.roc` | the `CanvasApp` value: the keys, the pause, and the frame leaned by the rider's roll |
 | `Tour.roc` | the whole ride for any platform: the current instant, the instants behind it for stepping back, and what a frame shows — the shapes, the roll, the sky colours, the sun |
-| `SafariShapes.roc` | a frame as shapes: the sky's gradient, the grass, the sun and its glow, and the ride's shapes |
+| `Backdrop.roc` | a frame as shapes: the sky's gradient, the grass, the sun and its glow, and the ride's shapes |
 | `Paint.roc` | builders that turn screen points and colours into `Shapes.Shape`s, for the drawing modules |
 | `SafariFrame.roc` | a frame painted into pixels in Roc, for the proof tools below |
 | `RideInstant.roc` and the chapter modules | one instant of the ride, the world, the route, the rider, the animals, the scenery, and how each is drawn |

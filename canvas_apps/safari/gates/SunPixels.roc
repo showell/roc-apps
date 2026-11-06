@@ -1,10 +1,10 @@
 ## SunPixels paints Safari's sun into a frame's pixels for SafariFrame (see
-## SafariFrame for more context). It paints the sun's glow and then its disc, as SafariShapes
+## SafariFrame for more context). It paints the sun's glow and then its disc, as Backdrop
 ## describes them, and clips both to the sky. The frame paints the sun before
 ## the ride's shapes, so the mountains can hide it.
 import lib.Brush
 import PixelGrid
-import game.SafariShapes
+import game.Backdrop
 import game.Screen
 import ScreenRoll
 import game.Sky
@@ -22,7 +22,7 @@ SunPixels :: [].{
 
 paint_glow_and_disc : List(U32), { roll : ScreenRoll, sun : Sky.SunPlace } -> List(U32)
 paint_glow_and_disc = |pixels, { roll, sun }| {
-	fills = SafariShapes.sun_fills(sun)
+	fills = Backdrop.sun_fills(sun)
 	on_screen = roll.to_screen(ScreenRoll.ScenePoint.({ x: sun.x, y: sun.y }))
 	rows = PixelGrid.pixels_between({
 		from: on_screen.y - fills.glow_radius,

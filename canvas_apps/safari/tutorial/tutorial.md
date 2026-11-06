@@ -238,7 +238,7 @@ digraph sky {
   Sky [style=bold];
   RideInstant -> Sky;
   Tour -> Sky;
-  SafariShapes -> Sky;
+  Backdrop -> Sky;
   Mountains -> Sky;
   Sky -> Angle;
   Sky -> Fraction;
@@ -1389,13 +1389,13 @@ digraph platform {
   SafariApp -> CanvasApp;
   SafariApp -> Input;
   SafariApp -> Tour;
-  SafariApp -> SafariShapes;
+  SafariApp -> Backdrop;
   SafariApp -> Screen;
   SafariApp -> Shapes;
   CanvasApp -> Input;
   CanvasApp -> Shapes;
   Tour -> Shapes;
-  SafariShapes -> Shapes;
+  Backdrop -> Shapes;
 }
 ```
 

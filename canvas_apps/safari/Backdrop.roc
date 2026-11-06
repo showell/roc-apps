@@ -1,4 +1,4 @@
-## SafariShapes builds Safari's whole frame as shapes. The vocabulary is in
+## Backdrop builds what is behind the ride, as shapes. The vocabulary is in
 ## lib/Shapes.roc, which every canvas app shares. This module knows what is
 ## behind the ride: the sky's gradient, the grass, and the sun's glow and disc.
 import Sky
@@ -6,7 +6,7 @@ import lib.Brush
 import Screen
 import lib.Shapes
 
-SafariShapes :: [].{
+Backdrop :: [].{
 
 	## The grass, from just above the horizon down.
 	grass_color : I64
@@ -27,7 +27,7 @@ SafariShapes :: [].{
 	}
 
 	## The sun's glow and disc where it stands, sized by its scale.
-	sun_fills : Sky.SunPlace -> SafariShapes.SunFills
+	sun_fills : Sky.SunPlace -> Backdrop.SunFills
 	sun_fills = |sun| {
 		glow_radius = 340.0 * sun.scale
 		disc_radius = Sky.sun_radius_px * sun.scale
@@ -71,13 +71,13 @@ SafariShapes :: [].{
 
 	## The frame in paint order: the sky, the grass, the sun, then the ride's
 	## shapes.
-	frame : List(Shapes.Shape),
+	behind : List(Shapes.Shape),
 	{
 		sky_top_color : I64,
 		sky_horizon_color : I64,
 		sun_sighting : Sky.SunSighting,
 	} -> List(Shapes.Shape)
-	frame = |
+	behind = |
 		ride_shapes,
 		{
 			sky_top_color: sky_top,

@@ -1,7 +1,7 @@
 # SafariApp -- the ride, as a value the canvas apps can run.
 #
 # Hand-written: the shim between the ride Safari actually is and the value a
-# runner wants. Tour holds the ride and its history; SafariShapes says
+# runner wants. Tour holds the ride and its history; Backdrop says
 # what a frame looks like. This says which keys move it and how the camera
 # leans.
 #
@@ -15,7 +15,7 @@
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
-import SafariShapes
+import Backdrop
 import Screen
 import Tour
 
@@ -53,7 +53,7 @@ SafariApp :: [].{
 				zoom: 1.0,
 			}),
 		)
-		SafariShapes.frame(
+		Backdrop.behind(
 			Tour.shapes(tour),
 			{
 				sky_top_color: Tour.sky_top(tour),

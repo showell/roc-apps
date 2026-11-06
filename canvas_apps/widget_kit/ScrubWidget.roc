@@ -8,7 +8,7 @@ import game.Animation
 import game.Clock
 import game.Distance
 import game.Fraction
-import game.SafariShapes
+import game.Backdrop
 import game.Sky
 import lib.Brush
 import lib.CanvasApp
@@ -137,7 +137,7 @@ ScrubWidget :: [].{
 	ride_picture : List(Shapes.Shape), { clock : Clock, sun : Sky.SunSighting } -> List(Shapes.Shape)
 	ride_picture = |shapes, { clock, sun }| {
 		corner = { x: 0.0, y: 0.0 }
-		ride = SafariShapes.frame(
+		ride = Backdrop.behind(
 			shapes,
 			{
 				sky_top_color: Sky.sky_color(clock),
