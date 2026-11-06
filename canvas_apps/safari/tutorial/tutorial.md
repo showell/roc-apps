@@ -188,7 +188,7 @@ Each stretch of this map is one record of a list called `World.plans`, and the l
 New in this chapter:
 
 - Roc: void modules, tag unions written in a field's type, `match` that has to cover every tag, `crash`
-- Modules: `World`, `Pond`, `Trees`
+- Modules: `World`, `Pond`, `Trees`, `Wildlife`
 
 The modules around `World`
 ```dot
@@ -237,6 +237,18 @@ A value that never changes can be checked once, whole. `Pond`'s one function is 
 {{code Pond.is_on_water}}
 
 The `expect` under it, in the module above, runs that over all six ducks. One line covers the whole pond.
+
+### The animal at each bend
+
+Most bends have an animal: a grown one beyond the rail on the outside of the bend, and its baby in the middle of the road a little further on. A segment's `bend_life` field says which, and the widget at the top of this chapter reads it out.
+
+{{code Wildlife.species_of}}
+
+Each animal is a tag, and each answers with its emoji and how tall it stands. The `match` has to cover all four.
+
+{{code Wildlife.bend_critters}}
+
+`Quiet` and `DuckPond` have no animals, so they answer with an empty list. An `Animal` answers with a list of two. `inward` is 1 or -1, so one line of arithmetic places the grown animal on either side of the road.
 
 Nothing in this chapter moves, and the ride does.
 
@@ -997,7 +1009,7 @@ Going forward, the ride has to be played, because each step starts from the one 
 New in this chapter:
 
 - Roc: a named open record, guards, list patterns, recursion
-- Modules: `Rider`, `RiderState`, `Bike`, `Throttle`, `Truck`, `Acceleration`
+- Modules: `Rider`, `RiderState`, `CanvasRoll`, `Bike`, `Throttle`, `Truck`, `Acceleration`
 
 The modules that do the stepping
 ```dot
@@ -1053,6 +1065,16 @@ That idea gets larger soon. A small version of it decides what happens at the en
 Record update does most of the writing in this module. Its plainest use is stopping dead, where `..s` keeps everything but the two fields named:
 
 {{code Rider.stopped_at}}
+
+### The picture leans too
+
+When the rider leans, the whole picture leans with it. This is all of that:
+
+{{module CanvasRoll}}
+
+A lean inside the deadband leaves the canvas level, and any other lean passes straight through. The last `expect` is a table of pairs, on both sides of the deadband and at its edge. It's called once a frame:
+
+🌳 {{code Tour.roll}}
 
 ### The bike
 
