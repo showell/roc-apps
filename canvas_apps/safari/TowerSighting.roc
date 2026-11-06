@@ -17,14 +17,14 @@ import lib.Trig
 import World
 
 ## A tower to draw: how its segment maps to the rider's view, where it
-## stands in that segment and how it is turned, how far ahead it is, and
-## how bright its beacon is.
+## stands in that segment and how it is turned, how far ahead it is, which
+## is never negative, and how bright its beacon is.
 TowerSighting := {
 	place : Chain.SegmentPlace,
 	along : Along,
 	across : Across,
 	yaw : Angle.Turn,
-	forward : F64,
+	forward : Distance,
 	beacon_brightness : Fraction,
 }.{
 
@@ -151,7 +151,7 @@ TowerSighting := {
 	## its position in `towers`.
 	depth_keys : List(TowerSighting) -> List(DepthSort.DepthKey)
 	depth_keys = |towers| towers.map_with_index(
-		|tower, i| { forward: Distance.metres(tower.forward), subject: Tower(i.to_u32_wrap()) },
+		|tower, i| { forward: tower.forward, subject: Tower(i.to_u32_wrap()) },
 	)
 }
 
@@ -183,7 +183,7 @@ tower_if_ahead = |view, { place, along, across, yaw, beacon_key }| {
 				along,
 				across,
 				yaw,
-				forward: center.forward.to_metres(),
+				forward: center.forward,
 				beacon_brightness: TowerSighting.beacon_brightness(
 					view.clock.minus(Clock.start).plus(TowerSighting.beacon_offset_for(beacon_key)),
 				),

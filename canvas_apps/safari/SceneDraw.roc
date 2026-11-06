@@ -37,14 +37,14 @@ SceneDraw :: [].{
 		scene.order.join_map(|depth_key| draw_subject(scene, { view, depth_key }))
 
 	## How many of `trees` are nearer than `forward`.
-	nearer_tree_count : List(TreeSighting), F64 -> U32
+	nearer_tree_count : List(TreeSighting), Distance -> U32
 	nearer_tree_count = |trees, forward|
 		trees.count_if(|tree| tree.forward < forward).to_u32_wrap()
 
 	## How much a crown is shaded at distance `forward`: fully at the camera,
 	## falling evenly to none at Detail.crown_shade_reach.
-	crown_shade : F64 -> Fraction
-	crown_shade = |forward| Fraction.clamp((1.0 - (forward / Detail.crown_shade_reach)))
+	crown_shade : Distance -> Fraction
+	crown_shade = |forward| Fraction.clamp(1.0 - forward.ratio_to(Detail.crown_shade_reach))
 
 	## A tree, drawn in more detail the nearer it is: its trunk is round when
 	## few of `trees` are nearer, and its crown is cones when it is nearer
@@ -53,8 +53,8 @@ SceneDraw :: [].{
 	draw_tree = |tree, { trees, cam_focal }| {
 		nearer_trees = SceneDraw.nearer_tree_count(trees, tree.forward)
 		TreeDraw.draw({
-			right: Distance.metres(tree.right),
-			forward: Distance.metres(tree.forward),
+			right: tree.right,
+			forward: tree.forward,
 			height: tree.height,
 			color: tree.color,
 			cam_focal,
@@ -148,8 +148,8 @@ thing_at = |things, place|
 draw_cat : CatSighting, F64 -> List(Shapes.Shape)
 draw_cat = |cat, cam_focal|
 	CatDraw.draw({
-		right: Distance.metres(cat.right),
-		forward: Distance.metres(cat.forward),
+		right: cat.right,
+		forward: cat.forward,
 		height: cat.height,
 		pose: cat.pose,
 		lift: cat.lift,
@@ -171,13 +171,13 @@ draw_truck = |view, truck_at|
 		NoTruck => crash "SceneDraw.draw_truck: the truck is in the depth order only in view"
 	}
 
-expect Detail.crown_shade_reach == 80.0
-expect Detail.full_detail_reach == 200.0
+expect Detail.crown_shade_reach.to_metres() == 80.0
+expect Detail.full_detail_reach.to_metres() == 200.0
 
 tree_at : F64 -> TreeSighting
 tree_at = |forward| {
-	right: 0.0,
-	forward,
+	right: Distance.metres(0.0),
+	forward: Distance.metres(forward),
 	height: Distance.metres(5.85),
 	color: 1858082,
 }
@@ -185,26 +185,26 @@ tree_at = |forward| {
 spread_trees : List(TreeSighting)
 spread_trees = [10.0, 20.0, 30.0, 40.0, 50.0].map(tree_at)
 
-expect SceneDraw.nearer_tree_count(spread_trees, 10.0) == 0
-expect SceneDraw.nearer_tree_count(spread_trees, 30.0) == 2
-expect SceneDraw.nearer_tree_count(spread_trees, 50.0) == 4
-expect SceneDraw.nearer_tree_count(spread_trees, 60.0) == 5
-expect SceneDraw.nearer_tree_count(spread_trees, 5.0) == 0
-expect SceneDraw.nearer_tree_count([], 10.0) == 0
+expect SceneDraw.nearer_tree_count(spread_trees, Distance.metres(10.0)) == 0
+expect SceneDraw.nearer_tree_count(spread_trees, Distance.metres(30.0)) == 2
+expect SceneDraw.nearer_tree_count(spread_trees, Distance.metres(50.0)) == 4
+expect SceneDraw.nearer_tree_count(spread_trees, Distance.metres(60.0)) == 5
+expect SceneDraw.nearer_tree_count(spread_trees, Distance.metres(5.0)) == 0
+expect SceneDraw.nearer_tree_count([], Distance.metres(10.0)) == 0
 
 tied_trees : List(TreeSighting)
 tied_trees = List.repeat(tree_at(20.0), 4)
 
-expect SceneDraw.nearer_tree_count(tied_trees, 20.0) == 0
-expect SceneDraw.nearer_tree_count(tied_trees, 20.1) == 4
-expect SceneDraw.nearer_tree_count(tied_trees, 19.9) == 0
+expect SceneDraw.nearer_tree_count(tied_trees, Distance.metres(20.0)) == 0
+expect SceneDraw.nearer_tree_count(tied_trees, Distance.metres(20.1)) == 4
+expect SceneDraw.nearer_tree_count(tied_trees, Distance.metres(19.9)) == 0
 
-expect SceneDraw.crown_shade(0.0).to_f64() == 1.0
-expect SceneDraw.crown_shade(20.0).to_f64() == 0.75
-expect SceneDraw.crown_shade(40.0).to_f64() == 0.5
-expect SceneDraw.crown_shade(80.0).to_f64() == 0.0
-expect SceneDraw.crown_shade(200.0).to_f64() == 0.0
-expect SceneDraw.crown_shade(-50.0).to_f64() == 1.0
+expect SceneDraw.crown_shade(Distance.metres(0.0)).to_f64() == 1.0
+expect SceneDraw.crown_shade(Distance.metres(20.0)).to_f64() == 0.75
+expect SceneDraw.crown_shade(Distance.metres(40.0)).to_f64() == 0.5
+expect SceneDraw.crown_shade(Distance.metres(80.0)).to_f64() == 0.0
+expect SceneDraw.crown_shade(Distance.metres(200.0)).to_f64() == 0.0
+expect SceneDraw.crown_shade(Distance.metres(-50.0)).to_f64() == 1.0
 
 # The rider at the start of the route, at the ride's first step.
 start_view : Chain.Viewpoint
@@ -229,7 +229,7 @@ tower_along = |along| {
 	along: Along.metres(along),
 	across: Across.metres(20.0),
 	yaw: Angle.straight_ahead,
-	forward: along,
+	forward: Distance.metres(along),
 	beacon_brightness: Fraction.zero,
 }
 
@@ -329,8 +329,8 @@ lone_tree = TreeSighting.tree_in_view(
 
 expect
 	[
-		(lone_tree.right, 3.5),
-		(lone_tree.forward, 120.0),
+		(lone_tree.right.to_metres(), 3.5),
+		(lone_tree.forward.to_metres(), 120.0),
 		(lone_tree.height.to_metres(), 5.85),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
@@ -366,11 +366,11 @@ planted_tree = |i|
 
 expect
 	[
-		(planted_tree(0).forward, 6.0),
-		(planted_tree(1).forward, 6.0),
-		(planted_tree(2).forward, 36.0),
-		(planted_tree(0).right, -3.5),
-		(planted_tree(1).right, 3.5),
+		(planted_tree(0).forward.to_metres(), 6.0),
+		(planted_tree(1).forward.to_metres(), 6.0),
+		(planted_tree(2).forward.to_metres(), 36.0),
+		(planted_tree(0).right.to_metres(), -3.5),
+		(planted_tree(1).right.to_metres(), 3.5),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 expect
@@ -495,8 +495,8 @@ expect
 
 expect
 	[
-		(ahead_of(100.0).forward, 100.0),
-		(ahead_of(499.0).forward, 499.0),
+		(ahead_of(100.0).forward.to_metres(), 100.0),
+		(ahead_of(499.0).forward.to_metres(), 499.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 expect !(is_ahead(NoTruck))

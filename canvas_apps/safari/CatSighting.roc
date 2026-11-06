@@ -10,10 +10,11 @@ import Detail
 import Speed
 
 ## A cat to draw: where it stands in the rider's view, its height, its
-## pose, and how high its leap has raised it.
+## pose, and how high its leap has raised it, in cat heights. A cat in view
+## is ahead of the rider, so of its lengths only `right` can be negative.
 CatSighting := {
-	right : F64,
-	forward : F64,
+	right : Distance,
+	forward : Distance,
 	height : Distance,
 	pose : Cat.Pose,
 	lift : F64,
@@ -44,7 +45,7 @@ CatSighting := {
 	## its position in `cats`.
 	depth_keys : List(CatSighting) -> List(DepthSort.DepthKey)
 	depth_keys = |cats| cats.map_with_index(
-		|cat, i| { forward: Distance.metres(cat.forward), subject: Cat(i.to_u32_wrap()) },
+		|cat, i| { forward: cat.forward, subject: Cat(i.to_u32_wrap()) },
 	)
 }
 
@@ -76,8 +77,8 @@ cat_in_view = |view, { position, crossing, speed }| {
 	} else {
 		[
 			{
-				right: seen.right.to_metres(),
-				forward: seen.forward.to_metres(),
+				right: seen.right,
+				forward: seen.forward,
 				height: crossing.height,
 				pose: instant.pose,
 				lift: instant.spot.lift,

@@ -10,10 +10,11 @@ import Geom
 import Detail
 
 ## A bird placed in the rider's view: where it is, how high its feet are,
-## and how it looks.
+## and how it looks. A bird in view is ahead of the rider, so of its lengths
+## only `right` can be negative.
 BirdSighting := {
-	right : F64,
-	forward : F64,
+	right : Distance,
+	forward : Distance,
 	lift : Distance,
 	pose : BirdFlight.Pose,
 }.{
@@ -23,8 +24,8 @@ BirdSighting := {
 	bird_height = Distance.metres(2.2)
 
 	## How tall a bird `forward` metres ahead is on screen.
-	height_px : { forward : F64, cam_focal : F64 } -> F64
-	height_px = |{ forward, cam_focal }| (bird_height.to_metres() / forward) * cam_focal
+	height_px : { forward : Distance, cam_focal : F64 } -> F64
+	height_px = |{ forward, cam_focal }| bird_height.ratio_to(forward) * cam_focal
 
 	## The birds in view, the nearest segment's first.
 	in_view : Chain.Viewpoint -> List(BirdSighting)
@@ -38,7 +39,7 @@ BirdSighting := {
 	## it is.
 	depth_keys : List(BirdSighting) -> List(DepthSort.DepthKey)
 	depth_keys = |birds| birds.map_with_index(
-		|bird, i| { forward: Distance.metres(bird.forward), subject: Bird(i.to_u32_wrap()) },
+		|bird, i| { forward: bird.forward, subject: Bird(i.to_u32_wrap()) },
 	)
 }
 
@@ -68,10 +69,7 @@ bird_in_view = |view, { position, instant }| {
 		view.road,
 		{ position, along: instant.spot.along, across: instant.spot.across },
 	)
-	height_px = BirdSighting.height_px({
-		forward: seen.forward.to_metres(),
-		cam_focal: view.cam_focal,
-	})
+	height_px = BirdSighting.height_px({ forward: seen.forward, cam_focal: view.cam_focal })
 	if seen.forward <= Geom.near_plane {
 		[]
 	} else if height_px < Detail.min_scenery_px {
@@ -79,8 +77,8 @@ bird_in_view = |view, { position, instant }| {
 	} else {
 		[
 			{
-				right: seen.right.to_metres(),
-				forward: seen.forward.to_metres(),
+				right: seen.right,
+				forward: seen.forward,
 				lift: Distance.metres(instant.spot.lift),
 				pose: instant.pose,
 			},

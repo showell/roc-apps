@@ -9,10 +9,11 @@ import Detail
 import Scenery
 
 ## A tree to draw: where it stands in the rider's view, its height and
-## its colour.
+## its colour. A tree in view is ahead of the rider, so of its lengths only
+## `right` can be negative.
 TreeSighting := {
-	right : F64,
-	forward : F64,
+	right : Distance,
+	forward : Distance,
 	height : Distance,
 	color : I64,
 }.{
@@ -60,8 +61,8 @@ TreeSighting := {
 		} else {
 			[
 				{
-					right: seen.right.to_metres(),
-					forward: seen.forward.to_metres(),
+					right: seen.right,
+					forward: seen.forward,
 					height: tree.height,
 					color: tree.color,
 				},
@@ -73,6 +74,6 @@ TreeSighting := {
 	## its position in `trees`.
 	depth_keys : List(TreeSighting) -> List(DepthSort.DepthKey)
 	depth_keys = |trees| trees.map_with_index(
-		|tree, i| { forward: Distance.metres(tree.forward), subject: Tree(i.to_u32_wrap()) },
+		|tree, i| { forward: tree.forward, subject: Tree(i.to_u32_wrap()) },
 	)
 }

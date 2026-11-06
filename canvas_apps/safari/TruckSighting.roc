@@ -11,14 +11,14 @@ import Truck
 
 ## The truck, if it is in view: the position in the chain of the segment it
 ## is on, how far along and across that segment it is, how far ahead of the
-## rider, and which of its lights are on.
+## rider, which is never negative, and which of its lights are on.
 TruckSighting := [
 	Ahead(
 		{
 			position : Chain.Position,
 			along : Along,
 			across : Across,
-			forward : F64,
+			forward : Distance,
 			lights : Truck.Lights,
 		},
 	),
@@ -51,9 +51,7 @@ TruckSighting := [
 	depth_keys : TruckSighting -> List(DepthSort.DepthKey)
 	depth_keys = |truck|
 		match truck {
-			Ahead(truck_ahead) => [
-				{ forward: Distance.metres(truck_ahead.forward), subject: Truck },
-			]
+			Ahead(truck_ahead) => [{ forward: truck_ahead.forward, subject: Truck }]
 			NoTruck => []
 		}
 }
@@ -89,7 +87,7 @@ truck_on_segment = |view, { along, position }| {
 			position,
 			along,
 			across,
-			forward: center.forward.to_metres(),
+			forward: center.forward,
 			lights: view.lights,
 		})
 	} else {

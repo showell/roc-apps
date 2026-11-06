@@ -142,7 +142,7 @@ bird_at = |rider_along|
 
 ## How far off a bird is, across the road and up.
 place_of : BirdSighting -> List(F64)
-place_of = |bird| [bird.right, bird.forward, bird.lift.to_metres()]
+place_of = |bird| [bird.right.to_metres(), bird.forward.to_metres(), bird.lift.to_metres()]
 
 expect place_of(bird_at(0.0)) == [-6.0, 100.0, 10.0]
 expect place_of(bird_at(40.0)) == [-6.0, 60.0, 10.0]
@@ -151,8 +151,8 @@ expect place_of(bird_at(40.0)) == [-6.0, 60.0, 10.0]
 expect {
 	bird = bird_at(62.5)
 	[
-		(bird.right, 0.0),
-		(bird.forward, 52.5),
+		(bird.right.to_metres(), 0.0),
+		(bird.forward.to_metres(), 52.5),
 		(bird.lift.to_metres(), 17.0),
 	].all(|(got, want)| (got - want).abs() <= 0.000000001)
 }
@@ -312,9 +312,9 @@ expect first_cat(300.0).lift == 0.0
 expect Cat.pose_index(first_cat(300.0).pose) == 0
 expect
 	[
-		((first_cat(300.0).forward - first_cat(200.0).forward), -100.0),
-		((first_cat(400.0).forward - first_cat(300.0).forward), -100.0),
-		((first_cat(300.0).right - first_cat(200.0).right), 0.0),
+		(first_cat(300.0).forward.minus(first_cat(200.0).forward).to_metres(), -100.0),
+		(first_cat(400.0).forward.minus(first_cat(300.0).forward).to_metres(), -100.0),
+		(first_cat(300.0).right.minus(first_cat(200.0).right).to_metres(), 0.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 expect riding(0.0).len() == 0

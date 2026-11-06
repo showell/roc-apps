@@ -18,8 +18,8 @@ BirdDraw :: [].{
 	draw = |bird, cam_focal| {
 		feet = Camera.project(
 			{
-				right: Distance.metres(bird.right),
-				forward: Distance.metres(bird.forward),
+				right: bird.right,
+				forward: bird.forward,
 				height: bird.lift,
 			},
 			cam_focal,
@@ -39,8 +39,8 @@ BirdDraw :: [].{
 # on the horizon in the middle of the screen.
 level_bird : BirdSighting
 level_bird = {
-	right: 0.0,
-	forward: 110.0,
+	right: Distance.metres(0.0),
+	forward: Distance.metres(110.0),
 	lift: Camera.eye_h,
 	pose: Perched,
 }
@@ -48,9 +48,9 @@ level_bird = {
 expect
 	[
 		(BirdSighting.bird_height.to_metres(), 2.2),
-		(BirdSighting.height_px({ forward: 110.0, cam_focal: 500.0 }), 10.0),
-		(BirdSighting.height_px({ forward: 220.0, cam_focal: 500.0 }), 5.0),
-		(BirdSighting.height_px({ forward: 110.0, cam_focal: 1000.0 }), 20.0),
+		(BirdSighting.height_px({ forward: Distance.metres(110.0), cam_focal: 500.0 }), 10.0),
+		(BirdSighting.height_px({ forward: Distance.metres(220.0), cam_focal: 500.0 }), 5.0),
+		(BirdSighting.height_px({ forward: Distance.metres(110.0), cam_focal: 1000.0 }), 20.0),
 	].all(|(got, want)| (got - want).abs() <= 0.000000001)
 
 # The perched still's first corner is (-0.0344, 0.5715), at a height of 10 px
@@ -64,7 +64,7 @@ expect {
 		}
 	moved_bird = {
 		..level_bird,
-		right: 11.0,
+		right: Distance.metres(11.0),
 		lift: Camera.eye_h.plus(Distance.metres(11.0)),
 	}
 	[(level_bird, [479.656, 294.285]), (moved_bird, [529.656, 244.285])].all(

@@ -11,9 +11,11 @@ Cutouts :: [].{
 	## Which way a critter faces on screen.
 	Facing : [FacesLeft, FacesRight]
 
+	## A critter to draw. A cutout is ahead of the rider, so of its lengths only
+	## `right` can be negative.
 	Cutout : {
-		right : F64,
-		forward : F64,
+		right : Distance,
+		forward : Distance,
 		height : Distance,
 		codepoint : I64,
 		facing : Cutouts.Facing,
@@ -40,8 +42,8 @@ Cutouts :: [].{
 			TooSmall
 		} else {
 			InView({
-				right: at.right.to_metres(),
-				forward: at.forward.to_metres(),
+				right: at.right,
+				forward: at.forward,
 				height,
 				codepoint,
 				facing,
@@ -75,11 +77,11 @@ Cutouts :: [].{
 			.to_i64_wrap()
 }
 
-cow_placement : { forward : F64, height : F64 } -> Cutouts.Placement
+cow_placement : { forward : Distance, height : Distance } -> Cutouts.Placement
 cow_placement = |{ forward, height }|
 	Cutouts.placement({
-		at: { right: Distance.metres(2.5), forward: Distance.metres(forward) },
-		height: Distance.metres(height),
+		at: { right: Distance.metres(2.5), forward },
+		height,
 		codepoint: 128004,
 		facing: FacesRight,
 	})
@@ -94,18 +96,18 @@ fate_of = |placement|
 	}
 
 # A cow 2.5 m to the right, at each distance and height.
-cow_places : List({ forward : F64, height : F64 })
+cow_places : List({ forward : Distance, height : Distance })
 cow_places = [
-	{ forward: -5.0, height: 1.0 },
-	{ forward: 0.3, height: 1.0 },
-	{ forward: 0.4, height: 1.0 },
-	{ forward: 0.5, height: 1.0 },
-	{ forward: 300.0, height: 1.0 },
-	{ forward: 342.0, height: 1.0 },
-	{ forward: 343.0, height: 1.0 },
-	{ forward: 400.0, height: 1.0 },
-	{ forward: 10.0, height: 0.0 },
-	{ forward: 50.0, height: 0.9 },
+	{ forward: Distance.metres(-5.0), height: Distance.metres(1.0) },
+	{ forward: Distance.metres(0.3), height: Distance.metres(1.0) },
+	{ forward: Distance.metres(0.4), height: Distance.metres(1.0) },
+	{ forward: Distance.metres(0.5), height: Distance.metres(1.0) },
+	{ forward: Distance.metres(300.0), height: Distance.metres(1.0) },
+	{ forward: Distance.metres(342.0), height: Distance.metres(1.0) },
+	{ forward: Distance.metres(343.0), height: Distance.metres(1.0) },
+	{ forward: Distance.metres(400.0), height: Distance.metres(1.0) },
+	{ forward: Distance.metres(10.0), height: Distance.metres(0.0) },
+	{ forward: Distance.metres(50.0), height: Distance.metres(0.9) },
 ]
 
 expect
@@ -132,7 +134,7 @@ cutout_of = |placement|
 	}
 
 near_cow : Cutouts.Cutout
-near_cow = cutout_of(cow_placement({ forward: 0.5, height: 1.0 }))
+near_cow = cutout_of(cow_placement({ forward: Distance.metres(0.5), height: Distance.metres(1.0) }))
 
 left_bull : Cutouts.Cutout
 left_bull = cutout_of(
@@ -144,11 +146,11 @@ left_bull = cutout_of(
 	}),
 )
 
-expect near_cow.right == 2.5
-expect near_cow.forward == 0.5
+expect near_cow.right.to_metres() == 2.5
+expect near_cow.forward.to_metres() == 0.5
 expect near_cow.height.to_metres() == 1.0
-expect left_bull.right == -1.5
-expect left_bull.forward == 50.0
+expect left_bull.right.to_metres() == -1.5
+expect left_bull.forward.to_metres() == 50.0
 expect left_bull.height.to_metres() == 1.6
 
 expect near_cow.codepoint == 128004

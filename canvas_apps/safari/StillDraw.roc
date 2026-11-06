@@ -78,11 +78,7 @@ StillDraw :: [].{
 	draw : Cutouts.Cutout, F64 -> List(Shapes.Shape)
 	draw = |critter, cam_focal| {
 		on_screen = |height| Camera.project(
-			{
-				right: Distance.metres(critter.right),
-				forward: Distance.metres(critter.forward),
-				height,
-			},
+			{ right: critter.right, forward: critter.forward, height },
 			cam_focal,
 		)
 		feet = on_screen(Distance.zero)
@@ -240,14 +236,14 @@ expect
 
 # How many shapes draw a critter of `height` metres, `forward` metres ahead.
 shape_count : {
-	forward : F64,
+	forward : Distance,
 	height : Distance,
 	codepoint : I64,
 } -> U64
 shape_count = |{ forward, height, codepoint }|
 	StillDraw.draw(
 		{
-			right: 0.0,
+			right: Distance.metres(0.0),
 			forward,
 			height,
 			codepoint,
@@ -262,28 +258,28 @@ elephant = 128024
 # A critter is drawn while it stands a pixel tall.
 expect
 	shape_count({
-		forward: 1000.0,
+		forward: Distance.metres(1000.0),
 		height: Distance.metres(2.0),
 		codepoint: elephant,
 	})
 		== 6
 expect
 	shape_count({
-		forward: 2000.0,
+		forward: Distance.metres(2000.0),
 		height: Distance.metres(2.0),
 		codepoint: elephant,
 	})
 		== 0
 expect
 	shape_count({
-		forward: 1000.0,
+		forward: Distance.metres(1000.0),
 		height: Distance.metres(1.9),
 		codepoint: elephant,
 	})
 		== 0
 expect
 	shape_count({
-		forward: 100.0,
+		forward: Distance.metres(100.0),
 		height: Distance.metres(2.0),
 		codepoint: elephant,
 	})
@@ -293,7 +289,7 @@ expect
 expect EmojiStills.emoji_polys_for(1).len() == 0
 expect
 	shape_count({
-		forward: 100.0,
+		forward: Distance.metres(100.0),
 		height: Distance.metres(2.0),
 		codepoint: 1,
 	})
