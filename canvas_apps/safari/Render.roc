@@ -51,7 +51,7 @@ Render :: [].{
 			TowerSighting.in_view({ road, clock })
 				.take_first(TowerSighting.max_vis_towers.to_u64_wrap())
 		critters =
-			Billboards.billboards_in_view(CritterSighting.sightings(road))
+			Billboards.billboards_in_view(CritterSighting.in_view(road))
 				.take_first(CritterSighting.max_vis_critters.to_u64_wrap())
 		cats = CatSighting.in_view(view, speed).take_first(CatSighting.max_vis_cats.to_u64_wrap())
 		rails = RailSighting.in_view(road)
@@ -72,7 +72,7 @@ Render :: [].{
 			BirdSighting.depth_keys(birds),
 			TreeSighting.depth_keys(trees),
 			TowerSighting.depth_keys(towers),
-			CritterSighting.cow_items(critters),
+			CritterSighting.depth_keys(critters),
 			CatSighting.depth_keys(cats),
 			TruckSighting.depth_keys(truck_at),
 			RailSighting.depth_keys(rails),

@@ -28,8 +28,8 @@ CritterSighting :: [].{
 
 	## Every critter ahead, nearest segment first, then those of the segment
 	## before the rider's, when there is one.
-	sightings : Chain.RoadView -> List(Billboards.Sighting)
-	sightings = |road|
+	in_view : Chain.RoadView -> List(Billboards.Sighting)
+	in_view = |road|
 		match Chain.segment_behind(road) {
 			Previous(segment_behind) =>
 				CritterSighting.sightings_ahead(road).concat(
@@ -110,8 +110,8 @@ CritterSighting :: [].{
 
 	## The depth-sort keys of the critters to draw, each naming its billboard
 	## by its place in `billboards`.
-	cow_items : List(Billboards.Billboard) -> List(DepthSort.DepthKey)
-	cow_items = |billboards|
+	depth_keys : List(Billboards.Billboard) -> List(DepthSort.DepthKey)
+	depth_keys = |billboards|
 		billboards.map_with_index(
 			|billboard, i| { forward: billboard.forward, subject: Critter(i.to_u32_wrap()) },
 		)

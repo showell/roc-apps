@@ -459,7 +459,7 @@ expect {
 	kind_counts = [
 		TreeSighting.depth_keys(scene.trees).len(),
 		TowerSighting.depth_keys(scene.towers).len(),
-		CritterSighting.cow_items(scene.critters).len(),
+		CritterSighting.depth_keys(scene.critters).len(),
 		CatSighting.depth_keys(scene.cats).len(),
 		TruckSighting.depth_keys(scene.truck).len(),
 		RailSighting.depth_keys(scene.rails).len(),
