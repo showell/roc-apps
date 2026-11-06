@@ -59,7 +59,6 @@ Rider :: [].{
 			along: on_next.along,
 			across: on_next.across,
 			yaw: rs.yaw.minus(seg.exit_turn),
-			gaze_yaw: Angle.straight_ahead,
 		}
 	}
 
@@ -170,7 +169,6 @@ at_seam = {
 	speed: Speed.metres_a_step(1.25),
 	lean: Angle.Lean.radians(0.05),
 	heading: Angle.Bearing.radians(0.7),
-	gaze_yaw: Angle.Turn.radians(0.3),
 }
 
 crossed : RiderState
@@ -179,7 +177,6 @@ crossed = Rider.on_next_segment(at_seam, first_segments)
 expect crossed.speed.to_metres_a_step() == 1.25
 expect crossed.lean.to_radians() == 0.05
 expect crossed.look_depth.to_f64() == 0.4
-expect crossed.gaze_yaw.to_radians() == 0.0
 expect crossed.heading.to_radians() - 0.7 == 0.0
 expect crossed.yaw.to_radians() - (0.1 - first_segment.exit_turn.to_radians()) == 0.0
 

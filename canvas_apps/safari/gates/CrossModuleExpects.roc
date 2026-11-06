@@ -28,6 +28,7 @@ import game.RailSighting
 import game.Scene
 import game.RideInstant
 import game.Rider
+import game.RiderState
 import game.BirdDraw
 import game.Scenery
 import game.Speed
@@ -601,6 +602,26 @@ expect {
 		and instant.rider.speed.to_metres_a_step() == 0.3
 		and instant.truck.route_position.to_metres() == 500.0
 		and instant.rider.look_depth.to_f64() == 0.0
+}
+
+# The gaze is home at each of the ride's crossings, and it did leave home. The
+# bike doesn't turn at a seam, and `gaze_yaw` is measured from the bike, so a
+# crossing carries the gaze over and it has no need to be reset.
+expect {
+	var $rider = RiderState.initial
+	var $crossings = 0
+	var $is_home_at_each = True
+	var $has_looked = False
+	while !Rider.is_finished($rider, World.segments) {
+		next = Rider.advance($rider, World.segments)
+		if next.segment_index != $rider.segment_index {
+			$crossings = $crossings + 1
+			$is_home_at_each = $is_home_at_each and $rider.gaze_yaw == Angle.straight_ahead
+		}
+		$has_looked = $has_looked or next.gaze_yaw != Angle.straight_ahead
+		$rider = next
+	}
+	$crossings == 18 and $is_home_at_each and $has_looked
 }
 
 expect Rider.is_finished(done.rider, World.segments)
