@@ -320,11 +320,11 @@ So the job is a short chain of signatures:
 |---|---|---|
 {{types row Conifer.height Know how tall it is}}
 {{types row TreeShapes.tree_on_screen Find it on the screen}}
-{{types row TreeShapes.tree_shapes Paint it}}
+{{types row TreeShapes.tree_shapes Make its shapes}}
 
 ### The functions
 
-The top of it is `tree_shapes`, and it reads like the concept: find the tree on the screen, then paint a trunk and eight tiers.
+The top of it is `tree_shapes`, and it reads like the concept: find the tree on the screen, then make a trunk and eight tiers.
 
 {{code TreeShapes.tree_shapes}}
 
@@ -422,7 +422,7 @@ Here's the other tree problem. Safari Ride plants 392 trees along its road, and 
 Step 1,570 of the ride, with only the trees on.
 ```
 
-This is step 1,570, with the cat frozen in the lane. Each tree here is a sighting from `TreeSighting.trees_in_view`, painted by `TreeShapes.tree_shapes`. They make up 1,656 of the 2,713 shapes in that frame, more than everything else put together.
+This is step 1,570, with the cat frozen in the lane. Each tree here is a sighting from `TreeSighting.trees_in_view`, turned into shapes by `TreeShapes.tree_shapes`. They make up 1,656 of the 2,713 shapes in that frame, more than everything else put together.
 
 So a tree has two lives. It's planted once, and that lasts the whole ride. It's seen again every frame, and that lasts one frame. This chapter takes them in that order.
 
