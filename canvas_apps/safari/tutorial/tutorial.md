@@ -365,11 +365,22 @@ New in this chapter:
 
 ### Get the types right
 
-The whole decision is one type:
+The whole decision is one type, and it's worth reading slowly:
 
 {{code TreeDraw.Crown}}
 
-A cone carries a `shade`, and a triangle doesn't. Triangles are never shaded, so a triangle has nowhere to put a shade by mistake. This function answers with that type:
+The square brackets list everything a `Crown` can be. Roc calls this a tag union, and `Cones` and `Triangles` are its tags. A tag is a capitalized name, and it needs no other declaration. So far that's close to a Python `Enum` with two members.
+
+The parentheses are where it leaves `Enum` behind. A tag can carry a value, called its payload. The payload of `Cones` is a record with one field, `shade`, and `Triangles` has no payload at all. So a `Crown` is written one of two ways:
+
+| Value | What it says |
+|---|---|
+| `Cones({ shade: Fraction.of(0.5) })` | Cones, half shaded |
+| `Triangles` | Triangles, and nothing more to say |
+
+In Python you might write a class with a `kind` and a `shade`, set `shade` to `None` for triangles, and remember not to read it. Here there's nothing to remember. A triangle has nowhere to put a shade, and a cone can't be missing one. The only way to reach a `shade` is a `match` branch for `Cones`, and we'll see one shortly.
+
+This function answers with that type:
 
 {{code TreeDraw.crown_of}}
 
