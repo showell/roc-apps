@@ -7,7 +7,7 @@
 --
 -- Run from the roc-apps root: every path is the checkout's, so a worktree
 -- gates its own tree. One merge gate runs at a time, on the one cache folder.
--- It takes about 70 seconds, half of that the proof tools.
+-- It takes about 75 seconds, half of that the proof tools.
 --
 -- Each stage has a CPU budget, about twice its warm time, in CPU_BUDGET_MS. A
 -- stage over it stops the run, since a slow gate is a fault to find, and a cold
