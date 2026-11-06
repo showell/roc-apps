@@ -72,6 +72,13 @@ h3 { font-size: 1.1rem; margin: 2rem 0 0.6rem; }
 .chapter-number {
   margin: 0 0 0.3rem;
   color: var(--quiet);
+/* A section links to itself, for a reader to copy. It keeps out of the way until
+   the heading is pointed at, and a touch screen shows it faintly. */
+.section-link { margin-left: 0.2em; color: var(--quiet); font-size: 0.75em; font-weight: 400; text-decoration: none; opacity: 0; }
+h2:hover .section-link, .section-link:focus { opacity: 1; }
+.section-link:hover { color: var(--accent); }
+@media (hover: none) { .section-link { opacity: 0.5; } }
+
   font: 0.75rem/1.4 var(--plain);
   letter-spacing: 0.08em;
   text-transform: uppercase;

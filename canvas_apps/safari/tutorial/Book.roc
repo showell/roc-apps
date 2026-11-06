@@ -144,13 +144,14 @@ Neighbour : Try(Chapter, [OutOfBounds])
 chapter_of : Str, MdDocument.FenceHook -> Chapter
 chapter_of = |text, fence| {
 	rendered = Md.render_document(text.to_utf8(), { fence, images: AsLinks })
+	html = BookText.from_bytes(rendered.html)
 	match rendered.headings {
 		[top, .. as rest] if top.level == 1 and rest.all(|heading| heading.level == 2) => {
 			{
 				file: "${BookText.from_bytes(top.id)}.html",
 				title: BookText.from_bytes(top.text),
 				number: Unnumbered,
-				body: DraftNotes.highlight(BookText.from_bytes(rendered.html)),
+				body: with_section_links(DraftNotes.highlight(html)),
 				sections: rest.map(section_of),
 				opening: "",
 			}
@@ -160,6 +161,31 @@ chapter_of = |text, fence| {
 			crash "book: a page needs one top heading and only sections under it: ${titles}"
 		}
 	}
+}
+
+section_open : Str
+section_open = "<h2 id=\""
+
+## Each section's heading with a link to itself, for a reader to copy.
+with_section_links : Str -> Str
+with_section_links = |html| match html.split_on(section_open) {
+	[before_any, .. as sections] => {
+		Str.join_with([before_any].concat(sections.map(section_with_link)), section_open)
+	}
+	[] => html
+}
+
+## One piece after a heading's opening: its id, the heading, and what follows.
+section_with_link : Str -> Str
+section_with_link = |piece| match piece.split_first("\">") {
+	Ok({ before: id, after }) => match after.split_first("</h2>") {
+		Ok({ before: heading, after: rest }) => {
+			link = "<a class=\"section-link\" href=\"#${id}\" aria-label=\"Link to this section\">§</a>"
+			"${id}\">${heading} ${link}</h2>${rest}"
+		}
+		Err(_) => crash "book: a section heading with no end: ${piece}"
+	}
+	Err(_) => crash "book: a section heading with no id: ${piece}"
 }
 
 section_of : MdDocument.Heading -> Section
@@ -233,6 +259,7 @@ chapter_html = |chapter, { chapters, previous, next }| {
 	forward = turn_link(next, { rel: "next", word: "Next" })
 	main =
 		\\<main>
+		\\<p class="book-bar"><a href="${front_file}">${book_name}</a> <a href="#chapters">Chapters</a></p>
 		\\<article>
 		\\${label}${chapter.body}
 		\\</article>
@@ -253,7 +280,7 @@ book_nav : List(Chapter), Chapter -> Str
 book_nav = |chapters, here| {
 	entries = Str.join_with(chapters.map(|chapter| nav_entry(chapter, here)), "\n")
 	nav =
-		\\<nav class="book-nav" aria-label="Chapters">
+		\\<nav class="book-nav" id="chapters" aria-label="Chapters">
 		\\<a class="book-name" href="${front_file}">${book_name}</a>
 		\\<ol>
 		\\${entries}
@@ -274,7 +301,7 @@ nav_entry = |chapter, here|
 chapter_link : Chapter -> Str
 chapter_link = |chapter| {
 	number = match chapter.number {
-		Numbered(n) => "<span class=\"number\">${n.to_str()}</span> "
+		Numbered(n) => "<span class=\"number\">${n.to_str()}</span>"
 		Unnumbered => ""
 	}
 	"<a href=\"${chapter.file}\">${number}${BookText.escaped_text(chapter.title)}</a>"
@@ -410,6 +437,10 @@ expect nav_entry(
 	{ ..one_section, opening: "<li>o</li>" },
 	{ ..one_section, file: "b.html" },
 ).starts_with("<li>o</li><li><a ")
+expect with_section_links("<p>no sections</p>") == "<p>no sections</p>"
+expect
+	with_section_links("<h1 id=\"a\">A</h1><h2 id=\"b\">B <code>c</code></h2>d<h2 id=\"e\">E</h2>")
+		== "<h1 id=\"a\">A</h1><h2 id=\"b\">B <code>c</code> <a class=\"section-link\" href=\"#b\" aria-label=\"Link to this section\">§</a></h2>d<h2 id=\"e\">E <a class=\"section-link\" href=\"#e\" aria-label=\"Link to this section\">§</a></h2>"
 expect turn_link(Err(OutOfBounds), { rel: "next", word: "Next" }) == "<span></span>"
 expect turn_link(
 	Ok(one_section),
