@@ -1,7 +1,7 @@
-## TowerSighting finds the radio masts in front of the rider in a frame. A mast
+## TowerSighting finds the radio towers in front of the rider in a frame. A tower
 ## stands past the end of every segment, off to the right, and a long
-## segment has one more halfway along, off to the left. The mast past the
-## end of the segment behind the rider is seen too. Each mast's beacon blinks
+## segment has one more halfway along, off to the left. The tower past the
+## end of the segment behind the rider is seen too. Each tower's beacon blinks
 ## on the ride's clock, and the sighting says how bright it is in the frame.
 import Across
 import Along
@@ -16,7 +16,7 @@ import Steps
 import lib.Trig
 import World
 
-## A mast to draw: how its segment maps to the rider's view, where it
+## A tower to draw: how its segment maps to the rider's view, where it
 ## stands in that segment and how it is turned, how far ahead it is, and
 ## how bright its beacon is.
 TowerSighting := {
@@ -28,26 +28,26 @@ TowerSighting := {
 	beacon_brightness : Fraction,
 }.{
 
-	## What the masts are seen from: the road in view, and the ride's clock.
+	## What the towers are seen from: the road in view, and the ride's clock.
 	Viewpoint : { road : Chain.RoadView, clock : Clock }
 
-	## How far past the end of its segment a mast stands.
+	## How far past the end of its segment a tower stands.
 	tower_beyond : Distance
 	tower_beyond = Distance.metres(160.0)
 
-	## How far right of the lane's middle a mast past a segment's end stands.
+	## How far right of the lane's middle a tower past a segment's end stands.
 	tower_right : Distance
 	tower_right = Distance.metres(20.0)
 
-	## How far left of the lane's middle a mast halfway along a segment stands.
+	## How far left of the lane's middle a tower halfway along a segment stands.
 	mid_tower_left : Distance
 	mid_tower_left = Distance.metres(100.0)
 
-	## How far a mast past a segment's end is turned: 30 degrees.
+	## How far a tower past a segment's end is turned: 30 degrees.
 	tower_yaw : Angle.Turn
 	tower_yaw = Angle.Turn.degrees(30.0)
 
-	## At most this many masts are drawn in a frame.
+	## At most this many towers are drawn in a frame.
 	max_vis_towers : I64
 	max_vis_towers = 16
 
@@ -55,12 +55,12 @@ TowerSighting := {
 	beacon_period : Steps
 	beacon_period = Steps.of(120)
 
-	## Each mast's blink starts this many steps past the last one's, a number
+	## Each tower's blink starts this many steps past the last one's, a number
 	## that shares no factor with the period, so neighbours blink apart.
 	beacon_stagger : Steps
 	beacon_stagger = Steps.of(37)
 
-	## How far into its blink the mast with key `n` is when the ride's clock
+	## How far into its blink the tower with key `n` is when the ride's clock
 	## is 0.
 	beacon_offset_for : U32 -> Steps
 	beacon_offset_for = |n| beacon_stagger.times(n).wrapped_to(beacon_period)
@@ -73,7 +73,7 @@ TowerSighting := {
 		Fraction.of(((1.0 - Trig.r_cos(angle)) / 2.0))
 	}
 
-	## The masts in view: those along the chain, then the one past the end of
+	## The towers in view: those along the chain, then the one past the end of
 	## the segment behind the rider.
 	in_view : TowerSighting.Viewpoint -> List(TowerSighting)
 	in_view = |view|
@@ -82,14 +82,14 @@ TowerSighting := {
 			AtRouteStart => along_chain(view)
 		}
 
-	## The masts in view along the chain, the nearest segment's first.
+	## The towers in view along the chain, the nearest segment's first.
 	along_chain : TowerSighting.Viewpoint -> List(TowerSighting)
 	along_chain = |view| {
 		positions = Chain.Position.all_in(view.road.chain)
 		positions.join_map(|position| segment_towers(view, position))
 	}
 
-	## The masts in view on the segment at `position` in the chain: the one past
+	## The towers in view on the segment at `position` in the chain: the one past
 	## its end, then the one halfway along.
 	segment_towers : TowerSighting.Viewpoint, Chain.Position -> List(TowerSighting)
 	segment_towers = |view, position| {
@@ -108,7 +108,7 @@ TowerSighting := {
 		end_tower.concat(mid_tower(view, position))
 	}
 
-	## The mast halfway along the segment at `position` in the chain, if it has
+	## The tower halfway along the segment at `position` in the chain, if it has
 	## one and it is in view.
 	mid_tower : TowerSighting.Viewpoint, Chain.Position -> List(TowerSighting)
 	mid_tower = |view, position| {
@@ -130,7 +130,7 @@ TowerSighting := {
 		}
 	}
 
-	## The mast past the end of the segment at `index`, the one behind the
+	## The tower past the end of the segment at `index`, the one behind the
 	## rider, if it is in view.
 	tower_behind : TowerSighting.Viewpoint, World.SegmentIndex -> List(TowerSighting)
 	tower_behind = |view, index| {
@@ -147,7 +147,7 @@ TowerSighting := {
 		)
 	}
 
-	## The masts as the depth sort sees them: each one's distance ahead, and
+	## The towers as the depth sort sees them: each one's distance ahead, and
 	## its position in `towers`.
 	depth_keys : List(TowerSighting) -> List(DepthSort.DepthKey)
 	depth_keys = |towers| towers.map_with_index(
@@ -155,14 +155,14 @@ TowerSighting := {
 	)
 }
 
-## A mast halfway along a segment takes its beacon's blink from a key this
+## A tower halfway along a segment takes its beacon's blink from a key this
 ## far past its segment's. That many staggers come to half a period past a
-## whole number of periods, so it blinks exactly opposite the mast at the
+## whole number of periods, so it blinks exactly opposite the tower at the
 ## segment's end.
 mid_tower_beacon_step : U32
 mid_tower_beacon_step = 60
 
-## A mast standing at `along` and `across` in the segment that `place` maps,
+## A tower standing at `along` and `across` in the segment that `place` maps,
 ## if it is in front of the camera: one item, or none.
 tower_if_ahead : TowerSighting.Viewpoint,
 {
@@ -235,7 +235,7 @@ expect TowerSighting.mid_tower(from_origin, Chain.Position.first).len() == 0
 expect TowerSighting.in_view(from_origin).len() == 3
 expect segs.all(|seg| !(has_mid_tower(seg)))
 
-## Whether a segment has a mast halfway along.
+## Whether a segment has a tower halfway along.
 has_mid_tower : World.Segment -> Bool
 has_mid_tower = |seg|
 	match seg.mid_tower {
@@ -243,12 +243,12 @@ has_mid_tower = |seg|
 		NoMidTower => False
 	}
 
-## The first mast in view on the segment at `position` in the chain.
+## The first tower in view on the segment at `position` in the chain.
 first_tower_on : U32 -> TowerSighting
 first_tower_on = |number| TowerSighting.segment_towers(
 	from_origin,
 	Chain.Position.number(number),
-).first() ?? crash "TowerSighting: the first two segments' masts are in view"
+).first() ?? crash "TowerSighting: the first two segments' towers are in view"
 
 expect first_tower_on(0).along.to_metres() == 660.0
 expect first_tower_on(0).across.to_metres() == 20.0
@@ -272,10 +272,10 @@ expect TowerSighting.mid_tower(long_view, Chain.Position.first).len() == 1
 long_towers : List(TowerSighting)
 long_towers = TowerSighting.along_chain(long_view)
 
-## The long segment's mast at `i`: its end mast, then its mid mast.
+## The long segment's tower at `i`: its end tower, then its mid tower.
 long_tower : U64 -> TowerSighting
 long_tower = |i|
-	long_towers.get(i) ?? crash "TowerSighting: the long segment has two masts in view"
+	long_towers.get(i) ?? crash "TowerSighting: the long segment has two towers in view"
 
 expect
 	[
@@ -308,8 +308,8 @@ expect
 		(TowerSighting.beacon_brightness(Steps.of(240)).to_f64(), 0.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0000001)
 
-## How bright the masts on the long segment are at `clock`: its end mast,
-## then its mid mast.
+## How bright the towers on the long segment are at `clock`: its end tower,
+## then its mid tower.
 long_brightness_at : Clock -> List(F64)
 long_brightness_at = |clock|
 	TowerSighting.along_chain({ ..long_view, clock }).map(|tower| tower.beacon_brightness.to_f64())
@@ -321,7 +321,7 @@ expect {
 	got.len() == wanted_list.len() and closeness.all(|is_close| is_close)
 }
 
-## How bright the first three segments' masts are at `clock`.
+## How bright the first three segments' towers are at `clock`.
 spread_at : Clock -> List(F64)
 spread_at = |clock| {
 	towers = TowerSighting.along_chain({ ..from_origin, clock })
@@ -352,15 +352,15 @@ keys = TowerSighting.depth_keys(TowerSighting.along_chain(from_origin))
 
 ## The depth key at `i`.
 key_at : U64 -> DepthSort.DepthKey
-key_at = |i| keys.get(i) ?? crash "TowerSighting: three masts are in view"
+key_at = |i| keys.get(i) ?? crash "TowerSighting: three towers are in view"
 
-## The position in the mast list that the key at `i` names.
+## The position in the tower list that the key at `i` names.
 tower_place_at : U64 -> I64
 tower_place_at = |i|
 	match key_at(i).subject {
 		Tower(position) => position.to_i64()
 		Tree(_) | Cutout(_) | Cat(_) | Truck | Rail(_) | Bird(_) =>
-			crash "TowerSighting: a mast's key names a mast"
+			crash "TowerSighting: a tower's key names a tower"
 	}
 
 expect keys.len() == 3

@@ -72,7 +72,7 @@ SceneDraw :: [].{
 		})
 	}
 
-	## Where a mast's four footprint corners stand in the rider's view.
+	## Where a tower's four footprint corners stand in the rider's view.
 	tower_footprint : Chain.Viewpoint, TowerSighting -> Tower.Footprint
 	tower_footprint = |view, tower| {
 		corner_point = |corner| {
@@ -101,7 +101,7 @@ SceneDraw :: [].{
 		}
 	}
 
-	## A mast, its beacon as bright as its sighting says.
+	## A tower, its beacon as bright as its sighting says.
 	draw_tower : Chain.Viewpoint, TowerSighting -> List(Shapes.Shape)
 	draw_tower = |view, tower|
 		Tower.draw({
@@ -222,7 +222,7 @@ start_view = {
 	cam_focal: 500.0,
 }
 
-# A mast `along` metres down the first segment, 20 m right of the lane's middle.
+# A tower `along` metres down the first segment, 20 m right of the lane's middle.
 tower_along : F64 -> TowerSighting
 tower_along = |along| {
 	place: InChain(Chain.Position.first),

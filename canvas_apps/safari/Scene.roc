@@ -1,4 +1,4 @@
-## Scene gathers what one frame shows beside the road: the trees, masts,
+## Scene gathers what one frame shows beside the road: the trees, towers,
 ## cutouts, cats, guard rails, the truck and the birds in view, each kind
 ## found by its own sighting, and the order to paint them in, far to near.
 import Cutouts

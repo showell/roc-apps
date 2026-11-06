@@ -95,7 +95,7 @@ World :: [].{
 		bend_life : Scenery.BendLife,
 	}
 
-	## A segment longer than this has a mast halfway along.
+	## A segment longer than this has a tower halfway along.
 	mid_tower_min_length : Distance
 	mid_tower_min_length = Distance.metres(1000.0)
 
@@ -534,7 +534,7 @@ next_of = |segment|
 turns_right : World.Segment -> Bool
 turns_right = |segment| segment.exit_turn.is_right()
 
-## Whether a segment has a mast halfway along.
+## Whether a segment has a tower halfway along.
 has_mid_tower : World.Segment -> Bool
 has_mid_tower = |segment|
 	match segment.mid_tower {
