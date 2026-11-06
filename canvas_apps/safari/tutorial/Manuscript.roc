@@ -4,10 +4,7 @@
 Manuscript := [].{
 
 	## One diagram, already drawn. Its id is the argument on its ```dot fence.
-	Diagram : {
-		id : Str,
-		svg : Str,
-	}
+	Diagram : { id : Str, svg : Str }
 
 	Contents : {
 		pages : List(Str),
@@ -25,13 +22,27 @@ contents_of : List(Str), Manuscript.Contents -> Manuscript.Contents
 contents_of = |args, so_far| match args {
 	[] => so_far
 	["page", text, .. as rest] => contents_of(rest, { ..so_far, pages: so_far.pages.append(text) })
-	["diagram", id, svg, .. as rest] => contents_of(rest, { ..so_far, diagrams: so_far.diagrams.append({ id, svg }) })
-	["widget", folder, .. as rest] => contents_of(rest, { ..so_far, widget_folders: so_far.widget_folders.append(folder) })
+	["diagram", id, svg, .. as rest] => {
+		contents_of(rest, { ..so_far, diagrams: so_far.diagrams.append({ id, svg }) })
+	}
+	["widget", folder, .. as rest] => {
+		contents_of(rest, { ..so_far, widget_folders: so_far.widget_folders.append(folder) })
+	}
 	[stray, ..] => crash "book: an argument that isn't a page, a diagram or a widget: ${stray}"
 }
 
 expect Manuscript.read([]) == { pages: [], diagrams: [], widget_folders: [] }
-expect Manuscript.read(["page", "a", "diagram", "d1", "<svg>", "page", "b", "widget", "sky_widget"]) == {
+expect Manuscript.read([
+	"page",
+	"a",
+	"diagram",
+	"d1",
+	"<svg>",
+	"page",
+	"b",
+	"widget",
+	"sky_widget",
+]) == {
 	pages: ["a", "b"],
 	diagrams: [{ id: "d1", svg: "<svg>" }],
 	widget_folders: ["sky_widget"],

@@ -11,7 +11,10 @@ DraftNotes := [].{
 	highlight = |html| {
 		pieces = html.replace_each("<p><em>[", "<p class=\"draft-note\"><em>[").split_on(check_open)
 		match pieces {
-			[before_any, .. as notes] => Str.join_with([before_any].concat(notes.map(check_note_html)), "")
+			[before_any, .. as notes] => {
+				marked_notes = notes.map(check_note_html)
+				Str.join_with([before_any].concat(marked_notes), "")
+			}
 			[] => html
 		}
 	}
