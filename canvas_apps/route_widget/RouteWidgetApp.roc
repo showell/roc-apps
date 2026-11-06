@@ -1,34 +1,44 @@
-## The widget for the Safari tutorial's chapter on what never changes. Dragging
-## across the canvas walks along the route, and the lines of text read out the
-## record in `World.plans` for the segment under the pointer. The picture is a
-## map of the road. The ride has no such map: a segment knows only its length
-## and its turn, so this widget lays the map out itself by adding up the turns.
+## The widget for the Safari tutorial's chapter on what never changes. Four video
+## recorder buttons step along the route a segment at a time, and the lines of text
+## read out that segment's record in `World.plans`. Nothing here runs by itself, so
+## the buttons have no play. The picture is a map of the road. The ride has no such
+## map: a segment knows only its length and its turn, so this widget lays the map
+## out itself by adding up the turns.
 import game.Angle
 import game.Distance
-import game.Fraction
 import game.Scenery
 import game.World
 import lib.CanvasApp
 import lib.Shapes
 import lib.Trig
 import widget.ScrubWidget
+import widget.VcrButtons
 
 RouteWidgetApp :: [].{
 
-	## The whole state of the widget: how far along the route the pointer is.
-	Model : { reached : Distance }
+	## The whole state of the widget: the buttons, which hold the number of the
+	## segment on show, from 1.
+	Model : VcrButtons.Transport(U64)
 
 	canvas_app : CanvasApp.CanvasApp(RouteWidgetApp.Model)
-	canvas_app = ScrubWidget.canvas_app({
+	canvas_app = VcrButtons.canvas_app({
 		title: "The route",
-		init: { reached: Distance.zero },
-		model_at: |share| { reached: route_length.times(share.to_f64()) },
-		frame: |model| frame_at(model.reached),
+		run: segment_steps,
+		opens_at: segment_steps.first,
+		frame: frame_at,
 	})
 }
 
-route_length : Distance
-route_length = World.route_length(World.segments)
+## A step is one segment, from the first to the last.
+segment_steps : VcrButtons.Run(U64)
+segment_steps = {
+	first: 1,
+	last: segments.len(),
+	place_of: |number| number.to_f64(),
+	number_at: |place| place.to_u64_wrap(),
+	one_step: 1.0,
+	playing: StepsOnly,
+}
 
 ## A place on the map, in metres from the route's start.
 MapPoint : { east : F64, north : F64 }
@@ -37,8 +47,6 @@ MapPoint : { east : F64, north : F64 }
 LaidSegment : {
 	plan : World.SegmentPlan,
 	number : U64,
-	from : Distance,
-	to : Distance,
 	start : MapPoint,
 	end : MapPoint,
 }
@@ -46,7 +54,6 @@ LaidSegment : {
 ## Where the road has reached while the map is being laid out.
 Layout : {
 	laid : List(LaidSegment),
-	reached : Distance,
 	at : MapPoint,
 	heading : F64,
 }
@@ -58,23 +65,19 @@ start_heading = 150.0 * Trig.deg
 
 ## `layout` with one more segment on the end.
 laid_onto : Layout, World.SegmentPlan -> Layout
-laid_onto = |{ laid, reached, at, heading }, plan| {
+laid_onto = |{ laid, at, heading }, plan| {
 	metres = plan.length.to_metres()
 	end = {
 		east: at.east + metres * heading.sin(),
 		north: at.north + metres * heading.cos(),
 	}
-	to = reached.plus(plan.length)
 	{
 		laid: laid.append({
 			plan,
 			number: laid.len() + 1,
-			from: reached,
-			to,
 			start: at,
 			end,
 		}),
-		reached: to,
 		at: end,
 		heading: heading + plan.turn.to_radians(),
 	}
@@ -85,7 +88,6 @@ segments =
 	World.plans.fold(
 		{
 			laid: [],
-			reached: Distance.zero,
 			at: { east: 0.0, north: 0.0 },
 			heading: start_heading,
 		},
@@ -134,22 +136,10 @@ on_canvas = |{ east, north }| {
 	y: ScrubWidget.picture_bottom_y / 2.0 - (north - (extent.south + extent.north) / 2.0) * map_scale,
 }
 
-## The segment under `reached`.
-segment_at : Distance -> LaidSegment
-segment_at = |reached|
-	segments.find_first(|segment| reached < segment.to)
-		?? (segments.last() ?? crash "RouteWidgetApp.segment_at: the route has segments")
-
-## The place `reached` metres along the route.
-place_at : Distance -> MapPoint
-place_at = |reached| {
-	{ from, to, start, end, .. } = segment_at(reached)
-	share = reached.minus(from).ratio_to(to.minus(from))
-	{
-		east: start.east + (end.east - start.east) * share,
-		north: start.north + (end.north - start.north) * share,
-	}
-}
+## The segment with this number.
+segment_numbered : U64 -> LaidSegment
+segment_numbered = |number|
+	segments.get(number - 1) ?? crash "RouteWidgetApp.segment_numbered: the buttons stay on the route"
 
 ground_color : I64
 ground_color = 0x6f9a55
@@ -252,39 +242,26 @@ legend =
 		legend_row({ y: 196.0, color: bird_color, word: "a bird flies" }),
 	].join()
 
-## The map with the place on the route and its segment picked out.
-picture : Distance -> List(Shapes.Shape)
-picture = |reached|
+## The map with `segment` picked out.
+picture : LaidSegment -> List(Shapes.Shape)
+picture = |segment|
 	[
 		[ground],
-		segments.join_map(|segment| road_piece(segment, { width: 5.0, color: road_color })),
-		road_piece(segment_at(reached), { width: 7.0, color: here_color }),
+		segments.join_map(|each| road_piece(each, { width: 5.0, color: road_color })),
+		road_piece(segment, { width: 7.0, color: here_color }),
 		segments.join_map(crossing_mark),
-		[spot(place_at(reached), { r: 5.0, color: 0x202020 })],
 		legend,
 	].join()
 
-## A segment's stretch of the ruler.
-stretch_of : LaidSegment -> ScrubWidget.Stretch
-stretch_of = |{ from, to, .. }| {
-	from: Fraction.clamp(from.ratio_to(route_length)),
-	to: Fraction.clamp(to.ratio_to(route_length)),
+## Everything on the canvas.
+frame_at : RouteWidgetApp.Model -> List(Shapes.Shape)
+frame_at = |transport| {
+	segment = segment_numbered(transport.at)
+	VcrButtons.frame_shapes(
+		transport,
+		{ run: segment_steps, picture: picture(segment), status: status_lines(segment) },
+	)
 }
-
-## The segments with something crossing them.
-crossed_stretches : List(ScrubWidget.Stretch)
-crossed_stretches =
-	segments.keep_if(|segment| crossing_color(segment.plan).is_ok()).map(stretch_of)
-
-## Everything on the canvas at `reached`.
-frame_at : Distance -> List(Shapes.Shape)
-frame_at = |reached|
-	ScrubWidget.frame_shapes({
-		picture: picture(reached),
-		dot_at: Fraction.clamp(reached.ratio_to(route_length)),
-		marked: crossed_stretches,
-		status: status_lines(segment_at(reached)),
-	})
 
 ## A whole number of metres.
 metres_text : Distance -> Str
@@ -356,25 +333,35 @@ status_lines = |{ plan, number, .. }|
 
 expect segments.len() == World.plans.len()
 
-# The segments end to end make up the route, with no gap between any two.
-expect segment_at(Distance.zero).number == 1
-expect segment_at(route_length).number == segments.len()
-expect segment_at(Distance.metres(499.0)).number == 1
-expect segment_at(Distance.metres(500.0)).number == 2
+# Each segment answers to its own number, at both ends of the route.
+expect segment_numbered(1).number == 1
+expect segment_numbered(2).number == 2
+expect segment_numbered(segments.len()).number == segments.len()
 
-# A place is `reached` metres from the start along the first segment, and the
-# end of that segment is where the second begins.
-expect place_at(Distance.zero).east.abs() < 0.001
-expect place_at(Distance.zero).north.abs() < 0.001
+# The first segment is as long as its record says, and the second starts where it
+# ends.
 expect {
-	{ east, north } = place_at(Distance.metres(100.0))
-	((east * east + north * north).sqrt() - 100.0).abs() < 0.001
+	first = segment_numbered(1)
+	{ east, north } = first.end
+	((east * east + north * north).sqrt() - first.plan.length.to_metres()).abs() < 0.001
 }
-expect {
-	{ east, north } = place_at(Distance.metres(500.0))
-	first = segment_at(Distance.zero)
-	(east - first.end.east).abs() < 0.001 and (north - first.end.north).abs() < 0.001
-}
+expect segment_numbered(2).start == segment_numbered(1).end
+
+## What a press of `control` does on segment `number`, after that frame.
+number_after_press : U64, VcrButtons.Control -> U64
+number_after_press = |number, control|
+	VcrButtons.next_transport(
+		VcrButtons.transport_at(number),
+		{ input: VcrButtons.click_on(control, segment_steps.playing), run: segment_steps },
+	).at
+
+# A step is a segment, and the buttons stop at the route's two ends.
+expect number_after_press(5, StepForward) == 6
+expect number_after_press(5, StepBack) == 4
+expect number_after_press(5, ToStart) == 1
+expect number_after_press(5, ToEnd) == segments.len()
+expect number_after_press(1, StepBack) == 1
+expect number_after_press(segments.len(), StepForward) == segments.len()
 
 # The road stays inside the picture, on all four sides.
 expect corners.all(|corner| on_canvas(corner).x >= 0.0)
@@ -389,7 +376,7 @@ expect turn_text(Angle.Turn.degrees(0.0)) == "straight on"
 expect metres_text(Distance.metres(1200.0)) == "1200"
 
 expect
-	status_lines(segment_at(Distance.zero))
+	status_lines(segment_numbered(1))
 		== [
 			"Segment 1 of 19: 500 m, 50 deg right",
 			"crossing: BirdHere, pigs: NoPigs",
@@ -398,8 +385,8 @@ expect
 		]
 
 # The map doesn't change along the road, and the picked-out part does.
-expect picture(Distance.zero) == picture(Distance.zero)
-expect picture(Distance.zero) != picture(Distance.metres(600.0))
+expect picture(segment_numbered(1)) == picture(segment_numbered(1))
+expect picture(segment_numbered(1)) != picture(segment_numbered(2))
 
-# Only the segments that something crosses are marked on the ruler.
-expect crossed_stretches.len() == 6
+# Only the segments that something crosses are marked on the map.
+expect segments.keep_if(|segment| crossing_color(segment.plan).is_ok()).len() == 6
