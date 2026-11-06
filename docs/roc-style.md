@@ -82,6 +82,14 @@ Roc's own rules are in the langref's
   hides what it gives, and a reader of a definition often forgets which
   module it's in, so write `Tree.trees_in_view`. A constructor or conversion
   that reads as one keeps its short form: `Clock.at_step`, `Fraction.from_ratio`.
+- **A list's name says many: it ends in a plural of what the list holds, or
+  says `list`.** `triangle : List(Shape)` would have to be `triangles` or
+  `triangle_list`. A collective noun doesn't do it: a herd of cows is
+  `herd_cows`, and a route of segments is `route_segments`. The rule covers
+  a function that gives a list, a field and a parameter, and a verb's object
+  doesn't excuse it: `draw_tree` giving shapes is `tree_shapes`. Bytes are
+  plumbing, so `boundary : List(U8)` says what they mean, and an accumulator
+  may keep its short idiom, `out`. The name hunt's `singular_list` holds this.
 - **A pure function is named by a noun for what it gives, or a verb for
   what it does; never by an adjective or a bare past participle.** A lone
   participle (`added`, `joined`, `named`, `escaped`) reads as a Bool:
@@ -602,7 +610,10 @@ is the base; these rules sharpen it.
   make every caller remember what "none" meant. A topic's last message is
   `[Latest(Message), NoMessage]`; the editor's open doc is
   `[NoneChosen, Doc(...)]`. The same holds for a fold's "nothing found yet"
-  (`[Newest(...), NoDocs]`).
+  (`[Newest(...), NoDocs]`). A list of one or none is an optional too: the
+  type should say there is at most one. `cat_in_view` answers
+  `Try(CatSighting, [OutOfView])`, keeps its singular name, and its caller
+  uses `keep_oks` or a `match`.
 - **A `Try`'s error lists the tags that function can return, in place; no
   shared error alias.** `Cart.add` fails only with `[OutOfStock(Item)]` and
   `Cart.remove` only with `[NotInCart(Item)]`; one alias of both,
@@ -1070,7 +1081,8 @@ is the base; these rules sharpen it.
     different trailing prepositions in one file, `blocks_of` beside
     `blocks_in`; a matched opposite pair and the `_from` recursion worker
     are fine), and `phrase_name` (a pure function named as a bare phrase,
-    `in_view`, that gives no Bool and isn't a constructor). An effect that starts with a preposition (`of!`) is a
+    `in_view`, that gives no Bool and isn't a constructor), and `singular_list`
+    (a list named as one thing, `triangle : List(Shape)`). An effect that starts with a preposition (`of!`) is a
     `noun_effect`. The words are shared files in Shale's `cookbook/words/`,
     and `words=1` lists every first word an effect starts with, for a
     reader to scan. Beside the names, `mixed_tense` (an effect handed a
