@@ -593,7 +593,7 @@ Its caller, `RideInstant.sun`, is short enough to read whole:
 
 That's every box on the diagram: one number goes in, and colours and a place for the sun come out, with nothing kept from one frame to the next.
 
-The sun would set the same way on an empty road. A clock can't tell that a rider is coming.
+With the sunset, we compute a value based on the clock alone. In the next chapter we will explore a more nuanced rule: the timing of a cat's crossing depends on the rider's position.
 
 ## The cat
 
