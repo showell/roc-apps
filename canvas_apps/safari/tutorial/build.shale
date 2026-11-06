@@ -56,7 +56,7 @@
 -- line, and no output is left behind. Any line holding `{{` must be an
 -- include, alone on its line, so a mistyped one can't reach the page.
 --
--- `{{proof row 1570 A cat frozen in the lane}}` becomes a row of a table: the
+-- `{{proof row 1570 A cat frozen in the road}}` becomes a row of a table: the
 -- step, the words, and that frame's hash and shape count from
 -- gates/proof.expected. A step the file doesn't have stops the build, and so
 -- does a step it has that no row shows, once there are any rows.

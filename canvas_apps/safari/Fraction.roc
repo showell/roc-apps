@@ -6,9 +6,6 @@
 ## ratio outside it means the sum that made it is wrong, so `of` crashes.
 ## `clamp` takes a ratio that can rightly fall outside, such as how far a
 ## rider has come along a stretch they haven't reached yet.
-##
-## Each operation does the plain float arithmetic its name says, so code
-## moved onto this type computes exactly what it did before.
 
 Fraction :: F64.{
 

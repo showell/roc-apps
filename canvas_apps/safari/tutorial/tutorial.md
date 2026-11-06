@@ -1816,9 +1816,9 @@ digraph reaction {
 
 Let's follow this back to `Cat`, to two small questions about the same `Stage`.
 
-`is_in_danger` asks whether the crossing is playing. `_` ignores a payload.
+`is_crossing` asks whether the crossing is playing. `_` ignores a payload.
 
-{{code Cat.is_in_danger}}
+{{code Cat.is_crossing}}
 
 `attention` is where `Past`'s payload is used. A cat in the lane also draws the rider's attention, which widens the view. `beyond` is how far past the end of the crossing the rider has come, and that attention fades over that distance, counted in beats. `beats_to_cover` divides by the speed, so a rider at a standstill gets an answer first. `Attention` is another opaque type.
 

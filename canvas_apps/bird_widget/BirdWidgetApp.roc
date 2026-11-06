@@ -89,7 +89,7 @@ picture : Distance -> List(Shapes.Shape)
 picture = |gap|
 	ScrubWidget.ride_picture(
 		[
-			lane,
+			road,
 			tree_shapes(flight.to),
 			tree_shapes(flight.from),
 			bird_shapes(gap),
@@ -97,11 +97,11 @@ picture = |gap|
 		{ clock: Clock.start, sun: OutOfView },
 	)
 
-## The lane, running up the picture from under the eye.
-lane : List(Shapes.Shape)
-lane = {
+## The road, running up the picture from under the eye.
+road : List(Shapes.Shape)
+road = {
 	half = Scenery.road_width.divided_by(2.0)
-	lane_start = Distance.metres(1.0)
+	road_start = Distance.metres(1.0)
 	on_ground = |right, forward|
 		Camera.project(
 			{
@@ -114,8 +114,8 @@ lane = {
 	Paint.polygon(
 		0x8a8a8a,
 		[
-			on_ground(half.opposite(), lane_start),
-			on_ground(half, lane_start),
+			on_ground(half.opposite(), road_start),
+			on_ground(half, road_start),
 			on_ground(half, road_end_forward),
 			on_ground(half.opposite(), road_end_forward),
 		],

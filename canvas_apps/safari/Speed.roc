@@ -2,9 +2,6 @@
 ## of the ride; the rider and the truck each hold one. An `Acceleration` is
 ## a type of its own, so no speed can be mistaken for one: `accelerated_by`
 ## takes one, and `acceleration_to` and `change_from` give one.
-##
-## Each operation does the plain float arithmetic its name says, so code
-## moved onto this type computes exactly what it did before.
 import Acceleration
 import Distance
 import Steps

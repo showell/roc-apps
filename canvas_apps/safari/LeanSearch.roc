@@ -20,16 +20,16 @@ LeanSearch :: [].{
 	asymptote_tuning : F64
 	asymptote_tuning = 0.3
 
-	center_lane_epsilon : Distance
-	center_lane_epsilon = Distance.metres(0.04)
+	center_road_epsilon : Distance
+	center_road_epsilon = Distance.metres(0.04)
 
 	lean_target : Across -> Across
 	lean_target = |across|
-		if across.distance_from_middle() < center_lane_epsilon {
+		if across.distance_from_middle() < center_road_epsilon {
 			if across >= Across.middle {
-				Across.right_of_middle(center_lane_epsilon)
+				Across.right_of_middle(center_road_epsilon)
 			} else {
-				Across.left_of_middle(center_lane_epsilon)
+				Across.left_of_middle(center_road_epsilon)
 			}
 		} else {
 			across.times(asymptote_tuning)
@@ -97,7 +97,7 @@ expect target_of(-2.0) > -2.0
 expect target_of(0.0) > 0.0
 
 expect LeanSearch.asymptote_tuning == 0.3
-expect LeanSearch.center_lane_epsilon.to_metres() == 0.04
+expect LeanSearch.center_road_epsilon.to_metres() == 0.04
 expect LeanSearch.max_lean_change.to_radians() == 0.017453292519943295
 expect LeanSearch.lean_search_rounds == 12
 

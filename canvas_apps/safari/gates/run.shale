@@ -50,7 +50,7 @@
 -- to gates/proof.expected. A change that rightly alters the picture changes
 -- that file with it, and the commit says why.
 -- A depth is there for what its frame shows: at 100 a Roc bird is in flight,
--- at 1570 a cat is frozen in the lane, at 1586 it is in mid-leap, at 3742 a
+-- at 1570 a cat is frozen in the road, at 1586 it is in mid-leap, at 3742 a
 -- distant truck's glow is too small to draw, at 5700 the truck is ahead at
 -- dusk with its lights on, and at 6520 it is braking in plain view with its
 -- brake lights on.

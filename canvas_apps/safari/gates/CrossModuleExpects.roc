@@ -43,7 +43,7 @@ import lib.Shapes
 
 main! = |_args| Ok({})
 
-## The rider at the start of a segment, in the middle of the lane, looking
+## The rider at the start of a segment, in the middle of the road, looking
 ## straight down it.
 origin : Geom.Vantage
 origin = {

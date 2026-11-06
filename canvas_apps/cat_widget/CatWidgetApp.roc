@@ -37,7 +37,7 @@ closing_gap : VcrButtons.NumberRange(Distance)
 closing_gap = VcrButtons.gap_range({ farthest: Distance.metres(50.0), metres_a_frame: 0.125 })
 
 ## A typical speed on the ride. At one metre a step, a step of the buttons is a
-## step of the ride, and the crossing's beats read as metres.
+## step of the ride, and the crossing's steps read as metres.
 rider_speed : Speed
 rider_speed = Speed.metres_a_step(1.0)
 
@@ -74,9 +74,9 @@ frame_at = |transport|
 pixels_a_metre : F64
 pixels_a_metre = 48.0
 
-## Where the middle of the lane is, on screen.
-lane_middle_x : F64
-lane_middle_x = 290.0
+## Where the middle of the road is, on screen.
+road_middle_x : F64
+road_middle_x = 290.0
 
 ground_top_y : F64
 ground_top_y = 150.0
@@ -88,10 +88,10 @@ ground_bottom_y = 215.0
 feet_y : F64
 feet_y = 190.0
 
-## The sky, the grass, and the lane between the verges.
+## The sky, the grass, and the road between the verges.
 road : List(Shapes.Shape)
 road = {
-	lane_width_px = Scenery.road_width.to_metres() * pixels_a_metre
+	road_width_px = Scenery.road_width.to_metres() * pixels_a_metre
 	ground_height = ground_bottom_y - ground_top_y
 	[
 		Rect({
@@ -109,9 +109,9 @@ road = {
 			fill: ScrubWidget.flat(0x7fa650),
 		}),
 		Rect({
-			x: lane_middle_x - lane_width_px / 2.0,
+			x: road_middle_x - road_width_px / 2.0,
 			y: ground_top_y,
-			w: lane_width_px,
+			w: road_width_px,
 			h: ground_height,
 			fill: ScrubWidget.flat(0x8a8a8a),
 		}),
@@ -125,7 +125,7 @@ cat_shapes = |gap| {
 	StillDraw.draw_still(
 		{
 			feet: {
-				x: Pixels.of(lane_middle_x + instant.spot.across.to_metres() * pixels_a_metre),
+				x: Pixels.of(road_middle_x + instant.spot.across.to_metres() * pixels_a_metre),
 				y: Pixels.of(feet_y - instant.spot.lift.to_metres() * pixels_a_metre),
 			},
 			flip: AsDrawn,
@@ -173,8 +173,8 @@ throttle_text = |throttle|
 	}
 
 # The whole crossing is on the range, with some road to spare at the far end.
-expect Cat.road_buffer.plus(rider_speed.distance_in(Cat.crossing_steps)) < closing_gap.first
-expect Cat.road_buffer > closing_gap.last
+expect Cat.clear_gap.plus(rider_speed.distance_in(Cat.crossing_steps)) < closing_gap.first
+expect Cat.clear_gap > closing_gap.last
 
 expect
 	status_lines(Distance.metres(50.0))

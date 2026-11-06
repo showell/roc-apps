@@ -1,10 +1,10 @@
 ## A cat that crosses the road ahead of the rider. It waits by a roadside
-## tree, then, as the rider comes, walks out into the lane, freezes there,
+## tree, then, as the rider comes, walks out into the road, freezes there,
 ## and leaps clear to the far verge. How far through its crossing it is
 ## depends only on how far ahead it is and how fast the rider comes: it
-## starts when the rider is `crossing_steps` away, at a frame a step, and is
-## across when the rider is `road_buffer` from it. The rider's eye is drawn to it while
-## it crosses, and lets it go after.
+## starts `crossing_steps` before the rider gets within `clear_gap` of it, and is
+## across at that gap. The rider's eye is drawn to it while it crosses, and lets
+## it go after.
 import Across
 import Along
 import Animation
@@ -18,7 +18,7 @@ import Steps
 Cat :: [].{
 
 	## Where a cat crosses: how far along its segment, and its place across
-	## the road at the start, in the middle of the lane, and at the end.
+	## the road at the start, in the middle of the road, and at the end.
 	Crossing : {
 		along : Along,
 		start_across : Across,
@@ -116,19 +116,19 @@ Cat :: [].{
 		Steps.of(frames.to_u32_wrap())
 	}
 
-	## How far short of the cat the rider is when it is across.
-	road_buffer : Distance
-	road_buffer = Distance.metres(3.0)
+	## How far short of the cat the rider is when its crossing ends.
+	clear_gap : Distance
+	clear_gap = Distance.metres(3.0)
 
 	## Where the crossing has got to. A cat has to finish before the rider
 	## reaches it however fast the rider comes, so it plays over beats.
 	crossing_stage : Animation.Approach -> Animation.Stage
 	crossing_stage = |approach|
-		Animation.over_beats({ length: crossing_steps, ends_at: road_buffer }, approach)
+		Animation.over_beats({ length: crossing_steps, ends_at: clear_gap }, approach)
 
 	## Whether the cat is crossing in front of the rider now.
-	is_in_danger : Animation.Approach -> Bool
-	is_in_danger = |approach|
+	is_crossing : Animation.Approach -> Bool
+	is_crossing = |approach|
 		match crossing_stage(approach) {
 			Playing(_) => True
 			Waiting | Past(_) => False
@@ -138,12 +138,14 @@ Cat :: [].{
 	peak_attention : Attention
 	peak_attention = Attention.of(1.8)
 
-	## Over how many steps, after the rider reaches the cat, its hold fades.
+	## Over how many steps its hold fades. The fade starts when the crossing ends,
+	## with the rider `clear_gap` short of the cat, so at a metre a step the cat
+	## lets go 80 metres past itself.
 	attention_fade : Steps
 	attention_fade = Steps.of(83)
 
 	## How hard the cat holds the rider's eye: rising as it crosses, then
-	## fading once the rider is past.
+	## fading once it is across.
 	attention : Animation.Approach -> Attention
 	attention = |approach|
 		if approach.speed <= Speed.standstill {
@@ -160,7 +162,7 @@ Cat :: [].{
 		}
 
 	## The whole of a crossing, a frame a step: the cat walks out to the middle
-	## of the lane, freezes there, and leaps clear to the far verge.
+	## of the road, freezes there, and leaps clear to the far verge.
 	crossing_timeline : Cat.Crossing -> Animation.Timeline(Cat.Pose)
 	crossing_timeline = |cat| {
 		on_road = |across| { along: cat.along, across, lift: Distance.zero }
@@ -235,7 +237,7 @@ expect Cat.frozen_head_reach.to_metres() == 0.425
 expect Cat.collapsed_hip_reach.to_metres() == 1.19
 expect Cat.grass_toehold.to_metres() == 0.3
 expect Cat.crossing_steps == Steps.of(38)
-expect Cat.road_buffer.to_metres() == 3.0
+expect Cat.clear_gap.to_metres() == 3.0
 expect
 	[
 		(coming(40.5, 1.0), True),
@@ -245,7 +247,7 @@ expect
 		(coming(2.0, 1.0), False),
 		(coming(41.0, 0.0), False),
 		(coming(22.0, 1.0), True),
-	].all(|(input, want)| Cat.is_in_danger(input) == want)
+	].all(|(input, want)| Cat.is_crossing(input) == want)
 
 ## How far through its crossing a cat is.
 progress_of : Animation.Approach -> F64
@@ -307,7 +309,7 @@ lift_at : F64 -> F64
 lift_at = |steps_left| phase_of(steps_left).spot.lift.to_metres()
 
 # It walks the first ten frames in even steps, and then stands in the middle of
-# the lane, and every frame is on the ground until it leaves it.
+# the road, and every frame is on the ground until it leaves it.
 expect
 	[
 		(37.5, 4.5),

@@ -1,10 +1,7 @@
-## A place across the road, in metres from the middle of the lane, growing to the
+## A place across the road, in metres from the middle of the road, growing to the
 ## right. A distance added to a place gives a place, and two places give the
 ## distance between them, but two places can't be added. A place across the road
 ## can't be passed as a place along it.
-##
-## Each operation does the plain float arithmetic its name says, so code
-## moved onto this type computes exactly what it did before.
 import Distance
 
 Across :: F64.{
@@ -15,19 +12,19 @@ Across :: F64.{
 	to_metres : Across -> F64
 	to_metres = |Across.(a)| a
 
-	## The middle of the lane.
+	## The middle of the road.
 	middle : Across
 	middle = Across.(0.0)
 
-	## The place `distance` to the right of the middle of the lane.
+	## The place `distance` to the right of the middle of the road.
 	right_of_middle : Distance -> Across
 	right_of_middle = |distance| Across.(distance.to_metres())
 
-	## The place `distance` to the left of the middle of the lane.
+	## The place `distance` to the left of the middle of the road.
 	left_of_middle : Distance -> Across
 	left_of_middle = |distance| Across.(0.0 - distance.to_metres())
 
-	## How far this place is from the middle of the lane, to either side.
+	## How far this place is from the middle of the road, to either side.
 	distance_from_middle : Across -> Distance
 	distance_from_middle = |Across.(a)| Distance.metres(a.abs())
 
@@ -44,7 +41,7 @@ Across :: F64.{
 	distance_from : Across, Across -> Distance
 	distance_from = |Across.(a), Across.(other)| Distance.metres(a - other)
 
-	## This place, its distance from the middle of the lane scaled by `factor`.
+	## This place, its distance from the middle of the road scaled by `factor`.
 	times : Across, F64 -> Across
 	times = |Across.(a), factor| Across.(a * factor)
 

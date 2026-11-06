@@ -73,7 +73,7 @@ truck_from = |view, { along, position }|
 	}
 
 ## The truck at `along` on the segment at `position` in the chain, in the
-## middle of the lane, if it is in front of the camera.
+## middle of the road, if it is in front of the camera.
 truck_on_segment : TruckSighting.Viewpoint,
 {
 	along : Along,

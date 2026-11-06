@@ -230,7 +230,7 @@ lean_shown_at = 3.0
 ## The road from behind, with the rider at `across`, leaning by `lean` radians.
 from_behind : { across : Across, lean : F64 } -> List(Shapes.Shape)
 from_behind = |{ across, lean }| {
-	lane = Scenery.road_half_width.to_metres() * pixels_a_metre
+	road = Scenery.road_half_width.to_metres() * pixels_a_metre
 	middle = ScrubWidget.canvas_width / 2.0
 	foot = middle + across.to_metres() * pixels_a_metre
 	head_x = foot + rider_height * (lean * lean_shown_at).sin()
@@ -245,9 +245,9 @@ from_behind = |{ across, lean }| {
 		],
 		[
 			Rect({
-				x: middle - lane,
+				x: middle - road,
 				y: surface_y,
-				w: 2.0 * lane,
+				w: 2.0 * road,
 				h: 8.0,
 				fill: ScrubWidget.flat(road_color),
 			}),
