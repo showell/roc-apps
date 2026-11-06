@@ -230,7 +230,7 @@ A `match` on a closed union has to cover it: leaving out a tag is a compile-time
 
 Here's where it's called, picking the color for a pair of small trees:
 
-{{code Trees.plant from "$conifer =" to "BigGreen => accent(scheme)"}}
+{{code Trees.plant from "match $conifer {" to "BigGreen => accent(scheme)"}}
 
 `SegmentIndex` is another small opaque type, a `U32` for a segment's place in the route. A place in the route can't be confused with a count of trees, because nothing outside can do arithmetic on it. `crash` appears here too. It isn't for error handling: an index that isn't in the world is a bug in Safari Ride, not a case to handle.
 
