@@ -3,9 +3,9 @@
 ## the cat frozen in the road, and shows that frame one layer at a time. The
 ## shapes are the game's own for that step, sorted into layers and painted in the
 ## game's order, because depth sorting interleaves the things beside the road.
-## Back and Next, or the arrow keys, take a layer off or put one on. The first line
-## of text counts the shapes so far against the frame's total, and the second names
-## the layer just added.
+## The address picks how many layers are on, and from there it's a still picture
+## with no controls. The first line of text counts the shapes so far against the
+## frame's total, and the second names the last layer on.
 import game.Backdrop
 import game.Chain
 import game.Clock
@@ -25,7 +25,6 @@ import game.ViewYaw
 import lib.Brush
 import lib.CanvasApp
 import lib.Input
-import lib.Mouse
 import lib.Shapes
 import widget.ScrubWidget
 import "page.html" as page_html : Str
@@ -33,14 +32,14 @@ import "page.html" as page_html : Str
 FrameWidgetApp :: [].{
 
 	## The whole state of the widget: how many of the layers are on, in the book's
-	## order, from one to all of them.
-	Model : { layers_on : U64 }
+	## order, from one to all of them, and whether that's still being settled.
+	Model : { layers_on : U64, opening : [Opening, Opened] }
 
 	canvas_app : CanvasApp.CanvasApp(FrameWidgetApp.Model)
 	canvas_app = {
 		size: { width: canvas_width, height: canvas_height },
 		fps: frames_a_second,
-		init: { layers_on: 1 },
+		init: { layers_on: 1, opening: Opening },
 		advance: |model, input, _seconds| next_model(model, input),
 		frame: frame_at,
 		sounds: |_model| 0,
@@ -49,7 +48,7 @@ FrameWidgetApp :: [].{
 	}
 }
 
-## The picture only changes on a click, and this is still quick to answer one.
+## The picture doesn't change once it's open, so a few frames a second will do.
 frames_a_second : I32
 frames_a_second = 15
 
@@ -231,93 +230,19 @@ panel = Rect({
 	fill: ScrubWidget.flat(0xdcecf5),
 })
 
-## A button's place on the canvas.
-Area : {
-	left : F64,
-	top : F64,
-	width : F64,
-	height : F64,
-}
-
-back_area : Area
-back_area = {
-	left: 680.0,
-	top: 618.0,
-	width: 120.0,
-	height: 64.0,
-}
-
-next_area : Area
-next_area = { ..back_area, left: 816.0 }
-
-is_inside : Area, { x : F64, y : F64 } -> Bool
-is_inside = |area, { x, y }|
-	x >= area.left
-		and x < area.left + area.width
-		and y >= area.top
-		and y < area.top + area.height
-
-button : Area, Str -> List(Shapes.Shape)
-button = |area, label|
-	[
-		Rect({
-			x: area.left,
-			y: area.top,
-			w: area.width,
-			h: area.height,
-			fill: ScrubWidget.flat(0x303030),
-		}),
-		Text({
-			text: label,
-			x: area.left + area.width / 2.0,
-			y: area.top + area.height / 2.0 + 8.0,
-			size: 24.0,
-			face: Prose,
-			align: Center,
-			color: Brush.opaque(0xf7f5f0),
-		}),
-	]
-
-## One layer on from `model`, round to the first after the last.
-one_layer_on : FrameWidgetApp.Model -> FrameWidgetApp.Model
-one_layer_on = |{ layers_on }|
-	if layers_on == layers.len() {
-		{ layers_on: 1 }
-	} else {
-		{ layers_on: layers_on + 1 }
-	}
-
-## One layer off from `model`, round to the last before the first.
-one_layer_off : FrameWidgetApp.Model -> FrameWidgetApp.Model
-one_layer_off = |{ layers_on }|
-	if layers_on == 1 {
-		{ layers_on: layers.len() }
-	} else {
-		{ layers_on: layers_on - 1 }
-	}
-
-## `model` after a click at `spot`, which does nothing off the buttons.
-after_click : FrameWidgetApp.Model, { x : F64, y : F64 } -> FrameWidgetApp.Model
-after_click = |model, spot|
-	if is_inside(next_area, spot) {
-		one_layer_on(model)
-	} else if is_inside(back_area, spot) {
-		one_layer_off(model)
-	} else {
-		model
-	}
-
+## An address that names a layer has the page press Right once for each layer
+## past the first, before the first frame. The first frame with no press settles
+## the picture, so a reader's arrow keys do nothing.
 next_model : FrameWidgetApp.Model, Input.Snapshot -> FrameWidgetApp.Model
 next_model = |model, input|
-	if input.key_pressed(KeyRight) {
-		one_layer_on(model)
-	} else if input.key_pressed(KeyLeft) {
-		one_layer_off(model)
-	} else if input.mouse.button_pressed(Left) {
-		position = input.mouse.position()
-		after_click(model, { x: position.x.to_f64(), y: position.y.to_f64() })
-	} else {
-		model
+	match model.opening {
+		Opened => model
+		Opening =>
+			if input.key_pressed(KeyRight) {
+				{ ..model, layers_on: model.layers_on + 1 }
+			} else {
+				{ ..model, opening: Opened }
+			}
 	}
 
 ## How the book names a layer: the word after `frame` in a ```widget fence.
@@ -355,7 +280,7 @@ layer_name = |layer|
 
 ## The two lines under the picture.
 status_lines : FrameWidgetApp.Model -> List(Str)
-status_lines = |{ layers_on }| {
+status_lines = |{ layers_on, .. }| {
 	on = layers_up_to(layers_on)
 	added = on.last() ?? crash "FrameWidgetApp.status_lines: a layer is always on"
 	so_far = ScrubWidget.count_text(ride_count(on))
@@ -386,8 +311,6 @@ frame_at = |model|
 		[plain_background],
 		picture(layers_up_to(model.layers_on)),
 		[View(Screen), panel],
-		button(back_area, "Back"),
-		button(next_area, "Next"),
 		status_lines(model).map_with_index(status_line),
 	].join()
 
@@ -447,102 +370,41 @@ expect {
 	page_html.contains("opensAt: [${Str.join_with(quoted_words, ", ")}],")
 }
 
-## A snapshot with the buttons in `held` down, those in `struck` pressed just now.
-pointer_at : {
-	x : F64,
-	y : F64,
-	held : U32,
-	struck : U32,
-} -> Input.Snapshot
-pointer_at = |{ x, y, held, struck }|
-	Input.none.with_mouse(Mouse.of(held, struck, x.to_f32_wrap(), y.to_f32_wrap(), 0.0))
-
-## `model` after a left click at `spot`.
-left_click : FrameWidgetApp.Model, { x : F64, y : F64 } -> FrameWidgetApp.Model
-left_click = |model, { x, y }|
-	next_model(
-		model,
-		pointer_at({
-			x,
-			y,
-			held: 1,
-			struck: 1,
-		}),
-	)
-
-middle_of : Area -> { x : F64, y : F64 }
-middle_of = |area| { x: area.left + area.width / 2.0, y: area.top + area.height / 2.0 }
-
 start : FrameWidgetApp.Model
 start = FrameWidgetApp.canvas_app.init
 
 all_on : FrameWidgetApp.Model
-all_on = { layers_on: layers.len() }
+all_on = { layers_on: layers.len(), opening: Opened }
 
-expect start == { layers_on: 1 }
+right_press : Input.Snapshot
+right_press = Input.none.with_key_pressed(KeyRight)
 
-# Next puts a layer on, Back takes one off, and each goes round at its end.
-expect left_click(start, middle_of(next_area)) == { layers_on: 2 }
-expect left_click({ layers_on: 2 }, middle_of(back_area)) == start
-expect left_click({ layers_on: 9 }, middle_of(next_area)) == all_on
-expect left_click(all_on, middle_of(next_area)) == start
-expect left_click(start, middle_of(back_area)) == all_on
+## The model once the page has pressed Right `count` times and a frame has gone
+## by.
+opened_after : U64 -> FrameWidgetApp.Model
+opened_after = |count| next_model(List.repeat(right_press, count).fold(start, next_model), Input.none)
 
-# The arrow keys do the same, and they're how a page opens partway.
-expect next_model(start, Input.none.with_key_pressed(KeyRight)) == { layers_on: 2 }
-expect next_model({ layers_on: 2 }, Input.none.with_key_pressed(KeyLeft)) == start
-expect next_model(all_on, Input.none.with_key_pressed(KeyRight)) == start
-expect next_model(start, Input.none.with_key_pressed(KeyLeft)) == all_on
-expect
-	List.repeat(Input.none.with_key_pressed(KeyRight), layers.len() - 1).fold(start, next_model)
-		== all_on
+# An address with no word opens on the trees alone, and the last word opens on
+# every layer.
+expect opened_after(0) == { layers_on: 1, opening: Opened }
+expect opened_after(5) == { layers_on: 6, opening: Opened }
+expect opened_after(layers.len() - 1) == all_on
 
-# A button ends where its area does.
-expect is_inside(next_area, { x: next_area.left, y: next_area.top })
-expect !is_inside(next_area, { x: next_area.left - 1.0, y: next_area.top })
-expect !is_inside(next_area, { x: next_area.left, y: next_area.top - 1.0 })
-expect !is_inside(next_area, { x: next_area.left + next_area.width, y: next_area.top })
-expect !is_inside(next_area, { x: next_area.left, y: next_area.top + next_area.height })
-expect is_inside(next_area, { x: next_area.left + next_area.width - 1.0, y: next_area.top })
-expect is_inside(next_area, { x: next_area.left, y: next_area.top + next_area.height - 1.0 })
+# Once it's open, the arrow keys change nothing.
+expect next_model(opened_after(0), right_press) == opened_after(0)
+expect next_model(all_on, Input.none.with_key_pressed(KeyLeft)) == all_on
 
-# Between the buttons and off them, a click does nothing.
-expect left_click(start, { x: 808.0, y: 650.0 }) == start
-expect left_click(start, { x: 300.0, y: 650.0 }) == start
-expect left_click(start, { x: 480.0, y: 300.0 }) == start
-
-# book_check.mjs clicks here, on Next. page_check.mjs presses here to learn whether
-# the pointer changes the picture, and a page where a finger scrolls has to answer no.
-expect left_click(start, { x: 873.6, y: 651.0 }) == { layers_on: 2 }
-expect left_click(start, { x: 192.0, y: 280.0 }) == start
-
-# Only a press of the left button is a click: not one held from before, not
-# the right button, and not nothing at all.
-expect {
-	spot = middle_of(next_area)
-	held = pointer_at({
-		x: spot.x,
-		y: spot.y,
-		held: 1,
-		struck: 0,
-	})
-	right = pointer_at({
-		x: spot.x,
-		y: spot.y,
-		held: 2,
-		struck: 2,
-	})
-	[held, right, Input.none].all(|input| next_model(start, input) == start)
-}
+# A press of any other key during the opening doesn't count as a layer.
+expect next_model(start, Input.none.with_key_pressed(KeyLeft)) == opened_after(0)
 
 expect
 	status_lines(start)
 		== ["Shapes so far: 1,656 of 2,713", "Added: Trees"]
 expect
-	status_lines({ layers_on: 3 })
+	status_lines(opened_after(2))
 		== ["Shapes so far: 1,656 of 2,713", "Added: The sun, out of view here"]
 expect
-	status_lines({ layers_on: 6 })
+	status_lines(opened_after(5))
 		== ["Shapes so far: 1,809 of 2,713", "Added: The road and pond"]
 expect
 	status_lines(all_on)

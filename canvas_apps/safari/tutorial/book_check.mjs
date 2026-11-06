@@ -183,14 +183,13 @@ const PLAY = { x: 0.384, y: 0.65 };
 const STILL = "still";
 
 // Where a widget wants its click, as shares of the frame: the buttons, rehearsal's
-// third mark, the first bird among the stills, and the frame's Next button, which
-// goes round from the last layer to the first.
+// third mark, and the first bird among the stills.
 const CLICKED_AT = {
   "../beacon_widget/": PLAY,
   "../bends_widget/": STILL,
   "../bird_widget/": PLAY,
   "../cat_widget/": PLAY,
-  "../frame_widget/": { x: 0.91, y: 0.93 },
+  "../frame_widget/": STILL,
   "../gaze_widget/": PLAY,
   "../rehearsal_widget/": { x: 0.12, y: 0.644 },
   "../route_widget/": STILL,

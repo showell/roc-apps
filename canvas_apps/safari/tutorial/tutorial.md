@@ -417,7 +417,7 @@ That's one tree. There are 392 more to go.
 Here's the other tree problem. Safari Ride plants 392 trees along its road, and most of them are out of sight at any moment. How a tree looks plays no part in this chapter.
 
 ```widget frame trees
-Step 1,570 of the ride, with only the trees on. Next adds the layers that come after.
+Step 1,570 of the ride, with only the trees on.
 ```
 
 This is step 1,570, with the cat frozen in the lane. Each tree here is a sighting from `TreeSighting.in_view`, painted by `TreeDraw.draw`. They make up 1,656 of the 2,713 shapes in that frame, more than everything else put together.
