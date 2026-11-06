@@ -461,7 +461,8 @@ Roc's own rules are in the langref's
 - declare: `X := T.{ ... }` (nominal) or `X :: T.{ ... }` (opaque);
 - wrap: `X.(v)`. Plain `X(v)` parses as a tag;
 - unwrap: the pattern `|X.(v)| v`;
-- compare: `==` needs an `is_eq` on the type; `is_eq : _` derives it.
+- compare: `==` needs an `is_eq` on the type; `is_eq : _` derives it;
+- a one-field record: `{ gap: gap }`. `{ gap }` is a block that gives `gap`.
 
 ## Text and bytes
 

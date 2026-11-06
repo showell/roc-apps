@@ -50,9 +50,9 @@
 -- to gates/proof.expected. A change that rightly alters the picture changes
 -- that file with it, and the commit says why.
 -- A depth is there for what its frame shows: at 100 a Roc bird is in flight,
--- at 1570 a cat is frozen in the lane, at 1586 it is in mid-leap, at 3742 a
+-- at 1570 a cat is frozen in the road, at 1590 it is in mid-leap, at 3742 a
 -- distant truck's glow is too small to draw, at 5700 the truck is ahead at
--- dusk with its lights on, and at 6520 it is braking in plain view with its
+-- dusk with its lights on, and at 6553 it is braking in plain view with its
 -- brake lights on.
 --
 -- `part=page` runs canvas_apps/build.sh for safari's dev page, into a scratch
@@ -153,9 +153,9 @@ const TUTORIAL = "canvas_apps/safari/tutorial/build.shale"
 const EXPECT_ROOTS = {"gates/CrossModuleExpects.roc", "web.roc", "../lib/main.roc"}
 const SAFARI_SOURCES = {":(glob)canvas_apps/safari/*.roc", ":(glob)canvas_apps/safari/gates/*.roc", ":(glob)canvas_apps/lib/*.roc"}
 const WIDGET_SOURCES = {":(glob)canvas_apps/*_widget/*.roc", ":(glob)canvas_apps/widget_kit/*.roc"}
-const DEPTHS = {"0", "100", "1570", "1586", "3000", "3742", "5700", "6520", "9000"}
+const DEPTHS = {"0", "100", "1570", "1590", "3000", "3742", "5700", "6553", "9000"}
 const CACHE_CEILING_MB = 4000
-const CPU_BUDGET_MS = {lints = 25000, expects = 30000, widgets = 40000, tutorial = 5000, proof = 60000, page = 25000}
+const CPU_BUDGET_MS = {lints = 25000, expects = 30000, widgets = 46000, tutorial = 5000, proof = 60000, page = 25000}
 const COLD = arg("cold", "") == "1"
 const RELEASE = arg("release", "") == "1"
 

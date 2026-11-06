@@ -44,7 +44,7 @@ import lib.Shapes
 
 main! = |_args| Ok({})
 
-## The rider at the start of a segment, in the middle of the lane, looking
+## The rider at the start of a segment, in the middle of the road, looking
 ## straight down it.
 origin : Geom.Vantage
 origin = {
@@ -318,10 +318,8 @@ first_cat = |along|
 expect seen.len() == 1
 expect cat_at(0).len() == 0
 expect cat_at(2).len() == 0
-expect CatSighting.max_visible_cats == 8
-expect first_cat(300.0).height.to_metres() == 1.7
-expect first_cat(300.0).lift.to_f64() == 0.0
-expect Cat.pose_index(first_cat(300.0).pose) == 0
+expect first_cat(300.0).lift.to_metres() == 0.0
+expect first_cat(300.0).pose == Rest
 expect
 	[
 		(first_cat(300.0).forward.minus(first_cat(200.0).forward).to_metres(), -100.0),
@@ -339,6 +337,47 @@ expect cats_on_chain([World.SegmentIndex.first]).len() == 0
 # One cat in view gives one key, which names the first cat; none gives none.
 expect CatSighting.depth_keys(seen).map(|key| key.subject) == [Cat(0)]
 expect CatSighting.depth_keys([]).len() == 0
+
+# The sighting looks along the whole chain, and the reaction only at the rider's
+# own segment. They agree because a crossing starts on its own segment: even at
+# top speed it starts closer to the cat than the cat is to the segment's start,
+# and a rider comes onto a segment no further along than that.
+## The cats of the route, each with its segment.
+route_cats : List({ segment : World.Segment, crossing : Cat.Crossing })
+route_cats = World.segments.join_map(
+	|segment|
+		match segment.crossing {
+			CatCrosses(crossing) => [{ segment, crossing }]
+			BirdHere(_) | QuietRoad => []
+		},
+)
+
+## How far short of a cat a crossing starts, at the fastest a rider goes.
+farthest_start : Distance
+farthest_start = Cat.clear_gap.plus(VehicleLimits.top_speed.distance_in(Cat.crossing_steps))
+
+expect route_cats.len() == 3
+expect farthest_start.to_metres() == 98.0
+expect farthest_start < Cat.cat_along.plus(Cat.cat_beyond_tree).from_start()
+expect route_cats.all(|{ crossing, .. }| farthest_start < crossing.along.from_start())
+
+## The speed a rider leaves `segment` at: the bend's, or none at the route's end.
+leaving_speed : World.Segment -> Speed
+leaving_speed = |segment|
+	match segment.ending {
+		Continues(_) => VehicleLimits.turn_speed(segment.exit_turn.abs())
+		Terminates => Speed.at_rest
+	}
+
+# The reaction ends with its segment, so the cat's hold has to have faded by then
+# or it would snap to nothing there. Braking for the bend only hurries the fade.
+expect
+	route_cats.all(
+		|{ segment, crossing }| {
+			gap = crossing.along.distance_from(Along.at(segment.length))
+			Cat.attention({ gap, speed: leaving_speed(segment) }).to_f64() == 0.0
+		},
+	)
 
 # CutoutSighting: how far along the chain each kind of critter is sighted.
 ## The first six segments, chained in order.
@@ -487,7 +526,6 @@ expect scene.rails.len() > 0
 expect scene.order.len() > 0
 expect scene.towers.len().to_i64_wrap() <= TowerSighting.max_visible_towers
 expect scene.cutouts.len().to_i64_wrap() <= CutoutSighting.max_visible_cutouts
-expect scene.cats.len().to_i64_wrap() <= CatSighting.max_visible_cats
 
 ## Whether no key in `keys` is farther than the one before it.
 is_far_to_near : List(DepthSort.DepthKey) -> Bool

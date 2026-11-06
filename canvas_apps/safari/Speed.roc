@@ -2,12 +2,9 @@
 ## of the ride; the rider and the truck each hold one. An `Acceleration` is
 ## a type of its own, so no speed can be mistaken for one: `accelerated_by`
 ## takes one, and `acceleration_to` and `change_from` give one.
-##
-## Each operation does the plain float arithmetic its name says, so code
-## moved onto this type computes exactly what it did before.
 import Acceleration
-import Beats
 import Distance
+import Steps
 
 Speed :: F64.{
 
@@ -20,6 +17,10 @@ Speed :: F64.{
 	## Standing still.
 	at_rest : Speed
 	at_rest = Speed.(0.0)
+
+	## Anything this slow counts as standing still.
+	standstill : Speed
+	standstill = Speed.(0.000001)
 
 	## This speed after `acceleration`, the change over one step.
 	accelerated_by : Speed, Acceleration -> Speed
@@ -38,13 +39,9 @@ Speed :: F64.{
 	times : Speed, F64 -> Speed
 	times = |Speed.(s), factor| Speed.(s * factor)
 
-	## How far this speed covers in `length`, at a beat a step.
-	distance_in : Speed, Beats -> Distance
+	## How far this speed covers in `length`.
+	distance_in : Speed, Steps -> Distance
 	distance_in = |Speed.(s), length| Distance.metres(s * length.to_f64())
-
-	## How many beats this speed takes to cover `distance`, at a beat a step.
-	beats_to_cover : Speed, Distance -> Beats
-	beats_to_cover = |Speed.(s), distance| Beats.of(distance.to_metres() / s)
 
 	## How far this speed covers in one step.
 	step_length : Speed -> Distance
@@ -70,8 +67,6 @@ Speed :: F64.{
 	is_eq : _
 }
 
-expect Speed.metres_a_step(2.0).distance_in(Beats.of(38.0)).to_metres() == 76.0
-expect Speed.at_rest.distance_in(Beats.of(38.0)).to_metres() == 0.0
-expect Speed.metres_a_step(2.0).beats_to_cover(Distance.metres(5.0)).to_f64() == 2.5
-expect Speed.metres_a_step(0.5).beats_to_cover(Distance.metres(5.0)).to_f64() == 10.0
+expect Speed.metres_a_step(2.0).distance_in(Steps.of(38)).to_metres() == 76.0
+expect Speed.at_rest.distance_in(Steps.of(38)).to_metres() == 0.0
 expect Speed.metres_a_step(0.5).step_length().to_metres() == 0.5

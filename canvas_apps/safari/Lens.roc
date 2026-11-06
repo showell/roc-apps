@@ -24,7 +24,7 @@ Lens :: [].{
 	min_focal_factor = Fraction.of(0.35)
 
 	## How much of the resting focal length is left at an attention of 1. It is
-	## no minimum, because a cat in the lane holds the eye harder than that.
+	## no minimum, because a cat in the road holds the eye harder than that.
 	focal_factor_at_full_attention : Fraction
 	focal_factor_at_full_attention = Fraction.of(0.61)
 

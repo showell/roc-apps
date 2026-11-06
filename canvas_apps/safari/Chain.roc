@@ -147,7 +147,7 @@ Chain :: [].{
 		}
 }
 
-## A road point, measured from the lane's left edge.
+## A road point, measured from the road's left edge.
 edge_point : Geom.RoadPoint -> Geom.EdgePoint
 edge_point = |{ along, across }| { along, from_left: across.distance_from(Scenery.left_edge) }
 

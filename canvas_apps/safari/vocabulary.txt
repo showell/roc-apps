@@ -1,4 +1,5 @@
 lean: tilt
+road: lane
 tower: mast
 tour: drive, journey
 step: tick

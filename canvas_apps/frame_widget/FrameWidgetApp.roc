@@ -1,6 +1,6 @@
 ## The widget for the first half of the Safari tutorial, which walks through one
 ## page of the flipbook a chapter at a time. It holds step 1,570 of the ride, with
-## the cat frozen in the lane, and shows that frame one layer at a time. The
+## the cat frozen in the road, and shows that frame one layer at a time. The
 ## shapes are the game's own for that step, sorted into layers and painted in the
 ## game's order, because depth sorting interleaves the things beside the road.
 ## Back and Next, or the arrow keys, take a layer off or put one on. The first line

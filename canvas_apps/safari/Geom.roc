@@ -2,7 +2,7 @@
 ##
 ## The road is a line of straight segments, and a point on it is measured
 ## within one segment: metres along it from its start, and metres across it
-## from the middle of the lane. A point in the rider's view is measured from
+## from the middle of the road. A point in the rider's view is measured from
 ## the rider: metres to the right, metres forward, and metres up where height
 ## matters. This module carries a point round a bend into the segment before
 ## or after it, turns it into the rider's view, and cuts a polygon at the near
@@ -32,13 +32,13 @@ Geom :: [].{
 	## A point on one segment of the road.
 	RoadPoint : { along : Along, across : Across }
 
-	## A point on one segment of the road, measured from the lane's left edge.
-	## A bend turns about a corner of the lane, so its arithmetic works from
+	## A point on one segment of the road, measured from the road's left edge.
+	## A bend turns about a corner of the road, so its arithmetic works from
 	## that edge.
 	EdgePoint : { along : Along, from_left : Distance }
 
 	## Where the camera stands on the current segment, and which way it faces.
-	## The middle of the lane is `half_width` from its left edge.
+	## The middle of the road is `half_width` from its left edge.
 	Vantage : {
 		along : Along,
 		across : Across,
@@ -47,7 +47,7 @@ Geom :: [].{
 	}
 
 	## The bend from one segment into the next: the length of the segment
-	## before it, the turn it makes, positive to the right, and the lane's
+	## before it, the turn it makes, positive to the right, and the road's
 	## width.
 	Bend : {
 		segment_length : Distance,
@@ -119,7 +119,7 @@ Geom :: [].{
 		{ along: centred.along, from_left: centred.across.distance_from(left_edge) }
 	}
 
-	## `in_segment_after` for a point measured from the middle of the lane, as
+	## `in_segment_after` for a point measured from the middle of the road, as
 	## the rider is.
 	centred_point_after : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
 	centred_point_after = |point, bend| {
@@ -362,7 +362,7 @@ expect {
 	)
 }
 
-## A bend of `degrees` out of a 300 metre segment of a 4 metre lane.
+## A bend of `degrees` out of a 300 metre segment of a 4 metre road.
 bend_of : F64 -> Geom.Bend
 bend_of = |degrees| {
 	segment_length: Distance.metres(300.0),
@@ -383,7 +383,7 @@ expect
 		},
 	)
 
-# Measured from the lane's middle, the same point lands the same place.
+# Measured from the road's middle, the same point lands the same place.
 expect
 	[50.0, -70.0].all(
 		|degrees| {

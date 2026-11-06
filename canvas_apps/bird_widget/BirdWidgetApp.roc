@@ -89,7 +89,7 @@ picture : Distance -> List(Shapes.Shape)
 picture = |gap|
 	ScrubWidget.ride_picture(
 		[
-			lane,
+			road,
 			tree_shapes(flight.to),
 			tree_shapes(flight.from),
 			bird_shapes(gap),
@@ -97,11 +97,11 @@ picture = |gap|
 		{ clock: Clock.start, sun: OutOfView },
 	)
 
-## The lane, running up the picture from under the eye.
-lane : List(Shapes.Shape)
-lane = {
+## The road, running up the picture from under the eye.
+road : List(Shapes.Shape)
+road = {
 	half = Scenery.road_width.divided_by(2.0)
-	lane_start = Distance.metres(1.0)
+	road_start = Distance.metres(1.0)
 	on_ground = |right, forward|
 		Camera.project(
 			{
@@ -114,8 +114,8 @@ lane = {
 	Paint.polygon(
 		0x8a8a8a,
 		[
-			on_ground(half.opposite(), lane_start),
-			on_ground(half, lane_start),
+			on_ground(half.opposite(), road_start),
+			on_ground(half, road_start),
 			on_ground(half, road_end_forward),
 			on_ground(half.opposite(), road_end_forward),
 		],
@@ -139,7 +139,7 @@ tree_shapes = |tree|
 ## The bird as `gap` finds it, drawn by Safari's own stills.
 bird_shapes : Distance -> List(Shapes.Shape)
 bird_shapes = |gap| {
-	instant = BirdFlight.instant_at(flight, gap)
+	instant = BirdFlight.instant_at(flight, { gap: gap })
 	BirdDraw.draw(
 		{
 			right: Distance.metres(instant.spot.across.to_metres()),
@@ -154,9 +154,9 @@ bird_shapes = |gap| {
 ## What BirdFlight says at `gap`, a line each.
 status_lines : Distance -> List(Str)
 status_lines = |gap| {
-	instant = BirdFlight.instant_at(flight, gap)
+	instant = BirdFlight.instant_at(flight, { gap: gap })
 	[
-		ScrubWidget.stage_text(BirdFlight.flight_stage(gap)),
+		ScrubWidget.stage_text(BirdFlight.flight_stage({ gap: gap })),
 		"Pose: ${pose_name(instant.pose)}",
 		"Gap: ${ScrubWidget.tenths_text(gap.to_metres())} m",
 		"Height: ${ScrubWidget.tenths_text(instant.spot.lift.to_metres())} m",
@@ -208,7 +208,7 @@ expect
 	status_lines(Distance.metres(30.0))
 		== [
 			"Playing: 66%",
-			"Pose: Flying away, wings down",
+			"Pose: Flying away, wings up",
 			"Gap: 30.0 m",
 			"Height: 9.7 m",
 		]
@@ -226,7 +226,24 @@ expect pose_name(Side(WingsDown)) == "Side on, wings down"
 expect pose_name(Away(WingsUp)) == "Flying away, wings up"
 expect pose_name(Diving) == "Diving"
 
-expect BirdFlight.instant_at(flight, Distance.metres(16.0)).pose == Diving
+expect BirdFlight.instant_at(flight, { gap: Distance.metres(16.0) }).pose == Diving
+
+## How far along the bird is with the rider at each step of the buttons through
+## the flight.
+alongs_through_flight : List(Along)
+alongs_through_flight = {
+	gaps = List.from_iter(U64.until(1, BirdFlight.flight_poses.len())).map(
+		|step| BirdFlight.takeoff_gap.minus(Distance.metres(step.to_f64() / 8.0)),
+	)
+	gaps.map(|gap| BirdFlight.instant_at(flight, { gap: gap }).spot.along)
+}
+
+# Every step of the buttons shows a frame of its own, so the bird never stalls
+# or jumps however slowly the flight is played.
+expect alongs_through_flight.len() == 359
+expect
+	alongs_through_flight.map2(alongs_through_flight.drop_first(1), |before, after| before < after)
+		.all(|is_on_the_way| is_on_the_way)
 
 # The picture depends on the gap, and it doesn't change once the bird is down.
 expect picture(Distance.metres(30.0)) != picture(Distance.metres(31.0))

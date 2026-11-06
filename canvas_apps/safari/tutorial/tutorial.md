@@ -159,9 +159,8 @@ At step 1,570 of the ride, a cat is frozen in the lane. This is what `CatSightin
 
 | Field | Value |
 |---|---|
-| `right` | 0.75 metres |
-| `forward` | 25.39 metres |
-| `height` | 1.7 metres |
+| `right` | 0.32 metres |
+| `forward` | 30.42 metres |
 | `pose` | `Frozen` |
 | `lift` | 0 |
 
@@ -244,62 +243,196 @@ The `expect` under it, in the module above, runs that over all six ducks. One li
 
 Nothing in this chapter moves, and that's true of the next few chapters too, as we go through what's on one page of the flipbook. Nature comes first, starting with the trees.
 
-## Trees
+## A simple tree
 
-Trees are the easiest thing to put in a frame, so we'll use them to see how anything gets there. It takes three stages. The world plants a tree once. Each frame, a sighting asks whether the rider can see it. Then the drawing paints it.
+Let's draw a tree. Forget the road for now, and the rider, and the ride.
+
+Drawing a tree and placing trees along a road are two nearly unrelated problems. In this chapter and the next, we learn how to draw a tree. In the chapter after that, we learn how to orient trees in the world, relative to the road and the rider.
+
+The concept is small. A tree is a trunk under eight tiers of foliage, and a tier is a flat triangle. Safari Ride's first trees were cruder than that, and every tree a long way off is still drawn this way.
 
 New in this chapter:
 
-- Roc: a function that calls itself, `|` in a `match` branch
-- Modules: `Scenery`, `Conifer`, `Distance`, `Along`, `Across`, `TreeSighting`, `TreeDraw`
+- Modules: `Conifer`, `TreeDraw`, `Distance`
 
-### Planting a tree
+### Get the types right
 
-A tree is a plain record:
+There are only four kinds of tree, and the kind decides how tall it is. That's a whole module:
 
-{{code Trees.Tree}}
+{{module Conifer}}
 
-`along` says how far along its segment a tree stands, and `across` says how far it is from the middle of the road. `height` is a `Distance`, a length in metres. All three are opaque types, like `Clock`. A place along the road can't be passed as a place across it, and neither can be passed as a plain length.
+`Distance` is a length in metres, and it's opaque like `Clock`. A tree doesn't store its height, because a stored copy could disagree with its kind.
 
-Trees stand in pairs, one each side of the road, every 30 metres. The pairs take turns, big and small. A big pair is green, and a small pair takes the accent color we saw in the last chapter. Gold and red trees are much taller than green ones:
+Four more types carry a tree to the screen:
 
-{{code Conifer.height}}
+| Type | What it is |
+|---|---|
+| `TreeDraw.TreeAhead(others)` | Any record with a `right`, a `forward` and a `conifer`, and `others` stands for whatever else is in it |
+| `Geom.RaisedPoint` | A point measured from the camera: right, forward and up |
+| `TreeDraw.Tier` | One layer of the crown, as fractions of the crown |
+| `TreeDraw.TreeOnScreen` | Where a tree landed, and how big it looks, in `Pixels` |
 
-A gold tree also stands further from the road. `Green | Red` is one branch for two tags:
+So the job is a short chain of signatures:
 
-{{code Trees.distance_from_middle}}
+| Job | Function | Its type |
+|---|---|---|
+{{types row Conifer.height Know how tall it is}}
+{{types row TreeDraw.on_screen Find it on the screen}}
+{{types row TreeDraw.draw Paint it}}
 
-Planting a segment starts at the first place a tree can go:
+### The functions
 
-{{code Trees.plant}}
-
-Each turn of the loop plants one pair, then moves on to the next place and the next kind. It stops 85 metres short of the segment's end.
-
-That all happens once, when the world is built. No frame ever plants a tree.
-
-### Seeing a tree
-
-From here on, things are measured from the rider. We don't need to know much about the rider yet. It's just where we're standing. A `Geom.RiderPoint` says how far right something is and how far ahead.
-
-{{code TreeSighting.sighting_of}}
-
-`Chain.rider_point_ahead` finds where a point on the road lies from the rider, and the math layer chapter shows how. After that, there are two ways to lose a tree. It can be behind the camera, or it can be so far off that it's too short to bother with. The line for `height_px` is perspective: a tree twice as far away looks half as tall.
-
-The answer is a list of one, or an empty list. `TreeSighting.in_view` asks that about every tree on the road ahead, and joins the answers.
-
-### Drawing a tree
-
-A conifer is a trunk under eight tiers of foliage. Each tier is one record. Its numbers are `Fraction`s, ratios from 0 to 1, and the sky chapter has more to say about those.
-
-{{code TreeDraw.Tier}}
-
-Drawing a tree means working out where it lands on screen, then painting the trunk and each tier:
+The top of it is `draw`. It picks a crown, and hands the rest to `draw_crowned`, which reads like the concept: find the tree on the screen, then paint a trunk and eight tiers.
 
 {{code TreeDraw.draw}}
 
-A far tree's tiers are flat triangles. A near tree's are cones, so a tree fattens as the rider passes under it. From far off, a triangle looks just like a cone, and it's cheaper.
+{{code TreeDraw.draw_crowned}}
 
-That's the shape of most things in a frame: a plain record, a sighting and a drawing. The next thing in nature needs none of that.
+`nearer_trees` and `crown` are for near trees, and they can wait. For now, every tier is a triangle.
+
+`on_screen` makes two calls to `Camera.project`, one for the tree's foot and one for its tip. The difference between them is how tall the tree looks.
+
+{{code TreeDraw.on_screen}}
+
+The trunk and the crown split the tree's height between them:
+
+{{code TreeDraw.trunk_height_share}}
+
+{{code TreeDraw.crown_height_share}}
+
+The crown's share is the trunk's `complement`, so the two add up to 1 by construction. They used to be two separate numbers, and they added up to 1.088. Nothing failed. A bird just perched a metre below the tip of a gold tree, inside the foliage, and nobody noticed until this book had to say how tall a tree is.
+
+### Triangles
+
+Each tier is a line in a table:
+
+{{code TreeDraw.Tier}}
+
+`tiers` is a list of eight of these, and each overlaps the next. A tier is one triangle, worked out in pixels:
+
+{{code TreeDraw.tier_triangle}}
+
+That's a tree, and from a distance nobody can tell it's flat. Ride close to one, though, and it looks like cardboard.
+
+## A conifer
+
+A near tree needs to look round, and it has to fatten as you ride past it. So Safari Ride draws two kinds of crown: flat triangles far off, and 3-D cones up close.
+
+New in this chapter:
+
+- Roc: a payload that exists only where it means something, a guard, a list pattern that takes from the end
+- Modules: `Detail`
+
+### Get the types right
+
+The whole decision is one type:
+
+{{code TreeDraw.Crown}}
+
+A cone carries a `shade`, and a triangle doesn't. Triangles are never shaded, so a triangle has nowhere to put a shade by mistake. This function answers with that type:
+
+{{code TreeDraw.crown_of}}
+
+`Detail` holds the distances that decide how much of a thing gets drawn, and `cone_reach` is 200 metres.
+
+```widget tree
+Bring one tree up to the camera, and switch its crown between flat triangles and cones to see where the difference starts to show.
+```
+
+### The functions
+
+`draw_tier` acts on that decision:
+
+{{code TreeDraw.draw_tier}}
+
+The first branch is the one surprise. A camera can't see a cone from inside, so a tier that's too close falls back to the flat triangle. The `if` after the pattern is a guard, and it adds a condition to a branch.
+
+Safari Ride has no 3-D models, so a cone is something we work out. We leave pixels behind for a moment and work in metres. `base_height` and `apex_height` are how high the tier's bottom and top stand, measured up the trunk and then down the crown. We take a ring of 16 points around the base and one point at the top, and we project them all onto the screen:
+
+{{code TreeDraw.tier_cone}}
+
+What's left is a handful of dots on the screen, and a cone's outline is whatever wraps around them. That's a convex hull:
+
+{{code TreeDraw.convex_hull}}
+
+This is Andrew's monotone chain. Sort the points from left to right, walk along the top, and walk back along the bottom. One step does both walks: add a point, and first drop any recent point that would make a dent. `[.., a, b]` is a list pattern that takes the last two items.
+
+{{code TreeDraw.trim_hull}}
+
+That's a cone with no 3-D anywhere! The ring gets wider on the screen as it gets nearer, so the tree fattens by itself. It's just perspective.
+
+That's one tree. There are 392 more to go.
+
+## Roadside trees
+
+Here's the other tree problem. Safari Ride plants 392 trees along its road, and most of them are out of sight at any moment. How a tree looks plays no part in this chapter.
+
+```widget frame trees
+Step 1,570 of the ride, with only the trees on. Next adds the layers that come after.
+```
+
+This is step 1,570, with the cat frozen in the lane. Each tree here is a sighting from `TreeSighting.in_view`, painted by `TreeDraw.draw`. They make up 1,656 of the 2,713 shapes in that frame, more than everything else put together.
+
+So a tree has two lives. It's planted once, and that lasts the whole ride. It's seen again every frame, and that lasts one frame. This chapter takes them in that order.
+
+New in this chapter:
+
+- Roc: `var` and `while` in a pure function
+- Modules: `Trees`, `TreeSighting`, `Scenery`, `Along`, `Across`
+
+### Get the types right
+
+Those two lives are two records, and each says where the tree stands in a different way:
+
+| Type | Where the tree is | Lasts |
+|---|---|---|
+| `Trees.Tree` | `along` and `across` its segment | The whole ride |
+| `TreeSighting` | `right` of the rider and `forward` of the rider | One frame |
+
+`Along` is a place along a segment, and `Across` is a place across the road. Both are opaque, and by now you can guess what the compiler says if you pass one as the other. Reading any function, the field names tell you which world you're in.
+
+A `TreeSighting` also fits `TreeDraw.TreeAhead`, so `TreeDraw` doesn't import it. The problems really are separate.
+
+| Job | Function | Its type |
+|---|---|---|
+{{types row Trees.plant Plant a segment, once}}
+{{types row TreeSighting.in_view Find the trees in view, each frame}}
+
+### Planting
+
+Planting walks along a segment and keeps a list, and a loop says that best. `$` marks the names that change. The function still has a `->`, because nothing outside it can see them change.
+
+{{code Trees.plant}}
+
+Trees stand in pairs, one each side of the road, every 30 metres. The pairs take turns: a big green pair, then the segment's accent, then big green again. A gold pair stands further from the road, because it's so much taller:
+
+{{code Trees.distance_from_middle}}
+
+### Seeing the trees
+
+Each frame starts with the road ahead, and asks about every tree on it:
+
+{{code TreeSighting.in_view}}
+
+{{code TreeSighting.segment_sightings}}
+
+From here on, things are measured from the rider. We don't need to know much about the rider yet. It's just where we're standing.
+
+{{code TreeSighting.sighting_of}}
+
+`Chain.rider_point_ahead` finds where a point on the road lies from the rider, and the math layer chapter shows how. After that, there are two ways to lose a tree. It can be behind the camera, or it can be under 2 pixels tall. The answer is a list of one, or an empty list, and `join_map` flattens them, so a "no" simply disappears.
+
+### Spending the detail
+
+Most of that 1,656 is far off, and far trees are cheap. They get eight triangles and a plain trunk. A cone costs a ring of 16 points and a hull, so only trees within 200 metres get cones, and only the nearest few get a shaded trunk.
+
+"The nearest few" is the one thing a tree can't work out by itself, because it depends on the other trees. So `SceneDraw` counts them, and that's the `nearer_trees` from A simple tree:
+
+{{code SceneDraw.draw_tree}}
+
+So the world remembers where it planted each tree, and no frame remembers anything. Every sighting is thrown away, and the next frame makes them all again.
+
+Most things in a frame work this way: a plain record that lasts, a sighting that doesn't, and a drawing. The next thing in nature needs none of that.
 
 ## Grass
 
@@ -1387,7 +1520,7 @@ Here are the truck's lights at three frames of the ride:
 |---|---|---|
 | 3,742 | `Off` | `On` |
 | 5,700 | `On` | `Off` |
-| 6,520 | `On` | `On` |
+| 6,553 | `On` | `On` |
 
 The modules behind the headlights
 ```dot
@@ -1564,29 +1697,19 @@ digraph tracks {
 
 A timeline is data, so the cat's whole performance reads in one place. This is the part of `crossing_timeline` that says how the cat looks:
 
-{{code Cat.crossing_timeline from "looks:" to "finally: Holds(Collapse),"}}
-
 The words are tags. `Through` and `Before` say where a stretch ends, and `Holds` and `Alternates` say how the cat looks. The poses are a closed tag union, so a `match` that misses one is a compile-time error.
 
 {{code Cat.Pose}}
 
 A timeline is divided into stretches, and a cut is where one stretch ends and the next begins. A cut has to say which stretch its own beat belongs to, and two tags say that better than a boolean would. `crossing_timeline`'s comment says why it matters: the beats of the leap add up to a float just under the beat they stand for.
 
-{{code Animation.Cut}}
-
 There are two tracks because a cat's looks and its movement change at different instants. Its body moves just ahead of its path, so the `looks` track above cuts at 0.8, 2.8 and 3.8 beats into the escape, while the `path` track cuts at 1 and 3. One list of phases tying them together wouldn't fit the cat or the bird.
 
 The `path` track needs three places on the road. `spot_across` makes one, as a single record. It sits below `Cat`'s block, so it's private. `Along.start`, the first place on a segment, is a value and not a call, so this function calls nothing of Safari Ride's.
 
-{{code Cat.spot_across}}
-
 `crossing_timeline` calls it three times before the timeline starts:
 
-{{code Cat.crossing_timeline from "## The whole of a crossing" to "end = spot_across"}}
-
 Here's the `path` track:
-
-{{code Cat.crossing_timeline from "path:" to "finally: StaysAt(end),"}}
 
 `Timeline` is nominal, the middle ground: unlike an alias it can carry methods, and unlike an opaque type anyone can build one, which is right for data that needs no guarding. `Timeline(pose, lift)` takes two type parameters, which is how a cat and a bird share it. A cat fills the first with its own poses and the second with `CatHeights`, because a cat's lift off the ground is measured in its own height.
 
@@ -1599,19 +1722,11 @@ A timeline is data, so something has to play it. This section shows how, and it'
 The code that plays a timeline is in `Animation`, and we'll start at an operator. `Beat.is_lte` opens two `Beat`s and compares the floats inside.
 
 
-{{code Beat.is_lte}}
-
 `is_short_of` is one `match`, and it looks like a leaf. It isn't, because `<=` on two `Beat`s is a call to `is_lte`, and `<` is a call to `is_lt`. An operator on an opaque type runs code of Safari Ride's own.
-
-{{code Animation.is_short_of}}
 
 Finding the stretch that's playing shows one more Roc idea. In `playing_at`, `var $from` is a local variable that a `for` loop reassigns, inside a pure function. Roc allows that because nothing outside can see it: `playing_at` still has a `->` arrow, and the `$` marks what changes. An early `return` ends the loop.
 
-{{code Animation.playing_at}}
-
 `Timeline.at_beat` calls it once for each track, which is what lets the two tracks cut wherever they like. `Animation.Timeline.(timeline)` in a parameter list opens the nominal type, the way `Clock.(n)` opens an opaque one. `pose_of` and `path_spot` turn what's playing into a pose and a spot, and the bird chapter reads `path_spot`.
-
-{{code Animation.Timeline from "## The critter at `beat`" to "path_spot(path.plays, fraction)"}}
 
 `Timeline.instant` is the one place that knows about stages. Its `match` covers all three tags, and `portion` turns a `Fraction` of the way through into a beat. It answers with an `Instant`, the cat at that point:
 
@@ -1750,25 +1865,15 @@ digraph flight_score {
 
 `BirdFlight` sets the length of a flight to one beat, so that a cut on the timeline is simply a share of the flight:
 
-{{code BirdFlight.flight_beats}}
-
 The bird needs one small helper. It sits below the block, so it's private, and it builds an `Alternates` from two poses. `Animation.Looks(BirdFlight.Pose)` is `Looks(pose)` with the type parameter filled in, which is how the cat's timeline type came to fit a bird:
 
-{{code BirdFlight.wings_beating}}
-
 Then the timeline. `Animation.Timeline.( ... )` wraps a record in the nominal type, and `Side(WingsUp)` is a tag whose payload is another tag. `flight_beats.portion(takeoff_share)` is a method on the opaque `Beats`, and `Beat.at` makes a place of the length it gives. It reads almost like configuration, and most of it is:
-
-{{code BirdFlight.flight_timeline from "length: flight_beats," to "finally: Holds(Diving),"}}
 
 Wings beat all the way through the first two stretches. `count` runs from the start of the timeline, so the wing beat carries on across the cut from side-on to from-behind without restarting.
 
 The path track shows why a `Track` has `finally`. A flight is one unbroken curve, so it has no cuts at all:
 
-{{code BirdFlight.flight_timeline from "path: {" to "rise: flight_arc,"}}
-
 That `Arc` is a tag. `path_spot` is where it's played. `{ ..on_line, lift: ... }` is record update: the spot on the straight line, with one field replaced. The curve is `4t(1 - t)`, a parabola that's 0 at both ends and 1 at the middle, so `rise` means what its comment says.
-
-{{code Animation.path_spot}}
 
 The stills are data too. Nested tags get checked all the way down, so a `match` that forgets `Away(WingsDown)` is a compile-time error. The function reads as a table, and there's nothing else in it:
 
@@ -1836,9 +1941,9 @@ digraph reaction {
 
 Let's follow this back to `Cat`, to two small questions about the same `Stage`.
 
-`is_in_danger` asks whether the crossing is playing. `_` ignores a payload.
+`is_crossing` asks whether the crossing is playing. `_` ignores a payload.
 
-{{code Cat.is_in_danger}}
+{{code Cat.is_crossing}}
 
 `attention` is where `Past`'s payload is used. A cat in the lane also draws the rider's attention, which widens the view. `beyond` is how far past the end of the crossing the rider has come, and that attention fades over that distance, counted in beats. `beats_to_cover` divides by the speed, so a rider at a standstill gets an answer first. `Attention` is another opaque type.
 
@@ -1997,8 +2102,6 @@ Eighteen small opaque types run through Safari Ride, and the tour has met most o
 |---|---|---|
 | `Clock` | `U32` | A place in the ride |
 | `Steps` | `U32` | A length of time |
-| `Beat` | `F64` | A place in an animation |
-| `Beats` | `F64` | A length of an animation |
 | `Angle.Bearing` | `F64` | A place on the compass |
 | `Angle.Turn` | `F64` | The angle between two bearings |
 | `Angle.Lean` | `F64` | Roll, which only reaches direction through a rate |
@@ -2006,7 +2109,6 @@ Eighteen small opaque types run through Safari Ride, and the tour has met most o
 | `Along` | `F64` | A place along a segment |
 | `Across` | `F64` | A place across the road |
 | `Pixels` | `F64` | A length on screen |
-| `CatHeights` | `F64` | A length measured in the cat's own height |
 | `Speed` | `F64` | Metres a step |
 | `Acceleration` | `F64` | Metres a step, each step |
 | `Fraction` | `F64` | A ratio from 0 to 1 |
@@ -2014,7 +2116,7 @@ Eighteen small opaque types run through Safari Ride, and the tour has met most o
 | `World.SegmentIndex` | `U32` | A place in the route |
 | `Chain.Position` | `U32` | A place in the view ahead |
 
-This is the opaque type doing the job of a unit. The block after each type is a small statement of dimensional analysis. `Speed.distance_in` takes `Beats` and gives a `Distance`. `Along.plus` takes a `Distance`, and two `Along`s give one back. `Lean.steer` takes a rate and gives a `Turn`. There's no `Bearing.plus(Bearing)`, because that sum has no meaning. If you try to write one, the compiler stops you.
+This is the opaque type doing the job of a unit. The block after each type is a small statement of dimensional analysis. `Speed.distance_in` takes `Steps` and gives a `Distance`. `Along.plus` takes a `Distance`, and two `Along`s give one back. `Lean.steer` takes a rate and gives a `Turn`. There's no `Bearing.plus(Bearing)`, because that sum has no meaning. If you try to write one, the compiler stops you.
 
 The bug these prevent is the most common one in this kind of code: a correct formula with the wrong number in it. Most physics bugs type-check in a language where everything's a float.
 
@@ -2126,11 +2228,11 @@ The answer rests on one fact from the ride instant chapter. Three fields decide 
 {{proof row 0 The start of the ride}}
 {{proof row 100 A bird in flight}}
 {{proof row 1570 A cat frozen in the lane}}
-{{proof row 1586 The same cat in mid-leap}}
+{{proof row 1590 The same cat in mid-leap}}
 {{proof row 3000 The ride under way}}
 {{proof row 3742 A distant truck, its glow too small to draw}}
 {{proof row 5700 The truck at dusk, lights on}}
-{{proof row 6520 The truck braking in plain view}}
+{{proof row 6553 The truck braking in plain view}}
 {{proof row 9000 Past the end, on the second lap}}
 
 Each row is one frame of the ride. Run the ride to that step today and you get that hash and that many shapes, and a change to the program has to leave every row as it is. This page's numbers come from the same file the check reads, `gates/proof.expected`.
@@ -2176,13 +2278,13 @@ Testing here is just calling a function. There are no mocks, no fakes, no browse
 
 A frame is only evidence for what's in it, so the steps in the table at the top of this chapter aren't arbitrary. The ride lasts 7,040 steps, so the clock at step 9,000 reads 1,959. [check: what 3,000 and 9,000 are there for; the gate's header doesn't say.]
 
-We add a frame whenever something could go wrong without any listed frame changing. A brake light wired to `Off`, for example, would have passed every hash until we added step 6,520.
+We add a frame whenever something could go wrong without any listed frame changing. A brake light wired to `Off`, for example, would have passed every hash until we added step 6,553.
 
 Exact hashes have a consequence that reaches into the code. Float addition isn't associative, so a sum's order is part of its meaning here. `World.route_length` says so in its doc comment, and it's one of the few places in Safari Ride where the direction of a fold is a decision:
 
 {{code World.route_length}}
 
-That's also what the sentence in the headers of `Speed`, `Beats`, `Fraction`, `Angle` and the rest is for. "Each operation does the plain float arithmetic its name says, so code moved onto this type computes exactly what it did before." An opaque type adds names and takes nothing away. A retyping that adds `Speed` to a module changes the types throughout, and if it leaves the arithmetic alone, every hash stays where it is. If a hash moves, the retyping changed the program, and the gate says so.
+That's also why each operation on `Speed`, `Fraction`, `Angle` and the rest does the plain float arithmetic its name says. An opaque type adds names and takes nothing away. A retyping that adds `Speed` to a module changes the types throughout, and if it leaves the arithmetic alone, every hash stays where it is. If a hash moves, the retyping changed the program, and the gate says so.
 
 This is how the code in this tour got its shape. About fifty modules were renamed, retyped and reorganized, many of them in parallel, and each merge had to leave the frames alone. Roc's types caught what they catch, the hashes caught the rest, and the picture didn't change. [check: the number, and whether "many" should say how many at once.] A language with no hidden state doesn't make a refactor safe by itself. It makes it possible to write a test strict enough to be trusted.
 
@@ -2302,7 +2404,7 @@ The ride instant chapter showed `SafariApp.step` reading a snapshot of the keys.
 
 | What's in the shapes of step 1,570 | How many |
 |---|---|
-| `Poly` | 2,705 |
+| `Poly` | 2,706 |
 | `Disc` | 7 |
 
 What the game hands back each frame is a `List(Shapes.Shape)`. A shape is a tag: `Poly`, `Disc`, `Rect` and a few more, each with its fill. Two of them aren't shapes. `Blend` and `View` are marks in the list that change how what comes after them is painted, because a frame is a list, and a mark is the cheapest way to say that.
