@@ -235,7 +235,7 @@ status_lines = |degrees| {
 	bend = bend_of(road)
 	[
 		"Turn: ${turn_text(degrees)}",
-		"The rail follows the outer edge: ${edge_text(bend.turn)}",
+		"Rail on the outer edge: ${edge_text(bend.turn)}",
 		apex_text(Joint.joint_apex(road, bend)),
 		"${GroundSighting.in_view(road).len().to_str()} patches, ${RailSighting.all_rails(road).len().to_str()} pieces of rail",
 	]

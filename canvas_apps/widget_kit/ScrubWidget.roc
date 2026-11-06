@@ -29,6 +29,14 @@ ScrubWidget :: [].{
 	picture_bottom_y : F64
 	picture_bottom_y = 216.0
 
+	## The space left of the ruler and of the text, and right of the ruler.
+	side_margin : F64
+	side_margin = 24.0
+
+	## The ruler's length, which is what a share of it is a share of.
+	ruler_length : F64
+	ruler_length = canvas_width - 2.0 * side_margin
+
 	## The steps of the ride that a ruler shows, from its left end to its right.
 	ClockRange : { first_step : F64, last_step : F64 }
 
@@ -85,10 +93,10 @@ ScrubWidget :: [].{
 			model
 		}
 
-	## How far across the canvas a pointer at `x` is. During a drag it may be
-	## off the canvas.
+	## How far along the ruler a pointer at `x` is. Past either end of the ruler
+	## it holds at that end, and during a drag it may be off the canvas.
 	share_under : F64 -> Fraction
-	share_under = |x| Fraction.clamp(x / canvas_width)
+	share_under = |x| Fraction.clamp((x - side_margin) / ruler_length)
 
 	## The gap with the pointer `share` of the way along a ruler that runs from
 	## `farthest` at the left down to zero at the right.
@@ -200,7 +208,7 @@ ruler_y = 232.0
 
 ## Where a share of the ruler is on the canvas.
 ruler_x : Fraction -> F64
-ruler_x = |share| ScrubWidget.canvas_width * share.to_f64()
+ruler_x = |share| ScrubWidget.side_margin + ScrubWidget.ruler_length * share.to_f64()
 
 ## A bar across the canvas, 6 px thick, in `color`, from `x` for `width`.
 bar : {
@@ -238,8 +246,8 @@ ruler = |{ dot_at, marked }|
 	[
 		[
 			bar({
-				x: 0.0,
-				width: ScrubWidget.canvas_width,
+				x: ScrubWidget.side_margin,
+				width: ScrubWidget.ruler_length,
 				color: 0xb8b8b8,
 			}),
 		],
@@ -259,18 +267,33 @@ status_line : Str, U64 -> List(Shapes.Shape)
 status_line = |text, row|
 	Font.text(
 		text,
-		20.0,
+		ScrubWidget.side_margin,
 		252.0 + row.to_f64() * 26.0,
 		16.0,
 		Brush.opaque(0x202020),
 	)
 
+## Where the ruler's right end is on the canvas.
+ruler_right_x : F64
+ruler_right_x = ScrubWidget.canvas_width - ScrubWidget.side_margin
+
+# The ruler's two ends read 0 and 1, and past them the share holds.
+expect ScrubWidget.share_under(ScrubWidget.side_margin) == Fraction.zero
+expect ScrubWidget.share_under(ruler_right_x) == Fraction.whole
+expect ScrubWidget.share_under(ScrubWidget.side_margin - 1.0) == Fraction.zero
+expect ScrubWidget.share_under(ruler_right_x + 1.0) == Fraction.whole
 expect ScrubWidget.share_under(0.0 - 5.0) == Fraction.zero
-expect ScrubWidget.share_under(0.0) == Fraction.zero
-expect ScrubWidget.share_under(ScrubWidget.canvas_width) == Fraction.whole
 expect ScrubWidget.share_under(ScrubWidget.canvas_width + 5.0) == Fraction.whole
-expect ScrubWidget.share_under(160.0) == Fraction.of(0.25)
-expect ruler_x(ScrubWidget.share_under(160.0)) == 160.0
+
+# Just inside either end isn't the end, and the middle is the canvas's.
+expect ScrubWidget.share_under(ScrubWidget.side_margin + 1.0).to_f64() > 0.0
+expect ScrubWidget.share_under(ruler_right_x - 1.0).to_f64() < 1.0
+expect ScrubWidget.share_under(ScrubWidget.canvas_width / 2.0) == Fraction.of(0.5)
+
+# Drawing and dragging agree on where the ruler is.
+expect ruler_x(Fraction.zero) == ScrubWidget.side_margin
+expect ruler_x(Fraction.whole) == ruler_right_x
+expect ruler_x(ScrubWidget.share_under(172.0)) == 172.0
 
 ## A snapshot with the left button held or not, the pointer mid-canvas.
 pointer_at_middle : U32 -> Input.Snapshot

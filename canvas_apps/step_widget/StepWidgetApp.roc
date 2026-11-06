@@ -333,7 +333,7 @@ status_lines = |model| {
 	[
 		"clock: step ${clock.to_str()}",
 		"rider: segment ${(rider.segment.to_u32() + 1).to_str()}, ${ScrubWidget.tenths_text(rider.along.to_metres())} m, speed ${ScrubWidget.tenths_text(rider.speed.to_metres_a_step())}",
-		"truck: ${ScrubWidget.tenths_text(truck.route_position.to_metres())} m, speed ${ScrubWidget.tenths_text(truck.speed.to_metres_a_step())}, brakes ${brakes_text(truck.brake_lights)}",
+		"truck: ${ScrubWidget.tenths_text(truck.route_position.to_metres())} m, speed ${ScrubWidget.tenths_text(truck.speed.to_metres_a_step())}, brake ${brakes_text(truck.brake_lights)}",
 		move_text(model),
 	]
 }
@@ -401,6 +401,6 @@ expect
 		== [
 			"clock: step 0",
 			"rider: segment 1, 0.0 m, speed 0.3",
-			"truck: 500.0 m, speed 0.3, brakes Off",
+			"truck: 500.0 m, speed 0.3, brake Off",
 			"Drag right to play, left to go back",
 		]
