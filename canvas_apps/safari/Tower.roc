@@ -3,6 +3,7 @@
 ## crossed braces in the lowest two storeys) with a blinking beacon on top.
 ## The earth curves away under a far tower, so it sinks below the horizon
 ## from the bottom up.
+import Pixels
 import Across
 import Along
 import Angle
@@ -64,7 +65,7 @@ Tower :: [].{
 	}
 
 	## How a rod is drawn: its width on screen, and the camera.
-	RodView : { rod_width_px : F64, cam_focal : F64 }
+	RodView : { rod_width_px : Pixels, cam_focal : Pixels }
 
 	## One tower, ready to draw: where it stands, how far the earth's curve
 	## has sunk it, which is never negative, and how its rods are drawn.
@@ -176,22 +177,22 @@ Tower :: [].{
 	screen_rod : {
 		from : Screen.Point,
 		to : Screen.Point,
-		width_px : F64,
+		width_px : Pixels,
 	} -> List(Shapes.Shape)
 	screen_rod = |{ from, to, width_px }| {
-		dx = (to.x - from.x)
-		dy = (to.y - from.y)
-		raw = DeviceMath.real_sqrt(((dx * dx) + (dy * dy)))
-		len = if raw < 0.0001 {
-			1.0
+		dx = to.x.minus(from.x)
+		dy = to.y.minus(from.y)
+		raw = dx.hypotenuse(dy)
+		len = if raw < Pixels.of(0.0001) {
+			Pixels.of(1.0)
 		} else {
 			raw
 		}
 		rod_quad({
 			from,
 			to,
-			offset_x: ((((0.0 - dy) / len) * width_px) / 2.0),
-			offset_y: (((dx / len) * width_px) / 2.0),
+			offset_x: width_px.times(dy.opposite().ratio_to(len)).divided_by(2.0),
+			offset_y: width_px.times(dx.ratio_to(len)).divided_by(2.0),
 		})
 	}
 
@@ -200,8 +201,8 @@ Tower :: [].{
 	rod_quad : {
 		from : Screen.Point,
 		to : Screen.Point,
-		offset_x : F64,
-		offset_y : F64,
+		offset_x : Pixels,
+		offset_y : Pixels,
 	} -> List(Shapes.Shape)
 	rod_quad = |
 		{
@@ -213,10 +214,10 @@ Tower :: [].{
 	| Paint.polygon(
 		tower_metal,
 		[
-			{ x: (a.x + ox), y: (a.y + oy) },
-			{ x: (b.x + ox), y: (b.y + oy) },
-			{ x: (b.x - ox), y: (b.y - oy) },
-			{ x: (a.x - ox), y: (a.y - oy) },
+			{ x: a.x.plus(ox), y: a.y.plus(oy) },
+			{ x: b.x.plus(ox), y: b.y.plus(oy) },
+			{ x: b.x.minus(ox), y: b.y.minus(oy) },
+			{ x: a.x.minus(ox), y: a.y.minus(oy) },
 		],
 	)
 
@@ -260,7 +261,7 @@ Tower :: [].{
 		})
 
 	## How many pixels one metre across spans at distance `forward`.
-	metre_px : { forward : Distance, cam_focal : F64 } -> F64
+	metre_px : { forward : Distance, cam_focal : Pixels } -> Pixels
 	metre_px = |{ forward, cam_focal }| {
 		p1 = Camera.project(
 			{
@@ -278,12 +279,12 @@ Tower :: [].{
 			},
 			cam_focal,
 		)
-		p1.x - p0.x
+		p1.x.minus(p0.x)
 	}
 
 	## A rod's width on screen at distance `forward`.
-	rod_width_at : { forward : Distance, cam_focal : F64 } -> F64
-	rod_width_at = |camera| rod_w.to_metres() * metre_px(camera)
+	rod_width_at : { forward : Distance, cam_focal : Pixels } -> Pixels
+	rod_width_at = |camera| metre_px(camera).times(rod_w.to_metres())
 
 	## The four legs, from the footprint's corners up to the apex.
 	legs : Tower.TowerInView, Geom.RaisedPoint -> List(Shapes.Shape)
@@ -406,8 +407,8 @@ Tower :: [].{
 				forward: tower.center.forward,
 				cam_focal: tower.view.cam_focal,
 			})
-			radius = beacon_radius.to_metres() * one_metre_px
-			if radius < 0.5 {
+			radius = one_metre_px.times(beacon_radius.to_metres())
+			if radius < Pixels.of(0.5) {
 				[]
 			} else {
 				Paint.beacon({
@@ -425,7 +426,7 @@ Tower :: [].{
 	draw : {
 		footprint : Tower.Footprint,
 		center : Geom.RiderPoint,
-		cam_focal : F64,
+		cam_focal : Pixels,
 		beacon_brightness : Fraction,
 	} -> List(Shapes.Shape)
 	draw = |{ footprint, center, cam_focal, beacon_brightness }| {
@@ -489,7 +490,7 @@ expect {
 }
 
 sample_rod_view : Tower.RodView
-sample_rod_view = { rod_width_px: 4.0, cam_focal: 500.0 }
+sample_rod_view = { rod_width_px: Pixels.of(4.0), cam_focal: Pixels.of(500.0) }
 
 # A tower 12 m square, centred 100 m ahead, sunk 1 m.
 sample_tower : Tower.TowerInView
@@ -576,9 +577,9 @@ expect
 
 expect
 	Tower.screen_rod({
-		from: { x: 0.0, y: 0.0 },
-		to: { x: 30.0, y: 40.0 },
-		width_px: 10.0,
+		from: Screen.point(0.0, 0.0),
+		to: Screen.point(30.0, 40.0),
+		width_px: Pixels.of(10.0),
 	})
 		== [
 			Poly({
@@ -590,9 +591,9 @@ expect
 # A rod of no length is still one quad, all at its one point.
 expect
 	Tower.screen_rod({
-		from: { x: 5.0, y: 6.0 },
-		to: { x: 5.0, y: 6.0 },
-		width_px: 10.0,
+		from: Screen.point(5.0, 6.0),
+		to: Screen.point(5.0, 6.0),
+		width_px: Pixels.of(10.0),
 	})
 		== [
 			Poly({
@@ -601,9 +602,15 @@ expect
 			}),
 		]
 
-expect Tower.rod_width_at({ forward: Distance.metres(10.0), cam_focal: 500.0 }) == 12.0
-expect Tower.rod_width_at({ forward: Distance.metres(25.0), cam_focal: 500.0 }) == 4.8
-expect Tower.rod_width_at({ forward: Distance.metres(50.0), cam_focal: 500.0 }) == 2.4
+expect
+	Tower.rod_width_at({ forward: Distance.metres(10.0), cam_focal: Pixels.of(500.0) }).to_f64()
+		== 12.0
+expect
+	Tower.rod_width_at({ forward: Distance.metres(25.0), cam_focal: Pixels.of(500.0) }).to_f64()
+		== 4.8
+expect
+	Tower.rod_width_at({ forward: Distance.metres(50.0), cam_focal: Pixels.of(500.0) }).to_f64()
+		== 2.4
 
 rod_along_road : F64, F64 -> List(Shapes.Shape)
 rod_along_road = |start, end|

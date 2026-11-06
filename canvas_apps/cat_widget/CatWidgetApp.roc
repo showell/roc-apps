@@ -10,6 +10,7 @@ import game.CatStills
 import game.CrossingReaction
 import game.Distance
 import game.Fraction
+import game.Pixels
 import game.Scenery
 import game.Speed
 import game.World
@@ -126,10 +127,10 @@ cat_shapes = |gap| {
 	CatDraw.polygons(
 		{
 			feet: {
-				x: lane_middle_x + instant.spot.across.to_metres() * pixels_a_metre,
-				y: feet_y,
+				x: Pixels.of(lane_middle_x + instant.spot.across.to_metres() * pixels_a_metre),
+				y: Pixels.of(feet_y),
 			},
-			height_px: crossing.height.to_metres() * pixels_a_metre,
+			height_px: Pixels.of(crossing.height.to_metres() * pixels_a_metre),
 			lift: instant.spot.lift,
 		},
 		CatStills.pose_polygons(instant.pose),

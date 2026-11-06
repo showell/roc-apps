@@ -6,6 +6,7 @@
 ## them as one of its roots.
 app [main!] { game: "../game.roc", lib: "../../lib/main.roc" }
 
+import game.Pixels
 import game.Across
 import game.Along
 import game.Angle
@@ -118,11 +119,11 @@ segment_of = |trees| {
 
 ## The birds on one segment of `trees`, for a rider `rider_along` metres into
 ## it, seen through a focal length of `cam_focal`.
-birds_on : List(Scenery.Tree), { rider_along : F64, cam_focal : F64 } -> List(BirdSighting)
+birds_on : List(Scenery.Tree), { rider_along : F64, cam_focal : Pixels } -> List(BirdSighting)
 birds_on = |trees, seen_from| birds_on_segment(segment_of(trees), seen_from)
 
 ## The birds on `segment_index`, for a rider `rider_along` metres into it.
-birds_on_segment : World.Segment, { rider_along : F64, cam_focal : F64 } -> List(BirdSighting)
+birds_on_segment : World.Segment, { rider_along : F64, cam_focal : Pixels } -> List(BirdSighting)
 birds_on_segment = |segment, { rider_along, cam_focal }|
 	BirdSighting.in_view({
 		road: {
@@ -137,7 +138,7 @@ birds_on_segment = |segment, { rider_along, cam_focal }|
 ## a far tree.
 bird_at : F64 -> BirdSighting
 bird_at = |rider_along|
-	birds_on(left_trees.append(far_tree), { rider_along, cam_focal: 500.0 }).first()
+	birds_on(left_trees.append(far_tree), { rider_along, cam_focal: Pixels.of(500.0) }).first()
 		?? crash "CrossModuleExpects: this rider sees a bird"
 
 ## How far off a bird is, across the road and up.
@@ -165,26 +166,28 @@ expect bird_at(85.0).pose == Perched
 # With no tree far enough to fly to, the bird stays on its own however near
 # the rider is.
 expect {
-	stays = birds_on(left_trees, { rider_along: 62.5, cam_focal: 500.0 })
+	stays = birds_on(left_trees, { rider_along: 62.5, cam_focal: Pixels.of(500.0) })
 	stays.join_map(place_of) == [-6.0, 37.5, 10.0]
 }
 
 ## How many birds there are on `trees` for each rider and focal length.
-bird_count : List(Scenery.Tree), { rider_along : F64, cam_focal : F64 } -> I64
+bird_count : List(Scenery.Tree), { rider_along : F64, cam_focal : Pixels } -> I64
 bird_count = |trees, seen_from| birds_on(trees, seen_from).len().to_i64_wrap()
 
 ## A segment where a cat crosses, with the same trees: it has no bird.
 segment_with_cat : World.Segment
 segment_with_cat = { ..segment_of(left_trees), crossing: World.route_segment(3).crossing }
 
-expect bird_count(left_trees, { rider_along: 0.0, cam_focal: 500.0 }) == 1
-expect bird_count(left_trees.drop_last(1), { rider_along: 0.0, cam_focal: 500.0 }) == 0
-expect bird_count(left_trees, { rider_along: 99.5, cam_focal: 500.0 }) == 1
-expect bird_count(left_trees, { rider_along: 99.7, cam_focal: 500.0 }) == 0
-expect bird_count(left_trees, { rider_along: 120.0, cam_focal: 500.0 }) == 0
-expect bird_count(left_trees, { rider_along: 0.0, cam_focal: 91.0 }) == 1
-expect bird_count(left_trees, { rider_along: 0.0, cam_focal: 90.0 }) == 0
-expect birds_on_segment(segment_with_cat, { rider_along: 0.0, cam_focal: 500.0 }).len() == 0
+expect bird_count(left_trees, { rider_along: 0.0, cam_focal: Pixels.of(500.0) }) == 1
+expect bird_count(left_trees.drop_last(1), { rider_along: 0.0, cam_focal: Pixels.of(500.0) }) == 0
+expect bird_count(left_trees, { rider_along: 99.5, cam_focal: Pixels.of(500.0) }) == 1
+expect bird_count(left_trees, { rider_along: 99.7, cam_focal: Pixels.of(500.0) }) == 0
+expect bird_count(left_trees, { rider_along: 120.0, cam_focal: Pixels.of(500.0) }) == 0
+expect bird_count(left_trees, { rider_along: 0.0, cam_focal: Pixels.of(91.0) }) == 1
+expect bird_count(left_trees, { rider_along: 0.0, cam_focal: Pixels.of(90.0) }) == 0
+expect
+	birds_on_segment(segment_with_cat, { rider_along: 0.0, cam_focal: Pixels.of(500.0) }).len()
+		== 0
 
 ## Two segments in the chain, the rider at the start of the first.
 two_segments : List(BirdSighting)
@@ -199,7 +202,7 @@ two_segments = BirdSighting.in_view({
 			half_width: Distance.metres(2.0),
 		},
 	},
-	cam_focal: 500.0,
+	cam_focal: Pixels.of(500.0),
 })
 
 ## A key's place in the birds' list.
@@ -235,7 +238,7 @@ cats_from_origin = {
 		chain: [0, 1, 2].map(World.SegmentIndex.number),
 		vantage: origin,
 	},
-	cam_focal: 500.0,
+	cam_focal: Pixels.of(500.0),
 }
 
 metre_a_step : Speed
@@ -443,7 +446,7 @@ scene = Scene.in_view(
 			chain: Chain.chain_ahead(World.segments, World.SegmentIndex.first),
 			vantage: origin,
 		},
-		cam_focal: 500.0,
+		cam_focal: Pixels.of(500.0),
 	},
 	{
 		speed: VehicleLimits.base_speed,
@@ -494,7 +497,7 @@ expect is_far_to_near([])
 # GroundSighting's road, chunk by chunk.
 ## A list of patches as a camera the drawing checks read paints them.
 patch_shapes : List(Ground.Patch) -> List(Shapes.Shape)
-patch_shapes = |patches| patches.join_map(|patch| Ground.draw(patch, 500.0))
+patch_shapes = |patches| patches.join_map(|patch| Ground.draw(patch, Pixels.of(500.0)))
 
 ## Chunk `chunk_number` of the first segment's 20, which is 500 m long.
 chunk_of_first : U32 -> List(Geom.RiderPoint)

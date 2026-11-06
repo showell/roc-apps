@@ -53,7 +53,7 @@ TreeSighting := {
 				across: tree.across,
 			},
 		)
-		height_px = tree.height.ratio_to(seen.forward) * view.cam_focal
+		height_px = view.cam_focal.times(tree.height.ratio_to(seen.forward))
 		if seen.forward <= Geom.near_plane {
 			[]
 		} else if height_px < Detail.min_scenery_px {

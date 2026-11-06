@@ -1,6 +1,7 @@
 ## The lens the ride is seen through. The view widens as the rider leans,
 ## and as the rider's attention is caught, by a crossing on the road or by a
 ## look to the side.
+import Pixels
 import Attention
 import Bike
 import CrossingReaction
@@ -19,7 +20,7 @@ RideFocal :: [].{
 		CrossingReaction.reaction_to(rider.segment_index.segment_in(route), rider).attention
 
 	## The camera's focal length for where the rider is and how they ride.
-	ride_focal : List(World.Segment), RiderState -> F64
+	ride_focal : List(World.Segment), RiderState -> Pixels
 	ride_focal = |route, rider| {
 		lean_fraction = Fraction.clamp(
 			(DeviceMath.real_abs(rider.lean.to_radians()) / Bike.max_lean.to_radians()),
@@ -63,13 +64,13 @@ has_cat = |seg|
 expect !has_cat(World.route_segment(0))
 expect has_cat(cat_segment)
 
-expect RideFocal.ride_focal(route, upright) - Lens.focal == 0.0
+expect RideFocal.ride_focal(route, upright).minus(Lens.focal) == Pixels.zero
 expect RideFocal.crossing_attention(route, upright).to_f64() == 0.0
 expect Gaze.gaze_attention(Fraction.zero).to_f64() == 0.0
 expect Lens.cam_focal({
 	lean_fraction: Fraction.zero,
 	attention: Attention.none,
-}) - Lens.focal == 0.0
+}).minus(Lens.focal) == Pixels.zero
 
 # RideFocal doesn't import Angle, so these leans are made from `Bike.max_lean`.
 focal_at_lean = |lean| RideFocal.ride_focal(route, { ..upright, lean })
@@ -83,13 +84,13 @@ expect {
 }
 
 # A lean past the greatest one widens the view no further.
-expect focal_at_lean(Bike.max_lean) - focal_at_lean(upright.lean.minus(Bike.max_lean)) == 0.0
+expect focal_at_lean(Bike.max_lean) == focal_at_lean(upright.lean.minus(Bike.max_lean))
 
 expect {
 	twice = Bike.max_lean.plus(Bike.max_lean)
 	ten_times = twice.plus(twice).plus(twice).plus(twice).plus(twice)
-	focal_at_lean(twice) - focal_at_lean(Bike.max_lean) == 0.0
-		and focal_at_lean(ten_times) - focal_at_lean(Bike.max_lean) == 0.0
+	focal_at_lean(twice).minus(focal_at_lean(Bike.max_lean)) == Pixels.zero
+		and focal_at_lean(ten_times).minus(focal_at_lean(Bike.max_lean)) == Pixels.zero
 }
 
 expect RideFocal.crossing_attention(route, near_cat_on(1)).to_f64() > 0.0
@@ -111,21 +112,23 @@ expect RideFocal.ride_focal(
 ) < RideFocal.ride_focal(route, { ..upright, attention: Fraction.of(0.5) })
 expect Gaze.gaze_attention(Fraction.whole).to_f64() > Gaze.gaze_attention(Fraction.zero).to_f64()
 
-both : F64
+both : Pixels
 both = RideFocal.ride_focal(route, { ..upright, lean: Bike.max_lean, attention: Fraction.whole })
 
-lean_only : F64
+lean_only : Pixels
 lean_only = RideFocal.ride_focal(route, { ..upright, lean: Bike.max_lean })
 
-gaze_only : F64
+gaze_only : Pixels
 gaze_only = RideFocal.ride_focal(route, { ..upright, attention: Fraction.whole })
 
 expect both <= lean_only
 expect both <= gaze_only
-expect F64.to_bits(both) == F64.to_bits(DeviceMath.real_min(lean_only, gaze_only))
-expect (lean_only + gaze_only) > both
-expect both - DeviceMath.real_min(lean_only, gaze_only) == 0.0
+expect
+	F64.to_bits(both.to_f64())
+		== F64.to_bits(DeviceMath.real_min(lean_only.to_f64(), gaze_only.to_f64()))
+expect lean_only.plus(gaze_only) > both
+expect both.to_f64() - DeviceMath.real_min(lean_only.to_f64(), gaze_only.to_f64()) == 0.0
 expect Lens.cam_focal({
 	lean_fraction: Fraction.whole,
 	attention: Attention.none,
-}) - lean_only == 0.0
+}).minus(lean_only) == Pixels.zero

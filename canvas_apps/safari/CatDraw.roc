@@ -1,5 +1,6 @@
 ## CatDraw draws the cat: the still for the pose it is in, scaled to its
 ## height on screen and raised as it leaps.
+import Pixels
 import Camera
 import Cat
 import CatStills
@@ -17,7 +18,7 @@ CatDraw :: [].{
 	## height is 1).
 	Anchor : {
 		feet : Screen.Point,
-		height_px : F64,
+		height_px : Pixels,
 		lift : F64,
 	}
 
@@ -28,8 +29,8 @@ CatDraw :: [].{
 	## A corner of the still, on screen.
 	screen_point : CatDraw.Anchor, Stills.StillPt -> Screen.Point
 	screen_point = |anchor, pt| {
-		x: (anchor.feet.x + (pt.x * anchor.height_px)),
-		y: (anchor.feet.y - ((pt.y + anchor.lift) * anchor.height_px)),
+		x: anchor.feet.x.plus(anchor.height_px.times(pt.x)),
+		y: anchor.feet.y.minus(anchor.height_px.times(pt.y + anchor.lift)),
 	}
 
 	## One polygon of the still, on screen.
@@ -55,7 +56,7 @@ CatDraw :: [].{
 		height : Distance,
 		pose : Cat.Pose,
 		lift : F64,
-		cam_focal : F64,
+		cam_focal : Pixels,
 	} -> List(Shapes.Shape)
 	draw = |
 		{
@@ -69,8 +70,8 @@ CatDraw :: [].{
 	| {
 		feet = Camera.project({ right, forward, height: Distance.zero }, cam_focal)
 		top = Camera.project({ right, forward, height }, cam_focal)
-		height_px = (feet.y - top.y)
-		if height_px < 1.0 {
+		height_px = feet.y.minus(top.y)
+		if height_px < Pixels.of(1.0) {
 			[]
 		} else {
 			polygons({ feet, height_px, lift }, CatStills.pose_polygons(pose))
@@ -79,45 +80,44 @@ CatDraw :: [].{
 }
 
 sample_feet : Screen.Point
-sample_feet = { x: 100.0, y: 200.0 }
+sample_feet = Screen.point(100.0, 200.0)
 
 # A cat 50 px tall, standing at the feet.
 standing : CatDraw.Anchor
 standing = {
 	feet: sample_feet,
-	height_px: 50.0,
+	height_px: Pixels.of(50.0),
 	lift: 0.0,
 }
 
-expect CatDraw.screen_point(standing, { x: 0.5, y: 0.4 }) == { x: 125.0, y: 180.0 }
-expect CatDraw.screen_point(standing, { x: 0.0, y: 0.0 }) == { x: 100.0, y: 200.0 }
-expect CatDraw.screen_point(standing, { x: -1.0, y: 1.0 }) == { x: 50.0, y: 150.0 }
+expect CatDraw.screen_point(standing, { x: 0.5, y: 0.4 }) == Screen.point(125.0, 180.0)
+expect CatDraw.screen_point(standing, { x: 0.0, y: 0.0 }) == Screen.point(100.0, 200.0)
+expect CatDraw.screen_point(standing, { x: -1.0, y: 1.0 }) == Screen.point(50.0, 150.0)
 
 # A lift raises a corner by that share of the cat's height, and doesn't move it
 # across.
 expect {
 	on_ground = CatDraw.screen_point(standing, { x: 0.5, y: 0.4 })
 	lifted = CatDraw.screen_point({ ..standing, lift: 0.2 }, { x: 0.5, y: 0.4 })
-	lifted == {
-		x: 125.0,
-		y: 170.0,
-	} and on_ground.y - lifted.y == 10.0 and lifted.x - on_ground.x == 0.0
+	lifted == Screen.point(125.0, 170.0)
+		and on_ground.y.minus(lifted.y).to_f64() == 10.0
+		and lifted.x.minus(on_ground.x).to_f64() == 0.0
 }
 
 expect
 	CatDraw.screen_point(
 		{
 			feet: sample_feet,
-			height_px: 100.0,
+			height_px: Pixels.of(100.0),
 			lift: 0.2,
 		},
 		{ x: 0.5, y: 0.4 },
-	).y
+	).y.to_f64()
 		== 140.0
 
 expect
 	[{ x: 0.0, y: 0.0 }, { x: 0.5, y: 0.4 }].map(|corner| CatDraw.screen_point(standing, corner))
-		== [{ x: 100.0, y: 200.0 }, { x: 125.0, y: 180.0 }]
+		== [Screen.point(100.0, 200.0), Screen.point(125.0, 180.0)]
 
 # A polygon of colour 9 with `count` corners, all at the feet.
 polygon_of : U64 -> Stills.StillPolygon
@@ -183,7 +183,7 @@ cat_shapes = |{ forward, pose, lift }|
 		height: Distance.metres(1.7),
 		pose,
 		lift,
-		cam_focal: 500.0,
+		cam_focal: Pixels.of(500.0),
 	}).len()
 
 expect

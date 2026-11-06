@@ -69,7 +69,7 @@ cat_in_view = |view, { position, crossing, speed }| {
 			across: instant.spot.across,
 		},
 	)
-	height_px = crossing.height.ratio_to(seen.forward) * view.cam_focal
+	height_px = view.cam_focal.times(crossing.height.ratio_to(seen.forward))
 	if seen.forward <= Geom.near_plane {
 		[]
 	} else if height_px < Detail.min_scenery_px {

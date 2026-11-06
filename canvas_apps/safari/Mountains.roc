@@ -3,6 +3,7 @@
 ## of both. Each is a silhouette across the screen whose height depends only on
 ## the bearing it is seen at, so the skyline turns with the rider but never
 ## comes nearer. The rock darkens at dusk, and the snow goes blue.
+import Pixels
 import Angle
 import Clock
 import lib.DeviceMath
@@ -18,7 +19,7 @@ import lib.Shapes
 Mountains :: [].{
 
 	## How the skyline is seen: the rider's heading, and the camera.
-	Sight : { heading : Angle.Bearing, cam_focal : F64 }
+	Sight : { heading : Angle.Bearing, cam_focal : Pixels }
 
 	rock : I64
 	rock = 0x5B6A8F
@@ -75,35 +76,35 @@ Mountains :: [].{
 	west_range_bearing = Angle.Bearing.radians(-2.0416)
 
 	## The north range is snowy above this height.
-	snow_threshold : F64
-	snow_threshold = 124.0
+	snow_threshold : Pixels
+	snow_threshold = Pixels.of(124.0)
 
 	## How far the snowline dips below the threshold under the highest peak.
-	snow_dip : F64
-	snow_dip = 10.0
+	snow_dip : Pixels
+	snow_dip = Pixels.of(10.0)
 
 	## The silhouettes are sampled every `column_step` pixels across the screen.
-	column_step : F64
-	column_step = 2.0
+	column_step : Pixels
+	column_step = Pixels.of(2.0)
 
 	## How far past each side of the screen the silhouettes reach, so the
 	## rider's roll never shows their ends.
-	roll_margin : F64
-	roll_margin = 200.0
+	roll_margin : Pixels
+	roll_margin = Pixels.of(200.0)
 
 	## The rolling land: low, and all the way round.
-	ground_base : Angle.Bearing -> F64
+	ground_base : Angle.Bearing -> Pixels
 	ground_base = |bearing|
-		18.0 + 12.0 * Trig.r_sin(bearing.turn_from_north().to_radians() * 0.9 + 1.9)
+		Pixels.of(18.0 + 12.0 * Trig.r_sin(bearing.turn_from_north().to_radians() * 0.9 + 1.9))
 
-	north_range : Angle.Bearing -> F64
+	north_range : Angle.Bearing -> Pixels
 	north_range = |bearing| range_height(north, bearing)
 
-	west_range : Angle.Bearing -> F64
+	west_range : Angle.Bearing -> Pixels
 	west_range = |bearing| range_height(west, bearing)
 
 	## The height of the north range's highest peak, as its samples find it.
-	snow_peak_height : F64
+	snow_peak_height : Pixels
 	snow_peak_height = {
 		first = Angle.Bearing.radians(-0.5)
 		north_peak_height_from({ at: first.plus(peak_sample_step), highest: north_range(first) })
@@ -111,32 +112,34 @@ Mountains :: [].{
 
 	## The snowline's height at `bearing`: at the threshold, dipping lower
 	## under the higher peaks.
-	snowline : Angle.Bearing -> F64
+	snowline : Angle.Bearing -> Pixels
 	snowline = |bearing| {
-		above_threshold = (north_range(bearing) - snow_threshold)
-		above_fraction = Fraction.clamp((above_threshold / (snow_peak_height - snow_threshold)))
-		snow_threshold - (snow_dip * above_fraction.to_f64())
+		above_threshold = north_range(bearing).minus(snow_threshold)
+		peak_above_threshold = snow_peak_height.minus(snow_threshold)
+		above_fraction = Fraction.clamp(above_threshold.ratio_to(peak_above_threshold))
+		snow_threshold.minus(snow_dip.times(above_fraction.to_f64()))
 	}
 
 	## The bearing seen at `x` across the screen.
-	bearing_at : Mountains.Sight, F64 -> Angle.Bearing
+	bearing_at : Mountains.Sight, Pixels -> Angle.Bearing
 	bearing_at = |sight, x| {
-		off_center = Angle.Turn.radians(Trig.r_atan((x - Screen.center_x) / sight.cam_focal))
+		slope = x.minus(Screen.center_x).ratio_to(sight.cam_focal)
+		off_center = Angle.Turn.radians(Trig.r_atan(slope))
 		sight.heading.plus(off_center)
 	}
 
 	## The skyline's height at `bearing`: the highest of the land and the two
 	## ranges.
-	horizon_crest_px : Angle.Bearing -> F64
-	horizon_crest_px = |bearing| DeviceMath.real_max(
-		west_range(bearing),
-		DeviceMath.real_max(north_range(bearing), ground_base(bearing)),
-	)
+	horizon_crest_px : Angle.Bearing -> Pixels
+	horizon_crest_px = |bearing| {
+		north_or_land = north_range(bearing).max(ground_base(bearing))
+		west_range(bearing).max(north_or_land)
+	}
 
 	## Whether the sun, at `clock`, has sunk behind the skyline.
 	is_sun_behind_mountains : Clock -> Bool
 	is_sun_behind_mountains = |clock| {
-		sun_top_px = (Sky.sun_height_px(clock) + Sky.sun_radius_px)
+		sun_top_px = Sky.sun_height_px(clock).plus(Sky.sun_radius_px)
 		sun_top_px < horizon_crest_px(Sky.sun_bearing)
 	}
 
@@ -145,7 +148,7 @@ Mountains :: [].{
 	draw : {
 		heading : Angle.Bearing,
 		dusk : Fraction,
-		cam_focal : F64,
+		cam_focal : Pixels,
 	} -> List(Shapes.Shape)
 	draw = |{ heading, dusk, cam_focal }| {
 		sight = { heading, cam_focal }
@@ -164,7 +167,7 @@ Mountains :: [].{
 MountainRange : {
 	center : Angle.Bearing,
 	half_width : Angle.Turn,
-	peak : F64,
+	peak : Pixels,
 	ridge_a : F64,
 	ridge_b : F64,
 }
@@ -173,7 +176,7 @@ north : MountainRange
 north = {
 	center: Angle.north,
 	half_width: Angle.Turn.radians(0.95),
-	peak: 150.0,
+	peak: Pixels.of(150.0),
 	ridge_a: 8.0,
 	ridge_b: 21.0,
 }
@@ -182,26 +185,26 @@ west : MountainRange
 west = {
 	center: Mountains.west_range_bearing,
 	half_width: Angle.Turn.radians(0.72),
-	peak: 120.0,
+	peak: Pixels.of(120.0),
 	ridge_a: 11.0,
 	ridge_b: 27.0,
 }
 
 ## A range's height at `bearing`: highest in its middle, falling to nothing at
 ## its ends, with two ridges along it.
-range_height : MountainRange, Angle.Bearing -> F64
+range_height : MountainRange, Angle.Bearing -> Pixels
 range_height = |range, bearing| {
 	from_center = bearing.turn_from(range.center)
 	fraction = from_center.ratio_to(range.half_width)
 	if DeviceMath.real_abs(fraction) >= 1.0 {
-		0.0
+		Pixels.zero
 	} else {
 		envelope = Trig.r_cos(fraction * Trig.pi / 2.0)
 		radians = from_center.to_radians()
 		first_wave = 0.24 * Trig.r_cos(radians * range.ridge_a)
 		second_wave = 0.16 * Trig.r_cos(radians * range.ridge_b + 1.0)
 		ridge = 0.6 + first_wave + second_wave
-		range.peak * envelope * ridge
+		range.peak.times(envelope).times(ridge)
 	}
 }
 
@@ -212,47 +215,47 @@ peak_sample_step = Angle.Turn.radians(0.01)
 ## The north range's peak height between `at` and half a radian, or
 ## `highest` where that is higher. Each sample's bearing is the last's plus
 ## the step.
-north_peak_height_from : { at : Angle.Bearing, highest : F64 } -> F64
+north_peak_height_from : { at : Angle.Bearing, highest : Pixels } -> Pixels
 north_peak_height_from = |{ at, highest }|
 	if at > Angle.Bearing.radians(0.5) {
 		highest
 	} else {
 		north_peak_height_from({
 			at: at.plus(peak_sample_step),
-			highest: DeviceMath.real_max(highest, Mountains.north_range(at)),
+			highest: highest.max(Mountains.north_range(at)),
 		})
 	}
 
 ## The screen's horizon, where a height of zero is drawn.
-horizon_y : F64
+horizon_y : Pixels
 horizon_y = Screen.horizon_y
 
 ## The screen's y for a height on the skyline.
-height_y : Mountains.Sight, F64 -> F64
-height_y = |sight, height| horizon_y - (height * (sight.cam_focal / Lens.focal))
+height_y : Mountains.Sight, Pixels -> Pixels
+height_y = |sight, height| horizon_y.minus(height.times(sight.cam_focal.ratio_to(Lens.focal)))
 
 ## The columns sampled, every `column_step` pixels from `from` up to `to`.
-columns : { from : F64, to : F64 } -> List(F64)
+columns : { from : Pixels, to : Pixels } -> List(Pixels)
 columns = |{ from, to }| columns_onto([], { at: from, to })
 
-columns_onto : List(F64), { at : F64, to : F64 } -> List(F64)
+columns_onto : List(Pixels), { at : Pixels, to : Pixels } -> List(Pixels)
 columns_onto = |sampled, { at, to }|
 	if at > to {
 		sampled
 	} else {
-		columns_onto(sampled.append(at), { at: (at + Mountains.column_step), to })
+		columns_onto(sampled.append(at), { at: at.plus(Mountains.column_step), to })
 	}
 
 ## A silhouette across the screen, its top at `height_at` each bearing, closed
 ## along the horizon.
 silhouette : Mountains.Sight,
 {
-	height_at : Angle.Bearing -> F64,
+	height_at : Angle.Bearing -> Pixels,
 	color : I64,
 } -> List(Shapes.Shape)
 silhouette = |sight, { height_at, color }| {
-	left = (0.0 - Mountains.roll_margin)
-	right = (Screen.width + Mountains.roll_margin)
+	left = Mountains.roll_margin.opposite()
+	right = Screen.width.plus(Mountains.roll_margin)
 	crest = columns({ from: left, to: right }).map(
 		|x| { x, y: height_y(sight, height_at(Mountains.bearing_at(sight, x))) },
 	)
@@ -263,10 +266,10 @@ silhouette = |sight, { height_at, color }| {
 ## snowline, then back along the snowline.
 snow : Mountains.Sight, I64 -> List(Shapes.Shape)
 snow = |sight, color| {
-	snowy = columns({ from: 0.0, to: Screen.width }).keep_if(
+	snowy = columns({ from: Pixels.zero, to: Screen.width }).keep_if(
 		|x| {
 			bearing = Mountains.bearing_at(sight, x)
-			Mountains.north_range(bearing) > (Mountains.snowline(bearing) + 0.01)
+			Mountains.north_range(bearing) > Mountains.snowline(bearing).plus(Pixels.of(0.01))
 		},
 	)
 	if snowy.len() < 2 {
@@ -324,44 +327,47 @@ expect Mountains.snow_color(Fraction.whole) > Mountains.color_at_dusk(
 )
 expect Mountains.snow_color(Fraction.zero) > Mountains.color_at_dusk(Mountains.rock, Fraction.zero)
 
-expect [0.95, 1.0, 2.0, -0.95, -3.0].all(|radians| Mountains.north_range(north_by(radians)) == 0.0)
+expect
+	[0.95, 1.0, 2.0, -0.95, -3.0].all(
+		|radians| Mountains.north_range(north_by(radians)) == Pixels.zero,
+	)
 expect
 	[
 		west_by(0.8),
 		west_by(-0.8),
 		north_by(0.0),
 		north_by(1.5),
-	].all(|sight| Mountains.west_range(sight) == 0.0)
+	].all(|sight| Mountains.west_range(sight) == Pixels.zero)
 
-expect Mountains.north_range(north_by(0.0)) > 0.0
-expect Mountains.north_range(north_by(0.94)) > 0.0
+expect Mountains.north_range(north_by(0.0)) > Pixels.zero
+expect Mountains.north_range(north_by(0.94)) > Pixels.zero
 expect Mountains.north_range(north_by(0.0)) > Mountains.snow_threshold
 expect !(Mountains.north_range(north_by(0.9)) > Mountains.snow_threshold)
-expect Mountains.west_range(Mountains.west_range_bearing) > 0.0
+expect Mountains.west_range(Mountains.west_range_bearing) > Pixels.zero
 
 expect Mountains.west_range_bearing.to_radians() == -2.0416
-expect Mountains.snow_threshold == 124.0
-expect Mountains.snow_dip == 10.0
-expect Mountains.column_step == 2.0
-expect Mountains.roll_margin == 200.0
+expect Mountains.snow_threshold.to_f64() == 124.0
+expect Mountains.snow_dip.to_f64() == 10.0
+expect Mountains.column_step.to_f64() == 2.0
+expect Mountains.roll_margin.to_f64() == 200.0
 expect Mountains.rock_night_dim.to_f64() == 0.5
 
-expect Mountains.snowline(north_by(0.9)) == 124.0
-expect Mountains.snowline(north_by(2.0)) == 124.0
+expect Mountains.snowline(north_by(0.9)).to_f64() == 124.0
+expect Mountains.snowline(north_by(2.0)).to_f64() == 124.0
 
 expect Mountains.snowline(north_by(0.0)) < Mountains.snow_threshold
-expect Mountains.snowline(north_by(0.0)) > Mountains.snow_threshold - Mountains.snow_dip
+expect Mountains.snowline(north_by(0.0)) > Mountains.snow_threshold.minus(Mountains.snow_dip)
 expect Mountains.snowline(north_by(0.5)) <= Mountains.snow_threshold
-expect Mountains.snowline(north_by(0.5)) >= Mountains.snow_threshold - Mountains.snow_dip
+expect Mountains.snowline(north_by(0.5)) >= Mountains.snow_threshold.minus(Mountains.snow_dip)
 
 expect Mountains.snow_peak_height > Mountains.snow_threshold
-expect Mountains.snow_peak_height < 150.0
+expect Mountains.snow_peak_height < Pixels.of(150.0)
 
 # The bearing seen at `x` across a 960-pixel screen.
 seen_bearing : {
 	heading : F64,
-	cam_focal : F64,
-	x : F64,
+	cam_focal : Pixels,
+	x : Pixels,
 } -> F64
 seen_bearing = |{ heading, cam_focal, x }|
 	Mountains.bearing_at({ heading: north_by(heading), cam_focal }, x).to_radians()
@@ -369,22 +375,22 @@ seen_bearing = |{ heading, cam_focal, x }|
 expect
 	seen_bearing({
 		heading: 0.0,
-		cam_focal: 500.0,
-		x: 480.0,
+		cam_focal: Pixels.of(500.0),
+		x: Pixels.of(480.0),
 	})
 		== 0.0
 expect
 	seen_bearing({
 		heading: 1.25,
-		cam_focal: 500.0,
-		x: 480.0,
+		cam_focal: Pixels.of(500.0),
+		x: Pixels.of(480.0),
 	})
 		== 1.25
 expect
 	seen_bearing({
 		heading: 1.25,
-		cam_focal: 100.0,
-		x: 480.0,
+		cam_focal: Pixels.of(100.0),
+		x: Pixels.of(480.0),
 	})
 		== 1.25
 
@@ -392,35 +398,35 @@ expect
 expect
 	seen_bearing({
 		heading: 0.0,
-		cam_focal: 500.0,
-		x: 0.0,
+		cam_focal: Pixels.of(500.0),
+		x: Pixels.of(0.0),
 	})
 		< seen_bearing({
 			heading: 0.0,
-			cam_focal: 500.0,
-			x: 480.0,
+			cam_focal: Pixels.of(500.0),
+			x: Pixels.of(480.0),
 		})
 expect
 	seen_bearing({
 		heading: 0.0,
-		cam_focal: 500.0,
-		x: 480.0,
+		cam_focal: Pixels.of(500.0),
+		x: Pixels.of(480.0),
 	})
 		< seen_bearing({
 			heading: 0.0,
-			cam_focal: 500.0,
-			x: 960.0,
+			cam_focal: Pixels.of(500.0),
+			x: Pixels.of(960.0),
 		})
 expect
 	seen_bearing({
 		heading: 0.0,
-		cam_focal: 100.0,
-		x: 960.0,
+		cam_focal: Pixels.of(100.0),
+		x: Pixels.of(960.0),
 	})
 		> seen_bearing({
 			heading: 0.0,
-			cam_focal: 500.0,
-			x: 960.0,
+			cam_focal: Pixels.of(500.0),
+			x: Pixels.of(960.0),
 		})
 
 expect Mountains.horizon_crest_px(north_by(0.0)) >= Mountains.ground_base(north_by(0.0))

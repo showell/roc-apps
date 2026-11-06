@@ -2,6 +2,7 @@
 ## stands, how tall it is, which emoji it is and which way it faces.
 ## Cutouts decides which critters become cutouts: one behind the camera,
 ## or too small to see, is left out.
+import Pixels
 import Distance
 import Geom
 import Lens
@@ -25,8 +26,8 @@ Cutouts :: [].{
 	Placement : [InView(Cutouts.Cutout), BehindCamera, TooSmall]
 
 	## A critter shorter than this many pixels is too small to draw.
-	min_critter_px : F64
-	min_critter_px = 2.0
+	min_critter_px : Pixels
+	min_critter_px = Pixels.of(2.0)
 
 	## A critter of `height` at `at` in the rider's view.
 	placement : {
@@ -38,7 +39,7 @@ Cutouts :: [].{
 	placement = |{ at, height, codepoint, facing }|
 		if at.forward <= Geom.near_plane {
 			BehindCamera
-		} else if (height.ratio_to(at.forward) * Lens.focal) < min_critter_px {
+		} else if Lens.focal.times(height.ratio_to(at.forward)) < min_critter_px {
 			TooSmall
 		} else {
 			InView({
@@ -162,4 +163,4 @@ expect Cutouts.cutouts_in_view(cow_places.map(cow_placement)).len() == 4
 expect Cutouts.too_small_count(cow_places.map(cow_placement)) == 3
 expect cow_places.map(cow_placement).len() == 10
 
-expect Cutouts.min_critter_px == 2.0
+expect Cutouts.min_critter_px.to_f64() == 2.0

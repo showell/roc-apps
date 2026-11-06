@@ -28,6 +28,7 @@ package
 		GroundSighting,
 		Lens,
 		Paint,
+		Pixels,
 		RailSighting,
 		RideInstant,
 		Rider,

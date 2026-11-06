@@ -1,6 +1,7 @@
 ## BirdSighting finds the Roc birds the rider can see in a frame: each one on a
 ## segment of the chain ahead, placed where its flight has got to, if it is in
 ## front of the camera and tall enough on screen to draw.
+import Pixels
 import Animation
 import BirdFlight
 import DepthSort
@@ -24,8 +25,8 @@ BirdSighting := {
 	bird_height = Distance.metres(2.2)
 
 	## How tall a bird `forward` metres ahead is on screen.
-	height_px : { forward : Distance, cam_focal : F64 } -> F64
-	height_px = |{ forward, cam_focal }| bird_height.ratio_to(forward) * cam_focal
+	height_px : { forward : Distance, cam_focal : Pixels } -> Pixels
+	height_px = |{ forward, cam_focal }| cam_focal.times(bird_height.ratio_to(forward))
 
 	## The birds in view, the nearest segment's first.
 	in_view : Chain.Viewpoint -> List(BirdSighting)

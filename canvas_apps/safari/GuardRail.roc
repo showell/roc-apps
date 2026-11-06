@@ -2,6 +2,7 @@
 ## on the ground. Each stretch of bar between two points of the path, and
 ## each post, is a flat quad, which the depth sort places among the frame's
 ## other things.
+import Pixels
 import Camera
 import lib.DeviceMath
 import Distance
@@ -84,7 +85,7 @@ GuardRail :: [].{
 
 	## A quad on screen, cut at the camera's near plane; a quad with fewer
 	## than three corners left in front of the camera draws nothing.
-	draw : GuardRail.RailQuad, F64 -> List(Shapes.Shape)
+	draw : GuardRail.RailQuad, Pixels -> List(Shapes.Shape)
 	draw = |quad, cam_focal| {
 		in_front = Geom.clip_near(quad.corners)
 		if in_front.len() < 3 {
