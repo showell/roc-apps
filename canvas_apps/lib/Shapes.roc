@@ -137,8 +137,8 @@ Shapes :: [].{
 		var $out = List.with_capacity(n)
 		var $k = 0
 		while $k < n {
-			a0 = Trig.two_pi * count($k) / count(n)
-			a1 = Trig.two_pi * count($k + 1) / count(n)
+			a0 = F64.tau * count($k) / count(n)
+			a1 = F64.tau * count($k + 1) / count(n)
 			$out = List.append(
 				$out,
 				line(x + r * Trig.r_cos(a0), y + r * Trig.r_sin(a0), x + r * Trig.r_cos(a1), y + r * Trig.r_sin(a1), w, fill),
@@ -258,7 +258,7 @@ Shapes :: [].{
 	}
 
 	half_pi : F64
-	half_pi = 1.5707963267948966
+	half_pi = F64.pi / 2.0
 
 	# One quarter turn about (cx, cy), from `from` through a right angle.
 	corner : List(F64), F64, F64, F64, F64, I64 -> List(F64)

@@ -4,12 +4,6 @@ import DeviceMath
 
 Trig :: [].{
 
-	pi : F64
-	pi = DeviceMath.dm_pi
-
-	two_pi : F64
-	two_pi = DeviceMath.dm_two_pi
-
 	half_pi : F64
 	half_pi = DeviceMath.dm_half_pi
 
@@ -22,12 +16,12 @@ Trig :: [].{
 			x
 		} else {
 			(
-				if x > pi {
-					wrap((x - two_pi), (fuel - 1))
+				if x > F64.pi {
+					wrap((x - F64.tau), (fuel - 1))
 				} else {
 					(
-						if x < (0.0 - pi) {
-							wrap((x + two_pi), (fuel - 1))
+						if x < (0.0 - F64.pi) {
+							wrap((x + F64.tau), (fuel - 1))
 						} else {
 							x
 						}
@@ -103,9 +97,9 @@ Trig :: [].{
 				if x < 0.0 {
 					(
 						if y >= 0.0 {
-							(r_atan((y / x)) + pi)
+							(r_atan((y / x)) + F64.pi)
 						} else {
-							(r_atan((y / x)) - pi)
+							(r_atan((y / x)) - F64.pi)
 						}
 					)
 				} else {

@@ -102,7 +102,7 @@ Walk :: [].{
 
 	# The turn, quick and eased at both ends.
 	heading : I64 -> F64
-	heading = |tick| Trig.pi * smooth(ramp(tick - spin_tick, spin_frames))
+	heading = |tick| F64.pi * smooth(ramp(tick - spin_tick, spin_frames))
 
 	# **A STRIDE, NOT A SHAKE.** Four bobs to the metre of nine millimetres
 	# each: it is the walking that makes it, so it quickens on the way back

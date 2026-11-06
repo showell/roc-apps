@@ -69,7 +69,7 @@ Halloween :: [].{
 		}
 		$out = List.concat($out, Witch.shapes(v, hf, Walk.witch_in(tick)))
 		$out = List.concat($out, Night.path(v, now, house_at))
-		tilt = (1.0 - Walk.attend(tick)) * Trig.pi / 4.0
+		tilt = (1.0 - Walk.attend(tick)) * F64.pi / 4.0
 		List.concat($out, Guards.shapes(v, tick, now, Walk.here(tick - Guards.lag_frames), tilt))
 	}
 }

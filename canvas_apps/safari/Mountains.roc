@@ -195,7 +195,7 @@ range_height = |range, bearing| {
 	if DeviceMath.real_abs(fraction) >= 1.0 {
 		Pixels.zero
 	} else {
-		envelope = Trig.r_cos(fraction * Trig.pi / 2.0)
+		envelope = Trig.r_cos(fraction * F64.pi / 2.0)
 		radians = from_center.to_radians()
 		first_wave = 0.24 * Trig.r_cos(radians * range.ridge_a)
 		second_wave = 0.16 * Trig.r_cos(radians * range.ridge_b + 1.0)

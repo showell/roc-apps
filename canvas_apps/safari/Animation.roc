@@ -215,7 +215,7 @@ pose_of = |looks, beat|
 	match looks {
 		Holds(pose) => pose
 		Alternates({ up, down, count, over }) =>
-			if Trig.r_sin(beat.from_start().ratio_to(over) * count.to_f64() * Trig.two_pi) > 0.0 {
+			if Trig.r_sin(beat.from_start().ratio_to(over) * count.to_f64() * F64.tau) > 0.0 {
 				up
 			} else {
 				down

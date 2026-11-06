@@ -111,7 +111,7 @@ Particles :: [].{
 		if life > 0.0 {
 			{ ..p, x: p.x + p.vx * dt, y: p.y + p.vy * dt, vy: p.vy + 420.0 * dt, life: life }
 		} else {
-			angle = p.phase * 6.2831855
+			angle = p.phase * F64.tau
 			speed = 90.0 + 150.0 * p.seed
 			{
 				..p,
