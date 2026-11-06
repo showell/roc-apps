@@ -121,7 +121,7 @@ segment_of = |trees| {
 birds_on : List(Scenery.Tree), { rider_along : F64, cam_focal : F64 } -> List(BirdSighting)
 birds_on = |trees, seen_from| birds_on_segment(segment_of(trees), seen_from)
 
-## The birds on `segment`, for a rider `rider_along` metres into it.
+## The birds on `segment_index`, for a rider `rider_along` metres into it.
 birds_on_segment : World.Segment, { rider_along : F64, cam_focal : F64 } -> List(BirdSighting)
 birds_on_segment = |segment, { rider_along, cam_focal }|
 	BirdSighting.in_view({
@@ -567,7 +567,7 @@ expect {
 done : RideInstant
 done = {
 	rider: {
-		segment: World.SegmentIndex.number(18),
+		segment_index: World.SegmentIndex.number(18),
 		along: Along.metres(400.0),
 		across: Across.metres(0.0),
 		yaw: Angle.Turn.radians(0.0),

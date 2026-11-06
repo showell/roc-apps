@@ -15,7 +15,7 @@ import World
 ## rider's look away from the way the bike points, and `attention` how
 ## closely the rider is watching something.
 RiderState := {
-	segment : World.SegmentIndex,
+	segment_index : World.SegmentIndex,
 	along : Along,
 	across : Across,
 	yaw : Angle.Turn,
@@ -28,7 +28,7 @@ RiderState := {
 
 	initial : RiderState
 	initial = {
-		segment: World.SegmentIndex.first,
+		segment_index: World.SegmentIndex.first,
 		along: Along.start,
 		across: Across.middle,
 		yaw: Angle.straight_ahead,
@@ -40,7 +40,7 @@ RiderState := {
 	}
 }
 
-expect RiderState.initial.segment.to_i64() == 0
+expect RiderState.initial.segment_index.to_i64() == 0
 expect RiderState.initial.along.to_metres() == 0.0
 expect RiderState.initial.across.to_metres() == 0.0
 expect RiderState.initial.yaw.to_radians() == 0.0

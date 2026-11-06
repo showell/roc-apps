@@ -16,7 +16,7 @@ RideFocal :: [].{
 	## How strongly the crossing on the rider's segment holds their attention.
 	crossing_attention : List(World.Segment), RiderState -> Attention
 	crossing_attention = |route, rider|
-		CrossingReaction.reaction_to(rider.segment.segment_in(route), rider).attention
+		CrossingReaction.reaction_to(rider.segment_index.segment_in(route), rider).attention
 
 	## The camera's focal length for where the rider is and how they ride.
 	ride_focal : List(World.Segment), RiderState -> F64
@@ -46,7 +46,7 @@ upright = RiderState.initial
 near_cat_on : U32 -> RiderState
 near_cat_on = |number| {
 	..upright,
-	segment: World.SegmentIndex.number(number),
+	segment_index: World.SegmentIndex.number(number),
 	along: upright.along.plus(Gaze.gaze_look_dist.times(0.8)),
 }
 
@@ -93,7 +93,7 @@ expect RideFocal.crossing_attention(route, near_cat_on(1)).to_f64() > 0.0
 expect !(
 	RideFocal.crossing_attention(
 		route,
-		{ ..upright, segment: World.SegmentIndex.number(1) },
+		{ ..upright, segment_index: World.SegmentIndex.number(1) },
 	).to_f64() > 0.0
 )
 expect !(RideFocal.crossing_attention(route, near_cat_on(0)).to_f64() > 0.0)

@@ -130,10 +130,10 @@ SafariApp :: [].{
 	# stepping until the segment changes.
 	next_segment : Tour -> Tour
 	next_segment = |tour| {
-		from = tour.instant.rider.segment
+		from = tour.instant.rider.segment_index
 		var $tour = Tour.step_forward(tour)
 		var $guard = 0
-		while $tour.instant.rider.segment == from and $guard < step_guard {
+		while $tour.instant.rider.segment_index == from and $guard < step_guard {
 			$tour = Tour.step_forward($tour)
 			$guard = $guard + 1
 		}

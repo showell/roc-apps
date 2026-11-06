@@ -147,7 +147,7 @@ Gaze :: [].{
 
 	next_rider_gaze : RiderState, List(World.Segment) -> RiderState
 	next_rider_gaze = |state, route| {
-		seg = state.segment.segment_in(route)
+		seg = state.segment_index.segment_in(route)
 		gaze_yaw = next_gaze_yaw(state, desired_gaze(state, seg))
 		{
 			..state,
@@ -218,7 +218,7 @@ expect distracting.pig_attention == Distracting
 rider : F64, F64 -> RiderState
 rider = |along, yaw| {
 	..RiderState.initial,
-	segment: World.SegmentIndex.number(2),
+	segment_index: World.SegmentIndex.number(2),
 	along: RiderState.initial.along.plus(Distance.metres(along)),
 	yaw: Angle.Turn.radians(yaw),
 }

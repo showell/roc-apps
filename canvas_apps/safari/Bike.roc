@@ -60,11 +60,11 @@ expect Bike.turn_per_lean == 0.1
 expect Bike.max_lean.to_radians() == 0.3490658503988659
 
 # Bike doesn't import RiderState, and `Motion` is open, so the records here stand in
-# for it: `segment`, `gaze_yaw` and `attention` are the caller's own fields.
+# for it: `segment_index`, `gaze_yaw` and `attention` are the caller's own fields.
 
 ## A rider well along a segment, leaning a little to the right.
 riding = {
-	segment: 3,
+	segment_index: 3,
 	along: Along.metres(120.5),
 	across: Across.metres(2.25),
 	yaw: Angle.Turn.radians(0.375),
@@ -122,9 +122,9 @@ expect first_step.gaze_yaw.to_radians() == 0.625
 expect first_step.attention == 0.25
 expect third_step.gaze_yaw.to_radians() == 0.625
 expect third_step.attention == 0.25
-expect first_step.segment == 3
-expect second_step.segment == 3
-expect third_step.segment == 3
+expect first_step.segment_index == 3
+expect second_step.segment_index == 3
+expect third_step.segment_index == 3
 
 # Each is within 1e-9 of its want, scaled up by a want past 1.
 expect
@@ -178,7 +178,7 @@ expect {
 }
 
 probe = {
-	segment: 7,
+	segment_index: 7,
 	along: Along.metres(11.0),
 	across: Across.metres(2.5),
 	yaw: Angle.Turn.radians(0.75),
@@ -216,7 +216,7 @@ expect
 			0.75,
 		]
 
-expect Bike.with_lean(probe, Angle.Lean.radians(9.5)).segment == 7
+expect Bike.with_lean(probe, Angle.Lean.radians(9.5)).segment_index == 7
 
 expect
 	numbers_of(Bike.with_lean(leaned_once, Angle.Lean.radians(9.5)))

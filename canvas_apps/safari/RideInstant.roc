@@ -44,7 +44,7 @@ RideInstant := {
 	next : List(World.Segment), RideInstant -> RideInstant
 	next = |route, instant| {
 		nx = Rider.advance(instant.rider, route)
-		dist = World.distance_along_route(route, { index: nx.segment, along: nx.along })
+		dist = World.distance_along_route(route, { index: nx.segment_index, along: nx.along })
 		{
 			rider: nx,
 			truck: Truck.advance(
@@ -77,7 +77,7 @@ RideInstant := {
 		view = {
 			road: {
 				route: route,
-				chain: Chain.chain_ahead(route, s.segment),
+				chain: Chain.chain_ahead(route, s.segment_index),
 				vantage: ViewYaw.vantage_for(s),
 			},
 			cam_focal: RideFocal.ride_focal(route, s),
@@ -122,7 +122,7 @@ expect RideInstant.initial.rider.across.to_metres() == 0.0
 expect RideInstant.initial.rider.speed.to_metres_a_step() == 0.3
 expect RideInstant.initial.truck.route_position.to_metres() == 500.0
 expect RideInstant.initial.truck.speed.to_metres_a_step() == 0.3
-expect RideInstant.initial.rider.segment.to_i64() == 0
+expect RideInstant.initial.rider.segment_index.to_i64() == 0
 expect RideInstant.initial.truck.brake_lights == Off
 expect !(Rider.is_finished(RideInstant.initial.rider, World.segments))
 
@@ -141,11 +141,11 @@ expect after_two_steps.rider.along > after_one_step.rider.along
 expect {
 	old_dist = World.distance_along_route(
 		World.segments,
-		{ index: RideInstant.initial.rider.segment, along: RideInstant.initial.rider.along },
+		{ index: RideInstant.initial.rider.segment_index, along: RideInstant.initial.rider.along },
 	)
 	new_dist = World.distance_along_route(
 		World.segments,
-		{ index: after_one_step.rider.segment, along: after_one_step.rider.along },
+		{ index: after_one_step.rider.segment_index, along: after_one_step.rider.along },
 	)
 	against_new = Truck.advance(
 		RideInstant.initial.truck,

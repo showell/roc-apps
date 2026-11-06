@@ -41,7 +41,7 @@ Rider :: [].{
 
 	rider_state_for_next_segment : RiderState, List(World.Segment) -> RiderState
 	rider_state_for_next_segment = |rs, route| {
-		seg = rs.segment.segment_in(route)
+		seg = rs.segment_index.segment_in(route)
 		next =
 			match seg.ending {
 				Continues({ next: index }) => index
@@ -57,7 +57,7 @@ Rider :: [].{
 		)
 		{
 			..rs,
-			segment: next,
+			segment_index: next,
 			along: on_next.along,
 			across: on_next.across,
 			yaw: rs.yaw.minus(seg.exit_turn),
@@ -97,7 +97,7 @@ Rider :: [].{
 
 	advance : RiderState, List(World.Segment) -> RiderState
 	advance = |state, route| {
-		seg = state.segment.segment_in(route)
+		seg = state.segment_index.segment_in(route)
 		dec = decide(state, seg)
 		moved = Bike.simulate_rider_step(state, { lean_step: dec.lean_step, accel: dec.accel })
 		resolved =
@@ -110,7 +110,7 @@ Rider :: [].{
 
 	is_finished : RiderState, List(World.Segment) -> Bool
 	is_finished = |s, route| {
-		seg = s.segment.segment_in(route)
+		seg = s.segment_index.segment_in(route)
 		match seg.ending {
 			Continues(_) => False
 			Terminates => s.along >= Along.at(seg.length)
@@ -185,7 +185,7 @@ expect crossed.gaze_yaw.to_radians() == 0.0
 expect crossed.heading.to_radians() - 0.7 == 0.0
 expect crossed.yaw.to_radians() - (0.1 - first_segment.exit_turn.to_radians()) == 0.0
 
-expect crossed.segment.to_i64() == 1
+expect crossed.segment_index.to_i64() == 1
 expect first_segment.ending == Continues({ next: World.SegmentIndex.number(1) })
 
 expect {
@@ -193,8 +193,8 @@ expect {
 	far.across.distance_from_middle() >= Scenery.road_half_width
 }
 
-expect Rider.resolve_cross(rider_at(100.0, 0.0), first_segments).segment.to_i64() == 0
-expect Rider.resolve_cross(rider_at(499.0, 0.0), first_segments).segment.to_i64() == 1
+expect Rider.resolve_cross(rider_at(100.0, 0.0), first_segments).segment_index.to_i64() == 0
+expect Rider.resolve_cross(rider_at(499.0, 0.0), first_segments).segment_index.to_i64() == 1
 
 last_seg : World.Segment
 last_seg = World.route_segment(18)
@@ -231,7 +231,7 @@ one_step_on = Rider.advance(RiderState.initial, first_segments)
 
 expect one_step_on.along > Along.start
 expect one_step_on.speed > Speed.at_rest
-expect one_step_on.segment == World.SegmentIndex.first
+expect one_step_on.segment_index == World.SegmentIndex.first
 expect one_step_on.across.distance_from_middle() < Scenery.road_half_width
 expect one_step_on.speed <= VehicleLimits.v_max
 
