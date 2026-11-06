@@ -33,8 +33,8 @@ GroundSighting :: [].{
 
 	## A bend's paving starts this far before the end of the segment that
 	## bends.
-	approach_length : Distance
-	approach_length = Distance.metres(40.0)
+	lead_in_length : Distance
+	lead_in_length = Distance.metres(40.0)
 
 	## The ground in view, in paint order: each segment of the chain ahead in
 	## turn, then the bend from the segment behind.
@@ -141,14 +141,14 @@ ground_behind = |road, index| {
 
 ## A bend's paving: the road just before it, then the corner it cuts.
 bend_ground : Chain.RoadView, BendView -> List(Ground.Patch)
-bend_ground = |road, bend| [road_patch(approach(road, bend)), road_patch(bend_corner(road, bend))]
+bend_ground = |road, bend| [road_patch(lead_in(road, bend)), road_patch(bend_corner(road, bend))]
 
-## The last `approach_length` of the road before a bend.
-approach : Chain.RoadView, BendView -> List(Geom.RiderPoint)
-approach = |road, bend| {
+## The last `lead_in_length` of the road before a bend.
+lead_in : Chain.RoadView, BendView -> List(Geom.RiderPoint)
+lead_in = |road, bend| {
 	corner = |along, across| Chain.rider_point_at(road, { place: bend.before, along, across })
 	end = Along.at(bend.length_before)
-	start = Along.at(bend.length_before.minus(GroundSighting.approach_length))
+	start = Along.at(bend.length_before.minus(GroundSighting.lead_in_length))
 	[
 		corner(end, Scenery.left_edge),
 		corner(end, Scenery.right_edge),
@@ -220,7 +220,7 @@ pond_ground = |road, { segment, place }|
 	}
 
 expect GroundSighting.road_chunk_length.to_metres() == 25.0
-expect GroundSighting.approach_length.to_metres() == 40.0
+expect GroundSighting.lead_in_length.to_metres() == 40.0
 expect GroundSighting.road_color == 3421500
 expect
 	[
