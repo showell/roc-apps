@@ -519,6 +519,31 @@ expect is_one_tree_behind(past_bend_trees(-150.0))
 expect past_bend_trees(30.0).len() == 0
 expect past_bend_trees(-80.0).len() == 0
 
+# TreeSighting keeps each segment's trees in the order they were planted,
+# leaving out those behind the camera and those too small to draw, and goes
+# through the segments in view in turn.
+## Where each tree in view stands for a rider 10 m into `segments`, seen through
+## `cam_focal`: right of the camera, then ahead of it.
+tree_feet : List(Segment), Pixels -> List((F64, F64))
+tree_feet = |segments, cam_focal|
+	TreeSighting.trees_in_view(
+		RoadAhead.RoadView.ahead_of(Route.from_segments(segments), Route.SegmentIndex.first),
+		{ vantage: { ..origin, along: Along.metres(10.0) }, cam_focal },
+	).map(|tree| (tree.spot.foot().right().to_metres(), tree.spot.foot().forward().to_metres()))
+
+## A tree behind the rider, then a far one, then a near pair.
+planted_out_of_order : Segment
+planted_out_of_order = segment_of([tree_at(5.0, -3.5), tree_at(46.0, 3.5), tree_at(16.0, -3.5), tree_at(16.0, 3.5)])
+
+expect tree_feet([planted_out_of_order], Pixels.of(500.0)) == [(3.5, 36.0), (-3.5, 6.0), (3.5, 6.0)]
+expect tree_feet([planted_out_of_order], Pixels.of(1.0)) == []
+expect
+	tree_feet(
+		[going_straight_on(segment_of([tree_at(46.0, 3.5)])), segment_of([tree_at(16.0, -3.5)])],
+		Pixels.of(500.0),
+	)
+		== [(3.5, 36.0), (-3.5, 206.0)]
+
 # EncounterSighting's cats: which cats are in view as the rider comes on them.
 ## The second segment, with a cat crossing it.
 cat_segment : Segment
