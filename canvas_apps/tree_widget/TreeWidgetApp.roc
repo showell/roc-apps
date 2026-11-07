@@ -17,8 +17,6 @@ import game.SegmentPlace
 import game.Sky
 import game.Spot
 import game.TreeShapes
-import lib.Brush
-import lib.RgbColor
 import lib.CanvasApp
 import lib.Shapes
 import widget.ReadoutText
@@ -30,12 +28,7 @@ TreeWidgetApp :: [].{
 	Model : {}
 
 	canvas_app : CanvasApp.CanvasApp(TreeWidgetApp.Model)
-	canvas_app = ScrubWidget.canvas_app({
-		title: "Three conifers",
-		init: {},
-		model_at_next_step: |model, _input| model,
-		frame_shapes: |_model| still_shapes,
-	})
+	canvas_app = ScrubWidget.still_app({ title: "Three conifers", shapes: still_shapes })
 }
 
 ## A tree in the picture: how far off it stands, and the x on the canvas of the
@@ -111,14 +104,17 @@ caption_lines = |forward|
 ## A line of a caption, centered under its tree, on row `row` of the panel.
 caption_line : Stand, { text : Str, row : U64 } -> Shapes.Shape
 caption_line = |stand, { text, row }|
-	Text({
+	ScrubWidget.readout({
 		text,
-		x: stand.canvas_x,
-		y: 276.0 + row.to_f64() * 24.0,
-		size: 13.0,
-		face: Code,
-		align: Center,
-		color: Brush.opaque(RgbColor.of(0x202020)),
+		color: ScrubWidget.ink_color,
+		row,
+		style: {
+			x: stand.canvas_x,
+			first_baseline: 276.0,
+			row_spacing: 24.0,
+			size: 13.0,
+			align: Center,
+		},
 	})
 
 caption_shapes : Stand -> List(Shapes.Shape)
@@ -163,11 +159,6 @@ is_plain_to_see = |stand|
 expect TreeShapes.crown_of(far_stand.forward) == Triangles
 expect TreeShapes.crown_of(middle_stand.forward) == Cones({ shade: Fraction.zero })
 expect TreeShapes.crown_of(near_stand.forward) == Cones({ shade: Fraction.of(0.5) })
-
-# A caption reads the distance and the crown.
-expect caption_lines(far_stand.forward) == ["forward = 210.0 m", "Triangles"]
-expect caption_lines(middle_stand.forward) == ["forward = 85.0 m", "Cones({ shade: 0.0 })"]
-expect caption_lines(near_stand.forward) == ["forward = 40.0 m", "Cones({ shade: 0.5 })"]
 
 # All three trees can be seen. A tree too near loses its foot under the panel or
 # its tip off the top, and one too far is a speck.

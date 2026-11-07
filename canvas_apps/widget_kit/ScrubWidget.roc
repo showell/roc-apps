@@ -2,8 +2,9 @@
 ## pure function of its state, so what it shows can play forward and backward.
 ## This module holds the page each widget is drawn on: the canvas, and laying out
 ## the picture and the lines of text below it. ReadoutText puts a widget's numbers
-## into words for those lines, and VcrButtons reads a widget's buttons into its
-## state.
+## into words for those lines, VcrButtons reads a widget's buttons into its
+## state, Click reads where the pointer was pressed, and PlanView draws a picture
+## that looks down on the road.
 import game.FrameView
 import game.Screen
 import lib.Brush
@@ -32,6 +33,14 @@ ScrubWidget :: [].{
 	panel_width : F64
 	panel_width = canvas_width - 2.0 * side_margin
 
+	## The words and the lines on the panel.
+	ink_color : RgbColor
+	ink_color = RgbColor.of(0x202020)
+
+	## The panel under the picture, which the text and the buttons sit on.
+	panel_color : RgbColor
+	panel_color = RgbColor.of(0xDCECF5)
+
 	## A canvas app from a widget's model, what a frame does to it and what it
 	## draws.
 	canvas_app : {
@@ -51,24 +60,73 @@ ScrubWidget :: [].{
 		title,
 	}
 
+	## A canvas app for a widget that draws one picture that never changes. Such a
+	## picture needn't be painted again sixty times a second.
+	still_app : { title : Str, shapes : List(Shapes.Shape) } -> CanvasApp.CanvasApp({})
+	still_app = |{ title, shapes }| {
+		size: { width: canvas_width, height: canvas_height },
+		fps: still_frames_a_second,
+		init: {},
+		model_at_next_step: |model, _input, _seconds| model,
+		frame_shapes: |_model| shapes,
+		sounds: |_model| 0,
+		tones: [],
+		title,
+	}
+
+	## A plain color behind the picture, first under everything else. It fills
+	## the canvas, and a widget's panel covers its lower part.
+	picture_backdrop : RgbColor -> Shapes.Shape
+	picture_backdrop = |color|
+		Rect({
+			x: 0.0,
+			y: 0.0,
+			width: canvas_width,
+			height: canvas_height,
+			fill: Brush.flat(color),
+		})
+
 	## The size of a label's words, on a canvas of the usual width.
 	label_size : F64
 	label_size = 14.0
 
-	## A line of what the widget reads out, on row `row` of the panel.
+	## Where and how large the rows of a readout are set: the x they are aligned
+	## on, the baseline of the first row, how far each row sits below the last,
+	## and the size of their type.
+	ReadoutStyle : {
+		x : F64,
+		first_baseline : F64,
+		row_spacing : F64,
+		size : F64,
+		align : Shapes.Align,
+	}
+
+	## The rows of text on the panel under the picture, from its left margin.
+	panel_readout : ScrubWidget.ReadoutStyle
+	panel_readout = {
+		x: side_margin,
+		first_baseline: picture_bottom_y + 50.0,
+		row_spacing: 26.0,
+		size: 15.0,
+		align: Left,
+	}
+
+	## A line of what the widget reads out, on row `row` of `style`, in
+	## monospace.
 	readout : {
 		text : Str,
 		color : RgbColor,
 		row : U64,
+		style : ScrubWidget.ReadoutStyle,
 	} -> Shapes.Shape
-	readout = |{ text, color, row }|
+	readout = |{ text, color, row, style }|
 		Text({
 			text,
-			x: side_margin,
-			y: readout_first_baseline + row.to_f64() * readout_row_spacing,
-			size: readout_size,
+			x: style.x,
+			y: style.first_baseline + row.to_f64() * style.row_spacing,
+			size: style.size,
 			face: Code,
-			align: Left,
+			align: style.align,
 			color: Brush.opaque(color),
 		})
 
@@ -86,7 +144,7 @@ ScrubWidget :: [].{
 			size: label_size,
 			face: Prose,
 			align: Left,
-			color: Brush.opaque(ink_color),
+			color: Brush.opaque(ScrubWidget.ink_color),
 		})
 
 	## The picture, and the panel with the lines of text on it.
@@ -111,23 +169,11 @@ ScrubWidget :: [].{
 	}
 }
 
-## The size of the lines under the picture, on a canvas of the usual width.
-readout_size : F64
-readout_size = 15.0
-
-## The baseline of the readout's first row, below the picture.
-readout_first_baseline : F64
-readout_first_baseline = ScrubWidget.picture_bottom_y + 50.0
-
-## How far each row of the readout sits below the last.
-readout_row_spacing : F64
-readout_row_spacing = 26.0
-
-panel_color : RgbColor
-panel_color = RgbColor.of(0xDCECF5)
-
-ink_color : RgbColor
-ink_color = RgbColor.of(0x202020)
+## How often a still picture is painted: seldom, since it never changes, but
+## often enough that a page's check, which runs a page for a few frames, sees
+## it painted more than once.
+still_frames_a_second : U32
+still_frames_a_second = 20
 
 ## The text sits on this, and a widget's buttons do too.
 panel : Shapes.Shape
@@ -136,11 +182,11 @@ panel = Rect({
 	y: ScrubWidget.picture_bottom_y,
 	width: ScrubWidget.canvas_width,
 	height: ScrubWidget.canvas_height - ScrubWidget.picture_bottom_y,
-	fill: Brush.flat(panel_color),
+	fill: Brush.flat(ScrubWidget.panel_color),
 })
 
 status_line : Str, U64 -> Shapes.Shape
-status_line = |text, row| ScrubWidget.readout({ text, color: ink_color, row })
+status_line = |text, row| ScrubWidget.readout({ text, color: ScrubWidget.ink_color, row, style: ScrubWidget.panel_readout })
 
 # A page is the panel and its text.
 expect ScrubWidget.frame_shapes({ picture_shapes: [], status_lines: [] }).len() == 1
@@ -152,12 +198,13 @@ expect
 		text: "I",
 		color: RgbColor.of(0x202020),
 		row: 1,
+		style: ScrubWidget.panel_readout,
 	})
 		== Text({
 			text: "I",
 			x: ScrubWidget.side_margin,
 			y: 292.0,
-			size: readout_size,
+			size: 15.0,
 			face: Code,
 			align: Left,
 			color: Brush.opaque(RgbColor.of(0x202020)),
