@@ -84,9 +84,6 @@ Geom :: [].{
 	herd_front_distance : Distance
 	herd_front_distance = road_half_width.plus(Distance.metres(10.0))
 
-	## A line through two points.
-	Line : { start_point : Geom.RiderPoint, end_point : Geom.RiderPoint }
-
 	## A point on the current segment, as the camera at `vantage` sees it.
 	to_rider_point : Geom.RoadPoint, Geom.Vantage -> Geom.RiderPoint
 	to_rider_point = |{ along, across }, vantage| {
@@ -136,26 +133,6 @@ Geom :: [].{
 	commit_along = |bend| {
 		exit_tan = bend.turn.abs().to_radians().tan()
 		Along.at(bend.segment_length.minus(Geom.road_half_width.divided_by(exit_tan)))
-	}
-
-	## Where two lines cross. They must not be parallel.
-	line_crossing : { first_line : Geom.Line, second_line : Geom.Line } -> Geom.RiderPoint
-	line_crossing = |{ first_line, second_line }| {
-		first_start = first_line.start_point
-		second_start = second_line.start_point
-		first_rightward = first_line.end_point.right.minus(first_start.right).to_metres()
-		first_forward = first_line.end_point.forward.minus(first_start.forward).to_metres()
-		second_rightward = second_line.end_point.right.minus(second_start.right).to_metres()
-		second_forward = second_line.end_point.forward.minus(second_start.forward).to_metres()
-		gap_rightward = second_start.right.minus(first_start.right).to_metres()
-		gap_forward = second_start.forward.minus(first_start.forward).to_metres()
-		offset_cross = gap_rightward * second_forward - gap_forward * second_rightward
-		direction_cross = first_rightward * second_forward - first_forward * second_rightward
-		fraction = offset_cross / direction_cross
-		{
-			right: first_start.right.plus(Distance.metres(fraction * first_rightward)),
-			forward: first_start.forward.plus(Distance.metres(fraction * first_forward)),
-		}
 	}
 
 	## The closest distance ahead that the camera can see.
@@ -614,19 +591,6 @@ expect
 				and from_next_middle(commit.plus(Distance.metres(0.01))) < 2.0
 		},
 	)
-
-expect
-	Geom.line_crossing({
-		first_line: {
-			start_point: { right: Distance.metres(0.0), forward: Distance.metres(0.0) },
-			end_point: { right: Distance.metres(0.0), forward: Distance.metres(1.0) },
-		},
-		second_line: {
-			start_point: { right: Distance.metres(-2.0), forward: Distance.metres(4.0) },
-			end_point: { right: Distance.metres(3.0), forward: Distance.metres(4.0) },
-		},
-	})
-		== { right: Distance.metres(0.0), forward: Distance.metres(4.0) }
 
 expect
 	Geom.clipped_points([
