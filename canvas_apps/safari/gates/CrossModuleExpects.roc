@@ -21,6 +21,7 @@ import game.DepthSort
 import game.Distance
 import game.EmojiStills
 import game.Fraction
+import game.FrameView
 import game.RoadAhead
 import game.Route
 import game.Segment
@@ -920,12 +921,33 @@ expect RideInstant.next_or_restart(World.route, done).truck.pace == NotSlowing
 
 # A frame of the ride draws.
 expect {
-	frame = RideInstant.frame_content(World.route, RideInstant.initial)
+	frame = FrameView.frame_view_at(World.route, RideInstant.initial)
 	first_shape = frame.shapes.first() ?? crash "CrossModuleExpects: a frame draws"
 	coordinates_of(first_shape).len() >= 6
 }
 
 expect {
 	after_one_step = RideInstant.next_or_restart(World.route, RideInstant.initial)
-	RideInstant.frame_content(World.route, after_one_step).shapes.len() > 0
+	FrameView.frame_view_at(World.route, after_one_step).shapes.len() > 0
 }
+
+# The ride starts facing away from the sun.
+expect FrameView.frame_view_at(World.route, RideInstant.initial).sun == OutOfView
+
+## A clock with the sun behind the mountains.
+after_sunset : Clock
+after_sunset = Clock.at_step(5700)
+
+## The truck's lights at `clock`, with the truck's pace as given.
+lights_at : { clock : Clock, pace : [Slowing, NotSlowing] } -> _
+lights_at = |{ clock, pace }|
+	FrameView.lit_truck({
+		..RideInstant.initial,
+		truck: { ..RideInstant.initial.truck, pace },
+		clock,
+	})
+
+expect lights_at({ clock: Clock.start, pace: NotSlowing }) == { headlights: Off, brake_lights: Off }
+expect lights_at({ clock: Clock.start, pace: Slowing }) == { headlights: Off, brake_lights: On }
+expect lights_at({ clock: after_sunset, pace: NotSlowing }) == { headlights: On, brake_lights: Off }
+expect lights_at({ clock: after_sunset, pace: Slowing }) == { headlights: On, brake_lights: On }

@@ -1,23 +1,10 @@
 import Clock
-import RoadAhead
-import Ground
-import GroundSighting
-import Lens
 import Route
-import SceneShapes
-import Mountains
 import RiderState
-import Scene
-import RideFocal
 import Rider
-import Sky
 import Steps
-import Sun
 import Truck
-import LitTruck
-import ViewYaw
 import World
-import lib.Shapes
 
 ## One instant of the ride, and all that is kept from one step to the next: the
 ## rider and the truck, each moved once a step from where it was, and the
@@ -56,67 +43,6 @@ RideInstant := {
 			),
 			clock: instant.clock.next(),
 		}
-	}
-
-	## Which of the truck's lights are on: its headlights once the sun is behind
-	## the mountains, and its brake lights while its last step slowed it.
-	lit_truck : RideInstant -> LitTruck
-	lit_truck = |instant| {
-		headlights: if Mountains.is_sun_behind_mountains(instant.clock) {
-			On
-		} else {
-			Off
-		},
-		brake_lights: match instant.truck.pace {
-			Slowing => On
-			NotSlowing => Off
-		},
-	}
-
-	## What the camera shows at one instant: the shapes in paint order, and the
-	## sun.
-	FrameContent : { shapes : List(Shapes.Shape), sun : Sun.Sighting }
-
-	## The frame at `instant`. The camera's heading and focal length are worked
-	## out once, for both the shapes and the sun.
-	frame_content : Route, RideInstant -> RideInstant.FrameContent
-	frame_content = |route, instant| {
-		aim = {
-			heading: ViewYaw.heading_for(instant.rider),
-			cam_focal: RideFocal.ride_focal(instant.rider, route),
-		}
-		{ shapes: shapes(instant, { route, aim }), sun: Sun.sighting(aim, instant.clock) }
-	}
-
-	shapes : RideInstant, { route : Route, aim : Lens.CameraAim } -> List(Shapes.Shape)
-	shapes = |instant, { route, aim }| {
-		cam_focal = aim.cam_focal
-		s = instant.rider
-		view = {
-			road: {
-				route,
-				segments_ahead: RoadAhead.indices_ahead(route, s.segment_index),
-				vantage: ViewYaw.vantage_for(s),
-			},
-			cam_focal,
-		}
-		scene = Scene.scene_in_view(
-			view,
-			{
-				speed: s.motorcycle.speed,
-				truck: {
-					route_position: instant.truck.route_position,
-					lit_truck: lit_truck(instant),
-				},
-				clock: instant.clock,
-			},
-		)
-		ground = GroundSighting.patches_in_view(view.road)
-		[
-			Mountains.mountain_shapes(aim, Sky.dusk_at(instant.clock)),
-			ground.keep_oks(|patch| Ground.patch_shape(patch, cam_focal)),
-			SceneShapes.scene_shapes(scene, view),
-		].join()
 	}
 }
 
@@ -175,24 +101,3 @@ expect {
 
 expect after_one_step.clock != Clock.start
 expect !Rider.is_finished(after_one_step.rider, World.route)
-
-# The ride starts facing away from the sun.
-expect RideInstant.frame_content(World.route, RideInstant.initial).sun == OutOfView
-
-## A clock with the sun behind the mountains.
-after_sunset : Clock
-after_sunset = Clock.at_step(5700)
-
-## The truck's lights at `clock`, with the truck's pace as given.
-lights_at : { clock : Clock, pace : [Slowing, NotSlowing] } -> LitTruck
-lights_at = |{ clock, pace }|
-	RideInstant.lit_truck({
-		..RideInstant.initial,
-		truck: { ..RideInstant.initial.truck, pace },
-		clock,
-	})
-
-expect lights_at({ clock: Clock.start, pace: NotSlowing }) == { headlights: Off, brake_lights: Off }
-expect lights_at({ clock: Clock.start, pace: Slowing }) == { headlights: Off, brake_lights: On }
-expect lights_at({ clock: after_sunset, pace: NotSlowing }) == { headlights: On, brake_lights: Off }
-expect lights_at({ clock: after_sunset, pace: Slowing }) == { headlights: On, brake_lights: On }

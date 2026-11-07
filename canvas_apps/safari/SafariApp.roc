@@ -10,6 +10,7 @@
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
+import Angle
 import Backdrop
 import Screen
 import Tour
@@ -39,24 +40,24 @@ SafariApp :: [].{
 	## around everything else.
 	frame_shapes : Tour -> List(Shapes.Shape)
 	frame_shapes = |tour| {
-		frame = Tour.frame_content(tour)
+		view = Tour.frame_view(tour)
 		Shapes.in_space(
-			lean_space(tour),
+			lean_space(view.roll),
 			Backdrop.frame_shapes(
-				frame.shapes,
-				{ sky_colors: Tour.sky_colors(tour), sun_sighting: frame.sun },
+				view.shapes,
+				{ sky_colors: view.sky_colors, sun_sighting: view.sun },
 			),
 		)
 	}
 
-	## The space the whole frame leans in.
-	lean_space : Tour -> Shapes.Space
-	lean_space = |tour| {
+	## The space the whole frame leans in, at the camera's `roll`.
+	lean_space : Angle.Lean -> Shapes.Space
+	lean_space = |roll| {
 		centre = { x: Screen.width.to_f64() / 2.0, y: Screen.height.to_f64() / 2.0 }
 		World({
 			target: centre,
 			offset: centre,
-			rotation: 0.0 - Tour.roll(tour).to_degrees(),
+			rotation: 0.0 - roll.to_degrees(),
 			zoom: 1.0,
 		})
 	}

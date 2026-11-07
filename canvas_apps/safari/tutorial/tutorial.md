@@ -788,7 +788,7 @@ Opaque types do the most work from here on. A `Bearing` and a `Turn` are both fl
 
 Its caller, `RideInstant.sun`, is short enough to read whole:
 
-{{code RideInstant.frame_content}}
+{{code FrameView.frame_view_at}}
 
 Those functions all take a `clock`, and that's the hard part. The sun sinks a little with every step, and the sky's colors, the mountains and the truck's headlights all follow it. That's a lot of heavy lifting for a circle. It gets a chapter of its own, The setting sun, once things start to move.
 
@@ -825,7 +825,7 @@ Every function in this chapter has a `->` arrow, not `=>`. That tells you the fu
 
 Here's one of the questions being asked. `Tour` holds the ride, and we'll come back to it. `Tour.sky_top_color` takes the clock from the current instant and hands it to `Sky`.
 
-{{code Tour.sky_colors}}
+{{code FrameView.frame_view_at from "sky_colors: Sky.colors_at" to "sky_colors: Sky.colors_at"}}
 
 ### Two colors
 
@@ -1214,7 +1214,7 @@ The first three lines under the picture are that record's three fields, read fro
 New in this chapter:
 
 - Roc: nominal types
-- Modules: `RideInstant`, `Tour`
+- Modules: `RideInstant`, `Tour`, `FrameView`
 
 A record is the plainest shape in Roc, and it's nearly all this needs. `RideInstant := { ... }.{ ... }` makes the module's own type out of one. That's a nominal type, which can carry a block of definitions, and unlike an opaque type it leaves its fields readable.
 
@@ -1378,7 +1378,7 @@ A box is a function, and an arrow is a call. The three boxes under the frame are
 
 Here's the top of that diagram in code. Each frame, the game asks for three things and hands them to `Backdrop`:
 
-{{code SafariApp.frame_shapes from "frame = Tour.frame_content(tour)" to "sun_sighting: frame.sun"}}
+{{code SafariApp.frame_shapes from "view = Tour.frame_view(tour)" to "sun_sighting: view.sun"}}
 
 `Tour` holds the clock and hands it straight to `Sun` and `Sky`, so everything from here on is in those two. Let's take the three jobs in order.
 
@@ -1539,7 +1539,7 @@ When the rider leans, the whole picture leans with it. This is all of that:
 
 A lean inside the deadband leaves the canvas level, and any other lean passes straight through. The last `expect` is a table of pairs, on both sides of the deadband and at its edge. It's called once a frame:
 
-{{code Tour.roll}}
+{{code FrameView.frame_view_at from "roll: CanvasRoll" to "roll: CanvasRoll"}}
 
 The camera turns as well. `ViewYaw` follows the rider's gaze, and turns a little with the lean, as a rider's head turns into a bend.
 
@@ -1878,7 +1878,7 @@ The truck's headlights come on once the sun has gone behind the mountains, at st
 
 `RideInstant` puts it together. It's the only place that can. `Truck` is in the ride half of the system and `Mountains` is in the view, and no arrow goes from the first to the second. `RideInstant` imports both.
 
-{{code RideInstant.lit_truck}}
+{{code FrameView.lit_truck}}
 
 Lamps are plain data. The sighting carries them, and the drawing does what they say, with each `match` covering both tags:
 

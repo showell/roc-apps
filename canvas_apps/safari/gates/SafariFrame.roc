@@ -28,27 +28,17 @@
 ## of shapes_canvas.js, paints shapes with it.
 import game.Angle
 import BackdropPixels
-import game.Sky
-import game.Sun
+import game.FrameView
 import game.Screen
 import PixelGrid
 import ScreenRoll
 import ShapesPixels
 import SunPixels
-import lib.Shapes
 
 SafariFrame :: [].{
 
-	## What a frame shows, in Tour's terms.
-	FrameContents : {
-		shapes : List(Shapes.Shape),
-		roll : Angle.Lean,
-		sky_colors : Sky.Colors,
-		sun : Sun.Sighting,
-	}
-
 	## The frame: the sky and the grass, the sun, then every shape.
-	picture_pixels : SafariFrame.FrameContents -> List(U32)
+	picture_pixels : FrameView -> List(U32)
 	picture_pixels = |scene| {
 		roll = SafariFrame.screen_roll(scene.roll)
 		var $px = BackdropPixels.backdrop_pixels(roll, scene.sky_colors)

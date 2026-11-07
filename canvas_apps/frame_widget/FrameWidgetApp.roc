@@ -9,11 +9,11 @@
 import game.Backdrop
 import game.RoadAhead
 import game.Clock
+import game.FrameView
 import game.Ground
 import game.GroundSighting
 import game.Mountains
 import game.RideFocal
-import game.RideInstant
 import game.SafariApp
 import game.Scene
 import game.SceneShapes
@@ -129,11 +129,9 @@ scene_shapes_on = |on_layers| {
 
 ## What `Backdrop.frame_shapes` paints under the ride's shapes: the sky, the grass, and
 ## what the sun adds when it's in view.
-backdrop_pieces : Tour -> List(Piece)
-backdrop_pieces = |tour| {
-	sky_colors = Tour.sky_colors(tour)
-	sun_sighting = Tour.frame_content(tour).sun
-	backdrop = Backdrop.backdrop_shapes({ sky_colors, sun_sighting })
+backdrop_pieces : FrameView -> List(Piece)
+backdrop_pieces = |view| {
+	backdrop = Backdrop.backdrop_shapes({ sky_colors: view.sky_colors, sun_sighting: view.sun })
 	[
 		{ layer: Sky, shapes: [backdrop.sky] },
 		{ layer: Grass, shapes: [backdrop.grass] },
@@ -158,6 +156,10 @@ view_at = |tour| {
 paused_view : RoadAhead.CameraView
 paused_view = view_at(paused_tour)
 
+## What the camera shows at the step on show.
+paused_frame_view : FrameView
+paused_frame_view = Tour.frame_view(paused_tour)
+
 ## The things in view at the step on show.
 paused_scene : Scene
 paused_scene = {
@@ -168,14 +170,14 @@ paused_scene = {
 			speed: instant.rider.motorcycle.speed,
 			truck: {
 				route_position: instant.truck.route_position,
-				lit_truck: RideInstant.lit_truck(instant),
+				lit_truck: FrameView.lit_truck(instant),
 			},
 			clock: instant.clock,
 		},
 	)
 }
 
-## The mountains and the road, which `RideInstant.shapes` puts under the things
+## The mountains and the road, which `FrameView.frame_view_at` puts under the things
 ## beside the road, each with its layer.
 ground_pieces : Tour -> List(Piece)
 ground_pieces = |tour| {
@@ -199,10 +201,10 @@ ground_parts : List(Piece)
 ground_parts = ground_pieces(paused_tour)
 
 backdrop_parts : List(Piece)
-backdrop_parts = backdrop_pieces(paused_tour)
+backdrop_parts = backdrop_pieces(paused_frame_view)
 
-## The part of `Tour.frame_content(tour).shapes` on `on_layers`, in its order.
-## `RideInstant.shapes` joins its parts into one list, so this asks for them one
+## The part of `Tour.frame_view(tour).shapes` on `on_layers`, in its order.
+## `FrameView.frame_view_at` joins its parts into one list, so this asks for them one
 ## at a time, and an `expect` below holds the join to the real list.
 ride_shapes_on : List(Layer) -> List(Shapes.Shape)
 ride_shapes_on = |on_layers| shapes_in(ground_parts, on_layers).concat(scene_shapes_on(on_layers))
@@ -214,7 +216,7 @@ frame_shapes_on = |on_layers| shapes_in(backdrop_parts, on_layers).concat(ride_s
 ## The space the paused frame leans in, which `SafariApp.frame_shapes` puts
 ## the whole frame in.
 lean_space : Shapes.Space
-lean_space = SafariApp.lean_space(paused_tour)
+lean_space = SafariApp.lean_space(paused_frame_view.roll)
 
 ## The first `count` of the layers.
 layers_up_to : U64 -> List(Layer)
@@ -356,17 +358,17 @@ expect frame_step == 1570
 expect picture_shapes(layers) == SafariApp.frame_shapes(paused_tour)
 
 # The ride's parts are the game's own shapes, in the game's order.
-expect ride_shapes_on(layers) == Tour.frame_content(paused_tour).shapes
+expect ride_shapes_on(layers) == paused_frame_view.shapes
 
 # The frame's total is the count the book's table gives for this step.
-expect ride_count(layers) == Tour.frame_content(paused_tour).shapes.len()
+expect ride_count(layers) == paused_frame_view.shapes.len()
 expect ride_count(layers) == 2588
 
 # Each layer's own shapes at this step. The sun is behind the rider, so it has none.
 expect
 	layers.map(|layer| frame_shapes_on([layer]).len())
 		== [1656, 1, 0, 1, 4, 24, 302, 187, 352, 63]
-expect Tour.frame_content(paused_tour).sun == OutOfView
+expect paused_frame_view.sun == OutOfView
 
 # The running count at each layer. The backdrop stays out of it.
 expect
