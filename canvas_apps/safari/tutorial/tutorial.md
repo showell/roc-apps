@@ -170,7 +170,7 @@ Most things in the view come in pairs, and the names say which half is which: `C
 
 A sighting answers one question each frame: which of these can the rider see right now, and how should each one look? `CatSighting` goes through the stretches of road ahead, which Safari Ride calls segments, asks `Cat` where it is, works out where that lands in the rider's view, and drops any cat behind the camera or too small to matter. What it hands back is a plain record with no drawing in it:
 
-{{code Geom.Sighted}}
+{{code Pipeline.Sighted}}
 
 `Scene` gathers every sighting's answer, a depth sort puts them in order, and `SceneShapes` hands each one to the module that paints it. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. So a sighting decides what's visible, and the drawing code only paints what it's told.
 
@@ -446,7 +446,7 @@ Those two lives are two records, and each says where the tree stands in a differ
 | Type | Where the tree is | Lasts |
 |---|---|---|
 | `Trees.RoadsideTree` | `along` and `across` its segment | The whole ride |
-| `Geom.Sighted(Conifer)` | `right` of the camera and `forward` of the camera | One frame |
+| `Pipeline.Sighted(Conifer)` | `right` of the camera and `forward` of the camera | One frame |
 
 `Along` is a place along a segment, and `Across` is a place across the road. Both are opaque, so passing one as the other is a compile-time error. In any function, the field names say which of the two it's working in.
 
@@ -480,6 +480,8 @@ From here on, things are measured from the camera, which is where the rider stan
 {{code TreeSighting.sighting_of}}
 
 {{code Pipeline.sighting_of}}
+
+{{code Pipeline.tall_sighting_of}}
 
 `Chain.rider_point_at` finds where a point on the road lies from the rider, and the math layer chapter shows how. After that, there are two ways to lose a tree. It can be behind the camera, or it can be under 2 pixels tall. The answer is a `Try`, either a sighting or `OutOfView`, and `keep_oks` keeps the sightings.
 
@@ -1077,7 +1079,7 @@ Each tower starts somewhere else in the cycle, so the towers along a road don't 
 
 The sighting calls both, adding the two `Steps`. `view.clock.minus(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride.
 
-{{code TowerSighting.tower_if_ahead from "if center.forward <= Geom.near_plane" to "view.clock.minus(Clock.start)"}}
+{{code TowerSighting.tower_if_ahead from "placed_tower = {" to "view.clock.minus(Clock.start)"}}
 
 Its caller gives each tower its key, the segment's index. Records with named fields stand in for what would otherwise be five arguments in a row, and `InChain(position)` is a tag carrying a payload, saying where the segment lies from the rider:
 

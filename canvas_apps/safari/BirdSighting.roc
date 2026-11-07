@@ -11,7 +11,7 @@ import Pipeline
 BirdSighting :: [].{
 
 	## The birds in view, the nearest segment's first.
-	birds_in_view : Chain.Viewpoint -> List(Geom.Sighted(BirdShapes.PosedBird))
+	birds_in_view : Chain.Viewpoint -> List(Pipeline.Sighted(BirdShapes.PosedBird))
 	birds_in_view = |view| {
 		positions = Chain.Position.positions_in(view.road.chain_indices)
 		positions.keep_oks(|position| segment_bird(view, position))
@@ -22,7 +22,7 @@ BirdSighting :: [].{
 ## and it is in view.
 segment_bird : Chain.Viewpoint,
 Chain.Position -> Try(
-	Geom.Sighted(BirdShapes.PosedBird),
+	Pipeline.Sighted(BirdShapes.PosedBird),
 	[NoBird, BehindCamera, TooSmall],
 )
 segment_bird = |view, position|
@@ -42,11 +42,11 @@ bird_in_view : Chain.Viewpoint,
 {
 	position : Chain.Position,
 	instant : BirdFlight.Bird,
-} -> Try(Geom.Sighted(BirdShapes.PosedBird), [BehindCamera, TooSmall])
+} -> Try(Pipeline.Sighted(BirdShapes.PosedBird), [BehindCamera, TooSmall])
 bird_in_view = |view, { position, instant }| {
 	placed_bird : Geom.Placed(BirdShapes.PosedBird)
 	placed_bird = Animation.placed_instant(instant)
-	Pipeline.sighting_of(
+	Pipeline.tall_sighting_of(
 		placed_bird,
 		{
 			road: view.road,

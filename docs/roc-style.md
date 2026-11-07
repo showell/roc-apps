@@ -142,7 +142,7 @@ Roc's own rules are in the langref's
   holds this.
 
   ```roc
-  rendering_of : Geom.Sighted(kind), { cam_focal : Pixels, context : context } -> Rendered
+  rendering_of : Pipeline.Sighted(kind), { cam_focal : Pixels, context : context } -> Rendered
   	where [kind.scenery_picture : kind, Picture.Setting(context) -> Picture]
   ```
 - **Prefer a two-part name that says what a thing is to a short one that
@@ -659,8 +659,8 @@ is the base; these rules sharpen it.
   (`[Newest(...), NoDocs]`).
 - **One or none is a `Try`, with a singular name and no `maybe_` prefix.** A
   list of one or none claims more than is true, and the type should say there
-  is at most one. `Pipeline.sighting_of` answers
-  `Try(Geom.Sighted(kind), [BehindCamera, TooSmall])`, so its error also says
+  is at most one. `Pipeline.tall_sighting_of` answers
+  `Try(Pipeline.Sighted(kind), [BehindCamera, TooSmall])`, so its error also says
   why there is none.
 - **A `Try`'s error lists the tags that function can return, in place; no
   shared error alias.** `Cart.add` fails only with `[OutOfStock(Item)]` and

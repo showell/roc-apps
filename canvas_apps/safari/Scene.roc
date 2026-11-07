@@ -10,8 +10,8 @@ import Conifer
 import BillboardSighting
 import Distance
 import Chain
-import Geom
 import GuardRail
+import Pipeline
 import RailSighting
 import Tower
 import TowerSighting
@@ -24,13 +24,13 @@ import World
 
 ## The things in view, each kind in its own list.
 Scene := {
-	trees : List(Geom.Sighted(Conifer)),
-	towers : List(Geom.Sighted(Tower)),
-	critters : List(Geom.Sighted(Billboard)),
-	cats : List(Geom.Sighted(CatShapes.PosedCat)),
+	trees : List(Pipeline.Sighted(Conifer)),
+	towers : List(Pipeline.Sighted(Tower)),
+	critters : List(Pipeline.Sighted(Billboard)),
+	cats : List(Pipeline.Sighted(CatShapes.PosedCat)),
 	rails : List(GuardRail.RailQuad),
 	truck : TruckSighting.TruckFate,
-	birds : List(Geom.Sighted(BirdShapes.PosedBird)),
+	birds : List(Pipeline.Sighted(BirdShapes.PosedBird)),
 }.{
 
 	## What the sightings read beyond the road: the rider's speed, where the

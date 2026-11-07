@@ -6,6 +6,7 @@ import Along
 import Distance
 import Chain
 import Geom
+import Pipeline
 import Truck
 import TruckAhead
 
@@ -20,7 +21,7 @@ TruckSighting :: [].{
 	}
 
 	## What became of the truck in a frame.
-	TruckFate : Try(Geom.Sighted(TruckAhead), [NoTruck])
+	TruckFate : Try(Pipeline.Sighted(TruckAhead), [NoTruck, BehindCamera])
 
 	## The truck, if it is ahead of the rider, on the chain, and in front of
 	## the camera.
@@ -64,15 +65,7 @@ truck_on_segment : TruckSighting.Viewpoint,
 	position : Chain.Position,
 } -> TruckSighting.TruckFate
 truck_on_segment = |view, { along, position }| {
-	across = Across.middle
-	center = Chain.rider_point_ahead(view.road, { position, along, across })
-	if center.forward > Geom.near_plane {
-		Ok({
-			right: center.right,
-			forward: center.forward,
-			kind: { position, along, across, lights: view.lights },
-		})
-	} else {
-		Err(NoTruck)
-	}
+	placed_truck : Geom.Placed(TruckAhead)
+	placed_truck = { along, across: Across.middle, kind: { lights: view.lights } }
+	Pipeline.sighting_of(placed_truck, { road: view.road, place: InChain(position) })
 }

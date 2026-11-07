@@ -53,7 +53,7 @@ SceneShapes :: [].{
 				|tree| SceneShapes.tree_rendering(tree, { trees: scene.trees, cam_focal }),
 			),
 			towers: scene.towers.map(
-				|tower| Pipeline.rendering_of(tower, { cam_focal, context: { road: view.road } }),
+				|tower| Pipeline.rendering_of(tower, { cam_focal, context: road_context(view, tower) }),
 			),
 			critters: scene.critters.map(
 				|critter| Pipeline.rendering_of(critter, { cam_focal, context: {} }),
@@ -82,14 +82,14 @@ SceneShapes :: [].{
 		].join()
 
 	## How many of `trees` are nearer than `forward`.
-	nearer_tree_count : List(Geom.Sighted(Conifer)), Distance -> U16
+	nearer_tree_count : List(Pipeline.Sighted(Conifer)), Distance -> U16
 	nearer_tree_count = |trees, forward| trees.count_if(|tree| tree.forward < forward).to_u16_wrap()
 
 	## A tree, told how many of `trees` are nearer, which is all it needs of
 	## the others.
-	tree_rendering : Geom.Sighted(Conifer),
+	tree_rendering : Pipeline.Sighted(Conifer),
 	{
-		trees : List(Geom.Sighted(Conifer)),
+		trees : List(Pipeline.Sighted(Conifer)),
 		cam_focal : Pixels,
 	} -> Rendered
 	tree_rendering = |tree, { trees, cam_focal }|
@@ -106,6 +106,22 @@ SceneShapes :: [].{
 rendering_at : Distance, List(Shapes.Shape) -> Rendered
 rendering_at = |depth, shapes| { depth, picture: Picture.from_shapes(shapes) }
 
+## What a thing measured on the road draws from: the road in view, and where on it
+## `sighting` found the thing.
+road_context : Chain.Viewpoint,
+Pipeline.Sighted(kind) -> {
+	road : Chain.RoadView,
+	place : Chain.SegmentPlace,
+	along : Along,
+	across : Across,
+}
+road_context = |view, sighting| {
+	road: view.road,
+	place: sighting.place,
+	along: sighting.along,
+	across: sighting.across,
+}
+
 ## The truck, if it is in view, where its sighting found it and with the lights
 ## its sighting gives it.
 truck_renderings : Chain.Viewpoint, TruckSighting.TruckFate -> List(Rendered)
@@ -114,20 +130,24 @@ truck_renderings = |view, truck_fate|
 		Ok(truck) => [
 			Pipeline.rendering_of(
 				truck,
-				{ cam_focal: view.cam_focal, context: { road: view.road } },
+				{ cam_focal: view.cam_focal, context: road_context(view, truck) },
 			),
 		]
 		Err(NoTruck) => []
+		Err(BehindCamera) => []
 	}
 
-tree_at : F64 -> Geom.Sighted(Conifer)
+tree_at : F64 -> Pipeline.Sighted(Conifer)
 tree_at = |forward| {
+	place: InChain(Chain.Position.first),
+	along: Along.metres(forward),
+	across: Across.middle,
 	right: Distance.metres(0.0),
 	forward: Distance.metres(forward),
 	kind: Conifer.BigGreen,
 }
 
-spread_trees : List(Geom.Sighted(Conifer))
+spread_trees : List(Pipeline.Sighted(Conifer))
 spread_trees = [10.0, 20.0, 30.0, 40.0, 50.0].map(tree_at)
 
 expect SceneShapes.nearer_tree_count(spread_trees, Distance.metres(10.0)) == 0
@@ -137,14 +157,14 @@ expect SceneShapes.nearer_tree_count(spread_trees, Distance.metres(60.0)) == 5
 expect SceneShapes.nearer_tree_count(spread_trees, Distance.metres(5.0)) == 0
 expect SceneShapes.nearer_tree_count([], Distance.metres(10.0)) == 0
 
-tied_trees : List(Geom.Sighted(Conifer))
+tied_trees : List(Pipeline.Sighted(Conifer))
 tied_trees = List.repeat(tree_at(20.0), 4)
 
 expect SceneShapes.nearer_tree_count(tied_trees, Distance.metres(20.0)) == 0
 expect SceneShapes.nearer_tree_count(tied_trees, Distance.metres(20.1)) == 4
 expect SceneShapes.nearer_tree_count(tied_trees, Distance.metres(19.9)) == 0
 
-cluster_sightings : List(Geom.Sighted(Conifer))
+cluster_sightings : List(Pipeline.Sighted(Conifer))
 cluster_sightings = [10.0, 11.0, 12.0, 13.0, 14.0].map(tree_at)
 
 cluster_shapes : F64 -> List(Shapes.Shape)
@@ -233,7 +253,7 @@ green_tree_at = |along| {
 	},
 }
 
-lone_tree : Geom.Sighted(Conifer)
+lone_tree : Pipeline.Sighted(Conifer)
 lone_tree = TreeSighting.sighting_of(
 	from_origin,
 	green_tree_at(120.0),
@@ -267,11 +287,11 @@ expect
 		},
 	)
 
-first_sightings : List(Geom.Sighted(Conifer))
+first_sightings : List(Pipeline.Sighted(Conifer))
 first_sightings = TreeSighting.segment_sightings(from_origin, Chain.Position.first)
 
 ## The first segment's tree at `i`, in planting order.
-roadside_tree : U64 -> Geom.Sighted(Conifer)
+roadside_tree : U64 -> Pipeline.Sighted(Conifer)
 roadside_tree = |i|
 	first_sightings.get(i) ?? crash "SceneShapes: the first segment has 28 trees in view"
 
@@ -324,7 +344,7 @@ lead_of : F64 -> TruckSighting.TruckFate
 lead_of = |lead| truck_seen_from(origin, lead)
 
 ## Where the truck is, for a lead that puts it in view.
-truck_ahead_of : F64 -> Geom.Sighted(TruckAhead)
+truck_ahead_of : F64 -> Pipeline.Sighted(TruckAhead)
 truck_ahead_of = |lead| lead_of(lead) ?? crash "SceneShapes: this lead puts the truck in view"
 
 expect
@@ -344,7 +364,7 @@ expect
 		(499.0, 0),
 		(600.0, 1),
 		(900.0, 2),
-	].all(|(lead, want)| truck_ahead_of(lead).kind.position.to_i64() == want)
+	].all(|(lead, want)| truck_ahead_of(lead).place == InChain(Chain.Position.number(want)))
 
 expect
 	[
@@ -352,7 +372,7 @@ expect
 		(499.0, 499.0),
 		(600.0, 100.0),
 		(900.0, 80.0),
-	].all(|(lead, want)| truck_ahead_of(lead).kind.along.to_metres() == want)
+	].all(|(lead, want)| truck_ahead_of(lead).along.to_metres() == want)
 
 expect
 	[
@@ -360,7 +380,7 @@ expect
 		(499.0, 0.0),
 		(600.0, 0.0),
 		(900.0, 0.0),
-	].all(|(lead, want)| truck_ahead_of(lead).kind.across.to_metres() == want)
+	].all(|(lead, want)| truck_ahead_of(lead).across.to_metres() == want)
 
 ## The lights a truck in view shows, when it has `lights` on.
 lights_shown = |lights| {

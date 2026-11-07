@@ -34,19 +34,10 @@ Geom :: [].{
 
 	## An object standing on one segment of the road, and what kind of object
 	## it is. This is the object's lasting form, and `Pipeline.sighting_of` turns
-	## it into a `Sighted` for a frame.
+	## it into a `Pipeline.Sighted` for a frame.
 	Placed(kind) : {
 		along : Along,
 		across : Across,
-		kind : kind,
-	}
-
-	## An object in the rider's view, and what kind of object it is. It is ahead
-	## of the rider, so of its lengths only `right` can be negative. It lasts one
-	## frame, and `Pipeline.rendering_of` turns it into a `Rendered`.
-	Sighted(kind) : {
-		right : Distance,
-		forward : Distance,
 		kind : kind,
 	}
 

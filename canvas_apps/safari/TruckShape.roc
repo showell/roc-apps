@@ -26,11 +26,11 @@ TruckShape :: [].{
 		right : Across,
 	}
 
-	## A truck ready to draw: what it is seen from, its segment's position in
-	## the chain, and the box it fills.
+	## A truck ready to draw: what it is seen from, where its segment lies from
+	## the rider, and the box it fills.
 	TruckInView : {
 		view : Chain.Viewpoint,
-		position : Chain.Position,
+		place : Chain.SegmentPlace,
 		box : TruckShape.TruckBox,
 	}
 
@@ -85,10 +85,7 @@ TruckShape :: [].{
 	## ground has dropped beneath it.
 	point : TruckShape.TruckInView, TruckShape.TruckPoint -> Geom.RaisedPoint
 	point = |truck, { along, across, height }| {
-		on_ground = Chain.rider_point_ahead(
-			truck.view.road,
-			{ position: truck.position, along, across },
-		)
+		on_ground = Chain.rider_point_at(truck.view.road, { place: truck.place, along, across })
 		{
 			right: on_ground.right,
 			forward: on_ground.forward,

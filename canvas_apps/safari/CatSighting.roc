@@ -12,7 +12,7 @@ import Speed
 CatSighting :: [].{
 
 	## The cats in view of a rider at `speed`, the nearest segment's first.
-	cats_in_view : Chain.Viewpoint, Speed -> List(Geom.Sighted(CatShapes.PosedCat))
+	cats_in_view : Chain.Viewpoint, Speed -> List(Pipeline.Sighted(CatShapes.PosedCat))
 	cats_in_view = |view, speed| {
 		positions = Chain.Position.positions_in(view.road.chain_indices)
 		positions.keep_oks(|position| segment_cat(view, { position, speed }))
@@ -24,7 +24,7 @@ CatSighting :: [].{
 	{
 		position : Chain.Position,
 		speed : Speed,
-	} -> Try(Geom.Sighted(CatShapes.PosedCat), [NoCat, BehindCamera, TooSmall])
+	} -> Try(Pipeline.Sighted(CatShapes.PosedCat), [NoCat, BehindCamera, TooSmall])
 	segment_cat = |view, { position, speed }| {
 		segment = position.index_in(view.road.chain_indices).segment_in(view.road.route_segments)
 		match segment.crossing {
@@ -42,13 +42,13 @@ cat_in_view : Chain.Viewpoint,
 	position : Chain.Position,
 	crossing : Cat.Crossing,
 	speed : Speed,
-} -> Try(Geom.Sighted(CatShapes.PosedCat), [BehindCamera, TooSmall])
+} -> Try(Pipeline.Sighted(CatShapes.PosedCat), [BehindCamera, TooSmall])
 cat_in_view = |view, { position, crossing, speed }| {
 	gap = Chain.gap_to_segment(view.road, position)
 	instant = Cat.instant_at(crossing, { gap: gap.plus(crossing.along.from_start()), speed })
 	placed_cat : Geom.Placed(CatShapes.PosedCat)
 	placed_cat = Animation.placed_instant(instant)
-	Pipeline.sighting_of(
+	Pipeline.tall_sighting_of(
 		placed_cat,
 		{
 			road: view.road,

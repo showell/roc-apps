@@ -11,29 +11,35 @@ import TruckLights
 import TruckShape
 import lib.Shapes
 
-## The position in the chain of the segment the truck is on, how far along and
-## across that segment its trailer is centred, and which of its lights are on.
-TruckAhead := {
-	position : Chain.Position,
-	along : Along,
-	across : Across,
-	lights : Truck.Lights,
-}.{
+## Which of the truck's lights are on.
+TruckAhead := { lights : Truck.Lights }.{
+
+	## The road in view, and where on it the truck's trailer is centred.
+	RoadContext : {
+		road : Chain.RoadView,
+		place : Chain.SegmentPlace,
+		along : Along,
+		across : Across,
+	}
 
 	## How the truck looks. Every point on it is measured on the road, so the
-	## road is its context.
-	scenery_picture : TruckAhead, Picture.Setting({ road : Chain.RoadView }) -> Picture
+	## road and where the truck stands there are its context.
+	scenery_picture : TruckAhead, Picture.Setting(TruckAhead.RoadContext) -> Picture
 	scenery_picture = |truck_ahead, { cam_focal, context, .. }|
-		Picture.from_shapes(TruckAhead.truck_shapes(truck_ahead, { road: context.road, cam_focal }))
+		Picture.from_shapes(
+			TruckAhead.truck_shapes(
+				truck_ahead,
+				{
+					view: { road: context.road, cam_focal },
+					place: context.place,
+					box: TruckShape.truck_box({ along: context.along, across: context.across }),
+				},
+			),
+		)
 
-	## The truck, seen from `view`.
-	truck_shapes : TruckAhead, Chain.Viewpoint -> List(Shapes.Shape)
-	truck_shapes = |truck_ahead, view| {
-		truck = {
-			view,
-			position: truck_ahead.position,
-			box: TruckShape.truck_box({ along: truck_ahead.along, across: truck_ahead.across }),
-		}
+	## The truck, filling its box.
+	truck_shapes : TruckAhead, TruckShape.TruckInView -> List(Shapes.Shape)
+	truck_shapes = |truck_ahead, truck| {
 		beams =
 			match truck_ahead.lights.headlights {
 				On => TruckLights.headlight_beams(truck)

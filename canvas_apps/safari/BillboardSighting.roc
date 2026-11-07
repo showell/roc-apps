@@ -34,11 +34,11 @@ BillboardSighting :: [].{
 	min_critter_px = Pixels.of(2.0)
 
 	## What became of a critter placed in the rider's view.
-	Fate : Try(Geom.Sighted(Billboard), [BehindCamera, TooSmall])
+	Fate : Try(Pipeline.Sighted(Billboard), [BehindCamera, TooSmall])
 
 	## The critters to draw, of `fates`. The cap comes after the cull, so a
 	## critter out of view never takes a place from one in view.
-	critters_to_draw : List(BillboardSighting.Fate) -> List(Geom.Sighted(Billboard))
+	critters_to_draw : List(BillboardSighting.Fate) -> List(Pipeline.Sighted(Billboard))
 	critters_to_draw = |fates|
 		fates.keep_oks(|fate| fate).take_first(BillboardSighting.max_visible_critters.to_u64_wrap())
 
@@ -135,7 +135,7 @@ BillboardSighting :: [].{
 		critter : Geom.Placed(Billboard),
 	} -> BillboardSighting.Fate
 	sight_critter = |road, { place, critter }|
-		Pipeline.sighting_of(
+		Pipeline.tall_sighting_of(
 			critter,
 			{
 				road,

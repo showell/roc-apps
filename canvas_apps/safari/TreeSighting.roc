@@ -3,7 +3,6 @@
 ## camera and are tall enough on screen to draw.
 import Conifer
 import Chain
-import Geom
 import Pipeline
 import Trees
 
@@ -11,14 +10,14 @@ TreeSighting :: [].{
 
 	## The trees in view, the nearest segment's first, and each segment's in
 	## the order it plants them.
-	trees_in_view : Chain.Viewpoint -> List(Geom.Sighted(Conifer))
+	trees_in_view : Chain.Viewpoint -> List(Pipeline.Sighted(Conifer))
 	trees_in_view = |view| {
 		positions = Chain.Position.positions_in(view.road.chain_indices)
 		positions.join_map(|position| segment_sightings(view, position))
 	}
 
 	## The trees in view on the segment at `position` in the chain.
-	segment_sightings : Chain.Viewpoint, Chain.Position -> List(Geom.Sighted(Conifer))
+	segment_sightings : Chain.Viewpoint, Chain.Position -> List(Pipeline.Sighted(Conifer))
 	segment_sightings = |view, position| {
 		segment = position.index_in(view.road.chain_indices).segment_in(view.road.route_segments)
 		segment.trees.keep_oks(|tree| sighting_of(view, { position, tree }))
@@ -31,9 +30,9 @@ TreeSighting :: [].{
 	{
 		position : Chain.Position,
 		tree : Trees.RoadsideTree,
-	} -> Try(Geom.Sighted(Conifer), [BehindCamera, TooSmall])
+	} -> Try(Pipeline.Sighted(Conifer), [BehindCamera, TooSmall])
 	sighting_of = |view, { position, tree }|
-		Pipeline.sighting_of(
+		Pipeline.tall_sighting_of(
 			tree,
 			{
 				road: view.road,
