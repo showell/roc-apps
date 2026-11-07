@@ -172,7 +172,7 @@ A sighting answers one question each frame: which of these can the rider see rig
 
 {{code Pipeline.Sighted}}
 
-`Scene` gathers every sighting's answer, a depth sort puts them in order, and `SceneShapes` hands each one to the module that paints it. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. So a sighting decides what's visible, and the drawing code only paints what it's told.
+`Scene` gathers every sighting's answer. `SceneShapes` renders each one through `Pipeline.rendering_of`, which asks the kind's own module for a picture and attaches the depth, making a `Rendered`, and a depth sort puts those in order, far to near. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. So a sighting decides what's visible, and the drawing code only paints what it's told.
 
 Cows, pigs and the other animals by the road are all sighted the same way, by `BillboardSighting`, which decides which of them get drawn. `Detail` holds the thresholds behind that kind of decision: how near a tree shows its full detail, and how few pixels tall something may be and still be drawn.
 
@@ -548,7 +548,7 @@ So a tree has two lives. It's planted once, and that lasts the whole ride. For e
 New in this chapter:
 
 - Roc: `var` and `while` in a pure function
-- Modules: `TreeSighting`, `Pipeline`, `Rendered`, `Chain`, `Along`, `Across`
+- Modules: `TreeSighting`, `Pipeline`, `Rendered`, `RoadAhead`, `Along`, `Across`
 
 ### Get the types right
 
@@ -612,7 +612,7 @@ Trees stand in pairs, one on each side of the road, every 30 metres. `{ ..left_t
 
 ### Seeing the trees
 
-For each frame, `trees_in_view` goes through the segments of the road ahead, which Safari Ride calls the chain. `join_map` is a `map` followed by a flatten:
+For each frame, `trees_in_view` goes through the segments of the road ahead, the ones the rider can see. `join_map` is a `map` followed by a flatten:
 
 {{code TreeSighting.trees_in_view}}
 
@@ -622,9 +622,9 @@ From here on, things are measured from the camera, which travels with the rider.
 
 {{code TreeSighting.sighting_of}}
 
-`InChain(position)` says which segment of the chain the tree stands on. The size test asks for 2 pixels, through the camera's own lens.
+`Ahead(position)` says which segment of the road ahead the tree stands on. The size test asks for 2 pixels, through the camera's own lens.
 
-`Pipeline.tall_sighting_of` serves the critters too, not only trees. It starts with `Pipeline.sighting_of`, which asks `Chain.rider_point_at` where the tree's spot on the road lies from the rider. The math layer chapter shows how. If that spot is no farther ahead than the near plane from A conifer, the answer is `BehindCamera`. Otherwise it's a sighting, holding the tree's `place`, `along` and `across`, the `right` and `forward` just found, and its kind.
+`Pipeline.tall_sighting_of` serves the critters too, not only trees. It starts with `Pipeline.sighting_of`, which asks `RoadAhead.rider_point_at` where the tree's spot on the road lies from the rider. The math layer chapter shows how. If that spot is no farther ahead than the near plane from A conifer, the answer is `BehindCamera`. Otherwise it's a sighting, holding the tree's `place`, `along` and `across`, the `right` and `forward` just found, and its kind.
 
 Then `tall_sighting_of` asks the conifer for its `scenery_height`, works out how tall the tree stands on the screen, and calls a tree under 2 pixels `TooSmall`. So the answer is a `Try`: a sighting, or one of those two reasons. `keep_oks`, in `segment_sightings`, keeps the sightings and drops the reasons.
 
@@ -850,9 +850,9 @@ digraph road {
   RailSighting -> BendView;
   GroundSighting -> Ground;
   RailSighting -> GuardRail;
-  GroundSighting -> Chain;
-  RailSighting -> Chain;
-  BendView -> Chain;
+  GroundSighting -> RoadAhead;
+  RailSighting -> RoadAhead;
+  BendView -> RoadAhead;
   BendView -> Geom;
   BendView -> World;
 }
@@ -1230,7 +1230,7 @@ The sighting calls both, adding the two `Steps`. `clock.minus(Clock.start)` is h
 
 {{code TowerSighting.tower_if_ahead from "placed_tower = {" to "clock.minus(Clock.start)"}}
 
-Its caller gives each tower its key, the segment's index. Records with named fields stand in for what would otherwise be six arguments in a row, and `InChain(position)` is a tag carrying a payload, saying where the segment lies from the rider:
+Its caller gives each tower its key, the segment's index. Records with named fields stand in for what would otherwise be six arguments in a row, and `Ahead(position)` is a tag carrying a payload, saying where the segment lies from the rider:
 
 {{code TowerSighting.segment_towers from "end_tower = tower_if_ahead(" to "[end_tower, mid_tower(road, { position, clock })].keep_oks(|tower| tower)"}}
 
@@ -2012,7 +2012,7 @@ digraph screen {
   SceneShapes -> CatSighting;
   Scene -> CatSighting;
   CatSighting -> Cat;
-  CatSighting -> Chain;
+  CatSighting -> RoadAhead;
   CatSighting -> DepthSort;
   CatShapes -> Cat;
   CatShapes -> CatStills;
@@ -2293,7 +2293,7 @@ All this time, a layer of math has been doing the measuring. This chapter works 
 New in this chapter:
 
 - Roc: records as coordinate systems, `fold`, `fold_rev` and `map2`
-- Modules: `Lens`, and `Geom`, `Chain` and `Camera` in full
+- Modules: `Lens`, and `Geom`, `RoadAhead` and `Camera` in full
 
 A lot of Safari Ride is math and physics, and most of it is geometry a reader could do on paper. It's here because this kind of code suits a compiled functional language unusually well, for a short list of reasons:
 
@@ -2316,12 +2316,12 @@ Safari Ride has 79 modules, not counting `web.roc`, `main.roc` and `game.roc`. T
 | `Geom` | 20 | 213 | Road points, rider points, and how to turn one into the other |
 | `Fraction` | 19 | 92 | A ratio from 0 to 1 |
 | `World` | 17 | 415 | The route |
-| `Chain` | 16 | 172 | Where the road lies from where the rider is |
+| `RoadAhead` | 16 | 172 | Where the road ahead lies from where the rider is |
 | `Scenery` | 15 | 48 | The words the world is built from, and the road's width |
 
 After those ten the count drops to 12, for `Screen`, 11 for `Speed` and 10 for `DepthSort`. Most modules are imported by one, two or three others. `Shapes` is imported about as widely. It's in `lib/`, a folder of modules shared with the repository's other canvas apps.
 
-These are the core utility modules. There are only ten, and nearly everything else is a small module that takes one of these and adds a single idea. Six of the ten are nothing but numbers with rules, and the top three are under 80 lines each. A cat, a tower and a truck are all found on the road through `Chain`, and all reach the screen through `Camera`.
+These are the core utility modules. There are only ten, and nearly everything else is a small module that takes one of these and adds a single idea. Six of the ten are nothing but numbers with rules, and the top three are under 80 lines each. A cat, a tower and a truck are all found on the road through `RoadAhead`, and all reach the screen through `Camera`.
 
 The modules of the math layer
 ```dot
@@ -2332,7 +2332,7 @@ digraph math {
   Coast -> Bike;
   Coast -> Angle;
   Bike -> Angle;
-  Chain -> Geom;
+  RoadAhead -> Geom;
   Camera -> Geom;
   Camera -> Screen;
   Lens -> Angle;
@@ -2341,7 +2341,7 @@ digraph math {
 }
 ```
 
-Two families share `Angle` and don't otherwise meet: `Geom`, `Chain`, `Camera` and `Lens` say how the world looks from the bike, and `Bike`, `Coast` and `LeanSearch` say where it's going.
+Two families share `Angle` and don't otherwise meet: `Geom`, `RoadAhead`, `Camera` and `Lens` say how the world looks from the bike, and `Bike`, `Coast` and `LeanSearch` say where it's going.
 
 ### Numbers with units
 
@@ -2367,7 +2367,7 @@ Eighteen small opaque types run through Safari Ride, and the tour has met most o
 | `Fraction` | `F64` | A ratio from 0 to 1 |
 | `Attention` | `F64` | How strongly something holds the eye, from 0 up |
 | `World.SegmentIndex` | `U32` | A place in the route |
-| `Chain.Position` | `U32` | A place in the view ahead |
+| `RoadAhead.Position` | `U32` | A place on the road ahead |
 
 This is the opaque type doing the job of a unit. The block after each type is a small statement of dimensional analysis. `Speed.distance_in` takes `Steps` and gives a `Distance`. `Along.plus` takes a `Distance`, and two `Along`s give one back. `Lean.steer` takes a rate and gives a `Turn`. There's no `Bearing.plus(Bearing)`, because that sum has no meaning. If you try to write one, the compiler stops you.
 
@@ -2429,13 +2429,13 @@ The road has no global coordinates. A point on it is measured within one segment
 
 So to see something three segments ahead, a point has to be carried back round each bend between it and the rider, one at a time. That's one rotation per bend, and `fold_rev` is the shape of it. The accumulator is a `RoadPoint`, it starts on the far segment, and each step moves it onto the segment before. `segments_before` gives the segments between, and the closure is the only thing the loop does. The last line does the one translation and rotation from above:
 
-{{code Chain.rider_point_ahead from "on_rider_segment =" to "Geom.to_rider_point(on_rider_segment, road.vantage)"}}
+{{code RoadAhead.rider_point_ahead from "on_rider_segment =" to "Geom.to_rider_point(on_rider_segment, road.vantage)"}}
 
 The rotation itself is plain, with two cases, because a right-hand bend pivots on the far side of the lane:
 
 {{code Geom.point_in_segment_before}}
 
-This is what lets `CatSighting`, `BirdSighting`, `TowerSighting`, `TreeSighting` and the rest not care where a segment is. They name a position in the chain and a point on that segment, and they get back a `RiderPoint`. That's why `Chain` has sixteen importers.
+This is what lets `CatSighting`, `BirdSighting`, `TowerSighting`, `TreeSighting` and the rest not care where a segment is. They name a position on the road ahead and a point on that segment, and they get back a `RiderPoint`. That's why `RoadAhead` has sixteen importers.
 
 The ground also curves away. That's one formula, the small-angle drop of a sphere, with a record destructured in the parameter list and `right` and `forward` taken out to metres before they're squared. There are two radii in the program, and neither is the earth's. `Geom.ground_curve_radius`, 100 km, is the surface the road and the truck stand on, and it puts the horizon 490 metres out. `Tower.sink_radius`, 20 km, only sets how soon a far tower goes: a tower is gone at 1.8 km, where the ground's curve would leave it in view to 4 km.
 
@@ -2785,7 +2785,6 @@ This book uses these words in one sense only.
 | Backdrop | The sky, the grass and the sun. It's the first thing in every frame. |
 | Billboard | A critter that stands still and always faces the camera, like the elephant. The bull is the fanciest one, with gradients in its still. |
 | Canvas | Where the painter puts shapes. Safari Ride's frames are for a canvas 960 pixels wide and 600 pixels tall. |
-| Chain | The rider's segment and the segments after it, as far as the rider can see. |
 | Corner | One of the points of a polygon. |
 | Critter | Any animal in the ride, from the cat to the elephant. It's just our word for them: other people would say animals. A tree or a tower is never a critter. Critters come in two sorts: billboards, and motion critters. |
 | Depth | How far ahead of the camera something is. Far things come first in a frame. |
@@ -2800,10 +2799,11 @@ This book uses these words in one sense only.
 | Placed | Standing at a fixed spot on the road, measured `along` and `across` a segment. |
 | Polygon | A shape with three or more corners, and nearly every shape in a frame is one. |
 | Rendered | Made into a picture, with its depth attached. |
+| Road ahead | The rider's segment and the segments after it, as far as the rider can see. |
 | Route | The list of segments that makes up the whole ride. |
 | Segment | One stretch of road, from one bend to the next. |
 | Shape | One item in a frame's list, such as a polygon, a disc or a rectangle. |
-| Sighting | Where an object is relative to the camera, measured `right` and `forward`. It lasts one frame. |
+| Sighting | Where an object is relative to the camera, measured `right` and `forward`, and its place on the road: its segment, and `along` and `across` it. It's a `Pipeline.Sighted`, and it lasts one frame. |
 | Step | One tick of the ride. Each step has one frame. |
 | Still | A critter's drawing, as polygons traced ahead of time. |
 | Tier | One layer of a conifer's crown. |
