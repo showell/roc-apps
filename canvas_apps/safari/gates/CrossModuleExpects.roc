@@ -816,7 +816,7 @@ cow_fate = |{ forward, height }|
 	critter_fate({
 		along: Along.at(forward),
 		across: Across.metres(2.5),
-		kind: { still: EmojiStills.cow, height, facing: FacesRight },
+		kind: { emoji: EmojiStills.cow, height, facing: FacesRight },
 	})
 
 ## Which way a sighting went, whatever it carries.
@@ -861,7 +861,7 @@ left_bull =
 		along: Along.metres(50.0),
 		across: Across.metres(-1.5),
 		kind: {
-			still: EmojiStills.bull,
+			emoji: EmojiStills.bull,
 			height: Distance.metres(1.6),
 			facing: FacesLeft,
 		},
@@ -875,8 +875,8 @@ expect left_bull.spot.foot().right().to_metres() == -1.5
 expect left_bull.spot.foot().forward().to_metres() == 50.0
 expect left_bull.kind.height.to_metres() == 1.6
 
-expect near_cow.kind.still == EmojiStills.cow
-expect left_bull.kind.still == EmojiStills.bull
+expect near_cow.kind.emoji == EmojiStills.cow
+expect left_bull.kind.emoji == EmojiStills.bull
 expect near_cow.kind.facing == FacesRight
 expect left_bull.kind.facing == FacesLeft
 

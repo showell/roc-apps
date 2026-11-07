@@ -125,7 +125,7 @@ expect
 		]
 
 expect
-	four_critters.map(|critter| critter.kind.still)
+	four_critters.map(|critter| critter.kind.emoji)
 		== [
 			EmojiStills.elephant,
 			EmojiStills.elephant,
