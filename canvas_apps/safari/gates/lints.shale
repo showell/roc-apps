@@ -3,7 +3,7 @@
 --
 --   cd <roc-apps checkout> && shale canvas_apps/safari/gates/lints.shale
 --
--- It takes about a minute, and run.shale runs it first.
+-- It takes about 16 seconds, and run.shale runs it first.
 --
 -- With `files=`, which fast.shale gives it, it judges only those files, named
 -- from safari's folder and separated by commas, or `files=every`, and only by
@@ -18,10 +18,20 @@ const FILES = arg("files", "")
 -- only 64 programs.
 const MOST_ONE_AT_A_TIME = 6
 
+-- `bool_param` has types only for what web.roc reaches, which is every game
+-- module. roc-types can't read the rest, so a file here is judged without
+-- types, and a game module web.roc stops reaching fails the run. The gates and
+-- the book's apps have no platform, and their `game:` package has a `lib:` of
+-- its own, which roc-types doesn't follow. The tutorial's fails/ don't compile,
+-- on purpose. game.roc is only a package header, and main.roc needs roc-ray
+-- beside the checkout.
+const UNTYPED_PATHS = {"game.roc", "main.roc", "gates/", "tutorial/"}
+
 -- `whole_tree` names the checks that one file can't answer, because they read
 -- across files. The fast tier skips them, and a recipe with nothing else in it.
 -- `skip` names files of drawing data, tables of points that read better side
--- by side than one number to a line.
+-- by side than one number to a line. `from_repo_root` runs a recipe from the
+-- checkout's root, where `types=1` finds `roc-version`.
 const LINTS = {
   {recipe = "name_hunt", args = {}, budget = {}, counts = {
     {"state_effect", 0}, {"question", 0}, {"vague", 0}, {"name_type", 0}, {"negative", 0},
@@ -29,8 +39,6 @@ const LINTS = {
     {"preposition_split", 0}, {"short_name", 0}, {"worker_name", 0}, {"stacked_preposition", 0},
     {"taken_word", 0}, {"bare_participle", 0},
     {"phrase_name", 0},
-    -- These two need Shale's plural-name-check merged: a cookbook without them
-    -- has no such count, and this gate fails naming it.
     {"singular_list", 0}, {"world_verb", 0}, {"where_name", 0},
   }, whole_tree = {"command_tense", "mixed_tense", "preposition_split"}},
   {recipe = "errors", args = {}, budget = {}, counts = {
@@ -38,7 +46,7 @@ const LINTS = {
   }, whole_tree = {"error_alias"}},
   {recipe = "nest_depth", args = {"min=4"}, budget = {}, counts = {{"nested", 0}}},
   {recipe = "parens", args = {}, budget = {}, counts = {{"paren_if", 0}, {"wrapped_body", 0}, {"else_block", 0}, {"lambda_if", 0}}},
-  {recipe = "boundaries", args = {}, budget = {}, counts = {
+  {recipe = "boundaries", args = {"types=1", "root=" .. SAFARI .. "/web.roc"}, budget = {}, from_repo_root = true, counts = {
     {"single", 0}, {"fixed", 0}, {"entry", 0}, {"constant", 0}, {"bool_param", 0}, {"dead", 0},
   }, whole_tree = {"single", "fixed", "entry", "constant", "bool_param", "dead"}},
   {recipe = "stack", args = {}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 0}, {"to unstack", 0}, {"long", 0}},
@@ -51,25 +59,73 @@ const LINTS = {
   {recipe = "plain_names", args = {}, budget = {}, counts = {{"pure_mutator", 0}, {"abbreviation", 0}, {"module_doc", 0}}},
 }
 
--- The command that runs `lint` over `glob`, in safari's folder.
+function runs_from_repo_root(lint)
+  return get(lint, "from_repo_root", false)
+end
+
+-- The command that runs `lint` over `glob`, a glob from safari's folder.
 function lint_argv(lint, glob)
   local argv = {"shale"}
   for b in lint.budget do push(argv, b) end
   push(argv, real("cookbook:roc/" .. lint.recipe .. ".shale"))
-  push(argv, "glob=" .. glob)
+  push(argv, "glob=" .. (runs_from_repo_root(lint) and (SAFARI .. "/") or "") .. glob)
   for a in lint.args do push(argv, a) end
   local skip = get(lint, "skip", {})
   if #skip > 0 and glob == "**/*.roc" then push(argv, "skip=" .. join(skip, ",")) end
   return argv
 end
 
--- A recipe's last line of counts.
+-- `whole`, not `tail`: name_hunt's summary is one long line.
+function lint_run(lint, glob)
+  local opts = {timeout_ms = 600000, whole = 4000000}
+  if not runs_from_repo_root(lint) then opts.cwd = SAFARI end
+  return run(lint_argv(lint, glob), opts)
+end
+
+const NOT_REACHED = "not reached by "
+
+-- A recipe's last line of counts, which comes before any list of files no root
+-- reaches. A refusal comes last instead, and it has no counts.
 function lint_summary(out)
   local summary = ""
   for l in lines(trim(out)) do
+    if starts_with(l, NOT_REACHED) then break end
     if not starts_with(l, "──") and trim(l) ~= "" then summary = l end
   end
   return summary
+end
+
+-- The files that `out` says no root of the types reaches.
+function files_not_reached(out)
+  local found = {}
+  for l in lines(out) do
+    if starts_with(l, NOT_REACHED) then
+      local parts = split(l, ": ")
+      push(found, parts[#parts])
+    end
+  end
+  return found
+end
+
+function is_untyped_path(path)
+  for p in UNTYPED_PATHS do
+    if starts_with(path, SAFARI .. "/" .. p) then return true end
+  end
+  return false
+end
+
+-- What's wrong with the files `out` says no root reaches, and a line saying how
+-- many of them had types. The recipe exits non-zero on such files, so
+-- UNTYPED_PATHS is what judges them. Nothing for a recipe without types.
+function judge_reach(lint, out, summary, wrong)
+  if not has_item(lint.args, "types=1") then return nil end
+  local missed = files_not_reached(out)
+  for f in missed do
+    if not is_untyped_path(f) then push(wrong, lint.recipe .. ": no root reaches " .. f .. ", so it has no types") end
+  end
+  local files = re_find(summary, "([0-9]+) files")
+  if files ~= nil then print(lint.recipe .. ": types for " .. (tonumber(files.group) - #missed) .. " of " .. files.group .. " files") end
+  return nil
 end
 
 -- The number a summary line gives for `check`: "check N", or "N check" for
@@ -106,7 +162,7 @@ end
 
 -- One recipe's run over `glob`, judged by the checks one file can answer.
 function judge_part(lint, glob)
-  local r = run(lint_argv(lint, glob), {cwd = SAFARI, timeout_ms = 600000, whole = 4000000})
+  local r = lint_run(lint, glob)
   if contains(r.out, "refused: ") then fail("safari lints: " .. lint.recipe .. " refused " .. glob .. ": " .. trim(r.out)) end
   local summary = lint_summary(r.out)
   for c in lint.counts do
@@ -146,9 +202,13 @@ end
 function judge_tree()
   local wrong = {}
   for lint in LINTS do
-    -- `whole`, not `tail`: name_hunt's summary is one long line.
-    local r = run(lint_argv(lint, "**/*.roc"), {cwd = SAFARI, timeout_ms = 600000, whole = 4000000})
+    local r = lint_run(lint, "**/*.roc")
     local summary = lint_summary(r.out)
+    judge_reach(lint, r.out, summary, wrong)
+    -- A recipe that stopped before its counts says why, as when Roc's checker
+    -- rejects web.roc.
+    local stopped = find(r.out, "── stopped")
+    if stopped ~= nil and count_in(summary, lint.counts[1][1]) == nil then print(sub(r.out, stopped)) end
     local said = {}
     for c in lint.counts do
       local got = count_in(summary, c[1])
