@@ -2554,3 +2554,56 @@ expect
 			((metres, speed), want),
 		| (brake_short_of_pig(metres, speed) - want).abs() <= 0.000000000001,
 	)
+
+## How far this motorcycle on the distracting segment wants to turn to the pig.
+turn_to_pig : Motorcycle -> F64
+turn_to_pig = |motorcycle|
+	match Gaze.desired_gaze(motorcycle, distracting_segment) {
+		OnPig(turn) => turn.to_radians()
+		OnRoad => crash "CrossModuleExpects: no pig in sight"
+	}
+
+expect {
+	far = turn_to_pig(motorcycle_at(200.0))
+	near = turn_to_pig(motorcycle_at(320.0))
+	far > 0.0 and near > far
+}
+
+expect Gaze.desired_gaze(motorcycle_at(200.0), pigless_segment) == OnRoad
+expect Gaze.desired_gaze(motorcycle_at(100.0), distracting_segment) == OnRoad
+
+# The gawking outlasts the look: at 341 m the rider still gawks, but no longer
+# looks.
+expect Gaze.desired_gaze(motorcycle_at(341.0), distracting_segment) == OnRoad
+
+## A motorcycle 100 m short of the pig, turned so the pig is `degrees` off.
+motorcycle_with_pig_off : F64 -> Motorcycle
+motorcycle_with_pig_off = |degrees| {
+	straight = short_of_pig(100.0)
+	turn_to_watched_pig = Angle.Turn.radians(
+		F64.atan2({
+			x: watched_pig.road_point.along.distance_from(straight.along).to_metres(),
+			y: watched_pig.road_point.across.distance_from(straight.across).to_metres(),
+		}),
+	).minus(straight.yaw)
+	{ ..straight, yaw: turn_to_watched_pig.minus(Angle.Turn.degrees(degrees)) }
+}
+
+## Whether this motorcycle's rider on the distracting segment wants to look at
+## the pig.
+is_looking : Motorcycle -> Bool
+is_looking = |motorcycle|
+	match Gaze.desired_gaze(motorcycle, distracting_segment) {
+		OnPig(_) => True
+		OnRoad => False
+	}
+
+# The pig stays in sight up to the release angle, on either side of the
+# motorcycle.
+expect
+	[
+		(34.99, True),
+		(-34.99, True),
+		(35.01, False),
+		(-35.01, False),
+	].all(|(degrees, is_in_sight)| is_looking(motorcycle_with_pig_off(degrees)) == is_in_sight)

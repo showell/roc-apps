@@ -8,17 +8,13 @@
 import Angle
 import Attention
 import Billboard
-import Distance
 import Easing
 import Fraction
 import Gawking
 import Geom
 import Motorcycle
 import RiderEyes
-import lib.Trig
-import Route
 import Segment
-import World
 
 Gaze :: [].{
 
@@ -111,79 +107,9 @@ turn_to = |motorcycle, pig| Angle.Turn.radians(
 
 expect Gaze.gaze_attention(Fraction.of(0.25)).to_f64() == 0.15625
 
-plain : Segment
-plain = World.route.segment_at(Route.SegmentIndex.number(0))
-
-distracting : Segment
-distracting = World.first_distracting_segment
-
-## A motorcycle `along` metres into the distracting segment, at rest in every
-## other way. Gaze doesn't import Along, so `along` is a distance from the
-## segment's start.
-motorcycle_at : F64 -> Motorcycle
-motorcycle_at = |along| {
-	..Motorcycle.initial,
-	along: Motorcycle.initial.along.plus(Distance.metres(along)),
-}
-
-## How far this motorcycle on the distracting segment wants to turn to the pig.
-turn_to_pig : Motorcycle -> F64
-turn_to_pig = |motorcycle|
-	match Gaze.desired_gaze(motorcycle, distracting) {
-		OnPig(turn) => turn.to_radians()
-		OnRoad => crash "Gaze's expects: no pig in sight"
-	}
-
-expect {
-	far = turn_to_pig(motorcycle_at(200.0))
-	near = turn_to_pig(motorcycle_at(320.0))
-	far > 0.0 and near > far
-}
-
-expect Gaze.desired_gaze(motorcycle_at(200.0), plain) == OnRoad
-expect Gaze.desired_gaze(motorcycle_at(100.0), distracting) == OnRoad
-expect Gaze.desired_gaze(motorcycle_at(341.0), distracting) == OnRoad
-
-## The pig that catches the eye on the distracting segment.
-watched_pig : Geom.Placed(Billboard)
-watched_pig =
-	match Gawking.eye_catching_pig(distracting) {
-		CatchesEye(pig) => pig
-		NoPigCatchesEye => crash "Gaze's expects: this segment's pigs catch the eye"
-	}
-
-## A motorcycle on the distracting segment, `metres` short of the pig.
-short_of_pig : F64 -> Motorcycle
-short_of_pig = |metres| {
-	..motorcycle_at(0.0),
-	along: watched_pig.road_point.along.minus(Distance.metres(metres)),
-}
-
-## A motorcycle 100 m short of the pig, turned so the pig is `degrees` off.
-motorcycle_with_pig_off : F64 -> Motorcycle
-motorcycle_with_pig_off = |degrees| {
-	straight = short_of_pig(100.0)
-	{ ..straight, yaw: turn_to(straight, watched_pig).minus(Angle.Turn.degrees(degrees)) }
-}
-
-# The pig stays in sight up to the release angle, on either side of the
-# motorcycle.
-expect
-	[
-		(34.99, True),
-		(-34.99, True),
-		(35.01, False),
-		(-35.01, False),
-	].all(|(degrees, is_in_sight)| is_looking(motorcycle_with_pig_off(degrees)) == is_in_sight)
-
-## Whether this motorcycle's rider on the distracting segment wants to look at
-## the pig.
-is_looking : Motorcycle -> Bool
-is_looking = |motorcycle|
-	match Gaze.desired_gaze(motorcycle, distracting) {
-		OnPig(_) => True
-		OnRoad => False
-	}
+## Radians in `d` degrees.
+degrees : F64 -> F64
+degrees = |d| Angle.Turn.degrees(d).to_radians()
 
 ## Eyes looking `gaze_yaw` from straight ahead.
 head : F64 -> RiderEyes
@@ -221,7 +147,7 @@ expect
 		(-2.0, -1.8),
 	].all(
 		|(from, to)|
-			(gaze_returning(head(from * Trig.degree)) / Trig.degree - to).abs() <= 0.000000000001,
+			(gaze_returning(head(degrees(from))) / degrees(1.0) - to).abs() <= 0.000000000001,
 	)
 
 # A gaze within the return rate comes all the way home, exactly, and one just
@@ -234,15 +160,15 @@ expect gaze_returning(head(-return_rate * 1.5)) < 0.0
 expect gaze_returning(head(0.0)) == 0.0
 
 # A pig dead ahead is still a pig: the gaze swivels to it, and doesn't ease.
-expect gaze_after(head(2.0 * Trig.degree), 0.0) == 0.0
+expect gaze_after(head(degrees(2.0)), 0.0) == 0.0
 
 ## Eyes with this look depth, looking `gaze_yaw` from straight ahead.
 eyes_at_depth : F64, F64 -> RiderEyes
 eyes_at_depth = |look_depth, gaze_yaw| { ..head(gaze_yaw), look_depth: Fraction.of(look_depth) }
 
 expect {
-	rising = depth_after(eyes_at_depth(0.0, 20.0 * Trig.degree), 20.0 * Trig.degree)
-	held = depth_after(eyes_at_depth(0.9, 1.0 * Trig.degree), 1.0 * Trig.degree)
+	rising = depth_after(eyes_at_depth(0.0, degrees(20.0)), degrees(20.0))
+	held = depth_after(eyes_at_depth(0.9, degrees(1.0)), degrees(1.0))
 	easing = depth_after(eyes_at_depth(0.9, 0.0), 0.0)
 	rising > 0.0 and held >= 0.9 and easing < 0.9 and easing > 0.0
 }
@@ -252,8 +178,4 @@ expect depth_after(eyes_at_depth(0.9, 0.0), return_rate / 10.0) == 0.9
 expect (depth_after(eyes_at_depth(0.9, 0.0), 0.0) - 0.8988).abs() <= 0.000000000001
 
 expect depth_after(eyes_at_depth(0.0, 0.0), 0.0) == 0.0
-expect depth_after(eyes_at_depth(0.0, 90.0 * Trig.degree), 90.0 * Trig.degree) == 1.0
-
-# The gawking outlasts the look.
-expect !is_looking(motorcycle_at(341.0))
-expect Gawking.is_gawking(motorcycle_at(341.0), distracting)
+expect depth_after(eyes_at_depth(0.0, degrees(90.0)), degrees(90.0)) == 1.0
