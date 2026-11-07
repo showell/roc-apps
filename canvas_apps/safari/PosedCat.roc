@@ -3,18 +3,26 @@
 ## sighting found it, its feet raised as it leaps.
 import Pixels
 import Camera
-import Cat
 import CatStills
 import Distance
 import Geom
 import Picture
 import StillShapes
+import Stills
 import lib.Shapes
 
-PosedCat := { pose : Cat.CatPose, lift : Distance }.{
+PosedCat := { pose : PosedCat.CatPose, lift : Distance }.{
+
+	## How the cat holds itself: walking, it is at rest or mid-stride; then
+	## frozen; then its leap, from the coil through flight and landing to the
+	## collapse after.
+	CatPose : [Rest, Stride, Frozen, Coil, Flight, Land, Collapse]
+
+	cat_height : Distance
+	cat_height = Distance.metres(1.7)
 
 	scenery_height : PosedCat -> Distance
-	scenery_height = |_cat| Cat.cat_height
+	scenery_height = |_cat| PosedCat.cat_height
 
 	## A cat on screen, its feet where it is.
 	scenery_picture : PosedCat, Picture.Setting({}) -> Picture
@@ -26,12 +34,25 @@ PosedCat := { pose : Cat.CatPose, lift : Distance }.{
 				{
 					feet,
 					flip: AsDrawn,
-					height_px: feet.y.minus(projected(cat.lift.plus(Cat.cat_height)).y),
+					height_px: feet.y.minus(projected(cat.lift.plus(PosedCat.cat_height)).y),
 				},
-				CatStills.pose_polygons(cat.pose),
+				PosedCat.pose_polygons(cat.pose),
 			),
 		)
 	}
+
+	## The cat's polygons in a pose.
+	pose_polygons : PosedCat.CatPose -> List(Stills.StillPolygon)
+	pose_polygons = |pose|
+		match pose {
+			Rest => CatStills.pose_rest_polys
+			Stride => CatStills.pose_stride_polys
+			Frozen => CatStills.pose_frozen_polys
+			Coil => CatStills.pose_coil_polys
+			Flight => CatStills.pose_flight_polys
+			Land => CatStills.pose_land_polys
+			Collapse => CatStills.pose_collapse_polys
+		}
 }
 
 ## A cat on the ground, at rest.
@@ -70,6 +91,18 @@ expect
 		({ ..near_cat, lift: Distance.metres(1.0) }, [480.0782, 297.16395]),
 	].all(|(cat, want)| is_near(first_corner_coordinates(cat), want))
 
+# Each pose draws its own still.
+expect
+	[
+		(Rest, CatStills.pose_rest_polys),
+		(Stride, CatStills.pose_stride_polys),
+		(Frozen, CatStills.pose_frozen_polys),
+		(Coil, CatStills.pose_coil_polys),
+		(Flight, CatStills.pose_flight_polys),
+		(Land, CatStills.pose_land_polys),
+		(Collapse, CatStills.pose_collapse_polys),
+	].all(|(pose, still)| PosedCat.pose_polygons(pose) == still)
+
 # Each pose draws every polygon of its still.
 expect
 	[
@@ -81,11 +114,5 @@ expect
 		Land,
 		Collapse,
 	].all(
-		|pose| sample_cat_shapes({ ..near_cat, pose }).len() == CatStills.pose_polygons(pose).len(),
-	)
-
-# A cat's height is the same in every pose.
-expect
-	[near_cat, { pose: Flight, lift: Distance.metres(1.0) }].all(
-		|cat| cat.scenery_height() == Cat.cat_height,
+		|pose| sample_cat_shapes({ ..near_cat, pose }).len() == PosedCat.pose_polygons(pose).len(),
 	)

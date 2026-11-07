@@ -3,6 +3,7 @@
 ## placed where its crossing has got to, if it is in front of the camera and
 ## tall enough on screen to draw. A segment holds one crossing at most, a cat's
 ## or a bird's.
+import Along
 import Animation
 import BirdFlight
 import Cat
@@ -51,11 +52,9 @@ cat_in_view : RoadAhead.CameraView,
 	speed : Speed,
 } -> Try(Pipeline.Sighted(PosedCat), [BehindCamera, TooSmall])
 cat_in_view = |view, { in_view, crossing, speed }| {
-	gap = RoadAhead.gap_to_segment(view.road, in_view)
-	instant = Cat.instant_at(crossing, { gap: gap.plus(crossing.along.from_start()), speed })
-	placed_cat : Geom.Placed(PosedCat)
-	placed_cat = Animation.placed_instant(instant)
-	animal_in_view(view, { place: in_view.place, animal: placed_cat })
+	placed_cat : Distance -> Geom.Placed(PosedCat)
+	placed_cat = |gap| Animation.placed_instant(Cat.instant_at(crossing, { gap, speed }))
+	crossing_in_view(view, { in_view, along: crossing.along, placed_at: placed_cat })
 }
 
 ## The bird of a segment in view, if that segment has one and it is in view.
@@ -67,15 +66,29 @@ RoadAhead.SegmentInView -> Try(
 segment_bird = |view, in_view|
 	match in_view.segment.crossing {
 		BirdHere(habit) => {
-			gap_to_segment = RoadAhead.gap_to_segment(view.road, in_view)
-			gap_to_tree = gap_to_segment.plus(BirdFlight.start_along(habit).from_start())
-			instant = BirdFlight.habit_instant_at(habit, { gap: gap_to_tree })
-			placed_bird : Geom.Placed(PosedBird)
-			placed_bird = Animation.placed_instant(instant)
-			animal_in_view(view, { place: in_view.place, animal: placed_bird })
+			placed_bird : Distance -> Geom.Placed(PosedBird)
+			placed_bird = |gap| {
+				instant = BirdFlight.habit_instant_at(habit, { gap: gap })
+				Animation.placed_instant(instant)
+			}
+			crossing_in_view(view, { in_view, along: habit.perch.along, placed_at: placed_bird })
 		}
 		CatCrosses(_) | QuietRoad => Err(NoBird)
 	}
+
+## The animal crossing a segment in view, `along` it, placed as `placed_at`
+## finds it with the rider that far short of it, if it is in view.
+crossing_in_view : RoadAhead.CameraView,
+{
+	in_view : RoadAhead.SegmentInView,
+	along : Along,
+	placed_at : Distance -> Geom.Placed(kind),
+} -> Try(Pipeline.Sighted(kind), [BehindCamera, TooSmall])
+	where [kind.scenery_height : kind -> Distance]
+crossing_in_view = |view, { in_view, along, placed_at }| {
+	gap = RoadAhead.gap_to_segment(view.road, in_view).plus(along.from_start())
+	animal_in_view(view, { place: in_view.place, animal: placed_at(gap) })
+}
 
 ## An animal placed on the segment at `place`, if it is in view. Its size is
 ## tested through the camera's own lens, as a tree's is.

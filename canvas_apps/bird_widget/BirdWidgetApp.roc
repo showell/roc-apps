@@ -49,8 +49,8 @@ closing_gap = VcrButtons.gap_range({ farthest: Distance.metres(75.0), metres_a_f
 segment_flight : World.Segment -> Try(BirdFlight.Flight, [NoFlight])
 segment_flight = |segment|
 	match segment.crossing {
-		BirdHere(Flies(flight)) => Ok(flight)
-		BirdHere(Sits(_)) | CatCrosses(_) | QuietRoad => Err(NoFlight)
+		BirdHere({ perch, leaves_for: FliesTo(to) }) => Ok({ from: perch, to })
+		BirdHere({ leaves_for: StaysPut, .. }) | CatCrosses(_) | QuietRoad => Err(NoFlight)
 	}
 
 ## The first flight on the route.
@@ -152,7 +152,7 @@ status_lines = |gap| {
 	]
 }
 
-pose_name : BirdFlight.BirdPose -> Str
+pose_name : PosedBird.BirdPose -> Str
 pose_name = |pose|
 	match pose {
 		Perched => "Perched"
@@ -161,7 +161,7 @@ pose_name = |pose|
 		Diving => "Diving"
 	}
 
-beat_name : BirdFlight.WingBeat -> Str
+beat_name : PosedBird.WingBeat -> Str
 beat_name = |beat|
 	match beat {
 		WingsUp => "wings up"
@@ -172,8 +172,8 @@ expect forward_of(flight.from.along).to_metres() == 18.0
 expect forward_of(flight.to.along).to_metres() == 48.0
 
 # The whole flight is on the range, with some road to spare at the far end.
-expect BirdFlight.takeoff_gap < closing_gap.first
-expect BirdFlight.landing_gap > closing_gap.last
+expect BirdFlight.flight_gaps.starts_at < closing_gap.first
+expect BirdFlight.flight_gaps.ends_at > closing_gap.last
 
 expect
 	status_lines(Distance.metres(61.0))
@@ -222,7 +222,7 @@ expect BirdFlight.instant_at(flight, { gap: Distance.metres(16.0) }).pose == Div
 flight_alongs : List(Along)
 flight_alongs = {
 	gaps = List.from_iter(U64.until(1, BirdFlight.flight_poses.len())).map(
-		|step| BirdFlight.takeoff_gap.minus(Distance.metres(step.to_f64() / 8.0)),
+		|step| BirdFlight.flight_gaps.starts_at.minus(Distance.metres(step.to_f64() / 8.0)),
 	)
 	gaps.map(|gap| BirdFlight.instant_at(flight, { gap: gap }).spot.along)
 }
