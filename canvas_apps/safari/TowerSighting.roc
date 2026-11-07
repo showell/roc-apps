@@ -132,6 +132,7 @@ tower_if_ahead = |
 	placed_tower = {
 		along,
 		across,
+		lift: Distance.zero,
 		kind: {
 			yaw,
 			beacon_brightness: Beacon.beacon_brightness(
@@ -206,14 +207,14 @@ first_tower_on = |number| TowerSighting.segment_towers(
 	},
 ).first() ?? crash "TowerSighting: the first two segments' towers are in view"
 
-expect first_tower_on(0).along.to_metres() == 660.0
-expect first_tower_on(0).across.to_metres() == 20.0
-expect first_tower_on(1).along.to_metres() == 480.0
-expect first_tower_on(1).across.to_metres() == 20.0
+expect first_tower_on(0).spot.road_point().along.to_metres() == 660.0
+expect first_tower_on(0).spot.road_point().across.to_metres() == 20.0
+expect first_tower_on(1).spot.road_point().along.to_metres() == 480.0
+expect first_tower_on(1).spot.road_point().across.to_metres() == 20.0
 expect
 	[
-		(first_tower_on(0).foot.right().to_metres(), 20.0),
-		(first_tower_on(0).foot.forward().to_metres(), 660.0),
+		(first_tower_on(0).spot.foot().right().to_metres(), 20.0),
+		(first_tower_on(0).spot.foot().forward().to_metres(), 660.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 ## The 1200 m segment alone, seen from the origin.
@@ -237,10 +238,10 @@ long_tower = |i|
 
 expect
 	[
-		(long_tower(0).along.to_metres(), 1360.0),
-		(long_tower(0).across.to_metres(), 20.0),
-		(long_tower(1).along.to_metres(), 600.0),
-		(long_tower(1).across.to_metres(), -100.0),
+		(long_tower(0).spot.road_point().along.to_metres(), 1360.0),
+		(long_tower(0).spot.road_point().across.to_metres(), 20.0),
+		(long_tower(1).spot.road_point().along.to_metres(), 600.0),
+		(long_tower(1).spot.road_point().across.to_metres(), -100.0),
 		(long_tower(0).kind.yaw.to_radians(), 0.5235987755982988),
 		(long_tower(1).kind.yaw.to_radians(), 0.0),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
@@ -277,7 +278,7 @@ expect TowerSighting.towers_in_view(short_road(0), Clock.start).len() == 3
 expect TowerSighting.towers_in_view(short_road(1), Clock.start).len() == 4
 expect TowerSighting.towers_in_view(short_road(2), Clock.start).len() == 4
 expect
-	TowerSighting.towers_in_view(short_road(1), Clock.start).map(|tower| tower.place)
+	TowerSighting.towers_in_view(short_road(1), Clock.start).map(|tower| tower.spot.place())
 		== [
 			Ahead(SegmentPlace.Position.number(0)),
 			Ahead(SegmentPlace.Position.number(1)),

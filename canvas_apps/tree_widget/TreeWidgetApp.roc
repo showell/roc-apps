@@ -2,6 +2,8 @@
 ## three trees of one kind at three distances, with no controls. TreeShapes draws
 ## each one and picks its crown, and under each tree are its distance and the
 ## crown `TreeShapes.crown_of` gives there.
+import game.Across
+import game.Along
 import game.Clock
 import game.Conifer
 import game.Distance
@@ -10,6 +12,8 @@ import game.Geom
 import game.Lens
 import game.Pixels
 import game.Screen
+import game.SegmentPlace
+import game.Spot
 import game.TreeShapes
 import lib.Brush
 import lib.RgbColor
@@ -72,9 +76,19 @@ stand_foot = |stand| Geom.ahead_on_level({ right: right_of(stand), forward: stan
 tree_shapes : Stand -> List(Shapes.Shape)
 tree_shapes = |stand|
 	match stand_foot(stand) {
-		Ok(foot) =>
-			conifer.scenery_picture({ foot, cam_focal: Lens.resting_focal, context: { nearer_tree_count: 0 } })
+		Ok(foot) => {
+			spot = Spot.at({
+				place: Ahead(SegmentPlace.Position.first),
+				road_point: {
+					along: Along.metres(stand.forward.to_metres()),
+					across: Across.metres(right_of(stand).to_metres()),
+				},
+				lift: Distance.zero,
+				foot,
+			})
+			conifer.scenery_picture({ spot, cam_focal: Lens.resting_focal, context: { nearer_tree_count: 0 } })
 				.to_shapes()
+		}
 		Err(BehindCamera) => []
 	}
 
@@ -122,7 +136,7 @@ is_plain_to_see = |stand|
 	match stand_foot(stand) {
 		Ok(foot) => {
 			tip = foot.at_height(conifer.scenery_height())
-			outline = TreeShapes.tree_outline(tip, Lens.resting_focal)
+			outline = TreeShapes.tree_outline({ tip, lift: Distance.zero, cam_focal: Lens.resting_focal })
 			foot_y = outline.foot.y.to_f64() * canvas_per_screen
 			tip_y = foot_y - outline.height.to_f64() * canvas_per_screen
 			x = outline.foot.x.to_f64() * canvas_per_screen

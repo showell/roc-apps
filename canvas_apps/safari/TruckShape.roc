@@ -6,7 +6,7 @@ import Along
 import Camera
 import Distance
 import RoadAhead
-import SegmentPlace
+import Spot
 import Fraction
 import Geom
 import Ground
@@ -27,16 +27,16 @@ TruckShape :: [].{
 		right : Across,
 	}
 
-	## A truck ready to draw: what it is seen from, where its segment lies from
-	## the rider, and the box it fills.
+	## A truck ready to draw: what it is seen from, where it stands, and the box
+	## it fills.
 	TruckInView : {
 		view : RoadAhead.CameraView,
-		place : SegmentPlace,
+		spot : Spot,
 		box : TruckShape.TruckBox,
 	}
 
 	## A point on the truck: how far along the road, how far across it, and
-	## how high above it.
+	## how high above the truck's own bottom.
 	TruckPoint : {
 		along : Along,
 		across : Across,
@@ -81,16 +81,17 @@ TruckShape :: [].{
 		}
 	}
 
-	## Where a point on the truck lands in the rider's view. The ground
-	## curves away from the rider, so the point is lowered by how far the
-	## ground has dropped beneath it.
+	## Where a point on the truck lands in the rider's view, raised as far as
+	## the truck is off the ground. The ground curves away from the rider, so
+	## the point is lowered by how far the ground has dropped beneath it.
 	point : TruckShape.TruckInView, TruckShape.TruckPoint -> Geom.RaisedPoint
 	point = |truck, { along, across, height }| {
-		on_ground = RoadAhead.rider_point_at(truck.view.road, { place: truck.place, along, across })
+		place = truck.spot.place()
+		on_ground = RoadAhead.rider_point_at(truck.view.road, { place, along, across })
 		{
 			right: on_ground.right,
 			forward: on_ground.forward,
-			height: height.minus(Ground.ground_drop(on_ground)),
+			height: truck.spot.lift().plus(height).minus(Ground.ground_drop(on_ground)),
 		}
 	}
 

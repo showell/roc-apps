@@ -71,6 +71,7 @@ herd_bull = |herd_along| {
 	{
 		along: herd_along,
 		across: Across.left_of_middle(bull_middle.plus(bull_tree_gap)),
+		lift: Distance.zero,
 		kind: Billboard.adult_billboard(bull, FacesLeft),
 	}
 }
@@ -94,6 +95,7 @@ herd_cow = |herd, { herd_along, cow_number }| {
 	{
 		along: in_line.plus(herd.jitter_along.times((fi * 2.7).sin())),
 		across: Across.left_of_middle(out_from_road),
+		lift: Distance.zero,
 		kind: if is_calf(cow_number) {
 			Billboard.young_billboard(cow, FacesRight)
 		} else {

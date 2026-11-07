@@ -27,7 +27,12 @@ TruckSighting :: [].{
 			match truck_from(road, start) {
 				Ok({ along, position }) => {
 					placed_truck : Geom.Placed(TruckAhead)
-					placed_truck = { along, across: Across.middle, kind: truck_ahead }
+					placed_truck = {
+						along,
+						across: Across.middle,
+						lift: Distance.zero,
+						kind: truck_ahead,
+					}
 					Pipeline.sighting_of(placed_truck, { road, place: Ahead(position) })
 				}
 				Err(NoTruck) => Err(NoTruck)

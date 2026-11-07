@@ -3,8 +3,8 @@
 ## of each other: `stage_over_gap` or `stage_over_step_span` says how far along an animation is,
 ## and a timeline looks up the frame that far through its list.
 ##
-## A timeline is a list of frames, each a pose and a spot, so a critter's whole
-## animation reads in one place. Nothing here plays a timeline but that lookup.
+## A timeline is a list of frames, each a pose and a location, so a critter's
+## whole animation reads in one place. Nothing here plays a timeline but that lookup.
 ## The instants before and after are the timeline's own, because a critter can
 ## rest somewhere no frame ever reaches.
 import Across
@@ -59,20 +59,21 @@ Animation :: [].{
 		stage_over_gap({ starts_at, ends_at }, approach)
 	}
 
-	## A place on a critter's segment, and how high it is off the ground.
-	Spot : {
+	## Where a critter is: a place on its segment, and how high it is off the
+	## ground.
+	Location : {
 		along : Along,
 		across : Across,
 		lift : Distance,
 	}
 
-	## The spot `fraction` of the way from `from` to `to`, in a straight line.
-	spot_between : {
-		from : Animation.Spot,
-		to : Animation.Spot,
+	## The location `fraction` of the way from `from` to `to`, in a straight line.
+	location_between : {
+		from : Animation.Location,
+		to : Animation.Location,
 		fraction : Fraction,
-	} -> Animation.Spot
-	spot_between = |{ from, to, fraction }| {
+	} -> Animation.Location
+	location_between = |{ from, to, fraction }| {
 		between = |start, end| Easing.lerp({ from: start, to: end, fraction })
 		{
 			along: Along.metres(between(from.along.to_metres(), to.along.to_metres())),
@@ -82,15 +83,16 @@ Animation :: [].{
 	}
 
 	## A critter at one instant: how it looks, and where it is.
-	Instant(pose) : { pose : pose, spot : Animation.Spot }
+	Instant(pose) : { pose : pose, location : Animation.Location }
 
-	## `instant` as an object on the road. A critter's kind says how it looks and
-	## how high it is, which is all of `instant` but where on the road it stands.
-	placed_instant : Animation.Instant(pose) -> Geom.Placed({ pose : pose, lift : Distance })
-	placed_instant = |instant| {
-		along: instant.spot.along,
-		across: instant.spot.across,
-		kind: { pose: instant.pose, lift: instant.spot.lift },
+	## `instant` as an object on the road: it stands at the instant's location,
+	## and its kind is the instant's pose.
+	placed_instant : Animation.Instant(pose) -> Geom.Placed({ pose : pose })
+	placed_instant = |{ pose, location }| {
+		along: location.along,
+		across: location.across,
+		lift: location.lift,
+		kind: { pose: pose },
 	}
 
 	## A whole animation: the critter at rest before, the frames it plays through,
@@ -209,8 +211,8 @@ expect
 
 Note : [First, Second, Third, Fourth, BeforeIt, AfterIt]
 
-spot_at : F64 -> Animation.Spot
-spot_at = |across| {
+location_at : F64 -> Animation.Location
+location_at = |across| {
 	along: Along.metres(0.0),
 	across: Across.metres(across),
 	lift: Distance.zero,
@@ -220,14 +222,14 @@ spot_at = |across| {
 four_frames : Animation.Timeline(Note)
 four_frames = Animation.Timeline.(
 	{
-		before: { pose: BeforeIt, spot: spot_at(-1.0) },
+		before: { pose: BeforeIt, location: location_at(-1.0) },
 		frames: [
-			{ pose: First, spot: spot_at(1.0) },
-			{ pose: Second, spot: spot_at(2.0) },
-			{ pose: Third, spot: spot_at(3.0) },
-			{ pose: Fourth, spot: spot_at(4.0) },
+			{ pose: First, location: location_at(1.0) },
+			{ pose: Second, location: location_at(2.0) },
+			{ pose: Third, location: location_at(3.0) },
+			{ pose: Fourth, location: location_at(4.0) },
 		],
-		after: { pose: AfterIt, spot: spot_at(99.0) },
+		after: { pose: AfterIt, location: location_at(99.0) },
 	},
 )
 
@@ -250,60 +252,61 @@ expect four_frames.instant(Playing(Fraction.of(0.25 - 0.0000000000001))).pose ==
 
 expect four_frames.instant(Waiting).pose == BeforeIt
 expect four_frames.instant(Past(Distance.metres(5.0))).pose == AfterIt
-expect four_frames.instant(Waiting).spot.across.to_metres() == -1.0
-expect four_frames.instant(Playing(Fraction.of(0.5))).spot.across.to_metres() == 3.0
-expect four_frames.instant(Past(Distance.metres(5.0))).spot.across.to_metres() == 99.0
+expect four_frames.instant(Waiting).location.across.to_metres() == -1.0
+expect four_frames.instant(Playing(Fraction.of(0.5))).location.across.to_metres() == 3.0
+expect four_frames.instant(Past(Distance.metres(5.0))).location.across.to_metres() == 99.0
 
 ## A timeline with no frames at all.
 empty_timeline : Animation.Timeline(Note)
 empty_timeline = Animation.Timeline.(
 	{
-		before: { pose: BeforeIt, spot: spot_at(0.0) },
+		before: { pose: BeforeIt, location: location_at(0.0) },
 		frames: [],
-		after: { pose: AfterIt, spot: spot_at(0.0) },
+		after: { pose: AfterIt, location: location_at(0.0) },
 	},
 )
 
 expect empty_timeline.instant(Playing(Fraction.zero)).pose == AfterIt
 
-# A placed instant stands where the instant's spot is, and keeps the rest as its kind.
+# A placed instant stands at the instant's location, and its kind is the pose.
 expect {
-	spot = {
+	location = {
 		along: Along.metres(3.0),
 		across: Across.metres(-1.0),
 		lift: Distance.metres(2.0),
 	}
-	Animation.placed_instant({ pose: First, spot })
+	Animation.placed_instant({ pose: First, location })
 		== {
-			along: spot.along,
-			across: spot.across,
-			kind: { pose: First, lift: spot.lift },
+			along: location.along,
+			across: location.across,
+			lift: location.lift,
+			kind: { pose: First },
 		}
 }
 
-start_spot : Animation.Spot
-start_spot = {
+start_location : Animation.Location
+start_location = {
 	along: Along.metres(10.0),
 	across: Across.metres(20.0),
 	lift: Distance.metres(30.0),
 }
 
-end_spot : Animation.Spot
-end_spot = {
+end_location : Animation.Location
+end_location = {
 	along: Along.metres(18.0),
 	across: Across.metres(4.0),
 	lift: Distance.metres(46.0),
 }
 
-## The spot's three parts, `fraction` of the way from `start_spot` to `end_spot`.
-spot_numbers : F64 -> List(F64)
-spot_numbers = |fraction| {
-	spot = Animation.spot_between({
-		from: start_spot,
-		to: end_spot,
+## The location's three parts, `fraction` of the way from `start_location` to `end_location`.
+location_numbers : F64 -> List(F64)
+location_numbers = |fraction| {
+	location = Animation.location_between({
+		from: start_location,
+		to: end_location,
 		fraction: Fraction.of(fraction),
 	})
-	[spot.along.to_metres(), spot.across.to_metres(), spot.lift.to_metres()]
+	[location.along.to_metres(), location.across.to_metres(), location.lift.to_metres()]
 }
 
 expect
@@ -311,4 +314,4 @@ expect
 		(0.0, [10.0, 20.0, 30.0]),
 		(0.25, [12.0, 16.0, 34.0]),
 		(1.0, [18.0, 4.0, 46.0]),
-	].all(|(fraction, want)| is_near(spot_numbers(fraction), want))
+	].all(|(fraction, want)| is_near(location_numbers(fraction), want))

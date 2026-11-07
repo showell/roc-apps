@@ -59,6 +59,7 @@ package
 		SegmentPlace,
 		Sky,
 		Speed,
+		Spot,
 		Steps,
 		StillShapes,
 		Stills,

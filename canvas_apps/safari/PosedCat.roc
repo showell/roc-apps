@@ -1,17 +1,21 @@
-## A cat at one moment of its crossing: how it holds itself, and how high its
-## leap has raised it. It draws as the still for its pose, standing where its
-## sighting found it, its feet raised as it leaps.
+## A cat at one moment of its crossing: how it holds itself. It draws as the
+## still for its pose, its feet at its spot, raised as high as the spot says
+## while it leaps.
 import Pixels
+import Across
+import Along
 import Camera
 import CatStills
 import Distance
 import Geom
 import Picture
+import SegmentPlace
+import Spot
 import StillShapes
 import Stills
 import lib.Shapes
 
-PosedCat := { pose : PosedCat.CatPose, lift : Distance }.{
+PosedCat := { pose : PosedCat.CatPose }.{
 
 	## How the cat holds itself: walking, it is at rest or mid-stride; then
 	## frozen; then its leap, from the coil through flight and landing to the
@@ -26,15 +30,15 @@ PosedCat := { pose : PosedCat.CatPose, lift : Distance }.{
 
 	## A cat on screen, its feet where it is.
 	scenery_picture : PosedCat, Picture.Setting({}) -> Picture
-	scenery_picture = |cat, { foot, cam_focal, .. }| {
-		projected = |height| Camera.project(foot.at_height(height), cam_focal)
-		feet = projected(cat.lift)
+	scenery_picture = |cat, { spot, cam_focal, .. }| {
+		projected = |height| Camera.project(spot.foot().at_height(height), cam_focal)
+		feet = projected(spot.lift())
 		Picture.from_shapes(
 			StillShapes.still_shapes(
 				{
 					feet,
 					flip: AsDrawn,
-					height_px: feet.y.minus(projected(cat.lift.plus(PosedCat.cat_height)).y),
+					height_px: feet.y.minus(projected(spot.lift().plus(PosedCat.cat_height)).y),
 				},
 				PosedCat.pose_polygons(cat.pose),
 			),
@@ -55,24 +59,40 @@ PosedCat := { pose : PosedCat.CatPose, lift : Distance }.{
 		}
 }
 
-## A cat on the ground, at rest.
+## A cat at rest.
 near_cat : PosedCat
-near_cat = { lift: Distance.zero, pose: Rest }
+near_cat = { pose: Rest }
 
-## `cat` 100 m straight ahead through a 500 px focal length: its feet on the
-## ground land at (480, 306), and it stands 8.5 px tall.
-sample_cat_shapes : PosedCat -> List(Shapes.Shape)
-sample_cat_shapes = |cat| {
+## The spot 100 m straight ahead, on the rider's own segment, `lift` off the
+## ground.
+spot_ahead : Distance -> Spot
+spot_ahead = |lift| {
 	foot =
 		Geom.ahead_on_level({ right: Distance.zero, forward: Distance.metres(100.0) })
 			?? crash "a test's cat is past the near plane"
-	cat.scenery_picture({ foot, cam_focal: Pixels.of(500.0), context: {} }).to_shapes()
+	Spot.at({
+		place: Ahead(SegmentPlace.Position.first),
+		road_point: { along: Along.metres(100.0), across: Across.middle },
+		lift,
+		foot,
+	})
 }
 
-## The first corner `cat` draws: its still's first corner, on screen.
-first_corner_coordinates : PosedCat -> List(F64)
-first_corner_coordinates = |cat|
-	match sample_cat_shapes(cat) {
+## `cat` 100 m straight ahead through a 500 px focal length, `lift` off the
+## ground: on the ground its feet land at (480, 306), and it stands 8.5 px tall.
+sample_cat_shapes : PosedCat, Distance -> List(Shapes.Shape)
+sample_cat_shapes = |cat, lift|
+	cat.scenery_picture({
+		spot: spot_ahead(lift),
+		cam_focal: Pixels.of(500.0),
+		context: {},
+	}).to_shapes()
+
+## The first corner `cat` draws, `lift` off the ground: its still's first
+## corner, on screen.
+first_corner_coordinates : PosedCat, Distance -> List(F64)
+first_corner_coordinates = |cat, lift|
+	match sample_cat_shapes(cat, lift) {
 		[Poly(polygon), ..] => polygon.coordinates.take_first(2)
 		_ => crash "a cat draws polygons"
 	}
@@ -87,9 +107,9 @@ is_near = |got, expected| {
 # raises it 5 px without moving it across.
 expect
 	[
-		(near_cat, [480.0782, 302.16395]),
-		({ ..near_cat, lift: Distance.metres(1.0) }, [480.0782, 297.16395]),
-	].all(|(cat, want)| is_near(first_corner_coordinates(cat), want))
+		(Distance.zero, [480.0782, 302.16395]),
+		(Distance.metres(1.0), [480.0782, 297.16395]),
+	].all(|(lift, want)| is_near(first_corner_coordinates(near_cat, lift), want))
 
 # Each pose draws its own still.
 expect
@@ -114,5 +134,8 @@ expect
 		Land,
 		Collapse,
 	].all(
-		|pose| sample_cat_shapes({ ..near_cat, pose }).len() == PosedCat.pose_polygons(pose).len(),
+		|pose| {
+			shapes = sample_cat_shapes({ pose: pose }, Distance.zero)
+			shapes.len() == PosedCat.pose_polygons(pose).len()
+		},
 	)

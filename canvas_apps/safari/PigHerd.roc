@@ -126,6 +126,7 @@ pig : { along : Along, across : Across } -> Geom.Placed(Billboard)
 pig = |{ along, across }| {
 	along,
 	across,
+	lift: Distance.zero,
 	kind: Billboard.adult_billboard(Pig.pig, FacesLeft),
 }
 

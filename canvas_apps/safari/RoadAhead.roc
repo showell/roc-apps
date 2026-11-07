@@ -25,15 +25,6 @@ RoadAhead :: [].{
 	## length in pixels.
 	CameraView : { road : RoadAhead.RoadView, cam_focal : Pixels }
 
-	## What a thing measured on the road draws from: the road in view, and where
-	## on it the thing stands.
-	RoadContext : {
-		road : RoadAhead.RoadView,
-		place : SegmentPlace,
-		along : Along,
-		across : Across,
-	}
-
 	## A segment in view: where it is in the route, the segment itself, and where
 	## it lies from the rider.
 	SegmentInView : {

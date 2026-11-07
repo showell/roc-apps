@@ -58,6 +58,7 @@ Pond :: [].{
 				{
 					along: on_segment.along,
 					across: on_segment.across,
+					lift: Distance.zero,
 					kind: Billboard.adult_billboard(duck, pond_duck.facing),
 				}
 			},

@@ -126,8 +126,8 @@ cat_shapes = |gap| {
 	StillShapes.still_shapes(
 		{
 			feet: {
-				x: Pixels.of(road_middle_x + instant.spot.across.to_metres() * pixels_a_metre),
-				y: Pixels.of(feet_y - instant.spot.lift.to_metres() * pixels_a_metre),
+				x: Pixels.of(road_middle_x + instant.location.across.to_metres() * pixels_a_metre),
+				y: Pixels.of(feet_y - instant.location.lift.to_metres() * pixels_a_metre),
 			},
 			flip: AsDrawn,
 			height_px: Pixels.of(PosedCat.cat_height.to_metres() * pixels_a_metre),
