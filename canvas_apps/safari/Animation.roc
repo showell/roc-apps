@@ -215,8 +215,8 @@ is_near = |got, expected| {
 
 Note : [First, Second, Third, Fourth, BeforeIt, AfterIt]
 
-location_at : F64 -> Animation.Location
-location_at = |across| {
+sideways_location : F64 -> Animation.Location
+sideways_location = |across| {
 	along: Along.metres(0.0),
 	across: Across.metres(across),
 	lift: Distance.zero,
@@ -226,14 +226,14 @@ location_at = |across| {
 four_frames : Animation.Timeline(Note)
 four_frames = Animation.Timeline.(
 	{
-		before: { pose: BeforeIt, location: location_at(-1.0) },
+		before: { pose: BeforeIt, location: sideways_location(-1.0) },
 		frames: [
-			{ pose: First, location: location_at(1.0) },
-			{ pose: Second, location: location_at(2.0) },
-			{ pose: Third, location: location_at(3.0) },
-			{ pose: Fourth, location: location_at(4.0) },
+			{ pose: First, location: sideways_location(1.0) },
+			{ pose: Second, location: sideways_location(2.0) },
+			{ pose: Third, location: sideways_location(3.0) },
+			{ pose: Fourth, location: sideways_location(4.0) },
 		],
-		after: { pose: AfterIt, location: location_at(99.0) },
+		after: { pose: AfterIt, location: sideways_location(99.0) },
 	},
 )
 
@@ -257,9 +257,9 @@ expect four_frames.instant(Past(Steps.of(5))).location.across.to_metres() == 99.
 empty_timeline : Animation.Timeline(Note)
 empty_timeline = Animation.Timeline.(
 	{
-		before: { pose: BeforeIt, location: location_at(0.0) },
+		before: { pose: BeforeIt, location: sideways_location(0.0) },
 		frames: [],
-		after: { pose: AfterIt, location: location_at(0.0) },
+		after: { pose: AfterIt, location: sideways_location(0.0) },
 	},
 )
 

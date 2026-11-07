@@ -63,7 +63,7 @@ RoadAhead :: [].{
 		segments_ahead =
 			SegmentPlace.Position.positions_in(road.segments_ahead())
 				.map(|position| segment_in_view_at(road, position))
-		match segment_behind(road) {
+		match previous_segment_index(road) {
 			Previous(index) => {
 				segment = road.route().segment_at(index)
 				segments_ahead.append({ index, segment, place: JustBehind })
@@ -135,8 +135,8 @@ segments_ahead_of = |route, start| {
 }
 
 ## The segment behind the rider's, unless the rider's is the route's first.
-segment_behind : RoadAhead.RoadView -> [Previous(Route.SegmentIndex), AtRouteStart]
-segment_behind = |road| RoadAhead.rider_segment(road).previous()
+previous_segment_index : RoadAhead.RoadView -> [Previous(Route.SegmentIndex), AtRouteStart]
+previous_segment_index = |road| RoadAhead.rider_segment(road).previous()
 
 ## A point on the segment at `position` on the road ahead, as the camera at
 ## `vantage` on the rider's segment sees it.
@@ -171,7 +171,7 @@ index_at = |road, position| {
 ## The bend from the segment just behind the rider into the rider's own.
 bend_behind : RoadAhead.RoadView -> Geom.Bend
 bend_behind = |road|
-	match segment_behind(road) {
+	match previous_segment_index(road) {
 		Previous(index) => road.route().segment_at(index).bend_out_of()
 		AtRouteStart => crash "RoadAhead.bend_behind: a rider on the route's first segment has no segment behind"
 	}

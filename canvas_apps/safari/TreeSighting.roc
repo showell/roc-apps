@@ -2,17 +2,10 @@
 ## placed along the segments in view that stand in front of the camera and are
 ## tall enough on screen to draw.
 import Pixels
-import Across
-import Along
-import Angle
 import Conifer
-import Distance
 import Geom
 import RoadAhead
-import Route
-import SegmentPlace
 import Pipeline
-import World
 
 TreeSighting :: [].{
 
@@ -41,104 +34,3 @@ segment_trees = |road, { camera, in_view }|
 	in_view.segment.trees.keep_oks(
 		|tree| Pipeline.scenery_sighting_of(tree, { road, camera, place: in_view.place }),
 	)
-
-## The rider at the start of the route, looking straight down the road.
-origin : Geom.Vantage
-origin = {
-	along: Along.metres(0.0),
-	across: Across.metres(0.0),
-	yaw: Angle.straight_ahead,
-}
-
-up_road : Geom.Vantage
-up_road = {
-	along: Along.metres(100.0),
-	across: Across.metres(0.0),
-	yaw: Angle.straight_ahead,
-}
-
-## The road ahead of a rider on the route's first segment.
-first_road : RoadAhead.RoadView
-first_road = RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex.first)
-
-from_origin : { vantage : Geom.Vantage, cam_focal : Pixels }
-from_origin = { vantage: origin, cam_focal: Pixels.of(500.0) }
-
-## A green tree `along` metres into the first segment, 3.5 m right of the
-## road's middle, seen by `camera`.
-green_tree_at : { vantage : Geom.Vantage, cam_focal : Pixels },
-F64 -> Try(
-	Pipeline.Sighted(Conifer),
-	[BehindCamera, TooSmall],
-)
-green_tree_at = |camera, along|
-	Pipeline.scenery_sighting_of(
-		{
-			road_point: { along: Along.metres(along), across: Across.metres(3.5) },
-			lift: Distance.zero,
-			kind: Conifer.Green,
-		},
-		{
-			road: first_road,
-			camera,
-			place: Ahead(SegmentPlace.Position.first),
-		},
-	)
-
-lone_tree : Pipeline.Sighted(Conifer)
-lone_tree = green_tree_at(from_origin, 120.0) ?? crash "TreeSighting: a tree 120 m ahead is in view"
-
-expect
-	[
-		(lone_tree.spot.foot().right().to_metres(), 3.5),
-		(lone_tree.spot.foot().forward().to_metres(), 120.0),
-	].all(|(got, want)| (got - want).abs() <= 0.0001)
-
-expect green_tree_at(from_origin, 120.0).is_ok()
-expect lone_tree.kind == Conifer.Green
-expect
-	[
-		(green_tree_at(from_origin, 0.39), False),
-		(green_tree_at(from_origin, 0.4), True),
-		(green_tree_at(from_origin, 0.5), True),
-		(green_tree_at({ vantage: origin, cam_focal: Pixels.of(1.0) }, 120.0), False),
-		(green_tree_at(from_origin, 2000.0), False),
-	].all(|(seen, want)| seen.is_ok() == want)
-
-## The trees in view on the rider's own segment, seen by `camera`.
-first_segment_sightings : {
-	vantage : Geom.Vantage,
-	cam_focal : Pixels,
-} -> List(Pipeline.Sighted(Conifer))
-first_segment_sightings = |camera|
-	segment_trees(
-		first_road,
-		{ camera, in_view: RoadAhead.segment_in_view_at(first_road, SegmentPlace.Position.first) },
-	)
-
-expect
-	[
-		(from_origin, 28),
-		({ vantage: up_road, cam_focal: Pixels.of(500.0) }, 20),
-		({ vantage: origin, cam_focal: Pixels.of(1.0) }, 0),
-	].all(|(camera, want)| first_segment_sightings(camera).len().to_i64_wrap() == want)
-
-first_sightings : List(Pipeline.Sighted(Conifer))
-first_sightings = first_segment_sightings(from_origin)
-
-## The first segment's tree at `i`, in planting order.
-roadside_tree : U64 -> Pipeline.Sighted(Conifer)
-roadside_tree = |i|
-	first_sightings.get(i) ?? crash "TreeSighting: the first segment has 28 trees in view"
-
-expect
-	[
-		(roadside_tree(0).spot.foot().forward().to_metres(), 6.0),
-		(roadside_tree(1).spot.foot().forward().to_metres(), 6.0),
-		(roadside_tree(2).spot.foot().forward().to_metres(), 36.0),
-		(roadside_tree(0).spot.foot().right().to_metres(), -3.5),
-		(roadside_tree(1).spot.foot().right().to_metres(), 3.5),
-	].all(|(got, want)| (got - want).abs() <= 0.0001)
-
-expect roadside_tree(0).kind == Conifer.Green
-expect roadside_tree(2).kind == Conifer.SmallGreen

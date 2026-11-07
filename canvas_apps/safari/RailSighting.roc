@@ -30,54 +30,54 @@ RailSighting :: [].{
 					Err(RoadEndsInView) => []
 				},
 		)
+}
 
-	## The rail along the last `rail_run_on` of a segment `length` long,
-	## which lies at `place`, at `across`: a point a metre, ending at the
-	## segment's end.
-	runup_points : RoadAhead.RoadView,
-	{
-		vantage : Geom.Vantage,
-		place : SegmentPlace,
-		length : Distance,
-		across : Across,
-	} -> List(Geom.RiderPoint)
-	runup_points = |road, { vantage, place, length, across }| {
-		run_on_metres = leg_pieces(rail_run_on)
-		List.from_iter(U32.to(0, run_on_metres)).map(
-			|metres_in| {
-				metres_left = Distance.metres((run_on_metres - metres_in).to_f64())
-				RoadAhead.rider_point_at(
-					road,
-					{
-						vantage,
-						place,
-						road_point: { along: Along.at(length.minus(metres_left)), across },
-					},
-				)
-			},
-		)
-	}
-
-	## The rail along the first `rail_run_on` of a segment at `place`, at
-	## `across`: a point a metre, the first a metre in.
-	runout_points : RoadAhead.RoadView,
-	{
-		vantage : Geom.Vantage,
-		place : SegmentPlace,
-		across : Across,
-	} -> List(Geom.RiderPoint)
-	runout_points = |road, { vantage, place, across }|
-		List.from_iter(U32.to(1, leg_pieces(rail_run_on))).map(
-			|metres_in| RoadAhead.rider_point_at(
+## The rail along the last `rail_run_on` of a segment `length` long,
+## which lies at `place`, at `across`: a point a metre, ending at the
+## segment's end.
+runup_points : RoadAhead.RoadView,
+{
+	vantage : Geom.Vantage,
+	place : SegmentPlace,
+	length : Distance,
+	across : Across,
+} -> List(Geom.RiderPoint)
+runup_points = |road, { vantage, place, length, across }| {
+	run_on_metres = leg_pieces(rail_run_on)
+	List.from_iter(U32.to(0, run_on_metres)).map(
+		|metres_in| {
+			metres_left = Distance.metres((run_on_metres - metres_in).to_f64())
+			RoadAhead.rider_point_at(
 				road,
 				{
 					vantage,
 					place,
-					road_point: { along: Along.metres(metres_in.to_f64()), across },
+					road_point: { along: Along.at(length.minus(metres_left)), across },
 				},
-			),
-		)
+			)
+		},
+	)
 }
+
+## The rail along the first `rail_run_on` of a segment at `place`, at
+## `across`: a point a metre, the first a metre in.
+runout_points : RoadAhead.RoadView,
+{
+	vantage : Geom.Vantage,
+	place : SegmentPlace,
+	across : Across,
+} -> List(Geom.RiderPoint)
+runout_points = |road, { vantage, place, across }|
+	List.from_iter(U32.to(1, leg_pieces(rail_run_on))).map(
+		|metres_in| RoadAhead.rider_point_at(
+			road,
+			{
+				vantage,
+				place,
+				road_point: { along: Along.metres(metres_in.to_f64()), across },
+			},
+		),
+	)
 
 ## How far the rail runs on, a post a metre, past each end of a bend.
 rail_run_on : Distance
@@ -155,7 +155,7 @@ rail_points = |road, { vantage, bend_in_view }| {
 	apex = rider_point_before(corner.apex)
 	start_after = rider_point_before(corner.start_after)
 	[
-		RailSighting.runup_points(
+		runup_points(
 			road,
 			{
 				vantage,
@@ -166,7 +166,7 @@ rail_points = |road, { vantage, bend_in_view }| {
 		),
 		leg_points({ from: end_before, to: apex }),
 		leg_points({ from: apex, to: start_after }),
-		RailSighting.runout_points(road, { vantage, place: place_after, across: outer_edge }),
+		runout_points(road, { vantage, place: place_after, across: outer_edge }),
 	].join()
 }
 

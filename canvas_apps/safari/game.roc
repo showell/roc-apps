@@ -84,6 +84,7 @@ package
 		Truck,
 		TruckSighting,
 		VehicleLimits,
+		Wildlife,
 		World,
 	]
 	{ lib: "../lib/main.roc" }
