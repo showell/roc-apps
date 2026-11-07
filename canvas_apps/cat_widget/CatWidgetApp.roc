@@ -7,7 +7,6 @@
 ## make of the gap.
 import game.Animation
 import game.Cat
-import game.Clock
 import game.EncounterReaction
 import game.Distance
 import game.Pixels
@@ -109,32 +108,10 @@ road_shapes = {
 	]
 }
 
-## The ride's clock with the rider `gap` short of the cat: the whole steps since
-## the far end of the range, at step 0.
-clock_at : Distance -> Clock
-clock_at = |gap| Clock.at_step(closing_gap.first.minus(gap).portion(rider_speed.step_length()).to_u32_wrap())
-
-## The crossing's timing with the rider `gap` short of the cat: planned as the
-## ride plans it, on the first step from the far end of the range that the rider
-## comes within reach.
+## The crossing's timing with the rider `gap` short of the cat.
 crossing_timing : Distance -> Animation.Timing
-crossing_timing = |gap| {
-	now = clock_at(gap)
-	var $step = Clock.start
-	var $start = Unplanned
-	while $start == Unplanned and !(now < $step) {
-		$start = Animation.planned_start(
-			Cat.crossing_span,
-			{
-				gap: closing_gap.first.minus(rider_speed.distance_in($step.steps_since(Clock.start))),
-				speed: rider_speed,
-				now: $step,
-			},
-		)
-		$step = $step.next()
-	}
-	Animation.timing_of($start, now)
-}
+crossing_timing = |gap|
+	VcrButtons.planned_timing(Cat.crossing_span, { range: closing_gap, speed: rider_speed, gap })
 
 ## The cat as `gap` finds it, drawn by Safari's own stills.
 cat_shapes : Distance -> List(Shapes.Shape)

@@ -3,8 +3,10 @@
 ## does the rest: it reads a press into the number and draws the buttons where
 ## the panel starts. Six buttons go to the start, play backward, step back, step
 ## forward, play and go to the end. A click anywhere else does nothing.
+import game.Animation
 import game.Clock
 import game.Distance
+import game.Speed
 import lib.Brush
 import lib.CanvasApp
 import lib.Input
@@ -60,6 +62,34 @@ VcrButtons :: [].{
 		place_of: |gap| farthest.minus(gap).to_metres(),
 		number_at: |place| farthest.minus(Distance.metres(place)),
 		play_reach: metres_a_frame,
+	}
+
+	## The timing of an animation `span` long, for a rider `gap` short of its
+	## animal on a gap's `range`, coming at `speed` from the range's far end at
+	## step 0 of the ride's clock. It is planned as the ride plans it, on the
+	## first step that the rider comes within reach.
+	planned_timing : Animation.StepSpan,
+	{
+		range : VcrButtons.NumberRange(Distance),
+		speed : Speed,
+		gap : Distance,
+	} -> Animation.Timing
+	planned_timing = |span, { range, speed, gap }| {
+		now = Clock.at_step(range.first.minus(gap).portion(speed.step_length()).to_u32_wrap())
+		var $step = Clock.start
+		var $start = Unplanned
+		while $start == Unplanned and !(now < $step) {
+			$start = Animation.planned_start(
+				span,
+				{
+					gap: range.first.minus(speed.distance_in($step.steps_since(Clock.start))),
+					speed,
+					now: $step,
+				},
+			)
+			$step = $step.next()
+		}
+		Animation.timing_of($start, now)
 	}
 
 	## The buttons at rest with the number at `number`.

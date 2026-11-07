@@ -63,32 +63,10 @@ segment_flight = |segment|
 		CatCrosses(_) | QuietRoad => Err(NoFlight)
 	}
 
-## The ride's clock with the rider `gap` from the bird's first tree: the whole
-## steps since the far end of the range, at step 0.
-clock_at : Distance -> Clock
-clock_at = |gap| Clock.at_step(closing_gap.first.minus(gap).portion(rider_speed.step_length()).to_u32_wrap())
-
-## The flight's timing with the rider `gap` from the bird's first tree: planned
-## as the ride plans it, on the first step from the far end of the range that the
-## rider comes within reach.
+## The flight's timing with the rider `gap` from the bird's first tree.
 flight_timing : Distance -> Animation.Timing
-flight_timing = |gap| {
-	now = clock_at(gap)
-	var $step = Clock.start
-	var $start = Unplanned
-	while $start == Unplanned and !(now < $step) {
-		$start = Animation.planned_start(
-			BirdFlight.flight_span,
-			{
-				gap: closing_gap.first.minus(rider_speed.distance_in($step.steps_since(Clock.start))),
-				speed: rider_speed,
-				now: $step,
-			},
-		)
-		$step = $step.next()
-	}
-	Animation.timing_of($start, now)
-}
+flight_timing = |gap|
+	VcrButtons.planned_timing(BirdFlight.flight_span, { range: closing_gap, speed: rider_speed, gap })
 
 ## Where the flight has got to with the rider `gap` from the bird's first tree.
 stage_at : Distance -> Animation.Stage
