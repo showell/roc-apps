@@ -58,14 +58,14 @@ Witch :: [].{
 				# Two arms, held out from it.
 				$out = List.append($out, Shapes.line(shoulder_l.x, shoulder_l.y, hand_l.x, hand_l.y, 0.075 * ppm, Flat(witch_c)))
 				$out = List.append($out, Shapes.line(shoulder_r.x, shoulder_r.y, hand_r.x, hand_r.y, 0.075 * ppm, Flat(witch_c)))
-				$out = List.append($out, Disc({ x: head.x, y: head.y, r: 0.115 * ppm, fill: Flat(witch_c), clip: Anywhere }))
+				$out = List.append($out, Disc({ x: head.x, y: head.y, r: 0.115 * ppm, fill: Flat(witch_c) }))
 				# The hat: a brim, and a point that leans.
 				$out = List.concat($out, Panels.face(v, fwd, [0.0 - 0.32, 1.37, 0.32, 1.37, 0.30, 1.31, 0.0 - 0.30, 1.31], Flat(witch_c)))
 				$out = List.concat($out, Panels.face(v, fwd, [0.0 - 0.25, 1.36, 0.25, 1.36, 0.12, 1.86], Flat(witch_c)))
 				# **THE ONLY PART OF HER THAT IS NOT DARK.** A silhouette says
 				# somebody; two eyes say who.
-				$out = List.append($out, Disc({ x: eye_l.x, y: eye_l.y, r: 0.022 * ppm, fill: Flat(eye_c), clip: Anywhere }))
-				List.append($out, Disc({ x: eye_r.x, y: eye_r.y, r: 0.022 * ppm, fill: Flat(eye_c), clip: Anywhere }))
+				$out = List.append($out, Disc({ x: eye_l.x, y: eye_l.y, r: 0.022 * ppm, fill: Flat(eye_c) }))
+				List.append($out, Disc({ x: eye_r.x, y: eye_r.y, r: 0.022 * ppm, fill: Flat(eye_c) }))
 			} else {
 				[]
 			}

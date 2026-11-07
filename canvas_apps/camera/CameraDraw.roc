@@ -88,8 +88,8 @@ CameraDraw :: [].{
 	marker = |x, y| {
 		white = { r: 255.0, g: 255.0, b: 255.0, a: 1.0 }
 		var $out = [
-			Disc({ x, y: y + 6.0, r: 26.0, fill: Flat({ r: 0.0, g: 0.0, b: 0.0, a: 110.0 / 255.0 }), clip: Anywhere }),
-			Disc({ x, y, r: 26.0, fill: Flat(hex(0xef476f)), clip: Anywhere }),
+			Disc({ x, y: y + 6.0, r: 26.0, fill: Flat({ r: 0.0, g: 0.0, b: 0.0, a: 110.0 / 255.0 }) }),
+			Disc({ x, y, r: 26.0, fill: Flat(hex(0xef476f)) }),
 		]
 		$out = List.concat($out, Shapes.ring_shapes(x, y, 26.0, 4.0, 28, Flat(white)))
 		$out = List.append($out, Shapes.line(x - 42.0, y, x + 42.0, y, 3.0, Flat(white)))

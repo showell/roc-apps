@@ -63,7 +63,7 @@ PongDraw :: [].{
 			fade = 1.0 - U64.to_f64($i) / 14.0
 			r = 10.0 * (0.35 + 0.55 * fade)
 			c = Color.brush(Rules.ball_neon)
-			$out = List.append($out, Disc({ x: F32.to_f64(p.x), y: F32.to_f64(p.y), r: r, fill: Flat({ ..c, a: fade * fade * 0.51 }), clip: Anywhere }))
+			$out = List.append($out, Disc({ x: F32.to_f64(p.x), y: F32.to_f64(p.y), r: r, fill: Flat({ ..c, a: fade * fade * 0.51 }) }))
 			$i = $i + 1
 		}
 		$out
@@ -104,8 +104,8 @@ PongDraw :: [].{
 		[
 			Shapes.rounded_rect(F32.to_f64(l.x), F32.to_f64(l.y), F32.to_f64(l.width), F32.to_f64(l.height), 7.0, 8, Flat(Color.brush(Rules.left_neon))),
 			Shapes.rounded_rect(F32.to_f64(r.x), F32.to_f64(r.y), F32.to_f64(r.width), F32.to_f64(r.height), 7.0, 8, Flat(Color.brush(Rules.right_neon))),
-			Disc({ x: bx, y: by, r: 10.0, fill: Flat(Color.brush(Rules.ball_neon)), clip: Anywhere }),
-			Disc({ x: bx - 2.0, y: by - 3.0, r: 4.2, fill: Flat(Color.brush(Color.white)), clip: Anywhere }),
+			Disc({ x: bx, y: by, r: 10.0, fill: Flat(Color.brush(Rules.ball_neon)) }),
+			Disc({ x: bx - 2.0, y: by - 3.0, r: 4.2, fill: Flat(Color.brush(Color.white)) }),
 		]
 	}
 

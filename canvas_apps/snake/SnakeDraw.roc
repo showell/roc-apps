@@ -153,8 +153,8 @@ SnakeDraw :: [].{
 		m = middle_of(at)
 		r = cell * (0.3 + 0.04 * Trig.pulse(elapsed))
 		[
-			Disc({ x: m.x, y: m.y, r: r, fill: Flat(food_neon), clip: Anywhere }),
-			Disc({ x: m.x - r * 0.3, y: m.y - r * 0.35, r: r * 0.32, fill: Flat(Brush.with_alpha(0xbeffffff)), clip: Anywhere }),
+			Disc({ x: m.x, y: m.y, r: r, fill: Flat(food_neon) }),
+			Disc({ x: m.x - r * 0.3, y: m.y - r * 0.35, r: r * 0.32, fill: Flat(Brush.with_alpha(0xbeffffff)) }),
 		]
 	}
 

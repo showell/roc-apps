@@ -166,18 +166,10 @@ function paintFrame(ctx, shapes, scale = 1) {
         fillShape(ctx, p.fill);
         break;
       case "Disc":
-        if (p.clip.tag === "Within") {
-          const r = p.clip.value;
-          ctx.save();
-          ctx.beginPath();
-          ctx.rect(r.x, r.y, r.w, r.h);
-          ctx.clip();
-        }
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.closePath();
         fillShape(ctx, p.fill);
-        if (p.clip.tag === "Within") ctx.restore();
         break;
       default:
         throw new Error(`shapes_canvas: a page is never sent ${shape.tag}`);

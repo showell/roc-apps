@@ -189,7 +189,6 @@ spot = |bend, { at, color }| {
 		y,
 		r: 4.0,
 		fill: ScrubWidget.flat(color),
-		clip: Anywhere,
 	})
 }
 

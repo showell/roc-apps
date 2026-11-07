@@ -5,7 +5,7 @@
 ## one a second time with its polygons cut into triangles.
 ##
 ## It paints only what Safari's ride draws: polygons, triangle pieces and
-## unclipped flat discs, each laid over what is there. Any other shape
+## flat discs, each laid over what is there. Any other shape
 ## crashes, naming what it got.
 import lib.Brush
 import lib.Shapes
@@ -39,19 +39,15 @@ pixels_with_shape = |pixels, { roll, shape }|
 				Skip | Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) =>
 					crash "ShapesPixels: a disc with a gradient"
 			}
-			match d.clip {
-				Anywhere =>
-					ScanlineFill.disc_pixels(
-						pixels,
-						{
-							roll,
-							center: ScreenRoll.ScenePoint.({ x: d.x, y: d.y }),
-							radius: d.r,
-							color,
-						},
-					)
-				Within(_) => crash "ShapesPixels: a disc clipped to a rectangle"
-			}
+			ScanlineFill.disc_pixels(
+				pixels,
+				{
+					roll,
+					center: ScreenRoll.ScenePoint.({ x: d.x, y: d.y }),
+					radius: d.r,
+					color,
+				},
+			)
 		}
 		Rect(_) => crash "ShapesPixels: a rectangle among the ride's shapes"
 		# ScanlineFill lays every pixel over what is there, so Over is the mode

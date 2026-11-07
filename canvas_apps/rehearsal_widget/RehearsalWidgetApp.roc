@@ -345,7 +345,6 @@ rider_mark = {
 		y,
 		r: 7.0,
 		fill: ScrubWidget.flat(kept_color),
-		clip: Anywhere,
 	})
 }
 
@@ -521,7 +520,6 @@ try_mark = |stop, tries_shown|
 			6.0
 		},
 		fill: ScrubWidget.flat(mark_color(stop, tries_shown)),
-		clip: Anywhere,
 	})
 
 ## The mark for the choice, which isn't a try, so it's a square.

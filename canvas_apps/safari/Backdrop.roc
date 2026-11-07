@@ -1,6 +1,6 @@
 ## Backdrop builds what is behind the ride, as shapes. The vocabulary is in
 ## lib/Shapes.roc, which every canvas app shares. This module knows what is
-## behind the ride: the sky's gradient, the grass, and the sun's glow and disc.
+## behind the ride: the sky's gradient, the sun's glow and disc, and the grass.
 import Fraction
 import HexColor
 import Pixels
@@ -73,8 +73,8 @@ Backdrop :: [].{
 		}
 	}
 
-	## The frame in paint order: the sky, the grass, the sun, then the ride's
-	## shapes.
+	## The frame in paint order: the sky, the sun, the grass, then the ride's
+	## shapes. The grass covers whatever of the sun has set.
 	frame_shapes : List(Shapes.Shape),
 	{
 		sky_top_color : HexColor.Rgb,
@@ -83,9 +83,8 @@ Backdrop :: [].{
 	} -> List(Shapes.Shape)
 	frame_shapes = |ride_shapes, { sky_top_color, sky_horizon_color, sun_sighting: sun }| {
 		var $out = List.with_capacity(ride_shapes.len() + 8)
-		# Oversized, so the rolled frame's corners stay filled: the top colour to
-		# a fifth of the way down to the horizon at y 300, then the fade; the
-		# grass from a pixel above the horizon.
+		# The top colour to a fifth of the way down to the horizon at y 300,
+		# then the fade.
 		sky = Linear({
 			c0: Brush.opaque(HexColor.pack(sky_top_color)),
 			c1: Brush.opaque(HexColor.pack(sky_horizon_color)),
@@ -96,15 +95,24 @@ Backdrop :: [].{
 			dx: 0.0,
 			dy: Screen.horizon_y.to_f64(),
 		})
-		$out = $out.append(
-			Rect({
-				x: -1080.0,
-				y: -1260.0,
-				w: 3120.0,
-				h: 1560.0,
-				fill: sky,
-			}),
-		)
+		$out = $out.append(sky_rect(sky))
+		$out =
+			match sun {
+				InView(place) => {
+					fills = sun_fills(place)
+					$out.concat([
+						sky_rect(fills.glow),
+						Disc({
+							x: place.x.to_f64(),
+							y: place.y.to_f64(),
+							r: fills.disc_radius.to_f64(),
+							fill: fills.disc,
+						}),
+					])
+				}
+				OutOfView => $out
+			}
+		# From a pixel above the horizon, oversized as the sky is.
 		$out = $out.append(
 			Rect({
 				x: -1080.0,
@@ -114,34 +122,18 @@ Backdrop :: [].{
 				fill: Flat(Brush.opaque(grass_color)),
 			}),
 		)
-		$out =
-			match sun {
-				InView(place) => {
-					fills = sun_fills(place)
-					$out.concat([
-						Rect({
-							x: 0.0,
-							y: 0.0,
-							w: Screen.width.to_f64(),
-							h: Screen.horizon_y.to_f64(),
-							fill: fills.glow,
-						}),
-						Disc({
-							x: place.x.to_f64(),
-							y: place.y.to_f64(),
-							r: fills.disc_radius.to_f64(),
-							fill: fills.disc,
-							clip: Within({
-								x: 0.0,
-								y: 0.0,
-								w: Screen.width.to_f64(),
-								h: Screen.horizon_y.to_f64(),
-							}),
-						}),
-					])
-				}
-				OutOfView => $out
-			}
 		$out.concat(ride_shapes)
 	}
 }
+
+## The sky's rectangle down to the horizon, painted with `fill`. It is oversized,
+## so a rolled frame's corners stay filled, and the sun's glow takes it too.
+sky_rect : Brush.Fill -> Shapes.Shape
+sky_rect = |fill|
+	Rect({
+		x: -1080.0,
+		y: -1260.0,
+		w: 3120.0,
+		h: 1560.0,
+		fill,
+	})

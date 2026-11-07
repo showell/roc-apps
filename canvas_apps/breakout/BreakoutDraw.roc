@@ -109,8 +109,8 @@ BreakoutDraw :: [].{
 		[
 			Shapes.rounded_rect(px, py, pw, ph, ph / 2.0, 8, Flat(Color.brush(paddle_neon))),
 			Rect({ x: px + 8.0, y: py + 3.0, w: pw - 16.0, h: 3.0, fill: Flat({ r: 255.0, g: 255.0, b: 255.0, a: 0.59 }) }),
-			Disc({ x: bx, y: by, r: r, fill: Flat(Color.brush(ball_neon)), clip: Anywhere }),
-			Disc({ x: bx - 2.0, y: by - 2.0, r: r * 0.4, fill: Flat({ r: 255.0, g: 255.0, b: 255.0, a: 0.82 }), clip: Anywhere }),
+			Disc({ x: bx, y: by, r: r, fill: Flat(Color.brush(ball_neon)) }),
+			Disc({ x: bx - 2.0, y: by - 2.0, r: r * 0.4, fill: Flat({ r: 255.0, g: 255.0, b: 255.0, a: 0.82 }) }),
 		]
 	}
 
