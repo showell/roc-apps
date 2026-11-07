@@ -55,8 +55,10 @@ next = |route, instant| {
 	nx = instant.rider.next({ route, encounter_timing: RideInstant.encounter_timing(instant) })
 	dist = distance_of_rider(route, nx)
 	clock = instant.clock.next()
+	from = instant.rider.motorcycle.route_place
+	to = nx.motorcycle.route_place
 	kept_start =
-		if nx.segment_index == instant.rider.segment_index {
+		if to.segment_index == from.segment_index {
 			instant.encounter_start
 		} else {
 			Unplanned
@@ -67,10 +69,7 @@ next = |route, instant| {
 		clock,
 		encounter_start: match kept_start {
 			StartsAt(_) => kept_start
-			Unplanned => planned_start(
-				route.segment_at(nx.segment_index),
-				{ rider: nx, now: clock },
-			)
+			Unplanned => planned_start(to.segment_on(route), { rider: nx, now: clock })
 		},
 	}
 }
@@ -78,7 +77,7 @@ next = |route, instant| {
 ## How far along `route` `rider` is.
 distance_of_rider : Route, RiderState -> Distance
 distance_of_rider = |route, rider|
-	route.distance_along_route({ index: rider.segment_index, along: rider.motorcycle.along })
+	rider.motorcycle.route_place.distance_along(route)
 
 ## The start the ride plans for `segment`'s encounter, with `rider` on it at
 ## `now`: unplanned until the rider comes within reach of it.
@@ -88,7 +87,7 @@ planned_start = |segment, { rider, now }| {
 		EncounterPlan.planned_start(
 			span,
 			{
-				gap: critter_along.distance_from(rider.motorcycle.along),
+				gap: critter_along.distance_from(rider.motorcycle.route_place.along),
 				speed: rider.motorcycle.speed,
 				now,
 			},

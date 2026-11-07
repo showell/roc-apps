@@ -37,14 +37,14 @@ RiderCamera := {
 	of : RiderState, { route : Route, encounter_timing : EncounterPlan.Timing } -> RiderCamera
 	of = |rider, { route, encounter_timing }| {
 		vantage = {
-			along: rider.motorcycle.along,
-			across: rider.motorcycle.across,
+			along: rider.motorcycle.route_place.along,
+			across: rider.motorcycle.route_place.across,
 			yaw: rider.motorcycle.yaw.plus(view_yaw_for(rider)),
 		}
 		{
-			segment_index: rider.segment_index,
+			segment_index: rider.motorcycle.route_place.segment_index,
 			vantage,
-			heading: route.bearing_of(rider.segment_index).plus(vantage.yaw),
+			heading: route.bearing_of(rider.motorcycle.route_place.segment_index).plus(vantage.yaw),
 			cam_focal: ride_focal(rider, { route, encounter_timing }),
 			roll: CanvasRoll.rider_roll(rider.motorcycle.lean),
 		}
@@ -65,7 +65,7 @@ view_yaw_for = |s| s.eyes.gaze_yaw.plus(s.motorcycle.lean.steer(head_turn_per_le
 ## an encounter on the road or by a look to the side.
 ride_focal : RiderState, { route : Route, encounter_timing : EncounterPlan.Timing } -> Pixels
 ride_focal = |rider, { route, encounter_timing }| {
-	seg = route.segment_at(rider.segment_index)
+	seg = rider.motorcycle.route_place.segment_on(route)
 	attention =
 		EncounterReaction.encounter_attention(seg, encounter_timing)
 			.max(Gaze.gaze_attention(rider.eyes.look_depth))

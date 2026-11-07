@@ -63,6 +63,7 @@ package
 		RiderState,
 		RoadAhead,
 		Route,
+		RoutePlace,
 		SafariApp,
 		Scene,
 		Screen,

@@ -61,8 +61,8 @@ points_of : Angle.Lean -> List(ArcPoint)
 points_of = |lean|
 	Coast.coast_path(rider.with_lean(lean)).path_motorcycles.map(
 		|motion| {
-			forward: motion.along.distance_from(rider.along).to_metres(),
-			across: motion.across.to_metres(),
+			forward: motion.route_place.along.distance_from(rider.route_place.along).to_metres(),
+			across: motion.route_place.across.to_metres(),
 		},
 	)
 
@@ -223,7 +223,7 @@ drawn_points = |path_points| {
 ## two of its points, as at its end, where no line is drawn.
 arc_shapes : List(ArcPoint), { color : RgbColor, width : F64 } -> List(Shapes.Shape)
 arc_shapes = |path_points, { color, width }| {
-	start = { forward: 0.0, across: rider.across.to_metres() }
+	start = { forward: 0.0, across: rider.route_place.across.to_metres() }
 	points = drawn_points(path_points).prepend(start).map(canvas_point)
 	points
 		.map2(points.drop_first(1), |from, to| { from, to })
@@ -247,7 +247,7 @@ tries_shapes = |tries, width|
 
 rider_mark : Shapes.Shape
 rider_mark = {
-	{ x, y } = canvas_point({ forward: 0.0, across: rider.across.to_metres() })
+	{ x, y } = canvas_point({ forward: 0.0, across: rider.route_place.across.to_metres() })
 	Disc({
 		x,
 		y,

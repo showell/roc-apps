@@ -51,7 +51,7 @@ Gawking :: [].{
 	gawk_brake = |motorcycle, seg|
 		match gawked_pig(motorcycle, seg) {
 			GawkingAt(pig) => {
-				gap = pig.road_point.along.distance_from(motorcycle.along)
+				gap = pig.road_point.along.distance_from(motorcycle.route_place.along)
 				room = gap.minus(gawk_settle_distance)
 				AtMost(
 					motorcycle.speed.acceleration_to({
@@ -67,7 +67,7 @@ Gawking :: [].{
 ## Whether the motorcycle has reached the place where `pig` is noticed.
 is_past_notice : Motorcycle, Geom.Placed(Billboard) -> Bool
 is_past_notice = |motorcycle, pig|
-	motorcycle.along >= pig.road_point.along.minus(Gawking.notice_distance)
+	motorcycle.route_place.along >= pig.road_point.along.minus(Gawking.notice_distance)
 
 ## The speed a gawking rider brakes down to.
 gawk_speed : Speed
