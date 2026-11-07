@@ -131,7 +131,7 @@ CallRow : { text : Str, color : RgbColor }
 
 sun_curve : Curve
 sun_curve = {
-	call_line: |clock| "Sun.height(clock) = ${height_text(Sun.height(clock))}",
+	call_line: |clock| "Sun.height_at(clock) = ${height_text(Sun.height_at(clock))}",
 	level_at: sun_level,
 	color: sun_color,
 }
@@ -145,7 +145,7 @@ dusk_curve = {
 
 warmth_curve : Curve
 warmth_curve = {
-	call_line: |clock| "Sky.sunset_warmth(clock) = ${ReadoutText.percent_text(Sky.sunset_warmth(clock))}",
+	call_line: |clock| "Sky.horizon_warmth_at(clock) = ${ReadoutText.percent_text(Sky.horizon_warmth_at(clock))}",
 	level_at: warmth_level,
 	color: warmth_color,
 }
@@ -213,15 +213,15 @@ chart_y = |level| chart_bottom - (chart_bottom - chart_top) * level
 ## The sun's height as a level on the chart, from its lowest to its highest.
 sun_level : Clock -> F64
 sun_level = |clock| {
-	lowest = Sun.height(sunset.last)
-	Sun.height(clock).minus(lowest).portion(Sun.height_at_start.minus(lowest))
+	lowest = Sun.height_at(sunset.last)
+	Sun.height_at(clock).minus(lowest).portion(Sun.height_at_start.minus(lowest))
 }
 
 dusk_level : Clock -> F64
 dusk_level = |clock| Sky.dusk_at(clock).to_f64()
 
 warmth_level : Clock -> F64
-warmth_level = |clock| Sky.sunset_warmth(clock).to_f64()
+warmth_level = |clock| Sky.horizon_warmth_at(clock).to_f64()
 
 ## Where the chart shows `level_at` at `clock`.
 chart_point : Clock, (Clock -> F64) -> { x : F64, y : F64 }
@@ -285,9 +285,9 @@ expect
 	row_texts(HorizonWarms, Clock.start)
 		== [
 			"clock = step 0",
-			"Sun.height(clock) = 244.0 px",
+			"Sun.height_at(clock) = 244.0 px",
 			"Sky.dusk_at(clock) = 0%",
-			"Sky.sunset_warmth(clock) = 0%",
+			"Sky.horizon_warmth_at(clock) = 0%",
 		]
 
 # The chart's levels stay on the chart: the sun runs from top to bottom.

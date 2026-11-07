@@ -57,8 +57,8 @@ Sun :: [].{
 
 	## How high the sun stands above the horizon at `clock`, in pixels at
 	## rest; below it once negative.
-	height : Clock -> Pixels
-	height = |clock| height_at_start.minus(drop_per_step.times(clock.to_f64()))
+	height_at : Clock -> Pixels
+	height_at = |clock| height_at_start.minus(drop_per_step.times(clock.to_f64()))
 
 	## The sun in a frame, for a camera facing `heading` through a lens of
 	## `cam_focal`. It is in view while it is in front of the camera and its glow
@@ -173,14 +173,14 @@ place : {
 place = |{ turn_from_view, clock, cam_focal }| {
 	{
 		x: Lens.x_for_turn({ turn: turn_from_view, cam_focal }),
-		y: Lens.y_for_height({ height: Sun.height(clock), cam_focal }),
+		y: Lens.y_for_height({ height: Sun.height_at(clock), cam_focal }),
 		scale: Lens.scale_for(cam_focal),
 	}
 }
 
 # The whole disc is below the horizon from `fully_set_at`.
-expect Sun.height(Sun.fully_set_at.previous()) > Sun.height_when_set
-expect Sun.height(Sun.fully_set_at) == Sun.height_when_set
+expect Sun.height_at(Sun.fully_set_at.previous()) > Sun.height_when_set
+expect Sun.height_at(Sun.fully_set_at) == Sun.height_when_set
 
 # The rider faces the sun, then away from it.
 expect

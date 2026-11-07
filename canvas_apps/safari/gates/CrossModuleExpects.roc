@@ -1377,8 +1377,8 @@ first_step_where = |holds| {
 sunset_climax : Clock
 sunset_climax = {
 	hidden_at = first_step_where(Mountains.is_sun_behind_mountains)
-	range_top = Sun.height(hidden_at).plus(Sun.radius)
-	first_step_where(|clock| Sun.height(clock).minus(Sun.radius) < range_top)
+	range_top = Sun.height_at(hidden_at).plus(Sun.radius)
+	first_step_where(|clock| Sun.height_at(clock).minus(Sun.radius) < range_top)
 }
 
 ## How many steps before and after the sunset's climax the rider must be on the
@@ -1613,7 +1613,7 @@ encounter_attention_of = |rider|
 expect focal_of(upright).minus(Lens.resting_focal) == Pixels.zero
 expect encounter_attention_of(upright) == 0.0
 expect Gaze.gaze_attention(Fraction.zero).to_f64() == 0.0
-expect Lens.cam_focal({
+expect Lens.focal_for({
 	lean: upright.motorcycle.lean,
 	attention: Attention.none,
 }).minus(Lens.resting_focal) == Pixels.zero
@@ -1674,7 +1674,7 @@ expect
 		== lean_only.to_f64().min(gaze_only.to_f64()).to_bits()
 expect lean_only.plus(gaze_only) > both
 expect both.to_f64() - lean_only.to_f64().min(gaze_only.to_f64()) == 0.0
-expect Lens.cam_focal({
+expect Lens.focal_for({
 	lean: Lens.full_lean,
 	attention: Attention.none,
 }).minus(lean_only) == Pixels.zero

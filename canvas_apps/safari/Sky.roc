@@ -19,7 +19,7 @@ Sky :: [].{
 	## How far toward dusk the sky is at `clock`, from 0 (day) to 1 (dusk).
 	dusk_at : Clock -> Fraction
 	dusk_at = |clock| {
-		height = Sun.height(clock)
+		height = Sun.height_at(clock)
 		if height >= Sun.height_when_set {
 			dusk_while_up(height)
 		} else {
@@ -29,8 +29,11 @@ Sky :: [].{
 
 	## How warm the horizon is at `clock`: most while the sun touches it, none
 	## once the sun is `warmth_reach` above or below.
-	sunset_warmth : Clock -> Fraction
-	sunset_warmth = |clock| Fraction.clamp(Sun.height(clock).abs().portion(warmth_reach)).less()
+	horizon_warmth_at : Clock -> Fraction
+	horizon_warmth_at = |clock| {
+		from_horizon = Sun.height_at(clock).abs()
+		Fraction.clamp(from_horizon.portion(warmth_reach)).less()
+	}
 
 	## The sky's two colors at `clock`.
 	colors_at : Clock -> Sky.Colors
@@ -96,7 +99,7 @@ sky_horizon_color : Clock -> RgbColor
 sky_horizon_color = |clock| HexColor.color_between({
 	from: sky_top_color(clock),
 	to: sunset_red,
-	fraction: Sky.sunset_warmth(clock).times(horizon_warmth_at_most),
+	fraction: Sky.horizon_warmth_at(clock).times(horizon_warmth_at_most),
 })
 
 ## How far toward dusk the sky is while the sun, `height` pixels up, is
@@ -121,9 +124,9 @@ expect Sky.dusk_at(Sun.fully_set_at.previous()) < dusk_at_set
 expect Sky.dusk_at(Sun.fully_set_at) == dusk_at_set
 expect dusk_at_set < Sky.dusk_at(Sun.fully_set_at.next())
 expect Sky.dusk_at(Clock.at_step(0)).to_f64() == 0.0
-expect Sky.sunset_warmth(Clock.at_step(0)).to_f64() == 0.0
+expect Sky.horizon_warmth_at(Clock.at_step(0)).to_f64() == 0.0
 expect Sky.dusk_at(Clock.at_step(6000)).to_f64() == 1.0
-expect Sky.sunset_warmth(Clock.at_step(6000)).to_f64() == 0.0
+expect Sky.horizon_warmth_at(Clock.at_step(6000)).to_f64() == 0.0
 
 # The sky and the horizon at each thousandth step of the ride.
 expect

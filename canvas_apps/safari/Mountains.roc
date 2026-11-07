@@ -22,7 +22,7 @@ Mountains :: [].{
 	## Whether the sun, at `clock`, has sunk behind the skyline.
 	is_sun_behind_mountains : Clock -> Bool
 	is_sun_behind_mountains = |clock| {
-		sun_top = Sun.height(clock).plus(Sun.radius)
+		sun_top = Sun.height_at(clock).plus(Sun.radius)
 		sun_top < skyline_height(Sun.bearing)
 	}
 

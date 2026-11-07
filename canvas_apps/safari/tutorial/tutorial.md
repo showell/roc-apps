@@ -1343,10 +1343,10 @@ The first three are opaque. Each is still a number, and the type gives it a name
 
 | Job | Function | Its type |
 |---|---|---|
-{{types row Sun.height Move the sun}}
+{{types row Sun.height_at Move the sun}}
 {{types row Sky.dusk_at Darken the sky}}
 {{types row Sky.sky_top_color}}
-{{types row Sky.sunset_warmth Warm the horizon}}
+{{types row Sky.horizon_warmth_at Warm the horizon}}
 {{types row Sky.sky_horizon_color}}
 
 Every one is a `->`, and every one starts from a `Clock`. That's most of the design, before we've read a line of code.
@@ -1392,7 +1392,7 @@ This widget does only the first job, so the sky stays blue. For each frame it ca
 
 The sun chapter showed how `Sun.sighting` places a sun. All it needs from the clock is a height:
 
-{{code Sun.height}}
+{{code Sun.height_at}}
 
 ### Job two: the sky darkens
 
@@ -1430,7 +1430,7 @@ The horizon is the same sky, warmed toward red:
 
 `sunset_warmth` asks for the sun's height, just as dusk did:
 
-{{code Sky.sunset_warmth}}
+{{code Sky.horizon_warmth_at}}
 
 The horizon is warmest when the sun's height is zero. `ratio_to` says how far away the sun is, as a share of 110 pixels, and `abs` makes the two sides match, which gives the red line its tent. `Fraction.clamp` holds everything past 110 pixels at no warmth at all.
 
@@ -2487,7 +2487,7 @@ The view widens as the rider leans. One `Fraction` goes in, and a focal length c
 
 {{code Lens.focal_for_lean}}
 
-{{code Lens.cam_focal}}
+{{code Lens.focal_for}}
 
 ### Round the bends
 
