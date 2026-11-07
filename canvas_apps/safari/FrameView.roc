@@ -1,6 +1,6 @@
 import Angle
 import Grass
-import Ground
+import GroundPatch
 import GroundSighting
 import LitTruck
 import Mountains
@@ -9,7 +9,6 @@ import RoadAhead
 import RiderCamera
 import Route
 import Scene
-import SceneShapes
 import Sky
 import Sun
 import lib.Shapes
@@ -99,8 +98,8 @@ shapes = |camera, { instant, route }| {
 	ground = GroundSighting.patches_in_view(road, camera)
 	[
 		Mountains.mountain_shapes(camera, Sky.dusk_at(instant.clock)),
-		ground.keep_oks(|patch| Ground.patch_shape(patch, camera.cam_focal)),
-		SceneShapes.scene_shapes(scene, { road, camera }),
+		ground.keep_oks(|patch| GroundPatch.patch_shape(patch, camera.cam_focal)),
+		Scene.scene_shapes(scene),
 	].join()
 }
 

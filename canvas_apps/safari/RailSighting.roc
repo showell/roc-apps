@@ -131,7 +131,8 @@ rails_at : RoadAhead.RoadView,
 	vantage : Geom.Vantage,
 	bend_in_view : BendInView,
 } -> List(GuardRail.RailQuad)
-rails_at = |road, seen| GuardRail.quads_along(rail_points(road, seen))
+rails_at = |road, { vantage, bend_in_view }|
+	GuardRail.quads_along(rail_points(road, { vantage, bend_in_view }))
 
 ## The path of the rail at a bend, along the road's outer edge: up to the
 ## bend, out to where the two outer edges meet, back to the next segment,
@@ -146,13 +147,13 @@ rail_points = |road, { vantage, bend_in_view }| {
 	place_after = Ahead(BendInView.position_after(bend_in_view))
 	length_before = bend_in_view.bend.segment_length
 	corner = bend_in_view.outer_corner()
-	seen_before = |road_point| RoadAhead.rider_point_at(
+	rider_point_before = |road_point| RoadAhead.rider_point_at(
 		road,
 		{ vantage, place: bend_in_view.before, road_point },
 	)
-	end_before = seen_before(corner.end_before)
-	apex = seen_before(corner.apex)
-	start_after = seen_before(corner.start_after)
+	end_before = rider_point_before(corner.end_before)
+	apex = rider_point_before(corner.apex)
+	start_after = rider_point_before(corner.start_after)
 	[
 		RailSighting.runup_points(
 			road,

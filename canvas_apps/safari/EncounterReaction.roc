@@ -40,13 +40,13 @@ EncounterReaction :: [].{
 }
 
 bird_segment : Segment
-bird_segment = World.route.segment_at(Route.SegmentIndex.number(0))
+bird_segment = World.first_bird_segment
 
 quiet_segment : Segment
 quiet_segment = World.route.segment_at(Route.SegmentIndex.number(1))
 
 cat_segment : Segment
-cat_segment = World.route.segment_at(Route.SegmentIndex.number(3))
+cat_segment = World.first_cat_segment
 
 # Before its encounter is planned, no segment asks anything of the rider. A
 # planned one is CrossModuleExpects', which can name a step of the clock.

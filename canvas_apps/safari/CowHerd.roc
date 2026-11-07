@@ -55,10 +55,10 @@ CowHerd := {
 }
 
 cow : Billboard.Species
-cow = { still: EmojiStills.cow, adult_height: Distance.metres(1.4) }
+cow = { emoji: EmojiStills.cow, adult_height: Distance.metres(1.4) }
 
 bull : Billboard.Species
-bull = { still: EmojiStills.bull, adult_height: cow.adult_height.times(1.15) }
+bull = { emoji: EmojiStills.bull, adult_height: cow.adult_height.times(1.15) }
 
 ## The gap between the bull's side and the trees.
 bull_tree_gap : Distance
@@ -120,7 +120,7 @@ herd_cow = |herd, { herd_along, cow_number }| {
 
 expect herd_bull(Along.metres(24.0)).road_point.along == Along.metres(24.0)
 expect herd_bull(Along.metres(24.0)).road_point.across == Across.metres(-4.805)
-expect herd_bull(Along.metres(24.0)).kind.still == EmojiStills.bull
+expect herd_bull(Along.metres(24.0)).kind.emoji == EmojiStills.bull
 expect herd_bull(Along.metres(24.0)).kind.facing == FacesLeft
 expect (herd_bull(Along.metres(24.0)).kind.height.to_metres() - 1.61).abs() <= 0.000000000001
 
@@ -159,11 +159,11 @@ expect cows_without_bull.len() == 14
 # The bull leads, facing left, and the cows follow him in their own order, facing
 # right.
 expect cows_with_bull.take_first(1).map(|leader| leader.road_point.along) == [Along.metres(24.0)]
-expect cows_with_bull.take_first(1).map(|leader| leader.kind.still) == [EmojiStills.bull]
+expect cows_with_bull.take_first(1).map(|leader| leader.kind.emoji) == [EmojiStills.bull]
 expect cows_with_bull.drop_first(1) == cows_without_bull
 expect cows_with_bull.take_first(2).map(|critter| critter.kind.facing) == [FacesLeft, FacesRight]
 expect cows_without_bull.all(|member| member.kind.facing == FacesRight)
-expect cows_without_bull.all(|member| member.kind.still == EmojiStills.cow)
+expect cows_without_bull.all(|member| member.kind.emoji == EmojiStills.cow)
 
 expect
 	cows_without_bull.map(|member| member.kind.height.to_metres())

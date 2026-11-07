@@ -37,7 +37,7 @@ import game.Geom
 import game.Motorcycle
 import game.Mountains
 import game.Lens
-import game.Ground
+import game.GroundPatch
 import game.GroundSighting
 import game.Pipeline
 import game.Pond
@@ -46,7 +46,6 @@ import game.PosedCat
 import game.RailSighting
 import game.Rendered
 import game.Scene
-import game.SceneShapes
 import game.RideInstant
 import game.Rider
 import game.RiderCamera
@@ -54,11 +53,14 @@ import game.RiderState
 import game.Screen
 import game.Sky
 import game.Speed
+import game.Spot
 import game.Steps
 import game.StillShapes
 import game.Sun
 import game.Throttle
+import game.TowerSighting
 import game.TreeSighting
+import game.TruckSighting
 import game.Trees
 import game.World
 import lib.Brush
@@ -397,6 +399,19 @@ bird_trees = left_trees.append(far_tree)
 flight_at_step : U32 -> Animation.Timing
 flight_at_step = |now| Animation.timing_of(StartsAt(Clock.at_step(100)), Clock.at_step(now))
 
+# Each segment ends where the lengths before it and its own add up to.
+expect {
+	stretches =
+		Route.from_segments([
+			{ ..going_straight_on(segment_of([])), length: Distance.metres(300.0) },
+			{ ..going_straight_on(segment_of([])), length: Distance.metres(150.0) },
+			{ ..segment_of([]), length: Distance.metres(50.0) },
+		]).segments_with_ends()
+	lengths = stretches.map(|stretch| stretch.segment.length.to_metres())
+	ends = stretches.map(|stretch| stretch.end.to_metres())
+	lengths == [300.0, 150.0, 50.0] and ends == [300.0, 450.0, 500.0]
+}
+
 ## The birds on one segment of `trees`, for a rider `rider_along` metres into
 ## it, seen through a focal length of `cam_focal`, with the bird's flight at
 ## `encounter`.
@@ -577,15 +592,7 @@ cat_at = |number| EncounterSighting.segment_cat(
 	},
 )
 
-expect cat_route.route_segments().map(has_cat) == [False, True, False]
-
-## Whether a segment has a cat waiting by the road.
-has_cat : Segment -> Bool
-has_cat = |seg|
-	match seg.encounter {
-		CatCrosses(_) => True
-		BirdHere(_) | QuietRoad => False
-	}
+expect cat_route.route_segments().map(World.has_cat) == [False, True, False]
 
 expect
 	[
@@ -841,7 +848,7 @@ cow_fate = |{ forward, height }|
 	critter_fate({
 		along: Along.at(forward),
 		across: Across.metres(2.5),
-		kind: { still: EmojiStills.cow, height, facing: FacesRight },
+		kind: { emoji: EmojiStills.cow, height, facing: FacesRight },
 	})
 
 ## Which way a sighting went, whatever it carries.
@@ -886,7 +893,7 @@ left_bull =
 		along: Along.metres(50.0),
 		across: Across.metres(-1.5),
 		kind: {
-			still: EmojiStills.bull,
+			emoji: EmojiStills.bull,
 			height: Distance.metres(1.6),
 			facing: FacesLeft,
 		},
@@ -900,8 +907,8 @@ expect left_bull.spot.foot().right().to_metres() == -1.5
 expect left_bull.spot.foot().forward().to_metres() == 50.0
 expect left_bull.kind.height.to_metres() == 1.6
 
-expect near_cow.kind.still == EmojiStills.cow
-expect left_bull.kind.still == EmojiStills.bull
+expect near_cow.kind.emoji == EmojiStills.cow
+expect left_bull.kind.emoji == EmojiStills.bull
 expect near_cow.kind.facing == FacesRight
 expect left_bull.kind.facing == FacesLeft
 
@@ -937,77 +944,200 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 # Scene, on the scene from the start of the route.
-scene_view : { road : RoadAhead.RoadView, camera : { vantage : Geom.Vantage, cam_focal : Pixels } }
-scene_view = { road, camera: origin_camera }
+scene_facts : Scene.RideFacts
+scene_facts = {
+	encounter: Unplanned,
+	truck: {
+		route_position: Distance.metres(500.0),
+		lit_truck: { headlights: Off, brake_lights: Off },
+	},
+	clock: Clock.start,
+}
 
 scene : Scene
-scene = Scene.scene_in_view(
-	road,
+scene = Scene.scene_in_view(road, { camera: origin_camera, facts: scene_facts })
+
+scene_renderings : List(Rendered)
+scene_renderings = Scene.scene_renderings(scene)
+
+## The route's start has no cat in view, so the cats come from the second
+## segment's, seen as `seen` sees them.
+cat_scene : Scene
+cat_scene = Scene.scene_in_view(
+	cat_road,
 	{
-		camera: origin_camera,
-		facts: {
-			encounter: Unplanned,
-			truck: {
-				route_position: Distance.metres(500.0),
-				lit_truck: { headlights: Off, brake_lights: Off },
-			},
-			clock: Clock.start,
-		},
+		camera: { ..origin_camera, vantage: { ..origin, along: Along.metres(300.0) } },
+		facts: scene_facts,
 	},
 )
 
-scene_renderings : List(Rendered)
-scene_renderings = SceneShapes.scene_renderings(scene, scene_view)
+## The depths of `renderings`, in their order.
+depths_of : List(Rendered) -> List(Distance)
+depths_of = |renderings| renderings.map(|rendering| rendering.depth)
 
-## A scene with nothing in view.
-empty_scene : Scene
-empty_scene = {
-	trees: [],
-	towers: [],
-	billboards: [],
-	cats: [],
-	rails: [],
-	truck: Err(NoTruck),
-	birds: [],
-}
+## How far ahead each of `sightings` stands, in their order.
+sighted_depths : List(Pipeline.Sighted(kind)) -> List(Distance)
+sighted_depths = |sightings| sightings.map(|sighting| sighting.spot.foot().forward())
 
-## How many renderings `only` has, seen as `scene` is.
-rendering_count : Scene -> U64
-rendering_count = |only| SceneShapes.scene_renderings(only, scene_view).len()
-
-# Each kind of thing in view has its rendering, one kind at a time, and a scene
-# with nothing in view has none. The route's start has no cat in view, so the
-# cats come from the second segment's.
-expect rendering_count({ ..empty_scene, trees: scene.trees }) == scene.trees.len()
-expect rendering_count({ ..empty_scene, towers: scene.towers }) == scene.towers.len()
-expect rendering_count({ ..empty_scene, billboards: scene.billboards }) == scene.billboards.len()
-expect rendering_count({ ..empty_scene, cats: seen }) == seen.len()
-expect rendering_count({ ..empty_scene, rails: scene.rails }) == scene.rails.len()
-expect rendering_count({ ..empty_scene, birds: scene.birds }) == scene.birds.len()
-expect rendering_count({ ..empty_scene, truck: scene.truck }) == 1
-expect rendering_count(empty_scene) == 0
-
-# A truck in view stands at its own depth, and one that isn't in view isn't drawn.
-expect {
-	truck_only = { ..empty_scene, truck: scene.truck }
-	truck_renderings = SceneShapes.scene_renderings(truck_only, scene_view)
-	truck_depths = truck_renderings.map(|rendering| rendering.depth)
-	scene.truck.map_ok(|truck| [truck.spot.foot().forward()]) == Ok(truck_depths)
-}
+# Each field holds what its own sighting found, in the sighting's order, each
+# thing at its own depth.
+expect depths_of(scene.trees) == sighted_depths(TreeSighting.trees_in_view(road, origin_camera))
+expect
+	depths_of(scene.birds)
+		== sighted_depths(EncounterSighting.birds_in_view(road, { camera: origin_camera, encounter: Unplanned }))
+expect
+	depths_of(scene.towers)
+		== sighted_depths(
+			TowerSighting.towers_in_view(road, { camera: origin_camera, clock: Clock.start }),
+		)
+expect
+	depths_of(scene.billboards)
+		== sighted_depths(BillboardSighting.billboards_in_view(road, origin_camera))
+expect depths_of(cat_scene.cats) == sighted_depths(seen)
+expect seen.len() > 0
+expect scene.rails.len() == RailSighting.rail_quads_in_view(road, origin_camera).len()
+expect
+	scene.truck.map_ok(|truck| truck.depth)
+		== TruckSighting.truck_in_view(
+			road,
+			{
+				camera: origin_camera,
+				route_position: scene_facts.truck.route_position,
+				lit_truck: scene_facts.truck.lit_truck,
+			},
+		).map_ok(|truck| truck.spot.foot().forward())
 expect scene.birds.len() > 0
-expect rendering_count({ ..empty_scene, truck: Err(BehindCamera) }) == 0
 
+# The renderings are every field's, the truck's among them.
 expect
 	scene_renderings.len()
 		== [
 			scene.trees.len(),
+			scene.birds.len(),
 			scene.towers.len(),
 			scene.billboards.len(),
 			scene.cats.len(),
 			1,
 			scene.rails.len(),
-			scene.birds.len(),
 		].sum()
+
+## A scene with nothing in view.
+empty_scene : Scene
+empty_scene = {
+	trees: [],
+	birds: [],
+	towers: [],
+	billboards: [],
+	cats: [],
+	truck: Err(NoTruck),
+	rails: [],
+}
+
+## Something of `kind` `forward` metres straight ahead of the route's start, as
+## its sighting finds it.
+sighted_ahead : kind, F64 -> Pipeline.Sighted(kind)
+sighted_ahead = |kind, forward|
+	Pipeline.sighting_of(
+		{
+			road_point: { along: Along.metres(forward), across: Across.middle },
+			lift: Distance.zero,
+			kind,
+		},
+		{
+			road,
+			vantage: origin,
+			place: Ahead(SegmentPlace.Position.first),
+		},
+	)
+		?? crash "CrossModuleExpects: a test's thing is past the near plane"
+
+## A big green tree `forward` metres straight ahead of the route's start.
+green_tree_ahead : F64 -> Pipeline.Sighted(Conifer)
+green_tree_ahead = |forward| sighted_ahead(Conifer.Green, forward)
+
+## A perched bird `forward` metres straight ahead of the route's start.
+perched_bird_ahead : F64 -> Pipeline.Sighted(PosedBird)
+perched_bird_ahead = |forward| sighted_ahead({ pose: Perched }, forward)
+
+## A scene of a lone tree `forward` metres ahead.
+lone_tree_scene : F64 -> Scene
+lone_tree_scene = |forward| {
+	..empty_scene,
+	trees: Scene.tree_renderings([green_tree_ahead(forward)], origin_camera.cam_focal),
+}
+
+## A scene of a lone perched bird `forward` metres ahead.
+lone_bird_scene : F64 -> Scene
+lone_bird_scene = |forward| {
+	..empty_scene,
+	birds: [
+		Pipeline.rendering_of(
+			perched_bird_ahead(forward),
+			{ cam_focal: origin_camera.cam_focal, context: {} },
+		),
+	],
+}
+
+## The shapes of a tree and a bird, these many metres ahead, in the order the
+## frame draws them.
+tree_and_bird_shapes : { tree_ahead : F64, bird_ahead : F64 } -> List(Shapes.Shape)
+tree_and_bird_shapes = |{ tree_ahead, bird_ahead }|
+	Scene.scene_shapes({ ..lone_tree_scene(tree_ahead), birds: lone_bird_scene(bird_ahead).birds })
+
+lone_tree_shapes : F64 -> List(Shapes.Shape)
+lone_tree_shapes = |forward| Scene.scene_shapes(lone_tree_scene(forward))
+
+lone_bird_shapes : F64 -> List(Shapes.Shape)
+lone_bird_shapes = |forward| Scene.scene_shapes(lone_bird_scene(forward))
+
+# A bird perched on a tree stands at the tree's depth and is drawn over it.
+# A bird that isn't perched is drawn by its own depth: behind a nearer tree,
+# and over a farther one.
+expect
+	tree_and_bird_shapes({ tree_ahead: 40.0, bird_ahead: 40.0 })
+		== lone_tree_shapes(40.0).concat(lone_bird_shapes(40.0))
+expect
+	tree_and_bird_shapes({ tree_ahead: 30.0, bird_ahead: 40.0 })
+		== lone_bird_shapes(40.0).concat(lone_tree_shapes(30.0))
+expect
+	tree_and_bird_shapes({ tree_ahead: 40.0, bird_ahead: 30.0 })
+		== lone_tree_shapes(40.0).concat(lone_bird_shapes(30.0))
+expect lone_tree_shapes(40.0).len() > 0
+expect lone_bird_shapes(40.0).len() > 0
+
+## Five trees a metre apart, from 10 to 14 metres ahead, rendered together.
+cluster_renderings : List(Rendered)
+cluster_renderings = Scene.tree_renderings(
+	[10.0, 11.0, 12.0, 13.0, 14.0].map(green_tree_ahead),
+	origin_camera.cam_focal,
+)
+
+## The shapes of the cluster's tree at `index`, nearest first.
+cluster_shapes : U64 -> List(Shapes.Shape)
+cluster_shapes = |index|
+	match cluster_renderings.get(index) {
+		Ok(rendering) => rendering.picture.to_shapes()
+		Err(OutOfBounds) => crash "CrossModuleExpects: the cluster has five trees"
+	}
+
+second_shape_points : List(Shapes.Shape) -> U64
+second_shape_points = |shapes|
+	match shapes {
+		[_, Poly(polygon), ..] => polygon.coordinates.len()
+		_ => crash "a tree in view draws a trunk and tiers"
+	}
+
+# A tree is drawn as the conifer told how many of the others are nearer, so the
+# nearest tree's tiers are cones, in more detail than the farthest's triangles.
+expect
+	cluster_shapes(4)
+		== Conifer.Green.scenery_picture({
+			spot: green_tree_ahead(14.0).spot,
+			cam_focal: origin_camera.cam_focal,
+			context: { nearer_tree_count: 4 },
+		}).to_shapes()
+expect second_shape_points(cluster_shapes(0)) > second_shape_points(cluster_shapes(4))
+expect second_shape_points(cluster_shapes(4)) >= 6
 
 expect scene.trees.len() > 0
 expect scene.towers.len() > 0
@@ -1031,17 +1161,96 @@ is_far_to_near = |renderings|
 expect is_far_to_near(scene_renderings)
 expect is_far_to_near([])
 
+# GroundPatch's shapes. A ground patch's checks sit here because the corners
+# need Distance and the fill needs Brush, and GroundPatch imports neither.
+sample_patch_shape : List(Geom.RiderPoint) -> Try(Shapes.Shape, [PastHorizon, BehindCamera])
+sample_patch_shape = |corners| GroundPatch.patch_shape(
+	{ corners, color: RgbColor.of(0x2F7E8C) },
+	Pixels.of(685.5110432362151),
+)
+
+patch_corners_ahead : List(Geom.RiderPoint)
+patch_corners_ahead = [
+	{ right: Distance.metres(-5.0), forward: Distance.metres(10.0) },
+	{ right: Distance.metres(5.0), forward: Distance.metres(10.0) },
+	{ right: Distance.metres(5.0), forward: Distance.metres(20.0) },
+	{ right: Distance.metres(-5.0), forward: Distance.metres(20.0) },
+]
+
+# A patch of `count` corners, all ahead of the camera.
+corners_ahead : I64 -> List(Geom.RiderPoint)
+corners_ahead = |count|
+	List.from_iter(I64.until(0, count)).map(
+		|k| {
+			offset = (count - k).to_f64()
+			{ right: Distance.metres(offset), forward: Distance.metres(10.0 + offset) }
+		},
+	)
+
+## What became of a patch: drawn, or why not.
+patch_outcome : Try(Shapes.Shape, [PastHorizon, BehindCamera]) -> [Drawn, PastHorizon, BehindCamera]
+patch_outcome = |shape|
+	match shape {
+		Ok(_) => Drawn
+		Err(PastHorizon) => PastHorizon
+		Err(BehindCamera) => BehindCamera
+	}
+
+# A patch that straddles the horizon is kept, and one wholly past it is not.
+expect
+	sample_patch_shape([
+		{ right: Distance.metres(-2.0), forward: Distance.metres(480.0) },
+		{ right: Distance.metres(2.0), forward: Distance.metres(480.0) },
+		{ right: Distance.metres(2.0), forward: Distance.metres(505.0) },
+		{ right: Distance.metres(-2.0), forward: Distance.metres(505.0) },
+	]).is_ok()
+expect
+	patch_outcome(
+		sample_patch_shape([
+			{ right: Distance.metres(-2.0), forward: Distance.metres(495.0) },
+			{ right: Distance.metres(2.0), forward: Distance.metres(495.0) },
+			{ right: Distance.metres(2.0), forward: Distance.metres(520.0) },
+			{ right: Distance.metres(-2.0), forward: Distance.metres(520.0) },
+		]),
+	)
+		== PastHorizon
+expect
+	patch_outcome(
+		sample_patch_shape([
+			{ right: Distance.metres(-5.0), forward: Distance.metres(-10.0) },
+			{ right: Distance.metres(5.0), forward: Distance.metres(-10.0) },
+			{ right: Distance.metres(5.0), forward: Distance.metres(-20.0) },
+			{ right: Distance.metres(-5.0), forward: Distance.metres(-20.0) },
+		]),
+	)
+		== BehindCamera
+
+expect sample_patch_shape(patch_corners_ahead).is_ok()
+expect sample_patch_shape(corners_ahead(8)).is_ok()
+expect sample_patch_shape(corners_ahead(9)).is_ok()
+
+expect {
+	match sample_patch_shape(patch_corners_ahead) {
+		Ok(Poly(polygon)) =>
+			polygon.fill == Flat(Brush.opaque(RgbColor.of(0x2F7E8C)))
+				and polygon.coordinates.len() == 8
+		_ => False
+	}
+}
+
 # GroundSighting's road along the first segment, 500 m long: one patch, its
 # edges laid in 20 chunks of 25 m.
 ## A list of patches as a camera the drawing checks read paints them.
-patch_shapes : List(Ground.Patch) -> List(Shapes.Shape)
-patch_shapes = |patches| patches.keep_oks(|patch| Ground.patch_shape(patch, Pixels.of(500.0)))
+patch_shapes : List(GroundPatch) -> List(Shapes.Shape)
+patch_shapes = |patches| patches.keep_oks(|patch| GroundPatch.patch_shape(patch, Pixels.of(500.0)))
 
-first_road : Ground.Patch
-first_road = GroundSighting.road_along(
-	road,
-	{ vantage: origin, in_view: numbered_segment(road, 0) },
-)
+## The ground in view from `rider_vantage` on the road ahead of the route's
+## first segment. Its first patch is the road along that segment.
+patches_seen_from : Geom.Vantage -> List(GroundPatch)
+patches_seen_from = |rider_vantage| GroundSighting.patches_in_view(road, { vantage: rider_vantage })
+
+first_road : GroundPatch
+first_road = patches_seen_from(origin).first() ?? crash "CrossModuleExpects: the first segment lays road"
 
 corner : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
 corner = |
@@ -1078,12 +1287,10 @@ strip_shapes : List(Shapes.Shape)
 strip_shapes = patch_shapes([first_road])
 
 expect strip_shapes.len() == 1
-expect patch_shapes([
-	GroundSighting.road_along(
-		road,
-		{ vantage: { ..origin, along: Along.metres(5000.0) }, in_view: numbered_segment(road, 0) },
-	),
-]).len() == 0
+expect {
+	road_behind = patches_seen_from({ ..origin, along: Along.metres(5000.0) }).take_first(1)
+	road_behind.len() == 1 and patch_shapes(road_behind).len() == 0
+}
 last_shape : Shapes.Shape
 last_shape = strip_shapes.last() ?? crash "CrossModuleExpects: the road draws"
 
@@ -1643,6 +1850,14 @@ expect
 		and Pond.placed_ducks(left_pond_bend).map(|placed| placed.road_point.across.to_metres())
 			== [10.0, 18.0, 11.0, 6.0, 14.0, 22.0]
 
+# Mirrored to the other side of the road at a left turn, each duck faces the
+# other way.
+expect
+	Pond.placed_ducks(right_pond_bend).map(|placed| placed.kind.facing)
+		== [FacesRight, FacesLeft, FacesRight, FacesRight, FacesLeft, FacesRight]
+		and Pond.placed_ducks(left_pond_bend).map(|placed| placed.kind.facing)
+			== [FacesLeft, FacesRight, FacesLeft, FacesLeft, FacesRight, FacesLeft]
+
 # The pond's water and bank lie off the road on the outside of the bend,
 # whichever way the road turns.
 expect {
@@ -1676,6 +1891,35 @@ expect {
 	match circling {
 		EndsAt(_) => True
 		Leaves(_) => False
+	}
+}
+
+# A coast's path has a motorcycle for each step it ran and ends where its
+# outcome says, clear of the start when it stays on the road, and `project`
+# gives the same outcome without the path.
+expect {
+	state = {
+		..Motorcycle.initial,
+		yaw: Angle.Turn.radians(-1.5),
+		speed: Speed.metres_a_step(0.7),
+	}
+	coast = Coast.coast_path(state)
+	match coast.outcome {
+		Leaves({ side: Left, after }) =>
+			coast.path_motorcycles.len() == after.to_u32().to_u64()
+				and coast.outcome == Coast.project(state)
+		Leaves({ side: Right, .. }) | EndsAt(_) => False
+	}
+}
+expect {
+	state = { ..Motorcycle.initial, across: Across.metres(1.0) }
+	coast = Coast.coast_path(state)
+	match (coast.outcome, coast.path_motorcycles.last()) {
+		(EndsAt(end_across), Ok(last)) =>
+			last.across == end_across
+				and last.along.distance_from(state.along) >= Coast.clear_distance
+				and coast.outcome == Coast.project(state)
+		(Leaves(_), _) | (EndsAt(_), Err(_)) => False
 	}
 }
 
@@ -1715,3 +1959,35 @@ wide_of_road = |lean| {
 # A rider far off to the right, whose coast crosses no shoulder, opens the
 # throttle however far they lean. Each is within 1e-12 of its want.
 expect [-0.001, -0.035, -0.535].all(|lean| (wide_of_road(lean) - 0.01).abs() <= 0.000000000001)
+
+## The spot on a straight road of a thing 3 m left of the middle and 2 m up,
+## `forward` ahead of the camera.
+straight_ahead_spot : F64 -> Try(Spot, [BehindCamera])
+straight_ahead_spot = |forward|
+	Spot.straight_ahead({
+		road_point: { along: Along.metres(50.0), across: Across.metres(-3.0) },
+		lift: Distance.metres(2.0),
+		forward: Distance.metres(forward),
+	})
+
+# A spot ahead keeps its road point and lift, sits on the first segment ahead,
+# and has its foot as far left of the camera as the thing is of the middle.
+expect
+	match straight_ahead_spot(20.0) {
+		Ok(spot) => {
+			foot = spot.foot().at_height(Distance.zero)
+			spot.place() == Ahead(SegmentPlace.Position.first)
+				and spot.road_point() == { along: Along.metres(50.0), across: Across.metres(-3.0) }
+				and spot.lift() == Distance.metres(2.0)
+				and foot.right() == Distance.metres(-3.0)
+				and foot.forward() == Distance.metres(20.0)
+		}
+		Err(BehindCamera) => False
+	}
+
+# A spot short of the near plane is behind the camera.
+expect
+	match straight_ahead_spot(0.1) {
+		Ok(_) => False
+		Err(BehindCamera) => True
+	}

@@ -21,10 +21,9 @@ Wildlife :: [].{
 		species = species_of(animal)
 		bend_along = Along.at(bend.segment_length)
 		{ out_on_outside, facing } =
-			if bend.turn.is_right() {
-				{ out_on_outside: Across.left_of_middle, facing: FacesRight }
-			} else {
-				{ out_on_outside: Across.right_of_middle, facing: FacesLeft }
+			match Geom.outer_side(bend.turn) {
+				LeftSide => { out_on_outside: Across.left_of_middle, facing: FacesRight }
+				RightSide => { out_on_outside: Across.right_of_middle, facing: FacesLeft }
 			}
 		adult = Billboard.adult_billboard(species, facing)
 		clear_of_rail = Geom.road_half_width.plus(adult_rail_buffer)
@@ -57,10 +56,10 @@ baby_beyond = Distance.metres(14.0)
 species_of : Wildlife.Animal -> Billboard.Species
 species_of = |animal|
 	match animal {
-		Elephant => { still: EmojiStills.elephant, adult_height: Distance.metres(2.8) }
-		Giraffe => { still: EmojiStills.giraffe, adult_height: Distance.metres(4.5) }
-		Zebra => { still: EmojiStills.zebra, adult_height: Distance.metres(1.6) }
-		Rhino => { still: EmojiStills.rhino, adult_height: Distance.metres(2.2) }
+		Elephant => { emoji: EmojiStills.elephant, adult_height: Distance.metres(2.8) }
+		Giraffe => { emoji: EmojiStills.giraffe, adult_height: Distance.metres(4.5) }
+		Zebra => { emoji: EmojiStills.zebra, adult_height: Distance.metres(1.6) }
+		Rhino => { emoji: EmojiStills.rhino, adult_height: Distance.metres(2.2) }
 	}
 
 ## An animal and its baby at each of four bends, the first and third turning
@@ -125,7 +124,7 @@ expect
 		]
 
 expect
-	four_critters.map(|critter| critter.kind.still)
+	four_critters.map(|critter| critter.kind.emoji)
 		== [
 			EmojiStills.elephant,
 			EmojiStills.elephant,

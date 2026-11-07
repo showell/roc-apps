@@ -7,14 +7,12 @@
 ## make of the gap.
 import game.Animation
 import game.Cat
-import game.CatCrossing
 import game.Clock
 import game.EncounterReaction
 import game.Distance
 import game.Pixels
 import game.PosedCat
 import game.Geom
-import game.Segment
 import game.Speed
 import game.StillShapes
 import game.VehicleLimits
@@ -50,23 +48,6 @@ closing_gap = VcrButtons.gap_range({ farthest: Distance.metres(50.0), metres_a_f
 ## step of the ride, and the crossing's steps read as metres.
 rider_speed : Speed
 rider_speed = Speed.metres_a_step(1.0)
-
-## The cat's crossing on a segment that has one.
-cat_crossing : Segment -> Try(CatCrossing, [NoCat])
-cat_crossing = |segment|
-	match segment.encounter {
-		CatCrosses(crossing) => Ok(crossing)
-		BirdHere(_) | QuietRoad => Err(NoCat)
-	}
-
-## The first segment of the route with a cat.
-cat_segment : Segment
-cat_segment =
-	World.route.route_segments().find_first(|segment| cat_crossing(segment).is_ok())
-		?? crash "CatWidgetApp.cat_segment: the route has cats"
-
-crossing : CatCrossing
-crossing = cat_crossing(cat_segment) ?? crash "CatWidgetApp.crossing: this segment has a cat"
 
 ## Everything on the canvas.
 shapes_at : CatWidgetApp.Model -> List(Shapes.Shape)
@@ -155,7 +136,7 @@ crossing_timing = |gap| {
 ## The cat as `gap` finds it, drawn by Safari's own stills.
 cat_shapes : Distance -> List(Shapes.Shape)
 cat_shapes = |gap| {
-	instant = Cat.instant_at(crossing, Cat.crossing_stage(crossing_timing(gap)))
+	instant = Cat.instant_at(World.first_cat_crossing, Cat.crossing_stage(crossing_timing(gap)))
 	StillShapes.still_shapes(
 		{
 			feet: {
@@ -174,8 +155,8 @@ status_lines : Distance -> List(Str)
 status_lines = |gap| {
 	timing = crossing_timing(gap)
 	stage = Cat.crossing_stage(timing)
-	instant = Cat.instant_at(crossing, stage)
-	throttle = EncounterReaction.encounter_throttle(cat_segment, timing)
+	instant = Cat.instant_at(World.first_cat_crossing, stage)
+	throttle = EncounterReaction.encounter_throttle(World.first_cat_segment, timing)
 	[
 		ReadoutText.stage_text(stage),
 		"Pose: ${pose_name(instant.pose)}",

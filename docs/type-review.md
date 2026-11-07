@@ -138,7 +138,7 @@ it plain, and don't write long prose. For each finding, worst first, give:
 - **Fix:** the change you recommend, as concrete as a signature. Show a short
   before and after for the worst one or two findings.
 - **Reach:** the files the fix touches. Mark any shared module (Geom, Camera,
-  Picture, Pipeline, RoadAhead, World, Segment, Route, SceneShapes, anything in `lib`,
+  Picture, Pipeline, RoadAhead, World, Segment, Route, Scene, anything in `lib`,
   `Distance`, `Along`, `Across`, `Fraction`, `Pixels`, `Angle`), and any widget
   that imports the module.
 - **Pixels:** whether the fix should leave every pixel as it is, or would move

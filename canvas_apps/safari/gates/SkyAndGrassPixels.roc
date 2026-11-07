@@ -29,7 +29,7 @@ SkyAndGrassPixels :: [].{
 		for row in PixelGrid.Coordinate.first.until(height) {
 			for column in PixelGrid.Coordinate.first.until(width) {
 				y = roll.to_scene(ScreenRoll.pixel_point({ row, column })).y
-				pixel = if y >= Screen.grass_top_y.to_f64() {
+				pixel = if y >= Grass.grass_top_y.to_f64() {
 					grass_pixel
 				} else {
 					t = Brush.clamp01(y / Screen.horizon_y.to_f64())

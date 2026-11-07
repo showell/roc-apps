@@ -12,7 +12,7 @@ import Spot
 import StillShapes
 
 Billboard := {
-	still : EmojiStills.EmojiStill,
+	emoji : EmojiStills.EmojiStill,
 	height : Distance,
 	facing : Billboard.Facing,
 }.{
@@ -21,12 +21,12 @@ Billboard := {
 	Facing : [FacesLeft, FacesRight]
 
 	## A kind of animal: its emoji, and how tall a grown one stands.
-	Species : { still : EmojiStills.EmojiStill, adult_height : Distance }
+	Species : { emoji : EmojiStills.EmojiStill, adult_height : Distance }
 
 	## A grown animal of `species`.
 	adult_billboard : Billboard.Species, Billboard.Facing -> Billboard
 	adult_billboard = |species, facing| {
-		still: species.still,
+		emoji: species.emoji,
 		height: species.adult_height,
 		facing,
 	}
@@ -34,7 +34,7 @@ Billboard := {
 	## A young animal of `species`, which stands half as tall as a grown one.
 	young_billboard : Billboard.Species, Billboard.Facing -> Billboard
 	young_billboard = |species, facing| {
-		still: species.still,
+		emoji: species.emoji,
 		height: species.adult_height.divided_by(2.0),
 		facing,
 	}
@@ -60,7 +60,7 @@ Billboard := {
 		if anchor.height_on_screen < Pixels.of(1.0) {
 			Picture.from_shapes([])
 		} else {
-			Picture.from_shapes(StillShapes.still_shapes(anchor, billboard.still.still()))
+			Picture.from_shapes(StillShapes.still_shapes(anchor, billboard.emoji.still()))
 		}
 	}
 
@@ -71,11 +71,11 @@ Billboard := {
 shape_count : {
 	forward : Distance,
 	height : Distance,
-	still : EmojiStills.EmojiStill,
+	emoji : EmojiStills.EmojiStill,
 } -> U64
-shape_count = |{ forward, height, still }| {
+shape_count = |{ forward, height, emoji }| {
 	billboard : Billboard
-	billboard = { still, height, facing: FacesLeft }
+	billboard = { emoji, height, facing: FacesLeft }
 	foot = Geom.ahead_on_level({
 		right: Distance.zero,
 		forward,
@@ -94,28 +94,28 @@ expect
 	shape_count({
 		forward: Distance.metres(1000.0),
 		height: Distance.metres(2.0),
-		still: EmojiStills.elephant,
+		emoji: EmojiStills.elephant,
 	})
 		== 6
 expect
 	shape_count({
 		forward: Distance.metres(2000.0),
 		height: Distance.metres(2.0),
-		still: EmojiStills.elephant,
+		emoji: EmojiStills.elephant,
 	})
 		== 0
 expect
 	shape_count({
 		forward: Distance.metres(1000.0),
 		height: Distance.metres(1.9),
-		still: EmojiStills.elephant,
+		emoji: EmojiStills.elephant,
 	})
 		== 0
 expect
 	shape_count({
 		forward: Distance.metres(100.0),
 		height: Distance.metres(2.0),
-		still: EmojiStills.elephant,
+		emoji: EmojiStills.elephant,
 	})
 		== 6
 

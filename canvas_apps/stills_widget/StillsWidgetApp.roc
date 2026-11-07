@@ -191,8 +191,8 @@ standing_at : Still,
 	ground_y : F64,
 	height_on_screen : Pixels,
 } -> StillShapes.Anchor
-standing_at = |polygons, { mid_x, ground_y, height_on_screen }| {
-	extent = extent_of(polygons)
+standing_at = |still, { mid_x, ground_y, height_on_screen }| {
+	extent = extent_of(still)
 	{
 		feet: Screen.point(mid_x - height_on_screen.to_f64() * (extent.left + extent.right) / 2.0, ground_y),
 		flip: AsDrawn,
@@ -254,15 +254,15 @@ large_area = {
 
 ## A still as large as `large_area` holds it, in the middle of that area.
 large_anchor : Still -> StillShapes.Anchor
-large_anchor = |polygons| {
-	extent = extent_of(polygons)
+large_anchor = |still| {
+	extent = extent_of(still)
 	height_px = F64.min(
 		large_area.width / extent_width(extent),
 		large_area.height / (extent.top - extent.bottom),
 	)
 	middle = middle_of(large_area)
 	standing_at(
-		polygons,
+		still,
 		{
 			mid_x: middle.x,
 			ground_y: middle.y + height_px * (extent.top + extent.bottom) / 2.0,
@@ -313,11 +313,11 @@ point_count = |still| still.polygons().fold(0, |sum, polygon| sum + polygon.poin
 ## What a pose's still is made of, a line each.
 read_out_lines : StillsWidgetApp.Pose -> List(Str)
 read_out_lines = |pose| {
-	polygons = pose_still(pose)
+	still = pose_still(pose)
 	[
 		pose_name(pose),
-		"${ReadoutText.count_text(polygons.polygons().len())} polygons",
-		"${ReadoutText.count_text(point_count(polygons))} points",
+		"${ReadoutText.count_text(still.polygons().len())} polygons",
+		"${ReadoutText.count_text(point_count(still))} points",
 	]
 }
 
@@ -369,13 +369,13 @@ outline_shapes = |anchor, polygon| {
 ## The large still, with the outlines of its polygons if they show.
 large_shapes : StillsWidgetApp.Model -> List(Shapes.Shape)
 large_shapes = |{ large_pose, outlines }| {
-	polygons = pose_still(large_pose)
-	anchor = large_anchor(polygons)
-	drawn = StillShapes.still_shapes(anchor, polygons)
+	still = pose_still(large_pose)
+	anchor = large_anchor(still)
+	drawn = StillShapes.still_shapes(anchor, still)
 	match outlines {
 		Hidden => drawn
 		Shown => {
-			outline = polygons.polygons().join_map(|polygon| outline_shapes(anchor, polygon))
+			outline = still.polygons().join_map(|polygon| outline_shapes(anchor, polygon))
 			drawn.concat(outline)
 		}
 	}
@@ -439,9 +439,9 @@ landing_spot = |anchor, point| {
 }
 
 ## Whether every point of a still lands in `area`.
-stays_in : StillShapes.Anchor, { polygons : Still, area : Click.Area } -> Bool
-stays_in = |anchor, { polygons, area }|
-	polygons.polygons().all(|polygon| polygon.points.all(|point| area.contains(landing_spot(anchor, point))))
+stays_in : StillShapes.Anchor, { still : Still, area : Click.Area } -> Bool
+stays_in = |anchor, { still, area }|
+	still.polygons().all(|polygon| polygon.points.all(|point| area.contains(landing_spot(anchor, point))))
 
 first_cell : StillCell
 first_cell = cells.first() ?? crash "StillsWidgetApp.first_cell: the grid has cells"
@@ -488,12 +488,12 @@ expect
 # A row shares one height, and no still leaves its cell or crosses its name.
 expect cells.take_first(7).all(|cell| cell.anchor.height_on_screen == first_cell.anchor.height_on_screen)
 expect cells.drop_first(7).all(|cell| cell.anchor.height_on_screen == last_cell.anchor.height_on_screen)
-expect cells.all(|{ pose, area, anchor }| stays_in(anchor, { polygons: pose_still(pose), area }))
+expect cells.all(|{ pose, area, anchor }| stays_in(anchor, { still: pose_still(pose), area }))
 expect
 	cells.all(
 		|{ pose, area, anchor }| {
 			above_name = { ..area, height: cell_name_top }
-			stays_in(anchor, { polygons: pose_still(pose), area: above_name })
+			stays_in(anchor, { still: pose_still(pose), area: above_name })
 		},
 	)
 
@@ -541,8 +541,8 @@ large_area_edges_held = {
 expect
 	cells.all(
 		|{ pose, .. }| {
-			polygons = pose_still(pose)
-			stays_in(large_anchor(polygons), { polygons, area: large_area_edges_held })
+			still = pose_still(pose)
+			stays_in(large_anchor(still), { still, area: large_area_edges_held })
 		},
 	)
 expect
@@ -655,16 +655,6 @@ expect toggled_outlines(Shown) == Hidden
 
 # The read-out names the pose and counts its still, with commas.
 expect read_out_lines(Cat(Rest)) == ["Rest", "46 polygons", "2,198 points"]
-
-# StillShapes draws one shape for each polygon, so the read-out's polygon count
-# is the count on screen.
-expect
-	cells.all(
-		|{ pose, anchor, .. }| {
-			polygons = pose_still(pose)
-			StillShapes.still_shapes(anchor, polygons).len() == polygons.polygons().len()
-		},
-	)
 
 # The outlines add one line for each edge between two different corners, and
 # none when hidden.

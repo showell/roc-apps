@@ -10,14 +10,13 @@ import game.RoadAhead
 import game.Clock
 import game.FrameView
 import game.Grass
-import game.Ground
+import game.GroundPatch
 import game.GroundSighting
 import game.Mountains
 import game.RideInstant
 import game.RiderCamera
 import game.SafariApp
 import game.Scene
-import game.SceneShapes
 import game.Screen
 import game.Sky
 import game.Sun
@@ -91,13 +90,7 @@ frame_step = 1529
 
 ## The ride at `frame_step`, with no history to step back through.
 paused_tour : Tour
-paused_tour = {
-	var $tour = Tour.initial
-	while $tour.instant.clock != Clock.at_step(frame_step) {
-		$tour = Tour.step_forward($tour)
-	}
-	{ ..$tour, past_instants: [] }
-}
+paused_tour = { ..Tour.at_step(frame_step), past_instants: [] }
 
 ## `things` if `layer` is one of `on_layers`, else none.
 things_on : List(thing), { on_layers : List(Layer), layer : Layer } -> List(thing)
@@ -110,7 +103,7 @@ things_on = |things, { on_layers, layer }|
 
 ## The things beside the road on `on_layers`, in the game's paint order. A scene
 ## that holds only some of the things draws them in the order the whole scene
-## does, so the game's own `SceneShapes` orders each layer among the others.
+## does, so the game's own `Scene` orders each layer among the others.
 scene_shapes_on : List(Layer) -> List(Shapes.Shape)
 scene_shapes_on = |on_layers| {
 	only = {
@@ -126,7 +119,7 @@ scene_shapes_on = |on_layers| {
 		},
 		birds: things_on(paused_scene.birds, { on_layers, layer: MovingThings }),
 	}
-	SceneShapes.scene_shapes(only, { road: paused_road, camera: paused_camera })
+	Scene.scene_shapes(only)
 }
 
 ## What `FrameView.framed_shapes` paints under the ride's shapes, in its order: the
@@ -179,7 +172,7 @@ ground_parts : List(Piece)
 ground_parts = {
 	skyline = Mountains.mountain_shapes(paused_camera, Sky.dusk_at(paused_tour.instant.clock))
 	ground = GroundSighting.patches_in_view(paused_road, paused_camera).keep_oks(
-		|patch| Ground.patch_shape(patch, paused_camera.cam_focal),
+		|patch| GroundPatch.patch_shape(patch, paused_camera.cam_focal),
 	)
 	[{ layer: Mountains, shapes: skyline }, { layer: Road, shapes: ground }]
 }

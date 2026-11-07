@@ -14,6 +14,11 @@
 const SAFARI = "canvas_apps/safari"
 const FILES = arg("files", "")
 
+-- Every file any lint here reads, as globs from the checkout's root. With
+-- `reads=globs` this script prints them and stops, so fast.shale's record of
+-- the last green covers each file a lint reads, not only safari's.
+const TREE_GLOBS = {SAFARI .. "/**/*.roc", "canvas_apps/*_widget/**/*.roc", "canvas_apps/widget_kit/**/*.roc", "canvas_apps/lib/**/*.roc"}
+
 -- More files than this go through each recipe at once, because a run may start
 -- only 64 programs.
 const MOST_ONE_AT_A_TIME = 6
@@ -61,7 +66,7 @@ const LINTS = {
   {recipe = "families", args = {}, budget = {}, counts = {{"family", 0}, {"twin_name", 0}}, whole_tree = {"family", "twin_name"}},
   {recipe = "plain_names", args = {}, budget = {}, counts = {{"pure_mutator", 0}, {"abbreviation", 0}, {"module_doc", 0}}},
   {recipe = "unused_imports", args = {}, budget = {}, from_repo_root = true, counts = {{"unused_import", 0}},
-    tree_globs = {SAFARI .. "/**/*.roc", "canvas_apps/*_widget/**/*.roc", "canvas_apps/widget_kit/**/*.roc", "canvas_apps/lib/**/*.roc"}},
+    tree_globs = TREE_GLOBS},
 }
 
 function runs_from_repo_root(lint)
@@ -239,7 +244,12 @@ function judge_tree()
   return nil
 end
 
-if FILES == "" then
+if not exists(SAFARI) then
+  fail("safari lints: no " .. SAFARI .. " here; run this from the roc-apps root")
+end
+if arg("reads", "") == "globs" then
+  print(join(TREE_GLOBS, "\n"))
+elseif FILES == "" then
   judge_tree()
 else
   judge_files()

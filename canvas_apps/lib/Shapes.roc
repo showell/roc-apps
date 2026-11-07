@@ -95,28 +95,31 @@ Shapes :: [].{
 		}
 	}
 
-	## A circle's outline, as `sides` lines `line_width` wide around the rim. A
-	## disc under a smaller disc makes a ring too, but only on a background of a
-	## known flat color. Fewer than three sides enclose nothing, and crash.
+	## A circle's outline, `line_width` wide around the rim, as `sides` sectors
+	## of the band between two circles. Neighbouring sectors share their edge
+	## exactly, so the band has no gap at a corner. A disc under a smaller disc
+	## makes a ring too, but only on a background of a known flat color. Fewer
+	## than three sides enclose nothing, and crash.
 	ring_shapes : { center : Point.Point, radius : F64, line_width : F64, sides : U64 }, Brush.Fill -> List(Shapes.Shape)
 	ring_shapes = |{ center, radius, line_width, sides }, fill|
 		if sides < 3 {
 			crash "Shapes.ring_shapes: a ring needs at least three sides"
 		} else {
+			inner_radius = radius - line_width / 2.0
+			outer_radius = radius + line_width / 2.0
+			# The last side ends at angle 0 itself, not at a whole turn, so it
+			# meets the first side's corners exactly.
+			rim_point = |r, k| {
+				angle = F64.tau * (k % sides).to_f64() / sides.to_f64()
+				[center.x + r * angle.cos(), center.y + r * angle.sin()]
+			}
 			var $out = List.with_capacity(sides)
 			for k in 0..<sides {
-				a0 = F64.tau * k.to_f64() / sides.to_f64()
-				a1 = F64.tau * (k + 1).to_f64() / sides.to_f64()
-				$out = $out.append(
-					line(
-						{
-							from: { x: center.x + radius * a0.cos(), y: center.y + radius * a0.sin() },
-							to: { x: center.x + radius * a1.cos(), y: center.y + radius * a1.sin() },
-							width: line_width,
-						},
-						fill,
-					),
-				)
+				coordinates = rim_point(outer_radius, k)
+					.concat(rim_point(outer_radius, k + 1))
+					.concat(rim_point(inner_radius, k + 1))
+					.concat(rim_point(inner_radius, k))
+				$out = $out.append(Poly({ coordinates, fill }))
 			}
 			$out
 		}
@@ -262,5 +265,26 @@ expect
 	Shapes.line({ from: { x: 0.0, y: 0.0 }, to: { x: 10.0, y: 0.0 }, width: 2.0 }, Brush.flat(RgbColor.of(0x202020)))
 		== Poly({ coordinates: [0.0, 1.0, 10.0, 1.0, 10.0, -1.0, 0.0, -1.0], fill: Brush.flat(RgbColor.of(0x202020)) })
 
-# The fewest sides a ring may have make three lines.
+# The fewest sides a ring may have make three sectors.
 expect Shapes.ring_shapes({ center: { x: 0.0, y: 0.0 }, radius: 5.0, line_width: 1.0, sides: 3 }, Brush.flat(RgbColor.of(0x202020))).len() == 3
+
+## A ring sector's corners: outer start, outer end, inner end, inner start.
+sector_corners : Shapes.Shape -> List(F64)
+sector_corners = |shape|
+	match shape {
+		Poly({ coordinates, fill: _ }) => coordinates
+		_ => []
+	}
+
+# Each sector starts where the one before it ends, outer corner and inner
+# corner, all the way round to the first again. Its inner corners sit nearer
+# the center than its outer ones, by the line's width.
+expect {
+	sectors = Shapes.ring_shapes({ center: { x: 3.0, y: 4.0 }, radius: 10.0, line_width: 2.0, sides: 7 }, Brush.flat(RgbColor.of(0x202020))).map(sector_corners)
+	following = sectors.drop_first(1).append(sectors.first() ?? [])
+	shared = sectors.map2(following, |sector, next| sector.sublist({ start: 2, len: 2 }) == next.sublist({ start: 0, len: 2 }) and sector.sublist({ start: 4, len: 2 }) == next.sublist({ start: 6, len: 2 }))
+	first = sectors.first() ?? []
+	outer_x = first.get(0) ?? 0.0
+	inner_x = first.get(6) ?? 0.0
+	sectors.len() == 7 and first.len() == 8 and shared.all(|same| same) and outer_x - inner_x == 2.0
+}

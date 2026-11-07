@@ -23,28 +23,50 @@ Coast :: [].{
 	clear_distance : Distance
 	clear_distance = Distance.metres(25.0)
 
+	## Where a coast ends up, and the motorcycle at each of its steps, the last
+	## one the step that ends it.
+	Path : { outcome : Coast.Outcome, path_motorcycles : List(Motorcycle) }
+
+	## The coast from `state`, step by step.
+	coast_path : Motorcycle -> Coast.Path
+	coast_path = |state| coast_keeping(state, KeepPath)
+
+	## Where a coast from `state` ends up.
 	project : Motorcycle -> Coast.Outcome
-	project = |state| {
-		inset_hw = Geom.road_half_width.minus(shoulder_margin)
-		right_bound = Across.right_of_middle(inset_hw).max(state.across)
-		left_bound = Across.left_of_middle(inset_hw).min(state.across)
-		var $rider = state
-		var $steps_run = Steps.zero
-		while $steps_run < longest_coast {
-			$rider = $rider.motorcycle_at_next_step($rider.steady_controls())
-			$steps_run = $steps_run.plus(Steps.one_step)
-			if $rider.across < left_bound {
-				return Leaves({ side: Left, after: $steps_run })
+	project = |state| coast_keeping(state, DropPath).outcome
+}
+
+## A coast from `state`, with its path or with an empty one. `project` runs
+## inside every step of the ride, and building the path there makes a
+## release-built ride two and a half times as slow, so only `coast_path` keeps
+## it.
+coast_keeping : Motorcycle, [KeepPath, DropPath] -> Coast.Path
+coast_keeping = |state, keeping| {
+	inset_hw = Geom.road_half_width.minus(Coast.shoulder_margin)
+	right_bound = Across.right_of_middle(inset_hw).max(state.across)
+	left_bound = Across.left_of_middle(inset_hw).min(state.across)
+	var $rider = state
+	var $steps_run = Steps.zero
+	var $path = []
+	while $steps_run < longest_coast {
+		$rider = $rider.motorcycle_at_next_step($rider.steady_controls())
+		$steps_run = $steps_run.plus(Steps.one_step)
+		$path =
+			match keeping {
+				KeepPath => $path.append($rider)
+				DropPath => $path
 			}
-			if $rider.across > right_bound {
-				return Leaves({ side: Right, after: $steps_run })
-			}
-			if $rider.along.distance_from(state.along) >= clear_distance {
-				return EndsAt($rider.across)
-			}
+		if $rider.across < left_bound {
+			return { outcome: Leaves({ side: Left, after: $steps_run }), path_motorcycles: $path }
 		}
-		EndsAt($rider.across)
+		if $rider.across > right_bound {
+			return { outcome: Leaves({ side: Right, after: $steps_run }), path_motorcycles: $path }
+		}
+		if $rider.along.distance_from(state.along) >= Coast.clear_distance {
+			return { outcome: EndsAt($rider.across), path_motorcycles: $path }
+		}
 	}
+	{ outcome: EndsAt($rider.across), path_motorcycles: $path }
 }
 
 ## A slow rider who leans can circle on the road and never get clear of where

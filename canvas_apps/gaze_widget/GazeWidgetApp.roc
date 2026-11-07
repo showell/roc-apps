@@ -15,9 +15,7 @@ import game.Gaze
 import game.Geom
 import game.Rider
 import game.RiderState
-import game.Route
 import game.Segment
-import game.Speed
 import game.Steps
 import game.Tour
 import game.World
@@ -83,37 +81,16 @@ stretch_length = (last_step - first_step + 1).to_u64()
 played_a_frame : U64
 played_a_frame = 8
 
-## The rider at `first_step`, a record like any other, so the widget needn't ride
-## there. An `expect` below rides there and compares.
+## The rider at `first_step`, the ride's own.
 first_rider : RiderState
-first_rider = {
-	segment_index: Route.SegmentIndex.number(2),
-	motorcycle: {
-		along: Along.metres(145.67667936647632),
-		across: Across.metres(0.0037716065214224797),
-		yaw: Angle.Turn.radians(0.00011930961684185286),
-		speed: Speed.metres_a_step(1.6856901914963254),
-		lean: Angle.Lean.radians(-0.0004005394279478844),
-	},
-	eyes: RiderState.initial.eyes,
-}
+first_rider = Tour.at_step(first_step).instant.rider
 
 starting_model : GazeWidgetApp.Model
 starting_model = { played: [first_rider], transport: VcrButtons.transport_at(stretch.first) }
 
 ## The first segment of the route whose pigs catch the rider's eye.
 pig_segment : Segment
-pig_segment =
-	World.route.route_segments().find_first(is_distracting)
-		?? crash "GazeWidgetApp.pig_segment: the route has a distracting pig"
-
-## Whether a segment's pigs catch the rider's eye.
-is_distracting : Segment -> Bool
-is_distracting = |segment|
-	match segment.pigs {
-		Herd({ interest: Distracting, .. }) => True
-		Herd({ interest: Unnoticed, .. }) | NoPigs => False
-	}
+pig_segment = World.first_distracting_segment
 
 ## The pig that catches the rider's eye.
 gaze_pig : Geom.Placed(Billboard)
@@ -347,26 +324,8 @@ stretch_states = {
 state_at_step : List(RiderState), U32 -> RiderState
 state_at_step = |played, step| state_at(played, (step - first_step).to_u64())
 
-## The ride at `step`, played from its start.
-ridden_to : U32 -> Tour
-ridden_to = |step| {
-	var $tour = Tour.initial
-	while $tour.instant.clock != Clock.at_step(step) {
-		$tour = Tour.step_forward($tour)
-	}
-	$tour
-}
-
-# The record above is the real rider at that step, field by field.
-expect {
-	real = ridden_to(first_step).instant.rider
-	real.segment_index == first_rider.segment_index
-		and real.motorcycle == first_rider.motorcycle
-		and real.eyes == first_rider.eyes
-}
-
 # This stretch is on the route's first distracting segment, a quiet road.
-expect is_distracting(World.route.segment_at(first_rider.segment_index))
+expect World.is_distracting(World.route.segment_at(first_rider.segment_index))
 expect
 	match pig_segment.encounter {
 		QuietRoad => True

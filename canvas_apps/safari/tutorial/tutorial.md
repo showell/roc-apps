@@ -331,7 +331,7 @@ Fewer than three would be a bug in Safari Ride, and a bug shouldn't quietly pain
 
 Some things can rightly have nothing to show. A `Ground.Patch` is a patch of ground, a list of corners on the ground and a color, and one wholly behind the camera has nothing to show. So `Ground.patch_shape` answers a `Try`:
 
-{{signatures Ground.patch_shape}}
+{{signatures GroundPatch.patch_shape}}
 
 Its second argument is the lens's focal length, in pixels, which turns corners on the ground into places on the screen. A simple tree says more about the lens. A `Try` is either `Ok` holding a shape, or `Err` holding a reason, here `BehindCamera`. Both answers are in the type, so whoever calls `patch_shape` can't forget the ground behind the camera.
 
@@ -642,7 +642,7 @@ A placed tree has a name of its own: `Trees.RoadsideTree` is another name for `G
 |---|---|---|
 {{types row Trees.roadside_trees Place a segment's trees, once}}
 {{types row TreeSighting.trees_in_view Find the trees in view, for each frame}}
-{{types row SceneShapes.tree_rendering Render one, for each frame}}
+{{types row Scene.tree_renderings Render them, for each frame}}
 
 A tree, once and for each frame
 ```dot
@@ -706,9 +706,9 @@ Far trees are cheap. They get eight triangles and a plain trunk. A cone costs a 
 
 "The nearest few" is the one thing a tree alone can't tell us, because it depends on the other trees. So `SceneShapes` counts them, and the count goes in as the conifer's context, the `nearer_tree_count` from Nature types:
 
-{{code SceneShapes.tree_rendering}}
+{{code Scene.tree_renderings}}
 
-{{code SceneShapes.nearer_tree_count}}
+{{code Scene.nearer_tree_count}}
 
 `count_if` answers a `U64`, and `to_u16_wrap` turns it into the `U16` the context wants, wrapping around past 65,535. A frame never sees more than the 392 trees there are, so it never wraps.
 
@@ -733,11 +733,11 @@ New in this chapter:
 
 Its list of shapes starts with the sky, the sun and the grass, and this is the grass:
 
-{{code Screen.below_grass_top_rect}}
+{{code Grass.grass_shape}}
 
 It starts a pixel above the horizon, so no seam shows between the grass and the sky:
 
-{{code Screen.grass_top_y}}
+{{code Grass.grass_top_y}}
 
 It's much wider than the screen because the whole picture tilts when the rider leans, and the corners have to stay filled.
 
@@ -1825,7 +1825,7 @@ And that's called from `RideInstant.next`, in the chapter on stepping, with the 
 
 Finding the next turn shows a list pattern. `[]` is the end of the route, and `[segment, .. as later_segments]` takes the first segment and names the rest. Recursion walks the list, carrying where the current segment starts. Elsewhere, the same walk is usually a `fold`.
 
-{{code Truck.next_bend_on from "match segments {" to "next_bend_on(later_segments, { route_position, segment_start: segment_end })"}}
+{{code Route.segments_with_ends}}
 
 It's called through a smaller function, which supplies the 0 so nobody else has to:
 
@@ -2336,7 +2336,7 @@ digraph rehearsal {
 
 `LeanSearch` asks `Coast` that question at a dozen different leans. The rider wants the coast to end somewhere near the middle of the lane, and more lean to the right moves the end of a coast to the right, so this is a bisection. It's a `for` loop, with `$low` and `$high` closing in on each other. `Bike.with_lean(state, mid)` is a rider who doesn't exist, handed to `Coast`, who gets a future that didn't happen:
 
-{{code LeanSearch.search_lean from "mid = $low.halfway_to($high)" to "$low = mid"}}
+{{code LeanSearch.search_tries from "mid = $bounds.low.halfway_to($bounds.high)" to "$bounds = bounds_after(lean_try, target)"}}
 
 The decision about which way to go is a `match` on what the rehearsal found. Running off the left means more right, running off the right means less, and staying on the road compares the end of the coast with the target:
 
