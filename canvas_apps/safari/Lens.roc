@@ -20,19 +20,25 @@ Lens :: [].{
 		Screen.width.divided_by(2.0).divided_by(half_view.to_radians().tan())
 	}
 
-	min_focal_factor : Fraction
-	min_focal_factor = Fraction.of(0.35)
+	## The lean that widens the view all it can. Nothing holds the bike to it:
+	## a deeper lean just widens the view no further.
+	full_lean : Angle.Lean
+	full_lean = Angle.Lean.degrees(20.0)
+
+	## How much of the resting focal length is left at `full_lean`.
+	focal_factor_at_full_lean : Fraction
+	focal_factor_at_full_lean = Fraction.of(0.35)
 
 	## How much of the resting focal length is left at an attention of 1. It is
 	## no minimum, because a cat in the road holds the eye harder than that.
 	focal_factor_at_full_attention : Fraction
 	focal_factor_at_full_attention = Fraction.of(0.61)
 
-	## The focal length for a lean, from 0 (upright) to 1 (the deepest lean).
+	## The focal length for a lean, from 0 (upright) to 1 (`full_lean`).
 	focal_for_lean : Fraction -> Pixels
 	focal_for_lean = |lean_fraction| {
 		lean = lean_fraction.to_f64()
-		focal.times(1.0 - (1.0 - min_focal_factor.to_f64()) * lean * lean)
+		focal.times(1.0 - (1.0 - focal_factor_at_full_lean.to_f64()) * lean * lean)
 	}
 
 	## The focal length for the rider's attention.

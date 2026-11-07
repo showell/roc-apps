@@ -12,9 +12,6 @@ Bike :: [].{
 	turn_per_lean : F64
 	turn_per_lean = 0.1
 
-	max_lean : Angle.Lean
-	max_lean = Angle.Lean.degrees(20.0)
-
 	## What a physics step reads and writes. It is open so that a caller's
 	## larger record passes through a step with its other fields kept.
 	Motion(others) : {
@@ -56,7 +53,6 @@ Bike :: [].{
 }
 
 expect Bike.turn_per_lean == 0.1
-expect Bike.max_lean.to_radians() == 0.3490658503988659
 
 # Bike doesn't import RiderState, and `Motion` is open, so the records here stand in
 # for it: `segment_index`, `gaze_yaw` and `look_depth` are the caller's own fields.
