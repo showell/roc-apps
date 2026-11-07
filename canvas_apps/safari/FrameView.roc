@@ -36,7 +36,10 @@ FrameView := {
 	## the sun and the roll.
 	frame_view_at : Route, RideInstant -> FrameView
 	frame_view_at = |route, instant| {
-		camera = RiderCamera.of(instant.rider, route)
+		camera = RiderCamera.of(
+			instant.rider,
+			{ route, encounter: RideInstant.encounter_timing(instant) },
+		)
 		{
 			shapes: shapes(camera, { instant, route }),
 			sun_sighting: Sun.sighting(camera, instant.clock),
@@ -78,14 +81,13 @@ FrameView := {
 
 shapes : RiderCamera, { instant : RideInstant, route : Route } -> List(Shapes.Shape)
 shapes = |camera, { instant, route }| {
-	s = instant.rider
 	road = RoadAhead.RoadView.ahead_of(route, camera.segment_index)
 	scene = Scene.scene_in_view(
 		road,
 		{
 			camera,
 			facts: {
-				speed: s.motorcycle.speed,
+				encounter: RideInstant.encounter_timing(instant),
 				truck: {
 					route_position: instant.truck.route_position,
 					lit_truck: FrameView.lit_truck(instant),

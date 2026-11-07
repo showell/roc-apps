@@ -4,6 +4,7 @@
 import Acceleration
 import Along
 import Angle
+import Animation
 import Coast
 import EncounterReaction
 import Gawking
@@ -17,13 +18,14 @@ import World
 
 Throttle :: [].{
 
-	## The speed the motorcycle goes on the next step.
-	next_speed : Motorcycle, Segment -> Speed
-	next_speed = |motorcycle, seg| {
+	## The speed the motorcycle goes on the next step, on `segment`, whose
+	## encounter stands at `encounter`.
+	next_speed : Motorcycle, { segment : Segment, encounter : Animation.Timing } -> Speed
+	next_speed = |motorcycle, { segment: seg, encounter }| {
 		offered = VehicleLimits.cruise_acceleration
 		limits = [
 			bend_limit(motorcycle, seg),
-			EncounterReaction.encounter_throttle(seg, motorcycle),
+			EncounterReaction.encounter_throttle(seg, encounter),
 			Gawking.gawk_brake(motorcycle, seg),
 			shoulder_limit(motorcycle),
 		]
@@ -183,9 +185,13 @@ expect clamped_speed(0.0) == 0.0
 expect clamped_speed(-1.0) == 0.0
 
 ## The change of speed that `Throttle.next_speed` makes for this motorcycle on
-## `seg`.
+## `seg`, before its encounter is planned.
 speed_change : Motorcycle, Segment -> Acceleration
-speed_change = |motorcycle, seg| Throttle.next_speed(motorcycle, seg).change_from(motorcycle.speed)
+speed_change = |motorcycle, seg|
+	Throttle.next_speed(
+		motorcycle,
+		{ segment: seg, encounter: Unplanned },
+	).change_from(motorcycle.speed)
 
 ## The whole decision for a motorcycle at the start of the segment, on the
 ## centre line.
@@ -216,8 +222,8 @@ decide_on = |index, along|
 		World.route.segment_at(Route.SegmentIndex.number(index)),
 	)
 
-# A crossing cat stops the throttle opening, and a gawking rider brakes.
+# A gawking rider brakes. A crossing cat's hold is CrossModuleExpects', which can
+# name a step of the clock.
 expect decide_on(3, 0.0) > Acceleration.steady
-expect decide_on(3, 120.0) == Acceleration.steady
 expect decide_on(2, 100.0) > Acceleration.steady
 expect decide_on(2, 300.0) < Acceleration.steady

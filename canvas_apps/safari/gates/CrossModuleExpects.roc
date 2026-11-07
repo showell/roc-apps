@@ -10,6 +10,7 @@ import game.Pixels
 import game.Across
 import game.Along
 import game.Angle
+import game.Animation
 import game.Attention
 import game.BendInView
 import game.Billboard
@@ -59,7 +60,6 @@ import game.Sun
 import game.Throttle
 import game.TreeSighting
 import game.Trees
-import game.VehicleLimits
 import game.World
 import lib.Brush
 import lib.RgbColor
@@ -333,22 +333,23 @@ expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0])) == Ok(50.0)
 expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0, 60.0])) == Ok(50.0)
 expect fifth_along([50.0, 60.0, 70.0, 80.0, 90.0].map(|along| tree_at(along, 6.0))) == Err(NoTree)
 
-## Whether the trees planted for `plan` have a fifth on the left.
-has_fifth_left_tree : World.SegmentPlan -> Bool
-has_fifth_left_tree = |plan| {
+## Whether the trees planted for `plan` have a fifth on the left, and a tree on
+## the far side for a bird there to fly to.
+has_bird_flight : World.SegmentPlan -> Bool
+has_bird_flight = |plan| {
 	planted = Trees.roadside_trees({ scheme: plan.scheme, length: plan.length })
 	match Segment.fifth_left_tree(planted) {
-		Found(_) => True
+		Found(perch) => BirdFlight.flight_from(planted, perch).is_ok()
 		NoTree => False
 	}
 }
 
-# Every segment the route plans with a bird has a tree for it to start on, or
-# building the segment crashes. A segment too short for five trees on the left
-# has none.
+# Every segment the route plans with a bird has a tree for it to start on and
+# one to fly to, or building the segment crashes: every bird flies. A segment
+# too short for five trees on the left has none.
 expect {
 	bird_plans = World.segment_plans.keep_if(|plan| plan.encounter == BirdHere)
-	bird_plans.len() > 0 and bird_plans.all(has_fifth_left_tree)
+	bird_plans.len() > 0 and bird_plans.all(has_bird_flight)
 }
 expect {
 	short_plan = {
@@ -356,20 +357,28 @@ expect {
 		length: Distance.metres(50.0),
 		encounter: BirdHere,
 	}
-	!has_fifth_left_tree(short_plan)
+	!has_bird_flight(short_plan)
 }
 
-## A segment 200 m long holding only `trees`, which ends a route.
+## A segment 200 m long holding only `trees`, which ends a route. It has a bird
+## if the trees give one a perch and a tree to fly to.
 segment_of : List(Trees.RoadsideTree) -> Segment
 segment_of = |trees| {
-	..World.route.segment_at(Route.SegmentIndex.first),
-	length: Distance.metres(200.0),
-	trees,
-	ending: RouteEnds,
-	encounter: match Segment.fifth_left_tree(trees) {
-		Found(perch) => BirdHere(BirdFlight.habit_from(trees, perch))
-		NoTree => QuietRoad
-	},
+	bird_flight =
+		match Segment.fifth_left_tree(trees) {
+			Found(perch) => BirdFlight.flight_from(trees, perch)
+			NoTree => Err(NoTreeToFlyTo)
+		}
+	{
+		..World.route.segment_at(Route.SegmentIndex.first),
+		length: Distance.metres(200.0),
+		trees,
+		ending: RouteEnds,
+		encounter: match bird_flight {
+			Ok(flight) => BirdHere(flight)
+			Err(NoTreeToFlyTo) => QuietRoad
+		},
+	}
 }
 
 ## `segment`, bending straight on into another.
@@ -379,32 +388,41 @@ going_straight_on = |segment| {
 	ending: Bends({ turn: Angle.straight_ahead, bend_life: Animal(Elephant) }),
 }
 
+## The trees of a segment with a bird: five on the left, and one on the far
+## side to fly to.
+bird_trees : List(Trees.RoadsideTree)
+bird_trees = left_trees.append(far_tree)
+
+## A flight that started at step 100, at step `now`.
+flight_at_step : U32 -> Animation.Timing
+flight_at_step = |now| Animation.timing_of(StartsAt(Clock.at_step(100)), Clock.at_step(now))
+
 ## The birds on one segment of `trees`, for a rider `rider_along` metres into
-## it, seen through a focal length of `cam_focal`.
+## it, seen through a focal length of `cam_focal`, with the bird's flight at
+## `encounter`.
 birds_on : List(Trees.RoadsideTree),
 {
 	rider_along : F64,
 	cam_focal : Pixels,
+	encounter : Animation.Timing,
 } -> List(Pipeline.Sighted(PosedBird))
-birds_on = |trees, seen_from| birds_on_segment(segment_of(trees), seen_from)
-
-## The birds on `segment_index`, for a rider `rider_along` metres into it.
-birds_on_segment : Segment,
-{
-	rider_along : F64,
-	cam_focal : Pixels,
-} -> List(Pipeline.Sighted(PosedBird))
-birds_on_segment = |segment, { rider_along, cam_focal }|
+birds_on = |trees, { rider_along, cam_focal, encounter }|
 	EncounterSighting.birds_in_view(
-		RoadAhead.RoadView.ahead_of(Route.from_segments([segment]), Route.SegmentIndex.first),
-		{ vantage: { ..origin, along: Along.metres(rider_along) }, cam_focal },
+		RoadAhead.RoadView.ahead_of(
+			Route.from_segments([segment_of(trees)]),
+			Route.SegmentIndex.first,
+		),
+		{
+			camera: { vantage: { ..origin, along: Along.metres(rider_along) }, cam_focal },
+			encounter,
+		},
 	)
 
-## The one bird that a rider `rider_along` metres in sees on the segment with
-## a far tree.
-bird_at : F64 -> Pipeline.Sighted(PosedBird)
-bird_at = |rider_along|
-	birds_on(left_trees.append(far_tree), { rider_along, cam_focal: Pixels.of(500.0) }).first()
+## The one bird that a rider `rider_along` metres in sees, with its flight at
+## `encounter`.
+bird_at : F64, Animation.Timing -> Pipeline.Sighted(PosedBird)
+bird_at = |rider_along, encounter|
+	birds_on(bird_trees, { rider_along, cam_focal: Pixels.of(500.0), encounter }).first()
 		?? crash "CrossModuleExpects: this rider sees a bird"
 
 ## How far off a bird is, across the road and up.
@@ -415,69 +433,79 @@ place_numbers = |bird| [
 	bird.spot.lift().to_metres(),
 ]
 
-expect place_numbers(bird_at(0.0)) == [-6.0, 100.0, left_top]
-expect place_numbers(bird_at(40.0)) == [-6.0, 60.0, left_top]
+# Before its flight the bird sits on the fifth left tree, wherever the rider is,
+# and after it on the far tree.
+expect place_numbers(bird_at(0.0, Unplanned)) == [-6.0, 100.0, left_top]
+expect place_numbers(bird_at(40.0, flight_at_step(99))) == [-6.0, 60.0, left_top]
+expect place_numbers(bird_at(85.0, flight_at_step(136))) == [6.0, 45.0, far_top]
+expect bird_at(40.0, flight_at_step(99)).kind.pose == Perched
+expect bird_at(85.0, flight_at_step(136)).kind.pose == Perched
 
-# Halfway through its flight, with the rider 37.5 m from the tree it left.
+# In flight, the bird is where its flight's frame for the step says.
 expect {
-	bird = bird_at(62.5)
+	bird = bird_at(40.0, flight_at_step(118))
+	frame = BirdFlight.instant_at(
+		{ from: tree_at(100.0, -6.0), to: far_tree },
+		Playing(Steps.of(18)),
+	)
 	[
-		(bird.spot.foot().right().to_metres(), 0.0),
-		(bird.spot.foot().forward().to_metres(), 52.5),
-		(
-			bird.spot.lift().to_metres(),
-			(left_top + far_top) / 2.0 + BirdFlight.flight_arc.to_metres(),
-		),
+		(bird.spot.foot().right().to_metres(), frame.location.across.to_metres()),
+		(bird.spot.foot().forward().to_metres(), frame.location.along.to_metres() - 40.0),
+		(bird.spot.lift().to_metres(), frame.location.lift.to_metres()),
 	].all(|(got, want)| (got - want).abs() <= 0.000000001)
+		and bird.kind.pose == frame.pose
+		and bird.kind.pose != Perched
 }
 
-expect place_numbers(bird_at(85.0)) == [6.0, 45.0, far_top]
-expect bird_at(40.0).kind.pose == Perched
-expect bird_at(62.5).kind.pose != Perched
-expect bird_at(85.0).kind.pose == Perched
-
-# With no tree far enough to fly to, the bird stays on its own however near
-# the rider is.
-expect {
-	stays = birds_on(left_trees, { rider_along: 62.5, cam_focal: Pixels.of(500.0) })
-	stays.join_map(place_numbers) == [-6.0, 37.5, left_top]
-}
-
-## How many birds there are on `trees` for each rider and focal length.
+## How many birds there are on `trees` for each rider and focal length, before
+## the flight.
 bird_count : List(Trees.RoadsideTree), { rider_along : F64, cam_focal : Pixels } -> I64
-bird_count = |trees, seen_from| birds_on(trees, seen_from).len().to_i64_wrap()
+bird_count = |trees, { rider_along, cam_focal }|
+	birds_on(trees, { rider_along, cam_focal, encounter: Unplanned }).len().to_i64_wrap()
 
 ## A segment where a cat crosses, with the same trees: it has no bird.
 segment_with_cat : Segment
 segment_with_cat = {
-	..segment_of(left_trees),
+	..segment_of(bird_trees),
 	encounter: World.route.segment_at(Route.SegmentIndex.number(3)).encounter,
 }
 
-expect bird_count(left_trees, { rider_along: 0.0, cam_focal: Pixels.of(500.0) }) == 1
-expect bird_count(left_trees.drop_last(1), { rider_along: 0.0, cam_focal: Pixels.of(500.0) }) == 0
-expect bird_count(left_trees, { rider_along: 99.5, cam_focal: Pixels.of(500.0) }) == 1
-expect bird_count(left_trees, { rider_along: 99.7, cam_focal: Pixels.of(500.0) }) == 0
-expect bird_count(left_trees, { rider_along: 120.0, cam_focal: Pixels.of(500.0) }) == 0
-expect bird_count(left_trees, { rider_along: 0.0, cam_focal: Pixels.of(91.0) }) == 1
-expect bird_count(left_trees, { rider_along: 0.0, cam_focal: Pixels.of(90.0) }) == 0
+expect bird_count(bird_trees, { rider_along: 0.0, cam_focal: Pixels.of(500.0) }) == 1
+expect bird_count(left_trees, { rider_along: 0.0, cam_focal: Pixels.of(500.0) }) == 0
+expect bird_count(
+	left_trees.drop_last(1).append(far_tree),
+	{ rider_along: 0.0, cam_focal: Pixels.of(500.0) },
+) == 0
+expect bird_count(bird_trees, { rider_along: 99.5, cam_focal: Pixels.of(500.0) }) == 1
+expect bird_count(bird_trees, { rider_along: 99.7, cam_focal: Pixels.of(500.0) }) == 0
+expect bird_count(bird_trees, { rider_along: 120.0, cam_focal: Pixels.of(500.0) }) == 0
+expect bird_count(bird_trees, { rider_along: 0.0, cam_focal: Pixels.of(91.0) }) == 1
+expect bird_count(bird_trees, { rider_along: 0.0, cam_focal: Pixels.of(90.0) }) == 0
 expect
-	birds_on_segment(segment_with_cat, { rider_along: 0.0, cam_focal: Pixels.of(500.0) }).len()
+	EncounterSighting.birds_in_view(
+		RoadAhead.RoadView.ahead_of(
+			Route.from_segments([segment_with_cat]),
+			Route.SegmentIndex.first,
+		),
+		{ camera: origin_camera, encounter: Unplanned },
+	).len()
 		== 0
 
-## Two segments on the road ahead, the rider at the start of the first.
+## Two segments on the road ahead, the rider at the start of the first, whose
+## bird is in flight.
 two_segments : List(Pipeline.Sighted(PosedBird))
 two_segments = EncounterSighting.birds_in_view(
 	RoadAhead.RoadView.ahead_of(
-		Route.from_segments([going_straight_on(segment_of(left_trees)), segment_of(left_trees)]),
+		Route.from_segments([going_straight_on(segment_of(bird_trees)), segment_of(bird_trees)]),
 		Route.SegmentIndex.first,
 	),
-	origin_camera,
+	{ camera: origin_camera, encounter: flight_at_step(118) },
 )
 
+# Only the rider's own segment plays its encounter: the bird ahead still sits.
 expect
-	match two_segments.map(|bird| bird.spot.foot().forward()) {
-		[near, far] => near == Distance.metres(100.0) and near < far
+	match two_segments.map(|bird| bird.kind.pose) {
+		[near, far] => near != Perched and far == Perched
 		_ => crash "CrossModuleExpects: each of two segments has a bird in view"
 	}
 
@@ -537,18 +565,15 @@ cat_route = Route.from_segments([
 cat_road : RoadAhead.RoadView
 cat_road = RoadAhead.RoadView.ahead_of(cat_route, Route.SegmentIndex.first)
 
-metre_a_step : Speed
-metre_a_step = Speed.metres_a_step(1.0)
-
 ## The cat on the segment at `number` on the road ahead, if it is in view from
-## the origin at 1 m a step.
-cat_at : U32 -> Try(Pipeline.Sighted(PosedCat), [NoCat, BehindCamera, TooSmall])
+## the origin, before any crossing is planned.
+cat_at : U32 -> Try(Pipeline.Sighted(PosedCat), [NoCat, Over, BehindCamera, TooSmall])
 cat_at = |number| EncounterSighting.segment_cat(
 	cat_road,
 	{
 		camera: origin_camera,
 		in_view: numbered_segment(cat_road, number),
-		speed: metre_a_step,
+		encounter: Unplanned,
 	},
 )
 
@@ -589,7 +614,7 @@ ride_sightings = |along| EncounterSighting.cats_in_view(
 	cat_road,
 	{
 		camera: { ..origin_camera, vantage: { ..origin, along: Along.metres(along) } },
-		speed: metre_a_step,
+		encounter: Unplanned,
 	},
 )
 
@@ -627,10 +652,11 @@ expect ride_sightings(200.0).len() == 1
 expect ride_sightings(500.0).len() == 1
 expect ride_sightings(600.0).len() == 0
 
-# The sighting looks along the whole road ahead, and the reaction only at the
-# rider's own segment. They agree because a crossing starts on its own segment: even at
-# top speed it starts closer to the cat than the cat is to the segment's start,
-# and a rider comes onto a segment no further along than that.
+# The sighting plays only the rider's own segment's encounter, and the ride
+# plans that encounter only once the rider is on its segment. They agree because
+# an animation is planned on its own segment: even at top speed its planning gap
+# is shorter than the critter is from the segment's start, and a rider comes onto
+# a segment no further along than that.
 ## The cats of the route, each with its segment.
 route_cats : List({ segment : Segment, crossing : CatCrossing })
 route_cats = World.route.route_segments().join_map(
@@ -641,32 +667,31 @@ route_cats = World.route.route_segments().join_map(
 		},
 )
 
-## How far short of a cat a crossing starts, at the fastest a rider goes.
-farthest_start : Distance
-farthest_start = Cat.clear_gap.plus(VehicleLimits.top_speed.distance_in(Cat.crossing_steps))
+## The flights of the route.
+route_flights : List(BirdFlight.Flight)
+route_flights = World.route.route_segments().join_map(
+	|segment|
+		match segment.encounter {
+			BirdHere(flight) => [flight]
+			CatCrosses(_) | QuietRoad => []
+		},
+)
+
+## How far short of a cat its crossing is planned.
+cat_planning_gap : Distance
+cat_planning_gap = Animation.farthest_planning_gap(Cat.crossing_span)
+
+## How far short of a bird's perch its flight is planned.
+bird_planning_gap : Distance
+bird_planning_gap = Animation.farthest_planning_gap(BirdFlight.flight_span)
 
 expect route_cats.len() == 3
-expect farthest_start.to_metres() == 98.0
-expect farthest_start < Segment.cat_along.plus(CatCrossing.cat_beyond_tree).from_start()
-expect route_cats.all(|{ crossing, .. }| farthest_start < crossing.along.from_start())
-
-## The speed a rider leaves `segment` at: the bend's, or none at the route's end.
-leaving_speed : Segment -> Speed
-leaving_speed = |segment|
-	match segment.ending {
-		Bends({ turn, .. }) => VehicleLimits.turn_speed(turn.abs())
-		RouteEnds => Speed.at_rest
-	}
-
-# The reaction ends with its segment, so the cat's hold has to have faded by then
-# or it would snap to nothing there. Braking for the bend only hurries the fade.
-expect
-	route_cats.all(
-		|{ segment, crossing }| {
-			gap = crossing.along.distance_from(Along.at(segment.length))
-			Cat.attention({ gap, speed: leaving_speed(segment) }).to_f64() == 0.0
-		},
-	)
+expect cat_planning_gap.to_metres() == 98.0
+expect cat_planning_gap < Segment.cat_along.plus(CatCrossing.cat_beyond_tree).from_start()
+expect route_cats.all(|{ crossing, .. }| cat_planning_gap < crossing.along.from_start())
+expect route_flights.len() == 3
+expect bird_planning_gap.to_metres() == 105.0
+expect route_flights.all(|{ from, .. }| bird_planning_gap < from.road_point.along.from_start())
 
 # BillboardSighting: how far along the road ahead each kind of critter is sighted.
 ## The road ahead of a rider on the first of a route of the world's first six
@@ -921,7 +946,7 @@ scene = Scene.scene_in_view(
 	{
 		camera: origin_camera,
 		facts: {
-			speed: VehicleLimits.starting_speed,
+			encounter: Unplanned,
 			truck: {
 				route_position: Distance.metres(500.0),
 				lit_truck: { headlights: Off, brake_lights: Off },
@@ -1099,6 +1124,7 @@ done = {
 		pace: Slowing,
 	},
 	clock: Clock.at_step(12345),
+	encounter_start: StartsAt(Clock.at_step(12300)),
 }
 
 expect {
@@ -1108,24 +1134,26 @@ expect {
 		and instant.rider.motorcycle.speed.to_metres_a_step() == 0.3
 		and instant.truck.route_position.to_metres() == 500.0
 		and instant.rider.eyes.look_depth.to_f64() == 0.0
+		and instant.encounter_start == Unplanned
 }
 
 # The gaze is home at each of the ride's crossings, and it did leave home. The
 # bike doesn't turn at a seam, and `gaze_yaw` is measured from the bike, so a
 # crossing carries the gaze over and it has no need to be reset.
 expect {
-	var $rider = RiderState.initial
+	var $instant = RideInstant.initial
 	var $crossings = 0
 	var $is_home_at_each = True
 	var $has_looked = False
-	while !Rider.is_finished($rider, World.route) {
-		next = Rider.rider_state_at_next_step($rider, World.route)
-		if next.segment_index != $rider.segment_index {
+	while !Rider.is_finished($instant.rider, World.route) {
+		next = RideInstant.next_or_restart(World.route, $instant)
+		if next.rider.segment_index != $instant.rider.segment_index {
 			$crossings = $crossings + 1
-			$is_home_at_each = $is_home_at_each and $rider.eyes.gaze_yaw == Angle.straight_ahead
+			is_home = $instant.rider.eyes.gaze_yaw == Angle.straight_ahead
+			$is_home_at_each = $is_home_at_each and is_home
 		}
-		$has_looked = $has_looked or next.eyes.gaze_yaw != Angle.straight_ahead
-		$rider = next
+		$has_looked = $has_looked or next.rider.eyes.gaze_yaw != Angle.straight_ahead
+		$instant = next
 	}
 	$crossings == 18 and $is_home_at_each and $has_looked
 }
@@ -1213,19 +1241,17 @@ expect {
 expect {
 	from = sunset_climax.minus(sunset_margin)
 	until = sunset_climax.plus(sunset_margin)
-	var $rider = RiderState.initial
-	var $clock = Clock.start
-	while $clock != from {
-		$rider = Rider.rider_state_at_next_step($rider, World.route)
-		$clock = $clock.next()
+	var $instant = RideInstant.initial
+	while $instant.clock != from {
+		$instant = RideInstant.next_or_restart(World.route, $instant)
 	}
 	var $is_on_long_segment = True
-	while $clock != until {
-		$is_on_long_segment = $is_on_long_segment and $rider.segment_index == longest_segment_index
-		$rider = Rider.rider_state_at_next_step($rider, World.route)
-		$clock = $clock.next()
+	while $instant.clock != until {
+		is_on_it = $instant.rider.segment_index == longest_segment_index
+		$is_on_long_segment = $is_on_long_segment and is_on_it
+		$instant = RideInstant.next_or_restart(World.route, $instant)
 	}
-	$is_on_long_segment and $rider.segment_index == longest_segment_index
+	$is_on_long_segment and $instant.rider.segment_index == longest_segment_index
 }
 
 # Steve's rule: the ride reaches full night, past dusk, before it finishes. The
@@ -1233,14 +1259,86 @@ expect {
 # The sky only darkens as the clock runs, so full dusk at the finish means it
 # came at or before it.
 expect {
-	var $rider = RiderState.initial
-	var $clock = Clock.start
-	while !Rider.is_finished($rider, World.route) {
-		$rider = Rider.rider_state_at_next_step($rider, World.route)
-		$clock = $clock.next()
+	var $instant = RideInstant.initial
+	while !Rider.is_finished($instant.rider, World.route) {
+		$instant = RideInstant.next_or_restart(World.route, $instant)
 	}
-	Sky.dusk_at($clock) == Fraction.whole
+	Sky.dusk_at($instant.clock) == Fraction.whole
 }
+
+## What the encounters do over the whole ride: how many steps a bird is in
+## flight and a cat crosses, whether every flying bird is ahead of the rider,
+## how many cat segments the rider leaves, at a bend or the route's end, and
+## whether each cat's hold on the eye has faded by then.
+ride_encounters : {
+	flying_step_count : U64,
+	crossing_step_count : U64,
+	is_bird_ahead_throughout : Bool,
+	cat_exits : U64,
+	is_faded_at_each_exit : Bool,
+}
+ride_encounters = {
+	var $instant = RideInstant.initial
+	var $flying_step_count = 0
+	var $crossing_step_count = 0
+	var $is_bird_ahead_throughout = True
+	var $cat_exits = 0
+	var $is_faded_at_each_exit = True
+	while !Rider.is_finished($instant.rider, World.route) {
+		segment = World.route.segment_at($instant.rider.segment_index)
+		timing = RideInstant.encounter_timing($instant)
+		next = RideInstant.next_or_restart(World.route, $instant)
+		is_leaving =
+			next.rider.segment_index != $instant.rider.segment_index
+				or Rider.is_finished(next.rider, World.route)
+		match segment.encounter {
+			BirdHere(flight) => {
+				stage = BirdFlight.flight_stage(timing)
+				match stage {
+					Playing(_) => {
+						bird = BirdFlight.instant_at(flight, stage)
+						$flying_step_count = $flying_step_count + 1
+						$is_bird_ahead_throughout = $is_bird_ahead_throughout
+							and bird.location.along > $instant.rider.motorcycle.along
+					}
+					Waiting | Past(_) => {}
+				}
+			}
+			CatCrosses(_) => {
+				if Cat.is_crossing(Cat.crossing_stage(timing)) {
+					$crossing_step_count = $crossing_step_count + 1
+				}
+				if is_leaving {
+					$cat_exits = $cat_exits + 1
+					$is_faded_at_each_exit = $is_faded_at_each_exit
+						and EncounterReaction.encounter_attention(segment, timing) == Attention.none
+				}
+			}
+			QuietRoad => {}
+		}
+		$instant = next
+	}
+	{
+		flying_step_count: $flying_step_count,
+		crossing_step_count: $crossing_step_count,
+		is_bird_ahead_throughout: $is_bird_ahead_throughout,
+		cat_exits: $cat_exits,
+		is_faded_at_each_exit: $is_faded_at_each_exit,
+	}
+}
+
+# Steve's rule: the rider can't overtake a bird. Each of the three birds flies
+# its whole flight on the ride, and at every step of it the bird is ahead of the
+# rider.
+expect ride_encounters.flying_step_count == 3 * BirdFlight.flight_poses.len()
+expect ride_encounters.is_bird_ahead_throughout
+
+# Each of the three cats crosses on the ride. The reaction ends with its
+# segment, so the cat's hold has to have faded by then or it would snap to
+# nothing there.
+expect ride_encounters.crossing_step_count == 3 * Cat.crossing_steps.to_u32().to_u64()
+expect ride_encounters.cat_exits == 3
+expect ride_encounters.is_faded_at_each_exit
 
 # A frame of the ride draws.
 expect {
@@ -1357,7 +1455,10 @@ expect
 		),
 	].all(
 		|(facing, heading)| {
-			camera = RiderCamera.of(rider_facing(facing), World.route)
+			camera = RiderCamera.of(
+				rider_facing(facing),
+				{ route: World.route, encounter: Unplanned },
+			)
 			camera.heading.to_radians() == heading
 		},
 	)
@@ -1373,22 +1474,30 @@ expect {
 
 # The camera's focal length: the view widens as the rider leans, and as the
 # rider's attention is caught, by the cat on the road or by a look to the side.
-## The focal length of the camera for `rider` on the cat route.
+## The focal length of the camera for `rider` on the cat route, before any
+## encounter is planned.
 focal_of : RiderState -> Pixels
-focal_of = |rider| RiderCamera.of(rider, cat_route).cam_focal
+focal_of = |rider| RiderCamera.of(rider, { route: cat_route, encounter: Unplanned }).cam_focal
+
+## An encounter ten steps in.
+ten_steps_in : Animation.Timing
+ten_steps_in = Animation.timing_of(StartsAt(Clock.at_step(100)), Clock.at_step(110))
+
+## The focal length of the camera for `rider` on the cat route, with the
+## encounter on their segment ten steps in.
+focal_ten_steps_in : RiderState -> Pixels
+focal_ten_steps_in = |rider| RiderCamera.of(
+	rider,
+	{ route: cat_route, encounter: ten_steps_in },
+).cam_focal
 
 ## A rider at the start of the first segment, upright and looking ahead.
 upright : RiderState
 upright = RiderState.initial
 
-## A rider 120 m along a segment: near enough to its cat, if it has one, to
-## notice it.
-rider_near_cat_on : U32 -> RiderState
-rider_near_cat_on = |number| {
-	segment_index: Route.SegmentIndex.number(number),
-	motorcycle: { ..upright.motorcycle, along: Along.metres(120.0) },
-	eyes: upright.eyes,
-}
+## An upright rider on the segment at `number`.
+rider_on : U32 -> RiderState
+rider_on = |number| { ..upright, segment_index: Route.SegmentIndex.number(number) }
 
 ## The same rider leaning `lean`.
 leaning = |rider, lean| { ..rider, motorcycle: { ..rider.motorcycle, lean } }
@@ -1397,16 +1506,17 @@ leaning = |rider, lean| { ..rider, motorcycle: { ..rider.motorcycle, lean } }
 looking_hard : RiderState -> RiderState
 looking_hard = |rider| { ..rider, eyes: { ..rider.eyes, look_depth: Fraction.whole } }
 
-## How strongly the encounter on this rider's segment holds their attention.
-encounter_attention_of : RiderState -> F64
-encounter_attention_of = |rider|
+## How strongly the encounter on this rider's segment, at `encounter`, holds
+## their attention.
+encounter_attention_of : RiderState, Animation.Timing -> F64
+encounter_attention_of = |rider, encounter|
 	EncounterReaction.encounter_attention(
 		cat_route.segment_at(rider.segment_index),
-		rider.motorcycle,
+		encounter,
 	).to_f64()
 
 expect focal_of(upright).minus(Lens.resting_focal) == Pixels.zero
-expect encounter_attention_of(upright) == 0.0
+expect encounter_attention_of(upright, Unplanned) == 0.0
 expect Gaze.gaze_attention(Fraction.zero).to_f64() == 0.0
 expect Lens.cam_focal({
 	lean: upright.motorcycle.lean,
@@ -1442,10 +1552,30 @@ expect {
 		and focal_at_lean(ten_times).minus(focal_at_lean(Lens.full_lean)) == Pixels.zero
 }
 
-expect encounter_attention_of(rider_near_cat_on(1)) > 0.0
-expect !(encounter_attention_of({ ..upright, segment_index: Route.SegmentIndex.number(1) }) > 0.0)
-expect !(encounter_attention_of(rider_near_cat_on(0)) > 0.0)
-expect focal_of(rider_near_cat_on(1)) < focal_of(rider_near_cat_on(0))
+expect encounter_attention_of(rider_on(1), ten_steps_in) > 0.0
+expect !(encounter_attention_of(rider_on(1), Unplanned) > 0.0)
+expect !(encounter_attention_of(rider_on(0), ten_steps_in) > 0.0)
+expect focal_ten_steps_in(rider_on(1)) < focal_ten_steps_in(rider_on(0))
+
+# While a cat crosses, the rider eases off: the throttle holds the acceleration
+# at none. Before the crossing it opens.
+## The change of speed Throttle makes for a rider at the start of the world's
+## cat segment, going 0.3 m a step, with its crossing at `encounter`.
+cat_throttle_change : Animation.Timing -> F64
+cat_throttle_change = |encounter| {
+	motorcycle = { ..Motorcycle.initial, speed: Speed.metres_a_step(0.3) }
+	segment = World.route.segment_at(Route.SegmentIndex.number(3))
+	Throttle.next_speed(motorcycle, { segment, encounter })
+		.change_from(motorcycle.speed)
+		.to_metres_a_step_each_step()
+}
+
+expect cat_throttle_change(ten_steps_in) == 0.0
+expect cat_throttle_change(Unplanned) > 0.0
+expect {
+	before_it = Animation.timing_of(StartsAt(Clock.at_step(100)), Clock.at_step(99))
+	cat_throttle_change(before_it) > 0.0
+}
 expect focal_of(looking_hard(upright)) < focal_of(upright)
 expect {
 	half_look = { ..upright, eyes: { ..upright.eyes, look_depth: Fraction.of(0.5) } }
@@ -1577,7 +1707,7 @@ wide_of_road = |lean| {
 		lean: Angle.Lean.radians(lean),
 	}
 	first_segment = World.route.segment_at(Route.SegmentIndex.number(0))
-	Throttle.next_speed(motorcycle, first_segment)
+	Throttle.next_speed(motorcycle, { segment: first_segment, encounter: Unplanned })
 		.change_from(motorcycle.speed)
 		.to_metres_a_step_each_step()
 }

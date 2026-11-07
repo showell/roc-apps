@@ -1,6 +1,7 @@
 ## Scene gathers what one frame shows beside the road: the trees, towers,
 ## billboards, cats, guard rails, the truck and the birds in view, each kind
 ## found by its own sighting.
+import Animation
 import Billboard
 import Clock
 import EncounterSighting
@@ -20,7 +21,6 @@ import TowerSighting
 import TreeSighting
 import LitTruck
 import TruckSighting
-import Speed
 
 ## The things in view, each kind in its own list.
 Scene := {
@@ -33,10 +33,10 @@ Scene := {
 	birds : List(Pipeline.Sighted(PosedBird)),
 }.{
 
-	## What the sightings read beyond the road: the rider's speed, where the
-	## truck is and how it looks, and the clock.
+	## What the sightings read beyond the road: where the encounter on the
+	## rider's segment stands, where the truck is and how it looks, and the clock.
 	RideFacts : {
-		speed : Speed,
+		encounter : Animation.Timing,
 		truck : { route_position : Distance, lit_truck : LitTruck },
 		clock : Clock,
 	}
@@ -51,7 +51,7 @@ Scene := {
 		trees = TreeSighting.trees_in_view(road, camera)
 		towers = TowerSighting.towers_in_view(road, { camera, clock: facts.clock })
 		billboards = BillboardSighting.billboards_in_view(road, camera)
-		cats = EncounterSighting.cats_in_view(road, { camera, speed: facts.speed })
+		cats = EncounterSighting.cats_in_view(road, { camera, encounter: facts.encounter })
 		rails = RailSighting.rail_quads_in_view(road, camera)
 		truck_at = TruckSighting.truck_in_view(
 			road,
@@ -61,7 +61,7 @@ Scene := {
 				lit_truck: facts.truck.lit_truck,
 			},
 		)
-		birds = EncounterSighting.birds_in_view(road, camera)
+		birds = EncounterSighting.birds_in_view(road, { camera, encounter: facts.encounter })
 		{
 			trees,
 			towers,
