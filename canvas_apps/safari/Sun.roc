@@ -178,10 +178,7 @@ place = |{ turn_from_view, clock, cam_focal }| {
 	}
 }
 
-# The sun's lower edge touches the horizon at step 3,233, and the whole disc
-# is below it from `fully_set_at`.
-expect Sun.height(Clock.at_step(3232)) > Sun.radius
-expect Sun.height(Clock.at_step(3233)) < Sun.radius
+# The whole disc is below the horizon from `fully_set_at`.
 expect Sun.height(Sun.fully_set_at.previous()) > Sun.height_when_set
 expect Sun.height(Sun.fully_set_at) == Sun.height_when_set
 

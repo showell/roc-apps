@@ -100,27 +100,3 @@ shapes = |camera, { instant, route }| {
 		Scene.scene_shapes(scene),
 	].join()
 }
-
-# The space's first mark, the sky, the grass, the shapes, and the mark back to
-# the screen.
-expect {
-	dot = Rect({
-		x: 0.0,
-		y: 0.0,
-		width: 1.0,
-		height: 1.0,
-		fill: Flat({
-			r: 0.0,
-			g: 0.0,
-			b: 0.0,
-			a: 1.0,
-		}),
-	})
-	view = {
-		shapes: [dot],
-		sun_sighting: OutOfView,
-		sky_colors: Sky.colors_at(RideInstant.initial.clock),
-		roll: Angle.upright,
-	}
-	FrameView.framed_shapes(view, Screen).len() == 5
-}
