@@ -54,13 +54,31 @@ the most primitive first, with no function bodies. Read it the way a newcomer
 would, from the top. Types past depth 3 are named in one line and not
 followed. Read their source only if a finding needs it.
 
+The walk has more than the types (the recipe's header lists every setting):
+- **Hub types:** `Shapes.Shape`, `Brush.*` and `World.Segment` are named once
+  and not expanded. Pass `stop=` to change the list, as when World is the module
+  you review.
+- **Less detail at depth:** past depth 1, and for unit wrappers such as
+  `Distance` at every depth, members show by name only.
+- **Who uses each member:** each of the module's own members carries a
+  count of the other files that use it, split into production and tests. A
+  `# Public, but used only in this file` line names the private helpers
+  wearing public names.
+- **"Named by":** every signature and type in other modules that mentions the
+  module's types, tagged `(test)` or `(private)`. This is where the wrappers and
+  makers of a kind show up. `named_by=production` hides the tagged ones.
+- **"Imported but not in any printed type":** modules the code uses only in
+  function bodies, which the walk can't show. Read them.
+
 ### 2. Read the code behind what smells
 
 The walk shows the surface. Open the source where a type, a name or a
 signature smells, and check:
 
-- **Who calls what.** grep the callers. A member of a type's `.{ }` block that
-  nothing outside the file uses is a private helper wearing a public name.
+- **Who calls what.** The walk's use counts and "named by" cover most of it.
+  grep for what they can't see, such as a caller that takes the type as an open
+  record. A member of a type's `.{ }` block that nothing outside the file uses
+  is a private helper wearing a public name.
 - **What the function really returns.** A list that holds one thing or none,
   a crash that a better type would make impossible, or a record that repeats
   another type's fields.
