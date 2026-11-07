@@ -9,6 +9,7 @@ import BirdFlight
 import Cat
 import Distance
 import Cows
+import Geom
 import Pigs
 import Scenery
 import Trees
@@ -353,10 +354,12 @@ built_segment = |plan, index| {
 		pig_interest,
 		exit_turn: plan.turn,
 		commit_along: match plan.ending {
-			Continues => {
-				exit_tan = plan.turn.abs().to_radians().tan()
-				Along.at(plan.length.minus(Scenery.road_half_width.divided_by(exit_tan)))
-			}
+			Continues =>
+				Geom.commit_along({
+					segment_length: plan.length,
+					turn: plan.turn,
+					road_width: Scenery.road_width,
+				})
 			Terminates => Along.at(plan.length)
 		},
 		mid_tower: if plan.length > World.mid_tower_min_length {

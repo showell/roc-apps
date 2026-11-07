@@ -141,6 +141,14 @@ Geom :: [].{
 		}
 	}
 
+	## How far along the segment before `bend` a rider on the middle of the road
+	## comes onto the next segment's road: its edge meets the middle here.
+	commit_along : Geom.Bend -> Along
+	commit_along = |bend| {
+		exit_tan = bend.turn.abs().to_radians().tan()
+		Along.at(bend.segment_length.minus(bend.road_width.divided_by(2.0).divided_by(exit_tan)))
+	}
+
 	## Where two lines cross. They must not be parallel.
 	line_crossing : { first_line : Geom.Line, second_line : Geom.Line } -> Geom.RiderPoint
 	line_crossing = |{ first_line, second_line }| {
@@ -380,6 +388,23 @@ expect
 			along_miss = back.along.distance_from(start.along).to_metres().abs()
 			across_miss = back.from_left.minus(start.from_left).to_metres().abs()
 			along_miss <= 0.000000001 and across_miss <= 0.000000001
+		},
+	)
+
+# The commit point is where the middle of the road reaches the next road's edge:
+# short of it a rider there is off that road, and just past it on.
+expect
+	[50.0, -70.0, 15.0, -80.0].all(
+		|degrees| {
+			bend = bend_of(degrees)
+			commit = Geom.commit_along(bend)
+			from_next_middle = |along| {
+				on_next = Geom.centred_point_after({ along, across: Across.middle }, bend)
+				on_next.across.distance_from_middle().to_metres()
+			}
+			(from_next_middle(commit) - 2.0).abs() <= 0.000000001
+				and from_next_middle(commit.minus(Distance.metres(0.01))) > 2.0
+				and from_next_middle(commit.plus(Distance.metres(0.01))) < 2.0
 		},
 	)
 
