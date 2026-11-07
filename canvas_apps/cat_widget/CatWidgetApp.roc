@@ -1,12 +1,14 @@
 ## The widget for the Safari tutorial's chapter on the cat. Video recorder buttons
-## run how far the rider is from the cat, and each frame is worked out from that
-## gap alone, so the crossing plays forward and backward. The picture looks down
-## the road at the cat, with the road's width to scale. Below it, the buttons and
-## four lines of text that say what Cat and EncounterReaction make of the gap.
+## run how far the rider is from the cat, coming at a metre a step, and each frame
+## is worked out from that gap alone: the step of the ride it is, and the start the
+## ride plans for the crossing, so the crossing plays forward and backward. The
+## picture looks down the road at the cat, with the road's width to scale. Below
+## it, the buttons and four lines of text that say what Cat and EncounterReaction
+## make of the gap.
+import game.Animation
 import game.Cat
+import game.Clock
 import game.EncounterReaction
-import game.EncountersAhead
-import game.Route
 import game.Distance
 import game.Pixels
 import game.PosedCat
@@ -107,10 +109,34 @@ road_shapes = {
 	]
 }
 
+## The ride's clock with the rider `gap` short of the cat: the whole steps since
+## the far end of the range, at step 0.
+clock_at : Distance -> Clock
+clock_at = |gap| Clock.at_step(closing_gap.first.minus(gap).portion(rider_speed.step_length()).to_u32_wrap())
+
+## The crossing's timing with the rider `gap` short of the cat: planned as the
+## ride plans it, on the first step from the far end of the range that the rider
+## comes within reach.
+crossing_timing : Distance -> Animation.Timing
+crossing_timing = |gap| {
+	now = clock_at(gap)
+	var $step = Clock.start
+	var $start = Unplanned
+	while $start == Unplanned and !(now < $step) {
+		approach = {
+			gap: closing_gap.first.minus(rider_speed.distance_in($step.steps_since(Clock.start))),
+			speed: rider_speed,
+		}
+		$start = Animation.planned_start(Cat.crossing_span, { approach, now: $step })
+		$step = $step.next()
+	}
+	Animation.timing_of($start, now)
+}
+
 ## The cat as `gap` finds it, drawn by Safari's own stills.
 cat_shapes : Distance -> List(Shapes.Shape)
 cat_shapes = |gap| {
-	instant = Cat.instant_at(World.first_cat_crossing, { gap, speed: rider_speed })
+	instant = Cat.instant_at(World.first_cat_crossing, Cat.crossing_stage(crossing_timing(gap)))
 	StillShapes.still_shapes(
 		{
 			feet: {
@@ -127,17 +153,12 @@ cat_shapes = |gap| {
 ## What the crossing and the rider's reaction to it are at `gap`, a line each.
 status_lines : Distance -> List(Str)
 status_lines = |gap| {
-	approach = { gap, speed: rider_speed }
-	instant = Cat.instant_at(World.first_cat_crossing, approach)
-	rider = {
-		segment_index: Route.SegmentIndex.first,
-		motorcycle: { along: World.first_cat_crossing.along.minus(gap), speed: rider_speed },
-	}
-	cat_road_alone = Route.from_segments([{ ..World.first_cat_segment, ending: RouteEnds }])
-	encounters = EncountersAhead.encounters_ahead(cat_road_alone, rider)
-	throttle = EncounterReaction.encounter_throttle(encounters)
+	timing = crossing_timing(gap)
+	stage = Cat.crossing_stage(timing)
+	instant = Cat.instant_at(World.first_cat_crossing, stage)
+	throttle = EncounterReaction.encounter_throttle(World.first_cat_segment, timing)
 	[
-		ReadoutText.stage_text(Cat.crossing_stage(approach)),
+		ReadoutText.stage_text(stage),
 		"Pose: ${pose_name(instant.pose)}",
 		"Gap: ${ReadoutText.tenths_text(gap.to_metres())} m",
 		throttle_text(throttle),
@@ -176,3 +197,18 @@ expect
 expect
 	status_lines(Distance.metres(1.5))
 		== ["Past", "Pose: Collapse", "Gap: 1.5 m", "The rider may accelerate"]
+
+# The crossing starts 41 m short of the cat, 3 m for the gap it ends at and 38
+# for its steps, and plays a frame a metre.
+expect
+	status_lines(Distance.metres(41.0))
+		== ["Playing: frame 1", "Pose: Stride", "Gap: 41.0 m", "The rider may not accelerate"]
+expect
+	status_lines(Distance.metres(41.125))
+		== ["Waiting", "Pose: Rest", "Gap: 41.1 m", "The rider may accelerate"]
+expect
+	status_lines(Distance.metres(3.5))
+		== ["Playing: frame 38", "Pose: Land", "Gap: 3.5 m", "The rider may not accelerate"]
+expect
+	status_lines(Distance.metres(3.0))
+		== ["Past", "Pose: Collapse", "Gap: 3.0 m", "The rider may accelerate"]

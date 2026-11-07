@@ -8,12 +8,12 @@
 ## frame's total, and the second names the last layer on.
 import game.RoadAhead
 import game.Clock
-import game.EncountersAhead
 import game.FrameView
 import game.Grass
-import game.Ground
+import game.GroundPatch
 import game.GroundSighting
 import game.Mountains
+import game.RideInstant
 import game.RiderCamera
 import game.SafariApp
 import game.Scene
@@ -112,7 +112,11 @@ scene_shapes_on = |on_layers| {
 		billboards: things_on(paused_scene.billboards, { on_layers, layer: Critters }),
 		cats: things_on(paused_scene.cats, { on_layers, layer: MovingThings }),
 		rails: things_on(paused_scene.rails, { on_layers, layer: Rails }),
-		trucks: things_on(paused_scene.trucks, { on_layers, layer: MovingThings }),
+		truck: if on_layers.contains(MovingThings) {
+			paused_scene.truck
+		} else {
+			Err(NoTruck)
+		},
 		birds: things_on(paused_scene.birds, { on_layers, layer: MovingThings }),
 	}
 	Scene.scene_shapes(only)
@@ -129,7 +133,10 @@ backdrop_pieces = |view| [
 
 ## The camera the ride sees through at the step on show.
 paused_camera : RiderCamera
-paused_camera = RiderCamera.of(paused_tour.instant.rider, paused_tour.route)
+paused_camera = RiderCamera.of(
+	paused_tour.instant.rider,
+	{ route: paused_tour.route, encounter: RideInstant.encounter_timing(paused_tour.instant) },
+)
 
 ## The road ahead of the rider at the step on show.
 paused_road : RoadAhead.RoadView
@@ -148,7 +155,7 @@ paused_scene = {
 		{
 			camera: paused_camera,
 			facts: {
-				encounters: EncountersAhead.encounters_ahead(paused_tour.route, instant.rider),
+				encounter: RideInstant.encounter_timing(instant),
 				truck: {
 					route_position: instant.truck.route_position,
 					lit_truck: FrameView.lit_truck(instant),
@@ -165,7 +172,7 @@ ground_parts : List(Piece)
 ground_parts = {
 	skyline = Mountains.mountain_shapes(paused_camera, Sky.dusk_at(paused_tour.instant.clock))
 	ground = GroundSighting.patches_in_view(paused_road, paused_camera).keep_oks(
-		|patch| Ground.patch_shape(patch, paused_camera.cam_focal),
+		|patch| GroundPatch.patch_shape(patch, paused_camera.cam_focal),
 	)
 	[{ layer: Mountains, shapes: skyline }, { layer: Road, shapes: ground }]
 }

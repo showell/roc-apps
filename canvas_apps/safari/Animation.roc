@@ -1,7 +1,9 @@
-## How a critter plays out as the rider comes. A rule turns an `Approach` into a
-## `Stage`, and a timeline turns a `Stage` into an `Instant`. The two know nothing
-## of each other: `stage_over_gap` or `stage_over_step_span` says how far along an animation is,
-## and a timeline looks up the frame that far through its list.
+## How a critter plays out on the ride. An encounter's animation runs on its own
+## clock, a frame a step from the step it starts at, and never looks at the
+## rider. The ride picks that step once, when the rider first comes within
+## reach, from how the rider is coming then, so that the animation ends as the
+## rider arrives. A `Timing` says where the animation has got to as a `Stage`,
+## and a timeline turns a `Stage` into an `Instant`.
 ##
 ## A timeline is a list of frames, each a pose and a location, so a critter's
 ## whole animation reads in one place. Nothing here plays a timeline but that lookup.
@@ -9,12 +11,14 @@
 ## rest somewhere no frame ever reaches.
 import Across
 import Along
+import Clock
 import Distance
 import Easing
 import Fraction
 import Geom
 import Speed
 import Steps
+import VehicleLimits
 
 Animation :: [].{
 
@@ -22,42 +26,79 @@ Animation :: [].{
 	## the rider's speed.
 	Approach : { gap : Distance, speed : Speed }
 
-	## Where an animation has got to: not begun, playing and this far through,
-	## or over, with the rider this far beyond its end.
-	Stage : [Waiting, Playing(Fraction), Past(Distance)]
+	## When the encounter on the rider's segment starts: not planned yet, or at
+	## a step of the ride's clock. The ride keeps one, and forgets it at each new
+	## segment, since only the encounter on the rider's own segment is ever live.
+	Start : [Unplanned, StartsAt(Clock)]
 
-	## The gaps an animation plays between.
-	GapSpan : { starts_at : Distance, ends_at : Distance }
+	## Where an encounter's clock stands: not planned yet, or planned to start
+	## at `first_step`, with the ride's clock at `now`.
+	Timing : [Unplanned, Planned({ first_step : Clock, now : Clock })]
 
-	## How many steps an animation plays for, and the gap it ends at.
-	StepSpan : { length : Steps, ends_at : Distance }
-
-	## An animation that plays while the rider closes from a gap of `starts_at`
-	## to `ends_at`, however fast. It is playing only strictly between the two,
-	## so a critter is at rest at both ends.
-	stage_over_gap : Animation.GapSpan, { gap : Distance, .. } -> Animation.Stage
-	stage_over_gap = |{ starts_at, ends_at }, { gap, .. }|
-		if gap <= ends_at {
-			Past(ends_at.minus(gap))
-		} else if gap >= starts_at {
-			Waiting
-		} else {
-			Playing(Fraction.of(starts_at.minus(gap).portion(starts_at.minus(ends_at))))
+	## The timing of an encounter that starts at `start`, with the ride's clock
+	## at `now`.
+	timing_of : Animation.Start, Clock -> Animation.Timing
+	timing_of = |start, now|
+		match start {
+			Unplanned => Unplanned
+			StartsAt(first_step) => Planned({ first_step, now })
 		}
 
-	## An animation that plays one frame a step, and ends with the rider
-	## `ends_at` short: `stage_over_gap`, starting however far off the rider's speed
-	## covers `length` from there. A faster rider starts it sooner, so it
-	## finishes in time however fast the rider comes.
+	## Where an animation has got to: not begun, playing and this many steps in,
+	## which is the frame it shows, or over this many steps ago.
+	Stage : [Waiting, Playing(Steps), Past(Steps)]
+
+	## How many steps an animation plays for, a frame a step, and the gap from
+	## the rider to the critter it ends at.
+	StepSpan : { length : Steps, ends_at : Distance }
+
+	## How far from the critter an animation is planned for the fastest rider,
+	## who covers the most road while it plays. No plan is made farther off.
+	farthest_planning_gap : Animation.StepSpan -> Distance
+	farthest_planning_gap = |span|
+		span.ends_at.plus(VehicleLimits.top_speed.distance_in(span.length))
+
+	## The start of an animation that is to end as the rider comes within
+	## `ends_at`, planned at `now` from how the rider comes then. It starts now
+	## on the first step that a rider keeping their speed would arrive within
+	## its length, so a faster rider has it start farther off. Till then, and
+	## while the rider is at rest, it isn't planned. The plan looks at the
+	## rider's speed that once: after it, the critter doesn't care what the
+	## rider does.
 	##
-	## It takes the speed to be steady. A rider who slows mid-animation shortens
-	## what is left to cover, so the animation falls back a little, and one who
-	## stands still has set nothing going: they are `Waiting`.
-	stage_over_step_span : Animation.StepSpan, Animation.Approach -> Animation.Stage
-	stage_over_step_span = |{ length, ends_at }, approach| {
-		starts_at = ends_at.plus(approach.speed.distance_in(length))
-		stage_over_gap({ starts_at, ends_at }, approach)
-	}
+	## Planning on the step itself keeps the guess short, an animation's length
+	## ahead. A plan from farther off would take the speed to be steady for
+	## longer, and a rider speeding up meanwhile would arrive before the end.
+	planned_start : Animation.StepSpan,
+	{
+		approach : Animation.Approach,
+		now : Clock,
+	} -> Animation.Start
+	planned_start = |{ length, ends_at }, { approach, now }|
+		if approach.speed == Speed.at_rest {
+			Unplanned
+		} else if approach.gap <= ends_at.plus(approach.speed.distance_in(length)) {
+			StartsAt(now)
+		} else {
+			Unplanned
+		}
+
+	## Where an animation `length` steps long has got to at `timing`.
+	stage_at : Animation.Timing, Steps -> Animation.Stage
+	stage_at = |timing, length|
+		match timing {
+			Unplanned => Waiting
+			Planned({ first_step, now }) => {
+				end = first_step.plus(length)
+				if now < first_step {
+					Waiting
+				} else if now < end {
+					Playing(now.steps_since(first_step))
+				} else {
+					Past(now.steps_since(end))
+				}
+			}
+		}
 
 	## Where a critter is: a place on its segment, and how high it is off the
 	## ground.
@@ -95,21 +136,20 @@ Animation :: [].{
 	}
 
 	## A whole animation: the critter at rest before, the frames it plays through,
-	## each an equal share of the animation, and the critter at rest after.
+	## one a step, and the critter at rest after.
 	Timeline(pose) := {
 		before : Animation.Instant(pose),
 		frames : List(Animation.Instant(pose)),
 		after : Animation.Instant(pose),
 	}.{
 
-		## The critter at `stage`. Only a progress of the whole way falls past
-		## the last frame, and that is the rest after it.
+		## The critter at `stage`. A stage past the last frame is the rest after it.
 		instant : Animation.Timeline(pose), Animation.Stage -> Animation.Instant(pose)
 		instant = |Animation.Timeline.(timeline), stage|
 			match stage {
 				Waiting => timeline.before
-				Playing(progress) =>
-					match timeline.frames.get(frame_number(progress, timeline.frames.len())) {
+				Playing(steps_in) =>
+					match timeline.frames.get(steps_in.to_u32().to_u64()) {
 						Ok(frame) => frame
 						Err(OutOfBounds) => timeline.after
 					}
@@ -118,11 +158,53 @@ Animation :: [].{
 	}
 }
 
-## Which of `count` frames `progress` has reached, counting from 0. A progress
-## meant to land on the start of a frame can come out a rounding error short of
-## it, so a billionth of a frame counts as having arrived.
-frame_number : Fraction, U64 -> U64
-frame_number = |progress, count| (progress.to_f64() * count.to_f64() + 0.000000001).to_u64_wrap()
+## A span of 10 steps that ends 3 m short of the critter.
+ten_step_span : Animation.StepSpan
+ten_step_span = { length: Steps.of(10), ends_at: Distance.metres(3.0) }
+
+## The start a rider `gap` metres off at `speed` metres a step plans at step 100.
+planned_at : F64, F64 -> Animation.Start
+planned_at = |gap, speed|
+	Animation.planned_start(
+		ten_step_span,
+		{
+			approach: { gap: Distance.metres(gap), speed: Speed.metres_a_step(speed) },
+			now: Clock.at_step(100),
+		},
+	)
+
+# At 1 m a step the rider is 10 steps from the end 13 m off: the animation
+# starts there and nearer, and not farther off. At 2 m a step that is 23 m off.
+expect planned_at(13.0, 1.0) == StartsAt(Clock.at_step(100))
+expect planned_at(13.1, 1.0) == Unplanned
+expect planned_at(8.0, 1.0) == StartsAt(Clock.at_step(100))
+expect planned_at(23.0, 2.0) == StartsAt(Clock.at_step(100))
+expect planned_at(23.1, 2.0) == Unplanned
+
+# A rider at rest plans nothing, however near.
+expect planned_at(2.0, 0.0) == Unplanned
+
+# The fastest rider plans farthest off: 3 + 2.5 × 10 = 28 m.
+expect Animation.farthest_planning_gap(ten_step_span) == Distance.metres(28.0)
+expect planned_at(28.0, 2.5) == StartsAt(Clock.at_step(100))
+
+## The stage at step `now` of a 10-step animation starting at step 50.
+stage_now : U32 -> Animation.Stage
+stage_now = |now|
+	Animation.stage_at(
+		Animation.timing_of(StartsAt(Clock.at_step(50)), Clock.at_step(now)),
+		Steps.of(10),
+	)
+
+expect stage_now(49) == Waiting
+expect stage_now(50) == Playing(Steps.zero)
+expect stage_now(59) == Playing(Steps.of(9))
+expect stage_now(60) == Past(Steps.zero)
+expect stage_now(65) == Past(Steps.of(5))
+expect Animation.stage_at(
+	Animation.timing_of(Unplanned, Clock.at_step(60)),
+	Steps.of(10),
+) == Waiting
 
 ## Whether each of `got` is within a billionth of its `expected`.
 is_near : List(F64), List(F64) -> Bool
@@ -130,83 +212,6 @@ is_near = |got, expected| {
 	closeness = got.map2(expected, |one, wanted| (one - wanted).abs() <= 0.000000001)
 	got.len() == expected.len() and closeness.all(|is_close| is_close)
 }
-
-## A stage as numbers, so a table can hold each tag beside its payload: 0 for
-## waiting, 1 and its progress for playing, 2 and its metres for past.
-stage_numbers : Animation.Stage -> List(F64)
-stage_numbers = |stage|
-	match stage {
-		Waiting => [0.0, 0.0]
-		Playing(progress) => [1.0, progress.to_f64()]
-		Past(beyond) => [2.0, beyond.to_metres()]
-	}
-
-gap_stage : F64 -> Animation.Stage
-gap_stage = |gap|
-	Animation.stage_over_gap(
-		{ starts_at: Distance.metres(60.0), ends_at: Distance.metres(20.0) },
-		{ gap: Distance.metres(gap) },
-	)
-
-expect
-	[
-		(61.0, [0.0, 0.0]),
-		(60.0, [0.0, 0.0]),
-		(59.0, [1.0, 0.025]),
-		(40.0, [1.0, 0.5]),
-		(21.0, [1.0, 0.975]),
-		(20.0, [2.0, 0.0]),
-		(19.0, [2.0, 1.0]),
-	].all(|(gap, want)| is_near(stage_numbers(gap_stage(gap)), want))
-
-beat_stage : F64, F64 -> Animation.Stage
-beat_stage = |gap, speed|
-	Animation.stage_over_step_span(
-		{ length: Steps.of(10), ends_at: Distance.metres(3.0) },
-		{ gap: Distance.metres(gap), speed: Speed.metres_a_step(speed) },
-	)
-
-expect
-	[
-		(beat_stage(14.0, 1.0), [0.0, 0.0]),
-		(beat_stage(13.0, 1.0), [0.0, 0.0]),
-		(beat_stage(12.0, 1.0), [1.0, 0.1]),
-		(beat_stage(8.0, 1.0), [1.0, 0.5]),
-		(beat_stage(4.0, 1.0), [1.0, 0.9]),
-		(beat_stage(3.0, 1.0), [2.0, 0.0]),
-		(beat_stage(1.0, 1.0), [2.0, 2.0]),
-		(beat_stage(23.0, 2.0), [0.0, 0.0]),
-		(beat_stage(21.0, 2.0), [1.0, 0.1]),
-		(beat_stage(13.0, 2.0), [1.0, 0.5]),
-	].all(|(stage, want)| is_near(stage_numbers(stage), want))
-
-# A rider at rest is waiting short of the end and past it from there on, and
-# one creeping is on the same rule as any other.
-expect
-	[
-		(beat_stage(3.5, 0.0), [0.0, 0.0]),
-		(beat_stage(3.0, 0.0), [2.0, 0.0]),
-		(beat_stage(2.0, 0.0), [2.0, 1.0]),
-		(beat_stage(3.000011, 0.000001), [0.0, 0.0]),
-		(beat_stage(3.000001, 0.000002), [1.0, 0.95]),
-		(beat_stage(2.0, 0.000001), [2.0, 1.0]),
-	].all(|(stage, want)| is_near(stage_numbers(stage), want))
-
-# The two rules answer alike at their ends: the same stage, whichever rule the
-# same start and end come from.
-expect
-	[8.0, 7.0, 6.5, 5.0, 3.5, 3.0, 1.0].all(
-		|gap| {
-			start_and_end = { starts_at: Distance.metres(7.0), ends_at: Distance.metres(3.0) }
-			approach = { gap: Distance.metres(gap), speed: Speed.metres_a_step(0.4) }
-			rule_by_gap = Animation.stage_over_gap(start_and_end, approach)
-			rule_by_steps = Animation.stage_over_step_span(
-				{ length: Steps.of(10), ends_at: Distance.metres(3.0) },
-				approach,
-			)
-			is_near(stage_numbers(rule_by_gap), stage_numbers(rule_by_steps))
-		},
-	)
 
 Note : [First, Second, Third, Fourth, BeforeIt, AfterIt]
 
@@ -232,28 +237,21 @@ four_frames = Animation.Timeline.(
 	},
 )
 
-# Each frame holds a quarter of the animation, from its own start, and a
-# progress of the whole way is the rest after the last.
+# Each step in shows its own frame, and a step past the last is the rest after.
 expect
 	[
-		(0.0, First),
-		(0.2499, First),
-		(0.25, Second),
-		(0.4999, Second),
-		(0.5, Third),
-		(0.75, Fourth),
-		(0.9999, Fourth),
-		(1.0, AfterIt),
-	].all(|(progress, note)| four_frames.instant(Playing(Fraction.of(progress))).pose == note)
-
-# A progress a rounding error short of a frame's start has reached it.
-expect four_frames.instant(Playing(Fraction.of(0.25 - 0.0000000000001))).pose == Second
+		(0, First),
+		(1, Second),
+		(2, Third),
+		(3, Fourth),
+		(4, AfterIt),
+	].all(|(steps_in, note)| four_frames.instant(Playing(Steps.of(steps_in))).pose == note)
 
 expect four_frames.instant(Waiting).pose == BeforeIt
-expect four_frames.instant(Past(Distance.metres(5.0))).pose == AfterIt
+expect four_frames.instant(Past(Steps.of(5))).pose == AfterIt
 expect four_frames.instant(Waiting).location.across.to_metres() == -1.0
-expect four_frames.instant(Playing(Fraction.of(0.5))).location.across.to_metres() == 3.0
-expect four_frames.instant(Past(Distance.metres(5.0))).location.across.to_metres() == 99.0
+expect four_frames.instant(Playing(Steps.of(2))).location.across.to_metres() == 3.0
+expect four_frames.instant(Past(Steps.of(5))).location.across.to_metres() == 99.0
 
 ## A timeline with no frames at all.
 empty_timeline : Animation.Timeline(Note)
@@ -265,7 +263,7 @@ empty_timeline = Animation.Timeline.(
 	},
 )
 
-expect empty_timeline.instant(Playing(Fraction.zero)).pose == AfterIt
+expect empty_timeline.instant(Playing(Steps.zero)).pose == AfterIt
 
 # A placed instant stands at the instant's location, and its kind is the pose.
 expect {

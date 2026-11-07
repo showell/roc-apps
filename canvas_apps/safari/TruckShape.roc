@@ -8,7 +8,7 @@ import Distance
 import RoadAhead
 import Fraction
 import Geom
-import Ground
+import EarthCurve
 import Picture
 import lib.Shapes
 
@@ -99,7 +99,7 @@ TruckShape :: [].{
 		{
 			right: on_ground.right,
 			forward: on_ground.forward,
-			height: truck.spot.lift().plus(height).minus(Ground.ground_drop(on_ground)),
+			height: truck.spot.lift().plus(height).minus(EarthCurve.ground_drop(on_ground)),
 		}
 	}
 

@@ -4,9 +4,9 @@
 import Acceleration
 import Along
 import Angle
+import Animation
 import Coast
 import EncounterReaction
-import EncountersAhead
 import Gawking
 import Motorcycle
 import Route
@@ -18,14 +18,14 @@ import World
 
 Throttle :: [].{
 
-	## The speed the motorcycle goes on the next step on `segment`, with the
-	## animals ahead where `encounters` has them.
-	next_speed : Motorcycle, { segment : Segment, encounters : EncountersAhead } -> Speed
-	next_speed = |motorcycle, { segment: seg, encounters }| {
+	## The speed the motorcycle goes on the next step, on `segment`, whose
+	## encounter stands at `encounter`.
+	next_speed : Motorcycle, { segment : Segment, encounter : Animation.Timing } -> Speed
+	next_speed = |motorcycle, { segment: seg, encounter }| {
 		offered = VehicleLimits.cruise_acceleration
 		limits = [
 			bend_limit(motorcycle, seg),
-			EncounterReaction.encounter_throttle(encounters),
+			EncounterReaction.encounter_throttle(seg, encounter),
 			Gawking.gawk_brake(motorcycle, seg),
 			shoulder_limit(motorcycle),
 		]
@@ -185,22 +185,19 @@ expect clamped_speed(0.0) == 0.0
 expect clamped_speed(-1.0) == 0.0
 
 ## The change of speed that `Throttle.next_speed` makes for this motorcycle on
-## the route's segment at `index`.
-speed_change : Motorcycle, Route.SegmentIndex -> Acceleration
-speed_change = |motorcycle, index| {
-	encounters = EncountersAhead.encounters_ahead(World.route, { segment_index: index, motorcycle })
-	segment = World.route.segment_at(index)
-	Throttle.next_speed(motorcycle, { segment, encounters }).change_from(motorcycle.speed)
-}
+## `seg`, before its encounter is planned.
+speed_change : Motorcycle, Segment -> Acceleration
+speed_change = |motorcycle, seg|
+	Throttle.next_speed(
+		motorcycle,
+		{ segment: seg, encounter: Unplanned },
+	).change_from(motorcycle.speed)
 
 ## The whole decision for a motorcycle at the start of the segment, on the
 ## centre line.
 decide : Speed, F64 -> Acceleration
 decide = |speed, lean|
-	speed_change(
-		{ ..Motorcycle.initial, speed, lean: Angle.Lean.radians(lean) },
-		Route.SegmentIndex.first,
-	)
+	speed_change({ ..Motorcycle.initial, speed, lean: Angle.Lean.radians(lean) }, first_segment)
 
 # Each is within 1e-12 of its want.
 expect
@@ -220,10 +217,13 @@ expect decide(Speed.metres_a_step(0.3), -0.034) < Acceleration.steady
 ## metres a step.
 decide_on : U32, F64 -> Acceleration
 decide_on = |index, along|
-	speed_change(centred_motorcycle(along, 0.3), Route.SegmentIndex.number(index))
+	speed_change(
+		centred_motorcycle(along, 0.3),
+		World.route.segment_at(Route.SegmentIndex.number(index)),
+	)
 
-# A crossing cat stops the throttle opening, and a gawking rider brakes.
+# A gawking rider brakes. A crossing cat's hold is CrossModuleExpects', which can
+# name a step of the clock.
 expect decide_on(3, 0.0) > Acceleration.steady
-expect decide_on(3, 120.0) == Acceleration.steady
 expect decide_on(2, 100.0) > Acceleration.steady
 expect decide_on(2, 300.0) < Acceleration.steady

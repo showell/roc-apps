@@ -50,6 +50,9 @@ Clock :: U32.{
 		}
 	}
 
+	is_lt : Clock, Clock -> Bool
+	is_lt = |Clock.(n), Clock.(other)| n < other
+
 	to_f64 : Clock -> F64
 	to_f64 = |Clock.(n)| n.to_f64()
 
@@ -78,5 +81,8 @@ expect Clock.at_step(9).plus(Steps.of(3)) == Clock.at_step(12)
 expect Clock.at_step(9).minus(Steps.zero) == Clock.at_step(9)
 expect Clock.at_step(9).minus(Steps.of(3)) == Clock.at_step(6)
 expect Clock.at_step(9).minus(Steps.of(9)) == Clock.start
+expect Clock.at_step(8) < Clock.at_step(9)
+expect !(Clock.at_step(9) < Clock.at_step(9))
+expect !(Clock.at_step(10) < Clock.at_step(9))
 expect Clock.start.to_str() == "0"
 expect Clock.at_step(5700).to_str() == "5700"

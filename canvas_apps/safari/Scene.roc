@@ -2,11 +2,11 @@
 ## billboards, cats, guard rails, the truck and the birds in view, each found by
 ## its own sighting and rendered as soon as it is found. Past the sighting
 ## nothing asks what kind a thing is, so each field holds only renderings.
+import Animation
 import Clock
 import Conifer
 import Distance
 import EncounterSighting
-import EncountersAhead
 import BillboardSighting
 import Geom
 import RoadAhead
@@ -28,14 +28,14 @@ Scene := {
 	towers : List(Rendered),
 	billboards : List(Rendered),
 	cats : List(Rendered),
-	trucks : List(Rendered),
+	truck : Try(Rendered, [NoTruck, BehindCamera]),
 	rails : List(Rendered),
 }.{
 
-	## What the sightings read beyond the road: where the animals have got to,
-	## where the truck is and how it looks, and the clock.
+	## What the sightings read beyond the road: where the encounter on the
+	## rider's segment stands, where the truck is and how it looks, and the clock.
 	RideFacts : {
-		encounters : EncountersAhead,
+		encounter : Animation.Timing,
 		truck : { route_position : Distance, lit_truck : LitTruck },
 		clock : Clock,
 	}
@@ -49,34 +49,30 @@ Scene := {
 	scene_in_view = |road, { camera, facts }| {
 		cam_focal = camera.cam_focal
 		on_road = { road, vantage: camera.vantage }
-		animals_seen = { camera, encounters: facts.encounters }
-		trucks =
-			match TruckSighting.truck_in_view(
-				road,
-				{
-					camera,
-					route_position: facts.truck.route_position,
-					lit_truck: facts.truck.lit_truck,
-				},
-			) {
-				Ok(truck) => [Pipeline.rendering_of(truck, { cam_focal, context: on_road })]
-				Err(NoTruck) | Err(BehindCamera) => []
-			}
+		birds_seen = EncounterSighting.birds_in_view(road, { camera, encounter: facts.encounter })
+		truck_at = TruckSighting.truck_in_view(
+			road,
+			{
+				camera,
+				route_position: facts.truck.route_position,
+				lit_truck: facts.truck.lit_truck,
+			},
+		)
 		{
 			trees: Scene.tree_renderings(TreeSighting.trees_in_view(road, camera), cam_focal),
-			birds: EncounterSighting.birds_in_view(road, animals_seen).map(
-				|bird| Pipeline.rendering_of(bird, { cam_focal, context: {} }),
-			),
+			birds: birds_seen.map(|bird| Pipeline.rendering_of(bird, { cam_focal, context: {} })),
 			towers: TowerSighting.towers_in_view(road, { camera, clock: facts.clock }).map(
 				|tower| Pipeline.rendering_of(tower, { cam_focal, context: on_road }),
 			),
 			billboards: BillboardSighting.billboards_in_view(road, camera).map(
 				|billboard| Pipeline.rendering_of(billboard, { cam_focal, context: {} }),
 			),
-			cats: EncounterSighting.cats_in_view(road, animals_seen).map(
+			cats: EncounterSighting.cats_in_view(road, { camera, encounter: facts.encounter }).map(
 				|cat| Pipeline.rendering_of(cat, { cam_focal, context: {} }),
 			),
-			trucks,
+			truck: truck_at.map_ok(
+				|truck| Pipeline.rendering_of(truck, { cam_focal, context: on_road }),
+			),
 			rails: RailSighting.rail_quads_in_view(road, camera).keep_oks(
 				|quad| GuardRail.quad_rendering(quad, cam_focal),
 			),
@@ -89,7 +85,12 @@ Scene := {
 	## drawn over it: a perched bird stands at its tree's own depth, so the trees
 	## come before the birds.
 	scene_renderings : Scene -> List(Rendered)
-	scene_renderings = |scene|
+	scene_renderings = |scene| {
+		trucks =
+			match scene.truck {
+				Ok(truck) => [truck]
+				Err(NoTruck) | Err(BehindCamera) => []
+			}
 		Rendered.depth_sorted_renderings(
 			[
 				scene.trees,
@@ -97,10 +98,11 @@ Scene := {
 				scene.towers,
 				scene.billboards,
 				scene.cats,
-				scene.trucks,
+				trucks,
 				scene.rails,
 			].join(),
 		)
+	}
 
 	## The scene's things as shapes, far to near.
 	scene_shapes : Scene -> List(Shapes.Shape)

@@ -4,7 +4,7 @@
 import Across
 import Along
 import Angle
-import EncountersAhead
+import Animation
 import Gaze
 import Geom
 import LeanSearch
@@ -17,12 +17,22 @@ import Throttle
 import World
 
 Rider :: [].{
-	rider_state_at_next_step : RiderState, Route -> RiderState
-	rider_state_at_next_step = |state, route| {
+
+	## The rider a step on along `route`, with the encounter on their segment at
+	## `encounter`.
+	rider_state_at_next_step : RiderState,
+	{
+		route : Route,
+		encounter : Animation.Timing,
+	} -> RiderState
+	rider_state_at_next_step = |state, { route, encounter }| {
 		seg = route.segment_at(state.segment_index)
-		encounters = EncountersAhead.encounters_ahead(route, state)
-		controls = decide(state.motorcycle, { segment: seg, encounters })
-		moved = { ..state, motorcycle: state.motorcycle.motorcycle_at_next_step(controls) }
+		moved = {
+			..state,
+			motorcycle: state.motorcycle.motorcycle_at_next_step(
+				decide(state.motorcycle, { segment: seg, encounter }),
+			),
+		}
 		resolved =
 			match seg.ending {
 				Bends(_) => cross_if_on_road(moved, route)
@@ -54,12 +64,11 @@ Rider :: [].{
 }
 
 ## The lean toward the best line, and the speed the throttle gives the
-## motorcycle once it leans so, on `segment` with the animals ahead where
-## `encounters` has them. The animals move first and the rider reacts.
-decide : Motorcycle, { segment : Segment, encounters : EncountersAhead } -> Motorcycle.Controls
-decide = |motorcycle, on_road| {
+## motorcycle once it leans so.
+decide : Motorcycle, { segment : Segment, encounter : Animation.Timing } -> Motorcycle.Controls
+decide = |motorcycle, road| {
 	lean = LeanSearch.best_lean(motorcycle)
-	{ lean, speed: Throttle.next_speed(motorcycle.with_lean(lean), on_road) }
+	{ lean, speed: Throttle.next_speed(motorcycle.with_lean(lean), road) }
 }
 
 ## The rider carried over the bend at the end of their segment: placed on the
@@ -131,12 +140,9 @@ rider_at = |along, lean_radians| {
 
 # The throttle is decided for the motorcycle as it will lean.
 expect {
-	on_road = {
-		segment: first_segment,
-		encounters: EncountersAhead.encounters_ahead(World.route, rider_at(0.0, 0.0)),
-	}
-	controls = decide(motorcycle_at(0.0, 0.0), on_road)
-	same = Throttle.next_speed(motorcycle_at(0.0, 0.0).with_lean(controls.lean), on_road)
+	road = { segment: first_segment, encounter: Unplanned }
+	controls = decide(motorcycle_at(0.0, 0.0), road)
+	same = Throttle.next_speed(motorcycle_at(0.0, 0.0).with_lean(controls.lean), road)
 	controls.speed.to_metres_a_step().to_bits() == same.to_metres_a_step().to_bits()
 }
 
@@ -227,7 +233,10 @@ expect last_seg.ending == RouteEnds
 expect !Rider.is_finished(rider_at(499.0, 0.0), World.route)
 
 one_step_on : RiderState
-one_step_on = Rider.rider_state_at_next_step(RiderState.initial, World.route)
+one_step_on = Rider.rider_state_at_next_step(
+	RiderState.initial,
+	{ route: World.route, encounter: Unplanned },
+)
 
 expect one_step_on.motorcycle.along > Along.start
 expect one_step_on.motorcycle.speed > Speed.at_rest
