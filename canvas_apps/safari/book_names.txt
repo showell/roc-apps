@@ -11,6 +11,7 @@ if: a Roc keyword
 match: a Roc keyword
 return: a Roc keyword
 var: a Roc keyword
+where: a Roc keyword, in an annotation
 while: a Roc keyword
 
 # Roc's builtins, which the book calls by their full names.
@@ -26,10 +27,7 @@ test: the `roc test` command
 PASS: what `roc test --verbose` prints for an expect
 
 # Other languages, for comparison.
-Enum: Python's, compared with a tag union
-None: Python's, compared with a tag's payload
 null: other languages' missing value, which Roc doesn't have
-reduce: Python's, compared with `fold`
 
 # Files and folders the book names, which aren't Roc names.
 canvas_app_runner.js: a file of the JavaScript platform
