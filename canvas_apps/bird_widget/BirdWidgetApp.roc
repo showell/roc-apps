@@ -124,7 +124,7 @@ road = {
 
 tree_shapes : Trees.Tree -> List(Shapes.Shape)
 tree_shapes = |tree|
-	TreeShapes.tree_shapes(
+	TreeShapes.tree_picture(
 		{
 			tree: {
 				right: Distance.metres(tree.across.to_metres()),
@@ -134,7 +134,7 @@ tree_shapes = |tree|
 			nearer_tree_count: 0,
 		},
 		Lens.focal,
-	)
+	).to_shapes()
 
 ## The bird as `gap` finds it, drawn by Safari's own stills.
 bird_shapes : Distance -> List(Shapes.Shape)

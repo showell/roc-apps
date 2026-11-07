@@ -15,6 +15,8 @@ import Fraction
 import Chain
 import Conifer
 import GuardRail
+import Picture
+import Rendered
 import Scene
 import Tower
 import TowerSighting
@@ -30,7 +32,7 @@ SceneShapes :: [].{
 	## The scene's things, painted far to near.
 	scene_shapes : Scene, Chain.Viewpoint -> List(Shapes.Shape)
 	scene_shapes = |scene, view|
-		scene.order_keys.join_map(|depth_key| subject_shapes(scene, { view, depth_key }))
+		scene_renderings(scene, view).join_map(|rendering| rendering.picture.to_shapes())
 
 	## How many of `trees` are nearer than `forward`.
 	nearer_tree_count : List(TreeSighting), Distance -> U16
@@ -38,13 +40,9 @@ SceneShapes :: [].{
 
 	## A tree, told how many of `trees` are nearer, which is all it needs of
 	## the others.
-	tree_shapes : TreeSighting,
-	{
-		trees : List(TreeSighting),
-		cam_focal : Pixels,
-	} -> List(Shapes.Shape)
-	tree_shapes = |tree, { trees, cam_focal }|
-		TreeShapes.tree_shapes(
+	tree_picture : TreeSighting, { trees : List(TreeSighting), cam_focal : Pixels } -> Picture
+	tree_picture = |tree, { trees, cam_focal }|
+		TreeShapes.tree_picture(
 			{ tree, nearer_tree_count: SceneShapes.nearer_tree_count(trees, tree.forward) },
 			cam_focal,
 		)
@@ -96,23 +94,36 @@ SceneShapes :: [].{
 		})
 }
 
+## Everything in the depth order, as the frame paints it.
+scene_renderings : Scene, Chain.Viewpoint -> List(Rendered)
+scene_renderings = |scene, view|
+	scene.order_keys.map(
+		|depth_key| {
+			depth: depth_key.forward,
+			picture: subject_picture(scene, { view, subject: depth_key.subject }),
+		},
+	)
+
 ## One thing in the depth order, looked up in its kind's list and drawn.
-subject_shapes : Scene,
-{
-	view : Chain.Viewpoint,
-	depth_key : DepthSort.DepthKey,
-} -> List(Shapes.Shape)
-subject_shapes = |scene, { view, depth_key }| {
+subject_picture : Scene, { view : Chain.Viewpoint, subject : DepthSort.Subject } -> Picture
+subject_picture = |scene, { view, subject }| {
 	cam_focal = view.cam_focal
-	match depth_key.subject {
+	match subject {
 		Tree(place) =>
-			SceneShapes.tree_shapes(thing_at(scene.trees, place), { trees: scene.trees, cam_focal })
-		Tower(place) => SceneShapes.tower_shapes(view, thing_at(scene.towers, place))
-		Rail(place) => GuardRail.quad_shapes(thing_at(scene.rails, place), cam_focal)
-		Cutout(place) => StillShapes.cutout_shapes(thing_at(scene.cutouts, place), cam_focal)
-		Cat(place) => CatShapes.cat_shapes(thing_at(scene.cats, place), cam_focal)
-		Truck => truck_shapes(view, scene.truck)
-		Bird(place) => BirdShapes.bird_shapes(thing_at(scene.birds, place), cam_focal)
+			SceneShapes.tree_picture(
+				thing_at(scene.trees, place),
+				{ trees: scene.trees, cam_focal },
+			)
+		Tower(place) =>
+			Picture.from_shapes(SceneShapes.tower_shapes(view, thing_at(scene.towers, place)))
+		Rail(place) =>
+			Picture.from_shapes(GuardRail.quad_shapes(thing_at(scene.rails, place), cam_focal))
+		Cutout(place) => StillShapes.cutout_picture(thing_at(scene.cutouts, place), cam_focal)
+		Cat(place) =>
+			Picture.from_shapes(CatShapes.cat_shapes(thing_at(scene.cats, place), cam_focal))
+		Truck => Picture.from_shapes(truck_shapes(view, scene.truck))
+		Bird(place) =>
+			Picture.from_shapes(BirdShapes.bird_shapes(thing_at(scene.birds, place), cam_focal))
 	}
 }
 
@@ -207,10 +218,10 @@ cluster_sightings = [10.0, 11.0, 12.0, 13.0, 14.0].map(tree_at)
 
 cluster_shapes : F64 -> List(Shapes.Shape)
 cluster_shapes = |forward|
-	SceneShapes.tree_shapes(
+	SceneShapes.tree_picture(
 		tree_at(forward),
 		{ trees: cluster_sightings, cam_focal: Pixels.of(500.0) },
-	)
+	).to_shapes()
 
 second_shape_points : List(Shapes.Shape) -> U64
 second_shape_points = |shapes|

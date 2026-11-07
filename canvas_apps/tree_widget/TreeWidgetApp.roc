@@ -65,7 +65,7 @@ right_of = |{ forward, canvas_x }| {
 
 tree_shapes : Stand -> List(Shapes.Shape)
 tree_shapes = |stand|
-	TreeShapes.tree_shapes(
+	TreeShapes.tree_picture(
 		{
 			tree: {
 				right: right_of(stand),
@@ -75,7 +75,7 @@ tree_shapes = |stand|
 			nearer_tree_count: 0,
 		},
 		Lens.focal,
-	)
+	).to_shapes()
 
 ## What `TreeShapes.crown_of` says at `forward`, as Roc would write it.
 crown_text : Distance -> Str

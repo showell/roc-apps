@@ -8,6 +8,7 @@ import Cutouts
 import Distance
 import Camera
 import EmojiStills
+import Picture
 import Polygon
 import lib.Brush
 import Stills
@@ -69,8 +70,8 @@ StillShapes :: [].{
 
 	## A critter in view. An emoji faces left, so a critter facing right is
 	## its still mirrored. A critter less than a pixel tall isn't drawn.
-	cutout_shapes : Cutouts.Cutout, Pixels -> List(Shapes.Shape)
-	cutout_shapes = |critter, cam_focal| {
+	cutout_picture : Cutouts.Cutout, Pixels -> Picture
+	cutout_picture = |critter, cam_focal| {
 		projected = |height| Camera.project(
 			{ right: critter.right, forward: critter.forward, height },
 			cam_focal,
@@ -78,16 +79,18 @@ StillShapes :: [].{
 		feet = projected(Distance.zero)
 		height_px = feet.y.minus(projected(critter.height).y)
 		if height_px < Pixels.of(1.0) {
-			[]
+			Picture.from_shapes([])
 		} else {
 			flip =
 				match critter.facing {
 					FacesLeft => AsDrawn
 					FacesRight => Mirrored
 				}
-			StillShapes.still_shapes(
-				{ feet, flip, height_px },
-				EmojiStills.emoji_polys_for(critter.codepoint),
+			Picture.from_shapes(
+				StillShapes.still_shapes(
+					{ feet, flip, height_px },
+					EmojiStills.emoji_polys_for(critter.codepoint),
+				),
 			)
 		}
 	}
@@ -220,7 +223,7 @@ shape_count : {
 	codepoint : I64,
 } -> U64
 shape_count = |{ forward, height, codepoint }|
-	StillShapes.cutout_shapes(
+	StillShapes.cutout_picture(
 		{
 			right: Distance.metres(0.0),
 			forward,
@@ -229,7 +232,7 @@ shape_count = |{ forward, height, codepoint }|
 			facing: FacesLeft,
 		},
 		Pixels.of(500.0),
-	).len()
+	).to_shapes().len()
 
 elephant : I64
 elephant = 128024

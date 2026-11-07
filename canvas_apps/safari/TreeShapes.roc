@@ -10,6 +10,7 @@ import Detail
 import Distance
 import Fraction
 import Geom
+import Picture
 import Polygon
 import Pixels
 import Screen
@@ -19,7 +20,7 @@ import lib.Shapes
 TreeShapes :: [].{
 
 	## A tree in front of the camera, so of its lengths only `right` can be
-	## negative. A record with more in it can be handed to `tree_shapes` as it is.
+	## negative. A record with more in it can be handed to `tree_picture` as it is.
 	TreeAhead(rest) : {
 		right : Distance,
 		forward : Distance,
@@ -49,9 +50,8 @@ TreeShapes :: [].{
 	## The tree on the screen: its trunk, then its tiers top to bottom. The
 	## nearest trees have a shaded trunk. The crown is cones, shaded by how near
 	## they are, within Detail.cone_reach, and triangles beyond it.
-	tree_shapes :
-		{ tree : TreeShapes.TreeAhead(rest), nearer_tree_count : U16 }, Pixels -> List(Shapes.Shape)
-	tree_shapes = |{ tree, nearer_tree_count }, cam_focal| {
+	tree_picture : { tree : TreeShapes.TreeAhead(rest), nearer_tree_count : U16 }, Pixels -> Picture
+	tree_picture = |{ tree, nearer_tree_count }, cam_focal| {
 		tip = {
 			right: tree.right,
 			forward: tree.forward,
@@ -71,7 +71,7 @@ TreeShapes :: [].{
 			crown: crown_of(tree.forward),
 		}
 		trunk = trunk_shape(screen_tree, trunk_finish)
-		[trunk].concat(tiers.map(|tier| tier_shape(tier, inputs)))
+		Picture.from_shapes([trunk].concat(tiers.map(|tier| tier_shape(tier, inputs))))
 	}
 
 	## How a crown is drawn: cones, shaded by how near they are, or flat triangles.

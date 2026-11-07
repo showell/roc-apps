@@ -328,13 +328,13 @@ So the job is three signatures:
 |---|---|---|
 {{types row Conifer.height Know how tall it is}}
 {{types row TreeShapes.tree_on_screen Find it on the screen}}
-{{types row TreeShapes.tree_shapes Make its shapes}}
+{{types row TreeShapes.tree_picture Make its picture}}
 
 ### The functions
 
-`tree_shapes` calls the others, and it reads like the concept: find the tree on the screen, then make a trunk and eight tiers.
+`tree_picture` calls the others, and it reads like the concept: find the tree on the screen, then make a trunk and eight tiers.
 
-{{code TreeShapes.tree_shapes}}
+{{code TreeShapes.tree_picture}}
 
 `|{ tree, nearer_tree_count }, cam_focal|` unpacks a record argument into two names. What `nearer_tree_count` and `crown` do for near trees can wait. For now, every tier is a triangle.
 
@@ -395,7 +395,7 @@ This function answers with that type:
 `Detail` holds the thresholds that decide how much of a thing gets drawn, and `cone_reach` is 200 metres. Shade fades from full at the camera to none at 80 metres.
 
 ```widget tree
-Three gold trees, each made by `TreeShapes.tree_shapes`. Under each are its distance and what `crown_of` said.
+Three gold trees, each made by `TreeShapes.tree_picture`. Under each are its distance and what `crown_of` said.
 ```
 
 ### The functions
@@ -430,7 +430,7 @@ Here's the other tree problem. Safari Ride plants 392 trees along its road, and 
 Step 1,570 of the ride, with only the trees on.
 ```
 
-This is step 1,570 again, the frame with the frozen cat, showing only its trees. Each tree here is a sighting from `TreeSighting.trees_in_view`, turned into shapes by `TreeShapes.tree_shapes`. They make up 1,656 of the 2,713 shapes in that frame, more than everything else put together.
+This is step 1,570 again, the frame with the frozen cat, showing only its trees. Each tree here is a sighting from `TreeSighting.trees_in_view`, turned into shapes by `TreeShapes.tree_picture`. They make up 1,656 of the 2,713 shapes in that frame, more than everything else put together.
 
 So a tree has two lives. It's planted once, and that lasts the whole ride. Each frame that can see it makes a fresh sighting, and that lasts one frame. This chapter takes them in that order.
 
@@ -487,7 +487,7 @@ Most of that 1,656 is far off, and far trees are cheap. They get eight triangles
 
 "The nearest few" is the one thing a tree alone can't tell us, because it depends on the other trees. So `SceneShapes` counts them, and that's the `nearer_tree_count` from A simple tree:
 
-{{code SceneShapes.tree_shapes}}
+{{code SceneShapes.tree_picture}}
 
 So `World` holds every tree's place for the whole ride, and no frame remembers anything. Every sighting is thrown away, and the next frame makes them all again.
 
