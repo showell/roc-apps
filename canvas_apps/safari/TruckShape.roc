@@ -109,7 +109,7 @@ TruckShape :: [].{
 }
 
 ## How far forward of the trailer the cab's flat roof reaches, as a fraction
-## of the cab's length.
+## of the cab's length, a proportion chosen by eye.
 cab_roof_fraction : Fraction
 cab_roof_fraction = Fraction.of(0.3)
 

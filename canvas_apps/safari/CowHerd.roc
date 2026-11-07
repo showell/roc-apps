@@ -8,6 +8,7 @@ import Conifer
 import Distance
 import EmojiStills
 import Geom
+import Scatter
 import Scenery
 import Trees
 
@@ -81,20 +82,28 @@ herd_bull = |herd_along| {
 is_calf : U64 -> Bool
 is_calf = |cow_number| cow_number.rem_by(4) == 1
 
-## The herd's cow at `cow_number`, counting from 0. The scatter's phases, 1.9 and
-## 2.7, are tuned by eye.
+## The herd's cow at `cow_number`, counting from 0. The scatter's phases, 2.7
+## along the road and 1.9 across it, are chosen by eye.
 herd_cow : CowHerd, { herd_along : Along, cow_number : U64 } -> Geom.Placed(Billboard)
 herd_cow = |herd, { herd_along, cow_number }| {
-	fi = cow_number.to_f64()
 	column = cow_number.div_trunc_by(herd.rows).to_f64()
 	row = cow_number.rem_by(herd.rows).to_f64()
 	herd_front = herd_along.plus(herd.gap_behind_bull)
 	column_place = herd_front.plus(herd.column_spacing.times(column))
 	in_line = column_place.plus(herd.row_stagger.times(row - 1.0))
 	row_place = Scenery.herd_front_distance.plus(herd.row_depth.times(row))
-	out_from_road = row_place.plus(herd.jitter_across.times((fi * 1.9).cos()))
+	stray = Scatter.offset(
+		cow_number,
+		{
+			along_phase: 2.7,
+			across_phase: 1.9,
+			jitter_along: herd.jitter_along,
+			jitter_across: herd.jitter_across,
+		},
+	)
+	out_from_road = row_place.plus(stray.across)
 	{
-		along: in_line.plus(herd.jitter_along.times((fi * 2.7).sin())),
+		along: in_line.plus(stray.along),
 		across: Across.left_of_middle(out_from_road),
 		lift: Distance.zero,
 		kind: if is_calf(cow_number) {

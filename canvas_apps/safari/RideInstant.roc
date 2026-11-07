@@ -79,8 +79,7 @@ RideInstant := {
 	}
 
 	## What the camera shows at one instant: the shapes in paint order, and the
-	## sun. A bird is sorted by depth with everything else, so a nearer tree
-	## hides it.
+	## sun.
 	FrameContent : { shapes : List(Shapes.Shape), sun : Sun.Sighting }
 
 	## The frame at `instant`. The camera's heading and focal length are worked

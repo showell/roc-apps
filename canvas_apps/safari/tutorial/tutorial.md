@@ -1173,7 +1173,7 @@ Safari Ride's farms are crowds of animals, and a crowd is just a list of critter
 New in this chapter:
 
 - Roc: `List.from_iter` with `I64.until`
-- Modules: `Cows`
+- Modules: `Cows`, `Scatter`
 
 ### Cows
 

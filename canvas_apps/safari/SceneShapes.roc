@@ -24,8 +24,8 @@ SceneShapes :: [].{
 
 	## One list for each sort of thing beside the road.
 	ThingLists(thing) : {
-		birds : List(thing),
 		trees : List(thing),
+		birds : List(thing),
 		towers : List(thing),
 		billboards : List(thing),
 		cats : List(thing),
@@ -49,10 +49,10 @@ SceneShapes :: [].{
 	scene_renderings = |scene, view| {
 		cam_focal = view.cam_focal
 		{
-			birds: scene.birds.map(|bird| Pipeline.rendering_of(bird, { cam_focal, context: {} })),
 			trees: scene.trees.map(
 				|tree| SceneShapes.tree_rendering(tree, { trees: scene.trees, cam_focal }),
 			),
+			birds: scene.birds.map(|bird| Pipeline.rendering_of(bird, { cam_focal, context: {} })),
 			towers: scene.towers.map(
 				|tower| Pipeline.rendering_of(tower, { cam_focal, context: view.road }),
 			),
@@ -67,12 +67,14 @@ SceneShapes :: [].{
 
 	## Every list's things in one list. Things about as far away as each other
 	## keep this order through the depth sort, so it decides which of two tied
-	## things is painted over the other.
+	## things is painted over the other. A critter perched on a tree is drawn
+	## over it: a perched bird stands at its tree's own depth, so the trees come
+	## before the birds.
 	things_in_tie_order : SceneShapes.ThingLists(thing) -> List(thing)
 	things_in_tie_order = |lists|
 		[
-			lists.birds,
 			lists.trees,
+			lists.birds,
 			lists.towers,
 			lists.billboards,
 			lists.cats,
@@ -300,8 +302,8 @@ expect roadside_tree(2).kind == Conifer.SmallGreen
 # The order that settles a tie, each list in its own order.
 expect
 	SceneShapes.things_in_tie_order({
-		birds: [1, 2],
-		trees: [3],
+		trees: [1],
+		birds: [2, 3],
 		towers: [4],
 		billboards: [5, 6],
 		cats: [7],
@@ -309,6 +311,58 @@ expect
 		rails: [9],
 	})
 		== [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+## One square at `mark` on the screen, which tells one rendering from another.
+mark_shapes : Pixels -> List(Shapes.Shape)
+mark_shapes = |mark| [
+	Rect({
+		x: mark.to_f64(),
+		y: 0.0,
+		width: 1.0,
+		height: 1.0,
+		fill: Flat({
+			r: 0.0,
+			g: 0.0,
+			b: 0.0,
+			a: 1.0,
+		}),
+	}),
+]
+
+tree_mark_shapes : List(Shapes.Shape)
+tree_mark_shapes = mark_shapes(Pixels.of(1.0))
+
+bird_mark_shapes : List(Shapes.Shape)
+bird_mark_shapes = mark_shapes(Pixels.of(2.0))
+
+## The marks of a tree and a bird, these many metres ahead, in the order they're
+## painted.
+painted_marks : { tree_ahead : F64, bird_ahead : F64 } -> List(List(Shapes.Shape))
+painted_marks = |{ tree_ahead, bird_ahead }| {
+	tree = { depth: Distance.metres(tree_ahead), picture: Picture.from_shapes(tree_mark_shapes) }
+	bird = { depth: Distance.metres(bird_ahead), picture: Picture.from_shapes(bird_mark_shapes) }
+	lists = {
+		trees: [tree],
+		birds: [bird],
+		towers: [],
+		billboards: [],
+		cats: [],
+		trucks: [],
+		rails: [],
+	}
+	Rendered.depth_sorted_renderings(SceneShapes.things_in_tie_order(lists))
+		.map(|rendering| rendering.picture.to_shapes())
+}
+
+# A bird perched on a tree stands at the tree's depth and is painted over it.
+# A bird that isn't perched is painted by its own depth: behind a nearer tree,
+# and over a farther one.
+expect
+	[
+		({ tree_ahead: 40.0, bird_ahead: 40.0 }, [tree_mark_shapes, bird_mark_shapes]),
+		({ tree_ahead: 30.0, bird_ahead: 40.0 }, [bird_mark_shapes, tree_mark_shapes]),
+		({ tree_ahead: 40.0, bird_ahead: 30.0 }, [tree_mark_shapes, bird_mark_shapes]),
+	].all(|(depths, want)| painted_marks(depths) == want)
 
 expect
 	route_segments.map(|seg| seg.length.to_metres())

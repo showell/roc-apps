@@ -7,6 +7,7 @@ import Billboard
 import Distance
 import Geom
 import Pig
+import Scatter
 import Scenery
 
 PigHerd := [NoPigs, BigHerd(PigHerd.BigPigHerd), TwoRows(PigHerd.TwoRowPigHerd)].{
@@ -130,6 +131,8 @@ pig = |{ along, across }| {
 	kind: Billboard.adult_billboard(Pig.pig, FacesLeft),
 }
 
+## The big herd's pig in `row` and `column`. The scatter's phases, 2.3 along
+## the road and 1.7 across it, are chosen by eye.
 herd_pig : PigHerd.BigPigHerd,
 {
 	herd_along : Along,
@@ -137,17 +140,22 @@ herd_pig : PigHerd.BigPigHerd,
 	column : U64,
 } -> Geom.Placed(Billboard)
 herd_pig = |herd, { herd_along, row, column }| {
-	i = (row * herd.columns + column).to_f64()
 	fr = row.to_f64()
 	fc = column.to_f64()
 	first_column = herd_along.plus(herd.first_column)
 	in_column = first_column.plus(herd.column_spacing.times(fc))
 	in_line = in_column.plus(herd.row_depth.times(fr))
 	in_row = front_row_across.plus(herd.row_depth.times(fr))
-	pig({
-		along: in_line.plus(herd.jitter_along.times((i * 2.3).sin())),
-		across: in_row.plus(herd.jitter_across.times((i * 1.7).cos())),
-	})
+	stray = Scatter.offset(
+		row * herd.columns + column,
+		{
+			along_phase: 2.3,
+			across_phase: 1.7,
+			jitter_along: herd.jitter_along,
+			jitter_across: herd.jitter_across,
+		},
+	)
+	pig({ along: in_line.plus(stray.along), across: in_row.plus(stray.across) })
 }
 
 row_pigs : Along, { across : Across, offsets : List(Distance) } -> List(Geom.Placed(Billboard))
