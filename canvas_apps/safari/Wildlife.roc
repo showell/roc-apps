@@ -56,10 +56,10 @@ baby_beyond = Distance.metres(14.0)
 species_of : Wildlife.Animal -> Billboard.Species
 species_of = |animal|
 	match animal {
-		Elephant => { still: EmojiStills.elephant, adult_height: Distance.metres(2.8) }
-		Giraffe => { still: EmojiStills.giraffe, adult_height: Distance.metres(4.5) }
-		Zebra => { still: EmojiStills.zebra, adult_height: Distance.metres(1.6) }
-		Rhino => { still: EmojiStills.rhino, adult_height: Distance.metres(2.2) }
+		Elephant => { emoji: EmojiStills.elephant, adult_height: Distance.metres(2.8) }
+		Giraffe => { emoji: EmojiStills.giraffe, adult_height: Distance.metres(4.5) }
+		Zebra => { emoji: EmojiStills.zebra, adult_height: Distance.metres(1.6) }
+		Rhino => { emoji: EmojiStills.rhino, adult_height: Distance.metres(2.2) }
 	}
 
 ## An animal and its baby at each of four bends, the first and third turning

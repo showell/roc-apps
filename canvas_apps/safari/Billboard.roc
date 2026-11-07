@@ -21,12 +21,12 @@ Billboard := {
 	Facing : [FacesLeft, FacesRight]
 
 	## A kind of animal: its emoji, and how tall a grown one stands.
-	Species : { still : EmojiStills.EmojiStill, adult_height : Distance }
+	Species : { emoji : EmojiStills.EmojiStill, adult_height : Distance }
 
 	## A grown animal of `species`.
 	adult_billboard : Billboard.Species, Billboard.Facing -> Billboard
 	adult_billboard = |species, facing| {
-		emoji: species.still,
+		emoji: species.emoji,
 		height: species.adult_height,
 		facing,
 	}
@@ -34,7 +34,7 @@ Billboard := {
 	## A young animal of `species`, which stands half as tall as a grown one.
 	young_billboard : Billboard.Species, Billboard.Facing -> Billboard
 	young_billboard = |species, facing| {
-		emoji: species.still,
+		emoji: species.emoji,
 		height: species.adult_height.divided_by(2.0),
 		facing,
 	}

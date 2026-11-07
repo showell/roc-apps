@@ -132,7 +132,7 @@ segment_point = |point, bend| {
 
 ## The duck's still, and how tall a duck stands.
 duck : Billboard.Species
-duck = { still: EmojiStills.duck, adult_height: Distance.metres(0.9) }
+duck = { emoji: EmojiStills.duck, adult_height: Distance.metres(0.9) }
 
 ## A duck on the pond, where it floats and which way it faces.
 Duck : { at : PondPoint, facing : Billboard.Facing }

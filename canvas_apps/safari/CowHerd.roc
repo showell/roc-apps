@@ -55,10 +55,10 @@ CowHerd := {
 }
 
 cow : Billboard.Species
-cow = { still: EmojiStills.cow, adult_height: Distance.metres(1.4) }
+cow = { emoji: EmojiStills.cow, adult_height: Distance.metres(1.4) }
 
 bull : Billboard.Species
-bull = { still: EmojiStills.bull, adult_height: cow.adult_height.times(1.15) }
+bull = { emoji: EmojiStills.bull, adult_height: cow.adult_height.times(1.15) }
 
 ## The gap between the bull's side and the trees.
 bull_tree_gap : Distance
