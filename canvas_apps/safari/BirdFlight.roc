@@ -36,6 +36,10 @@ BirdFlight :: [].{
 	## A bird at one instant.
 	Bird : Animation.Instant(BirdFlight.Pose)
 
+	## How tall a bird stands.
+	bird_height : Distance
+	bird_height = Distance.metres(2.2)
+
 	## How far the rider is from the bird's tree when it takes off.
 	takeoff_gap : Distance
 	takeoff_gap = Distance.metres(60.0)
@@ -179,6 +183,8 @@ flight_spot = |{ from, to }, through| {
 	above_line = BirdFlight.flight_arc.times(4.0 * share * (1.0 - share))
 	{ ..on_line, lift: on_line.lift.plus(above_line) }
 }
+
+expect BirdFlight.bird_height.to_metres() == 2.2
 
 tree_at : F64, F64 -> Trees.RoadsideTree
 tree_at = |along, across| {

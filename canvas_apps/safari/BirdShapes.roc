@@ -14,19 +14,15 @@ import lib.Shapes
 
 BirdShapes :: [].{
 
-	## How tall a bird stands.
-	bird_height : Distance
-	bird_height = Distance.metres(2.2)
-
 	## How tall a bird `forward` metres ahead is on screen.
 	height_px : { forward : Distance, cam_focal : Pixels } -> Pixels
-	height_px = |{ forward, cam_focal }| cam_focal.times(bird_height.ratio_to(forward))
+	height_px = |{ forward, cam_focal }| cam_focal.times(BirdFlight.bird_height.ratio_to(forward))
 
 	## A bird at one moment of its flight: how it looks, and how high its feet are.
 	PosedBird := { pose : BirdFlight.Pose, lift : Distance }.{
 
 		scenery_height : BirdShapes.PosedBird -> Distance
-		scenery_height = |_bird| BirdShapes.bird_height
+		scenery_height = |_bird| BirdFlight.bird_height
 
 		## A bird on screen, its feet where it is. Its still is unflipped: a bird
 		## from a left-hand tree crosses the road toward +x, the way its beak points.
@@ -68,7 +64,6 @@ height_on_screen = |forward, cam_focal| BirdShapes.height_px({ forward, cam_foca
 
 expect
 	[
-		(BirdShapes.bird_height.to_metres(), 2.2),
 		(height_on_screen(Distance.metres(110.0), Pixels.of(500.0)), 10.0),
 		(height_on_screen(Distance.metres(220.0), Pixels.of(500.0)), 5.0),
 		(height_on_screen(Distance.metres(110.0), Pixels.of(1000.0)), 20.0),
@@ -77,7 +72,7 @@ expect
 # A bird's height is the same in every pose.
 expect
 	[level_bird, { ..level_bird, pose: Diving }].all(
-		|bird| bird.scenery_height() == BirdShapes.bird_height,
+		|bird| bird.scenery_height() == BirdFlight.bird_height,
 	)
 
 # The perched still's first corner is (-0.0344, 0.5715), at a height of 10 px
