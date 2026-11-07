@@ -47,8 +47,8 @@ Mouse :: [].{
 			Snapshot.{ held: s.held.bitwise_or(bit(button)), struck: s.struck.bitwise_or(bit(button)), at: s.at, wheel: s.wheel }
 	}
 
-	## No button down, the pointer at the origin and the wheel still: what a
-	## test starts from.
+	## No button down, the pointer at the origin and the wheel still: the
+	## pointer in `Input.none`, and what a test starts from.
 	none : Mouse.Snapshot
 	none = Snapshot.{ held: 0, struck: 0, at: { x: 0, y: 0 }, wheel: 0 }
 

@@ -36,7 +36,9 @@ Input :: [].{
 		key_pressed : Snapshot, Keys.Key -> Bool
 		key_pressed = |snapshot, key| snapshot.struck.bitwise_and(Keys.bit(key)) != 0
 
-		## Say that a key is held, as `Input.none.with_key_down(KeyW)`.
+		## Say that a key is held, as `Input.none.with_key_down(KeyW)`. The native
+		## runner builds a tick's snapshot with this and `with_key_pressed`, and
+		## tests build theirs the same way.
 		with_key_down : Snapshot, Keys.Key -> Snapshot
 		with_key_down = |s, key| Snapshot.{ held: s.held.bitwise_or(Keys.bit(key)), struck: s.struck, mouse: s.mouse }
 
@@ -51,11 +53,14 @@ Input :: [].{
 
 	}
 
-	## Nothing touched: what a test starts from.
+	## Nothing touched: where the native runner starts each tick's snapshot,
+	## and where a test starts.
 	none : Input.Snapshot
 	none = Snapshot.{ held: 0, struck: 0, mouse: Mouse.none }
 
-	## What a runner packs a tick's input into.
+	## A tick's input from the keys held and struck, as bits, and the pointer,
+	## which is how WasmApp packs what the page hands it. The native runner packs its input the other way, from
+	## `none` with the `with_*` makers.
 	of : { held : U32, struck : U32, mouse : Mouse.Snapshot } -> Input.Snapshot
 	of = |{ held, struck, mouse }| Snapshot.{ held: held.bitwise_or(struck), struck, mouse }
 }
