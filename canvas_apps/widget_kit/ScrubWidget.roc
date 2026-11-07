@@ -155,8 +155,8 @@ ScrubWidget :: [].{
 	## The whole of `view`, backdrop and shapes, at the canvas's share of
 	## Safari's screen, so a widget's picture is what the ride's frame shows.
 	## A widget's picture is never rolled.
-	ride_shapes : FrameView -> List(Shapes.Shape)
-	ride_shapes = |view| {
+	picture_shapes : FrameView -> List(Shapes.Shape)
+	picture_shapes = |view| {
 		corner = { x: 0.0, y: 0.0 }
 		view.framed_shapes(
 			World({

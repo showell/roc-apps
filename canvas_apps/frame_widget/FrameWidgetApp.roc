@@ -10,7 +10,6 @@ import game.RoadAhead
 import game.Clock
 import game.FrameView
 import game.Grass
-import game.RideInstant
 import game.RiderCamera
 import game.SafariApp
 import game.Scene
@@ -126,10 +125,7 @@ backdrop_pieces = |view| [
 
 ## The camera the ride sees through at the step on show.
 paused_camera : RiderCamera
-paused_camera = RiderCamera.of(
-	paused_tour.instant.rider,
-	{ route: paused_tour.route, encounter: RideInstant.encounter_timing(paused_tour.instant) },
-)
+paused_camera = FrameView.camera_at(paused_tour.route, paused_tour.instant)
 
 ## The road ahead of the rider at the step on show.
 paused_road : RoadAhead.RoadView
