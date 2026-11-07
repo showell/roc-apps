@@ -5,7 +5,6 @@ import Acceleration
 import Distance
 import Fraction
 import Route
-import Segment
 import Speed
 import VehicleLimits
 import World
@@ -81,7 +80,18 @@ top_speed = VehicleLimits.top_speed.times(1.1)
 ## The next turn of `route` past `route_position`.
 next_bend : Route, Distance -> NextBend
 next_bend = |route, route_position|
-	next_bend_on(route.route_segments(), { route_position, segment_start: Distance.zero })
+	match route.segments_with_ends().find_first(|stretch| route_position < stretch.end) {
+		Ok({ segment, end }) =>
+			match segment.ending {
+				Bends({ turn, .. }) =>
+					BendAhead({
+						distance: end.minus(route_position),
+						turn_speed: VehicleLimits.turn_speed(turn.abs()),
+					})
+				RouteEnds => NoBendAhead
+			}
+		Err(_) => NoBendAhead
+	}
 
 ## Where the truck should be along the route, when the rider is
 ## `rider_distance` along it.
@@ -91,29 +101,6 @@ scheduled_position = |{ rider_distance, route_length }| {
 	extra_lead = start_lead.minus(finish_lead).times(fraction_left)
 	rider_distance.plus(finish_lead).plus(extra_lead)
 }
-
-## The next turn past `route_position` along `segments`, the first of which
-## starts at `segment_start`. The route's last segment ends in no turn.
-next_bend_on : List(Segment), { route_position : Distance, segment_start : Distance } -> NextBend
-next_bend_on = |segments, { route_position, segment_start }|
-	match segments {
-		[] => NoBendAhead
-		[segment, .. as later_segments] => {
-			segment_end = segment_start.plus(segment.length)
-			if route_position < segment_end {
-				match segment.ending {
-					Bends({ turn, .. }) =>
-						BendAhead({
-							distance: segment_end.minus(route_position),
-							turn_speed: VehicleLimits.turn_speed(turn.abs()),
-						})
-					RouteEnds => NoBendAhead
-				}
-			} else {
-				next_bend_on(later_segments, { route_position, segment_start: segment_end })
-			}
-		}
-	}
 
 ## The truck one step on, slowing for `turn`, so that it reaches the turn at a
 ## cautious speed.

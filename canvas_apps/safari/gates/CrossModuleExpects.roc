@@ -380,6 +380,19 @@ going_straight_on = |segment| {
 	ending: Bends({ turn: Angle.straight_ahead, bend_life: Animal(Elephant) }),
 }
 
+# Each segment ends where the lengths before it and its own add up to.
+expect {
+	stretches =
+		Route.from_segments([
+			{ ..going_straight_on(segment_of([])), length: Distance.metres(300.0) },
+			{ ..going_straight_on(segment_of([])), length: Distance.metres(150.0) },
+			{ ..segment_of([]), length: Distance.metres(50.0) },
+		]).segments_with_ends()
+	lengths = stretches.map(|stretch| stretch.segment.length.to_metres())
+	ends = stretches.map(|stretch| stretch.end.to_metres())
+	lengths == [300.0, 150.0, 50.0] and ends == [300.0, 450.0, 500.0]
+}
+
 ## The birds on one segment of `trees`, for a rider `rider_along` metres into
 ## it, seen through a focal length of `cam_focal`.
 birds_on : List(Trees.RoadsideTree),

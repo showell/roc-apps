@@ -148,14 +148,7 @@ rider_distance = |tour| {
 
 ## The route as a straight bar, with a mark where each segment ends.
 bar_shapes : List(Shapes.Shape)
-bar_shapes = {
-	ends = World.route.route_segments().fold(
-		{ reached: Distance.zero, marks: [] },
-		|{ reached, marks }, segment| {
-			end = reached.plus(segment.length)
-			{ reached: end, marks: marks.append(route_x(end)) }
-		},
-	)
+bar_shapes =
 	[
 		Rect({
 			x: route_left_x,
@@ -165,10 +158,10 @@ bar_shapes = {
 			fill: Brush.flat(road_color),
 		}),
 	].concat(
-		ends.marks.map(
-			|x|
+		World.route.segments_with_ends().map(
+			|stretch|
 				Rect({
-					x: x - 1.0,
+					x: route_x(stretch.end) - 1.0,
 					y: route_y - 8.0,
 					width: 2.0,
 					height: 16.0,
@@ -176,7 +169,6 @@ bar_shapes = {
 				}),
 		),
 	)
-}
 
 ## A disc on the bar with its name above or below it.
 marker_shapes : {
