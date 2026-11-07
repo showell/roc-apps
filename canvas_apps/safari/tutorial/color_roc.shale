@@ -9,27 +9,26 @@
 --   cd <roc-apps checkout> && shale canvas_apps/safari/tutorial/color_roc.shale
 --
 -- A block is often part of a definition, which Roc can't parse alone. Every
--- block comes from a file, though, so the file is parsed whole and the block is
--- found in it. The caption over the block names the file, and the block's lines
--- are the file's, less a common indent, with a `# ...` line at a cut. A last
--- line may stop short of its file line, at the end of a definition. A block may
--- also be several runs of lines from around the file, as a block of signatures
--- is, and each run is placed alone.
+-- block comes from a file, though, so the file is parsed whole. build.shale
+-- leaves a note, build/blocks.jsonl, that says which lines of which file each
+-- block shows, in the order of the expanded source. `order=` names the pages in
+-- book order, so the pages' blocks come in the note's order. The file and the
+-- note give each block's text, and a block that doesn't read that way stops the
+-- build, as does a count of blocks that differs from the note's.
 --
 -- Roc's tree places strings, numbers, type names, tags and top-level names
 -- exactly. It holds no comments and no keywords, so those are read from the text
 -- the tree doesn't claim, where a `#` can only start a comment.
 --
--- A block that can't be placed comes out plain, and the last line of the run
--- says how many did, with one line for each.
+-- A block of a file roc-ast refuses comes out plain, and so does one whose tree
+-- contradicts itself. The last line of the run says how many did, with one line
+-- for each.
 --
 -- `self_test=1` proves both sides of each rule on a module written here.
 const PAGES = "build:roc-apps/next/tutorial.staging"
-const SOURCES = "canvas_apps/**/*.roc"
+const NOTES = "canvas_apps/safari/tutorial/build/blocks.jsonl"
 const OPEN = "<pre><code class=\"language-roc\">"
 const CLOSE = "</code></pre>"
-const TITLE = "([A-Za-z0-9_]+\\.roc)[^<]*</figcaption>$"
-const TITLE_REACH = 300
 const CUT = "# ..."
 const KEYWORD = "\\b(?:and|as|break|crash|dbg|else|expect|exposing|for|if|import|in|match|or|return|var|where|while)\\b"
 const OUR_SPANS = "<span class=\"syn-[a-z]+\">|</span>"
@@ -227,141 +226,63 @@ function cut_line(shown)
   return escaped(sub(shown, 1, at - 1)) .. "<span class=\"syn-comment\">" .. CUT .. "</span>"
 end
 
-function is_cut(shown)
-  return trim(shown) == CUT
-end
-
--- Whether `kept` lies in the file from line `at`, `indent` bytes in.
-function lies_at(lines_of, at, indent, kept)
-  if at + #kept - 1 > #lines_of then return false end
-  local i = 1
-  while i <= #kept do
-    local line = lines_of[at + i - 1]
-    local shown = kept[i]
-    if shown == "" then
-      if trim(line) ~= "" then return false end
-    elseif i == #kept then
-      if sub(line, indent + 1, indent + #shown) ~= shown then return false end
-    elseif sub(line, indent + 1, #line) ~= shown then
-      return false
+-- What a note says its block shows, a line each. A cut holds its text alone, and
+-- any other line says where it sits in the file.
+function noted_lines(file, note)
+  local shown = {}
+  for part in note.parts do
+    if has_key(part, "cut") then
+      push(shown, {text = part.cut})
+    else
+      local number = part.from
+      while number <= part.to do
+        local line = file.lines[number]
+        local last = #line
+        if number == part.to then last = part.end_col - 1 end
+        push(shown, {text = sub(line, part.indent + 1, last), number = number, indent = part.indent})
+        number = number + 1
+      end
     end
-    i = i + 1
   end
-  return true
+  return shown
 end
 
--- Where a block's kept lines are in a file, or nil. Identical stretches of a
--- file read the same, so the first that fits is as good as any.
-function place_in(file, kept)
-  local number = 1
-  for line in file.lines do
-    local at = find(line, kept[1])
-    if at ~= nil and trim(sub(line, 1, at - 1)) == "" and lies_at(file.lines, number, at - 1, kept) then
-      return {first = number, indent = at - 1}
-    end
-    number = number + 1
+function check_block(text, shown, note, page)
+  local noted = {}
+  for line in shown do push(noted, line.text) end
+  if join(noted, "\n") .. "\n" ~= text then
+    fail("color_roc: " .. page .. " disagrees with the note for " .. note.path .. ": it has [" .. sub(text, 1, 40) .. "], and the note gives [" .. sub(join(noted, "\n"), 1, 40) .. "]")
   end
   return nil
-end
-
--- The longest run of `kept` from line `from` that lies in the file, or nil.
-function longest_run(file, kept, from)
-  if kept[from] == "" then return nil end
-  local to = #kept
-  while to >= from do
-    local place = place_in(file, slice(kept, from, to))
-    if place ~= nil then return {from = from, to = to, place = place} end
-    to = to - 1
-  end
-  return nil
-end
-
--- Where each stretch of `kept` is in the file, or nil if one isn't there.
-function runs_of(file, kept)
-  local runs = {}
-  local from = 1
-  while from <= #kept do
-    local run_here = longest_run(file, kept, from)
-    if run_here == nil then return nil end
-    push(runs, run_here)
-    from = run_here.to + 1
-  end
-  return runs
-end
-
-function colored_lines(file, runs, kept)
-  local html = {}
-  for stretch in runs do
-    local i = stretch.from
-    while i <= stretch.to do
-      local tokens = line_tokens(file, stretch.place.first + i - stretch.from)
-      if tokens == nil then return nil end
-      push(html, colored_line(kept[i], tokens, stretch.place.indent))
-      i = i + 1
-    end
-  end
-  return html
-end
-
--- The block's lines, less a `# ...` at either end.
-function kept_lines(shown)
-  local from = 1
-  local to = #shown
-  if is_cut(shown[from]) then from = from + 1 end
-  if to > from and is_cut(shown[to]) then to = to - 1 end
-  return slice(shown, from, to)
-end
-
--- A block's HTML from one file, or nil where it isn't there.
-function block_from(file, shown)
-  local kept = kept_lines(shown)
-  if #kept == 0 then return nil end
-  local runs = runs_of(file, kept)
-  if runs == nil then return nil end
-  local middle = colored_lines(file, runs, kept)
-  if middle == nil then return nil end
-  local html = {}
-  if is_cut(shown[1]) then push(html, cut_line(shown[1])) end
-  for line in middle do push(html, line) end
-  if #shown > 1 and is_cut(shown[#shown]) then push(html, cut_line(shown[#shown])) end
-  return join(html, "\n") .. "\n"
-end
-
-function title_file(before)
-  local from = 1
-  if #before > TITLE_REACH then from = #before - TITLE_REACH end
-  local m = re_find(sub(before, from, #before), TITLE)
-  if m == nil then return "" end
-  return m.groups[1]
 end
 
 -- The block's HTML, or nil with its reason in `tally`.
-function colored_block(body, name, sources, files, tally, page)
-  local text = unescaped(body)
-  if name == "" then
-    push(tally.plain, page .. ": no title names a file, above [" .. sub(text, 1, 40) .. "]")
+function colored_block(body, note, files, tally, page)
+  local file = files[note.path]
+  local shown = noted_lines(file, note)
+  check_block(unescaped(body), shown, note, page)
+  if file.err ~= "" then
+    push(tally.plain, page .. ": " .. file.err)
     return nil
   end
-  local refused = ""
-  local shown = split(sub(text, 1, #text - 1), "\n")
-  for path in get(sources, name, {}) do
-    local file = files[path]
-    if file.err ~= "" then
-      refused = file.err
+  local html = {}
+  for line in shown do
+    if has_key(line, "number") then
+      local tokens = line_tokens(file, line.number)
+      if tokens == nil then
+        push(tally.plain, page .. ": the tree contradicts itself at " .. note.path .. ":" .. line.number)
+        return nil
+      end
+      push(html, colored_line(line.text, tokens, line.indent))
     else
-      local html = block_from(file, shown)
-      if html ~= nil then return html end
+      push(html, cut_line(line.text))
     end
   end
-  if refused ~= "" then
-    push(tally.plain, page .. ": " .. refused)
-  else
-    push(tally.plain, page .. ": can't be placed in " .. name .. ": [" .. sub(text, 1, 40) .. "]")
-  end
-  return nil
+  return join(html, "\n") .. "\n"
 end
 
-function colored_page(page, sources, files, tally)
+-- The page with its blocks colored, each taking the next note.
+function colored_page(page, notes, files, tally)
   local pieces = split(read(page), OPEN)
   local out = {pieces[1]}
   local i = 2
@@ -369,8 +290,9 @@ function colored_page(page, sources, files, tally)
     local piece = pieces[i]
     local close = find(piece, CLOSE)
     if close == nil then fail("color_roc: a block with no end in " .. page) end
-    local body = sub(piece, 1, close - 1)
-    local html = colored_block(body, title_file(pieces[i - 1]), sources, files, tally, basename(page))
+    if tally.noted == #notes then fail("color_roc: " .. page .. " has a block past the note's last, of " .. #notes) end
+    tally.noted = tally.noted + 1
+    local html = colored_block(sub(piece, 1, close - 1), notes[tally.noted], files, tally, basename(page))
     if html == nil then
       push(out, piece)
     else
@@ -391,58 +313,44 @@ function check_text(page, before, after)
   return nil
 end
 
-function sources_by_name(pattern)
-  local sources = {}
-  for path in glob(pattern) do push_at(sources, basename(path), path) end
-  return sources
-end
-
-function titled_names(page, names)
-  local pieces = split(read(page), OPEN)
-  local i = 1
-  while i < #pieces do
-    local name = title_file(pieces[i])
-    if name ~= "" then names[name] = true end
-    i = i + 1
-  end
-  return nil
-end
-
--- Each file the pages' titles name, parsed in one run of roc-ast.
-function parsed_files(pages, sources)
-  local names = {}
-  for page in pages do titled_names(page, names) end
+-- Each file the notes name, parsed in one run of roc-ast.
+function parsed_files(notes)
   local paths = {}
-  for name in keys(names) do
-    for path in get(sources, name, {}) do push(paths, path) end
-  end
+  for note in notes do push(paths, note.path) end
   local files = {}
   if #paths == 0 then return files end
-  for tree in roc_tree(paths) do
+  for tree in roc_tree(unique(paths)) do
     local lines_of = split(read(tree.path), "\n")
     if tree.err == "" then
       files[tree.path] = {err = "", lines = lines_of, spans = tree_spans(lines_of, tree.nodes)}
     else
-      files[tree.path] = {err = tree.err}
+      files[tree.path] = {err = tree.err, lines = lines_of}
     end
   end
   return files
 end
 
--- Colors the pages in `folder`, and gives the count of each outcome.
-function color_pages(folder, pattern)
-  local pages = glob(folder .. "/*.html")
-  local sources = sources_by_name(pattern)
-  local files = parsed_files(pages, sources)
-  local tally = {colored = 0, plain = {}}
-  for page in pages do
+function read_notes(text)
+  local notes = {}
+  for l in lines(text) do push(notes, json_read(l)) end
+  return notes
+end
+
+-- Colors the pages named in `order`, in `folder`, and gives the count of each
+-- outcome.
+function color_pages(folder, order, notes)
+  local files = parsed_files(notes)
+  local tally = {colored = 0, plain = {}, noted = 0}
+  for name in order do
+    local page = folder .. "/" .. name
     local before = read(page)
     if contains(before, OPEN) then
-      local after = colored_page(page, sources, files, tally)
+      local after = colored_page(page, notes, files, tally)
       check_text(page, before, after)
       replace(page, after)
     end
   end
+  if tally.noted ~= #notes then fail("color_roc: the note has " .. #notes .. " blocks, and the pages " .. tally.noted) end
   return tally
 end
 
@@ -489,9 +397,9 @@ function caption(title)
   return "<figure class=\"listing\"><figcaption>" .. title .. "</figcaption>"
 end
 
-function color_one(folder, title, block)
+function color_one(folder, title, block, parts)
   replace(folder .. "/page.html", page_with(title, block))
-  local tally = color_pages(folder, folder .. "/*.roc")
+  local tally = color_pages(folder, {"page.html"}, {{path = folder .. "/Zoo.roc", parts = parts}})
   return {tally = tally, html = read(folder .. "/page.html")}
 end
 
@@ -499,8 +407,13 @@ function span(class, text)
   return "<span class=\"syn-" .. class .. "\">" .. text .. "</span>"
 end
 
-function expect_block(checks, folder, what, block, want)
-  local got = color_one(folder, caption("Zoo.roc"), block)
+-- The lines of ZOO from `from` through `to`, whole, less `indent` bytes each.
+function zoo_part(from, to, indent)
+  return {from = from, to = to, indent = indent, end_col = #split(ZOO, "\n")[to] + 1}
+end
+
+function expect_block(checks, folder, what, parts, block, want)
+  local got = color_one(folder, caption("Zoo.roc"), block, parts)
   local page = WRAPPED .. caption("Zoo.roc") .. OPEN .. want .. "\n" .. CLOSE .. "\n<p>after</p>\n"
   if got.tally.colored ~= 1 or #got.tally.plain ~= 0 then fail("self_test: " .. what .. " came out plain: " .. join(got.tally.plain, ", ")) end
   if got.html ~= page then fail("self_test: " .. what .. " gave [" .. got.html .. "], not [" .. page .. "]") end
@@ -508,12 +421,33 @@ function expect_block(checks, folder, what, block, want)
   return nil
 end
 
-function expect_plain(checks, folder, what, title, block, why)
-  local got = color_one(folder, title, block)
-  if got.tally.colored ~= 0 or #got.tally.plain ~= 1 then fail("self_test: " .. what .. " counted " .. json_write(got.tally)) end
-  if not contains(got.tally.plain[1], why) then fail("self_test: " .. what .. " said [" .. got.tally.plain[1] .. "]") end
-  if got.html ~= page_with(title, block) then fail("self_test: " .. what .. " changed the page") end
+-- A block the note doesn't describe stops the run, and leaves its page alone.
+function expect_stop(checks, folder, what, block, parts, why)
+  local got = attempt(color_one, folder, caption("Zoo.roc"), block, parts)
+  if got.ok or not contains(got.error, why) then fail("self_test: " .. what .. " gave " .. json_write(got)) end
+  if read(folder .. "/page.html") ~= page_with(caption("Zoo.roc"), block) then fail("self_test: " .. what .. " changed the page") end
   push(checks, what)
+  return nil
+end
+
+function check_counts(checks, folder)
+  local note = {path = folder .. "/Zoo.roc", parts = {{from = 19, to = 19, indent = 1, end_col = 10}}}
+  replace(folder .. "/page.html", page_with(caption("Zoo.roc"), "bare = 1"))
+  local too_few = attempt(color_pages, folder, {"page.html"}, {note, note})
+  if too_few.ok or too_few.error ~= "color_roc: the note has 2 blocks, and the pages 1" then fail("self_test: a note with a block too many gave " .. json_write(too_few)) end
+  push(checks, "a note with a block the pages lack")
+
+  replace(folder .. "/page.html", page_with(caption("Zoo.roc"), "bare = 1") .. page_with(caption("Zoo.roc"), "bare = 1"))
+  local too_many = attempt(color_pages, folder, {"page.html"}, {note})
+  if too_many.ok or not contains(too_many.error, "has a block past the note's last, of 1") then fail("self_test: a page with a block too many gave " .. json_write(too_many)) end
+  push(checks, "a page with a block the note lacks")
+
+  replace(folder .. "/other.html", page_with(caption("Zoo.roc"), "bare = 1"))
+  replace(folder .. "/page.html", page_with(caption("Zoo.roc"), "wide"))
+  local misordered = attempt(color_pages, folder, {"page.html", "other.html"}, {note, {path = note.path, parts = {{from = 21, to = 21, indent = 1, end_col = 6}}}})
+  if misordered.ok or not contains(misordered.error, "page.html disagrees with the note for") then fail("self_test: pages out of order gave " .. json_write(misordered)) end
+  push(checks, "pages out of the note's order")
+  remove(folder .. "/other.html")
   return nil
 end
 
@@ -523,60 +457,70 @@ function self_test()
   replace(folder .. "/Broken.roc", "Broken :: [].{\n\tx = = 1\n")
   local checks = {}
 
-  expect_block(checks, folder, "a `#` in a string, and a quote in a comment",
+  expect_block(checks, folder, "a `#` in a string, and a quote in a comment", {zoo_part(12, 14, 2)},
     "amount = cage.size # never \"quoted\" here\niffy = amount < 2.0 and amount > 1.0\nlabel = \"a # b ${cage.name} & 'c' if\"",
     "amount = cage.size " .. span("comment", "# never &quot;quoted&quot; here") .. "\n"
     .. "iffy = amount &lt; " .. span("number", "2.0") .. " " .. span("keyword", "and") .. " amount &gt; " .. span("number", "1.0") .. "\n"
     .. "label = " .. span("string", "&quot;a # b ") .. "${cage.name}" .. span("string", " &amp; &#39;c&#39; if&quot;"))
 
-  expect_block(checks, folder, "a fragment that can't parse alone, with its cuts",
+  expect_block(checks, folder, "a fragment that can't parse alone, with its cuts", {{cut = "\t# ..."}, zoo_part(15, 17, 1)},
     "\t# ...\n\tClock.seconds(amount)\n\tif iffy { Fed(0x10) } else { Hungry }\n}",
     "\t" .. span("comment", "# ...") .. "\n"
     .. "\t" .. span("type", "Clock") .. ".seconds(amount)\n"
     .. "\t" .. span("keyword", "if") .. " iffy { " .. span("type", "Fed") .. "(" .. span("number", "0x10") .. ") } " .. span("keyword", "else") .. " { " .. span("type", "Hungry") .. " }\n}")
 
-  expect_block(checks, folder, "a whole definition, its doc and its name",
+  expect_block(checks, folder, "a whole definition, its doc and its name", {zoo_part(9, 11, 1), {cut = "\t# ..."}},
     "## How much to feed.\nfeed : Cage -> F64\nfeed = |cage| {\n\t# ...",
     span("comment", "## How much to feed.") .. "\n"
     .. span("name", "feed") .. " : " .. span("type", "Cage") .. " -&gt; " .. span("type", "F64") .. "\n"
     .. span("name", "feed") .. " = |cage| {\n\t" .. span("comment", "# ..."))
 
-  expect_block(checks, folder, "a definition cut before its line ends", "bare = 1", span("name", "bare") .. " = " .. span("number", "1"))
+  expect_block(checks, folder, "a definition cut before its line ends", {{from = 19, to = 19, indent = 1, end_col = 10}},
+    "bare = 1", span("name", "bare") .. " = " .. span("number", "1"))
 
-  expect_block(checks, folder, "a multi-line string, and a local that is no definition",
+  expect_block(checks, folder, "a multi-line string, and a local that is no definition", {zoo_part(26, 29, 2)},
     "note =\n\t\\\\one # two\n\t\\\\three ${x}\nnote",
     "note =\n\t" .. span("string", "\\\\one # two") .. "\n\t" .. span("string", "\\\\three ") .. "${x}\nnote")
 
-  expect_block(checks, folder, "a comment's quote opens no string, and imports name a type",
+  expect_block(checks, folder, "a comment's quote opens no string, and imports name a type", {zoo_part(1, 3, 0)},
     "## A \"quoted\" doc: it's fine.\nimport pf.Stdout\nimport Other exposing [Thing]",
     span("comment", "## A &quot;quoted&quot; doc: it&#39;s fine.") .. "\n"
     .. span("keyword", "import") .. " pf." .. span("type", "Stdout") .. "\n"
     .. span("keyword", "import") .. " " .. span("type", "Other") .. " " .. span("keyword", "exposing") .. " [" .. span("type", "Thing") .. "]")
 
-  expect_block(checks, folder, "columns count bytes, and a wrapped value names its type",
+  expect_block(checks, folder, "columns count bytes, and a wrapped value names its type", {zoo_part(21, 21, 1)},
     "wide = (\"é\", 3, Cage.(4))",
     span("name", "wide") .. " = (" .. span("string", "&quot;é&quot;") .. ", " .. span("number", "3") .. ", " .. span("type", "Cage") .. ".(" .. span("number", "4") .. "))")
 
-  expect_block(checks, folder, "strings that end in an interpolation",
+  expect_block(checks, folder, "strings that end in an interpolation", {zoo_part(23, 23, 1)},
     "tail = |x| [\"${x}\", \"b ${x}\", \"c ${Inner.show(x)}\"]",
     span("name", "tail") .. " = |x| [" .. span("string", "&quot;") .. "${x}" .. span("string", "&quot;") .. ", "
     .. span("string", "&quot;b ") .. "${x}" .. span("string", "&quot;") .. ", "
     .. span("string", "&quot;c ") .. "${" .. span("type", "Inner") .. ".show(x)}" .. span("string", "&quot;") .. "]")
 
   expect_block(checks, folder, "lines from around the file, each run placed alone",
+    {zoo_part(10, 10, 1), {from = 19, to = 19, indent = 1, end_col = 10}, zoo_part(26, 27, 2)},
     "feed : Cage -> F64\nbare = 1\nnote =\n\t\\\\one # two",
     span("name", "feed") .. " : " .. span("type", "Cage") .. " -&gt; " .. span("type", "F64") .. "\n"
     .. span("name", "bare") .. " = " .. span("number", "1") .. "\n"
     .. "note =\n\t" .. span("string", "\\\\one # two"))
 
-  expect_plain(checks, folder, "a block not in its file", caption("Zoo.roc"), "gone = 1", "can't be placed in Zoo.roc")
-  expect_plain(checks, folder, "a block with one line not in its file", caption("Zoo.roc"), "bare = 1\ngone = 1", "can't be placed in Zoo.roc")
-  expect_plain(checks, folder, "a file there is none of", caption("Nowhere.roc"), "bare = 1", "can't be placed in Nowhere.roc")
-  expect_plain(checks, folder, "no title", "<p>Zoo.roc</p>\n", "bare = 1", "no title names a file")
-  expect_plain(checks, folder, "a file roc-ast refuses", caption("Broken.roc"), "x = = 1", "parse problem")
+  expect_stop(checks, folder, "a block that isn't where the note says", "gone = 1", {zoo_part(19, 19, 1)}, "disagrees with the note")
+  expect_stop(checks, folder, "a block with one line that isn't", "bare = 1\ngone = 1", {{from = 19, to = 19, indent = 1, end_col = 10}, zoo_part(21, 21, 1)}, "disagrees with the note")
+  expect_stop(checks, folder, "a block longer than its note", "bare = 1\nmore", {{from = 19, to = 19, indent = 1, end_col = 10}}, "disagrees with the note")
+  expect_stop(checks, folder, "a block shorter than its note", "bare = 1", {{from = 19, to = 19, indent = 1, end_col = 10}, {cut = "# ..."}}, "disagrees with the note")
+  expect_stop(checks, folder, "a note whose end column is off", "bare = 1", {{from = 19, to = 19, indent = 1, end_col = 9}}, "disagrees with the note")
+  expect_stop(checks, folder, "a note whose indent is off", "bare = 1", {{from = 19, to = 19, indent = 0, end_col = 10}}, "disagrees with the note")
+  check_counts(checks, folder)
+
+  replace(folder .. "/page.html", page_with(caption("Broken.roc"), "x = = 1"))
+  local refused = color_pages(folder, {"page.html"}, {{path = folder .. "/Broken.roc", parts = {{from = 2, to = 2, indent = 1, end_col = 9}}}})
+  if refused.colored ~= 0 or #refused.plain ~= 1 or not contains(refused.plain[1], "parse problem") then fail("self_test: a file roc-ast refuses counted " .. json_write(refused)) end
+  if read(folder .. "/page.html") ~= page_with(caption("Broken.roc"), "x = = 1") then fail("self_test: a file roc-ast refuses changed the page") end
+  push(checks, "a file roc-ast refuses")
 
   replace(folder .. "/page.html", caption("Zoo.roc") .. "<pre><code class=\"language-zig\">bare = 1\n</code></pre>\n")
-  local other = color_pages(folder, folder .. "/*.roc")
+  local other = color_pages(folder, {"page.html"}, {})
   if other.colored ~= 0 or #other.plain ~= 0 or not contains(read(folder .. "/page.html"), ">bare = 1\n<") then fail("self_test: a Zig block was touched") end
   push(checks, "a block in another language")
 
@@ -596,7 +540,9 @@ end
 if arg("self_test", "") == "1" then
   self_test()
 else
-  local tally = color_pages(arg("pages", PAGES), SOURCES)
+  local order = arg("order", "")
+  if order == "" then fail("color_roc: order= names the pages, in book order") end
+  local tally = color_pages(arg("pages", PAGES), split(order, " "), read_notes(read(NOTES)))
   for line in tally.plain do print("color_roc: plain, " .. line) end
   print("color_roc: " .. tally.colored .. " blocks colored, " .. #tally.plain .. " plain")
 end
