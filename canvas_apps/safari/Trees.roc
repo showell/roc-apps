@@ -44,8 +44,8 @@ Trees :: [].{
 	distance_from_middle : Conifer -> Distance
 	distance_from_middle = |conifer|
 		match conifer {
-			Gold => Scenery.road_half_width.plus(tree_road_offset.times(4.0))
-			BigGreen | SmallGreen | Red => Scenery.road_half_width.plus(tree_road_offset)
+			Gold => Geom.road_half_width.plus(tree_road_offset.times(4.0))
+			BigGreen | SmallGreen | Red => Geom.road_half_width.plus(tree_road_offset)
 		}
 
 	## A segment's trees, in pairs from its start, each pair's left tree

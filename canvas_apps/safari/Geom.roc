@@ -11,6 +11,7 @@ import Across
 import Along
 import Angle
 import Distance
+import Fraction
 
 Geom :: [].{
 
@@ -41,34 +42,36 @@ Geom :: [].{
 		kind : kind,
 	}
 
-	## A point on one segment of the road, measured from the road's left edge.
-	## A bend turns about a corner of the road, so its arithmetic works from
-	## that edge.
-	EdgePoint : { along : Along, from_left : Distance }
-
 	## Where the camera stands on the current segment, and which way it faces.
-	## The middle of the road is `half_width` from its left edge.
 	Vantage : {
 		along : Along,
 		across : Across,
 		yaw : Angle.Turn,
-		half_width : Distance,
 	}
 
 	## The bend from one segment into the next: the length of the segment
-	## before it, the turn it makes, positive to the right, and the road's
-	## width.
-	Bend : {
-		segment_length : Distance,
-		turn : Angle.Turn,
-		road_width : Distance,
-	}
+	## before it, and the turn it makes, positive to the right.
+	Bend : { segment_length : Distance, turn : Angle.Turn }
+
+	## How far the road reaches from its middle to either edge. The road is
+	## twice this wide.
+	road_half_width : Distance
+	road_half_width = Distance.metres(2.0)
+
+	## The road's left edge.
+	left_edge : Across
+	left_edge = Across.left_of_middle(road_half_width)
+
+	## The road's right edge.
+	right_edge : Across
+	right_edge = Across.right_of_middle(road_half_width)
 
 	## A line through two points.
 	Line : { start_point : Geom.RiderPoint, end_point : Geom.RiderPoint }
 
 	## The radius the ground, and the truck on it, curve away over. From the
-	## rider's eye it puts the horizon 490 metres out.
+	## rider's eye it puts the horizon 490 metres out, at
+	## `Ground.horizon_distance`.
 	ground_curve_radius : Distance
 	ground_curve_radius = Distance.metres(100000.0)
 
@@ -82,11 +85,10 @@ Geom :: [].{
 	}
 
 	## A point on the current segment, as the camera at `vantage` sees it.
-	to_rider_point : Geom.EdgePoint, Geom.Vantage -> Geom.RiderPoint
-	to_rider_point = |{ along, from_left }, vantage| {
+	to_rider_point : Geom.RoadPoint, Geom.Vantage -> Geom.RiderPoint
+	to_rider_point = |{ along, across }, vantage| {
 		ahead = along.distance_from(vantage.along).to_metres()
-		rider_from_left = vantage.across.distance_from(Across.left_of_middle(vantage.half_width))
-		aside = from_left.minus(rider_from_left).to_metres()
+		aside = across.distance_from(vantage.across).to_metres()
 		cos_yaw = vantage.yaw.to_radians().cos()
 		sin_yaw = vantage.yaw.to_radians().sin()
 		{
@@ -95,58 +97,33 @@ Geom :: [].{
 		}
 	}
 
-	## A point on the segment after `bend`, measured on the segment before it.
-	point_in_segment_before : Geom.EdgePoint, Geom.Bend -> Geom.EdgePoint
+	## A point on the segment after `bend`, measured on the segment before it:
+	## turned by the bend, then moved to where the segment after starts.
+	point_in_segment_before : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
 	point_in_segment_before = |point, bend| {
+		start = start_after(bend)
 		along = point.along.to_metres()
-		from_left = point.from_left.to_metres()
-		length = bend.segment_length.to_metres()
-		width = bend.road_width.to_metres()
-		turn_size = bend.turn.abs().to_radians()
-		cos_turn = turn_size.cos()
-		sin_turn = turn_size.sin()
-		if bend.turn.is_right() {
-			turned_along = along * cos_turn - from_left * sin_turn + width * sin_turn + length
-			turned_from_left = from_left * cos_turn + along * sin_turn + width * (1.0 - cos_turn)
-			{ along: Along.metres(turned_along), from_left: Distance.metres(turned_from_left) }
-		} else {
-			{
-				along: Along.metres(along * cos_turn + from_left * sin_turn + length),
-				from_left: Distance.metres(from_left * cos_turn - along * sin_turn),
-			}
+		across = point.across.to_metres()
+		cos_turn = bend.turn.to_radians().cos()
+		sin_turn = bend.turn.to_radians().sin()
+		{
+			along: start.along.plus(Distance.metres(cos_turn * along - sin_turn * across)),
+			across: start.across.plus(Distance.metres(sin_turn * along + cos_turn * across)),
 		}
 	}
 
 	## A point on the segment before `bend`, measured on the segment after it.
-	point_in_segment_after : Geom.EdgePoint, Geom.Bend -> Geom.EdgePoint
+	## This is `point_in_segment_before` undone.
+	point_in_segment_after : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
 	point_in_segment_after = |point, bend| {
-		left_edge = Across.left_of_middle(bend.road_width.divided_by(2.0))
-		centred = centred_point_after(
-			{ along: point.along, across: left_edge.plus(point.from_left) },
-			bend,
-		)
-		{ along: centred.along, from_left: centred.across.distance_from(left_edge) }
-	}
-
-	## `point_in_segment_after` for a point measured from the middle of the road, as
-	## the rider is.
-	centred_point_after : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
-	centred_point_after = |point, bend| {
-		across = point.across.to_metres()
-		half_width = bend.road_width.to_metres() / 2.0
+		start = start_after(bend)
+		past_start = point.along.distance_from(start.along).to_metres()
+		aside = point.across.distance_from(start.across).to_metres()
 		cos_turn = bend.turn.to_radians().cos()
 		sin_turn = bend.turn.to_radians().sin()
-		corner_shift = half_width * (1.0 - cos_turn)
-		corner_along = bend.segment_length.to_metres() + half_width * sin_turn.abs()
-		past_corner = point.along.to_metres() - corner_along
-		past_middle = if bend.turn.is_right() {
-			across - corner_shift
-		} else {
-			across + corner_shift
-		}
 		{
-			along: Along.metres(cos_turn * past_corner + sin_turn * past_middle),
-			across: Across.metres((0.0 - sin_turn) * past_corner + cos_turn * past_middle),
+			along: Along.metres(cos_turn * past_start + sin_turn * aside),
+			across: Across.metres((0.0 - sin_turn) * past_start + cos_turn * aside),
 		}
 	}
 
@@ -155,7 +132,7 @@ Geom :: [].{
 	commit_along : Geom.Bend -> Along
 	commit_along = |bend| {
 		exit_tan = bend.turn.abs().to_radians().tan()
-		Along.at(bend.segment_length.minus(bend.road_width.divided_by(2.0).divided_by(exit_tan)))
+		Along.at(bend.segment_length.minus(Geom.road_half_width.divided_by(exit_tan)))
 	}
 
 	## Where two lines cross. They must not be parallel.
@@ -188,6 +165,109 @@ Geom :: [].{
 		next_corners = polygon_points.drop_first(1).concat(polygon_points.take_first(1))
 		edges = polygon_points.map2(next_corners, |from, to| { from, to })
 		edges.fold(List.with_capacity(2 * polygon_points.len()), edge_points_onto)
+	}
+
+	## The polygon cut to what lies within `reach` of the rider, measured on
+	## the ground. Where an edge leaves that circle and another comes back
+	## into it, a straight line joins them.
+	points_within : List(Geom.RaisedPoint), Distance -> List(Geom.RaisedPoint)
+	points_within = |polygon_points, reach| {
+		next_corners = polygon_points.drop_first(1).concat(polygon_points.take_first(1))
+		edges = polygon_points.map2(next_corners, |from, to| { from, to, reach })
+		edges.fold(List.with_capacity(2 * polygon_points.len()), reach_points_onto)
+	}
+}
+
+## `points_within` with what one edge of a polygon adds to it: the edge's first
+## corner if that is within reach, then each point where the edge crosses the
+## circle at `reach`, in order along the edge.
+reach_points_onto : List(Geom.RaisedPoint),
+{
+	from : Geom.RaisedPoint,
+	to : Geom.RaisedPoint,
+	reach : Distance,
+} -> List(Geom.RaisedPoint)
+reach_points_onto = |kept_points, { from, to, reach }| {
+	with_corner = if is_within(from, reach) {
+		kept_points.append(from)
+	} else {
+		kept_points
+	}
+	circle_crossings({ from, to, reach }).fold(
+		with_corner,
+		|points, fraction| points.append(point_along_edge({ from, to, fraction })),
+	)
+}
+
+## Whether `point` is within `reach` of the rider, measured on the ground.
+is_within : Geom.RaisedPoint, Distance -> Bool
+is_within = |point, reach| {
+	r = point.right.to_metres()
+	f = point.forward.to_metres()
+	r * r + f * f <= reach.to_metres() * reach.to_metres()
+}
+
+## How far along the edge from `from` to `to` it crosses the circle at `reach`
+## round the rider, as fractions of the edge strictly between its ends,
+## nearest `from` first.
+##
+## The point a share t of the way along is `from` plus t steps, and it is on
+## the circle where its squared distance equals the squared reach, a quadratic
+## in t.
+circle_crossings : {
+	from : Geom.RaisedPoint,
+	to : Geom.RaisedPoint,
+	reach : Distance,
+} -> List(Fraction)
+circle_crossings = |{ from, to, reach }| {
+	start_right = from.right.to_metres()
+	start_forward = from.forward.to_metres()
+	step_right = to.right.to_metres() - start_right
+	step_forward = to.forward.to_metres() - start_forward
+	step_squared = step_right * step_right + step_forward * step_forward
+	outward = start_right * step_right + start_forward * step_forward
+	reach_squared = reach.to_metres() * reach.to_metres()
+	start_past_reach = start_right * start_right + start_forward * start_forward - reach_squared
+	discriminant = outward * outward - step_squared * start_past_reach
+	if step_squared == 0.0 or discriminant <= 0.0 {
+		[]
+	} else {
+		root = discriminant.sqrt()
+		entering = (0.0 - outward - root) / step_squared
+		leaving = (0.0 - outward + root) / step_squared
+		[entering, leaving].keep_if(|share| share > 0.0 and share < 1.0).map(Fraction.of)
+	}
+}
+
+## The point `fraction` of the way from `from` to `to`.
+point_along_edge : {
+	from : Geom.RaisedPoint,
+	to : Geom.RaisedPoint,
+	fraction : Fraction,
+} -> Geom.RaisedPoint
+point_along_edge = |{ from, to, fraction }| {
+	right: from.right.plus(to.right.minus(from.right).times(fraction.to_f64())),
+	forward: from.forward.plus(to.forward.minus(from.forward).times(fraction.to_f64())),
+	height: from.height.plus(to.height.minus(from.height).times(fraction.to_f64())),
+}
+
+## The middle of the road where the segment after `bend` starts, measured on
+## the segment before it. The two segments share the corner on the inside of
+## the bend, so this lies past the end of the segment before, and toward the
+## turn.
+start_after : Geom.Bend -> Geom.RoadPoint
+start_after = |bend| {
+	half_width = Geom.road_half_width.to_metres()
+	cos_turn = bend.turn.to_radians().cos()
+	sin_turn = bend.turn.to_radians().sin()
+	toward_turn = half_width * (1.0 - cos_turn)
+	{
+		along: Along.metres(bend.segment_length.to_metres() + half_width * sin_turn.abs()),
+		across: if bend.turn.is_right() {
+			Across.metres(toward_turn)
+		} else {
+			Across.metres(0.0 - toward_turn)
+		},
 	}
 }
 
@@ -243,37 +323,36 @@ expect Geom.ground_drop({
 }).to_metres() == 0.05078125
 
 expect {
-	seen_from = |edge_point, yaw|
+	seen_from = |road_point, yaw|
 		Geom.to_rider_point(
-			edge_point,
+			road_point,
 			{
 				along: Along.metres(5.0),
 				across: Across.metres(0.5),
 				yaw: Angle.Turn.radians(yaw),
-				half_width: Distance.metres(3.0),
 			},
 		)
 	[
 		(
-			seen_from({ along: Along.metres(0.0), from_left: Distance.metres(0.0) }, 0.0),
+			seen_from({ along: Along.metres(0.0), across: Across.metres(-3.0) }, 0.0),
 			{ right: Distance.metres(-3.5), forward: Distance.metres(-5.0) },
 		),
 		(
-			seen_from({ along: Along.metres(12.0), from_left: Distance.metres(3.0) }, 0.35),
+			seen_from({ along: Along.metres(12.0), across: Across.metres(0.0) }, 0.35),
 			{
 				right: Distance.metres(-2.869971008611849),
 				forward: Distance.metres(6.404160086203927),
 			},
 		),
 		(
-			seen_from({ along: Along.metres(40.0), from_left: Distance.metres(-2.0) }, -0.6),
+			seen_from({ along: Along.metres(40.0), across: Across.metres(-5.0) }, -0.6),
 			{
 				right: Distance.metres(15.223140686823006),
 				forward: Distance.metres(31.992280125511435),
 			},
 		),
 		(
-			seen_from({ along: Along.metres(7.5), from_left: Distance.metres(6.25) }, 1.2),
+			seen_from({ along: Along.metres(7.5), across: Across.metres(3.25) }, 1.2),
 			{
 				right: Distance.metres(-1.333613890107213),
 				forward: Distance.metres(3.4690018726015563),
@@ -288,26 +367,60 @@ expect {
 	)
 }
 
-## A bend of `degrees` out of a 300 metre segment of a 4 metre road.
+expect Geom.road_half_width.to_metres() == 2.0
+expect Geom.left_edge.to_metres() == -2.0
+expect Geom.right_edge.to_metres() == 2.0
+
+## A bend of `degrees` out of a 300 metre segment.
 bend_of : F64 -> Geom.Bend
-bend_of = |degrees| {
-	segment_length: Distance.metres(300.0),
-	turn: Angle.Turn.degrees(degrees),
-	road_width: Distance.metres(4.0),
+bend_of = |degrees| { segment_length: Distance.metres(300.0), turn: Angle.Turn.degrees(degrees) }
+
+## Whether two road points are within a nanometre of each other.
+is_near : Geom.RoadPoint, Geom.RoadPoint -> Bool
+is_near = |got, want| {
+	along_miss = got.along.distance_from(want.along).to_metres().abs()
+	across_miss = got.across.distance_from(want.across).to_metres().abs()
+	along_miss <= 0.000000001 and across_miss <= 0.000000001
 }
 
-# A point carried round a bend one way and back lands where it started.
+# A point carried round a bend one way and back lands where it started, both
+# ways round.
 expect
 	[50.0, -70.0, 15.0, -15.0].all(
 		|degrees| {
-			start = { along: Along.metres(12.0), from_left: Distance.metres(3.0) }
+			start = { along: Along.metres(12.0), across: Across.metres(1.0) }
 			bend = bend_of(degrees)
-			back = Geom.point_in_segment_before(Geom.point_in_segment_after(start, bend), bend)
-			along_miss = back.along.distance_from(start.along).to_metres().abs()
-			across_miss = back.from_left.minus(start.from_left).to_metres().abs()
-			along_miss <= 0.000000001 and across_miss <= 0.000000001
+			on_next = Geom.point_in_segment_after(start, bend)
+			on_previous = Geom.point_in_segment_before(start, bend)
+			is_near(Geom.point_in_segment_before(on_next, bend), start)
+				and is_near(Geom.point_in_segment_after(on_previous, bend), start)
 		},
 	)
+
+# The two segments share the corner on the inside of the bend: the right edge
+# for a right turn, the left edge for a left turn.
+expect
+	[
+		(50.0, Geom.right_edge),
+		(-70.0, Geom.left_edge),
+		(15.0, Geom.right_edge),
+	].all(
+		|(degrees, inner_edge)| {
+			end_before = { along: Along.metres(300.0), across: inner_edge }
+			next_start = { along: Along.start, across: inner_edge }
+			is_near(Geom.point_in_segment_before(next_start, bend_of(degrees)), end_before)
+		},
+	)
+
+# The middle of the road where the segment after starts is past the end of the
+# segment before and toward the turn.
+expect {
+	middle_at_start = { along: Along.start, across: Across.middle }
+	is_near(
+		Geom.point_in_segment_before(middle_at_start, bend_of(90.0)),
+		{ along: Along.metres(302.0), across: Across.metres(2.0) },
+	)
+}
 
 # The commit point is where the middle of the road reaches the next road's edge:
 # short of it a rider there is off that road, and just past it on.
@@ -317,30 +430,12 @@ expect
 			bend = bend_of(degrees)
 			commit = Geom.commit_along(bend)
 			from_next_middle = |along| {
-				on_next = Geom.centred_point_after({ along, across: Across.middle }, bend)
+				on_next = Geom.point_in_segment_after({ along, across: Across.middle }, bend)
 				on_next.across.distance_from_middle().to_metres()
 			}
 			(from_next_middle(commit) - 2.0).abs() <= 0.000000001
 				and from_next_middle(commit.minus(Distance.metres(0.01))) > 2.0
 				and from_next_middle(commit.plus(Distance.metres(0.01))) < 2.0
-		},
-	)
-
-# Measured from the road's middle, the same point lands the same place.
-expect
-	[50.0, -70.0].all(
-		|degrees| {
-			along = Along.metres(12.0)
-			bend = bend_of(degrees)
-			from_edge = Geom.point_in_segment_after(
-				{ along, from_left: Distance.metres(3.0) },
-				bend,
-			)
-			from_middle = Geom.centred_point_after({ along, across: Across.metres(1.0) }, bend)
-			along_miss = from_edge.along.distance_from(from_middle.along).to_metres().abs()
-			across_on_edge = Across.metres(from_edge.from_left.to_metres() - 2.0)
-			across_miss = across_on_edge.distance_from(from_middle.across).to_metres().abs()
-			along_miss <= 0.000000001 and across_miss <= 0.000000001
 		},
 	)
 
@@ -402,3 +497,67 @@ expect
 				height: Distance.metres(0.8),
 			},
 		]
+
+## A point on the level of the rider, `right` and `forward` in metres.
+level_at : F64, F64 -> Geom.RaisedPoint
+level_at = |right, forward| {
+	right: Distance.metres(right),
+	forward: Distance.metres(forward),
+	height: Distance.zero,
+}
+
+## Whether a point is within a nanometre of `right` and `forward`, in metres.
+is_level_near : Geom.RaisedPoint, (F64, F64) -> Bool
+is_level_near = |point, (right, forward)| {
+	right_miss = (point.right.to_metres() - right).abs()
+	forward_miss = (point.forward.to_metres() - forward).abs()
+	right_miss <= 0.000000001 and forward_miss <= 0.000000001
+}
+
+## Whether each point is near its want.
+are_near : List(Geom.RaisedPoint), List((F64, F64)) -> Bool
+are_near = |got_points, wants| {
+	is_each_near = got_points.map2(wants, is_level_near).all(|is_close| is_close)
+	got_points.len() == wants.len() and is_each_near
+}
+
+# A square that reaches past 10 m of the rider keeps two corners, then where its
+# right side leaves the circle, then where its left side comes back in.
+expect {
+	square = [
+		level_at(-6.0, 0.0),
+		level_at(6.0, 0.0),
+		level_at(6.0, 12.0),
+		level_at(-6.0, 12.0),
+	]
+	are_near(
+		Geom.points_within(square, Distance.metres(10.0)),
+		[
+			(-6.0, 0.0),
+			(6.0, 0.0),
+			(6.0, 8.0),
+			(-6.0, 8.0),
+		],
+	)
+}
+
+# An edge with both ends past reach that passes through the circle adds where
+# it enters and where it leaves.
+expect {
+	triangle = [
+		level_at(-20.0, 6.0),
+		level_at(20.0, 6.0),
+		level_at(0.0, 30.0),
+	]
+	are_near(Geom.points_within(triangle, Distance.metres(10.0)), [(-8.0, 6.0), (8.0, 6.0)])
+}
+
+# A polygon wholly past reach leaves nothing.
+expect {
+	far_triangle = [
+		level_at(20.0, 20.0),
+		level_at(30.0, 20.0),
+		level_at(30.0, 30.0),
+	]
+	Geom.points_within(far_triangle, Distance.metres(10.0)).is_empty()
+}

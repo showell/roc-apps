@@ -56,7 +56,6 @@ origin = {
 	along: Along.metres(0.0),
 	across: Across.metres(0.0),
 	yaw: Angle.straight_ahead,
-	half_width: Distance.metres(2.0),
 }
 
 ## The first three segments, the rider at the start of the first.
@@ -239,7 +238,6 @@ two_segments = BirdSighting.birds_in_view({
 			along: Along.metres(0.0),
 			across: Across.metres(0.0),
 			yaw: Angle.straight_ahead,
-			half_width: Distance.metres(2.0),
 		},
 	},
 	cam_focal: Pixels.of(500.0),

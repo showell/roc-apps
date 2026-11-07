@@ -214,7 +214,6 @@ origin = {
 	along: Along.metres(0.0),
 	across: Across.metres(0.0),
 	yaw: Angle.straight_ahead,
-	half_width: Distance.metres(2.0),
 }
 
 up_road : Geom.Vantage
@@ -222,7 +221,6 @@ up_road = {
 	along: Along.metres(100.0),
 	across: Across.metres(0.0),
 	yaw: Angle.straight_ahead,
-	half_width: Distance.metres(2.0),
 }
 
 ## The first three segments, seen from `vantage`.

@@ -7,7 +7,6 @@ import Angle
 import Distance
 import Chain
 import Geom
-import Scenery
 import World
 
 ## A bend as the rider sees it: where the segment before it lies, that
@@ -40,9 +39,9 @@ BendView := {
 	outer_edge : Angle.Turn -> Across
 	outer_edge = |turn|
 		if turn.is_right() {
-			Scenery.left_edge
+			Geom.left_edge
 		} else {
-			Scenery.right_edge
+			Geom.right_edge
 		}
 
 	## Where the outer edges of the two segments at a bend meet.
@@ -72,8 +71,8 @@ right_turn = Angle.Turn.radians(0.8726646259971648)
 left_turn : Angle.Turn
 left_turn = Angle.Turn.radians(-1.2217304763960306)
 
-expect BendView.outer_edge(right_turn) == Scenery.left_edge
-expect BendView.outer_edge(left_turn) == Scenery.right_edge
+expect BendView.outer_edge(right_turn) == Geom.left_edge
+expect BendView.outer_edge(left_turn) == Geom.right_edge
 
 ## The apex of a bend from a segment 300 m long, just behind the rider's.
 apex_after_turn : Angle.Turn -> Geom.RiderPoint
@@ -86,15 +85,10 @@ apex_after_turn = |turn|
 				along: Along.metres(100.0),
 				across: Across.metres(1.0),
 				yaw: Angle.Turn.radians(0.2),
-				half_width: Distance.metres(2.0),
 			},
 		},
 		{
-			before: JustBehind({
-				segment_length: Distance.metres(300.0),
-				turn,
-				road_width: Distance.metres(4.0),
-			}),
+			before: JustBehind({ segment_length: Distance.metres(300.0), turn }),
 			length_before: Distance.metres(300.0),
 			turn,
 		},
@@ -128,7 +122,6 @@ vantage = {
 	along: Along.metres(100.0),
 	across: Across.metres(1.0),
 	yaw: Angle.Turn.radians(0.2),
-	half_width: Distance.metres(2.0),
 }
 
 m_chain : Chain.SegmentPlace
@@ -138,14 +131,12 @@ m_prev_left : Chain.SegmentPlace
 m_prev_left = JustBehind({
 	segment_length: Distance.metres(300.0),
 	turn: Angle.Turn.radians(-1.2217304763960306),
-	road_width: Distance.metres(4.0),
 })
 
 m_prev_right : Chain.SegmentPlace
 m_prev_right = JustBehind({
 	segment_length: Distance.metres(300.0),
 	turn: Angle.Turn.radians(0.8726646259971648),
-	road_width: Distance.metres(4.0),
 })
 
 ## The bend of a place behind the rider.
@@ -167,9 +158,7 @@ turns_right : Chain.SegmentPlace -> Bool
 turns_right = |place| bend_of(place).turn.is_right()
 
 expect bend_of(m_prev_left).segment_length.to_metres() == 300.0
-expect bend_of(m_prev_left).road_width.to_metres() == 4.0
 expect bend_of(m_prev_right).segment_length.to_metres() == 300.0
-expect bend_of(m_prev_right).road_width.to_metres() == 4.0
 expect bend_of(Chain.place_behind(World.route_segment(0))).segment_length.to_metres() == 500.0
 expect is_in_chain(m_chain)
 expect !is_in_chain(m_prev_left)

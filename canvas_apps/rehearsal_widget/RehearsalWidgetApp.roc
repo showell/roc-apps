@@ -14,7 +14,7 @@ import game.Bike
 import game.Clock
 import game.Distance
 import game.LeanSearch
-import game.Scenery
+import game.Geom
 import game.Speed
 import game.Tour
 import lib.CanvasApp
@@ -77,7 +77,7 @@ Rehearsal : {
 
 ## The road's edge that stops an arc, on the right. The left's is its mirror.
 arc_edge : Distance
-arc_edge = Scenery.road_half_width.minus(Coast.straighten_margin)
+arc_edge = Geom.road_half_width.minus(Coast.straighten_margin)
 
 ## Whether an arc that has reached `motion` runs on. These are the tests in
 ## `Coast.project`, which answers with only where an arc ends. An `expect` below
@@ -272,7 +272,7 @@ road_line = |{ across, color, width }| {
 ## The road from above, with the line the rider is aiming for.
 road_shapes : List(Shapes.Shape)
 road_shapes = {
-	half_lane = Scenery.road_half_width.to_metres()
+	half_lane = Geom.road_half_width.to_metres()
 	[
 		ground,
 		Rect({

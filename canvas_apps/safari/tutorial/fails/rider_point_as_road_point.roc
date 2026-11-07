@@ -12,7 +12,6 @@ main! = |_args| {
 		along: Along.start,
 		across: Across.middle,
 		yaw: Angle.straight_ahead,
-		half_width: Distance.metres(2.0),
 	}
 	echo!(Geom.to_rider_point(ahead, vantage).forward.to_metres().to_str())
 	Ok({})
