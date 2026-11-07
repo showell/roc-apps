@@ -131,7 +131,7 @@ scene_shapes_on = |on_layers| {
 ## what the sun adds when it's in view.
 backdrop_pieces : FrameView -> List(Piece)
 backdrop_pieces = |view| {
-	backdrop = Backdrop.backdrop_shapes({ sky_colors: view.sky_colors, sun_sighting: view.sun })
+	backdrop = Backdrop.backdrop_shapes({ sky_colors: view.sky_colors, sun_sighting: view.sun_sighting })
 	[
 		{ layer: Sky, shapes: [backdrop.sky] },
 		{ layer: Grass, shapes: [backdrop.grass] },
@@ -368,7 +368,7 @@ expect ride_count(layers) == 2588
 expect
 	layers.map(|layer| frame_shapes_on([layer]).len())
 		== [1656, 1, 0, 1, 4, 24, 302, 187, 352, 63]
-expect paused_frame_view.sun == OutOfView
+expect paused_frame_view.sun_sighting == OutOfView
 
 # The running count at each layer. The backdrop stays out of it.
 expect

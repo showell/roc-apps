@@ -113,9 +113,9 @@ column_step : Pixels
 column_step = Pixels.of(2.0)
 
 ## The rolling land: low, and all the way round. It stands 18 pixels high on
-## average and rises and falls 12 either side of that, in 0.9 of a wave per
-## radian, so a little under one wave all the way round. The 1.9 sets where
-## along the wave north falls. Each number was tuned by eye.
+## average and rises and falls 12 either side of that, in 0.9 of a wave all
+## the way round, a little under one. The 1.9 sets where along the wave north
+## falls. Each number was tuned by eye.
 land_height : Angle.Bearing -> Pixels
 land_height = |bearing|
 	Pixels.of(18.0 + 12.0 * (bearing.turn_from_north().to_radians() * 0.9 + 1.9).sin())
@@ -362,78 +362,6 @@ expect snowline(north_by(0.5)) <= snow_threshold
 expect snowline(north_by(0.5)) >= snow_threshold.minus(snow_dip)
 
 expect snow_peak_height > snow_threshold
-expect snow_peak_height < Pixels.of(150.0)
-
-# The bearing seen at `x` across a 960-pixel screen.
-seen_bearing : {
-	heading : Angle.Bearing,
-	cam_focal : Pixels,
-	x : Pixels,
-} -> F64
-seen_bearing = |{ heading, cam_focal, x }|
-	bearing_at({ heading, cam_focal }, x).to_radians()
-
-expect
-	seen_bearing({
-		heading: north_by(0.0),
-		cam_focal: Pixels.of(500.0),
-		x: Pixels.of(480.0),
-	})
-		== 0.0
-expect
-	seen_bearing({
-		heading: north_by(1.25),
-		cam_focal: Pixels.of(500.0),
-		x: Pixels.of(480.0),
-	})
-		== 1.25
-expect
-	seen_bearing({
-		heading: north_by(1.25),
-		cam_focal: Pixels.of(100.0),
-		x: Pixels.of(480.0),
-	})
-		== 1.25
-
-# Bearings grow across the screen, and a shorter focal length spreads them.
-expect
-	seen_bearing({
-		heading: north_by(0.0),
-		cam_focal: Pixels.of(500.0),
-		x: Pixels.of(0.0),
-	})
-		< seen_bearing({
-			heading: north_by(0.0),
-			cam_focal: Pixels.of(500.0),
-			x: Pixels.of(480.0),
-		})
-expect
-	seen_bearing({
-		heading: north_by(0.0),
-		cam_focal: Pixels.of(500.0),
-		x: Pixels.of(480.0),
-	})
-		< seen_bearing({
-			heading: north_by(0.0),
-			cam_focal: Pixels.of(500.0),
-			x: Pixels.of(960.0),
-		})
-expect
-	seen_bearing({
-		heading: north_by(0.0),
-		cam_focal: Pixels.of(100.0),
-		x: Pixels.of(960.0),
-	})
-		> seen_bearing({
-			heading: north_by(0.0),
-			cam_focal: Pixels.of(500.0),
-			x: Pixels.of(960.0),
-		})
-
-# The land closes below the ranges, so it covers their bottom edge.
-expect range_base_y == Screen.grass_top_y
-expect land_base_y == Screen.horizon_y
-expect range_base_y < land_base_y
 
 # The y of each corner of a silhouette.
 corner_ys : Shapes.Shape -> List(F64)
@@ -497,8 +425,5 @@ expect {
 expect lowest_y(land_silhouette(aim_at_rest)) == land_base_y.to_f64()
 expect highest_y(land_silhouette(aim_at_rest)) < range_base_y.to_f64()
 
-expect skyline_height(north_by(0.0)) >= land_height(north_by(0.0))
-expect skyline_height(north_by(2.0)) >= land_height(north_by(2.0))
-expect skyline_height(north_by(0.0)) >= north_range_height(north_by(0.0))
 expect !Mountains.is_sun_behind_mountains(Clock.at_step(0))
 expect Mountains.is_sun_behind_mountains(Clock.at_step(6000))

@@ -1111,7 +1111,7 @@ expect {
 expect FrameView.frame_view_at(World.route, ride_at_step_one).shapes.len() > 0
 
 # The ride starts facing away from the sun.
-expect FrameView.frame_view_at(World.route, RideInstant.initial).sun == OutOfView
+expect FrameView.frame_view_at(World.route, RideInstant.initial).sun_sighting == OutOfView
 
 ## A clock with the sun behind the mountains.
 after_sunset : Clock

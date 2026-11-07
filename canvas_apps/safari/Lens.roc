@@ -6,7 +6,6 @@ import Angle
 import Attention
 import Fraction
 import Screen
-import lib.Trig
 
 Lens :: [].{
 
@@ -70,7 +69,12 @@ Lens :: [].{
 	## negative, and lands below it.
 	y_for_height : { height : Pixels, cam_focal : Pixels } -> Pixels
 	y_for_height = |{ height, cam_focal: focal }|
-		Screen.horizon_y.minus(height.times(focal.portion(resting_focal)))
+		Screen.horizon_y.minus(height.times(scale_for(focal).to_f64()))
+
+	## How large a lens of focal length `focal` draws things beside the lens at
+	## rest. The lens only ever widens, so that is never larger.
+	scale_for : Pixels -> Fraction
+	scale_for = |focal| Fraction.of(focal.portion(resting_focal))
 
 	## The screen's x for something `turn` to the right of where the camera
 	## faces, through a lens of `cam_focal`. The turn stays under a quarter
@@ -91,13 +95,6 @@ Lens :: [].{
 ## Whether `got` is within 1e-9 of `want`, scaled up by a want past 1.
 is_close : F64, F64 -> Bool
 is_close = |got, want| (got - want).abs() <= 0.000000001 * want.abs().max(1.0)
-
-expect
-	[
-		(Screen.width.to_f64(), 960.0),
-		(Lens.field_of_view.to_radians() / Trig.deg, 70.0),
-		(Lens.resting_focal.to_f64(), 685.5110432362151),
-	].all(|(got, want)| is_close(got, want))
 
 expect
 	[

@@ -101,7 +101,7 @@ picture_shapes = |gap|
 			tree_shapes(flight.from),
 			bird_shapes(gap),
 		].join(),
-		sun: OutOfView,
+		sun_sighting: OutOfView,
 		sky_colors: Sky.colors_at(Clock.start),
 		roll: Angle.upright,
 	})
