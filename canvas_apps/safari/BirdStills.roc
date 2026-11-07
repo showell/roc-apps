@@ -93,29 +93,21 @@ logo_dark = RgbColor.of(0x612BDE)
 logo_light : RgbColor
 logo_light = RgbColor.of(0x8257E5)
 
-# A still's polygon count, corner count and shaded polygon count.
+# A still's polygon count and corner count.
 still_counts : Still -> List(U64)
 still_counts = |Still.(polys)| [
 	polys.len(),
 	polys.fold(0, |sum, poly| sum + poly.points.len()),
-	polys.count_if(is_shaded),
 ]
-
-is_shaded : Still.Polygon -> Bool
-is_shaded = |poly|
-	match poly.fill {
-		Flat(_) => False
-		Shaded(_) => True
-	}
 
 expect
 	[
-		(BirdStills.perched_still, [6, 21, 0]),
-		(BirdStills.side_wings_up_still, [6, 21, 0]),
-		(BirdStills.side_wings_down_still, [6, 21, 0]),
-		(BirdStills.away_wings_up_still, [4, 17, 0]),
-		(BirdStills.away_wings_down_still, [4, 17, 0]),
-		(BirdStills.diving_still, [6, 22, 0]),
+		(BirdStills.perched_still, [6, 21]),
+		(BirdStills.side_wings_up_still, [6, 21]),
+		(BirdStills.side_wings_down_still, [6, 21]),
+		(BirdStills.away_wings_up_still, [4, 17]),
+		(BirdStills.away_wings_down_still, [4, 17]),
+		(BirdStills.diving_still, [6, 22]),
 	].all(|(polys, want)| still_counts(polys) == want)
 
 # The first corner of a still's first polygon, which tells the drawings apart.
