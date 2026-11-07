@@ -71,6 +71,8 @@ Rider :: [].{
 		}
 	}
 
+	## This rider stopped dead at `at`. The book shows it as the plainest record
+	## update, so it stands alone.
 	stopped_at : RiderState, Along -> RiderState
 	stopped_at = |s, at| { ..s, along: at, speed: Speed.at_rest }
 
