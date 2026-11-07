@@ -86,19 +86,17 @@ sitting_on = |tree| { pose: Perched, location: tree_top(tree) }
 ## The whole of a flight: `flight_poses`, on one smooth path that rises in
 ## the middle, from the tip of the tree it leaves to the tip of the one it
 ## lands on.
-flight_timeline : BirdFlight.Flight -> Animation.Timeline(PosedBird.BirdPose)
+flight_timeline : BirdFlight.Flight -> Animation.Timeline(PosedBird.BirdPose, PosedBird.BirdPose)
 flight_timeline = |{ from, to }| {
 	ends = { from: tree_top(from), to: tree_top(to) }
 	last_frame = (BirdFlight.flight_poses.len() - 1).to_f64()
-	frames = BirdFlight.flight_poses.map_with_index(
-		|pose, frame| {
+	Animation.Timeline.of({
+		before: sitting_on(from),
+		frames: BirdFlight.flight_poses,
+		frame_instant: |pose, frame| {
 			through = Fraction.of(frame.to_f64() / last_frame)
 			{ pose, location: flight_location({ from: ends.from, to: ends.to, through }) }
 		},
-	)
-	Animation.Timeline.of({
-		before: sitting_on(from),
-		frames,
 		after: sitting_on(to),
 	})
 }

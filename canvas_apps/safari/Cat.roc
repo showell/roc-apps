@@ -134,10 +134,13 @@ CrossingWay : [
 	Leaping({ way_to_verge : Fraction, lift : Distance }),
 ]
 
-## The frames of any crossing, one a step, before they are put on a road. Both
-## the crossing's length and its timeline come from this one list, so the two
-## can't disagree.
-crossing_frames : List({ pose : PosedCat.CatPose, way : CrossingWay })
+## One frame of any crossing before it is put on a road: how the cat looks, and
+## where it is on its way across.
+CrossingFrame : { pose : PosedCat.CatPose, way : CrossingWay }
+
+## The frames of any crossing, one a step. Both the crossing's length and its
+## timeline come from this one list, so the two can't disagree.
+crossing_frames : List(CrossingFrame)
 crossing_frames = {
 	walking = walking_poses.map_with_index(
 		|pose, frame| {
@@ -154,7 +157,7 @@ crossing_frames = {
 
 ## The whole of a crossing, a frame a step: the cat walks out to the middle
 ## of the road, freezes there, and leaps clear to the far verge.
-crossing_timeline : CatCrossing -> Animation.Timeline(PosedCat.CatPose)
+crossing_timeline : CatCrossing -> Animation.Timeline(CrossingFrame, PosedCat.CatPose)
 crossing_timeline = |cat| {
 	on_road = |across| { along: cat.along, across, lift: Distance.zero }
 	start = on_road(cat.start_across)
@@ -176,7 +179,8 @@ crossing_timeline = |cat| {
 		}
 	Animation.Timeline.of({
 		before: { pose: Rest, location: start },
-		frames: crossing_frames.map(|{ pose, way }| { pose, location: location_of(way) }),
+		frames: crossing_frames,
+		frame_instant: |{ pose, way }, _frame| { pose, location: location_of(way) },
 		after: { pose: Collapse, location: end },
 	})
 }
