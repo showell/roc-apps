@@ -133,7 +133,7 @@ truck_rendering = |view, truck_fate|
 	)
 
 ## A tree's foot `forward` metres straight ahead, past the near plane.
-foot_ahead : F64 -> Geom.AheadPoint
+foot_ahead : F64 -> Geom.LevelPoint
 foot_ahead = |forward|
 	Geom.ahead_on_level({ right: Distance.metres(0.0), forward: Distance.metres(forward) })
 		?? crash "SceneShapes: a test's tree is past the near plane"

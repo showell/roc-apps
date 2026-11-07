@@ -115,7 +115,7 @@ road = {
 
 ## Where a thing standing at `along` and `across` is from the picture's eye, if
 ## it is in front of the camera.
-foot_at : Along, Across -> Try(Geom.AheadPoint, [BehindCamera])
+foot_at : Along, Across -> Try(Geom.LevelPoint, [BehindCamera])
 foot_at = |along, across|
 	Geom.ahead_on_level({ right: Distance.metres(across.to_metres()), forward: forward_of(along) })
 

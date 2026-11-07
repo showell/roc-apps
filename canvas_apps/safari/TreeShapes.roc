@@ -22,7 +22,7 @@ TreeShapes :: [].{
 	## A tree in front of the camera: where its foot stands, how tall it is,
 	## and its foliage's color.
 	TreeAhead : {
-		foot : Geom.AheadPoint,
+		foot : Geom.LevelPoint,
 		height : Distance,
 		foliage_color : RgbColor,
 	}

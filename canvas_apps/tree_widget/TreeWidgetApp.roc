@@ -66,7 +66,7 @@ right_of = |{ forward, canvas_x }| {
 }
 
 ## Where a stand's tree has its foot, if it is in front of the camera.
-stand_foot : Stand -> Try(Geom.AheadPoint, [BehindCamera])
+stand_foot : Stand -> Try(Geom.LevelPoint, [BehindCamera])
 stand_foot = |stand| Geom.ahead_on_level({ right: right_of(stand), forward: stand.forward })
 
 tree_shapes : Stand -> List(Shapes.Shape)

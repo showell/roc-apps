@@ -26,7 +26,7 @@ Pipeline :: [].{
 		place : RoadAhead.SegmentPlace,
 		along : Along,
 		across : Across,
-		foot : Geom.AheadPoint,
+		foot : Geom.LevelPoint,
 		kind : kind,
 	}
 

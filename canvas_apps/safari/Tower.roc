@@ -102,7 +102,7 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 	## has sunk it, which is never negative, and how its rods are drawn.
 	TowerInView : {
 		footprint : Tower.Footprint,
-		center : Geom.AheadPoint,
+		center : Geom.LevelPoint,
 		sunk : Distance,
 		view : Tower.RodView,
 	}
@@ -279,7 +279,7 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 		})
 
 	## How many pixels one metre across spans as far ahead as `at`.
-	metre_px : { at : Geom.AheadPoint, cam_focal : Pixels } -> Pixels
+	metre_px : { at : Geom.LevelPoint, cam_focal : Pixels } -> Pixels
 	metre_px = |{ at, cam_focal }| {
 		on_level = at.at_height(Distance.zero)
 		p1 = Camera.project(on_level.at_right(Distance.metres(1.0)), cam_focal)
@@ -288,7 +288,7 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 	}
 
 	## A rod's width on screen as far ahead as `at`.
-	rod_width_at : { at : Geom.AheadPoint, cam_focal : Pixels } -> Pixels
+	rod_width_at : { at : Geom.LevelPoint, cam_focal : Pixels } -> Pixels
 	rod_width_at = |camera| metre_px(camera).times(rod_w.to_metres())
 
 	## The four legs, from the footprint's corners up to the apex.
@@ -427,12 +427,12 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 	## sunk wholly below the horizon draws nothing.
 	tower_shapes : {
 		footprint : Tower.Footprint,
-		center : Geom.AheadPoint,
+		center : Geom.LevelPoint,
 		cam_focal : Pixels,
 		beacon_brightness : Fraction,
 	} -> List(Shapes.Shape)
 	tower_shapes = |{ footprint, center, cam_focal, beacon_brightness }| {
-		sunk = sunk_below_horizon({ right: center.right(), forward: center.forward() })
+		sunk = sunk_below_horizon(center.to_rider())
 		if sunk >= tower_height {
 			[]
 		} else {
@@ -531,7 +531,7 @@ shapes_of_tower_along = |along|
 
 ## `point` on the rider's level and past the near plane, which every such
 ## point in these tests is.
-ahead : Geom.RiderPoint -> Geom.AheadPoint
+ahead : Geom.RiderPoint -> Geom.LevelPoint
 ahead = |point| Geom.ahead_on_level(point) ?? crash "a test's point is past the near plane"
 
 expect {
@@ -701,8 +701,7 @@ expect
 ## A rod's width on screen `forward` metres ahead, through a 500 px focal length.
 rod_width_ahead : F64 -> F64
 rod_width_ahead = |forward| {
-	on_level = ahead({ right: Distance.metres(3.0), forward: Distance.metres(forward) })
-	at = on_level.at_height(Distance.metres(7.0))
+	at = ahead({ right: Distance.metres(3.0), forward: Distance.metres(forward) })
 	Tower.rod_width_at({ at, cam_focal: Pixels.of(500.0) }).to_f64()
 }
 
