@@ -159,29 +159,29 @@ bend_paving = |road, { vantage, bend_in_view }| {
 	end_before = rider_point_before(corner.end_before)
 	apex = rider_point_before(corner.apex)
 	start_after = rider_point_before(corner.start_after)
-	outer = bend_in_view.outer_edge()
-	inner = bend_in_view.inner_edge()
+	left = Geom.left_edge
+	right = Geom.right_edge
 	corners =
 		match Geom.outer_side(bend_in_view.turn()) {
 			LeftSide => [
-				before(lead_start, outer),
+				before(lead_start, left),
 				end_before,
 				apex,
 				start_after,
-				after(lead_end, outer),
-				after(lead_end, inner),
-				before(end, inner),
-				before(lead_start, inner),
+				after(lead_end, left),
+				after(lead_end, right),
+				before(end, right),
+				before(lead_start, right),
 			]
 			RightSide => [
-				before(lead_start, inner),
-				before(end, inner),
-				after(lead_end, inner),
-				after(lead_end, outer),
+				before(lead_start, left),
+				before(end, left),
+				after(lead_end, left),
+				after(lead_end, right),
 				start_after,
 				apex,
 				end_before,
-				before(lead_start, outer),
+				before(lead_start, right),
 			]
 		}
 	road_patch(corners)

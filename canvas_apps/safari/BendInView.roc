@@ -57,15 +57,6 @@ BendInView := { before : SegmentPlace, bend : Geom.Bend }.{
 			RightSide => Geom.right_edge
 		}
 
-	## How far across the road its inner edge at a bend is: the edge on the
-	## side away from the outer one.
-	inner_edge : BendInView -> Across
-	inner_edge = |bend_in_view|
-		match Geom.outer_side(bend_in_view.bend.turn) {
-			LeftSide => Geom.right_edge
-			RightSide => Geom.left_edge
-		}
-
 	## The corner the road's outer edge turns at a bend, measured on the segment
 	## before it: where that segment's outer edge ends, the apex where it meets
 	## the outer edge of the segment after, carried straight on, and where the
@@ -100,8 +91,8 @@ right_bend = bend_at(Ahead(SegmentPlace.Position.first), Angle.Turn.degrees(50.0
 left_bend : BendInView
 left_bend = bend_at(Ahead(SegmentPlace.Position.first), Angle.Turn.degrees(-70.0))
 
-expect right_bend.outer_edge() == Geom.left_edge and right_bend.inner_edge() == Geom.right_edge
-expect left_bend.outer_edge() == Geom.right_edge and left_bend.inner_edge() == Geom.left_edge
+expect right_bend.outer_edge() == Geom.left_edge
+expect left_bend.outer_edge() == Geom.right_edge
 
 # The segment after a bend, from each place the segment before can lie.
 expect bend_at(
