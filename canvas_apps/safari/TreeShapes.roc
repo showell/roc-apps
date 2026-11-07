@@ -19,41 +19,21 @@ import lib.Shapes
 
 TreeShapes :: [].{
 
-	## A tree in front of the camera: where its foot stands, how tall it is,
-	## and its foliage's color.
-	TreeAhead : {
-		foot : Geom.LevelPoint,
-		height : Distance,
-		foliage_color : RgbColor,
-	}
-
-	## Where a tree stands on the screen, and how big it looks there.
-	TreeOutline : {
-		base_x : Pixels,
-		base_y : Pixels,
-		height_px : Pixels,
-		crown_top_y : Pixels,
-		crown_height_px : Pixels,
-		crown_half_width : Pixels,
-	}
-
-	## One tier of the crown: where its top and its bottom are, as fractions of
-	## the crown's height down from its top, and how wide its bottom is, as a
-	## fraction of the crown's width.
-	Tier : {
-		top : Fraction,
-		bottom : Fraction,
-		width : Fraction,
-	}
+	## Where a tree's foot stands on the screen, and how tall it looks there.
+	TreeOutline : { foot : Screen.Point, height : Pixels }
 
 	## The tree on the screen: its trunk, then its tiers top to bottom. The
 	## nearest trees have a shaded trunk. The crown is cones, shaded by how near
 	## they are, within Detail.cone_reach, and triangles beyond it.
-	tree_picture : { tree : TreeShapes.TreeAhead, nearer_tree_count : U16 }, Pixels -> Picture
-	tree_picture = |{ tree, nearer_tree_count }, cam_focal| {
-		tip = tree.foot.at_height(tree.height)
+	tree_picture : Picture.Setting({ nearer_tree_count : U16 }),
+	{
+		height : Distance,
+		foliage_color : RgbColor,
+	} -> Picture
+	tree_picture = |{ foot, cam_focal, context }, { height, foliage_color }| {
+		tip = foot.at_height(height)
 		outline = tree_outline(tip, cam_focal)
-		trunk_finish = if nearer_tree_count < Detail.round_trunk_limit {
+		trunk_finish = if context.nearer_tree_count < Detail.round_trunk_limit {
 			Shaded
 		} else {
 			Flat
@@ -62,8 +42,8 @@ TreeShapes :: [].{
 			tip,
 			cam_focal,
 			outline,
-			color: tree.foliage_color,
-			crown: crown_of(tree.foot.forward()),
+			foliage_color,
+			crown: crown_of(foot.forward()),
 		}
 		trunk = trunk_shape(outline, trunk_finish)
 		Picture.from_shapes([trunk].concat(tiers.map(|tier| tier_shape(tier, inputs))))
@@ -85,20 +65,36 @@ TreeShapes :: [].{
 	## length `cam_focal`.
 	tree_outline : Geom.AheadPoint, Pixels -> TreeShapes.TreeOutline
 	tree_outline = |tip, cam_focal| {
-		base = Camera.project(tip.at_height(Distance.zero), cam_focal)
+		foot = Camera.project(tip.at_height(Distance.zero), cam_focal)
 		top = Camera.project(tip, cam_focal)
-		height_px = base.y.minus(top.y)
-		crown_height_px = height_px.times(crown_height_share.to_f64())
-		crown_bottom_y = base.y.minus(height_px.times(trunk_height_share.to_f64()))
-		{
-			base_x: base.x,
-			base_y: base.y,
-			height_px,
-			crown_top_y: crown_bottom_y.minus(crown_height_px),
-			crown_height_px,
-			crown_half_width: height_px.times(crown_half_width_share.to_f64()),
-		}
+		{ foot, height: foot.y.minus(top.y) }
 	}
+}
+
+## How tall a tree's crown looks on the screen.
+crown_height : TreeShapes.TreeOutline -> Pixels
+crown_height = |outline| outline.height.times(crown_height_share.to_f64())
+
+## Where the top of a tree's crown is on the screen: the trunk's share of the
+## height up from the foot, then the crown's share, each taken off in turn.
+crown_top_y : TreeShapes.TreeOutline -> Pixels
+crown_top_y = |outline| {
+	crown_bottom_y = outline.foot.y.minus(outline.height.times(trunk_height_share.to_f64()))
+	crown_bottom_y.minus(crown_height(outline))
+}
+
+## How far the crown reaches either side of the trunk at its widest, on the
+## screen.
+crown_half_width : TreeShapes.TreeOutline -> Pixels
+crown_half_width = |outline| outline.height.times(crown_half_width_share.to_f64())
+
+## One tier of the crown: where its top and its bottom are, as fractions of
+## the crown's height down from its top, and how wide its bottom is, as a
+## fraction of the crown's width.
+Tier : {
+	top : Fraction,
+	bottom : Fraction,
+	width : Fraction,
 }
 
 ## What every tier of one tree needs. `tip` is the top of the tree.
@@ -106,12 +102,12 @@ TierInputs : {
 	tip : Geom.AheadPoint,
 	cam_focal : Pixels,
 	outline : TreeShapes.TreeOutline,
-	color : RgbColor,
+	foliage_color : RgbColor,
 	crown : TreeShapes.Crown,
 }
 
 ## The tiers, top to bottom. Each overlaps the next.
-tiers : List(TreeShapes.Tier)
+tiers : List(Tier)
 tiers = [
 	{
 		top: Fraction.of(0.0),
@@ -158,10 +154,13 @@ tiers = [
 trunk_color : RgbColor
 trunk_color = RgbColor.of(0x5A3E22)
 
-## A tree is 136 parts tall, and the shares below are parts of that. Of those
-## parts, 55 are trunk below the crown.
+## The tree is drawn 136 parts tall, and the shares below are parts of that.
+tree_parts : U64
+tree_parts = 136
+
+## Of the tree's parts, 55 are trunk below the crown.
 trunk_height_share : Fraction
-trunk_height_share = Fraction.of(55.0 / 136.0)
+trunk_height_share = Fraction.of(55.0 / tree_parts.to_f64())
 
 ## The crown is the rest of the tree, so its tip is the tree's height.
 crown_height_share : Fraction
@@ -169,11 +168,11 @@ crown_height_share = trunk_height_share.complement()
 
 ## The crown's widest half-width, as a fraction of the tree's height.
 crown_half_width_share : Fraction
-crown_half_width_share = Fraction.of(36.0 / 136.0)
+crown_half_width_share = Fraction.of(36.0 / tree_parts.to_f64())
 
 ## The trunk's width, as a fraction of the tree's height.
 trunk_width_share : Fraction
-trunk_width_share = Fraction.of(10.0 / 136.0)
+trunk_width_share = Fraction.of(10.0 / tree_parts.to_f64())
 
 ## However far off a tree is, its trunk is this wide.
 min_trunk_width : Pixels
@@ -182,7 +181,7 @@ min_trunk_width = Pixels.of(1.0)
 ## How far the trunk runs up inside the crown, as a fraction of the tree's
 ## height, so that no sky shows between them.
 trunk_overlap_share : Fraction
-trunk_overlap_share = Fraction.of(6.25 / 136.0)
+trunk_overlap_share = Fraction.of(6.25 / tree_parts.to_f64())
 
 ## A cone's base is a ring of this many points.
 ring_point_count : U64
@@ -195,14 +194,14 @@ crown_shade = |forward| Fraction.clamp(1.0 - forward.ratio_to(Detail.crown_shade
 
 trunk_shape : TreeShapes.TreeOutline, [Shaded, Flat] -> Shapes.Shape
 trunk_shape = |outline, finish| {
-	width = outline.height_px.times(trunk_width_share.to_f64()).max(min_trunk_width)
-	below_crown = outline.height_px.times(trunk_height_share.to_f64())
-	height = below_crown.plus(outline.height_px.times(trunk_overlap_share.to_f64()))
-	left = outline.base_x.minus(width.divided_by(2.0))
-	top = outline.base_y.minus(height)
+	width = outline.height.times(trunk_width_share.to_f64()).max(min_trunk_width)
+	below_crown = outline.height.times(trunk_height_share.to_f64())
+	height = below_crown.plus(outline.height.times(trunk_overlap_share.to_f64()))
+	left = outline.foot.x.minus(width.divided_by(2.0))
+	top = outline.foot.y.minus(height)
 	trunk_box = {
 		top_left: { x: left, y: top },
-		bottom_right: { x: left.plus(width), y: outline.base_y },
+		bottom_right: { x: left.plus(width), y: outline.foot.y },
 	}
 	match finish {
 		Shaded => Polygon.shaded_polygon(
@@ -215,17 +214,18 @@ trunk_shape = |outline, finish| {
 
 ## A tier as a flat triangle: its apex at the tier's top, its base across its
 ## bottom.
-tier_triangle : TreeShapes.TreeOutline, { tier : TreeShapes.Tier, color : RgbColor } -> Shapes.Shape
-tier_triangle = |outline, { tier, color }| {
-	bottom_y = outline.crown_top_y.plus(outline.crown_height_px.times(tier.bottom.to_f64()))
-	top_y = outline.crown_top_y.plus(outline.crown_height_px.times(tier.top.to_f64()))
-	half_base = outline.crown_half_width.times(tier.width.to_f64())
+tier_triangle : TreeShapes.TreeOutline, { tier : Tier, foliage_color : RgbColor } -> Shapes.Shape
+tier_triangle = |outline, { tier, foliage_color }| {
+	crown_top = crown_top_y(outline)
+	bottom_y = crown_top.plus(crown_height(outline).times(tier.bottom.to_f64()))
+	top_y = crown_top.plus(crown_height(outline).times(tier.top.to_f64()))
+	half_base = crown_half_width(outline).times(tier.width.to_f64())
 	Polygon.triangle(
-		color,
+		foliage_color,
 		{
-			first_corner: { x: outline.base_x, y: top_y },
-			second_corner: { x: outline.base_x.plus(half_base), y: bottom_y },
-			third_corner: { x: outline.base_x.minus(half_base), y: bottom_y },
+			first_corner: { x: outline.foot.x, y: top_y },
+			second_corner: { x: outline.foot.x.plus(half_base), y: bottom_y },
+			third_corner: { x: outline.foot.x.minus(half_base), y: bottom_y },
 		},
 	)
 }
@@ -297,22 +297,25 @@ ring_angles = {
 
 ## A tier, as a cone when the tree is near and the ring round the cone's base
 ## is at or past the near plane, else as a triangle.
-tier_shape : TreeShapes.Tier, TierInputs -> Shapes.Shape
+tier_shape : Tier, TierInputs -> Shapes.Shape
 tier_shape = |tier, inputs| {
-	cone_radius = inputs.tip.height().times(crown_half_width_share.to_f64() * tier.width.to_f64())
+	colored_tier = { tier, foliage_color: inputs.foliage_color }
 	match inputs.crown {
-		Cones({ shade }) =>
+		Cones({ shade }) => {
+			radius_share = crown_half_width_share.to_f64() * tier.width.to_f64()
+			cone_radius = inputs.tip.height().times(radius_share)
 			match cone_ring_points(tier, { tip: inputs.tip, cone_radius }) {
 				Ok(ring_points) => tier_cone(tier, { inputs, ring_points, shade })
-				Err(BehindCamera) => tier_triangle(inputs.outline, { tier, color: inputs.color })
+				Err(BehindCamera) => tier_triangle(inputs.outline, colored_tier)
 			}
-		Triangles => tier_triangle(inputs.outline, { tier, color: inputs.color })
+		}
+		Triangles => tier_triangle(inputs.outline, colored_tier)
 	}
 }
 
 ## The ring of points round a tier's base, `cone_radius` out from the tree's
 ## middle, if every one of them is at or past the near plane.
-cone_ring_points : TreeShapes.Tier,
+cone_ring_points : Tier,
 {
 	tip : Geom.AheadPoint,
 	cone_radius : Distance,
@@ -334,7 +337,7 @@ cone_ring_points = |tier, { tip, cone_radius }| {
 }
 
 ## A tier as a cone: the hull of the ring round its base and its apex.
-tier_cone : TreeShapes.Tier,
+tier_cone : Tier,
 {
 	inputs : TierInputs,
 	ring_points : List(Geom.AheadPoint),
@@ -350,7 +353,7 @@ tier_cone = |tier, { inputs, ring_points, shade }| {
 	ring_on_screen = Camera.projected_points(ring_points, inputs.cam_focal)
 	Polygon.shaded_polygon(
 		convex_hull_points(ring_on_screen.append(apex)),
-		{ fill_color: inputs.color, strength: shade },
+		{ fill_color: inputs.foliage_color, strength: shade },
 	)
 }
 
@@ -406,11 +409,11 @@ is_near = |got, expected|
 expect
 	is_near(
 		[
-			sample_outline.base_x.to_f64(),
-			sample_outline.base_y.to_f64(),
-			sample_outline.height_px.to_f64(),
-			sample_outline.crown_height_px.to_f64(),
-			sample_outline.crown_half_width.to_f64(),
+			sample_outline.foot.x.to_f64(),
+			sample_outline.foot.y.to_f64(),
+			sample_outline.height.to_f64(),
+			crown_height(sample_outline).to_f64(),
+			crown_half_width(sample_outline).to_f64(),
 		],
 		[480.0, 600.0, 1088.0, 648.0, 288.0],
 	)
@@ -418,8 +421,8 @@ expect
 # The crown's tip is the tree's height.
 expect
 	is_near(
-		[sample_outline.crown_top_y.to_f64()],
-		[sample_outline.base_y.minus(sample_outline.height_px).to_f64()],
+		[crown_top_y(sample_outline).to_f64()],
+		[sample_outline.foot.y.minus(sample_outline.height).to_f64()],
 	)
 
 expect
@@ -455,7 +458,7 @@ expect
 
 expect {
 	corners_of = |tier|
-		match tier_triangle(sample_outline, { tier, color: RgbColor.of(7) }) {
+		match tier_triangle(sample_outline, { tier, foliage_color: RgbColor.of(7) }) {
 			Poly(polygon) => polygon.coordinates
 			_ => crash "a tier is one polygon"
 		}

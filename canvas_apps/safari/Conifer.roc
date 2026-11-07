@@ -8,14 +8,6 @@ import lib.RgbColor
 
 Conifer := [BigGreen, SmallGreen, Red, Gold].{
 
-	## A small green tree's height.
-	small_height : Distance
-	small_height = Distance.metres(4.896)
-
-	## A big green tree's height.
-	big_height : Distance
-	big_height = small_height.times(1.3)
-
 	scenery_height : Conifer -> Distance
 	scenery_height = |conifer|
 		match conifer {
@@ -28,21 +20,22 @@ Conifer := [BigGreen, SmallGreen, Red, Gold].{
 	## How a conifer looks. How much detail it gets depends on how many trees
 	## are nearer than it, which it can't know alone, so that is its context.
 	scenery_picture : Conifer, Picture.Setting({ nearer_tree_count : U16 }) -> Picture
-	scenery_picture = |conifer, { foot, cam_focal, context }|
+	scenery_picture = |conifer, setting|
 		TreeShapes.tree_picture(
-			{
-				tree: {
-					foot,
-					height: conifer.scenery_height(),
-					foliage_color: foliage_color(conifer),
-				},
-				nearer_tree_count: context.nearer_tree_count,
-			},
-			cam_focal,
+			setting,
+			{ height: conifer.scenery_height(), foliage_color: foliage_color(conifer) },
 		)
 
 	is_eq : _
 }
+
+## A small green tree's height.
+small_height : Distance
+small_height = Distance.metres(4.896)
+
+## A big green tree's height.
+big_height : Distance
+big_height = small_height.times(1.3)
 
 green_color : RgbColor
 green_color = RgbColor.of(0x1C5A22)

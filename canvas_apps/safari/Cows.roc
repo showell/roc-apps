@@ -66,7 +66,7 @@ Cows :: [].{
 	bull_of = |bull|
 		match bull {
 			WithBull => {
-				tree_line = Trees.distance_from_middle(Conifer.BigGreen)
+				tree_line = Trees.tree_line_distance(Conifer.BigGreen)
 				bull_middle = tree_line.plus(bull_height.divided_by(2.0))
 				Ok({
 					along: bull_along,

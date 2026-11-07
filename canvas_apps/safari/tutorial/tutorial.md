@@ -680,7 +680,7 @@ Placing a segment's trees walks along the segment and keeps a list, and a loop s
 
 Trees stand in pairs, one on each side of the road, every 30 metres. `{ ..left_tree, across: ... }` makes the right tree from the left one, with the record update from A simple tree. The pairs take turns: a big green pair, then a pair of the segment's accent, which is small green, red or gold, then big green again. A gold pair stands farther from the road, because it's so much taller:
 
-{{code Trees.distance_from_middle}}
+{{code Trees.tree_line_distance}}
 
 ### Seeing the trees
 

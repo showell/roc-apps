@@ -11,6 +11,8 @@ Detail :: [].{
 	cone_reach : Distance
 	cone_reach = Distance.metres(200.0)
 
+	## A tree's crown is shaded fully at the camera, less the farther off it
+	## is, and not at all from this far on.
 	crown_shade_reach : Distance
 	crown_shade_reach = Distance.metres(80.0)
 
