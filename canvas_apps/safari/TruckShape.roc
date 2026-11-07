@@ -6,10 +6,10 @@ import Along
 import Camera
 import Distance
 import RoadAhead
-import Spot
 import Fraction
 import Geom
 import Ground
+import Picture
 import lib.Shapes
 
 TruckShape :: [].{
@@ -27,13 +27,9 @@ TruckShape :: [].{
 		right : Across,
 	}
 
-	## A truck ready to draw: what it is seen from, where it stands, and the box
-	## it fills.
-	TruckInView : {
-		view : RoadAhead.CameraView,
-		spot : Spot,
-		box : TruckShape.TruckBox,
-	}
+	## What a truck is drawn from beyond its spot and the camera: the road its
+	## points are measured on, and the box it fills there.
+	TruckOnRoad : { road : RoadAhead.RoadView, box : TruckShape.TruckBox }
 
 	## A point on the truck: how far along the road, how far across it, and
 	## how high above the truck's own bottom.
@@ -84,16 +80,47 @@ TruckShape :: [].{
 	## Where a point on the truck lands in the rider's view, raised as far as
 	## the truck is off the ground. The ground curves away from the rider, so
 	## the point is lowered by how far the ground has dropped beneath it.
-	point : TruckShape.TruckInView, TruckShape.TruckPoint -> Geom.RaisedPoint
+	point : Picture.Setting(TruckShape.TruckOnRoad), TruckShape.TruckPoint -> Geom.RaisedPoint
 	point = |truck, { along, across, height }| {
 		place = truck.spot.place()
-		on_ground = RoadAhead.rider_point_at(truck.view.road, { place, along, across })
+		on_ground = RoadAhead.rider_point_at(truck.context.road, { place, along, across })
 		{
 			right: on_ground.right,
 			forward: on_ground.forward,
 			height: truck.spot.lift().plus(height).minus(Ground.ground_drop(on_ground)),
 		}
 	}
+
+	## The four corners of a strip across the truck from `left` to `right`,
+	## between its `near` edge and its `far` edge: near left, near right, far
+	## right, far left.
+	strip_corners : { left : Across, right : Across },
+	{
+		near : { along : Along, height : Distance },
+		far : { along : Along, height : Distance },
+	} -> List(TruckShape.TruckPoint)
+	strip_corners = |{ left, right }, { near, far }| [
+		{
+			along: near.along,
+			across: left,
+			height: near.height,
+		},
+		{
+			along: near.along,
+			across: right,
+			height: near.height,
+		},
+		{
+			along: far.along,
+			across: right,
+			height: far.height,
+		},
+		{
+			along: far.along,
+			across: left,
+			height: far.height,
+		},
+	]
 
 	## The angles of the corners of a circle drawn as a polygon with `sides`
 	## corners, going round from angle 0.
@@ -104,8 +131,12 @@ TruckShape :: [].{
 
 	## A flat-coloured polygon on the truck, cut at the near plane and
 	## projected, unless it's wholly behind the camera.
-	truck_polygon : TruckShape.TruckInView, Camera.FlatPolygon -> Try(Shapes.Shape, [BehindCamera])
-	truck_polygon = |truck, polygon| Camera.clipped_polygon(polygon, truck.view.cam_focal)
+	truck_polygon : Picture.Setting(TruckShape.TruckOnRoad),
+	Camera.FlatPolygon -> Try(
+		Shapes.Shape,
+		[BehindCamera],
+	)
+	truck_polygon = |truck, polygon| Camera.clipped_polygon(polygon, truck.cam_focal)
 }
 
 ## How far forward of the trailer the cab's flat roof reaches, as a fraction
@@ -133,9 +164,17 @@ expect offset_box.roof_front.to_metres() == 45.25
 expect offset_box.left.to_metres() == 0.8
 expect offset_box.right.to_metres() == 3.2
 
-expect TruckShape.tire_radius.to_metres() == 0.5
-expect TruckShape.trailer_bottom.to_metres() == 1.12
-expect TruckShape.cab_bottom.to_metres() == 0.5
-expect TruckShape.truck_height.to_metres() == 3.6
-expect TruckShape.truck_width.to_metres() == 2.4
-expect TruckShape.trailer_length.to_metres() == 8.4
+expect
+	TruckShape.strip_corners(
+		{ left: Across.metres(-1.0), right: Across.metres(1.0) },
+		{
+			near: { along: Along.metres(2.0), height: Distance.metres(3.0) },
+			far: { along: Along.metres(5.0), height: Distance.metres(7.0) },
+		},
+	).map(|corner| (corner.along.to_metres(), corner.across.to_metres(), corner.height.to_metres()))
+		== [
+			(2.0, -1.0, 3.0),
+			(2.0, 1.0, 3.0),
+			(5.0, 1.0, 7.0),
+			(5.0, -1.0, 7.0),
+		]
