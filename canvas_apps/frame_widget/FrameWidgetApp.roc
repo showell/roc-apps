@@ -166,7 +166,7 @@ paused_scene = {
 ## beside the road, each with its layer.
 ground_parts : List(Piece)
 ground_parts = {
-	skyline = Mountains.mountain_shapes(paused_camera, Sky.dusk_at(paused_tour.instant.clock))
+	skyline = Mountains.mountain_shapes(paused_camera, Sky.darkness_at(paused_tour.instant.clock))
 	ground = GroundSighting.patches_in_view(paused_road, paused_camera).keep_oks(
 		|patch| GroundPatch.patch_shape(patch, paused_camera.cam_focal),
 	)

@@ -31,9 +31,9 @@ Mountains :: [].{
 	## land.
 	mountain_shapes :
 		{ heading : Angle.Bearing, cam_focal : Pixels, .. }, Fraction -> List(Shapes.Shape)
-	mountain_shapes = |aim, dusk| {
+	mountain_shapes = |aim, darkness| {
 		snow_shapes =
-			match snow_shape(aim, snow_color(dusk)) {
+			match snow_shape(aim, snow_color(darkness)) {
 				Ok(snow) => [snow]
 				Err(NoSnow) => []
 			}
@@ -43,7 +43,7 @@ Mountains :: [].{
 					aim,
 					{
 						height_at: west_range_height,
-						color: rock_color_at_dusk(west_rock, dusk),
+						color: rock_color_at_darkness(west_rock, darkness),
 						base_y: range_base_y,
 					},
 				),
@@ -51,7 +51,7 @@ Mountains :: [].{
 					aim,
 					{
 						height_at: north_range_height,
-						color: rock_color_at_dusk(north_rock, dusk),
+						color: rock_color_at_darkness(north_rock, darkness),
 						base_y: range_base_y,
 					},
 				),
@@ -77,7 +77,7 @@ north_rock = RgbColor.of(0x5B6A8F)
 west_rock : RgbColor
 west_rock = RgbColor.of(0x39435F)
 
-## How much of its light the rock loses at full dusk.
+## How much of its light the rock loses at full darkness.
 rock_night_dim : Fraction
 rock_night_dim = Fraction.of(0.5)
 
@@ -87,16 +87,16 @@ snow_day = RgbColor.of(0xEEF3F8)
 snow_night : RgbColor
 snow_night = RgbColor.of(0x465468)
 
-## A rock colour at `dusk`, from 0 (day) to 1 (night).
-rock_color_at_dusk : RgbColor, Fraction -> RgbColor
-rock_color_at_dusk = |color, dusk|
-	HexColor.shade_color(color, rock_night_dim.times(dusk).less().to_f64())
+## A rock colour at `darkness`, from 0 (day) to 1 (night).
+rock_color_at_darkness : RgbColor, Fraction -> RgbColor
+rock_color_at_darkness = |color, darkness|
+	HexColor.shade_color(color, rock_night_dim.times(darkness).less().to_f64())
 
 snow_color : Fraction -> RgbColor
-snow_color = |dusk| HexColor.color_between({
+snow_color = |darkness| HexColor.color_between({
 	from: snow_day,
 	to: snow_night,
-	fraction: dusk,
+	fraction: darkness,
 })
 
 west_range_bearing : Angle.Bearing
@@ -318,11 +318,11 @@ west_by = |radians| west_range_bearing.plus(Angle.Turn.radians(radians))
 aim_at_rest : { heading : Angle.Bearing, cam_focal : Pixels }
 aim_at_rest = { heading: Angle.north, cam_focal: Lens.resting_focal }
 
-expect rock_color_at_dusk(north_rock, Fraction.zero) == RgbColor.of(0x5B6A8F)
-expect rock_color_at_dusk(west_rock, Fraction.zero) == RgbColor.of(0x39435F)
-expect rock_color_at_dusk(north_rock, Fraction.whole) == RgbColor.of(0x2E3548)
-expect rock_color_at_dusk(west_rock, Fraction.whole) == RgbColor.of(0x1D2230)
-expect rock_color_at_dusk(north_rock, Fraction.of(0.5)) == RgbColor.of(0x44506B)
+expect rock_color_at_darkness(north_rock, Fraction.zero) == RgbColor.of(0x5B6A8F)
+expect rock_color_at_darkness(west_rock, Fraction.zero) == RgbColor.of(0x39435F)
+expect rock_color_at_darkness(north_rock, Fraction.whole) == RgbColor.of(0x2E3548)
+expect rock_color_at_darkness(west_rock, Fraction.whole) == RgbColor.of(0x1D2230)
+expect rock_color_at_darkness(north_rock, Fraction.of(0.5)) == RgbColor.of(0x44506B)
 
 expect snow_color(Fraction.zero) == RgbColor.of(0xEEF3F8)
 expect snow_color(Fraction.whole) == RgbColor.of(0x465468)
@@ -335,7 +335,10 @@ brightness = |color| HexColor.red_of(color) + HexColor.green_of(color) + HexColo
 # The snow stays brighter than the rock it lies on, by day and at dusk.
 expect
 	[Fraction.zero, Fraction.whole].all(
-		|dusk| brightness(snow_color(dusk)) > brightness(rock_color_at_dusk(north_rock, dusk)),
+		|darkness| {
+			rock = rock_color_at_darkness(north_rock, darkness)
+			brightness(snow_color(darkness)) > brightness(rock)
+		},
 	)
 
 expect

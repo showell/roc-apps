@@ -44,7 +44,7 @@ at_start : SkyWidgetApp.Model
 at_start = { transport: VcrButtons.transport_at(sunset.first), job: SunSets }
 
 ## The sunset, in twelve seconds, from the ride's start to a little after full
-## dusk.
+## night.
 sunset : VcrButtons.NumberRange(Clock)
 sunset = VcrButtons.clock_range({
 	first_step: 0,
@@ -136,11 +136,11 @@ sun_curve = {
 	color: sun_color,
 }
 
-dusk_curve : Curve
-dusk_curve = {
-	call_line: |clock| "Sky.dusk_at(clock) = ${ReadoutText.percent_text(Sky.dusk_at(clock))}",
-	level_at: dusk_level,
-	color: dusk_color,
+darkness_curve : Curve
+darkness_curve = {
+	call_line: |clock| "Sky.darkness_at(clock) = ${ReadoutText.percent_text(Sky.darkness_at(clock))}",
+	level_at: darkness_level,
+	color: darkness_color,
 }
 
 warmth_curve : Curve
@@ -155,8 +155,8 @@ job_curves : SkyWidgetApp.Job -> List(Curve)
 job_curves = |job|
 	match job {
 		SunSets => [sun_curve]
-		SkyDarkens => [sun_curve, dusk_curve]
-		HorizonWarms => [sun_curve, dusk_curve, warmth_curve]
+		SkyDarkens => [sun_curve, darkness_curve]
+		HorizonWarms => [sun_curve, darkness_curve, warmth_curve]
 	}
 
 ## The clock, then each call `job` makes at `clock` and its answer, a row each.
@@ -177,8 +177,8 @@ clock_color = RgbColor.of(0x202020)
 sun_color : RgbColor
 sun_color = RgbColor.of(0x9A6A00)
 
-dusk_color : RgbColor
-dusk_color = RgbColor.of(0x24406E)
+darkness_color : RgbColor
+darkness_color = RgbColor.of(0x24406E)
 
 warmth_color : RgbColor
 warmth_color = RgbColor.of(0xC0392B)
@@ -217,8 +217,8 @@ sun_level = |clock| {
 	Sun.height_at(clock).minus(lowest).portion(Sun.height_at_start.minus(lowest))
 }
 
-dusk_level : Clock -> F64
-dusk_level = |clock| Sky.dusk_at(clock).to_f64()
+darkness_level : Clock -> F64
+darkness_level = |clock| Sky.darkness_at(clock).to_f64()
 
 warmth_level : Clock -> F64
 warmth_level = |clock| Sky.horizon_warmth_at(clock).to_f64()
@@ -259,7 +259,7 @@ chart_shapes = |job| job_curves(job).join_map(curve_shapes)
 ## A line down the chart at `clock`, with a dot on each curve.
 cursor_shapes : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
 cursor_shapes = |job, clock| {
-	x = chart_point(clock, dusk_level).x
+	x = chart_point(clock, darkness_level).x
 	cursor =
 		Shapes.line(
 			{ from: { x, y: chart_top }, to: { x, y: chart_bottom }, width: 1.0 },
@@ -286,7 +286,7 @@ expect
 		== [
 			"clock = step 0",
 			"Sun.height_at(clock) = 244.0 px",
-			"Sky.dusk_at(clock) = 0%",
+			"Sky.darkness_at(clock) = 0%",
 			"Sky.horizon_warmth_at(clock) = 0%",
 		]
 
@@ -337,9 +337,9 @@ expect next_model({ ..at_start, job: SkyDarkens }, Input.none).job == SkyDarkens
 expect pressed_on({ ..at_start, job: SkyDarkens }, Play).job == SkyDarkens
 
 # The chart's two ends are the sunset's two ends.
-expect chart_point(Clock.start, dusk_level).x == chart_left
-expect chart_point(sunset.last, dusk_level).x == chart_right
-expect chart_point(Clock.start, dusk_level).y == chart_bottom
+expect chart_point(Clock.start, darkness_level).x == chart_left
+expect chart_point(sunset.last, darkness_level).x == chart_right
+expect chart_point(Clock.start, darkness_level).y == chart_bottom
 expect chart_point(Clock.start, sun_level).y == chart_top
 
 # The cursor is a line and three dots.

@@ -1344,7 +1344,7 @@ The first three are opaque. Each is still a number, and the type gives it a name
 | Job | Function | Its type |
 |---|---|---|
 {{types row Sun.height_at Move the sun}}
-{{types row Sky.dusk_at Darken the sky}}
+{{types row Sky.darkness_at Darken the sky}}
 {{types row Sky.sky_top_color}}
 {{types row Sky.horizon_warmth_at Warm the horizon}}
 {{types row Sky.sky_horizon_color}}
@@ -1406,11 +1406,11 @@ This widget adds one call, `Sky.dusk_at`, and the sky finally does something. It
 
 `dusk_at` works out that `Fraction`:
 
-{{code Sky.dusk_at}}
+{{code Sky.darkness_at}}
 
 It asks for the sun's height, then picks one of two shapes. They meet when the sun has fully set, one radius below the horizon, and you can see the join in the blue line at step 4,735. Before that, dusk grows with the square of how far the sun has fallen. After that, it runs on in a straight line to full dark.
 
-{{signatures Sky.dusk_while_up Sky.dusk_after_set}}
+{{signatures Sky.darkness_while_up Sky.darkness_after_set}}
 
 As always, anything outside a module's block is private, so these two are helpers without any keyword.
 

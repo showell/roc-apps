@@ -1435,7 +1435,7 @@ expect {
 
 # Steve's rule: the ride reaches full night, past dusk, before it finishes. The
 # rule is strict that night comes and loose about when, so it holds no step.
-# The sky only darkens as the clock runs, so full dusk at the finish means it
+# The sky only darkens as the clock runs, so full darkness at the finish means it
 # came at or before it.
 expect {
 	var $rider = RiderState.initial
@@ -1444,7 +1444,7 @@ expect {
 		$rider = Rider.rider_state_at_next_step($rider, World.route)
 		$clock = $clock.next()
 	}
-	Sky.dusk_at($clock) == Fraction.whole
+	Sky.darkness_at($clock) == Fraction.whole
 }
 
 # A frame of the ride draws.
