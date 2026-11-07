@@ -2900,6 +2900,101 @@ expect
 		(-35.01, False),
 	].all(|(degrees, is_in_sight)| is_looking(motorcycle_with_pig_off(degrees)) == is_in_sight)
 
+# The first pig that catches the rider's eye, on the real ride. The gaze widget
+# plays steps 860 to 1320, and the parked book's table quotes these steps.
+
+## The real ride's instants up to step 1320, a little after the gaze is back on
+## the road. As a constant it is ridden once, at compile time.
+first_pig_instants : List(RideInstant)
+first_pig_instants = {
+	tour = Tour.at_step(1320)
+	tour.past_instants.append(tour.instant)
+}
+
+## The rider at `step` of the real ride.
+rider_at_step : U32 -> RiderState
+rider_at_step = |step| {
+	instant =
+		first_pig_instants.get(step.to_u64())
+			?? crash "CrossModuleExpects.rider_at_step: the first pig's ride reaches step 1320"
+	instant.rider
+}
+
+## How far `rider` looks from the way the motorcycle points, in degrees.
+gaze_degrees_of : RiderState -> F64
+gaze_degrees_of = |rider| rider.eyes.gaze_yaw.to_degrees()
+
+# The steps the table quotes, each with its speed in metres a step, its gaze_yaw
+# in degrees and its look depth, to the table's precision.
+expect
+	[
+		{
+			step: 885,
+			speed: 1.9357,
+			gaze: 4.0,
+			look_depth: 0.1143,
+		},
+		{
+			step: 1049,
+			speed: 0.2000,
+			gaze: 34.9525,
+			look_depth: 0.9986,
+		},
+		{
+			step: 1050,
+			speed: 0.2000,
+			gaze: 34.7525,
+			look_depth: 0.9986,
+		},
+		{
+			step: 1224,
+			speed: 0.2000,
+			gaze: 0.0,
+			look_depth: 0.9974,
+		},
+	].all(
+		|{ step, speed, gaze, look_depth }| {
+			rider = rider_at_step(step)
+			(rider.motorcycle.speed.to_metres_a_step() - speed).abs() <= 0.00005
+				and (gaze_degrees_of(rider) - gaze).abs() <= 0.00005
+				and (rider.eyes.look_depth.to_f64() - look_depth).abs() <= 0.00005
+		},
+	)
+
+## Whether the rider at `step` is gawking at the first pig.
+is_gawking_at : U32 -> Bool
+is_gawking_at = |step| Gawking.is_gawking(rider_at_step(step).motorcycle, distracting_segment)
+
+## Whether the rider at `step` wants to look at the first pig.
+is_looking_at : U32 -> Bool
+is_looking_at = |step| is_looking(rider_at_step(step).motorcycle)
+
+# Each phase starts at its step, and not one step before it. The gawking and the
+# look start together at 885; the look lets go at 1050, while the gawking lasts to
+# the segment's end; the gaze is home at 1224.
+expect [860, 884].all(|step| !is_gawking_at(step) and !is_looking_at(step))
+expect [885, 1049].all(|step| is_gawking_at(step) and is_looking_at(step))
+expect [1050, 1223, 1224, 1320].all(|step| is_gawking_at(step) and !is_looking_at(step))
+expect [1050, 1223].all(|step| rider_at_step(step).eyes.gaze_yaw != Angle.straight_ahead)
+expect [1224, 1320].all(|step| rider_at_step(step).eyes.gaze_yaw == Angle.straight_ahead)
+
+# The brake bites a step after the gawking starts.
+expect {
+	before = rider_at_step(884).motorcycle.speed
+	first = rider_at_step(885).motorcycle.speed
+	first > before and rider_at_step(886).motorcycle.speed < first
+}
+
+# The gaze is at its widest on the look's last step, and the look ends short of
+# the release angle, because the next step would pass it.
+expect {
+	widest = gaze_degrees_of(rider_at_step(1049))
+	first_pig_instants.drop_first(860).all(|instant| gaze_degrees_of(instant.rider) <= widest)
+		and gaze_degrees_of(rider_at_step(1050)) < widest
+		and gaze_degrees_of(rider_at_step(1048)) < widest
+		and widest < Gaze.look_release_angle.to_degrees()
+}
+
 # A coast off the left shoulder means lean more right, and off the right more
 # left.
 expect LeanSearch.lean_correction(Leaves({ side: Left, after: Steps.one_step })) == MoreRight

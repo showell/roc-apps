@@ -55,8 +55,8 @@ first_step = 860
 last_step : U32
 last_step = 1320
 
-## The steps of the look, from its first to the first without it, and the step
-## the gaze is home. An `expect` below holds them to the ride.
+## The steps of the look, from its first to the first without it.
+## CrossModuleExpects holds them to the ride.
 look_first_step : U32
 look_first_step = 885
 
@@ -338,83 +338,15 @@ expect {
 }
 expect World.route.route_segments().take_first(2).all(|segment| segment.pigs == NoPigs)
 
-# The steps the book's table quotes, each with its speed in metres a step, its
-# gaze_yaw in degrees and its look depth, to the table's precision.
-expect {
-	played = stretch_states
-	[
-		{
-			step: 885,
-			speed: 1.9357,
-			gaze: 4.0,
-			look_depth: 0.1143,
-		},
-		{
-			step: 1049,
-			speed: 0.2000,
-			gaze: 34.9525,
-			look_depth: 0.9986,
-		},
-		{
-			step: 1050,
-			speed: 0.2000,
-			gaze: 34.7525,
-			look_depth: 0.9986,
-		},
-		{
-			step: 1224,
-			speed: 0.2000,
-			gaze: 0.0,
-			look_depth: 0.9974,
-		},
-	].all(
-		|{ step, speed, gaze, look_depth }| {
-			rider = state_at_step(played, step)
-			(rider.motorcycle.speed.to_metres_a_step() - speed).abs() <= 0.00005
-				and (gaze_degrees(rider) - gaze).abs() <= 0.00005
-				and (rider.eyes.look_depth.to_f64() - look_depth).abs() <= 0.00005
-		},
-	)
-}
-
-# Each phase starts at the step the book says, and not one step before it.
-expect {
-	played = stretch_states
+# Each of the four phases shows on the stretch, at the steps above.
+# CrossModuleExpects holds where each starts on the ride.
+expect
 	[
 		(first_step, EyesOnRoad),
-		(look_first_step - 1, EyesOnRoad),
 		(look_first_step, LookingAtPig),
-		(look_end_step - 1, LookingAtPig),
 		(look_end_step, TurningBack),
-		(eyes_back_step - 1, TurningBack),
 		(eyes_back_step, EyesBack),
-		(last_step, EyesBack),
-	].all(|(step, phase)| phase_of(state_at_step(played, step)) == phase)
-}
-
-# The gawking and the look start on one step, because both start the same
-# distance from the pig. The brake bites a step later.
-expect {
-	played = stretch_states
-	before = state_at_step(played, look_first_step - 1)
-	first = state_at_step(played, look_first_step)
-	next = state_at_step(played, look_first_step + 1)
-	!Gawking.is_gawking(before.motorcycle, pig_segment)
-		and Gawking.is_gawking(first.motorcycle, pig_segment)
-		and first.motorcycle.speed > before.motorcycle.speed
-		and next.motorcycle.speed < first.motorcycle.speed
-}
-
-# The gaze is at its widest on the look's last step, and the look ends short of
-# the release angle, because the next step would pass it.
-expect {
-	played = stretch_states
-	widest = gaze_degrees(state_at_step(played, look_end_step - 1))
-	played.all(|rider| gaze_degrees(rider) <= widest)
-		and gaze_degrees(state_at_step(played, look_end_step)) < widest
-		and gaze_degrees(state_at_step(played, look_end_step - 2)) < widest
-		and widest < Gaze.look_release_angle.to_degrees()
-}
+	].all(|(step, phase)| phase_of(state_at_step(stretch_states, step)) == phase)
 
 # The gaze never turns left on this stretch, as `gaze_degrees` says.
 expect stretch_states.all(|rider| gaze_degrees(rider) >= 0.0)
