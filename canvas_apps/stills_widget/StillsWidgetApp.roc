@@ -46,7 +46,7 @@ StillsWidgetApp :: [].{
 
 ## Every frame paints thirteen thousand points again, and at 60 that's most of a
 ## core for a picture that only changes on a click. This is still quick to answer one.
-frames_a_second : I32
+frames_a_second : U32
 frames_a_second = 15
 
 ## A part of the canvas, in pixels.
@@ -471,7 +471,7 @@ pointer_at : {
 	struck : U32,
 } -> Input.Snapshot
 pointer_at = |{ x, y, held, struck }|
-	Input.none.with_mouse(Mouse.of(held, struck, x.to_f32_wrap(), y.to_f32_wrap(), 0.0))
+	Input.none.with_mouse(Mouse.of({ held, struck, at: { x: x.to_f32_wrap(), y: y.to_f32_wrap() }, wheel: 0.0 }))
 
 ## A left click at `spot` from `model`.
 left_click : StillsWidgetApp.Model, { x : F64, y : F64 } -> StillsWidgetApp.Model

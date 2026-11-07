@@ -117,7 +117,7 @@ VcrButtons :: [].{
 			?? crash "VcrButtons.click_on: every control has a button"
 		middle_x = button.left + button_width / 2.0
 		Input.none.with_mouse(
-			Mouse.of(1, 1, middle_x.to_f32_wrap(), button_middle_y.to_f32_wrap(), 0.0),
+			Mouse.of({ held: 0, struck: 0, at: { x: middle_x.to_f32_wrap(), y: button_middle_y.to_f32_wrap() }, wheel: 0.0 }).with_button_pressed(Left),
 		)
 	}
 
@@ -393,7 +393,7 @@ clock_after_click : VcrButtons.Transport(Clock), { x : F32, y : F32 } -> VcrButt
 clock_after_click = |transport, { x, y }|
 	VcrButtons.next_transport(
 		transport,
-		{ input: Input.none.with_mouse(Mouse.of(1, 1, x, y, 0.0)), range: sample_clock_run },
+		{ input: Input.none.with_mouse(Mouse.of({ held: 0, struck: 0, at: { x, y }, wheel: 0.0 }).with_button_pressed(Left)), range: sample_clock_run },
 	)
 
 ## What a frame with nothing pressed does to the sample clock.
@@ -451,7 +451,7 @@ expect
 	VcrButtons.next_transport(
 		stopped_at(100),
 		{
-			input: Input.none.with_mouse(Mouse.of(1, 0, 196.0, 234.0, 0.0)),
+			input: Input.none.with_mouse(Mouse.of({ held: 0, struck: 0, at: { x: 196.0, y: 234.0 }, wheel: 0.0 }).with_button_down(Left)),
 			range: sample_clock_run,
 		},
 	)
@@ -536,10 +536,10 @@ caught_up_to_forty = |input|
 expect caught_up_to_forty(VcrButtons.click_on(StepBack)) == stopped_at(40)
 expect caught_up_to_forty(Input.none) == stopped_at(6000)
 expect caught_up_to_forty(
-	Input.none.with_mouse(Mouse.of(1, 1, 320.0, 100.0, 0.0)),
+	Input.none.with_mouse(Mouse.of({ held: 0, struck: 0, at: { x: 320.0, y: 100.0 }, wheel: 0.0 }).with_button_pressed(Left)),
 ) == stopped_at(6000)
 expect caught_up_to_forty(
-	Input.none.with_mouse(Mouse.of(1, 0, 196.0, 234.0, 0.0)),
+	Input.none.with_mouse(Mouse.of({ held: 0, struck: 0, at: { x: 196.0, y: 234.0 }, wheel: 0.0 }).with_button_down(Left)),
 ) == stopped_at(6000)
 
 # The hint shows until the number has moved or started to.

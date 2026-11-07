@@ -1625,7 +1625,7 @@ digraph limits {
 
 The rider has several reasons to slow down, and they don't know about each other. A turn is coming. A cat is in the lane. There's a pig to look at. The road is about to run out. `Throttle` writes them as a line of limits. An `Acceleration` goes in, a limit lets it through or lowers it, and the next limit gets what's left:
 
-{{code Throttle.acceleration from "limits = [" to "limited = limits.fold(offered, held_to)"}}
+{{code Throttle.next_speed from "limits = [" to "limited = limits.fold(offered, held_to)"}}
 
 Call this *the chain of limits*. Each limit has the same shape and can be read alone, and adding a reason is one more line. It reads like a list of rules because that's what it is.
 
@@ -1756,7 +1756,7 @@ It starts at the same 150 metres, but it only asks where the rider is. There's n
 
 `pig_limit` is the third link in the throttle's chain. It asks `Gaze` for a brake, and takes it if that's harder than what it was offered:
 
-{{code Throttle.acceleration from "Gawking.gawk_brake(motorcycle, seg)," to "Gawking.gawk_brake(motorcycle, seg),"}}
+{{code Throttle.next_speed from "Gawking.gawk_brake(motorcycle, seg)," to "Gawking.gawk_brake(motorcycle, seg),"}}
 
 {{code Gawking.gawk_brake}}
 
@@ -2286,7 +2286,7 @@ A cat in the lane stops the rider opening the throttle, without braking, and wid
 
 {{code EncounterReaction.encounter_attention}}
 
-{{code RideFocal.ride_focal}}
+{{code RiderCamera.ride_focal}}
 
 This is the only feedback loop in the design. The rider's speed decides where the cat has got to, and the cat holds the rider's speed down. The loop settles, and it's why `stage_over_step_span` has to stay the cat's rule. A bird asks nothing of the rider, so it falls through to the same answer as an empty road.
 
@@ -2552,12 +2552,12 @@ The answer rests on one fact from the ride instant chapter. Three fields decide 
 |---|---|---|---|
 {{proof row 0 The start of the ride}}
 {{proof row 100 A bird in flight}}
-{{proof row 1570 A cat frozen in the lane}}
-{{proof row 1590 The same cat in mid-leap}}
+{{proof row 1529 A cat frozen in the lane}}
+{{proof row 1542 The same cat in mid-leap}}
 {{proof row 3000 The ride under way}}
-{{proof row 3742 A distant truck, its glow barely a pixel}}
+{{proof row 3698 A distant truck, its glow barely a pixel}}
 {{proof row 5700 The truck at dusk, lights on}}
-{{proof row 6553 The truck braking in plain view}}
+{{proof row 6250 The truck braking in plain view}}
 {{proof row 9000 Past the end, on the second lap}}
 
 Each row is one frame of the ride. Run the ride to that step today and you get that hash and that many shapes, and a change to the program has to leave every row as it is. This page's numbers come from the same file the check reads, `gates/proof.expected`.

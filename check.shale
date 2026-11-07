@@ -16,7 +16,7 @@
 --
 -- budget: steps=200000000
 
-const APPS = 49
+const APPS = 51
 const CHUNK = 50
 const SELF_PATH = "check.shale"
 const WANT = "roc-pin: the repository's pinned nightly"

@@ -144,7 +144,7 @@ bend_life_critters = |segment|
 			match bend_life {
 				Animal(animal) =>
 					Wildlife.bend_critters({ animal, bend: segment.bend_out_of() })
-				DuckPond => Pond.placed_ducks(segment.length)
+				DuckPond => Pond.placed_ducks(segment.bend_out_of())
 				Quiet => []
 			}
 		RouteEnds => []

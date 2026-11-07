@@ -17,7 +17,9 @@ Trees :: [].{
 	## A tree beside the road: where it stands on its segment, and its kind.
 	RoadsideTree : Geom.Placed(Conifer)
 
-	## How far from the middle of the road a conifer stands, either side.
+	## How far from the middle of the road a conifer stands, either side. The gold
+	## tree stands four times as far out from the road's edge as the others, a
+	## factor chosen by eye.
 	tree_line_distance : Conifer -> Distance
 	tree_line_distance = |conifer|
 		match conifer {
@@ -64,11 +66,12 @@ tree_spacing = Distance.metres(30.0)
 tree_road_offset : Distance
 tree_road_offset = Distance.metres(1.5)
 
-## How far into a segment its first pair stands.
+## How far into a segment its first pair stands, chosen by eye.
 tree_start_inset : Distance
 tree_start_inset = Distance.metres(6.0)
 
-## No pair stands closer than this to a segment's end.
+## No pair stands closer than this to a segment's end, a distance chosen by
+## eye.
 tree_end_inset : Distance
 tree_end_inset = Distance.metres(85.0)
 

@@ -16,15 +16,10 @@ import Shapes
 
 Camera :: [].{
 
-	## Target, screen offset, clockwise rotation in degrees, and zoom factor.
-	Settings : {
-		target : Math.Vec2,
-		offset : Math.Vec2,
-		rotation : F32,
-		zoom : F32,
-	}
-
-	## What a frame is looked at through. roc-ray names this type too.
+	## What a frame is looked at through: the world point `target`, placed at
+	## the screen point `offset`, turned clockwise by `rotation` degrees and
+	## scaled by `zoom`. roc-ray names this type too. Every value is finite
+	## and the zoom is never zero, which `new` and `with_rotation` check.
 	Camera2D :: {
 		target : Math.Vec2,
 		offset : Math.Vec2,
@@ -32,37 +27,8 @@ Camera :: [].{
 		zoom : F32,
 	}.{
 
-		## World-space point placed at the camera offset.
-		target : Camera2D -> Math.Vec2
-		target = |camera| camera.target
-
-		## Screen-space offset the target is placed at.
-		offset : Camera2D -> Math.Vec2
-		offset = |camera| camera.offset
-
-		## Clockwise rotation, in degrees.
-		rotation : Camera2D -> F32
-		rotation = |camera| camera.rotation
-
-		## Zoom factor. Negative mirrors both axes; zero cannot occur.
-		zoom : Camera2D -> F32
-		zoom = |camera| camera.zoom
-
-		with_target : Camera2D, Math.Vec2 -> Camera2D
-		with_target = |camera, new_target| { ..camera, target: sane_vec(new_target) }
-
-		with_offset : Camera2D, Math.Vec2 -> Camera2D
-		with_offset = |camera, new_offset| { ..camera, offset: sane_vec(new_offset) }
-
 		with_rotation : Camera2D, F32 -> Camera2D
-		with_rotation = |camera, new_rotation| { ..camera, rotation: sane_scalar(new_rotation) }
-
-		with_zoom : Camera2D, F32 -> Camera2D
-		with_zoom = |camera, new_zoom| { ..camera, zoom: sane_zoom(new_zoom) }
-
-		## Hold the zoom between two limits, as a wheel wants.
-		clamp_zoom : Camera2D, { min : F32, max : F32 } -> Camera2D
-		clamp_zoom = |camera, limits| camera.with_zoom(Math.clamp(camera.zoom, limits.min, limits.max))
+		with_rotation = |camera, new_rotation| { ..camera, rotation: finite_scalar(new_rotation) }
 
 		## A world point, in screen pixels. Rotation is in degrees, as raylib
 		## and the canvas both take it.
@@ -79,8 +45,8 @@ Camera :: [].{
 			}
 		}
 
-		## A screen point, in the world. **THIS IS WHY A CAMERA IS A VALUE THE
-		## GAME HOLDS** rather than a scope a runner opens: the pointer arrives
+		## A screen point, in the world. This is why a camera is a value the
+		## game holds rather than a scope a runner opens: the pointer arrives
 		## in pixels and the rules are written in the world, so somebody has to
 		## do this arithmetic, and only the game knows which camera to do it
 		## with. Every camera here is invertible, because no constructor lets a
@@ -125,62 +91,49 @@ Camera :: [].{
 			})
 	}
 
-	## Identity: no offset, no rotation, unit zoom.
-	default : Camera.Camera2D
-	default = { target: Math.zero, offset: Math.zero, rotation: 0, zoom: 1 }
-
-	new : Camera.Settings -> Camera.Camera2D
-	new = |settings|
+	## A camera, its numbers checked: a value that is not finite, or a zoom of
+	## zero, crashes.
+	new : { target : Math.Vec2, offset : Math.Vec2, rotation : F32, zoom : F32 } -> Camera.Camera2D
+	new = |{ target, offset, rotation, zoom }|
 		{
-			target: sane_vec(settings.target),
-			offset: sane_vec(settings.offset),
-			rotation: sane_scalar(settings.rotation),
-			zoom: sane_zoom(settings.zoom),
+			target: finite_vec(target),
+			offset: finite_vec(offset),
+			rotation: finite_scalar(rotation),
+			zoom: invertible_zoom(zoom),
 		}
 
-	## Put `target` in the middle of a screen of that size, at unit zoom.
-	centered : Math.Vec2, Math.Vec2 -> Camera.Camera2D
-	centered = |target, screen|
-		new({ target, offset: { x: screen.x / 2, y: screen.y / 2 }, rotation: 0, zoom: 1 })
-
-	## The player-follow camera: the same, with a zoom.
+	## The player-follow camera: `target` in the middle of a screen of that
+	## size, at a zoom.
 	follow : Math.Vec2, { screen : Math.Vec2, zoom : F32 } -> Camera.Camera2D
 	follow = |target, cfg|
 		new({ target, offset: { x: cfg.screen.x / 2, y: cfg.screen.y / 2 }, rotation: 0, zoom: cfg.zoom })
+}
 
-	## Radians per degree.
-	degree : F32
-	degree = 0.017453292519943295
+# Radians per degree.
+degree : F32
+degree = 0.017453292519943295
 
-	# **A ZOOM OF ZERO HAS NO INVERSE**, and one that is not finite has no
-	# meaning, so neither is allowed to reach a transform. roc-ray substitutes
-	# a tiny zoom rather than 1, which collapses the world to a dot at the
-	# offset: a camera that had to be rescued should read on screen as the
-	# mistake it is, not as something plausible. The same reasoning as throwing
-	# on an unknown brush mode rather than painting half a frame.
-	fallback_zoom : F32
-	fallback_zoom = 0.000001
-
-	sane_scalar : F32 -> F32
-	sane_scalar = |value| if value.is_finite() {
+# A number that is not finite has no place on a camera, and comes only from a
+# bug in the game.
+finite_scalar : F32 -> F32
+finite_scalar = |value|
+	if value.is_finite() {
 		value
 	} else {
-		0
+		crash "Camera: a camera's number is not finite"
 	}
 
-	sane_vec : Math.Vec2 -> Math.Vec2
-	sane_vec = |v| { x: sane_scalar(v.x), y: sane_scalar(v.y) }
+finite_vec : Math.Vec2 -> Math.Vec2
+finite_vec = |v| { x: finite_scalar(v.x), y: finite_scalar(v.y) }
 
-	sane_zoom : F32 -> F32
-	sane_zoom = |zoom|
-		if zoom.is_finite() and zoom != 0 {
-			zoom
-		} else if zoom < 0 {
-			-fallback_zoom
-		} else {
-			fallback_zoom
-		}
-}
+# A zoom of zero has no inverse, so screen_to_world could not undo it.
+invertible_zoom : F32 -> F32
+invertible_zoom = |zoom|
+	if zoom == 0 {
+		crash "Camera: a zoom of zero has no inverse"
+	} else {
+		finite_scalar(zoom)
+	}
 
 # A point taken into the world and back is the point it started as.
 expect {
@@ -193,6 +146,3 @@ expect {
 # A follow camera puts its target under the middle of the screen.
 expect Camera.follow({ x: 900, y: 700 }, { screen: { x: 800, y: 600 }, zoom: 2 }).world_to_screen({ x: 900, y: 700 })
 	== { x: 400, y: 300 }
-
-# Zoom cannot be zero, whatever it is asked for.
-expect Camera.default.with_zoom(0).zoom() == Camera.fallback_zoom

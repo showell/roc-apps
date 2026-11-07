@@ -11,7 +11,7 @@
 import lib.Shapes
 import lib.Brush
 import lib.RgbColor
-import lib.Eye
+import Eye
 import Panels
 
 Fence :: [].{

@@ -8,7 +8,7 @@
 import lib.Shapes
 import lib.Brush
 import lib.RgbColor
-import lib.Eye
+import Eye
 import Panels
 
 Night :: [].{
@@ -43,12 +43,9 @@ Night :: [].{
 			Rect({ x: 0.0, y: 0.0, width: v.width, height: horizon + 1.0, fill: Linear({ stops: { start_color: sky_high, end_color: sky_low, start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: horizon } }) }),
 			Rect({ x: 0.0, y: horizon, width: v.width, height: v.height - horizon, fill: Flat(lawn) }),
 		]
-		if Eye.ahead(v, moon_at) {
-			c = Eye.turn(v, moon_at)
-			p = Eye.flat(v, c)
-			List.append($out, Disc({ x: p.x, y: p.y, radius: 32.0 * Eye.pixels_per_metre(v, c.forward), fill: Flat(moon_c) }))
-		} else {
-			$out
+		match Eye.sighting(v, moon_at) {
+			Ok({ point: p, pixels_per_metre }) => List.append($out, Disc({ x: p.x, y: p.y, radius: 32.0 * pixels_per_metre, fill: Flat(moon_c) }))
+			Err(BehindEye) => $out
 		}
 	}
 

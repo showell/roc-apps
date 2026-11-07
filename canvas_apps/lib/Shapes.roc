@@ -2,6 +2,7 @@
 ## of these shapes in the app's own coordinates, and each painter draws the list
 ## in order. What one app draws is built in that app's own folder.
 import Brush
+import Point
 import RgbColor
 
 Shapes :: [].{
@@ -63,7 +64,7 @@ Shapes :: [].{
 	## Camera, because the mark crosses to JavaScript, which has no such type.
 	Space : [
 		Screen,
-		World({ target : { x : F64, y : F64 }, offset : { x : F64, y : F64 }, rotation : F64, zoom : F64 }),
+		World({ target : Point.Point, offset : Point.Point, rotation : F64, zoom : F64 }),
 	]
 
 	## The shapes lit in `Add` mode, so each adds its light to what is under it,
@@ -79,7 +80,7 @@ Shapes :: [].{
 	## painter has to learn a stroke. It has no cap and no join, which suits a
 	## gridline. A line from a point to itself has no direction to be wide
 	## across, and crashes.
-	line : { from : { x : F64, y : F64 }, to : { x : F64, y : F64 }, width : F64 }, Brush.Fill -> Shapes.Shape
+	line : { from : Point.Point, to : Point.Point, width : F64 }, Brush.Fill -> Shapes.Shape
 	line = |{ from, to, width }, fill| {
 		dx = to.x - from.x
 		dy = to.y - from.y
@@ -97,7 +98,7 @@ Shapes :: [].{
 	## A circle's outline, as `sides` lines `line_width` wide around the rim. A
 	## disc under a smaller disc makes a ring too, but only on a background of a
 	## known flat color. Fewer than three sides enclose nothing, and crash.
-	ring_shapes : { center : { x : F64, y : F64 }, radius : F64, line_width : F64, sides : U64 }, Brush.Fill -> List(Shapes.Shape)
+	ring_shapes : { center : Point.Point, radius : F64, line_width : F64, sides : U64 }, Brush.Fill -> List(Shapes.Shape)
 	ring_shapes = |{ center, radius, line_width, sides }, fill|
 		if sides < 3 {
 			crash "Shapes.ring_shapes: a ring needs at least three sides"
@@ -128,7 +129,7 @@ Shapes :: [].{
 	squashed_shapes = |shapes, { axis, cosine: k }| shapes.map(
 		|shape|
 			match shape {
-				Poly(p) => Poly({ coordinates: pulled(p.coordinates, axis, k), fill: p.fill })
+				Poly(p) => Poly({ coordinates: pulled(p.coordinates, { axis, cosine: k }), fill: p.fill })
 				Disc(d) => Disc({ x: axis + (d.x - axis) * k, y: d.y, radius: d.radius, fill: d.fill })
 				# A mirror sends a rectangle's left edge to its right, and a width is never
 				# negative.
@@ -170,7 +171,7 @@ Shapes :: [].{
 
 	## Light in `color` at the middle, at the colour's own alpha, fading to
 	## nothing at `radius`.
-	halo : { center : { x : F64, y : F64 }, radius : F64 }, Brush.Rgba -> Shapes.Shape
+	halo : { center : Point.Point, radius : F64 }, Brush.Rgba -> Shapes.Shape
 	halo = |{ center, radius }, color|
 		Disc({
 			x: center.x,
@@ -199,8 +200,9 @@ Shapes :: [].{
 	}
 }
 
-pulled : List(F64), F64, F64 -> List(F64)
-pulled = |xs, axis, k| {
+## Every x of the coordinates pulled toward `axis` by `cosine`.
+pulled : List(F64), { axis : F64, cosine : F64 } -> List(F64)
+pulled = |xs, { axis, cosine: k }| {
 	n = xs.len()
 	var $out = List.with_capacity(n)
 	var $i = 0
@@ -220,12 +222,13 @@ half_pi = F64.pi / 2.0
 
 ## The coordinates of a quarter turn about `center`, starting at `start_angle`,
 ## onto `coordinates`.
-corner_coordinates : List(F64), { center : { x : F64, y : F64 }, radius : F64, start_angle : F64, steps : U64 } -> List(F64)
+corner_coordinates : List(F64), { center : Point.Point, radius : F64, start_angle : F64, steps : U64 } -> List(F64)
 corner_coordinates = |coordinates, { center, radius, start_angle, steps }| {
 	var $out = coordinates
 	for k in 0..=steps {
 		a = start_angle + half_pi * k.to_f64() / steps.to_f64()
-		$out = $out.concat([center.x + radius * a.cos(), center.y + radius * a.sin()])
+		$out = $out.append(center.x + radius * a.cos())
+		$out = $out.append(center.y + radius * a.sin())
 	}
 	$out
 }

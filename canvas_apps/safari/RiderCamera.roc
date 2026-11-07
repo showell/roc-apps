@@ -4,9 +4,11 @@
 ## rider's head turns into a bend.
 import Angle
 import CanvasRoll
+import EncounterReaction
+import Gaze
 import Geom
+import Lens
 import Pixels
-import RideFocal
 import RiderState
 import Route
 
@@ -28,20 +30,20 @@ RiderCamera := {
 	roll : Angle.Lean,
 }.{
 
-	## The camera for `rider` on `route`. The view's turn from the way the
-	## motorcycle points is worked out once, for both the heading and the vantage.
+	## The camera for `rider` on `route`. Its heading is the bearing the
+	## rider's segment sets off on, turned by the vantage's yaw.
 	of : RiderState, Route -> RiderCamera
 	of = |rider, route| {
-		view_yaw = view_yaw_for(rider)
+		vantage = {
+			along: rider.motorcycle.along,
+			across: rider.motorcycle.across,
+			yaw: rider.motorcycle.yaw.plus(view_yaw_for(rider)),
+		}
 		{
 			segment_index: rider.segment_index,
-			vantage: {
-				along: rider.motorcycle.along,
-				across: rider.motorcycle.across,
-				yaw: rider.motorcycle.yaw.plus(view_yaw),
-			},
-			heading: rider.motorcycle.heading.plus(view_yaw),
-			cam_focal: RideFocal.ride_focal(rider, route),
+			vantage,
+			heading: route.bearing_of(rider.segment_index).plus(vantage.yaw),
+			cam_focal: ride_focal(rider, route),
 			roll: CanvasRoll.rider_roll(rider.motorcycle.lean),
 		}
 	}
@@ -56,7 +58,17 @@ head_turn_per_lean = 0.15
 view_yaw_for : RiderState -> Angle.Turn
 view_yaw_for = |s| s.eyes.gaze_yaw.plus(s.motorcycle.lean.steer(head_turn_per_lean))
 
-expect head_turn_per_lean == 0.15
+## The camera's focal length for where the rider is and how they ride. The
+## view widens as the rider leans, and as the rider's attention is caught, by
+## an encounter on the road or by a look to the side.
+ride_focal : RiderState, Route -> Pixels
+ride_focal = |rider, route| {
+	seg = route.segment_at(rider.segment_index)
+	attention =
+		EncounterReaction.encounter_attention(seg, rider.motorcycle)
+			.max(Gaze.gaze_attention(rider.eyes.look_depth))
+	Lens.cam_focal({ lean: rider.motorcycle.lean, attention })
+}
 
 ## A rider leaning `lean`, looking `gaze_yaw` from the way the motorcycle
 ## points.

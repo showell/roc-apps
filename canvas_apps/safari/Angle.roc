@@ -61,7 +61,7 @@ Angle :: [].{
 
 		## The turn of this many degrees.
 		degrees : F64 -> Angle.Turn
-		degrees = |d| Angle.Turn.(d * Trig.deg)
+		degrees = |d| Angle.Turn.(d * Trig.degree)
 
 		to_radians : Angle.Turn -> F64
 		to_radians = |Angle.Turn.(r)| r
@@ -115,7 +115,7 @@ Angle :: [].{
 
 		## The lean of this many degrees.
 		degrees : F64 -> Angle.Lean
-		degrees = |d| Angle.Lean.(d * Trig.deg)
+		degrees = |d| Angle.Lean.(d * Trig.degree)
 
 		to_radians : Angle.Lean -> F64
 		to_radians = |Angle.Lean.(r)| r
@@ -177,7 +177,7 @@ Angle :: [].{
 
 		## The change of this many degrees.
 		degrees : F64 -> Angle.LeanChange
-		degrees = |d| Angle.LeanChange.(d * Trig.deg)
+		degrees = |d| Angle.LeanChange.(d * Trig.degree)
 
 		to_radians : Angle.LeanChange -> F64
 		to_radians = |Angle.LeanChange.(r)| r

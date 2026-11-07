@@ -9,7 +9,7 @@
 # turned through, and a negative factor mirrors it as well, so the two files
 # flanking the path face each other rather than both facing right.
 import lib.Shapes
-import lib.Eye
+import Eye
 import Skeleton
 
 Guards :: [].{
@@ -65,19 +65,18 @@ Guards :: [].{
 	one : Eye.Eye, F64, F64, F64, F64, F64, F64, F64 -> List(Shapes.Shape)
 	one = |v, sx, sz, now, lag, t, tilt, side| {
 		spot = { right: sx, forward: sz - now, height: 0.0 }
-		if Eye.ahead(v, spot) {
-			c = Eye.turn(v, spot)
-			feet = Eye.flat(v, c)
-			s = Eye.pixels_per_metre(v, c.forward) * bone_metres / bone_pixels
-			# Too small to read, or entirely off one side of the frame.
-			if s < 0.04 or feet.x + 120.0 * s < 0.0 or feet.x - 120.0 * s > v.width {
-				[]
-			} else {
-				k = facing(sx, sz, now, lag, tilt, side)
-				Shapes.squashed_shapes(Skeleton.figure(t, feet.x, feet.y, s), { axis: feet.x, cosine: k })
+		match Eye.sighting(v, spot) {
+			Ok({ point: feet, pixels_per_metre }) => {
+				s = pixels_per_metre * bone_metres / bone_pixels
+				# Too small to read, or entirely off one side of the frame.
+				if s < 0.04 or feet.x + 120.0 * s < 0.0 or feet.x - 120.0 * s > v.width {
+					[]
+				} else {
+					k = facing(sx, sz, now, lag, tilt, side)
+					Shapes.squashed_shapes(Skeleton.figure(t, feet.x, feet.y, s), { axis: feet.x, cosine: k })
+				}
 			}
-		} else {
-			[]
+			Err(BehindEye) => []
 		}
 	}
 

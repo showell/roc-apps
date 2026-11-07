@@ -3,6 +3,7 @@
 ## route can only be built in that shape. A segment's place in the route is its
 ## `Route.SegmentIndex`.
 import Along
+import Angle
 import Distance
 import Segment
 
@@ -87,6 +88,16 @@ Route :: List(Segment).{
 	distance_along_route : Route, { index : Route.SegmentIndex, along : Along } -> Distance
 	distance_along_route = |Route.(segments), { index, along }|
 		length_of(segments.take_first(index.count_before())).plus(along.from_start())
+
+	## The bearing the segment at `index` sets off on: north, turned by the bend
+	## out of each segment before it. The turns are added from the first segment
+	## on: a float sum's rounding depends on its order, and another order can
+	## move a pixel of the sky.
+	bearing_of : Route, Route.SegmentIndex -> Angle.Bearing
+	bearing_of = |Route.(segments), index|
+		segments
+			.take_first(index.count_before())
+			.fold(Angle.north, |bearing, segment| bearing.plus(segment.bend_out_of().turn))
 }
 
 ## The length of `segments`, end to end. It is summed from the last segment to

@@ -103,8 +103,8 @@ expect Rules.move_player({ x: Rules.world_right, y: 0 }, Input.none.with_key_dow
 
 # The wheel zooms, and stops at the limits rather than turning the world inside
 # out. A snapshot is a value, so saying "the wheel turned" is writing it down.
-expect Rules.step(Rules.start, Input.none.with_mouse(Mouse.of(0, 0, 0, 0, 3)), 0).zoom == 1.3
-expect Rules.step({ ..Rules.start, zoom: 2.4 }, Input.none.with_mouse(Mouse.of(0, 0, 0, 0, 9)), 0).zoom == 2.5
+expect Rules.step(Rules.start, Input.none.with_mouse(Mouse.of({ held: 0, struck: 0, at: { x: 0, y: 0 }, wheel: 3 })), 0).zoom == 1.3
+expect Rules.step({ ..Rules.start, zoom: 2.4 }, Input.none.with_mouse(Mouse.of({ held: 0, struck: 0, at: { x: 0, y: 0 }, wheel: 9 })), 0).zoom == 2.5
 
 # R levels a turned camera, which is what upstream's reset does.
 expect Rules.step({ ..Rules.start, rotation: 42 }, Input.none.with_key_pressed(KeyR), 0.1).rotation == 0

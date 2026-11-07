@@ -30,12 +30,16 @@ Shale is a small Lua-like language:
   - A function sees only `const`s, not the script's locals.
   - `read` and `replace` paths are relative to the folder you `cd` to, or a mount such as `repos:` or `scratch:`, never absolute.
   - Map keys must be strings.
+  - Loop over a list with `for x in list do ... end`, and over a map with `for k in keys(m) do`. `ipairs` and `for i, x in` are refused.
+  - A module must be listed in `game.roc` before `gates/CrossModuleExpects.roc` can import it.
 - **Files:** read with the Read tool, and edit with Edit and Write.
 - **Not in the language:** `table.*`, `local function`, and `type()`.
   - Declare a function with `function name()` at the top level.
   - Walk a map with `for k in keys(m) do`.
   - Join a list with `join(l, sep)`.
 - **Paths:** they're relative to the folder you `cd` to. A `repos:` path names a repo under ~/showell_repos.
+
+The gate enforces this for every agent: any other Bash command is refused. For a real need Shale can't meet, the escape is a first line `# want: <tag>: <text>`, which runs the command and logs it so Steve can see what agents reach for. Use it rarely, and say so in your report.
 
 Never push, never merge, and never touch a checkout that isn't yours.
 
@@ -196,7 +200,7 @@ files, and one frame held to `gates/proof.expected`.
   its cache, which takes longer.
 - **Widgets:** if you change something a widget imports, also run `roc check web.roc` in that widget's folder (`canvas_apps/<name>_widget`), with the
   pinned Roc: `/home/steve/tools/roc-nightly-2026-11-03-34bd006/roc`.
-- **A change that moves the ride or any pixel:** run `shale canvas_apps/safari/gates/run.shale part=widgets` (every widget's `roc check` and `roc test`, about 40 seconds). Several widgets hold numbers from a paused step of the real ride, such as the frame widget's shape counts at step 1570, so they break even when you didn't touch them.
+- **A change that moves the ride or any pixel:** run `shale canvas_apps/safari/gates/run.shale part=widgets` (every widget's `roc check`, then one `roc test` over all of them, about 35 seconds on a busy box). Several widgets hold numbers from a paused step of the real ride, such as the frame widget's shape counts at step 1570, so they break even when you didn't touch them.
 - **Whole-tree lints:** before you report, also run `shale canvas_apps/safari/gates/lints.shale` from the worktree root, about 17 seconds. fast.shale skips the lints that read across files (boundaries, families and others), and they catch what a lane's rename or new parameter does elsewhere.
 - **The book:** also run `shale canvas_apps/safari/gates/run.shale part=tutorial`, about a second. It fails only if an include breaks. While the book is parked, its stale names and the rule that it names every module are skipped, loudly (they print SKIPPED with their counts).
 - **The full gate is the orchestrator's.** Don't run `gates/run.shale`.
