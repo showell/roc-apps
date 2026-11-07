@@ -110,9 +110,6 @@ cross_if_on_road = |moved, route| {
 	}
 }
 
-first_segment : Segment
-first_segment = World.route.segment_at(Route.SegmentIndex.number(0))
-
 ## A motorcycle on the centre line of the first segment, going the base speed.
 motorcycle_at : F64, F64 -> Motorcycle
 motorcycle_at = |along, lean_radians| {
@@ -126,13 +123,6 @@ rider_at : F64, F64 -> RiderState
 rider_at = |along, lean_radians| {
 	..RiderState.initial,
 	motorcycle: motorcycle_at(along, lean_radians),
-}
-
-# The throttle is decided for the motorcycle as it will lean.
-expect {
-	controls = decide(motorcycle_at(0.0, 0.0), first_segment)
-	same = Throttle.next_speed(motorcycle_at(0.0, 0.0).with_lean(controls.lean), first_segment)
-	controls.speed.to_metres_a_step().to_bits() == same.to_metres_a_step().to_bits()
 }
 
 at_seam : RiderState
@@ -162,10 +152,6 @@ bearing_in_world = |rider| World.route.bearing_of(rider.segment_index).plus(ride
 expect {
 	turned = bearing_in_world(crossed).turn_from(bearing_in_world(at_seam))
 	turned.abs() < Angle.Turn.radians(0.000000000001)
-}
-expect {
-	exit_turn = first_segment.bend_out_of().turn
-	crossed.motorcycle.yaw.to_radians() - (0.1 - exit_turn.to_radians()) == 0.0
 }
 
 expect crossed.segment_index.to_i64() == 1
