@@ -1934,7 +1934,7 @@ A crossing and an approach go in, and the cat at that instant comes out. The sam
 
 `CrossingSighting.cat_in_view` calls it, adding the distance to the segment to get the gap:
 
-{{code EncounterSighting.segment_cat}}
+{{code EncounterPoses.segment_cat}}
 
 What `Cat` gets from `Animation` comes down to one type, `Stage`:
 
@@ -2096,11 +2096,11 @@ digraph screen {
 
 `cat_in_view` places the cat and decides whether it's big enough to draw. An empty list or a list of one is how it says "maybe".
 
-{{code EncounterSighting.segment_cat}}
+{{code EncounterPoses.segment_cat}}
 
 `segment_cat` calls it for a segment with a cat, and `cats_in_view` flattens the answers with `join_map`, so a "no" simply disappears:
 
-{{code EncounterSighting.cats_in_view}}
+{{code EncounterPoses.cat_poses}}
 
 Looking back over the chapter, notice what isn't in it: a cat in `RideInstant`, an update loop, or a flag saying the cat has already crossed.
 
@@ -2226,7 +2226,7 @@ And that's called from a `match` in the middle of a record, which is a reminder 
 
 Each frame, a sighting reads the route back. The crossing is matched in full, so a third kind of crossing would stop here until someone says what a bird sighting should do about it:
 
-{{code EncounterSighting.segment_bird}}
+{{code EncounterPoses.segment_bird}}
 
 We didn't need any new machinery for the bird. Above their `expect`s, the four bird modules come to about 450 lines, a quarter of them coordinates for the stills. `Animation` has nothing in it about birds.
 

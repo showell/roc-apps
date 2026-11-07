@@ -112,11 +112,7 @@ scene_shapes_on = |on_layers| {
 		billboards: things_on(paused_scene.billboards, { on_layers, layer: Critters }),
 		cats: things_on(paused_scene.cats, { on_layers, layer: MovingThings }),
 		rails: things_on(paused_scene.rails, { on_layers, layer: Rails }),
-		truck: if on_layers.contains(MovingThings) {
-			paused_scene.truck
-		} else {
-			Err(NoTruck)
-		},
+		trucks: things_on(paused_scene.trucks, { on_layers, layer: MovingThings }),
 		birds: things_on(paused_scene.birds, { on_layers, layer: MovingThings }),
 	}
 	Scene.scene_shapes(only)
