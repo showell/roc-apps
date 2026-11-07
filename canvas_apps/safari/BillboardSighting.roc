@@ -59,9 +59,9 @@ BillboardSighting :: [].{
 		vantage : Geom.Vantage,
 		in_view : RoadAhead.SegmentInView,
 	} -> List(BillboardSighting.Fate)
-	segment_billboards = |road, seen|
-		BillboardSighting.farm_sightings(road, seen)
-			.concat(BillboardSighting.bend_sightings(road, seen))
+	segment_billboards = |road, { vantage, in_view }|
+		BillboardSighting.farm_sightings(road, { vantage, in_view })
+			.concat(BillboardSighting.bend_sightings(road, { vantage, in_view }))
 
 	## The cows, then the pigs, of a segment in view.
 	farm_sightings : RoadAhead.RoadView,
