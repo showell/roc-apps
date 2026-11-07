@@ -26,14 +26,10 @@ Motorcycle := {
 		along: Along.start,
 		across: Across.middle,
 		yaw: Angle.straight_ahead,
-		speed: VehicleLimits.base_speed,
+		speed: VehicleLimits.starting_speed,
 		lean: Angle.upright,
 		heading: Angle.north,
 	}
-
-	## How far the motorcycle turns in a step for each radian of lean.
-	turn_per_lean : F64
-	turn_per_lean = 0.1
 
 	## The motorcycle one step on, after its lean changes by `lean_step` and it
 	## speeds up by `acceleration`.
@@ -63,6 +59,10 @@ Motorcycle := {
 
 	is_eq : _
 }
+
+## How far the motorcycle turns in a step for each radian of lean.
+turn_per_lean : F64
+turn_per_lean = 0.1
 
 expect Motorcycle.initial.along.to_metres() == 0.0
 expect Motorcycle.initial.across.to_metres() == 0.0
@@ -163,7 +163,7 @@ expect {
 		b.speed.to_metres_a_step(),
 		b.yaw.to_radians(),
 		b.heading.to_radians(),
-		Motorcycle.turn_per_lean,
+		turn_per_lean,
 	]
 		== [
 			0.0,

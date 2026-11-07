@@ -14,8 +14,8 @@ VehicleLimits :: [].{
 	cruise_acceleration : Acceleration
 	cruise_acceleration = Acceleration.metres_a_step_each_step(0.01)
 
-	base_speed : Speed
-	base_speed = Speed.metres_a_step(0.3)
+	starting_speed : Speed
+	starting_speed = Speed.metres_a_step(0.3)
 
 	top_speed : Speed
 	top_speed = Speed.metres_a_step(2.5)
