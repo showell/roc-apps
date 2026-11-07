@@ -41,14 +41,15 @@ Comparison : { pixels : List(U32), counts : Str }
 
 compare : Tour -> Comparison
 compare = |tour| {
-	instant_shapes = Tour.shapes(tour)
+	frame = Tour.frame_content(tour)
+	instant_shapes = frame.shapes
 	roll = Tour.roll(tour)
 	scene = {
 		shapes: instant_shapes,
 		roll,
 		sky_top_color: Tour.sky_top_color(tour),
 		sky_horizon_color: Tour.sky_horizon_color(tour),
-		sun: Tour.sun(tour),
+		sun: frame.sun,
 	}
 	cut_shapes = Shapes.cut_shapes(instant_shapes)
 	a = SafariFrame.picture_pixels(scene)

@@ -48,12 +48,13 @@ SafariApp :: [].{
 				zoom: 1.0,
 			}),
 		)
+		frame = Tour.frame_content(tour)
 		Backdrop.frame_shapes(
-			Tour.shapes(tour),
+			frame.shapes,
 			{
 				sky_top_color: Tour.sky_top_color(tour),
 				sky_horizon_color: Tour.sky_horizon_color(tour),
-				sun_sighting: Tour.sun(tour),
+				sun_sighting: frame.sun,
 			},
 		).prepend(lean)
 	}

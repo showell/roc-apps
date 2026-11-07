@@ -1306,7 +1306,7 @@ A box is a function, and an arrow is a call. The three boxes under the frame are
 
 Here's the top of that diagram in code. Each frame, the game asks for three things and hands them to `Backdrop`:
 
-{{code SafariApp.frame_shapes from "Backdrop.frame_shapes(" to "sun_sighting: Tour.sun(tour),"}}
+{{code SafariApp.frame_shapes from "frame = Tour.frame_content(tour)" to "sun_sighting: frame.sun,"}}
 
 `Tour` holds the clock and hands it straight to `Sun` and `Sky`, so everything from here on is in those two. Let's take the three jobs in order.
 

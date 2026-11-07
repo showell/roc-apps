@@ -262,25 +262,20 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 	rod_shapes = |view, { from, to }|
 		match (sight_of(from), sight_of(to)) {
 			(InView, InView) => [rod_on_screen(view, { from, to })]
-			(InView, BehindCamera) => [rod_on_screen(view, { from, to: cut_at_near({ from, to }) })]
-			(BehindCamera, InView) => [rod_on_screen(view, { from: cut_at_near({ from, to }), to })]
+			(InView, BehindCamera) =>
+				[rod_on_screen(view, { from, to: Geom.near_plane_crossing({ from, to }) })]
+			(BehindCamera, InView) =>
+				[rod_on_screen(view, { from: Geom.near_plane_crossing({ from, to }), to })]
 			(BehindCamera, BehindCamera) => []
 		}
 
 	sight_of : Geom.RaisedPoint -> [InView, BehindCamera]
 	sight_of = |point|
-		if point.forward >= Geom.near_plane {
+		if Geom.is_in_view(point.forward) {
 			InView
 		} else {
 			BehindCamera
 		}
-
-	## Where the line from `from` to `to` crosses the near plane.
-	cut_at_near : { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> Geom.RaisedPoint
-	cut_at_near = |{ from, to }| {
-		share = Geom.near_plane.minus(from.forward).ratio_to(to.forward.minus(from.forward))
-		point_between({ from, to, fraction: Fraction.of(share) })
-	}
 
 	rod_on_screen : Tower.RodView,
 	{
@@ -458,7 +453,7 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 	} -> List(Shapes.Shape)
 	tower_shapes = |{ footprint, center, cam_focal, beacon_brightness }| {
 		sunk = sunk_below_horizon(center)
-		if center.forward < Geom.near_plane or sunk >= tower_height {
+		if !Geom.is_in_view(center.forward) or sunk >= tower_height {
 			[]
 		} else {
 			view = { rod_width_px: rod_width_at({ forward: center.forward, cam_focal }), cam_focal }
@@ -773,22 +768,3 @@ expect
 expect rod_shapes_along_road(0.0, 0.8).len() == 1
 expect rod_shapes_along_road(0.8, 0.0).len() == 1
 expect rod_shapes_along_road(0.0, 0.2).len() == 0
-
-expect
-	Tower.cut_at_near({
-		from: {
-			right: Distance.metres(0.0),
-			forward: Distance.metres(0.0),
-			height: Distance.metres(10.0),
-		},
-		to: {
-			right: Distance.metres(8.0),
-			forward: Distance.metres(0.8),
-			height: Distance.metres(30.0),
-		},
-	})
-		== {
-			right: Distance.metres(4.0),
-			forward: Distance.metres(0.4),
-			height: Distance.metres(20.0),
-		}

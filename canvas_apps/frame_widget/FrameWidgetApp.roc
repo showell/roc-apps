@@ -126,7 +126,7 @@ backdrop_pieces = |tour| {
 		{
 			sky_top_color: Tour.sky_top_color(tour),
 			sky_horizon_color: Tour.sky_horizon_color(tour),
-			sun_sighting: Tour.sun(tour),
+			sun_sighting: Tour.frame_content(tour).sun,
 		},
 	)
 	[
@@ -136,7 +136,7 @@ backdrop_pieces = |tour| {
 	]
 }
 
-## `Tour.shapes(tour)`, each part with its layer. `RideInstant.shapes` joins its
+## `Tour.frame_content(tour).shapes`, each part with its layer. `RideInstant.shapes` joins its
 ## parts into one list, so this asks for them one at a time, and an `expect` below
 ## holds the join to the real list.
 ride_pieces : Tour -> List(Piece)
@@ -331,17 +331,17 @@ expect frame_step == 1570
 expect picture_shapes(layers) == SafariApp.frame_shapes(paused_tour)
 
 # The ride's parts are the game's own shapes, in the game's order.
-expect ride_parts.join_map(|piece| piece.shapes) == Tour.shapes(paused_tour)
+expect ride_parts.join_map(|piece| piece.shapes) == Tour.frame_content(paused_tour).shapes
 
 # The frame's total is the count the book's table gives for this step.
-expect ride_count(layers) == Tour.shapes(paused_tour).len()
+expect ride_count(layers) == Tour.frame_content(paused_tour).shapes.len()
 expect ride_count(layers) == 2588
 
 # Each layer's own shapes at this step. The sun is behind the rider, so it has none.
 expect
 	layers.map(|layer| shapes_in(frame_parts, [layer]).len())
 		== [1656, 1, 0, 1, 4, 24, 302, 187, 352, 63]
-expect Tour.sun(paused_tour) == OutOfView
+expect Tour.frame_content(paused_tour).sun == OutOfView
 
 # The running count at each layer. The backdrop stays out of it.
 expect
