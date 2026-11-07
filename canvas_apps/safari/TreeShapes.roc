@@ -32,7 +32,7 @@ TreeShapes :: [].{
 	} -> Picture
 	tree_picture = |{ spot, cam_focal, context }, { height, foliage_color }| {
 		base = base_of(spot)
-		outline = outline_from_base({ base, height, cam_focal })
+		outline = TreeShapes.tree_outline(spot, { height, cam_focal })
 		inputs = {
 			base,
 			height,
