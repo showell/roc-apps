@@ -83,7 +83,10 @@ TruckShape :: [].{
 	point : Picture.Setting(TruckShape.TruckOnRoad), TruckShape.TruckPoint -> Geom.RaisedPoint
 	point = |truck, { along, across, height }| {
 		place = truck.spot.place()
-		on_ground = RoadAhead.rider_point_at(truck.context.road, { place, along, across })
+		on_ground = RoadAhead.rider_point_at(
+			truck.context.road,
+			{ place, road_point: { along, across } },
+		)
 		{
 			right: on_ground.right,
 			forward: on_ground.forward,

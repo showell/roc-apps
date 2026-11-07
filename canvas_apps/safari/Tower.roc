@@ -60,14 +60,7 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 					yaw: tower.yaw,
 				},
 			)
-			RoadAhead.rider_point_at(
-				road,
-				{
-					place: spot.place(),
-					along: on_road.along,
-					across: on_road.across,
-				},
-			)
+			RoadAhead.rider_point_at(road, { place: spot.place(), road_point: on_road })
 		}
 		{
 			back_left: corner_point(BackLeft),

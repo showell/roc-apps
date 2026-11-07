@@ -48,10 +48,7 @@ Pipeline :: [].{
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera])
 	sighting_of = |placed, { road, place }| {
 		road_point = placed.road_point
-		seen = RoadAhead.rider_point_at(
-			road,
-			{ place, along: road_point.along, across: road_point.across },
-		)
+		seen = RoadAhead.rider_point_at(road, { place, road_point })
 		foot = Geom.ahead_on_level(seen)?
 		Ok({ spot: Spot.at({ place, road_point, lift: placed.lift, foot }), kind: placed.kind })
 	}

@@ -41,11 +41,7 @@ RailSighting :: [].{
 				metres_left = Distance.metres((runout_metres - metres_in).to_f64())
 				RoadAhead.rider_point_at(
 					road,
-					{
-						place,
-						along: Along.at(length.minus(metres_left)),
-						across,
-					},
+					{ place, road_point: { along: Along.at(length.minus(metres_left)), across } },
 				)
 			},
 		)
@@ -62,7 +58,7 @@ RailSighting :: [].{
 		List.from_iter(U32.to(1, leg_pieces(rail_runout))).map(
 			|metres_in| RoadAhead.rider_point_at(
 				road,
-				{ place, along: Along.metres(metres_in.to_f64()), across },
+				{ place, road_point: { along: Along.metres(metres_in.to_f64()), across } },
 			),
 		)
 }
@@ -123,23 +119,18 @@ rails_at = |road, bend_view| GuardRail.quads_along(rail_points(road, bend_view))
 rail_points : RoadAhead.RoadView, BendView -> List(Geom.RiderPoint)
 rail_points = |road, bend_view| {
 	outer_edge = BendView.outer_edge(bend_view.turn())
-	place_after = BendView.place_after(bend_view)
+	place_after = Ahead(BendView.position_after(bend_view))
 	length_before = bend_view.bend.segment_length
 	end_before = RoadAhead.rider_point_at(
 		road,
 		{
 			place: bend_view.before,
-			along: Along.at(length_before),
-			across: outer_edge,
+			road_point: { along: Along.at(length_before), across: outer_edge },
 		},
 	)
 	start_after = RoadAhead.rider_point_at(
 		road,
-		{
-			place: place_after,
-			along: Along.start,
-			across: outer_edge,
-		},
+		{ place: place_after, road_point: { along: Along.start, across: outer_edge } },
 	)
 	apex = BendView.apex(road, bend_view)
 	[

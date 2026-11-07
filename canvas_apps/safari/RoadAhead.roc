@@ -128,12 +128,11 @@ RoadAhead :: [].{
 	rider_point_ahead : RoadAhead.RoadView,
 	{
 		position : SegmentPlace.Position,
-		along : Along,
-		across : Across,
+		road_point : Geom.RoadPoint,
 	} -> Geom.RiderPoint
-	rider_point_ahead = |road, { position, along, across }| {
+	rider_point_ahead = |road, { position, road_point }| {
 		on_rider_segment = segments_before(road, position).fold_rev(
-			{ along, across },
+			road_point,
 			|index, point| Geom.point_in_segment_before(
 				point,
 				road.route.segment_at(index).bend_out_of(),
@@ -146,18 +145,14 @@ RoadAhead :: [].{
 	rider_point_at : RoadAhead.RoadView,
 	{
 		place : SegmentPlace,
-		along : Along,
-		across : Across,
+		road_point : Geom.RoadPoint,
 	} -> Geom.RiderPoint
-	rider_point_at = |road, { place, along, across }|
+	rider_point_at = |road, { place, road_point }|
 		match place {
 			Ahead(position) =>
-				rider_point_ahead(road, { position, along, across })
+				rider_point_ahead(road, { position, road_point })
 			JustBehind(bend) =>
-				Geom.to_rider_point(
-					Geom.point_in_segment_after({ along, across }, bend),
-					road.vantage,
-				)
+				Geom.to_rider_point(Geom.point_in_segment_after(road_point, bend), road.vantage)
 		}
 }
 

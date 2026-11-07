@@ -44,7 +44,7 @@ GroundSighting :: [].{
 		chunk_count = GroundSighting.chunks_along(segment_length)
 		corner = |chunk_number, across| {
 			along = chunk_end(segment_length, chunk_number)
-			RoadAhead.rider_point_at(road, { place, along, across })
+			RoadAhead.rider_point_at(road, { place, road_point: { along, across } })
 		}
 		up_right_edge =
 			List.from_iter(U32.until(0, chunk_count + 1))
@@ -79,11 +79,10 @@ chunk_end = |segment_length, chunk_number| {
 
 ## How long the segment after a bend is.
 length_after : RoadAhead.RoadView, BendView -> Distance
-length_after = |road, bend_view|
-	match BendView.place_after(bend_view) {
-		Ahead(position) => RoadAhead.segment_at(road, position).length
-		JustBehind(_) => crash "GroundSighting.length_after: the segment after a bend is never behind the rider"
-	}
+length_after = |road, bend_view| RoadAhead.segment_at(
+	road,
+	BendView.position_after(bend_view),
+).length
 
 ## A patch of road with these corners.
 road_patch : List(Geom.RiderPoint) -> Ground.Patch
@@ -131,11 +130,11 @@ bend_paving = |road, bend_view| {
 	length_before = bend_view.bend.segment_length
 	before = |along, across| RoadAhead.rider_point_at(
 		road,
-		{ place: bend_view.before, along, across },
+		{ place: bend_view.before, road_point: { along, across } },
 	)
 	after = |along, across| RoadAhead.rider_point_at(
 		road,
-		{ place: BendView.place_after(bend_view), along, across },
+		{ place: Ahead(BendView.position_after(bend_view)), road_point: { along, across } },
 	)
 	lead_start = Along.at(length_before.minus(lead_in_length))
 	end = Along.at(length_before)
@@ -188,10 +187,7 @@ pond_patches = |road, { segment, place }| {
 			outline.map(
 				|point| {
 					on_segment = Pond.segment_point(point, segment.length)
-					RoadAhead.rider_point_at(
-						road,
-						{ place, along: on_segment.along, across: on_segment.across },
-					)
+					RoadAhead.rider_point_at(road, { place, road_point: on_segment })
 				},
 			)
 		[

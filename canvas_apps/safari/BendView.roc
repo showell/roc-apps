@@ -33,13 +33,14 @@ BendView := { before : SegmentPlace, bend : Geom.Bend }.{
 	turn : BendView -> Angle.Turn
 	turn = |bend_view| bend_view.bend.turn
 
-	## Where the segment after a bend lies: next on the road ahead, or the
-	## rider's own when the segment before is just behind the rider.
-	place_after : BendView -> SegmentPlace
-	place_after = |bend_view|
+	## Where on the road ahead the segment after a bend lies: next after the
+	## segment before, or the rider's own when the segment before is just behind
+	## the rider.
+	position_after : BendView -> SegmentPlace.Position
+	position_after = |bend_view|
 		match bend_view.before {
-			Ahead(position) => Ahead(position.next())
-			JustBehind(_) => Ahead(SegmentPlace.Position.first)
+			Ahead(position) => position.next()
+			JustBehind(_) => SegmentPlace.Position.first
 		}
 
 	## How far across the road its outer edge at a bend is: the left edge
@@ -58,9 +59,15 @@ BendView := { before : SegmentPlace, bend : Geom.Bend }.{
 		across = outer_edge(bend_view.turn())
 		end_before = Along.at(bend_view.bend.segment_length)
 		before = bend_view.before
-		point_before = |along| RoadAhead.rider_point_at(road, { place: before, along, across })
-		place = place_after(bend_view)
-		point_after = |along| RoadAhead.rider_point_at(road, { place, along, across })
+		point_before = |along| RoadAhead.rider_point_at(
+			road,
+			{ place: before, road_point: { along, across } },
+		)
+		place = Ahead(position_after(bend_view))
+		point_after = |along| RoadAhead.rider_point_at(
+			road,
+			{ place, road_point: { along, across } },
+		)
 		Geom.line_crossing({
 			first_line: {
 				start_point: point_before(end_before),
@@ -103,18 +110,15 @@ apex_after_turn = |turn|
 	)
 
 # The segment after a bend, from each place the segment before can lie.
-position_after : SegmentPlace -> I64
-position_after = |before| {
+number_after : SegmentPlace -> I64
+number_after = |before| {
 	bend = BendView.of_segment(World.route.segment_at(Route.SegmentIndex.number(0)), before)
-	match BendView.place_after(bend) {
-		Ahead(position) => position.to_i64()
-		JustBehind(_) => -1
-	}
+	BendView.position_after(bend).to_i64()
 }
 
-expect position_after(Ahead(SegmentPlace.Position.first)) == 1
-expect position_after(Ahead(SegmentPlace.Position.number(3))) == 4
-expect position_after(m_prev_left) == 0
+expect number_after(Ahead(SegmentPlace.Position.first)) == 1
+expect number_after(Ahead(SegmentPlace.Position.number(3))) == 4
+expect number_after(m_prev_left) == 0
 
 # Each is within 1e-7 of its want, scaled up by a want past 1.
 expect
@@ -218,8 +222,7 @@ at_d0 = RoadAhead.rider_point_ahead(
 	road_from_vantage,
 	{
 		position: SegmentPlace.Position.first,
-		along: Along.metres(50.0),
-		across: Across.metres(1.0),
+		road_point: { along: Along.metres(50.0), across: Across.metres(1.0) },
 	},
 )
 
@@ -232,8 +235,7 @@ point_at_d1 = |route| RoadAhead.rider_point_ahead(
 	},
 	{
 		position: SegmentPlace.Position.number(1),
-		along: Along.metres(50.0),
-		across: Across.metres(1.0),
+		road_point: { along: Along.metres(50.0), across: Across.metres(1.0) },
 	},
 )
 
@@ -251,11 +253,7 @@ expect {
 rider_point_behind : SegmentPlace -> Geom.RiderPoint
 rider_point_behind = |place| RoadAhead.rider_point_at(
 	road_from_vantage,
-	{
-		place,
-		along: Along.metres(50.0),
-		across: Across.metres(1.0),
-	},
+	{ place, road_point: { along: Along.metres(50.0), across: Across.metres(1.0) } },
 )
 
 expect
