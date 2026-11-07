@@ -12,7 +12,6 @@
 # with no plus sign draws nothing at all and says nothing about it.
 import lib.Brush
 import lib.ArgbColor
-import lib.Camera
 import lib.Font
 import lib.Math
 import lib.RgbColor

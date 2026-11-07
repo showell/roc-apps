@@ -1,7 +1,6 @@
 ## Gawking is what a pig by the road does to the rider's speed. A rider who
 ## notices a pig that catches the eye slows for it, and stays slow to the end
 ## of the segment. The eyes' part, the look, is Gaze's.
-import Acceleration
 import Billboard
 import Distance
 import Geom

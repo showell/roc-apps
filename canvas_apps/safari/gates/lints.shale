@@ -31,7 +31,10 @@ const UNTYPED_PATHS = {"game.roc", "main.roc", "gates/", "tutorial/"}
 -- across files. The fast tier skips them, and a recipe with nothing else in it.
 -- `skip` names files of drawing data, tables of points that read better side
 -- by side than one number to a line. `from_repo_root` runs a recipe from the
--- checkout's root, where `types=1` finds `roc-version`.
+-- checkout's root, where `types=1` finds `roc-version`. `tree_globs`, from the
+-- root, stands for the whole tree in place of safari's folder: unused_imports
+-- reads the widgets, widget_kit and lib too, because Roc doesn't warn of an
+-- unused import, and the widgets import the game.
 const LINTS = {
   {recipe = "name_hunt", args = {}, budget = {}, counts = {
     {"state_effect", 0}, {"question", 0}, {"vague", 0}, {"name_type", 0}, {"negative", 0},
@@ -57,6 +60,8 @@ const LINTS = {
   {recipe = "bare_floats", args = {"table=bare_floats.txt"}, budget = {}, counts = {{"bare_float", 0}, {"unused_exception", 0}}},
   {recipe = "families", args = {}, budget = {}, counts = {{"family", 0}, {"twin_name", 0}}, whole_tree = {"family", "twin_name"}},
   {recipe = "plain_names", args = {}, budget = {}, counts = {{"pure_mutator", 0}, {"abbreviation", 0}, {"module_doc", 0}}},
+  {recipe = "unused_imports", args = {}, budget = {}, from_repo_root = true, counts = {{"unused_import", 0}},
+    tree_globs = {SAFARI .. "/**/*.roc", "canvas_apps/*_widget/**/*.roc", "canvas_apps/widget_kit/**/*.roc", "canvas_apps/lib/**/*.roc"}},
 }
 
 function runs_from_repo_root(lint)
@@ -68,7 +73,12 @@ function lint_argv(lint, glob)
   local argv = {"shale"}
   for b in lint.budget do push(argv, b) end
   push(argv, real("cookbook:roc/" .. lint.recipe .. ".shale"))
-  push(argv, "glob=" .. (runs_from_repo_root(lint) and (SAFARI .. "/") or "") .. glob)
+  local tree_globs = get(lint, "tree_globs", {})
+  if #tree_globs > 0 and glob == "**/*.roc" then
+    push(argv, "glob=" .. join(tree_globs, ","))
+  else
+    push(argv, "glob=" .. (runs_from_repo_root(lint) and (SAFARI .. "/") or "") .. glob)
+  end
   for a in lint.args do push(argv, a) end
   local skip = get(lint, "skip", {})
   if #skip > 0 and glob == "**/*.roc" then push(argv, "skip=" .. join(skip, ",")) end

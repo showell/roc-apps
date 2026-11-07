@@ -6,7 +6,6 @@
 ##
 ## It paints only what Safari's ride draws: polygons and flat discs, each laid
 ## over what is there. Any other shape crashes, naming what it got.
-import lib.Brush
 import lib.Shapes
 import ScanlineFill
 import ScreenRoll

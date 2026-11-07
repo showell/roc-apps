@@ -8,8 +8,6 @@
 # so the paddle slides while an arrow is down, and the edge for SPACE.
 import lib.CanvasApp
 import lib.Input
-import lib.Keys
-import lib.Shapes
 import Rules
 import BreakoutDraw
 

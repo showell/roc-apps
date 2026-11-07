@@ -12,7 +12,6 @@ import lib.Math
 import lib.Trig
 import Ball
 import Bricks
-import Paddle
 import Rules
 
 BreakoutDraw :: [].{

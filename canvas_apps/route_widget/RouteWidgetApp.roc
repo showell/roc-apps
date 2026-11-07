@@ -4,7 +4,6 @@
 ## white. The ride has no such map: a segment knows only its length and its
 ## turn, so this widget lays the map out itself by adding up the turns.
 import game.Angle
-import game.Distance
 import game.World
 import lib.Brush
 import lib.CanvasApp

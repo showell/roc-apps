@@ -55,8 +55,6 @@ import game.StillShapes
 import game.Sun
 import game.TreeSighting
 import game.Trees
-import game.Truck
-import game.TruckSighting
 import game.VehicleLimits
 import game.World
 import lib.Brush

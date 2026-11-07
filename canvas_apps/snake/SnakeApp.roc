@@ -10,9 +10,7 @@
 # and nothing else.
 import lib.CanvasApp
 import lib.Input
-import lib.Keys
 import lib.Random
-import lib.Shapes
 import Rules
 import SnakeDraw
 
