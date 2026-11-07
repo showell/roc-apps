@@ -43,7 +43,7 @@ BillboardSighting :: [].{
 	billboard_fates = |road, camera|
 		RoadAhead.segments_in_view(road)
 			.join_map(
-				|in_view| BillboardSighting.segment_sightings(
+				|in_view| BillboardSighting.segment_billboards(
 					road,
 					{ vantage: camera.vantage, in_view },
 				),
@@ -51,12 +51,12 @@ BillboardSighting :: [].{
 
 	## The critters of a segment in view: its farm animals, then what lives at
 	## its end.
-	segment_sightings : RoadAhead.RoadView,
+	segment_billboards : RoadAhead.RoadView,
 	{
 		vantage : Geom.Vantage,
 		in_view : RoadAhead.SegmentInView,
 	} -> List(BillboardSighting.Fate)
-	segment_sightings = |road, seen|
+	segment_billboards = |road, seen|
 		BillboardSighting.farm_sightings(road, seen)
 			.concat(BillboardSighting.bend_sightings(road, seen))
 
