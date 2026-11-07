@@ -77,3 +77,10 @@ Tour := {
 # The newest are the ones kept.
 past_instants_cap : U64
 past_instants_cap = 2048
+
+# A tour ridden to a step keeps every instant it passed, and none at the start.
+expect {
+	ridden = Tour.at_step(3)
+	ridden.instant.clock == Clock.at_step(3) and ridden.past_instants.len() == 3
+}
+expect Tour.at_step(0).past_instants.is_empty()
