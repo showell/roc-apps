@@ -984,7 +984,9 @@ sighted_depths = |sightings| sightings.map(|sighting| sighting.spot.foot().forwa
 expect depths_of(scene.trees) == sighted_depths(TreeSighting.trees_in_view(road, origin_camera))
 expect
 	depths_of(scene.birds)
-		== sighted_depths(EncounterSighting.birds_in_view(road, { camera: origin_camera, encounter: Unplanned }))
+		== sighted_depths(
+			EncounterSighting.birds_in_view(road, { camera: origin_camera, encounter: Unplanned }),
+		)
 expect
 	depths_of(scene.towers)
 		== sighted_depths(
