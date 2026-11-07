@@ -13,47 +13,15 @@ import lib.RgbColor
 
 Pond :: [].{
 
-	## A point on the pond, `past_end` along the road past the segment's end
-	## and `out_from_middle` from the middle of the road, on the outside of the
-	## bend.
-	PondPoint : { past_end : Distance, out_from_middle : Distance }
-
-	water_points : List(Pond.PondPoint)
-	water_points = [
-		{ past_end: Distance.metres(3.0), out_from_middle: Distance.metres(4.0) },
-		{ past_end: Distance.metres(3.0), out_from_middle: Distance.metres(30.0) },
-		{ past_end: Distance.metres(14.0), out_from_middle: Distance.metres(33.0) },
-		{ past_end: Distance.metres(28.0), out_from_middle: Distance.metres(28.0) },
-		{ past_end: Distance.metres(32.0), out_from_middle: Distance.metres(17.0) },
-		{ past_end: Distance.metres(29.0), out_from_middle: Distance.metres(7.0) },
-		{ past_end: Distance.metres(16.0), out_from_middle: Distance.metres(3.0) },
-	]
-
-	water_color : RgbColor
-	water_color = RgbColor.of(0x2F7E8C)
-
-	bank_points : List(Pond.PondPoint)
-	bank_points = [
-		{ past_end: Distance.metres(29.0), out_from_middle: Distance.metres(7.0) },
-		{ past_end: Distance.metres(32.0), out_from_middle: Distance.metres(17.0) },
-		{ past_end: Distance.metres(28.0), out_from_middle: Distance.metres(28.0) },
-		{ past_end: Distance.metres(29.0), out_from_middle: Distance.metres(28.0) },
-		{ past_end: Distance.metres(33.0), out_from_middle: Distance.metres(17.0) },
-		{ past_end: Distance.metres(30.0), out_from_middle: Distance.metres(7.0) },
-	]
-
-	bank_color : RgbColor
-	bank_color = RgbColor.of(0xC2B280)
-
-	## Where `point` lies on the road around `bend`, the bend that ends a
-	## segment. This is the one place a pond point becomes a road point.
-	segment_point : Pond.PondPoint, Geom.Bend -> Geom.RoadPoint
-	segment_point = |point, bend| {
-		along: Along.at(bend.segment_length).plus(point.past_end),
-		across: match BendView.outer_side(bend.turn) {
-			LeftSide => Across.left_of_middle(point.out_from_middle)
-			RightSide => Across.right_of_middle(point.out_from_middle)
-		},
+	## The pond's outlines on the road around `bend`, the bend that ends a
+	## segment, in the order they are painted: its water, then its bank.
+	pond_outlines : Geom.Bend -> List({ corners : List(Geom.RoadPoint), color : RgbColor })
+	pond_outlines = |bend| {
+		on_road = |outline| outline.map(|point| segment_point(point, bend))
+		[
+			{ corners: on_road(water_points), color: water_color },
+			{ corners: on_road(bank_points), color: bank_color },
+		]
 	}
 
 	## The ducks, placed at `bend`, the bend that ends a segment.
@@ -61,11 +29,53 @@ Pond :: [].{
 	placed_ducks = |bend|
 		ducks.map(
 			|pond_duck| {
-				road_point: Pond.segment_point(pond_duck.at, bend),
+				road_point: segment_point(pond_duck.at, bend),
 				lift: Distance.zero,
 				kind: Billboard.adult_billboard(duck, pond_duck.facing),
 			},
 		)
+}
+
+## A point on the pond, `past_end` along the road past the segment's end and
+## `out_from_middle` from the middle of the road, on the outside of the bend.
+PondPoint : { past_end : Distance, out_from_middle : Distance }
+
+water_points : List(PondPoint)
+water_points = [
+	{ past_end: Distance.metres(3.0), out_from_middle: Distance.metres(4.0) },
+	{ past_end: Distance.metres(3.0), out_from_middle: Distance.metres(30.0) },
+	{ past_end: Distance.metres(14.0), out_from_middle: Distance.metres(33.0) },
+	{ past_end: Distance.metres(28.0), out_from_middle: Distance.metres(28.0) },
+	{ past_end: Distance.metres(32.0), out_from_middle: Distance.metres(17.0) },
+	{ past_end: Distance.metres(29.0), out_from_middle: Distance.metres(7.0) },
+	{ past_end: Distance.metres(16.0), out_from_middle: Distance.metres(3.0) },
+]
+
+water_color : RgbColor
+water_color = RgbColor.of(0x2F7E8C)
+
+bank_points : List(PondPoint)
+bank_points = [
+	{ past_end: Distance.metres(29.0), out_from_middle: Distance.metres(7.0) },
+	{ past_end: Distance.metres(32.0), out_from_middle: Distance.metres(17.0) },
+	{ past_end: Distance.metres(28.0), out_from_middle: Distance.metres(28.0) },
+	{ past_end: Distance.metres(29.0), out_from_middle: Distance.metres(28.0) },
+	{ past_end: Distance.metres(33.0), out_from_middle: Distance.metres(17.0) },
+	{ past_end: Distance.metres(30.0), out_from_middle: Distance.metres(7.0) },
+]
+
+bank_color : RgbColor
+bank_color = RgbColor.of(0xC2B280)
+
+## Where `point` lies on the road around `bend`, the bend that ends a segment.
+## This is the one place a pond point becomes a road point.
+segment_point : PondPoint, Geom.Bend -> Geom.RoadPoint
+segment_point = |point, bend| {
+	along: Along.at(bend.segment_length).plus(point.past_end),
+	across: match BendView.outer_side(bend.turn) {
+		LeftSide => Across.left_of_middle(point.out_from_middle)
+		RightSide => Across.right_of_middle(point.out_from_middle)
+	},
 }
 
 ## The duck's still, and how tall a duck stands.
@@ -73,7 +83,7 @@ duck : Billboard.Species
 duck = { still: EmojiStills.duck, adult_height: Distance.metres(0.9) }
 
 ## A duck on the pond, where it floats and which way it faces.
-Duck : { at : Pond.PondPoint, facing : Billboard.Facing }
+Duck : { at : PondPoint, facing : Billboard.Facing }
 
 ducks : List(Duck)
 ducks = [
@@ -109,8 +119,8 @@ is_on_water : Duck -> Bool
 is_on_water = |pond_duck| {
 	is_within = |value, bounds|
 		bounds.any(|bound| bound <= value) and bounds.any(|bound| bound >= value)
-	outs = Pond.water_points.map(|point| point.out_from_middle.to_metres())
-	past_ends = Pond.water_points.map(|point| point.past_end.to_metres())
+	outs = water_points.map(|point| point.out_from_middle.to_metres())
+	past_ends = water_points.map(|point| point.past_end.to_metres())
 	is_within(pond_duck.at.out_from_middle.to_metres(), outs)
 		and is_within(pond_duck.at.past_end.to_metres(), past_ends)
 }

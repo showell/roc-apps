@@ -1153,10 +1153,11 @@ expect
 		and Pond.placed_ducks(left_pond_bend).map(|placed| placed.road_point.across.to_metres())
 			== [10.0, 18.0, 11.0, 6.0, 14.0, 22.0]
 
-# The water lies off the road on the outside of the bend, whichever way the
-# road turns.
+# The pond's water and bank lie off the road on the outside of the bend,
+# whichever way the road turns.
 expect {
-	water_at = |bend| Pond.water_points.map(|point| Pond.segment_point(point, bend).across)
-	water_at(right_pond_bend).all(|across| across < Geom.left_edge)
-		and water_at(left_pond_bend).all(|across| across > Geom.right_edge)
+	pond_acrosses = |bend|
+		Pond.pond_outlines(bend).join_map(|outline| outline.corners.map(|point| point.across))
+	pond_acrosses(right_pond_bend).all(|across| across < Geom.left_edge)
+		and pond_acrosses(left_pond_bend).all(|across| across > Geom.right_edge)
 }
