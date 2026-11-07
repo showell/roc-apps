@@ -30,6 +30,8 @@ Shale is a small Lua-like language:
 
 Never push, never merge, and never touch a checkout that isn't yours.
 
+Several agents share one scratch area, so keep your scratch files under Shale's `scratch:` mount, in a subfolder named for your lane or review, such as `scratch:<lane>/`, or another agent may overwrite them. Never put scratch files in a repo or a worktree.
+
 ## Read first, every time
 
 1. `CLAUDE.md` at the roc-apps root and `docs/roc-style.md`: the rules.
@@ -219,3 +221,15 @@ Keep it short:
 - whether pixels moved
 - book names that went stale
 - anything you saw and left alone
+
+## What tripped you up (every report, reviews and cleanups alike)
+
+End every report with a short list of whatever cost you time that wasn't the task itself. The tools get fixed from these. For example:
+- a Shale script refused, and what you meant (a missing builtin, a confusing error, a rule this brief didn't mention);
+- the hook refusing a command you needed;
+- a check that was slow, flaky, or failed for a reason unrelated to your change;
+- a recipe that gave a wrong or confusing answer (type_walk, roc_commas, the lints);
+- anything in this brief that was wrong, missing or unclear;
+- another agent's files getting in your way.
+
+Give each one a line: what you tried, what happened, and what you did instead. If nothing tripped you up, say "nothing".
