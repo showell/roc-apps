@@ -101,6 +101,14 @@ archetype: `Cut`, `Stretch`, `Track` and `Alternates` went, and an animation is
 now a list of frames on successive steps. If a constant is right only because it
 was nudged until the eye agreed, ask what it stands for.
 
+Tuning by eye isn't the smell. The truck's proportions, the trees' sizes and a
+herd's scatter were all got right with eye tests, and they're a fact of life in
+the app: say "chosen by eye" beside them and move on. The smell is a coincidence
+that something correct depends on. A perched bird sat at exactly its tree's
+depth, so the tie order decided which was painted on top, and the tree covered
+the bird's feet. Make that a rule ("a critter perched on a tree is drawn over
+it"), and leave the eye's numbers alone.
+
 **More than we need today.** A cap chosen to be big enough is a decision nobody
 owns, and it fails quietly on the day it's reached. Polygons were silently cut to
 8 corners by a buffer on the Zig side, and there were similar caps of 512 points
