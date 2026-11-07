@@ -2339,7 +2339,7 @@ focal_at_lean = |lean| focal_of(leaning(upright, lean))
 no_lean = upright.motorcycle.lean
 
 ## The change from upright to the full lean.
-full_change = Lens.full_lean.change_from(no_lean)
+full_change = Angle.LeanChange.radians(Lens.full_lean.to_radians() - no_lean.to_radians())
 
 ## The full lean, to the left.
 full_left = no_lean.minus(full_change)
@@ -2357,7 +2357,7 @@ expect focal_at_lean(Lens.full_lean) == focal_at_lean(full_left)
 
 expect {
 	twice = Lens.full_lean.plus(full_change)
-	twice_change = twice.change_from(no_lean)
+	twice_change = Angle.LeanChange.radians(twice.to_radians() - no_lean.to_radians())
 	ten_times = twice.plus(twice_change).plus(twice_change).plus(twice_change).plus(twice_change)
 	focal_at_lean(twice).minus(focal_at_lean(Lens.full_lean)) == Pixels.zero
 		and focal_at_lean(ten_times).minus(focal_at_lean(Lens.full_lean)) == Pixels.zero
@@ -2382,9 +2382,8 @@ cat_throttle_change = |encounter_timing| {
 		},
 		speed: Speed.metres_a_step(0.3),
 	}
-	Throttle.next_speed(motorcycle, { route: World.route, encounter_timing })
-		.change_from(motorcycle.speed)
-		.to_metres_a_step_each_step()
+	next = Throttle.next_speed(motorcycle, { route: World.route, encounter_timing })
+	next.to_metres_a_step() - motorcycle.speed.to_metres_a_step()
 }
 
 expect cat_throttle_change(ten_steps_in) == 0.0
@@ -2547,9 +2546,7 @@ wide_of_road = |lean| {
 		route_place: { ..Motorcycle.initial.route_place, across: Across.metres(100.0) },
 		lean: Angle.Lean.radians(lean),
 	}
-	Throttle.next_speed(motorcycle, { route: World.route, encounter_timing: Unplanned })
-		.change_from(motorcycle.speed)
-		.to_metres_a_step_each_step()
+	throttle_change(motorcycle)
 }
 
 # A rider far off to the right, whose coast crosses no shoulder, opens the
@@ -2578,10 +2575,10 @@ with_segment = |motorcycle, index| {
 ## The change of speed Throttle makes for this motorcycle on the real route,
 ## before its encounter is planned, in metres a step each step.
 throttle_change : Motorcycle -> F64
-throttle_change = |motorcycle|
-	Throttle.next_speed(motorcycle, { route: World.route, encounter_timing: Unplanned })
-		.change_from(motorcycle.speed)
-		.to_metres_a_step_each_step()
+throttle_change = |motorcycle| {
+	next = Throttle.next_speed(motorcycle, { route: World.route, encounter_timing: Unplanned })
+	next.to_metres_a_step() - motorcycle.speed.to_metres_a_step()
+}
 
 # The rider brakes for the bend from 60 m short of the segment's end, and not a
 # centimetre sooner.

@@ -136,10 +136,6 @@ Angle :: [].{
 		minus : Angle.Lean, Angle.LeanChange -> Angle.Lean
 		minus = |Angle.Lean.(l), Angle.LeanChange.(change)| Angle.Lean.(l - change)
 
-		## The change that takes `from` to this lean.
-		change_from : Angle.Lean, Angle.Lean -> Angle.LeanChange
-		change_from = |Angle.Lean.(l), Angle.Lean.(from)| Angle.LeanChange.(l - from)
-
 		## The lean halfway between this one and `other`.
 		halfway_to : Angle.Lean, Angle.Lean -> Angle.Lean
 		halfway_to = |Angle.Lean.(l), Angle.Lean.(other)| Angle.Lean.((l + other) / 2.0)

@@ -1,7 +1,7 @@
 ## Safari's speeds. A speed is how many metres something covers in one step
 ## of the ride; the rider and the truck each hold one. An `Acceleration` is
 ## a type of its own, so no speed can be mistaken for one: `accelerated_by`
-## takes one, and `acceleration_to` and `change_from` give one.
+## takes one, and `acceleration_to` gives one.
 import Acceleration
 import Distance
 import Steps
@@ -30,10 +30,6 @@ Speed :: F64.{
 			Speed.(after)
 		}
 	}
-
-	## The acceleration over one step that took `earlier` to this speed.
-	change_from : Speed, Speed -> Acceleration
-	change_from = |Speed.(s), Speed.(earlier)| Acceleration.metres_a_step_each_step(s - earlier)
 
 	## The steady acceleration that brings this speed to `target` within this
 	## distance.
