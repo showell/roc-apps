@@ -13,6 +13,7 @@ import game.Grass
 import game.Ground
 import game.GroundSighting
 import game.Mountains
+import game.RideInstant
 import game.RiderCamera
 import game.SafariApp
 import game.Scene
@@ -139,7 +140,10 @@ backdrop_pieces = |view| [
 
 ## The camera the ride sees through at the step on show.
 paused_camera : RiderCamera
-paused_camera = RiderCamera.of(paused_tour.instant.rider, paused_tour.route)
+paused_camera = RiderCamera.of(
+	paused_tour.instant.rider,
+	{ route: paused_tour.route, encounter: RideInstant.encounter_timing(paused_tour.instant) },
+)
 
 ## The road ahead of the rider at the step on show.
 paused_road : RoadAhead.RoadView
@@ -158,7 +162,7 @@ paused_scene = {
 		{
 			camera: paused_camera,
 			facts: {
-				speed: instant.rider.motorcycle.speed,
+				encounter: RideInstant.encounter_timing(instant),
 				truck: {
 					route_position: instant.truck.route_position,
 					lit_truck: FrameView.lit_truck(instant),
