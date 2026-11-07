@@ -3,7 +3,6 @@
 ## acceleration offered is held to the least of them.
 import Acceleration
 import Along
-import Angle
 import EncounterPlan
 import Coast
 import Distance
@@ -15,7 +14,6 @@ import Segment
 import Speed
 import Steps
 import VehicleLimits
-import World
 
 Throttle :: [].{
 
@@ -103,17 +101,6 @@ shoulder_brake = |speed, steps_to_shoulder| {
 allowed_speed : Speed -> Speed
 allowed_speed = |next_speed| next_speed.min(VehicleLimits.top_speed).max(Speed.at_rest)
 
-first_segment : Segment
-first_segment = World.route.segment_at(Route.SegmentIndex.number(0))
-
-## A motorcycle on the centre line, upright.
-centred_motorcycle : F64, F64 -> Motorcycle
-centred_motorcycle = |along, speed| {
-	..Motorcycle.initial,
-	route_place: { ..Motorcycle.initial.route_place, along: Along.metres(along) },
-	speed: Speed.metres_a_step(speed),
-}
-
 ## This many metres a step, each step.
 acceleration_of : F64 -> Acceleration
 acceleration_of = |metres| Acceleration.metres_a_step_each_step(metres)
@@ -123,44 +110,6 @@ expect held_to(Acceleration.steady, NoLimit) == Acceleration.steady
 expect held_to(acceleration_of(-0.5), NoLimit) == acceleration_of(-0.5)
 expect held_to(acceleration_of(0.01), AtMost(acceleration_of(-0.5))) == acceleration_of(-0.5)
 expect held_to(acceleration_of(-0.5), AtMost(Acceleration.steady)) == acceleration_of(-0.5)
-
-expect exit_speed(first_segment).to_metres_a_step() == 0.222
-expect exit_speed(World.route.segment_at(Route.SegmentIndex.number(18))) == Speed.at_rest
-
-expect !is_near_end(centred_motorcycle(439.9, 0.3), first_segment)
-expect is_near_end(centred_motorcycle(440.0, 0.3), first_segment)
-
-## The bend limit for this motorcycle on the first segment.
-bend_limit_at : Motorcycle -> VehicleLimits.Limit
-bend_limit_at = |motorcycle| bend_limit(motorcycle, first_segment)
-
-## The brake the bend limit asks of this motorcycle, near the bend.
-bend_brake_at : Motorcycle -> F64
-bend_brake_at = |motorcycle|
-	match bend_limit_at(motorcycle) {
-		AtMost(most) => most.to_metres_a_step_each_step()
-		NoLimit => crash "Throttle's expects: this motorcycle is near the bend"
-	}
-
-# Far from the bend, it asks nothing; past the commit point, no acceleration.
-expect bend_limit_at(centred_motorcycle(0.0, 0.3)) == NoLimit
-expect bend_limit_at(centred_motorcycle(498.4, 0.3)) == AtMost(Acceleration.steady)
-expect bend_limit_at(centred_motorcycle(600.0, 0.3)) == AtMost(Acceleration.steady)
-
-# Short of the commit point it brakes, and harder for a faster rider.
-expect bend_brake_at(centred_motorcycle(460.0, 0.3)) < 0.0
-expect bend_brake_at(centred_motorcycle(460.0, 2.0)) < bend_brake_at(centred_motorcycle(460.0, 0.3))
-
-## A motorcycle steering hard left at `speed`.
-off_left : F64 -> Motorcycle
-off_left = |speed| { ..centred_motorcycle(0.0, speed), yaw: Angle.Turn.radians(-1.5) }
-
-expect Coast.project(off_left(0.048)) == Leaves({ side: Left, after: Steps.of(41) })
-expect Coast.project(off_left(0.7)) == Leaves({ side: Left, after: Steps.of(3) })
-
-# A coast that stays on the road asks nothing, and one that leaves it brakes.
-expect shoulder_limit(centred_motorcycle(0.0, 0.3)) == NoLimit
-expect shoulder_limit(off_left(0.7)) == AtMost(shoulder_brake(off_left(0.7).speed, Steps.of(3)))
 
 ## The shoulder brake at 1 metre a step.
 brake_after : U32 -> Acceleration
@@ -185,49 +134,3 @@ expect clamped_speed(2.5) == 2.5
 expect clamped_speed(3.0) == 2.5
 expect clamped_speed(0.0) == 0.0
 expect clamped_speed(-1.0) == 0.0
-
-## The change of speed that `Throttle.next_speed` makes for this motorcycle on
-## the real route, before its encounter is planned.
-speed_change : Motorcycle -> Acceleration
-speed_change = |motorcycle|
-	Throttle.next_speed(
-		motorcycle,
-		{ route: World.route, encounter_timing: Unplanned },
-	).change_from(motorcycle.speed)
-
-## The whole decision for a motorcycle at the start of the first segment, on the
-## centre line.
-decide : Speed, F64 -> Acceleration
-decide = |speed, lean|
-	speed_change({ ..Motorcycle.initial, speed, lean: Angle.Lean.radians(lean) })
-
-# Each is within 1e-12 of its want.
-expect
-	[
-		(decide(Speed.metres_a_step(0.3), 0.0), 0.01),
-		(decide(VehicleLimits.top_speed, 0.0), 0.0),
-		(decide(Speed.at_rest, 0.0), 0.01),
-	].all(|(got, want)| (got.to_metres_a_step_each_step() - want).abs() <= 0.000000000001)
-
-# On the middle of the road, a lean that coasts off it brakes, either way, and a
-# slight one speeds up.
-expect decide(Speed.metres_a_step(0.3), 0.034) < Acceleration.steady
-expect decide(Speed.metres_a_step(0.3), 0.001) > Acceleration.steady
-expect decide(Speed.metres_a_step(0.3), -0.034) < Acceleration.steady
-
-## The decision for a motorcycle at `along` on segment `index`, going 0.3
-## metres a step.
-decide_on : U32, F64 -> Acceleration
-decide_on = |index, along| {
-	centred = centred_motorcycle(along, 0.3)
-	speed_change({
-		..centred,
-		route_place: { ..centred.route_place, segment_index: Route.SegmentIndex.number(index) },
-	})
-}
-
-# A gawking rider brakes. A crossing cat's hold is CrossModuleExpects', which can
-# name a step of the clock.
-expect decide_on(3, 0.0) > Acceleration.steady
-expect decide_on(2, 100.0) > Acceleration.steady
-expect decide_on(2, 300.0) < Acceleration.steady

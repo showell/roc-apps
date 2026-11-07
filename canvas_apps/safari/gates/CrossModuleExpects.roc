@@ -71,6 +71,7 @@ import game.Tour
 import game.Tower
 import game.TowerSighting
 import game.TreeSighting
+import game.Truck
 import game.TruckSighting
 import game.Trees
 import game.VehicleLimits
@@ -2554,6 +2555,176 @@ wide_of_road = |lean| {
 # A rider far off to the right, whose coast crosses no shoulder, opens the
 # throttle however far they lean. Each is within 1e-12 of its want.
 expect [-0.001, -0.035, -0.535].all(|lean| (wide_of_road(lean) - 0.01).abs() <= 0.000000000001)
+
+# Throttle's decisions on the real route, through Throttle.next_speed. Throttle
+# imports neither World nor Angle, which these need.
+
+## A motorcycle on the middle of the road, upright, `along` metres down the
+## real route's first segment, going `speed` metres a step.
+centred_motorcycle : F64, F64 -> Motorcycle
+centred_motorcycle = |along, speed| {
+	..Motorcycle.initial,
+	route_place: { ..Motorcycle.initial.route_place, along: Along.metres(along) },
+	speed: Speed.metres_a_step(speed),
+}
+
+## The same motorcycle on the real route's segment `index`.
+with_segment : Motorcycle, U32 -> Motorcycle
+with_segment = |motorcycle, index| {
+	..motorcycle,
+	route_place: { ..motorcycle.route_place, segment_index: Route.SegmentIndex.number(index) },
+}
+
+## The change of speed Throttle makes for this motorcycle on the real route,
+## before its encounter is planned, in metres a step each step.
+throttle_change : Motorcycle -> F64
+throttle_change = |motorcycle|
+	Throttle.next_speed(motorcycle, { route: World.route, encounter_timing: Unplanned })
+		.change_from(motorcycle.speed)
+		.to_metres_a_step_each_step()
+
+# The rider brakes for the bend from 60 m short of the segment's end, and not a
+# centimetre sooner.
+expect throttle_change(centred_motorcycle(439.9, 0.3)) > 0.0
+expect throttle_change(centred_motorcycle(440.0, 0.3)) < 0.0
+
+# Past the commit point there is no road left to brake on, and the throttle holds
+# the acceleration at none.
+expect [498.4, 600.0].all(|along| throttle_change(centred_motorcycle(along, 0.3)) == 0.0)
+
+# Short of the commit point a faster rider brakes harder.
+expect {
+	fast_brake = throttle_change(centred_motorcycle(460.0, 2.0))
+	fast_brake < throttle_change(centred_motorcycle(460.0, 0.3))
+}
+
+# A rider already at the first bend's speed of 0.222 holds it into the bend. On
+# the last segment, which ends the route, the same rider brakes to rest, but not
+# before the approach.
+expect throttle_change(centred_motorcycle(460.0, 0.222)) == 0.0
+expect throttle_change(with_segment(centred_motorcycle(260.0, 0.222), 18)) < 0.0
+expect throttle_change(with_segment(centred_motorcycle(200.0, 0.222), 18)) > 0.0
+
+## The change at the start of the first segment, going `speed` and leaning
+## `lean` radians.
+change_leaning : Speed, F64 -> F64
+change_leaning = |speed, lean|
+	throttle_change({ ..Motorcycle.initial, speed, lean: Angle.Lean.radians(lean) })
+
+# Each is within 1e-12 of its want.
+expect
+	[
+		(change_leaning(Speed.metres_a_step(0.3), 0.0), 0.01),
+		(change_leaning(VehicleLimits.top_speed, 0.0), 0.0),
+		(change_leaning(Speed.at_rest, 0.0), 0.01),
+	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
+
+# On the middle of the road, a lean that coasts off it brakes, either way, and a
+# slight one speeds up.
+expect change_leaning(Speed.metres_a_step(0.3), 0.034) < 0.0
+expect change_leaning(Speed.metres_a_step(0.3), 0.001) > 0.0
+expect change_leaning(Speed.metres_a_step(0.3), -0.034) < 0.0
+
+## A motorcycle at the start of the first segment, steering hard left at
+## `speed`.
+off_left : F64 -> Motorcycle
+off_left = |speed| { ..centred_motorcycle(0.0, speed), yaw: Angle.Turn.radians(-1.5) }
+
+# Its coast leaves the road on the third step, and the throttle gives it the
+# shoulder brake for three steps at 0.7 m a step, within 1e-12.
+expect Coast.project(off_left(0.7)) == Leaves({ side: Left, after: Steps.of(3) })
+expect (throttle_change(off_left(0.7)) - -0.10041593058292341).abs() <= 0.000000000001
+
+# A gawking rider brakes. On segment 2 the rider opens the throttle short of
+# where its pig is noticed, and brakes past it; at the start of segment 3 nothing
+# holds the rider back.
+expect throttle_change(with_segment(centred_motorcycle(0.0, 0.3), 3)) > 0.0
+expect throttle_change(with_segment(centred_motorcycle(100.0, 0.3), 2)) > 0.0
+expect throttle_change(with_segment(centred_motorcycle(300.0, 0.3), 2)) < 0.0
+
+# The truck on the real route, through Truck.at_next_step. Truck doesn't import
+# World. The real route's first bends are at 500 m and 820 m, its last at 7220 m,
+# and it ends at 7520 m.
+
+## The truck a step after one at `route_position` metres going `speed` metres a
+## step, with the rider at the start of the real route, where the tease is 500 m
+## ahead.
+truck_after : F64, F64 -> Truck
+truck_after = |route_position, speed|
+	Truck.at_next_step(
+		{
+			..Truck.initial,
+			route_position: Distance.metres(route_position),
+			speed: Speed.metres_a_step(speed),
+		},
+		{ rider_distance: Distance.zero, route: World.route },
+	)
+
+chasing_truck : Truck
+chasing_truck = truck_after(100.0, 0.3)
+
+expect
+	[
+		(chasing_truck.speed.to_metres_a_step(), 0.311),
+		(chasing_truck.route_position.to_metres(), 100.311),
+	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
+
+truck_past_tease : Truck
+truck_past_tease = truck_after(600.0, 0.5)
+
+truck_short_of_tease : Truck
+truck_short_of_tease = truck_after(400.0, 0.5)
+
+expect
+	[
+		(truck_past_tease.speed.to_metres_a_step(), 0.5),
+		(truck_past_tease.route_position.to_metres(), 600.5),
+		(truck_short_of_tease.speed.to_metres_a_step(), 0.511),
+	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
+
+# The chase holds a truck to one top speed, whatever it was going.
+expect truck_after(100.0, 5.0).speed == truck_after(100.0, 9.0).speed
+expect truck_after(100.0, 5.0).speed < Speed.metres_a_step(5.0)
+expect chasing_truck.pace == NotSlowing
+expect truck_past_tease.pace == NotSlowing
+
+## A truck 50 m short of the first bend.
+braking_truck : Truck
+braking_truck = truck_after(450.0, 0.3)
+
+expect
+	[
+		(braking_truck.speed.to_metres_a_step(), 0.2994154176),
+		(braking_truck.route_position.to_metres() - 450.0, 0.2994154176),
+	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
+
+expect braking_truck.pace == Slowing
+
+settled_truck : Truck
+settled_truck = Truck.at_next_step(
+	{
+		route_position: Distance.metres(450.0),
+		speed: Speed.metres_a_step(0.1776),
+		pace: Slowing,
+	},
+	{ rider_distance: Distance.zero, route: World.route },
+)
+
+expect settled_truck.pace == NotSlowing
+expect F64.to_bits(settled_truck.speed.to_metres_a_step()) == F64.to_bits(0.1776)
+
+# The truck brakes for a bend from 60 m short of it, and not a metre sooner.
+expect truck_after(440.0, 0.3).speed < Speed.metres_a_step(0.3)
+expect !(truck_after(439.0, 0.3).speed < Speed.metres_a_step(0.3))
+
+# Short of a bend the truck brakes for it. At a bend's own end the next bend is
+# the one ahead, and past the last bend, with only the route's end ahead, the
+# truck brakes for nothing: past the tease, it holds its speed.
+expect [499.0, 800.0, 7219.0].all(|route_position| truck_after(route_position, 0.3).pace == Slowing)
+expect
+	[500.0, 820.0, 7220.0, 7519.0, 7600.0].all(
+		|route_position| truck_after(route_position, 0.3).speed == Speed.metres_a_step(0.3),
+	)
 
 ## The spot on a straight road of a thing 3 m left of the middle and 2 m up,
 ## `forward` ahead of the camera.
