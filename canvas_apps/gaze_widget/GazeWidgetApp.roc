@@ -64,7 +64,7 @@ look_end_step = 1050
 
 ## The first step with the gaze back straight ahead after the look.
 eyes_back_step : U32
-eyes_back_step = 1309
+eyes_back_step = 1224
 
 ## The whole stretch, in about eight seconds.
 stretch : VcrButtons.NumberRange(Clock)
@@ -410,7 +410,7 @@ expect {
 			look_depth: 0.9986,
 		},
 		{
-			step: 1309,
+			step: 1224,
 			speed: 0.2000,
 			gaze: 0.0,
 			look_depth: 0.9974,
