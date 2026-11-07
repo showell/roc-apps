@@ -52,20 +52,17 @@ PixelGrid :: [].{
 	pixel_center : PixelGrid.Coordinate -> F64
 	pixel_center = |place| place.to_f64() + 0.5
 
-	## The pixels of a row or a column `count` long whose centres fall in
-	## [from, to). Each end is held to 0..`count` in an I64 before it becomes a
+	## The pixels of a row or a column `extent` long whose centres fall in
+	## [from, to). Each end is held to 0..`extent` in an I64 before it becomes a
 	## coordinate, so a place far off the grid never wraps onto it.
 	pixels_between : {
 		from : F64,
 		to : F64,
 		extent : PixelGrid.Coordinate,
 	} -> PixelGrid.CoordinateRange
-	pixels_between = |{ from, to, extent: PixelGrid.Coordinate.(extent) }| {
-		length = extent.to_i64()
-		{
-			start: nearest_coordinate({ place: first_pixel_past(from), length }),
-			end: nearest_coordinate({ place: first_pixel_past(to), length }),
-		}
+	pixels_between = |{ from, to, extent }| {
+		start: nearest_coordinate({ place: first_pixel_past(from), extent }),
+		end: nearest_coordinate({ place: first_pixel_past(to), extent }),
 	}
 
 	## Where the pixel at `row` and `column` is in the list of a grid `width`
@@ -86,11 +83,11 @@ PixelGrid :: [].{
 	}
 }
 
-## The coordinate on a row or a column `length` long nearest `place`.
-nearest_coordinate : { place : I64, length : I64 } -> PixelGrid.Coordinate
-nearest_coordinate = |{ place, length }| {
+## The coordinate on a row or a column `extent` long nearest `place`.
+nearest_coordinate : { place : I64, extent : PixelGrid.Coordinate } -> PixelGrid.Coordinate
+nearest_coordinate = |{ place, extent: PixelGrid.Coordinate.(extent) }| {
 	on_or_after_first = place.max(0)
-	PixelGrid.Coordinate.from_i64(length.min(on_or_after_first))
+	PixelGrid.Coordinate.from_i64(extent.to_i64().min(on_or_after_first))
 }
 
 ## The first pixel whose centre is at or past `x`. A coordinate far off the
