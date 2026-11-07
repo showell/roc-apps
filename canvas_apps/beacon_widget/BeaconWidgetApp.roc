@@ -46,20 +46,13 @@ blinks = VcrButtons.clock_range({
 	steps_a_frame: 1.0,
 })
 
-## The beacon keys of a tower past a segment's end, and of the tower halfway along
+## The beacons of a tower past a segment's end, and of the tower halfway along
 ## the same segment, which blinks opposite it.
-first_tower_key : U32
-first_tower_key = 0
+first_beacon : Beacon
+first_beacon = Beacon.(0)
 
-second_tower_key : U32
-second_tower_key = 60
-
-## How bright the beacon with `key` is at `clock`, as Beacon works it out.
-brightness_at : Clock, U32 -> Fraction
-brightness_at = |clock, key| {
-	offset = Beacon.beacon_offset_for(key)
-	Beacon.beacon_brightness(clock.steps_since(Clock.start).plus(offset))
-}
+second_beacon : Beacon
+second_beacon = first_beacon.opposite()
 
 ## How far ahead of the picture's eye the towers stand, so that their tops fit.
 tower_forward : Distance
@@ -86,8 +79,8 @@ picture_shapes : Clock -> List(Shapes.Shape)
 picture_shapes = |clock|
 	ScrubWidget.ride_shapes({
 		shapes: [
-			tower_shapes(tower_right.opposite(), brightness_at(clock, first_tower_key)),
-			tower_shapes(tower_right, brightness_at(clock, second_tower_key)),
+			tower_shapes(tower_right.opposite(), first_beacon.brightness_at(clock)),
+			tower_shapes(tower_right, second_beacon.brightness_at(clock)),
 		].join(),
 		sun_sighting: OutOfView,
 		sky_colors: Sky.colors_at(clock),
@@ -143,8 +136,8 @@ status_lines : Clock -> List(Str)
 status_lines = |clock| {
 	period = Beacon.beacon_period
 	into_blink = clock.steps_since(Clock.start).wrapped_to(period)
-	first_tower = ReadoutText.percent_text(brightness_at(clock, first_tower_key))
-	second_tower = ReadoutText.percent_text(brightness_at(clock, second_tower_key))
+	first_tower = ReadoutText.percent_text(first_beacon.brightness_at(clock))
+	second_tower = ReadoutText.percent_text(second_beacon.brightness_at(clock))
 	[
 		"Clock: step ${clock.to_str()}",
 		"Blink: ${step_count_text(into_blink)} of ${step_count_text(period)} steps",
@@ -162,8 +155,8 @@ expect
 	[5400, 5430, 5447, 5459, 5460, 5461, 5519, 5520, 5640].all(
 		|step| {
 			clock = Clock.at_step(step)
-			first_tower = brightness_at(clock, first_tower_key)
-			second_tower = brightness_at(clock, second_tower_key)
+			first_tower = first_beacon.brightness_at(clock)
+			second_tower = second_beacon.brightness_at(clock)
 			is_near(first_tower, second_tower.less().to_f64())
 		},
 	)
@@ -182,7 +175,7 @@ is_near = |share, want| (share.to_f64() - want).abs() <= 0.0000001
 # The picture depends on the clock. A beacon comes back after a whole blink,
 # though the sky goes on darkening.
 expect picture_shapes(Clock.at_step(5430)) != picture_shapes(Clock.at_step(5431))
-expect brightness_at(Clock.at_step(5430), 0) == brightness_at(Clock.at_step(5550), 0)
+expect first_beacon.brightness_at(Clock.at_step(5430)) == first_beacon.brightness_at(Clock.at_step(5550))
 
 # The picture follows the buttons' clock.
 expect

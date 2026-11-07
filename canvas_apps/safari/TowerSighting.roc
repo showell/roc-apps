@@ -14,7 +14,6 @@ import RoadAhead
 import Route
 import Segment
 import SegmentPlace
-import Steps
 import Geom
 import Pipeline
 import Tower
@@ -72,19 +71,21 @@ end_tower : RoadAhead.RoadView,
 	in_view : RoadAhead.SegmentInView,
 	clock : Clock,
 } -> Try(Pipeline.Sighted(Tower), [BehindCamera])
-end_tower = |road, { vantage, in_view, clock }|
+end_tower = |road, { vantage, in_view, clock }| {
+	beacon_brightness = Beacon.(in_view.index.to_u32()).brightness_at(clock)
 	tower_if_ahead(
 		road,
 		{
 			vantage,
-			clock,
 			place: in_view.place,
-			along: Along.at(in_view.segment.length.plus(tower_beyond)),
-			across: Across.right_of_middle(tower_right),
-			yaw: tower_yaw,
-			beacon_key: in_view.index.to_u32(),
+			road_point: {
+				along: Along.at(in_view.segment.length.plus(tower_beyond)),
+				across: Across.right_of_middle(tower_right),
+			},
+			tower: { yaw: tower_yaw, beacon_brightness },
 		},
 	)
+}
 
 ## The tower halfway along a segment in view, if it has one and it is in
 ## front of the camera.
@@ -96,64 +97,35 @@ mid_tower : RoadAhead.RoadView,
 } -> Try(Pipeline.Sighted(Tower), [BehindCamera, NoMidTower])
 mid_tower = |road, { vantage, in_view, clock }|
 	if Segment.has_mid_tower(in_view.segment) {
+		beacon_brightness = Beacon.(in_view.index.to_u32()).opposite().brightness_at(clock)
 		tower_if_ahead(
 			road,
 			{
 				vantage,
-				clock,
 				place: in_view.place,
-				along: Along.at(in_view.segment.length.divided_by(2.0)),
-				across: Across.left_of_middle(mid_tower_left),
-				yaw: Angle.straight_ahead,
-				beacon_key: in_view.index.to_u32() + mid_tower_key_offset,
+				road_point: {
+					along: Along.at(in_view.segment.length.divided_by(2.0)),
+					across: Across.left_of_middle(mid_tower_left),
+				},
+				tower: { yaw: Angle.straight_ahead, beacon_brightness },
 			},
 		)
 	} else {
 		Err(NoMidTower)
 	}
 
-## A tower halfway along a segment takes its beacon's blink from a key this
-## far past its segment's. That many staggers come to half a period past a
-## whole number of periods, so it blinks exactly opposite the tower at the
-## segment's end.
-mid_tower_key_offset : U32
-mid_tower_key_offset = 60
-
-## A tower standing at `along` and `across` in the segment that `place` maps,
-## if it is in front of the camera, its beacon as bright as `clock` says.
+## `tower` standing on the ground at `road_point` in the segment that `place`
+## maps, if it is in front of the camera at `vantage`.
 tower_if_ahead : RoadAhead.RoadView,
 {
 	vantage : Geom.Vantage,
-	clock : Clock,
 	place : SegmentPlace,
-	along : Along,
-	across : Across,
-	yaw : Angle.Turn,
-	beacon_key : U32,
+	road_point : Geom.RoadPoint,
+	tower : Tower,
 } -> Try(Pipeline.Sighted(Tower), [BehindCamera])
-tower_if_ahead = |
-	road,
-	{
-		vantage,
-		clock,
-		place,
-		along,
-		across,
-		yaw,
-		beacon_key,
-	},
-| {
+tower_if_ahead = |road, { vantage, place, road_point, tower }| {
 	placed_tower : Geom.Placed(Tower)
-	placed_tower = {
-		road_point: { along, across },
-		lift: Distance.zero,
-		kind: {
-			yaw,
-			beacon_brightness: Beacon.beacon_brightness(
-				clock.steps_since(Clock.start).plus(Beacon.beacon_offset_for(beacon_key)),
-			),
-		},
-	}
+	placed_tower = { road_point, lift: Distance.zero, kind: tower }
 	Pipeline.sighting_of(placed_tower, { road, vantage, place })
 }
 
@@ -292,7 +264,7 @@ expect
 		== [0, 37, 74, 30, 67, 104].map(brightness_at)
 
 brightness_at : U32 -> F64
-brightness_at = |phase| Beacon.beacon_brightness(Steps.of(phase)).to_f64()
+brightness_at = |phase| Beacon.(0).brightness_at(Clock.at_step(phase)).to_f64()
 
 expect towers_on(short_road(0), Clock.start).len() == 3
 expect towers_on(short_road(1), Clock.start).len() == 4
