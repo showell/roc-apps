@@ -418,14 +418,14 @@ expect {
 
 ## The birds on one segment of `trees`, for a rider `rider_along` metres into
 ## it, seen through a focal length of `cam_focal`, with the bird's flight at
-## `encounter`.
+## `encounter_timing`.
 birds_on : List(Trees.RoadsideTree),
 {
 	rider_along : F64,
 	cam_focal : Pixels,
-	encounter : Animation.Timing,
+	encounter_timing : Animation.Timing,
 } -> List(Pipeline.Sighted(PosedBird))
-birds_on = |trees, { rider_along, cam_focal, encounter }|
+birds_on = |trees, { rider_along, cam_focal, encounter_timing }|
 	birds_seen_on(
 		RoadAhead.RoadView.ahead_of(
 			Route.from_segments([segment_of(trees)]),
@@ -433,15 +433,15 @@ birds_on = |trees, { rider_along, cam_focal, encounter }|
 		),
 		{
 			camera: { vantage: { ..origin, along: Along.metres(rider_along) }, cam_focal },
-			encounter,
+			encounter_timing,
 		},
 	)
 
 ## The one bird that a rider `rider_along` metres in sees, with its flight at
-## `encounter`.
+## `encounter_timing`.
 bird_at : F64, Animation.Timing -> Pipeline.Sighted(PosedBird)
-bird_at = |rider_along, encounter|
-	birds_on(bird_trees, { rider_along, cam_focal: Pixels.of(500.0), encounter }).first()
+bird_at = |rider_along, encounter_timing|
+	birds_on(bird_trees, { rider_along, cam_focal: Pixels.of(500.0), encounter_timing }).first()
 		?? crash "CrossModuleExpects: this rider sees a bird"
 
 ## How far off a bird is, across the road and up.
@@ -480,7 +480,7 @@ expect {
 ## the flight.
 bird_count : List(Trees.RoadsideTree), { rider_along : F64, cam_focal : Pixels } -> I64
 bird_count = |trees, { rider_along, cam_focal }|
-	birds_on(trees, { rider_along, cam_focal, encounter: Unplanned }).len().to_i64_wrap()
+	birds_on(trees, { rider_along, cam_focal, encounter_timing: Unplanned }).len().to_i64_wrap()
 
 ## A segment where a cat crosses, with the same trees: it has no bird.
 segment_with_cat : Segment
@@ -506,7 +506,7 @@ expect
 			Route.from_segments([segment_with_cat]),
 			Route.SegmentIndex.first,
 		),
-		{ camera: origin_camera, encounter: Unplanned },
+		{ camera: origin_camera, encounter_timing: Unplanned },
 	).len()
 		== 0
 
@@ -518,7 +518,7 @@ two_segments = birds_seen_on(
 		Route.from_segments([going_straight_on(segment_of(bird_trees)), segment_of(bird_trees)]),
 		Route.SegmentIndex.first,
 	),
-	{ camera: origin_camera, encounter: flight_at_step(118) },
+	{ camera: origin_camera, encounter_timing: flight_at_step(118) },
 )
 
 # Only the rider's own segment plays its encounter: the bird ahead still sits.
@@ -585,29 +585,29 @@ cat_road : RoadAhead.RoadView
 cat_road = RoadAhead.RoadView.ahead_of(cat_route, Route.SegmentIndex.first)
 
 ## The birds the camera sees on `road_view`, with the encounter on the
-## rider's segment at `encounter`.
+## rider's segment at `encounter_timing`.
 birds_seen_on : RoadAhead.RoadView,
 {
 	camera : { vantage : Geom.Vantage, cam_focal : Pixels },
-	encounter : Animation.Timing,
+	encounter_timing : Animation.Timing,
 } -> List(Pipeline.Sighted(PosedBird))
-birds_seen_on = |road_view, { camera, encounter }|
+birds_seen_on = |road_view, { camera, encounter_timing }|
 	EncounterSighting.animals_in_view(
 		road_view,
-		{ camera, animals: EncounterPoses.bird_poses(road_view, encounter) },
+		{ camera, animals: EncounterPoses.bird_poses(road_view, encounter_timing) },
 	)
 
 ## The cats the camera sees on `road_view`, with the encounter on the rider's
-## segment at `encounter`.
+## segment at `encounter_timing`.
 cats_seen_on : RoadAhead.RoadView,
 {
 	camera : { vantage : Geom.Vantage, cam_focal : Pixels },
-	encounter : Animation.Timing,
+	encounter_timing : Animation.Timing,
 } -> List(Pipeline.Sighted(PosedCat))
-cats_seen_on = |road_view, { camera, encounter }|
+cats_seen_on = |road_view, { camera, encounter_timing }|
 	EncounterSighting.animals_in_view(
 		road_view,
-		{ camera, animals: EncounterPoses.cat_poses(road_view, encounter) },
+		{ camera, animals: EncounterPoses.cat_poses(road_view, encounter_timing) },
 	)
 
 expect cat_route.route_segments().map(World.has_cat) == [False, True, False]
@@ -618,7 +618,7 @@ ride_sightings = |along| cats_seen_on(
 	cat_road,
 	{
 		camera: { ..origin_camera, vantage: { ..origin, along: Along.metres(along) } },
-		encounter: Unplanned,
+		encounter_timing: Unplanned,
 	},
 )
 
@@ -945,7 +945,7 @@ expect
 # Scene, on the scene from the start of the route.
 scene_facts : Scene.RideFacts
 scene_facts = {
-	encounter: Unplanned,
+	encounter_timing: Unplanned,
 	truck: {
 		route_position: Distance.metres(500.0),
 		lit_truck: { headlights: Off, brake_lights: Off },
@@ -983,7 +983,9 @@ sighted_depths = |sightings| sightings.map(|sighting| sighting.spot.foot().forwa
 expect depths_of(scene.trees) == sighted_depths(TreeSighting.trees_in_view(road, origin_camera))
 expect
 	depths_of(scene.birds)
-		== sighted_depths(birds_seen_on(road, { camera: origin_camera, encounter: Unplanned }))
+		== sighted_depths(
+			birds_seen_on(road, { camera: origin_camera, encounter_timing: Unplanned }),
+		)
 expect
 	depths_of(scene.towers)
 		== sighted_depths(
@@ -1980,7 +1982,7 @@ expect
 		|(facing, heading)| {
 			camera = RiderCamera.of(
 				rider_facing(facing),
-				{ route: World.route, encounter: Unplanned },
+				{ route: World.route, encounter_timing: Unplanned },
 			)
 			camera.heading.to_radians() == heading
 		},
@@ -2000,7 +2002,8 @@ expect {
 ## The focal length of the camera for `rider` on the cat route, before any
 ## encounter is planned.
 focal_of : RiderState -> Pixels
-focal_of = |rider| RiderCamera.of(rider, { route: cat_route, encounter: Unplanned }).cam_focal
+focal_of = |rider|
+	RiderCamera.of(rider, { route: cat_route, encounter_timing: Unplanned }).cam_focal
 
 ## An encounter ten steps in.
 ten_steps_in : Animation.Timing
@@ -2011,7 +2014,7 @@ ten_steps_in = Animation.timing_of(StartsAt(Clock.at_step(100)), Clock.at_step(1
 focal_ten_steps_in : RiderState -> Pixels
 focal_ten_steps_in = |rider| RiderCamera.of(
 	rider,
-	{ route: cat_route, encounter: ten_steps_in },
+	{ route: cat_route, encounter_timing: ten_steps_in },
 ).cam_focal
 
 ## A rider at the start of the first segment, upright and looking ahead.
@@ -2029,13 +2032,13 @@ leaning = |rider, lean| { ..rider, motorcycle: { ..rider.motorcycle, lean } }
 looking_hard : RiderState -> RiderState
 looking_hard = |rider| { ..rider, eyes: { ..rider.eyes, look_depth: Fraction.whole } }
 
-## How strongly the encounter on this rider's segment, at `encounter`, holds
+## How strongly the encounter on this rider's segment, at `encounter_timing`, holds
 ## their attention.
 encounter_attention_of : RiderState, Animation.Timing -> F64
-encounter_attention_of = |rider, encounter|
+encounter_attention_of = |rider, encounter_timing|
 	EncounterReaction.encounter_attention(
 		cat_route.segment_at(rider.segment_index),
-		encounter,
+		encounter_timing,
 	).to_f64()
 
 expect focal_of(upright).minus(Lens.resting_focal) == Pixels.zero
@@ -2083,12 +2086,12 @@ expect focal_ten_steps_in(rider_on(1)) < focal_ten_steps_in(rider_on(0))
 # While a cat crosses, the rider eases off: the throttle holds the acceleration
 # at none. Before the crossing it opens.
 ## The change of speed Throttle makes for a rider at the start of the world's
-## cat segment, going 0.3 m a step, with its crossing at `encounter`.
+## cat segment, going 0.3 m a step, with its crossing at `encounter_timing`.
 cat_throttle_change : Animation.Timing -> F64
-cat_throttle_change = |encounter| {
+cat_throttle_change = |encounter_timing| {
 	motorcycle = { ..Motorcycle.initial, speed: Speed.metres_a_step(0.3) }
 	segment = World.route.segment_at(Route.SegmentIndex.number(3))
-	Throttle.next_speed(motorcycle, { segment, encounter })
+	Throttle.next_speed(motorcycle, { segment, encounter_timing })
 		.change_from(motorcycle.speed)
 		.to_metres_a_step_each_step()
 }
@@ -2249,7 +2252,7 @@ wide_of_road = |lean| {
 		lean: Angle.Lean.radians(lean),
 	}
 	first_segment = World.route.segment_at(Route.SegmentIndex.number(0))
-	Throttle.next_speed(motorcycle, { segment: first_segment, encounter: Unplanned })
+	Throttle.next_speed(motorcycle, { segment: first_segment, encounter_timing: Unplanned })
 		.change_from(motorcycle.speed)
 		.to_metres_a_step_each_step()
 }

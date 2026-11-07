@@ -20,27 +20,31 @@ EncounterPoses :: [].{
 	PosedAnimal(pose) : { place : SegmentPlace, placed : Geom.Placed(pose) }
 
 	## The cats on `road`, with the encounter on the rider's segment at
-	## `encounter`, in the order of `RoadAhead.segments_in_view`.
+	## `encounter_timing`, in the order of `RoadAhead.segments_in_view`.
 	cat_poses : RoadAhead.RoadView, Animation.Timing -> List(EncounterPoses.PosedAnimal(PosedCat))
-	cat_poses = |road, encounter|
-		RoadAhead.segments_in_view(road).keep_oks(|in_view| segment_cat({ in_view, encounter }))
+	cat_poses = |road, encounter_timing|
+		RoadAhead.segments_in_view(road).keep_oks(
+			|in_view| segment_cat({ in_view, encounter_timing }),
+		)
 
 	## The birds on `road`, with the encounter on the rider's segment at
-	## `encounter`, in the order of `RoadAhead.segments_in_view`.
+	## `encounter_timing`, in the order of `RoadAhead.segments_in_view`.
 	bird_poses : RoadAhead.RoadView, Animation.Timing -> List(EncounterPoses.PosedAnimal(PosedBird))
-	bird_poses = |road, encounter|
-		RoadAhead.segments_in_view(road).keep_oks(|in_view| segment_bird({ in_view, encounter }))
+	bird_poses = |road, encounter_timing|
+		RoadAhead.segments_in_view(road).keep_oks(
+			|in_view| segment_bird({ in_view, encounter_timing }),
+		)
 }
 
 ## The cat on a segment in view, if it has one that isn't over.
 segment_cat : {
 	in_view : RoadAhead.SegmentInView,
-	encounter : Animation.Timing,
+	encounter_timing : Animation.Timing,
 } -> Try(EncounterPoses.PosedAnimal(PosedCat), [NoCat, Over])
-segment_cat = |{ in_view, encounter }|
+segment_cat = |{ in_view, encounter_timing }|
 	match in_view.segment.encounter {
 		CatCrosses(crossing) => {
-			stage = segment_stage(in_view, Cat.crossing_stage(encounter))?
+			stage = segment_stage(in_view, Cat.crossing_stage(encounter_timing))?
 			Ok({
 				place: in_view.place,
 				placed: Animation.placed_instant(Cat.instant_at(crossing, stage)),
@@ -52,12 +56,12 @@ segment_cat = |{ in_view, encounter }|
 ## The bird on a segment in view, if it has one that isn't over.
 segment_bird : {
 	in_view : RoadAhead.SegmentInView,
-	encounter : Animation.Timing,
+	encounter_timing : Animation.Timing,
 } -> Try(EncounterPoses.PosedAnimal(PosedBird), [NoBird, Over])
-segment_bird = |{ in_view, encounter }|
+segment_bird = |{ in_view, encounter_timing }|
 	match in_view.segment.encounter {
 		BirdHere(flight) => {
-			stage = segment_stage(in_view, BirdFlight.flight_stage(encounter))?
+			stage = segment_stage(in_view, BirdFlight.flight_stage(encounter_timing))?
 			Ok({
 				place: in_view.place,
 				placed: Animation.placed_instant(BirdFlight.instant_at(flight, stage)),

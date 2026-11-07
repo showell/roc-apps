@@ -37,7 +37,7 @@ FrameView := {
 	frame_view_at = |route, instant| {
 		camera = RiderCamera.of(
 			instant.rider,
-			{ route, encounter: RideInstant.encounter_timing(instant) },
+			{ route, encounter_timing: RideInstant.encounter_timing(instant) },
 		)
 		{
 			backdrop: {
@@ -70,7 +70,7 @@ FrameView := {
 	## its lights are on, and the clock.
 	ride_facts : RideInstant -> Scene.RideFacts
 	ride_facts = |instant| {
-		encounter: RideInstant.encounter_timing(instant),
+		encounter_timing: RideInstant.encounter_timing(instant),
 		truck: {
 			route_position: instant.truck.route_position,
 			lit_truck: LitTruck.at(instant.truck, instant.clock),

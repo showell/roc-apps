@@ -32,10 +32,10 @@ RiderCamera := {
 }.{
 
 	## The camera for `rider` on `route`, with the encounter on their segment at
-	## `encounter`. Its heading is the bearing the rider's segment sets off on,
+	## `encounter_timing`. Its heading is the bearing the rider's segment sets off on,
 	## turned by the vantage's yaw.
-	of : RiderState, { route : Route, encounter : Animation.Timing } -> RiderCamera
-	of = |rider, { route, encounter }| {
+	of : RiderState, { route : Route, encounter_timing : Animation.Timing } -> RiderCamera
+	of = |rider, { route, encounter_timing }| {
 		vantage = {
 			along: rider.motorcycle.along,
 			across: rider.motorcycle.across,
@@ -45,7 +45,7 @@ RiderCamera := {
 			segment_index: rider.segment_index,
 			vantage,
 			heading: route.bearing_of(rider.segment_index).plus(vantage.yaw),
-			cam_focal: ride_focal(rider, { route, encounter }),
+			cam_focal: ride_focal(rider, { route, encounter_timing }),
 			roll: CanvasRoll.rider_roll(rider.motorcycle.lean),
 		}
 	}
@@ -63,11 +63,11 @@ view_yaw_for = |s| s.eyes.gaze_yaw.plus(s.motorcycle.lean.steer(head_turn_per_le
 ## The camera's focal length for where the rider is and how they ride. The
 ## view widens as the rider leans, and as the rider's attention is caught, by
 ## an encounter on the road or by a look to the side.
-ride_focal : RiderState, { route : Route, encounter : Animation.Timing } -> Pixels
-ride_focal = |rider, { route, encounter }| {
+ride_focal : RiderState, { route : Route, encounter_timing : Animation.Timing } -> Pixels
+ride_focal = |rider, { route, encounter_timing }| {
 	seg = route.segment_at(rider.segment_index)
 	attention =
-		EncounterReaction.encounter_attention(seg, encounter)
+		EncounterReaction.encounter_attention(seg, encounter_timing)
 			.max(Gaze.gaze_attention(rider.eyes.look_depth))
 	Lens.focal_for({ lean: rider.motorcycle.lean, attention })
 }

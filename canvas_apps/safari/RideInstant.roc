@@ -44,7 +44,7 @@ next : Route, RideInstant -> RideInstant
 next = |route, instant| {
 	nx = Rider.rider_state_at_next_step(
 		instant.rider,
-		{ route, encounter: RideInstant.encounter_timing(instant) },
+		{ route, encounter_timing: RideInstant.encounter_timing(instant) },
 	)
 	dist = route.distance_along_route({ index: nx.segment_index, along: nx.motorcycle.along })
 	clock = instant.clock.next()

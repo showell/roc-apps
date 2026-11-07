@@ -128,7 +128,7 @@ backdrop_pieces = |view| [
 paused_camera : RiderCamera
 paused_camera = RiderCamera.of(
 	paused_tour.instant.rider,
-	{ route: paused_tour.route, encounter: RideInstant.encounter_timing(paused_tour.instant) },
+	{ route: paused_tour.route, encounter_timing: RideInstant.encounter_timing(paused_tour.instant) },
 )
 
 ## The road ahead of the rider at the step on show.

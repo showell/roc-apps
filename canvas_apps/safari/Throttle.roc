@@ -20,13 +20,13 @@ import World
 Throttle :: [].{
 
 	## The speed the motorcycle goes on the next step, on `segment`, whose
-	## encounter stands at `encounter`.
-	next_speed : Motorcycle, { segment : Segment, encounter : Animation.Timing } -> Speed
-	next_speed = |motorcycle, { segment: seg, encounter }| {
+	## encounter stands at `encounter_timing`.
+	next_speed : Motorcycle, { segment : Segment, encounter_timing : Animation.Timing } -> Speed
+	next_speed = |motorcycle, { segment: seg, encounter_timing }| {
 		offered = VehicleLimits.cruise_acceleration
 		limits = [
 			bend_limit(motorcycle, seg),
-			EncounterReaction.encounter_throttle(seg, encounter),
+			EncounterReaction.encounter_throttle(seg, encounter_timing),
 			Gawking.gawk_brake(motorcycle, seg),
 			shoulder_limit(motorcycle),
 		]
@@ -191,7 +191,7 @@ speed_change : Motorcycle, Segment -> Acceleration
 speed_change = |motorcycle, seg|
 	Throttle.next_speed(
 		motorcycle,
-		{ segment: seg, encounter: Unplanned },
+		{ segment: seg, encounter_timing: Unplanned },
 	).change_from(motorcycle.speed)
 
 ## The whole decision for a motorcycle at the start of the segment, on the
