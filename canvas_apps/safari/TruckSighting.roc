@@ -5,6 +5,7 @@ import Along
 import Angle
 import Distance
 import RoadAhead
+import Route
 import SegmentPlace
 import Geom
 import Pipeline
@@ -30,8 +31,7 @@ TruckSighting :: [].{
 				Ok({ along, position }) => {
 					placed_truck : Geom.Placed(LitTruck)
 					placed_truck = {
-						along,
-						across: Across.middle,
+						road_point: { along, across: Across.middle },
 						lift: Distance.zero,
 						kind: lit_truck,
 					}
@@ -75,12 +75,8 @@ origin = {
 ## The first three segments, seen from `vantage`.
 first_road : Geom.Vantage -> RoadAhead.RoadView
 first_road = |vantage| {
-	route_segments: [
-		World.route_segment(0),
-		World.route_segment(1),
-		World.route_segment(2),
-	],
-	segments_ahead: [0, 1, 2].map(World.SegmentIndex.number),
+	route: World.route,
+	segments_ahead: { first_index: Route.SegmentIndex.first, count: 3 },
 	vantage,
 }
 

@@ -46,17 +46,13 @@ Pipeline :: [].{
 		place : SegmentPlace,
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera])
 	sighting_of = |placed, { road, place }| {
-		seen = RoadAhead.rider_point_at(road, { place, along: placed.along, across: placed.across })
+		road_point = placed.road_point
+		seen = RoadAhead.rider_point_at(
+			road,
+			{ place, along: road_point.along, across: road_point.across },
+		)
 		foot = Geom.ahead_on_level(seen)?
-		Ok({
-			spot: Spot.at({
-				place,
-				road_point: { along: placed.along, across: placed.across },
-				lift: placed.lift,
-				foot,
-			}),
-			kind: placed.kind,
-		})
+		Ok({ spot: Spot.at({ place, road_point, lift: placed.lift, foot }), kind: placed.kind })
 	}
 
 	## The sighting of `placed`, if it also passes `size_test`.

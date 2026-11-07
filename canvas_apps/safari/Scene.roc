@@ -19,7 +19,6 @@ import TreeSighting
 import LitTruck
 import TruckSighting
 import Speed
-import World
 
 ## The things in view, each kind in its own list.
 Scene := {
@@ -49,8 +48,7 @@ Scene := {
 		billboards = BillboardSighting.billboards_to_draw(BillboardSighting.billboard_fates(road))
 		cats = CrossingSighting.cats_in_view(view, speed)
 		rails = RailSighting.rails_in_view(road)
-		rider_distance = World.distance_along_route(
-			road.route_segments,
+		rider_distance = road.route.distance_along_route(
 			{ index: RoadAhead.rider_segment(road), along: road.vantage.along },
 		)
 		truck_at = TruckSighting.truck_in_view(

@@ -9,6 +9,7 @@ import Along
 import Angle
 import Camera
 import RoadAhead
+import Route
 import SegmentPlace
 import Spot
 import Distance
@@ -497,8 +498,8 @@ expect
 # The first three segments, seen from the start of the route.
 start_road : RoadAhead.RoadView
 start_road = {
-	route_segments: [0, 1, 2].map(World.route_segment),
-	segments_ahead: [0, 1, 2].map(World.SegmentIndex.number),
+	route: World.route,
+	segments_ahead: { first_index: Route.SegmentIndex.first, count: 3 },
 	vantage: {
 		along: Along.metres(0.0),
 		across: Across.metres(0.0),
@@ -516,8 +517,7 @@ tower_along : F64 -> Pipeline.Sighted(Tower)
 tower_along = |along|
 	Pipeline.sighting_of(
 		{
-			along: Along.metres(along),
-			across: Across.metres(20.0),
+			road_point: { along: Along.metres(along), across: Across.metres(20.0) },
 			lift: Distance.zero,
 			kind: plain_tower,
 		},

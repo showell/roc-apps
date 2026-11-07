@@ -9,14 +9,16 @@ import Fraction
 import Gaze
 import Lens
 import RiderState
+import Route
+import Segment
 import World
 
 RideFocal :: [].{
 
 	## The camera's focal length for where the rider is and how they ride.
-	ride_focal : RiderState, List(World.Segment) -> Pixels
-	ride_focal = |rider, route_segments| {
-		seg = rider.segment_index.segment_in(route_segments)
+	ride_focal : RiderState, Route -> Pixels
+	ride_focal = |rider, route| {
+		seg = route.segment_at(rider.segment_index)
 		attention =
 			CrossingReaction.crossing_attention(seg, rider.motorcycle)
 				.max(Gaze.gaze_attention(rider.eyes.look_depth))
@@ -24,12 +26,21 @@ RideFocal :: [].{
 	}
 }
 
-route_segments : List(World.Segment)
-route_segments = [World.route_segment(0), cat_segment, World.route_segment(2)]
+## The route's first three segments, a route of their own, with a cat crossing
+## the second.
+cat_route : Route
+cat_route = Route.from_segments([
+	World.route.segment_at(Route.SegmentIndex.first),
+	cat_segment,
+	{ ..World.route.segment_at(Route.SegmentIndex.number(2)), ending: RouteEnds },
+])
 
 ## The second segment, with a cat crossing it.
-cat_segment : World.Segment
-cat_segment = { ..World.route_segment(1), crossing: World.route_segment(3).crossing }
+cat_segment : Segment
+cat_segment = {
+	..World.route.segment_at(Route.SegmentIndex.number(1)),
+	crossing: World.route.segment_at(Route.SegmentIndex.number(3)).crossing,
+}
 
 ## A rider at the start of the first segment, upright and looking ahead.
 upright : RiderState
@@ -39,7 +50,7 @@ upright = RiderState.initial
 ## notice it.
 rider_near_cat_on : U32 -> RiderState
 rider_near_cat_on = |number| {
-	segment_index: World.SegmentIndex.number(number),
+	segment_index: Route.SegmentIndex.number(number),
 	motorcycle: { ..upright.motorcycle, along: Along.metres(120.0) },
 	eyes: upright.eyes,
 }
@@ -55,22 +66,22 @@ looking_hard = |rider| { ..rider, eyes: { ..rider.eyes, look_depth: Fraction.who
 crossing_attention_of : RiderState -> F64
 crossing_attention_of = |rider|
 	CrossingReaction.crossing_attention(
-		rider.segment_index.segment_in(route_segments),
+		cat_route.segment_at(rider.segment_index),
 		rider.motorcycle,
 	).to_f64()
 
 ## Whether a segment has a cat waiting by the road.
-has_cat : World.Segment -> Bool
+has_cat : Segment -> Bool
 has_cat = |seg|
 	match seg.crossing {
 		CatCrosses(_) => True
 		BirdHere(_) | QuietRoad => False
 	}
 
-expect !has_cat(World.route_segment(0))
+expect !has_cat(World.route.segment_at(Route.SegmentIndex.number(0)))
 expect has_cat(cat_segment)
 
-expect RideFocal.ride_focal(upright, route_segments).minus(Lens.resting_focal) == Pixels.zero
+expect RideFocal.ride_focal(upright, cat_route).minus(Lens.resting_focal) == Pixels.zero
 expect crossing_attention_of(upright) == 0.0
 expect Gaze.gaze_attention(Fraction.zero).to_f64() == 0.0
 expect Lens.cam_focal({
@@ -79,7 +90,7 @@ expect Lens.cam_focal({
 }).minus(Lens.resting_focal) == Pixels.zero
 
 # RideFocal doesn't import Angle, so these leans are made from `Lens.full_lean`.
-focal_at_lean = |lean| RideFocal.ride_focal(leaning(upright, lean), route_segments)
+focal_at_lean = |lean| RideFocal.ride_focal(leaning(upright, lean), cat_route)
 
 no_lean = upright.motorcycle.lean
 
@@ -109,29 +120,29 @@ expect {
 }
 
 expect crossing_attention_of(rider_near_cat_on(1)) > 0.0
-expect !(crossing_attention_of({ ..upright, segment_index: World.SegmentIndex.number(1) }) > 0.0)
+expect !(crossing_attention_of({ ..upright, segment_index: Route.SegmentIndex.number(1) }) > 0.0)
 expect !(crossing_attention_of(rider_near_cat_on(0)) > 0.0)
 expect
-	RideFocal.ride_focal(rider_near_cat_on(1), route_segments)
-		< RideFocal.ride_focal(rider_near_cat_on(0), route_segments)
+	RideFocal.ride_focal(rider_near_cat_on(1), cat_route)
+		< RideFocal.ride_focal(rider_near_cat_on(0), cat_route)
 expect
-	RideFocal.ride_focal(looking_hard(upright), route_segments)
-		< RideFocal.ride_focal(upright, route_segments)
+	RideFocal.ride_focal(looking_hard(upright), cat_route)
+		< RideFocal.ride_focal(upright, cat_route)
 expect {
 	half_look = { ..upright, eyes: { ..upright.eyes, look_depth: Fraction.of(0.5) } }
-	RideFocal.ride_focal(looking_hard(upright), route_segments)
-		< RideFocal.ride_focal(half_look, route_segments)
+	RideFocal.ride_focal(looking_hard(upright), cat_route)
+		< RideFocal.ride_focal(half_look, cat_route)
 }
 expect Gaze.gaze_attention(Fraction.whole).to_f64() > Gaze.gaze_attention(Fraction.zero).to_f64()
 
 both : Pixels
-both = RideFocal.ride_focal(looking_hard(leaning(upright, Lens.full_lean)), route_segments)
+both = RideFocal.ride_focal(looking_hard(leaning(upright, Lens.full_lean)), cat_route)
 
 lean_only : Pixels
-lean_only = RideFocal.ride_focal(leaning(upright, Lens.full_lean), route_segments)
+lean_only = RideFocal.ride_focal(leaning(upright, Lens.full_lean), cat_route)
 
 gaze_only : Pixels
-gaze_only = RideFocal.ride_focal(looking_hard(upright), route_segments)
+gaze_only = RideFocal.ride_focal(looking_hard(upright), cat_route)
 
 expect both <= lean_only
 expect both <= gaze_only

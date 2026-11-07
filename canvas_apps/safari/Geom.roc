@@ -38,8 +38,7 @@ Geom :: [].{
 	## a cat, a tower or the truck is placed anew for each frame.
 	## `Pipeline.sighting_of` turns it into a `Pipeline.Sighted` for a frame.
 	Placed(kind) : {
-		along : Along,
-		across : Across,
+		road_point : Geom.RoadPoint,
 		lift : Distance,
 		kind : kind,
 	}

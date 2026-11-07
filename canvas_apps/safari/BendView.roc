@@ -6,6 +6,8 @@ import Along
 import Angle
 import Distance
 import RoadAhead
+import Route
+import Segment
 import SegmentPlace
 import Geom
 import World
@@ -15,8 +17,8 @@ import World
 BendView := { before : SegmentPlace, bend : Geom.Bend }.{
 
 	## The bend at the end of `segment`, which lies at `before`.
-	of_segment : World.Segment, SegmentPlace -> BendView
-	of_segment = |segment, before| { before, bend: World.bend_out_of(segment) }
+	of_segment : Segment, SegmentPlace -> BendView
+	of_segment = |segment, before| { before, bend: segment.bend_out_of() }
 
 	## The bend at the end of `in_view`, unless the road in view ends there.
 	bend_after : RoadAhead.RoadView, RoadAhead.SegmentInView -> Try(BendView, [RoadEndsInView])
@@ -86,8 +88,8 @@ apex_after_turn : Angle.Turn -> Geom.RiderPoint
 apex_after_turn = |turn|
 	BendView.apex(
 		{
-			route_segments: [],
-			segments_ahead: [],
+			route: World.route,
+			segments_ahead: { first_index: Route.SegmentIndex.first, count: 1 },
 			vantage: {
 				along: Along.metres(100.0),
 				across: Across.metres(1.0),
@@ -103,7 +105,7 @@ apex_after_turn = |turn|
 # The segment after a bend, from each place the segment before can lie.
 position_after : SegmentPlace -> I64
 position_after = |before| {
-	bend = BendView.of_segment(World.route_segment(0), before)
+	bend = BendView.of_segment(World.route.segment_at(Route.SegmentIndex.number(0)), before)
 	match BendView.place_after(bend) {
 		Ahead(position) => position.to_i64()
 		JustBehind(_) => -1
@@ -165,44 +167,55 @@ turns_right = |place| bend_of(place).turn.is_right()
 
 expect bend_of(m_prev_left).segment_length.to_metres() == 300.0
 expect bend_of(m_prev_right).segment_length.to_metres() == 300.0
-expect bend_of(RoadAhead.place_behind(World.route_segment(0))).segment_length.to_metres() == 500.0
+expect {
+	first_segment = World.route.segment_at(Route.SegmentIndex.first)
+	bend_of(RoadAhead.place_behind(first_segment)).segment_length.to_metres() == 500.0
+}
 expect is_ahead(m_ahead)
 expect !is_ahead(m_prev_left)
 expect !is_ahead(m_prev_right)
 expect !turns_right(m_prev_left)
 expect turns_right(m_prev_right)
 
-## A road along `segments_ahead`, the route's segments by number.
-road_along : List(U32) -> RoadAhead.RoadView
-road_along = |segments_ahead| {
-	route_segments: World.segments,
-	segments_ahead: segments_ahead.map(World.SegmentIndex.number),
+## A road along `count` of the route's segments, from its segment `first`.
+road_along : { first : U32, count : U32 } -> RoadAhead.RoadView
+road_along = |{ first, count }| {
+	route: World.route,
+	segments_ahead: { first_index: Route.SegmentIndex.number(first), count },
 	vantage,
 }
 
-expect [([0, 1], 0), ([3, 4], 3)].all(
-	|(segments_ahead, want)| RoadAhead.rider_segment(road_along(segments_ahead)).to_i64() == want,
+expect [(0, 0), (3, 3)].all(
+	|(first, want)| RoadAhead.rider_segment(road_along({ first, count: 2 })).to_i64() == want,
 )
 
 ## The route's number of the segment behind the rider's, or -1 at the route's
 ## start.
-number_behind : List(U32) -> I64
-number_behind = |segments_ahead|
-	match RoadAhead.segment_behind(road_along(segments_ahead)) {
+number_behind : U32 -> I64
+number_behind = |first|
+	match RoadAhead.segment_behind(road_along({ first, count: 2 })) {
 		Previous(index) => index.to_i64()
 		AtRouteStart => -1
 	}
 
 expect
 	[
-		([0, 1], -1),
-		([1, 2], 0),
-		([3, 4], 2),
+		(0, -1),
+		(1, 0),
+		(3, 2),
 	].all(|(input, want)| number_behind(input) == want)
+
+## The road from `vantage`, on the route's first segment.
+road_from_vantage : RoadAhead.RoadView
+road_from_vantage = {
+	route: World.route,
+	segments_ahead: { first_index: Route.SegmentIndex.first, count: 1 },
+	vantage,
+}
 
 at_d0 : Geom.RiderPoint
 at_d0 = RoadAhead.rider_point_ahead(
-	{ route_segments: [], segments_ahead: [], vantage },
+	road_from_vantage,
 	{
 		position: SegmentPlace.Position.first,
 		along: Along.metres(50.0),
@@ -210,11 +223,11 @@ at_d0 = RoadAhead.rider_point_ahead(
 	},
 )
 
-point_at_d1 : List(World.Segment) -> Geom.RiderPoint
-point_at_d1 = |route_segments| RoadAhead.rider_point_ahead(
+point_at_d1 : Route -> Geom.RiderPoint
+point_at_d1 = |route| RoadAhead.rider_point_ahead(
 	{
-		route_segments,
-		segments_ahead: RoadAhead.indices_ahead(route_segments, World.SegmentIndex.first),
+		route,
+		segments_ahead: RoadAhead.indices_ahead(route, Route.SegmentIndex.first),
 		vantage,
 	},
 	{
@@ -225,7 +238,7 @@ point_at_d1 = |route_segments| RoadAhead.rider_point_ahead(
 )
 
 expect {
-	second_segment_point = point_at_d1(World.segments)
+	second_segment_point = point_at_d1(World.route)
 	[
 		(at_d0.right.to_metres(), 9.933466539753061),
 		(at_d0.forward.to_metres(), -49.00332889206208),
@@ -237,7 +250,7 @@ expect {
 ## The point 50 m along the segment at `place`, which is behind the rider.
 rider_point_behind : SegmentPlace -> Geom.RiderPoint
 rider_point_behind = |place| RoadAhead.rider_point_at(
-	{ route_segments: [], segments_ahead: [], vantage },
+	road_from_vantage,
 	{
 		place,
 		along: Along.metres(50.0),

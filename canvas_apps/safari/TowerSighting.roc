@@ -10,6 +10,8 @@ import Beacon
 import Clock
 import Distance
 import RoadAhead
+import Route
+import Segment
 import SegmentPlace
 import Steps
 import Geom
@@ -83,20 +85,20 @@ TowerSighting :: [].{
 		[BehindCamera, NoMidTower],
 	)
 	mid_tower = |road, { in_view, clock }|
-		match in_view.segment.mid_tower {
-			MidTower =>
-				tower_if_ahead(
-					road,
-					{
-						clock,
-						place: in_view.place,
-						along: Along.at(in_view.segment.length.divided_by(2.0)),
-						across: Across.left_of_middle(mid_tower_left),
-						yaw: Angle.straight_ahead,
-						beacon_key: in_view.index.to_u32() + mid_tower_key_offset,
-					},
-				)
-			NoMidTower => Err(NoMidTower)
+		if Segment.has_mid_tower(in_view.segment) {
+			tower_if_ahead(
+				road,
+				{
+					clock,
+					place: in_view.place,
+					along: Along.at(in_view.segment.length.divided_by(2.0)),
+					across: Across.left_of_middle(mid_tower_left),
+					yaw: Angle.straight_ahead,
+					beacon_key: in_view.index.to_u32() + mid_tower_key_offset,
+				},
+			)
+		} else {
+			Err(NoMidTower)
 		}
 }
 
@@ -131,8 +133,7 @@ tower_if_ahead = |
 | {
 	placed_tower : Geom.Placed(Tower)
 	placed_tower = {
-		along,
-		across,
+		road_point: { along, across },
 		lift: Distance.zero,
 		kind: {
 			yaw,
@@ -148,11 +149,11 @@ expect TowerSighting.tower_beyond.to_metres() == 160.0
 expect TowerSighting.tower_right.to_metres() == 20.0
 expect TowerSighting.mid_tower_left.to_metres() == 100.0
 
-route_segments : List(World.Segment)
+route_segments : List(Segment)
 route_segments = [
-	World.route_segment(0),
-	World.route_segment(1),
-	World.route_segment(2),
+	World.route.segment_at(Route.SegmentIndex.number(0)),
+	World.route.segment_at(Route.SegmentIndex.number(1)),
+	World.route.segment_at(Route.SegmentIndex.number(2)),
 ]
 
 origin : Geom.Vantage
@@ -166,12 +167,8 @@ origin = {
 ## route's segment `rider_number`.
 short_road : U32 -> RoadAhead.RoadView
 short_road = |rider_number| {
-	route_segments: [0, 1, 2, 3, 4].map(World.route_segment),
-	segments_ahead: [
-		rider_number,
-		rider_number + 1,
-		rider_number + 2,
-	].map(World.SegmentIndex.number),
+	route: World.route,
+	segments_ahead: { first_index: Route.SegmentIndex.number(rider_number), count: 3 },
 	vantage: origin,
 }
 
@@ -188,15 +185,7 @@ ride_start = |road| {
 expect TowerSighting.segment_towers(origin_road, ride_start(origin_road)).len() == 1
 expect TowerSighting.mid_tower(origin_road, ride_start(origin_road)).is_err()
 expect TowerSighting.towers_in_view(origin_road, Clock.start).len() == 3
-expect route_segments.all(|seg| !has_mid_tower(seg))
-
-## Whether a segment has a tower halfway along.
-has_mid_tower : World.Segment -> Bool
-has_mid_tower = |seg|
-	match seg.mid_tower {
-		MidTower => True
-		NoMidTower => False
-	}
+expect route_segments.all(|seg| !seg.has_mid_tower())
 
 ## The first tower in view on the segment at `position` on the road ahead.
 first_tower_on : U32 -> Pipeline.Sighted(Tower)
@@ -218,11 +207,13 @@ expect
 		(first_tower_on(0).spot.foot().forward().to_metres(), 660.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
-## The 1200 m segment alone, seen from the origin.
+## The 1200 m segment alone, a route of its own, seen from the origin.
 long_road : RoadAhead.RoadView
 long_road = {
-	route_segments: [World.route_segment(6)],
-	segments_ahead: [0].map(World.SegmentIndex.number),
+	route: Route.from_segments([
+		{ ..World.route.segment_at(Route.SegmentIndex.number(6)), ending: RouteEnds },
+	]),
+	segments_ahead: { first_index: Route.SegmentIndex.first, count: 1 },
 	vantage: origin,
 }
 
@@ -284,7 +275,7 @@ expect
 			Ahead(SegmentPlace.Position.number(0)),
 			Ahead(SegmentPlace.Position.number(1)),
 			Ahead(SegmentPlace.Position.number(2)),
-			RoadAhead.place_behind(World.route_segment(0)),
+			RoadAhead.place_behind(World.route.segment_at(Route.SegmentIndex.number(0))),
 		]
 expect TowerSighting.towers_in_view(
 	{ ..origin_road, vantage: { ..origin, along: Along.metres(5000.0) } },

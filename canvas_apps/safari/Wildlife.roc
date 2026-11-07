@@ -45,14 +45,12 @@ Wildlife :: [].{
 			}
 		[
 			{
-				along: bend_along,
-				across,
+				road_point: { along: bend_along, across },
 				lift: Distance.zero,
 				kind: Billboard.adult_billboard(species, facing),
 			},
 			{
-				along: bend_along.plus(baby_beyond),
-				across: Across.middle,
+				road_point: { along: bend_along.plus(baby_beyond), across: Across.middle },
 				lift: Distance.zero,
 				kind: Billboard.young_billboard(species, facing),
 			},
@@ -83,7 +81,7 @@ four_critters = [
 ].join()
 
 expect
-	four_critters.map(|critter| critter.across.to_metres())
+	four_critters.map(|critter| critter.road_point.across.to_metres())
 		== [
 			-4.9,
 			0.0,
@@ -96,7 +94,7 @@ expect
 		]
 
 expect
-	four_critters.map(|critter| critter.along.to_metres())
+	four_critters.map(|critter| critter.road_point.along.to_metres())
 		== [
 			100.0,
 			114.0,

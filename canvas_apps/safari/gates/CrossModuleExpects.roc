@@ -22,6 +22,8 @@ import game.Distance
 import game.EmojiStills
 import game.Fraction
 import game.RoadAhead
+import game.Route
+import game.Segment
 import game.SegmentPlace
 import game.Geom
 import game.Ground
@@ -62,24 +64,21 @@ origin = {
 ## The first three segments, the rider at the start of the first.
 road : RoadAhead.RoadView
 road = {
-	route_segments: [
-		World.route_segment(0),
-		World.route_segment(1),
-		World.route_segment(2),
-	],
-	segments_ahead: [0, 1, 2].map(World.SegmentIndex.number),
+	route: World.route,
+	segments_ahead: { first_index: Route.SegmentIndex.first, count: 3 },
 	vantage: origin,
 }
 
-# Positions count along the road ahead, not along the route.
+# Positions count along the road ahead from the rider's segment, not along the
+# route from its start.
 expect {
-	third_then_first = { ..road, segments_ahead: [2, 0].map(World.SegmentIndex.number) }
-	length_at = |position| RoadAhead.segment_at(third_then_first, position).length
-	third_length = World.route_segment(2).length
-	first_length = World.route_segment(0).length
-	third_length != first_length
-		and length_at(SegmentPlace.Position.first) == third_length
-		and length_at(SegmentPlace.Position.first.next()) == first_length
+	from_third = { ..road, segments_ahead: { first_index: Route.SegmentIndex.number(2), count: 2 } }
+	length_at = |position| RoadAhead.segment_at(from_third, position).length
+	length_of = |number| World.route.segment_at(Route.SegmentIndex.number(number)).length
+	length_of(2) != length_of(0)
+		and length_of(3) != length_of(1)
+		and length_at(SegmentPlace.Position.first) == length_of(2)
+		and length_at(SegmentPlace.Position.first.next()) == length_of(3)
 }
 
 polygon_of : Shapes.Shape -> { coordinates : List(F64), fill : Brush.Fill }
@@ -114,8 +113,7 @@ flat_color_of = |shape|
 # to draw.
 tree_at : F64, F64 -> Trees.RoadsideTree
 tree_at = |along, across| {
-	along: Along.metres(along),
-	across: Across.metres(across),
+	road_point: { along: Along.metres(along), across: Across.metres(across) },
 	lift: Distance.zero,
 	kind: Conifer.Red,
 }
@@ -133,14 +131,21 @@ left_top = Conifer.Red.scenery_height().to_metres()
 far_top : F64
 far_top = Conifer.Gold.scenery_height().to_metres()
 
-## A straight segment 200 m long holding only `trees`.
-segment_of : List(Trees.RoadsideTree) -> World.Segment
+## A segment 200 m long holding only `trees`, which ends a route.
+segment_of : List(Trees.RoadsideTree) -> Segment
 segment_of = |trees| {
-	..World.route_segment(0),
+	..World.route.segment_at(Route.SegmentIndex.first),
 	length: Distance.metres(200.0),
 	trees,
-	exit_turn: Angle.straight_ahead,
+	ending: RouteEnds,
 	crossing: BirdFlight.crossing_among(trees),
+}
+
+## `segment`, bending straight on into another.
+going_straight_on : Segment -> Segment
+going_straight_on = |segment| {
+	..segment,
+	ending: Bends({ turn: Angle.straight_ahead, bend_life: Animal(Elephant) }),
 }
 
 ## The birds on one segment of `trees`, for a rider `rider_along` metres into
@@ -153,7 +158,7 @@ birds_on : List(Trees.RoadsideTree),
 birds_on = |trees, seen_from| birds_on_segment(segment_of(trees), seen_from)
 
 ## The birds on `segment_index`, for a rider `rider_along` metres into it.
-birds_on_segment : World.Segment,
+birds_on_segment : Segment,
 {
 	rider_along : F64,
 	cam_focal : Pixels,
@@ -161,8 +166,8 @@ birds_on_segment : World.Segment,
 birds_on_segment = |segment, { rider_along, cam_focal }|
 	CrossingSighting.birds_in_view({
 		road: {
-			route_segments: [segment],
-			segments_ahead: [World.SegmentIndex.first],
+			route: Route.from_segments([segment]),
+			segments_ahead: { first_index: Route.SegmentIndex.first, count: 1 },
 			vantage: { ..origin, along: Along.metres(rider_along) },
 		},
 		cam_focal,
@@ -216,8 +221,11 @@ bird_count : List(Trees.RoadsideTree), { rider_along : F64, cam_focal : Pixels }
 bird_count = |trees, seen_from| birds_on(trees, seen_from).len().to_i64_wrap()
 
 ## A segment where a cat crosses, with the same trees: it has no bird.
-segment_with_cat : World.Segment
-segment_with_cat = { ..segment_of(left_trees), crossing: World.route_segment(3).crossing }
+segment_with_cat : Segment
+segment_with_cat = {
+	..segment_of(left_trees),
+	crossing: World.route.segment_at(Route.SegmentIndex.number(3)).crossing,
+}
 
 expect bird_count(left_trees, { rider_along: 0.0, cam_focal: Pixels.of(500.0) }) == 1
 expect bird_count(left_trees.drop_last(1), { rider_along: 0.0, cam_focal: Pixels.of(500.0) }) == 0
@@ -234,8 +242,11 @@ expect
 two_segments : List(Pipeline.Sighted(PosedBird))
 two_segments = CrossingSighting.birds_in_view({
 	road: {
-		route_segments: [segment_of(left_trees), segment_of(left_trees)],
-		segments_ahead: [0, 1].map(World.SegmentIndex.number),
+		route: Route.from_segments([
+			going_straight_on(segment_of(left_trees)),
+			segment_of(left_trees),
+		]),
+		segments_ahead: { first_index: Route.SegmentIndex.first, count: 2 },
 		vantage: {
 			along: Along.metres(0.0),
 			across: Across.metres(0.0),
@@ -260,14 +271,14 @@ past_bend_trees : F64 -> List(Pipeline.Sighted(Conifer))
 past_bend_trees = |degrees| {
 	segment_behind_rider = {
 		..segment_of([tree_at(195.0, 0.0)]),
-		exit_turn: Angle.Turn.degrees(degrees),
+		ending: Bends({ turn: Angle.Turn.degrees(degrees), bend_life: Animal(Elephant) }),
 		crossing: QuietRoad,
 	}
 	rider_segment = { ..segment_of([]), crossing: QuietRoad }
 	TreeSighting.trees_in_view({
 		road: {
-			route_segments: [segment_behind_rider, rider_segment],
-			segments_ahead: [1].map(World.SegmentIndex.number),
+			route: Route.from_segments([segment_behind_rider, rider_segment]),
+			segments_ahead: { first_index: Route.SegmentIndex.number(1), count: 1 },
 			vantage: origin,
 		},
 		cam_focal: Pixels.of(500.0),
@@ -289,18 +300,27 @@ expect past_bend_trees(-80.0).len() == 0
 
 # CrossingSighting's cats: which cats are in view as the rider comes on them.
 ## The second segment, with a cat crossing it.
-cat_segment : World.Segment
-cat_segment = { ..World.route_segment(1), crossing: World.route_segment(3).crossing }
+cat_segment : Segment
+cat_segment = {
+	..World.route.segment_at(Route.SegmentIndex.number(1)),
+	crossing: World.route.segment_at(Route.SegmentIndex.number(3)).crossing,
+}
 
-cat_segments : List(World.Segment)
-cat_segments = [World.route_segment(0), cat_segment, World.route_segment(2)]
+## The route's first three segments, a route of their own, with a cat crossing
+## the second.
+cat_route : Route
+cat_route = Route.from_segments([
+	World.route.segment_at(Route.SegmentIndex.first),
+	cat_segment,
+	{ ..World.route.segment_at(Route.SegmentIndex.number(2)), ending: RouteEnds },
+])
 
 ## The first three segments seen from the origin, at 1 m a step.
 cats_from_origin : RoadAhead.CameraView
 cats_from_origin = {
 	road: {
-		route_segments: cat_segments,
-		segments_ahead: [0, 1, 2].map(World.SegmentIndex.number),
+		route: cat_route,
+		segments_ahead: { first_index: Route.SegmentIndex.first, count: 3 },
 		vantage: origin,
 	},
 	cam_focal: Pixels.of(500.0),
@@ -309,10 +329,16 @@ cats_from_origin = {
 metre_a_step : Speed
 metre_a_step = Speed.metres_a_step(1.0)
 
-## The cats seen from the origin on a road of only `segments_ahead`.
-cats_on_road : List(World.SegmentIndex) -> List(Pipeline.Sighted(PosedCat))
-cats_on_road = |segments_ahead| CrossingSighting.cats_in_view(
-	{ ..cats_from_origin, road: { ..cats_from_origin.road, segments_ahead } },
+## The cats seen from the origin on a road of only `count` segments ahead.
+cats_on_road : U32 -> List(Pipeline.Sighted(PosedCat))
+cats_on_road = |count| CrossingSighting.cats_in_view(
+	{
+		..cats_from_origin,
+		road: {
+			..cats_from_origin.road,
+			segments_ahead: { first_index: Route.SegmentIndex.first, count },
+		},
+	},
 	metre_a_step,
 )
 
@@ -323,10 +349,10 @@ cat_at = |number| CrossingSighting.segment_cat(
 	{ in_view: numbered_segment(cats_from_origin.road, number), speed: metre_a_step },
 )
 
-expect cat_segments.map(has_cat) == [False, True, False]
+expect cat_route.route_segments().map(has_cat) == [False, True, False]
 
 ## Whether a segment has a cat waiting by the road.
-has_cat : World.Segment -> Bool
+has_cat : Segment -> Bool
 has_cat = |seg|
 	match seg.crossing {
 		CatCrosses(_) => True
@@ -395,15 +421,15 @@ expect ride_sightings(0.0).len() == 0
 expect ride_sightings(200.0).len() == 1
 expect ride_sightings(500.0).len() == 1
 expect ride_sightings(600.0).len() == 0
-expect cats_on_road([World.SegmentIndex.first]).len() == 0
+expect cats_on_road(1).len() == 0
 
 # The sighting looks along the whole road ahead, and the reaction only at the
 # rider's own segment. They agree because a crossing starts on its own segment: even at
 # top speed it starts closer to the cat than the cat is to the segment's start,
 # and a rider comes onto a segment no further along than that.
 ## The cats of the route, each with its segment.
-route_cats : List({ segment : World.Segment, crossing : Cat.Crossing })
-route_cats = World.segments.join_map(
+route_cats : List({ segment : Segment, crossing : Cat.Crossing })
+route_cats = World.route.route_segments().join_map(
 	|segment|
 		match segment.crossing {
 			CatCrosses(crossing) => [{ segment, crossing }]
@@ -421,11 +447,11 @@ expect farthest_start < Cat.cat_along.plus(Cat.cat_beyond_tree).from_start()
 expect route_cats.all(|{ crossing, .. }| farthest_start < crossing.along.from_start())
 
 ## The speed a rider leaves `segment` at: the bend's, or none at the route's end.
-leaving_speed : World.Segment -> Speed
+leaving_speed : Segment -> Speed
 leaving_speed = |segment|
 	match segment.ending {
-		Continues(_) => VehicleLimits.turn_speed(segment.exit_turn.abs())
-		Terminates => Speed.at_rest
+		Bends({ turn, .. }) => VehicleLimits.turn_speed(turn.abs())
+		RouteEnds => Speed.at_rest
 	}
 
 # The reaction ends with its segment, so the cat's hold has to have faded by then
@@ -442,16 +468,16 @@ expect
 ## The first six segments ahead, in order.
 six_segments : RoadAhead.RoadView
 six_segments = {
-	route_segments: [0, 1, 2, 3, 4, 5].map(World.route_segment),
-	segments_ahead: [0, 1, 2, 3, 4, 5].map(World.SegmentIndex.number),
+	route: World.route,
+	segments_ahead: { first_index: Route.SegmentIndex.first, count: 6 },
 	vantage: origin,
 }
 
 ## The world's segment `index` alone.
 lone : U32 -> RoadAhead.RoadView
 lone = |index| {
-	route_segments: [World.route_segment(index)],
-	segments_ahead: [0].map(World.SegmentIndex.number),
+	route: World.route,
+	segments_ahead: { first_index: Route.SegmentIndex.number(index), count: 1 },
 	vantage: origin,
 }
 
@@ -463,9 +489,9 @@ numbered_segment = |road_view, number|
 ## The world's segment `number`, as the segment just behind the rider.
 segment_behind : U32 -> RoadAhead.SegmentInView
 segment_behind = |number| {
-	segment = World.route_segment(number)
+	segment = World.route.segment_at(Route.SegmentIndex.number(number))
 	{
-		index: World.SegmentIndex.number(number),
+		index: Route.SegmentIndex.number(number),
 		segment,
 		place: RoadAhead.place_behind(segment),
 	}
@@ -545,7 +571,11 @@ critter_fate : {
 	kind : Billboard,
 } -> BillboardSighting.Fate
 critter_fate = |{ along, across, kind }| {
-	critter = { along, across, lift: Distance.zero, kind }
+	critter = {
+		road_point: { along, across },
+		lift: Distance.zero,
+		kind,
+	}
 	BillboardSighting.sight_critter(road, { place: Ahead(SegmentPlace.Position.first), critter })
 }
 
@@ -667,8 +697,8 @@ expect
 scene_view : RoadAhead.CameraView
 scene_view = {
 	road: {
-		route_segments: World.segments,
-		segments_ahead: RoadAhead.indices_ahead(World.segments, World.SegmentIndex.first),
+		route: World.route,
+		segments_ahead: RoadAhead.indices_ahead(World.route, Route.SegmentIndex.first),
 		vantage: origin,
 	},
 	cam_focal: Pixels.of(500.0),
@@ -837,7 +867,7 @@ expect {
 done : RideInstant
 done = {
 	rider: {
-		segment_index: World.SegmentIndex.number(18),
+		segment_index: Route.SegmentIndex.number(18),
 		motorcycle: {
 			along: Along.metres(400.0),
 			across: Across.metres(0.0),
@@ -857,7 +887,7 @@ done = {
 }
 
 expect {
-	instant = RideInstant.next_or_restart(World.segments, done)
+	instant = RideInstant.next_or_restart(World.route, done)
 	instant.clock.to_f64() == 0.0
 		and instant.rider.motorcycle.along.to_metres() == 0.0
 		and instant.rider.motorcycle.speed.to_metres_a_step() == 0.3
@@ -873,8 +903,8 @@ expect {
 	var $crossings = 0
 	var $is_home_at_each = True
 	var $has_looked = False
-	while !Rider.is_finished($rider, World.segments) {
-		next = Rider.rider_state_at_next_step($rider, World.segments)
+	while !Rider.is_finished($rider, World.route) {
+		next = Rider.rider_state_at_next_step($rider, World.route)
 		if next.segment_index != $rider.segment_index {
 			$crossings = $crossings + 1
 			$is_home_at_each = $is_home_at_each and $rider.eyes.gaze_yaw == Angle.straight_ahead
@@ -885,17 +915,17 @@ expect {
 	$crossings == 18 and $is_home_at_each and $has_looked
 }
 
-expect Rider.is_finished(done.rider, World.segments)
-expect RideInstant.next_or_restart(World.segments, done).truck.pace == NotSlowing
+expect Rider.is_finished(done.rider, World.route)
+expect RideInstant.next_or_restart(World.route, done).truck.pace == NotSlowing
 
 # A frame of the ride draws.
 expect {
-	frame = RideInstant.frame_content(World.segments, RideInstant.initial)
+	frame = RideInstant.frame_content(World.route, RideInstant.initial)
 	first_shape = frame.shapes.first() ?? crash "CrossModuleExpects: a frame draws"
 	coordinates_of(first_shape).len() >= 6
 }
 
 expect {
-	after_one_step = RideInstant.next_or_restart(World.segments, RideInstant.initial)
-	RideInstant.frame_content(World.segments, after_one_step).shapes.len() > 0
+	after_one_step = RideInstant.next_or_restart(World.route, RideInstant.initial)
+	RideInstant.frame_content(World.route, after_one_step).shapes.len() > 0
 }

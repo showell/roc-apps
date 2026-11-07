@@ -55,7 +55,7 @@ BirdFlight :: [].{
 	## there the bird faces the road.
 	fifth_left_tree : List(Trees.RoadsideTree) -> [Found(Trees.RoadsideTree), NoTree]
 	fifth_left_tree = |trees|
-		match trees.keep_if(|tree| tree.across < Across.middle).drop_first(4).first() {
+		match trees.keep_if(|tree| tree.road_point.across < Across.middle).drop_first(4).first() {
 			Ok(tree) => Found(tree)
 			Err(ListWasEmpty) => NoTree
 		}
@@ -99,8 +99,8 @@ frames_a_flap = 40
 ## on the other side of the road far enough along, or, with none, to stay put.
 habit_from : List(Trees.RoadsideTree), Trees.RoadsideTree -> BirdFlight.Habit
 habit_from = |trees, perch| {
-	is_far_enough = |tree| tree.along >= perch.along.plus(shortest_hop)
-	far_side = trees.keep_if(|tree| tree.across > Across.middle and is_far_enough(tree))
+	is_far_enough = |tree| tree.road_point.along >= perch.road_point.along.plus(shortest_hop)
+	far_side = trees.keep_if(|tree| tree.road_point.across > Across.middle and is_far_enough(tree))
 	match far_side.first() {
 		Ok(to) => { perch, leaves_for: FliesTo(to) }
 		Err(ListWasEmpty) => { perch, leaves_for: StaysPut }
@@ -135,8 +135,8 @@ flight_timeline = |{ from, to }| {
 ## The location on top of `tree`.
 tree_top : Trees.RoadsideTree -> Animation.Location
 tree_top = |tree| {
-	along: tree.along,
-	across: tree.across,
+	along: tree.road_point.along,
+	across: tree.road_point.across,
 	lift: tree.kind.scenery_height(),
 }
 
@@ -164,8 +164,7 @@ flight_location = |{ from, to, through }| {
 
 tree_at : F64, F64 -> Trees.RoadsideTree
 tree_at = |along, across| {
-	along: Along.metres(along),
-	across: Across.metres(across),
+	road_point: { along: Along.metres(along), across: Across.metres(across) },
 	lift: Distance.zero,
 	kind: Conifer.Red,
 }
@@ -201,7 +200,7 @@ pairs_at = |alongs| alongs.join_map(|along| [tree_at(along, -6.0), tree_at(along
 fifth_along : List(Trees.RoadsideTree) -> Try(F64, [NoTree])
 fifth_along = |choices|
 	match BirdFlight.fifth_left_tree(choices) {
-		Found(tree) => Ok(tree.along.to_metres())
+		Found(tree) => Ok(tree.road_point.along.to_metres())
 		NoTree => Err(NoTree)
 	}
 
@@ -214,7 +213,7 @@ expect fifth_along([50.0, 60.0, 70.0, 80.0, 90.0].map(|along| tree_at(along, 6.0
 chosen_along : List(Trees.RoadsideTree) -> List(F64)
 chosen_along = |choices|
 	match habit_from(choices, left_tree).leaves_for {
-		FliesTo(to) => [to.along.to_metres(), to.across.to_metres()]
+		FliesTo(to) => [to.road_point.along.to_metres(), to.road_point.across.to_metres()]
 		StaysPut => []
 	}
 
@@ -305,6 +304,6 @@ expect {
 	first = frames_of.instant(Playing(Fraction.zero)).location
 	last = frames_of.instant(Playing(Fraction.of(0.9999))).location
 	first == BirdFlight.instant_at(sample_flight, { gap: takeoff_gap }).location
-		and last.along.distance_from(sample_flight.to.along).to_metres().abs() <= 0.01
+		and last.along.distance_from(sample_flight.to.road_point.along).to_metres().abs() <= 0.01
 		and (last.lift.to_metres() - gold_top).abs() <= 0.1
 }

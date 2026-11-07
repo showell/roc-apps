@@ -11,6 +11,8 @@ import Geom
 import LeanSearch
 import Motorcycle
 import RiderState
+import Route
+import Segment
 import Speed
 import Throttle
 import VehicleLimits
@@ -19,33 +21,34 @@ import World
 Rider :: [].{
 	Decision : { lean_step : Angle.LeanChange, acceleration : Acceleration }
 
-	rider_state_at_next_step : RiderState, List(World.Segment) -> RiderState
-	rider_state_at_next_step = |state, route_segments| {
-		seg = state.segment_index.segment_in(route_segments)
+	rider_state_at_next_step : RiderState, Route -> RiderState
+	rider_state_at_next_step = |state, route| {
+		seg = route.segment_at(state.segment_index)
 		moved = {
 			..state,
 			motorcycle: state.motorcycle.motorcycle_at_next_step(decide(state.motorcycle, seg)),
 		}
 		resolved =
 			match seg.ending {
-				Continues({ next }) => cross_if_on_road(moved, { segment: seg, next })
-				Terminates => { ..moved, motorcycle: stop_at_route_end(moved.motorcycle, seg) }
+				Bends(_) =>
+					cross_if_on_road(moved, { segment: seg, next: state.segment_index.next() })
+				RouteEnds => { ..moved, motorcycle: stop_at_route_end(moved.motorcycle, seg) }
 			}
-		Gaze.next_rider_gaze(resolved, resolved.segment_index.segment_in(route_segments))
+		Gaze.next_rider_gaze(resolved, route.segment_at(resolved.segment_index))
 	}
 
-	is_finished : RiderState, List(World.Segment) -> Bool
-	is_finished = |s, route_segments| {
-		seg = s.segment_index.segment_in(route_segments)
+	is_finished : RiderState, Route -> Bool
+	is_finished = |s, route| {
+		seg = route.segment_at(s.segment_index)
 		match seg.ending {
-			Continues(_) => False
-			Terminates => s.motorcycle.along >= Along.at(seg.length)
+			Bends(_) => False
+			RouteEnds => s.motorcycle.along >= Along.at(seg.length)
 		}
 	}
 }
 
 ## The end of a segment that continues, and the segment it continues onto.
-Seam : { segment : World.Segment, next : World.SegmentIndex }
+Seam : { segment : Segment, next : Route.SegmentIndex }
 
 ## A rider this slow near the route's end stops there.
 stopping_speed : Speed
@@ -53,7 +56,7 @@ stopping_speed = Speed.metres_a_step(0.1)
 
 ## The lean toward the best line, and the throttle for the motorcycle once it
 ## leans so.
-decide : Motorcycle, World.Segment -> Rider.Decision
+decide : Motorcycle, Segment -> Rider.Decision
 decide = |motorcycle, seg| {
 	lean_step = LeanSearch.best_lean(motorcycle).change_from(motorcycle.lean)
 	{
@@ -68,10 +71,8 @@ decide = |motorcycle, seg| {
 rider_on_next_segment : RiderState, Seam -> RiderState
 rider_on_next_segment = |rs, { segment: seg, next }| {
 	m = rs.motorcycle
-	on_next = Geom.point_in_segment_after(
-		{ along: m.along, across: m.across },
-		World.bend_out_of(seg),
-	)
+	bend = seg.bend_out_of()
+	on_next = Geom.point_in_segment_after({ along: m.along, across: m.across }, bend)
 	{
 		..rs,
 		segment_index: next,
@@ -79,12 +80,12 @@ rider_on_next_segment = |rs, { segment: seg, next }| {
 			..m,
 			along: on_next.along,
 			across: on_next.across,
-			yaw: m.yaw.minus(seg.exit_turn),
+			yaw: m.yaw.minus(bend.turn),
 		},
 	}
 }
 
-stop_at_route_end : Motorcycle, World.Segment -> Motorcycle
+stop_at_route_end : Motorcycle, Segment -> Motorcycle
 stop_at_route_end = |moved, seg| {
 	end = Along.at(seg.length)
 	in_zone = end.distance_from(moved.along) < VehicleLimits.bend_approach
@@ -110,18 +111,11 @@ cross_if_on_road = |moved, seam| {
 	}
 }
 
-first_segments : List(World.Segment)
-first_segments = [
-	World.route_segment(0),
-	World.route_segment(1),
-	World.route_segment(2),
-]
-
-first_segment : World.Segment
-first_segment = World.route_segment(0)
+first_segment : Segment
+first_segment = World.route.segment_at(Route.SegmentIndex.number(0))
 
 first_seam : Seam
-first_seam = { segment: first_segment, next: World.SegmentIndex.number(1) }
+first_seam = { segment: first_segment, next: Route.SegmentIndex.number(1) }
 
 ## A motorcycle on the centre line of the first segment, going the base speed.
 motorcycle_at : F64, F64 -> Motorcycle
@@ -160,7 +154,7 @@ expect {
 
 at_seam : RiderState
 at_seam = {
-	segment_index: World.SegmentIndex.first,
+	segment_index: Route.SegmentIndex.first,
 	motorcycle: {
 		along: Along.metres(499.0),
 		across: Across.metres(0.5),
@@ -179,10 +173,12 @@ expect crossed.motorcycle.speed.to_metres_a_step() == 1.25
 expect crossed.motorcycle.lean.to_radians() == 0.05
 expect crossed.eyes.look_depth.to_f64() == 0.4
 expect crossed.motorcycle.heading.to_radians() - 0.7 == 0.0
-expect crossed.motorcycle.yaw.to_radians() - (0.1 - first_segment.exit_turn.to_radians()) == 0.0
+expect {
+	exit_turn = first_segment.bend_out_of().turn
+	crossed.motorcycle.yaw.to_radians() - (0.1 - exit_turn.to_radians()) == 0.0
+}
 
 expect crossed.segment_index.to_i64() == 1
-expect first_segment.ending == Continues({ next: World.SegmentIndex.number(1) })
 
 expect {
 	far = rider_on_next_segment(rider_at(100.0, 0.0), first_seam)
@@ -192,8 +188,8 @@ expect {
 expect cross_if_on_road(rider_at(100.0, 0.0), first_seam).segment_index.to_i64() == 0
 expect cross_if_on_road(rider_at(499.0, 0.0), first_seam).segment_index.to_i64() == 1
 
-last_seg : World.Segment
-last_seg = World.route_segment(18)
+last_seg : Segment
+last_seg = World.route.segment_at(Route.SegmentIndex.number(18))
 
 clamped_at_finish : F64, F64 -> Motorcycle
 clamped_at_finish = |along, speed|
@@ -221,19 +217,20 @@ expect clamped_at_finish(100.0, 0.05).speed.to_metres_a_step() == 0.05
 stopped_on_last : F64 -> RiderState
 stopped_on_last = |along| {
 	..RiderState.initial,
+	segment_index: Route.SegmentIndex.number(18),
 	motorcycle: { ..motorcycle_at(along, 0.0), speed: Speed.at_rest },
 }
 
-expect Rider.is_finished(stopped_on_last(300.0), [last_seg])
-expect !Rider.is_finished(stopped_on_last(299.0), [last_seg])
-expect last_seg.ending == Terminates
-expect !Rider.is_finished(rider_at(499.0, 0.0), first_segments)
+expect Rider.is_finished(stopped_on_last(300.0), World.route)
+expect !Rider.is_finished(stopped_on_last(299.0), World.route)
+expect last_seg.ending == RouteEnds
+expect !Rider.is_finished(rider_at(499.0, 0.0), World.route)
 
 one_step_on : RiderState
-one_step_on = Rider.rider_state_at_next_step(RiderState.initial, first_segments)
+one_step_on = Rider.rider_state_at_next_step(RiderState.initial, World.route)
 
 expect one_step_on.motorcycle.along > Along.start
 expect one_step_on.motorcycle.speed > Speed.at_rest
-expect one_step_on.segment_index == World.SegmentIndex.first
+expect one_step_on.segment_index == Route.SegmentIndex.first
 expect one_step_on.motorcycle.across.distance_from_middle() < Geom.road_half_width
 expect one_step_on.motorcycle.speed <= VehicleLimits.top_speed

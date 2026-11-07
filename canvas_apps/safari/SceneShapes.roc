@@ -7,6 +7,7 @@ import Along
 import Angle
 import Distance
 import Geom
+import Route
 import World
 import RoadAhead
 import SegmentPlace
@@ -88,12 +89,8 @@ origin = {
 ## The first three segments, seen from `origin`.
 first_road : RoadAhead.RoadView
 first_road = {
-	route_segments: [
-		World.route_segment(0),
-		World.route_segment(1),
-		World.route_segment(2),
-	],
-	segments_ahead: [0, 1, 2].map(World.SegmentIndex.number),
+	route: World.route,
+	segments_ahead: { first_index: Route.SegmentIndex.first, count: 3 },
 	vantage: origin,
 }
 
@@ -106,8 +103,7 @@ sighted_ahead : kind, F64 -> Pipeline.Sighted(kind)
 sighted_ahead = |kind, forward|
 	Pipeline.sighting_of(
 		{
-			along: Along.metres(forward),
-			across: Across.middle,
+			road_point: { along: Along.metres(forward), across: Across.middle },
 			lift: Distance.zero,
 			kind,
 		},

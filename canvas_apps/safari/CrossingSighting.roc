@@ -72,7 +72,10 @@ segment_bird = |view, in_view|
 				instant = BirdFlight.habit_instant_at(habit, { gap: gap })
 				Animation.placed_instant(instant)
 			}
-			crossing_in_view(view, { in_view, along: habit.perch.along, placed_at: placed_bird })
+			crossing_in_view(
+				view,
+				{ in_view, along: habit.perch.road_point.along, placed_at: placed_bird },
+			)
 		}
 		CatCrosses(_) | QuietRoad => Err(NoBird)
 	}

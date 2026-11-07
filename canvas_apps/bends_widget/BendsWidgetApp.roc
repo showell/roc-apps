@@ -8,6 +8,8 @@ import game.Along
 import game.Angle
 import game.Distance
 import game.RoadAhead
+import game.Route
+import game.Segment
 import game.SegmentPlace
 import game.Geom
 import game.GroundSighting
@@ -63,26 +65,28 @@ segment_length = Distance.metres(60.0)
 rider_before_bend : Distance
 rider_before_bend = Distance.metres(25.0)
 
-## Two segments of the route, cut to length, with `turn` between.
-two_segments : Angle.Turn -> List(World.Segment)
+## A route of two segments of the route, cut to length, with `turn` between.
+two_segments : Angle.Turn -> Route
 two_segments = |turn|
-	World.segments.take_first(2).map_with_index(
-		|segment, index| {
-			..segment,
-			length: segment_length,
-			exit_turn: if index == 0 {
-				turn
-			} else {
-				Angle.Turn.degrees(0.0)
+	Route.from_segments(
+		World.route.route_segments().take_first(2).map_with_index(
+			|segment, index| {
+				..segment,
+				length: segment_length,
+				ending: if index == 0 {
+					Bends({ turn, bend_life: Quiet })
+				} else {
+					RouteEnds
+				},
 			},
-		},
+		),
 	)
 
 ## The road as seen from the first segment, looking along it.
 road_with : Angle.Turn -> RoadAhead.RoadView
 road_with = |turn| {
-	route_segments: two_segments(turn),
-	segments_ahead: [World.SegmentIndex.number(0), World.SegmentIndex.number(1)],
+	route: two_segments(turn),
+	segments_ahead: { first_index: Route.SegmentIndex.first, count: 2 },
 	vantage: {
 		along: Along.at(segment_length.minus(rider_before_bend)),
 		across: Across.middle,
@@ -291,8 +295,8 @@ expect
 		]
 
 # The sharp bend is on the route, and nothing on the route is sharper.
-expect World.plans.any(|plan| plan.turn == sharp_bend.turn)
-expect World.plans.all(|plan| plan.turn.abs() <= sharp_bend.turn)
+expect World.bending_plans.any(|plan| plan.turn == sharp_bend.turn)
+expect World.bending_plans.all(|plan| plan.turn.abs() <= sharp_bend.turn)
 
 # The apex lies on the outer edge carried straight on, on either side.
 expect (apex_of(left_bend.turn).right.to_metres() - Geom.right_edge.to_metres()).abs() < 0.000001
