@@ -1338,6 +1338,14 @@ expect
 		and Pond.placed_ducks(left_pond_bend).map(|placed| placed.road_point.across.to_metres())
 			== [10.0, 18.0, 11.0, 6.0, 14.0, 22.0]
 
+# Mirrored to the other side of the road at a left turn, each duck faces the
+# other way.
+expect
+	Pond.placed_ducks(right_pond_bend).map(|placed| placed.kind.facing)
+		== [FacesRight, FacesLeft, FacesRight, FacesRight, FacesLeft, FacesRight]
+		and Pond.placed_ducks(left_pond_bend).map(|placed| placed.kind.facing)
+			== [FacesLeft, FacesRight, FacesLeft, FacesLeft, FacesRight, FacesLeft]
+
 # The pond's water and bank lie off the road on the outside of the bend,
 # whichever way the road turns.
 expect {

@@ -32,10 +32,21 @@ Pond :: [].{
 			|pond_duck| {
 				road_point: segment_point(pond_duck.at, bend),
 				lift: Distance.zero,
-				kind: Billboard.adult_billboard(duck, pond_duck.facing),
+				kind: Billboard.adult_billboard(duck, facing_at(pond_duck.facing, bend)),
 			},
 		)
 }
+
+## Which way a duck laid out as facing `facing` faces at `bend`. The ducks are
+## laid out for a pond on the road's left, at a right turn; at a left turn the
+## pond is mirrored to the right, and so is every duck.
+facing_at : Billboard.Facing, Geom.Bend -> Billboard.Facing
+facing_at = |facing, bend|
+	match (BendView.outer_side(bend.turn), facing) {
+		(LeftSide, _) => facing
+		(RightSide, FacesLeft) => FacesRight
+		(RightSide, FacesRight) => FacesLeft
+	}
 
 ## A point on the pond, `past_end` along the road past the segment's end and
 ## `out_from_middle` from the middle of the road, on the outside of the bend.
