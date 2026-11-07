@@ -5,7 +5,8 @@ good types are the most fundamental part of the system: a well-written type is
 clear with almost no context. The work comes in two kinds of job, each done by
 a cold agent with this file as its brief. A review agent reads a module's types
 and recommends fixes. A cleanup agent makes the fixes the orchestrator decided
-on, in a worktree of its own. The orchestrator merges, gates and decides.
+on, in a worktree of its own. The orchestrator merges, gates and decides. The orchestrator's side of the
+process is `docs/review-workflow.md`.
 
 ## Shell rules for every agent
 

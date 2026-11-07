@@ -414,6 +414,12 @@ planted cases, and let the compiler judge any rewrite.
   gate as a change of its own.
 - **For agents using Shale instead of the shell,** read Shale's
   `docs/SHALE-AGENTS.md`. That part is Steve's setup only.
+- **Code is reviewed type by type, with cold agents in parallel.** A
+  review agent walks a module's types and reports, a cleanup agent makes
+  the fixes the orchestrator decided, and the smells it keeps finding go
+  in `docs/smells.md`. The agents' brief is `docs/type-review.md`, and
+  the orchestrator's side is `docs/review-workflow.md`. Both are Steve's
+  setup: they need Shale and the essay surface.
 
 ## 8. Many ways to write the same thing: the style guide
 
