@@ -15,8 +15,8 @@ Wildlife :: [].{
 	Animal : [Elephant, Giraffe, Zebra, Rhino]
 
 	## The animal and its baby at `bend`, the bend that ends a segment.
-	bend_critters : { animal : Wildlife.Animal, bend : Geom.Bend } -> List(Geom.Placed(Billboard))
-	bend_critters = |{ animal, bend }| {
+	bend_billboards : { animal : Wildlife.Animal, bend : Geom.Bend } -> List(Geom.Placed(Billboard))
+	bend_billboards = |{ animal, bend }| {
 		species = species_of(animal)
 		bend_along = Along.at(bend.segment_length)
 		{ out_on_outside, facing } =
