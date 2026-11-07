@@ -166,8 +166,8 @@ Geom :: [].{
 	is_in_view = |forward| forward >= Geom.near_plane
 
 	## A point in the rider's view at or past the near plane, so the camera can
-	## put it on the screen. Only `ahead_point` and the near-plane cut build
-	## one.
+	## put it on the screen. Only `ahead_point`, the near-plane cut, and raising
+	## a point already in view build one.
 	AheadPoint :: Geom.RaisedPoint.{
 
 		right : Geom.AheadPoint -> Distance
@@ -204,10 +204,36 @@ Geom :: [].{
 			Err(BehindCamera)
 		}
 
-	## `point` on the rider's level, if it is at or past the near plane.
-	ahead_on_level : Geom.RiderPoint -> Try(Geom.AheadPoint, [BehindCamera])
-	ahead_on_level = |{ right, forward }|
-		Geom.ahead_point({ right, forward, height: Distance.zero })
+	## A point on the rider's level at or past the near plane, such as where an
+	## object stands. It has no height, so whatever is drawn above it says how
+	## high with `at_height`. Only `ahead_on_level` builds one.
+	LevelPoint :: Geom.RiderPoint.{
+
+		right : Geom.LevelPoint -> Distance
+		right = |Geom.LevelPoint.(point)| point.right
+
+		forward : Geom.LevelPoint -> Distance
+		forward = |Geom.LevelPoint.(point)| point.forward
+
+		to_rider : Geom.LevelPoint -> Geom.RiderPoint
+		to_rider = |Geom.LevelPoint.(point)| point
+
+		## The point raised to `height`. It is as far ahead, so still in view.
+		at_height : Geom.LevelPoint, Distance -> Geom.AheadPoint
+		at_height = |Geom.LevelPoint.(point), height|
+			Geom.AheadPoint.({ right: point.right, forward: point.forward, height })
+
+		is_eq : _
+	}
+
+	## `point`, if it is at or past the near plane.
+	ahead_on_level : Geom.RiderPoint -> Try(Geom.LevelPoint, [BehindCamera])
+	ahead_on_level = |point|
+		if Geom.is_in_view(point.forward) {
+			Ok(Geom.LevelPoint.(point))
+		} else {
+			Err(BehindCamera)
+		}
 
 	## Every one of `points`, in order, if all of them are at or past the near
 	## plane.
@@ -402,15 +428,33 @@ expect Geom.ahead_point(straight_ahead(0.39)) == Err(BehindCamera)
 expect Geom.ahead_point(straight_ahead(0.0)) == Err(BehindCamera)
 expect Geom.ahead_point(straight_ahead(-5.0)) == Err(BehindCamera)
 
-# A point on the rider's level is past the near plane as a raised one is.
+# A point on the rider's level is past the near plane as a raised one is, and
+# gives back each of its parts.
 expect {
-	on_level = Geom.ahead_on_level({ right: sample_point.right, forward: sample_point.forward })
-	on_level.map_ok(Geom.AheadPoint.to_raised) == Ok({ ..sample_point, height: Distance.zero })
+	on_ground = { right: sample_point.right, forward: sample_point.forward }
+	match Geom.ahead_on_level(on_ground) {
+		Ok(point) =>
+			[point.right(), point.forward()] == [on_ground.right, on_ground.forward]
+				and point.to_rider() == on_ground
+		Err(BehindCamera) => False
+	}
 }
+expect Geom.ahead_on_level({ right: Distance.zero, forward: Distance.metres(0.4) }).is_ok()
 expect {
 	short_of_plane = { right: Distance.zero, forward: Distance.metres(0.39) }
 	Geom.ahead_on_level(short_of_plane) == Err(BehindCamera)
 }
+
+# Raising a point on the rider's level keeps where it is and gives it the
+# height asked for, above or below that level.
+expect
+	match Geom.ahead_on_level({ right: sample_point.right, forward: sample_point.forward }) {
+		Ok(point) =>
+			[Distance.metres(3.0), Distance.zero, Distance.metres(-1.0)].all(
+				|height| point.at_height(height).to_raised() == { ..sample_point, height },
+			)
+		Err(BehindCamera) => False
+	}
 
 # A list is ahead when every point is, one on the near plane included, and an
 # empty list is ahead.

@@ -12,7 +12,7 @@ Picture :: List(Shapes.Shape).{
 	## focal length, and `context`, which is whatever else that kind needs. A
 	## kind that needs nothing more takes `{}`.
 	Setting(context) : {
-		foot : Geom.AheadPoint,
+		foot : Geom.LevelPoint,
 		cam_focal : Pixels,
 		context : context,
 	}

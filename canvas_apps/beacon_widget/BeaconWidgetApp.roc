@@ -95,7 +95,7 @@ tower_shapes = |right, brightness|
 	}
 
 ## A tower whose foot is at `center`, its beacon at `brightness`.
-tower_shapes_at : Geom.AheadPoint, Fraction -> List(Shapes.Shape)
+tower_shapes_at : Geom.LevelPoint, Fraction -> List(Shapes.Shape)
 tower_shapes_at = |center, brightness| {
 	right = center.right()
 	corner_point = |corner| {
