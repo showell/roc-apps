@@ -1,7 +1,8 @@
-## The Roc bird is roc-lang.org's logo, sitting on treetops beside the road
-## and flying off as the rider comes. BirdFlight says where a bird is and how
-## it looks, BirdSighting finds the birds in view, and BirdStills holds their
-## drawings. This module draws one.
+## A Roc bird at one moment of its flight: how it looks, and how high its feet
+## are. The Roc bird is roc-lang.org's logo, sitting on treetops beside the road
+## and flying off as the rider comes. BirdFlight says where a bird is and how it
+## looks, CrossingSighting finds the birds in view, and BirdStills holds their
+## drawings.
 import Pixels
 import BirdFlight
 import BirdStills
@@ -12,44 +13,40 @@ import Distance
 import lib.Brush
 import lib.Shapes
 
-BirdShapes :: [].{
+PosedBird := { pose : BirdFlight.BirdPose, lift : Distance }.{
 
 	## How tall a bird `forward` metres ahead is on screen.
 	height_px : { forward : Distance, cam_focal : Pixels } -> Pixels
 	height_px = |{ forward, cam_focal }| cam_focal.times(BirdFlight.bird_height.ratio_to(forward))
 
-	## A bird at one moment of its flight: how it looks, and how high its feet are.
-	PosedBird := { pose : BirdFlight.BirdPose, lift : Distance }.{
+	scenery_height : PosedBird -> Distance
+	scenery_height = |_bird| BirdFlight.bird_height
 
-		scenery_height : BirdShapes.PosedBird -> Distance
-		scenery_height = |_bird| BirdFlight.bird_height
-
-		## A bird on screen, its feet where it is. Its still is unflipped: a bird
-		## from a left-hand tree crosses the road toward +x, the way its beak points.
-		scenery_picture : BirdShapes.PosedBird, Picture.Setting({}) -> Picture
-		scenery_picture = |bird, { right, forward, cam_focal, .. }| {
-			feet = Camera.project({ right, forward, height: bird.lift }, cam_focal)
-			Picture.from_shapes(
-				StillShapes.still_shapes(
-					{
-						feet,
-						flip: AsDrawn,
-						height_px: BirdShapes.height_px({ forward, cam_focal }),
-					},
-					BirdStills.pose_polygons(bird.pose),
-				),
-			)
-		}
+	## A bird on screen, its feet where it is. Its still is unflipped: a bird
+	## from a left-hand tree crosses the road toward +x, the way its beak points.
+	scenery_picture : PosedBird, Picture.Setting({}) -> Picture
+	scenery_picture = |bird, { right, forward, cam_focal, .. }| {
+		feet = Camera.project({ right, forward, height: bird.lift }, cam_focal)
+		Picture.from_shapes(
+			StillShapes.still_shapes(
+				{
+					feet,
+					flip: AsDrawn,
+					height_px: PosedBird.height_px({ forward, cam_focal }),
+				},
+				BirdStills.pose_polygons(bird.pose),
+			),
+		)
 	}
 }
 
 # A perched bird with its feet at the camera's height, so that straight ahead
 # they land on the horizon in the middle of the screen.
-level_bird : BirdShapes.PosedBird
+level_bird : PosedBird
 level_bird = { lift: Camera.eye_height, pose: Perched }
 
 ## `bird` 110 m ahead and `right` of the camera, through a 500 px focal length.
-bird_shapes_at : BirdShapes.PosedBird, Distance -> List(Shapes.Shape)
+bird_shapes_at : PosedBird, Distance -> List(Shapes.Shape)
 bird_shapes_at = |bird, right|
 	bird.scenery_picture({
 		right,
@@ -60,7 +57,7 @@ bird_shapes_at = |bird, right|
 
 ## How many pixels tall a bird `forward` ahead is, through `cam_focal`.
 height_on_screen : Distance, Pixels -> F64
-height_on_screen = |forward, cam_focal| BirdShapes.height_px({ forward, cam_focal }).to_f64()
+height_on_screen = |forward, cam_focal| PosedBird.height_px({ forward, cam_focal }).to_f64()
 
 expect
 	[

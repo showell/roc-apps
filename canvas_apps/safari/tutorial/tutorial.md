@@ -120,7 +120,7 @@ digraph system {
 New in this chapter:
 
 - Roc: imports that can't form a cycle
-- Modules: `SafariApp`, `Scene`, `SceneShapes`, `CatSighting`
+- Modules: `SafariApp`, `Scene`, `SceneShapes`, `CrossingSighting`
 
 There are two halves. The ride is `Rider`, `Truck` and `World`. `World` puts the route together from its scenery and critters. Nothing in the ride knows anything about drawing.
 
@@ -155,7 +155,7 @@ Safari Ride runs in a browser, and that takes a thin layer of JavaScript. The Ro
 
 ### What's a sighting?
 
-At step 1,570 of the ride, a cat is frozen in the lane. This is what `CatSighting` answers about it on that frame:
+At step 1,570 of the ride, a cat is frozen in the lane. This is what `CrossingSighting` answers about it on that frame:
 
 | Field | Value |
 |---|---|
@@ -166,9 +166,9 @@ At step 1,570 of the ride, a cat is frozen in the lane. This is what `CatSightin
 
 That's a sighting: where the rider sees something, and how it should look.
 
-Most things in the view come in pairs, and the names say which half is which: `CatSighting` and `CatShapes`, `TreeSighting` and `TreeShapes`, `TowerSighting` and `Tower`, `TruckSighting` and `TruckAhead`.
+Most things in the view come in pairs, and the names say which half is which: `CrossingSighting` and `PosedCat`, `TreeSighting` and `TreeShapes`, `TowerSighting` and `Tower`, `TruckSighting` and `TruckAhead`.
 
-A sighting answers one question each frame: which of these can the rider see right now, and how should each one look? `CatSighting` goes through the stretches of road ahead, which Safari Ride calls segments, asks `Cat` where it is, works out where that lands in the rider's view, and drops any cat behind the camera or too small to matter. What it hands back is a plain record with no drawing in it:
+A sighting answers one question each frame: which of these can the rider see right now, and how should each one look? `CrossingSighting` goes through the stretches of road ahead, which Safari Ride calls segments, asks `Cat` where it is, works out where that lands in the rider's view, and drops any cat behind the camera or too small to matter. What it hands back is a plain record with no drawing in it:
 
 {{code Pipeline.Sighted}}
 
@@ -1860,9 +1860,9 @@ The widget isn't playing a video. Every gap it shows is a call to `Cat.instant_a
 
 A crossing and an approach go in, and the cat at that instant comes out. The same crossing at the same approach gives the same cat, a thousand frames apart.
 
-`CatSighting.cat_in_view` calls it, adding the distance to the segment to get the gap:
+`CrossingSighting.cat_in_view` calls it, adding the distance to the segment to get the gap:
 
-{{code CatSighting.cat_in_view from "gap =" to "instant ="}}
+{{code CrossingSighting.cat_in_view from "gap =" to "instant ="}}
 
 What `Cat` gets from `Animation` comes down to one type, `Stage`:
 
@@ -2020,15 +2020,15 @@ digraph screen {
 }
 ```
 
-`CatSighting` and `CatShapes` never import each other. `SceneShapes` is what carries a sighting's answer to the drawing.
+`CrossingSighting` and `PosedCat` never import each other. `SceneShapes` is what carries a sighting's answer to the drawing.
 
 `cat_in_view` places the cat and decides whether it's big enough to draw. An empty list or a list of one is how it says "maybe".
 
-{{code CatSighting.cat_in_view}}
+{{code CrossingSighting.cat_in_view}}
 
 `segment_cat` calls it for a segment with a cat, and `cats_in_view` flattens the answers with `join_map`, so a "no" simply disappears:
 
-{{code CatSighting.cats_in_view}}
+{{code CrossingSighting.cats_in_view}}
 
 Looking back over the chapter, notice what isn't in it: a cat in `RideInstant`, an update loop, or a flag saying the cat has already crossed.
 
@@ -2049,7 +2049,7 @@ Play it, and the gap falls from 75 metres to 0. The bird sits on the tip of the 
 New in this chapter:
 
 - Roc: record update, tags inside tags, opening a `Try` by hand, `match` as an expression
-- Modules: `BirdFlight`, `BirdSighting`, `BirdShapes`
+- Modules: `BirdFlight`, `CrossingSighting`, `PosedBird`
 
 The modules around `BirdFlight`
 ```dot
@@ -2070,7 +2070,7 @@ digraph bird {
 }
 ```
 
-The family has the cat's shape. `BirdFlight` says what a bird does and imports nothing that draws it. `BirdSighting` finds it, `BirdShapes` draws it, and `BirdStills` holds its pictures. `Animation` is underneath, and most of what the bird does is ask `Animation` for something.
+The family has the cat's shape. `BirdFlight` says what a bird does and imports nothing that draws it. `CrossingSighting` finds it, `PosedBird` draws it, and `BirdStills` holds its pictures. `Animation` is underneath, and most of what the bird does is ask `Animation` for something.
 
 `BirdFlight` does one addition, a tree's place plus `shortest_hop`, the shortest flight a bird will make. The rest is constants, tags and one timeline.
 
@@ -2154,7 +2154,7 @@ And that's called from a `match` in the middle of a record, which is a reminder 
 
 Each frame, a sighting reads the route back. The crossing is matched in full, so a third kind of crossing would stop here until someone says what a bird sighting should do about it:
 
-{{code BirdSighting.segment_bird}}
+{{code CrossingSighting.segment_bird}}
 
 We didn't need any new machinery for the bird. Above their `expect`s, the four bird modules come to about 450 lines, a quarter of them coordinates for the stills. `Animation` has nothing in it about birds.
 
@@ -2405,7 +2405,7 @@ From there to the screen is a pinhole camera, which is similar triangles. Dividi
 
 `PosedBird.scenery_picture` calls it with a record built on the spot for the bird's feet:
 
-{{code BirdShapes.PosedBird from "feet = Camera.project(" to "feet = Camera.project("}}
+{{code PosedBird.scenery_picture from "feet = Camera.project(" to "feet = Camera.project("}}
 
 The focal length comes from a lens. `resting_focal` is a value computed from other values, with no function in sight, and `field_of_view` is a `Turn`, so taking half of it needs no comment about radians. [check: whether a value like this inside a `.{ }` block is evaluated at compile time, as top-level values are.]
 
@@ -2435,7 +2435,7 @@ The rotation itself is plain, with two cases, because a right-hand bend pivots o
 
 {{code Geom.point_in_segment_before}}
 
-This is what lets `CatSighting`, `BirdSighting`, `TowerSighting`, `TreeSighting` and the rest not care where a segment is. They name a position on the road ahead and a point on that segment, and they get back a `RiderPoint`. That's why `RoadAhead` has sixteen importers.
+This is what lets `CrossingSighting`, `TowerSighting`, `TreeSighting` and the rest not care where a segment is. They name a position on the road ahead and a point on that segment, and they get back a `RiderPoint`. That's why `RoadAhead` has sixteen importers.
 
 The ground also curves away. That's one formula, the small-angle drop of a sphere, with a record destructured in the parameter list and `right` and `forward` taken out to metres before they're squared. There are two radii in the program, and neither is the earth's. `Geom.ground_curve_radius`, 100 km, is the surface the road and the truck stand on, and it puts the horizon 490 metres out. `Tower.sink_radius`, 20 km, only sets how soon a far tower goes: a tower is gone at 1.8 km, where the ground's curve would leave it in view to 4 km.
 
@@ -2729,7 +2729,7 @@ The tour named nine patterns in passing. They're patterns in the loose sense: sh
 | Name | What it is | Where to see it |
 |---|---|---|
 | Worked out, not stored | Keep the few things that must persist, and derive the rest each frame | `RideInstant`, `Cat`, `Sky` |
-| A sighting decides, drawing paints | A pure function answers with plain data, and something else draws it | `CatSighting`, `TowerSighting` |
+| A sighting decides, drawing paints | A pure function answers with plain data, and something else draws it | `CrossingSighting`, `TowerSighting` |
 | Places and distances | One opaque type for where, a second for how far apart, and only the sums that make sense | `Clock` and `Steps`, `Bearing` and `Turn`, `Along` and `Distance`, `Speed` and `Acceleration` |
 | Rule and timeline | One function says how far along, and one piece of data says what that looks like | `stage_over_gap` and `flight_timeline` |
 | The step function | A value goes in, and the next value comes out | `Rider.rider_state_at_next_step`, `Truck.truck_state_at_next_step`, `Tour.step_forward` |

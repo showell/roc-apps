@@ -12,12 +12,10 @@ import game.Along
 import game.Angle
 import game.Billboard
 import game.BirdFlight
-import game.BirdSighting
 import game.Cat
-import game.CatShapes
-import game.CatSighting
 import game.Clock
 import game.Conifer
+import game.CrossingSighting
 import game.BillboardSighting
 import game.DepthSort
 import game.Distance
@@ -27,6 +25,8 @@ import game.Geom
 import game.Ground
 import game.GroundSighting
 import game.Pipeline
+import game.PosedBird
+import game.PosedCat
 import game.RailSighting
 import game.Rendered
 import game.Scene
@@ -34,7 +34,6 @@ import game.SceneShapes
 import game.RideInstant
 import game.Rider
 import game.RiderState
-import game.BirdShapes
 import game.Scenery
 import game.Speed
 import game.TowerSighting
@@ -107,7 +106,7 @@ flat_color_of = |shape|
 			crash "CrossModuleExpects.flat_color_of: this polygon is not flat"
 	}
 
-# BirdSighting, on a straight segment with its fifth left tree 100 m along: a bird
+# CrossingSighting's birds, on a straight segment with its fifth left tree 100 m along: a bird
 # sits, flies and lands as the rider comes, stays where no tree is far enough to
 # fly to, and is left out with no tree for it, behind the near plane or too small
 # to draw.
@@ -147,7 +146,7 @@ birds_on : List(Trees.RoadsideTree),
 {
 	rider_along : F64,
 	cam_focal : Pixels,
-} -> List(Pipeline.Sighted(BirdShapes.PosedBird))
+} -> List(Pipeline.Sighted(PosedBird))
 birds_on = |trees, seen_from| birds_on_segment(segment_of(trees), seen_from)
 
 ## The birds on `segment_index`, for a rider `rider_along` metres into it.
@@ -155,9 +154,9 @@ birds_on_segment : World.Segment,
 {
 	rider_along : F64,
 	cam_focal : Pixels,
-} -> List(Pipeline.Sighted(BirdShapes.PosedBird))
+} -> List(Pipeline.Sighted(PosedBird))
 birds_on_segment = |segment, { rider_along, cam_focal }|
-	BirdSighting.birds_in_view({
+	CrossingSighting.birds_in_view({
 		road: {
 			route_segments: [segment],
 			segments_ahead: [World.SegmentIndex.first],
@@ -168,13 +167,13 @@ birds_on_segment = |segment, { rider_along, cam_focal }|
 
 ## The one bird that a rider `rider_along` metres in sees on the segment with
 ## a far tree.
-bird_at : F64 -> Pipeline.Sighted(BirdShapes.PosedBird)
+bird_at : F64 -> Pipeline.Sighted(PosedBird)
 bird_at = |rider_along|
 	birds_on(left_trees.append(far_tree), { rider_along, cam_focal: Pixels.of(500.0) }).first()
 		?? crash "CrossModuleExpects: this rider sees a bird"
 
 ## How far off a bird is, across the road and up.
-place_numbers : Pipeline.Sighted(BirdShapes.PosedBird) -> List(F64)
+place_numbers : Pipeline.Sighted(PosedBird) -> List(F64)
 place_numbers = |bird| [
 	bird.right.to_metres(),
 	bird.forward.to_metres(),
@@ -229,8 +228,8 @@ expect
 		== 0
 
 ## Two segments on the road ahead, the rider at the start of the first.
-two_segments : List(Pipeline.Sighted(BirdShapes.PosedBird))
-two_segments = BirdSighting.birds_in_view({
+two_segments : List(Pipeline.Sighted(PosedBird))
+two_segments = CrossingSighting.birds_in_view({
 	road: {
 		route_segments: [segment_of(left_trees), segment_of(left_trees)],
 		segments_ahead: [0, 1].map(World.SegmentIndex.number),
@@ -249,7 +248,7 @@ expect
 		_ => crash "CrossModuleExpects: each of two segments has a bird in view"
 	}
 
-# CatSighting: which cats are in view as the rider comes on them.
+# CrossingSighting's cats: which cats are in view as the rider comes on them.
 ## The second segment, with a cat crossing it.
 cat_segment : World.Segment
 cat_segment = { ..World.route_segment(1), crossing: World.route_segment(3).crossing }
@@ -272,15 +271,15 @@ metre_a_step : Speed
 metre_a_step = Speed.metres_a_step(1.0)
 
 ## The cats seen from the origin on a road of only `segments_ahead`.
-cats_on_road : List(World.SegmentIndex) -> List(Pipeline.Sighted(CatShapes.PosedCat))
-cats_on_road = |segments_ahead| CatSighting.cats_in_view(
+cats_on_road : List(World.SegmentIndex) -> List(Pipeline.Sighted(PosedCat))
+cats_on_road = |segments_ahead| CrossingSighting.cats_in_view(
 	{ ..cats_from_origin, road: { ..cats_from_origin.road, segments_ahead } },
 	metre_a_step,
 )
 
 ## The cat on the segment at `number` on the road ahead, if it is in view.
-cat_at : U32 -> Try(Pipeline.Sighted(CatShapes.PosedCat), [NoCat, BehindCamera, TooSmall])
-cat_at = |number| CatSighting.segment_cat(
+cat_at : U32 -> Try(Pipeline.Sighted(PosedCat), [NoCat, BehindCamera, TooSmall])
+cat_at = |number| CrossingSighting.segment_cat(
 	cats_from_origin,
 	{ position: RoadAhead.Position.number(number), speed: metre_a_step },
 )
@@ -316,8 +315,8 @@ expect
 	)
 
 ## The cats in view for a rider `along` metres into the first segment.
-ride_sightings : F64 -> List(Pipeline.Sighted(CatShapes.PosedCat))
-ride_sightings = |along| CatSighting.cats_in_view(
+ride_sightings : F64 -> List(Pipeline.Sighted(PosedCat))
+ride_sightings = |along| CrossingSighting.cats_in_view(
 	{
 		..cats_from_origin,
 		road: { ..cats_from_origin.road, vantage: { ..origin, along: Along.metres(along) } },
@@ -325,11 +324,11 @@ ride_sightings = |along| CatSighting.cats_in_view(
 	metre_a_step,
 )
 
-seen : List(Pipeline.Sighted(CatShapes.PosedCat))
+seen : List(Pipeline.Sighted(PosedCat))
 seen = ride_sightings(300.0)
 
 ## The first cat in view for a rider `along` metres in.
-first_cat : F64 -> Pipeline.Sighted(CatShapes.PosedCat)
+first_cat : F64 -> Pipeline.Sighted(PosedCat)
 first_cat = |along|
 	ride_sightings(along).first() ?? crash "CrossModuleExpects: the second segment's cat is in view"
 

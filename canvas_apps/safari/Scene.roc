@@ -2,23 +2,22 @@
 ## critters, cats, guard rails, the truck and the birds in view, each kind
 ## found by its own sighting.
 import Billboard
-import BirdSighting
-import CatShapes
-import CatSighting
 import Clock
+import CrossingSighting
 import Conifer
 import BillboardSighting
 import Distance
 import RoadAhead
 import GuardRail
 import Pipeline
+import PosedBird
+import PosedCat
 import RailSighting
 import Tower
 import TowerSighting
 import TreeSighting
 import Truck
 import TruckSighting
-import BirdShapes
 import Speed
 import World
 
@@ -27,10 +26,10 @@ Scene := {
 	trees : List(Pipeline.Sighted(Conifer)),
 	towers : List(Pipeline.Sighted(Tower)),
 	critters : List(Pipeline.Sighted(Billboard)),
-	cats : List(Pipeline.Sighted(CatShapes.PosedCat)),
+	cats : List(Pipeline.Sighted(PosedCat)),
 	rails : List(GuardRail.RailQuad),
 	truck : TruckSighting.TruckFate,
-	birds : List(Pipeline.Sighted(BirdShapes.PosedBird)),
+	birds : List(Pipeline.Sighted(PosedBird)),
 }.{
 
 	## What the sightings read beyond the road: the rider's speed, where the
@@ -50,7 +49,7 @@ Scene := {
 			TowerSighting.towers_in_view(road, clock)
 				.take_first(TowerSighting.max_visible_towers.to_u64_wrap())
 		critters = BillboardSighting.critters_to_draw(BillboardSighting.critter_fates(road))
-		cats = CatSighting.cats_in_view(view, speed)
+		cats = CrossingSighting.cats_in_view(view, speed)
 		rails = RailSighting.rails_in_view(road)
 		rider_distance = World.distance_along_route(
 			road.route_segments,
@@ -60,7 +59,7 @@ Scene := {
 			road,
 			{ lead: truck.route_position.minus(rider_distance), lights: truck.lights },
 		)
-		birds = BirdSighting.birds_in_view(view)
+		birds = CrossingSighting.birds_in_view(view)
 		{
 			trees,
 			towers,
