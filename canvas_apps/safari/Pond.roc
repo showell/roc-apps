@@ -180,6 +180,40 @@ is_on_water = |pond_duck| {
 
 expect ducks.all(is_on_water)
 
+## Whether `point` lies inside the water's outline: a line from it, out along
+## the road, crosses the outline an odd number of times.
+is_inside_water : PondPoint -> Bool
+is_inside_water = |point| {
+	x = point.past_end.to_metres()
+	y = point.out_from_middle.to_metres()
+	corners = water_points.map(
+		|corner| { x: corner.past_end.to_metres(), y: corner.out_from_middle.to_metres() },
+	)
+	next_corners = corners.drop_first(1).concat(corners.take_first(1))
+	edges = corners.map2(next_corners, |from, to| { from, to })
+	is_crossed = |{ from, to }| {
+		is_spanned = (from.y > y) != (to.y > y)
+		crossing_x = from.x + (y - from.y) / (to.y - from.y) * (to.x - from.x)
+		is_spanned and x < crossing_x
+	}
+	edges.keep_if(is_crossed).len() % 2 == 1
+}
+
+# The bank's inner edge lies under the water, where the water hides it. Moved
+# back as far as the near shore, it would show.
+expect bank_inner_points.all(is_inside_water)
+
+# A point just inside each edge of the water is in it, and one just past is not.
+expect
+	[
+		({ past_end: Distance.metres(3.1), out_from_middle: Distance.metres(10.0) }, True),
+		({ past_end: Distance.metres(2.9), out_from_middle: Distance.metres(10.0) }, False),
+		({ past_end: Distance.metres(31.9), out_from_middle: Distance.metres(17.0) }, True),
+		({ past_end: Distance.metres(32.1), out_from_middle: Distance.metres(17.0) }, False),
+		({ past_end: Distance.metres(10.0), out_from_middle: Distance.metres(3.9) }, True),
+		({ past_end: Distance.metres(10.0), out_from_middle: Distance.metres(3.3) }, False),
+	].all(|(at, inside)| is_inside_water(at) == inside)
+
 # A duck just past each edge of the water is off it.
 expect
 	[
