@@ -189,10 +189,11 @@ pond_patches = |road, { segment, place }| {
 			RouteEnds => False
 		}
 	if is_at_pond {
+		bend = segment.bend_out_of()
 		on_map = |outline|
 			outline.map(
 				|point| {
-					on_segment = Pond.segment_point(point, segment.length)
+					on_segment = Pond.segment_point(point, bend)
 					RoadAhead.rider_point_at(
 						road,
 						{ place, along: on_segment.along, across: on_segment.across },

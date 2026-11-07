@@ -32,6 +32,7 @@ import game.Mountains
 import game.Ground
 import game.GroundSighting
 import game.Pipeline
+import game.Pond
 import game.PosedBird
 import game.PosedCat
 import game.RailSighting
@@ -1130,3 +1131,32 @@ expect lights_at({ clock: Clock.start, pace: NotSlowing }) == { headlights: Off,
 expect lights_at({ clock: Clock.start, pace: Slowing }) == { headlights: Off, brake_lights: On }
 expect lights_at({ clock: after_sunset, pace: NotSlowing }) == { headlights: On, brake_lights: Off }
 expect lights_at({ clock: after_sunset, pace: Slowing }) == { headlights: On, brake_lights: On }
+
+## A pond's bend at the end of a segment 100 m long, turning 15° right.
+right_pond_bend : Geom.Bend
+right_pond_bend = { segment_length: Distance.metres(100.0), turn: Angle.Turn.degrees(15.0) }
+
+## A pond's bend at the end of a segment 100 m long, turning 15° left.
+left_pond_bend : Geom.Bend
+left_pond_bend = { segment_length: Distance.metres(100.0), turn: Angle.Turn.degrees(-15.0) }
+
+expect
+	Pond.placed_ducks(right_pond_bend).map(|placed| placed.road_point.along.to_metres())
+		== [111.0, 117.0, 121.0, 106.0, 107.0, 108.0]
+expect Pond.placed_ducks(right_pond_bend).all(|placed| placed.kind.height.to_metres() == 0.9)
+
+# A duck floats as far out from the road at a left turn as at a right one, on
+# the other side.
+expect
+	Pond.placed_ducks(right_pond_bend).map(|placed| placed.road_point.across.to_metres())
+		== [-10.0, -18.0, -11.0, -6.0, -14.0, -22.0]
+		and Pond.placed_ducks(left_pond_bend).map(|placed| placed.road_point.across.to_metres())
+			== [10.0, 18.0, 11.0, 6.0, 14.0, 22.0]
+
+# The water lies off the road on the outside of the bend, whichever way the
+# road turns.
+expect {
+	water_at = |bend| Pond.water_points.map(|point| Pond.segment_point(point, bend).across)
+	water_at(right_pond_bend).all(|across| across < Geom.left_edge)
+		and water_at(left_pond_bend).all(|across| across > Geom.right_edge)
+}
