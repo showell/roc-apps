@@ -64,6 +64,7 @@ import game.TreeSighting
 import game.TruckSighting
 import game.Trees
 import game.VehicleLimits
+import game.Wildlife
 import game.World
 import lib.Brush
 import lib.RgbColor
@@ -362,6 +363,11 @@ segment_of = |trees| {
 	},
 }
 
+## The road ahead of a rider on the first of `segments`, a route of their own.
+road_of : List(Segment) -> RoadAhead.RoadView
+road_of = |segments|
+	RoadAhead.RoadView.ahead_of(Route.from_segments(segments), Route.SegmentIndex.first)
+
 ## `segment`, bending straight on into another.
 going_straight_on : Segment -> Segment
 going_straight_on = |segment| {
@@ -524,21 +530,32 @@ expect past_bend_trees(-80.0).len() == 0
 # through the segments in view in turn.
 ## Where each tree in view stands for a rider 10 m into `segments`, seen through
 ## `cam_focal`: right of the camera, then ahead of it.
-tree_feet : List(Segment), Pixels -> List((F64, F64))
-tree_feet = |segments, cam_focal|
+tree_places : List(Segment), Pixels -> List((F64, F64))
+tree_places = |segments, cam_focal|
 	TreeSighting.trees_in_view(
-		RoadAhead.RoadView.ahead_of(Route.from_segments(segments), Route.SegmentIndex.first),
+		road_of(segments),
 		{ vantage: { ..origin, along: Along.metres(10.0) }, cam_focal },
 	).map(|tree| (tree.spot.foot().right().to_metres(), tree.spot.foot().forward().to_metres()))
 
 ## A tree behind the rider, then a far one, then a near pair.
 planted_out_of_order : Segment
-planted_out_of_order = segment_of([tree_at(5.0, -3.5), tree_at(46.0, 3.5), tree_at(16.0, -3.5), tree_at(16.0, 3.5)])
+planted_out_of_order = segment_of([
+	tree_at(5.0, -3.5),
+	tree_at(46.0, 3.5),
+	tree_at(16.0, -3.5),
+	tree_at(16.0, 3.5),
+])
 
-expect tree_feet([planted_out_of_order], Pixels.of(500.0)) == [(3.5, 36.0), (-3.5, 6.0), (3.5, 6.0)]
-expect tree_feet([planted_out_of_order], Pixels.of(1.0)) == []
 expect
-	tree_feet(
+	tree_places([planted_out_of_order], Pixels.of(500.0))
+		== [
+			(3.5, 36.0),
+			(-3.5, 6.0),
+			(3.5, 6.0),
+		]
+expect tree_places([planted_out_of_order], Pixels.of(1.0)) == []
+expect
+	tree_places(
 		[going_straight_on(segment_of([tree_at(46.0, 3.5)])), segment_of([tree_at(16.0, -3.5)])],
 		Pixels.of(500.0),
 	)
@@ -717,11 +734,7 @@ is_cow_seen_from = |forward| {
 		across: Across.metres(lone_cow.across.to_metres() - 2.5),
 		yaw: Angle.straight_ahead,
 	}
-	sighted = BillboardSighting.billboards_in_view(
-		RoadAhead.RoadView.ahead_of(Route.from_segments([one_cow_segment]), Route.SegmentIndex.first),
-		{ vantage: rider },
-	)
-	sighted.len() == 1
+	BillboardSighting.billboards_in_view(road_of([one_cow_segment]), { vantage: rider }).len() == 1
 }
 
 # The near plane is 0.4 m. The rider's place is worked out from the cow's, so
@@ -747,7 +760,11 @@ expect
 elephant_shape_count : { forward : F64, height : F64 } -> U64
 elephant_shape_count = |{ forward, height }| {
 	billboard : Billboard
-	billboard = { emoji: EmojiStills.elephant, height: Distance.metres(height), facing: FacesLeft }
+	billboard = {
+		emoji: EmojiStills.elephant,
+		height: Distance.metres(height),
+		facing: FacesLeft,
+	}
 	foot =
 		Geom.ahead_on_level({ right: Distance.zero, forward: Distance.metres(forward) })
 			?? crash "CrossModuleExpects: a test's billboard is past the near plane"
@@ -768,14 +785,61 @@ expect
 		({ forward: 2000.0, height: 2.0 }, 0),
 	].all(|(at, want)| elephant_shape_count(at) == want)
 
+# Wildlife: an animal and its baby at each of four bends, the first and third
+# turning right and the second and fourth left.
+four_critters : List(Geom.Placed(Billboard))
+four_critters = [
+	Wildlife.bend_critters({
+		animal: Elephant,
+		bend: { segment_length: Distance.metres(100.0), turn: Angle.Turn.degrees(50.0) },
+	}),
+	Wildlife.bend_critters({
+		animal: Giraffe,
+		bend: { segment_length: Distance.metres(50.0), turn: Angle.Turn.degrees(-70.0) },
+	}),
+	Wildlife.bend_critters({
+		animal: Zebra,
+		bend: { segment_length: Distance.metres(10.0), turn: Angle.Turn.degrees(50.0) },
+	}),
+	Wildlife.bend_critters({
+		animal: Rhino,
+		bend: { segment_length: Distance.metres(0.0), turn: Angle.Turn.degrees(-70.0) },
+	}),
+].join()
+
+expect
+	four_critters.map(|critter| critter.road_point.across.to_metres())
+		== [-4.9, 0.0, 5.75, 0.0, -4.3, 0.0, 4.6, 0.0]
+
+expect
+	four_critters.map(|critter| critter.road_point.along.to_metres())
+		== [100.0, 114.0, 50.0, 64.0, 10.0, 24.0, 0.0, 14.0]
+
+expect
+	four_critters.map(|critter| critter.kind.height.to_metres())
+		== [2.8, 1.4, 4.5, 2.25, 1.6, 0.8, 2.2, 1.1]
+
+expect
+	four_critters.map(|critter| critter.kind.facing)
+		== [
+			FacesRight,
+			FacesRight,
+			FacesLeft,
+			FacesLeft,
+			FacesRight,
+			FacesRight,
+			FacesLeft,
+			FacesLeft,
+		]
+
 # Tower: a tower that isn't turned stands on a square 12 m across, its corners
 # 6 m to either side of its middle and 6 m before and past it. Each leg rises
 # from its corner, from as high as the earth's curve hides it: 0.25 m for a
 # tower 100 m straight ahead, 1/320 of the tower's 80 m. The legs taper, so
 # each foot is drawn in toward the middle by 1/320 of 6 m.
-tower_shapes_100_ahead : List(Shapes.Shape)
-tower_shapes_100_ahead = {
-	tower_road = RoadAhead.RoadView.ahead_of(Route.from_segments([segment_of([])]), Route.SegmentIndex.first)
+shapes_of_tower_100_ahead : List(Shapes.Shape)
+shapes_of_tower_100_ahead = {
+	tower_road = road_of([segment_of([])])
 	plain_tower : Tower
 	plain_tower = { yaw: Angle.straight_ahead, beacon_brightness: Fraction.zero }
 	sighted =
@@ -785,7 +849,11 @@ tower_shapes_100_ahead = {
 				lift: Distance.zero,
 				kind: plain_tower,
 			},
-			{ road: tower_road, vantage: origin, place: Ahead(SegmentPlace.Position.first) },
+			{
+				road: tower_road,
+				vantage: origin,
+				place: Ahead(SegmentPlace.Position.first),
+			},
 		)
 			?? crash "CrossModuleExpects: a tower 100 m ahead is past the near plane"
 	sighted.kind.scenery_picture({
@@ -800,7 +868,7 @@ tower_shapes_100_ahead = {
 leg_foot_x : U64 -> F64
 leg_foot_x = |index| {
 	coordinates = coordinates_of(
-		tower_shapes_100_ahead.get(index) ?? crash "CrossModuleExpects: a tower has four legs",
+		shapes_of_tower_100_ahead.get(index) ?? crash "CrossModuleExpects: a tower has four legs",
 	)
 	match (coordinates.get(0), coordinates.get(6)) {
 		(Ok(near_side), Ok(far_side)) => (near_side + far_side) / 2.0 - Screen.center_x.to_f64()
@@ -854,7 +922,17 @@ expect {
 	towers = towers_on_short_then_long(0, Clock.start)
 	thirty = Angle.Turn.degrees(30.0).to_radians()
 	got = towers.map(tower_numbers).join()
-	want = [360.0, 20.0, thirty, 1360.0, 20.0, thirty, 600.0, -100.0, 0.0]
+	want = [
+		360.0,
+		20.0,
+		thirty,
+		1360.0,
+		20.0,
+		thirty,
+		600.0,
+		-100.0,
+		0.0,
+	]
 	towers.map(|tower| tower.spot.place())
 		== [
 			Ahead(SegmentPlace.Position.first),
@@ -862,7 +940,7 @@ expect {
 			Ahead(SegmentPlace.Position.number(1)),
 		]
 		and got.len() == want.len()
-		and got.map2(want, |one, wanted| (one - wanted).abs() <= 0.000000001).all(|is_close| is_close)
+		and got.map2(want, |one, wanted| (one - wanted).abs() <= 0.000000001).all(|is_near| is_near)
 }
 
 # The end tower's beacon blinks on its segment's number, and the mid tower's
@@ -870,8 +948,12 @@ expect {
 expect {
 	got = towers_on_short_then_long(0, Clock.at_step(30)).map(|tower| tower.kind.beacon_brightness)
 	clock = Clock.at_step(30)
-	got == [Beacon.(0).brightness_at(clock), Beacon.(1).brightness_at(clock), Beacon.(1).opposite().brightness_at(clock)]
-		and got.map(|brightness| brightness.to_f64()).sum() > 0.0
+	want = [
+		Beacon.(0).brightness_at(clock),
+		Beacon.(1).brightness_at(clock),
+		Beacon.(1).opposite().brightness_at(clock),
+	]
+	got == want and got.map(|brightness| brightness.to_f64()).sum() > 0.0
 }
 
 # The segment just behind shows its end tower, which stands past the bend, and
@@ -881,7 +963,7 @@ expect
 		== [Ahead(SegmentPlace.Position.first), Ahead(SegmentPlace.Position.first), JustBehind]
 expect
 	TowerSighting.towers_in_view(
-		RoadAhead.RoadView.ahead_of(Route.from_segments([segment_of([])]), Route.SegmentIndex.first),
+		road_of([segment_of([])]),
 		{ camera: { vantage: { ..origin, along: Along.metres(5000.0) } }, clock: Clock.start },
 	).len()
 		== 0

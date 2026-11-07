@@ -36,11 +36,7 @@ Fate : Try(Pipeline.Sighted(Billboard), [BehindCamera, TooSmall])
 
 ## What became of every billboard on the segments in view, in the order of
 ## `RoadAhead.segments_in_view`.
-billboard_fates : RoadAhead.RoadView,
-{
-	vantage : Geom.Vantage,
-	..,
-} -> List(Fate)
+billboard_fates : RoadAhead.RoadView, { vantage : Geom.Vantage, .. } -> List(Fate)
 billboard_fates = |road, camera|
 	RoadAhead.segments_in_view(road)
 		.join_map(|in_view| segment_billboards(road, { vantage: camera.vantage, in_view }))

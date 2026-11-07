@@ -29,7 +29,7 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 	) -> Picture
 	scenery_picture = |tower, { spot, cam_focal, context: { road, vantage } }| {
 		footprint = tower_footprint(tower, { road, vantage, spot })
-		Picture.from_shapes(tower_shapes(tower, footprint, { spot, cam_focal }))
+		Picture.from_shapes(tower_shapes(tower, { footprint, spot, cam_focal }))
 	}
 
 }
@@ -69,8 +69,13 @@ tower_footprint = |tower, { road, vantage, spot }| {
 
 ## The whole tower standing on `footprint`: legs, rings, braces and beacon, in
 ## that order. A tower sunk wholly below the horizon has no shapes.
-tower_shapes : Tower, Footprint, { spot : Spot, cam_focal : Pixels } -> List(Shapes.Shape)
-tower_shapes = |tower, footprint, { spot, cam_focal }| {
+tower_shapes : Tower,
+{
+	footprint : Footprint,
+	spot : Spot,
+	cam_focal : Pixels,
+} -> List(Shapes.Shape)
+tower_shapes = |tower, { footprint, spot, cam_focal }| {
 	foot = spot.foot()
 	lift = spot.lift()
 	sunk = sunk_below_horizon(foot.to_rider())
