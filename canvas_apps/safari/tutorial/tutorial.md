@@ -962,7 +962,7 @@ That's what `Ground` paints. It's plain data, so it can be checked with numbers.
 
 Four points cut the corner: the two ends of the first segment, the apex, and the place where the second segment's outer edge starts.
 
-{{code GroundSighting.lead_length}}
+{{code GroundSighting.lead_in_length}}
 
 The last 40 metres before a bend get a patch of their own, laid after the road's chunks and before the corner.
 
