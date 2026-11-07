@@ -11,7 +11,7 @@ import Picture
 import SegmentPlace
 import Spot
 import StillShapes
-import Stills
+import Still
 import lib.Shapes
 
 PosedCat := { pose : PosedCat.CatPose }.{
@@ -38,7 +38,7 @@ PosedCat := { pose : PosedCat.CatPose }.{
 		)
 
 	## The cat's polygons in a pose.
-	pose_polygons : PosedCat.CatPose -> List(Stills.StillPolygon)
+	pose_polygons : PosedCat.CatPose -> Still
 	pose_polygons = |pose|
 		match pose {
 			Rest => CatStills.rest_polygons
@@ -128,6 +128,6 @@ expect
 	].all(
 		|pose| {
 			shapes = sample_cat_shapes({ pose: pose }, Distance.zero)
-			shapes.len() == PosedCat.pose_polygons(pose).len()
+			shapes.len() == PosedCat.pose_polygons(pose).polygons().len()
 		},
 	)

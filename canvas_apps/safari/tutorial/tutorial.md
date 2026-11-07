@@ -1080,7 +1080,7 @@ The distinction matters. The cat and the bird were drawn for this game, and they
 
 A polygon is one record. It has a color, an optional gradient and a list of points:
 
-{{code Stills.StillPolygon}}
+{{code Still.Polygon}}
 
 The bird is the smallest set, because the perched bird is Roc's logo, and the logo is made of a few straight-edged shapes. The cat has far more points, because its curves are made of many short straight lines. Its seven stills fit in a 73-line file, and those lines are very long.
 

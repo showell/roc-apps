@@ -1,7 +1,7 @@
 ## StillShapes draws a still, a picture made of polygons, standing on screen.
-## A still is drawn in units of its height: its feet at the origin, y up, and
-## its height 1. StillShapes scales it to its height on screen, stands it on its
-## feet, and mirrors it when asked.
+## A still is drawn in its own frame, which Still.roc describes. StillShapes
+## scales it to its height on screen, stands it on its feet, and mirrors it when
+## asked.
 import Camera
 import Distance
 import Fraction
@@ -10,7 +10,7 @@ import Pixels
 import Polygon
 import lib.Brush
 import lib.RgbColor
-import Stills
+import Still
 import Screen
 import lib.Shapes
 
@@ -37,24 +37,24 @@ StillShapes :: [].{
 		}
 
 	## Where a point of the still lands on screen.
-	screen_point : StillShapes.Anchor, Stills.StillPt -> Screen.Point
+	screen_point : StillShapes.Anchor, Still.Vertex -> Screen.Point
 	screen_point = |anchor, point| {
 		x: anchor.feet.x.plus(anchor.height_on_screen.times(x_sign(anchor.flip) * point.x)),
 		y: anchor.feet.y.minus(anchor.height_on_screen.times(point.y)),
 	}
 
 	## How far, and which way, a step in the still goes on screen.
-	screen_vector : StillShapes.Anchor, Stills.StillPt -> Screen.Point
+	screen_vector : StillShapes.Anchor, Still.Vertex -> Screen.Point
 	screen_vector = |anchor, step| {
 		x: anchor.height_on_screen.times(x_sign(anchor.flip) * step.x),
 		y: anchor.height_on_screen.times(step.y).opposite(),
 	}
 
-	screen_points : StillShapes.Anchor, List(Stills.StillPt) -> List(Screen.Point)
+	screen_points : StillShapes.Anchor, List(Still.Vertex) -> List(Screen.Point)
 	screen_points = |anchor, points| points.map(|point| StillShapes.screen_point(anchor, point))
 
 	## One polygon of a still, filled with its colour or its gradient.
-	still_polygon : StillShapes.Anchor, Stills.StillPolygon -> Shapes.Shape
+	still_polygon : StillShapes.Anchor, Still.Polygon -> Shapes.Shape
 	still_polygon = |anchor, poly| {
 		points = StillShapes.screen_points(anchor, poly.points)
 		match poly.gradients.first() {
@@ -64,8 +64,9 @@ StillShapes :: [].{
 	}
 
 	## A whole still, its polygons in order.
-	still_shapes : StillShapes.Anchor, List(Stills.StillPolygon) -> List(Shapes.Shape)
-	still_shapes = |anchor, polys| polys.map(|poly| StillShapes.still_polygon(anchor, poly))
+	still_shapes : StillShapes.Anchor, Still -> List(Shapes.Shape)
+	still_shapes = |anchor, still|
+		still.polygons().map(|poly| StillShapes.still_polygon(anchor, poly))
 
 	## Where a still `height` tall stands on screen at the setting's spot: its
 	## feet raised as high as the spot says, and its height on screen from
@@ -90,7 +91,7 @@ StillShapes :: [].{
 	standing_still_shapes : Picture.Setting({}),
 	{
 		height : Distance,
-		polygons : List(Stills.StillPolygon),
+		polygons : Still,
 	} -> List(Shapes.Shape)
 	standing_still_shapes = |setting, { height, polygons }| {
 		anchor = StillShapes.standing_anchor(setting, { height, flip: AsDrawn })
@@ -99,7 +100,7 @@ StillShapes :: [].{
 }
 
 ## A still's gradient is linear when its kind is 1, and radial otherwise.
-gradient_shape : Stills.StillGradient -> [Linear, Radial]
+gradient_shape : Still.Gradient -> [Linear, Radial]
 gradient_shape = |gradient|
 	if gradient.kind == 1 {
 		Linear
@@ -110,7 +111,7 @@ gradient_shape = |gradient|
 ## A still's gradient colours and their offsets, as Polygon takes them. Every
 ## traced offset is from 0 to 1 and the end is never before the start, so an
 ## offset out of range or out of order is a bug in the data, and crashes.
-stops_of : Stills.StillGradient -> Polygon.ColorStops
+stops_of : Still.Gradient -> Polygon.ColorStops
 stops_of = |gradient| {
 	start_offset = Fraction.of(gradient.off0)
 	end_offset = Fraction.of(gradient.off1)
@@ -128,7 +129,7 @@ stops_of = |gradient| {
 
 still_gradient_polygon : StillShapes.Anchor,
 {
-	gradient : Stills.StillGradient,
+	gradient : Still.Gradient,
 	points : List(Screen.Point),
 } -> Shapes.Shape
 still_gradient_polygon = |anchor, { gradient, points }|
@@ -214,7 +215,7 @@ expect
 		]
 
 # A solid polygon of colour 7 with `count` points, all at the feet.
-flat_polygon : U64 -> Stills.StillPolygon
+flat_polygon : U64 -> Still.Polygon
 flat_polygon = |count| {
 	color: RgbColor.of(7),
 	gradients: [],
