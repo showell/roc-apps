@@ -29,6 +29,9 @@ LeanSearch :: [].{
 	max_lean_change : Angle.LeanChange
 	max_lean_change = Angle.LeanChange.degrees(1.0)
 
+	## How many times the search halves its bounds. They start 2° wide, a
+	## degree either side of the lean, so 12 halvings narrow them to about
+	## 0.0005°.
 	lean_search_round_count : U8
 	lean_search_round_count = 12
 

@@ -76,7 +76,7 @@ Rehearsal : {
 
 ## The road's edge that stops an arc, on the right. The left's is its mirror.
 arc_edge : Distance
-arc_edge = Geom.road_half_width.minus(Coast.straighten_margin)
+arc_edge = Geom.road_half_width.minus(Coast.shoulder_margin)
 
 ## Whether an arc that has reached `motion` runs on. These are the tests in
 ## `Coast.project`, which answers with only where an arc ends. An `expect` below

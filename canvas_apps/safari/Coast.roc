@@ -12,15 +12,20 @@ Coast :: [].{
 	## a shoulder after this many steps, counting the step that leaves.
 	Outcome : [EndsAt(Across), Leaves({ side : [Left, Right], after : Steps })]
 
-	straighten_margin : Distance
-	straighten_margin = Distance.metres(0.05)
+	## How far inside each shoulder the rehearsal puts the road's edge: 5 cm.
+	## A coast that crosses this inset edge counts as leaving the road, so the
+	## line the search keeps never grazes the shoulder itself.
+	shoulder_margin : Distance
+	shoulder_margin = Distance.metres(0.05)
 
+	## How far ahead the rehearsal needs to look: 25 m along the road. A coast
+	## that runs this far without leaving the road ends there.
 	clear_distance : Distance
 	clear_distance = Distance.metres(25.0)
 
 	project : Motorcycle -> Coast.Outcome
 	project = |state| {
-		inset_hw = Geom.road_half_width.minus(straighten_margin)
+		inset_hw = Geom.road_half_width.minus(shoulder_margin)
 		right_bound = Across.right_of_middle(inset_hw).max(state.across)
 		left_bound = Across.left_of_middle(inset_hw).min(state.across)
 		var $rider = state
