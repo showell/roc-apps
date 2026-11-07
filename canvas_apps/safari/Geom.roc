@@ -159,6 +159,22 @@ Geom :: [].{
 	near_plane : Distance
 	near_plane = Distance.metres(0.4)
 
+	## Whether a point `forward` of the camera is at or past the near plane,
+	## where the camera can see it.
+	is_in_view : Distance -> Bool
+	is_in_view = |forward| forward >= Geom.near_plane
+
+	## Where an edge that has one end on each side crosses the near plane.
+	near_plane_crossing : { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> Geom.RaisedPoint
+	near_plane_crossing = |{ from, to }| {
+		fraction = Geom.near_plane.minus(from.forward).ratio_to(to.forward.minus(from.forward))
+		{
+			right: from.right.plus(to.right.minus(from.right).times(fraction)),
+			forward: Geom.near_plane,
+			height: from.height.plus(to.height.minus(from.height).times(fraction)),
+		}
+	}
+
 	## The polygon cut to what lies at or past the near plane.
 	clipped_points : List(Geom.RaisedPoint) -> List(Geom.RaisedPoint)
 	clipped_points = |polygon_points| {
@@ -280,8 +296,8 @@ edge_points_onto : List(Geom.RaisedPoint),
 	to : Geom.RaisedPoint,
 } -> List(Geom.RaisedPoint)
 edge_points_onto = |clipped, { from, to }| {
-	is_from_in_view = from.forward >= Geom.near_plane
-	is_to_in_view = to.forward >= Geom.near_plane
+	is_from_in_view = Geom.is_in_view(from.forward)
+	is_to_in_view = Geom.is_in_view(to.forward)
 	with_corner = if is_from_in_view {
 		clipped.append(from)
 	} else {
@@ -290,20 +306,28 @@ edge_points_onto = |clipped, { from, to }| {
 	if is_from_in_view == is_to_in_view {
 		with_corner
 	} else {
-		with_corner.append(near_plane_crossing({ from, to }))
+		with_corner.append(Geom.near_plane_crossing({ from, to }))
 	}
 }
 
-## Where an edge that has one end on each side crosses the near plane.
-near_plane_crossing : { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> Geom.RaisedPoint
-near_plane_crossing = |{ from, to }| {
-	fraction = Geom.near_plane.minus(from.forward).ratio_to(to.forward.minus(from.forward))
-	{
-		right: from.right.plus(to.right.minus(from.right).times(fraction)),
-		forward: Geom.near_plane,
-		height: from.height.plus(to.height.minus(from.height).times(fraction)),
-	}
-}
+expect
+	Geom.near_plane_crossing({
+		from: {
+			right: Distance.metres(0.0),
+			forward: Distance.metres(0.0),
+			height: Distance.metres(10.0),
+		},
+		to: {
+			right: Distance.metres(8.0),
+			forward: Distance.metres(0.8),
+			height: Distance.metres(30.0),
+		},
+	})
+		== {
+			right: Distance.metres(4.0),
+			forward: Distance.metres(0.4),
+			height: Distance.metres(20.0),
+		}
 
 expect Geom.ground_drop({
 	right: Distance.metres(0.0),

@@ -305,7 +305,7 @@ tier_shape : TreeShapes.Tier, TierInputs -> Shapes.Shape
 tier_shape = |tier, inputs| {
 	cone_radius = inputs.tip.height.times(crown_half_width_share.to_f64() * tier.width.to_f64())
 	match inputs.crown {
-		Cones(_) if inputs.tip.forward.minus(cone_radius) < Geom.near_plane =>
+		Cones(_) if !Geom.is_in_view(inputs.tip.forward.minus(cone_radius)) =>
 			tier_triangle(inputs.outline, { tier, color: inputs.color })
 		Cones({ shade }) => tier_cone(tier, { inputs, cone_radius, shade })
 		Triangles => tier_triangle(inputs.outline, { tier, color: inputs.color })
