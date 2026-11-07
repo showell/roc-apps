@@ -35,13 +35,12 @@ CowHerd := {
 	jitter_across : Distance,
 }.{
 
+	## Whether a bull leads the herd.
+	Bull : [WithBull, NoBull]
+
 	## The herd's cows behind `herd_along`, column by column from the front,
 	## led by the bull at `herd_along` if the herd has one.
-	herd_cows : CowHerd,
-	{
-		herd_along : Along,
-		bull : [WithBull, NoBull],
-	} -> List(Geom.Placed(Billboard))
+	herd_cows : CowHerd, { herd_along : Along, bull : CowHerd.Bull } -> List(Geom.Placed(Billboard))
 	herd_cows = |herd, { herd_along, bull: with_bull }| {
 		cows =
 			List.from_iter(U64.until(0, herd.cow_count))

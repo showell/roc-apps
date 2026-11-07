@@ -7,7 +7,7 @@
 ## answers a `Try`.
 import Pixels
 import Fraction
-import HexColor
+import ColorShade
 import Screen
 import lib.ArgbColor
 import lib.Brush
@@ -184,11 +184,11 @@ shade_middle_lift = Fraction.of(0.25)
 ## A shaded polygon's color at its edges.
 width_shade_edge : RgbColor, Fraction -> RgbColor
 width_shade_edge = |color, strength|
-	HexColor.shade_color(color, shade_edge_darken.times(strength).less().to_f64())
+	ColorShade.shade_color(color, shade_edge_darken.times(strength).less().to_f64())
 
 ## A shaded polygon's color in its middle.
 width_shade_middle : RgbColor, Fraction -> RgbColor
-width_shade_middle = |color, strength| HexColor.shade_color(
+width_shade_middle = |color, strength| ColorShade.shade_color(
 	color,
 	1.0 + shade_middle_lift.to_f64() * strength.to_f64(),
 )

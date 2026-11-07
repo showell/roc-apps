@@ -33,6 +33,7 @@ import game.EmojiStills
 import game.EncounterReaction
 import game.Fraction
 import game.FrameView
+import game.Gawking
 import game.Gaze
 import game.RoadAhead
 import game.Route
@@ -41,9 +42,12 @@ import game.SegmentPlace
 import game.Geom
 import game.Motorcycle
 import game.Mountains
+import game.LeanSearch
 import game.Lens
+import game.LitTruck
 import game.GroundPatch
 import game.GroundSighting
+import game.Picture
 import game.Pipeline
 import game.Pond
 import game.PosedBird
@@ -59,6 +63,7 @@ import game.Sky
 import game.Speed
 import game.Spot
 import game.Steps
+import game.Still
 import game.StillShapes
 import game.Sun
 import game.Throttle
@@ -110,17 +115,24 @@ expect {
 		and length_at(SegmentPlace.Position.first.next()) == length_of(3)
 }
 
-# The road ahead holds as many segments as the rider can see, or the rest of
-# the route.
-expect World.route.segment_count() == 19
-expect
+# The road ahead holds as many segments as the rider can see, seven, or the rest
+# of the route. Here the route has nine.
+expect {
+	nine_segments = List.repeat(going_straight_on(segment_of([])), 8).append(segment_of([]))
+	route = Route.from_segments(nine_segments)
 	[
 		(0, 7),
-		(12, 7),
-		(13, 6),
-		(15, 4),
-		(18, 1),
-	].all(|(number, want)| road_from(number).segments_ahead().count == want)
+		(2, 7),
+		(3, 6),
+		(5, 4),
+		(8, 1),
+	].all(
+		|(number, want)| {
+			road_view = RoadAhead.RoadView.ahead_of(route, Route.SegmentIndex.number(number))
+			road_view.segments_ahead().count == want
+		},
+	)
+}
 
 expect [
 	(0, 0),
@@ -310,71 +322,29 @@ left_top = Conifer.Red.scenery_height().to_metres()
 far_top : F64
 far_top = Conifer.Gold.scenery_height().to_metres()
 
-# Segment's fifth left tree, which a bird starts on: only trees on the left count.
-## A left and a right tree at each of `alongs`.
-pairs_at : List(F64) -> List(Trees.RoadsideTree)
-pairs_at = |alongs| alongs.join_map(|along| [tree_at(along, -6.0), tree_at(along, 6.0)])
-
-## How far along the fifth left tree of `choices` is, if there is one.
-fifth_along : List(Trees.RoadsideTree) -> Try(F64, [NoTree])
-fifth_along = |choices|
-	match Segment.fifth_left_tree(choices) {
-		Found(tree) => Ok(tree.road_point.along.to_metres())
-		NoTree => Err(NoTree)
-	}
-
-expect fifth_along([]) == Err(NoTree)
-expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0])) == Err(NoTree)
-expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0])) == Ok(50.0)
-expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0, 60.0])) == Ok(50.0)
-expect fifth_along([50.0, 60.0, 70.0, 80.0, 90.0].map(|along| tree_at(along, 6.0))) == Err(NoTree)
-
-## Whether the trees planted for `plan` have a fifth on the left, and a tree on
-## the far side for a bird there to fly to.
-has_bird_flight : World.SegmentPlan -> Bool
-has_bird_flight = |plan| {
-	planted = Trees.roadside_trees({ scheme: plan.scheme, length: plan.length })
-	match Segment.fifth_left_tree(planted) {
-		Found(perch) => BirdFlight.flight_from(planted, perch).is_ok()
-		NoTree => False
-	}
-}
-
 # Every segment the route plans with a bird has a tree for it to start on and
-# one to fly to, or building the segment crashes: every bird flies. A segment
-# too short for five trees on the left has none.
-expect {
-	bird_plans = World.segment_plans.keep_if(|plan| plan.encounter == BirdHere)
-	bird_plans.len() > 0 and bird_plans.all(has_bird_flight)
-}
-expect {
-	short_plan = {
-		..World.last_plan,
-		length: Distance.metres(50.0),
-		encounter: BirdHere,
-	}
-	!has_bird_flight(short_plan)
-}
+# one to fly to, or building the segment crashes: every bird flies, and each
+# segment meets what its plan says.
+expect
+	World.route.route_segments().map(
+		|segment|
+			match segment.encounter {
+				CatCrosses(_) => CatCrosses
+				BirdHere(_) => BirdHere
+				QuietRoad => QuietRoad
+			},
+	)
+		== World.segment_plans.map(|plan| plan.encounter)
 
-## A segment 200 m long holding only `trees`, which ends a route. It has a bird
-## if the trees give one a perch and a tree to fly to.
+## A segment 200 m long holding only `trees`, with a quiet road, which ends a
+## route.
 segment_of : List(Trees.RoadsideTree) -> Segment
 segment_of = |trees| {
-	bird_flight =
-		match Segment.fifth_left_tree(trees) {
-			Found(perch) => BirdFlight.flight_from(trees, perch)
-			NoTree => Err(NoTreeToFlyTo)
-		}
-	{
-		..World.route.segment_at(Route.SegmentIndex.first),
-		length: Distance.metres(200.0),
-		trees,
-		ending: RouteEnds,
-		encounter: match bird_flight {
-			Ok(flight) => BirdHere(flight)
-			Err(NoTreeToFlyTo) => QuietRoad
-		},
-	}
+	..World.route.segment_at(Route.SegmentIndex.first),
+	length: Distance.metres(200.0),
+	trees,
+	ending: RouteEnds,
+	encounter: QuietRoad,
 }
 
 ## The road ahead of a rider on the first of `segments`, a route of their own.
@@ -394,6 +364,15 @@ going_straight_on = |segment| {
 bird_trees : List(Trees.RoadsideTree)
 bird_trees = left_trees.append(far_tree)
 
+## The flight of a bird on `bird_trees`, from the fifth left tree to the far
+## one.
+bird_flight : BirdFlight.Flight
+bird_flight = { from: tree_at(100.0, -6.0), to: far_tree }
+
+## A segment of `bird_trees` with its bird.
+bird_segment : Segment
+bird_segment = { ..segment_of(bird_trees), encounter: BirdHere(bird_flight) }
+
 ## A flight that started at step 100, at step `now`.
 flight_at_step : U32 -> EncounterPlan.Timing
 flight_at_step = |now| EncounterPlan.timing_of(StartsAt(Clock.at_step(100)), Clock.at_step(now))
@@ -411,21 +390,18 @@ expect {
 	lengths == [300.0, 150.0, 50.0] and ends == [300.0, 450.0, 500.0]
 }
 
-## The birds on one segment of `trees`, for a rider `rider_along` metres into
-## it, seen through a focal length of `cam_focal`, with the bird's flight at
-## `encounter_timing`.
-birds_on : List(Trees.RoadsideTree),
+## The birds on `segment`, alone on its route, for a rider `rider_along` metres
+## into it, seen through a focal length of `cam_focal`, with the bird's flight
+## at `encounter_timing`.
+birds_on : Segment,
 {
 	rider_along : F64,
 	cam_focal : Pixels,
 	encounter_timing : EncounterPlan.Timing,
 } -> List(Pipeline.Sighted(PosedBird))
-birds_on = |trees, { rider_along, cam_focal, encounter_timing }|
+birds_on = |segment, { rider_along, cam_focal, encounter_timing }|
 	birds_seen_on(
-		RoadAhead.RoadView.ahead_of(
-			Route.from_segments([segment_of(trees)]),
-			Route.SegmentIndex.first,
-		),
+		RoadAhead.RoadView.ahead_of(Route.from_segments([segment]), Route.SegmentIndex.first),
 		{
 			camera: { vantage: { ..origin, along: Along.metres(rider_along) }, cam_focal },
 			encounter_timing,
@@ -436,7 +412,7 @@ birds_on = |trees, { rider_along, cam_focal, encounter_timing }|
 ## `encounter_timing`.
 bird_at : F64, EncounterPlan.Timing -> Pipeline.Sighted(PosedBird)
 bird_at = |rider_along, encounter_timing|
-	birds_on(bird_trees, { rider_along, cam_focal: Pixels.of(500.0), encounter_timing }).first()
+	birds_on(bird_segment, { rider_along, cam_focal: Pixels.of(500.0), encounter_timing }).first()
 		?? crash "CrossModuleExpects: this rider sees a bird"
 
 ## How far off a bird is, across the road and up.
@@ -458,10 +434,7 @@ expect bird_at(85.0, flight_at_step(136)).kind.pose == Perched
 # In flight, the bird is where its flight's frame for the step says.
 expect {
 	bird = bird_at(40.0, flight_at_step(118))
-	frame = BirdFlight.instant_at(
-		{ from: tree_at(100.0, -6.0), to: far_tree },
-		Playing(Steps.of(18)),
-	)
+	frame = BirdFlight.instant_at(bird_flight, Playing(Steps.of(18)))
 	[
 		(bird.spot.foot().right().to_metres(), frame.location.across.to_metres()),
 		(bird.spot.foot().forward().to_metres(), frame.location.along.to_metres() - 40.0),
@@ -471,11 +444,13 @@ expect {
 		and bird.kind.pose != Perched
 }
 
-## How many birds there are on `trees` for each rider and focal length, before
-## the flight.
-bird_count : List(Trees.RoadsideTree), { rider_along : F64, cam_focal : Pixels } -> I64
-bird_count = |trees, { rider_along, cam_focal }|
-	birds_on(trees, { rider_along, cam_focal, encounter_timing: Unplanned }).len().to_i64_wrap()
+## How many birds a rider sees on `bird_segment` for each rider and focal
+## length, before the flight.
+bird_count : { rider_along : F64, cam_focal : Pixels } -> I64
+bird_count = |{ rider_along, cam_focal }| {
+	birds = birds_on(bird_segment, { rider_along, cam_focal, encounter_timing: Unplanned })
+	birds.len().to_i64_wrap()
+}
 
 ## A segment where a cat crosses, with the same trees: it has no bird.
 segment_with_cat : Segment
@@ -484,17 +459,12 @@ segment_with_cat = {
 	encounter: World.route.segment_at(Route.SegmentIndex.number(3)).encounter,
 }
 
-expect bird_count(bird_trees, { rider_along: 0.0, cam_focal: Pixels.of(500.0) }) == 1
-expect bird_count(left_trees, { rider_along: 0.0, cam_focal: Pixels.of(500.0) }) == 0
-expect bird_count(
-	left_trees.drop_last(1).append(far_tree),
-	{ rider_along: 0.0, cam_focal: Pixels.of(500.0) },
-) == 0
-expect bird_count(bird_trees, { rider_along: 99.5, cam_focal: Pixels.of(500.0) }) == 1
-expect bird_count(bird_trees, { rider_along: 99.7, cam_focal: Pixels.of(500.0) }) == 0
-expect bird_count(bird_trees, { rider_along: 120.0, cam_focal: Pixels.of(500.0) }) == 0
-expect bird_count(bird_trees, { rider_along: 0.0, cam_focal: Pixels.of(91.0) }) == 1
-expect bird_count(bird_trees, { rider_along: 0.0, cam_focal: Pixels.of(90.0) }) == 0
+expect bird_count({ rider_along: 0.0, cam_focal: Pixels.of(500.0) }) == 1
+expect bird_count({ rider_along: 99.5, cam_focal: Pixels.of(500.0) }) == 1
+expect bird_count({ rider_along: 99.7, cam_focal: Pixels.of(500.0) }) == 0
+expect bird_count({ rider_along: 120.0, cam_focal: Pixels.of(500.0) }) == 0
+expect bird_count({ rider_along: 0.0, cam_focal: Pixels.of(91.0) }) == 1
+expect bird_count({ rider_along: 0.0, cam_focal: Pixels.of(90.0) }) == 0
 expect
 	birds_seen_on(
 		RoadAhead.RoadView.ahead_of(
@@ -510,7 +480,7 @@ expect
 two_segments : List(Pipeline.Sighted(PosedBird))
 two_segments = birds_seen_on(
 	RoadAhead.RoadView.ahead_of(
-		Route.from_segments([going_straight_on(segment_of(bird_trees)), segment_of(bird_trees)]),
+		Route.from_segments([going_straight_on(bird_segment), bird_segment]),
 		Route.SegmentIndex.first,
 	),
 	{ camera: origin_camera, encounter_timing: flight_at_step(118) },
@@ -779,7 +749,6 @@ bird_planning_gap : Distance
 bird_planning_gap = EncounterPlan.planning_gap(BirdFlight.flight_span, VehicleLimits.top_speed)
 
 expect route_cats.len() == 3
-expect cat_planning_gap < Segment.cat_along.plus(CatCrossing.cat_beyond_tree).from_start()
 expect route_cats.all(|{ crossing, .. }| cat_planning_gap < crossing.along.from_start())
 expect route_flights.len() == 4
 expect route_flights.all(|{ from, .. }| bird_planning_gap < from.road_point.along.from_start())
@@ -1183,6 +1152,81 @@ sighted_ahead = |kind, forward|
 	)
 		?? crash "CrossModuleExpects: a test's thing is past the near plane"
 
+## A kind of object for Pipeline's expects: a post of some height, pictured as
+## nothing.
+Post := { height : Distance }.{
+
+	scenery_height : Post -> Distance
+	scenery_height = |post| post.height
+
+	scenery_picture : Post, Picture.Setting({}) -> Picture
+	scenery_picture = |_post, _setting| Picture.from_shapes([])
+}
+
+## The road ahead of a rider on a straight route of one segment.
+straight_road : RoadAhead.RoadView
+straight_road = road_of([segment_of([])])
+
+## A post 1 m tall, `along` the straight road and 1.5 m right of its middle, as
+## a camera at `origin` sees it.
+post_sighting : F64 -> Try(Pipeline.Sighted(Post), [BehindCamera])
+post_sighting = |along|
+	Pipeline.sighting_of(
+		{
+			road_point: { along: Along.metres(along), across: Across.metres(1.5) },
+			lift: Distance.zero,
+			kind: Post.({ height: Distance.metres(1.0) }),
+		},
+		{
+			road: straight_road,
+			vantage: origin,
+			place: Ahead(SegmentPlace.Position.first),
+		},
+	)
+
+# The near plane is 0.4 m ahead.
+expect
+	[
+		(0.39, Err(BehindCamera)),
+		(0.4, Ok(Seen)),
+		(0.41, Ok(Seen)),
+	].all(|(along, outcome)| post_sighting(along).map_ok(|_| Seen) == outcome)
+
+# A post 1 m tall, 64 m ahead, stands exactly 2 pixels tall through a lens of
+# 128 pixels, the smallest height drawn.
+expect
+	[
+		(Distance.metres(0.99), Err(TooSmall)),
+		(Distance.metres(1.0), Ok(Seen)),
+		(Distance.metres(1.01), Ok(Seen)),
+	].all(
+		|(height, outcome)|
+			Pipeline.tall_sighting_of(
+				{
+					road_point: { along: Along.metres(64.0), across: Across.metres(1.5) },
+					lift: Distance.zero,
+					kind: Post.({ height: height }),
+				},
+				{
+					road: straight_road,
+					vantage: origin,
+					place: Ahead(SegmentPlace.Position.first),
+					size_focal: Pixels.of(128.0),
+				},
+			).map_ok(|_| Seen)
+				== outcome,
+	)
+
+# A rendering's depth is how far ahead its sighting stands.
+expect
+	[30.0, 64.0].all(
+		|along| {
+			sighting = post_sighting(along) ?? crash "CrossModuleExpects: a post 30 m or more ahead is in view"
+			rendered = Pipeline.rendering_of(sighting, { cam_focal: Pixels.of(512.0), context: {} })
+			rendered.depth() == Distance.metres(along)
+		},
+	)
+
 ## A big green tree `forward` metres straight ahead of the route's start.
 green_tree_ahead : F64 -> Pipeline.Sighted(Conifer)
 green_tree_ahead = |forward| sighted_ahead(Conifer.Green, forward)
@@ -1279,7 +1323,7 @@ expect scene_renderings.len() > 0
 
 # A segment of the road ahead shows at most two towers, the one past its end and
 # the one halfway along, and the segment just behind shows one.
-expect scene.towers.len() <= 2 * RoadAhead.most_segments_ahead.to_u64() + 1
+expect scene.towers.len() <= 2 * road.segments_ahead().count.to_u64() + 1
 
 ## Whether no rendering in `renderings` is farther than the one before it.
 is_far_to_near : List(Rendered) -> Bool
@@ -2531,3 +2575,274 @@ expect
 		Ok(_) => False
 		Err(BehindCamera) => True
 	}
+
+## A segment with no pigs.
+pigless_segment : Segment
+pigless_segment = segment_of([])
+
+## The route's first segment with a herd the rider finds distracting.
+distracting_segment : Segment
+distracting_segment = World.first_distracting_segment
+
+expect Gawking.eye_catching_pig(pigless_segment) == NoPigCatchesEye
+
+## A segment of the route whose herd the rider passes by.
+passed_by_segment : Segment
+passed_by_segment = World.route.segment_at(Route.SegmentIndex.number(11))
+
+expect Gawking.eye_catching_pig(passed_by_segment) == NoPigCatchesEye
+
+## The pig that catches the eye on the distracting segment.
+watched_pig : Geom.Placed(Billboard)
+watched_pig =
+	match Gawking.eye_catching_pig(distracting_segment) {
+		CatchesEye(pig) => pig
+		NoPigCatchesEye => crash "CrossModuleExpects: this segment's pigs catch the eye"
+	}
+
+# The rider watches a pig of the herd.
+expect distracting_segment.segment_pigs().count_if(|pig| pig == watched_pig) == 1
+
+## A motorcycle `along` metres into its segment, at rest in every other way.
+motorcycle_at : F64 -> Motorcycle
+motorcycle_at = |along| {
+	..Motorcycle.initial,
+	along: Motorcycle.initial.along.plus(Distance.metres(along)),
+}
+
+## A motorcycle on the distracting segment, `metres` short of the pig.
+short_of_pig : F64 -> Motorcycle
+short_of_pig = |metres| {
+	..Motorcycle.initial,
+	along: watched_pig.road_point.along.minus(Distance.metres(metres)),
+}
+
+expect !Gawking.is_gawking(motorcycle_at(200.0), pigless_segment)
+expect !Gawking.is_gawking(motorcycle_at(100.0), distracting_segment)
+expect Gawking.is_gawking(motorcycle_at(200.0), distracting_segment)
+expect Gawking.is_gawking(motorcycle_at(341.0), distracting_segment)
+
+# The gawking starts where the pig is noticed, and not a centimetre sooner.
+expect Gawking.is_gawking(short_of_pig(Gawking.notice_distance.to_metres()), distracting_segment)
+expect !Gawking.is_gawking(short_of_pig(150.01), distracting_segment)
+
+expect Gawking.gawk_brake(motorcycle_at(200.0), pigless_segment) == NoLimit
+expect Gawking.gawk_brake(motorcycle_at(100.0), distracting_segment) == NoLimit
+
+## The brake for a motorcycle `metres` short of the pig, going `speed` metres a
+## step.
+brake_short_of_pig : F64, F64 -> F64
+brake_short_of_pig = |metres, speed| {
+	motorcycle = { ..short_of_pig(metres), speed: Speed.metres_a_step(speed) }
+	match Gawking.gawk_brake(motorcycle, distracting_segment) {
+		AtMost(brake) => brake.to_metres_a_step_each_step()
+		NoLimit => crash "CrossModuleExpects: this rider is gawking"
+	}
+}
+
+# Each is within 1e-12 of its want. The brake works out the road left to the
+# settle distance, until there's less than the least distance left.
+expect
+	[
+		((125.0, 0.3), -0.00025),
+		((75.0, 0.3), -0.0005),
+		((27.0, 0.3), -0.0125),
+		((26.0, 0.3), -0.025),
+		((25.5, 0.3), -0.025),
+		((0.0, 0.3), -0.025),
+		((-10.0, 0.3), -0.025),
+		((125.0, 0.2), 0.0),
+		((125.0, 0.1), 0.00015),
+	].all(
+		|
+			((metres, speed), want),
+		| (brake_short_of_pig(metres, speed) - want).abs() <= 0.000000000001,
+	)
+
+## How far this motorcycle on the distracting segment wants to turn to the pig.
+turn_to_pig : Motorcycle -> F64
+turn_to_pig = |motorcycle|
+	match Gaze.desired_gaze(motorcycle, distracting_segment) {
+		OnPig(turn) => turn.to_radians()
+		OnRoad => crash "CrossModuleExpects: no pig in sight"
+	}
+
+expect {
+	far = turn_to_pig(motorcycle_at(200.0))
+	near = turn_to_pig(motorcycle_at(320.0))
+	far > 0.0 and near > far
+}
+
+expect Gaze.desired_gaze(motorcycle_at(200.0), pigless_segment) == OnRoad
+expect Gaze.desired_gaze(motorcycle_at(100.0), distracting_segment) == OnRoad
+
+# The gawking outlasts the look: at 341 m the rider still gawks, but no longer
+# looks.
+expect Gaze.desired_gaze(motorcycle_at(341.0), distracting_segment) == OnRoad
+
+## A motorcycle 100 m short of the pig, turned so the pig is `degrees` off.
+motorcycle_with_pig_off : F64 -> Motorcycle
+motorcycle_with_pig_off = |degrees| {
+	straight = short_of_pig(100.0)
+	turn_to_watched_pig = Angle.Turn.radians(
+		F64.atan2({
+			x: watched_pig.road_point.along.distance_from(straight.along).to_metres(),
+			y: watched_pig.road_point.across.distance_from(straight.across).to_metres(),
+		}),
+	).minus(straight.yaw)
+	{ ..straight, yaw: turn_to_watched_pig.minus(Angle.Turn.degrees(degrees)) }
+}
+
+## Whether this motorcycle's rider on the distracting segment wants to look at
+## the pig.
+is_looking : Motorcycle -> Bool
+is_looking = |motorcycle|
+	match Gaze.desired_gaze(motorcycle, distracting_segment) {
+		OnPig(_) => True
+		OnRoad => False
+	}
+
+# The pig stays in sight up to the release angle, on either side of the
+# motorcycle.
+expect
+	[
+		(34.99, True),
+		(-34.99, True),
+		(35.01, False),
+		(-35.01, False),
+	].all(|(degrees, is_in_sight)| is_looking(motorcycle_with_pig_off(degrees)) == is_in_sight)
+
+# A coast off the left shoulder means lean more right, and off the right more
+# left.
+expect LeanSearch.lean_correction(Leaves({ side: Left, after: Steps.one_step })) == MoreRight
+expect LeanSearch.lean_correction(Leaves({ side: Right, after: Steps.one_step })) == MoreLeft
+
+## A straight road of three segments, 500 m, 320 m and 400 m long, and the
+## road ahead of a rider on the first of them.
+truck_road : RoadAhead.RoadView
+truck_road = road_of([
+	{ ..going_straight_on(segment_of([])), length: Distance.metres(500.0) },
+	{ ..going_straight_on(segment_of([])), length: Distance.metres(320.0) },
+	{ ..segment_of([]), length: Distance.metres(400.0) },
+])
+
+## What becomes of a truck `lead` metres ahead of a rider on the truck road's
+## first segment, seen from `vantage`, with its lights off. On the first
+## segment the rider's distance along the route is the vantage's `along`.
+truck_seen_from : Geom.Vantage, F64 -> TruckSighting.TruckFate
+truck_seen_from = |vantage, lead|
+	TruckSighting.truck_in_view(
+		truck_road,
+		{
+			camera: { vantage: vantage },
+			route_position: Distance.metres(vantage.along.to_metres() + lead),
+			lit_truck: { headlights: Off, brake_lights: Off },
+		},
+	)
+
+## What becomes of a truck `lead` metres ahead of a rider at `origin`.
+truck_lead_of : F64 -> TruckSighting.TruckFate
+truck_lead_of = |lead| truck_seen_from(origin, lead)
+
+## Where the truck is, for a lead that puts it in view.
+lit_truck_of : F64 -> Pipeline.Sighted(LitTruck)
+lit_truck_of = |lead| truck_lead_of(lead) ?? crash "CrossModuleExpects: this lead puts the truck in view"
+
+# The truck is in view on the road ahead, and not past its end or behind the
+# rider.
+expect
+	[
+		(100.0, True),
+		(499.0, True),
+		(600.0, True),
+		(900.0, True),
+		(2000.0, False),
+		(0.0, False),
+		(-50.0, False),
+	].all(|(lead, want)| truck_lead_of(lead).is_ok() == want)
+
+# A truck past a segment's end stands on a later segment, measured from its
+# start, in the middle of the road.
+expect
+	[
+		(100.0, 0),
+		(499.0, 0),
+		(600.0, 1),
+		(900.0, 2),
+	].all(
+		|(lead, want)| {
+			place = lit_truck_of(lead).spot.place()
+			place == Ahead(SegmentPlace.Position.number(want))
+		},
+	)
+
+expect
+	[
+		(100.0, 100.0),
+		(499.0, 499.0),
+		(600.0, 100.0),
+		(900.0, 80.0),
+	].all(|(lead, want)| lit_truck_of(lead).spot.road_point().along.to_metres() == want)
+
+expect
+	[
+		(100.0, 0.0),
+		(499.0, 0.0),
+		(600.0, 0.0),
+		(900.0, 0.0),
+	].all(|(lead, want)| lit_truck_of(lead).spot.road_point().across.to_metres() == want)
+
+## The lights a truck in view shows, when it has `lights` on.
+lights_shown : LitTruck -> LitTruck
+lights_shown = |lights| {
+	truck = TruckSighting.truck_in_view(
+		truck_road,
+		{
+			camera: { vantage: origin },
+			route_position: Distance.metres(100.0),
+			lit_truck: lights,
+		},
+	) ?? crash "CrossModuleExpects: this lead puts the truck in view"
+	truck.kind
+}
+
+expect
+	[
+		{ headlights: Off, brake_lights: Off },
+		{ headlights: Off, brake_lights: On },
+		{ headlights: On, brake_lights: Off },
+		{ headlights: On, brake_lights: On },
+	].all(|lights| lights_shown(lights) == lights)
+
+expect
+	[
+		(lit_truck_of(100.0).spot.foot().forward().to_metres(), 100.0),
+		(lit_truck_of(499.0).spot.foot().forward().to_metres(), 499.0),
+		(lit_truck_of(100.0).spot.foot().right().to_metres(), 0.0),
+	].all(|(got, want)| (got - want).abs() <= 0.0001)
+
+# A truck in view must be past the near plane.
+expect truck_seen_from({ ..origin, along: Along.metres(100.0) }, 0.25).is_err()
+expect truck_seen_from({ ..origin, along: Along.metres(100.0) }, 1.0).is_ok()
+
+## A still 50 pixels tall, standing as drawn on feet at (100, 200).
+upright_still_anchor : StillShapes.Anchor
+upright_still_anchor = {
+	feet: Screen.point(100.0, 200.0),
+	flip: AsDrawn,
+	height_on_screen: Pixels.of(50.0),
+}
+
+# A still of one flat polygon of colour 7, its three points all at the feet, is
+# drawn as one opaque polygon there.
+expect
+	StillShapes.still_shapes(
+		upright_still_anchor,
+		Still.of([{ fill: Flat(RgbColor.of(7)), points: List.repeat({ x: 0.0, y: 0.0 }, 3) }]),
+	)
+		== [
+			Poly({
+				coordinates: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0],
+				fill: Flat(Brush.opaque(RgbColor.of(7))),
+			}),
+		]

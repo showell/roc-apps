@@ -11,7 +11,7 @@ import FarHeight
 import Fraction
 import Grass
 import Lens
-import HexColor
+import ColorShade
 import Polygon
 import Screen
 import Sun
@@ -91,10 +91,10 @@ snow_night = RgbColor.of(0x465468)
 ## A rock colour at `darkness`, from 0 (day) to 1 (night).
 rock_color_at_darkness : RgbColor, Fraction -> RgbColor
 rock_color_at_darkness = |color, darkness|
-	HexColor.shade_color(color, rock_night_dim.times(darkness).less().to_f64())
+	ColorShade.shade_color(color, rock_night_dim.times(darkness).less().to_f64())
 
 snow_color : Fraction -> RgbColor
-snow_color = |darkness| HexColor.color_between({
+snow_color = |darkness| ColorShade.color_between({
 	from: snow_day,
 	to: snow_night,
 	fraction: darkness,
@@ -331,7 +331,7 @@ expect snow_color(Fraction.of(0.5)) == RgbColor.of(0x9AA4B0)
 
 ## A color's brightness: the sum of its three channels.
 brightness : RgbColor -> I64
-brightness = |color| HexColor.red_of(color) + HexColor.green_of(color) + HexColor.blue_of(color)
+brightness = |color| color.red() + color.green() + color.blue()
 
 # The snow stays brighter than the rock it lies on, by day and at dusk.
 expect

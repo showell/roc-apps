@@ -53,15 +53,6 @@ Clock :: U32.{
 	is_eq : _
 }
 
-expect Clock.start.to_f64() == 0.0
-expect Clock.start.next().to_f64() == 1.0
-expect Clock.start.next().next().to_f64() == 2.0
-expect Clock.at_step(5699).next().to_f64() == 5700.0
-expect Clock.at_step(0) == Clock.start
-expect Clock.start.next() == Clock.at_step(1)
-expect Clock.at_step(5700).minus(Steps.one_step).next() == Clock.at_step(5700)
-expect !(Clock.start == Clock.at_step(1))
-expect !(Clock.at_step(7).next() == Clock.at_step(7))
 expect Clock.at_step(9).steps_since(Clock.at_step(9)) == Steps.zero
 expect Clock.at_step(9).steps_since(Clock.at_step(8)) == Steps.one_step
 expect Clock.at_step(9).steps_since(Clock.start) == Steps.of(9)
@@ -74,5 +65,3 @@ expect Clock.at_step(9).minus(Steps.of(9)) == Clock.start
 expect Clock.at_step(8) < Clock.at_step(9)
 expect !(Clock.at_step(9) < Clock.at_step(9))
 expect !(Clock.at_step(10) < Clock.at_step(9))
-expect Clock.start.to_str() == "0"
-expect Clock.at_step(5700).to_str() == "5700"

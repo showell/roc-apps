@@ -2,7 +2,6 @@
 ## points, how fast it goes and how far it leans, and the physics that moves it
 ## a step. The lean steers the motorcycle, and it moves along the middle of the
 ## step's turn.
-import Acceleration
 import Across
 import Along
 import Angle
@@ -102,13 +101,13 @@ riding = {
 first_step : Motorcycle
 first_step = riding.motorcycle_at_next_step({
 	lean: riding.lean.plus(Angle.LeanChange.radians(0.05)),
-	speed: riding.speed.accelerated_by(Acceleration.metres_a_step_each_step(0.01)),
+	speed: Speed.metres_a_step(0.81),
 })
 
 second_step : Motorcycle
 second_step = first_step.motorcycle_at_next_step({
 	lean: first_step.lean.plus(Angle.LeanChange.radians(-0.02)),
-	speed: first_step.speed.accelerated_by(Acceleration.metres_a_step_each_step(0.005)),
+	speed: Speed.metres_a_step(0.8150000000000001),
 })
 
 third_step : Motorcycle

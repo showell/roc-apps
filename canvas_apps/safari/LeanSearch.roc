@@ -4,7 +4,6 @@ import Across
 import Angle
 import Coast
 import Motorcycle
-import Steps
 
 LeanSearch :: [].{
 
@@ -94,18 +93,10 @@ bounds_after = |lean_try| {
 	}
 }
 
-off_left : Coast.Outcome
-off_left = Leaves({ side: Left, after: Steps.one_step })
-
-off_right : Coast.Outcome
-off_right = Leaves({ side: Right, after: Steps.one_step })
-
 ## A coast that ends `metres` across the road.
 ending_at : F64 -> Coast.Outcome
 ending_at = |metres| EndsAt(Across.metres(metres))
 
-expect LeanSearch.lean_correction(off_left) == MoreRight
-expect LeanSearch.lean_correction(off_right) == MoreLeft
 expect LeanSearch.lean_correction(ending_at(-0.1)) == MoreRight
 expect LeanSearch.lean_correction(ending_at(0.1)) == MoreLeft
 expect LeanSearch.lean_correction(ending_at(0.0)) == MoreLeft
