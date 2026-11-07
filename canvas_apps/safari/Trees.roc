@@ -1,4 +1,4 @@
-## Trees plants a segment's roadside conifers: a tree each side of the road
+## Trees places a segment's roadside conifers: a tree each side of the road
 ## every 30 m, from just past the segment's start to well short of its end.
 ## The pairs alternate between big green trees and the segment's accent, which
 ## is small and green, or red, or gold, and a gold tree stands farther from the

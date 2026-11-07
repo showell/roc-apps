@@ -1,6 +1,6 @@
 ## TreeSighting finds the roadside trees the rider can see in a frame: those
-## planted along the road ahead that stand in front of the
-## camera and are tall enough on screen to draw.
+## placed along the road ahead that stand in front of the camera and are tall
+## enough on screen to draw.
 import Conifer
 import RoadAhead
 import Pipeline
@@ -9,7 +9,7 @@ import Trees
 TreeSighting :: [].{
 
 	## The trees in view, the nearest segment's first, and each segment's in
-	## the order it plants them.
+	## the order `Trees` places them.
 	trees_in_view : RoadAhead.CameraView -> List(Pipeline.Sighted(Conifer))
 	trees_in_view = |view| {
 		positions = RoadAhead.Position.positions_in(view.road.segments_ahead)
