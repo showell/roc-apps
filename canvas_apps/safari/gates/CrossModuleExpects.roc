@@ -7,6 +7,7 @@
 app [main!] { game: "../game.roc", lib: "../../lib/main.roc" }
 
 import game.Pixels
+import game.Acceleration
 import game.Across
 import game.Along
 import game.Angle
@@ -25,6 +26,7 @@ import game.DepthSort
 import game.Distance
 import game.EmojiStills
 import game.EncounterReaction
+import game.EncountersAhead
 import game.Fraction
 import game.FrameView
 import game.Gaze
@@ -409,11 +411,28 @@ birds_on_segment : Segment,
 	rider_along : F64,
 	cam_focal : Pixels,
 } -> List(Pipeline.Sighted(PosedBird))
-birds_on_segment = |segment, { rider_along, cam_focal }|
+birds_on_segment = |segment, { rider_along, cam_focal }| {
+	route = Route.from_segments([segment])
+	rider = rider_on_first(rider_along, metre_a_step)
 	EncounterSighting.birds_in_view(
-		RoadAhead.RoadView.ahead_of(Route.from_segments([segment]), Route.SegmentIndex.first),
-		{ vantage: { ..origin, along: Along.metres(rider_along) }, cam_focal },
+		RoadAhead.RoadView.ahead_of(route, Route.SegmentIndex.first),
+		{
+			camera: { vantage: { ..origin, along: rider.motorcycle.along }, cam_focal },
+			encounters: EncountersAhead.encounters_ahead(route, rider),
+		},
 	)
+}
+
+## A rider `along` metres into the first segment of a route, at `speed`.
+rider_on_first : F64,
+Speed -> {
+	segment_index : Route.SegmentIndex,
+	motorcycle : { along : Along, speed : Speed },
+}
+rider_on_first = |along, speed| {
+	segment_index: Route.SegmentIndex.first,
+	motorcycle: { along: Along.metres(along), speed },
+}
 
 ## The one bird that a rider `rider_along` metres in sees on the segment with
 ## a far tree.
@@ -482,13 +501,16 @@ expect
 
 ## Two segments on the road ahead, the rider at the start of the first.
 two_segments : List(Pipeline.Sighted(PosedBird))
-two_segments = EncounterSighting.birds_in_view(
-	RoadAhead.RoadView.ahead_of(
-		Route.from_segments([going_straight_on(segment_of(left_trees)), segment_of(left_trees)]),
-		Route.SegmentIndex.first,
-	),
-	origin_camera,
-)
+two_segments = {
+	route = Route.from_segments([going_straight_on(segment_of(left_trees)), segment_of(left_trees)])
+	EncounterSighting.birds_in_view(
+		RoadAhead.RoadView.ahead_of(route, Route.SegmentIndex.first),
+		{
+			camera: origin_camera,
+			encounters: EncountersAhead.encounters_ahead(route, rider_on_first(0.0, metre_a_step)),
+		},
+	)
+}
 
 expect
 	match two_segments.map(|bird| bird.spot.foot().forward()) {
@@ -555,17 +577,11 @@ cat_road = RoadAhead.RoadView.ahead_of(cat_route, Route.SegmentIndex.first)
 metre_a_step : Speed
 metre_a_step = Speed.metres_a_step(1.0)
 
-## The cat on the segment at `number` on the road ahead, if it is in view from
-## the origin at 1 m a step.
-cat_at : U32 -> Try(Pipeline.Sighted(PosedCat), [NoCat, BehindCamera, TooSmall])
-cat_at = |number| EncounterSighting.segment_cat(
-	cat_road,
-	{
-		camera: origin_camera,
-		in_view: numbered_segment(cat_road, number),
-		speed: metre_a_step,
-	},
-)
+## The animals ahead of a rider `along` metres into the cat route's first
+## segment, at 1 m a step.
+cat_route_encounters : F64 -> EncountersAhead
+cat_route_encounters = |along|
+	EncountersAhead.encounters_ahead(cat_route, rider_on_first(along, metre_a_step))
 
 expect cat_route.route_segments().map(World.has_cat) == [False, True, False]
 
@@ -584,7 +600,7 @@ expect
 			vantage = { ..origin, along: Along.metres(along) }
 			gap = RoadAhead.gap_to_segment(
 				cat_road,
-				{ vantage, in_view: numbered_segment(cat_road, number) },
+				{ rider: vantage, in_view: numbered_segment(cat_road, number) },
 			)
 			gap.to_metres() == want
 		},
@@ -596,7 +612,7 @@ ride_sightings = |along| EncounterSighting.cats_in_view(
 	cat_road,
 	{
 		camera: { ..origin_camera, vantage: { ..origin, along: Along.metres(along) } },
-		speed: metre_a_step,
+		encounters: cat_route_encounters(along),
 	},
 )
 
@@ -618,8 +634,10 @@ cat_right : F64 -> Distance
 cat_right = |along| first_cat(along).spot.foot().right()
 
 expect seen.len() == 1
-expect cat_at(0).is_err()
-expect cat_at(2).is_err()
+# The cat route's one cat is on its second segment.
+expect
+	cat_route_encounters(0.0).cats.map(|cat| cat.place)
+		== [Ahead(SegmentPlace.Position.number(1))]
 expect first_cat(300.0).spot.lift().to_metres() == 0.0
 expect first_cat(300.0).kind.pose == Rest
 expect
@@ -634,8 +652,8 @@ expect ride_sightings(200.0).len() == 1
 expect ride_sightings(500.0).len() == 1
 expect ride_sightings(600.0).len() == 0
 
-# The sighting looks along the whole road ahead, and the reaction only at the
-# rider's own segment. They agree because a crossing starts on its own segment: even at
+# The animals move along the whole road ahead, and the reaction looks only at
+# the rider's own segment. They agree because a crossing starts on its own segment: even at
 # top speed it starts closer to the cat than the cat is to the segment's start,
 # and a rider comes onto a segment no further along than that.
 ## The cats of the route, each with its segment.
@@ -921,7 +939,10 @@ expect
 # Scene, on the scene from the start of the route.
 scene_facts : Scene.RideFacts
 scene_facts = {
-	speed: VehicleLimits.starting_speed,
+	encounters: EncountersAhead.encounters_ahead(
+		World.route,
+		rider_on_first(0.0, VehicleLimits.starting_speed),
+	),
 	truck: {
 		route_position: Distance.metres(500.0),
 		lit_truck: { headlights: Off, brake_lights: Off },
@@ -942,7 +963,7 @@ cat_scene = Scene.scene_in_view(
 	cat_road,
 	{
 		camera: { ..origin_camera, vantage: { ..origin, along: Along.metres(300.0) } },
-		facts: { ..scene_facts, speed: metre_a_step },
+		facts: { ..scene_facts, encounters: cat_route_encounters(300.0) },
 	},
 )
 
@@ -959,7 +980,12 @@ sighted_depths = |sightings| sightings.map(|sighting| sighting.spot.foot().forwa
 expect depths_of(scene.trees) == sighted_depths(TreeSighting.trees_in_view(road, origin_camera))
 expect
 	depths_of(scene.birds)
-		== sighted_depths(EncounterSighting.birds_in_view(road, origin_camera))
+		== sighted_depths(
+			EncounterSighting.birds_in_view(
+				road,
+				{ camera: origin_camera, encounters: scene_facts.encounters },
+			),
+		)
 expect
 	depths_of(scene.towers)
 		== sighted_depths(
@@ -972,15 +998,18 @@ expect depths_of(cat_scene.cats) == sighted_depths(seen)
 expect seen.len() > 0
 expect scene.rails.len() == RailSighting.rail_quads_in_view(road, origin_camera).len()
 expect
-	scene.truck.map_ok(|truck| truck.depth)
-		== TruckSighting.truck_in_view(
-			road,
-			{
-				camera: origin_camera,
-				route_position: scene_facts.truck.route_position,
-				lit_truck: scene_facts.truck.lit_truck,
-			},
-		).map_ok(|truck| truck.spot.foot().forward())
+	depths_of(scene.trucks)
+		== sighted_depths(
+			TruckSighting.truck_in_view(
+				road,
+				{
+					camera: origin_camera,
+					route_position: scene_facts.truck.route_position,
+					lit_truck: scene_facts.truck.lit_truck,
+				},
+			).map_ok(|truck| [truck]) ?? [],
+		)
+expect scene.trucks.len() == 1
 expect scene.birds.len() > 0
 
 # The renderings are every field's, the truck's among them.
@@ -992,7 +1021,7 @@ expect
 			scene.towers.len(),
 			scene.billboards.len(),
 			scene.cats.len(),
-			1,
+			scene.trucks.len(),
 			scene.rails.len(),
 		].sum()
 
@@ -1004,7 +1033,7 @@ empty_scene = {
 	towers: [],
 	billboards: [],
 	cats: [],
-	truck: Err(NoTruck),
+	trucks: [],
 	rails: [],
 }
 
@@ -1529,11 +1558,52 @@ looking_hard = |rider| { ..rider, eyes: { ..rider.eyes, look_depth: Fraction.who
 
 ## How strongly the encounter on this rider's segment holds their attention.
 encounter_attention_of : RiderState -> F64
-encounter_attention_of = |rider|
-	EncounterReaction.encounter_attention(
-		cat_route.segment_at(rider.segment_index),
-		rider.motorcycle,
-	).to_f64()
+encounter_attention_of = |rider| {
+	encounters = EncountersAhead.encounters_ahead(cat_route, rider)
+	EncounterReaction.encounter_attention(encounters).to_f64()
+}
+
+## The animals ahead of a rider `gap` metres short of the world's first cat, on
+## its segment, at `speed` metres a step.
+short_of_first_cat : F64, F64 -> EncountersAhead
+short_of_first_cat = |gap, speed|
+	EncountersAhead.encounters_ahead(
+		Route.from_segments([{ ..World.first_cat_segment, ending: RouteEnds }]),
+		rider_on_first(
+			World.first_cat_crossing.along.to_metres() - gap,
+			Speed.metres_a_step(speed),
+		),
+	)
+
+# One case for each answer the cat gives; Cat's own expects hold its tables.
+expect
+	EncounterReaction.encounter_throttle(short_of_first_cat(22.0, 1.0))
+		== AtMost(Acceleration.steady)
+expect EncounterReaction.encounter_throttle(short_of_first_cat(42.0, 1.0)) == NoLimit
+expect EncounterReaction.encounter_attention(short_of_first_cat(22.0, 1.0)).to_f64() > 0.0
+
+# A rider on the route's first segment, with a bird, or its second, a quiet
+# road, asks nothing of an encounter at any place or speed, though the cat of
+# the fourth is ahead in view.
+expect
+	[0, 1].all(
+		|number| [0.0, 60.0, 100.0, 200.0, 400.0].all(
+			|along| [0.0, 0.3, 1.0].all(
+				|speed| {
+					rider = {
+						segment_index: Route.SegmentIndex.number(number),
+						motorcycle: {
+							along: Along.metres(along),
+							speed: Speed.metres_a_step(speed),
+						},
+					}
+					encounters = EncountersAhead.encounters_ahead(World.route, rider)
+					EncounterReaction.encounter_throttle(encounters) == NoLimit
+						and EncounterReaction.encounter_attention(encounters) == Attention.none
+				},
+			),
+		),
+	)
 
 expect focal_of(upright).minus(Lens.resting_focal) == Pixels.zero
 expect encounter_attention_of(upright) == 0.0
@@ -1744,7 +1814,11 @@ wide_of_road = |lean| {
 		lean: Angle.Lean.radians(lean),
 	}
 	first_segment = World.route.segment_at(Route.SegmentIndex.number(0))
-	Throttle.next_speed(motorcycle, first_segment)
+	encounters = EncountersAhead.encounters_ahead(
+		World.route,
+		{ segment_index: Route.SegmentIndex.first, motorcycle },
+	)
+	Throttle.next_speed(motorcycle, { segment: first_segment, encounters })
 		.change_from(motorcycle.speed)
 		.to_metres_a_step_each_step()
 }

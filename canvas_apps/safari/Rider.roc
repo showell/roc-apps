@@ -4,6 +4,7 @@
 import Across
 import Along
 import Angle
+import EncountersAhead
 import Gaze
 import Geom
 import LeanSearch
@@ -19,10 +20,9 @@ Rider :: [].{
 	rider_state_at_next_step : RiderState, Route -> RiderState
 	rider_state_at_next_step = |state, route| {
 		seg = route.segment_at(state.segment_index)
-		moved = {
-			..state,
-			motorcycle: state.motorcycle.motorcycle_at_next_step(decide(state.motorcycle, seg)),
-		}
+		encounters = EncountersAhead.encounters_ahead(route, state)
+		controls = decide(state.motorcycle, { segment: seg, encounters })
+		moved = { ..state, motorcycle: state.motorcycle.motorcycle_at_next_step(controls) }
 		resolved =
 			match seg.ending {
 				Bends(_) => cross_if_on_road(moved, route)
@@ -54,11 +54,12 @@ Rider :: [].{
 }
 
 ## The lean toward the best line, and the speed the throttle gives the
-## motorcycle once it leans so.
-decide : Motorcycle, Segment -> Motorcycle.Controls
-decide = |motorcycle, seg| {
+## motorcycle once it leans so, on `segment` with the animals ahead where
+## `encounters` has them. The animals move first and the rider reacts.
+decide : Motorcycle, { segment : Segment, encounters : EncountersAhead } -> Motorcycle.Controls
+decide = |motorcycle, on_road| {
 	lean = LeanSearch.best_lean(motorcycle)
-	{ lean, speed: Throttle.next_speed(motorcycle.with_lean(lean), seg) }
+	{ lean, speed: Throttle.next_speed(motorcycle.with_lean(lean), on_road) }
 }
 
 ## The rider carried over the bend at the end of their segment: placed on the
@@ -130,8 +131,12 @@ rider_at = |along, lean_radians| {
 
 # The throttle is decided for the motorcycle as it will lean.
 expect {
-	controls = decide(motorcycle_at(0.0, 0.0), first_segment)
-	same = Throttle.next_speed(motorcycle_at(0.0, 0.0).with_lean(controls.lean), first_segment)
+	on_road = {
+		segment: first_segment,
+		encounters: EncountersAhead.encounters_ahead(World.route, rider_at(0.0, 0.0)),
+	}
+	controls = decide(motorcycle_at(0.0, 0.0), on_road)
+	same = Throttle.next_speed(motorcycle_at(0.0, 0.0).with_lean(controls.lean), on_road)
 	controls.speed.to_metres_a_step().to_bits() == same.to_metres_a_step().to_bits()
 }
 

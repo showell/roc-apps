@@ -1,4 +1,5 @@
 import Angle
+import EncountersAhead
 import Grass
 import Ground
 import GroundSighting
@@ -84,7 +85,7 @@ shapes = |camera, { instant, route }| {
 		{
 			camera,
 			facts: {
-				speed: s.motorcycle.speed,
+				encounters: EncountersAhead.encounters_ahead(route, s),
 				truck: {
 					route_position: instant.truck.route_position,
 					lit_truck: FrameView.lit_truck(instant),

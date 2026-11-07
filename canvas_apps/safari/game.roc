@@ -27,6 +27,7 @@ package
 		EmojiStills,
 		EncounterReaction,
 		EncounterSighting,
+		EncountersAhead,
 		Fraction,
 		FrameView,
 		Gawking,

@@ -5,6 +5,7 @@
 import Angle
 import CanvasRoll
 import EncounterReaction
+import EncountersAhead
 import Gaze
 import Geom
 import Lens
@@ -63,9 +64,9 @@ view_yaw_for = |s| s.eyes.gaze_yaw.plus(s.motorcycle.lean.steer(head_turn_per_le
 ## an encounter on the road or by a look to the side.
 ride_focal : RiderState, Route -> Pixels
 ride_focal = |rider, route| {
-	seg = route.segment_at(rider.segment_index)
+	encounters = EncountersAhead.encounters_ahead(route, rider)
 	attention =
-		EncounterReaction.encounter_attention(seg, rider.motorcycle)
+		EncounterReaction.encounter_attention(encounters)
 			.max(Gaze.gaze_attention(rider.eyes.look_depth))
 	Lens.cam_focal({ lean: rider.motorcycle.lean, attention })
 }

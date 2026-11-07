@@ -8,6 +8,7 @@
 ## frame's total, and the second names the last layer on.
 import game.RoadAhead
 import game.Clock
+import game.EncountersAhead
 import game.FrameView
 import game.Grass
 import game.Ground
@@ -111,11 +112,7 @@ scene_shapes_on = |on_layers| {
 		billboards: things_on(paused_scene.billboards, { on_layers, layer: Critters }),
 		cats: things_on(paused_scene.cats, { on_layers, layer: MovingThings }),
 		rails: things_on(paused_scene.rails, { on_layers, layer: Rails }),
-		truck: if on_layers.contains(MovingThings) {
-			paused_scene.truck
-		} else {
-			Err(NoTruck)
-		},
+		trucks: things_on(paused_scene.trucks, { on_layers, layer: MovingThings }),
 		birds: things_on(paused_scene.birds, { on_layers, layer: MovingThings }),
 	}
 	Scene.scene_shapes(only)
@@ -151,7 +148,7 @@ paused_scene = {
 		{
 			camera: paused_camera,
 			facts: {
-				speed: instant.rider.motorcycle.speed,
+				encounters: EncountersAhead.encounters_ahead(paused_tour.route, instant.rider),
 				truck: {
 					route_position: instant.truck.route_position,
 					lit_truck: FrameView.lit_truck(instant),

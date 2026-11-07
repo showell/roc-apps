@@ -5,6 +5,8 @@
 ## four lines of text that say what Cat and EncounterReaction make of the gap.
 import game.Cat
 import game.EncounterReaction
+import game.EncountersAhead
+import game.Route
 import game.Distance
 import game.Pixels
 import game.PosedCat
@@ -127,10 +129,13 @@ status_lines : Distance -> List(Str)
 status_lines = |gap| {
 	approach = { gap, speed: rider_speed }
 	instant = Cat.instant_at(World.first_cat_crossing, approach)
-	throttle = EncounterReaction.encounter_throttle(
-		World.first_cat_segment,
-		{ along: World.first_cat_crossing.along.minus(gap), speed: rider_speed },
-	)
+	rider = {
+		segment_index: Route.SegmentIndex.first,
+		motorcycle: { along: World.first_cat_crossing.along.minus(gap), speed: rider_speed },
+	}
+	cat_road_alone = Route.from_segments([{ ..World.first_cat_segment, ending: RouteEnds }])
+	encounters = EncountersAhead.encounters_ahead(cat_road_alone, rider)
+	throttle = EncounterReaction.encounter_throttle(encounters)
 	[
 		ReadoutText.stage_text(Cat.crossing_stage(approach)),
 		"Pose: ${pose_name(instant.pose)}",
