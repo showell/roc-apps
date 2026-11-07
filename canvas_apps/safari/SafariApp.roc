@@ -33,10 +33,10 @@ SafariApp :: [].{
 
 	## What to draw, turned by the rider's lean.
 	##
-	## **THE WHOLE FRAME LEANS**, backdrop and all, so the world banks into a
-	## turn. That is a camera whose target and offset are both the middle of
-	## the screen and whose rotation is the roll, the other way round: a
-	## `View` mark in front of everything else.
+	## The whole frame leans, backdrop and all, so the world banks into a turn.
+	## That is a camera whose target and offset are both the middle of the
+	## screen and whose rotation is the roll, the other way round: a `View`
+	## mark in front of everything else.
 	frame_shapes : Tour -> List(Shapes.Shape)
 	frame_shapes = |tour| {
 		centre = { x: Screen.width.to_f64() / 2.0, y: Screen.height.to_f64() / 2.0 }

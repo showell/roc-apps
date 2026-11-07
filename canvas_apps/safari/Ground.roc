@@ -1,6 +1,6 @@
-## Ground paints a flat patch of ground, such as a stretch of road or a
-## pond, as one polygon. The patch follows the earth's curve down as it
-## goes away from the rider.
+## Ground gives a flat patch of ground, such as a stretch of road or a pond, as
+## one polygon. The patch follows the earth's curve down as it goes away from
+## the rider.
 import Pixels
 import Camera
 import Distance
@@ -10,7 +10,7 @@ import lib.Shapes
 
 Ground :: [].{
 
-	## A patch of ground to paint: its corners and its colour.
+	## A patch of ground: its corners and its colour.
 	Patch : { corners : List(Geom.RiderPoint), color : I64 }
 
 	## A point on the ground, lowered by the earth's curve.

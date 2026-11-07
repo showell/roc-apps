@@ -76,7 +76,7 @@ Tour := {
 	roll : Tour -> Angle.Lean
 	roll = |tour| CanvasRoll.rider_roll(tour.instant.rider.lean)
 
-	# The sky at the top of the frame and at the horizon, as 0xRRGGBB.
+	# The sky's color at the top of the frame and at the horizon.
 	sky_top_color : Tour -> HexColor.Rgb
 	sky_top_color = |tour| Sky.sky_top_color(tour.instant.clock)
 
