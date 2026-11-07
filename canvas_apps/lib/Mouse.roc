@@ -1,8 +1,7 @@
-# Mouse -- where the pointer is and which buttons are down.
-#
-# Hand-written, and shaped like roc-ray's Mouse.Snapshot so a game reads it the
-# same way on both ends: `input.mouse.button_down(Left)`, `input.mouse.position()`.
-# Only the three buttons a browser reports are here; roc-ray names seven.
+# Mouse is where the pointer is and which buttons are down. It is shaped like
+# roc-ray's Mouse.Snapshot, so a game reads it the same way on both ends:
+# `input.mouse.button_down(Left)`, `input.mouse.position()`. Only the three
+# buttons a browser reports are here, where roc-ray names seven.
 #
 # Position is in the game's own coordinates, so a game never learns how big the
 # window is or how the page scaled the canvas.
@@ -21,9 +20,9 @@ Mouse :: [].{
 		}
 
 	# `wheel` is a field rather than a method, so a game reads it exactly as it
-	# does on roc-ray: `input.mouse.wheel`, positive away from the hand. **IT
-	# IS NOT CALLED wheel_delta**, which roc-ray also has and which means
-	# something else there -- both axes, as a Vec2. One name, one meaning.
+	# does on roc-ray: `input.mouse.wheel`, positive away from the hand. It is
+	# not called `wheel_delta`, because roc-ray's `wheel_delta` means both
+	# axes, as a Vec2.
 	Snapshot := { held : U32, struck : U32, at : { x : F32, y : F32 }, wheel : F32 }.{
 
 		## Whether a button is down now, however long it has been.

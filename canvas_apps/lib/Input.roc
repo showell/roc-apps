@@ -1,28 +1,25 @@
-# Input -- what the keyboard and the mouse looked like at one tick.
+# Input is what the keyboard and the mouse looked like at one tick.
 #
-# **NOT CALLED Devices, THOUGH IT MIRRORS roc-ray's Devices.Snapshot.**
-# CanvasAppRunner imports both, and two nominal types with the same qualified name
-# are ambiguous to the compiler, not only to a reader. Aliasing roc-ray's
-# module does NOT fix it: `import rr.Devices as HostDevices` was tried, and the
-# compiler still reports two `Devices.Snapshot`s with "the difference is inside
-# this type". The same alias DOES work for Mouse, whose type never has to be
-# named on both sides of one signature. roc-ray calls a tick's whole input
-# `App.Input`, so that is the name this takes -- knowing that roc-ray's
-# App.Input is a larger thing, carrying window, time and messages besides.
+# It mirrors roc-ray's Devices.Snapshot but is named for roc-ray's App.Input,
+# a tick's whole input, which on roc-ray also carries the window, the time
+# and messages. CanvasAppRunner imports both modules, and two nominal types
+# with the same qualified name are ambiguous to the compiler, which still
+# reports two `Devices.Snapshot`s when roc-ray's module is imported under
+# another name. Mouse can share roc-ray's name because its type never has to
+# be named on both sides of one signature.
 #
-# Hand-written, and shaped deliberately like roc-ray's `Devices.Snapshot`: a
-# game's `read_controls` is the one function that touches input, and it takes a
-# snapshot as a VALUE rather than performing an effect. Matching the shape --
-# `key_down`, `mouse.button_pressed`, the lot -- means
-# such a function ports between the two platforms with its import line changed
-# and nothing else.
+# It is shaped like roc-ray's `Devices.Snapshot` on purpose. A game's
+# `read_controls` is the one function that touches input, and it takes a
+# snapshot as a value rather than performing an effect, so with `key_down`,
+# `mouse.button_pressed` and the rest named alike, such a function ports
+# between the two platforms with its import line changed and nothing else.
 #
-# **A SNAPSHOT IS DATA, SO A PAGE CAN MAKE ONE.** The browser's event loop owns
+# A snapshot is data, so a page can make one. The browser's event loop owns
 # the keyboard and the pointer, keeps what is down, and hands one of these to
 # every tick. On roc-ray the runner converts the host's snapshot into one.
 #
-# `pressed` is the edge -- struck since the last tick -- and implies `down`.
-# Snake turns on the edge; Pong's paddle moves while a key is held.
+# `pressed` is the edge, struck since the last tick, and implies `down`.
+# Snake turns on the edge, and Pong's paddle moves while a key is held.
 import Keys
 import Mouse
 
