@@ -1,6 +1,7 @@
-## At a bend in the road, a safari animal stands on the outside of
-## the bend, beyond the guard rail, and its baby stands in the middle of the
-## road a little past the bend. Both face the way the road turns.
+## At a bend in the road, a safari animal stands on the outside of the bend,
+## beyond the guard rail, and its baby stands straight on past the bend, dead
+## ahead of a rider coming up to it, off the road the rider turns onto. Both
+## face the way the road turns.
 import Across
 import Along
 import Angle
@@ -47,7 +48,8 @@ Wildlife :: [].{
 adult_rail_buffer : Distance
 adult_rail_buffer = Distance.metres(1.5)
 
-## How far past the bend the baby stands.
+## How far the baby stands past the bend, straight on along the segment that
+## ends there, in the middle of where its road would run.
 baby_beyond : Distance
 baby_beyond = Distance.metres(14.0)
 
