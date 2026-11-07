@@ -34,14 +34,14 @@ Motorcycle := {
 
 	## The motorcycle one step on, at the lean and speed its controls set.
 	motorcycle_at_next_step : Motorcycle, Motorcycle.Controls -> Motorcycle
-	motorcycle_at_next_step = |s, { lean, speed }| {
+	motorcycle_at_next_step = |motorcycle, { lean, speed }| {
 		step_length = speed.step_length()
 		turn = lean.steer(turn_per_lean)
-		mid = s.yaw.plus(turn.times(0.5)).to_radians()
+		mid = motorcycle.yaw.plus(turn.times(0.5)).to_radians()
 		{
-			along: s.along.plus(step_length.times(mid.cos())),
-			across: s.across.plus(step_length.times(mid.sin())),
-			yaw: s.yaw.plus(turn),
+			along: motorcycle.along.plus(step_length.times(mid.cos())),
+			across: motorcycle.across.plus(step_length.times(mid.sin())),
+			yaw: motorcycle.yaw.plus(turn),
 			speed,
 			lean,
 		}
@@ -49,10 +49,10 @@ Motorcycle := {
 
 	## The controls that keep this motorcycle's lean and speed as they are.
 	steady_controls : Motorcycle -> Motorcycle.Controls
-	steady_controls = |s| { lean: s.lean, speed: s.speed }
+	steady_controls = |motorcycle| { lean: motorcycle.lean, speed: motorcycle.speed }
 
 	with_lean : Motorcycle, Angle.Lean -> Motorcycle
-	with_lean = |s, lean| { ..s, lean }
+	with_lean = |motorcycle, lean| { ..motorcycle, lean }
 
 	is_eq : _
 }

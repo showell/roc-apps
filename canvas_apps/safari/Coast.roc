@@ -21,25 +21,25 @@ Coast :: [].{
 	## one the step that ends it.
 	Path : { outcome : Coast.Outcome, path_motorcycles : List(Motorcycle) }
 
-	## The coast from `state`, step by step.
+	## The coast from `motorcycle`, step by step.
 	coast_path : Motorcycle -> Coast.Path
-	coast_path = |state| coast_keeping(state, KeepPath)
+	coast_path = |motorcycle| coast_keeping(motorcycle, KeepPath)
 
-	## Where a coast from `state` ends up.
+	## Where a coast from `motorcycle` ends up.
 	project : Motorcycle -> Coast.Outcome
-	project = |state| coast_keeping(state, DropPath).outcome
+	project = |motorcycle| coast_keeping(motorcycle, DropPath).outcome
 }
 
-## A coast from `state`, with its path or with an empty one. `project` runs
+## A coast from `motorcycle`, with its path or with an empty one. `project` runs
 ## inside every step of the ride, and building the path there makes a
 ## release-built ride two and a half times as slow, so only `coast_path` keeps
 ## it.
 coast_keeping : Motorcycle, [KeepPath, DropPath] -> Coast.Path
-coast_keeping = |state, keeping| {
+coast_keeping = |motorcycle, keeping| {
 	inset_hw = Geom.road_half_width.minus(shoulder_margin)
-	right_bound = Across.right_of_middle(inset_hw).max(state.across)
-	left_bound = Across.left_of_middle(inset_hw).min(state.across)
-	var $rider = state
+	right_bound = Across.right_of_middle(inset_hw).max(motorcycle.across)
+	left_bound = Across.left_of_middle(inset_hw).min(motorcycle.across)
+	var $rider = motorcycle
 	var $steps_run = Steps.zero
 	var $path = []
 	while $steps_run < longest_coast {
@@ -56,7 +56,7 @@ coast_keeping = |state, keeping| {
 		if $rider.across > right_bound {
 			return { outcome: Leaves({ side: Right, after: $steps_run }), path_motorcycles: $path }
 		}
-		if $rider.along.distance_from(state.along) >= Coast.clear_distance {
+		if $rider.along.distance_from(motorcycle.along) >= Coast.clear_distance {
 			return { outcome: EndsAt($rider.across), path_motorcycles: $path }
 		}
 	}

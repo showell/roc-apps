@@ -1,6 +1,6 @@
 ## Where the rider looks. A pig by the road catches the rider's eye: the gaze
 ## swivels toward it. The pig passes out of sight to the side while it is still
-## ahead, and the gaze eases back to the road.
+## ahead, and the gaze turns back to the road.
 ##
 ## Two words keep the eyes and the throttle apart. A look is what the eyes do,
 ## and it ends once the pig is too far round. Gawking is what the speed does,
@@ -120,8 +120,8 @@ distracting = World.first_distracting_segment
 ## A motorcycle `along` metres into the distracting segment, at rest in every
 ## other way. Gaze doesn't import Along, so `along` is a distance from the
 ## segment's start.
-rider : F64 -> Motorcycle
-rider = |along| {
+motorcycle_at : F64 -> Motorcycle
+motorcycle_at = |along| {
 	..Motorcycle.initial,
 	along: Motorcycle.initial.along.plus(Distance.metres(along)),
 }
@@ -135,14 +135,14 @@ turn_to_pig = |motorcycle|
 	}
 
 expect {
-	far = turn_to_pig(rider(200.0))
-	near = turn_to_pig(rider(320.0))
+	far = turn_to_pig(motorcycle_at(200.0))
+	near = turn_to_pig(motorcycle_at(320.0))
 	far > 0.0 and near > far
 }
 
-expect Gaze.desired_gaze(rider(200.0), plain) == OnRoad
-expect Gaze.desired_gaze(rider(100.0), distracting) == OnRoad
-expect Gaze.desired_gaze(rider(341.0), distracting) == OnRoad
+expect Gaze.desired_gaze(motorcycle_at(200.0), plain) == OnRoad
+expect Gaze.desired_gaze(motorcycle_at(100.0), distracting) == OnRoad
+expect Gaze.desired_gaze(motorcycle_at(341.0), distracting) == OnRoad
 
 ## The pig that catches the eye on the distracting segment.
 watched_pig : Geom.Placed(Billboard)
@@ -153,16 +153,16 @@ watched_pig =
 	}
 
 ## A motorcycle on the distracting segment, `metres` short of the pig.
-rider_short_of_pig : F64 -> Motorcycle
-rider_short_of_pig = |metres| {
-	..rider(0.0),
+short_of_pig : F64 -> Motorcycle
+short_of_pig = |metres| {
+	..motorcycle_at(0.0),
 	along: watched_pig.road_point.along.minus(Distance.metres(metres)),
 }
 
 ## A motorcycle 100 m short of the pig, turned so the pig is `degrees` off.
-rider_with_pig_off : F64 -> Motorcycle
-rider_with_pig_off = |degrees| {
-	straight = rider_short_of_pig(100.0)
+motorcycle_with_pig_off : F64 -> Motorcycle
+motorcycle_with_pig_off = |degrees| {
+	straight = short_of_pig(100.0)
 	{ ..straight, yaw: turn_to(straight, watched_pig).minus(Angle.Turn.degrees(degrees)) }
 }
 
@@ -174,7 +174,7 @@ expect
 		(-34.99, True),
 		(35.01, False),
 		(-35.01, False),
-	].all(|(degrees, is_in_sight)| is_looking(rider_with_pig_off(degrees)) == is_in_sight)
+	].all(|(degrees, is_in_sight)| is_looking(motorcycle_with_pig_off(degrees)) == is_in_sight)
 
 ## Whether this motorcycle's rider on the distracting segment wants to look at
 ## the pig.
@@ -255,5 +255,5 @@ expect depth_after(eyes_at_depth(0.0, 0.0), 0.0) == 0.0
 expect depth_after(eyes_at_depth(0.0, 90.0 * Trig.degree), 90.0 * Trig.degree) == 1.0
 
 # The gawking outlasts the look.
-expect !is_looking(rider(341.0))
-expect Gawking.is_gawking(rider(341.0), distracting)
+expect !is_looking(motorcycle_at(341.0))
+expect Gawking.is_gawking(motorcycle_at(341.0), distracting)

@@ -46,7 +46,7 @@ GazeWidgetApp :: [].{
 }
 
 ## What the rider is doing about the pig at one step.
-GazePhase : [EyesOnRoad, LookingAtPig, EasingBack, EyesBack]
+GazePhase : [EyesOnRoad, LookingAtPig, TurningBack, EyesBack]
 
 ## The first step on show, with the pig still too far off to notice.
 first_step : U32
@@ -145,7 +145,7 @@ phase_of = |rider|
 		match Gaze.desired_gaze(rider.motorcycle, pig_segment) {
 			OnPig(_) => LookingAtPig
 			OnRoad if rider.eyes.gaze_yaw == Angle.straight_ahead => EyesBack
-			OnRoad => EasingBack
+			OnRoad => TurningBack
 		}
 	}
 
@@ -288,7 +288,7 @@ phase_text = |phase|
 	match phase {
 		EyesOnRoad => "Eyes on the road"
 		LookingAtPig => "Looking at the pig, and slowing"
-		EasingBack => "Too far round: the gaze eases back"
+		TurningBack => "Too far round: the gaze turns back"
 		EyesBack => "Eyes back on the road, still slow"
 	}
 
@@ -373,8 +373,8 @@ expect {
 		(look_first_step - 1, EyesOnRoad),
 		(look_first_step, LookingAtPig),
 		(look_end_step - 1, LookingAtPig),
-		(look_end_step, EasingBack),
-		(eyes_back_step - 1, EasingBack),
+		(look_end_step, TurningBack),
+		(eyes_back_step - 1, TurningBack),
 		(eyes_back_step, EyesBack),
 		(last_step, EyesBack),
 	].all(|(step, phase)| phase_of(state_at_step(played, step)) == phase)
