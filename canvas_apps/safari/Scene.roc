@@ -49,6 +49,7 @@ Scene := {
 	scene_in_view = |road, { camera, facts }| {
 		cam_focal = camera.cam_focal
 		on_road = { road, vantage: camera.vantage }
+		birds_seen = EncounterSighting.birds_in_view(road, { camera, encounter: facts.encounter })
 		truck_at = TruckSighting.truck_in_view(
 			road,
 			{
@@ -59,10 +60,7 @@ Scene := {
 		)
 		{
 			trees: Scene.tree_renderings(TreeSighting.trees_in_view(road, camera), cam_focal),
-			birds: EncounterSighting.birds_in_view(road, { camera, encounter: facts.encounter })
-				.map(
-					|bird| Pipeline.rendering_of(bird, { cam_focal, context: {} }),
-				),
+			birds: birds_seen.map(|bird| Pipeline.rendering_of(bird, { cam_focal, context: {} })),
 			towers: TowerSighting.towers_in_view(road, { camera, clock: facts.clock }).map(
 				|tower| Pipeline.rendering_of(tower, { cam_focal, context: on_road }),
 			),
