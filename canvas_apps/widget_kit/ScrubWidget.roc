@@ -4,10 +4,8 @@
 ## the picture and the lines of text below it. ReadoutText puts a widget's numbers
 ## into words for those lines, and VcrButtons reads a widget's buttons into its
 ## state.
-import game.Clock
-import game.Backdrop
-import game.Sky
-import game.Sun
+import game.FrameView
+import game.Screen
 import lib.Brush
 import lib.RgbColor
 import lib.CanvasApp
@@ -96,29 +94,19 @@ ScrubWidget :: [].{
 	frame_shapes = |{ picture_shapes, status_lines }|
 		[picture_shapes, [panel], status_lines.map_with_index(status_line)].join()
 
-	## The ride's sky and grass with `shapes` over them, at two thirds of
+	## The whole of `view`, backdrop and shapes, at the canvas's share of
 	## Safari's screen, so a widget's picture is what the ride's frame shows.
-	## The sky is `clock`'s, and `sun` is where the sun stands in it.
-	ride_shapes : List(Shapes.Shape), { clock : Clock, sun : Sun.Sighting } -> List(Shapes.Shape)
-	ride_shapes = |shapes, { clock, sun }|
-		ride_shapes_in(shapes, { sky_colors: Sky.colors_at(clock), sun_sighting: sun })
-
-	## The same picture under any sky, for a widget that shows part of a sunset.
-	ride_shapes_in : List(Shapes.Shape),
-	{
-		sky_colors : Sky.Colors,
-		sun_sighting : Sun.Sighting,
-	} -> List(Shapes.Shape)
-	ride_shapes_in = |shapes, sky| {
+	## A widget's picture is never rolled.
+	ride_shapes : FrameView -> List(Shapes.Shape)
+	ride_shapes = |view| {
 		corner = { x: 0.0, y: 0.0 }
-		Shapes.in_space(
+		view.framed_shapes(
 			World({
 				target: corner,
 				offset: corner,
 				rotation: 0.0,
-				zoom: 2.0 / 3.0,
+				zoom: canvas_width / Screen.width.to_f64(),
 			}),
-			Backdrop.frame_shapes(shapes, sky),
 		)
 	}
 }
@@ -153,28 +141,6 @@ panel = Rect({
 
 status_line : Str, U64 -> Shapes.Shape
 status_line = |text, row| ScrubWidget.readout({ text, color: ink_color, row })
-
-# The first view mark, the sky, the grass, the shapes, and the mark back to the
-# screen.
-expect
-	ScrubWidget.ride_shapes(
-		[
-			Rect({
-				x: 0.0,
-				y: 0.0,
-				width: 1.0,
-				height: 1.0,
-				fill: Flat({
-					r: 0.0,
-					g: 0.0,
-					b: 0.0,
-					a: 1.0,
-				}),
-			}),
-		],
-		{ clock: Clock.start, sun: OutOfView },
-	).len()
-		== 5
 
 # A page is the panel and its text.
 expect ScrubWidget.frame_shapes({ picture_shapes: [], status_lines: [] }).len() == 1

@@ -5,6 +5,7 @@
 ## thirds of its size. Below it, lines of text read out the calls to Sky, and a
 ## small chart plots their answers over the whole sunset. The book opens it at
 ## one of three jobs, and each job adds a call.
+import game.Angle
 import game.Clock
 import game.Lens
 import game.Pixels
@@ -108,13 +109,12 @@ sky_colors = |job, clock|
 ## The ride's sky at `clock`, for a rider facing the sun.
 picture_shapes : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
 picture_shapes = |job, clock|
-	ScrubWidget.ride_shapes_in(
-		[],
-		{
-			sky_colors: sky_colors(job, clock),
-			sun_sighting: Sun.sighting({ heading: Sun.bearing, cam_focal: Lens.resting_focal }, clock),
-		},
-	)
+	ScrubWidget.ride_shapes({
+		shapes: [],
+		sun: Sun.sighting({ heading: Sun.bearing, cam_focal: Lens.resting_focal }, clock),
+		sky_colors: sky_colors(job, clock),
+		roll: Angle.upright,
+	})
 
 ## The calls this widget makes at `clock`, and their answers, a line each.
 status_lines : SkyWidgetApp.Job, Clock -> List(Str)

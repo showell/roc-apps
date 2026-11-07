@@ -23,6 +23,13 @@ Shale is a small Lua-like language:
 - **Running a program:** `local r = run({"git", "status"}, {timeout_ms = 60000, whole = 20000, want = "any"})`, then `print(r.code)` and `print(r.out)`. Both `timeout_ms` and a keep (`whole`, `head` or `tail`) are required. A text tool such as grep needs a reason, as in `want = "any: callers"`.
 - **Never read `~/.config/shale/mounts`, and never run `shale --help`.** Both show the path of the secrets folder. The `scratch:` mount is `/tmp/claude-1000`, so write scratch files there under `/tmp/claude-1000/<lane>/`.
 - **A scratch Roc module** must declare a type named after its file.
+- **Shale gaps agents keep hitting:**
+  - There's no `write` or `write_file`: `replace(path, text)` writes a file.
+  - `substitute(text, old, new)` replaces in a string, and `find(text, pattern)` searches it. There's no `string.*` or `gsub`.
+  - A long string holding `]]` needs `[=[ ... ]=]`.
+  - A function sees only `const`s, not the script's locals.
+  - `read` and `replace` paths are relative to the folder you `cd` to, or a mount such as `repos:` or `scratch:`, never absolute.
+  - Map keys must be strings.
 - **Files:** read with the Read tool, and edit with Edit and Write.
 - **Not in the language:** `table.*`, `local function`, and `type()`.
   - Declare a function with `function name()` at the top level.
@@ -127,7 +134,7 @@ it plain, and don't write long prose. For each finding, worst first, give:
 - **Fix:** the change you recommend, as concrete as a signature. Show a short
   before and after for the worst one or two findings.
 - **Reach:** the files the fix touches. Mark any shared module (Geom, Camera,
-  Picture, Pipeline, RoadAhead, World, Scenery, SceneShapes, anything in `lib`,
+  Picture, Pipeline, RoadAhead, World, Segment, Route, SceneShapes, anything in `lib`,
   `Distance`, `Along`, `Across`, `Fraction`, `Pixels`, `Angle`), and any widget
   that imports the module.
 - **Pixels:** whether the fix should leave every pixel as it is, or would move
@@ -189,12 +196,12 @@ files, and one frame held to `gates/proof.expected`.
   its cache, which takes longer.
 - **Widgets:** if you change something a widget imports, also run `roc check web.roc` in that widget's folder (`canvas_apps/<name>_widget`), with the
   pinned Roc: `/home/steve/tools/roc-nightly-2026-11-03-34bd006/roc`.
+- **A change that moves the ride or any pixel:** run `shale canvas_apps/safari/gates/run.shale part=widgets` (every widget's `roc check` and `roc test`, about 40 seconds). Several widgets hold numbers from a paused step of the real ride, such as the frame widget's shape counts at step 1570, so they break even when you didn't touch them.
 - **Whole-tree lints:** before you report, also run `shale canvas_apps/safari/gates/lints.shale` from the worktree root, about 17 seconds. fast.shale skips the lints that read across files (boundaries, families and others), and they catch what a lane's rename or new parameter does elsewhere.
-- **The book's two parts:** also run `shale canvas_apps/safari/gates/run.shale part=tutorial` and `part=book_names`, a second each. The book must name every module, so a new module needs a mention, and a moved name needs its include repointed.
+- **The book:** also run `shale canvas_apps/safari/gates/run.shale part=tutorial`, about a second. It fails only if an include breaks. While the book is parked, its stale names and the rule that it names every module are skipped, loudly (they print SKIPPED with their counts).
 - **The full gate is the orchestrator's.** Don't run `gates/run.shale`.
 - **A lint you trip:** fix the code. Never loosen a lint or raise a held
-  count, except for the book's stale-name counts in `gates/run.shale`, as
-  noted below.
+  count.
 
 ### Pixels
 
@@ -214,10 +221,10 @@ rewritten later.
 - **Prose:** don't rewrite any.
 - **A broken include:** if an include such as `{{code Module.name}}` names
   something you moved, point it at the new name.
-- **Stale names:** if a name in the prose goes stale, raise
-  `BOOK_STALE_NAMES_HELD` (or `BOOK_STALE_DIAGRAM_NAMES_HELD`) in
-  `gates/run.shale` to match, and list each newly stale name, with its line,
-  in your report.
+- **Stale names and new modules:** leave them. No count is held while the
+  book is parked (Steve: "a skip is actually more honest than churning
+  counts"), and no module list needs a mention added. Name in your report any
+  sentence your change makes plainly false, so it's logged for the rewrite.
 
 ### Report
 
@@ -226,7 +233,7 @@ Keep it short:
 - each fix, done or not, with the reason if not
 - the fast.shale result
 - whether pixels moved
-- book names that went stale
+- book sentences your change made plainly false
 - anything you saw and left alone
 
 ## What tripped you up (every report, reviews and cleanups alike)

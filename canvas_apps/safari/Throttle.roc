@@ -5,7 +5,7 @@ import Acceleration
 import Along
 import Angle
 import Coast
-import CrossingReaction
+import EncounterReaction
 import Gawking
 import Motorcycle
 import Route
@@ -23,7 +23,7 @@ Throttle :: [].{
 		offered = VehicleLimits.cruise_acceleration
 		limits = [
 			bend_limit(motorcycle, { segment: seg, exit_speed: exit_speed(seg) }),
-			CrossingReaction.crossing_throttle(seg, motorcycle),
+			EncounterReaction.encounter_throttle(seg, motorcycle),
 			Gawking.gawk_brake(motorcycle, seg),
 			shoulder_limit(motorcycle),
 		]

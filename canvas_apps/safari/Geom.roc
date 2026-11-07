@@ -67,6 +67,10 @@ Geom :: [].{
 	right_edge : Across
 	right_edge = Across.right_of_middle(road_half_width)
 
+	## How far from the middle of the road the nearest row of a herd stands.
+	herd_front_distance : Distance
+	herd_front_distance = road_half_width.plus(Distance.metres(10.0))
+
 	## A line through two points.
 	Line : { start_point : Geom.RiderPoint, end_point : Geom.RiderPoint }
 

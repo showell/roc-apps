@@ -788,7 +788,7 @@ Opaque types do the most work from here on. A `Bearing` and a `Turn` are both fl
 
 Its caller, `RideInstant.sun`, is short enough to read whole:
 
-{{code RideInstant.frame_content}}
+{{code FrameView.frame_view_at}}
 
 Those functions all take a `clock`, and that's the hard part. The sun sinks a little with every step, and the sky's colors, the mountains and the truck's headlights all follow it. That's a lot of heavy lifting for a circle. It gets a chapter of its own, The setting sun, once things start to move.
 
@@ -825,7 +825,7 @@ Every function in this chapter has a `->` arrow, not `=>`. That tells you the fu
 
 Here's one of the questions being asked. `Tour` holds the ride, and we'll come back to it. `Tour.sky_top_color` takes the clock from the current instant and hands it to `Sky`.
 
-{{code Tour.sky_colors}}
+{{code FrameView.frame_view_at from "sky_colors: Sky.colors_at" to "sky_colors: Sky.colors_at"}}
 
 ### Two colors
 
@@ -1214,7 +1214,7 @@ The first three lines under the picture are that record's three fields, read fro
 New in this chapter:
 
 - Roc: nominal types
-- Modules: `RideInstant`, `Tour`
+- Modules: `RideInstant`, `Tour`, `FrameView`
 
 A record is the plainest shape in Roc, and it's nearly all this needs. `RideInstant := { ... }.{ ... }` makes the module's own type out of one. That's a nominal type, which can carry a block of definitions, and unlike an opaque type it leaves its fields readable.
 
@@ -1378,7 +1378,7 @@ A box is a function, and an arrow is a call. The three boxes under the frame are
 
 Here's the top of that diagram in code. Each frame, the game asks for three things and hands them to `Backdrop`:
 
-{{code SafariApp.frame_shapes from "frame = Tour.frame_content(tour)" to "sun_sighting: frame.sun"}}
+{{code FrameView.framed_shapes}}
 
 `Tour` holds the clock and hands it straight to `Sun` and `Sky`, so everything from here on is in those two. Let's take the three jobs in order.
 
@@ -1539,7 +1539,7 @@ When the rider leans, the whole picture leans with it. This is all of that:
 
 A lean inside the deadband leaves the canvas level, and any other lean passes straight through. The last `expect` is a table of pairs, on both sides of the deadband and at its edge. It's called once a frame:
 
-{{code Tour.roll}}
+{{code FrameView.frame_view_at from "roll: CanvasRoll" to "roll: CanvasRoll"}}
 
 The camera turns as well. `ViewYaw` follows the rider's gaze, and turns a little with the lean, as a rider's head turns into a bend.
 
@@ -1878,7 +1878,7 @@ The truck's headlights come on once the sun has gone behind the mountains, at st
 
 `RideInstant` puts it together. It's the only place that can. `Truck` is in the ride half of the system and `Mountains` is in the view, and no arrow goes from the first to the second. `RideInstant` imports both.
 
-{{code RideInstant.lit_truck}}
+{{code FrameView.lit_truck}}
 
 Lamps are plain data. The sighting carries them, and the drawing does what they say, with each `match` covering both tags:
 
@@ -1901,7 +1901,7 @@ Play it, and the gap falls from 50 metres to 0, with the rider held at a metre a
 New in this chapter:
 
 - Roc: type parameters, operators on opaque types, `var`, `for` and `return` in a pure function
-- Modules: `Cat`, `Animation`, `Beat`, `Beats`, `CatHeights`
+- Modules: `Cat`, `CatCrossing`, `Animation`, `Beat`, `Beats`, `CatHeights`
 
 The cat is one function, `Cat.instant_at`, with two jobs: work out how far along the crossing is, and look up what the cat does at that point. The module `Animation` sits under both.
 
@@ -1934,7 +1934,7 @@ A crossing and an approach go in, and the cat at that instant comes out. The sam
 
 `CrossingSighting.cat_in_view` calls it, adding the distance to the segment to get the gap:
 
-{{code CrossingSighting.crossing_in_view}}
+{{code EncounterSighting.encounter_in_view}}
 
 What `Cat` gets from `Animation` comes down to one type, `Stage`:
 
@@ -2096,11 +2096,11 @@ digraph screen {
 
 `cat_in_view` places the cat and decides whether it's big enough to draw. An empty list or a list of one is how it says "maybe".
 
-{{code CrossingSighting.cat_in_view}}
+{{code EncounterSighting.segment_cat}}
 
 `segment_cat` calls it for a segment with a cat, and `cats_in_view` flattens the answers with `join_map`, so a "no" simply disappears:
 
-{{code CrossingSighting.cats_in_view}}
+{{code EncounterSighting.cats_in_view}}
 
 Looking back over the chapter, notice what isn't in it: a cat in `RideInstant`, an update loop, or a flag saying the cat has already crossed.
 
@@ -2218,15 +2218,15 @@ Where a bird flies is decided once, when the world is built. `habit_from` shows 
 
 The caller's return type is written in place, a tag union that exists for this one function and fits straight into the `crossing` field of a segment:
 
-{{code BirdFlight.crossing_among}}
+{{code Segment.fifth_left_tree}}
 
 And that's called from a `match` in the middle of a record, which is a reminder that `match` is an expression. The plan's plain `BirdHere` tag comes in, and `BirdHere(route_segments)` goes out:
 
-{{code Segment.from_choices from "crossing: match choices.crossing {" to "QuietRoad => QuietRoad"}}
+{{code Segment.from_choices from "encounter: match choices.encounter {" to "QuietRoad => QuietRoad"}}
 
 Each frame, a sighting reads the route back. The crossing is matched in full, so a third kind of crossing would stop here until someone says what a bird sighting should do about it:
 
-{{code CrossingSighting.segment_bird}}
+{{code EncounterSighting.segment_bird}}
 
 We didn't need any new machinery for the bird. Above their `expect`s, the four bird modules come to about 450 lines, a quarter of them coordinates for the stills. `Animation` has nothing in it about birds.
 
@@ -2280,11 +2280,11 @@ Let's follow this back to `Cat`, to two small questions about the same `Stage`.
 
 `CrossingReaction.reaction_to` calls both. `..` in the argument's type makes it an open record, like `Bike.Motion`, though this one is only read and nothing comes back. This function needs `along` and `speed`, and accepts any record that has them, so it doesn't depend on `RiderState`, the rider's record. `speed` here is the opaque `Speed` again, and `match` on `segment.crossing` has to name every tag.
 
-{{code CrossingReaction.crossing_throttle}}
+{{code EncounterReaction.encounter_throttle}}
 
 A cat in the lane stops the rider opening the throttle, without braking, and widens the view as it pulls the rider's eye. Two tags, `MayAccelerate` and `NoAcceleration`, stand where a boolean might have gone. The next call up, `crossing_attention`, is one line, and its caller, `ride_focal`, works out the view's focal length:
 
-{{code CrossingReaction.crossing_attention}}
+{{code EncounterReaction.encounter_attention}}
 
 {{code RideFocal.ride_focal}}
 

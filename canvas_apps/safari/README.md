@@ -32,16 +32,17 @@ The rest have been rewritten by hand.
 | | |
 |---|---|
 | `SafariApp.roc` | the `CanvasApp` value: the keys, the pause, and the frame leaned by the rider's roll |
-| `Tour.roc` | the whole ride for any platform: the current instant, the instants behind it for stepping back, and what a frame shows — the shapes, the roll, the sky colours, the sun |
+| `Tour.roc` | the whole ride for any platform: the current instant, the instants behind it for stepping back, and the current instant's `FrameView` |
+| `FrameView.roc` | what the camera shows at one instant: the shapes, the sun, the sky colours and the roll |
 | `Backdrop.roc` | a frame as shapes: the sky's gradient, the sun and its glow, the grass, and the ride's shapes |
 | `Polygon.roc` | makers that turn screen points and colours into `Shapes.Shape` values, for the drawing modules |
 | `HexColor.roc` | lib's `RgbColor`: its channels, packing them, and shading |
 | `SafariFrame.roc` | a frame painted into pixels in Roc, for the proof tools below |
 | `RideInstant.roc` and the chapter modules | one instant of the ride, the world, the route, the rider, the animals, the scenery, and how each is drawn |
-| `PosedBird.roc` | the bird, the first thing here that was never Codex, with `BirdFlight.roc`, `CrossingSighting.roc` and `BirdStills.roc` |
+| `PosedBird.roc` | the bird, the first thing here that was never Codex, with `BirdFlight.roc`, `EncounterSighting.roc` and `BirdStills.roc` |
 | `Pipeline.roc` | the steps every kind of object takes through a frame: placed (`Geom.Placed`), sighted (`Pipeline.Sighted`), then rendered (`Rendered.roc`, a `Picture.roc` and its depth). `Conifer.roc`, `Billboard.roc`, `Tower.roc` and `LitTruck.roc` are among the kinds that go through it, and the depth sort orders the renderings |
 | `Animation.roc` | what the cat and the bird share: a rule that turns where the rider is into a stage, and a timeline that turns a stage into an instant |
-| `CrossingReaction.roc` | what a segment's crossing does to the rider, the one place that matches on it for `Throttle` and `RideFocal` |
+| `EncounterReaction.roc` | what a segment's encounter does to the rider, the one place that matches on it for `Throttle` and `RideFocal` |
 | `gates/` | test code the game never runs: the tiers `fast.shale`, `run.shale` and `publish.shale`, and the lints; `CrossModuleExpects.roc`, the expects that need more than the module they check imports; the proof tools and the modules only they use. They reach the game's modules through the package `game.roc` |
 
 **The rider's lean is a camera.** The whole frame, backdrop and all, turns by

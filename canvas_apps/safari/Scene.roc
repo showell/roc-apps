@@ -3,7 +3,7 @@
 ## found by its own sighting.
 import Billboard
 import Clock
-import CrossingSighting
+import EncounterSighting
 import Conifer
 import BillboardSighting
 import Distance
@@ -45,17 +45,11 @@ Scene := {
 		road = view.road
 		trees = TreeSighting.trees_in_view(view)
 		towers = TowerSighting.towers_in_view(road, clock)
-		billboards = BillboardSighting.billboards_to_draw(BillboardSighting.billboard_fates(road))
-		cats = CrossingSighting.cats_in_view(view, speed)
+		billboards = BillboardSighting.billboards_in_view(road)
+		cats = EncounterSighting.cats_in_view(view, speed)
 		rails = RailSighting.rails_in_view(road)
-		rider_distance = road.route.distance_along_route(
-			{ index: RoadAhead.rider_segment(road), along: road.vantage.along },
-		)
-		truck_at = TruckSighting.truck_in_view(
-			road,
-			{ lead: truck.route_position.minus(rider_distance), lit_truck: truck.lit_truck },
-		)
-		birds = CrossingSighting.birds_in_view(view)
+		truck_at = TruckSighting.truck_in_view(road, truck)
+		birds = EncounterSighting.birds_in_view(view)
 		{
 			trees,
 			towers,

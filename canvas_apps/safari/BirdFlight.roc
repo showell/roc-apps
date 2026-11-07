@@ -50,23 +50,19 @@ BirdFlight :: [].{
 		List.repeat(Diving, frames_a_flap),
 	].join()
 
-	## The tree a bird starts on, the fifth with a negative `across`. Those are
-	## on the left, and an unflipped still's beak points toward +x, so from
-	## there the bird faces the road.
-	fifth_left_tree : List(Trees.RoadsideTree) -> [Found(Trees.RoadsideTree), NoTree]
-	fifth_left_tree = |trees|
-		match trees.keep_if(|tree| tree.road_point.across < Across.middle).drop_first(4).first() {
-			Ok(tree) => Found(tree)
-			Err(ListWasEmpty) => NoTree
+	## The habit of a bird perched on the tree at `perch`, among a segment's
+	## `trees`: to fly to the first tree on the other side of the road far enough
+	## along, or, with none, to stay put.
+	habit_from : List(Trees.RoadsideTree), Trees.RoadsideTree -> BirdFlight.Habit
+	habit_from = |trees, perch| {
+		is_far_enough = |tree| tree.road_point.along >= perch.road_point.along.plus(shortest_hop)
+		is_far_side = |tree| tree.road_point.across > Across.middle
+		far_side = trees.keep_if(|tree| is_far_side(tree) and is_far_enough(tree))
+		match far_side.first() {
+			Ok(to) => { perch, leaves_for: FliesTo(to) }
+			Err(ListWasEmpty) => { perch, leaves_for: StaysPut }
 		}
-
-	## The bird of a segment with `trees`, if one has a tree to start on.
-	crossing_among : List(Trees.RoadsideTree) -> [BirdHere(BirdFlight.Habit), QuietRoad]
-	crossing_among = |trees|
-		match fifth_left_tree(trees) {
-			Found(tree) => BirdHere(habit_from(trees, tree))
-			NoTree => QuietRoad
-		}
+	}
 
 	## Where the bird's flight has got to, with the rider `gap` from the tree it
 	## left.
@@ -94,18 +90,6 @@ shortest_hop = Distance.metres(25.0)
 ## How many frames one flap of the wings takes, half of them up and half down.
 frames_a_flap : U64
 frames_a_flap = 40
-
-## The habit of a bird perched on the tree at `perch`: to fly to the first tree
-## on the other side of the road far enough along, or, with none, to stay put.
-habit_from : List(Trees.RoadsideTree), Trees.RoadsideTree -> BirdFlight.Habit
-habit_from = |trees, perch| {
-	is_far_enough = |tree| tree.road_point.along >= perch.road_point.along.plus(shortest_hop)
-	far_side = trees.keep_if(|tree| tree.road_point.across > Across.middle and is_far_enough(tree))
-	match far_side.first() {
-		Ok(to) => { perch, leaves_for: FliesTo(to) }
-		Err(ListWasEmpty) => { perch, leaves_for: StaysPut }
-	}
-}
 
 ## The bird as it sits on top of `tree`.
 sitting_on : Trees.RoadsideTree -> BirdFlight.BirdInstant
@@ -192,27 +176,9 @@ red_top = Conifer.Red.scenery_height().to_metres()
 gold_top : F64
 gold_top = Conifer.Gold.scenery_height().to_metres()
 
-## A left and a right tree at each of `alongs`.
-pairs_at : List(F64) -> List(Trees.RoadsideTree)
-pairs_at = |alongs| alongs.join_map(|along| [tree_at(along, -6.0), tree_at(along, 6.0)])
-
-## How far along the fifth left tree of `choices` is, if there is one.
-fifth_along : List(Trees.RoadsideTree) -> Try(F64, [NoTree])
-fifth_along = |choices|
-	match BirdFlight.fifth_left_tree(choices) {
-		Found(tree) => Ok(tree.road_point.along.to_metres())
-		NoTree => Err(NoTree)
-	}
-
-expect fifth_along([]) == Err(NoTree)
-expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0])) == Err(NoTree)
-expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0])) == Ok(50.0)
-expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0, 60.0])) == Ok(50.0)
-expect fifth_along([50.0, 60.0, 70.0, 80.0, 90.0].map(|along| tree_at(along, 6.0))) == Err(NoTree)
-
 chosen_along : List(Trees.RoadsideTree) -> List(F64)
 chosen_along = |choices|
-	match habit_from(choices, left_tree).leaves_for {
+	match BirdFlight.habit_from(choices, left_tree).leaves_for {
 		FliesTo(to) => [to.road_point.along.to_metres(), to.road_point.across.to_metres()]
 		StaysPut => []
 	}
@@ -221,7 +187,7 @@ expect chosen_along(sample_trees) == [140.0, 6.0]
 expect chosen_along([left_tree, tree_at(124.0, 6.0)]) == []
 expect chosen_along([left_tree, tree_at(125.0, 6.0)]) == [125.0, 6.0]
 expect chosen_along([left_tree, tree_at(140.0, -6.0)]) == []
-expect habit_from(sample_trees, left_tree).perch == left_tree
+expect BirdFlight.habit_from(sample_trees, left_tree).perch == left_tree
 
 ## How far through its flight a bird with the rider `gap` off is.
 progress_at : Distance -> F64

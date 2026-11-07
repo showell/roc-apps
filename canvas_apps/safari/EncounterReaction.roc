@@ -1,8 +1,8 @@
-## What a segment's crossing does to the rider. The rider reacts only to the
-## crossing on their own segment, though animations play along the road ahead,
-## and this is the one place that knows which crossings ask anything of them.
+## What a segment's encounter does to the rider. The rider reacts only to the
+## encounter on their own segment, though animations play along the road ahead,
+## and this is the one place that knows which encounters ask anything of them.
 ## A cat in the road stops the rider opening the throttle, without braking, and
-## draws their eye. A bird asks nothing. The pigs' gaze is no crossing, and is
+## draws their eye. A bird asks nothing. The pigs' gaze is no encounter, and is
 ## Gaze's.
 import Acceleration
 import Along
@@ -14,14 +14,14 @@ import Speed
 import VehicleLimits
 import World
 
-CrossingReaction :: [].{
+EncounterReaction :: [].{
 
-	## What `segment`'s crossing asks of the throttle of a rider on that
+	## What `segment`'s encounter asks of the throttle of a rider on that
 	## segment: a cat crossing holds the acceleration at none, which stops the
 	## rider speeding up and never brakes.
-	crossing_throttle : Segment, { along : Along, speed : Speed, .. } -> VehicleLimits.Limit
-	crossing_throttle = |segment, rider|
-		match segment.crossing {
+	encounter_throttle : Segment, { along : Along, speed : Speed, .. } -> VehicleLimits.Limit
+	encounter_throttle = |segment, rider|
+		match segment.encounter {
 			CatCrosses(crossing) => {
 				approach = { gap: crossing.along.distance_from(rider.along), speed: rider.speed }
 				if Cat.is_crossing(approach) {
@@ -33,10 +33,10 @@ CrossingReaction :: [].{
 			BirdHere(_) | QuietRoad => NoLimit
 		}
 
-	## How hard `segment`'s crossing holds the eye of a rider on that segment.
-	crossing_attention : Segment, { along : Along, speed : Speed, .. } -> Attention
-	crossing_attention = |segment, rider|
-		match segment.crossing {
+	## How hard `segment`'s encounter holds the eye of a rider on that segment.
+	encounter_attention : Segment, { along : Along, speed : Speed, .. } -> Attention
+	encounter_attention = |segment, rider|
+		match segment.encounter {
 			CatCrosses(crossing) => {
 				approach = { gap: crossing.along.distance_from(rider.along), speed: rider.speed }
 				Cat.attention(approach)
@@ -56,9 +56,9 @@ cat_segment = World.route.segment_at(Route.SegmentIndex.number(3))
 
 cat_along : Along
 cat_along =
-	match cat_segment.crossing {
+	match cat_segment.encounter {
 		CatCrosses(crossing) => crossing.along
-		BirdHere(_) | QuietRoad => crash "CrossingReaction: segment 3 has a cat"
+		BirdHere(_) | QuietRoad => crash "EncounterReaction: segment 3 has a cat"
 	}
 
 ## A rider `along` their segment at `speed` metres a step.
@@ -72,12 +72,12 @@ short_of_cat = |gap, speed| rider_at(Along.metres(cat_along.to_metres() - gap), 
 ## What the cat asks of the throttle of a rider `gap` metres short of it.
 throttle_for_cat : F64, F64 -> VehicleLimits.Limit
 throttle_for_cat = |gap, speed|
-	CrossingReaction.crossing_throttle(cat_segment, short_of_cat(gap, speed))
+	EncounterReaction.encounter_throttle(cat_segment, short_of_cat(gap, speed))
 
 ## How hard the cat holds the eye of a rider `gap` metres short of it.
 attention_to_cat : F64, F64 -> F64
 attention_to_cat = |gap, speed|
-	CrossingReaction.crossing_attention(cat_segment, short_of_cat(gap, speed)).to_f64()
+	EncounterReaction.encounter_attention(cat_segment, short_of_cat(gap, speed)).to_f64()
 
 expect throttle_for_cat(42.0, 1.0) == NoLimit
 expect throttle_for_cat(41.0, 1.0) == NoLimit
@@ -106,8 +106,8 @@ expect
 			|along| [0.0, 0.3, 1.0].all(
 				|speed| {
 					rider = rider_at(Along.metres(along), speed)
-					CrossingReaction.crossing_throttle(segment, rider) == NoLimit
-						and CrossingReaction.crossing_attention(segment, rider) == Attention.none
+					EncounterReaction.encounter_throttle(segment, rider) == NoLimit
+						and EncounterReaction.encounter_attention(segment, rider) == Attention.none
 				},
 			),
 		),

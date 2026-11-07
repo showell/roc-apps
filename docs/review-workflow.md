@@ -8,7 +8,7 @@ The process makes code right one module at a time, types first. Cold agents revi
 
 **Review agent.** It reads the guides (`CLAUDE.md`, `docs/roc-style.md`, `docs/smells.md`), walks a module with `cookbook:roc/type_walk.shale` and reports findings. It changes nothing. Each finding gives what the smell is, the fix, its reach, whether pixels move, and whether the call is clear or needs Steve. The report ends with how the walk felt, noisy or incomplete, which is how the tool gets tuned.
 
-**Cleanup agent.** It makes only the fixes the orchestrator decided, in a worktree of its own, and runs only the quick checks. It reports the new types, what it did and didn't do, the checks, whether pixels moved, and the book names that went stale.
+**Cleanup agent.** It makes only the fixes the orchestrator decided, in a worktree of its own, and runs only the quick checks. It reports the new types, what it did and didn't do, the checks, whether pixels moved, and any book sentence it made plainly false.
 
 **Orchestrator.**
 - Keeps up to four agents busy on mostly disjoint code.
@@ -36,10 +36,10 @@ The process makes code right one module at a time, types first. Cold agents revi
 
 - **Worktrees:** each lane is a worktree under `~/showell_repos/lanes/<lane>`, on its own branch. A lane goes when it merges.
 - **Shared modules, one lane at a time:**
-  - The shared modules are Geom, Pipeline, Picture, RoadAhead, World, Scenery, SceneShapes, lib and the unit types.
+  - The shared modules are Geom, Pipeline, Picture, RoadAhead, World, Segment, Route, SceneShapes, lib and the unit types.
   - The orchestrator gives each lane its shared modules by name, and only one lane at a time may touch a given one.
   - A fix that needs another lane's shared module waits.
-- **Conflicts:** the stale-name counts in `gates/run.shale` conflict at nearly every merge. Each lane raises them from its own base, so add the raises, then confirm with `run.shale part=book_names`.
+- **Conflicts:** most are in `gates/CrossModuleExpects.roc` (imports and tests from two lanes) and in widgets two lanes touched. Keep both sides.
 - **Shale lanes need their own mounts file:** copy `~/.config/shale/mounts` with `cookbook` pointed at the lane, and run through `SHALE_MOUNTS`. Without it, `cookbook:` resolves to master's plants. Don't print that file: it names the secrets folder. Delete it when the lane goes.
 
 ## Checks
@@ -56,7 +56,6 @@ The orchestrator runs the full gate (`gates/run.shale`, about two minutes) befor
 
 Things the quick tier has missed, which the brief now covers:
 - **Whole-tree lints:** a new parameter that's always the same value, or a field name clashing with a unit type elsewhere.
-- **The book's module rule:** the tutorial must name every module, so a new module needs a mention.
 - **Import cycles:** a type the kinds can see can't name anything that depends on World.
 
 `part=page`'s `drawn` hash covers every canvas call and its arguments, not pixels. When it moves, build master's page into a scratch `OUT=` and compare `shot.png` byte for byte. Never build into the dev channel.
@@ -74,7 +73,7 @@ Things the quick tier has missed, which the brief now covers:
 
 The tutorial is rewritten later, so lanes never rewrite prose.
 - **Includes:** a lane points a broken include at the new name.
-- **Stale names:** it raises the held stale-name counts, and lists each newly stale name.
+- **Stale names:** while the book is parked, no count is held. The gate prints the stale names and the unnamed modules as SKIPPED, because a held count only tracked how broken the parked prose was (Steve: "a skip is actually more honest than churning counts").
 - **The log:** the orchestrator logs the sentences each lane made false in `essay-repl-server/notes/book-parked-sentences.md`.
 
 ## The type walk

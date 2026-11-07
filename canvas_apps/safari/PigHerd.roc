@@ -7,7 +7,6 @@ import Distance
 import Geom
 import Pig
 import Scatter
-import Scenery
 
 PigHerd := [BigHerd(PigHerd.BigPigHerd), TwoRows(PigHerd.TwoRowPigHerd)].{
 
@@ -118,7 +117,7 @@ PigHerd := [BigHerd(PigHerd.BigPigHerd), TwoRows(PigHerd.TwoRowPigHerd)].{
 
 ## Where the row of pigs nearest the road stands across it.
 front_row_across : Across
-front_row_across = Across.right_of_middle(Scenery.herd_front_distance)
+front_row_across = Across.right_of_middle(Geom.herd_front_distance)
 
 pig : { along : Along, across : Across } -> Geom.Placed(Billboard)
 pig = |{ along, across }| {

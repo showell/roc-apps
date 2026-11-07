@@ -8,9 +8,11 @@ import Billboard
 import Distance
 import EmojiStills
 import Geom
-import Scenery
 
 Wildlife :: [].{
+
+	## The safari animals that stand at a bend.
+	Animal : [Elephant, Giraffe, Zebra, Rhino]
 
 	## How far beyond the guard rail the grown animal stands.
 	adult_rail_buffer : Distance
@@ -21,7 +23,7 @@ Wildlife :: [].{
 	baby_beyond = Distance.metres(14.0)
 
 	## The species of a bend's animal.
-	species_of : Scenery.Animal -> Billboard.Species
+	species_of : Wildlife.Animal -> Billboard.Species
 	species_of = |animal|
 		match animal {
 			Elephant => { still: EmojiStills.elephant, adult_height: Distance.metres(2.8) }
@@ -31,7 +33,7 @@ Wildlife :: [].{
 		}
 
 	## The animal and its baby at `bend`, the bend that ends a segment.
-	bend_critters : { animal : Scenery.Animal, bend : Geom.Bend } -> List(Geom.Placed(Billboard))
+	bend_critters : { animal : Wildlife.Animal, bend : Geom.Bend } -> List(Geom.Placed(Billboard))
 	bend_critters = |{ animal, bend }| {
 		species = species_of(animal)
 		bend_along = Along.at(bend.segment_length)
