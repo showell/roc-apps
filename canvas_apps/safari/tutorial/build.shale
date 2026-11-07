@@ -67,6 +67,13 @@
 -- the app roots and the package say nothing about the game, and a picture's
 -- data or an app's shim is named by what it serves.
 --
+-- Beside the output goes blocks.jsonl, the note color_roc.shale colors by. It has
+-- a line for each ```roc block, in the output's order, giving the block's file
+-- and its parts. A part is a run of the file's lines, `from` and `to`, each less
+-- its first `indent` bytes, with the last stopping before `end_col`. A part may
+-- instead be a `cut`, which holds the `# ...` line as the block shows it. The
+-- file and the note together give the block's text exactly.
+--
 -- `self_test=1` proves both sides of each failure on a module written here,
 -- and safari's gate runs it.
 const SAFARI = "canvas_apps/safari"
@@ -258,6 +265,19 @@ function whole_lines(kept)
   return shown
 end
 
+-- The note's part for `kept` from index `first` to `last`, with `least` more
+-- bytes taken off each line.
+function kept_part(kept, first, last, least)
+  local tail = kept[last]
+  return {from = kept[first].at, to = tail.at, indent = kept[first].indent + least, end_col = tail.indent + #tail.text + 1}
+end
+
+-- The note's part for a block that is a whole file's trimmed text.
+function whole_file_part(text)
+  local shown = split(text, "\n")
+  return {from = 1, to = #shown, indent = 0, end_col = #shown[#shown] + 1}
+end
+
 function doc_comment_start(source_lines, line)
   local first = line
   while first > 1 and starts_with(trim(source_lines[first - 1]), "##") do first = first - 1 end
@@ -276,7 +296,7 @@ function span_lines(entry, source_lines, first, place)
     if trim(sub(l, 1, indent)) ~= "" then
       stop(entry, entry.path .. ":" .. at .. " is not indented as the definition is")
     end
-    push(kept, {at = at, text = sub(l, indent + 1, #l)})
+    push(kept, {at = at, indent = indent, text = sub(l, indent + 1, #l)})
     at = at + 1
   end
   return kept
@@ -287,8 +307,9 @@ function definition_lines(entry, place)
   return span_lines(entry, source_lines, doc_comment_start(source_lines, place.line), place)
 end
 
--- The lines of the annotation of `name`, dedented.
-function annotation_lines(entry, tree, name)
+-- The lines of the annotation of `name`, dedented, each with its line in the
+-- module.
+function annotation_kept(entry, tree, name)
   if tree.err ~= "" then stop(entry, "roc-ast refused " .. entry.path .. ": " .. tree.err) end
   local found = {}
   for block in searched_blocks(tree.nodes, entry.module) do
@@ -299,7 +320,7 @@ function annotation_lines(entry, tree, name)
   end
   if #found == 0 then stop(entry, "no annotation of " .. name .. " in " .. entry.path) end
   if #found > 1 then stop(entry, name .. " has " .. #found .. " annotations in " .. entry.path) end
-  return whole_lines(span_lines(entry, split(read(entry.path), "\n"), found[1].line, found[1]))
+  return span_lines(entry, split(read(entry.path), "\n"), found[1].line, found[1])
 end
 
 -- Where in `kept` the one line holding `anchor` is.
@@ -333,7 +354,7 @@ function cut_beside(kept_line, least)
   return sub(kept_line, least + 1, indent_of(kept_line)) .. CUT
 end
 
-function elided_lines(entry, kept)
+function elided_block(entry, kept)
   local first = anchor_index(entry, kept, entry.from)
   local last = anchor_index(entry, kept, entry.to)
   if last < first then
@@ -346,14 +367,22 @@ function elided_lines(entry, kept)
     i = i + 1
   end
   local shown = {}
-  if first > 1 then push(shown, cut_beside(kept[first].text, least)) end
+  local parts = {}
+  if first > 1 then
+    push(shown, cut_beside(kept[first].text, least))
+    push(parts, {cut = shown[1]})
+  end
   i = first
   while i <= last do
     push(shown, sub(kept[i].text, least + 1, #kept[i].text))
     i = i + 1
   end
-  if last < #kept then push(shown, cut_beside(kept[last].text, least)) end
-  return shown
+  push(parts, kept_part(kept, first, last, least))
+  if last < #kept then
+    push(shown, cut_beside(kept[last].text, least))
+    push(parts, {cut = shown[#shown]})
+  end
+  return {shown = shown, parts = parts}
 end
 
 function check_quoted(entry, text)
@@ -364,7 +393,7 @@ function titled_block(title, language, text)
   return "```" .. language .. " " .. title .. "\n" .. text .. "\n```"
 end
 
-function fenced_definition(entry, tree, folder)
+function fenced_definition(entry, tree, folder, notes)
   if tree.err ~= "" then stop(entry, "roc-ast refused " .. entry.path .. ": " .. tree.err) end
   local places = places_of(tree.nodes, entry.module, entry.name)
   if #places == 0 then stop(entry, "no such name in " .. entry.path) end
@@ -374,22 +403,22 @@ function fenced_definition(entry, tree, folder)
     stop(entry, "found " .. #places .. " times in " .. entry.path .. ", at lines " .. join(at, ", "))
   end
   local kept = definition_lines(entry, places[1])
-  local shown = {}
+  local block = {shown = whole_lines(kept), parts = {kept_part(kept, 1, #kept, 0)}}
   local title = shown_path(folder, entry.path)
   if has_key(entry, "from") then
-    shown = elided_lines(entry, kept)
+    block = elided_block(entry, kept)
     title = title .. ", in " .. entry.name
-  else
-    shown = whole_lines(kept)
   end
-  local text = join(shown, "\n")
+  local text = join(block.shown, "\n")
   check_quoted(entry, text)
+  push(notes, {path = entry.path, parts = block.parts})
   return titled_block(title, "roc", text)
 end
 
-function fenced_module(entry, folder)
+function fenced_module(entry, folder, notes)
   local text = trim(read(entry.whole_module))
   check_quoted(entry, text)
+  push(notes, {path = entry.whole_module, parts = {whole_file_part(text)}})
   return titled_block(shown_path(folder, entry.whole_module) .. ", the whole file", "roc", text)
 end
 
@@ -416,7 +445,7 @@ function errors_reported(said)
   return tonumber(m.groups[1])
 end
 
-function fenced_failure(entry, roc)
+function fenced_failure(entry, roc, notes)
   local checked = run({roc, "check", basename(entry.program)},
     {cwd = dirname(entry.program), timeout_ms = 120000, whole = 1000000, want = WANT})
   local said = get(checked, "out", "")
@@ -426,6 +455,7 @@ function fenced_failure(entry, roc)
   local program = trim(read(entry.program))
   local message = trim(join(split(said, real(".") .. "/"), ""))
   check_quoted(entry, program .. message)
+  push(notes, {path = entry.program, parts = {whole_file_part(program)}})
   local file = basename(entry.program)
   return titled_block(file .. " (doesn't compile)", "roc", program) .. "\n\n" .. titled_block("roc check on " .. file, "text", message)
 end
@@ -437,20 +467,24 @@ function needs_roc(entries)
   return false
 end
 
-function fenced_signatures(entry, tree, folder)
+function fenced_signatures(entry, tree, folder, notes)
   local shown = {}
+  local parts = {}
   for name in entry.signatures do
-    for l in annotation_lines(entry, tree, name) do push(shown, l) end
+    local kept = annotation_kept(entry, tree, name)
+    for l in whole_lines(kept) do push(shown, l) end
+    push(parts, kept_part(kept, 1, #kept, 0))
   end
   local text = join(shown, "\n")
   check_quoted(entry, text)
+  push(notes, {path = entry.path, parts = parts})
   return titled_block(shown_path(folder, entry.path), "roc", text)
 end
 
 function types_table_row(entry, tree)
   local name = entry.types_name
   local pieces = {}
-  for l in annotation_lines(entry, tree, name) do push(pieces, trim(l)) end
+  for l in whole_lines(annotation_kept(entry, tree, name)) do push(pieces, trim(l)) end
   local annotation = join(pieces, " ")
   return "| " .. entry.types_words .. " | `" .. name .. "` | `" .. sub(annotation, #name + 4, #annotation) .. "` |"
 end
@@ -504,9 +538,20 @@ function needs_proof(entries)
   return false
 end
 
+function notes_path(output)
+  return dirname(output) .. "/blocks.jsonl"
+end
+
+function notes_text(notes)
+  local rows = {}
+  for note in notes do push(rows, json_write(note) .. "\n") end
+  return join(rows, "")
+end
+
 -- The number of includes expanded.
 function build(source, output, folder)
   if exists(output) then remove(output) end
+  if exists(notes_path(output)) then remove(notes_path(output)) end
   local entries = read_entries(source, read(source), folder)
   check_titles(entries)
   local trees = parse_modules(entries)
@@ -518,25 +563,26 @@ function build(source, output, folder)
     check_proof_rows(entries, numbers)
   end
   local kept = {}
+  local notes = {}
   local expanded = 0
   for e in entries do
     if has_key(e, "proof_step") then
       push(kept, proof_table_row(e, numbers))
       expanded = expanded + 1
     elseif has_key(e, "signatures") then
-      push(kept, fenced_signatures(e, trees[e.path], folder))
+      push(kept, fenced_signatures(e, trees[e.path], folder, notes))
       expanded = expanded + 1
     elseif has_key(e, "types_name") then
       push(kept, types_table_row(e, trees[e.path]))
       expanded = expanded + 1
     elseif has_key(e, "path") then
-      push(kept, fenced_definition(e, trees[e.path], folder))
+      push(kept, fenced_definition(e, trees[e.path], folder, notes))
       expanded = expanded + 1
     elseif has_key(e, "program") then
-      push(kept, fenced_failure(e, roc))
+      push(kept, fenced_failure(e, roc, notes))
       expanded = expanded + 1
     elseif has_key(e, "whole_module") then
-      push(kept, fenced_module(e, folder))
+      push(kept, fenced_module(e, folder, notes))
       expanded = expanded + 1
     else
       push(kept, e.text)
@@ -544,6 +590,7 @@ function build(source, output, folder)
   end
   mkdir(dirname(output))
   replace(output, join(kept, "\n"))
+  replace(notes_path(output), notes_text(notes))
   return expanded
 end
 
@@ -734,6 +781,39 @@ function check_title_rule(checks, folder)
   push(checks, "a title on line 1")
 end
 
+-- The note says where each kind of block came from, in order, and has no line
+-- for anything that isn't a Roc block. One document holds them all, because each
+-- document costs programs and a run holds 64.
+function check_note_rule(checks, folder)
+  local zoo = folder .. "/Zoo.roc"
+  local includes = {
+    "{{code Zoo.feed}}",
+    "{{code Zoo.bare}}",
+    "{{code Zoo.feed from \"amount = cage.size\" to \"amount * 2.0\"}}",
+    "{{code Zoo.feed from \"amount * 2.0\" to \"}\"}}",
+    "{{signatures Zoo.feed Zoo.top_function}}",
+    "{{types row Zoo.feed Feed them}}",
+    "{{module Tight}}",
+    "A title\n" .. DIAGRAM,
+    "{{fails bad}}",
+  }
+  local want = notes_text({
+    {path = zoo, parts = {{from = 10, to = 17, indent = 1, end_col = 3}}},
+    {path = zoo, parts = {{from = 19, to = 19, indent = 1, end_col = 12}}},
+    {path = zoo, parts = {{cut = "# ..."}, {from = 14, to = 16, indent = 2, end_col = 15}, {cut = "# ..."}}},
+    {path = zoo, parts = {{cut = "\t# ..."}, {from = 16, to = 17, indent = 1, end_col = 3}}},
+    {path = zoo, parts = {{from = 12, to = 12, indent = 1, end_col = 20}, {from = 36, to = 36, indent = 0, end_col = 26}}},
+    {path = folder .. "/Tight.roc", parts = {{from = 1, to = 1, indent = 0, end_col = 31}}},
+    {path = folder .. "/fails/bad.roc", parts = {{from = 1, to = 9, indent = 0, end_col = 2}}},
+  })
+  local r = attempt_include(folder, join(includes, "\n\n"))
+  if not r.ok then fail("self_test: the note's includes stopped: " .. r.error) end
+  local got = read(folder .. "/out/blocks.jsonl")
+  if got ~= want then fail("self_test: the note was [" .. got .. "], not [" .. want .. "]") end
+  push(checks, "the note of each kind of block")
+  return nil
+end
+
 -- Both sides of the proof table's rows.
 function check_proof_rule(checks, folder)
   mkdir(folder .. "/gates")
@@ -920,6 +1000,7 @@ function self_test()
   end
 
   check_title_rule(checks, folder)
+  check_note_rule(checks, folder)
   check_named_rule(checks, folder)
   check_proof_rule(checks, folder)
   check_annotation_rules(checks, folder)

@@ -108,8 +108,7 @@ diagram_html = |diagrams, id| match diagrams.find_first(|diagram| diagram.id == 
 	Err(NotFound) => crash "book: no drawing for the diagram `${id}`"
 }
 
-## The renderer's own markup for code, with the title over it. color_roc.shale
-## reads the file's name from the caption.
+## The renderer's own markup for code, with the title over it.
 listing_html : {
 	language : Str,
 	title : Str,
