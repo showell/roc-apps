@@ -25,22 +25,14 @@ Throttle :: [].{
 			} else {
 				VehicleLimits.cruise_acceleration
 			}
-		v_end = exit_speed(seg)
 		limits = [
-			bend_limit(motorcycle, { segment: seg, exit_speed: v_end }),
+			bend_limit(motorcycle, { segment: seg, exit_speed: exit_speed(seg) }),
 			CrossingReaction.crossing_throttle(seg, motorcycle),
 			Gawking.gawk_brake(motorcycle, seg),
 			shoulder_limit(motorcycle),
 		]
 		limited = limits.fold(offered, held_to)
-		allowed_speed(
-			motorcycle,
-			{
-				segment: seg,
-				exit_speed: v_end,
-				next_speed: motorcycle.speed.accelerated_by(limited),
-			},
-		)
+		allowed_speed(motorcycle.speed.accelerated_by(limited))
 	}
 }
 
@@ -110,37 +102,9 @@ shoulder_brake = |motorcycle, steps_to_shoulder| {
 }
 
 ## The speed the rider may reach: `next_speed`, held between rest and the top
-## speed. Near the end of the segment a rider below the exit speed is lifted
-## to it, unless they are gawking.
-allowed_speed : Motorcycle,
-{
-	segment : World.Segment,
-	exit_speed : Speed,
-	next_speed : Speed,
-} -> Speed
-allowed_speed = |
-	motorcycle,
-	{
-		segment: seg,
-		exit_speed: v_end,
-		next_speed: v0,
-	},
-| {
-	v2 = v0.min(VehicleLimits.top_speed).max(Speed.at_rest)
-	if is_near_end(motorcycle, seg) {
-		if v2 < v_end {
-			if Gawking.is_gawking(motorcycle, seg) {
-				v2
-			} else {
-				v_end
-			}
-		} else {
-			v2
-		}
-	} else {
-		v2
-	}
-}
+## speed.
+allowed_speed : Speed -> Speed
+allowed_speed = |next_speed| next_speed.min(VehicleLimits.top_speed).max(Speed.at_rest)
 
 # Each is within 1e-12 of its want.
 expect
@@ -225,31 +189,18 @@ expect brake_after(40) > brake_after(2)
 # A coast that leaves the road on its first step still brakes.
 expect brake_after(1) < Acceleration.steady
 
-## The speed the clamp allows this motorcycle, for `next_speed` metres a step.
-clamped_speed : Motorcycle, F64 -> F64
-clamped_speed = |motorcycle, next_speed|
-	allowed_speed(
-		motorcycle,
-		{
-			segment: first_segment,
-			exit_speed: Speed.metres_a_step(0.222),
-			next_speed: Speed.metres_a_step(next_speed),
-		},
-	).to_metres_a_step()
+## The speed the clamp allows for `next_speed` metres a step.
+clamped_speed : F64 -> F64
+clamped_speed = |next_speed| allowed_speed(Speed.metres_a_step(next_speed)).to_metres_a_step()
 
-## A motorcycle far from the bend, and one near it.
-far_from_bend : Motorcycle
-far_from_bend = centred_motorcycle(0.0, 0.3)
-
-near_bend : Motorcycle
-near_bend = centred_motorcycle(460.0, 0.3)
-
-expect clamped_speed(far_from_bend, 1.0) == 1.0
-expect clamped_speed(far_from_bend, 3.0) == 2.5
-expect clamped_speed(far_from_bend, -1.0) == 0.0
-expect clamped_speed(near_bend, 0.1) == 0.222
-expect clamped_speed(near_bend, 0.5) == 0.5
-expect clamped_speed(far_from_bend, 0.1) == 0.1
+# Within its bounds the speed is as asked, at the top speed it is held, and
+# outside them it is held to the nearer bound.
+expect clamped_speed(1.0) == 1.0
+expect clamped_speed(0.1) == 0.1
+expect clamped_speed(2.5) == 2.5
+expect clamped_speed(3.0) == 2.5
+expect clamped_speed(0.0) == 0.0
+expect clamped_speed(-1.0) == 0.0
 
 ## The change of speed that `Throttle.next_speed` makes for this motorcycle on
 ## `seg`.

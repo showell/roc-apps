@@ -57,14 +57,14 @@ last_step = 1320
 ## The steps of the look, from its first to the first without it, and the step
 ## the gaze is home. An `expect` below holds them to the ride.
 look_first_step : U32
-look_first_step = 876
+look_first_step = 892
 
 look_end_step : U32
-look_end_step = 1040
+look_end_step = 1055
 
 ## The first step with the gaze back straight ahead after the look.
 eyes_back_step : U32
-eyes_back_step = 1299
+eyes_back_step = 1312
 
 ## The whole stretch, in about eight seconds.
 stretch : VcrButtons.NumberRange(Clock)
@@ -85,12 +85,12 @@ first_rider : RiderState
 first_rider = {
 	segment_index: World.SegmentIndex.number(2),
 	motorcycle: {
-		along: Along.metres(161.91411758652882),
-		across: Across.metres(-0.0375336024045766),
-		yaw: Angle.Turn.radians(-0.00019686086777130412),
-		speed: Speed.metres_a_step(1.7792958724219055),
-		lean: Angle.Lean.radians(0.00013635384781194502),
-		heading: Angle.Bearing.radians(-0.34926271126663777),
+		along: Along.metres(135.1613358653238),
+		across: Across.metres(0.026694799693047538),
+		yaw: Angle.Turn.radians(0.0007712514517068885),
+		speed: Speed.metres_a_step(1.6220905762041298),
+		lean: Angle.Lean.radians(-0.00028975192660020334),
+		heading: Angle.Bearing.radians(-0.3482945989471598),
 	},
 	eyes: RiderState.initial.eyes,
 }
@@ -392,28 +392,28 @@ expect {
 	played = stretch_states
 	[
 		{
-			step: 876,
-			speed: 1.9393,
+			step: 892,
+			speed: 1.9421,
 			gaze: 4.0,
 			look_depth: 0.1143,
 		},
 		{
-			step: 1039,
+			step: 1054,
 			speed: 0.2000,
-			gaze: 34.9936,
-			look_depth: 0.9998,
+			gaze: 34.7045,
+			look_depth: 0.9916,
 		},
 		{
-			step: 1040,
+			step: 1055,
 			speed: 0.2000,
-			gaze: 34.7936,
-			look_depth: 0.9998,
+			gaze: 34.5045,
+			look_depth: 0.9916,
 		},
 		{
-			step: 1299,
+			step: 1312,
 			speed: 0.2000,
 			gaze: 0.0,
-			look_depth: 0.9986,
+			look_depth: 0.9904,
 		},
 	].all(
 		|{ step, speed, gaze, look_depth }| {
@@ -556,7 +556,7 @@ expect
 	status_lines(first_rider, 860.0)
 		== [
 			"Eyes on the road",
-			"Step 860: speed 1.8 m a step",
+			"Step 860: speed 1.6 m a step",
 			"Gaze yaw: 0.0 degrees",
 			"Look depth: 0%",
 		]
@@ -566,8 +566,8 @@ expect {
 	status_lines(widest_gaze, (look_end_step - 1).to_f64())
 		== [
 			"Looking at the pig, and slowing",
-			"Step 1039: speed 0.2 m a step",
-			"Gaze yaw: 35.0 degrees",
+			"Step 1054: speed 0.2 m a step",
+			"Gaze yaw: 34.7 degrees",
 			"Look depth: 99%",
 		]
 }

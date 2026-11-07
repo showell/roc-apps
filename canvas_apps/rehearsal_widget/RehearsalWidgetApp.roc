@@ -44,18 +44,18 @@ RehearsalWidgetApp :: [].{
 
 ## The step of the ride this widget looks inside.
 step_shown : U32
-step_shown = 370
+step_shown = 372
 
 ## The rider at that step, a record like any other. An `expect` below rides
 ## there and compares.
 rider : Motorcycle
 rider = {
-	along: Along.metres(6.020006844801467),
-	across: Across.metres(-1.881558174514434),
-	yaw: Angle.Turn.radians(0.060933551846790265),
-	speed: Speed.metres_a_step(0.17310247452190655),
-	lean: Angle.Lean.radians(-0.0010737865515197053),
-	heading: Angle.Bearing.radians(0.9335981778439549),
+	along: Along.metres(5.476396379271859),
+	across: Across.metres(-1.9331715114218482),
+	yaw: Angle.Turn.radians(0.03386262589257824),
+	speed: Speed.metres_a_step(0.12693087415782917),
+	lean: Angle.Lean.radians(0.00968112319465637),
+	heading: Angle.Bearing.radians(0.9065272518897429),
 }
 
 target : Across
@@ -574,23 +574,18 @@ expect {
 expect rehearsals.len() == 12
 expect chosen_lean.to_radians() == LeanSearch.best_lean(rider).to_radians()
 
-# Each path ends where the game's own arc says that arc ends: where the coast
-# ends on the road, or past the edge it leaves by.
+# Each path ends where the game's own arc says that arc ends.
 expect
 	rehearsals.all(
 		|{ path_points, outcome, .. }|
 			match (path_points.last(), outcome) {
 				(Ok(point), EndsAt(end_across)) => point.across == end_across.to_metres()
-				(Ok(point), Leaves({ side: Left, .. })) => point.across < Across.left_of_middle(arc_edge).to_metres()
-				(Ok(point), Leaves({ side: Right, .. })) => point.across > Across.right_of_middle(arc_edge).to_metres()
-				(Err(_), _) => False
+				(Ok(_), Leaves(_)) | (Err(_), _) => False
 			},
 	)
 
-# Some arcs of this step stay on the road and some leave it, and the search
-# goes both ways.
-expect rehearsals.any(|{ outcome, .. }| color_of(outcome) == kept_color)
-expect rehearsals.any(|{ outcome, .. }| color_of(outcome) != kept_color)
+# Every arc of this step stays on the road, and the search goes both ways.
+expect rehearsals.all(|{ outcome, .. }| color_of(outcome) == kept_color)
 expect rehearsals.any(|{ wants_more_right, .. }| wants_more_right)
 expect rehearsals.any(|{ wants_more_right, .. }| !wants_more_right)
 
