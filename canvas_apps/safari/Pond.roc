@@ -14,13 +14,14 @@ import lib.RgbColor
 Pond :: [].{
 
 	## The pond's outlines on the road around `bend`, the bend that ends a
-	## segment, in the order they are painted: its water, then its bank.
+	## segment, in the order they are painted: its bank, then its water over
+	## the bank's inner edge.
 	pond_outlines : Geom.Bend -> List({ corners : List(Geom.RoadPoint), color : RgbColor })
 	pond_outlines = |bend| {
 		on_road = |outline| outline.map(|point| segment_point(point, bend))
 		[
-			{ corners: on_road(water_points), color: water_color },
 			{ corners: on_road(bank_points), color: bank_color },
+			{ corners: on_road(water_points), color: water_color },
 		]
 	}
 
@@ -50,7 +51,7 @@ near_shore_points = [
 	{ past_end: Distance.metres(14.0), out_from_middle: Distance.metres(33.0) },
 ]
 
-## The water's shore farthest along the road, which the bank runs along.
+## The water's shore farthest along the road, where the bank meets it.
 far_shore_points : List(PondPoint)
 far_shore_points = [
 	{ past_end: Distance.metres(28.0), out_from_middle: Distance.metres(28.0) },
@@ -72,9 +73,21 @@ bank_outer_points = [
 	{ past_end: Distance.metres(30.0), out_from_middle: Distance.metres(7.0) },
 ]
 
+## How far back from the far shore the bank's inner edge runs, under the
+## water. Two polygons that share an edge show a seam where the browser
+## antialiases both, so the bank lies under the water's edge instead, and the
+## water hides the overlap. A distance along the road shrinks fast on screen,
+## so the overlap is generous; it only has to keep the inner edge inside the
+## water. The bank's ends still meet the far shore's ends, because each end of
+## the bank lies straight along the road from its inner corner.
+bank_under_water : Distance
+bank_under_water = Distance.metres(10.0)
+
+## The bank: the far shore, moved back under the water, then its outer edge.
 bank_points : List(PondPoint)
 bank_points = {
-	inner_points = far_shore_points.fold_rev([], |point, reversed| reversed.append(point))
+	under_water = |point| { ..point, past_end: point.past_end.minus(bank_under_water) }
+	inner_points = far_shore_points.fold_rev([], |point, out| out.append(under_water(point)))
 	inner_points.concat(bank_outer_points)
 }
 

@@ -175,8 +175,8 @@ bend_corners = |road, bend_view| {
 	]
 }
 
-## The pond past the end of `segment`, which lies at `place`: its water, then
-## its bank. A segment that ends at no pond has none.
+## The pond past the end of `segment`, which lies at `place`: its bank, then
+## its water. A segment that ends at no pond has none.
 pond_patches : RoadAhead.RoadView, { segment : Segment, place : SegmentPlace } -> List(Ground.Patch)
 pond_patches = |road, { segment, place }| {
 	is_at_pond =
