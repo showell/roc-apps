@@ -132,7 +132,7 @@ number_behind = |first| {
 	behind = RoadAhead.segments_in_view(road_from(first)).find_last(
 		|in_view|
 			match in_view.place {
-				JustBehind(_) => True
+				JustBehind => True
 				Ahead(_) => False
 			},
 	)
@@ -158,12 +158,12 @@ turned_vantage = {
 	yaw: Angle.Turn.radians(0.2),
 }
 
-## The point 50 m along and 1 m right on the segment at `place` on the road
-## ahead of a rider on the route's first segment, as `turned_vantage` sees it.
-turned_point_at : SegmentPlace -> Geom.RiderPoint
-turned_point_at = |place|
+## The point 50 m along and 1 m right on the segment at `place` on `road_view`,
+## as `turned_vantage` sees it.
+turned_point_at : RoadAhead.RoadView, SegmentPlace -> Geom.RiderPoint
+turned_point_at = |road_view, place|
 	RoadAhead.rider_point_at(
-		road,
+		road_view,
 		{
 			vantage: turned_vantage,
 			place,
@@ -172,8 +172,8 @@ turned_point_at = |place|
 	)
 
 expect {
-	at_d0 = turned_point_at(Ahead(SegmentPlace.Position.first))
-	second_segment_point = turned_point_at(Ahead(SegmentPlace.Position.number(1)))
+	at_d0 = turned_point_at(road, Ahead(SegmentPlace.Position.first))
+	second_segment_point = turned_point_at(road, Ahead(SegmentPlace.Position.number(1)))
 	[
 		(at_d0.right.to_metres(), 9.933466539753061),
 		(at_d0.forward.to_metres(), -49.00332889206208),
@@ -182,59 +182,77 @@ expect {
 	].all(|(got, want)| (got - want).abs() <= 0.00000005 * want.abs().max(1.0))
 }
 
-m_prev_left : SegmentPlace
-m_prev_left = JustBehind({
-	segment_length: Distance.metres(300.0),
-	turn: Angle.Turn.radians(-1.2217304763960306),
-})
+left_turn : Angle.Turn
+left_turn = Angle.Turn.radians(-1.2217304763960306)
 
-m_prev_right : SegmentPlace
-m_prev_right = JustBehind({
-	segment_length: Distance.metres(300.0),
-	turn: Angle.Turn.radians(0.8726646259971648),
-})
+right_turn : Angle.Turn
+right_turn = Angle.Turn.radians(0.8726646259971648)
+
+## The road ahead of a rider on the second of two segments, the first 300 m
+## long and bending by `turn` into the second.
+road_past_bend : Angle.Turn -> RoadAhead.RoadView
+road_past_bend = |turn|
+	RoadAhead.RoadView.ahead_of(
+		Route.from_segments([
+			{
+				..segment_of([]),
+				length: Distance.metres(300.0),
+				ending: Bends({ turn, bend_life: Quiet }),
+			},
+			segment_of([]),
+		]),
+		Route.SegmentIndex.number(1),
+	)
 
 expect
 	[
-		(turned_point_at(m_prev_left).right.to_metres(), -194.76069932822074),
-		(turned_point_at(m_prev_left).forward.to_metres(), -231.63435691739767),
-		(turned_point_at(m_prev_right).right.to_metres(), 239.9883995667414),
-		(turned_point_at(m_prev_right).forward.to_metres(), -218.13274420105967),
+		(
+			turned_point_at(road_past_bend(left_turn), JustBehind).right.to_metres(),
+			-194.76069932822074,
+		),
+		(
+			turned_point_at(road_past_bend(left_turn), JustBehind).forward.to_metres(),
+			-231.63435691739767,
+		),
+		(
+			turned_point_at(road_past_bend(right_turn), JustBehind).right.to_metres(),
+			239.9883995667414,
+		),
+		(
+			turned_point_at(road_past_bend(right_turn), JustBehind).forward.to_metres(),
+			-218.13274420105967,
+		),
 	].all(|(got, want)| (got - want).abs() <= 0.0000001 * want.abs().max(1.0))
+
+## The segment in view just behind the rider on `road_view`, which must have
+## one.
+segment_in_view_behind : RoadAhead.RoadView -> RoadAhead.SegmentInView
+segment_in_view_behind = |road_view|
+	match RoadAhead.segments_in_view(road_view).last() {
+		Ok(in_view) if in_view.place == JustBehind => in_view
+		_ => crash "CrossModuleExpects.segment_in_view_behind: this rider has a segment behind"
+	}
 
 ## The apex of a bend from a segment 300 m long, just behind the rider's.
 apex_after_turn : Angle.Turn -> Geom.RiderPoint
-apex_after_turn = |turn|
+apex_after_turn = |turn| {
+	road_view = road_past_bend(turn)
 	BendView.apex(
-		road,
+		road_view,
 		{
 			vantage: turned_vantage,
-			bend_view: {
-				before: JustBehind({ segment_length: Distance.metres(300.0), turn }),
-				bend: { segment_length: Distance.metres(300.0), turn },
-			},
+			bend_view: BendView.of_in_view(segment_in_view_behind(road_view)),
 		},
 	)
+}
 
 # Each is within 1e-7 of its want, scaled up by a want past 1.
 expect
 	[
-		(
-			apex_after_turn(Angle.Turn.radians(0.8726646259971648)).right.to_metres(),
-			17.297297467543466,
-		),
-		(
-			apex_after_turn(Angle.Turn.radians(0.8726646259971648)).forward.to_metres(),
-			-100.43071597950589,
-		),
-		(
-			apex_after_turn(Angle.Turn.radians(-1.2217304763960306)).right.to_metres(),
-			21.403438709482494,
-		),
-		(
-			apex_after_turn(Angle.Turn.radians(-1.2217304763960306)).forward.to_metres(),
-			-100.55298847633645,
-		),
+		(apex_after_turn(right_turn).right.to_metres(), 17.297297467543466),
+		(apex_after_turn(right_turn).forward.to_metres(), -100.43071597950589),
+		(apex_after_turn(left_turn).right.to_metres(), 21.403438709482494),
+		(apex_after_turn(left_turn).forward.to_metres(), -100.55298847633645),
 	].all(|(got, want)| (got - want).abs() <= 0.0000001 * want.abs().max(1.0))
 
 polygon_of : Shapes.Shape -> { coordinates : List(F64), fill : Brush.Fill }
@@ -461,7 +479,7 @@ expect
 ## the first holding one tree 5 m short of its bend of `degrees`.
 past_bend_trees : F64 -> List(Pipeline.Sighted(Conifer))
 past_bend_trees = |degrees| {
-	segment_behind_rider = {
+	segment_road_past_segment = {
 		..segment_of([tree_at(195.0, 0.0)]),
 		ending: Bends({ turn: Angle.Turn.degrees(degrees), bend_life: Animal(Elephant) }),
 		encounter: QuietRoad,
@@ -469,7 +487,7 @@ past_bend_trees = |degrees| {
 	rider_segment = { ..segment_of([]), encounter: QuietRoad }
 	TreeSighting.trees_in_view(
 		RoadAhead.RoadView.ahead_of(
-			Route.from_segments([segment_behind_rider, rider_segment]),
+			Route.from_segments([segment_road_past_segment, rider_segment]),
 			Route.SegmentIndex.number(1),
 		),
 		origin_camera,
@@ -480,7 +498,7 @@ past_bend_trees = |degrees| {
 is_one_tree_behind : List(Pipeline.Sighted(Conifer)) -> Bool
 is_one_tree_behind = |trees|
 	match trees.map(|tree| tree.spot.place()) {
-		[JustBehind(_)] => True
+		[JustBehind] => True
 		_ => False
 	}
 
@@ -673,15 +691,12 @@ numbered_segment : RoadAhead.RoadView, U32 -> RoadAhead.SegmentInView
 numbered_segment = |road_view, number|
 	RoadAhead.segment_in_view_at(road_view, SegmentPlace.Position.number(number))
 
-## The world's segment `number`, as the segment just behind the rider.
-segment_behind : U32 -> RoadAhead.SegmentInView
-segment_behind = |number| {
-	segment = World.route.segment_at(Route.SegmentIndex.number(number))
-	{
-		index: Route.SegmentIndex.number(number),
-		segment,
-		place: RoadAhead.place_behind(segment),
-	}
+## The road ahead of a rider on the segment after the world's segment `number`,
+## and `number` in view just behind that rider.
+road_past_segment : U32 -> { road_view : RoadAhead.RoadView, in_view : RoadAhead.SegmentInView }
+road_past_segment = |number| {
+	road_view = road_from(number + 1)
+	{ road_view, in_view: segment_in_view_behind(road_view) }
 }
 
 farm_at : U32 -> I64
@@ -745,13 +760,23 @@ expect BillboardSighting.billboard_fates(
 ).len().to_i64_wrap() == count_from(0)
 expect count_from(0) >= count_from(1)
 expect count_from(1) >= count_from(2)
-expect segment_sightings_on(six_segments, segment_behind(4)).len() > 0
-expect bend_sightings_on(six_segments, segment_behind(12)).len() == 6
 expect {
-	fates = farm_sightings_on(six_segments, segment_behind(0))
+	{ road_view, in_view } = road_past_segment(4)
+	segment_sightings_on(road_view, in_view).len() > 0
+}
+expect {
+	{ road_view, in_view } = road_past_segment(12)
+	bend_sightings_on(road_view, in_view).len() == 6
+}
+expect {
+	{ road_view, in_view } = road_past_segment(0)
+	fates = farm_sightings_on(road_view, in_view)
 	fates.len() > 0 and fates.all(|fate| how_it_went(fate) == BehindCamera)
 }
-expect bend_sightings_on(six_segments, segment_behind(0)).len() == 2
+expect {
+	{ road_view, in_view } = road_past_segment(0)
+	bend_sightings_on(road_view, in_view).len() == 2
+}
 
 ## A billboard standing on the ground of the first segment, as the rider at its
 ## start sees it.

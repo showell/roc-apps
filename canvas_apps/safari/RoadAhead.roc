@@ -72,7 +72,7 @@ RoadAhead :: [].{
 		match segment_behind(road) {
 			Previous(index) => {
 				segment = road.route().segment_at(index)
-				segments_ahead.append({ index, segment, place: place_behind(segment) })
+				segments_ahead.append({ index, segment, place: JustBehind })
 			}
 			AtRouteStart => segments_ahead
 		}
@@ -105,7 +105,7 @@ RoadAhead :: [].{
 					gap_to_rider_segment,
 					|gap, index| gap.plus(road.route().segment_at(index).length),
 				)
-			JustBehind(_) => gap_to_rider_segment.minus(in_view.segment.length)
+			JustBehind => gap_to_rider_segment.minus(in_view.segment.length)
 		}
 	}
 
@@ -119,10 +119,6 @@ RoadAhead :: [].{
 			count: left_on_route.min(RoadAhead.most_segments_ahead.to_u64()).to_u32_wrap(),
 		}
 	}
-
-	## The place of `segment`, which is just behind the rider.
-	place_behind : Segment -> SegmentPlace
-	place_behind = |segment| JustBehind(segment.bend_out_of())
 
 	## A point on the segment at `position` on the road ahead, as the camera at
 	## `vantage` on the rider's segment sees it.
@@ -155,8 +151,11 @@ RoadAhead :: [].{
 		match place {
 			Ahead(position) =>
 				rider_point_ahead(road, { vantage, position, road_point })
-			JustBehind(bend) =>
-				Geom.to_rider_point(Geom.point_in_segment_after(road_point, bend), vantage)
+			JustBehind =>
+				Geom.to_rider_point(
+					Geom.point_in_segment_after(road_point, bend_behind(road)),
+					vantage,
+				)
 		}
 }
 
@@ -170,6 +169,14 @@ index_at = |road, position| {
 		crash "RoadAhead.index_at: past the road's end"
 	}
 }
+
+## The bend from the segment just behind the rider into the rider's own.
+bend_behind : RoadAhead.RoadView -> Geom.Bend
+bend_behind = |road|
+	match RoadAhead.segment_behind(road) {
+		Previous(index) => road.route().segment_at(index).bend_out_of()
+		AtRouteStart => crash "RoadAhead.bend_behind: a rider on the route's first segment has no segment behind"
+	}
 
 ## The route's indices of the segments of the road ahead before `position`, the
 ## rider's own first.

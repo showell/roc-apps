@@ -132,7 +132,7 @@ is_within_reach : SegmentPlace, U32 -> Bool
 is_within_reach = |place, reach|
 	match place {
 		Ahead(position) => position.is_within_first(reach)
-		JustBehind(_) => True
+		JustBehind => True
 	}
 
 ## The critters at the end of `segment`, placed on it. A duck's place is

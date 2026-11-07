@@ -306,7 +306,7 @@ expect
 			Ahead(SegmentPlace.Position.number(0)),
 			Ahead(SegmentPlace.Position.number(1)),
 			Ahead(SegmentPlace.Position.number(2)),
-			RoadAhead.place_behind(World.route.segment_at(Route.SegmentIndex.number(0))),
+			JustBehind,
 		]
 expect TowerSighting.towers_in_view(
 	origin_road,

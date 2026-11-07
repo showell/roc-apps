@@ -25,7 +25,7 @@ BendView := { before : SegmentPlace, bend : Geom.Bend }.{
 		has_bend_in_view =
 			match in_view.place {
 				Ahead(position) => !position.is_last_in(road.segments_ahead())
-				JustBehind(_) => True
+				JustBehind => True
 			}
 		if has_bend_in_view {
 			Ok(BendView.of_in_view(in_view))
@@ -45,7 +45,7 @@ BendView := { before : SegmentPlace, bend : Geom.Bend }.{
 	position_after = |bend_view|
 		match bend_view.before {
 			Ahead(position) => position.next()
-			JustBehind(_) => SegmentPlace.Position.first
+			JustBehind => SegmentPlace.Position.first
 		}
 
 	## How far across the road its outer edge at a bend is: the left edge
@@ -122,7 +122,4 @@ expect bend_at(
 	Ahead(SegmentPlace.Position.number(3)),
 	Angle.straight_ahead,
 ).position_after().to_i64() == 4
-expect {
-	behind = JustBehind({ segment_length: Distance.metres(300.0), turn: Angle.straight_ahead })
-	bend_at(behind, Angle.straight_ahead).position_after().to_i64() == 0
-}
+expect bend_at(JustBehind, Angle.straight_ahead).position_after().to_i64() == 0

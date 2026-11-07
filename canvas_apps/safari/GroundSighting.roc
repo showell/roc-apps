@@ -112,7 +112,7 @@ ground_patches = |road, { vantage, in_view }| {
 	along_segment =
 		match place {
 			Ahead(_) => [GroundSighting.road_along(road, { vantage, in_view })]
-			JustBehind(_) => []
+			JustBehind => []
 		}
 	bend =
 		match BendView.bend_after(road, in_view) {
