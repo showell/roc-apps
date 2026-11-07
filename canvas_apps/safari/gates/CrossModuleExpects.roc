@@ -41,6 +41,7 @@ import game.Rider
 import game.RiderState
 import game.Scenery
 import game.Speed
+import game.Steps
 import game.TreeSighting
 import game.Trees
 import game.Truck
@@ -919,6 +920,24 @@ expect {
 expect Rider.is_finished(done.rider, World.route)
 expect RideInstant.next_or_restart(World.route, done).truck.pace == NotSlowing
 
+# A ride that hasn't finished steps on: the clock by a step, the rider and the
+# truck forward.
+ride_at_step_one : RideInstant
+ride_at_step_one = RideInstant.next_or_restart(World.route, RideInstant.initial)
+
+ride_at_step_two : RideInstant
+ride_at_step_two = RideInstant.next_or_restart(World.route, ride_at_step_one)
+
+expect !Rider.is_finished(RideInstant.initial.rider, World.route)
+expect ride_at_step_one.clock.to_f64() == 1.0
+expect ride_at_step_two.clock.to_f64() == 2.0
+expect ride_at_step_two.clock.steps_since(ride_at_step_one.clock) == Steps.one_step
+expect ride_at_step_one.rider.motorcycle.along > RideInstant.initial.rider.motorcycle.along
+expect ride_at_step_one.truck.route_position > RideInstant.initial.truck.route_position
+expect ride_at_step_two.rider.motorcycle.along > ride_at_step_one.rider.motorcycle.along
+expect ride_at_step_one.clock != Clock.start
+expect !Rider.is_finished(ride_at_step_one.rider, World.route)
+
 # A frame of the ride draws.
 expect {
 	frame = FrameView.frame_view_at(World.route, RideInstant.initial)
@@ -926,10 +945,7 @@ expect {
 	coordinates_of(first_shape).len() >= 6
 }
 
-expect {
-	after_one_step = RideInstant.next_or_restart(World.route, RideInstant.initial)
-	FrameView.frame_view_at(World.route, after_one_step).shapes.len() > 0
-}
+expect FrameView.frame_view_at(World.route, ride_at_step_one).shapes.len() > 0
 
 # The ride starts facing away from the sun.
 expect FrameView.frame_view_at(World.route, RideInstant.initial).sun == OutOfView
