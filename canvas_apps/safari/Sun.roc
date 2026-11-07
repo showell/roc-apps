@@ -31,11 +31,15 @@ Sun :: [].{
 	start_px : Pixels
 	start_px = Pixels.of(244.0)
 
-	drop_px_per_step : Pixels
-	drop_px_per_step = radius_px.times(2.0).times(0.41616).divided_by(625.0)
-
 	fully_set_px : Pixels
 	fully_set_px = radius_px.opposite()
+
+	## How far the sun sinks with each step. It falls from where it starts to
+	## where it has fully set, its whole disc below the horizon, 4734.0174 steps
+	## into a ride of about 7,000. That step places the sunset in the ride. It
+	## falls between two steps, so the sun is fully set from step 4,735.
+	drop_px_per_step : Pixels
+	drop_px_per_step = start_px.minus(fully_set_px).divided_by(4734.0174)
 
 	visible_turn_limit : Angle.Turn
 	visible_turn_limit = Angle.Turn.radians(1.4)
@@ -80,6 +84,13 @@ expect Sun.height_px(Clock.at_step(0)).to_f64() == 244.0
 expect Sun.start_px.to_f64() == 244.0
 expect Sun.radius_px.to_f64() == 46.0
 expect Sun.fully_set_px.to_f64() == -46.0
+
+# The sun's lower edge touches the horizon at step 3,233, and the whole disc
+# is below it from step 4,735.
+expect Sun.height_px(Clock.at_step(3232)) > Sun.radius_px
+expect Sun.height_px(Clock.at_step(3233)) < Sun.radius_px
+expect Sun.height_px(Clock.at_step(4734)) > Sun.fully_set_px
+expect Sun.height_px(Clock.at_step(4735)) < Sun.fully_set_px
 expect Sun.visible_turn_limit.to_radians() == 1.4
 
 # The rider faces the sun, then away from it.
