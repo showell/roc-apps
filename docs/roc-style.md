@@ -81,7 +81,7 @@ Roc's own rules are in the langref's
   definition often forgets which module it's in, so write
   `TreeSighting.trees_in_view`, never a bare `in_view`, which reads as a yes or
   no and hides what it gives. Two words almost always remove the ambiguity,
-  three counting a preposition: `Animation.stage_over_gap`. The name hunt's
+  three counting a preposition: `RoadAhead.rider_point_at`. The name hunt's
   `phrase_name` reports a pure function that starts with a preposition and
   gives no Bool. Three kinds pass, because each reads as what it is: a
   constructor that gives its own module's type (`Clock.at_step`), a conversion
