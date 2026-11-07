@@ -42,10 +42,7 @@ import lib.Shapes
 
 CanvasAppRunner :: [].{
 
-	## The values BrushGlsl's fragment shader reads, by its uniforms' names:
-	## which shading, and the colours and geometry that shading wants. Every
-	## field is sent with every shape, so a slot the shading doesn't read is
-	## zero.
+	## `BrushGlsl.Uniforms` in roc-ray's 32-bit types, as the shader takes them.
 	BrushUniforms : {
 		mode : F32,
 		color_a : Math.Vec4,
@@ -431,50 +428,18 @@ CanvasAppRunner :: [].{
 			}
 		}
 
-	# The fill as the uniforms BrushGlsl reads.
+	# The fill as the uniforms BrushGlsl lays out, in roc-ray's 32-bit vectors.
 	uniforms_of : Brush.Fill -> CanvasAppRunner.BrushUniforms
 	uniforms_of = |fill| {
-		blank = { ..blank_uniforms, mode: F64.to_f32_wrap(BrushGlsl.mode_of(fill)) }
-		match fill {
-			Flat(c) => { ..blank, color_a: rgba_vec(c) }
-			Span(p) => {
-				..blank,
-				color_a: rgba_vec(p.edge_color),
-				color_b: rgba_vec(p.middle_color),
-				geom_a: vec(p.left_x, p.right_x, 0.0, 0.0),
-			}
-			Radial(p) => {
-				..blank,
-				color_a: rgba_vec(p.inner_color),
-				color_b: rgba_vec(p.outer_color),
-				geom_a: vec(p.center.x, p.center.y, p.inner_radius, p.outer_radius),
-			}
-			Linear(p) => {
-				..blank,
-				color_a: rgba_vec(p.stops.start_color),
-				color_b: rgba_vec(p.stops.end_color),
-				geom_a: vec(p.stops.start_offset, p.stops.end_offset, 0.0, 0.0),
-				geom_b: vec(p.start_point.x, p.start_point.y, p.end_point.x - p.start_point.x, p.end_point.y - p.start_point.y),
-			}
-			Ellipse(p) => {
-				inverse = Brush.ellipse_inverse({ axis_u: p.axis_u, axis_v: p.axis_v })
-				{
-					..blank,
-					color_a: rgba_vec(p.stops.start_color),
-					color_b: rgba_vec(p.stops.end_color),
-					geom_a: vec(p.stops.start_offset, p.stops.end_offset, 0.0, 0.0),
-					geom_b: vec(p.center.x, p.center.y, 0.0, 0.0),
-					geom_c: vec(inverse.top_row.x, inverse.top_row.y, inverse.bottom_row.x, inverse.bottom_row.y),
-				}
-			}
-			Glow(p) => {
-				..blank,
-				color_a: rgba_vec(p.inner_color),
-				color_b: rgba_vec(p.middle_color),
-				color_c: rgba_vec(p.outer_color),
-				geom_a: vec(p.center.x, p.center.y, p.inner_radius, p.outer_radius),
-				geom_b: vec(p.middle_offset, 0.0, 0.0, 0.0),
-			}
+		u = BrushGlsl.uniforms(fill)
+		{
+			mode: F64.to_f32_wrap(u.mode),
+			color_a: vec(u.color_a),
+			color_b: vec(u.color_b),
+			color_c: vec(u.color_c),
+			geom_a: vec(u.geom_a),
+			geom_b: vec(u.geom_b),
+			geom_c: vec(u.geom_c),
 		}
 	}
 
@@ -483,19 +448,19 @@ CanvasAppRunner :: [].{
 	blank_uniforms : CanvasAppRunner.BrushUniforms
 	blank_uniforms = {
 		mode: 0.0,
-		color_a: vec(0.0, 0.0, 0.0, 0.0),
-		color_b: vec(0.0, 0.0, 0.0, 0.0),
-		color_c: vec(0.0, 0.0, 0.0, 0.0),
-		geom_a: vec(0.0, 0.0, 0.0, 0.0),
-		geom_b: vec(0.0, 0.0, 0.0, 0.0),
-		geom_c: vec(0.0, 0.0, 0.0, 0.0),
+		color_a: zero_vec,
+		color_b: zero_vec,
+		color_c: zero_vec,
+		geom_a: zero_vec,
+		geom_b: zero_vec,
+		geom_c: zero_vec,
 	}
 
-	rgba_vec : Brush.Rgba -> Math.Vec4
-	rgba_vec = |c| vec(c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a)
+	zero_vec : Math.Vec4
+	zero_vec = vec({ x: 0.0, y: 0.0, z: 0.0, w: 0.0 })
 
-	vec : F64, F64, F64, F64 -> Math.Vec4
-	vec = |x, y, z, w| Math.vec4(F64.to_f32_wrap(x), F64.to_f32_wrap(y), F64.to_f32_wrap(z), F64.to_f32_wrap(w))
+	vec : BrushGlsl.Quad -> Math.Vec4
+	vec = |q| Math.vec4(F64.to_f32_wrap(q.x), F64.to_f32_wrap(q.y), F64.to_f32_wrap(q.z), F64.to_f32_wrap(q.w))
 
 	color_of : Brush.Rgba -> Color.Rgba
 	color_of = |c| Color.rgba(byte(c.r), byte(c.g), byte(c.b), byte(c.a * 255.0))

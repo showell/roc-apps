@@ -4,7 +4,6 @@
 ## which the gates' ShapesFrame checks.
 import Brush
 import Point
-import RgbColor
 import Shapes
 
 ConvexCut :: [].{
@@ -250,7 +249,7 @@ fan = |{ coordinates, indices, out }|
 	}
 
 ink : Brush.Fill
-ink = Brush.flat(RgbColor.of(0x202020))
+ink = Flat({ r: 32.0, g: 32.0, b: 32.0, a: 1.0 })
 
 # A square is convex, and the cut leaves it as it is.
 expect {

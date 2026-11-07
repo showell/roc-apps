@@ -3,7 +3,6 @@
 ## in order. What one app draws is built in that app's own folder.
 import Brush
 import Point
-import RgbColor
 
 Shapes :: [].{
 
@@ -32,14 +31,14 @@ Shapes :: [].{
 
 		## A line of words in a real typeface. `Font.plotted` gives a painter that has
 		## no typefaces the strokes of the same line.
-		Text(Shapes.Line),
+		Text(Shapes.TextLine),
 	]
 
 	## A line of type. `y` is its baseline, `x` its left end or its middle as `align`
 	## says, and `size` the height of its em square, as in CSS. The viewer's machine
 	## chooses the typeface and measures the words, so nothing in Roc knows how wide
 	## the line came out: `Font.room_for` is the room to leave for it.
-	Line : {
+	TextLine : {
 		text : Str,
 		x : F64,
 		y : F64,
@@ -61,7 +60,10 @@ Shapes :: [].{
 
 	## The space the shapes after a `View` mark are in. `Screen` is the game's own
 	## pixels, where every frame starts. `World` carries plain numbers rather than a
-	## Camera, because the mark crosses to JavaScript, which has no such type.
+	## Camera, because the mark crosses to JavaScript, which has no such type. As in
+	## a Camera, the world point `target` lands on the screen point `offset`, turned
+	## clockwise by `rotation` degrees and scaled by `zoom`, which is never zero:
+	## `Camera.space` makes one from a camera that checked it.
 	Space : [
 		Screen,
 		World({ target : Point.Point, offset : Point.Point, rotation : F64, zoom : F64 }),
@@ -127,13 +129,15 @@ Shapes :: [].{
 	## Every x pulled toward `axis` by `cosine`, so a figure drawn face-on reads as one
 	## turned away by the angle whose cosine that is. A negative cosine mirrors it as
 	## well, so a pair beside a path can face each other. A disc keeps its radius,
-	## because no shape here is an ellipse.
+	## because no shape here is an ellipse. Only a flat fill can be squashed: a
+	## gradient's geometry would stay where it was while its shape moved, so a
+	## polygon, disc or rectangle with a gradient crashes.
 	squashed_shapes : List(Shapes.Shape), { axis : F64, cosine : F64 } -> List(Shapes.Shape)
 	squashed_shapes = |shapes, { axis, cosine: k }| shapes.map(
 		|shape|
 			match shape {
-				Poly(p) => Poly({ coordinates: pulled(p.coordinates, { axis, cosine: k }), fill: p.fill })
-				Disc(d) => Disc({ x: axis + (d.x - axis) * k, y: d.y, radius: d.radius, fill: d.fill })
+				Poly(p) => Poly({ coordinates: pulled(p.coordinates, { axis, cosine: k }), fill: squashable_fill(p.fill) })
+				Disc(d) => Disc({ x: axis + (d.x - axis) * k, y: d.y, radius: d.radius, fill: squashable_fill(d.fill) })
 				# A mirror sends a rectangle's left edge to its right, and a width is never
 				# negative.
 				Rect(r) => {
@@ -148,7 +152,7 @@ Shapes :: [].{
 							b - a
 						},
 						height: r.height,
-						fill: r.fill,
+						fill: squashable_fill(r.fill),
 					})
 				}
 				Blend(m) => Blend(m)
@@ -171,6 +175,17 @@ Shapes :: [].{
 				Text(t) => Text({ ..t, x: axis + (t.x - axis) * k })
 			},
 	)
+
+	## A picture `cols` by `rows` pixels, row by row, stretched over the box. A
+	## pixel list of any other length crashes: a painter would read past its end
+	## or leave some of it out.
+	image : { x : F64, y : F64, width : F64, height : F64, cols : U64, rows : U64, pixels : List(Brush.Rgba) } -> Shapes.Shape
+	image = |picture|
+		if picture.pixels.len() != picture.cols * picture.rows {
+			crash "Shapes.image: a picture's pixels number its cols times its rows"
+		} else {
+			Image(picture)
+		}
 
 	## Light in `color` at the middle, at the colour's own alpha, fading to
 	## nothing at `radius`.
@@ -202,6 +217,16 @@ Shapes :: [].{
 		}
 	}
 }
+
+## A squashed shape's fill, which must be flat: a gradient's geometry is in the
+## shape's coordinates, and squashing moves the shape but not the gradient.
+squashable_fill : Brush.Fill -> Brush.Fill
+squashable_fill = |fill|
+	match fill {
+		Flat(_) => fill
+		Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) =>
+			crash "Shapes.squashed_shapes: a gradient fill would not move with its shape"
+	}
 
 ## Every x of the coordinates pulled toward `axis` by `cosine`.
 pulled : List(F64), { axis : F64, cosine : F64 } -> List(F64)
@@ -237,7 +262,7 @@ corner_coordinates = |coordinates, { center, radius, start_angle, steps }| {
 }
 
 ## A line of type 100 px from the axis at 0.
-line_of_type : Shapes.Line
+line_of_type : Shapes.TextLine
 line_of_type = {
 	text: "Hi",
 	x: 100.0,
@@ -245,28 +270,44 @@ line_of_type = {
 	size: 16.0,
 	face: Code,
 	align: Center,
-	color: Brush.opaque(RgbColor.of(0x202020)),
+	color: { r: 32.0, g: 32.0, b: 32.0, a: 1.0 },
 }
 
 expect Shapes.squashed_shapes([Text(line_of_type)], { axis: 0.0, cosine: 0.5 }) == [Text({ ..line_of_type, x: 50.0 })]
 expect Shapes.squashed_shapes([Text(line_of_type)], { axis: 0.0, cosine: -1.0 }) == [Text({ ..line_of_type, x: -100.0 })]
 expect Shapes.squashed_shapes([Text(line_of_type)], { axis: 100.0, cosine: 0.5 }) == [Text(line_of_type)]
 
+## The fill the shapes below are drawn in.
+ink : Brush.Fill
+ink = Flat({ r: 32.0, g: 32.0, b: 32.0, a: 1.0 })
+
 ## A dot of light, as the shape both brackets hold.
 dot : Shapes.Shape
-dot = Disc({ x: 1.0, y: 2.0, radius: 3.0, fill: Brush.flat(RgbColor.of(0x202020)) })
+dot = Disc({ x: 1.0, y: 2.0, radius: 3.0, fill: ink })
 
 expect Shapes.added_light([dot]) == [Blend(Add), dot, Blend(Over)]
 expect Shapes.added_light([]) == [Blend(Add), Blend(Over)]
 expect Shapes.in_space(Screen, [dot]) == [View(Screen), dot, View(Screen)]
 
+# A picture two pixels wide and one high holds two pixels.
+expect {
+	white = { r: 255.0, g: 255.0, b: 255.0, a: 1.0 }
+	picture = { x: 0.0, y: 0.0, width: 4.0, height: 2.0, cols: 2, rows: 1, pixels: [white, white] }
+	Shapes.image(picture) == Image(picture)
+}
+
+# A flat polygon and a flat disc are squashed toward the axis with their fills.
+expect
+	Shapes.squashed_shapes([Poly({ coordinates: [10.0, 1.0, 20.0, 2.0, 30.0, 3.0], fill: ink }), dot], { axis: 10.0, cosine: 0.5 })
+		== [Poly({ coordinates: [10.0, 1.0, 15.0, 2.0, 20.0, 3.0], fill: ink }), Disc({ x: 5.5, y: 2.0, radius: 3.0, fill: ink })]
+
 # A horizontal line two wide stands one each side of its axis.
 expect
-	Shapes.line({ from: { x: 0.0, y: 0.0 }, to: { x: 10.0, y: 0.0 }, width: 2.0 }, Brush.flat(RgbColor.of(0x202020)))
-		== Poly({ coordinates: [0.0, 1.0, 10.0, 1.0, 10.0, -1.0, 0.0, -1.0], fill: Brush.flat(RgbColor.of(0x202020)) })
+	Shapes.line({ from: { x: 0.0, y: 0.0 }, to: { x: 10.0, y: 0.0 }, width: 2.0 }, ink)
+		== Poly({ coordinates: [0.0, 1.0, 10.0, 1.0, 10.0, -1.0, 0.0, -1.0], fill: ink })
 
 # The fewest sides a ring may have make three sectors.
-expect Shapes.ring_shapes({ center: { x: 0.0, y: 0.0 }, radius: 5.0, line_width: 1.0, sides: 3 }, Brush.flat(RgbColor.of(0x202020))).len() == 3
+expect Shapes.ring_shapes({ center: { x: 0.0, y: 0.0 }, radius: 5.0, line_width: 1.0, sides: 3 }, ink).len() == 3
 
 ## A ring sector's corners: outer start, outer end, inner end, inner start.
 sector_corners : Shapes.Shape -> List(F64)
@@ -280,7 +321,7 @@ sector_corners = |shape|
 # corner, all the way round to the first again. Its inner corners sit nearer
 # the center than its outer ones, by the line's width.
 expect {
-	sectors = Shapes.ring_shapes({ center: { x: 3.0, y: 4.0 }, radius: 10.0, line_width: 2.0, sides: 7 }, Brush.flat(RgbColor.of(0x202020))).map(sector_corners)
+	sectors = Shapes.ring_shapes({ center: { x: 3.0, y: 4.0 }, radius: 10.0, line_width: 2.0, sides: 7 }, ink).map(sector_corners)
 	following = sectors.drop_first(1).append(sectors.first() ?? [])
 	shared = sectors.map2(following, |sector, next| sector.sublist({ start: 2, len: 2 }) == next.sublist({ start: 0, len: 2 }) and sector.sublist({ start: 4, len: 2 }) == next.sublist({ start: 6, len: 2 }))
 	first = sectors.first() ?? []
