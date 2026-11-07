@@ -91,7 +91,7 @@ length_after = |road, bend_in_view| RoadAhead.segment_at(
 
 ## A patch of road with these corners.
 road_patch : List(Geom.RiderPoint) -> GroundPatch
-road_patch = |corners| { corners, color: road_color }
+road_patch = |corners| GroundPatch.of(corners, road_color)
 
 ## The ground of a segment in view: its road, the bend into the next segment
 ## if the road in view goes on, and its pond if it ends at one. The segment
@@ -208,7 +208,7 @@ pond_patches = |road, { vantage, in_view }| {
 		rider_point = |road_point|
 			RoadAhead.rider_point_at(road, { vantage, place: in_view.place, road_point })
 		Pond.pond_outlines(in_view.segment.bend_out_of()).map(
-			|outline| { corners: outline.corners.map(rider_point), color: outline.color },
+			|outline| GroundPatch.of(outline.corners.map(rider_point), outline.color),
 		)
 	} else {
 		[]

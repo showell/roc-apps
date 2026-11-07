@@ -183,7 +183,7 @@ bend_shapes : ShownBend -> List(Shapes.Shape)
 bend_shapes = |bend| {
 	road = road_with(bend.turn)
 	[
-		GroundSighting.patches_in_view(road, camera).map(|patch| patch_shape(bend, patch.corners)),
+		GroundSighting.patches_in_view(road, camera).map(|patch| patch_shape(bend, patch.corners())),
 		RailSighting.rail_quads_in_view(road, camera).join_map(|rail| foot_shapes(bend, rail.corners)),
 		[
 			spot(bend, { at: apex_of(bend.turn), color: apex_color }),
