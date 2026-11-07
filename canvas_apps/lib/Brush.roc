@@ -146,10 +146,7 @@ Brush :: [].{
 
 	## An opaque colour as a brush paints it.
 	opaque : RgbColor -> Brush.Rgba
-	opaque = |color| {
-		rgb = color.to_i64()
-		{ r: channel(rgb, 16), g: channel(rgb, 8), b: channel(rgb, 0), a: 1.0 }
-	}
+	opaque = |color| { r: color.red().to_f64(), g: color.green().to_f64(), b: color.blue().to_f64(), a: 1.0 }
 
 	## An opaque colour as a flat fill.
 	flat : RgbColor -> Brush.Fill
@@ -160,7 +157,7 @@ Brush :: [].{
 	translucent : ArgbColor -> Brush.Rgba
 	translucent = |color| {
 		argb = color.to_i64()
-		{ r: channel(argb, 16), g: channel(argb, 8), b: channel(argb, 0), a: channel(argb, 24) / 255.0 }
+		{ ..opaque(RgbColor.of(argb.bitwise_and(0xFFFFFF))), a: argb.shr_wrap(24).bitwise_and(255).to_f64() / 255.0 }
 	}
 
 	## An opaque colour made part way see-through by an alpha from 0 to 1, for
@@ -211,10 +208,6 @@ ellipse_determinant = |{ axis_u, axis_v }| axis_u.x * axis_v.y - axis_u.y * axis
 ## picture.
 min_ellipse_determinant : F64
 min_ellipse_determinant = 0.0001
-
-## One eight-bit channel of a packed colour, as a float.
-channel : I64, U8 -> F64
-channel = |packed, shift| packed.shr_wrap(shift).bitwise_and(255).to_f64()
 
 ## The colour the stops give at `t`, for offsets start_offset <= end_offset.
 two_stop : Brush.TwoStops, F64 -> Brush.Rgba

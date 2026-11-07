@@ -118,12 +118,11 @@ expect is_within_reach(JustBehind, 3)
 ## measured from the bend at the segment's end.
 bend_life_billboards : Segment -> List(Geom.Placed(Billboard))
 bend_life_billboards = |segment|
-	match segment.ending {
-		Bends({ bend_life, .. }) =>
+	match segment.segment_ending() {
+		Bends({ bend, bend_life }) =>
 			match bend_life {
-				Animal(animal) =>
-					Wildlife.bend_billboards({ animal, bend: segment.bend_out_of() })
-				DuckPond => Pond.placed_ducks(segment.bend_out_of())
+				Animal(animal) => Wildlife.bend_billboards({ animal, bend })
+				DuckPond => Pond.placed_ducks(bend)
 				Quiet => []
 			}
 		RouteEnds => []

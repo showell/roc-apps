@@ -3,7 +3,7 @@
 import Clock
 import FarHeight
 import Fraction
-import HexColor
+import ColorShade
 import Screen
 import Sun
 import lib.Brush
@@ -88,7 +88,7 @@ horizon_warmth_at_most = Fraction.of(0.85)
 
 ## The sky's color at the top of the frame.
 sky_top_color : Clock -> RgbColor
-sky_top_color = |clock| HexColor.color_between({
+sky_top_color = |clock| ColorShade.color_between({
 	from: day_sky,
 	to: night_sky,
 	fraction: Sky.darkness_at(clock),
@@ -96,7 +96,7 @@ sky_top_color = |clock| HexColor.color_between({
 
 ## The sky's color at the horizon: the sky warmed toward sunset red.
 sky_horizon_color : Clock -> RgbColor
-sky_horizon_color = |clock| HexColor.color_between({
+sky_horizon_color = |clock| ColorShade.color_between({
 	from: sky_top_color(clock),
 	to: sunset_red,
 	fraction: Sky.horizon_warmth_at(clock).times(horizon_warmth_at_most),

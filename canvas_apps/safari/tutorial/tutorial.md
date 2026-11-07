@@ -843,7 +843,7 @@ Every color in the sky is a blend of two others, and a blend needs a ratio. `Fra
 
 `color_between` takes one record argument, destructured in its parameter list, so callers name every field. Each channel moves the same share of the way. `HexColor.Rgb` is a plain record alias: three floats with nothing to guard.
 
-{{code HexColor.color_between}}
+{{code ColorShade.color_between}}
 
 `sky_top_color`, the one `Tour.sky_top_color` asked at the start of this chapter, calls it to blend day into dusk. `dusk_at` says how far the day has gone. That's a `Fraction` too, and The setting sun works it out.
 
@@ -859,7 +859,7 @@ Every color in the sky is a blend of two others, and a blend needs a ratio. `Fra
 
 That's where a color finally becomes one integer, because a `Brush` wants `0xRRGGBB`. `pack` gets there with method calls on plain numbers. Static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `pack` a leaf: it calls nothing of Safari Ride's own.
 
-{{code HexColor.pack_rgb}}
+{{code RgbColor.from_channels}}
 
 One more thing in the frame goes dark with the sky: the mountains.
 
@@ -1517,19 +1517,19 @@ A nominal record holds the rider, and `RideInstant` stores one. Count the opaque
 
 The step does four things in order, and the code reads that way. Static dispatch finds `segment_in` on the `SegmentIndex`. The `match` on `seg.ending` has two tags, and `Continues(_)` ignores its payload:
 
-{{code Rider.rider_state_at_next_step}}
+{{code RiderState.next}}
 
 The rider steers by leaning, so a decision is a record of two opaque values: a change of lean and an acceleration. There's something to notice in the last line of this next function. `Throttle`, which picks the acceleration, is asked about a bike that doesn't exist yet: the rider as it would be with the new lean, which `Bike.with_lean` makes by building a new record. The real rider isn't touched, because nothing can touch it.
 
-{{code Rider.decide}}
+{{code Rider.controls}}
 
 The Rehearsal chapter takes that idea much further. A small version of it decides what happens at the end of a segment. `cross_if_on_road` works out the rider on the next segment and keeps that only if it lands inside the lane. The rejected rider simply stops being referred to, and nothing has to be undone:
 
-{{code Rider.cross_if_on_road}}
+{{code RiderState.cross_if_on_road}}
 
 Record update does most of the writing in this module. Its plainest use is stopping dead, where `..s` keeps everything but the two fields named:
 
-{{code Rider.stopped_at}}
+{{code Motorcycle.stopped_at}}
 
 ### The picture leans too
 

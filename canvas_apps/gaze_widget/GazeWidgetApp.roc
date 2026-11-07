@@ -13,7 +13,6 @@ import game.Clock
 import game.Gawking
 import game.Gaze
 import game.Geom
-import game.Rider
 import game.RiderState
 import game.Segment
 import game.Steps
@@ -117,7 +116,7 @@ played_on = |model| {
 	var $played = model.played
 	while $played.len() < reach {
 		latest = $played.last() ?? crash "GazeWidgetApp.played_on: the stretch starts with a state"
-		next = Rider.rider_state_at_next_step(latest, { route: World.route, encounter_timing: Unplanned })
+		next = latest.next({ route: World.route, encounter_timing: Unplanned })
 		$played = $played.append(next)
 	}
 	{ ..model, played: $played }
