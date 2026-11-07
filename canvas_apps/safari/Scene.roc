@@ -47,7 +47,7 @@ Scene := {
 		road = view.road
 		trees = TreeSighting.trees_in_view(view)
 		towers =
-			TowerSighting.towers_in_view({ road, clock })
+			TowerSighting.towers_in_view(road, clock)
 				.take_first(TowerSighting.max_visible_towers.to_u64_wrap())
 		critters = BillboardSighting.critters_to_draw(BillboardSighting.critter_fates(road))
 		cats = CatSighting.cats_in_view(view, speed)

@@ -1077,13 +1077,13 @@ Each tower starts somewhere else in the cycle, so the towers along a road don't 
 
 {{code Beacon.beacon_offset_for}}
 
-The sighting calls both, adding the two `Steps`. `view.clock.minus(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride.
+The sighting calls both, adding the two `Steps`. `clock.minus(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride.
 
-{{code TowerSighting.tower_if_ahead from "placed_tower = {" to "view.clock.minus(Clock.start)"}}
+{{code TowerSighting.tower_if_ahead from "placed_tower = {" to "clock.minus(Clock.start)"}}
 
 Its caller gives each tower its key, the segment's index. Records with named fields stand in for what would otherwise be five arguments in a row, and `InChain(position)` is a tag carrying a payload, saying where the segment lies from the rider:
 
-{{code TowerSighting.segment_towers from "end_tower = tower_if_ahead(" to "[end_tower, mid_tower(view, position)].keep_oks(|tower| tower)"}}
+{{code TowerSighting.segment_towers from "end_tower = tower_if_ahead(" to "[end_tower, mid_tower(road, { position, clock })].keep_oks(|tower| tower)"}}
 
 A tower halfway along a segment takes the key plus 60. That's a small piece of number theory hiding in a constant: 60 staggers of 37 steps come to 2,220, which is 18 periods of 120 and 60 left over, so the mid-tower blinks exactly opposite the end tower.
 
