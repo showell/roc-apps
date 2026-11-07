@@ -34,6 +34,11 @@ Mountains :: [].{
 	} -> List(Shapes.Shape)
 	mountain_shapes = |{ heading, dusk, cam_focal }| {
 		sight = { heading, cam_focal }
+		snow_shapes =
+			match snow_shape(sight, snow_color(dusk)) {
+				Ok(snow) => [snow]
+				Err(NoSnow) => []
+			}
 		[
 			[
 				silhouette(
@@ -53,7 +58,7 @@ Mountains :: [].{
 					},
 				),
 			],
-			snow_shapes(sight, snow_color(dusk)),
+			snow_shapes,
 			[
 				silhouette(
 					sight,
@@ -297,9 +302,10 @@ thinnest_snow : Pixels
 thinnest_snow = Pixels.of(0.01)
 
 ## The north range's snow: along its crest where the range is above the
-## snowline, then back along the snowline.
-snow_shapes : Sight, I64 -> List(Shapes.Shape)
-snow_shapes = |sight, color| {
+## snowline, then back along the snowline, unless fewer than two columns of
+## the screen show snow.
+snow_shape : Sight, I64 -> Try(Shapes.Shape, [NoSnow])
+snow_shape = |sight, color| {
 	snowy = columns({ from: Pixels.zero, to: Screen.width }).keep_if(
 		|x| {
 			bearing = bearing_at(sight, x)
@@ -307,14 +313,14 @@ snow_shapes = |sight, color| {
 		},
 	)
 	if snowy.len() < 2 {
-		[]
+		Err(NoSnow)
 	} else {
 		crest = snowy.map(|x| { x, y: height_y(sight, north_range_height(bearing_at(sight, x))) })
 		snowline_points = snowy.fold_rev(
 			[],
 			|x, back| back.append({ x, y: height_y(sight, snowline(bearing_at(sight, x))) }),
 		)
-		[Polygon.flat_polygon(color, crest.concat(snowline_points))]
+		Ok(Polygon.flat_polygon(color, crest.concat(snowline_points)))
 	}
 }
 
