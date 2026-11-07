@@ -6,15 +6,12 @@
 ## physics run on a rider who doesn't exist. After the twelfth, the picture
 ## shows the lean the real rider took.
 import game.Across
-import game.Along
 import game.Angle
 import game.Coast
 import game.Motorcycle
-import game.Clock
 import game.Distance
 import game.LeanSearch
 import game.Geom
-import game.Speed
 import game.Tour
 import lib.Brush
 import lib.CanvasApp
@@ -50,16 +47,9 @@ RehearsalWidgetApp :: [].{
 step_shown : U32
 step_shown = 374
 
-## The rider at that step, a record like any other. An `expect` below rides
-## there and compares.
+## The rider's motorcycle at that step, the ride's own.
 rider : Motorcycle
-rider = {
-	along: Along.metres(5.841825521510666),
-	across: Across.metres(-1.9030035046601446),
-	yaw: Angle.Turn.radians(0.05277873953607818),
-	speed: Speed.metres_a_step(0.14981295069969633),
-	lean: Angle.Lean.radians(0.0026077673394057635),
-}
+rider = Tour.at_step(step_shown).instant.rider.motorcycle
 
 ## Where the rider aims: the road's middle, as `LeanSearch.best_lean` does.
 target : Across
@@ -550,26 +540,6 @@ shapes_at = |stop|
 		picture_shapes: picture_shapes(stop),
 		status_lines: status_lines(stop),
 	}).concat(marks(stop))
-
-## The ride at `step`, played from its start.
-ridden_to : U32 -> Tour
-ridden_to = |step| {
-	var $tour = Tour.initial
-	while $tour.instant.clock != Clock.at_step(step) {
-		$tour = Tour.step_forward($tour)
-	}
-	$tour
-}
-
-# The record above is the real rider at that step, field by field.
-expect {
-	real = ridden_to(step_shown).instant.rider.motorcycle
-	real.along == rider.along
-		and real.across == rider.across
-		and real.yaw == rider.yaw
-		and real.speed == rider.speed
-		and real.lean == rider.lean
-}
 
 ## How many tries the search makes.
 round_count : U64

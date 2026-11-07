@@ -3,11 +3,13 @@
 ## it gives the FrameView of the current instant: what a painter needs for a
 ## frame. SafariApp turns it into a canvas app, with the keys, the pause, and
 ## the frame leaned by the roll.
+import Clock
 import FrameView
 import Route
 import World
 import RideInstant
 import Rider
+import Steps
 
 ## The route, the instant the ride has reached, and the instants before it.
 Tour := {
@@ -40,6 +42,18 @@ Tour := {
 			instant: RideInstant.next_or_restart(tour.route, tour.instant),
 			past_instants,
 		}
+	}
+
+	## The tour ridden from its start to `step`, with the instants it passed
+	## behind it.
+	at_step : U32 -> Tour
+	at_step = |step| {
+		goal = Clock.start.plus(Steps.of(step))
+		var $tour = Tour.initial
+		while $tour.instant.clock != goal {
+			$tour = Tour.step_forward($tour)
+		}
+		$tour
 	}
 
 	step_back : Tour -> Tour

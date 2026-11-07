@@ -89,13 +89,7 @@ frame_step = 1529
 
 ## The ride at `frame_step`, with no history to step back through.
 paused_tour : Tour
-paused_tour = {
-	var $tour = Tour.initial
-	while $tour.instant.clock != Clock.at_step(frame_step) {
-		$tour = Tour.step_forward($tour)
-	}
-	{ ..$tour, past_instants: [] }
-}
+paused_tour = { ..Tour.at_step(frame_step), past_instants: [] }
 
 ## `things` if `layer` is one of `on_layers`, else none.
 things_on : List(thing), { on_layers : List(Layer), layer : Layer } -> List(thing)
