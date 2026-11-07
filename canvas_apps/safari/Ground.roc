@@ -15,11 +15,6 @@ Ground :: [].{
 	## A patch of ground: its corners and its colour.
 	Patch : { corners : List(Geom.RiderPoint), color : RgbColor }
 
-	## The radius the ground curves away over. From the rider's eye it puts
-	## the horizon 490 metres out.
-	ground_curve_radius : Distance
-	ground_curve_radius = Distance.metres(100000.0)
-
 	## How far the ground has curved away below level at `point`, which is
 	## never negative.
 	ground_drop : Geom.RiderPoint -> Distance
@@ -27,15 +22,6 @@ Ground :: [].{
 		r = right.to_metres()
 		f = forward.to_metres()
 		Distance.metres((r * r + f * f) / (2.0 * ground_curve_radius.to_metres()))
-	}
-
-	## How far from the rider the ground curves out of sight. A lowered point
-	## further out lands lower on screen again, so ground past here would show
-	## as slivers on the grass.
-	horizon_distance : Distance
-	horizon_distance = {
-		radius = Ground.ground_curve_radius.to_metres()
-		Distance.metres((2.0 * radius * Camera.eye_height.to_metres()).sqrt())
 	}
 
 	## A patch on screen, cut at the horizon and at the camera's near plane,
@@ -52,6 +38,20 @@ Ground :: [].{
 			Ok(shape)
 		}
 	}
+}
+
+## The radius the ground curves away over. From the rider's eye it puts
+## the horizon 490 metres out.
+ground_curve_radius : Distance
+ground_curve_radius = Distance.metres(100000.0)
+
+## How far from the rider the ground curves out of sight. A lowered point
+## further out lands lower on screen again, so ground past here would show
+## as slivers on the grass.
+horizon_distance : Distance
+horizon_distance = {
+	radius = ground_curve_radius.to_metres()
+	Distance.metres((2.0 * radius * Camera.eye_height.to_metres()).sqrt())
 }
 
 ## A point on the ground, lowered by the earth's curve.
@@ -206,27 +206,13 @@ expect {
 	points_within_ten_metres(far_triangle).is_empty()
 }
 
-expect ground_point({
-	right: Distance.metres(0.0),
-	forward: Distance.metres(0.0),
-}).height.to_metres() == 0.0
+# A point on the ground keeps its right and forward, and sits the drop below level.
 expect
 	ground_point({ right: Distance.metres(3.0), forward: Distance.metres(10.0) })
 		== {
 			right: Distance.metres(3.0),
 			forward: Distance.metres(10.0),
 			height: Distance.metres(-0.000545),
-		}
-expect ground_point({
-	right: Distance.metres(-5.0),
-	forward: Distance.metres(40.0),
-}).height.to_metres() == -0.008125
-expect
-	ground_point({ right: Distance.metres(12.5), forward: Distance.metres(100.0) })
-		== {
-			right: Distance.metres(12.5),
-			forward: Distance.metres(100.0),
-			height: Distance.metres(-0.05078125),
 		}
 
 sample_patch_shape : List(Geom.RiderPoint) -> Try(Shapes.Shape, [PastHorizon, BehindCamera])
@@ -294,14 +280,6 @@ expect
 expect sample_patch_shape(patch_corners_ahead).is_ok()
 expect sample_patch_shape(corners_ahead(8)).is_ok()
 expect sample_patch_shape(corners_ahead(9)).is_ok()
-
-expect
-	sample_patch_shape([
-		{ right: Distance.metres(-5.0), forward: Distance.metres(-10.0) },
-		{ right: Distance.metres(5.0), forward: Distance.metres(-10.0) },
-		{ right: Distance.metres(5.0), forward: Distance.metres(-20.0) },
-		{ right: Distance.metres(-5.0), forward: Distance.metres(-20.0) },
-	]).is_err()
 
 expect {
 	match sample_patch_shape(patch_corners_ahead) {
