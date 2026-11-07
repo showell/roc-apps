@@ -5,7 +5,6 @@
 ##
 ## It has a module of its own because a kind's picture names it, and Segment
 ## and Trees, which hold the kinds, sit under RoadAhead and Pipeline.
-import Across
 import Distance
 import Geom
 import SegmentPlace
@@ -28,29 +27,6 @@ Spot :: {
 		foot : Geom.LevelPoint,
 	} -> Spot
 	at = |parts| Spot.(parts)
-
-	## The spot of an object on a straight road that runs ahead from under the
-	## camera: standing at `road_point` on the first segment ahead, `lift` off
-	## the ground, and `forward` ahead of the camera. A widget that draws a
-	## straight road builds its spots here.
-	straight_ahead : {
-		road_point : Geom.RoadPoint,
-		lift : Distance,
-		forward : Distance,
-	} -> Try(Spot, [BehindCamera])
-	straight_ahead = |{ road_point, lift, forward }| {
-		right = road_point.across.distance_from(Across.middle)
-		Geom.ahead_on_level({ right, forward }).map_ok(
-			|foot| Spot.(
-				{
-					place: Ahead(SegmentPlace.Position.first),
-					road_point,
-					lift,
-					foot,
-				},
-			),
-		)
-	}
 
 	## The place of the object's segment, relative to the rider.
 	place : Spot -> SegmentPlace
