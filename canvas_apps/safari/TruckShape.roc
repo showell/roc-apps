@@ -8,6 +8,7 @@ import Distance
 import RoadAhead
 import Fraction
 import Geom
+import Ground
 import lib.Shapes
 
 TruckShape :: [].{
@@ -88,7 +89,7 @@ TruckShape :: [].{
 		{
 			right: on_ground.right,
 			forward: on_ground.forward,
-			height: height.minus(Geom.ground_drop(on_ground)),
+			height: height.minus(Ground.ground_drop(on_ground)),
 		}
 	}
 

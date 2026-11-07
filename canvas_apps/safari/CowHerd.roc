@@ -89,8 +89,7 @@ herd_cow = |herd, { herd_along, cow_number }| {
 	herd_front = herd_along.plus(herd.gap_behind_bull)
 	column_place = herd_front.plus(herd.column_spacing.times(column))
 	in_line = column_place.plus(herd.row_stagger.times(row - 1.0))
-	road_edge = Geom.road_half_width.plus(Scenery.herd_road_offset)
-	row_place = road_edge.plus(herd.row_depth.times(row))
+	row_place = Scenery.herd_front_distance.plus(herd.row_depth.times(row))
 	out_from_road = row_place.plus(herd.jitter_across.times((fi * 1.9).cos()))
 	{
 		along: in_line.plus(herd.jitter_along.times((fi * 2.7).sin())),
