@@ -13,6 +13,7 @@ import game.Fraction
 import game.Geom
 import game.Lens
 import game.SegmentPlace
+import game.Sky
 import game.Spot
 import game.Steps
 import game.Tower
@@ -83,13 +84,15 @@ shapes_at = |transport|
 ## The two towers in the ride's sky at `clock`.
 picture_shapes : Clock -> List(Shapes.Shape)
 picture_shapes = |clock|
-	ScrubWidget.ride_shapes(
-		[
+	ScrubWidget.ride_shapes({
+		shapes: [
 			tower_shapes(tower_right.opposite(), brightness_at(clock, first_tower_key)),
 			tower_shapes(tower_right, brightness_at(clock, second_tower_key)),
 		].join(),
-		{ clock, sun: OutOfView },
-	)
+		sun: OutOfView,
+		sky_colors: Sky.colors_at(clock),
+		roll: Angle.upright,
+	})
 
 ## A tower standing `right` of the road, its beacon at `brightness`, or nothing
 ## if it stood behind the camera.

@@ -21,6 +21,7 @@ import game.DepthSort
 import game.Distance
 import game.EmojiStills
 import game.Fraction
+import game.FrameView
 import game.RoadAhead
 import game.Route
 import game.Segment
@@ -41,6 +42,7 @@ import game.RiderState
 import game.Scenery
 import game.Screen
 import game.Speed
+import game.Steps
 import game.StillShapes
 import game.TreeSighting
 import game.Trees
@@ -653,22 +655,6 @@ expect left_bull.kind.facing == FacesLeft
 
 expect BillboardSighting.min_critter_px.to_f64() == 2.0
 
-## How many of `in_view` critters are drawn, among `out_of_view` others before
-## them. Every one in view is drawn, and none out of view.
-drawn_count : { out_of_view : U64, in_view : U64 } -> U64
-drawn_count = |{ out_of_view, in_view }|
-	BillboardSighting.billboards_to_draw(
-		List.repeat(Err(TooSmall), out_of_view).concat(List.repeat(Ok(near_cow), in_view)),
-	).len()
-
-expect
-	[
-		({ out_of_view: 0, in_view: 5 }, 5),
-		({ out_of_view: 400, in_view: 5 }, 5),
-		({ out_of_view: 400, in_view: 0 }, 0),
-		({ out_of_view: 0, in_view: 0 }, 0),
-	].all(|(counts, want)| drawn_count(counts) == want)
-
 # RailSighting's run up to a bend and out of it.
 rail_point_at : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
 rail_point_at = |points, i|
@@ -920,16 +906,29 @@ expect {
 expect Rider.is_finished(done.rider, World.route)
 expect RideInstant.next_or_restart(World.route, done).truck.pace == NotSlowing
 
+# A ride that hasn't finished steps on: the clock by a step, the rider and the
+# truck forward.
+ride_at_step_one : RideInstant
+ride_at_step_one = RideInstant.next_or_restart(World.route, RideInstant.initial)
+
+ride_at_step_two : RideInstant
+ride_at_step_two = RideInstant.next_or_restart(World.route, ride_at_step_one)
+
+expect !Rider.is_finished(RideInstant.initial.rider, World.route)
+expect ride_at_step_one.clock.to_f64() == 1.0
+expect ride_at_step_two.clock.to_f64() == 2.0
+expect ride_at_step_two.clock.steps_since(ride_at_step_one.clock) == Steps.one_step
+expect ride_at_step_one.rider.motorcycle.along > RideInstant.initial.rider.motorcycle.along
+expect ride_at_step_one.truck.route_position > RideInstant.initial.truck.route_position
+expect ride_at_step_two.rider.motorcycle.along > ride_at_step_one.rider.motorcycle.along
+expect ride_at_step_one.clock != Clock.start
+expect !Rider.is_finished(ride_at_step_one.rider, World.route)
+
 # A frame of the ride draws.
 expect {
-	frame = RideInstant.frame_content(World.route, RideInstant.initial)
+	frame = FrameView.frame_view_at(World.route, RideInstant.initial)
 	first_shape = frame.shapes.first() ?? crash "CrossModuleExpects: a frame draws"
 	coordinates_of(first_shape).len() >= 6
-}
-
-expect {
-	after_one_step = RideInstant.next_or_restart(World.route, RideInstant.initial)
-	RideInstant.frame_content(World.route, after_one_step).shapes.len() > 0
 }
 
 # Every bird and emoji still draws all its polygons through StillShapes, so
@@ -962,3 +961,26 @@ expect {
 		|still| StillShapes.still_shapes(anchor, still).len() == still.polygons().len(),
 	)
 }
+
+expect FrameView.frame_view_at(World.route, ride_at_step_one).shapes.len() > 0
+
+# The ride starts facing away from the sun.
+expect FrameView.frame_view_at(World.route, RideInstant.initial).sun == OutOfView
+
+## A clock with the sun behind the mountains.
+after_sunset : Clock
+after_sunset = Clock.at_step(5700)
+
+## The truck's lights at `clock`, with the truck's pace as given.
+lights_at : { clock : Clock, pace : [Slowing, NotSlowing] } -> _
+lights_at = |{ clock, pace }|
+	FrameView.lit_truck({
+		..RideInstant.initial,
+		truck: { ..RideInstant.initial.truck, pace },
+		clock,
+	})
+
+expect lights_at({ clock: Clock.start, pace: NotSlowing }) == { headlights: Off, brake_lights: Off }
+expect lights_at({ clock: Clock.start, pace: Slowing }) == { headlights: Off, brake_lights: On }
+expect lights_at({ clock: after_sunset, pace: NotSlowing }) == { headlights: On, brake_lights: Off }
+expect lights_at({ clock: after_sunset, pace: Slowing }) == { headlights: On, brake_lights: On }

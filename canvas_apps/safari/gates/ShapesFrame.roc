@@ -60,21 +60,14 @@ Comparison : { pixels : List(U32), counts : Str }
 
 compare : Tour -> Comparison
 compare = |tour| {
-	frame = Tour.frame_content(tour)
-	instant_shapes = frame.shapes
-	roll = Tour.roll(tour)
-	scene = {
-		shapes: instant_shapes,
-		roll,
-		sky_colors: Tour.sky_colors(tour),
-		sun: frame.sun,
-	}
+	view = Tour.frame_view(tour)
+	instant_shapes = view.shapes
 	cut_shapes = ConvexCut.cut_shapes(instant_shapes)
-	a = SafariFrame.picture_pixels(scene)
-	backdrop = SafariFrame.picture_pixels({ ..scene, shapes: [] })
+	a = SafariFrame.picture_pixels(view)
+	backdrop = SafariFrame.picture_pixels({ ..view, shapes: [] })
 	b = ShapesPixels.pixels_with_shapes(
 		backdrop,
-		{ roll: SafariFrame.screen_roll(roll), shapes: shapes_of_cut(cut_shapes) },
+		{ roll: SafariFrame.screen_roll(view.roll), shapes: shapes_of_cut(cut_shapes) },
 	)
 	n = a.len()
 	var $differ = 0

@@ -27,6 +27,7 @@ package
 		Distance,
 		EmojiStills,
 		Fraction,
+		FrameView,
 		Gawking,
 		Gaze,
 		Geom,

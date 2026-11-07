@@ -17,14 +17,19 @@ TruckSighting :: [].{
 	## What became of the truck in a frame.
 	TruckFate : Try(Pipeline.Sighted(LitTruck), [NoTruck, BehindCamera])
 
-	## The truck `lead` ahead of the rider, looking as `lit_truck` says, if it
-	## is ahead of the rider, on the road ahead, and in front of the camera.
+	## The truck at `route_position` along the route, looking as `lit_truck`
+	## says, if it is ahead of the rider, on the road ahead, and in front of
+	## the camera.
 	truck_in_view : RoadAhead.RoadView,
 	{
-		lead : Distance,
+		route_position : Distance,
 		lit_truck : LitTruck,
 	} -> TruckSighting.TruckFate
-	truck_in_view = |road, { lead, lit_truck }|
+	truck_in_view = |road, { route_position, lit_truck }| {
+		rider_distance = road.route.distance_along_route(
+			{ index: RoadAhead.rider_segment(road), along: road.vantage.along },
+		)
+		lead = route_position.minus(rider_distance)
 		if lead > Distance.zero {
 			start = { along: road.vantage.along.plus(lead), position: SegmentPlace.Position.first }
 			match truck_from(road, start) {
@@ -42,6 +47,7 @@ TruckSighting :: [].{
 		} else {
 			Err(NoTruck)
 		}
+	}
 }
 
 ## Where the truck is on the road ahead: `along` measured from the start of the
@@ -80,13 +86,17 @@ first_road = |vantage| {
 	vantage,
 }
 
-## What becomes of a truck `lead` metres ahead of a rider at the start of the
-## road ahead, seen from `vantage`, with its lights off.
+## What becomes of a truck `lead` metres ahead of a rider on the route's first
+## segment, seen from `vantage`, with its lights off. On the first segment the
+## rider's distance along the route is the vantage's `along`.
 truck_seen_from : Geom.Vantage, F64 -> TruckSighting.TruckFate
 truck_seen_from = |vantage, lead|
 	TruckSighting.truck_in_view(
 		first_road(vantage),
-		{ lead: Distance.metres(lead), lit_truck: { headlights: Off, brake_lights: Off } },
+		{
+			route_position: Distance.metres(vantage.along.to_metres() + lead),
+			lit_truck: { headlights: Off, brake_lights: Off },
+		},
 	)
 
 lead_of : F64 -> TruckSighting.TruckFate
@@ -140,7 +150,7 @@ expect
 lights_shown = |lights| {
 	truck = TruckSighting.truck_in_view(
 		first_road(origin),
-		{ lead: Distance.metres(100.0), lit_truck: lights },
+		{ route_position: Distance.metres(100.0), lit_truck: lights },
 	) ?? crash "TruckSighting: this lead puts the truck in view"
 	truck.kind
 }

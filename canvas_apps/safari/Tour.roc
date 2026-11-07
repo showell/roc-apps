@@ -1,19 +1,13 @@
 ## Tour is the whole ride, for any platform that draws it. It keeps the
 ## current instant of the ride and the instants behind it for stepping back, and
-## it says what a frame shows in the terms a painter needs: the shapes, the
-## camera roll, the two sky colours and the sun. SafariApp turns it into a
-## canvas app, with the keys, the pause, and the frame leaned by the roll.
-import Angle
+## it gives the FrameView of the current instant: what a painter needs for a
+## frame. SafariApp turns it into a canvas app, with the keys, the pause, and
+## the frame leaned by the roll.
+import FrameView
 import Route
 import World
 import RideInstant
-import Sky
 import Rider
-import CanvasRoll
-import RideFocal
-import ViewYaw
-import RoadAhead
-import Lens
 
 ## The route, the instant the ride has reached, and the instants before it.
 Tour := {
@@ -21,11 +15,6 @@ Tour := {
 	instant : RideInstant,
 	past_instants : List(RideInstant),
 }.{
-
-	# How far back a step back can go: 2048 instants, about half the route.
-	# The newest are the ones kept.
-	past_instants_cap : U64
-	past_instants_cap = 2048
 
 	initial : Tour
 	initial = { route: World.route, instant: RideInstant.initial, past_instants: [] }
@@ -35,8 +24,9 @@ Tour := {
 		finished = Rider.is_finished(tour.instant.rider, tour.route)
 		# Dropping one instant per step would copy the whole list every step, so
 		# half of it goes at once and the copy falls on one step in a thousand.
-		# The list is therefore between half a cap and a cap deep, never empty,
-		# and always the most recent instants.
+		# The list holds the most recent instants. It starts empty, grows to a
+		# cap, and from then on is between half a cap and a cap deep, until the
+		# ride finishes and starts again with the list empty.
 		past_instants =
 			if finished {
 				[]
@@ -64,17 +54,12 @@ Tour := {
 		}
 	}
 
-	## The frame at the tour's instant: its shapes and its sun.
-	frame_content : Tour -> RideInstant.FrameContent
-	frame_content = |tour| RideInstant.frame_content(tour.route, tour.instant)
-
-	# The camera roll: the whole frame, backdrop and shapes, turns
-	# by minus this about the screen's centre.
-	roll : Tour -> Angle.Lean
-	roll = |tour| CanvasRoll.rider_roll(tour.instant.rider.motorcycle.lean)
-
-	## The sky's colors at the tour's instant: at the top of the frame and at
-	## the horizon.
-	sky_colors : Tour -> Sky.Colors
-	sky_colors = |tour| Sky.colors_at(tour.instant.clock)
+	## What the camera shows at the tour's instant.
+	frame_view : Tour -> FrameView
+	frame_view = |tour| FrameView.frame_view_at(tour.route, tour.instant)
 }
+
+# How far back a step back can go: 2048 instants, about half the route.
+# The newest are the ones kept.
+past_instants_cap : U64
+past_instants_cap = 2048

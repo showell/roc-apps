@@ -7,6 +7,7 @@
 ## BirdFlight makes of the gap.
 import game.Across
 import game.Along
+import game.Angle
 import game.Animation
 import game.BirdFlight
 import game.Camera
@@ -20,6 +21,7 @@ import game.Segment
 import game.Trees
 import game.Screen
 import game.SegmentPlace
+import game.Sky
 import game.Spot
 import game.World
 import lib.CanvasApp
@@ -92,15 +94,17 @@ shapes_at = |transport|
 ## The road and the two trees, far things first, and the bird at `gap`.
 picture_shapes : Distance -> List(Shapes.Shape)
 picture_shapes = |gap|
-	ScrubWidget.ride_shapes(
-		[
+	ScrubWidget.ride_shapes({
+		shapes: [
 			road,
 			tree_shapes(flight.to),
 			tree_shapes(flight.from),
 			bird_shapes(gap),
 		].join(),
-		{ clock: Clock.start, sun: OutOfView },
-	)
+		sun: OutOfView,
+		sky_colors: Sky.colors_at(Clock.start),
+		roll: Angle.upright,
+	})
 
 ## The road, running up the picture from under the eye.
 road : List(Shapes.Shape)

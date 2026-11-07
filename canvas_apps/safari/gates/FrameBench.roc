@@ -7,6 +7,7 @@
 app [main!] { game: "../game.roc", lib: "../../lib/main.roc" }
 
 import game.World
+import game.FrameView
 import game.RideInstant
 import game.Rider
 
@@ -21,7 +22,7 @@ main! = |args| {
 	var $instant = RideInstant.initial
 	var $shapes = 0
 	for _ in 0..<steps {
-		$shapes = $shapes + RideInstant.frame_content(route, $instant).shapes.len()
+		$shapes = $shapes + FrameView.frame_view_at(route, $instant).shapes.len()
 		$instant = RideInstant.next_or_restart(route, $instant)
 	}
 	finished = if Rider.is_finished($instant.rider, route) {

@@ -4,6 +4,7 @@
 ## crown `TreeShapes.crown_of` gives there.
 import game.Across
 import game.Along
+import game.Angle
 import game.Clock
 import game.Conifer
 import game.Distance
@@ -13,6 +14,7 @@ import game.Lens
 import game.Pixels
 import game.Screen
 import game.SegmentPlace
+import game.Sky
 import game.Spot
 import game.TreeShapes
 import lib.Brush
@@ -126,7 +128,12 @@ caption_shapes = |stand|
 still_shapes : List(Shapes.Shape)
 still_shapes = {
 	trees = stands.join_map(tree_shapes)
-	picture_shapes = ScrubWidget.ride_shapes(trees, { clock: Clock.start, sun: OutOfView })
+	picture_shapes = ScrubWidget.ride_shapes({
+		shapes: trees,
+		sun: OutOfView,
+		sky_colors: Sky.colors_at(Clock.start),
+		roll: Angle.upright,
+	})
 	ScrubWidget.frame_shapes({ picture_shapes, status_lines: [] }).concat(stands.join_map(caption_shapes))
 }
 
