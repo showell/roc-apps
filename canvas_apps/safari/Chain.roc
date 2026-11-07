@@ -21,9 +21,9 @@ Chain :: [].{
 		vantage : Geom.Vantage,
 	}
 
-	## What a frame is seen from: the road in view, and the camera's focal
+	## What the camera sees in a frame: the road in view, and the camera's focal
 	## length in pixels.
-	Viewpoint : { road : Chain.RoadView, cam_focal : Pixels }
+	CameraView : { road : Chain.RoadView, cam_focal : Pixels }
 
 	## A segment's place in the chain, counted from the rider's own at 0. It
 	## says how many segments ahead of the rider that segment is, where a

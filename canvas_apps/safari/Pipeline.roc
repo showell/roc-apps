@@ -37,7 +37,7 @@ Pipeline :: [].{
 
 	## The size test of scenery seen through the camera's own lens, so that what
 	## is at the edge of sight comes and goes as the camera widens.
-	scenery_test : Chain.Viewpoint -> Pipeline.SizeTest
+	scenery_test : Chain.CameraView -> Pipeline.SizeTest
 	scenery_test = |view| { focal: view.cam_focal, smallest_px: Detail.min_scenery_px }
 
 	## `placed` as the rider sees it, on the segment at `place`, if it is past

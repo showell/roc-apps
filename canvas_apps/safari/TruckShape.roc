@@ -28,7 +28,7 @@ TruckShape :: [].{
 	## A truck ready to draw: what it is seen from, where its segment lies from
 	## the rider, and the box it fills.
 	TruckInView : {
-		view : Chain.Viewpoint,
+		view : Chain.CameraView,
 		place : Chain.SegmentPlace,
 		box : TruckShape.TruckBox,
 	}

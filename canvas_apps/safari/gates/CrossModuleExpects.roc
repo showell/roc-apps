@@ -260,7 +260,7 @@ cat_segments : List(World.Segment)
 cat_segments = [World.route_segment(0), cat_segment, World.route_segment(2)]
 
 ## The first three segments seen from the origin, at 1 m a step.
-cats_from_origin : Chain.Viewpoint
+cats_from_origin : Chain.CameraView
 cats_from_origin = {
 	road: {
 		route_segments: cat_segments,
@@ -597,7 +597,7 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 # Scene, on the scene from the start of the route.
-scene_view : Chain.Viewpoint
+scene_view : Chain.CameraView
 scene_view = {
 	road: {
 		route_segments: World.segments,

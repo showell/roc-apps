@@ -33,7 +33,7 @@ SceneShapes :: [].{
 	}
 
 	## The scene's things, painted far to near.
-	scene_shapes : Scene, Chain.Viewpoint -> List(Shapes.Shape)
+	scene_shapes : Scene, Chain.CameraView -> List(Shapes.Shape)
 	scene_shapes = |scene, view| {
 		renderings = SceneShapes.things_in_tie_order(SceneShapes.scene_renderings(scene, view))
 		Rendered.depth_sorted_renderings(renderings).join_map(
@@ -44,7 +44,7 @@ SceneShapes :: [].{
 	## The scene's things, each as the frame paints it. A tree's context is the
 	## one a tree can't know alone, a critter needs none, and a tower and the
 	## truck are measured on the road.
-	scene_renderings : Scene, Chain.Viewpoint -> SceneShapes.ThingLists(Rendered)
+	scene_renderings : Scene, Chain.CameraView -> SceneShapes.ThingLists(Rendered)
 	scene_renderings = |scene, view| {
 		cam_focal = view.cam_focal
 		{
@@ -113,7 +113,7 @@ rail_rendering = |quad, cam_focal|
 
 ## What a thing measured on the road draws from: the road in view, and where on it
 ## `sighting` found the thing.
-road_context : Chain.Viewpoint,
+road_context : Chain.CameraView,
 Pipeline.Sighted(kind) -> {
 	road : Chain.RoadView,
 	place : Chain.SegmentPlace,
@@ -129,7 +129,7 @@ road_context = |view, sighting| {
 
 ## The truck, if it is in view, where its sighting found it and with the lights
 ## its sighting gives it.
-truck_renderings : Chain.Viewpoint, TruckSighting.TruckFate -> List(Rendered)
+truck_renderings : Chain.CameraView, TruckSighting.TruckFate -> List(Rendered)
 truck_renderings = |view, truck_fate|
 	match truck_fate {
 		Ok(truck) => [
@@ -242,10 +242,10 @@ first_road = |vantage| {
 
 ## The first three segments, seen from `vantage` through a camera of focal
 ## length `cam_focal`.
-view_from : Geom.Vantage, Pixels -> Chain.Viewpoint
+view_from : Geom.Vantage, Pixels -> Chain.CameraView
 view_from = |vantage, cam_focal| { road: first_road(vantage), cam_focal }
 
-from_origin : Chain.Viewpoint
+from_origin : Chain.CameraView
 from_origin = view_from(origin, Pixels.of(500.0))
 
 ## A green tree `along` metres into the first segment, 3.5 m right of the

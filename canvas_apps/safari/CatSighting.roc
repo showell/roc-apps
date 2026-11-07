@@ -12,7 +12,7 @@ import Speed
 CatSighting :: [].{
 
 	## The cats in view of a rider at `speed`, the nearest segment's first.
-	cats_in_view : Chain.Viewpoint, Speed -> List(Pipeline.Sighted(CatShapes.PosedCat))
+	cats_in_view : Chain.CameraView, Speed -> List(Pipeline.Sighted(CatShapes.PosedCat))
 	cats_in_view = |view, speed| {
 		positions = Chain.Position.positions_in(view.road.chain_indices)
 		positions.keep_oks(|position| segment_cat(view, { position, speed }))
@@ -20,7 +20,7 @@ CatSighting :: [].{
 
 	## The cat waiting on the segment at `position` in the chain, if it has one
 	## and it is in view.
-	segment_cat : Chain.Viewpoint,
+	segment_cat : Chain.CameraView,
 	{
 		position : Chain.Position,
 		speed : Speed,
@@ -37,7 +37,7 @@ CatSighting :: [].{
 
 ## The cat crossing the segment at `position` in the chain, as far through its
 ## crossing as the rider's approach has brought it, if it is in view.
-cat_in_view : Chain.Viewpoint,
+cat_in_view : Chain.CameraView,
 {
 	position : Chain.Position,
 	crossing : Cat.Crossing,

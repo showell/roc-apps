@@ -42,7 +42,7 @@ Scene := {
 	}
 
 	## Everything in view from `view`, each kind that has a cap cut to it.
-	scene_in_view : Chain.Viewpoint, Scene.RideFacts -> Scene
+	scene_in_view : Chain.CameraView, Scene.RideFacts -> Scene
 	scene_in_view = |view, { speed, truck, clock }| {
 		road = view.road
 		trees = TreeSighting.trees_in_view(view)
