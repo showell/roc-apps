@@ -226,7 +226,7 @@ trunk_shape = |outline, finish| {
 	match finish {
 		Shaded => Polygon.shaded_polygon(
 			Polygon.rectangle_corners(trunk_box),
-			{ fill_color: trunk_color, strength: Fraction.whole },
+			{ color: trunk_color, strength: Fraction.whole },
 		)
 		Flat => Polygon.rectangle(trunk_color, trunk_box)
 	}
@@ -377,7 +377,7 @@ tier_cone = |tier, { inputs, ring_points, shade }| {
 	ring_on_screen = Camera.projected_points(ring_points, inputs.cam_focal)
 	Polygon.shaded_polygon(
 		convex_hull_points(ring_on_screen.append(apex)),
-		{ fill_color: inputs.foliage_color, strength: shade },
+		{ color: inputs.foliage_color, strength: shade },
 	)
 }
 
@@ -510,9 +510,6 @@ expect is_before(Screen.point(1.0, 2.0), Screen.point(1.0, 3.0))
 expect !is_before(Screen.point(1.0, 3.0), Screen.point(1.0, 2.0))
 expect !is_before(Screen.point(1.0, 2.0), Screen.point(1.0, 2.0))
 
-hull_points : List(Screen.Point) -> List(F64)
-hull_points = |points| Polygon.flat_coordinates(convex_hull_points(points))
-
 square_and_inside_points : List(Screen.Point)
 square_and_inside_points = [
 	Screen.point(0.0, 0.0),
@@ -549,13 +546,26 @@ repeated_points = [
 	Screen.point(4.0, 4.0),
 ]
 
-expect hull_points(square_and_inside_points) == [0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0]
-expect hull_points(triangle_points) == [0.0, 0.0, 4.0, 0.0, 2.0, 3.0]
-expect hull_points(line_points) == [0.0, 0.0, 3.0, 3.0]
-expect hull_points(pair_points) == [1.0, 2.0, 0.0, 0.0]
-expect hull_points([Screen.point(9.0, 9.0)]) == [9.0, 9.0]
-expect hull_points([]) == []
-expect hull_points(repeated_points) == [0.0, 0.0, 4.0, 0.0, 4.0, 4.0]
+expect convex_hull_points(square_and_inside_points) == [
+	Screen.point(0.0, 0.0),
+	Screen.point(4.0, 0.0),
+	Screen.point(4.0, 4.0),
+	Screen.point(0.0, 4.0),
+]
+expect convex_hull_points(triangle_points) == [
+	Screen.point(0.0, 0.0),
+	Screen.point(4.0, 0.0),
+	Screen.point(2.0, 3.0),
+]
+expect convex_hull_points(line_points) == [Screen.point(0.0, 0.0), Screen.point(3.0, 3.0)]
+expect convex_hull_points(pair_points) == [Screen.point(1.0, 2.0), Screen.point(0.0, 0.0)]
+expect convex_hull_points([Screen.point(9.0, 9.0)]) == [Screen.point(9.0, 9.0)]
+expect convex_hull_points([]) == []
+expect convex_hull_points(repeated_points) == [
+	Screen.point(0.0, 0.0),
+	Screen.point(4.0, 0.0),
+	Screen.point(4.0, 4.0),
+]
 
 expect convex_hull_points(square_and_inside_points).len() == 4
 expect convex_hull_points(triangle_points).len() == 3
@@ -564,8 +574,15 @@ expect convex_hull_points(pair_points).len() == 2
 expect convex_hull_points(repeated_points).len() == 3
 
 expect
-	Polygon.flat_coordinates(square_and_inside_points.sort_with(left_to_right))
-		== [0.0, 0.0, 0.0, 4.0, 2.0, 0.0, 2.0, 2.0, 4.0, 0.0, 4.0, 4.0]
+	square_and_inside_points.sort_with(left_to_right)
+		== [
+			Screen.point(0.0, 0.0),
+			Screen.point(0.0, 4.0),
+			Screen.point(2.0, 0.0),
+			Screen.point(2.0, 2.0),
+			Screen.point(4.0, 0.0),
+			Screen.point(4.0, 4.0),
+		]
 
 expect left_to_right(Screen.point(1.0, 9.0), Screen.point(2.0, 0.0)) == Before
 expect left_to_right(Screen.point(2.0, 0.0), Screen.point(1.0, 9.0)) == After

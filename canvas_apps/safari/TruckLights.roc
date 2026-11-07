@@ -170,7 +170,7 @@ headlight_beam = |truck, across| {
 	lamp = Geom.ahead_point(at_lamp(headlight_height))?
 	on_screen = Camera.projected_points(corners, truck.cam_focal)
 	lamp_on_screen = Camera.project(lamp, truck.cam_focal)
-	Polygon.gradient_polygon(
+	Polygon.circular_gradient_polygon(
 		on_screen,
 		{
 			center_color: beam_core,
@@ -217,7 +217,7 @@ brake_glow = |truck, lamp_points| {
 	on_screen = Camera.projected_points(lamp_ahead, truck.cam_focal)
 	center = center_of(on_screen)
 	radius = glow_radius(on_screen, center)
-	Polygon.gradient_polygon(
+	Polygon.circular_gradient_polygon(
 		outline_points({ center, outline_radius: radius }),
 		{
 			center_color: glow_core,

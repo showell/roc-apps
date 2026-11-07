@@ -40,8 +40,6 @@ Scatter.offset: phases, radians per animal, for Trig
 Screen.point: the plain numbers a point is written with, on the way into Pixels
 Polygon.flat_coordinates: the flat list lib.Shapes takes
 Polygon.polygon_coordinates: the flat list lib.Shapes takes
-Polygon.ColorStops: gradient offsets as traced, which offsets_of holds to 0 to 1
-Polygon.offsets_of: the gradient offsets lib.Shapes takes
 
 # The gates: test code, and the raster past lib.Shapes.
 CrossModuleExpects: an app holding only expects and their helpers
