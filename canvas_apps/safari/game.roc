@@ -26,6 +26,7 @@ package
 		Distance,
 		EarthCurve,
 		EmojiStills,
+		EncounterPoses,
 		EncounterReaction,
 		EncounterSighting,
 		Fraction,

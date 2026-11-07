@@ -20,6 +20,7 @@ import game.CatCrossing
 import game.Clock
 import game.Coast
 import game.Conifer
+import game.EncounterPoses
 import game.EncounterSighting
 import game.BillboardSighting
 import game.DepthSort
@@ -422,7 +423,7 @@ birds_on : List(Trees.RoadsideTree),
 	encounter : Animation.Timing,
 } -> List(Pipeline.Sighted(PosedBird))
 birds_on = |trees, { rider_along, cam_focal, encounter }|
-	EncounterSighting.birds_in_view(
+	birds_seen_on(
 		RoadAhead.RoadView.ahead_of(
 			Route.from_segments([segment_of(trees)]),
 			Route.SegmentIndex.first,
@@ -497,7 +498,7 @@ expect bird_count(bird_trees, { rider_along: 120.0, cam_focal: Pixels.of(500.0) 
 expect bird_count(bird_trees, { rider_along: 0.0, cam_focal: Pixels.of(91.0) }) == 1
 expect bird_count(bird_trees, { rider_along: 0.0, cam_focal: Pixels.of(90.0) }) == 0
 expect
-	EncounterSighting.birds_in_view(
+	birds_seen_on(
 		RoadAhead.RoadView.ahead_of(
 			Route.from_segments([segment_with_cat]),
 			Route.SegmentIndex.first,
@@ -509,7 +510,7 @@ expect
 ## Two segments on the road ahead, the rider at the start of the first, whose
 ## bird is in flight.
 two_segments : List(Pipeline.Sighted(PosedBird))
-two_segments = EncounterSighting.birds_in_view(
+two_segments = birds_seen_on(
 	RoadAhead.RoadView.ahead_of(
 		Route.from_segments([going_straight_on(segment_of(bird_trees)), segment_of(bird_trees)]),
 		Route.SegmentIndex.first,
@@ -580,17 +581,31 @@ cat_route = Route.from_segments([
 cat_road : RoadAhead.RoadView
 cat_road = RoadAhead.RoadView.ahead_of(cat_route, Route.SegmentIndex.first)
 
-## The cat on the segment at `number` on the road ahead, if it is in view from
-## the origin, before any crossing is planned.
-cat_at : U32 -> Try(Pipeline.Sighted(PosedCat), [NoCat, Over, BehindCamera, TooSmall])
-cat_at = |number| EncounterSighting.segment_cat(
-	cat_road,
-	{
-		camera: origin_camera,
-		in_view: numbered_segment(cat_road, number),
-		encounter: Unplanned,
-	},
-)
+## The birds the camera sees on `road_view`, with the encounter on the
+## rider's segment at `encounter`.
+birds_seen_on : RoadAhead.RoadView,
+{
+	camera : { vantage : Geom.Vantage, cam_focal : Pixels },
+	encounter : Animation.Timing,
+} -> List(Pipeline.Sighted(PosedBird))
+birds_seen_on = |road_view, { camera, encounter }|
+	EncounterSighting.animals_in_view(
+		road_view,
+		{ camera, animals: EncounterPoses.bird_poses(road_view, encounter) },
+	)
+
+## The cats the camera sees on `road_view`, with the encounter on the rider's
+## segment at `encounter`.
+cats_seen_on : RoadAhead.RoadView,
+{
+	camera : { vantage : Geom.Vantage, cam_focal : Pixels },
+	encounter : Animation.Timing,
+} -> List(Pipeline.Sighted(PosedCat))
+cats_seen_on = |road_view, { camera, encounter }|
+	EncounterSighting.animals_in_view(
+		road_view,
+		{ camera, animals: EncounterPoses.cat_poses(road_view, encounter) },
+	)
 
 expect cat_route.route_segments().map(World.has_cat) == [False, True, False]
 
@@ -617,7 +632,7 @@ expect
 
 ## The cats in view for a rider `along` metres into the first segment.
 ride_sightings : F64 -> List(Pipeline.Sighted(PosedCat))
-ride_sightings = |along| EncounterSighting.cats_in_view(
+ride_sightings = |along| cats_seen_on(
 	cat_road,
 	{
 		camera: { ..origin_camera, vantage: { ..origin, along: Along.metres(along) } },
@@ -643,8 +658,10 @@ cat_right : F64 -> Distance
 cat_right = |along| first_cat(along).spot.foot().right()
 
 expect seen.len() == 1
-expect cat_at(0).is_err()
-expect cat_at(2).is_err()
+# The cat route's one cat is on its second segment.
+expect
+	EncounterPoses.cat_poses(cat_road, Unplanned).map(|cat| cat.place)
+		== [Ahead(SegmentPlace.Position.number(1))]
 expect first_cat(300.0).spot.lift().to_metres() == 0.0
 expect first_cat(300.0).kind.pose == Rest
 expect
@@ -984,9 +1001,7 @@ sighted_depths = |sightings| sightings.map(|sighting| sighting.spot.foot().forwa
 expect depths_of(scene.trees) == sighted_depths(TreeSighting.trees_in_view(road, origin_camera))
 expect
 	depths_of(scene.birds)
-		== sighted_depths(
-			EncounterSighting.birds_in_view(road, { camera: origin_camera, encounter: Unplanned }),
-		)
+		== sighted_depths(birds_seen_on(road, { camera: origin_camera, encounter: Unplanned }))
 expect
 	depths_of(scene.towers)
 		== sighted_depths(
@@ -999,15 +1014,18 @@ expect depths_of(cat_scene.cats) == sighted_depths(seen)
 expect seen.len() > 0
 expect scene.rails.len() == RailSighting.rail_quads_in_view(road, origin_camera).len()
 expect
-	scene.truck.map_ok(|truck| truck.depth)
-		== TruckSighting.truck_in_view(
-			road,
-			{
-				camera: origin_camera,
-				route_position: scene_facts.truck.route_position,
-				lit_truck: scene_facts.truck.lit_truck,
-			},
-		).map_ok(|truck| truck.spot.foot().forward())
+	depths_of(scene.trucks)
+		== sighted_depths(
+			TruckSighting.truck_in_view(
+				road,
+				{
+					camera: origin_camera,
+					route_position: scene_facts.truck.route_position,
+					lit_truck: scene_facts.truck.lit_truck,
+				},
+			).map_ok(|truck| [truck]) ?? [],
+		)
+expect scene.trucks.len() == 1
 expect scene.birds.len() > 0
 
 # The renderings are every field's, the truck's among them.
@@ -1019,7 +1037,7 @@ expect
 			scene.towers.len(),
 			scene.billboards.len(),
 			scene.cats.len(),
-			1,
+			scene.trucks.len(),
 			scene.rails.len(),
 		].sum()
 
@@ -1031,7 +1049,7 @@ empty_scene = {
 	towers: [],
 	billboards: [],
 	cats: [],
-	truck: Err(NoTruck),
+	trucks: [],
 	rails: [],
 }
 
