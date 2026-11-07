@@ -25,10 +25,6 @@ BillboardSighting :: [].{
 	wildlife_reach : U32
 	wildlife_reach = 5
 
-	## No more critters than this are drawn in a frame.
-	max_visible_critters : I64
-	max_visible_critters = 320
-
 	## A critter shorter than this many pixels is too small to draw.
 	min_critter_px : Pixels
 	min_critter_px = Pixels.of(2.0)
@@ -36,11 +32,9 @@ BillboardSighting :: [].{
 	## What became of a critter placed in the rider's view.
 	Fate : Try(Pipeline.Sighted(Billboard), [BehindCamera, TooSmall])
 
-	## The billboards to draw, of `fates`. The cap comes after the cull, so a
-	## billboard out of view never takes a place from one in view.
+	## The billboards to draw, of `fates`: those in view.
 	billboards_to_draw : List(BillboardSighting.Fate) -> List(Pipeline.Sighted(Billboard))
-	billboards_to_draw = |fates|
-		fates.keep_oks(|fate| fate).take_first(BillboardSighting.max_visible_critters.to_u64_wrap())
+	billboards_to_draw = |fates| fates.keep_oks(|fate| fate)
 
 	## Every billboard in view, nearest segment first, then those of the segment
 	## before the rider's, when there is one.

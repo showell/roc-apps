@@ -33,10 +33,6 @@ TowerSighting :: [].{
 	tower_yaw : Angle.Turn
 	tower_yaw = Angle.Turn.degrees(30.0)
 
-	## At most this many towers are drawn in a frame.
-	max_visible_towers : I64
-	max_visible_towers = 16
-
 	## The towers in view: those on the road ahead, then the one past the end
 	## of the segment behind the rider.
 	towers_in_view : RoadAhead.RoadView, Clock -> List(Pipeline.Sighted(Tower))
@@ -152,7 +148,6 @@ tower_if_ahead = |
 expect TowerSighting.tower_beyond.to_metres() == 160.0
 expect TowerSighting.tower_right.to_metres() == 20.0
 expect TowerSighting.mid_tower_left.to_metres() == 100.0
-expect TowerSighting.max_visible_towers == 16
 
 route_segments : List(World.Segment)
 route_segments = [

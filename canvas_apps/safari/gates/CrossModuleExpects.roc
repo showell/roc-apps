@@ -36,7 +36,6 @@ import game.Rider
 import game.RiderState
 import game.Scenery
 import game.Speed
-import game.TowerSighting
 import game.TreeSighting
 import game.Trees
 import game.Truck
@@ -571,10 +570,9 @@ expect near_cow.kind.facing == FacesRight
 expect left_bull.kind.facing == FacesLeft
 
 expect BillboardSighting.min_critter_px.to_f64() == 2.0
-expect BillboardSighting.max_visible_critters == 320
 
 ## How many of `in_view` critters are drawn, among `out_of_view` others before
-## them. A count past the cap is cut to it, and one out of view takes no place.
+## them. Every one in view is drawn, and none out of view.
 drawn_count : { out_of_view : U64, in_view : U64 } -> U64
 drawn_count = |{ out_of_view, in_view }|
 	BillboardSighting.billboards_to_draw(
@@ -583,11 +581,9 @@ drawn_count = |{ out_of_view, in_view }|
 
 expect
 	[
-		({ out_of_view: 0, in_view: 319 }, 319),
-		({ out_of_view: 0, in_view: 320 }, 320),
-		({ out_of_view: 0, in_view: 321 }, 320),
+		({ out_of_view: 0, in_view: 5 }, 5),
 		({ out_of_view: 400, in_view: 5 }, 5),
-		({ out_of_view: 400, in_view: 321 }, 320),
+		({ out_of_view: 400, in_view: 0 }, 0),
 		({ out_of_view: 0, in_view: 0 }, 0),
 	].all(|(counts, want)| drawn_count(counts) == want)
 
@@ -673,8 +669,10 @@ expect scene.towers.len() > 0
 expect scene.billboards.len() > 0
 expect scene.rails.len() > 0
 expect scene_renderings.len() > 0
-expect scene.towers.len().to_i64_wrap() <= TowerSighting.max_visible_towers
-expect scene.billboards.len().to_i64_wrap() <= BillboardSighting.max_visible_critters
+
+# A segment of the road ahead shows at most two towers, the one past its end and
+# the one halfway along, and the segment just behind shows one.
+expect scene.towers.len() <= 2 * RoadAhead.most_segments_ahead.to_u64() + 1
 
 ## Whether no rendering in `renderings` is farther than the one before it.
 is_far_to_near : List(Rendered) -> Bool
