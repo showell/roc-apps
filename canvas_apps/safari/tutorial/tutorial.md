@@ -1901,7 +1901,7 @@ Play it, and the gap falls from 50 metres to 0, with the rider held at a metre a
 New in this chapter:
 
 - Roc: type parameters, operators on opaque types, `var`, `for` and `return` in a pure function
-- Modules: `Cat`, `Animation`, `Beat`, `Beats`, `CatHeights`
+- Modules: `Cat`, `CatCrossing`, `Animation`, `Beat`, `Beats`, `CatHeights`
 
 The cat is one function, `Cat.instant_at`, with two jobs: work out how far along the crossing is, and look up what the cat does at that point. The module `Animation` sits under both.
 

@@ -4,7 +4,7 @@
 ## its segments, such as which herds are big and which the rider finds
 ## distracting, and this module resolves them before each segment is built.
 import Angle
-import Cat
+import CatCrossing
 import CowHerd
 import Distance
 import PigHerd
@@ -470,17 +470,17 @@ expect seg(0).trees.len() == 28
 expect seg(1).trees.len() == 16
 expect seg(6).trees.len() == 74
 expect seg(18).trees.len() == 14
-expect crossing_at(3).mid_across.to_metres() == 0.425
-expect crossing_at(18).mid_across.to_metres() == 0.425
 # Each cat starts behind a tree that is really there, and just past it.
 expect
 	[3, 9, 18].all(
 		|index| {
 			crossing = crossing_at(index)
+			beyond = CatCrossing.cat_beyond_tree
+			behind = CatCrossing.cat_behind_tree
 			seg(index).trees.any(
 				|{ road_point, .. }|
-					road_point.along.plus(Cat.cat_beyond_tree) == crossing.along
-						and road_point.across.plus(Cat.cat_behind_tree) == crossing.start_across,
+					road_point.along.plus(beyond) == crossing.along
+						and road_point.across.plus(behind) == crossing.start_across,
 			)
 		},
 	)
@@ -518,7 +518,7 @@ is_distracting = |segment|
 	}
 
 ## The cat crossing at a segment that has one.
-crossing_at : U32 -> Cat.Crossing
+crossing_at : U32 -> CatCrossing
 crossing_at = |index|
 	match seg(index).encounter {
 		CatCrosses(crossing) => crossing

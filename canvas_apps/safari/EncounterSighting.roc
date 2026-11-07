@@ -7,6 +7,7 @@ import Along
 import Animation
 import BirdFlight
 import Cat
+import CatCrossing
 import Distance
 import RoadAhead
 import SegmentPlace
@@ -49,7 +50,7 @@ EncounterSighting :: [].{
 cat_in_view : RoadAhead.CameraView,
 {
 	in_view : RoadAhead.SegmentInView,
-	crossing : Cat.Crossing,
+	crossing : CatCrossing,
 	speed : Speed,
 } -> Try(Pipeline.Sighted(PosedCat), [BehindCamera, TooSmall])
 cat_in_view = |view, { in_view, crossing, speed }| {

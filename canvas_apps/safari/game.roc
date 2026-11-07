@@ -17,6 +17,7 @@ package
 		BirdStills,
 		Camera,
 		Cat,
+		CatCrossing,
 		CatStills,
 		Clock,
 		Coast,

@@ -13,6 +13,7 @@ import game.Angle
 import game.Billboard
 import game.BirdFlight
 import game.Cat
+import game.CatCrossing
 import game.Clock
 import game.Conifer
 import game.EncounterSighting
@@ -428,7 +429,7 @@ expect cats_on_road(1).len() == 0
 # top speed it starts closer to the cat than the cat is to the segment's start,
 # and a rider comes onto a segment no further along than that.
 ## The cats of the route, each with its segment.
-route_cats : List({ segment : Segment, crossing : Cat.Crossing })
+route_cats : List({ segment : Segment, crossing : CatCrossing })
 route_cats = World.route.route_segments().join_map(
 	|segment|
 		match segment.encounter {
@@ -443,7 +444,7 @@ farthest_start = Cat.clear_gap.plus(VehicleLimits.top_speed.distance_in(Cat.cros
 
 expect route_cats.len() == 3
 expect farthest_start.to_metres() == 98.0
-expect farthest_start < Cat.cat_along.plus(Cat.cat_beyond_tree).from_start()
+expect farthest_start < Cat.cat_along.plus(CatCrossing.cat_beyond_tree).from_start()
 expect route_cats.all(|{ crossing, .. }| farthest_start < crossing.along.from_start())
 
 ## The speed a rider leaves `segment` at: the bend's, or none at the route's end.

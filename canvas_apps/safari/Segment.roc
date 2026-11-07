@@ -10,6 +10,7 @@ import Angle
 import Billboard
 import BirdFlight
 import Cat
+import CatCrossing
 import CowHerd
 import Distance
 import Geom
@@ -30,7 +31,7 @@ Segment := {
 	## What the rider meets on the road here, at most one thing, so that the
 	## rider has one experience at a time. Most of the road is quiet, so that an
 	## encounter stands out.
-	encounter : [CatCrosses(Cat.Crossing), BirdHere(BirdFlight.Habit), QuietRoad],
+	encounter : [CatCrosses(CatCrossing), BirdHere(BirdFlight.Habit), QuietRoad],
 
 	## How the segment ends: by turning into the next, positive to the
 	## right, with what lives at the bend, or by ending the route.
@@ -72,7 +73,7 @@ Segment := {
 			cows: choices.cows,
 			encounter: match choices.encounter {
 				CatCrosses => CatCrosses(
-					Cat.crossing({
+					CatCrossing.by_tree({
 						road_half_width: Geom.road_half_width,
 						tree: nearest_tree_ahead(trees, Cat.cat_along).road_point,
 					}),

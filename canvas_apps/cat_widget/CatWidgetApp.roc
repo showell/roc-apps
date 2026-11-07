@@ -4,6 +4,7 @@
 ## the road at the cat, with the road's width to scale. Below it, the buttons and
 ## four lines of text that say what Cat and EncounterReaction make of the gap.
 import game.Cat
+import game.CatCrossing
 import game.EncounterReaction
 import game.Distance
 import game.Pixels
@@ -47,7 +48,7 @@ rider_speed : Speed
 rider_speed = Speed.metres_a_step(1.0)
 
 ## The cat's crossing on a segment that has one.
-cat_crossing : Segment -> Try(Cat.Crossing, [NoCat])
+cat_crossing : Segment -> Try(CatCrossing, [NoCat])
 cat_crossing = |segment|
 	match segment.encounter {
 		CatCrosses(crossing) => Ok(crossing)
@@ -60,7 +61,7 @@ cat_segment =
 	World.route.route_segments().find_first(|segment| cat_crossing(segment).is_ok())
 		?? crash "CatWidgetApp.cat_segment: the route has cats"
 
-crossing : Cat.Crossing
+crossing : CatCrossing
 crossing = cat_crossing(cat_segment) ?? crash "CatWidgetApp.crossing: this segment has a cat"
 
 ## Everything on the canvas.
