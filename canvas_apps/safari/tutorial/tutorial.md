@@ -958,15 +958,15 @@ A piece of ground is a list of corners and a color.
 
 That's what `Ground` paints. It's plain data, so it can be checked with numbers.
 
-{{code GroundSighting.bend_corners}}
+{{code GroundSighting.bend_paving}}
 
 Four points cut the corner: the two ends of the first segment, the apex, and the place where the second segment's outer edge starts.
 
-{{code GroundSighting.lead_points}}
+{{code GroundSighting.lead_length}}
 
 The last 40 metres before a bend get a patch of their own, laid after the road's chunks and before the corner.
 
-{{code GroundSighting.bend_patches}}
+{{code GroundSighting.road_along}}
 
 The road along a segment is laid in chunks of up to 25 metres. The widget's two segments are 60 metres each, which makes three chunks each, and `bend_patches` adds two patches. That's the widget's count of 8.
 
