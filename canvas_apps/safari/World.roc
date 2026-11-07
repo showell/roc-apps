@@ -65,7 +65,7 @@ World :: [].{
 			segment_plan: {
 				length: Distance.metres(400.0),
 				scheme: AllGreen,
-				encounter: QuietRoad,
+				encounter: BirdHere,
 				pigs: WithPigs,
 				bull: NoBull,
 			},

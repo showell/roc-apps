@@ -1047,7 +1047,7 @@ The `match` is on a pair, so it has to cover all four combinations. A rod with o
 
 As a tower gets further away, it sinks below the horizon from the bottom up:
 
-{{code Tower.sunk_below_horizon}}
+{{code EarthCurve.exaggerated_drop}}
 
 A real tower wouldn't go so soon. `sink_radius` is 20 km, a much smaller earth than ours, so a tower is gone at 1.8 km. That way, you can see it sink.
 
@@ -1815,11 +1815,11 @@ The truck is what the rider chases. It starts 500 metres ahead and keeps to a sc
 
 The schedule is a straight line, and a pure function of the rider's progress, destructured from a record so the call site has to name both `Distance`s:
 
-{{code Truck.scheduled_position}}
+{{code Truck.tease_position}}
 
 Its one caller is the truck's step function, the same shape as the rider's. `NextBend` is a tag union with a payload on one side, so the only way to read a `distance` is to be inside the branch where there is one:
 
-{{code Truck.at_next_step from "schedule = scheduled_position(" to "NoBendAhead => scheduled_state_at_next_step(truck, schedule)"}}
+{{code Truck.at_next_step from "tease = tease_position(" to "NoBendAhead => chasing_state_at_next_step(truck, tease)"}}
 
 And that's called from `RideInstant.next`, in the chapter on stepping, with the rider's distance as the only thing the truck knows of the rider. Nothing in `Rider` imports `Truck`, and nothing in `Truck` imports `Rider`. The chase is one record literal in `RideInstant`.
 
@@ -1835,7 +1835,7 @@ Then the two ways to take a step. Both sit below the block, private, and both ar
 
 {{code Truck.braking_state_at_next_step}}
 
-{{code Truck.scheduled_state_at_next_step}}
+{{code Truck.chasing_state_at_next_step}}
 
 `brake_lights` is state because it's a fact about the last step. Headlights aren't, and they stay out of `TruckState`. That's three of the four kinds in one vehicle: the place and speed are stepped, the headlights are clock-driven, and the tires don't change.
 

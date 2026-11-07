@@ -1,10 +1,10 @@
-# Mouse is where the pointer is and which buttons are down. It is shaped like
-# roc-ray's Mouse.Snapshot, so a game reads it the same way on both ends:
-# `input.mouse.button_down(Left)`, `input.mouse.position()`. Only the three
-# buttons a browser reports are here, where roc-ray names seven.
-#
-# Position is in the game's own coordinates, so a game never learns how big the
-# window is or how the page scaled the canvas.
+## Mouse is where the pointer is and which buttons are down. It is shaped like
+## roc-ray's Mouse.Snapshot, so a game reads it the same way on both ends:
+## `input.mouse.button_down(Left)`, `input.mouse.position()`. Only the three
+## buttons a browser reports are here, where roc-ray names seven.
+##
+## Position is in the game's own coordinates, so a game never learns how big the
+## window is or how the page scaled the canvas.
 
 Mouse :: [].{
 	Button := [Left, Right, Middle].{
@@ -19,10 +19,10 @@ Mouse :: [].{
 			Middle => 4
 		}
 
-	# `wheel` is a field rather than a method, so a game reads it exactly as it
-	# does on roc-ray: `input.mouse.wheel`, positive away from the hand. It is
-	# not called `wheel_delta`, because roc-ray's `wheel_delta` means both
-	# axes, as a Vec2.
+	## `wheel` is a field rather than a method, so a game reads it exactly as it
+	## does on roc-ray: `input.mouse.wheel`, positive away from the hand. It is
+	## not called `wheel_delta`, because roc-ray's `wheel_delta` means both
+	## axes, as a Vec2.
 	Snapshot := { held : U32, struck : U32, at : { x : F32, y : F32 }, wheel : F32 }.{
 
 		## Whether a button is down now, however long it has been.
@@ -47,8 +47,8 @@ Mouse :: [].{
 			Snapshot.{ held: s.held.bitwise_or(bit(button)), struck: s.struck.bitwise_or(bit(button)), at: s.at, wheel: s.wheel }
 	}
 
-	## No button down, the pointer at the origin and the wheel still: what a
-	## test starts from.
+	## No button down, the pointer at the origin and the wheel still: the
+	## pointer in `Input.none`, and what a test starts from.
 	none : Mouse.Snapshot
 	none = Snapshot.{ held: 0, struck: 0, at: { x: 0, y: 0 }, wheel: 0 }
 

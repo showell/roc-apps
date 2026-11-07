@@ -56,7 +56,7 @@ WorkshopDraw :: [].{
 		# its uploads are what this one shape replaces.
 		$out = List.append(
 			$out,
-			Image({
+			Shapes.image({
 				x,
 				y,
 				width: side,

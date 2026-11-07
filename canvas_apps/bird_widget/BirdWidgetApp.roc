@@ -106,7 +106,7 @@ shapes_at = |transport|
 ## The road and the two trees, far things first, and the bird at `gap`.
 picture_shapes : Distance -> List(Shapes.Shape)
 picture_shapes = |gap|
-	ScrubWidget.ride_shapes({
+	ScrubWidget.picture_shapes({
 		backdrop: { sky_colors: Sky.colors_at(Clock.start), sun_sighting: OutOfView },
 		ride_shapes: [
 			road,

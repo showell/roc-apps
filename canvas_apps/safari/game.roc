@@ -30,6 +30,7 @@ package
 		EncounterPoses,
 		EncounterReaction,
 		EncounterSighting,
+		FarHeight,
 		Fraction,
 		FrameView,
 		Gawking,
@@ -84,6 +85,7 @@ package
 		Truck,
 		TruckSighting,
 		VehicleLimits,
+		Wildlife,
 		World,
 	]
 	{ lib: "../lib/main.roc" }

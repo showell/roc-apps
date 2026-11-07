@@ -13,6 +13,7 @@ import game.Angle
 import game.Animation
 import game.EncounterPlan
 import game.Attention
+import game.Beacon
 import game.BendInView
 import game.Billboard
 import game.BirdFlight
@@ -62,11 +63,13 @@ import game.Steps
 import game.StillShapes
 import game.Sun
 import game.Throttle
+import game.Tower
 import game.TowerSighting
 import game.TreeSighting
 import game.TruckSighting
 import game.Trees
 import game.VehicleLimits
+import game.Wildlife
 import game.World
 import lib.Brush
 import lib.RgbColor
@@ -94,20 +97,6 @@ road_from = |number| RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex
 ## The road ahead of a rider on the route's first segment.
 road : RoadAhead.RoadView
 road = road_from(0)
-
-## The world's first `count` segments, a route of their own.
-route_of_first : U64 -> Route
-route_of_first = |count|
-	Route.from_segments(
-		World.route.route_segments().take_first(count).map_with_index(
-			|segment, at|
-				if at + 1 == count {
-					{ ..segment, ending: RouteEnds }
-				} else {
-					segment
-				},
-		),
-	)
 
 # Positions count along the road ahead from the rider's segment, not along the
 # route from its start.
@@ -388,6 +377,11 @@ segment_of = |trees| {
 	}
 }
 
+## The road ahead of a rider on the first of `segments`, a route of their own.
+road_of : List(Segment) -> RoadAhead.RoadView
+road_of = |segments|
+	RoadAhead.RoadView.ahead_of(Route.from_segments(segments), Route.SegmentIndex.first)
+
 ## `segment`, bending straight on into another.
 going_straight_on : Segment -> Segment
 going_straight_on = |segment| {
@@ -564,6 +558,96 @@ expect is_one_tree_behind(past_bend_trees(-150.0))
 expect past_bend_trees(30.0).len() == 0
 expect past_bend_trees(-80.0).len() == 0
 
+# RailSighting: the rail at a bend runs along the outer edge, from 10 m before
+# the bend on the segment before it to 10 m into the segment after it. On a
+# 300 m segment turning right by a right angle, the outer edge is the left one.
+## The road ahead of a rider at the start of a 300 m segment that turns right by
+## a right angle into another.
+right_angle_road : RoadAhead.RoadView
+right_angle_road = road_of([
+	{
+		..segment_of([]),
+		length: Distance.metres(300.0),
+		ending: Bends({ turn: Angle.Turn.degrees(90.0), bend_life: Quiet }),
+	},
+	segment_of([]),
+])
+
+## Where the rail's path starts and ends, as the rider sees it. Each bar joins
+## two points of the path, and the posts follow the bars, one at each point, so
+## a path of `n` points makes `2n - 1` quads, and the last bar ends the path.
+rail_ends : { start : Geom.RaisedPoint, end : Geom.RaisedPoint }
+rail_ends = {
+	quads = RailSighting.rail_quads_in_view(right_angle_road, { vantage: origin })
+	last_bar = (quads.len() - 1) / 2 - 1
+	corner_of = |quad_index, corner_index|
+		quads.get(quad_index).map_ok(|quad| quad.corners).ok_or([]).get(corner_index)
+			?? crash "CrossModuleExpects: a rail bar has four corners"
+	{ start: corner_of(0, 0), end: corner_of(last_bar, 1) }
+}
+
+## The point on the left edge `along` metres into the segment at `place` on the
+## right-angle road, as the rider sees it.
+left_edge_point : SegmentPlace, F64 -> Geom.RiderPoint
+left_edge_point = |place, along|
+	RoadAhead.rider_point_at(
+		right_angle_road,
+		{
+			vantage: origin,
+			place,
+			road_point: { along: Along.metres(along), across: Geom.left_edge },
+		},
+	)
+
+expect {
+	start = left_edge_point(Ahead(SegmentPlace.Position.first), 290.0)
+	end = left_edge_point(Ahead(SegmentPlace.Position.number(1)), 10.0)
+	[
+		(rail_ends.start.right, start.right),
+		(rail_ends.start.forward, start.forward),
+		(rail_ends.end.right, end.right),
+		(rail_ends.end.forward, end.forward),
+	].all(|(got, want)| (got.to_metres() - want.to_metres()).abs() <= 0.000001)
+		and start.right.to_metres() == -2.0
+		and start.forward.to_metres() == 290.0
+}
+
+# TreeSighting keeps each segment's trees in the order they were planted,
+# leaving out those behind the camera and those too small to draw, and goes
+# through the segments in view in turn.
+## Where each tree in view stands for a rider 10 m into `segments`, seen through
+## `cam_focal`: right of the camera, then ahead of it.
+tree_places : List(Segment), Pixels -> List((F64, F64))
+tree_places = |segments, cam_focal|
+	TreeSighting.trees_in_view(
+		road_of(segments),
+		{ vantage: { ..origin, along: Along.metres(10.0) }, cam_focal },
+	).map(|tree| (tree.spot.foot().right().to_metres(), tree.spot.foot().forward().to_metres()))
+
+## A tree behind the rider, then a far one, then a near pair.
+planted_out_of_order : Segment
+planted_out_of_order = segment_of([
+	tree_at(5.0, -3.5),
+	tree_at(46.0, 3.5),
+	tree_at(16.0, -3.5),
+	tree_at(16.0, 3.5),
+])
+
+expect
+	tree_places([planted_out_of_order], Pixels.of(500.0))
+		== [
+			(3.5, 36.0),
+			(-3.5, 6.0),
+			(3.5, 6.0),
+		]
+expect tree_places([planted_out_of_order], Pixels.of(1.0)) == []
+expect
+	tree_places(
+		[going_straight_on(segment_of([tree_at(46.0, 3.5)])), segment_of([tree_at(16.0, -3.5)])],
+		Pixels.of(500.0),
+	)
+		== [(3.5, 36.0), (-3.5, 206.0)]
+
 # EncounterSighting's cats: which cats are in view as the rider comes on them.
 ## The second segment, with a cat crossing it.
 cat_segment : Segment
@@ -695,251 +779,270 @@ bird_planning_gap = EncounterPlan.planning_gap(BirdFlight.flight_span, VehicleLi
 expect route_cats.len() == 3
 expect cat_planning_gap < Segment.cat_along.plus(CatCrossing.cat_beyond_tree).from_start()
 expect route_cats.all(|{ crossing, .. }| cat_planning_gap < crossing.along.from_start())
-expect route_flights.len() == 3
+expect route_flights.len() == 4
 expect route_flights.all(|{ from, .. }| bird_planning_gap < from.road_point.along.from_start())
 
-# BillboardSighting: how far along the road ahead each kind of critter is sighted.
-## The road ahead of a rider on the first of a route of the world's first six
-## segments.
-six_segments : RoadAhead.RoadView
-six_segments = RoadAhead.RoadView.ahead_of(route_of_first(6), Route.SegmentIndex.first)
-
-## The road ahead of a rider on a route of the world's first segment alone.
-first_alone : RoadAhead.RoadView
-first_alone = RoadAhead.RoadView.ahead_of(route_of_first(1), Route.SegmentIndex.first)
-
-## The critters of the segment at `in_view` on `road_view`, seen from the origin.
-segment_billboards_on : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(BillboardSighting.Fate)
-segment_billboards_on = |road_view, in_view|
-	BillboardSighting.segment_billboards(road_view, { vantage: origin, in_view })
-
-## The farm animals of the segment at `in_view` on `road_view`, seen from the
-## origin.
-farm_sightings_on : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(BillboardSighting.Fate)
-farm_sightings_on = |road_view, in_view|
-	BillboardSighting.farm_sightings(road_view, { vantage: origin, in_view })
-
-## What lives at the end of the segment at `in_view` on `road_view`, seen from
-## the origin.
-bend_sightings_on : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(BillboardSighting.Fate)
-bend_sightings_on = |road_view, in_view|
-	BillboardSighting.bend_sightings(road_view, { vantage: origin, in_view })
-
-## The segment `number` places along the road ahead of `road_view`.
-numbered_segment : RoadAhead.RoadView, U32 -> RoadAhead.SegmentInView
-numbered_segment = |road_view, number|
-	RoadAhead.segment_in_view_at(road_view, SegmentPlace.Position.number(number))
-
-## The road ahead of a rider on the segment after the world's segment `number`,
-## and `number` in view just behind that rider.
-road_past_segment : U32 -> { road_view : RoadAhead.RoadView, in_view : RoadAhead.SegmentInView }
-road_past_segment = |number| {
-	road_view = road_from(number + 1)
-	{ road_view, in_view: segment_in_view_behind(road_view) }
+# BillboardSighting: which critters are in view, on a road of one segment
+# holding one grown cow and nothing else.
+one_cow_segment : Segment
+one_cow_segment = {
+	..segment_of([]),
+	pigs: NoPigs,
+	cows: { herd: { ..segment_of([]).cows.herd, cow_count: 1 }, bull: NoBull },
 }
 
-farm_at : U32 -> I64
-farm_at = |number|
-	farm_sightings_on(six_segments, numbered_segment(six_segments, number))
-		.len()
-		.to_i64_wrap()
-
-bend_at : U32 -> I64
-bend_at = |number|
-	bend_sightings_on(six_segments, numbered_segment(six_segments, number))
-		.len()
-		.to_i64_wrap()
-
-expect farm_at(0) > 0
-expect farm_at(2) > 0
-expect farm_at(3) == 0
-expect farm_at(4) == 0
-expect farm_at(5) == 0
-expect bend_at(3) > 0
-expect bend_at(4) > 0
-expect bend_at(5) == 0
-
-## How many critters live at the end of the world's segment `index`, seen alone.
-lone_bend_count : U32 -> I64
-lone_bend_count = |index|
-	bend_sightings_on(road_from(index), numbered_segment(road_from(index), 0))
-		.len()
-		.to_i64_wrap()
-
-# Segment 12 ends at the duck pond, 0 and 4 at an animal and its baby, and 18,
-# the road's last, quietly.
-expect lone_bend_count(12) == 6
-expect lone_bend_count(0) == 2
-expect lone_bend_count(4) == 2
-expect lone_bend_count(18) == 0
-expect {
-	first = numbered_segment(six_segments, 0)
-	whole = segment_billboards_on(six_segments, first).len().to_i64_wrap()
-	whole == farm_at(0) + bend_at(0)
+lone_cow : Geom.RoadPoint
+lone_cow = match one_cow_segment.segment_cows() {
+	[cow] => cow.road_point
+	_ => crash "CrossModuleExpects: the one-cow segment holds one cow"
 }
 
-## How many critters the segments from `position` to the road's end hold.
-count_from : U32 -> I64
-count_from = |position|
-	List.from_iter(U32.until(position, 6))
-		.map(
-			|number| {
-				in_view = numbered_segment(six_segments, number)
-				segment_billboards_on(six_segments, in_view).len().to_i64_wrap()
-			},
-		)
-		.sum()
-
-expect
-	BillboardSighting.billboard_fates(first_alone, origin_camera).len()
-		== segment_billboards_on(first_alone, numbered_segment(first_alone, 0)).len()
-expect BillboardSighting.billboard_fates(
-	six_segments,
-	origin_camera,
-).len().to_i64_wrap() == count_from(0)
-expect count_from(0) >= count_from(1)
-expect count_from(1) >= count_from(2)
-expect {
-	{ road_view, in_view } = road_past_segment(4)
-	segment_billboards_on(road_view, in_view).len() > 0
-}
-expect {
-	{ road_view, in_view } = road_past_segment(12)
-	bend_sightings_on(road_view, in_view).len() == 6
-}
-expect {
-	{ road_view, in_view } = road_past_segment(0)
-	fates = farm_sightings_on(road_view, in_view)
-	fates.len() > 0 and fates.all(|fate| how_it_went(fate) == BehindCamera)
-}
-expect {
-	{ road_view, in_view } = road_past_segment(0)
-	bend_sightings_on(road_view, in_view).len() == 2
-}
-
-## A billboard standing on the ground of the first segment, as the rider at its
-## start sees it.
-critter_fate : {
-	along : Along,
-	across : Across,
-	kind : Billboard,
-} -> BillboardSighting.Fate
-critter_fate = |{ along, across, kind }| {
-	critter = {
-		road_point: { along, across },
-		lift: Distance.zero,
-		kind,
+## Whether the rider sees the lone cow from `forward` metres short of it and
+## 2.5 m to its left.
+is_cow_seen_from : F64 -> Bool
+is_cow_seen_from = |forward| {
+	rider = {
+		along: Along.metres(lone_cow.along.to_metres() - forward),
+		across: Across.metres(lone_cow.across.to_metres() - 2.5),
+		yaw: Angle.straight_ahead,
 	}
-	BillboardSighting.sight_critter(
-		road,
-		{
-			vantage: origin,
-			place: Ahead(SegmentPlace.Position.first),
-			critter,
-		},
-	)
+	BillboardSighting.billboards_in_view(road_of([one_cow_segment]), { vantage: rider }).len() == 1
 }
 
-## A cow 2.5 m to the right of the rider, `forward` metres ahead.
-cow_fate : { forward : Distance, height : Distance } -> BillboardSighting.Fate
-cow_fate = |{ forward, height }|
-	critter_fate({
-		along: Along.at(forward),
-		across: Across.metres(2.5),
-		kind: { emoji: EmojiStills.cow, height, facing: FacesRight },
-	})
-
-## Which way a sighting went, whatever it carries.
-how_it_went : BillboardSighting.Fate -> [Seen, BehindCamera, TooSmall]
-how_it_went = |fate|
-	match fate {
-		Ok(_) => Seen
-		Err(BehindCamera) => BehindCamera
-		Err(TooSmall) => TooSmall
-	}
-
-# The near plane is 0.4 m, and a cow on it is in view. At the lens's resting
-# focal length a 1 m cow is 2 pixels tall about 342.8 m off.
+# The near plane is 0.4 m. The rider's place is worked out from the cow's, so
+# the cow's distance carries a rounding, and the checks stand a little either
+# side of the plane. At the lens's resting focal length the 1.4 m cow is 2
+# pixels tall about 479.9 m off.
 expect
 	[
-		(-5.0, 1.0, BehindCamera),
-		(0.3, 1.0, BehindCamera),
-		(0.39, 1.0, BehindCamera),
-		(0.4, 1.0, Seen),
-		(0.5, 1.0, Seen),
-		(300.0, 1.0, Seen),
-		(342.0, 1.0, Seen),
-		(343.0, 1.0, TooSmall),
-		(400.0, 1.0, TooSmall),
-		(10.0, 0.0, TooSmall),
-		(50.0, 0.9, Seen),
+		(-5.0, False),
+		(0.3, False),
+		(0.39, False),
+		(0.41, True),
+		(0.5, True),
+		(300.0, True),
+		(479.0, True),
+		(481.0, False),
+		(600.0, False),
+	].all(|(forward, want)| is_cow_seen_from(forward) == want)
+
+# Billboard: a billboard is drawn while it stands a pixel tall.
+## How many shapes draw an elephant of `height` metres, `forward` metres
+## straight ahead, through a 500 px focal length.
+elephant_shape_count : { forward : Distance, height : Distance } -> U64
+elephant_shape_count = |{ forward, height }| {
+	billboard : Billboard
+	billboard = { emoji: EmojiStills.elephant, height, facing: FacesLeft }
+	foot =
+		Geom.ahead_on_level({ right: Distance.zero, forward })
+			?? crash "CrossModuleExpects: a test's billboard is past the near plane"
+	spot = Spot.at({
+		place: Ahead(SegmentPlace.Position.first),
+		road_point: { along: Along.at(forward), across: Across.middle },
+		lift: Distance.zero,
+		foot,
+	})
+	billboard.scenery_picture({ spot, cam_focal: Pixels.of(500.0), context: {} }).to_shapes().len()
+}
+
+expect
+	[
+		(100.0, 2.0, 6),
+		(1000.0, 2.0, 6),
+		(1000.0, 1.9, 0),
+		(2000.0, 2.0, 0),
 	].all(
 		|(forward, height, want)| {
-			fate = cow_fate({ forward: Distance.metres(forward), height: Distance.metres(height) })
-			how_it_went(fate) == want
+			count = elephant_shape_count({
+				forward: Distance.metres(forward),
+				height: Distance.metres(height),
+			})
+			count == want
 		},
 	)
 
-near_cow : Pipeline.Sighted(Billboard)
-near_cow =
-	cow_fate({ forward: Distance.metres(0.5), height: Distance.metres(1.0) })
-		?? crash "CrossModuleExpects: a cow 0.5 m ahead is in view"
+# Wildlife: an animal and its baby at each of four bends, the first and third
+# turning right and the second and fourth left.
+four_critters : List(Geom.Placed(Billboard))
+four_critters = [
+	Wildlife.bend_critters({
+		animal: Elephant,
+		bend: { segment_length: Distance.metres(100.0), turn: Angle.Turn.degrees(50.0) },
+	}),
+	Wildlife.bend_critters({
+		animal: Giraffe,
+		bend: { segment_length: Distance.metres(50.0), turn: Angle.Turn.degrees(-70.0) },
+	}),
+	Wildlife.bend_critters({
+		animal: Zebra,
+		bend: { segment_length: Distance.metres(10.0), turn: Angle.Turn.degrees(50.0) },
+	}),
+	Wildlife.bend_critters({
+		animal: Rhino,
+		bend: { segment_length: Distance.metres(0.0), turn: Angle.Turn.degrees(-70.0) },
+	}),
+].join()
 
-left_bull : Pipeline.Sighted(Billboard)
-left_bull =
-	critter_fate({
-		along: Along.metres(50.0),
-		across: Across.metres(-1.5),
-		kind: {
-			emoji: EmojiStills.bull,
-			height: Distance.metres(1.6),
-			facing: FacesLeft,
-		},
-	})
-		?? crash "CrossModuleExpects: a bull 50 m ahead is in view"
+expect
+	four_critters.map(|critter| critter.road_point.across.to_metres())
+		== [-4.9, 0.0, 5.75, 0.0, -4.3, 0.0, 4.6, 0.0]
 
-expect near_cow.spot.foot().right().to_metres() == 2.5
-expect near_cow.spot.foot().forward().to_metres() == 0.5
-expect near_cow.kind.height.to_metres() == 1.0
-expect left_bull.spot.foot().right().to_metres() == -1.5
-expect left_bull.spot.foot().forward().to_metres() == 50.0
-expect left_bull.kind.height.to_metres() == 1.6
+expect
+	four_critters.map(|critter| critter.road_point.along.to_metres())
+		== [100.0, 114.0, 50.0, 64.0, 10.0, 24.0, 0.0, 14.0]
 
-expect near_cow.kind.emoji == EmojiStills.cow
-expect left_bull.kind.emoji == EmojiStills.bull
-expect near_cow.kind.facing == FacesRight
-expect left_bull.kind.facing == FacesLeft
+expect
+	four_critters.map(|critter| critter.kind.height.to_metres())
+		== [2.8, 1.4, 4.5, 2.25, 1.6, 0.8, 2.2, 1.1]
 
-# RailSighting's run up to a bend and out of it.
-rail_point_at : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
-rail_point_at = |points, i|
-	points.get(i) ?? crash "CrossModuleExpects: an index past the rail's end"
+expect
+	four_critters.map(|critter| critter.kind.facing)
+		== [
+			FacesRight,
+			FacesRight,
+			FacesLeft,
+			FacesLeft,
+			FacesRight,
+			FacesRight,
+			FacesLeft,
+			FacesLeft,
+		]
 
-runup_points_to_bend : List(Geom.RiderPoint)
-runup_points_to_bend = RailSighting.runup_points(
-	road,
-	{
-		vantage: origin,
-		place: Ahead(SegmentPlace.Position.first),
-		length: Distance.metres(500.0),
-		across: Across.metres(2.0),
-	},
-)
+# Tower: a tower that isn't turned stands on a square 12 m across, its corners
+# 6 m to either side of its middle and 6 m before and past it. Each leg rises
+# from its corner, from as high as the earth's curve hides it: 0.25 m for a
+# tower 100 m straight ahead, 1/320 of the tower's 80 m. The legs taper, so
+# each foot is drawn in toward the middle by 1/320 of 6 m.
+shapes_of_tower_100_ahead : List(Shapes.Shape)
+shapes_of_tower_100_ahead = {
+	tower_road = road_of([segment_of([])])
+	plain_tower : Tower
+	plain_tower = { yaw: Angle.straight_ahead, beacon_brightness: Fraction.zero }
+	sighted =
+		Pipeline.sighting_of(
+			{
+				road_point: { along: Along.metres(100.0), across: Across.middle },
+				lift: Distance.zero,
+				kind: plain_tower,
+			},
+			{
+				road: tower_road,
+				vantage: origin,
+				place: Ahead(SegmentPlace.Position.first),
+			},
+		)
+			?? crash "CrossModuleExpects: a tower 100 m ahead is past the near plane"
+	sighted.kind.scenery_picture({
+		spot: sighted.spot,
+		cam_focal: origin_camera.cam_focal,
+		context: { road: tower_road, vantage: origin },
+	}).to_shapes()
+}
 
-expect RailSighting.runout_points(
-	road,
-	{
-		vantage: origin,
-		place: Ahead(SegmentPlace.Position.first),
-		across: Across.metres(2.0),
-	},
-).len() == 10
-expect runup_points_to_bend.len() == 11
+## How far right of the screen's middle the foot of leg `index` is: the middle
+## of the rod's end at its corner.
+leg_foot_x : U64 -> F64
+leg_foot_x = |index| {
+	coordinates = coordinates_of(
+		shapes_of_tower_100_ahead.get(index) ?? crash "CrossModuleExpects: a tower has four legs",
+	)
+	match (coordinates.get(0), coordinates.get(6)) {
+		(Ok(near_side), Ok(far_side)) => (near_side + far_side) / 2.0 - Screen.center_x.to_f64()
+		_ => crash "CrossModuleExpects: a leg is a quad"
+	}
+}
+
+## How far a leg's foot is to the side of the tower's middle, and before or
+## past it.
+foot_offset : F64
+foot_offset = 6.0 * 319.0 / 320.0
+
+# The legs go back left, back right, front right, front left.
 expect
 	[
-		(rail_point_at(runup_points_to_bend, 0).forward.to_metres(), 490.0),
-		(rail_point_at(runup_points_to_bend, 10).forward.to_metres(), 500.0),
-	].all(|(got, want)| (got - want).abs() <= 0.0001)
+		(leg_foot_x(0), -500.0 * foot_offset / (100.0 - foot_offset)),
+		(leg_foot_x(1), 500.0 * foot_offset / (100.0 - foot_offset)),
+		(leg_foot_x(2), 500.0 * foot_offset / (100.0 + foot_offset)),
+		(leg_foot_x(3), -500.0 * foot_offset / (100.0 + foot_offset)),
+	].all(|(got, want)| (got - want).abs() <= 0.000001)
+
+# TowerSighting: a tower stands 160 m past the end of every segment, 20 m right
+# and turned 30 degrees, and a segment longer than 1000 m has one more halfway
+# along, 100 m left and not turned.
+## A segment 1200 m long, holding nothing, which ends a route.
+long_segment : Segment
+long_segment = { ..segment_of([]), length: Distance.metres(1200.0) }
+
+## The towers in view at `clock` from the origin of the segment at `rider_number` on a
+## route of a 200 m segment going straight on into the long one.
+towers_on_short_then_long : U32, Clock -> List(Pipeline.Sighted(Tower))
+towers_on_short_then_long = |rider_number, clock|
+	TowerSighting.towers_in_view(
+		RoadAhead.RoadView.ahead_of(
+			Route.from_segments([going_straight_on(segment_of([])), long_segment]),
+			Route.SegmentIndex.number(rider_number),
+		),
+		{ camera: origin_camera, clock },
+	)
+
+## Where a tower stands on its segment, and how it is turned: along, across,
+## and its turn in radians.
+tower_numbers : Pipeline.Sighted(Tower) -> List(F64)
+tower_numbers = |tower| [
+	tower.spot.road_point().along.to_metres(),
+	tower.spot.road_point().across.to_metres(),
+	tower.kind.yaw.to_radians(),
+]
+
+expect {
+	towers = towers_on_short_then_long(0, Clock.start)
+	thirty = Angle.Turn.degrees(30.0).to_radians()
+	got = towers.map(tower_numbers).join()
+	want = [
+		360.0,
+		20.0,
+		thirty,
+		1360.0,
+		20.0,
+		thirty,
+		600.0,
+		-100.0,
+		0.0,
+	]
+	towers.map(|tower| tower.spot.place())
+		== [
+			Ahead(SegmentPlace.Position.first),
+			Ahead(SegmentPlace.Position.number(1)),
+			Ahead(SegmentPlace.Position.number(1)),
+		]
+		and got.len() == want.len()
+		and got.map2(want, |one, wanted| (one - wanted).abs() <= 0.000000001).all(|is_near| is_near)
+}
+
+# The end tower's beacon blinks on its segment's number, and the mid tower's
+# the opposite way.
+expect {
+	got = towers_on_short_then_long(0, Clock.at_step(30)).map(|tower| tower.kind.beacon_brightness)
+	clock = Clock.at_step(30)
+	want = [
+		Beacon.(0).brightness_at(clock),
+		Beacon.(1).brightness_at(clock),
+		Beacon.(1).opposite().brightness_at(clock),
+	]
+	got == want and got.map(|brightness| brightness.to_f64()).sum() > 0.0
+}
+
+# The segment just behind shows its end tower, which stands past the bend, and
+# a rider far past every tower sees none.
+expect
+	towers_on_short_then_long(1, Clock.start).map(|tower| tower.spot.place())
+		== [Ahead(SegmentPlace.Position.first), Ahead(SegmentPlace.Position.first), JustBehind]
+expect
+	TowerSighting.towers_in_view(
+		road_of([segment_of([])]),
+		{ camera: { vantage: { ..origin, along: Along.metres(5000.0) } }, clock: Clock.start },
+	).len()
+		== 0
 
 # Scene, on the scene from the start of the route.
 scene_facts : Scene.RideFacts
@@ -1408,8 +1511,8 @@ first_step_where = |holds| {
 sunset_climax : Clock
 sunset_climax = {
 	hidden_at = first_step_where(Mountains.is_sun_behind_mountains)
-	range_top = Sun.height_at(hidden_at).plus(Sun.radius)
-	first_step_where(|clock| Sun.height_at(clock).minus(Sun.radius) < range_top)
+	range_top = Sun.height_at(hidden_at).plus(Sun.radius_as_height)
+	first_step_where(|clock| Sun.height_at(clock).minus(Sun.radius_as_height) < range_top)
 }
 
 ## How many steps before and after the sunset's climax the rider must be on the
@@ -1535,10 +1638,10 @@ ride_encounters = {
 	}
 }
 
-# Steve's rule: the rider can't overtake a bird. Each of the three birds flies
+# Steve's rule: the rider can't overtake a bird. Each of the route's birds flies
 # its whole flight on the ride, and at every step of it the bird is ahead of the
 # rider.
-expect ride_encounters.flying_step_count == 3 * BirdFlight.flight_poses.len()
+expect ride_encounters.flying_step_count == route_flights.len() * BirdFlight.flight_poses.len()
 expect ride_encounters.is_bird_ahead_throughout
 
 # Each of the three cats crosses on the ride. The reaction ends with its

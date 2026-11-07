@@ -109,7 +109,8 @@ with_buttons = |model, input| {
 }
 
 ## `model` a frame on, with a few more steps played until the stretch is. The
-## stretch's segment is a quiet road, so the rider has no encounter to plan.
+## encounter on the stretch's segment asks nothing of the rider, so it is left
+## unplanned; an `expect` below holds the stretch to the ride.
 played_on : GazeWidgetApp.Model -> GazeWidgetApp.Model
 played_on = |model| {
 	reach = stretch_length.min(model.played.len() + played_a_frame)
@@ -324,13 +325,18 @@ stretch_states = {
 state_at_step : List(RiderState), U32 -> RiderState
 state_at_step = |played, step| state_at(played, (step - first_step).to_u64())
 
-# This stretch is on the route's first distracting segment, a quiet road.
+# This stretch is on the route's first distracting segment, and with its
+# encounter unplanned it still ends where the ride does.
 expect World.is_distracting(World.route.segment_at(first_rider.segment_index))
-expect
-	match pig_segment.encounter {
-		QuietRoad => True
-		CatCrosses(_) | BirdHere(_) => False
-	}
+expect {
+	played = state_at_step(stretch_states, last_step)
+	ridden = Tour.at_step(last_step).instant.rider
+	played.segment_index == ridden.segment_index
+		and played.motorcycle.along.to_metres() == ridden.motorcycle.along.to_metres()
+		and played.motorcycle.speed.to_metres_a_step() == ridden.motorcycle.speed.to_metres_a_step()
+		and played.eyes.gaze_yaw == ridden.eyes.gaze_yaw
+		and played.eyes.look_depth.to_f64() == ridden.eyes.look_depth.to_f64()
+}
 expect World.route.route_segments().take_first(2).all(|segment| segment.pigs == NoPigs)
 
 # The steps the book's table quotes, each with its speed in metres a step, its

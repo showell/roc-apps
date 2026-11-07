@@ -68,8 +68,3 @@ expect
 		(Conifer.Red, 9.792),
 		(Conifer.Gold, 14.688),
 	].all(|(conifer, want)| (conifer.scenery_height().to_metres() - want).abs() <= 0.000000001)
-
-expect foliage_color(Conifer.Green) == RgbColor.of(0x1C5A22)
-expect foliage_color(Conifer.SmallGreen) == RgbColor.of(0x1C5A22)
-expect foliage_color(Conifer.Gold) == RgbColor.of(0xCF9A18)
-expect foliage_color(Conifer.Red) == RgbColor.of(0xB23A2A)

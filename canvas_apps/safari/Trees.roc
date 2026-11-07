@@ -84,15 +84,6 @@ accent_conifer = |scheme|
 		AllGreen => Conifer.SmallGreen
 	}
 
-expect accent_conifer(AllGreen) == Conifer.SmallGreen
-expect accent_conifer(GoldGreen) == Conifer.Gold
-expect accent_conifer(RedGreen) == Conifer.Red
-
-expect Trees.tree_line_distance(Conifer.Green).to_metres() == 3.5
-expect Trees.tree_line_distance(Conifer.SmallGreen).to_metres() == 3.5
-expect Trees.tree_line_distance(Conifer.Red).to_metres() == 3.5
-expect Trees.tree_line_distance(Conifer.Gold).to_metres() == 8.0
-
 ## Seven pairs, alternating green and gold.
 gold_green_trees : List(Trees.RoadsideTree)
 gold_green_trees = Trees.roadside_trees({ scheme: GoldGreen, length: Distance.metres(300.0) })

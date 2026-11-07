@@ -131,20 +131,17 @@ Polygon :: [].{
 		axis_v : Screen.Point,
 	} -> Shapes.Shape
 	elliptical_gradient_polygon = |corners, { color_stops, center_point, axis_u, axis_v }| {
-		axes = {
+		ellipse = Brush.ellipse({
+			stops: brush_stops(color_stops),
+			center: { x: center_point.x.to_f64(), y: center_point.y.to_f64() },
 			axis_u: { x: axis_u.x.to_f64(), y: axis_u.y.to_f64() },
 			axis_v: { x: axis_v.x.to_f64(), y: axis_v.y.to_f64() },
-		}
+		})
 		fill =
-			if Brush.ellipse_determinant(axes).abs() < min_ellipse_determinant {
-				Flat(Brush.translucent(color_stops.start_color))
-			} else {
-				Ellipse({
-					stops: brush_stops(color_stops),
-					center: { x: center_point.x.to_f64(), y: center_point.y.to_f64() },
-					axis_u: axes.axis_u,
-					axis_v: axes.axis_v,
-				})
+			match ellipse {
+				Ok(gradient) => gradient
+				# The ellipse covers far less than a pixel, so its first color stands in for it.
+				Err(TooThin) => Flat(Brush.translucent(color_stops.start_color))
 			}
 		Poly({ coordinates: polygon_coordinates("Polygon.elliptical_gradient_polygon", corners), fill })
 	}
@@ -228,14 +225,6 @@ x_span = |corners|
 		}
 		[] => crash "Polygon.x_span: a polygon has a corner"
 	}
-
-## The least area, in square pixels, that an ellipse's two axes may span for
-## its gradient to be drawn as an ellipse. Below it the axes are all but
-## parallel, the ellipse covers far less than a pixel, and its inverse, which
-## divides by this area, has nothing sound to give. 0.0001 is a round number
-## chosen well under a pixel, not one tuned to a picture.
-min_ellipse_determinant : F64
-min_ellipse_determinant = 0.0001
 
 ## The stops as a brush takes them.
 brush_stops : Polygon.ColorStops -> Brush.TwoStops

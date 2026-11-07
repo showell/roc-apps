@@ -7,8 +7,8 @@
 ## one of three jobs, and each job adds a call.
 import game.Angle
 import game.Clock
+import game.FarHeight
 import game.Lens
-import game.Pixels
 import game.Sky
 import game.Steps
 import game.Sun
@@ -110,7 +110,7 @@ sky_colors = |job, clock|
 ## The ride's sky at `clock`, for a rider facing the sun.
 picture_shapes : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
 picture_shapes = |job, clock|
-	ScrubWidget.ride_shapes({
+	ScrubWidget.picture_shapes({
 		backdrop: {
 			sky_colors: sky_colors(job, clock),
 			sun_sighting: Sun.sighting({ heading: Sun.bearing, cam_focal: Lens.resting_focal }, clock),
@@ -168,8 +168,9 @@ call_rows = |job, clock| {
 	job_curves(job).map(|curve| { text: (curve.call_line)(clock), color: curve.color }).prepend(clock_row)
 }
 
-## How high the sun stands, in pixels, negative below the horizon.
-height_text : Pixels -> Str
+## How high the sun stands, in pixels at the resting lens, negative below the
+## horizon.
+height_text : FarHeight -> Str
 height_text = |height|
 	"${ReadoutText.tenths_text(height.to_f64())} px"
 

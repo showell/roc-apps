@@ -35,10 +35,7 @@ FrameView := {
 	## the sun and the roll.
 	frame_view_at : Route, RideInstant -> FrameView
 	frame_view_at = |route, instant| {
-		camera = RiderCamera.of(
-			instant.rider,
-			{ route, encounter_timing: RideInstant.encounter_timing(instant) },
-		)
+		camera = FrameView.camera_at(route, instant)
 		{
 			backdrop: {
 				sky_colors: Sky.colors_at(instant.clock),
@@ -48,6 +45,14 @@ FrameView := {
 			roll: camera.roll,
 		}
 	}
+
+	## The camera the frame at `instant` is seen through.
+	camera_at : Route, RideInstant -> RiderCamera
+	camera_at = |route, instant|
+		RiderCamera.of(
+			instant.rider,
+			{ route, encounter_timing: RideInstant.encounter_timing(instant) },
+		)
 
 	## The backdrop's shapes in paint order: the sky, the sun, then the grass,
 	## which covers whatever of the sun has set.

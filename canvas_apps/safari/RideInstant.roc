@@ -56,10 +56,7 @@ next = |route, instant| {
 		}
 	{
 		rider: nx,
-		truck: Truck.at_next_step(
-			instant.truck,
-			{ rider_distance: dist, route, route_length: route.route_length() },
-		),
+		truck: Truck.at_next_step(instant.truck, { rider_distance: dist, route }),
 		clock,
 		encounter_start: match kept_start {
 			StartsAt(_) => kept_start
