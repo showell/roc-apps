@@ -69,8 +69,8 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 	rod_w : Distance
 	rod_w = rod_half.times(2.0)
 
-	tower_metal : I64
-	tower_metal = 0x9AA0A8
+	tower_metal : RgbColor
+	tower_metal = RgbColor.of(0x9AA0A8)
 
 	## The radius a far tower sinks over, which hides it wholly at 1.8 km. It
 	## is tighter than `Geom.ground_curve_radius`, so a tower sinks visibly as
@@ -81,8 +81,8 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 	beacon_radius : Distance
 	beacon_radius = Distance.metres(3.0)
 
-	beacon_color : I64
-	beacon_color = 0xFF2FE6
+	beacon_color : RgbColor
+	beacon_color = RgbColor.of(0xFF2FE6)
 
 	## A corner of the tower's square footprint, as seen along the route.
 	Corner : [BackLeft, BackRight, FrontRight, FrontLeft]
@@ -452,13 +452,13 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 ## A beacon's disc, as a value: a list of one shape, seen through as far as
 ## `beacon_alpha` says.
 disc_shapes : {
-	beacon_color : I64,
+	beacon_color : RgbColor,
 	beacon_center : Screen.Point,
 	beacon_radius : Pixels,
 	beacon_alpha : Fraction,
 } -> List(Shapes.Shape)
 disc_shapes = |{ beacon_color, beacon_center, beacon_radius, beacon_alpha }| {
-	opaque = Brush.opaque(RgbColor.of(beacon_color))
+	opaque = Brush.opaque(beacon_color)
 	[
 		Disc({
 			x: beacon_center.x.to_f64(),
@@ -471,7 +471,7 @@ disc_shapes = |{ beacon_color, beacon_center, beacon_radius, beacon_alpha }| {
 
 expect
 	disc_shapes({
-		beacon_color: 7,
+		beacon_color: RgbColor.of(7),
 		beacon_center: Screen.point(1.0, 2.0),
 		beacon_radius: Pixels.of(3.0),
 		beacon_alpha: Fraction.of(0.5),
@@ -480,7 +480,7 @@ expect
 
 expect
 	disc_shapes({
-		beacon_color: 333,
+		beacon_color: RgbColor.of(333),
 		beacon_center: Screen.point(10.0, 20.0),
 		beacon_radius: Pixels.of(30.0),
 		beacon_alpha: Fraction.of(0.25),
@@ -556,8 +556,8 @@ expect Tower.sink_radius.to_metres() == 20000.0
 expect Tower.beacon_radius.to_metres() == 3.0
 
 expect Tower.brace_storeys == 2
-expect Tower.tower_metal == 0x9AA0A8
-expect Tower.beacon_color == 0xFF2FE6
+expect Tower.tower_metal == RgbColor.of(0x9AA0A8)
+expect Tower.beacon_color == RgbColor.of(0xFF2FE6)
 
 expect
 	Tower.corners.map(|corner| Tower.corner_offset(corner).across.ratio_to(Tower.tower_half))
@@ -683,7 +683,7 @@ expect
 	})
 		== Poly({
 			coordinates: [-4.0, 3.0, 26.0, 43.0, 34.0, 37.0, 4.0, -3.0],
-			fill: Flat(Brush.opaque(RgbColor.of(Tower.tower_metal))),
+			fill: Flat(Brush.opaque(Tower.tower_metal)),
 		})
 
 # A rod of no length is still one quad, all at its one point.
@@ -695,7 +695,7 @@ expect
 	})
 		== Poly({
 			coordinates: [5.0, 6.0, 5.0, 6.0, 5.0, 6.0, 5.0, 6.0],
-			fill: Flat(Brush.opaque(RgbColor.of(Tower.tower_metal))),
+			fill: Flat(Brush.opaque(Tower.tower_metal)),
 		})
 
 ## A rod's width on screen `forward` metres ahead, through a 500 px focal length.

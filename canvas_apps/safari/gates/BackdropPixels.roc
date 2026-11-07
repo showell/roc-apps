@@ -3,7 +3,6 @@
 ## are not part of it: they are shapes, which the game and SafariFrame both
 ## paint on top.
 import lib.Brush
-import lib.RgbColor
 import PixelColor
 import PixelGrid
 import game.Backdrop
@@ -26,8 +25,8 @@ BackdropPixels :: [].{
 		sky_horizon_color : HexColor.Rgb,
 	} -> List(U32)
 	backdrop_pixels = |roll, { sky_top_color, sky_horizon_color }| {
-		top_color = Brush.opaque(RgbColor.of(HexColor.pack(sky_top_color)))
-		horizon_color = Brush.opaque(RgbColor.of(HexColor.pack(sky_horizon_color)))
+		top_color = Brush.opaque(HexColor.pack(sky_top_color))
+		horizon_color = Brush.opaque(HexColor.pack(sky_horizon_color))
 		width = roll.width_px()
 		height = roll.height_px()
 		var $px = List.with_capacity(width.to_u64() * height.to_u64())
@@ -62,4 +61,4 @@ BackdropPixels :: [].{
 }
 
 grass_pixel : U32
-grass_pixel = Backdrop.grass_color.to_u32_wrap()
+grass_pixel = Backdrop.grass_color.to_i64().to_u32_wrap()

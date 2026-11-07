@@ -4,6 +4,7 @@
 import Distance
 import Picture
 import TreeShapes
+import lib.RgbColor
 
 Conifer := [BigGreen, SmallGreen, Red, Gold].{
 
@@ -43,17 +44,17 @@ Conifer := [BigGreen, SmallGreen, Red, Gold].{
 	is_eq : _
 }
 
-green_color : I64
-green_color = 0x1C5A22
+green_color : RgbColor
+green_color = RgbColor.of(0x1C5A22)
 
-gold_color : I64
-gold_color = 0xCF9A18
+gold_color : RgbColor
+gold_color = RgbColor.of(0xCF9A18)
 
-red_color : I64
-red_color = 0xB23A2A
+red_color : RgbColor
+red_color = RgbColor.of(0xB23A2A)
 
 ## A conifer's foliage color.
-foliage_color : Conifer -> I64
+foliage_color : Conifer -> RgbColor
 foliage_color = |conifer|
 	match conifer {
 		BigGreen | SmallGreen => green_color
@@ -69,7 +70,7 @@ expect
 		(Conifer.Gold, 14.688),
 	].all(|(conifer, want)| (conifer.scenery_height().to_metres() - want).abs() <= 0.000000001)
 
-expect foliage_color(Conifer.BigGreen) == 0x1C5A22
-expect foliage_color(Conifer.SmallGreen) == 0x1C5A22
-expect foliage_color(Conifer.Gold) == 0xCF9A18
-expect foliage_color(Conifer.Red) == 0xB23A2A
+expect foliage_color(Conifer.BigGreen) == RgbColor.of(0x1C5A22)
+expect foliage_color(Conifer.SmallGreen) == RgbColor.of(0x1C5A22)
+expect foliage_color(Conifer.Gold) == RgbColor.of(0xCF9A18)
+expect foliage_color(Conifer.Red) == RgbColor.of(0xB23A2A)

@@ -24,7 +24,7 @@ TreeShapes :: [].{
 	TreeAhead : {
 		foot : Geom.AheadPoint,
 		height : Distance,
-		foliage_color : I64,
+		foliage_color : RgbColor,
 	}
 
 	## Where a tree stands on the screen, and how big it looks there.
@@ -106,7 +106,7 @@ TierInputs : {
 	tip : Geom.AheadPoint,
 	cam_focal : Pixels,
 	outline : TreeShapes.TreeOutline,
-	color : I64,
+	color : RgbColor,
 	crown : TreeShapes.Crown,
 }
 
@@ -155,8 +155,8 @@ tiers = [
 	},
 ]
 
-trunk_color : I64
-trunk_color = 0x5A3E22
+trunk_color : RgbColor
+trunk_color = RgbColor.of(0x5A3E22)
 
 ## A tree is 136 parts tall, and the shares below are parts of that. Of those
 ## parts, 55 are trunk below the crown.
@@ -215,7 +215,7 @@ trunk_shape = |outline, finish| {
 
 ## A tier as a flat triangle: its apex at the tier's top, its base across its
 ## bottom.
-tier_triangle : TreeShapes.TreeOutline, { tier : TreeShapes.Tier, color : I64 } -> Shapes.Shape
+tier_triangle : TreeShapes.TreeOutline, { tier : TreeShapes.Tier, color : RgbColor } -> Shapes.Shape
 tier_triangle = |outline, { tier, color }| {
 	bottom_y = outline.crown_top_y.plus(outline.crown_height_px.times(tier.bottom.to_f64()))
 	top_y = outline.crown_top_y.plus(outline.crown_height_px.times(tier.top.to_f64()))
@@ -369,7 +369,7 @@ expect tiers.map(|tier| tier.width.to_f64()) == [
 
 expect tiers.len() == 8
 expect ring_point_count == 16
-expect trunk_color == 0x5A3E22
+expect trunk_color == RgbColor.of(0x5A3E22)
 
 expect trunk_height_share.to_f64() + crown_height_share.to_f64() == 1.0
 
@@ -455,7 +455,7 @@ expect
 
 expect {
 	corners_of = |tier|
-		match tier_triangle(sample_outline, { tier, color: 7 }) {
+		match tier_triangle(sample_outline, { tier, color: RgbColor.of(7) }) {
 			Poly(polygon) => polygon.coordinates
 			_ => crash "a tier is one polygon"
 		}

@@ -13,8 +13,8 @@ import lib.Shapes
 Backdrop :: [].{
 
 	## The grass, from just above the horizon down.
-	grass_color : I64
-	grass_color = 0x4a8f43
+	grass_color : RgbColor
+	grass_color = RgbColor.of(0x4a8f43)
 
 	## How far down to the horizon the sky holds its top colour before it
 	## fades to the horizon's.
@@ -87,8 +87,8 @@ Backdrop :: [].{
 		# The top colour to a fifth of the way down to the horizon at y 300,
 		# then the fade.
 		sky = Linear({
-			c0: Brush.opaque(RgbColor.of(HexColor.pack(sky_top_color))),
-			c1: Brush.opaque(RgbColor.of(HexColor.pack(sky_horizon_color))),
+			c0: Brush.opaque(HexColor.pack(sky_top_color)),
+			c1: Brush.opaque(HexColor.pack(sky_horizon_color)),
 			o0: sky_top_stop.to_f64(),
 			o1: 1.0,
 			ax: 0.0,
@@ -120,7 +120,7 @@ Backdrop :: [].{
 				y: Screen.grass_top_y.to_f64(),
 				w: 3120.0,
 				h: 1561.0,
-				fill: Flat(Brush.opaque(RgbColor.of(grass_color))),
+				fill: Flat(Brush.opaque(grass_color)),
 			}),
 		)
 		$out.concat(ride_shapes)

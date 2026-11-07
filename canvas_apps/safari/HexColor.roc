@@ -1,7 +1,8 @@
-## A color as one whole number, 0xRRGGBB, eight bits to a channel: its channels
-## read out, put back together, and shaded. A color part way through a blend is
-## an `Rgb`, with a float for each channel, and `pack` turns it into a whole number.
+## An opaque color, an `RgbColor`: its channels read out, put back together,
+## and shaded. A color part way through a blend is an `Rgb`, with a float for
+## each channel, and `pack` turns it into an `RgbColor`.
 import Fraction
+import lib.RgbColor
 
 HexColor :: [].{
 
@@ -11,29 +12,29 @@ HexColor :: [].{
 		b : F64,
 	}
 
-	red_of : I64 -> I64
-	red_of = |color| color.shr_wrap(16).bitwise_and(255)
+	red_of : RgbColor -> I64
+	red_of = |color| color.to_i64().shr_wrap(16).bitwise_and(255)
 
-	green_of : I64 -> I64
-	green_of = |color| color.shr_wrap(8).bitwise_and(255)
+	green_of : RgbColor -> I64
+	green_of = |color| color.to_i64().shr_wrap(8).bitwise_and(255)
 
-	blue_of : I64 -> I64
-	blue_of = |color| color.bitwise_and(255)
+	blue_of : RgbColor -> I64
+	blue_of = |color| color.to_i64().bitwise_and(255)
 
-	## A color as 0xRRGGBB from its three channels.
+	## A color from its three channels.
 	pack_rgb : {
 		red : I64,
 		green : I64,
 		blue : I64,
-	} -> I64
+	} -> RgbColor
 	pack_rgb = |{ red, green, blue }| {
 		red_bits = red.shl_wrap(16)
 		green_bits = green.shl_wrap(8)
-		red_bits.bitwise_or(green_bits).bitwise_or(blue)
+		RgbColor.of(red_bits.bitwise_or(green_bits).bitwise_or(blue))
 	}
 
 	## A color with each channel scaled by `factor`, as `shade_channel` scales it.
-	shade_color : I64, F64 -> I64
+	shade_color : RgbColor, F64 -> RgbColor
 	shade_color = |color, factor|
 		pack_rgb({
 			red: shade_channel(red_of(color), factor),
@@ -66,8 +67,8 @@ HexColor :: [].{
 		}
 	}
 
-	## A colour as 0xRRGGBB.
-	pack : HexColor.Rgb -> I64
+	## A blended colour as a whole color.
+	pack : HexColor.Rgb -> RgbColor
 	pack = |c|
 		pack_rgb({
 			red: c.r.to_i64_wrap(),
@@ -89,8 +90,8 @@ shade_channel = |channel, factor| {
 	}
 }
 
-sample_color : I64
-sample_color = 0x804020
+sample_color : RgbColor
+sample_color = RgbColor.of(0x804020)
 
 expect HexColor.red_of(sample_color) == 128
 expect HexColor.green_of(sample_color) == 64
@@ -100,20 +101,20 @@ expect HexColor.pack_rgb({
 	green: 64,
 	blue: 32,
 }) == sample_color
-expect HexColor.red_of(0xFFFFFF) == 255
-expect HexColor.green_of(0xFFFFFF) == 255
-expect HexColor.blue_of(0xFFFFFF) == 255
-expect HexColor.red_of(0) == 0
+expect HexColor.red_of(RgbColor.of(0xFFFFFF)) == 255
+expect HexColor.green_of(RgbColor.of(0xFFFFFF)) == 255
+expect HexColor.blue_of(RgbColor.of(0xFFFFFF)) == 255
+expect HexColor.red_of(RgbColor.of(0)) == 0
 expect HexColor.pack_rgb({
 	red: 0,
 	green: 0,
 	blue: 0,
-}) == 0
+}) == RgbColor.of(0)
 expect HexColor.pack_rgb({
 	red: 255,
 	green: 255,
 	blue: 255,
-}) == 0xFFFFFF
+}) == RgbColor.of(0xFFFFFF)
 
 expect shade_channel(128, 0.6) == 77
 expect shade_channel(64, 0.6) == 38
@@ -122,7 +123,7 @@ expect shade_channel(250, 1.25) == 255
 expect shade_channel(255, 1.0) == 255
 expect shade_channel(255, 2.0) == 255
 expect shade_channel(0, 1.25) == 0
-expect HexColor.shade_color(sample_color, 0.6) == 0x4D2613
+expect HexColor.shade_color(sample_color, 0.6) == RgbColor.of(0x4D2613)
 
 expect
 	[
@@ -151,8 +152,8 @@ blend_end = {
 	b: 94.0,
 }
 
-expect HexColor.pack(blend_start) == 0x8ECAE6
-expect HexColor.pack(blend_end) == 0x243A5E
+expect HexColor.pack(blend_start) == RgbColor.of(0x8ECAE6)
+expect HexColor.pack(blend_end) == RgbColor.of(0x243A5E)
 
 expect
 	HexColor.color_between({

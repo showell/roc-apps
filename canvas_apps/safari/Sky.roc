@@ -5,6 +5,7 @@ import Clock
 import Fraction
 import HexColor
 import Sun
+import lib.RgbColor
 
 Sky :: [].{
 
@@ -107,20 +108,20 @@ expect Sky.sunset_warmth(Clock.at_step(6000)).to_f64() == 0.0
 expect Sky.sunset_glow.to_f64() == 0.85
 
 # The sky and the horizon at each thousandth step of the ride.
-expect HexColor.pack(Sky.sky_top_color(Clock.at_step(0))) == 0x8ECAE6
-expect HexColor.pack(Sky.sky_top_color(Clock.at_step(1000))) == 0x8BC6E2
-expect HexColor.pack(Sky.sky_top_color(Clock.at_step(2000))) == 0x83BBD7
-expect HexColor.pack(Sky.sky_top_color(Clock.at_step(3000))) == 0x74A7C5
-expect HexColor.pack(Sky.sky_top_color(Clock.at_step(4000))) == 0x618CAC
-expect HexColor.pack(Sky.sky_top_color(Clock.at_step(5000))) == 0x3F5F81
-expect HexColor.pack(Sky.sky_top_color(Clock.at_step(6000))) == 0x243A5E
-expect HexColor.pack(Sky.sky_horizon_color(Clock.at_step(0))) == 0x8ECAE6
-expect HexColor.pack(Sky.sky_horizon_color(Clock.at_step(1000))) == 0x8BC6E2
-expect HexColor.pack(Sky.sky_horizon_color(Clock.at_step(2000))) == 0x83BBD7
-expect HexColor.pack(Sky.sky_horizon_color(Clock.at_step(3000))) == 0x9D898D
-expect HexColor.pack(Sky.sky_horizon_color(Clock.at_step(4000))) == 0xCA6047
-expect HexColor.pack(Sky.sky_horizon_color(Clock.at_step(5000))) == 0x7A5C65
-expect HexColor.pack(Sky.sky_horizon_color(Clock.at_step(6000))) == 0x243A5E
-expect HexColor.pack(Sky.day_sky) == 0x8ECAE6
-expect HexColor.pack(Sky.dusk_sky) == 0x243A5E
-expect HexColor.pack(Sky.sunset_red) == 0xDE5834
+expect HexColor.pack(Sky.sky_top_color(Clock.at_step(0))) == RgbColor.of(0x8ECAE6)
+expect HexColor.pack(Sky.sky_top_color(Clock.at_step(1000))) == RgbColor.of(0x8BC6E2)
+expect HexColor.pack(Sky.sky_top_color(Clock.at_step(2000))) == RgbColor.of(0x83BBD7)
+expect HexColor.pack(Sky.sky_top_color(Clock.at_step(3000))) == RgbColor.of(0x74A7C5)
+expect HexColor.pack(Sky.sky_top_color(Clock.at_step(4000))) == RgbColor.of(0x618CAC)
+expect HexColor.pack(Sky.sky_top_color(Clock.at_step(5000))) == RgbColor.of(0x3F5F81)
+expect HexColor.pack(Sky.sky_top_color(Clock.at_step(6000))) == RgbColor.of(0x243A5E)
+expect HexColor.pack(Sky.sky_horizon_color(Clock.at_step(0))) == RgbColor.of(0x8ECAE6)
+expect HexColor.pack(Sky.sky_horizon_color(Clock.at_step(1000))) == RgbColor.of(0x8BC6E2)
+expect HexColor.pack(Sky.sky_horizon_color(Clock.at_step(2000))) == RgbColor.of(0x83BBD7)
+expect HexColor.pack(Sky.sky_horizon_color(Clock.at_step(3000))) == RgbColor.of(0x9D898D)
+expect HexColor.pack(Sky.sky_horizon_color(Clock.at_step(4000))) == RgbColor.of(0xCA6047)
+expect HexColor.pack(Sky.sky_horizon_color(Clock.at_step(5000))) == RgbColor.of(0x7A5C65)
+expect HexColor.pack(Sky.sky_horizon_color(Clock.at_step(6000))) == RgbColor.of(0x243A5E)
+expect HexColor.pack(Sky.day_sky) == RgbColor.of(0x8ECAE6)
+expect HexColor.pack(Sky.dusk_sky) == RgbColor.of(0x243A5E)
+expect HexColor.pack(Sky.sunset_red) == RgbColor.of(0xDE5834)

@@ -14,6 +14,7 @@ import HexColor
 import Polygon
 import Screen
 import Sun
+import lib.RgbColor
 import lib.Shapes
 
 Mountains :: [].{
@@ -76,11 +77,11 @@ Mountains :: [].{
 ## How the skyline is seen: the rider's heading, and the camera.
 Sight : { heading : Angle.Bearing, cam_focal : Pixels }
 
-rock : I64
-rock = 0x5B6A8F
+rock : RgbColor
+rock = RgbColor.of(0x5B6A8F)
 
-rock_west : I64
-rock_west = 0x39435F
+rock_west : RgbColor
+rock_west = RgbColor.of(0x39435F)
 
 ## How much of its light the rock loses at full dusk.
 rock_night_dim : Fraction
@@ -101,11 +102,11 @@ snow_night = {
 }
 
 ## A rock colour at `dusk`, from 0 (day) to 1 (night).
-color_at_dusk : I64, Fraction -> I64
+color_at_dusk : RgbColor, Fraction -> RgbColor
 color_at_dusk = |color, dusk|
 	HexColor.shade_color(color, rock_night_dim.times(dusk).complement().to_f64())
 
-snow_color : Fraction -> I64
+snow_color : Fraction -> RgbColor
 snow_color = |dusk| HexColor.pack(
 	HexColor.color_between({
 		from: snow_day,
@@ -274,7 +275,7 @@ silhouette :
 	Sight,
 	{
 		height_at : Angle.Bearing -> Pixels,
-		color : I64,
+		color : RgbColor,
 		base_y : Pixels,
 	} -> Shapes.Shape
 silhouette = |sight, { height_at, color, base_y }| {
@@ -304,7 +305,7 @@ thinnest_snow = Pixels.of(0.01)
 ## The north range's snow: along its crest where the range is above the
 ## snowline, then back along the snowline, unless fewer than two columns of
 ## the screen show snow.
-snow_shape : Sight, I64 -> Try(Shapes.Shape, [NoSnow])
+snow_shape : Sight, RgbColor -> Try(Shapes.Shape, [NoSnow])
 snow_shape = |sight, color| {
 	snowy = columns({ from: Pixels.zero, to: Screen.width }).keep_if(
 		|x| {
@@ -332,8 +333,8 @@ north_by = |radians| Angle.Bearing.radians(radians)
 west_by : F64 -> Angle.Bearing
 west_by = |radians| west_range_bearing.plus(Angle.Turn.radians(radians))
 
-expect rock == 0x5B6A8F
-expect rock_west == 0x39435F
+expect rock == RgbColor.of(0x5B6A8F)
+expect rock_west == RgbColor.of(0x39435F)
 
 sight_at_rest : Sight
 sight_at_rest = { heading: Angle.north, cam_focal: Lens.resting_focal }
@@ -345,20 +346,20 @@ expect
 	height_y({ ..sight_at_rest, cam_focal: Lens.resting_focal.times(0.5) }, Pixels.of(100.0))
 		== Pixels.of(250.0)
 
-expect color_at_dusk(rock, Fraction.zero) == 0x5B6A8F
-expect color_at_dusk(rock_west, Fraction.zero) == 0x39435F
-expect color_at_dusk(rock, Fraction.whole) == 0x2E3548
-expect color_at_dusk(rock_west, Fraction.whole) == 0x1D2230
-expect color_at_dusk(rock, Fraction.of(0.5)) == 0x44506B
+expect color_at_dusk(rock, Fraction.zero) == RgbColor.of(0x5B6A8F)
+expect color_at_dusk(rock_west, Fraction.zero) == RgbColor.of(0x39435F)
+expect color_at_dusk(rock, Fraction.whole) == RgbColor.of(0x2E3548)
+expect color_at_dusk(rock_west, Fraction.whole) == RgbColor.of(0x1D2230)
+expect color_at_dusk(rock, Fraction.of(0.5)) == RgbColor.of(0x44506B)
 
-expect snow_color(Fraction.zero) == 0xEEF3F8
-expect snow_color(Fraction.whole) == 0x465468
-expect snow_color(Fraction.of(0.5)) == 0x9AA4B0
-expect HexColor.pack(snow_day) == 0xEEF3F8
-expect HexColor.pack(snow_night) == 0x465468
+expect snow_color(Fraction.zero) == RgbColor.of(0xEEF3F8)
+expect snow_color(Fraction.whole) == RgbColor.of(0x465468)
+expect snow_color(Fraction.of(0.5)) == RgbColor.of(0x9AA4B0)
+expect HexColor.pack(snow_day) == RgbColor.of(0xEEF3F8)
+expect HexColor.pack(snow_night) == RgbColor.of(0x465468)
 
-expect snow_color(Fraction.whole) > color_at_dusk(rock, Fraction.whole)
-expect snow_color(Fraction.zero) > color_at_dusk(rock, Fraction.zero)
+expect snow_color(Fraction.whole).to_i64() > color_at_dusk(rock, Fraction.whole).to_i64()
+expect snow_color(Fraction.zero).to_i64() > color_at_dusk(rock, Fraction.zero).to_i64()
 
 expect
 	[0.95, 1.0, 2.0, -0.95, -3.0].all(

@@ -6,6 +6,7 @@ import Pixels
 import Camera
 import Distance
 import Geom
+import lib.RgbColor
 import lib.Shapes
 
 GuardRail :: [].{
@@ -15,7 +16,7 @@ GuardRail :: [].{
 	## is negative for a quad behind the rider.
 	RailQuad : {
 		corners : List(Geom.RaisedPoint),
-		color : I64,
+		color : RgbColor,
 		forward : Distance,
 	}
 
@@ -28,11 +29,11 @@ GuardRail :: [].{
 	rail_post_width : Distance
 	rail_post_width = Distance.metres(0.02)
 
-	rail_metal : I64
-	rail_metal = 0xC2C7CF
+	rail_metal : RgbColor
+	rail_metal = RgbColor.of(0xC2C7CF)
 
-	rail_post_metal : I64
-	rail_post_metal = 0x9AA0A8
+	rail_post_metal : RgbColor
+	rail_post_metal = RgbColor.of(0x9AA0A8)
 
 	## How many metres the rail runs on, a post a metre, past each end of
 	## a bend.
@@ -78,7 +79,7 @@ GuardRail :: [].{
 }
 
 ## A quad with these corners, in `color`.
-rail_quad : List(Geom.RaisedPoint), I64 -> GuardRail.RailQuad
+rail_quad : List(Geom.RaisedPoint), RgbColor -> GuardRail.RailQuad
 rail_quad = |corners, color| { corners, color, forward: mean_forward(corners) }
 
 ## The mean of the corners' distances ahead, summed from the first corner
@@ -142,8 +143,8 @@ expect GuardRail.bar_top.to_metres() == 0.55
 expect GuardRail.bar_bot.to_metres() == 0.45
 expect GuardRail.half_post.to_metres() == 0.01
 
-expect GuardRail.rail_metal == 0xC2C7CF
-expect GuardRail.rail_post_metal == 0x9AA0A8
+expect GuardRail.rail_metal == RgbColor.of(0xC2C7CF)
+expect GuardRail.rail_post_metal == RgbColor.of(0x9AA0A8)
 expect GuardRail.rail_runout == 10
 
 first_post : List(Geom.RiderPoint) -> GuardRail.RailQuad
@@ -171,7 +172,7 @@ expect GuardRail.posts(straight_points).len() == 3
 expect straight_quads.all(|quad| quad.corners.len() == 4)
 
 expect
-	straight_quads.map(|quad| quad.color)
+	straight_quads.map(|quad| quad.color.to_i64())
 		== [0xC2C7CF, 0xC2C7CF, 0x9AA0A8, 0x9AA0A8, 0x9AA0A8]
 expect straight_quads.map(|quad| quad.forward.to_metres()) == [15.0, 25.0, 10.0, 20.0, 30.0]
 

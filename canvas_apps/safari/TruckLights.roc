@@ -12,6 +12,7 @@ import Polygon
 import TruckShape
 import Screen
 import lib.ArgbColor
+import lib.RgbColor
 import lib.Shapes
 
 TruckLights :: [].{
@@ -151,8 +152,8 @@ brake_lamp_bottom = TruckShape.trailer_bottom.plus(trailer_height.times(0.2))
 brake_lamp_top : Distance
 brake_lamp_top = TruckShape.trailer_bottom.plus(trailer_height.times(0.5))
 
-brake_color : I64
-brake_color = 0xFF2A18
+brake_color : RgbColor
+brake_color = RgbColor.of(0xFF2A18)
 
 glow_core : ArgbColor
 glow_core = ArgbColor.of(0xE6FF503C)
@@ -160,7 +161,7 @@ glow_core = ArgbColor.of(0xE6FF503C)
 ## The glow fades out to the brake lamp's own colour at no opacity:
 ## `brake_color`'s top byte is 0.
 glow_edge : ArgbColor
-glow_edge = ArgbColor.of(brake_color)
+glow_edge = ArgbColor.of(brake_color.to_i64())
 
 ## A glow reaches this many times as far as its lamp's farthest corner.
 glow_reach : F64

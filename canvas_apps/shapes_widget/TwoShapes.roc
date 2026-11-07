@@ -2,6 +2,7 @@
 ## in the list, so where the two overlap it paints over the triangle.
 import game.Polygon
 import game.Screen
+import lib.RgbColor
 import lib.Shapes
 
 TwoShapes :: [].{
@@ -12,7 +13,7 @@ TwoShapes :: [].{
 
 triangle : Shapes.Shape
 triangle = Polygon.triangle(
-	0x2e8b57,
+	RgbColor.of(0x2e8b57),
 	{
 		first_corner: Screen.point(120.0, 300.0),
 		second_corner: Screen.point(360.0, 300.0),
@@ -22,7 +23,7 @@ triangle = Polygon.triangle(
 
 rectangle : Shapes.Shape
 rectangle = Polygon.rectangle(
-	0xe8a33d,
+	RgbColor.of(0xe8a33d),
 	{ top_left: Screen.point(270.0, 120.0), bottom_right: Screen.point(520.0, 250.0) },
 )
 

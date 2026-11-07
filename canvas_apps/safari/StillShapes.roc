@@ -55,7 +55,7 @@ StillShapes :: [].{
 		points = StillShapes.screen_points(anchor, poly.points)
 		match poly.gradients.first() {
 			Ok(gradient) => still_gradient_polygon(anchor, { gradient, points })
-			Err(ListWasEmpty) => Polygon.flat_polygon(poly.color, points)
+			Err(ListWasEmpty) => Polygon.flat_polygon(RgbColor.of(poly.color), points)
 		}
 	}
 
