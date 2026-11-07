@@ -92,6 +92,9 @@ The walk has more than the types (the recipe's header lists every setting):
   makers of a kind show up. `named_by=production` hides the tagged ones.
 - **"Imported but not in any printed type":** modules the code uses only in
   function bodies, which the walk can't show. Read them.
+- **"Imported for tests only":** imports used only by `expect`s and the
+  top-level values only expects reach. Each one breaks Steve's rule and is a
+  finding: its tests move to `gates/CrossModuleExpects.roc` and the import goes.
 
 ### 2. Read the code behind what smells
 
