@@ -26,7 +26,7 @@ Chain.Position -> Try(
 	[NoBird, BehindCamera, TooSmall],
 )
 segment_bird = |view, position|
-	match position.index_in(view.road.chain_indices).segment_in(view.road.route_segments).crossing {
+	match Chain.segment_at(view.road, position).crossing {
 		BirdHere(habit) => {
 			gap_to_segment = Chain.gap_to_segment(view.road, position)
 			gap_to_tree = gap_to_segment.plus(BirdFlight.start_along(habit).from_start())

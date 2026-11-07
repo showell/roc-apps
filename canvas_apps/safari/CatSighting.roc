@@ -26,7 +26,7 @@ CatSighting :: [].{
 		speed : Speed,
 	} -> Try(Geom.Sighted(CatShapes.PosedCat), [NoCat, BehindCamera, TooSmall])
 	segment_cat = |view, { position, speed }| {
-		segment = position.index_in(view.road.chain_indices).segment_in(view.road.route_segments)
+		segment = Chain.segment_at(view.road, position)
 		match segment.crossing {
 			CatCrosses(crossing) =>
 				cat_in_view(view, { position, crossing, speed })
