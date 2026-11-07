@@ -243,7 +243,7 @@ from_origin = view_from(origin, Pixels.of(500.0))
 ## A green tree `along` metres into the first segment, 3.5 m right of the
 ## road's middle.
 green_tree_at = |along| {
-	position: RoadAhead.Position.first,
+	place: Ahead(RoadAhead.Position.first),
 	tree: {
 		along: Along.metres(along),
 		across: Across.metres(3.5),
@@ -281,13 +281,17 @@ expect
 		(view_from(origin, Pixels.of(1.0)), 0),
 	].all(
 		|(view, want)| {
-			trees = TreeSighting.segment_sightings(view, RoadAhead.Position.first)
+			trees = TreeSighting.segment_sightings(view, first_in_view(view))
 			trees.len().to_i64_wrap() == want
 		},
 	)
 
+## The rider's own segment, as a segment in `view`.
+first_in_view : RoadAhead.CameraView -> RoadAhead.SegmentInView
+first_in_view = |view| RoadAhead.segment_in_view_at(view.road, RoadAhead.Position.first)
+
 first_sightings : List(Pipeline.Sighted(Conifer))
-first_sightings = TreeSighting.segment_sightings(from_origin, RoadAhead.Position.first)
+first_sightings = TreeSighting.segment_sightings(from_origin, first_in_view(from_origin))
 
 ## The first segment's tree at `i`, in planting order.
 roadside_tree : U64 -> Pipeline.Sighted(Conifer)
