@@ -30,6 +30,8 @@ Shale is a small Lua-like language:
   - A function sees only `const`s, not the script's locals.
   - `read` and `replace` paths are relative to the folder you `cd` to, or a mount such as `repos:` or `scratch:`, never absolute.
   - Map keys must be strings.
+  - Loop over a list with `for x in list do ... end`, and over a map with `for k in keys(m) do`. `ipairs` and `for i, x in` are refused.
+  - A module must be listed in `game.roc` before `gates/CrossModuleExpects.roc` can import it.
 - **Files:** read with the Read tool, and edit with Edit and Write.
 - **Not in the language:** `table.*`, `local function`, and `type()`.
   - Declare a function with `function name()` at the top level.
