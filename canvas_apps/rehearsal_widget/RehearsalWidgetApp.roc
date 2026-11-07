@@ -113,9 +113,9 @@ points_of = |lean| {
 
 ## The tries from `at` on, between `low` and `high`: the bisection in
 ## `LeanSearch.search_lean`, keeping what that throws away.
-rehearsals_from : { low : Angle.Lean, high : Angle.Lean, at : I64 } -> List(Rehearsal)
+rehearsals_from : { low : Angle.Lean, high : Angle.Lean, at : U8 } -> List(Rehearsal)
 rehearsals_from = |{ low, high, at }|
-	if at >= LeanSearch.lean_search_rounds {
+	if at >= LeanSearch.lean_search_round_count {
 		[]
 	} else {
 		lean = low.halfway_to(high)

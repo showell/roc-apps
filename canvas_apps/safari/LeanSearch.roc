@@ -17,30 +17,34 @@ LeanSearch :: [].{
 			EndsAt(end_across) => end_across < target
 		}
 
-	asymptote_tuning : F64
-	asymptote_tuning = 0.3
+	## The share of the rider's distance from the middle that the line they want
+	## keeps.
+	line_offset_share : F64
+	line_offset_share = 0.3
 
-	center_road_epsilon : Distance
-	center_road_epsilon = Distance.metres(0.04)
+	## How close to the middle the rider's line comes: a rider nearer than this
+	## aims this far off it, on their own side.
+	least_line_offset : Distance
+	least_line_offset = Distance.metres(0.04)
 
 	lean_target : Across -> Across
 	lean_target = |across|
-		if across.distance_from_middle() < center_road_epsilon {
+		if across.distance_from_middle() < least_line_offset {
 			if across >= Across.middle {
-				Across.right_of_middle(center_road_epsilon)
+				Across.right_of_middle(least_line_offset)
 			} else {
-				Across.left_of_middle(center_road_epsilon)
+				Across.left_of_middle(least_line_offset)
 			}
 		} else {
-			across.times(asymptote_tuning)
+			across.times(line_offset_share)
 		}
 
 	## The most the lean changes in one step.
 	max_lean_change : Angle.Lean
 	max_lean_change = Angle.Lean.degrees(1.0)
 
-	lean_search_rounds : I64
-	lean_search_rounds = 12
+	lean_search_round_count : U8
+	lean_search_round_count = 12
 
 	## The lean between `low` and `high` whose coast ends nearest `target`
 	## across the road, by bisection.
@@ -53,7 +57,7 @@ LeanSearch :: [].{
 	search_lean = |state, { target, low, high }| {
 		var $low = low
 		var $high = high
-		for _ in 0..<lean_search_rounds {
+		for _ in 0..<lean_search_round_count {
 			mid = $low.halfway_to($high)
 			if want_more_right(Coast.project(Bike.with_lean(state, mid)), target) {
 				$low = mid
