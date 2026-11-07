@@ -46,7 +46,7 @@ StillsWidgetApp :: [].{
 
 ## Every frame paints thirteen thousand points again, and at 60 that's most of a
 ## core for a picture that only changes on a click. This is still quick to answer one.
-frames_a_second : I32
+frames_a_second : U32
 frames_a_second = 15
 
 ## A part of the canvas, in pixels.
