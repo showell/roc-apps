@@ -26,7 +26,10 @@ RailSighting :: [].{
 		RoadAhead.segments_in_view(road).join_map(
 			|in_view|
 				match BendInView.bend_after(road, in_view) {
-					Ok(bend_in_view) => rails_at(road, { vantage: camera.vantage, bend_in_view })
+					Ok(bend_in_view) => {
+						path_points = rail_points(road, { vantage: camera.vantage, bend_in_view })
+						GuardRail.quads_along(path_points)
+					}
 					Err(RoadEndsInView) => []
 				},
 		)
@@ -123,16 +126,6 @@ leg_points = |{ from, to }| {
 	pieces = leg_pieces(Distance.metres(distance))
 	evenly_spaced({ from, to, pieces }).drop_first(1)
 }
-
-## The guard rail at `bend_in_view`, as quads along its path. It stands alone so
-## the tutorial can show the step from a bend to its rail by itself.
-rails_at : RoadAhead.RoadView,
-{
-	vantage : Geom.Vantage,
-	bend_in_view : BendInView,
-} -> List(GuardRail.RailQuad)
-rails_at = |road, { vantage, bend_in_view }|
-	GuardRail.quads_along(rail_points(road, { vantage, bend_in_view }))
 
 ## The path of the rail at a bend, along the road's outer edge: up to the
 ## bend, out to where the two outer edges meet, back to the next segment,
