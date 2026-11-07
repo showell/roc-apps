@@ -713,7 +713,7 @@ expect route_cats.len() == 3
 expect cat_planning_gap.to_metres() == 98.0
 expect cat_planning_gap < Segment.cat_along.plus(CatCrossing.cat_beyond_tree).from_start()
 expect route_cats.all(|{ crossing, .. }| cat_planning_gap < crossing.along.from_start())
-expect route_flights.len() == 3
+expect route_flights.len() == 4
 expect bird_planning_gap.to_metres() == 105.0
 expect route_flights.all(|{ from, .. }| bird_planning_gap < from.road_point.along.from_start())
 
@@ -1552,10 +1552,10 @@ ride_encounters = {
 	}
 }
 
-# Steve's rule: the rider can't overtake a bird. Each of the three birds flies
+# Steve's rule: the rider can't overtake a bird. Each of the route's birds flies
 # its whole flight on the ride, and at every step of it the bird is ahead of the
 # rider.
-expect ride_encounters.flying_step_count == 3 * BirdFlight.flight_poses.len()
+expect ride_encounters.flying_step_count == route_flights.len() * BirdFlight.flight_poses.len()
 expect ride_encounters.is_bird_ahead_throughout
 
 # Each of the three cats crosses on the ride. The reaction ends with its

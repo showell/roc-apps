@@ -1,17 +1,18 @@
-# Keys names the keys a game can ask about, as roc-ray names them: `Keys.Key`
-# is the enum, and `Input.Snapshot`, shaped like roc-ray's
-# `Devices.Snapshot`, is what a tick is handed. With the key names kept, a
-# game's `read_controls` ports with its import line changed and nothing else.
+## Keys names the keys a game can ask about, as roc-ray names them: `Keys.Key`
+## is the enum, and `Input.Snapshot`, shaped like roc-ray's
+## `Devices.Snapshot`, is what a tick is handed. With the key names kept, a
+## game's `read_controls` ports with its import line changed and nothing else.
 
 Keys :: [].{
-	# The keys a game here can ask about. A tick sends two bit sets, so the
-	# list is short on purpose: adding one is a bit and a line in
-	# canvas_app_runner.js, which safari/gates/input_bits.shale holds equal.
-	#
-	# Escape and F belong to the runners, not to games: Escape closes a
-	# native window and F shows its frame rate, and a page can do neither.
-	# A key a game could bind on one end and not the other would behave
-	# differently on the two, so no game is given them at all.
+
+	## The keys a game here can ask about. A tick sends two bit sets, so the
+	## list is short on purpose: adding one is a bit and a line in
+	## canvas_app_runner.js, which safari/gates/input_bits.shale holds equal.
+	##
+	## Escape and F belong to the runners, not to games: Escape closes a
+	## native window and F shows its frame rate, and a page can do neither.
+	## A key a game could bind on one end and not the other would behave
+	## differently on the two, so no game is given them at all.
 	Key := [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEnter, KeyP, KeyR, KeyQ, KeyE, KeyC, KeyJ, Key1, Key2, Key3, Key4].{
 		is_eq : _
 	}

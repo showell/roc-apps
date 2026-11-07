@@ -19,7 +19,6 @@
 import Shapes
 import Brush
 import Point
-import RgbColor
 
 Font :: [].{
 	# A string, as shapes, with its top-left at `top_left`. `size` is the height
@@ -44,7 +43,7 @@ Font :: [].{
 
 	## A line of type as strokes. The strokes' capitals stand as tall as a real
 	## typeface's do at the line's size.
-	plotted : Shapes.Line -> List(Shapes.Shape)
+	plotted : Shapes.TextLine -> List(Shapes.Shape)
 	plotted = |{ text: words, x, y, size, align, color, .. }| {
 		cap_height = size * cap_height_share
 		top = y - cap_height
@@ -198,7 +197,7 @@ glyph_strokes = |b|
 	}
 
 ## A line of type at 50 px, whose capitals stand 36 px tall.
-sample_line : Shapes.Line
+sample_line : Shapes.TextLine
 sample_line = {
 	text: "Hi",
 	x: 100.0,
@@ -206,15 +205,15 @@ sample_line = {
 	size: 50.0,
 	face: Prose,
 	align: Left,
-	color: Brush.opaque(RgbColor.of(0x202020)),
+	color: { r: 32.0, g: 32.0, b: 32.0, a: 1.0 },
 }
 
 expect
 	Font.plotted(sample_line)
-		== Font.text_shapes("Hi", { top_left: { x: 100.0, y: 164.0 }, size: 36.0, color: Brush.opaque(RgbColor.of(0x202020)) })
+		== Font.text_shapes("Hi", { top_left: { x: 100.0, y: 164.0 }, size: 36.0, color: sample_line.color })
 expect
 	Font.plotted({ ..sample_line, align: Center })
-		== Font.centered("Hi", { top_center: { x: 100.0, y: 164.0 }, size: 36.0, color: Brush.opaque(RgbColor.of(0x202020)) })
+		== Font.centered("Hi", { top_center: { x: 100.0, y: 164.0 }, size: 36.0, color: sample_line.color })
 
 # A line's face is for a real typeface, and the strokes have only one.
 expect Font.plotted({ ..sample_line, face: Code }) == Font.plotted(sample_line)
