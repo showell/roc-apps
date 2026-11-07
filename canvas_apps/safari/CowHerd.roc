@@ -1,0 +1,120 @@
+## A herd of cows grazes on the left of the road, in columns that run back
+## from it, each cow a little out of line. A bull may stand in front of the
+## herd, by the trees.
+import Across
+import Along
+import Billboard
+import Conifer
+import Distance
+import Geom
+import Scenery
+import Trees
+
+CowHerd := {
+	cow_count : U64,
+
+	## How many cows stand in each column, one to a row.
+	rows : U64,
+
+	## How far along the road behind the bull's place the first column stands.
+	gap_behind_bull : Distance,
+
+	## The distance between the herd's columns, along the road.
+	column_spacing : Distance,
+
+	## How far along the road each row back is moved from the one in front.
+	row_stagger : Distance,
+
+	## The distance between the herd's rows, away from the road.
+	row_depth : Distance,
+
+	## How far a cow strays from its place, along the road and across it.
+	jitter_along : Distance,
+	jitter_across : Distance,
+}.{
+
+	## The herd's cows behind `herd_along`, column by column from the front,
+	## led by the bull at `herd_along` if the herd has one.
+	herd_cows : CowHerd,
+	{
+		herd_along : Along,
+		bull : [WithBull, NoBull],
+	} -> List(Geom.Placed(Billboard))
+	herd_cows = |herd, { herd_along, bull: with_bull }| {
+		cows =
+			List.from_iter(U64.until(0, herd.cow_count))
+				.map(|index| herd_cow(herd, { herd_along, index }))
+		match with_bull {
+			WithBull => [herd_bull(herd_along)].concat(cows)
+			NoBull => cows
+		}
+	}
+
+	is_eq : _
+}
+
+cow : Billboard.Species
+cow = { codepoint: 128004, adult_height: Distance.metres(1.4) }
+
+bull : Billboard.Species
+bull = { codepoint: 128002, adult_height: cow.adult_height.times(1.15) }
+
+## The gap between the bull's side and the trees.
+bull_tree_gap : Distance
+bull_tree_gap = Distance.metres(0.5)
+
+## The bull at `herd_along`, by the trees.
+herd_bull : Along -> Geom.Placed(Billboard)
+herd_bull = |herd_along| {
+	tree_line = Trees.distance_from_middle(Conifer.BigGreen)
+	bull_middle = tree_line.plus(bull.adult_height.divided_by(2.0))
+	{
+		along: herd_along,
+		across: Across.left_of_middle(bull_middle.plus(bull_tree_gap)),
+		kind: Billboard.adult_billboard(bull, FacesLeft),
+	}
+}
+
+## Every fourth cow, from the second, is a calf.
+is_calf : U64 -> Bool
+is_calf = |index| index.rem_by(4) == 1
+
+## The herd's cow at `index`, counting from 0. The scatter's phases, 1.9 and
+## 2.7, are tuned by eye.
+herd_cow : CowHerd, { herd_along : Along, index : U64 } -> Geom.Placed(Billboard)
+herd_cow = |herd, { herd_along, index }| {
+	fi = index.to_f64()
+	column = index.div_trunc_by(herd.rows).to_f64()
+	row = index.rem_by(herd.rows).to_f64()
+	herd_front = herd_along.plus(herd.gap_behind_bull)
+	column_place = herd_front.plus(herd.column_spacing.times(column))
+	in_line = column_place.plus(herd.row_stagger.times(row - 1.0))
+	road_edge = Geom.road_half_width.plus(Scenery.herd_road_offset)
+	row_place = road_edge.plus(herd.row_depth.times(row))
+	out_from_road = row_place.plus(herd.jitter_across.times((fi * 1.9).cos()))
+	{
+		along: in_line.plus(herd.jitter_along.times((fi * 2.7).sin())),
+		across: Across.left_of_middle(out_from_road),
+		kind: if is_calf(index) {
+			Billboard.young_billboard(cow, FacesRight)
+		} else {
+			Billboard.adult_billboard(cow, FacesRight)
+		},
+	}
+}
+
+expect herd_bull(Along.metres(24.0)).along == Along.metres(24.0)
+expect herd_bull(Along.metres(24.0)).across == Across.metres(-4.805)
+expect herd_bull(Along.metres(24.0)).kind.codepoint == 128002
+expect herd_bull(Along.metres(24.0)).kind.facing == FacesLeft
+expect (herd_bull(Along.metres(24.0)).kind.height.to_metres() - 1.61).abs() <= 0.000000000001
+
+expect
+	[
+		(0, False),
+		(1, True),
+		(2, False),
+		(4, False),
+		(5, True),
+		(13, True),
+	].all(|(index, want)| is_calf(index) == want)

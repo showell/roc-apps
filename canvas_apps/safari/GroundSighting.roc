@@ -194,7 +194,7 @@ pond_patches = |road, { segment, place }|
 				},
 			)
 		[
-			{ corners: on_map(Pond.water_outline_points), color: Pond.water_color },
+			{ corners: on_map(Pond.water_points), color: Pond.water_color },
 			{ corners: on_map(Pond.bank_points), color: Pond.bank_color },
 		]
 	} else {

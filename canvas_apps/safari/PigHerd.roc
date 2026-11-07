@@ -123,7 +123,11 @@ front_row_across : Across
 front_row_across = Across.right_of_middle(Geom.road_half_width.plus(Scenery.herd_road_offset))
 
 pig : { along : Along, across : Across } -> Geom.Placed(Billboard)
-pig = |{ along, across }| { along, across, kind: Pig.pig_billboard }
+pig = |{ along, across }| {
+	along,
+	across,
+	kind: Billboard.adult_billboard(Pig.pig, FacesLeft),
+}
 
 herd_pig : PigHerd.BigPigHerd,
 {

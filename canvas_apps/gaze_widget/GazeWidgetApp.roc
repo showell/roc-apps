@@ -271,7 +271,7 @@ pig_disc = |pig|
 ## The segment's whole herd, and the name of the pig that catches the eye.
 pigs : List(Shapes.Shape)
 pigs =
-	pig_segment.pigs
+	World.segment_pigs(pig_segment)
 		.map(pig_disc)
 		.append(
 			ScrubWidget.label({
@@ -540,11 +540,11 @@ expect screen_y(Across.metres(-10.0)) == road_middle_y - 10.0 * pixels_a_metre
 expect screen_x(gaze_pig.along) < ScrubWidget.canvas_width
 expect screen_y(gaze_pig.across) < ScrubWidget.picture_bottom_y
 
-expect pig_segment.pigs.len() == 49
+expect World.segment_pigs(pig_segment).len() == 49
 
 # Each pig of the herd is one disc, and the one that catches the eye is among them.
 expect pigs.len() == 50
-expect pig_segment.pigs.count_if(|pig| pig == gaze_pig) == 1
+expect World.segment_pigs(pig_segment).count_if(|pig| pig == gaze_pig) == 1
 
 expect phase_text(EyesOnRoad) == "Eyes on the road"
 expect phase_text(LookingAtPig) == "Looking at the pig, and slowing"

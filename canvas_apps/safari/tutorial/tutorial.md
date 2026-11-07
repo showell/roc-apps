@@ -217,7 +217,7 @@ A piece of the world can be just a value. Here's the second whole module. `Pond`
 
 Above its `expect`s, there are no functions here at all. The ducks are read where the critters are sighted:
 
-{{code BillboardSighting.pond_sightings from "if Scenery.is_pond" to "Pond.placed_ducks(segment.length)"}}
+{{code BillboardSighting.bend_life_critters}}
 
 `World` turns a route, a plain list of records, into segments of road. A plan for a segment shows how much tag unions can do with no declaration. `[WithBull, NoBull]` is written right in the field's type, and it says more than a boolean would at every place a segment is written down.
 
@@ -1153,7 +1153,7 @@ These animals stand at the bends. Most of the others come in crowds, and a crowd
 
 A pig is the simplest critter in Safari Ride. It isn't tied to a bend. Here's how we build one:
 
-{{code Pig.pig_billboard}}
+{{code Pig.pig}}
 
 New in this chapter:
 
@@ -1179,17 +1179,17 @@ New in this chapter:
 
 A herd of 14 cows grazes on the left of the road, in columns of three. Every fourth cow is a calf, at half the height.
 
-{{code Cows.cows}}
+{{code CowHerd.herd_cows}}
 
 A herd in a perfect grid would look like a parking lot, so each cow strays a little from its place:
 
-{{code Cows.cow_at}}
+{{code CowHerd.herd_cow}}
 
 The stray comes from the sine and cosine of the cow's number. It looks random, but it's the same on every run, so the frames stay exact.
 
 A bull may stand in front of the herd, by the trees. It's the same record again, a bit taller than a cow:
 
-{{code Cows.bull_of}}
+{{code CowHerd.herd_bull}}
 
 ### Pigs
 

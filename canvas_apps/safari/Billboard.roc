@@ -17,6 +17,25 @@ Billboard := {
 	## Which way a billboard faces on screen.
 	Facing : [FacesLeft, FacesRight]
 
+	## A kind of animal: its emoji, and how tall a grown one stands.
+	Species : { codepoint : U32, adult_height : Distance }
+
+	## A grown animal of `species`.
+	adult_billboard : Billboard.Species, Billboard.Facing -> Billboard
+	adult_billboard = |species, facing| {
+		codepoint: species.codepoint,
+		height: species.adult_height,
+		facing,
+	}
+
+	## A young animal of `species`, which stands half as tall as a grown one.
+	young_billboard : Billboard.Species, Billboard.Facing -> Billboard
+	young_billboard = |species, facing| {
+		codepoint: species.codepoint,
+		height: species.adult_height.divided_by(2.0),
+		facing,
+	}
+
 	scenery_height : Billboard -> Distance
 	scenery_height = |billboard| billboard.height
 
