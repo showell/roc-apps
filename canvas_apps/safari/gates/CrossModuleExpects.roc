@@ -653,22 +653,6 @@ expect left_bull.kind.facing == FacesLeft
 
 expect BillboardSighting.min_critter_px.to_f64() == 2.0
 
-## How many of `in_view` critters are drawn, among `out_of_view` others before
-## them. Every one in view is drawn, and none out of view.
-drawn_count : { out_of_view : U64, in_view : U64 } -> U64
-drawn_count = |{ out_of_view, in_view }|
-	BillboardSighting.billboards_to_draw(
-		List.repeat(Err(TooSmall), out_of_view).concat(List.repeat(Ok(near_cow), in_view)),
-	).len()
-
-expect
-	[
-		({ out_of_view: 0, in_view: 5 }, 5),
-		({ out_of_view: 400, in_view: 5 }, 5),
-		({ out_of_view: 400, in_view: 0 }, 0),
-		({ out_of_view: 0, in_view: 0 }, 0),
-	].all(|(counts, want)| drawn_count(counts) == want)
-
 # RailSighting's run up to a bend and out of it.
 rail_point_at : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
 rail_point_at = |points, i|

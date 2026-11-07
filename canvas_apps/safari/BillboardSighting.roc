@@ -29,11 +29,12 @@ BillboardSighting :: [].{
 	## What became of a critter placed in the rider's view.
 	Fate : Try(Pipeline.Sighted(Billboard), [BehindCamera, TooSmall])
 
-	## The billboards to draw, of `fates`: those in view.
-	billboards_to_draw : List(BillboardSighting.Fate) -> List(Pipeline.Sighted(Billboard))
-	billboards_to_draw = |fates| fates.keep_oks(|fate| fate)
+	## The billboards in view, in the order of `RoadAhead.segments_in_view`.
+	billboards_in_view : RoadAhead.RoadView -> List(Pipeline.Sighted(Billboard))
+	billboards_in_view = |road| BillboardSighting.billboard_fates(road).keep_oks(|fate| fate)
 
-	## Every billboard in view, in the order of `RoadAhead.segments_in_view`.
+	## What became of every billboard on the segments in view, in the order of
+	## `RoadAhead.segments_in_view`.
 	billboard_fates : RoadAhead.RoadView -> List(BillboardSighting.Fate)
 	billboard_fates = |road|
 		RoadAhead.segments_in_view(road)
