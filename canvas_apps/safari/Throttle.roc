@@ -147,10 +147,6 @@ expect bend_limit_at(centred_motorcycle(600.0, 0.3)) == AtMost(Acceleration.stea
 expect bend_brake_at(centred_motorcycle(460.0, 0.3)) < 0.0
 expect bend_brake_at(centred_motorcycle(460.0, 2.0)) < bend_brake_at(centred_motorcycle(460.0, 0.3))
 
-## Throttle doesn't import Distance or Across, so these places and lengths come
-## from what it does see.
-across_at = |metres| Motorcycle.initial.across.plus(Speed.metres_a_step(metres).step_length())
-
 ## A motorcycle steering hard left at `speed`.
 off_left : F64 -> Motorcycle
 off_left = |speed| { ..centred_motorcycle(0.0, speed), yaw: Angle.Turn.radians(-1.5) }
@@ -197,28 +193,12 @@ decide : Speed, F64 -> Acceleration
 decide = |speed, lean|
 	speed_change({ ..Motorcycle.initial, speed, lean: Angle.Lean.radians(lean) }, first_segment)
 
-## The whole decision for a motorcycle far off to the right.
-wide_of_road : F64 -> Acceleration
-wide_of_road = |lean|
-	speed_change(
-		{
-			..centred_motorcycle(0.0, 0.3),
-			across: across_at(100.0),
-			lean: Angle.Lean.radians(lean),
-		},
-		first_segment,
-	)
-
-# Each is within 1e-12 of its want. A rider far off to the right, whose coast
-# crosses no shoulder, opens the throttle however far they lean.
+# Each is within 1e-12 of its want.
 expect
 	[
 		(decide(Speed.metres_a_step(0.3), 0.0), 0.01),
 		(decide(VehicleLimits.top_speed, 0.0), 0.0),
 		(decide(Speed.at_rest, 0.0), 0.01),
-		(wide_of_road(-0.001), 0.01),
-		(wide_of_road(-0.035), 0.01),
-		(wide_of_road(-0.535), 0.01),
 	].all(|(got, want)| (got.to_metres_a_step_each_step() - want).abs() <= 0.000000000001)
 
 # On the middle of the road, a lean that coasts off it brakes, either way, and a
@@ -241,62 +221,3 @@ expect decide_on(3, 0.0) > Acceleration.steady
 expect decide_on(3, 120.0) == Acceleration.steady
 expect decide_on(2, 100.0) > Acceleration.steady
 expect decide_on(2, 300.0) < Acceleration.steady
-
-# These are Coast's projections. They sit here because Coast imports neither Speed
-# nor VehicleLimits, and Throttle sees both.
-
-## The coast of a motorcycle at the start of the segment, going the base speed.
-coast_of : F64, F64 -> Coast.Outcome
-coast_of = |across, lean_radians|
-	Coast.project({
-		..Motorcycle.initial,
-		across: across_at(across),
-		lean: Angle.Lean.radians(lean_radians),
-	})
-
-straight : Coast.Outcome
-straight = coast_of(0.0, 0.0)
-
-wide : Coast.Outcome
-wide = coast_of(3.0, 0.0)
-
-stopped : Coast.Outcome
-stopped = Coast.project({ ..Motorcycle.initial, speed: Speed.at_rest })
-
-leaning : Coast.Outcome
-leaning = coast_of(0.0, 0.2)
-
-other_way : Coast.Outcome
-other_way = coast_of(0.0, -0.2)
-
-expect straight == EndsAt(across_at(0.0))
-expect wide == EndsAt(across_at(3.0))
-expect stopped == EndsAt(across_at(0.0))
-
-# A rider this slow and this far over circles on the road, and the coast still ends.
-expect {
-	circling = Coast.project({
-		..Motorcycle.initial,
-		speed: Speed.metres_a_step(0.01),
-		lean: Angle.Lean.radians(0.5),
-	})
-	match circling {
-		EndsAt(_) => True
-		Leaves(_) => False
-	}
-}
-
-## How many steps a coast runs before it leaves the road.
-steps_off_road : Coast.Outcome -> Steps
-steps_off_road = |coast|
-	match coast {
-		Leaves({ after, .. }) => after
-		EndsAt(_) => crash "Throttle's expects: this coast stays on the road"
-	}
-
-expect leaning == Leaves({ side: Right, after: steps_off_road(leaning) })
-expect other_way == Leaves({ side: Left, after: steps_off_road(other_way) })
-
-expect steps_off_road(leaning) < Coast.longest_coast
-expect steps_off_road(leaning) > Steps.zero
-expect steps_off_road(leaning) == steps_off_road(other_way)

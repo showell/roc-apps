@@ -15,11 +15,6 @@ Coast :: [].{
 	straighten_margin : Distance
 	straighten_margin = Distance.metres(0.05)
 
-	## A slow rider who leans can circle on the road and never get clear of
-	## where they started, so a coast ends after this many steps.
-	longest_coast : Steps
-	longest_coast = Steps.of(2000)
-
 	clear_distance : Distance
 	clear_distance = Distance.metres(25.0)
 
@@ -46,3 +41,8 @@ Coast :: [].{
 		EndsAt($rider.across)
 	}
 }
+
+## A slow rider who leans can circle on the road and never get clear of where
+## they started, so a coast ends after this many steps.
+longest_coast : Steps
+longest_coast = Steps.of(2000)
