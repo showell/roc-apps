@@ -5,7 +5,6 @@
 ## Each try draws its coasting arc on the road, seen from above: the bike's own
 ## physics run on a rider who doesn't exist. After the twelfth, the picture
 ## shows the lean the real rider took.
-import game.Acceleration
 import game.Across
 import game.Along
 import game.Angle
@@ -43,22 +42,23 @@ RehearsalWidgetApp :: [].{
 
 ## The step of the ride this widget looks inside.
 step_shown : U32
-step_shown = 370
+step_shown = 374
 
 ## The rider at that step, a record like any other. An `expect` below rides
 ## there and compares.
 rider : Motorcycle
 rider = {
-	along: Along.metres(4.90868673787897),
-	across: Across.metres(-1.930897632424363),
-	yaw: Angle.Turn.radians(0.04392681817843164),
-	speed: Speed.metres_a_step(0.08377159378729097),
-	lean: Angle.Lean.radians(0.006118878920566433),
-	heading: Angle.Bearing.radians(0.9165914441755961),
+	along: Along.metres(5.841825521510666),
+	across: Across.metres(-1.9030035046601446),
+	yaw: Angle.Turn.radians(0.05277873953607818),
+	speed: Speed.metres_a_step(0.14981295069969633),
+	lean: Angle.Lean.radians(0.0026077673394057635),
+	heading: Angle.Bearing.radians(0.9254433655332428),
 }
 
+## Where the rider aims: the road's middle, as `LeanSearch.best_lean` does.
 target : Across
-target = LeanSearch.lean_target(rider.across)
+target = Across.middle
 
 ## A point on an arc: how far along the road from the rider, and where across it.
 ArcPoint : { forward : F64, across : F64 }
@@ -97,9 +97,7 @@ points_of = |lean| {
 	var $points = []
 	var $going = True
 	while $going {
-		$motion = $motion.motorcycle_at_next_step(
-			{ lean_step: Angle.steady_lean, acceleration: Acceleration.steady },
-		)
+		$motion = $motion.motorcycle_at_next_step($motion.steady_controls())
 		$points = $points.append({
 			forward: $motion.along.distance_from(rider.along).to_metres(),
 			across: $motion.across.to_metres(),

@@ -68,7 +68,7 @@ turn_caution = Fraction.of(0.8)
 
 ## The truck starts to brake when a turn is this close.
 brake_distance : Distance
-brake_distance = VehicleLimits.bend_approach
+brake_distance = Distance.metres(60.0)
 
 ## 10% over the rider's own cruise acceleration.
 chase_acceleration : Acceleration
