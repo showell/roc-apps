@@ -13,10 +13,10 @@ Shapes :: [].{
 		Poly({ coordinates : List(F64), fill : Brush.Fill }),
 
 		## The triangles of one concave polygon, six numbers each. Only `cut_shapes` makes these.
-		Pieces({ tris : List(F64), fill : Brush.Fill }),
+		Pieces({ triangle_coordinates : List(F64), fill : Brush.Fill }),
 
-		Disc({ x : F64, y : F64, r : F64, fill : Brush.Fill }),
-		Rect({ x : F64, y : F64, w : F64, h : F64, fill : Brush.Fill }),
+		Disc({ x : F64, y : F64, radius : F64, fill : Brush.Fill }),
+		Rect({ x : F64, y : F64, width : F64, height : F64, fill : Brush.Fill }),
 
 		## A mark, not a shape: how the shapes after it combine, until the next `Blend`.
 		## A painter holds this as a mode, so a mark in the list says it directly.
@@ -28,7 +28,7 @@ Shapes :: [].{
 
 		## `cols` by `rows` pixels stretched over the box without smoothing. It carries
 		## the pixels, not a handle, so there is no second copy of them to keep in step.
-		Image({ x : F64, y : F64, w : F64, h : F64, cols : U64, rows : U64, pixels : List(Brush.Rgba) }),
+		Image({ x : F64, y : F64, width : F64, height : F64, cols : U64, rows : U64, pixels : List(Brush.Rgba) }),
 
 		## A line of words in a real typeface. `Font.plotted` gives a painter that has
 		## no typefaces the strokes of the same line.
@@ -117,22 +117,22 @@ Shapes :: [].{
 		|shape|
 			match shape {
 				Poly(p) => Poly({ coordinates: pulled(p.coordinates, axis, k), fill: p.fill })
-				Pieces(p) => Pieces({ tris: pulled(p.tris, axis, k), fill: p.fill })
-				Disc(d) => Disc({ x: axis + (d.x - axis) * k, y: d.y, r: d.r, fill: d.fill })
+				Pieces(p) => Pieces({ triangle_coordinates: pulled(p.triangle_coordinates, axis, k), fill: p.fill })
+				Disc(d) => Disc({ x: axis + (d.x - axis) * k, y: d.y, radius: d.radius, fill: d.fill })
 				# A mirror sends a rectangle's left edge to its right, and a width is never
 				# negative.
 				Rect(r) => {
 					a = axis + (r.x - axis) * k
-					b = axis + (r.x + r.w - axis) * k
+					b = axis + (r.x + r.width - axis) * k
 					Rect({
 						x: a.min(b),
 						y: r.y,
-						w: if b < a {
+						width: if b < a {
 							a - b
 						} else {
 							b - a
 						},
-						h: r.h,
+						height: r.height,
 						fill: r.fill,
 					})
 				}
@@ -141,11 +141,11 @@ Shapes :: [].{
 				# A mirror sends a picture's left edge to its right, as it does a rectangle's.
 				Image(i) => {
 					a = axis + (i.x - axis) * k
-					b = axis + (i.x + i.w - axis) * k
+					b = axis + (i.x + i.width - axis) * k
 					Image({
 						..i,
 						x: a.min(b),
-						w: if b < a {
+						width: if b < a {
 							a - b
 						} else {
 							b - a
@@ -176,8 +176,8 @@ Shapes :: [].{
 		Disc({
 			x,
 			y,
-			r,
-			fill: Radial({ inner: { ..colour, a: alpha }, outer: { ..colour, a: 0.0 }, x, y, r0: 0.0, r1: r }),
+			radius: r,
+			fill: Radial({ inner_color: { ..colour, a: alpha }, outer_color: { ..colour, a: 0.0 }, center: { x, y }, inner_radius: 0.0, outer_radius: r }),
 		})
 
 	## A rectangle whose corners are rounded by `r`, each corner drawn in `segments`
@@ -225,7 +225,7 @@ Shapes :: [].{
 					if is_convex(p.coordinates) {
 						[Poly(p)]
 					} else {
-						[Pieces({ tris: wound_triangles(triangles(p.coordinates)), fill: p.fill })]
+						[Pieces({ triangle_coordinates: wound_triangles(triangles(p.coordinates)), fill: p.fill })]
 					}
 				other => [other]
 			},

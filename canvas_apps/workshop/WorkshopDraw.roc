@@ -32,7 +32,7 @@ WorkshopDraw :: [].{
 
 	frame : Rules.World -> List(Shapes.Shape)
 	frame = |world| {
-		var $out = [Rect({ x: 0.0, y: 0.0, w: 800.0, h: 600.0, fill: Flat(theme.bg) })]
+		var $out = [Rect({ x: 0.0, y: 0.0, width: 800.0, height: 600.0, fill: Flat(theme.bg) })]
 		$out = List.concat($out, Font.text_shapes("Pixel Workshop", 72.0, 12.0, 20.0, theme.ink))
 		$out = List.concat($out, Font.text_shapes("Canvas, palette and brush sound all generated at startup", 72.0, 44.0, 12.0, theme.muted))
 		$out = List.concat($out, canvas(world))
@@ -58,8 +58,8 @@ WorkshopDraw :: [].{
 			Image({
 				x,
 				y,
-				w: side,
-				h: side,
+				width: side,
+				height: side,
 				cols: Rules.grid_side,
 				rows: Rules.grid_side,
 				pixels: List.map(world.pixels, Color.brush),

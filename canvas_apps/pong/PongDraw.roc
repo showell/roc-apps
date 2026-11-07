@@ -28,7 +28,7 @@ PongDraw :: [].{
 	frame = |world| {
 		var $out = List.with_capacity(140)
 		# The field, a dark vertical gradient rather than flat black.
-		$out = List.append($out, Rect({ x: 0.0, y: 0.0, w: w, h: h, fill: Linear({ c0: Color.brush(Rules.field_top), c1: Color.brush(Rules.field_bottom), o0: 0.0, o1: 1.0, ax: 0.0, ay: 0.0, dx: 0.0, dy: h }) }))
+		$out = List.append($out, Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Linear({ stops: { start_color: Color.brush(Rules.field_top), end_color: Color.brush(Rules.field_bottom), start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: h } }) }))
 		$out = List.concat($out, center_line({}))
 		$out = List.concat($out, scores(world))
 		$out = List.append($out, Blend(Add))
@@ -64,7 +64,7 @@ PongDraw :: [].{
 			fade = 1.0 - U64.to_f64($i) / 14.0
 			r = 10.0 * (0.35 + 0.55 * fade)
 			c = Color.brush(Rules.ball_neon)
-			$out = List.append($out, Disc({ x: F32.to_f64(p.x), y: F32.to_f64(p.y), r: r, fill: Flat({ ..c, a: fade * fade * 0.51 }) }))
+			$out = List.append($out, Disc({ x: F32.to_f64(p.x), y: F32.to_f64(p.y), radius: r, fill: Flat({ ..c, a: fade * fade * 0.51 }) }))
 			$i = $i + 1
 		}
 		$out
@@ -92,7 +92,7 @@ PongDraw :: [].{
 			[]
 		} else {
 			c = Color.brush(world.flash.color)
-			[Rect({ x: 0.0, y: 0.0, w: w, h: h, fill: Flat({ ..c, a: F32.to_f64(world.flash.intensity) * 0.27 }) })]
+			[Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Flat({ ..c, a: F32.to_f64(world.flash.intensity) * 0.27 }) })]
 		}
 
 	## The solid bodies, over their own glow so the edges stay crisp.
@@ -105,8 +105,8 @@ PongDraw :: [].{
 		[
 			Shapes.rounded_rect(F32.to_f64(l.x), F32.to_f64(l.y), F32.to_f64(l.width), F32.to_f64(l.height), 7.0, 8, Flat(Color.brush(Rules.left_neon))),
 			Shapes.rounded_rect(F32.to_f64(r.x), F32.to_f64(r.y), F32.to_f64(r.width), F32.to_f64(r.height), 7.0, 8, Flat(Color.brush(Rules.right_neon))),
-			Disc({ x: bx, y: by, r: 10.0, fill: Flat(Color.brush(Rules.ball_neon)) }),
-			Disc({ x: bx - 2.0, y: by - 3.0, r: 4.2, fill: Flat(Color.brush(Color.white)) }),
+			Disc({ x: bx, y: by, radius: 10.0, fill: Flat(Color.brush(Rules.ball_neon)) }),
+			Disc({ x: bx - 2.0, y: by - 3.0, radius: 4.2, fill: Flat(Color.brush(Color.white)) }),
 		]
 	}
 
@@ -140,7 +140,7 @@ PongDraw :: [].{
 				Rules.right_neon
 			}
 			dim = Color.brush(Rules.field_bottom)
-			$out = List.concat([Rect({ x: 0.0, y: 0.0, w: w, h: h, fill: Flat({ ..dim, a: 0.75 }) })], $out)
+			$out = List.concat([Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Flat({ ..dim, a: 0.75 }) })], $out)
 			$out = List.concat($out, Font.centered(won, w / 2.0, 248.0, 40.0, Color.brush(tint)))
 			List.concat($out, Font.centered(again, w / 2.0, 316.0, 19.0, Color.brush(Rules.hint_color)))
 		} else {

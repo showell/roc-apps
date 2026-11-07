@@ -855,7 +855,7 @@ Every color in the sky is a blend of two others, and a blend needs a ratio. `Fra
 
 `Backdrop` paints the two as a gradient, down to the horizon. It stays on the top color for the first fifth of the way, then fades:
 
-{{code Backdrop.backdrop_shapes from "sky = Linear({" to "dy: Screen.horizon_y.to_f64(),"}}
+{{code Backdrop.backdrop_shapes from "sky = Linear({" to "end_point: { x: 0.0, y: Screen.horizon_y.to_f64() },"}}
 
 That's where a color finally becomes one integer, because a `Brush` wants `0xRRGGBB`. `pack` gets there with method calls on plain numbers. Static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `pack` a leaf: it calls nothing of Safari Ride's own.
 

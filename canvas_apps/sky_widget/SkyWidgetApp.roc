@@ -265,7 +265,7 @@ curve_dot = |{ x, y }, color|
 	Disc({
 		x,
 		y,
-		r: 4.0,
+		radius: 4.0,
 		fill: ScrubWidget.flat(color),
 	})
 

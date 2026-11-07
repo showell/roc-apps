@@ -185,8 +185,8 @@ panel : Shapes.Shape
 panel = Rect({
 	x: 0.0,
 	y: ScrubWidget.picture_bottom_y,
-	w: ScrubWidget.canvas_width,
-	h: ScrubWidget.canvas_height - ScrubWidget.picture_bottom_y,
+	width: ScrubWidget.canvas_width,
+	height: ScrubWidget.canvas_height - ScrubWidget.picture_bottom_y,
 	fill: ScrubWidget.flat(panel_color),
 })
 
@@ -205,9 +205,14 @@ expect
 			Rect({
 				x: 0.0,
 				y: 0.0,
-				w: 1.0,
-				h: 1.0,
-				fill: Skip,
+				width: 1.0,
+				height: 1.0,
+				fill: Flat({
+					r: 0.0,
+					g: 0.0,
+					b: 0.0,
+					a: 1.0,
+				}),
 			}),
 		],
 		{ clock: Clock.start, sun: OutOfView },

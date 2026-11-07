@@ -88,12 +88,11 @@ Polygon :: [].{
 				Poly({
 					coordinates: polygon_coordinates("Polygon.gradient_polygon", corners),
 					fill: Radial({
-						inner: ArgbColor.to_rgba(center_color),
-						outer: ArgbColor.to_rgba(edge_color),
-						x: gradient_center.x.to_f64(),
-						y: gradient_center.y.to_f64(),
-						r0: 0.0,
-						r1: gradient_radius.to_f64(),
+						inner_color: ArgbColor.to_rgba(center_color),
+						outer_color: ArgbColor.to_rgba(edge_color),
+						center: { x: gradient_center.x.to_f64(), y: gradient_center.y.to_f64() },
+						inner_radius: 0.0,
+						outer_radius: gradient_radius.to_f64(),
 					}),
 				}),
 			)
@@ -113,18 +112,12 @@ Polygon :: [].{
 		if dx * dx + dy * dy == 0.0 {
 			crash "Polygon.linear_gradient_polygon: a gradient has a length"
 		} else {
-			offsets = offsets_of(color_stops)
 			Poly({
 				coordinates: polygon_coordinates("Polygon.linear_gradient_polygon", corners),
 				fill: Linear({
-					c0: ArgbColor.to_rgba(color_stops.start_color),
-					c1: ArgbColor.to_rgba(color_stops.end_color),
-					o0: offsets.first,
-					o1: offsets.last,
-					ax: start_point.x.to_f64(),
-					ay: start_point.y.to_f64(),
-					dx,
-					dy,
+					stops: brush_stops(color_stops),
+					start_point: { x: start_point.x.to_f64(), y: start_point.y.to_f64() },
+					end_point: { x: end_point.x.to_f64(), y: end_point.y.to_f64() },
 				}),
 			})
 		}
@@ -141,28 +134,19 @@ Polygon :: [].{
 		axis_v : Screen.Point,
 	} -> Shapes.Shape
 	radial_gradient_polygon = |corners, { color_stops, center_point, axis_u, axis_v }| {
-		ux = axis_u.x.to_f64()
-		uy = axis_u.y.to_f64()
-		vx = axis_v.x.to_f64()
-		vy = axis_v.y.to_f64()
-		det = ux * vy - uy * vx
-		first_color = ArgbColor.to_rgba(color_stops.start_color)
+		axes = {
+			axis_u: { x: axis_u.x.to_f64(), y: axis_u.y.to_f64() },
+			axis_v: { x: axis_v.x.to_f64(), y: axis_v.y.to_f64() },
+		}
 		fill =
-			if det.abs() < min_ellipse_determinant {
-				Flat(first_color)
+			if Brush.ellipse_determinant(axes).abs() < min_ellipse_determinant {
+				Flat(ArgbColor.to_rgba(color_stops.start_color))
 			} else {
-				offsets = offsets_of(color_stops)
 				Ellipse({
-					c0: first_color,
-					c1: ArgbColor.to_rgba(color_stops.end_color),
-					o0: offsets.first,
-					o1: offsets.last,
-					x: center_point.x.to_f64(),
-					y: center_point.y.to_f64(),
-					ia: vy / det,
-					ib: (0.0 - vx) / det,
-					ic: (0.0 - uy) / det,
-					id: ux / det,
+					stops: brush_stops(color_stops),
+					center: { x: center_point.x.to_f64(), y: center_point.y.to_f64() },
+					axis_u: axes.axis_u,
+					axis_v: axes.axis_v,
 				})
 			}
 		Poly({ coordinates: polygon_coordinates("Polygon.radial_gradient_polygon", corners), fill })
@@ -252,6 +236,18 @@ min_ellipse_determinant : F64
 min_ellipse_determinant = 0.0001
 
 ## A gradient's offsets held to 0 to 1, the last never before the first.
+## The stops as a brush takes them, with their offsets held as `offsets_of` holds them.
+brush_stops : Polygon.ColorStops -> Brush.TwoStops
+brush_stops = |stops| {
+	offsets = offsets_of(stops)
+	{
+		start_color: ArgbColor.to_rgba(stops.start_color),
+		end_color: ArgbColor.to_rgba(stops.end_color),
+		start_offset: offsets.first,
+		end_offset: offsets.last,
+	}
+}
+
 offsets_of : Polygon.ColorStops -> { first : F64, last : F64 }
 offsets_of = |stops| {
 	first = Brush.clamp01(stops.start_offset)
@@ -266,10 +262,10 @@ width_shade = |corners, { color, strength }| {
 		Flat(Brush.opaque(color))
 	} else {
 		Span({
-			edge: Brush.opaque(width_shade_edge(color, strength)),
-			middle: Brush.opaque(width_shade_middle(color, strength)),
-			x0: span.min_x.to_f64(),
-			x1: span.max_x.to_f64(),
+			edge_color: Brush.opaque(width_shade_edge(color, strength)),
+			middle_color: Brush.opaque(width_shade_middle(color, strength)),
+			left_x: span.min_x.to_f64(),
+			right_x: span.max_x.to_f64(),
 		})
 	}
 }
@@ -362,12 +358,11 @@ expect radial_polygon(three_corners, Pixels.of(0.5)) == Ok(
 	Poly({
 		coordinates: triangle_coordinates,
 		fill: Radial({
-			inner: ArgbColor.to_rgba(ArgbColor.of(7)),
-			outer: ArgbColor.to_rgba(ArgbColor.of(8)),
-			x: 0.0,
-			y: 0.0,
-			r0: 0.0,
-			r1: 0.5,
+			inner_color: ArgbColor.to_rgba(ArgbColor.of(7)),
+			outer_color: ArgbColor.to_rgba(ArgbColor.of(8)),
+			center: { x: 0.0, y: 0.0 },
+			inner_radius: 0.0,
+			outer_radius: 0.5,
 		}),
 	}),
 )
@@ -385,10 +380,10 @@ expect
 		== Poly({
 			coordinates: triangle_coordinates,
 			fill: Span({
-				edge: Brush.opaque(RgbColor.of(155)),
-				middle: Brush.opaque(RgbColor.of(255)),
-				x0: 1.0,
-				x1: 5.0,
+				edge_color: Brush.opaque(RgbColor.of(155)),
+				middle_color: Brush.opaque(RgbColor.of(255)),
+				left_x: 1.0,
+				right_x: 5.0,
 			}),
 		})
 
@@ -406,12 +401,11 @@ expect
 			Poly({
 				coordinates: triangle_coordinates,
 				fill: Radial({
-					inner: ArgbColor.to_rgba(ArgbColor.of(444)),
-					outer: ArgbColor.to_rgba(ArgbColor.of(445)),
-					x: 10.0,
-					y: 20.0,
-					r0: 0.0,
-					r1: 30.0,
+					inner_color: ArgbColor.to_rgba(ArgbColor.of(444)),
+					outer_color: ArgbColor.to_rgba(ArgbColor.of(445)),
+					center: { x: 10.0, y: 20.0 },
+					inner_radius: 0.0,
+					outer_radius: 30.0,
 				}),
 			}),
 		)
@@ -433,14 +427,14 @@ expect
 		== Poly({
 			coordinates: triangle_coordinates,
 			fill: Linear({
-				c0: ArgbColor.to_rgba(ArgbColor.of(555)),
-				c1: ArgbColor.to_rgba(ArgbColor.of(556)),
-				o0: 0.25,
-				o1: 0.75,
-				ax: 1.0,
-				ay: 2.0,
-				dx: 2.0,
-				dy: 2.0,
+				stops: {
+					start_color: ArgbColor.to_rgba(ArgbColor.of(555)),
+					end_color: ArgbColor.to_rgba(ArgbColor.of(556)),
+					start_offset: 0.25,
+					end_offset: 0.75,
+				},
+				start_point: { x: 1.0, y: 2.0 },
+				end_point: { x: 3.0, y: 4.0 },
 			}),
 		})
 
@@ -457,16 +451,15 @@ expect
 		== Poly({
 			coordinates: triangle_coordinates,
 			fill: Ellipse({
-				c0: ArgbColor.to_rgba(ArgbColor.of(666)),
-				c1: ArgbColor.to_rgba(ArgbColor.of(667)),
-				o0: 0.25,
-				o1: 0.75,
-				x: 1.0,
-				y: 2.0,
-				ia: -3.0,
-				ib: 2.5,
-				ic: 2.0,
-				id: -1.5,
+				stops: {
+					start_color: ArgbColor.to_rgba(ArgbColor.of(666)),
+					end_color: ArgbColor.to_rgba(ArgbColor.of(667)),
+					start_offset: 0.25,
+					end_offset: 0.75,
+				},
+				center: { x: 1.0, y: 2.0 },
+				axis_u: { x: 3.0, y: 4.0 },
+				axis_v: { x: 5.0, y: 6.0 },
 			}),
 		})
 
@@ -481,29 +474,35 @@ offset_linear = |{ start_offset, end_offset }|
 		},
 	)
 
-linear_fill : { o0 : F64, o1 : F64 } -> Shapes.Shape
-linear_fill = |{ o0, o1 }|
+linear_fill : { first : F64, last : F64 } -> Shapes.Shape
+linear_fill = |{ first, last }|
 	Poly({
 		coordinates: triangle_coordinates,
 		fill: Linear({
-			c0: ArgbColor.to_rgba(ArgbColor.of(666)),
-			c1: ArgbColor.to_rgba(ArgbColor.of(667)),
-			o0,
-			o1,
-			ax: 1.0,
-			ay: 2.0,
-			dx: 2.0,
-			dy: 2.0,
+			stops: {
+				start_color: ArgbColor.to_rgba(ArgbColor.of(666)),
+				end_color: ArgbColor.to_rgba(ArgbColor.of(667)),
+				start_offset: first,
+				end_offset: last,
+			},
+			start_point: { x: 1.0, y: 2.0 },
+			end_point: { x: 3.0, y: 4.0 },
 		}),
 	})
 
 # An offset outside 0 to 1 is held there, and the last is never before the first.
-expect offset_linear({ start_offset: -1.0, end_offset: 2.0 }) == linear_fill({ o0: 0.0, o1: 1.0 })
-expect offset_linear({ start_offset: 0.0, end_offset: 1.0 }) == linear_fill({ o0: 0.0, o1: 1.0 })
+expect offset_linear({
+	start_offset: -1.0,
+	end_offset: 2.0,
+}) == linear_fill({ first: 0.0, last: 1.0 })
+expect offset_linear({
+	start_offset: 0.0,
+	end_offset: 1.0,
+}) == linear_fill({ first: 0.0, last: 1.0 })
 expect offset_linear({
 	start_offset: 0.75,
 	end_offset: 0.25,
-}) == linear_fill({ o0: 0.75, o1: 0.75 })
+}) == linear_fill({ first: 0.75, last: 0.75 })
 
 ellipse_of_height : F64 -> Shapes.Shape
 ellipse_of_height = |height|
@@ -570,10 +569,10 @@ expect
 		== Poly({
 			coordinates: [10.0, 1.0, 30.0, 2.0, 20.0, 3.0],
 			fill: Span({
-				edge: Brush.opaque(RgbColor.of(0x4D2613)),
-				middle: Brush.opaque(RgbColor.of(0xA05028)),
-				x0: 10.0,
-				x1: 30.0,
+				edge_color: Brush.opaque(RgbColor.of(0x4D2613)),
+				middle_color: Brush.opaque(RgbColor.of(0xA05028)),
+				left_x: 10.0,
+				right_x: 30.0,
 			}),
 		})
 

@@ -14,70 +14,93 @@ Brush :: [].{
 	# Red, green and blue in 0..255, alpha in 0..1.
 	Rgba : { r : F64, g : F64, b : F64, a : F64 }
 
+	# The start colour up to `start_offset`, the end colour from `end_offset`,
+	# and a mix of the two between.
+	TwoStops : { start_color : Brush.Rgba, end_color : Brush.Rgba, start_offset : F64, end_offset : F64 }
+
 	Fill : [
-		Skip,
 		Flat(Brush.Rgba),
-		# Mode 1: edge, middle, edge, across [x0, x1].
-		Span({ edge : Brush.Rgba, middle : Brush.Rgba, x0 : F64, x1 : F64 }),
-		# Mode 2: from radius r0 to r1 about (x, y).
-		Radial({ inner : Brush.Rgba, outer : Brush.Rgba, x : F64, y : F64, r0 : F64, r1 : F64 }),
-		# Mode 3: two stops along a..a+d, at offsets o0 <= o1.
-		Linear({ c0 : Brush.Rgba, c1 : Brush.Rgba, o0 : F64, o1 : F64, ax : F64, ay : F64, dx : F64, dy : F64 }),
-		# Mode 4: two stops out from (x, y) through the ellipse whose inverse is
-		# ia ib / ic id, taking a scene offset to the unit circle.
-		Ellipse({ c0 : Brush.Rgba, c1 : Brush.Rgba, o0 : F64, o1 : F64, x : F64, y : F64, ia : F64, ib : F64, ic : F64, id : F64 }),
-		# The sun's glow: stops at 0, 0.4 and 1, from radius r0 to r1 about (x, y).
-		Glow({ c0 : Brush.Rgba, c1 : Brush.Rgba, c2 : Brush.Rgba, x : F64, y : F64, r0 : F64, r1 : F64 }),
+		# The edge colour at `left_x` and `right_x`, and the middle colour halfway.
+		Span({ edge_color : Brush.Rgba, middle_color : Brush.Rgba, left_x : F64, right_x : F64 }),
+		Radial({ inner_color : Brush.Rgba, outer_color : Brush.Rgba, center : { x : F64, y : F64 }, inner_radius : F64, outer_radius : F64 }),
+		Linear({ stops : Brush.TwoStops, start_point : { x : F64, y : F64 }, end_point : { x : F64, y : F64 } }),
+		# Out from `center` to the ellipse whose half-axes are `axis_u` and `axis_v`.
+		Ellipse({ stops : Brush.TwoStops, center : { x : F64, y : F64 }, axis_u : { x : F64, y : F64 }, axis_v : { x : F64, y : F64 } }),
+		# The sun's glow: the middle colour at `middle_offset`, between 0 and 1.
+		Glow({ inner_color : Brush.Rgba, middle_color : Brush.Rgba, outer_color : Brush.Rgba, middle_offset : F64, center : { x : F64, y : F64 }, inner_radius : F64, outer_radius : F64 }),
 	]
 
 	# The colour a brush gives the scene point (x, y).
 	shade : Brush.Fill, F64, F64 -> Brush.Rgba
 	shade = |fill, x, y|
 		match fill {
-			Skip => { r: 0.0, g: 0.0, b: 0.0, a: 0.0 }
 			Flat(col) => col
 			Span(p) => {
-				t = clamp01((x - p.x0) / (p.x1 - p.x0))
+				t = clamp01((x - p.left_x) / (p.right_x - p.left_x))
 				if t <= 0.5 {
-					mix(p.edge, p.middle, t * 2.0)
+					mix(p.edge_color, p.middle_color, t * 2.0)
 				} else {
-					mix(p.middle, p.edge, (t - 0.5) * 2.0)
+					mix(p.middle_color, p.edge_color, (t - 0.5) * 2.0)
 				}
 			}
 			Radial(p) => {
-				d = ((x - p.x) * (x - p.x) + (y - p.y) * (y - p.y)).sqrt()
+				d = ((x - p.center.x) * (x - p.center.x) + (y - p.center.y) * (y - p.center.y)).sqrt()
 				mix(
-					p.inner,
-					p.outer,
-					if p.r1 > p.r0 {
-						clamp01((d - p.r0) / (p.r1 - p.r0))
+					p.inner_color,
+					p.outer_color,
+					if p.outer_radius > p.inner_radius {
+						clamp01((d - p.inner_radius) / (p.outer_radius - p.inner_radius))
 					} else {
 						1.0
 					},
 				)
 			}
-			Linear(p) => two_stop(p.c0, p.o0, p.c1, p.o1, clamp01(((x - p.ax) * p.dx + (y - p.ay) * p.dy) / (p.dx * p.dx + p.dy * p.dy)))
+			Linear(p) => {
+				dx = p.end_point.x - p.start_point.x
+				dy = p.end_point.y - p.start_point.y
+				two_stop(p.stops, clamp01(((x - p.start_point.x) * dx + (y - p.start_point.y) * dy) / (dx * dx + dy * dy)))
+			}
 			Ellipse(p) => {
-				qx = x - p.x
-				qy = y - p.y
-				ux = p.ia * qx + p.ib * qy
-				uy = p.ic * qx + p.id * qy
-				two_stop(p.c0, p.o0, p.c1, p.o1, clamp01((ux * ux + uy * uy).sqrt()))
+				qx = x - p.center.x
+				qy = y - p.center.y
+				inverse = ellipse_inverse({ axis_u: p.axis_u, axis_v: p.axis_v })
+				ux = inverse.top_row.x * qx + inverse.top_row.y * qy
+				uy = inverse.bottom_row.x * qx + inverse.bottom_row.y * qy
+				two_stop(p.stops, clamp01((ux * ux + uy * uy).sqrt()))
 			}
 			Glow(p) => {
-				d = ((x - p.x) * (x - p.x) + (y - p.y) * (y - p.y)).sqrt()
-				t = if p.r1 > p.r0 {
-					clamp01((d - p.r0) / (p.r1 - p.r0))
+				d = ((x - p.center.x) * (x - p.center.x) + (y - p.center.y) * (y - p.center.y)).sqrt()
+				t = if p.outer_radius > p.inner_radius {
+					clamp01((d - p.inner_radius) / (p.outer_radius - p.inner_radius))
 				} else {
 					1.0
 				}
-				if t <= 0.4 {
-					mix(p.c0, p.c1, t / 0.4)
+				m = p.middle_offset
+				if t <= m {
+					mix(p.inner_color, p.middle_color, t / m)
 				} else {
-					mix(p.c1, p.c2, (t - 0.4) / 0.6)
+					mix(p.middle_color, p.outer_color, (t - m) / (1.0 - m))
 				}
 			}
 		}
+
+	# The determinant of the matrix whose columns are an ellipse's axes. Near
+	# zero, the axes are nearly parallel and the ellipse has no inverse.
+	ellipse_determinant : { axis_u : { x : F64, y : F64 }, axis_v : { x : F64, y : F64 } } -> F64
+	ellipse_determinant = |{ axis_u, axis_v }| axis_u.x * axis_v.y - axis_u.y * axis_v.x
+
+	# The matrix that takes an offset from an ellipse's center to the unit
+	# circle, the inverse of the one whose columns are its axes. An offset
+	# (dx, dy) goes to (top_row.x * dx + top_row.y * dy, bottom_row.x * dx +
+	# bottom_row.y * dy). Brush.shade and the native player's shader both use it.
+	ellipse_inverse : { axis_u : { x : F64, y : F64 }, axis_v : { x : F64, y : F64 } } -> { top_row : { x : F64, y : F64 }, bottom_row : { x : F64, y : F64 } }
+	ellipse_inverse = |{ axis_u, axis_v }| {
+		det = ellipse_determinant({ axis_u, axis_v })
+		{
+			top_row: { x: axis_v.y / det, y: (0.0 - axis_v.x) / det },
+			bottom_row: { x: (0.0 - axis_u.y) / det, y: axis_u.x / det },
+		}
+	}
 
 	chan : I64, U8 -> F64
 	chan = |c, shift| c.shr_wrap(shift).bitwise_and(255).to_f64()
@@ -102,13 +125,21 @@ Brush :: [].{
 		t
 	}
 
-	# Two stops at offsets o0 <= o1: the first colour up to o0, the second from o1.
-	two_stop : Brush.Rgba, F64, Brush.Rgba, F64, F64 -> Brush.Rgba
-	two_stop = |c0, o0, c1, o1, t| if t <= o0 {
-		c0
-	} else if t >= o1 {
-		c1
+	# The colour the stops give at `t`, for offsets start_offset <= end_offset.
+	two_stop : Brush.TwoStops, F64 -> Brush.Rgba
+	two_stop = |stops, t| if t <= stops.start_offset {
+		stops.start_color
+	} else if t >= stops.end_offset {
+		stops.end_color
 	} else {
-		mix(c0, c1, (t - o0) / (o1 - o0))
+		mix(stops.start_color, stops.end_color, (t - stops.start_offset) / (stops.end_offset - stops.start_offset))
 	}
 }
+
+# The ellipse with axes (3, 4) and (5, 6) has determinant -2, and its inverse
+# takes each axis back to a unit vector.
+sample_inverse : { top_row : { x : F64, y : F64 }, bottom_row : { x : F64, y : F64 } }
+sample_inverse = Brush.ellipse_inverse({ axis_u: { x: 3.0, y: 4.0 }, axis_v: { x: 5.0, y: 6.0 } })
+
+expect Brush.ellipse_determinant({ axis_u: { x: 3.0, y: 4.0 }, axis_v: { x: 5.0, y: 6.0 } }) == -2.0
+expect sample_inverse == { top_row: { x: -3.0, y: 2.5 }, bottom_row: { x: 2.0, y: -1.5 } }

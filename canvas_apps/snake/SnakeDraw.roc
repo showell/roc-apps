@@ -60,7 +60,7 @@ SnakeDraw :: [].{
 	frame = |world, elapsed| {
 		var $out = List.with_capacity(220)
 		# The field, a dark vertical gradient rather than flat black.
-		$out = List.append($out, Rect({ x: 0.0, y: 0.0, w: w, h: h, fill: Linear({ c0: field_top, c1: field_bottom, o0: 0.0, o1: 1.0, ax: 0.0, ay: 0.0, dx: 0.0, dy: h }) }))
+		$out = List.append($out, Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Linear({ stops: { start_color: field_top, end_color: field_bottom, start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: h } }) }))
 		$out = List.concat($out, hud(world))
 		$out = List.concat($out, board({}))
 		$out = List.concat($out, glow(world, elapsed))
@@ -155,8 +155,8 @@ SnakeDraw :: [].{
 		m = middle_of(at)
 		r = cell * (0.3 + 0.04 * Trig.pulse(elapsed))
 		[
-			Disc({ x: m.x, y: m.y, r: r, fill: Flat(food_neon) }),
-			Disc({ x: m.x - r * 0.3, y: m.y - r * 0.35, r: r * 0.32, fill: Flat(ArgbColor.to_rgba(ArgbColor.of(0xbeffffff))) }),
+			Disc({ x: m.x, y: m.y, radius: r, fill: Flat(food_neon) }),
+			Disc({ x: m.x - r * 0.3, y: m.y - r * 0.35, radius: r * 0.32, fill: Flat(ArgbColor.to_rgba(ArgbColor.of(0xbeffffff))) }),
 		]
 	}
 
@@ -169,7 +169,7 @@ SnakeDraw :: [].{
 				over = "GAME OVER"
 				again = "PRESS SPACE TO PLAY AGAIN"
 				alpha = 0.59 + 0.41 * Trig.pulse(elapsed)
-				var $out = [Rect({ x: left - 8.0, y: 236.0, w: board_w + 16.0, h: 140.0, fill: Flat(ArgbColor.to_rgba(ArgbColor.of(0xe1060810))) })]
+				var $out = [Rect({ x: left - 8.0, y: 236.0, width: board_w + 16.0, height: 140.0, fill: Flat(ArgbColor.to_rgba(ArgbColor.of(0xe1060810))) })]
 				$out = List.concat($out, Font.centered(over, w / 2.0, 262.0, 40.0, food_neon))
 				List.concat($out, Font.centered(again, w / 2.0, 326.0, 19.0, { r: hint_color.r, g: hint_color.g, b: hint_color.b, a: alpha }))
 			}

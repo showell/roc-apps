@@ -39,7 +39,7 @@ BreakoutDraw :: [].{
 	## One complete Breakout frame, back to front.
 	frame : Rules.World, F64 -> List(Shapes.Shape)
 	frame = |world, elapsed| {
-		var $out = [Rect({ x: 0.0, y: 0.0, w: w, h: h, fill: Linear({ c0: Color.brush(field_top), c1: Color.brush(field_bottom), o0: 0.0, o1: 1.0, ax: 0.0, ay: 0.0, dx: 0.0, dy: h }) })]
+		var $out = [Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Linear({ stops: { start_color: Color.brush(field_top), end_color: Color.brush(field_bottom), start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: h } }) })]
 		$out = List.concat($out, hud(world))
 		$out = List.concat($out, bricks(world.bricks))
 		$out = List.concat($out, glow(world))
@@ -74,7 +74,7 @@ BreakoutDraw :: [].{
 			bh = F32.to_f64(b.rect.height)
 			face = Color.brush(b.color)
 			$out = List.append($out, Shapes.rounded_rect(x, y, bw, bh, 5.0, 6, Flat({ ..face, a: 0.92 })))
-			$out = List.append($out, Rect({ x: x + 5.0, y: y + 3.0, w: bw - 10.0, h: 3.0, fill: Flat({ r: 255.0, g: 255.0, b: 255.0, a: 0.43 }) }))
+			$out = List.append($out, Rect({ x: x + 5.0, y: y + 3.0, width: bw - 10.0, height: 3.0, fill: Flat({ r: 255.0, g: 255.0, b: 255.0, a: 0.43 }) }))
 			$i = $i + 1
 		}
 		$out
@@ -108,9 +108,9 @@ BreakoutDraw :: [].{
 		r = F32.to_f64(Ball.radius)
 		[
 			Shapes.rounded_rect(px, py, pw, ph, ph / 2.0, 8, Flat(Color.brush(paddle_neon))),
-			Rect({ x: px + 8.0, y: py + 3.0, w: pw - 16.0, h: 3.0, fill: Flat({ r: 255.0, g: 255.0, b: 255.0, a: 0.59 }) }),
-			Disc({ x: bx, y: by, r: r, fill: Flat(Color.brush(ball_neon)) }),
-			Disc({ x: bx - 2.0, y: by - 2.0, r: r * 0.4, fill: Flat({ r: 255.0, g: 255.0, b: 255.0, a: 0.82 }) }),
+			Rect({ x: px + 8.0, y: py + 3.0, width: pw - 16.0, height: 3.0, fill: Flat({ r: 255.0, g: 255.0, b: 255.0, a: 0.59 }) }),
+			Disc({ x: bx, y: by, radius: r, fill: Flat(Color.brush(ball_neon)) }),
+			Disc({ x: bx - 2.0, y: by - 2.0, radius: r * 0.4, fill: Flat({ r: 255.0, g: 255.0, b: 255.0, a: 0.82 }) }),
 		]
 	}
 

@@ -32,11 +32,14 @@ pixels_with_shape = |pixels, { roll, shape }|
 			pixels,
 			{ roll, coordinates: p.coordinates, fill: p.fill },
 		)
-		Pieces(p) => pixels_with_pieces(pixels, { roll, tris: p.tris, fill: p.fill })
+		Pieces(p) => pixels_with_pieces(
+			pixels,
+			{ roll, triangle_coordinates: p.triangle_coordinates, fill: p.fill },
+		)
 		Disc(d) => {
 			color = match d.fill {
 				Flat(flat) => flat
-				Skip | Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) =>
+				Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) =>
 					crash "ShapesPixels: a disc with a gradient"
 			}
 			ScanlineFill.disc_pixels(
@@ -44,7 +47,7 @@ pixels_with_shape = |pixels, { roll, shape }|
 				{
 					roll,
 					center: ScreenRoll.ScenePoint.({ x: d.x, y: d.y }),
-					radius: d.r,
+					radius: d.radius,
 					color,
 				},
 			)
@@ -64,17 +67,17 @@ pixels_with_shape = |pixels, { roll, shape }|
 pixels_with_pieces : List(U32),
 {
 	roll : ScreenRoll,
-	tris : List(F64),
+	triangle_coordinates : List(F64),
 	fill : Brush.Fill,
 } -> List(U32)
-pixels_with_pieces = |pixels, { roll, tris, fill }| {
+pixels_with_pieces = |pixels, { roll, triangle_coordinates, fill }| {
 	var $px = pixels
-	for k in 0..<(tris.len() // 6) {
+	for k in 0..<(triangle_coordinates.len() // 6) {
 		$px = ScanlineFill.polygon_pixels(
 			$px,
 			{
 				roll,
-				coordinates: tris.sublist({ start: 6 * k, len: 6 }),
+				coordinates: triangle_coordinates.sublist({ start: 6 * k, len: 6 }),
 				fill,
 			},
 		)

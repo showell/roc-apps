@@ -199,7 +199,7 @@ next mark of its kind. `Blend(Add)` lights rather than paints. `View(World(c))`
 puts the shapes after it in a camera's world and `View(Screen)` brings them
 back to the window. A frame starts on the screen, painting over.
 
-A `Brush.Fill` is `Skip`, a flat colour, or one of five gradients — `Span`,
+A `Brush.Fill` is a flat colour or one of five gradients — `Span`,
 `Radial`, `Linear`, `Ellipse`, `Glow` — each carrying its geometry in scene
 coordinates, which is what lets every painter shade it the same way.
 

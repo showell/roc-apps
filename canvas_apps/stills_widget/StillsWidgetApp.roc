@@ -385,8 +385,8 @@ picture_shapes = |model|
 			Rect({
 				x: 0.0,
 				y: 0.0,
-				w: ScrubWidget.canvas_width,
-				h: ScrubWidget.picture_bottom_y,
+				width: ScrubWidget.canvas_width,
+				height: ScrubWidget.picture_bottom_y,
 				fill: ScrubWidget.flat(picture_color),
 			}),
 		],
@@ -422,8 +422,8 @@ mark_shapes = |large_still|
 			Rect({
 				x: area.left,
 				y: area.top,
-				w: area.width,
-				h: area.height,
+				width: area.width,
+				height: area.height,
 				fill: ScrubWidget.flat(picture_color),
 			}),
 	)

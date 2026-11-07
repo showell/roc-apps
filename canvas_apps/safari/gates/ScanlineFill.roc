@@ -207,7 +207,6 @@ pixels_with_span = |pixels, { roll, fill, row, from, to }| {
 				p = roll.to_scene(ScreenRoll.pixel_point({ row, column }))
 				Brush.shade(fill, p.x, p.y)
 			}
-			Skip => crash "ScanlineFill.pixels_with_span: no caller fills with a Skip brush"
 		}
 		$px = PixelGrid.blended_pixels($px, { at, color })
 	}

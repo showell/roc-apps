@@ -8,14 +8,15 @@
 Frame :: [].{
 	Rgba : { r : F64, g : F64, b : F64, a : F64 }
 
+	TwoStops : { start_color : Frame.Rgba, end_color : Frame.Rgba, start_offset : F64, end_offset : F64 }
+
 	Fill : [
-		Skip,
 		Flat(Frame.Rgba),
-		Span({ edge : Frame.Rgba, middle : Frame.Rgba, x0 : F64, x1 : F64 }),
-		Radial({ inner : Frame.Rgba, outer : Frame.Rgba, x : F64, y : F64, r0 : F64, r1 : F64 }),
-		Linear({ c0 : Frame.Rgba, c1 : Frame.Rgba, o0 : F64, o1 : F64, ax : F64, ay : F64, dx : F64, dy : F64 }),
-		Ellipse({ c0 : Frame.Rgba, c1 : Frame.Rgba, o0 : F64, o1 : F64, x : F64, y : F64, ia : F64, ib : F64, ic : F64, id : F64 }),
-		Glow({ c0 : Frame.Rgba, c1 : Frame.Rgba, c2 : Frame.Rgba, x : F64, y : F64, r0 : F64, r1 : F64 }),
+		Span({ edge_color : Frame.Rgba, middle_color : Frame.Rgba, left_x : F64, right_x : F64 }),
+		Radial({ inner_color : Frame.Rgba, outer_color : Frame.Rgba, center : { x : F64, y : F64 }, inner_radius : F64, outer_radius : F64 }),
+		Linear({ stops : Frame.TwoStops, start_point : { x : F64, y : F64 }, end_point : { x : F64, y : F64 } }),
+		Ellipse({ stops : Frame.TwoStops, center : { x : F64, y : F64 }, axis_u : { x : F64, y : F64 }, axis_v : { x : F64, y : F64 } }),
+		Glow({ inner_color : Frame.Rgba, middle_color : Frame.Rgba, outer_color : Frame.Rgba, middle_offset : F64, center : { x : F64, y : F64 }, inner_radius : F64, outer_radius : F64 }),
 	]
 
 	Mode : [Over, Add]
@@ -31,12 +32,12 @@ Frame :: [].{
 
 	Shape : [
 		Poly({ coordinates : List(F64), fill : Frame.Fill }),
-		Pieces({ tris : List(F64), fill : Frame.Fill }),
-		Disc({ x : F64, y : F64, r : F64, fill : Frame.Fill }),
-		Rect({ x : F64, y : F64, w : F64, h : F64, fill : Frame.Fill }),
+		Pieces({ triangle_coordinates : List(F64), fill : Frame.Fill }),
+		Disc({ x : F64, y : F64, radius : F64, fill : Frame.Fill }),
+		Rect({ x : F64, y : F64, width : F64, height : F64, fill : Frame.Fill }),
 		Blend(Frame.Mode),
 		View(Frame.Space),
-		Image({ x : F64, y : F64, w : F64, h : F64, cols : U64, rows : U64, pixels : List(Frame.Rgba) }),
+		Image({ x : F64, y : F64, width : F64, height : F64, cols : U64, rows : U64, pixels : List(Frame.Rgba) }),
 		Text({ text : Str, x : F64, y : F64, size : F64, face : Frame.Face, align : Frame.Align, color : Frame.Rgba }),
 	]
 }

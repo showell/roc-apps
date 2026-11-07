@@ -19,7 +19,6 @@ BrushGlsl :: [].{
 	mode_of : Brush.Fill -> F64
 	mode_of = |fill|
 		match fill {
-			Skip => 0.0
 			Flat(_) => 0.0
 			Span(_) => 1.0
 			Radial(_) => 2.0
@@ -95,7 +94,8 @@ BrushGlsl :: [].{
 			"",
 			"vec4 glowColor() {",
 			"    float t = ringT();",
-			"    return t <= 0.4 ? mix(color_a, color_b, t / 0.4) : mix(color_b, color_c, (t - 0.4) / 0.6);",
+			"    float m = geom_b.x;",
+			"    return t <= m ? mix(color_a, color_b, t / m) : mix(color_b, color_c, (t - m) / (1.0 - m));",
 			"}",
 			"",
 			"void main() {",

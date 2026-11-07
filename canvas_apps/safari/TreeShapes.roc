@@ -448,10 +448,10 @@ expect
 # A shaded trunk is the same colour, lighter in the middle of its width.
 expect
 	match trunk_shape(sample_outline, Shaded) {
-		Poly({ coordinates, fill: Span({ edge, middle, x0, x1 }) }) =>
-			edge == Brush.opaque(RgbColor.of(0x362514))
-				and middle == Brush.opaque(RgbColor.of(0x714E2B))
-				and is_near([x0, x1], [440.0, 520.0])
+		Poly({ coordinates, fill: Span({ edge_color, middle_color, left_x, right_x }) }) =>
+			edge_color == Brush.opaque(RgbColor.of(0x362514))
+				and middle_color == Brush.opaque(RgbColor.of(0x714E2B))
+				and is_near([left_x, right_x], [440.0, 520.0])
 				and is_near(coordinates, [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0])
 		_ => False
 	}

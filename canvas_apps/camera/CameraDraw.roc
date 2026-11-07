@@ -41,9 +41,9 @@ CameraDraw :: [].{
 		Rect({
 			x: 0.0,
 			y: 0.0,
-			w: 800.0,
-			h: 600.0,
-			fill: Linear({ c0: hex(0x101a24), c1: hex(0x060a0f), o0: 0.0, o1: 1.0, ax: 0.0, ay: 0.0, dx: 0.0, dy: 600.0 }),
+			width: 800.0,
+			height: 600.0,
+			fill: Linear({ stops: { start_color: hex(0x101a24), end_color: hex(0x060a0f), start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: 600.0 } }),
 		})
 
 	# ── the world ──────────────────────────────────────────────────────────
@@ -55,7 +55,7 @@ CameraDraw :: [].{
 		right = f(Rules.world_right)
 		bottom = f(Rules.world_bottom)
 
-		var $out = [Rect({ x: left, y: top, w: right - left, h: bottom - top, fill: Flat(hex(0x16222b)) })]
+		var $out = [Rect({ x: left, y: top, width: right - left, height: bottom - top, fill: Flat(hex(0x16222b)) })]
 		$out = List.concat($out, box(left, top, right, bottom, 3.0, dim(0x5fa8d3, 90)))
 		$out = List.concat($out, grid(seen))
 
@@ -77,9 +77,9 @@ CameraDraw :: [].{
 	landmark : F64, F64, F64, F64, Brush.Rgba -> List(Shapes.Shape)
 	landmark = |x, y, w, h, color|
 		[
-			Rect({ x: x + 10.0, y: y + 14.0, w, h, fill: Flat({ r: 0.0, g: 0.0, b: 0.0, a: 90.0 / 255.0 }) }),
-			Rect({ x, y, w, h, fill: Flat(color) }),
-			Rect({ x, y, w, h: 10.0, fill: Flat({ r: 255.0, g: 255.0, b: 255.0, a: 45.0 / 255.0 }) }),
+			Rect({ x: x + 10.0, y: y + 14.0, width: w, height: h, fill: Flat({ r: 0.0, g: 0.0, b: 0.0, a: 90.0 / 255.0 }) }),
+			Rect({ x, y, width: w, height: h, fill: Flat(color) }),
+			Rect({ x, y, width: w, height: 10.0, fill: Flat({ r: 255.0, g: 255.0, b: 255.0, a: 45.0 / 255.0 }) }),
 		]
 
 	# The player: a shadow, the disc, its white rim, and the cross that shows
@@ -88,8 +88,8 @@ CameraDraw :: [].{
 	marker = |x, y| {
 		white = { r: 255.0, g: 255.0, b: 255.0, a: 1.0 }
 		var $out = [
-			Disc({ x, y: y + 6.0, r: 26.0, fill: Flat({ r: 0.0, g: 0.0, b: 0.0, a: 110.0 / 255.0 }) }),
-			Disc({ x, y, r: 26.0, fill: Flat(hex(0xef476f)) }),
+			Disc({ x, y: y + 6.0, radius: 26.0, fill: Flat({ r: 0.0, g: 0.0, b: 0.0, a: 110.0 / 255.0 }) }),
+			Disc({ x, y, radius: 26.0, fill: Flat(hex(0xef476f)) }),
 		]
 		$out = List.concat($out, Shapes.ring_shapes(x, y, 26.0, 4.0, 28, Flat(white)))
 		$out = List.append($out, Shapes.line(x - 42.0, y, x + 42.0, y, 3.0, Flat(white)))

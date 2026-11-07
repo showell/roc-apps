@@ -30,7 +30,7 @@ triangles = |shapes| shapes.fold(
 	0,
 	|n, s|
 		match s {
-			Pieces(p) => n + p.tris.len() // 6
+			Pieces(p) => n + p.triangle_coordinates.len() // 6
 			_ => n
 		},
 )
