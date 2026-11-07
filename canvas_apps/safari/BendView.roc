@@ -42,14 +42,25 @@ BendView := { before : SegmentPlace, bend : Geom.Bend }.{
 			JustBehind(_) => Ahead(SegmentPlace.Position.first)
 		}
 
-	## How far across the road its outer edge at a bend is: the left edge
-	## when the road turns right, the right edge when it turns left.
+	## The side of the road on the outside of a bend, where its guard rail runs.
+	OuterSide : [LeftSide, RightSide]
+
+	## The outside of a bend that turns `bend_turn`: the left side when the
+	## road turns right, the right side when it turns left.
+	outer_side : Angle.Turn -> BendView.OuterSide
+	outer_side = |bend_turn|
+		if bend_turn.is_right() {
+			LeftSide
+		} else {
+			RightSide
+		}
+
+	## How far across the road its outer edge at a bend is.
 	outer_edge : Angle.Turn -> Across
 	outer_edge = |bend_turn|
-		if bend_turn.is_right() {
-			Geom.left_edge
-		} else {
-			Geom.right_edge
+		match outer_side(bend_turn) {
+			LeftSide => Geom.left_edge
+			RightSide => Geom.right_edge
 		}
 
 	## Where the outer edges of the two segments at a bend meet.
@@ -80,6 +91,8 @@ right_turn = Angle.Turn.radians(0.8726646259971648)
 left_turn : Angle.Turn
 left_turn = Angle.Turn.radians(-1.2217304763960306)
 
+expect BendView.outer_side(right_turn) == LeftSide
+expect BendView.outer_side(left_turn) == RightSide
 expect BendView.outer_edge(right_turn) == Geom.left_edge
 expect BendView.outer_edge(left_turn) == Geom.right_edge
 
