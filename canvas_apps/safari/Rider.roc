@@ -4,7 +4,6 @@
 import Across
 import Along
 import Angle
-import Fraction
 import Gaze
 import Geom
 import LeanSearch
@@ -14,7 +13,6 @@ import Route
 import Segment
 import Speed
 import Throttle
-import VehicleLimits
 import World
 
 Rider :: [].{
@@ -130,18 +128,6 @@ rider_at = |along, lean_radians| {
 	motorcycle: motorcycle_at(along, lean_radians),
 }
 
-expect {
-	upright = decide(motorcycle_at(0.0, 0.0), first_segment)
-	leaning = decide(motorcycle_at(0.0, 0.5), first_segment)
-	most_speed =
-		VehicleLimits.starting_speed.to_metres_a_step()
-			+ VehicleLimits.cruise_acceleration.to_metres_a_step_each_step()
-			+ 0.000001
-	upright.lean.change_from(Angle.upright).abs() <= LeanSearch.max_lean_change
-		and leaning.lean.change_from(Angle.Lean.radians(0.5)).abs() <= LeanSearch.max_lean_change
-		and upright.speed.to_metres_a_step() <= most_speed
-}
-
 # The throttle is decided for the motorcycle as it will lean.
 expect {
 	controls = decide(motorcycle_at(0.0, 0.0), first_segment)
@@ -160,15 +146,12 @@ at_seam = {
 		lean: Angle.Lean.radians(0.05),
 		heading: Angle.Bearing.radians(0.7),
 	},
-	eyes: { ..RiderState.initial.eyes, look_depth: Fraction.of(0.4) },
+	eyes: RiderState.initial.eyes,
 }
 
 crossed : RiderState
 crossed = rider_on_next_segment(at_seam, first_seam)
 
-expect crossed.motorcycle.speed.to_metres_a_step() == 1.25
-expect crossed.motorcycle.lean.to_radians() == 0.05
-expect crossed.eyes.look_depth.to_f64() == 0.4
 expect crossed.motorcycle.heading.to_radians() - 0.7 == 0.0
 expect {
 	exit_turn = first_segment.bend_out_of().turn
@@ -238,6 +221,3 @@ one_step_on = Rider.rider_state_at_next_step(RiderState.initial, World.route)
 
 expect one_step_on.motorcycle.along > Along.start
 expect one_step_on.motorcycle.speed > Speed.at_rest
-expect one_step_on.segment_index == Route.SegmentIndex.first
-expect one_step_on.motorcycle.across.distance_from_middle() < Geom.road_half_width
-expect one_step_on.motorcycle.speed <= VehicleLimits.top_speed

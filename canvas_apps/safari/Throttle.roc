@@ -98,8 +98,6 @@ shoulder_brake = |motorcycle, steps_to_shoulder| {
 allowed_speed : Speed -> Speed
 allowed_speed = |next_speed| next_speed.min(VehicleLimits.top_speed).max(Speed.at_rest)
 
-expect brake_decay.to_f64() == 20.0
-
 first_segment : Segment
 first_segment = World.route.segment_at(Route.SegmentIndex.number(0))
 

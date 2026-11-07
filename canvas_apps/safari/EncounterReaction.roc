@@ -79,25 +79,10 @@ attention_to_cat : F64, F64 -> F64
 attention_to_cat = |gap, speed|
 	EncounterReaction.encounter_attention(cat_segment, short_of_cat(gap, speed)).to_f64()
 
-expect throttle_for_cat(42.0, 1.0) == NoLimit
-expect throttle_for_cat(41.0, 1.0) == NoLimit
-expect throttle_for_cat(40.5, 1.0) == AtMost(Acceleration.steady)
+# One case for each answer the cat gives; Cat's own expects hold its tables.
 expect throttle_for_cat(22.0, 1.0) == AtMost(Acceleration.steady)
-expect throttle_for_cat(3.5, 1.0) == AtMost(Acceleration.steady)
-expect throttle_for_cat(3.0, 1.0) == NoLimit
-expect throttle_for_cat(2.0, 1.0) == NoLimit
-expect throttle_for_cat(22.0, 0.0) == NoLimit
-
-expect
-	[
-		(attention_to_cat(42.0, 1.0), 0.0),
-		(attention_to_cat(41.0, 1.0), 0.0),
-		(attention_to_cat(22.0, 1.0), 0.9),
-		(attention_to_cat(3.0, 1.0), 1.8),
-		(attention_to_cat(-38.5, 1.0), 0.9),
-		(attention_to_cat(-80.0, 1.0), 0.0),
-		(attention_to_cat(22.0, 0.0), 0.0),
-	].all(|(got, want)| (got - want).abs() <= 0.000000001)
+expect throttle_for_cat(42.0, 1.0) == NoLimit
+expect attention_to_cat(22.0, 1.0) > 0.0
 
 # A bird or a quiet road at each place on it, and at each speed.
 expect

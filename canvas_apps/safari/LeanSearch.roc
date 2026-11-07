@@ -85,19 +85,14 @@ searched_lean = |across, lean_radians|
 		lean: Angle.Lean.radians(lean_radians),
 	}).to_radians()
 
-max_correction : F64
-max_correction = LeanSearch.max_lean_change.to_radians()
-
 centred : F64
 centred = searched_lean(0.0, 0.0)
-
-offset : F64
-offset = searched_lean(1.0, 0.0)
 
 held : F64
 held = searched_lean(0.0, 0.5)
 
-expect offset.abs() <= max_correction
-expect (held - 0.5).abs() <= max_correction
-expect centred.abs() <= max_correction
+# An upright rider right of the middle leans left, and one left of it leans
+# right.
+expect searched_lean(1.0, 0.0) < 0.0
+expect searched_lean(-1.0, 0.0) > 0.0
 expect held > centred

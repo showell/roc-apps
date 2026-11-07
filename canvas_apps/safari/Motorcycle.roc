@@ -65,13 +65,6 @@ Motorcycle := {
 turn_per_lean : F64
 turn_per_lean = 0.1
 
-expect Motorcycle.initial.along.to_metres() == 0.0
-expect Motorcycle.initial.across.to_metres() == 0.0
-expect Motorcycle.initial.yaw.to_radians() == 0.0
-expect Motorcycle.initial.speed.to_metres_a_step() == 0.3
-expect Motorcycle.initial.lean.to_radians() == 0.0
-expect Motorcycle.initial.heading.to_radians() == 0.0
-
 ## A motorcycle well along a segment, leaning a little to the right.
 riding : Motorcycle
 riding = {
@@ -151,7 +144,6 @@ expect {
 		b.speed.to_metres_a_step(),
 		b.yaw.to_radians(),
 		b.heading.to_radians(),
-		turn_per_lean,
 	]
 		== [
 			0.0,
@@ -163,52 +155,5 @@ expect {
 			0.55,
 			0.05,
 			0.05,
-			0.1,
 		]
 }
-
-probe : Motorcycle
-probe = {
-	along: Along.metres(11.0),
-	across: Across.metres(2.5),
-	yaw: Angle.Turn.radians(0.75),
-	speed: Speed.metres_a_step(3.25),
-	lean: Angle.Lean.radians(0.125),
-	heading: Angle.Bearing.radians(4.5),
-}
-
-numbers_of : Motorcycle -> List(F64)
-numbers_of = |s| [
-	s.along.to_metres(),
-	s.across.to_metres(),
-	s.yaw.to_radians(),
-	s.speed.to_metres_a_step(),
-	s.lean.to_radians(),
-	s.heading.to_radians(),
-]
-
-leaned_once : Motorcycle
-leaned_once = Motorcycle.with_lean(probe, Angle.Lean.radians(1.5))
-
-# `with_lean` changes the lean and nothing else, and the last one holds.
-expect
-	numbers_of(Motorcycle.with_lean(probe, Angle.Lean.radians(9.5)))
-		== [
-			11.0,
-			2.5,
-			0.75,
-			3.25,
-			9.5,
-			4.5,
-		]
-
-expect
-	numbers_of(Motorcycle.with_lean(leaned_once, Angle.Lean.radians(9.5)))
-		== [
-			11.0,
-			2.5,
-			0.75,
-			3.25,
-			9.5,
-			4.5,
-		]

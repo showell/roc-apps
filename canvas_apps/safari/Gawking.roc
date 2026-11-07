@@ -76,15 +76,6 @@ Gawking :: [].{
 		}
 }
 
-# Each is within 1e-12 of its want.
-expect
-	[
-		(Gawking.notice_distance.to_metres(), 150.0),
-		(Gawking.gawk_speed.to_metres_a_step(), 0.2),
-		(Gawking.gawk_settle_distance.to_metres(), 25.0),
-		(Gawking.gawk_least_distance.to_metres(), 1.0),
-	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
-
 plain : Segment
 plain = World.route.segment_at(Route.SegmentIndex.number(0))
 

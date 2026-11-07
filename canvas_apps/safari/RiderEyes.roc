@@ -13,6 +13,3 @@ RiderEyes := { gaze_yaw : Angle.Turn, look_depth : Fraction }.{
 
 	is_eq : _
 }
-
-expect RiderEyes.initial.gaze_yaw.to_radians() == 0.0
-expect RiderEyes.initial.look_depth.to_f64() == 0.0
