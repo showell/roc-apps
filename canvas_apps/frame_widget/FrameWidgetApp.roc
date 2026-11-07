@@ -9,11 +9,9 @@
 import game.Backdrop
 import game.RoadAhead
 import game.Clock
-import game.DepthSort
 import game.Ground
 import game.GroundSighting
 import game.Mountains
-import game.Rendered
 import game.RideFocal
 import game.RideInstant
 import game.SafariApp
@@ -99,23 +97,34 @@ paused_tour = {
 	{ ..$tour, past_instants: [] }
 }
 
-## Each thing beside the road with the layer it belongs to, in the game's paint
-## order.
-scene_pieces : SceneShapes.ThingLists(Rendered) -> List(Piece)
-scene_pieces = |lists| {
-	on_layer = |renderings, layer| renderings.map(|rendering| { layer, rendering })
-	layered = SceneShapes.things_in_tie_order({
-		birds: on_layer(lists.birds, MovingThings),
-		trees: on_layer(lists.trees, Trees),
-		towers: on_layer(lists.towers, Towers),
-		billboards: on_layer(lists.billboards, Critters),
-		cats: on_layer(lists.cats, MovingThings),
-		trucks: on_layer(lists.trucks, MovingThings),
-		rails: on_layer(lists.rails, Rails),
-	})
-	DepthSort.sort_by(layered, |thing| thing.rendering.depth).map(
-		|thing| { layer: thing.layer, shapes: thing.rendering.picture.to_shapes() },
-	)
+## `things` if `layer` is one of `on_layers`, else none.
+things_on : List(thing), { on_layers : List(Layer), layer : Layer } -> List(thing)
+things_on = |things, { on_layers, layer }|
+	if on_layers.contains(layer) {
+		things
+	} else {
+		[]
+	}
+
+## The things beside the road on `on_layers`, in the game's paint order. A scene
+## that holds only some of the things draws them in the order the whole scene
+## does, so the game's own `SceneShapes` orders each layer among the others.
+scene_shapes_on : List(Layer) -> List(Shapes.Shape)
+scene_shapes_on = |on_layers| {
+	only = {
+		trees: things_on(paused_scene.trees, { on_layers, layer: Trees }),
+		towers: things_on(paused_scene.towers, { on_layers, layer: Towers }),
+		billboards: things_on(paused_scene.billboards, { on_layers, layer: Critters }),
+		cats: things_on(paused_scene.cats, { on_layers, layer: MovingThings }),
+		rails: things_on(paused_scene.rails, { on_layers, layer: Rails }),
+		truck: if on_layers.contains(MovingThings) {
+			paused_scene.truck
+		} else {
+			Err(NoTruck)
+		},
+		birds: things_on(paused_scene.birds, { on_layers, layer: MovingThings }),
+	}
+	SceneShapes.scene_shapes(only, paused_view)
 }
 
 ## What `Backdrop.frame_shapes` paints under the ride's shapes: the sky, the grass, and
@@ -132,14 +141,11 @@ backdrop_pieces = |tour| {
 	]
 }
 
-## `Tour.frame_content(tour).shapes`, each part with its layer. `RideInstant.shapes` joins its
-## parts into one list, so this asks for them one at a time, and an `expect` below
-## holds the join to the real list.
-ride_pieces : Tour -> List(Piece)
-ride_pieces = |tour| {
-	instant = tour.instant
-	rider = instant.rider
-	view = {
+## The camera the ride sees through at `tour`'s instant.
+view_at : Tour -> RoadAhead.CameraView
+view_at = |tour| {
+	rider = tour.instant.rider
+	{
 		road: {
 			route_segments: tour.route_segments,
 			segments_ahead: RoadAhead.indices_ahead(tour.route_segments, rider.segment_index),
@@ -147,10 +153,19 @@ ride_pieces = |tour| {
 		},
 		cam_focal: RideFocal.ride_focal(rider, tour.route_segments),
 	}
-	scene = Scene.scene_in_view(
-		view,
+}
+
+paused_view : RoadAhead.CameraView
+paused_view = view_at(paused_tour)
+
+## The things in view at the step on show.
+paused_scene : Scene
+paused_scene = {
+	instant = paused_tour.instant
+	Scene.scene_in_view(
+		paused_view,
 		{
-			speed: rider.motorcycle.speed,
+			speed: instant.rider.motorcycle.speed,
 			truck: {
 				route_position: instant.truck.route_position,
 				lit_truck: RideInstant.lit_truck(instant),
@@ -158,6 +173,15 @@ ride_pieces = |tour| {
 			clock: instant.clock,
 		},
 	)
+}
+
+## The mountains and the road, which `RideInstant.shapes` puts under the things
+## beside the road, each with its layer.
+ground_pieces : Tour -> List(Piece)
+ground_pieces = |tour| {
+	instant = tour.instant
+	rider = instant.rider
+	view = view_at(tour)
 	skyline = Mountains.mountain_shapes(
 		{ heading: ViewYaw.heading_for(rider), cam_focal: view.cam_focal },
 		Sky.dusk_at(instant.clock),
@@ -168,17 +192,24 @@ ride_pieces = |tour| {
 			view.cam_focal,
 		),
 	)
-	[
-		[{ layer: Mountains, shapes: skyline }, { layer: Road, shapes: ground }],
-		scene_pieces(SceneShapes.scene_renderings(scene, view)),
-	].join()
+	[{ layer: Mountains, shapes: skyline }, { layer: Road, shapes: ground }]
 }
 
-ride_parts : List(Piece)
-ride_parts = ride_pieces(paused_tour)
+ground_parts : List(Piece)
+ground_parts = ground_pieces(paused_tour)
 
-frame_parts : List(Piece)
-frame_parts = backdrop_pieces(paused_tour).concat(ride_parts)
+backdrop_parts : List(Piece)
+backdrop_parts = backdrop_pieces(paused_tour)
+
+## The part of `Tour.frame_content(tour).shapes` on `on_layers`, in its order.
+## `RideInstant.shapes` joins its parts into one list, so this asks for them one
+## at a time, and an `expect` below holds the join to the real list.
+ride_shapes_on : List(Layer) -> List(Shapes.Shape)
+ride_shapes_on = |on_layers| shapes_in(ground_parts, on_layers).concat(scene_shapes_on(on_layers))
+
+## The frame's shapes on `on_layers`, backdrop and all, in paint order.
+frame_shapes_on : List(Layer) -> List(Shapes.Shape)
+frame_shapes_on = |on_layers| shapes_in(backdrop_parts, on_layers).concat(ride_shapes_on(on_layers))
 
 ## The camera's roll, which `SafariApp.frame_shapes` puts first.
 lean_mark : Shapes.Shape
@@ -197,7 +228,7 @@ shapes_in = |parts, on_layers|
 
 ## How many of the ride's shapes are in `on_layers`.
 ride_count : List(Layer) -> U64
-ride_count = |on_layers| shapes_in(ride_parts, on_layers).len()
+ride_count = |on_layers| ride_shapes_on(on_layers).len()
 
 ## The real frame's size in pixels, and the panel's below it.
 picture_width : F64
@@ -306,7 +337,7 @@ status_line = |text, row|
 
 ## The layers on, in the game's paint order.
 picture_shapes : List(Layer) -> List(Shapes.Shape)
-picture_shapes = |on_layers| shapes_in(frame_parts, on_layers).prepend(lean_mark)
+picture_shapes = |on_layers| frame_shapes_on(on_layers).prepend(lean_mark)
 
 ## Everything on the canvas.
 shapes_at : FrameWidgetApp.Model -> List(Shapes.Shape)
@@ -326,7 +357,7 @@ expect frame_step == 1570
 expect picture_shapes(layers) == SafariApp.frame_shapes(paused_tour)
 
 # The ride's parts are the game's own shapes, in the game's order.
-expect ride_parts.join_map(|piece| piece.shapes) == Tour.frame_content(paused_tour).shapes
+expect ride_shapes_on(layers) == Tour.frame_content(paused_tour).shapes
 
 # The frame's total is the count the book's table gives for this step.
 expect ride_count(layers) == Tour.frame_content(paused_tour).shapes.len()
@@ -334,7 +365,7 @@ expect ride_count(layers) == 2588
 
 # Each layer's own shapes at this step. The sun is behind the rider, so it has none.
 expect
-	layers.map(|layer| shapes_in(frame_parts, [layer]).len())
+	layers.map(|layer| frame_shapes_on([layer]).len())
 		== [1656, 1, 0, 1, 4, 24, 302, 187, 352, 63]
 expect Tour.frame_content(paused_tour).sun == OutOfView
 
@@ -350,13 +381,13 @@ expect picture_shapes(layers_up_to(3)) != picture_shapes(layers_up_to(4))
 expect picture_shapes(layers_up_to(9)) != picture_shapes(layers_up_to(10))
 
 # The first layer alone is the lean and the trees, in the game's order.
-expect picture_shapes([Trees]) == shapes_in(ride_parts, [Trees]).prepend(lean_mark)
+expect picture_shapes([Trees]) == ride_shapes_on([Trees]).prepend(lean_mark)
 
 # Sky is painted before grass, whichever the book comes to first.
-expect shapes_in(frame_parts, [Grass, Sky]) == shapes_in(frame_parts, [Sky, Grass])
+expect frame_shapes_on([Grass, Sky]) == frame_shapes_on([Sky, Grass])
 expect
-	shapes_in(frame_parts, [Grass, Sky])
-		== shapes_in(frame_parts, [Sky]).concat(shapes_in(frame_parts, [Grass]))
+	frame_shapes_on([Grass, Sky])
+		== frame_shapes_on([Sky]).concat(frame_shapes_on([Grass]))
 
 # The page's list of words, which a fence's word is looked up in, is the layers'
 # own: all of them, in order.

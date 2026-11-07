@@ -687,21 +687,47 @@ scene = Scene.scene_in_view(
 	},
 )
 
-scene_lists : SceneShapes.ThingLists(Rendered)
-scene_lists = SceneShapes.scene_renderings(scene, scene_view)
-
 scene_renderings : List(Rendered)
-scene_renderings = Rendered.depth_sorted_renderings(SceneShapes.things_in_tie_order(scene_lists))
+scene_renderings = SceneShapes.scene_renderings(scene, scene_view)
 
-# Each thing in view has its rendering. The start of the route has a truck
-# ahead, so `trucks` holds one.
-expect scene_lists.trees.len() == scene.trees.len()
-expect scene_lists.towers.len() == scene.towers.len()
-expect scene_lists.billboards.len() == scene.billboards.len()
-expect scene_lists.cats.len() == scene.cats.len()
-expect scene_lists.rails.len() == scene.rails.len()
-expect scene_lists.birds.len() == scene.birds.len()
-expect scene_lists.trucks.len() == 1
+## A scene with nothing in view.
+empty_scene : Scene
+empty_scene = {
+	trees: [],
+	towers: [],
+	billboards: [],
+	cats: [],
+	rails: [],
+	truck: Err(NoTruck),
+	birds: [],
+}
+
+## How many renderings `only` has, seen as `scene` is.
+rendering_count : Scene -> U64
+rendering_count = |only| SceneShapes.scene_renderings(only, scene_view).len()
+
+# Each kind of thing in view has its rendering, one kind at a time, and a scene
+# with nothing in view has none. The route's start has no cat in view, so the
+# cats come from the second segment's.
+expect rendering_count({ ..empty_scene, trees: scene.trees }) == scene.trees.len()
+expect rendering_count({ ..empty_scene, towers: scene.towers }) == scene.towers.len()
+expect rendering_count({ ..empty_scene, billboards: scene.billboards }) == scene.billboards.len()
+expect rendering_count({ ..empty_scene, cats: seen }) == seen.len()
+expect rendering_count({ ..empty_scene, rails: scene.rails }) == scene.rails.len()
+expect rendering_count({ ..empty_scene, birds: scene.birds }) == scene.birds.len()
+expect rendering_count({ ..empty_scene, truck: scene.truck }) == 1
+expect rendering_count(empty_scene) == 0
+
+# A truck in view stands at its own depth, and one that isn't in view isn't drawn.
+expect {
+	truck_only = { ..empty_scene, truck: scene.truck }
+	truck_renderings = SceneShapes.scene_renderings(truck_only, scene_view)
+	truck_depths = truck_renderings.map(|rendering| rendering.depth)
+	scene.truck.map_ok(|truck| [truck.spot.foot().forward()]) == Ok(truck_depths)
+}
+expect scene.birds.len() > 0
+expect rendering_count({ ..empty_scene, truck: Err(BehindCamera) }) == 0
+
 expect
 	scene_renderings.len()
 		== [
@@ -709,7 +735,7 @@ expect
 			scene.towers.len(),
 			scene.billboards.len(),
 			scene.cats.len(),
-			scene_lists.trucks.len(),
+			1,
 			scene.rails.len(),
 			scene.birds.len(),
 		].sum()

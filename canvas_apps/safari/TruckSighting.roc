@@ -2,12 +2,14 @@
 ## the road ahead it is, and whether it is in front of the camera.
 import Across
 import Along
+import Angle
 import Distance
 import RoadAhead
 import SegmentPlace
 import Geom
 import Pipeline
 import LitTruck
+import World
 
 TruckSighting :: [].{
 
@@ -61,3 +63,107 @@ truck_from = |road, { along, position }|
 			Ok({ along, position })
 		}
 	}
+
+## The rider at the start of the route, looking straight down the road.
+origin : Geom.Vantage
+origin = {
+	along: Along.metres(0.0),
+	across: Across.metres(0.0),
+	yaw: Angle.straight_ahead,
+}
+
+## The first three segments, seen from `vantage`.
+first_road : Geom.Vantage -> RoadAhead.RoadView
+first_road = |vantage| {
+	route_segments: [
+		World.route_segment(0),
+		World.route_segment(1),
+		World.route_segment(2),
+	],
+	segments_ahead: [0, 1, 2].map(World.SegmentIndex.number),
+	vantage,
+}
+
+## What becomes of a truck `lead` metres ahead of a rider at the start of the
+## road ahead, seen from `vantage`, with its lights off.
+truck_seen_from : Geom.Vantage, F64 -> TruckSighting.TruckFate
+truck_seen_from = |vantage, lead|
+	TruckSighting.truck_in_view(
+		first_road(vantage),
+		{ lead: Distance.metres(lead), lit_truck: { headlights: Off, brake_lights: Off } },
+	)
+
+lead_of : F64 -> TruckSighting.TruckFate
+lead_of = |lead| truck_seen_from(origin, lead)
+
+## Where the truck is, for a lead that puts it in view.
+lit_truck_of : F64 -> Pipeline.Sighted(LitTruck)
+lit_truck_of = |lead| lead_of(lead) ?? crash "TruckSighting: this lead puts the truck in view"
+
+expect
+	[
+		(100.0, True),
+		(499.0, True),
+		(600.0, True),
+		(900.0, True),
+		(2000.0, False),
+		(0.0, False),
+		(-50.0, False),
+	].all(|(lead, want)| lead_of(lead).is_ok() == want)
+
+expect
+	[
+		(100.0, 0),
+		(499.0, 0),
+		(600.0, 1),
+		(900.0, 2),
+	].all(
+		|(lead, want)| {
+			place = lit_truck_of(lead).spot.place()
+			place == Ahead(SegmentPlace.Position.number(want))
+		},
+	)
+
+expect
+	[
+		(100.0, 100.0),
+		(499.0, 499.0),
+		(600.0, 100.0),
+		(900.0, 80.0),
+	].all(|(lead, want)| lit_truck_of(lead).spot.road_point().along.to_metres() == want)
+
+expect
+	[
+		(100.0, 0.0),
+		(499.0, 0.0),
+		(600.0, 0.0),
+		(900.0, 0.0),
+	].all(|(lead, want)| lit_truck_of(lead).spot.road_point().across.to_metres() == want)
+
+## The lights a truck in view shows, when it has `lights` on.
+lights_shown = |lights| {
+	truck = TruckSighting.truck_in_view(
+		first_road(origin),
+		{ lead: Distance.metres(100.0), lit_truck: lights },
+	) ?? crash "TruckSighting: this lead puts the truck in view"
+	truck.kind
+}
+
+expect
+	[
+		{ headlights: Off, brake_lights: Off },
+		{ headlights: Off, brake_lights: On },
+		{ headlights: On, brake_lights: Off },
+		{ headlights: On, brake_lights: On },
+	].all(|lights| lights_shown(lights) == lights)
+
+expect
+	[
+		(lit_truck_of(100.0).spot.foot().forward().to_metres(), 100.0),
+		(lit_truck_of(499.0).spot.foot().forward().to_metres(), 499.0),
+		(lit_truck_of(100.0).spot.foot().right().to_metres(), 0.0),
+	].all(|(got, want)| (got - want).abs() <= 0.0001)
+
+expect lead_of(2000.0).is_err()
+expect truck_seen_from({ ..origin, along: Along.metres(100.0) }, 0.25).is_err()
+expect truck_seen_from({ ..origin, along: Along.metres(100.0) }, 1.0).is_ok()

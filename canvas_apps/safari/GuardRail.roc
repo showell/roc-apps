@@ -6,6 +6,8 @@ import Pixels
 import Camera
 import Distance
 import Geom
+import Picture
+import Rendered
 import lib.RgbColor
 import lib.Shapes
 
@@ -18,24 +20,33 @@ GuardRail :: [].{
 	quads_along : List(Geom.RiderPoint) -> List(GuardRail.RailQuad)
 	quads_along = |path_points| bars(path_points).concat(posts(path_points))
 
-	## How far ahead a quad is, for the depth sort: the mean of its corners'
-	## distances, summed from the first corner to the last, since a float
-	## sum's rounding depends on its order. It is negative for a quad behind
-	## the rider.
-	quad_depth : GuardRail.RailQuad -> Distance
-	quad_depth = |quad| {
-		corners = quad.corners
-		first = corners.first() ?? crash "GuardRail.quad_depth: a quad has corners"
-		sum = corners.drop_first(1).fold(first.forward, |total, corner| total.plus(corner.forward))
-		sum.divided_by(corners.len().to_f64())
-	}
-
-	## A quad on screen, cut at the camera's near plane, unless it's wholly
-	## behind the camera.
-	quad_shape : GuardRail.RailQuad, Pixels -> Try(Shapes.Shape, [BehindCamera])
-	quad_shape = |quad, cam_focal|
-		Camera.clipped_polygon({ color: quad.color, corners: quad.corners }, cam_focal)
+	## A quad as the frame draws it, at its own depth, unless it's wholly
+	## behind the camera. A rail quad has no kind for `Pipeline` to ask, so it
+	## renders itself.
+	quad_rendering : GuardRail.RailQuad, Pixels -> Try(Rendered, [BehindCamera])
+	quad_rendering = |quad, cam_focal|
+		quad_shape(quad, cam_focal).map_ok(
+			|shape| { depth: quad_depth(quad), picture: Picture.from_shapes([shape]) },
+		)
 }
+
+## How far ahead a quad is, for the depth sort: the mean of its corners'
+## distances, summed from the first corner to the last, since a float
+## sum's rounding depends on its order. It is negative for a quad behind
+## the rider.
+quad_depth : GuardRail.RailQuad -> Distance
+quad_depth = |quad| {
+	corners = quad.corners
+	first = corners.first() ?? crash "GuardRail.quad_depth: a quad has corners"
+	sum = corners.drop_first(1).fold(first.forward, |total, corner| total.plus(corner.forward))
+	sum.divided_by(corners.len().to_f64())
+}
+
+## A quad on screen, cut at the camera's near plane, unless it's wholly
+## behind the camera.
+quad_shape : GuardRail.RailQuad, Pixels -> Try(Shapes.Shape, [BehindCamera])
+quad_shape = |quad, cam_focal|
+	Camera.clipped_polygon({ color: quad.color, corners: quad.corners }, cam_focal)
 
 rail_height : Distance
 rail_height = Distance.metres(0.5)
@@ -151,8 +162,23 @@ expect
 	straight_quads.map(|quad| quad.color.to_i64())
 		== [0xC2C7CF, 0xC2C7CF, 0x9AA0A8, 0x9AA0A8, 0x9AA0A8]
 expect
-	straight_quads.map(|quad| GuardRail.quad_depth(quad).to_metres())
+	straight_quads.map(|quad| quad_depth(quad).to_metres())
 		== [15.0, 25.0, 10.0, 20.0, 30.0]
+
+behind_bar : GuardRail.RailQuad
+behind_bar = bar({
+	from: { right: Distance.metres(0.0), forward: Distance.metres(-20.0) },
+	to: { right: Distance.metres(0.0), forward: Distance.metres(-10.0) },
+})
+
+# A quad stands at its own depth, and one wholly behind the camera isn't drawn.
+expect {
+	first_bar_depth = GuardRail.quad_rendering(first_bar, Pixels.of(500.0)).map_ok(
+		|rendering| rendering.depth.to_metres(),
+	)
+	first_bar_depth == Ok(15.0)
+}
+expect GuardRail.quad_rendering(behind_bar, Pixels.of(500.0)).is_err()
 
 # The first bar runs from one post to the next, between the bar's two heights.
 expect first_bar.corners.map(|corner| corner.forward.to_metres()) == [10.0, 20.0, 20.0, 10.0]
