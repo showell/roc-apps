@@ -17,6 +17,7 @@ import Geom
 import Picture
 import Pixels
 import Rendered
+import Route
 import Spot
 import World
 
@@ -105,8 +106,7 @@ Post := { height : Distance }.{
 ## middle.
 placed_post : { along : Along, height : Distance } -> Geom.Placed(Post)
 placed_post = |{ along, height }| {
-	along,
-	across: Across.metres(1.5),
+	road_point: { along, across: Across.metres(1.5) },
 	lift: Distance.zero,
 	kind: Post.({ height: height }),
 }
@@ -114,8 +114,8 @@ placed_post = |{ along, height }| {
 ## The route's first segment, seen from its start, looking down the road.
 first_road : RoadAhead.RoadView
 first_road = {
-	route_segments: [World.route_segment(0)],
-	segments_ahead: [World.SegmentIndex.number(0)],
+	route: World.route,
+	segments_ahead: { first_index: Route.SegmentIndex.first, count: 1 },
 	vantage: {
 		along: Along.metres(0.0),
 		across: Across.metres(0.0),
