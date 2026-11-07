@@ -139,8 +139,8 @@ tower_metal : RgbColor
 tower_metal = RgbColor.of(0x9AA0A8)
 
 ## The radius a far tower sinks over, which hides it wholly at 1.8 km. It
-## is tighter than `Ground.ground_curve_radius`, so a tower sinks visibly as
-## it recedes: on the ground's curve it would stay in view to 4 km.
+## is tighter than the radius the ground curves over, so a tower sinks visibly
+## as it recedes: on the ground's curve it would stay in view to 4 km.
 sink_radius : Distance
 sink_radius = Distance.metres(20000.0)
 
