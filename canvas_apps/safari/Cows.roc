@@ -12,10 +12,10 @@ import Trees
 
 Cows :: [].{
 
-	bull_codepoint : I64
+	bull_codepoint : U32
 	bull_codepoint = 128002
 
-	cow_codepoint : I64
+	cow_codepoint : U32
 	cow_codepoint = 128004
 
 	cow_height : Distance

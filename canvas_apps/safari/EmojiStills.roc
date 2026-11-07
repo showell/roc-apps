@@ -33,7 +33,7 @@ EmojiStills :: [].{
 
 	## An animal's polygons, by the code point of its emoji. Every critter on the
 	## road has a still, so any other code point is a bug.
-	emoji_polys_for : I64 -> List(Stills.StillPolygon)
+	emoji_polys_for : U32 -> List(Stills.StillPolygon)
 	emoji_polys_for = |cp|
 		match cp {
 			129414 => duck_polys

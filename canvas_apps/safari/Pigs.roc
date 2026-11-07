@@ -88,7 +88,7 @@ Pigs :: [].{
 		is_eq : _
 	}
 
-	pig_codepoint : I64
+	pig_codepoint : U32
 	pig_codepoint = 128022
 
 	pig_height : Distance

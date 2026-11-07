@@ -39,7 +39,7 @@ Pond :: [].{
 	bank_color : RgbColor
 	bank_color = RgbColor.of(0xC2B280)
 
-	duck_codepoint : I64
+	duck_codepoint : U32
 	duck_codepoint = 129414
 
 	duck_height : Distance

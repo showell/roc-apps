@@ -9,7 +9,7 @@ import Pixels
 import StillShapes
 
 Billboard := {
-	codepoint : I64,
+	codepoint : U32,
 	height : Distance,
 	facing : Billboard.Facing,
 }.{
@@ -51,7 +51,7 @@ Billboard := {
 shape_count : {
 	forward : Distance,
 	height : Distance,
-	codepoint : I64,
+	codepoint : U32,
 } -> U64
 shape_count = |{ forward, height, codepoint }| {
 	billboard : Billboard
@@ -60,7 +60,7 @@ shape_count = |{ forward, height, codepoint }| {
 	billboard.scenery_picture({ foot, cam_focal: Pixels.of(500.0), context: {} }).to_shapes().len()
 }
 
-elephant : I64
+elephant : U32
 elephant = 128024
 
 # A billboard is drawn while it stands a pixel tall.
