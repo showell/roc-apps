@@ -88,36 +88,35 @@ Sun :: [].{
 		scale = sun.scale.to_f64()
 		{
 			glow: Glow({
-				c0: {
+				inner_color: {
 					r: 255.0,
 					g: 201.0,
 					b: 128.0,
 					a: 0.85,
 				},
-				c1: {
+				middle_color: {
 					r: 255.0,
 					g: 150.0,
 					b: 92.0,
 					a: 0.32,
 				},
-				c2: {
+				outer_color: {
 					r: 255.0,
 					g: 150.0,
 					b: 92.0,
 					a: 0.0,
 				},
-				x: sun.x.to_f64(),
-				y: sun.y.to_f64(),
-				r0: glow_inner_radius.times(scale).to_f64(),
-				r1: Sun.glow_radius_drawn(sun).to_f64(),
+				middle_offset: 0.4,
+				center: { x: sun.x.to_f64(), y: sun.y.to_f64() },
+				inner_radius: glow_inner_radius.times(scale).to_f64(),
+				outer_radius: Sun.glow_radius_drawn(sun).to_f64(),
 			}),
 			disc: Radial({
-				inner: Brush.opaque(RgbColor.of(0xFFE6A3)),
-				outer: Brush.opaque(RgbColor.of(0xFF9D5C)),
-				x: sun.x.to_f64(),
-				y: sun.y.to_f64(),
-				r0: disc_inner_radius.times(scale).to_f64(),
-				r1: Sun.disc_radius_drawn(sun).to_f64(),
+				inner_color: Brush.opaque(RgbColor.of(0xFFE6A3)),
+				outer_color: Brush.opaque(RgbColor.of(0xFF9D5C)),
+				center: { x: sun.x.to_f64(), y: sun.y.to_f64() },
+				inner_radius: disc_inner_radius.times(scale).to_f64(),
+				outer_radius: Sun.disc_radius_drawn(sun).to_f64(),
 			}),
 		}
 	}

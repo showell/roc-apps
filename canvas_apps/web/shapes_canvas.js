@@ -20,30 +20,31 @@ const withStops = (gradient, stops) => {
   return gradient;
 };
 
+const twoStops = (s) => [[stopAt(s.start_offset), cssColor(s.start_color)],
+  [stopAt(s.end_offset, stopAt(s.start_offset)), cssColor(s.end_color)]];
+
 // A fill becomes something canvas can paint with. An ellipse is the exception:
 // it paints through a transform, so it stays a descriptor.
 function paintFor(ctx, fill) {
   const p = fill.value;
   switch (fill.tag) {
-    case "Skip":
-      return null;
     case "Flat":
       return cssColor(p);
     case "Span":
-      return withStops(ctx.createLinearGradient(p.x0, 0, p.x1, 0),
-        [[0, cssColor(p.edge)], [0.5, cssColor(p.middle)], [1, cssColor(p.edge)]]);
+      return withStops(ctx.createLinearGradient(p.left_x, 0, p.right_x, 0),
+        [[0, cssColor(p.edge_color)], [0.5, cssColor(p.middle_color)], [1, cssColor(p.edge_color)]]);
     case "Radial":
-      if (!(p.r1 > p.r0)) return cssColor(p.outer);
-      return withStops(ctx.createRadialGradient(p.x, p.y, p.r0, p.x, p.y, p.r1),
-        [[0, cssColor(p.inner)], [1, cssColor(p.outer)]]);
+      if (!(p.outer_radius > p.inner_radius)) return cssColor(p.outer_color);
+      return withStops(ctx.createRadialGradient(p.center.x, p.center.y, p.inner_radius, p.center.x, p.center.y, p.outer_radius),
+        [[0, cssColor(p.inner_color)], [1, cssColor(p.outer_color)]]);
     case "Linear":
-      return withStops(ctx.createLinearGradient(p.ax, p.ay, p.ax + p.dx, p.ay + p.dy),
-        [[stopAt(p.o0), cssColor(p.c0)], [stopAt(p.o1, stopAt(p.o0)), cssColor(p.c1)]]);
+      return withStops(ctx.createLinearGradient(p.start_point.x, p.start_point.y, p.end_point.x, p.end_point.y),
+        twoStops(p.stops));
     case "Glow":
-      // Brush.shade and BrushGlsl both end at c2 when there is no ring to walk.
-      if (!(p.r1 > p.r0)) return cssColor(p.c2);
-      return withStops(ctx.createRadialGradient(p.x, p.y, p.r0, p.x, p.y, p.r1),
-        [[0, cssColor(p.c0)], [0.4, cssColor(p.c1)], [1, cssColor(p.c2)]]);
+      // Brush.shade and BrushGlsl both end at the outer colour when there is no ring to walk.
+      if (!(p.outer_radius > p.inner_radius)) return cssColor(p.outer_color);
+      return withStops(ctx.createRadialGradient(p.center.x, p.center.y, p.inner_radius, p.center.x, p.center.y, p.outer_radius),
+        [[0, cssColor(p.inner_color)], [p.middle_offset, cssColor(p.middle_color)], [1, cssColor(p.outer_color)]]);
     case "Ellipse":
       return { ellipse: p };
     default:
@@ -51,23 +52,19 @@ function paintFor(ctx, fill) {
   }
 }
 
-// An ellipse brush carries the matrix that takes a scene offset TO the unit
-// circle; a canvas wants the one that goes the other way, so it is inverted.
+// An ellipse brush carries its axes, the matrix that takes the unit circle to
+// the ellipse, which is the transform a canvas wants.
 function fillThroughEllipse(ctx, p) {
-  const det = p.ia * p.id - p.ib * p.ic;
-  if (Math.abs(det) < 1e-4) { ctx.fillStyle = cssColor(p.c0); ctx.fill(); return; }
   ctx.save();
   ctx.clip();
-  ctx.transform(p.id / det, -p.ic / det, -p.ib / det, p.ia / det, p.x, p.y);
-  ctx.fillStyle = withStops(ctx.createRadialGradient(0, 0, 0, 0, 0, 1),
-    [[stopAt(p.o0), cssColor(p.c0)], [stopAt(p.o1, stopAt(p.o0)), cssColor(p.c1)]]);
+  ctx.transform(p.axis_u.x, p.axis_u.y, p.axis_v.x, p.axis_v.y, p.center.x, p.center.y);
+  ctx.fillStyle = withStops(ctx.createRadialGradient(0, 0, 0, 0, 0, 1), twoStops(p.stops));
   ctx.fillRect(-1e4, -1e4, 2e4, 2e4); // clipped to the path; past r=1 the gradient holds
   ctx.restore();
 }
 
 function fillShape(ctx, fill) {
   const paint = paintFor(ctx, fill);
-  if (paint === null) return;
   if (paint.ellipse) fillThroughEllipse(ctx, paint.ellipse);
   else { ctx.fillStyle = paint; ctx.fill(); }
 }
@@ -133,7 +130,7 @@ function paintImage(ctx, p) {
   scratch.ctx.putImageData(image, 0, 0);
   const smoothing = ctx.imageSmoothingEnabled;
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(scratch.canvas, 0, 0, Number(p.cols), Number(p.rows), p.x, p.y, p.w, p.h);
+  ctx.drawImage(scratch.canvas, 0, 0, Number(p.cols), Number(p.rows), p.x, p.y, p.width, p.height);
   ctx.imageSmoothingEnabled = smoothing;
 }
 
@@ -161,13 +158,13 @@ function paintFrame(ctx, shapes, scale = 1) {
         break;
       case "Rect":
         ctx.beginPath();
-        ctx.rect(p.x, p.y, p.w, p.h);
+        ctx.rect(p.x, p.y, p.width, p.height);
         ctx.closePath();
         fillShape(ctx, p.fill);
         break;
       case "Disc":
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.closePath();
         fillShape(ctx, p.fill);
         break;

@@ -143,8 +143,8 @@ ground : Shapes.Shape
 ground = Rect({
 	x: 0.0,
 	y: 0.0,
-	w: ScrubWidget.canvas_width,
-	h: ScrubWidget.picture_bottom_y,
+	width: ScrubWidget.canvas_width,
+	height: ScrubWidget.picture_bottom_y,
 	fill: ScrubWidget.flat(ground_color),
 })
 
@@ -189,7 +189,7 @@ spot = |bend, { at, color }| {
 	Disc({
 		x,
 		y,
-		r: 4.0,
+		radius: 4.0,
 		fill: ScrubWidget.flat(color),
 	})
 }

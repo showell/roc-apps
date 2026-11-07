@@ -98,22 +98,22 @@ road_shapes = {
 		Rect({
 			x: 0.0,
 			y: 0.0,
-			w: ScrubWidget.canvas_width,
-			h: ScrubWidget.picture_bottom_y,
+			width: ScrubWidget.canvas_width,
+			height: ScrubWidget.picture_bottom_y,
 			fill: ScrubWidget.flat(RgbColor.of(0xdcecf5)),
 		}),
 		Rect({
 			x: 0.0,
 			y: ground_top_y,
-			w: ScrubWidget.canvas_width,
-			h: ground_height,
+			width: ScrubWidget.canvas_width,
+			height: ground_height,
 			fill: ScrubWidget.flat(RgbColor.of(0x7fa650)),
 		}),
 		Rect({
 			x: road_middle_x - road_width_px / 2.0,
 			y: ground_top_y,
-			w: road_width_px,
-			h: ground_height,
+			width: road_width_px,
+			height: ground_height,
 			fill: ScrubWidget.flat(RgbColor.of(0x8a8a8a)),
 		}),
 	]

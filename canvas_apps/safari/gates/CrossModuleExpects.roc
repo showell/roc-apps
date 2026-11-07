@@ -103,7 +103,7 @@ flat_color_of = |shape|
 			blue = color.b.to_i64_wrap()
 			RgbColor.of(red * 65536 + green * 256 + blue)
 		}
-		Skip | Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) =>
+		Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) =>
 			crash "CrossModuleExpects.flat_color_of: this polygon is not flat"
 	}
 

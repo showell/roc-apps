@@ -149,8 +149,8 @@ ground : Shapes.Shape
 ground = Rect({
 	x: 0.0,
 	y: 0.0,
-	w: ScrubWidget.canvas_width,
-	h: ScrubWidget.picture_bottom_y,
+	width: ScrubWidget.canvas_width,
+	height: ScrubWidget.picture_bottom_y,
 	fill: ScrubWidget.flat(ground_color),
 })
 
@@ -168,8 +168,8 @@ bar_shapes = {
 		Rect({
 			x: route_left_x,
 			y: route_y - 4.0,
-			w: route_width,
-			h: 8.0,
+			width: route_width,
+			height: 8.0,
 			fill: ScrubWidget.flat(road_color),
 		}),
 	].concat(
@@ -178,8 +178,8 @@ bar_shapes = {
 				Rect({
 					x: x - 1.0,
 					y: route_y - 8.0,
-					w: 2.0,
-					h: 16.0,
+					width: 2.0,
+					height: 16.0,
 					fill: ScrubWidget.flat(road_color),
 				}),
 		),
@@ -198,7 +198,7 @@ marker_shapes = |{ at, color, name, name_y }|
 		Disc({
 			x: route_x(at),
 			y: route_y,
-			r: 8.0,
+			radius: 8.0,
 			fill: ScrubWidget.flat(color),
 		}),
 		ScrubWidget.label({
@@ -245,8 +245,8 @@ shapes_from_behind_rider = |{ across, lean }| {
 			Rect({
 				x: middle - road,
 				y: surface_y,
-				w: 2.0 * road,
-				h: 8.0,
+				width: 2.0 * road,
+				height: 8.0,
 				fill: ScrubWidget.flat(road_color),
 			}),
 			Shapes.line(
@@ -260,7 +260,7 @@ shapes_from_behind_rider = |{ across, lean }| {
 			Disc({
 				x: head_x,
 				y: head_y,
-				r: 9.0,
+				radius: 9.0,
 				fill: ScrubWidget.flat(rider_color),
 			}),
 		],

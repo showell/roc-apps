@@ -251,8 +251,8 @@ ground : Shapes.Shape
 ground = Rect({
 	x: 0.0,
 	y: 0.0,
-	w: ScrubWidget.canvas_width,
-	h: ScrubWidget.picture_bottom_y,
+	width: ScrubWidget.canvas_width,
+	height: ScrubWidget.picture_bottom_y,
 	fill: ScrubWidget.flat(ground_color),
 })
 
@@ -279,8 +279,8 @@ road_shapes = {
 		Rect({
 			x: 0.0,
 			y: canvas_point({ forward: 0.0, across: -half_lane }).y,
-			w: ScrubWidget.canvas_width,
-			h: 2.0 * half_lane * pixels_a_metre_across,
+			width: ScrubWidget.canvas_width,
+			height: 2.0 * half_lane * pixels_a_metre_across,
 			fill: ScrubWidget.flat(road_color),
 		}),
 		road_line({ across: -half_lane, color: line_color, width: 2.0 }),
@@ -344,7 +344,7 @@ rider_mark = {
 	Disc({
 		x,
 		y,
-		r: 7.0,
+		radius: 7.0,
 		fill: ScrubWidget.flat(kept_color),
 	})
 }
@@ -515,7 +515,7 @@ try_mark = |stop, tries_shown|
 	Disc({
 		x: mark_x(stop),
 		y: marks_y,
-		r: if stop == tries_shown {
+		radius: if stop == tries_shown {
 			9.0
 		} else {
 			6.0
@@ -534,8 +534,8 @@ choice_mark = |tries_shown| {
 	Rect({
 		x: mark_x(last_stop) - half,
 		y: marks_y - half,
-		w: 2.0 * half,
-		h: 2.0 * half,
+		width: 2.0 * half,
+		height: 2.0 * half,
 		fill: ScrubWidget.flat(mark_color(last_stop, tries_shown)),
 	})
 }

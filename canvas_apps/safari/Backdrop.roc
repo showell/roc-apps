@@ -42,14 +42,14 @@ Backdrop :: [].{
 	} -> Backdrop.BackdropShapes
 	backdrop_shapes = |{ sky_colors, sun_sighting }| {
 		sky = Linear({
-			c0: Brush.opaque(sky_colors.top),
-			c1: Brush.opaque(sky_colors.horizon),
-			o0: sky_top_stop.to_f64(),
-			o1: 1.0,
-			ax: 0.0,
-			ay: 0.0,
-			dx: 0.0,
-			dy: Screen.horizon_y.to_f64(),
+			stops: {
+				start_color: Brush.opaque(sky_colors.top),
+				end_color: Brush.opaque(sky_colors.horizon),
+				start_offset: sky_top_stop.to_f64(),
+				end_offset: 1.0,
+			},
+			start_point: { x: 0.0, y: 0.0 },
+			end_point: { x: 0.0, y: Screen.horizon_y.to_f64() },
 		})
 		sun_shapes =
 			match sun_sighting {
@@ -60,7 +60,7 @@ Backdrop :: [].{
 						Disc({
 							x: place.x.to_f64(),
 							y: place.y.to_f64(),
-							r: Sun.disc_radius_drawn(place).to_f64(),
+							radius: Sun.disc_radius_drawn(place).to_f64(),
 							fill: look.disc,
 						}),
 					]
@@ -73,8 +73,8 @@ Backdrop :: [].{
 		grass = Rect({
 			x: margin.opposite().to_f64(),
 			y: Screen.grass_top_y.to_f64(),
-			w: Screen.width.plus(margin).plus(margin).to_f64(),
-			h: Screen.height.minus(Screen.grass_top_y).plus(margin).to_f64(),
+			width: Screen.width.plus(margin).plus(margin).to_f64(),
+			height: Screen.height.minus(Screen.grass_top_y).plus(margin).to_f64(),
 			fill: Flat(Brush.opaque(grass_color)),
 		})
 		{ sky: sky_rect(sky), sun_shapes, grass }
@@ -102,8 +102,8 @@ sky_rect = |fill| {
 	Rect({
 		x: margin.opposite().to_f64(),
 		y: margin.opposite().to_f64(),
-		w: Screen.width.plus(margin).plus(margin).to_f64(),
-		h: Screen.horizon_y.plus(margin).to_f64(),
+		width: Screen.width.plus(margin).plus(margin).to_f64(),
+		height: Screen.horizon_y.plus(margin).to_f64(),
 		fill,
 	})
 }

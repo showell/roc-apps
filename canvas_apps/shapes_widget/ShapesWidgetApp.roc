@@ -24,8 +24,8 @@ background : Shapes.Shape
 background = Rect({
 	x: 0.0,
 	y: 0.0,
-	w: ScrubWidget.canvas_width,
-	h: ScrubWidget.canvas_height,
+	width: ScrubWidget.canvas_width,
+	height: ScrubWidget.canvas_height,
 	fill: ScrubWidget.flat(RgbColor.of(0xf7f5f0)),
 })
 

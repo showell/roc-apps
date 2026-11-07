@@ -40,13 +40,13 @@ Night :: [].{
 	backdrop = |v| {
 		horizon = v.height / 2.0
 		var $out = [
-			Rect({ x: 0.0, y: 0.0, w: v.width, h: horizon + 1.0, fill: Linear({ c0: sky_high, c1: sky_low, o0: 0.0, o1: 1.0, ax: 0.0, ay: 0.0, dx: 0.0, dy: horizon }) }),
-			Rect({ x: 0.0, y: horizon, w: v.width, h: v.height - horizon, fill: Flat(lawn) }),
+			Rect({ x: 0.0, y: 0.0, width: v.width, height: horizon + 1.0, fill: Linear({ stops: { start_color: sky_high, end_color: sky_low, start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: horizon } }) }),
+			Rect({ x: 0.0, y: horizon, width: v.width, height: v.height - horizon, fill: Flat(lawn) }),
 		]
 		if View.ahead(v, moon_at) {
 			c = View.turn(v, moon_at)
 			p = View.flat(v, c)
-			List.append($out, Disc({ x: p.x, y: p.y, r: 32.0 * View.pixels_per_metre(v, c.forward), fill: Flat(moon_c) }))
+			List.append($out, Disc({ x: p.x, y: p.y, radius: 32.0 * View.pixels_per_metre(v, c.forward), fill: Flat(moon_c) }))
 		} else {
 			$out
 		}

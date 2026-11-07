@@ -463,7 +463,7 @@ disc_shapes = |
 		Disc({
 			x: center.x.to_f64(),
 			y: center.y.to_f64(),
-			r: radius.to_f64(),
+			radius: radius.to_f64(),
 			fill: Flat({ ..opaque, a: alpha.to_f64() }),
 		}),
 	]
@@ -489,7 +489,7 @@ expect
 			Disc({
 				x: 10.0,
 				y: 20.0,
-				r: 30.0,
+				radius: 30.0,
 				fill: Flat({ ..Brush.opaque(RgbColor.of(333)), a: 0.25 }),
 			}),
 		]

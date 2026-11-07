@@ -79,7 +79,7 @@ CanvasAppRunner :: [].{
 		|_io| {
 			target = Draw.RenderTexture.load!(target_size(game))?
 			Assets.set_texture_filter!(target.texture(), Bilinear)
-			shader = Shader.from_source!({ vertex_source: BrushGlsl.vertex, fragment_source: BrushGlsl.fragment }, uniforms_of(Skip))?
+			shader = Shader.from_source!({ vertex_source: BrushGlsl.vertex, fragment_source: BrushGlsl.fragment }, blank_uniforms)?
 			Ok({ state: game.init, fps: Bool.False, target, shader })
 		},
 	)
@@ -361,9 +361,9 @@ CanvasAppRunner :: [].{
 	draw_shape! = |shader, frame, shape|
 		match shape {
 			Poly(p) => with_fill!(shader, frame, p.fill, |f, col| f.convex_polygon!({ points: points(p.coordinates), style: Draw.filled(col) }))
-			Pieces(p) => with_fill!(shader, frame, p.fill, |f, col| draw_triangles!(f, p.tris, col))
-			Disc(d) => with_fill!(shader, frame, d.fill, |f, col| f.circle!({ center: point(d.x, d.y), radius: F64.to_f32_wrap(d.r), style: Draw.filled(col) }))
-			Rect(r) => with_fill!(shader, frame, r.fill, |f, col| f.rectangle!({ x: F64.to_f32_wrap(r.x), y: F64.to_f32_wrap(r.y), width: F64.to_f32_wrap(r.w), height: F64.to_f32_wrap(r.h), style: Draw.filled(col) }))
+			Pieces(p) => with_fill!(shader, frame, p.fill, |f, col| draw_triangles!(f, p.triangle_coordinates, col))
+			Disc(d) => with_fill!(shader, frame, d.fill, |f, col| f.circle!({ center: point(d.x, d.y), radius: F64.to_f32_wrap(d.radius), style: Draw.filled(col) }))
+			Rect(r) => with_fill!(shader, frame, r.fill, |f, col| f.rectangle!({ x: F64.to_f32_wrap(r.x), y: F64.to_f32_wrap(r.y), width: F64.to_f32_wrap(r.width), height: F64.to_f32_wrap(r.height), style: Draw.filled(col) }))
 			# **roc-ray IS HANDED THE RECTANGLES**, as it is handed triangles
 			# for a concave polygon: each painter gets a frame in the form it
 			# can paint. A canvas has `putImageData`; here a texture would be
@@ -377,7 +377,7 @@ CanvasAppRunner :: [].{
 			View(_) => {}
 		}
 
-	draw_pixels! : Draw.Frame, { x : F64, y : F64, w : F64, h : F64, cols : U64, rows : U64, pixels : List(Brush.Rgba) } => {}
+	draw_pixels! : Draw.Frame, { x : F64, y : F64, width : F64, height : F64, cols : U64, rows : U64, pixels : List(Brush.Rgba) } => {}
 	draw_pixels! = |frame, image| {
 		n = image.cols * image.rows
 		var $k = 0
@@ -386,10 +386,10 @@ CanvasAppRunner :: [].{
 			row = $k // image.cols
 			# Each cell edge to edge rather than a width times an index, so
 			# neighbours meet exactly and no seam shows through.
-			x0 = image.x + image.w * span(col) / span(image.cols)
-			x1 = image.x + image.w * span(col + 1) / span(image.cols)
-			y0 = image.y + image.h * span(row) / span(image.rows)
-			y1 = image.y + image.h * span(row + 1) / span(image.rows)
+			x0 = image.x + image.width * span(col) / span(image.cols)
+			x1 = image.x + image.width * span(col + 1) / span(image.cols)
+			y0 = image.y + image.height * span(row) / span(image.rows)
+			y1 = image.y + image.height * span(row + 1) / span(image.rows)
 			colour = List.get(image.pixels, $k) ?? { r: 0.0, g: 0.0, b: 0.0, a: 0.0 }
 			if colour.a > 0.0 {
 				frame.rectangle!({ x: F64.to_f32_wrap(x0), y: F64.to_f32_wrap(y0), width: F64.to_f32_wrap(x1 - x0), height: F64.to_f32_wrap(y1 - y0), style: Draw.filled(color_of(colour)) })
@@ -410,7 +410,6 @@ CanvasAppRunner :: [].{
 	with_fill! : Shader(CanvasAppRunner.BrushUniforms), Draw.Frame, Brush.Fill, (Draw.Frame, Color.Rgba => {}) => {}
 	with_fill! = |shader, frame, fill, draw_it!|
 		match fill {
-			Skip => {}
 			Flat(col) => draw_it!(frame, color_of(col))
 			_ => {
 				scope = frame.with_shader!(
@@ -430,54 +429,61 @@ CanvasAppRunner :: [].{
 	# The fill as the uniforms BrushGlsl reads.
 	uniforms_of : Brush.Fill -> CanvasAppRunner.BrushUniforms
 	uniforms_of = |fill| {
-		none = vec(0.0, 0.0, 0.0, 0.0)
-		blank = {
-			mode: F64.to_f32_wrap(BrushGlsl.mode_of(fill)),
-			color_a: none,
-			color_b: none,
-			color_c: none,
-			geom_a: none,
-			geom_b: none,
-			geom_c: none,
-		}
+		blank = { ..blank_uniforms, mode: F64.to_f32_wrap(BrushGlsl.mode_of(fill)) }
 		match fill {
-			Skip => blank
 			Flat(c) => { ..blank, color_a: rgba_vec(c) }
 			Span(p) => {
 				..blank,
-				color_a: rgba_vec(p.edge),
-				color_b: rgba_vec(p.middle),
-				geom_a: vec(p.x0, p.x1, 0.0, 0.0),
+				color_a: rgba_vec(p.edge_color),
+				color_b: rgba_vec(p.middle_color),
+				geom_a: vec(p.left_x, p.right_x, 0.0, 0.0),
 			}
 			Radial(p) => {
 				..blank,
-				color_a: rgba_vec(p.inner),
-				color_b: rgba_vec(p.outer),
-				geom_a: vec(p.x, p.y, p.r0, p.r1),
+				color_a: rgba_vec(p.inner_color),
+				color_b: rgba_vec(p.outer_color),
+				geom_a: vec(p.center.x, p.center.y, p.inner_radius, p.outer_radius),
 			}
 			Linear(p) => {
 				..blank,
-				color_a: rgba_vec(p.c0),
-				color_b: rgba_vec(p.c1),
-				geom_a: vec(p.o0, p.o1, 0.0, 0.0),
-				geom_b: vec(p.ax, p.ay, p.dx, p.dy),
+				color_a: rgba_vec(p.stops.start_color),
+				color_b: rgba_vec(p.stops.end_color),
+				geom_a: vec(p.stops.start_offset, p.stops.end_offset, 0.0, 0.0),
+				geom_b: vec(p.start_point.x, p.start_point.y, p.end_point.x - p.start_point.x, p.end_point.y - p.start_point.y),
 			}
 			Ellipse(p) => {
-				..blank,
-				color_a: rgba_vec(p.c0),
-				color_b: rgba_vec(p.c1),
-				geom_a: vec(p.o0, p.o1, 0.0, 0.0),
-				geom_b: vec(p.x, p.y, 0.0, 0.0),
-				geom_c: vec(p.ia, p.ib, p.ic, p.id),
+				inverse = Brush.ellipse_inverse({ axis_u: p.axis_u, axis_v: p.axis_v })
+				{
+					..blank,
+					color_a: rgba_vec(p.stops.start_color),
+					color_b: rgba_vec(p.stops.end_color),
+					geom_a: vec(p.stops.start_offset, p.stops.end_offset, 0.0, 0.0),
+					geom_b: vec(p.center.x, p.center.y, 0.0, 0.0),
+					geom_c: vec(inverse.top_row.x, inverse.top_row.y, inverse.bottom_row.x, inverse.bottom_row.y),
+				}
 			}
 			Glow(p) => {
 				..blank,
-				color_a: rgba_vec(p.c0),
-				color_b: rgba_vec(p.c1),
-				color_c: rgba_vec(p.c2),
-				geom_a: vec(p.x, p.y, p.r0, p.r1),
+				color_a: rgba_vec(p.inner_color),
+				color_b: rgba_vec(p.middle_color),
+				color_c: rgba_vec(p.outer_color),
+				geom_a: vec(p.center.x, p.center.y, p.inner_radius, p.outer_radius),
+				geom_b: vec(p.middle_offset, 0.0, 0.0, 0.0),
 			}
 		}
+	}
+
+	# Every uniform zero, which the shader starts with before the first
+	# gradient sets its own.
+	blank_uniforms : CanvasAppRunner.BrushUniforms
+	blank_uniforms = {
+		mode: 0.0,
+		color_a: vec(0.0, 0.0, 0.0, 0.0),
+		color_b: vec(0.0, 0.0, 0.0, 0.0),
+		color_c: vec(0.0, 0.0, 0.0, 0.0),
+		geom_a: vec(0.0, 0.0, 0.0, 0.0),
+		geom_b: vec(0.0, 0.0, 0.0, 0.0),
+		geom_c: vec(0.0, 0.0, 0.0, 0.0),
 	}
 
 	rgba_vec : Brush.Rgba -> Math.Vec4

@@ -292,8 +292,8 @@ bar = |x|
 	Rect({
 		x,
 		y: button_middle_y - 7.0,
-		w: 3.0,
-		h: 14.0,
+		width: 3.0,
+		height: 14.0,
 		fill: ScrubWidget.flat(icon_color),
 	})
 
@@ -327,8 +327,8 @@ button_shapes = |button, motion| {
 		Rect({
 			x: button.left,
 			y: button_top,
-			w: button_width,
-			h: button_height,
+			width: button_width,
+			height: button_height,
 			fill: ScrubWidget.flat(color),
 		}),
 	].concat(icon_shapes(button.control, { middle: button.left + button_width / 2.0, lit }))

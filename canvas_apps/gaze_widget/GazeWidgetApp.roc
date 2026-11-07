@@ -217,8 +217,8 @@ ground : Shapes.Shape
 ground = Rect({
 	x: 0.0,
 	y: 0.0,
-	w: ScrubWidget.canvas_width,
-	h: ScrubWidget.picture_bottom_y,
+	width: ScrubWidget.canvas_width,
+	height: ScrubWidget.picture_bottom_y,
 	fill: ScrubWidget.flat(ground_color),
 })
 
@@ -228,8 +228,8 @@ road = {
 	Rect({
 		x: 0.0,
 		y: road_middle_y - half_width,
-		w: ScrubWidget.canvas_width,
-		h: 2.0 * half_width,
+		width: ScrubWidget.canvas_width,
+		height: 2.0 * half_width,
 		fill: ScrubWidget.flat(road_color),
 	})
 }
@@ -245,7 +245,7 @@ plan_disc = |{ along, across, radius, color }|
 	Disc({
 		x: screen_x(along),
 		y: screen_y(across),
-		r: radius,
+		radius: radius,
 		fill: ScrubWidget.flat(color),
 	})
 

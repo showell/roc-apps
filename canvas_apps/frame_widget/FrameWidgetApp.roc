@@ -220,8 +220,8 @@ plain_background : Shapes.Shape
 plain_background = Rect({
 	x: 0.0,
 	y: 0.0,
-	w: picture_width,
-	h: picture_height,
+	width: picture_width,
+	height: picture_height,
 	fill: ScrubWidget.flat(RgbColor.of(0xE8E6DF)),
 })
 
@@ -229,8 +229,8 @@ panel : Shapes.Shape
 panel = Rect({
 	x: 0.0,
 	y: picture_height,
-	w: canvas_width,
-	h: panel_height,
+	width: canvas_width,
+	height: panel_height,
 	fill: ScrubWidget.flat(RgbColor.of(0xDCECF5)),
 })
 

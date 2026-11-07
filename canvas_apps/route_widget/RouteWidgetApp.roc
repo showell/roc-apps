@@ -142,8 +142,8 @@ ground : Shapes.Shape
 ground = Rect({
 	x: 0.0,
 	y: 0.0,
-	w: ScrubWidget.canvas_width,
-	h: ScrubWidget.picture_bottom_y,
+	width: ScrubWidget.canvas_width,
+	height: ScrubWidget.picture_bottom_y,
 	fill: ScrubWidget.flat(ground_color),
 })
 
@@ -154,7 +154,7 @@ spot = |point, { r, color }| {
 	Disc({
 		x,
 		y,
-		r,
+		radius: r,
 		fill: ScrubWidget.flat(color),
 	})
 }
@@ -213,7 +213,7 @@ row_shapes = |{ y, color, word }|
 		Disc({
 			x: 470.0,
 			y,
-			r: 6.0,
+			radius: 6.0,
 			fill: ScrubWidget.flat(color),
 		}),
 		ScrubWidget.label({
