@@ -61,8 +61,8 @@ BirdFlight :: [].{
 		}
 
 	## The bird of a segment with `trees`, if one has a tree to start on.
-	crossing_among : List(Trees.RoadsideTree) -> [BirdHere(BirdFlight.Habit), QuietRoad]
-	crossing_among = |trees|
+	encounter_among : List(Trees.RoadsideTree) -> [BirdHere(BirdFlight.Habit), QuietRoad]
+	encounter_among = |trees|
 		match fifth_left_tree(trees) {
 			Found(tree) => BirdHere(habit_from(trees, tree))
 			NoTree => QuietRoad

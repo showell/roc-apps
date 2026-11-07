@@ -1,7 +1,7 @@
 ## A Roc bird at one moment of its flight: how it looks. The Roc bird is
 ## roc-lang.org's logo, sitting on treetops beside the road and flying off as
 ## the rider comes. BirdFlight says where a bird is and how it looks,
-## CrossingSighting finds the birds in view, and BirdStills holds their
+## EncounterSighting finds the birds in view, and BirdStills holds their
 ## drawings.
 import Pixels
 import Across

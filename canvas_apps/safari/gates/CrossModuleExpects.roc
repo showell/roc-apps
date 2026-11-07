@@ -15,7 +15,7 @@ import game.BirdFlight
 import game.Cat
 import game.Clock
 import game.Conifer
-import game.CrossingSighting
+import game.EncounterSighting
 import game.BillboardSighting
 import game.DepthSort
 import game.Distance
@@ -107,7 +107,7 @@ flat_color_of = |shape|
 			crash "CrossModuleExpects.flat_color_of: this polygon is not flat"
 	}
 
-# CrossingSighting's birds, on a straight segment with its fifth left tree 100 m along: a bird
+# EncounterSighting's birds, on a straight segment with its fifth left tree 100 m along: a bird
 # sits, flies and lands as the rider comes, stays where no tree is far enough to
 # fly to, and is left out with no tree for it, behind the near plane or too small
 # to draw.
@@ -138,7 +138,7 @@ segment_of = |trees| {
 	length: Distance.metres(200.0),
 	trees,
 	ending: RouteEnds,
-	crossing: BirdFlight.crossing_among(trees),
+	encounter: BirdFlight.encounter_among(trees),
 }
 
 ## `segment`, bending straight on into another.
@@ -164,7 +164,7 @@ birds_on_segment : Segment,
 	cam_focal : Pixels,
 } -> List(Pipeline.Sighted(PosedBird))
 birds_on_segment = |segment, { rider_along, cam_focal }|
-	CrossingSighting.birds_in_view({
+	EncounterSighting.birds_in_view({
 		road: {
 			route: Route.from_segments([segment]),
 			segments_ahead: { first_index: Route.SegmentIndex.first, count: 1 },
@@ -224,7 +224,7 @@ bird_count = |trees, seen_from| birds_on(trees, seen_from).len().to_i64_wrap()
 segment_with_cat : Segment
 segment_with_cat = {
 	..segment_of(left_trees),
-	crossing: World.route.segment_at(Route.SegmentIndex.number(3)).crossing,
+	encounter: World.route.segment_at(Route.SegmentIndex.number(3)).encounter,
 }
 
 expect bird_count(left_trees, { rider_along: 0.0, cam_focal: Pixels.of(500.0) }) == 1
@@ -240,7 +240,7 @@ expect
 
 ## Two segments on the road ahead, the rider at the start of the first.
 two_segments : List(Pipeline.Sighted(PosedBird))
-two_segments = CrossingSighting.birds_in_view({
+two_segments = EncounterSighting.birds_in_view({
 	road: {
 		route: Route.from_segments([
 			going_straight_on(segment_of(left_trees)),
@@ -272,9 +272,9 @@ past_bend_trees = |degrees| {
 	segment_behind_rider = {
 		..segment_of([tree_at(195.0, 0.0)]),
 		ending: Bends({ turn: Angle.Turn.degrees(degrees), bend_life: Animal(Elephant) }),
-		crossing: QuietRoad,
+		encounter: QuietRoad,
 	}
-	rider_segment = { ..segment_of([]), crossing: QuietRoad }
+	rider_segment = { ..segment_of([]), encounter: QuietRoad }
 	TreeSighting.trees_in_view({
 		road: {
 			route: Route.from_segments([segment_behind_rider, rider_segment]),
@@ -298,12 +298,12 @@ expect is_one_tree_behind(past_bend_trees(-150.0))
 expect past_bend_trees(30.0).len() == 0
 expect past_bend_trees(-80.0).len() == 0
 
-# CrossingSighting's cats: which cats are in view as the rider comes on them.
+# EncounterSighting's cats: which cats are in view as the rider comes on them.
 ## The second segment, with a cat crossing it.
 cat_segment : Segment
 cat_segment = {
 	..World.route.segment_at(Route.SegmentIndex.number(1)),
-	crossing: World.route.segment_at(Route.SegmentIndex.number(3)).crossing,
+	encounter: World.route.segment_at(Route.SegmentIndex.number(3)).encounter,
 }
 
 ## The route's first three segments, a route of their own, with a cat crossing
@@ -331,7 +331,7 @@ metre_a_step = Speed.metres_a_step(1.0)
 
 ## The cats seen from the origin on a road of only `count` segments ahead.
 cats_on_road : U32 -> List(Pipeline.Sighted(PosedCat))
-cats_on_road = |count| CrossingSighting.cats_in_view(
+cats_on_road = |count| EncounterSighting.cats_in_view(
 	{
 		..cats_from_origin,
 		road: {
@@ -344,7 +344,7 @@ cats_on_road = |count| CrossingSighting.cats_in_view(
 
 ## The cat on the segment at `number` on the road ahead, if it is in view.
 cat_at : U32 -> Try(Pipeline.Sighted(PosedCat), [NoCat, BehindCamera, TooSmall])
-cat_at = |number| CrossingSighting.segment_cat(
+cat_at = |number| EncounterSighting.segment_cat(
 	cats_from_origin,
 	{ in_view: numbered_segment(cats_from_origin.road, number), speed: metre_a_step },
 )
@@ -354,7 +354,7 @@ expect cat_route.route_segments().map(has_cat) == [False, True, False]
 ## Whether a segment has a cat waiting by the road.
 has_cat : Segment -> Bool
 has_cat = |seg|
-	match seg.crossing {
+	match seg.encounter {
 		CatCrosses(_) => True
 		BirdHere(_) | QuietRoad => False
 	}
@@ -380,7 +380,7 @@ expect
 
 ## The cats in view for a rider `along` metres into the first segment.
 ride_sightings : F64 -> List(Pipeline.Sighted(PosedCat))
-ride_sightings = |along| CrossingSighting.cats_in_view(
+ride_sightings = |along| EncounterSighting.cats_in_view(
 	{
 		..cats_from_origin,
 		road: { ..cats_from_origin.road, vantage: { ..origin, along: Along.metres(along) } },
@@ -431,7 +431,7 @@ expect cats_on_road(1).len() == 0
 route_cats : List({ segment : Segment, crossing : Cat.Crossing })
 route_cats = World.route.route_segments().join_map(
 	|segment|
-		match segment.crossing {
+		match segment.encounter {
 			CatCrosses(crossing) => [{ segment, crossing }]
 			BirdHere(_) | QuietRoad => []
 		},

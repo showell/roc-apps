@@ -1,10 +1,10 @@
 ## The lens the ride is seen through. The view widens as the rider leans,
-## and as the rider's attention is caught, by a crossing on the road or by a
+## and as the rider's attention is caught, by an encounter on the road or by a
 ## look to the side.
 import Pixels
 import Along
 import Attention
-import CrossingReaction
+import EncounterReaction
 import Fraction
 import Gaze
 import Lens
@@ -20,7 +20,7 @@ RideFocal :: [].{
 	ride_focal = |rider, route| {
 		seg = route.segment_at(rider.segment_index)
 		attention =
-			CrossingReaction.crossing_attention(seg, rider.motorcycle)
+			EncounterReaction.encounter_attention(seg, rider.motorcycle)
 				.max(Gaze.gaze_attention(rider.eyes.look_depth))
 		Lens.cam_focal({ lean: rider.motorcycle.lean, attention })
 	}
@@ -39,7 +39,7 @@ cat_route = Route.from_segments([
 cat_segment : Segment
 cat_segment = {
 	..World.route.segment_at(Route.SegmentIndex.number(1)),
-	crossing: World.route.segment_at(Route.SegmentIndex.number(3)).crossing,
+	encounter: World.route.segment_at(Route.SegmentIndex.number(3)).encounter,
 }
 
 ## A rider at the start of the first segment, upright and looking ahead.
@@ -62,10 +62,10 @@ leaning = |rider, lean| { ..rider, motorcycle: { ..rider.motorcycle, lean } }
 looking_hard : RiderState -> RiderState
 looking_hard = |rider| { ..rider, eyes: { ..rider.eyes, look_depth: Fraction.whole } }
 
-## How strongly the crossing on this rider's segment holds their attention.
-crossing_attention_of : RiderState -> F64
-crossing_attention_of = |rider|
-	CrossingReaction.crossing_attention(
+## How strongly the encounter on this rider's segment holds their attention.
+encounter_attention_of : RiderState -> F64
+encounter_attention_of = |rider|
+	EncounterReaction.encounter_attention(
 		cat_route.segment_at(rider.segment_index),
 		rider.motorcycle,
 	).to_f64()
@@ -73,7 +73,7 @@ crossing_attention_of = |rider|
 ## Whether a segment has a cat waiting by the road.
 has_cat : Segment -> Bool
 has_cat = |seg|
-	match seg.crossing {
+	match seg.encounter {
 		CatCrosses(_) => True
 		BirdHere(_) | QuietRoad => False
 	}
@@ -82,7 +82,7 @@ expect !has_cat(World.route.segment_at(Route.SegmentIndex.number(0)))
 expect has_cat(cat_segment)
 
 expect RideFocal.ride_focal(upright, cat_route).minus(Lens.resting_focal) == Pixels.zero
-expect crossing_attention_of(upright) == 0.0
+expect encounter_attention_of(upright) == 0.0
 expect Gaze.gaze_attention(Fraction.zero).to_f64() == 0.0
 expect Lens.cam_focal({
 	lean: upright.motorcycle.lean,
@@ -119,9 +119,9 @@ expect {
 		and focal_at_lean(ten_times).minus(focal_at_lean(Lens.full_lean)) == Pixels.zero
 }
 
-expect crossing_attention_of(rider_near_cat_on(1)) > 0.0
-expect !(crossing_attention_of({ ..upright, segment_index: Route.SegmentIndex.number(1) }) > 0.0)
-expect !(crossing_attention_of(rider_near_cat_on(0)) > 0.0)
+expect encounter_attention_of(rider_near_cat_on(1)) > 0.0
+expect !(encounter_attention_of({ ..upright, segment_index: Route.SegmentIndex.number(1) }) > 0.0)
+expect !(encounter_attention_of(rider_near_cat_on(0)) > 0.0)
 expect
 	RideFocal.ride_focal(rider_near_cat_on(1), cat_route)
 		< RideFocal.ride_focal(rider_near_cat_on(0), cat_route)

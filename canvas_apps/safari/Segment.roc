@@ -1,8 +1,9 @@
 ## A segment is one straight stretch of the route's road, from one bend to the
-## next: its length, its trees, its herds, what crosses it, and how it ends. It is
-## built once, from choices the route has already made, and this module answers
-## the questions asked of one segment: where its herds stand, where the rider
-## commits to its bend, and whether a tower stands halfway along it.
+## next: its length, its trees, its herds, what the rider meets on it, and how
+## it ends. It is built once, from choices the route has already made, and this
+## module answers the questions asked of one segment: where its herds stand,
+## where the rider commits to its bend, and whether a tower stands halfway
+## along it.
 import Across
 import Along
 import Angle
@@ -26,10 +27,10 @@ Segment := {
 	## The segment's herd of cows, led by a bull or not.
 	cows : { herd : CowHerd, bull : [WithBull, NoBull] },
 
-	## What crosses the road here, at most one thing, so that the rider has
-	## one experience at a time. Most of the road is quiet, so that a crossing
-	## stands out.
-	crossing : [CatCrosses(Cat.Crossing), BirdHere(BirdFlight.Habit), QuietRoad],
+	## What the rider meets on the road here, at most one thing, so that the
+	## rider has one experience at a time. Most of the road is quiet, so that an
+	## encounter stands out.
+	encounter : [CatCrosses(Cat.Crossing), BirdHere(BirdFlight.Habit), QuietRoad],
 
 	## How the segment ends: by turning into the next, positive to the
 	## right, with what lives at the bend, or by ending the route.
@@ -53,13 +54,13 @@ Segment := {
 	cow_herd_along = Along.metres(24.0)
 
 	## A segment built from the route's choices for it: its trees are planted
-	## for its scheme, and what crosses it is placed among them.
+	## for its scheme, and what the rider meets on it is placed among them.
 	from_choices : {
 		length : Distance,
 		scheme : Scenery.Scheme,
 		pigs : [NoPigs, Herd({ herd : PigHerd, interest : Segment.PigInterest })],
 		cows : { herd : CowHerd, bull : [WithBull, NoBull] },
-		crossing : [CatCrosses, BirdHere, QuietRoad],
+		encounter : [CatCrosses, BirdHere, QuietRoad],
 		ending : [Bends({ turn : Angle.Turn, bend_life : Scenery.BendLife }), RouteEnds],
 	} -> Segment
 	from_choices = |choices| {
@@ -69,14 +70,14 @@ Segment := {
 			trees,
 			pigs: choices.pigs,
 			cows: choices.cows,
-			crossing: match choices.crossing {
+			encounter: match choices.encounter {
 				CatCrosses => CatCrosses(
 					Cat.crossing({
 						road_half_width: Geom.road_half_width,
 						tree: nearest_tree_ahead(trees, Cat.cat_along).road_point,
 					}),
 				)
-				BirdHere => BirdFlight.crossing_among(trees)
+				BirdHere => BirdFlight.encounter_among(trees)
 				QuietRoad => QuietRoad
 			},
 			ending: choices.ending,

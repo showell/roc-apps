@@ -2,9 +2,9 @@
 ## run how far the rider is from the cat, and each frame is worked out from that
 ## gap alone, so the crossing plays forward and backward. The picture looks down
 ## the road at the cat, with the road's width to scale. Below it, the buttons and
-## four lines of text that say what Cat and CrossingReaction make of the gap.
+## four lines of text that say what Cat and EncounterReaction make of the gap.
 import game.Cat
-import game.CrossingReaction
+import game.EncounterReaction
 import game.Distance
 import game.Pixels
 import game.PosedCat
@@ -49,7 +49,7 @@ rider_speed = Speed.metres_a_step(1.0)
 ## The cat's crossing on a segment that has one.
 cat_crossing : Segment -> Try(Cat.Crossing, [NoCat])
 cat_crossing = |segment|
-	match segment.crossing {
+	match segment.encounter {
 		CatCrosses(crossing) => Ok(crossing)
 		BirdHere(_) | QuietRoad => Err(NoCat)
 	}
@@ -145,7 +145,7 @@ status_lines : Distance -> List(Str)
 status_lines = |gap| {
 	approach = { gap, speed: rider_speed }
 	instant = Cat.instant_at(crossing, approach)
-	throttle = CrossingReaction.crossing_throttle(
+	throttle = EncounterReaction.encounter_throttle(
 		cat_segment,
 		{ along: crossing.along.minus(gap), speed: rider_speed },
 	)
