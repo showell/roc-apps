@@ -97,17 +97,17 @@ origin_camera : { vantage : Geom.Vantage, cam_focal : Pixels }
 origin_camera = { vantage: origin, cam_focal: Pixels.of(500.0) }
 
 ## The road ahead of a rider on the world's segment `number`.
-road_from : U32 -> RoadAhead.RoadView
-road_from = |number| RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex.number(number))
+world_road_at : U32 -> RoadAhead.RoadView
+world_road_at = |number| RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex.number(number))
 
 ## The road ahead of a rider on the route's first segment.
 road : RoadAhead.RoadView
-road = road_from(0)
+road = world_road_at(0)
 
 # Positions count along the road ahead from the rider's segment, not along the
 # route from its start.
 expect {
-	from_third = road_from(2)
+	from_third = world_road_at(2)
 	length_at = |position| RoadAhead.segment_at(from_third, position).length
 	length_of = |number| World.route.segment_at(Route.SegmentIndex.number(number)).length
 	length_of(2) != length_of(0)
@@ -138,13 +138,13 @@ expect {
 expect [
 	(0, 0),
 	(3, 3),
-].all(|(first, want)| RoadAhead.rider_segment_index(road_from(first)).to_i64() == want)
+].all(|(first, want)| RoadAhead.rider_segment_index(world_road_at(first)).to_i64() == want)
 
 ## The route's number of the segment in view just behind a rider on the
 ## world's segment `first`, or -1 at the route's start.
 number_behind : U32 -> I64
 number_behind = |first| {
-	behind = RoadAhead.segments_in_view(road_from(first)).find_last(
+	behind = RoadAhead.segments_in_view(world_road_at(first)).find_last(
 		|in_view|
 			match in_view.place {
 				JustBehind => True
@@ -349,8 +349,8 @@ segment_of = |trees| {
 }
 
 ## The road ahead of a rider on the first of `segments`, a route of their own.
-road_of : List(Segment) -> RoadAhead.RoadView
-road_of = |segments|
+crafted_road : List(Segment) -> RoadAhead.RoadView
+crafted_road = |segments|
 	RoadAhead.RoadView.ahead_of(Route.from_segments(segments), Route.SegmentIndex.first)
 
 ## `segment`, bending straight on into another.
@@ -535,7 +535,7 @@ expect past_bend_trees(-80.0).len() == 0
 ## The road ahead of a rider at the start of a 300 m segment that turns right by
 ## a right angle into another.
 right_angle_road : RoadAhead.RoadView
-right_angle_road = road_of([
+right_angle_road = crafted_road([
 	{
 		..segment_of([]),
 		length: Distance.metres(300.0),
@@ -593,7 +593,7 @@ expect {
 tree_places : List(Segment), Pixels -> List((F64, F64))
 tree_places = |segments, cam_focal|
 	TreeSighting.trees_in_view(
-		road_of(segments),
+		crafted_road(segments),
 		{ vantage: { ..origin, along: Along.metres(10.0) }, cam_focal },
 	).map(|tree| (tree.spot.foot().right().to_metres(), tree.spot.foot().forward().to_metres()))
 
@@ -802,7 +802,8 @@ is_cow_seen_from = |forward| {
 		across: Across.metres(lone_cow.across.to_metres() - 2.5),
 		yaw: Angle.straight_ahead,
 	}
-	BillboardSighting.billboards_in_view(road_of([one_cow_segment]), { vantage: rider }).len() == 1
+	cow_road = crafted_road([one_cow_segment])
+	BillboardSighting.billboards_in_view(cow_road, { vantage: rider }).len() == 1
 }
 
 # The near plane is 0.4 m. The rider's place is worked out from the cow's, so
@@ -911,7 +912,7 @@ expect
 # each foot is drawn in toward the middle by 1/320 of 6 m.
 shapes_of_tower_100_ahead : List(Shapes.Shape)
 shapes_of_tower_100_ahead = {
-	tower_road = road_of([segment_of([])])
+	tower_road = crafted_road([segment_of([])])
 	plain_tower : Tower
 	plain_tower = { yaw: Angle.straight_ahead, beacon_brightness: Fraction.zero }
 	sighted =
@@ -1035,7 +1036,7 @@ expect
 		== [Ahead(SegmentPlace.Position.first), Ahead(SegmentPlace.Position.first), JustBehind]
 expect
 	TowerSighting.towers_in_view(
-		road_of([segment_of([])]),
+		crafted_road([segment_of([])]),
 		{ camera: { vantage: { ..origin, along: Along.metres(5000.0) } }, clock: Clock.start },
 	).len()
 		== 0
@@ -1166,7 +1167,7 @@ Post := { height : Distance }.{
 
 ## The road ahead of a rider on a straight route of one segment.
 straight_road : RoadAhead.RoadView
-straight_road = road_of([segment_of([])])
+straight_road = crafted_road([segment_of([])])
 
 ## A post 1 m tall, `along` the straight road and 1.5 m right of its middle, as
 ## a camera at `origin` sees it.
@@ -2652,7 +2653,7 @@ expect LeanSearch.lean_correction(Leaves({ side: Right, after: Steps.one_step })
 ## A straight road of three segments, 500 m, 320 m and 400 m long, and the
 ## road ahead of a rider on the first of them.
 truck_road : RoadAhead.RoadView
-truck_road = road_of([
+truck_road = crafted_road([
 	{ ..going_straight_on(segment_of([])), length: Distance.metres(500.0) },
 	{ ..going_straight_on(segment_of([])), length: Distance.metres(320.0) },
 	{ ..segment_of([]), length: Distance.metres(400.0) },
