@@ -170,7 +170,7 @@ Most things in the view come in pairs, and the names say which half is which: `C
 
 A sighting answers one question each frame: which of these can the rider see right now, and how should each one look? `CatSighting` goes through the stretches of road ahead, which Safari Ride calls segments, asks `Cat` where it is, works out where that lands in the rider's view, and drops any cat behind the camera or too small to matter. What it hands back is a plain record with no drawing in it:
 
-{{code CatSighting.CatSighting}}
+{{code Geom.Sighted}}
 
 `Scene` gathers every sighting's answer, a depth sort puts them in order, and `SceneShapes` hands each one to the module that paints it. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. So a sighting decides what's visible, and the drawing code only paints what it's told.
 
@@ -2254,7 +2254,7 @@ From there to the screen is a pinhole camera, which is similar triangles. Dividi
 
 `BirdShapes.bird_shapes` calls it with a record built on the spot for the bird's feet:
 
-{{code BirdShapes.bird_shapes from "feet = Camera.project(" to "cam_focal,"}}
+{{code BirdShapes.PosedBird from "feet = Camera.project(" to "feet = Camera.project("}}
 
 The focal length comes from a lens. `focal` is a value computed from other values, with no function in sight, and `field_of_view` is a `Turn`, so taking half of it needs no comment about radians. [check: whether a value like this inside a `.{ }` block is evaluated at compile time, as top-level values are.]
 

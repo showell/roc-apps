@@ -3,48 +3,57 @@
 import Pixels
 import Camera
 import Cat
-import CatSighting
 import CatStills
 import Distance
+import Picture
 import StillShapes
 import lib.Shapes
 
 CatShapes :: [].{
 
-	## A cat on screen, its feet where it is.
-	cat_shapes : CatSighting, Pixels -> List(Shapes.Shape)
-	cat_shapes = |cat, cam_focal| {
-		projected = |height| Camera.project(
-			{ right: cat.right, forward: cat.forward, height },
-			cam_focal,
-		)
-		feet = projected(cat.lift)
-		StillShapes.still_shapes(
-			{
-				feet,
-				flip: AsDrawn,
-				height_px: feet.y.minus(projected(cat.lift.plus(Cat.cat_height)).y),
-			},
-			CatStills.pose_polygons(cat.pose),
-		)
+	## A cat at one moment of its crossing: how it holds itself, and how high its
+	## leap has raised it.
+	PosedCat := { pose : Cat.Pose, lift : Distance }.{
+
+		scenery_height : CatShapes.PosedCat -> Distance
+		scenery_height = |_cat| Cat.cat_height
+
+		## A cat on screen, its feet where it is.
+		scenery_picture : CatShapes.PosedCat, Picture.Setting({}) -> Picture
+		scenery_picture = |cat, { right, forward, cam_focal, .. }| {
+			projected = |height| Camera.project({ right, forward, height }, cam_focal)
+			feet = projected(cat.lift)
+			Picture.from_shapes(
+				StillShapes.still_shapes(
+					{
+						feet,
+						flip: AsDrawn,
+						height_px: feet.y.minus(projected(cat.lift.plus(Cat.cat_height)).y),
+					},
+					CatStills.pose_polygons(cat.pose),
+				),
+			)
+		}
 	}
 }
 
-## A cat 100 m straight ahead, on the ground, through a 500 px focal length: its
-## feet land at (480, 306), and it stands 8.5 px tall.
-near_cat : CatSighting
-near_cat = {
-	right: Distance.metres(0.0),
-	forward: Distance.metres(100.0),
-	lift: Distance.zero,
-	pose: Rest,
-}
+## A cat on the ground, at rest.
+near_cat : CatShapes.PosedCat
+near_cat = { lift: Distance.zero, pose: Rest }
 
-sample_cat_shapes : CatSighting -> List(Shapes.Shape)
-sample_cat_shapes = |cat| CatShapes.cat_shapes(cat, Pixels.of(500.0))
+## `cat` 100 m straight ahead through a 500 px focal length: its feet on the
+## ground land at (480, 306), and it stands 8.5 px tall.
+sample_cat_shapes : CatShapes.PosedCat -> List(Shapes.Shape)
+sample_cat_shapes = |cat|
+	cat.scenery_picture({
+		right: Distance.metres(0.0),
+		forward: Distance.metres(100.0),
+		cam_focal: Pixels.of(500.0),
+		context: {},
+	}).to_shapes()
 
 ## The first corner `cat` draws: its still's first corner, on screen.
-first_corner_coordinates : CatSighting -> List(F64)
+first_corner_coordinates : CatShapes.PosedCat -> List(F64)
 first_corner_coordinates = |cat|
 	match sample_cat_shapes(cat) {
 		[Poly(polygon), ..] => polygon.coordinates.take_first(2)
@@ -77,4 +86,10 @@ expect
 		Collapse,
 	].all(
 		|pose| sample_cat_shapes({ ..near_cat, pose }).len() == CatStills.pose_polygons(pose).len(),
+	)
+
+# A cat's height is the same in every pose.
+expect
+	[near_cat, { pose: Flight, lift: Distance.metres(1.0) }].all(
+		|cat| cat.scenery_height() == Cat.cat_height,
 	)
