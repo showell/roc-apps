@@ -290,11 +290,11 @@ sight_line = |rider| {
 	turn = rider.yaw.plus(rider.gaze_yaw).to_radians()
 	reach = Gaze.notice_distance.to_metres() * pixels_a_metre
 	Shapes.line(
-		x,
-		y,
-		x + reach * turn.cos(),
-		y + reach * turn.sin(),
-		2.0,
+		{
+			from: { x, y },
+			to: { x: x + reach * turn.cos(), y: y + reach * turn.sin() },
+			width: 2.0,
+		},
 		ScrubWidget.flat(sight_color),
 	)
 }

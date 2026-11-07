@@ -8,7 +8,7 @@ import lib.Shapes
 import lib.ArgbColor
 import lib.Brush
 import lib.RgbColor
-import lib.View
+import lib.Eye
 import Panels
 
 Streetlight :: [].{
@@ -23,13 +23,13 @@ Streetlight :: [].{
 	lamp_high : F64
 	lamp_high = 4.1
 
-	shapes : View.View, F64 -> List(Shapes.Shape)
+	shapes : Eye.Eye, F64 -> List(Shapes.Shape)
 	shapes = |v, fwd| {
 		lamp = { right: stands_at, forward: fwd, height: lamp_high }
-		if View.ahead(v, lamp) {
-			c = View.turn(v, lamp)
-			p = View.flat(v, c)
-			ppm = View.pixels_per_metre(v, c.forward)
+		if Eye.ahead(v, lamp) {
+			c = Eye.turn(v, lamp)
+			p = Eye.flat(v, c)
+			ppm = Eye.pixels_per_metre(v, c.forward)
 			List.concat(
 				Panels.face(v, fwd, [stands_at - 0.06, 0.0, stands_at + 0.06, 0.0, stands_at + 0.06, lamp_high, stands_at - 0.06, lamp_high], Flat(pole_c)),
 				[

@@ -261,11 +261,7 @@ road_line : { across : F64, color : RgbColor, width : F64 } -> Shapes.Shape
 road_line = |{ across, color, width }| {
 	y = canvas_point({ forward: 0.0, across }).y
 	Shapes.line(
-		0.0,
-		y,
-		ScrubWidget.canvas_width,
-		y,
-		width,
+		{ from: { x: 0.0, y }, to: { x: ScrubWidget.canvas_width, y }, width },
 		ScrubWidget.flat(color),
 	)
 }
@@ -305,23 +301,16 @@ drawn_points = |path_points| {
 	}
 }
 
-## One arc as a run of lines from the rider.
+## One arc as a run of lines from the rider. An arc can stand still between
+## two of its points, as at its end, where no line is drawn.
 arc_shapes : List(ArcPoint), { color : RgbColor, width : F64 } -> List(Shapes.Shape)
 arc_shapes = |path_points, { color, width }| {
 	start = { forward: 0.0, across: rider.across.to_metres() }
 	points = drawn_points(path_points).prepend(start).map(canvas_point)
-	points.map2(
-		points.drop_first(1),
-		|a, b|
-			Shapes.line(
-				a.x,
-				a.y,
-				b.x,
-				b.y,
-				width,
-				ScrubWidget.flat(color),
-			),
-	)
+	points
+		.map2(points.drop_first(1), |from, to| { from, to })
+		.keep_if(|{ from, to }| from != to)
+		.map(|{ from, to }| Shapes.line({ from, to, width }, ScrubWidget.flat(color)))
 }
 
 ## The colour that says where an arc ended.

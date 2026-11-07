@@ -3,10 +3,10 @@
 # Ported from roc-ray's examples/breakout Render.roc, which draws into a
 # Draw.Frame. Here a frame is a value, so this answers a list of shapes.
 #
-# The halos are additive, as upstream's are: `Blend(Add)` marks the run.
+# The halos are additive, as upstream's are: they are a run of added light.
 import lib.Shapes
 import lib.Brush
-import lib.Color
+import lib.RgbColor
 import lib.Font
 import lib.Math
 import lib.Trig
@@ -21,25 +21,27 @@ BreakoutDraw :: [].{
 	h : F64
 	h = 600.0
 
-	field_top : Color.Rgba
-	field_top = Color.from_hex_rgb(0x161d3c)
-	field_bottom : Color.Rgba
-	field_bottom = Color.from_hex_rgb(0x05070f)
-	paddle_neon : Color.Rgba
-	paddle_neon = Color.from_hex_rgb(0x38e8ff)
-	ball_neon : Color.Rgba
-	ball_neon = Color.from_hex_rgb(0xffe08a)
-	hud_color : Color.Rgba
-	hud_color = Color.from_hex_rgb(0xd7e3ff)
-	hint_color : Color.Rgba
-	hint_color = Color.from_hex_rgb(0x6d7aa8)
-	rule_color : Color.Rgba
-	rule_color = Color.from_hex_rgb(0x2a3566)
+	field_top : RgbColor
+	field_top = RgbColor.of(0x161d3c)
+	field_bottom : RgbColor
+	field_bottom = RgbColor.of(0x05070f)
+	paddle_neon : RgbColor
+	paddle_neon = RgbColor.of(0x38e8ff)
+	ball_neon : RgbColor
+	ball_neon = RgbColor.of(0xffe08a)
+	hud_color : RgbColor
+	hud_color = RgbColor.of(0xd7e3ff)
+	hint_color : RgbColor
+	hint_color = RgbColor.of(0x6d7aa8)
+	rule_color : RgbColor
+	rule_color = RgbColor.of(0x2a3566)
+	white : RgbColor
+	white = RgbColor.of(0xffffff)
 
 	## One complete Breakout frame, back to front.
 	frame : Rules.World, F64 -> List(Shapes.Shape)
 	frame = |world, elapsed| {
-		var $out = [Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Linear({ stops: { start_color: Color.brush(field_top), end_color: Color.brush(field_bottom), start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: h } }) })]
+		var $out = [Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Linear({ stops: { start_color: Brush.opaque(field_top), end_color: Brush.opaque(field_bottom), start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: h } }) })]
 		$out = List.concat($out, hud(world))
 		$out = List.concat($out, bricks(world.bricks))
 		$out = List.concat($out, glow(world))
@@ -53,11 +55,11 @@ BreakoutDraw :: [].{
 		score = Str.concat("SCORE ", U64.to_str(world.score))
 		lives = Str.concat("LIVES ", U64.to_str(world.lives))
 		hint = "LEFT / RIGHT MOVE    SPACE LAUNCH"
-		var $out = Font.text_shapes("BREAKOUT", 44.0, 22.0, 26.0, Color.brush(paddle_neon))
-		$out = List.concat($out, Font.text_shapes(score, 330.0, 26.0, 22.0, Color.brush(hud_color)))
-		$out = List.concat($out, Font.text_shapes(lives, 560.0, 26.0, 22.0, Color.brush(hud_color)))
-		$out = List.append($out, Shapes.line(44.0, 58.0, 756.0, 58.0, 2.0, Flat(Color.brush(rule_color))))
-		List.concat($out, Font.centered(hint, w / 2.0, 572.0, 17.0, Color.brush(hint_color)))
+		var $out = Font.text_shapes("BREAKOUT", { top_left: { x: 44.0, y: 22.0 }, size: 26.0, color: Brush.opaque(paddle_neon) })
+		$out = List.concat($out, Font.text_shapes(score, { top_left: { x: 330.0, y: 26.0 }, size: 22.0, color: Brush.opaque(hud_color) }))
+		$out = List.concat($out, Font.text_shapes(lives, { top_left: { x: 560.0, y: 26.0 }, size: 22.0, color: Brush.opaque(hud_color) }))
+		$out = List.append($out, Shapes.line({ from: { x: 44.0, y: 58.0 }, to: { x: 756.0, y: 58.0 }, width: 2.0 }, Flat(Brush.opaque(rule_color))))
+		List.concat($out, Font.centered(hint, { top_center: { x: w / 2.0, y: 572.0 }, size: 17.0, color: Brush.opaque(hint_color) }))
 	}
 
 	## Every brick still standing, each with a bright top-edge sheen.
@@ -72,9 +74,8 @@ BreakoutDraw :: [].{
 			y = F32.to_f64(b.rect.y)
 			bw = F32.to_f64(b.rect.width)
 			bh = F32.to_f64(b.rect.height)
-			face = Color.brush(b.color)
-			$out = List.append($out, Shapes.rounded_rect(x, y, bw, bh, 5.0, 6, Flat({ ..face, a: 0.92 })))
-			$out = List.append($out, Rect({ x: x + 5.0, y: y + 3.0, width: bw - 10.0, height: 3.0, fill: Flat({ r: 255.0, g: 255.0, b: 255.0, a: 0.43 }) }))
+			$out = List.append($out, Shapes.rounded_rect({ x, y, width: bw, height: bh, corner_radius: 5.0, corner_steps: 6 }, Flat(Brush.with_alpha(b.color, 0.92))))
+			$out = List.append($out, Rect({ x: x + 5.0, y: y + 3.0, width: bw - 10.0, height: 3.0, fill: Flat(Brush.with_alpha(white, 0.43)) }))
 			$i = $i + 1
 		}
 		$out
@@ -84,16 +85,14 @@ BreakoutDraw :: [].{
 	glow : Rules.World -> List(Shapes.Shape)
 	glow = |world| {
 		p = Math.center(world.paddle.rect())
-		[
-			Blend(Add),
+		Shapes.added_light([
 			halo(F32.to_f64(p.x), F32.to_f64(p.y), 90.0, paddle_neon),
 			halo(F32.to_f64(world.ball.pos.x), F32.to_f64(world.ball.pos.y), 46.0, ball_neon),
-			Blend(Over),
-		]
+		])
 	}
 
-	halo : F64, F64, F64, Color.Rgba -> Shapes.Shape
-	halo = |x, y, r, col| Shapes.halo(x, y, r, Color.brush(col), 0.37)
+	halo : F64, F64, F64, RgbColor -> Shapes.Shape
+	halo = |x, y, radius, color| Shapes.halo({ center: { x, y }, radius }, Brush.with_alpha(color, 0.37))
 
 	## The solid paddle and ball, over their glows.
 	bodies : Rules.World -> List(Shapes.Shape)
@@ -107,10 +106,10 @@ BreakoutDraw :: [].{
 		by = F32.to_f64(world.ball.pos.y)
 		r = F32.to_f64(Ball.radius)
 		[
-			Shapes.rounded_rect(px, py, pw, ph, ph / 2.0, 8, Flat(Color.brush(paddle_neon))),
-			Rect({ x: px + 8.0, y: py + 3.0, width: pw - 16.0, height: 3.0, fill: Flat({ r: 255.0, g: 255.0, b: 255.0, a: 0.59 }) }),
-			Disc({ x: bx, y: by, radius: r, fill: Flat(Color.brush(ball_neon)) }),
-			Disc({ x: bx - 2.0, y: by - 2.0, radius: r * 0.4, fill: Flat({ r: 255.0, g: 255.0, b: 255.0, a: 0.82 }) }),
+			Shapes.rounded_rect({ x: px, y: py, width: pw, height: ph, corner_radius: ph / 2.0, corner_steps: 8 }, Flat(Brush.opaque(paddle_neon))),
+			Rect({ x: px + 8.0, y: py + 3.0, width: pw - 16.0, height: 3.0, fill: Flat(Brush.with_alpha(white, 0.59)) }),
+			Disc({ x: bx, y: by, radius: r, fill: Flat(Brush.opaque(ball_neon)) }),
+			Disc({ x: bx - 2.0, y: by - 2.0, radius: r * 0.4, fill: Flat(Brush.with_alpha(white, 0.82)) }),
 		]
 	}
 
@@ -124,25 +123,21 @@ BreakoutDraw :: [].{
 		match world.state {
 			Ready => {
 				line = "PRESS SPACE TO LAUNCH"
-				c = Color.brush(hud_color)
-				Font.centered(line, w / 2.0, 340.0, 22.0, { ..c, a: prompt_alpha(elapsed) })
+				Font.centered(line, { top_center: { x: w / 2.0, y: 340.0 }, size: 22.0, color: Brush.with_alpha(hud_color, prompt_alpha(elapsed)) })
 			}
 			Playing => []
-			Won => banner("WALL CLEARED", Color.from_hex_rgb(0x4ce0b3), elapsed)
-			GameOver => banner("GAME OVER", Color.from_hex_rgb(0xff4f7d), elapsed)
+			Won => banner("WALL CLEARED", RgbColor.of(0x4ce0b3), elapsed)
+			GameOver => banner("GAME OVER", RgbColor.of(0xff4f7d), elapsed)
 		}
 
-	banner : Str, Color.Rgba, F64 -> List(Shapes.Shape)
+	banner : Str, RgbColor, F64 -> List(Shapes.Shape)
 	banner = |line, accent, elapsed| {
-		dim = Color.brush(field_bottom)
-		edge = Color.brush(accent)
 		again = "PRESS SPACE TO PLAY AGAIN"
-		hint = Color.brush(hint_color)
 		var $out = [
-			Shapes.rounded_rect(188.0, 274.0, 424.0, 128.0, 18.0, 8, Flat({ ..edge, a: 0.47 })),
-			Shapes.rounded_rect(190.0, 276.0, 420.0, 124.0, 17.0, 8, Flat({ ..dim, a: 0.91 })),
+			Shapes.rounded_rect({ x: 188.0, y: 274.0, width: 424.0, height: 128.0, corner_radius: 18.0, corner_steps: 8 }, Flat(Brush.with_alpha(accent, 0.47))),
+			Shapes.rounded_rect({ x: 190.0, y: 276.0, width: 420.0, height: 124.0, corner_radius: 17.0, corner_steps: 8 }, Flat(Brush.with_alpha(field_bottom, 0.91))),
 		]
-		$out = List.concat($out, Font.centered(line, w / 2.0, 304.0, 30.0, Color.brush(accent)))
-		List.concat($out, Font.centered(again, w / 2.0, 356.0, 17.0, { ..hint, a: prompt_alpha(elapsed) }))
+		$out = List.concat($out, Font.centered(line, { top_center: { x: w / 2.0, y: 304.0 }, size: 30.0, color: Brush.opaque(accent) }))
+		List.concat($out, Font.centered(again, { top_center: { x: w / 2.0, y: 356.0 }, size: 17.0, color: Brush.with_alpha(hint_color, prompt_alpha(elapsed)) }))
 	}
 }

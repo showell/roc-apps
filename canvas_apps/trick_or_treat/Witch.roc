@@ -15,7 +15,7 @@
 import lib.Shapes
 import lib.Brush
 import lib.RgbColor
-import lib.View
+import lib.Eye
 import Panels
 
 Witch :: [].{
@@ -30,23 +30,23 @@ Witch :: [].{
 	comes_from : F64
 	comes_from = 2.2
 
-	shapes : View.View, F64, F64 -> List(Shapes.Shape)
+	shapes : Eye.Eye, F64, F64 -> List(Shapes.Shape)
 	shapes = |v, door_f, u|
 		if u <= 0.0 {
 			[]
 		} else {
 			fwd = door_f + comes_from * (1.0 - u)
 			stands = { right: 0.0, forward: fwd, height: 1.0 }
-			if View.ahead(v, stands) {
-				c = View.turn(v, stands)
-				ppm = View.pixels_per_metre(v, c.forward)
-				shoulder_l = View.project(v, { right: 0.0 - 0.19, forward: fwd, height: 1.10 })
-				shoulder_r = View.project(v, { right: 0.19, forward: fwd, height: 1.10 })
-				hand_l = View.project(v, { right: 0.0 - 0.52, forward: fwd, height: 0.70 })
-				hand_r = View.project(v, { right: 0.52, forward: fwd, height: 0.70 })
-				head = View.project(v, { right: 0.0, forward: fwd, height: 1.24 })
-				eye_l = View.project(v, { right: 0.0 - 0.045, forward: fwd, height: 1.26 })
-				eye_r = View.project(v, { right: 0.045, forward: fwd, height: 1.26 })
+			if Eye.ahead(v, stands) {
+				c = Eye.turn(v, stands)
+				ppm = Eye.pixels_per_metre(v, c.forward)
+				shoulder_l = Eye.project(v, { right: 0.0 - 0.19, forward: fwd, height: 1.10 })
+				shoulder_r = Eye.project(v, { right: 0.19, forward: fwd, height: 1.10 })
+				hand_l = Eye.project(v, { right: 0.0 - 0.52, forward: fwd, height: 0.70 })
+				hand_r = Eye.project(v, { right: 0.52, forward: fwd, height: 0.70 })
+				head = Eye.project(v, { right: 0.0, forward: fwd, height: 1.24 })
+				eye_l = Eye.project(v, { right: 0.0 - 0.045, forward: fwd, height: 1.26 })
+				eye_r = Eye.project(v, { right: 0.045, forward: fwd, height: 1.26 })
 				var $out = List.with_capacity(14)
 				# Two legs and two long pointed shoes, under a hem that stops
 				# short of the floor.
@@ -57,8 +57,8 @@ Witch :: [].{
 				# The robe, flaring to the hem.
 				$out = List.concat($out, Panels.face(v, fwd, [0.0 - 0.19, 1.10, 0.19, 1.10, 0.30, 0.66, 0.42, 0.24, 0.0 - 0.42, 0.24, 0.0 - 0.30, 0.66], Flat(witch_c)))
 				# Two arms, held out from it.
-				$out = List.append($out, Shapes.line(shoulder_l.x, shoulder_l.y, hand_l.x, hand_l.y, 0.075 * ppm, Flat(witch_c)))
-				$out = List.append($out, Shapes.line(shoulder_r.x, shoulder_r.y, hand_r.x, hand_r.y, 0.075 * ppm, Flat(witch_c)))
+				$out = List.append($out, Shapes.line({ from: shoulder_l, to: hand_l, width: 0.075 * ppm }, Flat(witch_c)))
+				$out = List.append($out, Shapes.line({ from: shoulder_r, to: hand_r, width: 0.075 * ppm }, Flat(witch_c)))
 				$out = List.append($out, Disc({ x: head.x, y: head.y, radius: 0.115 * ppm, fill: Flat(witch_c) }))
 				# The hat: a brim, and a point that leans.
 				$out = List.concat($out, Panels.face(v, fwd, [0.0 - 0.32, 1.37, 0.32, 1.37, 0.30, 1.31, 0.0 - 0.30, 1.31], Flat(witch_c)))

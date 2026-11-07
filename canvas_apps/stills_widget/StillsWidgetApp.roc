@@ -349,18 +349,21 @@ hint_line = |text, row|
 outline_shapes : StillShapes.Anchor, Stills.StillPolygon -> List(Shapes.Shape)
 outline_shapes = |anchor, polygon| {
 	corners = StillShapes.screen_points(anchor, polygon.points)
-	corners.map2(
-		corners.drop_first(1).concat(corners.take_first(1)),
-		|from, to|
-			Shapes.line(
-				from.x.to_f64(),
-				from.y.to_f64(),
-				to.x.to_f64(),
-				to.y.to_f64(),
-				1.0,
-				Flat(ink),
-			),
-	)
+	# A baked still repeats some corners, and a repeated corner has no edge.
+	corners
+		.map2(corners.drop_first(1).concat(corners.take_first(1)), |from, to| { from, to })
+		.keep_if(|{ from, to }| from != to)
+		.map(
+			|{ from, to }|
+				Shapes.line(
+					{
+						from: { x: from.x.to_f64(), y: from.y.to_f64() },
+						to: { x: to.x.to_f64(), y: to.y.to_f64() },
+						width: 1.0,
+					},
+					Flat(ink),
+				),
+		)
 }
 
 ## The large still, with the outlines of its polygons if they show.
@@ -742,11 +745,20 @@ expect
 		},
 	)
 
-# The outlines add one line for each point of the still, and none when hidden.
+# The outlines add one line for each edge between two different corners, and
+# none when hidden.
 expect large_shapes(start).len() == start.large_still.polygons.len()
-expect
-	large_shapes({ ..start, outlines: Shown }).len()
-		== start.large_still.polygons.len() + point_count(start.large_still.polygons)
+expect {
+	edge_count = start.large_still.polygons.fold(
+		0,
+		|sum, polygon| {
+			points = polygon.points
+			ends = points.drop_first(1).concat(points.take_first(1))
+			sum + points.map2(ends, |from, to| from != to).keep_if(|differ| differ).len()
+		},
+	)
+	large_shapes({ ..start, outlines: Shown }).len() == start.large_still.polygons.len() + edge_count
+}
 
 # A polygon's outline closes: its last line ends where its first starts.
 expect {
@@ -771,22 +783,16 @@ expect {
 	}
 }
 
-# A repeated point makes an empty line, and a still of one point none at all.
+# A repeated corner makes no line, so a still of one point has no outline, and
+# one of two points has a line there and one back.
 expect {
 	anchor = {
 		feet: Screen.point(0.0, 0.0),
 		flip: AsDrawn,
 		height_px: Pixels.of(10.0),
 	}
-	outline_shapes(
-		anchor,
-		{
-			color: RgbColor.of(0),
-			gradients: [],
-			points: [{ x: 1.0, y: 1.0 }],
-		},
-	)
-		== [Poly({ coordinates: [], fill: Flat(ink) })]
+	outline_of = |points| outline_shapes(anchor, { color: RgbColor.of(0), gradients: [], points })
+	outline_of([{ x: 1.0, y: 1.0 }]) == [] and outline_of([{ x: 1.0, y: 1.0 }, { x: 1.0, y: 0.0 }]).len() == 2
 }
 
 # The picture answers each click.

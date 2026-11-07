@@ -11,7 +11,7 @@
 import lib.Shapes
 import lib.Brush
 import lib.RgbColor
-import lib.View
+import lib.Eye
 import Panels
 
 Fence :: [].{
@@ -40,7 +40,7 @@ Fence :: [].{
 	rail_at_high : F64
 	rail_at_high = 1.34
 
-	shapes : View.View, F64 -> List(Shapes.Shape)
+	shapes : Eye.Eye, F64 -> List(Shapes.Shape)
 	shapes = |v, now| {
 		fwd = fence_at - now
 		var $out = List.with_capacity(160)
@@ -71,18 +71,18 @@ Fence :: [].{
 		$out
 	}
 
-	picket : View.View, F64, F64 -> List(Shapes.Shape)
+	picket : Eye.Eye, F64, F64 -> List(Shapes.Shape)
 	picket = |v, fwd, x|
 		Panels.face(v, fwd, [x, 0.0, x + picket_wide, 0.0, x + picket_wide, fence_high - 0.16, x + picket_wide / 2.0, fence_high, x, fence_high - 0.16], Flat(fence_c))
 
-	front_rail : View.View, F64, F64 -> List(Shapes.Shape)
+	front_rail : Eye.Eye, F64, F64 -> List(Shapes.Shape)
 	front_rail = |v, fwd, y|
 		List.concat(
 			Panels.face(v, fwd, [gate_half, y, yard_half, y, yard_half, y + 0.1, gate_half, y + 0.1], Flat(fence_c)),
 			Panels.face(v, fwd, [0.0 - yard_half, y, 0.0 - gate_half, y, 0.0 - gate_half, y + 0.1, 0.0 - yard_half, y + 0.1], Flat(fence_c)),
 		)
 
-	side_picket : View.View, F64, F64 -> List(Shapes.Shape)
+	side_picket : Eye.Eye, F64, F64 -> List(Shapes.Shape)
 	side_picket = |v, x, f|
 		Panels.world(
 			v,
@@ -96,7 +96,7 @@ Fence :: [].{
 			Flat(fence_c),
 		)
 
-	side_rail : View.View, F64, F64, F64 -> List(Shapes.Shape)
+	side_rail : Eye.Eye, F64, F64, F64 -> List(Shapes.Shape)
 	side_rail = |v, now, x, y|
 		Panels.world(
 			v,

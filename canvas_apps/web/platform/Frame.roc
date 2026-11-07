@@ -32,7 +32,6 @@ Frame :: [].{
 
 	Shape : [
 		Poly({ coordinates : List(F64), fill : Frame.Fill }),
-		Pieces({ triangle_coordinates : List(F64), fill : Frame.Fill }),
 		Disc({ x : F64, y : F64, radius : F64, fill : Frame.Fill }),
 		Rect({ x : F64, y : F64, width : F64, height : F64, fill : Frame.Fill }),
 		Blend(Frame.Mode),

@@ -4,12 +4,11 @@
 # Here a frame is a value, so this answers a list of shapes and the same list
 # is filled by a canvas in a browser and by roc-ray in a window.
 #
-# The comet, the halos and the flash are additive, as upstream's are: one
-# `Blend(Add)` run covers all three.
+# The comet, the halos and the flash are additive, as upstream's are: one run
+# of added light covers all three.
 import lib.Shapes
 import lib.Brush
 import lib.RgbColor
-import lib.Color
 import lib.Font
 import lib.Math
 import Rules
@@ -28,14 +27,10 @@ PongDraw :: [].{
 	frame = |world| {
 		var $out = List.with_capacity(140)
 		# The field, a dark vertical gradient rather than flat black.
-		$out = List.append($out, Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Linear({ stops: { start_color: Color.brush(Rules.field_top), end_color: Color.brush(Rules.field_bottom), start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: h } }) }))
+		$out = List.append($out, Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Linear({ stops: { start_color: Brush.opaque(Rules.field_top), end_color: Brush.opaque(Rules.field_bottom), start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: h } }) }))
 		$out = List.concat($out, center_line({}))
 		$out = List.concat($out, scores(world))
-		$out = List.append($out, Blend(Add))
-		$out = List.concat($out, trail(world))
-		$out = List.concat($out, glow(world))
-		$out = List.concat($out, wash(world))
-		$out = List.append($out, Blend(Over))
+		$out = List.concat($out, Shapes.added_light([trail(world), glow(world), wash(world)].join()))
 		$out = List.concat($out, bodies(world))
 		List.concat($out, banner(world))
 	}
@@ -47,7 +42,7 @@ PongDraw :: [].{
 		var $i = 0
 		while $i < 15 {
 			y = 12.0 + I64.to_f64($i) * 40.0
-			$out = List.append($out, Shapes.rounded_rect(w * 0.5 - 2.0, y, 4.0, 22.0, 1.0, 4, Flat(dash)))
+			$out = List.append($out, Shapes.rounded_rect({ x: w * 0.5 - 2.0, y, width: 4.0, height: 22.0, corner_radius: 1.0, corner_steps: 4 }, Flat(dash)))
 			$i = $i + 1
 		}
 		$out
@@ -63,8 +58,7 @@ PongDraw :: [].{
 			p = List.get(world.trail, $i) ?? { x: 0, y: 0 }
 			fade = 1.0 - U64.to_f64($i) / 14.0
 			r = 10.0 * (0.35 + 0.55 * fade)
-			c = Color.brush(Rules.ball_neon)
-			$out = List.append($out, Disc({ x: F32.to_f64(p.x), y: F32.to_f64(p.y), radius: r, fill: Flat({ ..c, a: fade * fade * 0.51 }) }))
+			$out = List.append($out, Disc({ x: F32.to_f64(p.x), y: F32.to_f64(p.y), radius: r, fill: Flat(Brush.with_alpha(Rules.ball_neon, fade * fade * 0.51)) }))
 			$i = $i + 1
 		}
 		$out
@@ -82,8 +76,8 @@ PongDraw :: [].{
 		]
 	}
 
-	halo : F64, F64, F64, Color.Rgba -> Shapes.Shape
-	halo = |x, y, r, col| Shapes.halo(x, y, r, Color.brush(col), 0.39)
+	halo : F64, F64, F64, RgbColor -> Shapes.Shape
+	halo = |x, y, radius, color| Shapes.halo({ center: { x, y }, radius }, Brush.with_alpha(color, 0.39))
 
 	## The full-field tint after a hit or a point, which decays to nothing.
 	wash : Rules.World -> List(Shapes.Shape)
@@ -91,8 +85,7 @@ PongDraw :: [].{
 		if world.flash.intensity <= 0.0 {
 			[]
 		} else {
-			c = Color.brush(world.flash.color)
-			[Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Flat({ ..c, a: F32.to_f64(world.flash.intensity) * 0.27 }) })]
+			[Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Flat(Brush.with_alpha(world.flash.color, F32.to_f64(world.flash.intensity) * 0.27)) })]
 		}
 
 	## The solid bodies, over their own glow so the edges stay crisp.
@@ -103,10 +96,10 @@ PongDraw :: [].{
 		bx = F32.to_f64(world.ball.pos.x)
 		by = F32.to_f64(world.ball.pos.y)
 		[
-			Shapes.rounded_rect(F32.to_f64(l.x), F32.to_f64(l.y), F32.to_f64(l.width), F32.to_f64(l.height), 7.0, 8, Flat(Color.brush(Rules.left_neon))),
-			Shapes.rounded_rect(F32.to_f64(r.x), F32.to_f64(r.y), F32.to_f64(r.width), F32.to_f64(r.height), 7.0, 8, Flat(Color.brush(Rules.right_neon))),
-			Disc({ x: bx, y: by, radius: 10.0, fill: Flat(Color.brush(Rules.ball_neon)) }),
-			Disc({ x: bx - 2.0, y: by - 3.0, radius: 4.2, fill: Flat(Color.brush(Color.white)) }),
+			Shapes.rounded_rect({ x: F32.to_f64(l.x), y: F32.to_f64(l.y), width: F32.to_f64(l.width), height: F32.to_f64(l.height), corner_radius: 7.0, corner_steps: 8 }, Flat(Brush.opaque(Rules.left_neon))),
+			Shapes.rounded_rect({ x: F32.to_f64(r.x), y: F32.to_f64(r.y), width: F32.to_f64(r.width), height: F32.to_f64(r.height), corner_radius: 7.0, corner_steps: 8 }, Flat(Brush.opaque(Rules.right_neon))),
+			Disc({ x: bx, y: by, radius: 10.0, fill: Flat(Brush.opaque(Rules.ball_neon)) }),
+			Disc({ x: bx - 2.0, y: by - 3.0, radius: 4.2, fill: Flat(Brush.opaque(RgbColor.of(0xffffff))) }),
 		]
 	}
 
@@ -116,8 +109,8 @@ PongDraw :: [].{
 		left = U64.to_str(world.left.score)
 		right = U64.to_str(world.right.score)
 		List.concat(
-			Font.centered(left, w * 0.32, 30.0, 44.0, Color.brush(Rules.left_neon)),
-			Font.centered(right, w * 0.68, 30.0, 44.0, Color.brush(Rules.right_neon)),
+			Font.centered(left, { top_center: { x: w * 0.32, y: 30.0 }, size: 44.0, color: Brush.opaque(Rules.left_neon) }),
+			Font.centered(right, { top_center: { x: w * 0.68, y: 30.0 }, size: 44.0, color: Brush.opaque(Rules.right_neon) }),
 		)
 	}
 
@@ -125,7 +118,7 @@ PongDraw :: [].{
 	banner : Rules.World -> List(Shapes.Shape)
 	banner = |world| {
 		hint = "W / S MOVE    SPACE NEW MATCH"
-		var $out = Font.centered(hint, w / 2.0, h - 34.0, 17.0, Color.brush(Rules.hint_color))
+		var $out = Font.centered(hint, { top_center: { x: w / 2.0, y: h - 34.0 }, size: 17.0, color: Brush.opaque(Rules.hint_color) })
 		if Rules.is_over(world) {
 			left_won = world.left.score >= 5
 			won = if left_won {
@@ -139,10 +132,9 @@ PongDraw :: [].{
 			} else {
 				Rules.right_neon
 			}
-			dim = Color.brush(Rules.field_bottom)
-			$out = List.concat([Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Flat({ ..dim, a: 0.75 }) })], $out)
-			$out = List.concat($out, Font.centered(won, w / 2.0, 248.0, 40.0, Color.brush(tint)))
-			List.concat($out, Font.centered(again, w / 2.0, 316.0, 19.0, Color.brush(Rules.hint_color)))
+			$out = List.concat([Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Flat(Brush.with_alpha(Rules.field_bottom, 0.75)) })], $out)
+			$out = List.concat($out, Font.centered(won, { top_center: { x: w / 2.0, y: 248.0 }, size: 40.0, color: Brush.opaque(tint) }))
+			List.concat($out, Font.centered(again, { top_center: { x: w / 2.0, y: 316.0 }, size: 19.0, color: Brush.opaque(Rules.hint_color) }))
 		} else {
 			$out
 		}

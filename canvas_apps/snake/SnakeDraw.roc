@@ -5,8 +5,7 @@
 # answers one instead, and the same list is filled by a canvas in a browser and
 # by roc-ray in a window.
 #
-# The halos are additive, as upstream's are: `Blend(Add)` marks the run and
-# `Blend(Over)` ends it.
+# The halos are additive, as upstream's are: they are a run of added light.
 import lib.Shapes
 import lib.ArgbColor
 import lib.Brush
@@ -75,28 +74,28 @@ SnakeDraw :: [].{
 		score = Str.concat("SCORE ", U64.to_str(world.score))
 
 		hint = "ARROWS / WASD TURN    SPACE RESTART"
-		var $out = Font.text_shapes("SNAKE", left, 26.0, 30.0, snake_head)
-		$out = List.concat($out, Font.text_shapes(score, w - left - Font.width_of(score, 24.0), 30.0, 24.0, hud_color))
-		List.concat($out, Font.centered(hint, w / 2.0, 572.0, 17.0, hint_color))
+		var $out = Font.text_shapes("SNAKE", { top_left: { x: left, y: 26.0 }, size: 30.0, color: snake_head })
+		$out = List.concat($out, Font.text_shapes(score, { top_left: { x: w - left - Font.width_of(score, 24.0), y: 30.0 }, size: 24.0, color: hud_color }))
+		List.concat($out, Font.centered(hint, { top_center: { x: w / 2.0, y: 572.0 }, size: 17.0, color: hint_color }))
 	}
 
 	## The bordered playfield and its faint lattice.
 	board : {} -> List(Shapes.Shape)
 	board = |{}| {
 		var $out = [
-			Shapes.rounded_rect(left - 10.0, top - 10.0, board_w + 20.0, board_h + 20.0, 8.0, 8, Flat(board_edge)),
-			Shapes.rounded_rect(left - 8.0, top - 8.0, board_w + 16.0, board_h + 16.0, 7.0, 8, Flat(board_fill)),
+			Shapes.rounded_rect({ x: left - 10.0, y: top - 10.0, width: board_w + 20.0, height: board_h + 20.0, corner_radius: 8.0, corner_steps: 8 }, Flat(board_edge)),
+			Shapes.rounded_rect({ x: left - 8.0, y: top - 8.0, width: board_w + 16.0, height: board_h + 16.0, corner_radius: 7.0, corner_steps: 8 }, Flat(board_fill)),
 		]
 		var $c = 0
 		while $c <= 25 {
 			x = left + I64.to_f64($c) * cell
-			$out = List.append($out, Shapes.line(x, top, x, top + board_h, 1.0, Flat(grid_line)))
+			$out = List.append($out, Shapes.line({ from: { x, y: top }, to: { x, y: top + board_h }, width: 1.0 }, Flat(grid_line)))
 			$c = $c + 1
 		}
 		var $r = 0
 		while $r <= 18 {
 			y = top + I64.to_f64($r) * cell
-			$out = List.append($out, Shapes.line(left, y, left + board_w, y, 1.0, Flat(grid_line)))
+			$out = List.append($out, Shapes.line({ from: { x: left, y }, to: { x: left + board_w, y }, width: 1.0 }, Flat(grid_line)))
 			$r = $r + 1
 		}
 		$out
@@ -127,7 +126,7 @@ SnakeDraw :: [].{
 				U64.to_f64($i) / U64.to_f64(n - 1)
 			}
 			p = cell_at(c)
-			$out = List.append($out, Shapes.rounded_rect(p.x + 2.0, p.y + 2.0, cell - 4.0, cell - 4.0, 5.0, 6, Flat(Brush.mix(snake_head, snake_tail, t))))
+			$out = List.append($out, Shapes.rounded_rect({ x: p.x + 2.0, y: p.y + 2.0, width: cell - 4.0, height: cell - 4.0, corner_radius: 5.0, corner_steps: 6 }, Flat(Brush.mix(snake_head, snake_tail, t))))
 			$i = $i + 1
 		}
 		$out
@@ -141,12 +140,10 @@ SnakeDraw :: [].{
 		head_center = middle_of(world.snake.head())
 		food_r = cell * (1.0 + 0.5 * beat)
 		head_r = cell * 1.5
-		[
-			Blend(Add),
-			Shapes.halo(food_center.x, food_center.y, food_r, food_neon, 0.3137254901960784),
-			Shapes.halo(head_center.x, head_center.y, head_r, snake_head, 0.25098039215686274),
-			Blend(Over),
-		]
+		Shapes.added_light([
+			Shapes.halo({ center: food_center, radius: food_r }, Brush.translucent(ArgbColor.of(0x50ff6b8b))),
+			Shapes.halo({ center: head_center, radius: head_r }, Brush.translucent(ArgbColor.of(0x407ef7d1))),
+		])
 	}
 
 	## The apple and its highlight.
@@ -170,8 +167,8 @@ SnakeDraw :: [].{
 				again = "PRESS SPACE TO PLAY AGAIN"
 				alpha = 0.59 + 0.41 * Trig.pulse(elapsed)
 				var $out = [Rect({ x: left - 8.0, y: 236.0, width: board_w + 16.0, height: 140.0, fill: Flat(Brush.translucent(ArgbColor.of(0xe1060810))) })]
-				$out = List.concat($out, Font.centered(over, w / 2.0, 262.0, 40.0, food_neon))
-				List.concat($out, Font.centered(again, w / 2.0, 326.0, 19.0, { r: hint_color.r, g: hint_color.g, b: hint_color.b, a: alpha }))
+				$out = List.concat($out, Font.centered(over, { top_center: { x: w / 2.0, y: 262.0 }, size: 40.0, color: food_neon }))
+				List.concat($out, Font.centered(again, { top_center: { x: w / 2.0, y: 326.0 }, size: 19.0, color: { ..hint_color, a: alpha } }))
 			}
 		}
 }

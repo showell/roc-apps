@@ -52,7 +52,7 @@ which builds every app and runs it headless.
 | `snake/` | everything about one app: its two app roots, its `page.html`, and its rules and drawing, which cannot tell which runner is running them |
 | `snake/main.roc` | the app on roc-ray, reaching the runner as `native.CanvasAppRunner` |
 | `snake/web.roc` | the app as a page, on `web/platform/`, through `lib.WasmApp` |
-| `lib/` | a package every app shares: `CanvasApp` `WasmApp` `Shapes` `Brush` `Input` `Keys` `Mouse` `Math` `Color` `Camera` `Font` `Random` `Trig` `BrushGlsl` `View` |
+| `lib/` | a package every app shares: `CanvasApp` `WasmApp` `Shapes` `Brush` `Input` `Keys` `Mouse` `Math` `Camera` `Font` `Random` `Trig` `BrushGlsl` `Eye` `ConvexCut` `RgbColor` `ArgbColor` |
 | `web/` | the page's end: the wasm platform and host, `build.zig` and `options.zig` (the host object, rebuilt by every page build), `canvas_app_runner.js`, `shapes_canvas.js`, `page_check.mjs`, `mini_canvas.mjs`, `mini_font.mjs`, `camera_check.mjs`, `text_check.mjs` |
 | `native/` | roc-ray's end, as a package: `CanvasAppRunner.roc` |
 | `widget_kit/` | what the tutorial's widgets share, as a package: `ScrubWidget` lays out the picture and the text, and `VcrButtons` runs a widget's one number with a video recorder's buttons. It sits above `lib/` and Safari's `game` package, because it speaks in `Fraction`s and no other app wants it |
@@ -176,7 +176,7 @@ program = WasmApp.program(SnakeApp.canvas_app)          # snake/web.roc
 
 ## What a frame is
 
-A list of `Shapes.Shape` in the app's own coordinates. Six shapes and two
+A list of `Shapes.Shape` in the app's own coordinates. Five shapes and two
 marks:
 
 | | |
@@ -184,20 +184,21 @@ marks:
 | `Poly` | coordinates and a `Brush.Fill` |
 | `Disc` | centre, radius, a fill, and a rectangle it is kept inside |
 | `Rect` | a box and a fill |
-| `Pieces` | the triangles of one concave polygon, and a fill |
 | `Image` | `cols × rows` of `Brush.Rgba`, stretched over a box without smoothing |
 | `Text` | a line of words, its baseline, a size, `Prose` or `Code`, `Left` or `Center`, and a colour |
 | `Blend` | `Over` or `Add` |
 | `View` | `Screen`, or `World` with a camera's four settings |
 
-An app writes `Poly` and lets `Shapes.cut` make `Pieces`: the native runner
-calls it, because roc-ray fills convex polygons only, and the canvas does not,
-because it fills a concave one itself.
+An app writes `Poly`, any polygon. The native runner has `ConvexCut` cut each
+concave one into triangles, a type of its own that no app builds, because
+roc-ray fills convex polygons only. The canvas fills a concave one itself.
 
 A mark is not drawn. It changes how the shapes after it are painted, until the
 next mark of its kind. `Blend(Add)` lights rather than paints. `View(World(c))`
 puts the shapes after it in a camera's world and `View(Screen)` brings them
-back to the window. A frame starts on the screen, painting over.
+back to the window. A frame starts on the screen, painting over. An app writes
+the marks in pairs around a run of shapes, with `Shapes.added_light` and
+`Shapes.in_space`.
 
 A `Brush.Fill` is a flat colour or one of five gradients — `Span`,
 `Radial`, `Linear`, `Ellipse`, `Glow` — each carrying its geometry in scene
@@ -229,7 +230,7 @@ drag the position may be off the canvas. A test writes one down:
 Input.none.with_key_down(KeyW)
 ```
 
-`lib/Keys.roc`, `lib/Mouse.roc`, `lib/Math.roc`, `lib/Color.roc`,
+`lib/Keys.roc`, `lib/Mouse.roc`, `lib/Math.roc`,
 `lib/Camera.roc` and `lib/Random.roc` mirror roc-ray's surface under roc-ray's
 own names, so a program ported from an example keeps its rules and changes its
 import lines.

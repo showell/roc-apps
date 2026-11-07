@@ -120,21 +120,15 @@ ScrubWidget :: [].{
 	} -> List(Shapes.Shape)
 	ride_shapes_in = |shapes, sky| {
 		corner = { x: 0.0, y: 0.0 }
-		ride = Backdrop.frame_shapes(shapes, sky)
-		[
-			[
-				View(
-					World({
-						target: corner,
-						offset: corner,
-						rotation: 0.0,
-						zoom: 2.0 / 3.0,
-					}),
-				),
-			],
-			ride,
-			[View(Screen)],
-		].join()
+		Shapes.in_space(
+			World({
+				target: corner,
+				offset: corner,
+				rotation: 0.0,
+				zoom: 2.0 / 3.0,
+			}),
+			Backdrop.frame_shapes(shapes, sky),
+		)
 	}
 
 	## Where an animation has got to, in words.

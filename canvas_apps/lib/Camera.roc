@@ -1,17 +1,17 @@
 # Camera -- a 2D camera as a value, under roc-ray's own name and surface.
 #
-# Hand-written, the same trick as Keys, Math, Color and Random: a game ported
+# Hand-written, the same trick as Keys, Math and Random: a game ported
 # from an example says `import lib.Camera` instead of `import rr.Camera` and
 # every `Camera.` in it is left alone. Only what a game here asks for is
 # implemented; roc-ray's is larger.
 #
 # **A CAMERA IS TWO THINGS AND THEY ARE BOTH HERE.** It is arithmetic the game
 # itself needs -- `screen_to_world` is how a pointer in pixels becomes a point
-# in the world, and no runner can answer that for it -- and it is a mark in a
-# frame saying where the shapes after it are. `view` is the second; everything
-# else is the first, and none of it is an effect.
+# in the world, and no runner can answer that for it -- and it is the space a
+# frame's shapes can be put in. `space` is the second; everything else is the
+# first, and none of it is an effect.
 #
-# Pixels in F32, because that is what the examples are written in. `view`
+# Pixels in F32, because that is what the examples are written in. `space`
 # widens to the F64 a frame is made of.
 import Math
 import Shapes
@@ -116,18 +116,15 @@ Camera :: [].{
 			Math.rect(left, top, right - left, bottom - top)
 		}
 
-		## The mark that puts the shapes after it in this camera's world.
-		## `Shapes.screen` is how a frame comes back out again.
-		view : Camera2D -> Shapes.Shape
-		view = |camera|
-			View(
-				World({
-					target: { x: camera.target.x.to_f64(), y: camera.target.y.to_f64() },
-					offset: { x: camera.offset.x.to_f64(), y: camera.offset.y.to_f64() },
-					rotation: camera.rotation.to_f64(),
-					zoom: camera.zoom.to_f64(),
-				}),
-			)
+		## This camera's world, as the space `Shapes.in_space` puts shapes in.
+		space : Camera2D -> Shapes.Space
+		space = |camera|
+			World({
+				target: { x: camera.target.x.to_f64(), y: camera.target.y.to_f64() },
+				offset: { x: camera.offset.x.to_f64(), y: camera.offset.y.to_f64() },
+				rotation: camera.rotation.to_f64(),
+				zoom: camera.zoom.to_f64(),
+			})
 	}
 
 	## Identity: no offset, no rotation, unit zoom.

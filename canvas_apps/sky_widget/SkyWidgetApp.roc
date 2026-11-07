@@ -214,14 +214,7 @@ curve_shapes = |level_at, color| {
 	List.map2(
 		points,
 		points.drop_first(1),
-		|a, b| Shapes.line(
-			a.x,
-			a.y,
-			b.x,
-			b.y,
-			2.0,
-			ScrubWidget.flat(color),
-		),
+		|a, b| Shapes.line({ from: a, to: b, width: 2.0 }, ScrubWidget.flat(color)),
 	)
 }
 
@@ -244,11 +237,7 @@ cursor_shapes = |job, clock| {
 	[
 		[
 			Shapes.line(
-				x,
-				chart_top,
-				x,
-				chart_bottom,
-				1.0,
+				{ from: { x, y: chart_top }, to: { x, y: chart_bottom }, width: 1.0 },
 				ScrubWidget.flat(clock_color),
 			),
 		],

@@ -48,4 +48,3 @@ PixelColor: raster code past lib.Shapes, where numbers are plain
 PixelGrid: raster code past lib.Shapes, where numbers are plain
 ScanlineFill: raster code past lib.Shapes, where numbers are plain
 ScreenRoll: raster code past lib.Shapes, where numbers are plain
-ShapesPixels: raster code past lib.Shapes, where numbers are plain

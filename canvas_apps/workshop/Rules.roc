@@ -1,8 +1,8 @@
 # Rules -- roc-ray's examples/generated_assets, the Pixel Workshop editor.
 #
 # Upstream's `palette_color`, `initial_pixels`, `palette_from_input`, `cell_at`
-# and the body of `update_editor` are here with their import lines changed, and
-# its expects came across word for word.
+# and the body of `update_editor` are here with their import lines changed and
+# their colours written as RgbColor, and its expects came across word for word.
 #
 # **WHAT DID NOT COME ACROSS IS THE INTERESTING PART.** Upstream's editor
 # answers `Edited : { model, edits }`, where an edit is `Upload(pixels)`,
@@ -15,7 +15,7 @@
 # to drift, nothing to keep in step, and no upload to forget. Two of the three
 # edits are gone and the type with them; what is left is the sound, which is a
 # thing that HAPPENED and which this seam already carries as a bit per tone.
-import lib.Color
+import lib.RgbColor
 import lib.Input
 import lib.Math
 import lib.Mouse
@@ -29,7 +29,7 @@ Rules :: [].{
 	}
 
 	World : {
-		pixels : List(Color.Rgba),
+		pixels : List(RgbColor),
 		palette : U64,
 		last_cell : Rules.PaintState,
 		mouse : Math.Vec2,
@@ -53,29 +53,29 @@ Rules :: [].{
 	canvas_bounds : Math.Rect
 	canvas_bounds = Math.rect(canvas_x, canvas_y, canvas_size, canvas_size)
 
-	palette_color : U64 -> Color.Rgba
+	palette_color : U64 -> RgbColor
 	palette_color = |index|
 		match index {
-			0 => Color.from_hex_rgb(0x17202a)
-			1 => Color.from_hex_rgb(0x2f80ed)
-			2 => Color.from_hex_rgb(0xf9c74f)
-			_ => Color.from_hex_rgb(0xf94144)
+			0 => RgbColor.of(0x17202a)
+			1 => RgbColor.of(0x2f80ed)
+			2 => RgbColor.of(0xf9c74f)
+			_ => RgbColor.of(0xf94144)
 		}
 
 	## The design the canvas starts as and that C restores: two diagonals and a
 	## square in the middle.
-	initial_pixels : List(Color.Rgba)
+	initial_pixels : List(RgbColor)
 	initial_pixels = List.map_with_index(
-		List.repeat(Color.from_hex_rgb(0xf3f0e8), grid_side * grid_side),
+		List.repeat(RgbColor.of(0xf3f0e8), grid_side * grid_side),
 		|_color, index| {
 			row = index // grid_side
 			col = index % grid_side
 			if row == col or row + col == grid_side - 1 {
-				Color.from_hex_rgb(0x2f80ed)
+				RgbColor.of(0x2f80ed)
 			} else if row >= 6 and row <= 9 and col >= 6 and col <= 9 {
-				Color.from_hex_rgb(0xf9c74f)
+				RgbColor.of(0xf9c74f)
 			} else {
-				Color.from_hex_rgb(0xf3f0e8)
+				RgbColor.of(0xf3f0e8)
 			}
 		},
 	)

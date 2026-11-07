@@ -7,7 +7,7 @@
 import lib.Shapes
 import lib.Brush
 import lib.RgbColor
-import lib.View
+import lib.Eye
 import Panels
 
 House :: [].{
@@ -31,7 +31,7 @@ House :: [].{
 	hall_deep : F64
 	hall_deep = 2.4
 
-	shapes : View.View, F64, F64 -> List(Shapes.Shape)
+	shapes : Eye.Eye, F64, F64 -> List(Shapes.Shape)
 	shapes = |v, hf, open| {
 		var $out = List.with_capacity(24)
 		$out = List.concat($out, Panels.panel(v, hf, 0.0 - 3.0, 0.0, 3.0, 2.6, Flat(house_c)))
@@ -79,7 +79,7 @@ House :: [].{
 	leaf_swing : F64
 	leaf_swing = 1.658
 
-	leaf : View.View, F64, F64 -> List(Shapes.Shape)
+	leaf : Eye.Eye, F64, F64 -> List(Shapes.Shape)
 	leaf = |v, hf, open| {
 		a = open * leaf_swing
 		fx = hinge_at + leaf_wide * a.cos()

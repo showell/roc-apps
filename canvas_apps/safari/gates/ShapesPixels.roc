@@ -4,9 +4,8 @@
 ## paints every proof frame through this module, and ShapesFrame paints each
 ## one a second time with its polygons cut into triangles.
 ##
-## It paints only what Safari's ride draws: polygons, triangle pieces and
-## flat discs, each laid over what is there. Any other shape
-## crashes, naming what it got.
+## It paints only what Safari's ride draws: polygons and flat discs, each laid
+## over what is there. Any other shape crashes, naming what it got.
 import lib.Brush
 import lib.Shapes
 import ScanlineFill
@@ -31,10 +30,6 @@ pixels_with_shape = |pixels, { roll, shape }|
 		Poly(p) => ScanlineFill.polygon_pixels(
 			pixels,
 			{ roll, coordinates: p.coordinates, fill: p.fill },
-		)
-		Pieces(p) => pixels_with_pieces(
-			pixels,
-			{ roll, triangle_coordinates: p.triangle_coordinates, fill: p.fill },
 		)
 		Disc(d) => {
 			color = match d.fill {
@@ -62,25 +57,3 @@ pixels_with_shape = |pixels, { roll, shape }|
 		# The roll is the caller's, so the game's lean mark never reaches here.
 		View(_) => crash "ShapesPixels: a view mark among the ride's shapes"
 	}
-
-## The triangles, six numbers each, all filled with one brush.
-pixels_with_pieces : List(U32),
-{
-	roll : ScreenRoll,
-	triangle_coordinates : List(F64),
-	fill : Brush.Fill,
-} -> List(U32)
-pixels_with_pieces = |pixels, { roll, triangle_coordinates, fill }| {
-	var $px = pixels
-	for k in 0..<(triangle_coordinates.len() // 6) {
-		$px = ScanlineFill.polygon_pixels(
-			$px,
-			{
-				roll,
-				coordinates: triangle_coordinates.sublist({ start: 6 * k, len: 6 }),
-				fill,
-			},
-		)
-	}
-	$px
-}

@@ -1,8 +1,7 @@
 ## Ball movement and geometry for Breakout.
 ##
-## Ported from roc-ray's examples/breakout. `lib.Math` and `lib.Color` offer
-## what `rr.Math` and `rr.Color` offer under the same names, so the import line
-## is the whole diff.
+## Ported from roc-ray's examples/breakout. `lib.Math` offers what `rr.Math`
+## offers under the same names, so the import line is the whole diff.
 import lib.Math
 
 ready_gap = 2.F32

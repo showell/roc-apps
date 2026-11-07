@@ -180,11 +180,10 @@ ride_parts = ride_pieces(paused_tour)
 frame_parts : List(Piece)
 frame_parts = backdrop_pieces(paused_tour).concat(ride_parts)
 
-## The camera's roll, which `SafariApp.frame_shapes` puts first.
-lean_mark : Shapes.Shape
-lean_mark =
-	SafariApp.frame_shapes(paused_tour).first()
-		?? crash "FrameWidgetApp.lean_mark: a frame starts with its lean"
+## The space the paused frame leans in, which `SafariApp.frame_shapes` puts
+## the whole frame in.
+lean_space : Shapes.Space
+lean_space = SafariApp.lean_space(paused_tour)
 
 ## The first `count` of the layers.
 layers_up_to : U64 -> List(Layer)
@@ -306,7 +305,7 @@ status_line = |text, row|
 
 ## The layers on, in the game's paint order.
 picture_shapes : List(Layer) -> List(Shapes.Shape)
-picture_shapes = |on_layers| shapes_in(frame_parts, on_layers).prepend(lean_mark)
+picture_shapes = |on_layers| Shapes.in_space(lean_space, shapes_in(frame_parts, on_layers))
 
 ## Everything on the canvas.
 shapes_at : FrameWidgetApp.Model -> List(Shapes.Shape)
@@ -314,7 +313,7 @@ shapes_at = |model|
 	[
 		[plain_background],
 		picture_shapes(layers_up_to(model.layers_on)),
-		[View(Screen), panel],
+		[panel],
 		status_lines(model).map_with_index(status_line),
 	].join()
 
@@ -350,7 +349,7 @@ expect picture_shapes(layers_up_to(3)) != picture_shapes(layers_up_to(4))
 expect picture_shapes(layers_up_to(9)) != picture_shapes(layers_up_to(10))
 
 # The first layer alone is the lean and the trees, in the game's order.
-expect picture_shapes([Trees]) == shapes_in(ride_parts, [Trees]).prepend(lean_mark)
+expect picture_shapes([Trees]) == Shapes.in_space(lean_space, shapes_in(ride_parts, [Trees]))
 
 # Sky is painted before grass, whichever the book comes to first.
 expect shapes_in(frame_parts, [Grass, Sky]) == shapes_in(frame_parts, [Sky, Grass])

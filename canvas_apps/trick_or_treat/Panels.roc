@@ -3,7 +3,7 @@
 # Hand-written. Every solid thing in this movie is one of three: a polygon
 # whose corners are anywhere (`world`), a polygon on one plane a fixed distance
 # away (`face`, and `panel` for its rectangle), or a strip of flat ground
-# (`strip`). Each goes through View.seen, which turns the points into the eye's
+# (`strip`). Each goes through Eye.seen, which turns the points into the eye's
 # own frame, cuts what is behind it against the near plane, and projects the
 # rest.
 #
@@ -11,14 +11,14 @@
 # anything in metres. Nothing here knows what a house or a fence is.
 import lib.Shapes
 import lib.Brush
-import lib.View
+import lib.Eye
 
 Panels :: [].{
 	# A polygon whose corners are wherever they are: the door leaf turns out of
 	# its own plane on its hinge, and a floor lies flat.
-	world : View.View, List(View.At), Brush.Fill -> List(Shapes.Shape)
+	world : Eye.Eye, List(Eye.At), Brush.Fill -> List(Shapes.Shape)
 	world = |v, ats, fill| {
-		coordinates = View.seen(v, ats)
+		coordinates = Eye.seen(v, ats)
 		if coordinates.len() < 6 {
 			[]
 		} else {
@@ -28,7 +28,7 @@ Panels :: [].{
 
 	# A polygon given as metres on one plane `fwd` away: right, height, right,
 	# height. Everything on the house's face is one of these.
-	face : View.View, F64, List(F64), Brush.Fill -> List(Shapes.Shape)
+	face : Eye.Eye, F64, List(F64), Brush.Fill -> List(Shapes.Shape)
 	face = |v, fwd, coordinates, fill| {
 		n = List.len(coordinates)
 		var $ats = List.with_capacity(n // 2)
@@ -41,12 +41,12 @@ Panels :: [].{
 	}
 
 	# A rectangle on that plane, by its two opposite corners.
-	panel : View.View, F64, F64, F64, F64, F64, Brush.Fill -> List(Shapes.Shape)
+	panel : Eye.Eye, F64, F64, F64, F64, F64, Brush.Fill -> List(Shapes.Shape)
 	panel = |v, fwd, x0, y0, x1, y1, fill| face(v, fwd, [x0, y1, x1, y1, x1, y0, x0, y0], fill)
 
 	# A strip of ground between two distances, `half` metres either side of
 	# the middle: the walkway, which is wider the nearer it is.
-	strip : View.View, F64, F64, F64, Brush.Fill -> List(Shapes.Shape)
+	strip : Eye.Eye, F64, F64, F64, Brush.Fill -> List(Shapes.Shape)
 	strip = |v, half, near_f, far_f, fill|
 		world(
 			v,
