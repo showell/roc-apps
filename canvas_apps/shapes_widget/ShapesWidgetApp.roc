@@ -1,6 +1,7 @@
 ## The widget for the Safari tutorial's first look at shapes: the frame TwoShapes
 ## makes, on a plain background, as a still picture with no controls.
 import lib.CanvasApp
+import lib.RgbColor
 import lib.Shapes
 import widget.ScrubWidget
 import TwoShapes
@@ -25,7 +26,7 @@ background = Rect({
 	y: 0.0,
 	w: ScrubWidget.canvas_width,
 	h: ScrubWidget.canvas_height,
-	fill: ScrubWidget.flat(0xf7f5f0),
+	fill: ScrubWidget.flat(RgbColor.of(0xf7f5f0)),
 })
 
 # The background goes down first, so the shapes show over it.

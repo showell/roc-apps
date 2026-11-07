@@ -21,6 +21,7 @@ import game.World
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
+import lib.RgbColor
 import lib.Trig
 import widget.ScrubWidget
 import widget.VcrButtons
@@ -174,23 +175,23 @@ shapes_at = |model| {
 	)
 }
 
-ground_color : I64
-ground_color = 0x6f9a55
+ground_color : RgbColor
+ground_color = RgbColor.of(0x6f9a55)
 
-road_color : I64
-road_color = 0x8a8a8a
+road_color : RgbColor
+road_color = RgbColor.of(0x8a8a8a)
 
-rider_color : I64
-rider_color = 0xf2efe4
+rider_color : RgbColor
+rider_color = RgbColor.of(0xf2efe4)
 
-herd_color : I64
-herd_color = 0xe9b7b0
+herd_color : RgbColor
+herd_color = RgbColor.of(0xe9b7b0)
 
-gaze_pig_color : I64
-gaze_pig_color = 0xd0603a
+gaze_pig_color : RgbColor
+gaze_pig_color = RgbColor.of(0xd0603a)
 
-sight_color : I64
-sight_color = 0xf6d743
+sight_color : RgbColor
+sight_color = RgbColor.of(0xf6d743)
 
 ## How many pixels a metre takes up, along the road and across it.
 pixels_a_metre : F64
@@ -238,7 +239,7 @@ plan_disc : {
 	along : Along,
 	across : Across,
 	radius : F64,
-	color : I64,
+	color : RgbColor,
 } -> Shapes.Shape
 plan_disc = |{ along, across, radius, color }|
 	Disc({

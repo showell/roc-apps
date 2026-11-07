@@ -228,7 +228,7 @@ plain_background = Rect({
 	y: 0.0,
 	w: picture_width,
 	h: picture_height,
-	fill: ScrubWidget.flat(0xe8e6df),
+	fill: ScrubWidget.flat(RgbColor.of(0xe8e6df)),
 })
 
 panel : Shapes.Shape
@@ -237,7 +237,7 @@ panel = Rect({
 	y: picture_height,
 	w: canvas_width,
 	h: panel_height,
-	fill: ScrubWidget.flat(0xdcecf5),
+	fill: ScrubWidget.flat(RgbColor.of(0xdcecf5)),
 })
 
 ## An address that names a layer has the page press Right once for each layer

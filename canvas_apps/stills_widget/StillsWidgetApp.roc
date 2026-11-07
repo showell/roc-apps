@@ -302,8 +302,8 @@ next_model = |model, input|
 		model
 	}
 
-picture_color : I64
-picture_color = 0xf7f5ef
+picture_color : RgbColor
+picture_color = RgbColor.of(0xf7f5ef)
 
 ink : Brush.Rgba
 ink = Brush.opaque(RgbColor.of(0x202020))

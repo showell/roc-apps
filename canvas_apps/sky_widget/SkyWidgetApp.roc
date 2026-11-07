@@ -14,6 +14,7 @@ import game.Sun
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
+import lib.RgbColor
 import widget.ScrubWidget
 import widget.VcrButtons
 
@@ -145,17 +146,17 @@ height_text = |height|
 		"${ScrubWidget.tenths_text(height.to_f64())} px"
 	}
 
-clock_color : I64
-clock_color = 0x202020
+clock_color : RgbColor
+clock_color = RgbColor.of(0x202020)
 
-sun_color : I64
-sun_color = 0x9a6a00
+sun_color : RgbColor
+sun_color = RgbColor.of(0x9a6a00)
 
-dusk_color : I64
-dusk_color = 0x24406e
+dusk_color : RgbColor
+dusk_color = RgbColor.of(0x24406e)
 
-warmth_color : I64
-warmth_color = 0xc0392b
+warmth_color : RgbColor
+warmth_color = RgbColor.of(0xc0392b)
 
 ## The status lines, each in the color of its curve on the chart.
 call_lines : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
@@ -211,7 +212,7 @@ chart_clocks : List(Clock)
 chart_clocks = List.from_iter(U32.until(0, 61)).map(|i| Clock.at_step(i * 100))
 
 ## One curve of the chart.
-curve_shapes : (Clock -> F64), I64 -> List(Shapes.Shape)
+curve_shapes : (Clock -> F64), RgbColor -> List(Shapes.Shape)
 curve_shapes = |level_at, color| {
 	points = chart_clocks.map(|clock| chart_point(clock, level_at))
 	List.map2(
@@ -263,7 +264,7 @@ cursor_shapes = |job, clock| {
 	].join()
 }
 
-curve_dot : { x : F64, y : F64 }, I64 -> Shapes.Shape
+curve_dot : { x : F64, y : F64 }, RgbColor -> Shapes.Shape
 curve_dot = |{ x, y }, color|
 	Disc({
 		x,

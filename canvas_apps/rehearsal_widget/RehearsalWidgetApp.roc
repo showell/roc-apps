@@ -21,6 +21,7 @@ import lib.CanvasApp
 import lib.Input
 import lib.Mouse
 import lib.Shapes
+import lib.RgbColor
 import lib.Trig
 import widget.ScrubWidget
 
@@ -202,26 +203,26 @@ stepped = |tries_shown, input|
 is_past_the_tries : U64 -> Bool
 is_past_the_tries = |tries_shown| tries_shown > rehearsals.len()
 
-ground_color : I64
-ground_color = 0x6f9a55
+ground_color : RgbColor
+ground_color = RgbColor.of(0x6f9a55)
 
-road_color : I64
-road_color = 0x4a4a46
+road_color : RgbColor
+road_color = RgbColor.of(0x4a4a46)
 
-line_color : I64
-line_color = 0xc8c8c0
+line_color : RgbColor
+line_color = RgbColor.of(0xc8c8c0)
 
-off_left_color : I64
-off_left_color = 0x6aa0e8
+off_left_color : RgbColor
+off_left_color = RgbColor.of(0x6aa0e8)
 
-off_right_color : I64
-off_right_color = 0xe8805a
+off_right_color : RgbColor
+off_right_color = RgbColor.of(0xe8805a)
 
-kept_color : I64
-kept_color = 0xf2efe4
+kept_color : RgbColor
+kept_color = RgbColor.of(0xf2efe4)
 
-target_color : I64
-target_color = 0xe8c84a
+target_color : RgbColor
+target_color = RgbColor.of(0xe8c84a)
 
 ## How many pixels a metre along the road takes up.
 pixels_a_metre_along : F64
@@ -256,7 +257,7 @@ ground = Rect({
 })
 
 ## A line right along the road, `across` metres from its middle.
-road_line : { across : F64, color : I64, width : F64 } -> Shapes.Shape
+road_line : { across : F64, color : RgbColor, width : F64 } -> Shapes.Shape
 road_line = |{ across, color, width }| {
 	y = canvas_point({ forward: 0.0, across }).y
 	Shapes.line(
@@ -305,7 +306,7 @@ drawn_points = |path_points| {
 }
 
 ## One arc as a run of lines from the rider.
-arc_shapes : List(ArcPoint), { color : I64, width : F64 } -> List(Shapes.Shape)
+arc_shapes : List(ArcPoint), { color : RgbColor, width : F64 } -> List(Shapes.Shape)
 arc_shapes = |path_points, { color, width }| {
 	start = { forward: 0.0, across: rider.across.to_metres() }
 	points = drawn_points(path_points).prepend(start).map(canvas_point)
@@ -324,7 +325,7 @@ arc_shapes = |path_points, { color, width }| {
 }
 
 ## The colour that says where an arc ended.
-color_of : Coast.Outcome -> I64
+color_of : Coast.Outcome -> RgbColor
 color_of = |outcome|
 	match outcome {
 		Leaves({ side: Left, .. }) => off_left_color
@@ -495,18 +496,18 @@ mark_under = |x, y| {
 
 ## The colour of the mark for `stop`: the current one stands out, those before
 ## it are filled in, and the rest are still to come.
-mark_color : U64, U64 -> I64
+mark_color : U64, U64 -> RgbColor
 mark_color = |stop, tries_shown|
 	if stop == tries_shown {
 		current_color
 	} else if stop < tries_shown {
-		0x303030
+		RgbColor.of(0x303030)
 	} else {
-		0xb8b8b8
+		RgbColor.of(0xb8b8b8)
 	}
 
-current_color : I64
-current_color = 0xd0603a
+current_color : RgbColor
+current_color = RgbColor.of(0xd0603a)
 
 ## The mark for one try: a disc, larger when it's the current one.
 try_mark : U64, U64 -> Shapes.Shape
