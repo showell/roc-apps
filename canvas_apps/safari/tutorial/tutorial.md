@@ -1408,7 +1408,7 @@ This widget adds one call, `Sky.dusk_at`, and the sky finally does something. It
 
 {{code Sky.dusk_at}}
 
-It asks for the sun's height, then picks one of two shapes. They meet when the sun has fully set, one radius below the horizon, and you can see the join in the blue line near step 4,730. Before that, dusk grows with the square of how far the sun has fallen. After that, it runs on in a straight line to full dark.
+It asks for the sun's height, then picks one of two shapes. They meet when the sun has fully set, one radius below the horizon, and you can see the join in the blue line at step 4,735. Before that, dusk grows with the square of how far the sun has fallen. After that, it runs on in a straight line to full dark.
 
 {{signatures Sky.dusk_while_up Sky.dusk_after_set}}
 

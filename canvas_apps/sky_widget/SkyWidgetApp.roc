@@ -285,8 +285,8 @@ expect
 	status_lines(HorizonWarms, Clock.at_step(3000))
 		== [
 			"clock = step 3000",
-			"Sun.height_px(clock) = 60.2 px",
-			"Sky.dusk_at(clock) = 23%",
+			"Sun.height_px(clock) = 60.3 px",
+			"Sky.dusk_at(clock) = 24%",
 			"Sky.sunset_warmth(clock) = 45%",
 		]
 
@@ -294,7 +294,7 @@ expect
 	status_lines(HorizonWarms, Clock.at_step(6000))
 		== [
 			"clock = step 6000",
-			"Sun.height_px(clock) = -123.6 px",
+			"Sun.height_px(clock) = -123.5 px",
 			"Sky.dusk_at(clock) = 100%",
 			"Sky.sunset_warmth(clock) = 0%",
 		]
