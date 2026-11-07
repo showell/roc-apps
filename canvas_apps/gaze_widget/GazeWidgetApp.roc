@@ -103,9 +103,9 @@ pig_segment =
 ## Whether a segment's pigs catch the rider's eye.
 is_distracting : World.Segment -> Bool
 is_distracting = |segment|
-	match segment.pig_interest {
-		Distracting => True
-		Unnoticed => False
+	match segment.pigs {
+		Herd({ interest: Distracting, .. }) => True
+		Herd({ interest: Unnoticed, .. }) | NoPigs => False
 	}
 
 ## The pig that catches the rider's eye.
@@ -379,7 +379,7 @@ expect {
 
 # This stretch is on the route's first distracting segment.
 expect is_distracting(first_rider.segment_index.segment_in(World.segments))
-expect World.segments.take_first(2).all(|segment| segment.pig_herd == NoPigs)
+expect World.segments.take_first(2).all(|segment| segment.pigs == NoPigs)
 expect pig_segment.length == Distance.metres(400.0)
 
 # The steps the book's table quotes, each with its speed in metres a step, its

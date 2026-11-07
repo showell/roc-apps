@@ -85,12 +85,10 @@ World :: [].{
 	Segment : {
 		length : Distance,
 		trees : List(Trees.RoadsideTree),
-		pig_herd : PigHerd,
-		bull : [WithBull, NoBull],
 
-		## How the rider takes the segment's herd. A segment with no pigs has
-		## nothing to notice, so its pigs are `Unnoticed`.
-		pig_interest : World.PigInterest,
+		## The segment's herd of pigs, if it has one, and how the rider takes it.
+		pigs : [NoPigs, Herd({ herd : PigHerd, interest : World.PigInterest })],
+		bull : [WithBull, NoBull],
 
 		## What crosses the road here, at most one thing, so that the rider has
 		## one experience at a time. Most of the road is quiet, so that a crossing
@@ -367,15 +365,28 @@ World :: [].{
 
 	## The pigs of `segment`'s herd.
 	segment_pigs : World.Segment -> List(Geom.Placed(Billboard))
-	segment_pigs = |segment| segment.pig_herd.herd_pigs(pig_herd_along(segment.length))
+	segment_pigs = |segment|
+		match segment.pigs {
+			Herd({ herd, .. }) => herd.herd_pigs(pig_herd_along(segment.length))
+			NoPigs => []
+		}
 
 	## The cows of `segment`'s herd, led by its bull if it has one.
 	segment_cows : World.Segment -> List(Geom.Placed(Billboard))
 	segment_cows = |segment| route_cows(segment.bull)
 
-	## The pig of `segment`'s herd that stands out.
-	standout_pig : World.Segment -> [Standout(Geom.Placed(Billboard)), NoPigs]
-	standout_pig = |segment| segment.pig_herd.standout_pig(pig_herd_along(segment.length))
+	## The pig of `segment`'s herd that stands out, and how the rider takes the
+	## herd.
+	standout_pig : World.Segment -> [
+		Standout({ pig : Geom.Placed(Billboard), interest : World.PigInterest }),
+		NoPigs,
+	]
+	standout_pig = |segment|
+		match segment.pigs {
+			Herd({ herd, interest }) =>
+				Standout({ pig: herd.standout_pig(pig_herd_along(segment.length)), interest })
+			NoPigs => NoPigs
+		}
 
 	## How many of the segments before `index` have pigs.
 	herd_count_before : World.SegmentIndex -> U32
@@ -446,24 +457,30 @@ built_segment : World.SegmentPlan, World.SegmentIndex -> World.Segment
 built_segment = |plan, index| {
 	trees = Trees.roadside_trees({ scheme: plan.scheme, length: plan.length })
 	earlier_herd_count = World.herd_count_before(index)
-	pig_herd =
+	pigs =
 		match plan.pigs {
-			WithPigs if earlier_herd_count < World.big_herd_count =>
-				PigHerd.BigHerd(World.big_pig_herd)
-			WithPigs => PigHerd.TwoRows(World.two_row_pig_herd)
-			NoPigs => PigHerd.NoPigs
-		}
-	pig_interest =
-		match plan.pigs {
-			WithPigs if earlier_herd_count < World.pig_novelty_count => Distracting
-			WithPigs | NoPigs => Unnoticed
+			WithPigs => {
+				herd =
+					if earlier_herd_count < World.big_herd_count {
+						PigHerd.BigHerd(World.big_pig_herd)
+					} else {
+						PigHerd.TwoRows(World.two_row_pig_herd)
+					}
+				interest =
+					if earlier_herd_count < World.pig_novelty_count {
+						Distracting
+					} else {
+						Unnoticed
+					}
+				Herd({ herd, interest })
+			}
+			NoPigs => NoPigs
 		}
 	{
 		length: plan.length,
 		trees,
-		pig_herd,
+		pigs,
 		bull: plan.bull,
-		pig_interest,
 		crossing: match plan.crossing {
 			CatCrosses => CatCrosses(
 				Cat.crossing({
@@ -588,12 +605,12 @@ expect
 
 expect
 	[
-		(0, PigHerd.NoPigs),
-		(2, PigHerd.BigHerd(World.big_pig_herd)),
-		(10, PigHerd.BigHerd(World.big_pig_herd)),
-		(11, PigHerd.TwoRows(World.two_row_pig_herd)),
-		(18, PigHerd.TwoRows(World.two_row_pig_herd)),
-	].all(|(index, want)| seg(index).pig_herd == want)
+		(0, NoPigs),
+		(2, Herd({ herd: PigHerd.BigHerd(World.big_pig_herd), interest: Distracting })),
+		(10, Herd({ herd: PigHerd.BigHerd(World.big_pig_herd), interest: Distracting })),
+		(11, Herd({ herd: PigHerd.TwoRows(World.two_row_pig_herd), interest: Unnoticed })),
+		(18, Herd({ herd: PigHerd.TwoRows(World.two_row_pig_herd), interest: Unnoticed })),
+	].all(|(index, want)| seg(index).pigs == want)
 
 expect World.segment_cows(seg(0)).len() == 14
 expect World.segment_cows(seg(3)).len() == 14
@@ -653,9 +670,9 @@ has_cat = |segment|
 ## Whether a segment's pigs draw the rider's eye.
 is_distracting : World.Segment -> Bool
 is_distracting = |segment|
-	match segment.pig_interest {
-		Distracting => True
-		Unnoticed => False
+	match segment.pigs {
+		Herd({ interest: Distracting, .. }) => True
+		Herd({ interest: Unnoticed, .. }) | NoPigs => False
 	}
 
 ## The cat crossing at a segment that has one.
@@ -672,11 +689,7 @@ long_segment_herd_along = pig_herd_along(Distance.metres(1000.0))
 
 ## The standout pig of a herd on a 1000 m segment.
 standout_on_long_segment : PigHerd -> Geom.Placed(Billboard)
-standout_on_long_segment = |herd|
-	match herd.standout_pig(long_segment_herd_along) {
-		Standout(standout) => standout
-		NoPigs => crash "World's expects: a herd has a standout pig"
-	}
+standout_on_long_segment = |herd| herd.standout_pig(long_segment_herd_along)
 
 eye_catcher : Geom.Placed(Billboard)
 eye_catcher = standout_on_long_segment(PigHerd.BigHerd(World.big_pig_herd))
@@ -686,7 +699,6 @@ expect long_segment_herd_along.to_metres() == 940.0
 
 expect
 	[
-		(PigHerd.NoPigs, 0),
 		(PigHerd.TwoRows(World.two_row_pig_herd), 10),
 		(PigHerd.BigHerd(World.big_pig_herd), 49),
 	].all(|(herd, count)| herd.herd_pigs(long_segment_herd_along).len() == count)

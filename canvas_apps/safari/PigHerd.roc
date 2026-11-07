@@ -1,6 +1,5 @@
 ## A herd of pigs grazes on the right of the road about a place along it, in a
-## big herd or in two short rows, or a segment has none. One pig of each herd
-## stands out from the rest.
+## big herd or in two short rows. One pig of each herd stands out from the rest.
 import Across
 import Along
 import Billboard
@@ -10,7 +9,7 @@ import Pig
 import Scatter
 import Scenery
 
-PigHerd := [NoPigs, BigHerd(PigHerd.BigPigHerd), TwoRows(PigHerd.TwoRowPigHerd)].{
+PigHerd := [BigHerd(PigHerd.BigPigHerd), TwoRows(PigHerd.TwoRowPigHerd)].{
 
 	## A big herd: rows of columns, each pig strayed a little from its place.
 	## The first row is nearest the road, and each row behind it stands
@@ -104,16 +103,14 @@ PigHerd := [NoPigs, BigHerd(PigHerd.BigPigHerd), TwoRows(PigHerd.TwoRowPigHerd)]
 		match herd {
 			BigHerd(big_herd) => big_herd.big_herd_pigs(herd_along)
 			TwoRows(two_rows) => two_rows.two_row_pigs(herd_along)
-			NoPigs => []
 		}
 
 	## The herd's pig that stands out, about `herd_along`.
-	standout_pig : PigHerd, Along -> [Standout(Geom.Placed(Billboard)), NoPigs]
+	standout_pig : PigHerd, Along -> Geom.Placed(Billboard)
 	standout_pig = |herd, herd_along|
 		match herd {
-			BigHerd(big_herd) => Standout(big_herd.standout_pig(herd_along))
-			TwoRows(two_rows) => Standout(two_rows.standout_pig(herd_along))
-			NoPigs => NoPigs
+			BigHerd(big_herd) => big_herd.standout_pig(herd_along)
+			TwoRows(two_rows) => two_rows.standout_pig(herd_along)
 		}
 
 	is_eq : _
@@ -161,6 +158,3 @@ herd_pig = |herd, { herd_along, row, column }| {
 row_pigs : Along, { across : Across, offsets : List(Distance) } -> List(Geom.Placed(Billboard))
 row_pigs = |herd_along, { across, offsets }|
 	offsets.map(|offset| pig({ along: herd_along.plus(offset), across }))
-
-expect PigHerd.NoPigs.herd_pigs(Along.metres(940.0)) == []
-expect PigHerd.NoPigs.standout_pig(Along.metres(940.0)) == NoPigs

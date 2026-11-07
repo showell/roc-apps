@@ -38,13 +38,9 @@ Gawking :: [].{
 	## the rider finds distracting. A herd the rider passes by catches no eye.
 	eye_catching_pig : World.Segment -> [CatchesEye(Geom.Placed(Billboard)), NoPigCatchesEye]
 	eye_catching_pig = |seg|
-		match seg.pig_interest {
-			Distracting =>
-				match World.standout_pig(seg) {
-					Standout(pig) => CatchesEye(pig)
-					NoPigs => NoPigCatchesEye
-				}
-			Unnoticed => NoPigCatchesEye
+		match World.standout_pig(seg) {
+			Standout({ pig, interest: Distracting }) => CatchesEye(pig)
+			Standout({ interest: Unnoticed, .. }) | NoPigs => NoPigCatchesEye
 		}
 
 	## Whether the rider is gawking at this segment's pig. It starts where the
@@ -94,7 +90,7 @@ plain = World.route_segment(0)
 distracting : World.Segment
 distracting = World.route_segment(2)
 
-expect plain.pig_herd == NoPigs
+expect plain.pigs == NoPigs
 expect Gawking.eye_catching_pig(plain) == NoPigCatchesEye
 expect Gawking.eye_catching_pig(World.route_segment(11)) == NoPigCatchesEye
 
