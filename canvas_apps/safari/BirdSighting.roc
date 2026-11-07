@@ -1,6 +1,7 @@
 ## BirdSighting finds the Roc birds the rider can see in a frame: each one on a
 ## segment of the chain ahead, placed where its flight has got to, if it is in
 ## front of the camera and tall enough on screen to draw.
+import Animation
 import BirdFlight
 import BirdShapes
 import Chain
@@ -44,11 +45,7 @@ bird_in_view : Chain.Viewpoint,
 } -> Try(Geom.Sighted(BirdShapes.PosedBird), [BehindCamera, TooSmall])
 bird_in_view = |view, { position, instant }| {
 	placed_bird : Geom.Placed(BirdShapes.PosedBird)
-	placed_bird = {
-		along: instant.spot.along,
-		across: instant.spot.across,
-		kind: { pose: instant.pose, lift: instant.spot.lift },
-	}
+	placed_bird = Animation.placed_instant(instant)
 	Pipeline.sighting_of(
 		placed_bird,
 		{
