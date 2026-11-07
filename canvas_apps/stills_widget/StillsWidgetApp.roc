@@ -97,12 +97,12 @@ pose_name = |pose|
 		Bird(bird_pose) => bird_pose_name(bird_pose)
 	}
 
-## The polygons of a pose's still.
-pose_polygons : StillsWidgetApp.Pose -> Still
-pose_polygons = |pose|
+## A pose's still.
+pose_still : StillsWidgetApp.Pose -> Still
+pose_still = |pose|
 	match pose {
-		Cat(cat_pose) => PosedCat.pose_polygons(cat_pose)
-		Bird(bird_pose) => PosedBird.pose_polygons(bird_pose)
+		Cat(cat_pose) => PosedCat.pose_still(cat_pose)
+		Bird(bird_pose) => PosedBird.pose_still(bird_pose)
 	}
 
 cat_poses : List(StillsWidgetApp.Pose)
@@ -178,7 +178,7 @@ name_rise = 10.0
 ## others.
 row_height_on_screen : List(StillsWidgetApp.Pose), F64 -> Pixels
 row_height_on_screen = |poses, cell_width| {
-	extents = poses.map(|pose| extent_of(pose_polygons(pose)))
+	extents = poses.map(|pose| extent_of(pose_still(pose)))
 	widest = extents.fold(0.0, |most, extent| most.max(extent_width(extent)))
 	tallest = extents.fold(0.0, |most, extent| most.max(extent.top))
 	Pixels.of(F64.min((cell_width - 2.0 * cell_padding) / widest, (cell_ground - cell_padding) / tallest))
@@ -217,7 +217,7 @@ row_cells = |poses, row_top| {
 					height: cell_height,
 				},
 				anchor: standing_at(
-					pose_polygons(pose),
+					pose_still(pose),
 					{
 						mid_x: left + cell_width / 2.0,
 						ground_y: row_top + cell_ground,
@@ -313,7 +313,7 @@ point_count = |still| still.polygons().fold(0, |sum, polygon| sum + polygon.poin
 ## What a pose's still is made of, a line each.
 read_out_lines : StillsWidgetApp.Pose -> List(Str)
 read_out_lines = |pose| {
-	polygons = pose_polygons(pose)
+	polygons = pose_still(pose)
 	[
 		pose_name(pose),
 		"${ReadoutText.count_text(polygons.polygons().len())} polygons",
@@ -369,7 +369,7 @@ outline_shapes = |anchor, polygon| {
 ## The large still, with the outlines of its polygons if they show.
 large_shapes : StillsWidgetApp.Model -> List(Shapes.Shape)
 large_shapes = |{ large_pose, outlines }| {
-	polygons = pose_polygons(large_pose)
+	polygons = pose_still(large_pose)
 	anchor = large_anchor(polygons)
 	drawn = StillShapes.still_shapes(anchor, polygons)
 	match outlines {
@@ -394,7 +394,7 @@ picture_shapes = |model|
 ## One small still with its pose's name under it.
 cell_shapes : StillCell -> List(Shapes.Shape)
 cell_shapes = |{ pose, area, anchor }|
-	StillShapes.still_shapes(anchor, pose_polygons(pose)).append(
+	StillShapes.still_shapes(anchor, pose_still(pose)).append(
 		Text({
 			text: pose_name(pose),
 			x: area.left + area.width / 2.0,
@@ -468,8 +468,8 @@ expect cells.map(|cell| cell.pose).take_first(2) == [Cat(Rest), Cat(Stride)]
 expect cells.all(|cell| cells.keep_if(|other| other.pose == cell.pose).len() == 1)
 
 # Each pose has its own still.
-expect pose_polygons(Cat(Frozen)).polygons().len() == PosedCat.pose_polygons(Frozen).polygons().len()
-expect point_count(pose_polygons(Bird(Diving))) == point_count(BirdStills.diving_polygons)
+expect pose_still(Cat(Frozen)).polygons().len() == PosedCat.pose_still(Frozen).polygons().len()
+expect point_count(pose_still(Bird(Diving))) == point_count(BirdStills.diving_still)
 
 # The rows fill the space between the side margins, end to end.
 expect first_cell.area.left == ScrubWidget.side_margin
@@ -488,19 +488,19 @@ expect
 # A row shares one height, and no still leaves its cell or crosses its name.
 expect cells.take_first(7).all(|cell| cell.anchor.height_on_screen == first_cell.anchor.height_on_screen)
 expect cells.drop_first(7).all(|cell| cell.anchor.height_on_screen == last_cell.anchor.height_on_screen)
-expect cells.all(|{ pose, area, anchor }| stays_in(anchor, { polygons: pose_polygons(pose), area }))
+expect cells.all(|{ pose, area, anchor }| stays_in(anchor, { polygons: pose_still(pose), area }))
 expect
 	cells.all(
 		|{ pose, area, anchor }| {
 			above_name = { ..area, height: cell_name_top }
-			stays_in(anchor, { polygons: pose_polygons(pose), area: above_name })
+			stays_in(anchor, { polygons: pose_still(pose), area: above_name })
 		},
 	)
 
 ## Whether a cell's still fills the cell's width, up to the padding.
 is_full_width : StillCell -> Bool
 is_full_width = |{ pose, area, anchor }| {
-	still_width = anchor.height_on_screen.to_f64() * extent_width(extent_of(pose_polygons(pose)))
+	still_width = anchor.height_on_screen.to_f64() * extent_width(extent_of(pose_still(pose)))
 	area.width - still_width <= 2.0 * cell_padding + 0.000001
 }
 
@@ -541,15 +541,15 @@ large_area_edges_held = {
 expect
 	cells.all(
 		|{ pose, .. }| {
-			polygons = pose_polygons(pose)
+			polygons = pose_still(pose)
 			stays_in(large_anchor(polygons), { polygons, area: large_area_edges_held })
 		},
 	)
 expect
 	cells.all(
 		|{ pose, .. }| {
-			extent = extent_of(pose_polygons(pose))
-			height = large_anchor(pose_polygons(pose)).height_on_screen.to_f64()
+			extent = extent_of(pose_still(pose))
+			height = large_anchor(pose_still(pose)).height_on_screen.to_f64()
 			wide_room = large_area.width - height * extent_width(extent)
 			tall_room = large_area.height - height * (extent.top - extent.bottom)
 			wide_room.min(tall_room).abs() <= 0.000001
@@ -560,8 +560,8 @@ expect
 expect
 	cells.all(
 		|{ pose, .. }| {
-			anchor = large_anchor(pose_polygons(pose))
-			extent = extent_of(pose_polygons(pose))
+			anchor = large_anchor(pose_still(pose))
+			extent = extent_of(pose_still(pose))
 			low = landing_spot(anchor, { x: extent.left, y: extent.bottom })
 			high = landing_spot(anchor, { x: extent.right, y: extent.top })
 			middle = middle_of(large_area)
@@ -573,7 +573,7 @@ expect
 
 # Stills that reach past 1 and below 0 are measured from their points.
 expect {
-	frozen = extent_of(PosedCat.pose_polygons(Frozen))
+	frozen = extent_of(PosedCat.pose_still(Frozen))
 	frozen.top > 1.0 and frozen.bottom < 0.0 and frozen.left < 0.0 and frozen.right > 1.0
 }
 expect
@@ -656,21 +656,21 @@ expect toggled_outlines(Shown) == Hidden
 # The read-out names the pose and counts its still, with commas.
 expect read_out_lines(Cat(Rest)) == ["Rest", "46 polygons", "2,198 points"]
 
-# StillShapes leaves out what it won't draw, so the counts would lie if it left
-# out a polygon of these. It draws every one.
+# StillShapes draws one shape for each polygon, so the read-out's polygon count
+# is the count on screen.
 expect
 	cells.all(
 		|{ pose, anchor, .. }| {
-			polygons = pose_polygons(pose)
+			polygons = pose_still(pose)
 			StillShapes.still_shapes(anchor, polygons).len() == polygons.polygons().len()
 		},
 	)
 
 # The outlines add one line for each edge between two different corners, and
 # none when hidden.
-expect large_shapes(start).len() == pose_polygons(start.large_pose).polygons().len()
+expect large_shapes(start).len() == pose_still(start.large_pose).polygons().len()
 expect {
-	edge_count = pose_polygons(start.large_pose).polygons().fold(
+	edge_count = pose_still(start.large_pose).polygons().fold(
 		0,
 		|sum, polygon| {
 			points = polygon.points
@@ -678,7 +678,7 @@ expect {
 			sum + points.map2(ends, |from, to| from != to).keep_if(|differ| differ).len()
 		},
 	)
-	large_shapes({ ..start, outlines: Shown }).len() == pose_polygons(start.large_pose).polygons().len() + edge_count
+	large_shapes({ ..start, outlines: Shown }).len() == pose_still(start.large_pose).polygons().len() + edge_count
 }
 
 # A polygon's outline closes: its last line ends where its first starts.
