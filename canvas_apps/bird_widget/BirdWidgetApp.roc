@@ -5,6 +5,7 @@
 ## the first tree, so the bird shrinks as it flies off. It is drawn by Safari's own
 ## Tree and PosedBird. Below it, the buttons and four lines of text that say what
 ## BirdFlight makes of the gap.
+import game.Across
 import game.Along
 import game.Animation
 import game.BirdFlight
@@ -88,7 +89,7 @@ picture_shapes : Distance -> List(Shapes.Shape)
 picture_shapes = |gap|
 	ScrubWidget.ride_shapes(
 		[
-			[road],
+			road,
 			tree_shapes(flight.to),
 			tree_shapes(flight.from),
 			bird_shapes(gap),
@@ -97,38 +98,34 @@ picture_shapes = |gap|
 	)
 
 ## The road, running up the picture from under the eye.
-road : Shapes.Shape
+road : List(Shapes.Shape)
 road = {
 	half = Geom.road_half_width
 	road_start = Distance.metres(1.0)
-	on_ground = |right, forward|
-		Camera.project(
-			{
-				right,
-				forward,
-				height: Distance.zero,
-			},
-			Lens.resting_focal,
-		)
-	Polygon.flat_polygon(
-		0x8a8a8a,
-		[
-			on_ground(half.opposite(), road_start),
-			on_ground(half, road_start),
-			on_ground(half, road_end_forward),
-			on_ground(half.opposite(), road_end_forward),
-		],
-	)
+	on_ground = |right, forward| { right, forward, height: Distance.zero }
+	corners = [
+		on_ground(half.opposite(), road_start),
+		on_ground(half, road_start),
+		on_ground(half, road_end_forward),
+		on_ground(half.opposite(), road_end_forward),
+	]
+	[Camera.clipped_polygon({ color: 0x8a8a8a, corners }, Lens.resting_focal)].keep_oks(|shape| shape)
 }
+
+## Where a thing standing at `along` and `across` is from the picture's eye, if
+## it is in front of the camera.
+foot_at : Along, Across -> Try(Geom.AheadPoint, [BehindCamera])
+foot_at = |along, across|
+	Geom.ahead_on_level({ right: Distance.metres(across.to_metres()), forward: forward_of(along) })
 
 tree_shapes : Trees.RoadsideTree -> List(Shapes.Shape)
 tree_shapes = |tree|
-	tree.kind.scenery_picture({
-		right: Distance.metres(tree.across.to_metres()),
-		forward: forward_of(tree.along),
-		cam_focal: Lens.resting_focal,
-		context: { nearer_tree_count: 0 },
-	}).to_shapes()
+	match foot_at(tree.along, tree.across) {
+		Ok(foot) =>
+			tree.kind.scenery_picture({ foot, cam_focal: Lens.resting_focal, context: { nearer_tree_count: 0 } })
+				.to_shapes()
+		Err(BehindCamera) => []
+	}
 
 ## The bird as `gap` finds it, drawn by Safari's own stills.
 bird_shapes : Distance -> List(Shapes.Shape)
@@ -136,12 +133,10 @@ bird_shapes = |gap| {
 	instant = BirdFlight.instant_at(flight, { gap: gap })
 	bird : PosedBird
 	bird = { pose: instant.pose, lift: instant.spot.lift }
-	bird.scenery_picture({
-		right: Distance.metres(instant.spot.across.to_metres()),
-		forward: forward_of(instant.spot.along),
-		cam_focal: Lens.resting_focal,
-		context: {},
-	}).to_shapes()
+	match foot_at(instant.spot.along, instant.spot.across) {
+		Ok(foot) => bird.scenery_picture({ foot, cam_focal: Lens.resting_focal, context: {} }).to_shapes()
+		Err(BehindCamera) => []
+	}
 }
 
 ## What BirdFlight says at `gap`, a line each.

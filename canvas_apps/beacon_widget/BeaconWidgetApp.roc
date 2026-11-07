@@ -7,6 +7,7 @@ import game.Beacon
 import game.Clock
 import game.Distance
 import game.Fraction
+import game.Geom
 import game.Lens
 import game.Steps
 import game.Tower
@@ -84,10 +85,19 @@ picture_shapes = |clock|
 		{ clock, sun: OutOfView },
 	)
 
-## A tower standing `right` of the road, its beacon at `brightness`.
+## A tower standing `right` of the road, its beacon at `brightness`, or nothing
+## if it stood behind the camera.
 tower_shapes : Distance, Fraction -> List(Shapes.Shape)
-tower_shapes = |right, brightness| {
-	center = { right, forward: tower_forward }
+tower_shapes = |right, brightness|
+	match Geom.ahead_on_level({ right, forward: tower_forward }) {
+		Ok(center) => tower_shapes_at(center, brightness)
+		Err(BehindCamera) => []
+	}
+
+## A tower whose foot is at `center`, its beacon at `brightness`.
+tower_shapes_at : Geom.AheadPoint, Fraction -> List(Shapes.Shape)
+tower_shapes_at = |center, brightness| {
+	right = center.right()
 	corner_point = |corner| {
 		offset = Tower.corner_offset(corner)
 		{
