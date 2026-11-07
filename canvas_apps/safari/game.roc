@@ -60,7 +60,6 @@ package
 		Route,
 		SafariApp,
 		Scene,
-		SceneShapes,
 		Screen,
 		Segment,
 		SegmentPlace,

@@ -36,7 +36,7 @@ The process makes code right one module at a time, types first. Cold agents revi
 
 - **Worktrees:** each lane is a worktree under `~/showell_repos/lanes/<lane>`, on its own branch. A lane goes when it merges.
 - **Shared modules, one lane at a time:**
-  - The shared modules are Geom, Pipeline, Picture, RoadAhead, World, Segment, Route, SceneShapes, lib and the unit types.
+  - The shared modules are Geom, Pipeline, Picture, RoadAhead, World, Segment, Route, Scene, lib and the unit types.
   - The orchestrator gives each lane its shared modules by name, and only one lane at a time may touch a given one.
   - A fix that needs another lane's shared module waits.
 - **Conflicts:** most are in `gates/CrossModuleExpects.roc` (imports and tests from two lanes) and in widgets two lanes touched. Keep both sides.

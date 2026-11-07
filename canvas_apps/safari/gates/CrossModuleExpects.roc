@@ -45,7 +45,6 @@ import game.PosedCat
 import game.RailSighting
 import game.Rendered
 import game.Scene
-import game.SceneShapes
 import game.RideInstant
 import game.Rider
 import game.RiderCamera
@@ -58,7 +57,9 @@ import game.Steps
 import game.StillShapes
 import game.Sun
 import game.Throttle
+import game.TowerSighting
 import game.TreeSighting
+import game.TruckSighting
 import game.Trees
 import game.VehicleLimits
 import game.World
@@ -918,77 +919,200 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 # Scene, on the scene from the start of the route.
-scene_view : { road : RoadAhead.RoadView, camera : { vantage : Geom.Vantage, cam_focal : Pixels } }
-scene_view = { road, camera: origin_camera }
+scene_facts : Scene.RideFacts
+scene_facts = {
+	speed: VehicleLimits.starting_speed,
+	truck: {
+		route_position: Distance.metres(500.0),
+		lit_truck: { headlights: Off, brake_lights: Off },
+	},
+	clock: Clock.start,
+}
 
 scene : Scene
-scene = Scene.scene_in_view(
-	road,
+scene = Scene.scene_in_view(road, { camera: origin_camera, facts: scene_facts })
+
+scene_renderings : List(Rendered)
+scene_renderings = Scene.scene_renderings(scene)
+
+## The route's start has no cat in view, so the cats come from the second
+## segment's, seen as `seen` sees them.
+cat_scene : Scene
+cat_scene = Scene.scene_in_view(
+	cat_road,
 	{
-		camera: origin_camera,
-		facts: {
-			speed: VehicleLimits.starting_speed,
-			truck: {
-				route_position: Distance.metres(500.0),
-				lit_truck: { headlights: Off, brake_lights: Off },
-			},
-			clock: Clock.start,
-		},
+		camera: { ..origin_camera, vantage: { ..origin, along: Along.metres(300.0) } },
+		facts: { ..scene_facts, speed: metre_a_step },
 	},
 )
 
-scene_renderings : List(Rendered)
-scene_renderings = SceneShapes.scene_renderings(scene, scene_view)
+## The depths of `renderings`, in their order.
+depths_of : List(Rendered) -> List(Distance)
+depths_of = |renderings| renderings.map(|rendering| rendering.depth)
 
-## A scene with nothing in view.
-empty_scene : Scene
-empty_scene = {
-	trees: [],
-	towers: [],
-	billboards: [],
-	cats: [],
-	rails: [],
-	truck: Err(NoTruck),
-	birds: [],
-}
+## How far ahead each of `sightings` stands, in their order.
+sighted_depths : List(Pipeline.Sighted(kind)) -> List(Distance)
+sighted_depths = |sightings| sightings.map(|sighting| sighting.spot.foot().forward())
 
-## How many renderings `only` has, seen as `scene` is.
-rendering_count : Scene -> U64
-rendering_count = |only| SceneShapes.scene_renderings(only, scene_view).len()
-
-# Each kind of thing in view has its rendering, one kind at a time, and a scene
-# with nothing in view has none. The route's start has no cat in view, so the
-# cats come from the second segment's.
-expect rendering_count({ ..empty_scene, trees: scene.trees }) == scene.trees.len()
-expect rendering_count({ ..empty_scene, towers: scene.towers }) == scene.towers.len()
-expect rendering_count({ ..empty_scene, billboards: scene.billboards }) == scene.billboards.len()
-expect rendering_count({ ..empty_scene, cats: seen }) == seen.len()
-expect rendering_count({ ..empty_scene, rails: scene.rails }) == scene.rails.len()
-expect rendering_count({ ..empty_scene, birds: scene.birds }) == scene.birds.len()
-expect rendering_count({ ..empty_scene, truck: scene.truck }) == 1
-expect rendering_count(empty_scene) == 0
-
-# A truck in view stands at its own depth, and one that isn't in view isn't drawn.
-expect {
-	truck_only = { ..empty_scene, truck: scene.truck }
-	truck_renderings = SceneShapes.scene_renderings(truck_only, scene_view)
-	truck_depths = truck_renderings.map(|rendering| rendering.depth)
-	scene.truck.map_ok(|truck| [truck.spot.foot().forward()]) == Ok(truck_depths)
-}
+# Each field holds what its own sighting found, in the sighting's order, each
+# thing at its own depth.
+expect depths_of(scene.trees) == sighted_depths(TreeSighting.trees_in_view(road, origin_camera))
+expect
+	depths_of(scene.birds)
+		== sighted_depths(EncounterSighting.birds_in_view(road, origin_camera))
+expect
+	depths_of(scene.towers)
+		== sighted_depths(
+			TowerSighting.towers_in_view(road, { camera: origin_camera, clock: Clock.start }),
+		)
+expect
+	depths_of(scene.billboards)
+		== sighted_depths(BillboardSighting.billboards_in_view(road, origin_camera))
+expect depths_of(cat_scene.cats) == sighted_depths(seen)
+expect seen.len() > 0
+expect scene.rails.len() == RailSighting.rail_quads_in_view(road, origin_camera).len()
+expect
+	scene.truck.map_ok(|truck| truck.depth)
+		== TruckSighting.truck_in_view(
+			road,
+			{
+				camera: origin_camera,
+				route_position: scene_facts.truck.route_position,
+				lit_truck: scene_facts.truck.lit_truck,
+			},
+		).map_ok(|truck| truck.spot.foot().forward())
 expect scene.birds.len() > 0
-expect rendering_count({ ..empty_scene, truck: Err(BehindCamera) }) == 0
 
+# The renderings are every field's, the truck's among them.
 expect
 	scene_renderings.len()
 		== [
 			scene.trees.len(),
+			scene.birds.len(),
 			scene.towers.len(),
 			scene.billboards.len(),
 			scene.cats.len(),
 			1,
 			scene.rails.len(),
-			scene.birds.len(),
 		].sum()
+
+## A scene with nothing in view.
+empty_scene : Scene
+empty_scene = {
+	trees: [],
+	birds: [],
+	towers: [],
+	billboards: [],
+	cats: [],
+	truck: Err(NoTruck),
+	rails: [],
+}
+
+## Something of `kind` `forward` metres straight ahead of the route's start, as
+## its sighting finds it.
+sighted_ahead : kind, F64 -> Pipeline.Sighted(kind)
+sighted_ahead = |kind, forward|
+	Pipeline.sighting_of(
+		{
+			road_point: { along: Along.metres(forward), across: Across.middle },
+			lift: Distance.zero,
+			kind,
+		},
+		{
+			road,
+			vantage: origin,
+			place: Ahead(SegmentPlace.Position.first),
+		},
+	)
+		?? crash "CrossModuleExpects: a test's thing is past the near plane"
+
+## A big green tree `forward` metres straight ahead of the route's start.
+green_tree_ahead : F64 -> Pipeline.Sighted(Conifer)
+green_tree_ahead = |forward| sighted_ahead(Conifer.Green, forward)
+
+## A perched bird `forward` metres straight ahead of the route's start.
+perched_bird_ahead : F64 -> Pipeline.Sighted(PosedBird)
+perched_bird_ahead = |forward| sighted_ahead({ pose: Perched }, forward)
+
+## A scene of a lone tree `forward` metres ahead.
+lone_tree_scene : F64 -> Scene
+lone_tree_scene = |forward| {
+	..empty_scene,
+	trees: Scene.tree_renderings([green_tree_ahead(forward)], origin_camera.cam_focal),
+}
+
+## A scene of a lone perched bird `forward` metres ahead.
+lone_bird_scene : F64 -> Scene
+lone_bird_scene = |forward| {
+	..empty_scene,
+	birds: [
+		Pipeline.rendering_of(
+			perched_bird_ahead(forward),
+			{ cam_focal: origin_camera.cam_focal, context: {} },
+		),
+	],
+}
+
+## The shapes of a tree and a bird, these many metres ahead, in the order the
+## frame draws them.
+tree_and_bird_shapes : { tree_ahead : F64, bird_ahead : F64 } -> List(Shapes.Shape)
+tree_and_bird_shapes = |{ tree_ahead, bird_ahead }|
+	Scene.scene_shapes({ ..lone_tree_scene(tree_ahead), birds: lone_bird_scene(bird_ahead).birds })
+
+lone_tree_shapes : F64 -> List(Shapes.Shape)
+lone_tree_shapes = |forward| Scene.scene_shapes(lone_tree_scene(forward))
+
+lone_bird_shapes : F64 -> List(Shapes.Shape)
+lone_bird_shapes = |forward| Scene.scene_shapes(lone_bird_scene(forward))
+
+# A bird perched on a tree stands at the tree's depth and is drawn over it.
+# A bird that isn't perched is drawn by its own depth: behind a nearer tree,
+# and over a farther one.
+expect
+	tree_and_bird_shapes({ tree_ahead: 40.0, bird_ahead: 40.0 })
+		== lone_tree_shapes(40.0).concat(lone_bird_shapes(40.0))
+expect
+	tree_and_bird_shapes({ tree_ahead: 30.0, bird_ahead: 40.0 })
+		== lone_bird_shapes(40.0).concat(lone_tree_shapes(30.0))
+expect
+	tree_and_bird_shapes({ tree_ahead: 40.0, bird_ahead: 30.0 })
+		== lone_tree_shapes(40.0).concat(lone_bird_shapes(30.0))
+expect lone_tree_shapes(40.0).len() > 0
+expect lone_bird_shapes(40.0).len() > 0
+
+## Five trees a metre apart, from 10 to 14 metres ahead, rendered together.
+cluster_renderings : List(Rendered)
+cluster_renderings = Scene.tree_renderings(
+	[10.0, 11.0, 12.0, 13.0, 14.0].map(green_tree_ahead),
+	origin_camera.cam_focal,
+)
+
+## The shapes of the cluster's tree at `index`, nearest first.
+cluster_shapes : U64 -> List(Shapes.Shape)
+cluster_shapes = |index|
+	match cluster_renderings.get(index) {
+		Ok(rendering) => rendering.picture.to_shapes()
+		Err(OutOfBounds) => crash "CrossModuleExpects: the cluster has five trees"
+	}
+
+second_shape_points : List(Shapes.Shape) -> U64
+second_shape_points = |shapes|
+	match shapes {
+		[_, Poly(polygon), ..] => polygon.coordinates.len()
+		_ => crash "a tree in view draws a trunk and tiers"
+	}
+
+# A tree is drawn as the conifer told how many of the others are nearer, so the
+# nearest tree's tiers are cones, in more detail than the farthest's triangles.
+expect
+	cluster_shapes(4)
+		== Conifer.Green.scenery_picture({
+			spot: green_tree_ahead(14.0).spot,
+			cam_focal: origin_camera.cam_focal,
+			context: { nearer_tree_count: 4 },
+		}).to_shapes()
+expect second_shape_points(cluster_shapes(0)) > second_shape_points(cluster_shapes(4))
+expect second_shape_points(cluster_shapes(4)) >= 6
 
 expect scene.trees.len() > 0
 expect scene.towers.len() > 0

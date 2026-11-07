@@ -16,7 +16,6 @@ import game.Mountains
 import game.RiderCamera
 import game.SafariApp
 import game.Scene
-import game.SceneShapes
 import game.Screen
 import game.Sky
 import game.Sun
@@ -103,7 +102,7 @@ things_on = |things, { on_layers, layer }|
 
 ## The things beside the road on `on_layers`, in the game's paint order. A scene
 ## that holds only some of the things draws them in the order the whole scene
-## does, so the game's own `SceneShapes` orders each layer among the others.
+## does, so the game's own `Scene` orders each layer among the others.
 scene_shapes_on : List(Layer) -> List(Shapes.Shape)
 scene_shapes_on = |on_layers| {
 	only = {
@@ -119,7 +118,7 @@ scene_shapes_on = |on_layers| {
 		},
 		birds: things_on(paused_scene.birds, { on_layers, layer: MovingThings }),
 	}
-	SceneShapes.scene_shapes(only, { road: paused_road, camera: paused_camera })
+	Scene.scene_shapes(only)
 }
 
 ## What `FrameView.framed_shapes` paints under the ride's shapes, in its order: the
