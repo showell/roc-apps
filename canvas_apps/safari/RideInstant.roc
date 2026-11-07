@@ -1,11 +1,10 @@
-import Angle
 import Clock
 import RoadAhead
 import Ground
 import GroundSighting
+import Lens
 import SceneShapes
 import Mountains
-import Pixels
 import RiderState
 import Scene
 import RideFocal
@@ -92,18 +91,16 @@ RideInstant := {
 			heading: ViewYaw.heading_for(instant.rider),
 			cam_focal: RideFocal.ride_focal(route_segments, instant.rider),
 		}
-		{ shapes: shapes(instant, { route_segments, aim }), sun: sun(instant, aim) }
+		{ shapes: shapes(instant, { route_segments, aim }), sun: Sun.sighting(aim, instant.clock) }
 	}
-
-	## Which way the camera faces at one instant, and its focal length.
-	CameraAim : { heading : Angle.Bearing, cam_focal : Pixels }
 
 	shapes : RideInstant,
 	{
 		route_segments : List(World.Segment),
-		aim : RideInstant.CameraAim,
+		aim : Lens.CameraAim,
 	} -> List(Shapes.Shape)
-	shapes = |instant, { route_segments, aim: { heading, cam_focal } }| {
+	shapes = |instant, { route_segments, aim }| {
+		cam_focal = aim.cam_focal
 		s = instant.rider
 		view = {
 			road: {
@@ -126,16 +123,10 @@ RideInstant := {
 		)
 		ground = GroundSighting.patches_in_view(view.road)
 		[
-			Mountains.mountain_shapes({ heading, dusk: Sky.dusk_at(instant.clock), cam_focal }),
+			Mountains.mountain_shapes(aim, Sky.dusk_at(instant.clock)),
 			ground.keep_oks(|patch| Ground.patch_shape(patch, cam_focal)),
 			SceneShapes.scene_shapes(scene, view),
 		].join()
-	}
-
-	sun : RideInstant, RideInstant.CameraAim -> Sun.Sighting
-	sun = |instant, { heading, cam_focal }| {
-		clock = instant.clock
-		Sun.sighting({ heading, clock, cam_focal })
 	}
 }
 

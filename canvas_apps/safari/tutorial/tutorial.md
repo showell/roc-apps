@@ -733,7 +733,7 @@ New in this chapter:
 
 Its list of shapes starts with the sky, the sun and the grass, and this is the grass:
 
-{{code Backdrop.frame_shapes from "y: Screen.grass_top_y.to_f64()," to "fill: Flat(Brush.opaque(grass_color)),"}}
+{{code Backdrop.backdrop_shapes from "y: Screen.grass_top_y.to_f64()," to "fill: Flat(Brush.opaque(grass_color)),"}}
 
 It starts a pixel above the horizon, so no seam shows between the grass and the sky:
 
@@ -758,13 +758,13 @@ New in this chapter:
 
 A frame is a list of shapes, and a circle is one of them. `Disc` is a tag from `lib.Shapes`. This is the sun's, from the same list as the grass:
 
-{{code Backdrop.frame_shapes from "Disc({" to "fill: fills.disc,"}}
+{{code Backdrop.backdrop_shapes from "Disc({" to "fill: look.disc,"}}
 
 A `Disc` has a center, a radius and a fill. The grass comes after it in the list and paints over whatever falls below the horizon, so the sun can sink behind the land with no more code.
 
 The fill makes it look like a sun. `sun_fills` builds two, a disc and a glow behind it:
 
-{{code Backdrop.sun_fills}}
+{{code Sun.look}}
 
 `Radial` runs from pale yellow in the middle to orange at the edge. `Glow` is a wide haze that fades to nothing. Both are tags with records inside, so a fill is plain data, and the browser does the painting. `scale` is how large the sun is drawn, because a wider view makes it look smaller.
 
@@ -784,11 +784,11 @@ Opaque types do the most work from here on. A `Bearing` and a `Turn` are both fl
 
 `turn_from_view.abs() >= visible_turn_limit` compares two `Turn`s. The code never touches radians until `Sun.place` has to do trigonometry, because `.tan()` works on a float.
 
-{{code Sun.place from "scale =" to "y: Screen.horizon_y"}}
+{{code Sun.place from "scale =" to "y: Lens.y_for_height"}}
 
 Its caller, `RideInstant.sun`, is short enough to read whole:
 
-{{code RideInstant.sun}}
+{{code RideInstant.frame_content}}
 
 Those functions all take a `clock`, and that's the hard part. The sun sinks a little with every step, and the sky's colors, the mountains and the truck's headlights all follow it. That's a lot of heavy lifting for a circle. It gets a chapter of its own, The setting sun, once things start to move.
 
@@ -825,7 +825,7 @@ Every function in this chapter has a `->` arrow, not `=>`. That tells you the fu
 
 Here's one of the questions being asked. `Tour` holds the ride, and we'll come back to it. `Tour.sky_top_color` takes the clock from the current instant and hands it to `Sky`.
 
-{{code Tour.sky_top_color}}
+{{code Tour.sky_colors}}
 
 ### Two colors
 
@@ -855,11 +855,11 @@ Every color in the sky is a blend of two others, and a blend needs a ratio. `Fra
 
 `Backdrop` paints the two as a gradient, down to the horizon. It stays on the top color for the first fifth of the way, then fades:
 
-{{code Backdrop.frame_shapes from "sky = Linear({" to "dy: Screen.horizon_y.to_f64(),"}}
+{{code Backdrop.backdrop_shapes from "sky = Linear({" to "dy: Screen.horizon_y.to_f64(),"}}
 
 That's where a color finally becomes one integer, because a `Brush` wants `0xRRGGBB`. `pack` gets there with method calls on plain numbers. Static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `pack` a leaf: it calls nothing of Safari Ride's own.
 
-{{code HexColor.pack}}
+{{code HexColor.pack_rgb}}
 
 One more thing in the frame goes dark with the sky: the mountains.
 
@@ -1343,7 +1343,7 @@ The first three are opaque. Each is still a number, and the type gives it a name
 
 | Job | Function | Its type |
 |---|---|---|
-{{types row Sun.height_px Move the sun}}
+{{types row Sun.height Move the sun}}
 {{types row Sky.dusk_at Darken the sky}}
 {{types row Sky.sky_top_color}}
 {{types row Sky.sunset_warmth Warm the horizon}}
@@ -1378,7 +1378,7 @@ A box is a function, and an arrow is a call. The three boxes under the frame are
 
 Here's the top of that diagram in code. Each frame, the game asks for three things and hands them to `Backdrop`:
 
-{{code SafariApp.frame_shapes from "frame = Tour.frame_content(tour)" to "sun_sighting: frame.sun,"}}
+{{code SafariApp.frame_shapes from "frame = Tour.frame_content(tour)" to "sun_sighting: frame.sun"}}
 
 `Tour` holds the clock and hands it straight to `Sun` and `Sky`, so everything from here on is in those two. Let's take the three jobs in order.
 
@@ -1392,7 +1392,7 @@ This widget does only the first job, so the sky stays blue. For each frame it ca
 
 The sun chapter showed how `Sun.sighting` places a sun. All it needs from the clock is a height:
 
-{{code Sun.height_px}}
+{{code Sun.height}}
 
 ### Job two: the sky darkens
 

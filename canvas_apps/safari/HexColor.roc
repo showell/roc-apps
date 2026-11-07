@@ -1,16 +1,9 @@
 ## An opaque color, an `RgbColor`: its channels read out, put back together,
-## and shaded. A color part way through a blend is an `Rgb`, with a float for
-## each channel, and `pack` turns it into an `RgbColor`.
+## shaded, and blended.
 import Fraction
 import lib.RgbColor
 
 HexColor :: [].{
-
-	Rgb : {
-		r : F64,
-		g : F64,
-		b : F64,
-	}
 
 	red_of : RgbColor -> I64
 	red_of = |color| color.to_i64().shr_wrap(16).bitwise_and(255)
@@ -42,39 +35,39 @@ HexColor :: [].{
 			blue: shade_channel(blue_of(color), factor),
 		})
 
-	## A colour channel rounded to a whole value, half up. The channel stays a
-	## float, because a blend reads it again, and F64's builtins round only into
-	## an integer type.
-	whole_channel : F64 -> F64
-	whole_channel = |channel| {
-		rounded = channel.round_to_i64_try() ?? crash "HexColor.whole_channel: a channel is a finite number"
-		rounded.to_f64()
-	}
-
-	## The colour `fraction` of the way from `from` to `to`, each channel
-	## rounded to a whole value.
+	## The color `fraction` of the way from `from` to `to`, each channel
+	## rounded to a whole value as `channel_between` rounds it.
 	color_between : {
-		from : HexColor.Rgb,
-		to : HexColor.Rgb,
+		from : RgbColor,
+		to : RgbColor,
 		fraction : Fraction,
-	} -> HexColor.Rgb
+	} -> RgbColor
 	color_between = |{ from, to, fraction }| {
-		share = fraction.to_f64()
-		{
-			r: whole_channel(from.r + (to.r - from.r) * share),
-			g: whole_channel(from.g + (to.g - from.g) * share),
-			b: whole_channel(from.b + (to.b - from.b) * share),
-		}
-	}
-
-	## A blended colour as a whole color.
-	pack : HexColor.Rgb -> RgbColor
-	pack = |c|
+		blend = |channel_of|
+			channel_between({
+				from: channel_of(from),
+				to: channel_of(to),
+				fraction,
+			})
 		pack_rgb({
-			red: c.r.to_i64_wrap(),
-			green: c.g.to_i64_wrap(),
-			blue: c.b.to_i64_wrap(),
+			red: blend(red_of),
+			green: blend(green_of),
+			blue: blend(blue_of),
 		})
+	}
+}
+
+## One channel `fraction` of the way from `from` to `to`, rounded to a whole
+## value, half up.
+channel_between : {
+	from : I64,
+	to : I64,
+	fraction : Fraction,
+} -> I64
+channel_between = |{ from, to, fraction }| {
+	start = from.to_f64()
+	blended = start + (to.to_f64() - start) * fraction.to_f64()
+	blended.round_to_i64_try() ?? crash "HexColor.channel_between: a blended channel is a finite number"
 }
 
 ## One channel scaled by `factor`, rounded, and held at 255 at most.
@@ -125,35 +118,31 @@ expect shade_channel(255, 2.0) == 255
 expect shade_channel(0, 1.25) == 0
 expect HexColor.shade_color(sample_color, 0.6) == RgbColor.of(0x4D2613)
 
+# A channel part way rounds half up, and lands on each end exactly.
 expect
 	[
-		(0.0, 0.0),
-		(0.25, 0.0),
-		(0.5, 1.0),
-		(1.5, 2.0),
-		(2.5, 3.0),
-		(49.5, 50.0),
-		(127.5, 128.0),
-		(254.5, 255.0),
-		(255.0, 255.0),
-	].all(|(channel, want)| HexColor.whole_channel(channel) == want)
+		((0, 1, 0.0), 0),
+		((0, 1, 0.25), 0),
+		((0, 1, 0.5), 1),
+		((0, 3, 0.5), 2),
+		((0, 5, 0.5), 3),
+		((0, 99, 0.5), 50),
+		((0, 255, 0.5), 128),
+		((0, 255, 1.0), 255),
+		((255, 0, 0.5), 128),
+		((255, 255, 0.5), 255),
+	].all(
+		|((from, to, share), want)| {
+			fraction = Fraction.of(share)
+			channel_between({ from, to, fraction }) == want
+		},
+	)
 
-blend_start : HexColor.Rgb
-blend_start = {
-	r: 142.0,
-	g: 202.0,
-	b: 230.0,
-}
+blend_start : RgbColor
+blend_start = RgbColor.of(0x8ECAE6)
 
-blend_end : HexColor.Rgb
-blend_end = {
-	r: 36.0,
-	g: 58.0,
-	b: 94.0,
-}
-
-expect HexColor.pack(blend_start) == RgbColor.of(0x8ECAE6)
-expect HexColor.pack(blend_end) == RgbColor.of(0x243A5E)
+blend_end : RgbColor
+blend_end = RgbColor.of(0x243A5E)
 
 expect
 	HexColor.color_between({
@@ -177,8 +166,4 @@ expect
 		to: blend_end,
 		fraction: Fraction.of(0.5),
 	})
-		== {
-			r: 89.0,
-			g: 130.0,
-			b: 162.0,
-		}
+		== RgbColor.of(0x5982A2)

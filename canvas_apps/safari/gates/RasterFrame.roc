@@ -42,8 +42,7 @@ frame_pixels = |tour| {
 	SafariFrame.picture_pixels({
 		shapes: frame.shapes,
 		roll: Tour.roll(tour),
-		sky_top_color: Tour.sky_top_color(tour),
-		sky_horizon_color: Tour.sky_horizon_color(tour),
+		sky_colors: Tour.sky_colors(tour),
 		sun: frame.sun,
 	})
 }

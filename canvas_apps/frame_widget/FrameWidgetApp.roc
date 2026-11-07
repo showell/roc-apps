@@ -122,18 +122,13 @@ scene_pieces = |lists| {
 ## what the sun adds when it's in view.
 backdrop_pieces : Tour -> List(Piece)
 backdrop_pieces = |tour| {
-	backdrop = Backdrop.frame_shapes(
-		[],
-		{
-			sky_top_color: Tour.sky_top_color(tour),
-			sky_horizon_color: Tour.sky_horizon_color(tour),
-			sun_sighting: Tour.frame_content(tour).sun,
-		},
-	)
+	sky_colors = Tour.sky_colors(tour)
+	sun_sighting = Tour.frame_content(tour).sun
+	backdrop = Backdrop.backdrop_shapes({ sky_colors, sun_sighting })
 	[
-		{ layer: Sky, shapes: backdrop.take_first(1) },
-		{ layer: Grass, shapes: backdrop.drop_first(1).take_first(1) },
-		{ layer: Sun, shapes: backdrop.drop_first(2) },
+		{ layer: Sky, shapes: [backdrop.sky] },
+		{ layer: Grass, shapes: [backdrop.grass] },
+		{ layer: Sun, shapes: backdrop.sun_shapes },
 	]
 }
 
@@ -163,11 +158,10 @@ ride_pieces = |tour| {
 			clock: instant.clock,
 		},
 	)
-	skyline = Mountains.mountain_shapes({
-		heading: ViewYaw.heading_for(rider),
-		dusk: Sky.dusk_at(instant.clock),
-		cam_focal: view.cam_focal,
-	})
+	skyline = Mountains.mountain_shapes(
+		{ heading: ViewYaw.heading_for(rider), cam_focal: view.cam_focal },
+		Sky.dusk_at(instant.clock),
+	)
 	ground = GroundSighting.patches_in_view(view.road).keep_oks(
 		|patch| Ground.patch_shape(
 			patch,
@@ -228,7 +222,7 @@ plain_background = Rect({
 	y: 0.0,
 	w: picture_width,
 	h: picture_height,
-	fill: ScrubWidget.flat(RgbColor.of(0xe8e6df)),
+	fill: ScrubWidget.flat(RgbColor.of(0xE8E6DF)),
 })
 
 panel : Shapes.Shape
@@ -237,7 +231,7 @@ panel = Rect({
 	y: picture_height,
 	w: canvas_width,
 	h: panel_height,
-	fill: ScrubWidget.flat(RgbColor.of(0xdcecf5)),
+	fill: ScrubWidget.flat(RgbColor.of(0xDCECF5)),
 })
 
 ## An address that names a layer has the page press Right once for each layer
