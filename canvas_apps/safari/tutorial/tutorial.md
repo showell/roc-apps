@@ -688,11 +688,11 @@ For each frame, `trees_in_view` goes through the segments of the road ahead, the
 
 {{code TreeSighting.trees_in_view}}
 
-{{code TreeSighting.segment_sightings}}
+{{code TreeSighting.segment_trees}}
 
 From here on, things are measured from the camera, which travels with the rider. We don't need to know much about the rider yet.
 
-{{code TreeSighting.sighting_of}}
+{{code Pipeline.scenery_sighting_of}}
 
 `Ahead(position)` says which segment of the road ahead the tree stands on. The size test asks for 2 pixels, through the camera's own lens.
 

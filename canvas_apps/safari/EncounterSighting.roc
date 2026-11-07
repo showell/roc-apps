@@ -9,7 +9,6 @@ import BirdFlight
 import Cat
 import Distance
 import RoadAhead
-import SegmentPlace
 import Geom
 import Pipeline
 import Pixels
@@ -112,32 +111,5 @@ encounter_in_view = |road, { camera, in_view, along, placed_at }| {
 		road,
 		{ vantage: camera.vantage, in_view },
 	).plus(along.from_start())
-	animal_in_view(
-		road,
-		{
-			camera,
-			place: in_view.place,
-			animal: placed_at(gap),
-		},
-	)
+	Pipeline.scenery_sighting_of(placed_at(gap), { road, camera, place: in_view.place })
 }
-
-## An animal placed on the segment at `place`, if it is in view. Its size is
-## tested through the camera's own lens, as a tree's is.
-animal_in_view : RoadAhead.RoadView,
-{
-	camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
-	place : SegmentPlace,
-	animal : Geom.Placed(kind),
-} -> Try(Pipeline.Sighted(kind), [BehindCamera, TooSmall])
-	where [kind.scenery_height : kind -> Distance]
-animal_in_view = |road, { camera, place, animal }|
-	Pipeline.tall_sighting_of(
-		animal,
-		{
-			road,
-			vantage: camera.vantage,
-			place,
-			size_test: Pipeline.scenery_test(camera),
-		},
-	)

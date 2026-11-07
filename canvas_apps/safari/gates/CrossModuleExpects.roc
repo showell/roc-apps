@@ -879,8 +879,6 @@ expect left_bull.kind.still == EmojiStills.bull
 expect near_cow.kind.facing == FacesRight
 expect left_bull.kind.facing == FacesLeft
 
-expect BillboardSighting.min_critter_px.to_f64() == 2.0
-
 # RailSighting's run up to a bend and out of it.
 rail_point_at : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
 rail_point_at = |points, i|
