@@ -50,10 +50,12 @@ cd /home/steve/showell_repos/roc-apps/canvas_apps/safari && shale cookbook:roc/t
 TAG
 ```
 
-The walk prints the module's types and every type they depend on to depth 3,
+The walk prints the module's types and every type they depend on to depth 2,
 the most primitive first, with no function bodies. Read it the way a newcomer
-would, from the top. Types past depth 3 are named in one line and not
-followed. Read their source only if a finding needs it.
+would, from the top. Types past depth 2 are named in one line and not
+followed. Read their source only if a finding needs it. Judge a module's types
+by what depth 2 shows: if a type only makes sense once you've read three levels
+down, that's a finding, not a reason to go deeper.
 
 The walk has more than the types (the recipe's header lists every setting):
 - **Hub types:** `Shapes.Shape`, `Brush.*` and `World.Segment` are named once
@@ -127,7 +129,7 @@ it plain, and don't write long prose. For each finding, worst first, give:
 End with the findings you considered and rejected, one line each, so they
 aren't raised again.
 
-Then say, in a line or two, how depth 3 felt for this module:
+Then say, in a line or two, how depth 2 felt for this module:
 - **Noisy:** were types near the bottom of the walk ones you never needed?
 - **Incomplete:** did a finding need a type past the cut, which you had to read
   in its source?
