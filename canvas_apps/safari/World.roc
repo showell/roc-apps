@@ -336,6 +336,10 @@ World :: [].{
 	} -> Distance
 	distance_along_route = |route_segments, { index, along }|
 		route_length(route_segments.take_first(index.count_before())).plus(along.from_start())
+
+	## The bend at the end of `segment`.
+	bend_out_of : World.Segment -> Geom.Bend
+	bend_out_of = |segment| { segment_length: segment.length, turn: segment.exit_turn }
 }
 
 ## The segment at `index` of the route, built from its plan.
@@ -356,11 +360,7 @@ built_segment = |plan, index| {
 		exit_turn: plan.turn,
 		commit_along: match plan.ending {
 			Continues =>
-				Geom.commit_along({
-					segment_length: plan.length,
-					turn: plan.turn,
-					road_width: Scenery.road_width,
-				})
+				Geom.commit_along({ segment_length: plan.length, turn: plan.turn })
 			Terminates => Along.at(plan.length)
 		},
 		mid_tower: if plan.length > World.mid_tower_min_length {
@@ -371,7 +371,7 @@ built_segment = |plan, index| {
 		crossing: match plan.crossing {
 			CatCrosses => CatCrosses(
 				Cat.crossing({
-					road_half_width: Scenery.road_half_width,
+					road_half_width: Geom.road_half_width,
 					tree: nearest_tree_ahead(trees, Cat.cat_along),
 				}),
 			)

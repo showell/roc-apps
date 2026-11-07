@@ -11,7 +11,6 @@ import Gaze
 import Geom
 import LeanSearch
 import RiderState
-import Scenery
 import Speed
 import Throttle
 import VehicleLimits
@@ -43,13 +42,9 @@ Rider :: [].{
 
 	rider_on_next_segment : RiderState, Rider.Seam -> RiderState
 	rider_on_next_segment = |rs, { segment: seg, next }| {
-		on_next = Geom.centred_point_after(
+		on_next = Geom.point_in_segment_after(
 			{ along: rs.along, across: rs.across },
-			{
-				segment_length: seg.length,
-				turn: seg.exit_turn,
-				road_width: Scenery.road_width,
-			},
+			World.bend_out_of(seg),
 		)
 		{
 			..rs,
@@ -79,7 +74,7 @@ Rider :: [].{
 	cross_if_on_road : RiderState, Rider.Seam -> RiderState
 	cross_if_on_road = |moved, seam| {
 		on_next = rider_on_next_segment(moved, seam)
-		if on_next.across.distance_from_middle() < Scenery.road_half_width {
+		if on_next.across.distance_from_middle() < Geom.road_half_width {
 			on_next
 		} else {
 			moved
@@ -175,7 +170,7 @@ expect first_segment.ending == Continues({ next: World.SegmentIndex.number(1) })
 
 expect {
 	far = Rider.rider_on_next_segment(rider_at(100.0, 0.0), first_seam)
-	far.across.distance_from_middle() >= Scenery.road_half_width
+	far.across.distance_from_middle() >= Geom.road_half_width
 }
 
 expect Rider.cross_if_on_road(rider_at(100.0, 0.0), first_seam).segment_index.to_i64() == 0
@@ -217,7 +212,7 @@ one_step_on = Rider.rider_state_at_next_step(RiderState.initial, first_segments)
 expect one_step_on.along > Along.start
 expect one_step_on.speed > Speed.at_rest
 expect one_step_on.segment_index == World.SegmentIndex.first
-expect one_step_on.across.distance_from_middle() < Scenery.road_half_width
+expect one_step_on.across.distance_from_middle() < Geom.road_half_width
 expect one_step_on.speed <= VehicleLimits.top_speed
 
 # These test LeanSearch's search. They sit here because LeanSearch doesn't import
