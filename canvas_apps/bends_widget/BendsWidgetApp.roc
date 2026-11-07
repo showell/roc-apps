@@ -1,8 +1,8 @@
 ## The widget for the Safari tutorial's chapter on the road: a still picture of
 ## three bends side by side, with no controls. Each is a two-segment road seen
 ## from above, with the rider's way up the picture. The paving and the guard rail
-## come from GroundSighting and RailSighting, and the apex from BendView, and the
-## lines under each bend read out what those three say of it.
+## come from GroundSighting and RailSighting, and the apex from BendView's outer
+## corner, and the lines under each bend read out what those three say of it.
 import game.Across
 import game.Along
 import game.Angle
@@ -101,11 +101,19 @@ bend_of : RoadAhead.RoadView -> BendView
 bend_of = |road|
 	BendView.of_in_view(RoadAhead.segment_in_view_at(road, SegmentPlace.Position.first))
 
-## The apex of a bend of `turn`.
+## The apex of a bend of `turn`, as the camera sees it.
 apex_of : Angle.Turn -> Geom.RiderPoint
 apex_of = |turn| {
 	road = road_with(turn)
-	BendView.apex(road, { vantage: camera.vantage, bend_view: bend_of(road) })
+	bend_view = bend_of(road)
+	RoadAhead.rider_point_at(
+		road,
+		{
+			vantage: camera.vantage,
+			place: bend_view.before,
+			road_point: bend_view.outer_corner().apex,
+		},
+	)
 }
 
 ## Where the view is from, and so where every point is measured from.
@@ -227,9 +235,12 @@ edge_text = |bend_view|
 		"right"
 	}
 
-## How far past the end of the first segment the apex lies.
-apex_past_end : Geom.RiderPoint -> F64
-apex_past_end = |apex| apex.forward.minus(rider_before_bend).to_metres()
+## How far past the end of the segment before `bend_view` its apex lies.
+apex_past_end : BendView -> F64
+apex_past_end = |bend_view| {
+	corner = bend_view.outer_corner()
+	corner.apex.along.distance_from(corner.end_before.along).to_metres()
+}
 
 ## What the three modules say of a bend, a line each.
 caption_lines : Angle.Turn -> List(Str)
@@ -238,7 +249,7 @@ caption_lines = |turn| {
 	[
 		turn_text(turn),
 		"rail on the ${edge_text(bend_of(road))} edge",
-		"apex ${ReadoutText.tenths_text(apex_past_end(apex_of(turn)))} m past the end",
+		"apex ${ReadoutText.tenths_text(apex_past_end(bend_of(road)))} m past the end",
 		"${GroundSighting.patches_in_view(road, camera).len().to_str()} patches, ${RailSighting.rails_in_view(road, camera).len().to_str()} rail pieces",
 	]
 }

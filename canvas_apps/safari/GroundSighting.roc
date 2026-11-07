@@ -138,14 +138,11 @@ ground_patches = |road, { vantage, in_view }| {
 bend_paving : RoadAhead.RoadView, { vantage : Geom.Vantage, bend_view : BendView } -> Ground.Patch
 bend_paving = |road, { vantage, bend_view }| {
 	length_before = bend_view.bend.segment_length
-	before = |along, across| RoadAhead.rider_point_at(
+	seen_before = |road_point| RoadAhead.rider_point_at(
 		road,
-		{
-			vantage,
-			place: bend_view.before,
-			road_point: { along, across },
-		},
+		{ vantage, place: bend_view.before, road_point },
 	)
+	before = |along, across| seen_before({ along, across })
 	after = |along, across| RoadAhead.rider_point_at(
 		road,
 		{
@@ -157,16 +154,19 @@ bend_paving = |road, { vantage, bend_view }| {
 	lead_start = Along.at(length_before.minus(lead_in_length))
 	end = Along.at(length_before)
 	lead_end = chunk_end(length_after(road, bend_view), 1)
-	apex = BendView.apex(road, { vantage, bend_view })
+	corner = bend_view.outer_corner()
+	end_before = seen_before(corner.end_before)
+	apex = seen_before(corner.apex)
+	start_after = seen_before(corner.start_after)
 	outer = bend_view.outer_edge()
 	inner = bend_view.inner_edge()
 	corners =
 		if bend_view.turn().is_right() {
 			[
 				before(lead_start, outer),
-				before(end, outer),
+				end_before,
 				apex,
-				after(Along.start, outer),
+				start_after,
 				after(lead_end, outer),
 				after(lead_end, inner),
 				before(end, inner),
@@ -178,9 +178,9 @@ bend_paving = |road, { vantage, bend_view }| {
 				before(end, inner),
 				after(lead_end, inner),
 				after(lead_end, outer),
-				after(Along.start, outer),
+				start_after,
 				apex,
-				before(end, outer),
+				end_before,
 				before(lead_start, outer),
 			]
 		}

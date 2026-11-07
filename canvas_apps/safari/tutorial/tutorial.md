@@ -944,7 +944,7 @@ A bend is a small record.
 
 A bend to the right has its outer edge on the left. That's why the rail changes sides between the first two bends.
 
-{{code BendView.apex}}
+{{code BendView.outer_corner}}
 
 `point_before` and `point_after` are closures. Each gives a call with four arguments a short name, so the two lines below them read alike. Each line runs along the outer edge of one segment, and `Geom.line_crossing` finds where the two cross. That's the yellow dot.
 

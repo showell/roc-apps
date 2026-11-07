@@ -68,35 +68,27 @@ BendView := { before : SegmentPlace, bend : Geom.Bend }.{
 			Geom.left_edge
 		}
 
-	## Where the outer edges of the two segments at a bend meet.
-	apex : RoadAhead.RoadView, { vantage : Geom.Vantage, bend_view : BendView } -> Geom.RiderPoint
-	apex = |road, { vantage, bend_view }| {
+	## The corner the road's outer edge turns at a bend, measured on the segment
+	## before it: where that segment's outer edge ends, the apex where it meets
+	## the outer edge of the segment after, carried straight on, and where the
+	## outer edge of the segment after starts.
+	outer_corner : BendView -> {
+		end_before : Geom.RoadPoint,
+		apex : Geom.RoadPoint,
+		start_after : Geom.RoadPoint,
+	}
+	outer_corner = |bend_view| {
 		across = outer_edge(bend_view)
-		end_before = Along.at(bend_view.bend.segment_length)
-		before = bend_view.before
-		point_before = |along| RoadAhead.rider_point_at(
-			road,
-			{
-				vantage,
-				place: before,
-				road_point: { along, across },
-			},
-		)
-		place = Ahead(position_after(bend_view))
-		point_after = |along| RoadAhead.rider_point_at(
-			road,
-			{ vantage, place, road_point: { along, across } },
-		)
-		Geom.line_crossing({
-			first_line: {
-				start_point: point_before(end_before),
-				end_point: point_before(end_before.plus(Distance.metres(1.0))),
-			},
-			second_line: {
-				start_point: point_after(Along.start),
-				end_point: point_after(Along.metres(1.0)),
-			},
-		})
+		bend = bend_view.bend
+		start_after = Geom.point_in_segment_before({ along: Along.start, across }, bend)
+		turn_radians = bend.turn.to_radians()
+		toward_edge = across.distance_from(start_after.across).to_metres()
+		run_to_edge = toward_edge * turn_radians.cos() / turn_radians.sin()
+		{
+			end_before: { along: Along.at(bend.segment_length), across },
+			apex: { along: start_after.along.plus(Distance.metres(run_to_edge)), across },
+			start_after,
+		}
 	}
 }
 
@@ -123,3 +115,42 @@ expect bend_at(
 	Angle.straight_ahead,
 ).position_after().to_i64() == 4
 expect bend_at(JustBehind, Angle.straight_ahead).position_after().to_i64() == 0
+
+## The outer corner of a bend of `turn` from a segment 300 m long, as (along,
+## across) pairs: where the edge before ends, the apex, and where the edge
+## after starts.
+outer_corner_pairs : Angle.Turn -> List((F64, F64))
+outer_corner_pairs = |turn| {
+	corner = bend_at(Ahead(SegmentPlace.Position.first), turn).outer_corner()
+	[corner.end_before, corner.apex, corner.start_after].map(
+		|point| (point.along.to_metres(), point.across.to_metres()),
+	)
+}
+
+## Whether two lists of (along, across) pairs agree to a micrometre.
+is_near : List((F64, F64)), List((F64, F64)) -> Bool
+is_near = |got_pairs, wanted_pairs|
+	got_pairs.len() == wanted_pairs.len()
+		and got_pairs.map2(
+			wanted_pairs,
+			|(a, b), (c, d)| (a - c).abs() <= 0.000001 and (b - d).abs() <= 0.000001,
+		).all(|is_close| is_close)
+
+# A right angle's outer corner is a road's width past the end, on the outer
+# edge, and the edge after starts across the road from it.
+expect is_near(
+	outer_corner_pairs(Angle.Turn.degrees(90.0)),
+	[
+		(300.0, -2.0),
+		(304.0, -2.0),
+		(304.0, 2.0),
+	],
+)
+expect is_near(
+	outer_corner_pairs(Angle.Turn.degrees(-90.0)),
+	[
+		(300.0, 2.0),
+		(304.0, 2.0),
+		(304.0, -2.0),
+	],
+)

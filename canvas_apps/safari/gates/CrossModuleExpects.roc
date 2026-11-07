@@ -233,15 +233,18 @@ segment_in_view_behind = |road_view|
 		_ => crash "CrossModuleExpects.segment_in_view_behind: this rider has a segment behind"
 	}
 
-## The apex of a bend from a segment 300 m long, just behind the rider's.
+## The apex of a bend from a segment 300 m long, just behind the rider's, as
+## `turned_vantage` sees it.
 apex_after_turn : Angle.Turn -> Geom.RiderPoint
 apex_after_turn = |turn| {
 	road_view = road_past_bend(turn)
-	BendView.apex(
+	bend_view = BendView.of_in_view(segment_in_view_behind(road_view))
+	RoadAhead.rider_point_at(
 		road_view,
 		{
 			vantage: turned_vantage,
-			bend_view: BendView.of_in_view(segment_in_view_behind(road_view)),
+			place: bend_view.before,
+			road_point: bend_view.outer_corner().apex,
 		},
 	)
 }
