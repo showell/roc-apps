@@ -9,7 +9,6 @@ import game.Angle
 import game.Distance
 import game.RoadAhead
 import game.Route
-import game.Segment
 import game.SegmentPlace
 import game.Geom
 import game.GroundSighting
