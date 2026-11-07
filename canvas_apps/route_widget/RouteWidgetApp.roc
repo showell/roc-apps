@@ -191,21 +191,21 @@ middle_of = |{ start, end, .. }| {
 	north: (start.north + end.north) / 2.0,
 }
 
-## The colour that marks what crosses a segment, if anything does.
-crossing_color : World.SegmentPlan -> Try(RgbColor, [NothingCrosses])
-crossing_color = |plan|
-	match plan.crossing {
+## The colour that marks what the rider meets on a segment, if anything.
+encounter_color : World.SegmentPlan -> Try(RgbColor, [NoEncounter])
+encounter_color = |plan|
+	match plan.encounter {
 		CatCrosses => Ok(cat_color)
 		BirdHere => Ok(bird_color)
-		QuietRoad => Err(NothingCrosses)
+		QuietRoad => Err(NoEncounter)
 	}
 
-## A mark on the map where something crosses a segment.
+## A mark on the map where the rider meets something on a segment.
 mark_shapes : LaidSegment -> List(Shapes.Shape)
 mark_shapes = |segment|
-	match crossing_color(segment.plan) {
+	match encounter_color(segment.plan) {
 		Ok(color) => [spot(middle_of(segment), { r: 6.0, color })]
-		Err(NothingCrosses) => []
+		Err(NoEncounter) => []
 	}
 
 ## A coloured spot and the word for it, in the picture's empty corner.
@@ -285,7 +285,7 @@ status_lines = {
 	metres = (plan.length.to_metres() + 0.5).to_i64_wrap()
 	[
 		"Segment ${read_out_number.to_str()} of ${segments.len().to_str()}: ${metres.to_str()} m, ${turn_text(read_out_plan.turn)}",
-		"crossing: ${Str.inspect(plan.crossing)}, pigs: ${Str.inspect(plan.pigs)}",
+		"encounter: ${Str.inspect(plan.encounter)}, pigs: ${Str.inspect(plan.pigs)}",
 		"bull: ${Str.inspect(plan.bull)}, scheme: ${Str.inspect(plan.scheme)}",
 		"bend_life: ${Str.inspect(read_out_plan.bend_life)}",
 	]
@@ -318,7 +318,7 @@ expect
 	status_lines
 		== [
 			"Segment 7 of 19: 1200 m, 80 deg right",
-			"crossing: QuietRoad, pigs: NoPigs",
+			"encounter: QuietRoad, pigs: NoPigs",
 			"bull: WithBull, scheme: RedGreen",
 			"bend_life: Animal(Rhino)",
 		]
@@ -329,8 +329,8 @@ expect segments.all(|segment| segment.plan.length.to_metres() <= read_out_segmen
 # The stretch that's read out goes down over the road.
 expect picture_shapes.drop_first(1 + road_shapes.len()).starts_with(read_out_shapes)
 
-# Only the segments that something crosses are marked on the map.
-expect segments.keep_if(|segment| crossing_color(segment.plan).is_ok()).len() == 6
+# Only the segments where the rider meets something are marked on the map.
+expect segments.keep_if(|segment| encounter_color(segment.plan).is_ok()).len() == 6
 
 # The lines go on the panel, over the picture.
 expect still_shapes.starts_with(picture_shapes)

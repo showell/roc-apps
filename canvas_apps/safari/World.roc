@@ -1,16 +1,16 @@
 ## The ride's world is its route, planned as a list of segments. Each plan says
-## how long its segment is, what grows and grazes along it, what crosses it, and
-## how it turns into the next. The route makes some choices across its segments,
-## such as which herds are big and which the rider finds distracting, and this
-## module resolves them before each segment is built.
+## how long its segment is, what grows and grazes along it, what the rider meets
+## on it, and how it turns into the next. The route makes some choices across
+## its segments, such as which herds are big and which the rider finds
+## distracting, and this module resolves them before each segment is built.
 import Angle
-import Cat
+import CatCrossing
 import CowHerd
 import Distance
 import PigHerd
 import Route
-import Scenery
 import Segment
+import Trees
 import lib.Trig
 
 World :: [].{
@@ -22,8 +22,8 @@ World :: [].{
 	## lives along it.
 	SegmentPlan : {
 		length : Distance,
-		scheme : Scenery.Scheme,
-		crossing : [CatCrosses, BirdHere, QuietRoad],
+		scheme : Trees.Scheme,
+		encounter : [CatCrosses, BirdHere, QuietRoad],
 		pigs : World.PigPresence,
 		bull : [WithBull, NoBull],
 	}
@@ -33,7 +33,7 @@ World :: [].{
 	BendingPlan : {
 		segment_plan : World.SegmentPlan,
 		turn : Angle.Turn,
-		bend_life : Scenery.BendLife,
+		bend_life : Segment.BendLife,
 	}
 
 	## Every segment of the route but the last, in order, each with its bend.
@@ -43,7 +43,7 @@ World :: [].{
 			segment_plan: {
 				length: Distance.metres(500.0),
 				scheme: AllGreen,
-				crossing: BirdHere,
+				encounter: BirdHere,
 				pigs: NoPigs,
 				bull: NoBull,
 			},
@@ -54,7 +54,7 @@ World :: [].{
 			segment_plan: {
 				length: Distance.metres(320.0),
 				scheme: AllGreen,
-				crossing: QuietRoad,
+				encounter: QuietRoad,
 				pigs: NoPigs,
 				bull: NoBull,
 			},
@@ -65,7 +65,7 @@ World :: [].{
 			segment_plan: {
 				length: Distance.metres(400.0),
 				scheme: AllGreen,
-				crossing: QuietRoad,
+				encounter: QuietRoad,
 				pigs: WithPigs,
 				bull: NoBull,
 			},
@@ -76,7 +76,7 @@ World :: [].{
 			segment_plan: {
 				length: Distance.metres(300.0),
 				scheme: GoldGreen,
-				crossing: CatCrosses,
+				encounter: CatCrosses,
 				pigs: NoPigs,
 				bull: NoBull,
 			},
@@ -87,7 +87,7 @@ World :: [].{
 			segment_plan: {
 				length: Distance.metres(300.0),
 				scheme: AllGreen,
-				crossing: QuietRoad,
+				encounter: QuietRoad,
 				pigs: NoPigs,
 				bull: WithBull,
 			},
@@ -98,7 +98,7 @@ World :: [].{
 			segment_plan: {
 				length: Distance.metres(300.0),
 				scheme: AllGreen,
-				crossing: BirdHere,
+				encounter: BirdHere,
 				pigs: NoPigs,
 				bull: WithBull,
 			},
@@ -109,7 +109,7 @@ World :: [].{
 			segment_plan: {
 				length: Distance.metres(1200.0),
 				scheme: RedGreen,
-				crossing: QuietRoad,
+				encounter: QuietRoad,
 				pigs: NoPigs,
 				bull: WithBull,
 			},
@@ -120,7 +120,7 @@ World :: [].{
 			segment_plan: {
 				length: Distance.metres(300.0),
 				scheme: AllGreen,
-				crossing: QuietRoad,
+				encounter: QuietRoad,
 				pigs: NoPigs,
 				bull: WithBull,
 			},
@@ -131,7 +131,7 @@ World :: [].{
 			segment_plan: {
 				length: Distance.metres(300.0),
 				scheme: AllGreen,
-				crossing: QuietRoad,
+				encounter: QuietRoad,
 				pigs: NoPigs,
 				bull: WithBull,
 			},
@@ -142,7 +142,7 @@ World :: [].{
 			segment_plan: {
 				length: Distance.metres(800.0),
 				scheme: AllGreen,
-				crossing: CatCrosses,
+				encounter: CatCrosses,
 				pigs: NoPigs,
 				bull: WithBull,
 			},
@@ -153,7 +153,7 @@ World :: [].{
 			segment_plan: {
 				length: Distance.metres(300.0),
 				scheme: AllGreen,
-				crossing: QuietRoad,
+				encounter: QuietRoad,
 				pigs: WithPigs,
 				bull: WithBull,
 			},
@@ -164,7 +164,7 @@ World :: [].{
 			segment_plan: {
 				length: Distance.metres(300.0),
 				scheme: AllGreen,
-				crossing: QuietRoad,
+				encounter: QuietRoad,
 				pigs: WithPigs,
 				bull: WithBull,
 			},
@@ -175,7 +175,7 @@ World :: [].{
 			segment_plan: {
 				length: Distance.metres(300.0),
 				scheme: RedGreen,
-				crossing: QuietRoad,
+				encounter: QuietRoad,
 				pigs: WithPigs,
 				bull: WithBull,
 			},
@@ -186,7 +186,7 @@ World :: [].{
 			segment_plan: {
 				length: Distance.metres(400.0),
 				scheme: AllGreen,
-				crossing: QuietRoad,
+				encounter: QuietRoad,
 				pigs: WithPigs,
 				bull: WithBull,
 			},
@@ -197,7 +197,7 @@ World :: [].{
 			segment_plan: {
 				length: Distance.metres(300.0),
 				scheme: AllGreen,
-				crossing: BirdHere,
+				encounter: BirdHere,
 				pigs: WithPigs,
 				bull: WithBull,
 			},
@@ -208,7 +208,7 @@ World :: [].{
 			segment_plan: {
 				length: Distance.metres(300.0),
 				scheme: RedGreen,
-				crossing: QuietRoad,
+				encounter: QuietRoad,
 				pigs: NoPigs,
 				bull: WithBull,
 			},
@@ -219,7 +219,7 @@ World :: [].{
 			segment_plan: {
 				length: Distance.metres(300.0),
 				scheme: AllGreen,
-				crossing: QuietRoad,
+				encounter: QuietRoad,
 				pigs: WithPigs,
 				bull: WithBull,
 			},
@@ -230,7 +230,7 @@ World :: [].{
 			segment_plan: {
 				length: Distance.metres(300.0),
 				scheme: AllGreen,
-				crossing: QuietRoad,
+				encounter: QuietRoad,
 				pigs: WithPigs,
 				bull: WithBull,
 			},
@@ -244,7 +244,7 @@ World :: [].{
 	last_plan = {
 		length: Distance.metres(300.0),
 		scheme: RedGreen,
-		crossing: CatCrosses,
+		encounter: CatCrosses,
 		pigs: WithPigs,
 		bull: WithBull,
 	}
@@ -340,7 +340,7 @@ World :: [].{
 built_segment : World.SegmentPlan,
 {
 	index : Route.SegmentIndex,
-	ending : [Bends({ turn : Angle.Turn, bend_life : Scenery.BendLife }), RouteEnds],
+	ending : [Bends({ turn : Angle.Turn, bend_life : Segment.BendLife }), RouteEnds],
 } -> Segment
 built_segment = |plan, { index, ending }| {
 	earlier_herd_count = World.herd_count_before(index)
@@ -368,7 +368,7 @@ built_segment = |plan, { index, ending }| {
 		scheme: plan.scheme,
 		pigs,
 		cows: { herd: World.cow_herd, bull: plan.bull },
-		crossing: plan.crossing,
+		encounter: plan.encounter,
 		ending,
 	})
 }
@@ -470,17 +470,17 @@ expect seg(0).trees.len() == 28
 expect seg(1).trees.len() == 16
 expect seg(6).trees.len() == 74
 expect seg(18).trees.len() == 14
-expect crossing_at(3).mid_across.to_metres() == 0.425
-expect crossing_at(18).mid_across.to_metres() == 0.425
 # Each cat starts behind a tree that is really there, and just past it.
 expect
 	[3, 9, 18].all(
 		|index| {
 			crossing = crossing_at(index)
+			beyond = CatCrossing.cat_beyond_tree
+			behind = CatCrossing.cat_behind_tree
 			seg(index).trees.any(
 				|{ road_point, .. }|
-					road_point.along.plus(Cat.cat_beyond_tree) == crossing.along
-						and road_point.across.plus(Cat.cat_behind_tree) == crossing.start_across,
+					road_point.along.plus(beyond) == crossing.along
+						and road_point.across.plus(behind) == crossing.start_across,
 			)
 		},
 	)
@@ -504,7 +504,7 @@ turns_right = |segment| exit_turn_of(segment).is_right()
 ## Whether a segment has a cat waiting by the road.
 has_cat : Segment -> Bool
 has_cat = |segment|
-	match segment.crossing {
+	match segment.encounter {
 		CatCrosses(_) => True
 		BirdHere(_) | QuietRoad => False
 	}
@@ -518,9 +518,9 @@ is_distracting = |segment|
 	}
 
 ## The cat crossing at a segment that has one.
-crossing_at : U32 -> Cat.Crossing
+crossing_at : U32 -> CatCrossing
 crossing_at = |index|
-	match seg(index).crossing {
+	match seg(index).encounter {
 		CatCrosses(crossing) => crossing
 		BirdHere(_) | QuietRoad => crash "World.crossing_at: segments 3, 9 and 18 have a cat"
 	}

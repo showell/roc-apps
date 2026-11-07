@@ -1,20 +1,21 @@
 ## A segment is one straight stretch of the route's road, from one bend to the
-## next: its length, its trees, its herds, what crosses it, and how it ends. It is
-## built once, from choices the route has already made, and this module answers
-## the questions asked of one segment: where its herds stand, where the rider
-## commits to its bend, and whether a tower stands halfway along it.
+## next: its length, its trees, its herds, what the rider meets on it, and how
+## it ends. It is built once, from choices the route has already made, and this
+## module answers the questions asked of one segment: where its herds stand,
+## where the rider commits to its bend, and whether a tower stands halfway
+## along it.
 import Across
 import Along
 import Angle
 import Billboard
 import BirdFlight
-import Cat
+import CatCrossing
 import CowHerd
 import Distance
 import Geom
 import PigHerd
-import Scenery
 import Trees
+import Wildlife
 
 Segment := {
 	length : Distance,
@@ -26,18 +27,22 @@ Segment := {
 	## The segment's herd of cows, led by a bull or not.
 	cows : { herd : CowHerd, bull : [WithBull, NoBull] },
 
-	## What crosses the road here, at most one thing, so that the rider has
-	## one experience at a time. Most of the road is quiet, so that a crossing
-	## stands out.
-	crossing : [CatCrosses(Cat.Crossing), BirdHere(BirdFlight.Habit), QuietRoad],
+	## What the rider meets on the road here, at most one thing, so that the
+	## rider has one experience at a time. Most of the road is quiet, so that an
+	## encounter stands out.
+	encounter : [CatCrosses(CatCrossing), BirdHere(BirdFlight.Habit), QuietRoad],
 
 	## How the segment ends: by turning into the next, positive to the
 	## right, with what lives at the bend, or by ending the route.
-	ending : [Bends({ turn : Angle.Turn, bend_life : Scenery.BendLife }), RouteEnds],
+	ending : [Bends({ turn : Angle.Turn, bend_life : Segment.BendLife }), RouteEnds],
 }.{
 
 	## How the rider takes a herd, whatever its shape.
 	PigInterest : [Unnoticed, Distracting]
+
+	## What lives at the bend that ends a segment: nothing, a safari animal and
+	## its baby, or a pond with its ducks.
+	BendLife : [Quiet, Animal(Wildlife.Animal), DuckPond]
 
 	## A segment longer than this has a tower halfway along.
 	mid_tower_min_length : Distance
@@ -52,15 +57,30 @@ Segment := {
 	cow_herd_along : Along
 	cow_herd_along = Along.metres(24.0)
 
+	## Where a segment's cat starts looking for its tree: it waits by the first
+	## tree on the right from here on.
+	cat_along : Along
+	cat_along = Along.metres(105.0)
+
+	## The tree a segment's bird starts on, the fifth with a negative `across`.
+	## Those are on the left, and an unflipped still's beak points toward +x, so
+	## from there the bird faces the road.
+	fifth_left_tree : List(Trees.RoadsideTree) -> [Found(Trees.RoadsideTree), NoTree]
+	fifth_left_tree = |trees|
+		match trees.keep_if(|tree| tree.road_point.across < Across.middle).drop_first(4).first() {
+			Ok(tree) => Found(tree)
+			Err(ListWasEmpty) => NoTree
+		}
+
 	## A segment built from the route's choices for it: its trees are planted
-	## for its scheme, and what crosses it is placed among them.
+	## for its scheme, and what the rider meets on it is placed among them.
 	from_choices : {
 		length : Distance,
-		scheme : Scenery.Scheme,
+		scheme : Trees.Scheme,
 		pigs : [NoPigs, Herd({ herd : PigHerd, interest : Segment.PigInterest })],
 		cows : { herd : CowHerd, bull : [WithBull, NoBull] },
-		crossing : [CatCrosses, BirdHere, QuietRoad],
-		ending : [Bends({ turn : Angle.Turn, bend_life : Scenery.BendLife }), RouteEnds],
+		encounter : [CatCrosses, BirdHere, QuietRoad],
+		ending : [Bends({ turn : Angle.Turn, bend_life : Segment.BendLife }), RouteEnds],
 	} -> Segment
 	from_choices = |choices| {
 		trees = Trees.roadside_trees({ scheme: choices.scheme, length: choices.length })
@@ -69,14 +89,18 @@ Segment := {
 			trees,
 			pigs: choices.pigs,
 			cows: choices.cows,
-			crossing: match choices.crossing {
+			encounter: match choices.encounter {
 				CatCrosses => CatCrosses(
-					Cat.crossing({
+					CatCrossing.by_tree({
 						road_half_width: Geom.road_half_width,
-						tree: nearest_tree_ahead(trees, Cat.cat_along).road_point,
+						tree: nearest_tree_ahead(trees, Segment.cat_along).road_point,
 					}),
 				)
-				BirdHere => BirdFlight.crossing_among(trees)
+				BirdHere =>
+					match Segment.fifth_left_tree(trees) {
+						Found(perch) => BirdHere(BirdFlight.habit_from(trees, perch))
+						NoTree => crash "Segment.from_choices: a segment planned with a bird has a fifth tree on the left"
+					}
 				QuietRoad => QuietRoad
 			},
 			ending: choices.ending,
@@ -151,7 +175,7 @@ gold_trees = Trees.roadside_trees({ scheme: GoldGreen, length: Distance.metres(3
 
 # On a gold segment the pairs differ. The tree found is whichever comes next, near
 # the road or far from it, and never one on the left.
-expect nearest_tree_ahead(gold_trees, Cat.cat_along).road_point.across == Across.metres(3.5)
+expect nearest_tree_ahead(gold_trees, Segment.cat_along).road_point.across == Across.metres(3.5)
 expect nearest_tree_ahead(gold_trees, Along.metres(90.0)).road_point.across == Across.metres(8.0)
 expect nearest_tree_ahead(gold_trees, Along.metres(90.0)).road_point.along == Along.metres(96.0)
 expect nearest_tree_ahead(gold_trees, Along.metres(96.0)).road_point.along == Along.metres(96.0)

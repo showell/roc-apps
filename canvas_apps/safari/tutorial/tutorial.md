@@ -1901,7 +1901,7 @@ Play it, and the gap falls from 50 metres to 0, with the rider held at a metre a
 New in this chapter:
 
 - Roc: type parameters, operators on opaque types, `var`, `for` and `return` in a pure function
-- Modules: `Cat`, `Animation`, `Beat`, `Beats`, `CatHeights`
+- Modules: `Cat`, `CatCrossing`, `Animation`, `Beat`, `Beats`, `CatHeights`
 
 The cat is one function, `Cat.instant_at`, with two jobs: work out how far along the crossing is, and look up what the cat does at that point. The module `Animation` sits under both.
 
@@ -1934,7 +1934,7 @@ A crossing and an approach go in, and the cat at that instant comes out. The sam
 
 `CrossingSighting.cat_in_view` calls it, adding the distance to the segment to get the gap:
 
-{{code CrossingSighting.crossing_in_view}}
+{{code EncounterSighting.encounter_in_view}}
 
 What `Cat` gets from `Animation` comes down to one type, `Stage`:
 
@@ -2096,11 +2096,11 @@ digraph screen {
 
 `cat_in_view` places the cat and decides whether it's big enough to draw. An empty list or a list of one is how it says "maybe".
 
-{{code CrossingSighting.cat_in_view}}
+{{code EncounterSighting.segment_cat}}
 
 `segment_cat` calls it for a segment with a cat, and `cats_in_view` flattens the answers with `join_map`, so a "no" simply disappears:
 
-{{code CrossingSighting.cats_in_view}}
+{{code EncounterSighting.cats_in_view}}
 
 Looking back over the chapter, notice what isn't in it: a cat in `RideInstant`, an update loop, or a flag saying the cat has already crossed.
 
@@ -2218,15 +2218,15 @@ Where a bird flies is decided once, when the world is built. `habit_from` shows 
 
 The caller's return type is written in place, a tag union that exists for this one function and fits straight into the `crossing` field of a segment:
 
-{{code BirdFlight.crossing_among}}
+{{code Segment.fifth_left_tree}}
 
 And that's called from a `match` in the middle of a record, which is a reminder that `match` is an expression. The plan's plain `BirdHere` tag comes in, and `BirdHere(route_segments)` goes out:
 
-{{code Segment.from_choices from "crossing: match choices.crossing {" to "QuietRoad => QuietRoad"}}
+{{code Segment.from_choices from "encounter: match choices.encounter {" to "QuietRoad => QuietRoad"}}
 
 Each frame, a sighting reads the route back. The crossing is matched in full, so a third kind of crossing would stop here until someone says what a bird sighting should do about it:
 
-{{code CrossingSighting.segment_bird}}
+{{code EncounterSighting.segment_bird}}
 
 We didn't need any new machinery for the bird. Above their `expect`s, the four bird modules come to about 450 lines, a quarter of them coordinates for the stills. `Animation` has nothing in it about birds.
 
@@ -2280,11 +2280,11 @@ Let's follow this back to `Cat`, to two small questions about the same `Stage`.
 
 `CrossingReaction.reaction_to` calls both. `..` in the argument's type makes it an open record, like `Bike.Motion`, though this one is only read and nothing comes back. This function needs `along` and `speed`, and accepts any record that has them, so it doesn't depend on `RiderState`, the rider's record. `speed` here is the opaque `Speed` again, and `match` on `segment.crossing` has to name every tag.
 
-{{code CrossingReaction.crossing_throttle}}
+{{code EncounterReaction.encounter_throttle}}
 
 A cat in the lane stops the rider opening the throttle, without braking, and widens the view as it pulls the rider's eye. Two tags, `MayAccelerate` and `NoAcceleration`, stand where a boolean might have gone. The next call up, `crossing_attention`, is one line, and its caller, `ride_focal`, works out the view's focal length:
 
-{{code CrossingReaction.crossing_attention}}
+{{code EncounterReaction.encounter_attention}}
 
 {{code RideFocal.ride_focal}}
 

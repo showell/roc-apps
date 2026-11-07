@@ -13,9 +13,10 @@ import game.Angle
 import game.Billboard
 import game.BirdFlight
 import game.Cat
+import game.CatCrossing
 import game.Clock
 import game.Conifer
-import game.CrossingSighting
+import game.EncounterSighting
 import game.BillboardSighting
 import game.DepthSort
 import game.Distance
@@ -39,7 +40,6 @@ import game.SceneShapes
 import game.RideInstant
 import game.Rider
 import game.RiderState
-import game.Scenery
 import game.Screen
 import game.Speed
 import game.Steps
@@ -111,7 +111,7 @@ flat_color_of = |shape|
 			crash "CrossModuleExpects.flat_color_of: this polygon is not flat"
 	}
 
-# CrossingSighting's birds, on a straight segment with its fifth left tree 100 m along: a bird
+# EncounterSighting's birds, on a straight segment with its fifth left tree 100 m along: a bird
 # sits, flies and lands as the rider comes, stays where no tree is far enough to
 # fly to, and is left out with no tree for it, behind the near plane or too small
 # to draw.
@@ -135,6 +135,51 @@ left_top = Conifer.Red.scenery_height().to_metres()
 far_top : F64
 far_top = Conifer.Gold.scenery_height().to_metres()
 
+# Segment's fifth left tree, which a bird starts on: only trees on the left count.
+## A left and a right tree at each of `alongs`.
+pairs_at : List(F64) -> List(Trees.RoadsideTree)
+pairs_at = |alongs| alongs.join_map(|along| [tree_at(along, -6.0), tree_at(along, 6.0)])
+
+## How far along the fifth left tree of `choices` is, if there is one.
+fifth_along : List(Trees.RoadsideTree) -> Try(F64, [NoTree])
+fifth_along = |choices|
+	match Segment.fifth_left_tree(choices) {
+		Found(tree) => Ok(tree.road_point.along.to_metres())
+		NoTree => Err(NoTree)
+	}
+
+expect fifth_along([]) == Err(NoTree)
+expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0])) == Err(NoTree)
+expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0])) == Ok(50.0)
+expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0, 60.0])) == Ok(50.0)
+expect fifth_along([50.0, 60.0, 70.0, 80.0, 90.0].map(|along| tree_at(along, 6.0))) == Err(NoTree)
+
+## Whether the trees planted for `plan` have a fifth on the left.
+has_fifth_left_tree : World.SegmentPlan -> Bool
+has_fifth_left_tree = |plan| {
+	planted = Trees.roadside_trees({ scheme: plan.scheme, length: plan.length })
+	match Segment.fifth_left_tree(planted) {
+		Found(_) => True
+		NoTree => False
+	}
+}
+
+# Every segment the route plans with a bird has a tree for it to start on, or
+# building the segment crashes. A segment too short for five trees on the left
+# has none.
+expect {
+	bird_plans = World.segment_plans.keep_if(|plan| plan.encounter == BirdHere)
+	bird_plans.len() > 0 and bird_plans.all(has_fifth_left_tree)
+}
+expect {
+	short_plan = {
+		..World.last_plan,
+		length: Distance.metres(50.0),
+		encounter: BirdHere,
+	}
+	!has_fifth_left_tree(short_plan)
+}
+
 ## A segment 200 m long holding only `trees`, which ends a route.
 segment_of : List(Trees.RoadsideTree) -> Segment
 segment_of = |trees| {
@@ -142,7 +187,10 @@ segment_of = |trees| {
 	length: Distance.metres(200.0),
 	trees,
 	ending: RouteEnds,
-	crossing: BirdFlight.crossing_among(trees),
+	encounter: match Segment.fifth_left_tree(trees) {
+		Found(perch) => BirdHere(BirdFlight.habit_from(trees, perch))
+		NoTree => QuietRoad
+	},
 }
 
 ## `segment`, bending straight on into another.
@@ -168,7 +216,7 @@ birds_on_segment : Segment,
 	cam_focal : Pixels,
 } -> List(Pipeline.Sighted(PosedBird))
 birds_on_segment = |segment, { rider_along, cam_focal }|
-	CrossingSighting.birds_in_view({
+	EncounterSighting.birds_in_view({
 		road: {
 			route: Route.from_segments([segment]),
 			segments_ahead: { first_index: Route.SegmentIndex.first, count: 1 },
@@ -228,7 +276,7 @@ bird_count = |trees, seen_from| birds_on(trees, seen_from).len().to_i64_wrap()
 segment_with_cat : Segment
 segment_with_cat = {
 	..segment_of(left_trees),
-	crossing: World.route.segment_at(Route.SegmentIndex.number(3)).crossing,
+	encounter: World.route.segment_at(Route.SegmentIndex.number(3)).encounter,
 }
 
 expect bird_count(left_trees, { rider_along: 0.0, cam_focal: Pixels.of(500.0) }) == 1
@@ -244,7 +292,7 @@ expect
 
 ## Two segments on the road ahead, the rider at the start of the first.
 two_segments : List(Pipeline.Sighted(PosedBird))
-two_segments = CrossingSighting.birds_in_view({
+two_segments = EncounterSighting.birds_in_view({
 	road: {
 		route: Route.from_segments([
 			going_straight_on(segment_of(left_trees)),
@@ -276,9 +324,9 @@ past_bend_trees = |degrees| {
 	segment_behind_rider = {
 		..segment_of([tree_at(195.0, 0.0)]),
 		ending: Bends({ turn: Angle.Turn.degrees(degrees), bend_life: Animal(Elephant) }),
-		crossing: QuietRoad,
+		encounter: QuietRoad,
 	}
-	rider_segment = { ..segment_of([]), crossing: QuietRoad }
+	rider_segment = { ..segment_of([]), encounter: QuietRoad }
 	TreeSighting.trees_in_view({
 		road: {
 			route: Route.from_segments([segment_behind_rider, rider_segment]),
@@ -302,12 +350,12 @@ expect is_one_tree_behind(past_bend_trees(-150.0))
 expect past_bend_trees(30.0).len() == 0
 expect past_bend_trees(-80.0).len() == 0
 
-# CrossingSighting's cats: which cats are in view as the rider comes on them.
+# EncounterSighting's cats: which cats are in view as the rider comes on them.
 ## The second segment, with a cat crossing it.
 cat_segment : Segment
 cat_segment = {
 	..World.route.segment_at(Route.SegmentIndex.number(1)),
-	crossing: World.route.segment_at(Route.SegmentIndex.number(3)).crossing,
+	encounter: World.route.segment_at(Route.SegmentIndex.number(3)).encounter,
 }
 
 ## The route's first three segments, a route of their own, with a cat crossing
@@ -335,7 +383,7 @@ metre_a_step = Speed.metres_a_step(1.0)
 
 ## The cats seen from the origin on a road of only `count` segments ahead.
 cats_on_road : U32 -> List(Pipeline.Sighted(PosedCat))
-cats_on_road = |count| CrossingSighting.cats_in_view(
+cats_on_road = |count| EncounterSighting.cats_in_view(
 	{
 		..cats_from_origin,
 		road: {
@@ -348,7 +396,7 @@ cats_on_road = |count| CrossingSighting.cats_in_view(
 
 ## The cat on the segment at `number` on the road ahead, if it is in view.
 cat_at : U32 -> Try(Pipeline.Sighted(PosedCat), [NoCat, BehindCamera, TooSmall])
-cat_at = |number| CrossingSighting.segment_cat(
+cat_at = |number| EncounterSighting.segment_cat(
 	cats_from_origin,
 	{ in_view: numbered_segment(cats_from_origin.road, number), speed: metre_a_step },
 )
@@ -358,7 +406,7 @@ expect cat_route.route_segments().map(has_cat) == [False, True, False]
 ## Whether a segment has a cat waiting by the road.
 has_cat : Segment -> Bool
 has_cat = |seg|
-	match seg.crossing {
+	match seg.encounter {
 		CatCrosses(_) => True
 		BirdHere(_) | QuietRoad => False
 	}
@@ -384,7 +432,7 @@ expect
 
 ## The cats in view for a rider `along` metres into the first segment.
 ride_sightings : F64 -> List(Pipeline.Sighted(PosedCat))
-ride_sightings = |along| CrossingSighting.cats_in_view(
+ride_sightings = |along| EncounterSighting.cats_in_view(
 	{
 		..cats_from_origin,
 		road: { ..cats_from_origin.road, vantage: { ..origin, along: Along.metres(along) } },
@@ -432,10 +480,10 @@ expect cats_on_road(1).len() == 0
 # top speed it starts closer to the cat than the cat is to the segment's start,
 # and a rider comes onto a segment no further along than that.
 ## The cats of the route, each with its segment.
-route_cats : List({ segment : Segment, crossing : Cat.Crossing })
+route_cats : List({ segment : Segment, crossing : CatCrossing })
 route_cats = World.route.route_segments().join_map(
 	|segment|
-		match segment.crossing {
+		match segment.encounter {
 			CatCrosses(crossing) => [{ segment, crossing }]
 			BirdHere(_) | QuietRoad => []
 		},
@@ -447,7 +495,7 @@ farthest_start = Cat.clear_gap.plus(VehicleLimits.top_speed.distance_in(Cat.cros
 
 expect route_cats.len() == 3
 expect farthest_start.to_metres() == 98.0
-expect farthest_start < Cat.cat_along.plus(Cat.cat_beyond_tree).from_start()
+expect farthest_start < Segment.cat_along.plus(CatCrossing.cat_beyond_tree).from_start()
 expect route_cats.all(|{ crossing, .. }| farthest_start < crossing.along.from_start())
 
 ## The speed a rider leaves `segment` at: the bend's, or none at the route's end.

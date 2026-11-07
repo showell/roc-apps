@@ -54,7 +54,7 @@ closing_gap = VcrButtons.gap_range({ farthest: Distance.metres(75.0), metres_a_f
 ## The bird's flight on a segment that has one.
 segment_flight : Segment -> Try(BirdFlight.Flight, [NoFlight])
 segment_flight = |segment|
-	match segment.crossing {
+	match segment.encounter {
 		BirdHere({ perch, leaves_for: FliesTo(to) }) => Ok({ from: perch, to })
 		BirdHere({ leaves_for: StaysPut, .. }) | CatCrosses(_) | QuietRoad => Err(NoFlight)
 	}
