@@ -139,7 +139,7 @@ Animation :: [].{
 		after : Animation.Instant(pose),
 	}.{
 
-		## The critter at `stage`. A stage past the last frame is the rest after it.
+		## The animal at `stage`.
 		instant : Animation.Timeline(pose), Animation.Stage -> Animation.Instant(pose)
 		instant = |Animation.Timeline.(timeline), stage|
 			match stage {
@@ -147,7 +147,8 @@ Animation :: [].{
 				Playing(steps_in) =>
 					match timeline.frames.get(steps_in.to_u32().to_u64()) {
 						Ok(frame) => frame
-						Err(OutOfBounds) => timeline.after
+						Err(OutOfBounds) =>
+							crash "Animation.Timeline.instant: a stage plays past the last frame, so the span it was staged by disagrees with its timeline"
 					}
 				Past(_) => timeline.after
 			}
@@ -234,14 +235,13 @@ four_frames = Animation.Timeline.(
 	},
 )
 
-# Each step in shows its own frame, and a step past the last is the rest after.
+# Each step in shows its own frame.
 expect
 	[
 		(0, First),
 		(1, Second),
 		(2, Third),
 		(3, Fourth),
-		(4, AfterIt),
 	].all(|(steps_in, note)| four_frames.instant(Playing(Steps.of(steps_in))).pose == note)
 
 expect four_frames.instant(Waiting).pose == BeforeIt
@@ -249,18 +249,6 @@ expect four_frames.instant(Past(Steps.of(5))).pose == AfterIt
 expect four_frames.instant(Waiting).location.across.to_metres() == -1.0
 expect four_frames.instant(Playing(Steps.of(2))).location.across.to_metres() == 3.0
 expect four_frames.instant(Past(Steps.of(5))).location.across.to_metres() == 99.0
-
-## A timeline with no frames at all.
-empty_timeline : Animation.Timeline(Note)
-empty_timeline = Animation.Timeline.(
-	{
-		before: { pose: BeforeIt, location: location_at(0.0) },
-		frames: [],
-		after: { pose: AfterIt, location: location_at(0.0) },
-	},
-)
-
-expect empty_timeline.instant(Playing(Steps.zero)).pose == AfterIt
 
 # A placed instant stands at the instant's location, and its kind is the pose.
 expect {

@@ -16,10 +16,7 @@ Cat :: [].{
 
 	## How long a crossing takes, at a frame a step.
 	crossing_steps : Steps
-	crossing_steps = {
-		frames = walking_poses.len() + frozen_frames + leap_frames.len()
-		Steps.of(frames.to_u32_wrap())
-	}
+	crossing_steps = Steps.of(crossing_frames.len().to_u32_wrap())
 
 	## How far short of the cat the rider is when its crossing ends.
 	clear_gap : Distance
@@ -127,6 +124,33 @@ peak_attention = Attention.of(1.8)
 attention_fade : Steps
 attention_fade = Steps.of(83)
 
+## Where a cat is on its way across in one frame: walking out, this much of
+## the way to the middle of the road; standing frozen there; or leaping, this
+## much of the way on to the far verge and this high.
+CrossingWay : [
+	WalkingOut(Fraction),
+	StandingFrozen,
+	Leaping({ way_to_verge : Fraction, lift : Distance }),
+]
+
+## The frames of any crossing, one a step, before they are put on a road. Both
+## the crossing's length and its timeline come from this one list, so the two
+## can't disagree.
+crossing_frames : List({ pose : PosedCat.CatPose, way : CrossingWay })
+crossing_frames = {
+	walking = walking_poses.map_with_index(
+		|pose, frame| {
+			pose,
+			way: WalkingOut(Fraction.of(frame.to_f64() / walking_poses.len().to_f64())),
+		},
+	)
+	frozen = List.repeat({ pose: Frozen, way: StandingFrozen }, frozen_frames)
+	leaping = leap_frames.map(
+		|{ pose, way_to_verge, lift }| { pose, way: Leaping({ way_to_verge, lift }) },
+	)
+	[walking, frozen, leaping].join()
+}
+
 ## The whole of a crossing, a frame a step: the cat walks out to the middle
 ## of the road, freezes there, and leaps clear to the far verge.
 crossing_timeline : CatCrossing -> Animation.Timeline(PosedCat.CatPose)
@@ -135,27 +159,24 @@ crossing_timeline = |cat| {
 	start = on_road(cat.start_across)
 	middle = on_road(CatCrossing.mid_across)
 	end = on_road(cat.end_across)
-	walking = walking_poses.map_with_index(
-		|pose, frame| {
-			fraction = Fraction.of(frame.to_f64() / walking_poses.len().to_f64())
-			{ pose, location: Animation.location_between({ from: start, to: middle, fraction }) }
-		},
-	)
-	frozen = List.repeat({ pose: Frozen, location: middle }, frozen_frames)
-	leaping = leap_frames.map(
-		|{ pose, way_to_verge, lift }| {
-			on_the_way = Animation.location_between({
-				from: middle,
-				to: end,
-				fraction: way_to_verge,
-			})
-			{ pose, location: { ..on_the_way, lift } }
-		},
-	)
+	location_of = |way|
+		match way {
+			WalkingOut(fraction) =>
+				Animation.location_between({ from: start, to: middle, fraction })
+			StandingFrozen => middle
+			Leaping({ way_to_verge, lift }) => {
+				on_the_way = Animation.location_between({
+					from: middle,
+					to: end,
+					fraction: way_to_verge,
+				})
+				{ ..on_the_way, lift }
+			}
+		}
 	Animation.Timeline.(
 		{
 			before: { pose: Rest, location: start },
-			frames: [walking, frozen, leaping].join(),
+			frames: crossing_frames.map(|{ pose, way }| { pose, location: location_of(way) }),
 			after: { pose: Collapse, location: end },
 		},
 	)
