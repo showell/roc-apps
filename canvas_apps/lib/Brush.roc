@@ -183,15 +183,15 @@ Brush :: [].{
 	# The colour `fraction` of the way from one colour to another.
 	mix : { from : Brush.Rgba, to : Brush.Rgba, fraction : F64 } -> Brush.Rgba
 	mix = |{ from: p, to: q, fraction: t }| { r: p.r + (q.r - p.r) * t, g: p.g + (q.g - p.g) * t, b: p.b + (q.b - p.b) * t, a: p.a + (q.a - p.a) * t }
+}
 
-	clamp01 : F64 -> F64
-	clamp01 = |t| if t < 0.0 {
-		0.0
-	} else if t > 1.0 {
-		1.0
-	} else {
-		t
-	}
+clamp01 : F64 -> F64
+clamp01 = |t| if t < 0.0 {
+	0.0
+} else if t > 1.0 {
+	1.0
+} else {
+	t
 }
 
 # The determinant of the matrix whose columns are an ellipse's axes. Near
