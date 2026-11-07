@@ -43,10 +43,6 @@ RoadAhead :: [].{
 		place : SegmentPlace,
 	}
 
-	## The most segments the road ahead holds.
-	most_segments_ahead : U32
-	most_segments_ahead = 7
-
 	## The index of the segment the rider is on, which is the road ahead's first.
 	rider_segment_index : RoadAhead.RoadView -> Route.SegmentIndex
 	rider_segment_index = |road| road.segments_ahead().first_index
@@ -107,11 +103,12 @@ RoadAhead :: [].{
 segments_ahead_of : Route, Route.SegmentIndex -> RoadAhead.SegmentsAhead
 segments_ahead_of = |route, start| {
 	left_on_route = route.segment_count() - start.count_before()
-	{
-		first_index: start,
-		count: left_on_route.min(RoadAhead.most_segments_ahead.to_u64()).to_u32_wrap(),
-	}
+	{ first_index: start, count: left_on_route.min(most_segments_ahead.to_u64()).to_u32_wrap() }
 }
+
+## The most segments the road ahead holds.
+most_segments_ahead : U32
+most_segments_ahead = 7
 
 ## The segment behind the rider's, unless the rider's is the route's first.
 previous_segment_index : RoadAhead.RoadView -> [Previous(Route.SegmentIndex), AtRouteStart]
