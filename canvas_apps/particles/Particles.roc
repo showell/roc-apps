@@ -141,7 +141,7 @@ Particles :: [].{
 			p = List.get(m.particles, $i) ?? crash ("particle")
 			# Their sprite is 3 to 9 pixels across, sized by the same seed.
 			r = (3.0 + 6.0 * p.seed) / 2.0
-			$out = List.append($out, Disc({ x: p.x, y: p.y, r: r, fill: Flat(palette(p.tint)), clip: Anywhere }))
+			$out = List.append($out, Disc({ x: p.x, y: p.y, r: r, fill: Flat(palette(p.tint)) }))
 			$i = $i + 1
 		}
 		$out

@@ -42,12 +42,11 @@ import lib.Shapes
 CanvasAppRunner :: [].{
 
 	## The values BrushGlsl's fragment shader reads, by its uniforms' names:
-	## which shading, where it may paint, and the colours and geometry that
-	## shading wants. Every field is sent with every shape, so a slot the
-	## shading doesn't read is zero.
+	## which shading, and the colours and geometry that shading wants. Every
+	## field is sent with every shape, so a slot the shading doesn't read is
+	## zero.
 	BrushUniforms : {
 		mode : F32,
-		clip : Math.Vec4,
 		color_a : Math.Vec4,
 		color_b : Math.Vec4,
 		color_c : Math.Vec4,
@@ -80,7 +79,7 @@ CanvasAppRunner :: [].{
 		|_io| {
 			target = Draw.RenderTexture.load!(target_size(game))?
 			Assets.set_texture_filter!(target.texture(), Bilinear)
-			shader = Shader.from_source!({ vertex_source: BrushGlsl.vertex, fragment_source: BrushGlsl.fragment }, uniforms_of(Skip, Anywhere))?
+			shader = Shader.from_source!({ vertex_source: BrushGlsl.vertex, fragment_source: BrushGlsl.fragment }, uniforms_of(Skip))?
 			Ok({ state: game.init, fps: Bool.False, target, shader })
 		},
 	)
@@ -246,13 +245,6 @@ CanvasAppRunner :: [].{
 		Ok({})
 	}
 
-	unclipped : Shapes.Clip -> Bool
-	unclipped = |clip|
-		match clip {
-			Anywhere => Bool.True
-			Within(_) => Bool.False
-		}
-
 	camera : { width : F64, height : F64 }, F32, F32 -> Camera.Camera2D
 	camera = |size, rotation, zoom| {
 		mid_x = F64.to_f32_wrap(size.width / 2.0)
@@ -368,10 +360,10 @@ CanvasAppRunner :: [].{
 	draw_shape! : Shader(CanvasAppRunner.BrushUniforms), Draw.Frame, Shapes.Shape => {}
 	draw_shape! = |shader, frame, shape|
 		match shape {
-			Poly(p) => with_fill!(shader, frame, p.fill, Anywhere, |f, col| f.convex_polygon!({ points: points(p.coordinates), style: Draw.filled(col) }))
-			Pieces(p) => with_fill!(shader, frame, p.fill, Anywhere, |f, col| draw_triangles!(f, p.tris, col))
-			Disc(d) => with_fill!(shader, frame, d.fill, d.clip, |f, col| f.circle!({ center: point(d.x, d.y), radius: F64.to_f32_wrap(d.r), style: Draw.filled(col) }))
-			Rect(r) => with_fill!(shader, frame, r.fill, Anywhere, |f, col| f.rectangle!({ x: F64.to_f32_wrap(r.x), y: F64.to_f32_wrap(r.y), width: F64.to_f32_wrap(r.w), height: F64.to_f32_wrap(r.h), style: Draw.filled(col) }))
+			Poly(p) => with_fill!(shader, frame, p.fill, |f, col| f.convex_polygon!({ points: points(p.coordinates), style: Draw.filled(col) }))
+			Pieces(p) => with_fill!(shader, frame, p.fill, |f, col| draw_triangles!(f, p.tris, col))
+			Disc(d) => with_fill!(shader, frame, d.fill, |f, col| f.circle!({ center: point(d.x, d.y), radius: F64.to_f32_wrap(d.r), style: Draw.filled(col) }))
+			Rect(r) => with_fill!(shader, frame, r.fill, |f, col| f.rectangle!({ x: F64.to_f32_wrap(r.x), y: F64.to_f32_wrap(r.y), width: F64.to_f32_wrap(r.w), height: F64.to_f32_wrap(r.h), style: Draw.filled(col) }))
 			# **roc-ray IS HANDED THE RECTANGLES**, as it is handed triangles
 			# for a concave polygon: each painter gets a frame in the form it
 			# can paint. A canvas has `putImageData`; here a texture would be
@@ -415,14 +407,14 @@ CanvasAppRunner :: [].{
 	# Draw with a flat colour directly, or through the shader: its uniforms
 	# made from the fill, and the geometry drawn in white, which the shader
 	# ignores.
-	with_fill! : Shader(CanvasAppRunner.BrushUniforms), Draw.Frame, Brush.Fill, Shapes.Clip, (Draw.Frame, Color.Rgba => {}) => {}
-	with_fill! = |shader, frame, fill, clip, draw_it!|
+	with_fill! : Shader(CanvasAppRunner.BrushUniforms), Draw.Frame, Brush.Fill, (Draw.Frame, Color.Rgba => {}) => {}
+	with_fill! = |shader, frame, fill, draw_it!|
 		match fill {
 			Skip => {}
-			Flat(col) if unclipped(clip) => draw_it!(frame, color_of(col))
+			Flat(col) => draw_it!(frame, color_of(col))
 			_ => {
 				scope = frame.with_shader!(
-					shader.with_uniforms(uniforms_of(fill, clip)),
+					shader.with_uniforms(uniforms_of(fill)),
 					|shaded| {
 						draw_it!(shaded, Color.white)
 						Ok({})
@@ -435,17 +427,12 @@ CanvasAppRunner :: [].{
 			}
 		}
 
-	# The fill as the uniforms BrushGlsl reads. A zero clip width means no
-	# clip, so the shader keeps every fragment.
-	uniforms_of : Brush.Fill, Shapes.Clip -> CanvasAppRunner.BrushUniforms
-	uniforms_of = |fill, clip| {
+	# The fill as the uniforms BrushGlsl reads.
+	uniforms_of : Brush.Fill -> CanvasAppRunner.BrushUniforms
+	uniforms_of = |fill| {
 		none = vec(0.0, 0.0, 0.0, 0.0)
 		blank = {
 			mode: F64.to_f32_wrap(BrushGlsl.mode_of(fill)),
-			clip: match clip {
-				Anywhere => none
-				Within(r) => vec(r.x, r.y, r.w, r.h)
-			},
 			color_a: none,
 			color_b: none,
 			color_c: none,

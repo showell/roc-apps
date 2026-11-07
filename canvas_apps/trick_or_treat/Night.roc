@@ -45,7 +45,7 @@ Night :: [].{
 		if View.ahead(v, moon_at) {
 			c = View.turn(v, moon_at)
 			p = View.flat(v, c)
-			List.append($out, Disc({ x: p.x, y: p.y, r: 32.0 * View.pixels_per_metre(v, c.forward), fill: Flat(moon_c), clip: Anywhere }))
+			List.append($out, Disc({ x: p.x, y: p.y, r: 32.0 * View.pixels_per_metre(v, c.forward), fill: Flat(moon_c) }))
 		} else {
 			$out
 		}

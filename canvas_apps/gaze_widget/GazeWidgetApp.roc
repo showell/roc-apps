@@ -247,7 +247,6 @@ plan_disc = |{ along, across, radius, color }|
 		y: screen_y(across),
 		r: radius,
 		fill: ScrubWidget.flat(color),
-		clip: Anywhere,
 	})
 
 ## One pig of the herd, the one that catches the eye drawn larger.

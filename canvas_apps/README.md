@@ -249,8 +249,8 @@ The native side is a spike, not kept current (see the top of this file).
 Painting walks the frame once and cuts it into runs at every mark, because
 raylib takes a blend and a camera as scopes; each run is drawn inside the
 scopes its marks named. A gradient goes through one fragment shader
-(`lib/BrushGlsl.roc`) that does the brush arithmetic on the scene position; an
-unclipped flat colour is drawn directly. The whole frame is painted into a render texture
+(`lib/BrushGlsl.roc`) that does the brush arithmetic on the scene position; a
+flat colour is drawn directly. The whole frame is painted into a render texture
 at twice the window and scaled back down, which is where the anti-aliasing
 comes from.
 

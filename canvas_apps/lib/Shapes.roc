@@ -14,9 +14,7 @@ Shapes :: [].{
 		## The triangles of one concave polygon, six numbers each. Only `cut_shapes` makes these.
 		Pieces({ tris : List(F64), fill : Brush.Fill }),
 
-		## A disc, kept inside `clip`. A clip is a rectangle, not a named place, so no
-		## painter has to know about one app's picture.
-		Disc({ x : F64, y : F64, r : F64, fill : Brush.Fill, clip : Shapes.Clip }),
+		Disc({ x : F64, y : F64, r : F64, fill : Brush.Fill }),
 		Rect({ x : F64, y : F64, w : F64, h : F64, fill : Brush.Fill }),
 
 		## A mark, not a shape: how the shapes after it combine, until the next `Blend`.
@@ -119,7 +117,7 @@ Shapes :: [].{
 			match shape {
 				Poly(p) => Poly({ coordinates: pulled(p.coordinates, axis, k), fill: p.fill })
 				Pieces(p) => Pieces({ tris: pulled(p.tris, axis, k), fill: p.fill })
-				Disc(d) => Disc({ x: axis + (d.x - axis) * k, y: d.y, r: d.r, fill: d.fill, clip: d.clip })
+				Disc(d) => Disc({ x: axis + (d.x - axis) * k, y: d.y, r: d.r, fill: d.fill })
 				# A mirror sends a rectangle's left edge to its right, and a width is never
 				# negative.
 				Rect(r) => {
@@ -179,7 +177,6 @@ Shapes :: [].{
 			y,
 			r,
 			fill: Radial({ inner: { ..colour, a: alpha }, outer: { ..colour, a: 0.0 }, x, y, r0: 0.0, r1: r }),
-			clip: Anywhere,
 		})
 
 	## A rectangle whose corners are rounded by `r`, each corner drawn in `segments`
@@ -214,9 +211,6 @@ Shapes :: [].{
 		}
 		$out
 	}
-
-	## Where a shape may paint.
-	Clip : [Anywhere, Within({ x : F64, y : F64, w : F64, h : F64 })]
 
 	## The frame with each concave polygon cut into triangles, for a painter that
 	## fills only convex polygons, as roc-ray does. A canvas fills a concave polygon

@@ -155,7 +155,6 @@ spot = |point, { r, color }| {
 		y,
 		r,
 		fill: ScrubWidget.flat(color),
-		clip: Anywhere,
 	})
 }
 
@@ -215,7 +214,6 @@ row_shapes = |{ y, color, word }|
 			y,
 			r: 6.0,
 			fill: ScrubWidget.flat(color),
-			clip: Anywhere,
 		}),
 		ScrubWidget.label({
 			text: word,
