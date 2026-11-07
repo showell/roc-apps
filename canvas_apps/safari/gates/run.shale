@@ -6,7 +6,8 @@
 --   cd <roc-apps checkout> && nice -n 19 shale canvas_apps/safari/gates/run.shale
 --
 -- Run from the roc-apps root: every path is the checkout's, so a worktree
--- gates its own tree. One merge gate runs at a time, on the one cache folder.
+-- gates its own tree, on its own caches, so gates in several worktrees can run
+-- at once.
 -- It takes about 75 seconds, half of that the proof tools.
 --
 -- Each stage has a CPU budget, about twice its warm time, in CPU_BUDGET_MS. A
@@ -77,9 +78,9 @@
 -- Roc is roc-apps' pin, the nightly named in `roc-version`, installed at
 -- `tools:roc-<pin>/roc` (`~/tools/` on the box).
 --
--- Every Roc here runs on one warm cache, under `build:`. `cold=1`, which
--- publish.shale gives it, runs each child on an empty cache instead. The caches
--- are cleared when they pass CACHE_CEILING_MB.
+-- Every Roc here runs on the checkout's warm cache, under `build:` (CACHES).
+-- `cold=1`, which publish.shale gives it, runs each child on an empty cache
+-- instead. `part=caches` runs only the cache upkeep the full gate starts with.
 --
 -- Each child's binaries and outputs go in a folder of its own under `scratch:`
 -- (`fresh_dir`), removed when the child passes and kept, named, when it fails.
@@ -91,11 +92,27 @@ const PAGE_EXPECTED = "canvas_apps/safari/gates/page.expected"
 const WANT = "roc-pin: roc-apps' pinned nightly, and the binaries it builds"
 const PAGE_WANT = "script: canvas_apps/build.sh builds and checks a page, and refuses another Roc"
 
--- The tiers' Roc caches, never the user's default one. The merge gate has one
--- folder, and each checkout's fast tier has its own, because two Rocs that write
--- one cache entry at once share its temporary file.
-const CACHES = "build:roc-apps/safari-gate-caches"
-const MERGE_CACHE = "build:roc-apps/safari-gate-caches/merge"
+-- The tiers' Roc caches, never the user's default one. Each checkout has a
+-- folder of its own under CACHES, named for the checkout's path, so a gate in
+-- one worktree never reads, clears or races on another's. In it this gate has
+-- `merge` and fast.shale has `fast`, which it asks for with
+-- `part=fast_cache`, apart because two Rocs that write one cache entry at once
+-- share its temporary file. The folder is cleared when it passes
+-- CHECKOUT_CEILING_MB, and a removed worktree's folder goes at the next merge
+-- gate run in any checkout.
+const CACHES = "build:roc-apps/safari-checkout-caches"
+-- The merge cache is about 900 MB warm and a fast one 100 to 450 MB
+-- (2026-11-07), so this leaves room for both to grow.
+const CHECKOUT_CEILING_MB = 2000
+
+function cache_folder_name(checkout_path)
+  return substitute(checkout_path, "/", "-")
+end
+
+-- This checkout's folder, for a gate run from its root.
+function checkout_caches()
+  return CACHES .. "/" .. cache_folder_name(real("."))
+end
 
 function roc_path()
   if not exists("roc-version") then fail("safari gates: no roc-version here: run from the roc-apps root") end
@@ -173,7 +190,6 @@ const WIDGET_EXPECTS = "canvas_apps/safari/gates/WidgetExpects.roc"
 const SAFARI_SOURCES = {":(glob)canvas_apps/safari/*.roc", ":(glob)canvas_apps/safari/gates/*.roc", ":(glob)canvas_apps/lib/*.roc", ":(exclude)" .. WIDGET_EXPECTS}
 const WIDGET_SOURCES = {":(glob)canvas_apps/*_widget/*.roc", ":(glob)canvas_apps/widget_kit/*.roc", WIDGET_EXPECTS}
 const DEPTHS = {"0", "100", "1529", "1542", "3000", "3698", "5700", "6250", "9000"}
-const CACHE_CEILING_MB = 4000
 -- The widgets' budget is set from a cold cache after a change to a module they
 -- all import: 23 s of CPU for 13 widgets' checks and their one test run, and
 -- 17 s warm, measured 2026-11-07.
@@ -184,7 +200,7 @@ const RELEASE = arg("release", "") == "1"
 -- The cache a child runs on: empty in a cold run, else the merge gate's.
 function child_cache(name)
   if COLD then return fresh_dir("scratch:", "safari-cache-" .. name) end
-  return MERGE_CACHE
+  return checkout_caches() .. "/merge"
 end
 
 function drop_child_cache(cache)
@@ -192,13 +208,44 @@ function drop_child_cache(cache)
   return nil
 end
 
+-- The size of `folder` in MB, or a failure naming why du couldn't say.
+function size_mb(folder)
+  local du = run({"du", "-sm", real(folder)}, {timeout_ms = 60000, whole = 4000, want = "any: du, the caches' size"})
+  local size = nil
+  if du.ended == "exit" and get(du, "code", -1) == 0 then size = tonumber(split(trim(du.out), "\t")[1]) end
+  if size == nil then fail("safari gates: du of " .. folder .. " ended " .. du.ended .. " " .. get(du, "code", -1) .. ": " .. trim(du.out)) end
+  return size
+end
+
+-- Removes the folder of each checkout that `git worktree list` no longer has.
+function prune_removed_checkouts()
+  if not exists(CACHES) then return nil end
+  local r = must(run({"git", "worktree", "list", "--porcelain"}, {timeout_ms = 30000, whole = 100000}))
+  local live = {}
+  for l in lines(r.out) do
+    if starts_with(l, "worktree ") then live[cache_folder_name(sub(l, #"worktree " + 1))] = true end
+  end
+  for name in ls(CACHES) do
+    if not has_key(live, name) then
+      -- Two gates may prune one folder at once, and `remove_tree` stops on an
+      -- entry the other already removed, where `rm -rf` passes over it.
+      local rm = run({"rm", "-rf", real(CACHES .. "/" .. name)}, {timeout_ms = 120000, whole = 4000, want = "any: rm, a removed checkout's caches, which two gates may prune at once"})
+      if rm.ended ~= "exit" or get(rm, "code", -1) ~= 0 then fail("safari gates: rm -rf " .. CACHES .. "/" .. name .. " failed: " .. trim(rm.out)) end
+      print("safari gates: " .. CACHES .. "/" .. name .. " names no checkout: removed")
+    end
+  end
+  return nil
+end
+
+-- Clears this checkout's caches when they pass the ceiling; whether they're
+-- empty now, so the run is cold.
 function clear_full_caches()
-  if not exists(CACHES) then return true end
-  local du = run({"du", "-sm", real(CACHES)}, {timeout_ms = 60000, whole = 4000, want = "tool: the caches' size"})
-  local size = tonumber(split(trim(du.out), "\t")[1])
-  if size > CACHE_CEILING_MB then
-    print("safari gates: the caches hold " .. size .. " MB, over " .. CACHE_CEILING_MB .. ": cleared, so this run is cold")
-    remove_tree(CACHES)
+  local folder = checkout_caches()
+  if not exists(folder) then return true end
+  local size = size_mb(folder)
+  if size > CHECKOUT_CEILING_MB then
+    print("safari gates: " .. folder .. " holds " .. size .. " MB, over " .. CHECKOUT_CEILING_MB .. ": cleared, so this run is cold")
+    remove_tree(folder)
     return true
   end
   return false
@@ -468,6 +515,7 @@ end
 -- still run.
 function all()
   roc_path()
+  prune_removed_checkouts()
   local is_cold = clear_full_caches() or COLD
   local bad = {}
   local times = {}
@@ -511,6 +559,11 @@ elseif PART == "book_names" then
   book_names()
 elseif PART == "page" then
   page()
+elseif PART == "fast_cache" then
+  print(checkout_caches() .. "/fast")
+elseif PART == "caches" then
+  prune_removed_checkouts()
+  if clear_full_caches() then print("safari gates: caches empty, a run would be cold") else print("safari gates: caches warm, under " .. CHECKOUT_CEILING_MB .. " MB") end
 else
-  fail("safari gates: part= is expects, widgets, format, proof, tutorial, book_names or page (none runs them all)")
+  fail("safari gates: part= is expects, widgets, format, proof, tutorial, book_names, page, fast_cache or caches (none runs them all)")
 end

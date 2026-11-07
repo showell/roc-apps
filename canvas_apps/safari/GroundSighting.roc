@@ -195,23 +195,14 @@ pond_patches : RoadAhead.RoadView,
 	in_view : RoadAhead.SegmentInView,
 } -> List(GroundPatch)
 pond_patches = |road, { vantage, in_view }| {
-	is_at_pond =
-		match in_view.segment.ending {
-			Bends({ bend_life, .. }) =>
-				match bend_life {
-					DuckPond => True
-					Animal(_) | Quiet => False
-				}
-			RouteEnds => False
-		}
-	if is_at_pond {
-		rider_point = |road_point|
-			RoadAhead.rider_point_at(road, { vantage, place: in_view.place, road_point })
-		Pond.pond_outlines(in_view.segment.bend_out_of()).map(
-			|outline| GroundPatch.of(outline.corners.map(rider_point), outline.color),
-		)
-	} else {
-		[]
+	rider_point = |road_point|
+		RoadAhead.rider_point_at(road, { vantage, place: in_view.place, road_point })
+	match in_view.segment.segment_ending() {
+		Bends({ bend, bend_life: DuckPond }) =>
+			Pond.pond_outlines(bend).map(
+				|outline| GroundPatch.of(outline.corners.map(rider_point), outline.color),
+			)
+		Bends({ bend_life: Animal(_), .. }) | Bends({ bend_life: Quiet, .. }) | RouteEnds => []
 	}
 }
 

@@ -843,7 +843,7 @@ Every color in the sky is a blend of two others, and a blend needs a ratio. `Fra
 
 `color_between` takes one record argument, destructured in its parameter list, so callers name every field. Each channel moves the same share of the way. `HexColor.Rgb` is a plain record alias: three floats with nothing to guard.
 
-{{code HexColor.color_between}}
+{{code ColorShade.color_between}}
 
 `sky_top_color`, the one `Tour.sky_top_color` asked at the start of this chapter, calls it to blend day into dusk. `dusk_at` says how far the day has gone. That's a `Fraction` too, and The setting sun works it out.
 
@@ -859,7 +859,7 @@ Every color in the sky is a blend of two others, and a blend needs a ratio. `Fra
 
 That's where a color finally becomes one integer, because a `Brush` wants `0xRRGGBB`. `pack` gets there with method calls on plain numbers. Static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `pack` a leaf: it calls nothing of Safari Ride's own.
 
-{{code HexColor.pack_rgb}}
+{{code RgbColor.from_channels}}
 
 One more thing in the frame goes dark with the sky: the mountains.
 
