@@ -39,14 +39,8 @@ GroundSighting :: [].{
 	## The ground in view, in paint order: each segment of the road ahead in
 	## turn, then the bend from the segment behind.
 	patches_in_view : RoadAhead.RoadView -> List(Ground.Patch)
-	patches_in_view = |road| {
-		positions = RoadAhead.Position.positions_in(road.segments_ahead)
-		ahead = positions.join_map(|position| ground_patches(road, position))
-		match RoadAhead.segment_behind(road) {
-			Previous(segment_behind) => ahead.concat(patches_behind(road, segment_behind))
-			AtRouteStart => ahead
-		}
-	}
+	patches_in_view = |road|
+		RoadAhead.segments_in_view(road).join_map(|in_view| ground_patches(road, in_view))
 
 	## How many chunks the road along a segment `length` long is laid in:
 	## at least one.
@@ -95,35 +89,30 @@ GroundSighting :: [].{
 road_patch : List(Geom.RiderPoint) -> Ground.Patch
 road_patch = |corners| { corners, color: GroundSighting.road_color }
 
-## The ground along the segment at `position` on the road ahead: its road,
-## the bend into the next segment if the road ahead goes on, and its pond if
-## it ends at one.
-ground_patches : RoadAhead.RoadView, RoadAhead.Position -> List(Ground.Patch)
-ground_patches = |road, position| {
-	segment = RoadAhead.segment_at(road, position)
-	place = Ahead(position)
+## The ground of a segment in view: its road, the bend into the next segment
+## if the road in view goes on, and its pond if it ends at one. The road along
+## the segment just behind is left out, because the rider has passed it, and
+## its bend's paving reaches the rider's segment.
+ground_patches : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(Ground.Patch)
+ground_patches = |road, in_view| {
+	segment = in_view.segment
+	place = in_view.place
+	road_along =
+		match place {
+			Ahead(position) => GroundSighting.road_patches(road, position)
+			JustBehind(_) => []
+		}
 	bend =
-		if position.is_last_in(road.segments_ahead) {
-			[]
-		} else {
+		if RoadAhead.has_bend_in_view(road, in_view) {
 			bend_patches(road, BendView.of_segment(segment, place))
+		} else {
+			[]
 		}
 	[
-		GroundSighting.road_patches(road, position),
+		road_along,
 		bend,
 		pond_patches(road, { segment, place }),
 	].join()
-}
-
-## The bend into the rider's segment from the segment at `index`, and the
-## pond that segment ends at, if it has one.
-patches_behind : RoadAhead.RoadView, World.SegmentIndex -> List(Ground.Patch)
-patches_behind = |road, index| {
-	segment = index.segment_in(road.route_segments)
-	before = RoadAhead.place_behind(segment)
-	bend_patches(road, BendView.of_segment(segment, before)).concat(
-		pond_patches(road, { segment, place: before }),
-	)
 }
 
 ## A bend's paving: the road just before it, then the corner it cuts.

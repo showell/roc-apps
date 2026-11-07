@@ -87,6 +87,14 @@ RoadAhead :: [].{
 	## just behind the rider, round the bend into the rider's segment.
 	SegmentPlace : [Ahead(RoadAhead.Position), JustBehind(Geom.Bend)]
 
+	## A segment in view: where it is in the route, the segment itself, and where
+	## it lies from the rider.
+	SegmentInView : {
+		index : World.SegmentIndex,
+		segment : World.Segment,
+		place : RoadAhead.SegmentPlace,
+	}
+
 	## The most segments the road ahead holds.
 	most_segments_ahead : U32
 	most_segments_ahead = 7
@@ -103,6 +111,43 @@ RoadAhead :: [].{
 	## The segment behind the rider's, unless the rider's is the route's first.
 	segment_behind : RoadAhead.RoadView -> [Previous(World.SegmentIndex), AtRouteStart]
 	segment_behind = |road| rider_segment(road).previous()
+
+	## The segments in view: those of the road ahead, the rider's own first, then
+	## the one just behind the rider, unless the rider's is the route's first.
+	segments_in_view : RoadAhead.RoadView -> List(RoadAhead.SegmentInView)
+	segments_in_view = |road| {
+		segments_ahead =
+			RoadAhead.Position.positions_in(road.segments_ahead)
+				.map(|position| segment_in_view_at(road, position))
+		match segment_behind(road) {
+			Previous(index) => {
+				segment = index.segment_in(road.route_segments)
+				segments_ahead.append({ index, segment, place: place_behind(segment) })
+			}
+			AtRouteStart => segments_ahead
+		}
+	}
+
+	## The segment at `position` on the road ahead, as a segment in view.
+	segment_in_view_at : RoadAhead.RoadView, RoadAhead.Position -> RoadAhead.SegmentInView
+	segment_in_view_at = |road, position| {
+		index = position.index_in(road.segments_ahead)
+		{
+			index,
+			segment: index.segment_in(road.route_segments),
+			place: Ahead(position),
+		}
+	}
+
+	## Whether the road in view goes on round the bend at the end of `in_view`:
+	## it does past every segment of the road ahead but the last, and past the
+	## segment just behind, which bends into the rider's.
+	has_bend_in_view : RoadAhead.RoadView, RoadAhead.SegmentInView -> Bool
+	has_bend_in_view = |road, in_view|
+		match in_view.place {
+			Ahead(position) => !position.is_last_in(road.segments_ahead)
+			JustBehind(_) => True
+		}
 
 	## How far ahead of the rider the segment at `position` on the road ahead starts.
 	## The segments' lengths are added nearest first.

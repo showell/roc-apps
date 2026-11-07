@@ -3,7 +3,7 @@
 ## frame is worked out from that gap alone, so the flight plays forward and
 ## backward. The picture stays still, looking up the road from a place short of
 ## the first tree, so the bird shrinks as it flies off. It is drawn by Safari's own
-## Tree and BirdShapes. Below it, the buttons and four lines of text that say what
+## Tree and PosedBird. Below it, the buttons and four lines of text that say what
 ## BirdFlight makes of the gap.
 import game.Along
 import game.Animation
@@ -13,7 +13,7 @@ import game.Clock
 import game.Distance
 import game.Lens
 import game.Polygon
-import game.BirdShapes
+import game.PosedBird
 import game.Geom
 import game.Trees
 import game.Screen
@@ -134,7 +134,7 @@ tree_shapes = |tree|
 bird_shapes : Distance -> List(Shapes.Shape)
 bird_shapes = |gap| {
 	instant = BirdFlight.instant_at(flight, { gap: gap })
-	bird : BirdShapes.PosedBird
+	bird : PosedBird
 	bird = { pose: instant.pose, lift: instant.spot.lift }
 	bird.scenery_picture({
 		right: Distance.metres(instant.spot.across.to_metres()),

@@ -34,8 +34,9 @@ Geom :: [].{
 	RoadPoint : { along : Along, across : Across }
 
 	## An object standing on one segment of the road, and what kind of object
-	## it is. This is the object's lasting form, and `Pipeline.sighting_of` turns
-	## it into a `Pipeline.Sighted` for a frame.
+	## it is. A tree or a cow is placed once for the whole ride; a cat, a tower or
+	## the truck is placed anew for each frame. `Pipeline.sighting_of` turns it
+	## into a `Pipeline.Sighted` for a frame.
 	Placed(kind) : {
 		along : Along,
 		across : Across,

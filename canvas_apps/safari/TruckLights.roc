@@ -19,9 +19,10 @@ TruckLights :: [].{
 	## The two headlight beams, each a little in from its side.
 	headlight_beams : TruckShape.TruckInView -> List(Shapes.Shape)
 	headlight_beams = |truck|
-		beam_shapes(truck, truck.box.left.plus(headlight_inset)).concat(
-			beam_shapes(truck, truck.box.right.minus(headlight_inset)),
-		)
+		[
+			headlight_beam(truck, truck.box.left.plus(headlight_inset)),
+			headlight_beam(truck, truck.box.right.minus(headlight_inset)),
+		].keep_oks(|beam| beam)
 
 	## The two brake lights, one in from each side of the trailer's back.
 	brake_lights : TruckShape.TruckInView -> List(Shapes.Shape)
@@ -167,8 +168,8 @@ glow_reach = 3.2
 
 ## The beam of the headlight at `across`, brightest at the lamp. A beam
 ## with a corner behind the camera is not drawn.
-beam_shapes : TruckShape.TruckInView, Across -> List(Shapes.Shape)
-beam_shapes = |truck, across| {
+headlight_beam : TruckShape.TruckInView, Across -> Try(Shapes.Shape, [BehindCamera, TooSmall])
+headlight_beam = |truck, across| {
 	at_lamp = |height| TruckShape.point(truck, { along: truck.box.nose, across, height })
 	at_far_end = |height| TruckShape.point(
 		truck,
@@ -178,27 +179,11 @@ beam_shapes = |truck, across| {
 	lamp_top = at_lamp(headlight_height.plus(beam_half_height_at_lamp))
 	far_top = at_far_end(beam_far_center.plus(beam_far_half_height))
 	far_bottom = at_far_end(beam_far_center.minus(beam_far_half_height))
-	beam_polygon = beam_on_screen(
-		{
-			corners: [lamp_bottom, lamp_top, far_top, far_bottom],
-			lamp: TruckLights.midpoint({ from: lamp_bottom, to: lamp_top }),
-		},
-		truck.view.cam_focal,
-	)
-	match beam_polygon {
-		Ok(shape) => [shape]
-		Err(BehindCamera) => []
-		Err(TooSmall) => []
-	}
-}
-
-## A beam's polygon on screen, brightest at `lamp`, if its corners and its lamp
-## are at or past the near plane.
-beam_on_screen : { corners : List(Geom.RaisedPoint), lamp : Geom.RaisedPoint }, Pixels -> Try(Shapes.Shape, [BehindCamera, TooSmall])
-beam_on_screen = |{ corners, lamp }, cam_focal| {
-	on_screen = Camera.projected_points(Geom.ahead_points(corners)?, cam_focal)
-	lamp_on_screen = Camera.project(Geom.ahead_point(lamp)?, cam_focal)
-	beam_polygon = Polygon.gradient_polygon(
+	corners = Geom.ahead_points([lamp_bottom, lamp_top, far_top, far_bottom])?
+	lamp = Geom.ahead_point(TruckLights.midpoint({ from: lamp_bottom, to: lamp_top }))?
+	on_screen = Camera.projected_points(corners, truck.view.cam_focal)
+	lamp_on_screen = Camera.project(lamp, truck.view.cam_focal)
+	Polygon.gradient_polygon(
 		on_screen,
 		{
 			center_color: beam_core,
@@ -207,7 +192,6 @@ beam_on_screen = |{ corners, lamp }, cam_focal| {
 			gradient_radius: TruckLights.farthest_from(on_screen, lamp_on_screen),
 		},
 	)
-	Ok(beam_polygon?)
 }
 
 ## A brake light on the back of the trailer, from `left` to `right` across
@@ -238,7 +222,7 @@ brake_shapes = |truck, { left, right }| {
 				height: brake_lamp_top,
 			},
 		].map(|corner| TruckShape.point(truck, corner))
-	glow = glow_shapes(truck, lamp)
+	glow = [brake_glow(truck, lamp)].keep_oks(|shape| shape)
 	match TruckShape.truck_polygon(truck, { color: brake_color, corners: lamp }) {
 		Ok(lamp_polygon) => glow.append(lamp_polygon)
 		Err(BehindCamera) => glow
@@ -247,29 +231,26 @@ brake_shapes = |truck, { left, right }| {
 
 ## The glow round a brake lamp. A lamp with a corner behind the camera has
 ## no glow; the lamp itself is cut at the near plane like the body's faces.
-glow_shapes : TruckShape.TruckInView, List(Geom.RaisedPoint) -> List(Shapes.Shape)
-glow_shapes = |truck, lamp_points|
-	match Geom.ahead_points(lamp_points) {
-		Err(BehindCamera) => []
-		Ok(lamp_ahead) => {
-			on_screen = Camera.projected_points(lamp_ahead, truck.view.cam_focal)
-			center = TruckLights.center_of(on_screen)
-			radius = TruckLights.glow_radius(on_screen, center)
-			glow_polygon = Polygon.gradient_polygon(
-				TruckLights.outline_points({ center, outline_radius: radius }),
-				{
-					center_color: glow_core,
-					edge_color: glow_edge,
-					gradient_center: center,
-					gradient_radius: radius,
-				},
-			)
-			match glow_polygon {
-				Ok(shape) => [shape]
-				Err(TooSmall) => []
-			}
-		}
-	}
+brake_glow : TruckShape.TruckInView,
+List(Geom.RaisedPoint) -> Try(
+	Shapes.Shape,
+	[BehindCamera, TooSmall],
+)
+brake_glow = |truck, lamp_points| {
+	lamp_ahead = Geom.ahead_points(lamp_points)?
+	on_screen = Camera.projected_points(lamp_ahead, truck.view.cam_focal)
+	center = TruckLights.center_of(on_screen)
+	radius = TruckLights.glow_radius(on_screen, center)
+	Polygon.gradient_polygon(
+		TruckLights.outline_points({ center, outline_radius: radius }),
+		{
+			center_color: glow_core,
+			edge_color: glow_edge,
+			gradient_center: center,
+			gradient_radius: radius,
+		},
+	)
+}
 
 panel_points : List(Screen.Point)
 panel_points = [

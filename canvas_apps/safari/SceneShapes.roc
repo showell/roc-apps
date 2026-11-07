@@ -26,7 +26,7 @@ SceneShapes :: [].{
 		birds : List(thing),
 		trees : List(thing),
 		towers : List(thing),
-		critters : List(thing),
+		billboards : List(thing),
 		cats : List(thing),
 		trucks : List(thing),
 		rails : List(thing),
@@ -42,7 +42,7 @@ SceneShapes :: [].{
 	}
 
 	## The scene's things, each as the frame paints it. A tree's context is the
-	## one a tree can't know alone, a critter needs none, and a tower and the
+	## one a tree can't know alone, a billboard needs none, and a tower and the
 	## truck are measured on the road.
 	scene_renderings : Scene, RoadAhead.CameraView -> SceneShapes.ThingLists(Rendered)
 	scene_renderings = |scene, view| {
@@ -58,11 +58,11 @@ SceneShapes :: [].{
 					{ cam_focal, context: road_context(view, tower) },
 				),
 			),
-			critters: scene.critters.map(
-				|critter| Pipeline.rendering_of(critter, { cam_focal, context: {} }),
+			billboards: scene.billboards.map(
+				|billboard| Pipeline.rendering_of(billboard, { cam_focal, context: {} }),
 			),
 			cats: scene.cats.map(|cat| Pipeline.rendering_of(cat, { cam_focal, context: {} })),
-			trucks: truck_renderings(view, scene.truck),
+			trucks: [truck_rendering(view, scene.truck)].keep_oks(|truck| truck),
 			rails: scene.rails.keep_oks(|quad| rail_rendering(quad, cam_focal)),
 		}
 	}
@@ -76,7 +76,7 @@ SceneShapes :: [].{
 			lists.birds,
 			lists.trees,
 			lists.towers,
-			lists.critters,
+			lists.billboards,
 			lists.cats,
 			lists.trucks,
 			lists.rails,
@@ -95,8 +95,8 @@ SceneShapes :: [].{
 		cam_focal : Pixels,
 	} -> Rendered
 	tree_rendering = |tree, { trees, cam_focal }| {
-		nearer_tree_count = SceneShapes.nearer_tree_count(trees, tree.foot.forward())
-		Pipeline.rendering_of(tree, { cam_focal, context: { nearer_tree_count } })
+		nearer_count = SceneShapes.nearer_tree_count(trees, tree.foot.forward())
+		Pipeline.rendering_of(tree, { cam_focal, context: { nearer_tree_count: nearer_count } })
 	}
 }
 
@@ -119,18 +119,18 @@ road_context = |view, sighting| {
 
 ## The truck, if it is in view, where its sighting found it and with the lights
 ## its sighting gives it.
-truck_renderings : RoadAhead.CameraView, TruckSighting.TruckFate -> List(Rendered)
-truck_renderings = |view, truck_fate|
-	match truck_fate {
-		Ok(truck) => [
-			Pipeline.rendering_of(
-				truck,
-				{ cam_focal: view.cam_focal, context: road_context(view, truck) },
-			),
-		]
-		Err(NoTruck) => []
-		Err(BehindCamera) => []
-	}
+truck_rendering : RoadAhead.CameraView,
+TruckSighting.TruckFate -> Try(
+	Rendered,
+	[NoTruck, BehindCamera],
+)
+truck_rendering = |view, truck_fate|
+	truck_fate.map_ok(
+		|truck| Pipeline.rendering_of(
+			truck,
+			{ cam_focal: view.cam_focal, context: road_context(view, truck) },
+		),
+	)
 
 ## A tree's foot `forward` metres straight ahead, past the near plane.
 foot_ahead : F64 -> Geom.AheadPoint
@@ -312,7 +312,7 @@ expect
 		birds: [1, 2],
 		trees: [3],
 		towers: [4],
-		critters: [5, 6],
+		billboards: [5, 6],
 		cats: [7],
 		trucks: [8],
 		rails: [9],
@@ -402,10 +402,10 @@ expect lead_of(2000.0).is_err()
 expect truck_seen_from({ ..origin, along: Along.metres(100.0) }, 0.25).is_err()
 expect truck_seen_from({ ..origin, along: Along.metres(100.0) }, 1.0).is_ok()
 
-expect truck_renderings(from_origin, lead_of(100.0)).len() == 1
-expect truck_renderings(from_origin, lead_of(2000.0)).len() == 0
-expect truck_renderings(from_origin, Err(NoTruck)).len() == 0
-expect truck_renderings(from_origin, Err(BehindCamera)).len() == 0
+expect truck_rendering(from_origin, lead_of(100.0)).is_ok()
+expect truck_rendering(from_origin, lead_of(2000.0)).is_err()
+expect truck_rendering(from_origin, Err(NoTruck)).is_err()
+expect truck_rendering(from_origin, Err(BehindCamera)).is_err()
 expect
-	truck_renderings(from_origin, lead_of(499.0)).map(|rendering| rendering.depth.to_metres())
-		== [truck_ahead_of(499.0).foot.forward().to_metres()]
+	truck_rendering(from_origin, lead_of(499.0)).map_ok(|rendering| rendering.depth.to_metres())
+		== Ok(truck_ahead_of(499.0).foot.forward().to_metres())
