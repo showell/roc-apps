@@ -150,6 +150,11 @@ You make the fixes listed in your prompt, which the orchestrator has decided.
 Make those fixes and nothing else. If you see something more, put it in your
 report.
 
+**Tests (Steve's rule):**
+- A new test that needs nothing its module doesn't already import sits beside the code.
+- A test that needs more goes in `gates/CrossModuleExpects.roc`. Never add an import only a test uses.
+- Don't write a test that restates a constant or could never fail usefully. Roc's types already catch most of it.
+
 ### Where you work
 
 Your worktree is named in your prompt, under `/home/steve/showell_repos/lanes/`,
