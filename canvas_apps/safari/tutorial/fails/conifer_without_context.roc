@@ -9,6 +9,8 @@ tree_rendering : Pipeline.Sighted(Conifer) -> Rendered
 tree_rendering = |tree| Pipeline.rendering_of(tree, { cam_focal: Pixels.of(500.0), context: {} })
 
 main! = |_args| {
-	echo!("no tree to draw")
+	trees : List(Pipeline.Sighted(Conifer))
+	trees = []
+	echo!("${trees.map(tree_rendering).len().to_str()} trees drawn")
 	Ok({})
 }
