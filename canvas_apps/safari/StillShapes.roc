@@ -4,6 +4,7 @@
 ## feet, and mirrors it when asked.
 import Camera
 import Distance
+import Fraction
 import Picture
 import Pixels
 import Polygon
@@ -58,7 +59,7 @@ StillShapes :: [].{
 		points = StillShapes.screen_points(anchor, poly.points)
 		match poly.gradients.first() {
 			Ok(gradient) => still_gradient_polygon(anchor, { gradient, points })
-			Err(ListWasEmpty) => Polygon.flat_polygon(poly.color, points)
+			Err(ListWasEmpty) => Polygon.flat_polygon(points, poly.color)
 		}
 	}
 
@@ -106,13 +107,23 @@ gradient_shape = |gradient|
 		Radial
 	}
 
-## A still's gradient colours and their offsets, as Polygon takes them.
+## A still's gradient colours and their offsets, as Polygon takes them. Every
+## traced offset is from 0 to 1 and the end is never before the start, so an
+## offset out of range or out of order is a bug in the data, and crashes.
 stops_of : Stills.StillGradient -> Polygon.ColorStops
 stops_of = |gradient| {
-	start_color: gradient.color0,
-	end_color: gradient.color1,
-	start_offset: gradient.off0,
-	end_offset: gradient.off1,
+	start_offset = Fraction.of(gradient.off0)
+	end_offset = Fraction.of(gradient.off1)
+	if end_offset < start_offset {
+		crash "StillShapes.stops_of: a gradient's end offset is before its start"
+	} else {
+		{
+			start_color: gradient.color0,
+			end_color: gradient.color1,
+			start_offset,
+			end_offset,
+		}
+	}
 }
 
 still_gradient_polygon : StillShapes.Anchor,
@@ -138,7 +149,7 @@ still_gradient_polygon = |anchor, { gradient, points }|
 			center = StillShapes.screen_point(anchor, { x: gradient.cx, y: gradient.cy })
 			u = StillShapes.screen_vector(anchor, { x: gradient.ux, y: gradient.uy })
 			v = StillShapes.screen_vector(anchor, { x: gradient.vx, y: gradient.vy })
-			Polygon.radial_gradient_polygon(
+			Polygon.elliptical_gradient_polygon(
 				points,
 				{
 					color_stops: stops_of(gradient),

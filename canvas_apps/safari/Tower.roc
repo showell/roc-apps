@@ -279,13 +279,13 @@ rod_quad = |
 		offset_y: oy,
 	},
 | Polygon.flat_polygon(
-	tower_metal,
 	[
 		{ x: a.x.plus(ox), y: a.y.plus(oy) },
 		{ x: b.x.plus(ox), y: b.y.plus(oy) },
 		{ x: b.x.minus(ox), y: b.y.minus(oy) },
 		{ x: a.x.minus(ox), y: a.y.minus(oy) },
 	],
+	tower_metal,
 )
 
 ## A rod between two points in the rider's view, cut where it crosses the
