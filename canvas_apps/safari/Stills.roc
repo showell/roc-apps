@@ -3,17 +3,19 @@
 ## and y up from its feet. EmojiStills, CatStills and BirdStills hold the
 ## pictures, and StillShapes puts them on screen.
 
+import lib.ArgbColor
+
 Stills :: [].{
 	StillPt : { x : F64, y : F64 }
 
 	## A polygon's gradient as traced. A linear one (kind 1) runs from `a` to
 	## `b`; a radial one (any other kind) is centred at `c`, with `u` and `v`
-	## its two axes. Each runs from `rgba0` at offset `off0` to `rgba1` at
+	## its two axes. Each runs from `color0` at offset `off0` to `color1` at
 	## `off1`.
 	StillGradient : {
 		kind : I64,
-		rgba0 : I64,
-		rgba1 : I64,
+		color0 : ArgbColor,
+		color1 : ArgbColor,
 		off0 : F64,
 		off1 : F64,
 		ax : F64,
@@ -63,8 +65,8 @@ sample_point = { x: 0.5, y: 1.5 }
 sample_gradient : Stills.StillGradient
 sample_gradient = {
 	kind: 2,
-	rgba0: 16711680,
-	rgba1: 255,
+	color0: ArgbColor.of(16711680),
+	color1: ArgbColor.of(255),
 	off0: 0.25,
 	off1: 0.75,
 	ax: 2.5,
@@ -123,8 +125,8 @@ expect sample_gradient.vx == 10.5
 expect sample_gradient.vy == 11.5
 
 expect sample_gradient.kind == 2
-expect sample_gradient.rgba0 == 16711680
-expect sample_gradient.rgba1 == 255
+expect sample_gradient.color0 == ArgbColor.of(16711680)
+expect sample_gradient.color1 == ArgbColor.of(255)
 
 expect solid_polygon.color == 9066271
 expect shaded_polygon.color == 4989733

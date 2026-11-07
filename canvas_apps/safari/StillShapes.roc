@@ -75,8 +75,8 @@ gradient_shape = |gradient|
 ## A still's gradient colours and their offsets, as Polygon takes them.
 stops_of : Stills.StillGradient -> Polygon.ColorStops
 stops_of = |gradient| {
-	start_rgba: gradient.rgba0,
-	end_rgba: gradient.rgba1,
+	start_color: gradient.color0,
+	end_color: gradient.color1,
 	start_offset: gradient.off0,
 	end_offset: gradient.off1,
 }

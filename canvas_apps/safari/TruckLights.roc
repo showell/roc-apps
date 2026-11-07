@@ -11,6 +11,7 @@ import Geom
 import Polygon
 import TruckShape
 import Screen
+import lib.ArgbColor
 import lib.Shapes
 
 TruckLights :: [].{
@@ -129,11 +130,11 @@ beam_far_half_height : Distance
 beam_far_half_height = Distance.metres(0.9)
 
 ## The beam is one warm white, more opaque at the lamp than at its edge.
-beam_core : I64
-beam_core = 0xC3FFF8D6
+beam_core : ArgbColor
+beam_core = ArgbColor.of(0xC3FFF8D6)
 
-beam_edge : I64
-beam_edge = 0x45FFF8D6
+beam_edge : ArgbColor
+beam_edge = ArgbColor.of(0x45FFF8D6)
 
 ## A brake lamp spans from a tenth of the truck's width in from its side
 ## to just over a third, and from a fifth of the way up the trailer's back
@@ -156,13 +157,13 @@ brake_lamp_top = TruckShape.trailer_bottom.plus(trailer_height.times(0.5))
 brake_color : I64
 brake_color = 0xFF2A18
 
-glow_core : I64
-glow_core = 0xE6FF503C
+glow_core : ArgbColor
+glow_core = ArgbColor.of(0xE6FF503C)
 
 ## The glow fades out to the brake lamp's own colour at no opacity:
 ## `brake_color`'s top byte is 0.
-glow_edge : I64
-glow_edge = brake_color
+glow_edge : ArgbColor
+glow_edge = ArgbColor.of(brake_color)
 
 ## A glow reaches this many times as far as its lamp's farthest corner.
 glow_reach : F64
@@ -193,8 +194,8 @@ beam_shapes = |truck, across| {
 		beam_polygon = Polygon.gradient_polygon(
 			on_screen,
 			{
-				center_rgba: beam_core,
-				edge_rgba: beam_edge,
+				center_color: beam_core,
+				edge_color: beam_edge,
 				gradient_center: lamp,
 				gradient_radius: TruckLights.farthest_from(on_screen, lamp),
 			},
@@ -254,8 +255,8 @@ glow_shapes = |truck, lamp_points|
 		glow_polygon = Polygon.gradient_polygon(
 			TruckLights.outline_points({ center, outline_radius: radius }),
 			{
-				center_rgba: glow_core,
-				edge_rgba: glow_edge,
+				center_color: glow_core,
+				edge_color: glow_edge,
 				gradient_center: center,
 				gradient_radius: radius,
 			},

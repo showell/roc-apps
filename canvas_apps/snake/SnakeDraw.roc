@@ -8,6 +8,7 @@
 # The halos are additive, as upstream's are: `Blend(Add)` marks the run and
 # `Blend(Over)` ends it.
 import lib.Shapes
+import lib.ArgbColor
 import lib.Brush
 import lib.Font
 import Board
@@ -154,7 +155,7 @@ SnakeDraw :: [].{
 		r = cell * (0.3 + 0.04 * Trig.pulse(elapsed))
 		[
 			Disc({ x: m.x, y: m.y, r: r, fill: Flat(food_neon) }),
-			Disc({ x: m.x - r * 0.3, y: m.y - r * 0.35, r: r * 0.32, fill: Flat(Brush.with_alpha(0xbeffffff)) }),
+			Disc({ x: m.x - r * 0.3, y: m.y - r * 0.35, r: r * 0.32, fill: Flat(ArgbColor.to_rgba(ArgbColor.of(0xbeffffff))) }),
 		]
 	}
 
@@ -167,7 +168,7 @@ SnakeDraw :: [].{
 				over = "GAME OVER"
 				again = "PRESS SPACE TO PLAY AGAIN"
 				alpha = 0.59 + 0.41 * Trig.pulse(elapsed)
-				var $out = [Rect({ x: left - 8.0, y: 236.0, w: board_w + 16.0, h: 140.0, fill: Flat(Brush.with_alpha(0xe1060810)) })]
+				var $out = [Rect({ x: left - 8.0, y: 236.0, w: board_w + 16.0, h: 140.0, fill: Flat(ArgbColor.to_rgba(ArgbColor.of(0xe1060810))) })]
 				$out = List.concat($out, Font.centered(over, w / 2.0, 262.0, 40.0, food_neon))
 				List.concat($out, Font.centered(again, w / 2.0, 326.0, 19.0, { r: hint_color.r, g: hint_color.g, b: hint_color.b, a: alpha }))
 			}

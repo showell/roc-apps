@@ -81,13 +81,10 @@ Brush :: [].{
 	chan : I64, U8 -> F64
 	chan = |c, shift| c.shr_wrap(shift).bitwise_and(255).to_f64()
 
-	# 0xRRGGBB, opaque.
+	# 0xRRGGBB, opaque. A colour with alpha is an `ArgbColor`, and its
+	# `to_rgba` is its brush colour.
 	opaque : I64 -> Brush.Rgba
 	opaque = |c| { r: chan(c, 16), g: chan(c, 8), b: chan(c, 0), a: 1.0 }
-
-	# 0xAARRGGBB.
-	with_alpha : I64 -> Brush.Rgba
-	with_alpha = |c| { r: chan(c, 16), g: chan(c, 8), b: chan(c, 0), a: chan(c, 24) / 255.0 }
 
 	mix : Brush.Rgba, Brush.Rgba, F64 -> Brush.Rgba
 	mix = |p, q, t| { r: p.r + (q.r - p.r) * t, g: p.g + (q.g - p.g) * t, b: p.b + (q.b - p.b) * t, a: p.a + (q.a - p.a) * t }

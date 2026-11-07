@@ -10,6 +10,7 @@ import Pixels
 import Fraction
 import HexColor
 import Screen
+import lib.ArgbColor
 import lib.Brush
 import lib.Shapes
 
@@ -17,8 +18,8 @@ Polygon :: [].{
 
 	## A gradient's two colors, and where each sits along it.
 	ColorStops : {
-		start_rgba : I64,
-		end_rgba : I64,
+		start_color : ArgbColor,
+		end_color : ArgbColor,
 		start_offset : F64,
 		end_offset : F64,
 	}
@@ -69,12 +70,12 @@ Polygon :: [].{
 	## `gradient_center`, or `TooSmall` when the radius is too small to see.
 	gradient_polygon : List(Screen.Point),
 	{
-		center_rgba : I64,
-		edge_rgba : I64,
+		center_color : ArgbColor,
+		edge_color : ArgbColor,
 		gradient_center : Screen.Point,
 		gradient_radius : Pixels,
 	} -> Try(Shapes.Shape, [TooSmall])
-	gradient_polygon = |corners, { center_rgba, edge_rgba, gradient_center, gradient_radius }|
+	gradient_polygon = |corners, { center_color, edge_color, gradient_center, gradient_radius }|
 		if gradient_radius < min_gradient_radius {
 			Err(TooSmall)
 		} else {
@@ -82,8 +83,8 @@ Polygon :: [].{
 				Poly({
 					coordinates: polygon_coordinates("Polygon.gradient_polygon", corners),
 					fill: Radial({
-						inner: Brush.with_alpha(center_rgba),
-						outer: Brush.with_alpha(edge_rgba),
+						inner: ArgbColor.to_rgba(center_color),
+						outer: ArgbColor.to_rgba(edge_color),
 						x: gradient_center.x.to_f64(),
 						y: gradient_center.y.to_f64(),
 						r0: 0.0,
@@ -111,8 +112,8 @@ Polygon :: [].{
 			Poly({
 				coordinates: polygon_coordinates("Polygon.linear_gradient_polygon", corners),
 				fill: Linear({
-					c0: Brush.with_alpha(color_stops.start_rgba),
-					c1: Brush.with_alpha(color_stops.end_rgba),
+					c0: ArgbColor.to_rgba(color_stops.start_color),
+					c1: ArgbColor.to_rgba(color_stops.end_color),
 					o0: offsets.first,
 					o1: offsets.last,
 					ax: start_point.x.to_f64(),
@@ -140,7 +141,7 @@ Polygon :: [].{
 		vx = axis_v.x.to_f64()
 		vy = axis_v.y.to_f64()
 		det = ux * vy - uy * vx
-		first_color = Brush.with_alpha(color_stops.start_rgba)
+		first_color = ArgbColor.to_rgba(color_stops.start_color)
 		fill =
 			if det.abs() < min_ellipse_determinant {
 				Flat(first_color)
@@ -148,7 +149,7 @@ Polygon :: [].{
 				offsets = offsets_of(color_stops)
 				Ellipse({
 					c0: first_color,
-					c1: Brush.with_alpha(color_stops.end_rgba),
+					c1: ArgbColor.to_rgba(color_stops.end_color),
 					o0: offsets.first,
 					o1: offsets.last,
 					x: center_point.x.to_f64(),
@@ -283,16 +284,16 @@ origin = Screen.point(0.0, 0.0)
 
 plain_stops : Polygon.ColorStops
 plain_stops = {
-	start_rgba: 7,
-	end_rgba: 8,
+	start_color: ArgbColor.of(7),
+	end_color: ArgbColor.of(8),
 	start_offset: 0.0,
 	end_offset: 1.0,
 }
 
 inner_stops : Polygon.ColorStops
 inner_stops = {
-	start_rgba: 666,
-	end_rgba: 667,
+	start_color: ArgbColor.of(666),
+	end_color: ArgbColor.of(667),
 	start_offset: 0.25,
 	end_offset: 0.75,
 }
@@ -302,8 +303,8 @@ radial_polygon = |corners, gradient_radius|
 	Polygon.gradient_polygon(
 		corners,
 		{
-			center_rgba: 7,
-			edge_rgba: 8,
+			center_color: ArgbColor.of(7),
+			edge_color: ArgbColor.of(8),
 			gradient_center: origin,
 			gradient_radius,
 		},
@@ -356,8 +357,8 @@ expect radial_polygon(three_corners, Pixels.of(0.5)) == Ok(
 	Poly({
 		coordinates: triangle_coordinates,
 		fill: Radial({
-			inner: Brush.with_alpha(7),
-			outer: Brush.with_alpha(8),
+			inner: ArgbColor.to_rgba(ArgbColor.of(7)),
+			outer: ArgbColor.to_rgba(ArgbColor.of(8)),
 			x: 0.0,
 			y: 0.0,
 			r0: 0.0,
@@ -387,8 +388,8 @@ expect
 	Polygon.gradient_polygon(
 		three_corners,
 		{
-			center_rgba: 444,
-			edge_rgba: 445,
+			center_color: ArgbColor.of(444),
+			edge_color: ArgbColor.of(445),
 			gradient_center: Screen.point(10.0, 20.0),
 			gradient_radius: Pixels.of(30.0),
 		},
@@ -397,8 +398,8 @@ expect
 			Poly({
 				coordinates: triangle_coordinates,
 				fill: Radial({
-					inner: Brush.with_alpha(444),
-					outer: Brush.with_alpha(445),
+					inner: ArgbColor.to_rgba(ArgbColor.of(444)),
+					outer: ArgbColor.to_rgba(ArgbColor.of(445)),
 					x: 10.0,
 					y: 20.0,
 					r0: 0.0,
@@ -412,8 +413,8 @@ expect
 		three_corners,
 		{
 			color_stops: {
-				start_rgba: 555,
-				end_rgba: 556,
+				start_color: ArgbColor.of(555),
+				end_color: ArgbColor.of(556),
 				start_offset: 0.25,
 				end_offset: 0.75,
 			},
@@ -424,8 +425,8 @@ expect
 		== Poly({
 			coordinates: triangle_coordinates,
 			fill: Linear({
-				c0: Brush.with_alpha(555),
-				c1: Brush.with_alpha(556),
+				c0: ArgbColor.to_rgba(ArgbColor.of(555)),
+				c1: ArgbColor.to_rgba(ArgbColor.of(556)),
 				o0: 0.25,
 				o1: 0.75,
 				ax: 1.0,
@@ -448,8 +449,8 @@ expect
 		== Poly({
 			coordinates: triangle_coordinates,
 			fill: Ellipse({
-				c0: Brush.with_alpha(666),
-				c1: Brush.with_alpha(667),
+				c0: ArgbColor.to_rgba(ArgbColor.of(666)),
+				c1: ArgbColor.to_rgba(ArgbColor.of(667)),
 				o0: 0.25,
 				o1: 0.75,
 				x: 1.0,
@@ -477,8 +478,8 @@ linear_fill = |{ o0, o1 }|
 	Poly({
 		coordinates: triangle_coordinates,
 		fill: Linear({
-			c0: Brush.with_alpha(666),
-			c1: Brush.with_alpha(667),
+			c0: ArgbColor.to_rgba(ArgbColor.of(666)),
+			c1: ArgbColor.to_rgba(ArgbColor.of(667)),
 			o0,
 			o1,
 			ax: 1.0,
@@ -511,11 +512,11 @@ ellipse_of_height = |height|
 # An ellipse just under the limit is flat, and one just over it is not.
 expect ellipse_of_height(0.009) == Poly({
 	coordinates: triangle_coordinates,
-	fill: Flat(Brush.with_alpha(666)),
+	fill: Flat(ArgbColor.to_rgba(ArgbColor.of(666))),
 })
 expect ellipse_of_height(0.011) != Poly({
 	coordinates: triangle_coordinates,
-	fill: Flat(Brush.with_alpha(666)),
+	fill: Flat(ArgbColor.to_rgba(ArgbColor.of(666))),
 })
 
 sample_color : I64
