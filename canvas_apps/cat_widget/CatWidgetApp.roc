@@ -125,7 +125,7 @@ cat_shapes = |timing| {
 	instant = Cat.instant_at(World.first_cat_crossing, Cat.crossing_stage(timing))
 	StillShapes.still_shapes(
 		{
-			feet: {
+			foot: {
 				x: Pixels.of(road_middle_x + instant.location.across.to_metres() * pixels_a_metre),
 				y: Pixels.of(feet_y - instant.location.lift.to_metres() * pixels_a_metre),
 			},

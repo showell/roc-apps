@@ -2125,7 +2125,7 @@ expect {
 # Polygon's own checks judge the data. The cat's poses are drawn above.
 expect {
 	anchor = {
-		feet: Screen.point(100.0, 200.0),
+		foot: Screen.point(100.0, 200.0),
 		flip: AsDrawn,
 		height_on_screen: Pixels.of(50.0),
 	}
@@ -2791,15 +2791,15 @@ expect
 expect truck_seen_from({ ..origin, along: Along.metres(100.0) }, 0.25).is_err()
 expect truck_seen_from({ ..origin, along: Along.metres(100.0) }, 1.0).is_ok()
 
-## A still 50 pixels tall, standing as drawn on feet at (100, 200).
+## A still 50 pixels tall, standing as drawn on a foot at (100, 200).
 upright_still_anchor : StillShapes.Anchor
 upright_still_anchor = {
-	feet: Screen.point(100.0, 200.0),
+	foot: Screen.point(100.0, 200.0),
 	flip: AsDrawn,
 	height_on_screen: Pixels.of(50.0),
 }
 
-# A still of one flat polygon of colour 7, its three points all at the feet, is
+# A still of one flat polygon of colour 7, its three points all at the foot, is
 # drawn as one opaque polygon there.
 expect
 	StillShapes.still_shapes(

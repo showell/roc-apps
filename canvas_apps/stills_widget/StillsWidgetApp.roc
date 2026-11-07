@@ -186,7 +186,7 @@ standing_at : Still,
 standing_at = |still, { mid_x, ground_y, height_on_screen }| {
 	extent = extent_of(still)
 	{
-		feet: Screen.point(mid_x - height_on_screen.to_f64() * (extent.left + extent.right) / 2.0, ground_y),
+		foot: Screen.point(mid_x - height_on_screen.to_f64() * (extent.left + extent.right) / 2.0, ground_y),
 		flip: AsDrawn,
 		height_on_screen,
 	}
@@ -645,7 +645,7 @@ expect {
 		],
 	}
 	anchor = {
-		feet: Screen.point(0.0, 10.0),
+		foot: Screen.point(0.0, 10.0),
 		flip: AsDrawn,
 		height_on_screen: Pixels.of(10.0),
 	}
@@ -659,7 +659,7 @@ expect {
 # one of two points has a line there and one back.
 expect {
 	anchor = {
-		feet: Screen.point(0.0, 0.0),
+		foot: Screen.point(0.0, 0.0),
 		flip: AsDrawn,
 		height_on_screen: Pixels.of(10.0),
 	}

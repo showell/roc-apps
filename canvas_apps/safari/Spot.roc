@@ -3,8 +3,8 @@
 ## `Pipeline.sighting_of` works one out for each object in view, and every
 ## picture is drawn from it.
 ##
-## It has a module of its own because a kind's picture names it, and World,
-## which holds the kinds, sits under RoadAhead and Pipeline.
+## It has a module of its own because a kind's picture names it, and Segment
+## and Trees, which hold the kinds, sit under RoadAhead and Pipeline.
 import Across
 import Distance
 import Geom
@@ -68,4 +68,9 @@ Spot :: {
 	## past the near plane.
 	foot : Spot -> Geom.LevelPoint
 	foot = |Spot.(spot)| spot.foot
+
+	## The middle of the object's foot, raised as high off the ground as the
+	## object is: where an upright object stands.
+	base : Spot -> Geom.AheadPoint
+	base = |spot| spot.foot().at_height(spot.lift())
 }
