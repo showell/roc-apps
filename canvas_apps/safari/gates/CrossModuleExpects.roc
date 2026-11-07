@@ -26,6 +26,7 @@ import game.Route
 import game.Segment
 import game.SegmentPlace
 import game.Geom
+import game.Mountains
 import game.Ground
 import game.GroundSighting
 import game.Pipeline
@@ -42,6 +43,8 @@ import game.Scenery
 import game.Screen
 import game.Speed
 import game.StillShapes
+import game.Steps
+import game.Sun
 import game.TreeSighting
 import game.Trees
 import game.Truck
@@ -919,6 +922,87 @@ expect {
 
 expect Rider.is_finished(done.rider, World.route)
 expect RideInstant.next_or_restart(World.route, done).truck.pace == NotSlowing
+
+## The first step of the ride at which `holds` holds.
+first_step_where : (Clock -> Bool) -> Clock
+first_step_where = |holds| {
+	var $clock = Clock.start
+	while !holds($clock) {
+		$clock = $clock.next()
+	}
+	$clock
+}
+
+## The climax of the sunset: the step the sun's lower edge meets the west range,
+## where the sun starts to set on screen. The range stands above the horizon at
+## the sun's bearing, so the sun's touching the horizon is never seen. The sun's
+## top sinks behind the range at the first step the sun is behind it, which says
+## how high the range stands there, and the lower edge meets it a diameter
+## higher.
+sunset_climax : Clock
+sunset_climax = {
+	hidden_at = first_step_where(Mountains.is_sun_behind_mountains)
+	range_top = Sun.height(hidden_at).plus(Sun.radius)
+	first_step_where(|clock| Sun.height(clock).minus(Sun.radius) < range_top)
+}
+
+## How many steps before and after the sunset's climax the rider must be on the
+## long westward segment: 150, a few hundred metres of road, so the rider sees
+## the sun come down onto the range from the straight and watches it start to
+## sink. The climax falls 230 steps after the rider turns onto the segment and
+## 451 before the next bend, so a change in the ride's timing has room to move
+## it before the rule breaks.
+sunset_margin : Steps
+sunset_margin = Steps.of(150)
+
+## The route's longest segment.
+longest_segment_index : Route.SegmentIndex
+longest_segment_index = {
+	(_, longest_at) =
+		World.route.route_segments()
+			.map_with_index(|segment, at| (segment.length, at))
+			.fold(
+				(Distance.zero, 0),
+				|(best_length, best_at), (length, at)|
+					if length > best_length {
+						(length, at)
+					} else {
+						(best_length, best_at)
+					},
+			)
+	Route.SegmentIndex.number(longest_at.to_u32_wrap())
+}
+
+# The route's longest segment heads within 20° of the sun, as the rider enters it.
+expect {
+	turns_before =
+		World.route.route_segments()
+			.take_first(longest_segment_index.count_before())
+			.map(|segment| segment.bend_out_of().turn)
+	bearing = turns_before.fold(Angle.north, |so_far, turn| so_far.plus(turn))
+	Sun.bearing.turn_from(bearing).abs() < Angle.Turn.degrees(20.0)
+}
+
+# Steve's rule: the climax of the sunset happens on the really long road segment
+# that heads west. The ride is ridden to `sunset_margin` steps past the climax,
+# and the rider is on that segment from `sunset_margin` steps before it.
+expect {
+	from = sunset_climax.minus(sunset_margin)
+	until = sunset_climax.plus(sunset_margin)
+	var $rider = RiderState.initial
+	var $clock = Clock.start
+	while $clock != from {
+		$rider = Rider.rider_state_at_next_step($rider, World.route)
+		$clock = $clock.next()
+	}
+	var $is_on_long_segment = True
+	while $clock != until {
+		$is_on_long_segment = $is_on_long_segment and $rider.segment_index == longest_segment_index
+		$rider = Rider.rider_state_at_next_step($rider, World.route)
+		$clock = $clock.next()
+	}
+	$is_on_long_segment and $rider.segment_index == longest_segment_index
+}
 
 # A frame of the ride draws.
 expect {
