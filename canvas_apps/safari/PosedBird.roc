@@ -36,30 +36,23 @@ PosedBird := { pose : PosedBird.BirdPose }.{
 	bird_height : Distance
 	bird_height = Distance.metres(2.2)
 
-	## How tall a bird `forward` metres ahead is on screen.
-	height_px : { forward : Distance, cam_focal : Pixels } -> Pixels
-	height_px = |{ forward, cam_focal }| cam_focal.times(PosedBird.bird_height.ratio_to(forward))
-
 	scenery_height : PosedBird -> Distance
 	scenery_height = |_bird| PosedBird.bird_height
 
-	## A bird on screen, its feet where it is. Its still is unflipped: a bird
-	## from a left-hand tree crosses the road toward +x, the way its beak points.
+	## A bird on screen, its feet where it is.
 	scenery_picture : PosedBird, Picture.Setting({}) -> Picture
-	scenery_picture = |bird, { spot, cam_focal, .. }| {
-		foot = spot.foot()
-		feet = Camera.project(foot.at_height(spot.lift()), cam_focal)
+	scenery_picture = |bird, setting|
 		Picture.from_shapes(
-			StillShapes.still_shapes(
+			StillShapes.standing_still_shapes(
+				setting,
 				{
-					feet,
+					height: PosedBird.bird_height,
+					# Birds start on left-hand trees; facing joins the pose when they fly both ways.
 					flip: AsDrawn,
-					height_px: PosedBird.height_px({ forward: foot.forward(), cam_focal }),
+					polygons: PosedBird.pose_polygons(bird.pose),
 				},
-				PosedBird.pose_polygons(bird.pose),
 			),
 		)
-	}
 
 	## The drawing for a pose.
 	pose_polygons : PosedBird.BirdPose -> List(Stills.StillPolygon)
@@ -80,26 +73,47 @@ expect PosedBird.bird_height.to_metres() == 2.2
 level_bird : PosedBird
 level_bird = { pose: Perched }
 
+## The spot `forward` ahead, `right` of the camera and `lift` off the ground.
+spot_at : {
+	forward : Distance,
+	right : Distance,
+	lift : Distance,
+} -> Spot
+spot_at = |{ forward, right, lift }| {
+	foot =
+		Geom.ahead_on_level({ right, forward })
+			?? crash "a test's bird is past the near plane"
+	Spot.at({
+		place: Ahead(SegmentPlace.Position.first),
+		road_point: {
+			along: Along.metres(forward.to_metres()),
+			across: Across.metres(right.to_metres()),
+		},
+		lift,
+		foot,
+	})
+}
+
 ## `bird` 110 m ahead, `right` of the camera and `lift` off the ground, through
 ## a 500 px focal length. A lift of the camera's height puts its feet on the
 ## horizon.
 bird_shapes_at : PosedBird, { right : Distance, lift : Distance } -> List(Shapes.Shape)
 bird_shapes_at = |bird, { right, lift }| {
-	foot =
-		Geom.ahead_on_level({ right, forward: Distance.metres(110.0) })
-			?? crash "a test's bird is past the near plane"
-	spot = Spot.at({
-		place: Ahead(SegmentPlace.Position.first),
-		road_point: { along: Along.metres(110.0), across: Across.metres(right.to_metres()) },
-		lift,
-		foot,
-	})
+	spot = spot_at({ forward: Distance.metres(110.0), right, lift })
 	bird.scenery_picture({ spot, cam_focal: Pixels.of(500.0), context: {} }).to_shapes()
 }
 
-## How many pixels tall a bird `forward` ahead is, through `cam_focal`.
+## How many pixels tall a bird `forward` ahead, on the ground, is through
+## `cam_focal`.
 height_on_screen : Distance, Pixels -> F64
-height_on_screen = |forward, cam_focal| PosedBird.height_px({ forward, cam_focal }).to_f64()
+height_on_screen = |forward, cam_focal| {
+	spot = spot_at({ forward, right: Distance.zero, lift: Distance.zero })
+	anchor = StillShapes.standing_anchor(
+		{ spot, cam_focal, context: {} },
+		{ height: PosedBird.bird_height, flip: AsDrawn },
+	)
+	anchor.height_on_screen.to_f64()
+}
 
 expect
 	[

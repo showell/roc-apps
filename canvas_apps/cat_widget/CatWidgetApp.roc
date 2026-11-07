@@ -130,7 +130,7 @@ cat_shapes = |gap| {
 				y: Pixels.of(feet_y - instant.location.lift.to_metres() * pixels_a_metre),
 			},
 			flip: AsDrawn,
-			height_px: Pixels.of(PosedCat.cat_height.to_metres() * pixels_a_metre),
+			height_on_screen: Pixels.of(PosedCat.cat_height.to_metres() * pixels_a_metre),
 		},
 		PosedCat.pose_polygons(instant.pose),
 	)

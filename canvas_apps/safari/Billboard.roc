@@ -2,7 +2,6 @@
 ## camera: an emoji's still, at a height, facing left or right.
 import Across
 import Along
-import Camera
 import Distance
 import EmojiStills
 import Geom
@@ -46,21 +45,17 @@ Billboard := {
 	## How a billboard looks. An emoji faces left, so a billboard facing right
 	## is its still mirrored. One less than a pixel tall isn't drawn.
 	scenery_picture : Billboard, Picture.Setting({}) -> Picture
-	scenery_picture = |billboard, { spot, cam_focal, .. }| {
-		projected = |height| Camera.project(spot.foot().at_height(height), cam_focal)
-		feet = projected(spot.lift())
-		height_px = feet.y.minus(projected(spot.lift().plus(billboard.height)).y)
-		if height_px < Pixels.of(1.0) {
+	scenery_picture = |billboard, setting| {
+		flip =
+			match billboard.facing {
+				FacesLeft => AsDrawn
+				FacesRight => Mirrored
+			}
+		anchor = StillShapes.standing_anchor(setting, { height: billboard.height, flip })
+		if anchor.height_on_screen < Pixels.of(1.0) {
 			Picture.from_shapes([])
 		} else {
-			flip =
-				match billboard.facing {
-					FacesLeft => AsDrawn
-					FacesRight => Mirrored
-				}
-			Picture.from_shapes(
-				StillShapes.still_shapes({ feet, flip, height_px }, billboard.still.polygons()),
-			)
+			Picture.from_shapes(StillShapes.still_shapes(anchor, billboard.still.polygons()))
 		}
 	}
 

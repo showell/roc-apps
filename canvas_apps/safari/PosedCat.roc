@@ -4,7 +4,6 @@
 import Pixels
 import Across
 import Along
-import Camera
 import CatStills
 import Distance
 import Geom
@@ -30,20 +29,17 @@ PosedCat := { pose : PosedCat.CatPose }.{
 
 	## A cat on screen, its feet where it is.
 	scenery_picture : PosedCat, Picture.Setting({}) -> Picture
-	scenery_picture = |cat, { spot, cam_focal, .. }| {
-		projected = |height| Camera.project(spot.foot().at_height(height), cam_focal)
-		feet = projected(spot.lift())
+	scenery_picture = |cat, setting|
 		Picture.from_shapes(
-			StillShapes.still_shapes(
+			StillShapes.standing_still_shapes(
+				setting,
 				{
-					feet,
+					height: PosedCat.cat_height,
 					flip: AsDrawn,
-					height_px: feet.y.minus(projected(spot.lift().plus(PosedCat.cat_height)).y),
+					polygons: PosedCat.pose_polygons(cat.pose),
 				},
-				PosedCat.pose_polygons(cat.pose),
 			),
 		)
-	}
 
 	## The cat's polygons in a pose.
 	pose_polygons : PosedCat.CatPose -> List(Stills.StillPolygon)

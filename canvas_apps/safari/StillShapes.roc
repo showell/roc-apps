@@ -1,7 +1,10 @@
 ## StillShapes draws a still, a picture made of polygons, standing on screen.
 ## A still is drawn in units of its height: its feet at the origin, y up, and
-## its height 1. StillShapes scales it to its height in pixels, stands it on its feet,
-## and mirrors it when asked.
+## its height 1. StillShapes scales it to its height on screen, stands it on its
+## feet, and mirrors it when asked.
+import Camera
+import Distance
+import Picture
 import Pixels
 import Polygon
 import lib.Brush
@@ -17,11 +20,11 @@ StillShapes :: [].{
 	Flip : [AsDrawn, Mirrored]
 
 	## Where a still stands on screen: its feet, which way it is drawn, and
-	## its height in pixels.
+	## its height on screen.
 	Anchor : {
 		feet : Screen.Point,
 		flip : StillShapes.Flip,
-		height_px : Pixels,
+		height_on_screen : Pixels,
 	}
 
 	## The sign that a still's x is multiplied by.
@@ -35,15 +38,15 @@ StillShapes :: [].{
 	## Where a point of the still lands on screen.
 	screen_point : StillShapes.Anchor, Stills.StillPt -> Screen.Point
 	screen_point = |anchor, point| {
-		x: anchor.feet.x.plus(anchor.height_px.times(x_sign(anchor.flip) * point.x)),
-		y: anchor.feet.y.minus(anchor.height_px.times(point.y)),
+		x: anchor.feet.x.plus(anchor.height_on_screen.times(x_sign(anchor.flip) * point.x)),
+		y: anchor.feet.y.minus(anchor.height_on_screen.times(point.y)),
 	}
 
 	## How far, and which way, a step in the still goes on screen.
 	screen_vector : StillShapes.Anchor, Stills.StillPt -> Screen.Point
 	screen_vector = |anchor, step| {
-		x: anchor.height_px.times(x_sign(anchor.flip) * step.x),
-		y: anchor.height_px.times(step.y).opposite(),
+		x: anchor.height_on_screen.times(x_sign(anchor.flip) * step.x),
+		y: anchor.height_on_screen.times(step.y).opposite(),
 	}
 
 	screen_points : StillShapes.Anchor, List(Stills.StillPt) -> List(Screen.Point)
@@ -62,6 +65,34 @@ StillShapes :: [].{
 	## A whole still, its polygons in order.
 	still_shapes : StillShapes.Anchor, List(Stills.StillPolygon) -> List(Shapes.Shape)
 	still_shapes = |anchor, polys| polys.map(|poly| StillShapes.still_polygon(anchor, poly))
+
+	## Where a still `height` tall stands on screen at the setting's spot: its
+	## feet raised as high as the spot says, and its height on screen from
+	## there to its top.
+	standing_anchor : Picture.Setting({}),
+	{
+		height : Distance,
+		flip : StillShapes.Flip,
+	} -> StillShapes.Anchor
+	standing_anchor = |{ spot, cam_focal, .. }, { height, flip }| {
+		projected = |above_ground| Camera.project(spot.foot().at_height(above_ground), cam_focal)
+		feet = projected(spot.lift())
+		{
+			feet,
+			flip,
+			height_on_screen: feet.y.minus(projected(spot.lift().plus(height)).y),
+		}
+	}
+
+	## A still `height` tall, standing on its feet at the setting's spot.
+	standing_still_shapes : Picture.Setting({}),
+	{
+		height : Distance,
+		flip : StillShapes.Flip,
+		polygons : List(Stills.StillPolygon),
+	} -> List(Shapes.Shape)
+	standing_still_shapes = |setting, { height, flip, polygons }|
+		StillShapes.still_shapes(StillShapes.standing_anchor(setting, { height, flip }), polygons)
 }
 
 ## A still's gradient is linear when its kind is 1, and radial otherwise.
@@ -125,7 +156,7 @@ upright : StillShapes.Anchor
 upright = {
 	feet: sample_feet,
 	flip: AsDrawn,
-	height_px: Pixels.of(50.0),
+	height_on_screen: Pixels.of(50.0),
 }
 
 # The same still, mirrored.
@@ -133,7 +164,7 @@ mirrored : StillShapes.Anchor
 mirrored = {
 	feet: sample_feet,
 	flip: Mirrored,
-	height_px: Pixels.of(50.0),
+	height_on_screen: Pixels.of(50.0),
 }
 
 expect StillShapes.x_sign(Mirrored) == -1.0
