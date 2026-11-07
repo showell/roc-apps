@@ -9,19 +9,18 @@ These are Steve's preferences for Roc in this repository and its siblings
 ([roc-chat](https://github.com/showell/roc-chat), dog-park's physics), and
 most carry over from his Zig. Each one replaces a construct that can be wrong
 and still compile with one that can't. Examples are small and constructed (a
-cart, an order, a user id) unless the chat's own code is the clearest; a
-module named as the chat's (`Files`, `Html`) is in the older chat,
-roc-webbox's `chat/`. The rules are for any Roc. The guide is written for
-Claude, which writes this code, so a rule is added where our own code taught
-it. How the compiler itself behaves is in [roc-notes.md](roc-notes.md).
+cart, an order, a user id) unless real code is the clearest, which is Safari
+(`canvas_apps/safari/`) or the chat; a module named as the chat's (`Files`,
+`Html`) is in the older chat, roc-webbox's `chat/`. The rules are for any Roc.
+The guide is written for Claude, which writes this code, so a rule is added
+where our own code taught it. How the compiler itself behaves is in
+[roc-notes.md](roc-notes.md), and what takes judgment rather than a rule is in
+[smells.md](smells.md).
 
 **Roc's own conventions** are in its language reference, the *langref*:
-<https://roc-lang.org/docs/main/langref/> (source: `docs/langref/` in
-roc-lang/roc; read it at the pin's commit, fetched as CLAUDE.md §1 says). It
-covers the new compiler's syntax and is marked work in progress. Roc has no
-style guide for code (roc-lang/roc's `docs/langref-style-guide.md` is about
-writing the langref's prose, not Roc), and `roc fmt` settles layout with no
-options. Its conventions sit in the langref's pages, chiefly
+<https://roc-lang.org/docs/main/langref/> (read it at the pin's commit, fetched
+as CLAUDE.md §1 says). Roc has no style guide for code, and `roc fmt` settles
+layout with no options. Its conventions sit in the langref's pages, chiefly
 [naming](https://roc-lang.org/docs/main/langref/naming/),
 [errors](https://roc-lang.org/docs/main/langref/errors/),
 [types](https://roc-lang.org/docs/main/langref/types/) and
@@ -69,32 +68,51 @@ numbers, or a file read that bypasses its module, is a Shale hunt. See
 Roc's own rules are in the langref's
 [naming](https://roc-lang.org/docs/main/langref/naming/) page.
 
-- **A function that returns a Bool is a question: `is_*` or `has_*`.**
-  A bare noun or adjective (`all_digits`) doesn't say which way `True` points.
-  Examples: `is_valid_emoji`, `has_prefix`, `is_all_digits`, the langref's
-  `is_empty`.
+- **A function that returns a Bool is a question, `is_*`, `has_*`, `can_*` or
+  `should_*`, asked the positive way.** A bare noun or adjective (`all_digits`)
+  doesn't say which way `True` points, and a negative (`no_*`, `not_*`,
+  `is_not_*`) reads twice under a `!`. Examples: `is_finished`, `can_turn_to`,
+  `is_too_narrow_to_shade`, the langref's `is_empty`.
 - **A function is named for what it does,** so a reader can predict it
   without opening it; what the caller wants it for stays in the caller.
   `item_at(cart, i)` answers the item at an index, and crashes past the
   end; named `in_cart` it reads as a question.
-- **A function is not named as a bare phrase; it names what it gives, even
-  if that repeats its module.** `Tree.in_view` reads as a yes or no and
-  hides what it gives, and a reader of a definition often forgets which
-  module it's in, so write `Tree.trees_in_view`. A constructor or conversion
-  that reads as one keeps its short form: `Clock.at_step`, `Fraction.from_ratio`.
-- **A pure function's verb says what happens to its argument, and a function
-  that only makes a value is named for that value.** `plus`, `clamp` and
-  `trim_hull` say what happens to what they are given. `draw_tree` claims to
-  act on something outside, and all it does is give shapes, so it is
-  `tree_shapes`. The name hunt's `world_verb` holds this.
-- **A list's name says many: it ends in a plural of what the list holds, or
-  says `list`.** `triangle : List(Shape)` would have to be `triangles` or
-  `triangle_list`. A collective noun doesn't do it: a herd of cows is
-  `herd_cows`, and a route of segments is `route_segments`. The rule covers
-  a function that gives a list, a field and a parameter, and a verb's object
-  doesn't excuse it: `draw_tree` giving shapes is `tree_shapes`. Bytes are
-  plumbing, so `boundary : List(U8)` says what they mean, and an accumulator
-  may keep its short idiom, `out`. The name hunt's `singular_list` holds this.
+- **A name stands alone from its module: repeat the noun.** A reader of a
+  definition often forgets which module it's in, so write
+  `TreeSighting.trees_in_view`, never a bare `in_view`, which reads as a yes or
+  no and hides what it gives. Two words almost always remove the ambiguity,
+  three counting a preposition: `Animation.stage_over_gap`. The name hunt's
+  `phrase_name` reports a pure function that starts with a preposition and
+  gives no Bool. Three kinds pass, because each reads as what it is: a
+  constructor that gives its own module's type (`Clock.at_step`,
+  `Fraction.from_ratio`), a conversion (`Along.to_metres`, `Along.from_start`),
+  and a changed copy that gives its first argument's type (`Bike.with_lean`).
+- **A verb in a pure function's name says what happens to its argument; a
+  pretend effect goes, and the name becomes its answer.** `plus`, `clamp` and
+  `project` say what happens to what they are given. `draw`, `fill`, `paint`,
+  `plant` and `render` claim to act on something outside, and all the function
+  does is give a value, so `draw_tree` is `tree_shapes`. An effect does act, and
+  keeps its verb (`draw!`). The clear name goes on the function, not the local
+  (Steve: "I like brevity for the var name and clarity for the function call"):
+  `rider = rider_state_at_next_step(...)`. The name hunt's `world_verb` holds
+  this.
+- **A pure function starts with `push`, `set`, `append` or `add` only when it
+  gives back what it was handed, and never starts with `get`.** `append_digits`
+  takes a `List(U8)` and gives one. Anything else makes a new value, so it is
+  named for that value, and a plain name already says what it gets: `speed`, not
+  `get_speed`. Shale's `plain_names` holds this as `pure_mutator`.
+- **A name holding a list is plural or explicit.** `triangle : List(Shape)`
+  would have to be `triangles` or `triangle_list`. The word that counts is the
+  noun: the one before a preposition or a word like `ahead`, else the last, so
+  `trees_in_view`, `corners_ahead` and `rectangle_corners` all pass. A collective
+  noun doesn't count: a herd of cows is `herd_cows`, and a route of segments is
+  `route_segments`. The rule covers a function that gives a list or a `Try` of
+  one, a field and a parameter, and a verb's object doesn't excuse it unless the
+  function gives back the list it took (`push_trail`). Bytes are plumbing, so
+  `boundary : List(U8)` says what they mean, but `flat_coordinates` gives a
+  `List(F64)` and is plural. A word with no plural passes, and an accumulator may
+  keep its short idiom as its whole name, `out`. The name hunt's `singular_list`
+  holds this.
 - **A pure function is named by a noun for what it gives, or a verb for
   what it does; never by an adjective or a bare past participle.** A lone
   participle (`added`, `joined`, `named`, `escaped`) reads as a Bool:
@@ -107,32 +125,29 @@ Roc's own rules are in the langref's
   refusal : Str -> Html
   user_by_name : Users, Name -> Try(User, [NoSuchUser])
   ```
-- **Prefer a plain word to an abbreviation.** `customer`, not `cust`;
-  `quantity`, not `qty`.
+- **Prefer a plain word to an abbreviation.** `position`, not `pos`;
+  `acceleration`, not `accel`. Shale's `plain_names` holds this as
+  `abbreviation`, from its list of them.
 - **A method a `where` clause names has at least two words.** A `where`
   clause matches a method by name alone, so any type with that method fits,
-  whatever it means by it, and the name is the whole contract. Safari asks a
-  kind of scenery for its `scenery_height`, because `height` would fit any
-  type that has one, whether or not it stands by the road. The methods Roc
-  calls by name, for operators and the like (`is_eq`, `plus`), have a fixed
-  meaning and keep their names.
+  whatever it means by it, and the name is the whole contract: a one-word
+  `bark` would take a tree's bark for a dog's. `Pipeline.roc` is the worked
+  example. It asks a kind of scenery for its `scenery_height` and its
+  `scenery_picture`, and `Conifer` gives both without knowing `Pipeline`. The
+  methods Roc calls by name, for operators and the like (`is_eq`, `plus`),
+  have a fixed meaning and keep their names. The name hunt's `where_name`
+  holds this.
 
   ```roc
-  sighting_of : Geom.Placed(kind), Sightline -> Try(Geom.Sighted(kind), [TooSmall])
-  	where [kind.scenery_height : kind -> Distance]
+  rendering_of : Geom.Sighted(kind), { cam_focal : Pixels, context : context } -> Rendered
+  	where [kind.scenery_picture : kind, Picture.Setting(context) -> Picture]
   ```
 - **Prefer a two-part name that says what a thing is to a short one that
   is cute or sounds like something else.** One word saves a few letters
   and costs the reader a guess. An order whose every part is checked,
   waiting only for its number, named `Order.Submission`, reads as an
   event, the act of submitting; `Order.Unnumbered` says what it is, and a
-  value of it is `unnumbered_order`. Repeating the module's noun is fine:
-  the name is read far from the module.
-
-  ```roc
-  place : Orders, Order.Unnumbered -> Try(Order, [Full])  # not Order.Submission
-  placed = orders.place(unnumbered_order)                 # not orders.place(submission)
-  ```
+  value of it is `unnumbered_order`.
 - **Use the domain's exact word, keep Roc's words for Roc, and name a
   function and its inverse as a mirrored pair.** `record`, `tag` and
   `module` mean Roc's things to a Roc reader: `<p>` is a tag, and what
@@ -148,15 +163,35 @@ Roc's own rules are in the langref's
   or member function named only by Roc's word (`record`, `tag`), unless it gives that
   very thing (`record : Key -> ApiKey.Record`), and a value named only by a
   number (`three`).
+- **One thing has one word, and a project lists the words it has retired.** A
+  search then finds every use, and a word can't outlive its thing. Safari's
+  `vocabulary.txt` keeps `lean` over `tilt` and `road` over `lane`, and Shale's
+  `vocabulary` reports a retired word in a name or a comment.
+- **One relation keeps one preposition in a file.** `blocks_of` beside
+  `blocks_in` makes a reader ask how they differ. A pair of opposites is fine,
+  like `point_in_segment_before` and `point_in_segment_after`. The name hunt's
+  `preposition_split` holds this.
+- **A name's last word promises its type.** A `*_count` is an integer
+  (`nearer_tree_count : U16`) and a `*_path` is a `Str` or a path type. A project
+  adds its own words in a table: safari's `name_types.txt` ties `fraction` to
+  `Fraction` and `steps` to `Steps`. Both are checked as `name_type`.
+- **Modules that look alike are spelled alike, and one type name means one
+  thing.** `TreeSighting`, `RailSighting` and `GroundSighting` answer
+  `trees_in_view`, `rails_in_view` and `patches_in_view`, so a reader who knows
+  one finds the others. Shale's `families` reports a member that lacks a public
+  name most of its family has (`family`; a member that differs says so in its
+  `##` doc), and a `Pose` that has two shapes in two modules (`twin_name`).
 - **A top-level value or a field is never one letter.** `board_width`, not
   `w`; `row`, not `y`. It is read far from where it is set, so its name is
   all the reader has. A local or a lambda's parameter can be short: its
   definition is in view.
-- **A type is named for what it holds, not where it sits.** `Entry`, `Item`,
-  `Node`, `Data` and `Info` say only that a value is in a list or a tree;
-  the domain usually has the word. One row of a customer's order history is
-  an `OrderSummary`, not an `Entry`. Where the container word *is* the domain's
-  (a folder listing's entry), it stays.
+- **A type or a field is named for what it holds, not where it sits.**
+  `Entry`, `Item`, `Node`, `Data` and `Info` say only that a value is in a list
+  or a tree; the domain usually has the word. One row of a customer's order
+  history is an `OrderSummary`, not an `Entry`. Where the container word *is* the
+  domain's (a folder listing's entry), it stays, and its `##` doc says whose. A
+  function named only by vague words (`handle_data`, `process!`) has the same
+  fault. The name hunt's `container` and `vague` hold this.
 - **A record that reports an act names its fields for the things;** its
   type, a noun, already names the act. A field `added` says again what
   `Addition` says, and hides that it holds a user.
@@ -185,21 +220,21 @@ Roc's own rules are in the langref's
 - **An effect is named for its act, never as a state or a noun.** `page!`, `appended!` or `member!` read as a value or a question,
   not a command. A route handler is `serve_*!` for what it serves
   (`serve_topic_page!`); a lookup that can fail the request is `load_*!`
-  (`load_viewer!`); anything else is a verb (`append_message!`, `fan_out!`,
-  `check_member!`). A port is where bad names come from: it keeps the old
-  function's noun or past tense, so rename on the way in.
+  (`load_viewer!`); anything else is a verb (`append_message!`, `fan_out!`).
+  An effect whose first argument is a surface, a `Frame` or a `Canvas`, is
+  named for what it draws there. A port is where bad names come from: it keeps
+  the old function's noun or past tense, so rename on the way in.
 - **A command is not named as a question.** An effect that
   does something and reports how it went is named for the act, not for the
   state it checks: `serve_file!` answering `[Serving, NotServing]`, not
   `held_raw!`.
-- **When a Bool becomes a tag, rename the field to the question.** See
-  [tags](#a-closed-set-is-a-tag-union).
 - **Name a tag for what it is: a command, an event, or a state.** A tag that
   tells someone what to do is an imperative verb; a tag that reports what
   happened is past tense; a tag that says what is (a state, an answer) is a
   noun or an adjective. The reader can then tell an instruction from a fact
   at a glance, and a tag passed *in* as an instruction doesn't read like
-  something that has already happened.
+  something that has already happened. The name hunt's `command_tense` and
+  `mixed_tense` hold this for what an effect is handed.
 
   ```roc
   # A command, passed in:
@@ -228,7 +263,7 @@ Roc's own rules are in the langref's
   predicates.** The markdown's callers say `Tight` or `Loose`, `HardWrap`
   or `Reflow`, `Linked` or `InLabel`; inside, CommonMark's own `left`,
   `right`, `can_open` and `can_close` stay Bools, as the spec and the
-  Zig it is held to name them (QUEUE 305).
+  Zig it is held to name them.
 - **Naming the tags forces you to name the question.** A Bool usually states
   one case of it, so rename the field when the tag reads wrong with it:
   `on : Bool` becomes `change : [Added, Removed]`; `online : Bool` becomes
@@ -270,10 +305,7 @@ Roc's own rules are in the langref's
   `add : Cart, { item : Item, quantity : U64 } -> Cart`, called as
   `cart.add({ item: tea, quantity: 2 })`. A loop's
   index and accumulator are fields too (`{ at: i, out }`), a one-letter
-  parameter given a field's name and keeping its own in the body. A
-  hosted effect's record is a seam record: its mirror on the host's side
-  is laid out as Roc lays it out (numbers by name, then lists by name,
-  then the small fields), asserted, and driven field by field.
+  parameter given a field's name and keeping its own in the body.
 
   The stack hunt flags a signature with three or more arguments
   ([enforcement](#testing-and-enforcement)).
@@ -283,7 +315,7 @@ Roc's own rules are in the langref's
   the index is passed: `find(s, { needle })` calls
   `find_from(s, { needle, at: 0 })`.
 - **The entry function takes the plain name; the worker is named for what
-  it adds.** Callers call `count`, `sorted`, `find`. The worker's suffix is
+  it adds.** Callers call `count`, `find`. The worker's suffix is
   a preposition naming its extra parameter, so a call reads as a sentence:
   `_from` for a start point (`count_from(xs, at)`), `_onto` for an output
   being built (`html_onto(out, node)`), `_with` for other carried state
@@ -299,7 +331,7 @@ Roc's own rules are in the langref's
   `for pixel in pixels` has no counter, no increment and no `List.get` with
   a placeholder, and `for _ in 0..<n` says "n times". A `while` stays for a
   stop that isn't a count, an early exit, or a step other than one, and a
-  stepped float (above) stays a `var` and a `while`. Recursion stays where it
+  stepped float (below) stays a `var` and a `while`. Recursion stays where it
   says more than a loop: walking a list by pattern, or a merge. Recursion
   that only counts or only builds a list is a loop, and needs no worker.
 - **A pure function that takes only `{}` is a constant.** `empty_cart : Cart`
@@ -307,10 +339,10 @@ Roc's own rules are in the langref's
   `empty_cart({})` for a value that never changes. Two stay functions. A
   value generic over a type variable can't be a constant: the pin refuses
   one ("value is not polymorphic") and asks for a `{}` function, so
-  `signed_out : {} -> Viewer(id)` stays. And a constant is computed at
+  `empty_cart : {} -> Cart(item)` stays. And a constant is computed at
   compile time (CLAUDE.md §4), so one that does real work, a search or a
   large table, stays a `{}` function with a comment saying so.
-- **Neighbouring arguments of one type get a record**, even when there are
+- **Neighboring arguments of one type get a record**, even when there are
   only two of them: they can be swapped and still type-check, and a record
   names the fields, so order can't go wrong: `copy!({ from, to })`, not
   `copy!(src, dst)` with two `Str`s in a row
@@ -330,7 +362,7 @@ Roc's own rules are in the langref's
   ```
 - **No list read by position.** A list of lists whose parts are known only by
   their index becomes a list of records.
-- **When one of two neighbours of the same type is a checked value, give it
+- **When one of two neighbors of the same type is a checked value, give it
   its own opaque type.** `part(body : List(U8), boundary : List(U8))` can be
   called with the two swapped, or with a boundary nobody checked. With
   `boundary : Form.Boundary`, made only by the function that checks it, the
@@ -344,9 +376,8 @@ Roc's own rules are in the langref's
 - **Spell out the arms of a match on a closed set; no wildcard.** With
   `(Stream, Post) => …` and `(Stream, Put) => …`, a new tag is a compile
   error that forces a decision, where `(Stream, _)` takes it silently. When
-  the repeated body passes about six lines, extract a helper (Steve,
-  2026-11-03). Arms that share a body can still be one arm by alternation
-  at the top level (`Flat(_) | Span(_) => …`), and one tag that splits on a
+  the repeated body passes about six lines, extract a helper. Arms that
+  share a body can still be one arm by alternation at the top level (`Flat(_) | Span(_) => …`), and one tag that splits on a
   condition takes a guard (`Cones if tall => …`).
 - **A float keeps its order of operations when code is rewritten.** A sum
   that was right-nested stays a `fold_rev`, and a value stepped by
@@ -377,8 +408,8 @@ Roc's own rules are in the langref's
   Distance.metres((w * w + h * h).sqrt())
   ```
 - **A closed set that needs no checking is nominal, not opaque.** Every
-  value of `Script := [Palette, Chrome, Compose, Feed]` is valid, so there
-  is nothing to guard, and callers write `Script.Chrome`. Opaque is for
+  value of `Conifer := [BigGreen, SmallGreen, Red, Gold]` is valid, so there
+  is nothing to guard, and callers write `Conifer.Red`. Opaque is for
   values a constructor must check.
 - **Use an opaque type (`::`) for anything validated.** Only its own module
   can build one, so the validator is the only way in. A `UserId` is all
@@ -445,11 +476,8 @@ Roc's own rules are in the langref's
 - **Call a value's own functions as methods:** `messages.last()`, not
   `List.last(messages)`; `id.to_str()`, `count.to_str()`.
   The subject comes first, as in a sentence, and a chain reads in the order
-  it runs. Most readers know the form from other languages, and the Roc
-  community leans toward it. Agents lean the other way, because most
-  functional training data has no methods, so expect to correct them. The
-  module name's one advantage, showing the type at a glance, is what the
-  value's name and its annotation are for.
+  it runs. Agents lean the other way, because most functional training data
+  has no methods, so expect to correct them.
 
   Keep a module call where it's no method call:
   - the function is passed as a value (`xs.map(Str.trim)`, `map_ok(UserId.to_str)`);
@@ -530,12 +558,11 @@ Roc's own rules are in the langref's
   Html.element({ name: "a", attrs: [Attr("href", href)], inner: Html.text(label) })
   ```
 - **The markdown renderer is the one writer of markup by bytes** (Md,
-  MdInline, MdMedia in roc-markdown's `package/`). It is
-  parsing at the door, held byte for byte to the Zig that defines the
-  dialect, so it writes its HTML as bytes, every byte of a member's text
-  through its one escape, `MdText.escape_onto`, and every tag it lets
-  through rebuilt by MdMedia's allowlist. What it makes enters a page as
-  markup the host made would: at the one door.
+  MdInline, MdMedia in roc-markdown's `package/`). It is parsing at the door,
+  held byte for byte to the Zig that defines the dialect, so it writes its
+  HTML as bytes, every byte of a member's text through its one escape,
+  `MdText.escape_onto`, and every tag it lets through rebuilt by MdMedia's
+  allowlist.
 - **Join bytes only where bytes are the point:** inside an opaque builder
   (`Html`, `JsonOut`) or a decoder at the door, with `List.join`. Text past
   the door stays `Str`.
@@ -598,7 +625,7 @@ Roc's own rules are in the langref's
   that must match another byte for byte (one per byte) keeps its own, and
   says so.
 - **A byte's class has one home** (the chat's `Ascii`: `is_digit`,
-  `is_alphabetic`, `is_whitespace`, `to_lower` and the rest), asked one
+  `is_letter`, `is_whitespace`, `to_lowercase` and the rest), asked one
   byte at a time of UTF-8 bytes, which never splits a character. A format
   with its own set (markdown's five spaces, JSON's four) names it beside
   its parser, saying how it differs, rather than borrowing a near one.
@@ -627,10 +654,12 @@ is the base; these rules sharpen it.
   make every caller remember what "none" meant. A topic's last message is
   `[Latest(Message), NoMessage]`; the editor's open doc is
   `[NoneChosen, Doc(...)]`. The same holds for a fold's "nothing found yet"
-  (`[Newest(...), NoDocs]`). A list of one or none is an optional too: the
-  type should say there is at most one. `cat_in_view` answers
-  `Try(CatSighting, [OutOfView])`, keeps its singular name, and its caller
-  uses `keep_oks` or a `match`.
+  (`[Newest(...), NoDocs]`).
+- **One or none is a `Try`, with a singular name and no `maybe_` prefix.** A
+  list of one or none claims more than is true, and the type should say there
+  is at most one. `Pipeline.sighting_of` answers
+  `Try(Geom.Sighted(kind), [BehindCamera, TooSmall])`, so its error also says
+  why there is none.
 - **A `Try`'s error lists the tags that function can return, in place; no
   shared error alias.** `Cart.add` fails only with `[OutOfStock(Item)]` and
   `Cart.remove` only with `[NotInCart(Item)]`; one alias of both,
@@ -705,18 +734,17 @@ is the base; these rules sharpen it.
 - **Pure decisions live outside effects,** so `expect`s can reach them. An
   effect gathers input, calls a pure function for the decision, and acts on
   its answer. See [testing](#testing-and-enforcement).
-- **Effects are named for their act.** See [naming](#naming).
 - **Best-effort work runs in an aside, and gives back what it could not
   spend.** Work the request does not stand on (a broadcast, a welcome)
-  runs between `Host.aside!(Begin)` and `Host.aside!(End)`: a read that
-  fails there fails the aside, never the request. Whatever the work was
+  runs between `Host.mark_aside!(Begin)` and `Host.mark_aside!(End)`: a read
+  that fails there fails the aside, never the request. Whatever the work was
   owed is handed back to the host when it did not happen, so it is tried
   again later rather than lost.
 
   ```roc
-  _ = Host.aside!(Begin)
+  _ = Host.mark_aside!(Begin)
   told = came_online!(who)
-  match (Host.aside!(End).status, told) {
+  match (Host.mark_aside!(End).status, told) {
   	(Done, Ok({})) => {}
   	_ => Host.presence_unspent!({})
   }
@@ -731,15 +759,19 @@ is the base; these rules sharpen it.
   published only if the write held, its fault counted if not.
 
   ```roc
-  ended = Host.aside!(End)
+  ended = Host.mark_aside!(End)
   match ended.status {
-  	Done => Host.publish!(member, event)
-  	Failed => Host.report_failure!(member, ended.fault)
+  	Done => Host.publish!(key, event)
+  	Failed => Host.count!(FanoutFailure, Fanout.failure(surface, details))
   }
   ```
 
 ## Modules and visibility
 
+- **A module opens with a `##` doc that says what it does.** A reader starts
+  there, so it is present tense, with no history: `Pipeline.roc`'s doc says
+  what the module carries and how. Shale's `plain_names` holds this as
+  `module_doc`.
 - **Private helpers live outside the `X :: [].{ }` block**. Only what sits
   inside the block is exposed
   ([modules](https://roc-lang.org/docs/main/langref/modules/)), so the block
@@ -764,26 +796,24 @@ is the base; these rules sharpen it.
   force folks to read 5 different modules to understand a code flow").
   A module whose every caller is one other module belongs with that
   caller, unless the reason it stands alone is written down: a route
-  whole (the upload's POST and GET, the docs, the admin retire), with main
-  only dispatching to it; a rule to audit alone (which `<img>` a page may
-  hold); an effect kept apart from the pure rules the twin tests. Helpers
-  another module shares go where its callers meet (byte searches in Bytes,
-  a markdown fence in its own module), not in whichever module wrote them
-  first. What a route needs from the request (who is asking, the accounts)
-  is a module of its own too, so the route can leave main.
+  whole, with main only dispatching to it; a rule to audit alone (which
+  `<img>` a page may hold); an effect kept apart from the pure rules the twin
+  tests. Helpers another module shares go where its callers meet (byte
+  searches in Bytes), not in whichever module wrote them first.
 - **A function earns its boundary.** It names a domain concept, hides a
   platform's fiddliness, removes real repetition, or is a pure decision an
   `expect` reaches. A wrapper of a line or two with one caller, or a second
   name for one function, is read better inline: the chat's `docs!` only
   split `/post` from the rest for its one caller, a match whose other arms
-  make the same split in place. A rule of thumb, not a gate: a one-caller
-  function that is a rule's one home, or the public name of a function the
-  twins hold to its Zig, stays.
+  make the same split in place. A rule of thumb: a one-caller function that
+  is a rule's one home, or the public name of a function the twins hold to
+  its Zig, stays, and a `##` doc or an `expect` answers the hunt. A function
+  nothing reaches goes.
 - **A building block never imports a type built from it.** If a narrower
   caller needs the same operation, it uses a builtin or keeps its own call,
-  and a test holds the two equal. A letter-folding module that took
-  `[Written, Strict(StrictName)]` only so strict names could reuse its fold
-  had its dependency backwards; the strict name now lowercases with
+  and a test holds the two equal. A letter-folding module that takes
+  `[Written, Strict(StrictName)]` only so strict names can reuse its fold has
+  its dependency backwards; a strict name lowercases with
   `Str.with_ascii_lowercased`, and a test holds both keys equal.
 - **A function that reads part of a higher layer's record takes an open
   record.** It says exactly which fields the function reads, and the caller
@@ -859,14 +889,12 @@ is the base; these rules sharpen it.
 - **A primitive takes the bytes exactly; the rule around them is the
   Roc's.** The host appends what it is handed (`append!(path, bytes)`,
   answering the size after); whether a torn line needs a newline first, or
-  a feed a separator, the Roc decides from `stat!` and a one-byte
+  a feed a separator, the Roc decides from `read_stat!` and a one-byte
   `read_at!`, in a pure function its `expect`s reach
   (`Files.line_bytes`, `Files.entry_bytes`). One primitive with no rule in
   it replaces one per rule, and the rule is tested where it lives.
 - **A bad name at the seam crashes (a 500) rather than returning `[]`.** An
   empty answer looks like a real one.
-- **Decode the host's answer into types at the door.** See
-  [decode once](#make-wrong-values-impossible-to-build).
 - **A list the host would mirror goes a call at a time.** Rather than a
   list of records crossing the seam (one more mirror for the host to keep,
   and a list it must own and free), the Roc
@@ -941,16 +969,17 @@ is the base; these rules sharpen it.
   on one line, because nobody needs to read them:
 
   ```roc
-  sun_pos : {
-  	heading : Angle.Bearing,
-  	clock : Clock,
-  	cam_focal : F64,
-  } -> Sky.SunPos
-  sun_pos = |{ heading, clock, cam_focal }| {
+  triangle : I64,
+  {
+  	first_corner : Screen.Point,
+  	second_corner : Screen.Point,
+  	third_corner : Screen.Point,
+  } -> Shapes.Shape
+  triangle = |color, { first_corner, second_corner, third_corner }|
   ```
 
   Two items stay side by side, whatever they hold: a pair reads as a pair,
-  like `{ along: Along.metres(33.0), across: Across.metres(-15.0) }` or a
+  like `{ along: Along.metres(33.0), across: Across.metres(-17.0) }` or a
   table's `(agent_added(full, { name: "Bot", owner: zed }), Err(NoSuchOwner))`.
   A row of literals stays side by side too, like
   `[1.0, 2.0, 3.0, 4.0, 5.0, 6.0]`, and may stand stacked. A group with a
@@ -976,14 +1005,13 @@ is the base; these rules sharpen it.
 - **An `if` takes braces, and a body takes no parentheses.** `roc fmt` keeps
   both of an emitter's habits, and adds the parentheses to a braceless `if`
   itself, so `if (x) a else b` is the layout it gives a form we don't write.
+  An `if` that is a lambda's whole body starts its own line, never
+  `|x| if x > 1 {`.
   Parentheses that group an operand stay: a float's order rests on them.
   Parentheses that group nothing go: `a * b + c * d`, not
-  `(a * b) + (c * d)`, and `f(a * b)`, not `f((a * b))`. Roc's tutorial
-  writes `($num * 10) + digit`; ours is shorter, and every reader knows the
-  precedence of `*` and `+`.
-  This is our taste, not Roc's: other guides keep a short `if (x) a else b`
-  on one line, and we find the stacked branches easier to read.
-  Safari holds this at zero; older trees still carry the braceless form.
+  `(a * b) + (c * d)`, and `f(a * b)`, not `f((a * b))`. This is our taste,
+  not Roc's. Safari holds it at zero; older trees still carry the braceless
+  form.
 
   ```roc
   # Not this:
@@ -1068,7 +1096,7 @@ is the base; these rules sharpen it.
   ```roc
   expect room({ held: 90, adding: 9 }) == Fits
   expect room({ held: 90, adding: 11 }) == Overflows
-  expect ["Steve!", "R2D2"].all(|text| named(text) == Err(ForbiddenCharacter))
+  expect ["Steve!", "R2D2"].all(|text| checked_name(text) == Err(ForbiddenCharacter))
   expect
   	[
   		(Class(token("author")), " class=\"author\""),
@@ -1089,52 +1117,48 @@ is the base; these rules sharpen it.
   comment or a string never counts), names each finding `path:line: check:
   why`, and is a question for a reader, not a verdict. Its plants are cases
   it must find and cases it must not, so the hunt itself is tested
-  (`self_test=1`). The ones we run:
-  - Shale's `cookbook/roc/name_hunt.shale`: an effect named as a state or a
-    noun, a question with no Bool, vague names, a name its type contradicts,
-    negative flags, `command_tense` (an effect told what to do in past
-    tense: a tag union with no payloads whose tags all read as done,
-    `[Pinned, Unpinned]`), and `preposition_split` (one noun given
-    different trailing prepositions in one file, `blocks_of` beside
-    `blocks_in`; a matched opposite pair and the `_from` recursion worker
-    are fine), and `phrase_name` (a pure function named as a bare phrase,
-    `in_view`, that gives no Bool and isn't a constructor), and `singular_list`
-    (a list named as one thing, `triangle : List(Shape)`), and `world_verb` (a
-    pure function that pretends to an effect, `draw_tree`), and `where_name` (a
-    `where` method of one word, since a `where` clause matches by name alone).
-    An effect that starts with a preposition (`of!`) is a
-    `noun_effect`. The words are shared files in Shale's `cookbook/words/`,
-    and `words=1` lists every first word an effect starts with, for a
-    reader to scan. Beside the names, `mixed_tense` (an effect handed a
-    union of commands and events at once, `[Pin, Unpinned]`; a `List(T)`
-    argument is judged as `T`, for this and `command_tense`) and
-    `container` (a type or record field named only by container words,
-    `Entry`, `items`, unless its doc says whose: `## A folder's entry`),
-    and `worker_name` (a recursion's worker named only as a helper,
-    `count_acc`, where `count_from` says what it carries), and
-    `taken_word` (a function named only by Roc's own word, `record` or
-    `tag`, or a value only by a number, `three`: part of
-    [naming](#naming)'s "keep Roc's words for Roc");
-  - Shale's `cookbook/roc/boundaries.shale`: `fixed`, a parameter every
-    production call fills with the same literal (a recursion's `at: 0`;
-    context passed down, `me` or `accounts`, is no constant), and `single`,
-    a one-caller wrapper of a line or two that no `expect`, twin or `##`
-    doc keeps (the rule of thumb in [modules](#modules-and-visibility),
-    never a gate);
-  - Shale's `cookbook/roc/errors.shale`: `error_alias` (a result's `Try`
-    whose error is a shared alias, not its tags in place) and
-    `optional_tag` (a tag named as an optional, `None` or `Some`);
-  - Shale's `cookbook/roc/nest_depth.shale`: a call nested three deep or
-    more, read inside out ([layout](#layout-and-formatting));
-  - Shale's `cookbook/roc/parens.shale`: `paren_if` (`if (x) a else b`),
-    `wrapped_body` (`|x| (...)`) and `else_block` (`else { if ... }`), each
-    rewritten by `write=1` ([layout](#layout-and-formatting));
-  - Shale's `cookbook/roc/stack.shale`: a group on one line that should
-    stack, a stacked group that should sit on one line (`unstack`),
+  (`self_test=1`). The recipes are in Shale's `cookbook/roc/`, and the ones we
+  run are:
+  - `name_hunt.shale`, for what [naming](#naming) says: `question`, `negative`,
+    `vague`, `name_type`, `short_name`, `bare_participle`, `taken_word`,
+    `phrase_name`, `singular_list`, `world_verb`, `where_name`, `container`,
+    `preposition_split`, `worker_name` and `stacked_preposition`, and for
+    effects `state_effect`, `noun_effect` (an effect that starts with a noun or
+    a preposition, `of!`), `command_tense` (a union of tags with no payloads, all
+    past tense, `[Pinned, Unpinned]`) and `mixed_tense` (`[Pin, Unpinned]`; a
+    `List(T)` argument is judged as `T`). The words are shared files in Shale's
+    `cookbook/words/`, and `words=1` lists every first word an effect starts
+    with, for a reader to scan;
+  - `plain_names.shale`: `pure_mutator`, `abbreviation` and `module_doc`;
+  - `vocabulary.shale`, `name_types.shale` and `families.shale`, which take a
+    project's own words. `name_types` also holds `no_value` (a constant that
+    means "none", `no_frames`) and `bare_beside_unit` (a field that is a bare
+    number in one record and a unit in another);
+  - `bare_floats.shale`, over the project's table of reasons;
+  - `boundaries.shale`: `fixed`, a parameter every production call fills with
+    the same literal (context passed down, `me` or `accounts`, is no
+    constant); `entry`, the same for a recursion's start; `constant`, a pure
+    function of `{}`; `bool_param`, a flag passed as a Bool, which only
+    `types=1` can see; `dead`, a function nothing reaches; and `single`, a
+    one-caller wrapper of a line or two that no `expect`, twin or `##` doc
+    keeps. Safari's gate holds the five that need no types, and `unused_api`
+    and `same_branches` print as questions;
+  - `errors.shale`: `error_alias` (a result's `Try` whose error is a shared
+    alias, not its tags in place), `optional_tag` (a tag named as an optional,
+    `None` or `Some`), `set_fallback` (`l.set(i, v) ?? l`), `placeholder`
+    (`?? "bogus"`) and `number_fallback` (`l.get(i) ?? 0.0`, which no gate
+    holds yet);
+  - `nest_depth.shale`: a call nested three deep or more, read inside out
+    ([layout](#layout-and-formatting)). The gates run it with `min=4`, so three
+    deep is a reader's question and four deep fails;
+  - `parens.shale`: `paren_if` (`if (x) a else b`), `wrapped_body`
+    (`|x| (...)`), `else_block` (`else { if ... }`) and `lambda_if`
+    (`|x| if x > 1 {`), each rewritten by `write=1`
+    ([layout](#layout-and-formatting));
+  - `stack.shale`: a group on one line that should stack, a stacked group that should sit on one line (`unstack`),
     or a line over 100 columns (`long`; one that only a string literal
     makes long is reported apart as `wide string`, and no gate holds it);
-  - Shale's `cookbook/roc/methods.shale`: an old-style `Module.fn(x, ...)`
-    call the compiler accepts as `x.fn(...)`, rewritten by `apply=1`
+  - `methods.shale`: an old-style `Module.fn(x, ...)` call the compiler accepts as `x.fn(...)`, rewritten by `apply=1`
     ([methods](#make-wrong-values-impossible-to-build)).
 
   A rule added here that a script can check gets a check, and a gate runs
