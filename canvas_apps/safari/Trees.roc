@@ -15,34 +15,9 @@ Trees :: [].{
 	## A tree beside the road: where it stands on its segment, and its kind.
 	RoadsideTree : Geom.Placed(Conifer)
 
-	tree_spacing : Distance
-	tree_spacing = Distance.metres(30.0)
-
-	## How far from the road's edge a tree stands; a gold one, four times
-	## as far.
-	tree_road_offset : Distance
-	tree_road_offset = Distance.metres(1.5)
-
-	## How far into a segment its first pair stands.
-	tree_start_inset : Distance
-	tree_start_inset = Distance.metres(6.0)
-
-	## No pair stands closer than this to a segment's end.
-	tree_end_inset : Distance
-	tree_end_inset = Distance.metres(85.0)
-
-	## The conifer that sets off a scheme's green.
-	accent_conifer : Scenery.Scheme -> Conifer
-	accent_conifer = |scheme|
-		match scheme {
-			GoldGreen => Conifer.Gold
-			RedGreen => Conifer.Red
-			AllGreen => Conifer.SmallGreen
-		}
-
 	## How far from the middle of the road a conifer stands, either side.
-	distance_from_middle : Conifer -> Distance
-	distance_from_middle = |conifer|
+	tree_line_distance : Conifer -> Distance
+	tree_line_distance = |conifer|
 		match conifer {
 			Gold => Geom.road_half_width.plus(tree_road_offset.times(4.0))
 			BigGreen | SmallGreen | Red => Geom.road_half_width.plus(tree_road_offset)
@@ -57,7 +32,7 @@ Trees :: [].{
 		var $conifer = Conifer.BigGreen
 		var $trees = []
 		while $along <= last_along {
-			tree_distance = distance_from_middle($conifer)
+			tree_distance = tree_line_distance($conifer)
 			left_tree = {
 				along: $along,
 				across: Across.left_of_middle(tree_distance),
@@ -76,19 +51,39 @@ Trees :: [].{
 	}
 }
 
-expect Trees.tree_spacing == Distance.metres(30.0)
-expect Trees.tree_road_offset == Distance.metres(1.5)
-expect Trees.tree_start_inset == Distance.metres(6.0)
-expect Trees.tree_end_inset == Distance.metres(85.0)
+tree_spacing : Distance
+tree_spacing = Distance.metres(30.0)
 
-expect Trees.accent_conifer(AllGreen) == Conifer.SmallGreen
-expect Trees.accent_conifer(GoldGreen) == Conifer.Gold
-expect Trees.accent_conifer(RedGreen) == Conifer.Red
+## How far from the road's edge a tree stands; a gold one, four times
+## as far.
+tree_road_offset : Distance
+tree_road_offset = Distance.metres(1.5)
 
-expect Trees.distance_from_middle(Conifer.BigGreen).to_metres() == 3.5
-expect Trees.distance_from_middle(Conifer.SmallGreen).to_metres() == 3.5
-expect Trees.distance_from_middle(Conifer.Red).to_metres() == 3.5
-expect Trees.distance_from_middle(Conifer.Gold).to_metres() == 8.0
+## How far into a segment its first pair stands.
+tree_start_inset : Distance
+tree_start_inset = Distance.metres(6.0)
+
+## No pair stands closer than this to a segment's end.
+tree_end_inset : Distance
+tree_end_inset = Distance.metres(85.0)
+
+## The conifer that sets off a scheme's green.
+accent_conifer : Scenery.Scheme -> Conifer
+accent_conifer = |scheme|
+	match scheme {
+		GoldGreen => Conifer.Gold
+		RedGreen => Conifer.Red
+		AllGreen => Conifer.SmallGreen
+	}
+
+expect accent_conifer(AllGreen) == Conifer.SmallGreen
+expect accent_conifer(GoldGreen) == Conifer.Gold
+expect accent_conifer(RedGreen) == Conifer.Red
+
+expect Trees.tree_line_distance(Conifer.BigGreen).to_metres() == 3.5
+expect Trees.tree_line_distance(Conifer.SmallGreen).to_metres() == 3.5
+expect Trees.tree_line_distance(Conifer.Red).to_metres() == 3.5
+expect Trees.tree_line_distance(Conifer.Gold).to_metres() == 8.0
 
 ## Seven pairs, alternating big green and gold.
 gold_green_trees : List(Trees.RoadsideTree)
