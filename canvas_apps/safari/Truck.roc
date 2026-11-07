@@ -86,7 +86,7 @@ next_bend = |route, route_position|
 				Bends({ turn, .. }) =>
 					BendAhead({
 						distance: end.minus(route_position),
-						turn_speed: VehicleLimits.turn_speed(turn.abs()),
+						turn_speed: VehicleLimits.turn_speed(turn),
 					})
 				RouteEnds => NoBendAhead
 			}
@@ -200,7 +200,7 @@ expect turn_v(World.route, 0.0) == 0.222
 expect turn_v(World.route, 450.0) == 0.222
 expect {
 	first_turn = World.route.segment_at(Route.SegmentIndex.number(0)).bend_out_of().turn
-	VehicleLimits.turn_speed(first_turn.abs()).to_metres_a_step() == 0.222
+	VehicleLimits.turn_speed(first_turn).to_metres_a_step() == 0.222
 }
 
 # The route's last segment, from 7220 m to its end at 7520 m, ends in no turn.

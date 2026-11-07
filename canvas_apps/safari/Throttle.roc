@@ -30,6 +30,15 @@ Throttle :: [].{
 		limited = limits.fold(offered, held_to)
 		allowed_speed(motorcycle.speed.accelerated_by(limited))
 	}
+
+	## The speed to leave `seg` at: the speed for its bend, or rest at the
+	## route's end.
+	exit_speed : Segment -> Speed
+	exit_speed = |seg|
+		match seg.ending {
+			Bends({ turn, .. }) => VehicleLimits.turn_speed(turn)
+			RouteEnds => Speed.at_rest
+		}
 }
 
 brake_decay : Steps
@@ -43,15 +52,6 @@ held_to = |a, limit|
 		NoLimit => a
 	}
 
-## The speed to leave `seg` at: the speed for its bend, or rest at the route's
-## end.
-exit_speed : Segment -> Speed
-exit_speed = |seg|
-	match seg.ending {
-		Bends({ turn, .. }) => VehicleLimits.turn_speed(turn.abs())
-		RouteEnds => Speed.at_rest
-	}
-
 ## Whether the motorcycle is near enough the end of `seg` to brake for its bend.
 is_near_end : Motorcycle, Segment -> Bool
 is_near_end = |motorcycle, seg|
@@ -63,7 +63,7 @@ is_near_end = |motorcycle, seg|
 bend_limit : Motorcycle, Segment -> VehicleLimits.Limit
 bend_limit = |motorcycle, seg|
 	if is_near_end(motorcycle, seg) {
-		v_end = exit_speed(seg)
+		v_end = Throttle.exit_speed(seg)
 		d = seg.commit_along().distance_from(motorcycle.along)
 		bend_a =
 			if d <= VehicleLimits.least_braking_distance {
@@ -120,8 +120,8 @@ expect held_to(acceleration_of(-0.5), NoLimit) == acceleration_of(-0.5)
 expect held_to(acceleration_of(0.01), AtMost(acceleration_of(-0.5))) == acceleration_of(-0.5)
 expect held_to(acceleration_of(-0.5), AtMost(Acceleration.steady)) == acceleration_of(-0.5)
 
-expect exit_speed(first_segment).to_metres_a_step() == 0.222
-expect exit_speed(World.route.segment_at(Route.SegmentIndex.number(18))) == Speed.at_rest
+expect Throttle.exit_speed(first_segment).to_metres_a_step() == 0.222
+expect Throttle.exit_speed(World.route.segment_at(Route.SegmentIndex.number(18))) == Speed.at_rest
 
 expect !is_near_end(centred_motorcycle(439.9, 0.3), first_segment)
 expect is_near_end(centred_motorcycle(440.0, 0.3), first_segment)

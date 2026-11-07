@@ -657,21 +657,13 @@ expect farthest_start.to_metres() == 98.0
 expect farthest_start < Segment.cat_along.plus(CatCrossing.cat_beyond_tree).from_start()
 expect route_cats.all(|{ crossing, .. }| farthest_start < crossing.along.from_start())
 
-## The speed a rider leaves `segment` at: the bend's, or none at the route's end.
-leaving_speed : Segment -> Speed
-leaving_speed = |segment|
-	match segment.ending {
-		Bends({ turn, .. }) => VehicleLimits.turn_speed(turn.abs())
-		RouteEnds => Speed.at_rest
-	}
-
 # The reaction ends with its segment, so the cat's hold has to have faded by then
 # or it would snap to nothing there. Braking for the bend only hurries the fade.
 expect
 	route_cats.all(
 		|{ segment, crossing }| {
 			gap = crossing.along.distance_from(Along.at(segment.length))
-			Cat.attention({ gap, speed: leaving_speed(segment) }).to_f64() == 0.0
+			Cat.attention({ gap, speed: Throttle.exit_speed(segment) }).to_f64() == 0.0
 		},
 	)
 
