@@ -12,12 +12,6 @@ Coast :: [].{
 	## a shoulder after this many steps, counting the step that leaves.
 	Outcome : [EndsAt(Across), Leaves({ side : [Left, Right], after : Steps })]
 
-	## How far inside each shoulder the rehearsal puts the road's edge: 5 cm.
-	## A coast that crosses this inset edge counts as leaving the road, so the
-	## line the search keeps never grazes the shoulder itself.
-	shoulder_margin : Distance
-	shoulder_margin = Distance.metres(0.05)
-
 	## How far ahead the rehearsal needs to look: 25 m along the road. A coast
 	## that runs this far without leaving the road ends there.
 	clear_distance : Distance
@@ -42,7 +36,7 @@ Coast :: [].{
 ## it.
 coast_keeping : Motorcycle, [KeepPath, DropPath] -> Coast.Path
 coast_keeping = |state, keeping| {
-	inset_hw = Geom.road_half_width.minus(Coast.shoulder_margin)
+	inset_hw = Geom.road_half_width.minus(shoulder_margin)
 	right_bound = Across.right_of_middle(inset_hw).max(state.across)
 	left_bound = Across.left_of_middle(inset_hw).min(state.across)
 	var $rider = state
@@ -68,6 +62,12 @@ coast_keeping = |state, keeping| {
 	}
 	{ outcome: EndsAt($rider.across), path_motorcycles: $path }
 }
+
+## How far inside each shoulder the rehearsal puts the road's edge: 5 cm.
+## A coast that crosses this inset edge counts as leaving the road, so the
+## line the search keeps never grazes the shoulder itself.
+shoulder_margin : Distance
+shoulder_margin = Distance.metres(0.05)
 
 ## A slow rider who leans can circle on the road and never get clear of where
 ## they started, so a coast ends after this many steps.

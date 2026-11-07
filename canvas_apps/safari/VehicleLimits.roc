@@ -20,10 +20,6 @@ VehicleLimits :: [].{
 	top_speed : Speed
 	top_speed = Speed.metres_a_step(2.5)
 
-	## How far short of a segment's end the rider starts to brake for its bend.
-	bend_approach : Distance
-	bend_approach = Distance.metres(60.0)
-
 	## The acceleration that brings `speed` to `target` within a distance. A
 	## target closer than `least_braking_distance` counts as reached, and the
 	## speed holds. That keeps the division off zero, and it has a second job:

@@ -5,6 +5,7 @@ import Acceleration
 import Along
 import Angle
 import Coast
+import Distance
 import EncounterReaction
 import Gawking
 import Motorcycle
@@ -55,7 +56,11 @@ held_to = |a, limit|
 ## Whether the motorcycle is near enough the end of `seg` to brake for its bend.
 is_near_end : Motorcycle, Segment -> Bool
 is_near_end = |motorcycle, seg|
-	Along.at(seg.length).distance_from(motorcycle.along) <= VehicleLimits.bend_approach
+	Along.at(seg.length).distance_from(motorcycle.along) <= bend_approach
+
+## How far short of a segment's end the rider starts to brake for its bend.
+bend_approach : Distance
+bend_approach = Distance.metres(60.0)
 
 ## Near the end of the segment, the brake that brings the rider to the exit
 ## speed at the point where they commit to the turn. Past that point there is
