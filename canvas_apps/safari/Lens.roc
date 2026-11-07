@@ -55,7 +55,7 @@ Lens :: [].{
 	## gives the wider view. A lean to either side widens it alike.
 	cam_focal : { lean : Angle.Lean, attention : Attention } -> Pixels
 	cam_focal = |{ lean, attention }| {
-		lean_fraction = Fraction.clamp(lean.to_radians().abs() / full_lean.to_radians())
+		lean_fraction = Fraction.clamp(lean.abs().portion(full_lean))
 		for_lean = focal_for_lean(lean_fraction)
 		for_attention = focal_for_attention(attention)
 		if for_lean < for_attention {

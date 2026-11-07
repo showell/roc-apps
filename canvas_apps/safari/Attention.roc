@@ -26,8 +26,8 @@ Attention :: F64.{
 	none = Attention.(0.0)
 
 	## This fraction of this attention.
-	portion : Attention, Fraction -> Attention
-	portion = |Attention.(a), fraction| Attention.(fraction.to_f64() * a)
+	scaled_by : Attention, Fraction -> Attention
+	scaled_by = |Attention.(a), fraction| Attention.(fraction.to_f64() * a)
 
 	## The stronger of this attention and `other`.
 	max : Attention, Attention -> Attention
@@ -40,6 +40,6 @@ expect Attention.none.to_f64() == 0.0
 expect Attention.of(1.8).to_f64() == 1.8
 expect Attention.of(0.0) == Attention.none
 expect Attention.from_fraction(Fraction.of(0.5)).to_f64() == 0.5
-expect Attention.of(1.8).portion(Fraction.of(0.5)).to_f64() == 0.9
+expect Attention.of(1.8).scaled_by(Fraction.of(0.5)).to_f64() == 0.9
 expect Attention.of(0.3).max(Attention.of(1.4)).to_f64() == 1.4
 expect Attention.of(1.4).max(Attention.of(0.3)).to_f64() == 1.4

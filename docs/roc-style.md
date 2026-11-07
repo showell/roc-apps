@@ -85,7 +85,7 @@ Roc's own rules are in the langref's
   `phrase_name` reports a pure function that starts with a preposition and
   gives no Bool. Three kinds pass, because each reads as what it is: a
   constructor that gives its own module's type (`Clock.at_step`), a conversion
-  (`Along.to_metres`, `Fraction.from_ratio`), and a changed copy that gives its
+  (`Along.to_metres`, `Attention.from_fraction`), and a changed copy that gives its
   first argument's type (`Bike.with_lean`). A `from_*` is a conversion when it
   takes or gives its own module's type, even inside a record, a union or a
   `Try`'s success; in a `[].{}` module, which has no type to take or give, any
@@ -410,7 +410,7 @@ Roc's own rules are in the langref's
   Distance.metres((w * w + h * h).sqrt())
   ```
 - **A closed set that needs no checking is nominal, not opaque.** Every
-  value of `Conifer := [BigGreen, SmallGreen, Red, Gold]` is valid, so there
+  value of `Conifer := [Green, SmallGreen, Red, Gold]` is valid, so there
   is nothing to guard, and callers write `Conifer.Red`. Opaque is for
   values a constructor must check.
 - **Use an opaque type (`::`) for anything validated.** Only its own module
