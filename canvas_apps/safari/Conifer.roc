@@ -1,6 +1,6 @@
-## A conifer's kind, which sets its height, from the ground to the tip of its
-## crown, where a bird perches, and its color. `TreeShapes` draws a tree of that
-## height and color, and where it stands beside a road comes from `Trees`.
+## Conifer is a kind of tree. It sets the tree's height, from the ground to the
+## tip where a bird perches, and its color. TreeShapes draws it, and Trees places
+## it beside the road.
 import Distance
 import Picture
 import TreeShapes

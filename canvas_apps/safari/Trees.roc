@@ -1,6 +1,6 @@
 ## Trees places a segment's roadside conifers: a tree each side of the road
 ## every 30 m, from just past the segment's start to well short of its end.
-## The pairs alternate between big green trees and the segment's accent, which
+## The pairs alternate between green trees and the segment's accent, which
 ## is small and green, or red, or gold, and a gold tree stands farther from the
 ## road.
 import Across
@@ -86,7 +86,7 @@ expect Trees.tree_line_distance(Conifer.SmallGreen).to_metres() == 3.5
 expect Trees.tree_line_distance(Conifer.Red).to_metres() == 3.5
 expect Trees.tree_line_distance(Conifer.Gold).to_metres() == 8.0
 
-## Seven pairs, alternating big green and gold.
+## Seven pairs, alternating green and gold.
 gold_green_trees : List(Trees.RoadsideTree)
 gold_green_trees = Trees.roadside_trees({ scheme: GoldGreen, length: Distance.metres(300.0) })
 

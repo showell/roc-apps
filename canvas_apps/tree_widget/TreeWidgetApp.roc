@@ -135,8 +135,11 @@ is_plain_to_see : Stand -> Bool
 is_plain_to_see = |stand|
 	match stand_foot(stand) {
 		Ok(foot) => {
-			tip = foot.at_height(conifer.scenery_height())
-			outline = TreeShapes.tree_outline({ tip, lift: Distance.zero, cam_focal: Lens.resting_focal })
+			outline = TreeShapes.tree_outline({
+				base: foot.at_height(Distance.zero),
+				height: conifer.scenery_height(),
+				cam_focal: Lens.resting_focal,
+			})
 			foot_y = outline.foot.y.to_f64() * canvas_per_screen
 			tip_y = foot_y - outline.height.to_f64() * canvas_per_screen
 			x = outline.foot.x.to_f64() * canvas_per_screen

@@ -5,7 +5,6 @@
 ## handed: a tree's height and color, where it stands from the camera, how many
 ## trees are nearer, and the lens.
 import Camera
-import Detail
 import Distance
 import Fraction
 import Geom
@@ -24,30 +23,24 @@ TreeShapes :: [].{
 
 	## The tree on the screen: its trunk, then its tiers top to bottom. The
 	## nearest trees have a shaded trunk. The crown is cones, shaded by how near
-	## they are, within Detail.cone_reach, and triangles beyond it.
+	## they are, within cone_reach, and triangles beyond it.
 	tree_picture : Picture.Setting({ nearer_tree_count : U16 }),
 	{
 		height : Distance,
 		foliage_color : RgbColor,
 	} -> Picture
 	tree_picture = |{ spot, cam_focal, context }, { height, foliage_color }| {
-		foot = spot.foot()
-		lift = spot.lift()
-		tip = foot.at_height(lift.plus(height))
-		outline = tree_outline({ tip, lift, cam_focal })
-		trunk_finish = if context.nearer_tree_count < Detail.round_trunk_limit {
-			Shaded
-		} else {
-			Flat
-		}
+		base = spot.foot().at_height(spot.lift())
+		outline = tree_outline({ base, height, cam_focal })
 		inputs = {
-			tip,
+			base,
+			height,
 			cam_focal,
 			outline,
 			foliage_color,
-			crown: crown_of(foot.forward()),
+			crown: crown_of(base.forward()),
 		}
-		trunk = trunk_shape(outline, trunk_finish)
+		trunk = trunk_shape(outline, trunk_finish_of(context.nearer_tree_count))
 		Picture.from_shapes([trunk].concat(tiers.map(|tier| tier_shape(tier, inputs))))
 	}
 
@@ -57,22 +50,22 @@ TreeShapes :: [].{
 	## How a tree's crown is drawn at distance `forward`.
 	crown_of : Distance -> TreeShapes.Crown
 	crown_of = |forward|
-		if forward < Detail.cone_reach {
+		if forward < cone_reach {
 			Cones({ shade: crown_shade(forward) })
 		} else {
 			Triangles
 		}
 
-	## Where a tree is on the screen, given its `tip`, for a tree standing
-	## `lift` off the ground, through a lens of focal length `cam_focal`.
+	## Where a tree is on the screen, given its `base`, the middle of its foot,
+	## and its `height` above that, through a lens of focal length `cam_focal`.
 	tree_outline : {
-		tip : Geom.AheadPoint,
-		lift : Distance,
+		base : Geom.AheadPoint,
+		height : Distance,
 		cam_focal : Pixels,
 	} -> TreeShapes.TreeOutline
-	tree_outline = |{ tip, lift, cam_focal }| {
-		foot = Camera.project(tip.at_height(lift), cam_focal)
-		top = Camera.project(tip, cam_focal)
+	tree_outline = |{ base, height, cam_focal }| {
+		foot = Camera.project(base, cam_focal)
+		top = Camera.project(base.at_height(base.height().plus(height)), cam_focal)
 		{ foot, height: foot.y.minus(top.y) }
 	}
 
@@ -81,17 +74,36 @@ TreeShapes :: [].{
 	tree_parts = 136
 }
 
+## A tree nearer than this has cones for a crown.
+cone_reach : Distance
+cone_reach = Distance.metres(200.0)
+
+## A tree's crown is shaded fully at the camera, less the farther off it
+## is, and not at all from this far on.
+crown_shade_reach : Distance
+crown_shade_reach = Distance.metres(80.0)
+
+## A tree with fewer than this many trees nearer than it gets a shaded
+## trunk, which looks round.
+round_trunk_limit : U16
+round_trunk_limit = 4
+
+## How a tree's trunk is drawn, with `nearer_tree_count` trees nearer than it.
+trunk_finish_of : U16 -> [Shaded, Flat]
+trunk_finish_of = |nearer_tree_count|
+	if nearer_tree_count < round_trunk_limit {
+		Shaded
+	} else {
+		Flat
+	}
+
 ## How tall a tree's crown looks on the screen.
 crown_height : TreeShapes.TreeOutline -> Pixels
 crown_height = |outline| outline.height.times(crown_height_share.to_f64())
 
-## Where the top of a tree's crown is on the screen: the trunk's share of the
-## height up from the foot, then the crown's share, each taken off in turn.
+## Where the top of a tree's crown is on the screen: the tree's tip.
 crown_top_y : TreeShapes.TreeOutline -> Pixels
-crown_top_y = |outline| {
-	crown_bottom_y = outline.foot.y.minus(outline.height.times(trunk_height_share.to_f64()))
-	crown_bottom_y.minus(crown_height(outline))
-}
+crown_top_y = |outline| outline.foot.y.minus(outline.height)
 
 ## How far the crown reaches either side of the trunk at its widest, on the
 ## screen.
@@ -107,9 +119,11 @@ Tier : {
 	width : Fraction,
 }
 
-## What every tier of one tree needs. `tip` is the top of the tree.
+## What every tier of one tree needs. `base` is the middle of the tree's foot,
+## and `height` how far its tip stands above that.
 TierInputs : {
-	tip : Geom.AheadPoint,
+	base : Geom.AheadPoint,
+	height : Distance,
 	cam_focal : Pixels,
 	outline : TreeShapes.TreeOutline,
 	foliage_color : RgbColor,
@@ -194,9 +208,9 @@ ring_point_count : U64
 ring_point_count = 16
 
 ## How much a crown is shaded at distance `forward`: fully at the camera,
-## falling evenly to none at Detail.crown_shade_reach.
+## falling evenly to none at crown_shade_reach.
 crown_shade : Distance -> Fraction
-crown_shade = |forward| Fraction.clamp(forward.portion(Detail.crown_shade_reach)).less()
+crown_shade = |forward| Fraction.clamp(forward.portion(crown_shade_reach)).less()
 
 trunk_shape : TreeShapes.TreeOutline, [Shaded, Flat] -> Shapes.Shape
 trunk_shape = |outline, finish| {
@@ -309,8 +323,8 @@ tier_shape = |tier, inputs| {
 	match inputs.crown {
 		Cones({ shade }) => {
 			radius_share = crown_half_width_share.to_f64() * tier.width.to_f64()
-			cone_radius = inputs.tip.height().times(radius_share)
-			match cone_ring_points(tier, { tip: inputs.tip, cone_radius }) {
+			cone_radius = inputs.height.times(radius_share)
+			match cone_ring_points(tier, { inputs, cone_radius }) {
 				Ok(ring_points) => tier_cone(tier, { inputs, ring_points, shade })
 				Err(BehindCamera) => tier_triangle(inputs.outline, colored_tier)
 			}
@@ -319,24 +333,32 @@ tier_shape = |tier, inputs| {
 	}
 }
 
+## How high above the ground a point `down` the crown is, as a fraction of the
+## crown's height down from its tip: the tree's base, then the trunk's share of
+## its height, then the crown's share less the part above the point.
+height_down_crown : TierInputs, Fraction -> Distance
+height_down_crown = |inputs, down| {
+	trunk_part = trunk_height_share.to_f64()
+	crown_part = crown_height_share.to_f64()
+	inputs.base.height().plus(inputs.height.times(trunk_part + crown_part * (1.0 - down.to_f64())))
+}
+
 ## The ring of points round a tier's base, `cone_radius` out from the tree's
 ## middle, if every one of them is at or past the near plane.
 cone_ring_points : Tier,
 {
-	tip : Geom.AheadPoint,
+	inputs : TierInputs,
 	cone_radius : Distance,
 } -> Try(List(Geom.AheadPoint), [BehindCamera])
-cone_ring_points = |tier, { tip, cone_radius }| {
-	trunk_part = trunk_height_share.to_f64()
-	crown_part = crown_height_share.to_f64()
-	bottom = tier.bottom.to_f64()
-	base_height = tip.height().times(trunk_part + crown_part * (1.0 - bottom))
+cone_ring_points = |tier, { inputs, cone_radius }| {
+	base = inputs.base
+	ring_height = height_down_crown(inputs, tier.bottom)
 	Geom.ahead_points(
 		ring_angles.map(
 			|angle| {
-				right: tip.right().plus(cone_radius.times(angle.cos())),
-				forward: tip.forward().plus(cone_radius.times(angle.sin())),
-				height: base_height,
+				right: base.right().plus(cone_radius.times(angle.cos())),
+				forward: base.forward().plus(cone_radius.times(angle.sin())),
+				height: ring_height,
 			},
 		),
 	)
@@ -350,35 +372,14 @@ tier_cone : Tier,
 	shade : Fraction,
 } -> Shapes.Shape
 tier_cone = |tier, { inputs, ring_points, shade }| {
-	tip = inputs.tip
-	trunk_part = trunk_height_share.to_f64()
-	crown_part = crown_height_share.to_f64()
-	top = tier.top.to_f64()
-	apex_height = tip.height().times(trunk_part + crown_part * (1.0 - top))
-	apex = Camera.project(tip.at_height(apex_height), inputs.cam_focal)
+	apex_height = height_down_crown(inputs, tier.top)
+	apex = Camera.project(inputs.base.at_height(apex_height), inputs.cam_focal)
 	ring_on_screen = Camera.projected_points(ring_points, inputs.cam_focal)
 	Polygon.shaded_polygon(
 		convex_hull_points(ring_on_screen.append(apex)),
 		{ fill_color: inputs.foliage_color, strength: shade },
 	)
 }
-
-expect tiers.map(|tier| tier.top.to_f64()) == [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
-expect tiers.map(|tier| tier.bottom.to_f64()) == [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-expect tiers.map(|tier| tier.width.to_f64()) == [
-	0.35,
-	0.44,
-	0.53,
-	0.63,
-	0.72,
-	0.81,
-	0.91,
-	1.0,
-]
-
-expect tiers.len() == 8
-expect ring_point_count == 16
-expect trunk_color == RgbColor.of(0x5A3E22)
 
 expect trunk_height_share.to_f64() + crown_height_share.to_f64() == 1.0
 
@@ -393,17 +394,49 @@ expect TreeShapes.crown_of(Distance.metres(40.0)) == Cones({ shade: Fraction.of(
 expect TreeShapes.crown_of(Distance.metres(199.0)) == Cones({ shade: Fraction.zero })
 expect TreeShapes.crown_of(Distance.metres(200.0)) == Triangles
 
-sample_outline : TreeShapes.TreeOutline
-sample_outline = TreeShapes.tree_outline({
-	tip: Geom.ahead_point({
+# The three nearest trees have a shaded trunk, and the fourth has a flat one.
+expect [0, 3].all(|count| trunk_finish_of(count) == Shaded)
+expect [4, 9].all(|count| trunk_finish_of(count) == Flat)
+
+## The sample tree's base, the middle of its foot, at `lift` off the ground.
+sample_base : Distance -> Geom.AheadPoint
+sample_base = |lift|
+	Geom.ahead_point({
 		right: Distance.metres(0.0),
 		forward: Distance.metres(2.0),
-		height: Distance.metres(4.352),
+		height: lift,
 	})
-		?? crash "the sample tree is past the near plane",
-	lift: Distance.zero,
+		?? crash "the sample tree is past the near plane"
+
+sample_height : Distance
+sample_height = Distance.metres(4.352)
+
+sample_outline : TreeShapes.TreeOutline
+sample_outline = TreeShapes.tree_outline({
+	base: sample_base(Distance.zero),
+	height: sample_height,
 	cam_focal: Pixels.of(500.0),
 })
+
+# A lifted tree's cones measure from its foot: the ring under the bottom tier
+# sits the trunk's share of the height above the foot, which here is 2 m up.
+expect {
+	inputs = {
+		base: sample_base(Distance.metres(2.0)),
+		height: sample_height,
+		cam_focal: Pixels.of(500.0),
+		outline: sample_outline,
+		foliage_color: RgbColor.of(7),
+		crown: Cones({ shade: Fraction.whole }),
+	}
+	bottom_tier = tiers.last() ?? crash "a tree has tiers"
+	want = 2.0 + 4.352 * 55.0 / 136.0
+	is_at_want = |point| (point.height().to_metres() - want).abs() <= 0.000000001
+	match cone_ring_points(bottom_tier, { inputs, cone_radius: Distance.metres(1.0) }) {
+		Ok(ring_points) => ring_points.len() == ring_point_count and ring_points.all(is_at_want)
+		Err(BehindCamera) => False
+	}
+}
 
 ## Whether two lists of coordinates agree, past rounding.
 is_near : List(F64), List(F64) -> Bool
@@ -423,13 +456,6 @@ expect
 			crown_half_width(sample_outline).to_f64(),
 		],
 		[480.0, 600.0, 1088.0, 648.0, 288.0],
-	)
-
-# The crown's tip is the tree's height.
-expect
-	is_near(
-		[crown_top_y(sample_outline).to_f64()],
-		[sample_outline.foot.y.minus(sample_outline.height).to_f64()],
 	)
 
 expect

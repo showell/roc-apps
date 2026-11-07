@@ -24,7 +24,6 @@ package
 		CrossingReaction,
 		CrossingSighting,
 		DepthSort,
-		Detail,
 		Distance,
 		EmojiStills,
 		Fraction,
