@@ -10,7 +10,7 @@ import game.Pixels
 import game.Across
 import game.Along
 import game.Angle
-import game.BendView
+import game.BendInView
 import game.Billboard
 import game.BirdFlight
 import game.Cat
@@ -238,13 +238,13 @@ segment_in_view_behind = |road_view|
 apex_after_turn : Angle.Turn -> Geom.RiderPoint
 apex_after_turn = |turn| {
 	road_view = road_past_bend(turn)
-	bend_view = BendView.of_in_view(segment_in_view_behind(road_view))
+	bend_in_view = BendInView.of_in_view(segment_in_view_behind(road_view))
 	RoadAhead.rider_point_at(
 		road_view,
 		{
 			vantage: turned_vantage,
-			place: bend_view.before,
-			road_point: bend_view.outer_corner().apex,
+			place: bend_in_view.before,
+			road_point: bend_in_view.outer_corner().apex,
 		},
 	)
 }

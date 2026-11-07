@@ -9,7 +9,7 @@ import RoadAhead
 import SegmentPlace
 import Geom
 import GuardRail
-import BendView
+import BendInView
 
 RailSighting :: [].{
 
@@ -19,8 +19,8 @@ RailSighting :: [].{
 	rails_in_view = |road, camera|
 		RoadAhead.segments_in_view(road).join_map(
 			|in_view|
-				match BendView.bend_after(road, in_view) {
-					Ok(bend_view) => rails_at(road, { vantage: camera.vantage, bend_view })
+				match BendInView.bend_after(road, in_view) {
+					Ok(bend_in_view) => rails_at(road, { vantage: camera.vantage, bend_in_view })
 					Err(RoadEndsInView) => []
 				},
 		)
@@ -118,12 +118,12 @@ leg_points = |{ from, to }| {
 	evenly_spaced({ from, to, pieces }).drop_first(1)
 }
 
-## The guard rail at `bend_view`, as quads along its path. It stands alone so
+## The guard rail at `bend_in_view`, as quads along its path. It stands alone so
 ## the tutorial can show the step from a bend to its rail by itself.
 rails_at : RoadAhead.RoadView,
 {
 	vantage : Geom.Vantage,
-	bend_view : BendView,
+	bend_in_view : BendInView,
 } -> List(GuardRail.RailQuad)
 rails_at = |road, seen| GuardRail.quads_along(rail_points(road, seen))
 
@@ -133,16 +133,16 @@ rails_at = |road, seen| GuardRail.quads_along(rail_points(road, seen))
 rail_points : RoadAhead.RoadView,
 {
 	vantage : Geom.Vantage,
-	bend_view : BendView,
+	bend_in_view : BendInView,
 } -> List(Geom.RiderPoint)
-rail_points = |road, { vantage, bend_view }| {
-	outer_edge = bend_view.outer_edge()
-	place_after = Ahead(BendView.position_after(bend_view))
-	length_before = bend_view.bend.segment_length
-	corner = bend_view.outer_corner()
+rail_points = |road, { vantage, bend_in_view }| {
+	outer_edge = bend_in_view.outer_edge()
+	place_after = Ahead(BendInView.position_after(bend_in_view))
+	length_before = bend_in_view.bend.segment_length
+	corner = bend_in_view.outer_corner()
 	seen_before = |road_point| RoadAhead.rider_point_at(
 		road,
-		{ vantage, place: bend_view.before, road_point },
+		{ vantage, place: bend_in_view.before, road_point },
 	)
 	end_before = seen_before(corner.end_before)
 	apex = seen_before(corner.apex)
@@ -152,7 +152,7 @@ rail_points = |road, { vantage, bend_view }| {
 			road,
 			{
 				vantage,
-				place: bend_view.before,
+				place: bend_in_view.before,
 				length: length_before,
 				across: outer_edge,
 			},

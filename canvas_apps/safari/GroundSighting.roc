@@ -10,7 +10,7 @@ import Segment
 import SegmentPlace
 import Geom
 import Ground
-import BendView
+import BendInView
 import Pond
 import lib.RgbColor
 
@@ -84,10 +84,10 @@ chunk_end = |segment_length, chunk_number| {
 }
 
 ## How long the segment after a bend is.
-length_after : RoadAhead.RoadView, BendView -> Distance
-length_after = |road, bend_view| RoadAhead.segment_at(
+length_after : RoadAhead.RoadView, BendInView -> Distance
+length_after = |road, bend_in_view| RoadAhead.segment_at(
 	road,
-	BendView.position_after(bend_view),
+	BendInView.position_after(bend_in_view),
 ).length
 
 ## A patch of road with these corners.
@@ -115,8 +115,8 @@ ground_patches = |road, { vantage, in_view }| {
 			JustBehind => []
 		}
 	bend =
-		match BendView.bend_after(road, in_view) {
-			Ok(bend_view) => [bend_paving(road, { vantage, bend_view })]
+		match BendInView.bend_after(road, in_view) {
+			Ok(bend_in_view) => [bend_paving(road, { vantage, bend_in_view })]
 			Err(RoadEndsInView) => []
 		}
 	[
@@ -135,33 +135,37 @@ ground_patches = |road, { vantage, in_view }| {
 ## road over road, and no seam shows. The paving takes in the first chunk after
 ## the bend for that reason, though that road is laid anyway, and it ends where
 ## that chunk ends, so its edges there are the road's own.
-bend_paving : RoadAhead.RoadView, { vantage : Geom.Vantage, bend_view : BendView } -> Ground.Patch
-bend_paving = |road, { vantage, bend_view }| {
-	length_before = bend_view.bend.segment_length
+bend_paving : RoadAhead.RoadView,
+{
+	vantage : Geom.Vantage,
+	bend_in_view : BendInView,
+} -> Ground.Patch
+bend_paving = |road, { vantage, bend_in_view }| {
+	length_before = bend_in_view.bend.segment_length
 	seen_before = |road_point| RoadAhead.rider_point_at(
 		road,
-		{ vantage, place: bend_view.before, road_point },
+		{ vantage, place: bend_in_view.before, road_point },
 	)
 	before = |along, across| seen_before({ along, across })
 	after = |along, across| RoadAhead.rider_point_at(
 		road,
 		{
 			vantage,
-			place: Ahead(BendView.position_after(bend_view)),
+			place: Ahead(BendInView.position_after(bend_in_view)),
 			road_point: { along, across },
 		},
 	)
 	lead_start = Along.at(length_before.minus(lead_in_length))
 	end = Along.at(length_before)
-	lead_end = chunk_end(length_after(road, bend_view), 1)
-	corner = bend_view.outer_corner()
+	lead_end = chunk_end(length_after(road, bend_in_view), 1)
+	corner = bend_in_view.outer_corner()
 	end_before = seen_before(corner.end_before)
 	apex = seen_before(corner.apex)
 	start_after = seen_before(corner.start_after)
-	outer = bend_view.outer_edge()
-	inner = bend_view.inner_edge()
+	outer = bend_in_view.outer_edge()
+	inner = bend_in_view.inner_edge()
 	corners =
-		if bend_view.turn().is_right() {
+		if bend_in_view.turn().is_right() {
 			[
 				before(lead_start, outer),
 				end_before,

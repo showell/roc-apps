@@ -936,15 +936,15 @@ Everything in this chapter is measured from the rider, as the trees were.
 
 A bend is a small record.
 
-{{code BendView.BendView from "A bend as the rider sees it" to "}.{"}}
+{{code BendInView.BendInView from "A bend as the rider sees it" to "}.{"}}
 
 `before` and `after` say where the two segments lie from the rider. The turn is positive to the right.
 
-{{code BendView.outer_edge}}
+{{code BendInView.outer_edge}}
 
 A bend to the right has its outer edge on the left. That's why the rail changes sides between the first two bends.
 
-{{code BendView.outer_corner}}
+{{code BendInView.outer_corner}}
 
 `point_before` and `point_after` are closures. Each gives a call with four arguments a short name, so the two lines below them read alike. Each line runs along the outer edge of one segment, and `Geom.line_crossing` finds where the two cross. That's the yellow dot.
 

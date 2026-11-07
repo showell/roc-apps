@@ -10,7 +10,7 @@ package
 		Animation,
 		Backdrop,
 		Beacon,
-		BendView,
+		BendInView,
 		Billboard,
 		BillboardSighting,
 		BirdFlight,

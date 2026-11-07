@@ -20,9 +20,7 @@ RoadAhead :: [].{
 		## far as the rider can see, or to the route's end.
 		ahead_of : Route, Route.SegmentIndex -> RoadAhead.RoadView
 		ahead_of = |route, rider_index|
-			RoadAhead.RoadView.(
-				{ route, segments_ahead: RoadAhead.indices_ahead(route, rider_index) },
-			)
+			RoadAhead.RoadView.({ route, segments_ahead: segments_ahead_of(route, rider_index) })
 
 		## The route the road is on.
 		route : RoadAhead.RoadView -> Route
@@ -57,10 +55,6 @@ RoadAhead :: [].{
 	## The segment at `position` on the road ahead.
 	segment_at : RoadAhead.RoadView, SegmentPlace.Position -> Segment
 	segment_at = |road, position| road.route().segment_at(index_at(road, position))
-
-	## The segment behind the rider's, unless the rider's is the route's first.
-	segment_behind : RoadAhead.RoadView -> [Previous(Route.SegmentIndex), AtRouteStart]
-	segment_behind = |road| rider_segment(road).previous()
 
 	## The segments in view: those of the road ahead, the rider's own first, then
 	## the one just behind the rider, unless the rider's is the route's first.
@@ -109,36 +103,6 @@ RoadAhead :: [].{
 		}
 	}
 
-	## The road ahead of a rider on the segment at `start`: as far as the rider
-	## can see, or to the route's end.
-	indices_ahead : Route, Route.SegmentIndex -> RoadAhead.SegmentsAhead
-	indices_ahead = |route, start| {
-		left_on_route = route.segment_count() - start.count_before()
-		{
-			first_index: start,
-			count: left_on_route.min(RoadAhead.most_segments_ahead.to_u64()).to_u32_wrap(),
-		}
-	}
-
-	## A point on the segment at `position` on the road ahead, as the camera at
-	## `vantage` on the rider's segment sees it.
-	rider_point_ahead : RoadAhead.RoadView,
-	{
-		vantage : Geom.Vantage,
-		position : SegmentPlace.Position,
-		road_point : Geom.RoadPoint,
-	} -> Geom.RiderPoint
-	rider_point_ahead = |road, { vantage, position, road_point }| {
-		on_rider_segment = segments_before(road, position).fold_rev(
-			road_point,
-			|index, point| Geom.point_in_segment_before(
-				point,
-				road.route().segment_at(index).bend_out_of(),
-			),
-		)
-		Geom.to_rider_point(on_rider_segment, vantage)
-	}
-
 	## A point on the segment at `place`, as the camera at `vantage` on the
 	## rider's segment sees it.
 	rider_point_at : RoadAhead.RoadView,
@@ -159,6 +123,40 @@ RoadAhead :: [].{
 		}
 }
 
+## The road ahead of a rider on the segment at `start`: as far as the rider can
+## see, or to the route's end.
+segments_ahead_of : Route, Route.SegmentIndex -> RoadAhead.SegmentsAhead
+segments_ahead_of = |route, start| {
+	left_on_route = route.segment_count() - start.count_before()
+	{
+		first_index: start,
+		count: left_on_route.min(RoadAhead.most_segments_ahead.to_u64()).to_u32_wrap(),
+	}
+}
+
+## The segment behind the rider's, unless the rider's is the route's first.
+segment_behind : RoadAhead.RoadView -> [Previous(Route.SegmentIndex), AtRouteStart]
+segment_behind = |road| RoadAhead.rider_segment(road).previous()
+
+## A point on the segment at `position` on the road ahead, as the camera at
+## `vantage` on the rider's segment sees it.
+rider_point_ahead : RoadAhead.RoadView,
+{
+	vantage : Geom.Vantage,
+	position : SegmentPlace.Position,
+	road_point : Geom.RoadPoint,
+} -> Geom.RiderPoint
+rider_point_ahead = |road, { vantage, position, road_point }| {
+	on_rider_segment = segments_before(road, position).fold_rev(
+		road_point,
+		|index, point| Geom.point_in_segment_before(
+			point,
+			road.route().segment_at(index).bend_out_of(),
+		),
+	)
+	Geom.to_rider_point(on_rider_segment, vantage)
+}
+
 ## The route's index of the segment at `position` on the road ahead.
 index_at : RoadAhead.RoadView, SegmentPlace.Position -> Route.SegmentIndex
 index_at = |road, position| {
@@ -173,7 +171,7 @@ index_at = |road, position| {
 ## The bend from the segment just behind the rider into the rider's own.
 bend_behind : RoadAhead.RoadView -> Geom.Bend
 bend_behind = |road|
-	match RoadAhead.segment_behind(road) {
+	match segment_behind(road) {
 		Previous(index) => road.route().segment_at(index).bend_out_of()
 		AtRouteStart => crash "RoadAhead.bend_behind: a rider on the route's first segment has no segment behind"
 	}
