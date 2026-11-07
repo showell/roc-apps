@@ -352,30 +352,30 @@ expect snow_peak_height < Pixels.of(150.0)
 
 # The bearing seen at `x` across a 960-pixel screen.
 seen_bearing : {
-	heading : F64,
+	heading : Angle.Bearing,
 	cam_focal : Pixels,
 	x : Pixels,
 } -> F64
 seen_bearing = |{ heading, cam_focal, x }|
-	bearing_at({ heading: north_by(heading), cam_focal }, x).to_radians()
+	bearing_at({ heading, cam_focal }, x).to_radians()
 
 expect
 	seen_bearing({
-		heading: 0.0,
+		heading: north_by(0.0),
 		cam_focal: Pixels.of(500.0),
 		x: Pixels.of(480.0),
 	})
 		== 0.0
 expect
 	seen_bearing({
-		heading: 1.25,
+		heading: north_by(1.25),
 		cam_focal: Pixels.of(500.0),
 		x: Pixels.of(480.0),
 	})
 		== 1.25
 expect
 	seen_bearing({
-		heading: 1.25,
+		heading: north_by(1.25),
 		cam_focal: Pixels.of(100.0),
 		x: Pixels.of(480.0),
 	})
@@ -384,34 +384,34 @@ expect
 # Bearings grow across the screen, and a shorter focal length spreads them.
 expect
 	seen_bearing({
-		heading: 0.0,
+		heading: north_by(0.0),
 		cam_focal: Pixels.of(500.0),
 		x: Pixels.of(0.0),
 	})
 		< seen_bearing({
-			heading: 0.0,
+			heading: north_by(0.0),
 			cam_focal: Pixels.of(500.0),
 			x: Pixels.of(480.0),
 		})
 expect
 	seen_bearing({
-		heading: 0.0,
+		heading: north_by(0.0),
 		cam_focal: Pixels.of(500.0),
 		x: Pixels.of(480.0),
 	})
 		< seen_bearing({
-			heading: 0.0,
+			heading: north_by(0.0),
 			cam_focal: Pixels.of(500.0),
 			x: Pixels.of(960.0),
 		})
 expect
 	seen_bearing({
-		heading: 0.0,
+		heading: north_by(0.0),
 		cam_focal: Pixels.of(100.0),
 		x: Pixels.of(960.0),
 	})
 		> seen_bearing({
-			heading: 0.0,
+			heading: north_by(0.0),
 			cam_focal: Pixels.of(500.0),
 			x: Pixels.of(960.0),
 		})
