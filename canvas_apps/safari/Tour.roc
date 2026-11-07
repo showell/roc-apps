@@ -8,14 +8,12 @@ import World
 import RideInstant
 import HexColor
 import Sky
-import Sun
 import Rider
 import CanvasRoll
 import RideFocal
 import ViewYaw
 import RoadAhead
 import Lens
-import lib.Shapes
 
 ## The route, the instant the ride has reached, and the instants before it.
 Tour := {
@@ -66,10 +64,9 @@ Tour := {
 		}
 	}
 
-	## The frame's shapes in paint order. A bird is sorted by depth with
-	## everything else, so a nearer tree hides it.
-	shapes : Tour -> List(Shapes.Shape)
-	shapes = |tour| RideInstant.shapes(tour.route_segments, tour.instant)
+	## The frame at the tour's instant: its shapes and its sun.
+	frame_content : Tour -> RideInstant.FrameContent
+	frame_content = |tour| RideInstant.frame_content(tour.route_segments, tour.instant)
 
 	# The camera roll: the whole frame, backdrop and shapes, turns
 	# by minus this about the screen's centre.
@@ -82,7 +79,4 @@ Tour := {
 
 	sky_horizon_color : Tour -> HexColor.Rgb
 	sky_horizon_color = |tour| Sky.sky_horizon_color(tour.instant.clock)
-
-	sun : Tour -> Sun.Sighting
-	sun = |tour| RideInstant.sun(tour.route_segments, tour.instant)
 }

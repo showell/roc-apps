@@ -37,13 +37,16 @@ hash = |pixels| pixels.fold(
 )
 
 frame_pixels : Tour -> List(U32)
-frame_pixels = |tour| SafariFrame.picture_pixels({
-	shapes: Tour.shapes(tour),
-	roll: Tour.roll(tour),
-	sky_top_color: Tour.sky_top_color(tour),
-	sky_horizon_color: Tour.sky_horizon_color(tour),
-	sun: Tour.sun(tour),
-})
+frame_pixels = |tour| {
+	frame = Tour.frame_content(tour)
+	SafariFrame.picture_pixels({
+		shapes: frame.shapes,
+		roll: Tour.roll(tour),
+		sky_top_color: Tour.sky_top_color(tour),
+		sky_horizon_color: Tour.sky_horizon_color(tour),
+		sun: frame.sun,
+	})
+}
 
 ## The bytes `hash 1234abcd`.
 hash_line : List(U32) -> List(U8)

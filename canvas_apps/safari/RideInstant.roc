@@ -1,9 +1,11 @@
+import Angle
 import Clock
 import RoadAhead
 import Ground
 import GroundSighting
 import SceneShapes
 import Mountains
+import Pixels
 import RiderState
 import Scene
 import RideFocal
@@ -73,8 +75,31 @@ RideInstant := {
 		brake_lights: instant.truck.brake_lights,
 	}
 
-	shapes : List(World.Segment), RideInstant -> List(Shapes.Shape)
-	shapes = |route_segments, instant| {
+	## What the camera shows at one instant: the shapes in paint order, and the
+	## sun. A bird is sorted by depth with everything else, so a nearer tree
+	## hides it.
+	FrameContent : { shapes : List(Shapes.Shape), sun : Sun.Sighting }
+
+	## The frame at `instant`. The camera's heading and focal length are worked
+	## out once, for both the shapes and the sun.
+	frame_content : List(World.Segment), RideInstant -> RideInstant.FrameContent
+	frame_content = |route_segments, instant| {
+		aim = {
+			heading: ViewYaw.heading_for(instant.rider),
+			cam_focal: RideFocal.ride_focal(route_segments, instant.rider),
+		}
+		{ shapes: shapes(instant, { route_segments, aim }), sun: sun(instant, aim) }
+	}
+
+	## Which way the camera faces at one instant, and its focal length.
+	CameraAim : { heading : Angle.Bearing, cam_focal : Pixels }
+
+	shapes : RideInstant,
+	{
+		route_segments : List(World.Segment),
+		aim : RideInstant.CameraAim,
+	} -> List(Shapes.Shape)
+	shapes = |instant, { route_segments, aim: { heading, cam_focal } }| {
 		s = instant.rider
 		view = {
 			road: {
@@ -82,7 +107,7 @@ RideInstant := {
 				segments_ahead: RoadAhead.indices_ahead(route_segments, s.segment_index),
 				vantage: ViewYaw.vantage_for(s),
 			},
-			cam_focal: RideFocal.ride_focal(route_segments, s),
+			cam_focal,
 		}
 		scene = Scene.scene_in_view(
 			view,
@@ -97,24 +122,16 @@ RideInstant := {
 		)
 		ground = GroundSighting.patches_in_view(view.road)
 		[
-			Mountains.mountain_shapes({
-				heading: ViewYaw.heading_for(s),
-				dusk: Sky.dusk_at(instant.clock),
-				cam_focal: view.cam_focal,
-			}),
-			ground.keep_oks(|patch| Ground.patch_shape(patch, view.cam_focal)),
+			Mountains.mountain_shapes({ heading, dusk: Sky.dusk_at(instant.clock), cam_focal }),
+			ground.keep_oks(|patch| Ground.patch_shape(patch, cam_focal)),
 			SceneShapes.scene_shapes(scene, view),
 		].join()
 	}
 
-	sun : List(World.Segment), RideInstant -> Sun.Sighting
-	sun = |route_segments, instant| {
-		cf = RideFocal.ride_focal(route_segments, instant.rider)
-		Sun.sighting({
-			heading: ViewYaw.heading_for(instant.rider),
-			clock: instant.clock,
-			cam_focal: cf,
-		})
+	sun : RideInstant, RideInstant.CameraAim -> Sun.Sighting
+	sun = |instant, { heading, cam_focal }| {
+		clock = instant.clock
+		Sun.sighting({ heading, clock, cam_focal })
 	}
 }
 
@@ -176,7 +193,7 @@ expect after_one_step.clock != Clock.start
 expect !Rider.is_finished(after_one_step.rider, World.segments)
 
 # The ride starts facing away from the sun.
-expect RideInstant.sun(World.segments, RideInstant.initial) == OutOfView
+expect RideInstant.frame_content(World.segments, RideInstant.initial).sun == OutOfView
 
 ## A clock with the sun behind the mountains.
 after_sunset : Clock
