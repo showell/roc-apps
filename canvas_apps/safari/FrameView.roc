@@ -1,5 +1,5 @@
 import Angle
-import Backdrop
+import Grass
 import Ground
 import GroundSighting
 import LitTruck
@@ -45,15 +45,19 @@ FrameView := {
 		}
 	}
 
-	## The whole frame in `space`: the backdrop, then the ride's shapes over it.
+	## The whole frame in `space`, in paint order: the sky, the sun, the grass,
+	## then the ride's shapes, which start with the mountains. The grass covers
+	## whatever of the sun has set.
 	framed_shapes : FrameView, Shapes.Space -> List(Shapes.Shape)
 	framed_shapes = |view, space|
 		Shapes.in_space(
 			space,
-			Backdrop.frame_shapes(
+			[
+				[Sky.sky_shape(view.sky_colors)],
+				Sun.sun_shapes(view.sun_sighting),
+				[Grass.grass_shape],
 				view.shapes,
-				{ sky_colors: view.sky_colors, sun_sighting: view.sun_sighting },
-			),
+			].join(),
 		)
 
 	## Which of the truck's lights are on: its headlights once the sun is behind

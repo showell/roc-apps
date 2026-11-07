@@ -10,6 +10,7 @@ import Pixels
 import Screen
 import lib.Brush
 import lib.RgbColor
+import lib.Shapes
 
 Sun :: [].{
 
@@ -82,6 +83,27 @@ Sun :: [].{
 	## The disc's radius where the sun stands.
 	disc_radius_drawn : Sun.Place -> Pixels
 	disc_radius_drawn = |sun| radius.times(sun.scale.to_f64())
+
+	## The sun's shapes in a frame: while it is in view, its glow over the
+	## rectangle above the horizon and its disc over that, and nothing while it
+	## isn't.
+	sun_shapes : Sun.Sighting -> List(Shapes.Shape)
+	sun_shapes = |sun_sighting|
+		match sun_sighting {
+			InView(sun) => {
+				look = Sun.look(sun)
+				[
+					Screen.above_horizon_rect(look.glow),
+					Disc({
+						x: sun.x.to_f64(),
+						y: sun.y.to_f64(),
+						radius: Sun.disc_radius_drawn(sun).to_f64(),
+						fill: look.disc,
+					}),
+				]
+			}
+			OutOfView => []
+		}
 
 	## The sun's glow and disc where it stands, sized by its scale.
 	look : Sun.Place -> Sun.Look

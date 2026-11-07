@@ -1,6 +1,8 @@
 ## The screen Safari draws on: its size in pixels, and where the horizon and
 ## the top of the grass cross it before the camera rolls.
 import Pixels
+import lib.Brush
+import lib.Shapes
 
 Screen :: [].{
 
@@ -53,7 +55,36 @@ Screen :: [].{
 	## this far left, land on the screen's own whole pixels.
 	roll_margin : Pixels
 	roll_margin = Pixels.of(200.0)
+
+	## The rectangle above the horizon, painted with `fill`: from `roll_margin`
+	## above the screen down to the horizon, and `roll_margin` past each side.
+	above_horizon_rect : Brush.Fill -> Shapes.Shape
+	above_horizon_rect = |fill|
+		Rect({
+			x: roll_margin.opposite().to_f64(),
+			y: roll_margin.opposite().to_f64(),
+			width: width_with_margins.to_f64(),
+			height: horizon_y.plus(roll_margin).to_f64(),
+			fill,
+		})
+
+	## The rectangle below the grass's top, painted with `fill`: from
+	## `grass_top_y` down to `roll_margin` below the screen, and `roll_margin`
+	## past each side.
+	below_grass_top_rect : Brush.Fill -> Shapes.Shape
+	below_grass_top_rect = |fill|
+		Rect({
+			x: roll_margin.opposite().to_f64(),
+			y: grass_top_y.to_f64(),
+			width: width_with_margins.to_f64(),
+			height: height.minus(grass_top_y).plus(roll_margin).to_f64(),
+			fill,
+		})
 }
+
+## The screen's width with `roll_margin` past each side.
+width_with_margins : Pixels
+width_with_margins = Screen.width.plus(Screen.roll_margin).plus(Screen.roll_margin)
 
 expect Screen.distance({ from: Screen.point(3.0, 4.0), to: Screen.point(0.0, 0.0) }).to_f64() == 5.0
 expect Screen.distance({ from: Screen.point(0.0, 0.0), to: Screen.point(3.0, 4.0) }).to_f64() == 5.0

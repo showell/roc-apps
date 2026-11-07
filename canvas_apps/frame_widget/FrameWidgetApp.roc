@@ -6,10 +6,10 @@
 ## The address picks how many layers are on, and from there it's a still picture
 ## with no controls. The first line of text counts the shapes so far against the
 ## frame's total, and the second names the last layer on.
-import game.Backdrop
 import game.RoadAhead
 import game.Clock
 import game.FrameView
+import game.Grass
 import game.Ground
 import game.GroundSighting
 import game.Mountains
@@ -19,6 +19,7 @@ import game.Scene
 import game.SceneShapes
 import game.Screen
 import game.Sky
+import game.Sun
 import game.Tour
 import lib.Brush
 import lib.RgbColor
@@ -127,17 +128,14 @@ scene_shapes_on = |on_layers| {
 	SceneShapes.scene_shapes(only, { road: paused_road, camera: paused_camera })
 }
 
-## What `Backdrop.frame_shapes` paints under the ride's shapes: the sky, the grass, and
-## what the sun adds when it's in view.
+## What `FrameView.framed_shapes` paints under the ride's shapes, in its order: the
+## sky, what the sun adds when it's in view, and the grass.
 backdrop_pieces : FrameView -> List(Piece)
-backdrop_pieces = |view| {
-	backdrop = Backdrop.backdrop_shapes({ sky_colors: view.sky_colors, sun_sighting: view.sun_sighting })
-	[
-		{ layer: Sky, shapes: [backdrop.sky] },
-		{ layer: Grass, shapes: [backdrop.grass] },
-		{ layer: Sun, shapes: backdrop.sun_shapes },
-	]
-}
+backdrop_pieces = |view| [
+	{ layer: Sky, shapes: [Sky.sky_shape(view.sky_colors)] },
+	{ layer: Sun, shapes: Sun.sun_shapes(view.sun_sighting) },
+	{ layer: Grass, shapes: [Grass.grass_shape] },
+]
 
 ## The camera the ride sees through at the step on show.
 paused_camera : RiderCamera

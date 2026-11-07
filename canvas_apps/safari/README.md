@@ -33,8 +33,8 @@ The rest have been rewritten by hand.
 |---|---|
 | `SafariApp.roc` | the `CanvasApp` value: the keys, the pause, and the frame leaned by the rider's roll |
 | `Tour.roc` | the whole ride for any platform: the current instant, the instants behind it for stepping back, and the current instant's `FrameView` |
-| `FrameView.roc` | what the camera shows at one instant: the shapes, the sun, the sky colours and the roll |
-| `Backdrop.roc` | a frame as shapes: the sky's gradient, the sun and its glow, the grass, and the ride's shapes |
+| `FrameView.roc` | what the camera shows at one instant: the shapes, the sun, the sky colours and the roll, and the whole frame in paint order |
+| `Sky.roc`, `Sun.roc` and `Grass.roc` | what is behind the ride: the sky's gradient, the sun and its glow, and the grass, each drawn by its own module over `Screen.roc`'s rectangles, which reach past a rolled screen's corners |
 | `Polygon.roc` | makers that turn screen points and colours into `Shapes.Shape` values, for the drawing modules |
 | `HexColor.roc` | lib's `RgbColor`: its channels, packing them, and shading |
 | `SafariFrame.roc` | a frame painted into pixels in Roc, for the proof tools below |
