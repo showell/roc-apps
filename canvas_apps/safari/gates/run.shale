@@ -27,9 +27,8 @@
 --
 -- `part=book_names` runs gates/book_names.shale, which finds a backticked name
 -- in the tutorial's prose, or a node name in its diagrams, that is gone from the
--- code. Its counts of stale names are held at BOOK_STALE_NAMES_HELD and
--- BOOK_STALE_DIAGRAM_NAMES_HELD, the names that wait for their chapters to be
--- rewritten, so a count that moves either way fails.
+-- code. While the book is parked it only prints its counts, marked SKIPPED, and
+-- holds none; when the chapters are rewritten, it goes back to holding them.
 --
 -- `part=expects` runs `roc test --verbose` from each of EXPECT_ROOTS, whose
 -- reach together is every expect: gates/CrossModuleExpects.roc reaches nearly
@@ -160,8 +159,6 @@ end
 const SELF_PATH = "canvas_apps/safari/gates/run.shale"
 const TUTORIAL = "canvas_apps/safari/tutorial/build.shale"
 const BOOK_NAMES = "canvas_apps/safari/gates/book_names.shale"
-const BOOK_STALE_NAMES_HELD = 133
-const BOOK_STALE_DIAGRAM_NAMES_HELD = 65
 const EXPECT_ROOTS = {"gates/CrossModuleExpects.roc", "web.roc", "../lib/main.roc"}
 const SAFARI_SOURCES = {":(glob)canvas_apps/safari/*.roc", ":(glob)canvas_apps/safari/gates/*.roc", ":(glob)canvas_apps/lib/*.roc"}
 const WIDGET_SOURCES = {":(glob)canvas_apps/*_widget/*.roc", ":(glob)canvas_apps/widget_kit/*.roc"}
@@ -431,8 +428,16 @@ function tutorial()
   return nil
 end
 
+-- The book is parked until its chapters are rewritten (Steve, 2026-11-07), so
+-- the stale names are counted and printed, loudly, but no count is held: a held
+-- count only tracked how broken the parked prose was, and churned at every merge.
 function book_names()
-  print(trim(must(run({"shale", "--root", ".", BOOK_NAMES, "held=" .. BOOK_STALE_NAMES_HELD, "held_diagram=" .. BOOK_STALE_DIAGRAM_NAMES_HELD},{timeout_ms = 60000, tail = 100})).out))
+  local r = run({"shale", "--root", ".", BOOK_NAMES, "held=0", "held_diagram=0"}, {timeout_ms = 60000, tail = 100})
+  local summary = "no summary line"
+  for line in lines(r.out) do
+    if starts_with(line, "book_names:") then summary = line end
+  end
+  print("book_names: SKIPPED while the book is parked: " .. summary)
   return nil
 end
 

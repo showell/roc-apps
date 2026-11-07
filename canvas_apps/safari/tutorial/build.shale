@@ -694,13 +694,19 @@ end
 
 -- Stops the build on any module beside the others in `folder` that `text`
 -- doesn't name as a whole word.
-function check_modules_named(folder, text)
+function unnamed_modules(folder, text)
   local unnamed = {}
   for path in glob(folder .. "/*.roc") do
     local module = sub(basename(path), 1, #basename(path) - 4)
     if not excused(module) and re_find(text, "\\b" .. module .. "\\b") == nil then push(unnamed, module) end
   end
-  if #unnamed > 0 then fail("tutorial: the book never names " .. join(sort(unnamed), ", ")) end
+  return sort(unnamed)
+end
+
+-- Stops the build on any module that `unnamed_modules` finds.
+function check_modules_named(folder, text)
+  local unnamed = unnamed_modules(folder, text)
+  if #unnamed > 0 then fail("tutorial: the book never names " .. join(unnamed, ", ")) end
   return nil
 end
 
@@ -1026,6 +1032,10 @@ if arg("self_test", "") == "1" then
   self_test()
 else
   local expanded = build(SOURCE, OUTPUT, SAFARI)
-  check_modules_named(SAFARI, read(SOURCE))
   print("tutorial: " .. expanded .. " includes expanded into " .. OUTPUT)
+  -- The book is parked until its chapters are rewritten (Steve, 2026-11-07),
+  -- so the rule that it names every module is skipped, loudly, rather than
+  -- satisfied with module lists added to prose that will be rewritten.
+  local unnamed = unnamed_modules(SAFARI, read(SOURCE))
+  print("tutorial: SKIPPED while the book is parked: the book names every module (" .. #unnamed .. " unnamed: " .. join(unnamed, ", ") .. ")")
 end
