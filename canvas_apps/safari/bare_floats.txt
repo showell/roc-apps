@@ -17,7 +17,6 @@ Steps.to_f64: a whole count's way into float sums
 # Factors and ratios, which have no unit.
 Motorcycle.turn_per_lean: a turn per radian of lean, an angle over an angle
 RiderCamera.head_turn_per_lean: a turn per radian of lean, an angle over an angle
-LeanSearch.line_offset_share: a share of a length
 DepthSort.tie_slack: a relative tolerance, scaled by the length it is compared with
 TruckLights.glow_reach: a factor that passes 1
 HexColor.shade_channel: a factor that passes 1 on a colour channel

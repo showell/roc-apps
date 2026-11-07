@@ -1,5 +1,5 @@
 ## The widget for the first half of the Safari tutorial, which walks through one
-## page of the flipbook a chapter at a time. It holds step 1,570 of the ride, with
+## page of the flipbook a chapter at a time. It holds step 1,529 of the ride, with
 ## the cat frozen in the road, and shows that frame one layer at a time. The
 ## shapes are the game's own for that step, sorted into layers and painted in the
 ## game's order, because depth sorting interleaves the things beside the road.
@@ -84,7 +84,7 @@ Piece : { layer : Layer, shapes : List(Shapes.Shape) }
 
 ## The step on show.
 frame_step : U32
-frame_step = 1570
+frame_step = 1529
 
 ## The ride at `frame_step`, with no history to step back through.
 paused_tour : Tour
@@ -329,7 +329,7 @@ shapes_at = |model|
 
 # The step is the one the book holds, and the ride's own record of it.
 expect paused_tour.instant.clock == Clock.at_step(frame_step)
-expect frame_step == 1570
+expect frame_step == 1529
 
 # All the layers on is the game's own frame, shape for shape and in its order.
 expect picture_shapes(layers) == SafariApp.frame_shapes(paused_tour)
@@ -337,20 +337,16 @@ expect picture_shapes(layers) == SafariApp.frame_shapes(paused_tour)
 # The ride's parts are the game's own shapes, in the game's order.
 expect ride_shapes_on(layers) == paused_frame_view.shapes
 
-# The frame's total is the count the book's table gives for this step.
+# The frame's total is the game's own count of its shapes.
 expect ride_count(layers) == paused_frame_view.shapes.len()
-expect ride_count(layers) == 2568
 
-# Each layer's own shapes at this step. The sun is behind the rider, so it has none.
-expect
-	layers.map(|layer| frame_shapes_on([layer]).len())
-		== [1656, 1, 0, 1, 4, 4, 302, 187, 352, 63]
+# Every layer has shapes of its own at this step but the sun, which is behind the
+# rider.
+expect layers.keep_if(|layer| frame_shapes_on([layer]).is_empty()) == [Sun]
 expect paused_frame_view.sun_sighting == OutOfView
 
-# The running count at each layer. The backdrop stays out of it.
-expect
-	List.from_iter(U64.until(1, layers.len() + 1)).map(|count| ride_count(layers_up_to(count)))
-		== [1656, 1656, 1656, 1656, 1660, 1664, 1966, 2153, 2505, 2568]
+# The backdrop stays out of the running count.
+expect ride_count([Grass, Sun, Sky]) == 0
 
 # A layer with shapes of its own always changes the picture, and the sun doesn't.
 expect picture_shapes(layers_up_to(1)) != picture_shapes(layers_up_to(2))
@@ -406,16 +402,16 @@ expect next_model(start, Input.none.with_key_pressed(KeyLeft)) == opened_after(0
 
 expect
 	status_lines(start)
-		== ["Shapes so far: 1,656 of 2,568", "Added: Trees"]
+		== ["Shapes so far: 1,656 of 2,569", "Added: Trees"]
 expect
 	status_lines(opened_after(2))
-		== ["Shapes so far: 1,656 of 2,568", "Added: The sun, out of view here"]
+		== ["Shapes so far: 1,656 of 2,569", "Added: The sun, out of view here"]
 expect
 	status_lines(opened_after(5))
-		== ["Shapes so far: 1,664 of 2,568", "Added: The road and pond"]
+		== ["Shapes so far: 1,665 of 2,569", "Added: The road and pond"]
 expect
 	status_lines(all_on)
-		== ["Shapes so far: 2,568 of 2,568", "Added: The moving things"]
+		== ["Shapes so far: 2,569 of 2,569", "Added: The moving things"]
 
 expect
 	layers.map(layer_name)

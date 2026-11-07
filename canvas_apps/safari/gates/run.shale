@@ -58,10 +58,12 @@
 -- why. OnRoad's widest point and finishing step move with every physics
 -- change, so they are printed and not held.
 -- A depth is there for what its frame shows: at 100 a Roc bird is in flight,
--- at 1570 a cat is frozen in the road, at 1590 it is in mid-leap, at 3742 a
--- distant truck's glow is about a pixel across, at 5700 the truck is ahead at
--- dusk with its lights on, and at 6553 it is braking in plain view with its
--- brake lights on.
+-- at 1529 a cat is frozen in the road, at 1542 it is in mid-leap, at 3698 the
+-- truck brakes about 600 m off and its glow is about a pixel across, at 5700
+-- the truck is ahead at dusk with its lights on, and at 6250 it is braking in
+-- plain view with its brake lights on. Each is a step of the ride's timing, so a
+-- physics change that moves the ride can empty a frame: check each scene again
+-- after one.
 --
 -- `part=page` runs canvas_apps/build.sh for safari's dev page, into a scratch
 -- folder so the dev channel doesn't move, and holds the hash of what it drew to
@@ -162,7 +164,7 @@ const BOOK_NAMES = "canvas_apps/safari/gates/book_names.shale"
 const EXPECT_ROOTS = {"gates/CrossModuleExpects.roc", "web.roc", "../lib/main.roc"}
 const SAFARI_SOURCES = {":(glob)canvas_apps/safari/*.roc", ":(glob)canvas_apps/safari/gates/*.roc", ":(glob)canvas_apps/lib/*.roc"}
 const WIDGET_SOURCES = {":(glob)canvas_apps/*_widget/*.roc", ":(glob)canvas_apps/widget_kit/*.roc"}
-const DEPTHS = {"0", "100", "1570", "1590", "3000", "3742", "5700", "6553", "9000"}
+const DEPTHS = {"0", "100", "1529", "1542", "3000", "3698", "5700", "6250", "9000"}
 const CACHE_CEILING_MB = 4000
 -- The widgets' budget is set from a cold cache after a change to a module they
 -- all import: 53 s of CPU for 13 widgets, measured 2026-11-07.

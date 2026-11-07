@@ -47,11 +47,9 @@ Gawking :: [].{
 
 	## Whether the rider is gawking at this segment's pig. It starts where the
 	## pig is noticed and asks only where the motorcycle is, so it stays true
-	## past the pig to the end of the segment: the rider brakes for the pig and
-	## doesn't open the throttle until the next segment. Two things depend on
-	## that. `gawk_brake` holds the rider down for as long as this is true, and
-	## Throttle's `allowed_speed` leaves a gawking rider below the segment's exit
-	## speed, where it lifts any other rider near the end up to it.
+	## past the pig to the end of the segment: `gawk_brake` holds the rider down
+	## for as long as this is true, so the rider doesn't open the throttle until
+	## the next segment.
 	is_gawking : Motorcycle, Segment -> Bool
 	is_gawking = |motorcycle, seg|
 		match eye_catching_pig(seg) {

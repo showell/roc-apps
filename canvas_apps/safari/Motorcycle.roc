@@ -31,16 +31,13 @@ Motorcycle := {
 		heading: Angle.north,
 	}
 
-	## The motorcycle one step on, after its lean changes by `lean_step` and it
-	## speeds up by `acceleration`.
-	motorcycle_at_next_step : Motorcycle,
-	{
-		lean_step : Angle.LeanChange,
-		acceleration : Acceleration,
-	} -> Motorcycle
-	motorcycle_at_next_step = |s, { lean_step, acceleration }| {
-		lean = s.lean.plus(lean_step)
-		speed = s.speed.accelerated_by(acceleration)
+	## What the rider sets for a step: the lean the motorcycle takes, and the
+	## speed it goes.
+	Controls : { lean : Angle.Lean, speed : Speed }
+
+	## The motorcycle one step on, at the lean and speed its controls set.
+	motorcycle_at_next_step : Motorcycle, Motorcycle.Controls -> Motorcycle
+	motorcycle_at_next_step = |s, { lean, speed }| {
 		step_length = speed.step_length()
 		turn = lean.steer(turn_per_lean)
 		mid = s.yaw.plus(turn.times(0.5)).to_radians()
@@ -53,6 +50,10 @@ Motorcycle := {
 			heading: s.heading.plus(turn),
 		}
 	}
+
+	## The controls that keep this motorcycle's lean and speed as they are.
+	steady_controls : Motorcycle -> Motorcycle.Controls
+	steady_controls = |s| { lean: s.lean, speed: s.speed }
 
 	with_lean : Motorcycle, Angle.Lean -> Motorcycle
 	with_lean = |s, lean| { ..s, lean }
@@ -82,29 +83,22 @@ riding = {
 	heading: Angle.Bearing.radians(4.5),
 }
 
+# The first two steps change the lean and the speed a little from the step
+# before, and the third keeps them.
 first_step : Motorcycle
-first_step = Motorcycle.motorcycle_at_next_step(
-	riding,
-	{
-		lean_step: Angle.LeanChange.radians(0.05),
-		acceleration: Acceleration.metres_a_step_each_step(0.01),
-	},
-)
+first_step = riding.motorcycle_at_next_step({
+	lean: riding.lean.plus(Angle.LeanChange.radians(0.05)),
+	speed: riding.speed.accelerated_by(Acceleration.metres_a_step_each_step(0.01)),
+})
 
 second_step : Motorcycle
-second_step = Motorcycle.motorcycle_at_next_step(
-	first_step,
-	{
-		lean_step: Angle.LeanChange.radians(-0.02),
-		acceleration: Acceleration.metres_a_step_each_step(0.005),
-	},
-)
+second_step = first_step.motorcycle_at_next_step({
+	lean: first_step.lean.plus(Angle.LeanChange.radians(-0.02)),
+	speed: first_step.speed.accelerated_by(Acceleration.metres_a_step_each_step(0.005)),
+})
 
 third_step : Motorcycle
-third_step = Motorcycle.motorcycle_at_next_step(
-	second_step,
-	{ lean_step: Angle.steady_lean, acceleration: Acceleration.steady },
-)
+third_step = second_step.motorcycle_at_next_step(second_step.steady_controls())
 
 expect
 	[first_step, second_step, third_step].join_map(
@@ -142,16 +136,10 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.000000001 * want.abs().max(1.0))
 
 expect {
-	a = Motorcycle.motorcycle_at_next_step(
-		Motorcycle.initial,
-		{ lean_step: Angle.steady_lean, acceleration: Acceleration.steady },
-	)
+	a = Motorcycle.initial.motorcycle_at_next_step(Motorcycle.initial.steady_controls())
 	b = Motorcycle.motorcycle_at_next_step(
 		Motorcycle.initial,
-		{
-			lean_step: Angle.LeanChange.radians(0.5),
-			acceleration: Acceleration.metres_a_step_each_step(0.25),
-		},
+		{ lean: Angle.Lean.radians(0.5), speed: Speed.metres_a_step(0.55) },
 	)
 	[
 		a.across.to_metres(),
