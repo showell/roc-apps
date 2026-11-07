@@ -42,7 +42,7 @@ Animation :: [].{
 		} else if gap >= starts_at {
 			Waiting
 		} else {
-			Playing(Fraction.of(starts_at.minus(gap).ratio_to(starts_at.minus(ends_at))))
+			Playing(Fraction.of(starts_at.minus(gap).portion(starts_at.minus(ends_at))))
 		}
 
 	## An animation that plays one frame a step, and ends with the rider

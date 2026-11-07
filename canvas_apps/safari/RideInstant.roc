@@ -10,6 +10,7 @@ import Scene
 import RideFocal
 import Rider
 import Sky
+import Steps
 import Sun
 import Truck
 import LitTruck
@@ -147,7 +148,7 @@ after_two_steps = RideInstant.next_or_restart(World.segments, after_one_step)
 
 expect after_one_step.clock.to_f64() == 1.0
 expect after_two_steps.clock.to_f64() == 2.0
-expect after_two_steps.clock.to_f64() - after_one_step.clock.to_f64() == 1.0
+expect after_two_steps.clock.steps_since(after_one_step.clock) == Steps.one_step
 expect after_one_step.rider.motorcycle.along > RideInstant.initial.rider.motorcycle.along
 expect after_one_step.truck.route_position > RideInstant.initial.truck.route_position
 expect after_two_steps.rider.motorcycle.along > after_one_step.rider.motorcycle.along

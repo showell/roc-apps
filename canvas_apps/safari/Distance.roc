@@ -31,8 +31,8 @@ Distance :: F64.{
 	opposite = |Distance.(d)| Distance.(0.0 - d)
 
 	## How many of `whole` this is, which can pass 1.
-	ratio_to : Distance, Distance -> F64
-	ratio_to = |Distance.(d), Distance.(whole)| d / whole
+	portion : Distance, Distance -> F64
+	portion = |Distance.(d), Distance.(whole)| d / whole
 
 	## The smaller of this length and `other`.
 	min : Distance, Distance -> Distance
@@ -63,8 +63,8 @@ expect Distance.metres(1.5).minus(Distance.metres(2.25)).to_metres() == -0.75
 expect Distance.metres(4.0).times(0.5).to_metres() == 2.0
 expect Distance.metres(5.0).divided_by(2.0).to_metres() == 2.5
 expect Distance.metres(1.5).opposite().to_metres() == -1.5
-expect Distance.metres(2.0).ratio_to(Distance.metres(8.0)) == 0.25
-expect Distance.metres(12.0).ratio_to(Distance.metres(8.0)) == 1.5
+expect Distance.metres(2.0).portion(Distance.metres(8.0)) == 0.25
+expect Distance.metres(12.0).portion(Distance.metres(8.0)) == 1.5
 expect Distance.metres(2.0).min(Distance.metres(3.0)).to_metres() == 2.0
 expect Distance.metres(3.0).min(Distance.metres(2.0)).to_metres() == 2.0
 expect Distance.metres(2.0).max(Distance.metres(3.0)).to_metres() == 3.0

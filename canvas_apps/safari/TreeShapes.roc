@@ -170,7 +170,7 @@ trunk_height_share = Fraction.of(55.0 / TreeShapes.tree_parts.to_f64())
 
 ## The crown is the rest of the tree, so its tip is the tree's height.
 crown_height_share : Fraction
-crown_height_share = trunk_height_share.complement()
+crown_height_share = trunk_height_share.less()
 
 ## The crown's widest half-width, as a fraction of the tree's height.
 crown_half_width_share : Fraction
@@ -196,7 +196,7 @@ ring_point_count = 16
 ## How much a crown is shaded at distance `forward`: fully at the camera,
 ## falling evenly to none at Detail.crown_shade_reach.
 crown_shade : Distance -> Fraction
-crown_shade = |forward| Fraction.clamp(1.0 - forward.ratio_to(Detail.crown_shade_reach))
+crown_shade = |forward| Fraction.clamp(forward.portion(Detail.crown_shade_reach)).less()
 
 trunk_shape : TreeShapes.TreeOutline, [Shaded, Flat] -> Shapes.Shape
 trunk_shape = |outline, finish| {

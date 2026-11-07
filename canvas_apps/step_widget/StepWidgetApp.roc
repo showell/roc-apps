@@ -136,7 +136,7 @@ route_length = World.route_length(World.segments)
 
 ## Where `distance` along the route falls on the bar.
 route_x : Distance -> F64
-route_x = |distance| route_left_x + route_width * distance.ratio_to(route_length)
+route_x = |distance| route_left_x + route_width * distance.portion(route_length)
 
 ## How far along the route the rider of `tour` is.
 rider_distance : Tour -> Distance

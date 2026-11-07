@@ -205,7 +205,7 @@ bend_shapes = |bend| {
 ## A whole number of degrees and which way.
 turn_text : Angle.Turn -> Str
 turn_text = |turn| {
-	degrees = turn.abs().ratio_to(Angle.Turn.degrees(1.0))
+	degrees = turn.abs().portion(Angle.Turn.degrees(1.0))
 	side = if turn.is_right() {
 		"right"
 	} else {

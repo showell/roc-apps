@@ -5,8 +5,15 @@ import Fraction
 
 Attention :: F64.{
 
+	## Attention of this strength. Nothing holds the eye less than not at all,
+	## so a strength below zero means the sum behind it is wrong.
 	of : F64 -> Attention
-	of = |strength| Attention.(strength)
+	of = |strength|
+		if strength < 0.0 {
+			crash "Attention.of: this strength is below zero, so the sum behind it is wrong"
+		} else {
+			Attention.(strength)
+		}
 
 	from_fraction : Fraction -> Attention
 	from_fraction = |fraction| Attention.(fraction.to_f64())
@@ -31,6 +38,7 @@ Attention :: F64.{
 
 expect Attention.none.to_f64() == 0.0
 expect Attention.of(1.8).to_f64() == 1.8
+expect Attention.of(0.0) == Attention.none
 expect Attention.from_fraction(Fraction.of(0.5)).to_f64() == 0.5
 expect Attention.of(1.8).portion(Fraction.of(0.5)).to_f64() == 0.9
 expect Attention.of(0.3).max(Attention.of(1.4)).to_f64() == 1.4

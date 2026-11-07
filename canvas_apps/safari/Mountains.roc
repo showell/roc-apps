@@ -88,7 +88,7 @@ snow_night = RgbColor.of(0x465468)
 ## A rock colour at `dusk`, from 0 (day) to 1 (night).
 rock_color_at_dusk : RgbColor, Fraction -> RgbColor
 rock_color_at_dusk = |color, dusk|
-	HexColor.shade_color(color, rock_night_dim.times(dusk).complement().to_f64())
+	HexColor.shade_color(color, rock_night_dim.times(dusk).less().to_f64())
 
 snow_color : Fraction -> RgbColor
 snow_color = |dusk| HexColor.color_between({
@@ -145,7 +145,7 @@ snowline : Angle.Bearing -> Pixels
 snowline = |bearing| {
 	above_threshold = north_range_height(bearing).minus(snow_threshold)
 	peak_above_threshold = snow_peak_height.minus(snow_threshold)
-	above_fraction = Fraction.clamp(above_threshold.ratio_to(peak_above_threshold))
+	above_fraction = Fraction.clamp(above_threshold.portion(peak_above_threshold))
 	snow_threshold.minus(snow_dip.times(above_fraction.to_f64()))
 }
 
@@ -200,7 +200,7 @@ west = {
 range_height : MountainRange, Angle.Bearing -> Pixels
 range_height = |range, bearing| {
 	from_center = bearing.turn_from(range.center)
-	fraction = from_center.ratio_to(range.half_width)
+	fraction = from_center.portion(range.half_width)
 	if fraction.abs() >= 1.0 {
 		Pixels.zero
 	} else {

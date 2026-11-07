@@ -144,7 +144,7 @@ place : {
 	cam_focal : Pixels,
 } -> Sun.Place
 place = |{ turn_from_view, clock, cam_focal }| {
-	scale = Fraction.of(cam_focal.ratio_to(Lens.resting_focal))
+	scale = Fraction.of(cam_focal.portion(Lens.resting_focal))
 	{
 		x: Lens.x_for_turn({ turn: turn_from_view, cam_focal }),
 		y: Lens.y_for_height({ height: Sun.height(clock), cam_focal }),

@@ -85,7 +85,7 @@ next_bend = |route_segments, route_position|
 ## `rider_distance` along it.
 scheduled_position : { rider_distance : Distance, route_length : Distance } -> Distance
 scheduled_position = |{ rider_distance, route_length }| {
-	fraction_left = 1.0 - rider_distance.ratio_to(route_length)
+	fraction_left = 1.0 - rider_distance.portion(route_length)
 	extra_lead = start_lead.minus(finish_lead).times(fraction_left)
 	rider_distance.plus(finish_lead).plus(extra_lead)
 }
@@ -171,7 +171,7 @@ expect
 		(chase_metres, 0.011),
 		(top_speed.to_metres_a_step(), 2.75),
 		(chase_metres / VehicleLimits.cruise_acceleration.to_metres_a_step_each_step(), 1.1),
-		(top_speed.to_metres_a_step() / VehicleLimits.top_speed.to_metres_a_step(), 1.1),
+		(top_speed.portion(VehicleLimits.top_speed), 1.1),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 
 expect Truck.initial.route_position.to_metres() == 500.0

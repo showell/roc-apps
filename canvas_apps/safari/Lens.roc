@@ -41,13 +41,13 @@ Lens :: [].{
 	focal_for_lean : Fraction -> Pixels
 	focal_for_lean = |lean_fraction| {
 		lean = lean_fraction.to_f64()
-		resting_focal.times(1.0 - (1.0 - focal_factor_at_full_lean.to_f64()) * lean * lean)
+		resting_focal.times(1.0 - focal_factor_at_full_lean.less().to_f64() * lean * lean)
 	}
 
 	## The focal length for the rider's attention.
 	focal_for_attention : Attention -> Pixels
 	focal_for_attention = |attention| {
-		lost_at_full_attention = 1.0 - focal_factor_at_full_attention.to_f64()
+		lost_at_full_attention = focal_factor_at_full_attention.less().to_f64()
 		resting_focal.times(1.0 - lost_at_full_attention * attention.to_f64())
 	}
 
@@ -70,7 +70,7 @@ Lens :: [].{
 	## negative, and lands below it.
 	y_for_height : { height : Pixels, cam_focal : Pixels } -> Pixels
 	y_for_height = |{ height, cam_focal: focal }|
-		Screen.horizon_y.minus(height.times(focal.ratio_to(resting_focal)))
+		Screen.horizon_y.minus(height.times(focal.portion(resting_focal)))
 
 	## The screen's x for something `turn` to the right of where the camera
 	## faces, through a lens of `cam_focal`. The turn stays under a quarter
@@ -83,7 +83,7 @@ Lens :: [].{
 	## through a lens of `cam_focal`: the way back from `x_for_turn`.
 	turn_at_x : { x : Pixels, cam_focal : Pixels } -> Angle.Turn
 	turn_at_x = |{ x, cam_focal: focal }| {
-		slope = x.minus(Screen.center_x).ratio_to(focal)
+		slope = x.minus(Screen.center_x).portion(focal)
 		Angle.Turn.radians(slope.atan())
 	}
 }

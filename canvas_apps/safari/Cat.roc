@@ -94,8 +94,8 @@ Cat :: [].{
 				Waiting => Attention.none
 				Playing(progress) => peak_attention.portion(Easing.smoothstep(progress))
 				Past(beyond) => {
-					faded = beyond.ratio_to(approach.speed.distance_in(attention_fade))
-					peak_attention.portion(Easing.smoothstep(Fraction.clamp(faded)).complement())
+					faded = beyond.portion(approach.speed.distance_in(attention_fade))
+					peak_attention.portion(Easing.smoothstep(Fraction.clamp(faded)).less())
 				}
 			}
 		}

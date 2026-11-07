@@ -63,7 +63,7 @@ Pipeline :: [].{
 	tall_sighting_of = |placed, { road, place, size_test }| {
 		sighting = sighting_of(placed, { road, place })?
 		forward = sighting.spot.foot().forward()
-		height_px = size_test.focal.times(placed.kind.scenery_height().ratio_to(forward))
+		height_px = size_test.focal.times(placed.kind.scenery_height().portion(forward))
 		if height_px < size_test.smallest_px {
 			Err(TooSmall)
 		} else {

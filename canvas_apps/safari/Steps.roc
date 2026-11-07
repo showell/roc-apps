@@ -8,6 +8,9 @@ Steps :: U32.{
 	to_f64 : Steps -> F64
 	to_f64 = |Steps.(n)| n.to_f64()
 
+	to_u32 : Steps -> U32
+	to_u32 = |Steps.(n)| n
+
 	zero : Steps
 	zero = Steps.(0)
 
@@ -38,6 +41,7 @@ Steps :: U32.{
 
 expect Steps.zero.to_f64() == 0.0
 expect Steps.one_step.to_f64() == 1.0
+expect Steps.of(7).to_u32() == 7
 expect Steps.of(5).plus(Steps.of(7)).to_f64() == 12.0
 expect Steps.of(37).times(3).to_f64() == 111.0
 expect Steps.of(37).times(0).to_f64() == 0.0
