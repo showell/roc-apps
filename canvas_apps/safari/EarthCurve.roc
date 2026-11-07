@@ -11,11 +11,14 @@ EarthCurve :: [].{
 	## How far the ground has curved away below level at `point`, which is
 	## never negative.
 	ground_drop : Geom.RiderPoint -> Distance
-	ground_drop = |{ right, forward }| {
-		r = right.to_metres()
-		f = forward.to_metres()
-		Distance.metres((r * r + f * f) / (2.0 * ground_curve_radius.to_metres()))
-	}
+	ground_drop = |point| drop_over_radius(point, ground_curve_radius)
+
+	## How far a curve much tighter than the ground's has dropped below level
+	## at `point`, which is never negative. It is exaggerated on purpose, so a
+	## far tower visibly sinks as it recedes: it hides an 80 m tower wholly at
+	## 1.8 km, where on the ground's own curve it would stay in view to 4 km.
+	exaggerated_drop : Geom.RiderPoint -> Distance
+	exaggerated_drop = |point| drop_over_radius(point, exaggerated_curve_radius)
 
 	## The outline through `points`, each lowered by the earth's curve, cut at
 	## the horizon. It is empty when all of it lies past the horizon.
@@ -28,6 +31,18 @@ EarthCurve :: [].{
 ## the horizon 490 metres out.
 ground_curve_radius : Distance
 ground_curve_radius = Distance.metres(100000.0)
+
+## The radius of `EarthCurve.exaggerated_drop`, a fifth of the ground's.
+exaggerated_curve_radius : Distance
+exaggerated_curve_radius = Distance.metres(20000.0)
+
+## How far a curve of `radius` has dropped below level at `point`.
+drop_over_radius : Geom.RiderPoint, Distance -> Distance
+drop_over_radius = |{ right, forward }, radius| {
+	r = right.to_metres()
+	f = forward.to_metres()
+	Distance.metres((r * r + f * f) / (2.0 * radius.to_metres()))
+}
 
 ## How far from the rider the ground curves out of sight. A lowered point
 ## further out lands lower on screen again, so ground past here would show
@@ -118,6 +133,19 @@ expect EarthCurve.ground_drop({
 	right: Distance.metres(12.5),
 	forward: Distance.metres(100.0),
 }).to_metres() == 0.05078125
+
+expect EarthCurve.exaggerated_drop({
+	right: Distance.metres(0.0),
+	forward: Distance.metres(200.0),
+}).to_metres() == 1.0
+expect EarthCurve.exaggerated_drop({
+	right: Distance.metres(100.0),
+	forward: Distance.metres(100.0),
+}).to_metres() == 0.5
+expect EarthCurve.exaggerated_drop({
+	right: Distance.metres(0.0),
+	forward: Distance.metres(0.0),
+}).to_metres() == 0.0
 
 ## A point on the level of the rider, `right` and `forward` in metres.
 level_at : F64, F64 -> Geom.RaisedPoint

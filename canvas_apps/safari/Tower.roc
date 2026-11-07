@@ -8,6 +8,7 @@ import Across
 import Along
 import Angle
 import Camera
+import EarthCurve
 import RoadAhead
 import Route
 import SegmentPlace
@@ -78,7 +79,7 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 	tower_shapes = |tower, { spot, cam_focal, context: footprint }| {
 		foot = spot.foot()
 		lift = spot.lift()
-		sunk = sunk_below_horizon(foot.to_rider())
+		sunk = EarthCurve.exaggerated_drop(foot.to_rider())
 		if sunk >= tower_height {
 			[]
 		} else {
@@ -125,12 +126,6 @@ rod_width = rod_half_width.times(2.0)
 
 tower_metal : RgbColor
 tower_metal = RgbColor.of(0x9AA0A8)
-
-## The radius a far tower sinks over, which hides it wholly at 1.8 km. It
-## is tighter than the radius the ground curves over, so a tower sinks visibly
-## as it recedes: on the ground's curve it would stay in view to 4 km.
-sink_radius : Distance
-sink_radius = Distance.metres(20000.0)
 
 beacon_radius : Distance
 beacon_radius = Distance.metres(3.0)
@@ -209,14 +204,6 @@ base_corner_on_road = |corner, { center, yaw }| {
 		along: center.along.plus(Distance.metres(du * sy + dv * cy)),
 		across: center.across.plus(Distance.metres(du * cy - dv * sy)),
 	}
-}
-
-## How far the earth's curve hides the bottom of a tower standing at `p`.
-sunk_below_horizon : Geom.RiderPoint -> Distance
-sunk_below_horizon = |p| {
-	r = p.right.to_metres()
-	f = p.forward.to_metres()
-	Distance.metres((r * r + f * f) / (2.0 * sink_radius.to_metres()))
 }
 
 ## A corner of the tower at `height_on_tower`: drawn in toward the foot as
@@ -610,19 +597,6 @@ expect
 			forward: Distance.metres(100.0),
 			height: Distance.metres(79.0),
 		}
-
-expect sunk_below_horizon({
-	right: Distance.metres(0.0),
-	forward: Distance.metres(200.0),
-}).to_metres() == 1.0
-expect sunk_below_horizon({
-	right: Distance.metres(100.0),
-	forward: Distance.metres(100.0),
-}).to_metres() == 0.5
-expect sunk_below_horizon({
-	right: Distance.metres(0.0),
-	forward: Distance.metres(0.0),
-}).to_metres() == 0.0
 
 expect
 	screen_rod({
