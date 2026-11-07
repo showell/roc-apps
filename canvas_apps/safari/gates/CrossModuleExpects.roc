@@ -663,15 +663,7 @@ cats_seen_on = |road_view, { camera, encounter_timing }|
 		{ camera, animals: EncounterPoses.cat_poses(road_view, encounter_timing) },
 	)
 
-expect
-	cat_route.route_segments().map(
-		|segment|
-			match segment.encounter {
-				CatCrosses(_) => True
-				BirdHere(_) | QuietRoad => False
-			},
-	)
-		== [False, True, False]
+expect cat_route.route_segments().map(World.has_cat) == [False, True, False]
 
 ## The cats in view for a rider `along` metres into the first segment.
 ride_sightings : F64 -> List(Pipeline.Sighted(PosedCat))

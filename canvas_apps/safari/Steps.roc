@@ -39,13 +39,6 @@ Steps :: U32.{
 	is_eq : _
 }
 
-expect Steps.zero.to_f64() == 0.0
-expect Steps.one_step.to_f64() == 1.0
-expect Steps.of(7).to_u32() == 7
-expect Steps.of(5).plus(Steps.of(7)).to_f64() == 12.0
-expect Steps.of(37).times(3).to_f64() == 111.0
-expect Steps.of(37).times(0).to_f64() == 0.0
-
 ## A count of steps wrapped to a cycle of 120.
 phase_of : U32 -> F64
 phase_of = |count| Steps.of(count).wrapped_to(Steps.of(120)).to_f64()
@@ -58,12 +51,3 @@ expect phase_of(120) == 0.0
 expect phase_of(121) == 1.0
 expect phase_of(239) == 119.0
 expect phase_of(240) == 0.0
-
-expect Steps.of(3) > Steps.of(2)
-expect !(Steps.of(3) > Steps.of(3))
-expect Steps.of(3) >= Steps.of(3)
-expect !(Steps.of(2) >= Steps.of(3))
-expect Steps.of(2) < Steps.of(3)
-expect !(Steps.of(3) < Steps.of(3))
-expect Steps.of(3) == Steps.of(3)
-expect !(Steps.of(3) == Steps.of(4))

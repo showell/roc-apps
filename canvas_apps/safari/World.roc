@@ -268,6 +268,14 @@ World :: [].{
 		Route.from_segments(bending_segments.append(last_segment))
 	}
 
+	## Whether a segment has a cat waiting by the road.
+	has_cat : Segment -> Bool
+	has_cat = |segment|
+		match segment.encounter {
+			CatCrosses(_) => True
+			BirdHere(_) | QuietRoad => False
+		}
+
 	## Whether a segment's pigs draw the rider's eye.
 	is_distracting : Segment -> Bool
 	is_distracting = |segment|
@@ -279,7 +287,7 @@ World :: [].{
 	## The route's first segment with a cat.
 	first_cat_segment : Segment
 	first_cat_segment =
-		World.route.route_segments().find_first(has_cat)
+		World.route.route_segments().find_first(World.has_cat)
 			?? crash "World.first_cat_segment: the route has a cat"
 
 	## The cat crossing on the route's first segment with a cat.
@@ -402,14 +410,6 @@ herd_count_before = |index|
 		.count_if(|plan| plan.pigs == WithPigs)
 		.to_u32_wrap()
 
-## Whether a segment has a cat waiting by the road.
-has_cat : Segment -> Bool
-has_cat = |segment|
-	match segment.encounter {
-		CatCrosses(_) => True
-		BirdHere(_) | QuietRoad => False
-	}
-
 seg : U32 -> Segment
 seg = |i| World.route.segment_at(Route.SegmentIndex.number(i))
 
@@ -441,7 +441,7 @@ expect
 		(9, True),
 		(12, False),
 		(18, True),
-	].all(|(index, want)| has_cat(seg(index)) == want)
+	].all(|(index, want)| World.has_cat(seg(index)) == want)
 
 expect
 	[
