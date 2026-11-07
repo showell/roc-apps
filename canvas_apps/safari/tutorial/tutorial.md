@@ -331,7 +331,7 @@ Fewer than three would be a bug in Safari Ride, and a bug shouldn't quietly pain
 
 Some things can rightly have nothing to show. A `Ground.Patch` is a patch of ground, a list of corners on the ground and a color, and one wholly behind the camera has nothing to show. So `Ground.patch_shape` answers a `Try`:
 
-{{signatures Ground.patch_shape}}
+{{signatures GroundPatch.patch_shape}}
 
 Its second argument is the lens's focal length, in pixels, which turns corners on the ground into places on the screen. A simple tree says more about the lens. A `Try` is either `Ok` holding a shape, or `Err` holding a reason, here `BehindCamera`. Both answers are in the type, so whoever calls `patch_shape` can't forget the ground behind the camera.
 

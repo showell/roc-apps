@@ -34,6 +34,7 @@ package
 		Geom,
 		Grass,
 		Ground,
+		GroundPatch,
 		GroundSighting,
 		HexColor,
 		LeanSearch,

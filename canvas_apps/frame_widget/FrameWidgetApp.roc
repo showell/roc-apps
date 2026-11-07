@@ -10,7 +10,7 @@ import game.RoadAhead
 import game.Clock
 import game.FrameView
 import game.Grass
-import game.Ground
+import game.GroundPatch
 import game.GroundSighting
 import game.Mountains
 import game.RiderCamera
@@ -168,7 +168,7 @@ ground_parts : List(Piece)
 ground_parts = {
 	skyline = Mountains.mountain_shapes(paused_camera, Sky.dusk_at(paused_tour.instant.clock))
 	ground = GroundSighting.patches_in_view(paused_road, paused_camera).keep_oks(
-		|patch| Ground.patch_shape(patch, paused_camera.cam_focal),
+		|patch| GroundPatch.patch_shape(patch, paused_camera.cam_focal),
 	)
 	[{ layer: Mountains, shapes: skyline }, { layer: Road, shapes: ground }]
 }

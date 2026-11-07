@@ -1,19 +1,12 @@
-## Ground gives a patch of ground, such as a stretch of road or a pond, as
-## one polygon. The patch follows the earth's curve down as it goes away from
-## the rider.
-import Pixels
+## Ground is the earth's curve under the rider: how far the ground drops below
+## level as it goes away from the rider, and the horizon where it curves out of
+## sight.
 import Camera
 import Distance
 import Fraction
 import Geom
-import lib.Brush
-import lib.RgbColor
-import lib.Shapes
 
 Ground :: [].{
-
-	## A patch of ground: its corners and its colour.
-	Patch : { corners : List(Geom.RiderPoint), color : RgbColor }
 
 	## How far the ground has curved away below level at `point`, which is
 	## never negative.
@@ -24,20 +17,11 @@ Ground :: [].{
 		Distance.metres((r * r + f * f) / (2.0 * ground_curve_radius.to_metres()))
 	}
 
-	## A patch on screen, cut at the horizon and at the camera's near plane,
-	## unless nothing of it is left.
-	patch_shape : Ground.Patch, Pixels -> Try(Shapes.Shape, [PastHorizon, BehindCamera])
-	patch_shape = |patch, cam_focal| {
-		lowered = patch.corners.map(ground_point)
-		before_horizon = Geom.points_in_region(lowered, region_within(horizon_distance))
-		if before_horizon.is_empty() {
-			Err(PastHorizon)
-		} else {
-			polygon = { color: patch.color, corners: before_horizon }
-			shape = Camera.clipped_polygon(polygon, cam_focal)?
-			Ok(shape)
-		}
-	}
+	## The outline through `points`, each lowered by the earth's curve, cut at
+	## the horizon. It is empty when all of it lies past the horizon.
+	points_before_horizon : List(Geom.RiderPoint) -> List(Geom.RaisedPoint)
+	points_before_horizon = |points|
+		Geom.points_in_region(points.map(ground_point), region_within(horizon_distance))
 }
 
 ## The radius the ground curves away over. From the rider's eye it puts
@@ -214,78 +198,3 @@ expect
 			forward: Distance.metres(10.0),
 			height: Distance.metres(-0.000545),
 		}
-
-sample_patch_shape : List(Geom.RiderPoint) -> Try(Shapes.Shape, [PastHorizon, BehindCamera])
-sample_patch_shape = |corners| Ground.patch_shape(
-	{ corners, color: RgbColor.of(0x2F7E8C) },
-	Pixels.of(685.5110432362151),
-)
-
-patch_corners_ahead : List(Geom.RiderPoint)
-patch_corners_ahead = [
-	{ right: Distance.metres(-5.0), forward: Distance.metres(10.0) },
-	{ right: Distance.metres(5.0), forward: Distance.metres(10.0) },
-	{ right: Distance.metres(5.0), forward: Distance.metres(20.0) },
-	{ right: Distance.metres(-5.0), forward: Distance.metres(20.0) },
-]
-
-# A patch of `count` corners, all ahead of the camera.
-corners_ahead : I64 -> List(Geom.RiderPoint)
-corners_ahead = |count|
-	List.from_iter(I64.until(0, count)).map(
-		|k| {
-			offset = (count - k).to_f64()
-			{ right: Distance.metres(offset), forward: Distance.metres(10.0 + offset) }
-		},
-	)
-
-## What became of a patch: drawn, or why not.
-outcome : Try(Shapes.Shape, [PastHorizon, BehindCamera]) -> [Drawn, PastHorizon, BehindCamera]
-outcome = |shape|
-	match shape {
-		Ok(_) => Drawn
-		Err(PastHorizon) => PastHorizon
-		Err(BehindCamera) => BehindCamera
-	}
-
-# A patch that straddles the horizon is kept, and one wholly past it is not.
-expect
-	sample_patch_shape([
-		{ right: Distance.metres(-2.0), forward: Distance.metres(480.0) },
-		{ right: Distance.metres(2.0), forward: Distance.metres(480.0) },
-		{ right: Distance.metres(2.0), forward: Distance.metres(505.0) },
-		{ right: Distance.metres(-2.0), forward: Distance.metres(505.0) },
-	]).is_ok()
-expect
-	outcome(
-		sample_patch_shape([
-			{ right: Distance.metres(-2.0), forward: Distance.metres(495.0) },
-			{ right: Distance.metres(2.0), forward: Distance.metres(495.0) },
-			{ right: Distance.metres(2.0), forward: Distance.metres(520.0) },
-			{ right: Distance.metres(-2.0), forward: Distance.metres(520.0) },
-		]),
-	)
-		== PastHorizon
-expect
-	outcome(
-		sample_patch_shape([
-			{ right: Distance.metres(-5.0), forward: Distance.metres(-10.0) },
-			{ right: Distance.metres(5.0), forward: Distance.metres(-10.0) },
-			{ right: Distance.metres(5.0), forward: Distance.metres(-20.0) },
-			{ right: Distance.metres(-5.0), forward: Distance.metres(-20.0) },
-		]),
-	)
-		== BehindCamera
-
-expect sample_patch_shape(patch_corners_ahead).is_ok()
-expect sample_patch_shape(corners_ahead(8)).is_ok()
-expect sample_patch_shape(corners_ahead(9)).is_ok()
-
-expect {
-	match sample_patch_shape(patch_corners_ahead) {
-		Ok(Poly(polygon)) =>
-			polygon.fill == Flat(Brush.opaque(RgbColor.of(0x2F7E8C)))
-				and polygon.coordinates.len() == 8
-		_ => False
-	}
-}

@@ -36,7 +36,7 @@ import game.Geom
 import game.Motorcycle
 import game.Mountains
 import game.Lens
-import game.Ground
+import game.GroundPatch
 import game.GroundSighting
 import game.Pipeline
 import game.Pond
@@ -1136,18 +1136,95 @@ is_far_to_near = |renderings|
 expect is_far_to_near(scene_renderings)
 expect is_far_to_near([])
 
+# GroundPatch's shapes. A ground patch's checks sit here because the corners
+# need Distance and the fill needs Brush, and GroundPatch imports neither.
+sample_patch_shape : List(Geom.RiderPoint) -> Try(Shapes.Shape, [PastHorizon, BehindCamera])
+sample_patch_shape = |corners| GroundPatch.patch_shape(
+	{ corners, color: RgbColor.of(0x2F7E8C) },
+	Pixels.of(685.5110432362151),
+)
+
+patch_corners_ahead : List(Geom.RiderPoint)
+patch_corners_ahead = [
+	{ right: Distance.metres(-5.0), forward: Distance.metres(10.0) },
+	{ right: Distance.metres(5.0), forward: Distance.metres(10.0) },
+	{ right: Distance.metres(5.0), forward: Distance.metres(20.0) },
+	{ right: Distance.metres(-5.0), forward: Distance.metres(20.0) },
+]
+
+# A patch of `count` corners, all ahead of the camera.
+corners_ahead : I64 -> List(Geom.RiderPoint)
+corners_ahead = |count|
+	List.from_iter(I64.until(0, count)).map(
+		|k| {
+			offset = (count - k).to_f64()
+			{ right: Distance.metres(offset), forward: Distance.metres(10.0 + offset) }
+		},
+	)
+
+## What became of a patch: drawn, or why not.
+patch_outcome : Try(Shapes.Shape, [PastHorizon, BehindCamera]) -> [Drawn, PastHorizon, BehindCamera]
+patch_outcome = |shape|
+	match shape {
+		Ok(_) => Drawn
+		Err(PastHorizon) => PastHorizon
+		Err(BehindCamera) => BehindCamera
+	}
+
+# A patch that straddles the horizon is kept, and one wholly past it is not.
+expect
+	sample_patch_shape([
+		{ right: Distance.metres(-2.0), forward: Distance.metres(480.0) },
+		{ right: Distance.metres(2.0), forward: Distance.metres(480.0) },
+		{ right: Distance.metres(2.0), forward: Distance.metres(505.0) },
+		{ right: Distance.metres(-2.0), forward: Distance.metres(505.0) },
+	]).is_ok()
+expect
+	patch_outcome(
+		sample_patch_shape([
+			{ right: Distance.metres(-2.0), forward: Distance.metres(495.0) },
+			{ right: Distance.metres(2.0), forward: Distance.metres(495.0) },
+			{ right: Distance.metres(2.0), forward: Distance.metres(520.0) },
+			{ right: Distance.metres(-2.0), forward: Distance.metres(520.0) },
+		]),
+	)
+		== PastHorizon
+expect
+	patch_outcome(
+		sample_patch_shape([
+			{ right: Distance.metres(-5.0), forward: Distance.metres(-10.0) },
+			{ right: Distance.metres(5.0), forward: Distance.metres(-10.0) },
+			{ right: Distance.metres(5.0), forward: Distance.metres(-20.0) },
+			{ right: Distance.metres(-5.0), forward: Distance.metres(-20.0) },
+		]),
+	)
+		== BehindCamera
+
+expect sample_patch_shape(patch_corners_ahead).is_ok()
+expect sample_patch_shape(corners_ahead(8)).is_ok()
+expect sample_patch_shape(corners_ahead(9)).is_ok()
+
+expect {
+	match sample_patch_shape(patch_corners_ahead) {
+		Ok(Poly(polygon)) =>
+			polygon.fill == Flat(Brush.opaque(RgbColor.of(0x2F7E8C)))
+				and polygon.coordinates.len() == 8
+		_ => False
+	}
+}
+
 # GroundSighting's road along the first segment, 500 m long: one patch, its
 # edges laid in 20 chunks of 25 m.
 ## A list of patches as a camera the drawing checks read paints them.
-patch_shapes : List(Ground.Patch) -> List(Shapes.Shape)
-patch_shapes = |patches| patches.keep_oks(|patch| Ground.patch_shape(patch, Pixels.of(500.0)))
+patch_shapes : List(GroundPatch) -> List(Shapes.Shape)
+patch_shapes = |patches| patches.keep_oks(|patch| GroundPatch.patch_shape(patch, Pixels.of(500.0)))
 
 ## The ground in view from `rider_vantage` on the road ahead of the route's
 ## first segment. Its first patch is the road along that segment.
-patches_seen_from : Geom.Vantage -> List(Ground.Patch)
+patches_seen_from : Geom.Vantage -> List(GroundPatch)
 patches_seen_from = |rider_vantage| GroundSighting.patches_in_view(road, { vantage: rider_vantage })
 
-first_road : Ground.Patch
+first_road : GroundPatch
 first_road = patches_seen_from(origin).first() ?? crash "CrossModuleExpects: the first segment lays road"
 
 corner : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
