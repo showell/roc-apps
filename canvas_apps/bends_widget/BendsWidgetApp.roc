@@ -69,10 +69,10 @@ two_segments = |turn|
 		|segment, index| {
 			..segment,
 			length: segment_length,
-			exit_turn: if index == 0 {
-				turn
+			ending: if index == 0 {
+				Bends({ turn, bend_life: Quiet })
 			} else {
-				Angle.Turn.degrees(0.0)
+				RouteEnds
 			},
 		},
 	)

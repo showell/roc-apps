@@ -83,20 +83,20 @@ TowerSighting :: [].{
 		[BehindCamera, NoMidTower],
 	)
 	mid_tower = |road, { in_view, clock }|
-		match in_view.segment.mid_tower {
-			MidTower =>
-				tower_if_ahead(
-					road,
-					{
-						clock,
-						place: in_view.place,
-						along: Along.at(in_view.segment.length.divided_by(2.0)),
-						across: Across.left_of_middle(mid_tower_left),
-						yaw: Angle.straight_ahead,
-						beacon_key: in_view.index.to_u32() + mid_tower_key_offset,
-					},
-				)
-			NoMidTower => Err(NoMidTower)
+		if World.has_mid_tower(in_view.segment) {
+			tower_if_ahead(
+				road,
+				{
+					clock,
+					place: in_view.place,
+					along: Along.at(in_view.segment.length.divided_by(2.0)),
+					across: Across.left_of_middle(mid_tower_left),
+					yaw: Angle.straight_ahead,
+					beacon_key: in_view.index.to_u32() + mid_tower_key_offset,
+				},
+			)
+		} else {
+			Err(NoMidTower)
 		}
 }
 
@@ -188,15 +188,7 @@ ride_start = |road| {
 expect TowerSighting.segment_towers(origin_road, ride_start(origin_road)).len() == 1
 expect TowerSighting.mid_tower(origin_road, ride_start(origin_road)).is_err()
 expect TowerSighting.towers_in_view(origin_road, Clock.start).len() == 3
-expect route_segments.all(|seg| !has_mid_tower(seg))
-
-## Whether a segment has a tower halfway along.
-has_mid_tower : World.Segment -> Bool
-has_mid_tower = |seg|
-	match seg.mid_tower {
-		MidTower => True
-		NoMidTower => False
-	}
+expect route_segments.all(|seg| !World.has_mid_tower(seg))
 
 ## The first tower in view on the segment at `position` on the road ahead.
 first_tower_on : U32 -> Pipeline.Sighted(Tower)

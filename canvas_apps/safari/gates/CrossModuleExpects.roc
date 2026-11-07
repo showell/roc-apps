@@ -139,7 +139,7 @@ segment_of = |trees| {
 	..World.route_segment(0),
 	length: Distance.metres(200.0),
 	trees,
-	exit_turn: Angle.straight_ahead,
+	ending: Bends({ turn: Angle.straight_ahead, bend_life: Animal(Elephant) }),
 	crossing: BirdFlight.crossing_among(trees),
 }
 
@@ -260,7 +260,7 @@ past_bend_trees : F64 -> List(Pipeline.Sighted(Conifer))
 past_bend_trees = |degrees| {
 	segment_behind_rider = {
 		..segment_of([tree_at(195.0, 0.0)]),
-		exit_turn: Angle.Turn.degrees(degrees),
+		ending: Bends({ turn: Angle.Turn.degrees(degrees), bend_life: Animal(Elephant) }),
 		crossing: QuietRoad,
 	}
 	rider_segment = { ..segment_of([]), crossing: QuietRoad }
@@ -424,8 +424,8 @@ expect route_cats.all(|{ crossing, .. }| farthest_start < crossing.along.from_st
 leaving_speed : World.Segment -> Speed
 leaving_speed = |segment|
 	match segment.ending {
-		Continues(_) => VehicleLimits.turn_speed(segment.exit_turn.abs())
-		Terminates => Speed.at_rest
+		Bends({ turn, .. }) => VehicleLimits.turn_speed(turn.abs())
+		RouteEnds => Speed.at_rest
 	}
 
 # The reaction ends with its segment, so the cat's hold has to have faded by then

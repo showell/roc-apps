@@ -28,8 +28,9 @@ Rider :: [].{
 		}
 		resolved =
 			match seg.ending {
-				Continues({ next }) => cross_if_on_road(moved, { segment: seg, next })
-				Terminates => { ..moved, motorcycle: stop_at_route_end(moved.motorcycle, seg) }
+				Bends(_) =>
+					cross_if_on_road(moved, { segment: seg, next: state.segment_index.next() })
+				RouteEnds => { ..moved, motorcycle: stop_at_route_end(moved.motorcycle, seg) }
 			}
 		Gaze.next_rider_gaze(resolved, resolved.segment_index.segment_in(route_segments))
 	}
@@ -38,8 +39,8 @@ Rider :: [].{
 	is_finished = |s, route_segments| {
 		seg = s.segment_index.segment_in(route_segments)
 		match seg.ending {
-			Continues(_) => False
-			Terminates => s.motorcycle.along >= Along.at(seg.length)
+			Bends(_) => False
+			RouteEnds => s.motorcycle.along >= Along.at(seg.length)
 		}
 	}
 }
@@ -68,10 +69,8 @@ decide = |motorcycle, seg| {
 rider_on_next_segment : RiderState, Seam -> RiderState
 rider_on_next_segment = |rs, { segment: seg, next }| {
 	m = rs.motorcycle
-	on_next = Geom.point_in_segment_after(
-		{ along: m.along, across: m.across },
-		World.bend_out_of(seg),
-	)
+	bend = World.bend_out_of(seg)
+	on_next = Geom.point_in_segment_after({ along: m.along, across: m.across }, bend)
 	{
 		..rs,
 		segment_index: next,
@@ -79,7 +78,7 @@ rider_on_next_segment = |rs, { segment: seg, next }| {
 			..m,
 			along: on_next.along,
 			across: on_next.across,
-			yaw: m.yaw.minus(seg.exit_turn),
+			yaw: m.yaw.minus(bend.turn),
 		},
 	}
 }
@@ -179,10 +178,12 @@ expect crossed.motorcycle.speed.to_metres_a_step() == 1.25
 expect crossed.motorcycle.lean.to_radians() == 0.05
 expect crossed.eyes.look_depth.to_f64() == 0.4
 expect crossed.motorcycle.heading.to_radians() - 0.7 == 0.0
-expect crossed.motorcycle.yaw.to_radians() - (0.1 - first_segment.exit_turn.to_radians()) == 0.0
+expect {
+	exit_turn = World.bend_out_of(first_segment).turn
+	crossed.motorcycle.yaw.to_radians() - (0.1 - exit_turn.to_radians()) == 0.0
+}
 
 expect crossed.segment_index.to_i64() == 1
-expect first_segment.ending == Continues({ next: World.SegmentIndex.number(1) })
 
 expect {
 	far = rider_on_next_segment(rider_at(100.0, 0.0), first_seam)
@@ -226,7 +227,7 @@ stopped_on_last = |along| {
 
 expect Rider.is_finished(stopped_on_last(300.0), [last_seg])
 expect !Rider.is_finished(stopped_on_last(299.0), [last_seg])
-expect last_seg.ending == Terminates
+expect last_seg.ending == RouteEnds
 expect !Rider.is_finished(rider_at(499.0, 0.0), first_segments)
 
 one_step_on : RiderState

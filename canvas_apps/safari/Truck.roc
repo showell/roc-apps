@@ -104,12 +104,12 @@ next_bend_on = |segments, { route_position, segment_start }|
 			segment_end = segment_start.plus(segment.length)
 			if route_position < segment_end {
 				match segment.ending {
-					Continues(_) =>
+					Bends({ turn, .. }) =>
 						BendAhead({
 							distance: segment_end.minus(route_position),
-							turn_speed: VehicleLimits.turn_speed(segment.exit_turn.abs()),
+							turn_speed: VehicleLimits.turn_speed(turn.abs()),
 						})
-					Terminates => NoBendAhead
+					RouteEnds => NoBendAhead
 				}
 			} else {
 				next_bend_on(later_segments, { route_position, segment_start: segment_end })
@@ -216,7 +216,10 @@ expect turn_distance(one_segment_list, 450.0) == 50.0
 expect turn_distance(one_segment_list, 499.0) == 1.0
 expect turn_v(one_segment_list, 0.0) == 0.222
 expect turn_v(one_segment_list, 450.0) == 0.222
-expect VehicleLimits.turn_speed(World.route_segment(0).exit_turn.abs()).to_metres_a_step() == 0.222
+expect {
+	first_turn = World.bend_out_of(World.route_segment(0)).turn
+	VehicleLimits.turn_speed(first_turn.abs()).to_metres_a_step() == 0.222
+}
 expect turn_distance(one_segment_list, 500.0) == -1.0
 expect turn_distance(one_segment_list, 900.0) == -1.0
 expect turn_distance([World.route_segment(18)], 0.0) == -1.0

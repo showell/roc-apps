@@ -105,10 +105,15 @@ is_within_reach = |place, reach|
 ## measured from the bend at the segment's end.
 bend_life_critters : World.Segment -> List(Geom.Placed(Billboard))
 bend_life_critters = |segment|
-	match segment.bend_life {
-		Animal(animal) => Wildlife.bend_critters({ animal, bend: World.bend_out_of(segment) })
-		DuckPond => Pond.placed_ducks(segment.length)
-		Quiet => []
+	match segment.ending {
+		Bends({ bend_life, .. }) =>
+			match bend_life {
+				Animal(animal) =>
+					Wildlife.bend_critters({ animal, bend: World.bend_out_of(segment) })
+				DuckPond => Pond.placed_ducks(segment.length)
+				Quiet => []
+			}
+		RouteEnds => []
 	}
 
 expect BillboardSighting.farm_reach.to_i64() == 3

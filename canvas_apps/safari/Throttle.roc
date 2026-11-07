@@ -63,8 +63,8 @@ held_to = |a, limit|
 exit_speed : World.Segment -> Speed
 exit_speed = |seg|
 	match seg.ending {
-		Continues(_) => VehicleLimits.turn_speed(seg.exit_turn.abs())
-		Terminates => Speed.at_rest
+		Bends({ turn, .. }) => VehicleLimits.turn_speed(turn.abs())
+		RouteEnds => Speed.at_rest
 	}
 
 ## Whether the motorcycle is near enough the end of `seg` to brake for its bend.
@@ -78,7 +78,7 @@ is_near_end = |motorcycle, seg|
 bend_limit : Motorcycle, { segment : World.Segment, exit_speed : Speed } -> VehicleLimits.Limit
 bend_limit = |motorcycle, { segment: seg, exit_speed: v_end }|
 	if is_near_end(motorcycle, seg) {
-		d = seg.commit_along.distance_from(motorcycle.along)
+		d = World.commit_along(seg).distance_from(motorcycle.along)
 		bend_a =
 			if d <= VehicleLimits.least_braking_distance {
 				Acceleration.steady

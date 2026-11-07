@@ -183,8 +183,13 @@ pond_patches : RoadAhead.RoadView,
 	segment : World.Segment,
 	place : SegmentPlace,
 } -> List(Ground.Patch)
-pond_patches = |road, { segment, place }|
-	if Scenery.is_pond(segment.bend_life) {
+pond_patches = |road, { segment, place }| {
+	is_at_pond =
+		match segment.ending {
+			Bends({ bend_life, .. }) => Scenery.is_pond(bend_life)
+			RouteEnds => False
+		}
+	if is_at_pond {
 		on_map = |outline|
 			outline.map(
 				|point| {
@@ -202,6 +207,7 @@ pond_patches = |road, { segment, place }|
 	} else {
 		[]
 	}
+}
 
 expect
 	[

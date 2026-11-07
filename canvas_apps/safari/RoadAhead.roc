@@ -166,11 +166,11 @@ indices_onto = |route_segments, { index, segments_ahead }|
 	} else {
 		more_segments_ahead = segments_ahead.append(index)
 		match index.segment_in(route_segments).ending {
-			Continues({ next }) => indices_onto(
+			Bends(_) => indices_onto(
 				route_segments,
-				{ index: next, segments_ahead: more_segments_ahead },
+				{ index: index.next(), segments_ahead: more_segments_ahead },
 			)
-			Terminates => more_segments_ahead
+			RouteEnds => more_segments_ahead
 		}
 	}
 

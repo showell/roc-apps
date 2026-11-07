@@ -92,18 +92,14 @@ World :: [].{
 		## nothing to notice, so its pigs are `Unnoticed`.
 		pig_interest : World.PigInterest,
 
-		## The turn into the next segment: positive to the right, negative to
-		## the left.
-		exit_turn : Angle.Turn,
-		commit_along : Along,
-		mid_tower : [MidTower, NoMidTower],
-
 		## What crosses the road here, at most one thing, so that the rider has
 		## one experience at a time. Most of the road is quiet, so that a crossing
 		## stands out.
 		crossing : [CatCrosses(Cat.Crossing), BirdHere(BirdFlight.Habit), QuietRoad],
-		ending : [Continues({ next : World.SegmentIndex }), Terminates],
-		bend_life : Scenery.BendLife,
+
+		## How the segment ends: by turning into the next, positive to the
+		## right, with what lives at the bend, or by ending the route.
+		ending : [Bends({ turn : Angle.Turn, bend_life : Scenery.BendLife }), RouteEnds],
 	}
 
 	## A segment longer than this has a tower halfway along.
@@ -423,9 +419,26 @@ World :: [].{
 	distance_along_route = |route_segments, { index, along }|
 		route_length(route_segments.take_first(index.count_before())).plus(along.from_start())
 
-	## The bend at the end of `segment`.
+	## The bend at the end of `segment`, which some segment follows.
 	bend_out_of : World.Segment -> Geom.Bend
-	bend_out_of = |segment| { segment_length: segment.length, turn: segment.exit_turn }
+	bend_out_of = |segment|
+		match segment.ending {
+			Bends({ turn, .. }) => { segment_length: segment.length, turn }
+			RouteEnds => crash "World.bend_out_of: nothing follows the route's last segment"
+		}
+
+	## How far along `segment` a rider on the middle of the road comes onto the
+	## next segment's road, or the end of the route.
+	commit_along : World.Segment -> Along
+	commit_along = |segment|
+		match segment.ending {
+			Bends({ turn, .. }) => Geom.commit_along({ segment_length: segment.length, turn })
+			RouteEnds => Along.at(segment.length)
+		}
+
+	## Whether `segment` has a tower halfway along.
+	has_mid_tower : World.Segment -> Bool
+	has_mid_tower = |segment| segment.length > World.mid_tower_min_length
 }
 
 ## The segment at `index` of the route, built from its plan.
@@ -451,17 +464,6 @@ built_segment = |plan, index| {
 		pig_herd,
 		bull: plan.bull,
 		pig_interest,
-		exit_turn: plan.turn,
-		commit_along: match plan.ending {
-			Continues =>
-				Geom.commit_along({ segment_length: plan.length, turn: plan.turn })
-			Terminates => Along.at(plan.length)
-		},
-		mid_tower: if plan.length > World.mid_tower_min_length {
-			MidTower
-		} else {
-			NoMidTower
-		},
 		crossing: match plan.crossing {
 			CatCrosses => CatCrosses(
 				Cat.crossing({
@@ -473,12 +475,8 @@ built_segment = |plan, index| {
 			QuietRoad => QuietRoad
 		},
 		ending: match plan.ending {
-			Continues => Continues({ next: index.next() })
-			Terminates => Terminates
-		},
-		bend_life: match plan.ending {
-			Continues => plan.bend_life
-			Terminates => Quiet
+			Continues => Bends({ turn: plan.turn, bend_life: plan.bend_life })
+			Terminates => RouteEnds
 		},
 	}
 }
@@ -530,19 +528,16 @@ expect seg(9).length.to_metres() == 800.0
 expect seg(18).length.to_metres() == 300.0
 expect
 	[
-		(0, 1),
-		(1, 2),
-		(17, 18),
-	].all(|(index, want)| next_of(seg(index)) == want)
-
-expect [(0, False), (18, True)].all(|(index, want)| is_route_end(seg(index)) == want)
+		(0, False),
+		(17, False),
+		(18, True),
+	].all(|(index, want)| is_route_end(seg(index)) == want)
 
 expect
 	[
 		(0, True),
 		(1, False),
 		(6, True),
-		(18, True),
 	].all(|(index, want)| turns_right(seg(index)) == want)
 
 expect
@@ -550,7 +545,7 @@ expect
 		(0, False),
 		(6, True),
 		(9, False),
-	].all(|(index, want)| has_mid_tower(seg(index)) == want)
+	].all(|(index, want)| World.has_mid_tower(seg(index)) == want)
 
 expect
 	[
@@ -563,18 +558,17 @@ expect
 
 expect
 	[
-		(seg(0).exit_turn.abs().to_radians() / Trig.deg, 50.0),
-		(seg(1).exit_turn.abs().to_radians() / Trig.deg, 70.0),
-		(seg(6).exit_turn.abs().to_radians() / Trig.deg, 80.0),
-		(seg(18).exit_turn.abs().to_radians() / Trig.deg, 0.0),
-		(seg(18).commit_along.to_metres(), 300.0),
+		(exit_turn_of(seg(0)).abs().to_radians() / Trig.deg, 50.0),
+		(exit_turn_of(seg(1)).abs().to_radians() / Trig.deg, 70.0),
+		(exit_turn_of(seg(6)).abs().to_radians() / Trig.deg, 80.0),
+		(World.commit_along(seg(18)).to_metres(), 300.0),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 
 expect
 	[
-		(seg(0).commit_along.to_metres(), 498.32180073764545),
-		(seg(1).commit_along.to_metres(), 319.2720595314676),
-		(seg(6).commit_along.to_metres(), 1199.647346038583),
+		(World.commit_along(seg(0)).to_metres(), 498.32180073764545),
+		(World.commit_along(seg(1)).to_metres(), 319.2720595314676),
+		(World.commit_along(seg(6)).to_metres(), 1199.647346038583),
 	].all(|(got, want)| (got - want).abs() <= 0.00000001)
 
 expect World.segment_pigs(seg(0)).len() == 0
@@ -636,29 +630,17 @@ expect nearest_tree_ahead(seg(3).trees, Along.metres(96.5)).along == Along.metre
 is_route_end : World.Segment -> Bool
 is_route_end = |segment|
 	match segment.ending {
-		Continues(_) => False
-		Terminates => True
+		Bends(_) => False
+		RouteEnds => True
 	}
 
-## The segment after one that continues.
-next_of : World.Segment -> I64
-next_of = |segment|
-	match segment.ending {
-		Continues({ next }) => next.to_i64()
-		Terminates => crash "World.next_of: segments 0, 1 and 17 continue"
-	}
+## The turn out of a segment that bends.
+exit_turn_of : World.Segment -> Angle.Turn
+exit_turn_of = |segment| World.bend_out_of(segment).turn
 
 ## Whether a segment ends by turning right.
 turns_right : World.Segment -> Bool
-turns_right = |segment| segment.exit_turn.is_right()
-
-## Whether a segment has a tower halfway along.
-has_mid_tower : World.Segment -> Bool
-has_mid_tower = |segment|
-	match segment.mid_tower {
-		MidTower => True
-		NoMidTower => False
-	}
+turns_right = |segment| exit_turn_of(segment).is_right()
 
 ## Whether a segment has a cat waiting by the road.
 has_cat : World.Segment -> Bool
