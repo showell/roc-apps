@@ -16,7 +16,7 @@ import RailSighting
 import Tower
 import TowerSighting
 import TreeSighting
-import Truck
+import TruckAhead
 import TruckSighting
 import Speed
 import World
@@ -33,10 +33,10 @@ Scene := {
 }.{
 
 	## What the sightings read beyond the road: the rider's speed, where the
-	## truck is and which of its lights are on, and the clock.
+	## truck is and how it looks, and the clock.
 	RideFacts : {
 		speed : Speed,
-		truck : { route_position : Distance, lights : Truck.Lights },
+		truck : { route_position : Distance, truck_ahead : TruckAhead },
 		clock : Clock,
 	}
 
@@ -55,7 +55,7 @@ Scene := {
 		)
 		truck_at = TruckSighting.truck_in_view(
 			road,
-			{ lead: truck.route_position.minus(rider_distance), lights: truck.lights },
+			{ lead: truck.route_position.minus(rider_distance), truck_ahead: truck.truck_ahead },
 		)
 		birds = CrossingSighting.birds_in_view(view)
 		{

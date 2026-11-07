@@ -13,6 +13,7 @@ import Rider
 import Sky
 import Sun
 import Truck
+import TruckAhead
 import ViewYaw
 import World
 import lib.Shapes
@@ -23,14 +24,14 @@ import lib.Shapes
 ## from these three.
 RideInstant := {
 	rider : RiderState,
-	truck : Truck.TruckState,
+	truck : Truck,
 	clock : Clock,
 }.{
 
 	initial : RideInstant
 	initial = {
 		rider: RiderState.initial,
-		truck: Truck.initial_truck,
+		truck: Truck.initial,
 		clock: Clock.start,
 	}
 
@@ -51,7 +52,7 @@ RideInstant := {
 		)
 		{
 			rider: nx,
-			truck: Truck.truck_state_at_next_step(
+			truck: Truck.at_next_step(
 				instant.truck,
 				{
 					rider_distance: dist,
@@ -64,15 +65,18 @@ RideInstant := {
 	}
 
 	## Which of the truck's lights are on: its headlights once the sun is behind
-	## the mountains, and its brake lights as its last step left them.
-	truck_lights : RideInstant -> Truck.Lights
+	## the mountains, and its brake lights while its last step slowed it.
+	truck_lights : RideInstant -> TruckAhead
 	truck_lights = |instant| {
 		headlights: if Mountains.is_sun_behind_mountains(instant.clock) {
 			On
 		} else {
 			Off
 		},
-		brake_lights: instant.truck.brake_lights,
+		brake_lights: match instant.truck.pace {
+			Slowing => On
+			NotSlowing => Off
+		},
 	}
 
 	## What the camera shows at one instant: the shapes in paint order, and the
@@ -115,7 +119,7 @@ RideInstant := {
 				speed: s.speed,
 				truck: {
 					route_position: instant.truck.route_position,
-					lights: truck_lights(instant),
+					truck_ahead: truck_lights(instant),
 				},
 				clock: instant.clock,
 			},
@@ -142,7 +146,7 @@ expect RideInstant.initial.rider.speed.to_metres_a_step() == 0.3
 expect RideInstant.initial.truck.route_position.to_metres() == 500.0
 expect RideInstant.initial.truck.speed.to_metres_a_step() == 0.3
 expect RideInstant.initial.rider.segment_index.to_i64() == 0
-expect RideInstant.initial.truck.brake_lights == Off
+expect RideInstant.initial.truck.pace == NotSlowing
 expect !Rider.is_finished(RideInstant.initial.rider, World.segments)
 
 after_one_step : RideInstant
@@ -166,7 +170,7 @@ expect {
 		World.segments,
 		{ index: after_one_step.rider.segment_index, along: after_one_step.rider.along },
 	)
-	against_new = Truck.truck_state_at_next_step(
+	against_new = Truck.at_next_step(
 		RideInstant.initial.truck,
 		{
 			rider_distance: new_dist,
@@ -174,7 +178,7 @@ expect {
 			route_length: World.route_length(World.segments),
 		},
 	)
-	against_old = Truck.truck_state_at_next_step(
+	against_old = Truck.at_next_step(
 		RideInstant.initial.truck,
 		{
 			rider_distance: old_dist,
@@ -199,20 +203,16 @@ expect RideInstant.frame_content(World.segments, RideInstant.initial).sun == Out
 after_sunset : Clock
 after_sunset = Clock.at_step(5700)
 
-## The truck's lights at `clock`, with its brake lights left as given.
-lights_at : { clock : Clock, brake_lights : [On, Off] } -> Truck.Lights
-lights_at = |{ clock, brake_lights }|
+## The truck's lights at `clock`, with the truck's pace as given.
+lights_at : { clock : Clock, pace : [Slowing, NotSlowing] } -> TruckAhead
+lights_at = |{ clock, pace }|
 	RideInstant.truck_lights({
 		..RideInstant.initial,
-		truck: { ..RideInstant.initial.truck, brake_lights },
+		truck: { ..RideInstant.initial.truck, pace },
 		clock,
 	})
 
-expect
-	lights_at({ clock: Clock.start, brake_lights: Off })
-		== { headlights: Off, brake_lights: Off }
-expect lights_at({ clock: Clock.start, brake_lights: On }) == { headlights: Off, brake_lights: On }
-expect
-	lights_at({ clock: after_sunset, brake_lights: Off })
-		== { headlights: On, brake_lights: Off }
-expect lights_at({ clock: after_sunset, brake_lights: On }) == { headlights: On, brake_lights: On }
+expect lights_at({ clock: Clock.start, pace: NotSlowing }) == { headlights: Off, brake_lights: Off }
+expect lights_at({ clock: Clock.start, pace: Slowing }) == { headlights: Off, brake_lights: On }
+expect lights_at({ clock: after_sunset, pace: NotSlowing }) == { headlights: On, brake_lights: Off }
+expect lights_at({ clock: after_sunset, pace: Slowing }) == { headlights: On, brake_lights: On }

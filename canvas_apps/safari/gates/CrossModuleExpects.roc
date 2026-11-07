@@ -669,7 +669,7 @@ scene = Scene.scene_in_view(
 		speed: VehicleLimits.base_speed,
 		truck: {
 			route_position: Distance.metres(500.0),
-			lights: { headlights: Off, brake_lights: Off },
+			truck_ahead: { headlights: Off, brake_lights: Off },
 		},
 		clock: Clock.start,
 	},
@@ -813,7 +813,7 @@ done = {
 	truck: {
 		route_position: Distance.metres(9000.0),
 		speed: Speed.metres_a_step(2.0),
-		brake_lights: On,
+		pace: Slowing,
 	},
 	clock: Clock.at_step(12345),
 }
@@ -848,7 +848,7 @@ expect {
 }
 
 expect Rider.is_finished(done.rider, World.segments)
-expect RideInstant.next_or_restart(World.segments, done).truck.brake_lights == Off
+expect RideInstant.next_or_restart(World.segments, done).truck.pace == NotSlowing
 
 # A frame of the ride draws.
 expect {
