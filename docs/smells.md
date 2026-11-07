@@ -144,6 +144,12 @@ only what is its own. `Pipeline` is that place for sighting and rendering.
 `Conifer` owns its picture and `Pipeline` knows nothing of trees. If a general
 module imports a particular one, ask which way the arrow should point.
 
+**A module's tests live in another module.** More than half of SceneShapes.roc
+tested TreeSighting and TruckSighting, which had no `expect`s of their own, and
+SceneShapes imported six modules only for those tests. An expect belongs beside
+the function it tests. The walk's "Imported but not in any printed type" line is
+the lead.
+
 **The explanation needs an apology.** If you can't say what a piece of code does
 in plain words to a newcomer, the code is usually wrong and the prose is fine.
 "It's kind of amazing how shining a light on the code reveals so much to the
