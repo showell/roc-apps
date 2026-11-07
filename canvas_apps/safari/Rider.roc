@@ -56,10 +56,6 @@ Seam : { segment : World.Segment, next : World.SegmentIndex }
 ## A rider, and the segment of the route they are on.
 RiderOnSegment : { rider : RiderState, segment : World.Segment }
 
-## A rider this slow near the route's end stops there.
-stopping_speed : Speed
-stopping_speed = Speed.metres_a_step(0.1)
-
 ## The lean toward the best line, and the throttle for the motorcycle once it
 ## leans so.
 decide : Motorcycle, World.Segment -> Rider.Decision
@@ -93,11 +89,12 @@ rider_on_next_segment = |rs, { segment: seg, next }| {
 	}
 }
 
+## The motorcycle held at the route's end once it reaches it. The throttle
+## brakes it to rest there, and this catches the last step's overrun.
 stop_at_route_end : Motorcycle, World.Segment -> Motorcycle
 stop_at_route_end = |moved, seg| {
 	end = Along.at(seg.length)
-	in_zone = end.distance_from(moved.along) < VehicleLimits.bend_approach
-	if moved.along >= end or (in_zone and moved.speed < stopping_speed) {
+	if moved.along >= end {
 		stopped_at(moved, end)
 	} else {
 		moved
@@ -234,12 +231,12 @@ expect clamped_at_finish(300.0, 0.5).along.to_metres() == 300.0
 expect clamped_at_finish(300.0, 0.5).speed.to_metres_a_step() == 0.0
 expect clamped_at_finish(310.0, 0.5).along.to_metres() == 300.0
 expect clamped_at_finish(310.0, 0.5).speed.to_metres_a_step() == 0.0
-expect clamped_at_finish(290.0, 0.05).along.to_metres() == 300.0
-expect clamped_at_finish(290.0, 0.05).speed.to_metres_a_step() == 0.0
+
+# Short of the end, however slow, the motorcycle is left where it is.
+expect clamped_at_finish(299.99, 0.05).along.to_metres() == 299.99
+expect clamped_at_finish(299.99, 0.05).speed.to_metres_a_step() == 0.05
 expect clamped_at_finish(290.0, 0.5).along.to_metres() == 290.0
 expect clamped_at_finish(290.0, 0.5).speed.to_metres_a_step() == 0.5
-expect clamped_at_finish(100.0, 0.05).along.to_metres() == 100.0
-expect clamped_at_finish(100.0, 0.05).speed.to_metres_a_step() == 0.05
 
 ## A rider stopped at `along` metres on the last segment.
 stopped_on_last : F64 -> RiderState
