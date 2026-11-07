@@ -245,13 +245,29 @@ Geom :: [].{
 			(Err(BehindCamera), Err(BehindCamera)) => Err(BehindCamera)
 		}
 
-	## The polygon cut to what lies at or past the near plane.
-	clipped_points : List(Geom.RaisedPoint) -> List(Geom.AheadPoint)
-	clipped_points = |polygon_points| {
+	## A region of the rider's view that a polygon can be cut to: which of its
+	## corners lie in the region, and where its edges cross the boundary.
+	Region(point) : {
+		## `corner` as a point of the cut polygon, if it lies in the region.
+		corner_in_region : Geom.RaisedPoint -> Try(point, [Outside]),
+
+		## Where the edge from `from` to `to` crosses the region's boundary,
+		## strictly between its ends, nearest `from` first.
+		edge_crossings : { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> List(point),
+	}
+
+	## The polygon cut to what lies in `region`. Where an edge leaves the
+	## region and another comes back into it, a straight line joins them.
+	points_in_region : List(Geom.RaisedPoint), Geom.Region(point) -> List(point)
+	points_in_region = |polygon_points, region| {
 		next_corners = polygon_points.drop_first(1).concat(polygon_points.take_first(1))
-		edges = polygon_points.map2(next_corners, |from, to| { from, to })
+		edges = polygon_points.map2(next_corners, |from, to| { from, to, region })
 		edges.fold(List.with_capacity(2 * polygon_points.len()), edge_points_onto)
 	}
+
+	## The polygon cut to what lies at or past the near plane.
+	clipped_points : List(Geom.RaisedPoint) -> List(Geom.AheadPoint)
+	clipped_points = |polygon_points| Geom.points_in_region(polygon_points, near_plane_region)
 
 	## The point `fraction` of the way from `from` to `to`.
 	point_between : {
@@ -304,26 +320,41 @@ start_after = |bend| {
 	}
 }
 
-## `clipped` with what one edge of a polygon adds to it: the edge's first
-## corner if that is in view, then the point where the edge crosses the near
-## plane if it does.
-edge_points_onto : List(Geom.AheadPoint),
+## `kept_points` with what one edge of a polygon adds to it: the edge's first
+## corner if that lies in `region`, then each point where the edge crosses the
+## region's boundary, in order along the edge.
+edge_points_onto : List(point),
 {
 	from : Geom.RaisedPoint,
 	to : Geom.RaisedPoint,
-} -> List(Geom.AheadPoint)
-edge_points_onto = |clipped, { from, to }| {
-	from_ahead = Geom.ahead_point(from)
+	region : Geom.Region(point),
+} -> List(point)
+edge_points_onto = |kept_points, { from, to, region }| {
+	corner_in_region = region.corner_in_region
+	edge_crossings = region.edge_crossings
 	with_corner =
-		match from_ahead {
-			Ok(corner) => clipped.append(corner)
-			Err(BehindCamera) => clipped
+		match corner_in_region(from) {
+			Ok(corner) => kept_points.append(corner)
+			Err(Outside) => kept_points
 		}
-	if from_ahead.is_ok() == Geom.ahead_point(to).is_ok() {
-		with_corner
-	} else {
-		with_corner.append(near_plane_crossing({ from, to }))
-	}
+	with_corner.concat(edge_crossings({ from, to }))
+}
+
+## The part of the rider's view at or past the near plane. An edge crosses it
+## where its two ends lie on either side of the near plane.
+near_plane_region : Geom.Region(Geom.AheadPoint)
+near_plane_region = {
+	corner_in_region: |point|
+		match Geom.ahead_point(point) {
+			Ok(ahead) => Ok(ahead)
+			Err(BehindCamera) => Err(Outside)
+		},
+	edge_crossings: |{ from, to }|
+		if is_in_view(from.forward) == is_in_view(to.forward) {
+			[]
+		} else {
+			[near_plane_crossing({ from, to })]
+		},
 }
 
 ## A point `forward` metres straight ahead, on the rider's level.

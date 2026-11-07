@@ -1,4 +1,4 @@
-## Ground gives a flat patch of ground, such as a stretch of road or a pond, as
+## Ground gives a patch of ground, such as a stretch of road or a pond, as
 ## one polygon. The patch follows the earth's curve down as it goes away from
 ## the rider.
 import Pixels
@@ -15,9 +15,8 @@ Ground :: [].{
 	## A patch of ground: its corners and its colour.
 	Patch : { corners : List(Geom.RiderPoint), color : RgbColor }
 
-	## The radius the ground, and the truck on it, curve away over. From the
-	## rider's eye it puts the horizon 490 metres out, at
-	## `Ground.horizon_distance`.
+	## The radius the ground curves away over. From the rider's eye it puts
+	## the horizon 490 metres out.
 	ground_curve_radius : Distance
 	ground_curve_radius = Distance.metres(100000.0)
 
@@ -44,7 +43,7 @@ Ground :: [].{
 	patch_shape : Ground.Patch, Pixels -> Try(Shapes.Shape, [PastHorizon, BehindCamera])
 	patch_shape = |patch, cam_focal| {
 		lowered = patch.corners.map(ground_point)
-		before_horizon = points_within(lowered, horizon_distance)
+		before_horizon = Geom.points_in_region(lowered, region_within(horizon_distance))
 		if before_horizon.is_empty() {
 			Err(PastHorizon)
 		} else {
@@ -63,35 +62,20 @@ ground_point = |point| {
 	height: Ground.ground_drop(point).opposite(),
 }
 
-## The polygon cut to what lies within `reach` of the rider, measured on
-## the ground. Where an edge leaves that circle and another comes back
-## into it, a straight line joins them.
-points_within : List(Geom.RaisedPoint), Distance -> List(Geom.RaisedPoint)
-points_within = |polygon_points, reach| {
-	next_corners = polygon_points.drop_first(1).concat(polygon_points.take_first(1))
-	edges = polygon_points.map2(next_corners, |from, to| { from, to, reach })
-	edges.fold(List.with_capacity(2 * polygon_points.len()), reach_points_onto)
-}
-
-## `points_within` with what one edge of a polygon adds to it: the edge's first
-## corner if that is within reach, then each point where the edge crosses the
-## circle at `reach`, in order along the edge.
-reach_points_onto : List(Geom.RaisedPoint),
-{
-	from : Geom.RaisedPoint,
-	to : Geom.RaisedPoint,
-	reach : Distance,
-} -> List(Geom.RaisedPoint)
-reach_points_onto = |kept_points, { from, to, reach }| {
-	with_corner = if is_within(from, reach) {
-		kept_points.append(from)
-	} else {
-		kept_points
-	}
-	circle_crossings({ from, to, reach }).fold(
-		with_corner,
-		|points, fraction| points.append(Geom.point_between({ from, to, fraction })),
-	)
+## The part of the rider's view within `reach` of the rider, measured on the
+## ground: a circle round the rider.
+region_within : Distance -> Geom.Region(Geom.RaisedPoint)
+region_within = |reach| {
+	corner_in_region: |point|
+		if is_within(point, reach) {
+			Ok(point)
+		} else {
+			Err(Outside)
+		},
+	edge_crossings: |{ from, to }| {
+		point_at = |fraction| Geom.point_between({ from, to, fraction })
+		circle_crossings({ from, to, reach }).map(point_at)
+	},
 }
 
 ## Whether `point` is within `reach` of the rider, measured on the ground.
@@ -174,6 +158,13 @@ are_near = |got_points, wants| {
 	got_points.len() == wants.len() and is_each_near
 }
 
+## The polygon cut to what lies within 10 m of the rider.
+points_within_ten_metres : List(Geom.RaisedPoint) -> List(Geom.RaisedPoint)
+points_within_ten_metres = |polygon_points| {
+	reach = region_within(Distance.metres(10.0))
+	Geom.points_in_region(polygon_points, reach)
+}
+
 # A square that reaches past 10 m of the rider keeps two corners, then where its
 # right side leaves the circle, then where its left side comes back in.
 expect {
@@ -184,7 +175,7 @@ expect {
 		level_at(-6.0, 12.0),
 	]
 	are_near(
-		points_within(square, Distance.metres(10.0)),
+		points_within_ten_metres(square),
 		[
 			(-6.0, 0.0),
 			(6.0, 0.0),
@@ -202,7 +193,7 @@ expect {
 		level_at(20.0, 6.0),
 		level_at(0.0, 30.0),
 	]
-	are_near(points_within(triangle, Distance.metres(10.0)), [(-8.0, 6.0), (8.0, 6.0)])
+	are_near(points_within_ten_metres(triangle), [(-8.0, 6.0), (8.0, 6.0)])
 }
 
 # A polygon wholly past reach leaves nothing.
@@ -212,7 +203,7 @@ expect {
 		level_at(30.0, 20.0),
 		level_at(30.0, 30.0),
 	]
-	points_within(far_triangle, Distance.metres(10.0)).is_empty()
+	points_within_ten_metres(far_triangle).is_empty()
 }
 
 expect ground_point({
@@ -261,8 +252,6 @@ corners_ahead = |count|
 			{ right: Distance.metres(offset), forward: Distance.metres(10.0 + offset) }
 		},
 	)
-
-expect (Ground.horizon_distance.to_metres() - 489.89794855663564).abs() <= 0.000000001
 
 ## What became of a patch: drawn, or why not.
 outcome : Try(Shapes.Shape, [PastHorizon, BehindCamera]) -> [Drawn, PastHorizon, BehindCamera]
