@@ -1141,8 +1141,8 @@ is the base; these rules sharpen it.
     function of `{}`; `bool_param`, a flag passed as a Bool, which only
     `types=1` can see; `dead`, a function nothing reaches; and `single`, a
     one-caller wrapper of a line or two that no `expect`, twin or `##` doc
-    keeps. Safari's gate holds the five that need no types, and `unused_api`
-    and `same_branches` print as questions;
+    keeps. Safari's gate holds all six, and `unused_api` and `same_branches`
+    print as questions;
   - `errors.shale`: `error_alias` (a result's `Try` whose error is a shared
     alias, not its tags in place), `optional_tag` (a tag named as an optional,
     `None` or `Some`), `set_fallback` (`l.set(i, v) ?? l`), `placeholder`
