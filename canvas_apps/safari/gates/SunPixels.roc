@@ -6,8 +6,8 @@
 ## the grass is where the glow is. The frame paints the sun before the ride's
 ## shapes, so the mountains can hide it.
 import lib.Brush
+import game.Grass
 import PixelGrid
-import game.Screen
 import ScreenRoll
 import game.Sun
 
@@ -29,7 +29,7 @@ pixels_with_glow_and_disc = |pixels, { roll, sun }| {
 	disc_radius = Sun.disc_radius_drawn(sun).to_f64()
 	sun_x = sun.x.to_f64()
 	sun_y = sun.y.to_f64()
-	grass_top_y = Screen.grass_top_y.to_f64()
+	grass_top_y = Grass.grass_top_y.to_f64()
 	on_screen = roll.to_screen(ScreenRoll.ScenePoint.({ x: sun_x, y: sun_y }))
 	rows = PixelGrid.pixels_between({
 		from: on_screen.y - glow_radius,
