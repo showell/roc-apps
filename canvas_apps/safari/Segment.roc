@@ -95,7 +95,7 @@ Segment := {
 				BirdHere =>
 					match Segment.fifth_left_tree(trees) {
 						Found(perch) => BirdHere(BirdFlight.habit_from(trees, perch))
-						NoTree => QuietRoad
+						NoTree => crash "Segment.from_choices: a segment planned with a bird has a fifth tree on the left"
 					}
 				QuietRoad => QuietRoad
 			},

@@ -151,6 +151,32 @@ expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0])) == Ok(50.0)
 expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0, 60.0])) == Ok(50.0)
 expect fifth_along([50.0, 60.0, 70.0, 80.0, 90.0].map(|along| tree_at(along, 6.0))) == Err(NoTree)
 
+## Whether the trees planted for `plan` have a fifth on the left.
+has_fifth_left_tree : World.SegmentPlan -> Bool
+has_fifth_left_tree = |plan| {
+	planted = Trees.roadside_trees({ scheme: plan.scheme, length: plan.length })
+	match Segment.fifth_left_tree(planted) {
+		Found(_) => True
+		NoTree => False
+	}
+}
+
+# Every segment the route plans with a bird has a tree for it to start on, or
+# building the segment crashes. A segment too short for five trees on the left
+# has none.
+expect {
+	bird_plans = World.segment_plans.keep_if(|plan| plan.encounter == BirdHere)
+	bird_plans.len() > 0 and bird_plans.all(has_fifth_left_tree)
+}
+expect {
+	short_plan = {
+		..World.last_plan,
+		length: Distance.metres(50.0),
+		encounter: BirdHere,
+	}
+	!has_fifth_left_tree(short_plan)
+}
+
 ## A segment 200 m long holding only `trees`, which ends a route.
 segment_of : List(Trees.RoadsideTree) -> Segment
 segment_of = |trees| {
