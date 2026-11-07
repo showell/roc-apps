@@ -20,6 +20,9 @@ import World
 Rider :: [].{
 	Decision : { lean_step : Angle.Lean, acceleration : Acceleration }
 
+	## The end of a segment that continues, and the segment it continues onto.
+	Seam : { segment : World.Segment, next : World.SegmentIndex }
+
 	## A rider this slow near the route's end stops there.
 	stopping_speed : Speed
 	stopping_speed = Speed.metres_a_step(0.1)
@@ -38,14 +41,8 @@ Rider :: [].{
 		}
 	}
 
-	rider_on_next_segment : RiderState, List(World.Segment) -> RiderState
-	rider_on_next_segment = |rs, route_segments| {
-		seg = rs.segment_index.segment_in(route_segments)
-		next =
-			match seg.ending {
-				Continues({ next: index }) => index
-				Terminates => crash "Rider.rider_on_next_segment: past the route's end"
-			}
+	rider_on_next_segment : RiderState, Rider.Seam -> RiderState
+	rider_on_next_segment = |rs, { segment: seg, next }| {
 		on_next = Geom.centred_point_after(
 			{ along: rs.along, across: rs.across },
 			{
@@ -67,14 +64,8 @@ Rider :: [].{
 	stop_at_route_end = |moved, seg| {
 		end = Along.at(seg.length)
 		in_zone = end.distance_from(moved.along) < VehicleLimits.bend_approach
-		if moved.along >= end {
+		if moved.along >= end or (in_zone and moved.speed < stopping_speed) {
 			stopped_at(moved, end)
-		} else if in_zone {
-			if moved.speed < stopping_speed {
-				stopped_at(moved, end)
-			} else {
-				moved
-			}
 		} else {
 			moved
 		}
@@ -83,9 +74,9 @@ Rider :: [].{
 	stopped_at : RiderState, Along -> RiderState
 	stopped_at = |s, at| { ..s, along: at, speed: Speed.at_rest }
 
-	cross_if_on_road : RiderState, List(World.Segment) -> RiderState
-	cross_if_on_road = |moved, route_segments| {
-		on_next = rider_on_next_segment(moved, route_segments)
+	cross_if_on_road : RiderState, Rider.Seam -> RiderState
+	cross_if_on_road = |moved, seam| {
+		on_next = rider_on_next_segment(moved, seam)
 		if on_next.across.distance_from_middle() < Scenery.road_half_width {
 			on_next
 		} else {
@@ -96,14 +87,10 @@ Rider :: [].{
 	rider_state_at_next_step : RiderState, List(World.Segment) -> RiderState
 	rider_state_at_next_step = |state, route_segments| {
 		seg = state.segment_index.segment_in(route_segments)
-		dec = decide(state, seg)
-		moved = Bike.bike_motion_at_next_step(
-			state,
-			{ lean_step: dec.lean_step, acceleration: dec.acceleration },
-		)
+		moved = Bike.bike_motion_at_next_step(state, decide(state, seg))
 		resolved =
 			match seg.ending {
-				Continues(_) => cross_if_on_road(moved, route_segments)
+				Continues({ next }) => cross_if_on_road(moved, { segment: seg, next })
 				Terminates => stop_at_route_end(moved, seg)
 			}
 		Gaze.next_rider_gaze(resolved, route_segments)
@@ -128,6 +115,9 @@ first_segments = [
 
 first_segment : World.Segment
 first_segment = World.route_segment(0)
+
+first_seam : Rider.Seam
+first_seam = { segment: first_segment, next: World.SegmentIndex.number(1) }
 
 ## A rider on the centre line of the first segment, going the base speed.
 rider_at : F64, F64 -> RiderState
@@ -170,7 +160,7 @@ at_seam = {
 }
 
 crossed : RiderState
-crossed = Rider.rider_on_next_segment(at_seam, first_segments)
+crossed = Rider.rider_on_next_segment(at_seam, first_seam)
 
 expect crossed.speed.to_metres_a_step() == 1.25
 expect crossed.lean.to_radians() == 0.05
@@ -182,12 +172,12 @@ expect crossed.segment_index.to_i64() == 1
 expect first_segment.ending == Continues({ next: World.SegmentIndex.number(1) })
 
 expect {
-	far = Rider.rider_on_next_segment(rider_at(100.0, 0.0), first_segments)
+	far = Rider.rider_on_next_segment(rider_at(100.0, 0.0), first_seam)
 	far.across.distance_from_middle() >= Scenery.road_half_width
 }
 
-expect Rider.cross_if_on_road(rider_at(100.0, 0.0), first_segments).segment_index.to_i64() == 0
-expect Rider.cross_if_on_road(rider_at(499.0, 0.0), first_segments).segment_index.to_i64() == 1
+expect Rider.cross_if_on_road(rider_at(100.0, 0.0), first_seam).segment_index.to_i64() == 0
+expect Rider.cross_if_on_road(rider_at(499.0, 0.0), first_seam).segment_index.to_i64() == 1
 
 last_seg : World.Segment
 last_seg = World.route_segment(18)

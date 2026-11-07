@@ -118,18 +118,7 @@ Throttle :: [].{
 			is_near_end: near,
 		},
 	| {
-		v1 =
-			if v0 > VehicleLimits.top_speed {
-				VehicleLimits.top_speed
-			} else {
-				v0
-			}
-		v2 =
-			if v1 < Speed.at_rest {
-				Speed.at_rest
-			} else {
-				v1
-			}
+		v2 = v0.min(VehicleLimits.top_speed).max(Speed.at_rest)
 		if near {
 			if v2 < v_end {
 				if Gaze.is_gawking(state, seg) {
