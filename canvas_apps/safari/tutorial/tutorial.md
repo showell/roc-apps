@@ -1069,11 +1069,11 @@ A beacon is the only thing in Safari Ride that repeats on the clock, so it's the
 
 Here, `wrapped_to` is `Steps`'s one way to reach `%`. The result is a `Fraction` built with `of`, because `(1 - cos) / 2` can only be in range:
 
-{{code TowerSighting.beacon_brightness}}
+{{code Beacon.beacon_brightness}}
 
 Each tower starts somewhere else in the cycle, so the towers along a road don't blink together. This function is one line of method calls, and every call in it is on a `Steps`:
 
-{{code TowerSighting.beacon_offset_for}}
+{{code Beacon.beacon_offset_for}}
 
 The sighting calls both, adding the two `Steps`. `view.clock.minus(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride.
 

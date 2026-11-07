@@ -9,6 +9,7 @@ package
 		Angle,
 		Animation,
 		Backdrop,
+		Beacon,
 		BendView,
 		Bike,
 		Billboard,

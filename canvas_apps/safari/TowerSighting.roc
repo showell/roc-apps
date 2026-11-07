@@ -6,12 +6,11 @@
 import Across
 import Along
 import Angle
+import Beacon
 import Clock
 import Distance
-import Fraction
 import Chain
 import Geom
-import Steps
 import Tower
 import World
 
@@ -42,28 +41,6 @@ TowerSighting :: [].{
 	## At most this many towers are drawn in a frame.
 	max_visible_towers : I64
 	max_visible_towers = 16
-
-	## A beacon blinks once in this many steps of the ride.
-	beacon_period : Steps
-	beacon_period = Steps.of(120)
-
-	## Each tower's blink starts this many steps past the last one's, a number
-	## that shares no factor with the period, so neighbours blink apart.
-	beacon_stagger : Steps
-	beacon_stagger = Steps.of(37)
-
-	## How far into its blink the tower with key `n` is when the ride's clock
-	## is 0.
-	beacon_offset_for : U32 -> Steps
-	beacon_offset_for = |n| beacon_stagger.times(n).wrapped_to(beacon_period)
-
-	## How bright a beacon is `phase` steps into its blink.
-	beacon_brightness : Steps -> Fraction
-	beacon_brightness = |phase| {
-		wrapped = phase.wrapped_to(beacon_period).to_f64()
-		angle = 2.0 * F64.pi * wrapped / beacon_period.to_f64()
-		Fraction.of((1.0 - angle.cos()) / 2.0)
-	}
 
 	## The towers in view: those along the chain, then the one past the end of
 	## the segment behind the rider.
@@ -174,8 +151,8 @@ tower_if_ahead = |view, { place, along, across, yaw, beacon_key }| {
 				along,
 				across,
 				yaw,
-				beacon_brightness: TowerSighting.beacon_brightness(
-					view.clock.minus(Clock.start).plus(TowerSighting.beacon_offset_for(beacon_key)),
+				beacon_brightness: Beacon.beacon_brightness(
+					view.clock.minus(Clock.start).plus(Beacon.beacon_offset_for(beacon_key)),
 				),
 			},
 		})
@@ -185,8 +162,6 @@ tower_if_ahead = |view, { place, along, across, yaw, beacon_key }| {
 expect TowerSighting.tower_beyond.to_metres() == 160.0
 expect TowerSighting.tower_right.to_metres() == 20.0
 expect TowerSighting.mid_tower_left.to_metres() == 100.0
-expect TowerSighting.beacon_period.to_f64() == 120.0
-expect TowerSighting.beacon_stagger.to_f64() == 37.0
 expect TowerSighting.max_visible_towers == 16
 
 route_segments : List(World.Segment)
@@ -288,27 +263,6 @@ expect
 		(long_tower(1).yaw.to_radians(), 0.0),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 
-expect TowerSighting.beacon_offset_for(0).to_f64() == 0.0
-expect TowerSighting.beacon_offset_for(1).to_f64() == 37.0
-expect TowerSighting.beacon_offset_for(2).to_f64() == 74.0
-expect TowerSighting.beacon_offset_for(3).to_f64() == 111.0
-expect TowerSighting.beacon_offset_for(4).to_f64() == 28.0
-expect TowerSighting.beacon_offset_for(5).to_f64() == 65.0
-expect TowerSighting.beacon_offset_for(10).to_f64() == 10.0
-expect TowerSighting.beacon_offset_for(60).to_f64() == 60.0
-expect TowerSighting.beacon_offset_for(120).to_f64() == 0.0
-expect
-	[
-		(TowerSighting.beacon_brightness(Steps.of(0)).to_f64(), 0.0),
-		(TowerSighting.beacon_brightness(Steps.of(60)).to_f64(), 1.0),
-		(TowerSighting.beacon_brightness(Steps.of(30)).to_f64(), 0.5),
-		(TowerSighting.beacon_brightness(Steps.of(90)).to_f64(), 0.5),
-		(TowerSighting.beacon_brightness(Steps.of(120)).to_f64(), 0.0),
-		(TowerSighting.beacon_brightness(Steps.of(180)).to_f64(), 1.0),
-		(TowerSighting.beacon_brightness(Steps.of(300)).to_f64(), 1.0),
-		(TowerSighting.beacon_brightness(Steps.of(240)).to_f64(), 0.0),
-	].all(|(got, want)| (got - want).abs() <= 0.0000001)
-
 ## How bright the towers on the long segment are at `clock`: its end tower,
 ## then its mid tower.
 long_brightnesses_at : Clock -> List(F64)
@@ -337,7 +291,7 @@ expect
 		== [0, 37, 74, 30, 67, 104].map(brightness_at)
 
 brightness_at : U32 -> F64
-brightness_at = |phase| TowerSighting.beacon_brightness(Steps.of(phase)).to_f64()
+brightness_at = |phase| Beacon.beacon_brightness(Clock.at_step(phase).minus(Clock.start)).to_f64()
 
 expect TowerSighting.towers_in_view(short_view(0)).len() == 3
 expect TowerSighting.towers_in_view(short_view(1)).len() == 4

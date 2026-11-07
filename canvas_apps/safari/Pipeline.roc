@@ -5,6 +5,7 @@
 ## knows nothing of this module: a `where` clause names the methods a step needs,
 ## and it matches them by name alone, so those names say what they are for.
 import Chain
+import Detail
 import Distance
 import Geom
 import Picture
@@ -16,6 +17,11 @@ Pipeline :: [].{
 	## How an object's size decides if it is drawn: it must stand at least
 	## `smallest_px` tall through a lens of focal length `focal`.
 	SizeTest : { focal : Pixels, smallest_px : Pixels }
+
+	## The size test of scenery seen through the camera's own lens, so that what
+	## is at the edge of sight comes and goes as the camera widens.
+	scenery_test : Chain.Viewpoint -> Pipeline.SizeTest
+	scenery_test = |view| { focal: view.cam_focal, smallest_px: Detail.min_scenery_px }
 
 	## `placed` as the rider sees it, on the segment at `place`, if it is past
 	## the camera's near plane and passes `size_test`.
