@@ -65,7 +65,7 @@ TowerSighting :: [].{
 	} -> List(Pipeline.Sighted(Tower))
 	segment_towers = |road, { position, clock }| {
 		index = position.index_in(road.chain_indices)
-		segment = index.segment_in(road.route_segments)
+		segment = Chain.segment_at(road, position)
 		end_tower = tower_if_ahead(
 			road,
 			{
@@ -89,7 +89,7 @@ TowerSighting :: [].{
 	)
 	mid_tower = |road, { position, clock }| {
 		index = position.index_in(road.chain_indices)
-		segment = index.segment_in(road.route_segments)
+		segment = Chain.segment_at(road, position)
 		match segment.mid_tower {
 			MidTower =>
 				tower_if_ahead(

@@ -50,7 +50,7 @@ truck_from = |road, { along, position, lights }|
 	if position.is_past_end_of(road.chain_indices) {
 		Err(NoTruck)
 	} else {
-		segment = position.index_in(road.chain_indices).segment_in(road.route_segments)
+		segment = Chain.segment_at(road, position)
 		if along > Along.at(segment.length) {
 			truck_from(
 				road,
