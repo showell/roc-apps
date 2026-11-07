@@ -100,14 +100,14 @@ searched_lean = |across, lean_radians|
 		lean: Angle.Lean.radians(lean_radians),
 	}).to_radians()
 
-centred : F64
-centred = searched_lean(0.0, 0.0)
-
-held : F64
-held = searched_lean(0.0, 0.5)
-
 # An upright rider right of the middle leans left, and one left of it leans
 # right.
 expect searched_lean(1.0, 0.0) < 0.0
 expect searched_lean(-1.0, 0.0) > 0.0
-expect held > centred
+
+# A lean held to the right stays further right than an upright rider's.
+expect {
+	held = searched_lean(0.0, 0.5)
+	centred = searched_lean(0.0, 0.0)
+	held > centred
+}
