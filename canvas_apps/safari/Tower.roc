@@ -142,7 +142,7 @@ smallest_beacon_radius = Pixels.of(0.5)
 ## One tower, as its shapes are worked out: where its footprint and foot
 ## stand, how far the earth's curve has sunk it, which is never negative,
 ## and how its rods look on screen.
-SunkTower : {
+TowerSetting : {
 	footprint : Tower.Footprint,
 	foot : Geom.LevelPoint,
 	sunk : Distance,
@@ -219,7 +219,7 @@ point_between = |{ from, to, fraction }| {
 
 ## A corner of the tower at `height_on_tower`: drawn in toward the foot as
 ## the tower tapers, and lowered by how far the tower has sunk.
-corner_at : SunkTower, { corner : Tower.Corner, height_on_tower : Distance } -> Geom.RaisedPoint
+corner_at : TowerSetting, { corner : Tower.Corner, height_on_tower : Distance } -> Geom.RaisedPoint
 corner_at = |tower, { corner, height_on_tower }| {
 	t = height_on_tower.ratio_to(tower_height)
 	bottom = footprint_corner(tower.footprint, corner)
@@ -282,7 +282,7 @@ rod_quad = |
 
 ## A rod between two points in the rider's view, cut where it crosses the
 ## near plane. A rod wholly behind the near plane has no shape.
-rod_shape : SunkTower,
+rod_shape : TowerSetting,
 {
 	from : Geom.RaisedPoint,
 	to : Geom.RaisedPoint,
@@ -312,7 +312,7 @@ rod_width_at : { at : Geom.LevelPoint, cam_focal : Pixels } -> Pixels
 rod_width_at = |camera| metre_on_screen(camera).times(rod_width.to_metres())
 
 ## The four legs, from the footprint's corners up to the apex.
-legs : SunkTower, Geom.RaisedPoint -> List(Shapes.Shape)
+legs : TowerSetting, Geom.RaisedPoint -> List(Shapes.Shape)
 legs = |tower, apex| corners.keep_oks(
 	|corner| rod_shape(
 		tower,
@@ -321,7 +321,7 @@ legs = |tower, apex| corners.keep_oks(
 )
 
 ## The ring of rods round the tower at height `h`.
-ring_shapes : SunkTower, Distance -> List(Shapes.Shape)
+ring_shapes : TowerSetting, Distance -> List(Shapes.Shape)
 ring_shapes = |tower, h| corners.keep_oks(
 	|corner| rod_shape(
 		tower,
@@ -334,7 +334,7 @@ ring_shapes = |tower, h| corners.keep_oks(
 
 ## A ring at every storey below the top, bottom first, leaving out those
 ## the earth has hidden.
-rings : SunkTower -> List(Shapes.Shape)
+rings : TowerSetting -> List(Shapes.Shape)
 rings = |tower| ring_heights.join_map(
 	|h|
 		if h <= tower.sunk {
@@ -358,11 +358,11 @@ ring_heights = {
 
 ## The crossed braces of the lowest storeys, bottom first. A storey the
 ## earth has partly hidden starts its braces at the horizon.
-braces : SunkTower -> List(Shapes.Shape)
+braces : TowerSetting -> List(Shapes.Shape)
 braces = |tower|
 	List.from_iter(U64.until(0, brace_storeys)).join_map(|storey| storey_shapes(tower, storey))
 
-storey_shapes : SunkTower, U64 -> List(Shapes.Shape)
+storey_shapes : TowerSetting, U64 -> List(Shapes.Shape)
 storey_shapes = |tower, storey| {
 	storey_bottom = storey_height.times(storey.to_f64())
 	storey_top = storey_bottom.plus(storey_height)
@@ -379,7 +379,7 @@ storey_shapes = |tower, storey| {
 
 ## The two braces crossing the face from `corner` to the next corner: one
 ## rising each way.
-brace_shapes : SunkTower,
+brace_shapes : TowerSetting,
 {
 	corner : Tower.Corner,
 	storey_bottom : Distance,
@@ -409,7 +409,11 @@ brace_shapes = |tower, { corner, storey_bottom, storey_top, hidden_fraction }| {
 
 ## The beacon on the apex, at its brightness; too dim or too small, it
 ## isn't drawn.
-beacon_shapes : SunkTower, { apex : Geom.AheadPoint, brightness : Fraction } -> List(Shapes.Shape)
+beacon_shapes : TowerSetting,
+{
+	apex : Geom.AheadPoint,
+	brightness : Fraction,
+} -> List(Shapes.Shape)
 beacon_shapes = |tower, { apex, brightness }| {
 	apex_on_screen = Camera.project(apex, tower.cam_focal)
 	if brightness < dimmest_beacon {
@@ -578,7 +582,7 @@ expect {
 }
 
 # A tower 12 m square, its foot 100 m ahead, sunk 1 m, its rods 4 px wide.
-sample_tower : SunkTower
+sample_tower : TowerSetting
 sample_tower = {
 	footprint: {
 		back_left: { right: Distance.metres(-6.0), forward: Distance.metres(94.0) },
