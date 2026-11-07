@@ -26,6 +26,11 @@ Camera :: [].{
 		}
 	}
 
+	## How tall something of `height` stands on the screen, `forward` of the
+	## camera, through a lens of focal length `cam_focal` in pixels.
+	height_on_screen : { height : Distance, forward : Distance }, Pixels -> Pixels
+	height_on_screen = |{ height, forward }, cam_focal| cam_focal.times(height.portion(forward))
+
 	projected_points : List(Geom.AheadPoint), Pixels -> List(Screen.Point)
 	projected_points = |points, cam_focal| points.map(|p| project(p, cam_focal))
 
@@ -129,6 +134,21 @@ expect screen_point({
 	forward: Distance.metres(16.0),
 	height: Distance.metres(5.2),
 }).y.to_f64() == 100.0
+expect
+	[
+		(1.0, 4.0, 800.0, 200.0),
+		(1.0, 8.0, 800.0, 100.0),
+		(2.0, 8.0, 800.0, 200.0),
+		(1.0, 4.0, 400.0, 100.0),
+	].all(
+		|(height, forward, cam_focal, on_screen)|
+			Camera.height_on_screen(
+				{ height: Distance.metres(height), forward: Distance.metres(forward) },
+				Pixels.of(cam_focal),
+			)
+				== Pixels.of(on_screen),
+	)
+
 expect Screen.height.to_f64() == 600.0
 expect Camera.eye_height.to_metres() == 1.2
 
