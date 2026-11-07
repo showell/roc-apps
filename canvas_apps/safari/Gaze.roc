@@ -14,6 +14,7 @@ import Gawking
 import Geom
 import Motorcycle
 import RiderEyes
+import Route
 import Segment
 
 Gaze :: [].{
@@ -49,10 +50,11 @@ Gaze :: [].{
 			NotGawking => OnRoad
 		}
 
-	## These eyes moved on a step, for a rider on `motorcycle` on `segment`, the
-	## segment the rider is on: the gaze, and the look depth it leaves.
-	eyes_at_next_step : RiderEyes, { motorcycle : Motorcycle, segment : Segment } -> RiderEyes
-	eyes_at_next_step = |eyes, { motorcycle, segment }| {
+	## These eyes moved on a step, for a rider on `motorcycle` on `route`: the
+	## gaze, and the look depth it leaves.
+	eyes_at_next_step : RiderEyes, { motorcycle : Motorcycle, route : Route } -> RiderEyes
+	eyes_at_next_step = |eyes, { motorcycle, route }| {
+		segment = motorcycle.route_place.segment_on(route)
 		gaze_yaw = next_gaze_yaw(eyes, desired_gaze(motorcycle, segment))
 		{ gaze_yaw, look_depth: next_look_depth(eyes, gaze_yaw) }
 	}

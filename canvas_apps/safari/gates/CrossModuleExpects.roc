@@ -2373,9 +2373,15 @@ expect focal_ten_steps_in(rider_on(1)) < focal_ten_steps_in(rider_on(0))
 ## cat segment, going 0.3 m a step, with its crossing at `encounter_timing`.
 cat_throttle_change : EncounterPlan.Timing -> F64
 cat_throttle_change = |encounter_timing| {
-	motorcycle = { ..Motorcycle.initial, speed: Speed.metres_a_step(0.3) }
-	segment = World.route.segment_at(Route.SegmentIndex.number(3))
-	Throttle.next_speed(motorcycle, { segment, encounter_timing })
+	motorcycle = {
+		..Motorcycle.initial,
+		route_place: {
+			..Motorcycle.initial.route_place,
+			segment_index: Route.SegmentIndex.number(3),
+		},
+		speed: Speed.metres_a_step(0.3),
+	}
+	Throttle.next_speed(motorcycle, { route: World.route, encounter_timing })
 		.change_from(motorcycle.speed)
 		.to_metres_a_step_each_step()
 }
@@ -2540,8 +2546,7 @@ wide_of_road = |lean| {
 		route_place: { ..Motorcycle.initial.route_place, across: Across.metres(100.0) },
 		lean: Angle.Lean.radians(lean),
 	}
-	first_segment = World.route.segment_at(Route.SegmentIndex.number(0))
-	Throttle.next_speed(motorcycle, { segment: first_segment, encounter_timing: Unplanned })
+	Throttle.next_speed(motorcycle, { route: World.route, encounter_timing: Unplanned })
 		.change_from(motorcycle.speed)
 		.to_metres_a_step_each_step()
 }

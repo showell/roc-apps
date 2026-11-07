@@ -22,23 +22,14 @@ RiderState := { motorcycle : Motorcycle, eyes : RiderEyes }.{
 	next = |state, { route, encounter_timing }| {
 		seg = state.motorcycle.route_place.segment_on(route)
 		moved = state.motorcycle.motorcycle_at_next_step(
-			Rider.controls(state.motorcycle, { segment: seg, encounter_timing }),
+			Rider.controls(state.motorcycle, { route, encounter_timing }),
 		)
 		motorcycle =
 			match seg.ending {
 				Bends(_) => moved.cross_bend_if_on_road(seg.bend_out_of())
 				RouteEnds => stop_at_route_end(moved, seg)
 			}
-		motorcycle_seg =
-			if motorcycle.route_place.segment_index == state.motorcycle.route_place.segment_index {
-				seg
-			} else {
-				motorcycle.route_place.segment_on(route)
-			}
-		{
-			motorcycle,
-			eyes: Gaze.eyes_at_next_step(state.eyes, { motorcycle, segment: motorcycle_seg }),
-		}
+		{ motorcycle, eyes: Gaze.eyes_at_next_step(state.eyes, { motorcycle, route }) }
 	}
 
 	## Whether the rider has reached the end of the route.
