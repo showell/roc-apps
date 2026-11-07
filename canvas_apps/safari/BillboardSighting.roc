@@ -1,8 +1,8 @@
 ## BillboardSighting sights every billboard on the road ahead from where the
 ## rider is: the farm animals of the nearest segments, the safari animal and its
-## baby at each bend, and the ducks on each pond. The critters of the segment
-## before the rider's are sighted too, so the bend the rider has just turned
-## keeps its animals.
+## baby at each bend, and the ducks on each pond. The bend and the pond of the
+## segment before the rider's are sighted too, so the bend the rider has just
+## turned keeps its animals.
 import Along
 import Billboard
 import RoadAhead
@@ -36,97 +36,67 @@ BillboardSighting :: [].{
 	## What became of a critter placed in the rider's view.
 	Fate : Try(Pipeline.Sighted(Billboard), [BehindCamera, TooSmall])
 
-	## The critters to draw, of `fates`. The cap comes after the cull, so a
-	## critter out of view never takes a place from one in view.
-	critters_to_draw : List(BillboardSighting.Fate) -> List(Pipeline.Sighted(Billboard))
-	critters_to_draw = |fates|
+	## The billboards to draw, of `fates`. The cap comes after the cull, so a
+	## billboard out of view never takes a place from one in view.
+	billboards_to_draw : List(BillboardSighting.Fate) -> List(Pipeline.Sighted(Billboard))
+	billboards_to_draw = |fates|
 		fates.keep_oks(|fate| fate).take_first(BillboardSighting.max_visible_critters.to_u64_wrap())
 
-	## Every critter ahead, nearest segment first, then those of the segment
+	## Every billboard in view, nearest segment first, then those of the segment
 	## before the rider's, when there is one.
-	critter_fates : RoadAhead.RoadView -> List(BillboardSighting.Fate)
-	critter_fates = |road|
-		match RoadAhead.segment_behind(road) {
-			Previous(segment_behind) =>
-				BillboardSighting.sightings_ahead(road).concat(
-					BillboardSighting.sightings_behind(road, segment_behind),
-				)
-			AtRouteStart => BillboardSighting.sightings_ahead(road)
-		}
+	billboard_fates : RoadAhead.RoadView -> List(BillboardSighting.Fate)
+	billboard_fates = |road|
+		RoadAhead.segments_in_view(road)
+			.join_map(|in_view| BillboardSighting.segment_sightings(road, in_view))
 
-	## The critters of every segment on the road ahead, nearest first.
-	sightings_ahead : RoadAhead.RoadView -> List(BillboardSighting.Fate)
-	sightings_ahead = |road|
-		RoadAhead.Position.positions_in(road.segments_ahead)
-			.join_map(|position| BillboardSighting.sightings_at(road, position))
-
-	## The critters of the segment at `position` on the road ahead: its
-	## farm animals, its bend's animals, then its pond's ducks.
-	sightings_at : RoadAhead.RoadView, RoadAhead.Position -> List(BillboardSighting.Fate)
-	sightings_at = |road, position|
+	## The critters of a segment in view: its farm animals, its bend's
+	## animals, then its pond's ducks.
+	segment_sightings : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(BillboardSighting.Fate)
+	segment_sightings = |road, in_view|
 		[
-			BillboardSighting.farm_sightings(road, position),
-			BillboardSighting.wildlife_sightings(road, position),
-			BillboardSighting.duck_sightings(road, position),
+			BillboardSighting.farm_sightings(road, in_view),
+			BillboardSighting.wildlife_sightings(road, in_view),
+			BillboardSighting.duck_sightings(road, in_view),
 		].join()
 
-	## The cows, then the pigs, of the segment at `position` on the road ahead.
-	farm_sightings : RoadAhead.RoadView, RoadAhead.Position -> List(BillboardSighting.Fate)
-	farm_sightings = |road, position|
-		if position.is_within_first(farm_reach) {
-			segment = RoadAhead.segment_at(road, position)
-			segment.cows.concat(segment.pigs)
-				.map(|critter| sight_critter(road, { place: Ahead(position), critter }))
-		} else {
-			[]
+	## The cows, then the pigs, of a segment in view. The farm animals stand
+	## along their segment, so the segment just behind, which the rider has
+	## passed, has none in view.
+	farm_sightings : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(BillboardSighting.Fate)
+	farm_sightings = |road, { segment, place, index: _ }|
+		match place {
+			Ahead(position) =>
+				if position.is_within_first(farm_reach) {
+					segment.cows.concat(segment.pigs)
+						.map(|critter| sight_critter(road, { place, critter }))
+				} else {
+					[]
+				}
+			JustBehind(_) => []
 		}
 
-	## The animals at the bend that ends the segment at `position` on the
-	## road ahead. The road's last segment ends with no bend.
-	wildlife_sightings : RoadAhead.RoadView, RoadAhead.Position -> List(BillboardSighting.Fate)
-	wildlife_sightings = |road, position| {
-		segment = RoadAhead.segment_at(road, position)
+	## The animals at the bend that ends a segment in view. The road's last
+	## segment ends with no bend.
+	wildlife_sightings : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(BillboardSighting.Fate)
+	wildlife_sightings = |road, { segment, place, index: _ }|
 		match segment.ending {
 			Continues(_) =>
-				if position.is_within_first(wildlife_reach) {
-					bend_sightings(road, { place: Ahead(position), segment })
+				if is_within_reach(place, wildlife_reach) {
+					bend_sightings(road, { place, segment })
 				} else {
 					[]
 				}
 			Terminates => []
 		}
-	}
 
-	## The ducks of the segment at `position` on the road ahead, if it has a
-	## pond.
-	duck_sightings : RoadAhead.RoadView, RoadAhead.Position -> List(BillboardSighting.Fate)
-	duck_sightings = |road, position|
-		if position.is_within_first(wildlife_reach) {
-			pond_sightings(
-				road,
-				{ place: Ahead(position), segment: RoadAhead.segment_at(road, position) },
-			)
+	## The ducks of a segment in view, if it has a pond.
+	duck_sightings : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(BillboardSighting.Fate)
+	duck_sightings = |road, { segment, place, index: _ }|
+		if is_within_reach(place, wildlife_reach) {
+			pond_sightings(road, { place, segment })
 		} else {
 			[]
 		}
-
-	## The bend's animals and the pond's ducks of the world's segment at
-	## `index`, the one before the rider's.
-	sightings_behind : RoadAhead.RoadView, World.SegmentIndex -> List(BillboardSighting.Fate)
-	sightings_behind = |road, index| {
-		segment = index.segment_in(road.route_segments)
-		bend_sightings(
-			road,
-			{ place: RoadAhead.place_behind(segment), segment },
-		).concat(BillboardSighting.ducks_behind(road, segment))
-	}
-
-	## The ducks of `segment`, the one before the rider's, if it has a pond.
-	ducks_behind : RoadAhead.RoadView, World.Segment -> List(BillboardSighting.Fate)
-	ducks_behind = |road, segment| pond_sightings(
-		road,
-		{ place: RoadAhead.place_behind(segment), segment },
-	)
 
 	## A critter, placed through `place` on the road's map, as the rider sees it.
 	## A critter's size is tested through the lens at rest, where a tree's is
@@ -151,6 +121,15 @@ BillboardSighting :: [].{
 			},
 		)
 }
+
+## Whether a segment at `place` is in reach: among the first `reach` of the
+## road ahead, or the segment just behind, whose bend the rider has just turned.
+is_within_reach : RoadAhead.SegmentPlace, U32 -> Bool
+is_within_reach = |place, reach|
+	match place {
+		Ahead(position) => position.is_within_first(reach)
+		JustBehind(_) => True
+	}
 
 bend_sightings : RoadAhead.RoadView,
 {

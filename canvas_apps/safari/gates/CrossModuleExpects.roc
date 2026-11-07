@@ -12,12 +12,10 @@ import game.Along
 import game.Angle
 import game.Billboard
 import game.BirdFlight
-import game.BirdSighting
 import game.Cat
-import game.CatShapes
-import game.CatSighting
 import game.Clock
 import game.Conifer
+import game.CrossingSighting
 import game.BillboardSighting
 import game.DepthSort
 import game.Distance
@@ -27,6 +25,8 @@ import game.Geom
 import game.Ground
 import game.GroundSighting
 import game.Pipeline
+import game.PosedBird
+import game.PosedCat
 import game.RailSighting
 import game.Rendered
 import game.Scene
@@ -34,7 +34,6 @@ import game.SceneShapes
 import game.RideInstant
 import game.Rider
 import game.RiderState
-import game.BirdShapes
 import game.Scenery
 import game.Speed
 import game.TowerSighting
@@ -107,7 +106,7 @@ flat_color_of = |shape|
 			crash "CrossModuleExpects.flat_color_of: this polygon is not flat"
 	}
 
-# BirdSighting, on a straight segment with its fifth left tree 100 m along: a bird
+# CrossingSighting's birds, on a straight segment with its fifth left tree 100 m along: a bird
 # sits, flies and lands as the rider comes, stays where no tree is far enough to
 # fly to, and is left out with no tree for it, behind the near plane or too small
 # to draw.
@@ -147,7 +146,7 @@ birds_on : List(Trees.RoadsideTree),
 {
 	rider_along : F64,
 	cam_focal : Pixels,
-} -> List(Pipeline.Sighted(BirdShapes.PosedBird))
+} -> List(Pipeline.Sighted(PosedBird))
 birds_on = |trees, seen_from| birds_on_segment(segment_of(trees), seen_from)
 
 ## The birds on `segment_index`, for a rider `rider_along` metres into it.
@@ -155,9 +154,9 @@ birds_on_segment : World.Segment,
 {
 	rider_along : F64,
 	cam_focal : Pixels,
-} -> List(Pipeline.Sighted(BirdShapes.PosedBird))
+} -> List(Pipeline.Sighted(PosedBird))
 birds_on_segment = |segment, { rider_along, cam_focal }|
-	BirdSighting.birds_in_view({
+	CrossingSighting.birds_in_view({
 		road: {
 			route_segments: [segment],
 			segments_ahead: [World.SegmentIndex.first],
@@ -168,13 +167,13 @@ birds_on_segment = |segment, { rider_along, cam_focal }|
 
 ## The one bird that a rider `rider_along` metres in sees on the segment with
 ## a far tree.
-bird_at : F64 -> Pipeline.Sighted(BirdShapes.PosedBird)
+bird_at : F64 -> Pipeline.Sighted(PosedBird)
 bird_at = |rider_along|
 	birds_on(left_trees.append(far_tree), { rider_along, cam_focal: Pixels.of(500.0) }).first()
 		?? crash "CrossModuleExpects: this rider sees a bird"
 
 ## How far off a bird is, across the road and up.
-place_numbers : Pipeline.Sighted(BirdShapes.PosedBird) -> List(F64)
+place_numbers : Pipeline.Sighted(PosedBird) -> List(F64)
 place_numbers = |bird| [
 	bird.right.to_metres(),
 	bird.forward.to_metres(),
@@ -229,8 +228,8 @@ expect
 		== 0
 
 ## Two segments on the road ahead, the rider at the start of the first.
-two_segments : List(Pipeline.Sighted(BirdShapes.PosedBird))
-two_segments = BirdSighting.birds_in_view({
+two_segments : List(Pipeline.Sighted(PosedBird))
+two_segments = CrossingSighting.birds_in_view({
 	road: {
 		route_segments: [segment_of(left_trees), segment_of(left_trees)],
 		segments_ahead: [0, 1].map(World.SegmentIndex.number),
@@ -249,7 +248,7 @@ expect
 		_ => crash "CrossModuleExpects: each of two segments has a bird in view"
 	}
 
-# CatSighting: which cats are in view as the rider comes on them.
+# CrossingSighting's cats: which cats are in view as the rider comes on them.
 ## The second segment, with a cat crossing it.
 cat_segment : World.Segment
 cat_segment = { ..World.route_segment(1), crossing: World.route_segment(3).crossing }
@@ -272,15 +271,15 @@ metre_a_step : Speed
 metre_a_step = Speed.metres_a_step(1.0)
 
 ## The cats seen from the origin on a road of only `segments_ahead`.
-cats_on_road : List(World.SegmentIndex) -> List(Pipeline.Sighted(CatShapes.PosedCat))
-cats_on_road = |segments_ahead| CatSighting.cats_in_view(
+cats_on_road : List(World.SegmentIndex) -> List(Pipeline.Sighted(PosedCat))
+cats_on_road = |segments_ahead| CrossingSighting.cats_in_view(
 	{ ..cats_from_origin, road: { ..cats_from_origin.road, segments_ahead } },
 	metre_a_step,
 )
 
 ## The cat on the segment at `number` on the road ahead, if it is in view.
-cat_at : U32 -> Try(Pipeline.Sighted(CatShapes.PosedCat), [NoCat, BehindCamera, TooSmall])
-cat_at = |number| CatSighting.segment_cat(
+cat_at : U32 -> Try(Pipeline.Sighted(PosedCat), [NoCat, BehindCamera, TooSmall])
+cat_at = |number| CrossingSighting.segment_cat(
 	cats_from_origin,
 	{ position: RoadAhead.Position.number(number), speed: metre_a_step },
 )
@@ -316,8 +315,8 @@ expect
 	)
 
 ## The cats in view for a rider `along` metres into the first segment.
-ride_sightings : F64 -> List(Pipeline.Sighted(CatShapes.PosedCat))
-ride_sightings = |along| CatSighting.cats_in_view(
+ride_sightings : F64 -> List(Pipeline.Sighted(PosedCat))
+ride_sightings = |along| CrossingSighting.cats_in_view(
 	{
 		..cats_from_origin,
 		road: { ..cats_from_origin.road, vantage: { ..origin, along: Along.metres(along) } },
@@ -325,11 +324,11 @@ ride_sightings = |along| CatSighting.cats_in_view(
 	metre_a_step,
 )
 
-seen : List(Pipeline.Sighted(CatShapes.PosedCat))
+seen : List(Pipeline.Sighted(PosedCat))
 seen = ride_sightings(300.0)
 
 ## The first cat in view for a rider `along` metres in.
-first_cat : F64 -> Pipeline.Sighted(CatShapes.PosedCat)
+first_cat : F64 -> Pipeline.Sighted(PosedCat)
 first_cat = |along|
 	ride_sightings(along).first() ?? crash "CrossModuleExpects: the second segment's cat is in view"
 
@@ -410,18 +409,33 @@ lone = |index| {
 	vantage: origin,
 }
 
+## The segment `number` places along the road ahead of `road_view`.
+numbered_segment : RoadAhead.RoadView, U32 -> RoadAhead.SegmentInView
+numbered_segment = |road_view, number|
+	RoadAhead.segment_in_view_at(road_view, RoadAhead.Position.number(number))
+
+## The world's segment `number`, as the segment just behind the rider.
+segment_behind : U32 -> RoadAhead.SegmentInView
+segment_behind = |number| {
+	segment = World.route_segment(number)
+	{
+		index: World.SegmentIndex.number(number),
+		segment,
+		place: RoadAhead.place_behind(segment),
+	}
+}
+
 farm_at : U32 -> I64
-farm_at = |number| BillboardSighting.farm_sightings(
-	six_segments,
-	RoadAhead.Position.number(number),
-).len().to_i64_wrap()
+farm_at = |number|
+	BillboardSighting.farm_sightings(six_segments, numbered_segment(six_segments, number))
+		.len()
+		.to_i64_wrap()
 
 safari_at : U32 -> I64
 safari_at = |number|
-	BillboardSighting.wildlife_sightings(
-		six_segments,
-		RoadAhead.Position.number(number),
-	).len().to_i64_wrap()
+	BillboardSighting.wildlife_sightings(six_segments, numbered_segment(six_segments, number))
+		.len()
+		.to_i64_wrap()
 
 expect farm_at(0) > 0
 expect farm_at(2) > 0
@@ -431,22 +445,24 @@ expect farm_at(5) == 0
 expect safari_at(3) > 0
 expect safari_at(4) > 0
 expect safari_at(5) == 0
-expect BillboardSighting.wildlife_sightings(lone(18), RoadAhead.Position.first).len() == 0
-expect BillboardSighting.wildlife_sightings(lone(0), RoadAhead.Position.first).len() > 0
+expect BillboardSighting.wildlife_sightings(lone(18), numbered_segment(lone(18), 0)).len() == 0
+expect BillboardSighting.wildlife_sightings(lone(0), numbered_segment(lone(0), 0)).len() > 0
 
 duck_count : U32 -> I64
 duck_count = |index|
-	BillboardSighting.duck_sightings(lone(index), RoadAhead.Position.first).len().to_i64_wrap()
+	BillboardSighting.duck_sightings(lone(index), numbered_segment(lone(index), 0))
+		.len()
+		.to_i64_wrap()
 
 expect duck_count(12) > 0
 expect duck_count(0) == 0
 expect duck_count(4) == 0
 expect duck_count(18) == 0
-expect BillboardSighting.duck_sightings(six_segments, RoadAhead.Position.number(5)).len() == 0
+expect BillboardSighting.duck_sightings(six_segments, numbered_segment(six_segments, 5)).len() == 0
 expect duck_count(12) == 6
 expect {
-	first = RoadAhead.Position.first
-	whole = BillboardSighting.sightings_at(six_segments, first).len().to_i64_wrap()
+	first = numbered_segment(six_segments, 0)
+	whole = BillboardSighting.segment_sightings(six_segments, first).len().to_i64_wrap()
 	ducks = BillboardSighting.duck_sightings(six_segments, first).len().to_i64_wrap()
 	whole == farm_at(0) + safari_at(0) + ducks
 }
@@ -456,22 +472,24 @@ count_from : U32 -> I64
 count_from = |position|
 	List.from_iter(U32.until(position, 6))
 		.map(
-			|number| BillboardSighting.sightings_at(six_segments, RoadAhead.Position.number(number))
-				.len()
-				.to_i64_wrap(),
+			|number| {
+				in_view = numbered_segment(six_segments, number)
+				BillboardSighting.segment_sightings(six_segments, in_view).len().to_i64_wrap()
+			},
 		)
 		.sum()
 
-expect BillboardSighting.sightings_ahead({ ..six_segments, segments_ahead: [] }).len() == 0
 expect
-	BillboardSighting.sightings_ahead(lone(0)).len()
-		== BillboardSighting.sightings_at(lone(0), RoadAhead.Position.first).len()
-expect BillboardSighting.sightings_ahead(six_segments).len().to_i64_wrap() == count_from(0)
+	BillboardSighting.billboard_fates(lone(0)).len()
+		== BillboardSighting.segment_sightings(lone(0), numbered_segment(lone(0), 0)).len()
+expect BillboardSighting.billboard_fates(six_segments).len().to_i64_wrap() == count_from(0)
 expect count_from(0) >= count_from(1)
 expect count_from(1) >= count_from(2)
-expect BillboardSighting.sightings_behind(six_segments, World.SegmentIndex.number(4)).len() > 0
-expect BillboardSighting.ducks_behind(six_segments, World.route_segment(12)).len() > 0
-expect BillboardSighting.ducks_behind(six_segments, World.route_segment(0)).len() == 0
+expect BillboardSighting.segment_sightings(six_segments, segment_behind(4)).len() > 0
+expect BillboardSighting.duck_sightings(six_segments, segment_behind(12)).len() > 0
+expect BillboardSighting.duck_sightings(six_segments, segment_behind(0)).len() == 0
+expect BillboardSighting.farm_sightings(six_segments, segment_behind(0)).len() == 0
+expect BillboardSighting.wildlife_sightings(six_segments, segment_behind(0)).len() > 0
 
 ## A billboard on the first segment, as the rider at its start sees it.
 critter_fate : Geom.Placed(Billboard) -> BillboardSighting.Fate
@@ -554,7 +572,7 @@ expect BillboardSighting.max_visible_critters == 320
 ## them. A count past the cap is cut to it, and one out of view takes no place.
 drawn_count : { out_of_view : U64, in_view : U64 } -> U64
 drawn_count = |{ out_of_view, in_view }|
-	BillboardSighting.critters_to_draw(
+	BillboardSighting.billboards_to_draw(
 		List.repeat(Err(TooSmall), out_of_view).concat(List.repeat(Ok(near_cow), in_view)),
 	).len()
 
@@ -628,7 +646,7 @@ scene_renderings = Rendered.depth_sorted_renderings(SceneShapes.things_in_tie_or
 # ahead, so `trucks` holds one.
 expect scene_lists.trees.len() == scene.trees.len()
 expect scene_lists.towers.len() == scene.towers.len()
-expect scene_lists.critters.len() == scene.critters.len()
+expect scene_lists.billboards.len() == scene.billboards.len()
 expect scene_lists.cats.len() == scene.cats.len()
 expect scene_lists.rails.len() == scene.rails.len()
 expect scene_lists.birds.len() == scene.birds.len()
@@ -638,7 +656,7 @@ expect
 		== [
 			scene.trees.len(),
 			scene.towers.len(),
-			scene.critters.len(),
+			scene.billboards.len(),
 			scene.cats.len(),
 			scene_lists.trucks.len(),
 			scene.rails.len(),
@@ -647,11 +665,11 @@ expect
 
 expect scene.trees.len() > 0
 expect scene.towers.len() > 0
-expect scene.critters.len() > 0
+expect scene.billboards.len() > 0
 expect scene.rails.len() > 0
 expect scene_renderings.len() > 0
 expect scene.towers.len().to_i64_wrap() <= TowerSighting.max_visible_towers
-expect scene.critters.len().to_i64_wrap() <= BillboardSighting.max_visible_critters
+expect scene.billboards.len().to_i64_wrap() <= BillboardSighting.max_visible_critters
 
 ## Whether no rendering in `renderings` is farther than the one before it.
 is_far_to_near : List(Rendered) -> Bool

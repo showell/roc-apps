@@ -9,7 +9,9 @@ import Trees
 TreeSighting :: [].{
 
 	## The trees in view, the nearest segment's first, and each segment's in
-	## the order `Trees` places them.
+	## the order `Trees` places them. Only the road ahead is searched, because
+	## the segment just behind adds the bend the rider has just turned, and a
+	## tree stands along its segment, which the rider has passed.
 	trees_in_view : RoadAhead.CameraView -> List(Pipeline.Sighted(Conifer))
 	trees_in_view = |view| {
 		positions = RoadAhead.Position.positions_in(view.road.segments_ahead)

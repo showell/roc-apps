@@ -1,6 +1,6 @@
 ## A truck's shape: its size, the box it fills on the road, and where a
 ## point on it lands in the rider's view. TruckBody and TruckLights build
-## their polygons from these, and `fill` paints one.
+## their polygons from these, and `truck_polygon` makes a shape of one.
 import Across
 import Along
 import Camera
