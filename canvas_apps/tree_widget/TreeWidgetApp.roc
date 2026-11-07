@@ -7,7 +7,6 @@ import game.Along
 import game.Clock
 import game.Conifer
 import game.Distance
-import game.Fraction
 import game.Lens
 import game.Pixels
 import game.Screen
@@ -147,8 +146,16 @@ is_plain_to_see = |stand|
 
 # Each tree shows one of the three things `crown_of` can say.
 expect TreeShapes.crown_of(far_stand.forward) == Triangles
-expect TreeShapes.crown_of(middle_stand.forward) == Cones({ shade: Fraction.zero })
-expect TreeShapes.crown_of(near_stand.forward) == Cones({ shade: Fraction.of(0.5) })
+expect
+	match TreeShapes.crown_of(middle_stand.forward) {
+		Cones({ shade }) => shade.to_f64() == 0.0
+		Triangles => False
+	}
+expect
+	match TreeShapes.crown_of(near_stand.forward) {
+		Cones({ shade }) => shade.to_f64() == 0.5
+		Triangles => False
+	}
 
 # All three trees can be seen. A tree too near loses its foot under the panel or
 # its tip off the top, and one too far is a speck.

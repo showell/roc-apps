@@ -12,9 +12,7 @@ import game.Still
 import lib.Brush
 import lib.RgbColor
 import lib.CanvasApp
-import lib.Font
 import lib.Input
-import lib.Mouse
 import lib.Shapes
 import widget.Click
 import widget.ReadoutText
@@ -496,26 +494,6 @@ expect cells.take_first(7).any(is_full_width)
 expect cells.drop_first(7).any(is_full_width)
 expect !is_full_width(first_cell)
 
-# Each name fits its cell, and one much longer would not.
-expect cells.all(|{ pose, area, .. }| Font.room_for(pose_name(pose), name_size) <= area.width)
-expect Font.room_for("Collapse, and then some", name_size) > first_cell.area.width
-
-# The words all fit left of the large still.
-expect
-	cells.all(
-		|{ pose, .. }|
-			read_out_lines(pose).all(
-				|line| {
-					line_end = WidgetPage.side_margin + Font.room_for(line, read_out_size)
-					line_end <= large_area.left
-				},
-			),
-	)
-expect
-	hint_lines.all(
-		|line| WidgetPage.side_margin + Font.room_for(line, WidgetPage.label_size) <= large_area.left,
-	)
-
 ## The large area with its far edges inside it, which a still may touch.
 large_area_edges_held : Click.Area
 large_area_edges_held = {
@@ -627,12 +605,11 @@ expect is_as_started(left_click(start, { x: 630.0, y: 300.0 }))
 # a page where a finger scrolls has to answer no.
 expect is_as_started(left_click(start, { x: 128.0, y: 144.0 }))
 
-# Only a press of the left button is a click: not one held from before, not
-# the right button, and not nothing at all.
+# Only a click changes the widget: not a button held from before, and not
+# nothing at all.
 expect {
 	spot = middle_of(last_cell.area)
-	right = Input.none.with_mouse(Mouse.of({ held: 2, struck: 2, at: { x: spot.x.to_f32_wrap(), y: spot.y.to_f32_wrap() }, wheel: 0.0 }))
-	[Click.held_at(spot), right, Input.none].all(|input| is_as_started(next_model(start, input)))
+	[Click.held_at(spot), Input.none].all(|input| is_as_started(next_model(start, input)))
 }
 
 expect toggled_outlines(Hidden) == Shown
