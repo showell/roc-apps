@@ -8,18 +8,13 @@
 ## where the object is.
 import RoadAhead
 import SegmentPlace
-import Across
-import Along
-import Angle
 import Camera
 import Distance
 import Geom
 import Picture
 import Pixels
 import Rendered
-import Route
 import Spot
-import World
 
 Pipeline :: [].{
 
@@ -102,88 +97,3 @@ Pipeline :: [].{
 		picture: sighting.kind.scenery_picture({ spot: sighting.spot, cam_focal, context }),
 	}
 }
-
-## A kind of object that exists for this file's expects: a post of some height,
-## pictured as nothing.
-Post := { height : Distance }.{
-
-	scenery_height : Post -> Distance
-	scenery_height = |post| post.height
-
-	scenery_picture : Post, Picture.Setting({}) -> Picture
-	scenery_picture = |_post, _setting| Picture.from_shapes([])
-}
-
-## A post of `height`, `along` the first segment and 1.5 m right of the road's
-## middle.
-placed_post : { along : Along, height : Distance } -> Geom.Placed(Post)
-placed_post = |{ along, height }| {
-	road_point: { along, across: Across.metres(1.5) },
-	lift: Distance.zero,
-	kind: Post.({ height: height }),
-}
-
-## The road ahead of a rider on the route's first segment.
-first_road : RoadAhead.RoadView
-first_road = RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex.first)
-
-## The camera at the start of the route, looking down the road.
-first_vantage : Geom.Vantage
-first_vantage = {
-	along: Along.metres(0.0),
-	across: Across.metres(0.0),
-	yaw: Angle.straight_ahead,
-}
-
-first_place : SegmentPlace
-first_place = Ahead(SegmentPlace.Position.first)
-
-## A post 1 m tall, `along` the first segment, as the rider sees it.
-post_sighting : Along -> Try(Pipeline.Sighted(Post), [BehindCamera])
-post_sighting = |along|
-	Pipeline.sighting_of(
-		placed_post({ along, height: Distance.metres(1.0) }),
-		{
-			road: first_road,
-			vantage: first_vantage,
-			place: first_place,
-		},
-	)
-
-## A post of `height`, 64 m ahead, if it stands 2 pixels tall through a lens of
-## 128 pixels. A post 1 m tall stands exactly that.
-tall_post_sighting : Distance -> Try(Pipeline.Sighted(Post), [BehindCamera, TooSmall])
-tall_post_sighting = |height|
-	Pipeline.tall_sighting_of(
-		placed_post({ along: Along.metres(64.0), height }),
-		{
-			road: first_road,
-			vantage: first_vantage,
-			place: first_place,
-			size_focal: Pixels.of(128.0),
-		},
-	)
-
-# The near plane is 0.4 m ahead.
-expect
-	[
-		(0.39, Err(BehindCamera)),
-		(0.4, Ok(Seen)),
-		(0.41, Ok(Seen)),
-	].all(|(along, outcome)| post_sighting(Along.metres(along)).map_ok(|_| Seen) == outcome)
-
-expect
-	[
-		(Distance.metres(0.99), Err(TooSmall)),
-		(Distance.metres(1.0), Ok(Seen)),
-		(Distance.metres(1.01), Ok(Seen)),
-	].all(|(height, outcome)| tall_post_sighting(height).map_ok(|_| Seen) == outcome)
-
-expect
-	[30.0, 64.0].all(
-		|along| {
-			sighting = post_sighting(Along.metres(along)) ?? crash "Pipeline: a post 30 m or more ahead is in view"
-			rendered = Pipeline.rendering_of(sighting, { cam_focal: Pixels.of(512.0), context: {} })
-			rendered.depth == Distance.metres(along)
-		},
-	)

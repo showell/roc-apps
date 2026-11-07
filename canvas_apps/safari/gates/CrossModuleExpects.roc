@@ -44,6 +44,7 @@ import game.Mountains
 import game.Lens
 import game.GroundPatch
 import game.GroundSighting
+import game.Picture
 import game.Pipeline
 import game.Pond
 import game.PosedBird
@@ -1156,6 +1157,81 @@ sighted_ahead = |kind, forward|
 		},
 	)
 		?? crash "CrossModuleExpects: a test's thing is past the near plane"
+
+## A kind of object for Pipeline's expects: a post of some height, pictured as
+## nothing.
+Post := { height : Distance }.{
+
+	scenery_height : Post -> Distance
+	scenery_height = |post| post.height
+
+	scenery_picture : Post, Picture.Setting({}) -> Picture
+	scenery_picture = |_post, _setting| Picture.from_shapes([])
+}
+
+## The road ahead of a rider on a straight route of one segment.
+straight_road : RoadAhead.RoadView
+straight_road = road_of([segment_of([])])
+
+## A post 1 m tall, `along` the straight road and 1.5 m right of its middle, as
+## a camera at `origin` sees it.
+post_sighting : F64 -> Try(Pipeline.Sighted(Post), [BehindCamera])
+post_sighting = |along|
+	Pipeline.sighting_of(
+		{
+			road_point: { along: Along.metres(along), across: Across.metres(1.5) },
+			lift: Distance.zero,
+			kind: Post.({ height: Distance.metres(1.0) }),
+		},
+		{
+			road: straight_road,
+			vantage: origin,
+			place: Ahead(SegmentPlace.Position.first),
+		},
+	)
+
+# The near plane is 0.4 m ahead.
+expect
+	[
+		(0.39, Err(BehindCamera)),
+		(0.4, Ok(Seen)),
+		(0.41, Ok(Seen)),
+	].all(|(along, outcome)| post_sighting(along).map_ok(|_| Seen) == outcome)
+
+# A post 1 m tall, 64 m ahead, stands exactly 2 pixels tall through a lens of
+# 128 pixels, the smallest height drawn.
+expect
+	[
+		(Distance.metres(0.99), Err(TooSmall)),
+		(Distance.metres(1.0), Ok(Seen)),
+		(Distance.metres(1.01), Ok(Seen)),
+	].all(
+		|(height, outcome)|
+			Pipeline.tall_sighting_of(
+				{
+					road_point: { along: Along.metres(64.0), across: Across.metres(1.5) },
+					lift: Distance.zero,
+					kind: Post.({ height: height }),
+				},
+				{
+					road: straight_road,
+					vantage: origin,
+					place: Ahead(SegmentPlace.Position.first),
+					size_focal: Pixels.of(128.0),
+				},
+			).map_ok(|_| Seen)
+				== outcome,
+	)
+
+# A rendering's depth is how far ahead its sighting stands.
+expect
+	[30.0, 64.0].all(
+		|along| {
+			sighting = post_sighting(along) ?? crash "CrossModuleExpects: a post 30 m or more ahead is in view"
+			rendered = Pipeline.rendering_of(sighting, { cam_focal: Pixels.of(512.0), context: {} })
+			rendered.depth == Distance.metres(along)
+		},
+	)
 
 ## A big green tree `forward` metres straight ahead of the route's start.
 green_tree_ahead : F64 -> Pipeline.Sighted(Conifer)
