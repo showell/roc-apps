@@ -40,29 +40,43 @@ Pond :: [].{
 ## `out_from_middle` from the middle of the road, on the outside of the bend.
 PondPoint : { past_end : Distance, out_from_middle : Distance }
 
-water_points : List(PondPoint)
-water_points = [
+## The water's shore on the bend's side, from where it comes nearest the road
+## round to the far shore.
+near_shore_points : List(PondPoint)
+near_shore_points = [
+	{ past_end: Distance.metres(16.0), out_from_middle: Distance.metres(3.0) },
 	{ past_end: Distance.metres(3.0), out_from_middle: Distance.metres(4.0) },
 	{ past_end: Distance.metres(3.0), out_from_middle: Distance.metres(30.0) },
 	{ past_end: Distance.metres(14.0), out_from_middle: Distance.metres(33.0) },
+]
+
+## The water's shore farthest along the road, which the bank runs along.
+far_shore_points : List(PondPoint)
+far_shore_points = [
 	{ past_end: Distance.metres(28.0), out_from_middle: Distance.metres(28.0) },
 	{ past_end: Distance.metres(32.0), out_from_middle: Distance.metres(17.0) },
 	{ past_end: Distance.metres(29.0), out_from_middle: Distance.metres(7.0) },
-	{ past_end: Distance.metres(16.0), out_from_middle: Distance.metres(3.0) },
 ]
+
+water_points : List(PondPoint)
+water_points = near_shore_points.concat(far_shore_points)
 
 water_color : RgbColor
 water_color = RgbColor.of(0x2F7E8C)
 
-bank_points : List(PondPoint)
-bank_points = [
-	{ past_end: Distance.metres(29.0), out_from_middle: Distance.metres(7.0) },
-	{ past_end: Distance.metres(32.0), out_from_middle: Distance.metres(17.0) },
-	{ past_end: Distance.metres(28.0), out_from_middle: Distance.metres(28.0) },
+## The bank's edge away from the water, running the way the far shore runs.
+bank_outer_points : List(PondPoint)
+bank_outer_points = [
 	{ past_end: Distance.metres(29.0), out_from_middle: Distance.metres(28.0) },
 	{ past_end: Distance.metres(33.0), out_from_middle: Distance.metres(17.0) },
 	{ past_end: Distance.metres(30.0), out_from_middle: Distance.metres(7.0) },
 ]
+
+bank_points : List(PondPoint)
+bank_points = {
+	inner_points = far_shore_points.fold_rev([], |point, reversed| reversed.append(point))
+	inner_points.concat(bank_outer_points)
+}
 
 bank_color : RgbColor
 bank_color = RgbColor.of(0xC2B280)
