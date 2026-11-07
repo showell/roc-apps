@@ -1708,7 +1708,7 @@ The chain from `desired_gaze` is the look, and the chain from `is_gawking` is th
 
 `Rider.rider_state_at_next_step` moves the eyes last, after the bike has moved:
 
-{{code Gaze.next_rider_gaze}}
+{{code Gaze.eyes_at_next_step}}
 
 Choosing where to look comes first:
 
@@ -2340,7 +2340,7 @@ digraph rehearsal {
 
 The decision about which way to go is a `match` on what the rehearsal found. Running off the left means more right, running off the right means less, and staying on the road compares the end of the coast with the target:
 
-{{code LeanSearch.want_more_right}}
+{{code LeanSearch.lean_correction}}
 
 Its caller gives the search its bounds, at most a degree either side of the current lean. That's what stops the bike flicking from one lean to another:
 

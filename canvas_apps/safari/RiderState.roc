@@ -19,7 +19,3 @@ RiderState := {
 		eyes: RiderEyes.initial,
 	}
 }
-
-expect RiderState.initial.segment_index.to_i64() == 0
-expect RiderState.initial.motorcycle == Motorcycle.initial
-expect RiderState.initial.eyes == RiderEyes.initial

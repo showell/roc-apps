@@ -17,6 +17,7 @@ import game.BirdFlight
 import game.Cat
 import game.CatCrossing
 import game.Clock
+import game.Coast
 import game.Conifer
 import game.EncounterSighting
 import game.BillboardSighting
@@ -32,6 +33,7 @@ import game.Route
 import game.Segment
 import game.SegmentPlace
 import game.Geom
+import game.Motorcycle
 import game.Mountains
 import game.Lens
 import game.Ground
@@ -54,6 +56,7 @@ import game.Speed
 import game.Steps
 import game.StillShapes
 import game.Sun
+import game.Throttle
 import game.TreeSighting
 import game.Trees
 import game.VehicleLimits
@@ -1520,3 +1523,67 @@ expect {
 	pond_acrosses(right_pond_bend).all(|across| across < Geom.left_edge)
 		and pond_acrosses(left_pond_bend).all(|across| across > Geom.right_edge)
 }
+# Coast's projections. Coast imports neither Angle nor Speed, which these need.
+
+## The coast of a motorcycle at the start of the segment, going the base speed.
+coast_of : F64, F64 -> Coast.Outcome
+coast_of = |across, lean_radians|
+	Coast.project({
+		..Motorcycle.initial,
+		across: Across.metres(across),
+		lean: Angle.Lean.radians(lean_radians),
+	})
+
+expect coast_of(0.0, 0.0) == EndsAt(Across.metres(0.0))
+expect coast_of(3.0, 0.0) == EndsAt(Across.metres(3.0))
+expect Coast.project({ ..Motorcycle.initial, speed: Speed.at_rest }) == EndsAt(Across.metres(0.0))
+
+# A rider this slow and this far over circles on the road, and the coast still ends.
+expect {
+	circling = Coast.project({
+		..Motorcycle.initial,
+		speed: Speed.metres_a_step(0.01),
+		lean: Angle.Lean.radians(0.5),
+	})
+	match circling {
+		EndsAt(_) => True
+		Leaves(_) => False
+	}
+}
+
+## How many steps a coast runs before it leaves the road.
+steps_off_road : Coast.Outcome -> Steps
+steps_off_road = |coast|
+	match coast {
+		Leaves({ after, .. }) => after
+		EndsAt(_) => crash "CrossModuleExpects: this coast stays on the road"
+	}
+
+# A lean to the right coasts off the right shoulder, and the same lean to the
+# left coasts off the left one in as many steps.
+expect {
+	right_lean = coast_of(0.0, 0.2)
+	left_lean = coast_of(0.0, -0.2)
+	right_lean == Leaves({ side: Right, after: steps_off_road(right_lean) })
+		and left_lean == Leaves({ side: Left, after: steps_off_road(left_lean) })
+		and steps_off_road(right_lean) == steps_off_road(left_lean)
+}
+
+## The change of speed Throttle makes for a motorcycle on the first segment far
+## off to the right, leaning `lean`.
+wide_of_road : F64 -> F64
+wide_of_road = |lean| {
+	motorcycle = {
+		..Motorcycle.initial,
+		across: Across.metres(100.0),
+		lean: Angle.Lean.radians(lean),
+	}
+	first_segment = World.route.segment_at(Route.SegmentIndex.number(0))
+	Throttle.next_speed(motorcycle, first_segment)
+		.change_from(motorcycle.speed)
+		.to_metres_a_step_each_step()
+}
+
+# A rider far off to the right, whose coast crosses no shoulder, opens the
+# throttle however far they lean. Each is within 1e-12 of its want.
+expect [-0.001, -0.035, -0.535].all(|lean| (wide_of_road(lean) - 0.01).abs() <= 0.000000000001)

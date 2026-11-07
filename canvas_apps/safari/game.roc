@@ -71,6 +71,7 @@ package
 		Still,
 		StillShapes,
 		Sun,
+		Throttle,
 		Tour,
 		Tower,
 		TowerSighting,

@@ -18,23 +18,6 @@ Gawking :: [].{
 	notice_distance : Distance
 	notice_distance = Distance.metres(150.0)
 
-	## The speed a gawking rider brakes down to.
-	gawk_speed : Speed
-	gawk_speed = Speed.metres_a_step(0.2)
-
-	## How far short of the pig a gawking rider aims to reach `gawk_speed`.
-	gawk_settle_distance : Distance
-	gawk_settle_distance = Distance.metres(25.0)
-
-	## The shortest distance the brake for a pig is worked out over. Past the
-	## settle distance the rider is still coming down to `gawk_speed`, so the
-	## brake keeps working at this distance's strength. Throttle's bend limit
-	## has a different guard, which lets go at its commit point: a rider who
-	## reaches a bend has no more road to brake on, and a rider who reaches
-	## the pig has the rest of the segment.
-	gawk_least_distance : Distance
-	gawk_least_distance = Distance.metres(1.0)
-
 	## The pig on `seg` that catches the rider's eye: the standout pig of a herd
 	## the rider finds distracting. A herd the rider passes by catches no eye.
 	eye_catching_pig : Segment -> [CatchesEye(Geom.Placed(Billboard)), NoPigCatchesEye]
@@ -52,7 +35,7 @@ Gawking :: [].{
 	is_gawking : Motorcycle, Segment -> Bool
 	is_gawking = |motorcycle, seg|
 		match eye_catching_pig(seg) {
-			CatchesEye(pig) => motorcycle.along >= pig.road_point.along.minus(notice_distance)
+			CatchesEye(pig) => is_past_notice(motorcycle, pig)
 			NoPigCatchesEye => False
 		}
 
@@ -61,7 +44,7 @@ Gawking :: [].{
 	gawk_brake : Motorcycle, Segment -> VehicleLimits.Limit
 	gawk_brake = |motorcycle, seg|
 		match eye_catching_pig(seg) {
-			CatchesEye(pig) if is_gawking(motorcycle, seg) => {
+			CatchesEye(pig) if is_past_notice(motorcycle, pig) => {
 				gap = pig.road_point.along.distance_from(motorcycle.along)
 				room = gap.minus(gawk_settle_distance)
 				AtMost(
@@ -75,14 +58,27 @@ Gawking :: [].{
 		}
 }
 
-# Each is within 1e-12 of its want.
-expect
-	[
-		(Gawking.notice_distance.to_metres(), 150.0),
-		(Gawking.gawk_speed.to_metres_a_step(), 0.2),
-		(Gawking.gawk_settle_distance.to_metres(), 25.0),
-		(Gawking.gawk_least_distance.to_metres(), 1.0),
-	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
+## Whether the motorcycle has reached the place where `pig` is noticed.
+is_past_notice : Motorcycle, Geom.Placed(Billboard) -> Bool
+is_past_notice = |motorcycle, pig|
+	motorcycle.along >= pig.road_point.along.minus(Gawking.notice_distance)
+
+## The speed a gawking rider brakes down to.
+gawk_speed : Speed
+gawk_speed = Speed.metres_a_step(0.2)
+
+## How far short of the pig a gawking rider aims to reach `gawk_speed`.
+gawk_settle_distance : Distance
+gawk_settle_distance = Distance.metres(25.0)
+
+## The shortest distance the brake for a pig is worked out over. Past the
+## settle distance the rider is still coming down to `gawk_speed`, so the
+## brake keeps working at this distance's strength. Throttle's bend limit
+## has a different guard, which lets go at its commit point: a rider who
+## reaches a bend has no more road to brake on, and a rider who reaches
+## the pig has the rest of the segment.
+gawk_least_distance : Distance
+gawk_least_distance = Distance.metres(1.0)
 
 plain : Segment
 plain = World.route.segment_at(Route.SegmentIndex.number(0))

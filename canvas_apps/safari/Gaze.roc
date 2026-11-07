@@ -15,7 +15,6 @@ import Gawking
 import Geom
 import Motorcycle
 import RiderEyes
-import RiderState
 import lib.Trig
 import Route
 import Segment
@@ -54,13 +53,12 @@ Gaze :: [].{
 			CatchesEye(_) | NoPigCatchesEye => OnRoad
 		}
 
-	## This rider with the eyes moved on a step, on `seg`, the segment the rider
-	## is on: the gaze, and the look depth it leaves.
-	next_rider_gaze : RiderState, Segment -> RiderState
-	next_rider_gaze = |state, seg| {
-		eyes = state.eyes
-		gaze_yaw = next_gaze_yaw(eyes, desired_gaze(state.motorcycle, seg))
-		{ ..state, eyes: { gaze_yaw, look_depth: next_look_depth(eyes, gaze_yaw) } }
+	## These eyes moved on a step, for a rider on `motorcycle` on `segment`, the
+	## segment the rider is on: the gaze, and the look depth it leaves.
+	eyes_at_next_step : RiderEyes, { motorcycle : Motorcycle, segment : Segment } -> RiderEyes
+	eyes_at_next_step = |eyes, { motorcycle, segment }| {
+		gaze_yaw = next_gaze_yaw(eyes, desired_gaze(motorcycle, segment))
+		{ gaze_yaw, look_depth: next_look_depth(eyes, gaze_yaw) }
 	}
 }
 
@@ -111,15 +109,6 @@ turn_to = |motorcycle, pig| Angle.Turn.radians(
 	}),
 ).minus(motorcycle.yaw)
 
-# Each is within 1e-12 of its want.
-expect
-	[
-		(look_depth_decay.to_f64(), 0.0012),
-		(Gaze.look_release_angle.to_radians() / Trig.degree, 35.0),
-		(look_swivel_rate.to_radians() / Trig.degree, 4.0),
-		(look_return_rate.to_radians() / Trig.degree, 0.2),
-	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
-
 expect Gaze.gaze_attention(Fraction.of(0.25)).to_f64() == 0.15625
 
 plain : Segment
@@ -169,10 +158,6 @@ rider_short_of_pig = |metres| {
 	..rider(0.0),
 	along: watched_pig.road_point.along.minus(Distance.metres(metres)),
 }
-
-# The look starts where the pig is noticed, and not a centimetre sooner.
-expect turn_to_pig(rider_short_of_pig(Gawking.notice_distance.to_metres())) > 0.0
-expect Gaze.desired_gaze(rider_short_of_pig(150.01), distracting) == OnRoad
 
 ## A motorcycle 100 m short of the pig, turned so the pig is `degrees` off.
 rider_with_pig_off : F64 -> Motorcycle

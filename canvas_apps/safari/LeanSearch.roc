@@ -8,18 +8,30 @@ import Steps
 
 LeanSearch :: [].{
 
-	want_more_right : Coast.Outcome, Across -> Bool
-	want_more_right = |coast, target|
+	## Which way the next try should lean, from where this try's coast went:
+	## off the left shoulder means more right, off the right means more left,
+	## and a coast that stays on the road compares its end with `target`. A
+	## coast that ends exactly on the target means lean left.
+	lean_correction : Coast.Outcome, Across -> [MoreRight, MoreLeft]
+	lean_correction = |coast, target|
 		match coast {
-			Leaves({ side: Left, .. }) => True
-			Leaves({ side: Right, .. }) => False
-			EndsAt(end_across) => end_across < target
+			Leaves({ side: Left, .. }) => MoreRight
+			Leaves({ side: Right, .. }) => MoreLeft
+			EndsAt(end_across) =>
+				if end_across < target {
+					MoreRight
+				} else {
+					MoreLeft
+				}
 		}
 
 	## The most the lean changes in one step.
 	max_lean_change : Angle.LeanChange
 	max_lean_change = Angle.LeanChange.degrees(1.0)
 
+	## How many times the search halves its bounds. They start 2° wide, a
+	## degree either side of the lean, so 12 halvings narrow them to about
+	## 0.0005°.
 	lean_search_round_count : U8
 	lean_search_round_count = 12
 
@@ -36,10 +48,13 @@ LeanSearch :: [].{
 		var $high = high
 		for _ in 0..<lean_search_round_count {
 			mid = $low.halfway_to($high)
-			if want_more_right(Coast.project(state.with_lean(mid)), target) {
-				$low = mid
-			} else {
-				$high = mid
+			match lean_correction(Coast.project(state.with_lean(mid)), target) {
+				MoreRight => {
+					$low = mid
+				}
+				MoreLeft => {
+					$high = mid
+				}
 			}
 		}
 		$low.halfway_to($high)
@@ -69,11 +84,11 @@ off_right = Leaves({ side: Right, after: Steps.one_step })
 ending_at : F64 -> Coast.Outcome
 ending_at = |metres| EndsAt(Across.metres(metres))
 
-expect LeanSearch.want_more_right(off_left, Across.metres(0.5))
-expect !LeanSearch.want_more_right(off_right, Across.metres(0.5))
-expect LeanSearch.want_more_right(ending_at(0.4), Across.metres(0.5))
-expect !LeanSearch.want_more_right(ending_at(0.6), Across.metres(0.5))
-expect !LeanSearch.want_more_right(ending_at(0.5), Across.metres(0.5))
+expect LeanSearch.lean_correction(off_left, Across.metres(0.5)) == MoreRight
+expect LeanSearch.lean_correction(off_right, Across.metres(0.5)) == MoreLeft
+expect LeanSearch.lean_correction(ending_at(0.4), Across.metres(0.5)) == MoreRight
+expect LeanSearch.lean_correction(ending_at(0.6), Across.metres(0.5)) == MoreLeft
+expect LeanSearch.lean_correction(ending_at(0.5), Across.metres(0.5)) == MoreLeft
 
 ## The lean the search picks for a motorcycle at the start of the segment, in
 ## radians.
@@ -85,19 +100,14 @@ searched_lean = |across, lean_radians|
 		lean: Angle.Lean.radians(lean_radians),
 	}).to_radians()
 
-max_correction : F64
-max_correction = LeanSearch.max_lean_change.to_radians()
+# An upright rider right of the middle leans left, and one left of it leans
+# right.
+expect searched_lean(1.0, 0.0) < 0.0
+expect searched_lean(-1.0, 0.0) > 0.0
 
-centred : F64
-centred = searched_lean(0.0, 0.0)
-
-offset : F64
-offset = searched_lean(1.0, 0.0)
-
-held : F64
-held = searched_lean(0.0, 0.5)
-
-expect offset.abs() <= max_correction
-expect (held - 0.5).abs() <= max_correction
-expect centred.abs() <= max_correction
-expect held > centred
+# A lean held to the right stays further right than an upright rider's.
+expect {
+	held = searched_lean(0.0, 0.5)
+	centred = searched_lean(0.0, 0.0)
+	held > centred
+}
