@@ -42,6 +42,7 @@ import game.SegmentPlace
 import game.Geom
 import game.Motorcycle
 import game.Mountains
+import game.LeanSearch
 import game.Lens
 import game.GroundPatch
 import game.GroundSighting
@@ -2607,3 +2608,8 @@ expect
 		(35.01, False),
 		(-35.01, False),
 	].all(|(degrees, is_in_sight)| is_looking(motorcycle_with_pig_off(degrees)) == is_in_sight)
+
+# A coast off the left shoulder means lean more right, and off the right more
+# left.
+expect LeanSearch.lean_correction(Leaves({ side: Left, after: Steps.one_step })) == MoreRight
+expect LeanSearch.lean_correction(Leaves({ side: Right, after: Steps.one_step })) == MoreLeft
