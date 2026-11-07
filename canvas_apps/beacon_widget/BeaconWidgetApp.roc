@@ -3,6 +3,8 @@
 ## blink opposite each other at dusk, where a beacon shows up. The towers are drawn
 ## by Safari's own Tower, and how bright each is comes from Beacon. Below
 ## them, the buttons and four lines of text that read out the clock.
+import game.Across
+import game.Along
 import game.Angle
 import game.Beacon
 import game.Clock
@@ -10,6 +12,8 @@ import game.Distance
 import game.Fraction
 import game.Geom
 import game.Lens
+import game.SegmentPlace
+import game.Spot
 import game.Steps
 import game.Tower
 import lib.CanvasApp
@@ -106,10 +110,19 @@ tower_shapes_at = |foot, brightness| {
 			forward: tower_forward.plus(offset.along),
 		}
 	}
+	spot = Spot.at({
+		place: Ahead(SegmentPlace.Position.first),
+		road_point: {
+			along: Along.metres(tower_forward.to_metres()),
+			across: Across.metres(right.to_metres()),
+		},
+		lift: Distance.zero,
+		foot,
+	})
 	Tower.tower_shapes(
 		{ yaw: Angle.straight_ahead, beacon_brightness: brightness },
 		{
-			foot,
+			spot,
 			cam_focal: Lens.resting_focal,
 			context: {
 				back_left: corner_point(BackLeft),

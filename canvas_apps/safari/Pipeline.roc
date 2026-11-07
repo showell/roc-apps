@@ -6,29 +6,21 @@
 ## needs, and it matches them by name alone, so those names say what they are
 ## for. A kind holds how the object looks right now, and the form around it holds
 ## where the object is.
-import Across
-import Along
 import RoadAhead
+import SegmentPlace
 import Detail
 import Distance
 import Geom
 import Picture
 import Pixels
 import Rendered
+import Spot
 
 Pipeline :: [].{
 
-	## An object in the rider's view, and what kind of object it is. It stands at
-	## `along` and `across` on the segment at `place`, and its `foot` is where
-	## that is from the camera, on the rider's level and past the near plane. It
-	## lasts one frame.
-	Sighted(kind) : {
-		place : RoadAhead.SegmentPlace,
-		along : Along,
-		across : Across,
-		foot : Geom.LevelPoint,
-		kind : kind,
-	}
+	## An object in the rider's view, and what kind of object it is, for one
+	## frame.
+	Sighted(kind) : { spot : Spot, kind : kind }
 
 	## How an object's size decides if it is drawn: it must stand at least
 	## `smallest_px` tall through a lens of focal length `focal`.
@@ -44,16 +36,18 @@ Pipeline :: [].{
 	sighting_of : Geom.Placed(kind),
 	{
 		road : RoadAhead.RoadView,
-		place : RoadAhead.SegmentPlace,
+		place : SegmentPlace,
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera])
 	sighting_of = |placed, { road, place }| {
 		seen = RoadAhead.rider_point_at(road, { place, along: placed.along, across: placed.across })
 		foot = Geom.ahead_on_level(seen)?
 		Ok({
-			place,
-			along: placed.along,
-			across: placed.across,
-			foot,
+			spot: Spot.at({
+				place,
+				road_point: { along: placed.along, across: placed.across },
+				lift: placed.lift,
+				foot,
+			}),
 			kind: placed.kind,
 		})
 	}
@@ -62,13 +56,13 @@ Pipeline :: [].{
 	tall_sighting_of : Geom.Placed(kind),
 	{
 		road : RoadAhead.RoadView,
-		place : RoadAhead.SegmentPlace,
+		place : SegmentPlace,
 		size_test : Pipeline.SizeTest,
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera, TooSmall])
 		where [kind.scenery_height : kind -> Distance]
 	tall_sighting_of = |placed, { road, place, size_test }| {
 		sighting = sighting_of(placed, { road, place })?
-		forward = sighting.foot.forward()
+		forward = sighting.spot.foot().forward()
 		height_px = size_test.focal.times(placed.kind.scenery_height().ratio_to(forward))
 		if height_px < size_test.smallest_px {
 			Err(TooSmall)
@@ -82,7 +76,7 @@ Pipeline :: [].{
 	rendering_of : Pipeline.Sighted(kind), { cam_focal : Pixels, context : context } -> Rendered
 		where [kind.scenery_picture : kind, Picture.Setting(context) -> Picture]
 	rendering_of = |sighting, { cam_focal, context }| {
-		depth: sighting.foot.forward(),
-		picture: sighting.kind.scenery_picture({ foot: sighting.foot, cam_focal, context }),
+		depth: sighting.spot.foot().forward(),
+		picture: sighting.kind.scenery_picture({ spot: sighting.spot, cam_focal, context }),
 	}
 }

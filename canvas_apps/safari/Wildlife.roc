@@ -46,11 +46,13 @@ Wildlife :: [].{
 			{
 				along: bend_along,
 				across,
+				lift: Distance.zero,
 				kind: Billboard.adult_billboard(species, facing),
 			},
 			{
 				along: bend_along.plus(baby_beyond),
 				across: Across.middle,
+				lift: Distance.zero,
 				kind: Billboard.young_billboard(species, facing),
 			},
 		]

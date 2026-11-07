@@ -109,7 +109,7 @@ habit_from = |trees, perch| {
 
 ## The bird as it sits on top of `tree`.
 sitting_on : Trees.RoadsideTree -> BirdFlight.BirdInstant
-sitting_on = |tree| { pose: Perched, spot: tree_top(tree) }
+sitting_on = |tree| { pose: Perched, location: tree_top(tree) }
 
 ## The whole of a flight: `flight_poses`, on one smooth path that rises in
 ## the middle.
@@ -120,7 +120,7 @@ flight_timeline = |{ from, to }| {
 	frames = BirdFlight.flight_poses.map_with_index(
 		|pose, frame| {
 			through = Fraction.of(frame.to_f64() / frame_count)
-			{ pose, spot: flight_spot(ends, through) }
+			{ pose, location: flight_location({ from: ends.from, to: ends.to, through }) }
 		},
 	)
 	Animation.Timeline.(
@@ -132,8 +132,8 @@ flight_timeline = |{ from, to }| {
 	)
 }
 
-## The spot on top of `tree`.
-tree_top : Trees.RoadsideTree -> Animation.Spot
+## The location on top of `tree`.
+tree_top : Trees.RoadsideTree -> Animation.Location
 tree_top = |tree| {
 	along: tree.along,
 	across: tree.across,
@@ -147,11 +147,15 @@ flap_poses = |up, down| {
 	List.repeat(up, half).concat(List.repeat(down, half))
 }
 
-## The spot `through` a flight between `from` and `to`, easing out and in along
+## The location `through` a flight between `from` and `to`, easing out and in along
 ## a straight line, and raised by an arc over it.
-flight_spot : { from : Animation.Spot, to : Animation.Spot }, Fraction -> Animation.Spot
-flight_spot = |{ from, to }, through| {
-	on_line = Animation.spot_between({ from, to, fraction: Easing.smoothstep(through) })
+flight_location : {
+	from : Animation.Location,
+	to : Animation.Location,
+	through : Fraction,
+} -> Animation.Location
+flight_location = |{ from, to, through }| {
+	on_line = Animation.location_between({ from, to, fraction: Easing.smoothstep(through) })
 	share = through.to_f64()
 	# 4t(1 - t) is 0 at both ends and 1 halfway, so the arc tops out at `flight_arc`.
 	above_line = BirdFlight.flight_arc.times(4.0 * share * (1.0 - share))
@@ -162,6 +166,7 @@ tree_at : F64, F64 -> Trees.RoadsideTree
 tree_at = |along, across| {
 	along: Along.metres(along),
 	across: Across.metres(across),
+	lift: Distance.zero,
 	kind: Conifer.Red,
 }
 
@@ -249,25 +254,25 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.000000001)
 
 expect {
-	spot = BirdFlight.instant_at(sample_flight, { gap: Distance.metres(100.0) }).spot
-	spot.along.to_metres() == 100.0
-		and spot.across.to_metres() == -6.0
-		and spot.lift.to_metres() == red_top
+	location = BirdFlight.instant_at(sample_flight, { gap: Distance.metres(100.0) }).location
+	location.along.to_metres() == 100.0
+		and location.across.to_metres() == -6.0
+		and location.lift.to_metres() == red_top
 }
 
 expect {
-	spot = BirdFlight.instant_at(sample_flight, { gap: Distance.zero }).spot
-	spot.along.to_metres() == 140.0
-		and spot.across.to_metres() == 6.0
-		and spot.lift.to_metres() == gold_top
+	location = BirdFlight.instant_at(sample_flight, { gap: Distance.zero }).location
+	location.along.to_metres() == 140.0
+		and location.across.to_metres() == 6.0
+		and location.lift.to_metres() == gold_top
 }
 
 expect {
-	spot = BirdFlight.instant_at(sample_flight, { gap: halfway_gap }).spot
+	location = BirdFlight.instant_at(sample_flight, { gap: halfway_gap }).location
 	[
-		(spot.along.to_metres(), 120.0),
-		(spot.across.to_metres(), 0.0),
-		(spot.lift.to_metres(), (red_top + gold_top) / 2.0 + BirdFlight.flight_arc.to_metres()),
+		(location.along.to_metres(), 120.0),
+		(location.across.to_metres(), 0.0),
+		(location.lift.to_metres(), (red_top + gold_top) / 2.0 + BirdFlight.flight_arc.to_metres()),
 	].all(|(got, want)| (got - want).abs() <= 0.000000001)
 }
 
@@ -297,9 +302,9 @@ expect
 # drop to it is out of sight.
 expect {
 	frames_of = flight_timeline(sample_flight)
-	first = frames_of.instant(Playing(Fraction.zero)).spot
-	last = frames_of.instant(Playing(Fraction.of(0.9999))).spot
-	first == BirdFlight.instant_at(sample_flight, { gap: takeoff_gap }).spot
+	first = frames_of.instant(Playing(Fraction.zero)).location
+	last = frames_of.instant(Playing(Fraction.of(0.9999))).location
+	first == BirdFlight.instant_at(sample_flight, { gap: takeoff_gap }).location
 		and last.along.distance_from(sample_flight.to.along).to_metres().abs() <= 0.01
 		and (last.lift.to_metres() - gold_top).abs() <= 0.1
 }

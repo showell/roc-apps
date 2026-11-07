@@ -30,9 +30,11 @@ TreeShapes :: [].{
 		height : Distance,
 		foliage_color : RgbColor,
 	} -> Picture
-	tree_picture = |{ foot, cam_focal, context }, { height, foliage_color }| {
-		tip = foot.at_height(height)
-		outline = tree_outline(tip, cam_focal)
+	tree_picture = |{ spot, cam_focal, context }, { height, foliage_color }| {
+		foot = spot.foot()
+		lift = spot.lift()
+		tip = foot.at_height(lift.plus(height))
+		outline = tree_outline({ tip, lift, cam_focal })
 		trunk_finish = if context.nearer_tree_count < Detail.round_trunk_limit {
 			Shaded
 		} else {
@@ -61,11 +63,15 @@ TreeShapes :: [].{
 			Triangles
 		}
 
-	## Where a tree is on the screen, given its `tip`, through a lens of focal
-	## length `cam_focal`.
-	tree_outline : Geom.AheadPoint, Pixels -> TreeShapes.TreeOutline
-	tree_outline = |tip, cam_focal| {
-		foot = Camera.project(tip.at_height(Distance.zero), cam_focal)
+	## Where a tree is on the screen, given its `tip`, for a tree standing
+	## `lift` off the ground, through a lens of focal length `cam_focal`.
+	tree_outline : {
+		tip : Geom.AheadPoint,
+		lift : Distance,
+		cam_focal : Pixels,
+	} -> TreeShapes.TreeOutline
+	tree_outline = |{ tip, lift, cam_focal }| {
+		foot = Camera.project(tip.at_height(lift), cam_focal)
 		top = Camera.project(tip, cam_focal)
 		{ foot, height: foot.y.minus(top.y) }
 	}
@@ -388,15 +394,16 @@ expect TreeShapes.crown_of(Distance.metres(199.0)) == Cones({ shade: Fraction.ze
 expect TreeShapes.crown_of(Distance.metres(200.0)) == Triangles
 
 sample_outline : TreeShapes.TreeOutline
-sample_outline = TreeShapes.tree_outline(
-	Geom.ahead_point({
+sample_outline = TreeShapes.tree_outline({
+	tip: Geom.ahead_point({
 		right: Distance.metres(0.0),
 		forward: Distance.metres(2.0),
 		height: Distance.metres(4.352),
 	})
 		?? crash "the sample tree is past the near plane",
-	Pixels.of(500.0),
-)
+	lift: Distance.zero,
+	cam_focal: Pixels.of(500.0),
+})
 
 ## Whether two lists of coordinates agree, past rounding.
 is_near : List(F64), List(F64) -> Bool

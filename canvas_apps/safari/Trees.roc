@@ -36,6 +36,7 @@ Trees :: [].{
 			left_tree = {
 				along: $along,
 				across: Across.left_of_middle(tree_distance),
+				lift: Distance.zero,
 				kind: $conifer,
 			}
 			right_tree = { ..left_tree, across: Across.right_of_middle(tree_distance) }

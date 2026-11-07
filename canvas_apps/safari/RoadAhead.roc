@@ -8,6 +8,7 @@ import Across
 import Along
 import Distance
 import Geom
+import SegmentPlace
 import World
 
 RoadAhead :: [].{
@@ -24,75 +25,12 @@ RoadAhead :: [].{
 	## length in pixels.
 	CameraView : { road : RoadAhead.RoadView, cam_focal : Pixels }
 
-	## What a thing measured on the road draws from: the road in view, and where
-	## on it the thing stands.
-	RoadContext : {
-		road : RoadAhead.RoadView,
-		place : RoadAhead.SegmentPlace,
-		along : Along,
-		across : Across,
-	}
-
-	## A segment's place on the road ahead, counted from the rider's own at 0. It
-	## says how many segments ahead of the rider that segment is, where a
-	## World.SegmentIndex says where it is in the route.
-	Position :: U32.{
-
-		number : U32 -> RoadAhead.Position
-		number = |n| RoadAhead.Position.(n)
-
-		to_i64 : RoadAhead.Position -> I64
-		to_i64 = |RoadAhead.Position.(n)| n.to_i64()
-
-		## The rider's own segment.
-		first : RoadAhead.Position
-		first = RoadAhead.Position.(0)
-
-		next : RoadAhead.Position -> RoadAhead.Position
-		next = |RoadAhead.Position.(n)| RoadAhead.Position.(n + 1)
-
-		## Every position in `segments_ahead`, the rider's own first.
-		positions_in : List(World.SegmentIndex) -> List(RoadAhead.Position)
-		positions_in = |segments_ahead|
-			List.from_iter(
-				U32.until(0, segments_ahead.len().to_u32_wrap()),
-			).map(RoadAhead.Position.number)
-
-		## The segment at this position in `segments_ahead`.
-		index_in : RoadAhead.Position, List(World.SegmentIndex) -> World.SegmentIndex
-		index_in = |RoadAhead.Position.(n), segments_ahead|
-			segments_ahead.get(n.to_u64()) ?? crash "RoadAhead.Position.index_in: past the road's end"
-
-		## The segments of `segments_ahead` before this position, the rider's own first.
-		segments_before : RoadAhead.Position, List(World.SegmentIndex) -> List(World.SegmentIndex)
-		segments_before = |RoadAhead.Position.(n), segments_ahead|
-			segments_ahead.take_first(n.to_u64())
-
-		## Whether this position is the last one in `segments_ahead`.
-		is_last_in : RoadAhead.Position, List(World.SegmentIndex) -> Bool
-		is_last_in = |RoadAhead.Position.(n), segments_ahead| n.to_u64() + 1 >= segments_ahead.len()
-
-		## Whether `segments_ahead` stops before this position.
-		is_past_end_of : RoadAhead.Position, List(World.SegmentIndex) -> Bool
-		is_past_end_of = |RoadAhead.Position.(n), segments_ahead| n.to_u64() >= segments_ahead.len()
-
-		## Whether this position is among the first `count` of the road ahead.
-		is_within_first : RoadAhead.Position, U32 -> Bool
-		is_within_first = |RoadAhead.Position.(n), count| n < count
-
-		is_eq : _
-	}
-
-	## Where a segment lies from the rider: at a position on the road ahead, or
-	## just behind the rider, round the bend into the rider's segment.
-	SegmentPlace : [Ahead(RoadAhead.Position), JustBehind(Geom.Bend)]
-
 	## A segment in view: where it is in the route, the segment itself, and where
 	## it lies from the rider.
 	SegmentInView : {
 		index : World.SegmentIndex,
 		segment : World.Segment,
-		place : RoadAhead.SegmentPlace,
+		place : SegmentPlace,
 	}
 
 	## The most segments the road ahead holds.
@@ -101,10 +39,10 @@ RoadAhead :: [].{
 
 	## The segment the rider is on, which is the road ahead's first.
 	rider_segment : RoadAhead.RoadView -> World.SegmentIndex
-	rider_segment = |road| RoadAhead.Position.first.index_in(road.segments_ahead)
+	rider_segment = |road| SegmentPlace.Position.first.index_in(road.segments_ahead)
 
 	## The segment at `position` on the road ahead.
-	segment_at : RoadAhead.RoadView, RoadAhead.Position -> World.Segment
+	segment_at : RoadAhead.RoadView, SegmentPlace.Position -> World.Segment
 	segment_at = |road, position|
 		position.index_in(road.segments_ahead).segment_in(road.route_segments)
 
@@ -117,7 +55,7 @@ RoadAhead :: [].{
 	segments_in_view : RoadAhead.RoadView -> List(RoadAhead.SegmentInView)
 	segments_in_view = |road| {
 		segments_ahead =
-			RoadAhead.Position.positions_in(road.segments_ahead)
+			SegmentPlace.Position.positions_in(road.segments_ahead)
 				.map(|position| segment_in_view_at(road, position))
 		match segment_behind(road) {
 			Previous(index) => {
@@ -129,7 +67,7 @@ RoadAhead :: [].{
 	}
 
 	## The segment at `position` on the road ahead, as a segment in view.
-	segment_in_view_at : RoadAhead.RoadView, RoadAhead.Position -> RoadAhead.SegmentInView
+	segment_in_view_at : RoadAhead.RoadView, SegmentPlace.Position -> RoadAhead.SegmentInView
 	segment_in_view_at = |road, position| {
 		index = position.index_in(road.segments_ahead)
 		{
@@ -174,13 +112,13 @@ RoadAhead :: [].{
 	)
 
 	## The place of `segment`, which is just behind the rider.
-	place_behind : World.Segment -> RoadAhead.SegmentPlace
+	place_behind : World.Segment -> SegmentPlace
 	place_behind = |segment| JustBehind(World.bend_out_of(segment))
 
 	## A point on the segment at `position` on the road ahead, in the rider's view.
 	rider_point_ahead : RoadAhead.RoadView,
 	{
-		position : RoadAhead.Position,
+		position : SegmentPlace.Position,
 		along : Along,
 		across : Across,
 	} -> Geom.RiderPoint
@@ -198,7 +136,7 @@ RoadAhead :: [].{
 	## A point on the segment at `place`, in the rider's view.
 	rider_point_at : RoadAhead.RoadView,
 	{
-		place : RoadAhead.SegmentPlace,
+		place : SegmentPlace,
 		along : Along,
 		across : Across,
 	} -> Geom.RiderPoint
@@ -248,6 +186,3 @@ route_facts = |segments| [
 ]
 
 expect route_facts(World.segments) == [19, 7, 4, 1]
-
-expect RoadAhead.Position.number(3).to_i64() == 3
-expect RoadAhead.Position.first.next().to_i64() == 1

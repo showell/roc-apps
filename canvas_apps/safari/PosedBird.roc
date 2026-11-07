@@ -1,20 +1,24 @@
-## A Roc bird at one moment of its flight: how it looks, and how high its feet
-## are. The Roc bird is roc-lang.org's logo, sitting on treetops beside the road
-## and flying off as the rider comes. BirdFlight says where a bird is and how it
-## looks, CrossingSighting finds the birds in view, and BirdStills holds their
+## A Roc bird at one moment of its flight: how it looks. The Roc bird is
+## roc-lang.org's logo, sitting on treetops beside the road and flying off as
+## the rider comes. BirdFlight says where a bird is and how it looks,
+## CrossingSighting finds the birds in view, and BirdStills holds their
 ## drawings.
 import Pixels
+import Across
+import Along
 import BirdStills
 import Camera
 import Geom
 import Picture
+import SegmentPlace
+import Spot
 import StillShapes
 import Stills
 import Distance
 import lib.Brush
 import lib.Shapes
 
-PosedBird := { pose : PosedBird.BirdPose, lift : Distance }.{
+PosedBird := { pose : PosedBird.BirdPose }.{
 
 	## Where the wings are in a beat.
 	WingBeat : [WingsUp, WingsDown]
@@ -42,8 +46,9 @@ PosedBird := { pose : PosedBird.BirdPose, lift : Distance }.{
 	## A bird on screen, its feet where it is. Its still is unflipped: a bird
 	## from a left-hand tree crosses the road toward +x, the way its beak points.
 	scenery_picture : PosedBird, Picture.Setting({}) -> Picture
-	scenery_picture = |bird, { foot, cam_focal, .. }| {
-		feet = Camera.project(foot.at_height(bird.lift), cam_focal)
+	scenery_picture = |bird, { spot, cam_focal, .. }| {
+		foot = spot.foot()
+		feet = Camera.project(foot.at_height(spot.lift()), cam_focal)
 		Picture.from_shapes(
 			StillShapes.still_shapes(
 				{
@@ -71,18 +76,25 @@ PosedBird := { pose : PosedBird.BirdPose, lift : Distance }.{
 
 expect PosedBird.bird_height.to_metres() == 2.2
 
-# A perched bird with its feet at the camera's height, so that straight ahead
-# they land on the horizon in the middle of the screen.
+# A perched bird.
 level_bird : PosedBird
-level_bird = { lift: Camera.eye_height, pose: Perched }
+level_bird = { pose: Perched }
 
-## `bird` 110 m ahead and `right` of the camera, through a 500 px focal length.
-bird_shapes_at : PosedBird, Distance -> List(Shapes.Shape)
-bird_shapes_at = |bird, right| {
+## `bird` 110 m ahead, `right` of the camera and `lift` off the ground, through
+## a 500 px focal length. A lift of the camera's height puts its feet on the
+## horizon.
+bird_shapes_at : PosedBird, { right : Distance, lift : Distance } -> List(Shapes.Shape)
+bird_shapes_at = |bird, { right, lift }| {
 	foot =
 		Geom.ahead_on_level({ right, forward: Distance.metres(110.0) })
 			?? crash "a test's bird is past the near plane"
-	bird.scenery_picture({ foot, cam_focal: Pixels.of(500.0), context: {} }).to_shapes()
+	spot = Spot.at({
+		place: Ahead(SegmentPlace.Position.first),
+		road_point: { along: Along.metres(110.0), across: Across.metres(right.to_metres()) },
+		lift,
+		foot,
+	})
+	bird.scenery_picture({ spot, cam_focal: Pixels.of(500.0), context: {} }).to_shapes()
 }
 
 ## How many pixels tall a bird `forward` ahead is, through `cam_focal`.
@@ -106,18 +118,18 @@ expect
 # from feet at (480, 300). 11 m to the right and 11 m above the camera, at
 # 110 m, is 50 px each way.
 expect {
-	first_corner = |bird, right|
-		match bird_shapes_at(bird, right) {
+	first_corner = |perch|
+		match bird_shapes_at(level_bird, perch) {
 			[Poly(polygon), ..] => polygon.coordinates.take_first(2)
 			_ => crash "a bird draws polygons"
 		}
-	raised_bird = { ..level_bird, lift: Camera.eye_height.plus(Distance.metres(11.0)) }
+	raised = { right: Distance.metres(11.0), lift: Camera.eye_height.plus(Distance.metres(11.0)) }
 	[
-		(level_bird, Distance.metres(0.0), [479.656, 294.285]),
-		(raised_bird, Distance.metres(11.0), [529.656, 244.285]),
+		({ right: Distance.metres(0.0), lift: Camera.eye_height }, [479.656, 294.285]),
+		(raised, [529.656, 244.285]),
 	].all(
-		|(bird, right, want)| {
-			got = first_corner(bird, right)
+		|(perch, want)| {
+			got = first_corner(perch)
 			got.len() == 2 and got.map2(want, |x, y| (x - y).abs()).all(|miss| miss <= 0.000000001)
 		},
 	)
@@ -141,8 +153,9 @@ expect {
 			Poly(polygon) => polygon.fill
 			_ => crash "a bird's still is polygons"
 		}
+	level = { right: Distance.metres(0.0), lift: Camera.eye_height }
 	drawn = [Side(WingsDown), Diving].join_map(
-		|pose| bird_shapes_at({ ..level_bird, pose }, Distance.metres(0.0)).map(fill_of),
+		|pose| bird_shapes_at({ pose: pose }, level).map(fill_of),
 	)
 	stills = BirdStills.side_wings_down_polygons.concat(BirdStills.diving_polygons)
 	drawn == stills.map(|poly| Flat(Brush.opaque(poly.color)))

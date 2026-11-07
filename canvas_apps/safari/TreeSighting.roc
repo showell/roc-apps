@@ -3,6 +3,7 @@
 ## tall enough on screen to draw.
 import Conifer
 import RoadAhead
+import SegmentPlace
 import Pipeline
 import Trees
 
@@ -28,7 +29,7 @@ TreeSighting :: [].{
 	## seen comes and goes as the camera widens.
 	sighting_of : RoadAhead.CameraView,
 	{
-		place : RoadAhead.SegmentPlace,
+		place : SegmentPlace,
 		tree : Trees.RoadsideTree,
 	} -> Try(Pipeline.Sighted(Conifer), [BehindCamera, TooSmall])
 	sighting_of = |view, { place, tree }|

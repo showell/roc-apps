@@ -2868,14 +2868,15 @@ This book uses these words in one sense only.
 | Object | A thing in the picture with a place of its own: a tree, a tower or a critter. |
 | Painter | What puts shapes on the canvas. It's never Roc. |
 | Picture | How one object looks in one frame. A frame holds a series of pictures, so the app never draws "a new picture" at each step. |
-| Placed | Standing at a fixed spot on the road, measured `along` and `across` a segment. |
+| Placed | Put on the road, measured `along` and `across` a segment, and `lift` off the ground. |
 | Polygon | A shape with three or more corners, and nearly every shape in a frame is one. |
 | Rendered | Made into a picture, with its depth attached. |
 | Road ahead | The rider's segment and the segments after it, as far as the rider can see. |
 | Route | The list of segments that makes up the whole ride. |
 | Segment | One stretch of road, from one bend to the next. |
 | Shape | One item in a frame's list, such as a polygon, a disc or a rectangle. |
-| Sighting | Where an object is relative to the camera, measured `right` and `forward`, and its place on the road: its segment, and `along` and `across` it. It's a `Pipeline.Sighted`, and it lasts one frame. |
+| Sighting | An object's spot and its kind, for one frame. It's a `Pipeline.Sighted`. |
+| Spot | Where an object stands in one frame: its place on the road, its height off the ground, and where that puts its foot in the rider's view. Its sighting works it out once, and every picture is drawn from it. It's a `Spot`, from the module `Spot`. |
 | Step | One tick of the ride. Each step has one frame. |
 | Still | A critter's drawing, as polygons traced ahead of time. |
 | Tier | One layer of a conifer's crown. |

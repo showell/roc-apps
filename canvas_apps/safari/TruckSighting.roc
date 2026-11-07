@@ -4,6 +4,7 @@ import Across
 import Along
 import Distance
 import RoadAhead
+import SegmentPlace
 import Geom
 import Pipeline
 import TruckAhead
@@ -22,11 +23,16 @@ TruckSighting :: [].{
 	} -> TruckSighting.TruckFate
 	truck_in_view = |road, { lead, truck_ahead }|
 		if lead > Distance.zero {
-			start = { along: road.vantage.along.plus(lead), position: RoadAhead.Position.first }
+			start = { along: road.vantage.along.plus(lead), position: SegmentPlace.Position.first }
 			match truck_from(road, start) {
 				Ok({ along, position }) => {
 					placed_truck : Geom.Placed(TruckAhead)
-					placed_truck = { along, across: Across.middle, kind: truck_ahead }
+					placed_truck = {
+						along,
+						across: Across.middle,
+						lift: Distance.zero,
+						kind: truck_ahead,
+					}
 					Pipeline.sighting_of(placed_truck, { road, place: Ahead(position) })
 				}
 				Err(NoTruck) => Err(NoTruck)
@@ -38,7 +44,7 @@ TruckSighting :: [].{
 
 ## Where the truck is on the road ahead: `along` measured from the start of the
 ## segment at `position`.
-TruckPlace : { along : Along, position : RoadAhead.Position }
+TruckPlace : { along : Along, position : SegmentPlace.Position }
 
 ## Where the truck at `along`, measured from the start of the segment at
 ## `position` on the road ahead, really is, found by walking on through the

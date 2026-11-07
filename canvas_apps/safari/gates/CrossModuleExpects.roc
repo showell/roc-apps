@@ -21,6 +21,7 @@ import game.DepthSort
 import game.Distance
 import game.Fraction
 import game.RoadAhead
+import game.SegmentPlace
 import game.Geom
 import game.Ground
 import game.GroundSighting
@@ -76,8 +77,8 @@ expect {
 	third_length = World.route_segment(2).length
 	first_length = World.route_segment(0).length
 	third_length != first_length
-		and length_at(RoadAhead.Position.first) == third_length
-		and length_at(RoadAhead.Position.first.next()) == first_length
+		and length_at(SegmentPlace.Position.first) == third_length
+		and length_at(SegmentPlace.Position.first.next()) == first_length
 }
 
 polygon_of : Shapes.Shape -> { coordinates : List(F64), fill : Brush.Fill }
@@ -114,6 +115,7 @@ tree_at : F64, F64 -> Trees.RoadsideTree
 tree_at = |along, across| {
 	along: Along.metres(along),
 	across: Across.metres(across),
+	lift: Distance.zero,
 	kind: Conifer.Red,
 }
 
@@ -175,9 +177,9 @@ bird_at = |rider_along|
 ## How far off a bird is, across the road and up.
 place_numbers : Pipeline.Sighted(PosedBird) -> List(F64)
 place_numbers = |bird| [
-	bird.foot.right().to_metres(),
-	bird.foot.forward().to_metres(),
-	bird.kind.lift.to_metres(),
+	bird.spot.foot().right().to_metres(),
+	bird.spot.foot().forward().to_metres(),
+	bird.spot.lift().to_metres(),
 ]
 
 expect place_numbers(bird_at(0.0)) == [-6.0, 100.0, left_top]
@@ -187,10 +189,10 @@ expect place_numbers(bird_at(40.0)) == [-6.0, 60.0, left_top]
 expect {
 	bird = bird_at(62.5)
 	[
-		(bird.foot.right().to_metres(), 0.0),
-		(bird.foot.forward().to_metres(), 52.5),
+		(bird.spot.foot().right().to_metres(), 0.0),
+		(bird.spot.foot().forward().to_metres(), 52.5),
 		(
-			bird.kind.lift.to_metres(),
+			bird.spot.lift().to_metres(),
 			(left_top + far_top) / 2.0 + BirdFlight.flight_arc.to_metres(),
 		),
 	].all(|(got, want)| (got - want).abs() <= 0.000000001)
@@ -243,7 +245,7 @@ two_segments = CrossingSighting.birds_in_view({
 })
 
 expect
-	match two_segments.map(|bird| bird.foot.forward()) {
+	match two_segments.map(|bird| bird.spot.foot().forward()) {
 		[near, far] => near == Distance.metres(100.0) and near < far
 		_ => crash "CrossModuleExpects: each of two segments has a bird in view"
 	}
@@ -274,7 +276,7 @@ past_bend_trees = |degrees| {
 ## Whether `trees` is one tree, sighted on the segment just behind the rider.
 is_one_tree_behind : List(Pipeline.Sighted(Conifer)) -> Bool
 is_one_tree_behind = |trees|
-	match trees.map(|tree| tree.place) {
+	match trees.map(|tree| tree.spot.place()) {
 		[JustBehind(_)] => True
 		_ => False
 	}
@@ -369,18 +371,23 @@ first_cat = |along|
 
 ## How far ahead the first cat in view is for a rider `along` metres in.
 cat_forward : F64 -> Distance
-cat_forward = |along| first_cat(along).foot.forward()
+cat_forward = |along| first_cat(along).spot.foot().forward()
+
+## How far right of the camera the first cat in view is for a rider `along`
+## metres in.
+cat_right : F64 -> Distance
+cat_right = |along| first_cat(along).spot.foot().right()
 
 expect seen.len() == 1
 expect cat_at(0).is_err()
 expect cat_at(2).is_err()
-expect first_cat(300.0).kind.lift.to_metres() == 0.0
+expect first_cat(300.0).spot.lift().to_metres() == 0.0
 expect first_cat(300.0).kind.pose == Rest
 expect
 	[
 		(cat_forward(300.0).minus(cat_forward(200.0)).to_metres(), -100.0),
 		(cat_forward(400.0).minus(cat_forward(300.0)).to_metres(), -100.0),
-		(first_cat(300.0).foot.right().minus(first_cat(200.0).foot.right()).to_metres(), 0.0),
+		(cat_right(300.0).minus(cat_right(200.0)).to_metres(), 0.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 expect ride_sightings(0.0).len() == 0
@@ -450,7 +457,7 @@ lone = |index| {
 ## The segment `number` places along the road ahead of `road_view`.
 numbered_segment : RoadAhead.RoadView, U32 -> RoadAhead.SegmentInView
 numbered_segment = |road_view, number|
-	RoadAhead.segment_in_view_at(road_view, RoadAhead.Position.number(number))
+	RoadAhead.segment_in_view_at(road_view, SegmentPlace.Position.number(number))
 
 ## The world's segment `number`, as the segment just behind the rider.
 segment_behind : U32 -> RoadAhead.SegmentInView
@@ -529,10 +536,17 @@ expect {
 }
 expect BillboardSighting.bend_sightings(six_segments, segment_behind(0)).len() == 2
 
-## A billboard on the first segment, as the rider at its start sees it.
-critter_fate : Geom.Placed(Billboard) -> BillboardSighting.Fate
-critter_fate = |critter|
-	BillboardSighting.sight_critter(road, { place: Ahead(RoadAhead.Position.first), critter })
+## A billboard standing on the ground of the first segment, as the rider at its
+## start sees it.
+critter_fate : {
+	along : Along,
+	across : Across,
+	kind : Billboard,
+} -> BillboardSighting.Fate
+critter_fate = |{ along, across, kind }| {
+	critter = { along, across, lift: Distance.zero, kind }
+	BillboardSighting.sight_critter(road, { place: Ahead(SegmentPlace.Position.first), critter })
+}
 
 ## A cow 2.5 m to the right of the rider, `forward` metres ahead.
 cow_fate : { forward : Distance, height : Distance } -> BillboardSighting.Fate
@@ -592,11 +606,11 @@ left_bull =
 	})
 		?? crash "CrossModuleExpects: a bull 50 m ahead is in view"
 
-expect near_cow.foot.right().to_metres() == 2.5
-expect near_cow.foot.forward().to_metres() == 0.5
+expect near_cow.spot.foot().right().to_metres() == 2.5
+expect near_cow.spot.foot().forward().to_metres() == 0.5
 expect near_cow.kind.height.to_metres() == 1.0
-expect left_bull.foot.right().to_metres() == -1.5
-expect left_bull.foot.forward().to_metres() == 50.0
+expect left_bull.spot.foot().right().to_metres() == -1.5
+expect left_bull.spot.foot().forward().to_metres() == 50.0
 expect left_bull.kind.height.to_metres() == 1.6
 
 expect near_cow.kind.codepoint == 128004
@@ -631,7 +645,7 @@ runup_points_to_bend : List(Geom.RiderPoint)
 runup_points_to_bend = RailSighting.runup_points(
 	road,
 	{
-		place: Ahead(RoadAhead.Position.first),
+		place: Ahead(SegmentPlace.Position.first),
 		length: Distance.metres(500.0),
 		across: Across.metres(2.0),
 	},
@@ -639,7 +653,7 @@ runup_points_to_bend = RailSighting.runup_points(
 
 expect RailSighting.run_out_points(
 	road,
-	{ place: Ahead(RoadAhead.Position.first), across: Across.metres(2.0) },
+	{ place: Ahead(SegmentPlace.Position.first), across: Across.metres(2.0) },
 ).len() == 10
 expect runup_points_to_bend.len() == 11
 expect
@@ -731,7 +745,7 @@ corners_of_chunk : U32 -> List(Geom.RiderPoint)
 corners_of_chunk = |chunk_number| GroundSighting.chunk_corners(
 	road,
 	{
-		place: Ahead(RoadAhead.Position.first),
+		place: Ahead(SegmentPlace.Position.first),
 		segment_length: Distance.metres(500.0),
 		chunk_count: 20,
 		chunk_number,

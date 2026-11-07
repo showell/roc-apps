@@ -13,17 +13,17 @@ TruckAhead := { headlights : [On, Off], brake_lights : [On, Off] }.{
 
 	is_eq : _
 
-	## How the truck looks. Every point on it is measured on the road, so the
-	## road and where its trailer is centred there are its context.
-	scenery_picture : TruckAhead, Picture.Setting(RoadAhead.RoadContext) -> Picture
-	scenery_picture = |truck_ahead, { cam_focal, context, .. }|
+	## How the truck looks. Every point on it is measured on the road, from where
+	## its trailer is centred, so the road is its context.
+	scenery_picture : TruckAhead, Picture.Setting(RoadAhead.RoadView) -> Picture
+	scenery_picture = |truck_ahead, { spot, cam_focal, context: road }|
 		Picture.from_shapes(
 			truck_shapes(
 				truck_ahead,
 				{
-					view: { road: context.road, cam_focal },
-					place: context.place,
-					box: TruckShape.truck_box({ along: context.along, across: context.across }),
+					view: { road, cam_focal },
+					spot,
+					box: TruckShape.truck_box(spot.road_point()),
 				},
 			),
 		)

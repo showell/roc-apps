@@ -194,25 +194,25 @@ crossing_timeline = |cat| {
 	walking = walking_poses.map_with_index(
 		|pose, frame| {
 			fraction = Fraction.of(frame.to_f64() / walking_poses.len().to_f64())
-			{ pose, spot: Animation.spot_between({ from: start, to: middle, fraction }) }
+			{ pose, location: Animation.location_between({ from: start, to: middle, fraction }) }
 		},
 	)
-	frozen = List.repeat({ pose: Frozen, spot: middle }, frozen_frames)
+	frozen = List.repeat({ pose: Frozen, location: middle }, frozen_frames)
 	leaping = leap_frames.map(
 		|{ pose, way_to_verge, lift }| {
-			on_the_way = Animation.spot_between({
+			on_the_way = Animation.location_between({
 				from: middle,
 				to: end,
 				fraction: way_to_verge,
 			})
-			{ pose, spot: { ..on_the_way, lift } }
+			{ pose, location: { ..on_the_way, lift } }
 		},
 	)
 	Animation.Timeline.(
 		{
-			before: { pose: Rest, spot: start },
+			before: { pose: Rest, location: start },
 			frames: [walking, frozen, leaping].join(),
-			after: { pose: Collapse, spot: end },
+			after: { pose: Collapse, location: end },
 		},
 	)
 }
@@ -309,11 +309,11 @@ expect phase_of(0.0).pose == Collapse
 
 ## How far across the road the cat is `steps_left` steps from the end.
 across_at : F64 -> F64
-across_at = |steps_left| phase_of(steps_left).spot.across.to_metres()
+across_at = |steps_left| phase_of(steps_left).location.across.to_metres()
 
 ## How high the cat is `steps_left` steps from the end.
 lift_at : F64 -> F64
-lift_at = |steps_left| phase_of(steps_left).spot.lift.to_metres()
+lift_at = |steps_left| phase_of(steps_left).location.lift.to_metres()
 
 # It walks the first ten frames in even steps, and then stands in the middle of
 # the road, and every frame is on the ground until it leaves it.
@@ -340,7 +340,7 @@ expect (across_at(0.5) - -3.49).abs() <= 0.000000000001
 expect (across_at(0.0) - -3.49).abs() <= 0.000000000001
 
 # Every crossing is on its own road.
-expect the_frames.all(|frame| frame.spot.along == the_cat.along)
+expect the_frames.all(|frame| frame.location.along == the_cat.along)
 
 ## The poses a rider at `speed`, a metre a step apart from one step to the next,
 ## sees through the crossing, `phase` of a step past the start of each frame.

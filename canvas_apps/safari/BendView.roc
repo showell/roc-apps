@@ -6,19 +6,20 @@ import Along
 import Angle
 import Distance
 import RoadAhead
+import SegmentPlace
 import Geom
 import World
 
 ## A bend as the rider sees it: where the segment before it lies, that
 ## segment's length, and the turn the road makes, positive to the right.
 BendView := {
-	before : RoadAhead.SegmentPlace,
+	before : SegmentPlace,
 	length_before : Distance,
 	turn : Angle.Turn,
 }.{
 
 	## The bend at the end of `segment`, which lies at `before`.
-	of_segment : World.Segment, RoadAhead.SegmentPlace -> BendView
+	of_segment : World.Segment, SegmentPlace -> BendView
 	of_segment = |segment, before| {
 		before,
 		length_before: segment.length,
@@ -27,11 +28,11 @@ BendView := {
 
 	## Where the segment after a bend lies: next on the road ahead, or the
 	## rider's own when the segment before is just behind the rider.
-	place_after : BendView -> RoadAhead.SegmentPlace
+	place_after : BendView -> SegmentPlace
 	place_after = |bend|
 		match bend.before {
 			Ahead(position) => Ahead(position.next())
-			JustBehind(_) => Ahead(RoadAhead.Position.first)
+			JustBehind(_) => Ahead(SegmentPlace.Position.first)
 		}
 
 	## How far across the road its outer edge at a bend is: the left edge
@@ -95,7 +96,7 @@ apex_after_turn = |turn|
 	)
 
 # The segment after a bend, from each place the segment before can lie.
-position_after : RoadAhead.SegmentPlace -> I64
+position_after : SegmentPlace -> I64
 position_after = |before| {
 	bend = BendView.of_segment(World.route_segment(0), before)
 	match BendView.place_after(bend) {
@@ -104,8 +105,8 @@ position_after = |before| {
 	}
 }
 
-expect position_after(Ahead(RoadAhead.Position.first)) == 1
-expect position_after(Ahead(RoadAhead.Position.number(3))) == 4
+expect position_after(Ahead(SegmentPlace.Position.first)) == 1
+expect position_after(Ahead(SegmentPlace.Position.number(3))) == 4
 expect position_after(m_prev_left) == 0
 
 # Each is within 1e-7 of its want, scaled up by a want past 1.
@@ -124,37 +125,37 @@ vantage = {
 	yaw: Angle.Turn.radians(0.2),
 }
 
-m_ahead : RoadAhead.SegmentPlace
-m_ahead = Ahead(RoadAhead.Position.number(3))
+m_ahead : SegmentPlace
+m_ahead = Ahead(SegmentPlace.Position.number(3))
 
-m_prev_left : RoadAhead.SegmentPlace
+m_prev_left : SegmentPlace
 m_prev_left = JustBehind({
 	segment_length: Distance.metres(300.0),
 	turn: Angle.Turn.radians(-1.2217304763960306),
 })
 
-m_prev_right : RoadAhead.SegmentPlace
+m_prev_right : SegmentPlace
 m_prev_right = JustBehind({
 	segment_length: Distance.metres(300.0),
 	turn: Angle.Turn.radians(0.8726646259971648),
 })
 
 ## The bend of a place behind the rider.
-bend_of : RoadAhead.SegmentPlace -> Geom.Bend
+bend_of : SegmentPlace -> Geom.Bend
 bend_of = |place|
 	match place {
 		JustBehind(bend) => bend
 		Ahead(_) => crash "BendView.bend_of: only a place behind the rider has a bend"
 	}
 
-is_ahead : RoadAhead.SegmentPlace -> Bool
+is_ahead : SegmentPlace -> Bool
 is_ahead = |place|
 	match place {
 		Ahead(_) => True
 		JustBehind(_) => False
 	}
 
-turns_right : RoadAhead.SegmentPlace -> Bool
+turns_right : SegmentPlace -> Bool
 turns_right = |place| bend_of(place).turn.is_right()
 
 expect bend_of(m_prev_left).segment_length.to_metres() == 300.0
@@ -198,7 +199,7 @@ at_d0 : Geom.RiderPoint
 at_d0 = RoadAhead.rider_point_ahead(
 	{ route_segments: [], segments_ahead: [], vantage },
 	{
-		position: RoadAhead.Position.first,
+		position: SegmentPlace.Position.first,
 		along: Along.metres(50.0),
 		across: Across.metres(1.0),
 	},
@@ -212,7 +213,7 @@ point_at_d1 = |route_segments| RoadAhead.rider_point_ahead(
 		vantage,
 	},
 	{
-		position: RoadAhead.Position.number(1),
+		position: SegmentPlace.Position.number(1),
 		along: Along.metres(50.0),
 		across: Across.metres(1.0),
 	},
@@ -229,7 +230,7 @@ expect {
 }
 
 ## The point 50 m along the segment at `place`, which is behind the rider.
-rider_point_behind : RoadAhead.SegmentPlace -> Geom.RiderPoint
+rider_point_behind : SegmentPlace -> Geom.RiderPoint
 rider_point_behind = |place| RoadAhead.rider_point_at(
 	{ route_segments: [], segments_ahead: [], vantage },
 	{

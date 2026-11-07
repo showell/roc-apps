@@ -19,7 +19,7 @@ import lib.Trig
 World :: [].{
 
 	## A segment's place in the route, counted from 0. It says where a segment
-	## is in the route, where a RoadAhead.Position says how far ahead of the
+	## is in the route, where a SegmentPlace.Position says how far ahead of the
 	## rider it is.
 	SegmentIndex :: U32.{
 

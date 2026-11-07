@@ -18,6 +18,8 @@ import game.PosedBird
 import game.Geom
 import game.Trees
 import game.Screen
+import game.SegmentPlace
+import game.Spot
 import game.World
 import lib.CanvasApp
 import lib.Shapes
@@ -119,12 +121,26 @@ foot_at : Along, Across -> Try(Geom.LevelPoint, [BehindCamera])
 foot_at = |along, across|
 	Geom.ahead_on_level({ right: Distance.metres(across.to_metres()), forward: forward_of(along) })
 
+## The spot of a thing standing at `along` and `across`, `lift` off the ground,
+## with its foot at `foot`.
+spot_of : { along : Along, across : Across, lift : Distance, .. }, Geom.LevelPoint -> Spot
+spot_of = |{ along, across, lift, .. }, foot|
+	Spot.at({
+		place: Ahead(SegmentPlace.Position.first),
+		road_point: { along, across },
+		lift,
+		foot,
+	})
+
 tree_shapes : Trees.RoadsideTree -> List(Shapes.Shape)
 tree_shapes = |tree|
 	match foot_at(tree.along, tree.across) {
 		Ok(foot) =>
-			tree.kind.scenery_picture({ foot, cam_focal: Lens.resting_focal, context: { nearer_tree_count: 0 } })
-				.to_shapes()
+			tree.kind.scenery_picture({
+				spot: spot_of(tree, foot),
+				cam_focal: Lens.resting_focal,
+				context: { nearer_tree_count: 0 },
+			}).to_shapes()
 		Err(BehindCamera) => []
 	}
 
@@ -133,9 +149,15 @@ bird_shapes : Distance -> List(Shapes.Shape)
 bird_shapes = |gap| {
 	instant = BirdFlight.instant_at(flight, { gap: gap })
 	bird : PosedBird
-	bird = { pose: instant.pose, lift: instant.spot.lift }
-	match foot_at(instant.spot.along, instant.spot.across) {
-		Ok(foot) => bird.scenery_picture({ foot, cam_focal: Lens.resting_focal, context: {} }).to_shapes()
+	bird = { pose: instant.pose }
+	location = instant.location
+	match foot_at(location.along, location.across) {
+		Ok(foot) =>
+			bird.scenery_picture({
+				spot: spot_of(location, foot),
+				cam_focal: Lens.resting_focal,
+				context: {},
+			}).to_shapes()
 		Err(BehindCamera) => []
 	}
 }
@@ -148,7 +170,7 @@ status_lines = |gap| {
 		ScrubWidget.stage_text(BirdFlight.flight_stage({ gap: gap })),
 		"Pose: ${pose_name(instant.pose)}",
 		"Gap: ${ScrubWidget.tenths_text(gap.to_metres())} m",
-		"Height: ${ScrubWidget.tenths_text(instant.spot.lift.to_metres())} m",
+		"Height: ${ScrubWidget.tenths_text(instant.location.lift.to_metres())} m",
 	]
 }
 
@@ -224,7 +246,7 @@ flight_alongs = {
 	gaps = List.from_iter(U64.until(1, BirdFlight.flight_poses.len())).map(
 		|step| BirdFlight.flight_gaps.starts_at.minus(Distance.metres(step.to_f64() / 8.0)),
 	)
-	gaps.map(|gap| BirdFlight.instant_at(flight, { gap: gap }).spot.along)
+	gaps.map(|gap| BirdFlight.instant_at(flight, { gap: gap }).location.along)
 }
 
 # Every step of the buttons shows a frame of its own, so the bird never stalls

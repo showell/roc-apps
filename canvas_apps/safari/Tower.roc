@@ -9,10 +9,13 @@ import Along
 import Angle
 import Camera
 import RoadAhead
+import SegmentPlace
+import Spot
 import Distance
 import Fraction
 import Geom
 import Picture
+import Pipeline
 import Polygon
 import lib.Brush
 import lib.RgbColor
@@ -34,20 +37,36 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 		front_left : Geom.RiderPoint,
 	}
 
-	## How a tower looks. Its footprint is measured on the road, so the road and
-	## where it stands there are its context.
-	scenery_picture : Tower, Picture.Setting(RoadAhead.RoadContext) -> Picture
-	scenery_picture = |tower, { foot, cam_focal, context }| {
-		footprint = Tower.tower_footprint(tower, context)
-		Picture.from_shapes(Tower.tower_shapes(tower, { foot, cam_focal, context: footprint }))
+	## How a tower looks. Its footprint is measured on the road, so the road is
+	## its context.
+	scenery_picture : Tower, Picture.Setting(RoadAhead.RoadView) -> Picture
+	scenery_picture = |tower, { spot, cam_focal, context: road }| {
+		footprint = Tower.tower_footprint(tower, { road, spot })
+		Picture.from_shapes(Tower.tower_shapes(tower, { spot, cam_focal, context: footprint }))
 	}
 
-	## Where a tower's four footprint corners stand in the rider's view.
-	tower_footprint : Tower, RoadAhead.RoadContext -> Tower.Footprint
-	tower_footprint = |tower, { road, place, along, across }| {
+	## Where the four footprint corners of a tower standing at `spot` on `road`
+	## are in the rider's view.
+	tower_footprint : Tower, { road : RoadAhead.RoadView, spot : Spot } -> Tower.Footprint
+	tower_footprint = |tower, { road, spot }| {
+		center = spot.road_point()
 		corner_point = |corner| {
-			on_road = base_corner_on_road(corner, { along, across, yaw: tower.yaw })
-			RoadAhead.rider_point_at(road, { place, along: on_road.along, across: on_road.across })
+			on_road = base_corner_on_road(
+				corner,
+				{
+					along: center.along,
+					across: center.across,
+					yaw: tower.yaw,
+				},
+			)
+			RoadAhead.rider_point_at(
+				road,
+				{
+					place: spot.place(),
+					along: on_road.along,
+					across: on_road.across,
+				},
+			)
 		}
 		{
 			back_left: corner_point(BackLeft),
@@ -61,7 +80,9 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 	## braces and beacon, in that order. A tower sunk wholly below the horizon
 	## has no shapes.
 	tower_shapes : Tower, Picture.Setting(Tower.Footprint) -> List(Shapes.Shape)
-	tower_shapes = |tower, { foot, cam_focal, context: footprint }| {
+	tower_shapes = |tower, { spot, cam_focal, context: footprint }| {
+		foot = spot.foot()
+		lift = spot.lift()
 		sunk = sunk_below_horizon(foot.to_rider())
 		if sunk >= tower_height {
 			[]
@@ -69,11 +90,12 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 			sunk_tower = {
 				footprint,
 				foot,
+				lift,
 				sunk,
 				rod_width_on_screen: rod_width_at({ at: foot, cam_focal }),
 				cam_focal,
 			}
-			apex = foot.at_height(tower_height.minus(sunk))
+			apex = foot.at_height(lift.plus(tower_height.minus(sunk)))
 			[
 				legs(sunk_tower, apex.to_raised()),
 				rings(sunk_tower),
@@ -140,11 +162,12 @@ smallest_beacon_radius : Pixels
 smallest_beacon_radius = Pixels.of(0.5)
 
 ## One tower, as its shapes are worked out: where its footprint and foot
-## stand, how far the earth's curve has sunk it, which is never negative,
-## and how its rods look on screen.
+## stand, how high off the ground it is, how far the earth's curve has sunk
+## it, which is never negative, and how its rods look on screen.
 TowerSetting : {
 	footprint : Tower.Footprint,
 	foot : Geom.LevelPoint,
+	lift : Distance,
 	sunk : Distance,
 	rod_width_on_screen : Pixels,
 	cam_focal : Pixels,
@@ -202,7 +225,8 @@ sunk_below_horizon = |p| {
 }
 
 ## A corner of the tower at `height_on_tower`: drawn in toward the foot as
-## the tower tapers, and lowered by how far the tower has sunk.
+## the tower tapers, raised by the tower's lift, and lowered by how far the
+## tower has sunk.
 corner_at : TowerSetting, { corner : Tower.Corner, height_on_tower : Distance } -> Geom.RaisedPoint
 corner_at = |tower, { corner, height_on_tower }| {
 	t = height_on_tower.ratio_to(tower_height)
@@ -211,7 +235,7 @@ corner_at = |tower, { corner, height_on_tower }| {
 	{
 		right: tapered(bottom.right, tower.foot.right()),
 		forward: tapered(bottom.forward, tower.foot.forward()),
-		height: height_on_tower.minus(tower.sunk),
+		height: tower.lift.plus(height_on_tower.minus(tower.sunk)),
 	}
 }
 
@@ -486,24 +510,31 @@ start_road = {
 plain_tower : Tower
 plain_tower = { yaw: Angle.straight_ahead, beacon_brightness: Fraction.zero }
 
-# The start of the route, and a place `along` metres down the first segment, 20 m
-# right of the road's middle.
-context_along : F64 -> RoadAhead.RoadContext
-context_along = |along| {
-	road: start_road,
-	place: Ahead(RoadAhead.Position.first),
-	along: Along.metres(along),
-	across: Across.metres(20.0),
-}
+# A plain tower `along` metres down the first segment, 20 m right of the road's
+# middle, as its sighting finds it from the start of the route.
+tower_along : F64 -> Pipeline.Sighted(Tower)
+tower_along = |along|
+	Pipeline.sighting_of(
+		{
+			along: Along.metres(along),
+			across: Across.metres(20.0),
+			lift: Distance.zero,
+			kind: plain_tower,
+		},
+		{ road: start_road, place: Ahead(SegmentPlace.Position.first) },
+	)
+		?? crash "a test's tower is past the near plane"
 
 # The shapes of a tower standing there, seen from the start of the route.
 shapes_of_tower_along : F64 -> List(Shapes.Shape)
-shapes_of_tower_along = |along|
-	plain_tower.scenery_picture({
-		foot: ahead({ right: Distance.metres(20.0), forward: Distance.metres(along) }),
+shapes_of_tower_along = |along| {
+	tower = tower_along(along)
+	tower.kind.scenery_picture({
+		spot: tower.spot,
 		cam_focal: Pixels.of(500.0),
-		context: context_along(along),
+		context: start_road,
 	}).to_shapes()
+}
 
 ## `point` on the rider's level and past the near plane, which every such
 ## point in these tests is.
@@ -511,7 +542,8 @@ ahead : Geom.RiderPoint -> Geom.LevelPoint
 ahead = |point| Geom.ahead_on_level(point) ?? crash "a test's point is past the near plane"
 
 expect {
-	footprint = Tower.tower_footprint(plain_tower, context_along(200.0))
+	tower = tower_along(200.0)
+	footprint = Tower.tower_footprint(plain_tower, { road: start_road, spot: tower.spot })
 	[
 		(footprint.back_left.forward.to_metres(), 194.0),
 		(footprint.front_right.forward.to_metres(), 206.0),
@@ -575,6 +607,7 @@ sample_tower = {
 		front_left: { right: Distance.metres(-6.0), forward: Distance.metres(106.0) },
 	},
 	foot: ahead({ right: Distance.metres(0.0), forward: Distance.metres(100.0) }),
+	lift: Distance.zero,
 	sunk: Distance.metres(1.0),
 	rod_width_on_screen: Pixels.of(4.0),
 	cam_focal: Pixels.of(500.0),

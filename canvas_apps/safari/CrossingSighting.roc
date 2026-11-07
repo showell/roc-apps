@@ -9,6 +9,7 @@ import BirdFlight
 import Cat
 import Distance
 import RoadAhead
+import SegmentPlace
 import Geom
 import Pipeline
 import PosedBird
@@ -94,7 +95,7 @@ crossing_in_view = |view, { in_view, along, placed_at }| {
 ## tested through the camera's own lens, as a tree's is.
 animal_in_view : RoadAhead.CameraView,
 {
-	place : RoadAhead.SegmentPlace,
+	place : SegmentPlace,
 	animal : Geom.Placed(kind),
 } -> Try(Pipeline.Sighted(kind), [BehindCamera, TooSmall])
 	where [kind.scenery_height : kind -> Distance]
