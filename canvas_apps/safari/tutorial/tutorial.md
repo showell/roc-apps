@@ -733,11 +733,11 @@ New in this chapter:
 
 Its list of shapes starts with the sky, the sun and the grass, and this is the grass:
 
-{{code Screen.below_grass_top_rect}}
+{{code Grass.grass_shape}}
 
 It starts a pixel above the horizon, so no seam shows between the grass and the sky:
 
-{{code Screen.grass_top_y}}
+{{code Grass.grass_top_y}}
 
 It's much wider than the screen because the whole picture tilts when the rider leans, and the corners have to stay filled.
 

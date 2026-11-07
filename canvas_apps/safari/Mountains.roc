@@ -233,7 +233,7 @@ columns = |{ from, to }| {
 
 ## The ranges are seen only above the grass, so they stop where it begins.
 range_base_y : Pixels
-range_base_y = Screen.grass_top_y
+range_base_y = Grass.grass_top_y
 
 ## The land is in front of the ranges and closes along the horizon. The grass
 ## begins a pixel above the horizon so that no seam shows under the roll, and
