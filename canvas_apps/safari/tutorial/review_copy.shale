@@ -137,7 +137,7 @@ function plain_text(html)
   end
   local text = join(piece, "")
   for pair in {{"&lt;", "<"}, {"&gt;", ">"}, {"&quot;", "\""}, {"&#39;", "'"}, {"&amp;", "&"}} do
-    text = substitute(text, pair[1], pair[2])
+    text = substitute(text, pair[1], pair[2], {missing_ok = true})
   end
   for l in lines(text) do
     if trim(l) ~= "" then push(out, l) end
