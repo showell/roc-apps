@@ -410,8 +410,8 @@ lone = |index| {
 }
 
 ## The segment `number` places along the road ahead of `road_view`.
-segment_on : RoadAhead.RoadView, U32 -> RoadAhead.SegmentInView
-segment_on = |road_view, number|
+numbered_segment : RoadAhead.RoadView, U32 -> RoadAhead.SegmentInView
+numbered_segment = |road_view, number|
 	RoadAhead.segment_in_view_at(road_view, RoadAhead.Position.number(number))
 
 ## The world's segment `number`, as the segment just behind the rider.
@@ -427,13 +427,13 @@ segment_behind = |number| {
 
 farm_at : U32 -> I64
 farm_at = |number|
-	BillboardSighting.farm_sightings(six_segments, segment_on(six_segments, number))
+	BillboardSighting.farm_sightings(six_segments, numbered_segment(six_segments, number))
 		.len()
 		.to_i64_wrap()
 
 safari_at : U32 -> I64
 safari_at = |number|
-	BillboardSighting.wildlife_sightings(six_segments, segment_on(six_segments, number))
+	BillboardSighting.wildlife_sightings(six_segments, numbered_segment(six_segments, number))
 		.len()
 		.to_i64_wrap()
 
@@ -445,21 +445,23 @@ expect farm_at(5) == 0
 expect safari_at(3) > 0
 expect safari_at(4) > 0
 expect safari_at(5) == 0
-expect BillboardSighting.wildlife_sightings(lone(18), segment_on(lone(18), 0)).len() == 0
-expect BillboardSighting.wildlife_sightings(lone(0), segment_on(lone(0), 0)).len() > 0
+expect BillboardSighting.wildlife_sightings(lone(18), numbered_segment(lone(18), 0)).len() == 0
+expect BillboardSighting.wildlife_sightings(lone(0), numbered_segment(lone(0), 0)).len() > 0
 
 duck_count : U32 -> I64
 duck_count = |index|
-	BillboardSighting.duck_sightings(lone(index), segment_on(lone(index), 0)).len().to_i64_wrap()
+	BillboardSighting.duck_sightings(lone(index), numbered_segment(lone(index), 0))
+		.len()
+		.to_i64_wrap()
 
 expect duck_count(12) > 0
 expect duck_count(0) == 0
 expect duck_count(4) == 0
 expect duck_count(18) == 0
-expect BillboardSighting.duck_sightings(six_segments, segment_on(six_segments, 5)).len() == 0
+expect BillboardSighting.duck_sightings(six_segments, numbered_segment(six_segments, 5)).len() == 0
 expect duck_count(12) == 6
 expect {
-	first = segment_on(six_segments, 0)
+	first = numbered_segment(six_segments, 0)
 	whole = BillboardSighting.segment_sightings(six_segments, first).len().to_i64_wrap()
 	ducks = BillboardSighting.duck_sightings(six_segments, first).len().to_i64_wrap()
 	whole == farm_at(0) + safari_at(0) + ducks
@@ -471,7 +473,7 @@ count_from = |position|
 	List.from_iter(U32.until(position, 6))
 		.map(
 			|number| {
-				in_view = segment_on(six_segments, number)
+				in_view = numbered_segment(six_segments, number)
 				BillboardSighting.segment_sightings(six_segments, in_view).len().to_i64_wrap()
 			},
 		)
@@ -479,7 +481,7 @@ count_from = |position|
 
 expect
 	BillboardSighting.billboard_fates(lone(0)).len()
-		== BillboardSighting.segment_sightings(lone(0), segment_on(lone(0), 0)).len()
+		== BillboardSighting.segment_sightings(lone(0), numbered_segment(lone(0), 0)).len()
 expect BillboardSighting.billboard_fates(six_segments).len().to_i64_wrap() == count_from(0)
 expect count_from(0) >= count_from(1)
 expect count_from(1) >= count_from(2)

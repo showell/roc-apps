@@ -106,6 +106,8 @@ RailSighting :: [].{
 		)
 }
 
+## The guard rail at `bend`, as quads along its path. It stands alone so the
+## tutorial can show the step from a bend to its rail by itself.
 rails_at : RoadAhead.RoadView, BendView -> List(GuardRail.RailQuad)
 rails_at = |road, bend| GuardRail.quads_along(rail_points(road, bend))
 
