@@ -24,8 +24,9 @@ Tour := {
 		finished = Rider.is_finished(tour.instant.rider, tour.route)
 		# Dropping one instant per step would copy the whole list every step, so
 		# half of it goes at once and the copy falls on one step in a thousand.
-		# The list is therefore between half a cap and a cap deep, never empty,
-		# and always the most recent instants.
+		# The list holds the most recent instants. It starts empty, grows to a
+		# cap, and from then on is between half a cap and a cap deep, until the
+		# ride finishes and starts again with the list empty.
 		past_instants =
 			if finished {
 				[]
