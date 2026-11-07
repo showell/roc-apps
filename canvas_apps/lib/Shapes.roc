@@ -3,7 +3,6 @@
 ## in order. What one app draws is built in that app's own folder.
 import Brush
 import Point
-import RgbColor
 
 Shapes :: [].{
 
@@ -245,16 +244,20 @@ line_of_type = {
 	size: 16.0,
 	face: Code,
 	align: Center,
-	color: Brush.opaque(RgbColor.of(0x202020)),
+	color: { r: 32.0, g: 32.0, b: 32.0, a: 1.0 },
 }
 
 expect Shapes.squashed_shapes([Text(line_of_type)], { axis: 0.0, cosine: 0.5 }) == [Text({ ..line_of_type, x: 50.0 })]
 expect Shapes.squashed_shapes([Text(line_of_type)], { axis: 0.0, cosine: -1.0 }) == [Text({ ..line_of_type, x: -100.0 })]
 expect Shapes.squashed_shapes([Text(line_of_type)], { axis: 100.0, cosine: 0.5 }) == [Text(line_of_type)]
 
+## The fill the shapes below are drawn in.
+ink : Brush.Fill
+ink = Flat({ r: 32.0, g: 32.0, b: 32.0, a: 1.0 })
+
 ## A dot of light, as the shape both brackets hold.
 dot : Shapes.Shape
-dot = Disc({ x: 1.0, y: 2.0, radius: 3.0, fill: Brush.flat(RgbColor.of(0x202020)) })
+dot = Disc({ x: 1.0, y: 2.0, radius: 3.0, fill: ink })
 
 expect Shapes.added_light([dot]) == [Blend(Add), dot, Blend(Over)]
 expect Shapes.added_light([]) == [Blend(Add), Blend(Over)]
@@ -262,11 +265,11 @@ expect Shapes.in_space(Screen, [dot]) == [View(Screen), dot, View(Screen)]
 
 # A horizontal line two wide stands one each side of its axis.
 expect
-	Shapes.line({ from: { x: 0.0, y: 0.0 }, to: { x: 10.0, y: 0.0 }, width: 2.0 }, Brush.flat(RgbColor.of(0x202020)))
-		== Poly({ coordinates: [0.0, 1.0, 10.0, 1.0, 10.0, -1.0, 0.0, -1.0], fill: Brush.flat(RgbColor.of(0x202020)) })
+	Shapes.line({ from: { x: 0.0, y: 0.0 }, to: { x: 10.0, y: 0.0 }, width: 2.0 }, ink)
+		== Poly({ coordinates: [0.0, 1.0, 10.0, 1.0, 10.0, -1.0, 0.0, -1.0], fill: ink })
 
 # The fewest sides a ring may have make three sectors.
-expect Shapes.ring_shapes({ center: { x: 0.0, y: 0.0 }, radius: 5.0, line_width: 1.0, sides: 3 }, Brush.flat(RgbColor.of(0x202020))).len() == 3
+expect Shapes.ring_shapes({ center: { x: 0.0, y: 0.0 }, radius: 5.0, line_width: 1.0, sides: 3 }, ink).len() == 3
 
 ## A ring sector's corners: outer start, outer end, inner end, inner start.
 sector_corners : Shapes.Shape -> List(F64)
@@ -280,7 +283,7 @@ sector_corners = |shape|
 # corner, all the way round to the first again. Its inner corners sit nearer
 # the center than its outer ones, by the line's width.
 expect {
-	sectors = Shapes.ring_shapes({ center: { x: 3.0, y: 4.0 }, radius: 10.0, line_width: 2.0, sides: 7 }, Brush.flat(RgbColor.of(0x202020))).map(sector_corners)
+	sectors = Shapes.ring_shapes({ center: { x: 3.0, y: 4.0 }, radius: 10.0, line_width: 2.0, sides: 7 }, ink).map(sector_corners)
 	following = sectors.drop_first(1).append(sectors.first() ?? [])
 	shared = sectors.map2(following, |sector, next| sector.sublist({ start: 2, len: 2 }) == next.sublist({ start: 0, len: 2 }) and sector.sublist({ start: 4, len: 2 }) == next.sublist({ start: 6, len: 2 }))
 	first = sectors.first() ?? []
