@@ -43,12 +43,17 @@ You review one module, or a small family of them, named in your prompt. You chan
 
 ### 1. Walk the types
 
-From `canvas_apps/safari` in the main checkout (`/home/steve/showell_repos/roc-apps`):
+From `canvas_apps` in the main checkout (`/home/steve/showell_repos/roc-apps`), with the widgets as clients so their uses count. The hook refuses a glob on the command line, so launch the walk from a script:
 
 ```
-cd /home/steve/showell_repos/roc-apps/canvas_apps/safari && shale cookbook:roc/type_walk.shale module=Tower packages=lib=repos:roc-apps/canvas_apps/lib <<'TAG'
+cd /home/steve/showell_repos/roc-apps/canvas_apps && shale <<'TAG'
+local r = run({"shale", "cookbook:roc/type_walk.shale", "root=safari", "module=Tower",
+  "clients=*_widget", "packages=lib=repos:roc-apps/canvas_apps/lib"}, {whole = 4000000, timeout_ms = 300000})
+print(r.out)
 TAG
 ```
+
+Without `clients=`, a member only a widget uses looks unused, and making it private breaks the widget.
 
 The walk prints the module's types and every type they depend on to depth 2,
 the most primitive first, with no function bodies. Read it the way a newcomer
