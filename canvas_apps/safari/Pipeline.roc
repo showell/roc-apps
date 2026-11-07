@@ -22,11 +22,6 @@ Pipeline :: [].{
 	## frame.
 	Sighted(kind) : { spot : Spot, kind : kind }
 
-	## The smallest thing worth drawing: an object that would stand less than
-	## this tall on the screen isn't drawn.
-	smallest_height_on_screen : Pixels
-	smallest_height_on_screen = Pixels.of(2.0)
-
 	## `placed` as the camera at `vantage` sees it, on the segment at `place`,
 	## if it is at or past the camera's near plane.
 	sighting_of : Geom.Placed(kind),
@@ -59,7 +54,7 @@ Pipeline :: [].{
 			{ height: placed.kind.scenery_height(), forward: sighting.spot.foot().forward() },
 			camera.cam_focal,
 		)
-		if height_on_screen < Pipeline.smallest_height_on_screen {
+		if height_on_screen < smallest_height_on_screen {
 			Err(TooSmall)
 		} else {
 			Ok(sighting)
@@ -76,3 +71,8 @@ Pipeline :: [].{
 			sighting.kind.scenery_picture({ spot: sighting.spot, cam_focal, context }),
 		)
 }
+
+## The smallest thing worth drawing: an object that would stand less than
+## this tall on the screen isn't drawn.
+smallest_height_on_screen : Pixels
+smallest_height_on_screen = Pixels.of(2.0)

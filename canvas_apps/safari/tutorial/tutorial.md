@@ -2469,7 +2469,7 @@ Structural records give us *one record per space* at no cost: `along` and `acros
 
 Going from the road to the rider is a translation and a rotation, and this is the function where the opaque places give way to floats. `distance_from` makes the translation, and the rotation is written the way it would be on paper:
 
-{{code Geom.to_rider_point}}
+{{code RoadAhead.to_rider_point}}
 
 From there to the screen is a pinhole camera, which is similar triangles. Dividing by `forward` is all of perspective. Nearly everything on screen passes through this function, and it's short:
 
@@ -2501,7 +2501,7 @@ The road has no global coordinates. A point on it is measured within one segment
 
 So to see something three segments ahead, a point has to be carried back round each bend between it and the rider, one at a time. That's one rotation per bend, and `fold_rev` is the shape of it. The accumulator is a `RoadPoint`, it starts on the far segment, and each step moves it onto the segment before. `segments_before` gives the segments between, and the closure is the only thing the loop does. The last line does the one translation and rotation from above:
 
-{{code RoadAhead.rider_point_ahead from "on_rider_segment =" to "Geom.to_rider_point(on_rider_segment, vantage)"}}
+{{code RoadAhead.rider_point_ahead from "on_rider_segment =" to "to_rider_point(on_rider_segment, vantage)"}}
 
 The rotation itself is plain, with two cases, because a right-hand bend pivots on the far side of the lane:
 

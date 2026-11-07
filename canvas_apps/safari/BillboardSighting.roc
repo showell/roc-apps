@@ -112,8 +112,12 @@ is_within_reach = |place, reach|
 		JustBehind => True
 	}
 
-expect is_within_reach(Ahead(SegmentPlace.Position.number(2)), 3)
-expect !is_within_reach(Ahead(SegmentPlace.Position.number(3)), 3)
+## The third segment of the road ahead, the rider's own first.
+third_position : SegmentPlace.Position
+third_position = SegmentPlace.Position.first.next().next()
+
+expect is_within_reach(Ahead(third_position), 3)
+expect !is_within_reach(Ahead(third_position.next()), 3)
 expect is_within_reach(JustBehind, 3)
 
 ## The billboards at the end of `segment`, placed on it. A duck's place is

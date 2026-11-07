@@ -8,14 +8,8 @@ SegmentPlace := [Ahead(SegmentPlace.Position), JustBehind].{
 	## route instead.
 	Position :: U32.{
 
-		number : U32 -> SegmentPlace.Position
-		number = |n| SegmentPlace.Position.(n)
-
 		to_u32 : SegmentPlace.Position -> U32
 		to_u32 = |SegmentPlace.Position.(n)| n
-
-		to_i64 : SegmentPlace.Position -> I64
-		to_i64 = |SegmentPlace.Position.(n)| n.to_i64()
 
 		## The rider's own segment.
 		first : SegmentPlace.Position
@@ -28,7 +22,7 @@ SegmentPlace := [Ahead(SegmentPlace.Position), JustBehind].{
 		## first.
 		positions_in : { count : U32, .. } -> List(SegmentPlace.Position)
 		positions_in = |{ count, .. }|
-			List.from_iter(U32.until(0, count)).map(SegmentPlace.Position.number)
+			List.from_iter(U32.until(0, count)).map(position_number)
 
 		## Whether this position is the last one on a road ahead of `count`
 		## segments.
@@ -45,5 +39,6 @@ SegmentPlace := [Ahead(SegmentPlace.Position), JustBehind].{
 	is_eq : _
 }
 
-expect SegmentPlace.Position.number(3).to_i64() == 3
-expect SegmentPlace.Position.first.next().to_i64() == 1
+## The position `n` segments ahead of the rider's own.
+position_number : U32 -> SegmentPlace.Position
+position_number = |n| SegmentPlace.Position.(n)
