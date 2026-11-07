@@ -11,6 +11,7 @@ import Clock
 import Distance
 import RoadAhead
 import SegmentPlace
+import Steps
 import Geom
 import Pipeline
 import Tower
@@ -272,10 +273,7 @@ expect
 		== [0, 37, 74, 30, 67, 104].map(brightness_at)
 
 brightness_at : U32 -> F64
-brightness_at = |phase| {
-	since_start = Clock.at_step(phase).steps_since(Clock.start)
-	Beacon.beacon_brightness(since_start).to_f64()
-}
+brightness_at = |phase| Beacon.beacon_brightness(Steps.of(phase)).to_f64()
 
 expect TowerSighting.towers_in_view(short_road(0), Clock.start).len() == 3
 expect TowerSighting.towers_in_view(short_road(1), Clock.start).len() == 4
