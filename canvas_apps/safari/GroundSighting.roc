@@ -6,8 +6,6 @@
 import Along
 import Distance
 import RoadAhead
-import Segment
-import SegmentPlace
 import Geom
 import Ground
 import BendInView
@@ -24,42 +22,43 @@ GroundSighting :: [].{
 			|in_view| ground_patches(road, { vantage: camera.vantage, in_view }),
 		)
 
-	## How many chunks the edges of the road along a segment `length` long
-	## are laid in: at least one.
-	chunks_along : Distance -> U32
-	chunks_along = |length| {
-		chunks =
-			length.portion(road_chunk_length).ceiling_to_i64_try()
-				?? crash "GroundSighting.chunks_along: a segment's length is finite"
-		chunks.max(1).to_u32_wrap()
-	}
+}
 
-	## The road along a segment in view, as one patch: across its start, up its
-	## right edge to the end of each chunk, then back down its left edge. It is
-	## one patch, not a patch a chunk, because a canvas smooths each patch's
-	## edges on its own, and where two patches meet the grass under them shows
-	## through as a pale seam.
-	road_along : RoadAhead.RoadView,
-	{
-		vantage : Geom.Vantage,
-		in_view : RoadAhead.SegmentInView,
-	} -> Ground.Patch
-	road_along = |road, { vantage, in_view }| {
-		place = in_view.place
-		segment_length = in_view.segment.length
-		chunk_count = GroundSighting.chunks_along(segment_length)
-		corner = |chunk_number, across| {
-			along = chunk_end(segment_length, chunk_number)
-			RoadAhead.rider_point_at(road, { vantage, place, road_point: { along, across } })
-		}
-		up_right_edge =
-			List.from_iter(U32.until(0, chunk_count + 1))
-				.map(|number| corner(number, Geom.right_edge))
-		down_left_edge =
-			List.from_iter(U32.until(0, chunk_count))
-				.map(|k| corner(chunk_count - k, Geom.left_edge))
-		road_patch([corner(0, Geom.left_edge)].concat(up_right_edge).concat(down_left_edge))
+## How many chunks the edges of the road along a segment `length` long are
+## laid in: at least one.
+chunk_count : Distance -> U32
+chunk_count = |length| {
+	chunks =
+		length.portion(road_chunk_length).ceiling_to_i64_try()
+			?? crash "GroundSighting.chunk_count: a segment's length is finite"
+	chunks.max(1).to_u32_wrap()
+}
+
+## The road along a segment in view, as one patch: across its start, up its
+## right edge to the end of each chunk, then back down its left edge. It is
+## one patch, not a patch a chunk, because a canvas smooths each patch's
+## edges on its own, and where two patches meet the grass under them shows
+## through as a pale seam.
+road_along : RoadAhead.RoadView,
+{
+	vantage : Geom.Vantage,
+	in_view : RoadAhead.SegmentInView,
+} -> Ground.Patch
+road_along = |road, { vantage, in_view }| {
+	place = in_view.place
+	segment_length = in_view.segment.length
+	segment_chunk_count = chunk_count(segment_length)
+	corner = |chunk_number, across| {
+		along = chunk_end(segment_length, chunk_number)
+		RoadAhead.rider_point_at(road, { vantage, place, road_point: { along, across } })
 	}
+	up_right_edge =
+		List.from_iter(U32.until(0, segment_chunk_count + 1))
+			.map(|number| corner(number, Geom.right_edge))
+	down_left_edge =
+		List.from_iter(U32.until(0, segment_chunk_count))
+			.map(|k| corner(segment_chunk_count - k, Geom.left_edge))
+	road_patch([corner(0, Geom.left_edge)].concat(up_right_edge).concat(down_left_edge))
 }
 
 road_color : RgbColor
@@ -79,8 +78,8 @@ lead_in_length = Distance.metres(40.0)
 ## ends, the chunks counted from 1. Chunk 0 ends where the segment starts.
 chunk_end : Distance, U32 -> Along
 chunk_end = |segment_length, chunk_number| {
-	chunk_count = GroundSighting.chunks_along(segment_length)
-	Along.at(segment_length.times(chunk_number.to_f64()).divided_by(chunk_count.to_f64()))
+	segment_chunk_count = chunk_count(segment_length)
+	Along.at(segment_length.times(chunk_number.to_f64()).divided_by(segment_chunk_count.to_f64()))
 }
 
 ## How long the segment after a bend is.
@@ -107,11 +106,9 @@ ground_patches : RoadAhead.RoadView,
 	in_view : RoadAhead.SegmentInView,
 } -> List(Ground.Patch)
 ground_patches = |road, { vantage, in_view }| {
-	segment = in_view.segment
-	place = in_view.place
 	along_segment =
-		match place {
-			Ahead(_) => [GroundSighting.road_along(road, { vantage, in_view })]
+		match in_view.place {
+			Ahead(_) => [road_along(road, { vantage, in_view })]
 			JustBehind => []
 		}
 	bend =
@@ -122,7 +119,7 @@ ground_patches = |road, { vantage, in_view }| {
 	[
 		along_segment,
 		bend,
-		pond_patches(road, { vantage, segment, place }),
+		pond_patches(road, { vantage, in_view }),
 	].join()
 }
 
@@ -162,45 +159,44 @@ bend_paving = |road, { vantage, bend_in_view }| {
 	end_before = rider_point_before(corner.end_before)
 	apex = rider_point_before(corner.apex)
 	start_after = rider_point_before(corner.start_after)
-	outer = bend_in_view.outer_edge()
-	inner = bend_in_view.inner_edge()
+	left = Geom.left_edge
+	right = Geom.right_edge
 	corners =
 		match Geom.outer_side(bend_in_view.turn()) {
 			LeftSide => [
-				before(lead_start, outer),
+				before(lead_start, left),
 				end_before,
 				apex,
 				start_after,
-				after(lead_end, outer),
-				after(lead_end, inner),
-				before(end, inner),
-				before(lead_start, inner),
+				after(lead_end, left),
+				after(lead_end, right),
+				before(end, right),
+				before(lead_start, right),
 			]
 			RightSide => [
-				before(lead_start, inner),
-				before(end, inner),
-				after(lead_end, inner),
-				after(lead_end, outer),
+				before(lead_start, left),
+				before(end, left),
+				after(lead_end, left),
+				after(lead_end, right),
 				start_after,
 				apex,
 				end_before,
-				before(lead_start, outer),
+				before(lead_start, right),
 			]
 		}
 	road_patch(corners)
 }
 
-## The pond past the end of `segment`, which lies at `place`: its bank, then
-## its water. A segment that ends at no pond has none.
+## The pond past the end of a segment in view: its bank, then its water. A
+## segment that ends at no pond has none.
 pond_patches : RoadAhead.RoadView,
 {
 	vantage : Geom.Vantage,
-	segment : Segment,
-	place : SegmentPlace,
+	in_view : RoadAhead.SegmentInView,
 } -> List(Ground.Patch)
-pond_patches = |road, { vantage, segment, place }| {
+pond_patches = |road, { vantage, in_view }| {
 	is_at_pond =
-		match segment.ending {
+		match in_view.segment.ending {
 			Bends({ bend_life, .. }) =>
 				match bend_life {
 					DuckPond => True
@@ -210,8 +206,8 @@ pond_patches = |road, { vantage, segment, place }| {
 		}
 	if is_at_pond {
 		rider_point = |road_point|
-			RoadAhead.rider_point_at(road, { vantage, place, road_point })
-		Pond.pond_outlines(segment.bend_out_of()).map(
+			RoadAhead.rider_point_at(road, { vantage, place: in_view.place, road_point })
+		Pond.pond_outlines(in_view.segment.bend_out_of()).map(
 			|outline| { corners: outline.corners.map(rider_point), color: outline.color },
 		)
 	} else {
@@ -230,4 +226,4 @@ expect
 		(500.0, 20),
 		(320.0, 13),
 		(1200.0, 48),
-	].all(|(length, want)| GroundSighting.chunks_along(Distance.metres(length)).to_i64() == want)
+	].all(|(length, want)| chunk_count(Distance.metres(length)).to_i64() == want)

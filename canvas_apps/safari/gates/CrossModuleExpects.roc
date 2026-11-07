@@ -1142,11 +1142,13 @@ expect is_far_to_near([])
 patch_shapes : List(Ground.Patch) -> List(Shapes.Shape)
 patch_shapes = |patches| patches.keep_oks(|patch| Ground.patch_shape(patch, Pixels.of(500.0)))
 
+## The ground in view from `rider_vantage` on the road ahead of the route's
+## first segment. Its first patch is the road along that segment.
+patches_seen_from : Geom.Vantage -> List(Ground.Patch)
+patches_seen_from = |rider_vantage| GroundSighting.patches_in_view(road, { vantage: rider_vantage })
+
 first_road : Ground.Patch
-first_road = GroundSighting.road_along(
-	road,
-	{ vantage: origin, in_view: numbered_segment(road, 0) },
-)
+first_road = patches_seen_from(origin).first() ?? crash "CrossModuleExpects: the first segment lays road"
 
 corner : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
 corner = |
@@ -1183,12 +1185,10 @@ strip_shapes : List(Shapes.Shape)
 strip_shapes = patch_shapes([first_road])
 
 expect strip_shapes.len() == 1
-expect patch_shapes([
-	GroundSighting.road_along(
-		road,
-		{ vantage: { ..origin, along: Along.metres(5000.0) }, in_view: numbered_segment(road, 0) },
-	),
-]).len() == 0
+expect {
+	road_behind = patches_seen_from({ ..origin, along: Along.metres(5000.0) }).take_first(1)
+	road_behind.len() == 1 and patch_shapes(road_behind).len() == 0
+}
 last_shape : Shapes.Shape
 last_shape = strip_shapes.last() ?? crash "CrossModuleExpects: the road draws"
 
