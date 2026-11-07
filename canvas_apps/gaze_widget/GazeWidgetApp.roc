@@ -101,16 +101,16 @@ pig_segment =
 is_distracting : World.Segment -> Bool
 is_distracting = |segment|
 	match segment.pig_interest {
-		Distracting(_) => True
-		Unnoticed | NoPigs => False
+		Distracting => True
+		Unnoticed => False
 	}
 
 ## The pig that catches the rider's eye.
 gaze_pig : Geom.Placed(Billboard)
 gaze_pig =
-	match pig_segment.pig_interest {
-		Distracting(pig) => pig
-		Unnoticed | NoPigs => crash "GazeWidgetApp.gaze_pig: this segment's pigs catch the eye"
+	match Gaze.eye_catching_pig(pig_segment) {
+		CatchesEye(pig) => pig
+		NoPigCatchesEye => crash "GazeWidgetApp.gaze_pig: this segment's pigs catch the eye"
 	}
 
 ## `model` after a frame of its buttons. A press counts from the step on show,
@@ -382,7 +382,7 @@ expect {
 
 # This stretch is on the route's first distracting segment.
 expect is_distracting(first_rider.segment_index.segment_in(World.segments))
-expect World.segments.take_first(2).all(|segment| segment.pig_interest == NoPigs)
+expect World.segments.take_first(2).all(|segment| segment.pig_herd == NoPigs)
 expect pig_segment.length == Distance.metres(400.0)
 
 # The steps the book's table quotes, each with its speed in metres a step, its

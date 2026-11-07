@@ -1195,7 +1195,7 @@ A bull may stand in front of the herd, by the trees. It's the same record again,
 
 Pigs graze on the right of the road, near the end of a segment. The first two segments with pigs get a big herd, 7 rows of 7. After that, it's two short rows.
 
-{{code Pigs.pigs_along}}
+{{code Pigs.herd_pigs}}
 
 The `match` has three branches, because a segment's pigs can be three things to the rider. `Distracting` is the one a cow doesn't have. One pig in a big herd catches the rider's eye, and the rider slows down to look. That's about the rider more than the pig, so it waits for the rider's chapters.
 

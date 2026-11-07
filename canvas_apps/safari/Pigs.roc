@@ -1,6 +1,5 @@
-## Pigs graze on the right of the road near the end of a segment. On the
-## first few segments with pigs they are a big herd, and one pig of that herd
-## catches the rider's eye. After that, they stand in two short rows.
+## Pigs graze on the right of the road near the end of a segment, in a big
+## herd or in two short rows. One pig of each herd stands out from the rest.
 import Across
 import Along
 import Billboard
@@ -13,128 +12,146 @@ Pigs :: [].{
 	## Whether the route plans pigs along a segment.
 	PigPresence : [WithPigs, NoPigs]
 
-	## What a built segment's pigs are to the rider: there are none, the rider
-	## passes them by, or this one of them catches the eye.
-	PigInterest : [NoPigs, Unnoticed, Distracting(Geom.Placed(Billboard))]
+	## How a segment's pigs stand.
+	PigHerd : [NoPigs, BigHerd(Pigs.BigPigHerd), TwoRows(Pigs.TwoRowPigHerd)]
 
-	pig_codepoint : I64
+	## How the rider takes a herd, whatever its shape.
+	PigInterest : [Unnoticed, Distracting]
+
+	## A big herd: rows of columns, each pig strayed a little from its place.
+	## The first row is nearest the road, and each row behind it stands
+	## `row_depth` farther from the road and as far again along it.
+	BigPigHerd := {
+		columns : U64,
+		rows : U64,
+
+		## Where the first column is along the road, from the pigs' place.
+		first_column : Distance,
+
+		## The distance between columns, along the road.
+		column_spacing : Distance,
+		row_depth : Distance,
+
+		## How far a pig strays from its place, along the road and across it.
+		jitter_along : Distance,
+		jitter_across : Distance,
+
+		## Which pig of the row nearest the road stands out, counting from 0.
+		standout_column : U64,
+	}.{
+
+		## The herd's pigs about `herd_along`, row by row from the road.
+		big_herd_pigs : Pigs.BigPigHerd, Along -> List(Geom.Placed(Billboard))
+		big_herd_pigs = |herd, herd_along| {
+			columns = List.from_iter(U64.until(0, herd.columns))
+			List.from_iter(U64.until(0, herd.rows))
+				.join_map(|row| columns.map(|column| herd_pig(herd, { herd_along, row, column })))
+		}
+
+		## The herd's pig that stands out, about `herd_along`.
+		standout_pig : Pigs.BigPigHerd, Along -> Geom.Placed(Billboard)
+		standout_pig = |herd, herd_along| {
+			column = herd.standout_column
+			herd_pig(herd, { herd_along, row: 0, column })
+		}
+
+		is_eq : _
+	}
+
+	## Two short rows of pigs, the back row farther from the road.
+	TwoRowPigHerd := {
+		## Where the pigs of each row are along the road, from the pigs' place.
+		front_offsets : List(Distance),
+		back_offsets : List(Distance),
+
+		## How much farther from the road the back row stands than the front.
+		back_row_offset : Distance,
+	}.{
+
+		## The herd's pigs about `herd_along`, front row first.
+		two_row_pigs : Pigs.TwoRowPigHerd, Along -> List(Geom.Placed(Billboard))
+		two_row_pigs = |herd, herd_along| {
+			back_across = front_row_across.plus(herd.back_row_offset)
+			row_pigs(herd_along, { across: front_row_across, offsets: herd.front_offsets })
+				.concat(row_pigs(herd_along, { across: back_across, offsets: herd.back_offsets }))
+		}
+
+		## The herd's pig that stands out, about `herd_along`: the middle pig of
+		## the front row, the later of the two middle ones when the row is even.
+		standout_pig : Pigs.TwoRowPigHerd, Along -> Geom.Placed(Billboard)
+		standout_pig = |herd, herd_along| {
+			offset = herd.front_offsets.get(herd.front_offsets.len() // 2)
+				?? crash "Pigs.TwoRowPigHerd.standout_pig: a two-row herd has a pig in its front row"
+			pig({ along: herd_along.plus(offset), across: front_row_across })
+		}
+
+		is_eq : _
+	}
+
+	pig_codepoint : U32
 	pig_codepoint = 128022
 
 	pig_height : Distance
 	pig_height = Distance.metres(1.1)
 
-	## How many segments with pigs have the big herd.
-	pig_novelty_count : U32
-	pig_novelty_count = 2
-
 	## How far before the end of its segment the pigs are.
 	pig_distance_before_end : Distance
 	pig_distance_before_end = Distance.metres(60.0)
 
-	big_herd_columns : I64
-	big_herd_columns = 7
+	## The route's big herd, seven rows of seven.
+	big_pig_herd : Pigs.BigPigHerd
+	big_pig_herd = {
+		columns: 7,
+		rows: 7,
+		first_column: Distance.metres(-6.0),
+		column_spacing: Distance.metres(4.0),
+		row_depth: Distance.metres(6.0),
+		jitter_along: Distance.metres(1.2),
+		jitter_across: Distance.metres(1.0),
+		standout_column: 2,
+	}
 
-	big_herd_rows : I64
-	big_herd_rows = 7
+	## The route's two-row herd, four pigs in front and six behind.
+	two_row_pig_herd : Pigs.TwoRowPigHerd
+	two_row_pig_herd = {
+		front_offsets: [-6.0, -2.0, 2.0, 6.0].map(Distance.metres),
+		back_offsets: [
+			-10.0,
+			-6.0,
+			-2.0,
+			2.0,
+			6.0,
+			10.0,
+		].map(Distance.metres),
+		back_row_offset: Distance.metres(6.0),
+	}
 
-	## The distance between the big herd's columns, along the road.
-	pig_column_spacing : Distance
-	pig_column_spacing = Distance.metres(4.0)
-
-	## The distance between rows of pigs, away from the road. Each row of the
-	## big herd is also moved this far along the road.
-	pig_row_depth : Distance
-	pig_row_depth = Distance.metres(6.0)
-
-	## How far a pig of the big herd strays from its place, along the road
-	## and across it.
-	pig_jitter_along : Distance
-	pig_jitter_along = Distance.metres(1.2)
-
-	pig_jitter_across : Distance
-	pig_jitter_across = Distance.metres(1.0)
-
-	## Where the big herd's first column is, along the road, from the pigs'
-	## place.
-	pig_herd_first_column : Distance
-	pig_herd_first_column = Distance.metres(-6.0)
-
-	## How much farther from the road the back row stands than the front.
-	pig_back_row_offset : Distance
-	pig_back_row_offset = Distance.metres(6.0)
-
-	## Where the pigs of the front and back rows are along the road, from the
-	## pigs' place.
-	front_row_offsets : List(Distance)
-	front_row_offsets = [-6.0, -2.0, 2.0, 6.0].map(Distance.metres)
-
-	back_row_offsets : List(Distance)
-	back_row_offsets = [
-		-10.0,
-		-6.0,
-		-2.0,
-		2.0,
-		6.0,
-		10.0,
-	].map(Distance.metres)
-
-	has_pigs : Pigs.PigPresence -> Bool
-	has_pigs = |presence|
-		match presence {
-			WithPigs => True
-			NoPigs => False
-		}
-
-	## How the pigs of a segment `length` long strike the rider, when
-	## `pig_segments_so_far` of the route's segments, this one included, have pigs.
-	## The pig that catches the eye is the third in the row nearest the road.
-	interest_of : {
-		presence : Pigs.PigPresence,
-		pig_segments_so_far : U32,
-		length : Distance,
-	} -> Pigs.PigInterest
-	interest_of = |{ presence, pig_segments_so_far, length }|
-		match presence {
-			NoPigs => NoPigs
-			WithPigs if pig_segments_so_far <= pig_novelty_count =>
-				Distracting(herd_pig(pigs_place(length), { row: 0, column: 2 }))
-			WithPigs => Unnoticed
-		}
-
-	## The pigs on a segment `length` long: a big herd where they catch the
-	## rider's eye, and two rows where they don't.
-	pigs_along : { interest : Pigs.PigInterest, length : Distance } -> List(Geom.Placed(Billboard))
-	pigs_along = |{ interest, length }|
-		match interest {
-			Distracting(_) => big_herd_pigs(length)
-			Unnoticed => two_rows(length)
+	## The pigs of `herd` on a segment `length` long.
+	herd_pigs : Pigs.PigHerd, Distance -> List(Geom.Placed(Billboard))
+	herd_pigs = |herd, length|
+		match herd {
+			BigHerd(big_herd) => big_herd.big_herd_pigs(pigs_place(length))
+			TwoRows(two_rows) => two_rows.two_row_pigs(pigs_place(length))
 			NoPigs => []
 		}
 
-	## The big herd on a segment `length` long, row by row from the road.
-	big_herd_pigs : Distance -> List(Geom.Placed(Billboard))
-	big_herd_pigs = |length| {
-		herd_along = pigs_place(length)
-		columns = List.from_iter(I64.until(0, big_herd_columns))
-		List.from_iter(I64.until(0, big_herd_rows))
-			.join_map(|row| columns.map(|column| herd_pig(herd_along, { row, column })))
-	}
-
-	## The two rows of pigs on a segment `length` long, front row first.
-	two_rows : Distance -> List(Geom.Placed(Billboard))
-	two_rows = |length| {
-		herd_along = pigs_place(length)
-		edge = Geom.road_half_width.plus(Scenery.herd_road_offset)
-		front_across = Across.right_of_middle(edge)
-		back_across = Across.right_of_middle(edge.plus(pig_back_row_offset))
-		row_pigs(herd_along, { across: front_across, offsets: front_row_offsets })
-			.concat(row_pigs(herd_along, { across: back_across, offsets: back_row_offsets }))
-	}
+	## The pig of `herd` that stands out on a segment `length` long.
+	standout_pig : Pigs.PigHerd, Distance -> [Standout(Geom.Placed(Billboard)), NoPigs]
+	standout_pig = |herd, length|
+		match herd {
+			BigHerd(big_herd) => Standout(big_herd.standout_pig(pigs_place(length)))
+			TwoRows(two_rows) => Standout(two_rows.standout_pig(pigs_place(length)))
+			NoPigs => NoPigs
+		}
 }
 
 ## Where the pigs are on a segment `length` long.
 pigs_place : Distance -> Along
 pigs_place = |length| Along.at(length.minus(Pigs.pig_distance_before_end))
+
+## Where the row of pigs nearest the road stands across it.
+front_row_across : Across
+front_row_across = Across.right_of_middle(Geom.road_half_width.plus(Scenery.herd_road_offset))
 
 pig : { along : Along, across : Across } -> Geom.Placed(Billboard)
 pig = |{ along, across }| {
@@ -147,20 +164,23 @@ pig = |{ along, across }| {
 	},
 }
 
-herd_pig : Along, { row : I64, column : I64 } -> Geom.Placed(Billboard)
-herd_pig = |herd_along, { row, column }| {
-	i = (row * Pigs.big_herd_columns + column).to_f64()
+herd_pig : Pigs.BigPigHerd,
+{
+	herd_along : Along,
+	row : U64,
+	column : U64,
+} -> Geom.Placed(Billboard)
+herd_pig = |herd, { herd_along, row, column }| {
+	i = (row * herd.columns + column).to_f64()
 	fr = row.to_f64()
 	fc = column.to_f64()
-	first_column = herd_along.plus(Pigs.pig_herd_first_column)
-	in_column = first_column.plus(Pigs.pig_column_spacing.times(fc))
-	in_line = in_column.plus(Pigs.pig_row_depth.times(fr))
-	edge = Geom.road_half_width.plus(Scenery.herd_road_offset)
-	in_row = edge.plus(Pigs.pig_row_depth.times(fr))
-	out_from_middle = in_row.plus(Pigs.pig_jitter_across.times((i * 1.7).cos()))
+	first_column = herd_along.plus(herd.first_column)
+	in_column = first_column.plus(herd.column_spacing.times(fc))
+	in_line = in_column.plus(herd.row_depth.times(fr))
+	in_row = front_row_across.plus(herd.row_depth.times(fr))
 	pig({
-		along: in_line.plus(Pigs.pig_jitter_along.times((i * 2.3).sin())),
-		across: Across.right_of_middle(out_from_middle),
+		along: in_line.plus(herd.jitter_along.times((i * 2.3).sin())),
+		across: in_row.plus(herd.jitter_across.times((i * 1.7).cos())),
 	})
 }
 
@@ -168,33 +188,28 @@ row_pigs : Along, { across : Across, offsets : List(Distance) } -> List(Geom.Pla
 row_pigs = |herd_along, { across, offsets }|
 	offsets.map(|offset| pig({ along: herd_along.plus(offset), across }))
 
-## How a 1000 m segment's pigs strike the rider.
-interest_on_long_segment : Pigs.PigPresence, U32 -> Pigs.PigInterest
-interest_on_long_segment = |presence, pig_segments_so_far|
-	Pigs.interest_of({ presence, pig_segments_so_far, length: Distance.metres(1000.0) })
+long_segment : Distance
+long_segment = Distance.metres(1000.0)
 
-eye_catcher : Geom.Placed(Billboard)
-eye_catcher =
-	match interest_on_long_segment(WithPigs, 1) {
-		Distracting(eye_catching_pig) => eye_catching_pig
-		NoPigs | Unnoticed => crash "Pigs' expects: the first pigs catch the eye"
+## The standout pig of a herd on a 1000 m segment.
+standout_on_long_segment : Pigs.PigHerd -> Geom.Placed(Billboard)
+standout_on_long_segment = |herd|
+	match Pigs.standout_pig(herd, long_segment) {
+		Standout(standout) => standout
+		NoPigs => crash "Pigs' expects: a herd has a standout pig"
 	}
 
-expect interest_on_long_segment(NoPigs, 1) == NoPigs
-expect interest_on_long_segment(WithPigs, 2) == Distracting(eye_catcher)
-expect interest_on_long_segment(WithPigs, 3) == Unnoticed
+eye_catcher : Geom.Placed(Billboard)
+eye_catcher = standout_on_long_segment(BigHerd(Pigs.big_pig_herd))
+
+expect Pigs.standout_pig(NoPigs, long_segment) == NoPigs
 
 expect
 	[
 		(NoPigs, 0),
-		(Unnoticed, 10),
-		(Distracting(eye_catcher), 49),
-	].all(
-		|(interest, count)| Pigs.pigs_along({
-			interest,
-			length: Distance.metres(1000.0),
-		}).len() == count,
-	)
+		(TwoRows(Pigs.two_row_pig_herd), 10),
+		(BigHerd(Pigs.big_pig_herd), 49),
+	].all(|(herd, count)| Pigs.herd_pigs(herd, long_segment).len() == count)
 
 # The third pig of the row nearest the road, strayed from its place.
 expect (eye_catcher.along.to_metres() - 940.80757).abs() <= 0.00001
@@ -204,13 +219,13 @@ expect Pigs.pig_height.to_metres() == 1.1
 expect Pigs.pig_distance_before_end.to_metres() == 60.0
 expect eye_catcher.kind.codepoint == 128022
 expect Pigs.pig_codepoint == 128022
-expect Pigs.pig_novelty_count.to_i64() == 2
-expect Pigs.big_herd_columns == 7
-expect Pigs.big_herd_rows == 7
+expect Pigs.big_pig_herd.columns == 7
+expect Pigs.big_pig_herd.rows == 7
+expect Pigs.big_pig_herd.standout_column == 2
 expect eye_catcher.kind.facing == FacesLeft
 
 all_pigs : List(Geom.Placed(Billboard))
-all_pigs = Pigs.big_herd_pigs(Distance.metres(1000.0))
+all_pigs = Pigs.herd_pigs(BigHerd(Pigs.big_pig_herd), long_segment)
 
 herd_pig_at : U64 -> Geom.Placed(Billboard)
 herd_pig_at = |i| all_pigs.get(i) ?? crash "Pigs: the big herd has 49 pigs"
@@ -218,7 +233,7 @@ herd_pig_at = |i| all_pigs.get(i) ?? crash "Pigs: the big herd has 49 pigs"
 expect all_pigs.len() == 49
 expect herd_pig_at(2) == eye_catcher
 expect all_pigs.count_if(|herd_member| herd_member == eye_catcher) == 1
-expect Pigs.big_herd_pigs(Distance.metres(500.0)).len() == 49
+expect Pigs.herd_pigs(BigHerd(Pigs.big_pig_herd), Distance.metres(500.0)).len() == 49
 expect herd_pig_at(0).kind.codepoint == 128022
 expect herd_pig_at(48).kind.codepoint == 128022
 
@@ -263,11 +278,11 @@ expect
 	].all(|(i, across)| (herd_pig_at(i).across.to_metres() - across).abs() <= 1.0)
 
 both_rows : List(Geom.Placed(Billboard))
-both_rows = Pigs.two_rows(Distance.metres(1000.0))
+both_rows = Pigs.herd_pigs(TwoRows(Pigs.two_row_pig_herd), long_segment)
 
 expect both_rows.len() == 10
-expect Pigs.front_row_offsets.len() == 4
-expect Pigs.back_row_offsets.len() == 6
+expect Pigs.two_row_pig_herd.front_offsets.len() == 4
+expect Pigs.two_row_pig_herd.back_offsets.len() == 6
 
 expect
 	both_rows.map(|critter| critter.along.to_metres())
@@ -299,11 +314,29 @@ expect
 			18.0,
 		]
 
-expect Pigs.front_row_offsets.map(Distance.to_metres) == [-6.0, -2.0, 2.0, 6.0]
-expect Pigs.back_row_offsets.map(Distance.to_metres) == [-10.0, -6.0, -2.0, 2.0, 6.0, 10.0]
-expect Pigs.pig_back_row_offset.to_metres() == 6.0
-expect Pigs.pig_herd_first_column.to_metres() == -6.0
-expect Pigs.pig_column_spacing.to_metres() == 4.0
-expect Pigs.pig_row_depth.to_metres() == 6.0
-expect Pigs.pig_jitter_along.to_metres() == 1.2
-expect Pigs.pig_jitter_across.to_metres() == 1.0
+# The two-row herd's standout is the third pig of its front row, one of the herd.
+two_row_standout : Geom.Placed(Billboard)
+two_row_standout = standout_on_long_segment(TwoRows(Pigs.two_row_pig_herd))
+
+expect two_row_standout.along.to_metres() == 942.0
+expect two_row_standout.across.to_metres() == 12.0
+expect both_rows.get(2) == Ok(two_row_standout)
+expect both_rows.count_if(|row_member| row_member == two_row_standout) == 1
+
+expect Pigs.two_row_pig_herd.front_offsets.map(Distance.to_metres) == [-6.0, -2.0, 2.0, 6.0]
+expect
+	Pigs.two_row_pig_herd.back_offsets.map(Distance.to_metres)
+		== [
+			-10.0,
+			-6.0,
+			-2.0,
+			2.0,
+			6.0,
+			10.0,
+		]
+expect Pigs.two_row_pig_herd.back_row_offset.to_metres() == 6.0
+expect Pigs.big_pig_herd.first_column.to_metres() == -6.0
+expect Pigs.big_pig_herd.column_spacing.to_metres() == 4.0
+expect Pigs.big_pig_herd.row_depth.to_metres() == 6.0
+expect Pigs.big_pig_herd.jitter_along.to_metres() == 1.2
+expect Pigs.big_pig_herd.jitter_across.to_metres() == 1.0

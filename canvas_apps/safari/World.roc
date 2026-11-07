@@ -81,6 +81,10 @@ World :: [].{
 		trees : List(Trees.RoadsideTree),
 		cows : List(Geom.Placed(Billboard)),
 		pigs : List(Geom.Placed(Billboard)),
+		pig_herd : Pigs.PigHerd,
+
+		## How the rider takes the segment's herd. A segment with no pigs has
+		## nothing to notice, so its pigs are `Unnoticed`.
 		pig_interest : Pigs.PigInterest,
 
 		## The turn into the next segment: positive to the right, negative to
@@ -295,12 +299,22 @@ World :: [].{
 		},
 	]
 
-	## How many of the segments up to and including `index` have pigs.
-	pig_segments_through : World.SegmentIndex -> U32
-	pig_segments_through = |index|
+	## How many of the route's herds, from its first, are big. The rest stand
+	## in two rows.
+	big_herd_count : U32
+	big_herd_count = 2
+
+	## How many of the route's herds, from its first, the rider finds
+	## distracting. The rider passes the rest by.
+	pig_novelty_count : U32
+	pig_novelty_count = 2
+
+	## How many of the segments before `index` have pigs.
+	herd_count_before : World.SegmentIndex -> U32
+	herd_count_before = |index|
 		plans
-			.take_first(index.count_before() + 1)
-			.count_if(|plan| Pigs.has_pigs(plan.pigs))
+			.take_first(index.count_before())
+			.count_if(|plan| plan.pigs == WithPigs)
 			.to_u32_wrap()
 
 	## Segment `number` of the route, counting from 0.
@@ -346,16 +360,24 @@ World :: [].{
 built_segment : World.SegmentPlan, World.SegmentIndex -> World.Segment
 built_segment = |plan, index| {
 	trees = Trees.roadside_trees({ scheme: plan.scheme, length: plan.length })
-	pig_interest = Pigs.interest_of({
-		presence: plan.pigs,
-		pig_segments_so_far: World.pig_segments_through(index),
-		length: plan.length,
-	})
+	earlier_herd_count = World.herd_count_before(index)
+	pig_herd =
+		match plan.pigs {
+			WithPigs if earlier_herd_count < World.big_herd_count => BigHerd(Pigs.big_pig_herd)
+			WithPigs => TwoRows(Pigs.two_row_pig_herd)
+			NoPigs => NoPigs
+		}
+	pig_interest =
+		match plan.pigs {
+			WithPigs if earlier_herd_count < World.pig_novelty_count => Distracting
+			WithPigs | NoPigs => Unnoticed
+		}
 	{
 		length: plan.length,
 		trees,
 		cows: Cows.herd_cows(plan.bull),
-		pigs: Pigs.pigs_along({ interest: pig_interest, length: plan.length }),
+		pigs: Pigs.herd_pigs(pig_herd, plan.length),
+		pig_herd,
 		pig_interest,
 		exit_turn: plan.turn,
 		commit_along: match plan.ending {
@@ -402,16 +424,21 @@ expect World.plans.len() == 19
 expect
 	[
 		(0, 0),
-		(2, 1),
-		(10, 2),
-		(11, 3),
-		(18, 9),
+		(2, 0),
+		(3, 1),
+		(10, 1),
+		(11, 2),
+		(12, 3),
+		(18, 8),
 	].all(
 		|(number, want)| {
 			index = World.SegmentIndex.number(number)
-			World.pig_segments_through(index).to_i64() == want
+			World.herd_count_before(index).to_i64() == want
 		},
 	)
+
+expect World.big_herd_count.to_i64() == 2
+expect World.pig_novelty_count.to_i64() == 2
 
 seg : U32 -> World.Segment
 seg = |i| World.route_segment(i)
@@ -485,6 +512,15 @@ expect
 		(18, False),
 	].all(|(index, want)| is_distracting(seg(index)) == want)
 
+expect
+	[
+		(0, NoPigs),
+		(2, BigHerd(Pigs.big_pig_herd)),
+		(10, BigHerd(Pigs.big_pig_herd)),
+		(11, TwoRows(Pigs.two_row_pig_herd)),
+		(18, TwoRows(Pigs.two_row_pig_herd)),
+	].all(|(index, want)| seg(index).pig_herd == want)
+
 expect seg(0).cows.len() == 14
 expect seg(3).cows.len() == 14
 expect seg(4).cows.len() == 15
@@ -556,8 +592,8 @@ has_cat = |segment|
 is_distracting : World.Segment -> Bool
 is_distracting = |segment|
 	match segment.pig_interest {
-		Distracting(_) => True
-		Unnoticed | NoPigs => False
+		Distracting => True
+		Unnoticed => False
 	}
 
 ## The cat crossing at a segment that has one.

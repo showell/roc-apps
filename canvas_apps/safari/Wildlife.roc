@@ -13,7 +13,7 @@ import Scenery
 Wildlife :: [].{
 
 	## A safari animal: its emoji, and how tall a grown one stands.
-	Species : { codepoint : I64, adult_height : Distance }
+	Species : { codepoint : U32, adult_height : Distance }
 
 	## How far beyond the guard rail the grown animal stands.
 	adult_rail_buffer : Distance
