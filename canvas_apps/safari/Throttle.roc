@@ -100,11 +100,12 @@ shoulder_limit = |motorcycle|
 		Leaves({ after, .. }) => AtMost(shoulder_brake(motorcycle, after))
 	}
 
-## The brake for a coast that leaves the road in `steps_to_shoulder`.
+## The brake for a coast that leaves the road in `steps_to_shoulder`, which is
+## at least one step.
 shoulder_brake : Motorcycle, Steps -> Acceleration
 shoulder_brake = |motorcycle, steps_to_shoulder| {
 	n = steps_to_shoulder.to_f64()
-	even_braking = (0.0 - motorcycle.speed.to_metres_a_step()) / (2.0 * n.max(1.0))
+	even_braking = (0.0 - motorcycle.speed.to_metres_a_step()) / (2.0 * n)
 	Acceleration.metres_a_step_each_step(even_braking * F64.e.pow((0.0 - n) / brake_decay.to_f64()))
 }
 
@@ -206,12 +207,12 @@ across_at = |metres| Motorcycle.initial.across.plus(Speed.metres_a_step(metres).
 off_left : F64 -> Motorcycle
 off_left = |speed| { ..centred_motorcycle(0.0, speed), yaw: Angle.Turn.radians(-1.5) }
 
-expect Coast.project(off_left(0.048)) == Leaves({ side: Left, after: Steps.of(40) })
-expect Coast.project(off_left(0.7)) == Leaves({ side: Left, after: Steps.of(2) })
+expect Coast.project(off_left(0.048)) == Leaves({ side: Left, after: Steps.of(41) })
+expect Coast.project(off_left(0.7)) == Leaves({ side: Left, after: Steps.of(3) })
 
 # A coast that stays on the road asks nothing, and one that leaves it brakes.
 expect shoulder_limit(centred_motorcycle(0.0, 0.3)) == NoLimit
-expect shoulder_limit(off_left(0.7)) == AtMost(shoulder_brake(off_left(0.7), Steps.of(2)))
+expect shoulder_limit(off_left(0.7)) == AtMost(shoulder_brake(off_left(0.7), Steps.of(3)))
 
 ## The shoulder brake for a motorcycle going 1 metre a step.
 brake_after : U32 -> Acceleration
@@ -221,8 +222,8 @@ brake_after = |steps_to_shoulder|
 expect brake_after(40) < Acceleration.steady
 expect brake_after(40) > brake_after(2)
 
-# A coast that leaves the road at once still brakes.
-expect brake_after(0) < Acceleration.steady
+# A coast that leaves the road on its first step still brakes.
+expect brake_after(1) < Acceleration.steady
 
 ## The speed the clamp allows this motorcycle, for `next_speed` metres a step.
 clamped_speed : Motorcycle, F64 -> F64

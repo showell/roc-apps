@@ -50,12 +50,12 @@ step_shown = 370
 ## there and compares.
 rider : Motorcycle
 rider = {
-	along: Along.metres(4.90868673787897),
-	across: Across.metres(-1.930897632424363),
-	yaw: Angle.Turn.radians(0.04392681817843164),
-	speed: Speed.metres_a_step(0.08377159378729097),
-	lean: Angle.Lean.radians(0.0061188789205664324),
-	heading: Angle.Bearing.radians(0.9165914441755961),
+	along: Along.metres(6.020006844801467),
+	across: Across.metres(-1.881558174514434),
+	yaw: Angle.Turn.radians(0.060933551846790265),
+	speed: Speed.metres_a_step(0.17310247452190655),
+	lean: Angle.Lean.radians(-0.0010737865515197053),
+	heading: Angle.Bearing.radians(0.9335981778439549),
 }
 
 target : Across
@@ -574,18 +574,23 @@ expect {
 expect rehearsals.len() == 12
 expect chosen_lean.to_radians() == LeanSearch.best_lean(rider).to_radians()
 
-# Each path ends where the game's own arc says that arc ends.
+# Each path ends where the game's own arc says that arc ends: where the coast
+# ends on the road, or past the edge it leaves by.
 expect
 	rehearsals.all(
 		|{ path_points, outcome, .. }|
 			match (path_points.last(), outcome) {
 				(Ok(point), EndsAt(end_across)) => point.across == end_across.to_metres()
-				(Ok(_), Leaves(_)) | (Err(_), _) => False
+				(Ok(point), Leaves({ side: Left, .. })) => point.across < Across.left_of_middle(arc_edge).to_metres()
+				(Ok(point), Leaves({ side: Right, .. })) => point.across > Across.right_of_middle(arc_edge).to_metres()
+				(Err(_), _) => False
 			},
 	)
 
-# Every arc of this step stays on the road, and the search goes both ways.
-expect rehearsals.all(|{ outcome, .. }| color_of(outcome) == kept_color)
+# Some arcs of this step stay on the road and some leave it, and the search
+# goes both ways.
+expect rehearsals.any(|{ outcome, .. }| color_of(outcome) == kept_color)
+expect rehearsals.any(|{ outcome, .. }| color_of(outcome) != kept_color)
 expect rehearsals.any(|{ wants_more_right, .. }| wants_more_right)
 expect rehearsals.any(|{ wants_more_right, .. }| !wants_more_right)
 
