@@ -63,6 +63,7 @@ import game.Steps
 import game.StillShapes
 import game.Sun
 import game.Throttle
+import game.Tour
 import game.Tower
 import game.TowerSighting
 import game.TreeSighting
@@ -125,7 +126,7 @@ expect
 expect [
 	(0, 0),
 	(3, 3),
-].all(|(first, want)| RoadAhead.rider_segment(road_from(first)).to_i64() == want)
+].all(|(first, want)| RoadAhead.rider_segment_index(road_from(first)).to_i64() == want)
 
 ## The route's number of the segment in view just behind a rider on the
 ## world's segment `first`, or -1 at the route's start.
@@ -1440,15 +1441,30 @@ done = {
 	encounter_start: StartsAt(Clock.at_step(12300)),
 }
 
-expect {
-	instant = RideInstant.next_or_restart(World.route, done)
-	instant.clock.to_f64() == 0.0
-		and instant.rider.motorcycle.along.to_metres() == 0.0
-		and instant.rider.motorcycle.speed.to_metres_a_step() == 0.3
-		and instant.truck.route_position.to_metres() == 500.0
-		and instant.rider.eyes.look_depth.to_f64() == 0.0
-		and instant.encounter_start == Unplanned
-}
+## The world's ride a step on from `instant`, whether it went on or restarted.
+instant_after : RideInstant -> RideInstant
+instant_after = |instant|
+	match RideInstant.next_or_restart(World.route, instant) {
+		Continued(next) | Restarted(next) => next
+	}
+
+expect
+	match RideInstant.next_or_restart(World.route, done) {
+		Restarted(instant) =>
+			instant.clock.to_f64() == 0.0
+				and instant.rider.motorcycle.along.to_metres() == 0.0
+				and instant.rider.motorcycle.speed.to_metres_a_step() == 0.3
+				and instant.truck.route_position.to_metres() == 500.0
+				and instant.rider.eyes.look_depth.to_f64() == 0.0
+				and instant.encounter_start == Unplanned
+		Continued(_) => False
+	}
+
+expect
+	match RideInstant.next_or_restart(World.route, RideInstant.initial) {
+		Continued(_) => True
+		Restarted(_) => False
+	}
 
 # The gaze is home at each of the ride's crossings, and it did leave home. The
 # bike doesn't turn at a seam, and `gaze_yaw` is measured from the bike, so a
@@ -1459,7 +1475,7 @@ expect {
 	var $is_home_at_each = True
 	var $has_looked = False
 	while !Rider.is_finished($instant.rider, World.route) {
-		next = RideInstant.next_or_restart(World.route, $instant)
+		next = instant_after($instant)
 		if next.rider.segment_index != $instant.rider.segment_index {
 			$crossings = $crossings + 1
 			is_home = $instant.rider.eyes.gaze_yaw == Angle.straight_ahead
@@ -1472,15 +1488,15 @@ expect {
 }
 
 expect Rider.is_finished(done.rider, World.route)
-expect RideInstant.next_or_restart(World.route, done).truck.pace == NotSlowing
+expect instant_after(done).truck.pace == NotSlowing
 
 # A ride that hasn't finished steps on: the clock by a step, the rider and the
 # truck forward.
 ride_at_step_one : RideInstant
-ride_at_step_one = RideInstant.next_or_restart(World.route, RideInstant.initial)
+ride_at_step_one = instant_after(RideInstant.initial)
 
 ride_at_step_two : RideInstant
-ride_at_step_two = RideInstant.next_or_restart(World.route, ride_at_step_one)
+ride_at_step_two = instant_after(ride_at_step_one)
 
 expect !Rider.is_finished(RideInstant.initial.rider, World.route)
 expect ride_at_step_one.clock.to_f64() == 1.0
@@ -1491,6 +1507,31 @@ expect ride_at_step_one.truck.route_position > RideInstant.initial.truck.route_p
 expect ride_at_step_two.rider.motorcycle.along > ride_at_step_one.rider.motorcycle.along
 expect ride_at_step_one.clock != Clock.start
 expect !Rider.is_finished(ride_at_step_one.rider, World.route)
+
+# The rider starts at the route's start and moves along it.
+expect RideInstant.rider_distance(World.route, RideInstant.initial) == Distance.zero
+expect
+	RideInstant.rider_distance(World.route, ride_at_step_two)
+		> RideInstant.rider_distance(World.route, ride_at_step_one)
+
+# A tour can be ridden right up to the step the ride finishes at. A step past it
+# crashes, since the ride starts again before reaching it.
+expect {
+	var $tour = Tour.initial
+	while !Rider.is_finished($tour.instant.rider, $tour.route) {
+		$tour = Tour.step_forward($tour)
+	}
+	finish = $tour.instant.clock
+	Tour.at_step(finish.steps_since(Clock.start).to_u32()).instant.clock == finish
+}
+
+# The sun's disc is not yet wholly set a step before `fully_set_at`, and the sky
+# is lighter than when it is.
+expect {
+	step_before_set = Sun.fully_set_at.minus(Steps.one_step)
+	Sun.height_at(step_before_set) > Sun.height_when_set
+		and Sky.darkness_at(step_before_set) < Sky.darkness_at(Sun.fully_set_at)
+}
 
 ## The first step of the ride at which `holds` holds.
 first_step_where : (Clock -> Bool) -> Clock
@@ -1554,13 +1595,13 @@ expect {
 	until = sunset_climax.plus(sunset_margin)
 	var $instant = RideInstant.initial
 	while $instant.clock != from {
-		$instant = RideInstant.next_or_restart(World.route, $instant)
+		$instant = instant_after($instant)
 	}
 	var $is_on_long_segment = True
 	while $instant.clock != until {
 		is_on_it = $instant.rider.segment_index == longest_segment_index
 		$is_on_long_segment = $is_on_long_segment and is_on_it
-		$instant = RideInstant.next_or_restart(World.route, $instant)
+		$instant = instant_after($instant)
 	}
 	$is_on_long_segment and $instant.rider.segment_index == longest_segment_index
 }
@@ -1572,7 +1613,7 @@ expect {
 expect {
 	var $instant = RideInstant.initial
 	while !Rider.is_finished($instant.rider, World.route) {
-		$instant = RideInstant.next_or_restart(World.route, $instant)
+		$instant = instant_after($instant)
 	}
 	Sky.darkness_at($instant.clock) == Fraction.whole
 }
@@ -1598,7 +1639,7 @@ ride_encounters = {
 	while !Rider.is_finished($instant.rider, World.route) {
 		segment = World.route.segment_at($instant.rider.segment_index)
 		timing = RideInstant.encounter_timing($instant)
-		next = RideInstant.next_or_restart(World.route, $instant)
+		next = instant_after($instant)
 		is_leaving =
 			next.rider.segment_index != $instant.rider.segment_index
 				or Rider.is_finished(next.rider, World.route)

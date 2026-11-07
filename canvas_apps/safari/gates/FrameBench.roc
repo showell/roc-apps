@@ -23,7 +23,10 @@ main! = |args| {
 	var $shapes = 0
 	for _ in 0..<steps {
 		$shapes = $shapes + FrameView.frame_view_at(route, $instant).ride_shapes.len()
-		$instant = RideInstant.next_or_restart(route, $instant)
+		$instant =
+			match RideInstant.next_or_restart(route, $instant) {
+				Continued(next) | Restarted(next) => next
+			}
 	}
 	finished = if Rider.is_finished($instant.rider, route) {
 		"yes"
