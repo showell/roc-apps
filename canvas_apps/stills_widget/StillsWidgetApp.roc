@@ -740,8 +740,8 @@ expect read_out_lines(bird_still(Side(WingsUp))) == ["Side up", "6 polygons", "2
 expect read_out_lines(bird_still(Away(WingsDown))) == ["Away down", "4 polygons", "17 points"]
 expect read_out_lines(bird_still(Diving)) == ["Diving", "6 polygons", "22 points"]
 
-# StillShapes leaves out what it won't draw, so the counts would lie if it left
-# out a polygon of these. It draws every one.
+# StillShapes draws one shape for each polygon, so the read-out's polygon count
+# is the count on screen.
 expect
 	cells.all(
 		|{ still, anchor, .. }| {
