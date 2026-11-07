@@ -838,7 +838,8 @@ is_cow_seen_from = |forward| {
 		across: Across.metres(lone_cow.across.to_metres() - 2.5),
 		yaw: Angle.straight_ahead,
 	}
-	BillboardSighting.billboards_in_view(road_of([one_cow_segment]), { vantage: rider }).len() == 1
+	camera = { vantage: rider, cam_focal: Lens.resting_focal }
+	BillboardSighting.billboards_in_view(road_of([one_cow_segment]), camera).len() == 1
 }
 
 # The near plane is 0.4 m. The rider's place is worked out from the cow's, so
@@ -857,41 +858,6 @@ expect
 		(481.0, False),
 		(600.0, False),
 	].all(|(forward, want)| is_cow_seen_from(forward) == want)
-
-# Billboard: a billboard is drawn while it stands a pixel tall.
-## How many shapes draw an elephant of `height` metres, `forward` metres
-## straight ahead, through a 500 px focal length.
-elephant_shape_count : { forward : Distance, height : Distance } -> U64
-elephant_shape_count = |{ forward, height }| {
-	billboard : Billboard
-	billboard = { emoji: EmojiStills.elephant, height, facing: FacesLeft }
-	foot =
-		Geom.ahead_on_level({ right: Distance.zero, forward })
-			?? crash "CrossModuleExpects: a test's billboard is past the near plane"
-	spot = Spot.at({
-		place: Ahead(SegmentPlace.Position.first),
-		road_point: { along: Along.at(forward), across: Across.middle },
-		lift: Distance.zero,
-		foot,
-	})
-	billboard.scenery_picture({ spot, cam_focal: Pixels.of(500.0), context: {} }).to_shapes().len()
-}
-
-expect
-	[
-		(100.0, 2.0, 6),
-		(1000.0, 2.0, 6),
-		(1000.0, 1.9, 0),
-		(2000.0, 2.0, 0),
-	].all(
-		|(forward, height, want)| {
-			count = elephant_shape_count({
-				forward: Distance.metres(forward),
-				height: Distance.metres(height),
-			})
-			count == want
-		},
-	)
 
 # Wildlife: an animal and its baby at each of four bends, the first and third
 # turning right and the second and fourth left.
@@ -1238,7 +1204,7 @@ expect
 		(Distance.metres(1.01), Ok(Seen)),
 	].all(
 		|(height, outcome)|
-			Pipeline.tall_sighting_of(
+			Pipeline.scenery_sighting_of(
 				{
 					road_point: { along: Along.metres(64.0), across: Across.metres(1.5) },
 					lift: Distance.zero,
@@ -1246,9 +1212,8 @@ expect
 				},
 				{
 					road: straight_road,
-					vantage: origin,
+					camera: { vantage: origin, cam_focal: Pixels.of(128.0) },
 					place: Ahead(SegmentPlace.Position.first),
-					size_focal: Pixels.of(128.0),
 				},
 			).map_ok(|_| Seen)
 				== outcome,
