@@ -17,7 +17,6 @@ import game.PosedBird
 import game.Geom
 import game.Segment
 import game.Trees
-import game.SegmentPlace
 import game.Sky
 import game.Spot
 import game.World
@@ -58,7 +57,9 @@ segment_flight = |segment|
 
 ## The first flight on the route.
 flight : BirdFlight.Flight
-flight = World.route.route_segments().keep_oks(segment_flight).first() ?? crash "BirdWidgetApp.flight: the route has a bird that flies"
+flight =
+	World.route.route_segments().keep_oks(segment_flight).first()
+		?? crash "BirdWidgetApp.flight: the route has a bird that flies"
 
 ## How far the picture's eye stands short of the first tree: far enough for
 ## the bird perched on top of it to fit.
@@ -114,36 +115,18 @@ road = {
 	[Camera.clipped_polygon({ color: RgbColor.of(0x8a8a8a), corners }, Lens.resting_focal)].keep_oks(|shape| shape)
 }
 
-## Where a thing standing at `along` and `across` is from the picture's eye, if
-## it is in front of the camera.
-foot_at : Along, Across -> Try(Geom.LevelPoint, [BehindCamera])
-foot_at = |along, across|
-	Geom.ahead_on_level({ right: Distance.metres(across.to_metres()), forward: forward_of(along) })
-
 ## The spot of a thing standing at `along` and `across`, `lift` off the ground,
-## with its foot at `foot`.
-spot_of : { along : Along, across : Across, lift : Distance, .. }, Geom.LevelPoint -> Spot
-spot_of = |{ along, across, lift, .. }, foot|
-	Spot.at({
-		place: Ahead(SegmentPlace.Position.first),
-		road_point: { along, across },
-		lift,
-		foot,
-	})
+## if it is in front of the picture's eye.
+spot_of : { along : Along, across : Across, lift : Distance, .. } -> Try(Spot, [BehindCamera])
+spot_of = |{ along, across, lift, .. }|
+	Spot.straight_ahead({ road_point: { along, across }, lift, forward: forward_of(along) })
 
 tree_shapes : Trees.RoadsideTree -> List(Shapes.Shape)
 tree_shapes = |tree|
-	match foot_at(tree.road_point.along, tree.road_point.across) {
-		Ok(foot) =>
+	match spot_of({ along: tree.road_point.along, across: tree.road_point.across, lift: tree.lift }) {
+		Ok(spot) =>
 			tree.kind.scenery_picture({
-				spot: spot_of(
-					{
-						along: tree.road_point.along,
-						across: tree.road_point.across,
-						lift: tree.lift,
-					},
-					foot,
-				),
+				spot,
 				cam_focal: Lens.resting_focal,
 				context: { nearer_tree_count: 0 },
 			}).to_shapes()
@@ -156,11 +139,10 @@ bird_shapes = |gap| {
 	instant = BirdFlight.instant_at(flight, { gap: gap })
 	bird : PosedBird
 	bird = { pose: instant.pose }
-	location = instant.location
-	match foot_at(location.along, location.across) {
-		Ok(foot) =>
+	match spot_of(instant.location) {
+		Ok(spot) =>
 			bird.scenery_picture({
-				spot: spot_of(location, foot),
+				spot,
 				cam_focal: Lens.resting_focal,
 				context: {},
 			}).to_shapes()

@@ -53,6 +53,7 @@ import game.RiderState
 import game.Screen
 import game.Sky
 import game.Speed
+import game.Spot
 import game.Steps
 import game.StillShapes
 import game.Sun
@@ -1614,3 +1615,35 @@ wide_of_road = |lean| {
 # A rider far off to the right, whose coast crosses no shoulder, opens the
 # throttle however far they lean. Each is within 1e-12 of its want.
 expect [-0.001, -0.035, -0.535].all(|lean| (wide_of_road(lean) - 0.01).abs() <= 0.000000000001)
+
+## The spot on a straight road of a thing 3 m left of the middle and 2 m up,
+## `forward` ahead of the camera.
+straight_ahead_spot : F64 -> Try(Spot, [BehindCamera])
+straight_ahead_spot = |forward|
+	Spot.straight_ahead({
+		road_point: { along: Along.metres(50.0), across: Across.metres(-3.0) },
+		lift: Distance.metres(2.0),
+		forward: Distance.metres(forward),
+	})
+
+# A spot ahead keeps its road point and lift, sits on the first segment ahead,
+# and has its foot as far left of the camera as the thing is of the middle.
+expect
+	match straight_ahead_spot(20.0) {
+		Ok(spot) => {
+			foot = spot.foot().at_height(Distance.zero)
+			spot.place() == Ahead(SegmentPlace.Position.first)
+				and spot.road_point() == { along: Along.metres(50.0), across: Across.metres(-3.0) }
+				and spot.lift() == Distance.metres(2.0)
+				and foot.right() == Distance.metres(-3.0)
+				and foot.forward() == Distance.metres(20.0)
+		}
+		Err(BehindCamera) => False
+	}
+
+# A spot short of the near plane is behind the camera.
+expect
+	match straight_ahead_spot(0.1) {
+		Ok(_) => False
+		Err(BehindCamera) => True
+	}
