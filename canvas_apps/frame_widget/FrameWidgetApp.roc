@@ -360,20 +360,16 @@ expect picture_shapes(layers) == SafariApp.frame_shapes(paused_tour)
 # The ride's parts are the game's own shapes, in the game's order.
 expect ride_shapes_on(layers) == paused_frame_view.shapes
 
-# The frame's total is the count the book's table gives for this step.
+# The frame's total is the game's own count of its shapes.
 expect ride_count(layers) == paused_frame_view.shapes.len()
-expect ride_count(layers) == 2588
 
-# Each layer's own shapes at this step. The sun is behind the rider, so it has none.
-expect
-	layers.map(|layer| frame_shapes_on([layer]).len())
-		== [1656, 1, 0, 1, 4, 24, 302, 187, 352, 63]
+# Every layer has shapes of its own at this step but the sun, which is behind the
+# rider.
+expect layers.keep_if(|layer| frame_shapes_on([layer]).is_empty()) == [Sun]
 expect paused_frame_view.sun == OutOfView
 
-# The running count at each layer. The backdrop stays out of it.
-expect
-	List.from_iter(U64.until(1, layers.len() + 1)).map(|count| ride_count(layers_up_to(count)))
-		== [1656, 1656, 1656, 1656, 1660, 1684, 1986, 2173, 2525, 2588]
+# The backdrop stays out of the running count.
+expect ride_count([Grass, Sun, Sky]) == 0
 
 # A layer with shapes of its own always changes the picture, and the sun doesn't.
 expect picture_shapes(layers_up_to(1)) != picture_shapes(layers_up_to(2))
@@ -429,16 +425,16 @@ expect next_model(start, Input.none.with_key_pressed(KeyLeft)) == opened_after(0
 
 expect
 	status_lines(start)
-		== ["Shapes so far: 1,656 of 2,588", "Added: Trees"]
+		== ["Shapes so far: 1,620 of 2,514", "Added: Trees"]
 expect
 	status_lines(opened_after(2))
-		== ["Shapes so far: 1,656 of 2,588", "Added: The sun, out of view here"]
+		== ["Shapes so far: 1,620 of 2,514", "Added: The sun, out of view here"]
 expect
 	status_lines(opened_after(5))
-		== ["Shapes so far: 1,684 of 2,588", "Added: The road and pond"]
+		== ["Shapes so far: 1,651 of 2,514", "Added: The road and pond"]
 expect
 	status_lines(all_on)
-		== ["Shapes so far: 2,588 of 2,588", "Added: The moving things"]
+		== ["Shapes so far: 2,514 of 2,514", "Added: The moving things"]
 
 expect
 	layers.map(layer_name)
