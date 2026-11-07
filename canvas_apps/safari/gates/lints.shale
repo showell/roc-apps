@@ -167,7 +167,7 @@ end
 
 -- The lines of `out` that are findings of `check`.
 function findings_of(out, check)
-  local mark = ": " .. substitute(substitute(check, "to stack", "stack"), "to unstack", "unstack") .. ":"
+  local mark = ": " .. substitute(substitute(check, "to stack", "stack", {missing_ok = true}), "to unstack", "unstack", {missing_ok = true}) .. ":"
   local found = {}
   for l in lines(out) do
     if contains(l, mark) then push(found, l) end

@@ -112,7 +112,7 @@ end
 
 -- Adds each word of `dotted`, which may be `.min`, `$out` or `lib.Trig`.
 function add_words(words, dotted)
-  for word in split(substitute(dotted, "$", ""), ".") do
+  for word in split(substitute(dotted, "$", "", {missing_ok = true}), ".") do
     if word ~= "" then words[word] = true end
   end
   return nil
@@ -216,7 +216,7 @@ end
 -- are not read.
 function label_names(value)
   local names = {}
-  for m in re_find_all(substitute(value, "\\n", " "), "\\b(" .. NAME .. ")") do
+  for m in re_find_all(substitute(value, "\\n", " ", {missing_ok = true}), "\\b(" .. NAME .. ")") do
     local name = m.groups[1]
     if re_find(name, "^[A-Z][A-Za-z0-9_]*\\.") ~= nil or re_find(name, "^[A-Z][a-z0-9]+[A-Z][A-Za-z0-9]*$") ~= nil then
       push(names, name)
@@ -230,7 +230,7 @@ function labeled_ids(fence)
   local labeled = {}
   for row in fence do
     local m = re_find(row.text, "^ *(\"[^\"]*\"|[A-Za-z_][A-Za-z0-9_]*) *\\[[^\\]]*\\blabel *=")
-    if m ~= nil then labeled[substitute(m.groups[1], "\"", "")] = true end
+    if m ~= nil then labeled[substitute(m.groups[1], "\"", "", {missing_ok = true})] = true end
   end
   return labeled
 end
