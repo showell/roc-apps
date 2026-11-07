@@ -35,7 +35,7 @@ The rest have been rewritten by hand.
 | `Tour.roc` | the whole ride for any platform: the current instant, the instants behind it for stepping back, and what a frame shows — the shapes, the roll, the sky colours, the sun |
 | `Backdrop.roc` | a frame as shapes: the sky's gradient, the sun and its glow, the grass, and the ride's shapes |
 | `Polygon.roc` | makers that turn screen points and colours into `Shapes.Shape` values, for the drawing modules |
-| `HexColor.roc` | a colour as one whole number: its channels, packing them, and shading |
+| `HexColor.roc` | lib's `RgbColor`: its channels, packing them, and shading |
 | `SafariFrame.roc` | a frame painted into pixels in Roc, for the proof tools below |
 | `RideInstant.roc` and the chapter modules | one instant of the ride, the world, the route, the rider, the animals, the scenery, and how each is drawn |
 | `PosedBird.roc` | the bird, the first thing here that was never Codex, with `BirdFlight.roc`, `CrossingSighting.roc` and `BirdStills.roc` |
