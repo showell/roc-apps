@@ -21,6 +21,7 @@ import game.DepthSort
 import game.Distance
 import game.Fraction
 import game.RoadAhead
+import game.SegmentPlace
 import game.Geom
 import game.Ground
 import game.GroundSighting
@@ -76,8 +77,8 @@ expect {
 	third_length = World.route_segment(2).length
 	first_length = World.route_segment(0).length
 	third_length != first_length
-		and length_at(RoadAhead.Position.first) == third_length
-		and length_at(RoadAhead.Position.first.next()) == first_length
+		and length_at(SegmentPlace.Position.first) == third_length
+		and length_at(SegmentPlace.Position.first.next()) == first_length
 }
 
 polygon_of : Shapes.Shape -> { coordinates : List(F64), fill : Brush.Fill }
@@ -450,7 +451,7 @@ lone = |index| {
 ## The segment `number` places along the road ahead of `road_view`.
 numbered_segment : RoadAhead.RoadView, U32 -> RoadAhead.SegmentInView
 numbered_segment = |road_view, number|
-	RoadAhead.segment_in_view_at(road_view, RoadAhead.Position.number(number))
+	RoadAhead.segment_in_view_at(road_view, SegmentPlace.Position.number(number))
 
 ## The world's segment `number`, as the segment just behind the rider.
 segment_behind : U32 -> RoadAhead.SegmentInView
@@ -532,7 +533,7 @@ expect BillboardSighting.bend_sightings(six_segments, segment_behind(0)).len() =
 ## A billboard on the first segment, as the rider at its start sees it.
 critter_fate : Geom.Placed(Billboard) -> BillboardSighting.Fate
 critter_fate = |critter|
-	BillboardSighting.sight_critter(road, { place: Ahead(RoadAhead.Position.first), critter })
+	BillboardSighting.sight_critter(road, { place: Ahead(SegmentPlace.Position.first), critter })
 
 ## A cow 2.5 m to the right of the rider, `forward` metres ahead.
 cow_fate : { forward : Distance, height : Distance } -> BillboardSighting.Fate
@@ -631,7 +632,7 @@ runup_points_to_bend : List(Geom.RiderPoint)
 runup_points_to_bend = RailSighting.runup_points(
 	road,
 	{
-		place: Ahead(RoadAhead.Position.first),
+		place: Ahead(SegmentPlace.Position.first),
 		length: Distance.metres(500.0),
 		across: Across.metres(2.0),
 	},
@@ -639,7 +640,7 @@ runup_points_to_bend = RailSighting.runup_points(
 
 expect RailSighting.run_out_points(
 	road,
-	{ place: Ahead(RoadAhead.Position.first), across: Across.metres(2.0) },
+	{ place: Ahead(SegmentPlace.Position.first), across: Across.metres(2.0) },
 ).len() == 10
 expect runup_points_to_bend.len() == 11
 expect
@@ -731,7 +732,7 @@ corners_of_chunk : U32 -> List(Geom.RiderPoint)
 corners_of_chunk = |chunk_number| GroundSighting.chunk_corners(
 	road,
 	{
-		place: Ahead(RoadAhead.Position.first),
+		place: Ahead(SegmentPlace.Position.first),
 		segment_length: Distance.metres(500.0),
 		chunk_count: 20,
 		chunk_number,

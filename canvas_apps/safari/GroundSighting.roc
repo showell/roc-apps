@@ -6,6 +6,7 @@
 import Along
 import Distance
 import RoadAhead
+import SegmentPlace
 import Geom
 import Ground
 import BendView
@@ -19,7 +20,7 @@ GroundSighting :: [].{
 	## One chunk of the road along the segment at `place`, which is
 	## `segment_length` long and laid in `chunk_count` chunks.
 	RoadChunk : {
-		place : RoadAhead.SegmentPlace,
+		place : SegmentPlace,
 		segment_length : Distance,
 		chunk_count : U32,
 		chunk_number : U32,
@@ -179,7 +180,7 @@ bend_corners = |road, bend| {
 pond_patches : RoadAhead.RoadView,
 {
 	segment : World.Segment,
-	place : RoadAhead.SegmentPlace,
+	place : SegmentPlace,
 } -> List(Ground.Patch)
 pond_patches = |road, { segment, place }|
 	if Scenery.is_pond(segment.bend_life) {

@@ -8,6 +8,7 @@ import game.Along
 import game.Angle
 import game.Distance
 import game.RoadAhead
+import game.SegmentPlace
 import game.Geom
 import game.GroundSighting
 import game.BendView
@@ -92,8 +93,8 @@ road_with = |turn| {
 bend_of : RoadAhead.RoadView -> BendView
 bend_of = |road|
 	BendView.of_segment(
-		RoadAhead.segment_at(road, RoadAhead.Position.first),
-		Ahead(RoadAhead.Position.first),
+		RoadAhead.segment_at(road, SegmentPlace.Position.first),
+		Ahead(SegmentPlace.Position.first),
 	)
 
 ## The apex of a bend of `turn`.

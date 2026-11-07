@@ -9,6 +9,7 @@ import Along
 import Angle
 import Camera
 import RoadAhead
+import SegmentPlace
 import Distance
 import Fraction
 import Geom
@@ -491,7 +492,7 @@ plain_tower = { yaw: Angle.straight_ahead, beacon_brightness: Fraction.zero }
 context_along : F64 -> RoadAhead.RoadContext
 context_along = |along| {
 	road: start_road,
-	place: Ahead(RoadAhead.Position.first),
+	place: Ahead(SegmentPlace.Position.first),
 	along: Along.metres(along),
 	across: Across.metres(20.0),
 }

@@ -6,6 +6,7 @@ import Across
 import Along
 import Distance
 import RoadAhead
+import SegmentPlace
 import Geom
 import GuardRail
 import BendView
@@ -71,7 +72,7 @@ RailSighting :: [].{
 	## metre, ending at the segment's end.
 	runup_points : RoadAhead.RoadView,
 	{
-		place : RoadAhead.SegmentPlace,
+		place : SegmentPlace,
 		length : Distance,
 		across : Across,
 	} -> List(Geom.RiderPoint)
@@ -94,7 +95,7 @@ RailSighting :: [].{
 	## at `across`: a point a metre, the first a metre in.
 	run_out_points : RoadAhead.RoadView,
 	{
-		place : RoadAhead.SegmentPlace,
+		place : SegmentPlace,
 		across : Across,
 	} -> List(Geom.RiderPoint)
 	run_out_points = |road, { place, across }|

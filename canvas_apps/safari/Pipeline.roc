@@ -9,6 +9,7 @@
 import Across
 import Along
 import RoadAhead
+import SegmentPlace
 import Detail
 import Distance
 import Geom
@@ -23,7 +24,7 @@ Pipeline :: [].{
 	## that is from the camera, on the rider's level and past the near plane. It
 	## lasts one frame.
 	Sighted(kind) : {
-		place : RoadAhead.SegmentPlace,
+		place : SegmentPlace,
 		along : Along,
 		across : Across,
 		foot : Geom.LevelPoint,
@@ -44,7 +45,7 @@ Pipeline :: [].{
 	sighting_of : Geom.Placed(kind),
 	{
 		road : RoadAhead.RoadView,
-		place : RoadAhead.SegmentPlace,
+		place : SegmentPlace,
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera])
 	sighting_of = |placed, { road, place }| {
 		seen = RoadAhead.rider_point_at(road, { place, along: placed.along, across: placed.across })
@@ -62,7 +63,7 @@ Pipeline :: [].{
 	tall_sighting_of : Geom.Placed(kind),
 	{
 		road : RoadAhead.RoadView,
-		place : RoadAhead.SegmentPlace,
+		place : SegmentPlace,
 		size_test : Pipeline.SizeTest,
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera, TooSmall])
 		where [kind.scenery_height : kind -> Distance]

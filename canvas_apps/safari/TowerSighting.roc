@@ -10,6 +10,7 @@ import Beacon
 import Clock
 import Distance
 import RoadAhead
+import SegmentPlace
 import Geom
 import Pipeline
 import Tower
@@ -110,7 +111,7 @@ mid_tower_key_offset = 60
 tower_if_ahead : RoadAhead.RoadView,
 {
 	clock : Clock,
-	place : RoadAhead.SegmentPlace,
+	place : SegmentPlace,
 	along : Along,
 	across : Across,
 	yaw : Angle.Turn,
@@ -178,7 +179,7 @@ origin_road = short_road(0)
 ## The start of the ride on `road`, on the rider's own segment.
 ride_start : RoadAhead.RoadView -> { in_view : RoadAhead.SegmentInView, clock : Clock }
 ride_start = |road| {
-	in_view: RoadAhead.segment_in_view_at(road, RoadAhead.Position.first),
+	in_view: RoadAhead.segment_in_view_at(road, SegmentPlace.Position.first),
 	clock: Clock.start,
 }
 
@@ -200,7 +201,7 @@ first_tower_on : U32 -> Pipeline.Sighted(Tower)
 first_tower_on = |number| TowerSighting.segment_towers(
 	origin_road,
 	{
-		in_view: RoadAhead.segment_in_view_at(origin_road, RoadAhead.Position.number(number)),
+		in_view: RoadAhead.segment_in_view_at(origin_road, SegmentPlace.Position.number(number)),
 		clock: Clock.start,
 	},
 ).first() ?? crash "TowerSighting: the first two segments' towers are in view"
@@ -278,9 +279,9 @@ expect TowerSighting.towers_in_view(short_road(2), Clock.start).len() == 4
 expect
 	TowerSighting.towers_in_view(short_road(1), Clock.start).map(|tower| tower.place)
 		== [
-			Ahead(RoadAhead.Position.number(0)),
-			Ahead(RoadAhead.Position.number(1)),
-			Ahead(RoadAhead.Position.number(2)),
+			Ahead(SegmentPlace.Position.number(0)),
+			Ahead(SegmentPlace.Position.number(1)),
+			Ahead(SegmentPlace.Position.number(2)),
 			RoadAhead.place_behind(World.route_segment(0)),
 		]
 expect TowerSighting.towers_in_view(

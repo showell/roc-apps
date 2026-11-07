@@ -6,6 +6,7 @@ import Along
 import Camera
 import Distance
 import RoadAhead
+import SegmentPlace
 import Fraction
 import Geom
 import Ground
@@ -30,7 +31,7 @@ TruckShape :: [].{
 	## the rider, and the box it fills.
 	TruckInView : {
 		view : RoadAhead.CameraView,
-		place : RoadAhead.SegmentPlace,
+		place : SegmentPlace,
 		box : TruckShape.TruckBox,
 	}
 

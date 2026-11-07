@@ -56,6 +56,7 @@ package
 		SceneShapes,
 		Scenery,
 		Screen,
+		SegmentPlace,
 		Sky,
 		Speed,
 		Steps,

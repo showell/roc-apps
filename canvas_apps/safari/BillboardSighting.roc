@@ -3,6 +3,7 @@
 ## its baby at each bend, and the ducks on each pond.
 import Billboard
 import RoadAhead
+import SegmentPlace
 import Geom
 import Lens
 import Pipeline
@@ -73,7 +74,7 @@ BillboardSighting :: [].{
 	## is wide. Giving critters the tree's test would change what the ride draws.
 	sight_critter : RoadAhead.RoadView,
 	{
-		place : RoadAhead.SegmentPlace,
+		place : SegmentPlace,
 		critter : Geom.Placed(Billboard),
 	} -> BillboardSighting.Fate
 	sight_critter = |road, { place, critter }|
@@ -93,7 +94,7 @@ BillboardSighting :: [].{
 ## Whether a segment at `place` is in reach: among the first `reach` of the
 ## road ahead, or the segment just behind, which meets the rider's own at its
 ## bend.
-is_within_reach : RoadAhead.SegmentPlace, U32 -> Bool
+is_within_reach : SegmentPlace, U32 -> Bool
 is_within_reach = |place, reach|
 	match place {
 		Ahead(position) => position.is_within_first(reach)

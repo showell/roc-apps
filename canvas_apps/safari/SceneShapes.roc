@@ -8,6 +8,7 @@ import Distance
 import Geom
 import World
 import RoadAhead
+import SegmentPlace
 import Conifer
 import GuardRail
 import Picture
@@ -140,7 +141,7 @@ foot_ahead = |forward|
 
 tree_at : F64 -> Pipeline.Sighted(Conifer)
 tree_at = |forward| {
-	place: Ahead(RoadAhead.Position.first),
+	place: Ahead(SegmentPlace.Position.first),
 	along: Along.metres(forward),
 	across: Across.middle,
 	foot: foot_ahead(forward),
@@ -243,7 +244,7 @@ from_origin = view_from(origin, Pixels.of(500.0))
 ## A green tree `along` metres into the first segment, 3.5 m right of the
 ## road's middle.
 green_tree_at = |along| {
-	place: Ahead(RoadAhead.Position.first),
+	place: Ahead(SegmentPlace.Position.first),
 	tree: {
 		along: Along.metres(along),
 		across: Across.metres(3.5),
@@ -288,7 +289,7 @@ expect
 
 ## The rider's own segment, as a segment in `view`.
 first_in_view : RoadAhead.CameraView -> RoadAhead.SegmentInView
-first_in_view = |view| RoadAhead.segment_in_view_at(view.road, RoadAhead.Position.first)
+first_in_view = |view| RoadAhead.segment_in_view_at(view.road, SegmentPlace.Position.first)
 
 first_sightings : List(Pipeline.Sighted(Conifer))
 first_sightings = TreeSighting.segment_sightings(from_origin, first_in_view(from_origin))
@@ -360,7 +361,7 @@ expect
 		(499.0, 0),
 		(600.0, 1),
 		(900.0, 2),
-	].all(|(lead, want)| truck_ahead_of(lead).place == Ahead(RoadAhead.Position.number(want)))
+	].all(|(lead, want)| truck_ahead_of(lead).place == Ahead(SegmentPlace.Position.number(want)))
 
 expect
 	[
