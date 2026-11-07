@@ -2625,6 +2625,40 @@ This page lists what catches a reader of Roc out in Safari Ride, sorted by what 
 | A green gate over a wrong brake light | The gate is blind to whatever no listed frame shows | Proving it |
 | A page that differs from the hashed frame | The hash proves `ShapesPixels`'s pixels. The page's come from the browser's canvas, with anti-aliasing | Proving it |
 
+## Appendix: glossary
+
+This book uses these words in one sense only.
+
+| Word | What it means |
+|---|---|
+| Across | A place across the road, measured from its middle. Left is negative. |
+| Along | A place along a segment, measured from its start. |
+| Backdrop | The sky, the grass and the sun. It's the first thing in every frame. |
+| Billboard | A critter that stands still and always faces the camera, like the elephant. The code calls these cutouts. The bull is the fanciest one, with gradients in its still. |
+| Canvas | Where the painter puts shapes. Safari Ride's frames are for a canvas 960 pixels wide and 600 pixels tall. |
+| Chain | The rider's segment and the segments after it, as far as the rider can see. |
+| Corner | One of the points of a polygon. |
+| Critter | Any animal in the ride, from the cat to the elephant. It's just our word for them: other people would say animals. A tree or a tower is never a critter. Critters come in two sorts: billboards, and motion critters. |
+| Depth | How far ahead of the camera something is. Far things come first in a frame. |
+| Frame | Everything shown for one step: the backdrop, the mountains and the ground, then a series of pictures, far to near. |
+| Gawking | What the speed does for a pig: it drops, and it stays down to the end of the segment. |
+| Kind | Which sort of object something is, like `Conifer`. |
+| Look | What the eyes do for a pig: they follow it until it's too far round. |
+| Motion critter | A hand-drawn critter that moves, like the cat and the bird. |
+| Object | A thing in the picture with a place of its own: a tree, a tower or a critter. |
+| Painter | What puts shapes on the canvas. It's never Roc. |
+| Picture | How one object looks in one frame. A frame holds a series of pictures, so the app never draws "a new picture" at each step. |
+| Placed | Standing at a fixed spot on the road, measured `along` and `across` a segment. |
+| Polygon | A shape with three or more corners, and nearly every shape in a frame is one. |
+| Rendered | Made into a picture, with its depth attached. |
+| Route | The list of segments that makes up the whole ride. |
+| Segment | One stretch of road, from one bend to the next. |
+| Shape | One item in a frame's list, such as a polygon, a disc or a rectangle. |
+| Sighting | Where an object is relative to the camera, measured `right` and `forward`. It lasts one frame. |
+| Step | One tick of the ride. Each step has one frame. |
+| Still | A critter's drawing, as polygons traced ahead of time. |
+| Tier | One layer of a conifer's crown. |
+
 ## Credits
 
 Safari Ride was designed by Steve Howell. Claude wrote most of the code and this tutorial under his direction.
