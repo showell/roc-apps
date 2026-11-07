@@ -8,7 +8,6 @@
 ## where the object is.
 import RoadAhead
 import SegmentPlace
-import Detail
 import Distance
 import Geom
 import Picture
@@ -29,7 +28,7 @@ Pipeline :: [].{
 	## The size test of scenery seen through the camera's own lens, so that what
 	## is at the edge of sight comes and goes as the camera widens.
 	scenery_test : RoadAhead.CameraView -> Pipeline.SizeTest
-	scenery_test = |view| { focal: view.cam_focal, smallest_px: Detail.min_scenery_px }
+	scenery_test = |view| { focal: view.cam_focal, smallest_px: min_scenery_px }
 
 	## `placed` as the rider sees it, on the segment at `place`, if it is at or
 	## past the camera's near plane.
@@ -80,3 +79,7 @@ Pipeline :: [].{
 		picture: sighting.kind.scenery_picture({ spot: sighting.spot, cam_focal, context }),
 	}
 }
+
+## Scenery that would stand less than this tall on the screen isn't drawn.
+min_scenery_px : Pixels
+min_scenery_px = Pixels.of(2.0)
