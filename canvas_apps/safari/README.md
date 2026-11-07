@@ -36,7 +36,7 @@ The rest have been rewritten by hand.
 | `FrameView.roc` | what the camera shows at one instant: the backdrop (the sky's colours and the sun), the ride's shapes and the roll, and the whole frame in paint order |
 | `Sky.roc`, `Sun.roc` and `Grass.roc` | what is behind the ride: the sky's gradient, the sun and its glow, and the grass, each drawn by its own module over `Screen.roc`'s rectangles, which reach past a rolled screen's corners |
 | `Polygon.roc` | makers that turn screen points and colours into `Shapes.Shape` values, for the drawing modules |
-| `HexColor.roc` | lib's `RgbColor`: its channels, packing them, and shading |
+| `ColorShade.roc` | lib's `RgbColor` shaded by a factor or blended toward another, channel by channel |
 | `SafariFrame.roc` | a frame painted into pixels in Roc, for the proof tools below |
 | `RideInstant.roc` and the chapter modules | one instant of the ride, the world, the route, the rider, the animals, the scenery, and how each is drawn |
 | `PosedBird.roc` | the bird, the first thing here that was never Codex, with `BirdFlight.roc`, `EncounterSighting.roc` and `BirdStills.roc` |
