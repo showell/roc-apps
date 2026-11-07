@@ -9,7 +9,6 @@ import game.Across
 import game.Angle
 import game.Coast
 import game.Motorcycle
-import game.Distance
 import game.LeanSearch
 import game.Geom
 import game.Tour
@@ -58,94 +57,40 @@ target = Across.middle
 ## A point on an arc: how far along the road from the rider, and where across it.
 ArcPoint : { forward : F64, across : F64 }
 
-## One try of the search: the lean it tried, the bounds it tried it between,
-## what the rehearsal found, and the way the rehearsal drew it.
-Rehearsal : {
-	lean : Angle.Lean,
-	low : Angle.Lean,
-	high : Angle.Lean,
-	outcome : Coast.Outcome,
-	lean_correction : [MoreRight, MoreLeft],
-	path_points : List(ArcPoint),
+## The search's bounds, as `LeanSearch.best_lean` starts it.
+search : { target : Across, low : Angle.Lean, high : Angle.Lean }
+search = {
+	target,
+	low: rider.lean.minus(LeanSearch.max_lean_change),
+	high: rider.lean.plus(LeanSearch.max_lean_change),
 }
 
-## The road's edge that stops an arc, on the right. The left's is its mirror.
-arc_edge : Distance
-arc_edge = Geom.road_half_width.minus(Coast.shoulder_margin)
+## One try of the search, and the way its coast drew it.
+Rehearsal : { lean_try : LeanSearch.LeanTry, path_points : List(ArcPoint) }
 
-## Whether an arc that has reached `motion` runs on. These are the tests in
-## `Coast.project`, which answers with only where an arc ends. An `expect` below
-## holds the two to the same end.
-runs_on : Motorcycle -> Bool
-runs_on = |motion| {
-	forward = motion.along.distance_from(rider.along)
-	on_road =
-		motion.across >= Across.left_of_middle(arc_edge)
-			and motion.across <= Across.right_of_middle(arc_edge)
-	on_road and forward < Coast.clear_distance
-}
-
-## The way a rider coasts with `lean`: the call `Coast.project` makes.
+## Where a coast with `lean` goes, each step as a point on the arc.
 points_of : Angle.Lean -> List(ArcPoint)
-points_of = |lean| {
-	var $motion = rider.with_lean(lean)
-	var $points = []
-	var $going = True
-	while $going {
-		$motion = $motion.motorcycle_at_next_step($motion.steady_controls())
-		$points = $points.append({
-			forward: $motion.along.distance_from(rider.along).to_metres(),
-			across: $motion.across.to_metres(),
-		})
-		$going = runs_on($motion)
-	}
-	$points
-}
-
-## The tries from `at` on, between `low` and `high`: the bisection in
-## `LeanSearch.search_lean`, keeping what that throws away.
-rehearsals_from : { low : Angle.Lean, high : Angle.Lean, at : U8 } -> List(Rehearsal)
-rehearsals_from = |{ low, high, at }|
-	if at >= LeanSearch.lean_search_round_count {
-		[]
-	} else {
-		lean = low.halfway_to(high)
-		outcome = Coast.project(rider.with_lean(lean))
-		lean_correction = LeanSearch.lean_correction(outcome, target)
-		next =
-			match lean_correction {
-				MoreRight => { low: lean, high, at: at + 1 }
-				MoreLeft => { low, high: lean, at: at + 1 }
-			}
-		rehearsals_from(next).prepend({
-			lean,
-			low,
-			high,
-			outcome,
-			lean_correction,
-			path_points: points_of(lean),
-		})
-	}
+points_of = |lean|
+	Coast.coast_path(rider.with_lean(lean)).path_motorcycles.map(
+		|motion| {
+			forward: motion.along.distance_from(rider.along).to_metres(),
+			across: motion.across.to_metres(),
+		},
+	)
 
 rehearsals : List(Rehearsal)
 rehearsals =
-	rehearsals_from({
-		low: rider.lean.minus(LeanSearch.max_lean_change),
-		high: rider.lean.plus(LeanSearch.max_lean_change),
-		at: 0,
-	})
+	LeanSearch.search_tries(rider, search).map(
+		|lean_try| { lean_try, path_points: points_of(LeanSearch.tried_lean(lean_try)) },
+	)
 
-## The lean the search settled on, midway between its last bounds.
+## Which way the search went after a try.
+lean_correction_of : Rehearsal -> [MoreRight, MoreLeft]
+lean_correction_of = |{ lean_try, .. }| LeanSearch.lean_correction(lean_try.outcome, target)
+
+## The lean the search settled on.
 chosen_lean : Angle.Lean
-chosen_lean =
-	match rehearsals.last() {
-		Ok({ lean, low, high, lean_correction, .. }) =>
-			match lean_correction {
-				MoreRight => lean.halfway_to(high)
-				MoreLeft => low.halfway_to(lean)
-			}
-		Err(_) => crash "RehearsalWidgetApp.chosen_lean: the search has tries"
-	}
+chosen_lean = LeanSearch.search_lean(rider, search)
 
 chosen_points : List(ArcPoint)
 chosen_points = points_of(chosen_lean)
@@ -310,7 +255,7 @@ color_of = |outcome|
 ## The arcs for a list of tries.
 tries_shapes : List(Rehearsal), F64 -> List(Shapes.Shape)
 tries_shapes = |tries, width|
-	tries.join_map(|{ path_points, outcome, .. }| arc_shapes(path_points, { color: color_of(outcome), width }))
+	tries.join_map(|{ path_points, lean_try }| arc_shapes(path_points, { color: color_of(lean_try.outcome), width }))
 
 rider_mark : Shapes.Shape
 rider_mark = {
@@ -388,9 +333,9 @@ across_text = |across| {
 
 ## What a rehearsal found, in words.
 outcome_text : Rehearsal -> Str
-outcome_text = |{ outcome, path_points, .. }| {
+outcome_text = |{ lean_try, path_points }| {
 	steps = path_points.len().to_str()
-	match outcome {
+	match lean_try.outcome {
 		Leaves({ side: Left, .. }) => "Off the left edge in ${steps} steps"
 		Leaves({ side: Right, .. }) => "Off the right edge in ${steps} steps"
 		EndsAt(end_across) => "Stays on, ends ${across_text(end_across)}"
@@ -398,8 +343,8 @@ outcome_text = |{ outcome, path_points, .. }| {
 }
 
 ## What the search does next, in words.
-verdict_text : Rehearsal -> Str
-verdict_text = |{ lean_correction, .. }|
+verdict_text : [MoreRight, MoreLeft] -> Str
+verdict_text = |lean_correction|
 	match lean_correction {
 		MoreRight => "So try further right"
 		MoreLeft => "So try further left"
@@ -424,10 +369,10 @@ status_lines = |stop|
 			match rehearsals.get(try - 1) {
 				Ok(rehearsal) =>
 					[
-						"Try ${try.to_str()} of ${rehearsals.len().to_str()}: lean ${lean_text(rehearsal.lean)}",
-						"Between ${lean_text(rehearsal.low)} and ${lean_text(rehearsal.high)}",
+						"Try ${try.to_str()} of ${rehearsals.len().to_str()}: lean ${lean_text(LeanSearch.tried_lean(rehearsal.lean_try))}",
+						"Between ${lean_text(rehearsal.lean_try.low)} and ${lean_text(rehearsal.lean_try.high)}",
 						outcome_text(rehearsal),
-						verdict_text(rehearsal),
+						verdict_text(lean_correction_of(rehearsal)),
 					]
 				Err(_) => crash "RehearsalWidgetApp.status_lines: this try is in the list"
 			}
@@ -546,23 +491,12 @@ round_count : U64
 round_count = LeanSearch.lean_search_round_count.to_u64()
 
 # The tries come to the lean the game's own search comes to.
-expect rehearsals.len() == round_count
 expect chosen_lean.to_radians() == LeanSearch.best_lean(rider).to_radians()
 
-# Each path ends where the game's own arc says that arc ends.
-expect
-	rehearsals.all(
-		|{ path_points, outcome, .. }|
-			match (path_points.last(), outcome) {
-				(Ok(point), EndsAt(end_across)) => point.across == end_across.to_metres()
-				(Ok(_), Leaves(_)) | (Err(_), _) => False
-			},
-	)
-
 # Every arc of this step stays on the road, and the search goes both ways.
-expect rehearsals.all(|{ outcome, .. }| color_of(outcome) == kept_color)
-expect rehearsals.any(|{ lean_correction, .. }| lean_correction == MoreRight)
-expect rehearsals.any(|{ lean_correction, .. }| lean_correction == MoreLeft)
+expect rehearsals.all(|{ lean_try, .. }| color_of(lean_try.outcome) == kept_color)
+expect rehearsals.any(|rehearsal| lean_correction_of(rehearsal) == MoreRight)
+expect rehearsals.any(|rehearsal| lean_correction_of(rehearsal) == MoreLeft)
 
 # Going forward runs through every stop and round to the start.
 expect next_stop(Start) == Shown(1)
@@ -630,12 +564,8 @@ expect lean_text(Angle.Lean.degrees(-0.5)) == "0.50 left"
 expect across_text(Across.metres(-0.5)) == "0.5 m left"
 expect across_text(Across.metres(0.5)) == "0.5 m right"
 
-expect verdict_text({ ..rehearsal_one, lean_correction: MoreRight }) == "So try further right"
-expect verdict_text({ ..rehearsal_one, lean_correction: MoreLeft }) == "So try further left"
-
-## The search's first try.
-rehearsal_one : Rehearsal
-rehearsal_one = rehearsals.first() ?? crash "RehearsalWidgetApp.rehearsal_one: the search has tries"
+expect verdict_text(MoreRight) == "So try further right"
+expect verdict_text(MoreLeft) == "So try further left"
 
 # The picture changes with every stop along the ruler.
 expect picture_shapes(Start) != picture_shapes(Shown(1))

@@ -1551,6 +1551,35 @@ expect {
 	}
 }
 
+# A coast's path has a motorcycle for each step it ran and ends where its
+# outcome says, clear of the start when it stays on the road, and `project`
+# gives the same outcome without the path.
+expect {
+	state = {
+		..Motorcycle.initial,
+		yaw: Angle.Turn.radians(-1.5),
+		speed: Speed.metres_a_step(0.7),
+	}
+	coast = Coast.coast_path(state)
+	match coast.outcome {
+		Leaves({ side: Left, after }) =>
+			coast.path_motorcycles.len() == after.to_u32().to_u64()
+				and coast.outcome == Coast.project(state)
+		Leaves({ side: Right, .. }) | EndsAt(_) => False
+	}
+}
+expect {
+	state = { ..Motorcycle.initial, across: Across.metres(1.0) }
+	coast = Coast.coast_path(state)
+	match (coast.outcome, coast.path_motorcycles.last()) {
+		(EndsAt(end_across), Ok(last)) =>
+			last.across == end_across
+				and last.along.distance_from(state.along) >= Coast.clear_distance
+				and coast.outcome == Coast.project(state)
+		(Leaves(_), _) | (EndsAt(_), Err(_)) => False
+	}
+}
+
 ## How many steps a coast runs before it leaves the road.
 steps_off_road : Coast.Outcome -> Steps
 steps_off_road = |coast|
