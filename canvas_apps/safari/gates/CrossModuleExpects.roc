@@ -1025,9 +1025,9 @@ expect {
 	got = towers_on_short_then_long(0, Clock.at_step(30)).map(|tower| tower.kind.beacon_brightness)
 	clock = Clock.at_step(30)
 	want = [
-		Beacon.(0).brightness_at(clock),
-		Beacon.(1).brightness_at(clock),
-		Beacon.(1).opposite().brightness_at(clock),
+		Beacon.of_segment(Route.SegmentIndex.first).brightness_at(clock),
+		Beacon.of_segment(Route.SegmentIndex.number(1)).brightness_at(clock),
+		Beacon.of_segment(Route.SegmentIndex.number(1)).opposite().brightness_at(clock),
 	]
 	got == want and got.map(|brightness| brightness.to_f64()).sum() > 0.0
 }

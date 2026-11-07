@@ -70,7 +70,7 @@ end_tower : RoadAhead.RoadView,
 	clock : Clock,
 } -> Try(Pipeline.Sighted(Tower), [BehindCamera])
 end_tower = |road, { vantage, in_view, clock }| {
-	beacon_brightness = Beacon.(in_view.index.to_u32()).brightness_at(clock)
+	beacon_brightness = Beacon.of_segment(in_view.index).brightness_at(clock)
 	tower_if_ahead(
 		road,
 		{
@@ -95,7 +95,7 @@ mid_tower : RoadAhead.RoadView,
 } -> Try(Pipeline.Sighted(Tower), [BehindCamera, NoMidTower])
 mid_tower = |road, { vantage, in_view, clock }|
 	if Segment.has_mid_tower(in_view.segment) {
-		beacon_brightness = Beacon.(in_view.index.to_u32()).opposite().brightness_at(clock)
+		beacon_brightness = Beacon.of_segment(in_view.index).opposite().brightness_at(clock)
 		tower_if_ahead(
 			road,
 			{
