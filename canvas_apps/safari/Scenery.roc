@@ -1,14 +1,16 @@
 ## Scenery holds the words the world is built from: a segment's colour scheme,
 ## the animals, and how far from the road the herds keep.
 import Distance
+import Geom
 
 Scenery :: [].{
 	Scheme : [AllGreen, GoldGreen, RedGreen]
 	Animal : [Elephant, Giraffe, Zebra, Rhino]
 	BendLife : [Quiet, Animal(Scenery.Animal), DuckPond]
 
-	herd_road_offset : Distance
-	herd_road_offset = Distance.metres(10.0)
+	## How far from the middle of the road the nearest row of a herd stands.
+	herd_front_distance : Distance
+	herd_front_distance = Geom.road_half_width.plus(Distance.metres(10.0))
 
 	is_pond : Scenery.BendLife -> Bool
 	is_pond = |c|
@@ -18,7 +20,6 @@ Scenery :: [].{
 		}
 }
 
-expect Scenery.herd_road_offset.to_metres() == 10.0
 expect Scenery.is_pond(DuckPond)
 expect !Scenery.is_pond(Quiet)
 expect !Scenery.is_pond(Animal(Zebra))

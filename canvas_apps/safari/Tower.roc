@@ -117,7 +117,7 @@ tower_metal : RgbColor
 tower_metal = RgbColor.of(0x9AA0A8)
 
 ## The radius a far tower sinks over, which hides it wholly at 1.8 km. It
-## is tighter than `Geom.ground_curve_radius`, so a tower sinks visibly as
+## is tighter than `Ground.ground_curve_radius`, so a tower sinks visibly as
 ## it recedes: on the ground's curve it would stay in view to 4 km.
 sink_radius : Distance
 sink_radius = Distance.metres(20000.0)
@@ -199,22 +199,6 @@ sunk_below_horizon = |p| {
 	r = p.right.to_metres()
 	f = p.forward.to_metres()
 	Distance.metres((r * r + f * f) / (2.0 * sink_radius.to_metres()))
-}
-
-## The point `fraction` of the way from `from` to `to`.
-point_between : {
-	from : Geom.RaisedPoint,
-	to : Geom.RaisedPoint,
-	fraction : Fraction,
-} -> Geom.RaisedPoint
-point_between = |{ from, to, fraction }| {
-	share = fraction.to_f64()
-	part_way = |start, end| start.plus(end.minus(start).times(share))
-	{
-		right: part_way(from.right, to.right),
-		forward: part_way(from.forward, to.forward),
-		height: part_way(from.height, to.height),
-	}
 }
 
 ## A corner of the tower at `height_on_tower`: drawn in toward the foot as
@@ -389,7 +373,7 @@ brace_shapes : TowerSetting,
 brace_shapes = |tower, { corner, storey_bottom, storey_top, hidden_fraction }| {
 	next = next_corner(corner)
 	brace_up = {
-		from: point_between({
+		from: Geom.point_between({
 			from: corner_at(tower, { corner, height_on_tower: storey_bottom }),
 			to: corner_at(tower, { corner: next, height_on_tower: storey_top }),
 			fraction: hidden_fraction,
@@ -397,7 +381,7 @@ brace_shapes = |tower, { corner, storey_bottom, storey_top, hidden_fraction }| {
 		to: corner_at(tower, { corner: next, height_on_tower: storey_top }),
 	}
 	brace_down = {
-		from: point_between({
+		from: Geom.point_between({
 			from: corner_at(tower, { corner: next, height_on_tower: storey_bottom }),
 			to: corner_at(tower, { corner, height_on_tower: storey_top }),
 			fraction: hidden_fraction,
@@ -644,26 +628,6 @@ expect sunk_below_horizon({
 	right: Distance.metres(0.0),
 	forward: Distance.metres(0.0),
 }).to_metres() == 0.0
-
-expect
-	point_between({
-		from: {
-			right: Distance.metres(0.0),
-			forward: Distance.metres(10.0),
-			height: Distance.metres(20.0),
-		},
-		to: {
-			right: Distance.metres(8.0),
-			forward: Distance.metres(30.0),
-			height: Distance.metres(0.0),
-		},
-		fraction: Fraction.of(0.25),
-	})
-		== {
-			right: Distance.metres(2.0),
-			forward: Distance.metres(15.0),
-			height: Distance.metres(15.0),
-		}
 
 expect
 	screen_rod({
