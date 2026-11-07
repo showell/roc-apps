@@ -7,16 +7,13 @@ import Across
 import Along
 import Conifer
 import Distance
+import Geom
 import Scenery
 
 Trees :: [].{
 
 	## A planted tree: where it stands on its segment, and its kind.
-	Tree : {
-		along : Along,
-		across : Across,
-		conifer : Conifer,
-	}
+	Tree : Geom.Placed(Conifer)
 
 	tree_spacing : Distance
 	tree_spacing = Distance.metres(30.0)
@@ -64,7 +61,7 @@ Trees :: [].{
 			left_tree = {
 				along: $along,
 				across: Across.left_of_middle(tree_distance),
-				conifer: $conifer,
+				kind: $conifer,
 			}
 			right_tree = { ..left_tree, across: Across.right_of_middle(tree_distance) }
 			$trees = $trees.append(left_tree).append(right_tree)
@@ -136,7 +133,7 @@ expect
 		]
 
 expect
-	gold_green_trees.map(|tree| tree.conifer)
+	gold_green_trees.map(|tree| tree.kind)
 		== [
 			Conifer.BigGreen,
 			Conifer.BigGreen,

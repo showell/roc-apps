@@ -2,10 +2,9 @@
 ## triangles on the screen. A near one's are cones seen from the camera: the
 ## outline of a ring of points round each tier's base and its apex, so the
 ## tiers fatten as the camera passes under them. It works from what it is
-## handed: a tree's kind, where it stands from the camera, how many trees are
-## nearer, and the lens.
+## handed: a tree's height and color, where it stands from the camera, how many
+## trees are nearer, and the lens.
 import Camera
-import Conifer
 import Detail
 import Distance
 import Fraction
@@ -20,12 +19,12 @@ import lib.Shapes
 TreeShapes :: [].{
 
 	## A tree in front of the camera, so of its lengths only `right` can be
-	## negative. A record with more in it can be handed to `tree_picture` as it is.
-	TreeAhead(rest) : {
+	## negative.
+	TreeAhead : {
 		right : Distance,
 		forward : Distance,
-		conifer : Conifer,
-		..rest,
+		height : Distance,
+		foliage_color : I64,
 	}
 
 	## Where a tree stands on the screen, and how big it looks there.
@@ -50,12 +49,12 @@ TreeShapes :: [].{
 	## The tree on the screen: its trunk, then its tiers top to bottom. The
 	## nearest trees have a shaded trunk. The crown is cones, shaded by how near
 	## they are, within Detail.cone_reach, and triangles beyond it.
-	tree_picture : { tree : TreeShapes.TreeAhead(rest), nearer_tree_count : U16 }, Pixels -> Picture
+	tree_picture : { tree : TreeShapes.TreeAhead, nearer_tree_count : U16 }, Pixels -> Picture
 	tree_picture = |{ tree, nearer_tree_count }, cam_focal| {
 		tip = {
 			right: tree.right,
 			forward: tree.forward,
-			height: tree.conifer.height(),
+			height: tree.height,
 		}
 		screen_tree = tree_on_screen(tip, cam_focal)
 		trunk_finish = if nearer_tree_count < Detail.round_trunk_limit {
@@ -67,7 +66,7 @@ TreeShapes :: [].{
 			tip,
 			cam_focal,
 			screen_tree,
-			color: conifer_color(tree.conifer),
+			color: tree.foliage_color,
 			crown: crown_of(tree.forward),
 		}
 		trunk = trunk_shape(screen_tree, trunk_finish)
@@ -162,24 +161,6 @@ tiers = [
 
 trunk_color : I64
 trunk_color = 0x5A3E22
-
-green_color : I64
-green_color = 0x1C5A22
-
-gold_color : I64
-gold_color = 0xCF9A18
-
-red_color : I64
-red_color = 0xB23A2A
-
-## A conifer's foliage color.
-conifer_color : Conifer -> I64
-conifer_color = |conifer|
-	match conifer {
-		BigGreen | SmallGreen => green_color
-		Gold => gold_color
-		Red => red_color
-	}
 
 ## A tree is 136 parts tall, and the shares below are parts of that. Of those
 ## parts, 55 are trunk below the crown.
@@ -379,10 +360,6 @@ expect tiers.map(|tier| tier.width.to_f64()) == [
 expect tiers.len() == 8
 expect ring_point_count == 16
 expect trunk_color == 0x5A3E22
-expect conifer_color(Conifer.BigGreen) == 0x1C5A22
-expect conifer_color(Conifer.SmallGreen) == 0x1C5A22
-expect conifer_color(Conifer.Gold) == 0xCF9A18
-expect conifer_color(Conifer.Red) == 0xB23A2A
 
 expect trunk_height_share.to_f64() + crown_height_share.to_f64() == 1.0
 

@@ -100,21 +100,21 @@ tree_at : F64, F64 -> Trees.Tree
 tree_at = |along, across| {
 	along: Along.metres(along),
 	across: Across.metres(across),
-	conifer: Conifer.Red,
+	kind: Conifer.Red,
 }
 
 left_trees : List(Trees.Tree)
 left_trees = [20.0, 40.0, 60.0, 80.0, 100.0].map(|along| tree_at(along, -6.0))
 
 far_tree : Trees.Tree
-far_tree = { ..tree_at(130.0, 6.0), conifer: Conifer.Gold }
+far_tree = { ..tree_at(130.0, 6.0), kind: Conifer.Gold }
 
 ## How high a bird perches on a left tree, and on the far tree.
 left_top : F64
-left_top = Conifer.Red.height().to_metres()
+left_top = Conifer.Red.scenery_height().to_metres()
 
 far_top : F64
-far_top = Conifer.Gold.height().to_metres()
+far_top = Conifer.Gold.scenery_height().to_metres()
 
 ## A straight segment 200 m long holding only `trees`.
 segment_of : List(Trees.Tree) -> World.Segment

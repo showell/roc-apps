@@ -159,7 +159,7 @@ tree_top : Trees.Tree -> Animation.Spot
 tree_top = |tree| {
 	along: tree.along,
 	across: tree.across,
-	lift: tree.conifer.height(),
+	lift: tree.kind.scenery_height(),
 }
 
 ## One flap of the wings: `up` for half its frames and `down` for the rest.
@@ -184,7 +184,7 @@ tree_at : F64, F64 -> Trees.Tree
 tree_at = |along, across| {
 	along: Along.metres(along),
 	across: Across.metres(across),
-	conifer: Conifer.Red,
+	kind: Conifer.Red,
 }
 
 left_tree : Trees.Tree
@@ -201,14 +201,14 @@ sample_trees = [
 ]
 
 sample_flight : BirdFlight.Flight
-sample_flight = { from: left_tree, to: { ..tree_at(140.0, 6.0), conifer: Conifer.Gold } }
+sample_flight = { from: left_tree, to: { ..tree_at(140.0, 6.0), kind: Conifer.Gold } }
 
 ## How high a bird perches on a red tree, and on a gold one.
 red_top : F64
-red_top = Conifer.Red.height().to_metres()
+red_top = Conifer.Red.scenery_height().to_metres()
 
 gold_top : F64
-gold_top = Conifer.Gold.height().to_metres()
+gold_top = Conifer.Gold.scenery_height().to_metres()
 
 ## A left and a right tree at each of `alongs`.
 pairs_at : List(F64) -> List(Trees.Tree)

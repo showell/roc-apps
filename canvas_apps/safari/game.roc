@@ -39,6 +39,7 @@ package
 		Mountains,
 		Picture,
 		Pigs,
+		Pipeline,
 		Pixels,
 		Polygon,
 		RailSighting,

@@ -32,6 +32,24 @@ Geom :: [].{
 	## A point on one segment of the road.
 	RoadPoint : { along : Along, across : Across }
 
+	## An object standing on one segment of the road, and what kind of object
+	## it is. This is the object's lasting form, and `Pipeline.sighting_of` turns
+	## it into a `Sighted` for a frame.
+	Placed(kind) : {
+		along : Along,
+		across : Across,
+		kind : kind,
+	}
+
+	## An object in the rider's view, and what kind of object it is. It is ahead
+	## of the rider, so of its lengths only `right` can be negative. It lasts one
+	## frame, and `Pipeline.rendering_of` turns it into a `Rendered`.
+	Sighted(kind) : {
+		right : Distance,
+		forward : Distance,
+		kind : kind,
+	}
+
 	## A point on one segment of the road, measured from the road's left edge.
 	## A bend turns about a corner of the road, so its arithmetic works from
 	## that edge.

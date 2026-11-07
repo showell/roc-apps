@@ -5,10 +5,12 @@ import Cutouts
 import BirdSighting
 import CatSighting
 import Clock
+import Conifer
 import CutoutSighting
 import DepthSort
 import Distance
 import Chain
+import Geom
 import GuardRail
 import RailSighting
 import TowerSighting
@@ -22,7 +24,7 @@ import World
 ## The things in view, each kind in its own list, and the depth order
 ## that names each by its place in its list.
 Scene := {
-	trees : List(TreeSighting),
+	trees : List(Geom.Sighted(Conifer)),
 	towers : List(TowerSighting),
 	cutouts : List(Cutouts.Cutout),
 	cats : List(CatSighting),

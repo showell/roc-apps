@@ -16,11 +16,11 @@ import Chain
 import Conifer
 import GuardRail
 import Picture
+import Pipeline
 import Rendered
 import Scene
 import Tower
 import TowerSighting
-import TreeShapes
 import TreeSighting
 import TruckPicture
 import TruckSighting
@@ -35,16 +35,23 @@ SceneShapes :: [].{
 		scene_renderings(scene, view).join_map(|rendering| rendering.picture.to_shapes())
 
 	## How many of `trees` are nearer than `forward`.
-	nearer_tree_count : List(TreeSighting), Distance -> U16
+	nearer_tree_count : List(Geom.Sighted(Conifer)), Distance -> U16
 	nearer_tree_count = |trees, forward| trees.count_if(|tree| tree.forward < forward).to_u16_wrap()
 
 	## A tree, told how many of `trees` are nearer, which is all it needs of
 	## the others.
-	tree_picture : TreeSighting, { trees : List(TreeSighting), cam_focal : Pixels } -> Picture
-	tree_picture = |tree, { trees, cam_focal }|
-		TreeShapes.tree_picture(
-			{ tree, nearer_tree_count: SceneShapes.nearer_tree_count(trees, tree.forward) },
-			cam_focal,
+	tree_rendering : Geom.Sighted(Conifer),
+	{
+		trees : List(Geom.Sighted(Conifer)),
+		cam_focal : Pixels,
+	} -> Rendered
+	tree_rendering = |tree, { trees, cam_focal }|
+		Pipeline.rendering_of(
+			tree,
+			{
+				cam_focal,
+				context: { nearer_tree_count: SceneShapes.nearer_tree_count(trees, tree.forward) },
+			},
 		)
 
 	## Where a tower's four footprint corners stand in the rider's view.
@@ -110,10 +117,10 @@ subject_picture = |scene, { view, subject }| {
 	cam_focal = view.cam_focal
 	match subject {
 		Tree(place) =>
-			SceneShapes.tree_picture(
+			SceneShapes.tree_rendering(
 				thing_at(scene.trees, place),
 				{ trees: scene.trees, cam_focal },
-			)
+			).picture
 		Tower(place) =>
 			Picture.from_shapes(SceneShapes.tower_shapes(view, thing_at(scene.towers, place)))
 		Rail(place) =>
@@ -148,14 +155,14 @@ truck_shapes = |view, truck_at|
 		NoTruck => crash "SceneShapes.truck_shapes: the truck is in the depth order only in view"
 	}
 
-tree_at : F64 -> TreeSighting
+tree_at : F64 -> Geom.Sighted(Conifer)
 tree_at = |forward| {
 	right: Distance.metres(0.0),
 	forward: Distance.metres(forward),
-	conifer: Conifer.BigGreen,
+	kind: Conifer.BigGreen,
 }
 
-spread_trees : List(TreeSighting)
+spread_trees : List(Geom.Sighted(Conifer))
 spread_trees = [10.0, 20.0, 30.0, 40.0, 50.0].map(tree_at)
 
 expect SceneShapes.nearer_tree_count(spread_trees, Distance.metres(10.0)) == 0
@@ -165,7 +172,7 @@ expect SceneShapes.nearer_tree_count(spread_trees, Distance.metres(60.0)) == 5
 expect SceneShapes.nearer_tree_count(spread_trees, Distance.metres(5.0)) == 0
 expect SceneShapes.nearer_tree_count([], Distance.metres(10.0)) == 0
 
-tied_trees : List(TreeSighting)
+tied_trees : List(Geom.Sighted(Conifer))
 tied_trees = List.repeat(tree_at(20.0), 4)
 
 expect SceneShapes.nearer_tree_count(tied_trees, Distance.metres(20.0)) == 0
@@ -213,15 +220,15 @@ expect SceneShapes.tower_shapes(start_view, tower_along(200.0)).len() > 0
 expect SceneShapes.tower_shapes(start_view, tower_along(1000.0)).len() > 0
 expect SceneShapes.tower_shapes(start_view, tower_along(-100.0)).len() == 0
 
-cluster_sightings : List(TreeSighting)
+cluster_sightings : List(Geom.Sighted(Conifer))
 cluster_sightings = [10.0, 11.0, 12.0, 13.0, 14.0].map(tree_at)
 
 cluster_shapes : F64 -> List(Shapes.Shape)
 cluster_shapes = |forward|
-	SceneShapes.tree_picture(
+	SceneShapes.tree_rendering(
 		tree_at(forward),
 		{ trees: cluster_sightings, cam_focal: Pixels.of(500.0) },
-	).to_shapes()
+	).picture.to_shapes()
 
 second_shape_points : List(Shapes.Shape) -> U64
 second_shape_points = |shapes|
@@ -281,11 +288,11 @@ green_tree_at = |along| {
 	tree: {
 		along: Along.metres(along),
 		across: Across.metres(3.5),
-		conifer: Conifer.BigGreen,
+		kind: Conifer.BigGreen,
 	},
 }
 
-lone_tree : TreeSighting
+lone_tree : Geom.Sighted(Conifer)
 lone_tree = TreeSighting.sighting_of(
 	from_origin,
 	green_tree_at(120.0),
@@ -298,7 +305,7 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 expect TreeSighting.sighting_of(from_origin, green_tree_at(120.0)).is_ok()
-expect lone_tree.conifer == Conifer.BigGreen
+expect lone_tree.kind == Conifer.BigGreen
 expect
 	[
 		(TreeSighting.sighting_of(from_origin, green_tree_at(0.4)), False),
@@ -319,11 +326,11 @@ expect
 		},
 	)
 
-first_sightings : List(TreeSighting)
+first_sightings : List(Geom.Sighted(Conifer))
 first_sightings = TreeSighting.segment_sightings(from_origin, Chain.Position.first)
 
 ## The first segment's tree at `i`, in planting order.
-planted_tree : U64 -> TreeSighting
+planted_tree : U64 -> Geom.Sighted(Conifer)
 planted_tree = |i|
 	first_sightings.get(i) ?? crash "SceneShapes: the first segment has 28 trees in view"
 
@@ -336,8 +343,8 @@ expect
 		(planted_tree(1).right.to_metres(), 3.5),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
-expect planted_tree(0).conifer == Conifer.BigGreen
-expect planted_tree(2).conifer == Conifer.SmallGreen
+expect planted_tree(0).kind == Conifer.BigGreen
+expect planted_tree(2).kind == Conifer.SmallGreen
 
 keys : List(DepthSort.DepthKey)
 keys = TreeSighting.depth_keys(first_sightings)
