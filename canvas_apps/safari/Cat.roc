@@ -19,11 +19,6 @@ import Steps
 
 Cat :: [].{
 
-	## Where a segment's cat starts looking for its tree: it waits by the first
-	## tree on the right from here on.
-	cat_along : Along
-	cat_along = Along.metres(105.0)
-
 	## How long a crossing takes, at a frame a step.
 	crossing_steps : Steps
 	crossing_steps = {

@@ -9,7 +9,6 @@ import Along
 import Angle
 import Billboard
 import BirdFlight
-import Cat
 import CatCrossing
 import CowHerd
 import Distance
@@ -54,6 +53,21 @@ Segment := {
 	cow_herd_along : Along
 	cow_herd_along = Along.metres(24.0)
 
+	## Where a segment's cat starts looking for its tree: it waits by the first
+	## tree on the right from here on.
+	cat_along : Along
+	cat_along = Along.metres(105.0)
+
+	## The tree a segment's bird starts on, the fifth with a negative `across`.
+	## Those are on the left, and an unflipped still's beak points toward +x, so
+	## from there the bird faces the road.
+	fifth_left_tree : List(Trees.RoadsideTree) -> [Found(Trees.RoadsideTree), NoTree]
+	fifth_left_tree = |trees|
+		match trees.keep_if(|tree| tree.road_point.across < Across.middle).drop_first(4).first() {
+			Ok(tree) => Found(tree)
+			Err(ListWasEmpty) => NoTree
+		}
+
 	## A segment built from the route's choices for it: its trees are planted
 	## for its scheme, and what the rider meets on it is placed among them.
 	from_choices : {
@@ -75,10 +89,14 @@ Segment := {
 				CatCrosses => CatCrosses(
 					CatCrossing.by_tree({
 						road_half_width: Geom.road_half_width,
-						tree: nearest_tree_ahead(trees, Cat.cat_along).road_point,
+						tree: nearest_tree_ahead(trees, Segment.cat_along).road_point,
 					}),
 				)
-				BirdHere => BirdFlight.encounter_among(trees)
+				BirdHere =>
+					match Segment.fifth_left_tree(trees) {
+						Found(perch) => BirdHere(BirdFlight.habit_from(trees, perch))
+						NoTree => QuietRoad
+					}
 				QuietRoad => QuietRoad
 			},
 			ending: choices.ending,
@@ -153,7 +171,7 @@ gold_trees = Trees.roadside_trees({ scheme: GoldGreen, length: Distance.metres(3
 
 # On a gold segment the pairs differ. The tree found is whichever comes next, near
 # the road or far from it, and never one on the left.
-expect nearest_tree_ahead(gold_trees, Cat.cat_along).road_point.across == Across.metres(3.5)
+expect nearest_tree_ahead(gold_trees, Segment.cat_along).road_point.across == Across.metres(3.5)
 expect nearest_tree_ahead(gold_trees, Along.metres(90.0)).road_point.across == Across.metres(8.0)
 expect nearest_tree_ahead(gold_trees, Along.metres(90.0)).road_point.along == Along.metres(96.0)
 expect nearest_tree_ahead(gold_trees, Along.metres(96.0)).road_point.along == Along.metres(96.0)

@@ -132,6 +132,25 @@ left_top = Conifer.Red.scenery_height().to_metres()
 far_top : F64
 far_top = Conifer.Gold.scenery_height().to_metres()
 
+# Segment's fifth left tree, which a bird starts on: only trees on the left count.
+## A left and a right tree at each of `alongs`.
+pairs_at : List(F64) -> List(Trees.RoadsideTree)
+pairs_at = |alongs| alongs.join_map(|along| [tree_at(along, -6.0), tree_at(along, 6.0)])
+
+## How far along the fifth left tree of `choices` is, if there is one.
+fifth_along : List(Trees.RoadsideTree) -> Try(F64, [NoTree])
+fifth_along = |choices|
+	match Segment.fifth_left_tree(choices) {
+		Found(tree) => Ok(tree.road_point.along.to_metres())
+		NoTree => Err(NoTree)
+	}
+
+expect fifth_along([]) == Err(NoTree)
+expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0])) == Err(NoTree)
+expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0])) == Ok(50.0)
+expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0, 60.0])) == Ok(50.0)
+expect fifth_along([50.0, 60.0, 70.0, 80.0, 90.0].map(|along| tree_at(along, 6.0))) == Err(NoTree)
+
 ## A segment 200 m long holding only `trees`, which ends a route.
 segment_of : List(Trees.RoadsideTree) -> Segment
 segment_of = |trees| {
@@ -139,7 +158,10 @@ segment_of = |trees| {
 	length: Distance.metres(200.0),
 	trees,
 	ending: RouteEnds,
-	encounter: BirdFlight.encounter_among(trees),
+	encounter: match Segment.fifth_left_tree(trees) {
+		Found(perch) => BirdHere(BirdFlight.habit_from(trees, perch))
+		NoTree => QuietRoad
+	},
 }
 
 ## `segment`, bending straight on into another.
@@ -444,7 +466,7 @@ farthest_start = Cat.clear_gap.plus(VehicleLimits.top_speed.distance_in(Cat.cros
 
 expect route_cats.len() == 3
 expect farthest_start.to_metres() == 98.0
-expect farthest_start < Cat.cat_along.plus(CatCrossing.cat_beyond_tree).from_start()
+expect farthest_start < Segment.cat_along.plus(CatCrossing.cat_beyond_tree).from_start()
 expect route_cats.all(|{ crossing, .. }| farthest_start < crossing.along.from_start())
 
 ## The speed a rider leaves `segment` at: the bend's, or none at the route's end.
