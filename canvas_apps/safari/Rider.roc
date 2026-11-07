@@ -1,7 +1,6 @@
 ## The rider's decisions and one step of the ride: how far to lean and how
 ## hard to accelerate, then the move, the crossing onto the next segment, the
 ## stop at the route's end, and where the rider looks.
-import Acceleration
 import Across
 import Along
 import Angle
@@ -17,8 +16,6 @@ import VehicleLimits
 import World
 
 Rider :: [].{
-	Decision : { lean_step : Angle.LeanChange, acceleration : Acceleration }
-
 	rider_state_at_next_step : RiderState, List(World.Segment) -> RiderState
 	rider_state_at_next_step = |state, route_segments| {
 		seg = state.segment_index.segment_in(route_segments)
@@ -56,18 +53,12 @@ Seam : { segment : World.Segment, next : World.SegmentIndex }
 ## A rider, and the segment of the route they are on.
 RiderOnSegment : { rider : RiderState, segment : World.Segment }
 
-## The lean toward the best line, and the throttle for the motorcycle once it
-## leans so.
-decide : Motorcycle, World.Segment -> Rider.Decision
+## The lean toward the best line, and the speed the throttle gives the
+## motorcycle once it leans so.
+decide : Motorcycle, World.Segment -> Motorcycle.Controls
 decide = |motorcycle, seg| {
-	lean_step = LeanSearch.best_lean(motorcycle).change_from(motorcycle.lean)
-	{
-		lean_step,
-		acceleration: Throttle.acceleration(
-			motorcycle.with_lean(motorcycle.lean.plus(lean_step)),
-			seg,
-		),
-	}
+	lean = LeanSearch.best_lean(motorcycle)
+	{ lean, speed: Throttle.next_speed(motorcycle.with_lean(lean), seg) }
 }
 
 rider_on_next_segment : RiderState, Seam -> RiderState
@@ -153,21 +144,20 @@ rider_at = |along, lean_radians| {
 expect {
 	upright = decide(motorcycle_at(0.0, 0.0), first_segment)
 	leaning = decide(motorcycle_at(0.0, 0.5), first_segment)
-	most_accel = VehicleLimits.cruise_acceleration.to_metres_a_step_each_step() + 0.000001
-	upright.lean_step.abs() <= LeanSearch.max_lean_change
-		and leaning.lean_step.abs() <= LeanSearch.max_lean_change
-		and upright.acceleration.to_metres_a_step_each_step() <= most_accel
+	most_speed =
+		VehicleLimits.starting_speed.to_metres_a_step()
+			+ VehicleLimits.cruise_acceleration.to_metres_a_step_each_step()
+			+ 0.000001
+	upright.lean.change_from(Angle.upright).abs() <= LeanSearch.max_lean_change
+		and leaning.lean.change_from(Angle.Lean.radians(0.5)).abs() <= LeanSearch.max_lean_change
+		and upright.speed.to_metres_a_step() <= most_speed
 }
 
 # The throttle is decided for the motorcycle as it will lean.
 expect {
-	decision = decide(motorcycle_at(0.0, 0.0), first_segment)
-	same = Throttle.acceleration(
-		motorcycle_at(0.0, 0.0).with_lean(Angle.upright.plus(decision.lean_step)),
-		first_segment,
-	)
-	chosen = decision.acceleration.to_metres_a_step_each_step()
-	chosen.to_bits() == same.to_metres_a_step_each_step().to_bits()
+	controls = decide(motorcycle_at(0.0, 0.0), first_segment)
+	same = Throttle.next_speed(motorcycle_at(0.0, 0.0).with_lean(controls.lean), first_segment)
+	controls.speed.to_metres_a_step().to_bits() == same.to_metres_a_step().to_bits()
 }
 
 at_seam : RiderState

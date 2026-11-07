@@ -1,8 +1,6 @@
 ## Coast rehearses the rider's next few seconds: it runs the bike's real physics
 ## with no change of lean or speed, and says where the rider would end up.
-import Acceleration
 import Across
-import Angle
 import Motorcycle
 import Distance
 import Geom
@@ -33,9 +31,7 @@ Coast :: [].{
 		var $rider = state
 		var $steps_run = Steps.zero
 		while $steps_run < longest_coast {
-			$rider = $rider.motorcycle_at_next_step(
-				{ lean_step: Angle.steady_lean, acceleration: Acceleration.steady },
-			)
+			$rider = $rider.motorcycle_at_next_step($rider.steady_controls())
 			if $rider.across < left_bound {
 				return Leaves({ side: Left, after: $steps_run })
 			}

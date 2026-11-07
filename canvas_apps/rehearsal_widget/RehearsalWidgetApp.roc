@@ -5,7 +5,6 @@
 ## Each try draws its coasting arc on the road, seen from above: the bike's own
 ## physics run on a rider who doesn't exist. After the twelfth, the picture
 ## shows the lean the real rider took.
-import game.Acceleration
 import game.Across
 import game.Along
 import game.Angle
@@ -55,7 +54,7 @@ rider = {
 	across: Across.metres(-1.930897632424363),
 	yaw: Angle.Turn.radians(0.04392681817843164),
 	speed: Speed.metres_a_step(0.08377159378729097),
-	lean: Angle.Lean.radians(0.006118878920566433),
+	lean: Angle.Lean.radians(0.0061188789205664324),
 	heading: Angle.Bearing.radians(0.9165914441755961),
 }
 
@@ -99,9 +98,7 @@ points_of = |lean| {
 	var $points = []
 	var $going = True
 	while $going {
-		$motion = $motion.motorcycle_at_next_step(
-			{ lean_step: Angle.steady_lean, acceleration: Acceleration.steady },
-		)
+		$motion = $motion.motorcycle_at_next_step($motion.steady_controls())
 		$points = $points.append({
 			forward: $motion.along.distance_from(rider.along).to_metres(),
 			across: $motion.across.to_metres(),

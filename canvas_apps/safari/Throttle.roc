@@ -1,4 +1,4 @@
-## Throttle decides how hard the rider speeds up or brakes. Each of four limits
+## Throttle decides the rider's speed for the next step. Each of four limits
 ## asks for nothing or for an acceleration no harder than its own, and the
 ## acceleration offered is held to the least of them.
 import Acceleration
@@ -16,8 +16,9 @@ import World
 
 Throttle :: [].{
 
-	acceleration : Motorcycle, World.Segment -> Acceleration
-	acceleration = |motorcycle, seg| {
+	## The speed the motorcycle goes on the next step.
+	next_speed : Motorcycle, World.Segment -> Speed
+	next_speed = |motorcycle, seg| {
 		offered =
 			if motorcycle.lean.abs() >= lean_hold {
 				Acceleration.steady
@@ -39,7 +40,7 @@ Throttle :: [].{
 				exit_speed: v_end,
 				next_speed: motorcycle.speed.accelerated_by(limited),
 			},
-		).change_from(motorcycle.speed)
+		)
 	}
 }
 
@@ -249,19 +250,21 @@ expect clamped_speed(near_bend, 0.1) == 0.222
 expect clamped_speed(near_bend, 0.5) == 0.5
 expect clamped_speed(far_from_bend, 0.1) == 0.1
 
+## The change of speed that `Throttle.next_speed` makes for this motorcycle on
+## `seg`.
+speed_change : Motorcycle, World.Segment -> Acceleration
+speed_change = |motorcycle, seg| Throttle.next_speed(motorcycle, seg).change_from(motorcycle.speed)
+
 ## The whole decision for a motorcycle at the start of the segment, on the
 ## centre line.
 decide : Speed, F64 -> Acceleration
 decide = |speed, lean|
-	Throttle.acceleration(
-		{ ..Motorcycle.initial, speed, lean: Angle.Lean.radians(lean) },
-		first_segment,
-	)
+	speed_change({ ..Motorcycle.initial, speed, lean: Angle.Lean.radians(lean) }, first_segment)
 
 ## The whole decision for a motorcycle far off to the right.
 wide_of_road : F64 -> Acceleration
 wide_of_road = |lean|
-	Throttle.acceleration(
+	speed_change(
 		{
 			..centred_motorcycle(0.0, 0.3),
 			across: across_at(100.0),
@@ -292,7 +295,7 @@ expect decide(Speed.metres_a_step(0.3), -(hold_radians - 0.001)) < Acceleration.
 ## metres a step.
 decide_on : U32, F64 -> Acceleration
 decide_on = |index, along|
-	Throttle.acceleration(centred_motorcycle(along, 0.3), World.route_segment(index))
+	speed_change(centred_motorcycle(along, 0.3), World.route_segment(index))
 
 # A crossing cat stops the throttle opening, and a gawking rider brakes.
 expect decide_on(3, 0.0) > Acceleration.steady
