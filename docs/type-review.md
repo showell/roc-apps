@@ -154,6 +154,7 @@ files, and one frame held to `gates/proof.expected`.
   its cache, which takes longer.
 - **Widgets:** if you change something a widget imports, also run `roc check web.roc` in that widget's folder (`canvas_apps/<name>_widget`), with the
   pinned Roc: `/home/steve/tools/roc-nightly-2026-11-03-34bd006/roc`.
+- **Whole-tree lints:** before you report, also run `shale canvas_apps/safari/gates/lints.shale` from the worktree root, about 17 seconds. fast.shale skips the lints that read across files (boundaries, families and others), and they catch what a lane's rename or new parameter does elsewhere.
 - **The full gate is the orchestrator's.** Don't run `gates/run.shale`.
 - **A lint you trip:** fix the code. Never loosen a lint or raise a held
   count, except for the book's stale-name counts in `gates/run.shale`, as
