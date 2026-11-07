@@ -22,7 +22,7 @@ Throttle :: [].{
 	next_speed = |motorcycle, seg| {
 		offered = VehicleLimits.cruise_acceleration
 		limits = [
-			bend_limit(motorcycle, { segment: seg, exit_speed: exit_speed(seg) }),
+			bend_limit(motorcycle, seg),
 			EncounterReaction.encounter_throttle(seg, motorcycle),
 			Gawking.gawk_brake(motorcycle, seg),
 			shoulder_limit(motorcycle),
@@ -60,9 +60,10 @@ is_near_end = |motorcycle, seg|
 ## Near the end of the segment, the brake that brings the rider to the exit
 ## speed at the point where they commit to the turn. Past that point there is
 ## no road left to brake on, and the limit holds the acceleration at none.
-bend_limit : Motorcycle, { segment : Segment, exit_speed : Speed } -> VehicleLimits.Limit
-bend_limit = |motorcycle, { segment: seg, exit_speed: v_end }|
+bend_limit : Motorcycle, Segment -> VehicleLimits.Limit
+bend_limit = |motorcycle, seg|
 	if is_near_end(motorcycle, seg) {
+		v_end = exit_speed(seg)
 		d = seg.commit_along().distance_from(motorcycle.along)
 		bend_a =
 			if d <= VehicleLimits.least_braking_distance {
@@ -127,8 +128,7 @@ expect is_near_end(centred_motorcycle(440.0, 0.3), first_segment)
 
 ## The bend limit for this motorcycle on the first segment.
 bend_limit_at : Motorcycle -> VehicleLimits.Limit
-bend_limit_at = |motorcycle|
-	bend_limit(motorcycle, { segment: first_segment, exit_speed: Speed.metres_a_step(0.222) })
+bend_limit_at = |motorcycle| bend_limit(motorcycle, first_segment)
 
 ## The brake the bend limit asks of this motorcycle, near the bend.
 bend_brake_at : Motorcycle -> F64
