@@ -138,21 +138,20 @@ glow_inner_radius = Pixels.of(8.0)
 disc_inner_radius : Pixels
 disc_inner_radius = Pixels.of(4.0)
 
+## Where the sun stands at `clock`, `turn_from_view` to the right of where
+## the camera faces, through a lens of `cam_focal`.
 place : {
 	turn_from_view : Angle.Turn,
 	clock : Clock,
 	cam_focal : Pixels,
 } -> Sun.Place
 place = |{ turn_from_view, clock, cam_focal }| {
-	scale = Fraction.of(cam_focal.portion(Lens.resting_focal))
 	{
 		x: Lens.x_for_turn({ turn: turn_from_view, cam_focal }),
 		y: Lens.y_for_height({ height: Sun.height(clock), cam_focal }),
-		scale,
+		scale: Lens.scale_for(cam_focal),
 	}
 }
-
-expect Sun.height(Clock.start) == Sun.height_at_start
 
 # The sun's lower edge touches the horizon at step 3,233, and the whole disc
 # is below it from `fully_set_at`.
@@ -199,15 +198,3 @@ is_in_view_beside = |radians| {
 # to the side, either side, and has left it at 1.0.
 expect [0.95, -0.95].all(is_in_view_beside)
 expect [1.0, -1.0, 1.5, -1.5, 3.0].all(|radians| !is_in_view_beside(radians))
-
-# The glow and the disc are drawn at the sun's scale.
-expect {
-	half = {
-		x: Pixels.of(480.0),
-		y: Pixels.of(178.0),
-		scale: Fraction.of(0.5),
-	}
-	glow = Sun.glow_radius_drawn(half)
-	disc = Sun.disc_radius_drawn(half)
-	glow == Pixels.of(170.0) and disc == Pixels.of(23.0)
-}

@@ -25,7 +25,7 @@ FrameView := {
 	shapes : List(Shapes.Shape),
 
 	## Where the sun stands in the sky, if it is in view.
-	sun : Sun.Sighting,
+	sun_sighting : Sun.Sighting,
 
 	## The sky's colors, at the top of the frame and at the horizon.
 	sky_colors : Sky.Colors,
@@ -45,7 +45,7 @@ FrameView := {
 		}
 		{
 			shapes: shapes(instant, { route, aim }),
-			sun: Sun.sighting(aim, instant.clock),
+			sun_sighting: Sun.sighting(aim, instant.clock),
 			sky_colors: Sky.colors_at(instant.clock),
 			roll: CanvasRoll.rider_roll(instant.rider.motorcycle.lean),
 		}
@@ -58,7 +58,7 @@ FrameView := {
 			space,
 			Backdrop.frame_shapes(
 				view.shapes,
-				{ sky_colors: view.sky_colors, sun_sighting: view.sun },
+				{ sky_colors: view.sky_colors, sun_sighting: view.sun_sighting },
 			),
 		)
 
@@ -126,7 +126,7 @@ expect {
 	})
 	view = {
 		shapes: [dot],
-		sun: OutOfView,
+		sun_sighting: OutOfView,
 		sky_colors: Sky.colors_at(RideInstant.initial.clock),
 		roll: Angle.upright,
 	}

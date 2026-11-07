@@ -42,7 +42,7 @@ SafariFrame :: [].{
 	picture_pixels = |scene| {
 		roll = SafariFrame.screen_roll(scene.roll)
 		var $px = BackdropPixels.backdrop_pixels(roll, scene.sky_colors)
-		$px = SunPixels.pixels_with_sun($px, { roll, sun: scene.sun })
+		$px = SunPixels.pixels_with_sun($px, { roll, sun: scene.sun_sighting })
 		ShapesPixels.pixels_with_shapes($px, { roll, shapes: scene.shapes })
 	}
 

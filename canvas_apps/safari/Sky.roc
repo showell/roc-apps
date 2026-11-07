@@ -13,11 +13,6 @@ Sky :: [].{
 	## horizon.
 	Colors : { top : RgbColor, horizon : RgbColor }
 
-	## How far toward dusk the sky is when the sun has just set: a little over
-	## half, so the sky goes on darkening after the sun has gone.
-	dusk_at_set : Fraction
-	dusk_at_set = Fraction.of(0.6)
-
 	## How far toward dusk the sky is at `clock`, from 0 (day) to 1 (dusk).
 	dusk_at : Clock -> Fraction
 	dusk_at = |clock| {
@@ -38,6 +33,11 @@ Sky :: [].{
 	colors_at : Clock -> Sky.Colors
 	colors_at = |clock| { top: sky_top_color(clock), horizon: sky_horizon_color(clock) }
 }
+
+## How far toward dusk the sky is when the sun has just set: a little over
+## half, so the sky goes on darkening after the sun has gone.
+dusk_at_set : Fraction
+dusk_at_set = Fraction.of(0.6)
 
 ## How far above or below the horizon the sun warms it. Once the sun is
 ## further away than this, the horizon has the sky's own color.
@@ -80,7 +80,7 @@ dusk_while_up : Pixels -> Fraction
 dusk_while_up = |height| {
 	whole_fall = Sun.height_at_start.minus(Sun.height_when_set)
 	set_so_far = Fraction.of(Sun.height_at_start.minus(height).portion(whole_fall))
-	Sky.dusk_at_set.times(set_so_far).times(set_so_far)
+	dusk_at_set.times(set_so_far).times(set_so_far)
 }
 
 ## How far toward dusk the sky is once the sun has fully set, darkening on
@@ -88,13 +88,13 @@ dusk_while_up = |height| {
 dusk_after_set : Pixels -> Fraction
 dusk_after_set = |height| {
 	sunk_past_set = Sun.height_when_set.minus(height).portion(Sun.radius)
-	Fraction.clamp(Sky.dusk_at_set.to_f64() + sunk_past_set * Sky.dusk_at_set.less().to_f64())
+	Fraction.clamp(dusk_at_set.to_f64() + sunk_past_set * dusk_at_set.less().to_f64())
 }
 
 # The sky is at dusk_at_set as the sun fully sets, and darker a step later.
-expect Sky.dusk_at(Sun.fully_set_at.previous()) < Sky.dusk_at_set
-expect Sky.dusk_at(Sun.fully_set_at) == Sky.dusk_at_set
-expect Sky.dusk_at_set < Sky.dusk_at(Sun.fully_set_at.next())
+expect Sky.dusk_at(Sun.fully_set_at.previous()) < dusk_at_set
+expect Sky.dusk_at(Sun.fully_set_at) == dusk_at_set
+expect dusk_at_set < Sky.dusk_at(Sun.fully_set_at.next())
 expect Sky.dusk_at(Clock.at_step(0)).to_f64() == 0.0
 expect Sky.sunset_warmth(Clock.at_step(0)).to_f64() == 0.0
 expect Sky.dusk_at(Clock.at_step(6000)).to_f64() == 1.0
