@@ -1,6 +1,8 @@
 ## Tour is the whole ride, for any platform that draws it. It keeps the
-## current instant of the ride and the instants behind it for stepping back, and
-## it gives the FrameView of the current instant: what a painter needs for a
+## current instant of the ride and every instant behind it, back to the ride's
+## start, so stepping back can reach step 0. The whole ride's instants come to
+## under a megabyte. A restart clears them. It also
+## gives the FrameView of the current instant: what a painter needs for a
 ## frame. SafariApp turns it into a canvas app, with the keys, the pause, and
 ## the frame leaned by the roll.
 import Clock
@@ -42,11 +44,6 @@ Tour := {
 		$tour
 	}
 
-	## How many past instants a tour keeps for stepping back: about half the
-	## route. The newest are the ones kept.
-	steps_kept_back : Steps
-	steps_kept_back = Steps.of(2048)
-
 	step_back : Tour -> Tour
 	step_back = |tour| {
 		match tour.past_instants.last() {
@@ -73,24 +70,10 @@ tour_after_step = |tour|
 			Continued({
 				route: tour.route,
 				instant: next_instant,
-				past_instants: past_instants_after(tour),
+				past_instants: tour.past_instants.append(tour.instant),
 			})
 		Restarted(start) => Restarted({ route: tour.route, instant: start, past_instants: [] })
 	}
-
-## `tour`'s past instants with its current one added. Dropping one instant per
-## step would copy the whole list every step, so half of it goes at once and the
-## copy falls on one step in a thousand. The list starts empty, grows to a cap,
-## and from then on is between half a cap and a cap deep.
-past_instants_after : Tour -> List(RideInstant)
-past_instants_after = |tour| {
-	cap = Tour.steps_kept_back.to_u32().to_u64()
-	if tour.past_instants.len() < cap {
-		tour.past_instants.append(tour.instant)
-	} else {
-		tour.past_instants.drop_first(cap // 2).append(tour.instant)
-	}
-}
 
 # A tour ridden to a step keeps every instant it passed, and none at the start.
 expect {
@@ -98,3 +81,18 @@ expect {
 	ridden.instant.clock == Clock.at_step(3) and ridden.past_instants.len() == 3
 }
 expect Tour.at_step(0).past_instants.is_empty()
+
+# A tour stepped back from step 5 is one step short of the start after 4 backs,
+# at step 0 after 5, and still there after a sixth.
+expect {
+	var $tour = Tour.at_step(5)
+	for _ in 0..<4 {
+		$tour = Tour.step_back($tour)
+	}
+	after_four = $tour.instant.clock
+	$tour = Tour.step_back($tour)
+	after_five = $tour.instant.clock
+	$tour = Tour.step_back($tour)
+	after_six = $tour.instant.clock
+	after_four == Clock.at_step(1) and after_five == Clock.start and after_six == Clock.start
+}

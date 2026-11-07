@@ -46,19 +46,19 @@ StepWidgetApp :: [].{
 steps_a_frame : U32
 steps_a_frame = 8
 
-## The range stops short of the steps a Tour keeps back, so all of it can be
-## read back. Play goes as fast as the ride can be worked out.
+## The steps the buttons reach. Play goes as fast as the ride can be worked out.
 journey : VcrButtons.NumberRange(Clock)
 journey = VcrButtons.clock_range({
 	first_step: 0,
-	last_step: Tour.steps_kept_back.to_u32() - steps_short_of_kept_back,
+	last_step: journey_last_step,
 	steps_a_frame: steps_a_frame.to_f64(),
 })
 
-## How many steps short of a Tour's history the range ends, which leaves the
-## range a round 2000 steps.
-steps_short_of_kept_back : U32
-steps_short_of_kept_back = 48
+## Where the range ends: a round 2000 steps, which is far enough along the bar
+## to see the rider and the truck move, and near enough that To the end, which
+## has to play every step, gets there in about four seconds.
+journey_last_step : U32
+journey_last_step = 2000
 
 ## How many instants are taken back off the list in one frame of the widget.
 read_back_a_frame : U32
