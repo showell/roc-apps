@@ -80,6 +80,13 @@ disagree with them, which makes it a wrong state the type allows.
 expect to keep the two equal. The truck's `brake_lights` repeated what its two
 speeds say. Store the source, and work the rest out where it's needed.
 
+**A field means nothing in some cases.** If readers must check a tag before a
+field means anything, the field belongs inside that tag. The route's last
+segment carried a planned 0° `exit_turn` that every reader matched past, and a
+segment with no pigs still held a `pig_interest`. Put the bend inside
+`Bends({ turn, ... })` and the interest inside `Herd({ herd, interest })`, so
+the case that has no such thing has no such field.
+
 **One input is packed several ways.** The same facts travel as one record, then
 another, then a third, renamed on the way. Tower took a `Picture.Setting`, then
 a record of its own with `center` for the setting's `foot`, then `TowerInView`.
