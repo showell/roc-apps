@@ -2439,7 +2439,7 @@ Eighteen small opaque types run through Safari Ride, and the tour has met most o
 | `Fraction` | `F64` | A ratio from 0 to 1 |
 | `Attention` | `F64` | How strongly something holds the eye, from 0 up |
 | `World.SegmentIndex` | `U32` | A place in the route |
-| `RoadAhead.Position` | `U32` | A place on the road ahead |
+| `SegmentPlace.Position` | `U32` | A place on the road ahead |
 
 This is the opaque type doing the job of a unit. The block after each type is a small statement of dimensional analysis. `Speed.distance_in` takes `Steps` and gives a `Distance`. `Along.plus` takes a `Distance`, and two `Along`s give one back. `Lean.steer` takes a rate and gives a `Turn`. There's no `Bearing.plus(Bearing)`, because that sum has no meaning. If you try to write one, the compiler stops you.
 
