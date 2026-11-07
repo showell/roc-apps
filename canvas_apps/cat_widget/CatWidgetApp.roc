@@ -5,7 +5,7 @@
 ## picture looks down the road at the cat, with the road's width to scale. Below
 ## it, the buttons and four lines of text that say what Cat and EncounterReaction
 ## make of the gap.
-import game.Animation
+import game.EncounterPlan
 import game.Cat
 import game.EncounterReaction
 import game.Distance
@@ -109,7 +109,7 @@ road_shapes = {
 }
 
 ## The crossing's timing with the rider `gap` short of the cat.
-crossing_timing : Distance -> Animation.Timing
+crossing_timing : Distance -> EncounterPlan.Timing
 crossing_timing = |gap|
 	VcrButtons.planned_timing(Cat.crossing_span, { range: closing_gap, speed: rider_speed, gap })
 
@@ -167,7 +167,7 @@ throttle_text = |throttle|
 	}
 
 # The whole crossing is on the range, with some road to spare at the far end.
-expect Animation.planning_gap(Cat.crossing_span, rider_speed) < closing_gap.first
+expect EncounterPlan.planning_gap(Cat.crossing_span, rider_speed) < closing_gap.first
 expect Cat.crossing_span.ends_at > closing_gap.last
 
 expect

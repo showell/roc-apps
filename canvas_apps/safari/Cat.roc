@@ -4,6 +4,7 @@
 ## it is across as the rider comes within `clear_gap` of it. The rider's eye is
 ## drawn to it while it crosses, and lets it go after.
 import Animation
+import EncounterPlan
 import Attention
 import CatCrossing
 import Distance
@@ -15,12 +16,12 @@ import Steps
 Cat :: [].{
 
 	## What the ride plans a crossing by: its length, and the gap it ends at.
-	crossing_span : Animation.StepSpan
+	crossing_span : EncounterPlan.StepSpan
 	crossing_span = { length: crossing_steps, ends_at: clear_gap }
 
 	## Where the crossing has got to at `timing`.
-	crossing_stage : Animation.Timing -> Animation.Stage
-	crossing_stage = |timing| Animation.stage_at(timing, crossing_steps)
+	crossing_stage : EncounterPlan.Timing -> Animation.Stage
+	crossing_stage = |timing| EncounterPlan.stage_at(timing, crossing_steps)
 
 	## Whether the cat is crossing in front of the rider at `stage`. The rider
 	## eases off while it does, which is the rider reacting to the cat; the cat

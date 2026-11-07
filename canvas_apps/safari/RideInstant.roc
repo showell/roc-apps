@@ -1,4 +1,4 @@
-import Animation
+import EncounterPlan
 import BirdFlight
 import Cat
 import Clock
@@ -16,7 +16,7 @@ RideInstant := {
 	rider : RiderState,
 	truck : Truck,
 	clock : Clock,
-	encounter_start : Animation.Start,
+	encounter_start : EncounterPlan.Start,
 }.{
 
 	initial : RideInstant
@@ -36,8 +36,8 @@ RideInstant := {
 		}
 
 	## Where the encounter on the rider's segment stands at `instant`.
-	encounter_timing : RideInstant -> Animation.Timing
-	encounter_timing = |instant| Animation.timing_of(instant.encounter_start, instant.clock)
+	encounter_timing : RideInstant -> EncounterPlan.Timing
+	encounter_timing = |instant| EncounterPlan.timing_of(instant.encounter_start, instant.clock)
 }
 
 next : Route, RideInstant -> RideInstant
@@ -73,10 +73,10 @@ next = |route, instant| {
 
 ## The start the ride plans for `segment`'s encounter, with `rider` on it at
 ## `now`: unplanned until the rider comes within reach of it.
-planned_start : Segment, { rider : RiderState, now : Clock } -> Animation.Start
+planned_start : Segment, { rider : RiderState, now : Clock } -> EncounterPlan.Start
 planned_start = |segment, { rider, now }| {
 	plan_for = |span, critter_along|
-		Animation.planned_start(
+		EncounterPlan.planned_start(
 			span,
 			{
 				gap: critter_along.distance_from(rider.motorcycle.along),

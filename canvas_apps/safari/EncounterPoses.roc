@@ -5,6 +5,7 @@
 ## segment behind ended before the rider left it, so it has no pose. A segment
 ## holds one encounter at most, a cat's or a bird's.
 import Animation
+import EncounterPlan
 import BirdFlight
 import Cat
 import Geom
@@ -21,7 +22,10 @@ EncounterPoses :: [].{
 
 	## The cats on `road`, with the encounter on the rider's segment at
 	## `encounter_timing`, in the order of `RoadAhead.segments_in_view`.
-	cat_poses : RoadAhead.RoadView, Animation.Timing -> List(EncounterPoses.PosedAnimal(PosedCat))
+	cat_poses : RoadAhead.RoadView,
+	EncounterPlan.Timing -> List(
+		EncounterPoses.PosedAnimal(PosedCat),
+	)
 	cat_poses = |road, encounter_timing|
 		RoadAhead.segments_in_view(road).keep_oks(
 			|in_view| segment_cat({ in_view, encounter_timing }),
@@ -29,7 +33,10 @@ EncounterPoses :: [].{
 
 	## The birds on `road`, with the encounter on the rider's segment at
 	## `encounter_timing`, in the order of `RoadAhead.segments_in_view`.
-	bird_poses : RoadAhead.RoadView, Animation.Timing -> List(EncounterPoses.PosedAnimal(PosedBird))
+	bird_poses : RoadAhead.RoadView,
+	EncounterPlan.Timing -> List(
+		EncounterPoses.PosedAnimal(PosedBird),
+	)
 	bird_poses = |road, encounter_timing|
 		RoadAhead.segments_in_view(road).keep_oks(
 			|in_view| segment_bird({ in_view, encounter_timing }),
@@ -39,7 +46,7 @@ EncounterPoses :: [].{
 ## The cat on a segment in view, if it has one that isn't over.
 segment_cat : {
 	in_view : RoadAhead.SegmentInView,
-	encounter_timing : Animation.Timing,
+	encounter_timing : EncounterPlan.Timing,
 } -> Try(EncounterPoses.PosedAnimal(PosedCat), [NoCat, Over])
 segment_cat = |{ in_view, encounter_timing }|
 	match in_view.segment.encounter {
@@ -56,7 +63,7 @@ segment_cat = |{ in_view, encounter_timing }|
 ## The bird on a segment in view, if it has one that isn't over.
 segment_bird : {
 	in_view : RoadAhead.SegmentInView,
-	encounter_timing : Animation.Timing,
+	encounter_timing : EncounterPlan.Timing,
 } -> Try(EncounterPoses.PosedAnimal(PosedBird), [NoBird, Over])
 segment_bird = |{ in_view, encounter_timing }|
 	match in_view.segment.encounter {

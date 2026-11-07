@@ -2001,11 +2001,11 @@ A faster rider sets the cat off sooner, so it's clear of the lane in time.
 
 The rule lives in `Animation`. It takes the cat's numbers and an `Approach`, which says how the rider is coming:
 
-{{code Animation.StepSpan}}
+{{code EncounterPlan.StepSpan}}
 
 `stage_over_step_span` destructures its first argument in place, and the `Approach` after it, so the body reads in plain names:
 
-{{code Animation.planned_start}}
+{{code EncounterPlan.planned_start}}
 
 Neither field of an `Approach` is a plain number. `Distance`, `Speed` and `Beats` are opaque types, like `Clock` and `Angle`. A distance can't be passed as a speed, and a place in an animation can't be passed as a step of the ride. `distance_in`, on the second line, multiplies a speed by some beats and gives a `Distance`. `Speed` also derives `is_eq`, which is what lets `speed == Speed.at_rest` work with an ordinary operator.
 
@@ -2160,7 +2160,7 @@ A rule turns where the rider is into a `Stage`. The cat's rule was `stage_over_s
 
 The first argument of each is destructured in place, and both answer the same tag union. `stage_over_gap` has a shorter job, so here it is first. `Fraction.clamp` fits here because a rider far off gives a ratio well outside 0 to 1, and `<=` works on a `Fraction` because `Fraction` defines `is_lte`:
 
-{{code Animation.stage_at}}
+{{code EncounterPlan.stage_at}}
 
 The bird calls it with two constants, and passes no speed, since this rule doesn't take one:
 
@@ -2168,7 +2168,7 @@ The bird calls it with two constants, and passes no speed, since this rule doesn
 
 Beside it, again, is the cat's rule. Its second argument is the whole `Approach`:
 
-{{code Animation.planned_start}}
+{{code EncounterPlan.planned_start}}
 
 The extra case in `stage_over_step_span` is there because its ratio divides by a stretch that a stopped rider makes zero. `stage_over_gap` divides only by constants, so it has no such case. That hanging bird is real: nothing in `stage_over_gap` knows a bird can't hover. The rider never drops below 1.1 metres a step inside a bird's 45 metres on this route, so it doesn't come up.
 

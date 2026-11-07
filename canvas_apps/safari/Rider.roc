@@ -4,7 +4,7 @@
 import Across
 import Along
 import Angle
-import Animation
+import EncounterPlan
 import Gaze
 import Geom
 import LeanSearch
@@ -23,7 +23,7 @@ Rider :: [].{
 	rider_state_at_next_step : RiderState,
 	{
 		route : Route,
-		encounter_timing : Animation.Timing,
+		encounter_timing : EncounterPlan.Timing,
 	} -> RiderState
 	rider_state_at_next_step = |state, { route, encounter_timing }| {
 		seg = route.segment_at(state.segment_index)
@@ -68,7 +68,7 @@ Rider :: [].{
 decide : Motorcycle,
 {
 	segment : Segment,
-	encounter_timing : Animation.Timing,
+	encounter_timing : EncounterPlan.Timing,
 } -> Motorcycle.Controls
 decide = |motorcycle, road| {
 	lean = LeanSearch.best_lean(motorcycle)

@@ -10,6 +10,7 @@ import game.Across
 import game.Along
 import game.Angle
 import game.Animation
+import game.EncounterPlan
 import game.BirdFlight
 import game.Camera
 import game.Clock
@@ -64,7 +65,7 @@ segment_flight = |segment|
 	}
 
 ## The flight's timing with the rider `gap` from the bird's first tree.
-flight_timing : Distance -> Animation.Timing
+flight_timing : Distance -> EncounterPlan.Timing
 flight_timing = |gap|
 	VcrButtons.planned_timing(BirdFlight.flight_span, { range: closing_gap, speed: rider_speed, gap })
 
@@ -198,7 +199,7 @@ beat_name = |beat|
 ## The gap the flight starts at, for a rider at `rider_speed`: 15 m for the gap
 ## it lands at and 45 m for its 36 steps.
 takeoff_gap : Distance
-takeoff_gap = Animation.planning_gap(BirdFlight.flight_span, rider_speed)
+takeoff_gap = EncounterPlan.planning_gap(BirdFlight.flight_span, rider_speed)
 
 # The whole flight is on the range, with some road to spare at the far end.
 expect takeoff_gap < closing_gap.first

@@ -3,7 +3,7 @@
 ## It turns with the rider's gaze, and a little with the motorcycle's lean, as a
 ## rider's head turns into a bend.
 import Angle
-import Animation
+import EncounterPlan
 import CanvasRoll
 import EncounterReaction
 import Gaze
@@ -34,7 +34,7 @@ RiderCamera := {
 	## The camera for `rider` on `route`, with the encounter on their segment at
 	## `encounter_timing`. Its heading is the bearing the rider's segment sets off on,
 	## turned by the vantage's yaw.
-	of : RiderState, { route : Route, encounter_timing : Animation.Timing } -> RiderCamera
+	of : RiderState, { route : Route, encounter_timing : EncounterPlan.Timing } -> RiderCamera
 	of = |rider, { route, encounter_timing }| {
 		vantage = {
 			along: rider.motorcycle.along,
@@ -63,7 +63,7 @@ view_yaw_for = |s| s.eyes.gaze_yaw.plus(s.motorcycle.lean.steer(head_turn_per_le
 ## The camera's focal length for where the rider is and how they ride. The
 ## view widens as the rider leans, and as the rider's attention is caught, by
 ## an encounter on the road or by a look to the side.
-ride_focal : RiderState, { route : Route, encounter_timing : Animation.Timing } -> Pixels
+ride_focal : RiderState, { route : Route, encounter_timing : EncounterPlan.Timing } -> Pixels
 ride_focal = |rider, { route, encounter_timing }| {
 	seg = route.segment_at(rider.segment_index)
 	attention =

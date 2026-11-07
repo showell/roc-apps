@@ -2,7 +2,7 @@
 ## billboards, cats, guard rails, the truck and the birds in view, each found by
 ## its own sighting and rendered as soon as it is found. Past the sighting
 ## nothing asks what kind a thing is, so each field holds only renderings.
-import Animation
+import EncounterPlan
 import Clock
 import Conifer
 import Distance
@@ -36,7 +36,7 @@ Scene := {
 	## What the sightings read beyond the road: where the encounter on the
 	## rider's segment stands, where the truck is and how it looks, and the clock.
 	RideFacts : {
-		encounter_timing : Animation.Timing,
+		encounter_timing : EncounterPlan.Timing,
 		truck : { route_position : Distance, lit_truck : LitTruck },
 		clock : Clock,
 	}

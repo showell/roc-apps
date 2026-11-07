@@ -4,7 +4,7 @@
 import Acceleration
 import Along
 import Angle
-import Animation
+import EncounterPlan
 import Coast
 import Distance
 import EncounterReaction
@@ -21,7 +21,7 @@ Throttle :: [].{
 
 	## The speed the motorcycle goes on the next step, on `segment`, whose
 	## encounter stands at `encounter_timing`.
-	next_speed : Motorcycle, { segment : Segment, encounter_timing : Animation.Timing } -> Speed
+	next_speed : Motorcycle, { segment : Segment, encounter_timing : EncounterPlan.Timing } -> Speed
 	next_speed = |motorcycle, { segment: seg, encounter_timing }| {
 		offered = VehicleLimits.cruise_acceleration
 		limits = [

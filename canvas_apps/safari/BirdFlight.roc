@@ -5,6 +5,7 @@
 ## that it lands as the rider comes within `landing_gap` of the tree it left.
 import Across
 import Animation
+import EncounterPlan
 import Distance
 import Easing
 import Fraction
@@ -31,7 +32,7 @@ BirdFlight :: [].{
 
 	## What the ride plans a flight by: its length, and the gap from the rider
 	## to the tree it left at which it has landed.
-	flight_span : Animation.StepSpan
+	flight_span : EncounterPlan.StepSpan
 	flight_span = { length: Steps.of(flight_poses.len().to_u32_wrap()), ends_at: landing_gap }
 
 	## The flight of a bird perched on the tree at `perch`, among a segment's
@@ -51,8 +52,8 @@ BirdFlight :: [].{
 	}
 
 	## Where the flight has got to at `timing`.
-	flight_stage : Animation.Timing -> Animation.Stage
-	flight_stage = |timing| Animation.stage_at(timing, flight_span.length)
+	flight_stage : EncounterPlan.Timing -> Animation.Stage
+	flight_stage = |timing| EncounterPlan.stage_at(timing, flight_span.length)
 
 	## The bird at `stage` of its flight.
 	instant_at : BirdFlight.Flight, Animation.Stage -> BirdFlight.BirdInstant

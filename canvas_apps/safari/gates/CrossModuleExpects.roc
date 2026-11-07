@@ -11,6 +11,7 @@ import game.Across
 import game.Along
 import game.Angle
 import game.Animation
+import game.EncounterPlan
 import game.Attention
 import game.BendInView
 import game.Billboard
@@ -400,8 +401,8 @@ bird_trees : List(Trees.RoadsideTree)
 bird_trees = left_trees.append(far_tree)
 
 ## A flight that started at step 100, at step `now`.
-flight_at_step : U32 -> Animation.Timing
-flight_at_step = |now| Animation.timing_of(StartsAt(Clock.at_step(100)), Clock.at_step(now))
+flight_at_step : U32 -> EncounterPlan.Timing
+flight_at_step = |now| EncounterPlan.timing_of(StartsAt(Clock.at_step(100)), Clock.at_step(now))
 
 # Each segment ends where the lengths before it and its own add up to.
 expect {
@@ -423,7 +424,7 @@ birds_on : List(Trees.RoadsideTree),
 {
 	rider_along : F64,
 	cam_focal : Pixels,
-	encounter_timing : Animation.Timing,
+	encounter_timing : EncounterPlan.Timing,
 } -> List(Pipeline.Sighted(PosedBird))
 birds_on = |trees, { rider_along, cam_focal, encounter_timing }|
 	birds_seen_on(
@@ -439,7 +440,7 @@ birds_on = |trees, { rider_along, cam_focal, encounter_timing }|
 
 ## The one bird that a rider `rider_along` metres in sees, with its flight at
 ## `encounter_timing`.
-bird_at : F64, Animation.Timing -> Pipeline.Sighted(PosedBird)
+bird_at : F64, EncounterPlan.Timing -> Pipeline.Sighted(PosedBird)
 bird_at = |rider_along, encounter_timing|
 	birds_on(bird_trees, { rider_along, cam_focal: Pixels.of(500.0), encounter_timing }).first()
 		?? crash "CrossModuleExpects: this rider sees a bird"
@@ -589,7 +590,7 @@ cat_road = RoadAhead.RoadView.ahead_of(cat_route, Route.SegmentIndex.first)
 birds_seen_on : RoadAhead.RoadView,
 {
 	camera : { vantage : Geom.Vantage, cam_focal : Pixels },
-	encounter_timing : Animation.Timing,
+	encounter_timing : EncounterPlan.Timing,
 } -> List(Pipeline.Sighted(PosedBird))
 birds_seen_on = |road_view, { camera, encounter_timing }|
 	EncounterSighting.animals_in_view(
@@ -602,7 +603,7 @@ birds_seen_on = |road_view, { camera, encounter_timing }|
 cats_seen_on : RoadAhead.RoadView,
 {
 	camera : { vantage : Geom.Vantage, cam_focal : Pixels },
-	encounter_timing : Animation.Timing,
+	encounter_timing : EncounterPlan.Timing,
 } -> List(Pipeline.Sighted(PosedCat))
 cats_seen_on = |road_view, { camera, encounter_timing }|
 	EncounterSighting.animals_in_view(
@@ -685,11 +686,11 @@ route_flights = World.route.route_segments().join_map(
 
 ## How far short of a cat its crossing is planned for the fastest rider.
 cat_planning_gap : Distance
-cat_planning_gap = Animation.planning_gap(Cat.crossing_span, VehicleLimits.top_speed)
+cat_planning_gap = EncounterPlan.planning_gap(Cat.crossing_span, VehicleLimits.top_speed)
 
 ## How far short of a bird's perch its flight is planned for the fastest rider.
 bird_planning_gap : Distance
-bird_planning_gap = Animation.planning_gap(BirdFlight.flight_span, VehicleLimits.top_speed)
+bird_planning_gap = EncounterPlan.planning_gap(BirdFlight.flight_span, VehicleLimits.top_speed)
 
 expect route_cats.len() == 3
 expect cat_planning_gap < Segment.cat_along.plus(CatCrossing.cat_beyond_tree).from_start()
@@ -2004,8 +2005,8 @@ focal_of = |rider|
 	RiderCamera.of(rider, { route: cat_route, encounter_timing: Unplanned }).cam_focal
 
 ## An encounter ten steps in.
-ten_steps_in : Animation.Timing
-ten_steps_in = Animation.timing_of(StartsAt(Clock.at_step(100)), Clock.at_step(110))
+ten_steps_in : EncounterPlan.Timing
+ten_steps_in = EncounterPlan.timing_of(StartsAt(Clock.at_step(100)), Clock.at_step(110))
 
 ## The focal length of the camera for `rider` on the cat route, with the
 ## encounter on their segment ten steps in.
@@ -2032,7 +2033,7 @@ looking_hard = |rider| { ..rider, eyes: { ..rider.eyes, look_depth: Fraction.who
 
 ## How strongly the encounter on this rider's segment, at `encounter_timing`, holds
 ## their attention.
-encounter_attention_of : RiderState, Animation.Timing -> F64
+encounter_attention_of : RiderState, EncounterPlan.Timing -> F64
 encounter_attention_of = |rider, encounter_timing|
 	EncounterReaction.encounter_attention(
 		cat_route.segment_at(rider.segment_index),
@@ -2085,7 +2086,7 @@ expect focal_ten_steps_in(rider_on(1)) < focal_ten_steps_in(rider_on(0))
 # at none. Before the crossing it opens.
 ## The change of speed Throttle makes for a rider at the start of the world's
 ## cat segment, going 0.3 m a step, with its crossing at `encounter_timing`.
-cat_throttle_change : Animation.Timing -> F64
+cat_throttle_change : EncounterPlan.Timing -> F64
 cat_throttle_change = |encounter_timing| {
 	motorcycle = { ..Motorcycle.initial, speed: Speed.metres_a_step(0.3) }
 	segment = World.route.segment_at(Route.SegmentIndex.number(3))
@@ -2097,7 +2098,7 @@ cat_throttle_change = |encounter_timing| {
 expect cat_throttle_change(ten_steps_in) == 0.0
 expect cat_throttle_change(Unplanned) > 0.0
 expect {
-	before_it = Animation.timing_of(StartsAt(Clock.at_step(100)), Clock.at_step(99))
+	before_it = EncounterPlan.timing_of(StartsAt(Clock.at_step(100)), Clock.at_step(99))
 	cat_throttle_change(before_it) > 0.0
 }
 expect focal_of(looking_hard(upright)) < focal_of(upright)
