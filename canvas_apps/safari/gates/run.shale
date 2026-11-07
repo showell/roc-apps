@@ -15,7 +15,8 @@
 -- change from the recent ones prints a line (cookbook/times.shale).
 --
 -- The gates run as child runs of this script, `part=expects`, `part=widgets`,
--- `part=tutorial`, `part=proof` and `part=page`, one program of this run's each.
+-- `part=tutorial`, `part=book_names`, `part=proof` and `part=page`, one program
+-- of this run's each.
 -- A child runs alone the same way (`... run.shale part=proof`).
 --
 -- The lints (gates/lints.shale) run first: shale's Roc lints, each count held
@@ -23,6 +24,11 @@
 --
 -- `part=tutorial` runs tutorial/build.shale's self-test, then builds the
 -- tutorial, so a name it quotes that is gone from the code fails the gates.
+--
+-- `part=book_names` runs gates/book_names.shale, which finds a backticked name
+-- in the tutorial's prose that is gone from the code. Its count of stale names
+-- is held at BOOK_STALE_NAMES_HELD, the names that wait for their chapters to be
+-- rewritten, so a count that moves either way fails.
 --
 -- `part=expects` runs `roc test --verbose` from each of EXPECT_ROOTS, whose
 -- reach together is every expect: gates/CrossModuleExpects.roc reaches nearly
@@ -150,12 +156,14 @@ end
 
 const SELF_PATH = "canvas_apps/safari/gates/run.shale"
 const TUTORIAL = "canvas_apps/safari/tutorial/build.shale"
+const BOOK_NAMES = "canvas_apps/safari/gates/book_names.shale"
+const BOOK_STALE_NAMES_HELD = 35
 const EXPECT_ROOTS = {"gates/CrossModuleExpects.roc", "web.roc", "../lib/main.roc"}
 const SAFARI_SOURCES = {":(glob)canvas_apps/safari/*.roc", ":(glob)canvas_apps/safari/gates/*.roc", ":(glob)canvas_apps/lib/*.roc"}
 const WIDGET_SOURCES = {":(glob)canvas_apps/*_widget/*.roc", ":(glob)canvas_apps/widget_kit/*.roc"}
 const DEPTHS = {"0", "100", "1570", "1590", "3000", "3742", "5700", "6553", "9000"}
 const CACHE_CEILING_MB = 4000
-const CPU_BUDGET_MS = {lints = 25000, expects = 30000, widgets = 50000, tutorial = 5000, proof = 60000, page = 25000}
+const CPU_BUDGET_MS = {lints = 25000, expects = 30000, widgets = 50000, tutorial = 5000, book_names = 2000, proof = 60000, page = 25000}
 const COLD = arg("cold", "") == "1"
 const RELEASE = arg("release", "") == "1"
 
@@ -412,6 +420,11 @@ function tutorial()
   return nil
 end
 
+function book_names()
+  print(trim(must(run({"shale", "--root", ".", BOOK_NAMES, "held=" .. BOOK_STALE_NAMES_HELD}, {timeout_ms = 60000, tail = 100})).out))
+  return nil
+end
+
 -- Every gate, each a child run; a child that fails is named, and the rest
 -- still run.
 function all()
@@ -425,7 +438,7 @@ function all()
   end
   push(times, "lints " .. (lints.ms // 1000) .. " s")
   if lints.ended ~= "exit" or lints.code ~= 0 then push(bad, "lints") end
-  for part in {"expects", "widgets", "tutorial", "proof", "page"} do
+  for part in {"expects", "widgets", "tutorial", "book_names", "proof", "page"} do
     -- A child, and every roc under it, inherits this run's niceness.
     local argv = {"shale", "--root", ".", SELF_PATH, "part=" .. part}
     if COLD then push(argv, "cold=1") end
@@ -438,7 +451,7 @@ function all()
   end
   print("safari gates: " .. join(times, ", "))
   if #bad > 0 then fail("safari gates: " .. #bad .. " failed: " .. join(bad, ", ")) end
-  print("safari gates: expects held, widgets checked, proof tools ok, tutorial built, page drawn")
+  print("safari gates: expects held, widgets checked, tutorial built, book names held, proof tools ok, page drawn")
   if not COLD then print("NOT RUN, left to publish: check.shale, cold caches, release wasm, the widgets' page builds") end
 end
 
@@ -455,8 +468,10 @@ elseif PART == "proof" then
   proof()
 elseif PART == "tutorial" then
   tutorial()
+elseif PART == "book_names" then
+  book_names()
 elseif PART == "page" then
   page()
 else
-  fail("safari gates: part= is expects, widgets, format, proof, tutorial or page (none runs them all)")
+  fail("safari gates: part= is expects, widgets, format, proof, tutorial, book_names or page (none runs them all)")
 end

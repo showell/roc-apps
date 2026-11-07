@@ -166,11 +166,11 @@ At step 1,570 of the ride, a cat is frozen in the lane. This is what `CatSightin
 
 That's a sighting: where the rider sees something, and how it should look.
 
-Most things in the view come in pairs, and the names say which half is which: `CatSighting` and `CatShapes`, `TreeSighting` and `TreeShapes`, `TowerSighting` and `Tower`, `TruckSighting` and `TruckPicture`.
+Most things in the view come in pairs, and the names say which half is which: `CatSighting` and `CatShapes`, `TreeSighting` and `TreeShapes`, `TowerSighting` and `Tower`, `TruckSighting` and `TruckAhead`.
 
 A sighting answers one question each frame: which of these can the rider see right now, and how should each one look? `CatSighting` goes through the stretches of road ahead, which Safari Ride calls segments, asks `Cat` where it is, works out where that lands in the rider's view, and drops any cat behind the camera or too small to matter. What it hands back is a plain record with no drawing in it:
 
-{{code CatSighting.CatSighting}}
+{{code Geom.Sighted}}
 
 `Scene` gathers every sighting's answer, a depth sort puts them in order, and `SceneShapes` hands each one to the module that paints it. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. So a sighting decides what's visible, and the drawing code only paints what it's told.
 
@@ -1568,7 +1568,7 @@ The truck stays ahead of the rider all the way:
 New in this chapter:
 
 - Roc: list patterns
-- Modules: `Truck`, `TruckPicture`
+- Modules: `Truck`, `TruckAhead`
 
 The modules around `Truck`
 ```dot
@@ -1578,7 +1578,7 @@ digraph truck {
   RideInstant -> Truck;
   Scene -> Truck;
   TruckSighting -> Truck;
-  TruckPicture -> Truck;
+  TruckAhead -> Truck;
   Truck -> World;
   Truck -> VehicleLimits;
   Truck -> Speed;
@@ -1640,8 +1640,8 @@ digraph headlights {
   Mountains -> Sky;
   Mountains -> Clock;
   Sky -> Clock;
-  SceneShapes -> TruckPicture;
-  TruckPicture -> Truck;
+  SceneShapes -> TruckAhead;
+  TruckAhead -> Truck;
 }
 ```
 
@@ -1661,7 +1661,7 @@ Lamps are plain data. The sighting carries them, and the drawing does what they 
 
 {{code TruckAhead.truck_shapes from "beams =" to "].join()"}}
 
-`TruckPicture` leaves the painting to two modules. `TruckBody` paints the trailer, the cab and the tires, far to near, and `TruckLights` paints the beams and the brake lights, each with its glow.
+`TruckAhead` leaves the painting to two modules. `TruckBody` paints the trailer, the cab and the tires, far to near, and `TruckLights` paints the beams and the brake lights, each with its glow.
 
 The sun and the beacons follow the clock alone. The cat has a more nuanced rule: the timing of its crossing depends on the rider's position.
 
@@ -1931,7 +1931,7 @@ A rule turns where the rider is into a `Stage`. The cat's rule was `stage_over_s
 |---|---|---|
 | It reads | The gap | The gap and the speed |
 | It starts | 60 metres off, always | Earlier for a faster rider |
-| It ends | 15 metres off, always | `buffer` metres short, always |
+| It ends | 15 metres off, always | `ends_at` metres short, always |
 | It's for | Something that reacts to how close the rider is | Something that has to finish in time |
 | A stopped rider | Leaves the bird hanging where the gap puts it | Holds the cat at the start of its crossing |
 
@@ -1985,7 +1985,7 @@ The stills are data too. Nested tags get checked all the way down, so a `match` 
 
 {{code BirdStills.pose_polygons}}
 
-`BirdShapes.bird_shapes` hands that to `StillShapes.still_shapes`, the function that also draws a cow. A bird's feet reach the screen through `Camera.project`, as a tree's top does, and the math layer chapter shows how. That's the drawing.
+`PosedBird.scenery_picture` hands that to `StillShapes.still_shapes`, the function that also draws a cow. A bird's feet reach the screen through `Camera.project`, as a tree's top does, and the math layer chapter shows how. That's the drawing.
 
 ### Finding a tree
 
@@ -2252,9 +2252,9 @@ From there to the screen is a pinhole camera, which is similar triangles. Dividi
 
 {{code Camera.project}}
 
-`BirdShapes.bird_shapes` calls it with a record built on the spot for the bird's feet:
+`PosedBird.scenery_picture` calls it with a record built on the spot for the bird's feet:
 
-{{code BirdShapes.bird_shapes from "feet = Camera.project(" to "cam_focal,"}}
+{{code BirdShapes.PosedBird from "feet = Camera.project(" to "feet = Camera.project("}}
 
 The focal length comes from a lens. `focal` is a value computed from other values, with no function in sight, and `field_of_view` is a `Turn`, so taking half of it needs no comment about radians. [check: whether a value like this inside a `.{ }` block is evaluated at compile time, as top-level values are.]
 
@@ -2511,7 +2511,7 @@ The ride instant chapter showed `SafariApp.model_at_next_step` reading a snapsho
 
 What the game hands back each frame is a `List(Shapes.Shape)`. A shape is a tag: `Poly`, `Disc`, `Rect` and a few more, each with its fill. Two of them aren't shapes. `Blend` and `View` are marks in the list that change how what comes after them is painted, because a frame is a list, and a mark is the cheapest way to say that.
 
-The rider's lean is one of those marks. The whole picture banks into a turn, backdrop included, so `SafariApp.frame` builds a camera out of nested tags and puts it at the front. The rest is `Tour` answering questions, each a one-liner:
+The rider's lean is one of those marks. The whole picture banks into a turn, backdrop included, so `SafariApp.frame_shapes` builds a camera out of nested tags and puts it at the front. The rest is `Tour` answering questions, each a one-liner:
 
 {{code SafariApp.frame_shapes from "centre = {" to ").prepend(lean)"}}
 

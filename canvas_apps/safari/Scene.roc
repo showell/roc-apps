@@ -3,6 +3,7 @@
 ## found by its own sighting.
 import Billboard
 import BirdSighting
+import CatShapes
 import CatSighting
 import Clock
 import Conifer
@@ -26,10 +27,10 @@ Scene := {
 	trees : List(Geom.Sighted(Conifer)),
 	towers : List(Geom.Sighted(Tower)),
 	critters : List(Geom.Sighted(Billboard)),
-	cats : List(CatSighting),
+	cats : List(Geom.Sighted(CatShapes.PosedCat)),
 	rails : List(GuardRail.RailQuad),
 	truck : TruckSighting.TruckFate,
-	birds : List(BirdSighting),
+	birds : List(Geom.Sighted(BirdShapes.PosedBird)),
 }.{
 
 	## What the sightings read beyond the road: the rider's speed, where the

@@ -299,7 +299,7 @@ function main()
   local rendered = must(run(make_book_argv(tool, book, folders), {timeout_ms = 60000, whole = 20000000, want = ROC_WANT}), "make_book")
   local files = write_pages(rendered.out)
   must(run({"shale", "--root", ".", COLOR, "self_test=1"}, {timeout_ms = 30000, tail = 20}), "color_roc's self test")
-  print(trim(must(run({"shale", "--root", ".", COLOR, "pages=" .. STAGING}, {timeout_ms = 30000, tail = 300}), "color_roc").out))
+  print(trim(must(run({"shale", "--root", ".", COLOR, "pages=" .. STAGING, "order=" .. join(files, " ")}, {timeout_ms = 30000, tail = 300}), "color_roc").out))
   local sizes = page_sizes(files)
 
   if STAGE == "" then

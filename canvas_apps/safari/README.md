@@ -73,7 +73,7 @@ them, in three tiers, each run from the roc-apps root:
 | Tier | Runs | Time |
 |---|---|---|
 | `fast.shale` | `roc check`, one test root, the one-file lints on changed files, one frame; stops at the first failure | about 10 s, or a minute and a half on a checkout's first run |
-| `run.shale` | every lint, every expect, every widget's check and expects, the tutorial, the proof tools, the dev page; reports every failure | two to three minutes |
+| `run.shale` | every lint, every expect, every widget's check and expects, the tutorial, the names in its prose, the proof tools, the dev page; reports every failure | two to three minutes |
 | `publish.shale` | the merge gate and `check.shale` from cold caches, then the book, which builds safari's page and every widget's as release wasm | about six minutes |
 
 The book of the tutorial, one page a chapter, builds into the dev channel at

@@ -1,14 +1,12 @@
 ## SceneShapes renders the things beside the road, each by its own kind's module,
 ## and paints them in depth order, far to near.
 import Pixels
-import CatShapes
 import Across
 import Along
 import Angle
 import Distance
 import Geom
 import World
-import CatSighting
 import Chain
 import Conifer
 import GuardRail
@@ -19,7 +17,6 @@ import Scene
 import TreeSighting
 import TruckAhead
 import TruckSighting
-import BirdShapes
 import lib.Shapes
 
 SceneShapes :: [].{
@@ -51,9 +48,7 @@ SceneShapes :: [].{
 	scene_renderings = |scene, view| {
 		cam_focal = view.cam_focal
 		{
-			birds: scene.birds.map(
-				|bird| rendering_at(bird.forward, BirdShapes.bird_shapes(bird, cam_focal)),
-			),
+			birds: scene.birds.map(|bird| Pipeline.rendering_of(bird, { cam_focal, context: {} })),
 			trees: scene.trees.map(
 				|tree| SceneShapes.tree_rendering(tree, { trees: scene.trees, cam_focal }),
 			),
@@ -63,9 +58,7 @@ SceneShapes :: [].{
 			critters: scene.critters.map(
 				|critter| Pipeline.rendering_of(critter, { cam_focal, context: {} }),
 			),
-			cats: scene.cats.map(
-				|cat| rendering_at(cat.forward, CatShapes.cat_shapes(cat, cam_focal)),
-			),
+			cats: scene.cats.map(|cat| Pipeline.rendering_of(cat, { cam_focal, context: {} })),
 			trucks: truck_renderings(view, scene.truck),
 			rails: scene.rails.map(
 				|quad| rendering_at(quad.forward, GuardRail.quad_shapes(quad, cam_focal)),

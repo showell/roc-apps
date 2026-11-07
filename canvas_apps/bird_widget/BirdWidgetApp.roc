@@ -134,15 +134,14 @@ tree_shapes = |tree|
 bird_shapes : Distance -> List(Shapes.Shape)
 bird_shapes = |gap| {
 	instant = BirdFlight.instant_at(flight, { gap: gap })
-	BirdShapes.bird_shapes(
-		{
-			right: Distance.metres(instant.spot.across.to_metres()),
-			forward: forward_of(instant.spot.along),
-			lift: instant.spot.lift,
-			pose: instant.pose,
-		},
-		Lens.focal,
-	)
+	bird : BirdShapes.PosedBird
+	bird = { pose: instant.pose, lift: instant.spot.lift }
+	bird.scenery_picture({
+		right: Distance.metres(instant.spot.across.to_metres()),
+		forward: forward_of(instant.spot.along),
+		cam_focal: Lens.focal,
+		context: {},
+	}).to_shapes()
 }
 
 ## What BirdFlight says at `gap`, a line each.

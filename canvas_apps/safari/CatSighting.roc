@@ -2,24 +2,17 @@
 ## on a segment of the chain ahead, placed where its crossing has got to,
 ## if it is in front of the camera and tall enough on screen to draw.
 import Cat
-import Distance
+import CatShapes
 import Chain
 import Geom
 import Detail
+import Pipeline
 import Speed
 
-## A cat to draw: where it stands in the rider's view, its pose, and how high
-## its leap has raised it. A cat in view is ahead of the rider, so of its
-## lengths only `right` can be negative.
-CatSighting := {
-	right : Distance,
-	forward : Distance,
-	pose : Cat.Pose,
-	lift : Distance,
-}.{
+CatSighting :: [].{
 
 	## The cats in view of a rider at `speed`, the nearest segment's first.
-	cats_in_view : Chain.Viewpoint, Speed -> List(CatSighting)
+	cats_in_view : Chain.Viewpoint, Speed -> List(Geom.Sighted(CatShapes.PosedCat))
 	cats_in_view = |view, speed| {
 		positions = Chain.Position.positions_in(view.road.chain_indices)
 		positions.keep_oks(|position| segment_cat(view, { position, speed }))
@@ -31,7 +24,7 @@ CatSighting := {
 	{
 		position : Chain.Position,
 		speed : Speed,
-	} -> Try(CatSighting, [NoCat, OutOfView])
+	} -> Try(Geom.Sighted(CatShapes.PosedCat), [NoCat, BehindCamera, TooSmall])
 	segment_cat = |view, { position, speed }| {
 		segment = position.index_in(view.road.chain_indices).segment_in(view.road.route_segments)
 		match segment.crossing {
@@ -49,25 +42,22 @@ cat_in_view : Chain.Viewpoint,
 	position : Chain.Position,
 	crossing : Cat.Crossing,
 	speed : Speed,
-} -> Try(CatSighting, [OutOfView])
+} -> Try(Geom.Sighted(CatShapes.PosedCat), [BehindCamera, TooSmall])
 cat_in_view = |view, { position, crossing, speed }| {
 	gap = Chain.gap_to_segment(view.road, position)
 	instant = Cat.instant_at(crossing, { gap: gap.plus(crossing.along.from_start()), speed })
-	seen = Chain.rider_point_ahead(
-		view.road,
-		{ position, along: instant.spot.along, across: instant.spot.across },
-	)
-	height_px = view.cam_focal.times(Cat.cat_height.ratio_to(seen.forward))
-	if seen.forward <= Geom.near_plane {
-		Err(OutOfView)
-	} else if height_px < Detail.min_scenery_px {
-		Err(OutOfView)
-	} else {
-		Ok({
-			right: seen.right,
-			forward: seen.forward,
-			pose: instant.pose,
-			lift: instant.spot.lift,
-		})
+	placed_cat : Geom.Placed(CatShapes.PosedCat)
+	placed_cat = {
+		along: instant.spot.along,
+		across: instant.spot.across,
+		kind: { pose: instant.pose, lift: instant.spot.lift },
 	}
+	Pipeline.sighting_of(
+		placed_cat,
+		{
+			road: view.road,
+			place: InChain(position),
+			size_test: { focal: view.cam_focal, smallest_px: Detail.min_scenery_px },
+		},
+	)
 }

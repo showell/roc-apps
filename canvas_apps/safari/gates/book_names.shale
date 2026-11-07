@@ -1,0 +1,286 @@
+-- budget: steps=100000000 arena_bytes=2000000000 reads=20000 read_bytes=400000000 output_bytes=1000000
+-- This lint finds a backticked name in a document's prose that the code no
+-- longer has. The includes of tutorial/build.shale can't go stale, because the
+-- build stops on them, but a sentence can.
+--
+--   cd <roc-apps checkout> && shale canvas_apps/safari/gates/book_names.shale
+--
+-- The arguments:
+--   manuscript  the document, safari's tutorial by default;
+--   sources     the folders of Roc it answers to, separated by commas, each
+--               folder's own `*.roc` and not the folders under it: by default
+--               the game, its gates, lib and shapes_widget, the folders the
+--               book quotes;
+--   table       the names that are rightly not in those sources, each with a
+--               reason, by default canvas_apps/safari/book_names.txt;
+--   held        how many stale names to expect, which the merge gate gives it.
+--
+-- The prose is every line outside a ``` fence, except a line that starts `{{`.
+-- A span that holds a `/` and no space is a path, not a name, and is skipped.
+-- From any other span every name is taken, so `Foo.bar`, `foo_bar`, the words of
+-- a code expression such as `view.clock.minus(Clock.start)`, and the words of
+-- `roc test` are all read the same way. A name is a run of words joined by dots,
+-- with an optional `!`, and a word can't start with a digit, so `0x8ecae6` and
+-- `2as` hold none. A name counts once on a line.
+--
+-- The code comes from Roc's parser through roc_tree. The tree holds no comments
+-- and a string is a kind of node that is not read here, so a word that is only
+-- in a comment or a message doesn't count as existing.
+--
+-- A name with one word exists if the code uses that word anywhere as an
+-- identifier, a field, a tag or a type, or if a file has that name.
+--
+-- A dotted name that starts with a capital is looked up. Its first word must be
+-- a file's module or a type declared anywhere in the sources, and each word
+-- after it must be declared directly in the one before: at the top level of
+-- the module's file, or in the block of a type of that name. So `Sky.dusk_at`
+-- needs `dusk_at` declared in Sky.roc, and a use of it from another module
+-- doesn't count. `Angle.Turn`, `Timeline.at_beat` and `Lean.steer` resolve
+-- through types declared inside a module's block. Words after a value are its
+-- fields or methods, and each only has to exist as a word.
+--
+-- A dotted name that starts in lower case is a value's fields or a file's name,
+-- so each of its words only has to exist.
+--
+-- Each line of the table is `Name: reason`, for the whole name as the prose
+-- spells it. There are no patterns. A blank line or one starting with `#` is
+-- skipped, and a line with no reason or a name listed twice stops the run.
+--
+-- The checks:
+--
+--   stale_name        A name on a line of the prose that the code doesn't have
+--                     and the table doesn't excuse.
+--   unused_exception  A line of the table that no prose holds, or that excuses
+--                     nothing because the code has the name.
+--
+-- The output is the counts, one line per finding, and the counts again
+-- (cookbook/roc/findings.shale). The run fails if there is a finding. Given
+-- `held`, it passes with that many stale names, printing only the counts, and
+-- fails with any other number, more or fewer, or with an unused exception.
+
+use("cookbook:roc/findings.shale")
+
+const MANUSCRIPT = arg("manuscript", "canvas_apps/safari/tutorial/tutorial.md")
+const SOURCES = arg("sources", "canvas_apps/safari,canvas_apps/safari/gates,canvas_apps/lib,canvas_apps/shapes_widget")
+const TABLE_FILE = arg("table", "canvas_apps/safari/book_names.txt")
+const HELD = arg("held", "")
+
+const NAME = "[A-Za-z_][A-Za-z0-9_]*!?(?:\\.[A-Za-z_][A-Za-z0-9_]*!?)*"
+
+-- Which attribute of a node holds a word of the code, by the node's kind. A
+-- field node has its word under `field` or under `name`.
+const WORD_ATTRIBUTES = {
+  ["anno-record-field"] = "name", ["e-ident"] = "raw", ["e-method-call"] = "method", ["e-tag"] = "raw",
+  ["exposed-upper-ident"] = "text", ["header"] = "name", ["method"] = "name", ["p-ident"] = "raw",
+  ["p-list-rest"] = "name", ["p-tag"] = "raw", ["record-field"] = "name", ["s-import"] = "raw",
+  ["s-type-anno"] = "name", ["s-var"] = "name", ["segment"] = "field", ["ty"] = "name", ["ty-var"] = "raw",
+}
+
+function source_paths()
+  local paths = {}
+  for folder in split(SOURCES, ",") do
+    if not is_dir(folder) then fail("book_names: no folder " .. folder) end
+    for p in glob(folder .. "/*.roc") do push(paths, p) end
+  end
+  if #paths == 0 then fail("book_names: no .roc files in " .. SOURCES) end
+  return paths
+end
+
+function module_of_path(path)
+  return substitute(basename(path), ".roc", "")
+end
+
+-- Adds each word of `dotted`, which may be `.min`, `$out` or `lib.Trig`.
+function add_words(words, dotted)
+  for word in split(substitute(dotted, "$", ""), ".") do
+    if word ~= "" then words[word] = true end
+  end
+  return nil
+end
+
+function add_node_words(words, node)
+  if node.kind == "field" then
+    add_words(words, get(node, "field", get(node, "name", "")))
+  elseif has_key(WORD_ATTRIBUTES, node.kind) then
+    add_words(words, get(node, WORD_ATTRIBUTES[node.kind], ""))
+  end
+  return nil
+end
+
+-- The name a statement declares, or "".
+function declared_name(nodes, statement)
+  if statement.kind == "s-type-anno" then return statement.name end
+  if statement.kind == "s-type-decl" then return nodes[statement.kids[1]].name end
+  if statement.kind == "s-decl" then return get(nodes[statement.kids[1]], "raw", "") end
+  return ""
+end
+
+-- Records what `block` declares as members of `scope`, and goes on into the
+-- block of each type declared there. Every type has a scope, block or none.
+function add_block_members(members, nodes, block, scope)
+  if not has_key(members, scope) then members[scope] = {} end
+  for k in block.kids do
+    local statement = nodes[k]
+    local name = declared_name(nodes, statement)
+    if name ~= "" then members[scope][name] = true end
+    if statement.kind == "s-type-decl" then
+      if not has_key(members, name) then members[name] = {} end
+      for part in statement.kids do
+        if nodes[part].kind == "associated" then add_block_members(members, nodes, nodes[part], name) end
+      end
+    end
+  end
+  return nil
+end
+
+-- What the sources hold: `words`, the set of every word in their code, and
+-- `members`, from each module and type to the set of what it declares.
+function code_names()
+  local words = {}
+  local members = {}
+  for tree in roc_tree(source_paths()) do
+    if tree.err ~= "" then fail("book_names: roc-ast refused " .. tree.path .. ": " .. tree.err) end
+    local module = module_of_path(tree.path)
+    words[module] = true
+    for node in tree.nodes do
+      add_node_words(words, node)
+      if node.kind == "statements" and node.depth == 1 then add_block_members(members, tree.nodes, node, module) end
+    end
+  end
+  return {words = words, members = members}
+end
+
+function is_capitalized(word)
+  return re_find(word, "^[A-Z]") ~= nil
+end
+
+function words_exist(code, words)
+  for word in words do
+    if not has_key(code.words, word) then return false end
+  end
+  return true
+end
+
+-- Whether a name that starts with a capital is declared where it says.
+function is_declared(code, parts)
+  local scope = parts[1]
+  if not has_key(code.members, scope) then return false end
+  local at = 2
+  while at <= #parts do
+    if not has_key(code.members[scope], parts[at]) then return false end
+    if not has_key(code.members, parts[at]) then return words_exist(code, drop(parts, at)) end
+    scope = parts[at]
+    at = at + 1
+  end
+  return true
+end
+
+function is_in_code(code, name)
+  local parts = split(name, ".")
+  if #parts > 1 and is_capitalized(parts[1]) then return is_declared(code, parts) end
+  return words_exist(code, parts)
+end
+
+-- The names in one span of inline code.
+function span_names(span)
+  if re_find(span, "^[^ ]*/[^ ]*$") ~= nil then return {} end
+  local names = {}
+  for m in re_find_all(span, "\\b(" .. NAME .. ")") do push(names, m.group) end
+  return names
+end
+
+-- Every name of the prose, as `{line, name}`, once for each line that holds it.
+function prose_names(text)
+  local found = {}
+  local is_fenced = false
+  local number = 0
+  for l in split(text, "\n") do
+    number = number + 1
+    if starts_with(l, "```") then
+      is_fenced = not is_fenced
+    elseif not is_fenced and not starts_with(l, "{{") then
+      local names = {}
+      for m in re_find_all(l, "`([^`]+)`") do
+        for name in span_names(m.group) do push(names, name) end
+      end
+      for name in unique(names) do push(found, {line = number, name = name}) end
+    end
+  end
+  return found
+end
+
+-- The table as `{rows, by_name}`, each row `{name, line}`.
+function exception_table()
+  if not exists(TABLE_FILE) then fail("book_names: no table " .. TABLE_FILE) end
+  local rows = {}
+  local by_name = {}
+  local number = 0
+  for raw in lines(read(TABLE_FILE)) do
+    number = number + 1
+    local l = trim(raw)
+    if l ~= "" and not starts_with(l, "#") then
+      local m = re_find(l, "^(" .. NAME .. "): +[^ ]")
+      if m == nil then fail("book_names: " .. TABLE_FILE .. ":" .. number .. ": expected `Name: reason`") end
+      if has_key(by_name, m.group) then fail("book_names: " .. TABLE_FILE .. ":" .. number .. ": `" .. m.group .. "` is listed twice") end
+      push(rows, {name = m.group, line = number})
+      by_name[m.group] = true
+    end
+  end
+  return {rows = rows, by_name = by_name}
+end
+
+function unused_lines(exceptions, in_prose, excused)
+  local found = {}
+  for row in exceptions.rows do
+    local at = TABLE_FILE .. ":" .. row.line .. ": unused_exception: `" .. row.name .. "` "
+    if not has_key(in_prose, row.name) then
+      push(found, at .. "is in no prose")
+    elseif not has_key(excused, row.name) then
+      push(found, at .. "excuses nothing: the code has it")
+    end
+  end
+  return found
+end
+
+-- The verdict as `{stale, unused, summary}`, the first two lists of finding lines.
+function judged_names()
+  local code = code_names()
+  local exceptions = exception_table()
+  local names = prose_names(read(MANUSCRIPT))
+  if #names == 0 then fail("book_names: no backticked names in " .. MANUSCRIPT) end
+  local in_prose = {}
+  local excused = {}
+  local stale = {}
+  for found in names do
+    local is_excepted = has_key(exceptions.by_name, found.name)
+    if is_excepted then in_prose[found.name] = true end
+    if not is_in_code(code, found.name) then
+      if is_excepted then
+        excused[found.name] = true
+      else
+        push(stale, MANUSCRIPT .. ":" .. found.line .. ": stale_name: `" .. found.name .. "`")
+      end
+    end
+  end
+  local unused = unused_lines(exceptions, in_prose, excused)
+  local summary = "book_names: stale_name " .. #stale .. ", unused_exception " .. #unused .. ", " .. #names .. " names read, " .. #exceptions.rows .. " in the table"
+  return {stale = stale, unused = unused, summary = summary}
+end
+
+function all_findings(verdict)
+  local found = {}
+  for l in verdict.stale do push(found, l) end
+  for l in verdict.unused do push(found, l) end
+  return found
+end
+
+-- This `fail` stands at the top level so the summary is the last line a
+-- caller reads: a stop inside a function prints the calls after it.
+const VERDICT = judged_names()
+if HELD ~= "" and #VERDICT.stale == tonumber(HELD) and #VERDICT.unused == 0 then
+  print(VERDICT.summary .. ", as held")
+else
+  print_findings(VERDICT.summary, all_findings(VERDICT))
+  if HELD ~= "" then fail("book_names: held at stale_name " .. HELD .. " and unused_exception 0") end
+  if #VERDICT.stale + #VERDICT.unused > 0 then fail(VERDICT.summary) end
+end
