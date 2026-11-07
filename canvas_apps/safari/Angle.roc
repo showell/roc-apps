@@ -38,11 +38,11 @@ Angle :: [].{
 		## The shortest turn from `from` round to this bearing, between minus
 		## and plus a half turn.
 		turn_from : Angle.Bearing, Angle.Bearing -> Angle.Turn
-		turn_from = |Angle.Bearing.(b), Angle.Bearing.(from)| Angle.Turn.(Trig.wrap(b - from, 64))
+		turn_from = |Angle.Bearing.(b), Angle.Bearing.(from)| Angle.Turn.(Trig.wrap(b - from))
 
 		## The shortest turn from north round to this bearing.
 		turn_from_north : Angle.Bearing -> Angle.Turn
-		turn_from_north = |Angle.Bearing.(b)| Angle.Turn.(Trig.wrap(b, 64))
+		turn_from_north = |Angle.Bearing.(b)| Angle.Turn.(Trig.wrap(b))
 
 		## Whether this bearing is no further right than `other`, read without
 		## going round: for a sweep across a stretch of bearings.
