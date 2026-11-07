@@ -6,8 +6,9 @@
 -- It runs `roc check`, then the merge gate's `part=format`, then `roc test` from
 -- gates/CrossModuleExpects.roc, then the one-file lints (lints.shale) on the
 -- .roc files changed since this checkout's last green, then builds RasterFrame
--- and holds one frame to its line in gates/proof.expected. Every run names what
--- it left to the merge gate.
+-- and holds one frame to its line in gates/proof.expected. A changed file that a
+-- lint reads outside safari, in lib or a widget, judges every file. Every run
+-- names what it left to the merge gate.
 -- It takes about ten seconds once its cache is warm and a green is on record.
 --
 -- A frame stands in for the other depths because an arithmetic slip no expect
@@ -46,9 +47,17 @@ function hashes_of(paths)
   return found
 end
 
--- Every .roc file of safari's, as the lints read them: from safari's folder.
-function safari_files()
-  local r = run({"git", "ls-files", "--cached", "--others", "--exclude-standard", "--", SAFARI .. "/*.roc"}, {timeout_ms = 30000, whole = 1000000})
+-- Every file a lint reads, committed or not, from the globs lints.shale holds:
+-- safari's, and the widgets', widget_kit's and lib's too.
+function lint_read_files()
+  local g = run({"shale", "--root", ".", LINTS, "reads=globs"}, {timeout_ms = 30000, whole = 100000})
+  if g.ended ~= "exit" or get(g, "code", -1) ~= 0 then
+    print(trim(g.out))
+    fail("safari fast: lints.shale didn't name the files it reads")
+  end
+  local argv = {"git", "ls-files", "--cached", "--others", "--exclude-standard", "--"}
+  for glob in lines(trim(g.out)) do push(argv, ":(glob)" .. glob) end
+  local r = run(argv, {timeout_ms = 30000, whole = 1000000})
   local kept = {}
   for f in lines(trim(r.out)) do
     if exists(f) then push(kept, f) end
@@ -93,7 +102,13 @@ function changed_files(held, hashes, sources)
   end
   local changed = {}
   for p in sources do
-    if get(held, p, "") ~= hashes[p] then push(changed, sub(p, #SAFARI + 2)) end
+    if get(held, p, "") ~= hashes[p] then
+      if not starts_with(p, SAFARI .. "/") then
+        print(p .. " changed, and only a run over every file judges it: judging every file")
+        return "every"
+      end
+      push(changed, sub(p, #SAFARI + 2))
+    end
   end
   return join(changed, ",")
 end
@@ -176,7 +191,7 @@ function main()
   if not exists(folder) then mkdir(folder) end
   local env = {XDG_CACHE_HOME = real(folder)}
   local record = folder .. "/green.txt"
-  local sources = safari_files()
+  local sources = lint_read_files()
   local judged = {}
   for f in sources do push(judged, f) end
   for f in rule_files() do push(judged, f) end
