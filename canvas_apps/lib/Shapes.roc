@@ -248,7 +248,7 @@ expect Shapes.squashed_shapes([Text(line_of_type)], { axis: 100.0, cosine: 0.5 }
 
 ## A dot of light, as the shape both brackets hold.
 dot : Shapes.Shape
-dot = Disc({ x: 1.0, y: 2.0, radius: 3.0, fill: Flat(Brush.opaque(RgbColor.of(0x202020))) })
+dot = Disc({ x: 1.0, y: 2.0, radius: 3.0, fill: Brush.flat(RgbColor.of(0x202020)) })
 
 expect Shapes.added_light([dot]) == [Blend(Add), dot, Blend(Over)]
 expect Shapes.added_light([]) == [Blend(Add), Blend(Over)]
@@ -256,8 +256,8 @@ expect Shapes.in_space(Screen, [dot]) == [View(Screen), dot, View(Screen)]
 
 # A horizontal line two wide stands one each side of its axis.
 expect
-	Shapes.line({ from: { x: 0.0, y: 0.0 }, to: { x: 10.0, y: 0.0 }, width: 2.0 }, Flat(Brush.opaque(RgbColor.of(0x202020))))
-		== Poly({ coordinates: [0.0, 1.0, 10.0, 1.0, 10.0, -1.0, 0.0, -1.0], fill: Flat(Brush.opaque(RgbColor.of(0x202020))) })
+	Shapes.line({ from: { x: 0.0, y: 0.0 }, to: { x: 10.0, y: 0.0 }, width: 2.0 }, Brush.flat(RgbColor.of(0x202020)))
+		== Poly({ coordinates: [0.0, 1.0, 10.0, 1.0, 10.0, -1.0, 0.0, -1.0], fill: Brush.flat(RgbColor.of(0x202020)) })
 
 # The fewest sides a ring may have make three lines.
-expect Shapes.ring_shapes({ center: { x: 0.0, y: 0.0 }, radius: 5.0, line_width: 1.0, sides: 3 }, Flat(Brush.opaque(RgbColor.of(0x202020)))).len() == 3
+expect Shapes.ring_shapes({ center: { x: 0.0, y: 0.0 }, radius: 5.0, line_width: 1.0, sides: 3 }, Brush.flat(RgbColor.of(0x202020))).len() == 3

@@ -4,6 +4,7 @@
 ## camera roll, the two sky colours and the sun. SafariApp turns it into a
 ## canvas app, with the keys, the pause, and the frame leaned by the roll.
 import Angle
+import Route
 import World
 import RideInstant
 import Sky
@@ -16,7 +17,7 @@ import Lens
 
 ## The route, the instant the ride has reached, and the instants before it.
 Tour := {
-	route_segments : List(World.Segment),
+	route : Route,
 	instant : RideInstant,
 	past_instants : List(RideInstant),
 }.{
@@ -27,11 +28,11 @@ Tour := {
 	past_instants_cap = 2048
 
 	initial : Tour
-	initial = { route_segments: World.segments, instant: RideInstant.initial, past_instants: [] }
+	initial = { route: World.route, instant: RideInstant.initial, past_instants: [] }
 
 	step_forward : Tour -> Tour
 	step_forward = |tour| {
-		finished = Rider.is_finished(tour.instant.rider, tour.route_segments)
+		finished = Rider.is_finished(tour.instant.rider, tour.route)
 		# Dropping one instant per step would copy the whole list every step, so
 		# half of it goes at once and the copy falls on one step in a thousand.
 		# The list is therefore between half a cap and a cap deep, never empty,
@@ -45,8 +46,8 @@ Tour := {
 				tour.past_instants.drop_first(past_instants_cap // 2).append(tour.instant)
 			}
 		{
-			route_segments: tour.route_segments,
-			instant: RideInstant.next_or_restart(tour.route_segments, tour.instant),
+			route: tour.route,
+			instant: RideInstant.next_or_restart(tour.route, tour.instant),
 			past_instants,
 		}
 	}
@@ -55,7 +56,7 @@ Tour := {
 	step_back = |tour| {
 		match tour.past_instants.last() {
 			Ok(prev) => {
-				route_segments: tour.route_segments,
+				route: tour.route,
 				instant: prev,
 				past_instants: tour.past_instants.drop_last(1),
 			}
@@ -65,7 +66,7 @@ Tour := {
 
 	## The frame at the tour's instant: its shapes and its sun.
 	frame_content : Tour -> RideInstant.FrameContent
-	frame_content = |tour| RideInstant.frame_content(tour.route_segments, tour.instant)
+	frame_content = |tour| RideInstant.frame_content(tour.route, tour.instant)
 
 	# The camera roll: the whole frame, backdrop and shapes, turns
 	# by minus this about the screen's centre.

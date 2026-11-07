@@ -245,7 +245,7 @@ fan = |coordinates, indices, out| {
 }
 
 ink : Brush.Fill
-ink = Flat(Brush.opaque(RgbColor.of(0x202020)))
+ink = Brush.flat(RgbColor.of(0x202020))
 
 # A square is convex, and the cut leaves it as it is.
 expect {

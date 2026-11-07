@@ -13,7 +13,7 @@ import Picture
 import SegmentPlace
 import Spot
 import StillShapes
-import Stills
+import Still
 import Distance
 import lib.Brush
 import lib.Shapes
@@ -52,7 +52,7 @@ PosedBird := { pose : PosedBird.BirdPose }.{
 		)
 
 	## The drawing for a pose.
-	pose_polygons : PosedBird.BirdPose -> List(Stills.StillPolygon)
+	pose_polygons : PosedBird.BirdPose -> Still
 	pose_polygons = |pose|
 		match pose {
 			Perched => BirdStills.perched_polygons
@@ -168,6 +168,14 @@ expect {
 	drawn = [Side(WingsDown), Diving].join_map(
 		|pose| bird_shapes_at({ pose: pose }, level).map(fill_of),
 	)
-	stills = BirdStills.side_wings_down_polygons.concat(BirdStills.diving_polygons)
-	drawn == stills.map(|poly| Flat(Brush.opaque(poly.color)))
+	side_down = BirdStills.side_wings_down_polygons.polygons()
+	stills = side_down.concat(BirdStills.diving_polygons.polygons())
+	drawn
+		== stills.map(
+			|poly|
+				match poly.fill {
+					Flat(color) => Brush.flat(color)
+					Shaded(_) => crash "a bird's still is flat"
+				},
+		)
 }

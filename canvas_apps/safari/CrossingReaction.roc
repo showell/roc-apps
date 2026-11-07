@@ -8,6 +8,8 @@ import Acceleration
 import Along
 import Attention
 import Cat
+import Route
+import Segment
 import Speed
 import VehicleLimits
 import World
@@ -17,7 +19,7 @@ CrossingReaction :: [].{
 	## What `segment`'s crossing asks of the throttle of a rider on that
 	## segment: a cat crossing holds the acceleration at none, which stops the
 	## rider speeding up and never brakes.
-	crossing_throttle : World.Segment, { along : Along, speed : Speed, .. } -> VehicleLimits.Limit
+	crossing_throttle : Segment, { along : Along, speed : Speed, .. } -> VehicleLimits.Limit
 	crossing_throttle = |segment, rider|
 		match segment.crossing {
 			CatCrosses(crossing) => {
@@ -32,7 +34,7 @@ CrossingReaction :: [].{
 		}
 
 	## How hard `segment`'s crossing holds the eye of a rider on that segment.
-	crossing_attention : World.Segment, { along : Along, speed : Speed, .. } -> Attention
+	crossing_attention : Segment, { along : Along, speed : Speed, .. } -> Attention
 	crossing_attention = |segment, rider|
 		match segment.crossing {
 			CatCrosses(crossing) => {
@@ -43,14 +45,14 @@ CrossingReaction :: [].{
 		}
 }
 
-bird_segment : World.Segment
-bird_segment = World.route_segment(0)
+bird_segment : Segment
+bird_segment = World.route.segment_at(Route.SegmentIndex.number(0))
 
-quiet_segment : World.Segment
-quiet_segment = World.route_segment(1)
+quiet_segment : Segment
+quiet_segment = World.route.segment_at(Route.SegmentIndex.number(1))
 
-cat_segment : World.Segment
-cat_segment = World.route_segment(3)
+cat_segment : Segment
+cat_segment = World.route.segment_at(Route.SegmentIndex.number(3))
 
 cat_along : Along
 cat_along =

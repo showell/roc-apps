@@ -9,6 +9,7 @@ import Along
 import Angle
 import Camera
 import RoadAhead
+import Route
 import SegmentPlace
 import Spot
 import Distance
@@ -139,8 +140,8 @@ tower_metal : RgbColor
 tower_metal = RgbColor.of(0x9AA0A8)
 
 ## The radius a far tower sinks over, which hides it wholly at 1.8 km. It
-## is tighter than `Ground.ground_curve_radius`, so a tower sinks visibly as
-## it recedes: on the ground's curve it would stay in view to 4 km.
+## is tighter than the radius the ground curves over, so a tower sinks visibly
+## as it recedes: on the ground's curve it would stay in view to 4 km.
 sink_radius : Distance
 sink_radius = Distance.metres(20000.0)
 
@@ -279,13 +280,13 @@ rod_quad = |
 		offset_y: oy,
 	},
 | Polygon.flat_polygon(
-	tower_metal,
 	[
 		{ x: a.x.plus(ox), y: a.y.plus(oy) },
 		{ x: b.x.plus(ox), y: b.y.plus(oy) },
 		{ x: b.x.minus(ox), y: b.y.minus(oy) },
 		{ x: a.x.minus(ox), y: a.y.minus(oy) },
 	],
+	tower_metal,
 )
 
 ## A rod between two points in the rider's view, cut where it crosses the
@@ -497,8 +498,8 @@ expect
 # The first three segments, seen from the start of the route.
 start_road : RoadAhead.RoadView
 start_road = {
-	route_segments: [0, 1, 2].map(World.route_segment),
-	segments_ahead: [0, 1, 2].map(World.SegmentIndex.number),
+	route: World.route,
+	segments_ahead: { first_index: Route.SegmentIndex.first, count: 3 },
 	vantage: {
 		along: Along.metres(0.0),
 		across: Across.metres(0.0),
@@ -516,8 +517,7 @@ tower_along : F64 -> Pipeline.Sighted(Tower)
 tower_along = |along|
 	Pipeline.sighting_of(
 		{
-			along: Along.metres(along),
-			across: Across.metres(20.0),
+			road_point: { along: Along.metres(along), across: Across.metres(20.0) },
 			lift: Distance.zero,
 			kind: plain_tower,
 		},

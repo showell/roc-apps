@@ -8,6 +8,8 @@ import game.Along
 import game.Angle
 import game.Distance
 import game.RoadAhead
+import game.Route
+import game.Segment
 import game.SegmentPlace
 import game.Geom
 import game.GroundSighting
@@ -18,6 +20,7 @@ import lib.Brush
 import lib.RgbColor
 import lib.CanvasApp
 import lib.Shapes
+import widget.ReadoutText
 import widget.ScrubWidget
 
 BendsWidgetApp :: [].{
@@ -62,26 +65,28 @@ segment_length = Distance.metres(60.0)
 rider_before_bend : Distance
 rider_before_bend = Distance.metres(25.0)
 
-## Two segments of the route, cut to length, with `turn` between.
-two_segments : Angle.Turn -> List(World.Segment)
+## A route of two segments of the route, cut to length, with `turn` between.
+two_segments : Angle.Turn -> Route
 two_segments = |turn|
-	World.segments.take_first(2).map_with_index(
-		|segment, index| {
-			..segment,
-			length: segment_length,
-			exit_turn: if index == 0 {
-				turn
-			} else {
-				Angle.Turn.degrees(0.0)
+	Route.from_segments(
+		World.route.route_segments().take_first(2).map_with_index(
+			|segment, index| {
+				..segment,
+				length: segment_length,
+				ending: if index == 0 {
+					Bends({ turn, bend_life: Quiet })
+				} else {
+					RouteEnds
+				},
 			},
-		},
+		),
 	)
 
 ## The road as seen from the first segment, looking along it.
 road_with : Angle.Turn -> RoadAhead.RoadView
 road_with = |turn| {
-	route_segments: two_segments(turn),
-	segments_ahead: [World.SegmentIndex.number(0), World.SegmentIndex.number(1)],
+	route: two_segments(turn),
+	segments_ahead: { first_index: Route.SegmentIndex.first, count: 2 },
 	vantage: {
 		along: Along.at(segment_length.minus(rider_before_bend)),
 		across: Across.middle,
@@ -145,7 +150,7 @@ ground = Rect({
 	y: 0.0,
 	width: ScrubWidget.canvas_width,
 	height: ScrubWidget.picture_bottom_y,
-	fill: ScrubWidget.flat(ground_color),
+	fill: Brush.flat(ground_color),
 })
 
 ## A patch of paving, as a polygon on the canvas.
@@ -158,7 +163,7 @@ patch_shape = |bend, corners|
 				[x, y]
 			},
 		),
-		fill: ScrubWidget.flat(road_color),
+		fill: Brush.flat(road_color),
 	})
 
 ## The first two corners of a rail's quad, which lie along the ground.
@@ -169,7 +174,7 @@ foot_shapes = |bend, corners|
 			from = canvas_point(bend, { right: a.right, forward: a.forward })
 			to = canvas_point(bend, { right: b.right, forward: b.forward })
 			[
-				Shapes.line({ from, to, width: 2.0 }, ScrubWidget.flat(rail_color)),
+				Shapes.line({ from, to, width: 2.0 }, Brush.flat(rail_color)),
 			]
 		}
 		_ => []
@@ -183,7 +188,7 @@ spot = |bend, { at, color }| {
 		x,
 		y,
 		radius: 4.0,
-		fill: ScrubWidget.flat(color),
+		fill: Brush.flat(color),
 	})
 }
 
@@ -234,7 +239,7 @@ caption_lines = |turn| {
 	[
 		turn_text(turn),
 		"rail on the ${edge_text(turn)} edge",
-		"apex ${ScrubWidget.tenths_text(apex_past_end(apex_of(turn)))} m past the end",
+		"apex ${ReadoutText.tenths_text(apex_past_end(apex_of(turn)))} m past the end",
 		"${GroundSighting.patches_in_view(road).len().to_str()} patches, ${RailSighting.rails_in_view(road).len().to_str()} rail pieces",
 	]
 }
@@ -290,8 +295,8 @@ expect
 		]
 
 # The sharp bend is on the route, and nothing on the route is sharper.
-expect World.plans.any(|plan| plan.turn == sharp_bend.turn)
-expect World.plans.all(|plan| plan.turn.abs() <= sharp_bend.turn)
+expect World.bending_plans.any(|plan| plan.turn == sharp_bend.turn)
+expect World.bending_plans.all(|plan| plan.turn.abs() <= sharp_bend.turn)
 
 # The apex lies on the outer edge carried straight on, on either side.
 expect (apex_of(left_bend.turn).right.to_metres() - Geom.right_edge.to_metres()).abs() < 0.000001

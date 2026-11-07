@@ -16,6 +16,7 @@ import game.Lens
 import game.Polygon
 import game.PosedBird
 import game.Geom
+import game.Segment
 import game.Trees
 import game.Screen
 import game.SegmentPlace
@@ -24,6 +25,7 @@ import game.World
 import lib.CanvasApp
 import lib.Shapes
 import lib.RgbColor
+import widget.ReadoutText
 import widget.ScrubWidget
 import widget.VcrButtons
 
@@ -48,7 +50,7 @@ closing_gap : VcrButtons.NumberRange(Distance)
 closing_gap = VcrButtons.gap_range({ farthest: Distance.metres(75.0), metres_a_frame: 0.125 })
 
 ## The bird's flight on a segment that has one.
-segment_flight : World.Segment -> Try(BirdFlight.Flight, [NoFlight])
+segment_flight : Segment -> Try(BirdFlight.Flight, [NoFlight])
 segment_flight = |segment|
 	match segment.crossing {
 		BirdHere({ perch, leaves_for: FliesTo(to) }) => Ok({ from: perch, to })
@@ -58,7 +60,7 @@ segment_flight = |segment|
 ## The first flight on the route.
 flight : BirdFlight.Flight
 flight = {
-	first_flying = World.segments.find_first(|segment| segment_flight(segment).is_ok())
+	first_flying = World.route.route_segments().find_first(|segment| segment_flight(segment).is_ok())
 		?? crash "BirdWidgetApp.flight: the route has birds"
 	segment_flight(first_flying) ?? crash "BirdWidgetApp.flight: this segment has a flight"
 }
@@ -71,7 +73,7 @@ eye_to_first_tree = Distance.metres(18.0)
 ## How far ahead of the picture's eye a place on the road is.
 forward_of : Along -> Distance
 forward_of = |along| {
-	past_first_tree = along.distance_from(flight.from.along)
+	past_first_tree = along.distance_from(flight.from.road_point.along)
 	eye_to_first_tree.plus(past_first_tree)
 }
 
@@ -134,10 +136,17 @@ spot_of = |{ along, across, lift, .. }, foot|
 
 tree_shapes : Trees.RoadsideTree -> List(Shapes.Shape)
 tree_shapes = |tree|
-	match foot_at(tree.along, tree.across) {
+	match foot_at(tree.road_point.along, tree.road_point.across) {
 		Ok(foot) =>
 			tree.kind.scenery_picture({
-				spot: spot_of(tree, foot),
+				spot: spot_of(
+					{
+						along: tree.road_point.along,
+						across: tree.road_point.across,
+						lift: tree.lift,
+					},
+					foot,
+				),
 				cam_focal: Lens.resting_focal,
 				context: { nearer_tree_count: 0 },
 			}).to_shapes()
@@ -167,10 +176,10 @@ status_lines : Distance -> List(Str)
 status_lines = |gap| {
 	instant = BirdFlight.instant_at(flight, { gap: gap })
 	[
-		ScrubWidget.stage_text(BirdFlight.flight_stage({ gap: gap })),
+		ReadoutText.stage_text(BirdFlight.flight_stage({ gap: gap })),
 		"Pose: ${pose_name(instant.pose)}",
-		"Gap: ${ScrubWidget.tenths_text(gap.to_metres())} m",
-		"Height: ${ScrubWidget.tenths_text(instant.location.lift.to_metres())} m",
+		"Gap: ${ReadoutText.tenths_text(gap.to_metres())} m",
+		"Height: ${ReadoutText.tenths_text(instant.location.lift.to_metres())} m",
 	]
 }
 
@@ -190,8 +199,8 @@ beat_name = |beat|
 		WingsDown => "wings down"
 	}
 
-expect forward_of(flight.from.along).to_metres() == 18.0
-expect forward_of(flight.to.along).to_metres() == 48.0
+expect forward_of(flight.from.road_point.along).to_metres() == 18.0
+expect forward_of(flight.to.road_point.along).to_metres() == 48.0
 
 # The whole flight is on the range, with some road to spare at the far end.
 expect BirdFlight.flight_gaps.starts_at < closing_gap.first

@@ -9,13 +9,16 @@ import game.Distance
 import game.Pixels
 import game.PosedCat
 import game.Geom
+import game.Segment
 import game.Speed
 import game.StillShapes
 import game.VehicleLimits
 import game.World
+import lib.Brush
 import lib.CanvasApp
 import lib.RgbColor
 import lib.Shapes
+import widget.ReadoutText
 import widget.ScrubWidget
 import widget.VcrButtons
 
@@ -44,7 +47,7 @@ rider_speed : Speed
 rider_speed = Speed.metres_a_step(1.0)
 
 ## The cat's crossing on a segment that has one.
-cat_crossing : World.Segment -> Try(Cat.Crossing, [NoCat])
+cat_crossing : Segment -> Try(Cat.Crossing, [NoCat])
 cat_crossing = |segment|
 	match segment.crossing {
 		CatCrosses(crossing) => Ok(crossing)
@@ -52,9 +55,9 @@ cat_crossing = |segment|
 	}
 
 ## The first segment of the route with a cat.
-cat_segment : World.Segment
+cat_segment : Segment
 cat_segment =
-	World.segments.find_first(|segment| cat_crossing(segment).is_ok())
+	World.route.route_segments().find_first(|segment| cat_crossing(segment).is_ok())
 		?? crash "CatWidgetApp.cat_segment: the route has cats"
 
 crossing : Cat.Crossing
@@ -101,21 +104,21 @@ road_shapes = {
 			y: 0.0,
 			width: ScrubWidget.canvas_width,
 			height: ScrubWidget.picture_bottom_y,
-			fill: ScrubWidget.flat(RgbColor.of(0xdcecf5)),
+			fill: Brush.flat(RgbColor.of(0xdcecf5)),
 		}),
 		Rect({
 			x: 0.0,
 			y: ground_top_y,
 			width: ScrubWidget.canvas_width,
 			height: ground_height,
-			fill: ScrubWidget.flat(RgbColor.of(0x7fa650)),
+			fill: Brush.flat(RgbColor.of(0x7fa650)),
 		}),
 		Rect({
 			x: road_middle_x - road_width_px / 2.0,
 			y: ground_top_y,
 			width: road_width_px,
 			height: ground_height,
-			fill: ScrubWidget.flat(RgbColor.of(0x8a8a8a)),
+			fill: Brush.flat(RgbColor.of(0x8a8a8a)),
 		}),
 	]
 }
@@ -147,9 +150,9 @@ status_lines = |gap| {
 		{ along: crossing.along.minus(gap), speed: rider_speed },
 	)
 	[
-		ScrubWidget.stage_text(Cat.crossing_stage(approach)),
+		ReadoutText.stage_text(Cat.crossing_stage(approach)),
 		"Pose: ${pose_name(instant.pose)}",
-		"Gap: ${ScrubWidget.tenths_text(gap.to_metres())} m",
+		"Gap: ${ReadoutText.tenths_text(gap.to_metres())} m",
 		throttle_text(throttle),
 	]
 }

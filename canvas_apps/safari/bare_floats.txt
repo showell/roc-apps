@@ -28,7 +28,7 @@ Easing.lerp: the sum behind blending any unit, which a caller unwraps once
 # Numbers with a meaning no unit type here holds.
 Polygon.min_ellipse_determinant: square pixels, the plain number two axes' determinant gives
 VehicleLimits.turn_speeds: whole degrees, a key looked up by equality after a turn rounds to it
-Stills: traced pictures, in units of the still's own height
+Still: traced pictures, in units of the still's own height
 
 # Trigonometry.
 TreeShapes.ring_angles: radians for Trig
@@ -39,8 +39,6 @@ Scatter.offset: phases, radians per animal, for Trig
 Screen.point: the plain numbers a point is written with, on the way into Pixels
 Polygon.flat_coordinates: the flat list lib.Shapes takes
 Polygon.polygon_coordinates: the flat list lib.Shapes takes
-Polygon.ColorStops: gradient offsets as traced, which offsets_of holds to 0 to 1
-Polygon.offsets_of: the gradient offsets lib.Shapes takes
 
 # The gates: test code, and the raster past lib.Shapes.
 CrossModuleExpects: an app holding only expects and their helpers

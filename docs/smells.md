@@ -144,11 +144,28 @@ only what is its own. `Pipeline` is that place for sighting and rendering.
 `Conifer` owns its picture and `Pipeline` knows nothing of trees. If a general
 module imports a particular one, ask which way the arrow should point.
 
-**A module's tests live in another module.** More than half of SceneShapes.roc
-tested TreeSighting and TruckSighting, which had no `expect`s of their own, and
-SceneShapes imported six modules only for those tests. An expect belongs beside
-the function it tests. The walk's "Imported but not in any printed type" line is
-the lead.
+**A collection keeps its kinds past their last use.** Scene held seven typed
+lists, one per kind, though its only use of a kind was to render it at once.
+Every walk of the scene dragged in each kind's internals: stills, poses,
+Tower's corners. Erase the kind where the last step that needs it runs. Here
+that's `rendering_of`, after which every kind is one `Rendered`. Keep the
+sources as named fields rather than a tag enum, which would be a second list of
+kinds.
+
+**An import only a test uses.** More than half of SceneShapes.roc tested
+TreeSighting and TruckSighting, and SceneShapes imported six modules only for
+those tests. A test that needs nothing the module doesn't already import sits
+beside the function it tests. A test that needs more (a road, a route, another
+module's types) goes in `gates/CrossModuleExpects.roc`, so no game module
+imports anything for a test. Steve: "cluttering up imports is ugly." The walk's
+"Imported but not in any printed type" line is the lead.
+
+**A test that will never fail usefully.** Roc's types catch most of what tests
+would. Steve: "It's actually kinda shocking how infrequently we've needed tests
+to catch things... if a cross-module test feels redundant or unlikely to ever
+fail in a useful way, just nuke it." Keep a test that guards a rule a change
+could really break: a boundary, a tie order, a crash's near side. Delete the
+rest.
 
 **The explanation needs an apology.** If you can't say what a piece of code does
 in plain words to a newcomer, the code is usually wrong and the prose is fine.

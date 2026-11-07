@@ -16,15 +16,19 @@ import game.Gaze
 import game.Geom
 import game.Rider
 import game.RiderState
+import game.Route
+import game.Segment
 import game.Speed
 import game.Steps
 import game.Tour
 import game.World
+import lib.Brush
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
 import lib.RgbColor
 import lib.Trig
+import widget.ReadoutText
 import widget.ScrubWidget
 import widget.VcrButtons
 
@@ -83,7 +87,7 @@ played_a_frame = 8
 ## there. An `expect` below rides there and compares.
 first_rider : RiderState
 first_rider = {
-	segment_index: World.SegmentIndex.number(2),
+	segment_index: Route.SegmentIndex.number(2),
 	motorcycle: {
 		along: Along.metres(145.67667936647632),
 		across: Across.metres(0.0037716065214224797),
@@ -99,17 +103,17 @@ starting_model : GazeWidgetApp.Model
 starting_model = { played: [first_rider], transport: VcrButtons.transport_at(stretch.first) }
 
 ## The first segment of the route whose pigs catch the rider's eye.
-pig_segment : World.Segment
+pig_segment : Segment
 pig_segment =
-	World.segments.find_first(is_distracting)
+	World.route.route_segments().find_first(is_distracting)
 		?? crash "GazeWidgetApp.pig_segment: the route has a distracting pig"
 
 ## Whether a segment's pigs catch the rider's eye.
-is_distracting : World.Segment -> Bool
+is_distracting : Segment -> Bool
 is_distracting = |segment|
-	match segment.pig_interest {
-		Distracting => True
-		Unnoticed => False
+	match segment.pigs {
+		Herd({ interest: Distracting, .. }) => True
+		Herd({ interest: Unnoticed, .. }) | NoPigs => False
 	}
 
 ## The pig that catches the rider's eye.
@@ -136,7 +140,7 @@ played_on = |model| {
 	var $played = model.played
 	while $played.len() < reach {
 		latest = $played.last() ?? crash "GazeWidgetApp.played_on: the stretch starts with a state"
-		$played = $played.append(Rider.rider_state_at_next_step(latest, World.segments))
+		$played = $played.append(Rider.rider_state_at_next_step(latest, World.route))
 	}
 	{ ..model, played: $played }
 }
@@ -226,7 +230,7 @@ ground = Rect({
 	y: 0.0,
 	width: ScrubWidget.canvas_width,
 	height: ScrubWidget.picture_bottom_y,
-	fill: ScrubWidget.flat(ground_color),
+	fill: Brush.flat(ground_color),
 })
 
 road : Shapes.Shape
@@ -237,7 +241,7 @@ road = {
 		y: road_middle_y - half_width,
 		width: ScrubWidget.canvas_width,
 		height: 2.0 * half_width,
-		fill: ScrubWidget.flat(road_color),
+		fill: Brush.flat(road_color),
 	})
 }
 
@@ -253,7 +257,7 @@ plan_disc = |{ along, across, radius, color }|
 		x: screen_x(along),
 		y: screen_y(across),
 		radius: radius,
-		fill: ScrubWidget.flat(color),
+		fill: Brush.flat(color),
 	})
 
 ## One pig of the herd, the one that catches the eye drawn larger.
@@ -261,15 +265,15 @@ pig_disc : Geom.Placed(Billboard) -> Shapes.Shape
 pig_disc = |pig|
 	if pig == gaze_pig {
 		plan_disc({
-			along: pig.along,
-			across: pig.across,
+			along: pig.road_point.along,
+			across: pig.road_point.across,
 			radius: 6.0,
 			color: gaze_pig_color,
 		})
 	} else {
 		plan_disc({
-			along: pig.along,
-			across: pig.across,
+			along: pig.road_point.along,
+			across: pig.road_point.across,
 			radius: 3.0,
 			color: herd_color,
 		})
@@ -278,13 +282,13 @@ pig_disc = |pig|
 ## The segment's whole herd, and the name of the pig that catches the eye.
 pigs : List(Shapes.Shape)
 pigs =
-	World.segment_pigs(pig_segment)
+	pig_segment.segment_pigs()
 		.map(pig_disc)
 		.append(
 			ScrubWidget.label({
 				text: "the pig",
-				x: screen_x(gaze_pig.along) - 62.0,
-				y: screen_y(gaze_pig.across) + 20.0,
+				x: screen_x(gaze_pig.road_point.along) - 62.0,
+				y: screen_y(gaze_pig.road_point.across) + 20.0,
 			}),
 		)
 
@@ -302,7 +306,7 @@ sight_line = |rider| {
 			to: { x: x + reach * turn.cos(), y: y + reach * turn.sin() },
 			width: 2.0,
 		},
-		ScrubWidget.flat(sight_color),
+		Brush.flat(sight_color),
 	)
 }
 
@@ -343,9 +347,9 @@ status_lines : RiderState, F64 -> List(Str)
 status_lines = |rider, step|
 	[
 		phase_text(phase_of(rider)),
-		"Step ${step.to_u64_wrap().to_str()}: speed ${ScrubWidget.tenths_text(rider.motorcycle.speed.to_metres_a_step())} m a step",
-		"Gaze yaw: ${ScrubWidget.tenths_text(gaze_degrees(rider))} degrees",
-		"Look depth: ${ScrubWidget.percent_text(rider.eyes.look_depth)}",
+		"Step ${step.to_u64_wrap().to_str()}: speed ${ReadoutText.tenths_text(rider.motorcycle.speed.to_metres_a_step())} m a step",
+		"Gaze yaw: ${ReadoutText.tenths_text(gaze_degrees(rider))} degrees",
+		"Look depth: ${ReadoutText.percent_text(rider.eyes.look_depth)}",
 	]
 
 ## The whole stretch, played, for the expects. As a constant it's ridden once, at
@@ -382,8 +386,8 @@ expect {
 }
 
 # This stretch is on the route's first distracting segment.
-expect is_distracting(first_rider.segment_index.segment_in(World.segments))
-expect World.segments.take_first(2).all(|segment| segment.pig_herd == NoPigs)
+expect is_distracting(World.route.segment_at(first_rider.segment_index))
+expect World.route.route_segments().take_first(2).all(|segment| segment.pigs == NoPigs)
 expect pig_segment.length == Distance.metres(400.0)
 
 # The steps the book's table quotes, each with its speed in metres a step, its
@@ -538,14 +542,14 @@ expect screen_x(Along.metres(left_edge_metres + 100.0)) == 100.0 * pixels_a_metr
 expect screen_y(Across.middle) == road_middle_y
 expect screen_y(Across.metres(10.0)) == road_middle_y + 10.0 * pixels_a_metre
 expect screen_y(Across.metres(-10.0)) == road_middle_y - 10.0 * pixels_a_metre
-expect screen_x(gaze_pig.along) < ScrubWidget.canvas_width
-expect screen_y(gaze_pig.across) < ScrubWidget.picture_bottom_y
+expect screen_x(gaze_pig.road_point.along) < ScrubWidget.canvas_width
+expect screen_y(gaze_pig.road_point.across) < ScrubWidget.picture_bottom_y
 
-expect World.segment_pigs(pig_segment).len() == 49
+expect pig_segment.segment_pigs().len() == 49
 
 # Each pig of the herd is one disc, and the one that catches the eye is among them.
 expect pigs.len() == 50
-expect World.segment_pigs(pig_segment).count_if(|pig| pig == gaze_pig) == 1
+expect pig_segment.segment_pigs().count_if(|pig| pig == gaze_pig) == 1
 
 expect phase_text(EyesOnRoad) == "Eyes on the road"
 expect phase_text(LookingAtPig) == "Looking at the pig, and slowing"

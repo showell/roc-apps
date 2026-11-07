@@ -265,7 +265,7 @@ silhouette = |aim, { height_at, color, base_y }| {
 			}
 		},
 	)
-	Polygon.flat_polygon(color, crest.concat([{ x: right, y: base_y }, { x: left, y: base_y }]))
+	Polygon.flat_polygon(crest.concat([{ x: right, y: base_y }, { x: left, y: base_y }]), color)
 }
 
 ## Snow thinner than this, between the range's crest and the snowline, isn't
@@ -300,7 +300,7 @@ snow_shape = |aim, color| {
 				back.append({ x, y: Lens.y_for_height({ height, cam_focal: aim.cam_focal }) })
 			},
 		)
-		Ok(Polygon.flat_polygon(color, crest.concat(snowline_points)))
+		Ok(Polygon.flat_polygon(crest.concat(snowline_points), color))
 	}
 }
 

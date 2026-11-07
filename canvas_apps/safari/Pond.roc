@@ -57,8 +57,7 @@ Pond :: [].{
 			|pond_duck| {
 				on_segment = Pond.segment_point(pond_duck.at, length)
 				{
-					along: on_segment.along,
-					across: on_segment.across,
+					road_point: { along: on_segment.along, across: on_segment.across },
 					lift: Distance.zero,
 					kind: Billboard.adult_billboard(duck, pond_duck.facing),
 				}
@@ -90,7 +89,7 @@ expect
 	)
 		== { along: Along.metres(106.0), across: Across.metres(-22.0) }
 expect
-	Pond.placed_ducks(Distance.metres(100.0)).map(|placed| placed.along.to_metres())
+	Pond.placed_ducks(Distance.metres(100.0)).map(|placed| placed.road_point.along.to_metres())
 		== [111.0, 117.0, 121.0, 106.0, 107.0, 108.0]
 expect Pond.placed_ducks(Distance.metres(100.0)).all(|placed| placed.kind.height.to_metres() == 0.9)
 

@@ -75,7 +75,7 @@ Backdrop :: [].{
 			y: Screen.grass_top_y.to_f64(),
 			width: Screen.width.plus(margin).plus(margin).to_f64(),
 			height: Screen.height.minus(Screen.grass_top_y).plus(margin).to_f64(),
-			fill: Flat(Brush.opaque(grass_color)),
+			fill: Brush.flat(grass_color),
 		})
 		{ sky: sky_rect(sky), sun_shapes, grass }
 	}

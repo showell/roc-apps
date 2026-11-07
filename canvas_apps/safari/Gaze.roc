@@ -17,6 +17,8 @@ import Motorcycle
 import RiderEyes
 import RiderState
 import lib.Trig
+import Route
+import Segment
 import World
 
 Gaze :: [].{
@@ -38,7 +40,7 @@ Gaze :: [].{
 	## Where the rider wants to look: at a distracting pig that is near enough
 	## to notice and less than the release angle from the way the motorcycle
 	## points, or else at the road.
-	desired_gaze : Motorcycle, World.Segment -> Gaze.GazeTarget
+	desired_gaze : Motorcycle, Segment -> Gaze.GazeTarget
 	desired_gaze = |motorcycle, seg|
 		match Gawking.eye_catching_pig(seg) {
 			CatchesEye(pig) if Gawking.is_gawking(motorcycle, seg) => {
@@ -54,7 +56,7 @@ Gaze :: [].{
 
 	## This rider with the eyes moved on a step, on `seg`, the segment the rider
 	## is on: the gaze, and the look depth it leaves.
-	next_rider_gaze : RiderState, World.Segment -> RiderState
+	next_rider_gaze : RiderState, Segment -> RiderState
 	next_rider_gaze = |state, seg| {
 		eyes = state.eyes
 		gaze_yaw = next_gaze_yaw(eyes, desired_gaze(state.motorcycle, seg))
@@ -104,8 +106,8 @@ next_look_depth = |eyes, gaze_yaw|
 turn_to : Motorcycle, Geom.Placed(Billboard) -> Angle.Turn
 turn_to = |motorcycle, pig| Angle.Turn.radians(
 	F64.atan2({
-		x: pig.along.distance_from(motorcycle.along).to_metres(),
-		y: pig.across.distance_from(motorcycle.across).to_metres(),
+		x: pig.road_point.along.distance_from(motorcycle.along).to_metres(),
+		y: pig.road_point.across.distance_from(motorcycle.across).to_metres(),
 	}),
 ).minus(motorcycle.yaw)
 
@@ -120,11 +122,11 @@ expect
 
 expect Gaze.gaze_attention(Fraction.of(0.25)).to_f64() == 0.15625
 
-plain : World.Segment
-plain = World.route_segment(0)
+plain : Segment
+plain = World.route.segment_at(Route.SegmentIndex.number(0))
 
-distracting : World.Segment
-distracting = World.route_segment(2)
+distracting : Segment
+distracting = World.route.segment_at(Route.SegmentIndex.number(2))
 
 ## A motorcycle `along` metres into the distracting segment, at rest in every
 ## other way. Gaze doesn't import Along, so `along` is a distance from the
@@ -165,7 +167,7 @@ watched_pig =
 rider_short_of_pig : F64 -> Motorcycle
 rider_short_of_pig = |metres| {
 	..rider(0.0),
-	along: watched_pig.along.minus(Distance.metres(metres)),
+	along: watched_pig.road_point.along.minus(Distance.metres(metres)),
 }
 
 # The look starts where the pig is noticed, and not a centimetre sooner.

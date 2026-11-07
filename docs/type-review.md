@@ -20,7 +20,9 @@ TAG
 
 Shale is a small Lua-like language:
 
-- **Running a program:** `local r = run({"git", "status"}, {timeout_ms = 60000, whole = 20000, want = "any"})`, then `print(r.code)` and `print(r.out)`. A text tool such as grep needs a reason, as in `want = "any: callers"`.
+- **Running a program:** `local r = run({"git", "status"}, {timeout_ms = 60000, whole = 20000, want = "any"})`, then `print(r.code)` and `print(r.out)`. Both `timeout_ms` and a keep (`whole`, `head` or `tail`) are required. A text tool such as grep needs a reason, as in `want = "any: callers"`.
+- **Never read `~/.config/shale/mounts`, and never run `shale --help`.** Both show the path of the secrets folder. The `scratch:` mount is `/tmp/claude-1000`, so write scratch files there under `/tmp/claude-1000/<lane>/`.
+- **A scratch Roc module** must declare a type named after its file.
 - **Files:** read with the Read tool, and edit with Edit and Write.
 - **Not in the language:** `table.*`, `local function`, and `type()`.
   - Declare a function with `function name()` at the top level.
@@ -29,6 +31,8 @@ Shale is a small Lua-like language:
 - **Paths:** they're relative to the folder you `cd` to. A `repos:` path names a repo under ~/showell_repos.
 
 Never push, never merge, and never touch a checkout that isn't yours.
+
+Several agents share one scratch area, so keep your scratch files under Shale's `scratch:` mount (`/tmp/claude-1000`), in a subfolder named for your lane or review, such as `scratch:<lane>/`, or another agent may overwrite them. Never put scratch files in a repo or a worktree.
 
 ## Read first, every time
 
@@ -43,12 +47,17 @@ You review one module, or a small family of them, named in your prompt. You chan
 
 ### 1. Walk the types
 
-From `canvas_apps/safari` in the main checkout (`/home/steve/showell_repos/roc-apps`):
+From `canvas_apps` in the main checkout (`/home/steve/showell_repos/roc-apps`), with the widgets as clients so their uses count. The hook refuses a glob on the command line, so launch the walk from a script:
 
 ```
-cd /home/steve/showell_repos/roc-apps/canvas_apps/safari && shale cookbook:roc/type_walk.shale module=Tower packages=lib=repos:roc-apps/canvas_apps/lib <<'TAG'
+cd /home/steve/showell_repos/roc-apps/canvas_apps && shale <<'TAG'
+local r = run({"shale", "cookbook:roc/type_walk.shale", "root=safari", "module=Tower",
+  "clients=*_widget", "packages=lib=repos:roc-apps/canvas_apps/lib"}, {whole = 4000000, timeout_ms = 300000})
+print(r.out)
 TAG
 ```
+
+Without `clients=`, a member only a widget uses looks unused, and making it private breaks the widget.
 
 The walk prints the module's types and every type they depend on to depth 2,
 the most primitive first, with no function bodies. Read it the way a newcomer
@@ -143,6 +152,11 @@ You make the fixes listed in your prompt, which the orchestrator has decided.
 Make those fixes and nothing else. If you see something more, put it in your
 report.
 
+**Tests (Steve's rule):**
+- A new test that needs nothing its module doesn't already import sits beside the code.
+- A test that needs more goes in `gates/CrossModuleExpects.roc`. Never add an import only a test uses.
+- Don't write a test that restates a constant or could never fail usefully. Roc's types already catch most of it.
+
 ### Where you work
 
 Your worktree is named in your prompt, under `/home/steve/showell_repos/lanes/`,
@@ -214,3 +228,15 @@ Keep it short:
 - whether pixels moved
 - book names that went stale
 - anything you saw and left alone
+
+## What tripped you up (every report, reviews and cleanups alike)
+
+End every report with a short list of whatever cost you time that wasn't the task itself. The tools get fixed from these. For example:
+- a Shale script refused, and what you meant (a missing builtin, a confusing error, a rule this brief didn't mention);
+- the hook refusing a command you needed;
+- a check that was slow, flaky, or failed for a reason unrelated to your change;
+- a recipe that gave a wrong or confusing answer (type_walk, roc_commas, the lints);
+- anything in this brief that was wrong, missing or unclear;
+- another agent's files getting in your way.
+
+Give each one a line: what you tried, what happened, and what you did instead. If nothing tripped you up, say "nothing".

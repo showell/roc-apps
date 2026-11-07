@@ -45,7 +45,7 @@ Camera :: [].{
 		if in_front.is_empty() {
 			Err(BehindCamera)
 		} else {
-			Ok(Polygon.flat_polygon(color, projected_points(in_front, cam_focal)))
+			Ok(Polygon.flat_polygon(projected_points(in_front, cam_focal), color))
 		}
 	}
 }

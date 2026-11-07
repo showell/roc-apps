@@ -1,11 +1,12 @@
 ## The widget for the Safari tutorial's chapter on what never changes: a still
 ## map of the whole route, with no controls. Each stretch is one record of
-## `World.plans`, and the lines of text read out the record of the stretch in
+## `World.segment_plans`, and the lines of text read out the record of the stretch in
 ## white. The ride has no such map: a segment knows only its length and its
 ## turn, so this widget lays the map out itself by adding up the turns.
 import game.Angle
 import game.Distance
 import game.World
+import lib.Brush
 import lib.CanvasApp
 import lib.Shapes
 import lib.RgbColor
@@ -49,23 +50,29 @@ laid_onto : Layout, World.SegmentPlan -> Layout
 laid_onto = |{ laid, at, heading }, plan| {
 	metres = plan.length.to_metres()
 	end = { east: at.east + metres * heading.sin(), north: at.north + metres * heading.cos() }
-	{
-		laid: laid.append({ plan, start: at, end }),
-		at: end,
-		heading: heading + plan.turn.to_radians(),
-	}
+	{ laid: laid.append({ plan, start: at, end }), at: end, heading }
+}
+
+## `layout` with one more segment on the end, and the road turned into the next.
+bent_onto : Layout, World.BendingPlan -> Layout
+bent_onto = |layout, { segment_plan, turn, .. }| {
+	laid = laid_onto(layout, segment_plan)
+	{ ..laid, heading: laid.heading + turn.to_radians() }
 }
 
 segments : List(LaidSegment)
-segments =
-	World.plans.fold(
-		{
-			laid: [],
-			at: { east: 0.0, north: 0.0 },
-			heading: start_heading,
-		},
-		laid_onto,
-	).laid
+segments = {
+	bent =
+		World.bending_plans.fold(
+			{
+				laid: [],
+				at: { east: 0.0, north: 0.0 },
+				heading: start_heading,
+			},
+			bent_onto,
+		)
+	laid_onto(bent, World.last_plan).laid
+}
 
 ## The segment read out under the map, counted from 1. It's the longest on the
 ## route, and the one the book quotes in its chapter on the math layer.
@@ -75,6 +82,12 @@ read_out_number = 7
 read_out_segment : LaidSegment
 read_out_segment =
 	segments.get(read_out_number - 1) ?? crash "RouteWidgetApp.read_out_segment: the route has this segment"
+
+## The plan of the segment read out, with the bend at its end.
+read_out_plan : World.BendingPlan
+read_out_plan =
+	World.bending_plans.get(read_out_number - 1)
+		?? crash "RouteWidgetApp.read_out_plan: the segment read out bends into the next"
 
 ## Every corner of the road.
 corners : List(MapPoint)
@@ -144,7 +157,7 @@ ground = Rect({
 	y: 0.0,
 	width: ScrubWidget.canvas_width,
 	height: ScrubWidget.picture_bottom_y,
-	fill: ScrubWidget.flat(ground_color),
+	fill: Brush.flat(ground_color),
 })
 
 ## A disc on the map.
@@ -155,7 +168,7 @@ spot = |point, { r, color }| {
 		x,
 		y,
 		radius: r,
-		fill: ScrubWidget.flat(color),
+		fill: Brush.flat(color),
 	})
 }
 
@@ -165,7 +178,7 @@ piece_shapes = |{ start, end, .. }, { width, color }| {
 	a = canvas_point(start)
 	b = canvas_point(end)
 	[
-		Shapes.line({ from: a, to: b, width }, ScrubWidget.flat(color)),
+		Shapes.line({ from: a, to: b, width }, Brush.flat(color)),
 		spot(start, { r: width / 2.0, color }),
 		spot(end, { r: width / 2.0, color }),
 	]
@@ -207,7 +220,7 @@ row_shapes = |{ y, color, word }|
 			x: 470.0,
 			y,
 			radius: 6.0,
-			fill: ScrubWidget.flat(color),
+			fill: Brush.flat(color),
 		}),
 		ScrubWidget.label({
 			text: word,
@@ -268,20 +281,20 @@ turn_text = |turn| {
 ## The segment's record, a few fields a line, with its tags as Roc writes them.
 status_lines : List(Str)
 status_lines = {
-	plan = read_out_segment.plan
+	plan = read_out_plan.segment_plan
 	metres = (plan.length.to_metres() + 0.5).to_i64_wrap()
 	[
-		"Segment ${read_out_number.to_str()} of ${segments.len().to_str()}: ${metres.to_str()} m, ${turn_text(plan.turn)}",
+		"Segment ${read_out_number.to_str()} of ${segments.len().to_str()}: ${metres.to_str()} m, ${turn_text(read_out_plan.turn)}",
 		"crossing: ${Str.inspect(plan.crossing)}, pigs: ${Str.inspect(plan.pigs)}",
 		"bull: ${Str.inspect(plan.bull)}, scheme: ${Str.inspect(plan.scheme)}",
-		"bend_life: ${Str.inspect(plan.bend_life)}",
+		"bend_life: ${Str.inspect(read_out_plan.bend_life)}",
 	]
 }
 
 still_shapes : List(Shapes.Shape)
 still_shapes = ScrubWidget.frame_shapes({ picture_shapes, status_lines: status_lines })
 
-expect segments.len() == World.plans.len()
+expect segments.len() == World.segment_plans.len()
 
 # The first segment is as long as its record says, and each one starts where the
 # one before it ends.

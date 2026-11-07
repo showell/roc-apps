@@ -16,12 +16,14 @@ import game.LeanSearch
 import game.Geom
 import game.Speed
 import game.Tour
+import lib.Brush
 import lib.CanvasApp
 import lib.Input
 import lib.Mouse
 import lib.Shapes
 import lib.RgbColor
 import lib.Trig
+import widget.ReadoutText
 import widget.ScrubWidget
 
 RehearsalWidgetApp :: [].{
@@ -30,16 +32,12 @@ RehearsalWidgetApp :: [].{
 	Model : { tries_shown : U64 }
 
 	canvas_app : CanvasApp.CanvasApp(RehearsalWidgetApp.Model)
-	canvas_app = {
-		size: { width: ScrubWidget.canvas_width, height: ScrubWidget.canvas_height },
-		fps: 60,
-		init: { tries_shown: 0 },
-		model_at_next_step: |model, input, _seconds| { tries_shown: stepped(model.tries_shown, input) },
-		frame_shapes: |model| shapes_at(model.tries_shown),
-		sounds: |_model| 0,
-		tones: [],
+	canvas_app = ScrubWidget.canvas_app({
 		title: "Twelve rehearsals",
-	}
+		init: { tries_shown: 0 },
+		model_at_next_step: |model, input| { tries_shown: stepped(model.tries_shown, input) },
+		frame_shapes: |model| shapes_at(model.tries_shown),
+	})
 }
 
 ## The step of the ride this widget looks inside.
@@ -250,7 +248,7 @@ ground = Rect({
 	y: 0.0,
 	width: ScrubWidget.canvas_width,
 	height: ScrubWidget.picture_bottom_y,
-	fill: ScrubWidget.flat(ground_color),
+	fill: Brush.flat(ground_color),
 })
 
 ## A line right along the road, `across` metres from its middle.
@@ -259,7 +257,7 @@ road_line = |{ across, color, width }| {
 	y = canvas_point({ forward: 0.0, across }).y
 	Shapes.line(
 		{ from: { x: 0.0, y }, to: { x: ScrubWidget.canvas_width, y }, width },
-		ScrubWidget.flat(color),
+		Brush.flat(color),
 	)
 }
 
@@ -274,7 +272,7 @@ road_shapes = {
 			y: canvas_point({ forward: 0.0, across: -half_lane }).y,
 			width: ScrubWidget.canvas_width,
 			height: 2.0 * half_lane * pixels_a_metre_across,
-			fill: ScrubWidget.flat(road_color),
+			fill: Brush.flat(road_color),
 		}),
 		road_line({ across: -half_lane, color: line_color, width: 2.0 }),
 		road_line({ across: half_lane, color: line_color, width: 2.0 }),
@@ -307,7 +305,7 @@ arc_shapes = |path_points, { color, width }| {
 	points
 		.map2(points.drop_first(1), |from, to| { from, to })
 		.keep_if(|{ from, to }| from != to)
-		.map(|{ from, to }| Shapes.line({ from, to, width }, ScrubWidget.flat(color)))
+		.map(|{ from, to }| Shapes.line({ from, to, width }, Brush.flat(color)))
 }
 
 ## The colour that says where an arc ended.
@@ -331,7 +329,7 @@ rider_mark = {
 		x,
 		y,
 		radius: 7.0,
-		fill: ScrubWidget.flat(kept_color),
+		fill: Brush.flat(kept_color),
 	})
 }
 
@@ -392,9 +390,9 @@ across_text : Across -> Str
 across_text = |across| {
 	metres = across.to_metres()
 	if metres < 0.0 {
-		"${ScrubWidget.tenths_text(0.0 - metres)} m left"
+		"${ReadoutText.tenths_text(metres.abs())} m left"
 	} else {
-		"${ScrubWidget.tenths_text(metres)} m right"
+		"${ReadoutText.tenths_text(metres)} m right"
 	}
 }
 
@@ -506,7 +504,7 @@ try_mark = |stop, tries_shown|
 		} else {
 			6.0
 		},
-		fill: ScrubWidget.flat(mark_color(stop, tries_shown)),
+		fill: Brush.flat(mark_color(stop, tries_shown)),
 	})
 
 ## The mark for the choice, which isn't a try, so it's a square.
@@ -522,7 +520,7 @@ choice_mark = |tries_shown| {
 		y: marks_y - half,
 		width: 2.0 * half,
 		height: 2.0 * half,
-		fill: ScrubWidget.flat(mark_color(last_stop, tries_shown)),
+		fill: Brush.flat(mark_color(last_stop, tries_shown)),
 	})
 }
 

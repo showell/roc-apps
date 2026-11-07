@@ -233,7 +233,7 @@ Here's where it's called, picking the color for a pair of small trees:
 
 `SegmentIndex` is another small opaque type, a `U32` for a segment's place in the route. A place in the route can't be confused with a count of trees, because nothing outside can do arithmetic on it. `crash` appears here too. It isn't for error handling: an index that isn't in the world is a bug in Safari Ride, not a case to handle.
 
-{{code World.SegmentIndex from "## The segment of `route_segments`" to "?? crash"}}
+{{code Route.segment_at}}
 
 A value that never changes can be checked once, whole. `Pond`'s one function is below its block, and it's there for a test:
 
@@ -733,7 +733,7 @@ New in this chapter:
 
 Its list of shapes starts with the sky, the sun and the grass, and this is the grass:
 
-{{code Backdrop.backdrop_shapes from "y: Screen.grass_top_y.to_f64()," to "fill: Flat(Brush.opaque(grass_color)),"}}
+{{code Backdrop.backdrop_shapes from "y: Screen.grass_top_y.to_f64()," to "fill: Brush.flat(grass_color),"}}
 
 It starts a pixel above the horizon, so no seam shows between the grass and the sky:
 
@@ -1080,7 +1080,7 @@ The distinction matters. The cat and the bird were drawn for this game, and they
 
 A polygon is one record. It has a color, an optional gradient and a list of points:
 
-{{code Stills.StillPolygon}}
+{{code Still.Polygon}}
 
 The bird is the smallest set, because the perched bird is Roc's logo, and the logo is made of a few straight-edged shapes. The cat has far more points, because its curves are made of many short straight lines. Its seven stills fit in a 73-line file, and those lines are very long.
 
@@ -1670,7 +1670,7 @@ Mind what `gaze_yaw` is measured from. The road has a direction, `yaw` is how fa
 
 Three small types say what a pig can do to the rider. Each one carries its payload only where it means something. A segment's `pig_interest` says what its pigs are to the rider, and only `Distracting` has a pig in it:
 
-{{code World.PigInterest}}
+{{code Segment.PigInterest}}
 
 The rider looks at a pig or at the road, and only a pig has an angle:
 
@@ -2222,7 +2222,7 @@ The caller's return type is written in place, a tag union that exists for this o
 
 And that's called from a `match` in the middle of a record, which is a reminder that `match` is an expression. The plan's plain `BirdHere` tag comes in, and `BirdHere(route_segments)` goes out:
 
-{{code World.built_segment from "crossing: match plan.crossing {" to "QuietRoad => QuietRoad"}}
+{{code Segment.from_choices from "crossing: match choices.crossing {" to "QuietRoad => QuietRoad"}}
 
 Each frame, a sighting reads the route back. The crossing is matched in full, so a third kind of crossing would stop here until someone says what a bird sighting should do about it:
 
@@ -2497,7 +2497,7 @@ The route again. This map comes from adding up the turns, which the ride itself 
 
 The road has no global coordinates. A point on it is measured within one segment, `along` and `across`, and nothing in the game holds a world coordinate for it. Each segment knows only its length and the turn at its end. `World.plans` is nineteen records like this one, and it reads like configuration: a list of plain values, with the tags declared by `SegmentPlan` and an opaque `Distance` and `Turn` built from their units. It's checked like any other Roc, so a misspelled tag is a compile-time error.
 
-{{code World.plans from "length: Distance.metres(1200.0)," to "bend_life: Animal(Rhino),"}}
+{{code World.bending_plans from "length: Distance.metres(1200.0)," to "bend_life: Animal(Rhino),"}}
 
 So to see something three segments ahead, a point has to be carried back round each bend between it and the rider, one at a time. That's one rotation per bend, and `fold_rev` is the shape of it. The accumulator is a `RoadPoint`, it starts on the far segment, and each step moves it onto the segment before. `segments_before` gives the segments between, and the closure is the only thing the loop does. The last line does the one translation and rotation from above:
 
@@ -2534,7 +2534,7 @@ A fold's step is a plain function of the list so far and one edge:
 
 `Ground`, `GuardRail` and `TruckShape` call it the same way. `patch.corners.map(...)` makes the `RaisedPoint`s, and what comes back is a shorter or longer list of the same type:
 
-{{code Camera.clipped_polygon from "in_front = Geom.clipped_points(" to "Ok(Polygon.flat_polygon(color, projected_points(in_front, cam_focal)))"}}
+{{code Camera.clipped_polygon from "in_front = Geom.clipped_points(" to "Ok(Polygon.flat_polygon(projected_points(in_front, cam_focal), color))"}}
 
 ### Arithmetic all the way down
 
@@ -2607,7 +2607,7 @@ We add a frame whenever something could go wrong without any listed frame changi
 
 Exact hashes have a consequence that reaches into the code. Float addition isn't associative, so a sum's order is part of its meaning here. `World.route_length` says so in its doc comment, and it's one of the few places in Safari Ride where the direction of a fold is a decision:
 
-{{code World.route_length}}
+{{code Route.length_of}}
 
 That's also why each operation on `Speed`, `Fraction`, `Angle` and the rest does the plain float arithmetic its name says. An opaque type adds names and takes nothing away. A retyping that adds `Speed` to a module changes the types throughout, and if it leaves the arithmetic alone, every hash stays where it is. If a hash moves, the retyping changed the program, and the gate says so.
 

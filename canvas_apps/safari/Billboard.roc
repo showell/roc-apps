@@ -114,4 +114,4 @@ expect
 	})
 		== 6
 
-expect EmojiStills.elephant.polygons().len() == 6
+expect EmojiStills.elephant.polygons().polygons().len() == 6

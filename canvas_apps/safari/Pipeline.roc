@@ -17,6 +17,7 @@ import Geom
 import Picture
 import Pixels
 import Rendered
+import Route
 import Spot
 import World
 
@@ -46,17 +47,13 @@ Pipeline :: [].{
 		place : SegmentPlace,
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera])
 	sighting_of = |placed, { road, place }| {
-		seen = RoadAhead.rider_point_at(road, { place, along: placed.along, across: placed.across })
+		road_point = placed.road_point
+		seen = RoadAhead.rider_point_at(
+			road,
+			{ place, along: road_point.along, across: road_point.across },
+		)
 		foot = Geom.ahead_on_level(seen)?
-		Ok({
-			spot: Spot.at({
-				place,
-				road_point: { along: placed.along, across: placed.across },
-				lift: placed.lift,
-				foot,
-			}),
-			kind: placed.kind,
-		})
+		Ok({ spot: Spot.at({ place, road_point, lift: placed.lift, foot }), kind: placed.kind })
 	}
 
 	## The sighting of `placed`, if it also passes `size_test`.
@@ -109,8 +106,7 @@ Post := { height : Distance }.{
 ## middle.
 placed_post : { along : Along, height : Distance } -> Geom.Placed(Post)
 placed_post = |{ along, height }| {
-	along,
-	across: Across.metres(1.5),
+	road_point: { along, across: Across.metres(1.5) },
 	lift: Distance.zero,
 	kind: Post.({ height: height }),
 }
@@ -118,8 +114,8 @@ placed_post = |{ along, height }| {
 ## The route's first segment, seen from its start, looking down the road.
 first_road : RoadAhead.RoadView
 first_road = {
-	route_segments: [World.route_segment(0)],
-	segments_ahead: [World.SegmentIndex.number(0)],
+	route: World.route,
+	segments_ahead: { first_index: Route.SegmentIndex.first, count: 1 },
 	vantage: {
 		along: Along.metres(0.0),
 		across: Across.metres(0.0),

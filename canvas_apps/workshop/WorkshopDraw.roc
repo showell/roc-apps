@@ -133,7 +133,7 @@ WorkshopDraw :: [].{
 			2.0
 		}
 		$out = List.append($out, Shapes.rounded_rect({ x: x - lip, y: y - lip, width: w + lip * 2.0, height: h + lip * 2.0, corner_radius: 8.0 + lip, corner_steps: 8 }, Flat(edge)))
-		$out = List.append($out, Shapes.rounded_rect({ x, y, width: w, height: h, corner_radius: 8.0, corner_steps: 8 }, Flat(Brush.opaque(Rules.palette_color(index)))))
+		$out = List.append($out, Shapes.rounded_rect({ x, y, width: w, height: h, corner_radius: 8.0, corner_steps: 8 }, Brush.flat(Rules.palette_color(index))))
 
 		# The number beside the swatch, centred on upstream's anchor.
 		digit = U64.to_str(index + 1)

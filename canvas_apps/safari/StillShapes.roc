@@ -1,7 +1,7 @@
 ## StillShapes draws a still, a picture made of polygons, standing on screen.
-## A still is drawn in units of its height: its feet at the origin, y up, and
-## its height 1. StillShapes scales it to its height on screen, stands it on its
-## feet, and mirrors it when asked.
+## A still is drawn in its own frame, which Still.roc describes. StillShapes
+## scales it to its height on screen, stands it on its feet, and mirrors it when
+## asked.
 import Camera
 import Distance
 import Picture
@@ -9,7 +9,7 @@ import Pixels
 import Polygon
 import lib.Brush
 import lib.RgbColor
-import Stills
+import Still
 import Screen
 import lib.Shapes
 
@@ -27,44 +27,20 @@ StillShapes :: [].{
 		height_on_screen : Pixels,
 	}
 
-	## The sign that a still's x is multiplied by.
-	x_sign : StillShapes.Flip -> F64
-	x_sign = |flip|
-		match flip {
-			AsDrawn => 1.0
-			Mirrored => -1.0
-		}
-
 	## Where a point of the still lands on screen.
-	screen_point : StillShapes.Anchor, Stills.StillPt -> Screen.Point
+	screen_point : StillShapes.Anchor, Still.Vertex -> Screen.Point
 	screen_point = |anchor, point| {
 		x: anchor.feet.x.plus(anchor.height_on_screen.times(x_sign(anchor.flip) * point.x)),
 		y: anchor.feet.y.minus(anchor.height_on_screen.times(point.y)),
 	}
 
-	## How far, and which way, a step in the still goes on screen.
-	screen_vector : StillShapes.Anchor, Stills.StillPt -> Screen.Point
-	screen_vector = |anchor, step| {
-		x: anchor.height_on_screen.times(x_sign(anchor.flip) * step.x),
-		y: anchor.height_on_screen.times(step.y).opposite(),
-	}
-
-	screen_points : StillShapes.Anchor, List(Stills.StillPt) -> List(Screen.Point)
+	screen_points : StillShapes.Anchor, List(Still.Vertex) -> List(Screen.Point)
 	screen_points = |anchor, points| points.map(|point| StillShapes.screen_point(anchor, point))
 
-	## One polygon of a still, filled with its colour or its gradient.
-	still_polygon : StillShapes.Anchor, Stills.StillPolygon -> Shapes.Shape
-	still_polygon = |anchor, poly| {
-		points = StillShapes.screen_points(anchor, poly.points)
-		match poly.gradients.first() {
-			Ok(gradient) => still_gradient_polygon(anchor, { gradient, points })
-			Err(ListWasEmpty) => Polygon.flat_polygon(poly.color, points)
-		}
-	}
-
 	## A whole still, its polygons in order.
-	still_shapes : StillShapes.Anchor, List(Stills.StillPolygon) -> List(Shapes.Shape)
-	still_shapes = |anchor, polys| polys.map(|poly| StillShapes.still_polygon(anchor, poly))
+	still_shapes : StillShapes.Anchor, Still -> List(Shapes.Shape)
+	still_shapes = |anchor, still|
+		still.polygons().map(|poly| still_polygon(anchor, poly))
 
 	## Where a still `height` tall stands on screen at the setting's spot: its
 	## feet raised as high as the spot says, and its height on screen from
@@ -89,7 +65,7 @@ StillShapes :: [].{
 	standing_still_shapes : Picture.Setting({}),
 	{
 		height : Distance,
-		polygons : List(Stills.StillPolygon),
+		polygons : Still,
 	} -> List(Shapes.Shape)
 	standing_still_shapes = |setting, { height, polygons }| {
 		anchor = StillShapes.standing_anchor(setting, { height, flip: AsDrawn })
@@ -97,57 +73,57 @@ StillShapes :: [].{
 	}
 }
 
-## A still's gradient is linear when its kind is 1, and radial otherwise.
-gradient_shape : Stills.StillGradient -> [Linear, Radial]
-gradient_shape = |gradient|
-	if gradient.kind == 1 {
-		Linear
-	} else {
-		Radial
+## The sign that a still's x is multiplied by.
+x_sign : StillShapes.Flip -> F64
+x_sign = |flip|
+	match flip {
+		AsDrawn => 1.0
+		Mirrored => -1.0
 	}
 
-## A still's gradient colours and their offsets, as Polygon takes them.
-stops_of : Stills.StillGradient -> Polygon.ColorStops
-stops_of = |gradient| {
-	start_color: gradient.color0,
-	end_color: gradient.color1,
-	start_offset: gradient.off0,
-	end_offset: gradient.off1,
+## How far, and which way, a step in the still goes on screen.
+screen_vector : StillShapes.Anchor, Still.Vertex -> Screen.Point
+screen_vector = |anchor, step| {
+	x: anchor.height_on_screen.times(x_sign(anchor.flip) * step.x),
+	y: anchor.height_on_screen.times(step.y).opposite(),
+}
+
+## One polygon of a still, filled with its colour or its gradient.
+still_polygon : StillShapes.Anchor, Still.Polygon -> Shapes.Shape
+still_polygon = |anchor, poly| {
+	points = StillShapes.screen_points(anchor, poly.points)
+	match poly.fill {
+		Flat(color) => Polygon.flat_polygon(points, color)
+		Shaded(gradient) => still_gradient_polygon(anchor, { gradient, points })
+	}
 }
 
 still_gradient_polygon : StillShapes.Anchor,
 {
-	gradient : Stills.StillGradient,
+	gradient : Still.Gradient,
 	points : List(Screen.Point),
 } -> Shapes.Shape
 still_gradient_polygon = |anchor, { gradient, points }|
-	match gradient_shape(gradient) {
-		Linear => {
-			start = StillShapes.screen_point(anchor, { x: gradient.ax, y: gradient.ay })
-			stop = StillShapes.screen_point(anchor, { x: gradient.bx, y: gradient.by })
+	match gradient {
+		Linear({ stops, start, end }) =>
 			Polygon.linear_gradient_polygon(
 				points,
 				{
-					color_stops: stops_of(gradient),
-					start_point: start,
-					end_point: stop,
+					color_stops: stops,
+					start_point: StillShapes.screen_point(anchor, start),
+					end_point: StillShapes.screen_point(anchor, end),
 				},
 			)
-		}
-		Radial => {
-			center = StillShapes.screen_point(anchor, { x: gradient.cx, y: gradient.cy })
-			u = StillShapes.screen_vector(anchor, { x: gradient.ux, y: gradient.uy })
-			v = StillShapes.screen_vector(anchor, { x: gradient.vx, y: gradient.vy })
-			Polygon.radial_gradient_polygon(
+		Radial({ stops, center, axis_u, axis_v }) =>
+			Polygon.elliptical_gradient_polygon(
 				points,
 				{
-					color_stops: stops_of(gradient),
-					center_point: center,
-					axis_u: u,
-					axis_v: v,
+					color_stops: stops,
+					center_point: StillShapes.screen_point(anchor, center),
+					axis_u: screen_vector(anchor, axis_u),
+					axis_v: screen_vector(anchor, axis_v),
 				},
 			)
-		}
 	}
 
 sample_feet : Screen.Point
@@ -169,21 +145,21 @@ mirrored = {
 	height_on_screen: Pixels.of(50.0),
 }
 
-expect StillShapes.x_sign(Mirrored) == -1.0
-expect StillShapes.x_sign(AsDrawn) == 1.0
+expect x_sign(Mirrored) == -1.0
+expect x_sign(AsDrawn) == 1.0
 
 expect StillShapes.screen_point(upright, { x: 0.5, y: 0.4 }) == Screen.point(125.0, 180.0)
 expect StillShapes.screen_point(mirrored, { x: 0.5, y: 0.4 }) == Screen.point(75.0, 180.0)
 expect StillShapes.screen_point(upright, { x: 0.0, y: 0.0 }) == Screen.point(100.0, 200.0)
 
-expect StillShapes.screen_vector(upright, { x: 0.5, y: 0.4 }) == Screen.point(25.0, -20.0)
-expect StillShapes.screen_vector(mirrored, { x: 0.5, y: 0.4 }) == Screen.point(-25.0, -20.0)
-expect StillShapes.screen_vector(upright, { x: 0.0, y: 0.0 }) == Screen.point(0.0, 0.0)
+expect screen_vector(upright, { x: 0.5, y: 0.4 }) == Screen.point(25.0, -20.0)
+expect screen_vector(mirrored, { x: 0.5, y: 0.4 }) == Screen.point(-25.0, -20.0)
+expect screen_vector(upright, { x: 0.0, y: 0.0 }) == Screen.point(0.0, 0.0)
 
 # A point is the feet plus its vector.
 expect {
 	point = StillShapes.screen_point(upright, { x: 0.5, y: 0.4 })
-	vector = StillShapes.screen_vector(upright, { x: 0.5, y: 0.4 })
+	vector = screen_vector(upright, { x: 0.5, y: 0.4 })
 	point.x.minus(vector.x).to_f64() == 100.0 and point.y.minus(vector.y).to_f64() == 200.0
 }
 
@@ -203,15 +179,14 @@ expect
 		]
 
 # A solid polygon of colour 7 with `count` points, all at the feet.
-flat_polygon : U64 -> Stills.StillPolygon
+flat_polygon : U64 -> Still.Polygon
 flat_polygon = |count| {
-	color: RgbColor.of(7),
-	gradients: [],
+	fill: Flat(RgbColor.of(7)),
 	points: List.repeat({ x: 0.0, y: 0.0 }, count),
 }
 
 expect
-	StillShapes.still_polygon(upright, flat_polygon(3))
+	still_polygon(upright, flat_polygon(3))
 		== Poly({
 			coordinates: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0],
 			fill: Flat(Brush.opaque(RgbColor.of(7))),
