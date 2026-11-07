@@ -20,7 +20,7 @@ import lib.Shapes
 TreeShapes :: [].{
 
 	## Where a tree's foot stands on the screen, and how tall it looks there.
-	TreeOutline : { foot : Screen.Point, height : Pixels }
+	TreeOutline : { foot : Screen.Point, height_on_screen : Pixels }
 
 	## The tree on the screen: its trunk, then its tiers top to bottom. The
 	## nearest trees have a shaded trunk. The crown is cones, shaded by how near
@@ -82,7 +82,7 @@ outline_from_base : {
 outline_from_base = |{ base, height, cam_focal }| {
 	foot = Camera.project(base, cam_focal)
 	top = Camera.project(base.at_height(base.height().plus(height)), cam_focal)
-	{ foot, height: foot.y.minus(top.y) }
+	{ foot, height_on_screen: foot.y.minus(top.y) }
 }
 
 ## A tree nearer than this has cones for a crown.
@@ -110,16 +110,16 @@ trunk_finish_of = |nearer_tree_count|
 
 ## How tall a tree's crown looks on the screen.
 crown_height : TreeShapes.TreeOutline -> Pixels
-crown_height = |outline| outline.height.times(crown_height_share.to_f64())
+crown_height = |outline| outline.height_on_screen.times(crown_height_share.to_f64())
 
 ## Where the top of a tree's crown is on the screen: the tree's tip.
 crown_top_y : TreeShapes.TreeOutline -> Pixels
-crown_top_y = |outline| outline.foot.y.minus(outline.height)
+crown_top_y = |outline| outline.foot.y.minus(outline.height_on_screen)
 
 ## How far the crown reaches either side of the trunk at its widest, on the
 ## screen.
 crown_half_width : TreeShapes.TreeOutline -> Pixels
-crown_half_width = |outline| outline.height.times(crown_half_width_share.to_f64())
+crown_half_width = |outline| outline.height_on_screen.times(crown_half_width_share.to_f64())
 
 ## One tier of the crown: where its top and its bottom are, as fractions of
 ## the crown's height down from its top, and how wide its bottom is, as a
@@ -225,9 +225,9 @@ crown_shade = |forward| Fraction.clamp(forward.portion(crown_shade_reach)).less(
 
 trunk_shape : TreeShapes.TreeOutline, [Shaded, Flat] -> Shapes.Shape
 trunk_shape = |outline, finish| {
-	width = outline.height.times(trunk_width_share.to_f64()).max(min_trunk_width)
-	below_crown = outline.height.times(trunk_height_share.to_f64())
-	height = below_crown.plus(outline.height.times(trunk_overlap_share.to_f64()))
+	width = outline.height_on_screen.times(trunk_width_share.to_f64()).max(min_trunk_width)
+	below_crown = outline.height_on_screen.times(trunk_height_share.to_f64())
+	height = below_crown.plus(outline.height_on_screen.times(trunk_overlap_share.to_f64()))
 	left = outline.foot.x.minus(width.divided_by(2.0))
 	top = outline.foot.y.minus(height)
 	trunk_box = {
@@ -462,7 +462,7 @@ expect
 		[
 			sample_outline.foot.x.to_f64(),
 			sample_outline.foot.y.to_f64(),
-			sample_outline.height.to_f64(),
+			sample_outline.height_on_screen.to_f64(),
 			crown_height(sample_outline).to_f64(),
 			crown_half_width(sample_outline).to_f64(),
 		],

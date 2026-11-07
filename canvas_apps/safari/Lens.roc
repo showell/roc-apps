@@ -3,6 +3,7 @@
 ## rider's attention; the camera takes the wider of the two.
 import Pixels
 import Angle
+import FarHeight
 import Attention
 import Fraction
 import Screen
@@ -35,12 +36,13 @@ Lens :: [].{
 		}
 	}
 
-	## The screen's y for something `height` above the horizon, seen far
-	## away through a lens of `cam_focal`. A height below the horizon is
-	## negative, and lands below it.
-	y_for_height : { height : Pixels, cam_focal : Pixels } -> Pixels
+	## The screen's y for something infinitely far away, `height` above the
+	## horizon, through a lens of `cam_focal`. A height below the horizon is
+	## negative, and lands below it. This is the one place a far height
+	## becomes pixels.
+	y_for_height : { height : FarHeight, cam_focal : Pixels } -> Pixels
 	y_for_height = |{ height, cam_focal: focal }|
-		Screen.horizon_y.minus(height.times(scale_for(focal).to_f64()))
+		Screen.horizon_y.minus(Pixels.of(height.to_f64() * scale_for(focal).to_f64()))
 
 	## How large a lens of focal length `focal` draws things beside the lens at
 	## rest. The lens only ever widens, so that is never larger.
@@ -138,7 +140,7 @@ expect
 		((100.0, Lens.resting_focal.times(0.5)), 250.0),
 	].all(
 		|((height, cam_focal), y)| {
-			got = Lens.y_for_height({ height: Pixels.of(height), cam_focal })
+			got = Lens.y_for_height({ height: FarHeight.of(height), cam_focal })
 			got == Pixels.of(y)
 		},
 	)

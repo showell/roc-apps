@@ -29,6 +29,7 @@ package
 		EncounterPoses,
 		EncounterReaction,
 		EncounterSighting,
+		FarHeight,
 		Fraction,
 		FrameView,
 		Gawking,

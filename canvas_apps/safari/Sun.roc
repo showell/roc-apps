@@ -4,6 +4,7 @@
 ## look too, a glow and a disc over it.
 import Angle
 import Clock
+import FarHeight
 import Fraction
 import Lens
 import Pixels
@@ -39,13 +40,18 @@ Sun :: [].{
 	radius : Pixels
 	radius = Pixels.of(46.0)
 
+	## The sun's radius as a far height: how far its top stands above its
+	## middle, and its bottom below.
+	radius_as_height : FarHeight
+	radius_as_height = FarHeight.of(radius.to_f64())
+
 	## How high the sun stands above the horizon as the ride starts.
-	height_at_start : Pixels
-	height_at_start = Pixels.of(244.0)
+	height_at_start : FarHeight
+	height_at_start = FarHeight.of(244.0)
 
 	## How high the sun stands once it has fully set: its top on the horizon.
-	height_when_set : Pixels
-	height_when_set = radius.opposite()
+	height_when_set : FarHeight
+	height_when_set = radius_as_height.opposite()
 
 	## The step at which the sun has fully set, its whole disc below the
 	## horizon, in a ride of about 7,000 steps. The sun sinks at one steady
@@ -55,9 +61,9 @@ Sun :: [].{
 	fully_set_at : Clock
 	fully_set_at = Clock.at_step(4735)
 
-	## How high the sun stands above the horizon at `clock`, in pixels at
-	## rest; below it once negative.
-	height_at : Clock -> Pixels
+	## How high the sun stands above the horizon at `clock`; below it once
+	## negative.
+	height_at : Clock -> FarHeight
 	height_at = |clock| height_at_start.minus(drop_per_step.times(clock.to_f64()))
 
 	## The sun in a frame, for a camera facing `heading` through a lens of
@@ -134,7 +140,7 @@ Sun :: [].{
 
 ## How far the sun sinks with each step, to fall from where it starts to
 ## where it has fully set by `fully_set_at`.
-drop_per_step : Pixels
+drop_per_step : FarHeight
 drop_per_step = Sun.height_at_start.minus(Sun.height_when_set).divided_by(Sun.fully_set_at.to_f64())
 
 ## A quarter turn. The camera sees only what is less than this to either side
