@@ -371,7 +371,7 @@ A tree passes through these types on its way to the screen:
 | `Picture.Setting` | What any object draws from: `right` and `forward` of the camera, the lens's focal length, and a `context` for whatever else its kind needs |
 | `TreeShapes.TreeAhead` | A tree as `TreeShapes` sees it: `right`, `forward`, `height` and `foliage_color` |
 | `Geom.RaisedPoint` | A point in the rider's view: `right` and `forward` of the camera, and `height` above the rider's level, negative where the ground curves away |
-| `TreeShapes.TreeOnScreen` | Where a tree lands on the screen, and how big it looks there, in `Pixels` |
+| `TreeShapes.TreeOutline` | Where a tree lands on the screen, and how big it looks there, in `Pixels` |
 | `TreeShapes.Tier` | One layer of the crown, as fractions of the crown |
 
 A conifer's `context` is how many trees are nearer than it, so its setting is a `Picture.Setting({ nearer_tree_count : U16 })`. Read that as "a `Setting` whose context is a record holding `nearer_tree_count`". A later chapter, Animal types, shows how a type like that is written.
@@ -382,7 +382,7 @@ Each step of the job is a signature:
 |---|---|---|
 {{types row Conifer.scenery_picture Draw a conifer}}
 {{types row TreeShapes.tree_picture Draw a tree of any height and color}}
-{{types row TreeShapes.tree_on_screen Find it on the screen}}
+{{types row TreeShapes.tree_outline Find it on the screen}}
 {{types row TreeShapes.tier_triangle Make one tier}}
 
 One tree, from the top
@@ -391,8 +391,8 @@ digraph tree {
   node [shape=box, fontname="Helvetica"];
   "Conifer.scenery_picture" [style=bold];
   "Conifer.scenery_picture" -> "TreeShapes.tree_picture";
-  "TreeShapes.tree_picture" -> "tree_on_screen";
-  "tree_on_screen" -> "Camera.project";
+  "TreeShapes.tree_picture" -> "tree_outline";
+  "tree_outline" -> "Camera.project";
   "TreeShapes.tree_picture" -> "trunk_shape";
   "TreeShapes.tree_picture" -> "tier_shape";
   "tier_shape" -> "tier_triangle";
@@ -419,9 +419,9 @@ The kind holds how a tree looks, its height and its color, and never where it is
 
 `tip` is the top of the tree, as a point in the rider's view. `trunk_shape` makes the trunk, a rectangle, and `tier_shape` makes each tier. `tiers.map(...)` calls it for every tier, as a Python list comprehension would, and `[trunk].concat(...)` puts the trunk first, so the tiers paint over it. What `trunk_finish` and `crown` do for near trees can wait, but notice the tags in `trunk_finish`. `Shaded` and `Flat` are written on the spot, as in The world, and this `Flat` has nothing to do with the fill `Flat` from Shapes. Two tags with one name in two unrelated unions are two different tags. For a far tree, `tier_shape` answers with `tier_triangle`, and the next chapter shows the rest of it.
 
-`Camera.project` turns a point in front of the camera into a place on the screen, and `cam_focal` is the lens's focal length, in pixels. `tree_on_screen` calls it twice, once for the tree's foot and once for its tip. The difference between them is how tall the tree looks.
+`Camera.project` turns a point in front of the camera into a place on the screen, and `cam_focal` is the lens's focal length, in pixels. `tree_outline` calls it twice, once for the tree's foot and once for its tip. The difference between them is how tall the tree looks.
 
-{{code TreeShapes.tree_on_screen}}
+{{code TreeShapes.tree_outline}}
 
 `{ ..tip, height: Distance.zero }` is a copy of `tip` with a new `height`, the way Python copies a dataclass with replace. That copy is the tree's foot.
 

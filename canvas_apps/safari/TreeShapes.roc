@@ -1,6 +1,6 @@
 ## A conifer: a trunk under eight tiers of foliage. A far tree's tiers are flat
 ## triangles on the screen. A near one's are cones seen from the camera: the
-## outline of a ring of points round each tier's base and its apex, so the
+## hull of a ring of points round each tier's base and its apex, so the
 ## tiers fatten as the camera passes under them. It works from what it is
 ## handed: a tree's height and color, where it stands from the camera, how many
 ## trees are nearer, and the lens.
@@ -28,7 +28,7 @@ TreeShapes :: [].{
 	}
 
 	## Where a tree stands on the screen, and how big it looks there.
-	TreeOnScreen : {
+	TreeOutline : {
 		base_x : Pixels,
 		base_y : Pixels,
 		height_px : Pixels,
@@ -56,7 +56,7 @@ TreeShapes :: [].{
 			forward: tree.forward,
 			height: tree.height,
 		}
-		screen_tree = tree_on_screen(tip, cam_focal)
+		outline = tree_outline(tip, cam_focal)
 		trunk_finish = if nearer_tree_count < Detail.round_trunk_limit {
 			Shaded
 		} else {
@@ -65,11 +65,11 @@ TreeShapes :: [].{
 		inputs = {
 			tip,
 			cam_focal,
-			screen_tree,
+			outline,
 			color: tree.foliage_color,
 			crown: crown_of(tree.forward),
 		}
-		trunk = trunk_shape(screen_tree, trunk_finish)
+		trunk = trunk_shape(outline, trunk_finish)
 		Picture.from_shapes([trunk].concat(tiers.map(|tier| tier_shape(tier, inputs))))
 	}
 
@@ -87,8 +87,8 @@ TreeShapes :: [].{
 
 	## Where a tree is on the screen, given its `tip`, through a lens of focal
 	## length `cam_focal`.
-	tree_on_screen : Geom.RaisedPoint, Pixels -> TreeShapes.TreeOnScreen
-	tree_on_screen = |tip, cam_focal| {
+	tree_outline : Geom.RaisedPoint, Pixels -> TreeShapes.TreeOutline
+	tree_outline = |tip, cam_focal| {
 		base = Camera.project({ ..tip, height: Distance.zero }, cam_focal)
 		top = Camera.project(tip, cam_focal)
 		height_px = base.y.minus(top.y)
@@ -109,7 +109,7 @@ TreeShapes :: [].{
 TierInputs : {
 	tip : Geom.RaisedPoint,
 	cam_focal : Pixels,
-	screen_tree : TreeShapes.TreeOnScreen,
+	outline : TreeShapes.TreeOutline,
 	color : I64,
 	crown : TreeShapes.Crown,
 }
@@ -197,16 +197,16 @@ ring_point_count = 16
 crown_shade : Distance -> Fraction
 crown_shade = |forward| Fraction.clamp(1.0 - forward.ratio_to(Detail.crown_shade_reach))
 
-trunk_shape : TreeShapes.TreeOnScreen, [Shaded, Flat] -> Shapes.Shape
-trunk_shape = |screen_tree, finish| {
-	width = screen_tree.height_px.times(trunk_width_share.to_f64()).max(min_trunk_width)
-	below_crown = screen_tree.height_px.times(trunk_height_share.to_f64())
-	height = below_crown.plus(screen_tree.height_px.times(trunk_overlap_share.to_f64()))
-	left = screen_tree.base_x.minus(width.divided_by(2.0))
-	top = screen_tree.base_y.minus(height)
+trunk_shape : TreeShapes.TreeOutline, [Shaded, Flat] -> Shapes.Shape
+trunk_shape = |outline, finish| {
+	width = outline.height_px.times(trunk_width_share.to_f64()).max(min_trunk_width)
+	below_crown = outline.height_px.times(trunk_height_share.to_f64())
+	height = below_crown.plus(outline.height_px.times(trunk_overlap_share.to_f64()))
+	left = outline.base_x.minus(width.divided_by(2.0))
+	top = outline.base_y.minus(height)
 	trunk_box = {
 		top_left: { x: left, y: top },
-		bottom_right: { x: left.plus(width), y: screen_tree.base_y },
+		bottom_right: { x: left.plus(width), y: outline.base_y },
 	}
 	match finish {
 		Shaded => Polygon.shaded_polygon(
@@ -219,17 +219,17 @@ trunk_shape = |screen_tree, finish| {
 
 ## A tier as a flat triangle: its apex at the tier's top, its base across its
 ## bottom.
-tier_triangle : TreeShapes.TreeOnScreen, { tier : TreeShapes.Tier, color : I64 } -> Shapes.Shape
-tier_triangle = |screen_tree, { tier, color }| {
-	bottom_y = screen_tree.crown_top_y.plus(screen_tree.crown_height_px.times(tier.bottom.to_f64()))
-	top_y = screen_tree.crown_top_y.plus(screen_tree.crown_height_px.times(tier.top.to_f64()))
-	half_base = screen_tree.crown_half_width.times(tier.width.to_f64())
+tier_triangle : TreeShapes.TreeOutline, { tier : TreeShapes.Tier, color : I64 } -> Shapes.Shape
+tier_triangle = |outline, { tier, color }| {
+	bottom_y = outline.crown_top_y.plus(outline.crown_height_px.times(tier.bottom.to_f64()))
+	top_y = outline.crown_top_y.plus(outline.crown_height_px.times(tier.top.to_f64()))
+	half_base = outline.crown_half_width.times(tier.width.to_f64())
 	Polygon.triangle(
 		color,
 		{
-			first_corner: { x: screen_tree.base_x, y: top_y },
-			second_corner: { x: screen_tree.base_x.plus(half_base), y: bottom_y },
-			third_corner: { x: screen_tree.base_x.minus(half_base), y: bottom_y },
+			first_corner: { x: outline.base_x, y: top_y },
+			second_corner: { x: outline.base_x.plus(half_base), y: bottom_y },
+			third_corner: { x: outline.base_x.minus(half_base), y: bottom_y },
 		},
 	)
 }
@@ -306,13 +306,13 @@ tier_shape = |tier, inputs| {
 	cone_radius = inputs.tip.height.times(crown_half_width_share.to_f64() * tier.width.to_f64())
 	match inputs.crown {
 		Cones(_) if inputs.tip.forward.minus(cone_radius) < Geom.near_plane =>
-			tier_triangle(inputs.screen_tree, { tier, color: inputs.color })
+			tier_triangle(inputs.outline, { tier, color: inputs.color })
 		Cones({ shade }) => tier_cone(tier, { inputs, cone_radius, shade })
-		Triangles => tier_triangle(inputs.screen_tree, { tier, color: inputs.color })
+		Triangles => tier_triangle(inputs.outline, { tier, color: inputs.color })
 	}
 }
 
-## A tier as a cone: the outline of the ring round its base and its apex.
+## A tier as a cone: the hull of the ring round its base and its apex.
 tier_cone : TreeShapes.Tier,
 {
 	inputs : TierInputs,
@@ -374,8 +374,8 @@ expect TreeShapes.crown_of(Distance.metres(40.0)) == Cones({ shade: Fraction.of(
 expect TreeShapes.crown_of(Distance.metres(199.0)) == Cones({ shade: Fraction.zero })
 expect TreeShapes.crown_of(Distance.metres(200.0)) == Triangles
 
-sample_on_screen : TreeShapes.TreeOnScreen
-sample_on_screen = TreeShapes.tree_on_screen(
+sample_outline : TreeShapes.TreeOutline
+sample_outline = TreeShapes.tree_outline(
 	{
 		right: Distance.metres(0.0),
 		forward: Distance.metres(2.0),
@@ -395,11 +395,11 @@ is_near = |got, expected|
 expect
 	is_near(
 		[
-			sample_on_screen.base_x.to_f64(),
-			sample_on_screen.base_y.to_f64(),
-			sample_on_screen.height_px.to_f64(),
-			sample_on_screen.crown_height_px.to_f64(),
-			sample_on_screen.crown_half_width.to_f64(),
+			sample_outline.base_x.to_f64(),
+			sample_outline.base_y.to_f64(),
+			sample_outline.height_px.to_f64(),
+			sample_outline.crown_height_px.to_f64(),
+			sample_outline.crown_half_width.to_f64(),
 		],
 		[480.0, 600.0, 1088.0, 648.0, 288.0],
 	)
@@ -407,12 +407,12 @@ expect
 # The crown's tip is the tree's height.
 expect
 	is_near(
-		[sample_on_screen.crown_top_y.to_f64()],
-		[sample_on_screen.base_y.minus(sample_on_screen.height_px).to_f64()],
+		[sample_outline.crown_top_y.to_f64()],
+		[sample_outline.base_y.minus(sample_outline.height_px).to_f64()],
 	)
 
 expect
-	match trunk_shape(sample_on_screen, Flat) {
+	match trunk_shape(sample_outline, Flat) {
 		Poly(polygon) =>
 			polygon.fill == Flat(Brush.opaque(0x5A3E22))
 				and is_near(
@@ -433,7 +433,7 @@ expect
 
 # A shaded trunk is the same colour, lighter in the middle of its width.
 expect
-	match trunk_shape(sample_on_screen, Shaded) {
+	match trunk_shape(sample_outline, Shaded) {
 		Poly({ coordinates, fill: Span({ edge, middle, x0, x1 }) }) =>
 			edge == Brush.opaque(0x362514)
 				and middle == Brush.opaque(0x714E2B)
@@ -444,7 +444,7 @@ expect
 
 expect {
 	corners_of = |tier|
-		match tier_triangle(sample_on_screen, { tier, color: 7 }) {
+		match tier_triangle(sample_outline, { tier, color: 7 }) {
 			Poly(polygon) => polygon.coordinates
 			_ => crash "a tier is one polygon"
 		}

@@ -118,10 +118,10 @@ is_plain_to_see = |stand| {
 		forward: stand.forward,
 		height: conifer.scenery_height(),
 	}
-	on_screen = TreeShapes.tree_on_screen(point, Lens.resting_focal)
-	foot_y = on_screen.base_y.to_f64() * canvas_per_screen
-	tip_y = foot_y - on_screen.height_px.to_f64() * canvas_per_screen
-	x = on_screen.base_x.to_f64() * canvas_per_screen
+	outline = TreeShapes.tree_outline(point, Lens.resting_focal)
+	foot_y = outline.base_y.to_f64() * canvas_per_screen
+	tip_y = foot_y - outline.height_px.to_f64() * canvas_per_screen
+	x = outline.base_x.to_f64() * canvas_per_screen
 	tip_y >= 0.0
 		and foot_y <= ScrubWidget.picture_bottom_y
 		and foot_y - tip_y >= 30.0
