@@ -51,7 +51,7 @@ blinks = VcrButtons.clock_range({
 ## The beacons of a tower past a segment's end, and of the tower halfway along
 ## the same segment, which blinks opposite it.
 first_beacon : Beacon
-first_beacon = Beacon.(0)
+first_beacon = Beacon.of_segment(Route.SegmentIndex.first)
 
 second_beacon : Beacon
 second_beacon = first_beacon.opposite()

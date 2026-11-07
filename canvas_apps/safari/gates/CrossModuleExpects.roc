@@ -246,7 +246,7 @@ apex_after_turn = |turn| {
 		road_view,
 		{
 			vantage: turned_vantage,
-			place: bend_in_view.before,
+			place: bend_in_view.place_before(),
 			road_point: bend_in_view.outer_corner().apex,
 		},
 	)
@@ -1052,9 +1052,9 @@ expect {
 	got = towers_on_short_then_long(0, Clock.at_step(30)).map(|tower| tower.kind.beacon_brightness)
 	clock = Clock.at_step(30)
 	want = [
-		Beacon.(0).brightness_at(clock),
-		Beacon.(1).brightness_at(clock),
-		Beacon.(1).opposite().brightness_at(clock),
+		Beacon.of_segment(Route.SegmentIndex.first).brightness_at(clock),
+		Beacon.of_segment(Route.SegmentIndex.number(1)).brightness_at(clock),
+		Beacon.of_segment(Route.SegmentIndex.number(1)).opposite().brightness_at(clock),
 	]
 	got == want and got.map(|brightness| brightness.to_f64()).sum() > 0.0
 }
@@ -1101,7 +1101,7 @@ cat_scene = Scene.scene_in_view(
 
 ## The depths of `renderings`, in their order.
 depths_of : List(Rendered) -> List(Distance)
-depths_of = |renderings| renderings.map(|rendering| rendering.depth)
+depths_of = |renderings| renderings.map(|rendering| rendering.depth())
 
 ## How far ahead each of `sightings` stands, in their order.
 sighted_depths : List(Pipeline.Sighted(kind)) -> List(Distance)
@@ -1249,7 +1249,7 @@ cluster_renderings = Scene.tree_renderings(
 cluster_shapes : U64 -> List(Shapes.Shape)
 cluster_shapes = |index|
 	match cluster_renderings.get(index) {
-		Ok(rendering) => rendering.picture.to_shapes()
+		Ok(rendering) => rendering.picture().to_shapes()
 		Err(OutOfBounds) => crash "CrossModuleExpects: the cluster has five trees"
 	}
 
@@ -1287,7 +1287,7 @@ is_far_to_near : List(Rendered) -> Bool
 is_far_to_near = |renderings|
 	renderings.map2(
 		renderings.drop_first(1),
-		|before, after| DepthSort.is_farther({ this: after.depth, that: before.depth }),
+		|before, after| DepthSort.is_farther({ this: after.depth(), that: before.depth() }),
 	)
 		.all(|is_out_of_order| !is_out_of_order)
 
@@ -1298,7 +1298,7 @@ expect is_far_to_near([])
 # need Distance and the fill needs Brush, and GroundPatch imports neither.
 sample_patch_shape : List(Geom.RiderPoint) -> Try(Shapes.Shape, [PastHorizon, BehindCamera])
 sample_patch_shape = |corners| GroundPatch.patch_shape(
-	{ corners, color: RgbColor.of(0x2F7E8C) },
+	GroundPatch.of(corners, RgbColor.of(0x2F7E8C)),
 	Pixels.of(685.5110432362151),
 )
 
@@ -1400,10 +1400,10 @@ chunk_start_corners = |number| {
 	} else {
 		42 - number
 	}
-	(corner(first_road.corners, number + 1), corner(first_road.corners, left_index))
+	(corner(first_road.corners(), number + 1), corner(first_road.corners(), left_index))
 }
 
-expect first_road.corners.len() == 42
+expect first_road.corners().len() == 42
 expect
 	List.from_iter(U64.until(0, 21)).all(
 		|number| {
@@ -1438,9 +1438,11 @@ expect coordinates_of(last_shape).len() == 2 * (2 * 19 + 4)
 # its corners reach back to 460 m along the first segment.
 expect
 	match GroundSighting.patches_in_view(road, origin_camera).get(1) {
-		Ok(paving) =>
-			paving.corners.len() == 8
-				and paving.corners.any(|point| (point.forward.to_metres() - 460.0).abs() <= 0.0001)
+		Ok(paving) => {
+			paving_corners = paving.corners()
+			paving_corners.len() == 8
+				and paving_corners.any(|point| (point.forward.to_metres() - 460.0).abs() <= 0.0001)
+		}
 		Err(_) => False
 	}
 

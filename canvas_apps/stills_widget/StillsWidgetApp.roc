@@ -565,18 +565,16 @@ expect {
 }
 expect
 	extent_of(
-		Still.(
-			[
-				{
-					fill: Flat(RgbColor.of(0)),
-					points: [{ x: 0.5, y: 0.25 }, { x: -1.0, y: 2.0 }],
-				},
-				{
-					fill: Flat(RgbColor.of(0)),
-					points: [{ x: 3.0, y: -4.0 }],
-				},
-			],
-		),
+		Still.of([
+			{
+				fill: Flat(RgbColor.of(0)),
+				points: [{ x: 0.5, y: 0.25 }, { x: -1.0, y: 2.0 }],
+			},
+			{
+				fill: Flat(RgbColor.of(0)),
+				points: [{ x: 3.0, y: -4.0 }],
+			},
+		]),
 	)
 		== {
 			left: -1.0,

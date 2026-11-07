@@ -56,11 +56,20 @@ Animation :: [].{
 
 	## A whole animation: the animal at rest before, the frames it plays through,
 	## one a step, and the animal at rest after.
-	Timeline(pose) := {
+	Timeline(pose) :: {
 		before : Animation.Instant(pose),
 		frames : List(Animation.Instant(pose)),
 		after : Animation.Instant(pose),
 	}.{
+
+		## The timeline that rests at `before`, plays `frames` one a step, then
+		## rests at `after`.
+		of : {
+			before : Animation.Instant(pose),
+			frames : List(Animation.Instant(pose)),
+			after : Animation.Instant(pose),
+		} -> Animation.Timeline(pose)
+		of = |parts| Animation.Timeline.(parts)
 
 		## The animal at `stage`.
 		instant : Animation.Timeline(pose), Animation.Stage -> Animation.Instant(pose)
@@ -89,18 +98,16 @@ sideways_location = |across| {
 
 ## A timeline of four frames.
 four_frames : Animation.Timeline(Note)
-four_frames = Animation.Timeline.(
-	{
-		before: { pose: BeforeIt, location: sideways_location(-1.0) },
-		frames: [
-			{ pose: First, location: sideways_location(1.0) },
-			{ pose: Second, location: sideways_location(2.0) },
-			{ pose: Third, location: sideways_location(3.0) },
-			{ pose: Fourth, location: sideways_location(4.0) },
-		],
-		after: { pose: AfterIt, location: sideways_location(99.0) },
-	},
-)
+four_frames = Animation.Timeline.of({
+	before: { pose: BeforeIt, location: sideways_location(-1.0) },
+	frames: [
+		{ pose: First, location: sideways_location(1.0) },
+		{ pose: Second, location: sideways_location(2.0) },
+		{ pose: Third, location: sideways_location(3.0) },
+		{ pose: Fourth, location: sideways_location(4.0) },
+	],
+	after: { pose: AfterIt, location: sideways_location(99.0) },
+})
 
 # Each step in shows its own frame.
 expect
