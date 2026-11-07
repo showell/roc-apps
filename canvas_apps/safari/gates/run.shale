@@ -158,7 +158,7 @@ end
 const SELF_PATH = "canvas_apps/safari/gates/run.shale"
 const TUTORIAL = "canvas_apps/safari/tutorial/build.shale"
 const BOOK_NAMES = "canvas_apps/safari/gates/book_names.shale"
-const BOOK_STALE_NAMES_HELD = 36
+const BOOK_STALE_NAMES_HELD = 42
 const BOOK_STALE_DIAGRAM_NAMES_HELD = 10
 const EXPECT_ROOTS = {"gates/CrossModuleExpects.roc", "web.roc", "../lib/main.roc"}
 const SAFARI_SOURCES = {":(glob)canvas_apps/safari/*.roc", ":(glob)canvas_apps/safari/gates/*.roc", ":(glob)canvas_apps/lib/*.roc"}

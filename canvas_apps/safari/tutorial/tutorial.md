@@ -1811,7 +1811,7 @@ digraph truck {
 
 The truck is what the rider chases. It starts 500 metres ahead and keeps to a schedule that brings it to within 100 at the route's end. Its state is three fields:
 
-{{code Truck.TruckState}}
+{{code Truck.Truck from "How far along" to "pace : [Slowing, NotSlowing],"}}
 
 The schedule is a straight line, and a pure function of the rider's progress, destructured from a record so the call site has to name both `Distance`s:
 
@@ -1819,7 +1819,7 @@ The schedule is a straight line, and a pure function of the rider's progress, de
 
 Its one caller is the truck's step function, the same shape as the rider's. `NextBend` is a tag union with a payload on one side, so the only way to read a `distance` is to be inside the branch where there is one:
 
-{{code Truck.truck_state_at_next_step from "schedule = scheduled_position(" to "NoBendAhead => scheduled_state_at_next_step(truck, schedule)"}}
+{{code Truck.at_next_step from "schedule = scheduled_position(" to "NoBendAhead => scheduled_state_at_next_step(truck, schedule)"}}
 
 And that's called from `RideInstant.next`, in the chapter on stepping, with the rider's distance as the only thing the truck knows of the rider. Nothing in `Rider` imports `Truck`, and nothing in `Truck` imports `Rider`. The chase is one record literal in `RideInstant`.
 
@@ -1874,7 +1874,7 @@ The truck's headlights come on once the sun has gone behind the mountains, at st
 
 `Truck.Lights` is a record of two tag unions. Two independent lamps aren't one state with four values, so they're two fields:
 
-{{code Truck.Lights}}
+{{code TruckAhead.TruckAhead from "Which of" to "TruckAhead := {"}}
 
 `RideInstant` puts it together. It's the only place that can. `Truck` is in the ride half of the system and `Mountains` is in the view, and no arrow goes from the first to the second. `RideInstant` imports both.
 

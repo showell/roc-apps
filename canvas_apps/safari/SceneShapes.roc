@@ -333,7 +333,7 @@ truck_seen_from : Geom.Vantage, F64 -> TruckSighting.TruckFate
 truck_seen_from = |vantage, lead|
 	TruckSighting.truck_in_view(
 		first_road(vantage),
-		{ lead: Distance.metres(lead), lights: { headlights: Off, brake_lights: Off } },
+		{ lead: Distance.metres(lead), truck_ahead: { headlights: Off, brake_lights: Off } },
 	)
 
 lead_of : F64 -> TruckSighting.TruckFate
@@ -382,9 +382,9 @@ expect
 lights_shown = |lights| {
 	truck = TruckSighting.truck_in_view(
 		first_road(origin),
-		{ lead: Distance.metres(100.0), lights },
+		{ lead: Distance.metres(100.0), truck_ahead: lights },
 	) ?? crash "SceneShapes: this lead puts the truck in view"
-	truck.kind.lights
+	truck.kind
 }
 
 expect
