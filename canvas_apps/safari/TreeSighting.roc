@@ -31,7 +31,7 @@ TreeSighting :: [].{
 	sighting_of : Chain.Viewpoint,
 	{
 		position : Chain.Position,
-		tree : Trees.Tree,
+		tree : Trees.RoadsideTree,
 	} -> Try(Geom.Sighted(Conifer), [BehindCamera, TooSmall])
 	sighting_of = |view, { position, tree }|
 		Pipeline.sighting_of(

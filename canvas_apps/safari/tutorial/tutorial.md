@@ -229,7 +229,7 @@ A `match` on a closed union has to cover it: leaving out a tag is a compile-time
 
 Here's where it's called, picking the color for a pair of small trees:
 
-{{code Trees.planted_trees from "match $conifer {" to "BigGreen => accent_conifer(scheme)"}}
+{{code Trees.roadside_trees from "match $conifer {" to "BigGreen => accent_conifer(scheme)"}}
 
 `SegmentIndex` is another small opaque type, a `U32` for a segment's place in the route. A place in the route can't be confused with a count of trees, because nothing outside can do arithmetic on it. `crash` appears here too. It isn't for error handling: an index that isn't in the world is a bug in Safari Ride, not a case to handle.
 
@@ -445,7 +445,7 @@ Those two lives are two records, and each says where the tree stands in a differ
 
 | Type | Where the tree is | Lasts |
 |---|---|---|
-| `Trees.Tree` | `along` and `across` its segment | The whole ride |
+| `Trees.RoadsideTree` | `along` and `across` its segment | The whole ride |
 | `TreeSighting` | `right` of the camera and `forward` of the camera | One frame |
 
 `Along` is a place along a segment, and `Across` is a place across the road. Both are opaque, so passing one as the other is a compile-time error. In any function, the field names say which of the two it's working in.
@@ -454,14 +454,14 @@ A `TreeSighting` also fits `TreeShapes.TreeAhead`, so `TreeShapes` doesn't impor
 
 | Job | Function | Its type |
 |---|---|---|
-{{types row Trees.planted_trees Plant a segment, once}}
+{{types row Trees.roadside_trees Plant a segment, once}}
 {{types row TreeSighting.trees_in_view Find the trees in view, each frame}}
 
 ### Planting
 
 Planting walks along a segment and keeps a list, and a loop says that best. `$` marks the names that change. The function still has a `->`, because nothing outside it can see them change.
 
-{{code Trees.planted_trees}}
+{{code Trees.roadside_trees}}
 
 Trees stand in pairs, one each side of the road, every 30 metres. The pairs take turns: a big green pair, then a pair of the segment's accent, which is small green, red or gold, then big green again. A gold pair stands further from the road, because it's so much taller:
 

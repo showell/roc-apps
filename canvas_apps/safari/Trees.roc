@@ -12,8 +12,8 @@ import Scenery
 
 Trees :: [].{
 
-	## A planted tree: where it stands on its segment, and its kind.
-	Tree : Geom.Placed(Conifer)
+	## A tree beside the road: where it stands on its segment, and its kind.
+	RoadsideTree : Geom.Placed(Conifer)
 
 	tree_spacing : Distance
 	tree_spacing = Distance.metres(30.0)
@@ -50,8 +50,8 @@ Trees :: [].{
 
 	## A segment's trees, in pairs from its start, each pair's left tree
 	## first.
-	planted_trees : { scheme : Scenery.Scheme, length : Distance } -> List(Trees.Tree)
-	planted_trees = |{ scheme, length }| {
+	roadside_trees : { scheme : Scenery.Scheme, length : Distance } -> List(Trees.RoadsideTree)
+	roadside_trees = |{ scheme, length }| {
 		last_along = Along.at(length.minus(tree_end_inset))
 		var $along = Along.at(tree_start_inset)
 		var $conifer = Conifer.BigGreen
@@ -91,8 +91,8 @@ expect Trees.distance_from_middle(Conifer.Red).to_metres() == 3.5
 expect Trees.distance_from_middle(Conifer.Gold).to_metres() == 8.0
 
 ## Seven pairs, alternating big green and gold.
-gold_green_trees : List(Trees.Tree)
-gold_green_trees = Trees.planted_trees({ scheme: GoldGreen, length: Distance.metres(300.0) })
+gold_green_trees : List(Trees.RoadsideTree)
+gold_green_trees = Trees.roadside_trees({ scheme: GoldGreen, length: Distance.metres(300.0) })
 
 expect
 	gold_green_trees.map(|tree| tree.along.to_metres())
@@ -152,5 +152,5 @@ expect
 		]
 
 expect gold_green_trees.len() == 14
-expect Trees.planted_trees({ scheme: AllGreen, length: Distance.metres(100.0) }).len() == 2
-expect Trees.planted_trees({ scheme: AllGreen, length: Distance.metres(50.0) }).len() == 0
+expect Trees.roadside_trees({ scheme: AllGreen, length: Distance.metres(100.0) }).len() == 2
+expect Trees.roadside_trees({ scheme: AllGreen, length: Distance.metres(50.0) }).len() == 0

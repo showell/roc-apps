@@ -372,21 +372,21 @@ first_sightings : List(Geom.Sighted(Conifer))
 first_sightings = TreeSighting.segment_sightings(from_origin, Chain.Position.first)
 
 ## The first segment's tree at `i`, in planting order.
-planted_tree : U64 -> Geom.Sighted(Conifer)
-planted_tree = |i|
+roadside_tree : U64 -> Geom.Sighted(Conifer)
+roadside_tree = |i|
 	first_sightings.get(i) ?? crash "SceneShapes: the first segment has 28 trees in view"
 
 expect
 	[
-		(planted_tree(0).forward.to_metres(), 6.0),
-		(planted_tree(1).forward.to_metres(), 6.0),
-		(planted_tree(2).forward.to_metres(), 36.0),
-		(planted_tree(0).right.to_metres(), -3.5),
-		(planted_tree(1).right.to_metres(), 3.5),
+		(roadside_tree(0).forward.to_metres(), 6.0),
+		(roadside_tree(1).forward.to_metres(), 6.0),
+		(roadside_tree(2).forward.to_metres(), 36.0),
+		(roadside_tree(0).right.to_metres(), -3.5),
+		(roadside_tree(1).right.to_metres(), 3.5),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
-expect planted_tree(0).kind == Conifer.BigGreen
-expect planted_tree(2).kind == Conifer.SmallGreen
+expect roadside_tree(0).kind == Conifer.BigGreen
+expect roadside_tree(2).kind == Conifer.SmallGreen
 
 # The order that settles a tie, each list in its own order.
 expect

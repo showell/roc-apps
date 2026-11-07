@@ -121,7 +121,7 @@ road = {
 	)
 }
 
-tree_shapes : Trees.Tree -> List(Shapes.Shape)
+tree_shapes : Trees.RoadsideTree -> List(Shapes.Shape)
 tree_shapes = |tree|
 	tree.kind.scenery_picture({
 		right: Distance.metres(tree.across.to_metres()),

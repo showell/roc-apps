@@ -99,17 +99,17 @@ flat_color_of = |shape|
 # sits, flies and lands as the rider comes, stays where no tree is far enough to
 # fly to, and is left out with no tree for it, behind the near plane or too small
 # to draw.
-tree_at : F64, F64 -> Trees.Tree
+tree_at : F64, F64 -> Trees.RoadsideTree
 tree_at = |along, across| {
 	along: Along.metres(along),
 	across: Across.metres(across),
 	kind: Conifer.Red,
 }
 
-left_trees : List(Trees.Tree)
+left_trees : List(Trees.RoadsideTree)
 left_trees = [20.0, 40.0, 60.0, 80.0, 100.0].map(|along| tree_at(along, -6.0))
 
-far_tree : Trees.Tree
+far_tree : Trees.RoadsideTree
 far_tree = { ..tree_at(130.0, 6.0), kind: Conifer.Gold }
 
 ## How high a bird perches on a left tree, and on the far tree.
@@ -120,7 +120,7 @@ far_top : F64
 far_top = Conifer.Gold.scenery_height().to_metres()
 
 ## A straight segment 200 m long holding only `trees`.
-segment_of : List(Trees.Tree) -> World.Segment
+segment_of : List(Trees.RoadsideTree) -> World.Segment
 segment_of = |trees| {
 	..World.route_segment(0),
 	length: Distance.metres(200.0),
@@ -131,7 +131,7 @@ segment_of = |trees| {
 
 ## The birds on one segment of `trees`, for a rider `rider_along` metres into
 ## it, seen through a focal length of `cam_focal`.
-birds_on : List(Trees.Tree), { rider_along : F64, cam_focal : Pixels } -> List(BirdSighting)
+birds_on : List(Trees.RoadsideTree), { rider_along : F64, cam_focal : Pixels } -> List(BirdSighting)
 birds_on = |trees, seen_from| birds_on_segment(segment_of(trees), seen_from)
 
 ## The birds on `segment_index`, for a rider `rider_along` metres into it.
@@ -183,7 +183,7 @@ expect {
 }
 
 ## How many birds there are on `trees` for each rider and focal length.
-bird_count : List(Trees.Tree), { rider_along : F64, cam_focal : Pixels } -> I64
+bird_count : List(Trees.RoadsideTree), { rider_along : F64, cam_focal : Pixels } -> I64
 bird_count = |trees, seen_from| birds_on(trees, seen_from).len().to_i64_wrap()
 
 ## A segment where a cat crosses, with the same trees: it has no bird.
