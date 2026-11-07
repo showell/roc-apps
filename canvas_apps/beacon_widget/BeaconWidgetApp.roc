@@ -164,7 +164,7 @@ expect
 			clock = Clock.at_step(step)
 			first_tower = brightness_at(clock, first_tower_key)
 			second_tower = brightness_at(clock, second_tower_key)
-			is_near(first_tower, second_tower.complement().to_f64())
+			is_near(first_tower, second_tower.less().to_f64())
 		},
 	)
 

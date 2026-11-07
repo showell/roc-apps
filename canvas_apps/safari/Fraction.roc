@@ -9,15 +9,6 @@
 
 Fraction :: F64.{
 
-	## This ratio as a fraction. A value that is not a number is out of range.
-	from_ratio : F64 -> Try(Fraction, [OutOfRange])
-	from_ratio = |ratio|
-		if ratio >= 0.0 and ratio <= 1.0 {
-			Ok(Fraction.(ratio))
-		} else {
-			Err(OutOfRange)
-		}
-
 	## A ratio that can only be in range, as a fraction.
 	of : F64 -> Fraction
 	of = |ratio|
@@ -50,9 +41,9 @@ Fraction :: F64.{
 	times : Fraction, Fraction -> Fraction
 	times = |Fraction.(f), Fraction.(other)| Fraction.(f * other)
 
-	## What is left of the whole after this fraction.
-	complement : Fraction -> Fraction
-	complement = |Fraction.(f)| Fraction.(1.0 - f)
+	## What is left of the whole after this fraction: the whole less it.
+	less : Fraction -> Fraction
+	less = |Fraction.(f)| Fraction.(1.0 - f)
 
 	## The larger of this fraction and `other`.
 	max : Fraction, Fraction -> Fraction
@@ -70,6 +61,15 @@ Fraction :: F64.{
 	is_eq : _
 }
 
+## This ratio as a fraction. A value that is not a number is out of range.
+from_ratio : F64 -> Try(Fraction, [OutOfRange])
+from_ratio = |ratio|
+	if ratio >= 0.0 and ratio <= 1.0 {
+		Ok(Fraction.(ratio))
+	} else {
+		Err(OutOfRange)
+	}
+
 not_a_number : F64
 not_a_number = F64.from_bits(9221120237041090560)
 
@@ -81,7 +81,7 @@ negative_zero = F64.from_bits(9223372036854775808)
 
 is_fraction : F64 -> Bool
 is_fraction = |ratio|
-	match Fraction.from_ratio(ratio) {
+	match from_ratio(ratio) {
 		Ok(_) => True
 		Err(OutOfRange) => False
 	}
@@ -115,9 +115,9 @@ expect Fraction.clamp(negative_zero).to_f64().to_bits() == negative_zero.to_bits
 expect Fraction.zero.to_f64() == 0.0
 expect Fraction.whole.to_f64() == 1.0
 expect Fraction.of(0.5).times(Fraction.of(0.25)).to_f64() == 0.125
-expect Fraction.of(0.25).complement().to_f64() == 0.75
-expect Fraction.zero.complement().to_f64() == 1.0
-expect Fraction.whole.complement().to_f64() == 0.0
+expect Fraction.of(0.25).less().to_f64() == 0.75
+expect Fraction.zero.less().to_f64() == 1.0
+expect Fraction.whole.less().to_f64() == 0.0
 expect Fraction.of(0.25).max(Fraction.of(0.5)).to_f64() == 0.5
 expect Fraction.of(0.5).max(Fraction.of(0.25)).to_f64() == 0.5
 

@@ -41,13 +41,13 @@ Lens :: [].{
 	focal_for_lean : Fraction -> Pixels
 	focal_for_lean = |lean_fraction| {
 		lean = lean_fraction.to_f64()
-		resting_focal.times(1.0 - (1.0 - focal_factor_at_full_lean.to_f64()) * lean * lean)
+		resting_focal.times(1.0 - focal_factor_at_full_lean.less().to_f64() * lean * lean)
 	}
 
 	## The focal length for the rider's attention.
 	focal_for_attention : Attention -> Pixels
 	focal_for_attention = |attention| {
-		lost_at_full_attention = 1.0 - focal_factor_at_full_attention.to_f64()
+		lost_at_full_attention = focal_factor_at_full_attention.less().to_f64()
 		resting_focal.times(1.0 - lost_at_full_attention * attention.to_f64())
 	}
 

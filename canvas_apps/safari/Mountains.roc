@@ -88,7 +88,7 @@ snow_night = RgbColor.of(0x465468)
 ## A rock colour at `dusk`, from 0 (day) to 1 (night).
 rock_color_at_dusk : RgbColor, Fraction -> RgbColor
 rock_color_at_dusk = |color, dusk|
-	HexColor.shade_color(color, rock_night_dim.times(dusk).complement().to_f64())
+	HexColor.shade_color(color, rock_night_dim.times(dusk).less().to_f64())
 
 snow_color : Fraction -> RgbColor
 snow_color = |dusk| HexColor.color_between({

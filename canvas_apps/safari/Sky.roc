@@ -32,7 +32,7 @@ Sky :: [].{
 	## How warm the horizon is at `clock`: most while the sun touches it, none
 	## once the sun is `warmth_reach` above or below.
 	sunset_warmth : Clock -> Fraction
-	sunset_warmth = |clock| Fraction.clamp(1.0 - Sun.height(clock).abs().portion(warmth_reach))
+	sunset_warmth = |clock| Fraction.clamp(Sun.height(clock).abs().portion(warmth_reach)).less()
 
 	## The sky's two colors at `clock`.
 	colors_at : Clock -> Sky.Colors
@@ -88,7 +88,7 @@ dusk_while_up = |height| {
 dusk_after_set : Pixels -> Fraction
 dusk_after_set = |height| {
 	sunk_past_set = Sun.height_when_set.minus(height).portion(Sun.radius)
-	Fraction.clamp(Sky.dusk_at_set.to_f64() + sunk_past_set * Sky.dusk_at_set.complement().to_f64())
+	Fraction.clamp(Sky.dusk_at_set.to_f64() + sunk_past_set * Sky.dusk_at_set.less().to_f64())
 }
 
 # The sky is at dusk_at_set as the sun fully sets, and darker a step later.
