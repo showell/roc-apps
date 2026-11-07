@@ -1931,7 +1931,7 @@ A rule turns where the rider is into a `Stage`. The cat's rule was `stage_over_s
 |---|---|---|
 | It reads | The gap | The gap and the speed |
 | It starts | 60 metres off, always | Earlier for a faster rider |
-| It ends | 15 metres off, always | `buffer` metres short, always |
+| It ends | 15 metres off, always | `ends_at` metres short, always |
 | It's for | Something that reacts to how close the rider is | Something that has to finish in time |
 | A stopped rider | Leaves the bird hanging where the gap puts it | Holds the cat at the start of its crossing |
 
@@ -2511,7 +2511,7 @@ The ride instant chapter showed `SafariApp.model_at_next_step` reading a snapsho
 
 What the game hands back each frame is a `List(Shapes.Shape)`. A shape is a tag: `Poly`, `Disc`, `Rect` and a few more, each with its fill. Two of them aren't shapes. `Blend` and `View` are marks in the list that change how what comes after them is painted, because a frame is a list, and a mark is the cheapest way to say that.
 
-The rider's lean is one of those marks. The whole picture banks into a turn, backdrop included, so `SafariApp.frame` builds a camera out of nested tags and puts it at the front. The rest is `Tour` answering questions, each a one-liner:
+The rider's lean is one of those marks. The whole picture banks into a turn, backdrop included, so `SafariApp.frame_shapes` builds a camera out of nested tags and puts it at the front. The rest is `Tour` answering questions, each a one-liner:
 
 {{code SafariApp.frame_shapes from "centre = {" to ").prepend(lean)"}}
 
