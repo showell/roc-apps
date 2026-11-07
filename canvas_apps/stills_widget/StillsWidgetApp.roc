@@ -9,7 +9,7 @@ import game.PosedBird
 import game.PosedCat
 import game.Screen
 import game.StillShapes
-import game.Stills
+import game.Still
 import lib.Brush
 import lib.RgbColor
 import lib.CanvasApp
@@ -23,7 +23,7 @@ import widget.ScrubWidget
 StillsWidgetApp :: [].{
 
 	## A pose's still: the pose's name, and its polygons.
-	PoseStill : { name : Str, polygons : List(Stills.StillPolygon) }
+	PoseStill : { name : Str, polygons : Still }
 
 	## The whole state of the widget: the still shown large, and whether the
 	## outlines of its polygons show.
@@ -124,9 +124,9 @@ bird_stills =
 		Diving,
 	].map(bird_still)
 
-extent_of : List(Stills.StillPolygon) -> StillExtent
-extent_of = |polygons|
-	match polygons.join_map(|polygon| polygon.points) {
+extent_of : Still -> StillExtent
+extent_of = |still|
+	match still.polygons().join_map(|polygon| polygon.points) {
 		[first, .. as rest] =>
 			rest.fold(
 				{
@@ -182,7 +182,7 @@ row_height_px = |stills, cell_width| {
 }
 
 ## Where a still stands with its middle at `mid_x` and its y 0 at `ground_y`.
-standing_at : List(Stills.StillPolygon),
+standing_at : Still,
 {
 	mid_x : F64,
 	ground_y : F64,
@@ -250,7 +250,7 @@ large_area = {
 }
 
 ## A still as large as `large_area` holds it, in the middle of that area.
-large_anchor : List(Stills.StillPolygon) -> StillShapes.Anchor
+large_anchor : Still -> StillShapes.Anchor
 large_anchor = |polygons| {
 	extent = extent_of(polygons)
 	height_px = F64.min(
@@ -310,14 +310,14 @@ picture_color = RgbColor.of(0xf7f5ef)
 ink : Brush.Rgba
 ink = Brush.opaque(RgbColor.of(0x202020))
 
-point_count : List(Stills.StillPolygon) -> U64
-point_count = |polygons| polygons.fold(0, |sum, polygon| sum + polygon.points.len())
+point_count : Still -> U64
+point_count = |still| still.polygons().fold(0, |sum, polygon| sum + polygon.points.len())
 
 ## What a still is made of, a line each.
 read_out_lines : StillsWidgetApp.PoseStill -> List(Str)
 read_out_lines = |still| [
 	still.name,
-	"${ReadoutText.count_text(still.polygons.len())} polygons",
+	"${ReadoutText.count_text(still.polygons.polygons().len())} polygons",
 	"${ReadoutText.count_text(point_count(still.polygons))} points",
 ]
 
@@ -349,7 +349,7 @@ hint_line = |text, row|
 
 ## The lines round one polygon. A still repeats a point here and there, and the
 ## line between two such points is empty.
-outline_shapes : StillShapes.Anchor, Stills.StillPolygon -> List(Shapes.Shape)
+outline_shapes : StillShapes.Anchor, Still.Polygon -> List(Shapes.Shape)
 outline_shapes = |anchor, polygon| {
 	corners = StillShapes.screen_points(anchor, polygon.points)
 	# A baked still repeats some corners, and a repeated corner has no edge.
@@ -377,7 +377,7 @@ large_shapes = |{ large_still, outlines }| {
 	match outlines {
 		Hidden => drawn
 		Shown => {
-			outline = large_still.polygons.join_map(|polygon| outline_shapes(anchor, polygon))
+			outline = large_still.polygons.polygons().join_map(|polygon| outline_shapes(anchor, polygon))
 			drawn.concat(outline)
 		}
 	}
@@ -442,16 +442,16 @@ shapes_at = |model|
 		.concat(grid_shapes)
 
 ## Where a point of a still lands, as plain numbers.
-landing_spot : StillShapes.Anchor, Stills.StillPt -> { x : F64, y : F64 }
+landing_spot : StillShapes.Anchor, Still.Vertex -> { x : F64, y : F64 }
 landing_spot = |anchor, point| {
 	on_screen = StillShapes.screen_point(anchor, point)
 	{ x: on_screen.x.to_f64(), y: on_screen.y.to_f64() }
 }
 
 ## Whether every point of a still lands in `area`.
-stays_in : StillShapes.Anchor, { polygons : List(Stills.StillPolygon), area : Area } -> Bool
+stays_in : StillShapes.Anchor, { polygons : Still, area : Area } -> Bool
 stays_in = |anchor, { polygons, area }|
-	polygons.all(|polygon| polygon.points.all(|point| is_inside(area, landing_spot(anchor, point))))
+	polygons.polygons().all(|polygon| polygon.points.all(|point| is_inside(area, landing_spot(anchor, point))))
 
 first_cell : StillCell
 first_cell = cells.first() ?? crash "StillsWidgetApp.first_cell: the grid has cells"
@@ -518,7 +518,7 @@ expect
 		(Away(WingsDown), "Away down"),
 		(Diving, "Diving"),
 	].all(|(pose, name)| bird_pose_name(pose) == name)
-expect cat_still(Frozen).polygons.len() == PosedCat.pose_polygons(Frozen).len()
+expect cat_still(Frozen).polygons.polygons().len() == PosedCat.pose_polygons(Frozen).polygons().len()
 expect point_count(bird_still(Diving).polygons) == point_count(BirdStills.diving_polygons)
 
 # The rows fill the space between the side margins, end to end.
@@ -628,18 +628,20 @@ expect {
 	frozen.top > 1.0 and frozen.bottom < 0.0 and frozen.left < 0.0 and frozen.right > 1.0
 }
 expect
-	extent_of([
-		{
-			color: RgbColor.of(0),
-			gradients: [],
-			points: [{ x: 0.5, y: 0.25 }, { x: -1.0, y: 2.0 }],
-		},
-		{
-			color: RgbColor.of(0),
-			gradients: [],
-			points: [{ x: 3.0, y: -4.0 }],
-		},
-	])
+	extent_of(
+		Still.(
+			[
+				{
+					fill: Flat(RgbColor.of(0)),
+					points: [{ x: 0.5, y: 0.25 }, { x: -1.0, y: 2.0 }],
+				},
+				{
+					fill: Flat(RgbColor.of(0)),
+					points: [{ x: 3.0, y: -4.0 }],
+				},
+			],
+		),
+	)
 		== {
 			left: -1.0,
 			right: 3.0,
@@ -744,15 +746,15 @@ expect
 	cells.all(
 		|{ still, anchor, .. }| {
 			drawn = StillShapes.still_shapes(anchor, still.polygons)
-			drawn.len() == still.polygons.len()
+			drawn.len() == still.polygons.polygons().len()
 		},
 	)
 
 # The outlines add one line for each edge between two different corners, and
 # none when hidden.
-expect large_shapes(start).len() == start.large_still.polygons.len()
+expect large_shapes(start).len() == start.large_still.polygons.polygons().len()
 expect {
-	edge_count = start.large_still.polygons.fold(
+	edge_count = start.large_still.polygons.polygons().fold(
 		0,
 		|sum, polygon| {
 			points = polygon.points
@@ -760,14 +762,13 @@ expect {
 			sum + points.map2(ends, |from, to| from != to).keep_if(|differ| differ).len()
 		},
 	)
-	large_shapes({ ..start, outlines: Shown }).len() == start.large_still.polygons.len() + edge_count
+	large_shapes({ ..start, outlines: Shown }).len() == start.large_still.polygons.polygons().len() + edge_count
 }
 
 # A polygon's outline closes: its last line ends where its first starts.
 expect {
 	square = {
-		color: RgbColor.of(0),
-		gradients: [],
+		fill: Flat(RgbColor.of(0)),
 		points: [
 			{ x: 0.0, y: 0.0 },
 			{ x: 1.0, y: 0.0 },
@@ -794,7 +795,7 @@ expect {
 		flip: AsDrawn,
 		height_on_screen: Pixels.of(10.0),
 	}
-	outline_of = |points| outline_shapes(anchor, { color: RgbColor.of(0), gradients: [], points })
+	outline_of = |points| outline_shapes(anchor, { fill: Flat(RgbColor.of(0)), points })
 	outline_of([{ x: 1.0, y: 1.0 }]) == [] and outline_of([{ x: 1.0, y: 1.0 }, { x: 1.0, y: 0.0 }]).len() == 2
 }
 
@@ -807,4 +808,4 @@ expect shapes_at(start) == shapes_at(left_click(start, { x: 100.0, y: 60.0 }))
 expect mark_shapes(cat_still(Land)).len() == 1
 expect mark_shapes(bird_still(Diving)).len() == 1
 expect mark_shapes(cat_still(Land)) != mark_shapes(bird_still(Diving))
-expect mark_shapes({ name: "None", polygons: [] }).len() == 0
+expect mark_shapes({ name: "None", polygons: Still.([]) }).len() == 0

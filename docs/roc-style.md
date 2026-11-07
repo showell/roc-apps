@@ -694,8 +694,8 @@ is the base; these rules sharpen it.
 - **A function that makes one thing answers that thing, not a list of it.**
   A list that is empty on bad input turns a bug into nothing drawn, and every
   caller joins it without a look. Safari's `Polygon.flat_polygon` answers one
-  shape and crashes on two corners; `gradient_polygon` answers a `Try`, because
-  a distant gradient really can shrink out of sight. The caller that has
+  shape and crashes on two corners; `circular_gradient_polygon` answers a `Try`,
+  because a distant gradient really can shrink out of sight. The caller that has
   nothing to draw says so in its own list.
 - **A placeholder is not a value.** `?? "bogus"`, `?? "?"`, or `?? 4` for
   "no winner" makes up an answer the type allows and the program never

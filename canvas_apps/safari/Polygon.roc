@@ -33,18 +33,18 @@ Polygon :: [].{
 		})
 
 	## Makes a triangle of one flat color.
-	triangle : RgbColor,
-	{
+	triangle : {
 		first_corner : Screen.Point,
 		second_corner : Screen.Point,
 		third_corner : Screen.Point,
-	} -> Shapes.Shape
-	triangle = |color, { first_corner, second_corner, third_corner }|
+	},
+	RgbColor -> Shapes.Shape
+	triangle = |{ first_corner, second_corner, third_corner }, color|
 		flat_polygon([first_corner, second_corner, third_corner], color)
 
 	## Makes a rectangle of one flat color. Its sides run along the screen's edges.
-	rectangle : RgbColor, { top_left : Screen.Point, bottom_right : Screen.Point } -> Shapes.Shape
-	rectangle = |color, opposite_corners| flat_polygon(rectangle_corners(opposite_corners), color)
+	rectangle : { top_left : Screen.Point, bottom_right : Screen.Point }, RgbColor -> Shapes.Shape
+	rectangle = |opposite_corners, color| flat_polygon(rectangle_corners(opposite_corners), color)
 
 	## A rectangle's four corners, clockwise on the screen from its top left.
 	rectangle_corners : {
@@ -309,12 +309,12 @@ expect flat_coordinates([]) == []
 # A triangle keeps its corners in the order given.
 expect
 	Polygon.triangle(
-		RgbColor.of(111),
 		{
 			first_corner: Screen.point(1.0, 2.0),
 			second_corner: Screen.point(3.0, 4.0),
 			third_corner: Screen.point(5.0, 6.0),
 		},
+		RgbColor.of(111),
 	)
 		== Poly({ coordinates: triangle_coordinates, fill: Flat(Brush.opaque(RgbColor.of(111))) })
 
@@ -328,7 +328,7 @@ expect Polygon.rectangle_corners(sample_rectangle) == [
 	Screen.point(1.0, 8.0),
 ]
 
-expect Polygon.rectangle(RgbColor.of(111), sample_rectangle) == Poly({
+expect Polygon.rectangle(sample_rectangle, RgbColor.of(111)) == Poly({
 	coordinates: [1.0, 2.0, 5.0, 2.0, 5.0, 8.0, 1.0, 8.0],
 	fill: Flat(Brush.opaque(RgbColor.of(111))),
 })
@@ -336,8 +336,8 @@ expect Polygon.rectangle(RgbColor.of(111), sample_rectangle) == Poly({
 # A rectangle of no size still has its four corners.
 expect
 	Polygon.rectangle(
-		RgbColor.of(111),
 		{ top_left: Screen.point(1.0, 2.0), bottom_right: Screen.point(1.0, 2.0) },
+		RgbColor.of(111),
 	)
 		== Poly({
 			coordinates: [1.0, 2.0, 1.0, 2.0, 1.0, 2.0, 1.0, 2.0],

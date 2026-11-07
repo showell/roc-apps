@@ -228,7 +228,7 @@ trunk_shape = |outline, finish| {
 			Polygon.rectangle_corners(trunk_box),
 			{ color: trunk_color, strength: Fraction.whole },
 		)
-		Flat => Polygon.rectangle(trunk_color, trunk_box)
+		Flat => Polygon.rectangle(trunk_box, trunk_color)
 	}
 }
 
@@ -241,12 +241,12 @@ tier_triangle = |outline, { tier, foliage_color }| {
 	top_y = crown_top.plus(crown_height(outline).times(tier.top.to_f64()))
 	half_base = crown_half_width(outline).times(tier.width.to_f64())
 	Polygon.triangle(
-		foliage_color,
 		{
 			first_corner: { x: outline.foot.x, y: top_y },
 			second_corner: { x: outline.foot.x.plus(half_base), y: bottom_y },
 			third_corner: { x: outline.foot.x.minus(half_base), y: bottom_y },
 		},
+		foliage_color,
 	)
 }
 

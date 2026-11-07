@@ -39,7 +39,9 @@ import game.RideInstant
 import game.Rider
 import game.RiderState
 import game.Scenery
+import game.Screen
 import game.Speed
+import game.StillShapes
 import game.TreeSighting
 import game.Trees
 import game.Truck
@@ -928,4 +930,35 @@ expect {
 expect {
 	after_one_step = RideInstant.next_or_restart(World.route, RideInstant.initial)
 	RideInstant.frame_content(World.route, after_one_step).shapes.len() > 0
+}
+
+# Every bird and emoji still draws all its polygons through StillShapes, so
+# Polygon's own checks judge the data. PosedCat's tests draw every cat pose.
+expect {
+	anchor = {
+		feet: Screen.point(100.0, 200.0),
+		flip: AsDrawn,
+		height_on_screen: Pixels.of(50.0),
+	}
+	bird_stills = [
+		Perched,
+		Side(WingsUp),
+		Side(WingsDown),
+		Away(WingsUp),
+		Away(WingsDown),
+		Diving,
+	].map(PosedBird.pose_polygons)
+	emoji_stills = [
+		EmojiStills.duck,
+		EmojiStills.elephant,
+		EmojiStills.giraffe,
+		EmojiStills.zebra,
+		EmojiStills.rhino,
+		EmojiStills.bull,
+		EmojiStills.cow,
+		EmojiStills.pig,
+	].map(|emoji| emoji.polygons())
+	bird_stills.concat(emoji_stills).all(
+		|still| StillShapes.still_shapes(anchor, still).len() == still.polygons().len(),
+	)
 }
