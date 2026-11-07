@@ -2001,7 +2001,7 @@ A faster rider sets the cat off sooner, so it's clear of the lane in time.
 
 The rule lives in `Animation`. It takes the cat's numbers and an `Approach`, which says how the rider is coming:
 
-{{code Animation.Approach}}
+{{code Animation.StepSpan}}
 
 `stage_over_step_span` destructures its first argument in place, and the `Approach` after it, so the body reads in plain names:
 
@@ -2061,7 +2061,7 @@ Finding the stretch that's playing shows one more Roc idea. In `playing_at`, `va
 
 {{code Animation.Instant}}
 
-{{code Animation.Timeline from "## The critter at `stage`." to "Past(_) => timeline.after"}}
+{{code Animation.Timeline from "## The animal at `stage`." to "Past(_) => timeline.after"}}
 
 Back at the top, nothing in `instant_at` is unknown any more.
 
