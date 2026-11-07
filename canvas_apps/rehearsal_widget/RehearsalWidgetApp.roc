@@ -35,6 +35,7 @@ RehearsalWidgetApp :: [].{
 
 	canvas_app : CanvasApp.CanvasApp(RehearsalWidgetApp.Model)
 	canvas_app = ScrubWidget.canvas_app({
+		frames_a_second: ScrubWidget.moving_frames_a_second,
 		title: "Twelve rehearsals",
 		init: { stop: Start },
 		model_at_next_step: |model, input| { stop: stepped(model.stop, input) },

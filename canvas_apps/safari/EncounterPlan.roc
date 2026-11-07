@@ -67,6 +67,34 @@ EncounterPlan :: [].{
 			Unplanned
 		}
 
+	## The timing of an animation `span` long, for a rider `gap` short of its
+	## animal, coming at a steady `speed` from `gap_at_start` at step 0 of the
+	## ride's clock. It is planned as the ride plans it, on the first step that
+	## the rider comes within reach.
+	steady_approach_timing : EncounterPlan.StepSpan,
+	{
+		gap_at_start : Distance,
+		speed : Speed,
+		gap : Distance,
+	} -> EncounterPlan.Timing
+	steady_approach_timing = |span, { gap_at_start, speed, gap }| {
+		now = Clock.at_step(gap_at_start.minus(gap).portion(speed.step_length()).to_u32_wrap())
+		var $step = Clock.start
+		var $start = Unplanned
+		while $start == Unplanned and !(now < $step) {
+			$start = EncounterPlan.planned_start(
+				span,
+				{
+					gap: gap_at_start.minus(speed.distance_in($step.steps_since(Clock.start))),
+					speed,
+					now: $step,
+				},
+			)
+			$step = $step.next()
+		}
+		EncounterPlan.timing_of($start, now)
+	}
+
 	## Where an animation `length` steps long has got to at `timing`.
 	stage_at : EncounterPlan.Timing, Steps -> Animation.Stage
 	stage_at = |timing, length|

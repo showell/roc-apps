@@ -38,6 +38,7 @@ GazeWidgetApp :: [].{
 
 	canvas_app : CanvasApp.CanvasApp(GazeWidgetApp.Model)
 	canvas_app = ScrubWidget.canvas_app({
+		frames_a_second: ScrubWidget.moving_frames_a_second,
 		title: "The rider's gaze",
 		init: starting_model,
 		model_at_next_step: |model, input| played_on(with_buttons(model, input)),

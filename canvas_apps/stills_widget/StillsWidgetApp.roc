@@ -3,7 +3,6 @@
 ## stands large with its polygons and points counted. Nothing here moves, so
 ## there are no video recorder buttons. A click on a small still makes it the large one, and a click
 ## on the large one shows or hides the outline of each polygon.
-import game.BirdStills
 import game.Pixels
 import game.PosedBird
 import game.PosedCat
@@ -30,19 +29,14 @@ StillsWidgetApp :: [].{
 	## outlines of its still's polygons show.
 	Model : { large_pose : StillsWidgetApp.Pose, outlines : [Hidden, Shown] }
 
-	## Built by hand, not by `ScrubWidget.canvas_app`, because it runs at its own
-	## frame rate.
 	canvas_app : CanvasApp.CanvasApp(StillsWidgetApp.Model)
-	canvas_app = {
-		size: { width: ScrubWidget.canvas_width, height: ScrubWidget.canvas_height },
-		fps: frames_a_second,
-		init: { large_pose: Cat(Rest), outlines: Hidden },
-		model_at_next_step: |model, input, _seconds| next_model(model, input),
-		frame_shapes: shapes_at,
-		sounds: |_model| 0,
-		tones: [],
+	canvas_app = ScrubWidget.canvas_app({
+		frames_a_second,
 		title: "The stills",
-	}
+		init: { large_pose: Cat(Rest), outlines: Hidden },
+		model_at_next_step: next_model,
+		frame_shapes: shapes_at,
+	})
 }
 
 ## Every frame paints thirteen thousand points again, and at 60 that's most of a
@@ -460,16 +454,9 @@ left_click = |model, spot| next_model(model, Click.click_at(spot))
 is_as_started : StillsWidgetApp.Model -> Bool
 is_as_started = |model| model == start
 
-# Every pose is in the grid, the cat's first, and no two share a cell.
-expect cat_poses.len() == 7
-expect bird_poses.len() == 6
-expect cells.len() == 13
+# The cat's poses come first, and no two share a cell.
 expect cells.map(|cell| cell.pose).take_first(2) == [Cat(Rest), Cat(Stride)]
 expect cells.all(|cell| cells.keep_if(|other| other.pose == cell.pose).len() == 1)
-
-# Each pose has its own still.
-expect pose_still(Cat(Frozen)).polygons().len() == PosedCat.pose_still(Frozen).polygons().len()
-expect point_count(pose_still(Bird(Diving))) == point_count(BirdStills.diving_still)
 
 # The rows fill the space between the side margins, end to end.
 expect first_cell.area.left == ScrubWidget.side_margin

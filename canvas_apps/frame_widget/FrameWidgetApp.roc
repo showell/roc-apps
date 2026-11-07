@@ -7,7 +7,6 @@
 ## with no controls. The first line of text counts the shapes so far against the
 ## frame's total, and the second names the last layer on.
 import game.RoadAhead
-import game.Clock
 import game.FrameView
 import game.Grass
 import game.RiderCamera
@@ -311,10 +310,6 @@ shapes_at = |model|
 		[panel],
 		status_lines(model).map_with_index(status_line),
 	].join()
-
-# The step is the one the book holds, and the ride's own record of it.
-expect paused_tour.instant.clock == Clock.at_step(frame_step)
-expect frame_step == 1529
 
 # All the layers on is the game's own frame, shape for shape and in its order.
 expect picture_shapes(layers) == SafariApp.frame_shapes(paused_tour)

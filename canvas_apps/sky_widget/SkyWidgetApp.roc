@@ -5,7 +5,6 @@
 ## thirds of its size. Below it, lines of text read out the calls to Sky, and a
 ## small chart plots their answers over the whole sunset. The book opens it at
 ## one of three jobs, and each job adds a call.
-import game.Angle
 import game.Clock
 import game.FarHeight
 import game.Lens
@@ -32,6 +31,7 @@ SkyWidgetApp :: [].{
 
 	canvas_app : CanvasApp.CanvasApp(SkyWidgetApp.Model)
 	canvas_app = ScrubWidget.canvas_app({
+		frames_a_second: ScrubWidget.moving_frames_a_second,
 		title: "The sun going down",
 		init: at_start,
 		model_at_next_step: next_model,
@@ -116,7 +116,6 @@ picture_shapes = |job, clock|
 			sun_sighting: Sun.sighting({ heading: Sun.bearing, cam_focal: Lens.resting_focal }, clock),
 		},
 		ride_shapes: [],
-		roll: Angle.upright,
 	})
 
 ## One call to Sky or Sun that the chart plots: the line of text that reads out

@@ -782,6 +782,30 @@ expect route_cats.all(|{ crossing, .. }| cat_planning_gap < crossing.along.from_
 expect route_flights.len() == 4
 expect route_flights.all(|{ from, .. }| bird_planning_gap < from.road_point.along.from_start())
 
+# EncounterPlan.steady_approach_timing: a rider coming at 1.25 m a step from
+# 75 m off sees the bird take off at 60 m, perched a step before, and land at
+# 15 m.
+
+## Where the bird's flight has got to, for that rider `gap` metres short of
+## its perch.
+steady_flight_stage : F64 -> Animation.Stage
+steady_flight_stage = |gap|
+	BirdFlight.flight_stage(
+		EncounterPlan.steady_approach_timing(
+			BirdFlight.flight_span,
+			{
+				gap_at_start: Distance.metres(75.0),
+				speed: Speed.metres_a_step(1.25),
+				gap: Distance.metres(gap),
+			},
+		),
+	)
+
+expect steady_flight_stage(60.0) == Playing(Steps.zero)
+expect steady_flight_stage(60.125) == Waiting
+expect steady_flight_stage(15.0) == Past(Steps.zero)
+expect steady_flight_stage(15.125) == Playing(Steps.of(35))
+
 # BillboardSighting: which critters are in view, on a road of one segment
 # holding one grown cow and nothing else.
 one_cow_segment : Segment

@@ -33,6 +33,7 @@ StepWidgetApp :: [].{
 
 	canvas_app : CanvasApp.CanvasApp(StepWidgetApp.Model)
 	canvas_app = ScrubWidget.canvas_app({
+		frames_a_second: ScrubWidget.moving_frames_a_second,
 		title: "Three stored fields",
 		init: heading_for_step(0),
 		model_at_next_step: |model, input| moved(aimed(model, input)),

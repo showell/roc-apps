@@ -5,8 +5,14 @@
 ## into words for those lines, VcrButtons reads a widget's buttons into its
 ## state, Click reads where the pointer was pressed, and PlanView draws a picture
 ## that looks down on the road.
+import game.Angle
 import game.FrameView
+import game.Lens
+import game.Picture
+import game.Pipeline
 import game.Screen
+import game.Sky
+import game.Sun
 import lib.Brush
 import lib.RgbColor
 import lib.CanvasApp
@@ -41,17 +47,23 @@ ScrubWidget :: [].{
 	panel_color : RgbColor
 	panel_color = RgbColor.of(0xDCECF5)
 
+	## How often a widget whose picture moves is painted: as often as a page
+	## paints.
+	moving_frames_a_second : U32
+	moving_frames_a_second = 60
+
 	## A canvas app from a widget's model, what a frame does to it and what it
-	## draws.
+	## draws, painted `frames_a_second` times a second.
 	canvas_app : {
 		title : Str,
+		frames_a_second : U32,
 		init : model,
 		model_at_next_step : model, Input.Snapshot -> model,
 		frame_shapes : model -> List(Shapes.Shape),
 	} -> CanvasApp.CanvasApp(model)
-	canvas_app = |{ title, init, model_at_next_step, frame_shapes }| {
+	canvas_app = |{ title, frames_a_second, init, model_at_next_step, frame_shapes }| {
 		size: { width: canvas_width, height: canvas_height },
-		fps: 60,
+		fps: frames_a_second,
 		init,
 		model_at_next_step: CanvasApp.untimed_model_at_next_step(model_at_next_step),
 		frame_shapes,
@@ -152,11 +164,16 @@ ScrubWidget :: [].{
 	frame_shapes = |{ picture_shapes, status_lines }|
 		[picture_shapes, [panel], status_lines.map_with_index(status_line)].join()
 
-	## The whole of `view`, backdrop and shapes, at the canvas's share of
+	## The ride's `ride_shapes` over its `backdrop`, at the canvas's share of
 	## Safari's screen, so a widget's picture is what the ride's frame shows.
 	## A widget's picture is never rolled.
-	picture_shapes : FrameView -> List(Shapes.Shape)
-	picture_shapes = |view| {
+	picture_shapes : {
+		backdrop : { sky_colors : Sky.Colors, sun_sighting : Sun.Sighting },
+		ride_shapes : List(Shapes.Shape),
+	} -> List(Shapes.Shape)
+	picture_shapes = |{ backdrop, ride_shapes }| {
+		view : FrameView
+		view = { backdrop, ride_shapes, roll: Angle.upright }
 		corner = { x: 0.0, y: 0.0 }
 		view.framed_shapes(
 			World({
@@ -167,6 +184,17 @@ ScrubWidget :: [].{
 			}),
 		)
 	}
+
+	## What `sighting` shows through the lens at rest, with `context` for whatever
+	## else its kind needs, or nothing if it stood behind the camera.
+	resting_lens_shapes : Try(Pipeline.Sighted(kind), [BehindCamera]), context -> List(Shapes.Shape)
+		where [kind.scenery_picture : kind, Picture.Setting(context) -> Picture]
+	resting_lens_shapes = |sighting, context|
+		match sighting {
+			Ok(sighted) =>
+				Pipeline.rendering_of(sighted, { cam_focal: Lens.resting_focal, context }).picture.to_shapes()
+			Err(BehindCamera) => []
+		}
 }
 
 ## How often a still picture is painted: seldom, since it never changes, but
