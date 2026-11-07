@@ -24,6 +24,7 @@ import game.World
 import lib.CanvasApp
 import lib.Shapes
 import lib.RgbColor
+import widget.ReadoutText
 import widget.ScrubWidget
 import widget.VcrButtons
 
@@ -167,10 +168,10 @@ status_lines : Distance -> List(Str)
 status_lines = |gap| {
 	instant = BirdFlight.instant_at(flight, { gap: gap })
 	[
-		ScrubWidget.stage_text(BirdFlight.flight_stage({ gap: gap })),
+		ReadoutText.stage_text(BirdFlight.flight_stage({ gap: gap })),
 		"Pose: ${pose_name(instant.pose)}",
-		"Gap: ${ScrubWidget.tenths_text(gap.to_metres())} m",
-		"Height: ${ScrubWidget.tenths_text(instant.location.lift.to_metres())} m",
+		"Gap: ${ReadoutText.tenths_text(gap.to_metres())} m",
+		"Height: ${ReadoutText.tenths_text(instant.location.lift.to_metres())} m",
 	]
 }
 

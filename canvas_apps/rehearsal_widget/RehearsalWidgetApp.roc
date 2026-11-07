@@ -23,6 +23,7 @@ import lib.Mouse
 import lib.Shapes
 import lib.RgbColor
 import lib.Trig
+import widget.ReadoutText
 import widget.ScrubWidget
 
 RehearsalWidgetApp :: [].{
@@ -31,16 +32,12 @@ RehearsalWidgetApp :: [].{
 	Model : { tries_shown : U64 }
 
 	canvas_app : CanvasApp.CanvasApp(RehearsalWidgetApp.Model)
-	canvas_app = {
-		size: { width: ScrubWidget.canvas_width, height: ScrubWidget.canvas_height },
-		fps: 60,
-		init: { tries_shown: 0 },
-		model_at_next_step: |model, input, _seconds| { tries_shown: stepped(model.tries_shown, input) },
-		frame_shapes: |model| shapes_at(model.tries_shown),
-		sounds: |_model| 0,
-		tones: [],
+	canvas_app = ScrubWidget.canvas_app({
 		title: "Twelve rehearsals",
-	}
+		init: { tries_shown: 0 },
+		model_at_next_step: |model, input| { tries_shown: stepped(model.tries_shown, input) },
+		frame_shapes: |model| shapes_at(model.tries_shown),
+	})
 }
 
 ## The step of the ride this widget looks inside.
@@ -394,9 +391,9 @@ across_text : Across -> Str
 across_text = |across| {
 	metres = across.to_metres()
 	if metres < 0.0 {
-		"${ScrubWidget.tenths_text(0.0 - metres)} m left"
+		"${ReadoutText.tenths_text(metres.abs())} m left"
 	} else {
-		"${ScrubWidget.tenths_text(metres)} m right"
+		"${ReadoutText.tenths_text(metres)} m right"
 	}
 }
 

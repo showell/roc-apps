@@ -18,6 +18,7 @@ import lib.Brush
 import lib.RgbColor
 import lib.CanvasApp
 import lib.Shapes
+import widget.ReadoutText
 import widget.ScrubWidget
 
 BendsWidgetApp :: [].{
@@ -234,7 +235,7 @@ caption_lines = |turn| {
 	[
 		turn_text(turn),
 		"rail on the ${edge_text(turn)} edge",
-		"apex ${ScrubWidget.tenths_text(apex_past_end(apex_of(turn)))} m past the end",
+		"apex ${ReadoutText.tenths_text(apex_past_end(apex_of(turn)))} m past the end",
 		"${GroundSighting.patches_in_view(road).len().to_str()} patches, ${RailSighting.rails_in_view(road).len().to_str()} rail pieces",
 	]
 }

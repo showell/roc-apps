@@ -1,12 +1,10 @@
 ## A scrub widget is a small canvas app for the Safari tutorial. Every frame is a
 ## pure function of its state, so what it shows can play forward and backward.
-## This module holds what each widget has in common: the canvas, and laying out
-## the picture and the lines of text below it. VcrButtons reads a widget's buttons
-## into its state.
-import game.Animation
+## This module holds the page each widget is drawn on: the canvas, and laying out
+## the picture and the lines of text below it. ReadoutText puts a widget's numbers
+## into words for those lines, and VcrButtons reads a widget's buttons into its
+## state.
 import game.Clock
-import game.Distance
-import game.Fraction
 import game.Backdrop
 import game.Sky
 import game.Sun
@@ -48,7 +46,7 @@ ScrubWidget :: [].{
 		size: { width: canvas_width, height: canvas_height },
 		fps: 60,
 		init,
-		model_at_next_step: |model, input, _seconds| model_at_next_step(model, input),
+		model_at_next_step: CanvasApp.untimed_model_at_next_step(model_at_next_step),
 		frame_shapes,
 		sounds: |_model| 0,
 		tones: [],
@@ -130,42 +128,6 @@ ScrubWidget :: [].{
 			Backdrop.frame_shapes(shapes, sky),
 		)
 	}
-
-	## Where an animation has got to, in words.
-	stage_text : Animation.Stage -> Str
-	stage_text = |stage|
-		match stage {
-			Waiting => "Waiting"
-			Playing(progress) => "Playing: ${percent_text(progress)}"
-			Past(_) => "Past"
-		}
-
-	## A number of at least zero, to one decimal place.
-	tenths_text : F64 -> Str
-	tenths_text = |number| {
-		tenths = (number * 10.0 + 0.5).to_i64_wrap()
-		"${(tenths // 10).to_str()}.${(tenths % 10).to_str()}"
-	}
-
-	## A fraction as a whole percentage, rounded down.
-	percent_text : Fraction -> Str
-	percent_text = |fraction| "${(fraction.to_f64() * 100.0).to_i64_wrap().to_str()}%"
-
-	## A count as the book writes it, with commas.
-	count_text : U64 -> Str
-	count_text = |count| {
-		thousands = count // 1000
-		rest = count % 1000
-		if thousands == 0 {
-			rest.to_str()
-		} else if rest < 10 {
-			"${count_text(thousands)},00${rest.to_str()}"
-		} else if rest < 100 {
-			"${count_text(thousands)},0${rest.to_str()}"
-		} else {
-			"${count_text(thousands)},${rest.to_str()}"
-		}
-	}
 }
 
 panel_color : RgbColor
@@ -186,10 +148,6 @@ panel = Rect({
 
 status_line : Str, U64 -> Shapes.Shape
 status_line = |text, row| ScrubWidget.readout({ text, color: ink_color, row })
-
-expect ScrubWidget.stage_text(Waiting) == "Waiting"
-expect ScrubWidget.stage_text(Playing(Fraction.of(0.5))) == "Playing: 50%"
-expect ScrubWidget.stage_text(Past(Distance.metres(1.0))) == "Past"
 
 # The first view mark, the sky, the grass, the shapes, and the mark back to the
 # screen.
@@ -212,24 +170,6 @@ expect
 		{ clock: Clock.start, sun: OutOfView },
 	).len()
 		== 5
-
-expect ScrubWidget.tenths_text(0.0) == "0.0"
-expect ScrubWidget.tenths_text(0.04) == "0.0"
-expect ScrubWidget.tenths_text(0.06) == "0.1"
-expect ScrubWidget.tenths_text(21.0) == "21.0"
-expect ScrubWidget.tenths_text(9.96) == "10.0"
-
-expect ScrubWidget.percent_text(Fraction.zero) == "0%"
-expect ScrubWidget.percent_text(Fraction.of(0.529)) == "52%"
-expect ScrubWidget.percent_text(Fraction.whole) == "100%"
-
-expect ScrubWidget.count_text(0) == "0"
-expect ScrubWidget.count_text(999) == "999"
-expect ScrubWidget.count_text(1000) == "1,000"
-expect ScrubWidget.count_text(1005) == "1,005"
-expect ScrubWidget.count_text(1050) == "1,050"
-expect ScrubWidget.count_text(2198) == "2,198"
-expect ScrubWidget.count_text(1000000) == "1,000,000"
 
 # A page is the panel and its text.
 expect ScrubWidget.frame_shapes({ picture_shapes: [], status_lines: [] }).len() == 1

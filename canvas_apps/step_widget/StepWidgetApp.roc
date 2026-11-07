@@ -14,6 +14,7 @@ import lib.CanvasApp
 import lib.Input
 import lib.Shapes
 import lib.RgbColor
+import widget.ReadoutText
 import widget.ScrubWidget
 import widget.VcrButtons
 
@@ -322,8 +323,8 @@ status_lines = |model| {
 	clock = model.tour.instant.clock
 	[
 		"clock: step ${clock.to_str()}",
-		"rider: segment ${(rider.segment_index.to_u32() + 1).to_str()}, ${ScrubWidget.tenths_text(rider.motorcycle.along.to_metres())} m, speed ${ScrubWidget.tenths_text(rider.motorcycle.speed.to_metres_a_step())}",
-		"truck: ${ScrubWidget.tenths_text(truck.route_position.to_metres())} m, speed ${ScrubWidget.tenths_text(truck.speed.to_metres_a_step())}, brake ${brakes_text(RideInstant.lit_truck(model.tour.instant).brake_lights)}",
+		"rider: segment ${(rider.segment_index.to_u32() + 1).to_str()}, ${ReadoutText.tenths_text(rider.motorcycle.along.to_metres())} m, speed ${ReadoutText.tenths_text(rider.motorcycle.speed.to_metres_a_step())}",
+		"truck: ${ReadoutText.tenths_text(truck.route_position.to_metres())} m, speed ${ReadoutText.tenths_text(truck.speed.to_metres_a_step())}, brake ${brakes_text(RideInstant.lit_truck(model.tour.instant).brake_lights)}",
 		move_text(model),
 	]
 }

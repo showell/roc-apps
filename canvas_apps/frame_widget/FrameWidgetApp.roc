@@ -26,6 +26,7 @@ import lib.RgbColor
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
+import widget.ReadoutText
 import widget.ScrubWidget
 import "page.html" as page_html : Str
 
@@ -317,8 +318,8 @@ status_lines : FrameWidgetApp.Model -> List(Str)
 status_lines = |{ layers_on, .. }| {
 	on_layers = layers_up_to(layers_on)
 	added = on_layers.last() ?? crash "FrameWidgetApp.status_lines: a layer is always on"
-	so_far = ScrubWidget.count_text(ride_count(on_layers))
-	total = ScrubWidget.count_text(ride_count(layers))
+	so_far = ReadoutText.count_text(ride_count(on_layers))
+	total = ReadoutText.count_text(ride_count(layers))
 	["Shapes so far: ${so_far} of ${total}", "Added: ${layer_name(added)}"]
 }
 

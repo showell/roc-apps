@@ -16,6 +16,7 @@ import game.World
 import lib.CanvasApp
 import lib.RgbColor
 import lib.Shapes
+import widget.ReadoutText
 import widget.ScrubWidget
 import widget.VcrButtons
 
@@ -147,9 +148,9 @@ status_lines = |gap| {
 		{ along: crossing.along.minus(gap), speed: rider_speed },
 	)
 	[
-		ScrubWidget.stage_text(Cat.crossing_stage(approach)),
+		ReadoutText.stage_text(Cat.crossing_stage(approach)),
 		"Pose: ${pose_name(instant.pose)}",
-		"Gap: ${ScrubWidget.tenths_text(gap.to_metres())} m",
+		"Gap: ${ReadoutText.tenths_text(gap.to_metres())} m",
 		throttle_text(throttle),
 	]
 }

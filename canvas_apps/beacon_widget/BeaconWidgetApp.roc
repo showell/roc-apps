@@ -18,6 +18,7 @@ import game.Steps
 import game.Tower
 import lib.CanvasApp
 import lib.Shapes
+import widget.ReadoutText
 import widget.ScrubWidget
 import widget.VcrButtons
 
@@ -139,8 +140,8 @@ status_lines : Clock -> List(Str)
 status_lines = |clock| {
 	period = Beacon.beacon_period
 	into_blink = clock.steps_since(Clock.start).wrapped_to(period)
-	first_tower = ScrubWidget.percent_text(brightness_at(clock, first_tower_key))
-	second_tower = ScrubWidget.percent_text(brightness_at(clock, second_tower_key))
+	first_tower = ReadoutText.percent_text(brightness_at(clock, first_tower_key))
+	second_tower = ReadoutText.percent_text(brightness_at(clock, second_tower_key))
 	[
 		"Clock: step ${clock.to_str()}",
 		"Blink: ${step_count_text(into_blink)} of ${step_count_text(period)} steps",

@@ -19,6 +19,7 @@ import lib.Brush
 import lib.RgbColor
 import lib.CanvasApp
 import lib.Shapes
+import widget.ReadoutText
 import widget.ScrubWidget
 
 TreeWidgetApp :: [].{
@@ -96,14 +97,14 @@ tree_shapes = |stand|
 crown_text : Distance -> Str
 crown_text = |forward|
 	match TreeShapes.crown_of(forward) {
-		Cones({ shade }) => "Cones({ shade: ${ScrubWidget.tenths_text(shade.to_f64())} })"
+		Cones({ shade }) => "Cones({ shade: ${ReadoutText.tenths_text(shade.to_f64())} })"
 		Triangles => "Triangles"
 	}
 
 ## The two lines under a tree.
 caption_lines : Distance -> List(Str)
 caption_lines = |forward|
-	["forward = ${ScrubWidget.tenths_text(forward.to_metres())} m", crown_text(forward)]
+	["forward = ${ReadoutText.tenths_text(forward.to_metres())} m", crown_text(forward)]
 
 ## A line of a caption, centered under its tree, on row `row` of the panel.
 caption_line : Stand, { text : Str, row : U64 } -> Shapes.Shape

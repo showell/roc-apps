@@ -25,6 +25,7 @@ import lib.Input
 import lib.Shapes
 import lib.RgbColor
 import lib.Trig
+import widget.ReadoutText
 import widget.ScrubWidget
 import widget.VcrButtons
 
@@ -339,9 +340,9 @@ status_lines : RiderState, F64 -> List(Str)
 status_lines = |rider, step|
 	[
 		phase_text(phase_of(rider)),
-		"Step ${step.to_u64_wrap().to_str()}: speed ${ScrubWidget.tenths_text(rider.motorcycle.speed.to_metres_a_step())} m a step",
-		"Gaze yaw: ${ScrubWidget.tenths_text(gaze_degrees(rider))} degrees",
-		"Look depth: ${ScrubWidget.percent_text(rider.eyes.look_depth)}",
+		"Step ${step.to_u64_wrap().to_str()}: speed ${ReadoutText.tenths_text(rider.motorcycle.speed.to_metres_a_step())} m a step",
+		"Gaze yaw: ${ReadoutText.tenths_text(gaze_degrees(rider))} degrees",
+		"Look depth: ${ReadoutText.percent_text(rider.eyes.look_depth)}",
 	]
 
 ## The whole stretch, played, for the expects. As a constant it's ridden once, at
