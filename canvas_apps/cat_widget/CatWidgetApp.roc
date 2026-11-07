@@ -168,7 +168,7 @@ throttle_text = |throttle|
 
 # The whole crossing is on the range, with some road to spare at the far end.
 expect Animation.planning_gap(Cat.crossing_span, rider_speed) < closing_gap.first
-expect Cat.clear_gap > closing_gap.last
+expect Cat.crossing_span.ends_at > closing_gap.last
 
 expect
 	status_lines(Distance.metres(50.0))

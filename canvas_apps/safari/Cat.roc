@@ -14,14 +14,6 @@ import Steps
 
 Cat :: [].{
 
-	## How long a crossing takes, at a frame a step.
-	crossing_steps : Steps
-	crossing_steps = Steps.of(crossing_frames.len().to_u32_wrap())
-
-	## How far short of the cat the rider is when its crossing ends.
-	clear_gap : Distance
-	clear_gap = Distance.metres(3.0)
-
 	## What the ride plans a crossing by: its length, and the gap it ends at.
 	crossing_span : Animation.StepSpan
 	crossing_span = { length: crossing_steps, ends_at: clear_gap }
@@ -60,6 +52,14 @@ Cat :: [].{
 	instant_at : CatCrossing, Animation.Stage -> Animation.Instant(PosedCat.CatPose)
 	instant_at = |cat, stage| crossing_timeline(cat).instant(stage)
 }
+
+## How long a crossing takes, at a frame a step.
+crossing_steps : Steps
+crossing_steps = Steps.of(crossing_frames.len().to_u32_wrap())
+
+## How far short of the cat the rider is when its crossing ends.
+clear_gap : Distance
+clear_gap = Distance.metres(3.0)
 
 ## How the cat looks walking out: two strides, a frame each step.
 walking_poses : List(PosedCat.CatPose)

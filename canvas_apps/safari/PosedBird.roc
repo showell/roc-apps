@@ -23,12 +23,8 @@ PosedBird := { pose : PosedBird.BirdPose }.{
 		Diving,
 	]
 
-	## How tall a bird stands.
-	bird_height : Distance
-	bird_height = Distance.metres(2.2)
-
 	scenery_height : PosedBird -> Distance
-	scenery_height = |_bird| PosedBird.bird_height
+	scenery_height = |_bird| bird_height
 
 	## A bird on screen, its feet where it is.
 	scenery_picture : PosedBird, Picture.Setting({}) -> Picture
@@ -38,7 +34,7 @@ PosedBird := { pose : PosedBird.BirdPose }.{
 			# pose when they fly both ways.
 			StillShapes.standing_still_shapes(
 				setting,
-				{ height: PosedBird.bird_height, still: PosedBird.pose_still(bird.pose) },
+				{ height: bird_height, still: PosedBird.pose_still(bird.pose) },
 			),
 		)
 
@@ -55,12 +51,13 @@ PosedBird := { pose : PosedBird.BirdPose }.{
 		}
 }
 
+## How tall a bird stands.
+bird_height : Distance
+bird_height = Distance.metres(2.2)
+
 # A perched bird.
 level_bird : PosedBird
 level_bird = { pose: Perched }
 
 # A bird's height is the same in every pose.
-expect
-	[level_bird, { ..level_bird, pose: Diving }].all(
-		|bird| bird.scenery_height() == PosedBird.bird_height,
-	)
+expect [level_bird, { ..level_bird, pose: Diving }].all(|bird| bird.scenery_height() == bird_height)

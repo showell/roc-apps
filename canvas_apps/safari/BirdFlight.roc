@@ -20,10 +20,6 @@ BirdFlight :: [].{
 	## A bird at one instant: how it looks, and where it is.
 	BirdInstant : Animation.Instant(PosedBird.BirdPose)
 
-	## How far above a straight line the top of its path is.
-	flight_arc : Distance
-	flight_arc = Distance.metres(5.0)
-
 	## How the bird looks through a flight, a frame a step: a flap side on as
 	## it takes off, seven flaps seen from behind, and a flap's length of diving.
 	flight_poses : List(PosedBird.BirdPose)
@@ -36,10 +32,7 @@ BirdFlight :: [].{
 	## What the ride plans a flight by: its length, and the gap from the rider
 	## to the tree it left at which it has landed.
 	flight_span : Animation.StepSpan
-	flight_span = {
-		length: Steps.of(flight_poses.len().to_u32_wrap()),
-		ends_at: Distance.metres(15.0),
-	}
+	flight_span = { length: Steps.of(flight_poses.len().to_u32_wrap()), ends_at: landing_gap }
 
 	## The flight of a bird perched on the tree at `perch`, among a segment's
 	## `trees`: to the first tree on the other side of the road far enough along.
@@ -65,6 +58,14 @@ BirdFlight :: [].{
 	instant_at : BirdFlight.Flight, Animation.Stage -> BirdFlight.BirdInstant
 	instant_at = |flight, stage| flight_timeline(flight).instant(stage)
 }
+
+## How far short of the tree it left the rider is when the bird lands.
+landing_gap : Distance
+landing_gap = Distance.metres(15.0)
+
+## How far above a straight line the top of its path is.
+flight_arc : Distance
+flight_arc = Distance.metres(5.0)
 
 ## The bird flies to a tree at least this far along from the one it left,
 ## so that its path runs ahead of the rider as well as across the road.
@@ -129,6 +130,6 @@ flight_location = |{ from, to, through }| {
 	on_line = Animation.location_between({ from, to, fraction: Easing.smoothstep(through) })
 	share = through.to_f64()
 	# 4t(1 - t) is 0 at both ends and 1 halfway, so the arc tops out at `flight_arc`.
-	above_line = BirdFlight.flight_arc.times(4.0 * share * (1.0 - share))
+	above_line = flight_arc.times(4.0 * share * (1.0 - share))
 	{ ..on_line, lift: on_line.lift.plus(above_line) }
 }
