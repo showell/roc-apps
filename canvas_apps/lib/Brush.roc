@@ -1,13 +1,23 @@
-# Brush is the paint a shape is filled with: a flat colour or one of five
-# gradients, with the gradient's geometry in scene coordinates. Safari's
-# ScanlineFill shades a brush on the CPU, BrushGlsl on the GPU and
-# shapes_canvas.js on a canvas, all from what is here.
+# A brush is the paint a shape is filled with. It answers one question: what
+# colour does this point of the shape get? A `Fill` is a flat colour or one of
+# five gradients, and a gradient's geometry is in the same coordinates as the
+# shape it fills. `shade` is the answer, point by point.
 #
-# Every canvas app paints with it, so it sits in lib/ rather than in safari/.
+# A polygon, disc or rectangle has exactly one fill and nothing else. There is
+# no stroke: an outline is built from filled shapes, as `Shapes.line` and
+# `Shapes.ring_shapes` build it. There is no alpha on the shape either. Each
+# colour carries its own alpha, from 0 for invisible to 1 for opaque, and a
+# gradient mixes the alpha along with red, green and blue. The colour a point
+# gets is then laid over what is already there by the frame's mode
+# (`Shapes.Mode`), which paints over it or adds light to it, in proportion to
+# that alpha either way.
 #
-# The tags are the ones shapes_canvas.js reads, and so is what they mean:
-# gradients mix unpremultiplied, as the canvas specification says, and an
-# offset outside [0, 1] is clamped as shapes_canvas.js clamps it.
+# Safari's ScanlineFill shades a brush on the CPU, BrushGlsl on the GPU and
+# shapes_canvas.js on a canvas, all from what is here. The tags are the ones
+# shapes_canvas.js reads, and so is what they mean: gradients mix
+# unpremultiplied, as the canvas specification says, and an offset outside
+# [0, 1] is clamped as shapes_canvas.js clamps it. Every canvas app paints
+# with brushes, so the module sits in lib/ rather than in safari/.
 import ArgbColor
 import Point
 import RgbColor
