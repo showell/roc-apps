@@ -107,7 +107,7 @@ scene_pieces = |lists| {
 		birds: on_layer(lists.birds, MovingThings),
 		trees: on_layer(lists.trees, Trees),
 		towers: on_layer(lists.towers, Towers),
-		critters: on_layer(lists.critters, Critters),
+		billboards: on_layer(lists.billboards, Critters),
 		cats: on_layer(lists.cats, MovingThings),
 		trucks: on_layer(lists.trucks, MovingThings),
 		rails: on_layer(lists.rails, Rails),

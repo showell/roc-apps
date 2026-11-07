@@ -36,16 +36,16 @@ BillboardSighting :: [].{
 	## What became of a critter placed in the rider's view.
 	Fate : Try(Pipeline.Sighted(Billboard), [BehindCamera, TooSmall])
 
-	## The critters to draw, of `fates`. The cap comes after the cull, so a
-	## critter out of view never takes a place from one in view.
-	critters_to_draw : List(BillboardSighting.Fate) -> List(Pipeline.Sighted(Billboard))
-	critters_to_draw = |fates|
+	## The billboards to draw, of `fates`. The cap comes after the cull, so a
+	## billboard out of view never takes a place from one in view.
+	billboards_to_draw : List(BillboardSighting.Fate) -> List(Pipeline.Sighted(Billboard))
+	billboards_to_draw = |fates|
 		fates.keep_oks(|fate| fate).take_first(BillboardSighting.max_visible_critters.to_u64_wrap())
 
-	## Every critter in view, nearest segment first, then those of the segment
+	## Every billboard in view, nearest segment first, then those of the segment
 	## before the rider's, when there is one.
-	critter_fates : RoadAhead.RoadView -> List(BillboardSighting.Fate)
-	critter_fates = |road|
+	billboard_fates : RoadAhead.RoadView -> List(BillboardSighting.Fate)
+	billboard_fates = |road|
 		RoadAhead.segments_in_view(road)
 			.join_map(|in_view| BillboardSighting.segment_sightings(road, in_view))
 

@@ -26,7 +26,7 @@ SceneShapes :: [].{
 		birds : List(thing),
 		trees : List(thing),
 		towers : List(thing),
-		critters : List(thing),
+		billboards : List(thing),
 		cats : List(thing),
 		trucks : List(thing),
 		rails : List(thing),
@@ -42,7 +42,7 @@ SceneShapes :: [].{
 	}
 
 	## The scene's things, each as the frame paints it. A tree's context is the
-	## one a tree can't know alone, a critter needs none, and a tower and the
+	## one a tree can't know alone, a billboard needs none, and a tower and the
 	## truck are measured on the road.
 	scene_renderings : Scene, RoadAhead.CameraView -> SceneShapes.ThingLists(Rendered)
 	scene_renderings = |scene, view| {
@@ -58,8 +58,8 @@ SceneShapes :: [].{
 					{ cam_focal, context: road_context(view, tower) },
 				),
 			),
-			critters: scene.critters.map(
-				|critter| Pipeline.rendering_of(critter, { cam_focal, context: {} }),
+			billboards: scene.billboards.map(
+				|billboard| Pipeline.rendering_of(billboard, { cam_focal, context: {} }),
 			),
 			cats: scene.cats.map(|cat| Pipeline.rendering_of(cat, { cam_focal, context: {} })),
 			trucks: [truck_rendering(view, scene.truck)].keep_oks(|truck| truck),
@@ -76,7 +76,7 @@ SceneShapes :: [].{
 			lists.birds,
 			lists.trees,
 			lists.towers,
-			lists.critters,
+			lists.billboards,
 			lists.cats,
 			lists.trucks,
 			lists.rails,
@@ -310,7 +310,7 @@ expect
 		birds: [1, 2],
 		trees: [3],
 		towers: [4],
-		critters: [5, 6],
+		billboards: [5, 6],
 		cats: [7],
 		trucks: [8],
 		rails: [9],

@@ -478,9 +478,9 @@ count_from = |position|
 		.sum()
 
 expect
-	BillboardSighting.critter_fates(lone(0)).len()
+	BillboardSighting.billboard_fates(lone(0)).len()
 		== BillboardSighting.segment_sightings(lone(0), segment_on(lone(0), 0)).len()
-expect BillboardSighting.critter_fates(six_segments).len().to_i64_wrap() == count_from(0)
+expect BillboardSighting.billboard_fates(six_segments).len().to_i64_wrap() == count_from(0)
 expect count_from(0) >= count_from(1)
 expect count_from(1) >= count_from(2)
 expect BillboardSighting.segment_sightings(six_segments, segment_behind(4)).len() > 0
@@ -570,7 +570,7 @@ expect BillboardSighting.max_visible_critters == 320
 ## them. A count past the cap is cut to it, and one out of view takes no place.
 drawn_count : { out_of_view : U64, in_view : U64 } -> U64
 drawn_count = |{ out_of_view, in_view }|
-	BillboardSighting.critters_to_draw(
+	BillboardSighting.billboards_to_draw(
 		List.repeat(Err(TooSmall), out_of_view).concat(List.repeat(Ok(near_cow), in_view)),
 	).len()
 
@@ -644,7 +644,7 @@ scene_renderings = Rendered.depth_sorted_renderings(SceneShapes.things_in_tie_or
 # ahead, so `trucks` holds one.
 expect scene_lists.trees.len() == scene.trees.len()
 expect scene_lists.towers.len() == scene.towers.len()
-expect scene_lists.critters.len() == scene.critters.len()
+expect scene_lists.billboards.len() == scene.billboards.len()
 expect scene_lists.cats.len() == scene.cats.len()
 expect scene_lists.rails.len() == scene.rails.len()
 expect scene_lists.birds.len() == scene.birds.len()
@@ -654,7 +654,7 @@ expect
 		== [
 			scene.trees.len(),
 			scene.towers.len(),
-			scene.critters.len(),
+			scene.billboards.len(),
 			scene.cats.len(),
 			scene_lists.trucks.len(),
 			scene.rails.len(),
@@ -663,11 +663,11 @@ expect
 
 expect scene.trees.len() > 0
 expect scene.towers.len() > 0
-expect scene.critters.len() > 0
+expect scene.billboards.len() > 0
 expect scene.rails.len() > 0
 expect scene_renderings.len() > 0
 expect scene.towers.len().to_i64_wrap() <= TowerSighting.max_visible_towers
-expect scene.critters.len().to_i64_wrap() <= BillboardSighting.max_visible_critters
+expect scene.billboards.len().to_i64_wrap() <= BillboardSighting.max_visible_critters
 
 ## Whether no rendering in `renderings` is farther than the one before it.
 is_far_to_near : List(Rendered) -> Bool

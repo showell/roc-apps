@@ -1,5 +1,5 @@
 ## Scene gathers what one frame shows beside the road: the trees, towers,
-## critters, cats, guard rails, the truck and the birds in view, each kind
+## billboards, cats, guard rails, the truck and the birds in view, each kind
 ## found by its own sighting.
 import Billboard
 import Clock
@@ -25,7 +25,7 @@ import World
 Scene := {
 	trees : List(Pipeline.Sighted(Conifer)),
 	towers : List(Pipeline.Sighted(Tower)),
-	critters : List(Pipeline.Sighted(Billboard)),
+	billboards : List(Pipeline.Sighted(Billboard)),
 	cats : List(Pipeline.Sighted(PosedCat)),
 	rails : List(GuardRail.RailQuad),
 	truck : TruckSighting.TruckFate,
@@ -48,7 +48,7 @@ Scene := {
 		towers =
 			TowerSighting.towers_in_view(road, clock)
 				.take_first(TowerSighting.max_visible_towers.to_u64_wrap())
-		critters = BillboardSighting.critters_to_draw(BillboardSighting.critter_fates(road))
+		billboards = BillboardSighting.billboards_to_draw(BillboardSighting.billboard_fates(road))
 		cats = CrossingSighting.cats_in_view(view, speed)
 		rails = RailSighting.rails_in_view(road)
 		rider_distance = World.distance_along_route(
@@ -63,7 +63,7 @@ Scene := {
 		{
 			trees,
 			towers,
-			critters,
+			billboards,
 			cats,
 			rails,
 			truck: truck_at,
