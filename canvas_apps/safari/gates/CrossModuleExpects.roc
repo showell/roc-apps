@@ -554,6 +554,60 @@ expect is_one_tree_behind(past_bend_trees(-150.0))
 expect past_bend_trees(30.0).len() == 0
 expect past_bend_trees(-80.0).len() == 0
 
+# RailSighting: the rail at a bend runs along the outer edge, from 10 m before
+# the bend on the segment before it to 10 m into the segment after it. On a
+# 300 m segment turning right by a right angle, the outer edge is the left one.
+## The road ahead of a rider at the start of a 300 m segment that turns right by
+## a right angle into another.
+right_angle_road : RoadAhead.RoadView
+right_angle_road = road_of([
+	{
+		..segment_of([]),
+		length: Distance.metres(300.0),
+		ending: Bends({ turn: Angle.Turn.degrees(90.0), bend_life: Quiet }),
+	},
+	segment_of([]),
+])
+
+## Where the rail's path starts and ends, as the rider sees it. Each bar joins
+## two points of the path, and the posts follow the bars, one at each point, so
+## a path of `n` points makes `2n - 1` quads, and the last bar ends the path.
+rail_ends : { start : Geom.RaisedPoint, end : Geom.RaisedPoint }
+rail_ends = {
+	quads = RailSighting.rail_quads_in_view(right_angle_road, { vantage: origin })
+	last_bar = (quads.len() - 1) / 2 - 1
+	corner_of = |quad_index, corner_index|
+		quads.get(quad_index).map_ok(|quad| quad.corners).ok_or([]).get(corner_index)
+			?? crash "CrossModuleExpects: a rail bar has four corners"
+	{ start: corner_of(0, 0), end: corner_of(last_bar, 1) }
+}
+
+## The point on the left edge `along` metres into the segment at `place` on the
+## right-angle road, as the rider sees it.
+left_edge_point : SegmentPlace, F64 -> Geom.RiderPoint
+left_edge_point = |place, along|
+	RoadAhead.rider_point_at(
+		right_angle_road,
+		{
+			vantage: origin,
+			place,
+			road_point: { along: Along.metres(along), across: Geom.left_edge },
+		},
+	)
+
+expect {
+	start = left_edge_point(Ahead(SegmentPlace.Position.first), 290.0)
+	end = left_edge_point(Ahead(SegmentPlace.Position.number(1)), 10.0)
+	[
+		(rail_ends.start.right, start.right),
+		(rail_ends.start.forward, start.forward),
+		(rail_ends.end.right, end.right),
+		(rail_ends.end.forward, end.forward),
+	].all(|(got, want)| (got.to_metres() - want.to_metres()).abs() <= 0.000001)
+		and start.right.to_metres() == -2.0
+		and start.forward.to_metres() == 290.0
+}
+
 # TreeSighting keeps each segment's trees in the order they were planted,
 # leaving out those behind the camera and those too small to draw, and goes
 # through the segments in view in turn.
