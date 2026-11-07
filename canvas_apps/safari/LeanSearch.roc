@@ -107,7 +107,7 @@ searched_lean : F64, F64 -> F64
 searched_lean = |across, lean_radians|
 	LeanSearch.best_lean({
 		..Motorcycle.initial,
-		across: Across.metres(across),
+		route_place: { ..Motorcycle.initial.route_place, across: Across.metres(across) },
 		lean: Angle.Lean.radians(lean_radians),
 	}).to_radians()
 

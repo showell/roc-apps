@@ -1459,10 +1459,12 @@ expect
 done : RideInstant
 done = {
 	rider: {
-		segment_index: Route.SegmentIndex.number(18),
 		motorcycle: {
-			along: Along.metres(400.0),
-			across: Across.metres(0.0),
+			route_place: {
+				segment_index: Route.SegmentIndex.number(18),
+				along: Along.metres(400.0),
+				across: Across.metres(0.0),
+			},
 			yaw: Angle.Turn.radians(0.0),
 			speed: Speed.at_rest,
 			lean: Angle.Lean.radians(0.0),
@@ -1485,11 +1487,19 @@ instant_after = |instant|
 		Continued(next) | Restarted(next) => next
 	}
 
+## The segment the rider of `instant` is on.
+rider_segment_index : RideInstant -> Route.SegmentIndex
+rider_segment_index = |instant| instant.rider.motorcycle.route_place.segment_index
+
+## How far along their segment the rider of `instant` is.
+rider_along : RideInstant -> Along
+rider_along = |instant| instant.rider.motorcycle.route_place.along
+
 expect
 	match RideInstant.next_or_restart(World.route, done) {
 		Restarted(instant) =>
 			instant.clock.to_f64() == 0.0
-				and instant.rider.motorcycle.along.to_metres() == 0.0
+				and instant.rider.motorcycle.route_place.along.to_metres() == 0.0
 				and instant.rider.motorcycle.speed.to_metres_a_step() == 0.3
 				and instant.truck.route_position.to_metres() == 500.0
 				and instant.rider.eyes.look_depth.to_f64() == 0.0
@@ -1513,7 +1523,7 @@ expect {
 	var $has_looked = False
 	while !$instant.rider.is_finished(World.route) {
 		next = instant_after($instant)
-		if next.rider.segment_index != $instant.rider.segment_index {
+		if rider_segment_index(next) != rider_segment_index($instant) {
 			$crossings = $crossings + 1
 			is_home = $instant.rider.eyes.gaze_yaw == Angle.straight_ahead
 			$is_home_at_each = $is_home_at_each and is_home
@@ -1539,9 +1549,9 @@ expect !RideInstant.initial.rider.is_finished(World.route)
 expect ride_at_step_one.clock.to_f64() == 1.0
 expect ride_at_step_two.clock.to_f64() == 2.0
 expect ride_at_step_two.clock.steps_since(ride_at_step_one.clock) == Steps.one_step
-expect ride_at_step_one.rider.motorcycle.along > RideInstant.initial.rider.motorcycle.along
+expect rider_along(ride_at_step_one) > rider_along(RideInstant.initial)
 expect ride_at_step_one.truck.route_position > RideInstant.initial.truck.route_position
-expect ride_at_step_two.rider.motorcycle.along > ride_at_step_one.rider.motorcycle.along
+expect rider_along(ride_at_step_two) > rider_along(ride_at_step_one)
 expect ride_at_step_one.clock != Clock.start
 expect !ride_at_step_one.rider.is_finished(World.route)
 
@@ -1550,8 +1560,14 @@ expect !ride_at_step_one.rider.is_finished(World.route)
 placed_rider : U32, F64 -> RiderState
 placed_rider = |index, along| {
 	..RiderState.initial,
-	segment_index: Route.SegmentIndex.number(index),
-	motorcycle: { ..Motorcycle.initial, along: Along.metres(along) },
+	motorcycle: {
+		..Motorcycle.initial,
+		route_place: {
+			..Motorcycle.initial.route_place,
+			segment_index: Route.SegmentIndex.number(index),
+			along: Along.metres(along),
+		},
+	},
 }
 
 ## The route's last segment, which ends the route.
@@ -1573,26 +1589,29 @@ rider_a_step_after = |index, along|
 
 # A rider near the first bend crosses onto the next segment's road, and one well
 # short of it, which the bend would carry far off that road, stays.
-expect rider_a_step_after(0, 499.0).segment_index.to_i64() == 1
-expect rider_a_step_after(0, 100.0).segment_index.to_i64() == 0
+expect rider_a_step_after(0, 499.0).motorcycle.route_place.segment_index.to_i64() == 1
+expect rider_a_step_after(0, 100.0).motorcycle.route_place.segment_index.to_i64() == 0
 
 # The ride ends stopped dead at the route's end, and a step short of the end
 # leaves the rider moving.
 expect {
 	stopped = ride_at_finish.rider.motorcycle
-	stopped.along.to_metres() == 300.0 and stopped.speed == Speed.at_rest
+	stopped.route_place.along.to_metres() == 300.0 and stopped.speed == Speed.at_rest
 }
 expect {
 	short = rider_a_step_after(last_segment_index, 290.0).motorcycle
-	short.along.to_metres() < 300.0 and short.speed > Speed.at_rest
+	short.route_place.along.to_metres() < 300.0 and short.speed > Speed.at_rest
 }
 
 ## A motorcycle just short of the first bend, a little off the middle and
 ## turned a little from the segment's axis.
 motorcycle_at_first_seam : Motorcycle
 motorcycle_at_first_seam = {
-	along: Along.metres(499.0),
-	across: Across.metres(0.5),
+	route_place: {
+		..Motorcycle.initial.route_place,
+		along: Along.metres(499.0),
+		across: Across.metres(0.5),
+	},
 	yaw: Angle.Turn.radians(0.1),
 	speed: Speed.metres_a_step(1.25),
 	lean: Angle.Lean.radians(0.05),
@@ -1604,7 +1623,7 @@ motorcycle_at_first_seam = {
 expect {
 	first = Route.SegmentIndex.first
 	at_seam = motorcycle_at_first_seam
-	on_next = at_seam.motorcycle_past_bend(World.route.segment_at(first).bend_out_of())
+	on_next = at_seam.cross_bend_if_on_road(World.route.segment_at(first).bend_out_of())
 	before = World.route.bearing_of(first).plus(at_seam.yaw)
 	after = World.route.bearing_of(first.next()).plus(on_next.yaw)
 	after.turn_from(before).abs() < Angle.Turn.radians(0.000000000001)
@@ -1701,11 +1720,11 @@ expect {
 	}
 	var $is_on_long_segment = True
 	while $instant.clock != until {
-		is_on_it = $instant.rider.segment_index == longest_segment_index
+		is_on_it = rider_segment_index($instant) == longest_segment_index
 		$is_on_long_segment = $is_on_long_segment and is_on_it
 		$instant = instant_after($instant)
 	}
-	$is_on_long_segment and $instant.rider.segment_index == longest_segment_index
+	$is_on_long_segment and rider_segment_index($instant) == longest_segment_index
 }
 
 # Steve's rule: the ride reaches full night, past dusk, before it finishes. The
@@ -1743,11 +1762,11 @@ ride_encounters = {
 	var $cat_exits = 0
 	var $is_faded_at_each_exit = True
 	while !$instant.rider.is_finished(World.route) {
-		segment = World.route.segment_at($instant.rider.segment_index)
+		segment = World.route.segment_at(rider_segment_index($instant))
 		timing = RideInstant.encounter_timing($instant)
 		next = instant_after($instant)
 		is_leaving =
-			next.rider.segment_index != $instant.rider.segment_index
+			rider_segment_index(next) != rider_segment_index($instant)
 				or next.rider.is_finished(World.route)
 		match segment.encounter {
 			BirdHere(flight) => {
@@ -1757,7 +1776,7 @@ ride_encounters = {
 						bird = BirdFlight.instant_at(flight, stage)
 						$flying_step_count = $flying_step_count + 1
 						$is_bird_ahead_throughout = $is_bird_ahead_throughout
-							and bird.location.along > $instant.rider.motorcycle.along
+							and bird.location.along > rider_along($instant)
 					}
 					Waiting | Past(_) => {}
 				}
@@ -2167,8 +2186,15 @@ rider_facing : {
 } -> RiderState
 rider_facing = |{ segment, yaw, lean, gaze_yaw }| {
 	..RiderState.initial,
-	segment_index: Route.SegmentIndex.number(segment),
-	motorcycle: { ..RiderState.initial.motorcycle, yaw, lean },
+	motorcycle: {
+		..RiderState.initial.motorcycle,
+		route_place: {
+			..RiderState.initial.motorcycle.route_place,
+			segment_index: Route.SegmentIndex.number(segment),
+		},
+		yaw,
+		lean,
+	},
 	eyes: { ..RiderState.initial.eyes, gaze_yaw },
 }
 
@@ -2272,7 +2298,16 @@ upright = RiderState.initial
 
 ## An upright rider on the segment at `number`.
 rider_on : U32 -> RiderState
-rider_on = |number| { ..upright, segment_index: Route.SegmentIndex.number(number) }
+rider_on = |number| {
+	..upright,
+	motorcycle: {
+		..upright.motorcycle,
+		route_place: {
+			..upright.motorcycle.route_place,
+			segment_index: Route.SegmentIndex.number(number),
+		},
+	},
+}
 
 ## The same rider leaning `lean`.
 leaning = |rider, lean| { ..rider, motorcycle: { ..rider.motorcycle, lean } }
@@ -2286,7 +2321,7 @@ looking_hard = |rider| { ..rider, eyes: { ..rider.eyes, look_depth: Fraction.who
 encounter_attention_of : RiderState, EncounterPlan.Timing -> F64
 encounter_attention_of = |rider, encounter_timing|
 	EncounterReaction.encounter_attention(
-		cat_route.segment_at(rider.segment_index),
+		cat_route.segment_at(rider.motorcycle.route_place.segment_index),
 		encounter_timing,
 	).to_f64()
 
@@ -2423,7 +2458,7 @@ coast_of : F64, F64 -> Coast.Outcome
 coast_of = |across, lean_radians|
 	Coast.project({
 		..Motorcycle.initial,
-		across: Across.metres(across),
+		route_place: { ..Motorcycle.initial.route_place, across: Across.metres(across) },
 		lean: Angle.Lean.radians(lean_radians),
 	})
 
@@ -2462,13 +2497,18 @@ expect {
 	}
 }
 expect {
-	state = { ..Motorcycle.initial, across: Across.metres(1.0) }
+	state = {
+		..Motorcycle.initial,
+		route_place: { ..Motorcycle.initial.route_place, across: Across.metres(1.0) },
+	}
 	coast = Coast.coast_path(state)
 	match (coast.outcome, coast.path_motorcycles.last()) {
-		(EndsAt(end_across), Ok(last)) =>
-			last.across == end_across
-				and last.along.distance_from(state.along) >= Coast.clear_distance
+		(EndsAt(end_across), Ok(last)) => {
+			travelled = last.route_place.along.distance_from(state.route_place.along)
+			last.route_place.across == end_across
+				and travelled >= Coast.clear_distance
 				and coast.outcome == Coast.project(state)
+		}
 		(Leaves(_), _) | (EndsAt(_), Err(_)) => False
 	}
 }
@@ -2497,7 +2537,7 @@ wide_of_road : F64 -> F64
 wide_of_road = |lean| {
 	motorcycle = {
 		..Motorcycle.initial,
-		across: Across.metres(100.0),
+		route_place: { ..Motorcycle.initial.route_place, across: Across.metres(100.0) },
 		lean: Angle.Lean.radians(lean),
 	}
 	first_segment = World.route.segment_at(Route.SegmentIndex.number(0))
@@ -2573,14 +2613,20 @@ expect distracting_segment.segment_pigs().count_if(|pig| pig == watched_pig) == 
 motorcycle_at : F64 -> Motorcycle
 motorcycle_at = |along| {
 	..Motorcycle.initial,
-	along: Motorcycle.initial.along.plus(Distance.metres(along)),
+	route_place: {
+		..Motorcycle.initial.route_place,
+		along: Motorcycle.initial.route_place.along.plus(Distance.metres(along)),
+	},
 }
 
 ## A motorcycle on the distracting segment, `metres` short of the pig.
 short_of_pig : F64 -> Motorcycle
 short_of_pig = |metres| {
 	..Motorcycle.initial,
-	along: watched_pig.road_point.along.minus(Distance.metres(metres)),
+	route_place: {
+		..Motorcycle.initial.route_place,
+		along: watched_pig.road_point.along.minus(Distance.metres(metres)),
+	},
 }
 
 expect !Gawking.is_gawking(motorcycle_at(200.0), pigless_segment)
@@ -2652,8 +2698,8 @@ motorcycle_with_pig_off = |degrees| {
 	straight = short_of_pig(100.0)
 	turn_to_watched_pig = Angle.Turn.radians(
 		F64.atan2({
-			x: watched_pig.road_point.along.distance_from(straight.along).to_metres(),
-			y: watched_pig.road_point.across.distance_from(straight.across).to_metres(),
+			x: watched_pig.road_point.along.distance_from(straight.route_place.along).to_metres(),
+			y: watched_pig.road_point.across.distance_from(straight.route_place.across).to_metres(),
 		}),
 	).minus(straight.yaw)
 	{ ..straight, yaw: turn_to_watched_pig.minus(Angle.Turn.degrees(degrees)) }

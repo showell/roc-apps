@@ -1,20 +1,19 @@
-## The motorcycle the rider sits on: where it is on its segment, which way it
+## The motorcycle the rider sits on: where it is on the route, which way it
 ## points, how fast it goes and how far it leans, and the physics that moves it
 ## a step. The lean steers the motorcycle, and it moves along the middle of the
-## step's turn.
-import Across
+## step's turn, in its segment's frame.
 import Along
 import Angle
 import Distance
 import Geom
+import RoutePlace
 import Speed
 import VehicleLimits
 
-## The motorcycle at one step. `along` and `across` place it on its segment,
-## and `yaw` is its turn from the segment's axis. `lean` is how far it tips.
+## The motorcycle at one step. `route_place` places it on the route, and `yaw`
+## is its turn from its segment's axis. `lean` is how far it tips.
 Motorcycle := {
-	along : Along,
-	across : Across,
+	route_place : RoutePlace,
 	yaw : Angle.Turn,
 	speed : Speed,
 	lean : Angle.Lean,
@@ -22,8 +21,7 @@ Motorcycle := {
 
 	initial : Motorcycle
 	initial = {
-		along: Along.start,
-		across: Across.middle,
+		route_place: RoutePlace.route_start,
 		yaw: Angle.straight_ahead,
 		speed: VehicleLimits.starting_speed,
 		lean: Angle.upright,
@@ -39,9 +37,13 @@ Motorcycle := {
 		step_length = speed.step_length()
 		turn = lean.steer(turn_per_lean)
 		mid = motorcycle.yaw.plus(turn.times(0.5)).to_radians()
+		place = motorcycle.route_place
 		{
-			along: motorcycle.along.plus(step_length.times(mid.cos())),
-			across: motorcycle.across.plus(step_length.times(mid.sin())),
+			route_place: {
+				..place,
+				along: place.along.plus(step_length.times(mid.cos())),
+				across: place.across.plus(step_length.times(mid.sin())),
+			},
 			yaw: motorcycle.yaw.plus(turn),
 			speed,
 			lean,
@@ -55,29 +57,34 @@ Motorcycle := {
 	with_lean : Motorcycle, Angle.Lean -> Motorcycle
 	with_lean = |motorcycle, lean| { ..motorcycle, lean }
 
-	## This motorcycle carried over `bend` onto the next segment: placed in that
-	## segment's frame, and turned to its axis. Nothing here asks whether that
-	## puts it on the next segment's road.
-	motorcycle_past_bend : Motorcycle, Geom.Bend -> Motorcycle
-	motorcycle_past_bend = |motorcycle, bend| {
-		place = { along: motorcycle.along, across: motorcycle.across }
-		on_next = Geom.point_in_segment_after(place, bend)
-		{
-			..motorcycle,
-			along: on_next.along,
-			across: on_next.across,
-			yaw: motorcycle.yaw.minus(bend.turn),
+	## This motorcycle carried over `bend`, the bend out of its segment, when
+	## that puts it on the next segment's road: placed on that segment and turned
+	## to its axis. Short of that, it stays where it is.
+	cross_bend_if_on_road : Motorcycle, Geom.Bend -> Motorcycle
+	cross_bend_if_on_road = |motorcycle, bend| {
+		on_next = motorcycle.route_place.route_place_past_bend(bend)
+		if on_next.is_on_road() {
+			{
+				..motorcycle,
+				route_place: on_next,
+				yaw: motorcycle.yaw.minus(bend.turn),
+			}
+		} else {
+			motorcycle
 		}
 	}
 
-	## This motorcycle stopped dead at `at`. The book shows it as the plainest
-	## record update, so it stands alone.
+	## This motorcycle stopped dead at `at` on its segment.
 	stopped_at : Motorcycle, Along -> Motorcycle
-	stopped_at = |motorcycle, at| { ..motorcycle, along: at, speed: Speed.at_rest }
+	stopped_at = |motorcycle, at| {
+		..motorcycle,
+		route_place: { ..motorcycle.route_place, along: at },
+		speed: Speed.at_rest,
+	}
 
 	## Whether this motorcycle has come `length` along its segment, or gone past.
 	has_reached : Motorcycle, Distance -> Bool
-	has_reached = |motorcycle, length| motorcycle.along >= Along.at(length)
+	has_reached = |motorcycle, length| motorcycle.route_place.along >= Along.at(length)
 
 	is_eq : _
 }
@@ -89,8 +96,11 @@ turn_per_lean = 0.1
 ## A motorcycle well along a segment, leaning a little to the right.
 riding : Motorcycle
 riding = {
-	along: Along.metres(120.5),
-	across: Across.metres(2.25),
+	route_place: {
+		..RoutePlace.route_start,
+		along: Along.metres(120.5),
+		across: RoutePlace.route_start.across.plus(Distance.metres(2.25)),
+	},
 	yaw: Angle.Turn.radians(0.375),
 	speed: Speed.metres_a_step(0.8),
 	lean: Angle.Lean.radians(0.125),
@@ -129,12 +139,12 @@ expect
 # Each is within 1e-9 of its want, scaled up by a want past 1.
 expect
 	[
-		(first_step.along.to_metres(), 121.25108639750266),
-		(first_step.across.to_metres(), 2.5532642799382796),
-		(second_step.along.to_metres(), 122.00167174017032),
-		(second_step.across.to_metres(), 2.8708278851774045),
-		(third_step.along.to_metres(), 122.7472448817898),
-		(third_step.across.to_metres(), 3.1999869508214647),
+		(first_step.route_place.along.to_metres(), 121.25108639750266),
+		(first_step.route_place.across.to_metres(), 2.5532642799382796),
+		(second_step.route_place.along.to_metres(), 122.00167174017032),
+		(second_step.route_place.across.to_metres(), 2.8708278851774045),
+		(third_step.route_place.along.to_metres(), 122.7472448817898),
+		(third_step.route_place.across.to_metres(), 3.1999869508214647),
 	].all(|(got, want)| (got - want).abs() <= 0.000000001 * want.abs().max(1.0))
 
 expect {
@@ -144,7 +154,7 @@ expect {
 		{ lean: Angle.Lean.radians(0.5), speed: Speed.metres_a_step(0.55) },
 	)
 	[
-		(a.across.to_metres(), 0.0),
+		(a.route_place.across.to_metres(), 0.0),
 		(a.yaw.to_radians(), 0.0),
 		(a.lean.to_radians(), 0.0),
 		(a.speed.to_metres_a_step(), 0.3),
@@ -160,14 +170,30 @@ gentle_bend = { segment_length: Distance.metres(500.0), turn: Angle.Turn.radians
 
 ## A motorcycle on the middle of the road, `along` metres down its segment.
 motorcycle_at : F64 -> Motorcycle
-motorcycle_at = |along| { ..Motorcycle.initial, along: Along.metres(along) }
+motorcycle_at = |along| {
+	..Motorcycle.initial,
+	route_place: { ..RoutePlace.route_start, along: Along.metres(along) },
+}
 
-# Carried over the bend from well short of it, a motorcycle lands far off the
-# next segment's road, and from the bend itself it lands on it.
-expect motorcycle_at(100.0).motorcycle_past_bend(gentle_bend).across.distance_from_middle()
-	> Distance.metres(100.0)
-expect motorcycle_at(500.0).motorcycle_past_bend(gentle_bend).across.distance_from_middle()
-	< Geom.road_half_width
+## The place of a motorcycle `along` metres down its segment, carried over the
+## gentle bend.
+place_past_bend : F64 -> RoutePlace
+place_past_bend = |along| motorcycle_at(along).route_place.route_place_past_bend(gentle_bend)
+
+# Carried over the bend from well short of it, a place lands far off the next
+# segment's road, and from the bend itself it lands on it. Either way it is on
+# the next segment.
+expect place_past_bend(100.0).across.distance_from_middle() > Distance.metres(100.0)
+expect place_past_bend(500.0).is_on_road()
+expect [100.0, 500.0].all(|along| place_past_bend(along).segment_index.to_i64() == 1)
+
+# So from well short of the bend the motorcycle stays where it was, and from the
+# bend it crosses, turned to the next segment's axis.
+expect motorcycle_at(100.0).cross_bend_if_on_road(gentle_bend) == motorcycle_at(100.0)
+expect {
+	crossed = motorcycle_at(500.0).cross_bend_if_on_road(gentle_bend)
+	crossed.route_place.segment_index.to_i64() == 1 and crossed.yaw.to_radians() == -0.3
+}
 
 expect motorcycle_at(300.0).has_reached(Distance.metres(300.0))
 expect motorcycle_at(310.0).has_reached(Distance.metres(300.0))

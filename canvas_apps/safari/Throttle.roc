@@ -60,7 +60,7 @@ held_to = |a, limit|
 ## Whether the motorcycle is near enough the end of `seg` to brake for its bend.
 is_near_end : Motorcycle, Segment -> Bool
 is_near_end = |motorcycle, seg|
-	Along.at(seg.length).distance_from(motorcycle.along) <= bend_approach
+	Along.at(seg.length).distance_from(motorcycle.route_place.along) <= bend_approach
 
 ## How far short of a segment's end the rider starts to brake for its bend.
 bend_approach : Distance
@@ -73,7 +73,7 @@ bend_limit : Motorcycle, Segment -> VehicleLimits.Limit
 bend_limit = |motorcycle, seg|
 	if is_near_end(motorcycle, seg) {
 		v_end = exit_speed(seg)
-		d = seg.commit_along().distance_from(motorcycle.along)
+		d = seg.commit_along().distance_from(motorcycle.route_place.along)
 		AtMost(VehicleLimits.braking_to(motorcycle.speed, { target: v_end, within: d }))
 	} else {
 		NoLimit
@@ -109,7 +109,7 @@ first_segment = World.route.segment_at(Route.SegmentIndex.number(0))
 centred_motorcycle : F64, F64 -> Motorcycle
 centred_motorcycle = |along, speed| {
 	..Motorcycle.initial,
-	along: Along.metres(along),
+	route_place: { ..Motorcycle.initial.route_place, along: Along.metres(along) },
 	speed: Speed.metres_a_step(speed),
 }
 

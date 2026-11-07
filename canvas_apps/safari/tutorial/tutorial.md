@@ -1525,7 +1525,7 @@ The rider steers by leaning, so a decision is a record of two opaque values: a c
 
 The Rehearsal chapter takes that idea much further. A small version of it decides what happens at the end of a segment. `cross_if_on_road` works out the rider on the next segment and keeps that only if it lands inside the lane. The rejected rider simply stops being referred to, and nothing has to be undone:
 
-{{code RiderState.cross_if_on_road}}
+{{code Motorcycle.cross_bend_if_on_road}}
 
 Record update does most of the writing in this module. Its plainest use is stopping dead, where `..s` keeps everything but the two fields named:
 
