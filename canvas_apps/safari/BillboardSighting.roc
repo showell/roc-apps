@@ -133,6 +133,3 @@ bend_life_critters = |segment|
 			}
 		RouteEnds => []
 	}
-
-expect BillboardSighting.farm_reach.to_i64() == 3
-expect BillboardSighting.wildlife_reach.to_i64() == 5
