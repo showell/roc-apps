@@ -11,11 +11,10 @@ Sky :: [].{
 	warmth_falloff_px : Pixels
 	warmth_falloff_px = Pixels.of(110.0)
 
-	## How far toward dusk the sky is when the sun has just set.
+	## How far toward dusk the sky is when the sun has just set: a little over
+	## half, so the sky goes on darkening after the sun has gone.
 	dusk_at_set : Fraction
-	dusk_at_set = Fraction.of(
-		Sun.start_px.minus(Sun.fully_set_px).times(0.5).ratio_to(Sun.start_px),
-	)
+	dusk_at_set = Fraction.of(0.5942623)
 
 	## How far toward dusk the sky is at `clock`, from 0 (day) to 1 (dusk).
 	dusk_at : Clock -> Fraction
@@ -95,6 +94,11 @@ dusk_after_set = |height| {
 }
 
 expect Sky.warmth_falloff_px.to_f64() == 110.0
+expect Sky.dusk_at_set.to_f64() == 0.5942623
+
+# The sky is at dusk_at_set as the sun fully sets, and darker a step later.
+expect Sky.dusk_at(Clock.at_step(4734)) < Sky.dusk_at_set
+expect Sky.dusk_at_set < Sky.dusk_at(Clock.at_step(4735))
 expect Sky.dusk_at(Clock.at_step(0)).to_f64() == 0.0
 expect Sky.sunset_warmth(Clock.at_step(0)).to_f64() == 0.0
 expect Sky.dusk_at(Clock.at_step(6000)).to_f64() == 1.0
