@@ -115,7 +115,7 @@ rendering_at = |depth, shapes| { depth, picture: Picture.from_shapes(shapes) }
 
 ## The truck, if it is in view, where its sighting found it and with the lights
 ## its sighting gives it.
-truck_renderings : Chain.Viewpoint, TruckSighting.Fate -> List(Rendered)
+truck_renderings : Chain.Viewpoint, TruckSighting.TruckFate -> List(Rendered)
 truck_renderings = |view, truck_fate|
 	match truck_fate {
 		Ok(truck) => [
@@ -324,10 +324,10 @@ truck_view = |vantage, lead| {
 	lights: { headlights: Off, brake_lights: Off },
 }
 
-truck_seen_from : Geom.Vantage, F64 -> TruckSighting.Fate
+truck_seen_from : Geom.Vantage, F64 -> TruckSighting.TruckFate
 truck_seen_from = |vantage, lead| TruckSighting.truck_in_view(truck_view(vantage, lead))
 
-lead_of : F64 -> TruckSighting.Fate
+lead_of : F64 -> TruckSighting.TruckFate
 lead_of = |lead| truck_seen_from(origin, lead)
 
 ## Where the truck is, for a lead that puts it in view.

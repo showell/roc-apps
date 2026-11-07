@@ -20,11 +20,11 @@ TruckSighting :: [].{
 	}
 
 	## What became of the truck in a frame.
-	Fate : Try(Geom.Sighted(TruckAhead), [NoTruck])
+	TruckFate : Try(Geom.Sighted(TruckAhead), [NoTruck])
 
 	## The truck, if it is ahead of the rider, on the chain, and in front of
 	## the camera.
-	truck_in_view : TruckSighting.Viewpoint -> TruckSighting.Fate
+	truck_in_view : TruckSighting.Viewpoint -> TruckSighting.TruckFate
 	truck_in_view = |view|
 		if view.lead > Distance.zero {
 			truck_from(
@@ -43,7 +43,7 @@ truck_from : TruckSighting.Viewpoint,
 {
 	along : Along,
 	position : Chain.Position,
-} -> TruckSighting.Fate
+} -> TruckSighting.TruckFate
 truck_from = |view, { along, position }|
 	if position.is_past_end_of(view.road.chain_indices) {
 		Err(NoTruck)
@@ -62,7 +62,7 @@ truck_on_segment : TruckSighting.Viewpoint,
 {
 	along : Along,
 	position : Chain.Position,
-} -> TruckSighting.Fate
+} -> TruckSighting.TruckFate
 truck_on_segment = |view, { along, position }| {
 	across = Across.middle
 	center = Chain.rider_point_ahead(view.road, { position, along, across })

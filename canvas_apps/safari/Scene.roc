@@ -28,7 +28,7 @@ Scene := {
 	critters : List(Geom.Sighted(Billboard)),
 	cats : List(CatSighting),
 	rails : List(GuardRail.RailQuad),
-	truck : TruckSighting.Fate,
+	truck : TruckSighting.TruckFate,
 	birds : List(BirdSighting),
 }.{
 
