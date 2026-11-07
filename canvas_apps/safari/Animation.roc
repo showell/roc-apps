@@ -18,13 +18,8 @@ import Fraction
 import Geom
 import Speed
 import Steps
-import VehicleLimits
 
 Animation :: [].{
-
-	## How the rider comes on a thing: the gap from the rider ahead to it, and
-	## the rider's speed.
-	Approach : { gap : Distance, speed : Speed }
 
 	## When the encounter on the rider's segment starts: not planned yet, or at
 	## a step of the ride's clock. The ride keeps one, and forgets it at each new
@@ -52,32 +47,33 @@ Animation :: [].{
 	## the rider to the critter it ends at.
 	StepSpan : { length : Steps, ends_at : Distance }
 
-	## How far from the critter an animation is planned for the fastest rider,
-	## who covers the most road while it plays. No plan is made farther off.
-	farthest_planning_gap : Animation.StepSpan -> Distance
-	farthest_planning_gap = |span|
-		span.ends_at.plus(VehicleLimits.top_speed.distance_in(span.length))
+	## How far from the critter an animation is planned for a rider at `speed`:
+	## the gap it ends at, and the road the rider covers while it plays. A
+	## faster rider has it planned farther off.
+	planning_gap : Animation.StepSpan, Speed -> Distance
+	planning_gap = |span, speed| span.ends_at.plus(speed.distance_in(span.length))
 
 	## The start of an animation that is to end as the rider comes within
-	## `ends_at`, planned at `now` from how the rider comes then. It starts now
-	## on the first step that a rider keeping their speed would arrive within
-	## its length, so a faster rider has it start farther off. Till then, and
-	## while the rider is at rest, it isn't planned. The plan looks at the
-	## rider's speed that once: after it, the critter doesn't care what the
-	## rider does.
+	## `ends_at`, planned at `now` from how the rider comes then: `gap` from the
+	## critter, at `speed`. It starts now on the first step that a rider keeping
+	## their speed would arrive within its length, so a faster rider has it
+	## start farther off. Till then, and while the rider is at rest, it isn't
+	## planned. The plan looks at the rider's speed that once: after it, the
+	## critter doesn't care what the rider does.
 	##
 	## Planning on the step itself keeps the guess short, an animation's length
 	## ahead. A plan from farther off would take the speed to be steady for
 	## longer, and a rider speeding up meanwhile would arrive before the end.
 	planned_start : Animation.StepSpan,
 	{
-		approach : Animation.Approach,
+		gap : Distance,
+		speed : Speed,
 		now : Clock,
 	} -> Animation.Start
-	planned_start = |{ length, ends_at }, { approach, now }|
-		if approach.speed == Speed.at_rest {
+	planned_start = |span, { gap, speed, now }|
+		if speed == Speed.at_rest {
 			Unplanned
-		} else if approach.gap <= ends_at.plus(approach.speed.distance_in(length)) {
+		} else if gap <= Animation.planning_gap(span, speed) {
 			StartsAt(now)
 		} else {
 			Unplanned
@@ -168,7 +164,8 @@ planned_at = |gap, speed|
 	Animation.planned_start(
 		ten_step_span,
 		{
-			approach: { gap: Distance.metres(gap), speed: Speed.metres_a_step(speed) },
+			gap: Distance.metres(gap),
+			speed: Speed.metres_a_step(speed),
 			now: Clock.at_step(100),
 		},
 	)
@@ -184,8 +181,8 @@ expect planned_at(23.1, 2.0) == Unplanned
 # A rider at rest plans nothing, however near.
 expect planned_at(2.0, 0.0) == Unplanned
 
-# The fastest rider plans farthest off: 3 + 2.5 × 10 = 28 m.
-expect Animation.farthest_planning_gap(ten_step_span) == Distance.metres(28.0)
+# At 2.5 m a step the plan is made 3 + 2.5 × 10 = 28 m off.
+expect Animation.planning_gap(ten_step_span, Speed.metres_a_step(2.5)) == Distance.metres(28.0)
 expect planned_at(28.0, 2.5) == StartsAt(Clock.at_step(100))
 
 ## The stage at step `now` of a 10-step animation starting at step 50.

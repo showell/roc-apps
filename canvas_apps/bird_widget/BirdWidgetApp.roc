@@ -77,11 +77,14 @@ flight_timing = |gap| {
 	var $step = Clock.start
 	var $start = Unplanned
 	while $start == Unplanned and !(now < $step) {
-		approach = {
-			gap: closing_gap.first.minus(rider_speed.distance_in($step.steps_since(Clock.start))),
-			speed: rider_speed,
-		}
-		$start = Animation.planned_start(BirdFlight.flight_span, { approach, now: $step })
+		$start = Animation.planned_start(
+			BirdFlight.flight_span,
+			{
+				gap: closing_gap.first.minus(rider_speed.distance_in($step.steps_since(Clock.start))),
+				speed: rider_speed,
+				now: $step,
+			},
+		)
 		$step = $step.next()
 	}
 	Animation.timing_of($start, now)
@@ -217,7 +220,7 @@ beat_name = |beat|
 ## The gap the flight starts at, for a rider at `rider_speed`: 15 m for the gap
 ## it lands at and 45 m for its 36 steps.
 takeoff_gap : Distance
-takeoff_gap = BirdFlight.flight_span.ends_at.plus(rider_speed.distance_in(BirdFlight.flight_span.length))
+takeoff_gap = Animation.planning_gap(BirdFlight.flight_span, rider_speed)
 
 # The whole flight is on the range, with some road to spare at the far end.
 expect takeoff_gap < closing_gap.first

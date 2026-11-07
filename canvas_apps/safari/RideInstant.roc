@@ -79,10 +79,8 @@ planned_start = |segment, { rider, now }| {
 		Animation.planned_start(
 			span,
 			{
-				approach: {
-					gap: critter_along.distance_from(rider.motorcycle.along),
-					speed: rider.motorcycle.speed,
-				},
+				gap: critter_along.distance_from(rider.motorcycle.along),
+				speed: rider.motorcycle.speed,
 				now,
 			},
 		)

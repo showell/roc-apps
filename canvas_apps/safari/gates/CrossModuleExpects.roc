@@ -65,6 +65,7 @@ import game.TowerSighting
 import game.TreeSighting
 import game.TruckSighting
 import game.Trees
+import game.VehicleLimits
 import game.World
 import lib.Brush
 import lib.RgbColor
@@ -703,13 +704,13 @@ route_flights = World.route.route_segments().join_map(
 		},
 )
 
-## How far short of a cat its crossing is planned.
+## How far short of a cat its crossing is planned for the fastest rider.
 cat_planning_gap : Distance
-cat_planning_gap = Animation.farthest_planning_gap(Cat.crossing_span)
+cat_planning_gap = Animation.planning_gap(Cat.crossing_span, VehicleLimits.top_speed)
 
-## How far short of a bird's perch its flight is planned.
+## How far short of a bird's perch its flight is planned for the fastest rider.
 bird_planning_gap : Distance
-bird_planning_gap = Animation.farthest_planning_gap(BirdFlight.flight_span)
+bird_planning_gap = Animation.planning_gap(BirdFlight.flight_span, VehicleLimits.top_speed)
 
 expect route_cats.len() == 3
 expect cat_planning_gap.to_metres() == 98.0
