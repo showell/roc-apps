@@ -38,15 +38,32 @@ Mountains :: [].{
 			[
 				silhouette(
 					sight,
-					{ height_at: west_range_height, color: color_at_dusk(rock_west, dusk) },
+					{
+						height_at: west_range_height,
+						color: color_at_dusk(rock_west, dusk),
+						base_y: range_base_y,
+					},
 				),
 				silhouette(
 					sight,
-					{ height_at: north_range_height, color: color_at_dusk(rock, dusk) },
+					{
+						height_at: north_range_height,
+						color: color_at_dusk(rock, dusk),
+						base_y: range_base_y,
+					},
 				),
 			],
 			snow_shapes(sight, snow_color(dusk)),
-			[silhouette(sight, { height_at: land_height, color: Backdrop.grass_color })],
+			[
+				silhouette(
+					sight,
+					{
+						height_at: land_height,
+						color: Backdrop.grass_color,
+						base_y: land_base_y,
+					},
+				),
+			],
 		].join()
 	}
 }
@@ -236,19 +253,42 @@ columns = |{ from, to }| {
 	$sampled
 }
 
-## A silhouette across the screen, its top at `height_at` each bearing, closed
-## along the horizon.
-silhouette : Sight, { height_at : Angle.Bearing -> Pixels, color : I64 } -> Shapes.Shape
-silhouette = |sight, { height_at, color }| {
+## The ranges are seen only above the grass, so they stop where it begins.
+range_base_y : Pixels
+range_base_y = Screen.grass_top_y
+
+## The land is in front of the ranges and closes along the horizon. The grass
+## begins a pixel above the horizon so that no seam shows under the roll, and
+## the land reaches that same pixel past the ranges' foot, for the same reason.
+land_base_y : Pixels
+land_base_y = horizon_y
+
+## A silhouette across the screen, its top at `height_at` each bearing but never
+## below `base_y`, closed along `base_y`.
+silhouette :
+	Sight,
+	{
+		height_at : Angle.Bearing -> Pixels,
+		color : I64,
+		base_y : Pixels,
+	} -> Shapes.Shape
+silhouette = |sight, { height_at, color, base_y }| {
 	left = roll_margin.opposite()
 	right = Screen.width.plus(roll_margin)
 	crest = columns({ from: left, to: right }).map(
-		|x| { x, y: height_y(sight, height_at(bearing_at(sight, x))) },
+		|x| {
+			top_y = height_y(sight, height_at(bearing_at(sight, x)))
+			{
+				x,
+				y: if top_y > base_y {
+					base_y
+				} else {
+					top_y
+				},
+			}
+		},
 	)
-	Polygon.flat_polygon(
-		color,
-		crest.concat([{ x: right, y: horizon_y }, { x: left, y: horizon_y }]),
-	)
+	Polygon.flat_polygon(color, crest.concat([{ x: right, y: base_y }, { x: left, y: base_y }]))
 }
 
 ## Snow thinner than this, between the range's crest and the snowline, isn't
@@ -415,6 +455,73 @@ expect
 			cam_focal: Pixels.of(500.0),
 			x: Pixels.of(960.0),
 		})
+
+# The land closes below the ranges, so it covers their bottom edge.
+expect range_base_y == Screen.grass_top_y
+expect land_base_y == Screen.horizon_y
+expect range_base_y < land_base_y
+
+# The y of each corner of a silhouette.
+corner_ys : Shapes.Shape -> List(F64)
+corner_ys = |shape|
+	match shape {
+		Poly(p) =>
+			p.coordinates.fold(
+				{ ys: [], is_y: Bool.False },
+				|walk, n| {
+					ys: if walk.is_y {
+						walk.ys.append(n)
+					} else {
+						walk.ys
+					},
+					is_y: !walk.is_y,
+				},
+			).ys
+		_ => crash "Mountains: a silhouette is a polygon"
+	}
+
+lowest_y : Shapes.Shape -> F64
+lowest_y = |shape| corner_ys(shape).fold(-F64.infinity, |low, y| low.max(y))
+
+highest_y : Shapes.Shape -> F64
+highest_y = |shape| corner_ys(shape).fold(F64.infinity, |high, y| high.min(y))
+
+range_silhouette : Sight -> Shapes.Shape
+range_silhouette = |sight| silhouette(
+	sight,
+	{
+		height_at: north_range_height,
+		color: rock,
+		base_y: range_base_y,
+	},
+)
+
+land_silhouette : Sight -> Shapes.Shape
+land_silhouette = |sight| silhouette(
+	sight,
+	{
+		height_at: land_height,
+		color: Backdrop.grass_color,
+		base_y: land_base_y,
+	},
+)
+
+# Facing south, the north range is out of sight: it lies flat along its base,
+# never below it.
+expect {
+	south = range_silhouette({ ..sight_at_rest, heading: north_by(3.0) })
+	lowest_y(south) == range_base_y.to_f64() and highest_y(south) == range_base_y.to_f64()
+}
+
+# Facing north, it stands above its base, and still closes along it.
+expect {
+	north_view = range_silhouette(sight_at_rest)
+	lowest_y(north_view) == range_base_y.to_f64() and highest_y(north_view) < range_base_y.to_f64()
+}
+
+# The land closes along its own base, below the ranges'.
+expect lowest_y(land_silhouette(sight_at_rest)) == land_base_y.to_f64()
+expect highest_y(land_silhouette(sight_at_rest)) < range_base_y.to_f64()
 
 expect horizon_crest_px(north_by(0.0)) >= land_height(north_by(0.0))
 expect horizon_crest_px(north_by(2.0)) >= land_height(north_by(2.0))
