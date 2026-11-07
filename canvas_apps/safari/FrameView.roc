@@ -1,4 +1,5 @@
 import Angle
+import Clock
 import Grass
 import GroundPatch
 import GroundSighting
@@ -59,44 +60,38 @@ FrameView := {
 			].join(),
 		)
 
-	## Which of the truck's lights are on: its headlights once the sun is behind
-	## the mountains, and its brake lights while its last step slowed it.
-	lit_truck : RideInstant -> LitTruck
-	lit_truck = |instant| {
-		headlights: if Mountains.is_sun_behind_mountains(instant.clock) {
-			On
-		} else {
-			Off
+	## What the sightings read from `instant` beyond the road: the rider's
+	## speed, where the truck is and which of its lights are on, and the clock.
+	ride_facts : RideInstant -> Scene.RideFacts
+	ride_facts = |instant| {
+		speed: instant.rider.motorcycle.speed,
+		truck: {
+			route_position: instant.truck.route_position,
+			lit_truck: LitTruck.at(instant.truck, instant.clock),
 		},
-		brake_lights: match instant.truck.pace {
-			Slowing => On
-			NotSlowing => Off
-		},
+		clock: instant.clock,
 	}
+
+	## The skyline `camera` sees at `clock`, darkened as far as the sky is.
+	skyline_shapes : RiderCamera, Clock -> List(Shapes.Shape)
+	skyline_shapes = |camera, clock| Mountains.mountain_shapes(camera, Sky.darkness_at(clock))
+
+	## The road's ground that `camera` sees of `road`: the road itself and its
+	## ponds.
+	ground_shapes : RoadAhead.RoadView, RiderCamera -> List(Shapes.Shape)
+	ground_shapes = |road, camera|
+		GroundSighting.patches_in_view(road, camera).keep_oks(
+			|patch| GroundPatch.patch_shape(patch, camera.cam_focal),
+		)
 }
 
 shapes : RiderCamera, { instant : RideInstant, route : Route } -> List(Shapes.Shape)
 shapes = |camera, { instant, route }| {
-	s = instant.rider
 	road = RoadAhead.RoadView.ahead_of(route, camera.segment_index)
-	scene = Scene.scene_in_view(
-		road,
-		{
-			camera,
-			facts: {
-				speed: s.motorcycle.speed,
-				truck: {
-					route_position: instant.truck.route_position,
-					lit_truck: FrameView.lit_truck(instant),
-				},
-				clock: instant.clock,
-			},
-		},
-	)
-	ground = GroundSighting.patches_in_view(road, camera)
+	scene = Scene.scene_in_view(road, { camera, facts: FrameView.ride_facts(instant) })
 	[
-		Mountains.mountain_shapes(camera, Sky.darkness_at(instant.clock)),
-		ground.keep_oks(|patch| GroundPatch.patch_shape(patch, camera.cam_focal)),
+		FrameView.skyline_shapes(camera, instant.clock),
+		FrameView.ground_shapes(road, camera),
 		Scene.scene_shapes(scene),
 	].join()
 }

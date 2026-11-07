@@ -1679,24 +1679,6 @@ expect Lens.focal_for({
 	attention: Attention.none,
 }).minus(lean_only) == Pixels.zero
 
-## A clock with the sun behind the mountains.
-after_sunset : Clock
-after_sunset = Clock.at_step(5700)
-
-## The truck's lights at `clock`, with the truck's pace as given.
-lights_at : { clock : Clock, pace : [Slowing, NotSlowing] } -> _
-lights_at = |{ clock, pace }|
-	FrameView.lit_truck({
-		..RideInstant.initial,
-		truck: { ..RideInstant.initial.truck, pace },
-		clock,
-	})
-
-expect lights_at({ clock: Clock.start, pace: NotSlowing }) == { headlights: Off, brake_lights: Off }
-expect lights_at({ clock: Clock.start, pace: Slowing }) == { headlights: Off, brake_lights: On }
-expect lights_at({ clock: after_sunset, pace: NotSlowing }) == { headlights: On, brake_lights: Off }
-expect lights_at({ clock: after_sunset, pace: Slowing }) == { headlights: On, brake_lights: On }
-
 ## A pond's bend at the end of a segment 100 m long, turning 15° right.
 right_pond_bend : Geom.Bend
 right_pond_bend = { segment_length: Distance.metres(100.0), turn: Angle.Turn.degrees(15.0) }

@@ -10,9 +10,6 @@ import game.RoadAhead
 import game.Clock
 import game.FrameView
 import game.Grass
-import game.GroundPatch
-import game.GroundSighting
-import game.Mountains
 import game.RiderCamera
 import game.SafariApp
 import game.Scene
@@ -144,34 +141,18 @@ paused_frame_view = Tour.frame_view(paused_tour)
 
 ## The things in view at the step on show.
 paused_scene : Scene
-paused_scene = {
-	instant = paused_tour.instant
-	Scene.scene_in_view(
-		paused_road,
-		{
-			camera: paused_camera,
-			facts: {
-				speed: instant.rider.motorcycle.speed,
-				truck: {
-					route_position: instant.truck.route_position,
-					lit_truck: FrameView.lit_truck(instant),
-				},
-				clock: instant.clock,
-			},
-		},
-	)
-}
+paused_scene = Scene.scene_in_view(
+	paused_road,
+	{ camera: paused_camera, facts: FrameView.ride_facts(paused_tour.instant) },
+)
 
 ## The mountains and the road, which `FrameView.frame_view_at` puts under the things
 ## beside the road, each with its layer.
 ground_parts : List(Piece)
-ground_parts = {
-	skyline = Mountains.mountain_shapes(paused_camera, Sky.darkness_at(paused_tour.instant.clock))
-	ground = GroundSighting.patches_in_view(paused_road, paused_camera).keep_oks(
-		|patch| GroundPatch.patch_shape(patch, paused_camera.cam_focal),
-	)
-	[{ layer: Mountains, shapes: skyline }, { layer: Road, shapes: ground }]
-}
+ground_parts = [
+	{ layer: Mountains, shapes: FrameView.skyline_shapes(paused_camera, paused_tour.instant.clock) },
+	{ layer: Road, shapes: FrameView.ground_shapes(paused_road, paused_camera) },
+]
 
 backdrop_parts : List(Piece)
 backdrop_parts = backdrop_pieces(paused_frame_view)

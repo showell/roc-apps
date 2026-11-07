@@ -1878,7 +1878,7 @@ The truck's headlights come on once the sun has gone behind the mountains, at st
 
 `RideInstant` puts it together. It's the only place that can. `Truck` is in the ride half of the system and `Mountains` is in the view, and no arrow goes from the first to the second. `RideInstant` imports both.
 
-{{code FrameView.lit_truck}}
+{{code LitTruck.at}}
 
 Lamps are plain data. The sighting carries them, and the drawing does what they say, with each `match` covering both tags:
 
