@@ -49,23 +49,29 @@ laid_onto : Layout, World.SegmentPlan -> Layout
 laid_onto = |{ laid, at, heading }, plan| {
 	metres = plan.length.to_metres()
 	end = { east: at.east + metres * heading.sin(), north: at.north + metres * heading.cos() }
-	{
-		laid: laid.append({ plan, start: at, end }),
-		at: end,
-		heading: heading + plan.turn.to_radians(),
-	}
+	{ laid: laid.append({ plan, start: at, end }), at: end, heading }
+}
+
+## `layout` with one more segment on the end, and the road turned into the next.
+bent_onto : Layout, World.BendingPlan -> Layout
+bent_onto = |layout, { segment_plan, turn, .. }| {
+	laid = laid_onto(layout, segment_plan)
+	{ ..laid, heading: laid.heading + turn.to_radians() }
 }
 
 segments : List(LaidSegment)
-segments =
-	World.plans.fold(
-		{
-			laid: [],
-			at: { east: 0.0, north: 0.0 },
-			heading: start_heading,
-		},
-		laid_onto,
-	).laid
+segments = {
+	bent =
+		World.bending_plans.fold(
+			{
+				laid: [],
+				at: { east: 0.0, north: 0.0 },
+				heading: start_heading,
+			},
+			bent_onto,
+		)
+	laid_onto(bent, World.last_plan).laid
+}
 
 ## The segment read out under the map, counted from 1. It's the longest on the
 ## route, and the one the book quotes in its chapter on the math layer.
@@ -75,6 +81,12 @@ read_out_number = 7
 read_out_segment : LaidSegment
 read_out_segment =
 	segments.get(read_out_number - 1) ?? crash "RouteWidgetApp.read_out_segment: the route has this segment"
+
+## The plan of the segment read out, with the bend at its end.
+read_out_plan : World.BendingPlan
+read_out_plan =
+	World.bending_plans.get(read_out_number - 1)
+		?? crash "RouteWidgetApp.read_out_plan: the segment read out bends into the next"
 
 ## Every corner of the road.
 corners : List(MapPoint)
@@ -268,13 +280,13 @@ turn_text = |turn| {
 ## The segment's record, a few fields a line, with its tags as Roc writes them.
 status_lines : List(Str)
 status_lines = {
-	plan = read_out_segment.plan
+	plan = read_out_plan.segment_plan
 	metres = (plan.length.to_metres() + 0.5).to_i64_wrap()
 	[
-		"Segment ${read_out_number.to_str()} of ${segments.len().to_str()}: ${metres.to_str()} m, ${turn_text(plan.turn)}",
+		"Segment ${read_out_number.to_str()} of ${segments.len().to_str()}: ${metres.to_str()} m, ${turn_text(read_out_plan.turn)}",
 		"crossing: ${Str.inspect(plan.crossing)}, pigs: ${Str.inspect(plan.pigs)}",
 		"bull: ${Str.inspect(plan.bull)}, scheme: ${Str.inspect(plan.scheme)}",
-		"bend_life: ${Str.inspect(plan.bend_life)}",
+		"bend_life: ${Str.inspect(read_out_plan.bend_life)}",
 	]
 }
 

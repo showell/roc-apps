@@ -9,6 +9,7 @@ import Conifer
 import Distance
 import Geom
 import RoadAhead
+import Route
 import SegmentPlace
 import Pipeline
 import Trees
@@ -68,12 +69,8 @@ up_road = {
 ## The first three segments, seen from `vantage`.
 first_road : Geom.Vantage -> RoadAhead.RoadView
 first_road = |vantage| {
-	route_segments: [
-		World.route_segment(0),
-		World.route_segment(1),
-		World.route_segment(2),
-	],
-	segments_ahead: [0, 1, 2].map(World.SegmentIndex.number),
+	route: World.route,
+	segments_ahead: { first_index: Route.SegmentIndex.first, count: 3 },
 	vantage,
 }
 

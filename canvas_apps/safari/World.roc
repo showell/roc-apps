@@ -3,271 +3,255 @@
 ## how it turns into the next. The route makes some choices across its segments,
 ## such as which herds are big and which the rider finds distracting, and this
 ## module resolves them before each segment is built.
-import Along
 import Angle
 import Cat
 import CowHerd
 import Distance
 import PigHerd
+import Route
 import Scenery
 import Segment
 import lib.Trig
 
 World :: [].{
 
-	## A segment's place in the route, counted from 0. It says where a segment
-	## is in the route, where a SegmentPlace.Position says how far ahead of the
-	## rider it is.
-	SegmentIndex :: U32.{
-
-		number : U32 -> World.SegmentIndex
-		number = |n| World.SegmentIndex.(n)
-
-		to_u32 : World.SegmentIndex -> U32
-		to_u32 = |World.SegmentIndex.(n)| n
-
-		to_i64 : World.SegmentIndex -> I64
-		to_i64 = |World.SegmentIndex.(n)| n.to_i64()
-
-		## The route's first segment.
-		first : World.SegmentIndex
-		first = World.SegmentIndex.(0)
-
-		next : World.SegmentIndex -> World.SegmentIndex
-		next = |World.SegmentIndex.(n)| World.SegmentIndex.(n + 1)
-
-		## The segment before this one, unless this is the first.
-		previous : World.SegmentIndex -> [Previous(World.SegmentIndex), AtRouteStart]
-		previous = |World.SegmentIndex.(n)|
-			if n == 0 {
-				AtRouteStart
-			} else {
-				Previous(World.SegmentIndex.(n - 1))
-			}
-
-		## How many segments come before this one.
-		count_before : World.SegmentIndex -> U64
-		count_before = |World.SegmentIndex.(n)| n.to_u64()
-
-		## The segment of `route_segments` at this index.
-		segment_in : World.SegmentIndex, List(Segment) -> Segment
-		segment_in = |index, route_segments|
-			route_segments.get(index.count_before())
-				?? crash "World.SegmentIndex.segment_in: the route has no segment there"
-
-		is_eq : _
-	}
-
 	## Whether the route plans pigs along a segment.
 	PigPresence : [WithPigs, NoPigs]
 
-	## One segment of the route as planned: its length and scenery, its turn
-	## into the next (right is positive), what lives along it, and
-	## what lives at its end.
+	## One segment of the route as planned: its length and scenery, and what
+	## lives along it.
 	SegmentPlan : {
 		length : Distance,
 		scheme : Scenery.Scheme,
-		turn : Angle.Turn,
 		crossing : [CatCrosses, BirdHere, QuietRoad],
 		pigs : World.PigPresence,
 		bull : [WithBull, NoBull],
-		ending : [Continues, Terminates],
+	}
+
+	## A segment the route plans to bend into the next: the segment's own plan,
+	## its turn into the next (right is positive), and what lives at the bend.
+	BendingPlan : {
+		segment_plan : World.SegmentPlan,
+		turn : Angle.Turn,
 		bend_life : Scenery.BendLife,
 	}
 
-	plans : List(World.SegmentPlan)
-	plans = [
+	## Every segment of the route but the last, in order, each with its bend.
+	bending_plans : List(World.BendingPlan)
+	bending_plans = [
 		{
-			length: Distance.metres(500.0),
-			scheme: AllGreen,
+			segment_plan: {
+				length: Distance.metres(500.0),
+				scheme: AllGreen,
+				crossing: BirdHere,
+				pigs: NoPigs,
+				bull: NoBull,
+			},
 			turn: Angle.Turn.degrees(50.0),
-			crossing: BirdHere,
-			pigs: NoPigs,
-			bull: NoBull,
-			ending: Continues,
 			bend_life: Animal(Elephant),
 		},
 		{
-			length: Distance.metres(320.0),
-			scheme: AllGreen,
+			segment_plan: {
+				length: Distance.metres(320.0),
+				scheme: AllGreen,
+				crossing: QuietRoad,
+				pigs: NoPigs,
+				bull: NoBull,
+			},
 			turn: Angle.Turn.degrees(-70.0),
-			crossing: QuietRoad,
-			pigs: NoPigs,
-			bull: NoBull,
-			ending: Continues,
 			bend_life: Animal(Elephant),
 		},
 		{
-			length: Distance.metres(400.0),
-			scheme: AllGreen,
+			segment_plan: {
+				length: Distance.metres(400.0),
+				scheme: AllGreen,
+				crossing: QuietRoad,
+				pigs: WithPigs,
+				bull: NoBull,
+			},
 			turn: Angle.Turn.degrees(20.0),
-			crossing: QuietRoad,
-			pigs: WithPigs,
-			bull: NoBull,
-			ending: Continues,
 			bend_life: Animal(Elephant),
 		},
 		{
-			length: Distance.metres(300.0),
-			scheme: GoldGreen,
+			segment_plan: {
+				length: Distance.metres(300.0),
+				scheme: GoldGreen,
+				crossing: CatCrosses,
+				pigs: NoPigs,
+				bull: NoBull,
+			},
 			turn: Angle.Turn.degrees(20.0),
-			crossing: CatCrosses,
-			pigs: NoPigs,
-			bull: NoBull,
-			ending: Continues,
 			bend_life: Animal(Elephant),
 		},
 		{
-			length: Distance.metres(300.0),
-			scheme: AllGreen,
+			segment_plan: {
+				length: Distance.metres(300.0),
+				scheme: AllGreen,
+				crossing: QuietRoad,
+				pigs: NoPigs,
+				bull: WithBull,
+			},
 			turn: Angle.Turn.degrees(-70.0),
-			crossing: QuietRoad,
-			pigs: NoPigs,
-			bull: WithBull,
-			ending: Continues,
 			bend_life: Animal(Giraffe),
 		},
 		{
-			length: Distance.metres(300.0),
-			scheme: AllGreen,
+			segment_plan: {
+				length: Distance.metres(300.0),
+				scheme: AllGreen,
+				crossing: BirdHere,
+				pigs: NoPigs,
+				bull: WithBull,
+			},
 			turn: Angle.Turn.degrees(-70.0),
-			crossing: BirdHere,
-			pigs: NoPigs,
-			bull: WithBull,
-			ending: Continues,
 			bend_life: Animal(Elephant),
 		},
 		{
-			length: Distance.metres(1200.0),
-			scheme: RedGreen,
+			segment_plan: {
+				length: Distance.metres(1200.0),
+				scheme: RedGreen,
+				crossing: QuietRoad,
+				pigs: NoPigs,
+				bull: WithBull,
+			},
 			turn: Angle.Turn.degrees(80.0),
-			crossing: QuietRoad,
-			pigs: NoPigs,
-			bull: WithBull,
-			ending: Continues,
 			bend_life: Animal(Rhino),
 		},
 		{
-			length: Distance.metres(300.0),
-			scheme: AllGreen,
+			segment_plan: {
+				length: Distance.metres(300.0),
+				scheme: AllGreen,
+				crossing: QuietRoad,
+				pigs: NoPigs,
+				bull: WithBull,
+			},
 			turn: Angle.Turn.degrees(15.0),
-			crossing: QuietRoad,
-			pigs: NoPigs,
-			bull: WithBull,
-			ending: Continues,
 			bend_life: Animal(Elephant),
 		},
 		{
-			length: Distance.metres(300.0),
-			scheme: AllGreen,
+			segment_plan: {
+				length: Distance.metres(300.0),
+				scheme: AllGreen,
+				crossing: QuietRoad,
+				pigs: NoPigs,
+				bull: WithBull,
+			},
 			turn: Angle.Turn.degrees(-70.0),
-			crossing: QuietRoad,
-			pigs: NoPigs,
-			bull: WithBull,
-			ending: Continues,
 			bend_life: Animal(Elephant),
 		},
 		{
-			length: Distance.metres(800.0),
-			scheme: AllGreen,
+			segment_plan: {
+				length: Distance.metres(800.0),
+				scheme: AllGreen,
+				crossing: CatCrosses,
+				pigs: NoPigs,
+				bull: WithBull,
+			},
 			turn: Angle.Turn.degrees(15.0),
-			crossing: CatCrosses,
-			pigs: NoPigs,
-			bull: WithBull,
-			ending: Continues,
 			bend_life: Animal(Elephant),
 		},
 		{
-			length: Distance.metres(300.0),
-			scheme: AllGreen,
+			segment_plan: {
+				length: Distance.metres(300.0),
+				scheme: AllGreen,
+				crossing: QuietRoad,
+				pigs: WithPigs,
+				bull: WithBull,
+			},
 			turn: Angle.Turn.degrees(15.0),
-			crossing: QuietRoad,
-			pigs: WithPigs,
-			bull: WithBull,
-			ending: Continues,
 			bend_life: Animal(Elephant),
 		},
 		{
-			length: Distance.metres(300.0),
-			scheme: AllGreen,
+			segment_plan: {
+				length: Distance.metres(300.0),
+				scheme: AllGreen,
+				crossing: QuietRoad,
+				pigs: WithPigs,
+				bull: WithBull,
+			},
 			turn: Angle.Turn.degrees(15.0),
-			crossing: QuietRoad,
-			pigs: WithPigs,
-			bull: WithBull,
-			ending: Continues,
 			bend_life: Animal(Elephant),
 		},
 		{
-			length: Distance.metres(300.0),
-			scheme: RedGreen,
+			segment_plan: {
+				length: Distance.metres(300.0),
+				scheme: RedGreen,
+				crossing: QuietRoad,
+				pigs: WithPigs,
+				bull: WithBull,
+			},
 			turn: Angle.Turn.degrees(15.0),
-			crossing: QuietRoad,
-			pigs: WithPigs,
-			bull: WithBull,
-			ending: Continues,
 			bend_life: DuckPond,
 		},
 		{
-			length: Distance.metres(400.0),
-			scheme: AllGreen,
+			segment_plan: {
+				length: Distance.metres(400.0),
+				scheme: AllGreen,
+				crossing: QuietRoad,
+				pigs: WithPigs,
+				bull: WithBull,
+			},
 			turn: Angle.Turn.degrees(-50.0),
-			crossing: QuietRoad,
-			pigs: WithPigs,
-			bull: WithBull,
-			ending: Continues,
 			bend_life: Animal(Elephant),
 		},
 		{
-			length: Distance.metres(300.0),
-			scheme: AllGreen,
+			segment_plan: {
+				length: Distance.metres(300.0),
+				scheme: AllGreen,
+				crossing: BirdHere,
+				pigs: WithPigs,
+				bull: WithBull,
+			},
 			turn: Angle.Turn.degrees(50.0),
-			crossing: BirdHere,
-			pigs: WithPigs,
-			bull: WithBull,
-			ending: Continues,
 			bend_life: Animal(Elephant),
 		},
 		{
-			length: Distance.metres(300.0),
-			scheme: RedGreen,
+			segment_plan: {
+				length: Distance.metres(300.0),
+				scheme: RedGreen,
+				crossing: QuietRoad,
+				pigs: NoPigs,
+				bull: WithBull,
+			},
 			turn: Angle.Turn.degrees(-50.0),
-			crossing: QuietRoad,
-			pigs: NoPigs,
-			bull: WithBull,
-			ending: Continues,
 			bend_life: Animal(Zebra),
 		},
 		{
-			length: Distance.metres(300.0),
-			scheme: AllGreen,
+			segment_plan: {
+				length: Distance.metres(300.0),
+				scheme: AllGreen,
+				crossing: QuietRoad,
+				pigs: WithPigs,
+				bull: WithBull,
+			},
 			turn: Angle.Turn.degrees(50.0),
-			crossing: QuietRoad,
-			pigs: WithPigs,
-			bull: WithBull,
-			ending: Continues,
 			bend_life: Animal(Elephant),
 		},
 		{
-			length: Distance.metres(300.0),
-			scheme: AllGreen,
+			segment_plan: {
+				length: Distance.metres(300.0),
+				scheme: AllGreen,
+				crossing: QuietRoad,
+				pigs: WithPigs,
+				bull: WithBull,
+			},
 			turn: Angle.Turn.degrees(-50.0),
-			crossing: QuietRoad,
-			pigs: WithPigs,
-			bull: WithBull,
-			ending: Continues,
 			bend_life: Animal(Elephant),
-		},
-		{
-			length: Distance.metres(300.0),
-			scheme: RedGreen,
-			turn: Angle.Turn.degrees(0.0),
-			crossing: CatCrosses,
-			pigs: WithPigs,
-			bull: WithBull,
-			ending: Terminates,
-			bend_life: Quiet,
 		},
 	]
+
+	## The route's last segment, which ends it.
+	last_plan : World.SegmentPlan
+	last_plan = {
+		length: Distance.metres(300.0),
+		scheme: RedGreen,
+		crossing: CatCrosses,
+		pigs: WithPigs,
+		bull: WithBull,
+	}
+
+	## Every segment's plan, in order.
+	plans : List(World.SegmentPlan)
+	plans = bending_plans.map(|bending| bending.segment_plan).append(last_plan)
 
 	## How many of the route's herds, from its first, are big. The rest stand
 	## in two rows.
@@ -326,49 +310,39 @@ World :: [].{
 	}
 
 	## How many of the segments before `index` have pigs.
-	herd_count_before : World.SegmentIndex -> U32
+	herd_count_before : Route.SegmentIndex -> U32
 	herd_count_before = |index|
 		plans
 			.take_first(index.count_before())
 			.count_if(|plan| plan.pigs == WithPigs)
 			.to_u32_wrap()
 
-	## Segment `number` of the route, counting from 0.
-	route_segment : U32 -> Segment
-	route_segment = |number| {
-		index = World.SegmentIndex.number(number)
-		plan = plans.get(index.count_before())
-			?? crash "World.route_segment: the route has no segment there"
-		built_segment(plan, index)
+	## The route, built from its plans. Each segment but the last bends as its
+	## plan says, and the last ends the route.
+	route : Route
+	route = {
+		bending_segments = bending_plans.map_with_index(
+			|{ segment_plan, turn, bend_life }, at| {
+				index = Route.SegmentIndex.number(at.to_u32_wrap())
+				built_segment(segment_plan, { index, ending: Bends({ turn, bend_life }) })
+			},
+		)
+		last_index = Route.SegmentIndex.number(bending_plans.len().to_u32_wrap())
+		last_segment = built_segment(last_plan, { index: last_index, ending: RouteEnds })
+		Route.from_segments(bending_segments.append(last_segment))
 	}
-
-	## Every segment of the route, in order.
-	segments : List(Segment)
-	segments = plans.map_with_index(
-		|plan, at| built_segment(plan, World.SegmentIndex.number(at.to_u32_wrap())),
-	)
-
-	## The segments' length, end to end. It is summed from the last segment to
-	## the first: a float sum's rounding depends on its order, and another
-	## order can move a pixel.
-	route_length : List(Segment) -> Distance
-	route_length = |route_segments| route_segments.fold_rev(
-		Distance.zero,
-		|segment, sum| segment.length.plus(sum),
-	)
-
-	## How far along the route the point at `along` on the segment at `index`
-	## is.
-	distance_along_route : List(Segment), { index : World.SegmentIndex, along : Along } -> Distance
-	distance_along_route = |route_segments, { index, along }|
-		route_length(route_segments.take_first(index.count_before())).plus(along.from_start())
 }
 
 ## The segment at `index` of the route, built from its plan once the route's
 ## choices for it are made: the shape of its herd and whether the rider finds it
-## distracting, both from how many herds come before it.
-built_segment : World.SegmentPlan, World.SegmentIndex -> Segment
-built_segment = |plan, index| {
+## distracting, both from how many herds come before it, and how it ends, from
+## its place in the route.
+built_segment : World.SegmentPlan,
+{
+	index : Route.SegmentIndex,
+	ending : [Bends({ turn : Angle.Turn, bend_life : Scenery.BendLife }), RouteEnds],
+} -> Segment
+built_segment = |plan, { index, ending }| {
 	earlier_herd_count = World.herd_count_before(index)
 	pigs =
 		match plan.pigs {
@@ -395,10 +369,7 @@ built_segment = |plan, index| {
 		pigs,
 		cows: { herd: World.cow_herd, bull: plan.bull },
 		crossing: plan.crossing,
-		ending: match plan.ending {
-			Continues => Bends({ turn: plan.turn, bend_life: plan.bend_life })
-			Terminates => RouteEnds
-		},
+		ending,
 	})
 }
 
@@ -415,7 +386,7 @@ expect
 		(18, 8),
 	].all(
 		|(number, want)| {
-			index = World.SegmentIndex.number(number)
+			index = Route.SegmentIndex.number(number)
 			World.herd_count_before(index).to_i64() == want
 		},
 	)
@@ -424,7 +395,7 @@ expect World.big_herd_count.to_i64() == 2
 expect World.pig_novelty_count.to_i64() == 2
 
 seg : U32 -> Segment
-seg = |i| World.route_segment(i)
+seg = |i| World.route.segment_at(Route.SegmentIndex.number(i))
 
 expect seg(0).length.to_metres() == 500.0
 expect seg(1).length.to_metres() == 320.0

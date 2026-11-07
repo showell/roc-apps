@@ -16,6 +16,7 @@ import game.Gaze
 import game.Geom
 import game.Rider
 import game.RiderState
+import game.Route
 import game.Segment
 import game.Speed
 import game.Steps
@@ -80,7 +81,7 @@ played_a_frame = 8
 ## there. An `expect` below rides there and compares.
 first_rider : RiderState
 first_rider = {
-	segment_index: World.SegmentIndex.number(2),
+	segment_index: Route.SegmentIndex.number(2),
 	motorcycle: {
 		along: Along.metres(140.3590433880225),
 		across: Across.metres(-0.027010758256703966),
@@ -98,7 +99,7 @@ starting_model = { played: [first_rider], transport: VcrButtons.transport_at(str
 ## The first segment of the route whose pigs catch the rider's eye.
 pig_segment : Segment
 pig_segment =
-	World.segments.find_first(is_distracting)
+	World.route.route_segments().find_first(is_distracting)
 		?? crash "GazeWidgetApp.pig_segment: the route has a distracting pig"
 
 ## Whether a segment's pigs catch the rider's eye.
@@ -133,7 +134,7 @@ played_on = |model| {
 	var $played = model.played
 	while $played.len() < reach {
 		latest = $played.last() ?? crash "GazeWidgetApp.played_on: the stretch starts with a state"
-		$played = $played.append(Rider.rider_state_at_next_step(latest, World.segments))
+		$played = $played.append(Rider.rider_state_at_next_step(latest, World.route))
 	}
 	{ ..model, played: $played }
 }
@@ -379,8 +380,8 @@ expect {
 }
 
 # This stretch is on the route's first distracting segment.
-expect is_distracting(first_rider.segment_index.segment_in(World.segments))
-expect World.segments.take_first(2).all(|segment| segment.pigs == NoPigs)
+expect is_distracting(World.route.segment_at(first_rider.segment_index))
+expect World.route.route_segments().take_first(2).all(|segment| segment.pigs == NoPigs)
 expect pig_segment.length == Distance.metres(400.0)
 
 # The steps the book's table quotes, each with its speed in metres a step, its

@@ -147,11 +147,11 @@ view_at = |tour| {
 	rider = tour.instant.rider
 	{
 		road: {
-			route_segments: tour.route_segments,
-			segments_ahead: RoadAhead.indices_ahead(tour.route_segments, rider.segment_index),
+			route: tour.route,
+			segments_ahead: RoadAhead.indices_ahead(tour.route, rider.segment_index),
 			vantage: ViewYaw.vantage_for(rider),
 		},
-		cam_focal: RideFocal.ride_focal(rider, tour.route_segments),
+		cam_focal: RideFocal.ride_focal(rider, tour.route),
 	}
 }
 

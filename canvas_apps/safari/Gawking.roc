@@ -6,6 +6,7 @@ import Billboard
 import Distance
 import Geom
 import Motorcycle
+import Route
 import Segment
 import Speed
 import VehicleLimits
@@ -86,14 +87,19 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 
 plain : Segment
-plain = World.route_segment(0)
+plain = World.route.segment_at(Route.SegmentIndex.number(0))
 
 distracting : Segment
-distracting = World.route_segment(2)
+distracting = World.route.segment_at(Route.SegmentIndex.number(2))
 
 expect plain.pigs == NoPigs
 expect Gawking.eye_catching_pig(plain) == NoPigCatchesEye
-expect Gawking.eye_catching_pig(World.route_segment(11)) == NoPigCatchesEye
+
+## A segment whose herd the rider passes by.
+passed_by : Segment
+passed_by = World.route.segment_at(Route.SegmentIndex.number(11))
+
+expect Gawking.eye_catching_pig(passed_by) == NoPigCatchesEye
 
 ## The pig that catches the eye on the distracting segment.
 watched_pig : Geom.Placed(Billboard)

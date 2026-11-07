@@ -17,6 +17,7 @@ import Motorcycle
 import RiderEyes
 import RiderState
 import lib.Trig
+import Route
 import Segment
 import World
 
@@ -140,10 +141,10 @@ expect
 expect Gaze.gaze_attention(Fraction.of(0.25)).to_f64() == 0.15625
 
 plain : Segment
-plain = World.route_segment(0)
+plain = World.route.segment_at(Route.SegmentIndex.number(0))
 
 distracting : Segment
-distracting = World.route_segment(2)
+distracting = World.route.segment_at(Route.SegmentIndex.number(2))
 
 ## A motorcycle `along` metres into the distracting segment, at rest in every
 ## other way. Gaze doesn't import Along, so `along` is a distance from the

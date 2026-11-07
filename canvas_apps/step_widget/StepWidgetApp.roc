@@ -132,7 +132,7 @@ route_y : F64
 route_y = 62.0
 
 route_length : Distance
-route_length = World.route_length(World.segments)
+route_length = World.route.route_length()
 
 ## Where `distance` along the route falls on the bar.
 route_x : Distance -> F64
@@ -142,8 +142,7 @@ route_x = |distance| route_left_x + route_width * distance.portion(route_length)
 rider_distance : Tour -> Distance
 rider_distance = |tour| {
 	rider = tour.instant.rider
-	World.distance_along_route(
-		tour.route_segments,
+	tour.route.distance_along_route(
 		{ index: rider.segment_index, along: rider.motorcycle.along },
 	)
 }
@@ -160,7 +159,7 @@ ground = Rect({
 ## The route as a straight bar, with a mark where each segment ends.
 bar_shapes : List(Shapes.Shape)
 bar_shapes = {
-	ends = World.segments.fold(
+	ends = World.route.route_segments().fold(
 		{ reached: Distance.zero, marks: [] },
 		|{ reached, marks }, segment| {
 			end = reached.plus(segment.length)

@@ -55,7 +55,7 @@ cat_crossing = |segment|
 ## The first segment of the route with a cat.
 cat_segment : Segment
 cat_segment =
-	World.segments.find_first(|segment| cat_crossing(segment).is_ok())
+	World.route.route_segments().find_first(|segment| cat_crossing(segment).is_ok())
 		?? crash "CatWidgetApp.cat_segment: the route has cats"
 
 crossing : Cat.Crossing

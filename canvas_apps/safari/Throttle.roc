@@ -8,6 +8,7 @@ import Coast
 import CrossingReaction
 import Gawking
 import Motorcycle
+import Route
 import Segment
 import Speed
 import Steps
@@ -150,7 +151,7 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 
 first_segment : Segment
-first_segment = World.route_segment(0)
+first_segment = World.route.segment_at(Route.SegmentIndex.number(0))
 
 ## A motorcycle on the centre line, upright.
 centred_motorcycle : F64, F64 -> Motorcycle
@@ -171,7 +172,7 @@ expect held_to(acceleration_of(0.01), AtMost(acceleration_of(-0.5))) == accelera
 expect held_to(acceleration_of(-0.5), AtMost(Acceleration.steady)) == acceleration_of(-0.5)
 
 expect exit_speed(first_segment).to_metres_a_step() == 0.222
-expect exit_speed(World.route_segment(18)) == Speed.at_rest
+expect exit_speed(World.route.segment_at(Route.SegmentIndex.number(18))) == Speed.at_rest
 
 expect !is_near_end(centred_motorcycle(439.9, 0.3), first_segment)
 expect is_near_end(centred_motorcycle(440.0, 0.3), first_segment)
@@ -293,7 +294,10 @@ expect decide(Speed.metres_a_step(0.3), -(hold_radians - 0.001)) < Acceleration.
 ## metres a step.
 decide_on : U32, F64 -> Acceleration
 decide_on = |index, along|
-	Throttle.acceleration(centred_motorcycle(along, 0.3), World.route_segment(index))
+	Throttle.acceleration(
+		centred_motorcycle(along, 0.3),
+		World.route.segment_at(Route.SegmentIndex.number(index)),
+	)
 
 # A crossing cat stops the throttle opening, and a gawking rider brakes.
 expect decide_on(3, 0.0) > Acceleration.steady

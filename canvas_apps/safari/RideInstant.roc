@@ -3,13 +3,13 @@ import RoadAhead
 import Ground
 import GroundSighting
 import Lens
+import Route
 import SceneShapes
 import Mountains
 import RiderState
 import Scene
 import RideFocal
 import Rider
-import Segment
 import Sky
 import Steps
 import Sun
@@ -36,30 +36,23 @@ RideInstant := {
 		clock: Clock.start,
 	}
 
-	next_or_restart : List(Segment), RideInstant -> RideInstant
-	next_or_restart = |route_segments, instant|
-		if Rider.is_finished(instant.rider, route_segments) {
+	next_or_restart : Route, RideInstant -> RideInstant
+	next_or_restart = |route, instant|
+		if Rider.is_finished(instant.rider, route) {
 			initial
 		} else {
-			next(route_segments, instant)
+			next(route, instant)
 		}
 
-	next : List(Segment), RideInstant -> RideInstant
-	next = |route_segments, instant| {
-		nx = Rider.rider_state_at_next_step(instant.rider, route_segments)
-		dist = World.distance_along_route(
-			route_segments,
-			{ index: nx.segment_index, along: nx.motorcycle.along },
-		)
+	next : Route, RideInstant -> RideInstant
+	next = |route, instant| {
+		nx = Rider.rider_state_at_next_step(instant.rider, route)
+		dist = route.distance_along_route({ index: nx.segment_index, along: nx.motorcycle.along })
 		{
 			rider: nx,
 			truck: Truck.at_next_step(
 				instant.truck,
-				{
-					rider_distance: dist,
-					route_segments,
-					route_length: World.route_length(route_segments),
-				},
+				{ rider_distance: dist, route, route_length: route.route_length() },
 			),
 			clock: instant.clock.next(),
 		}
@@ -86,27 +79,23 @@ RideInstant := {
 
 	## The frame at `instant`. The camera's heading and focal length are worked
 	## out once, for both the shapes and the sun.
-	frame_content : List(Segment), RideInstant -> RideInstant.FrameContent
-	frame_content = |route_segments, instant| {
+	frame_content : Route, RideInstant -> RideInstant.FrameContent
+	frame_content = |route, instant| {
 		aim = {
 			heading: ViewYaw.heading_for(instant.rider),
-			cam_focal: RideFocal.ride_focal(instant.rider, route_segments),
+			cam_focal: RideFocal.ride_focal(instant.rider, route),
 		}
-		{ shapes: shapes(instant, { route_segments, aim }), sun: Sun.sighting(aim, instant.clock) }
+		{ shapes: shapes(instant, { route, aim }), sun: Sun.sighting(aim, instant.clock) }
 	}
 
-	shapes : RideInstant,
-	{
-		route_segments : List(Segment),
-		aim : Lens.CameraAim,
-	} -> List(Shapes.Shape)
-	shapes = |instant, { route_segments, aim }| {
+	shapes : RideInstant, { route : Route, aim : Lens.CameraAim } -> List(Shapes.Shape)
+	shapes = |instant, { route, aim }| {
 		cam_focal = aim.cam_focal
 		s = instant.rider
 		view = {
 			road: {
-				route_segments,
-				segments_ahead: RoadAhead.indices_ahead(route_segments, s.segment_index),
+				route,
+				segments_ahead: RoadAhead.indices_ahead(route, s.segment_index),
 				vantage: ViewYaw.vantage_for(s),
 			},
 			cam_focal,
@@ -139,13 +128,13 @@ expect RideInstant.initial.truck.route_position.to_metres() == 500.0
 expect RideInstant.initial.truck.speed.to_metres_a_step() == 0.3
 expect RideInstant.initial.rider.segment_index.to_i64() == 0
 expect RideInstant.initial.truck.pace == NotSlowing
-expect !Rider.is_finished(RideInstant.initial.rider, World.segments)
+expect !Rider.is_finished(RideInstant.initial.rider, World.route)
 
 after_one_step : RideInstant
-after_one_step = RideInstant.next_or_restart(World.segments, RideInstant.initial)
+after_one_step = RideInstant.next_or_restart(World.route, RideInstant.initial)
 
 after_two_steps : RideInstant
-after_two_steps = RideInstant.next_or_restart(World.segments, after_one_step)
+after_two_steps = RideInstant.next_or_restart(World.route, after_one_step)
 
 expect after_one_step.clock.to_f64() == 1.0
 expect after_two_steps.clock.to_f64() == 2.0
@@ -154,31 +143,27 @@ expect after_one_step.rider.motorcycle.along > RideInstant.initial.rider.motorcy
 expect after_one_step.truck.route_position > RideInstant.initial.truck.route_position
 expect after_two_steps.rider.motorcycle.along > after_one_step.rider.motorcycle.along
 expect {
-	old_dist = World.distance_along_route(
-		World.segments,
-		{
-			index: RideInstant.initial.rider.segment_index,
-			along: RideInstant.initial.rider.motorcycle.along,
-		},
-	)
-	new_dist = World.distance_along_route(
-		World.segments,
+	old_dist = World.route.distance_along_route({
+		index: RideInstant.initial.rider.segment_index,
+		along: RideInstant.initial.rider.motorcycle.along,
+	})
+	new_dist = World.route.distance_along_route(
 		{ index: after_one_step.rider.segment_index, along: after_one_step.rider.motorcycle.along },
 	)
 	against_new = Truck.at_next_step(
 		RideInstant.initial.truck,
 		{
 			rider_distance: new_dist,
-			route_segments: World.segments,
-			route_length: World.route_length(World.segments),
+			route: World.route,
+			route_length: World.route.route_length(),
 		},
 	)
 	against_old = Truck.at_next_step(
 		RideInstant.initial.truck,
 		{
 			rider_distance: old_dist,
-			route_segments: World.segments,
-			route_length: World.route_length(World.segments),
+			route: World.route,
+			route_length: World.route.route_length(),
 		},
 	)
 	new_position = against_new.route_position
@@ -189,10 +174,10 @@ expect {
 }
 
 expect after_one_step.clock != Clock.start
-expect !Rider.is_finished(after_one_step.rider, World.segments)
+expect !Rider.is_finished(after_one_step.rider, World.route)
 
 # The ride starts facing away from the sun.
-expect RideInstant.frame_content(World.segments, RideInstant.initial).sun == OutOfView
+expect RideInstant.frame_content(World.route, RideInstant.initial).sun == OutOfView
 
 ## A clock with the sun behind the mountains.
 after_sunset : Clock

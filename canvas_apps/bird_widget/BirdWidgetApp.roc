@@ -59,7 +59,7 @@ segment_flight = |segment|
 ## The first flight on the route.
 flight : BirdFlight.Flight
 flight = {
-	first_flying = World.segments.find_first(|segment| segment_flight(segment).is_ok())
+	first_flying = World.route.route_segments().find_first(|segment| segment_flight(segment).is_ok())
 		?? crash "BirdWidgetApp.flight: the route has birds"
 	segment_flight(first_flying) ?? crash "BirdWidgetApp.flight: this segment has a flight"
 }

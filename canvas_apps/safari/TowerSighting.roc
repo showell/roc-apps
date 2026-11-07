@@ -10,6 +10,7 @@ import Beacon
 import Clock
 import Distance
 import RoadAhead
+import Route
 import Segment
 import SegmentPlace
 import Steps
@@ -151,9 +152,9 @@ expect TowerSighting.mid_tower_left.to_metres() == 100.0
 
 route_segments : List(Segment)
 route_segments = [
-	World.route_segment(0),
-	World.route_segment(1),
-	World.route_segment(2),
+	World.route.segment_at(Route.SegmentIndex.number(0)),
+	World.route.segment_at(Route.SegmentIndex.number(1)),
+	World.route.segment_at(Route.SegmentIndex.number(2)),
 ]
 
 origin : Geom.Vantage
@@ -167,12 +168,8 @@ origin = {
 ## route's segment `rider_number`.
 short_road : U32 -> RoadAhead.RoadView
 short_road = |rider_number| {
-	route_segments: [0, 1, 2, 3, 4].map(World.route_segment),
-	segments_ahead: [
-		rider_number,
-		rider_number + 1,
-		rider_number + 2,
-	].map(World.SegmentIndex.number),
+	route: World.route,
+	segments_ahead: { first_index: Route.SegmentIndex.number(rider_number), count: 3 },
 	vantage: origin,
 }
 
@@ -211,11 +208,13 @@ expect
 		(first_tower_on(0).spot.foot().forward().to_metres(), 660.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
-## The 1200 m segment alone, seen from the origin.
+## The 1200 m segment alone, a route of its own, seen from the origin.
 long_road : RoadAhead.RoadView
 long_road = {
-	route_segments: [World.route_segment(6)],
-	segments_ahead: [0].map(World.SegmentIndex.number),
+	route: Route.from_segments([
+		{ ..World.route.segment_at(Route.SegmentIndex.number(6)), ending: RouteEnds },
+	]),
+	segments_ahead: { first_index: Route.SegmentIndex.first, count: 1 },
 	vantage: origin,
 }
 
@@ -277,7 +276,7 @@ expect
 			Ahead(SegmentPlace.Position.number(0)),
 			Ahead(SegmentPlace.Position.number(1)),
 			Ahead(SegmentPlace.Position.number(2)),
-			RoadAhead.place_behind(World.route_segment(0)),
+			RoadAhead.place_behind(World.route.segment_at(Route.SegmentIndex.number(0))),
 		]
 expect TowerSighting.towers_in_view(
 	{ ..origin_road, vantage: { ..origin, along: Along.metres(5000.0) } },

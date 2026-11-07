@@ -2,19 +2,19 @@
 ## the motorcycle they ride, and where their eyes are.
 import Motorcycle
 import RiderEyes
-import World
+import Route
 
 ## The rider at one step. `segment_index` is the segment of the route the
 ## motorcycle is on, which places its `along` and `across`.
 RiderState := {
-	segment_index : World.SegmentIndex,
+	segment_index : Route.SegmentIndex,
 	motorcycle : Motorcycle,
 	eyes : RiderEyes,
 }.{
 
 	initial : RiderState
 	initial = {
-		segment_index: World.SegmentIndex.first,
+		segment_index: Route.SegmentIndex.first,
 		motorcycle: Motorcycle.initial,
 		eyes: RiderEyes.initial,
 	}

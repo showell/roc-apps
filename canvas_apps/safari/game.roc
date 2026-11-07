@@ -53,6 +53,7 @@ package
 		RiderEyes,
 		RiderState,
 		RoadAhead,
+		Route,
 		SafariApp,
 		Scene,
 		SceneShapes,

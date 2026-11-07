@@ -8,6 +8,7 @@ import Acceleration
 import Along
 import Attention
 import Cat
+import Route
 import Segment
 import Speed
 import VehicleLimits
@@ -45,13 +46,13 @@ CrossingReaction :: [].{
 }
 
 bird_segment : Segment
-bird_segment = World.route_segment(0)
+bird_segment = World.route.segment_at(Route.SegmentIndex.number(0))
 
 quiet_segment : Segment
-quiet_segment = World.route_segment(1)
+quiet_segment = World.route.segment_at(Route.SegmentIndex.number(1))
 
 cat_segment : Segment
-cat_segment = World.route_segment(3)
+cat_segment = World.route.segment_at(Route.SegmentIndex.number(3))
 
 cat_along : Along
 cat_along =
