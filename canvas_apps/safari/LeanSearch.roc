@@ -11,10 +11,10 @@ LeanSearch :: [].{
 
 	want_more_right : Coast.Outcome, Across -> Bool
 	want_more_right = |coast, target|
-		match coast.exit {
+		match coast {
 			Leaves({ side: Left, .. }) => True
 			Leaves({ side: Right, .. }) => False
-			StaysOn => coast.end_across < target
+			EndsAt(end_across) => end_across < target
 		}
 
 	asymptote_tuning : F64
@@ -101,24 +101,18 @@ expect LeanSearch.center_road_epsilon.to_metres() == 0.04
 expect LeanSearch.max_lean_change.to_radians() == 0.017453292519943295
 expect LeanSearch.lean_search_rounds == 12
 
-## A coast ending at `end_across`, leaving by `exit` or not.
-outcome : Coast.Exit, F64 -> Coast.Outcome
-outcome = |exit, end_across| {
-	exit,
-	forward: Distance.metres(10.0),
-	end_across: Across.metres(end_across),
-}
-
-off_left : Coast.Exit
+off_left : Coast.Outcome
 off_left = Leaves({ side: Left, after: Steps.one_step })
 
-off_right : Coast.Exit
+off_right : Coast.Outcome
 off_right = Leaves({ side: Right, after: Steps.one_step })
 
-expect LeanSearch.want_more_right(outcome(off_left, 99.0), Across.metres(0.5))
-expect LeanSearch.want_more_right(outcome(off_left, -99.0), Across.metres(0.5))
-expect !LeanSearch.want_more_right(outcome(off_right, 99.0), Across.metres(0.5))
-expect !LeanSearch.want_more_right(outcome(off_right, -99.0), Across.metres(0.5))
-expect LeanSearch.want_more_right(outcome(StaysOn, 0.4), Across.metres(0.5))
-expect !LeanSearch.want_more_right(outcome(StaysOn, 0.6), Across.metres(0.5))
-expect !LeanSearch.want_more_right(outcome(StaysOn, 0.5), Across.metres(0.5))
+## A coast that ends `metres` across the road.
+ending_at : F64 -> Coast.Outcome
+ending_at = |metres| EndsAt(Across.metres(metres))
+
+expect LeanSearch.want_more_right(off_left, Across.metres(0.5))
+expect !LeanSearch.want_more_right(off_right, Across.metres(0.5))
+expect LeanSearch.want_more_right(ending_at(0.4), Across.metres(0.5))
+expect !LeanSearch.want_more_right(ending_at(0.6), Across.metres(0.5))
+expect !LeanSearch.want_more_right(ending_at(0.5), Across.metres(0.5))

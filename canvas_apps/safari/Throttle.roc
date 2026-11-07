@@ -77,8 +77,8 @@ Throttle :: [].{
 	## passes the acceleration through in turn.
 	shoulder_brake : RiderState, Acceleration -> Acceleration
 	shoulder_brake = |state, a|
-		match Coast.project(state).exit {
-			StaysOn => a
+		match Coast.project(state) {
+			EndsAt(_) => a
 			Leaves({ after: steps_to_shoulder, .. }) =>
 				shoulder_brake_at(state, { steps_to_shoulder, offered_acceleration: a })
 		}
@@ -284,8 +284,8 @@ across_at = |metres| RiderState.initial.across.plus(Speed.metres_a_step(metres).
 rider_off_left : F64 -> RiderState
 rider_off_left = |speed| { ..centred_rider(0.0, speed), yaw: Angle.Turn.radians(-1.5) }
 
-expect Coast.project(rider_off_left(0.048)).exit == Leaves({ side: Left, after: Steps.of(40) })
-expect Coast.project(rider_off_left(0.7)).exit == Leaves({ side: Left, after: Steps.of(2) })
+expect Coast.project(rider_off_left(0.048)) == Leaves({ side: Left, after: Steps.of(40) })
+expect Coast.project(rider_off_left(0.7)) == Leaves({ side: Left, after: Steps.of(2) })
 
 # A coast that stays on the road takes what is offered, and one that leaves it
 # brakes.
@@ -401,34 +401,34 @@ leaning = coast_of(0.0, 0.2)
 other_way : Coast.Outcome
 other_way = coast_of(0.0, -0.2)
 
-expect straight.forward.to_metres() == 25.0
-expect straight.end_across.to_metres() == 0.0
-expect wide.forward.to_metres() == 25.0
-expect wide.end_across.to_metres() == 3.0
-expect stopped.forward.to_metres() == 0.0
-expect stopped.end_across.to_metres() == 0.0
+expect straight == EndsAt(across_at(0.0))
+expect wide == EndsAt(across_at(3.0))
+expect stopped == EndsAt(across_at(0.0))
 
-expect straight.exit == StaysOn
-expect wide.exit == StaysOn
-expect stopped.exit == StaysOn
+# A rider this slow and this far over circles on the road, and the coast still ends.
+expect {
+	circling = Coast.project({
+		..RiderState.initial,
+		speed: Speed.metres_a_step(0.01),
+		lean: Angle.Lean.radians(0.5),
+	})
+	match circling {
+		EndsAt(_) => True
+		Leaves(_) => False
+	}
+}
 
 ## How many steps a coast runs before it leaves the road.
 steps_off_road : Coast.Outcome -> Steps
 steps_off_road = |coast|
-	match coast.exit {
+	match coast {
 		Leaves({ after, .. }) => after
-		StaysOn => crash "Throttle's expects: this coast stays on the road"
+		EndsAt(_) => crash "Throttle's expects: this coast stays on the road"
 	}
 
-expect leaning.exit == Leaves({ side: Right, after: steps_off_road(leaning) })
-expect other_way.exit == Leaves({ side: Left, after: steps_off_road(other_way) })
+expect leaning == Leaves({ side: Right, after: steps_off_road(leaning) })
+expect other_way == Leaves({ side: Left, after: steps_off_road(other_way) })
 
 expect steps_off_road(leaning) < Coast.longest_coast
 expect steps_off_road(leaning) > Steps.zero
-expect leaning.forward <= Coast.clear_distance
-expect leaning.end_across > RiderState.initial.across
-expect other_way.end_across < RiderState.initial.across
 expect steps_off_road(leaning) == steps_off_road(other_way)
-expect leaning.end_across.to_metres() + other_way.end_across.to_metres() == 0.0
-
-expect leaning.forward.minus(other_way.forward).to_metres().abs() <= 0.000001

@@ -2,7 +2,6 @@
 ## with no change of lean or speed, and says where the rider would end up.
 import Acceleration
 import Across
-import Along
 import Angle
 import Bike
 import Distance
@@ -11,99 +10,44 @@ import Steps
 
 Coast :: [].{
 
-	## Where a coast ends up: off a shoulder after this many steps, or still
-	## on the road.
-	Exit : [StaysOn, Leaves({ side : [Left, Right], after : Steps })]
-
-	Outcome : {
-		exit : Coast.Exit,
-		forward : Distance,
-		end_across : Across,
-	}
+	## Where a coast ends up: still on the road at this place across it, or off
+	## a shoulder after this many steps.
+	Outcome : [EndsAt(Across), Leaves({ side : [Left, Right], after : Steps })]
 
 	straighten_margin : Distance
 	straighten_margin = Distance.metres(0.05)
 
+	## A slow rider who leans can circle on the road and never get clear of
+	## where they started, so a coast ends after this many steps.
 	longest_coast : Steps
 	longest_coast = Steps.of(2000)
 
 	clear_distance : Distance
 	clear_distance = Distance.metres(25.0)
 
-	## What holds for the whole of one coast: the road's edges, and
-	## the distance along the road the rider started from.
-	Bounds : {
-		left_bound : Across,
-		right_bound : Across,
-		start_along : Along,
-	}
-
-	## Where a coast has reached: how many steps it has run, and the coasting
-	## rider.
-	Progress(others) : { steps_run : Steps, coasting_rider : Bike.Motion(others) }
-
-	coast_from : Coast.Bounds, Coast.Progress(others) -> Coast.Outcome
-	coast_from = |course, { steps_run: i, coasting_rider: phys }|
-		if i >= longest_coast {
-			{
-				exit: StaysOn,
-				forward: phys.along.distance_from(course.start_along),
-				end_across: phys.across,
-			}
-		} else {
-			judge_place(
-				course,
-				{
-					steps_run: i,
-					coasting_rider: Bike.bike_motion_at_next_step(
-						phys,
-						{ lean_step: Angle.upright, acceleration: Acceleration.steady },
-					),
-				},
-			)
-		}
-
-	judge_place : Coast.Bounds, Coast.Progress(others) -> Coast.Outcome
-	judge_place = |course, { steps_run: i, coasting_rider: phys }| {
-		across = phys.across
-		forward = phys.along.distance_from(course.start_along)
-		if across < course.left_bound {
-			{
-				exit: Leaves({ side: Left, after: i }),
-				forward: forward.min(clear_distance),
-				end_across: across,
-			}
-		} else if across > course.right_bound {
-			{
-				exit: Leaves({ side: Right, after: i }),
-				forward: forward.min(clear_distance),
-				end_across: across,
-			}
-		} else if forward < Distance.zero {
-			{ exit: StaysOn, forward, end_across: across }
-		} else if forward >= clear_distance {
-			{
-				exit: StaysOn,
-				forward: clear_distance,
-				end_across: across,
-			}
-		} else {
-			coast_from(course, { steps_run: i.plus(Steps.one_step), coasting_rider: phys })
-		}
-	}
-
 	project : Bike.Motion(others) -> Coast.Outcome
 	project = |state| {
 		inset_hw = Scenery.road_half_width.minus(straighten_margin)
 		right_bound = Across.right_of_middle(inset_hw).max(state.across)
 		left_bound = Across.left_of_middle(inset_hw).min(state.across)
-		coast_from(
-			{ left_bound, right_bound, start_along: state.along },
-			{ steps_run: Steps.zero, coasting_rider: state },
-		)
+		var $rider = state
+		var $steps_run = Steps.zero
+		while $steps_run < longest_coast {
+			$rider = Bike.bike_motion_at_next_step(
+				$rider,
+				{ lean_step: Angle.upright, acceleration: Acceleration.steady },
+			)
+			if $rider.across < left_bound {
+				return Leaves({ side: Left, after: $steps_run })
+			}
+			if $rider.across > right_bound {
+				return Leaves({ side: Right, after: $steps_run })
+			}
+			if $rider.along.distance_from(state.along) >= clear_distance {
+				return EndsAt($rider.across)
+			}
+			$steps_run = $steps_run.plus(Steps.one_step)
+		}
+		EndsAt($rider.across)
 	}
 }
-
-expect Coast.straighten_margin.to_metres() == 0.05
-expect Coast.clear_distance.to_metres() == 25.0
-expect Coast.longest_coast.to_f64() == 2000.0

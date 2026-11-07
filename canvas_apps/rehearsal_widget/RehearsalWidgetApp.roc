@@ -80,7 +80,7 @@ arc_edge : Distance
 arc_edge = Scenery.road_half_width.minus(Coast.straighten_margin)
 
 ## Whether an arc that has reached `motion` runs on. These are the tests in
-## `Coast.judge_place`, which answers with only where an arc ends. An `expect` below
+## `Coast.project`, which answers with only where an arc ends. An `expect` below
 ## holds the two to the same end.
 runs_on : Bike.Motion({}) -> Bool
 runs_on = |motion| {
@@ -88,10 +88,10 @@ runs_on = |motion| {
 	on_road =
 		motion.across >= Across.left_of_middle(arc_edge)
 			and motion.across <= Across.right_of_middle(arc_edge)
-	on_road and forward >= Distance.zero and forward < Coast.clear_distance
+	on_road and forward < Coast.clear_distance
 }
 
-## The way a rider coasts with `lean`: the call `Coast.coast_from` makes.
+## The way a rider coasts with `lean`: the call `Coast.project` makes.
 points_of : Angle.Lean -> List(ArcPoint)
 points_of = |lean| {
 	var $motion = Bike.with_lean(rider, lean)
@@ -326,10 +326,10 @@ arc_shapes = |path_points, { color, width }| {
 ## The colour that says where an arc ended.
 color_of : Coast.Outcome -> I64
 color_of = |outcome|
-	match outcome.exit {
+	match outcome {
 		Leaves({ side: Left, .. }) => off_left_color
 		Leaves({ side: Right, .. }) => off_right_color
-		StaysOn => kept_color
+		EndsAt(_) => kept_color
 	}
 
 ## The arcs for a list of tries.
@@ -416,10 +416,10 @@ across_text = |across| {
 outcome_text : Rehearsal -> Str
 outcome_text = |{ outcome, path_points, .. }| {
 	steps = path_points.len().to_str()
-	match outcome.exit {
+	match outcome {
 		Leaves({ side: Left, .. }) => "Off the left edge in ${steps} steps"
 		Leaves({ side: Right, .. }) => "Off the right edge in ${steps} steps"
-		StaysOn => "Stays on, ends ${across_text(outcome.end_across)}"
+		EndsAt(end_across) => "Stays on, ends ${across_text(end_across)}"
 	}
 }
 
@@ -594,9 +594,9 @@ expect chosen_lean.to_radians() == LeanSearch.best_lean(rider).to_radians()
 expect
 	rehearsals.all(
 		|{ path_points, outcome, .. }|
-			match path_points.last() {
-				Ok(point) => point.across == outcome.end_across.to_metres()
-				Err(_) => False
+			match (path_points.last(), outcome) {
+				(Ok(point), EndsAt(end_across)) => point.across == end_across.to_metres()
+				(Ok(_), Leaves(_)) | (Err(_), _) => False
 			},
 	)
 
