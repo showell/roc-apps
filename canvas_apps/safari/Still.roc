@@ -4,7 +4,7 @@
 ## still that is wider than it is tall, such as a flying bird, has x past 1.
 ## EmojiStills, CatStills and BirdStills hold the pictures, and StillShapes
 ## puts them on screen.
-import lib.ArgbColor
+import Polygon
 import lib.RgbColor
 
 Still := List(Still.Polygon).{
@@ -12,27 +12,27 @@ Still := List(Still.Polygon).{
 	## A corner of a still's polygon, in the still's frame.
 	Vertex : { x : F64, y : F64 }
 
-	## A polygon's gradient as traced. A linear one (kind 1) runs from `a` to
-	## `b`; a radial one (any other kind) is centred at `c`, with `u` and `v`
-	## its two axes. Each runs from `color0` at offset `off0` to `color1` at
-	## `off1`.
-	Gradient : {
-		kind : I64,
-		color0 : ArgbColor,
-		color1 : ArgbColor,
-		off0 : F64,
-		off1 : F64,
-		ax : F64,
-		ay : F64,
-		bx : F64,
-		by : F64,
-		cx : F64,
-		cy : F64,
-		ux : F64,
-		uy : F64,
-		vx : F64,
-		vy : F64,
-	}
+	## A polygon's gradient as traced, with its two colours and where each
+	## sits along it. A linear one runs from `start` to `end`. A radial one
+	## spreads over an ellipse about `center`, whose two axes are the steps
+	## `axis_u` and `axis_v`.
+	Gradient : [
+		Linear(
+			{
+				stops : Polygon.ColorStops,
+				start : Still.Vertex,
+				end : Still.Vertex,
+			},
+		),
+		Radial(
+			{
+				stops : Polygon.ColorStops,
+				center : Still.Vertex,
+				axis_u : Still.Vertex,
+				axis_v : Still.Vertex,
+			},
+		),
+	]
 
 	## One polygon of a still: its colour, and its gradient if it has one.
 	Polygon : {
