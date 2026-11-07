@@ -37,11 +37,11 @@ BackdropPixels :: [].{
 					color = if t <= stop {
 						top_color
 					} else {
-						Brush.mix(
-							top_color,
-							horizon_color,
-							(t - stop) / (1.0 - stop),
-						)
+						Brush.mix({
+							from: top_color,
+							to: horizon_color,
+							fraction: (t - stop) / (1.0 - stop),
+						})
 					}
 					PixelColor.pack({
 						r: color.r,

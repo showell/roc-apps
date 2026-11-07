@@ -18,13 +18,14 @@
 # width, and they look like what they are.
 import Shapes
 import Brush
+import Point
 import RgbColor
 
 Font :: [].{
 	# A string, as shapes, with its top-left at `top_left`. `size` is the height
 	# of a capital letter; the stroke is a fourteenth of it, which is about what
 	# a plotter would give you.
-	text_shapes : Str, { top_left : { x : F64, y : F64 }, size : F64, color : Brush.Rgba } -> List(Shapes.Shape)
+	text_shapes : Str, { top_left : Point.Point, size : F64, color : Brush.Rgba } -> List(Shapes.Shape)
 	text_shapes = |str, { top_left, size, color }| {
 		unit = size / units
 		stroke_width = (size / 14.0).max(1.0)
@@ -37,7 +38,7 @@ Font :: [].{
 
 	## A string centred on `top_center`, the middle of its top edge, which is
 	## what a title, a banner and a hint all want.
-	centered : Str, { top_center : { x : F64, y : F64 }, size : F64, color : Brush.Rgba } -> List(Shapes.Shape)
+	centered : Str, { top_center : Point.Point, size : F64, color : Brush.Rgba } -> List(Shapes.Shape)
 	centered = |str, { top_center, size, color }|
 		text_shapes(str, { top_left: { x: top_center.x - width_of(str, size) / 2.0, y: top_center.y }, size, color })
 
@@ -77,7 +78,7 @@ cap_height_share = 0.72
 
 # One glyph's strokes, placed and thickened. `unit` is the pixels in one unit
 # of the grid.
-glyph_shapes : U8, { top_left : { x : F64, y : F64 }, unit : F64, stroke_width : F64, color : Brush.Rgba } -> List(Shapes.Shape)
+glyph_shapes : U8, { top_left : Point.Point, unit : F64, stroke_width : F64, color : Brush.Rgba } -> List(Shapes.Shape)
 glyph_shapes = |b, { top_left, unit, stroke_width, color }| {
 	strokes = strokes_for(b)
 	var $out = List.with_capacity(strokes.len())

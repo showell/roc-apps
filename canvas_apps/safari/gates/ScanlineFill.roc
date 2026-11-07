@@ -205,7 +205,7 @@ pixels_with_span = |pixels, { roll, fill, row, from, to }| {
 			Flat(flat) => flat
 			Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) => {
 				p = roll.to_scene(ScreenRoll.pixel_point({ row, column }))
-				Brush.shade(fill, p.x, p.y)
+				Brush.shade(fill, p)
 			}
 		}
 		$px = PixelGrid.blended_pixels($px, { at, color })
