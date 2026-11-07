@@ -1805,7 +1805,7 @@ A timeline is data, so the cat's whole performance reads in one place. This is t
 
 The words are tags. `Through` and `Before` say where a stretch ends, and `Holds` and `Alternates` say how the cat looks. The poses are a closed tag union, so a `match` that misses one is a compile-time error.
 
-{{code Cat.Pose}}
+{{code Cat.CatPose}}
 
 A timeline is divided into stretches, and a cut is where one stretch ends and the next begins. A cut has to say which stretch its own beat belongs to, and two tags say that better than a boolean would. `crossing_timeline`'s comment says why it matters: the beats of the leap add up to a float just under the beat they stand for.
 
@@ -1971,7 +1971,7 @@ digraph flight_score {
 
 `BirdFlight` sets the length of a flight to one beat, so that a cut on the timeline is simply a share of the flight:
 
-The bird needs one small helper. It sits below the block, so it's private, and it builds an `Alternates` from two poses. `Animation.Looks(BirdFlight.Pose)` is `Looks(pose)` with the type parameter filled in, which is how the cat's timeline type came to fit a bird:
+The bird needs one small helper. It sits below the block, so it's private, and it builds an `Alternates` from two poses. `Animation.Looks(BirdFlight.BirdPose)` is `Looks(pose)` with the type parameter filled in, which is how the cat's timeline type came to fit a bird:
 
 Then the timeline. `Animation.Timeline.( ... )` wraps a record in the nominal type, and `Side(WingsUp)` is a tag whose payload is another tag. `flight_beats.portion(takeoff_share)` is a method on the opaque `Beats`, and `Beat.at` makes a place of the length it gives. It reads almost like configuration, and most of it is:
 

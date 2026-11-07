@@ -13,7 +13,7 @@ import Stills
 BirdStills :: [].{
 
 	## The drawing for a pose.
-	pose_polygons : BirdFlight.Pose -> List(Stills.StillPolygon)
+	pose_polygons : BirdFlight.BirdPose -> List(Stills.StillPolygon)
 	pose_polygons = |pose|
 		match pose {
 			Perched => perched

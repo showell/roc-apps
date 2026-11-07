@@ -55,7 +55,7 @@ const LINTS = {
   {recipe = "name_types", args = {"table=name_types.txt"}, budget = {}, counts = {{"name_type", 0}, {"bare_beside_unit", 9}, {"no_value", 0}},
     whole_tree = {"bare_beside_unit"}},
   {recipe = "bare_floats", args = {"table=bare_floats.txt"}, budget = {}, counts = {{"bare_float", 0}, {"unused_exception", 0}}},
-  {recipe = "families", args = {}, budget = {}, counts = {{"family", 0}, {"twin_name", 2}}, whole_tree = {"family", "twin_name"}},
+  {recipe = "families", args = {}, budget = {}, counts = {{"family", 0}, {"twin_name", 1}}, whole_tree = {"family", "twin_name"}},
   {recipe = "plain_names", args = {}, budget = {}, counts = {{"pure_mutator", 0}, {"abbreviation", 0}, {"module_doc", 0}}},
 }
 

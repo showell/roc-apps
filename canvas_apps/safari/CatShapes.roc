@@ -13,7 +13,7 @@ CatShapes :: [].{
 
 	## A cat at one moment of its crossing: how it holds itself, and how high its
 	## leap has raised it.
-	PosedCat := { pose : Cat.Pose, lift : Distance }.{
+	PosedCat := { pose : Cat.CatPose, lift : Distance }.{
 
 		scenery_height : CatShapes.PosedCat -> Distance
 		scenery_height = |_cat| Cat.cat_height
