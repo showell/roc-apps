@@ -52,10 +52,12 @@
 -- is most of this part's time.
 --
 -- The proof tools: StepBack passes on "every step back went back one step",
--- and ShapesFrame on "differ 0" at every depth. All their
--- output, and RasterFrame's hash of the frame at each depth, is held exactly
--- to gates/proof.expected. A change that rightly alters the picture changes
--- that file with it, and the commit says why.
+-- OnRoad on "the ride stayed on the road", and ShapesFrame on "differ 0" at
+-- every depth. All their output but OnRoad's, and RasterFrame's hash of the
+-- frame at each depth, is held exactly to gates/proof.expected. A change that
+-- rightly alters the picture changes that file with it, and the commit says
+-- why. OnRoad's widest point and finishing step move with every physics
+-- change, so they are printed and not held.
 -- A depth is there for what its frame shows: at 100 a Roc bird is in flight,
 -- at 1570 a cat is frozen in the road, at 1590 it is in mid-leap, at 3742 a
 -- distant truck's glow is about a pixel across, at 5700 the truck is ahead at
@@ -361,22 +363,27 @@ function proof()
   local bad = 0
   local held = {}
   local tools = {
-    {name = "StepBack", args = {}},
-    {name = "ShapesFrame", args = held_args()},
-    {name = "RasterFrame", args = held_args()},
+    {name = "StepBack", args = {}, held = true},
+    {name = "OnRoad", args = {}, held = false},
+    {name = "ShapesFrame", args = held_args(), held = true},
+    {name = "RasterFrame", args = held_args(), held = true},
   }
+  local unheld = ""
   for tool in tools do
     local out = nil
     if tool_build(roc, bin, tool.name, env) then out = held_run(bin, tool.name, tool.args) end
     if out == nil then
       bad = bad + 1
-    else
+    elseif tool.held then
       push(held, out)
+    else
+      unheld = unheld .. out .. "\n"
     end
   end
   drop_child_cache(cache)
   local got = join(held, "\n") .. "\n"
   if not contains(got, "every step back went back one step") then bad = bad + 1 end
+  if not contains(unheld, "the ride stayed on the road") then bad = bad + 1 end
   for l in lines(got) do
     if starts_with(l, "ShapesFrame ") and not contains(l, ": differ 0 ") then bad = bad + 1 end
   end
