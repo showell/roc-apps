@@ -31,7 +31,7 @@ const LINTS = {
     {"phrase_name", 0},
     -- These two need Shale's plural-name-check merged: a cookbook without them
     -- has no such count, and this gate fails naming it.
-    {"singular_list", 0}, {"world_verb", 0},
+    {"singular_list", 0}, {"world_verb", 0}, {"where_name", 0},
   }, whole_tree = {"command_tense", "mixed_tense", "preposition_split"}},
   {recipe = "errors", args = {}, budget = {}, counts = {
     {"error_alias", 0}, {"optional_tag", 0}, {"set_fallback", 0}, {"placeholder", 0},

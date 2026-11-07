@@ -1100,7 +1100,9 @@ is the base; these rules sharpen it.
     are fine), and `phrase_name` (a pure function named as a bare phrase,
     `in_view`, that gives no Bool and isn't a constructor), and `singular_list`
     (a list named as one thing, `triangle : List(Shape)`), and `world_verb` (a
-    pure function that pretends to an effect, `draw_tree`). An effect that starts with a preposition (`of!`) is a
+    pure function that pretends to an effect, `draw_tree`), and `where_name` (a
+    `where` method of one word, since a `where` clause matches by name alone).
+    An effect that starts with a preposition (`of!`) is a
     `noun_effect`. The words are shared files in Shale's `cookbook/words/`,
     and `words=1` lists every first word an effect starts with, for a
     reader to scan. Beside the names, `mixed_tense` (an effect handed a
