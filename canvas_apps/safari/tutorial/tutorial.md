@@ -2511,7 +2511,7 @@ This is what lets `CrossingSighting`, `TowerSighting`, `TreeSighting` and the re
 
 The ground also curves away. That's one formula, the small-angle drop of a sphere, with a record destructured in the parameter list and `right` and `forward` taken out to metres before they're squared. There are two radii in the program, and neither is the earth's. `Geom.ground_curve_radius`, 100 km, is the surface the road and the truck stand on, and it puts the horizon 490 metres out. `Tower.sink_radius`, 20 km, only sets how soon a far tower goes: a tower is gone at 1.8 km, where the ground's curve would leave it in view to 4 km.
 
-{{code Ground.ground_drop}}
+{{code EarthCurve.ground_drop}}
 
 ### Cutting a polygon
 

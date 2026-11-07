@@ -4,7 +4,7 @@
 import Pixels
 import Camera
 import Geom
-import Ground
+import EarthCurve
 import lib.RgbColor
 import lib.Shapes
 
@@ -15,7 +15,7 @@ GroundPatch := { corners : List(Geom.RiderPoint), color : RgbColor }.{
 	## unless nothing of it is left.
 	patch_shape : GroundPatch, Pixels -> Try(Shapes.Shape, [PastHorizon, BehindCamera])
 	patch_shape = |patch, cam_focal| {
-		before_horizon = Ground.points_before_horizon(patch.corners)
+		before_horizon = EarthCurve.points_before_horizon(patch.corners)
 		if before_horizon.is_empty() {
 			Err(PastHorizon)
 		} else {

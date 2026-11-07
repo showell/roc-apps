@@ -1,4 +1,4 @@
-## Ground is the earth's curve under the rider: how far the ground drops below
+## EarthCurve is the earth's curve under the rider: how far the ground drops below
 ## level as it goes away from the rider, and the horizon where it curves out of
 ## sight.
 import Camera
@@ -6,7 +6,7 @@ import Distance
 import Fraction
 import Geom
 
-Ground :: [].{
+EarthCurve :: [].{
 
 	## How far the ground has curved away below level at `point`, which is
 	## never negative.
@@ -43,7 +43,7 @@ ground_point : Geom.RiderPoint -> Geom.RaisedPoint
 ground_point = |point| {
 	right: point.right,
 	forward: point.forward,
-	height: Ground.ground_drop(point).opposite(),
+	height: EarthCurve.ground_drop(point).opposite(),
 }
 
 ## The part of the rider's view within `reach` of the rider, measured on the
@@ -102,19 +102,19 @@ circle_crossings = |{ from, to, reach }| {
 	}
 }
 
-expect Ground.ground_drop({
+expect EarthCurve.ground_drop({
 	right: Distance.metres(0.0),
 	forward: Distance.metres(0.0),
 }).to_metres() == 0.0
-expect Ground.ground_drop({
+expect EarthCurve.ground_drop({
 	right: Distance.metres(3.0),
 	forward: Distance.metres(10.0),
 }).to_metres() == 0.000545
-expect Ground.ground_drop({
+expect EarthCurve.ground_drop({
 	right: Distance.metres(-5.0),
 	forward: Distance.metres(40.0),
 }).to_metres() == 0.008125
-expect Ground.ground_drop({
+expect EarthCurve.ground_drop({
 	right: Distance.metres(12.5),
 	forward: Distance.metres(100.0),
 }).to_metres() == 0.05078125
