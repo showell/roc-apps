@@ -41,8 +41,8 @@ Gaze :: [].{
 	## points, or else at the road.
 	desired_gaze : Motorcycle, Segment -> Gaze.GazeTarget
 	desired_gaze = |motorcycle, seg|
-		match Gawking.eye_catching_pig(seg) {
-			CatchesEye(pig) if Gawking.is_gawking(motorcycle, seg) => {
+		match Gawking.gawked_pig(motorcycle, seg) {
+			GawkingAt(pig) => {
 				turn = turn_to(motorcycle, pig)
 				if turn.abs() < look_release_angle {
 					OnPig(turn)
@@ -50,7 +50,7 @@ Gaze :: [].{
 					OnRoad
 				}
 			}
-			CatchesEye(_) | NoPigCatchesEye => OnRoad
+			NotGawking => OnRoad
 		}
 
 	## These eyes moved on a step, for a rider on `motorcycle` on `segment`, the
