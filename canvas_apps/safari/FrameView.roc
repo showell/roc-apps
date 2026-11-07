@@ -1,4 +1,5 @@
 import Angle
+import Backdrop
 import CanvasRoll
 import Ground
 import GroundSighting
@@ -50,6 +51,17 @@ FrameView := {
 		}
 	}
 
+	## The whole frame in `space`: the backdrop, then the ride's shapes over it.
+	framed_shapes : FrameView, Shapes.Space -> List(Shapes.Shape)
+	framed_shapes = |view, space|
+		Shapes.in_space(
+			space,
+			Backdrop.frame_shapes(
+				view.shapes,
+				{ sky_colors: view.sky_colors, sun_sighting: view.sun },
+			),
+		)
+
 	## Which of the truck's lights are on: its headlights once the sun is behind
 	## the mountains, and its brake lights while its last step slowed it.
 	lit_truck : RideInstant -> LitTruck
@@ -95,4 +107,28 @@ shapes = |instant, { route, aim }| {
 		ground.keep_oks(|patch| Ground.patch_shape(patch, cam_focal)),
 		SceneShapes.scene_shapes(scene, view),
 	].join()
+}
+
+# The space's first mark, the sky, the grass, the shapes, and the mark back to
+# the screen.
+expect {
+	dot = Rect({
+		x: 0.0,
+		y: 0.0,
+		width: 1.0,
+		height: 1.0,
+		fill: Flat({
+			r: 0.0,
+			g: 0.0,
+			b: 0.0,
+			a: 1.0,
+		}),
+	})
+	view = {
+		shapes: [dot],
+		sun: OutOfView,
+		sky_colors: Sky.colors_at(RideInstant.initial.clock),
+		roll: Angle.upright,
+	}
+	FrameView.framed_shapes(view, Screen).len() == 5
 }
