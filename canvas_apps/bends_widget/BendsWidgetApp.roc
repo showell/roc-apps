@@ -18,6 +18,7 @@ import lib.Brush
 import lib.RgbColor
 import lib.CanvasApp
 import lib.Shapes
+import widget.ReadoutText
 import widget.ScrubWidget
 
 BendsWidgetApp :: [].{
@@ -145,7 +146,7 @@ ground = Rect({
 	y: 0.0,
 	width: ScrubWidget.canvas_width,
 	height: ScrubWidget.picture_bottom_y,
-	fill: ScrubWidget.flat(ground_color),
+	fill: Brush.flat(ground_color),
 })
 
 ## A patch of paving, as a polygon on the canvas.
@@ -158,7 +159,7 @@ patch_shape = |bend, corners|
 				[x, y]
 			},
 		),
-		fill: ScrubWidget.flat(road_color),
+		fill: Brush.flat(road_color),
 	})
 
 ## The first two corners of a rail's quad, which lie along the ground.
@@ -169,7 +170,7 @@ foot_shapes = |bend, corners|
 			from = canvas_point(bend, { right: a.right, forward: a.forward })
 			to = canvas_point(bend, { right: b.right, forward: b.forward })
 			[
-				Shapes.line({ from, to, width: 2.0 }, ScrubWidget.flat(rail_color)),
+				Shapes.line({ from, to, width: 2.0 }, Brush.flat(rail_color)),
 			]
 		}
 		_ => []
@@ -183,7 +184,7 @@ spot = |bend, { at, color }| {
 		x,
 		y,
 		radius: 4.0,
-		fill: ScrubWidget.flat(color),
+		fill: Brush.flat(color),
 	})
 }
 
@@ -234,7 +235,7 @@ caption_lines = |turn| {
 	[
 		turn_text(turn),
 		"rail on the ${edge_text(turn)} edge",
-		"apex ${ScrubWidget.tenths_text(apex_past_end(apex_of(turn)))} m past the end",
+		"apex ${ReadoutText.tenths_text(apex_past_end(apex_of(turn)))} m past the end",
 		"${GroundSighting.patches_in_view(road).len().to_str()} patches, ${RailSighting.rails_in_view(road).len().to_str()} rail pieces",
 	]
 }

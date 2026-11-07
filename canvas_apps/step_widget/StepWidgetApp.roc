@@ -10,10 +10,12 @@ import game.Geom
 import game.RideInstant
 import game.Tour
 import game.World
+import lib.Brush
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
 import lib.RgbColor
+import widget.ReadoutText
 import widget.ScrubWidget
 import widget.VcrButtons
 
@@ -154,7 +156,7 @@ ground = Rect({
 	y: 0.0,
 	width: ScrubWidget.canvas_width,
 	height: ScrubWidget.picture_bottom_y,
-	fill: ScrubWidget.flat(ground_color),
+	fill: Brush.flat(ground_color),
 })
 
 ## The route as a straight bar, with a mark where each segment ends.
@@ -173,7 +175,7 @@ bar_shapes = {
 			y: route_y - 4.0,
 			width: route_width,
 			height: 8.0,
-			fill: ScrubWidget.flat(road_color),
+			fill: Brush.flat(road_color),
 		}),
 	].concat(
 		ends.marks.map(
@@ -183,7 +185,7 @@ bar_shapes = {
 					y: route_y - 8.0,
 					width: 2.0,
 					height: 16.0,
-					fill: ScrubWidget.flat(road_color),
+					fill: Brush.flat(road_color),
 				}),
 		),
 	)
@@ -202,7 +204,7 @@ marker_shapes = |{ at, color, name, name_y }|
 			x: route_x(at),
 			y: route_y,
 			radius: 8.0,
-			fill: ScrubWidget.flat(color),
+			fill: Brush.flat(color),
 		}),
 		ScrubWidget.label({
 			text: name,
@@ -250,7 +252,7 @@ shapes_from_behind_rider = |{ across, lean }| {
 				y: surface_y,
 				width: 2.0 * road,
 				height: 8.0,
-				fill: ScrubWidget.flat(road_color),
+				fill: Brush.flat(road_color),
 			}),
 			Shapes.line(
 				{
@@ -258,13 +260,13 @@ shapes_from_behind_rider = |{ across, lean }| {
 					to: { x: head_x, y: head_y },
 					width: 6.0,
 				},
-				ScrubWidget.flat(rider_color),
+				Brush.flat(rider_color),
 			),
 			Disc({
 				x: head_x,
 				y: head_y,
 				radius: 9.0,
-				fill: ScrubWidget.flat(rider_color),
+				fill: Brush.flat(rider_color),
 			}),
 		],
 	].join()
@@ -322,8 +324,8 @@ status_lines = |model| {
 	clock = model.tour.instant.clock
 	[
 		"clock: step ${clock.to_str()}",
-		"rider: segment ${(rider.segment_index.to_u32() + 1).to_str()}, ${ScrubWidget.tenths_text(rider.motorcycle.along.to_metres())} m, speed ${ScrubWidget.tenths_text(rider.motorcycle.speed.to_metres_a_step())}",
-		"truck: ${ScrubWidget.tenths_text(truck.route_position.to_metres())} m, speed ${ScrubWidget.tenths_text(truck.speed.to_metres_a_step())}, brake ${brakes_text(RideInstant.lit_truck(model.tour.instant).brake_lights)}",
+		"rider: segment ${(rider.segment_index.to_u32() + 1).to_str()}, ${ReadoutText.tenths_text(rider.motorcycle.along.to_metres())} m, speed ${ReadoutText.tenths_text(rider.motorcycle.speed.to_metres_a_step())}",
+		"truck: ${ReadoutText.tenths_text(truck.route_position.to_metres())} m, speed ${ReadoutText.tenths_text(truck.speed.to_metres_a_step())}, brake ${brakes_text(RideInstant.lit_truck(model.tour.instant).brake_lights)}",
 		move_text(model),
 	]
 }

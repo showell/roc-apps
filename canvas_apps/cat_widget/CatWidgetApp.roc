@@ -13,9 +13,11 @@ import game.Speed
 import game.StillShapes
 import game.VehicleLimits
 import game.World
+import lib.Brush
 import lib.CanvasApp
 import lib.RgbColor
 import lib.Shapes
+import widget.ReadoutText
 import widget.ScrubWidget
 import widget.VcrButtons
 
@@ -101,21 +103,21 @@ road_shapes = {
 			y: 0.0,
 			width: ScrubWidget.canvas_width,
 			height: ScrubWidget.picture_bottom_y,
-			fill: ScrubWidget.flat(RgbColor.of(0xdcecf5)),
+			fill: Brush.flat(RgbColor.of(0xdcecf5)),
 		}),
 		Rect({
 			x: 0.0,
 			y: ground_top_y,
 			width: ScrubWidget.canvas_width,
 			height: ground_height,
-			fill: ScrubWidget.flat(RgbColor.of(0x7fa650)),
+			fill: Brush.flat(RgbColor.of(0x7fa650)),
 		}),
 		Rect({
 			x: road_middle_x - road_width_px / 2.0,
 			y: ground_top_y,
 			width: road_width_px,
 			height: ground_height,
-			fill: ScrubWidget.flat(RgbColor.of(0x8a8a8a)),
+			fill: Brush.flat(RgbColor.of(0x8a8a8a)),
 		}),
 	]
 }
@@ -147,9 +149,9 @@ status_lines = |gap| {
 		{ along: crossing.along.minus(gap), speed: rider_speed },
 	)
 	[
-		ScrubWidget.stage_text(Cat.crossing_stage(approach)),
+		ReadoutText.stage_text(Cat.crossing_stage(approach)),
 		"Pose: ${pose_name(instant.pose)}",
-		"Gap: ${ScrubWidget.tenths_text(gap.to_metres())} m",
+		"Gap: ${ReadoutText.tenths_text(gap.to_metres())} m",
 		throttle_text(throttle),
 	]
 }

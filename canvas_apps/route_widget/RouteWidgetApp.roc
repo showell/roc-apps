@@ -6,6 +6,7 @@
 import game.Angle
 import game.Distance
 import game.World
+import lib.Brush
 import lib.CanvasApp
 import lib.Shapes
 import lib.RgbColor
@@ -144,7 +145,7 @@ ground = Rect({
 	y: 0.0,
 	width: ScrubWidget.canvas_width,
 	height: ScrubWidget.picture_bottom_y,
-	fill: ScrubWidget.flat(ground_color),
+	fill: Brush.flat(ground_color),
 })
 
 ## A disc on the map.
@@ -155,7 +156,7 @@ spot = |point, { r, color }| {
 		x,
 		y,
 		radius: r,
-		fill: ScrubWidget.flat(color),
+		fill: Brush.flat(color),
 	})
 }
 
@@ -165,7 +166,7 @@ piece_shapes = |{ start, end, .. }, { width, color }| {
 	a = canvas_point(start)
 	b = canvas_point(end)
 	[
-		Shapes.line({ from: a, to: b, width }, ScrubWidget.flat(color)),
+		Shapes.line({ from: a, to: b, width }, Brush.flat(color)),
 		spot(start, { r: width / 2.0, color }),
 		spot(end, { r: width / 2.0, color }),
 	]
@@ -207,7 +208,7 @@ row_shapes = |{ y, color, word }|
 			x: 470.0,
 			y,
 			radius: 6.0,
-			fill: ScrubWidget.flat(color),
+			fill: Brush.flat(color),
 		}),
 		ScrubWidget.label({
 			text: word,

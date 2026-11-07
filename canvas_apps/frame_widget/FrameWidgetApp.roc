@@ -26,7 +26,7 @@ import lib.RgbColor
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
-import widget.ScrubWidget
+import widget.ReadoutText
 import "page.html" as page_html : Str
 
 FrameWidgetApp :: [].{
@@ -252,7 +252,7 @@ plain_background = Rect({
 	y: 0.0,
 	width: picture_width,
 	height: picture_height,
-	fill: ScrubWidget.flat(RgbColor.of(0xE8E6DF)),
+	fill: Brush.flat(RgbColor.of(0xE8E6DF)),
 })
 
 panel : Shapes.Shape
@@ -261,7 +261,7 @@ panel = Rect({
 	y: picture_height,
 	width: canvas_width,
 	height: panel_height,
-	fill: ScrubWidget.flat(RgbColor.of(0xDCECF5)),
+	fill: Brush.flat(RgbColor.of(0xDCECF5)),
 })
 
 ## An address that names a layer has the page press Right once for each layer
@@ -317,8 +317,8 @@ status_lines : FrameWidgetApp.Model -> List(Str)
 status_lines = |{ layers_on, .. }| {
 	on_layers = layers_up_to(layers_on)
 	added = on_layers.last() ?? crash "FrameWidgetApp.status_lines: a layer is always on"
-	so_far = ScrubWidget.count_text(ride_count(on_layers))
-	total = ScrubWidget.count_text(ride_count(layers))
+	so_far = ReadoutText.count_text(ride_count(on_layers))
+	total = ReadoutText.count_text(ride_count(layers))
 	["Shapes so far: ${so_far} of ${total}", "Added: ${layer_name(added)}"]
 }
 

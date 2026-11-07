@@ -10,10 +10,12 @@ import game.Lens
 import game.Pixels
 import game.Sky
 import game.Sun
+import lib.Brush
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
 import lib.RgbColor
+import widget.ReadoutText
 import widget.ScrubWidget
 import widget.VcrButtons
 
@@ -120,8 +122,8 @@ status_lines = |job, clock|
 	[
 		"clock = step ${clock.to_str()}",
 		"Sun.height(clock) = ${height_text(Sun.height(clock))}",
-		"Sky.dusk_at(clock) = ${ScrubWidget.percent_text(Sky.dusk_at(clock))}",
-		"Sky.sunset_warmth(clock) = ${ScrubWidget.percent_text(Sky.sunset_warmth(clock))}",
+		"Sky.dusk_at(clock) = ${ReadoutText.percent_text(Sky.dusk_at(clock))}",
+		"Sky.sunset_warmth(clock) = ${ReadoutText.percent_text(Sky.sunset_warmth(clock))}",
 	].take_first(curves_of(job) + 1)
 
 ## How many curves `job` has on its chart.
@@ -133,14 +135,10 @@ curves_of = |job|
 		HorizonWarms => 3
 	}
 
-## How high the sun stands, with a minus sign below the horizon.
+## How high the sun stands, in pixels, negative below the horizon.
 height_text : Pixels -> Str
 height_text = |height|
-	if height < Pixels.zero {
-		"-${ScrubWidget.tenths_text(height.opposite().to_f64())} px"
-	} else {
-		"${ScrubWidget.tenths_text(height.to_f64())} px"
-	}
+	"${ReadoutText.tenths_text(height.to_f64())} px"
 
 clock_color : RgbColor
 clock_color = RgbColor.of(0x202020)
@@ -214,7 +212,7 @@ curve_shapes = |level_at, color| {
 	List.map2(
 		points,
 		points.drop_first(1),
-		|a, b| Shapes.line({ from: a, to: b, width: 2.0 }, ScrubWidget.flat(color)),
+		|a, b| Shapes.line({ from: a, to: b, width: 2.0 }, Brush.flat(color)),
 	)
 }
 
@@ -238,7 +236,7 @@ cursor_shapes = |job, clock| {
 		[
 			Shapes.line(
 				{ from: { x, y: chart_top }, to: { x, y: chart_bottom }, width: 1.0 },
-				ScrubWidget.flat(clock_color),
+				Brush.flat(clock_color),
 			),
 		],
 		[
@@ -255,7 +253,7 @@ curve_dot = |{ x, y }, color|
 		x,
 		y,
 		radius: 4.0,
-		fill: ScrubWidget.flat(color),
+		fill: Brush.flat(color),
 	})
 
 expect

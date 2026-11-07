@@ -17,6 +17,7 @@ import lib.Font
 import lib.Input
 import lib.Mouse
 import lib.Shapes
+import widget.ReadoutText
 import widget.ScrubWidget
 
 StillsWidgetApp :: [].{
@@ -28,6 +29,8 @@ StillsWidgetApp :: [].{
 	## outlines of its polygons show.
 	Model : { large_still : StillsWidgetApp.PoseStill, outlines : [Hidden, Shown] }
 
+	## Built by hand, not by `ScrubWidget.canvas_app`, because it runs at its own
+	## frame rate.
 	canvas_app : CanvasApp.CanvasApp(StillsWidgetApp.Model)
 	canvas_app = {
 		size: { width: ScrubWidget.canvas_width, height: ScrubWidget.canvas_height },
@@ -314,8 +317,8 @@ point_count = |polygons| polygons.fold(0, |sum, polygon| sum + polygon.points.le
 read_out_lines : StillsWidgetApp.PoseStill -> List(Str)
 read_out_lines = |still| [
 	still.name,
-	"${ScrubWidget.count_text(still.polygons.len())} polygons",
-	"${ScrubWidget.count_text(point_count(still.polygons))} points",
+	"${ReadoutText.count_text(still.polygons.len())} polygons",
+	"${ReadoutText.count_text(point_count(still.polygons))} points",
 ]
 
 read_out_size : F64
@@ -390,7 +393,7 @@ picture_shapes = |model|
 				y: 0.0,
 				width: ScrubWidget.canvas_width,
 				height: ScrubWidget.picture_bottom_y,
-				fill: ScrubWidget.flat(picture_color),
+				fill: Brush.flat(picture_color),
 			}),
 		],
 		read_out_lines(model.large_still).map_with_index(read_out_line),
@@ -427,7 +430,7 @@ mark_shapes = |large_still|
 				y: area.top,
 				width: area.width,
 				height: area.height,
-				fill: ScrubWidget.flat(picture_color),
+				fill: Brush.flat(picture_color),
 			}),
 	)
 

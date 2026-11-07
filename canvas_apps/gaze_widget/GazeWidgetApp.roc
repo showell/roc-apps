@@ -20,11 +20,13 @@ import game.Speed
 import game.Steps
 import game.Tour
 import game.World
+import lib.Brush
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
 import lib.RgbColor
 import lib.Trig
+import widget.ReadoutText
 import widget.ScrubWidget
 import widget.VcrButtons
 
@@ -222,7 +224,7 @@ ground = Rect({
 	y: 0.0,
 	width: ScrubWidget.canvas_width,
 	height: ScrubWidget.picture_bottom_y,
-	fill: ScrubWidget.flat(ground_color),
+	fill: Brush.flat(ground_color),
 })
 
 road : Shapes.Shape
@@ -233,7 +235,7 @@ road = {
 		y: road_middle_y - half_width,
 		width: ScrubWidget.canvas_width,
 		height: 2.0 * half_width,
-		fill: ScrubWidget.flat(road_color),
+		fill: Brush.flat(road_color),
 	})
 }
 
@@ -249,7 +251,7 @@ plan_disc = |{ along, across, radius, color }|
 		x: screen_x(along),
 		y: screen_y(across),
 		radius: radius,
-		fill: ScrubWidget.flat(color),
+		fill: Brush.flat(color),
 	})
 
 ## One pig of the herd, the one that catches the eye drawn larger.
@@ -298,7 +300,7 @@ sight_line = |rider| {
 			to: { x: x + reach * turn.cos(), y: y + reach * turn.sin() },
 			width: 2.0,
 		},
-		ScrubWidget.flat(sight_color),
+		Brush.flat(sight_color),
 	)
 }
 
@@ -339,9 +341,9 @@ status_lines : RiderState, F64 -> List(Str)
 status_lines = |rider, step|
 	[
 		phase_text(phase_of(rider)),
-		"Step ${step.to_u64_wrap().to_str()}: speed ${ScrubWidget.tenths_text(rider.motorcycle.speed.to_metres_a_step())} m a step",
-		"Gaze yaw: ${ScrubWidget.tenths_text(gaze_degrees(rider))} degrees",
-		"Look depth: ${ScrubWidget.percent_text(rider.eyes.look_depth)}",
+		"Step ${step.to_u64_wrap().to_str()}: speed ${ReadoutText.tenths_text(rider.motorcycle.speed.to_metres_a_step())} m a step",
+		"Gaze yaw: ${ReadoutText.tenths_text(gaze_degrees(rider))} degrees",
+		"Look depth: ${ReadoutText.percent_text(rider.eyes.look_depth)}",
 	]
 
 ## The whole stretch, played, for the expects. As a constant it's ridden once, at

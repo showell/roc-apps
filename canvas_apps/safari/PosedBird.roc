@@ -169,5 +169,5 @@ expect {
 		|pose| bird_shapes_at({ pose: pose }, level).map(fill_of),
 	)
 	stills = BirdStills.side_wings_down_polygons.concat(BirdStills.diving_polygons)
-	drawn == stills.map(|poly| Flat(Brush.opaque(poly.color)))
+	drawn == stills.map(|poly| Brush.flat(poly.color))
 }

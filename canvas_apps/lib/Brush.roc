@@ -113,6 +113,10 @@ Brush :: [].{
 		{ r: channel(rgb, 16), g: channel(rgb, 8), b: channel(rgb, 0), a: 1.0 }
 	}
 
+	# An opaque colour as a flat fill.
+	flat : RgbColor -> Brush.Fill
+	flat = |color| Flat(opaque(color))
+
 	# A colour with its alpha byte as a brush paints it, the alpha as a share
 	# of 255.
 	translucent : ArgbColor -> Brush.Rgba
@@ -184,6 +188,8 @@ expect Brush.translucent(ArgbColor.of(0xFF000000)) == { r: 0.0, g: 0.0, b: 0.0, 
 expect Brush.translucent(ArgbColor.of(0x00FFE9A8)).a == 0.0
 
 expect Brush.opaque(RgbColor.of(0xFFE9A8)) == { r: 255.0, g: 233.0, b: 168.0, a: 1.0 }
+
+expect Brush.flat(RgbColor.of(0xFFE9A8)) == Flat({ r: 255.0, g: 233.0, b: 168.0, a: 1.0 })
 
 # An alpha share is kept as it is, at either end and between.
 expect Brush.with_alpha(RgbColor.of(0xFFC980), 0.85) == { r: 255.0, g: 201.0, b: 128.0, a: 0.85 }
