@@ -510,7 +510,7 @@ New in this chapter:
 
 {{code Backdrop.grass_color}}
 
-Its list of shapes starts with the sky and the grass, and this is the grass:
+Its list of shapes starts with the sky, the sun and the grass, and this is the grass:
 
 {{code Backdrop.frame_shapes from "y: Screen.grass_top_y.to_f64()," to "fill: Flat(Brush.opaque(grass_color)),"}}
 
@@ -537,9 +537,9 @@ New in this chapter:
 
 A frame is a list of shapes, and a circle is one of them. `Disc` is a tag from `lib.Shapes`. This is the sun's, from the same list as the grass:
 
-{{code Backdrop.frame_shapes from "Disc({" to "clip: Within({"}}
+{{code Backdrop.frame_shapes from "Disc({" to "fill: fills.disc,"}}
 
-A `Disc` has a center, a radius and a fill. `clip` cuts off whatever falls below the horizon, so the sun can sink behind the land with no more code.
+A `Disc` has a center, a radius and a fill. The grass comes after it in the list and paints over whatever falls below the horizon, so the sun can sink behind the land with no more code.
 
 The fill makes it look like a sun. `sun_fills` builds two, a disc and a glow behind it:
 

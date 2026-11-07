@@ -18,8 +18,6 @@ Frame :: [].{
 		Glow({ c0 : Frame.Rgba, c1 : Frame.Rgba, c2 : Frame.Rgba, x : F64, y : F64, r0 : F64, r1 : F64 }),
 	]
 
-	Clip : [Anywhere, Within({ x : F64, y : F64, w : F64, h : F64 })]
-
 	Mode : [Over, Add]
 
 	Space : [
@@ -34,7 +32,7 @@ Frame :: [].{
 	Shape : [
 		Poly({ coordinates : List(F64), fill : Frame.Fill }),
 		Pieces({ tris : List(F64), fill : Frame.Fill }),
-		Disc({ x : F64, y : F64, r : F64, fill : Frame.Fill, clip : Frame.Clip }),
+		Disc({ x : F64, y : F64, r : F64, fill : Frame.Fill }),
 		Rect({ x : F64, y : F64, w : F64, h : F64, fill : Frame.Fill }),
 		Blend(Frame.Mode),
 		View(Frame.Space),

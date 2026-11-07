@@ -494,7 +494,6 @@ disc_shapes = |{ beacon_color, beacon_center, beacon_radius, beacon_alpha }| {
 			y: beacon_center.y.to_f64(),
 			r: beacon_radius.to_f64(),
 			fill: Flat({ ..opaque, a: beacon_alpha.to_f64() }),
-			clip: Anywhere,
 		}),
 	]
 }
@@ -521,7 +520,6 @@ expect
 				y: 20.0,
 				r: 30.0,
 				fill: Flat({ ..Brush.opaque(333), a: 0.25 }),
-				clip: Anywhere,
 			}),
 		]
 

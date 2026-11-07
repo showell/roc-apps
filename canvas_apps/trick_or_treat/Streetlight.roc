@@ -31,8 +31,8 @@ Streetlight :: [].{
 			List.concat(
 				Panels.face(v, fwd, [stands_at - 0.06, 0.0, stands_at + 0.06, 0.0, stands_at + 0.06, lamp_high, stands_at - 0.06, lamp_high], Flat(pole_c)),
 				[
-					Disc({ x: p.x, y: p.y, r: 1.4 * ppm, fill: Radial({ inner: Brush.with_alpha(0x80ffe9a8), outer: Brush.with_alpha(0x00ffe9a8), x: p.x, y: p.y, r0: 0.0, r1: 1.4 * ppm }), clip: Anywhere }),
-					Disc({ x: p.x, y: p.y, r: 0.24 * ppm, fill: Flat(lamp_c), clip: Anywhere }),
+					Disc({ x: p.x, y: p.y, r: 1.4 * ppm, fill: Radial({ inner: Brush.with_alpha(0x80ffe9a8), outer: Brush.with_alpha(0x00ffe9a8), x: p.x, y: p.y, r0: 0.0, r1: 1.4 * ppm }) }),
+					Disc({ x: p.x, y: p.y, r: 0.24 * ppm, fill: Flat(lamp_c) }),
 				],
 			)
 		} else {

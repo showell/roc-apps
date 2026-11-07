@@ -33,7 +33,7 @@ Skeleton :: [].{
 	rib = |x0, y0, x1, y1, w| Shapes.line(x0, y0, x1, y1, w, Flat(bone))
 
 	joint : F64, F64, F64 -> Shapes.Shape
-	joint = |x, y, r| Disc({ x: x, y: y, r: r, fill: Flat(bone), clip: Anywhere })
+	joint = |x, y, r| Disc({ x: x, y: y, r: r, fill: Flat(bone) })
 
 	# **A FIGURE IS A PHASE, A PLACE AND A SIZE.** It was pixels at a fixed
 	# spot on a fixed screen until a scene wanted six of them at six distances;
@@ -74,8 +74,8 @@ Skeleton :: [].{
 
 		# The skull: a disc, two sockets, and a jaw that opens on the beat.
 		$out = List.append($out, joint(skull.x, skull.y, 26.0 * s))
-		$out = List.append($out, Disc({ x: skull.x - 9.0 * s, y: skull.y - 4.0 * s, r: 6.0 * s, fill: Flat(night), clip: Anywhere }))
-		$out = List.append($out, Disc({ x: skull.x + 9.0 * s, y: skull.y - 4.0 * s, r: 6.0 * s, fill: Flat(night), clip: Anywhere }))
+		$out = List.append($out, Disc({ x: skull.x - 9.0 * s, y: skull.y - 4.0 * s, r: 6.0 * s, fill: Flat(night) }))
+		$out = List.append($out, Disc({ x: skull.x + 9.0 * s, y: skull.y - 4.0 * s, r: 6.0 * s, fill: Flat(night) }))
 		gape = (3.0 + 3.0 * (1.0 + (2.0 * t).cos()) / 2.0) * s
 		$out = List.append($out, Rect({ x: skull.x - 11.0 * s, y: skull.y + 12.0 * s, w: 22.0 * s, h: gape, fill: Flat(night) }))
 

@@ -198,7 +198,6 @@ marker_shapes = |{ at, color, name, name_y }|
 			y: route_y,
 			r: 8.0,
 			fill: ScrubWidget.flat(color),
-			clip: Anywhere,
 		}),
 		ScrubWidget.label({
 			text: name,
@@ -261,7 +260,6 @@ shapes_from_behind_rider = |{ across, lean }| {
 				y: head_y,
 				r: 9.0,
 				fill: ScrubWidget.flat(rider_color),
-				clip: Anywhere,
 			}),
 		],
 	].join()
