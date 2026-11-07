@@ -44,11 +44,11 @@ WasmApp :: [].{
 			# doesn't, so the host returns the frame rather than freeing it.
 			release: |_frame| {},
 			sounds: |b| sounds(Box.unbox(b)),
-			tone_count: |_b| game.tones.len().to_u32_wrap(),
+			tone_count: |_b| game.tones.len().to_u32_try() ?? crash "WasmApp.program: more tones than a U32 can count",
 			tone_freq: |_b, i| tone_at(game.tones, i).freq,
 			tone_ms: |_b, i| tone_at(game.tones, i).ms,
-			width: |_b| game.size.width.to_u32_wrap(),
-			height: |_b| game.size.height.to_u32_wrap(),
+			width: |_b| game.size.width.to_u32_try() ?? crash "WasmApp.program: a width outside a U32's range",
+			height: |_b| game.size.height.to_u32_try() ?? crash "WasmApp.program: a height outside a U32's range",
 			fps: |_b| game.fps,
 		}
 	}
