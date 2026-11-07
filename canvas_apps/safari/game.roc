@@ -40,6 +40,7 @@ package
 		Grass,
 		GroundPatch,
 		GroundSighting,
+		GuardRail,
 		LeanSearch,
 		Lens,
 		LitTruck,
