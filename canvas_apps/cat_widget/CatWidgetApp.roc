@@ -152,7 +152,7 @@ status_lines = |gap| {
 	]
 }
 
-pose_name : Cat.Pose -> Str
+pose_name : Cat.CatPose -> Str
 pose_name = |pose|
 	match pose {
 		Rest => "Rest"

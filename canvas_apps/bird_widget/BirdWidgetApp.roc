@@ -156,7 +156,7 @@ status_lines = |gap| {
 	]
 }
 
-pose_name : BirdFlight.Pose -> Str
+pose_name : BirdFlight.BirdPose -> Str
 pose_name = |pose|
 	match pose {
 		Perched => "Perched"

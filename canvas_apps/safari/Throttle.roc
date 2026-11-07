@@ -224,18 +224,18 @@ expect {
 }
 
 ## What the crossing limit lets through for a rider at `along` on `segment`.
-limit_at : { segment : World.Segment, along : F64 }, F64 -> F64
+limit_at : { segment : World.Segment, along : Along }, F64 -> F64
 limit_at = |{ segment, along }, offered|
 	Throttle.crossing_limit(
-		centred_rider(along, 0.3),
+		{ ..centred_rider(0.0, 0.3), along },
 		{ segment, offered_acceleration: Acceleration.metres_a_step_each_step(offered) },
 	).to_metres_a_step_each_step()
 
-expect limit_at({ segment: first_segment, along: 0.0 }, 0.01) == 0.01
-expect limit_at({ segment: first_segment, along: 0.0 }, -5.0) == -5.0
-expect limit_at({ segment: cat_segment, along: 120.0 }, 0.01) == 0.0
-expect limit_at({ segment: cat_segment, along: 120.0 }, -5.0) == -5.0
-expect limit_at({ segment: cat_segment, along: 0.0 }, 0.01) == 0.01
+expect limit_at({ segment: first_segment, along: Along.start }, 0.01) == 0.01
+expect limit_at({ segment: first_segment, along: Along.start }, -5.0) == -5.0
+expect limit_at({ segment: cat_segment, along: Along.metres(120.0) }, 0.01) == 0.0
+expect limit_at({ segment: cat_segment, along: Along.metres(120.0) }, -5.0) == -5.0
+expect limit_at({ segment: cat_segment, along: Along.start }, 0.01) == 0.01
 
 ## What the pig limit lets through for a rider at `along`, going 0.3 metres a
 ## step, on the route's first segment with a pig that catches the eye.
@@ -305,24 +305,24 @@ expect
 expect brake_after(0, 0.01) < Acceleration.steady
 
 ## The speed the clamp allows.
-clamped_speed : { next_speed : F64, is_near_end : Bool } -> F64
+clamped_speed : { next_speed : Speed, is_near_end : Bool } -> F64
 clamped_speed = |{ next_speed, is_near_end }|
 	Throttle.allowed_speed(
 		centred_rider(0.0, 0.3),
 		{
 			segment: first_segment,
 			exit_speed: Speed.metres_a_step(0.222),
-			next_speed: Speed.metres_a_step(next_speed),
+			next_speed,
 			is_near_end,
 		},
 	).to_metres_a_step()
 
-expect clamped_speed({ next_speed: 1.0, is_near_end: False }) == 1.0
-expect clamped_speed({ next_speed: 3.0, is_near_end: False }) == 2.5
-expect clamped_speed({ next_speed: -1.0, is_near_end: False }) == 0.0
-expect clamped_speed({ next_speed: 0.1, is_near_end: True }) == 0.222
-expect clamped_speed({ next_speed: 0.5, is_near_end: True }) == 0.5
-expect clamped_speed({ next_speed: 0.1, is_near_end: False }) == 0.1
+expect clamped_speed({ next_speed: Speed.metres_a_step(1.0), is_near_end: False }) == 1.0
+expect clamped_speed({ next_speed: Speed.metres_a_step(3.0), is_near_end: False }) == 2.5
+expect clamped_speed({ next_speed: Speed.metres_a_step(-1.0), is_near_end: False }) == 0.0
+expect clamped_speed({ next_speed: Speed.metres_a_step(0.1), is_near_end: True }) == 0.222
+expect clamped_speed({ next_speed: Speed.metres_a_step(0.5), is_near_end: True }) == 0.5
+expect clamped_speed({ next_speed: Speed.metres_a_step(0.1), is_near_end: False }) == 0.1
 
 ## The whole decision for a rider at the start of the segment, on the centre
 ## line.

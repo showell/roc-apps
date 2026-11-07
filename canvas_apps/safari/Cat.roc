@@ -29,7 +29,7 @@ Cat :: [].{
 	## How the cat holds itself: walking, it is at rest or mid-stride; then
 	## frozen; then its leap, from the coil through flight and landing to the
 	## collapse after.
-	Pose : [Rest, Stride, Frozen, Coil, Flight, Land, Collapse]
+	CatPose : [Rest, Stride, Frozen, Coil, Flight, Land, Collapse]
 
 	cat_height : Distance
 	cat_height = Distance.metres(1.7)
@@ -79,7 +79,7 @@ Cat :: [].{
 	}
 
 	## How the cat looks walking out: two strides, a frame each step.
-	walking_poses : List(Cat.Pose)
+	walking_poses : List(Cat.CatPose)
 	walking_poses = [
 		Stride,
 		Stride,
@@ -101,7 +101,7 @@ Cat :: [].{
 	## middle of the road to the far verge it has come, and how high its feet are.
 	## These are set by eye, not measured off the stills. A rider at a steady
 	## speed sees every one of these frames.
-	leap_frames : List({ pose : Cat.Pose, place : { share : Fraction, lift : Distance } })
+	leap_frames : List({ pose : Cat.CatPose, place : { share : Fraction, lift : Distance } })
 	leap_frames = [
 		{ pose: Coil, place: { share: Fraction.zero, lift: Distance.zero } },
 		{ pose: Flight, place: { share: Fraction.of(0.4), lift: Distance.metres(0.27) } },
@@ -165,7 +165,7 @@ Cat :: [].{
 
 	## The whole of a crossing, a frame a step: the cat walks out to the middle
 	## of the road, freezes there, and leaps clear to the far verge.
-	crossing_timeline : Cat.Crossing -> Animation.Timeline(Cat.Pose)
+	crossing_timeline : Cat.Crossing -> Animation.Timeline(Cat.CatPose)
 	crossing_timeline = |cat| {
 		on_road = |across| { along: cat.along, across, lift: Distance.zero }
 		start = on_road(cat.start_across)
@@ -198,7 +198,7 @@ Cat :: [].{
 	}
 
 	## The cat as the rider comes on it.
-	instant_at : Cat.Crossing, Animation.Approach -> Animation.Instant(Cat.Pose)
+	instant_at : Cat.Crossing, Animation.Approach -> Animation.Instant(Cat.CatPose)
 	instant_at = |cat, approach| crossing_timeline(cat).instant(crossing_stage(approach))
 }
 
@@ -281,15 +281,15 @@ expect Cat.attention_fade == Steps.of(83)
 
 ## The cat `steps_left` steps short of the end of its crossing, for a rider
 ## going a metre a step.
-phase_of : F64 -> Animation.Instant(Cat.Pose)
+phase_of : F64 -> Animation.Instant(Cat.CatPose)
 phase_of = |steps_left| Cat.instant_at(the_cat, coming(3.0 + steps_left, 1.0))
 
 ## The frames of a crossing, as a rider who sees each sees them.
-the_frames : List(Animation.Instant(Cat.Pose))
+the_frames : List(Animation.Instant(Cat.CatPose))
 the_frames = List.from_iter(U64.until(0, 38)).map(|frame| phase_of(37.5 - frame.to_f64()))
 
 ## The poses frames `from` to `to` of the crossing show.
-poses_of : U64, U64 -> List(Cat.Pose)
+poses_of : U64, U64 -> List(Cat.CatPose)
 poses_of = |from, to| the_frames.sublist({
 	start: from,
 	len: to - from + 1,
@@ -339,7 +339,7 @@ expect the_frames.all(|frame| frame.spot.along == the_cat.along)
 
 ## The poses a rider at `speed`, a metre a step apart from one step to the next,
 ## sees through the crossing, `phase` of a step past the start of each frame.
-poses_seen : F64, F64 -> List(Cat.Pose)
+poses_seen : F64, F64 -> List(Cat.CatPose)
 poses_seen = |speed, phase|
 	List.from_iter(U64.until(0, 38)).map(
 		|frame| {

@@ -26,7 +26,7 @@ BirdFlight :: [].{
 
 	## How the bird looks: sitting; side on as it takes off; seen from behind
 	## as it flies off; and dropping onto its tree.
-	Pose : [
+	BirdPose : [
 		Perched,
 		Side(BirdFlight.WingBeat),
 		Away(BirdFlight.WingBeat),
@@ -34,7 +34,7 @@ BirdFlight :: [].{
 	]
 
 	## A bird at one instant.
-	Bird : Animation.Instant(BirdFlight.Pose)
+	Bird : Animation.Instant(BirdFlight.BirdPose)
 
 	## How tall a bird stands.
 	bird_height : Distance
@@ -69,7 +69,7 @@ BirdFlight :: [].{
 	## than any rider sees: eight for each metre of the gap it plays over, the
 	## finest the book's widget steps through it. However a rider comes, a step
 	## lands within an eighth of a metre of where the bird should be.
-	flight_poses : List(BirdFlight.Pose)
+	flight_poses : List(BirdFlight.BirdPose)
 	flight_poses = [
 		flap_poses(Side(WingsUp), Side(WingsDown)),
 		List.repeat(flap_poses(Away(WingsUp), Away(WingsDown)), 7).join(),
@@ -138,7 +138,7 @@ BirdFlight :: [].{
 
 	## The whole of a flight: `flight_poses`, on one smooth path that rises in
 	## the middle.
-	flight_timeline : BirdFlight.Flight -> Animation.Timeline(BirdFlight.Pose)
+	flight_timeline : BirdFlight.Flight -> Animation.Timeline(BirdFlight.BirdPose)
 	flight_timeline = |{ from, to }| {
 		ends = { from: tree_top(from), to: tree_top(to) }
 		frame_count = flight_poses.len().to_f64()
@@ -167,7 +167,7 @@ tree_top = |tree| {
 }
 
 ## One flap of the wings: `up` for half its frames and `down` for the rest.
-flap_poses : BirdFlight.Pose, BirdFlight.Pose -> List(BirdFlight.Pose)
+flap_poses : BirdFlight.BirdPose, BirdFlight.BirdPose -> List(BirdFlight.BirdPose)
 flap_poses = |up, down| {
 	half = BirdFlight.frames_a_flap // 2
 	List.repeat(up, half).concat(List.repeat(down, half))

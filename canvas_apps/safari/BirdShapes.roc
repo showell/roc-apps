@@ -19,7 +19,7 @@ BirdShapes :: [].{
 	height_px = |{ forward, cam_focal }| cam_focal.times(BirdFlight.bird_height.ratio_to(forward))
 
 	## A bird at one moment of its flight: how it looks, and how high its feet are.
-	PosedBird := { pose : BirdFlight.Pose, lift : Distance }.{
+	PosedBird := { pose : BirdFlight.BirdPose, lift : Distance }.{
 
 		scenery_height : BirdShapes.PosedBird -> Distance
 		scenery_height = |_bird| BirdFlight.bird_height
