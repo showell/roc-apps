@@ -1,6 +1,6 @@
 ## A conifer's kind, which sets its height: from the ground to the tip of its
-## crown, where a bird perches. Its colour is the drawing's, and where it stands
-## beside a road is planting's.
+## crown, where a bird perches. Its color comes from `TreeShapes`, and where it
+## stands beside a road comes from `Trees`.
 import Distance
 
 Conifer := [BigGreen, SmallGreen, Red, Gold].{

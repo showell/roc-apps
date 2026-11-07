@@ -26,7 +26,7 @@ ScanlineFill :: [].{
 			|pair|
 				match pair {
 					[x, y] => roll.to_screen(ScreenRoll.ScenePoint.({ x, y }))
-					_ => crash "ScanlineFill.fill_polygon: a polygon's coordinates come in pairs"
+					_ => crash "ScanlineFill.polygon_pixels: a polygon's coordinates come in pairs"
 				},
 		)
 		match corners {
@@ -207,7 +207,7 @@ pixels_with_span = |pixels, { roll, fill, row, from, to }| {
 				p = roll.to_scene(ScreenRoll.pixel_point({ row, column }))
 				Brush.shade(fill, p.x, p.y)
 			}
-			Skip => crash "ScanlineFill.paint_span: no caller fills with a Skip brush"
+			Skip => crash "ScanlineFill.pixels_with_span: no caller fills with a Skip brush"
 		}
 		$px = PixelGrid.blended_pixels($px, { at, color })
 	}

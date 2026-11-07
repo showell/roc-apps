@@ -33,8 +33,8 @@ SceneShapes :: [].{
 		scene.order_keys.join_map(|depth_key| subject_shapes(scene, { view, depth_key }))
 
 	## How many of `trees` are nearer than `forward`.
-	nearer_tree_count : List(TreeSighting), Distance -> U64
-	nearer_tree_count = |trees, forward| trees.count_if(|tree| tree.forward < forward)
+	nearer_tree_count : List(TreeSighting), Distance -> U16
+	nearer_tree_count = |trees, forward| trees.count_if(|tree| tree.forward < forward).to_u16_wrap()
 
 	## A tree, told how many of `trees` are nearer, which is all it needs of
 	## the others.
@@ -45,7 +45,7 @@ SceneShapes :: [].{
 	} -> List(Shapes.Shape)
 	tree_shapes = |tree, { trees, cam_focal }|
 		TreeShapes.tree_shapes(
-			{ tree, nearer_trees: SceneShapes.nearer_tree_count(trees, tree.forward) },
+			{ tree, nearer_tree_count: SceneShapes.nearer_tree_count(trees, tree.forward) },
 			cam_focal,
 		)
 
@@ -134,7 +134,7 @@ truck_shapes = |view, truck_at|
 				center: { along: truck.along, across: truck.across },
 				lights: truck.lights,
 			})
-		NoTruck => crash "SceneShapes.draw_truck: the truck is in the depth order only in view"
+		NoTruck => crash "SceneShapes.truck_shapes: the truck is in the depth order only in view"
 	}
 
 tree_at : F64 -> TreeSighting

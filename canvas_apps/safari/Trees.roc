@@ -35,8 +35,8 @@ Trees :: [].{
 	tree_end_inset = Distance.metres(85.0)
 
 	## The conifer that sets off a scheme's green.
-	accent : Scenery.Scheme -> Conifer
-	accent = |scheme|
+	accent_conifer : Scenery.Scheme -> Conifer
+	accent_conifer = |scheme|
 		match scheme {
 			GoldGreen => Conifer.Gold
 			RedGreen => Conifer.Red
@@ -58,24 +58,24 @@ Trees :: [].{
 		last_along = Along.at(length.minus(tree_end_inset))
 		var $along = Along.at(tree_start_inset)
 		var $conifer = Conifer.BigGreen
-		var $planted = []
+		var $trees = []
 		while $along <= last_along {
-			from_middle = distance_from_middle($conifer)
-			left = {
+			tree_distance = distance_from_middle($conifer)
+			left_tree = {
 				along: $along,
-				across: Across.left_of_middle(from_middle),
+				across: Across.left_of_middle(tree_distance),
 				conifer: $conifer,
 			}
-			right = { ..left, across: Across.right_of_middle(from_middle) }
-			$planted = $planted.append(left).append(right)
+			right_tree = { ..left_tree, across: Across.right_of_middle(tree_distance) }
+			$trees = $trees.append(left_tree).append(right_tree)
 			$along = $along.plus(tree_spacing)
 			$conifer =
 				match $conifer {
-					BigGreen => accent(scheme)
+					BigGreen => accent_conifer(scheme)
 					SmallGreen | Red | Gold => Conifer.BigGreen
 				}
 		}
-		$planted
+		$trees
 	}
 }
 
@@ -84,9 +84,9 @@ expect Trees.tree_road_offset == Distance.metres(1.5)
 expect Trees.tree_start_inset == Distance.metres(6.0)
 expect Trees.tree_end_inset == Distance.metres(85.0)
 
-expect Trees.accent(AllGreen) == Conifer.SmallGreen
-expect Trees.accent(GoldGreen) == Conifer.Gold
-expect Trees.accent(RedGreen) == Conifer.Red
+expect Trees.accent_conifer(AllGreen) == Conifer.SmallGreen
+expect Trees.accent_conifer(GoldGreen) == Conifer.Gold
+expect Trees.accent_conifer(RedGreen) == Conifer.Red
 
 expect Trees.distance_from_middle(Conifer.BigGreen).to_metres() == 3.5
 expect Trees.distance_from_middle(Conifer.SmallGreen).to_metres() == 3.5

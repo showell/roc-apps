@@ -16,7 +16,7 @@ Detail :: [].{
 
 	## A tree with fewer than this many trees nearer than it gets a shaded
 	## trunk, which looks round.
-	round_trunk_limit : U64
+	round_trunk_limit : U16
 	round_trunk_limit = 4
 
 	min_scenery_px : Pixels

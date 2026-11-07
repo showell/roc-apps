@@ -1,7 +1,7 @@
 ## A conifer: a trunk under eight tiers of foliage. A far tree's tiers are flat
 ## triangles on the screen. A near one's are cones seen from the camera: the
 ## outline of a ring of points round each tier's base and its apex, so the
-## tiers fatten as the camera passes under them. It draws from what it is
+## tiers fatten as the camera passes under them. It works from what it is
 ## handed: a tree's kind, where it stands from the camera, how many trees are
 ## nearer, and the lens.
 import Camera
@@ -49,28 +49,32 @@ TreeShapes :: [].{
 	## The tree on the screen: its trunk, then its tiers top to bottom. The
 	## nearest trees have a shaded trunk. The crown is cones, shaded by how near
 	## they are, within Detail.cone_reach, and triangles beyond it.
-	tree_shapes :
-		{ tree : TreeShapes.TreeAhead(others), nearer_trees : U64 }, Pixels -> List(Shapes.Shape)
-	tree_shapes = |{ tree, nearer_trees }, cam_focal| {
-		point = {
+	tree_shapes : {
+		tree : TreeShapes.TreeAhead(others),
+		nearer_tree_count : U16,
+	},
+	Pixels -> List(Shapes.Shape)
+	tree_shapes = |{ tree, nearer_tree_count }, cam_focal| {
+		tip = {
 			right: tree.right,
 			forward: tree.forward,
 			height: tree.conifer.height(),
 		}
-		screen_tree = tree_on_screen(point, cam_focal)
-		trunk = if nearer_trees < Detail.round_trunk_limit {
+		screen_tree = tree_on_screen(tip, cam_focal)
+		trunk_finish = if nearer_tree_count < Detail.round_trunk_limit {
 			Shaded
 		} else {
 			Flat
 		}
-		look = {
-			point,
+		inputs = {
+			tip,
 			cam_focal,
 			screen_tree,
 			color: conifer_color(tree.conifer),
 			crown: crown_of(tree.forward),
 		}
-		[trunk_shape(screen_tree, trunk)].concat(tiers.map(|tier| tier_shape(tier, look)))
+		trunk = trunk_shape(screen_tree, trunk_finish)
+		[trunk].concat(tiers.map(|tier| tier_shape(tier, inputs)))
 	}
 
 	## How a crown is drawn: cones, shaded by how near they are, or flat triangles.
@@ -85,12 +89,12 @@ TreeShapes :: [].{
 			Triangles
 		}
 
-	## Where a tree whose foot is at `point`, and `point.height` tall, is on the
-	## screen, through a lens of focal length `cam_focal`.
+	## Where a tree is on the screen, given its `tip`, through a lens of focal
+	## length `cam_focal`.
 	tree_on_screen : Geom.RaisedPoint, Pixels -> TreeShapes.TreeOnScreen
-	tree_on_screen = |point, cam_focal| {
-		base = Camera.project({ ..point, height: Distance.zero }, cam_focal)
-		top = Camera.project(point, cam_focal)
+	tree_on_screen = |tip, cam_focal| {
+		base = Camera.project({ ..tip, height: Distance.zero }, cam_focal)
+		top = Camera.project(tip, cam_focal)
 		height_px = base.y.minus(top.y)
 		crown_height_px = height_px.times(crown_height_share.to_f64())
 		crown_bottom_y = base.y.minus(height_px.times(trunk_height_share.to_f64()))
@@ -105,13 +109,13 @@ TreeShapes :: [].{
 	}
 }
 
-## What every tier of one tree is drawn from.
-TreeLook : {
-	point : Geom.RaisedPoint,
+## What every tier of one tree needs. `tip` is the top of the tree.
+TierInputs : {
+	tip : Geom.RaisedPoint,
 	cam_focal : Pixels,
 	screen_tree : TreeShapes.TreeOnScreen,
 	color : I64,
-	crown : [Cones({ shade : Fraction }), Triangles],
+	crown : TreeShapes.Crown,
 }
 
 ## The tiers, top to bottom. Each overlaps the next.
@@ -160,7 +164,6 @@ tiers = [
 ]
 
 trunk_color : I64
-
 trunk_color = 0x5A3E22
 
 green_color : I64
@@ -172,7 +175,7 @@ gold_color = 0xCF9A18
 red_color : I64
 red_color = 0xB23A2A
 
-## A conifer's foliage colour.
+## A conifer's foliage color.
 conifer_color : Conifer -> I64
 conifer_color = |conifer|
 	match conifer {
@@ -208,8 +211,8 @@ trunk_overlap_share : Fraction
 trunk_overlap_share = Fraction.of(6.25 / 136.0)
 
 ## A cone's base is a ring of this many points.
-ring_points : U64
-ring_points = 16
+ring_point_count : U64
+ring_point_count = 16
 
 ## How much a crown is shaded at distance `forward`: fully at the camera,
 ## falling evenly to none at Detail.crown_shade_reach.
@@ -223,16 +226,16 @@ trunk_shape = |screen_tree, finish| {
 	height = below_crown.plus(screen_tree.height_px.times(trunk_overlap_share.to_f64()))
 	left = screen_tree.base_x.minus(width.divided_by(2.0))
 	top = screen_tree.base_y.minus(height)
-	trunk = {
+	trunk_box = {
 		top_left: { x: left, y: top },
 		bottom_right: { x: left.plus(width), y: screen_tree.base_y },
 	}
 	match finish {
 		Shaded => Polygon.shaded_polygon(
-			Polygon.rectangle_corners(trunk),
+			Polygon.rectangle_corners(trunk_box),
 			{ fill_color: trunk_color, strength: Fraction.whole },
 		)
-		Flat => Polygon.rectangle(trunk_color, trunk)
+		Flat => Polygon.rectangle(trunk_color, trunk_box)
 	}
 }
 
@@ -308,10 +311,10 @@ trim_hull = |hull_corners, point|
 ## before plus a step, not a multiple of the step: the two round differently.
 ring_angles : List(F64)
 ring_angles = {
-	step = F64.tau / ring_points.to_f64()
+	step = F64.tau / ring_point_count.to_f64()
 	var $angle = 0.0
 	var $angles = []
-	for _ in 0..<ring_points {
+	for _ in 0..<ring_point_count {
 		$angles = $angles.append($angle)
 		$angle = $angle + step
 	}
@@ -319,47 +322,47 @@ ring_angles = {
 }
 
 ## A tier, as a cone when the tree is near and the whole cone is past the near
-## plane, else as a triangle: the camera can't see a cone from inside.
-tier_shape : TreeShapes.Tier, TreeLook -> Shapes.Shape
-tier_shape = |tier, look| {
-	cone_radius = look.point.height.times(crown_half_width_share.to_f64() * tier.width.to_f64())
-	match look.crown {
-		Cones(_) if look.point.forward.minus(cone_radius) < Geom.near_plane =>
-			tier_triangle(look.screen_tree, { tier, color: look.color })
-		Cones({ shade }) => tier_cone(tier, { look, cone_radius, shade })
-		Triangles => tier_triangle(look.screen_tree, { tier, color: look.color })
+## plane, else as a triangle: `Camera.project` needs points in front of the camera.
+tier_shape : TreeShapes.Tier, TierInputs -> Shapes.Shape
+tier_shape = |tier, inputs| {
+	cone_radius = inputs.tip.height.times(crown_half_width_share.to_f64() * tier.width.to_f64())
+	match inputs.crown {
+		Cones(_) if inputs.tip.forward.minus(cone_radius) < Geom.near_plane =>
+			tier_triangle(inputs.screen_tree, { tier, color: inputs.color })
+		Cones({ shade }) => tier_cone(tier, { inputs, cone_radius, shade })
+		Triangles => tier_triangle(inputs.screen_tree, { tier, color: inputs.color })
 	}
 }
 
 ## A tier as a cone: the outline of the ring round its base and its apex.
 tier_cone : TreeShapes.Tier,
 {
-	look : TreeLook,
+	inputs : TierInputs,
 	cone_radius : Distance,
 	shade : Fraction,
 } -> Shapes.Shape
-tier_cone = |tier, { look, cone_radius, shade }| {
-	point = look.point
+tier_cone = |tier, { inputs, cone_radius, shade }| {
+	tip = inputs.tip
 	trunk_part = trunk_height_share.to_f64()
 	crown_part = crown_height_share.to_f64()
 	bottom = tier.bottom.to_f64()
 	top = tier.top.to_f64()
-	base_height = point.height.times(trunk_part + crown_part * (1.0 - bottom))
-	apex_height = point.height.times(trunk_part + crown_part * (1.0 - top))
-	apex = Camera.project({ ..point, height: apex_height }, look.cam_focal)
+	base_height = tip.height.times(trunk_part + crown_part * (1.0 - bottom))
+	apex_height = tip.height.times(trunk_part + crown_part * (1.0 - top))
+	apex = Camera.project({ ..tip, height: apex_height }, inputs.cam_focal)
 	ring = ring_angles.map(
 		|angle| {
-			on_ring = {
-				right: point.right.plus(cone_radius.times(angle.cos())),
-				forward: point.forward.plus(cone_radius.times(angle.sin())),
+			ring_point = {
+				right: tip.right.plus(cone_radius.times(angle.cos())),
+				forward: tip.forward.plus(cone_radius.times(angle.sin())),
 				height: base_height,
 			}
-			Camera.project(on_ring, look.cam_focal)
+			Camera.project(ring_point, inputs.cam_focal)
 		},
 	)
 	Polygon.shaded_polygon(
 		convex_hull_points(ring.append(apex)),
-		{ fill_color: look.color, strength: shade },
+		{ fill_color: inputs.color, strength: shade },
 	)
 }
 
@@ -377,7 +380,7 @@ expect tiers.map(|tier| tier.width.to_f64()) == [
 ]
 
 expect tiers.len() == 8
-expect ring_points == 16
+expect ring_point_count == 16
 expect trunk_color == 0x5A3E22
 expect conifer_color(Conifer.BigGreen) == 0x1C5A22
 expect conifer_color(Conifer.SmallGreen) == 0x1C5A22

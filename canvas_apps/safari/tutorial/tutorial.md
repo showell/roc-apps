@@ -225,11 +225,11 @@ Above its `expect`s, there are no functions here at all. The ducks are read wher
 
 A `match` on a closed union has to cover it: leaving out a tag is a compile-time error.
 
-{{code Trees.accent}}
+{{code Trees.accent_conifer}}
 
 Here's where it's called, picking the color for a pair of small trees:
 
-{{code Trees.planted_trees from "match $conifer {" to "BigGreen => accent(scheme)"}}
+{{code Trees.planted_trees from "match $conifer {" to "BigGreen => accent_conifer(scheme)"}}
 
 `SegmentIndex` is another small opaque type, a `U32` for a segment's place in the route. A place in the route can't be confused with a count of trees, because nothing outside can do arithmetic on it. `crash` appears here too. It isn't for error handling: an index that isn't in the world is a bug in Safari Ride, not a case to handle.
 
@@ -299,7 +299,7 @@ Let's draw a tree. Forget the road for now, and the rider, and the ride.
 
 Drawing a tree and placing trees along a road are two nearly unrelated problems. In this chapter and the next, we learn how to draw a tree. In the chapter after that, we learn how to orient trees in the world, relative to the road and the rider.
 
-The concept is small. A tree is a trunk under eight tiers of foliage, and a tier is a flat triangle. Safari Ride's first trees were cruder than that, and every tree a long way off is still drawn this way.
+The concept is small. A tree is a trunk under eight tiers of foliage, and a tier is a flat triangle. Every tree a long way off is drawn exactly this way.
 
 New in this chapter:
 
@@ -318,11 +318,11 @@ Four more types carry a tree to the screen:
 | Type | What it is |
 |---|---|
 | `TreeShapes.TreeAhead(others)` | Any record with a `right`, a `forward` and a `conifer`, and `others` stands for whatever else is in it |
-| `Geom.RaisedPoint` | A point measured from the camera: right, forward and up |
+| `Geom.RaisedPoint` | A point in the rider's view: `right` and `forward` of the camera, and `height` above the ground |
 | `TreeShapes.Tier` | One layer of the crown, as fractions of the crown |
 | `TreeShapes.TreeOnScreen` | Where a tree landed, and how big it looks, in `Pixels` |
 
-So the job is a short chain of signatures:
+So the job is three signatures:
 
 | Job | Function | Its type |
 |---|---|---|
@@ -332,13 +332,13 @@ So the job is a short chain of signatures:
 
 ### The functions
 
-The top of it is `tree_shapes`, and it reads like the concept: find the tree on the screen, then make a trunk and eight tiers.
+`tree_shapes` calls the others, and it reads like the concept: find the tree on the screen, then make a trunk and eight tiers.
 
 {{code TreeShapes.tree_shapes}}
 
-`nearer_trees` and `crown` are for near trees, and they can wait. For now, every tier is a triangle.
+`|{ tree, nearer_tree_count }, cam_focal|` unpacks a record argument into two names. What `nearer_tree_count` and `crown` do for near trees can wait. For now, every tier is a triangle.
 
-`tree_on_screen` makes two calls to `Camera.project`, one for the tree's foot and one for its tip. The difference between them is how tall the tree looks.
+`Camera.project` turns a point in front of the camera into a place on the screen, and `cam_focal` is the lens's focal length, in pixels. `tree_on_screen` calls it twice, once for the tree's foot and once for its tip. The difference between them is how tall the tree looks. `{ ..tip, height: Distance.zero }` is a copy of `tip` with a new `height`.
 
 {{code TreeShapes.tree_on_screen}}
 
@@ -348,11 +348,11 @@ The trunk and the crown split the tree's height between them:
 
 {{code TreeShapes.crown_height_share}}
 
-The crown's share is the trunk's `complement`, so the two add up to 1 by construction.
+`complement` is one minus a `Fraction`, a number from 0 to 1, so the two shares add up to 1 by construction.
 
 ### Triangles
 
-Each tier is a line in a table:
+A tier is three fractions:
 
 {{code TreeShapes.Tier}}
 
@@ -373,11 +373,11 @@ New in this chapter:
 
 ### Get the types right
 
-The whole decision is one type, and it's worth reading slowly:
+The whole decision is one type:
 
 {{code TreeShapes.Crown}}
 
-The square brackets list everything a `Crown` can be. Roc calls this a tag union, and `Cones` and `Triangles` are its tags. A tag is a capitalized name, and it needs no other declaration. So far that's close to a Python `Enum` with two members.
+The square brackets list everything a `Crown` can be. This is a tag union, as in The world, and `Cones` and `Triangles` are its tags. A tag is a capitalized name, and it needs no other declaration. So far that's close to a Python `Enum` with two members.
 
 The parentheses are where it leaves `Enum` behind. A tag can carry a value, called its payload. The payload of `Cones` is a record with one field, `shade`, and `Triangles` has no payload at all. So a `Crown` is written one of two ways:
 
@@ -392,10 +392,10 @@ This function answers with that type:
 
 {{code TreeShapes.crown_of}}
 
-`Detail` holds the distances that decide how much of a thing gets drawn, and `cone_reach` is 200 metres.
+`Detail` holds the thresholds that decide how much of a thing gets drawn, and `cone_reach` is 200 metres. Shade fades from full at the camera to none at 80 metres.
 
 ```widget tree
-Three gold trees at three distances, each drawn by `TreeShapes.tree_shapes`. Under each tree is what `crown_of` said.
+Three gold trees, each made by `TreeShapes.tree_shapes`. Under each are its distance and what `crown_of` said.
 ```
 
 ### The functions
@@ -404,23 +404,23 @@ Three gold trees at three distances, each drawn by `TreeShapes.tree_shapes`. Und
 
 {{code TreeShapes.tier_shape}}
 
-The first branch is the one surprise. A camera can't see a cone from inside, so a tier that's too close falls back to the flat triangle. The `if` after the pattern is a guard, and it adds a condition to a branch.
+`Camera.project` only handles points in front of the camera, so a tier whose ring reaches back past `Geom.near_plane` falls back to the flat triangle. The `if` after the pattern is a guard, and it adds a condition to a branch.
 
-What goes to the screen is still a flat polygon, so a cone is something we work out. We leave pixels behind for a moment and work in metres. `base_height` and `apex_height` are how high the tier's bottom and top stand, measured up the trunk and then down the crown. We take a ring of 16 points around the base and one point at the top, and we project them all onto the screen:
+A frame has no cones, only polygons, so we work out the polygon a cone would make. We leave pixels behind for a moment and work in metres. `base_height` and `apex_height` are how high the tier's bottom and top stand. `top` and `bottom` count down from the crown's tip, so `1.0 - bottom` is the share up from the crown's foot. We take a ring of 16 points around the base and one point at the top, and we project them all onto the screen:
 
 {{code TreeShapes.tier_cone}}
 
-What's left is a handful of dots on the screen, and a cone's outline is whatever wraps around them. That's a convex hull:
+That leaves 17 points on the screen, and a cone's outline is whatever wraps around them. That's a convex hull:
 
 {{code TreeShapes.convex_hull_points}}
 
-This is Andrew's monotone chain. Sort the points from left to right, walk along the top, and walk back along the bottom. One step does both walks: add a point, and first drop any recent point that would make a dent. `[.., a, b]` is a list pattern that takes the last two items.
+This is Andrew's monotone chain. Sort the points from left to right, walk along the top, and walk back along the bottom. `fold` is Python's `reduce`, and `fold_rev` is the same from the far end, with its arguments the other way round. `trim_hull` serves both walks: before a point goes on, it drops any recent points that would make a dent. `[.., a, b]` is a list pattern that takes the last two items.
 
 {{code TreeShapes.trim_hull}}
 
-That's a cone, as one flat polygon! The ring gets wider on the screen as it gets nearer, so the tree fattens by itself. It's just perspective.
+That's a cone, as one polygon! The ring gets wider on the screen as it gets nearer, so the tree fattens as you pass.
 
-That's one tree. There are 392 more to go.
+That's one tree. Safari Ride plants 392.
 
 ## Roadside trees
 
@@ -430,14 +430,14 @@ Here's the other tree problem. Safari Ride plants 392 trees along its road, and 
 Step 1,570 of the ride, with only the trees on.
 ```
 
-This is step 1,570, with the cat frozen in the lane. Each tree here is a sighting from `TreeSighting.trees_in_view`, turned into shapes by `TreeShapes.tree_shapes`. They make up 1,656 of the 2,713 shapes in that frame, more than everything else put together.
+This is step 1,570 again, the frame with the frozen cat, showing only its trees. Each tree here is a sighting from `TreeSighting.trees_in_view`, turned into shapes by `TreeShapes.tree_shapes`. They make up 1,656 of the 2,713 shapes in that frame, more than everything else put together.
 
-So a tree has two lives. It's planted once, and that lasts the whole ride. It's seen again every frame, and that lasts one frame. This chapter takes them in that order.
+So a tree has two lives. It's planted once, and that lasts the whole ride. Each frame that can see it makes a fresh sighting, and that lasts one frame. This chapter takes them in that order.
 
 New in this chapter:
 
 - Roc: `var` and `while` in a pure function
-- Modules: `Trees`, `TreeSighting`, `Scenery`, `Along`, `Across`
+- Modules: `TreeSighting`, `Scenery`, `Along`, `Across`
 
 ### Get the types right
 
@@ -446,9 +446,9 @@ Those two lives are two records, and each says where the tree stands in a differ
 | Type | Where the tree is | Lasts |
 |---|---|---|
 | `Trees.Tree` | `along` and `across` its segment | The whole ride |
-| `TreeSighting` | `right` of the rider and `forward` of the rider | One frame |
+| `TreeSighting` | `right` of the camera and `forward` of the camera | One frame |
 
-`Along` is a place along a segment, and `Across` is a place across the road. Both are opaque, and by now you can guess what the compiler says if you pass one as the other. Reading any function, the field names tell you which world you're in.
+`Along` is a place along a segment, and `Across` is a place across the road. Both are opaque, so passing one as the other is a compile-time error. In any function, the field names say which of the two it's working in.
 
 A `TreeSighting` also fits `TreeShapes.TreeAhead`, so `TreeShapes` doesn't import it. The problems really are separate.
 
@@ -463,19 +463,19 @@ Planting walks along a segment and keeps a list, and a loop says that best. `$` 
 
 {{code Trees.planted_trees}}
 
-Trees stand in pairs, one each side of the road, every 30 metres. The pairs take turns: a big green pair, then the segment's accent, then big green again. A gold pair stands further from the road, because it's so much taller:
+Trees stand in pairs, one each side of the road, every 30 metres. The pairs take turns: a big green pair, then a pair of the segment's accent, which is small green, red or gold, then big green again. A gold pair stands further from the road, because it's so much taller:
 
 {{code Trees.distance_from_middle}}
 
 ### Seeing the trees
 
-Each frame starts with the road ahead, and asks about every tree on it:
+For each frame, `trees_in_view` goes through the segments of the road ahead. `join_map` is a `map` followed by a flatten:
 
 {{code TreeSighting.trees_in_view}}
 
 {{code TreeSighting.segment_sightings}}
 
-From here on, things are measured from the rider. We don't need to know much about the rider yet. It's just where we're standing.
+From here on, things are measured from the camera, which is where the rider stands. We don't need to know much about the rider yet.
 
 {{code TreeSighting.sighting_of}}
 
@@ -485,13 +485,13 @@ From here on, things are measured from the rider. We don't need to know much abo
 
 Most of that 1,656 is far off, and far trees are cheap. They get eight triangles and a plain trunk. A cone costs a ring of 16 points and a hull, so only trees within 200 metres get cones, and only the nearest few get a shaded trunk.
 
-"The nearest few" is the one thing a tree can't work out by itself, because it depends on the other trees. So `SceneShapes` counts them, and that's the `nearer_trees` from A simple tree:
+"The nearest few" is the one thing a tree alone can't tell us, because it depends on the other trees. So `SceneShapes` counts them, and that's the `nearer_tree_count` from A simple tree:
 
 {{code SceneShapes.tree_shapes}}
 
-So the world remembers where it planted each tree, and no frame remembers anything. Every sighting is thrown away, and the next frame makes them all again.
+So `World` holds every tree's place for the whole ride, and no frame remembers anything. Every sighting is thrown away, and the next frame makes them all again.
 
-Most things in a frame work this way: a plain record that lasts, a sighting that doesn't, and a drawing. The next thing in nature needs none of that.
+Most things in a frame work this way: a plain record that lasts, a sighting that doesn't, and a list of shapes. Grass needs none of that.
 
 ## Grass
 
@@ -1408,7 +1408,7 @@ Each limit takes the lower of two opaque `Acceleration`s with `min`. `NoAccelera
 
 {{code Throttle.crossing_limit}}
 
-`Speed` and `Acceleration` are places and distances again: two speeds make an acceleration, and an acceleration moves a speed. The sum behind braking for a turn is the first line of a physics textbook, `v² = u² + 2as`, solved for `a`. This function is a good example of how far opaque types reach into a parameter list. `target: Speed.(t)` opens the field's `Speed` where it's destructured:
+`Speed` and `Acceleration` are places and distances again: two speeds make an acceleration, and an acceleration moves a speed. The formula behind braking for a turn is the first line of a physics textbook, `v² = u² + 2as`, solved for `a`. This function is a good example of how far opaque types reach into a parameter list. `target: Speed.(t)` opens the field's `Speed` where it's destructured:
 
 {{code Speed.acceleration_to}}
 
@@ -1424,12 +1424,12 @@ The two limits in the middle come from what the rider sees. `crossing_limit` is 
 
 ## The rider's gaze
 
-The herds chapter left one pig waiting. On the first two segments with pigs, one pig in the big herd catches the rider's eye. The rider turns to look and slows down, and the picture turns too.
+The herds chapter left one pig waiting. On the first two segments with pigs, one pig in the big herd catches the rider's eye. The rider turns to look and slows down, and the camera turns too.
 
 Those are two different things, and they don't last the same time. The eyes follow the pig, and they give up once it's too far round. The speed drops for the pig, and it stays down until the segment ends. So `Gaze` has two words. A *look* is what the eyes do, and *gawking* is what the speed does. This chapter takes them in that order.
 
 ```widget gaze
-Press play to ride the stretch around the first distracting pig. Each step is one call to `Rider.rider_state_at_next_step`, and the lines under the picture read the rider's `speed`, `gaze_yaw` and `look_depth`.
+Press play to ride the stretch around the first distracting pig, seen from above. Each step is one call to `Rider.rider_state_at_next_step`, and the lines under the picture read the rider's `speed`, `gaze_yaw` and `look_depth`.
 ```
 
 ### Get the types right
@@ -1439,9 +1439,9 @@ The rider's record has two fields we skipped:
 | Field | Type | What it is |
 |---|---|---|
 | `gaze_yaw` | `Angle.Turn` | How far the rider looks from the way the bike points |
-| `look_depth` | `Fraction` | How far a look went, from 0 to 1, fading once it's over |
+| `look_depth` | `Fraction` | How far a look went, from 0 to 1, fading once the gaze is back on the road |
 
-Mind what `gaze_yaw` is measured from. The road has a direction, `yaw` is how far the bike points from the road, and `gaze_yaw` is how far the eyes point from the bike. Each angle only knows about the one before it, and that's why they're both a `Turn`.
+Mind what `gaze_yaw` is measured from. The road has a direction, `yaw` is how far the bike points from the road, and `gaze_yaw` is how far the eyes point from the bike. Each is measured from the one before it, which is what a `Turn` is.
 
 Three small types say what a pig can do to the rider. Each one carries its payload only where it means something. A segment's `pig_interest` says what its pigs are to the rider, and only `Distracting` has a pig in it:
 
@@ -1463,7 +1463,7 @@ So the job is a short list:
 {{types row Gaze.next_gaze_yaw Turn the head}}
 {{types row Gaze.next_look_depth Keep the depth of the look}}
 {{types row Gaze.is_gawking Know whether the rider is gawking}}
-{{types row Gaze.gawk_brake Ask the throttle to brake}}
+{{types row Gaze.gawk_brake Work out the brake}}
 
 One step of the gaze
 ```dot
@@ -1477,7 +1477,7 @@ digraph gaze {
 }
 ```
 
-The top row is the look, and the bottom row is the gawking. Nothing joins them. Both ask about the same pig, and neither asks about the other.
+The chain from `desired_gaze` is the look, and the chain from `is_gawking` is the gawking. Nothing joins them. Both ask about the same pig, and neither asks about the other.
 
 ### The look
 
@@ -1493,7 +1493,7 @@ The pig has to be near, and it has to be in sight. Near means within 150 metres,
 
 {{code Gaze.turn_to}}
 
-That's the direction to the pig, less the way the bike points. The pig stands beside the road, so the angle grows as the rider comes closer. At 35 degrees the rider lets it go. There's no timer and no flag saying the look is over. The first pig reaches 35 degrees when it's still 15.8 metres ahead, and that falls out of where it stands.
+That's the direction to the pig, less the way the bike points. The pig stands beside the road, so the angle grows as the rider comes closer. At 35 degrees the rider lets it go. There's no timer and no flag saying the look is over. The first pig stands about 11 metres from the middle of the road, so it reaches 35 degrees about 16 metres ahead.
 
 ### Turning the head
 
@@ -1501,7 +1501,7 @@ That's the direction to the pig, less the way the bike points. The pig stands be
 
 Toward a pig, the gaze turns by at most 4 degrees a step, and `clamped_within` holds the change to that limit on either side. On the way back it gives up a twentieth of its angle each step, and never more than 0.2 degrees.
 
-A twentieth of what's left never gets to zero, so the `OnRoad` branch tests for that first. Once the gaze is within 0.02 degrees, it snaps to straight ahead, and a look comes to a real end.
+A twentieth of what's left never gets to zero, so the `OnRoad` branch first checks whether the gaze is nearly home. Within 0.02 degrees, it snaps to straight ahead, and the return ends.
 
 Nothing here turns the bike. The gaze goes to the camera, and to nothing else that moves:
 
@@ -1519,7 +1519,7 @@ The depth has one job. It widens the view:
 
 {{code Gaze.gaze_attention}}
 
-`RideFocal.ride_focal`, which sets how wide the view is, takes the stronger of this and the cat's attention. So a pig widens the view the way a cat does, and it stays wide for a while after.
+`RideFocal.ride_focal`, which sets how wide the view is, takes the stronger of this and what a crossing on the road asks for, which we'll meet with the cat. So a pig widens the view, and the view stays wide for a while after.
 
 ### Gawking
 
@@ -1535,7 +1535,7 @@ It starts at the same 150 metres, but it only asks where the rider is. There's n
 
 {{code Gaze.gawk_brake}}
 
-The sum is the one the throttle uses for a bend, with a pig for a bend. The rider aims to be down to 0.2 metres a step by 25 metres before the pig. Past that point `room` would go below zero, so `gawk_least_distance` holds it at a metre and the brake stays on.
+The formula is the one the throttle uses for a bend, with a pig for a bend. The rider aims to be down to 0.2 metres a step by 25 metres before the pig. Past that point `room` would go below zero, so `gawk_least_distance` holds it at a metre and the brake stays on.
 
 ### The first pig
 
@@ -1543,14 +1543,14 @@ Here's all of that on the third segment of the route:
 
 | Step | What happens | Speed | `gaze_yaw` | `look_depth` |
 |---|---|---|---|---|
-| 889 | The rider looks, with the pig 150 metres off | 1.94 metres a step | 4.0 degrees | 0.114 |
+| 889 | The rider looks, with the pig just inside 150 metres | 1.94 metres a step | 4.0 degrees | 0.114 |
 | 1,050 | The gaze is at its widest | 0.2 metres a step | 34.7 degrees | 0.991 |
 | 1,051 | The rider lets the pig go | 0.2 metres a step | 34.5 degrees | 0.991 |
 | 1,308 | The gaze is back on the road | 0.2 metres a step | 0 degrees | 0.989 |
 
-The look takes 162 steps, and getting the eyes back takes 257. The rider crawls for 90 steps more with nothing to look at, and the segment ends at step 1,398. The gaze is home at every one of the ride's 18 crossings, and an expect holds that, so a new segment has nothing to reset.
+The look takes 162 steps, and getting the eyes back takes 257. The rider crawls for 90 steps more with nothing to look at, and the segment ends at step 1,398. The gaze is home at every one of the ride's 18 crossings, and an expect holds that. A crossing needs no reset anyway: the bike doesn't turn at a seam, and `gaze_yaw` is measured from the bike.
 
-That's the rider's step, apart from the lean. The other stepped thing is up ahead.
+That's the pig's part of the rider's step. The truck is the other stepped thing.
 
 ## The truck
 
@@ -1643,7 +1643,7 @@ digraph headlights {
 }
 ```
 
-The truck's headlights come on once the sun has gone behind the mountains, at step 4,039 of a ride that lasts 7,040. `Mountains` knows the skyline and already imports `Sky`, so the question is asked there. The argument is an opaque `Clock`, and the answer is a plain `Bool`, which is about to be turned into something better:
+The truck's headlights come on once the sun has gone behind the mountains, at step 4,039 of a ride that lasts 7,071. `Mountains` knows the skyline and already imports `Sky`, so the question is asked there. The argument is an opaque `Clock`, and the answer is a plain `Bool`, which is about to be turned into something better:
 
 {{code Mountains.is_sun_behind_mountains}}
 
@@ -2127,7 +2127,7 @@ Its caller gives the search its bounds, at most a degree either side of the curr
 
 And `Rider.decide` calls that, on its first line. The walk up the stack ends there.
 
-Call this *rehearsal*: run the real rules on a pretend copy, read the result, and throw it away. The numbers are worth stating. Twelve coasts for the lean and one more in `Throttle`, which uses `Coast` to ask whether the road is about to run out. Over the whole ride, a coast averages about 44 simulated steps. So each real step of the ride runs about 570 steps of bike physics that never happen, and the 7,040 steps of the ride come to about four million. With no drawing, on the dev backend, the whole ride takes about 1.6 seconds: about a quarter of a millisecond a step, against a budget of 33. [check: the 44 is `forward / speed` from one coast per step, measured at 9aa3814, not a counter inside `coast_from`; the 1.6 seconds is one native run, and the page runs wasm.]
+Call this *rehearsal*: run the real rules on a pretend copy, read the result, and throw it away. The numbers are worth stating. Twelve coasts for the lean and one more in `Throttle`, which uses `Coast` to ask whether the road is about to run out. Over the whole ride, a coast averages about 44 simulated steps. So each real step of the ride runs about 570 steps of bike physics that never happen, and the 7,071 steps of the ride come to about four million. With no drawing, on the dev backend, the whole ride takes about 1.6 seconds: about a quarter of a millisecond a step, against a budget of 33. [check: the 44 is `forward / speed` from one coast per step, measured at 9aa3814, not a counter inside `coast_from`; the 1.6 seconds is one native run, and the page runs wasm.]
 
 In a language with mutable objects, a rehearsal has a problem to solve before it starts. It needs to copy the rider, or save it and restore it, and it needs to be sure the copy really is one, all the way down. It needs to know that the physics doesn't quietly update something global, like a scoreboard or a random number generator. In Roc, none of that comes up. `Bike.bike_motion_at_next_step` has a `->`, so it can't reach anything but its arguments. The old rider stays intact because every rider does. A rehearsal that goes wrong costs nothing, and all of `LeanSearch` is 105 lines.
 
@@ -2380,7 +2380,7 @@ Testing here is just calling a function. There are no mocks, no fakes, no browse
 
 `RasterFrame` rides to a step, paints the frame into 576,000 exact pixels, and prints an FNV-1a hash of them. The painter is `SafariFrame`, in pure Roc. Its `ShapesPixels` does what `shapes_canvas.js`, the JavaScript that paints the page, does on a canvas. The gate holds each hash to a line of `gates/proof.expected`, exactly. There's no tolerance: one different pixel in one frame fails it.
 
-A frame is only evidence for what's in it, so the steps in the table at the top of this chapter aren't arbitrary. The ride lasts 7,040 steps, so the clock at step 9,000 reads 1,959. [check: what 3,000 and 9,000 are there for; the gate's header doesn't say.]
+A frame is only evidence for what's in it, so the steps in the table at the top of this chapter aren't arbitrary. The ride lasts 7,071 steps, so the clock at step 9,000 reads 1,928. [check: what 3,000 and 9,000 are there for; the gate's header doesn't say.]
 
 We add a frame whenever something could go wrong without any listed frame changing. A brake light wired to `Off`, for example, would have passed every hash until we added step 6,553.
 

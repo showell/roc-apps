@@ -131,7 +131,7 @@ tree_shapes = |tree|
 				forward: forward_of(tree.along),
 				conifer: tree.conifer,
 			},
-			nearer_trees: 0,
+			nearer_tree_count: 0,
 		},
 		Lens.focal,
 	)
