@@ -1,5 +1,8 @@
 ## The cat's drawings: a still for each of its poses, as polygons in the
 ## still's own frame (feet at y 0, y up, a cat's height 1).
+import Pixels
+import Screen
+import StillShapes
 import Stills
 import lib.RgbColor
 
@@ -55,7 +58,12 @@ expect
 		CatStills.flight_polygons,
 		CatStills.land_polygons,
 		CatStills.collapse_polygons,
-	].all(|polys| polys.all(Stills.is_drawable))
+	].all(|polys| StillShapes.still_shapes(sample_anchor, polys).len() == polys.len())
+
+# Where the tests stand a still on screen: drawing it through StillShapes lets
+# Polygon's own checks judge every polygon.
+sample_anchor : StillShapes.Anchor
+sample_anchor = { feet: Screen.point(100.0, 200.0), flip: AsDrawn, height_on_screen: Pixels.of(50.0) }
 
 # The x of the first corner of a still's first polygon.
 first_x : List(Stills.StillPolygon) -> F64

@@ -37,28 +37,7 @@ Stills :: [].{
 		gradients : List(Stills.StillGradient),
 		points : List(Stills.StillPt),
 	}
-
-	## Whether a polygon can be drawn: it has three corners, and a linear
-	## gradient of its has a length. StillShapes crashes on anything less.
-	is_drawable : Stills.StillPolygon -> Bool
-	is_drawable = |polygon| polygon.points.len() >= 3 and !polygon.gradients.any(has_no_length)
 }
-
-## Whether a gradient is a linear one that starts where it ends.
-has_no_length : Stills.StillGradient -> Bool
-has_no_length = |gradients|
-	gradients.kind == 1 and gradients.ax == gradients.bx and gradients.ay == gradients.by
-
-# A flat polygon of `count` corners, all at one point.
-polygon_of : U64 -> Stills.StillPolygon
-polygon_of = |count| {
-	color: RgbColor.of(7),
-	gradients: [],
-	points: List.repeat({ x: 0.0, y: 0.0 }, count),
-}
-
-expect Stills.is_drawable(polygon_of(3))
-expect !Stills.is_drawable(polygon_of(2))
 
 sample_point : Stills.StillPt
 sample_point = { x: 0.5, y: 1.5 }
@@ -81,22 +60,6 @@ sample_gradient = {
 	vx: 10.5,
 	vy: 11.5,
 }
-
-# A linear gradient that ends where it starts.
-gradient_in_place : Stills.StillGradient
-gradient_in_place = {
-	..sample_gradient,
-	kind: 1,
-	bx: 2.5,
-	by: 3.5,
-}
-
-# A linear gradient needs a length, and only a linear one has `a` and `b`.
-expect has_no_length(gradient_in_place)
-expect !has_no_length({ ..gradient_in_place, bx: 4.5 })
-expect !has_no_length({ ..gradient_in_place, by: 5.5 })
-expect !has_no_length({ ..gradient_in_place, kind: 2 })
-expect !Stills.is_drawable({ ..polygon_of(3), gradients: [gradient_in_place] })
 
 solid_polygon : Stills.StillPolygon
 solid_polygon = {

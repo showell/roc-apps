@@ -2,6 +2,9 @@
 ## `pose_polygons`: an animal here has one drawing, and no poses.
 import lib.ArgbColor
 import lib.RgbColor
+import Pixels
+import Screen
+import StillShapes
 import Stills
 
 EmojiStills :: [].{
@@ -59,6 +62,11 @@ still_facts = |polys|
 		[] => crash "EmojiStills.still_facts: a still has polygons"
 	}
 
+# Where the tests stand a still on screen: drawing it through StillShapes lets
+# Polygon's own checks judge every polygon.
+sample_anchor : StillShapes.Anchor
+sample_anchor = { feet: Screen.point(100.0, 200.0), flip: AsDrawn, height_on_screen: Pixels.of(50.0) }
+
 emoji_stills : List(EmojiStills.EmojiStill)
 emoji_stills = [
 	EmojiStills.duck,
@@ -71,7 +79,10 @@ emoji_stills = [
 	EmojiStills.pig,
 ]
 
-expect emoji_stills.all(|still| still.polygons().all(Stills.is_drawable))
+expect
+	emoji_stills.all(
+		|still| StillShapes.still_shapes(sample_anchor, still.polygons()).len() == still.polygons().len(),
+	)
 
 # Each still's emoji, and its polygons, points, gradients and first colour.
 expect
