@@ -4,7 +4,7 @@
 ## the bend, in metres.
 import Across
 import Along
-import BendView
+import BendInView
 import Billboard
 import Distance
 import EmojiStills
@@ -99,7 +99,7 @@ bank_color = RgbColor.of(0xC2B280)
 segment_point : PondPoint, Geom.Bend -> Geom.RoadPoint
 segment_point = |point, bend| {
 	along: Along.at(bend.segment_length).plus(point.past_end),
-	across: match BendView.outer_side(bend.turn) {
+	across: match BendInView.outer_side(bend.turn) {
 		LeftSide => Across.left_of_middle(point.out_from_middle)
 		RightSide => Across.right_of_middle(point.out_from_middle)
 	},

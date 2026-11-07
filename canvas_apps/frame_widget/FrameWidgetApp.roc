@@ -123,7 +123,7 @@ scene_shapes_on = |on_layers| {
 		},
 		birds: things_on(paused_scene.birds, { on_layers, layer: MovingThings }),
 	}
-	SceneShapes.scene_shapes(only, paused_view)
+	SceneShapes.scene_shapes(only, { road: paused_road, camera: paused_camera })
 }
 
 ## What `Backdrop.frame_shapes` paints under the ride's shapes: the sky, the grass, and
@@ -142,8 +142,9 @@ backdrop_pieces = |view| {
 paused_camera : RiderCamera
 paused_camera = RiderCamera.of(paused_tour.instant.rider, paused_tour.route)
 
-paused_view : RoadAhead.CameraView
-paused_view = paused_camera.camera_view(paused_tour.route)
+## The road ahead of the rider at the step on show.
+paused_road : RoadAhead.RoadView
+paused_road = RoadAhead.RoadView.ahead_of(paused_tour.route, paused_camera.segment_index)
 
 ## What the camera shows at the step on show.
 paused_frame_view : FrameView
@@ -154,14 +155,17 @@ paused_scene : Scene
 paused_scene = {
 	instant = paused_tour.instant
 	Scene.scene_in_view(
-		paused_view,
+		paused_road,
 		{
-			speed: instant.rider.motorcycle.speed,
-			truck: {
-				route_position: instant.truck.route_position,
-				lit_truck: FrameView.lit_truck(instant),
+			camera: paused_camera,
+			facts: {
+				speed: instant.rider.motorcycle.speed,
+				truck: {
+					route_position: instant.truck.route_position,
+					lit_truck: FrameView.lit_truck(instant),
+				},
+				clock: instant.clock,
 			},
-			clock: instant.clock,
 		},
 	)
 }
@@ -171,7 +175,7 @@ paused_scene = {
 ground_parts : List(Piece)
 ground_parts = {
 	skyline = Mountains.mountain_shapes(paused_camera, Sky.dusk_at(paused_tour.instant.clock))
-	ground = GroundSighting.patches_in_view(paused_view.road).keep_oks(
+	ground = GroundSighting.patches_in_view(paused_road, paused_camera).keep_oks(
 		|patch| Ground.patch_shape(patch, paused_camera.cam_focal),
 	)
 	[{ layer: Mountains, shapes: skyline }, { layer: Road, shapes: ground }]

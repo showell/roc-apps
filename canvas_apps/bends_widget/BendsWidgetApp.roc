@@ -1,8 +1,8 @@
 ## The widget for the Safari tutorial's chapter on the road: a still picture of
 ## three bends side by side, with no controls. Each is a two-segment road seen
 ## from above, with the rider's way up the picture. The paving and the guard rail
-## come from GroundSighting and RailSighting, and the apex from BendView, and the
-## lines under each bend read out what those three say of it.
+## come from GroundSighting and RailSighting, and the apex from BendInView's outer
+## corner, and the lines under each bend read out what those three say of it.
 import game.Across
 import game.Along
 import game.Angle
@@ -13,7 +13,7 @@ import game.Segment
 import game.SegmentPlace
 import game.Geom
 import game.GroundSighting
-import game.BendView
+import game.BendInView
 import game.RailSighting
 import game.World
 import lib.Brush
@@ -82,11 +82,13 @@ two_segments = |turn|
 		),
 	)
 
-## The road as seen from the first segment, looking along it.
+## The road ahead of a rider on the first segment.
 road_with : Angle.Turn -> RoadAhead.RoadView
-road_with = |turn| {
-	route: two_segments(turn),
-	segments_ahead: { first_index: Route.SegmentIndex.first, count: 2 },
+road_with = |turn| RoadAhead.RoadView.ahead_of(two_segments(turn), Route.SegmentIndex.first)
+
+## The camera the road is seen from, on the first segment, looking along it.
+camera : { vantage : Geom.Vantage }
+camera = {
 	vantage: {
 		along: Along.at(segment_length.minus(rider_before_bend)),
 		across: Across.middle,
@@ -95,18 +97,23 @@ road_with = |turn| {
 }
 
 ## The one bend on that road.
-bend_of : RoadAhead.RoadView -> BendView
+bend_of : RoadAhead.RoadView -> BendInView
 bend_of = |road|
-	BendView.of_segment(
-		RoadAhead.segment_at(road, SegmentPlace.Position.first),
-		Ahead(SegmentPlace.Position.first),
-	)
+	BendInView.of_in_view(RoadAhead.segment_in_view_at(road, SegmentPlace.Position.first))
 
-## The apex of a bend of `turn`.
+## The apex of a bend of `turn`, as the camera sees it.
 apex_of : Angle.Turn -> Geom.RiderPoint
 apex_of = |turn| {
 	road = road_with(turn)
-	BendView.apex(road, bend_of(road))
+	bend_in_view = bend_of(road)
+	RoadAhead.rider_point_at(
+		road,
+		{
+			vantage: camera.vantage,
+			place: bend_in_view.before,
+			road_point: bend_in_view.outer_corner().apex,
+		},
+	)
 }
 
 ## Where the view is from, and so where every point is measured from.
@@ -193,13 +200,13 @@ spot = |bend, { at, color }| {
 }
 
 ## One bend from above: what GroundSighting and RailSighting say of it, the apex
-## BendView finds, and where the view is from.
+## BendInView finds, and where the view is from.
 bend_shapes : ShownBend -> List(Shapes.Shape)
 bend_shapes = |bend| {
 	road = road_with(bend.turn)
 	[
-		GroundSighting.patches_in_view(road).map(|patch| patch_shape(bend, patch.corners)),
-		RailSighting.rails_in_view(road).join_map(|rail| foot_shapes(bend, rail.corners)),
+		GroundSighting.patches_in_view(road, camera).map(|patch| patch_shape(bend, patch.corners)),
+		RailSighting.rails_in_view(road, camera).join_map(|rail| foot_shapes(bend, rail.corners)),
 		[
 			spot(bend, { at: apex_of(bend.turn), color: apex_color }),
 			spot(bend, { at: rider, color: rider_color }),
@@ -220,17 +227,20 @@ turn_text = |turn| {
 }
 
 ## Which edge a bend's outer edge is, in words.
-edge_text : Angle.Turn -> Str
-edge_text = |turn|
-	if BendView.outer_edge(turn) == Geom.left_edge {
+edge_text : BendInView -> Str
+edge_text = |bend_in_view|
+	if bend_in_view.outer_edge() == Geom.left_edge {
 		"left"
 	} else {
 		"right"
 	}
 
-## How far past the end of the first segment the apex lies.
-apex_past_end : Geom.RiderPoint -> F64
-apex_past_end = |apex| apex.forward.minus(rider_before_bend).to_metres()
+## How far past the end of the segment before `bend_in_view` its apex lies.
+apex_past_end : BendInView -> F64
+apex_past_end = |bend_in_view| {
+	corner = bend_in_view.outer_corner()
+	corner.apex.along.distance_from(corner.end_before.along).to_metres()
+}
 
 ## What the three modules say of a bend, a line each.
 caption_lines : Angle.Turn -> List(Str)
@@ -238,9 +248,9 @@ caption_lines = |turn| {
 	road = road_with(turn)
 	[
 		turn_text(turn),
-		"rail on the ${edge_text(turn)} edge",
-		"apex ${ReadoutText.tenths_text(apex_past_end(apex_of(turn)))} m past the end",
-		"${GroundSighting.patches_in_view(road).len().to_str()} patches, ${RailSighting.rails_in_view(road).len().to_str()} rail pieces",
+		"rail on the ${edge_text(bend_of(road))} edge",
+		"apex ${ReadoutText.tenths_text(apex_past_end(bend_of(road)))} m past the end",
+		"${GroundSighting.patches_in_view(road, camera).len().to_str()} patches, ${RailSighting.rails_in_view(road, camera).len().to_str()} rail pieces",
 	]
 }
 

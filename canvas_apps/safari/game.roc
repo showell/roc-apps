@@ -11,7 +11,7 @@ package
 		Attention,
 		Backdrop,
 		Beacon,
-		BendView,
+		BendInView,
 		Billboard,
 		BillboardSighting,
 		BirdFlight,

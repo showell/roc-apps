@@ -30,43 +30,74 @@ BillboardSighting :: [].{
 	Fate : Try(Pipeline.Sighted(Billboard), [BehindCamera, TooSmall])
 
 	## The billboards in view, in the order of `RoadAhead.segments_in_view`.
-	billboards_in_view : RoadAhead.RoadView -> List(Pipeline.Sighted(Billboard))
-	billboards_in_view = |road| BillboardSighting.billboard_fates(road).keep_oks(|fate| fate)
+	billboards_in_view : RoadAhead.RoadView,
+	{
+		vantage : Geom.Vantage,
+		..,
+	} -> List(Pipeline.Sighted(Billboard))
+	billboards_in_view = |road, camera|
+		BillboardSighting.billboard_fates(road, camera).keep_oks(|fate| fate)
 
 	## What became of every billboard on the segments in view, in the order of
 	## `RoadAhead.segments_in_view`.
-	billboard_fates : RoadAhead.RoadView -> List(BillboardSighting.Fate)
-	billboard_fates = |road|
+	billboard_fates : RoadAhead.RoadView,
+	{
+		vantage : Geom.Vantage,
+		..,
+	} -> List(BillboardSighting.Fate)
+	billboard_fates = |road, camera|
 		RoadAhead.segments_in_view(road)
-			.join_map(|in_view| BillboardSighting.segment_sightings(road, in_view))
+			.join_map(
+				|in_view| BillboardSighting.segment_sightings(
+					road,
+					{ vantage: camera.vantage, in_view },
+				),
+			)
 
 	## The critters of a segment in view: its farm animals, then what lives at
 	## its end.
-	segment_sightings : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(BillboardSighting.Fate)
-	segment_sightings = |road, in_view|
-		BillboardSighting.farm_sightings(road, in_view)
-			.concat(BillboardSighting.bend_sightings(road, in_view))
+	segment_sightings : RoadAhead.RoadView,
+	{
+		vantage : Geom.Vantage,
+		in_view : RoadAhead.SegmentInView,
+	} -> List(BillboardSighting.Fate)
+	segment_sightings = |road, seen|
+		BillboardSighting.farm_sightings(road, seen)
+			.concat(BillboardSighting.bend_sightings(road, seen))
 
 	## The cows, then the pigs, of a segment in view.
-	farm_sightings : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(BillboardSighting.Fate)
-	farm_sightings = |road, { segment, place, index: _ }|
+	farm_sightings : RoadAhead.RoadView,
+	{
+		vantage : Geom.Vantage,
+		in_view : RoadAhead.SegmentInView,
+	} -> List(BillboardSighting.Fate)
+	farm_sightings = |road, { vantage, in_view }| {
+		place = in_view.place
 		if is_within_reach(place, farm_reach) {
-			segment.segment_cows()
-				.concat(segment.segment_pigs())
-				.map(|critter| sight_critter(road, { place, critter }))
+			in_view.segment.segment_cows()
+				.concat(in_view.segment.segment_pigs())
+				.map(|critter| sight_critter(road, { vantage, place, critter }))
 		} else {
 			[]
 		}
+	}
 
 	## What lives at the end of a segment in view: the animal and its baby at
 	## its bend, or the ducks on its pond. The road's last segment ends quiet.
-	bend_sightings : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(BillboardSighting.Fate)
-	bend_sightings = |road, { segment, place, index: _ }|
+	bend_sightings : RoadAhead.RoadView,
+	{
+		vantage : Geom.Vantage,
+		in_view : RoadAhead.SegmentInView,
+	} -> List(BillboardSighting.Fate)
+	bend_sightings = |road, { vantage, in_view }| {
+		place = in_view.place
 		if is_within_reach(place, wildlife_reach) {
-			bend_life_critters(segment).map(|critter| sight_critter(road, { place, critter }))
+			bend_life_critters(in_view.segment)
+				.map(|critter| sight_critter(road, { vantage, place, critter }))
 		} else {
 			[]
 		}
+	}
 
 	## A critter, placed through `place` on the road's map, as the rider sees it.
 	## A critter's size is tested through the lens at rest, where a tree's is
@@ -75,14 +106,16 @@ BillboardSighting :: [].{
 	## is wide. Giving critters the tree's test would change what the ride draws.
 	sight_critter : RoadAhead.RoadView,
 	{
+		vantage : Geom.Vantage,
 		place : SegmentPlace,
 		critter : Geom.Placed(Billboard),
 	} -> BillboardSighting.Fate
-	sight_critter = |road, { place, critter }|
+	sight_critter = |road, { vantage, place, critter }|
 		Pipeline.tall_sighting_of(
 			critter,
 			{
 				road,
+				vantage,
 				place,
 				size_test: {
 					focal_length: Lens.resting_focal,
@@ -99,7 +132,7 @@ is_within_reach : SegmentPlace, U32 -> Bool
 is_within_reach = |place, reach|
 	match place {
 		Ahead(position) => position.is_within_first(reach)
-		JustBehind(_) => True
+		JustBehind => True
 	}
 
 ## The critters at the end of `segment`, placed on it. A duck's place is
