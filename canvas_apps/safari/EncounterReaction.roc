@@ -6,8 +6,10 @@
 ## Gaze's.
 import Acceleration
 import Along
+import Animation
 import Attention
 import Cat
+import CatCrossing
 import Route
 import Segment
 import Speed
@@ -22,14 +24,12 @@ EncounterReaction :: [].{
 	encounter_throttle : Segment, { along : Along, speed : Speed, .. } -> VehicleLimits.Limit
 	encounter_throttle = |segment, rider|
 		match segment.encounter {
-			CatCrosses(crossing) => {
-				approach = { gap: crossing.along.distance_from(rider.along), speed: rider.speed }
-				if Cat.is_crossing(approach) {
+			CatCrosses(crossing) =>
+				if Cat.is_crossing(cat_approach(crossing, rider)) {
 					AtMost(Acceleration.steady)
 				} else {
 					NoLimit
 				}
-			}
 			BirdHere(_) | QuietRoad => NoLimit
 		}
 
@@ -37,12 +37,17 @@ EncounterReaction :: [].{
 	encounter_attention : Segment, { along : Along, speed : Speed, .. } -> Attention
 	encounter_attention = |segment, rider|
 		match segment.encounter {
-			CatCrosses(crossing) => {
-				approach = { gap: crossing.along.distance_from(rider.along), speed: rider.speed }
-				Cat.attention(approach)
-			}
+			CatCrosses(crossing) => Cat.attention(cat_approach(crossing, rider))
 			BirdHere(_) | QuietRoad => Attention.none
 		}
+}
+
+## How a rider comes on `crossing`'s cat: the gap along the road to it, and
+## their speed.
+cat_approach : CatCrossing, { along : Along, speed : Speed, .. } -> Animation.Approach
+cat_approach = |crossing, rider| {
+	gap: crossing.along.distance_from(rider.along),
+	speed: rider.speed,
 }
 
 bird_segment : Segment
