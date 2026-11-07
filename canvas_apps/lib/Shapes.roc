@@ -60,7 +60,10 @@ Shapes :: [].{
 
 	## The space the shapes after a `View` mark are in. `Screen` is the game's own
 	## pixels, where every frame starts. `World` carries plain numbers rather than a
-	## Camera, because the mark crosses to JavaScript, which has no such type.
+	## Camera, because the mark crosses to JavaScript, which has no such type. As in
+	## a Camera, the world point `target` lands on the screen point `offset`, turned
+	## clockwise by `rotation` degrees and scaled by `zoom`, which is never zero:
+	## `Camera.space` makes one from a camera that checked it.
 	Space : [
 		Screen,
 		World({ target : Point.Point, offset : Point.Point, rotation : F64, zoom : F64 }),
