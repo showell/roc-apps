@@ -65,11 +65,11 @@ StillShapes :: [].{
 	standing_still_shapes : Picture.Setting({}),
 	{
 		height : Distance,
-		polygons : Still,
+		still : Still,
 	} -> List(Shapes.Shape)
-	standing_still_shapes = |setting, { height, polygons }| {
+	standing_still_shapes = |setting, { height, still }| {
 		anchor = StillShapes.standing_anchor(setting, { height, flip: AsDrawn })
-		StillShapes.still_shapes(anchor, polygons)
+		StillShapes.still_shapes(anchor, still)
 	}
 }
 

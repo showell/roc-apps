@@ -1090,7 +1090,7 @@ expect {
 		Away(WingsUp),
 		Away(WingsDown),
 		Diving,
-	].map(PosedBird.pose_polygons)
+	].map(PosedBird.pose_still)
 	emoji_stills = [
 		EmojiStills.duck,
 		EmojiStills.elephant,
@@ -1100,7 +1100,7 @@ expect {
 		EmojiStills.bull,
 		EmojiStills.cow,
 		EmojiStills.pig,
-	].map(|emoji| emoji.polygons())
+	].map(|emoji| emoji.still())
 	bird_stills.concat(emoji_stills).all(
 		|still| StillShapes.still_shapes(anchor, still).len() == still.polygons().len(),
 	)

@@ -22,8 +22,8 @@ import widget.ScrubWidget
 
 StillsWidgetApp :: [].{
 
-	## A pose's still: the pose's name, and its polygons.
-	PoseStill : { name : Str, polygons : Still }
+	## A pose's still: the pose's name, and its still.
+	PoseStill : { name : Str, still : Still }
 
 	## The whole state of the widget: the still shown large, and whether the
 	## outlines of its polygons show.
@@ -96,10 +96,10 @@ bird_pose_name = |pose|
 	}
 
 cat_still : PosedCat.CatPose -> StillsWidgetApp.PoseStill
-cat_still = |pose| { name: cat_pose_name(pose), polygons: PosedCat.pose_polygons(pose) }
+cat_still = |pose| { name: cat_pose_name(pose), still: PosedCat.pose_still(pose) }
 
 bird_still : PosedBird.BirdPose -> StillsWidgetApp.PoseStill
-bird_still = |pose| { name: bird_pose_name(pose), polygons: PosedBird.pose_polygons(pose) }
+bird_still = |pose| { name: bird_pose_name(pose), still: PosedBird.pose_still(pose) }
 
 cat_stills : List(StillsWidgetApp.PoseStill)
 cat_stills =
@@ -175,7 +175,7 @@ name_rise = 10.0
 ## shares one height, so a pose keeps its true size beside the others.
 row_height_px : List(StillsWidgetApp.PoseStill), F64 -> F64
 row_height_px = |stills, cell_width| {
-	extents = stills.map(|still| extent_of(still.polygons))
+	extents = stills.map(|still| extent_of(still.still))
 	widest = extents.fold(0.0, |most, extent| most.max(extent_width(extent)))
 	tallest = extents.fold(0.0, |most, extent| most.max(extent.top))
 	F64.min((cell_width - 2.0 * cell_padding) / widest, (cell_ground - cell_padding) / tallest)
@@ -214,7 +214,7 @@ row_cells = |stills, row_top| {
 					height: cell_height,
 				},
 				anchor: standing_at(
-					still.polygons,
+					still.still,
 					{
 						mid_x: left + cell_width / 2.0,
 						ground_y: row_top + cell_ground,
@@ -317,8 +317,8 @@ point_count = |still| still.polygons().fold(0, |sum, polygon| sum + polygon.poin
 read_out_lines : StillsWidgetApp.PoseStill -> List(Str)
 read_out_lines = |still| [
 	still.name,
-	"${ReadoutText.count_text(still.polygons.polygons().len())} polygons",
-	"${ReadoutText.count_text(point_count(still.polygons))} points",
+	"${ReadoutText.count_text(still.still.polygons().len())} polygons",
+	"${ReadoutText.count_text(point_count(still.still))} points",
 ]
 
 read_out_size : F64
@@ -372,12 +372,12 @@ outline_shapes = |anchor, polygon| {
 ## The large still, with the outlines of its polygons if they show.
 large_shapes : StillsWidgetApp.Model -> List(Shapes.Shape)
 large_shapes = |{ large_still, outlines }| {
-	anchor = large_anchor(large_still.polygons)
-	drawn = StillShapes.still_shapes(anchor, large_still.polygons)
+	anchor = large_anchor(large_still.still)
+	drawn = StillShapes.still_shapes(anchor, large_still.still)
 	match outlines {
 		Hidden => drawn
 		Shown => {
-			outline = large_still.polygons.polygons().join_map(|polygon| outline_shapes(anchor, polygon))
+			outline = large_still.still.polygons().join_map(|polygon| outline_shapes(anchor, polygon))
 			drawn.concat(outline)
 		}
 	}
@@ -404,7 +404,7 @@ picture_shapes = |model|
 ## One small still with its pose's name under it.
 cell_shapes : StillCell -> List(Shapes.Shape)
 cell_shapes = |{ still, area, anchor }|
-	StillShapes.still_shapes(anchor, still.polygons).append(
+	StillShapes.still_shapes(anchor, still.still).append(
 		Text({
 			text: still.name,
 			x: area.left + area.width / 2.0,
@@ -518,8 +518,8 @@ expect
 		(Away(WingsDown), "Away down"),
 		(Diving, "Diving"),
 	].all(|(pose, name)| bird_pose_name(pose) == name)
-expect cat_still(Frozen).polygons.polygons().len() == PosedCat.pose_polygons(Frozen).polygons().len()
-expect point_count(bird_still(Diving).polygons) == point_count(BirdStills.diving_polygons)
+expect cat_still(Frozen).still.polygons().len() == PosedCat.pose_still(Frozen).polygons().len()
+expect point_count(bird_still(Diving).still) == point_count(BirdStills.diving_still)
 
 # The rows fill the space between the side margins, end to end.
 expect first_cell.area.left == ScrubWidget.side_margin
@@ -538,19 +538,19 @@ expect
 # A row shares one height, and no still leaves its cell or crosses its name.
 expect cells.take_first(7).all(|cell| cell.anchor.height_on_screen == first_cell.anchor.height_on_screen)
 expect cells.drop_first(7).all(|cell| cell.anchor.height_on_screen == last_cell.anchor.height_on_screen)
-expect cells.all(|{ still, area, anchor }| stays_in(anchor, { polygons: still.polygons, area }))
+expect cells.all(|{ still, area, anchor }| stays_in(anchor, { polygons: still.still, area }))
 expect
 	cells.all(
 		|{ still, area, anchor }| {
 			above_name = { ..area, height: cell_name_top }
-			stays_in(anchor, { polygons: still.polygons, area: above_name })
+			stays_in(anchor, { polygons: still.still, area: above_name })
 		},
 	)
 
 ## Whether a cell's still fills the cell's width, up to the padding.
 is_full_width : StillCell -> Bool
 is_full_width = |{ still, area, anchor }| {
-	still_width = anchor.height_on_screen.to_f64() * extent_width(extent_of(still.polygons))
+	still_width = anchor.height_on_screen.to_f64() * extent_width(extent_of(still.still))
 	area.width - still_width <= 2.0 * cell_padding + 0.000001
 }
 
@@ -592,15 +592,15 @@ expect
 	cells.all(
 		|{ still, .. }|
 			stays_in(
-				large_anchor(still.polygons),
-				{ polygons: still.polygons, area: large_area_edges_held },
+				large_anchor(still.still),
+				{ polygons: still.still, area: large_area_edges_held },
 			),
 	)
 expect
 	cells.all(
 		|{ still, .. }| {
-			extent = extent_of(still.polygons)
-			height = large_anchor(still.polygons).height_on_screen.to_f64()
+			extent = extent_of(still.still)
+			height = large_anchor(still.still).height_on_screen.to_f64()
 			wide_room = large_area.width - height * extent_width(extent)
 			tall_room = large_area.height - height * (extent.top - extent.bottom)
 			wide_room.min(tall_room).abs() <= 0.000001
@@ -611,8 +611,8 @@ expect
 expect
 	cells.all(
 		|{ still, .. }| {
-			anchor = large_anchor(still.polygons)
-			extent = extent_of(still.polygons)
+			anchor = large_anchor(still.still)
+			extent = extent_of(still.still)
 			low = landing_spot(anchor, { x: extent.left, y: extent.bottom })
 			high = landing_spot(anchor, { x: extent.right, y: extent.top })
 			middle = middle_of(large_area)
@@ -624,7 +624,7 @@ expect
 
 # Stills that reach past 1 and below 0 are measured from their points.
 expect {
-	frozen = extent_of(PosedCat.pose_polygons(Frozen))
+	frozen = extent_of(PosedCat.pose_still(Frozen))
 	frozen.top > 1.0 and frozen.bottom < 0.0 and frozen.left < 0.0 and frozen.right > 1.0
 }
 expect
@@ -745,16 +745,16 @@ expect read_out_lines(bird_still(Diving)) == ["Diving", "6 polygons", "22 points
 expect
 	cells.all(
 		|{ still, anchor, .. }| {
-			drawn = StillShapes.still_shapes(anchor, still.polygons)
-			drawn.len() == still.polygons.polygons().len()
+			drawn = StillShapes.still_shapes(anchor, still.still)
+			drawn.len() == still.still.polygons().len()
 		},
 	)
 
 # The outlines add one line for each edge between two different corners, and
 # none when hidden.
-expect large_shapes(start).len() == start.large_still.polygons.polygons().len()
+expect large_shapes(start).len() == start.large_still.still.polygons().len()
 expect {
-	edge_count = start.large_still.polygons.polygons().fold(
+	edge_count = start.large_still.still.polygons().fold(
 		0,
 		|sum, polygon| {
 			points = polygon.points
@@ -762,7 +762,7 @@ expect {
 			sum + points.map2(ends, |from, to| from != to).keep_if(|differ| differ).len()
 		},
 	)
-	large_shapes({ ..start, outlines: Shown }).len() == start.large_still.polygons.polygons().len() + edge_count
+	large_shapes({ ..start, outlines: Shown }).len() == start.large_still.still.polygons().len() + edge_count
 }
 
 # A polygon's outline closes: its last line ends where its first starts.
@@ -808,4 +808,4 @@ expect shapes_at(start) == shapes_at(left_click(start, { x: 100.0, y: 60.0 }))
 expect mark_shapes(cat_still(Land)).len() == 1
 expect mark_shapes(bird_still(Diving)).len() == 1
 expect mark_shapes(cat_still(Land)) != mark_shapes(bird_still(Diving))
-expect mark_shapes({ name: "None", polygons: Still.([]) }).len() == 0
+expect mark_shapes({ name: "None", still: Still.([]) }).len() == 0

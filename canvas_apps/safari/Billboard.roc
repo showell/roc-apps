@@ -60,7 +60,7 @@ Billboard := {
 		if anchor.height_on_screen < Pixels.of(1.0) {
 			Picture.from_shapes([])
 		} else {
-			Picture.from_shapes(StillShapes.still_shapes(anchor, billboard.still.polygons()))
+			Picture.from_shapes(StillShapes.still_shapes(anchor, billboard.still.still()))
 		}
 	}
 
@@ -119,4 +119,4 @@ expect
 	})
 		== 6
 
-expect EmojiStills.elephant.polygons().polygons().len() == 6
+expect EmojiStills.elephant.still().polygons().len() == 6

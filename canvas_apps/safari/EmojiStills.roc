@@ -1,5 +1,5 @@
 ## The animals by the road, each a still traced from its emoji. It has no
-## `pose_polygons`: an animal here has one drawing, and no poses.
+## `pose_still`: an animal here has one drawing, and no poses.
 import lib.ArgbColor
 import lib.RgbColor
 import Fraction
@@ -11,8 +11,8 @@ EmojiStills :: [].{
 	## hold only a still that exists.
 	EmojiStill :: Still.{
 
-		polygons : EmojiStills.EmojiStill -> Still
-		polygons = |EmojiStills.EmojiStill.(still)| still
+		still : EmojiStills.EmojiStill -> Still
+		still = |EmojiStills.EmojiStill.(still)| still
 
 		is_eq : _
 	}
@@ -95,7 +95,7 @@ emoji_stills = [
 # Each still's polygons, points, shaded polygons and first colour, in the
 # order of `emoji_stills`.
 expect
-	emoji_stills.map(|still| still_facts(still.polygons()))
+	emoji_stills.map(|emoji| still_facts(emoji.still()))
 		== [
 			[6, 189, 0, 0x44911B],
 			[6, 257, 0, 0x636363],
@@ -110,7 +110,7 @@ expect
 # The bull's first polygon is shaded by a linear gradient, which runs the
 # whole way from its first colour to its second.
 expect
-	match EmojiStills.bull.polygons().polygons() {
+	match EmojiStills.bull.still().polygons() {
 		[{ fill: Shaded(Linear({ stops, .. })), .. }, ..] =>
 			stops.start_offset.to_f64() == 0.0 and stops.end_offset.to_f64() == 1.0
 		_ => False
