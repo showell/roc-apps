@@ -1,7 +1,7 @@
-## Backdrop builds what is behind the ride, as shapes. The vocabulary is in
-## lib/Shapes.roc, which every canvas app shares. This module puts together the
-## sky's gradient from Sky's two colors, the sun as Sun says it looks, and the
-## grass, and lays the frame's shapes over them.
+## Backdrop builds the sky, the sun and the grass, as shapes, and lays the
+## ride's shapes over them. The vocabulary is in lib/Shapes.roc, which every
+## canvas app shares. This module puts together the sky's gradient from Sky's
+## two colors, the sun as Sun says it looks, and the grass.
 import Fraction
 import lib.Brush
 import lib.RgbColor
@@ -21,7 +21,7 @@ Backdrop :: [].{
 	sky_top_stop : Fraction
 	sky_top_stop = Fraction.of(0.2)
 
-	## What is behind the ride, each part by name.
+	## The sky, the sun and the grass, each part by name.
 	BackdropShapes : {
 		## The sky's gradient.
 		sky : Shapes.Shape,
