@@ -38,8 +38,10 @@ Brush :: [].{
 		Linear({ stops : Brush.TwoStops, start_point : Point.Point, end_point : Point.Point }),
 		# Out from `center` to the ellipse whose half-axes are `axis_u` and `axis_v`.
 		Ellipse({ stops : Brush.TwoStops, center : Point.Point, axis_u : Point.Point, axis_v : Point.Point }),
-		# The sun's glow: the middle colour at `middle_offset`, strictly between 0
-		# and 1, which `Brush.glow` checks.
+		# A radial gradient of three stops: the inner colour at `inner_radius`,
+		# the outer colour at `outer_radius`, and the middle colour at
+		# `middle_offset` of the way between, strictly between 0 and 1, which
+		# `Brush.glow` checks.
 		Glow(Brush.GlowLook),
 	]
 
@@ -114,10 +116,16 @@ Brush :: [].{
 			}
 		}
 
-	# The determinant of the matrix whose columns are an ellipse's axes. Near
-	# zero, the axes are nearly parallel and the ellipse has no inverse.
-	ellipse_determinant : { axis_u : Point.Point, axis_v : Point.Point } -> F64
-	ellipse_determinant = |{ axis_u, axis_v }| axis_u.x * axis_v.y - axis_u.y * axis_v.x
+	# The gradient out from `center` to the ellipse whose half-axes are `axis_u`
+	# and `axis_v`, or `TooThin` when the axes are so nearly parallel that the
+	# ellipse has no sound inverse to shade with.
+	ellipse : { stops : Brush.TwoStops, center : Point.Point, axis_u : Point.Point, axis_v : Point.Point } -> Try(Brush.Fill, [TooThin])
+	ellipse = |look|
+		if ellipse_determinant({ axis_u: look.axis_u, axis_v: look.axis_v }).abs() < min_ellipse_determinant {
+			Err(TooThin)
+		} else {
+			Ok(Ellipse(look))
+		}
 
 	# The matrix that takes an offset from an ellipse's center to the unit
 	# circle, the inverse of the one whose columns are its axes. An offset
@@ -186,6 +194,20 @@ Brush :: [].{
 	}
 }
 
+# The determinant of the matrix whose columns are an ellipse's axes. Near
+# zero, the axes are nearly parallel and the ellipse has no inverse.
+ellipse_determinant : { axis_u : Point.Point, axis_v : Point.Point } -> F64
+ellipse_determinant = |{ axis_u, axis_v }| axis_u.x * axis_v.y - axis_u.y * axis_v.x
+
+# The least area, in square units of the shape's coordinates, that an
+# ellipse's two axes may span for `Brush.ellipse` to give the gradient. Below
+# it the axes are all but parallel, the ellipse covers far less than a pixel,
+# and its inverse, which divides by this area, has nothing sound to give.
+# 0.0001 is a round number chosen well under a pixel, not one tuned to a
+# picture.
+min_ellipse_determinant : F64
+min_ellipse_determinant = 0.0001
+
 # One eight-bit channel of a packed colour, as a float.
 channel : I64, U8 -> F64
 channel = |packed, shift| packed.shr_wrap(shift).bitwise_and(255).to_f64()
@@ -205,8 +227,22 @@ two_stop = |stops, t| if t <= stops.start_offset {
 sample_inverse : { top_row : Point.Point, bottom_row : Point.Point }
 sample_inverse = Brush.ellipse_inverse({ axis_u: { x: 3.0, y: 4.0 }, axis_v: { x: 5.0, y: 6.0 } })
 
-expect Brush.ellipse_determinant({ axis_u: { x: 3.0, y: 4.0 }, axis_v: { x: 5.0, y: 6.0 } }) == -2.0
+expect ellipse_determinant({ axis_u: { x: 3.0, y: 4.0 }, axis_v: { x: 5.0, y: 6.0 } }) == -2.0
 expect sample_inverse == { top_row: { x: -3.0, y: 2.5 }, bottom_row: { x: 2.0, y: -1.5 } }
+
+# An ellipse whose axes span the least area is a gradient, one just under it
+# is too thin, either way round, and parallel axes are too thin.
+expect {
+	stops = { start_color: Brush.opaque(RgbColor.of(0x000000)), end_color: Brush.opaque(RgbColor.of(0xFFFFFF)), start_offset: 0.0, end_offset: 1.0 }
+	at_least = { stops, center: { x: 0.0, y: 0.0 }, axis_u: { x: 0.0001, y: 0.0 }, axis_v: { x: 0.0, y: 1.0 } }
+	under = { ..at_least, axis_u: { x: 0.00009, y: 0.0 } }
+	under_flipped = { ..under, axis_v: { x: 0.0, y: -1.0 } }
+	parallel = { ..at_least, axis_u: { x: 2.0, y: 4.0 }, axis_v: { x: 1.0, y: 2.0 } }
+	Brush.ellipse(at_least) == Ok(Ellipse(at_least))
+		and Brush.ellipse(under) == Err(TooThin)
+		and Brush.ellipse(under_flipped) == Err(TooThin)
+		and Brush.ellipse(parallel) == Err(TooThin)
+}
 
 expect Brush.translucent(ArgbColor.of(0x80FFE9A8)) == { r: 255.0, g: 233.0, b: 168.0, a: 128.0 / 255.0 }
 expect Brush.translucent(ArgbColor.of(0xFF000000)) == { r: 0.0, g: 0.0, b: 0.0, a: 1.0 }
