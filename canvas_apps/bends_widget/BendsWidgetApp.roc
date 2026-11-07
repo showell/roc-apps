@@ -152,7 +152,7 @@ ground = Rect({
 patch_shape : ShownBend, List(Geom.RiderPoint) -> Shapes.Shape
 patch_shape = |bend, corners|
 	Poly({
-		points: corners.join_map(
+		coordinates: corners.join_map(
 			|corner| {
 				{ x, y } = canvas_point(bend, corner)
 				[x, y]

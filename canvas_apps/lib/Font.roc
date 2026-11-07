@@ -82,14 +82,14 @@ Font :: [].{
 	glyph_shapes = |b, x, y, u, w, color| {
 		strokes = strokes_for(b)
 		var $out = List.with_capacity(strokes.len())
-		for points in strokes {
-			for j in 1..<(points.len() // 2) {
+		for coordinates in strokes {
+			for j in 1..<(coordinates.len() // 2) {
 				$out = $out.append(
 					Shapes.line(
-						x + at(points, 2 * (j - 1)) * u,
-						y + at(points, 2 * (j - 1) + 1) * u,
-						x + at(points, 2 * j) * u,
-						y + at(points, 2 * j + 1) * u,
+						x + at(coordinates, 2 * (j - 1)) * u,
+						y + at(coordinates, 2 * (j - 1) + 1) * u,
+						x + at(coordinates, 2 * j) * u,
+						y + at(coordinates, 2 * j + 1) * u,
 						w,
 						Flat(color),
 					),

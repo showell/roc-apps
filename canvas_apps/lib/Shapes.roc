@@ -9,7 +9,7 @@ Shapes :: [].{
 	Shape : [
 		## A polygon, as x0, y0, x1, y1 and so on. It can be any polygon, until `cut_shapes`
 		## leaves only convex ones for a painter that fills nothing else.
-		Poly({ points : List(F64), fill : Brush.Fill }),
+		Poly({ coordinates : List(F64), fill : Brush.Fill }),
 
 		## The triangles of one concave polygon, six numbers each. Only `cut_shapes` makes these.
 		Pieces({ tris : List(F64), fill : Brush.Fill }),
@@ -80,12 +80,12 @@ Shapes :: [].{
 		dy = y1 - y0
 		len = (dx * dx + dy * dy).sqrt()
 		if len == 0.0 {
-			Poly({ points: [], fill })
+			Poly({ coordinates: [], fill })
 		} else {
 			# The unit normal, half a width each way.
 			nx = 0.0 - dy / len * (w / 2.0)
 			ny = dx / len * (w / 2.0)
-			Poly({ points: [x0 + nx, y0 + ny, x1 + nx, y1 + ny, x1 - nx, y1 - ny, x0 - nx, y0 - ny], fill })
+			Poly({ coordinates: [x0 + nx, y0 + ny, x1 + nx, y1 + ny, x1 - nx, y1 - ny, x0 - nx, y0 - ny], fill })
 		}
 	}
 
@@ -117,7 +117,7 @@ Shapes :: [].{
 	squashed_shapes = |shapes, axis, k| shapes.map(
 		|shape|
 			match shape {
-				Poly(p) => Poly({ points: pulled(p.points, axis, k), fill: p.fill })
+				Poly(p) => Poly({ coordinates: pulled(p.coordinates, axis, k), fill: p.fill })
 				Pieces(p) => Pieces({ tris: pulled(p.tris, axis, k), fill: p.fill })
 				Disc(d) => Disc({ x: axis + (d.x - axis) * k, y: d.y, r: d.r, fill: d.fill, clip: d.clip })
 				# A mirror sends a rectangle's left edge to its right, and a width is never
@@ -189,25 +189,25 @@ Shapes :: [].{
 	rounded_rect = |x, y, w, h, r, segments, fill| {
 		rr = r.min((w / 2.0).min(h / 2.0))
 		if rr <= 0.0 or segments < 1 {
-			Poly({ points: [x, y, x + w, y, x + w, y + h, x, y + h], fill })
+			Poly({ coordinates: [x, y, x + w, y, x + w, y + h, x, y + h], fill })
 		} else {
-			var $points = List.with_capacity((8 * (segments + 1)).to_u64_wrap())
+			var $coordinates = List.with_capacity((8 * (segments + 1)).to_u64_wrap())
 			# Clockwise from the top-left corner, each swept from its own start angle.
-			$points = corner_points($points, x + rr, y + rr, rr, half_pi * 2.0, segments)
-			$points = corner_points($points, x + w - rr, y + rr, rr, -half_pi, segments)
-			$points = corner_points($points, x + w - rr, y + h - rr, rr, 0.0, segments)
-			$points = corner_points($points, x + rr, y + h - rr, rr, half_pi, segments)
-			Poly({ points: $points, fill })
+			$coordinates = corner_coordinates($coordinates, x + rr, y + rr, rr, half_pi * 2.0, segments)
+			$coordinates = corner_coordinates($coordinates, x + w - rr, y + rr, rr, -half_pi, segments)
+			$coordinates = corner_coordinates($coordinates, x + w - rr, y + h - rr, rr, 0.0, segments)
+			$coordinates = corner_coordinates($coordinates, x + rr, y + h - rr, rr, half_pi, segments)
+			Poly({ coordinates: $coordinates, fill })
 		}
 	}
 
 	half_pi : F64
 	half_pi = F64.pi / 2.0
 
-	## The points of a quarter turn about (cx, cy), starting at the angle `from`.
-	corner_points : List(F64), F64, F64, F64, F64, I64 -> List(F64)
-	corner_points = |points, cx, cy, r, from, segments| {
-		var $out = points
+	## The coordinates of a quarter turn about (cx, cy), starting at the angle `from`.
+	corner_coordinates : List(F64), F64, F64, F64, F64, I64 -> List(F64)
+	corner_coordinates = |coordinates, cx, cy, r, from, segments| {
+		var $out = coordinates
 		for k in 0..=segments {
 			a = from + half_pi * k.to_f64() / segments.to_f64()
 			$out = $out.concat([cx + r * a.cos(), cy + r * a.sin()])
@@ -227,10 +227,10 @@ Shapes :: [].{
 		|shape|
 			match shape {
 				Poly(p) =>
-					if is_convex(p.points) {
+					if is_convex(p.coordinates) {
 						[Poly(p)]
 					} else {
-						[Pieces({ tris: wound_triangles(triangles(p.points)), fill: p.fill })]
+						[Pieces({ tris: wound_triangles(triangles(p.coordinates)), fill: p.fill })]
 					}
 				other => [other]
 			},
@@ -267,8 +267,8 @@ Shapes :: [].{
 
 	## Twice the signed area, summed as roc-ray's host sums it.
 	twice_area : List(F64) -> F64
-	twice_area = |points| {
-		n = points.len() // 2
+	twice_area = |coordinates| {
+		n = coordinates.len() // 2
 		var $sum = 0.0
 		for k in 0..<n {
 			k1 = if k + 1 == n {
@@ -276,7 +276,7 @@ Shapes :: [].{
 			} else {
 				k + 1
 			}
-			$sum = $sum + at(points, 2 * k) * at(points, 2 * k1 + 1) - at(points, 2 * k1) * at(points, 2 * k + 1)
+			$sum = $sum + at(coordinates, 2 * k) * at(coordinates, 2 * k1 + 1) - at(coordinates, 2 * k1) * at(coordinates, 2 * k + 1)
 		}
 		$sum
 	}
@@ -289,8 +289,8 @@ Shapes :: [].{
 	## Convex when every corner turns the same way and the boundary stays within
 	## `flip_limit`, which rules out a star whose corners all turn one way.
 	is_convex : List(F64) -> Bool
-	is_convex = |points| {
-		n = points.len() // 2
+	is_convex = |coordinates| {
+		n = coordinates.len() // 2
 		var $sign = 0.0
 		var $bad = False
 		var $xflips = 0
@@ -309,11 +309,11 @@ Shapes :: [].{
 			} else {
 				$k + 2
 			}
-			x0 = at(points, 2 * $k)
-			y0 = at(points, 2 * $k + 1)
-			x1 = at(points, 2 * k1)
-			y1 = at(points, 2 * k1 + 1)
-			turn = cross3(x0, y0, x1, y1, at(points, 2 * k2), at(points, 2 * k2 + 1))
+			x0 = at(coordinates, 2 * $k)
+			y0 = at(coordinates, 2 * $k + 1)
+			x1 = at(coordinates, 2 * k1)
+			y1 = at(coordinates, 2 * k1 + 1)
+			turn = cross3(x0, y0, x1, y1, at(coordinates, 2 * k2), at(coordinates, 2 * k2 + 1))
 			$bad = turn * $sign < 0.0
 			$sign = if $sign == 0.0 {
 				turn
@@ -351,9 +351,9 @@ Shapes :: [].{
 	## corner in line with its neighbors is dropped without a triangle. A polygon
 	## that crosses itself can run out of ears, and what is left is fanned.
 	triangles : List(F64) -> List(F64)
-	triangles = |points| {
-		n = points.len() // 2
-		orient = if twice_area(points) >= 0.0 {
+	triangles = |coordinates| {
+		n = coordinates.len() // 2
+		orient = if twice_area(coordinates) >= 0.0 {
 			1.0
 		} else {
 			-1.0
@@ -377,14 +377,14 @@ Shapes :: [].{
 			a = $indices.get(ip) ?? crash "vertex out of range"
 			b = $indices.get($i) ?? crash "vertex out of range"
 			c = $indices.get(inx) ?? crash "vertex out of range"
-			ax = at(points, 2 * a)
-			ay = at(points, 2 * a + 1)
-			bx = at(points, 2 * b)
-			by = at(points, 2 * b + 1)
-			cx = at(points, 2 * c)
-			cy = at(points, 2 * c + 1)
+			ax = at(coordinates, 2 * a)
+			ay = at(coordinates, 2 * a + 1)
+			bx = at(coordinates, 2 * b)
+			by = at(coordinates, 2 * b + 1)
+			cx = at(coordinates, 2 * c)
+			cy = at(coordinates, 2 * c + 1)
 			turn = cross3(ax, ay, bx, by, cx, cy) * orient
-			ear = turn >= 0.0 and !any_inside(points, $indices, a, b, c, orient)
+			ear = turn >= 0.0 and !any_inside(coordinates, $indices, a, b, c, orient)
 			$out = if ear and turn > 0.0 {
 				$out.concat([ax, ay, bx, by, cx, cy])
 			} else {
@@ -410,23 +410,23 @@ Shapes :: [].{
 				inx
 			}
 		}
-		fan(points, $indices, $out)
+		fan(coordinates, $indices, $out)
 	}
 
 	## Whether a remaining corner other than a, b and c lies strictly inside the
 	## triangle a b c.
 	any_inside : List(F64), List(U64), U64, U64, U64, F64 -> Bool
-	any_inside = |points, indices, a, b, c, orient| {
-		ax = at(points, 2 * a)
-		ay = at(points, 2 * a + 1)
-		bx = at(points, 2 * b)
-		by = at(points, 2 * b + 1)
-		cx = at(points, 2 * c)
-		cy = at(points, 2 * c + 1)
+	any_inside = |coordinates, indices, a, b, c, orient| {
+		ax = at(coordinates, 2 * a)
+		ay = at(coordinates, 2 * a + 1)
+		bx = at(coordinates, 2 * b)
+		by = at(coordinates, 2 * b + 1)
+		cx = at(coordinates, 2 * c)
+		cy = at(coordinates, 2 * c + 1)
 		indices.any(
 			|p| {
-				px = at(points, 2 * p)
-				py = at(points, 2 * p + 1)
+				px = at(coordinates, 2 * p)
+				py = at(coordinates, 2 * p + 1)
 				p != a and p != b and p != c and cross3(ax, ay, bx, by, px, py) * orient > 0.0 and cross3(bx, by, cx, cy, px, py) * orient > 0.0 and cross3(cx, cy, ax, ay, px, py) * orient > 0.0
 			},
 		)
@@ -434,7 +434,7 @@ Shapes :: [].{
 
 	## The remaining corners as a fan from the first, onto `out`.
 	fan : List(F64), List(U64), List(F64) -> List(F64)
-	fan = |points, indices, out| {
+	fan = |coordinates, indices, out| {
 		m = indices.len()
 		first = indices.get(0) ?? 0
 		var $out = out
@@ -442,7 +442,7 @@ Shapes :: [].{
 		while $k + 1 < m {
 			p = indices.get($k) ?? crash "vertex out of range"
 			q = indices.get($k + 1) ?? crash "vertex out of range"
-			$out = $out.concat([at(points, 2 * first), at(points, 2 * first + 1), at(points, 2 * p), at(points, 2 * p + 1), at(points, 2 * q), at(points, 2 * q + 1)])
+			$out = $out.concat([at(coordinates, 2 * first), at(coordinates, 2 * first + 1), at(coordinates, 2 * p), at(coordinates, 2 * p + 1), at(coordinates, 2 * q), at(coordinates, 2 * q + 1)])
 			$k = $k + 1
 		}
 		$out

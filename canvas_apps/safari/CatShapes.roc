@@ -47,7 +47,7 @@ sample_cat_shapes = |cat| CatShapes.cat_shapes(cat, Pixels.of(500.0))
 first_corner_coordinates : CatSighting -> List(F64)
 first_corner_coordinates = |cat|
 	match sample_cat_shapes(cat) {
-		[Poly(polygon), ..] => polygon.points.take_first(2)
+		[Poly(polygon), ..] => polygon.coordinates.take_first(2)
 		_ => crash "a cat draws polygons"
 	}
 

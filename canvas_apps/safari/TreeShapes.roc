@@ -439,7 +439,7 @@ expect
 		Poly(polygon) =>
 			polygon.fill == Flat(Brush.opaque(0x5A3E22))
 				and is_near(
-					polygon.points,
+					polygon.coordinates,
 					[
 						440.0,
 						110.0,
@@ -457,18 +457,18 @@ expect
 # A shaded trunk is the same colour, lighter in the middle of its width.
 expect
 	match trunk_shape(sample_on_screen, Shaded) {
-		Poly({ points, fill: Span({ edge, middle, x0, x1 }) }) =>
+		Poly({ coordinates, fill: Span({ edge, middle, x0, x1 }) }) =>
 			edge == Brush.opaque(0x362514)
 				and middle == Brush.opaque(0x714E2B)
 				and is_near([x0, x1], [440.0, 520.0])
-				and is_near(points, [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0])
+				and is_near(coordinates, [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0])
 		_ => False
 	}
 
 expect {
 	corners_of = |tier|
 		match tier_triangle(sample_on_screen, { tier, color: 7 }) {
-			Poly(polygon) => polygon.points
+			Poly(polygon) => polygon.coordinates
 			_ => crash "a tier is one polygon"
 		}
 	top_tier = tiers.first() ?? crash "a tree has tiers"

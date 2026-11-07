@@ -72,10 +72,10 @@ function fillShape(ctx, fill) {
   else { ctx.fillStyle = paint; ctx.fill(); }
 }
 
-function tracePoly(ctx, pts) {
+function tracePoly(ctx, coordinates) {
   ctx.beginPath();
-  ctx.moveTo(pts[0], pts[1]);
-  for (let i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i], pts[i + 1]);
+  ctx.moveTo(coordinates[0], coordinates[1]);
+  for (let i = 2; i < coordinates.length; i += 2) ctx.lineTo(coordinates[i], coordinates[i + 1]);
   ctx.closePath();
 }
 
@@ -156,7 +156,7 @@ function paintFrame(ctx, shapes, scale = 1) {
         paintText(ctx, p);
         break;
       case "Poly":
-        tracePoly(ctx, p.points);
+        tracePoly(ctx, p.coordinates);
         fillShape(ctx, p.fill);
         break;
       case "Rect":

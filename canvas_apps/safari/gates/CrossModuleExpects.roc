@@ -66,7 +66,7 @@ road = {
 	vantage: origin,
 }
 
-polygon_of : Shapes.Shape -> { points : List(F64), fill : Brush.Fill }
+polygon_of : Shapes.Shape -> { coordinates : List(F64), fill : Brush.Fill }
 polygon_of = |shape|
 	match shape {
 		Poly(polygon) => polygon
@@ -74,9 +74,9 @@ polygon_of = |shape|
 			crash "CrossModuleExpects.polygon_of: this shape is not a polygon"
 	}
 
-## A polygon's points, flat as x0, y0, x1, y1, ...
-points_of : Shapes.Shape -> List(F64)
-points_of = |shape| polygon_of(shape).points
+## A polygon's coordinates, flat as x0, y0, x1, y1, ...
+coordinates_of : Shapes.Shape -> List(F64)
+coordinates_of = |shape| polygon_of(shape).coordinates
 
 ## A flat polygon's colour, as 0xRRGGBB.
 flat_color_of : Shapes.Shape -> I64
@@ -607,8 +607,8 @@ last_shape = strip_shapes.last() ?? crash "CrossModuleExpects: the road draws"
 
 expect flat_color_of(last_shape) == 0x34353C
 expect {
-	point_count = points_of(last_shape).len()
-	point_count >= 6 and point_count <= 10
+	coordinate_count = coordinates_of(last_shape).len()
+	coordinate_count >= 6 and coordinate_count <= 10
 }
 
 # A ride that has finished starts again.
@@ -669,7 +669,7 @@ expect RideInstant.next_or_restart(World.segments, done).truck.brake_lights == O
 expect {
 	frame = RideInstant.shapes(World.segments, RideInstant.initial)
 	first_shape = frame.first() ?? crash "CrossModuleExpects: a frame draws"
-	points_of(first_shape).len() >= 6
+	coordinates_of(first_shape).len() >= 6
 }
 
 expect {

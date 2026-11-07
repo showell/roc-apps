@@ -625,7 +625,7 @@ expect
 		width_px: Pixels.of(10.0),
 	})
 		== Poly({
-			points: [-4.0, 3.0, 26.0, 43.0, 34.0, 37.0, 4.0, -3.0],
+			coordinates: [-4.0, 3.0, 26.0, 43.0, 34.0, 37.0, 4.0, -3.0],
 			fill: Flat(Brush.opaque(Tower.tower_metal)),
 		})
 
@@ -637,7 +637,7 @@ expect
 		width_px: Pixels.of(10.0),
 	})
 		== Poly({
-			points: [5.0, 6.0, 5.0, 6.0, 5.0, 6.0, 5.0, 6.0],
+			coordinates: [5.0, 6.0, 5.0, 6.0, 5.0, 6.0, 5.0, 6.0],
 			fill: Flat(Brush.opaque(Tower.tower_metal)),
 		})
 
