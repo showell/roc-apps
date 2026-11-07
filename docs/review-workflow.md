@@ -87,4 +87,6 @@ The tutorial is rewritten later, so lanes never rewrite prose.
 - "named by", the signatures elsewhere that mention the module's types, marked test or private;
 - the imports used only in bodies.
 
+A package such as lib is walked with its apps as clients, from `canvas_apps`: `root=lib module=Brush clients=*`. Without clients, a package's members look unused.
+
 The recipe's header lists every setting.
