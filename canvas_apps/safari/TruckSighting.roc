@@ -66,6 +66,10 @@ truck_on_segment : TruckSighting.Viewpoint,
 } -> TruckSighting.TruckFate
 truck_on_segment = |view, { along, position }| {
 	placed_truck : Geom.Placed(TruckAhead)
-	placed_truck = { along, across: Across.middle, kind: { lights: view.lights } }
+	placed_truck = {
+		along,
+		across: Across.middle,
+		kind: { lights: view.lights },
+	}
 	Pipeline.sighting_of(placed_truck, { road: view.road, place: InChain(position) })
 }

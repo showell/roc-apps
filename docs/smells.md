@@ -49,6 +49,11 @@ that each handle a kind, has to change in two places forever. `DepthSort.Subject
 was that enum. The fix was generic forms, `Placed(kind)` and `Sighted(kind)`,
 with `where` methods on each kind.
 
+**A kind says where the object is.** A kind holds how the object looks right now,
+a pose or a beacon's brightness, because it is what the picture needs beyond where
+the object is. `Tower` and `TruckAhead` held `along` and `across`, so location had
+two homes. Location lives in `Geom.Placed` and `Pipeline.Sighted`, around the kind.
+
 **A wrong state can be written down.** If a value can hold something the program
 must never see, the type is too loose. Prefer a type where that state has nowhere
 to live over a check that catches it.

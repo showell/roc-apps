@@ -53,7 +53,10 @@ SceneShapes :: [].{
 				|tree| SceneShapes.tree_rendering(tree, { trees: scene.trees, cam_focal }),
 			),
 			towers: scene.towers.map(
-				|tower| Pipeline.rendering_of(tower, { cam_focal, context: road_context(view, tower) }),
+				|tower| Pipeline.rendering_of(
+					tower,
+					{ cam_focal, context: road_context(view, tower) },
+				),
 			),
 			critters: scene.critters.map(
 				|critter| Pipeline.rendering_of(critter, { cam_focal, context: {} }),
@@ -413,6 +416,7 @@ expect truck_seen_from({ ..origin, along: Along.metres(100.0) }, 1.0).is_ok()
 expect truck_renderings(from_origin, lead_of(100.0)).len() == 1
 expect truck_renderings(from_origin, lead_of(2000.0)).len() == 0
 expect truck_renderings(from_origin, Err(NoTruck)).len() == 0
+expect truck_renderings(from_origin, Err(BehindCamera)).len() == 0
 expect
 	truck_renderings(from_origin, lead_of(499.0)).map(|rendering| rendering.depth.to_metres())
 		== [truck_ahead_of(499.0).forward.to_metres()]

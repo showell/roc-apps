@@ -48,14 +48,7 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 	tower_footprint = |tower, { road, place, along, across }| {
 		corner_point = |corner| {
 			on_road = base_corner_on_road(corner, { along, across, yaw: tower.yaw })
-			Chain.rider_point_at(
-				road,
-				{
-					place,
-					along: on_road.along,
-					across: on_road.across,
-				},
-			)
+			Chain.rider_point_at(road, { place, along: on_road.along, across: on_road.across })
 		}
 		{
 			back_left: corner_point(BackLeft),
