@@ -14,8 +14,6 @@ import game.Geom
 import game.GroundSighting
 import game.BendInView
 import game.RailSighting
-import game.Lens
-import game.Pixels
 import game.World
 import lib.Brush
 import lib.RgbColor
@@ -84,10 +82,8 @@ road_with : Angle.Turn -> RoadAhead.RoadView
 road_with = |turn| RoadAhead.RoadView.ahead_of(two_segments(turn), Route.SegmentIndex.first)
 
 ## The camera the road is seen from, on the first segment, looking along it.
-## The picture is drawn from above, so nothing here reads its lens.
-camera : { vantage : Geom.Vantage, cam_focal : Pixels }
+camera : { vantage : Geom.Vantage }
 camera = {
-	cam_focal: Lens.resting_focal,
 	vantage: {
 		along: Along.at(segment_length.minus(rider_before_bend)),
 		across: Across.middle,

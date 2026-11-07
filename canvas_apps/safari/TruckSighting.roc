@@ -12,7 +12,6 @@ import SegmentPlace
 import Geom
 import Pipeline
 import LitTruck
-import Pixels
 import World
 
 TruckSighting :: [].{
@@ -25,7 +24,7 @@ TruckSighting :: [].{
 	## the camera.
 	truck_in_view : RoadAhead.RoadView,
 	{
-		camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
+		camera : { vantage : Geom.Vantage, .. },
 		route_position : Distance,
 		lit_truck : LitTruck,
 	} -> TruckSighting.TruckFate
@@ -103,7 +102,7 @@ truck_seen_from = |vantage, lead|
 	TruckSighting.truck_in_view(
 		first_road,
 		{
-			camera: { vantage, cam_focal: Pixels.of(500.0) },
+			camera: { vantage: vantage },
 			route_position: Distance.metres(vantage.along.to_metres() + lead),
 			lit_truck: { headlights: Off, brake_lights: Off },
 		},
@@ -161,7 +160,7 @@ lights_shown = |lights| {
 	truck = TruckSighting.truck_in_view(
 		first_road,
 		{
-			camera: { vantage: origin, cam_focal: Pixels.of(500.0) },
+			camera: { vantage: origin },
 			route_position: Distance.metres(100.0),
 			lit_truck: lights,
 		},

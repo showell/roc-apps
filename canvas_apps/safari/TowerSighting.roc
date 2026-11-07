@@ -16,7 +16,6 @@ import Segment
 import SegmentPlace
 import Geom
 import Pipeline
-import Pixels
 import Tower
 import World
 
@@ -25,7 +24,7 @@ TowerSighting :: [].{
 	## The towers in view, in the order of `RoadAhead.segments_in_view`.
 	towers_in_view : RoadAhead.RoadView,
 	{
-		camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
+		camera : { vantage : Geom.Vantage, .. },
 		clock : Clock,
 	} -> List(Pipeline.Sighted(Tower))
 	towers_in_view = |road, { camera, clock }|
@@ -163,10 +162,6 @@ short_road = |rider_number| {
 	RoadAhead.RoadView.ahead_of(route, Route.SegmentIndex.number(rider_number))
 }
 
-## The camera at the origin.
-origin_camera : { vantage : Geom.Vantage, cam_focal : Pixels }
-origin_camera = { vantage: origin, cam_focal: Pixels.of(500.0) }
-
 origin_road : RoadAhead.RoadView
 origin_road = short_road(0)
 
@@ -185,7 +180,7 @@ ride_start = |road| {
 
 ## The towers in view from the origin on `road` at `clock`.
 towers_on : RoadAhead.RoadView, Clock -> List(Pipeline.Sighted(Tower))
-towers_on = |road, clock| TowerSighting.towers_in_view(road, { camera: origin_camera, clock })
+towers_on = |road, clock| TowerSighting.towers_in_view(road, { camera: { vantage: origin }, clock })
 
 expect segment_towers(origin_road, ride_start(origin_road)).len() == 1
 expect mid_tower(origin_road, ride_start(origin_road)).is_err()
@@ -284,8 +279,5 @@ expect
 		]
 expect TowerSighting.towers_in_view(
 	origin_road,
-	{
-		camera: { ..origin_camera, vantage: { ..origin, along: Along.metres(5000.0) } },
-		clock: Clock.start,
-	},
+	{ camera: { vantage: { ..origin, along: Along.metres(5000.0) } }, clock: Clock.start },
 ).len() == 0
