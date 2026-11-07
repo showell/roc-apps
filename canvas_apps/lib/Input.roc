@@ -1,31 +1,32 @@
-# Input is what the keyboard and the mouse looked like at one tick.
-#
-# It mirrors roc-ray's Devices.Snapshot but is named for roc-ray's App.Input,
-# a tick's whole input, which on roc-ray also carries the window, the time
-# and messages. CanvasAppRunner imports both modules, and two nominal types
-# with the same qualified name are ambiguous to the compiler, which still
-# reports two `Devices.Snapshot`s when roc-ray's module is imported under
-# another name. Mouse can share roc-ray's name because its type never has to
-# be named on both sides of one signature.
-#
-# It is shaped like roc-ray's `Devices.Snapshot` on purpose. A game's
-# `read_controls` is the one function that touches input, and it takes a
-# snapshot as a value rather than performing an effect, so with `key_down`,
-# `mouse.button_pressed` and the rest named alike, such a function ports
-# between the two platforms with its import line changed and nothing else.
-#
-# A snapshot is data, so a page can make one. The browser's event loop owns
-# the keyboard and the pointer, keeps what is down, and hands one of these to
-# every tick. On roc-ray the runner converts the host's snapshot into one.
-#
-# `pressed` is the edge, struck since the last tick, and implies `down`.
-# Snake turns on the edge, and Pong's paddle moves while a key is held.
+## Input is what the keyboard and the mouse looked like at one tick.
+##
+## It mirrors roc-ray's Devices.Snapshot but is named for roc-ray's App.Input,
+## a tick's whole input, which on roc-ray also carries the window, the time
+## and messages. CanvasAppRunner imports both modules, and two nominal types
+## with the same qualified name are ambiguous to the compiler, which still
+## reports two `Devices.Snapshot`s when roc-ray's module is imported under
+## another name. Mouse can share roc-ray's name because its type never has to
+## be named on both sides of one signature.
+##
+## It is shaped like roc-ray's `Devices.Snapshot` on purpose. A game's
+## `read_controls` is the one function that touches input, and it takes a
+## snapshot as a value rather than performing an effect, so with `key_down`,
+## `mouse.button_pressed` and the rest named alike, such a function ports
+## between the two platforms with its import line changed and nothing else.
+##
+## A snapshot is data, so a page can make one. The browser's event loop owns
+## the keyboard and the pointer, keeps what is down, and hands one of these to
+## every tick. On roc-ray the runner converts the host's snapshot into one.
+##
+## `pressed` is the edge, struck since the last tick, and implies `down`.
+## Snake turns on the edge, and Pong's paddle moves while a key is held.
 import Keys
 import Mouse
 
 Input :: [].{
-	# `mouse` is a field rather than a method, so a game reaches the pointer
-	# exactly as it does on roc-ray: `input.mouse.position()`.
+
+	## `mouse` is a field rather than a method, so a game reaches the pointer
+	## exactly as it does on roc-ray: `input.mouse.position()`.
 	Snapshot := { held : U32, struck : U32, mouse : Mouse.Snapshot }.{
 
 		## Whether a key is held down now, however long it has been.

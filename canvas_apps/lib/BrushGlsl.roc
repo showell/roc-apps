@@ -1,26 +1,27 @@
-# BrushGlsl is Brush.shade on a GPU, with the numbers that say which shading.
-# It shades the six fills a shape can carry on the scene position, for a
-# platform whose fragment shader can do the arithmetic itself. It sits beside
-# Brush because it belongs to Brush. No app owns any of it:
-# native/CanvasAppRunner.roc compiles it once and shades every app's gradients
-# with it.
-#
-# `Brush.shade` is the same arithmetic on the CPU, case for case, and the names
-# below are its cases, so the two can be read side by side. A player sends
-# `uniforms` of a shape's fill, each number converted to its own vector type,
-# and draws the shape in white. Which numbers go in which uniform is decided
-# here, beside the shader that reads them, so both ends of the contract are in
-# this one file.
+## BrushGlsl is Brush.shade on a GPU, with the numbers that say which shading.
+## It shades the six fills a shape can carry on the scene position, for a
+## platform whose fragment shader can do the arithmetic itself. It sits beside
+## Brush because it belongs to Brush. No app owns any of it:
+## native/CanvasAppRunner.roc compiles it once and shades every app's gradients
+## with it.
+##
+## `Brush.shade` is the same arithmetic on the CPU, case for case, and the names
+## below are its cases, so the two can be read side by side. A player sends
+## `uniforms` of a shape's fill, each number converted to its own vector type,
+## and draws the shape in white. Which numbers go in which uniform is decided
+## here, beside the shader that reads them, so both ends of the contract are in
+## this one file.
 import Brush
 
 BrushGlsl :: [].{
-	# One vec4 uniform's four numbers.
+
+	## One vec4 uniform's four numbers.
 	Quad : { x : F64, y : F64, z : F64, w : F64 }
 
-	# The values the fragment shader reads, by its uniforms' names: which
-	# shading, and the colours and geometry that shading wants. Every field is
-	# sent with every shape, so a slot the shading doesn't read is zero. A
-	# colour's red, green and blue go from 0..255 to the 0..1 a shader mixes.
+	## The values the fragment shader reads, by its uniforms' names: which
+	## shading, and the colours and geometry that shading wants. Every field is
+	## sent with every shape, so a slot the shading doesn't read is zero. A
+	## colour's red, green and blue go from 0..255 to the 0..1 a shader mixes.
 	Uniforms : {
 		mode : F64,
 		color_a : BrushGlsl.Quad,
@@ -31,7 +32,7 @@ BrushGlsl :: [].{
 		geom_c : BrushGlsl.Quad,
 	}
 
-	# The fill as the uniforms the fragment shader reads.
+	## The fill as the uniforms the fragment shader reads.
 	uniforms : Brush.Fill -> BrushGlsl.Uniforms
 	uniforms = |fill| {
 		blank = { ..blank_uniforms, mode: mode_of(fill) }
@@ -78,9 +79,9 @@ BrushGlsl :: [].{
 		}
 	}
 
-	# The scene position, through to the fragment shader. The camera is in the
-	# matrix, not in the vertices, so what arrives is the frame's own
-	# coordinates -- which is what every brush's geometry is in.
+	## The scene position, through to the fragment shader. The camera is in the
+	## matrix, not in the vertices, so what arrives is the frame's own
+	## coordinates -- which is what every brush's geometry is in.
 	vertex : Str
 	vertex = Str.join_with(
 		[
@@ -169,7 +170,7 @@ BrushGlsl :: [].{
 	)
 }
 
-# Which shading, as `mode`. The shader's switch names the same numbers.
+## Which shading, as `mode`. The shader's switch names the same numbers.
 mode_of : Brush.Fill -> F64
 mode_of = |fill|
 	match fill {
