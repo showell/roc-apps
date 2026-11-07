@@ -16,11 +16,6 @@ Tour := {
 	past_instants : List(RideInstant),
 }.{
 
-	# How far back a step back can go: 2048 instants, about half the route.
-	# The newest are the ones kept.
-	past_instants_cap : U64
-	past_instants_cap = 2048
-
 	initial : Tour
 	initial = { route: World.route, instant: RideInstant.initial, past_instants: [] }
 
@@ -62,3 +57,8 @@ Tour := {
 	frame_view : Tour -> FrameView
 	frame_view = |tour| FrameView.frame_view_at(tour.route, tour.instant)
 }
+
+# How far back a step back can go: 2048 instants, about half the route.
+# The newest are the ones kept.
+past_instants_cap : U64
+past_instants_cap = 2048

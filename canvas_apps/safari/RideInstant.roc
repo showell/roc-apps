@@ -30,19 +30,19 @@ RideInstant := {
 		} else {
 			next(route, instant)
 		}
+}
 
-	next : Route, RideInstant -> RideInstant
-	next = |route, instant| {
-		nx = Rider.rider_state_at_next_step(instant.rider, route)
-		dist = route.distance_along_route({ index: nx.segment_index, along: nx.motorcycle.along })
-		{
-			rider: nx,
-			truck: Truck.at_next_step(
-				instant.truck,
-				{ rider_distance: dist, route, route_length: route.route_length() },
-			),
-			clock: instant.clock.next(),
-		}
+next : Route, RideInstant -> RideInstant
+next = |route, instant| {
+	nx = Rider.rider_state_at_next_step(instant.rider, route)
+	dist = route.distance_along_route({ index: nx.segment_index, along: nx.motorcycle.along })
+	{
+		rider: nx,
+		truck: Truck.at_next_step(
+			instant.truck,
+			{ rider_distance: dist, route, route_length: route.route_length() },
+		),
+		clock: instant.clock.next(),
 	}
 }
 
