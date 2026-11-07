@@ -36,9 +36,10 @@ concept here, or only the language does.
 **The top comment has to translate the name.** Read a module's first
 sentence aloud with its name in it. If the sentence has to say what the name
 means before it can say what the module does, the name is a metaphor the reader
-must learn. `Chain` has to begin "Chain finds where the road lies from where the
-rider is", and a chain is also a bike's. The structure is fine; the name should
-say what the comment says.
+must learn. `Chain` had to begin "Chain finds where the road lies from where the
+rider is", and a chain is also a bike's. The structure was fine, so only the
+name changed: `RoadAhead` begins "RoadAhead finds where the road ahead lies",
+which restates its name.
 
 ## Types
 
