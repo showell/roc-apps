@@ -1509,7 +1509,7 @@ This is the rider at step 1,570, with the cat ahead:
 New in this chapter:
 
 - Roc: a nominal record with no bare floats, a value for a bike that doesn't exist
-- Modules: `RiderState`, `Rider`, `CanvasRoll`, `Speed`
+- Modules: `RiderState`, `RiderEyes`, `Rider`, `CanvasRoll`, `Speed`
 
 A nominal record holds the rider, and `RideInstant` stores one. Count the opaque types: `SegmentIndex`, `Along`, `Across`, `Turn`, `Speed`, `Lean`, `Bearing` and `Fraction`. Nothing in it is a bare float. Four fields of this one record are angles, of three different types, and passing one type where another is wanted is a compile-time error. The last two fields say where the rider is looking, and they get a chapter of their own.
 
@@ -1573,17 +1573,17 @@ digraph bike {
 
 `Bike` holds the physics. It's under 60 lines, not counting its `expect`s. Its type is the first one in the tour that names the rest of a record. `..others` makes `Motion` open: it's any record with these six fields and whatever else, with `others` standing for the whatever else.
 
-{{code Bike.Motion}}
+{{code Motorcycle.Motorcycle}}
 
 A structural type like this has to be named when it appears twice. Here it appears in the argument and in the result, and that's the promise: what goes in comes out with the same other fields. A `RiderState` goes in, with its `segment`, `gaze_yaw` and `attention`, and a `RiderState` comes out, though `Bike` has never heard of a gaze.
 
 Call this *a narrow view of a wide record*. A module says exactly which fields it cares about, and the compiler takes care of the rest, with no base class and no copying fields across by hand. The smallest example in the program is a function with one job:
 
-{{code Bike.with_lean}}
+{{code Motorcycle.with_lean}}
 
 `{ ..s, lean }` is record update with a shorthand: the field and the local have the same name. `Rider.decide` called it in the last chapter. Here's the step, which `Rider.rider_state_at_next_step` called:
 
-{{code Bike.bike_motion_at_next_step}}
+{{code Motorcycle.motorcycle_at_next_step}}
 
 Reading down, the types do their share of explaining. A `Lean` can't be added to anything but a `Lean`, and it only reaches direction through `lean.steer(turn_per_lean)`, which is the single door from roll to yaw. The bike then moves along the middle of the step's turn, which is what `s.yaw.plus(turn.times(0.5))` means. `speed.step_length()` is a `Distance`, and `Along.plus` takes one, so the move itself is places and distances. `to_radians()` waits until the last line, where `.cos()` needs a float.
 
@@ -1625,13 +1625,13 @@ digraph limits {
 
 The rider has several reasons to slow down, and they don't know about each other. A turn is coming. A cat is in the lane. There's a pig to look at. The road is about to run out. `Throttle` writes them as a line of limits. An `Acceleration` goes in, a limit lets it through or lowers it, and the next limit gets what's left:
 
-{{code Throttle.acceleration from "a2 = crossing_limit(" to "a4 = shoulder_brake(state, a3)"}}
+{{code Throttle.acceleration from "limits = [" to "limited = limits.fold(offered, held_to)"}}
 
 Call this *the chain of limits*. Each limit has the same shape and can be read alone, and adding a reason is one more line. It reads like a list of rules because that's what it is.
 
 Each limit takes the lower of two opaque `Acceleration`s with `min`. `NoAcceleration` comes from the cat: it stops the rider opening the throttle, and a rider already braking stays braking. We'll see how once we've met the cat.
 
-{{code Throttle.crossing_limit}}
+{{code Throttle.held_to}}
 
 `Speed` and `Acceleration` are places and distances again: two speeds make an acceleration, and an acceleration moves a speed. The formula behind braking for a turn is the first line of a physics textbook, `v² = u² + 2as`, solved for `a`. This function is a good example of how far opaque types reach into a parameter list. `target: Speed.(t)` opens the field's `Speed` where it's destructured:
 
@@ -1639,7 +1639,7 @@ Each limit takes the lower of two opaque `Acceleration`s with `min`. `NoAccelera
 
 The first limit, `bend_brake`, makes the `a1` that the chain above starts from. It calls this for the distance left to the point where the rider commits to the turn. Three modules use that one line of physics: this one, `Gaze` to slow for a pig, and `Truck`.
 
-{{code Throttle.bend_brake from "bend_a =" to "state.speed.acceleration_to({ target: v_end, within: d })"}}
+{{code Throttle.bend_limit from "bend_a =" to "motorcycle.speed.acceleration_to({ target: v_end, within: d })"}}
 
 After the limits, `Throttle.acceleration` hands its result to `allowed_speed`, not quoted here, which holds the speed between rest and the top speed. The chain works in accelerations and that step works in speeds, so the answer is taken back with `.change_from(state.speed)`, the other half of the same pair of types.
 
@@ -1678,7 +1678,7 @@ The rider looks at a pig or at the road, and only a pig has an angle:
 
 A pig asks something of the throttle, or it doesn't:
 
-{{code Gaze.GawkBrake}}
+{{code VehicleLimits.Limit}}
 
 So the job is a short list:
 
@@ -1687,8 +1687,8 @@ So the job is a short list:
 {{types row Gaze.desired_gaze Choose where to look}}
 {{types row Gaze.next_gaze_yaw Turn the head}}
 {{types row Gaze.next_look_depth Keep the depth of the look}}
-{{types row Gaze.is_gawking Know whether the rider is gawking}}
-{{types row Gaze.gawk_brake Work out the brake}}
+{{types row Gawking.is_gawking Know whether the rider is gawking}}
+{{types row Gawking.gawk_brake Work out the brake}}
 
 One step of the gaze
 ```dot
@@ -1750,15 +1750,15 @@ The depth has one job. It widens the view:
 
 Whether the rider is gawking is a plainer question than whether it's looking:
 
-{{code Gaze.is_gawking}}
+{{code Gawking.is_gawking}}
 
 It starts at the same 150 metres, but it only asks where the rider is. There's no angle in it, so it outlasts the look.
 
 `pig_limit` is the third link in the throttle's chain. It asks `Gaze` for a brake, and takes it if that's harder than what it was offered:
 
-{{code Throttle.pig_limit}}
+{{code Throttle.acceleration from "Gawking.gawk_brake(motorcycle, seg)," to "Gawking.gawk_brake(motorcycle, seg),"}}
 
-{{code Gaze.gawk_brake}}
+{{code Gawking.gawk_brake}}
 
 The formula is the one the throttle uses for a bend, with a pig for a bend. The rider aims to be down to 0.2 metres a step by 25 metres before the pig. Past that point `room` would go below zero, so `gawk_least_distance` holds it at a metre and the brake stays on.
 
@@ -2280,11 +2280,11 @@ Let's follow this back to `Cat`, to two small questions about the same `Stage`.
 
 `CrossingReaction.reaction_to` calls both. `..` in the argument's type makes it an open record, like `Bike.Motion`, though this one is only read and nothing comes back. This function needs `along` and `speed`, and accepts any record that has them, so it doesn't depend on `RiderState`, the rider's record. `speed` here is the opaque `Speed` again, and `match` on `segment.crossing` has to name every tag.
 
-{{code CrossingReaction.reaction_to}}
+{{code CrossingReaction.crossing_throttle}}
 
 A cat in the lane stops the rider opening the throttle, without braking, and widens the view as it pulls the rider's eye. Two tags, `MayAccelerate` and `NoAcceleration`, stand where a boolean might have gone. The next call up, `crossing_attention`, is one line, and its caller, `ride_focal`, works out the view's focal length:
 
-{{code RideFocal.crossing_attention}}
+{{code CrossingReaction.crossing_attention}}
 
 {{code RideFocal.ride_focal}}
 
@@ -2354,7 +2354,7 @@ In a language with mutable objects, a rehearsal has a problem to solve before it
 
 The last limit of the throttle is the same idea with one rehearsal in it. It runs the coast, and brakes only if the coast leaves the road:
 
-{{code Throttle.shoulder_brake}}
+{{code Throttle.shoulder_limit}}
 
 That's the last of the rider.
 
@@ -2636,11 +2636,11 @@ The rest of the testing is ordinary `expect`s. An `expect` sits at the top level
 
 A test's data can sit beside it as a plain definition. `Bike` doesn't import `RiderState`, and `Motion` is open, so its fixture is a record that has the six fields and makes up the rest. `segment` and `attention` are bare numbers here, because `Bike` carries them through and never looks. A narrow view of a wide record pays off twice: the test needs nothing the module doesn't.
 
-{{code Bike.riding}}
+{{code Motorcycle.riding}}
 
 It's called like any other value, and the steps that follow are named, so three `expect`s can read them:
 
-{{code Bike.first_step}}
+{{code Motorcycle.first_step}}
 
 The gate makes `expect` honest in one further way. The gate takes its count from the source: every line that starts `expect`, in a module that one of its `roc test` runs compiles, has to print `PASS` exactly once. An `expect` that nothing compiles fails, and so does one that's indented out of reach. One more consequence: an `expect` can only name what its module imports, so a check sits where its test data can be seen, and a module doesn't take on an import for a test's sake. `Coast`'s projections are checked in `Throttle`, which can see a `Speed`, and `LeanSearch`'s search in `Rider`, which can see a `RiderState`.
 
