@@ -30,7 +30,7 @@ Segment := {
 	## What the rider meets on the road here, at most one thing, so that the
 	## rider has one experience at a time. Most of the road is quiet, so that an
 	## encounter stands out.
-	encounter : [CatCrosses(CatCrossing), BirdHere(BirdFlight.Habit), QuietRoad],
+	encounter : [CatCrosses(CatCrossing), BirdHere(BirdFlight.Flight), QuietRoad],
 
 	## How the segment ends: by turning into the next, positive to the
 	## right, with what lives at the bend, or by ending the route.
@@ -98,7 +98,12 @@ Segment := {
 				)
 				BirdHere =>
 					match Segment.fifth_left_tree(trees) {
-						Found(perch) => BirdHere(BirdFlight.habit_from(trees, perch))
+						Found(perch) =>
+							match BirdFlight.flight_from(trees, perch) {
+								Ok(flight) => BirdHere(flight)
+								Err(NoTreeToFlyTo) =>
+									crash "Segment.from_choices: a segment planned with a bird has a tree to fly to"
+							}
 						NoTree => crash "Segment.from_choices: a segment planned with a bird has a fifth tree on the left"
 					}
 				QuietRoad => QuietRoad

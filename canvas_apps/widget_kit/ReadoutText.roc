@@ -1,8 +1,8 @@
 ## The words a widget's readout gives a number: a distance to a tenth, a fraction
 ## as a percentage, a count with commas, and where an animation has got to.
 import game.Animation
-import game.Distance
 import game.Fraction
+import game.Steps
 
 ReadoutText :: [].{
 
@@ -11,7 +11,7 @@ ReadoutText :: [].{
 	stage_text = |stage|
 		match stage {
 			Waiting => "Waiting"
-			Playing(progress) => "Playing: ${percent_text(progress)}"
+			Playing(steps_in) => "Playing: frame ${(steps_in.to_u32() + 1).to_str()}"
 			Past(_) => "Past"
 		}
 
@@ -49,8 +49,9 @@ ReadoutText :: [].{
 }
 
 expect ReadoutText.stage_text(Waiting) == "Waiting"
-expect ReadoutText.stage_text(Playing(Fraction.of(0.5))) == "Playing: 50%"
-expect ReadoutText.stage_text(Past(Distance.metres(1.0))) == "Past"
+expect ReadoutText.stage_text(Playing(Steps.zero)) == "Playing: frame 1"
+expect ReadoutText.stage_text(Playing(Steps.of(9))) == "Playing: frame 10"
+expect ReadoutText.stage_text(Past(Steps.of(1))) == "Past"
 
 expect ReadoutText.tenths_text(0.0) == "0.0"
 expect ReadoutText.tenths_text(0.04) == "0.0"
