@@ -20,8 +20,24 @@ const withStops = (gradient, stops) => {
   return gradient;
 };
 
-const twoStops = (s) => [[stopAt(s.start_offset), cssColor(s.start_color)],
-  [stopAt(s.end_offset, stopAt(s.start_offset)), cssColor(s.end_color)]];
+// Brush.mix, operation for operation, so a colour's last bit agrees with lib's.
+const mix = (p, q, t) => ({
+  r: p.r + (q.r - p.r) * t, g: p.g + (q.g - p.g) * t,
+  b: p.b + (q.b - p.b) * t, a: p.a + (q.a - p.a) * t,
+});
+
+// Brush's two_stop: the colour the stops give at t, for t in [0, 1].
+const twoStopAt = (s, t) => t <= s.start_offset ? s.start_color
+  : t >= s.end_offset ? s.end_color
+  : mix(s.start_color, s.end_color, (t - s.start_offset) / (s.end_offset - s.start_offset));
+
+// A canvas takes offsets in [0, 1] only. An offset past either end becomes a
+// stop at that end in the colour Brush.shade gives there, so the gradient
+// matches lib's mix across the whole of [0, 1].
+const twoStops = (s) => [
+  [stopAt(s.start_offset), cssColor(s.start_offset >= 0 ? s.start_color : twoStopAt(s, 0))],
+  [stopAt(s.end_offset, stopAt(s.start_offset)), cssColor(s.end_offset <= 1 ? s.end_color : twoStopAt(s, 1))],
+];
 
 // A fill becomes something canvas can paint with. An ellipse is the exception:
 // it paints through a transform, so it stays a descriptor.
@@ -34,15 +50,19 @@ function paintFor(ctx, fill) {
       return withStops(ctx.createLinearGradient(p.left_x, 0, p.right_x, 0),
         [[0, cssColor(p.edge_color)], [0.5, cssColor(p.middle_color)], [1, cssColor(p.edge_color)]]);
     case "Radial":
-      if (!(p.outer_radius > p.inner_radius)) return cssColor(p.outer_color);
+      // With no ring to walk, Brush.shade mixes all the way to the outer colour.
+      if (!(p.outer_radius > p.inner_radius)) return cssColor(mix(p.inner_color, p.outer_color, 1));
       return withStops(ctx.createRadialGradient(p.center.x, p.center.y, p.inner_radius, p.center.x, p.center.y, p.outer_radius),
         [[0, cssColor(p.inner_color)], [1, cssColor(p.outer_color)]]);
     case "Linear":
       return withStops(ctx.createLinearGradient(p.start_point.x, p.start_point.y, p.end_point.x, p.end_point.y),
         twoStops(p.stops));
     case "Glow":
-      // Brush.shade and BrushGlsl both end at the outer colour when there is no ring to walk.
-      if (!(p.outer_radius > p.inner_radius)) return cssColor(p.outer_color);
+      // With no ring to walk, Brush.shade takes t = 1, past the middle offset,
+      // and mixes from the middle colour to the outer one.
+      if (!(p.outer_radius > p.inner_radius)) {
+        return cssColor(mix(p.middle_color, p.outer_color, (1 - p.middle_offset) / (1 - p.middle_offset)));
+      }
       return withStops(ctx.createRadialGradient(p.center.x, p.center.y, p.inner_radius, p.center.x, p.center.y, p.outer_radius),
         [[0, cssColor(p.inner_color)], [p.middle_offset, cssColor(p.middle_color)], [1, cssColor(p.outer_color)]]);
     case "Ellipse":
