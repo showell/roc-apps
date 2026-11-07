@@ -1539,7 +1539,7 @@ When the rider leans, the whole picture leans with it. This is all of that:
 
 A lean inside the deadband leaves the canvas level, and any other lean passes straight through. The last `expect` is a table of pairs, on both sides of the deadband and at its edge. It's called once a frame:
 
-{{code FrameView.frame_view_at from "roll: CanvasRoll" to "roll: CanvasRoll"}}
+{{code RiderCamera.of from "roll: CanvasRoll" to "roll: CanvasRoll"}}
 
 The camera turns as well. `ViewYaw` follows the rider's gaze, and turns a little with the lean, as a rider's head turns into a bend.
 
@@ -1730,7 +1730,7 @@ A twentieth of what's left never gets to zero, so the `OnRoad` branch first chec
 
 Nothing here turns the bike. The gaze goes to the camera, and to nothing else that moves:
 
-{{code ViewYaw.view_yaw_for}}
+{{code RiderCamera.view_yaw_for}}
 
 The second term is the rider's head going with the lean. So when the rider looks right, the road slides left on the page, and the bike keeps going where it was going.
 

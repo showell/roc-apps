@@ -49,9 +49,9 @@ package
 		PosedCat,
 		RailSighting,
 		Rendered,
-		RideFocal,
 		RideInstant,
 		Rider,
+		RiderCamera,
 		RiderEyes,
 		RiderState,
 		RoadAhead,
@@ -78,7 +78,6 @@ package
 		Truck,
 		TruckSighting,
 		VehicleLimits,
-		ViewYaw,
 		World,
 	]
 	{ lib: "../lib/main.roc" }

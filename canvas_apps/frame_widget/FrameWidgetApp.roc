@@ -13,14 +13,13 @@ import game.FrameView
 import game.Ground
 import game.GroundSighting
 import game.Mountains
-import game.RideFocal
+import game.RiderCamera
 import game.SafariApp
 import game.Scene
 import game.SceneShapes
 import game.Screen
 import game.Sky
 import game.Tour
-import game.ViewYaw
 import lib.Brush
 import lib.RgbColor
 import lib.CanvasApp
@@ -139,22 +138,12 @@ backdrop_pieces = |view| {
 	]
 }
 
-## The camera the ride sees through at `tour`'s instant.
-view_at : Tour -> RoadAhead.CameraView
-view_at = |tour| {
-	rider = tour.instant.rider
-	{
-		road: {
-			route: tour.route,
-			segments_ahead: RoadAhead.indices_ahead(tour.route, rider.segment_index),
-			vantage: ViewYaw.vantage_for(rider),
-		},
-		cam_focal: RideFocal.ride_focal(rider, tour.route),
-	}
-}
+## The camera the ride sees through at the step on show.
+paused_camera : RiderCamera
+paused_camera = RiderCamera.of(paused_tour.instant.rider, paused_tour.route)
 
 paused_view : RoadAhead.CameraView
-paused_view = view_at(paused_tour)
+paused_view = paused_camera.camera_view(paused_tour.route)
 
 ## What the camera shows at the step on show.
 paused_frame_view : FrameView
@@ -179,26 +168,14 @@ paused_scene = {
 
 ## The mountains and the road, which `FrameView.frame_view_at` puts under the things
 ## beside the road, each with its layer.
-ground_pieces : Tour -> List(Piece)
-ground_pieces = |tour| {
-	instant = tour.instant
-	rider = instant.rider
-	view = view_at(tour)
-	skyline = Mountains.mountain_shapes(
-		{ heading: ViewYaw.heading_for(rider), cam_focal: view.cam_focal },
-		Sky.dusk_at(instant.clock),
-	)
-	ground = GroundSighting.patches_in_view(view.road).keep_oks(
-		|patch| Ground.patch_shape(
-			patch,
-			view.cam_focal,
-		),
+ground_parts : List(Piece)
+ground_parts = {
+	skyline = Mountains.mountain_shapes(paused_camera, Sky.dusk_at(paused_tour.instant.clock))
+	ground = GroundSighting.patches_in_view(paused_view.road).keep_oks(
+		|patch| Ground.patch_shape(patch, paused_camera.cam_focal),
 	)
 	[{ layer: Mountains, shapes: skyline }, { layer: Road, shapes: ground }]
 }
-
-ground_parts : List(Piece)
-ground_parts = ground_pieces(paused_tour)
 
 backdrop_parts : List(Piece)
 backdrop_parts = backdrop_pieces(paused_frame_view)
