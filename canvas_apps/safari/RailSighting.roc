@@ -110,7 +110,7 @@ RailSighting :: [].{
 bend_after : Chain.RoadView, Chain.Position -> BendView
 bend_after = |road, position|
 	BendView.of_segment(
-		position.index_in(road.chain_indices).segment_in(road.route_segments),
+		Chain.segment_at(road, position),
 		{ before: InChain(position), after: InChain(position.next()) },
 	)
 

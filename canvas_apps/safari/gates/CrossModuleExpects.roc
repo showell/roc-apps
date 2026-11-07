@@ -70,6 +70,17 @@ road = {
 	vantage: origin,
 }
 
+# A chain's positions count along the chain, not along the route.
+expect {
+	third_then_first = { ..road, chain_indices: [2, 0].map(World.SegmentIndex.number) }
+	length_at = |position| Chain.segment_at(third_then_first, position).length
+	third_length = World.route_segment(2).length
+	first_length = World.route_segment(0).length
+	third_length != first_length
+		and length_at(Chain.Position.first) == third_length
+		and length_at(Chain.Position.first.next()) == first_length
+}
+
 polygon_of : Shapes.Shape -> { coordinates : List(F64), fill : Brush.Fill }
 polygon_of = |shape|
 	match shape {

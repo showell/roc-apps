@@ -21,7 +21,7 @@ TreeSighting :: [].{
 	## The trees in view on the segment at `position` in the chain.
 	segment_sightings : Chain.Viewpoint, Chain.Position -> List(Geom.Sighted(Conifer))
 	segment_sightings = |view, position| {
-		segment = position.index_in(view.road.chain_indices).segment_in(view.road.route_segments)
+		segment = Chain.segment_at(view.road, position)
 		segment.trees.keep_oks(|tree| sighting_of(view, { position, tree }))
 	}
 

@@ -74,7 +74,7 @@ BillboardSighting :: [].{
 	farm_sightings : Chain.RoadView, Chain.Position -> List(BillboardSighting.Fate)
 	farm_sightings = |road, position|
 		if position.is_within_first(farm_reach) {
-			segment = segment_at(road, position)
+			segment = Chain.segment_at(road, position)
 			segment.cows.concat(segment.pigs)
 				.map(|critter| sight_critter(road, { place: InChain(position), critter }))
 		} else {
@@ -85,7 +85,7 @@ BillboardSighting :: [].{
 	## chain. The road's last segment ends with no bend.
 	wildlife_sightings : Chain.RoadView, Chain.Position -> List(BillboardSighting.Fate)
 	wildlife_sightings = |road, position| {
-		segment = segment_at(road, position)
+		segment = Chain.segment_at(road, position)
 		match segment.ending {
 			Continues(_) =>
 				if position.is_within_first(wildlife_reach) {
@@ -101,7 +101,10 @@ BillboardSighting :: [].{
 	duck_sightings : Chain.RoadView, Chain.Position -> List(BillboardSighting.Fate)
 	duck_sightings = |road, position|
 		if position.is_within_first(wildlife_reach) {
-			pond_sightings(road, { place: InChain(position), segment: segment_at(road, position) })
+			pond_sightings(
+				road,
+				{ place: InChain(position), segment: Chain.segment_at(road, position) },
+			)
 		} else {
 			[]
 		}
@@ -144,9 +147,6 @@ BillboardSighting :: [].{
 			},
 		)
 }
-
-segment_at : Chain.RoadView, Chain.Position -> World.Segment
-segment_at = |road, position| position.index_in(road.chain_indices).segment_in(road.route_segments)
 
 bend_sightings : Chain.RoadView,
 {
