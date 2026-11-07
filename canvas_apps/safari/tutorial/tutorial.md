@@ -383,6 +383,7 @@ digraph tree {
   "Conifer.scenery_picture" -> "TreeShapes.tree_picture";
   "TreeShapes.tree_picture" -> "tree_on_screen";
   "tree_on_screen" -> "Camera.project";
+  "TreeShapes.tree_picture" -> "trunk_shape";
   "TreeShapes.tree_picture" -> "tier_shape";
   "tier_shape" -> "tier_triangle";
 }
@@ -476,6 +477,7 @@ digraph cone {
   "TreeShapes.tree_picture" -> "tier_shape";
   "tier_shape" -> "tier_triangle";
   "tier_shape" -> "tier_cone";
+  "tier_cone" -> "Camera.project";
   "tier_cone" -> "convex_hull_points";
   "convex_hull_points" -> "trim_hull";
   "trim_hull" -> "trim_hull";
