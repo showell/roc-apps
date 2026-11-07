@@ -259,15 +259,15 @@ pig_disc : Geom.Placed(Billboard) -> Shapes.Shape
 pig_disc = |pig|
 	if pig == gaze_pig {
 		plan_disc({
-			along: pig.along,
-			across: pig.across,
+			along: pig.road_point.along,
+			across: pig.road_point.across,
 			radius: 6.0,
 			color: gaze_pig_color,
 		})
 	} else {
 		plan_disc({
-			along: pig.along,
-			across: pig.across,
+			along: pig.road_point.along,
+			across: pig.road_point.across,
 			radius: 3.0,
 			color: herd_color,
 		})
@@ -281,8 +281,8 @@ pigs =
 		.append(
 			ScrubWidget.label({
 				text: "the pig",
-				x: screen_x(gaze_pig.along) - 62.0,
-				y: screen_y(gaze_pig.across) + 20.0,
+				x: screen_x(gaze_pig.road_point.along) - 62.0,
+				y: screen_y(gaze_pig.road_point.across) + 20.0,
 			}),
 		)
 
@@ -536,8 +536,8 @@ expect screen_x(Along.metres(left_edge_metres + 100.0)) == 100.0 * pixels_a_metr
 expect screen_y(Across.middle) == road_middle_y
 expect screen_y(Across.metres(10.0)) == road_middle_y + 10.0 * pixels_a_metre
 expect screen_y(Across.metres(-10.0)) == road_middle_y - 10.0 * pixels_a_metre
-expect screen_x(gaze_pig.along) < ScrubWidget.canvas_width
-expect screen_y(gaze_pig.across) < ScrubWidget.picture_bottom_y
+expect screen_x(gaze_pig.road_point.along) < ScrubWidget.canvas_width
+expect screen_y(gaze_pig.road_point.across) < ScrubWidget.picture_bottom_y
 
 expect pig_segment.segment_pigs().len() == 49
 

@@ -478,9 +478,9 @@ expect
 		|index| {
 			crossing = crossing_at(index)
 			seg(index).trees.any(
-				|tree|
-					tree.along.plus(Cat.cat_beyond_tree) == crossing.along
-						and tree.across.plus(Cat.cat_behind_tree) == crossing.start_across,
+				|{ road_point, .. }|
+					road_point.along.plus(Cat.cat_beyond_tree) == crossing.along
+						and road_point.across.plus(Cat.cat_behind_tree) == crossing.start_across,
 			)
 		},
 	)

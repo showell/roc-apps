@@ -55,7 +55,7 @@ Gawking :: [].{
 	is_gawking : Motorcycle, Segment -> Bool
 	is_gawking = |motorcycle, seg|
 		match eye_catching_pig(seg) {
-			CatchesEye(pig) => motorcycle.along >= pig.along.minus(notice_distance)
+			CatchesEye(pig) => motorcycle.along >= pig.road_point.along.minus(notice_distance)
 			NoPigCatchesEye => False
 		}
 
@@ -65,7 +65,8 @@ Gawking :: [].{
 	gawk_brake = |motorcycle, seg|
 		match eye_catching_pig(seg) {
 			CatchesEye(pig) if is_gawking(motorcycle, seg) => {
-				room = pig.along.distance_from(motorcycle.along).minus(gawk_settle_distance)
+				gap = pig.road_point.along.distance_from(motorcycle.along)
+				room = gap.minus(gawk_settle_distance)
 				AtMost(
 					motorcycle.speed.acceleration_to({
 						target: gawk_speed,
@@ -125,7 +126,7 @@ motorcycle_at = |along| {
 short_of_pig : F64 -> Motorcycle
 short_of_pig = |metres| {
 	..Motorcycle.initial,
-	along: watched_pig.along.minus(Distance.metres(metres)),
+	along: watched_pig.road_point.along.minus(Distance.metres(metres)),
 }
 
 expect !Gawking.is_gawking(motorcycle_at(200.0), plain)

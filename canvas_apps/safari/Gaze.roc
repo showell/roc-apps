@@ -122,8 +122,8 @@ next_look_depth = |eyes, gaze_yaw|
 turn_to : Motorcycle, Geom.Placed(Billboard) -> Angle.Turn
 turn_to = |motorcycle, pig| Angle.Turn.radians(
 	F64.atan2({
-		x: pig.along.distance_from(motorcycle.along).to_metres(),
-		y: pig.across.distance_from(motorcycle.across).to_metres(),
+		x: pig.road_point.along.distance_from(motorcycle.along).to_metres(),
+		y: pig.road_point.across.distance_from(motorcycle.across).to_metres(),
 	}),
 ).minus(motorcycle.yaw)
 
@@ -185,7 +185,7 @@ watched_pig =
 rider_short_of_pig : F64 -> Motorcycle
 rider_short_of_pig = |metres| {
 	..rider(0.0),
-	along: watched_pig.along.minus(Distance.metres(metres)),
+	along: watched_pig.road_point.along.minus(Distance.metres(metres)),
 }
 
 # The look starts where the pig is noticed, and not a centimetre sooner.

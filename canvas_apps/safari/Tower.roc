@@ -517,8 +517,7 @@ tower_along : F64 -> Pipeline.Sighted(Tower)
 tower_along = |along|
 	Pipeline.sighting_of(
 		{
-			along: Along.metres(along),
-			across: Across.metres(20.0),
+			road_point: { along: Along.metres(along), across: Across.metres(20.0) },
 			lift: Distance.zero,
 			kind: plain_tower,
 		},

@@ -103,8 +103,7 @@ sighted_ahead : kind, F64 -> Pipeline.Sighted(kind)
 sighted_ahead = |kind, forward|
 	Pipeline.sighting_of(
 		{
-			along: Along.metres(forward),
-			across: Across.middle,
+			road_point: { along: Along.metres(forward), across: Across.middle },
 			lift: Distance.zero,
 			kind,
 		},

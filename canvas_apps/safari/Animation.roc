@@ -89,8 +89,7 @@ Animation :: [].{
 	## and its kind is the instant's pose.
 	placed_instant : Animation.Instant(pose) -> Geom.Placed({ pose : pose })
 	placed_instant = |{ pose, location }| {
-		along: location.along,
-		across: location.across,
+		road_point: { along: location.along, across: location.across },
 		lift: location.lift,
 		kind: { pose: pose },
 	}
@@ -277,8 +276,7 @@ expect {
 	}
 	Animation.placed_instant({ pose: First, location })
 		== {
-			along: location.along,
-			across: location.across,
+			road_point: { along: location.along, across: location.across },
 			lift: location.lift,
 			kind: { pose: First },
 		}

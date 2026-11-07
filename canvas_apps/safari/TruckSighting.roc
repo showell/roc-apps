@@ -31,8 +31,7 @@ TruckSighting :: [].{
 				Ok({ along, position }) => {
 					placed_truck : Geom.Placed(LitTruck)
 					placed_truck = {
-						along,
-						across: Across.middle,
+						road_point: { along, across: Across.middle },
 						lift: Distance.zero,
 						kind: lit_truck,
 					}

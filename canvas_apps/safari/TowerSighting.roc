@@ -133,8 +133,7 @@ tower_if_ahead = |
 | {
 	placed_tower : Geom.Placed(Tower)
 	placed_tower = {
-		along,
-		across,
+		road_point: { along, across },
 		lift: Distance.zero,
 		kind: {
 			yaw,

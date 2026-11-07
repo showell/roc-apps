@@ -87,8 +87,7 @@ from_origin = view_from(origin, Pixels.of(500.0))
 green_tree_at = |along| {
 	place: Ahead(SegmentPlace.Position.first),
 	tree: {
-		along: Along.metres(along),
-		across: Across.metres(3.5),
+		road_point: { along: Along.metres(along), across: Across.metres(3.5) },
 		lift: Distance.zero,
 		kind: Conifer.Green,
 	},

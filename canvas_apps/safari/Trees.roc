@@ -34,12 +34,14 @@ Trees :: [].{
 		while $along <= last_along {
 			tree_distance = tree_line_distance($conifer)
 			left_tree = {
-				along: $along,
-				across: Across.left_of_middle(tree_distance),
+				road_point: { along: $along, across: Across.left_of_middle(tree_distance) },
 				lift: Distance.zero,
 				kind: $conifer,
 			}
-			right_tree = { ..left_tree, across: Across.right_of_middle(tree_distance) }
+			right_tree = {
+				..left_tree,
+				road_point: { along: $along, across: Across.right_of_middle(tree_distance) },
+			}
 			$trees = $trees.append(left_tree).append(right_tree)
 			$along = $along.plus(tree_spacing)
 			$conifer =
@@ -91,7 +93,7 @@ gold_green_trees : List(Trees.RoadsideTree)
 gold_green_trees = Trees.roadside_trees({ scheme: GoldGreen, length: Distance.metres(300.0) })
 
 expect
-	gold_green_trees.map(|tree| tree.along.to_metres())
+	gold_green_trees.map(|tree| tree.road_point.along.to_metres())
 		== [
 			6.0,
 			6.0,
@@ -110,7 +112,7 @@ expect
 		]
 
 expect
-	gold_green_trees.map(|tree| tree.across.to_metres())
+	gold_green_trees.map(|tree| tree.road_point.across.to_metres())
 		== [
 			-3.5,
 			3.5,

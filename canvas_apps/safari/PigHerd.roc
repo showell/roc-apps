@@ -122,8 +122,7 @@ front_row_across = Across.right_of_middle(Scenery.herd_front_distance)
 
 pig : { along : Along, across : Across } -> Geom.Placed(Billboard)
 pig = |{ along, across }| {
-	along,
-	across,
+	road_point: { along, across },
 	lift: Distance.zero,
 	kind: Billboard.adult_billboard(Pig.pig, FacesLeft),
 }
@@ -207,8 +206,8 @@ expect
 	].all(|(herd, count)| herd.herd_pigs(fixture_herd_along).len() == count)
 
 # The third pig of the row nearest the road, strayed from its place.
-expect (eye_catcher.along.to_metres() - 940.80757).abs() <= 0.00001
-expect (eye_catcher.across.to_metres() - 11.0332).abs() <= 0.00001
+expect (eye_catcher.road_point.along.to_metres() - 940.80757).abs() <= 0.00001
+expect (eye_catcher.road_point.across.to_metres() - 11.0332).abs() <= 0.00001
 expect eye_catcher.kind.height.to_metres() == 1.1
 expect eye_catcher.kind.still.codepoint() == 128022
 expect eye_catcher.kind.facing == FacesLeft
@@ -250,7 +249,7 @@ expect
 		(46, 986.0),
 		(47, 990.0),
 		(48, 994.0),
-	].all(|(i, along)| (herd_pig_at(i).along.to_metres() - along).abs() <= 1.2)
+	].all(|(i, along)| (herd_pig_at(i).road_point.along.to_metres() - along).abs() <= 1.2)
 
 expect
 	[
@@ -264,7 +263,7 @@ expect
 		(35, 42.0),
 		(42, 48.0),
 		(48, 48.0),
-	].all(|(i, across)| (herd_pig_at(i).across.to_metres() - across).abs() <= 1.0)
+	].all(|(i, across)| (herd_pig_at(i).road_point.across.to_metres() - across).abs() <= 1.0)
 
 both_rows : List(Geom.Placed(Billboard))
 both_rows = PigHerd.TwoRows(four_and_six).herd_pigs(fixture_herd_along)
@@ -273,7 +272,7 @@ expect both_rows.len() == 10
 expect four_and_six.front_offsets().len() == 4
 
 expect
-	both_rows.map(|critter| critter.along.to_metres())
+	both_rows.map(|critter| critter.road_point.along.to_metres())
 		== [
 			934.0,
 			938.0,
@@ -288,7 +287,7 @@ expect
 		]
 
 expect
-	both_rows.map(|critter| critter.across.to_metres())
+	both_rows.map(|critter| critter.road_point.across.to_metres())
 		== [
 			12.0,
 			12.0,
@@ -306,8 +305,8 @@ expect
 two_row_standout : Geom.Placed(Billboard)
 two_row_standout = PigHerd.TwoRows(four_and_six).standout_pig(fixture_herd_along)
 
-expect two_row_standout.along.to_metres() == 942.0
-expect two_row_standout.across.to_metres() == 12.0
+expect two_row_standout.road_point.along.to_metres() == 942.0
+expect two_row_standout.road_point.across.to_metres() == 12.0
 expect both_rows.get(2) == Ok(two_row_standout)
 expect both_rows.count_if(|row_member| row_member == two_row_standout) == 1
 

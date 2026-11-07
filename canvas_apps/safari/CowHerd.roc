@@ -71,8 +71,10 @@ herd_bull = |herd_along| {
 	tree_line = Trees.tree_line_distance(Conifer.Green)
 	bull_middle = tree_line.plus(bull.adult_height.divided_by(2.0))
 	{
-		along: herd_along,
-		across: Across.left_of_middle(bull_middle.plus(bull_tree_gap)),
+		road_point: {
+			along: herd_along,
+			across: Across.left_of_middle(bull_middle.plus(bull_tree_gap)),
+		},
 		lift: Distance.zero,
 		kind: Billboard.adult_billboard(bull, FacesLeft),
 	}
@@ -103,8 +105,10 @@ herd_cow = |herd, { herd_along, cow_number }| {
 	)
 	out_from_road = row_place.plus(stray.across)
 	{
-		along: in_line.plus(stray.along),
-		across: Across.left_of_middle(out_from_road),
+		road_point: {
+			along: in_line.plus(stray.along),
+			across: Across.left_of_middle(out_from_road),
+		},
 		lift: Distance.zero,
 		kind: if is_calf(cow_number) {
 			Billboard.young_billboard(cow, FacesRight)
@@ -114,8 +118,8 @@ herd_cow = |herd, { herd_along, cow_number }| {
 	}
 }
 
-expect herd_bull(Along.metres(24.0)).along == Along.metres(24.0)
-expect herd_bull(Along.metres(24.0)).across == Across.metres(-4.805)
+expect herd_bull(Along.metres(24.0)).road_point.along == Along.metres(24.0)
+expect herd_bull(Along.metres(24.0)).road_point.across == Across.metres(-4.805)
 expect herd_bull(Along.metres(24.0)).kind.still == EmojiStills.bull
 expect herd_bull(Along.metres(24.0)).kind.facing == FacesLeft
 expect (herd_bull(Along.metres(24.0)).kind.height.to_metres() - 1.61).abs() <= 0.000000000001
@@ -154,7 +158,7 @@ expect cows_without_bull.len() == 14
 
 # The bull leads, facing left, and the cows follow him in their own order, facing
 # right.
-expect cows_with_bull.take_first(1).map(|leader| leader.along) == [Along.metres(24.0)]
+expect cows_with_bull.take_first(1).map(|leader| leader.road_point.along) == [Along.metres(24.0)]
 expect cows_with_bull.take_first(1).map(|leader| leader.kind.still.codepoint()) == [128002]
 expect cows_with_bull.drop_first(1) == cows_without_bull
 expect cows_with_bull.take_first(2).map(|critter| critter.kind.facing) == [FacesLeft, FacesRight]
@@ -198,7 +202,10 @@ expect {
 		52.0,
 		54.0,
 	]
-	misses = cows_without_bull.map2(places, |one, place| (one.along.to_metres() - place).abs())
+	misses = cows_without_bull.map2(
+		places,
+		|one, place| (one.road_point.along.to_metres() - place).abs(),
+	)
 	misses.all(|miss| miss <= 1.5)
 }
 
@@ -219,6 +226,9 @@ expect {
 		-12.0,
 		-17.0,
 	]
-	misses = cows_without_bull.map2(places, |one, place| (one.across.to_metres() - place).abs())
+	misses = cows_without_bull.map2(
+		places,
+		|one, place| (one.road_point.across.to_metres() - place).abs(),
+	)
 	misses.all(|miss| miss <= 1.2)
 }

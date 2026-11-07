@@ -113,8 +113,7 @@ flat_color_of = |shape|
 # to draw.
 tree_at : F64, F64 -> Trees.RoadsideTree
 tree_at = |along, across| {
-	along: Along.metres(along),
-	across: Across.metres(across),
+	road_point: { along: Along.metres(along), across: Across.metres(across) },
 	lift: Distance.zero,
 	kind: Conifer.Red,
 }
@@ -572,7 +571,11 @@ critter_fate : {
 	kind : Billboard,
 } -> BillboardSighting.Fate
 critter_fate = |{ along, across, kind }| {
-	critter = { along, across, lift: Distance.zero, kind }
+	critter = {
+		road_point: { along, across },
+		lift: Distance.zero,
+		kind,
+	}
 	BillboardSighting.sight_critter(road, { place: Ahead(SegmentPlace.Position.first), critter })
 }
 

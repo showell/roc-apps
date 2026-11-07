@@ -73,7 +73,7 @@ Segment := {
 				CatCrosses => CatCrosses(
 					Cat.crossing({
 						road_half_width: Geom.road_half_width,
-						tree: nearest_tree_ahead(trees, Cat.cat_along),
+						tree: nearest_tree_ahead(trees, Cat.cat_along).road_point,
 					}),
 				)
 				BirdHere => BirdFlight.crossing_among(trees)
@@ -136,7 +136,9 @@ Segment := {
 ## is the nearest.
 nearest_tree_ahead : List(Trees.RoadsideTree), Along -> Trees.RoadsideTree
 nearest_tree_ahead = |trees, along|
-	trees.find_first(|tree| tree.across > Across.middle and tree.along >= along)
+	trees.find_first(
+		|{ road_point, .. }| road_point.across > Across.middle and road_point.along >= along,
+	)
 		?? crash "Segment.nearest_tree_ahead: a segment with a cat is long enough to have its tree"
 
 ## Where a herd of pigs stands on a segment `length` long.
@@ -149,10 +151,10 @@ gold_trees = Trees.roadside_trees({ scheme: GoldGreen, length: Distance.metres(3
 
 # On a gold segment the pairs differ. The tree found is whichever comes next, near
 # the road or far from it, and never one on the left.
-expect nearest_tree_ahead(gold_trees, Cat.cat_along).across == Across.metres(3.5)
-expect nearest_tree_ahead(gold_trees, Along.metres(90.0)).across == Across.metres(8.0)
-expect nearest_tree_ahead(gold_trees, Along.metres(90.0)).along == Along.metres(96.0)
-expect nearest_tree_ahead(gold_trees, Along.metres(96.0)).along == Along.metres(96.0)
-expect nearest_tree_ahead(gold_trees, Along.metres(96.5)).along == Along.metres(126.0)
+expect nearest_tree_ahead(gold_trees, Cat.cat_along).road_point.across == Across.metres(3.5)
+expect nearest_tree_ahead(gold_trees, Along.metres(90.0)).road_point.across == Across.metres(8.0)
+expect nearest_tree_ahead(gold_trees, Along.metres(90.0)).road_point.along == Along.metres(96.0)
+expect nearest_tree_ahead(gold_trees, Along.metres(96.0)).road_point.along == Along.metres(96.0)
+expect nearest_tree_ahead(gold_trees, Along.metres(96.5)).road_point.along == Along.metres(126.0)
 
 expect pig_herd_along(Distance.metres(1000.0)) == Along.metres(940.0)

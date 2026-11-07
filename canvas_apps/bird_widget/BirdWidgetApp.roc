@@ -72,7 +72,7 @@ eye_to_first_tree = Distance.metres(18.0)
 ## How far ahead of the picture's eye a place on the road is.
 forward_of : Along -> Distance
 forward_of = |along| {
-	past_first_tree = along.distance_from(flight.from.along)
+	past_first_tree = along.distance_from(flight.from.road_point.along)
 	eye_to_first_tree.plus(past_first_tree)
 }
 
@@ -135,10 +135,17 @@ spot_of = |{ along, across, lift, .. }, foot|
 
 tree_shapes : Trees.RoadsideTree -> List(Shapes.Shape)
 tree_shapes = |tree|
-	match foot_at(tree.along, tree.across) {
+	match foot_at(tree.road_point.along, tree.road_point.across) {
 		Ok(foot) =>
 			tree.kind.scenery_picture({
-				spot: spot_of(tree, foot),
+				spot: spot_of(
+					{
+						along: tree.road_point.along,
+						across: tree.road_point.across,
+						lift: tree.lift,
+					},
+					foot,
+				),
 				cam_focal: Lens.resting_focal,
 				context: { nearer_tree_count: 0 },
 			}).to_shapes()
@@ -191,8 +198,8 @@ beat_name = |beat|
 		WingsDown => "wings down"
 	}
 
-expect forward_of(flight.from.along).to_metres() == 18.0
-expect forward_of(flight.to.along).to_metres() == 48.0
+expect forward_of(flight.from.road_point.along).to_metres() == 18.0
+expect forward_of(flight.to.road_point.along).to_metres() == 48.0
 
 # The whole flight is on the range, with some road to spare at the far end.
 expect BirdFlight.flight_gaps.starts_at < closing_gap.first
