@@ -126,13 +126,15 @@ Shapes :: [].{
 	## Every x pulled toward `axis` by `cosine`, so a figure drawn face-on reads as one
 	## turned away by the angle whose cosine that is. A negative cosine mirrors it as
 	## well, so a pair beside a path can face each other. A disc keeps its radius,
-	## because no shape here is an ellipse.
+	## because no shape here is an ellipse. Only a flat fill can be squashed: a
+	## gradient's geometry would stay where it was while its shape moved, so a
+	## polygon, disc or rectangle with a gradient crashes.
 	squashed_shapes : List(Shapes.Shape), { axis : F64, cosine : F64 } -> List(Shapes.Shape)
 	squashed_shapes = |shapes, { axis, cosine: k }| shapes.map(
 		|shape|
 			match shape {
-				Poly(p) => Poly({ coordinates: pulled(p.coordinates, { axis, cosine: k }), fill: p.fill })
-				Disc(d) => Disc({ x: axis + (d.x - axis) * k, y: d.y, radius: d.radius, fill: d.fill })
+				Poly(p) => Poly({ coordinates: pulled(p.coordinates, { axis, cosine: k }), fill: squashable_fill(p.fill) })
+				Disc(d) => Disc({ x: axis + (d.x - axis) * k, y: d.y, radius: d.radius, fill: squashable_fill(d.fill) })
 				# A mirror sends a rectangle's left edge to its right, and a width is never
 				# negative.
 				Rect(r) => {
@@ -147,7 +149,7 @@ Shapes :: [].{
 							b - a
 						},
 						height: r.height,
-						fill: r.fill,
+						fill: squashable_fill(r.fill),
 					})
 				}
 				Blend(m) => Blend(m)
@@ -201,6 +203,16 @@ Shapes :: [].{
 		}
 	}
 }
+
+## A squashed shape's fill, which must be flat: a gradient's geometry is in the
+## shape's coordinates, and squashing moves the shape but not the gradient.
+squashable_fill : Brush.Fill -> Brush.Fill
+squashable_fill = |fill|
+	match fill {
+		Flat(_) => fill
+		Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) =>
+			crash "Shapes.squashed_shapes: a gradient fill would not move with its shape"
+	}
 
 ## Every x of the coordinates pulled toward `axis` by `cosine`.
 pulled : List(F64), { axis : F64, cosine : F64 } -> List(F64)
@@ -262,6 +274,11 @@ dot = Disc({ x: 1.0, y: 2.0, radius: 3.0, fill: ink })
 expect Shapes.added_light([dot]) == [Blend(Add), dot, Blend(Over)]
 expect Shapes.added_light([]) == [Blend(Add), Blend(Over)]
 expect Shapes.in_space(Screen, [dot]) == [View(Screen), dot, View(Screen)]
+
+# A flat polygon and a flat disc are squashed toward the axis with their fills.
+expect
+	Shapes.squashed_shapes([Poly({ coordinates: [10.0, 1.0, 20.0, 2.0, 30.0, 3.0], fill: ink }), dot], { axis: 10.0, cosine: 0.5 })
+		== [Poly({ coordinates: [10.0, 1.0, 15.0, 2.0, 20.0, 3.0], fill: ink }), Disc({ x: 5.5, y: 2.0, radius: 3.0, fill: ink })]
 
 # A horizontal line two wide stands one each side of its axis.
 expect
