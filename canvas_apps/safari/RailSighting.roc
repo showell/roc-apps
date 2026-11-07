@@ -12,6 +12,7 @@ import SegmentPlace
 import Geom
 import GuardRail
 import BendInView
+import Pixels
 
 RailSighting :: [].{
 
@@ -20,6 +21,7 @@ RailSighting :: [].{
 	rail_quads_in_view : RoadAhead.RoadView,
 	{
 		vantage : Geom.Vantage,
+		cam_focal : Pixels,
 		..,
 	} -> List(GuardRail.RailQuad)
 	rail_quads_in_view = |road, camera|

@@ -8,6 +8,7 @@ import SegmentPlace
 import Geom
 import Lens
 import Pipeline
+import Pixels
 import Pond
 import Wildlife
 
@@ -28,6 +29,7 @@ BillboardSighting :: [].{
 	billboards_in_view : RoadAhead.RoadView,
 	{
 		vantage : Geom.Vantage,
+		cam_focal : Pixels,
 		..,
 	} -> List(Pipeline.Sighted(Billboard))
 	billboards_in_view = |road, camera|
@@ -38,6 +40,7 @@ BillboardSighting :: [].{
 	billboard_fates : RoadAhead.RoadView,
 	{
 		vantage : Geom.Vantage,
+		cam_focal : Pixels,
 		..,
 	} -> List(BillboardSighting.Fate)
 	billboard_fates = |road, camera|

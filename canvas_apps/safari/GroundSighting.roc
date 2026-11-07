@@ -11,6 +11,7 @@ import SegmentPlace
 import Geom
 import Ground
 import BendInView
+import Pixels
 import Pond
 import lib.RgbColor
 
@@ -18,7 +19,12 @@ GroundSighting :: [].{
 
 	## The ground in view, in paint order: each segment in view in the order of
 	## `RoadAhead.segments_in_view`.
-	patches_in_view : RoadAhead.RoadView, { vantage : Geom.Vantage, .. } -> List(Ground.Patch)
+	patches_in_view : RoadAhead.RoadView,
+	{
+		vantage : Geom.Vantage,
+		cam_focal : Pixels,
+		..,
+	} -> List(Ground.Patch)
 	patches_in_view = |road, camera|
 		RoadAhead.segments_in_view(road).join_map(
 			|in_view| ground_patches(road, { vantage: camera.vantage, in_view }),
