@@ -12,10 +12,13 @@ import lib.RgbColor
 
 Pond :: [].{
 
+	## One outline of the pond on the road: its corners, and the color inside.
+	PondOutline : { corners : List(Geom.RoadPoint), color : RgbColor }
+
 	## The pond's outlines on the road around `bend`, the bend that ends a
 	## segment, in the order they are painted: its bank, then its water over
 	## the bank's inner edge.
-	pond_outlines : Geom.Bend -> List({ corners : List(Geom.RoadPoint), color : RgbColor })
+	pond_outlines : Geom.Bend -> List(Pond.PondOutline)
 	pond_outlines = |bend| {
 		on_road = |outline| outline.map(|point| segment_point(point, bend))
 		[
@@ -61,16 +64,21 @@ near_shore_points = [
 	{ past_end: Distance.metres(14.0), out_from_middle: Distance.metres(33.0) },
 ]
 
-## The water's shore farthest along the road, where the bank meets it.
-far_shore_points : List(PondPoint)
-far_shore_points = [
-	{ past_end: Distance.metres(28.0), out_from_middle: Distance.metres(28.0) },
-	{ past_end: Distance.metres(32.0), out_from_middle: Distance.metres(17.0) },
-	{ past_end: Distance.metres(29.0), out_from_middle: Distance.metres(7.0) },
-]
+## The water's shore farthest along the road, where the bank meets it, running
+## on from the near shore.
+far_shore : {
+	first : PondPoint,
+	middle : PondPoint,
+	last : PondPoint,
+}
+far_shore = {
+	first: { past_end: Distance.metres(28.0), out_from_middle: Distance.metres(28.0) },
+	middle: { past_end: Distance.metres(32.0), out_from_middle: Distance.metres(17.0) },
+	last: { past_end: Distance.metres(29.0), out_from_middle: Distance.metres(7.0) },
+}
 
 water_points : List(PondPoint)
-water_points = near_shore_points.concat(far_shore_points)
+water_points = near_shore_points.concat([far_shore.first, far_shore.middle, far_shore.last])
 
 water_color : RgbColor
 water_color = RgbColor.of(0x2F7E8C)
@@ -100,16 +108,17 @@ bank_under_water = Distance.metres(10.0)
 bank_end_pull_in : Distance
 bank_end_pull_in = Distance.metres(2.0)
 
-## The bank's inner edge: the far shore, moved back under the water, with its
-## two ends pulled in toward the road.
+## The bank's inner edge: the far shore from its last point back to its first,
+## moved back under the water, with its two ends pulled in toward the road.
 bank_inner_points : List(PondPoint)
 bank_inner_points = {
 	under_water = |point| { ..point, past_end: point.past_end.minus(bank_under_water) }
 	pulled_in = |point| { ..point, out_from_middle: point.out_from_middle.minus(bank_end_pull_in) }
-	match far_shore_points.fold_rev([], |point, out| out.append(under_water(point))) {
-		[first, middle, last] => [pulled_in(first), middle, pulled_in(last)]
-		_ => crash "Pond.bank_inner_points: the far shore has three points"
-	}
+	[
+		pulled_in(under_water(far_shore.last)),
+		under_water(far_shore.middle),
+		pulled_in(under_water(far_shore.first)),
+	]
 }
 
 ## The bank: its inner edge under the water, then its outer edge.

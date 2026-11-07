@@ -16,15 +16,6 @@ Clock :: U32.{
 	next : Clock -> Clock
 	next = |Clock.(n)| Clock.(n + 1)
 
-	## The clock one step back. The ride's first step has none before it.
-	previous : Clock -> Clock
-	previous = |Clock.(n)|
-		if n == 0 {
-			crash "Clock.previous: the ride starts at step 0, and nothing comes before it"
-		} else {
-			Clock.(n - 1)
-		}
-
 	## How many steps this clock is past `earlier`. A clock before `earlier` is
 	## no count of steps.
 	steps_since : Clock, Clock -> Steps
@@ -68,8 +59,7 @@ expect Clock.start.next().next().to_f64() == 2.0
 expect Clock.at_step(5699).next().to_f64() == 5700.0
 expect Clock.at_step(0) == Clock.start
 expect Clock.start.next() == Clock.at_step(1)
-expect Clock.at_step(1).previous() == Clock.start
-expect Clock.at_step(5700).previous().next() == Clock.at_step(5700)
+expect Clock.at_step(5700).minus(Steps.one_step).next() == Clock.at_step(5700)
 expect !(Clock.start == Clock.at_step(1))
 expect !(Clock.at_step(7).next() == Clock.at_step(7))
 expect Clock.at_step(9).steps_since(Clock.at_step(9)) == Steps.zero

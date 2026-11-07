@@ -1,7 +1,12 @@
+## RideInstant is one step of the ride, and how the ride moves from one step to
+## the next: the rider and the truck each move once, the clock ticks, and the
+## encounter on the rider's segment is planned as the rider nears it. A ride
+## that has finished starts again from the beginning.
 import EncounterPlan
 import BirdFlight
 import Cat
 import Clock
+import Distance
 import Route
 import RiderState
 import Rider
@@ -27,13 +32,19 @@ RideInstant := {
 		encounter_start: Unplanned,
 	}
 
-	next_or_restart : Route, RideInstant -> RideInstant
+	## The instant a step after `instant`, or the ride's start again once the
+	## rider has finished; the tag says which.
+	next_or_restart : Route, RideInstant -> [Continued(RideInstant), Restarted(RideInstant)]
 	next_or_restart = |route, instant|
 		if Rider.is_finished(instant.rider, route) {
-			initial
+			Restarted(initial)
 		} else {
-			next(route, instant)
+			Continued(next(route, instant))
 		}
+
+	## How far along `route` the rider of `instant` is.
+	rider_distance : Route, RideInstant -> Distance
+	rider_distance = |route, instant| distance_of_rider(route, instant.rider)
 
 	## Where the encounter on the rider's segment stands at `instant`.
 	encounter_timing : RideInstant -> EncounterPlan.Timing
@@ -46,7 +57,7 @@ next = |route, instant| {
 		instant.rider,
 		{ route, encounter_timing: RideInstant.encounter_timing(instant) },
 	)
-	dist = route.distance_along_route({ index: nx.segment_index, along: nx.motorcycle.along })
+	dist = distance_of_rider(route, nx)
 	clock = instant.clock.next()
 	kept_start =
 		if nx.segment_index == instant.rider.segment_index {
@@ -67,6 +78,11 @@ next = |route, instant| {
 		},
 	}
 }
+
+## How far along `route` `rider` is.
+distance_of_rider : Route, RiderState -> Distance
+distance_of_rider = |route, rider|
+	route.distance_along_route({ index: rider.segment_index, along: rider.motorcycle.along })
 
 ## The start the ride plans for `segment`'s encounter, with `rider` on it at
 ## `now`: unplanned until the rider comes within reach of it.

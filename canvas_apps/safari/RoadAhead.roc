@@ -47,9 +47,9 @@ RoadAhead :: [].{
 	most_segments_ahead : U32
 	most_segments_ahead = 7
 
-	## The segment the rider is on, which is the road ahead's first.
-	rider_segment : RoadAhead.RoadView -> Route.SegmentIndex
-	rider_segment = |road| road.segments_ahead().first_index
+	## The index of the segment the rider is on, which is the road ahead's first.
+	rider_segment_index : RoadAhead.RoadView -> Route.SegmentIndex
+	rider_segment_index = |road| road.segments_ahead().first_index
 
 	## The segment at `position` on the road ahead.
 	segment_at : RoadAhead.RoadView, SegmentPlace.Position -> Segment
@@ -115,7 +115,7 @@ segments_ahead_of = |route, start| {
 
 ## The segment behind the rider's, unless the rider's is the route's first.
 previous_segment_index : RoadAhead.RoadView -> [Previous(Route.SegmentIndex), AtRouteStart]
-previous_segment_index = |road| RoadAhead.rider_segment(road).previous()
+previous_segment_index = |road| RoadAhead.rider_segment_index(road).previous()
 
 ## A point on the segment at `position` on the road ahead, as the camera at
 ## `vantage` on the rider's segment sees it.

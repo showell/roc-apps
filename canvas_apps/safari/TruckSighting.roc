@@ -28,7 +28,7 @@ TruckSighting :: [].{
 	truck_in_view = |road, { camera, route_position, lit_truck }| {
 		vantage = camera.vantage
 		rider_distance = road.route().distance_along_route(
-			{ index: RoadAhead.rider_segment(road), along: vantage.along },
+			{ index: RoadAhead.rider_segment_index(road), along: vantage.along },
 		)
 		lead = route_position.minus(rider_distance)
 		if lead > Distance.zero {

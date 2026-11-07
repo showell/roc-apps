@@ -185,8 +185,8 @@ place = |{ turn_from_view, clock, cam_focal }| {
 	}
 }
 
-# The whole disc is below the horizon from `fully_set_at`.
-expect Sun.height_at(Sun.fully_set_at.previous()) > Sun.height_when_set
+# The whole disc is below the horizon from `fully_set_at`, and not a step
+# before, which CrossModuleExpects holds.
 expect Sun.height_at(Sun.fully_set_at) == Sun.height_when_set
 
 # The rider faces the sun, then away from it.

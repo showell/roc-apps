@@ -9,6 +9,7 @@ import game.Clock
 import game.Distance
 import game.Geom
 import game.LitTruck
+import game.RideInstant
 import game.Tour
 import game.World
 import lib.Brush
@@ -44,14 +45,19 @@ StepWidgetApp :: [].{
 steps_a_frame : U32
 steps_a_frame = 8
 
-## The range stops short of the cap on a Tour's history, so all of it can be read
-## back. Play goes as fast as the ride can be worked out.
+## The range stops short of the steps a Tour keeps back, so all of it can be
+## read back. Play goes as fast as the ride can be worked out.
 journey : VcrButtons.NumberRange(Clock)
 journey = VcrButtons.clock_range({
 	first_step: 0,
-	last_step: 2000,
+	last_step: Tour.steps_kept_back.to_u32() - steps_short_of_kept_back,
 	steps_a_frame: steps_a_frame.to_f64(),
 })
+
+## How many steps short of a Tour's history the range ends, which leaves the
+## range a round 2000 steps.
+steps_short_of_kept_back : U32
+steps_short_of_kept_back = 48
 
 ## How many instants are taken back off the list in one frame of the widget.
 read_back_a_frame : U32
@@ -136,15 +142,6 @@ route_length = World.route.route_length()
 ## Where `distance` along the route falls on the bar.
 route_x : Distance -> F64
 route_x = |distance| route_left_x + route_width * distance.portion(route_length)
-
-## How far along the route the rider of `tour` is.
-rider_distance : Tour -> Distance
-rider_distance = |tour| {
-	rider = tour.instant.rider
-	tour.route.distance_along_route(
-		{ index: rider.segment_index, along: rider.motorcycle.along },
-	)
-}
 
 ## The route as a straight bar, with a mark where each segment ends.
 bar_shapes : List(Shapes.Shape)
@@ -267,7 +264,7 @@ picture_shapes = |tour| {
 			name_y: route_y - 28.0,
 		}),
 		marker_shapes({
-			at: rider_distance(tour),
+			at: RideInstant.rider_distance(tour.route, tour.instant),
 			color: rider_color,
 			name: "rider",
 			name_y: route_y + 16.0,
