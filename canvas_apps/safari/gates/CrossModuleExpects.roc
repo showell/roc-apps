@@ -14,6 +14,7 @@ import game.Billboard
 import game.BirdFlight
 import game.BirdSighting
 import game.Cat
+import game.CatShapes
 import game.CatSighting
 import game.Clock
 import game.Conifer
@@ -131,11 +132,19 @@ segment_of = |trees| {
 
 ## The birds on one segment of `trees`, for a rider `rider_along` metres into
 ## it, seen through a focal length of `cam_focal`.
-birds_on : List(Trees.RoadsideTree), { rider_along : F64, cam_focal : Pixels } -> List(BirdSighting)
+birds_on : List(Trees.RoadsideTree),
+{
+	rider_along : F64,
+	cam_focal : Pixels,
+} -> List(Geom.Sighted(BirdShapes.PosedBird))
 birds_on = |trees, seen_from| birds_on_segment(segment_of(trees), seen_from)
 
 ## The birds on `segment_index`, for a rider `rider_along` metres into it.
-birds_on_segment : World.Segment, { rider_along : F64, cam_focal : Pixels } -> List(BirdSighting)
+birds_on_segment : World.Segment,
+{
+	rider_along : F64,
+	cam_focal : Pixels,
+} -> List(Geom.Sighted(BirdShapes.PosedBird))
 birds_on_segment = |segment, { rider_along, cam_focal }|
 	BirdSighting.birds_in_view({
 		road: {
@@ -148,14 +157,18 @@ birds_on_segment = |segment, { rider_along, cam_focal }|
 
 ## The one bird that a rider `rider_along` metres in sees on the segment with
 ## a far tree.
-bird_at : F64 -> BirdSighting
+bird_at : F64 -> Geom.Sighted(BirdShapes.PosedBird)
 bird_at = |rider_along|
 	birds_on(left_trees.append(far_tree), { rider_along, cam_focal: Pixels.of(500.0) }).first()
 		?? crash "CrossModuleExpects: this rider sees a bird"
 
 ## How far off a bird is, across the road and up.
-place_numbers : BirdSighting -> List(F64)
-place_numbers = |bird| [bird.right.to_metres(), bird.forward.to_metres(), bird.lift.to_metres()]
+place_numbers : Geom.Sighted(BirdShapes.PosedBird) -> List(F64)
+place_numbers = |bird| [
+	bird.right.to_metres(),
+	bird.forward.to_metres(),
+	bird.kind.lift.to_metres(),
+]
 
 expect place_numbers(bird_at(0.0)) == [-6.0, 100.0, left_top]
 expect place_numbers(bird_at(40.0)) == [-6.0, 60.0, left_top]
@@ -166,14 +179,17 @@ expect {
 	[
 		(bird.right.to_metres(), 0.0),
 		(bird.forward.to_metres(), 52.5),
-		(bird.lift.to_metres(), (left_top + far_top) / 2.0 + BirdFlight.flight_arc.to_metres()),
+		(
+			bird.kind.lift.to_metres(),
+			(left_top + far_top) / 2.0 + BirdFlight.flight_arc.to_metres(),
+		),
 	].all(|(got, want)| (got - want).abs() <= 0.000000001)
 }
 
 expect place_numbers(bird_at(85.0)) == [6.0, 45.0, far_top]
-expect bird_at(40.0).pose == Perched
-expect bird_at(62.5).pose != Perched
-expect bird_at(85.0).pose == Perched
+expect bird_at(40.0).kind.pose == Perched
+expect bird_at(62.5).kind.pose != Perched
+expect bird_at(85.0).kind.pose == Perched
 
 # With no tree far enough to fly to, the bird stays on its own however near
 # the rider is.
@@ -202,7 +218,7 @@ expect
 		== 0
 
 ## Two segments in the chain, the rider at the start of the first.
-two_segments : List(BirdSighting)
+two_segments : List(Geom.Sighted(BirdShapes.PosedBird))
 two_segments = BirdSighting.birds_in_view({
 	road: {
 		route_segments: [segment_of(left_trees), segment_of(left_trees)],
@@ -246,14 +262,14 @@ metre_a_step : Speed
 metre_a_step = Speed.metres_a_step(1.0)
 
 ## The cats seen from the origin on a road of only `chain_indices`.
-cats_on_chain : List(World.SegmentIndex) -> List(CatSighting)
+cats_on_chain : List(World.SegmentIndex) -> List(Geom.Sighted(CatShapes.PosedCat))
 cats_on_chain = |chain_indices| CatSighting.cats_in_view(
 	{ ..cats_from_origin, road: { ..cats_from_origin.road, chain_indices } },
 	metre_a_step,
 )
 
 ## The cat on the segment at `number` in the chain, if it is in view.
-cat_at : U32 -> Try(CatSighting, [NoCat, OutOfView])
+cat_at : U32 -> Try(Geom.Sighted(CatShapes.PosedCat), [NoCat, BehindCamera, TooSmall])
 cat_at = |number| CatSighting.segment_cat(
 	cats_from_origin,
 	{ position: Chain.Position.number(number), speed: metre_a_step },
@@ -290,7 +306,7 @@ expect
 	)
 
 ## The cats in view for a rider `along` metres into the first segment.
-ride_sightings : F64 -> List(CatSighting)
+ride_sightings : F64 -> List(Geom.Sighted(CatShapes.PosedCat))
 ride_sightings = |along| CatSighting.cats_in_view(
 	{
 		..cats_from_origin,
@@ -299,19 +315,19 @@ ride_sightings = |along| CatSighting.cats_in_view(
 	metre_a_step,
 )
 
-seen : List(CatSighting)
+seen : List(Geom.Sighted(CatShapes.PosedCat))
 seen = ride_sightings(300.0)
 
 ## The first cat in view for a rider `along` metres in.
-first_cat : F64 -> CatSighting
+first_cat : F64 -> Geom.Sighted(CatShapes.PosedCat)
 first_cat = |along|
 	ride_sightings(along).first() ?? crash "CrossModuleExpects: the second segment's cat is in view"
 
 expect seen.len() == 1
 expect cat_at(0).is_err()
 expect cat_at(2).is_err()
-expect first_cat(300.0).lift.to_metres() == 0.0
-expect first_cat(300.0).pose == Rest
+expect first_cat(300.0).kind.lift.to_metres() == 0.0
+expect first_cat(300.0).kind.pose == Rest
 expect
 	[
 		(first_cat(300.0).forward.minus(first_cat(200.0).forward).to_metres(), -100.0),
