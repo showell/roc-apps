@@ -23,7 +23,6 @@ TruckLights.glow_reach: a factor that passes 1
 HexColor.shade_channel: a factor that passes 1 on a colour channel
 HexColor.shade_color: a factor that passes 1 on a colour
 StillShapes.x_sign: a sign, 1 or -1, multiplied into a still's x
-Tower.corner_offset: a sign, 1 or -1, for each way a corner lies from the centre
 Mountains.MountainRange: how many ridge waves fit a whole turn, a frequency
 Easing.lerp: the sum behind blending any unit, which a caller unwraps once
 

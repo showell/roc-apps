@@ -91,8 +91,8 @@ tower_shapes = |right, brightness| {
 	corner_point = |corner| {
 		offset = Tower.corner_offset(corner)
 		{
-			right: right.plus(Tower.tower_half.times(offset.across)),
-			forward: tower_forward.plus(Tower.tower_half.times(offset.along)),
+			right: right.plus(offset.across),
+			forward: tower_forward.plus(offset.along),
 		}
 	}
 	Tower.tower_shapes({

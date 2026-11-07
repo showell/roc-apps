@@ -128,15 +128,15 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 			FrontLeft => BackLeft
 		}
 
-	## Which way a corner lies from the footprint's centre, across the route
-	## and along it.
-	corner_offset : Tower.Corner -> { across : F64, along : F64 }
+	## How far a corner lies from the footprint's centre, across the route and
+	## along it. Left and back are the negative ways.
+	corner_offset : Tower.Corner -> { across : Distance, along : Distance }
 	corner_offset = |corner|
 		match corner {
-			BackLeft => { across: -1.0, along: -1.0 }
-			BackRight => { across: 1.0, along: -1.0 }
-			FrontRight => { across: 1.0, along: 1.0 }
-			FrontLeft => { across: -1.0, along: 1.0 }
+			BackLeft => { across: tower_half.opposite(), along: tower_half.opposite() }
+			BackRight => { across: tower_half, along: tower_half.opposite() }
+			FrontRight => { across: tower_half, along: tower_half }
+			FrontLeft => { across: tower_half.opposite(), along: tower_half }
 		}
 
 	footprint_corner : Tower.Footprint, Tower.Corner -> Geom.RiderPoint
@@ -158,9 +158,8 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 	} -> Geom.RoadPoint
 	base_corner_on_road = |corner, { along, across, yaw }| {
 		offset = corner_offset(corner)
-		half = tower_half.to_metres()
-		du = offset.across * half
-		dv = offset.along * half
+		du = offset.across.to_metres()
+		dv = offset.along.to_metres()
 		cy = yaw.to_radians().cos()
 		sy = yaw.to_radians().sin()
 		{
@@ -597,8 +596,12 @@ expect Tower.brace_storeys == 2
 expect Tower.tower_metal == 0x9AA0A8
 expect Tower.beacon_color == 0xFF2FE6
 
-expect Tower.corners.map(|corner| Tower.corner_offset(corner).across) == [-1.0, 1.0, 1.0, -1.0]
-expect Tower.corners.map(|corner| Tower.corner_offset(corner).along) == [-1.0, -1.0, 1.0, 1.0]
+expect
+	Tower.corners.map(|corner| Tower.corner_offset(corner).across.ratio_to(Tower.tower_half))
+		== [-1.0, 1.0, 1.0, -1.0]
+expect
+	Tower.corners.map(|corner| Tower.corner_offset(corner).along.ratio_to(Tower.tower_half))
+		== [-1.0, -1.0, 1.0, 1.0]
 
 expect {
 	[
