@@ -26,8 +26,9 @@
 -- tutorial, so a name it quotes that is gone from the code fails the gates.
 --
 -- `part=book_names` runs gates/book_names.shale, which finds a backticked name
--- in the tutorial's prose that is gone from the code. Its count of stale names
--- is held at BOOK_STALE_NAMES_HELD, the names that wait for their chapters to be
+-- in the tutorial's prose, or a node name in its diagrams, that is gone from the
+-- code. Its counts of stale names are held at BOOK_STALE_NAMES_HELD and
+-- BOOK_STALE_DIAGRAM_NAMES_HELD, the names that wait for their chapters to be
 -- rewritten, so a count that moves either way fails.
 --
 -- `part=expects` runs `roc test --verbose` from each of EXPECT_ROOTS, whose
@@ -158,6 +159,7 @@ const SELF_PATH = "canvas_apps/safari/gates/run.shale"
 const TUTORIAL = "canvas_apps/safari/tutorial/build.shale"
 const BOOK_NAMES = "canvas_apps/safari/gates/book_names.shale"
 const BOOK_STALE_NAMES_HELD = 35
+const BOOK_STALE_DIAGRAM_NAMES_HELD = 8
 const EXPECT_ROOTS = {"gates/CrossModuleExpects.roc", "web.roc", "../lib/main.roc"}
 const SAFARI_SOURCES = {":(glob)canvas_apps/safari/*.roc", ":(glob)canvas_apps/safari/gates/*.roc", ":(glob)canvas_apps/lib/*.roc"}
 const WIDGET_SOURCES = {":(glob)canvas_apps/*_widget/*.roc", ":(glob)canvas_apps/widget_kit/*.roc"}
@@ -423,7 +425,7 @@ function tutorial()
 end
 
 function book_names()
-  print(trim(must(run({"shale", "--root", ".", BOOK_NAMES, "held=" .. BOOK_STALE_NAMES_HELD}, {timeout_ms = 60000, tail = 100})).out))
+  print(trim(must(run({"shale", "--root", ".", BOOK_NAMES, "held=" .. BOOK_STALE_NAMES_HELD, "held_diagram=" .. BOOK_STALE_DIAGRAM_NAMES_HELD},{timeout_ms = 60000, tail = 100})).out))
   return nil
 end
 
