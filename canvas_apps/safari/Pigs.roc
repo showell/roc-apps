@@ -3,7 +3,9 @@
 ## catches the rider's eye. After that, they stand in two short rows.
 import Across
 import Along
+import Billboard
 import Distance
+import Geom
 import Scenery
 
 Pigs :: [].{
@@ -13,7 +15,7 @@ Pigs :: [].{
 
 	## What a built segment's pigs are to the rider: there are none, the rider
 	## passes them by, or this one of them catches the eye.
-	PigInterest : [NoPigs, Unnoticed, Distracting(Scenery.Critter)]
+	PigInterest : [NoPigs, Unnoticed, Distracting(Geom.Placed(Billboard))]
 
 	pig_codepoint : I64
 	pig_codepoint = 128022
@@ -101,7 +103,7 @@ Pigs :: [].{
 
 	## The pigs on a segment `length` long: a big herd where they catch the
 	## rider's eye, and two rows where they don't.
-	pigs_along : { interest : Pigs.PigInterest, length : Distance } -> List(Scenery.Critter)
+	pigs_along : { interest : Pigs.PigInterest, length : Distance } -> List(Geom.Placed(Billboard))
 	pigs_along = |{ interest, length }|
 		match interest {
 			Distracting(_) => big_herd_pigs(length)
@@ -110,7 +112,7 @@ Pigs :: [].{
 		}
 
 	## The big herd on a segment `length` long, row by row from the road.
-	big_herd_pigs : Distance -> List(Scenery.Critter)
+	big_herd_pigs : Distance -> List(Geom.Placed(Billboard))
 	big_herd_pigs = |length| {
 		herd_along = pigs_place(length)
 		columns = List.from_iter(I64.until(0, big_herd_columns))
@@ -119,7 +121,7 @@ Pigs :: [].{
 	}
 
 	## The two rows of pigs on a segment `length` long, front row first.
-	two_rows : Distance -> List(Scenery.Critter)
+	two_rows : Distance -> List(Geom.Placed(Billboard))
 	two_rows = |length| {
 		herd_along = pigs_place(length)
 		edge = Scenery.road_half_width.plus(Scenery.herd_road_offset)
@@ -134,16 +136,18 @@ Pigs :: [].{
 pigs_place : Distance -> Along
 pigs_place = |length| Along.at(length.minus(Pigs.pig_distance_before_end))
 
-pig : { along : Along, across : Across } -> Scenery.Critter
+pig : { along : Along, across : Across } -> Geom.Placed(Billboard)
 pig = |{ along, across }| {
 	along,
 	across,
-	codepoint: Pigs.pig_codepoint,
-	height: Pigs.pig_height,
-	facing: FacesLeft,
+	kind: {
+		codepoint: Pigs.pig_codepoint,
+		height: Pigs.pig_height,
+		facing: FacesLeft,
+	},
 }
 
-herd_pig : Along, { row : I64, column : I64 } -> Scenery.Critter
+herd_pig : Along, { row : I64, column : I64 } -> Geom.Placed(Billboard)
 herd_pig = |herd_along, { row, column }| {
 	i = (row * Pigs.big_herd_columns + column).to_f64()
 	fr = row.to_f64()
@@ -160,7 +164,7 @@ herd_pig = |herd_along, { row, column }| {
 	})
 }
 
-row_pigs : Along, { across : Across, offsets : List(Distance) } -> List(Scenery.Critter)
+row_pigs : Along, { across : Across, offsets : List(Distance) } -> List(Geom.Placed(Billboard))
 row_pigs = |herd_along, { across, offsets }|
 	offsets.map(|offset| pig({ along: herd_along.plus(offset), across }))
 
@@ -169,7 +173,7 @@ interest_on_long_segment : Pigs.PigPresence, U32 -> Pigs.PigInterest
 interest_on_long_segment = |presence, pig_segments_so_far|
 	Pigs.interest_of({ presence, pig_segments_so_far, length: Distance.metres(1000.0) })
 
-eye_catcher : Scenery.Critter
+eye_catcher : Geom.Placed(Billboard)
 eye_catcher =
 	match interest_on_long_segment(WithPigs, 1) {
 		Distracting(eye_catching_pig) => eye_catching_pig
@@ -195,28 +199,28 @@ expect
 # The third pig of the row nearest the road, strayed from its place.
 expect (eye_catcher.along.to_metres() - 940.80757).abs() <= 0.00001
 expect (eye_catcher.across.to_metres() - 11.0332).abs() <= 0.00001
-expect eye_catcher.height.to_metres() == 1.1
+expect eye_catcher.kind.height.to_metres() == 1.1
 expect Pigs.pig_height.to_metres() == 1.1
 expect Pigs.pig_distance_before_end.to_metres() == 60.0
-expect eye_catcher.codepoint == 128022
+expect eye_catcher.kind.codepoint == 128022
 expect Pigs.pig_codepoint == 128022
 expect Pigs.pig_novelty_count.to_i64() == 2
 expect Pigs.big_herd_columns == 7
 expect Pigs.big_herd_rows == 7
-expect eye_catcher.facing == FacesLeft
+expect eye_catcher.kind.facing == FacesLeft
 
-all_pigs : List(Scenery.Critter)
+all_pigs : List(Geom.Placed(Billboard))
 all_pigs = Pigs.big_herd_pigs(Distance.metres(1000.0))
 
-herd_pig_at : U64 -> Scenery.Critter
+herd_pig_at : U64 -> Geom.Placed(Billboard)
 herd_pig_at = |i| all_pigs.get(i) ?? crash "Pigs: the big herd has 49 pigs"
 
 expect all_pigs.len() == 49
 expect herd_pig_at(2) == eye_catcher
 expect all_pigs.count_if(|herd_member| herd_member == eye_catcher) == 1
 expect Pigs.big_herd_pigs(Distance.metres(500.0)).len() == 49
-expect herd_pig_at(0).codepoint == 128022
-expect herd_pig_at(48).codepoint == 128022
+expect herd_pig_at(0).kind.codepoint == 128022
+expect herd_pig_at(48).kind.codepoint == 128022
 
 # Rows 0, 3 and 6 along the road, each pig within the jitter of its place.
 expect
@@ -258,7 +262,7 @@ expect
 		(48, 48.0),
 	].all(|(i, across)| (herd_pig_at(i).across.to_metres() - across).abs() <= 1.0)
 
-both_rows : List(Scenery.Critter)
+both_rows : List(Geom.Placed(Billboard))
 both_rows = Pigs.two_rows(Distance.metres(1000.0))
 
 expect both_rows.len() == 10

@@ -3,12 +3,13 @@
 ## end of the segment, and across it from the middle of the road, in metres.
 import Across
 import Along
-import Cutouts
+import Billboard
 import Distance
+import Geom
 
 Pond :: [].{
 	PondPt : { along : Along, across : Across }
-	Duck : { at : Pond.PondPt, facing : Cutouts.Facing }
+	Duck : { at : Pond.PondPt, facing : Billboard.Facing }
 
 	water_outline_points : List(Pond.PondPt)
 	water_outline_points = [
@@ -52,11 +53,47 @@ Pond :: [].{
 		{ at: { along: Along.metres(7.0), across: Across.metres(-14.0) }, facing: FacesLeft },
 		{ at: { along: Along.metres(8.0), across: Across.metres(-22.0) }, facing: FacesRight },
 	]
+
+	## Where `point` lies on a segment `length` long, whose end it is measured
+	## from.
+	segment_point : Pond.PondPt, Distance -> Geom.RoadPoint
+	segment_point = |point, length| {
+		along: Along.at(length).plus(point.along.from_start()),
+		across: point.across,
+	}
+
+	## The ducks, placed on a segment `length` long.
+	placed_ducks : Distance -> List(Geom.Placed(Billboard))
+	placed_ducks = |length|
+		ducks.map(
+			|duck| {
+				on_segment = Pond.segment_point(duck.at, length)
+				{
+					along: on_segment.along,
+					across: on_segment.across,
+					kind: {
+						codepoint: duck_codepoint,
+						height: duck_height,
+						facing: duck.facing,
+					},
+				}
+			},
+		)
 }
 
 expect Pond.water_outline_points.len() == 7
 expect Pond.bank_points.len() == 6
 expect Pond.ducks.len() == 6
+expect
+	Pond.segment_point(
+		{ along: Along.metres(6.0), across: Across.metres(-22.0) },
+		Distance.metres(100.0),
+	)
+		== { along: Along.metres(106.0), across: Across.metres(-22.0) }
+expect
+	Pond.placed_ducks(Distance.metres(100.0)).map(|duck| duck.along.to_metres())
+		== [111.0, 117.0, 121.0, 106.0, 107.0, 108.0]
+expect Pond.placed_ducks(Distance.metres(100.0)).all(|duck| duck.kind.height == Pond.duck_height)
 expect Pond.water_color == 0x2F7E8C
 expect Pond.bank_color == 0xC2B280
 expect Pond.duck_codepoint == 129414

@@ -1,8 +1,8 @@
 ## GroundSighting finds the ground under everything else in a frame, as patches
 ## for `Ground` to paint: the road, in chunks along each segment in view; the
 ## paved corner where one segment bends into the next; and the pond beside a
-## segment that ends at one. It has no `depth_keys`: the ground is painted first,
-## under everything, so nothing sorts it.
+## segment that ends at one. It is never depth sorted, because the ground is
+## painted first, under everything.
 import Along
 import Distance
 import Chain
@@ -201,14 +201,13 @@ pond_patches = |road, { segment, place }|
 	if Scenery.is_pond(segment.bend_life) {
 		on_map = |outline|
 			outline.map(
-				|point| Chain.rider_point_at(
-					road,
-					{
-						place,
-						along: Along.at(segment.length).plus(point.along.from_start()),
-						across: point.across,
-					},
-				),
+				|point| {
+					on_segment = Pond.segment_point(point, segment.length)
+					Chain.rider_point_at(
+						road,
+						{ place, along: on_segment.along, across: on_segment.across },
+					)
+				},
 			)
 		[
 			{ corners: on_map(Pond.water_outline_points), color: Pond.water_color },

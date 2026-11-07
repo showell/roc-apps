@@ -2,7 +2,6 @@
 ## on a segment of the chain ahead, placed where its crossing has got to,
 ## if it is in front of the camera and tall enough on screen to draw.
 import Cat
-import DepthSort
 import Distance
 import Chain
 import Geom
@@ -41,13 +40,6 @@ CatSighting := {
 			BirdHere(_) | QuietRoad => Err(NoCat)
 		}
 	}
-
-	## The cats as the depth sort sees them: each one's distance ahead, and
-	## its position in `cats`.
-	depth_keys : List(CatSighting) -> List(DepthSort.DepthKey)
-	depth_keys = |cats| cats.map_with_index(
-		|cat, i| { forward: cat.forward, subject: Cat(i.to_u32_wrap()) },
-	)
 }
 
 ## The cat crossing the segment at `position` in the chain, as far through its

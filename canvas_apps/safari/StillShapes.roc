@@ -1,13 +1,8 @@
 ## StillShapes draws a still, a picture made of polygons, standing on screen.
 ## A still is drawn in units of its height: its feet at the origin, y up, and
 ## its height 1. StillShapes scales it to its height in pixels, stands it on its feet,
-## and mirrors it when asked. A critter in view is drawn from the emoji still
-## for its codepoint.
+## and mirrors it when asked.
 import Pixels
-import Cutouts
-import Distance
-import Camera
-import EmojiStills
 import Polygon
 import lib.Brush
 import Stills
@@ -66,31 +61,6 @@ StillShapes :: [].{
 	## A whole still, its polygons in order.
 	still_shapes : StillShapes.Anchor, List(Stills.StillPolygon) -> List(Shapes.Shape)
 	still_shapes = |anchor, polys| polys.map(|poly| StillShapes.still_polygon(anchor, poly))
-
-	## A critter in view. An emoji faces left, so a critter facing right is
-	## its still mirrored. A critter less than a pixel tall isn't drawn.
-	cutout_shapes : Cutouts.Cutout, Pixels -> List(Shapes.Shape)
-	cutout_shapes = |critter, cam_focal| {
-		projected = |height| Camera.project(
-			{ right: critter.right, forward: critter.forward, height },
-			cam_focal,
-		)
-		feet = projected(Distance.zero)
-		height_px = feet.y.minus(projected(critter.height).y)
-		if height_px < Pixels.of(1.0) {
-			[]
-		} else {
-			flip =
-				match critter.facing {
-					FacesLeft => AsDrawn
-					FacesRight => Mirrored
-				}
-			StillShapes.still_shapes(
-				{ feet, flip, height_px },
-				EmojiStills.emoji_polys_for(critter.codepoint),
-			)
-		}
-	}
 }
 
 ## A still's gradient is linear when its kind is 1, and radial otherwise.
@@ -212,56 +182,3 @@ expect
 			coordinates: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0],
 			fill: Flat(Brush.opaque(7)),
 		})
-
-# How many shapes draw a critter of `height` metres, `forward` metres ahead.
-shape_count : {
-	forward : Distance,
-	height : Distance,
-	codepoint : I64,
-} -> U64
-shape_count = |{ forward, height, codepoint }|
-	StillShapes.cutout_shapes(
-		{
-			right: Distance.metres(0.0),
-			forward,
-			height,
-			codepoint,
-			facing: FacesLeft,
-		},
-		Pixels.of(500.0),
-	).len()
-
-elephant : I64
-elephant = 128024
-
-# A critter is drawn while it stands a pixel tall.
-expect
-	shape_count({
-		forward: Distance.metres(1000.0),
-		height: Distance.metres(2.0),
-		codepoint: elephant,
-	})
-		== 6
-expect
-	shape_count({
-		forward: Distance.metres(2000.0),
-		height: Distance.metres(2.0),
-		codepoint: elephant,
-	})
-		== 0
-expect
-	shape_count({
-		forward: Distance.metres(1000.0),
-		height: Distance.metres(1.9),
-		codepoint: elephant,
-	})
-		== 0
-expect
-	shape_count({
-		forward: Distance.metres(100.0),
-		height: Distance.metres(2.0),
-		codepoint: elephant,
-	})
-		== 6
-
-expect EmojiStills.emoji_polys_for(elephant).len() == 6

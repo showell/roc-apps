@@ -7,7 +7,6 @@ import Across
 import Along
 import Angle
 import Clock
-import DepthSort
 import Distance
 import Fraction
 import Chain
@@ -149,13 +148,6 @@ TowerSighting := {
 			},
 		)
 	}
-
-	## The towers as the depth sort sees them: each one's distance ahead, and
-	## its position in `towers`.
-	depth_keys : List(TowerSighting) -> List(DepthSort.DepthKey)
-	depth_keys = |towers| towers.map_with_index(
-		|tower, i| { forward: tower.forward, subject: Tower(i.to_u32_wrap()) },
-	)
 }
 
 ## A tower halfway along a segment takes its beacon's blink from a key this
@@ -355,23 +347,4 @@ expect TowerSighting.towers_along_chain({
 	..from_origin,
 	road: { ..from_origin.road, chain_indices: [] },
 }).len() == 0
-keys : List(DepthSort.DepthKey)
-keys = TowerSighting.depth_keys(TowerSighting.towers_along_chain(from_origin))
-
-## The depth key at `i`.
-key_at : U64 -> DepthSort.DepthKey
-key_at = |i| keys.get(i) ?? crash "TowerSighting: three towers are in view"
-
-## The position in the tower list that the key at `i` names.
-tower_place_at : U64 -> I64
-tower_place_at = |i|
-	match key_at(i).subject {
-		Tower(position) => position.to_i64()
-		Tree(_) | Cutout(_) | Cat(_) | Truck | Rail(_) | Bird(_) =>
-			crash "TowerSighting: a tower's key names a tower"
-	}
-
-expect keys.len() == 3
-expect tower_place_at(0) == 0
-expect tower_place_at(2) == 2
-expect TowerSighting.depth_keys([]).len() == 0
+expect TowerSighting.towers_along_chain(from_origin).len() == 3

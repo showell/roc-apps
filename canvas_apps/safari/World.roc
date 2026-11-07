@@ -5,6 +5,7 @@
 import Across
 import Along
 import Angle
+import Billboard
 import BirdFlight
 import Cat
 import Distance
@@ -77,9 +78,9 @@ World :: [].{
 	## One segment of road, built from its plan.
 	Segment : {
 		length : Distance,
-		trees : List(Trees.Tree),
-		cows : List(Scenery.Critter),
-		pigs : List(Scenery.Critter),
+		trees : List(Trees.RoadsideTree),
+		cows : List(Geom.Placed(Billboard)),
+		pigs : List(Geom.Placed(Billboard)),
 		pig_interest : Pigs.PigInterest,
 
 		## The turn into the next segment: positive to the right, negative to
@@ -340,7 +341,7 @@ World :: [].{
 ## The segment at `index` of the route, built from its plan.
 built_segment : World.SegmentPlan, World.SegmentIndex -> World.Segment
 built_segment = |plan, index| {
-	trees = Trees.planted_trees({ scheme: plan.scheme, length: plan.length })
+	trees = Trees.roadside_trees({ scheme: plan.scheme, length: plan.length })
 	pig_interest = Pigs.interest_of({
 		presence: plan.pigs,
 		pig_segments_so_far: World.pig_segments_through(index),
@@ -391,7 +392,7 @@ built_segment = |plan, index| {
 ## The nearest tree on the right at or past `along`, which a segment's cat waits
 ## by. A segment's trees are planted in order along the road, so the first found
 ## is the nearest.
-nearest_tree_ahead : List(Trees.Tree), Along -> Trees.Tree
+nearest_tree_ahead : List(Trees.RoadsideTree), Along -> Trees.RoadsideTree
 nearest_tree_ahead = |trees, along|
 	trees.find_first(|tree| tree.across > Across.middle and tree.along >= along)
 		?? crash "World.nearest_tree_ahead: a segment with a cat is long enough to have its tree"

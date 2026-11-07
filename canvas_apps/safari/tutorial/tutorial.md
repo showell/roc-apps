@@ -174,7 +174,7 @@ A sighting answers one question each frame: which of these can the rider see rig
 
 `Scene` gathers every sighting's answer, a depth sort puts them in order, and `SceneShapes` hands each one to the module that paints it. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. So a sighting decides what's visible, and the drawing code only paints what it's told.
 
-Cows, pigs and the other animals by the road are all sighted the same way, by `CutoutSighting`, and `Cutouts` decides which of them get drawn. `Detail` holds the thresholds behind that kind of decision: how near a tree shows its full detail, and how few pixels tall something may be and still be drawn.
+Cows, pigs and the other animals by the road are all sighted the same way, by `BillboardSighting`, which decides which of them get drawn. `Detail` holds the thresholds behind that kind of decision: how near a tree shows its full detail, and how few pixels tall something may be and still be drawn.
 
 Everything in this chapter happens within a single frame, and none of it survives to the next one. Very little carries over from step to step, and we'll come to that. First, let's hold one frame still and see what's in it.
 
@@ -217,7 +217,7 @@ A piece of the world can be just a value. Here's the second whole module. `Pond`
 
 Above its `expect`s, there are no functions here at all. The ducks are read where the critters are sighted:
 
-{{code CutoutSighting.pond_sightings from "if Scenery.is_pond" to "Pond.ducks.map("}}
+{{code BillboardSighting.pond_sightings from "if Scenery.is_pond" to "Pond.placed_ducks(segment.length)"}}
 
 `World` turns a route, a plain list of records, into segments of road. A plan for a segment shows how much tag unions can do with no declaration. `[WithBull, NoBull]` is written right in the field's type, and it says more than a boolean would at every place a segment is written down.
 
@@ -229,7 +229,7 @@ A `match` on a closed union has to cover it: leaving out a tag is a compile-time
 
 Here's where it's called, picking the color for a pair of small trees:
 
-{{code Trees.planted_trees from "match $conifer {" to "BigGreen => accent_conifer(scheme)"}}
+{{code Trees.roadside_trees from "match $conifer {" to "BigGreen => accent_conifer(scheme)"}}
 
 `SegmentIndex` is another small opaque type, a `U32` for a segment's place in the route. A place in the route can't be confused with a count of trees, because nothing outside can do arithmetic on it. `crash` appears here too. It isn't for error handling: an index that isn't in the world is a bug in Safari Ride, not a case to handle.
 
@@ -317,7 +317,7 @@ Four more types carry a tree to the screen:
 
 | Type | What it is |
 |---|---|
-| `TreeShapes.TreeAhead(rest)` | Any record with a `right`, a `forward` and a `conifer`, and `rest` stands for whatever else is in it |
+| `TreeShapes.TreeAhead` | Any record with a `right`, a `forward` and a `conifer`, and `rest` stands for whatever else is in it |
 | `Geom.RaisedPoint` | A point in the rider's view: `right` and `forward` of the camera, and `height` above the ground |
 | `TreeShapes.Tier` | One layer of the crown, as fractions of the crown |
 | `TreeShapes.TreeOnScreen` | Where a tree landed, and how big it looks, in `Pixels` |
@@ -326,15 +326,15 @@ So the job is three signatures:
 
 | Job | Function | Its type |
 |---|---|---|
-{{types row Conifer.height Know how tall it is}}
+{{types row Conifer.scenery_height Know how tall it is}}
 {{types row TreeShapes.tree_on_screen Find it on the screen}}
-{{types row TreeShapes.tree_shapes Make its shapes}}
+{{types row TreeShapes.tree_picture Make its picture}}
 
 ### The functions
 
-`tree_shapes` calls the others, and it reads like the concept: find the tree on the screen, then make a trunk and eight tiers.
+`tree_picture` calls the others, and it reads like the concept: find the tree on the screen, then make a trunk and eight tiers.
 
-{{code TreeShapes.tree_shapes}}
+{{code TreeShapes.tree_picture}}
 
 `|{ tree, nearer_tree_count }, cam_focal|` unpacks a record argument into two names. What `nearer_tree_count` and `crown` do for near trees can wait. For now, every tier is a triangle.
 
@@ -395,7 +395,7 @@ This function answers with that type:
 `Detail` holds the thresholds that decide how much of a thing gets drawn, and `cone_reach` is 200 metres. Shade fades from full at the camera to none at 80 metres.
 
 ```widget tree
-Three gold trees, each made by `TreeShapes.tree_shapes`. Under each are its distance and what `crown_of` said.
+Three gold trees, each made by `TreeShapes.tree_picture`. Under each are its distance and what `crown_of` said.
 ```
 
 ### The functions
@@ -430,7 +430,7 @@ Here's the other tree problem. Safari Ride plants 392 trees along its road, and 
 Step 1,570 of the ride, with only the trees on.
 ```
 
-This is step 1,570 again, the frame with the frozen cat, showing only its trees. Each tree here is a sighting from `TreeSighting.trees_in_view`, turned into shapes by `TreeShapes.tree_shapes`. They make up 1,656 of the 2,713 shapes in that frame, more than everything else put together.
+This is step 1,570 again, the frame with the frozen cat, showing only its trees. Each tree here is a sighting from `TreeSighting.trees_in_view`, turned into shapes by `TreeShapes.tree_picture`. They make up 1,656 of the 2,713 shapes in that frame, more than everything else put together.
 
 So a tree has two lives. It's planted once, and that lasts the whole ride. Each frame that can see it makes a fresh sighting, and that lasts one frame. This chapter takes them in that order.
 
@@ -445,8 +445,8 @@ Those two lives are two records, and each says where the tree stands in a differ
 
 | Type | Where the tree is | Lasts |
 |---|---|---|
-| `Trees.Tree` | `along` and `across` its segment | The whole ride |
-| `TreeSighting` | `right` of the camera and `forward` of the camera | One frame |
+| `Trees.RoadsideTree` | `along` and `across` its segment | The whole ride |
+| `Geom.Sighted(Conifer)` | `right` of the camera and `forward` of the camera | One frame |
 
 `Along` is a place along a segment, and `Across` is a place across the road. Both are opaque, so passing one as the other is a compile-time error. In any function, the field names say which of the two it's working in.
 
@@ -454,14 +454,14 @@ A `TreeSighting` also fits `TreeShapes.TreeAhead`, so `TreeShapes` doesn't impor
 
 | Job | Function | Its type |
 |---|---|---|
-{{types row Trees.planted_trees Plant a segment, once}}
+{{types row Trees.roadside_trees Plant a segment, once}}
 {{types row TreeSighting.trees_in_view Find the trees in view, each frame}}
 
 ### Planting
 
 Planting walks along a segment and keeps a list, and a loop says that best. `$` marks the names that change. The function still has a `->`, because nothing outside it can see them change.
 
-{{code Trees.planted_trees}}
+{{code Trees.roadside_trees}}
 
 Trees stand in pairs, one each side of the road, every 30 metres. The pairs take turns: a big green pair, then a pair of the segment's accent, which is small green, red or gold, then big green again. A gold pair stands further from the road, because it's so much taller:
 
@@ -479,7 +479,9 @@ From here on, things are measured from the camera, which is where the rider stan
 
 {{code TreeSighting.sighting_of}}
 
-`Chain.rider_point_ahead` finds where a point on the road lies from the rider, and the math layer chapter shows how. After that, there are two ways to lose a tree. It can be behind the camera, or it can be under 2 pixels tall. The answer is a `Try`, either a sighting or `OutOfView`, and `keep_oks` keeps the sightings.
+{{code Pipeline.sighting_of}}
+
+`Chain.rider_point_at` finds where a point on the road lies from the rider, and the math layer chapter shows how. After that, there are two ways to lose a tree. It can be behind the camera, or it can be under 2 pixels tall. The answer is a `Try`, either a sighting or `OutOfView`, and `keep_oks` keeps the sightings.
 
 ### Spending the detail
 
@@ -487,7 +489,7 @@ Most of that 1,656 is far off, and far trees are cheap. They get eight triangles
 
 "The nearest few" is the one thing a tree alone can't tell us, because it depends on the other trees. So `SceneShapes` counts them, and that's the `nearer_tree_count` from A simple tree:
 
-{{code SceneShapes.tree_shapes}}
+{{code SceneShapes.tree_rendering}}
 
 So `World` holds every tree's place for the whole ride, and no frame remembers anything. Every sighting is thrown away, and the next frame makes them all again.
 
@@ -895,7 +897,7 @@ Now that we can draw a critter, we can stand one by the road.
 
 ## The elephant
 
-The critters in this stretch of the book are billboards: flat pictures that stand in one place and never change. The code calls them cutouts. We'll start with the elephant. It stands at 14 of the route's 19 bends, so it's the animal you'll see most. A grown elephant waits beyond the guard rail on the outside of the bend, and its baby stands in the middle of the road a little further on.
+The critters in this stretch of the book are billboards: flat pictures that stand in one place and never change. The code calls them billboards too. We'll start with the elephant. It stands at 14 of the route's 19 bends, so it's the animal you'll see most. A grown elephant waits beyond the guard rail on the outside of the bend, and its baby stands in the middle of the road a little further on.
 
 New in this chapter:
 
@@ -908,7 +910,7 @@ A segment's `bend_life` field says what's at its bend. `Wildlife.bend_critters` 
 
 `Quiet` and `DuckPond` have no animals, so they answer with an empty list. An `Animal` answers with a list of two. `inward` is 1 or -1, so one line of arithmetic places the grown animal on either side of the road.
 
-An elephant has no state. It's a plain record, with a place, an emoji, a height and a way to face. `StillShapes` looks up the emoji's still and draws it at that height. The baby is the same still at half the height.
+An elephant has no state. It's a plain record, with a place, an emoji, a height and a way to face. `Billboard` looks up the emoji's still and draws it at that height. The baby is the same still at half the height.
 
 Nothing in that function says "elephant". That's what makes the next chapter short.
 
@@ -2630,7 +2632,7 @@ This book uses these words in one sense only.
 | Across | A place across the road, measured from its middle. Left is negative. |
 | Along | A place along a segment, measured from its start. |
 | Backdrop | The sky, the grass and the sun. It's the first thing in every frame. |
-| Billboard | A critter that stands still and always faces the camera, like the elephant. The code calls these cutouts. The bull is the fanciest one, with gradients in its still. |
+| Billboard | A critter that stands still and always faces the camera, like the elephant. The bull is the fanciest one, with gradients in its still. |
 | Canvas | Where the painter puts shapes. Safari Ride's frames are for a canvas 960 pixels wide and 600 pixels tall. |
 | Chain | The rider's segment and the segments after it, as far as the rider can see. |
 | Corner | One of the points of a polygon. |

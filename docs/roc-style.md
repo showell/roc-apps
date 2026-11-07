@@ -109,6 +109,18 @@ Roc's own rules are in the langref's
   ```
 - **Prefer a plain word to an abbreviation.** `customer`, not `cust`;
   `quantity`, not `qty`.
+- **A method a `where` clause names has at least two words.** A `where`
+  clause matches a method by name alone, so any type with that method fits,
+  whatever it means by it, and the name is the whole contract. Safari asks a
+  kind of scenery for its `scenery_height`, because `height` would fit any
+  type that has one, whether or not it stands by the road. The methods Roc
+  calls by name, for operators and the like (`is_eq`, `plus`), have a fixed
+  meaning and keep their names.
+
+  ```roc
+  sighting_of : Geom.Placed(kind), Sightline -> Try(Geom.Sighted(kind), [TooSmall])
+  	where [kind.scenery_height : kind -> Distance]
+  ```
 - **Prefer a two-part name that says what a thing is to a short one that
   is cute or sounds like something else.** One word saves a few letters
   and costs the reader a guess. An order whose every part is checked,

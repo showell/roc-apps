@@ -5,23 +5,6 @@ import Distance
 
 DepthSort :: [].{
 
-	## Which thing in the frame a key stands for: its kind, and its place in
-	## that kind's list. A frame has at most one truck, so the truck has no
-	## place.
-	Subject : [
-		Tree(U32),
-		Tower(U32),
-		Cutout(U32),
-		Cat(U32),
-		Truck,
-		Rail(U32),
-		Bird(U32),
-	]
-
-	## A thing to draw, as the sort sees it: how far ahead it is, negative for
-	## what is behind the rider, and which thing it is.
-	DepthKey : { forward : Distance, subject : DepthSort.Subject }
-
 	## `items` from far to near, by `depth_of`: a stable merge sort.
 	sort_by : List(item), (item -> Distance) -> List(item)
 	sort_by = |items, depth_of|
@@ -115,45 +98,45 @@ merge_onto = |merged, { first_items, second_items, depth_of, at_first, at_second
 expect
 	DepthSort.sort_by(
 		[
-			{ forward: Distance.metres(30.0), subject: Tree(0) },
-			{ forward: Distance.metres(10.0), subject: Cutout(1) },
-			{ forward: Distance.metres(30.0), subject: Rail(2) },
-			{ forward: Distance.metres(50.0), subject: Tower(3) },
-			{ forward: Distance.metres(10.0), subject: Cat(4) },
-			{ forward: Distance.metres(20.0), subject: Bird(5) },
-			{ forward: Distance.metres(30.0), subject: Tree(6) },
-			{ forward: Distance.metres(40.0), subject: Rail(7) },
-			{ forward: Distance.metres(10.0), subject: Cutout(8) },
-			{ forward: Distance.metres(5.0), subject: Cat(9) },
+			{ forward: Distance.metres(30.0), place: 0 },
+			{ forward: Distance.metres(10.0), place: 1 },
+			{ forward: Distance.metres(30.0), place: 2 },
+			{ forward: Distance.metres(50.0), place: 3 },
+			{ forward: Distance.metres(10.0), place: 4 },
+			{ forward: Distance.metres(20.0), place: 5 },
+			{ forward: Distance.metres(30.0), place: 6 },
+			{ forward: Distance.metres(40.0), place: 7 },
+			{ forward: Distance.metres(10.0), place: 8 },
+			{ forward: Distance.metres(5.0), place: 9 },
 		],
 		|key| key.forward,
 	)
 		== [
-			{ forward: Distance.metres(50.0), subject: Tower(3) },
-			{ forward: Distance.metres(40.0), subject: Rail(7) },
-			{ forward: Distance.metres(30.0), subject: Tree(0) },
-			{ forward: Distance.metres(30.0), subject: Rail(2) },
-			{ forward: Distance.metres(30.0), subject: Tree(6) },
-			{ forward: Distance.metres(20.0), subject: Bird(5) },
-			{ forward: Distance.metres(10.0), subject: Cutout(1) },
-			{ forward: Distance.metres(10.0), subject: Cat(4) },
-			{ forward: Distance.metres(10.0), subject: Cutout(8) },
-			{ forward: Distance.metres(5.0), subject: Cat(9) },
+			{ forward: Distance.metres(50.0), place: 3 },
+			{ forward: Distance.metres(40.0), place: 7 },
+			{ forward: Distance.metres(30.0), place: 0 },
+			{ forward: Distance.metres(30.0), place: 2 },
+			{ forward: Distance.metres(30.0), place: 6 },
+			{ forward: Distance.metres(20.0), place: 5 },
+			{ forward: Distance.metres(10.0), place: 1 },
+			{ forward: Distance.metres(10.0), place: 4 },
+			{ forward: Distance.metres(10.0), place: 8 },
+			{ forward: Distance.metres(5.0), place: 9 },
 		]
 
-## A pair of trees at these depths, as the sort orders them.
-sorted_subjects : { first : F64, second : F64 } -> List(DepthSort.Subject)
-sorted_subjects = |{ first, second }| {
+## A pair of things at these depths, first 0 and then 1, as the sort orders them.
+sorted_places : { first : F64, second : F64 } -> List(U64)
+sorted_places = |{ first, second }| {
 	keys = [
-		{ forward: Distance.metres(first), subject: Tree(0) },
-		{ forward: Distance.metres(second), subject: Tree(1) },
+		{ forward: Distance.metres(first), place: 0 },
+		{ forward: Distance.metres(second), place: 1 },
 	]
-	DepthSort.sort_by(keys, |key| key.forward).map(|key| key.subject)
+	DepthSort.sort_by(keys, |key| key.forward).map(|key| key.place)
 }
 
 # At each depth the first pair is within the tie's slack and keeps its order;
-# the second is not, and its farther tree goes first.
-expect sorted_subjects({ first: 100.0, second: 100.000004 }) == [Tree(0), Tree(1)]
-expect sorted_subjects({ first: 100.0, second: 100.00001 }) == [Tree(1), Tree(0)]
-expect sorted_subjects({ first: 0.5, second: 0.50000004 }) == [Tree(0), Tree(1)]
-expect sorted_subjects({ first: 0.5, second: 0.5000001 }) == [Tree(1), Tree(0)]
+# the second is not, and its farther thing goes first.
+expect sorted_places({ first: 100.0, second: 100.000004 }) == [0, 1]
+expect sorted_places({ first: 100.0, second: 100.00001 }) == [1, 0]
+expect sorted_places({ first: 0.5, second: 0.50000004 }) == [0, 1]
+expect sorted_places({ first: 0.5, second: 0.5000001 }) == [1, 0]

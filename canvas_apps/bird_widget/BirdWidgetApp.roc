@@ -17,7 +17,6 @@ import game.BirdShapes
 import game.Scenery
 import game.Trees
 import game.Screen
-import game.TreeShapes
 import game.World
 import lib.CanvasApp
 import lib.Shapes
@@ -122,19 +121,14 @@ road = {
 	)
 }
 
-tree_shapes : Trees.Tree -> List(Shapes.Shape)
+tree_shapes : Trees.RoadsideTree -> List(Shapes.Shape)
 tree_shapes = |tree|
-	TreeShapes.tree_shapes(
-		{
-			tree: {
-				right: Distance.metres(tree.across.to_metres()),
-				forward: forward_of(tree.along),
-				conifer: tree.conifer,
-			},
-			nearer_tree_count: 0,
-		},
-		Lens.focal,
-	)
+	tree.kind.scenery_picture({
+		right: Distance.metres(tree.across.to_metres()),
+		forward: forward_of(tree.along),
+		cam_focal: Lens.focal,
+		context: { nearer_tree_count: 0 },
+	}).to_shapes()
 
 ## The bird as `gap` finds it, drawn by Safari's own stills.
 bird_shapes : Distance -> List(Shapes.Shape)

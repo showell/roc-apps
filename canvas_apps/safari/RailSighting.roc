@@ -4,7 +4,6 @@
 ## back, and follows the next segment's outer edge for as far again.
 import Across
 import Along
-import DepthSort
 import Distance
 import Chain
 import Geom
@@ -25,13 +24,6 @@ RailSighting :: [].{
 			AtRouteStart => ahead
 		}
 	}
-
-	## The depth sort's key for each rail quad: how far ahead it is, and its
-	## place in the list.
-	depth_keys : List(GuardRail.RailQuad) -> List(DepthSort.DepthKey)
-	depth_keys = |quads| quads.map_with_index(
-		|quad, i| { forward: quad.forward, subject: Rail(i.to_u32_wrap()) },
-	)
 
 	## How many pieces a leg `distance` long is cut into: one a metre, and at
 	## least one.

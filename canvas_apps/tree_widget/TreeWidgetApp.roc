@@ -65,17 +65,12 @@ right_of = |{ forward, canvas_x }| {
 
 tree_shapes : Stand -> List(Shapes.Shape)
 tree_shapes = |stand|
-	TreeShapes.tree_shapes(
-		{
-			tree: {
-				right: right_of(stand),
-				forward: stand.forward,
-				conifer,
-			},
-			nearer_tree_count: 0,
-		},
-		Lens.focal,
-	)
+	conifer.scenery_picture({
+		right: right_of(stand),
+		forward: stand.forward,
+		cam_focal: Lens.focal,
+		context: { nearer_tree_count: 0 },
+	}).to_shapes()
 
 ## What `TreeShapes.crown_of` says at `forward`, as Roc would write it.
 crown_text : Distance -> Str
@@ -121,7 +116,7 @@ is_plain_to_see = |stand| {
 	point = {
 		right: right_of(stand),
 		forward: stand.forward,
-		height: conifer.height(),
+		height: conifer.scenery_height(),
 	}
 	on_screen = TreeShapes.tree_on_screen(point, Lens.focal)
 	foot_y = on_screen.base_y.to_f64() * canvas_per_screen
