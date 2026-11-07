@@ -729,11 +729,11 @@ New in this chapter:
 
 `Backdrop` paints what's behind the ride. It has one color for grass:
 
-{{code Backdrop.grass_color}}
+{{code Grass.grass_color}}
 
 Its list of shapes starts with the sky, the sun and the grass, and this is the grass:
 
-{{code Backdrop.backdrop_shapes from "y: Screen.grass_top_y.to_f64()," to "fill: Brush.flat(grass_color),"}}
+{{code Screen.below_grass_top_rect}}
 
 It starts a pixel above the horizon, so no seam shows between the grass and the sky:
 
@@ -758,7 +758,7 @@ New in this chapter:
 
 A frame is a list of shapes, and a circle is one of them. `Disc` is a tag from `lib.Shapes`. This is the sun's, from the same list as the grass:
 
-{{code Backdrop.backdrop_shapes from "Disc({" to "fill: look.disc,"}}
+{{code Sun.sun_shapes from "Disc({" to "fill: look.disc,"}}
 
 A `Disc` has a center, a radius and a fill. The grass comes after it in the list and paints over whatever falls below the horizon, so the sun can sink behind the land with no more code.
 
@@ -855,7 +855,7 @@ Every color in the sky is a blend of two others, and a blend needs a ratio. `Fra
 
 `Backdrop` paints the two as a gradient, down to the horizon. It stays on the top color for the first fifth of the way, then fades:
 
-{{code Backdrop.backdrop_shapes from "sky = Linear({" to "end_point: { x: 0.0, y: Screen.horizon_y.to_f64() },"}}
+{{code Sky.sky_shape from "Linear({" to "end_point: { x: 0.0, y: Screen.horizon_y.to_f64() },"}}
 
 That's where a color finally becomes one integer, because a `Brush` wants `0xRRGGBB`. `pack` gets there with method calls on plain numbers. Static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `pack` a leaf: it calls nothing of Safari Ride's own.
 

@@ -6,9 +6,9 @@
 ## blue.
 import Pixels
 import Angle
-import Backdrop
 import Clock
 import Fraction
+import Grass
 import Lens
 import HexColor
 import Polygon
@@ -62,7 +62,7 @@ Mountains :: [].{
 					aim,
 					{
 						height_at: land_height,
-						color: Backdrop.grass_color,
+						color: Grass.grass_color,
 						base_y: land_base_y,
 					},
 				),
@@ -406,7 +406,7 @@ land_silhouette = |aim| silhouette(
 	aim,
 	{
 		height_at: land_height,
-		color: Backdrop.grass_color,
+		color: Grass.grass_color,
 		base_y: land_base_y,
 	},
 )

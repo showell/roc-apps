@@ -1,7 +1,7 @@
 ## SunPixels paints Safari's sun into a frame's pixels for SafariFrame (see
 ## SafariFrame for more context). It paints the sun's glow and then its disc, as Sun
-## describes them, onto the sky and grass that BackdropPixels painted. Backdrop
-## paints the grass after the sun, so this paints only above the grass's top.
+## describes them, onto the sky and grass that SkyAndGrassPixels painted. The
+## frame paints the grass after the sun, so this paints only above the grass's top.
 ## The sky's rectangle reaches past every corner of a rolled screen, so above
 ## the grass is where the glow is. The frame paints the sun before the ride's
 ## shapes, so the mountains can hide it.
