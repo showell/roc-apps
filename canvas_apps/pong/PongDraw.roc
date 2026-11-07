@@ -96,10 +96,10 @@ PongDraw :: [].{
 		bx = F32.to_f64(world.ball.pos.x)
 		by = F32.to_f64(world.ball.pos.y)
 		[
-			Shapes.rounded_rect({ x: F32.to_f64(l.x), y: F32.to_f64(l.y), width: F32.to_f64(l.width), height: F32.to_f64(l.height), corner_radius: 7.0, corner_steps: 8 }, Flat(Brush.opaque(Rules.left_neon))),
-			Shapes.rounded_rect({ x: F32.to_f64(r.x), y: F32.to_f64(r.y), width: F32.to_f64(r.width), height: F32.to_f64(r.height), corner_radius: 7.0, corner_steps: 8 }, Flat(Brush.opaque(Rules.right_neon))),
-			Disc({ x: bx, y: by, radius: 10.0, fill: Flat(Brush.opaque(Rules.ball_neon)) }),
-			Disc({ x: bx - 2.0, y: by - 3.0, radius: 4.2, fill: Flat(Brush.opaque(RgbColor.of(0xffffff))) }),
+			Shapes.rounded_rect({ x: F32.to_f64(l.x), y: F32.to_f64(l.y), width: F32.to_f64(l.width), height: F32.to_f64(l.height), corner_radius: 7.0, corner_steps: 8 }, Brush.flat(Rules.left_neon)),
+			Shapes.rounded_rect({ x: F32.to_f64(r.x), y: F32.to_f64(r.y), width: F32.to_f64(r.width), height: F32.to_f64(r.height), corner_radius: 7.0, corner_steps: 8 }, Brush.flat(Rules.right_neon)),
+			Disc({ x: bx, y: by, radius: 10.0, fill: Brush.flat(Rules.ball_neon) }),
+			Disc({ x: bx - 2.0, y: by - 3.0, radius: 4.2, fill: Brush.flat(RgbColor.of(0xffffff)) }),
 		]
 	}
 

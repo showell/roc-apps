@@ -27,7 +27,6 @@ import lib.CanvasApp
 import lib.Input
 import lib.Shapes
 import widget.ReadoutText
-import widget.ScrubWidget
 import "page.html" as page_html : Str
 
 FrameWidgetApp :: [].{
@@ -253,7 +252,7 @@ plain_background = Rect({
 	y: 0.0,
 	width: picture_width,
 	height: picture_height,
-	fill: ScrubWidget.flat(RgbColor.of(0xE8E6DF)),
+	fill: Brush.flat(RgbColor.of(0xE8E6DF)),
 })
 
 panel : Shapes.Shape
@@ -262,7 +261,7 @@ panel = Rect({
 	y: picture_height,
 	width: canvas_width,
 	height: panel_height,
-	fill: ScrubWidget.flat(RgbColor.of(0xDCECF5)),
+	fill: Brush.flat(RgbColor.of(0xDCECF5)),
 })
 
 ## An address that names a layer has the page press Right once for each layer

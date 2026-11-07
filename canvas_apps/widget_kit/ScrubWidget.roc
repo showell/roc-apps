@@ -53,9 +53,6 @@ ScrubWidget :: [].{
 		title,
 	}
 
-	flat : RgbColor -> Brush.Fill
-	flat = |color| Flat(Brush.opaque(color))
-
 	## The size of a label's words, on a canvas of the usual width.
 	label_size : F64
 	label_size = 14.0
@@ -151,7 +148,7 @@ panel = Rect({
 	y: ScrubWidget.picture_bottom_y,
 	width: ScrubWidget.canvas_width,
 	height: ScrubWidget.canvas_height - ScrubWidget.picture_bottom_y,
-	fill: ScrubWidget.flat(panel_color),
+	fill: Brush.flat(panel_color),
 })
 
 status_line : Str, U64 -> Shapes.Shape

@@ -58,7 +58,7 @@ BreakoutDraw :: [].{
 		var $out = Font.text_shapes("BREAKOUT", { top_left: { x: 44.0, y: 22.0 }, size: 26.0, color: Brush.opaque(paddle_neon) })
 		$out = List.concat($out, Font.text_shapes(score, { top_left: { x: 330.0, y: 26.0 }, size: 22.0, color: Brush.opaque(hud_color) }))
 		$out = List.concat($out, Font.text_shapes(lives, { top_left: { x: 560.0, y: 26.0 }, size: 22.0, color: Brush.opaque(hud_color) }))
-		$out = List.append($out, Shapes.line({ from: { x: 44.0, y: 58.0 }, to: { x: 756.0, y: 58.0 }, width: 2.0 }, Flat(Brush.opaque(rule_color))))
+		$out = List.append($out, Shapes.line({ from: { x: 44.0, y: 58.0 }, to: { x: 756.0, y: 58.0 }, width: 2.0 }, Brush.flat(rule_color)))
 		List.concat($out, Font.centered(hint, { top_center: { x: w / 2.0, y: 572.0 }, size: 17.0, color: Brush.opaque(hint_color) }))
 	}
 
@@ -106,9 +106,9 @@ BreakoutDraw :: [].{
 		by = F32.to_f64(world.ball.pos.y)
 		r = F32.to_f64(Ball.radius)
 		[
-			Shapes.rounded_rect({ x: px, y: py, width: pw, height: ph, corner_radius: ph / 2.0, corner_steps: 8 }, Flat(Brush.opaque(paddle_neon))),
+			Shapes.rounded_rect({ x: px, y: py, width: pw, height: ph, corner_radius: ph / 2.0, corner_steps: 8 }, Brush.flat(paddle_neon)),
 			Rect({ x: px + 8.0, y: py + 3.0, width: pw - 16.0, height: 3.0, fill: Flat(Brush.with_alpha(white, 0.59)) }),
-			Disc({ x: bx, y: by, radius: r, fill: Flat(Brush.opaque(ball_neon)) }),
+			Disc({ x: bx, y: by, radius: r, fill: Brush.flat(ball_neon) }),
 			Disc({ x: bx - 2.0, y: by - 2.0, radius: r * 0.4, fill: Flat(Brush.with_alpha(white, 0.82)) }),
 		]
 	}

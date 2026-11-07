@@ -20,6 +20,7 @@ import game.Speed
 import game.Steps
 import game.Tour
 import game.World
+import lib.Brush
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
@@ -223,7 +224,7 @@ ground = Rect({
 	y: 0.0,
 	width: ScrubWidget.canvas_width,
 	height: ScrubWidget.picture_bottom_y,
-	fill: ScrubWidget.flat(ground_color),
+	fill: Brush.flat(ground_color),
 })
 
 road : Shapes.Shape
@@ -234,7 +235,7 @@ road = {
 		y: road_middle_y - half_width,
 		width: ScrubWidget.canvas_width,
 		height: 2.0 * half_width,
-		fill: ScrubWidget.flat(road_color),
+		fill: Brush.flat(road_color),
 	})
 }
 
@@ -250,7 +251,7 @@ plan_disc = |{ along, across, radius, color }|
 		x: screen_x(along),
 		y: screen_y(across),
 		radius: radius,
-		fill: ScrubWidget.flat(color),
+		fill: Brush.flat(color),
 	})
 
 ## One pig of the herd, the one that catches the eye drawn larger.
@@ -299,7 +300,7 @@ sight_line = |rider| {
 			to: { x: x + reach * turn.cos(), y: y + reach * turn.sin() },
 			width: 2.0,
 		},
-		ScrubWidget.flat(sight_color),
+		Brush.flat(sight_color),
 	)
 }
 

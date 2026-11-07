@@ -733,7 +733,7 @@ New in this chapter:
 
 Its list of shapes starts with the sky, the sun and the grass, and this is the grass:
 
-{{code Backdrop.backdrop_shapes from "y: Screen.grass_top_y.to_f64()," to "fill: Flat(Brush.opaque(grass_color)),"}}
+{{code Backdrop.backdrop_shapes from "y: Screen.grass_top_y.to_f64()," to "fill: Brush.flat(grass_color),"}}
 
 It starts a pixel above the horizon, so no seam shows between the grass and the sky:
 

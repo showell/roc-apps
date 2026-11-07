@@ -5,6 +5,7 @@
 ## forward, play and go to the end. A click anywhere else does nothing.
 import game.Clock
 import game.Distance
+import lib.Brush
 import lib.CanvasApp
 import lib.Input
 import lib.Mouse
@@ -283,7 +284,7 @@ triangle = |{ tip_x, reach }|
 			tip_x - reach,
 			button_middle_y + 7.0,
 		],
-		fill: ScrubWidget.flat(icon_color),
+		fill: Brush.flat(icon_color),
 	})
 
 ## A bar across a button's height, for a pause or a stop at either end.
@@ -294,7 +295,7 @@ bar = |x|
 		y: button_middle_y - 7.0,
 		width: 3.0,
 		height: 14.0,
-		fill: ScrubWidget.flat(icon_color),
+		fill: Brush.flat(icon_color),
 	})
 
 ## What a button shows, around `middle`. A lit play button shows a pause.
@@ -329,7 +330,7 @@ button_shapes = |button, motion| {
 			y: button_top,
 			width: button_width,
 			height: button_height,
-			fill: ScrubWidget.flat(color),
+			fill: Brush.flat(color),
 		}),
 	].concat(icon_shapes(button.control, { middle: button.left + button_width / 2.0, lit }))
 }

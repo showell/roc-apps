@@ -393,7 +393,7 @@ picture_shapes = |model|
 				y: 0.0,
 				width: ScrubWidget.canvas_width,
 				height: ScrubWidget.picture_bottom_y,
-				fill: ScrubWidget.flat(picture_color),
+				fill: Brush.flat(picture_color),
 			}),
 		],
 		read_out_lines(model.large_still).map_with_index(read_out_line),
@@ -430,7 +430,7 @@ mark_shapes = |large_still|
 				y: area.top,
 				width: area.width,
 				height: area.height,
-				fill: ScrubWidget.flat(picture_color),
+				fill: Brush.flat(picture_color),
 			}),
 	)
 
