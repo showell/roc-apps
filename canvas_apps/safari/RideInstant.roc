@@ -47,7 +47,7 @@ RideInstant := {
 		nx = Rider.rider_state_at_next_step(instant.rider, route_segments)
 		dist = World.distance_along_route(
 			route_segments,
-			{ index: nx.segment_index, along: nx.along },
+			{ index: nx.segment_index, along: nx.motorcycle.along },
 		)
 		{
 			rider: nx,
@@ -89,7 +89,7 @@ RideInstant := {
 	frame_content = |route_segments, instant| {
 		aim = {
 			heading: ViewYaw.heading_for(instant.rider),
-			cam_focal: RideFocal.ride_focal(route_segments, instant.rider),
+			cam_focal: RideFocal.ride_focal(instant.rider, route_segments),
 		}
 		{ shapes: shapes(instant, { route_segments, aim }), sun: Sun.sighting(aim, instant.clock) }
 	}
@@ -113,7 +113,7 @@ RideInstant := {
 		scene = Scene.scene_in_view(
 			view,
 			{
-				speed: s.speed,
+				speed: s.motorcycle.speed,
 				truck: {
 					route_position: instant.truck.route_position,
 					lit_truck: lit_truck(instant),
@@ -131,9 +131,9 @@ RideInstant := {
 }
 
 expect RideInstant.initial.clock.to_f64() == 0.0
-expect RideInstant.initial.rider.along.to_metres() == 0.0
-expect RideInstant.initial.rider.across.to_metres() == 0.0
-expect RideInstant.initial.rider.speed.to_metres_a_step() == 0.3
+expect RideInstant.initial.rider.motorcycle.along.to_metres() == 0.0
+expect RideInstant.initial.rider.motorcycle.across.to_metres() == 0.0
+expect RideInstant.initial.rider.motorcycle.speed.to_metres_a_step() == 0.3
 expect RideInstant.initial.truck.route_position.to_metres() == 500.0
 expect RideInstant.initial.truck.speed.to_metres_a_step() == 0.3
 expect RideInstant.initial.rider.segment_index.to_i64() == 0
@@ -149,17 +149,20 @@ after_two_steps = RideInstant.next_or_restart(World.segments, after_one_step)
 expect after_one_step.clock.to_f64() == 1.0
 expect after_two_steps.clock.to_f64() == 2.0
 expect after_two_steps.clock.to_f64() - after_one_step.clock.to_f64() == 1.0
-expect after_one_step.rider.along > RideInstant.initial.rider.along
+expect after_one_step.rider.motorcycle.along > RideInstant.initial.rider.motorcycle.along
 expect after_one_step.truck.route_position > RideInstant.initial.truck.route_position
-expect after_two_steps.rider.along > after_one_step.rider.along
+expect after_two_steps.rider.motorcycle.along > after_one_step.rider.motorcycle.along
 expect {
 	old_dist = World.distance_along_route(
 		World.segments,
-		{ index: RideInstant.initial.rider.segment_index, along: RideInstant.initial.rider.along },
+		{
+			index: RideInstant.initial.rider.segment_index,
+			along: RideInstant.initial.rider.motorcycle.along,
+		},
 	)
 	new_dist = World.distance_along_route(
 		World.segments,
-		{ index: after_one_step.rider.segment_index, along: after_one_step.rider.along },
+		{ index: after_one_step.rider.segment_index, along: after_one_step.rider.motorcycle.along },
 	)
 	against_new = Truck.at_next_step(
 		RideInstant.initial.truck,

@@ -812,14 +812,15 @@ done : RideInstant
 done = {
 	rider: {
 		segment_index: World.SegmentIndex.number(18),
-		along: Along.metres(400.0),
-		across: Across.metres(0.0),
-		yaw: Angle.Turn.radians(0.0),
-		speed: Speed.at_rest,
-		lean: Angle.Lean.radians(0.0),
-		heading: Angle.Bearing.radians(0.0),
-		gaze_yaw: Angle.Turn.radians(0.0),
-		look_depth: Fraction.of(0.9),
+		motorcycle: {
+			along: Along.metres(400.0),
+			across: Across.metres(0.0),
+			yaw: Angle.Turn.radians(0.0),
+			speed: Speed.at_rest,
+			lean: Angle.Lean.radians(0.0),
+			heading: Angle.Bearing.radians(0.0),
+		},
+		eyes: { gaze_yaw: Angle.Turn.radians(0.0), look_depth: Fraction.of(0.9) },
 	},
 	truck: {
 		route_position: Distance.metres(9000.0),
@@ -832,10 +833,10 @@ done = {
 expect {
 	instant = RideInstant.next_or_restart(World.segments, done)
 	instant.clock.to_f64() == 0.0
-		and instant.rider.along.to_metres() == 0.0
-		and instant.rider.speed.to_metres_a_step() == 0.3
+		and instant.rider.motorcycle.along.to_metres() == 0.0
+		and instant.rider.motorcycle.speed.to_metres_a_step() == 0.3
 		and instant.truck.route_position.to_metres() == 500.0
-		and instant.rider.look_depth.to_f64() == 0.0
+		and instant.rider.eyes.look_depth.to_f64() == 0.0
 }
 
 # The gaze is home at each of the ride's crossings, and it did leave home. The
@@ -850,9 +851,9 @@ expect {
 		next = Rider.rider_state_at_next_step($rider, World.segments)
 		if next.segment_index != $rider.segment_index {
 			$crossings = $crossings + 1
-			$is_home_at_each = $is_home_at_each and $rider.gaze_yaw == Angle.straight_ahead
+			$is_home_at_each = $is_home_at_each and $rider.eyes.gaze_yaw == Angle.straight_ahead
 		}
-		$has_looked = $has_looked or next.gaze_yaw != Angle.straight_ahead
+		$has_looked = $has_looked or next.eyes.gaze_yaw != Angle.straight_ahead
 		$rider = next
 	}
 	$crossings == 18 and $is_home_at_each and $has_looked

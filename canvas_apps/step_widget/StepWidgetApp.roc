@@ -142,7 +142,10 @@ route_x = |distance| route_left_x + route_width * distance.ratio_to(route_length
 rider_distance : Tour -> Distance
 rider_distance = |tour| {
 	rider = tour.instant.rider
-	World.distance_along_route(tour.route_segments, { index: rider.segment_index, along: rider.along })
+	World.distance_along_route(
+		tour.route_segments,
+		{ index: rider.segment_index, along: rider.motorcycle.along },
+	)
 }
 
 ground : Shapes.Shape
@@ -287,7 +290,10 @@ picture_shapes = |tour| {
 			name: "rider",
 			name_y: route_y + 16.0,
 		}),
-		shapes_from_behind_rider({ across: rider.across, lean: rider.lean.to_radians() }),
+		shapes_from_behind_rider({
+			across: rider.motorcycle.across,
+			lean: rider.motorcycle.lean.to_radians(),
+		}),
 	].join()
 }
 
@@ -316,7 +322,7 @@ status_lines = |model| {
 	clock = model.tour.instant.clock
 	[
 		"clock: step ${clock.to_str()}",
-		"rider: segment ${(rider.segment_index.to_u32() + 1).to_str()}, ${ScrubWidget.tenths_text(rider.along.to_metres())} m, speed ${ScrubWidget.tenths_text(rider.speed.to_metres_a_step())}",
+		"rider: segment ${(rider.segment_index.to_u32() + 1).to_str()}, ${ScrubWidget.tenths_text(rider.motorcycle.along.to_metres())} m, speed ${ScrubWidget.tenths_text(rider.motorcycle.speed.to_metres_a_step())}",
 		"truck: ${ScrubWidget.tenths_text(truck.route_position.to_metres())} m, speed ${ScrubWidget.tenths_text(truck.speed.to_metres_a_step())}, brake ${brakes_text(RideInstant.lit_truck(model.tour.instant).brake_lights)}",
 		move_text(model),
 	]
@@ -374,8 +380,10 @@ expect {
 	on_the_way = left_alone(heading_for_step(16), 2)
 	past_it = left_alone(heading_on_to(on_the_way, 40), 3)
 	back = moved(heading_on_to(past_it, 16))
-	back.tour.instant.rider.along == on_the_way.tour.instant.rider.along
-		and back.tour.instant.rider.speed == on_the_way.tour.instant.rider.speed
+	back_motorcycle = back.tour.instant.rider.motorcycle
+	on_the_way_motorcycle = on_the_way.tour.instant.rider.motorcycle
+	back_motorcycle.along == on_the_way_motorcycle.along
+		and back_motorcycle.speed == on_the_way_motorcycle.speed
 }
 
 # Play keeps pace with the ride, and pausing leaves the ride where it is.
