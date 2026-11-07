@@ -8,7 +8,7 @@ import game.CatStills
 import game.CrossingReaction
 import game.Distance
 import game.Pixels
-import game.Scenery
+import game.Geom
 import game.Speed
 import game.StillShapes
 import game.World
@@ -91,7 +91,7 @@ feet_y = 190.0
 ## The sky, the grass, and the road between the verges.
 road_shapes : List(Shapes.Shape)
 road_shapes = {
-	road_width_px = Scenery.road_width.to_metres() * pixels_a_metre
+	road_width_px = Geom.road_half_width.to_metres() * 2.0 * pixels_a_metre
 	ground_height = ground_bottom_y - ground_top_y
 	[
 		Rect({

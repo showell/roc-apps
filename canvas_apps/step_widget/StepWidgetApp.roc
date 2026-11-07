@@ -6,7 +6,7 @@
 import game.Across
 import game.Clock
 import game.Distance
-import game.Scenery
+import game.Geom
 import game.Tour
 import game.World
 import lib.CanvasApp
@@ -227,7 +227,7 @@ lean_shown_at = 3.0
 ## The road from behind, with the rider at `across`, leaning by `lean` radians.
 shapes_from_behind_rider : { across : Across, lean : F64 } -> List(Shapes.Shape)
 shapes_from_behind_rider = |{ across, lean }| {
-	road = Scenery.road_half_width.to_metres() * pixels_a_metre
+	road = Geom.road_half_width.to_metres() * pixels_a_metre
 	middle = ScrubWidget.canvas_width / 2.0
 	foot = middle + across.to_metres() * pixels_a_metre
 	head_x = foot + rider_height * (lean * lean_shown_at).sin()

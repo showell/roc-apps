@@ -12,7 +12,6 @@ import game.Geom
 import game.GroundSighting
 import game.BendView
 import game.RailSighting
-import game.Scenery
 import game.World
 import lib.Brush
 import lib.CanvasApp
@@ -85,7 +84,6 @@ road_with = |turn| {
 		along: Along.at(segment_length.minus(rider_before_bend)),
 		across: Across.middle,
 		yaw: Angle.straight_ahead,
-		half_width: Scenery.road_half_width,
 	},
 }
 
@@ -225,7 +223,7 @@ turn_text = |turn| {
 ## Which edge a bend's outer edge is, in words.
 edge_text : Angle.Turn -> Str
 edge_text = |turn|
-	if BendView.outer_edge(turn) == Scenery.left_edge {
+	if BendView.outer_edge(turn) == Geom.left_edge {
 		"left"
 	} else {
 		"right"
@@ -302,8 +300,8 @@ expect World.plans.any(|plan| plan.turn == sharp_bend.turn)
 expect World.plans.all(|plan| plan.turn.abs() <= sharp_bend.turn)
 
 # The apex lies on the outer edge carried straight on, on either side.
-expect (apex_of(left_bend.turn).right.to_metres() - Scenery.right_edge.to_metres()).abs() < 0.000001
-expect (apex_of(right_bend.turn).right.to_metres() - Scenery.left_edge.to_metres()).abs() < 0.000001
+expect (apex_of(left_bend.turn).right.to_metres() - Geom.right_edge.to_metres()).abs() < 0.000001
+expect (apex_of(right_bend.turn).right.to_metres() - Geom.left_edge.to_metres()).abs() < 0.000001
 
 # Each bend's rider and apex are in the picture, in the bend's own third.
 expect

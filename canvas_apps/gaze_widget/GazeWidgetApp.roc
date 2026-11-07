@@ -15,7 +15,6 @@ import game.Gaze
 import game.Geom
 import game.Rider
 import game.RiderState
-import game.Scenery
 import game.Speed
 import game.Tour
 import game.World
@@ -224,7 +223,7 @@ ground = Rect({
 
 road : Shapes.Shape
 road = {
-	half_width = Scenery.road_half_width.to_metres() * pixels_a_metre
+	half_width = Geom.road_half_width.to_metres() * pixels_a_metre
 	Rect({
 		x: 0.0,
 		y: road_middle_y - half_width,
