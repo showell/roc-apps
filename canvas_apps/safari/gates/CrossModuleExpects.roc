@@ -64,6 +64,7 @@ import game.Sky
 import game.Speed
 import game.Spot
 import game.Steps
+import game.Still
 import game.StillShapes
 import game.Sun
 import game.Throttle
@@ -2722,3 +2723,25 @@ expect
 # A truck in view must be past the near plane.
 expect truck_seen_from({ ..origin, along: Along.metres(100.0) }, 0.25).is_err()
 expect truck_seen_from({ ..origin, along: Along.metres(100.0) }, 1.0).is_ok()
+
+## A still 50 pixels tall, standing as drawn on feet at (100, 200).
+upright_still_anchor : StillShapes.Anchor
+upright_still_anchor = {
+	feet: Screen.point(100.0, 200.0),
+	flip: AsDrawn,
+	height_on_screen: Pixels.of(50.0),
+}
+
+# A still of one flat polygon of colour 7, its three points all at the feet, is
+# drawn as one opaque polygon there.
+expect
+	StillShapes.still_shapes(
+		upright_still_anchor,
+		Still.([{ fill: Flat(RgbColor.of(7)), points: List.repeat({ x: 0.0, y: 0.0 }, 3) }]),
+	)
+		== [
+			Poly({
+				coordinates: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0],
+				fill: Flat(Brush.opaque(RgbColor.of(7))),
+			}),
+		]
