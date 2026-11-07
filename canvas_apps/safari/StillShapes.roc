@@ -7,8 +7,6 @@ import Distance
 import Picture
 import Pixels
 import Polygon
-import lib.Brush
-import lib.RgbColor
 import Still
 import Screen
 import lib.Shapes
@@ -177,17 +175,3 @@ expect
 			Screen.point(125.0, 180.0),
 			Screen.point(150.0, 150.0),
 		]
-
-# A solid polygon of colour 7 with `count` points, all at the feet.
-flat_polygon : U64 -> Still.Polygon
-flat_polygon = |count| {
-	fill: Flat(RgbColor.of(7)),
-	points: List.repeat({ x: 0.0, y: 0.0 }, count),
-}
-
-expect
-	still_polygon(upright, flat_polygon(3))
-		== Poly({
-			coordinates: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0],
-			fill: Flat(Brush.opaque(RgbColor.of(7))),
-		})

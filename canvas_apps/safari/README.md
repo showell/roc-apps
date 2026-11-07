@@ -99,7 +99,10 @@ RasterFrame at the depths its script lists, and builds the page. `part=expects`,
 script's header has the rest.
 
 The fast and merge tiers keep their Roc caches under
-`~/build/roc-apps/safari-gate-caches/`, and `publish.shale` runs on empty ones.
+`~/build/roc-apps/safari-checkout-caches/`, in a folder for each checkout named for
+its path, and `publish.shale` runs on empty ones. A checkout's folder is
+cleared past run.shale's `CHECKOUT_CEILING_MB`, and a removed worktree's goes at the next merge gate run
+in any checkout.
 
 An `expect` sits below the block of the module it checks. Where it needs a
 module that one doesn't import, it sits in a module that sees both, such as

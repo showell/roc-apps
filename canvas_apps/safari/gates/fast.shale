@@ -17,8 +17,9 @@
 -- nudged in one drawing module moved it for 12 of 17 modules, where 3000 moved
 -- for 9 and 1586 for 7.
 --
--- Each checkout has a folder under the box's build folder, with its own Roc
--- cache and its record of the last green. The record holds a hash of each file
+-- Each checkout has a folder under the box's build folder, named by the merge
+-- gate (`part=fast_cache`), with its own Roc cache and its record of the last
+-- green. The record holds a hash of each file
 -- it judged, and of the rules, so a change to the rules judges every file again.
 
 use("cookbook:roc/pinned.shale")
@@ -30,8 +31,13 @@ const MERGE_GATE = "canvas_apps/safari/gates/run.shale"
 const WANT = "roc-pin: roc-apps' pinned nightly, and the binary it builds"
 const FRAME_DEPTH = "5700"
 
+-- The merge gate is the one home of where each checkout's caches live.
 function checkout_folder()
-  return "build:roc-apps/safari-gate-caches/fast" .. substitute(real("."), "/", "-")
+  local r = must(run({"shale", "--root", ".", MERGE_GATE, "part=fast_cache"}, {timeout_ms = 30000, whole = 4000}))
+  for l in lines(r.out) do
+    if starts_with(l, "build:") then return trim(l) end
+  end
+  fail("safari fast: the merge gate named no cache folder: " .. trim(r.out))
 end
 
 -- The file's hash, for each path of `paths`.
