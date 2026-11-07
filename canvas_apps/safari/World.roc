@@ -375,8 +375,7 @@ World :: [].{
 
 	## The cows of `segment`'s herd, led by its bull if it has one.
 	segment_cows : World.Segment -> List(Geom.Placed(Billboard))
-	segment_cows = |segment|
-		World.cow_herd.herd_cows({ herd_along: World.cow_herd_along, bull: segment.bull })
+	segment_cows = |segment| route_cows(segment.bull)
 
 	## The pig of `segment`'s herd that stands out.
 	standout_pig : World.Segment -> [Standout(Geom.Placed(Billboard)), NoPigs]
@@ -495,6 +494,10 @@ nearest_tree_ahead = |trees, along|
 ## Where a herd stands on a segment `length` long.
 pig_herd_along : Distance -> Along
 pig_herd_along = |length| Along.at(length.minus(World.pig_distance_before_end))
+
+## The route's cow herd at its place, led by a bull or not.
+route_cows : [WithBull, NoBull] -> List(Geom.Placed(Billboard))
+route_cows = |bull| World.cow_herd.herd_cows({ herd_along: World.cow_herd_along, bull })
 
 expect World.plans.len() == 19
 
@@ -838,10 +841,10 @@ expect World.big_pig_herd.jitter_along.to_metres() == 1.2
 expect World.big_pig_herd.jitter_across.to_metres() == 1.0
 
 cows_with_bull : List(Geom.Placed(Billboard))
-cows_with_bull = World.cow_herd.herd_cows({ herd_along: World.cow_herd_along, bull: WithBull })
+cows_with_bull = route_cows(WithBull)
 
 cows_without_bull : List(Geom.Placed(Billboard))
-cows_without_bull = World.cow_herd.herd_cows({ herd_along: World.cow_herd_along, bull: NoBull })
+cows_without_bull = route_cows(NoBull)
 
 expect cows_with_bull.len() == 15
 expect cows_without_bull.len() == 14

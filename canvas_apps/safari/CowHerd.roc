@@ -43,7 +43,7 @@ CowHerd := {
 	herd_cows = |herd, { herd_along, bull: with_bull }| {
 		cows =
 			List.from_iter(U64.until(0, herd.cow_count))
-				.map(|index| herd_cow(herd, { herd_along, index }))
+				.map(|cow_number| herd_cow(herd, { herd_along, cow_number }))
 		match with_bull {
 			WithBull => [herd_bull(herd_along)].concat(cows)
 			NoBull => cows
@@ -77,15 +77,15 @@ herd_bull = |herd_along| {
 
 ## Every fourth cow, from the second, is a calf.
 is_calf : U64 -> Bool
-is_calf = |index| index.rem_by(4) == 1
+is_calf = |cow_number| cow_number.rem_by(4) == 1
 
-## The herd's cow at `index`, counting from 0. The scatter's phases, 1.9 and
+## The herd's cow at `cow_number`, counting from 0. The scatter's phases, 1.9 and
 ## 2.7, are tuned by eye.
-herd_cow : CowHerd, { herd_along : Along, index : U64 } -> Geom.Placed(Billboard)
-herd_cow = |herd, { herd_along, index }| {
-	fi = index.to_f64()
-	column = index.div_trunc_by(herd.rows).to_f64()
-	row = index.rem_by(herd.rows).to_f64()
+herd_cow : CowHerd, { herd_along : Along, cow_number : U64 } -> Geom.Placed(Billboard)
+herd_cow = |herd, { herd_along, cow_number }| {
+	fi = cow_number.to_f64()
+	column = cow_number.div_trunc_by(herd.rows).to_f64()
+	row = cow_number.rem_by(herd.rows).to_f64()
 	herd_front = herd_along.plus(herd.gap_behind_bull)
 	column_place = herd_front.plus(herd.column_spacing.times(column))
 	in_line = column_place.plus(herd.row_stagger.times(row - 1.0))
@@ -95,7 +95,7 @@ herd_cow = |herd, { herd_along, index }| {
 	{
 		along: in_line.plus(herd.jitter_along.times((fi * 2.7).sin())),
 		across: Across.left_of_middle(out_from_road),
-		kind: if is_calf(index) {
+		kind: if is_calf(cow_number) {
 			Billboard.young_billboard(cow, FacesRight)
 		} else {
 			Billboard.adult_billboard(cow, FacesRight)
@@ -117,4 +117,4 @@ expect
 		(4, False),
 		(5, True),
 		(13, True),
-	].all(|(index, want)| is_calf(index) == want)
+	].all(|(cow_number, want)| is_calf(cow_number) == want)
