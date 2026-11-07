@@ -1,7 +1,8 @@
-## A scrub widget is a small canvas app for the Safari tutorial. Every frame is a
-## pure function of its state, so what it shows can play forward and backward.
-## This module holds the page each widget is drawn on: the canvas, and laying out
-## the picture and the lines of text below it. ReadoutText puts a widget's numbers
+## A widget page is the canvas a Safari tutorial widget is drawn on: a picture
+## across the top, and a panel under it for the lines of text and any buttons.
+## A widget is a small canvas app, and every frame is a pure function of its
+## state. This module holds the page's sizes and colors, the canvas app around a
+## widget, and laying out the picture and the text. ReadoutText puts a widget's numbers
 ## into words for those lines, VcrButtons reads a widget's buttons into its
 ## state, Click reads where the pointer was pressed, and PlanView draws a picture
 ## that looks down on the road.
@@ -19,7 +20,7 @@ import lib.CanvasApp
 import lib.Input
 import lib.Shapes
 
-ScrubWidget :: [].{
+WidgetPage :: [].{
 
 	canvas_width : F64
 	canvas_width = 640.0
@@ -114,7 +115,7 @@ ScrubWidget :: [].{
 	}
 
 	## The rows of text on the panel under the picture, from its left margin.
-	panel_readout : ScrubWidget.ReadoutStyle
+	panel_readout : WidgetPage.ReadoutStyle
 	panel_readout = {
 		x: side_margin,
 		first_baseline: picture_bottom_y + 50.0,
@@ -129,7 +130,7 @@ ScrubWidget :: [].{
 		text : Str,
 		color : RgbColor,
 		row : U64,
-		style : ScrubWidget.ReadoutStyle,
+		style : WidgetPage.ReadoutStyle,
 	} -> Shapes.Shape
 	readout = |{ text, color, row, style }|
 		Text({
@@ -156,7 +157,7 @@ ScrubWidget :: [].{
 			size: label_size,
 			face: Prose,
 			align: Left,
-			color: Brush.opaque(ScrubWidget.ink_color),
+			color: Brush.opaque(WidgetPage.ink_color),
 		})
 
 	## The picture, and the panel with the lines of text on it.
@@ -207,30 +208,30 @@ still_frames_a_second = 20
 panel : Shapes.Shape
 panel = Rect({
 	x: 0.0,
-	y: ScrubWidget.picture_bottom_y,
-	width: ScrubWidget.canvas_width,
-	height: ScrubWidget.canvas_height - ScrubWidget.picture_bottom_y,
-	fill: Brush.flat(ScrubWidget.panel_color),
+	y: WidgetPage.picture_bottom_y,
+	width: WidgetPage.canvas_width,
+	height: WidgetPage.canvas_height - WidgetPage.picture_bottom_y,
+	fill: Brush.flat(WidgetPage.panel_color),
 })
 
 status_line : Str, U64 -> Shapes.Shape
-status_line = |text, row| ScrubWidget.readout({ text, color: ScrubWidget.ink_color, row, style: ScrubWidget.panel_readout })
+status_line = |text, row| WidgetPage.readout({ text, color: WidgetPage.ink_color, row, style: WidgetPage.panel_readout })
 
 # A page is the panel and its text.
-expect ScrubWidget.frame_shapes({ picture_shapes: [], status_lines: [] }).len() == 1
-expect ScrubWidget.frame_shapes({ picture_shapes: [], status_lines: ["I"] }).len() == 2
+expect WidgetPage.frame_shapes({ picture_shapes: [], status_lines: [] }).len() == 1
+expect WidgetPage.frame_shapes({ picture_shapes: [], status_lines: ["I"] }).len() == 2
 
 # Each row of the readout sits under the last, in monospace.
 expect
-	ScrubWidget.readout({
+	WidgetPage.readout({
 		text: "I",
 		color: RgbColor.of(0x202020),
 		row: 1,
-		style: ScrubWidget.panel_readout,
+		style: WidgetPage.panel_readout,
 	})
 		== Text({
 			text: "I",
-			x: ScrubWidget.side_margin,
+			x: WidgetPage.side_margin,
 			y: 292.0,
 			size: 15.0,
 			face: Code,
@@ -240,7 +241,7 @@ expect
 
 # A label is words, set where it is asked.
 expect
-	ScrubWidget.label({
+	WidgetPage.label({
 		text: "I",
 		x: 3.0,
 		y: 4.0,
@@ -249,7 +250,7 @@ expect
 			text: "I",
 			x: 3.0,
 			y: 4.0,
-			size: ScrubWidget.label_size,
+			size: WidgetPage.label_size,
 			face: Prose,
 			align: Left,
 			color: Brush.opaque(RgbColor.of(0x202020)),

@@ -12,13 +12,11 @@ import game.Still
 import lib.Brush
 import lib.RgbColor
 import lib.CanvasApp
-import lib.Font
 import lib.Input
-import lib.Mouse
 import lib.Shapes
 import widget.Click
 import widget.ReadoutText
-import widget.ScrubWidget
+import widget.WidgetPage
 
 StillsWidgetApp :: [].{
 
@@ -30,7 +28,7 @@ StillsWidgetApp :: [].{
 	Model : { large_pose : StillsWidgetApp.Pose, outlines : [Hidden, Shown] }
 
 	canvas_app : CanvasApp.CanvasApp(StillsWidgetApp.Model)
-	canvas_app = ScrubWidget.canvas_app({
+	canvas_app = WidgetPage.canvas_app({
 		frames_a_second,
 		title: "The stills",
 		init: { large_pose: Cat(Rest), outlines: Hidden },
@@ -146,7 +144,7 @@ extent_width = |extent| extent.right - extent.left
 
 ## How high a cell is. Two rows of them fill the panel under the picture.
 cell_height : F64
-cell_height = (ScrubWidget.canvas_height - ScrubWidget.picture_bottom_y) / 2.0
+cell_height = (WidgetPage.canvas_height - WidgetPage.picture_bottom_y) / 2.0
 
 ## How far down a cell the stills stand, which leaves room under them for a name.
 cell_ground : F64
@@ -197,11 +195,11 @@ standing_at = |still, { mid_x, ground_y, height_on_screen }| {
 ## A row of stills across the canvas, between its side margins.
 row_cells : List(StillsWidgetApp.Pose), F64 -> List(StillCell)
 row_cells = |poses, row_top| {
-	cell_width = ScrubWidget.panel_width / poses.len().to_f64()
+	cell_width = WidgetPage.panel_width / poses.len().to_f64()
 	height_on_screen = row_height_on_screen(poses, cell_width)
 	poses.map_with_index(
 		|pose, column| {
-			left = ScrubWidget.side_margin + column.to_f64() * cell_width
+			left = WidgetPage.side_margin + column.to_f64() * cell_width
 			{
 				pose,
 				area: {
@@ -226,8 +224,8 @@ row_cells = |poses, row_top| {
 ## The cat's poses on the first row, and the bird's on the second.
 cells : List(StillCell)
 cells =
-	row_cells(cat_poses, ScrubWidget.picture_bottom_y)
-		.concat(row_cells(bird_poses, ScrubWidget.picture_bottom_y + cell_height))
+	row_cells(cat_poses, WidgetPage.picture_bottom_y)
+		.concat(row_cells(bird_poses, WidgetPage.picture_bottom_y + cell_height))
 
 ## Where the words stop and the large still starts.
 large_area_left : F64
@@ -242,8 +240,8 @@ large_area : Click.Area
 large_area = {
 	left: large_area_left,
 	top: large_area_margin,
-	width: ScrubWidget.canvas_width - ScrubWidget.side_margin - large_area_left,
-	height: ScrubWidget.picture_bottom_y - 2.0 * large_area_margin,
+	width: WidgetPage.canvas_width - WidgetPage.side_margin - large_area_left,
+	height: WidgetPage.picture_bottom_y - 2.0 * large_area_margin,
 }
 
 ## A still as large as `large_area` holds it, in the middle of that area.
@@ -299,7 +297,7 @@ picture_color : RgbColor
 picture_color = RgbColor.of(0xf7f5ef)
 
 ink : Brush.Rgba
-ink = Brush.opaque(ScrubWidget.ink_color)
+ink = Brush.opaque(WidgetPage.ink_color)
 
 point_count : Still -> U64
 point_count = |still| still.polygons().fold(0, |sum, polygon| sum + polygon.points.len())
@@ -320,11 +318,11 @@ read_out_size = 18.0
 
 read_out_line : Str, U64 -> Shapes.Shape
 read_out_line = |text, row|
-	ScrubWidget.readout({
+	WidgetPage.readout({
 		text,
-		color: ScrubWidget.ink_color,
+		color: WidgetPage.ink_color,
 		row,
-		style: { ..ScrubWidget.panel_readout, first_baseline: 42.0, size: read_out_size },
+		style: { ..WidgetPage.panel_readout, first_baseline: 42.0, size: read_out_size },
 	})
 
 hint_lines : List(Str)
@@ -332,9 +330,9 @@ hint_lines = ["Click a still below.", "Click the large one", "to outline its pol
 
 hint_line : Str, U64 -> Shapes.Shape
 hint_line = |text, row|
-	ScrubWidget.label({
+	WidgetPage.label({
 		text,
-		x: ScrubWidget.side_margin,
+		x: WidgetPage.side_margin,
 		y: 138.0 + row.to_f64() * 18.0,
 	})
 
@@ -379,7 +377,7 @@ large_shapes = |{ large_pose, outlines }| {
 picture_shapes : StillsWidgetApp.Model -> List(Shapes.Shape)
 picture_shapes = |model|
 	[
-		[ScrubWidget.picture_backdrop(picture_color)],
+		[WidgetPage.picture_backdrop(picture_color)],
 		read_out_lines(model.large_pose).map_with_index(read_out_line),
 		hint_lines.map_with_index(hint_line),
 		large_shapes(model),
@@ -421,7 +419,7 @@ mark_shapes = |large_pose|
 ## Everything on the canvas.
 shapes_at : StillsWidgetApp.Model -> List(Shapes.Shape)
 shapes_at = |model|
-	ScrubWidget.frame_shapes({ picture_shapes: picture_shapes(model), status_lines: [] })
+	WidgetPage.frame_shapes({ picture_shapes: picture_shapes(model), status_lines: [] })
 		.concat(mark_shapes(model.large_pose))
 		.concat(grid_shapes)
 
@@ -459,14 +457,14 @@ expect cells.map(|cell| cell.pose).take_first(2) == [Cat(Rest), Cat(Stride)]
 expect cells.all(|cell| cells.keep_if(|other| other.pose == cell.pose).len() == 1)
 
 # The rows fill the space between the side margins, end to end.
-expect first_cell.area.left == ScrubWidget.side_margin
+expect first_cell.area.left == WidgetPage.side_margin
 expect (last_cell.area.left + last_cell.area.width - 616.0).abs() <= 0.000001
 expect (first_cell.area.width - 592.0 / 7.0).abs() <= 0.000001
 expect (last_cell.area.width - 592.0 / 6.0).abs() <= 0.000001
 
 # The two rows fill the panel, top to bottom, and no two cells overlap.
-expect first_cell.area.top == ScrubWidget.picture_bottom_y
-expect last_cell.area.top + last_cell.area.height == ScrubWidget.canvas_height
+expect first_cell.area.top == WidgetPage.picture_bottom_y
+expect last_cell.area.top + last_cell.area.height == WidgetPage.canvas_height
 expect
 	cells.all(
 		|cell| cells.keep_if(|other| other.area.contains(middle_of(cell.area))).len() == 1,
@@ -495,26 +493,6 @@ is_full_width = |{ pose, area, anchor }| {
 expect cells.take_first(7).any(is_full_width)
 expect cells.drop_first(7).any(is_full_width)
 expect !is_full_width(first_cell)
-
-# Each name fits its cell, and one much longer would not.
-expect cells.all(|{ pose, area, .. }| Font.room_for(pose_name(pose), name_size) <= area.width)
-expect Font.room_for("Collapse, and then some", name_size) > first_cell.area.width
-
-# The words all fit left of the large still.
-expect
-	cells.all(
-		|{ pose, .. }|
-			read_out_lines(pose).all(
-				|line| {
-					line_end = ScrubWidget.side_margin + Font.room_for(line, read_out_size)
-					line_end <= large_area.left
-				},
-			),
-	)
-expect
-	hint_lines.all(
-		|line| ScrubWidget.side_margin + Font.room_for(line, ScrubWidget.label_size) <= large_area.left,
-	)
 
 ## The large area with its far edges inside it, which a still may touch.
 large_area_edges_held : Click.Area
@@ -627,12 +605,11 @@ expect is_as_started(left_click(start, { x: 630.0, y: 300.0 }))
 # a page where a finger scrolls has to answer no.
 expect is_as_started(left_click(start, { x: 128.0, y: 144.0 }))
 
-# Only a press of the left button is a click: not one held from before, not
-# the right button, and not nothing at all.
+# Only a click changes the widget: not a button held from before, and not
+# nothing at all.
 expect {
 	spot = middle_of(last_cell.area)
-	right = Input.none.with_mouse(Mouse.of({ held: 2, struck: 2, at: { x: spot.x.to_f32_wrap(), y: spot.y.to_f32_wrap() }, wheel: 0.0 }))
-	[Click.held_at(spot), right, Input.none].all(|input| is_as_started(next_model(start, input)))
+	[Click.held_at(spot), Input.none].all(|input| is_as_started(next_model(start, input)))
 }
 
 expect toggled_outlines(Hidden) == Shown

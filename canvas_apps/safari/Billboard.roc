@@ -3,7 +3,6 @@
 import Distance
 import EmojiStills
 import Picture
-import Pixels
 import StillShapes
 
 Billboard := {
@@ -43,7 +42,7 @@ Billboard := {
 	half_width = |billboard| billboard.height.divided_by(2.0)
 
 	## How a billboard looks. An emoji faces left, so a billboard facing right
-	## is its still mirrored. One less than a pixel tall isn't drawn.
+	## is its still mirrored.
 	scenery_picture : Billboard, Picture.Setting({}) -> Picture
 	scenery_picture = |billboard, setting| {
 		flip =
@@ -52,11 +51,7 @@ Billboard := {
 				FacesRight => Mirrored
 			}
 		anchor = StillShapes.standing_anchor(setting, { height: billboard.height, flip })
-		if anchor.height_on_screen < Pixels.of(1.0) {
-			Picture.from_shapes([])
-		} else {
-			Picture.from_shapes(StillShapes.still_shapes(anchor, billboard.emoji.still()))
-		}
+		Picture.from_shapes(StillShapes.still_shapes(anchor, billboard.emoji.still()))
 	}
 
 	is_eq : _

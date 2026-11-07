@@ -37,7 +37,7 @@ BookFence := [].{
 }
 
 ## The page behind a widget's word, and the shape of its canvas: `Screen.roc`
-## sets the ride's, `FrameWidgetApp.roc` the paused frame's, and `ScrubWidget.roc`
+## sets the ride's, `FrameWidgetApp.roc` the paused frame's, and `WidgetPage.roc`
 ## the other widgets'.
 Frame : {
 	folder : Str,

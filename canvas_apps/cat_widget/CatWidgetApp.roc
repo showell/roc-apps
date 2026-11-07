@@ -21,7 +21,7 @@ import lib.CanvasApp
 import lib.RgbColor
 import lib.Shapes
 import widget.ReadoutText
-import widget.ScrubWidget
+import widget.WidgetPage
 import widget.VcrButtons
 
 CatWidgetApp :: [].{
@@ -90,14 +90,14 @@ road_shapes = {
 		Rect({
 			x: 0.0,
 			y: 0.0,
-			width: ScrubWidget.canvas_width,
-			height: ScrubWidget.picture_bottom_y,
+			width: WidgetPage.canvas_width,
+			height: WidgetPage.picture_bottom_y,
 			fill: Brush.flat(RgbColor.of(0xdcecf5)),
 		}),
 		Rect({
 			x: 0.0,
 			y: ground_top_y,
-			width: ScrubWidget.canvas_width,
+			width: WidgetPage.canvas_width,
 			height: ground_height,
 			fill: Brush.flat(RgbColor.of(0x7fa650)),
 		}),

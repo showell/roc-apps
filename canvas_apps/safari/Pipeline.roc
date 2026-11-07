@@ -42,34 +42,10 @@ Pipeline :: [].{
 		Ok({ spot: Spot.at({ place, road_point, lift: placed.lift, foot }), kind: placed.kind })
 	}
 
-	## The sighting of `placed`, if it stands at least
-	## `smallest_height_on_screen` tall through a lens of focal length
-	## `size_focal`. Which lens that is, the camera's or the one at rest, is
-	## the only way one kind's size test differs from another's.
-	tall_sighting_of : Geom.Placed(kind),
-	{
-		road : RoadAhead.RoadView,
-		vantage : Geom.Vantage,
-		place : SegmentPlace,
-		size_focal : Pixels,
-	} -> Try(Pipeline.Sighted(kind), [BehindCamera, TooSmall])
-		where [kind.scenery_height : kind -> Distance]
-	tall_sighting_of = |placed, { road, vantage, place, size_focal }| {
-		sighting = sighting_of(placed, { road, vantage, place })?
-		height_on_screen = Camera.height_on_screen(
-			{ height: placed.kind.scenery_height(), forward: sighting.spot.foot().forward() },
-			size_focal,
-		)
-		if height_on_screen < Pipeline.smallest_height_on_screen {
-			Err(TooSmall)
-		} else {
-			Ok(sighting)
-		}
-	}
-
-	## The sighting of scenery `placed` on the segment at `place`, if it is tall
-	## enough through the camera's own lens, so that what is at the edge of
-	## sight comes and goes as the camera widens.
+	## The sighting of scenery `placed` on the segment at `place`, if it stands
+	## at least `smallest_height_on_screen` tall through the camera's own lens,
+	## so that what is at the edge of sight comes and goes as the camera widens.
+	## Every kind with a size test takes it here.
 	scenery_sighting_of : Geom.Placed(kind),
 	{
 		road : RoadAhead.RoadView,
@@ -77,16 +53,18 @@ Pipeline :: [].{
 		place : SegmentPlace,
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera, TooSmall])
 		where [kind.scenery_height : kind -> Distance]
-	scenery_sighting_of = |placed, { road, camera, place }|
-		Pipeline.tall_sighting_of(
-			placed,
-			{
-				road,
-				vantage: camera.vantage,
-				place,
-				size_focal: camera.cam_focal,
-			},
+	scenery_sighting_of = |placed, { road, camera, place }| {
+		sighting = sighting_of(placed, { road, vantage: camera.vantage, place })?
+		height_on_screen = Camera.height_on_screen(
+			{ height: placed.kind.scenery_height(), forward: sighting.spot.foot().forward() },
+			camera.cam_focal,
 		)
+		if height_on_screen < Pipeline.smallest_height_on_screen {
+			Err(TooSmall)
+		} else {
+			Ok(sighting)
+		}
+	}
 
 	## `sighting` drawn through a lens of focal length `cam_focal`, with `context`
 	## for whatever else its kind needs.

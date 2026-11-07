@@ -17,7 +17,7 @@ import lib.Input
 import lib.Shapes
 import lib.RgbColor
 import widget.ReadoutText
-import widget.ScrubWidget
+import widget.WidgetPage
 import widget.VcrButtons
 
 SkyWidgetApp :: [].{
@@ -30,8 +30,8 @@ SkyWidgetApp :: [].{
 	Model : { transport : VcrButtons.Transport(Clock), job : SkyWidgetApp.Job }
 
 	canvas_app : CanvasApp.CanvasApp(SkyWidgetApp.Model)
-	canvas_app = ScrubWidget.canvas_app({
-		frames_a_second: ScrubWidget.moving_frames_a_second,
+	canvas_app = WidgetPage.canvas_app({
+		frames_a_second: WidgetPage.moving_frames_a_second,
 		title: "The sun going down",
 		init: at_start,
 		model_at_next_step: next_model,
@@ -110,7 +110,7 @@ sky_colors = |job, clock|
 ## The ride's sky at `clock`, for a rider facing the sun.
 picture_shapes : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
 picture_shapes = |job, clock|
-	ScrubWidget.picture_shapes({
+	WidgetPage.picture_shapes({
 		backdrop: {
 			sky_colors: sky_colors(job, clock),
 			sun_sighting: Sun.sighting({ heading: Sun.bearing, cam_focal: Lens.resting_focal }, clock),
@@ -189,7 +189,7 @@ warmth_color = RgbColor.of(0xC0392B)
 call_lines : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
 call_lines = |job, clock|
 	call_rows(job, clock).map_with_index(
-		|{ text, color }, row| ScrubWidget.readout({ text, color, row, style: ScrubWidget.panel_readout }),
+		|{ text, color }, row| WidgetPage.readout({ text, color, row, style: WidgetPage.panel_readout }),
 	)
 
 chart_left : F64

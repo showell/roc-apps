@@ -65,7 +65,12 @@ expect !sample_area.contains({ x: 10.0, y: 60.0 })
 expect !sample_area.contains({ x: 9.0, y: 20.0 })
 expect !sample_area.contains({ x: 10.0, y: 19.0 })
 
-# A press is a click where it lands; a held button and no button are none.
+# A press of the left button is a click where it lands; a held button, a press
+# of the right button and no button are none.
 expect Click.click_point(Click.click_at({ x: 3.0, y: 4.0 })) == Ok({ x: 3.0, y: 4.0 })
 expect Click.click_point(Click.held_at({ x: 3.0, y: 4.0 })) == Err(NoClick)
+expect {
+	right_press = Input.none.with_mouse(pointer_at({ x: 3.0, y: 4.0 }).with_button_pressed(Right))
+	Click.click_point(right_press) == Err(NoClick)
+}
 expect Click.click_point(Input.none) == Err(NoClick)

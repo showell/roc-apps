@@ -22,7 +22,7 @@ import game.World
 import lib.CanvasApp
 import lib.Shapes
 import widget.ReadoutText
-import widget.ScrubWidget
+import widget.WidgetPage
 import widget.VcrButtons
 
 BeaconWidgetApp :: [].{
@@ -80,7 +80,7 @@ shapes_at = |transport|
 ## The two towers in the ride's sky at `clock`.
 picture_shapes : Clock -> List(Shapes.Shape)
 picture_shapes = |clock|
-	ScrubWidget.picture_shapes({
+	WidgetPage.picture_shapes({
 		backdrop: { sky_colors: Sky.colors_at(clock), sun_sighting: OutOfView },
 		ride_shapes: [
 			tower_shapes(tower_right.opposite(), first_beacon.brightness_at(clock)),
@@ -112,7 +112,7 @@ tower_shapes = |right, brightness| {
 		kind: { yaw: Angle.straight_ahead, beacon_brightness: brightness },
 	}
 	place = Ahead(SegmentPlace.Position.first)
-	ScrubWidget.resting_lens_shapes(
+	WidgetPage.resting_lens_shapes(
 		Pipeline.sighting_of(placed_tower, { road: straight_road, vantage: eye, place }),
 		{ road: straight_road, vantage: eye },
 	)

@@ -26,7 +26,7 @@ import lib.CanvasApp
 import lib.Shapes
 import lib.RgbColor
 import widget.ReadoutText
-import widget.ScrubWidget
+import widget.WidgetPage
 import widget.VcrButtons
 
 BirdWidgetApp :: [].{
@@ -92,7 +92,7 @@ shapes_at = |transport|
 ## The road and the two trees, far things first, and the bird at `gap`.
 picture_shapes : Distance -> List(Shapes.Shape)
 picture_shapes = |gap|
-	ScrubWidget.picture_shapes({
+	WidgetPage.picture_shapes({
 		backdrop: { sky_colors: Sky.colors_at(Clock.start), sun_sighting: OutOfView },
 		ride_shapes: [
 			road,
@@ -125,7 +125,7 @@ spot_of = |{ along, across, lift, .. }|
 
 tree_shapes : Trees.RoadsideTree -> List(Shapes.Shape)
 tree_shapes = |tree|
-	ScrubWidget.resting_lens_shapes(
+	WidgetPage.resting_lens_shapes(
 		spot_of({ along: tree.road_point.along, across: tree.road_point.across, lift: tree.lift })
 			.map_ok(|spot| { spot, kind: tree.kind }),
 		{ nearer_tree_count: 0 },
@@ -137,7 +137,7 @@ bird_shapes = |gap| {
 	instant = BirdFlight.instant_at(World.first_bird_flight, stage_at(gap))
 	bird : PosedBird
 	bird = { pose: instant.pose }
-	ScrubWidget.resting_lens_shapes(spot_of(instant.location).map_ok(|spot| { spot, kind: bird }), {})
+	WidgetPage.resting_lens_shapes(spot_of(instant.location).map_ok(|spot| { spot, kind: bird }), {})
 }
 
 ## What BirdFlight says at `gap`, a line each.

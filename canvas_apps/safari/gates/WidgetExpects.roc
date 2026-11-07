@@ -18,6 +18,7 @@ app [main!] {
 	step: "../../step_widget/package.roc",
 	stills: "../../stills_widget/package.roc",
 	tree: "../../tree_widget/package.roc",
+	widget: "../../widget_kit/main.roc",
 }
 
 import beacon.BeaconWidgetApp
@@ -36,20 +37,27 @@ import tree.TreeWidgetApp
 import lib.CanvasApp
 import lib.Font
 import lib.Input
+import lib.Point
 import lib.Shapes
+import widget.Click
+import widget.WidgetPage
 
 main! = |_args| Ok({})
 
-## The words of each line of type in a frame.
-words_in : List(Shapes.Shape) -> List(Str)
-words_in = |shapes|
+## Each line of type in a frame.
+lines_of_type : List(Shapes.Shape) -> List(Shapes.TextLine)
+lines_of_type = |shapes|
 	shapes.keep_oks(
 		|shape|
 			match shape {
-				Text(line) => Ok(line.text)
+				Text(line) => Ok(line)
 				Poly(_) | Disc(_) | Rect(_) | Blend(_) | View(_) | Image(_) => Err(NotText)
 			},
 	)
+
+## The words of each line of type in a frame.
+words_in : List(Shapes.Shape) -> List(Str)
+words_in = |shapes| lines_of_type(shapes).map(|line| line.text)
 
 ## The words of a canvas app's first frame, and of the frame after each of
 ## `inputs`, one step each.
@@ -91,4 +99,103 @@ expect {
 	words.all(Font.can_plot)
 		and words.contains("Added: The moving things")
 		and words.contains("Cones({ shade: 0.5 })")
+}
+
+## The names under the stills widget's small stills, the only lines it centers.
+still_names : List(Shapes.Shape) -> List(Shapes.TextLine)
+still_names = |shapes| lines_of_type(shapes).keep_if(|line| line.align == Center)
+
+## Whether `text`, set as `name` is, fits the cell `name` stands under. The
+## cells of a row are all one width, so a cell is as wide as its name is far
+## from the nearest name in the row.
+fits_cell_of : List(Shapes.TextLine), { name : Shapes.TextLine, text : Str } -> Bool
+fits_cell_of = |names, { name, text }| {
+	row_neighbors = names.keep_if(|other| other.y == name.y and other.x != name.x)
+	match row_neighbors.map(|other| (other.x - name.x).abs()).min() {
+		Ok(cell_width) => Font.room_for(text, name.size) <= cell_width
+		Err(ListWasEmpty) => crash "WidgetExpects.fits_cell_of: every row of stills has two or more"
+	}
+}
+
+## The stills widget's frame for `model`.
+stills_frame_shapes : StillsWidgetApp.Model -> List(Shapes.Shape)
+stills_frame_shapes = |model| {
+	frame_of = StillsWidgetApp.canvas_app.frame_shapes
+	frame_of(model)
+}
+
+## The stills widget's first frame.
+stills_first_frame_shapes : List(Shapes.Shape)
+stills_first_frame_shapes = stills_frame_shapes(StillsWidgetApp.canvas_app.init)
+
+## The stills widget after a click on each small still, which shows it large. A
+## name's baseline is inside its still's cell.
+stills_models : List(StillsWidgetApp.Model)
+stills_models = {
+	stills_app = StillsWidgetApp.canvas_app
+	model_at_next_step = stills_app.model_at_next_step
+	seconds = 1.0 / stills_app.fps.to_f32()
+	still_names(stills_first_frame_shapes).map(
+		|name| {
+			click = Click.click_at({ x: name.x, y: name.y })
+			model_at_next_step(stills_app.init, click, seconds)
+		},
+	)
+}
+
+## The corners of a frame's polygons that lie wholly above the panel. A
+## polygon's coordinates are its corners' x and y, two at a time.
+picture_points : List(Shapes.Shape) -> List(Point.Point)
+picture_points = |shapes| {
+	corner_of = |pair|
+		match pair {
+			[x, y] => { x, y }
+			_ => crash "WidgetExpects.picture_points: a polygon's coordinates come in pairs"
+		}
+	polygons = shapes.keep_oks(
+		|shape|
+			match shape {
+				Poly({ coordinates, .. }) => Ok(coordinates.chunks_of(2).map(corner_of))
+				Text(_) | Disc(_) | Rect(_) | Blend(_) | View(_) | Image(_) => Err(NotPoly)
+			},
+	)
+	is_above_panel = |point| point.y < WidgetPage.picture_bottom_y
+	polygons.keep_if(|corners| corners.all(is_above_panel)).join()
+}
+
+## Whether every line of type above the panel ends left of every polygon there,
+## which in the stills widget is the large still.
+is_type_left_of_still : List(Shapes.Shape) -> Bool
+is_type_left_of_still = |shapes| {
+	lines = lines_of_type(shapes).keep_if(|line| line.y < WidgetPage.picture_bottom_y)
+	match picture_points(shapes).map(|point| point.x).min() {
+		Ok(still_left) => {
+			is_left_of_still = |line| {
+				line_end = line.x + Font.room_for(line.text, line.size)
+				line.align == Left and line_end <= still_left
+			}
+			!lines.is_empty() and lines.all(is_left_of_still)
+		}
+		Err(ListWasEmpty) => False
+	}
+}
+
+# Each name under a small still fits its cell, and one much longer would not.
+expect {
+	names = still_names(stills_first_frame_shapes)
+	names.len() == 13 and names.all(|name| fits_cell_of(names, { name, text: name.text }))
+}
+expect
+	match still_names(stills_first_frame_shapes) {
+		[first, ..] as names => !fits_cell_of(names, { name: first, text: "Collapse, and then some" })
+		[] => False
+	}
+
+# The words above the panel end left of the large still, whichever still is
+# shown large.
+expect {
+	poses = stills_models.map(|model| model.large_pose)
+	is_each_pose_once = poses.all(|pose| poses.keep_if(|other| other == pose).len() == 1)
+	frames = stills_models.map(stills_frame_shapes)
+	is_each_pose_once and frames.all(is_type_left_of_still)
 }
