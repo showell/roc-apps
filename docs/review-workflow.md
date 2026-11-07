@@ -34,7 +34,7 @@ The process makes code right one module at a time, types first. Cold agents revi
 
 ## Lanes and shared modules
 
-- **Worktrees:** each lane is a worktree under `~/showell_repos/lanes/<lane>`, on its own branch. A lane goes when it merges.
+- **Worktrees:** each lane is a worktree under `~/showell_repos/lanes/<lane>`, on its own branch. A lane goes when it merges. Each checkout's gate caches (a GB or so) sit under `~/build/roc-apps/safari-checkout-caches/`, and the next merge gate run in any checkout removes a removed worktree's.
 - **Shared modules, one lane at a time:**
   - The shared modules are Geom, Pipeline, Picture, RoadAhead, World, Segment, Route, Scene, lib and the unit types.
   - The orchestrator gives each lane its shared modules by name, and only one lane at a time may touch a given one.
