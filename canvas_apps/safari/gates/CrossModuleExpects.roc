@@ -11,6 +11,7 @@ import game.Across
 import game.Along
 import game.Angle
 import game.Attention
+import game.Beacon
 import game.BendInView
 import game.Billboard
 import game.BirdFlight
@@ -768,6 +769,70 @@ expect
 		(leg_foot_x(2), 500.0 * foot_offset / (100.0 + foot_offset)),
 		(leg_foot_x(3), -500.0 * foot_offset / (100.0 + foot_offset)),
 	].all(|(got, want)| (got - want).abs() <= 0.000001)
+
+# TowerSighting: a tower stands 160 m past the end of every segment, 20 m right
+# and turned 30 degrees, and a segment longer than 1000 m has one more halfway
+# along, 100 m left and not turned.
+## A segment 1200 m long, holding nothing, which ends a route.
+long_segment : Segment
+long_segment = { ..segment_of([]), length: Distance.metres(1200.0) }
+
+## The towers in view at `clock` from the origin of the segment at `rider_number` on a
+## route of a 200 m segment going straight on into the long one.
+towers_on_short_then_long : U32, Clock -> List(Pipeline.Sighted(Tower))
+towers_on_short_then_long = |rider_number, clock|
+	TowerSighting.towers_in_view(
+		RoadAhead.RoadView.ahead_of(
+			Route.from_segments([going_straight_on(segment_of([])), long_segment]),
+			Route.SegmentIndex.number(rider_number),
+		),
+		{ camera: origin_camera, clock },
+	)
+
+## Where a tower stands on its segment, and how it is turned: along, across,
+## and its turn in radians.
+tower_numbers : Pipeline.Sighted(Tower) -> List(F64)
+tower_numbers = |tower| [
+	tower.spot.road_point().along.to_metres(),
+	tower.spot.road_point().across.to_metres(),
+	tower.kind.yaw.to_radians(),
+]
+
+expect {
+	towers = towers_on_short_then_long(0, Clock.start)
+	thirty = Angle.Turn.degrees(30.0).to_radians()
+	got = towers.map(tower_numbers).join()
+	want = [360.0, 20.0, thirty, 1360.0, 20.0, thirty, 600.0, -100.0, 0.0]
+	towers.map(|tower| tower.spot.place())
+		== [
+			Ahead(SegmentPlace.Position.first),
+			Ahead(SegmentPlace.Position.number(1)),
+			Ahead(SegmentPlace.Position.number(1)),
+		]
+		and got.len() == want.len()
+		and got.map2(want, |one, wanted| (one - wanted).abs() <= 0.000000001).all(|is_close| is_close)
+}
+
+# The end tower's beacon blinks on its segment's number, and the mid tower's
+# the opposite way.
+expect {
+	got = towers_on_short_then_long(0, Clock.at_step(30)).map(|tower| tower.kind.beacon_brightness)
+	clock = Clock.at_step(30)
+	got == [Beacon.(0).brightness_at(clock), Beacon.(1).brightness_at(clock), Beacon.(1).opposite().brightness_at(clock)]
+		and got.map(|brightness| brightness.to_f64()).sum() > 0.0
+}
+
+# The segment just behind shows its end tower, which stands past the bend, and
+# a rider far past every tower sees none.
+expect
+	towers_on_short_then_long(1, Clock.start).map(|tower| tower.spot.place())
+		== [Ahead(SegmentPlace.Position.first), Ahead(SegmentPlace.Position.first), JustBehind]
+expect
+	TowerSighting.towers_in_view(
+		RoadAhead.RoadView.ahead_of(Route.from_segments([segment_of([])]), Route.SegmentIndex.first),
+		{ camera: { vantage: { ..origin, along: Along.metres(5000.0) } }, clock: Clock.start },
+	).len()
+		== 0
 
 # Scene, on the scene from the start of the route.
 scene_facts : Scene.RideFacts
