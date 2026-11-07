@@ -20,7 +20,7 @@ Trees :: [].{
 	tree_line_distance = |conifer|
 		match conifer {
 			Gold => Geom.road_half_width.plus(tree_road_offset.times(4.0))
-			BigGreen | SmallGreen | Red => Geom.road_half_width.plus(tree_road_offset)
+			Green | SmallGreen | Red => Geom.road_half_width.plus(tree_road_offset)
 		}
 
 	## A segment's trees, in pairs from its start, each pair's left tree
@@ -29,7 +29,7 @@ Trees :: [].{
 	roadside_trees = |{ scheme, length }| {
 		last_along = Along.at(length.minus(tree_end_inset))
 		var $along = Along.at(tree_start_inset)
-		var $conifer = Conifer.BigGreen
+		var $conifer = Conifer.Green
 		var $trees = []
 		while $along <= last_along {
 			tree_distance = tree_line_distance($conifer)
@@ -44,8 +44,8 @@ Trees :: [].{
 			$along = $along.plus(tree_spacing)
 			$conifer =
 				match $conifer {
-					BigGreen => accent_conifer(scheme)
-					SmallGreen | Red | Gold => Conifer.BigGreen
+					Green => accent_conifer(scheme)
+					SmallGreen | Red | Gold => Conifer.Green
 				}
 		}
 		$trees
@@ -81,7 +81,7 @@ expect accent_conifer(AllGreen) == Conifer.SmallGreen
 expect accent_conifer(GoldGreen) == Conifer.Gold
 expect accent_conifer(RedGreen) == Conifer.Red
 
-expect Trees.tree_line_distance(Conifer.BigGreen).to_metres() == 3.5
+expect Trees.tree_line_distance(Conifer.Green).to_metres() == 3.5
 expect Trees.tree_line_distance(Conifer.SmallGreen).to_metres() == 3.5
 expect Trees.tree_line_distance(Conifer.Red).to_metres() == 3.5
 expect Trees.tree_line_distance(Conifer.Gold).to_metres() == 8.0
@@ -131,20 +131,20 @@ expect
 expect
 	gold_green_trees.map(|tree| tree.kind)
 		== [
-			Conifer.BigGreen,
-			Conifer.BigGreen,
+			Conifer.Green,
+			Conifer.Green,
 			Conifer.Gold,
 			Conifer.Gold,
-			Conifer.BigGreen,
-			Conifer.BigGreen,
+			Conifer.Green,
+			Conifer.Green,
 			Conifer.Gold,
 			Conifer.Gold,
-			Conifer.BigGreen,
-			Conifer.BigGreen,
+			Conifer.Green,
+			Conifer.Green,
 			Conifer.Gold,
 			Conifer.Gold,
-			Conifer.BigGreen,
-			Conifer.BigGreen,
+			Conifer.Green,
+			Conifer.Green,
 		]
 
 expect gold_green_trees.len() == 14

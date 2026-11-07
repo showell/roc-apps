@@ -66,7 +66,7 @@ bull_tree_gap = Distance.metres(0.5)
 ## The bull at `herd_along`, by the trees.
 herd_bull : Along -> Geom.Placed(Billboard)
 herd_bull = |herd_along| {
-	tree_line = Trees.tree_line_distance(Conifer.BigGreen)
+	tree_line = Trees.tree_line_distance(Conifer.Green)
 	bull_middle = tree_line.plus(bull.adult_height.divided_by(2.0))
 	{
 		along: herd_along,

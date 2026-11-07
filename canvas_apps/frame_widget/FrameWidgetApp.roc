@@ -153,7 +153,7 @@ ride_pieces = |tour| {
 			speed: rider.speed,
 			truck: {
 				route_position: instant.truck.route_position,
-				truck_ahead: RideInstant.truck_lights(instant),
+				lit_truck: RideInstant.lit_truck(instant),
 			},
 			clock: instant.clock,
 		},

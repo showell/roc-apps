@@ -229,7 +229,7 @@ A `match` on a closed union has to cover it: leaving out a tag is a compile-time
 
 Here's where it's called, picking the color for a pair of small trees:
 
-{{code Trees.roadside_trees from "match $conifer {" to "BigGreen => accent_conifer(scheme)"}}
+{{code Trees.roadside_trees from "match $conifer {" to "Green => accent_conifer(scheme)"}}
 
 `SegmentIndex` is another small opaque type, a `U32` for a segment's place in the route. A place in the route can't be confused with a count of trees, because nothing outside can do arithmetic on it. `crash` appears here too. It isn't for error handling: an index that isn't in the world is a bug in Safari Ride, not a case to handle.
 
@@ -1874,15 +1874,15 @@ The truck's headlights come on once the sun has gone behind the mountains, at st
 
 `Truck.Lights` is a record of two tag unions. Two independent lamps aren't one state with four values, so they're two fields:
 
-{{code TruckAhead.TruckAhead from "Which of" to "TruckAhead := {"}}
+{{code LitTruck.LitTruck from "Which of" to "LitTruck := {"}}
 
 `RideInstant` puts it together. It's the only place that can. `Truck` is in the ride half of the system and `Mountains` is in the view, and no arrow goes from the first to the second. `RideInstant` imports both.
 
-{{code RideInstant.truck_lights}}
+{{code RideInstant.lit_truck}}
 
 Lamps are plain data. The sighting carries them, and the drawing does what they say, with each `match` covering both tags:
 
-{{code TruckAhead.truck_shapes from "beams =" to "].join()"}}
+{{code LitTruck.truck_shapes from "beams =" to "].join()"}}
 
 `TruckAhead` leaves the painting to two modules. `TruckBody` paints the trailer, the cab and the tires, far to near, and `TruckLights` paints the beams and the brake lights, each with its glow.
 

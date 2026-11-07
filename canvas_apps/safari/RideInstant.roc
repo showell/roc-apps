@@ -12,7 +12,7 @@ import Rider
 import Sky
 import Sun
 import Truck
-import TruckAhead
+import LitTruck
 import ViewYaw
 import World
 import lib.Shapes
@@ -65,8 +65,8 @@ RideInstant := {
 
 	## Which of the truck's lights are on: its headlights once the sun is behind
 	## the mountains, and its brake lights while its last step slowed it.
-	truck_lights : RideInstant -> TruckAhead
-	truck_lights = |instant| {
+	lit_truck : RideInstant -> LitTruck
+	lit_truck = |instant| {
 		headlights: if Mountains.is_sun_behind_mountains(instant.clock) {
 			On
 		} else {
@@ -116,7 +116,7 @@ RideInstant := {
 				speed: s.speed,
 				truck: {
 					route_position: instant.truck.route_position,
-					truck_ahead: truck_lights(instant),
+					lit_truck: lit_truck(instant),
 				},
 				clock: instant.clock,
 			},
@@ -195,9 +195,9 @@ after_sunset : Clock
 after_sunset = Clock.at_step(5700)
 
 ## The truck's lights at `clock`, with the truck's pace as given.
-lights_at : { clock : Clock, pace : [Slowing, NotSlowing] } -> TruckAhead
+lights_at : { clock : Clock, pace : [Slowing, NotSlowing] } -> LitTruck
 lights_at = |{ clock, pace }|
-	RideInstant.truck_lights({
+	RideInstant.lit_truck({
 		..RideInstant.initial,
 		truck: { ..RideInstant.initial.truck, pace },
 		clock,

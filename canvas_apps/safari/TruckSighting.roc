@@ -7,31 +7,31 @@ import RoadAhead
 import SegmentPlace
 import Geom
 import Pipeline
-import TruckAhead
+import LitTruck
 
 TruckSighting :: [].{
 
 	## What became of the truck in a frame.
-	TruckFate : Try(Pipeline.Sighted(TruckAhead), [NoTruck, BehindCamera])
+	TruckFate : Try(Pipeline.Sighted(LitTruck), [NoTruck, BehindCamera])
 
-	## The truck `lead` ahead of the rider, looking as `truck_ahead` says, if it
+	## The truck `lead` ahead of the rider, looking as `lit_truck` says, if it
 	## is ahead of the rider, on the road ahead, and in front of the camera.
 	truck_in_view : RoadAhead.RoadView,
 	{
 		lead : Distance,
-		truck_ahead : TruckAhead,
+		lit_truck : LitTruck,
 	} -> TruckSighting.TruckFate
-	truck_in_view = |road, { lead, truck_ahead }|
+	truck_in_view = |road, { lead, lit_truck }|
 		if lead > Distance.zero {
 			start = { along: road.vantage.along.plus(lead), position: SegmentPlace.Position.first }
 			match truck_from(road, start) {
 				Ok({ along, position }) => {
-					placed_truck : Geom.Placed(TruckAhead)
+					placed_truck : Geom.Placed(LitTruck)
 					placed_truck = {
 						along,
 						across: Across.middle,
 						lift: Distance.zero,
-						kind: truck_ahead,
+						kind: lit_truck,
 					}
 					Pipeline.sighting_of(placed_truck, { road, place: Ahead(position) })
 				}
