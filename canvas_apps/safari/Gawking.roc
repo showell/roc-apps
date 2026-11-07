@@ -40,7 +40,7 @@ Gawking :: [].{
 	## the rider finds distracting. A herd the rider passes by catches no eye.
 	eye_catching_pig : Segment -> [CatchesEye(Geom.Placed(Billboard)), NoPigCatchesEye]
 	eye_catching_pig = |seg|
-		match seg.standout_pig() {
+		match seg.segment_standout_pig() {
 			Standout({ pig, interest: Distracting }) => CatchesEye(pig)
 			Standout({ interest: Unnoticed, .. }) | NoPigs => NoPigCatchesEye
 		}

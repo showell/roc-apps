@@ -98,11 +98,11 @@ Segment := {
 
 	## The pig of `segment`'s herd that stands out, and how the rider takes the
 	## herd.
-	standout_pig : Segment -> [
+	segment_standout_pig : Segment -> [
 		Standout({ pig : Geom.Placed(Billboard), interest : Segment.PigInterest }),
 		NoPigs,
 	]
-	standout_pig = |segment|
+	segment_standout_pig = |segment|
 		match segment.pigs {
 			Herd({ herd, interest }) =>
 				Standout({ pig: herd.standout_pig(pig_herd_along(segment.length)), interest })

@@ -1,6 +1,6 @@
 ## The widget for the Safari tutorial's chapter on what never changes: a still
 ## map of the whole route, with no controls. Each stretch is one record of
-## `World.plans`, and the lines of text read out the record of the stretch in
+## `World.segment_plans`, and the lines of text read out the record of the stretch in
 ## white. The ride has no such map: a segment knows only its length and its
 ## turn, so this widget lays the map out itself by adding up the turns.
 import game.Angle
@@ -293,7 +293,7 @@ status_lines = {
 still_shapes : List(Shapes.Shape)
 still_shapes = ScrubWidget.frame_shapes({ picture_shapes, status_lines: status_lines })
 
-expect segments.len() == World.plans.len()
+expect segments.len() == World.segment_plans.len()
 
 # The first segment is as long as its record says, and each one starts where the
 # one before it ends.

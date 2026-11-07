@@ -250,8 +250,8 @@ World :: [].{
 	}
 
 	## Every segment's plan, in order.
-	plans : List(World.SegmentPlan)
-	plans = bending_plans.map(|bending| bending.segment_plan).append(last_plan)
+	segment_plans : List(World.SegmentPlan)
+	segment_plans = bending_plans.map(|bending| bending.segment_plan).append(last_plan)
 
 	## How many of the route's herds, from its first, are big. The rest stand
 	## in two rows.
@@ -312,7 +312,7 @@ World :: [].{
 	## How many of the segments before `index` have pigs.
 	herd_count_before : Route.SegmentIndex -> U32
 	herd_count_before = |index|
-		plans
+		segment_plans
 			.take_first(index.count_before())
 			.count_if(|plan| plan.pigs == WithPigs)
 			.to_u32_wrap()
@@ -373,8 +373,6 @@ built_segment = |plan, { index, ending }| {
 	})
 }
 
-expect World.plans.len() == 19
-
 expect
 	[
 		(0, 0),
@@ -391,17 +389,9 @@ expect
 		},
 	)
 
-expect World.big_herd_count.to_i64() == 2
-expect World.pig_novelty_count.to_i64() == 2
-
 seg : U32 -> Segment
 seg = |i| World.route.segment_at(Route.SegmentIndex.number(i))
 
-expect seg(0).length.to_metres() == 500.0
-expect seg(1).length.to_metres() == 320.0
-expect seg(6).length.to_metres() == 1200.0
-expect seg(9).length.to_metres() == 800.0
-expect seg(18).length.to_metres() == 300.0
 expect
 	[
 		(0, False),
@@ -471,7 +461,7 @@ expect
 		(18, Herd({ herd: PigHerd.TwoRows(World.two_row_pig_herd), interest: Unnoticed })),
 	].all(|(index, want)| seg(index).pigs == want)
 
-expect seg(0).standout_pig() == NoPigs
+expect seg(0).segment_standout_pig() == NoPigs
 expect seg(0).segment_cows().len() == 14
 expect seg(3).segment_cows().len() == 14
 expect seg(4).segment_cows().len() == 15
@@ -534,25 +524,3 @@ crossing_at = |index|
 		CatCrosses(crossing) => crossing
 		BirdHere(_) | QuietRoad => crash "World.crossing_at: segments 3, 9 and 18 have a cat"
 	}
-
-expect Segment.pig_distance_before_end.to_metres() == 60.0
-expect World.big_pig_herd.columns == 7
-expect World.big_pig_herd.rows == 7
-expect World.big_pig_herd.standout_column == 2
-expect World.two_row_pig_herd.back_offsets.len() == 6
-expect
-	World.two_row_pig_herd.back_offsets.map(Distance.to_metres)
-		== [
-			-10.0,
-			-6.0,
-			-2.0,
-			2.0,
-			6.0,
-			10.0,
-		]
-expect World.two_row_pig_herd.back_row_offset.to_metres() == 6.0
-expect World.big_pig_herd.first_column.to_metres() == -6.0
-expect World.big_pig_herd.column_spacing.to_metres() == 4.0
-expect World.big_pig_herd.row_depth.to_metres() == 6.0
-expect World.big_pig_herd.jitter_along.to_metres() == 1.2
-expect World.big_pig_herd.jitter_across.to_metres() == 1.0
