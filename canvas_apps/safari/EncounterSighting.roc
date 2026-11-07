@@ -7,7 +7,6 @@ import Along
 import Animation
 import BirdFlight
 import Cat
-import CatCrossing
 import Distance
 import RoadAhead
 import SegmentPlace
@@ -39,24 +38,16 @@ EncounterSighting :: [].{
 	} -> Try(Pipeline.Sighted(PosedCat), [NoCat, BehindCamera, TooSmall])
 	segment_cat = |view, { in_view, speed }|
 		match in_view.segment.encounter {
-			CatCrosses(crossing) =>
-				cat_in_view(view, { in_view, crossing, speed })
+			CatCrosses(crossing) => {
+				placed_cat : Distance -> Geom.Placed(PosedCat)
+				placed_cat = |gap| {
+					instant = Cat.instant_at(crossing, { gap, speed })
+					Animation.placed_instant(instant)
+				}
+				encounter_in_view(view, { in_view, along: crossing.along, placed_at: placed_cat })
+			}
 			BirdHere(_) | QuietRoad => Err(NoCat)
 		}
-}
-
-## The cat crossing a segment in view, as far through its crossing as the
-## rider's approach has brought it, if it is in view.
-cat_in_view : RoadAhead.CameraView,
-{
-	in_view : RoadAhead.SegmentInView,
-	crossing : CatCrossing,
-	speed : Speed,
-} -> Try(Pipeline.Sighted(PosedCat), [BehindCamera, TooSmall])
-cat_in_view = |view, { in_view, crossing, speed }| {
-	placed_cat : Distance -> Geom.Placed(PosedCat)
-	placed_cat = |gap| Animation.placed_instant(Cat.instant_at(crossing, { gap, speed }))
-	encounter_in_view(view, { in_view, along: crossing.along, placed_at: placed_cat })
 }
 
 ## The bird of a segment in view, if that segment has one and it is in view.
