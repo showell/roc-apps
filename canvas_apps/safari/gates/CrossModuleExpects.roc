@@ -552,15 +552,7 @@ cat_at = |number| EncounterSighting.segment_cat(
 	},
 )
 
-expect cat_route.route_segments().map(has_cat) == [False, True, False]
-
-## Whether a segment has a cat waiting by the road.
-has_cat : Segment -> Bool
-has_cat = |seg|
-	match seg.encounter {
-		CatCrosses(_) => True
-		BirdHere(_) | QuietRoad => False
-	}
+expect cat_route.route_segments().map(World.has_cat) == [False, True, False]
 
 expect
 	[

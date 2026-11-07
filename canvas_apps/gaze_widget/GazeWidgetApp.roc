@@ -90,17 +90,7 @@ starting_model = { played: [first_rider], transport: VcrButtons.transport_at(str
 
 ## The first segment of the route whose pigs catch the rider's eye.
 pig_segment : Segment
-pig_segment =
-	World.route.route_segments().find_first(is_distracting)
-		?? crash "GazeWidgetApp.pig_segment: the route has a distracting pig"
-
-## Whether a segment's pigs catch the rider's eye.
-is_distracting : Segment -> Bool
-is_distracting = |segment|
-	match segment.pigs {
-		Herd({ interest: Distracting, .. }) => True
-		Herd({ interest: Unnoticed, .. }) | NoPigs => False
-	}
+pig_segment = World.first_distracting_segment
 
 ## The pig that catches the rider's eye.
 gaze_pig : Geom.Placed(Billboard)
@@ -333,7 +323,7 @@ state_at_step : List(RiderState), U32 -> RiderState
 state_at_step = |played, step| state_at(played, (step - first_step).to_u64())
 
 # This stretch is on the route's first distracting segment.
-expect is_distracting(World.route.segment_at(first_rider.segment_index))
+expect World.is_distracting(World.route.segment_at(first_rider.segment_index))
 expect World.route.route_segments().take_first(2).all(|segment| segment.pigs == NoPigs)
 
 # The steps the book's table quotes, each with its speed in metres a step, its

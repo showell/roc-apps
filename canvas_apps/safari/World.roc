@@ -331,6 +331,40 @@ World :: [].{
 		last_segment = built_segment(last_plan, { index: last_index, ending: RouteEnds })
 		Route.from_segments(bending_segments.append(last_segment))
 	}
+
+	## Whether a segment has a cat waiting by the road.
+	has_cat : Segment -> Bool
+	has_cat = |segment|
+		match segment.encounter {
+			CatCrosses(_) => True
+			BirdHere(_) | QuietRoad => False
+		}
+
+	## Whether a segment's pigs draw the rider's eye.
+	is_distracting : Segment -> Bool
+	is_distracting = |segment|
+		match segment.pigs {
+			Herd({ interest: Distracting, .. }) => True
+			Herd({ interest: Unnoticed, .. }) | NoPigs => False
+		}
+
+	## The route's first segment with a cat.
+	first_cat_segment : Segment
+	first_cat_segment =
+		World.route.route_segments().find_first(World.has_cat)
+			?? crash "World.first_cat_segment: the route has a cat"
+
+	## The route's first segment with a bird.
+	first_bird_segment : Segment
+	first_bird_segment =
+		World.route.route_segments().find_first(has_bird)
+			?? crash "World.first_bird_segment: the route has a bird"
+
+	## The route's first segment whose pigs draw the rider's eye.
+	first_distracting_segment : Segment
+	first_distracting_segment =
+		World.route.route_segments().find_first(World.is_distracting)
+			?? crash "World.first_distracting_segment: the route has a distracting herd"
 }
 
 ## The segment at `index` of the route, built from its plan once the route's
@@ -420,7 +454,7 @@ expect
 		(9, True),
 		(12, False),
 		(18, True),
-	].all(|(index, want)| has_cat(seg(index)) == want)
+	].all(|(index, want)| World.has_cat(seg(index)) == want)
 
 expect
 	[
@@ -450,7 +484,7 @@ expect
 		(10, True),
 		(11, False),
 		(18, False),
-	].all(|(index, want)| is_distracting(seg(index)) == want)
+	].all(|(index, want)| World.is_distracting(seg(index)) == want)
 
 expect
 	[
@@ -501,20 +535,12 @@ exit_turn_of = |segment| segment.bend_out_of().turn
 turns_right : Segment -> Bool
 turns_right = |segment| exit_turn_of(segment).is_right()
 
-## Whether a segment has a cat waiting by the road.
-has_cat : Segment -> Bool
-has_cat = |segment|
+## Whether a segment has a bird in it.
+has_bird : Segment -> Bool
+has_bird = |segment|
 	match segment.encounter {
-		CatCrosses(_) => True
-		BirdHere(_) | QuietRoad => False
-	}
-
-## Whether a segment's pigs draw the rider's eye.
-is_distracting : Segment -> Bool
-is_distracting = |segment|
-	match segment.pigs {
-		Herd({ interest: Distracting, .. }) => True
-		Herd({ interest: Unnoticed, .. }) | NoPigs => False
+		BirdHere(_) => True
+		CatCrosses(_) | QuietRoad => False
 	}
 
 ## The cat crossing at a segment that has one.

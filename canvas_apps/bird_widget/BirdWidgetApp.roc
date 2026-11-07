@@ -58,11 +58,7 @@ segment_flight = |segment|
 
 ## The first flight on the route.
 flight : BirdFlight.Flight
-flight = {
-	first_flying = World.route.route_segments().find_first(|segment| segment_flight(segment).is_ok())
-		?? crash "BirdWidgetApp.flight: the route has birds"
-	segment_flight(first_flying) ?? crash "BirdWidgetApp.flight: this segment has a flight"
-}
+flight = World.route.route_segments().keep_oks(segment_flight).first() ?? crash "BirdWidgetApp.flight: the route has a bird that flies"
 
 ## How far the picture's eye stands short of the first tree: far enough for
 ## the bird perched on top of it to fit.

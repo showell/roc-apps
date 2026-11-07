@@ -57,12 +57,10 @@ cat_crossing = |segment|
 
 ## The first segment of the route with a cat.
 cat_segment : Segment
-cat_segment =
-	World.route.route_segments().find_first(|segment| cat_crossing(segment).is_ok())
-		?? crash "CatWidgetApp.cat_segment: the route has cats"
+cat_segment = World.first_cat_segment
 
 crossing : CatCrossing
-crossing = cat_crossing(cat_segment) ?? crash "CatWidgetApp.crossing: this segment has a cat"
+crossing = cat_crossing(cat_segment) ?? crash "CatWidgetApp.crossing: World's first cat segment has a cat"
 
 ## Everything on the canvas.
 shapes_at : CatWidgetApp.Model -> List(Shapes.Shape)

@@ -51,19 +51,19 @@ cat_approach = |crossing, rider| {
 }
 
 bird_segment : Segment
-bird_segment = World.route.segment_at(Route.SegmentIndex.number(0))
+bird_segment = World.first_bird_segment
 
 quiet_segment : Segment
 quiet_segment = World.route.segment_at(Route.SegmentIndex.number(1))
 
 cat_segment : Segment
-cat_segment = World.route.segment_at(Route.SegmentIndex.number(3))
+cat_segment = World.first_cat_segment
 
 cat_along : Along
 cat_along =
 	match cat_segment.encounter {
 		CatCrosses(crossing) => crossing.along
-		BirdHere(_) | QuietRoad => crash "EncounterReaction: segment 3 has a cat"
+		BirdHere(_) | QuietRoad => crash "EncounterReaction: the first cat segment has a cat"
 	}
 
 ## A rider `along` their segment at `speed` metres a step.
