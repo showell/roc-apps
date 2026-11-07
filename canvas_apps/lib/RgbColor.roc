@@ -8,7 +8,12 @@
 RgbColor :: I64.{
 
 	of : I64 -> RgbColor
-	of = |rgb| RgbColor.(rgb)
+	of = |rgb|
+		if rgb < 0 or rgb > 0xFFFFFF {
+			crash "RgbColor.of: a colour outside 0 to 0xFFFFFF"
+		} else {
+			RgbColor.(rgb)
+		}
 
 	to_i64 : RgbColor -> I64
 	to_i64 = |RgbColor.(rgb)| rgb
@@ -17,5 +22,7 @@ RgbColor :: I64.{
 }
 
 expect RgbColor.of(0xFFE9A8).to_i64() == 0xFFE9A8
+expect RgbColor.of(0).to_i64() == 0
+expect RgbColor.of(0xFFFFFF).to_i64() == 0xFFFFFF
 expect RgbColor.of(0x8ECAE6) == RgbColor.of(0x8ECAE6)
 expect RgbColor.of(0x8ECAE6) != RgbColor.of(0x8ECAE7)

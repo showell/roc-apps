@@ -156,7 +156,7 @@ SnakeDraw :: [].{
 		r = cell * (0.3 + 0.04 * Trig.pulse(elapsed))
 		[
 			Disc({ x: m.x, y: m.y, radius: r, fill: Flat(food_neon) }),
-			Disc({ x: m.x - r * 0.3, y: m.y - r * 0.35, radius: r * 0.32, fill: Flat(ArgbColor.to_rgba(ArgbColor.of(0xbeffffff))) }),
+			Disc({ x: m.x - r * 0.3, y: m.y - r * 0.35, radius: r * 0.32, fill: Flat(Brush.translucent(ArgbColor.of(0xbeffffff))) }),
 		]
 	}
 
@@ -169,7 +169,7 @@ SnakeDraw :: [].{
 				over = "GAME OVER"
 				again = "PRESS SPACE TO PLAY AGAIN"
 				alpha = 0.59 + 0.41 * Trig.pulse(elapsed)
-				var $out = [Rect({ x: left - 8.0, y: 236.0, width: board_w + 16.0, height: 140.0, fill: Flat(ArgbColor.to_rgba(ArgbColor.of(0xe1060810))) })]
+				var $out = [Rect({ x: left - 8.0, y: 236.0, width: board_w + 16.0, height: 140.0, fill: Flat(Brush.translucent(ArgbColor.of(0xe1060810))) })]
 				$out = List.concat($out, Font.centered(over, w / 2.0, 262.0, 40.0, food_neon))
 				List.concat($out, Font.centered(again, w / 2.0, 326.0, 19.0, { r: hint_color.r, g: hint_color.g, b: hint_color.b, a: alpha }))
 			}

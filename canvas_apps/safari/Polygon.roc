@@ -88,8 +88,8 @@ Polygon :: [].{
 				Poly({
 					coordinates: polygon_coordinates("Polygon.gradient_polygon", corners),
 					fill: Radial({
-						inner_color: ArgbColor.to_rgba(center_color),
-						outer_color: ArgbColor.to_rgba(edge_color),
+						inner_color: Brush.translucent(center_color),
+						outer_color: Brush.translucent(edge_color),
 						center: { x: gradient_center.x.to_f64(), y: gradient_center.y.to_f64() },
 						inner_radius: 0.0,
 						outer_radius: gradient_radius.to_f64(),
@@ -140,7 +140,7 @@ Polygon :: [].{
 		}
 		fill =
 			if Brush.ellipse_determinant(axes).abs() < min_ellipse_determinant {
-				Flat(ArgbColor.to_rgba(color_stops.start_color))
+				Flat(Brush.translucent(color_stops.start_color))
 			} else {
 				Ellipse({
 					stops: brush_stops(color_stops),
@@ -241,8 +241,8 @@ brush_stops : Polygon.ColorStops -> Brush.TwoStops
 brush_stops = |stops| {
 	offsets = offsets_of(stops)
 	{
-		start_color: ArgbColor.to_rgba(stops.start_color),
-		end_color: ArgbColor.to_rgba(stops.end_color),
+		start_color: Brush.translucent(stops.start_color),
+		end_color: Brush.translucent(stops.end_color),
 		start_offset: offsets.first,
 		end_offset: offsets.last,
 	}
@@ -358,8 +358,8 @@ expect radial_polygon(three_corners, Pixels.of(0.5)) == Ok(
 	Poly({
 		coordinates: triangle_coordinates,
 		fill: Radial({
-			inner_color: ArgbColor.to_rgba(ArgbColor.of(7)),
-			outer_color: ArgbColor.to_rgba(ArgbColor.of(8)),
+			inner_color: Brush.translucent(ArgbColor.of(7)),
+			outer_color: Brush.translucent(ArgbColor.of(8)),
 			center: { x: 0.0, y: 0.0 },
 			inner_radius: 0.0,
 			outer_radius: 0.5,
@@ -401,8 +401,8 @@ expect
 			Poly({
 				coordinates: triangle_coordinates,
 				fill: Radial({
-					inner_color: ArgbColor.to_rgba(ArgbColor.of(444)),
-					outer_color: ArgbColor.to_rgba(ArgbColor.of(445)),
+					inner_color: Brush.translucent(ArgbColor.of(444)),
+					outer_color: Brush.translucent(ArgbColor.of(445)),
 					center: { x: 10.0, y: 20.0 },
 					inner_radius: 0.0,
 					outer_radius: 30.0,
@@ -428,8 +428,8 @@ expect
 			coordinates: triangle_coordinates,
 			fill: Linear({
 				stops: {
-					start_color: ArgbColor.to_rgba(ArgbColor.of(555)),
-					end_color: ArgbColor.to_rgba(ArgbColor.of(556)),
+					start_color: Brush.translucent(ArgbColor.of(555)),
+					end_color: Brush.translucent(ArgbColor.of(556)),
 					start_offset: 0.25,
 					end_offset: 0.75,
 				},
@@ -452,8 +452,8 @@ expect
 			coordinates: triangle_coordinates,
 			fill: Ellipse({
 				stops: {
-					start_color: ArgbColor.to_rgba(ArgbColor.of(666)),
-					end_color: ArgbColor.to_rgba(ArgbColor.of(667)),
+					start_color: Brush.translucent(ArgbColor.of(666)),
+					end_color: Brush.translucent(ArgbColor.of(667)),
 					start_offset: 0.25,
 					end_offset: 0.75,
 				},
@@ -480,8 +480,8 @@ linear_fill = |{ first, last }|
 		coordinates: triangle_coordinates,
 		fill: Linear({
 			stops: {
-				start_color: ArgbColor.to_rgba(ArgbColor.of(666)),
-				end_color: ArgbColor.to_rgba(ArgbColor.of(667)),
+				start_color: Brush.translucent(ArgbColor.of(666)),
+				end_color: Brush.translucent(ArgbColor.of(667)),
 				start_offset: first,
 				end_offset: last,
 			},
@@ -519,11 +519,11 @@ ellipse_of_height = |height|
 # An ellipse just under the limit is flat, and one just over it is not.
 expect ellipse_of_height(0.009) == Poly({
 	coordinates: triangle_coordinates,
-	fill: Flat(ArgbColor.to_rgba(ArgbColor.of(666))),
+	fill: Flat(Brush.translucent(ArgbColor.of(666))),
 })
 expect ellipse_of_height(0.011) != Poly({
 	coordinates: triangle_coordinates,
-	fill: Flat(ArgbColor.to_rgba(ArgbColor.of(666))),
+	fill: Flat(Brush.translucent(ArgbColor.of(666))),
 })
 
 sample_color : RgbColor
