@@ -19,7 +19,7 @@ Truck := {
 	initial : Truck
 	initial = {
 		route_position: start_lead,
-		speed: VehicleLimits.base_speed,
+		speed: VehicleLimits.starting_speed,
 		pace: NotSlowing,
 	}
 

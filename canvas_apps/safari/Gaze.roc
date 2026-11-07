@@ -30,10 +30,6 @@ Gaze :: [].{
 	look_release_angle : Angle.Turn
 	look_release_angle = Angle.Turn.degrees(35.0)
 
-	## The most the gaze swivels toward a pig in one step.
-	look_swivel_rate : Angle.Turn
-	look_swivel_rate = Angle.Turn.degrees(4.0)
-
 	## How strongly a look of this depth holds the rider's eye. The easing keeps
 	## a shallow look from widening the view much.
 	gaze_attention : Fraction -> Attention
@@ -66,6 +62,10 @@ Gaze :: [].{
 	}
 }
 
+## The most the gaze swivels toward a pig in one step.
+look_swivel_rate : Angle.Turn
+look_swivel_rate = Angle.Turn.degrees(4.0)
+
 ## The most the gaze turns back toward the road in one step.
 look_return_rate : Angle.Turn
 look_return_rate = Angle.Turn.degrees(0.2)
@@ -92,7 +92,7 @@ next_gaze_yaw : RiderEyes, Gaze.GazeTarget -> Angle.Turn
 next_gaze_yaw = |eyes, target| {
 	gaze = eyes.gaze_yaw
 	match target {
-		OnPig(turn) => gaze.plus(turn.minus(gaze).clamped_within(Gaze.look_swivel_rate))
+		OnPig(turn) => gaze.plus(turn.minus(gaze).clamped_within(look_swivel_rate))
 		OnRoad =>
 			if gaze.abs() <= look_return_snap {
 				Angle.straight_ahead
@@ -130,7 +130,7 @@ expect
 	[
 		(look_depth_decay.to_f64(), 0.0012),
 		(Gaze.look_release_angle.to_radians() / Trig.deg, 35.0),
-		(Gaze.look_swivel_rate.to_radians() / Trig.deg, 4.0),
+		(look_swivel_rate.to_radians() / Trig.deg, 4.0),
 		(look_return_rate.to_radians() / Trig.deg, 0.2),
 		(look_return_snap.to_radians() / Trig.deg, 0.02),
 		(look_return_ease.to_f64(), 0.05),
@@ -233,7 +233,7 @@ depth_after : RiderEyes, F64 -> F64
 depth_after = |eyes, gaze| next_look_depth(eyes, Angle.Turn.radians(gaze)).to_f64()
 
 swivel_rate : F64
-swivel_rate = Gaze.look_swivel_rate.to_radians()
+swivel_rate = look_swivel_rate.to_radians()
 
 return_snap : F64
 return_snap = look_return_snap.to_radians()

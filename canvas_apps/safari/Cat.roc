@@ -92,10 +92,10 @@ Cat :: [].{
 		} else {
 			match crossing_stage(approach) {
 				Waiting => Attention.none
-				Playing(progress) => peak_attention.portion(Easing.smoothstep(progress))
+				Playing(progress) => peak_attention.scaled_by(Easing.smoothstep(progress))
 				Past(beyond) => {
 					faded = beyond.portion(approach.speed.distance_in(attention_fade))
-					peak_attention.portion(Easing.smoothstep(Fraction.clamp(faded)).less())
+					peak_attention.scaled_by(Easing.smoothstep(Fraction.clamp(faded)).less())
 				}
 			}
 		}

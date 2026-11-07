@@ -1,4 +1,4 @@
-# RgbColor -- an opaque colour as one whole number, 0xRRGGBB: eight bits each
+# RgbColor is an opaque colour as one whole number, 0xRRGGBB: eight bits each
 # of red, green and blue, red highest. A flat fill's colour is one of these, and
 # `Brush.opaque` is what turns it into a brush colour.
 #

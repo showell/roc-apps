@@ -144,6 +144,10 @@ Angle :: [].{
 		abs : Angle.Lean -> Angle.Lean
 		abs = |Angle.Lean.(l)| Angle.Lean.(l.abs())
 
+		## How many of `whole` this lean is: negative for a lean to the left.
+		portion : Angle.Lean, Angle.Lean -> F64
+		portion = |Angle.Lean.(l), Angle.Lean.(whole)| l / whole
+
 		## The turn this lean makes at `rate` radians of turn for each radian
 		## of lean.
 		steer : Angle.Lean, F64 -> Angle.Turn
@@ -208,3 +212,5 @@ degrees_per_radian = 57.29577951308232
 expect Angle.upright.to_degrees() == 0.0
 expect Angle.Lean.radians(1.0).to_degrees() == 57.29577951308232
 expect Angle.Lean.radians(-1.0).to_degrees() == -57.29577951308232
+expect Angle.Lean.radians(0.5).portion(Angle.Lean.radians(2.0)) == 0.25
+expect Angle.Lean.radians(-0.5).portion(Angle.Lean.radians(2.0)) == -0.25

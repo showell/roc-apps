@@ -182,7 +182,7 @@ marks:
 | | |
 |---|---|
 | `Poly` | coordinates and a `Brush.Fill` |
-| `Disc` | centre, radius, a fill, and a rectangle it is kept inside |
+| `Disc` | centre, radius and a fill |
 | `Rect` | a box and a fill |
 | `Image` | `cols × rows` of `Brush.Rgba`, stretched over a box without smoothing |
 | `Text` | a line of words, its baseline, a size, `Prose` or `Code`, `Left` or `Center`, and a colour |

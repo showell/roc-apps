@@ -1,26 +1,21 @@
-# Font -- letters as strokes, so a movie can say something.
+# Font gives letters as strokes, so a game or a movie can put words on the
+# screen. The games write with this alphabet, on every painter. Words that
+# should read well, such as a tutorial widget's, are a `Text` shape in the
+# viewer's own typeface; `plotted` here is that shape for a painter that has no
+# typefaces, and `room_for` is the room such a line wants.
 #
-# Hand-written. Nothing in this vocabulary drew a glyph: Safari's critters are
-# baked polygons, and it never prints a word. roc-ray's
-# `capture_plot` draws a title, a status line and a frame count, and that was
-# the first thing a second movie asked for that could not be said at all.
+# A letter is a few strokes, and a stroke is a polygon, the same quad
+# `Shapes.line` builds. So text needs no new shape, no new brush, and nothing
+# new on any wire, and it looks the same on the GPU, on the canvas and in
+# ScanlineFill, because by then it is only polygons.
 #
-# The games draw with this alphabet, on every painter. Words that should read
-# well, such as a tutorial widget's, are a `Text` shape in the viewer's own
-# typeface; `plotted` here is that shape for a painter that has no typefaces,
-# and `room_for` is the room such a line wants.
+# The grid is 5 wide and 6 tall, x 0..4 and y 0..6 with y down. The cap height
+# is at 0, the x-height at 2 and the baseline at 6, and descenders reach 8. A
+# glyph advances 6. `size` is the height from cap to baseline, so a 24 px label
+# has units of 4 px.
 #
-# **A LETTER IS A FEW STROKES, AND A STROKE IS A POLYGON** -- the same quad
-# `Shapes.line` builds -- so text needs no new shape, no new brush, and nothing
-# new on any wire. It draws identically on the GPU, on the canvas and in
-# ScanlineFill, because by the time anyone sees it it is only polygons.
-#
-# **THE GRID IS 5 WIDE AND 6 TALL**, x 0..4 and y 0..6 with y down: cap at 0,
-# x-height at 2, baseline at 6, descenders to 8. A glyph advances 6. `size` is
-# the cap-to-baseline height, so a 24 px label has units of 4 px.
-#
-# It is a plotter's alphabet rather than a typeface, which is honest: these are
-# strokes of a constant width, and they look like what they are.
+# It is a plotter's alphabet rather than a typeface: its strokes have one
+# width, and they look like what they are.
 import Shapes
 import Brush
 import RgbColor

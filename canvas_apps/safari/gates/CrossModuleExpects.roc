@@ -678,7 +678,7 @@ scene : Scene
 scene = Scene.scene_in_view(
 	scene_view,
 	{
-		speed: VehicleLimits.base_speed,
+		speed: VehicleLimits.starting_speed,
 		truck: {
 			route_position: Distance.metres(500.0),
 			lit_truck: { headlights: Off, brake_lights: Off },

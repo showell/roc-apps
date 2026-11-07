@@ -120,12 +120,12 @@ Shapes :: [].{
 			$out
 		}
 
-	## Every x pulled toward `axis` by `k`, so a figure drawn face-on reads as one
-	## turned away by the angle whose cosine is `k`. A negative `k` mirrors it as
+	## Every x pulled toward `axis` by `cosine`, so a figure drawn face-on reads as one
+	## turned away by the angle whose cosine that is. A negative cosine mirrors it as
 	## well, so a pair beside a path can face each other. A disc keeps its radius,
 	## because no shape here is an ellipse.
-	squashed_shapes : List(Shapes.Shape), F64, F64 -> List(Shapes.Shape)
-	squashed_shapes = |shapes, axis, k| shapes.map(
+	squashed_shapes : List(Shapes.Shape), { axis : F64, cosine : F64 } -> List(Shapes.Shape)
+	squashed_shapes = |shapes, { axis, cosine: k }| shapes.map(
 		|shape|
 			match shape {
 				Poly(p) => Poly({ coordinates: pulled(p.coordinates, axis, k), fill: p.fill })
@@ -242,9 +242,9 @@ line_of_type = {
 	color: Brush.opaque(RgbColor.of(0x202020)),
 }
 
-expect Shapes.squashed_shapes([Text(line_of_type)], 0.0, 0.5) == [Text({ ..line_of_type, x: 50.0 })]
-expect Shapes.squashed_shapes([Text(line_of_type)], 0.0, -1.0) == [Text({ ..line_of_type, x: -100.0 })]
-expect Shapes.squashed_shapes([Text(line_of_type)], 100.0, 0.5) == [Text(line_of_type)]
+expect Shapes.squashed_shapes([Text(line_of_type)], { axis: 0.0, cosine: 0.5 }) == [Text({ ..line_of_type, x: 50.0 })]
+expect Shapes.squashed_shapes([Text(line_of_type)], { axis: 0.0, cosine: -1.0 }) == [Text({ ..line_of_type, x: -100.0 })]
+expect Shapes.squashed_shapes([Text(line_of_type)], { axis: 100.0, cosine: 0.5 }) == [Text(line_of_type)]
 
 ## A dot of light, as the shape both brackets hold.
 dot : Shapes.Shape
