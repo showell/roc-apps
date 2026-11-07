@@ -16,7 +16,7 @@ import RailSighting
 import Tower
 import TowerSighting
 import TreeSighting
-import TruckAhead
+import LitTruck
 import TruckSighting
 import Speed
 import World
@@ -36,7 +36,7 @@ Scene := {
 	## truck is and how it looks, and the clock.
 	RideFacts : {
 		speed : Speed,
-		truck : { route_position : Distance, truck_ahead : TruckAhead },
+		truck : { route_position : Distance, lit_truck : LitTruck },
 		clock : Clock,
 	}
 
@@ -55,7 +55,7 @@ Scene := {
 		)
 		truck_at = TruckSighting.truck_in_view(
 			road,
-			{ lead: truck.route_position.minus(rider_distance), truck_ahead: truck.truck_ahead },
+			{ lead: truck.route_position.minus(rider_distance), lit_truck: truck.lit_truck },
 		)
 		birds = CrossingSighting.birds_in_view(view)
 		{

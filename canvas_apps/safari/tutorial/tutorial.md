@@ -229,7 +229,7 @@ A `match` on a closed union has to cover it: leaving out a tag is a compile-time
 
 Here's where it's called, picking the color for a pair of small trees:
 
-{{code Trees.roadside_trees from "match $conifer {" to "BigGreen => accent_conifer(scheme)"}}
+{{code Trees.roadside_trees from "match $conifer {" to "Green => accent_conifer(scheme)"}}
 
 `SegmentIndex` is another small opaque type, a `U32` for a segment's place in the route. A place in the route can't be confused with a count of trees, because nothing outside can do arithmetic on it. `crash` appears here too. It isn't for error handling: an index that isn't in the world is a bug in Safari Ride, not a case to handle.
 
@@ -1162,7 +1162,7 @@ New in this chapter:
 
 That's the record that the elephant and its baby came out as: two places, an emoji, a height and a way to face. A critter's `codepoint` is what finds its still, and that's one `match`, from a number to some polygons:
 
-{{code EmojiStills.emoji_polys_for}}
+{{code EmojiStills.EmojiStill}}
 
 That's a pig. One pig doesn't look like much of a farm, though.
 
@@ -1874,15 +1874,15 @@ The truck's headlights come on once the sun has gone behind the mountains, at st
 
 `Truck.Lights` is a record of two tag unions. Two independent lamps aren't one state with four values, so they're two fields:
 
-{{code TruckAhead.TruckAhead from "Which of" to "TruckAhead := {"}}
+{{code LitTruck.LitTruck from "Which of" to "LitTruck := {"}}
 
 `RideInstant` puts it together. It's the only place that can. `Truck` is in the ride half of the system and `Mountains` is in the view, and no arrow goes from the first to the second. `RideInstant` imports both.
 
-{{code RideInstant.truck_lights}}
+{{code RideInstant.lit_truck}}
 
 Lamps are plain data. The sighting carries them, and the drawing does what they say, with each `match` covering both tags:
 
-{{code TruckAhead.truck_shapes from "beams =" to "].join()"}}
+{{code LitTruck.truck_shapes from "beams =" to "].join()"}}
 
 `TruckAhead` leaves the painting to two modules. `TruckBody` paints the trailer, the cab and the tires, far to near, and `TruckLights` paints the beams and the brake lights, each with its glow.
 
@@ -2477,7 +2477,7 @@ From there to the screen is a pinhole camera, which is similar triangles. Dividi
 
 `PosedBird.scenery_picture` calls it with a record built on the spot for the bird's feet:
 
-{{code PosedBird.scenery_picture from "feet = Camera.project(" to "feet = Camera.project("}}
+{{code StillShapes.standing_anchor from "projected = |above_ground|" to "feet = projected(spot.lift())"}}
 
 The focal length comes from a lens. `resting_focal` is a value computed from other values, with no function in sight, and `field_of_view` is a `Turn`, so taking half of it needs no comment about radians. [check: whether a value like this inside a `.{ }` block is evaluated at compile time, as top-level values are.]
 

@@ -16,7 +16,7 @@ import Pipeline
 import Rendered
 import Scene
 import TreeSighting
-import TruckAhead
+import LitTruck
 import TruckSighting
 import lib.Shapes
 
@@ -127,7 +127,7 @@ tree_at = |forward|
 			along: Along.metres(forward),
 			across: Across.middle,
 			lift: Distance.zero,
-			kind: Conifer.BigGreen,
+			kind: Conifer.Green,
 		},
 		{ road: first_road(origin), place: Ahead(SegmentPlace.Position.first) },
 	)
@@ -177,7 +177,7 @@ expect
 		== Distance.metres(14.0)
 expect
 	cluster_shapes(14.0)
-		== Conifer.BigGreen.scenery_picture({
+		== Conifer.Green.scenery_picture({
 			spot: tree_at(14.0).spot,
 			cam_focal: Pixels.of(500.0),
 			context: { nearer_tree_count: 4 },
@@ -234,7 +234,7 @@ green_tree_at = |along| {
 		along: Along.metres(along),
 		across: Across.metres(3.5),
 		lift: Distance.zero,
-		kind: Conifer.BigGreen,
+		kind: Conifer.Green,
 	},
 }
 
@@ -251,7 +251,7 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 expect TreeSighting.sighting_of(from_origin, green_tree_at(120.0)).is_ok()
-expect lone_tree.kind == Conifer.BigGreen
+expect lone_tree.kind == Conifer.Green
 expect
 	[
 		(TreeSighting.sighting_of(from_origin, green_tree_at(0.39)), False),
@@ -294,7 +294,7 @@ expect
 		(roadside_tree(1).spot.foot().right().to_metres(), 3.5),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
-expect roadside_tree(0).kind == Conifer.BigGreen
+expect roadside_tree(0).kind == Conifer.Green
 expect roadside_tree(2).kind == Conifer.SmallGreen
 
 # The order that settles a tie, each list in its own order.
@@ -320,15 +320,15 @@ truck_seen_from : Geom.Vantage, F64 -> TruckSighting.TruckFate
 truck_seen_from = |vantage, lead|
 	TruckSighting.truck_in_view(
 		first_road(vantage),
-		{ lead: Distance.metres(lead), truck_ahead: { headlights: Off, brake_lights: Off } },
+		{ lead: Distance.metres(lead), lit_truck: { headlights: Off, brake_lights: Off } },
 	)
 
 lead_of : F64 -> TruckSighting.TruckFate
 lead_of = |lead| truck_seen_from(origin, lead)
 
 ## Where the truck is, for a lead that puts it in view.
-truck_ahead_of : F64 -> Pipeline.Sighted(TruckAhead)
-truck_ahead_of = |lead| lead_of(lead) ?? crash "SceneShapes: this lead puts the truck in view"
+lit_truck_of : F64 -> Pipeline.Sighted(LitTruck)
+lit_truck_of = |lead| lead_of(lead) ?? crash "SceneShapes: this lead puts the truck in view"
 
 expect
 	[
@@ -349,7 +349,7 @@ expect
 		(900.0, 2),
 	].all(
 		|(lead, want)| {
-			place = truck_ahead_of(lead).spot.place()
+			place = lit_truck_of(lead).spot.place()
 			place == Ahead(SegmentPlace.Position.number(want))
 		},
 	)
@@ -360,7 +360,7 @@ expect
 		(499.0, 499.0),
 		(600.0, 100.0),
 		(900.0, 80.0),
-	].all(|(lead, want)| truck_ahead_of(lead).spot.road_point().along.to_metres() == want)
+	].all(|(lead, want)| lit_truck_of(lead).spot.road_point().along.to_metres() == want)
 
 expect
 	[
@@ -368,13 +368,13 @@ expect
 		(499.0, 0.0),
 		(600.0, 0.0),
 		(900.0, 0.0),
-	].all(|(lead, want)| truck_ahead_of(lead).spot.road_point().across.to_metres() == want)
+	].all(|(lead, want)| lit_truck_of(lead).spot.road_point().across.to_metres() == want)
 
 ## The lights a truck in view shows, when it has `lights` on.
 lights_shown = |lights| {
 	truck = TruckSighting.truck_in_view(
 		first_road(origin),
-		{ lead: Distance.metres(100.0), truck_ahead: lights },
+		{ lead: Distance.metres(100.0), lit_truck: lights },
 	) ?? crash "SceneShapes: this lead puts the truck in view"
 	truck.kind
 }
@@ -389,9 +389,9 @@ expect
 
 expect
 	[
-		(truck_ahead_of(100.0).spot.foot().forward().to_metres(), 100.0),
-		(truck_ahead_of(499.0).spot.foot().forward().to_metres(), 499.0),
-		(truck_ahead_of(100.0).spot.foot().right().to_metres(), 0.0),
+		(lit_truck_of(100.0).spot.foot().forward().to_metres(), 100.0),
+		(lit_truck_of(499.0).spot.foot().forward().to_metres(), 499.0),
+		(lit_truck_of(100.0).spot.foot().right().to_metres(), 0.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 expect lead_of(2000.0).is_err()
@@ -404,4 +404,4 @@ expect truck_rendering(from_origin, Err(NoTruck)).is_err()
 expect truck_rendering(from_origin, Err(BehindCamera)).is_err()
 expect
 	truck_rendering(from_origin, lead_of(499.0)).map_ok(|rendering| rendering.depth.to_metres())
-		== Ok(truck_ahead_of(499.0).spot.foot().forward().to_metres())
+		== Ok(lit_truck_of(499.0).spot.foot().forward().to_metres())

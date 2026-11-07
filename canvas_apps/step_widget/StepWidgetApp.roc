@@ -317,7 +317,7 @@ status_lines = |model| {
 	[
 		"clock: step ${clock.to_str()}",
 		"rider: segment ${(rider.segment_index.to_u32() + 1).to_str()}, ${ScrubWidget.tenths_text(rider.along.to_metres())} m, speed ${ScrubWidget.tenths_text(rider.speed.to_metres_a_step())}",
-		"truck: ${ScrubWidget.tenths_text(truck.route_position.to_metres())} m, speed ${ScrubWidget.tenths_text(truck.speed.to_metres_a_step())}, brake ${brakes_text(RideInstant.truck_lights(model.tour.instant).brake_lights)}",
+		"truck: ${ScrubWidget.tenths_text(truck.route_position.to_metres())} m, speed ${ScrubWidget.tenths_text(truck.speed.to_metres_a_step())}, brake ${brakes_text(RideInstant.lit_truck(model.tour.instant).brake_lights)}",
 		move_text(model),
 	]
 }

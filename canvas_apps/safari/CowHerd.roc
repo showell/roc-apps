@@ -6,6 +6,7 @@ import Along
 import Billboard
 import Conifer
 import Distance
+import EmojiStills
 import Geom
 import Scenery
 import Trees
@@ -54,10 +55,10 @@ CowHerd := {
 }
 
 cow : Billboard.Species
-cow = { codepoint: 128004, adult_height: Distance.metres(1.4) }
+cow = { still: EmojiStills.cow, adult_height: Distance.metres(1.4) }
 
 bull : Billboard.Species
-bull = { codepoint: 128002, adult_height: cow.adult_height.times(1.15) }
+bull = { still: EmojiStills.bull, adult_height: cow.adult_height.times(1.15) }
 
 ## The gap between the bull's side and the trees.
 bull_tree_gap : Distance
@@ -66,7 +67,7 @@ bull_tree_gap = Distance.metres(0.5)
 ## The bull at `herd_along`, by the trees.
 herd_bull : Along -> Geom.Placed(Billboard)
 herd_bull = |herd_along| {
-	tree_line = Trees.tree_line_distance(Conifer.BigGreen)
+	tree_line = Trees.tree_line_distance(Conifer.Green)
 	bull_middle = tree_line.plus(bull.adult_height.divided_by(2.0))
 	{
 		along: herd_along,
@@ -106,7 +107,7 @@ herd_cow = |herd, { herd_along, cow_number }| {
 
 expect herd_bull(Along.metres(24.0)).along == Along.metres(24.0)
 expect herd_bull(Along.metres(24.0)).across == Across.metres(-4.805)
-expect herd_bull(Along.metres(24.0)).kind.codepoint == 128002
+expect herd_bull(Along.metres(24.0)).kind.still == EmojiStills.bull
 expect herd_bull(Along.metres(24.0)).kind.facing == FacesLeft
 expect (herd_bull(Along.metres(24.0)).kind.height.to_metres() - 1.61).abs() <= 0.000000000001
 

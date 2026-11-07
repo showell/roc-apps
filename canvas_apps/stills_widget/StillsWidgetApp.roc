@@ -190,7 +190,7 @@ standing_at = |polygons, { mid_x, ground_y, height_px }| {
 	{
 		feet: Screen.point(mid_x - height_px * (extent.left + extent.right) / 2.0, ground_y),
 		flip: AsDrawn,
-		height_px: Pixels.of(height_px),
+		height_on_screen: Pixels.of(height_px),
 	}
 }
 
@@ -530,8 +530,8 @@ expect
 	)
 
 # A row shares one height, and no still leaves its cell or crosses its name.
-expect cells.take_first(7).all(|cell| cell.anchor.height_px == first_cell.anchor.height_px)
-expect cells.drop_first(7).all(|cell| cell.anchor.height_px == last_cell.anchor.height_px)
+expect cells.take_first(7).all(|cell| cell.anchor.height_on_screen == first_cell.anchor.height_on_screen)
+expect cells.drop_first(7).all(|cell| cell.anchor.height_on_screen == last_cell.anchor.height_on_screen)
 expect cells.all(|{ still, area, anchor }| stays_in(anchor, { polygons: still.polygons, area }))
 expect
 	cells.all(
@@ -544,7 +544,7 @@ expect
 ## Whether a cell's still fills the cell's width, up to the padding.
 is_full_width : StillCell -> Bool
 is_full_width = |{ still, area, anchor }| {
-	still_width = anchor.height_px.to_f64() * extent_width(extent_of(still.polygons))
+	still_width = anchor.height_on_screen.to_f64() * extent_width(extent_of(still.polygons))
 	area.width - still_width <= 2.0 * cell_padding + 0.000001
 }
 
@@ -594,7 +594,7 @@ expect
 	cells.all(
 		|{ still, .. }| {
 			extent = extent_of(still.polygons)
-			height = large_anchor(still.polygons).height_px.to_f64()
+			height = large_anchor(still.polygons).height_on_screen.to_f64()
 			wide_room = large_area.width - height * extent_width(extent)
 			tall_room = large_area.height - height * (extent.top - extent.bottom)
 			wide_room.min(tall_room).abs() <= 0.000001
@@ -763,7 +763,7 @@ expect {
 	anchor = {
 		feet: Screen.point(0.0, 10.0),
 		flip: AsDrawn,
-		height_px: Pixels.of(10.0),
+		height_on_screen: Pixels.of(10.0),
 	}
 	match outline_shapes(anchor, square) {
 		[_, _, _, Poly({ coordinates, .. })] => coordinates == [-0.5, 0.0, -0.5, 10.0, 0.5, 10.0, 0.5, 0.0]
@@ -776,7 +776,7 @@ expect {
 	anchor = {
 		feet: Screen.point(0.0, 0.0),
 		flip: AsDrawn,
-		height_px: Pixels.of(10.0),
+		height_on_screen: Pixels.of(10.0),
 	}
 	outline_shapes(
 		anchor,

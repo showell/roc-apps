@@ -19,6 +19,7 @@ import game.CrossingSighting
 import game.BillboardSighting
 import game.DepthSort
 import game.Distance
+import game.EmojiStills
 import game.Fraction
 import game.RoadAhead
 import game.SegmentPlace
@@ -554,7 +555,7 @@ cow_fate = |{ forward, height }|
 	critter_fate({
 		along: Along.at(forward),
 		across: Across.metres(2.5),
-		kind: { codepoint: 128004, height, facing: FacesRight },
+		kind: { still: EmojiStills.cow, height, facing: FacesRight },
 	})
 
 ## Which way a sighting went, whatever it carries.
@@ -599,7 +600,7 @@ left_bull =
 		along: Along.metres(50.0),
 		across: Across.metres(-1.5),
 		kind: {
-			codepoint: 128002,
+			still: EmojiStills.bull,
 			height: Distance.metres(1.6),
 			facing: FacesLeft,
 		},
@@ -613,8 +614,8 @@ expect left_bull.spot.foot().right().to_metres() == -1.5
 expect left_bull.spot.foot().forward().to_metres() == 50.0
 expect left_bull.kind.height.to_metres() == 1.6
 
-expect near_cow.kind.codepoint == 128004
-expect left_bull.kind.codepoint == 128002
+expect near_cow.kind.still == EmojiStills.cow
+expect left_bull.kind.still == EmojiStills.bull
 expect near_cow.kind.facing == FacesRight
 expect left_bull.kind.facing == FacesLeft
 
@@ -680,7 +681,7 @@ scene = Scene.scene_in_view(
 		speed: VehicleLimits.base_speed,
 		truck: {
 			route_position: Distance.metres(500.0),
-			truck_ahead: { headlights: Off, brake_lights: Off },
+			lit_truck: { headlights: Off, brake_lights: Off },
 		},
 		clock: Clock.start,
 	},

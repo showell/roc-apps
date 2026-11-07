@@ -4,7 +4,6 @@
 import Pixels
 import Across
 import Along
-import Camera
 import CatStills
 import Distance
 import Geom
@@ -30,32 +29,25 @@ PosedCat := { pose : PosedCat.CatPose }.{
 
 	## A cat on screen, its feet where it is.
 	scenery_picture : PosedCat, Picture.Setting({}) -> Picture
-	scenery_picture = |cat, { spot, cam_focal, .. }| {
-		projected = |height| Camera.project(spot.foot().at_height(height), cam_focal)
-		feet = projected(spot.lift())
+	scenery_picture = |cat, setting|
 		Picture.from_shapes(
-			StillShapes.still_shapes(
-				{
-					feet,
-					flip: AsDrawn,
-					height_px: feet.y.minus(projected(spot.lift().plus(PosedCat.cat_height)).y),
-				},
-				PosedCat.pose_polygons(cat.pose),
+			StillShapes.standing_still_shapes(
+				setting,
+				{ height: PosedCat.cat_height, polygons: PosedCat.pose_polygons(cat.pose) },
 			),
 		)
-	}
 
 	## The cat's polygons in a pose.
 	pose_polygons : PosedCat.CatPose -> List(Stills.StillPolygon)
 	pose_polygons = |pose|
 		match pose {
-			Rest => CatStills.pose_rest_polys
-			Stride => CatStills.pose_stride_polys
-			Frozen => CatStills.pose_frozen_polys
-			Coil => CatStills.pose_coil_polys
-			Flight => CatStills.pose_flight_polys
-			Land => CatStills.pose_land_polys
-			Collapse => CatStills.pose_collapse_polys
+			Rest => CatStills.rest_polygons
+			Stride => CatStills.stride_polygons
+			Frozen => CatStills.frozen_polygons
+			Coil => CatStills.coil_polygons
+			Flight => CatStills.flight_polygons
+			Land => CatStills.land_polygons
+			Collapse => CatStills.collapse_polygons
 		}
 }
 
@@ -114,13 +106,13 @@ expect
 # Each pose draws its own still.
 expect
 	[
-		(Rest, CatStills.pose_rest_polys),
-		(Stride, CatStills.pose_stride_polys),
-		(Frozen, CatStills.pose_frozen_polys),
-		(Coil, CatStills.pose_coil_polys),
-		(Flight, CatStills.pose_flight_polys),
-		(Land, CatStills.pose_land_polys),
-		(Collapse, CatStills.pose_collapse_polys),
+		(Rest, CatStills.rest_polygons),
+		(Stride, CatStills.stride_polygons),
+		(Frozen, CatStills.frozen_polygons),
+		(Coil, CatStills.coil_polygons),
+		(Flight, CatStills.flight_polygons),
+		(Land, CatStills.land_polygons),
+		(Collapse, CatStills.collapse_polygons),
 	].all(|(pose, still)| PosedCat.pose_polygons(pose) == still)
 
 # Each pose draws every polygon of its still.

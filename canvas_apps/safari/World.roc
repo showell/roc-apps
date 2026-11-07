@@ -714,7 +714,7 @@ expect (eye_catcher.along.to_metres() - 940.80757).abs() <= 0.00001
 expect (eye_catcher.across.to_metres() - 11.0332).abs() <= 0.00001
 expect eye_catcher.kind.height.to_metres() == 1.1
 expect World.pig_distance_before_end.to_metres() == 60.0
-expect eye_catcher.kind.codepoint == 128022
+expect eye_catcher.kind.still.codepoint() == 128022
 expect World.big_pig_herd.columns == 7
 expect World.big_pig_herd.rows == 7
 expect World.big_pig_herd.standout_column == 2
@@ -733,8 +733,8 @@ expect {
 	herd_along = pig_herd_along(Distance.metres(500.0))
 	PigHerd.BigHerd(World.big_pig_herd).herd_pigs(herd_along).len() == 49
 }
-expect herd_pig_at(0).kind.codepoint == 128022
-expect herd_pig_at(48).kind.codepoint == 128022
+expect herd_pig_at(0).kind.still.codepoint() == 128022
+expect herd_pig_at(48).kind.still.codepoint() == 128022
 
 # Rows 0, 3 and 6 along the road, each pig within the jitter of its place.
 expect
@@ -852,11 +852,11 @@ expect cows_without_bull.len() == 14
 # The bull leads, facing left, and the cows follow him in their own order, facing
 # right.
 expect cows_with_bull.take_first(1).map(|bull| bull.along) == [Along.metres(24.0)]
-expect cows_with_bull.take_first(1).map(|bull| bull.kind.codepoint) == [128002]
+expect cows_with_bull.take_first(1).map(|bull| bull.kind.still.codepoint()) == [128002]
 expect cows_with_bull.drop_first(1) == cows_without_bull
 expect cows_with_bull.take_first(2).map(|critter| critter.kind.facing) == [FacesLeft, FacesRight]
 expect cows_without_bull.all(|cow| cow.kind.facing == FacesRight)
-expect cows_without_bull.all(|cow| cow.kind.codepoint == 128004)
+expect cows_without_bull.all(|cow| cow.kind.still.codepoint() == 128004)
 
 expect
 	cows_without_bull.map(|cow| cow.kind.height.to_metres())
