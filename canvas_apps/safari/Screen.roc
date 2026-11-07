@@ -1,5 +1,5 @@
-## The screen Safari draws on: its size in pixels, and where the horizon and
-## the top of the grass cross it before the camera rolls.
+## The screen Safari draws on: its size in pixels, and where the horizon
+## crosses it before the camera rolls.
 import Pixels
 import lib.Brush
 import lib.Shapes
@@ -42,11 +42,6 @@ Screen :: [].{
 	horizon_y : Pixels
 	horizon_y = height.divided_by(2.0)
 
-	## The grass starts a pixel above the horizon, so no seam shows between
-	## the two under the roll.
-	grass_top_y : Pixels
-	grass_top_y = horizon_y.minus(Pixels.of(1.0))
-
 	## How far past each edge of the screen the backdrop and the skyline reach,
 	## so the camera's roll never shows their edges. The roll turns the screen
 	## about its middle, and 200 pixels covers a roll of up to 30° either way.
@@ -68,23 +63,10 @@ Screen :: [].{
 			fill,
 		})
 
-	## The rectangle below the grass's top, painted with `fill`: from
-	## `grass_top_y` down to `roll_margin` below the screen, and `roll_margin`
-	## past each side.
-	below_grass_top_rect : Brush.Fill -> Shapes.Shape
-	below_grass_top_rect = |fill|
-		Rect({
-			x: roll_margin.opposite().to_f64(),
-			y: grass_top_y.to_f64(),
-			width: width_with_margins.to_f64(),
-			height: height.minus(grass_top_y).plus(roll_margin).to_f64(),
-			fill,
-		})
+	## The screen's width with `roll_margin` past each side.
+	width_with_margins : Pixels
+	width_with_margins = width.plus(roll_margin).plus(roll_margin)
 }
-
-## The screen's width with `roll_margin` past each side.
-width_with_margins : Pixels
-width_with_margins = Screen.width.plus(Screen.roll_margin).plus(Screen.roll_margin)
 
 expect Screen.distance({ from: Screen.point(3.0, 4.0), to: Screen.point(0.0, 0.0) }).to_f64() == 5.0
 expect Screen.distance({ from: Screen.point(0.0, 0.0), to: Screen.point(3.0, 4.0) }).to_f64() == 5.0

@@ -1,9 +1,9 @@
-## The skyline, in front of the sky and behind the rest of the ride: a high range
-## to the north with snow on its peaks, a lower range to the west, and the rolling
-## land in front of both. Each is a silhouette across the screen whose height
-## depends on the bearing it is seen at and on the lens, so the skyline turns with
-## the rider but never comes nearer. The rock darkens at dusk, and the snow goes
-## blue.
+## The skyline, the farthest of the ride's shapes and painted first among them,
+## over the backdrop's sky, sun and grass: a high range to the north with snow on
+## its peaks, a lower range to the west, and the rolling land in front of both.
+## Each is a silhouette across the screen whose height depends on the bearing it
+## is seen at and on the lens, so the skyline turns with the rider but never comes
+## nearer. The rock darkens at dusk, and the snow goes blue.
 import Pixels
 import Angle
 import Clock
@@ -233,7 +233,7 @@ columns = |{ from, to }| {
 
 ## The ranges are seen only above the grass, so they stop where it begins.
 range_base_y : Pixels
-range_base_y = Screen.grass_top_y
+range_base_y = Grass.grass_top_y
 
 ## The land is in front of the ranges and closes along the horizon. The grass
 ## begins a pixel above the horizon so that no seam shows under the roll, and
