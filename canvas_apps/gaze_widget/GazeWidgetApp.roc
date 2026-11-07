@@ -17,6 +17,7 @@ import game.Geom
 import game.Rider
 import game.RiderState
 import game.Speed
+import game.Steps
 import game.Tour
 import game.World
 import lib.CanvasApp
@@ -119,7 +120,7 @@ gaze_pig =
 ## which the ride may not have reached the one asked for.
 with_buttons : GazeWidgetApp.Model, Input.Snapshot -> GazeWidgetApp.Model
 with_buttons = |model, input| {
-	shown = Clock.at_step(first_step + shown_offset(model).to_u32_wrap())
+	shown = Clock.at_step(first_step).plus(Steps.of(shown_offset(model).to_u32_wrap()))
 	caught_up = VcrButtons.catch_up(model.transport, { input, shown })
 	{ ..model, transport: VcrButtons.next_transport(caught_up, { input, range: stretch }) }
 }
@@ -140,7 +141,7 @@ played_on = |model| {
 ## the last step played if the ride hasn't got there yet.
 shown_offset : GazeWidgetApp.Model -> U64
 shown_offset = |model| {
-	asked_for = (model.transport.at.to_f64() - first_step.to_f64()).to_u64_wrap()
+	asked_for = model.transport.at.steps_since(Clock.at_step(first_step)).to_u32().to_u64()
 	asked_for.min(model.played.len() - 1)
 }
 
@@ -522,7 +523,7 @@ expect shown_offset(left_alone(asking_for(870), 1)) == 8
 expect {
 	catching_up = left_alone(asking_for(last_step), 2)
 	stepped = with_buttons(catching_up, VcrButtons.click_on(StepForward))
-	stepped.transport == { at: Clock.at_step(first_step + 2 * 8 + 1), motion: Stopped }
+	stepped.transport == { at: Clock.at_step(first_step).plus(Steps.of(2 * 8 + 1)), motion: Stopped }
 }
 
 expect look_first_step < look_end_step

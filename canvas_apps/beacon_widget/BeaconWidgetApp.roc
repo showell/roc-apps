@@ -56,7 +56,7 @@ second_tower_key = 60
 brightness_at : Clock, U32 -> Fraction
 brightness_at = |clock, key| {
 	offset = Beacon.beacon_offset_for(key)
-	Beacon.beacon_brightness(clock.minus(Clock.start).plus(offset))
+	Beacon.beacon_brightness(clock.steps_since(Clock.start).plus(offset))
 }
 
 ## How far ahead of the picture's eye the towers stand, so that their tops fit.
@@ -138,7 +138,7 @@ tower_shapes_at = |foot, brightness| {
 status_lines : Clock -> List(Str)
 status_lines = |clock| {
 	period = Beacon.beacon_period
-	into_blink = clock.minus(Clock.start).wrapped_to(period)
+	into_blink = clock.steps_since(Clock.start).wrapped_to(period)
 	first_tower = ScrubWidget.percent_text(brightness_at(clock, first_tower_key))
 	second_tower = ScrubWidget.percent_text(brightness_at(clock, second_tower_key))
 	[
@@ -183,7 +183,7 @@ expect
 # The range opens at the start of a blink and ends at the end of the second.
 expect blinks.first == Clock.at_step(5400)
 expect blinks.last == Clock.at_step(5640)
-expect blinks.last.minus(blinks.first).to_f64() == 2.0 * Beacon.beacon_period.to_f64()
+expect blinks.last.steps_since(blinks.first).to_f64() == 2.0 * Beacon.beacon_period.to_f64()
 
 ## Whether a share is `want`, to within rounding.
 is_near : Fraction, F64 -> Bool

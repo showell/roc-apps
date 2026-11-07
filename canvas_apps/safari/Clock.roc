@@ -25,9 +25,30 @@ Clock :: U32.{
 			Clock.(n - 1)
 		}
 
-	## How many steps this clock is past `earlier`.
-	minus : Clock, Clock -> Steps
-	minus = |Clock.(n), Clock.(earlier)| Steps.of(n - earlier)
+	## How many steps this clock is past `earlier`. A clock before `earlier` is
+	## no count of steps.
+	steps_since : Clock, Clock -> Steps
+	steps_since = |Clock.(n), Clock.(earlier)|
+		if n < earlier {
+			crash "Clock.steps_since: this clock comes before the one it counts from"
+		} else {
+			Steps.of(n - earlier)
+		}
+
+	## The clock `length` steps on.
+	plus : Clock, Steps -> Clock
+	plus = |Clock.(n), length| Clock.(n + length.to_u32())
+
+	## The clock `length` steps back. The ride's first step has none before it.
+	minus : Clock, Steps -> Clock
+	minus = |Clock.(n), length| {
+		back = length.to_u32()
+		if back > n {
+			crash "Clock.minus: the ride starts at step 0, and nothing comes before it"
+		} else {
+			Clock.(n - back)
+		}
+	}
 
 	to_f64 : Clock -> F64
 	to_f64 = |Clock.(n)| n.to_f64()
@@ -48,9 +69,14 @@ expect Clock.at_step(1).previous() == Clock.start
 expect Clock.at_step(5700).previous().next() == Clock.at_step(5700)
 expect !(Clock.start == Clock.at_step(1))
 expect !(Clock.at_step(7).next() == Clock.at_step(7))
-expect Clock.at_step(9).minus(Clock.at_step(9)).to_f64() == 0.0
-expect Clock.at_step(9).minus(Clock.at_step(8)).to_f64() == 1.0
-expect Clock.at_step(9).minus(Clock.start).to_f64() == 9.0
-expect Clock.start.next().minus(Clock.start).to_f64() == 1.0
+expect Clock.at_step(9).steps_since(Clock.at_step(9)) == Steps.zero
+expect Clock.at_step(9).steps_since(Clock.at_step(8)) == Steps.one_step
+expect Clock.at_step(9).steps_since(Clock.start) == Steps.of(9)
+expect Clock.start.next().steps_since(Clock.start) == Steps.one_step
+expect Clock.start.plus(Steps.zero) == Clock.start
+expect Clock.at_step(9).plus(Steps.of(3)) == Clock.at_step(12)
+expect Clock.at_step(9).minus(Steps.zero) == Clock.at_step(9)
+expect Clock.at_step(9).minus(Steps.of(3)) == Clock.at_step(6)
+expect Clock.at_step(9).minus(Steps.of(9)) == Clock.start
 expect Clock.start.to_str() == "0"
 expect Clock.at_step(5700).to_str() == "5700"

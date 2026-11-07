@@ -1300,7 +1300,7 @@ Each tower starts somewhere else in the cycle, so the towers along a road don't 
 
 The sighting calls both, adding the two `Steps`. `clock.minus(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride.
 
-{{code TowerSighting.tower_if_ahead from "placed_tower = {" to "clock.minus(Clock.start)"}}
+{{code TowerSighting.tower_if_ahead from "placed_tower = {" to "clock.steps_since(Clock.start)"}}
 
 Its caller gives each tower its key, the segment's index. Records with named fields stand in for what would otherwise be six arguments in a row, and `Ahead(position)` is a tag carrying a payload, saying where the segment lies from the rider:
 
