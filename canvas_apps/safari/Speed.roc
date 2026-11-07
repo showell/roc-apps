@@ -18,9 +18,18 @@ Speed :: F64.{
 	at_rest : Speed
 	at_rest = Speed.(0.0)
 
-	## This speed after `acceleration`, the change over one step.
+	## This speed after `acceleration`, the change over one step. Nothing in the
+	## ride goes backwards, so a speed below zero means the braking behind it is
+	## wrong.
 	accelerated_by : Speed, Acceleration -> Speed
-	accelerated_by = |Speed.(s), acceleration| Speed.(s + acceleration.to_metres_a_step_each_step())
+	accelerated_by = |Speed.(s), acceleration| {
+		after = s + acceleration.to_metres_a_step_each_step()
+		if after < 0.0 {
+			crash "Speed.accelerated_by: this acceleration takes the speed below zero, so the braking behind it is wrong"
+		} else {
+			Speed.(after)
+		}
+	}
 
 	## The acceleration over one step that took `earlier` to this speed.
 	change_from : Speed, Speed -> Acceleration
@@ -70,5 +79,18 @@ Speed :: F64.{
 expect Speed.metres_a_step(2.0).distance_in(Steps.of(38)).to_metres() == 76.0
 expect Speed.at_rest.distance_in(Steps.of(38)).to_metres() == 0.0
 expect Speed.metres_a_step(0.5).step_length().to_metres() == 0.5
+half_metre_a_step : Speed
+half_metre_a_step = Speed.metres_a_step(0.5)
+
+expect {
+	gain = Acceleration.metres_a_step_each_step(0.25)
+	half_metre_a_step.accelerated_by(gain) == Speed.metres_a_step(0.75)
+}
+
+# Braking to a stop exactly is still a speed.
+expect {
+	loss = Acceleration.metres_a_step_each_step(-0.5)
+	half_metre_a_step.accelerated_by(loss) == Speed.at_rest
+}
 expect Speed.metres_a_step(1.0).portion(Speed.metres_a_step(4.0)) == 0.25
 expect Speed.metres_a_step(6.0).portion(Speed.metres_a_step(4.0)) == 1.5
