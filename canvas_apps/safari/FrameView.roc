@@ -35,7 +35,10 @@ FrameView := {
 	## the sun and the roll.
 	frame_view_at : Route, RideInstant -> FrameView
 	frame_view_at = |route, instant| {
-		camera = RiderCamera.of(instant.rider, route)
+		camera = RiderCamera.of(
+			instant.rider,
+			{ route, encounter: RideInstant.encounter_timing(instant) },
+		)
 		{
 			backdrop: {
 				sky_colors: Sky.colors_at(instant.clock),
@@ -62,11 +65,12 @@ FrameView := {
 	framed_shapes = |view, space|
 		Shapes.in_space(space, FrameView.backdrop_shapes(view).concat(view.ride_shapes))
 
-	## What the sightings read from `instant` beyond the road: the rider's
-	## speed, where the truck is and which of its lights are on, and the clock.
+	## What the sightings read from `instant` beyond the road: where the
+	## encounter on the rider's segment stands, where the truck is and which of
+	## its lights are on, and the clock.
 	ride_facts : RideInstant -> Scene.RideFacts
 	ride_facts = |instant| {
-		speed: instant.rider.motorcycle.speed,
+		encounter: RideInstant.encounter_timing(instant),
 		truck: {
 			route_position: instant.truck.route_position,
 			lit_truck: LitTruck.at(instant.truck, instant.clock),

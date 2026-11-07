@@ -86,7 +86,7 @@ next_bend = |route, route_position|
 				Bends({ turn, .. }) =>
 					BendAhead({
 						distance: end.minus(route_position),
-						turn_speed: VehicleLimits.turn_speed(turn.abs()),
+						turn_speed: VehicleLimits.turn_speed(turn),
 					})
 				RouteEnds => NoBendAhead
 			}
@@ -107,12 +107,10 @@ scheduled_position = |{ rider_distance, route_length }| {
 braking_state_at_next_step : Truck, ComingBend -> Truck
 braking_state_at_next_step = |truck, turn| {
 	target_speed = turn.turn_speed.times(turn_caution.to_f64())
-	acceleration =
-		if turn.distance > VehicleLimits.least_braking_distance {
-			truck.speed.acceleration_to({ target: target_speed, within: turn.distance })
-		} else {
-			Acceleration.steady
-		}
+	acceleration = VehicleLimits.braking_to(
+		truck.speed,
+		{ target: target_speed, within: turn.distance },
+	)
 	speed = target_speed.max(truck.speed.accelerated_by(acceleration))
 	{
 		route_position: truck.route_position.plus(speed.step_length()),
@@ -200,7 +198,7 @@ expect turn_v(World.route, 0.0) == 0.222
 expect turn_v(World.route, 450.0) == 0.222
 expect {
 	first_turn = World.route.segment_at(Route.SegmentIndex.number(0)).bend_out_of().turn
-	VehicleLimits.turn_speed(first_turn.abs()).to_metres_a_step() == 0.222
+	VehicleLimits.turn_speed(first_turn).to_metres_a_step() == 0.222
 }
 
 # The route's last segment, from 7220 m to its end at 7520 m, ends in no turn.
