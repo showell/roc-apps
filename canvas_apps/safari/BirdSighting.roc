@@ -10,7 +10,9 @@ import Pipeline
 
 BirdSighting :: [].{
 
-	## The birds in view, the nearest segment's first.
+	## The birds in view, the nearest segment's first. Only the road ahead is
+	## searched, because a bird flies along its segment, and the segment just
+	## behind is one the rider has passed.
 	birds_in_view : RoadAhead.CameraView -> List(Pipeline.Sighted(BirdShapes.PosedBird))
 	birds_in_view = |view| {
 		positions = RoadAhead.Position.positions_in(view.road.segments_ahead)

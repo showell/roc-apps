@@ -410,18 +410,33 @@ lone = |index| {
 	vantage: origin,
 }
 
+## The segment `number` places along the road ahead of `road_view`.
+segment_on : RoadAhead.RoadView, U32 -> RoadAhead.SegmentInView
+segment_on = |road_view, number|
+	RoadAhead.segment_in_view_at(road_view, RoadAhead.Position.number(number))
+
+## The world's segment `number`, as the segment just behind the rider.
+segment_behind : U32 -> RoadAhead.SegmentInView
+segment_behind = |number| {
+	segment = World.route_segment(number)
+	{
+		index: World.SegmentIndex.number(number),
+		segment,
+		place: RoadAhead.place_behind(segment),
+	}
+}
+
 farm_at : U32 -> I64
-farm_at = |number| BillboardSighting.farm_sightings(
-	six_segments,
-	RoadAhead.Position.number(number),
-).len().to_i64_wrap()
+farm_at = |number|
+	BillboardSighting.farm_sightings(six_segments, segment_on(six_segments, number))
+		.len()
+		.to_i64_wrap()
 
 safari_at : U32 -> I64
 safari_at = |number|
-	BillboardSighting.wildlife_sightings(
-		six_segments,
-		RoadAhead.Position.number(number),
-	).len().to_i64_wrap()
+	BillboardSighting.wildlife_sightings(six_segments, segment_on(six_segments, number))
+		.len()
+		.to_i64_wrap()
 
 expect farm_at(0) > 0
 expect farm_at(2) > 0
@@ -431,22 +446,22 @@ expect farm_at(5) == 0
 expect safari_at(3) > 0
 expect safari_at(4) > 0
 expect safari_at(5) == 0
-expect BillboardSighting.wildlife_sightings(lone(18), RoadAhead.Position.first).len() == 0
-expect BillboardSighting.wildlife_sightings(lone(0), RoadAhead.Position.first).len() > 0
+expect BillboardSighting.wildlife_sightings(lone(18), segment_on(lone(18), 0)).len() == 0
+expect BillboardSighting.wildlife_sightings(lone(0), segment_on(lone(0), 0)).len() > 0
 
 duck_count : U32 -> I64
 duck_count = |index|
-	BillboardSighting.duck_sightings(lone(index), RoadAhead.Position.first).len().to_i64_wrap()
+	BillboardSighting.duck_sightings(lone(index), segment_on(lone(index), 0)).len().to_i64_wrap()
 
 expect duck_count(12) > 0
 expect duck_count(0) == 0
 expect duck_count(4) == 0
 expect duck_count(18) == 0
-expect BillboardSighting.duck_sightings(six_segments, RoadAhead.Position.number(5)).len() == 0
+expect BillboardSighting.duck_sightings(six_segments, segment_on(six_segments, 5)).len() == 0
 expect duck_count(12) == 6
 expect {
-	first = RoadAhead.Position.first
-	whole = BillboardSighting.sightings_at(six_segments, first).len().to_i64_wrap()
+	first = segment_on(six_segments, 0)
+	whole = BillboardSighting.segment_sightings(six_segments, first).len().to_i64_wrap()
 	ducks = BillboardSighting.duck_sightings(six_segments, first).len().to_i64_wrap()
 	whole == farm_at(0) + safari_at(0) + ducks
 }
@@ -456,22 +471,24 @@ count_from : U32 -> I64
 count_from = |position|
 	List.from_iter(U32.until(position, 6))
 		.map(
-			|number| BillboardSighting.sightings_at(six_segments, RoadAhead.Position.number(number))
-				.len()
-				.to_i64_wrap(),
+			|number| {
+				in_view = segment_on(six_segments, number)
+				BillboardSighting.segment_sightings(six_segments, in_view).len().to_i64_wrap()
+			},
 		)
 		.sum()
 
-expect BillboardSighting.sightings_ahead({ ..six_segments, segments_ahead: [] }).len() == 0
 expect
-	BillboardSighting.sightings_ahead(lone(0)).len()
-		== BillboardSighting.sightings_at(lone(0), RoadAhead.Position.first).len()
-expect BillboardSighting.sightings_ahead(six_segments).len().to_i64_wrap() == count_from(0)
+	BillboardSighting.critter_fates(lone(0)).len()
+		== BillboardSighting.segment_sightings(lone(0), segment_on(lone(0), 0)).len()
+expect BillboardSighting.critter_fates(six_segments).len().to_i64_wrap() == count_from(0)
 expect count_from(0) >= count_from(1)
 expect count_from(1) >= count_from(2)
-expect BillboardSighting.sightings_behind(six_segments, World.SegmentIndex.number(4)).len() > 0
-expect BillboardSighting.ducks_behind(six_segments, World.route_segment(12)).len() > 0
-expect BillboardSighting.ducks_behind(six_segments, World.route_segment(0)).len() == 0
+expect BillboardSighting.segment_sightings(six_segments, segment_behind(4)).len() > 0
+expect BillboardSighting.duck_sightings(six_segments, segment_behind(12)).len() > 0
+expect BillboardSighting.duck_sightings(six_segments, segment_behind(0)).len() == 0
+expect BillboardSighting.farm_sightings(six_segments, segment_behind(0)).len() == 0
+expect BillboardSighting.wildlife_sightings(six_segments, segment_behind(0)).len() > 0
 
 ## A billboard on the first segment, as the rider at its start sees it.
 critter_fate : Geom.Placed(Billboard) -> BillboardSighting.Fate

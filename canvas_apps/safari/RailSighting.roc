@@ -9,21 +9,21 @@ import RoadAhead
 import Geom
 import GuardRail
 import BendView
-import World
 
 RailSighting :: [].{
 
 	## The rails at every bend in view: the bends along the road ahead, then
 	## the bend from the segment behind.
 	rails_in_view : RoadAhead.RoadView -> List(GuardRail.RailQuad)
-	rails_in_view = |road| {
-		bends_ahead = RoadAhead.Position.positions_in(road.segments_ahead).drop_last(1)
-		ahead = bends_ahead.join_map(|position| rails_at(road, bend_after(road, position)))
-		match RoadAhead.segment_behind(road) {
-			Previous(segment_behind) => ahead.concat(rails_behind(road, segment_behind))
-			AtRouteStart => ahead
-		}
-	}
+	rails_in_view = |road|
+		RoadAhead.segments_in_view(road).join_map(
+			|in_view|
+				if RoadAhead.has_bend_in_view(road, in_view) {
+					rails_at(road, BendView.of_segment(in_view.segment, in_view.place))
+				} else {
+					[]
+				},
+		)
 
 	## How many pieces a leg `distance` long is cut into: one a metre, and at
 	## least one.
@@ -104,18 +104,6 @@ RailSighting :: [].{
 				{ place, along: Along.metres(metres_in.to_f64()), across },
 			),
 		)
-}
-
-## The bend at the end of the segment at `position` on the road ahead.
-bend_after : RoadAhead.RoadView, RoadAhead.Position -> BendView
-bend_after = |road, position|
-	BendView.of_segment(RoadAhead.segment_at(road, position), Ahead(position))
-
-## The rails at the bend into the rider's segment from the segment at `index`.
-rails_behind : RoadAhead.RoadView, World.SegmentIndex -> List(GuardRail.RailQuad)
-rails_behind = |road, index| {
-	segment = index.segment_in(road.route_segments)
-	rails_at(road, BendView.of_segment(segment, RoadAhead.place_behind(segment)))
 }
 
 rails_at : RoadAhead.RoadView, BendView -> List(GuardRail.RailQuad)

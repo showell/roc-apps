@@ -12,6 +12,8 @@ import Speed
 CatSighting :: [].{
 
 	## The cats in view of a rider at `speed`, the nearest segment's first.
+	## Only the road ahead is searched, because a cat crosses along its
+	## segment, and the segment just behind is one the rider has passed.
 	cats_in_view : RoadAhead.CameraView, Speed -> List(Pipeline.Sighted(CatShapes.PosedCat))
 	cats_in_view = |view, speed| {
 		positions = RoadAhead.Position.positions_in(view.road.segments_ahead)
