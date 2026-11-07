@@ -7,10 +7,8 @@ import Acceleration
 import Animation
 import Attention
 import Cat
-import Route
 import Segment
 import VehicleLimits
-import World
 
 EncounterReaction :: [].{
 
@@ -38,21 +36,3 @@ EncounterReaction :: [].{
 			BirdHere(_) | QuietRoad => Attention.none
 		}
 }
-
-bird_segment : Segment
-bird_segment = World.first_bird_segment
-
-quiet_segment : Segment
-quiet_segment = World.route.segment_at(Route.SegmentIndex.number(1))
-
-cat_segment : Segment
-cat_segment = World.first_cat_segment
-
-# Before its encounter is planned, no segment asks anything of the rider. A
-# planned one is CrossModuleExpects', which can name a step of the clock.
-expect
-	[bird_segment, quiet_segment, cat_segment].all(
-		|segment|
-			EncounterReaction.encounter_throttle(segment, Unplanned) == NoLimit
-				and EncounterReaction.encounter_attention(segment, Unplanned) == Attention.none,
-	)

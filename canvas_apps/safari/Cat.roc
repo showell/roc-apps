@@ -3,8 +3,6 @@
 ## far verge, a frame a step at its own pace. The ride plans its start so that
 ## it is across as the rider comes within `clear_gap` of it. The rider's eye is
 ## drawn to it while it crosses, and lets it go after.
-import Across
-import Along
 import Animation
 import Attention
 import CatCrossing
@@ -163,13 +161,6 @@ crossing_timeline = |cat| {
 	)
 }
 
-the_cat : CatCrossing
-the_cat = CatCrossing.by_tree({
-	road_half_width: Distance.metres(2.0),
-	tree: { along: Along.metres(100.0), across: Across.metres(3.0) },
-})
-
-expect Cat.crossing_steps == Steps.of(38)
 expect
 	[
 		(Waiting, False),
@@ -190,65 +181,3 @@ expect attention_at(Past(Steps.of(42))) > 0.0
 expect attention_at(Past(Steps.of(42))) < 1.8
 expect attention_at(Past(Steps.of(83))) == 0.0
 expect attention_at(Past(Steps.of(200))) == 0.0
-
-## The cat `steps_in` steps into its crossing.
-frame_of : U32 -> Animation.Instant(PosedCat.CatPose)
-frame_of = |steps_in| Cat.instant_at(the_cat, Playing(Steps.of(steps_in)))
-
-## The frames of a crossing, one a step.
-the_frames : List(Animation.Instant(PosedCat.CatPose))
-the_frames = List.from_iter(U32.until(0, 38)).map(frame_of)
-
-## The poses frames `from` to `to` of the crossing show.
-poses_of : U64, U64 -> List(PosedCat.CatPose)
-poses_of = |from, to| the_frames.sublist({
-	start: from,
-	len: to - from + 1,
-}).map(|frame| frame.pose)
-
-expect the_frames.len() == 38
-expect poses_of(0, 9) == walking_poses
-expect poses_of(10, 33).all(|pose| pose == Frozen)
-expect poses_of(34, 37) == [Coil, Flight, Flight, Land]
-expect Cat.instant_at(the_cat, Waiting).pose == Rest
-expect Cat.instant_at(the_cat, Past(Steps.zero)).pose == Collapse
-
-## How far across the road the cat is `steps_in` steps into its crossing.
-across_at : U32 -> F64
-across_at = |steps_in| frame_of(steps_in).location.across.to_metres()
-
-## How high the cat is `steps_in` steps into its crossing.
-lift_at : U32 -> F64
-lift_at = |steps_in| frame_of(steps_in).location.lift.to_metres()
-
-# It walks the first ten frames in even steps, and then stands in the middle of
-# the road, and every frame is on the ground until it leaves it.
-expect
-	[
-		(0, 4.5),
-		(1, 4.0925),
-		(9, 0.8325),
-		(10, 0.425),
-		(33, 0.425),
-		(34, 0.425),
-	].all(|(steps_in, want)| (across_at(steps_in) - want).abs() <= 0.000000000001)
-expect [0, 9, 10, 33, 34, 37].all(|steps_in| lift_at(steps_in) == 0.0)
-
-# In the air, it is on its way and off the ground.
-expect
-	[(35, -1.141, 0.27), (36, -2.90275, 0.17)].all(
-		|(steps_in, across, lift)|
-			(across_at(steps_in) - across).abs() <= 0.000000000001
-				and (lift_at(steps_in) - lift).abs() <= 0.000000000001,
-	)
-
-expect (across_at(37) - -3.49).abs() <= 0.000000000001
-expect (
-	Cat.instant_at(
-		the_cat,
-		Past(Steps.zero),
-	).location.across.to_metres() - -3.49
-).abs() <= 0.000000000001
-
-# Every crossing is on its own road.
-expect the_frames.all(|frame| frame.location.along == the_cat.along)

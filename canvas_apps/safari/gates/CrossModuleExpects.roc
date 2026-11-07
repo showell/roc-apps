@@ -15,6 +15,8 @@ import game.Attention
 import game.BendInView
 import game.Billboard
 import game.BirdFlight
+import game.BirdStills
+import game.Camera
 import game.Cat
 import game.CatCrossing
 import game.Clock
@@ -1572,8 +1574,323 @@ expect {
 	coordinates_of(first_shape).len() >= 6
 }
 
+# Cat: a crossing, frame by frame.
+## A cat that crosses from beside a tree 100 m along and 3 m right of the
+## middle of a road 2 m either side.
+crossing_cat : CatCrossing
+crossing_cat = CatCrossing.by_tree({
+	road_half_width: Distance.metres(2.0),
+	tree: { along: Along.metres(100.0), across: Across.metres(3.0) },
+})
+
+## The cat `steps_in` steps into its crossing.
+crossing_frame_of : U32 -> Animation.Instant(PosedCat.CatPose)
+crossing_frame_of = |steps_in| Cat.instant_at(crossing_cat, Playing(Steps.of(steps_in)))
+
+## The frames of a crossing, one a step.
+crossing_frames : List(Animation.Instant(PosedCat.CatPose))
+crossing_frames = List.from_iter(U32.until(0, Cat.crossing_steps.to_u32())).map(crossing_frame_of)
+
+## The poses frames `from` to `to` of the crossing show.
+crossing_poses : U64, U64 -> List(PosedCat.CatPose)
+crossing_poses = |from, to| crossing_frames.sublist({
+	start: from,
+	len: to - from + 1,
+}).map(|frame| frame.pose)
+
+# Two strides as it walks out, frozen in the middle, then the leap.
+expect
+	crossing_poses(0, 9)
+		== [
+			Stride,
+			Stride,
+			Stride,
+			Rest,
+			Rest,
+			Stride,
+			Stride,
+			Stride,
+			Rest,
+			Rest,
+		]
+expect crossing_poses(10, 33).all(|pose| pose == Frozen)
+expect crossing_poses(34, 37) == [Coil, Flight, Flight, Land]
+expect Cat.instant_at(crossing_cat, Waiting).pose == Rest
+expect Cat.instant_at(crossing_cat, Past(Steps.zero)).pose == Collapse
+
+## How far across the road the cat is `steps_in` steps into its crossing.
+crossing_across_at : U32 -> F64
+crossing_across_at = |steps_in| crossing_frame_of(steps_in).location.across.to_metres()
+
+## How high the cat is `steps_in` steps into its crossing.
+crossing_lift_at : U32 -> F64
+crossing_lift_at = |steps_in| crossing_frame_of(steps_in).location.lift.to_metres()
+
+# It walks the first ten frames in even steps, and then stands in the middle of
+# the road, and every frame is on the ground until it leaves it.
+expect
+	[
+		(0, 4.5),
+		(1, 4.0925),
+		(9, 0.8325),
+		(10, 0.425),
+		(33, 0.425),
+		(34, 0.425),
+	].all(|(steps_in, want)| (crossing_across_at(steps_in) - want).abs() <= 0.000000000001)
+expect [0, 9, 10, 33, 34, 37].all(|steps_in| crossing_lift_at(steps_in) == 0.0)
+
+# In the air, it is on its way and off the ground.
+expect
+	[(35, -1.141, 0.27), (36, -2.90275, 0.17)].all(
+		|(steps_in, across, lift)|
+			(crossing_across_at(steps_in) - across).abs() <= 0.000000000001
+				and (crossing_lift_at(steps_in) - lift).abs() <= 0.000000000001,
+	)
+
+expect (crossing_across_at(37) - -3.49).abs() <= 0.000000000001
+expect (
+	Cat.instant_at(
+		crossing_cat,
+		Past(Steps.zero),
+	).location.across.to_metres() - -3.49
+).abs() <= 0.000000000001
+
+# Every crossing is on its own road.
+expect crossing_frames.all(|frame| frame.location.along == crossing_cat.along)
+
+# BirdFlight: the tree a bird flies to, and its flight frame by frame.
+## The tree a sample bird leaves.
+flight_left_tree : Trees.RoadsideTree
+flight_left_tree = tree_at(100.0, -6.0)
+
+## A tree on the far side too near to fly to, and two far enough.
+flight_sample_trees : List(Trees.RoadsideTree)
+flight_sample_trees = [
+	flight_left_tree,
+	tree_at(100.0, 6.0),
+	tree_at(140.0, -6.0),
+	tree_at(140.0, 6.0),
+	tree_at(180.0, 6.0),
+]
+
+## A flight from the left tree to a gold one 40 m on, across the road.
+sample_flight : BirdFlight.Flight
+sample_flight = { from: flight_left_tree, to: { ..tree_at(140.0, 6.0), kind: Conifer.Gold } }
+
+## Where the tree a bird on the left tree flies to stands, among `choices`.
+chosen_tree_numbers : List(Trees.RoadsideTree) -> List(F64)
+chosen_tree_numbers = |choices|
+	match BirdFlight.flight_from(choices, flight_left_tree) {
+		Ok({ to, .. }) => [to.road_point.along.to_metres(), to.road_point.across.to_metres()]
+		Err(NoTreeToFlyTo) => []
+	}
+
+expect chosen_tree_numbers(flight_sample_trees) == [140.0, 6.0]
+expect chosen_tree_numbers([flight_left_tree, tree_at(124.0, 6.0)]) == []
+expect chosen_tree_numbers([flight_left_tree, tree_at(125.0, 6.0)]) == [125.0, 6.0]
+expect chosen_tree_numbers([flight_left_tree, tree_at(140.0, -6.0)]) == []
+expect
+	BirdFlight.flight_from(flight_sample_trees, flight_left_tree).map_ok(|flight| flight.from)
+		== Ok(flight_left_tree)
+
+## The sample bird `steps_in` steps into its flight.
+flight_frame_of : U32 -> BirdFlight.BirdInstant
+flight_frame_of = |steps_in| BirdFlight.instant_at(sample_flight, Playing(Steps.of(steps_in)))
+
+expect {
+	location = BirdFlight.instant_at(sample_flight, Waiting).location
+	location.along.to_metres() == 100.0
+		and location.across.to_metres() == -6.0
+		and location.lift.to_metres() == left_top
+}
+
+expect {
+	location = BirdFlight.instant_at(sample_flight, Past(Steps.zero)).location
+	location.along.to_metres() == 140.0
+		and location.across.to_metres() == 6.0
+		and location.lift.to_metres() == far_top
+}
+
+expect BirdFlight.instant_at(sample_flight, Waiting).pose == Perched
+expect BirdFlight.instant_at(sample_flight, Past(Steps.zero)).pose == Perched
+
+# A flap side on, seven from behind, and one of diving, four steps to a flap.
+expect
+	[
+		(0, Side(WingsUp)),
+		(1, Side(WingsUp)),
+		(2, Side(WingsDown)),
+		(3, Side(WingsDown)),
+		(4, Away(WingsUp)),
+		(6, Away(WingsDown)),
+		(29, Away(WingsUp)),
+		(31, Away(WingsDown)),
+		(32, Diving),
+		(35, Diving),
+	].all(|(steps_in, pose)| flight_frame_of(steps_in).pose == pose)
+
+# The flight starts on the first tree's tip and ends on the second's, and its
+# path rises over the straight line between them.
+expect flight_frame_of(0).location == BirdFlight.instant_at(sample_flight, Waiting).location
+expect {
+	last = flight_frame_of(35).location
+	[
+		(last.along.to_metres(), 140.0),
+		(last.across.to_metres(), 6.0),
+		(last.lift.to_metres(), far_top),
+	].all(|(got, want)| (got - want).abs() <= 0.000000001)
+}
+expect flight_frame_of(18).location.lift.to_metres() > (left_top + far_top) / 2.0 + 4.0
+
+# PosedCat and PosedBird on screen.
+## The spot `forward` ahead on the rider's own segment, `right` of the camera
+## and `lift` off the ground.
+posed_spot_at : {
+	forward : Distance,
+	right : Distance,
+	lift : Distance,
+} -> Spot
+posed_spot_at = |{ forward, right, lift }| {
+	foot =
+		Geom.ahead_on_level({ right, forward })
+			?? crash "CrossModuleExpects: a test's animal is past the near plane"
+	Spot.at({
+		place: Ahead(SegmentPlace.Position.first),
+		road_point: {
+			along: Along.metres(forward.to_metres()),
+			across: Across.metres(right.to_metres()),
+		},
+		lift,
+		foot,
+	})
+}
+
+## `cat` 100 m straight ahead through a 500 px focal length, `lift` off the
+## ground: on the ground its feet land at (480, 306), and it stands 8.5 px tall.
+sample_cat_shapes : PosedCat, Distance -> List(Shapes.Shape)
+sample_cat_shapes = |cat, lift|
+	cat.scenery_picture({
+		spot: posed_spot_at({
+			forward: Distance.metres(100.0),
+			right: Distance.zero,
+			lift,
+		}),
+		cam_focal: Pixels.of(500.0),
+		context: {},
+	}).to_shapes()
+
+## The first corner `cat` draws, `lift` off the ground: its still's first
+## corner's coordinates, on screen.
+first_cat_corner_coordinates : PosedCat, Distance -> List(F64)
+first_cat_corner_coordinates = |cat, lift|
+	match sample_cat_shapes(cat, lift) {
+		[Poly(polygon), ..] => polygon.coordinates.take_first(2)
+		_ => crash "CrossModuleExpects: a cat draws polygons"
+	}
+
+## Whether each of `got` is within a billionth of its `expected`.
+is_near_each : List(F64), List(F64) -> Bool
+is_near_each = |got, expected| {
+	misses = got.map2(expected, |one, wanted| (one - wanted).abs())
+	got.len() == expected.len() and misses.all(|miss| miss <= 0.000000001)
+}
+
+# The resting still's first corner is (0.0092, 0.4513), and 1 m of lift at 100 m
+# raises it 5 px without moving it across.
+expect
+	[
+		(Distance.zero, [480.0782, 302.16395]),
+		(Distance.metres(1.0), [480.0782, 297.16395]),
+	].all(|(lift, want)| is_near_each(first_cat_corner_coordinates({ pose: Rest }, lift), want))
+
+# Each cat pose draws every polygon of its still.
+expect
+	[
+		Rest,
+		Stride,
+		Frozen,
+		Coil,
+		Flight,
+		Land,
+		Collapse,
+	].all(
+		|pose| {
+			shapes = sample_cat_shapes({ pose: pose }, Distance.zero)
+			shapes.len() == PosedCat.pose_still(pose).polygons().len()
+		},
+	)
+
+## `bird` 110 m ahead, `right` of the camera and `lift` off the ground, through
+## a 500 px focal length. A lift of the camera's height puts its feet on the
+## horizon.
+bird_shapes_at : PosedBird, { right : Distance, lift : Distance } -> List(Shapes.Shape)
+bird_shapes_at = |bird, { right, lift }| {
+	spot = posed_spot_at({ forward: Distance.metres(110.0), right, lift })
+	bird.scenery_picture({ spot, cam_focal: Pixels.of(500.0), context: {} }).to_shapes()
+}
+
+## How many pixels tall a perched bird `forward` ahead, on the ground, is
+## through `cam_focal`.
+bird_height_on_screen : Distance, Pixels -> F64
+bird_height_on_screen = |forward, cam_focal| {
+	spot = posed_spot_at({ forward, right: Distance.zero, lift: Distance.zero })
+	bird : PosedBird
+	bird = { pose: Perched }
+	anchor = StillShapes.standing_anchor(
+		{ spot, cam_focal, context: {} },
+		{ height: bird.scenery_height(), flip: AsDrawn },
+	)
+	anchor.height_on_screen.to_f64()
+}
+
+expect
+	[
+		(bird_height_on_screen(Distance.metres(110.0), Pixels.of(500.0)), 10.0),
+		(bird_height_on_screen(Distance.metres(220.0), Pixels.of(500.0)), 5.0),
+		(bird_height_on_screen(Distance.metres(110.0), Pixels.of(1000.0)), 20.0),
+	].all(|(got, want)| (got - want).abs() <= 0.000000001)
+
+# The perched still's first corner is (-0.0344, 0.5715), at a height of 10 px
+# from feet at (480, 300). 11 m to the right and 11 m above the camera, at
+# 110 m, is 50 px each way.
+expect {
+	first_corner = |perch|
+		match bird_shapes_at({ pose: Perched }, perch) {
+			[Poly(polygon), ..] => polygon.coordinates.take_first(2)
+			_ => crash "CrossModuleExpects: a bird draws polygons"
+		}
+	raised = { right: Distance.metres(11.0), lift: Camera.eye_height.plus(Distance.metres(11.0)) }
+	[
+		({ right: Distance.metres(0.0), lift: Camera.eye_height }, [479.656, 294.285]),
+		(raised, [529.656, 244.285]),
+	].all(|(perch, want)| is_near_each(first_corner(perch), want))
+}
+
+# Each still's polygons, in their colours, as a bird in each pose draws them.
+expect {
+	fill_of = |shape|
+		match shape {
+			Poly(polygon) => polygon.fill
+			_ => crash "CrossModuleExpects: a bird's still is polygons"
+		}
+	level = { right: Distance.metres(0.0), lift: Camera.eye_height }
+	drawn = [Side(WingsDown), Diving].join_map(
+		|pose| bird_shapes_at({ pose: pose }, level).map(fill_of),
+	)
+	side_down = BirdStills.side_wings_down_still.polygons()
+	stills = side_down.concat(BirdStills.diving_still.polygons())
+	drawn
+		== stills.map(
+			|poly|
+				match poly.fill {
+					Flat(color) => Brush.flat(color)
+					Shaded(_) => crash "CrossModuleExpects: a bird's still is flat"
+				},
+		)
+}
+
 # Every bird and emoji still draws all its polygons through StillShapes, so
-# Polygon's own checks judge the data. PosedCat's tests draw every cat pose.
+# Polygon's own checks judge the data. The cat's poses are drawn above.
 expect {
 	anchor = {
 		feet: Screen.point(100.0, 200.0),
