@@ -3,7 +3,6 @@
 ## `World.segment_plans`, and the lines of text read out the record of the stretch in
 ## white. The ride has no such map: a segment knows only its length and its
 ## turn, so this widget lays the map out itself by adding up the turns.
-import game.Angle
 import game.World
 import lib.Brush
 import lib.CanvasApp
@@ -11,6 +10,7 @@ import lib.Shapes
 import lib.RgbColor
 import lib.Trig
 import widget.PlanView
+import widget.ReadoutText
 import widget.ScrubWidget
 
 RouteWidgetApp :: [].{
@@ -265,25 +265,13 @@ picture_shapes =
 		legend_shapes,
 	].join()
 
-## A turn in words.
-turn_text : Angle.Turn -> Str
-turn_text = |turn| {
-	degrees = turn.abs().portion(Angle.Turn.degrees(1.0))
-	side = if turn.is_right() {
-		"right"
-	} else {
-		"left"
-	}
-	"${(degrees + 0.5).to_i64_wrap().to_str()} deg ${side}"
-}
-
 ## The segment's record, a few fields a line, with its tags as Roc writes them.
 status_lines : List(Str)
 status_lines = {
 	plan = read_out_plan.segment_plan
 	metres = (plan.length.to_metres() + 0.5).to_i64_wrap()
 	[
-		"Segment ${read_out_number.to_str()} of ${segments.len().to_str()}: ${metres.to_str()} m, ${turn_text(read_out_plan.turn)}",
+		"Segment ${read_out_number.to_str()} of ${segments.len().to_str()}: ${metres.to_str()} m, ${ReadoutText.turn_text(read_out_plan.turn)}",
 		"encounter: ${Str.inspect(plan.encounter)}, pigs: ${Str.inspect(plan.pigs)}",
 		"bull: ${Str.inspect(plan.bull)}, scheme: ${Str.inspect(plan.scheme)}",
 		"bend_life: ${Str.inspect(read_out_plan.bend_life)}",
@@ -303,9 +291,6 @@ expect corners.all(|corner| canvas_point(corner).x >= 0.0)
 expect corners.all(|corner| canvas_point(corner).x <= ScrubWidget.canvas_width)
 expect corners.all(|corner| canvas_point(corner).y >= 0.0)
 expect corners.all(|corner| canvas_point(corner).y <= ScrubWidget.picture_bottom_y)
-
-expect turn_text(Angle.Turn.degrees(80.0)) == "80 deg right"
-expect turn_text(Angle.Turn.degrees(-70.0)) == "70 deg left"
 
 # It is the longest segment, so it is plain on the map.
 expect segments.all(|segment| segment.plan.length.to_metres() <= read_out_segment.plan.length.to_metres())

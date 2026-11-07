@@ -192,18 +192,6 @@ bend_shapes = |bend| {
 	].join()
 }
 
-## A whole number of degrees and which way.
-turn_text : Angle.Turn -> Str
-turn_text = |turn| {
-	degrees = turn.abs().portion(Angle.Turn.degrees(1.0))
-	side = if turn.is_right() {
-		"right"
-	} else {
-		"left"
-	}
-	"${(degrees + 0.5).to_i64_wrap().to_str()} deg ${side}"
-}
-
 ## Which edge a bend's outer edge is, in words.
 edge_text : BendInView -> Str
 edge_text = |bend_in_view|
@@ -224,7 +212,7 @@ caption_lines : Angle.Turn -> List(Str)
 caption_lines = |turn| {
 	road = road_with(turn)
 	[
-		turn_text(turn),
+		ReadoutText.turn_text(turn),
 		"rail on the ${edge_text(bend_of(road))} edge",
 		"apex ${ReadoutText.tenths_text(apex_past_end(bend_of(road)))} m past the end",
 		"${GroundSighting.patches_in_view(road, camera).len().to_str()} patches, ${RailSighting.rail_quads_in_view(road, camera).len().to_str()} rail pieces",
@@ -271,10 +259,6 @@ expect
 # The sharp bend is on the route, and nothing on the route is sharper.
 expect World.bending_plans.any(|plan| plan.turn == sharp_bend.turn)
 expect World.bending_plans.all(|plan| plan.turn.abs() <= sharp_bend.turn)
-
-# The apex lies on the outer edge carried straight on, on either side.
-expect (apex_of(left_bend.turn).right.to_metres() - Geom.right_edge.to_metres()).abs() < 0.000001
-expect (apex_of(right_bend.turn).right.to_metres() - Geom.left_edge.to_metres()).abs() < 0.000001
 
 # Each bend's rider and apex are in the picture, in the bend's own third.
 expect

@@ -1,5 +1,7 @@
 ## The words a widget's readout gives a number: a distance to a tenth, a fraction
-## as a percentage, a count with commas, and where an animation has got to.
+## as a percentage, a count with commas, a turn in degrees, and where an
+## animation has got to.
+import game.Angle
 import game.Animation
 import game.Fraction
 import game.Steps
@@ -46,6 +48,18 @@ ReadoutText :: [].{
 			"${count_text(thousands)},${rest.to_str()}"
 		}
 	}
+
+	## A turn as a whole number of degrees, and which way.
+	turn_text : Angle.Turn -> Str
+	turn_text = |turn| {
+		degrees = turn.abs().to_degrees()
+		side = if turn.is_right() {
+			"right"
+		} else {
+			"left"
+		}
+		"${(degrees + 0.5).to_i64_wrap().to_str()} deg ${side}"
+	}
 }
 
 expect ReadoutText.stage_text(Waiting) == "Waiting"
@@ -75,3 +89,5 @@ expect ReadoutText.count_text(1005) == "1,005"
 expect ReadoutText.count_text(1050) == "1,050"
 expect ReadoutText.count_text(2198) == "2,198"
 expect ReadoutText.count_text(1000000) == "1,000,000"
+expect ReadoutText.turn_text(Angle.Turn.degrees(80.0)) == "80 deg right"
+expect ReadoutText.turn_text(Angle.Turn.degrees(-70.0)) == "70 deg left"
