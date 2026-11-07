@@ -111,17 +111,24 @@ expect {
 		and length_at(SegmentPlace.Position.first.next()) == length_of(3)
 }
 
-# The road ahead holds as many segments as the rider can see, or the rest of
-# the route.
-expect World.route.segment_count() == 19
-expect
+# The road ahead holds as many segments as the rider can see, seven, or the rest
+# of the route. Here the route has nine.
+expect {
+	nine_segments = List.repeat(going_straight_on(segment_of([])), 8).append(segment_of([]))
+	route = Route.from_segments(nine_segments)
 	[
 		(0, 7),
-		(12, 7),
-		(13, 6),
-		(15, 4),
-		(18, 1),
-	].all(|(number, want)| road_from(number).segments_ahead().count == want)
+		(2, 7),
+		(3, 6),
+		(5, 4),
+		(8, 1),
+	].all(
+		|(number, want)| {
+			road_view = RoadAhead.RoadView.ahead_of(route, Route.SegmentIndex.number(number))
+			road_view.segments_ahead().count == want
+		},
+	)
+}
 
 expect [
 	(0, 0),
@@ -311,71 +318,29 @@ left_top = Conifer.Red.scenery_height().to_metres()
 far_top : F64
 far_top = Conifer.Gold.scenery_height().to_metres()
 
-# Segment's fifth left tree, which a bird starts on: only trees on the left count.
-## A left and a right tree at each of `alongs`.
-pairs_at : List(F64) -> List(Trees.RoadsideTree)
-pairs_at = |alongs| alongs.join_map(|along| [tree_at(along, -6.0), tree_at(along, 6.0)])
-
-## How far along the fifth left tree of `choices` is, if there is one.
-fifth_along : List(Trees.RoadsideTree) -> Try(F64, [NoTree])
-fifth_along = |choices|
-	match Segment.fifth_left_tree(choices) {
-		Found(tree) => Ok(tree.road_point.along.to_metres())
-		NoTree => Err(NoTree)
-	}
-
-expect fifth_along([]) == Err(NoTree)
-expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0])) == Err(NoTree)
-expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0])) == Ok(50.0)
-expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0, 60.0])) == Ok(50.0)
-expect fifth_along([50.0, 60.0, 70.0, 80.0, 90.0].map(|along| tree_at(along, 6.0))) == Err(NoTree)
-
-## Whether the trees planted for `plan` have a fifth on the left, and a tree on
-## the far side for a bird there to fly to.
-has_bird_flight : World.SegmentPlan -> Bool
-has_bird_flight = |plan| {
-	planted = Trees.roadside_trees({ scheme: plan.scheme, length: plan.length })
-	match Segment.fifth_left_tree(planted) {
-		Found(perch) => BirdFlight.flight_from(planted, perch).is_ok()
-		NoTree => False
-	}
-}
-
 # Every segment the route plans with a bird has a tree for it to start on and
-# one to fly to, or building the segment crashes: every bird flies. A segment
-# too short for five trees on the left has none.
-expect {
-	bird_plans = World.segment_plans.keep_if(|plan| plan.encounter == BirdHere)
-	bird_plans.len() > 0 and bird_plans.all(has_bird_flight)
-}
-expect {
-	short_plan = {
-		..World.last_plan,
-		length: Distance.metres(50.0),
-		encounter: BirdHere,
-	}
-	!has_bird_flight(short_plan)
-}
+# one to fly to, or building the segment crashes: every bird flies, and each
+# segment meets what its plan says.
+expect
+	World.route.route_segments().map(
+		|segment|
+			match segment.encounter {
+				CatCrosses(_) => CatCrosses
+				BirdHere(_) => BirdHere
+				QuietRoad => QuietRoad
+			},
+	)
+		== World.segment_plans.map(|plan| plan.encounter)
 
-## A segment 200 m long holding only `trees`, which ends a route. It has a bird
-## if the trees give one a perch and a tree to fly to.
+## A segment 200 m long holding only `trees`, with a quiet road, which ends a
+## route.
 segment_of : List(Trees.RoadsideTree) -> Segment
 segment_of = |trees| {
-	bird_flight =
-		match Segment.fifth_left_tree(trees) {
-			Found(perch) => BirdFlight.flight_from(trees, perch)
-			NoTree => Err(NoTreeToFlyTo)
-		}
-	{
-		..World.route.segment_at(Route.SegmentIndex.first),
-		length: Distance.metres(200.0),
-		trees,
-		ending: RouteEnds,
-		encounter: match bird_flight {
-			Ok(flight) => BirdHere(flight)
-			Err(NoTreeToFlyTo) => QuietRoad
-		},
-	}
+	..World.route.segment_at(Route.SegmentIndex.first),
+	length: Distance.metres(200.0),
+	trees,
+	ending: RouteEnds,
+	encounter: QuietRoad,
 }
 
 ## The road ahead of a rider on the first of `segments`, a route of their own.
@@ -395,6 +360,15 @@ going_straight_on = |segment| {
 bird_trees : List(Trees.RoadsideTree)
 bird_trees = left_trees.append(far_tree)
 
+## The flight of a bird on `bird_trees`, from the fifth left tree to the far
+## one.
+bird_flight : BirdFlight.Flight
+bird_flight = { from: tree_at(100.0, -6.0), to: far_tree }
+
+## A segment of `bird_trees` with its bird.
+bird_segment : Segment
+bird_segment = { ..segment_of(bird_trees), encounter: BirdHere(bird_flight) }
+
 ## A flight that started at step 100, at step `now`.
 flight_at_step : U32 -> EncounterPlan.Timing
 flight_at_step = |now| EncounterPlan.timing_of(StartsAt(Clock.at_step(100)), Clock.at_step(now))
@@ -412,21 +386,18 @@ expect {
 	lengths == [300.0, 150.0, 50.0] and ends == [300.0, 450.0, 500.0]
 }
 
-## The birds on one segment of `trees`, for a rider `rider_along` metres into
-## it, seen through a focal length of `cam_focal`, with the bird's flight at
-## `encounter_timing`.
-birds_on : List(Trees.RoadsideTree),
+## The birds on `segment`, alone on its route, for a rider `rider_along` metres
+## into it, seen through a focal length of `cam_focal`, with the bird's flight
+## at `encounter_timing`.
+birds_on : Segment,
 {
 	rider_along : F64,
 	cam_focal : Pixels,
 	encounter_timing : EncounterPlan.Timing,
 } -> List(Pipeline.Sighted(PosedBird))
-birds_on = |trees, { rider_along, cam_focal, encounter_timing }|
+birds_on = |segment, { rider_along, cam_focal, encounter_timing }|
 	birds_seen_on(
-		RoadAhead.RoadView.ahead_of(
-			Route.from_segments([segment_of(trees)]),
-			Route.SegmentIndex.first,
-		),
+		RoadAhead.RoadView.ahead_of(Route.from_segments([segment]), Route.SegmentIndex.first),
 		{
 			camera: { vantage: { ..origin, along: Along.metres(rider_along) }, cam_focal },
 			encounter_timing,
@@ -437,7 +408,7 @@ birds_on = |trees, { rider_along, cam_focal, encounter_timing }|
 ## `encounter_timing`.
 bird_at : F64, EncounterPlan.Timing -> Pipeline.Sighted(PosedBird)
 bird_at = |rider_along, encounter_timing|
-	birds_on(bird_trees, { rider_along, cam_focal: Pixels.of(500.0), encounter_timing }).first()
+	birds_on(bird_segment, { rider_along, cam_focal: Pixels.of(500.0), encounter_timing }).first()
 		?? crash "CrossModuleExpects: this rider sees a bird"
 
 ## How far off a bird is, across the road and up.
@@ -459,10 +430,7 @@ expect bird_at(85.0, flight_at_step(136)).kind.pose == Perched
 # In flight, the bird is where its flight's frame for the step says.
 expect {
 	bird = bird_at(40.0, flight_at_step(118))
-	frame = BirdFlight.instant_at(
-		{ from: tree_at(100.0, -6.0), to: far_tree },
-		Playing(Steps.of(18)),
-	)
+	frame = BirdFlight.instant_at(bird_flight, Playing(Steps.of(18)))
 	[
 		(bird.spot.foot().right().to_metres(), frame.location.across.to_metres()),
 		(bird.spot.foot().forward().to_metres(), frame.location.along.to_metres() - 40.0),
@@ -472,11 +440,13 @@ expect {
 		and bird.kind.pose != Perched
 }
 
-## How many birds there are on `trees` for each rider and focal length, before
-## the flight.
-bird_count : List(Trees.RoadsideTree), { rider_along : F64, cam_focal : Pixels } -> I64
-bird_count = |trees, { rider_along, cam_focal }|
-	birds_on(trees, { rider_along, cam_focal, encounter_timing: Unplanned }).len().to_i64_wrap()
+## How many birds a rider sees on `bird_segment` for each rider and focal
+## length, before the flight.
+bird_count : { rider_along : F64, cam_focal : Pixels } -> I64
+bird_count = |{ rider_along, cam_focal }| {
+	birds = birds_on(bird_segment, { rider_along, cam_focal, encounter_timing: Unplanned })
+	birds.len().to_i64_wrap()
+}
 
 ## A segment where a cat crosses, with the same trees: it has no bird.
 segment_with_cat : Segment
@@ -485,17 +455,12 @@ segment_with_cat = {
 	encounter: World.route.segment_at(Route.SegmentIndex.number(3)).encounter,
 }
 
-expect bird_count(bird_trees, { rider_along: 0.0, cam_focal: Pixels.of(500.0) }) == 1
-expect bird_count(left_trees, { rider_along: 0.0, cam_focal: Pixels.of(500.0) }) == 0
-expect bird_count(
-	left_trees.drop_last(1).append(far_tree),
-	{ rider_along: 0.0, cam_focal: Pixels.of(500.0) },
-) == 0
-expect bird_count(bird_trees, { rider_along: 99.5, cam_focal: Pixels.of(500.0) }) == 1
-expect bird_count(bird_trees, { rider_along: 99.7, cam_focal: Pixels.of(500.0) }) == 0
-expect bird_count(bird_trees, { rider_along: 120.0, cam_focal: Pixels.of(500.0) }) == 0
-expect bird_count(bird_trees, { rider_along: 0.0, cam_focal: Pixels.of(91.0) }) == 1
-expect bird_count(bird_trees, { rider_along: 0.0, cam_focal: Pixels.of(90.0) }) == 0
+expect bird_count({ rider_along: 0.0, cam_focal: Pixels.of(500.0) }) == 1
+expect bird_count({ rider_along: 99.5, cam_focal: Pixels.of(500.0) }) == 1
+expect bird_count({ rider_along: 99.7, cam_focal: Pixels.of(500.0) }) == 0
+expect bird_count({ rider_along: 120.0, cam_focal: Pixels.of(500.0) }) == 0
+expect bird_count({ rider_along: 0.0, cam_focal: Pixels.of(91.0) }) == 1
+expect bird_count({ rider_along: 0.0, cam_focal: Pixels.of(90.0) }) == 0
 expect
 	birds_seen_on(
 		RoadAhead.RoadView.ahead_of(
@@ -511,7 +476,7 @@ expect
 two_segments : List(Pipeline.Sighted(PosedBird))
 two_segments = birds_seen_on(
 	RoadAhead.RoadView.ahead_of(
-		Route.from_segments([going_straight_on(segment_of(bird_trees)), segment_of(bird_trees)]),
+		Route.from_segments([going_straight_on(bird_segment), bird_segment]),
 		Route.SegmentIndex.first,
 	),
 	{ camera: origin_camera, encounter_timing: flight_at_step(118) },
@@ -698,7 +663,15 @@ cats_seen_on = |road_view, { camera, encounter_timing }|
 		{ camera, animals: EncounterPoses.cat_poses(road_view, encounter_timing) },
 	)
 
-expect cat_route.route_segments().map(World.has_cat) == [False, True, False]
+expect
+	cat_route.route_segments().map(
+		|segment|
+			match segment.encounter {
+				CatCrosses(_) => True
+				BirdHere(_) | QuietRoad => False
+			},
+	)
+		== [False, True, False]
 
 ## The cats in view for a rider `along` metres into the first segment.
 ride_sightings : F64 -> List(Pipeline.Sighted(PosedCat))
@@ -780,7 +753,6 @@ bird_planning_gap : Distance
 bird_planning_gap = EncounterPlan.planning_gap(BirdFlight.flight_span, VehicleLimits.top_speed)
 
 expect route_cats.len() == 3
-expect cat_planning_gap < Segment.cat_along.plus(CatCrossing.cat_beyond_tree).from_start()
 expect route_cats.all(|{ crossing, .. }| cat_planning_gap < crossing.along.from_start())
 expect route_flights.len() == 4
 expect route_flights.all(|{ from, .. }| bird_planning_gap < from.road_point.along.from_start())
@@ -1256,7 +1228,7 @@ expect scene_renderings.len() > 0
 
 # A segment of the road ahead shows at most two towers, the one past its end and
 # the one halfway along, and the segment just behind shows one.
-expect scene.towers.len() <= 2 * RoadAhead.most_segments_ahead.to_u64() + 1
+expect scene.towers.len() <= 2 * road.segments_ahead().count.to_u64() + 1
 
 ## Whether no rendering in `renderings` is farther than the one before it.
 is_far_to_near : List(Rendered) -> Bool

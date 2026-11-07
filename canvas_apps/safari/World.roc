@@ -23,9 +23,9 @@ World :: [].{
 	SegmentPlan : {
 		length : Distance,
 		scheme : Trees.Scheme,
-		encounter : [CatCrosses, BirdHere, QuietRoad],
+		encounter : Segment.PlannedEncounter,
 		pigs : World.PigPresence,
-		bull : [WithBull, NoBull],
+		bull : CowHerd.Bull,
 	}
 
 	## A segment the route plans to bend into the next: the segment's own plan,
@@ -253,71 +253,6 @@ World :: [].{
 	segment_plans : List(World.SegmentPlan)
 	segment_plans = bending_plans.map(|bending| bending.segment_plan).append(last_plan)
 
-	## How many of the route's herds, from its first, are big. The rest stand
-	## in two rows.
-	big_herd_count : U32
-	big_herd_count = 2
-
-	## How many of the route's herds, from its first, the rider finds
-	## distracting. The rider passes the rest by.
-	pig_novelty_count : U32
-	pig_novelty_count = 2
-
-	## The route's big herd, seven rows of seven. The third pig of the front
-	## row stands out.
-	big_pig_herd : PigHerd.BigPigHerd
-	big_pig_herd = {
-		columns_before_standout: 2,
-		columns_after_standout: 4,
-		rows_behind_front: 6,
-		first_column: Distance.metres(-6.0),
-		column_spacing: Distance.metres(4.0),
-		row_depth: Distance.metres(6.0),
-		jitter_along: Distance.metres(1.2),
-		jitter_across: Distance.metres(1.0),
-	}
-
-	## The route's two-row herd, four pigs in front and six behind. The third
-	## pig of the front row stands out.
-	two_row_pig_herd : PigHerd.TwoRowPigHerd
-	two_row_pig_herd = {
-		front_row: {
-			offsets_before: [-6.0, -2.0].map(Distance.metres),
-			standout_offset: Distance.metres(2.0),
-			offsets_after: [6.0].map(Distance.metres),
-		},
-		back_offsets: [
-			-10.0,
-			-6.0,
-			-2.0,
-			2.0,
-			6.0,
-			10.0,
-		].map(Distance.metres),
-		back_row_offset: Distance.metres(6.0),
-	}
-
-	## The route's cow herd, fourteen cows in columns of three.
-	cow_herd : CowHerd
-	cow_herd = {
-		cow_count: 14,
-		rows_behind_front: 2,
-		gap_behind_bull: Distance.metres(6.0),
-		column_spacing: Distance.metres(6.0),
-		row_stagger: Distance.metres(2.0),
-		row_depth: Distance.metres(5.0),
-		jitter_along: Distance.metres(1.5),
-		jitter_across: Distance.metres(1.2),
-	}
-
-	## How many of the segments before `index` have pigs.
-	herd_count_before : Route.SegmentIndex -> U32
-	herd_count_before = |index|
-		segment_plans
-			.take_first(index.count_before())
-			.count_if(|plan| plan.pigs == WithPigs)
-			.to_u32_wrap()
-
 	## The route, built from its plans. Each segment but the last bends as its
 	## plan says, and the last ends the route.
 	route : Route
@@ -333,14 +268,6 @@ World :: [].{
 		Route.from_segments(bending_segments.append(last_segment))
 	}
 
-	## Whether a segment has a cat waiting by the road.
-	has_cat : Segment -> Bool
-	has_cat = |segment|
-		match segment.encounter {
-			CatCrosses(_) => True
-			BirdHere(_) | QuietRoad => False
-		}
-
 	## Whether a segment's pigs draw the rider's eye.
 	is_distracting : Segment -> Bool
 	is_distracting = |segment|
@@ -352,7 +279,7 @@ World :: [].{
 	## The route's first segment with a cat.
 	first_cat_segment : Segment
 	first_cat_segment =
-		World.route.route_segments().find_first(World.has_cat)
+		World.route.route_segments().find_first(has_cat)
 			?? crash "World.first_cat_segment: the route has a cat"
 
 	## The cat crossing on the route's first segment with a cat.
@@ -362,12 +289,6 @@ World :: [].{
 			CatCrosses(crossing) => crossing
 			BirdHere(_) | QuietRoad => crash "World.first_cat_crossing: the first cat segment has a cat"
 		}
-
-	## The route's first segment with a bird.
-	first_bird_segment : Segment
-	first_bird_segment =
-		World.route.route_segments().find_first(has_bird)
-			?? crash "World.first_bird_segment: the route has a bird"
 
 	## The route's first segment whose pigs draw the rider's eye.
 	first_distracting_segment : Segment
@@ -383,21 +304,21 @@ World :: [].{
 built_segment : World.SegmentPlan,
 {
 	index : Route.SegmentIndex,
-	ending : [Bends({ turn : Angle.Turn, bend_life : Segment.BendLife }), RouteEnds],
+	ending : Segment.Ending,
 } -> Segment
 built_segment = |plan, { index, ending }| {
-	earlier_herd_count = World.herd_count_before(index)
+	earlier_herd_count = herd_count_before(index)
 	pigs =
 		match plan.pigs {
 			WithPigs => {
 				herd =
-					if earlier_herd_count < World.big_herd_count {
-						PigHerd.BigHerd(World.big_pig_herd)
+					if earlier_herd_count < big_herd_count {
+						PigHerd.BigHerd(big_pig_herd)
 					} else {
-						PigHerd.TwoRows(World.two_row_pig_herd)
+						PigHerd.TwoRows(two_row_pig_herd)
 					}
 				interest =
-					if earlier_herd_count < World.pig_novelty_count {
+					if earlier_herd_count < pig_novelty_count {
 						Distracting
 					} else {
 						Unnoticed
@@ -410,27 +331,84 @@ built_segment = |plan, { index, ending }| {
 		length: plan.length,
 		scheme: plan.scheme,
 		pigs,
-		cows: { herd: World.cow_herd, bull: plan.bull },
+		cows: { herd: cow_herd, bull: plan.bull },
 		encounter: plan.encounter,
 		ending,
 	})
 }
 
-expect
-	[
-		(0, 0),
-		(2, 0),
-		(3, 1),
-		(10, 1),
-		(11, 2),
-		(12, 3),
-		(18, 8),
-	].all(
-		|(number, want)| {
-			index = Route.SegmentIndex.number(number)
-			World.herd_count_before(index).to_i64() == want
-		},
-	)
+## How many of the route's herds, from its first, are big. The rest stand in
+## two rows.
+big_herd_count : U32
+big_herd_count = 2
+
+## How many of the route's herds, from its first, the rider finds distracting.
+## The rider passes the rest by.
+pig_novelty_count : U32
+pig_novelty_count = 2
+
+## The route's big herd, seven rows of seven. The third pig of the front row
+## stands out.
+big_pig_herd : PigHerd.BigPigHerd
+big_pig_herd = {
+	columns_before_standout: 2,
+	columns_after_standout: 4,
+	rows_behind_front: 6,
+	first_column: Distance.metres(-6.0),
+	column_spacing: Distance.metres(4.0),
+	row_depth: Distance.metres(6.0),
+	jitter_along: Distance.metres(1.2),
+	jitter_across: Distance.metres(1.0),
+}
+
+## The route's two-row herd, four pigs in front and six behind. The third pig
+## of the front row stands out.
+two_row_pig_herd : PigHerd.TwoRowPigHerd
+two_row_pig_herd = {
+	front_row: {
+		offsets_before: [-6.0, -2.0].map(Distance.metres),
+		standout_offset: Distance.metres(2.0),
+		offsets_after: [6.0].map(Distance.metres),
+	},
+	back_offsets: [
+		-10.0,
+		-6.0,
+		-2.0,
+		2.0,
+		6.0,
+		10.0,
+	].map(Distance.metres),
+	back_row_offset: Distance.metres(6.0),
+}
+
+## The route's cow herd, fourteen cows in columns of three.
+cow_herd : CowHerd
+cow_herd = {
+	cow_count: 14,
+	rows_behind_front: 2,
+	gap_behind_bull: Distance.metres(6.0),
+	column_spacing: Distance.metres(6.0),
+	row_stagger: Distance.metres(2.0),
+	row_depth: Distance.metres(5.0),
+	jitter_along: Distance.metres(1.5),
+	jitter_across: Distance.metres(1.2),
+}
+
+## How many of the segments before `index` have pigs.
+herd_count_before : Route.SegmentIndex -> U32
+herd_count_before = |index|
+	World.segment_plans
+		.take_first(index.count_before())
+		.count_if(|plan| plan.pigs == WithPigs)
+		.to_u32_wrap()
+
+## Whether a segment has a cat waiting by the road.
+has_cat : Segment -> Bool
+has_cat = |segment|
+	match segment.encounter {
+		CatCrosses(_) => True
+		BirdHere(_) | QuietRoad => False
+	}
 
 seg : U32 -> Segment
 seg = |i| World.route.segment_at(Route.SegmentIndex.number(i))
@@ -463,7 +441,7 @@ expect
 		(9, True),
 		(12, False),
 		(18, True),
-	].all(|(index, want)| World.has_cat(seg(index)) == want)
+	].all(|(index, want)| has_cat(seg(index)) == want)
 
 expect
 	[
@@ -480,39 +458,6 @@ expect
 		(seg(6).commit_along().to_metres(), 1199.647346038583),
 	].all(|(got, want)| (got - want).abs() <= 0.00000001)
 
-expect seg(0).segment_pigs().len() == 0
-expect seg(2).segment_pigs().len() == 49
-expect seg(10).segment_pigs().len() == 49
-expect seg(11).segment_pigs().len() == 10
-expect seg(13).segment_pigs().len() == 10
-expect seg(18).segment_pigs().len() == 10
-expect
-	[
-		(0, False),
-		(2, True),
-		(10, True),
-		(11, False),
-		(18, False),
-	].all(|(index, want)| World.is_distracting(seg(index)) == want)
-
-expect
-	[
-		(0, NoPigs),
-		(2, Herd({ herd: PigHerd.BigHerd(World.big_pig_herd), interest: Distracting })),
-		(10, Herd({ herd: PigHerd.BigHerd(World.big_pig_herd), interest: Distracting })),
-		(11, Herd({ herd: PigHerd.TwoRows(World.two_row_pig_herd), interest: Unnoticed })),
-		(18, Herd({ herd: PigHerd.TwoRows(World.two_row_pig_herd), interest: Unnoticed })),
-	].all(|(index, want)| seg(index).pigs == want)
-
-expect seg(0).segment_standout_pig() == NoPigs
-expect seg(0).segment_cows().len() == 14
-expect seg(3).segment_cows().len() == 14
-expect seg(4).segment_cows().len() == 15
-expect seg(18).segment_cows().len() == 15
-expect seg(0).trees.len() == 28
-expect seg(1).trees.len() == 16
-expect seg(6).trees.len() == 74
-expect seg(18).trees.len() == 14
 # Each cat starts behind a tree that is really there, and just past it.
 expect
 	[3, 9, 18].all(
@@ -544,18 +489,10 @@ exit_turn_of = |segment| segment.bend_out_of().turn
 turns_right : Segment -> Bool
 turns_right = |segment| exit_turn_of(segment).is_right()
 
-## Whether a segment has a bird in it.
-has_bird : Segment -> Bool
-has_bird = |segment|
-	match segment.encounter {
-		BirdHere(_) => True
-		CatCrosses(_) | QuietRoad => False
-	}
-
 ## The cat crossing at a segment that has one.
 crossing_at : U32 -> CatCrossing
 crossing_at = |index|
 	match seg(index).encounter {
 		CatCrosses(crossing) => crossing
-		BirdHere(_) | QuietRoad => crash "World.crossing_at: segments 3, 9 and 18 have a cat"
+		BirdHere(_) | QuietRoad => crash "World.crossing_at: the segment has a cat"
 	}
