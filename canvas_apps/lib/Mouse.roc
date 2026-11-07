@@ -37,11 +37,25 @@ Mouse :: [].{
 		## Where the pointer is, in the game's coordinates.
 		position : Snapshot -> { x : F32, y : F32 }
 		position = |snapshot| snapshot.at
+
+		## Say that a button is held, as `Mouse.none.with_button_down(Left)`.
+		with_button_down : Snapshot, Mouse.Button -> Snapshot
+		with_button_down = |s, button| Snapshot.{ held: s.held.bitwise_or(bit(button)), struck: s.struck, at: s.at, wheel: s.wheel }
+
+		## Say that a button was struck, which is also held.
+		with_button_pressed : Snapshot, Mouse.Button -> Snapshot
+		with_button_pressed = |s, button|
+			Snapshot.{ held: s.held.bitwise_or(bit(button)), struck: s.struck.bitwise_or(bit(button)), at: s.at, wheel: s.wheel }
 	}
 
+	## No button down, the pointer at the origin and the wheel still: what a
+	## test starts from.
 	none : Mouse.Snapshot
 	none = Snapshot.{ held: 0, struck: 0, at: { x: 0, y: 0 }, wheel: 0 }
 
-	of : U32, U32, F32, F32, F32 -> Mouse.Snapshot
-	of = |held, struck, x, y, wheel| Snapshot.{ held: held.bitwise_or(struck), struck, at: { x, y }, wheel }
+	## What a runner packs a tick's pointer into: the buttons held and struck
+	## as bits, where the pointer is, and how far the wheel turned. A struck
+	## button is held too.
+	of : { held : U32, struck : U32, at : { x : F32, y : F32 }, wheel : F32 } -> Mouse.Snapshot
+	of = |{ held, struck, at, wheel }| Snapshot.{ held: held.bitwise_or(struck), struck, at, wheel }
 }

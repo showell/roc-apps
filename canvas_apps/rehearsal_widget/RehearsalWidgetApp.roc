@@ -604,13 +604,7 @@ expect previous_stop(0) == 0
 ## or held from before.
 pointer_at : { x : F32, y : F32, struck : U32 } -> Input.Snapshot
 pointer_at = |{ x, y, struck }| Input.none.with_mouse(
-	Mouse.of(
-		1,
-		struck,
-		x,
-		y,
-		0.0,
-	),
+	Mouse.of({ held: 0, struck, at: { x, y }, wheel: 0.0 }).with_button_down(Left),
 )
 
 ## The stop after a click at (`x`, `y`) from stop 3.

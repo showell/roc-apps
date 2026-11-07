@@ -217,7 +217,7 @@ expect Rules.cell_at({ x: Rules.canvas_x + Rules.canvas_size, y: Rules.canvas_y 
 ## second step over the same cell is silent and changes nothing.
 expect {
 	at = { x: Rules.canvas_x + 10, y: Rules.canvas_y + 10 }
-	held = Input.none.with_mouse(Mouse.of(Mouse.bit(Left), 0, at.x, at.y, 0))
+	held = Input.none.with_mouse(Mouse.of({ held: 0, struck: 0, at, wheel: 0 }).with_button_down(Left))
 	first = Rules.step(Rules.start, held)
 	again = Rules.step(first.world, held)
 	first.sounds == Rules.tone_paint(1) and again.sounds == 0 and again.world.pixels == first.world.pixels
@@ -226,7 +226,7 @@ expect {
 ## A stroke paints the colour the digit chose, in the same step.
 expect {
 	at = { x: Rules.canvas_x + 10, y: Rules.canvas_y + 10 }
-	keyed = Input.none.with_key_pressed(Key4).with_mouse(Mouse.of(Mouse.bit(Left), 0, at.x, at.y, 0))
+	keyed = Input.none.with_key_pressed(Key4).with_mouse(Mouse.of({ held: 0, struck: 0, at, wheel: 0 }).with_button_down(Left))
 	after = Rules.step(Rules.start, keyed)
 	List.get(after.world.pixels, 0) == Ok(Rules.palette_color(3)) and after.sounds == 16
 }
@@ -234,7 +234,7 @@ expect {
 ## C restores the design and says so.
 expect {
 	at = { x: Rules.canvas_x + 10, y: Rules.canvas_y + 10 }
-	painted = Rules.step(Rules.start, Input.none.with_mouse(Mouse.of(Mouse.bit(Left), 0, at.x, at.y, 0))).world
+	painted = Rules.step(Rules.start, Input.none.with_mouse(Mouse.of({ held: 0, struck: 0, at, wheel: 0 }).with_button_down(Left))).world
 	restored = Rules.step(painted, Input.none.with_key_pressed(KeyC))
 	restored.world.pixels == Rules.initial_pixels and restored.sounds == 1
 }
@@ -248,18 +248,18 @@ expect Rules.swatch_bounds(3).y + Rules.swatch_bounds(3).height <= 456
 ## between two of them does not.
 expect {
 	on = Math.center(Rules.swatch_bounds(2))
-	click = Input.none.with_mouse(Mouse.of(0, Mouse.bit(Left), on.x, on.y, 0))
+	click = Input.none.with_mouse(Mouse.of({ held: 0, struck: 0, at: on, wheel: 0 }).with_button_pressed(Left))
 	after = Rules.step(Rules.start, click)
 	after.world.palette == 2 and after.sounds == Rules.tone_paint(2)
 }
 expect {
-	click = Input.none.with_mouse(Mouse.of(0, Mouse.bit(Left), 600, 470, 0))
+	click = Input.none.with_mouse(Mouse.of({ held: 0, struck: 0, at: { x: 600, y: 470 }, wheel: 0 }).with_button_pressed(Left))
 	Rules.step(Rules.start, click).world.palette == Rules.start.palette
 }
 
 ## And a click on a swatch is not a brush stroke: the canvas is untouched.
 expect {
 	on = Math.center(Rules.swatch_bounds(3))
-	click = Input.none.with_mouse(Mouse.of(0, Mouse.bit(Left), on.x, on.y, 0))
+	click = Input.none.with_mouse(Mouse.of({ held: 0, struck: 0, at: on, wheel: 0 }).with_button_pressed(Left))
 	Rules.step(Rules.start, click).world.pixels == Rules.initial_pixels
 }

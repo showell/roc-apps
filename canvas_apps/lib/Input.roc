@@ -59,6 +59,6 @@ Input :: [].{
 	none = Snapshot.{ held: 0, struck: 0, mouse: Mouse.none }
 
 	## What a runner packs a tick's input into.
-	of : U32, U32, Mouse.Snapshot -> Input.Snapshot
-	of = |held, struck, mouse| Snapshot.{ held: held.bitwise_or(struck), struck, mouse }
+	of : { held : U32, struck : U32, mouse : Mouse.Snapshot } -> Input.Snapshot
+	of = |{ held, struck, mouse }| Snapshot.{ held: held.bitwise_or(struck), struck, mouse }
 }
