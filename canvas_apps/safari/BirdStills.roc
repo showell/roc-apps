@@ -9,6 +9,7 @@
 ## its beak down and its wings swept back.
 import BirdFlight
 import Stills
+import lib.RgbColor
 
 BirdStills :: [].{
 
@@ -99,11 +100,11 @@ BirdStills :: [].{
 	]
 }
 
-logo_dark : I64
-logo_dark = 6368222
+logo_dark : RgbColor
+logo_dark = RgbColor.of(6368222)
 
-logo_light : I64
-logo_light = 8542181
+logo_light : RgbColor
+logo_light = RgbColor.of(8542181)
 
 # A still's polygon count, corner count and gradient count.
 still_counts : List(Stills.StillPolygon) -> List(I64)
@@ -163,14 +164,14 @@ is_within_bounds = |polys|
 
 # Whether every polygon of a still is one of the logo's two purples.
 is_logo_coloured : List(Stills.StillPolygon) -> Bool
-is_logo_coloured = |polys| polys.all(|poly| poly.color == 6368222 or poly.color == 8542181)
+is_logo_coloured = |polys| polys.all(|poly| poly.color == RgbColor.of(6368222) or poly.color == RgbColor.of(8542181))
 
 expect all_stills.all(|polys| polys.all(Stills.is_drawable))
 expect all_stills.all(is_within_bounds)
 expect
 	!is_within_bounds([
 		{
-			color: 6368222,
+			color: RgbColor.of(6368222),
 			gradients: [],
 			points: [{ x: 1.1, y: 0.5 }],
 		},
@@ -180,7 +181,7 @@ expect all_stills.all(is_logo_coloured)
 expect
 	!is_logo_coloured([
 		{
-			color: 0,
+			color: RgbColor.of(0),
 			gradients: [],
 			points: [],
 		},

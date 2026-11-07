@@ -625,12 +625,12 @@ expect {
 expect
 	extent_of([
 		{
-			color: 0,
+			color: RgbColor.of(0),
 			gradients: [],
 			points: [{ x: 0.5, y: 0.25 }, { x: -1.0, y: 2.0 }],
 		},
 		{
-			color: 0,
+			color: RgbColor.of(0),
 			gradients: [],
 			points: [{ x: 3.0, y: -4.0 }],
 		},
@@ -752,7 +752,7 @@ expect
 # A polygon's outline closes: its last line ends where its first starts.
 expect {
 	square = {
-		color: 0,
+		color: RgbColor.of(0),
 		gradients: [],
 		points: [
 			{ x: 0.0, y: 0.0 },
@@ -782,7 +782,7 @@ expect {
 	outline_shapes(
 		anchor,
 		{
-			color: 0,
+			color: RgbColor.of(0),
 			gradients: [],
 			points: [{ x: 1.0, y: 1.0 }],
 		},
