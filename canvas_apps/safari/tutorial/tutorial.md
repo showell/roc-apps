@@ -353,7 +353,7 @@ Let's draw a tree. Forget the road for now, and the rider, and the ride. All we 
 
 Drawing a tree and placing trees along a road are two nearly separate problems. This chapter and the next draw one tree. The chapter after that, Roadside trees, puts trees in the world, relative to the road and the rider.
 
-A tree is a trunk under eight tiers of foliage, and a far tree's tiers are flat triangles. Every tree a long way off is drawn exactly this way. The tree's kind decides how tall it is and what color. Where it stands isn't up to the kind, though the planting rule in Roadside trees reads the kind to decide how far from the road a tree goes.
+A tree is a trunk under eight tiers of foliage, and a far tree's tiers are flat triangles. Every tree a long way off is drawn exactly this way. The tree's kind decides how tall it is and what color.
 
 New in this chapter:
 
@@ -374,7 +374,7 @@ A tree passes through these types on its way to the screen:
 | `TreeShapes.TreeOnScreen` | Where a tree lands on the screen, and how big it looks there, in `Pixels` |
 | `TreeShapes.Tier` | One layer of the crown, as fractions of the crown |
 
-A conifer's `context` is how many trees are nearer than it, so its setting is a `Picture.Setting({ nearer_tree_count : U16 })`. Read that as "a `Setting` whose context is a record holding `nearer_tree_count`". A later chapter, Animal types, shows how a type like that is written. The count itself only matters up close, and it can wait.
+A conifer's `context` is how many trees are nearer than it, so its setting is a `Picture.Setting({ nearer_tree_count : U16 })`. Read that as "a `Setting` whose context is a record holding `nearer_tree_count`". A later chapter, Animal types, shows how a type like that is written.
 
 Each step of the job is a signature:
 
