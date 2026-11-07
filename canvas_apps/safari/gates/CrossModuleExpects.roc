@@ -1384,9 +1384,7 @@ sunset_climax = {
 ## How many steps before and after the sunset's climax the rider must be on the
 ## long westward segment: 150, a few hundred metres of road, so the rider sees
 ## the sun come down onto the range from the straight and watches it start to
-## sink. The climax falls 230 steps after the rider turns onto the segment and
-## 451 before the next bend, so a change in the ride's timing has room to move
-## it before the rule breaks.
+## sink.
 sunset_margin : Steps
 sunset_margin = Steps.of(150)
 

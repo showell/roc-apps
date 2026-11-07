@@ -49,7 +49,9 @@ Sun :: [].{
 
 	## The step at which the sun has fully set, its whole disc below the
 	## horizon, in a ride of about 7,000 steps. The sun sinks at one steady
-	## rate, so this step is what places the sunset in the ride.
+	## rate, so this step places the sunset in the ride. It is chosen so the
+	## sunset's climax falls on the long road west, which `sunset_climax` in
+	## CrossModuleExpects holds.
 	fully_set_at : Clock
 	fully_set_at = Clock.at_step(4735)
 
