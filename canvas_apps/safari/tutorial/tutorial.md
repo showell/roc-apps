@@ -217,7 +217,7 @@ A piece of the world can be just a value. Here's the second whole module. `Pond`
 
 Above its `expect`s, there are no functions here at all. The ducks are read where the critters are sighted:
 
-{{code BillboardSighting.bend_life_critters}}
+{{code BillboardSighting.bend_life_billboards}}
 
 `World` turns a route, a plain list of records, into segments of road. A plan for a segment shows how much tag unions can do with no declaration. `[WithBull, NoBull]` is written right in the field's type, and it says more than a boolean would at every place a segment is written down.
 
@@ -1006,7 +1006,7 @@ The four parts of the list are the four boxes.
 
 A leg gets a point about every metre. It leaves out its first point, which is the last point of the leg before it.
 
-{{code RailSighting.rails_at}}
+{{code RailSighting.rail_quads_in_view}}
 
 `GuardRail.quads_along` turns the path into rails and posts for the depth sort. At a turn of 45 degrees, that's the 49 pieces in the last chapter's widget.
 
@@ -1129,7 +1129,7 @@ New in this chapter:
 
 A segment's `bend_life` field says what's at its bend. `Wildlife.bend_critters` turns that into critters:
 
-{{code Wildlife.bend_critters}}
+{{code Wildlife.bend_billboards}}
 
 `Quiet` and `DuckPond` have no animals, so they answer with an empty list. An `Animal` answers with a list of two. `inward` is 1 or -1, so one line of arithmetic places the grown animal on either side of the road.
 

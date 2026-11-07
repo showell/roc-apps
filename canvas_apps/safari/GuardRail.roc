@@ -13,8 +13,17 @@ import lib.Shapes
 
 GuardRail :: [].{
 
-	## A quad of the rail: its corners and its colour.
-	RailQuad : { corners : List(Geom.RaisedPoint), color : RgbColor }
+	## A quad of the rail: its corners and its colour. Its low edge runs along
+	## the path from start to end, and its high edge runs above it.
+	RailQuad : {
+		corners : {
+			low_start : Geom.RaisedPoint,
+			low_end : Geom.RaisedPoint,
+			high_end : Geom.RaisedPoint,
+			high_start : Geom.RaisedPoint,
+		},
+		color : RgbColor,
+	}
 
 	## The rail along `path_points`: the bars, then the posts.
 	quads_along : List(Geom.RiderPoint) -> List(GuardRail.RailQuad)
@@ -31,22 +40,24 @@ GuardRail :: [].{
 }
 
 ## How far ahead a quad is, for the depth sort: the mean of its corners'
-## distances, summed from the first corner to the last, since a float
-## sum's rounding depends on its order. It is negative for a quad behind
-## the rider.
+## distances, summed round the quad from its low start, since a float sum's
+## rounding depends on its order. It is negative for a quad behind the rider.
 quad_depth : GuardRail.RailQuad -> Distance
 quad_depth = |quad| {
-	corners = quad.corners
-	first = corners.first() ?? crash "GuardRail.quad_depth: a quad has corners"
-	sum = corners.drop_first(1).fold(first.forward, |total, corner| total.plus(corner.forward))
-	sum.divided_by(corners.len().to_f64())
+	{ low_start, low_end, high_end, high_start } = quad.corners
+	sum = low_start.forward.plus(low_end.forward).plus(high_end.forward).plus(high_start.forward)
+	sum.divided_by(4.0)
 }
 
 ## A quad on screen, cut at the camera's near plane, unless it's wholly
 ## behind the camera.
 quad_shape : GuardRail.RailQuad, Pixels -> Try(Shapes.Shape, [BehindCamera])
 quad_shape = |quad, cam_focal|
-	Camera.clipped_polygon({ color: quad.color, corners: quad.corners }, cam_focal)
+	{
+		{ low_start, low_end, high_end, high_start } = quad.corners
+		corners = [low_start, low_end, high_end, high_start]
+		Camera.clipped_polygon({ color: quad.color, corners }, cam_focal)
+	}
 
 rail_height : Distance
 rail_height = Distance.metres(0.5)
@@ -97,12 +108,12 @@ raised_point = |point, height| { right: point.right, forward: point.forward, hei
 ## The bar from `from` to `to`, bottom edge first.
 bar : { from : Geom.RiderPoint, to : Geom.RiderPoint } -> GuardRail.RailQuad
 bar = |{ from, to }| {
-	corners: [
-		raised_point(from, bar_bottom),
-		raised_point(to, bar_bottom),
-		raised_point(to, bar_top),
-		raised_point(from, bar_top),
-	],
+	corners: {
+		low_start: raised_point(from, bar_bottom),
+		low_end: raised_point(to, bar_bottom),
+		high_end: raised_point(to, bar_top),
+		high_start: raised_point(from, bar_top),
+	},
 	color: rail_metal,
 }
 
@@ -124,21 +135,18 @@ post = |at, { previous, next }| {
 	back = { right: at.right.minus(half_right), forward: at.forward.minus(half_forward) }
 	front = { right: at.right.plus(half_right), forward: at.forward.plus(half_forward) }
 	{
-		corners: [
-			raised_point(back, Distance.zero),
-			raised_point(front, Distance.zero),
-			raised_point(front, bar_top),
-			raised_point(back, bar_top),
-		],
+		corners: {
+			low_start: raised_point(back, Distance.zero),
+			low_end: raised_point(front, Distance.zero),
+			high_end: raised_point(front, bar_top),
+			high_start: raised_point(back, bar_top),
+		},
 		color: rail_post_metal,
 	}
 }
 
 first_post : List(Geom.RiderPoint) -> GuardRail.RailQuad
 first_post = |route_points| posts(route_points).first() ?? crash "a route of two points has posts"
-
-corner_at : GuardRail.RailQuad, U64 -> Geom.RaisedPoint
-corner_at = |quad, i| quad.corners.get(i) ?? crash "a quad has four corners"
 
 straight_points : List(Geom.RiderPoint)
 straight_points = [
@@ -156,7 +164,6 @@ first_bar = straight_quads.first() ?? crash "a straight route has a rail"
 expect straight_quads.len() == 5
 expect bars(straight_points).len() == 2
 expect posts(straight_points).len() == 3
-expect straight_quads.all(|quad| quad.corners.len() == 4)
 
 expect
 	straight_quads.map(|quad| quad.color.to_i64())
@@ -181,17 +188,27 @@ expect {
 expect GuardRail.quad_rendering(behind_bar, Pixels.of(500.0)).is_err()
 
 # The first bar runs from one post to the next, between the bar's two heights.
-expect first_bar.corners.map(|corner| corner.forward.to_metres()) == [10.0, 20.0, 20.0, 10.0]
-expect first_bar.corners.map(|corner| corner.height.to_metres()) == [0.45, 0.45, 0.55, 0.55]
+expect first_bar.corners.low_start.forward.to_metres() == 10.0
+expect first_bar.corners.low_end.forward.to_metres() == 20.0
+expect first_bar.corners.high_end.forward.to_metres() == 20.0
+expect first_bar.corners.high_start.forward.to_metres() == 10.0
+expect first_bar.corners.low_start.height.to_metres() == 0.45
+expect first_bar.corners.low_end.height.to_metres() == 0.45
+expect first_bar.corners.high_end.height.to_metres() == 0.55
+expect first_bar.corners.high_start.height.to_metres() == 0.55
 
 # A post is square to the path, and stands from the ground to the bar's top.
-expect
-	first_post(straight_points).corners.map(|corner| corner.forward.to_metres())
-		== [9.99, 10.01, 10.01, 9.99]
-expect corner_at(first_post(straight_points), 0).height.to_metres() == 0.0
-expect corner_at(first_post(straight_points), 2).height.to_metres() == 0.55
-expect corner_at(first_post(straight_points), 0).right.to_metres() == 0.0
-expect corner_at(first_post(straight_points), 1).right.to_metres() == 0.0
+straight_post : GuardRail.RailQuad
+straight_post = first_post(straight_points)
+
+expect straight_post.corners.low_start.forward.to_metres() == 9.99
+expect straight_post.corners.low_end.forward.to_metres() == 10.01
+expect straight_post.corners.high_end.forward.to_metres() == 10.01
+expect straight_post.corners.high_start.forward.to_metres() == 9.99
+expect straight_post.corners.low_start.height.to_metres() == 0.0
+expect straight_post.corners.high_end.height.to_metres() == 0.55
+expect straight_post.corners.low_start.right.to_metres() == 0.0
+expect straight_post.corners.low_end.right.to_metres() == 0.0
 
 diagonal_post : GuardRail.RailQuad
 diagonal_post = first_post([
@@ -199,10 +216,10 @@ diagonal_post = first_post([
 	{ right: Distance.metres(30.0), forward: Distance.metres(50.0) },
 ])
 
-expect corner_at(diagonal_post, 0).right.to_metres() == -0.006
-expect corner_at(diagonal_post, 1).right.to_metres() == 0.006
-expect corner_at(diagonal_post, 0).forward.to_metres() == 9.992
-expect corner_at(diagonal_post, 1).forward.to_metres() == 10.008
+expect diagonal_post.corners.low_start.right.to_metres() == -0.006
+expect diagonal_post.corners.low_end.right.to_metres() == 0.006
+expect diagonal_post.corners.low_start.forward.to_metres() == 9.992
+expect diagonal_post.corners.low_end.forward.to_metres() == 10.008
 
 doubled_points : List(Geom.RiderPoint)
 doubled_points = [
@@ -215,10 +232,10 @@ doubled_post = first_post(doubled_points)
 
 # A path that goes nowhere keeps its posts, each with no width.
 expect GuardRail.quads_along(doubled_points).len() == 3
-expect corner_at(doubled_post, 0).right.to_metres() == 0.0
-expect corner_at(doubled_post, 1).right.to_metres() == 0.0
-expect corner_at(doubled_post, 0).forward.to_metres() == 10.0
-expect corner_at(doubled_post, 1).forward.to_metres() == 10.0
-expect corner_at(doubled_post, 2).height.to_metres() == 0.55
+expect doubled_post.corners.low_start.right.to_metres() == 0.0
+expect doubled_post.corners.low_end.right.to_metres() == 0.0
+expect doubled_post.corners.low_start.forward.to_metres() == 10.0
+expect doubled_post.corners.low_end.forward.to_metres() == 10.0
+expect doubled_post.corners.high_end.height.to_metres() == 0.55
 
 expect bars([{ right: Distance.metres(0.0), forward: Distance.metres(10.0) }]).len() == 0

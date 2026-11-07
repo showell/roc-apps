@@ -31,13 +31,9 @@ Conifer := [Green, SmallGreen, Red, Gold].{
 	is_eq : _
 }
 
-## The length of one of the tree drawing's parts on a small green tree.
-part_length : Distance
-part_length = Distance.metres(0.036)
-
-## A small green tree's height: the drawing's parts at a part's length each.
+## A small green tree's height, chosen by eye.
 small_height : Distance
-small_height = part_length.times(TreeShapes.tree_parts.to_f64())
+small_height = Distance.metres(4.896)
 
 ## A green tree's height, 1.3 times a small one's, a size chosen by eye.
 green_height : Distance
