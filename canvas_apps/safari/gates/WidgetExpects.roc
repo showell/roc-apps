@@ -71,12 +71,14 @@ words_shown = |canvas_app, inputs| {
 # widget's first frame is read, and the frame widget's with each layer added.
 # The two lines named are there to show the words were found at all.
 expect {
+	# Nine presses open the frame widget's ten layers, its last one last.
+	right_presses = List.repeat(Input.none.with_key_pressed(KeyRight), 9)
 	words = [
 		words_shown(BeaconWidgetApp.canvas_app, []),
 		words_shown(BendsWidgetApp.canvas_app, []),
 		words_shown(BirdWidgetApp.canvas_app, []),
 		words_shown(CatWidgetApp.canvas_app, []),
-		words_shown(FrameWidgetApp.canvas_app, List.repeat(Input.none.with_key_pressed(KeyRight), 9)),
+		words_shown(FrameWidgetApp.canvas_app, right_presses),
 		words_shown(GazeWidgetApp.canvas_app, []),
 		words_shown(RehearsalWidgetApp.canvas_app, []),
 		words_shown(RouteWidgetApp.canvas_app, []),
