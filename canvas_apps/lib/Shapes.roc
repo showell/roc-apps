@@ -20,7 +20,7 @@ Shapes :: [].{
 		Rect({ x : F64, y : F64, w : F64, h : F64, fill : Brush.Fill }),
 
 		## A mark, not a shape: how the shapes after it combine, until the next `Blend`.
-		## Both painters hold this as a mode, so a mark in the list says it directly.
+		## A painter holds this as a mode, so a mark in the list says it directly.
 		Blend(Shapes.Mode),
 
 		## A mark, not a shape: the space the shapes after it are in, until the next

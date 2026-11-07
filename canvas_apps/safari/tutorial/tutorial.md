@@ -124,7 +124,7 @@ New in this chapter:
 
 There are two halves. The ride is `Rider`, `Truck` and `World`. `World` puts the route together from its scenery and critters. Nothing in the ride knows anything about drawing.
 
-The view is everything that turns the ride into a picture. The sightings work out what's visible, and the drawing code paints it. The dotted arrow shows the view reading the ride. No arrow goes the other way.
+The view is everything that turns the ride into a picture. The sightings work out what's visible, and the drawing code makes its shapes. The dotted arrow shows the view reading the ride. No arrow goes the other way.
 
 `RideInstant` sits above both halves. It holds one instant of the ride and steps to the next. The browser only ever sees `SafariApp`, which gives it a list of shapes each frame.
 
@@ -245,45 +245,53 @@ Nothing in this chapter moves, and that's true of the next few chapters too, as 
 
 ## Shapes
 
-Our Roc app doesn't draw anything. We said that back in the modules chapter, and it's worth saying again before we start drawing things. Roc answers with a list of shapes, and something else paints them.
+Our Roc app doesn't draw anything. For each frame, Roc answers with a list of shapes, and something else paints them. The painter on this page is JavaScript on a canvas, but it could as well be wasm compiled from Odin or Zig. The Roc is the same either way.
 
-So a function like `Polygon.triangle` makes a value, and that's as close to the metal as Safari Ride gets. The metal could be JavaScript on a canvas, or a wasm painter written in Odin or Zig. The Roc is the same either way.
+So `Polygon.triangle` doesn't put a triangle on the canvas. It makes a value that describes one.
 
-Here's a frame with two shapes in it:
+Here's a frame with a triangle and a rectangle in it:
 
 ```widget shapes
-A triangle and a rectangle, and nothing else.
+The list `TwoShapes.shapes`, painted over a plain background, on a smaller canvas than the ride's.
 ```
 
-And here's the code that answers with that frame:
+And here's the whole of `TwoShapes`, which makes that list:
 
 {{module TwoShapes}}
 
+A color is a whole number in hex, with the six digits a web page writes after its `#`. `0x2e8b57` is a green, and `0xe8a33d` is an amber.
+
+New in this chapter:
+
+- Modules: `TwoShapes`, `Shapes`, `Polygon`, `Screen`
+
 ### Get the types right
 
-Safari Ride writes to a canvas 960 pixels wide and 600 pixels tall. A place on it is two `Pixels`, measured from the top left corner, so `y` grows downward:
+Safari Ride's frames are for a canvas 960 pixels wide and 600 pixels tall. A `Screen.Point` is a place given as an `x` and a `y`, in pixels from the top left of the canvas, so `y` grows downward. `Screen.point`, in the code above, makes one:
 
 {{code Screen.Point}}
 
-Every frame is a list of this:
+A frame is a list of `Shapes.Shape`:
 
 {{code Shapes.Shape}}
 
-This one type serves every canvas app in the repository, so some tags are there for the others: `Image` is for a pixel paint program. A frame of Safari Ride has a couple of thousand shapes, and nearly all of them are `Poly`.
+That type serves every app under `canvas_apps`, so some of its tags are for apps other than Safari Ride. `Image`, for example, is for a pixel paint program. A frame of Safari Ride often holds more than 2,000 shapes, and nearly all of them are `Poly`.
 
-Safari Ride's own `Polygon` takes a color and screen points. `triangle` and `rectangle` are handy forms of this one, which takes three or more corners:
+`Polygon.triangle` and `Polygon.rectangle` both call `flat_polygon`, which makes a `Poly` of one color from a list of corners:
 
 {{code Polygon.flat_polygon}}
 
-### One shape, and lists of them
+So our rectangle is a `Poly`, not a `Rect`.
 
-A function in `Polygon` gives back one shape. A polygon with fewer than three corners is a bug in Safari Ride, so `flat_polygon` crashes rather than quietly draw nothing.
+### Shapes and lists of shapes
 
-A whole thing in the picture is a list. A tree is a trunk and eight tiers, and a frame is its trees and everything else. An empty list is an honest answer here, but only from code that knows why: a patch of ground behind the camera has nothing to draw, and `Ground.patch_shapes` says so.
+`Polygon` makes shapes one at a time. A polygon needs at least three corners, so `flat_polygon` crashes if it gets fewer. That would be a bug in Safari Ride, and a bug shouldn't quietly paint nothing.
 
-The list is also the order of painting. A shape goes over whatever came before it, so the rectangle is on top of the triangle because it comes later. A frame paints far things first and near things last.
+Something made of several shapes is a list of them. A tree is nine: a trunk and eight tiers of foliage. A list can be empty, and that isn't a bug. `Ground.patch_shapes` knows that a patch of ground wholly behind the camera has nothing to show.
 
-The work from here on is deciding which corners to hand to `Polygon`, and in what order. That starts with a tree.
+The order of the list is the order of painting, so the rectangle covers part of the triangle. A frame lists the sky and mountains, then the ground, then what stands on the ground, far to near.
+
+For the next few chapters, the work is choosing corners and choosing their order. We'll start with a tree.
 
 ## A simple tree
 
