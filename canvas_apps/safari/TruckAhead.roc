@@ -1,8 +1,6 @@
 ## TruckAhead is the truck ahead on the road in a frame. Its picture is its
 ## headlight beams first, then its body, then its brake lights, so each paints
 ## over the one before.
-import Across
-import Along
 import Chain
 import Picture
 import Truck
@@ -14,17 +12,9 @@ import lib.Shapes
 ## Which of the truck's lights are on.
 TruckAhead := { lights : Truck.Lights }.{
 
-	## The road in view, and where on it the truck's trailer is centred.
-	RoadContext : {
-		road : Chain.RoadView,
-		place : Chain.SegmentPlace,
-		along : Along,
-		across : Across,
-	}
-
 	## How the truck looks. Every point on it is measured on the road, so the
-	## road and where the truck stands there are its context.
-	scenery_picture : TruckAhead, Picture.Setting(TruckAhead.RoadContext) -> Picture
+	## road and where its trailer is centred there are its context.
+	scenery_picture : TruckAhead, Picture.Setting(Chain.RoadContext) -> Picture
 	scenery_picture = |truck_ahead, { cam_focal, context, .. }|
 		Picture.from_shapes(
 			TruckAhead.truck_shapes(

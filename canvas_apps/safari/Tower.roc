@@ -22,17 +22,9 @@ import World
 ## A tower in a frame: how it is turned, and how bright its beacon is.
 Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 
-	## The road in view, and where on it a tower stands.
-	RoadContext : {
-		road : Chain.RoadView,
-		place : Chain.SegmentPlace,
-		along : Along,
-		across : Across,
-	}
-
 	## How a tower looks. Its footprint is measured on the road, so the road and
 	## where it stands there are its context.
-	scenery_picture : Tower, Picture.Setting(Tower.RoadContext) -> Picture
+	scenery_picture : Tower, Picture.Setting(Chain.RoadContext) -> Picture
 	scenery_picture = |tower, { right, forward, cam_focal, context }|
 		Picture.from_shapes(
 			Tower.tower_shapes({
@@ -44,7 +36,7 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 		)
 
 	## Where a tower's four footprint corners stand in the rider's view.
-	tower_footprint : Tower, Tower.RoadContext -> Tower.Footprint
+	tower_footprint : Tower, Chain.RoadContext -> Tower.Footprint
 	tower_footprint = |tower, { road, place, along, across }| {
 		corner_point = |corner| {
 			on_road = base_corner_on_road(corner, { along, across, yaw: tower.yaw })
@@ -552,7 +544,7 @@ plain_tower = { yaw: Angle.straight_ahead, beacon_brightness: Fraction.zero }
 
 # The start of the route, and a place `along` metres down the first segment, 20 m
 # right of the road's middle.
-context_along : F64 -> Tower.RoadContext
+context_along : F64 -> Chain.RoadContext
 context_along = |along| {
 	road: start_road,
 	place: InChain(Chain.Position.first),

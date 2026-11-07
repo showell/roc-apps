@@ -111,15 +111,8 @@ rail_rendering = |quad, cam_focal|
 		|shape| { depth: quad.forward, picture: Picture.from_shapes([shape]) },
 	)
 
-## What a thing measured on the road draws from: the road in view, and where on it
-## `sighting` found the thing.
-road_context : Chain.CameraView,
-Pipeline.Sighted(kind) -> {
-	road : Chain.RoadView,
-	place : Chain.SegmentPlace,
-	along : Along,
-	across : Across,
-}
+## The road in view, and where on it `sighting` found the thing.
+road_context : Chain.CameraView, Pipeline.Sighted(kind) -> Chain.RoadContext
 road_context = |view, sighting| {
 	road: view.road,
 	place: sighting.place,

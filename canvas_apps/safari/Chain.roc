@@ -25,6 +25,15 @@ Chain :: [].{
 	## length in pixels.
 	CameraView : { road : Chain.RoadView, cam_focal : Pixels }
 
+	## What a thing measured on the road draws from: the road in view, and where
+	## on it the thing stands.
+	RoadContext : {
+		road : Chain.RoadView,
+		place : Chain.SegmentPlace,
+		along : Along,
+		across : Across,
+	}
+
 	## A segment's place in the chain, counted from the rider's own at 0. It
 	## says how many segments ahead of the rider that segment is, where a
 	## World.SegmentIndex says where it is in the route.
