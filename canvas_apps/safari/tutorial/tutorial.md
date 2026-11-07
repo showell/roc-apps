@@ -1659,7 +1659,7 @@ The truck's headlights come on once the sun has gone behind the mountains, at st
 
 Lamps are plain data. The sighting carries them, and the drawing does what they say, with each `match` covering both tags:
 
-{{code TruckPicture.truck_shapes from "beams =" to "].join()"}}
+{{code TruckAhead.truck_shapes from "beams =" to "].join()"}}
 
 `TruckPicture` leaves the painting to two modules. `TruckBody` paints the trailer, the cab and the tires, far to near, and `TruckLights` paints the beams and the brake lights, each with its glow.
 

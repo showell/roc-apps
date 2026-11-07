@@ -9,7 +9,6 @@ import Distance
 import Geom
 import World
 import CatSighting
-import Fraction
 import Chain
 import Conifer
 import GuardRail
@@ -17,10 +16,8 @@ import Picture
 import Pipeline
 import Rendered
 import Scene
-import Tower
-import TowerSighting
 import TreeSighting
-import TruckPicture
+import TruckAhead
 import TruckSighting
 import BirdShapes
 import lib.Shapes
@@ -48,7 +45,8 @@ SceneShapes :: [].{
 	}
 
 	## The scene's things, each as the frame paints it. A tree's context is the
-	## one a tree can't know alone, and a critter needs none.
+	## one a tree can't know alone, a critter needs none, and a tower and the
+	## truck are measured on the road.
 	scene_renderings : Scene, Chain.Viewpoint -> SceneShapes.ThingLists(Rendered)
 	scene_renderings = |scene, view| {
 		cam_focal = view.cam_focal
@@ -60,7 +58,7 @@ SceneShapes :: [].{
 				|tree| SceneShapes.tree_rendering(tree, { trees: scene.trees, cam_focal }),
 			),
 			towers: scene.towers.map(
-				|tower| rendering_at(tower.forward, SceneShapes.tower_shapes(view, tower)),
+				|tower| Pipeline.rendering_of(tower, { cam_focal, context: { road: view.road } }),
 			),
 			critters: scene.critters.map(
 				|critter| Pipeline.rendering_of(critter, { cam_focal, context: {} }),
@@ -109,52 +107,6 @@ SceneShapes :: [].{
 				context: { nearer_tree_count: SceneShapes.nearer_tree_count(trees, tree.forward) },
 			},
 		)
-
-	## Where a tower's four footprint corners stand in the rider's view.
-	tower_footprint : Chain.Viewpoint, TowerSighting -> Tower.Footprint
-	tower_footprint = |view, tower| {
-		corner_point = |corner| {
-			on_road = Tower.base_corner_on_road(
-				corner,
-				{
-					along: tower.along,
-					across: tower.across,
-					yaw: tower.yaw,
-				},
-			)
-			Chain.rider_point_at(
-				view.road,
-				{
-					place: tower.place,
-					along: on_road.along,
-					across: on_road.across,
-				},
-			)
-		}
-		{
-			back_left: corner_point(BackLeft),
-			back_right: corner_point(BackRight),
-			front_right: corner_point(FrontRight),
-			front_left: corner_point(FrontLeft),
-		}
-	}
-
-	## A tower, its beacon as bright as its sighting says.
-	tower_shapes : Chain.Viewpoint, TowerSighting -> List(Shapes.Shape)
-	tower_shapes = |view, tower|
-		Tower.tower_shapes({
-			footprint: SceneShapes.tower_footprint(view, tower),
-			center: Chain.rider_point_at(
-				view.road,
-				{
-					place: tower.place,
-					along: tower.along,
-					across: tower.across,
-				},
-			),
-			cam_focal: view.cam_focal,
-			beacon_brightness: tower.beacon_brightness,
-		})
 }
 
 ## A thing that doesn't go through `Pipeline`: its shapes, at `depth`.
@@ -163,21 +115,16 @@ rendering_at = |depth, shapes| { depth, picture: Picture.from_shapes(shapes) }
 
 ## The truck, if it is in view, where its sighting found it and with the lights
 ## its sighting gives it.
-truck_renderings : Chain.Viewpoint, TruckSighting -> List(Rendered)
-truck_renderings = |view, truck_at|
-	match truck_at {
-		Ahead(truck) => [
-			rendering_at(
-				truck.forward,
-				TruckPicture.truck_shapes({
-					view,
-					position: truck.position,
-					center: { along: truck.along, across: truck.across },
-					lights: truck.lights,
-				}),
+truck_renderings : Chain.Viewpoint, TruckSighting.Fate -> List(Rendered)
+truck_renderings = |view, truck_fate|
+	match truck_fate {
+		Ok(truck) => [
+			Pipeline.rendering_of(
+				truck,
+				{ cam_focal: view.cam_focal, context: { road: view.road } },
 			),
 		]
-		NoTruck => []
+		Err(NoTruck) => []
 	}
 
 tree_at : F64 -> Geom.Sighted(Conifer)
@@ -203,47 +150,6 @@ tied_trees = List.repeat(tree_at(20.0), 4)
 expect SceneShapes.nearer_tree_count(tied_trees, Distance.metres(20.0)) == 0
 expect SceneShapes.nearer_tree_count(tied_trees, Distance.metres(20.1)) == 4
 expect SceneShapes.nearer_tree_count(tied_trees, Distance.metres(19.9)) == 0
-
-# The rider at the start of the route, at the ride's first step.
-start_view : Chain.Viewpoint
-start_view = {
-	road: {
-		route_segments: [0, 1, 2].map(World.route_segment),
-		chain_indices: [0, 1, 2].map(World.SegmentIndex.number),
-		vantage: {
-			along: Along.metres(0.0),
-			across: Across.metres(0.0),
-			yaw: Angle.straight_ahead,
-			half_width: Distance.metres(2.0),
-		},
-	},
-	cam_focal: Pixels.of(500.0),
-}
-
-# A tower `along` metres down the first segment, 20 m right of the road's middle.
-tower_along : F64 -> TowerSighting
-tower_along = |along| {
-	place: InChain(Chain.Position.first),
-	along: Along.metres(along),
-	across: Across.metres(20.0),
-	yaw: Angle.straight_ahead,
-	forward: Distance.metres(along),
-	beacon_brightness: Fraction.zero,
-}
-
-expect {
-	footprint = SceneShapes.tower_footprint(start_view, tower_along(200.0))
-	[
-		(footprint.back_left.forward.to_metres(), 194.0),
-		(footprint.front_right.forward.to_metres(), 206.0),
-		(footprint.back_left.right.to_metres(), 14.0),
-		(footprint.back_right.right.to_metres(), 26.0),
-	].all(|(got, want)| (got - want).abs() <= 0.0001)
-}
-
-expect SceneShapes.tower_shapes(start_view, tower_along(200.0)).len() > 0
-expect SceneShapes.tower_shapes(start_view, tower_along(1000.0)).len() > 0
-expect SceneShapes.tower_shapes(start_view, tower_along(-100.0)).len() == 0
 
 cluster_sightings : List(Geom.Sighted(Conifer))
 cluster_sightings = [10.0, 11.0, 12.0, 13.0, 14.0].map(tree_at)
@@ -418,26 +324,15 @@ truck_view = |vantage, lead| {
 	lights: { headlights: Off, brake_lights: Off },
 }
 
-truck_seen_from : Geom.Vantage, F64 -> TruckSighting
+truck_seen_from : Geom.Vantage, F64 -> TruckSighting.Fate
 truck_seen_from = |vantage, lead| TruckSighting.truck_in_view(truck_view(vantage, lead))
 
-lead_of : F64 -> TruckSighting
+lead_of : F64 -> TruckSighting.Fate
 lead_of = |lead| truck_seen_from(origin, lead)
 
-## Whether the truck is in view.
-is_ahead : TruckSighting -> Bool
-is_ahead = |truck|
-	match truck {
-		Ahead(_) => True
-		NoTruck => False
-	}
-
 ## Where the truck is, for a lead that puts it in view.
-truck_ahead_of = |lead|
-	match lead_of(lead) {
-		Ahead(truck) => truck
-		NoTruck => crash "SceneShapes: this lead puts the truck in view"
-	}
+truck_ahead_of : F64 -> Geom.Sighted(TruckAhead)
+truck_ahead_of = |lead| lead_of(lead) ?? crash "SceneShapes: this lead puts the truck in view"
 
 expect
 	[
@@ -448,7 +343,7 @@ expect
 		(2000.0, False),
 		(0.0, False),
 		(-50.0, False),
-	].all(|(lead, want)| is_ahead(lead_of(lead)) == want)
+	].all(|(lead, want)| lead_of(lead).is_ok() == want)
 
 expect
 	[
@@ -456,7 +351,7 @@ expect
 		(499.0, 0),
 		(600.0, 1),
 		(900.0, 2),
-	].all(|(lead, want)| truck_ahead_of(lead).position.to_i64() == want)
+	].all(|(lead, want)| truck_ahead_of(lead).kind.position.to_i64() == want)
 
 expect
 	[
@@ -464,7 +359,7 @@ expect
 		(499.0, 499.0),
 		(600.0, 100.0),
 		(900.0, 80.0),
-	].all(|(lead, want)| truck_ahead_of(lead).along.to_metres() == want)
+	].all(|(lead, want)| truck_ahead_of(lead).kind.along.to_metres() == want)
 
 expect
 	[
@@ -472,14 +367,14 @@ expect
 		(499.0, 0.0),
 		(600.0, 0.0),
 		(900.0, 0.0),
-	].all(|(lead, want)| truck_ahead_of(lead).across.to_metres() == want)
+	].all(|(lead, want)| truck_ahead_of(lead).kind.across.to_metres() == want)
 
 ## The lights a truck in view shows, when it has `lights` on.
-lights_shown = |lights|
-	match TruckSighting.truck_in_view({ ..truck_view(origin, 100.0), lights }) {
-		Ahead(truck) => truck.lights
-		NoTruck => crash "SceneShapes: this lead puts the truck in view"
-	}
+lights_shown = |lights| {
+	truck = TruckSighting.truck_in_view({ ..truck_view(origin, 100.0), lights })
+		?? crash "SceneShapes: this lead puts the truck in view"
+	truck.kind.lights
+}
 
 expect
 	[
@@ -493,16 +388,16 @@ expect
 	[
 		(truck_ahead_of(100.0).forward.to_metres(), 100.0),
 		(truck_ahead_of(499.0).forward.to_metres(), 499.0),
+		(truck_ahead_of(100.0).right.to_metres(), 0.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
-expect !is_ahead(NoTruck)
-expect !is_ahead(lead_of(2000.0))
-expect !is_ahead(truck_seen_from({ ..origin, along: Along.metres(100.0) }, 0.25))
-expect is_ahead(truck_seen_from({ ..origin, along: Along.metres(100.0) }, 1.0))
+expect lead_of(2000.0).is_err()
+expect truck_seen_from({ ..origin, along: Along.metres(100.0) }, 0.25).is_err()
+expect truck_seen_from({ ..origin, along: Along.metres(100.0) }, 1.0).is_ok()
 
 expect truck_renderings(from_origin, lead_of(100.0)).len() == 1
 expect truck_renderings(from_origin, lead_of(2000.0)).len() == 0
-expect truck_renderings(from_origin, NoTruck).len() == 0
+expect truck_renderings(from_origin, Err(NoTruck)).len() == 0
 expect
 	truck_renderings(from_origin, lead_of(499.0)).map(|rendering| rendering.depth.to_metres())
 		== [truck_ahead_of(499.0).forward.to_metres()]

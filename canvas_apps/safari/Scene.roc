@@ -12,6 +12,7 @@ import Chain
 import Geom
 import GuardRail
 import RailSighting
+import Tower
 import TowerSighting
 import TreeSighting
 import Truck
@@ -23,11 +24,11 @@ import World
 ## The things in view, each kind in its own list.
 Scene := {
 	trees : List(Geom.Sighted(Conifer)),
-	towers : List(TowerSighting),
+	towers : List(Geom.Sighted(Tower)),
 	critters : List(Geom.Sighted(Billboard)),
 	cats : List(CatSighting),
 	rails : List(GuardRail.RailQuad),
-	truck : TruckSighting,
+	truck : TruckSighting.Fate,
 	birds : List(BirdSighting),
 }.{
 
