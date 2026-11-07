@@ -100,8 +100,8 @@ next_look_depth = |eyes, gaze_yaw|
 turn_to : Motorcycle, Geom.Placed(Billboard) -> Angle.Turn
 turn_to = |motorcycle, pig| Angle.Turn.radians(
 	F64.atan2({
-		x: pig.road_point.along.distance_from(motorcycle.along).to_metres(),
-		y: pig.road_point.across.distance_from(motorcycle.across).to_metres(),
+		x: pig.road_point.along.distance_from(motorcycle.route_place.along).to_metres(),
+		y: pig.road_point.across.distance_from(motorcycle.route_place.across).to_metres(),
 	}),
 ).minus(motorcycle.yaw)
 

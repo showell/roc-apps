@@ -36,9 +36,10 @@ Coast :: [].{
 ## it.
 coast_keeping : Motorcycle, [KeepPath, DropPath] -> Coast.Path
 coast_keeping = |motorcycle, keeping| {
+	start = motorcycle.route_place
 	inset_hw = Geom.road_half_width.minus(shoulder_margin)
-	right_bound = Across.right_of_middle(inset_hw).max(motorcycle.across)
-	left_bound = Across.left_of_middle(inset_hw).min(motorcycle.across)
+	right_bound = Across.right_of_middle(inset_hw).max(start.across)
+	left_bound = Across.left_of_middle(inset_hw).min(start.across)
 	var $rider = motorcycle
 	var $steps_run = Steps.zero
 	var $path = []
@@ -50,17 +51,17 @@ coast_keeping = |motorcycle, keeping| {
 				KeepPath => $path.append($rider)
 				DropPath => $path
 			}
-		if $rider.across < left_bound {
+		if $rider.route_place.across < left_bound {
 			return { outcome: Leaves({ side: Left, after: $steps_run }), path_motorcycles: $path }
 		}
-		if $rider.across > right_bound {
+		if $rider.route_place.across > right_bound {
 			return { outcome: Leaves({ side: Right, after: $steps_run }), path_motorcycles: $path }
 		}
-		if $rider.along.distance_from(motorcycle.along) >= Coast.clear_distance {
-			return { outcome: EndsAt($rider.across), path_motorcycles: $path }
+		if $rider.route_place.along.distance_from(start.along) >= Coast.clear_distance {
+			return { outcome: EndsAt($rider.route_place.across), path_motorcycles: $path }
 		}
 	}
-	{ outcome: EndsAt($rider.across), path_motorcycles: $path }
+	{ outcome: EndsAt($rider.route_place.across), path_motorcycles: $path }
 }
 
 ## How far inside each shoulder the rehearsal puts the road's edge: 5 cm.

@@ -271,7 +271,7 @@ picture_shapes = |tour| {
 			name_y: route_y + 16.0,
 		}),
 		shapes_from_behind_rider({
-			across: rider.motorcycle.across,
+			across: rider.motorcycle.route_place.across,
 			lean: rider.motorcycle.lean,
 		}),
 	].join()
@@ -294,7 +294,7 @@ status_lines = |model| {
 	clock = model.tour.instant.clock
 	[
 		"clock: step ${clock.to_str()}",
-		"rider: segment ${(rider.segment_index.to_u32() + 1).to_str()}, ${ReadoutText.tenths_text(rider.motorcycle.along.to_metres())} m, speed ${ReadoutText.tenths_text(rider.motorcycle.speed.to_metres_a_step())}",
+		"rider: segment ${(rider.motorcycle.route_place.segment_index.to_u32() + 1).to_str()}, ${ReadoutText.tenths_text(rider.motorcycle.route_place.along.to_metres())} m, speed ${ReadoutText.tenths_text(rider.motorcycle.speed.to_metres_a_step())}",
 		"truck: ${ReadoutText.tenths_text(truck.route_position.to_metres())} m, speed ${ReadoutText.tenths_text(truck.speed.to_metres_a_step())}, brake ${Str.inspect(LitTruck.at(truck, clock).brake_lights)}",
 		move_text(model),
 	]
@@ -354,7 +354,7 @@ expect {
 	back = moved(heading_on_to(past_it, 16))
 	back_motorcycle = back.tour.instant.rider.motorcycle
 	on_the_way_motorcycle = on_the_way.tour.instant.rider.motorcycle
-	back_motorcycle.along == on_the_way_motorcycle.along
+	back_motorcycle.route_place.along == on_the_way_motorcycle.route_place.along
 		and back_motorcycle.speed == on_the_way_motorcycle.speed
 }
 

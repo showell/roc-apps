@@ -254,7 +254,7 @@ pigs = {
 ## road by the bike's yaw and the rider's gaze.
 sight_line : RiderState -> Shapes.Shape
 sight_line = |rider| {
-	{ x, y } = canvas_point({ along: rider.motorcycle.along, across: rider.motorcycle.across })
+	{ x, y } = canvas_point(rider.motorcycle.route_place.road_point())
 	turn = rider.motorcycle.yaw.plus(rider.eyes.gaze_yaw).to_radians()
 	reach = Gawking.notice_distance.to_metres() * road_plan.pixels_a_metre
 	Shapes.line(
@@ -276,8 +276,8 @@ picture_shapes = |rider|
 		[
 			sight_line(rider),
 			plan_disc({
-				along: rider.motorcycle.along,
-				across: rider.motorcycle.across,
+				along: rider.motorcycle.route_place.along,
+				across: rider.motorcycle.route_place.across,
 				radius: 5.0,
 				color: PlanView.standout_color,
 			}),
@@ -326,12 +326,12 @@ state_at_step = |played, step| state_at(played, (step - first_step).to_u64())
 
 # This stretch is on the route's first distracting segment, and with its
 # encounter unplanned it still ends where the ride does.
-expect World.is_distracting(World.route.segment_at(first_rider.segment_index))
+expect World.is_distracting(World.route.segment_at(first_rider.motorcycle.route_place.segment_index))
 expect {
 	played = state_at_step(stretch_states, last_step)
 	ridden = Tour.at_step(last_step).instant.rider
-	played.segment_index == ridden.segment_index
-		and played.motorcycle.along.to_metres() == ridden.motorcycle.along.to_metres()
+	played.motorcycle.route_place.segment_index == ridden.motorcycle.route_place.segment_index
+		and played.motorcycle.route_place.along.to_metres() == ridden.motorcycle.route_place.along.to_metres()
 		and played.motorcycle.speed.to_metres_a_step() == ridden.motorcycle.speed.to_metres_a_step()
 		and played.eyes.gaze_yaw == ridden.eyes.gaze_yaw
 		and played.eyes.look_depth.to_f64() == ridden.eyes.look_depth.to_f64()
@@ -423,9 +423,9 @@ expect stretch_states.all(|rider| gaze_degrees(rider) >= 0.0)
 expect
 	stretch_states.all(
 		|rider|
-			rider.segment_index == first_rider.segment_index
-				and canvas_point({ along: rider.motorcycle.along, across: rider.motorcycle.across }).x > 0.0
-				and canvas_point({ along: rider.motorcycle.along, across: rider.motorcycle.across }).x < ScrubWidget.canvas_width,
+			rider.motorcycle.route_place.segment_index == first_rider.motorcycle.route_place.segment_index
+				and canvas_point(rider.motorcycle.route_place.road_point()).x > 0.0
+				and canvas_point(rider.motorcycle.route_place.road_point()).x < ScrubWidget.canvas_width,
 	)
 
 ## A model at its start, asking for `step`.
@@ -513,6 +513,12 @@ expect {
 	picture_shapes(first_rider) != picture_shapes(looking)
 }
 expect {
-	further = { ..first_rider, motorcycle: { ..first_rider.motorcycle, along: Along.metres(200.0) } }
+	further = {
+		..first_rider,
+		motorcycle: {
+			..first_rider.motorcycle,
+			route_place: { ..first_rider.motorcycle.route_place, along: Along.metres(200.0) },
+		},
+	}
 	picture_shapes(first_rider) != picture_shapes(further)
 }
