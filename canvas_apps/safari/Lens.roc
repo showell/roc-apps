@@ -23,8 +23,8 @@ Lens :: [].{
 
 	## The focal length the camera uses: the shorter of the two, which
 	## gives the wider view. A lean to either side widens it alike.
-	cam_focal : { lean : Angle.Lean, attention : Attention } -> Pixels
-	cam_focal = |{ lean, attention }| {
+	focal_for : { lean : Angle.Lean, attention : Attention } -> Pixels
+	focal_for = |{ lean, attention }| {
 		lean_fraction = Fraction.clamp(lean.abs().portion(full_lean))
 		for_lean = focal_for_lean(lean_fraction)
 		for_attention = focal_for_attention(attention)
@@ -120,7 +120,7 @@ expect
 		((0.6, 0.5), 525.1014591189407),
 	].all(
 		|((lean, strength), want)| {
-			got = Lens.cam_focal({
+			got = Lens.focal_for({
 				lean: Angle.Lean.degrees(lean * 20.0),
 				attention: Attention.of(strength),
 			})

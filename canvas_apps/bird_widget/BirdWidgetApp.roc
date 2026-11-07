@@ -125,14 +125,13 @@ shapes_at = |transport|
 picture_shapes : Distance -> List(Shapes.Shape)
 picture_shapes = |gap|
 	ScrubWidget.ride_shapes({
-		shapes: [
+		backdrop: { sky_colors: Sky.colors_at(Clock.start), sun_sighting: OutOfView },
+		ride_shapes: [
 			road,
 			tree_shapes(flight.to),
 			tree_shapes(flight.from),
 			bird_shapes(gap),
 		].join(),
-		sun_sighting: OutOfView,
-		sky_colors: Sky.colors_at(Clock.start),
 		roll: Angle.upright,
 	})
 

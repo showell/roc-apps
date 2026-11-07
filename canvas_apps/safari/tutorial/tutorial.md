@@ -1343,10 +1343,10 @@ The first three are opaque. Each is still a number, and the type gives it a name
 
 | Job | Function | Its type |
 |---|---|---|
-{{types row Sun.height Move the sun}}
-{{types row Sky.dusk_at Darken the sky}}
+{{types row Sun.height_at Move the sun}}
+{{types row Sky.darkness_at Darken the sky}}
 {{types row Sky.sky_top_color}}
-{{types row Sky.sunset_warmth Warm the horizon}}
+{{types row Sky.horizon_warmth_at Warm the horizon}}
 {{types row Sky.sky_horizon_color}}
 
 Every one is a `->`, and every one starts from a `Clock`. That's most of the design, before we've read a line of code.
@@ -1392,7 +1392,7 @@ This widget does only the first job, so the sky stays blue. For each frame it ca
 
 The sun chapter showed how `Sun.sighting` places a sun. All it needs from the clock is a height:
 
-{{code Sun.height}}
+{{code Sun.height_at}}
 
 ### Job two: the sky darkens
 
@@ -1406,11 +1406,11 @@ This widget adds one call, `Sky.dusk_at`, and the sky finally does something. It
 
 `dusk_at` works out that `Fraction`:
 
-{{code Sky.dusk_at}}
+{{code Sky.darkness_at}}
 
 It asks for the sun's height, then picks one of two shapes. They meet when the sun has fully set, one radius below the horizon, and you can see the join in the blue line at step 4,735. Before that, dusk grows with the square of how far the sun has fallen. After that, it runs on in a straight line to full dark.
 
-{{signatures Sky.dusk_while_up Sky.dusk_after_set}}
+{{signatures Sky.darkness_while_up Sky.darkness_after_set}}
 
 As always, anything outside a module's block is private, so these two are helpers without any keyword.
 
@@ -1430,7 +1430,7 @@ The horizon is the same sky, warmed toward red:
 
 `sunset_warmth` asks for the sun's height, just as dusk did:
 
-{{code Sky.sunset_warmth}}
+{{code Sky.horizon_warmth_at}}
 
 The horizon is warmest when the sun's height is zero. `ratio_to` says how far away the sun is, as a share of 110 pixels, and `abs` makes the two sides match, which gives the red line its tent. `Fraction.clamp` holds everything past 110 pixels at no warmth at all.
 
@@ -1878,7 +1878,7 @@ The truck's headlights come on once the sun has gone behind the mountains, at st
 
 `RideInstant` puts it together. It's the only place that can. `Truck` is in the ride half of the system and `Mountains` is in the view, and no arrow goes from the first to the second. `RideInstant` imports both.
 
-{{code FrameView.lit_truck}}
+{{code LitTruck.at}}
 
 Lamps are plain data. The sighting carries them, and the drawing does what they say, with each `match` covering both tags:
 
@@ -2487,7 +2487,7 @@ The view widens as the rider leans. One `Fraction` goes in, and a focal length c
 
 {{code Lens.focal_for_lean}}
 
-{{code Lens.cam_focal}}
+{{code Lens.focal_for}}
 
 ### Round the bends
 

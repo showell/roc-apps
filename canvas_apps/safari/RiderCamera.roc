@@ -69,7 +69,7 @@ ride_focal = |rider, { route, encounter }| {
 	attention =
 		EncounterReaction.encounter_attention(seg, encounter)
 			.max(Gaze.gaze_attention(rider.eyes.look_depth))
-	Lens.cam_focal({ lean: rider.motorcycle.lean, attention })
+	Lens.focal_for({ lean: rider.motorcycle.lean, attention })
 }
 
 ## A rider leaning `lean`, looking `gaze_yaw` from the way the motorcycle

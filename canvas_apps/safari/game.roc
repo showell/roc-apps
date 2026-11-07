@@ -40,6 +40,7 @@ package
 		HexColor,
 		LeanSearch,
 		Lens,
+		LitTruck,
 		Motorcycle,
 		Mountains,
 		Picture,

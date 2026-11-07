@@ -22,11 +22,8 @@ Grass :: [].{
 	## The grass: a rectangle from `grass_top_y` down to `roll_margin` below
 	## the screen, and `roll_margin` past each side.
 	grass_shape : Shapes.Shape
-	grass_shape = Rect({
-		x: Screen.roll_margin.opposite().to_f64(),
-		y: grass_top_y.to_f64(),
-		width: Screen.width_with_margins.to_f64(),
-		height: Screen.height.minus(grass_top_y).plus(Screen.roll_margin).to_f64(),
-		fill: Brush.flat(grass_color),
-	})
+	grass_shape = Screen.margin_rect(
+		{ top: grass_top_y, bottom: Screen.height.plus(Screen.roll_margin) },
+		Brush.flat(grass_color),
+	)
 }

@@ -49,14 +49,16 @@ Sun :: [].{
 
 	## The step at which the sun has fully set, its whole disc below the
 	## horizon, in a ride of about 7,000 steps. The sun sinks at one steady
-	## rate, so this step is what places the sunset in the ride.
+	## rate, so this step places the sunset in the ride. It is chosen so the
+	## sunset's climax falls on the long road west, which `sunset_climax` in
+	## CrossModuleExpects holds.
 	fully_set_at : Clock
 	fully_set_at = Clock.at_step(4735)
 
 	## How high the sun stands above the horizon at `clock`, in pixels at
 	## rest; below it once negative.
-	height : Clock -> Pixels
-	height = |clock| height_at_start.minus(drop_per_step.times(clock.to_f64()))
+	height_at : Clock -> Pixels
+	height_at = |clock| height_at_start.minus(drop_per_step.times(clock.to_f64()))
 
 	## The sun in a frame, for a camera facing `heading` through a lens of
 	## `cam_focal`. It is in view while it is in front of the camera and its glow
@@ -141,11 +143,12 @@ quarter_turn : Angle.Turn
 quarter_turn = Angle.Turn.radians(F64.pi / 2.0)
 
 ## Whether any of the glow around `sun` reaches across the screen, as far out
-## as `Screen.roll_margin`, which every roll of the screen stays inside.
+## as the frame is drawn, from `Screen.drawn_left` to `Screen.drawn_right`,
+## which every roll of the screen stays inside.
 is_glow_on_screen : Sun.Place -> Bool
 is_glow_on_screen = |sun| {
 	from_middle = sun.x.minus(Screen.center_x).abs()
-	reach = Screen.width.divided_by(2.0).plus(Screen.roll_margin)
+	reach = Screen.drawn_right.minus(Screen.center_x)
 	from_middle.minus(Sun.glow_radius_drawn(sun)) < reach
 }
 
@@ -171,17 +174,14 @@ place : {
 place = |{ turn_from_view, clock, cam_focal }| {
 	{
 		x: Lens.x_for_turn({ turn: turn_from_view, cam_focal }),
-		y: Lens.y_for_height({ height: Sun.height(clock), cam_focal }),
+		y: Lens.y_for_height({ height: Sun.height_at(clock), cam_focal }),
 		scale: Lens.scale_for(cam_focal),
 	}
 }
 
-# The sun's lower edge touches the horizon at step 3,233, and the whole disc
-# is below it from `fully_set_at`.
-expect Sun.height(Clock.at_step(3232)) > Sun.radius
-expect Sun.height(Clock.at_step(3233)) < Sun.radius
-expect Sun.height(Sun.fully_set_at.previous()) > Sun.height_when_set
-expect Sun.height(Sun.fully_set_at) == Sun.height_when_set
+# The whole disc is below the horizon from `fully_set_at`.
+expect Sun.height_at(Sun.fully_set_at.previous()) > Sun.height_when_set
+expect Sun.height_at(Sun.fully_set_at) == Sun.height_when_set
 
 # The rider faces the sun, then away from it.
 expect

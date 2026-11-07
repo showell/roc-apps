@@ -1425,16 +1425,14 @@ first_step_where = |holds| {
 sunset_climax : Clock
 sunset_climax = {
 	hidden_at = first_step_where(Mountains.is_sun_behind_mountains)
-	range_top = Sun.height(hidden_at).plus(Sun.radius)
-	first_step_where(|clock| Sun.height(clock).minus(Sun.radius) < range_top)
+	range_top = Sun.height_at(hidden_at).plus(Sun.radius)
+	first_step_where(|clock| Sun.height_at(clock).minus(Sun.radius) < range_top)
 }
 
 ## How many steps before and after the sunset's climax the rider must be on the
 ## long westward segment: 150, a few hundred metres of road, so the rider sees
 ## the sun come down onto the range from the straight and watches it start to
-## sink. The climax falls 230 steps after the rider turns onto the segment and
-## 451 before the next bend, so a change in the ride's timing has room to move
-## it before the rule breaks.
+## sink.
 sunset_margin : Steps
 sunset_margin = Steps.of(150)
 
@@ -1483,14 +1481,14 @@ expect {
 
 # Steve's rule: the ride reaches full night, past dusk, before it finishes. The
 # rule is strict that night comes and loose about when, so it holds no step.
-# The sky only darkens as the clock runs, so full dusk at the finish means it
+# The sky only darkens as the clock runs, so full darkness at the finish means it
 # came at or before it.
 expect {
 	var $instant = RideInstant.initial
 	while !Rider.is_finished($instant.rider, World.route) {
 		$instant = RideInstant.next_or_restart(World.route, $instant)
 	}
-	Sky.dusk_at($instant.clock) == Fraction.whole
+	Sky.darkness_at($instant.clock) == Fraction.whole
 }
 
 ## What the encounters do over the whole ride: how many steps a bird is in
@@ -1570,7 +1568,7 @@ expect ride_encounters.is_faded_at_each_exit
 # A frame of the ride draws.
 expect {
 	frame = FrameView.frame_view_at(World.route, RideInstant.initial)
-	first_shape = frame.shapes.first() ?? crash "CrossModuleExpects: a frame draws"
+	first_shape = frame.ride_shapes.first() ?? crash "CrossModuleExpects: a frame draws"
 	coordinates_of(first_shape).len() >= 6
 }
 
@@ -1605,10 +1603,10 @@ expect {
 	)
 }
 
-expect FrameView.frame_view_at(World.route, ride_at_step_one).shapes.len() > 0
+expect FrameView.frame_view_at(World.route, ride_at_step_one).ride_shapes.len() > 0
 
 # The ride starts facing away from the sun.
-expect FrameView.frame_view_at(World.route, RideInstant.initial).sun_sighting == OutOfView
+expect FrameView.frame_view_at(World.route, RideInstant.initial).backdrop.sun_sighting == OutOfView
 
 ## A rider on the segment at `segment`, turned `yaw` from its axis, leaning
 ## `lean` and looking `gaze_yaw` from the way the motorcycle points.
@@ -1745,7 +1743,7 @@ encounter_attention_of = |rider, encounter|
 expect focal_of(upright).minus(Lens.resting_focal) == Pixels.zero
 expect encounter_attention_of(upright, Unplanned) == 0.0
 expect Gaze.gaze_attention(Fraction.zero).to_f64() == 0.0
-expect Lens.cam_focal({
+expect Lens.focal_for({
 	lean: upright.motorcycle.lean,
 	attention: Attention.none,
 }).minus(Lens.resting_focal) == Pixels.zero
@@ -1826,28 +1824,10 @@ expect
 		== lean_only.to_f64().min(gaze_only.to_f64()).to_bits()
 expect lean_only.plus(gaze_only) > both
 expect both.to_f64() - lean_only.to_f64().min(gaze_only.to_f64()) == 0.0
-expect Lens.cam_focal({
+expect Lens.focal_for({
 	lean: Lens.full_lean,
 	attention: Attention.none,
 }).minus(lean_only) == Pixels.zero
-
-## A clock with the sun behind the mountains.
-after_sunset : Clock
-after_sunset = Clock.at_step(5700)
-
-## The truck's lights at `clock`, with the truck's pace as given.
-lights_at : { clock : Clock, pace : [Slowing, NotSlowing] } -> _
-lights_at = |{ clock, pace }|
-	FrameView.lit_truck({
-		..RideInstant.initial,
-		truck: { ..RideInstant.initial.truck, pace },
-		clock,
-	})
-
-expect lights_at({ clock: Clock.start, pace: NotSlowing }) == { headlights: Off, brake_lights: Off }
-expect lights_at({ clock: Clock.start, pace: Slowing }) == { headlights: Off, brake_lights: On }
-expect lights_at({ clock: after_sunset, pace: NotSlowing }) == { headlights: On, brake_lights: Off }
-expect lights_at({ clock: after_sunset, pace: Slowing }) == { headlights: On, brake_lights: On }
 
 ## A pond's bend at the end of a segment 100 m long, turning 15° right.
 right_pond_bend : Geom.Bend
