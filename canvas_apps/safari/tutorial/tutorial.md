@@ -377,18 +377,15 @@ One tree, from the top
 digraph tree {
   node [shape=box, fontname="Helvetica"];
   "Conifer.scenery_picture" [style=bold];
-  "Conifer.scenery_picture" -> "Conifer.scenery_height";
-  "Conifer.scenery_picture" -> "foliage_color";
   "Conifer.scenery_picture" -> "TreeShapes.tree_picture";
-  "TreeShapes.tree_picture" -> "TreeShapes.tree_on_screen";
-  "TreeShapes.tree_on_screen" -> "Camera.project";
-  "TreeShapes.tree_picture" -> "trunk_shape";
+  "TreeShapes.tree_picture" -> "tree_on_screen";
+  "tree_on_screen" -> "Camera.project";
   "TreeShapes.tree_picture" -> "tier_shape";
   "tier_shape" -> "tier_triangle";
 }
 ```
 
-A box is a function, and an arrow is a call. The top row knows the four kinds of conifer. Everything from `TreeShapes.tree_picture` down knows only a height and a color. `Conifer` imports `TreeShapes`, and `TreeShapes` doesn't import `Conifer`, so a fifth kind of tree wouldn't touch a line of `TreeShapes`.
+A box is a function, and an arrow is a call. `Conifer.scenery_picture` knows the four kinds of conifer, and works out a height and a color from the kind. Everything below it knows only a height and a color. `Conifer` imports `TreeShapes`, and `TreeShapes` doesn't import `Conifer`, so a fifth kind of tree wouldn't touch a line of `TreeShapes`.
 
 ### The functions
 
@@ -472,15 +469,14 @@ A near tree's tiers
 ```dot
 digraph cone {
   node [shape=box, fontname="Helvetica"];
-  "TreeShapes.tree_picture" -> "TreeShapes.crown_of";
+  "TreeShapes.tree_picture" -> "crown_of";
   "TreeShapes.tree_picture" -> "tier_shape";
   "tier_shape" -> "tier_triangle";
   "tier_shape" -> "tier_cone";
-  "tier_cone" -> "Camera.project";
   "tier_cone" -> "convex_hull_points";
   "convex_hull_points" -> "trim_hull";
   "trim_hull" -> "trim_hull";
-  "TreeShapes.crown_of" [style=bold];
+  "crown_of" [style=bold];
 }
 ```
 
