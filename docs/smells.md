@@ -144,6 +144,14 @@ only what is its own. `Pipeline` is that place for sighting and rendering.
 `Conifer` owns its picture and `Pipeline` knows nothing of trees. If a general
 module imports a particular one, ask which way the arrow should point.
 
+**A collection keeps its kinds past their last use.** Scene held seven typed
+lists, one per kind, though its only use of a kind was to render it at once.
+Every walk of the scene dragged in each kind's internals: stills, poses,
+Tower's corners. Erase the kind where the last step that needs it runs. Here
+that's `rendering_of`, after which every kind is one `Rendered`. Keep the
+sources as named fields rather than a tag enum, which would be a second list of
+kinds.
+
 **A module's tests live in another module.** More than half of SceneShapes.roc
 tested TreeSighting and TruckSighting, which had no `expect`s of their own, and
 SceneShapes imported six modules only for those tests. An expect belongs beside
