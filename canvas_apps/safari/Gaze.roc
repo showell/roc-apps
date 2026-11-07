@@ -13,7 +13,6 @@ import Distance
 import Easing
 import Fraction
 import Geom
-import Pigs
 import RiderState
 import Scenery
 import Speed
@@ -91,7 +90,7 @@ Gaze :: [].{
 	eye_catching_pig = |seg|
 		match seg.pig_interest {
 			Distracting =>
-				match Pigs.standout_pig(seg.pig_herd, seg.length) {
+				match World.standout_pig(seg) {
 					Standout(pig) => CatchesEye(pig)
 					NoPigs => NoPigCatchesEye
 				}

@@ -1153,7 +1153,7 @@ These animals stand at the bends. Most of the others come in crowds, and a crowd
 
 A pig is the simplest critter in Safari Ride. It isn't tied to a bend. Here's how we build one:
 
-{{code Pigs.pig}}
+{{code Pig.pig_billboard}}
 
 New in this chapter:
 
@@ -1195,7 +1195,7 @@ A bull may stand in front of the herd, by the trees. It's the same record again,
 
 Pigs graze on the right of the road, near the end of a segment. The first two segments with pigs get a big herd, 7 rows of 7. After that, it's two short rows.
 
-{{code Pigs.herd_pigs}}
+{{code PigHerd.herd_pigs}}
 
 The `match` has three branches, because a segment's pigs can be three things to the rider. `Distracting` is the one a cow doesn't have. One pig in a big herd catches the rider's eye, and the rider slows down to look. That's about the rider more than the pig, so it waits for the rider's chapters.
 
@@ -1670,7 +1670,7 @@ Mind what `gaze_yaw` is measured from. The road has a direction, `yaw` is how fa
 
 Three small types say what a pig can do to the rider. Each one carries its payload only where it means something. A segment's `pig_interest` says what its pigs are to the rider, and only `Distracting` has a pig in it:
 
-{{code Pigs.PigInterest}}
+{{code World.PigInterest}}
 
 The rider looks at a pig or at the road, and only a pig has an angle:
 
