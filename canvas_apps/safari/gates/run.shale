@@ -42,13 +42,15 @@
 -- once. It also runs `part=format`, `roc fmt --check` over safari, lib,
 -- widget_kit and the widgets, the check fast.shale runs too.
 --
--- `part=widgets` runs `roc check` and `roc test --verbose` on each widget's
--- web.roc, because the widgets import the game through game.roc and a change to
--- a type they use breaks them. The widgets are the `*_widget` folders of
--- canvas_apps, found by listing it, and finding none fails. Every expect in a
--- widget or in widget_kit must pass, counted as in `part=expects`. `roc test` has
--- no way to run one module's expects, so each widget runs the game's again: that
--- is most of this part's time.
+-- `part=widgets` runs `roc check` on each widget's web.roc, because the widgets
+-- import the game through game.roc and a change to a type they use breaks them.
+-- Then it runs `roc test --verbose` once, on gates/WidgetExpects.roc, which
+-- reaches every widget's app module through the package.roc in its folder. The
+-- widgets are the `*_widget` folders of canvas_apps, found by listing it, and
+-- finding none fails, as does a widget the root doesn't name. Every expect in a
+-- widget or in widget_kit must pass, counted as in `part=expects`. `roc test`
+-- runs the expects of every module a root reaches, packages on a path included,
+-- and has no way to run only some, so the game's expects run here too, once.
 --
 -- The proof tools: StepBack passes on "every step back went back one step",
 -- OnRoad on "the ride stayed on the road", and ShapesFrame on "differ 0" at
@@ -162,13 +164,15 @@ const SELF_PATH = "canvas_apps/safari/gates/run.shale"
 const TUTORIAL = "canvas_apps/safari/tutorial/build.shale"
 const BOOK_NAMES = "canvas_apps/safari/gates/book_names.shale"
 const EXPECT_ROOTS = {"gates/CrossModuleExpects.roc", "web.roc", "../lib/main.roc"}
+const WIDGET_ROOT = "gates/WidgetExpects.roc"
 const SAFARI_SOURCES = {":(glob)canvas_apps/safari/*.roc", ":(glob)canvas_apps/safari/gates/*.roc", ":(glob)canvas_apps/lib/*.roc"}
 const WIDGET_SOURCES = {":(glob)canvas_apps/*_widget/*.roc", ":(glob)canvas_apps/widget_kit/*.roc"}
 const DEPTHS = {"0", "100", "1529", "1542", "3000", "3698", "5700", "6250", "9000"}
 const CACHE_CEILING_MB = 4000
 -- The widgets' budget is set from a cold cache after a change to a module they
--- all import: 53 s of CPU for 13 widgets, measured 2026-11-07.
-const CPU_BUDGET_MS = {lints = 25000, expects = 30000, widgets = 60000, tutorial = 5000, book_names = 2000, proof = 60000, page = 25000}
+-- all import: 23 s of CPU for 13 widgets' checks and their one test run, and
+-- 17 s warm, measured 2026-11-07.
+const CPU_BUDGET_MS = {lints = 25000, expects = 30000, widgets = 35000, tutorial = 5000, book_names = 2000, proof = 60000, page = 25000}
 const COLD = arg("cold", "") == "1"
 const RELEASE = arg("release", "") == "1"
 
@@ -313,24 +317,35 @@ function widget_lines(passed)
   return kept
 end
 
--- A widget that doesn't check isn't tested, so the count waits for them all.
+-- How many widget folders WIDGET_ROOT leaves out, each named. A widget with no
+-- expects of its own would otherwise go untested unnoticed.
+function widgets_unrooted(folders)
+  local root = read(SAFARI .. "/" .. WIDGET_ROOT)
+  local missing = 0
+  for folder in folders do
+    if not contains(root, "\"../../" .. folder .. "/package.roc\"") then
+      missing = missing + 1
+      print("FAIL " .. WIDGET_ROOT .. " doesn't reach " .. folder .. "/package.roc")
+    end
+  end
+  return missing
+end
+
+-- A widget that doesn't check isn't tested, so the test waits for them all.
 function widgets()
   local roc = roc_path()
   local cache = child_cache("widgets")
   local env = cache_env(cache)
   local passed = {}
-  local wrong = 0
   local folders = widget_folders()
-  for folder in folders do
-    local broken = check_widget(roc, env, folder)
-    wrong = wrong + broken
-    if broken == 0 then wrong = wrong + test_root(roc, env, "../" .. folder .. "/web.roc", passed) end
-  end
+  local wrong = widgets_unrooted(folders)
+  for folder in folders do wrong = wrong + check_widget(roc, env, folder) end
+  if wrong == 0 then wrong = test_root(roc, env, WIDGET_ROOT, passed) end
   drop_child_cache(cache)
   local source = written_expects(WIDGET_SOURCES)
   if #keys(source.written) == 0 then fail("safari gates: no expects found in the widgets") end
   if wrong == 0 then wrong = expects_unheld(source, widget_lines(passed)) end
-  print("widgets: " .. #folders .. " checked, " .. #keys(source.written) .. " expects in the source, " .. wrong .. " wrong")
+  print("widgets: " .. #folders .. " checked, " .. #keys(source.written) .. " expects in the source, " .. #keys(passed) .. " passed in one roc test, " .. wrong .. " wrong")
   if wrong > 0 then fail("safari gates: the widgets failed") end
   return nil
 end

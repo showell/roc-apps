@@ -196,7 +196,7 @@ files, and one frame held to `gates/proof.expected`.
   its cache, which takes longer.
 - **Widgets:** if you change something a widget imports, also run `roc check web.roc` in that widget's folder (`canvas_apps/<name>_widget`), with the
   pinned Roc: `/home/steve/tools/roc-nightly-2026-11-03-34bd006/roc`.
-- **A change that moves the ride or any pixel:** run `shale canvas_apps/safari/gates/run.shale part=widgets` (every widget's `roc check` and `roc test`, about 40 seconds). Several widgets hold numbers from a paused step of the real ride, such as the frame widget's shape counts at step 1570, so they break even when you didn't touch them.
+- **A change that moves the ride or any pixel:** run `shale canvas_apps/safari/gates/run.shale part=widgets` (every widget's `roc check`, then one `roc test` over all of them, about 35 seconds on a busy box). Several widgets hold numbers from a paused step of the real ride, such as the frame widget's shape counts at step 1570, so they break even when you didn't touch them.
 - **Whole-tree lints:** before you report, also run `shale canvas_apps/safari/gates/lints.shale` from the worktree root, about 17 seconds. fast.shale skips the lints that read across files (boundaries, families and others), and they catch what a lane's rename or new parameter does elsewhere.
 - **The book:** also run `shale canvas_apps/safari/gates/run.shale part=tutorial`, about a second. It fails only if an include breaks. While the book is parked, its stale names and the rule that it names every module are skipped, loudly (they print SKIPPED with their counts).
 - **The full gate is the orchestrator's.** Don't run `gates/run.shale`.
