@@ -28,7 +28,10 @@ ShapesPixels :: [].{
 pixels_with_shape : List(U32), { roll : ScreenRoll, shape : Shapes.Shape } -> List(U32)
 pixels_with_shape = |pixels, { roll, shape }|
 	match shape {
-		Poly(p) => ScanlineFill.polygon_pixels(pixels, { roll, points: p.points, fill: p.fill })
+		Poly(p) => ScanlineFill.polygon_pixels(
+			pixels,
+			{ roll, coordinates: p.coordinates, fill: p.fill },
+		)
 		Pieces(p) => pixels_with_pieces(pixels, { roll, tris: p.tris, fill: p.fill })
 		Disc(d) => {
 			color = match d.fill {
@@ -75,7 +78,7 @@ pixels_with_pieces = |pixels, { roll, tris, fill }| {
 			$px,
 			{
 				roll,
-				points: tris.sublist({ start: 6 * k, len: 6 }),
+				coordinates: tris.sublist({ start: 6 * k, len: 6 }),
 				fill,
 			},
 		)

@@ -18,23 +18,23 @@ Panels :: [].{
 	# its own plane on its hinge, and a floor lies flat.
 	world : View.View, List(View.At), Brush.Fill -> List(Shapes.Shape)
 	world = |v, ats, fill| {
-		points = View.seen(v, ats)
-		if points.len() < 6 {
+		coordinates = View.seen(v, ats)
+		if coordinates.len() < 6 {
 			[]
 		} else {
-			[Poly({ points, fill })]
+			[Poly({ coordinates, fill })]
 		}
 	}
 
 	# A polygon given as metres on one plane `fwd` away: right, height, right,
 	# height. Everything on the house's face is one of these.
 	face : View.View, F64, List(F64), Brush.Fill -> List(Shapes.Shape)
-	face = |v, fwd, points, fill| {
-		n = List.len(points)
+	face = |v, fwd, coordinates, fill| {
+		n = List.len(coordinates)
 		var $ats = List.with_capacity(n // 2)
 		var $i = 0
 		while $i + 1 < n {
-			$ats = List.append($ats, { right: List.get(points, $i) ?? 0.0, forward: fwd, height: List.get(points, $i + 1) ?? 0.0 })
+			$ats = List.append($ats, { right: List.get(coordinates, $i) ?? 0.0, forward: fwd, height: List.get(coordinates, $i + 1) ?? 0.0 })
 			$i = $i + 2
 		}
 		world(v, $ats, fill)

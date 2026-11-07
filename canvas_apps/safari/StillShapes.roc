@@ -208,7 +208,10 @@ flat_polygon = |count| {
 
 expect
 	StillShapes.still_polygon(upright, flat_polygon(3))
-		== Poly({ points: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0], fill: Flat(Brush.opaque(7)) })
+		== Poly({
+			coordinates: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0],
+			fill: Flat(Brush.opaque(7)),
+		})
 
 # How many shapes draw a critter of `height` metres, `forward` metres ahead.
 shape_count : {

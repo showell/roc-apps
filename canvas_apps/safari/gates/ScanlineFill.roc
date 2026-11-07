@@ -18,11 +18,11 @@ ScanlineFill :: [].{
 	polygon_pixels : List(U32),
 	{
 		roll : ScreenRoll,
-		points : List(F64),
+		coordinates : List(F64),
 		fill : Brush.Fill,
 	} -> List(U32)
-	polygon_pixels = |pixels, { roll, points, fill }| {
-		corners = points.chunks_of(2).map(
+	polygon_pixels = |pixels, { roll, coordinates, fill }| {
+		corners = coordinates.chunks_of(2).map(
 			|pair|
 				match pair {
 					[x, y] => roll.to_screen(ScreenRoll.ScenePoint.({ x, y }))

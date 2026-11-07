@@ -274,7 +274,7 @@ icon_color = 0xf7f5f0
 triangle : F64, F64 -> Shapes.Shape
 triangle = |tip_x, reach|
 	Poly({
-		points: [
+		coordinates: [
 			tip_x - reach,
 			button_middle_y - 7.0,
 			tip_x,

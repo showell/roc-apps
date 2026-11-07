@@ -215,7 +215,7 @@ cluster_shapes = |forward|
 second_shape_points : List(Shapes.Shape) -> U64
 second_shape_points = |shapes|
 	match shapes {
-		[_, Poly(polygon), ..] => polygon.points.len()
+		[_, Poly(polygon), ..] => polygon.coordinates.len()
 		_ => crash "a tree in view draws a trunk and tiers"
 	}
 

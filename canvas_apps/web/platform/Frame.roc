@@ -32,7 +32,7 @@ Frame :: [].{
 	Align : [Left, Center]
 
 	Shape : [
-		Poly({ points : List(F64), fill : Frame.Fill }),
+		Poly({ coordinates : List(F64), fill : Frame.Fill }),
 		Pieces({ tris : List(F64), fill : Frame.Fill }),
 		Disc({ x : F64, y : F64, r : F64, fill : Frame.Fill, clip : Frame.Clip }),
 		Rect({ x : F64, y : F64, w : F64, h : F64, fill : Frame.Fill }),

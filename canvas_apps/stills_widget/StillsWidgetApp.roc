@@ -766,7 +766,7 @@ expect {
 		height_px: Pixels.of(10.0),
 	}
 	match outline_shapes(anchor, square) {
-		[_, _, _, Poly({ points, .. })] => points == [-0.5, 0.0, -0.5, 10.0, 0.5, 10.0, 0.5, 0.0]
+		[_, _, _, Poly({ coordinates, .. })] => coordinates == [-0.5, 0.0, -0.5, 10.0, 0.5, 10.0, 0.5, 0.0]
 		_ => False
 	}
 }
@@ -786,7 +786,7 @@ expect {
 			points: [{ x: 1.0, y: 1.0 }],
 		},
 	)
-		== [Poly({ points: [], fill: Flat(ink) })]
+		== [Poly({ coordinates: [], fill: Flat(ink) })]
 }
 
 # The picture answers each click.

@@ -41,7 +41,7 @@ TruckShape.circle_angles: radians for Trig
 # The edge of lib.Shapes, which takes plain numbers.
 Screen.point: the plain numbers a point is written with, on the way into Pixels
 Polygon.flat_coordinates: the flat list lib.Shapes takes
-Polygon.polygon_points: the flat list lib.Shapes takes
+Polygon.polygon_coordinates: the flat list lib.Shapes takes
 Polygon.ColorStops: gradient offsets as traced, which offsets_of holds to 0 to 1
 Polygon.offsets_of: the gradient offsets lib.Shapes takes
 
