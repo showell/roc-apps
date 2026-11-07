@@ -56,7 +56,6 @@ import game.RailSighting
 import game.Rendered
 import game.Scene
 import game.RideInstant
-import game.Rider
 import game.RiderCamera
 import game.RiderState
 import game.Screen
@@ -97,17 +96,17 @@ origin_camera : { vantage : Geom.Vantage, cam_focal : Pixels }
 origin_camera = { vantage: origin, cam_focal: Pixels.of(500.0) }
 
 ## The road ahead of a rider on the world's segment `number`.
-road_from : U32 -> RoadAhead.RoadView
-road_from = |number| RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex.number(number))
+world_road_at : U32 -> RoadAhead.RoadView
+world_road_at = |number| RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex.number(number))
 
 ## The road ahead of a rider on the route's first segment.
 road : RoadAhead.RoadView
-road = road_from(0)
+road = world_road_at(0)
 
 # Positions count along the road ahead from the rider's segment, not along the
 # route from its start.
 expect {
-	from_third = road_from(2)
+	from_third = world_road_at(2)
 	length_at = |position| RoadAhead.segment_at(from_third, position).length
 	length_of = |number| World.route.segment_at(Route.SegmentIndex.number(number)).length
 	length_of(2) != length_of(0)
@@ -138,13 +137,13 @@ expect {
 expect [
 	(0, 0),
 	(3, 3),
-].all(|(first, want)| RoadAhead.rider_segment_index(road_from(first)).to_i64() == want)
+].all(|(first, want)| RoadAhead.rider_segment_index(world_road_at(first)).to_i64() == want)
 
 ## The route's number of the segment in view just behind a rider on the
 ## world's segment `first`, or -1 at the route's start.
 number_behind : U32 -> I64
 number_behind = |first| {
-	behind = RoadAhead.segments_in_view(road_from(first)).find_last(
+	behind = RoadAhead.segments_in_view(world_road_at(first)).find_last(
 		|in_view|
 			match in_view.place {
 				JustBehind => True
@@ -349,8 +348,8 @@ segment_of = |trees| {
 }
 
 ## The road ahead of a rider on the first of `segments`, a route of their own.
-road_of : List(Segment) -> RoadAhead.RoadView
-road_of = |segments|
+crafted_road : List(Segment) -> RoadAhead.RoadView
+crafted_road = |segments|
 	RoadAhead.RoadView.ahead_of(Route.from_segments(segments), Route.SegmentIndex.first)
 
 ## `segment`, bending straight on into another.
@@ -535,7 +534,7 @@ expect past_bend_trees(-80.0).len() == 0
 ## The road ahead of a rider at the start of a 300 m segment that turns right by
 ## a right angle into another.
 right_angle_road : RoadAhead.RoadView
-right_angle_road = road_of([
+right_angle_road = crafted_road([
 	{
 		..segment_of([]),
 		length: Distance.metres(300.0),
@@ -593,7 +592,7 @@ expect {
 tree_places : List(Segment), Pixels -> List((F64, F64))
 tree_places = |segments, cam_focal|
 	TreeSighting.trees_in_view(
-		road_of(segments),
+		crafted_road(segments),
 		{ vantage: { ..origin, along: Along.metres(10.0) }, cam_focal },
 	).map(|tree| (tree.spot.foot().right().to_metres(), tree.spot.foot().forward().to_metres()))
 
@@ -802,8 +801,9 @@ is_cow_seen_from = |forward| {
 		across: Across.metres(lone_cow.across.to_metres() - 2.5),
 		yaw: Angle.straight_ahead,
 	}
+	cow_road = crafted_road([one_cow_segment])
 	camera = { vantage: rider, cam_focal: Lens.resting_focal }
-	BillboardSighting.billboards_in_view(road_of([one_cow_segment]), camera).len() == 1
+	BillboardSighting.billboards_in_view(cow_road, camera).len() == 1
 }
 
 # The near plane is 0.4 m. The rider's place is worked out from the cow's, so
@@ -877,7 +877,7 @@ expect
 # each foot is drawn in toward the middle by 1/320 of 6 m.
 shapes_of_tower_100_ahead : List(Shapes.Shape)
 shapes_of_tower_100_ahead = {
-	tower_road = road_of([segment_of([])])
+	tower_road = crafted_road([segment_of([])])
 	plain_tower : Tower
 	plain_tower = { yaw: Angle.straight_ahead, beacon_brightness: Fraction.zero }
 	sighted =
@@ -1001,7 +1001,7 @@ expect
 		== [Ahead(SegmentPlace.Position.first), Ahead(SegmentPlace.Position.first), JustBehind]
 expect
 	TowerSighting.towers_in_view(
-		road_of([segment_of([])]),
+		crafted_road([segment_of([])]),
 		{ camera: { vantage: { ..origin, along: Along.metres(5000.0) } }, clock: Clock.start },
 	).len()
 		== 0
@@ -1132,7 +1132,7 @@ Post := { height : Distance }.{
 
 ## The road ahead of a rider on a straight route of one segment.
 straight_road : RoadAhead.RoadView
-straight_road = road_of([segment_of([])])
+straight_road = crafted_road([segment_of([])])
 
 ## A post 1 m tall, `along` the straight road and 1.5 m right of its middle, as
 ## a camera at `origin` sees it.
@@ -1511,7 +1511,7 @@ expect {
 	var $crossings = 0
 	var $is_home_at_each = True
 	var $has_looked = False
-	while !Rider.is_finished($instant.rider, World.route) {
+	while !$instant.rider.is_finished(World.route) {
 		next = instant_after($instant)
 		if next.rider.segment_index != $instant.rider.segment_index {
 			$crossings = $crossings + 1
@@ -1524,7 +1524,7 @@ expect {
 	$crossings == 18 and $is_home_at_each and $has_looked
 }
 
-expect Rider.is_finished(done.rider, World.route)
+expect done.rider.is_finished(World.route)
 expect instant_after(done).truck.pace == NotSlowing
 
 # A ride that hasn't finished steps on: the clock by a step, the rider and the
@@ -1535,7 +1535,7 @@ ride_at_step_one = instant_after(RideInstant.initial)
 ride_at_step_two : RideInstant
 ride_at_step_two = instant_after(ride_at_step_one)
 
-expect !Rider.is_finished(RideInstant.initial.rider, World.route)
+expect !RideInstant.initial.rider.is_finished(World.route)
 expect ride_at_step_one.clock.to_f64() == 1.0
 expect ride_at_step_two.clock.to_f64() == 2.0
 expect ride_at_step_two.clock.steps_since(ride_at_step_one.clock) == Steps.one_step
@@ -1543,7 +1543,72 @@ expect ride_at_step_one.rider.motorcycle.along > RideInstant.initial.rider.motor
 expect ride_at_step_one.truck.route_position > RideInstant.initial.truck.route_position
 expect ride_at_step_two.rider.motorcycle.along > ride_at_step_one.rider.motorcycle.along
 expect ride_at_step_one.clock != Clock.start
-expect !Rider.is_finished(ride_at_step_one.rider, World.route)
+expect !ride_at_step_one.rider.is_finished(World.route)
+
+## A rider on the middle of the road at the starting speed, `along` metres down
+## segment `index` of the route.
+placed_rider : U32, F64 -> RiderState
+placed_rider = |index, along| {
+	..RiderState.initial,
+	segment_index: Route.SegmentIndex.number(index),
+	motorcycle: { ..Motorcycle.initial, along: Along.metres(along) },
+}
+
+## The route's last segment, which ends the route.
+last_segment_index : U32
+last_segment_index = 18
+
+expect World.route.segment_at(Route.SegmentIndex.number(last_segment_index)).ending == RouteEnds
+
+# The ride is finished once the rider reaches the end of the last segment, and
+# not before, nor anywhere on a segment that bends into another.
+expect placed_rider(last_segment_index, 300.0).is_finished(World.route)
+expect !placed_rider(last_segment_index, 299.0).is_finished(World.route)
+expect !placed_rider(0, 499.0).is_finished(World.route)
+
+## That rider a step on.
+rider_a_step_after : U32, F64 -> RiderState
+rider_a_step_after = |index, along|
+	placed_rider(index, along).next({ route: World.route, encounter_timing: Unplanned })
+
+# A rider near the first bend crosses onto the next segment's road, and one well
+# short of it, which the bend would carry far off that road, stays.
+expect rider_a_step_after(0, 499.0).segment_index.to_i64() == 1
+expect rider_a_step_after(0, 100.0).segment_index.to_i64() == 0
+
+# The ride ends stopped dead at the route's end, and a step short of the end
+# leaves the rider moving.
+expect {
+	stopped = ride_at_finish.rider.motorcycle
+	stopped.along.to_metres() == 300.0 and stopped.speed == Speed.at_rest
+}
+expect {
+	short = rider_a_step_after(last_segment_index, 290.0).motorcycle
+	short.along.to_metres() < 300.0 and short.speed > Speed.at_rest
+}
+
+## A motorcycle just short of the first bend, a little off the middle and
+## turned a little from the segment's axis.
+motorcycle_at_first_seam : Motorcycle
+motorcycle_at_first_seam = {
+	along: Along.metres(499.0),
+	across: Across.metres(0.5),
+	yaw: Angle.Turn.radians(0.1),
+	speed: Speed.metres_a_step(1.25),
+	lean: Angle.Lean.radians(0.05),
+}
+
+# The crossing keeps the motorcycle's bearing in the world: the yaw turns back
+# by the bend that turns the next segment's bearing. The two sums round apart,
+# by no more than a float's last bits.
+expect {
+	first = Route.SegmentIndex.first
+	at_seam = motorcycle_at_first_seam
+	on_next = at_seam.motorcycle_past_bend(World.route.segment_at(first).bend_out_of())
+	before = World.route.bearing_of(first).plus(at_seam.yaw)
+	after = World.route.bearing_of(first.next()).plus(on_next.yaw)
+	after.turn_from(before).abs() < Angle.Turn.radians(0.000000000001)
+}
 
 # The rider starts at the route's start and moves along it.
 expect RideInstant.rider_distance(World.route, RideInstant.initial) == Distance.zero
@@ -1555,7 +1620,7 @@ expect
 # crashes, since the ride starts again before reaching it.
 expect {
 	var $tour = Tour.initial
-	while !Rider.is_finished($tour.instant.rider, $tour.route) {
+	while !$tour.instant.rider.is_finished($tour.route) {
 		$tour = Tour.step_forward($tour)
 	}
 	finish = $tour.instant.clock
@@ -1647,12 +1712,16 @@ expect {
 # rule is strict that night comes and loose about when, so it holds no step.
 # The sky only darkens as the clock runs, so full darkness at the finish means it
 # came at or before it.
-expect {
+expect Sky.darkness_at(ride_at_finish.clock) == Fraction.whole
+
+## The ride at the step it finishes.
+ride_at_finish : RideInstant
+ride_at_finish = {
 	var $instant = RideInstant.initial
-	while !Rider.is_finished($instant.rider, World.route) {
+	while !$instant.rider.is_finished(World.route) {
 		$instant = instant_after($instant)
 	}
-	Sky.darkness_at($instant.clock) == Fraction.whole
+	$instant
 }
 
 ## What the encounters do over the whole ride: how many steps a bird is in
@@ -1673,13 +1742,13 @@ ride_encounters = {
 	var $is_bird_ahead_throughout = True
 	var $cat_exits = 0
 	var $is_faded_at_each_exit = True
-	while !Rider.is_finished($instant.rider, World.route) {
+	while !$instant.rider.is_finished(World.route) {
 		segment = World.route.segment_at($instant.rider.segment_index)
 		timing = RideInstant.encounter_timing($instant)
 		next = instant_after($instant)
 		is_leaving =
 			next.rider.segment_index != $instant.rider.segment_index
-				or Rider.is_finished(next.rider, World.route)
+				or next.rider.is_finished(World.route)
 		match segment.encounter {
 			BirdHere(flight) => {
 				stage = BirdFlight.flight_stage(timing)
@@ -2617,7 +2686,7 @@ expect LeanSearch.lean_correction(Leaves({ side: Right, after: Steps.one_step })
 ## A straight road of three segments, 500 m, 320 m and 400 m long, and the
 ## road ahead of a rider on the first of them.
 truck_road : RoadAhead.RoadView
-truck_road = road_of([
+truck_road = crafted_road([
 	{ ..going_straight_on(segment_of([])), length: Distance.metres(500.0) },
 	{ ..going_straight_on(segment_of([])), length: Distance.metres(320.0) },
 	{ ..segment_of([]), length: Distance.metres(400.0) },

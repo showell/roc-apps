@@ -5,6 +5,8 @@
 import Across
 import Along
 import Angle
+import Distance
+import Geom
 import Speed
 import VehicleLimits
 
@@ -52,6 +54,30 @@ Motorcycle := {
 
 	with_lean : Motorcycle, Angle.Lean -> Motorcycle
 	with_lean = |motorcycle, lean| { ..motorcycle, lean }
+
+	## This motorcycle carried over `bend` onto the next segment: placed in that
+	## segment's frame, and turned to its axis. Nothing here asks whether that
+	## puts it on the next segment's road.
+	motorcycle_past_bend : Motorcycle, Geom.Bend -> Motorcycle
+	motorcycle_past_bend = |motorcycle, bend| {
+		place = { along: motorcycle.along, across: motorcycle.across }
+		on_next = Geom.point_in_segment_after(place, bend)
+		{
+			..motorcycle,
+			along: on_next.along,
+			across: on_next.across,
+			yaw: motorcycle.yaw.minus(bend.turn),
+		}
+	}
+
+	## This motorcycle stopped dead at `at`. The book shows it as the plainest
+	## record update, so it stands alone.
+	stopped_at : Motorcycle, Along -> Motorcycle
+	stopped_at = |motorcycle, at| { ..motorcycle, along: at, speed: Speed.at_rest }
+
+	## Whether this motorcycle has come `length` along its segment, or gone past.
+	has_reached : Motorcycle, Distance -> Bool
+	has_reached = |motorcycle, length| motorcycle.along >= Along.at(length)
 
 	is_eq : _
 }
@@ -127,3 +153,22 @@ expect {
 		(b.yaw.to_radians(), 0.05),
 	].all(|(got, want)| got == want)
 }
+
+## A bend at the end of a 500-metre segment, turning a little to the right.
+gentle_bend : Geom.Bend
+gentle_bend = { segment_length: Distance.metres(500.0), turn: Angle.Turn.radians(0.3) }
+
+## A motorcycle on the middle of the road, `along` metres down its segment.
+motorcycle_at : F64 -> Motorcycle
+motorcycle_at = |along| { ..Motorcycle.initial, along: Along.metres(along) }
+
+# Carried over the bend from well short of it, a motorcycle lands far off the
+# next segment's road, and from the bend itself it lands on it.
+expect motorcycle_at(100.0).motorcycle_past_bend(gentle_bend).across.distance_from_middle()
+	> Distance.metres(100.0)
+expect motorcycle_at(500.0).motorcycle_past_bend(gentle_bend).across.distance_from_middle()
+	< Geom.road_half_width
+
+expect motorcycle_at(300.0).has_reached(Distance.metres(300.0))
+expect motorcycle_at(310.0).has_reached(Distance.metres(300.0))
+expect !motorcycle_at(299.99).has_reached(Distance.metres(300.0))
