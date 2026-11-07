@@ -11,11 +11,17 @@ import Scatter
 PigHerd := [BigHerd(PigHerd.BigPigHerd), TwoRows(PigHerd.TwoRowPigHerd)].{
 
 	## A big herd: rows of columns, each pig strayed a little from its place.
-	## The first row is nearest the road, and each row behind it stands
-	## `row_depth` farther from the road and as far again along it.
+	## The front row is nearest the road, and each row behind it stands
+	## `row_depth` farther from the road and as far again along it. The front
+	## row always has its standout pig: the columns are counted either side of
+	## it.
 	BigPigHerd := {
-		columns : U64,
-		rows : U64,
+		## How many columns stand before the standout pig's, and after it.
+		columns_before_standout : U64,
+		columns_after_standout : U64,
+
+		## How many rows stand behind the front row.
+		rows_behind_front : U64,
 
 		## Where the first column is along the road, from the herd's place.
 		first_column : Distance,
@@ -27,15 +33,12 @@ PigHerd := [BigHerd(PigHerd.BigPigHerd), TwoRows(PigHerd.TwoRowPigHerd)].{
 		## How far a pig strays from its place, along the road and across it.
 		jitter_along : Distance,
 		jitter_across : Distance,
-
-		## Which pig of the row nearest the road stands out, counting from 0.
-		standout_column : U64,
 	}.{
 
 		## The herd's pig that stands out, about `herd_along`.
 		standout_pig : PigHerd.BigPigHerd, Along -> Geom.Placed(Billboard)
 		standout_pig = |herd, herd_along| {
-			column = herd.standout_column
+			column = herd.columns_before_standout
 			herd_pig(herd, { herd_along, row: 0, column })
 		}
 
@@ -105,10 +108,15 @@ pig = |{ along, across }| {
 ## The big herd's pigs about `herd_along`, row by row from the road.
 big_herd_pigs : PigHerd.BigPigHerd, Along -> List(Geom.Placed(Billboard))
 big_herd_pigs = |herd, herd_along| {
-	columns = List.from_iter(U64.until(0, herd.columns))
-	List.from_iter(U64.until(0, herd.rows))
+	columns = List.from_iter(U64.until(0, column_count(herd)))
+	List.from_iter(U64.until(0, herd.rows_behind_front + 1))
 		.join_map(|row| columns.map(|column| herd_pig(herd, { herd_along, row, column })))
 }
+
+## How many columns the big herd has: those either side of the standout pig's,
+## and its own.
+column_count : PigHerd.BigPigHerd -> U64
+column_count = |herd| herd.columns_before_standout + 1 + herd.columns_after_standout
 
 ## Where the two-row herd's front row pigs are along the road, from the herd's
 ## place, in the order they stand.
@@ -142,7 +150,7 @@ herd_pig = |herd, { herd_along, row, column }| {
 	in_line = in_column.plus(herd.row_depth.times(fr))
 	in_row = front_row_across.plus(herd.row_depth.times(fr))
 	stray = Scatter.offset(
-		row * herd.columns + column,
+		row * column_count(herd) + column,
 		{
 			along_phase: 2.3,
 			across_phase: 1.7,
@@ -161,14 +169,14 @@ row_pigs = |herd_along, { across, offsets }|
 ## stands out.
 seven_by_seven : PigHerd.BigPigHerd
 seven_by_seven = {
-	columns: 7,
-	rows: 7,
+	columns_before_standout: 2,
+	columns_after_standout: 4,
+	rows_behind_front: 6,
 	first_column: Distance.metres(-6.0),
 	column_spacing: Distance.metres(4.0),
 	row_depth: Distance.metres(6.0),
 	jitter_along: Distance.metres(1.2),
 	jitter_across: Distance.metres(1.0),
-	standout_column: 2,
 }
 
 ## A two-row herd, four pigs in front and six behind. The third pig of the front

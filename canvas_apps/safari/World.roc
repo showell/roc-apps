@@ -264,17 +264,18 @@ World :: [].{
 	pig_novelty_count : U32
 	pig_novelty_count = 2
 
-	## The route's big herd, seven rows of seven.
+	## The route's big herd, seven rows of seven. The third pig of the front
+	## row stands out.
 	big_pig_herd : PigHerd.BigPigHerd
 	big_pig_herd = {
-		columns: 7,
-		rows: 7,
+		columns_before_standout: 2,
+		columns_after_standout: 4,
+		rows_behind_front: 6,
 		first_column: Distance.metres(-6.0),
 		column_spacing: Distance.metres(4.0),
 		row_depth: Distance.metres(6.0),
 		jitter_along: Distance.metres(1.2),
 		jitter_across: Distance.metres(1.0),
-		standout_column: 2,
 	}
 
 	## The route's two-row herd, four pigs in front and six behind. The third
@@ -301,7 +302,7 @@ World :: [].{
 	cow_herd : CowHerd
 	cow_herd = {
 		cow_count: 14,
-		rows: 3,
+		rows_behind_front: 2,
 		gap_behind_bull: Distance.metres(6.0),
 		column_spacing: Distance.metres(6.0),
 		row_stagger: Distance.metres(2.0),

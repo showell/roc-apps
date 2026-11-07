@@ -63,6 +63,7 @@ import game.Steps
 import game.StillShapes
 import game.Sun
 import game.Throttle
+import game.Tour
 import game.Tower
 import game.TowerSighting
 import game.TreeSighting
@@ -125,7 +126,7 @@ expect
 expect [
 	(0, 0),
 	(3, 3),
-].all(|(first, want)| RoadAhead.rider_segment(road_from(first)).to_i64() == want)
+].all(|(first, want)| RoadAhead.rider_segment_index(road_from(first)).to_i64() == want)
 
 ## The route's number of the segment in view just behind a rider on the
 ## world's segment `first`, or -1 at the route's start.
@@ -580,10 +581,12 @@ rail_ends : { start : Geom.RaisedPoint, end : Geom.RaisedPoint }
 rail_ends = {
 	quads = RailSighting.rail_quads_in_view(right_angle_road, { vantage: origin })
 	last_bar = (quads.len() - 1) / 2 - 1
-	corner_of = |quad_index, corner_index|
-		quads.get(quad_index).map_ok(|quad| quad.corners).ok_or([]).get(corner_index)
-			?? crash "CrossModuleExpects: a rail bar has four corners"
-	{ start: corner_of(0, 0), end: corner_of(last_bar, 1) }
+	corners_of = |quad_index|
+		match quads.get(quad_index) {
+			Ok(quad) => quad.corners
+			Err(OutOfBounds) => crash "CrossModuleExpects: the rail has a bar at each end of its path"
+		}
+	{ start: corners_of(0).low_start, end: corners_of(last_bar).low_end }
 }
 
 ## The point on the left edge `along` metres into the segment at `place` on the
@@ -806,7 +809,7 @@ expect steady_flight_stage(60.125) == Waiting
 expect steady_flight_stage(15.0) == Past(Steps.zero)
 expect steady_flight_stage(15.125) == Playing(Steps.of(35))
 
-# BillboardSighting: which critters are in view, on a road of one segment
+# BillboardSighting: which billboards are in view, on a road of one segment
 # holding one grown cow and nothing else.
 one_cow_segment : Segment
 one_cow_segment = {
@@ -887,40 +890,40 @@ expect
 
 # Wildlife: an animal and its baby at each of four bends, the first and third
 # turning right and the second and fourth left.
-four_critters : List(Geom.Placed(Billboard))
-four_critters = [
-	Wildlife.bend_critters({
+billboards_at_four_bends : List(Geom.Placed(Billboard))
+billboards_at_four_bends = [
+	Wildlife.bend_billboards({
 		animal: Elephant,
 		bend: { segment_length: Distance.metres(100.0), turn: Angle.Turn.degrees(50.0) },
 	}),
-	Wildlife.bend_critters({
+	Wildlife.bend_billboards({
 		animal: Giraffe,
 		bend: { segment_length: Distance.metres(50.0), turn: Angle.Turn.degrees(-70.0) },
 	}),
-	Wildlife.bend_critters({
+	Wildlife.bend_billboards({
 		animal: Zebra,
 		bend: { segment_length: Distance.metres(10.0), turn: Angle.Turn.degrees(50.0) },
 	}),
-	Wildlife.bend_critters({
+	Wildlife.bend_billboards({
 		animal: Rhino,
 		bend: { segment_length: Distance.metres(0.0), turn: Angle.Turn.degrees(-70.0) },
 	}),
 ].join()
 
 expect
-	four_critters.map(|critter| critter.road_point.across.to_metres())
+	billboards_at_four_bends.map(|billboard| billboard.road_point.across.to_metres())
 		== [-4.9, 0.0, 5.75, 0.0, -4.3, 0.0, 4.6, 0.0]
 
 expect
-	four_critters.map(|critter| critter.road_point.along.to_metres())
+	billboards_at_four_bends.map(|billboard| billboard.road_point.along.to_metres())
 		== [100.0, 114.0, 50.0, 64.0, 10.0, 24.0, 0.0, 14.0]
 
 expect
-	four_critters.map(|critter| critter.kind.height.to_metres())
+	billboards_at_four_bends.map(|billboard| billboard.kind.height.to_metres())
 		== [2.8, 1.4, 4.5, 2.25, 1.6, 0.8, 2.2, 1.1]
 
 expect
-	four_critters.map(|critter| critter.kind.facing)
+	billboards_at_four_bends.map(|billboard| billboard.kind.facing)
 		== [
 			FacesRight,
 			FacesRight,
@@ -1464,15 +1467,30 @@ done = {
 	encounter_start: StartsAt(Clock.at_step(12300)),
 }
 
-expect {
-	instant = RideInstant.next_or_restart(World.route, done)
-	instant.clock.to_f64() == 0.0
-		and instant.rider.motorcycle.along.to_metres() == 0.0
-		and instant.rider.motorcycle.speed.to_metres_a_step() == 0.3
-		and instant.truck.route_position.to_metres() == 500.0
-		and instant.rider.eyes.look_depth.to_f64() == 0.0
-		and instant.encounter_start == Unplanned
-}
+## The world's ride a step on from `instant`, whether it went on or restarted.
+instant_after : RideInstant -> RideInstant
+instant_after = |instant|
+	match RideInstant.next_or_restart(World.route, instant) {
+		Continued(next) | Restarted(next) => next
+	}
+
+expect
+	match RideInstant.next_or_restart(World.route, done) {
+		Restarted(instant) =>
+			instant.clock.to_f64() == 0.0
+				and instant.rider.motorcycle.along.to_metres() == 0.0
+				and instant.rider.motorcycle.speed.to_metres_a_step() == 0.3
+				and instant.truck.route_position.to_metres() == 500.0
+				and instant.rider.eyes.look_depth.to_f64() == 0.0
+				and instant.encounter_start == Unplanned
+		Continued(_) => False
+	}
+
+expect
+	match RideInstant.next_or_restart(World.route, RideInstant.initial) {
+		Continued(_) => True
+		Restarted(_) => False
+	}
 
 # The gaze is home at each of the ride's crossings, and it did leave home. The
 # bike doesn't turn at a seam, and `gaze_yaw` is measured from the bike, so a
@@ -1483,7 +1501,7 @@ expect {
 	var $is_home_at_each = True
 	var $has_looked = False
 	while !Rider.is_finished($instant.rider, World.route) {
-		next = RideInstant.next_or_restart(World.route, $instant)
+		next = instant_after($instant)
 		if next.rider.segment_index != $instant.rider.segment_index {
 			$crossings = $crossings + 1
 			is_home = $instant.rider.eyes.gaze_yaw == Angle.straight_ahead
@@ -1496,15 +1514,15 @@ expect {
 }
 
 expect Rider.is_finished(done.rider, World.route)
-expect RideInstant.next_or_restart(World.route, done).truck.pace == NotSlowing
+expect instant_after(done).truck.pace == NotSlowing
 
 # A ride that hasn't finished steps on: the clock by a step, the rider and the
 # truck forward.
 ride_at_step_one : RideInstant
-ride_at_step_one = RideInstant.next_or_restart(World.route, RideInstant.initial)
+ride_at_step_one = instant_after(RideInstant.initial)
 
 ride_at_step_two : RideInstant
-ride_at_step_two = RideInstant.next_or_restart(World.route, ride_at_step_one)
+ride_at_step_two = instant_after(ride_at_step_one)
 
 expect !Rider.is_finished(RideInstant.initial.rider, World.route)
 expect ride_at_step_one.clock.to_f64() == 1.0
@@ -1515,6 +1533,31 @@ expect ride_at_step_one.truck.route_position > RideInstant.initial.truck.route_p
 expect ride_at_step_two.rider.motorcycle.along > ride_at_step_one.rider.motorcycle.along
 expect ride_at_step_one.clock != Clock.start
 expect !Rider.is_finished(ride_at_step_one.rider, World.route)
+
+# The rider starts at the route's start and moves along it.
+expect RideInstant.rider_distance(World.route, RideInstant.initial) == Distance.zero
+expect
+	RideInstant.rider_distance(World.route, ride_at_step_two)
+		> RideInstant.rider_distance(World.route, ride_at_step_one)
+
+# A tour can be ridden right up to the step the ride finishes at. A step past it
+# crashes, since the ride starts again before reaching it.
+expect {
+	var $tour = Tour.initial
+	while !Rider.is_finished($tour.instant.rider, $tour.route) {
+		$tour = Tour.step_forward($tour)
+	}
+	finish = $tour.instant.clock
+	Tour.at_step(finish.steps_since(Clock.start).to_u32()).instant.clock == finish
+}
+
+# The sun's disc is not yet wholly set a step before `fully_set_at`, and the sky
+# is lighter than when it is.
+expect {
+	step_before_set = Sun.fully_set_at.minus(Steps.one_step)
+	Sun.height_at(step_before_set) > Sun.height_when_set
+		and Sky.darkness_at(step_before_set) < Sky.darkness_at(Sun.fully_set_at)
+}
 
 ## The first step of the ride at which `holds` holds.
 first_step_where : (Clock -> Bool) -> Clock
@@ -1578,13 +1621,13 @@ expect {
 	until = sunset_climax.plus(sunset_margin)
 	var $instant = RideInstant.initial
 	while $instant.clock != from {
-		$instant = RideInstant.next_or_restart(World.route, $instant)
+		$instant = instant_after($instant)
 	}
 	var $is_on_long_segment = True
 	while $instant.clock != until {
 		is_on_it = $instant.rider.segment_index == longest_segment_index
 		$is_on_long_segment = $is_on_long_segment and is_on_it
-		$instant = RideInstant.next_or_restart(World.route, $instant)
+		$instant = instant_after($instant)
 	}
 	$is_on_long_segment and $instant.rider.segment_index == longest_segment_index
 }
@@ -1596,7 +1639,7 @@ expect {
 expect {
 	var $instant = RideInstant.initial
 	while !Rider.is_finished($instant.rider, World.route) {
-		$instant = RideInstant.next_or_restart(World.route, $instant)
+		$instant = instant_after($instant)
 	}
 	Sky.darkness_at($instant.clock) == Fraction.whole
 }
@@ -1622,7 +1665,7 @@ ride_encounters = {
 	while !Rider.is_finished($instant.rider, World.route) {
 		segment = World.route.segment_at($instant.rider.segment_index)
 		timing = RideInstant.encounter_timing($instant)
-		next = RideInstant.next_or_restart(World.route, $instant)
+		next = instant_after($instant)
 		is_leaving =
 			next.rider.segment_index != $instant.rider.segment_index
 				or Rider.is_finished(next.rider, World.route)
