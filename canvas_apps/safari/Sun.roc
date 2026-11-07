@@ -143,11 +143,12 @@ quarter_turn : Angle.Turn
 quarter_turn = Angle.Turn.radians(F64.pi / 2.0)
 
 ## Whether any of the glow around `sun` reaches across the screen, as far out
-## as `Screen.roll_margin`, which every roll of the screen stays inside.
+## as the frame is drawn, from `Screen.drawn_left` to `Screen.drawn_right`,
+## which every roll of the screen stays inside.
 is_glow_on_screen : Sun.Place -> Bool
 is_glow_on_screen = |sun| {
 	from_middle = sun.x.minus(Screen.center_x).abs()
-	reach = Screen.width.divided_by(2.0).plus(Screen.roll_margin)
+	reach = Screen.drawn_right.minus(Screen.center_x)
 	from_middle.minus(Sun.glow_radius_drawn(sun)) < reach
 }
 

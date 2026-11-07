@@ -251,8 +251,8 @@ silhouette :
 		base_y : Pixels,
 	} -> Shapes.Shape
 silhouette = |aim, { height_at, color, base_y }| {
-	left = Screen.roll_margin.opposite()
-	right = Screen.width.plus(Screen.roll_margin)
+	left = Screen.drawn_left
+	right = Screen.drawn_right
 	crest = columns({ from: left, to: right }).map(
 		|x| {
 			height = height_at(bearing_at(aim, x))
