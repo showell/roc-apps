@@ -757,20 +757,16 @@ expect
 # Billboard: a billboard is drawn while it stands a pixel tall.
 ## How many shapes draw an elephant of `height` metres, `forward` metres
 ## straight ahead, through a 500 px focal length.
-elephant_shape_count : { forward : F64, height : F64 } -> U64
+elephant_shape_count : { forward : Distance, height : Distance } -> U64
 elephant_shape_count = |{ forward, height }| {
 	billboard : Billboard
-	billboard = {
-		emoji: EmojiStills.elephant,
-		height: Distance.metres(height),
-		facing: FacesLeft,
-	}
+	billboard = { emoji: EmojiStills.elephant, height, facing: FacesLeft }
 	foot =
-		Geom.ahead_on_level({ right: Distance.zero, forward: Distance.metres(forward) })
+		Geom.ahead_on_level({ right: Distance.zero, forward })
 			?? crash "CrossModuleExpects: a test's billboard is past the near plane"
 	spot = Spot.at({
 		place: Ahead(SegmentPlace.Position.first),
-		road_point: { along: Along.metres(forward), across: Across.middle },
+		road_point: { along: Along.at(forward), across: Across.middle },
 		lift: Distance.zero,
 		foot,
 	})
@@ -779,11 +775,19 @@ elephant_shape_count = |{ forward, height }| {
 
 expect
 	[
-		({ forward: 100.0, height: 2.0 }, 6),
-		({ forward: 1000.0, height: 2.0 }, 6),
-		({ forward: 1000.0, height: 1.9 }, 0),
-		({ forward: 2000.0, height: 2.0 }, 0),
-	].all(|(at, want)| elephant_shape_count(at) == want)
+		(100.0, 2.0, 6),
+		(1000.0, 2.0, 6),
+		(1000.0, 1.9, 0),
+		(2000.0, 2.0, 0),
+	].all(
+		|(forward, height, want)| {
+			count = elephant_shape_count({
+				forward: Distance.metres(forward),
+				height: Distance.metres(height),
+			})
+			count == want
+		},
+	)
 
 # Wildlife: an animal and its baby at each of four bends, the first and third
 # turning right and the second and fourth left.
