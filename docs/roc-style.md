@@ -183,8 +183,9 @@ Roc's own rules are in the langref's
   `##` doc), and a `Pose` that has two shapes in two modules (`twin_name`).
 - **A top-level value or a field is never one letter.** `board_width`, not
   `w`; `row`, not `y`. It is read far from where it is set, so its name is
-  all the reader has. A local or a lambda's parameter can be short: its
-  definition is in view.
+  all the reader has. Coordinates are the exception: `x` and `y` on a point
+  like `Screen.Point` are the words for what they hold. A local or a lambda's
+  parameter can be short: its definition is in view.
 - **A type or a field is named for what it holds, not where it sits.**
   `Entry`, `Item`, `Node`, `Data` and `Info` say only that a value is in a list
   or a tree; the domain usually has the word. One row of a customer's order
@@ -336,12 +337,10 @@ Roc's own rules are in the langref's
   that only counts or only builds a list is a loop, and needs no worker.
 - **A pure function that takes only `{}` is a constant.** `empty_cart : Cart`
   says what it is; `empty_cart : {} -> Cart` makes every caller write
-  `empty_cart({})` for a value that never changes. Two stay functions. A
-  value generic over a type variable can't be a constant: the pin refuses
+  `empty_cart({})` for a value that never changes. One stays a function: a
+  value generic over a type variable can't be a constant. The pin refuses
   one ("value is not polymorphic") and asks for a `{}` function, so
-  `empty_cart : {} -> Cart(item)` stays. And a constant is computed at
-  compile time (CLAUDE.md §4), so one that does real work, a search or a
-  large table, stays a `{}` function with a comment saying so.
+  `empty_cart : {} -> Cart(item)` stays.
 - **Neighboring arguments of one type get a record**, even when there are
   only two of them: they can be swapped and still type-check, and a record
   names the fields, so order can't go wrong: `copy!({ from, to })`, not
@@ -652,7 +651,7 @@ is the base; these rules sharpen it.
 - **No optionals: a value that may be absent is tagged by what it is, and
   its absence by why.** `[Some(x), None]`, `Nothing`, and `Try(x, [None])`
   make every caller remember what "none" meant. A topic's last message is
-  `[Latest(Message), NoMessage]`; the editor's open doc is
+  `Try(Message, [NoMessage])`; the editor's open doc is
   `[NoneChosen, Doc(...)]`. The same holds for a fold's "nothing found yet"
   (`[Newest(...), NoDocs]`).
 - **One or none is a `Try`, with a singular name and no `maybe_` prefix.** A
@@ -1025,7 +1024,7 @@ is the base; these rules sharpen it.
   		400
   	}
   ```
-- **A call nested three deep is read inside out; write it left to right.**
+- **A call nested four deep is read inside out; write it left to right.**
   A method chain first, where the values carry methods (the builtins' do:
   `s.split_on("\n").map(Str.trim).drop_if(|l| l.is_empty())`); a
   pipe where the steps are module functions; else a named middle step
@@ -1148,9 +1147,8 @@ is the base; these rules sharpen it.
     `None` or `Some`), `set_fallback` (`l.set(i, v) ?? l`), `placeholder`
     (`?? "bogus"`) and `number_fallback` (`l.get(i) ?? 0.0`, which no gate
     holds yet);
-  - `nest_depth.shale`: a call nested three deep or more, read inside out
-    ([layout](#layout-and-formatting)). The gates run it with `min=4`, so three
-    deep is a reader's question and four deep fails;
+  - `nest_depth.shale`: a call nested four deep or more, read inside out
+    ([layout](#layout-and-formatting)), run with `min=4`;
   - `parens.shale`: `paren_if` (`if (x) a else b`), `wrapped_body`
     (`|x| (...)`), `else_block` (`else { if ... }`) and `lambda_if`
     (`|x| if x > 1 {`), each rewritten by `write=1`
