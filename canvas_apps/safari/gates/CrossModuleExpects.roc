@@ -612,27 +612,6 @@ cats_seen_on = |road_view, { camera, encounter }|
 
 expect cat_route.route_segments().map(World.has_cat) == [False, True, False]
 
-expect
-	[
-		(0.0, 0, 0.0),
-		(0.0, 1, 500.0),
-		(0.0, 2, 820.0),
-		(120.0, 0, -120.0),
-		(120.0, 1, 380.0),
-		(120.0, 2, 700.0),
-	].all(
-		|
-			(along, number, want),
-		| {
-			vantage = { ..origin, along: Along.metres(along) }
-			gap = RoadAhead.gap_to_segment(
-				cat_road,
-				{ vantage, in_view: numbered_segment(cat_road, number) },
-			)
-			gap.to_metres() == want
-		},
-	)
-
 ## The cats in view for a rider `along` metres into the first segment.
 ride_sightings : F64 -> List(Pipeline.Sighted(PosedCat))
 ride_sightings = |along| cats_seen_on(

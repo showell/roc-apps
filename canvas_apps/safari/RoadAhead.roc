@@ -3,7 +3,6 @@
 ## rider's own first, and a point on any of them, or on the segment just behind,
 ## is carried back round the bends between to the rider's own segment and into
 ## the view of a camera standing there.
-import Distance
 import Geom
 import Route
 import Segment
@@ -80,26 +79,6 @@ RoadAhead :: [].{
 			index,
 			segment: road.route().segment_at(index),
 			place: Ahead(position),
-		}
-	}
-
-	## How far ahead of a camera at `vantage`, along the road, a segment in view
-	## starts. The lengths of the road ahead's segments are added nearest first,
-	## and the segment just behind starts its own length behind the rider's.
-	gap_to_segment : RoadAhead.RoadView,
-	{
-		vantage : Geom.Vantage,
-		in_view : RoadAhead.SegmentInView,
-	} -> Distance
-	gap_to_segment = |road, { vantage, in_view }| {
-		gap_to_rider_segment = vantage.along.from_start().opposite()
-		match in_view.place {
-			Ahead(position) =>
-				segments_before(road, position).fold(
-					gap_to_rider_segment,
-					|gap, index| gap.plus(road.route().segment_at(index).length),
-				)
-			JustBehind => gap_to_rider_segment.minus(in_view.segment.length)
 		}
 	}
 
