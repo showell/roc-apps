@@ -56,11 +56,7 @@ ScrubWidget :: [].{
 	flat : RgbColor -> Brush.Fill
 	flat = |color| Flat(Brush.opaque(color))
 
-	## The size of the lines under the picture, and of the words in it, on a
-	## canvas of the usual width.
-	readout_size : F64
-	readout_size = 15.0
-
+	## The size of a label's words, on a canvas of the usual width.
 	label_size : F64
 	label_size = 14.0
 
@@ -74,7 +70,7 @@ ScrubWidget :: [].{
 		Text({
 			text,
 			x: side_margin,
-			y: 266.0 + row.to_f64() * 26.0,
+			y: readout_first_baseline + row.to_f64() * readout_row_spacing,
 			size: readout_size,
 			face: Code,
 			align: Left,
@@ -129,6 +125,18 @@ ScrubWidget :: [].{
 		)
 	}
 }
+
+## The size of the lines under the picture, on a canvas of the usual width.
+readout_size : F64
+readout_size = 15.0
+
+## The baseline of the readout's first row, below the picture.
+readout_first_baseline : F64
+readout_first_baseline = ScrubWidget.picture_bottom_y + 50.0
+
+## How far each row of the readout sits below the last.
+readout_row_spacing : F64
+readout_row_spacing = 26.0
 
 panel_color : RgbColor
 panel_color = RgbColor.of(0xDCECF5)
@@ -186,7 +194,7 @@ expect
 			text: "I",
 			x: ScrubWidget.side_margin,
 			y: 292.0,
-			size: ScrubWidget.readout_size,
+			size: readout_size,
 			face: Code,
 			align: Left,
 			color: Brush.opaque(RgbColor.of(0x202020)),

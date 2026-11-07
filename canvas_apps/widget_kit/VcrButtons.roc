@@ -1,9 +1,8 @@
 ## A video recorder's buttons for a widget whose whole state is one number. A
-## widget says what its number runs over, how fast it plays and what one step is,
-## and this module does the rest: it reads a press into the number and draws the
-## buttons where the panel starts. Six buttons go to the start, play backward,
-## step back, step forward, play and go to the end. A click anywhere else does
-## nothing.
+## widget says what its number runs over and how fast it plays, and this module
+## does the rest: it reads a press into the number and draws the buttons where
+## the panel starts. Six buttons go to the start, play backward, step back, step
+## forward, play and go to the end. A click anywhere else does nothing.
 import game.Clock
 import game.Distance
 import lib.CanvasApp
@@ -23,14 +22,13 @@ VcrButtons :: [].{
 
 	## What a widget says about its number. `place_of` says how far along the range
 	## a number is, growing from `first` to `last`, and `number_at` is its inverse.
-	## `one_step` is how far along the range a step moves, and `play_reach` how far
-	## a frame of play moves.
+	## A step moves a number one along the range, and `play_reach` is how far a
+	## frame of play moves it.
 	NumberRange(number) : {
 		first : number,
 		last : number,
 		place_of : number -> F64,
 		number_at : F64 -> number,
-		one_step : F64,
 		play_reach : F64,
 	}
 
@@ -48,7 +46,6 @@ VcrButtons :: [].{
 		last: Clock.at_step(last_step),
 		place_of: Clock.to_f64,
 		number_at: |step| Clock.at_step(step.to_u32_wrap()),
-		one_step: 1.0,
 		play_reach: steps_a_frame,
 	}
 
@@ -60,7 +57,6 @@ VcrButtons :: [].{
 		last: Distance.zero,
 		place_of: |gap| farthest.minus(gap).to_metres(),
 		number_at: |place| farthest.minus(Distance.metres(place)),
-		one_step: 1.0,
 		play_reach: metres_a_frame,
 	}
 
@@ -199,11 +195,11 @@ transport_after_press = |transport, { control, range }|
 		PlayBack => { ..transport, motion: toggle(transport.motion, Backward) }
 		StepBack => transport_moved_by(
 			{ ..transport, motion: Stopped },
-			{ by: -range.one_step, range },
+			{ by: -1.0, range },
 		)
 		StepForward => transport_moved_by(
 			{ ..transport, motion: Stopped },
-			{ by: range.one_step, range },
+			{ by: 1.0, range },
 		)
 		Play =>
 			if place_in(range, transport.at) == place_in(range, range.last) {
@@ -233,8 +229,12 @@ button_spacing = 50.0
 button_width : F64
 button_width = 44.0
 
+## The space between the picture and the top of the buttons.
+button_gap : F64
+button_gap = 6.0
+
 button_top : F64
-button_top = 222.0
+button_top = ScrubWidget.picture_bottom_y + button_gap
 
 button_height : F64
 button_height = 24.0
@@ -272,8 +272,8 @@ icon_color : RgbColor
 icon_color = RgbColor.of(0xf7f5f0)
 
 ## A triangle pointing right when `reach` is positive, and left when it's not.
-triangle : F64, F64 -> Shapes.Shape
-triangle = |tip_x, reach|
+triangle : { tip_x : F64, reach : F64 } -> Shapes.Shape
+triangle = |{ tip_x, reach }|
 	Poly({
 		coordinates: [
 			tip_x - reach,
@@ -304,12 +304,12 @@ icon_shapes = |control, { middle, lit }|
 		[bar(middle - 5.0), bar(middle + 2.0)]
 	} else {
 		match control {
-			ToStart => [bar(middle - 9.0), triangle(middle - 5.0, -11.0)]
-			PlayBack => [triangle(middle - 6.0, -12.0)]
-			StepBack => [triangle(middle - 7.0, -9.0), bar(middle + 5.0)]
-			StepForward => [bar(middle - 8.0), triangle(middle + 7.0, 9.0)]
-			Play => [triangle(middle + 6.0, 12.0)]
-			ToEnd => [triangle(middle + 5.0, 11.0), bar(middle + 6.0)]
+			ToStart => [bar(middle - 9.0), triangle({ tip_x: middle - 5.0, reach: -11.0 })]
+			PlayBack => [triangle({ tip_x: middle - 6.0, reach: -12.0 })]
+			StepBack => [triangle({ tip_x: middle - 7.0, reach: -9.0 }), bar(middle + 5.0)]
+			StepForward => [bar(middle - 8.0), triangle({ tip_x: middle + 7.0, reach: 9.0 })]
+			Play => [triangle({ tip_x: middle + 6.0, reach: 12.0 })]
+			ToEnd => [triangle({ tip_x: middle + 5.0, reach: 11.0 }), bar(middle + 6.0)]
 		}
 	}
 
@@ -347,12 +347,17 @@ hint_shapes = |transport, range|
 			ScrubWidget.label({
 				text: "Press play",
 				x: last_button_right + 14.0,
-				y: 239.0,
+				y: hint_baseline,
 			}),
 		]
 	} else {
 		[]
 	}
+
+## The baseline of the hint's words, below the picture and level with the
+## buttons.
+hint_baseline : F64
+hint_baseline = ScrubWidget.picture_bottom_y + 23.0
 
 ## A range over steps 0 to 6000, eight steps a frame.
 sample_clock_run : VcrButtons.NumberRange(Clock)
