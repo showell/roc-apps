@@ -1782,7 +1782,7 @@ The rule lives in `Animation`. It takes the cat's numbers and an `Approach`, whi
 
 {{code Animation.stage_over_step_span}}
 
-Neither field of an `Approach` is a plain number. `Distance`, `Speed` and `Beats` are opaque types, like `Clock` and `Angle`. A distance can't be passed as a speed, and a place in an animation can't be passed as a step of the ride. `distance_in`, on the second line, multiplies a speed by some beats and gives a `Distance`. `Speed` also defines `is_lte`, which is what lets `speed <= standstill` work with an ordinary operator.
+Neither field of an `Approach` is a plain number. `Distance`, `Speed` and `Beats` are opaque types, like `Clock` and `Angle`. A distance can't be passed as a speed, and a place in an animation can't be passed as a step of the ride. `distance_in`, on the second line, multiplies a speed by some beats and gives a `Distance`. `Speed` also derives `is_eq`, which is what lets `speed == Speed.at_rest` work with an ordinary operator.
 
 
 The cat plays over beats rather than over a stretch of road because it has to finish before the rider reaches it, however fast the rider comes. A faster rider makes it start earlier. The bird uses `stage_over_gap`, because a bird simply reacts to how close the rider is. Each critter picks the rule that suits it.

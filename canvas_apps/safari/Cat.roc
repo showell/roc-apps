@@ -150,7 +150,7 @@ Cat :: [].{
 	## fading once it is across.
 	attention : Animation.Approach -> Attention
 	attention = |approach|
-		if approach.speed <= Speed.standstill {
+		if approach.speed == Speed.at_rest {
 			Attention.none
 		} else {
 			match crossing_stage(approach) {

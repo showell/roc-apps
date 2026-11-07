@@ -88,16 +88,15 @@ Gaze :: [].{
 	desired_gaze : RiderState, World.Segment -> Gaze.GazeTarget
 	desired_gaze = |state, seg|
 		match seg.pig_interest {
-			Distracting(pig) => {
+			Distracting(pig) if is_gawking(state, seg) => {
 				turn = turn_to(state, pig)
-				is_near = pig.along.distance_from(state.along) <= notice_distance
-				if is_near and turn.abs() < look_release_angle {
+				if turn.abs() < look_release_angle {
 					OnPig(turn)
 				} else {
 					OnRoad
 				}
 			}
-			Unnoticed | NoPigs => OnRoad
+			Distracting(_) | Unnoticed | NoPigs => OnRoad
 		}
 
 	## The gaze one step on. It swivels toward a pig by at most the swivel rate.

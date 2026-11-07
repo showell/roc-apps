@@ -18,10 +18,6 @@ Speed :: F64.{
 	at_rest : Speed
 	at_rest = Speed.(0.0)
 
-	## Anything this slow counts as standing still.
-	standstill : Speed
-	standstill = Speed.(0.000001)
-
 	## This speed after `acceleration`, the change over one step.
 	accelerated_by : Speed, Acceleration -> Speed
 	accelerated_by = |Speed.(s), acceleration| Speed.(s + acceleration.to_metres_a_step_each_step())
