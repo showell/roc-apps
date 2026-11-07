@@ -1708,7 +1708,7 @@ The chain from `desired_gaze` is the look, and the chain from `is_gawking` is th
 
 `Rider.rider_state_at_next_step` moves the eyes last, after the bike has moved:
 
-{{code Gaze.next_rider_gaze}}
+{{code Gaze.eyes_at_next_step}}
 
 Choosing where to look comes first:
 
