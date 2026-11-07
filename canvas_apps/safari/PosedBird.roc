@@ -4,24 +4,40 @@
 ## looks, CrossingSighting finds the birds in view, and BirdStills holds their
 ## drawings.
 import Pixels
-import BirdFlight
 import BirdStills
 import Camera
 import Geom
 import Picture
 import StillShapes
+import Stills
 import Distance
 import lib.Brush
 import lib.Shapes
 
-PosedBird := { pose : BirdFlight.BirdPose, lift : Distance }.{
+PosedBird := { pose : PosedBird.BirdPose, lift : Distance }.{
+
+	## Where the wings are in a beat.
+	WingBeat : [WingsUp, WingsDown]
+
+	## How the bird looks: sitting; side on as it takes off; seen from behind
+	## as it flies off; and dropping onto its tree.
+	BirdPose : [
+		Perched,
+		Side(PosedBird.WingBeat),
+		Away(PosedBird.WingBeat),
+		Diving,
+	]
+
+	## How tall a bird stands.
+	bird_height : Distance
+	bird_height = Distance.metres(2.2)
 
 	## How tall a bird `forward` metres ahead is on screen.
 	height_px : { forward : Distance, cam_focal : Pixels } -> Pixels
-	height_px = |{ forward, cam_focal }| cam_focal.times(BirdFlight.bird_height.ratio_to(forward))
+	height_px = |{ forward, cam_focal }| cam_focal.times(PosedBird.bird_height.ratio_to(forward))
 
 	scenery_height : PosedBird -> Distance
-	scenery_height = |_bird| BirdFlight.bird_height
+	scenery_height = |_bird| PosedBird.bird_height
 
 	## A bird on screen, its feet where it is. Its still is unflipped: a bird
 	## from a left-hand tree crosses the road toward +x, the way its beak points.
@@ -35,11 +51,25 @@ PosedBird := { pose : BirdFlight.BirdPose, lift : Distance }.{
 					flip: AsDrawn,
 					height_px: PosedBird.height_px({ forward: foot.forward(), cam_focal }),
 				},
-				BirdStills.pose_polygons(bird.pose),
+				PosedBird.pose_polygons(bird.pose),
 			),
 		)
 	}
+
+	## The drawing for a pose.
+	pose_polygons : PosedBird.BirdPose -> List(Stills.StillPolygon)
+	pose_polygons = |pose|
+		match pose {
+			Perched => BirdStills.perched_polygons
+			Side(WingsUp) => BirdStills.side_wings_up_polygons
+			Side(WingsDown) => BirdStills.side_wings_down_polygons
+			Away(WingsUp) => BirdStills.away_wings_up_polygons
+			Away(WingsDown) => BirdStills.away_wings_down_polygons
+			Diving => BirdStills.diving_polygons
+		}
 }
+
+expect PosedBird.bird_height.to_metres() == 2.2
 
 # A perched bird with its feet at the camera's height, so that straight ahead
 # they land on the horizon in the middle of the screen.
@@ -69,7 +99,7 @@ expect
 # A bird's height is the same in every pose.
 expect
 	[level_bird, { ..level_bird, pose: Diving }].all(
-		|bird| bird.scenery_height() == BirdFlight.bird_height,
+		|bird| bird.scenery_height() == PosedBird.bird_height,
 	)
 
 # The perched still's first corner is (-0.0344, 0.5715), at a height of 10 px
@@ -93,6 +123,17 @@ expect {
 	)
 }
 
+# Each pose draws its own still.
+expect
+	[
+		(Perched, BirdStills.perched_polygons),
+		(Side(WingsUp), BirdStills.side_wings_up_polygons),
+		(Side(WingsDown), BirdStills.side_wings_down_polygons),
+		(Away(WingsUp), BirdStills.away_wings_up_polygons),
+		(Away(WingsDown), BirdStills.away_wings_down_polygons),
+		(Diving, BirdStills.diving_polygons),
+	].all(|(pose, still)| PosedBird.pose_polygons(pose) == still)
+
 # Each still's polygons, in their colours, as a bird in each pose draws them.
 expect {
 	fill_of = |shape|
@@ -103,6 +144,6 @@ expect {
 	drawn = [Side(WingsDown), Diving].join_map(
 		|pose| bird_shapes_at({ ..level_bird, pose }, Distance.metres(0.0)).map(fill_of),
 	)
-	stills = BirdStills.side_wings_down.concat(BirdStills.diving_polygons)
+	stills = BirdStills.side_wings_down_polygons.concat(BirdStills.diving_polygons)
 	drawn == stills.map(|poly| Flat(Brush.opaque(poly.color)))
 }

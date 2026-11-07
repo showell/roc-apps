@@ -1934,7 +1934,7 @@ A crossing and an approach go in, and the cat at that instant comes out. The sam
 
 `CrossingSighting.cat_in_view` calls it, adding the distance to the segment to get the gap:
 
-{{code CrossingSighting.cat_in_view from "gap =" to "instant ="}}
+{{code CrossingSighting.crossing_in_view}}
 
 What `Cat` gets from `Animation` comes down to one type, `Stage`:
 
@@ -2028,7 +2028,7 @@ A timeline is data, so the cat's whole performance reads in one place. This is t
 
 The words are tags. `Through` and `Before` say where a stretch ends, and `Holds` and `Alternates` say how the cat looks. The poses are a closed tag union, so a `match` that misses one is a compile-time error.
 
-{{code Cat.CatPose}}
+{{code PosedCat.CatPose}}
 
 A timeline is divided into stretches, and a cut is where one stretch ends and the next begins. A cut has to say which stretch its own beat belongs to, and two tags say that better than a boolean would. `crossing_timeline`'s comment says why it matters: the beats of the leap add up to a float just under the beat they stand for.
 
@@ -2206,7 +2206,7 @@ That `Arc` is a tag. `path_spot` is where it's played. `{ ..on_line, lift: ... }
 
 The stills are data too. Nested tags get checked all the way down, so a `match` that forgets `Away(WingsDown)` is a compile-time error. The function reads as a table, and there's nothing else in it:
 
-{{code BirdStills.pose_polygons}}
+{{code PosedBird.pose_polygons}}
 
 `PosedBird.scenery_picture` hands that to `StillShapes.still_shapes`, the function that also draws a cow. A bird's feet reach the screen through `Camera.project`, as a tree's top does, and the math layer chapter shows how. That's the drawing.
 

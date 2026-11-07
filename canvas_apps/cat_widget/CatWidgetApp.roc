@@ -4,10 +4,10 @@
 ## the road at the cat, with the road's width to scale. Below it, the buttons and
 ## four lines of text that say what Cat and CrossingReaction make of the gap.
 import game.Cat
-import game.CatStills
 import game.CrossingReaction
 import game.Distance
 import game.Pixels
+import game.PosedCat
 import game.Geom
 import game.Speed
 import game.StillShapes
@@ -130,9 +130,9 @@ cat_shapes = |gap| {
 				y: Pixels.of(feet_y - instant.spot.lift.to_metres() * pixels_a_metre),
 			},
 			flip: AsDrawn,
-			height_px: Pixels.of(Cat.cat_height.to_metres() * pixels_a_metre),
+			height_px: Pixels.of(PosedCat.cat_height.to_metres() * pixels_a_metre),
 		},
-		CatStills.pose_polygons(instant.pose),
+		PosedCat.pose_polygons(instant.pose),
 	)
 }
 
@@ -153,7 +153,7 @@ status_lines = |gap| {
 	]
 }
 
-pose_name : Cat.CatPose -> Str
+pose_name : PosedCat.CatPose -> Str
 pose_name = |pose|
 	match pose {
 		Rest => "Rest"

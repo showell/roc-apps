@@ -3,11 +3,10 @@
 ## stands large with its polygons and points counted. Nothing here moves, so
 ## there are no video recorder buttons. A click on a small still makes it the large one, and a click
 ## on the large one shows or hides the outline of each polygon.
-import game.BirdFlight
 import game.BirdStills
-import game.Cat
-import game.CatStills
 import game.Pixels
+import game.PosedBird
+import game.PosedCat
 import game.Screen
 import game.StillShapes
 import game.Stills
@@ -70,7 +69,7 @@ StillCell : {
 	anchor : StillShapes.Anchor,
 }
 
-cat_pose_name : Cat.CatPose -> Str
+cat_pose_name : PosedCat.CatPose -> Str
 cat_pose_name = |pose|
 	match pose {
 		Rest => "Rest"
@@ -82,7 +81,7 @@ cat_pose_name = |pose|
 		Collapse => "Collapse"
 	}
 
-bird_pose_name : BirdFlight.BirdPose -> Str
+bird_pose_name : PosedBird.BirdPose -> Str
 bird_pose_name = |pose|
 	match pose {
 		Perched => "Perched"
@@ -93,11 +92,11 @@ bird_pose_name = |pose|
 		Diving => "Diving"
 	}
 
-cat_still : Cat.CatPose -> StillsWidgetApp.PoseStill
-cat_still = |pose| { name: cat_pose_name(pose), polygons: CatStills.pose_polygons(pose) }
+cat_still : PosedCat.CatPose -> StillsWidgetApp.PoseStill
+cat_still = |pose| { name: cat_pose_name(pose), polygons: PosedCat.pose_polygons(pose) }
 
-bird_still : BirdFlight.BirdPose -> StillsWidgetApp.PoseStill
-bird_still = |pose| { name: bird_pose_name(pose), polygons: BirdStills.pose_polygons(pose) }
+bird_still : PosedBird.BirdPose -> StillsWidgetApp.PoseStill
+bird_still = |pose| { name: bird_pose_name(pose), polygons: PosedBird.pose_polygons(pose) }
 
 cat_stills : List(StillsWidgetApp.PoseStill)
 cat_stills =
@@ -513,7 +512,7 @@ expect
 		(Away(WingsDown), "Away down"),
 		(Diving, "Diving"),
 	].all(|(pose, name)| bird_pose_name(pose) == name)
-expect cat_still(Frozen).polygons.len() == CatStills.pose_polygons(Frozen).len()
+expect cat_still(Frozen).polygons.len() == PosedCat.pose_polygons(Frozen).len()
 expect point_count(bird_still(Diving).polygons) == point_count(BirdStills.diving_polygons)
 
 # The rows fill the space between the side margins, end to end.
@@ -619,7 +618,7 @@ expect
 
 # Stills that reach past 1 and below 0 are measured from their points.
 expect {
-	frozen = extent_of(CatStills.pose_polygons(Frozen))
+	frozen = extent_of(PosedCat.pose_polygons(Frozen))
 	frozen.top > 1.0 and frozen.bottom < 0.0 and frozen.left < 0.0 and frozen.right > 1.0
 }
 expect
