@@ -679,9 +679,9 @@ first_alone : RoadAhead.RoadView
 first_alone = RoadAhead.RoadView.ahead_of(route_of_first(1), Route.SegmentIndex.first)
 
 ## The critters of the segment at `in_view` on `road_view`, seen from the origin.
-segment_sightings_on : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(BillboardSighting.Fate)
-segment_sightings_on = |road_view, in_view|
-	BillboardSighting.segment_sightings(road_view, { vantage: origin, in_view })
+segment_billboards_on : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(BillboardSighting.Fate)
+segment_billboards_on = |road_view, in_view|
+	BillboardSighting.segment_billboards(road_view, { vantage: origin, in_view })
 
 ## The farm animals of the segment at `in_view` on `road_view`, seen from the
 ## origin.
@@ -744,7 +744,7 @@ expect lone_bend_count(4) == 2
 expect lone_bend_count(18) == 0
 expect {
 	first = numbered_segment(six_segments, 0)
-	whole = segment_sightings_on(six_segments, first).len().to_i64_wrap()
+	whole = segment_billboards_on(six_segments, first).len().to_i64_wrap()
 	whole == farm_at(0) + bend_at(0)
 }
 
@@ -755,14 +755,14 @@ count_from = |position|
 		.map(
 			|number| {
 				in_view = numbered_segment(six_segments, number)
-				segment_sightings_on(six_segments, in_view).len().to_i64_wrap()
+				segment_billboards_on(six_segments, in_view).len().to_i64_wrap()
 			},
 		)
 		.sum()
 
 expect
 	BillboardSighting.billboard_fates(first_alone, origin_camera).len()
-		== segment_sightings_on(first_alone, numbered_segment(first_alone, 0)).len()
+		== segment_billboards_on(first_alone, numbered_segment(first_alone, 0)).len()
 expect BillboardSighting.billboard_fates(
 	six_segments,
 	origin_camera,
@@ -771,7 +771,7 @@ expect count_from(0) >= count_from(1)
 expect count_from(1) >= count_from(2)
 expect {
 	{ road_view, in_view } = road_past_segment(4)
-	segment_sightings_on(road_view, in_view).len() > 0
+	segment_billboards_on(road_view, in_view).len() > 0
 }
 expect {
 	{ road_view, in_view } = road_past_segment(12)
@@ -880,8 +880,6 @@ expect left_bull.kind.still == EmojiStills.bull
 expect near_cow.kind.facing == FacesRight
 expect left_bull.kind.facing == FacesLeft
 
-expect BillboardSighting.min_critter_px.to_f64() == 2.0
-
 # RailSighting's run up to a bend and out of it.
 rail_point_at : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
 rail_point_at = |points, i|
@@ -898,7 +896,7 @@ runup_points_to_bend = RailSighting.runup_points(
 	},
 )
 
-expect RailSighting.run_out_points(
+expect RailSighting.runout_points(
 	road,
 	{
 		vantage: origin,

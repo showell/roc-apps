@@ -180,7 +180,7 @@ Roc's own rules are in the langref's
   `Fraction` and `steps` to `Steps`. Both are checked as `name_type`.
 - **Modules that look alike are spelled alike, and one type name means one
   thing.** `TreeSighting`, `RailSighting` and `GroundSighting` answer
-  `trees_in_view`, `rails_in_view` and `patches_in_view`, so a reader who knows
+  `trees_in_view`, `rail_quads_in_view` and `patches_in_view`, so a reader who knows
   one finds the others. Shale's `families` reports a member that lacks a public
   name most of its family has (`family`; a member that differs says so in its
   `##` doc), and a `Pose` that has two shapes in two modules (`twin_name`).

@@ -688,11 +688,11 @@ For each frame, `trees_in_view` goes through the segments of the road ahead, the
 
 {{code TreeSighting.trees_in_view}}
 
-{{code TreeSighting.segment_sightings}}
+{{code TreeSighting.segment_trees}}
 
 From here on, things are measured from the camera, which travels with the rider. We don't need to know much about the rider yet.
 
-{{code TreeSighting.sighting_of}}
+{{code Pipeline.scenery_sighting_of}}
 
 `Ahead(position)` says which segment of the road ahead the tree stands on. The size test asks for 2 pixels, through the camera's own lens.
 
@@ -1035,7 +1035,7 @@ A tower's footprint is a square, and four tags name its corners. Going round the
 
 Everything above the footprint is rods. Four legs run from the corners up to a point:
 
-{{code Tower.legs}}
+{{code Tower.leg_shapes}}
 
 A ring of rods goes round the tower every 20 metres, and crossed braces fill the lowest two storeys. Each rod is a line between two points in the rider's view, and it needs some care, because a near tower can stand partly behind the camera:
 
@@ -1300,11 +1300,11 @@ Each tower starts somewhere else in the cycle, so the towers along a road don't 
 
 The sighting calls both, adding the two `Steps`. `clock.minus(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride.
 
-{{code TowerSighting.tower_if_ahead from "placed_tower = {" to "clock.steps_since(Clock.start)"}}
+{{code Beacon.brightness_at}}
 
 Its caller gives each tower its key, the segment's index. Records with named fields stand in for what would otherwise be six arguments in a row, and `Ahead(position)` is a tag carrying a payload, saying where the segment lies from the rider:
 
-{{code TowerSighting.end_tower_of}}
+{{code TowerSighting.end_tower}}
 
 A tower halfway along a segment takes the key plus 60. That's a small piece of number theory hiding in a constant: 60 staggers of 37 steps come to 2,220, which is 18 periods of 120 and 60 left over, so the mid-tower blinks exactly opposite the end tower.
 
