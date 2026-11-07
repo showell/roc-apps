@@ -3,6 +3,7 @@
 ## turns one when it translates to the centre, rotates by minus the roll and
 ## translates back; a point on the screen turns back into the scene by the
 ## roll. The centre is the same point in both.
+import game.Angle
 import PixelGrid
 
 ScreenRoll :: {
@@ -23,22 +24,24 @@ ScreenRoll :: {
 		is_eq : _
 	}
 
-	## A screen `width` by `height` pixels, and the camera's roll in radians.
+	## A screen `width` by `height` pixels, and the camera's roll.
 	of : {
-		roll : F64,
+		roll : Angle.Lean,
 		width : PixelGrid.Coordinate,
 		height : PixelGrid.Coordinate,
 	} -> ScreenRoll
-	of = |{ roll, width, height }|
+	of = |{ roll, width, height }| {
+		radians = roll.to_radians()
 		ScreenRoll.(
 			{
-				cos: roll.cos(),
-				sin: roll.sin(),
+				cos: radians.cos(),
+				sin: radians.sin(),
 				center: { x: width.to_f64() / 2.0, y: height.to_f64() / 2.0 },
 				width_px: width,
 				height_px: height,
 			},
 		)
+	}
 
 	width_px : ScreenRoll -> PixelGrid.Coordinate
 	width_px = |ScreenRoll.(screen)| screen.width_px

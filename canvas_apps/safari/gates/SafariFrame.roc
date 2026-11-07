@@ -21,11 +21,11 @@
 ## anti-aliased, far faster than Roc could fill every pixel and copy the
 ## frame out. This painter has no anti-aliasing.
 ##
-## What is generic lives in modules that know nothing of Safari: ScreenRoll
-## turns points by the roll, PixelGrid finds the pixels that a stretch of a
-## row or column covers, PixelColor packs and blends pixels, ScanlineFill
-## fills polygons and discs, and ShapesPixels, the Roc twin of
-## shapes_canvas.js, paints shapes with it.
+## What is generic lives in modules that know nothing of Safari's scene:
+## ScreenRoll turns points by the roll, an Angle.Lean, PixelGrid finds the
+## pixels that a stretch of a row or column covers, PixelColor packs and blends
+## pixels, ScanlineFill fills polygons and discs, and ShapesPixels, the Roc twin
+## of shapes_canvas.js, paints shapes with it.
 import game.Angle
 import BackdropPixels
 import game.HexColor
@@ -63,11 +63,7 @@ SafariFrame :: [].{
 	## Safari's screen, seen through the camera's roll.
 	screen_roll : Angle.Lean -> ScreenRoll
 	screen_roll = |roll|
-		ScreenRoll.of({
-			roll: roll.to_radians(),
-			width: screen_width,
-			height: screen_height,
-		})
+		ScreenRoll.of({ roll, width: screen_width, height: screen_height })
 }
 
 ## Safari's screen, in pixels across and down.
