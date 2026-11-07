@@ -354,6 +354,14 @@ World :: [].{
 		World.route.route_segments().find_first(World.has_cat)
 			?? crash "World.first_cat_segment: the route has a cat"
 
+	## The cat crossing on the route's first segment with a cat.
+	first_cat_crossing : CatCrossing
+	first_cat_crossing =
+		match World.first_cat_segment.encounter {
+			CatCrosses(crossing) => crossing
+			BirdHere(_) | QuietRoad => crash "World.first_cat_crossing: the first cat segment has a cat"
+		}
+
 	## The route's first segment with a bird.
 	first_bird_segment : Segment
 	first_bird_segment =

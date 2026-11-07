@@ -60,11 +60,7 @@ cat_segment : Segment
 cat_segment = World.first_cat_segment
 
 cat_along : Along
-cat_along =
-	match cat_segment.encounter {
-		CatCrosses(crossing) => crossing.along
-		BirdHere(_) | QuietRoad => crash "EncounterReaction: the first cat segment has a cat"
-	}
+cat_along = World.first_cat_crossing.along
 
 ## A rider `along` their segment at `speed` metres a step.
 rider_at : Along, F64 -> { along : Along, speed : Speed }
