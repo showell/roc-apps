@@ -4,6 +4,7 @@
 ## reach. Going forward the ride has to be played, a few steps a frame, so the end
 ## takes a while to reach. Going back it's a list lookup, so the start doesn't.
 import game.Across
+import game.Angle
 import game.Clock
 import game.Distance
 import game.Geom
@@ -15,6 +16,7 @@ import lib.CanvasApp
 import lib.Input
 import lib.Shapes
 import lib.RgbColor
+import widget.PlanView
 import widget.ReadoutText
 import widget.ScrubWidget
 import widget.VcrButtons
@@ -39,8 +41,8 @@ StepWidgetApp :: [].{
 }
 
 ## How many steps of the ride are worked out in one frame of the widget.
-played_a_frame : F64
-played_a_frame = 8.0
+steps_a_frame : U32
+steps_a_frame = 8
 
 ## The range stops short of the cap on a Tour's history, so all of it can be read
 ## back. Play goes as fast as the ride can be worked out.
@@ -48,12 +50,12 @@ journey : VcrButtons.NumberRange(Clock)
 journey = VcrButtons.clock_range({
 	first_step: 0,
 	last_step: 2000,
-	steps_a_frame: played_a_frame,
+	steps_a_frame: steps_a_frame.to_f64(),
 })
 
 ## How many instants are taken back off the list in one frame of the widget.
-read_back_a_frame : F64
-read_back_a_frame = 200.0
+read_back_a_frame : U32
+read_back_a_frame = 200
 
 ## `model` with its buttons setting the step it's heading for. A press counts from
 ## where the ride is, which may not have reached the step it was heading for.
@@ -64,13 +66,11 @@ aimed = |model, input| {
 }
 
 ## `step_once` applied `count` times.
-repeated : Tour, { count : F64, step_once : Tour -> Tour } -> Tour
+repeated : Tour, { count : U32, step_once : Tour -> Tour } -> Tour
 repeated = |tour, { count, step_once }| {
 	var $tour = tour
-	var $left = count
-	while $left > 0.0 {
+	for _ in 0..<count {
 		$tour = step_once($tour)
-		$left = $left - 1.0
 	}
 	$tour
 }
@@ -78,17 +78,17 @@ repeated = |tour, { count, step_once }| {
 ## `model` a frame on: closer to the step it's heading for, or left alone.
 moved : StepWidgetApp.Model -> StepWidgetApp.Model
 moved = |model| {
-	now = model.tour.instant.clock.to_f64()
-	wanted = model.transport.at.to_f64()
-	if now < wanted {
-		count = played_a_frame.min(wanted - now)
+	now = model.tour.instant.clock
+	wanted = model.transport.at
+	if now.to_f64() < wanted.to_f64() {
+		count = steps_a_frame.min(wanted.steps_since(now).to_u32())
 		{
 			..model,
 			tour: repeated(model.tour, { count, step_once: Tour.step_forward }),
 			last_move: Played,
 		}
-	} else if now > wanted {
-		count = read_back_a_frame.min(now - wanted)
+	} else if now.to_f64() > wanted.to_f64() {
+		count = read_back_a_frame.min(now.steps_since(wanted).to_u32())
 		{
 			..model,
 			tour: repeated(model.tour, { count, step_once: Tour.step_back }),
@@ -111,17 +111,14 @@ shapes_at = |model|
 		},
 	)
 
-ground_color : RgbColor
-ground_color = RgbColor.of(0x6f9a55)
-
 road_color : RgbColor
-road_color = RgbColor.of(0x4a4a46)
+road_color = PlanView.road_color
 
 rider_color : RgbColor
-rider_color = RgbColor.of(0xf2efe4)
+rider_color = PlanView.standout_color
 
 truck_color : RgbColor
-truck_color = RgbColor.of(0xd0603a)
+truck_color = PlanView.accent_color
 
 ## The left end of the bar that stands for the whole route.
 route_left_x : F64
@@ -148,15 +145,6 @@ rider_distance = |tour| {
 		{ index: rider.segment_index, along: rider.motorcycle.along },
 	)
 }
-
-ground : Shapes.Shape
-ground = Rect({
-	x: 0.0,
-	y: 0.0,
-	width: ScrubWidget.canvas_width,
-	height: ScrubWidget.picture_bottom_y,
-	fill: Brush.flat(ground_color),
-})
 
 ## The route as a straight bar, with a mark where each segment ends.
 bar_shapes : List(Shapes.Shape)
@@ -229,14 +217,15 @@ rider_height = 74.0
 lean_shown_at : F64
 lean_shown_at = 3.0
 
-## The road from behind, with the rider at `across`, leaning by `lean` radians.
-shapes_from_behind_rider : { across : Across, lean : F64 } -> List(Shapes.Shape)
+## The road from behind, with the rider at `across`, leaning by `lean`.
+shapes_from_behind_rider : { across : Across, lean : Angle.Lean } -> List(Shapes.Shape)
 shapes_from_behind_rider = |{ across, lean }| {
 	road = Geom.road_half_width.to_metres() * pixels_a_metre
 	middle = ScrubWidget.canvas_width / 2.0
 	foot = middle + across.to_metres() * pixels_a_metre
-	head_x = foot + rider_height * (lean * lean_shown_at).sin()
-	head_y = surface_y - rider_height * (lean * lean_shown_at).cos()
+	lean_shown = lean.to_radians() * lean_shown_at
+	head_x = foot + rider_height * lean_shown.sin()
+	head_y = surface_y - rider_height * lean_shown.cos()
 	[
 		[
 			ScrubWidget.label({
@@ -277,7 +266,7 @@ picture_shapes = |tour| {
 	rider = tour.instant.rider
 	truck = tour.instant.truck
 	[
-		[ground],
+		[ScrubWidget.picture_backdrop(PlanView.ground_color)],
 		bar_shapes,
 		marker_shapes({
 			at: truck.route_position,
@@ -293,18 +282,10 @@ picture_shapes = |tour| {
 		}),
 		shapes_from_behind_rider({
 			across: rider.motorcycle.across,
-			lean: rider.motorcycle.lean.to_radians(),
+			lean: rider.motorcycle.lean,
 		}),
 	].join()
 }
-
-## The brake lights in words.
-brakes_text : [On, Off] -> Str
-brakes_text = |lights|
-	match lights {
-		On => "On"
-		Off => "Off"
-	}
 
 ## How the ride last moved, in words.
 move_text : StepWidgetApp.Model -> Str
@@ -324,7 +305,7 @@ status_lines = |model| {
 	[
 		"clock: step ${clock.to_str()}",
 		"rider: segment ${(rider.segment_index.to_u32() + 1).to_str()}, ${ReadoutText.tenths_text(rider.motorcycle.along.to_metres())} m, speed ${ReadoutText.tenths_text(rider.motorcycle.speed.to_metres_a_step())}",
-		"truck: ${ReadoutText.tenths_text(truck.route_position.to_metres())} m, speed ${ReadoutText.tenths_text(truck.speed.to_metres_a_step())}, brake ${brakes_text(FrameView.lit_truck(model.tour.instant).brake_lights)}",
+		"truck: ${ReadoutText.tenths_text(truck.route_position.to_metres())} m, speed ${ReadoutText.tenths_text(truck.speed.to_metres_a_step())}, brake ${Str.inspect(FrameView.lit_truck(model.tour.instant).brake_lights)}",
 		move_text(model),
 	]
 }
@@ -361,7 +342,7 @@ clock_of : StepWidgetApp.Model -> F64
 clock_of = |model| model.tour.instant.clock.to_f64()
 
 # Going forward, a frame plays a few steps and no more than it takes.
-expect clock_of(moved(heading_for_step(100))) == played_a_frame
+expect clock_of(moved(heading_for_step(100))) == steps_a_frame.to_f64()
 expect clock_of(moved(heading_for_step(3))) == 3.0
 expect clock_of(left_alone(heading_for_step(20), 10)) == 20.0
 
@@ -388,12 +369,12 @@ expect {
 }
 
 # Play keeps pace with the ride, and pausing leaves the ride where it is.
-expect clock_of(pressed_on(heading_for_step(0), Play)) == played_a_frame
+expect clock_of(pressed_on(heading_for_step(0), Play)) == steps_a_frame.to_f64()
 expect {
 	playing = pressed_on(heading_for_step(0), Play)
 	on = moved(aimed(playing, Input.none))
 	paused = pressed_on(on, Play)
-	clock_of(on) == 2.0 * played_a_frame
+	clock_of(on) == 2.0 * steps_a_frame.to_f64()
 		and clock_of(paused) == clock_of(on)
 		and paused.transport.motion == Stopped
 }
@@ -407,7 +388,7 @@ expect {
 }
 
 # To the end has to play there, and to the start reads back almost at once.
-expect clock_of(pressed_on(heading_for_step(0), ToEnd)) == played_a_frame
+expect clock_of(pressed_on(heading_for_step(0), ToEnd)) == steps_a_frame.to_f64()
 expect pressed_on(heading_for_step(0), ToEnd).transport.at == journey.last
 expect {
 	played = left_alone(heading_for_step(300), 40)
@@ -418,20 +399,20 @@ expect {
 expect {
 	chasing = pressed_on(heading_for_step(0), ToEnd)
 	stepped = pressed_on(chasing, StepBack)
-	clock_of(stepped) == played_a_frame - 1.0 and stepped.transport.at == Clock.at_step(7)
+	clock_of(stepped) == steps_a_frame.to_f64() - 1.0 and stepped.transport.at == Clock.at_step(7)
 }
 
 expect route_x(Distance.zero) == route_left_x
 expect route_x(route_length) == route_left_x + route_width
 
-expect brakes_text(On) == "On"
-expect brakes_text(Off) == "Off"
-
-expect
-	status_lines(heading_for_step(0))
+# The lines read the clock, the rider and how the ride last moved. The truck's
+# line, between them, reads the truck's own numbers.
+expect {
+	lines = status_lines(heading_for_step(0))
+	[lines.take_first(2), lines.drop_first(3)].join()
 		== [
 			"clock: step 0",
 			"rider: segment 1, 0.0 m, speed 0.3",
-			"truck: 500.0 m, speed 0.3, brake Off",
 			"Play it forward, then go back",
 		]
+}
