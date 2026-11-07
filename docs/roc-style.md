@@ -413,7 +413,8 @@ Roc's own rules are in the langref's
   An opaque type can change its insides without touching a caller, and
   nobody outside builds one by hand. Say the reason for nominal in the type's
   doc unless it is the one below. A wish to build values in a test or a
-  widget is not a reason: give the type a maker instead.
+  widget is not a reason: give the type a maker instead. Widgets are real
+  clients, so a maker only widgets use is fine; one only tests use is not.
 - **A closed set that needs no checking is nominal, not opaque.** This is
   the usual reason. Every
   value of `Conifer := [Green, SmallGreen, Red, Gold]` is valid, so there
