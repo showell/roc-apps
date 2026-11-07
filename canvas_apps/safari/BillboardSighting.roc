@@ -6,8 +6,8 @@ import RoadAhead
 import Segment
 import SegmentPlace
 import Geom
-import Lens
 import Pipeline
+import Pixels
 import Pond
 import Wildlife
 
@@ -17,6 +17,7 @@ BillboardSighting :: [].{
 	billboards_in_view : RoadAhead.RoadView,
 	{
 		vantage : Geom.Vantage,
+		cam_focal : Pixels,
 		..,
 	} -> List(Pipeline.Sighted(Billboard))
 	billboards_in_view = |road, camera|
@@ -36,34 +37,39 @@ Fate : Try(Pipeline.Sighted(Billboard), [BehindCamera, TooSmall])
 
 ## What became of every billboard on the segments in view, in the order of
 ## `RoadAhead.segments_in_view`.
-billboard_fates : RoadAhead.RoadView, { vantage : Geom.Vantage, .. } -> List(Fate)
+billboard_fates : RoadAhead.RoadView,
+{
+	vantage : Geom.Vantage,
+	cam_focal : Pixels,
+	..,
+} -> List(Fate)
 billboard_fates = |road, camera|
 	RoadAhead.segments_in_view(road)
-		.join_map(|in_view| segment_billboards(road, { vantage: camera.vantage, in_view }))
+		.join_map(|in_view| segment_billboards(road, { camera, in_view }))
 
 ## The billboards of a segment in view: its farm animals, then what lives at
 ## its end.
 segment_billboards : RoadAhead.RoadView,
 {
-	vantage : Geom.Vantage,
+	camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
 	in_view : RoadAhead.SegmentInView,
 } -> List(Fate)
-segment_billboards = |road, { vantage, in_view }|
-	farm_sightings(road, { vantage, in_view })
-		.concat(bend_sightings(road, { vantage, in_view }))
+segment_billboards = |road, { camera, in_view }|
+	farm_sightings(road, { camera, in_view })
+		.concat(bend_sightings(road, { camera, in_view }))
 
 ## The cows, then the pigs, of a segment in view.
 farm_sightings : RoadAhead.RoadView,
 {
-	vantage : Geom.Vantage,
+	camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
 	in_view : RoadAhead.SegmentInView,
 } -> List(Fate)
-farm_sightings = |road, { vantage, in_view }| {
+farm_sightings = |road, { camera, in_view }| {
 	place = in_view.place
 	if is_within_reach(place, farm_reach) {
 		in_view.segment.segment_cows()
 			.concat(in_view.segment.segment_pigs())
-			.map(|billboard| sight_billboard(road, { vantage, place, billboard }))
+			.map(|billboard| sight_billboard(road, { camera, place, billboard }))
 	} else {
 		[]
 	}
@@ -73,32 +79,28 @@ farm_sightings = |road, { vantage, in_view }| {
 ## its bend, or the ducks on its pond. The road's last segment ends quiet.
 bend_sightings : RoadAhead.RoadView,
 {
-	vantage : Geom.Vantage,
+	camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
 	in_view : RoadAhead.SegmentInView,
 } -> List(Fate)
-bend_sightings = |road, { vantage, in_view }| {
+bend_sightings = |road, { camera, in_view }| {
 	place = in_view.place
 	if is_within_reach(place, wildlife_reach) {
 		bend_life_billboards(in_view.segment)
-			.map(|billboard| sight_billboard(road, { vantage, place, billboard }))
+			.map(|billboard| sight_billboard(road, { camera, place, billboard }))
 	} else {
 		[]
 	}
 }
 
 ## A billboard, placed through `place` on the road's map, as the rider sees it.
-## A billboard's size is tested through the lens at rest, where a tree's is
-## tested through the camera's own. The camera's focal length is never longer
-## than that, so this keeps billboards a tree's test would drop while the view
-## is wide. Giving billboards the tree's test would change what the ride draws.
 sight_billboard : RoadAhead.RoadView,
 {
-	vantage : Geom.Vantage,
+	camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
 	place : SegmentPlace,
 	billboard : Geom.Placed(Billboard),
 } -> Fate
-sight_billboard = |road, { vantage, place, billboard }|
-	Pipeline.tall_sighting_of(billboard, { road, vantage, place, size_focal: Lens.resting_focal })
+sight_billboard = |road, { camera, place, billboard }|
+	Pipeline.scenery_sighting_of(billboard, { road, camera, place })
 
 ## Whether a segment at `place` is in reach: among the first `reach` of the
 ## road ahead, or the segment just behind, which meets the rider's own at its

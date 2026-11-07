@@ -386,7 +386,7 @@ expect next_model(start, Input.none.with_key_pressed(KeyLeft)) == opened_after(0
 
 expect
 	status_lines(start)
-		== ["Shapes so far: 1,656 of 2,569", "Added: Trees"]
+		== ["Shapes so far: 1,656 of 2,474", "Added: Trees"]
 
 # The canvas answers the layers, and the panel stays over whatever leans past it.
 expect shapes_at(start) != shapes_at(all_on)
