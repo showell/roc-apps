@@ -1,20 +1,25 @@
 // canvas_app_runner — the browser half of canvas_apps, and the twin of
 // native/CanvasAppRunner.roc. It loads an app's wasm, runs the clock and the
-// keyboard, and hands each frame to ShapeWire to paint.
+// keyboard, and hands each frame to ShapesCanvas to paint.
 //
-// **NOT ONLY GAMES.** Six programs are built against this file and two of them
-// are not games: `camera` is a world you fly around and `trick_or_treat` is a
-// movie you can scrub. What they share is that they are a Roc value on a
-// canvas, stepped at their own rate and drawn from what they answer. The
-// `game` in the names below is older than that and has not been made honest
-// yet.
+// Not every program built against this file is a game: `camera` is a world
+// you fly around and `trick_or_treat` is a movie you can scrub. What they
+// share is that each is a Roc value on a canvas, stepped at its own rate and
+// drawn from what it answers. The `game` in the names below is older than
+// that.
 //
 // The app is the same Roc that runs natively. What is in here is only what a
 // browser does differently: keep the input, pace the clock, show the speaker.
-// Reading a frame and filling a canvas is shapewire.js, which this loads
+// Reading a frame and filling a canvas is shapes_canvas.js, which this loads
 // first and which knows nothing about any of them.
 //
-//   window.SHOW = { wasm: 'snake.wasm', loading: '…' }
+//   window.SHOW = { wasm: 'snake.wasm', loading: '…', readsPointer: true }
+//
+// A page that sets `sharp: true` keeps one canvas pixel for each pixel of the
+// screen, however the page has scaled the canvas, so its type stays crisp.
+//
+// A page that opens partway lists the words its address may name, as
+// `opensAt: ['trees', 'grass']`, and `?start=grass` opens it at the second.
 //
 // No hint: every game draws the keys it reads in its own HUD, which is the
 // only place that cannot drift from the keys it actually reads.
@@ -25,7 +30,7 @@
 // needs both — snake turns on the edge, a paddle moves while a key is held —
 // so an event alone will not do.
 //
-// The bits are Keys.roc's, in its order.
+// The bits are Keys.roc's, and safari/gates/input_bits.shale holds the two equal.
 const KEY_BIT = {
   ArrowUp: 1, ArrowDown: 2, ArrowLeft: 4, ArrowRight: 8,
   KeyW: 16, KeyA: 32, KeyS: 64, KeyD: 128,
@@ -65,16 +70,24 @@ function watchKeyboard(target) {
 }
 
 // ── the pointer ────────────────────────────────────────────────────────────
-// Position is reported in the game's own coordinates, so a game never learns
-// how big the window is or how the page scaled the canvas.
+// A mouse, a finger and a pen all arrive as pointer events, so an app can't
+// tell them apart. Position is reported in the game's own coordinates, so a
+// game never learns how big the window is or how the page scaled the canvas.
+// During a drag it may be off the canvas.
 
-const MOUSE_BIT = { 0: 1, 2: 2, 1: 4 }; // left, right, middle — Mouse.roc's bits
+// `event.buttons` uses Mouse.roc's bits, and safari/gates/input_bits.shale holds the
+// two equal, as it does KEY_BIT.
+const MOUSE_BIT = { Left: 1, Right: 2, Middle: 4 };
+const MOUSE_BITS = MOUSE_BIT.Left | MOUSE_BIT.Right | MOUSE_BIT.Middle;
 
 function watchPointer(canvas, width, height) {
-  const held = new Set();
-  let struck = new Set();
+  let held = 0;
+  let struck = 0;
   let at = { x: 0, y: 0 };
   let wheel = 0;
+  // The pointer that pressed on the canvas, until it lets go. A second finger
+  // is ignored until then.
+  let dragger = null;
 
   const place = (event) => {
     const box = canvas.getBoundingClientRect();
@@ -84,25 +97,45 @@ function watchPointer(canvas, width, height) {
     };
   };
 
-  canvas.addEventListener('mousemove', place);
-  canvas.addEventListener('mousedown', (event) => {
+  const readButtons = (event) => {
+    const now = event.buttons & MOUSE_BITS;
+    struck |= now & ~held;
+    held = now;
+  };
+
+  const release = (event) => {
+    if (event.pointerId !== dragger) return;
+    held = 0;
+    dragger = null;
+  };
+
+  canvas.addEventListener('pointerdown', (event) => {
+    if (dragger !== null && event.pointerId !== dragger) return;
+    dragger = event.pointerId;
+    // With capture, a drag that leaves the canvas keeps tracking and ends here.
+    canvas.setPointerCapture(dragger);
     place(event);
-    held.add(event.button);
-    struck.add(event.button);
+    readButtons(event);
     event.preventDefault();
   });
-  // On the window, not the canvas: a drag that ends outside it still ends.
-  window.addEventListener('mouseup', (event) => { held.delete(event.button); });
+  canvas.addEventListener('pointermove', (event) => {
+    if (dragger !== null && event.pointerId !== dragger) return;
+    place(event);
+    // A mouse's other buttons arrive as moves: pointerdown and pointerup come
+    // only with the first button down and the last one up.
+    if (dragger !== null) readButtons(event);
+  });
+  canvas.addEventListener('pointerup', release);
+  canvas.addEventListener('pointercancel', release);
   canvas.addEventListener('contextmenu', (event) => event.preventDefault());
   // Positive is away from the hand, as raylib reports it; a browser's deltaY
   // is the other way round.
   canvas.addEventListener('wheel', (event) => { wheel -= Math.sign(event.deltaY); event.preventDefault(); });
-  window.addEventListener('blur', () => { held.clear(); struck.clear(); });
+  window.addEventListener('blur', () => { held = 0; struck = 0; dragger = null; });
 
-  const bits = (buttons) => [...buttons].reduce((m, b) => m | (MOUSE_BIT[b] ?? 0), 0);
   return () => {
-    const pointer = { held: bits(held), struck: bits(struck), x: at.x, y: at.y, wheel };
-    struck = new Set();
+    const pointer = { held, struck, x: at.x, y: at.y, wheel };
+    struck = 0;
     wheel = 0;
     return pointer;
   };
@@ -112,7 +145,8 @@ function watchPointer(canvas, width, height) {
 // The game says a sound happened and what it sounds like; this plays it and
 // lights a pip. A browser will not start audio until the page has been
 // clicked or typed in, so the context is made on the first key or button and
-// the pips work either way.
+// the pips work either way. A finger counts only when it lifts, so `wake` runs
+// again then and resumes a context its pointerdown left suspended.
 
 const FADE_MS = 420;
 const bitsOf = (word) => [...Array(32).keys()].filter((bit) => word & (1 << bit));
@@ -126,8 +160,9 @@ function makeSpeaker(game) {
   }));
 
   const wake = () => {
-    if (audio || typeof AudioContext === 'undefined') return;
-    audio = new AudioContext();
+    if (typeof AudioContext === 'undefined') return;
+    audio ??= new AudioContext();
+    audio.resume();
   };
 
   const play = (which) => {
@@ -216,6 +251,17 @@ function bindApp(exports) {
 
 const CATCH_UP = 4; // steps one animation frame may take before time is dropped
 
+// How many times the app hears Right before its first frame: the place in
+// `opensAt` of the word the address names. An app has no way to hear an address,
+// so it hears the keys a reader would press to get there.
+function pressesToOpen(show) {
+  const word = new URLSearchParams(location.search).get('start');
+  if (word === null) return 0;
+  const presses = (show.opensAt ?? []).indexOf(word);
+  if (presses < 0) throw new Error(`canvas_app_runner: this page can't start at ${word}`);
+  return presses;
+}
+
 async function main(show) {
   document.body.style.cssText =
     'margin:0;background:#06080f;height:100vh;display:flex;flex-direction:column;' +
@@ -234,14 +280,22 @@ async function main(show) {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
-  canvas.style.cssText = 'background:#06080f;max-width:100%;max-height:88vh';
+  // A sharp canvas's own size follows the screen, so its place on the page is
+  // said outright: the same one the other canvases get from their own size.
+  canvas.style.cssText = 'background:#06080f;' + (show.sharp
+    ? `width:min(${width}px,100%,${(88 * width) / height}vh);height:auto;aspect-ratio:${width}/${height}`
+    : 'max-width:100%;max-height:88vh');
+  // A finger on a canvas that reads the pointer is a drag. On any other canvas
+  // it is the reader scrolling the page.
+  canvas.style.touchAction = show.readsPointer ? 'none' : 'auto';
   const ctx = canvas.getContext('2d');
 
   const keyboard = watchKeyboard(window);
   const pointer = watchPointer(canvas, width, height);
   const speaker = makeSpeaker(game);
   window.addEventListener('keydown', speaker.wake);
-  window.addEventListener('mousedown', speaker.wake);
+  window.addEventListener('pointerdown', speaker.wake);
+  window.addEventListener('pointerup', speaker.wake);
   const ringing = { at: -Infinity, tones: [] };
 
   const step = (now) => {
@@ -256,13 +310,27 @@ async function main(show) {
     }
   };
 
+  // How many canvas pixels the app's pixel takes this frame. Setting a canvas's
+  // size clears it and its transform, so only a change of size sets it.
+  const matchScreen = () => {
+    const across = Math.round(canvas.getBoundingClientRect().width * (window.devicePixelRatio ?? 1));
+    if (across > 0 && across !== canvas.width) {
+      canvas.width = across;
+      canvas.height = Math.round((across * height) / width);
+    }
+    const scale = canvas.width / width;
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    return scale;
+  };
+
   const draw = (now) => {
+    const scale = show.sharp ? matchScreen() : 1;
     // The canvas keeps what was drawn, so a frame starts from nothing —
     // as the native runner's clear does.
     ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, width, height);
-    ShapeWire.paint(ctx, game.frame());
+    ShapesCanvas.paint(ctx, game.frame(), scale);
     drawSpeaker(ctx, width, height, toneCount, ringing, now);
   };
 
@@ -298,6 +366,10 @@ async function main(show) {
     document.body.textContent = `${show.wasm} stopped: ${error.message}`;
     throw error; // and again into the console, with its stack
   };
+
+  for (let press = pressesToOpen(show); press > 0; press--) {
+    game.advance(0, KEY_BIT.ArrowRight, 0, 0, 0, 0, 0);
+  }
 
   loading.remove();
   document.body.appendChild(canvas);

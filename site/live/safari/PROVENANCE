@@ -1,6 +1,7 @@
-published 2026-11-01T16:14:57Z
-roc nightly-2026-09-22-e494788
-roc-apps a70ec56
+published 2026-11-07T21:57:26Z
+roc nightly-2026-11-03-34bd006
+opt speed
+roc-apps ba7b71c5
 rocemit ad9a0e7
 cobblestone  
-sha256 ba354ed2b8e64129  740129 bytes  safari.wasm
+sha256 1363dcbf98576cde  679800 bytes  safari.wasm
