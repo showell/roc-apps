@@ -71,6 +71,17 @@ road = {
 	vantage: origin,
 }
 
+# A chain's positions count along the chain, not along the route.
+expect {
+	third_then_first = { ..road, chain_indices: [2, 0].map(World.SegmentIndex.number) }
+	length_at = |position| Chain.segment_at(third_then_first, position).length
+	third_length = World.route_segment(2).length
+	first_length = World.route_segment(0).length
+	third_length != first_length
+		and length_at(Chain.Position.first) == third_length
+		and length_at(Chain.Position.first.next()) == first_length
+}
+
 polygon_of : Shapes.Shape -> { coordinates : List(F64), fill : Brush.Fill }
 polygon_of = |shape|
 	match shape {
@@ -659,7 +670,7 @@ expect is_far_to_near([])
 # GroundSighting's road, chunk by chunk.
 ## A list of patches as a camera the drawing checks read paints them.
 patch_shapes : List(Ground.Patch) -> List(Shapes.Shape)
-patch_shapes = |patches| patches.join_map(|patch| Ground.patch_shapes(patch, Pixels.of(500.0)))
+patch_shapes = |patches| patches.keep_oks(|patch| Ground.patch_shape(patch, Pixels.of(500.0)))
 
 ## Chunk `chunk_number` of the first segment's 20, which is 500 m long.
 corners_of_chunk : U32 -> List(Geom.RiderPoint)

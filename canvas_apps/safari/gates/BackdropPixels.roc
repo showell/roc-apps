@@ -6,8 +6,8 @@ import lib.Brush
 import PixelColor
 import PixelGrid
 import game.Backdrop
+import game.HexColor
 import game.Screen
-import game.Sky
 import ScreenRoll
 
 BackdropPixels :: [].{
@@ -21,12 +21,12 @@ BackdropPixels :: [].{
 	## whose arithmetic rounds differently.
 	backdrop_pixels : ScreenRoll,
 	{
-		sky_top_color : Sky.Rgb,
-		sky_horizon_color : Sky.Rgb,
+		sky_top_color : HexColor.Rgb,
+		sky_horizon_color : HexColor.Rgb,
 	} -> List(U32)
 	backdrop_pixels = |roll, { sky_top_color, sky_horizon_color }| {
-		top_color = Brush.opaque(Sky.pack(sky_top_color))
-		horizon_color = Brush.opaque(Sky.pack(sky_horizon_color))
+		top_color = Brush.opaque(HexColor.pack(sky_top_color))
+		horizon_color = Brush.opaque(HexColor.pack(sky_horizon_color))
 		width = roll.width_px()
 		height = roll.height_px()
 		var $px = List.with_capacity(width.to_u64() * height.to_u64())

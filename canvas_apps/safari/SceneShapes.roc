@@ -60,9 +60,7 @@ SceneShapes :: [].{
 			),
 			cats: scene.cats.map(|cat| Pipeline.rendering_of(cat, { cam_focal, context: {} })),
 			trucks: truck_renderings(view, scene.truck),
-			rails: scene.rails.map(
-				|quad| rendering_at(quad.forward, GuardRail.quad_shapes(quad, cam_focal)),
-			),
+			rails: scene.rails.keep_oks(|quad| rail_rendering(quad, cam_focal)),
 		}
 	}
 
@@ -102,9 +100,13 @@ SceneShapes :: [].{
 		)
 }
 
-## A thing that doesn't go through `Pipeline`: its shapes, at `depth`.
-rendering_at : Distance, List(Shapes.Shape) -> Rendered
-rendering_at = |depth, shapes| { depth, picture: Picture.from_shapes(shapes) }
+## A quad of the rail, which doesn't go through `Pipeline`, at its own depth,
+## unless it's wholly behind the camera.
+rail_rendering : GuardRail.RailQuad, Pixels -> Try(Rendered, [BehindCamera])
+rail_rendering = |quad, cam_focal|
+	GuardRail.quad_shape(quad, cam_focal).map_ok(
+		|shape| { depth: quad.forward, picture: Picture.from_shapes([shape]) },
+	)
 
 ## What a thing measured on the road draws from: the road in view, and where on it
 ## `sighting` found the thing.

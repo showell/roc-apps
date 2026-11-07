@@ -86,6 +86,11 @@ Chain :: [].{
 	rider_segment : Chain.RoadView -> World.SegmentIndex
 	rider_segment = |road| Chain.Position.first.index_in(road.chain_indices)
 
+	## The segment at `position` in the chain.
+	segment_at : Chain.RoadView, Chain.Position -> World.Segment
+	segment_at = |road, position|
+		position.index_in(road.chain_indices).segment_in(road.route_segments)
+
 	## The segment behind the rider's, unless the rider's is the route's first.
 	segment_behind : Chain.RoadView -> [Previous(World.SegmentIndex), AtRouteStart]
 	segment_behind = |road| rider_segment(road).previous()

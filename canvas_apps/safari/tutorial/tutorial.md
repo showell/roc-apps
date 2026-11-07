@@ -287,7 +287,7 @@ So our rectangle is a `Poly`, not a `Rect`.
 
 `Polygon` makes shapes one at a time. A polygon needs at least three corners, so `flat_polygon` crashes if it gets fewer. That would be a bug in Safari Ride, and a bug shouldn't quietly paint nothing.
 
-Something made of several shapes is a list of them. A tree is nine: a trunk and eight tiers of foliage. A list can be empty, and that isn't a bug. `Ground.patch_shapes` knows that a patch of ground wholly behind the camera has nothing to show.
+Something made of several shapes is a list of them. A tree is nine: a trunk and eight tiers of foliage. A list can be empty, and that isn't a bug. `Ground.patch_shape` knows that a patch of ground wholly behind the camera has nothing to show.
 
 The order of the list is the order of painting, so the rectangle covers part of the triangle. A frame lists the sky and mountains, then the ground, then what stands on the ground, far to near.
 
@@ -620,9 +620,9 @@ The sky is two colors, the top of the sky and the horizon. Here they are at five
 
 Every color in the sky is a blend of two others, and a blend needs a ratio. `Fraction` is another small opaque type, a ratio from 0 to 1, and only its own block can build one, so a `Fraction` is always in range. It has two ways in. `Fraction.of` takes a ratio that can only be in range and crashes on anything else, because that would be a bug in the sum. `Fraction.clamp` takes a ratio that can rightly fall outside, and holds it at the nearest end.
 
-`color_between` takes one record argument, destructured in its parameter list, so callers name every field. Each channel moves the same share of the way. `Sky.Rgb` is a plain record alias: three floats with nothing to guard.
+`color_between` takes one record argument, destructured in its parameter list, so callers name every field. Each channel moves the same share of the way. `HexColor.Rgb` is a plain record alias: three floats with nothing to guard.
 
-{{code Sky.color_between}}
+{{code HexColor.color_between}}
 
 `sky_top_color`, the one `Tour.sky_top_color` asked at the start of this chapter, calls it to blend day into dusk. `dusk_at` says how far the day has gone. That's a `Fraction` too, and The setting sun works it out.
 
@@ -638,7 +638,7 @@ Every color in the sky is a blend of two others, and a blend needs a ratio. `Fra
 
 That's where a color finally becomes one integer, because a `Brush` wants `0xRRGGBB`. `pack` gets there with method calls on plain numbers. Static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `pack` a leaf: it calls nothing of Safari Ride's own.
 
-{{code Sky.pack}}
+{{code HexColor.pack}}
 
 One more thing in the frame goes dark with the sky: the mountains.
 
@@ -1116,7 +1116,7 @@ The types do the work, and a sunset needs four:
 | `Clock` | A step of the ride | A `U32` |
 | `Pixels` | A length on screen, like the sun's height | An `F64`, because a shape can sit between two pixels |
 | `Fraction` | A ratio from 0 to 1, like how far toward dusk we are | An `F64` |
-| `Sky.Rgb` | A color | A record of three floats |
+| `HexColor.Rgb` | A color | A record of three floats |
 
 The first three are opaque. Each is still a number, and the type gives it a name, so a height can't be passed where a dusk is wanted. With those in hand, each job is a signature:
 
@@ -2258,9 +2258,9 @@ From there to the screen is a pinhole camera, which is similar triangles. Dividi
 
 {{code BirdShapes.PosedBird from "feet = Camera.project(" to "feet = Camera.project("}}
 
-The focal length comes from a lens. `focal` is a value computed from other values, with no function in sight, and `field_of_view` is a `Turn`, so taking half of it needs no comment about radians. [check: whether a value like this inside a `.{ }` block is evaluated at compile time, as top-level values are.]
+The focal length comes from a lens. `resting_focal` is a value computed from other values, with no function in sight, and `field_of_view` is a `Turn`, so taking half of it needs no comment about radians. [check: whether a value like this inside a `.{ }` block is evaluated at compile time, as top-level values are.]
 
-{{code Lens.focal}}
+{{code Lens.resting_focal}}
 
 The view widens as the rider leans. One `Fraction` goes in, and a focal length comes out. `RideFocal.ride_focal`, from the chapter on what a cat does to the rider, calls this through `cam_focal`, taking the wider of what the lean and the rider's attention ask for:
 
@@ -2305,7 +2305,7 @@ The corner behind the camera has gone, and two new ones stand on the camera's pl
 
 Anything that crosses the camera's plane has to be cut, or dividing by `forward` flips it across the screen. The textbook algorithm walks a polygon's edges, keeping corners in view and adding a new corner wherever an edge crosses the plane. In Roc, that's a pairing and a `fold`. `map2` zips each corner with the next one, which is the list rotated by one, and `fold` builds the new polygon. `List.with_capacity` is the one line about performance, and `edge_points_onto` is passed by name:
 
-{{code Geom.near_points}}
+{{code Geom.clipped_points}}
 
 A fold's step is a plain function of the list so far and one edge:
 
@@ -2313,7 +2313,7 @@ A fold's step is a plain function of the list so far and one edge:
 
 `Ground`, `GuardRail` and `TruckShape` call it the same way. `patch.corners.map(...)` makes the `RaisedPoint`s, and what comes back is a shorter or longer list of the same type:
 
-{{code Ground.patch_shapes from "in_front = Geom.near_points(" to "Polygon.flat_polygon(patch.color, Camera.projected_points(in_front, cam_focal))"}}
+{{code Camera.clipped_polygon from "in_front = Geom.clipped_points(" to "Ok(Polygon.flat_polygon(color, projected_points(in_front, cam_focal)))"}}
 
 ### Arithmetic all the way down
 

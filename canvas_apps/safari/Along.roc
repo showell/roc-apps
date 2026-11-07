@@ -52,3 +52,32 @@ Along :: F64.{
 
 	is_eq : _
 }
+
+expect Along.start.to_metres() == 0.0
+expect Along.at(Distance.metres(7.5)).to_metres() == 7.5
+expect Along.metres(7.5).from_start().to_metres() == 7.5
+expect Along.metres(7.5).plus(Distance.metres(2.0)).to_metres() == 9.5
+expect Along.metres(7.5).minus(Distance.metres(2.0)).to_metres() == 5.5
+expect Along.metres(7.5).distance_from(Along.metres(2.0)).to_metres() == 5.5
+expect Along.metres(2.0).distance_from(Along.metres(7.5)).to_metres() == -5.5
+
+## Just under, at and just over 2.5 m, and how `<`, `<=`, `>`, `>=` and `==`
+## answer against 2.5 m there.
+expect
+	[
+		(2.0, [True, True, False, False, False]),
+		(2.5, [False, True, False, True, True]),
+		(3.0, [False, False, True, True, False]),
+	].all(
+		|(metres, want)| {
+			along = Along.metres(metres)
+			held = Along.metres(2.5)
+			[
+				along < held,
+				along <= held,
+				along > held,
+				along >= held,
+				along == held,
+			] == want
+		},
+	)

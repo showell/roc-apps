@@ -60,7 +60,7 @@ canvas_per_screen = ScrubWidget.canvas_width / Screen.width.to_f64()
 right_of : Stand -> Distance
 right_of = |{ forward, canvas_x }| {
 	screen_x = Pixels.of(canvas_x / canvas_per_screen)
-	forward.times(screen_x.minus(Screen.center_x).ratio_to(Lens.focal))
+	forward.times(screen_x.minus(Screen.center_x).ratio_to(Lens.resting_focal))
 }
 
 tree_shapes : Stand -> List(Shapes.Shape)
@@ -68,7 +68,7 @@ tree_shapes = |stand|
 	conifer.scenery_picture({
 		right: right_of(stand),
 		forward: stand.forward,
-		cam_focal: Lens.focal,
+		cam_focal: Lens.resting_focal,
 		context: { nearer_tree_count: 0 },
 	}).to_shapes()
 
@@ -118,7 +118,7 @@ is_plain_to_see = |stand| {
 		forward: stand.forward,
 		height: conifer.scenery_height(),
 	}
-	on_screen = TreeShapes.tree_on_screen(point, Lens.focal)
+	on_screen = TreeShapes.tree_on_screen(point, Lens.resting_focal)
 	foot_y = on_screen.base_y.to_f64() * canvas_per_screen
 	tip_y = foot_y - on_screen.height_px.to_f64() * canvas_per_screen
 	x = on_screen.base_x.to_f64() * canvas_per_screen

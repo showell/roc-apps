@@ -61,7 +61,7 @@ GroundSighting :: [].{
 	## The road along the segment at `position` in the chain, chunk by chunk.
 	road_patches : Chain.RoadView, Chain.Position -> List(Ground.Patch)
 	road_patches = |road, position| {
-		segment_length = segment_in_chain(road, position).length
+		segment_length = Chain.segment_at(road, position).length
 		chunk_count = GroundSighting.chunks_along(segment_length)
 		List.from_iter(U32.until(0, chunk_count)).map(
 			|chunk_number| road_patch(
@@ -94,26 +94,18 @@ GroundSighting :: [].{
 road_patch : List(Geom.RiderPoint) -> Ground.Patch
 road_patch = |corners| { corners, color: GroundSighting.road_color }
 
-## The segment at `position` in the chain.
-segment_in_chain : Chain.RoadView, Chain.Position -> World.Segment
-segment_in_chain = |road, position|
-	position.index_in(road.chain_indices).segment_in(road.route_segments)
-
 ## The ground along the segment at `position` in the chain: its road, the
 ## bend into the next segment if the chain goes on, and its pond if it
 ## ends at one.
 ground_patches : Chain.RoadView, Chain.Position -> List(Ground.Patch)
 ground_patches = |road, position| {
-	segment = segment_in_chain(road, position)
+	segment = Chain.segment_at(road, position)
 	place = InChain(position)
 	bend =
 		if position.is_last_in(road.chain_indices) {
 			[]
 		} else {
-			bend_patches(
-				road,
-				BendView.of_segment(segment, { before: place, after: InChain(position.next()) }),
-			)
+			bend_patches(road, BendView.of_segment(segment, place))
 		}
 	[
 		GroundSighting.road_patches(road, position),
@@ -128,11 +120,9 @@ patches_behind : Chain.RoadView, World.SegmentIndex -> List(Ground.Patch)
 patches_behind = |road, index| {
 	segment = index.segment_in(road.route_segments)
 	before = Chain.place_behind(segment)
-	after = InChain(Chain.Position.first)
-	bend_patches(
-		road,
-		BendView.of_segment(segment, { before, after }),
-	).concat(pond_patches(road, { segment, place: before }))
+	bend_patches(road, BendView.of_segment(segment, before)).concat(
+		pond_patches(road, { segment, place: before }),
+	)
 }
 
 ## A bend's paving: the road just before it, then the corner it cuts.
@@ -182,7 +172,7 @@ bend_corners = |road, bend| {
 		Chain.rider_point_at(
 			road,
 			{
-				place: bend.after,
+				place: BendView.place_after(bend),
 				along: Along.start,
 				across: outer_edge,
 			},

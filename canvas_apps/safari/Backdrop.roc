@@ -2,8 +2,8 @@
 ## lib/Shapes.roc, which every canvas app shares. This module knows what is
 ## behind the ride: the sky's gradient, the grass, and the sun's glow and disc.
 import Fraction
+import HexColor
 import Pixels
-import Sky
 import lib.Brush
 import Screen
 import Sun
@@ -77,8 +77,8 @@ Backdrop :: [].{
 	## shapes.
 	frame_shapes : List(Shapes.Shape),
 	{
-		sky_top_color : Sky.Rgb,
-		sky_horizon_color : Sky.Rgb,
+		sky_top_color : HexColor.Rgb,
+		sky_horizon_color : HexColor.Rgb,
 		sun_sighting : Sun.Sighting,
 	} -> List(Shapes.Shape)
 	frame_shapes = |ride_shapes, { sky_top_color, sky_horizon_color, sun_sighting: sun }| {
@@ -87,8 +87,8 @@ Backdrop :: [].{
 		# a fifth of the way down to the horizon at y 300, then the fade; the
 		# grass from a pixel above the horizon.
 		sky = Linear({
-			c0: Brush.opaque(Sky.pack(sky_top_color)),
-			c1: Brush.opaque(Sky.pack(sky_horizon_color)),
+			c0: Brush.opaque(HexColor.pack(sky_top_color)),
+			c1: Brush.opaque(HexColor.pack(sky_horizon_color)),
 			o0: sky_top_stop.to_f64(),
 			o1: 1.0,
 			ax: 0.0,

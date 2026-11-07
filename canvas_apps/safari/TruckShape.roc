@@ -8,7 +8,6 @@ import Distance
 import Chain
 import Fraction
 import Geom
-import Polygon
 import lib.Shapes
 
 TruckShape :: [].{
@@ -102,19 +101,8 @@ TruckShape :: [].{
 
 	## A flat-coloured polygon on the truck, cut at the near plane and
 	## projected, unless it's wholly behind the camera.
-	truck_polygon : TruckShape.TruckInView,
-	{
-		color : I64,
-		corners : List(Geom.RaisedPoint),
-	} -> Try(Shapes.Shape, [BehindCamera])
-	truck_polygon = |truck, { color, corners }| {
-		in_front = Geom.near_points(corners)
-		if in_front.is_empty() {
-			Err(BehindCamera)
-		} else {
-			Ok(Polygon.flat_polygon(color, Camera.projected_points(in_front, truck.view.cam_focal)))
-		}
-	}
+	truck_polygon : TruckShape.TruckInView, Camera.FlatPolygon -> Try(Shapes.Shape, [BehindCamera])
+	truck_polygon = |truck, polygon| Camera.clipped_polygon(polygon, truck.view.cam_focal)
 }
 
 ## How far forward of the trailer the cab's flat roof reaches, as a fraction

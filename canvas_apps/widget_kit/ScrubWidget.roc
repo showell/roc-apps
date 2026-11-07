@@ -8,6 +8,7 @@ import game.Clock
 import game.Distance
 import game.Fraction
 import game.Backdrop
+import game.HexColor
 import game.Sky
 import game.Sun
 import lib.Brush
@@ -121,8 +122,8 @@ ScrubWidget :: [].{
 	## The same picture under any sky, for a widget that shows part of a sunset.
 	ride_shapes_in : List(Shapes.Shape),
 	{
-		sky_top_color : Sky.Rgb,
-		sky_horizon_color : Sky.Rgb,
+		sky_top_color : HexColor.Rgb,
+		sky_horizon_color : HexColor.Rgb,
 		sun_sighting : Sun.Sighting,
 	} -> List(Shapes.Shape)
 	ride_shapes_in = |shapes, sky| {

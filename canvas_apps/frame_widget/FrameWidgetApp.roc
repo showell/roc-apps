@@ -167,8 +167,8 @@ ride_pieces = |tour| {
 		dusk: Sky.dusk_at(instant.clock),
 		cam_focal: view.cam_focal,
 	})
-	ground = GroundSighting.patches_in_view(view.road).join_map(
-		|patch| Ground.patch_shapes(
+	ground = GroundSighting.patches_in_view(view.road).keep_oks(
+		|patch| Ground.patch_shape(
 			patch,
 			view.cam_focal,
 		),
