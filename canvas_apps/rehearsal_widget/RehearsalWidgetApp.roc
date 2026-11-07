@@ -70,7 +70,7 @@ Rehearsal : {
 	low : Angle.Lean,
 	high : Angle.Lean,
 	outcome : Coast.Outcome,
-	wants_more_right : Bool,
+	lean_correction : [MoreRight, MoreLeft],
 	path_points : List(ArcPoint),
 }
 
@@ -116,19 +116,18 @@ rehearsals_from = |{ low, high, at }|
 	} else {
 		lean = low.halfway_to(high)
 		outcome = Coast.project(rider.with_lean(lean))
-		wants_more_right = LeanSearch.want_more_right(outcome, target)
+		lean_correction = LeanSearch.lean_correction(outcome, target)
 		next =
-			if wants_more_right {
-				{ low: lean, high, at: at + 1 }
-			} else {
-				{ low, high: lean, at: at + 1 }
+			match lean_correction {
+				MoreRight => { low: lean, high, at: at + 1 }
+				MoreLeft => { low, high: lean, at: at + 1 }
 			}
 		rehearsals_from(next).prepend({
 			lean,
 			low,
 			high,
 			outcome,
-			wants_more_right,
+			lean_correction,
 			path_points: points_of(lean),
 		})
 	}
@@ -145,11 +144,10 @@ rehearsals =
 chosen_lean : Angle.Lean
 chosen_lean =
 	match rehearsals.last() {
-		Ok({ lean, low, high, wants_more_right, .. }) =>
-			if wants_more_right {
-				lean.halfway_to(high)
-			} else {
-				low.halfway_to(lean)
+		Ok({ lean, low, high, lean_correction, .. }) =>
+			match lean_correction {
+				MoreRight => lean.halfway_to(high)
+				MoreLeft => low.halfway_to(lean)
 			}
 		Err(_) => crash "RehearsalWidgetApp.chosen_lean: the search has tries"
 	}
@@ -409,11 +407,10 @@ outcome_text = |{ outcome, path_points, .. }| {
 
 ## What the search does next, in words.
 verdict_text : Rehearsal -> Str
-verdict_text = |{ wants_more_right, .. }|
-	if wants_more_right {
-		"So try further right"
-	} else {
-		"So try further left"
+verdict_text = |{ lean_correction, .. }|
+	match lean_correction {
+		MoreRight => "So try further right"
+		MoreLeft => "So try further left"
 	}
 
 ## How many steps of physics all the tries ran.
@@ -585,8 +582,8 @@ expect
 
 # Every arc of this step stays on the road, and the search goes both ways.
 expect rehearsals.all(|{ outcome, .. }| color_of(outcome) == kept_color)
-expect rehearsals.any(|{ wants_more_right, .. }| wants_more_right)
-expect rehearsals.any(|{ wants_more_right, .. }| !wants_more_right)
+expect rehearsals.any(|{ lean_correction, .. }| lean_correction == MoreRight)
+expect rehearsals.any(|{ lean_correction, .. }| lean_correction == MoreLeft)
 
 # Going forward runs through every stop and round to the start.
 expect next_stop(0) == 1
@@ -662,8 +659,8 @@ expect lean_text(Angle.Lean.degrees(-0.5)) == "0.50 left"
 expect across_text(Across.metres(-0.5)) == "0.5 m left"
 expect across_text(Across.metres(0.5)) == "0.5 m right"
 
-expect verdict_text({ ..rehearsal_one, wants_more_right: True }) == "So try further right"
-expect verdict_text({ ..rehearsal_one, wants_more_right: False }) == "So try further left"
+expect verdict_text({ ..rehearsal_one, lean_correction: MoreRight }) == "So try further right"
+expect verdict_text({ ..rehearsal_one, lean_correction: MoreLeft }) == "So try further left"
 
 ## The search's first try.
 rehearsal_one : Rehearsal
