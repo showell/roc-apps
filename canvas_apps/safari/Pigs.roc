@@ -40,19 +40,19 @@ Pigs :: [].{
 		standout_column : U64,
 	}.{
 
-		## The herd's pigs about `place`, row by row from the road.
+		## The herd's pigs about `herd_along`, row by row from the road.
 		big_herd_pigs : Pigs.BigPigHerd, Along -> List(Geom.Placed(Billboard))
-		big_herd_pigs = |herd, place| {
+		big_herd_pigs = |herd, herd_along| {
 			columns = List.from_iter(U64.until(0, herd.columns))
 			List.from_iter(U64.until(0, herd.rows))
-				.join_map(|row| columns.map(|column| herd_pig(herd, { place, row, column })))
+				.join_map(|row| columns.map(|column| herd_pig(herd, { herd_along, row, column })))
 		}
 
-		## The herd's pig that stands out, about `place`.
+		## The herd's pig that stands out, about `herd_along`.
 		standout_pig : Pigs.BigPigHerd, Along -> Geom.Placed(Billboard)
-		standout_pig = |herd, place| {
-			standout_spot = { place, row: 0, column: herd.standout_column }
-			herd_pig(herd, standout_spot)
+		standout_pig = |herd, herd_along| {
+			column = herd.standout_column
+			herd_pig(herd, { herd_along, row: 0, column })
 		}
 
 		is_eq : _
@@ -68,21 +68,21 @@ Pigs :: [].{
 		back_row_offset : Distance,
 	}.{
 
-		## The herd's pigs about `place`, front row first.
+		## The herd's pigs about `herd_along`, front row first.
 		two_row_pigs : Pigs.TwoRowPigHerd, Along -> List(Geom.Placed(Billboard))
-		two_row_pigs = |herd, place| {
+		two_row_pigs = |herd, herd_along| {
 			back_across = front_row_across.plus(herd.back_row_offset)
-			row_pigs(place, { across: front_row_across, offsets: herd.front_offsets })
-				.concat(row_pigs(place, { across: back_across, offsets: herd.back_offsets }))
+			row_pigs(herd_along, { across: front_row_across, offsets: herd.front_offsets })
+				.concat(row_pigs(herd_along, { across: back_across, offsets: herd.back_offsets }))
 		}
 
-		## The herd's pig that stands out, about `place`: the middle pig of the
-		## front row, the later of the two middle ones when the row is even.
+		## The herd's pig that stands out, about `herd_along`: the middle pig of
+		## the front row, the later of the two middle ones when the row is even.
 		standout_pig : Pigs.TwoRowPigHerd, Along -> Geom.Placed(Billboard)
-		standout_pig = |herd, place| {
+		standout_pig = |herd, herd_along| {
 			offset = herd.front_offsets.get(herd.front_offsets.len() // 2)
 				?? crash "Pigs.TwoRowPigHerd.standout_pig: a two-row herd has a pig in its front row"
-			pig({ along: place.plus(offset), across: front_row_across })
+			pig({ along: herd_along.plus(offset), across: front_row_across })
 		}
 
 		is_eq : _
@@ -166,15 +166,15 @@ pig = |{ along, across }| {
 
 herd_pig : Pigs.BigPigHerd,
 {
-	place : Along,
+	herd_along : Along,
 	row : U64,
 	column : U64,
 } -> Geom.Placed(Billboard)
-herd_pig = |herd, { place, row, column }| {
+herd_pig = |herd, { herd_along, row, column }| {
 	i = (row * herd.columns + column).to_f64()
 	fr = row.to_f64()
 	fc = column.to_f64()
-	first_column = place.plus(herd.first_column)
+	first_column = herd_along.plus(herd.first_column)
 	in_column = first_column.plus(herd.column_spacing.times(fc))
 	in_line = in_column.plus(herd.row_depth.times(fr))
 	in_row = front_row_across.plus(herd.row_depth.times(fr))
@@ -185,8 +185,8 @@ herd_pig = |herd, { place, row, column }| {
 }
 
 row_pigs : Along, { across : Across, offsets : List(Distance) } -> List(Geom.Placed(Billboard))
-row_pigs = |place, { across, offsets }|
-	offsets.map(|offset| pig({ along: place.plus(offset), across }))
+row_pigs = |herd_along, { across, offsets }|
+	offsets.map(|offset| pig({ along: herd_along.plus(offset), across }))
 
 long_segment : Distance
 long_segment = Distance.metres(1000.0)
