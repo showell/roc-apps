@@ -89,18 +89,33 @@ bank_outer_points = [
 ## antialiases both, so the bank lies under the water's edge instead, and the
 ## water hides the overlap. A distance along the road shrinks fast on screen,
 ## so the overlap is generous; it only has to keep the inner edge inside the
-## water. The bank's ends still meet the far shore's ends, because each end of
-## the bank lies straight along the road from its inner corner.
+## water.
 bank_under_water : Distance
 bank_under_water = Distance.metres(10.0)
 
-## The bank: the far shore, moved back under the water, then its outer edge.
-bank_points : List(PondPoint)
-bank_points = {
+## How far the bank's two inner end corners are pulled in toward the road.
+## Left in line with the far shore's ends, each end of the bank would leave the
+## water exactly at the water's corner, beside the shore at a narrow angle, and
+## the browser's antialiasing would leave a seam of grass between them. Pulled
+## in, each end edge crosses the shore beside the corner at an angle.
+bank_end_pull_in : Distance
+bank_end_pull_in = Distance.metres(2.0)
+
+## The bank's inner edge: the far shore, moved back under the water, with its
+## two ends pulled in toward the road.
+bank_inner_points : List(PondPoint)
+bank_inner_points = {
 	under_water = |point| { ..point, past_end: point.past_end.minus(bank_under_water) }
-	inner_points = far_shore_points.fold_rev([], |point, out| out.append(under_water(point)))
-	inner_points.concat(bank_outer_points)
+	pulled_in = |point| { ..point, out_from_middle: point.out_from_middle.minus(bank_end_pull_in) }
+	match far_shore_points.fold_rev([], |point, out| out.append(under_water(point))) {
+		[first, middle, last] => [pulled_in(first), middle, pulled_in(last)]
+		_ => crash "Pond.bank_inner_points: the far shore has three points"
+	}
 }
+
+## The bank: its inner edge under the water, then its outer edge.
+bank_points : List(PondPoint)
+bank_points = bank_inner_points.concat(bank_outer_points)
 
 bank_color : RgbColor
 bank_color = RgbColor.of(0xC2B280)
