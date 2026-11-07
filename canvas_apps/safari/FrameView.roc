@@ -5,6 +5,7 @@ import GroundSighting
 import LitTruck
 import Mountains
 import RideInstant
+import RoadAhead
 import RiderCamera
 import Route
 import Scene
@@ -74,23 +75,26 @@ FrameView := {
 shapes : RiderCamera, { instant : RideInstant, route : Route } -> List(Shapes.Shape)
 shapes = |camera, { instant, route }| {
 	s = instant.rider
-	view = camera.camera_view(route)
+	road = RoadAhead.RoadView.ahead_of(route, camera.segment_index)
 	scene = Scene.scene_in_view(
-		view,
+		road,
 		{
-			speed: s.motorcycle.speed,
-			truck: {
-				route_position: instant.truck.route_position,
-				lit_truck: FrameView.lit_truck(instant),
+			camera,
+			facts: {
+				speed: s.motorcycle.speed,
+				truck: {
+					route_position: instant.truck.route_position,
+					lit_truck: FrameView.lit_truck(instant),
+				},
+				clock: instant.clock,
 			},
-			clock: instant.clock,
 		},
 	)
-	ground = GroundSighting.patches_in_view(view.road)
+	ground = GroundSighting.patches_in_view(road, camera)
 	[
 		Mountains.mountain_shapes(camera, Sky.dusk_at(instant.clock)),
 		ground.keep_oks(|patch| Ground.patch_shape(patch, camera.cam_focal)),
-		SceneShapes.scene_shapes(scene, view),
+		SceneShapes.scene_shapes(scene, { road, camera }),
 	].join()
 }
 

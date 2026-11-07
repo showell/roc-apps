@@ -33,21 +33,21 @@ PosedCat := { pose : PosedCat.CatPose }.{
 		Picture.from_shapes(
 			StillShapes.standing_still_shapes(
 				setting,
-				{ height: PosedCat.cat_height, polygons: PosedCat.pose_polygons(cat.pose) },
+				{ height: PosedCat.cat_height, still: PosedCat.pose_still(cat.pose) },
 			),
 		)
 
-	## The cat's polygons in a pose.
-	pose_polygons : PosedCat.CatPose -> Still
-	pose_polygons = |pose|
+	## The cat's still in a pose.
+	pose_still : PosedCat.CatPose -> Still
+	pose_still = |pose|
 		match pose {
-			Rest => CatStills.rest_polygons
-			Stride => CatStills.stride_polygons
-			Frozen => CatStills.frozen_polygons
-			Coil => CatStills.coil_polygons
-			Flight => CatStills.flight_polygons
-			Land => CatStills.land_polygons
-			Collapse => CatStills.collapse_polygons
+			Rest => CatStills.rest_still
+			Stride => CatStills.stride_still
+			Frozen => CatStills.frozen_still
+			Coil => CatStills.coil_still
+			Flight => CatStills.flight_still
+			Land => CatStills.land_still
+			Collapse => CatStills.collapse_still
 		}
 }
 
@@ -106,14 +106,14 @@ expect
 # Each pose draws its own still.
 expect
 	[
-		(Rest, CatStills.rest_polygons),
-		(Stride, CatStills.stride_polygons),
-		(Frozen, CatStills.frozen_polygons),
-		(Coil, CatStills.coil_polygons),
-		(Flight, CatStills.flight_polygons),
-		(Land, CatStills.land_polygons),
-		(Collapse, CatStills.collapse_polygons),
-	].all(|(pose, still)| PosedCat.pose_polygons(pose) == still)
+		(Rest, CatStills.rest_still),
+		(Stride, CatStills.stride_still),
+		(Frozen, CatStills.frozen_still),
+		(Coil, CatStills.coil_still),
+		(Flight, CatStills.flight_still),
+		(Land, CatStills.land_still),
+		(Collapse, CatStills.collapse_still),
+	].all(|(pose, still)| PosedCat.pose_still(pose) == still)
 
 # Each pose draws every polygon of its still.
 expect
@@ -128,6 +128,6 @@ expect
 	].all(
 		|pose| {
 			shapes = sample_cat_shapes({ pose: pose }, Distance.zero)
-			shapes.len() == PosedCat.pose_polygons(pose).polygons().len()
+			shapes.len() == PosedCat.pose_still(pose).polygons().len()
 		},
 	)

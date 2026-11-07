@@ -936,15 +936,15 @@ Everything in this chapter is measured from the rider, as the trees were.
 
 A bend is a small record.
 
-{{code BendView.BendView from "A bend as the rider sees it" to "}.{"}}
+{{code BendInView.BendInView from "A bend as the rider sees it" to "}.{"}}
 
 `before` and `after` say where the two segments lie from the rider. The turn is positive to the right.
 
-{{code BendView.outer_edge}}
+{{code BendInView.outer_edge}}
 
 A bend to the right has its outer edge on the left. That's why the rail changes sides between the first two bends.
 
-{{code BendView.apex}}
+{{code BendInView.outer_corner}}
 
 `point_before` and `point_after` are closures. Each gives a call with four arguments a short name, so the two lines below them read alike. Each line runs along the outer edge of one segment, and `Geom.line_crossing` finds where the two cross. That's the yellow dot.
 
@@ -2206,7 +2206,7 @@ That `Arc` is a tag. `path_spot` is where it's played. `{ ..on_line, lift: ... }
 
 The stills are data too. Nested tags get checked all the way down, so a `match` that forgets `Away(WingsDown)` is a compile-time error. The function reads as a table, and there's nothing else in it:
 
-{{code PosedBird.pose_polygons}}
+{{code PosedBird.pose_still}}
 
 `PosedBird.scenery_picture` hands that to `StillShapes.still_shapes`, the function that also draws a cow. A bird's feet reach the screen through `Camera.project`, as a tree's top does, and the math layer chapter shows how. That's the drawing.
 
@@ -2286,7 +2286,7 @@ A cat in the lane stops the rider opening the throttle, without braking, and wid
 
 {{code EncounterReaction.encounter_attention}}
 
-{{code RideFocal.ride_focal}}
+{{code RiderCamera.ride_focal}}
 
 This is the only feedback loop in the design. The rider's speed decides where the cat has got to, and the cat holds the rider's speed down. The loop settles, and it's why `stage_over_step_span` has to stay the cat's rule. A bird asks nothing of the rider, so it falls through to the same answer as an empty road.
 
@@ -2501,7 +2501,7 @@ The road has no global coordinates. A point on it is measured within one segment
 
 So to see something three segments ahead, a point has to be carried back round each bend between it and the rider, one at a time. That's one rotation per bend, and `fold_rev` is the shape of it. The accumulator is a `RoadPoint`, it starts on the far segment, and each step moves it onto the segment before. `segments_before` gives the segments between, and the closure is the only thing the loop does. The last line does the one translation and rotation from above:
 
-{{code RoadAhead.rider_point_ahead from "on_rider_segment =" to "Geom.to_rider_point(on_rider_segment, road.vantage)"}}
+{{code RoadAhead.rider_point_ahead from "on_rider_segment =" to "Geom.to_rider_point(on_rider_segment, vantage)"}}
 
 The rotation itself is plain, with two cases, because a right-hand bend pivots on the far side of the lane:
 

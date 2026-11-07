@@ -19,24 +19,30 @@ import game.Tour
 import lib.Brush
 import lib.CanvasApp
 import lib.Input
-import lib.Mouse
 import lib.Shapes
 import lib.RgbColor
 import lib.Trig
+import widget.Click
+import widget.PlanView
 import widget.ReadoutText
 import widget.ScrubWidget
 
 RehearsalWidgetApp :: [].{
 
-	## The whole state of the widget: how many of the tries are on show.
-	Model : { tries_shown : U64 }
+	## Where the widget has got to: the start, before any try; a try, counted
+	## from 1, with it and the tries before it on show; or the choice the search
+	## made after its last try.
+	Stop : [Start, Shown(U64), Choice]
+
+	## The whole state of the widget: the stop on show.
+	Model : { stop : RehearsalWidgetApp.Stop }
 
 	canvas_app : CanvasApp.CanvasApp(RehearsalWidgetApp.Model)
 	canvas_app = ScrubWidget.canvas_app({
 		title: "Twelve rehearsals",
-		init: { tries_shown: 0 },
-		model_at_next_step: |model, input| { tries_shown: stepped(model.tries_shown, input) },
-		frame_shapes: |model| shapes_at(model.tries_shown),
+		init: { stop: Start },
+		model_at_next_step: |model, input| { stop: stepped(model.stop, input) },
+		frame_shapes: |model| shapes_at(model.stop),
 	})
 }
 
@@ -53,7 +59,6 @@ rider = {
 	yaw: Angle.Turn.radians(0.05277873953607818),
 	speed: Speed.metres_a_step(0.14981295069969633),
 	lean: Angle.Lean.radians(0.0026077673394057635),
-	heading: Angle.Bearing.radians(0.9254433655332428),
 }
 
 ## Where the rider aims: the road's middle, as `LeanSearch.best_lean` does.
@@ -155,52 +160,63 @@ chosen_lean =
 chosen_points : List(ArcPoint)
 chosen_points = points_of(chosen_lean)
 
-## How many tries are on show at the last stop, which is the choice.
+## The place of the choice's mark in the row, after one for each try.
 last_stop : U64
 last_stop = rehearsals.len() + 1
 
-## The stop after `tries_shown`, going round to the start after the last.
-next_stop : U64 -> U64
-next_stop = |tries_shown|
-	if tries_shown >= last_stop {
-		0
-	} else {
-		tries_shown + 1
+## The place of `stop` in the row of marks: the start is 0, a try its count, and
+## the choice the last.
+stop_number : Stop -> U64
+stop_number = |stop|
+	match stop {
+		Start => 0
+		Shown(try) => try
+		Choice => last_stop
 	}
 
-## The stop before `tries_shown`, staying at the start.
-previous_stop : U64 -> U64
-previous_stop = |tries_shown|
-	if tries_shown == 0 {
-		0
+## The stop in place `number` of the row of marks, from 1 to `last_stop`.
+stop_at_number : U64 -> Stop
+stop_at_number = |number|
+	if number == last_stop {
+		Choice
 	} else {
-		tries_shown - 1
+		Shown(number)
+	}
+
+## The stop after `stop`, going round to the start after the choice.
+next_stop : Stop -> Stop
+next_stop = |stop|
+	match stop {
+		Start => Shown(1)
+		Shown(try) if try < rehearsals.len() => Shown(try + 1)
+		Shown(_) => Choice
+		Choice => Start
+	}
+
+## The stop before `stop`, staying at the start.
+previous_stop : Stop -> Stop
+previous_stop = |stop|
+	match stop {
+		Start | Shown(1) => Start
+		Shown(try) => Shown(try - 1)
+		Choice => Shown(rehearsals.len())
 	}
 
 ## The stop after this step's clicks and keys. A click that isn't on a mark
 ## leaves the stop as it was.
-stepped : U64, Input.Snapshot -> U64
-stepped = |tries_shown, input|
-	if input.mouse.button_pressed(Left) {
-		{ x, y } = input.mouse.position()
-		mark_under(x.to_f64(), y.to_f64()) ?? tries_shown
-	} else if input.key_pressed(KeyRight) {
-		next_stop(tries_shown)
-	} else if input.key_pressed(KeyLeft) {
-		previous_stop(tries_shown)
-	} else {
-		tries_shown
+stepped : Stop, Input.Snapshot -> Stop
+stepped = |stop, input|
+	match Click.click_point(input) {
+		Ok(spot) => mark_under(spot) ?? stop
+		Err(NoClick) =>
+			if input.key_pressed(KeyRight) {
+				next_stop(stop)
+			} else if input.key_pressed(KeyLeft) {
+				previous_stop(stop)
+			} else {
+				stop
+			}
 	}
-
-## Whether `tries_shown` has got past the last try, to the choice.
-is_past_the_tries : U64 -> Bool
-is_past_the_tries = |tries_shown| tries_shown > rehearsals.len()
-
-ground_color : RgbColor
-ground_color = RgbColor.of(0x6f9a55)
-
-road_color : RgbColor
-road_color = RgbColor.of(0x4a4a46)
 
 line_color : RgbColor
 line_color = RgbColor.of(0xc8c8c0)
@@ -212,42 +228,28 @@ off_right_color : RgbColor
 off_right_color = RgbColor.of(0xe8805a)
 
 kept_color : RgbColor
-kept_color = RgbColor.of(0xf2efe4)
+kept_color = PlanView.standout_color
 
 target_color : RgbColor
 target_color = RgbColor.of(0xe8c84a)
 
-## How many pixels a metre along the road takes up.
-pixels_a_metre_along : F64
-pixels_a_metre_along = 23.0
+## The road from above, with the rider on the road's middle line at the left of
+## the picture, and 23 pixels to a metre along the road.
+road_plan : PlanView
+road_plan = {
+	origin: { x: 30.0, y: ScrubWidget.picture_bottom_y / 2.0 },
+	pixels_a_metre: 23.0,
+}
 
-## How many pixels a metre across the road takes up. This is twice the figure
-## along it, or the arcs would be too close together to tell apart.
-pixels_a_metre_across : F64
-pixels_a_metre_across = 46.0
-
-## Where the rider sits on the canvas.
-rider_x : F64
-rider_x = 30.0
-
-road_middle_y : F64
-road_middle_y = ScrubWidget.picture_bottom_y / 2.0
+## How many times its true width the road is drawn across. At its true width
+## the arcs would be too close together to tell apart.
+across_stretch : F64
+across_stretch = 2.0
 
 ## The right of the road is down the canvas, for a rider heading across it.
 canvas_point : ArcPoint -> { x : F64, y : F64 }
-canvas_point = |{ forward, across }| {
-	x: rider_x + forward * pixels_a_metre_along,
-	y: road_middle_y + across * pixels_a_metre_across,
-}
-
-ground : Shapes.Shape
-ground = Rect({
-	x: 0.0,
-	y: 0.0,
-	width: ScrubWidget.canvas_width,
-	height: ScrubWidget.picture_bottom_y,
-	fill: Brush.flat(ground_color),
-})
+canvas_point = |{ forward, across }|
+	road_plan.canvas_point({ metres_right: forward, metres_down: across * across_stretch })
 
 ## A line right along the road, `across` metres from its middle.
 road_line : { across : F64, color : RgbColor, width : F64 } -> Shapes.Shape
@@ -264,13 +266,13 @@ road_shapes : List(Shapes.Shape)
 road_shapes = {
 	half_lane = Geom.road_half_width.to_metres()
 	[
-		ground,
+		ScrubWidget.picture_backdrop(PlanView.ground_color),
 		Rect({
 			x: 0.0,
 			y: canvas_point({ forward: 0.0, across: -half_lane }).y,
 			width: ScrubWidget.canvas_width,
-			height: 2.0 * half_lane * pixels_a_metre_across,
-			fill: Brush.flat(road_color),
+			height: 2.0 * half_lane * across_stretch * road_plan.pixels_a_metre,
+			fill: Brush.flat(PlanView.road_color),
 		}),
 		road_line({ across: -half_lane, color: line_color, width: 2.0 }),
 		road_line({ across: half_lane, color: line_color, width: 2.0 }),
@@ -337,26 +339,26 @@ caption_shapes = [ScrubWidget.label({ text: "from above, stretched x2 across the
 
 ## The road and the arcs so far. The newest try is drawn bold, and once the
 ## tries are over the arc that was chosen is.
-picture_shapes : U64 -> List(Shapes.Shape)
-picture_shapes = |tries_shown|
+picture_shapes : Stop -> List(Shapes.Shape)
+picture_shapes = |stop|
 	[
 		road_shapes,
-		arcs_shown(tries_shown),
+		arcs_shown(stop),
 		[rider_mark],
 		caption_shapes,
 	].join()
 
-## The arcs with `tries_shown` tries on show, the boldest last.
-arcs_shown : U64 -> List(Shapes.Shape)
-arcs_shown = |tries_shown|
-	if tries_shown == 0 {
-		[]
-	} else if is_past_the_tries(tries_shown) {
-		tries_shapes(rehearsals, 1.0).concat(arc_shapes(chosen_points, { color: kept_color, width: 4.0 }))
-	} else {
-		earlier = rehearsals.take_first(tries_shown - 1)
-		newest = rehearsals.drop_first(tries_shown - 1).take_first(1)
-		tries_shapes(earlier, 1.0).concat(tries_shapes(newest, 4.0))
+## The arcs on show at `stop`, the boldest last.
+arcs_shown : Stop -> List(Shapes.Shape)
+arcs_shown = |stop|
+	match stop {
+		Start => []
+		Shown(try) => {
+			earlier = rehearsals.take_first(try - 1)
+			newest = rehearsals.drop_first(try - 1).take_first(1)
+			tries_shapes(earlier, 1.0).concat(tries_shapes(newest, 4.0))
+		}
+		Choice => tries_shapes(rehearsals, 1.0).concat(arc_shapes(chosen_points, { color: kept_color, width: 4.0 }))
 	}
 
 ## A number of at least zero, to two decimal places.
@@ -418,33 +420,34 @@ steps_rehearsed : U64
 steps_rehearsed = rehearsals.fold(0, |sum, { path_points, .. }| sum + path_points.len())
 
 ## What the search has done so far, a line each.
-status_lines : U64 -> List(Str)
-status_lines = |tries_shown|
-	if tries_shown == 0 {
-		[
-			"Step ${step_shown.to_str()}, just after a bend",
-			"Leaning ${lean_text(rider.lean)}",
-			"Aiming for ${across_text(target)}",
-			"Each mark is one try at a lean",
-		]
-	} else if is_past_the_tries(tries_shown) {
-		[
-			"Chosen: ${lean_text(chosen_lean)}",
-			"${rehearsals.len().to_str()} rehearsals, ${steps_rehearsed.to_str()} steps of physics",
-			"None of them happened",
-			"The real rider takes one step",
-		]
-	} else {
-		match rehearsals.get(tries_shown - 1) {
-			Ok(rehearsal) =>
-				[
-					"Try ${tries_shown.to_str()} of ${rehearsals.len().to_str()}: lean ${lean_text(rehearsal.lean)}",
-					"Between ${lean_text(rehearsal.low)} and ${lean_text(rehearsal.high)}",
-					outcome_text(rehearsal),
-					verdict_text(rehearsal),
-				]
-			Err(_) => crash "RehearsalWidgetApp.status_lines: this try is in the list"
-		}
+status_lines : Stop -> List(Str)
+status_lines = |stop|
+	match stop {
+		Start =>
+			[
+				"Step ${step_shown.to_str()}, just after a bend",
+				"Leaning ${lean_text(rider.lean)}",
+				"Aiming for ${across_text(target)}",
+				"Each mark is one try at a lean",
+			]
+		Shown(try) =>
+			match rehearsals.get(try - 1) {
+				Ok(rehearsal) =>
+					[
+						"Try ${try.to_str()} of ${rehearsals.len().to_str()}: lean ${lean_text(rehearsal.lean)}",
+						"Between ${lean_text(rehearsal.low)} and ${lean_text(rehearsal.high)}",
+						outcome_text(rehearsal),
+						verdict_text(rehearsal),
+					]
+				Err(_) => crash "RehearsalWidgetApp.status_lines: this try is in the list"
+			}
+		Choice =>
+			[
+				"Chosen: ${lean_text(chosen_lean)}",
+				"${rehearsals.len().to_str()} rehearsals, ${steps_rehearsed.to_str()} steps of physics",
+				"None of them happened",
+				"The real rider takes one step",
+			]
 	}
 
 ## How far apart the marks are.
@@ -458,56 +461,59 @@ marks_y = 232.0
 marks_reach : F64
 marks_reach = 12.0
 
-## Where the mark for stop `stop` sits. Stop 1 is the first, and there's one
-## for each try and one for the choice.
+## Where the mark in place `number` of the row sits. Place 1 is the first, and
+## there's one for each try and one for the choice.
 mark_x : U64 -> F64
-mark_x = |stop| ScrubWidget.side_margin + 8.0 + (stop.to_f64() - 1.0) * mark_spacing
+mark_x = |number| ScrubWidget.side_margin + 8.0 + (number.to_f64() - 1.0) * mark_spacing
 
-## The stop whose mark is at (`x`, `y`). Each mark's reach ends halfway to the
-## next one, so no click is on two.
-mark_under : F64, F64 -> Try(U64, [NoMark])
-mark_under = |x, y| {
-	stop = ((x - mark_x(1)) / mark_spacing + 1.5).to_i64_wrap()
-	if (y - marks_y).abs() > marks_reach or stop < 1 or stop > last_stop.to_i64_wrap() {
+## The stop whose mark is at `spot`. Each mark's reach ends halfway to the next
+## one, so no click is on two.
+mark_under : { x : F64, y : F64 } -> Try(Stop, [NoMark])
+mark_under = |{ x, y }| {
+	number = ((x - mark_x(1)) / mark_spacing + 1.5).to_i64_wrap()
+	if (y - marks_y).abs() > marks_reach or number < 1 or number > last_stop.to_i64_wrap() {
 		Err(NoMark)
 	} else {
-		Ok(stop.to_u64_wrap())
+		Ok(stop_at_number(number.to_u64_wrap()))
 	}
 }
 
-## The colour of the mark for `stop`: the current one stands out, those before
-## it are filled in, and the rest are still to come.
-mark_color : U64, U64 -> RgbColor
-mark_color = |stop, tries_shown|
-	if stop == tries_shown {
+## A mark of the row, and the stop on show.
+MarkAndStop : { mark : Stop, current : Stop }
+
+## The colour of a mark: the current one stands out, those before it are filled
+## in, and the rest are still to come.
+mark_color : MarkAndStop -> RgbColor
+mark_color = |{ mark, current }|
+	if mark == current {
 		current_color
-	} else if stop < tries_shown {
+	} else if stop_number(mark) < stop_number(current) {
 		RgbColor.of(0x303030)
 	} else {
 		RgbColor.of(0xb8b8b8)
 	}
 
 current_color : RgbColor
-current_color = RgbColor.of(0xd0603a)
+current_color = PlanView.accent_color
 
 ## The mark for one try: a disc, larger when it's the current one.
-try_mark : U64, U64 -> Shapes.Shape
-try_mark = |stop, tries_shown|
+try_mark : MarkAndStop -> Shapes.Shape
+try_mark = |{ mark, current }|
 	Disc({
-		x: mark_x(stop),
+		x: mark_x(stop_number(mark)),
 		y: marks_y,
-		radius: if stop == tries_shown {
+		radius: if mark == current {
 			9.0
 		} else {
 			6.0
 		},
-		fill: Brush.flat(mark_color(stop, tries_shown)),
+		fill: Brush.flat(mark_color({ mark, current })),
 	})
 
 ## The mark for the choice, which isn't a try, so it's a square.
-choice_mark : U64 -> Shapes.Shape
-choice_mark = |tries_shown| {
-	half = if last_stop == tries_shown {
+choice_mark : Stop -> Shapes.Shape
+choice_mark = |current| {
+	half = if current == Choice {
 		8.0
 	} else {
 		6.0
@@ -517,7 +523,7 @@ choice_mark = |tries_shown| {
 		y: marks_y - half,
 		width: 2.0 * half,
 		height: 2.0 * half,
-		fill: Brush.flat(mark_color(last_stop, tries_shown)),
+		fill: Brush.flat(mark_color({ mark: Choice, current })),
 	})
 }
 
@@ -531,19 +537,19 @@ hint =
 	})
 
 ## The row of marks and what to do with them.
-marks : U64 -> List(Shapes.Shape)
-marks = |tries_shown|
-	rehearsals.map_with_index(|_rehearsal, index| try_mark(index + 1, tries_shown))
-		.append(choice_mark(tries_shown))
+marks : Stop -> List(Shapes.Shape)
+marks = |current|
+	rehearsals.map_with_index(|_rehearsal, index| try_mark({ mark: Shown(index + 1), current }))
+		.append(choice_mark(current))
 		.append(hint)
 
-## Everything on the canvas with `tries_shown` tries on show.
-shapes_at : U64 -> List(Shapes.Shape)
-shapes_at = |tries_shown|
+## Everything on the canvas at `stop`.
+shapes_at : Stop -> List(Shapes.Shape)
+shapes_at = |stop|
 	ScrubWidget.frame_shapes({
-		picture_shapes: picture_shapes(tries_shown),
-		status_lines: status_lines(tries_shown),
-	}).concat(marks(tries_shown))
+		picture_shapes: picture_shapes(stop),
+		status_lines: status_lines(stop),
+	}).concat(marks(stop))
 
 ## The ride at `step`, played from its start.
 ridden_to : U32 -> Tour
@@ -563,11 +569,14 @@ expect {
 		and real.yaw == rider.yaw
 		and real.speed == rider.speed
 		and real.lean == rider.lean
-		and real.heading == rider.heading
 }
 
+## How many tries the search makes.
+round_count : U64
+round_count = LeanSearch.lean_search_round_count.to_u64()
+
 # The tries come to the lean the game's own search comes to.
-expect rehearsals.len() == 12
+expect rehearsals.len() == round_count
 expect chosen_lean.to_radians() == LeanSearch.best_lean(rider).to_radians()
 
 # Each path ends where the game's own arc says that arc ends.
@@ -586,52 +595,44 @@ expect rehearsals.any(|{ lean_correction, .. }| lean_correction == MoreRight)
 expect rehearsals.any(|{ lean_correction, .. }| lean_correction == MoreLeft)
 
 # Going forward runs through every stop and round to the start.
-expect next_stop(0) == 1
-expect next_stop(12) == 13
-expect next_stop(13) == 0
+expect next_stop(Start) == Shown(1)
+expect next_stop(Shown(1)) == Shown(2)
+expect next_stop(Shown(round_count)) == Choice
+expect next_stop(Choice) == Start
 
 # Going back stops at the start.
-expect previous_stop(13) == 12
-expect previous_stop(1) == 0
-expect previous_stop(0) == 0
+expect previous_stop(Choice) == Shown(round_count)
+expect previous_stop(Shown(2)) == Shown(1)
+expect previous_stop(Shown(1)) == Start
+expect previous_stop(Start) == Start
 
-## A snapshot with the pointer at (`x`, `y`) and the left button just pressed,
-## or held from before.
-pointer_at : { x : F32, y : F32, struck : U32 } -> Input.Snapshot
-pointer_at = |{ x, y, struck }| Input.none.with_mouse(
-	Mouse.of({ held: 0, struck, at: { x, y }, wheel: 0.0 }).with_button_down(Left),
-)
-
-## The stop after a click at (`x`, `y`) from stop 3.
-clicked_from_three : F32, F32 -> U64
-clicked_from_three = |x, y| stepped(3, pointer_at({ x, y, struck: 1 }))
+## The stop after a click at `spot` from the third try.
+clicked_from_three : { x : F64, y : F64 } -> Stop
+clicked_from_three = |spot| stepped(Shown(3), Click.click_at(spot))
 
 # A click on a mark goes straight to that stop, either way along the row.
-expect clicked_from_three(mark_x(9).to_f32_wrap(), 232.0) == 9
-expect clicked_from_three(mark_x(1).to_f32_wrap(), 232.0) == 1
-expect clicked_from_three(mark_x(13).to_f32_wrap(), 232.0) == 13
-expect clicked_from_three(mark_x(3).to_f32_wrap(), 232.0) == 3
+expect clicked_from_three({ x: mark_x(9), y: marks_y }) == Shown(9)
+expect clicked_from_three({ x: mark_x(1), y: marks_y }) == Shown(1)
+expect clicked_from_three({ x: mark_x(last_stop), y: marks_y }) == Choice
+expect clicked_from_three({ x: mark_x(3), y: marks_y }) == Shown(3)
 
 # A click anywhere else leaves it alone: on the picture, on the text, past
 # either end of the row.
-expect clicked_from_three(320.0, 100.0) == 3
-expect clicked_from_three(320.0, 300.0) == 3
-expect clicked_from_three(2.0, 232.0) == 3
-expect clicked_from_three(620.0, 232.0) == 3
+expect clicked_from_three({ x: 320.0, y: 100.0 }) == Shown(3)
+expect clicked_from_three({ x: 320.0, y: 300.0 }) == Shown(3)
+expect clicked_from_three({ x: 2.0, y: marks_y }) == Shown(3)
+expect clicked_from_three({ x: 620.0, y: marks_y }) == Shown(3)
 
 # Holding the button on another mark isn't a click, and nor is nothing at all.
-expect stepped(3, pointer_at({ x: mark_x(9).to_f32_wrap(), y: 232.0, struck: 0 })) == 3
-expect stepped(3, Input.none) == 3
+expect stepped(Shown(3), Click.held_at({ x: mark_x(9), y: marks_y })) == Shown(3)
+expect stepped(Shown(3), Input.none) == Shown(3)
 
 # Each mark reaches halfway to the next, and the row's reach ends above and below.
-expect mark_under(mark_x(5) + 10.0, marks_y) == Ok(5)
-expect mark_under(mark_x(5) + 12.0, marks_y) == Ok(6)
-expect mark_under(mark_x(5), marks_y + marks_reach) == Ok(5)
-expect mark_under(mark_x(5), marks_y + marks_reach + 1.0) == Err(NoMark)
-expect mark_under(mark_x(5), marks_y - marks_reach - 1.0) == Err(NoMark)
-
-expect !is_past_the_tries(12)
-expect is_past_the_tries(13)
+expect mark_under({ x: mark_x(5) + 10.0, y: marks_y }) == Ok(Shown(5))
+expect mark_under({ x: mark_x(5) + 12.0, y: marks_y }) == Ok(Shown(6))
+expect mark_under({ x: mark_x(5), y: marks_y + marks_reach }) == Ok(Shown(5))
+expect mark_under({ x: mark_x(5), y: marks_y + marks_reach + 1.0 }) == Err(NoMark)
+expect mark_under({ x: mark_x(5), y: marks_y - marks_reach - 1.0 }) == Err(NoMark)
 
 # An arc is drawn by fewer points than it has, and it still ends at its end.
 expect
@@ -643,14 +644,14 @@ expect
 	)
 
 # The current mark stands apart from those before and after it.
-expect mark_color(5, 5) == current_color
-expect mark_color(4, 5) != current_color
-expect mark_color(6, 5) != current_color
-expect mark_color(4, 5) != mark_color(6, 5)
+expect mark_color({ mark: Shown(5), current: Shown(5) }) == current_color
+expect mark_color({ mark: Shown(4), current: Shown(5) }) != current_color
+expect mark_color({ mark: Shown(6), current: Shown(5) }) != current_color
+expect mark_color({ mark: Shown(4), current: Shown(5) }) != mark_color({ mark: Shown(6), current: Shown(5) })
 
 # A mark for each try and one for the choice, then the words.
-expect marks(0).len() > 13
-expect marks(1) != marks(2)
+expect marks(Start).len() > last_stop
+expect marks(Shown(1)) != marks(Shown(2))
 
 expect lean_text(Angle.Lean.degrees(12.0)) == "12.00 right"
 expect lean_text(Angle.Lean.degrees(12.05)) == "12.05 right"
@@ -667,6 +668,6 @@ rehearsal_one : Rehearsal
 rehearsal_one = rehearsals.first() ?? crash "RehearsalWidgetApp.rehearsal_one: the search has tries"
 
 # The picture changes with every stop along the ruler.
-expect picture_shapes(0) != picture_shapes(1)
-expect picture_shapes(1) != picture_shapes(2)
-expect picture_shapes(12) != picture_shapes(13)
+expect picture_shapes(Start) != picture_shapes(Shown(1))
+expect picture_shapes(Shown(1)) != picture_shapes(Shown(2))
+expect picture_shapes(Shown(round_count)) != picture_shapes(Choice)

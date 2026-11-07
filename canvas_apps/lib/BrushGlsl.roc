@@ -71,8 +71,10 @@ BrushGlsl :: [].{
 			"    return geom_a.w > geom_a.z ? clamp((d - geom_a.z) / (geom_a.w - geom_a.z), 0.0, 1.0) : 1.0;",
 			"}",
 			"",
+			# A span whose edges meet, and a line from a point to itself in
+			# linearColor, are at their far end everywhere, as in Brush.shade.
 			"vec4 spanColor() {",
-			"    float t = clamp((scenePos.x - geom_a.x) / (geom_a.y - geom_a.x), 0.0, 1.0);",
+			"    float t = geom_a.y != geom_a.x ? clamp((scenePos.x - geom_a.x) / (geom_a.y - geom_a.x), 0.0, 1.0) : 1.0;",
 			"    return t <= 0.5 ? mix(color_a, color_b, t * 2.0) : mix(color_b, color_a, (t - 0.5) * 2.0);",
 			"}",
 			"",
@@ -81,7 +83,8 @@ BrushGlsl :: [].{
 			"}",
 			"",
 			"vec4 linearColor() {",
-			"    float t = clamp(dot(scenePos - geom_b.xy, geom_b.zw) / dot(geom_b.zw, geom_b.zw), 0.0, 1.0);",
+			"    float length_squared = dot(geom_b.zw, geom_b.zw);",
+			"    float t = length_squared > 0.0 ? clamp(dot(scenePos - geom_b.xy, geom_b.zw) / length_squared, 0.0, 1.0) : 1.0;",
 			"    return twoStop(color_a, geom_a.x, color_b, geom_a.y, t);",
 			"}",
 			"",

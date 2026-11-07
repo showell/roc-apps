@@ -42,7 +42,7 @@ The rest have been rewritten by hand.
 | `PosedBird.roc` | the bird, the first thing here that was never Codex, with `BirdFlight.roc`, `EncounterSighting.roc` and `BirdStills.roc` |
 | `Pipeline.roc` | the steps every kind of object takes through a frame: placed (`Geom.Placed`), sighted (`Pipeline.Sighted`), then rendered (`Rendered.roc`, a `Picture.roc` and its depth). `Conifer.roc`, `Billboard.roc`, `Tower.roc` and `LitTruck.roc` are among the kinds that go through it, and the depth sort orders the renderings |
 | `Animation.roc` | what the cat and the bird share: a rule that turns where the rider is into a stage, and a timeline that turns a stage into an instant |
-| `EncounterReaction.roc` | what a segment's encounter does to the rider, the one place that matches on it for `Throttle` and `RideFocal` |
+| `EncounterReaction.roc` | what a segment's encounter does to the rider, the one place that matches on it for `Throttle` and `RiderCamera`'s focal length |
 | `gates/` | test code the game never runs: the tiers `fast.shale`, `run.shale` and `publish.shale`, and the lints; `CrossModuleExpects.roc`, the expects that need more than the module they check imports; the proof tools and the modules only they use. They reach the game's modules through the package `game.roc` |
 
 **The rider's lean is a camera.** The whole frame, backdrop and all, turns by
@@ -102,7 +102,7 @@ The fast and merge tiers keep their Roc caches under
 
 An `expect` sits below the block of the module it checks. Where it needs a
 module that one doesn't import, it sits in a module that sees both, such as
-`BendView.roc` or `SceneShapes.roc`, or else in `gates/CrossModuleExpects.roc`.
+`SceneShapes.roc`, or else in `gates/CrossModuleExpects.roc`.
 
 `emitted.sh` and `retest.sh`, which emitted the Roc from Codex, refuse to run:
 the modules they would rewrite are source now.

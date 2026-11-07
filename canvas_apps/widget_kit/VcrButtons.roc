@@ -8,9 +8,10 @@ import game.Distance
 import lib.Brush
 import lib.CanvasApp
 import lib.Input
-import lib.Mouse
 import lib.Shapes
 import lib.RgbColor
+import Click
+import PlanView
 import ScrubWidget
 
 VcrButtons :: [].{
@@ -115,10 +116,7 @@ VcrButtons :: [].{
 	click_on = |control| {
 		button = buttons.find_first(|each| each.control == control)
 			?? crash "VcrButtons.click_on: every control has a button"
-		middle_x = button.left + button_width / 2.0
-		Input.none.with_mouse(
-			Mouse.of({ held: 0, struck: 0, at: { x: middle_x.to_f32_wrap(), y: button_middle_y.to_f32_wrap() }, wheel: 0.0 }).with_button_pressed(Left),
-		)
+		Click.click_at({ x: button.left + button_width / 2.0, y: button_middle_y })
 	}
 
 	## Everything on the canvas: the page, with the buttons on it.
@@ -240,28 +238,27 @@ button_top = ScrubWidget.picture_bottom_y + button_gap
 button_height : F64
 button_height = 24.0
 
-is_on : Button, { x : F64, y : F64 } -> Bool
-is_on = |button, { x, y }|
-	x >= button.left
-		and x < button.left + button_width
-		and y >= button_top
-		and y < button_top + button_height
+## The part of the canvas a click on `button` lands in.
+button_area : Button -> Click.Area
+button_area = |button| {
+	left: button.left,
+	top: button_top,
+	width: button_width,
+	height: button_height,
+}
 
-## The control under a press this frame, if there's a press and it's on a button.
-## A button held down from an earlier frame isn't a press.
+## The control under a click this frame, if there's a click and it's on a button.
 pressed_control : Input.Snapshot -> Try(VcrButtons.Control, [NoButton])
 pressed_control = |input|
-	if input.mouse.button_pressed(Left) {
-		position = input.mouse.position()
-		control_at({ x: position.x.to_f64(), y: position.y.to_f64() })
-	} else {
-		Err(NoButton)
+	match Click.click_point(input) {
+		Ok(spot) => control_at(spot)
+		Err(NoClick) => Err(NoButton)
 	}
 
 ## The control at `spot`.
 control_at : { x : F64, y : F64 } -> Try(VcrButtons.Control, [NoButton])
 control_at = |spot|
-	match buttons.keep_if(|button| is_on(button, spot)) {
+	match buttons.keep_if(|button| button_area(button).contains(spot)) {
 		[button, ..] => Ok(button.control)
 		[] => Err(NoButton)
 	}
@@ -320,7 +317,7 @@ button_shapes = |button, motion| {
 	lit = is_lit(button.control, motion)
 	color =
 		if lit {
-			RgbColor.of(0xd0603a)
+			PlanView.accent_color
 		} else {
 			RgbColor.of(0x303030)
 		}
@@ -388,13 +385,10 @@ clock_after_press = |transport, control|
 		{ input: VcrButtons.click_on(control), range: sample_clock_run },
 	)
 
-## What a click at (`x`, `y`) on the sample clock does, after that frame.
-clock_after_click : VcrButtons.Transport(Clock), { x : F32, y : F32 } -> VcrButtons.Transport(Clock)
-clock_after_click = |transport, { x, y }|
-	VcrButtons.next_transport(
-		transport,
-		{ input: Input.none.with_mouse(Mouse.of({ held: 0, struck: 0, at: { x, y }, wheel: 0.0 }).with_button_pressed(Left)), range: sample_clock_run },
-	)
+## What a click at `spot` on the sample clock does, after that frame.
+clock_after_click : VcrButtons.Transport(Clock), { x : F64, y : F64 } -> VcrButtons.Transport(Clock)
+clock_after_click = |transport, spot|
+	VcrButtons.next_transport(transport, { input: Click.click_at(spot), range: sample_clock_run })
 
 ## What a frame with nothing pressed does to the sample clock.
 clock_left_alone : VcrButtons.Transport(Clock) -> VcrButtons.Transport(Clock)
@@ -451,7 +445,7 @@ expect
 	VcrButtons.next_transport(
 		stopped_at(100),
 		{
-			input: Input.none.with_mouse(Mouse.of({ held: 0, struck: 0, at: { x: 196.0, y: 234.0 }, wheel: 0.0 }).with_button_down(Left)),
+			input: Click.held_at({ x: 196.0, y: 234.0 }),
 			range: sample_clock_run,
 		},
 	)
@@ -535,12 +529,8 @@ caught_up_to_forty = |input|
 # A press counts from what's on show, and only a press on a button does.
 expect caught_up_to_forty(VcrButtons.click_on(StepBack)) == stopped_at(40)
 expect caught_up_to_forty(Input.none) == stopped_at(6000)
-expect caught_up_to_forty(
-	Input.none.with_mouse(Mouse.of({ held: 0, struck: 0, at: { x: 320.0, y: 100.0 }, wheel: 0.0 }).with_button_pressed(Left)),
-) == stopped_at(6000)
-expect caught_up_to_forty(
-	Input.none.with_mouse(Mouse.of({ held: 0, struck: 0, at: { x: 196.0, y: 234.0 }, wheel: 0.0 }).with_button_down(Left)),
-) == stopped_at(6000)
+expect caught_up_to_forty(Click.click_at({ x: 320.0, y: 100.0 })) == stopped_at(6000)
+expect caught_up_to_forty(Click.held_at({ x: 196.0, y: 234.0 })) == stopped_at(6000)
 
 # The hint shows until the number has moved or started to.
 expect hint_shapes(stopped_at(0), sample_clock_run).len() == 1

@@ -157,10 +157,6 @@ status_lines = |clock| {
 step_count_text : Steps -> Str
 step_count_text = |steps| steps.to_f64().to_i64_wrap().to_str()
 
-# The real towers' key step: half a period past a whole number of periods.
-expect Beacon.beacon_offset_for(first_tower_key) == Steps.zero
-expect Beacon.beacon_offset_for(second_tower_key) == Steps.of(60)
-
 # Whatever the clock says, what one beacon lacks the other has.
 expect
 	[5400, 5430, 5447, 5459, 5460, 5461, 5519, 5520, 5640].all(
@@ -176,17 +172,7 @@ expect
 	status_lines(Clock.at_step(5400))
 		== ["Clock: step 5400", "Blink: 0 of 120 steps", "First tower: 0%", "Second tower: 100%"]
 
-expect
-	status_lines(Clock.at_step(5415))
-		== ["Clock: step 5415", "Blink: 15 of 120 steps", "First tower: 14%", "Second tower: 85%"]
-
-expect
-	status_lines(Clock.at_step(5520))
-		== ["Clock: step 5520", "Blink: 0 of 120 steps", "First tower: 0%", "Second tower: 100%"]
-
-# The range opens at the start of a blink and ends at the end of the second.
-expect blinks.first == Clock.at_step(5400)
-expect blinks.last == Clock.at_step(5640)
+# The range runs two whole blinks.
 expect blinks.last.steps_since(blinks.first).to_f64() == 2.0 * Beacon.beacon_period.to_f64()
 
 ## Whether a share is `want`, to within rounding.

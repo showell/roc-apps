@@ -47,20 +47,20 @@ PosedBird := { pose : PosedBird.BirdPose }.{
 			# pose when they fly both ways.
 			StillShapes.standing_still_shapes(
 				setting,
-				{ height: PosedBird.bird_height, polygons: PosedBird.pose_polygons(bird.pose) },
+				{ height: PosedBird.bird_height, still: PosedBird.pose_still(bird.pose) },
 			),
 		)
 
 	## The drawing for a pose.
-	pose_polygons : PosedBird.BirdPose -> Still
-	pose_polygons = |pose|
+	pose_still : PosedBird.BirdPose -> Still
+	pose_still = |pose|
 		match pose {
-			Perched => BirdStills.perched_polygons
-			Side(WingsUp) => BirdStills.side_wings_up_polygons
-			Side(WingsDown) => BirdStills.side_wings_down_polygons
-			Away(WingsUp) => BirdStills.away_wings_up_polygons
-			Away(WingsDown) => BirdStills.away_wings_down_polygons
-			Diving => BirdStills.diving_polygons
+			Perched => BirdStills.perched_still
+			Side(WingsUp) => BirdStills.side_wings_up_still
+			Side(WingsDown) => BirdStills.side_wings_down_still
+			Away(WingsUp) => BirdStills.away_wings_up_still
+			Away(WingsDown) => BirdStills.away_wings_down_still
+			Diving => BirdStills.diving_still
 		}
 }
 
@@ -149,13 +149,13 @@ expect {
 # Each pose draws its own still.
 expect
 	[
-		(Perched, BirdStills.perched_polygons),
-		(Side(WingsUp), BirdStills.side_wings_up_polygons),
-		(Side(WingsDown), BirdStills.side_wings_down_polygons),
-		(Away(WingsUp), BirdStills.away_wings_up_polygons),
-		(Away(WingsDown), BirdStills.away_wings_down_polygons),
-		(Diving, BirdStills.diving_polygons),
-	].all(|(pose, still)| PosedBird.pose_polygons(pose) == still)
+		(Perched, BirdStills.perched_still),
+		(Side(WingsUp), BirdStills.side_wings_up_still),
+		(Side(WingsDown), BirdStills.side_wings_down_still),
+		(Away(WingsUp), BirdStills.away_wings_up_still),
+		(Away(WingsDown), BirdStills.away_wings_down_still),
+		(Diving, BirdStills.diving_still),
+	].all(|(pose, still)| PosedBird.pose_still(pose) == still)
 
 # Each still's polygons, in their colours, as a bird in each pose draws them.
 expect {
@@ -168,8 +168,8 @@ expect {
 	drawn = [Side(WingsDown), Diving].join_map(
 		|pose| bird_shapes_at({ pose: pose }, level).map(fill_of),
 	)
-	side_down = BirdStills.side_wings_down_polygons.polygons()
-	stills = side_down.concat(BirdStills.diving_polygons.polygons())
+	side_down = BirdStills.side_wings_down_still.polygons()
+	stills = side_down.concat(BirdStills.diving_still.polygons())
 	drawn
 		== stills.map(
 			|poly|

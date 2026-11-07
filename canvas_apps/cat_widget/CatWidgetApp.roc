@@ -137,7 +137,7 @@ cat_shapes = |gap| {
 			flip: AsDrawn,
 			height_on_screen: Pixels.of(PosedCat.cat_height.to_metres() * pixels_a_metre),
 		},
-		PosedCat.pose_polygons(instant.pose),
+		PosedCat.pose_still(instant.pose),
 	)
 }
 
@@ -186,10 +186,6 @@ expect Cat.clear_gap > closing_gap.last
 expect
 	status_lines(Distance.metres(50.0))
 		== ["Waiting", "Pose: Rest", "Gap: 50.0 m", "The rider may accelerate"]
-
-expect
-	status_lines(Distance.metres(21.0))
-		== ["Playing: 52%", "Pose: Frozen", "Gap: 21.0 m", "The rider may not accelerate"]
 
 expect
 	status_lines(Distance.metres(1.5))

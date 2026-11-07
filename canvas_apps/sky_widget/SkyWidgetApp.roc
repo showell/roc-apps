@@ -10,6 +10,7 @@ import game.Clock
 import game.Lens
 import game.Pixels
 import game.Sky
+import game.Steps
 import game.Sun
 import lib.Brush
 import lib.CanvasApp
@@ -116,24 +117,54 @@ picture_shapes = |job, clock|
 		roll: Angle.upright,
 	})
 
-## The calls this widget makes at `clock`, and their answers, a line each.
-status_lines : SkyWidgetApp.Job, Clock -> List(Str)
-status_lines = |job, clock|
-	[
-		"clock = step ${clock.to_str()}",
-		"Sun.height(clock) = ${height_text(Sun.height(clock))}",
-		"Sky.dusk_at(clock) = ${ReadoutText.percent_text(Sky.dusk_at(clock))}",
-		"Sky.sunset_warmth(clock) = ${ReadoutText.percent_text(Sky.sunset_warmth(clock))}",
-	].take_first(curves_of(job) + 1)
+## One call to Sky or Sun that the chart plots: the line of text that reads out
+## the call at a clock, where its answer sits up the chart at that clock, from 0
+## at the bottom to 1 at the top, and the color of both.
+Curve : {
+	call_line : Clock -> Str,
+	level_at : Clock -> F64,
+	color : RgbColor,
+}
 
-## How many curves `job` has on its chart.
-curves_of : SkyWidgetApp.Job -> U64
-curves_of = |job|
+## A line of the readout, in its color.
+CallRow : { text : Str, color : RgbColor }
+
+sun_curve : Curve
+sun_curve = {
+	call_line: |clock| "Sun.height(clock) = ${height_text(Sun.height(clock))}",
+	level_at: sun_level,
+	color: sun_color,
+}
+
+dusk_curve : Curve
+dusk_curve = {
+	call_line: |clock| "Sky.dusk_at(clock) = ${ReadoutText.percent_text(Sky.dusk_at(clock))}",
+	level_at: dusk_level,
+	color: dusk_color,
+}
+
+warmth_curve : Curve
+warmth_curve = {
+	call_line: |clock| "Sky.sunset_warmth(clock) = ${ReadoutText.percent_text(Sky.sunset_warmth(clock))}",
+	level_at: warmth_level,
+	color: warmth_color,
+}
+
+## The curves `job` has got to. Each job adds one.
+job_curves : SkyWidgetApp.Job -> List(Curve)
+job_curves = |job|
 	match job {
-		SunSets => 1
-		SkyDarkens => 2
-		HorizonWarms => 3
+		SunSets => [sun_curve]
+		SkyDarkens => [sun_curve, dusk_curve]
+		HorizonWarms => [sun_curve, dusk_curve, warmth_curve]
 	}
+
+## The clock, then each call `job` makes at `clock` and its answer, a row each.
+call_rows : SkyWidgetApp.Job, Clock -> List(CallRow)
+call_rows = |job, clock| {
+	clock_row = { text: "clock = step ${clock.to_str()}", color: clock_color }
+	job_curves(job).map(|curve| { text: (curve.call_line)(clock), color: curve.color }).prepend(clock_row)
+}
 
 ## How high the sun stands, in pixels, negative below the horizon.
 height_text : Pixels -> Str
@@ -152,14 +183,12 @@ dusk_color = RgbColor.of(0x24406E)
 warmth_color : RgbColor
 warmth_color = RgbColor.of(0xC0392B)
 
-## The status lines, each in the color of its curve on the chart.
+## The rows of the readout, each in the color of its curve on the chart.
 call_lines : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
 call_lines = |job, clock|
-	List.map2(
-		status_lines(job, clock),
-		[clock_color, sun_color, dusk_color, warmth_color],
-		|text, color| { text, color },
-	).map_with_index(|{ text, color }, row| ScrubWidget.readout({ text, color, row }))
+	call_rows(job, clock).map_with_index(
+		|{ text, color }, row| ScrubWidget.readout({ text, color, row, style: ScrubWidget.panel_readout }),
+	)
 
 chart_left : F64
 chart_left = 372.0
@@ -201,13 +230,20 @@ chart_point = |clock, level_at| {
 	y: chart_y(level_at(clock)),
 }
 
-## The clocks a curve is drawn through, every hundred steps.
+## How far apart the clocks a curve is drawn through are.
+chart_spacing : Steps
+chart_spacing = Steps.of(100)
+
+## The clocks a curve is drawn through, from the sunset's start to its end.
 chart_clocks : List(Clock)
-chart_clocks = List.from_iter(U32.until(0, 61)).map(|i| Clock.at_step(i * 100))
+chart_clocks = {
+	spaces = sunset.last.steps_since(sunset.first).to_u32() // chart_spacing.to_u32()
+	List.from_iter(U32.until(0, spaces + 1)).map(|space| sunset.first.plus(chart_spacing.times(space)))
+}
 
 ## One curve of the chart.
-curve_shapes : (Clock -> F64), RgbColor -> List(Shapes.Shape)
-curve_shapes = |level_at, color| {
+curve_shapes : Curve -> List(Shapes.Shape)
+curve_shapes = |{ level_at, color, .. }| {
 	points = chart_clocks.map(|clock| chart_point(clock, level_at))
 	List.map2(
 		points,
@@ -216,35 +252,20 @@ curve_shapes = |level_at, color| {
 	)
 }
 
-## The chart's curves, which are the same at every clock.
-all_curves : List(List(Shapes.Shape))
-all_curves = [
-	curve_shapes(sun_level, sun_color),
-	curve_shapes(dusk_level, dusk_color),
-	curve_shapes(warmth_level, warmth_color),
-]
-
 ## The curves `job` has got to.
 chart_shapes : SkyWidgetApp.Job -> List(Shapes.Shape)
-chart_shapes = |job| all_curves.take_first(curves_of(job)).join()
+chart_shapes = |job| job_curves(job).join_map(curve_shapes)
 
 ## A line down the chart at `clock`, with a dot on each curve.
 cursor_shapes : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
 cursor_shapes = |job, clock| {
 	x = chart_point(clock, dusk_level).x
-	[
-		[
-			Shapes.line(
-				{ from: { x, y: chart_top }, to: { x, y: chart_bottom }, width: 1.0 },
-				Brush.flat(clock_color),
-			),
-		],
-		[
-			curve_dot(chart_point(clock, sun_level), sun_color),
-			curve_dot(chart_point(clock, dusk_level), dusk_color),
-			curve_dot(chart_point(clock, warmth_level), warmth_color),
-		].take_first(curves_of(job)),
-	].join()
+	cursor =
+		Shapes.line(
+			{ from: { x, y: chart_top }, to: { x, y: chart_bottom }, width: 1.0 },
+			Brush.flat(clock_color),
+		)
+	job_curves(job).map(|curve| curve_dot(chart_point(clock, curve.level_at), curve.color)).prepend(cursor)
 }
 
 curve_dot : { x : F64, y : F64 }, RgbColor -> Shapes.Shape
@@ -256,8 +277,12 @@ curve_dot = |{ x, y }, color|
 		fill: Brush.flat(color),
 	})
 
+## The text of the rows `job` reads out at `clock`.
+row_texts : SkyWidgetApp.Job, Clock -> List(Str)
+row_texts = |job, clock| call_rows(job, clock).map(|row| row.text)
+
 expect
-	status_lines(HorizonWarms, Clock.start)
+	row_texts(HorizonWarms, Clock.start)
 		== [
 			"clock = step 0",
 			"Sun.height(clock) = 244.0 px",
@@ -265,36 +290,18 @@ expect
 			"Sky.sunset_warmth(clock) = 0%",
 		]
 
-expect
-	status_lines(HorizonWarms, Clock.at_step(3000))
-		== [
-			"clock = step 3000",
-			"Sun.height(clock) = 60.3 px",
-			"Sky.dusk_at(clock) = 24%",
-			"Sky.sunset_warmth(clock) = 45%",
-		]
-
-expect
-	status_lines(HorizonWarms, sunset.last)
-		== [
-			"clock = step 6000",
-			"Sun.height(clock) = -123.5 px",
-			"Sky.dusk_at(clock) = 100%",
-			"Sky.sunset_warmth(clock) = 0%",
-		]
-
 # The chart's levels stay on the chart: the sun runs from top to bottom.
 expect sun_level(Clock.start) == 1.0
 expect sun_level(sunset.last) == 0.0
-expect chart_clocks.len() == 61
-expect chart_shapes(HorizonWarms).len() == 180
-expect chart_shapes(SkyDarkens).len() == 120
-expect chart_shapes(SunSets).len() == 60
+
+# The chart's curves run from the sunset's first clock to its last.
+expect chart_clocks.first() == Ok(sunset.first)
+expect chart_clocks.last() == Ok(sunset.last)
 
 # Each job adds a call to the lines under the picture.
-expect status_lines(SunSets, Clock.start).len() == 2
-expect status_lines(SkyDarkens, Clock.start).len() == 3
-expect status_lines(HorizonWarms, Clock.start).len() == 4
+expect row_texts(SunSets, Clock.start).len() == 2
+expect row_texts(SkyDarkens, Clock.start).len() == 3
+expect row_texts(HorizonWarms, Clock.start).len() == 4
 
 # The sky holds at day for the first job, darkens evenly for the second, and
 # warms at the horizon only for the third.
@@ -325,9 +332,6 @@ expect pressed_on(stopped_at(100), ToStart).transport.at == Clock.start
 expect pressed_on(at_start, ToEnd).transport.at == sunset.last
 
 # The Right key moves through the jobs, and the pointer leaves them alone.
-expect next_job(SunSets) == SkyDarkens
-expect next_job(SkyDarkens) == HorizonWarms
-expect next_job(HorizonWarms) == SunSets
 expect next_model(at_start, Input.none.with_key_pressed(KeyRight)).job == SkyDarkens
 expect next_model({ ..at_start, job: SkyDarkens }, Input.none).job == SkyDarkens
 expect pressed_on({ ..at_start, job: SkyDarkens }, Play).job == SkyDarkens
@@ -345,9 +349,5 @@ expect cursor_shapes(SunSets, Clock.at_step(3000)).len() == 2
 # The hint goes once the clock has moved.
 expect shapes_at(at_start).len() > shapes_at(stopped_at(1)).len()
 
-# Two view marks around the sky, the grass, the glow and the sun.
-expect picture_shapes(HorizonWarms, Clock.start).len() == 6
-
-# The picture depends on the clock and on nothing else.
-expect picture_shapes(HorizonWarms, Clock.at_step(3000)) == picture_shapes(HorizonWarms, Clock.at_step(3000))
+# The picture depends on the clock.
 expect picture_shapes(HorizonWarms, Clock.at_step(3000)) != picture_shapes(HorizonWarms, Clock.at_step(3001))

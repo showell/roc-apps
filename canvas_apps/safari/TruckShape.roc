@@ -27,9 +27,14 @@ TruckShape :: [].{
 		right : Across,
 	}
 
-	## What a truck is drawn from beyond its spot and the camera: the road its
-	## points are measured on, and the box it fills there.
-	TruckOnRoad : { road : RoadAhead.RoadView, box : TruckShape.TruckBox }
+	## What a truck is drawn from beyond its spot and the camera's lens: the road
+	## its points are measured on, the camera's vantage, and the box it fills
+	## there.
+	TruckOnRoad : {
+		road : RoadAhead.RoadView,
+		vantage : Geom.Vantage,
+		box : TruckShape.TruckBox,
+	}
 
 	## A point on the truck: how far along the road, how far across it, and
 	## how high above the truck's own bottom.
@@ -83,7 +88,14 @@ TruckShape :: [].{
 	point : Picture.Setting(TruckShape.TruckOnRoad), TruckShape.TruckPoint -> Geom.RaisedPoint
 	point = |truck, { along, across, height }| {
 		place = truck.spot.place()
-		on_ground = RoadAhead.rider_point_at(truck.context.road, { place, along, across })
+		on_ground = RoadAhead.rider_point_at(
+			truck.context.road,
+			{
+				vantage: truck.context.vantage,
+				place,
+				road_point: { along, across },
+			},
+		)
 		{
 			right: on_ground.right,
 			forward: on_ground.forward,

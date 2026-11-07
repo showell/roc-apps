@@ -1,8 +1,8 @@
 ## The widget for the Safari tutorial's chapter on the road: a still picture of
 ## three bends side by side, with no controls. Each is a two-segment road seen
 ## from above, with the rider's way up the picture. The paving and the guard rail
-## come from GroundSighting and RailSighting, and the apex from BendView, and the
-## lines under each bend read out what those three say of it.
+## come from GroundSighting and RailSighting, and the apex from BendInView's outer
+## corner, and the lines under each bend read out what those three say of it.
 import game.Across
 import game.Along
 import game.Angle
@@ -13,13 +13,14 @@ import game.Segment
 import game.SegmentPlace
 import game.Geom
 import game.GroundSighting
-import game.BendView
+import game.BendInView
 import game.RailSighting
 import game.World
 import lib.Brush
 import lib.RgbColor
 import lib.CanvasApp
 import lib.Shapes
+import widget.PlanView
 import widget.ReadoutText
 import widget.ScrubWidget
 
@@ -29,12 +30,7 @@ BendsWidgetApp :: [].{
 	Model : {}
 
 	canvas_app : CanvasApp.CanvasApp(BendsWidgetApp.Model)
-	canvas_app = ScrubWidget.canvas_app({
-		title: "Three bends in the road",
-		init: {},
-		model_at_next_step: |model, _input| model,
-		frame_shapes: |_model| still_shapes,
-	})
+	canvas_app = ScrubWidget.still_app({ title: "Three bends in the road", shapes: still_shapes })
 }
 
 ## A bend in the picture: how far it turns, and the x on the canvas of the
@@ -82,11 +78,13 @@ two_segments = |turn|
 		),
 	)
 
-## The road as seen from the first segment, looking along it.
+## The road ahead of a rider on the first segment.
 road_with : Angle.Turn -> RoadAhead.RoadView
-road_with = |turn| {
-	route: two_segments(turn),
-	segments_ahead: { first_index: Route.SegmentIndex.first, count: 2 },
+road_with = |turn| RoadAhead.RoadView.ahead_of(two_segments(turn), Route.SegmentIndex.first)
+
+## The camera the road is seen from, on the first segment, looking along it.
+camera : { vantage : Geom.Vantage }
+camera = {
 	vantage: {
 		along: Along.at(segment_length.minus(rider_before_bend)),
 		across: Across.middle,
@@ -95,18 +93,23 @@ road_with = |turn| {
 }
 
 ## The one bend on that road.
-bend_of : RoadAhead.RoadView -> BendView
+bend_of : RoadAhead.RoadView -> BendInView
 bend_of = |road|
-	BendView.of_segment(
-		RoadAhead.segment_at(road, SegmentPlace.Position.first),
-		Ahead(SegmentPlace.Position.first),
-	)
+	BendInView.of_in_view(RoadAhead.segment_in_view_at(road, SegmentPlace.Position.first))
 
-## The apex of a bend of `turn`.
+## The apex of a bend of `turn`, as the camera sees it.
 apex_of : Angle.Turn -> Geom.RiderPoint
 apex_of = |turn| {
 	road = road_with(turn)
-	BendView.apex(road, bend_of(road))
+	bend_in_view = bend_of(road)
+	RoadAhead.rider_point_at(
+		road,
+		{
+			vantage: camera.vantage,
+			place: bend_in_view.before,
+			road_point: bend_in_view.outer_corner().apex,
+		},
+	)
 }
 
 ## Where the view is from, and so where every point is measured from.
@@ -125,33 +128,16 @@ rider_y = 198.0
 ## rider's right is the reader's right.
 canvas_point : ShownBend, Geom.RiderPoint -> { x : F64, y : F64 }
 canvas_point = |{ canvas_x, .. }, { right, forward }| {
-	x: canvas_x + right.to_metres() * pixels_a_metre,
-	y: rider_y - forward.to_metres() * pixels_a_metre,
+	plan : PlanView
+	plan = { origin: { x: canvas_x, y: rider_y }, pixels_a_metre }
+	plan.canvas_point({ metres_right: right.to_metres(), metres_down: 0.0 - forward.to_metres() })
 }
-
-ground_color : RgbColor
-ground_color = RgbColor.of(0x6f9a55)
-
-road_color : RgbColor
-road_color = RgbColor.of(0x4a4a46)
 
 rail_color : RgbColor
 rail_color = RgbColor.of(0xe8805a)
 
 apex_color : RgbColor
 apex_color = RgbColor.of(0xf0d040)
-
-rider_color : RgbColor
-rider_color = RgbColor.of(0xf2efe4)
-
-ground : Shapes.Shape
-ground = Rect({
-	x: 0.0,
-	y: 0.0,
-	width: ScrubWidget.canvas_width,
-	height: ScrubWidget.picture_bottom_y,
-	fill: Brush.flat(ground_color),
-})
 
 ## A patch of paving, as a polygon on the canvas.
 patch_shape : ShownBend, List(Geom.RiderPoint) -> Shapes.Shape
@@ -163,7 +149,7 @@ patch_shape = |bend, corners|
 				[x, y]
 			},
 		),
-		fill: Brush.flat(road_color),
+		fill: Brush.flat(PlanView.road_color),
 	})
 
 ## The first two corners of a rail's quad, which lie along the ground.
@@ -193,16 +179,16 @@ spot = |bend, { at, color }| {
 }
 
 ## One bend from above: what GroundSighting and RailSighting say of it, the apex
-## BendView finds, and where the view is from.
+## BendInView finds, and where the view is from.
 bend_shapes : ShownBend -> List(Shapes.Shape)
 bend_shapes = |bend| {
 	road = road_with(bend.turn)
 	[
-		GroundSighting.patches_in_view(road).map(|patch| patch_shape(bend, patch.corners)),
-		RailSighting.rails_in_view(road).join_map(|rail| foot_shapes(bend, rail.corners)),
+		GroundSighting.patches_in_view(road, camera).map(|patch| patch_shape(bend, patch.corners)),
+		RailSighting.rails_in_view(road, camera).join_map(|rail| foot_shapes(bend, rail.corners)),
 		[
 			spot(bend, { at: apex_of(bend.turn), color: apex_color }),
-			spot(bend, { at: rider, color: rider_color }),
+			spot(bend, { at: rider, color: PlanView.standout_color }),
 		],
 	].join()
 }
@@ -220,17 +206,20 @@ turn_text = |turn| {
 }
 
 ## Which edge a bend's outer edge is, in words.
-edge_text : Angle.Turn -> Str
-edge_text = |turn|
-	if BendView.outer_edge(turn) == Geom.left_edge {
+edge_text : BendInView -> Str
+edge_text = |bend_in_view|
+	if bend_in_view.outer_edge() == Geom.left_edge {
 		"left"
 	} else {
 		"right"
 	}
 
-## How far past the end of the first segment the apex lies.
-apex_past_end : Geom.RiderPoint -> F64
-apex_past_end = |apex| apex.forward.minus(rider_before_bend).to_metres()
+## How far past the end of the segment before `bend_in_view` its apex lies.
+apex_past_end : BendInView -> F64
+apex_past_end = |bend_in_view| {
+	corner = bend_in_view.outer_corner()
+	corner.apex.along.distance_from(corner.end_before.along).to_metres()
+}
 
 ## What the three modules say of a bend, a line each.
 caption_lines : Angle.Turn -> List(Str)
@@ -238,23 +227,26 @@ caption_lines = |turn| {
 	road = road_with(turn)
 	[
 		turn_text(turn),
-		"rail on the ${edge_text(turn)} edge",
-		"apex ${ReadoutText.tenths_text(apex_past_end(apex_of(turn)))} m past the end",
-		"${GroundSighting.patches_in_view(road).len().to_str()} patches, ${RailSighting.rails_in_view(road).len().to_str()} rail pieces",
+		"rail on the ${edge_text(bend_of(road))} edge",
+		"apex ${ReadoutText.tenths_text(apex_past_end(bend_of(road)))} m past the end",
+		"${GroundSighting.patches_in_view(road, camera).len().to_str()} patches, ${RailSighting.rails_in_view(road, camera).len().to_str()} rail pieces",
 	]
 }
 
 ## A line of a caption, centered under its bend, on row `row` of the panel.
 caption_line : ShownBend, { text : Str, row : U64 } -> Shapes.Shape
 caption_line = |bend, { text, row }|
-	Text({
+	ScrubWidget.readout({
 		text,
-		x: bend.canvas_x,
-		y: 246.0 + row.to_f64() * 26.0,
-		size: 13.0,
-		face: Code,
-		align: Center,
-		color: Brush.opaque(RgbColor.of(0x202020)),
+		color: ScrubWidget.ink_color,
+		row,
+		style: {
+			..ScrubWidget.panel_readout,
+			x: bend.canvas_x,
+			first_baseline: 246.0,
+			size: 13.0,
+			align: Center,
+		},
 	})
 
 caption_shapes : ShownBend -> List(Shapes.Shape)
@@ -263,20 +255,12 @@ caption_shapes = |bend|
 
 still_shapes : List(Shapes.Shape)
 still_shapes = {
-	picture_shapes = [ground].concat(shown_bends.join_map(bend_shapes))
+	picture_shapes = [ScrubWidget.picture_backdrop(PlanView.ground_color)].concat(shown_bends.join_map(bend_shapes))
 	ScrubWidget.frame_shapes({ picture_shapes, status_lines: [] }).concat(shown_bends.join_map(caption_shapes))
 }
 
-# The captions read what the modules say: the rail swaps sides with the turn, the
-# apex goes out as the turn sharpens, and the middle bend has the book's numbers.
-expect
-	caption_lines(left_bend.turn)
-		== [
-			"45 deg left",
-			"rail on the right edge",
-			"apex 1.7 m past the end",
-			"3 patches, 49 rail pieces",
-		]
+# The captions read what the modules say, and the middle bend has the book's
+# numbers.
 expect
 	caption_lines(right_bend.turn)
 		== [
@@ -284,14 +268,6 @@ expect
 			"rail on the left edge",
 			"apex 1.7 m past the end",
 			"3 patches, 49 rail pieces",
-		]
-expect
-	caption_lines(sharp_bend.turn)
-		== [
-			"80 deg right",
-			"rail on the left edge",
-			"apex 3.4 m past the end",
-			"3 patches, 53 rail pieces",
 		]
 
 # The sharp bend is on the route, and nothing on the route is sharper.

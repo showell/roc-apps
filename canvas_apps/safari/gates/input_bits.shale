@@ -1,0 +1,111 @@
+-- This holds the page's input bits equal to lib's. lib/Keys.roc and
+-- lib/Mouse.roc number each key and button by hand in their `bit`, and
+-- web/canvas_app_runner.js copies the numbers into KEY_BIT and MOUSE_BIT. A
+-- number that differs would bind the wrong key, silently, so this reads both
+-- sides and fails on any difference.
+--
+--   cd <roc-apps checkout> && shale canvas_apps/safari/gates/input_bits.shale
+--
+-- The Roc side is read with Roc's own parser: each branch of `bit`'s match, a
+-- tag and an integer. The page names a key by the browser's `event.code`, so a
+-- Roc key's name maps to it by the one rule in `browser_code`.
+
+const KEYS = "canvas_apps/lib/Keys.roc"
+const MOUSE = "canvas_apps/lib/Mouse.roc"
+const RUNNER = "canvas_apps/web/canvas_app_runner.js"
+
+-- The tags and numbers of the branches of the match in `path`'s `bit`, as a
+-- map from tag to number.
+function roc_bits(path)
+  local nodes = roc_tree({path})[1].nodes
+  local bits = {}
+  local found = false
+  for n in nodes do
+    if n.kind == "p-ident" and get(n, "raw", "") == "bit" and nodes[n.parent].kind == "s-decl" then
+      found = true
+      local lambda = nodes[nodes[n.parent].kids[2]]
+      local match = nil
+      for k in lambda.kids do
+        if nodes[k].kind == "e-match" then match = nodes[k] end
+      end
+      if match == nil then fail("input_bits: " .. path .. "'s bit is not a match") end
+      for k in match.kids do
+        if nodes[k].kind == "branches" then
+          for b in nodes[k].kids do
+            local branch = nodes[b]
+            local tag = nodes[branch.kids[1]]
+            local value = nodes[branch.kids[2]]
+            if tag.kind ~= "p-tag" or value.kind ~= "e-int" then
+              fail("input_bits: " .. path .. ":" .. branch.line .. ": a branch of bit that isn't a tag and an integer")
+            end
+            bits[tag.raw] = tonumber(value.raw)
+          end
+        end
+      end
+    end
+  end
+  if not found then fail("input_bits: no bit in " .. path) end
+  return bits
+end
+
+-- The names and numbers of the JS object `name` in the runner, as a map.
+function js_bits(text, name)
+  local body = between(text, "const " .. name .. " = {", "};")
+  if body == nil then fail("input_bits: no `const " .. name .. " = {` ... `};` in " .. RUNNER) end
+  local bits = {}
+  for m in re_find_all(body, "[A-Za-z0-9]+: *[0-9]+") do
+    local parts = split(m.text, ":")
+    bits[trim(parts[1])] = tonumber(trim(parts[2]))
+  end
+  return bits
+end
+
+-- The browser's `event.code` for a key Keys.roc names: the arrows are Arrow*,
+-- the digits Digit*, Space and Enter drop the Key, and a letter keeps it.
+function browser_code(key)
+  local rest = sub(key, 4)
+  if rest == "Up" or rest == "Down" or rest == "Left" or rest == "Right" then return "Arrow" .. rest end
+  if rest == "Space" or rest == "Enter" then return rest end
+  if re_find(rest, "^[0-9]$") ~= nil then return "Digit" .. rest end
+  return key
+end
+
+-- How many ways `page` and `roc`, renamed by `rename`, differ; each is printed.
+function differences(what, roc, page, rename)
+  local wrong = 0
+  local seen = {}
+  local values = {}
+  for name in sort(keys(roc)) do
+    local code = name
+    if rename then code = browser_code(name) end
+    seen[code] = true
+    local value = tostring(roc[name])
+    if has_key(values, value) then
+      wrong = wrong + 1
+      print("FAIL " .. what .. ": " .. name .. " and " .. values[value] .. " share the bit " .. value)
+    end
+    values[value] = name
+    if not has_key(page, code) then
+      wrong = wrong + 1
+      print("FAIL " .. what .. ": " .. name .. " is bit " .. roc[name] .. " in lib, and the page has no " .. code)
+    elseif page[code] ~= roc[name] then
+      wrong = wrong + 1
+      print("FAIL " .. what .. ": " .. name .. " is bit " .. roc[name] .. " in lib, and the page's " .. code .. " is " .. page[code])
+    end
+  end
+  for code in sort(keys(page)) do
+    if not has_key(seen, code) then
+      wrong = wrong + 1
+      print("FAIL " .. what .. ": the page's " .. code .. " is bit " .. page[code] .. ", and lib names no such key")
+    end
+  end
+  return wrong
+end
+
+local runner = read(RUNNER)
+local keys_roc = roc_bits(KEYS)
+local mouse_roc = roc_bits(MOUSE)
+local wrong = differences("keys", keys_roc, js_bits(runner, "KEY_BIT"), true)
+wrong = wrong + differences("mouse", mouse_roc, js_bits(runner, "MOUSE_BIT"), false)
+print("input_bits: " .. #keys(keys_roc) .. " keys and " .. #keys(mouse_roc) .. " buttons, " .. wrong .. " different")
+if wrong > 0 then fail("input_bits: the page's bits are not lib's") end

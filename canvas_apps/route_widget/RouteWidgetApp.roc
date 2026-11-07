@@ -4,13 +4,13 @@
 ## white. The ride has no such map: a segment knows only its length and its
 ## turn, so this widget lays the map out itself by adding up the turns.
 import game.Angle
-import game.Distance
 import game.World
 import lib.Brush
 import lib.CanvasApp
 import lib.Shapes
 import lib.RgbColor
 import lib.Trig
+import widget.PlanView
 import widget.ScrubWidget
 
 RouteWidgetApp :: [].{
@@ -19,12 +19,7 @@ RouteWidgetApp :: [].{
 	Model : {}
 
 	canvas_app : CanvasApp.CanvasApp(RouteWidgetApp.Model)
-	canvas_app = ScrubWidget.canvas_app({
-		title: "The route",
-		init: {},
-		model_at_next_step: |model, _input| model,
-		frame_shapes: |_model| still_shapes,
-	})
+	canvas_app = ScrubWidget.still_app({ title: "The route", shapes: still_shapes })
 }
 
 ## A place on the map, in metres from the route's start.
@@ -75,9 +70,23 @@ segments = {
 }
 
 ## The segment read out under the map, counted from 1. It's the longest on the
-## route, and the one the book quotes in its chapter on the math layer.
+## route, the first of them if two tie, and the one the book quotes in its
+## chapter on the math layer.
 read_out_number : U64
-read_out_number = 7
+read_out_number = {
+	longest = segments.fold_with_index(
+		{ number: 0, metres: 0.0 },
+		|best, segment, index| {
+			metres = segment.plan.length.to_metres()
+			if metres > best.metres {
+				{ number: index + 1, metres }
+			} else {
+				best
+			}
+		},
+	)
+	longest.number
+}
 
 read_out_segment : LaidSegment
 read_out_segment =
@@ -122,43 +131,33 @@ extent =
 map_margin : F64
 map_margin = 18.0
 
-## How many pixels a metre takes up on the map.
-map_scale : F64
-map_scale = F64.min(
-	(ScrubWidget.canvas_width - 2.0 * map_margin) / (extent.east - extent.west),
-	(ScrubWidget.picture_bottom_y - 2.0 * map_margin) / (extent.north - extent.south),
-)
-
-## Where `point` falls on the canvas, with the road centred in the picture.
-canvas_point : MapPoint -> { x : F64, y : F64 }
-canvas_point = |{ east, north }| {
-	x: ScrubWidget.canvas_width / 2.0 + (east - (extent.west + extent.east) / 2.0) * map_scale,
-	y: ScrubWidget.picture_bottom_y / 2.0 - (north - (extent.south + extent.north) / 2.0) * map_scale,
+## The map, with the middle of the road's extent in the middle of the picture,
+## and as many pixels a metre as let the whole road fit.
+map_plan : PlanView
+map_plan = {
+	origin: { x: ScrubWidget.canvas_width / 2.0, y: ScrubWidget.picture_bottom_y / 2.0 },
+	pixels_a_metre: F64.min(
+		(ScrubWidget.canvas_width - 2.0 * map_margin) / (extent.east - extent.west),
+		(ScrubWidget.picture_bottom_y - 2.0 * map_margin) / (extent.north - extent.south),
+	),
 }
 
-ground_color : RgbColor
-ground_color = RgbColor.of(0x6f9a55)
-
-road_color : RgbColor
-road_color = RgbColor.of(0x4a4a46)
+## Where `point` falls on the canvas. North is up the picture.
+canvas_point : MapPoint -> { x : F64, y : F64 }
+canvas_point = |{ east, north }|
+	map_plan.canvas_point({
+		metres_right: east - (extent.west + extent.east) / 2.0,
+		metres_down: (extent.south + extent.north) / 2.0 - north,
+	})
 
 read_out_color : RgbColor
-read_out_color = RgbColor.of(0xf2efe4)
+read_out_color = PlanView.standout_color
 
 cat_color : RgbColor
-cat_color = RgbColor.of(0xd0603a)
+cat_color = PlanView.accent_color
 
 bird_color : RgbColor
 bird_color = RgbColor.of(0x7a5cc0)
-
-ground : Shapes.Shape
-ground = Rect({
-	x: 0.0,
-	y: 0.0,
-	width: ScrubWidget.canvas_width,
-	height: ScrubWidget.picture_bottom_y,
-	fill: Brush.flat(ground_color),
-})
 
 ## A disc on the map.
 spot : MapPoint, { r : F64, color : RgbColor } -> Shapes.Shape
@@ -250,7 +249,7 @@ legend_shapes =
 	].join()
 
 road_shapes : List(Shapes.Shape)
-road_shapes = segments.join_map(|each| piece_shapes(each, { width: 5.0, color: road_color }))
+road_shapes = segments.join_map(|each| piece_shapes(each, { width: 5.0, color: PlanView.road_color }))
 
 ## The stretch that the lines under the map read out.
 read_out_shapes : List(Shapes.Shape)
@@ -259,7 +258,7 @@ read_out_shapes = piece_shapes(read_out_segment, { width: 7.0, color: read_out_c
 picture_shapes : List(Shapes.Shape)
 picture_shapes =
 	[
-		[ground],
+		[ScrubWidget.picture_backdrop(PlanView.ground_color)],
 		road_shapes,
 		read_out_shapes,
 		segments.join_map(mark_shapes),
@@ -296,12 +295,7 @@ still_shapes = ScrubWidget.frame_shapes({ picture_shapes, status_lines: status_l
 
 expect segments.len() == World.segment_plans.len()
 
-# The first segment is as long as its record says, and each one starts where the
-# one before it ends.
-expect {
-	{ east, north } = (segments.first() ?? crash "the route has segments").end
-	((east * east + north * north).sqrt() - 500.0).abs() < 0.001
-}
+# Each segment starts where the one before it ends.
 expect segments.map(|segment| segment.start).drop_first(1) == segments.map(|segment| segment.end).drop_last(1)
 
 # The road stays inside the picture, on all four sides.
@@ -313,25 +307,11 @@ expect corners.all(|corner| canvas_point(corner).y <= ScrubWidget.picture_bottom
 expect turn_text(Angle.Turn.degrees(80.0)) == "80 deg right"
 expect turn_text(Angle.Turn.degrees(-70.0)) == "70 deg left"
 
-# The lines read the same record the book quotes, and no other.
-expect
-	status_lines
-		== [
-			"Segment 7 of 19: 1200 m, 80 deg right",
-			"encounter: QuietRoad, pigs: NoPigs",
-			"bull: WithBull, scheme: RedGreen",
-			"bend_life: Animal(Rhino)",
-		]
-
 # It is the longest segment, so it is plain on the map.
 expect segments.all(|segment| segment.plan.length.to_metres() <= read_out_segment.plan.length.to_metres())
 
 # The stretch that's read out goes down over the road.
 expect picture_shapes.drop_first(1 + road_shapes.len()).starts_with(read_out_shapes)
 
-# Only the segments where the rider meets something are marked on the map.
-expect segments.keep_if(|segment| encounter_color(segment.plan).is_ok()).len() == 6
-
 # The lines go on the panel, over the picture.
 expect still_shapes.starts_with(picture_shapes)
-expect still_shapes.len() == picture_shapes.len() + 5

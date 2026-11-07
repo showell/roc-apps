@@ -144,7 +144,6 @@ at_seam = {
 		yaw: Angle.Turn.radians(0.1),
 		speed: Speed.metres_a_step(1.25),
 		lean: Angle.Lean.radians(0.05),
-		heading: Angle.Bearing.radians(0.7),
 	},
 	eyes: RiderState.initial.eyes,
 }
@@ -152,7 +151,18 @@ at_seam = {
 crossed : RiderState
 crossed = rider_on_next_segment(at_seam, World.route)
 
-expect crossed.motorcycle.heading.to_radians() - 0.7 == 0.0
+## The motorcycle's bearing in the world: its segment's bearing, turned by its
+## yaw.
+bearing_in_world : RiderState -> Angle.Bearing
+bearing_in_world = |rider| World.route.bearing_of(rider.segment_index).plus(rider.motorcycle.yaw)
+
+# The crossing keeps the motorcycle's bearing in the world: the yaw turns back
+# by the bend that turns the next segment's bearing. The two sums round apart,
+# by no more than a float's last bits.
+expect {
+	turned = bearing_in_world(crossed).turn_from(bearing_in_world(at_seam))
+	turned.abs() < Angle.Turn.radians(0.000000000001)
+}
 expect {
 	exit_turn = first_segment.bend_out_of().turn
 	crossed.motorcycle.yaw.to_radians() - (0.1 - exit_turn.to_radians()) == 0.0

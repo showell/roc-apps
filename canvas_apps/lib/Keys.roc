@@ -6,7 +6,7 @@
 Keys :: [].{
 	# The keys a game here can ask about. A tick sends two bit sets, so the
 	# list is short on purpose: adding one is a bit and a line in
-	# canvas_app_runner.js.
+	# canvas_app_runner.js, which safari/gates/input_bits.shale holds equal.
 	#
 	# Escape and F belong to the runners, not to games: Escape closes a
 	# native window and F shows its frame rate, and a page can do neither.

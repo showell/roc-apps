@@ -1,8 +1,7 @@
 ## A segment's place relative to the rider: ahead at a position on the road
 ## ahead, or just behind the rider, round the bend into the rider's segment.
-import Geom
-
-SegmentPlace := [Ahead(SegmentPlace.Position), JustBehind(Geom.Bend)].{
+## The bend behind is the route's, so a place doesn't carry it.
+SegmentPlace := [Ahead(SegmentPlace.Position), JustBehind].{
 
 	## How many segments ahead of the rider a segment is, counted from the
 	## rider's own at 0. A Route.SegmentIndex says where a segment is in the
@@ -35,10 +34,6 @@ SegmentPlace := [Ahead(SegmentPlace.Position), JustBehind(Geom.Bend)].{
 		## segments.
 		is_last_in : SegmentPlace.Position, { count : U32, .. } -> Bool
 		is_last_in = |SegmentPlace.Position.(n), { count, .. }| n + 1 >= count
-
-		## Whether a road ahead of `count` segments stops before this position.
-		is_past_end_of : SegmentPlace.Position, { count : U32, .. } -> Bool
-		is_past_end_of = |SegmentPlace.Position.(n), { count, .. }| n >= count
 
 		## Whether this position is among the first `count` of the road ahead.
 		is_within_first : SegmentPlace.Position, U32 -> Bool

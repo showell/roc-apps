@@ -30,7 +30,7 @@
 // needs both — snake turns on the edge, a paddle moves while a key is held —
 // so an event alone will not do.
 //
-// The bits are Keys.roc's, in its order.
+// The bits are Keys.roc's, and safari/gates/input_bits.shale holds the two equal.
 const KEY_BIT = {
   ArrowUp: 1, ArrowDown: 2, ArrowLeft: 4, ArrowRight: 8,
   KeyW: 16, KeyA: 32, KeyS: 64, KeyD: 128,
@@ -75,8 +75,10 @@ function watchKeyboard(target) {
 // game never learns how big the window is or how the page scaled the canvas.
 // During a drag it may be off the canvas.
 
-// `event.buttons` uses Mouse.roc's bits: left, right, middle.
-const MOUSE_BITS = 1 | 2 | 4;
+// `event.buttons` uses Mouse.roc's bits, and safari/gates/input_bits.shale holds the
+// two equal, as it does KEY_BIT.
+const MOUSE_BIT = { Left: 1, Right: 2, Middle: 4 };
+const MOUSE_BITS = MOUSE_BIT.Left | MOUSE_BIT.Right | MOUSE_BIT.Middle;
 
 function watchPointer(canvas, width, height) {
   let held = 0;

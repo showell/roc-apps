@@ -159,11 +159,11 @@ expect cows_without_bull.len() == 14
 # The bull leads, facing left, and the cows follow him in their own order, facing
 # right.
 expect cows_with_bull.take_first(1).map(|leader| leader.road_point.along) == [Along.metres(24.0)]
-expect cows_with_bull.take_first(1).map(|leader| leader.kind.still.codepoint()) == [128002]
+expect cows_with_bull.take_first(1).map(|leader| leader.kind.still) == [EmojiStills.bull]
 expect cows_with_bull.drop_first(1) == cows_without_bull
 expect cows_with_bull.take_first(2).map(|critter| critter.kind.facing) == [FacesLeft, FacesRight]
 expect cows_without_bull.all(|member| member.kind.facing == FacesRight)
-expect cows_without_bull.all(|member| member.kind.still.codepoint() == 128004)
+expect cows_without_bull.all(|member| member.kind.still == EmojiStills.cow)
 
 expect
 	cows_without_bull.map(|member| member.kind.height.to_metres())

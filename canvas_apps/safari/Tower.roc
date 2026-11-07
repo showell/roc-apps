@@ -38,18 +38,26 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 		front_left : Geom.RiderPoint,
 	}
 
-	## How a tower looks. Its footprint is measured on the road, so the road is
-	## its context.
-	scenery_picture : Tower, Picture.Setting(RoadAhead.RoadView) -> Picture
-	scenery_picture = |tower, { spot, cam_focal, context: road }| {
-		footprint = Tower.tower_footprint(tower, { road, spot })
+	## How a tower looks. Its footprint is measured on the road and seen from the
+	## camera's vantage, so those are its context.
+	scenery_picture : Tower,
+	Picture.Setting(
+		{ road : RoadAhead.RoadView, vantage : Geom.Vantage },
+	) -> Picture
+	scenery_picture = |tower, { spot, cam_focal, context: { road, vantage } }| {
+		footprint = Tower.tower_footprint(tower, { road, vantage, spot })
 		Picture.from_shapes(Tower.tower_shapes(tower, { spot, cam_focal, context: footprint }))
 	}
 
 	## Where the four footprint corners of a tower standing at `spot` on `road`
-	## are in the rider's view.
-	tower_footprint : Tower, { road : RoadAhead.RoadView, spot : Spot } -> Tower.Footprint
-	tower_footprint = |tower, { road, spot }| {
+	## are in the view of the camera at `vantage`.
+	tower_footprint : Tower,
+	{
+		road : RoadAhead.RoadView,
+		vantage : Geom.Vantage,
+		spot : Spot,
+	} -> Tower.Footprint
+	tower_footprint = |tower, { road, vantage, spot }| {
 		center = spot.road_point()
 		corner_point = |corner| {
 			on_road = base_corner_on_road(
@@ -60,14 +68,7 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 					yaw: tower.yaw,
 				},
 			)
-			RoadAhead.rider_point_at(
-				road,
-				{
-					place: spot.place(),
-					along: on_road.along,
-					across: on_road.across,
-				},
-			)
+			RoadAhead.rider_point_at(road, { vantage, place: spot.place(), road_point: on_road })
 		}
 		{
 			back_left: corner_point(BackLeft),
@@ -495,16 +496,16 @@ expect
 			}),
 		]
 
-# The first three segments, seen from the start of the route.
+# The road ahead of a rider on the route's first segment.
 start_road : RoadAhead.RoadView
-start_road = {
-	route: World.route,
-	segments_ahead: { first_index: Route.SegmentIndex.first, count: 3 },
-	vantage: {
-		along: Along.metres(0.0),
-		across: Across.metres(0.0),
-		yaw: Angle.straight_ahead,
-	},
+start_road = RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex.first)
+
+# The camera at the start of the route, looking down the road.
+start_vantage : Geom.Vantage
+start_vantage = {
+	along: Along.metres(0.0),
+	across: Across.metres(0.0),
+	yaw: Angle.straight_ahead,
 }
 
 # A tower that isn't turned, its beacon dark.
@@ -521,7 +522,11 @@ tower_along = |along|
 			lift: Distance.zero,
 			kind: plain_tower,
 		},
-		{ road: start_road, place: Ahead(SegmentPlace.Position.first) },
+		{
+			road: start_road,
+			vantage: start_vantage,
+			place: Ahead(SegmentPlace.Position.first),
+		},
 	)
 		?? crash "a test's tower is past the near plane"
 
@@ -532,7 +537,7 @@ shapes_of_tower_along = |along| {
 	tower.kind.scenery_picture({
 		spot: tower.spot,
 		cam_focal: Pixels.of(500.0),
-		context: start_road,
+		context: { road: start_road, vantage: start_vantage },
 	}).to_shapes()
 }
 
@@ -543,7 +548,14 @@ ahead = |point| Geom.ahead_on_level(point) ?? crash "a test's point is past the 
 
 expect {
 	tower = tower_along(200.0)
-	footprint = Tower.tower_footprint(plain_tower, { road: start_road, spot: tower.spot })
+	footprint = Tower.tower_footprint(
+		plain_tower,
+		{
+			road: start_road,
+			vantage: start_vantage,
+			spot: tower.spot,
+		},
+	)
 	[
 		(footprint.back_left.forward.to_metres(), 194.0),
 		(footprint.front_right.forward.to_metres(), 206.0),
