@@ -33,6 +33,7 @@ import game.EmojiStills
 import game.EncounterReaction
 import game.Fraction
 import game.FrameView
+import game.Gawking
 import game.Gaze
 import game.RoadAhead
 import game.Route
@@ -2470,3 +2471,86 @@ expect
 		Ok(_) => False
 		Err(BehindCamera) => True
 	}
+
+## A segment with no pigs.
+pigless_segment : Segment
+pigless_segment = segment_of([])
+
+## The route's first segment with a herd the rider finds distracting.
+distracting_segment : Segment
+distracting_segment = World.first_distracting_segment
+
+expect Gawking.eye_catching_pig(pigless_segment) == NoPigCatchesEye
+
+## A segment of the route whose herd the rider passes by.
+passed_by_segment : Segment
+passed_by_segment = World.route.segment_at(Route.SegmentIndex.number(11))
+
+expect Gawking.eye_catching_pig(passed_by_segment) == NoPigCatchesEye
+
+## The pig that catches the eye on the distracting segment.
+watched_pig : Geom.Placed(Billboard)
+watched_pig =
+	match Gawking.eye_catching_pig(distracting_segment) {
+		CatchesEye(pig) => pig
+		NoPigCatchesEye => crash "CrossModuleExpects: this segment's pigs catch the eye"
+	}
+
+# The rider watches a pig of the herd.
+expect distracting_segment.segment_pigs().count_if(|pig| pig == watched_pig) == 1
+
+## A motorcycle `along` metres into its segment, at rest in every other way.
+motorcycle_at : F64 -> Motorcycle
+motorcycle_at = |along| {
+	..Motorcycle.initial,
+	along: Motorcycle.initial.along.plus(Distance.metres(along)),
+}
+
+## A motorcycle on the distracting segment, `metres` short of the pig.
+short_of_pig : F64 -> Motorcycle
+short_of_pig = |metres| {
+	..Motorcycle.initial,
+	along: watched_pig.road_point.along.minus(Distance.metres(metres)),
+}
+
+expect !Gawking.is_gawking(motorcycle_at(200.0), pigless_segment)
+expect !Gawking.is_gawking(motorcycle_at(100.0), distracting_segment)
+expect Gawking.is_gawking(motorcycle_at(200.0), distracting_segment)
+expect Gawking.is_gawking(motorcycle_at(341.0), distracting_segment)
+
+# The gawking starts where the pig is noticed, and not a centimetre sooner.
+expect Gawking.is_gawking(short_of_pig(Gawking.notice_distance.to_metres()), distracting_segment)
+expect !Gawking.is_gawking(short_of_pig(150.01), distracting_segment)
+
+expect Gawking.gawk_brake(motorcycle_at(200.0), pigless_segment) == NoLimit
+expect Gawking.gawk_brake(motorcycle_at(100.0), distracting_segment) == NoLimit
+
+## The brake for a motorcycle `metres` short of the pig, going `speed` metres a
+## step.
+brake_short_of_pig : F64, F64 -> F64
+brake_short_of_pig = |metres, speed| {
+	motorcycle = { ..short_of_pig(metres), speed: Speed.metres_a_step(speed) }
+	match Gawking.gawk_brake(motorcycle, distracting_segment) {
+		AtMost(brake) => brake.to_metres_a_step_each_step()
+		NoLimit => crash "CrossModuleExpects: this rider is gawking"
+	}
+}
+
+# Each is within 1e-12 of its want. The brake works out the road left to the
+# settle distance, until there's less than the least distance left.
+expect
+	[
+		((125.0, 0.3), -0.00025),
+		((75.0, 0.3), -0.0005),
+		((27.0, 0.3), -0.0125),
+		((26.0, 0.3), -0.025),
+		((25.5, 0.3), -0.025),
+		((0.0, 0.3), -0.025),
+		((-10.0, 0.3), -0.025),
+		((125.0, 0.2), 0.0),
+		((125.0, 0.1), 0.00015),
+	].all(
+		|
+			((metres, speed), want),
+		| (brake_short_of_pig(metres, speed) - want).abs() <= 0.000000000001,
+	)
