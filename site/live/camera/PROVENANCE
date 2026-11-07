@@ -1,6 +1,7 @@
-published 2026-09-24T11:19:28Z
-roc nightly-2026-09-22-e494788
-roc-apps e94acd4
-rocemit e6a83da
-cobblestone 9f6bdc03 u62-candidate
-sha256 1d06c49340726d1c  133248 bytes  camera.wasm
+published 2026-11-07T21:57:25Z
+roc nightly-2026-11-03-34bd006
+opt speed
+roc-apps e864c152
+rocemit ad9a0e7
+cobblestone  
+sha256 92d58036ca06e92d  82205 bytes  camera.wasm
