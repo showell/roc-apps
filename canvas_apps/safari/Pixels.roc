@@ -39,8 +39,8 @@ Pixels :: F64.{
 	abs = |Pixels.(p)| Pixels.(p.abs())
 
 	## How many of `whole` this is, which can pass 1 or go negative.
-	ratio_to : Pixels, Pixels -> F64
-	ratio_to = |Pixels.(p), Pixels.(whole)| p / whole
+	portion : Pixels, Pixels -> F64
+	portion = |Pixels.(p), Pixels.(whole)| p / whole
 
 	## The larger of this length and `other`.
 	max : Pixels, Pixels -> Pixels
@@ -82,10 +82,10 @@ expect Pixels.of(-3.0).abs().to_f64() == 3.0
 expect Pixels.zero.abs().to_f64() == 0.0
 
 # A ratio can be under 1, 1 itself, past it, or negative.
-expect Pixels.of(2.0).ratio_to(Pixels.of(8.0)) == 0.25
-expect Pixels.of(8.0).ratio_to(Pixels.of(8.0)) == 1.0
-expect Pixels.of(12.0).ratio_to(Pixels.of(8.0)) == 1.5
-expect Pixels.of(-2.0).ratio_to(Pixels.of(8.0)) == -0.25
+expect Pixels.of(2.0).portion(Pixels.of(8.0)) == 0.25
+expect Pixels.of(8.0).portion(Pixels.of(8.0)) == 1.0
+expect Pixels.of(12.0).portion(Pixels.of(8.0)) == 1.5
+expect Pixels.of(-2.0).portion(Pixels.of(8.0)) == -0.25
 
 expect Pixels.of(2.0).max(Pixels.of(3.0)).to_f64() == 3.0
 expect Pixels.of(3.0).max(Pixels.of(2.0)).to_f64() == 3.0

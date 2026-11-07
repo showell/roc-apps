@@ -35,6 +35,10 @@ Speed :: F64.{
 	times : Speed, F64 -> Speed
 	times = |Speed.(s), factor| Speed.(s * factor)
 
+	## How many of `whole` this speed is, which can pass 1.
+	portion : Speed, Speed -> F64
+	portion = |Speed.(s), Speed.(whole)| s / whole
+
 	## How far this speed covers in `length`.
 	distance_in : Speed, Steps -> Distance
 	distance_in = |Speed.(s), length| Distance.metres(s * length.to_f64())
@@ -66,3 +70,5 @@ Speed :: F64.{
 expect Speed.metres_a_step(2.0).distance_in(Steps.of(38)).to_metres() == 76.0
 expect Speed.at_rest.distance_in(Steps.of(38)).to_metres() == 0.0
 expect Speed.metres_a_step(0.5).step_length().to_metres() == 0.5
+expect Speed.metres_a_step(1.0).portion(Speed.metres_a_step(4.0)) == 0.25
+expect Speed.metres_a_step(6.0).portion(Speed.metres_a_step(4.0)) == 1.5

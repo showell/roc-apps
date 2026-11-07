@@ -28,7 +28,7 @@ GroundSighting :: [].{
 	chunks_along : Distance -> U32
 	chunks_along = |length| {
 		chunks =
-			length.ratio_to(road_chunk_length).ceiling_to_i64_try()
+			length.portion(road_chunk_length).ceiling_to_i64_try()
 				?? crash "GroundSighting.chunks_along: a segment's length is finite"
 		chunks.max(1).to_u32_wrap()
 	}

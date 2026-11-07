@@ -70,7 +70,7 @@ Lens :: [].{
 	## negative, and lands below it.
 	y_for_height : { height : Pixels, cam_focal : Pixels } -> Pixels
 	y_for_height = |{ height, cam_focal: focal }|
-		Screen.horizon_y.minus(height.times(focal.ratio_to(resting_focal)))
+		Screen.horizon_y.minus(height.times(focal.portion(resting_focal)))
 
 	## The screen's x for something `turn` to the right of where the camera
 	## faces, through a lens of `cam_focal`. The turn stays under a quarter
@@ -83,7 +83,7 @@ Lens :: [].{
 	## through a lens of `cam_focal`: the way back from `x_for_turn`.
 	turn_at_x : { x : Pixels, cam_focal : Pixels } -> Angle.Turn
 	turn_at_x = |{ x, cam_focal: focal }| {
-		slope = x.minus(Screen.center_x).ratio_to(focal)
+		slope = x.minus(Screen.center_x).portion(focal)
 		Angle.Turn.radians(slope.atan())
 	}
 }

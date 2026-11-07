@@ -18,8 +18,8 @@ Camera :: [].{
 	## lens of focal length `cam_focal` in pixels.
 	project : Geom.AheadPoint, Pixels -> Screen.Point
 	project = |p, cam_focal| {
-		slope_right = p.right().ratio_to(p.forward())
-		slope_up = p.height().minus(eye_height).ratio_to(p.forward())
+		slope_right = p.right().portion(p.forward())
+		slope_up = p.height().minus(eye_height).portion(p.forward())
 		{
 			x: Screen.center_x.plus(cam_focal.times(slope_right)),
 			y: Screen.horizon_y.minus(cam_focal.times(slope_up)),

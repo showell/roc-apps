@@ -196,7 +196,7 @@ ring_point_count = 16
 ## How much a crown is shaded at distance `forward`: fully at the camera,
 ## falling evenly to none at Detail.crown_shade_reach.
 crown_shade : Distance -> Fraction
-crown_shade = |forward| Fraction.clamp(1.0 - forward.ratio_to(Detail.crown_shade_reach))
+crown_shade = |forward| Fraction.clamp(1.0 - forward.portion(Detail.crown_shade_reach))
 
 trunk_shape : TreeShapes.TreeOutline, [Shaded, Flat] -> Shapes.Shape
 trunk_shape = |outline, finish| {
