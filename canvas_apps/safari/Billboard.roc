@@ -3,6 +3,7 @@
 import Camera
 import Distance
 import EmojiStills
+import Geom
 import Picture
 import Pixels
 import StillShapes
@@ -22,8 +23,8 @@ Billboard := {
 	## How a billboard looks. An emoji faces left, so a billboard facing right
 	## is its still mirrored. One less than a pixel tall isn't drawn.
 	scenery_picture : Billboard, Picture.Setting({}) -> Picture
-	scenery_picture = |billboard, { right, forward, cam_focal, .. }| {
-		projected = |height| Camera.project({ right, forward, height }, cam_focal)
+	scenery_picture = |billboard, { foot, cam_focal, .. }| {
+		projected = |height| Camera.project(foot.at_height(height), cam_focal)
 		feet = projected(Distance.zero)
 		height_px = feet.y.minus(projected(billboard.height).y)
 		if height_px < Pixels.of(1.0) {
@@ -55,12 +56,8 @@ shape_count : {
 shape_count = |{ forward, height, codepoint }| {
 	billboard : Billboard
 	billboard = { codepoint, height, facing: FacesLeft }
-	billboard.scenery_picture({
-		right: Distance.metres(0.0),
-		forward,
-		cam_focal: Pixels.of(500.0),
-		context: {},
-	}).to_shapes().len()
+	foot = Geom.ahead_on_level({ right: Distance.zero, forward }) ?? crash "a test's billboard is past the near plane"
+	billboard.scenery_picture({ foot, cam_focal: Pixels.of(500.0), context: {} }).to_shapes().len()
 }
 
 elephant : I64

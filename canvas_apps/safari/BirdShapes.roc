@@ -6,6 +6,7 @@ import Pixels
 import BirdFlight
 import BirdStills
 import Camera
+import Geom
 import Picture
 import StillShapes
 import Distance
@@ -27,14 +28,14 @@ BirdShapes :: [].{
 		## A bird on screen, its feet where it is. Its still is unflipped: a bird
 		## from a left-hand tree crosses the road toward +x, the way its beak points.
 		scenery_picture : BirdShapes.PosedBird, Picture.Setting({}) -> Picture
-		scenery_picture = |bird, { right, forward, cam_focal, .. }| {
-			feet = Camera.project({ right, forward, height: bird.lift }, cam_focal)
+		scenery_picture = |bird, { foot, cam_focal, .. }| {
+			feet = Camera.project(foot.at_height(bird.lift), cam_focal)
 			Picture.from_shapes(
 				StillShapes.still_shapes(
 					{
 						feet,
 						flip: AsDrawn,
-						height_px: BirdShapes.height_px({ forward, cam_focal }),
+						height_px: BirdShapes.height_px({ forward: foot.forward(), cam_focal }),
 					},
 					BirdStills.pose_polygons(bird.pose),
 				),
@@ -50,13 +51,10 @@ level_bird = { lift: Camera.eye_height, pose: Perched }
 
 ## `bird` 110 m ahead and `right` of the camera, through a 500 px focal length.
 bird_shapes_at : BirdShapes.PosedBird, Distance -> List(Shapes.Shape)
-bird_shapes_at = |bird, right|
-	bird.scenery_picture({
-		right,
-		forward: Distance.metres(110.0),
-		cam_focal: Pixels.of(500.0),
-		context: {},
-	}).to_shapes()
+bird_shapes_at = |bird, right| {
+	foot = Geom.ahead_on_level({ right, forward: Distance.metres(110.0) }) ?? crash "a test's bird is past the near plane"
+	bird.scenery_picture({ foot, cam_focal: Pixels.of(500.0), context: {} }).to_shapes()
+}
 
 ## How many pixels tall a bird `forward` ahead is, through `cam_focal`.
 height_on_screen : Distance, Pixels -> F64

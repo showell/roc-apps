@@ -48,10 +48,6 @@ TruckLights :: [].{
 	glow_sides : I64
 	glow_sides = 16
 
-	## Whether any of `points` is at or behind the camera's near plane.
-	has_point_behind_camera : List(Geom.RaisedPoint) -> Bool
-	has_point_behind_camera = |points| points.any(|point| point.forward <= Geom.near_plane)
-
 	## The point halfway between `from` and `to`.
 	midpoint : { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> Geom.RaisedPoint
 	midpoint = |{ from, to }| {
@@ -182,29 +178,36 @@ beam_shapes = |truck, across| {
 	lamp_top = at_lamp(headlight_height.plus(beam_half_height_at_lamp))
 	far_top = at_far_end(beam_far_center.plus(beam_far_half_height))
 	far_bottom = at_far_end(beam_far_center.minus(beam_far_half_height))
-	corners = [lamp_bottom, lamp_top, far_top, far_bottom]
-	if TruckLights.has_point_behind_camera(corners) {
-		[]
-	} else {
-		on_screen = Camera.projected_points(corners, truck.view.cam_focal)
-		lamp = Camera.project(
-			TruckLights.midpoint({ from: lamp_bottom, to: lamp_top }),
-			truck.view.cam_focal,
-		)
-		beam_polygon = Polygon.gradient_polygon(
-			on_screen,
-			{
-				center_color: beam_core,
-				edge_color: beam_edge,
-				gradient_center: lamp,
-				gradient_radius: TruckLights.farthest_from(on_screen, lamp),
-			},
-		)
-		match beam_polygon {
-			Ok(shape) => [shape]
-			Err(TooSmall) => []
-		}
+	beam_polygon = beam_on_screen(
+		{
+			corners: [lamp_bottom, lamp_top, far_top, far_bottom],
+			lamp: TruckLights.midpoint({ from: lamp_bottom, to: lamp_top }),
+		},
+		truck.view.cam_focal,
+	)
+	match beam_polygon {
+		Ok(shape) => [shape]
+		Err(BehindCamera) => []
+		Err(TooSmall) => []
 	}
+}
+
+## A beam's polygon on screen, brightest at `lamp`, if its corners and its lamp
+## are at or past the near plane.
+beam_on_screen : { corners : List(Geom.RaisedPoint), lamp : Geom.RaisedPoint }, Pixels -> Try(Shapes.Shape, [BehindCamera, TooSmall])
+beam_on_screen = |{ corners, lamp }, cam_focal| {
+	on_screen = Camera.projected_points(Geom.ahead_points(corners)?, cam_focal)
+	lamp_on_screen = Camera.project(Geom.ahead_point(lamp)?, cam_focal)
+	beam_polygon = Polygon.gradient_polygon(
+		on_screen,
+		{
+			center_color: beam_core,
+			edge_color: beam_edge,
+			gradient_center: lamp_on_screen,
+			gradient_radius: TruckLights.farthest_from(on_screen, lamp_on_screen),
+		},
+	)
+	Ok(beam_polygon?)
 }
 
 ## A brake light on the back of the trailer, from `left` to `right` across
@@ -246,24 +249,25 @@ brake_shapes = |truck, { left, right }| {
 ## no glow; the lamp itself is cut at the near plane like the body's faces.
 glow_shapes : TruckShape.TruckInView, List(Geom.RaisedPoint) -> List(Shapes.Shape)
 glow_shapes = |truck, lamp_points|
-	if TruckLights.has_point_behind_camera(lamp_points) {
-		[]
-	} else {
-		on_screen = Camera.projected_points(lamp_points, truck.view.cam_focal)
-		center = TruckLights.center_of(on_screen)
-		radius = TruckLights.glow_radius(on_screen, center)
-		glow_polygon = Polygon.gradient_polygon(
-			TruckLights.outline_points({ center, outline_radius: radius }),
-			{
-				center_color: glow_core,
-				edge_color: glow_edge,
-				gradient_center: center,
-				gradient_radius: radius,
-			},
-		)
-		match glow_polygon {
-			Ok(shape) => [shape]
-			Err(TooSmall) => []
+	match Geom.ahead_points(lamp_points) {
+		Err(BehindCamera) => []
+		Ok(lamp_ahead) => {
+			on_screen = Camera.projected_points(lamp_ahead, truck.view.cam_focal)
+			center = TruckLights.center_of(on_screen)
+			radius = TruckLights.glow_radius(on_screen, center)
+			glow_polygon = Polygon.gradient_polygon(
+				TruckLights.outline_points({ center, outline_radius: radius }),
+				{
+					center_color: glow_core,
+					edge_color: glow_edge,
+					gradient_center: center,
+					gradient_radius: radius,
+				},
+			)
+			match glow_polygon {
+				Ok(shape) => [shape]
+				Err(TooSmall) => []
+			}
 		}
 	}
 
@@ -304,34 +308,6 @@ expect
 	}).len()
 		== 16
 expect TruckLights.glow_sides == 16
-
-point_ahead : F64 -> Geom.RaisedPoint
-point_ahead = |forward| {
-	right: Distance.zero,
-	forward: Distance.metres(forward),
-	height: Distance.zero,
-}
-
-expect
-	!TruckLights.has_point_behind_camera([
-		point_ahead(10.0),
-		point_ahead(20.0),
-		point_ahead(30.0),
-	])
-expect
-	TruckLights.has_point_behind_camera([
-		point_ahead(10.0),
-		point_ahead(0.2),
-		point_ahead(30.0),
-	])
-expect
-	TruckLights.has_point_behind_camera([
-		point_ahead(10.0),
-		point_ahead(0.4),
-		point_ahead(30.0),
-	])
-expect !TruckLights.has_point_behind_camera([point_ahead(0.41)])
-expect !TruckLights.has_point_behind_camera([])
 
 expect
 	TruckLights.midpoint({

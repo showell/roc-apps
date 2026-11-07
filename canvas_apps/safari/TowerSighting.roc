@@ -239,8 +239,8 @@ expect first_tower_on(1).along.to_metres() == 480.0
 expect first_tower_on(1).across.to_metres() == 20.0
 expect
 	[
-		(first_tower_on(0).right.to_metres(), 20.0),
-		(first_tower_on(0).forward.to_metres(), 660.0),
+		(first_tower_on(0).foot.right().to_metres(), 20.0),
+		(first_tower_on(0).foot.forward().to_metres(), 660.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 ## The 1200 m segment alone, seen from the origin.

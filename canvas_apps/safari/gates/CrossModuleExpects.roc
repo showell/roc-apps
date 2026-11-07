@@ -176,8 +176,8 @@ bird_at = |rider_along|
 ## How far off a bird is, across the road and up.
 place_numbers : Pipeline.Sighted(BirdShapes.PosedBird) -> List(F64)
 place_numbers = |bird| [
-	bird.right.to_metres(),
-	bird.forward.to_metres(),
+	bird.foot.right().to_metres(),
+	bird.foot.forward().to_metres(),
 	bird.kind.lift.to_metres(),
 ]
 
@@ -188,8 +188,8 @@ expect place_numbers(bird_at(40.0)) == [-6.0, 60.0, left_top]
 expect {
 	bird = bird_at(62.5)
 	[
-		(bird.right.to_metres(), 0.0),
-		(bird.forward.to_metres(), 52.5),
+		(bird.foot.right().to_metres(), 0.0),
+		(bird.foot.forward().to_metres(), 52.5),
 		(
 			bird.kind.lift.to_metres(),
 			(left_top + far_top) / 2.0 + BirdFlight.flight_arc.to_metres(),
@@ -244,7 +244,7 @@ two_segments = BirdSighting.birds_in_view({
 })
 
 expect
-	match two_segments.map(|bird| bird.forward) {
+	match two_segments.map(|bird| bird.foot.forward()) {
 		[near, far] => near == Distance.metres(100.0) and near < far
 		_ => crash "CrossModuleExpects: each of two segments has a bird in view"
 	}
@@ -333,6 +333,10 @@ first_cat : F64 -> Pipeline.Sighted(CatShapes.PosedCat)
 first_cat = |along|
 	ride_sightings(along).first() ?? crash "CrossModuleExpects: the second segment's cat is in view"
 
+## How far ahead the first cat in view is for a rider `along` metres in.
+cat_forward : F64 -> Distance
+cat_forward = |along| first_cat(along).foot.forward()
+
 expect seen.len() == 1
 expect cat_at(0).is_err()
 expect cat_at(2).is_err()
@@ -340,9 +344,9 @@ expect first_cat(300.0).kind.lift.to_metres() == 0.0
 expect first_cat(300.0).kind.pose == Rest
 expect
 	[
-		(first_cat(300.0).forward.minus(first_cat(200.0).forward).to_metres(), -100.0),
-		(first_cat(400.0).forward.minus(first_cat(300.0).forward).to_metres(), -100.0),
-		(first_cat(300.0).right.minus(first_cat(200.0).right).to_metres(), 0.0),
+		(cat_forward(300.0).minus(cat_forward(200.0)).to_metres(), -100.0),
+		(cat_forward(400.0).minus(cat_forward(300.0)).to_metres(), -100.0),
+		(first_cat(300.0).foot.right().minus(first_cat(200.0).foot.right()).to_metres(), 0.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 expect ride_sightings(0.0).len() == 0
@@ -496,13 +500,14 @@ how_it_went = |fate|
 		Err(TooSmall) => TooSmall
 	}
 
-# The near plane is 0.4 m, and at the lens's resting focal length a 1 m cow is 2
-# pixels tall about 342.8 m off.
+# The near plane is 0.4 m, and a cow on it is in view. At the lens's resting
+# focal length a 1 m cow is 2 pixels tall about 342.8 m off.
 expect
 	[
 		(-5.0, 1.0, BehindCamera),
 		(0.3, 1.0, BehindCamera),
-		(0.4, 1.0, BehindCamera),
+		(0.39, 1.0, BehindCamera),
+		(0.4, 1.0, Seen),
 		(0.5, 1.0, Seen),
 		(300.0, 1.0, Seen),
 		(342.0, 1.0, Seen),
@@ -535,11 +540,11 @@ left_bull =
 	})
 		?? crash "CrossModuleExpects: a bull 50 m ahead is in view"
 
-expect near_cow.right.to_metres() == 2.5
-expect near_cow.forward.to_metres() == 0.5
+expect near_cow.foot.right().to_metres() == 2.5
+expect near_cow.foot.forward().to_metres() == 0.5
 expect near_cow.kind.height.to_metres() == 1.0
-expect left_bull.right.to_metres() == -1.5
-expect left_bull.forward.to_metres() == 50.0
+expect left_bull.foot.right().to_metres() == -1.5
+expect left_bull.foot.forward().to_metres() == 50.0
 expect left_bull.kind.height.to_metres() == 1.6
 
 expect near_cow.kind.codepoint == 128004

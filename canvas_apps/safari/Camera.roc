@@ -15,17 +15,17 @@ Camera :: [].{
 
 	## Where a point in front of the camera lands on the screen, through a
 	## lens of focal length `cam_focal` in pixels.
-	project : Geom.RaisedPoint, Pixels -> Screen.Point
+	project : Geom.AheadPoint, Pixels -> Screen.Point
 	project = |p, cam_focal| {
-		slope_right = p.right.ratio_to(p.forward)
-		slope_up = p.height.minus(eye_height).ratio_to(p.forward)
+		slope_right = p.right().ratio_to(p.forward())
+		slope_up = p.height().minus(eye_height).ratio_to(p.forward())
 		{
 			x: Screen.center_x.plus(cam_focal.times(slope_right)),
 			y: Screen.horizon_y.minus(cam_focal.times(slope_up)),
 		}
 	}
 
-	projected_points : List(Geom.RaisedPoint), Pixels -> List(Screen.Point)
+	projected_points : List(Geom.AheadPoint), Pixels -> List(Screen.Point)
 	projected_points = |points, cam_focal| points.map(|p| project(p, cam_focal))
 
 	## A polygon of one color, in the rider's view.
@@ -44,8 +44,12 @@ Camera :: [].{
 	}
 }
 
+## `point` past the near plane, which every point in these tests is.
+ahead : Geom.RaisedPoint -> Geom.AheadPoint
+ahead = |point| Geom.ahead_point(point) ?? crash "a test's point is past the near plane"
+
 screen_point : Geom.RaisedPoint -> Screen.Point
-screen_point = |point| Camera.project(point, Pixels.of(800.0))
+screen_point = |point| Camera.project(ahead(point), Pixels.of(800.0))
 
 expect screen_point({
 	right: Distance.metres(0.0),
@@ -145,7 +149,7 @@ expect
 				forward: Distance.metres(10.0),
 				height: Distance.metres(11.2),
 			},
-		],
+		].map(ahead),
 		Pixels.of(800.0),
 	)
 		== [

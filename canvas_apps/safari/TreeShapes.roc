@@ -18,11 +18,10 @@ import lib.Shapes
 
 TreeShapes :: [].{
 
-	## A tree in front of the camera, so of its lengths only `right` can be
-	## negative.
+	## A tree in front of the camera: where its foot stands, how tall it is,
+	## and its foliage's color.
 	TreeAhead : {
-		right : Distance,
-		forward : Distance,
+		foot : Geom.AheadPoint,
 		height : Distance,
 		foliage_color : I64,
 	}
@@ -51,11 +50,7 @@ TreeShapes :: [].{
 	## they are, within Detail.cone_reach, and triangles beyond it.
 	tree_picture : { tree : TreeShapes.TreeAhead, nearer_tree_count : U16 }, Pixels -> Picture
 	tree_picture = |{ tree, nearer_tree_count }, cam_focal| {
-		tip = {
-			right: tree.right,
-			forward: tree.forward,
-			height: tree.height,
-		}
+		tip = tree.foot.at_height(tree.height)
 		outline = tree_outline(tip, cam_focal)
 		trunk_finish = if nearer_tree_count < Detail.round_trunk_limit {
 			Shaded
@@ -67,7 +62,7 @@ TreeShapes :: [].{
 			cam_focal,
 			outline,
 			color: tree.foliage_color,
-			crown: crown_of(tree.forward),
+			crown: crown_of(tree.foot.forward()),
 		}
 		trunk = trunk_shape(outline, trunk_finish)
 		Picture.from_shapes([trunk].concat(tiers.map(|tier| tier_shape(tier, inputs))))
@@ -87,9 +82,9 @@ TreeShapes :: [].{
 
 	## Where a tree is on the screen, given its `tip`, through a lens of focal
 	## length `cam_focal`.
-	tree_outline : Geom.RaisedPoint, Pixels -> TreeShapes.TreeOutline
+	tree_outline : Geom.AheadPoint, Pixels -> TreeShapes.TreeOutline
 	tree_outline = |tip, cam_focal| {
-		base = Camera.project({ ..tip, height: Distance.zero }, cam_focal)
+		base = Camera.project(tip.at_height(Distance.zero), cam_focal)
 		top = Camera.project(tip, cam_focal)
 		height_px = base.y.minus(top.y)
 		crown_height_px = height_px.times(crown_height_share.to_f64())
@@ -107,7 +102,7 @@ TreeShapes :: [].{
 
 ## What every tier of one tree needs. `tip` is the top of the tree.
 TierInputs : {
-	tip : Geom.RaisedPoint,
+	tip : Geom.AheadPoint,
 	cam_focal : Pixels,
 	outline : TreeShapes.TreeOutline,
 	color : I64,
@@ -299,47 +294,61 @@ ring_angles = {
 	$angles
 }
 
-## A tier, as a cone when the tree is near and the whole cone is past the near
-## plane, else as a triangle: `Camera.project` needs points in front of the camera.
+## A tier, as a cone when the tree is near and the ring round the cone's base
+## is at or past the near plane, else as a triangle.
 tier_shape : TreeShapes.Tier, TierInputs -> Shapes.Shape
 tier_shape = |tier, inputs| {
-	cone_radius = inputs.tip.height.times(crown_half_width_share.to_f64() * tier.width.to_f64())
+	cone_radius = inputs.tip.height().times(crown_half_width_share.to_f64() * tier.width.to_f64())
 	match inputs.crown {
-		Cones(_) if !Geom.is_in_view(inputs.tip.forward.minus(cone_radius)) =>
-			tier_triangle(inputs.outline, { tier, color: inputs.color })
-		Cones({ shade }) => tier_cone(tier, { inputs, cone_radius, shade })
+		Cones({ shade }) =>
+			match cone_ring_points(tier, { tip: inputs.tip, cone_radius }) {
+				Ok(ring_points) => tier_cone(tier, { inputs, ring_points, shade })
+				Err(BehindCamera) => tier_triangle(inputs.outline, { tier, color: inputs.color })
+			}
 		Triangles => tier_triangle(inputs.outline, { tier, color: inputs.color })
 	}
+}
+
+## The ring of points round a tier's base, `cone_radius` out from the tree's
+## middle, if every one of them is at or past the near plane.
+cone_ring_points : TreeShapes.Tier,
+{
+	tip : Geom.AheadPoint,
+	cone_radius : Distance,
+} -> Try(List(Geom.AheadPoint), [BehindCamera])
+cone_ring_points = |tier, { tip, cone_radius }| {
+	trunk_part = trunk_height_share.to_f64()
+	crown_part = crown_height_share.to_f64()
+	bottom = tier.bottom.to_f64()
+	base_height = tip.height().times(trunk_part + crown_part * (1.0 - bottom))
+	Geom.ahead_points(
+		ring_angles.map(
+			|angle| {
+				right: tip.right().plus(cone_radius.times(angle.cos())),
+				forward: tip.forward().plus(cone_radius.times(angle.sin())),
+				height: base_height,
+			},
+		),
+	)
 }
 
 ## A tier as a cone: the hull of the ring round its base and its apex.
 tier_cone : TreeShapes.Tier,
 {
 	inputs : TierInputs,
-	cone_radius : Distance,
+	ring_points : List(Geom.AheadPoint),
 	shade : Fraction,
 } -> Shapes.Shape
-tier_cone = |tier, { inputs, cone_radius, shade }| {
+tier_cone = |tier, { inputs, ring_points, shade }| {
 	tip = inputs.tip
 	trunk_part = trunk_height_share.to_f64()
 	crown_part = crown_height_share.to_f64()
-	bottom = tier.bottom.to_f64()
 	top = tier.top.to_f64()
-	base_height = tip.height.times(trunk_part + crown_part * (1.0 - bottom))
-	apex_height = tip.height.times(trunk_part + crown_part * (1.0 - top))
-	apex = Camera.project({ ..tip, height: apex_height }, inputs.cam_focal)
-	ring = ring_angles.map(
-		|angle| {
-			ring_point = {
-				right: tip.right.plus(cone_radius.times(angle.cos())),
-				forward: tip.forward.plus(cone_radius.times(angle.sin())),
-				height: base_height,
-			}
-			Camera.project(ring_point, inputs.cam_focal)
-		},
-	)
+	apex_height = tip.height().times(trunk_part + crown_part * (1.0 - top))
+	apex = Camera.project(tip.at_height(apex_height), inputs.cam_focal)
+	ring_on_screen = Camera.projected_points(ring_points, inputs.cam_focal)
 	Polygon.shaded_polygon(
-		convex_hull_points(ring.append(apex)),
+		convex_hull_points(ring_on_screen.append(apex)),
 		{ fill_color: inputs.color, strength: shade },
 	)
 }
@@ -376,11 +385,12 @@ expect TreeShapes.crown_of(Distance.metres(200.0)) == Triangles
 
 sample_outline : TreeShapes.TreeOutline
 sample_outline = TreeShapes.tree_outline(
-	{
+	Geom.ahead_point({
 		right: Distance.metres(0.0),
 		forward: Distance.metres(2.0),
 		height: Distance.metres(4.352),
-	},
+	})
+		?? crash "the sample tree is past the near plane",
 	Pixels.of(500.0),
 )
 

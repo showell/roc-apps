@@ -5,6 +5,7 @@ import Camera
 import Cat
 import CatStills
 import Distance
+import Geom
 import Picture
 import StillShapes
 import lib.Shapes
@@ -20,8 +21,8 @@ CatShapes :: [].{
 
 		## A cat on screen, its feet where it is.
 		scenery_picture : CatShapes.PosedCat, Picture.Setting({}) -> Picture
-		scenery_picture = |cat, { right, forward, cam_focal, .. }| {
-			projected = |height| Camera.project({ right, forward, height }, cam_focal)
+		scenery_picture = |cat, { foot, cam_focal, .. }| {
+			projected = |height| Camera.project(foot.at_height(height), cam_focal)
 			feet = projected(cat.lift)
 			Picture.from_shapes(
 				StillShapes.still_shapes(
@@ -44,13 +45,12 @@ near_cat = { lift: Distance.zero, pose: Rest }
 ## `cat` 100 m straight ahead through a 500 px focal length: its feet on the
 ## ground land at (480, 306), and it stands 8.5 px tall.
 sample_cat_shapes : CatShapes.PosedCat -> List(Shapes.Shape)
-sample_cat_shapes = |cat|
-	cat.scenery_picture({
-		right: Distance.metres(0.0),
-		forward: Distance.metres(100.0),
-		cam_focal: Pixels.of(500.0),
-		context: {},
-	}).to_shapes()
+sample_cat_shapes = |cat| {
+	foot =
+		Geom.ahead_on_level({ right: Distance.zero, forward: Distance.metres(100.0) })
+			?? crash "a test's cat is past the near plane"
+	cat.scenery_picture({ foot, cam_focal: Pixels.of(500.0), context: {} }).to_shapes()
+}
 
 ## The first corner `cat` draws: its still's first corner, on screen.
 first_corner_coordinates : CatShapes.PosedCat -> List(F64)
