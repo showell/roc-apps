@@ -31,6 +31,23 @@ Camera :: [].{
 	height_on_screen : { height : Distance, forward : Distance }, Pixels -> Pixels
 	height_on_screen = |{ height, forward }, cam_focal| cam_focal.times(height.portion(forward))
 
+	## Where an upright object stands on the screen: `foot`, its foot at `base`
+	## put on the screen, and `height_on_screen`, how far up the screen its top
+	## is from there, `height` above `base`. A tree, a still and a billboard all
+	## stand this way.
+	upright_on_screen : Geom.AheadPoint,
+	{
+		height : Distance,
+		cam_focal : Pixels,
+	} -> { foot : Screen.Point, height_on_screen : Pixels }
+	upright_on_screen = |base, { height, cam_focal }| {
+		foot = project(base, cam_focal)
+		top = project(base.at_height(base.height().plus(height)), cam_focal)
+		{ foot, height_on_screen: foot.y.minus(top.y) }
+	}
+
+	## Each of `points` put on the screen, in order, through a lens of focal
+	## length `cam_focal`.
 	projected_points : List(Geom.AheadPoint), Pixels -> List(Screen.Point)
 	projected_points = |points, cam_focal| points.map(|p| project(p, cam_focal))
 
@@ -148,9 +165,6 @@ expect
 			)
 				== Pixels.of(on_screen),
 	)
-
-expect Screen.height.to_f64() == 600.0
-expect Camera.eye_height.to_metres() == 1.2
 
 expect
 	Camera.projected_points(

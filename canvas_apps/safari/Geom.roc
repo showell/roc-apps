@@ -5,8 +5,8 @@
 ## from the middle of the road. A point in the rider's view is measured from
 ## the rider: metres to the right, metres forward, and metres up where height
 ## matters. This module carries a point round a bend into the segment before
-## or after it, turns it into the rider's view, and cuts a polygon at the near
-## plane, the closest thing the camera can see.
+## or after it, and cuts a polygon at the near plane, the closest thing the
+## camera can see. RoadAhead turns a point on the road into the rider's view.
 import Across
 import Along
 import Angle
@@ -84,19 +84,6 @@ Geom :: [].{
 	herd_front_distance : Distance
 	herd_front_distance = road_half_width.plus(Distance.metres(10.0))
 
-	## A point on the current segment, as the camera at `vantage` sees it.
-	to_rider_point : Geom.RoadPoint, Geom.Vantage -> Geom.RiderPoint
-	to_rider_point = |{ along, across }, vantage| {
-		ahead = along.distance_from(vantage.along).to_metres()
-		aside = across.distance_from(vantage.across).to_metres()
-		cos_yaw = vantage.yaw.to_radians().cos()
-		sin_yaw = vantage.yaw.to_radians().sin()
-		{
-			forward: Distance.metres(ahead * cos_yaw + aside * sin_yaw),
-			right: Distance.metres((0.0 - ahead) * sin_yaw + aside * cos_yaw),
-		}
-	}
-
 	## A point on the segment after `bend`, measured on the segment before it:
 	## turned by the bend, then moved to where the segment after starts.
 	point_in_segment_before : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
@@ -134,10 +121,6 @@ Geom :: [].{
 		exit_tan = bend.turn.abs().to_radians().tan()
 		Along.at(bend.segment_length.minus(Geom.road_half_width.divided_by(exit_tan)))
 	}
-
-	## The closest distance ahead that the camera can see.
-	near_plane : Distance
-	near_plane = Distance.metres(0.4)
 
 	## A point in the rider's view at or past the near plane, so the camera can
 	## put it on the screen. Only `ahead_point`, the near-plane cut, and raising
@@ -275,19 +258,23 @@ Geom :: [].{
 	}
 }
 
+## The closest distance ahead that the camera can see.
+near_plane : Distance
+near_plane = Distance.metres(0.4)
+
 ## Whether a point `forward` of the camera is at or past the near plane,
 ## where the camera can see it.
 is_in_view : Distance -> Bool
-is_in_view = |forward| forward >= Geom.near_plane
+is_in_view = |forward| forward >= near_plane
 
 ## Where an edge that has one end on each side crosses the near plane.
 near_plane_crossing : { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> Geom.AheadPoint
 near_plane_crossing = |{ from, to }| {
-	fraction = Geom.near_plane.minus(from.forward).portion(to.forward.minus(from.forward))
+	fraction = near_plane.minus(from.forward).portion(to.forward.minus(from.forward))
 	Geom.AheadPoint.(
 		{
 			right: from.right.plus(to.right.minus(from.right).times(fraction)),
-			forward: Geom.near_plane,
+			forward: near_plane,
 			height: from.height.plus(to.height.minus(from.height).times(fraction)),
 		},
 	)
@@ -473,54 +460,6 @@ expect ahead_line_ends(0.0, 10.0) == Ok((0.4, 10.0))
 expect ahead_line_ends(0.0, 0.39) == Err(BehindCamera)
 expect ahead_line_ends(-5.0, 0.2) == Err(BehindCamera)
 
-expect {
-	seen_from = |road_point, yaw|
-		Geom.to_rider_point(
-			road_point,
-			{
-				along: Along.metres(5.0),
-				across: Across.metres(0.5),
-				yaw: Angle.Turn.radians(yaw),
-			},
-		)
-	[
-		(
-			seen_from({ along: Along.metres(0.0), across: Across.metres(-3.0) }, 0.0),
-			{ right: Distance.metres(-3.5), forward: Distance.metres(-5.0) },
-		),
-		(
-			seen_from({ along: Along.metres(12.0), across: Across.metres(0.0) }, 0.35),
-			{
-				right: Distance.metres(-2.869971008611849),
-				forward: Distance.metres(6.404160086203927),
-			},
-		),
-		(
-			seen_from({ along: Along.metres(40.0), across: Across.metres(-5.0) }, -0.6),
-			{
-				right: Distance.metres(15.223140686823006),
-				forward: Distance.metres(31.992280125511435),
-			},
-		),
-		(
-			seen_from({ along: Along.metres(7.5), across: Across.metres(3.25) }, 1.2),
-			{
-				right: Distance.metres(-1.333613890107213),
-				forward: Distance.metres(3.4690018726015563),
-			},
-		),
-	].all(
-		|(got, want)| {
-			right_miss = got.right.minus(want.right).to_metres().abs()
-			forward_miss = got.forward.minus(want.forward).to_metres().abs()
-			right_miss <= 0.000001 and forward_miss <= 0.000001
-		},
-	)
-}
-
-expect Geom.road_half_width.to_metres() == 2.0
-expect Geom.left_edge.to_metres() == -2.0
-expect Geom.right_edge.to_metres() == 2.0
 expect Geom.outer_side(Angle.Turn.degrees(50.0)) == LeftSide
 expect Geom.outer_side(Angle.Turn.degrees(-70.0)) == RightSide
 

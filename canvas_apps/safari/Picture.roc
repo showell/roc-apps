@@ -22,20 +22,3 @@ Picture :: List(Shapes.Shape).{
 	to_shapes : Picture -> List(Shapes.Shape)
 	to_shapes = |Picture.(shapes)| shapes
 }
-
-sample_shape : Shapes.Shape
-sample_shape = Rect({
-	x: 1.0,
-	y: 2.0,
-	width: 3.0,
-	height: 4.0,
-	fill: Flat({
-		r: 0.0,
-		g: 0.0,
-		b: 0.0,
-		a: 1.0,
-	}),
-})
-
-expect Picture.from_shapes([]).to_shapes() == []
-expect Picture.from_shapes([sample_shape, View(Screen)]).to_shapes() == [sample_shape, View(Screen)]

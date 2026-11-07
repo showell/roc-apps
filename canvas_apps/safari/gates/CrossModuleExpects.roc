@@ -27,7 +27,6 @@ import game.Conifer
 import game.EncounterPoses
 import game.EncounterSighting
 import game.BillboardSighting
-import game.DepthSort
 import game.Distance
 import game.EmojiStills
 import game.EncounterReaction
@@ -103,6 +102,10 @@ world_road_at = |number| RoadAhead.RoadView.ahead_of(World.route, Route.SegmentI
 ## The road ahead of a rider on the route's first segment.
 road : RoadAhead.RoadView
 road = world_road_at(0)
+
+## The segment after the rider's own on the road ahead.
+second_position : SegmentPlace.Position
+second_position = SegmentPlace.Position.first.next()
 
 # Positions count along the road ahead from the rider's segment, not along the
 # route from its start.
@@ -188,7 +191,7 @@ turned_point_at = |road_view, place|
 
 expect {
 	at_d0 = turned_point_at(road, Ahead(SegmentPlace.Position.first))
-	second_segment_point = turned_point_at(road, Ahead(SegmentPlace.Position.number(1)))
+	second_segment_point = turned_point_at(road, Ahead(second_position))
 	[
 		(at_d0.right.to_metres(), 9.933466539753061),
 		(at_d0.forward.to_metres(), -49.00332889206208),
@@ -574,7 +577,7 @@ left_edge_point = |place, along|
 
 expect {
 	start = left_edge_point(Ahead(SegmentPlace.Position.first), 290.0)
-	end = left_edge_point(Ahead(SegmentPlace.Position.number(1)), 10.0)
+	end = left_edge_point(Ahead(second_position), 10.0)
 	[
 		(rail_ends.start.right, start.right),
 		(rail_ends.start.forward, start.forward),
@@ -701,7 +704,7 @@ expect seen.len() == 1
 # The cat route's one cat is on its second segment.
 expect
 	EncounterPoses.cat_poses(cat_road, Unplanned).map(|cat| cat.place)
-		== [Ahead(SegmentPlace.Position.number(1))]
+		== [Ahead(second_position)]
 expect first_cat(300.0).spot.lift().to_metres() == 0.0
 expect first_cat(300.0).kind.pose == Rest
 expect
@@ -975,8 +978,8 @@ expect {
 	towers.map(|tower| tower.spot.place())
 		== [
 			Ahead(SegmentPlace.Position.first),
-			Ahead(SegmentPlace.Position.number(1)),
-			Ahead(SegmentPlace.Position.number(1)),
+			Ahead(second_position),
+			Ahead(second_position),
 		]
 		and got.len() == want.len()
 		and got.map2(want, |one, wanted| (one - wanted).abs() <= 0.000000001).all(|is_near| is_near)
@@ -1120,6 +1123,57 @@ sighted_ahead = |kind, forward|
 	)
 		?? crash "CrossModuleExpects: a test's thing is past the near plane"
 
+# A point on the rider's own segment, as a camera there sees it, turned as the
+# camera faces: RoadAhead's turn from the road into the rider's view.
+expect {
+	seen_from = |road_point, yaw|
+		RoadAhead.rider_point_at(
+			road,
+			{
+				vantage: {
+					along: Along.metres(5.0),
+					across: Across.metres(0.5),
+					yaw: Angle.Turn.radians(yaw),
+				},
+				place: Ahead(SegmentPlace.Position.first),
+				road_point,
+			},
+		)
+	[
+		(
+			seen_from({ along: Along.metres(0.0), across: Across.metres(-3.0) }, 0.0),
+			{ right: Distance.metres(-3.5), forward: Distance.metres(-5.0) },
+		),
+		(
+			seen_from({ along: Along.metres(12.0), across: Across.metres(0.0) }, 0.35),
+			{
+				right: Distance.metres(-2.869971008611849),
+				forward: Distance.metres(6.404160086203927),
+			},
+		),
+		(
+			seen_from({ along: Along.metres(40.0), across: Across.metres(-5.0) }, -0.6),
+			{
+				right: Distance.metres(15.223140686823006),
+				forward: Distance.metres(31.992280125511435),
+			},
+		),
+		(
+			seen_from({ along: Along.metres(7.5), across: Across.metres(3.25) }, 1.2),
+			{
+				right: Distance.metres(-1.333613890107213),
+				forward: Distance.metres(3.4690018726015563),
+			},
+		),
+	].all(
+		|(got, want)| {
+			right_miss = got.right.minus(want.right).to_metres().abs()
+			forward_miss = got.forward.minus(want.forward).to_metres().abs()
+			right_miss <= 0.000001 and forward_miss <= 0.000001
+		},
+	)
+}
+
 ## A kind of object for Pipeline's expects: a post of some height, pictured as
 ## nothing.
 Post := { height : Distance }.{
@@ -1159,6 +1213,21 @@ expect
 		(0.4, Ok(Seen)),
 		(0.41, Ok(Seen)),
 	].all(|(along, outcome)| post_sighting(along).map_ok(|_| Seen) == outcome)
+
+# A sighting on a straight road keeps the post's place, road point and lift,
+# and has its foot as far right of a camera on the middle as the post is of
+# the middle, and as far ahead as it is along.
+expect
+	match post_sighting(20.0) {
+		Ok({ spot, .. }) => {
+			spot.place() == Ahead(SegmentPlace.Position.first)
+				and spot.road_point() == { along: Along.metres(20.0), across: Across.metres(1.5) }
+				and spot.lift() == Distance.zero
+				and spot.foot().right() == Distance.metres(1.5)
+				and spot.foot().forward() == Distance.metres(20.0)
+		}
+		Err(BehindCamera) => False
+	}
 
 # A post 1 m tall, 64 m ahead, stands exactly 2 pixels tall through a lens of
 # 128 pixels, the smallest height drawn.
@@ -1292,17 +1361,12 @@ expect scene_renderings.len() > 0
 # the one halfway along, and the segment just behind shows one.
 expect scene.towers.len() <= 2 * road.segments_ahead().count.to_u64() + 1
 
-## Whether no rendering in `renderings` is farther than the one before it.
-is_far_to_near : List(Rendered) -> Bool
-is_far_to_near = |renderings|
-	renderings.map2(
-		renderings.drop_first(1),
-		|before, after| DepthSort.is_farther({ this: after.depth(), that: before.depth() }),
-	)
-		.all(|is_out_of_order| !is_out_of_order)
-
-expect is_far_to_near(scene_renderings)
-expect is_far_to_near([])
+# The scene's renderings come far to near: sorting them again changes nothing.
+expect {
+	parts_of = |renderings|
+		renderings.map(|rendering| (rendering.depth(), rendering.picture().to_shapes()))
+	parts_of(Rendered.depth_sorted_renderings(scene_renderings)) == parts_of(scene_renderings)
+}
 
 # GroundPatch's shapes. A ground patch's checks sit here because the corners
 # need Distance and the fill needs Brush, and GroundPatch imports neither.
@@ -2145,7 +2209,7 @@ expect {
 # Polygon's own checks judge the data. The cat's poses are drawn above.
 expect {
 	anchor = {
-		feet: Screen.point(100.0, 200.0),
+		foot: Screen.point(100.0, 200.0),
 		flip: AsDrawn,
 		height_on_screen: Pixels.of(50.0),
 	}
@@ -2723,38 +2787,6 @@ expect
 		|route_position| truck_after(route_position, 0.3).speed == Speed.metres_a_step(0.3),
 	)
 
-## The spot on a straight road of a thing 3 m left of the middle and 2 m up,
-## `forward` ahead of the camera.
-straight_ahead_spot : F64 -> Try(Spot, [BehindCamera])
-straight_ahead_spot = |forward|
-	Spot.straight_ahead({
-		road_point: { along: Along.metres(50.0), across: Across.metres(-3.0) },
-		lift: Distance.metres(2.0),
-		forward: Distance.metres(forward),
-	})
-
-# A spot ahead keeps its road point and lift, sits on the first segment ahead,
-# and has its foot as far left of the camera as the thing is of the middle.
-expect
-	match straight_ahead_spot(20.0) {
-		Ok(spot) => {
-			foot = spot.foot().at_height(Distance.zero)
-			spot.place() == Ahead(SegmentPlace.Position.first)
-				and spot.road_point() == { along: Along.metres(50.0), across: Across.metres(-3.0) }
-				and spot.lift() == Distance.metres(2.0)
-				and foot.right() == Distance.metres(-3.0)
-				and foot.forward() == Distance.metres(20.0)
-		}
-		Err(BehindCamera) => False
-	}
-
-# A spot short of the near plane is behind the camera.
-expect
-	match straight_ahead_spot(0.1) {
-		Ok(_) => False
-		Err(BehindCamera) => True
-	}
-
 ## A segment with no pigs.
 pigless_segment : Segment
 pigless_segment = segment_of([])
@@ -3045,16 +3077,11 @@ expect
 # start, in the middle of the road.
 expect
 	[
-		(100.0, 0),
-		(499.0, 0),
-		(600.0, 1),
-		(900.0, 2),
-	].all(
-		|(lead, want)| {
-			place = lit_truck_of(lead).spot.place()
-			place == Ahead(SegmentPlace.Position.number(want))
-		},
-	)
+		(100.0, SegmentPlace.Position.first),
+		(499.0, SegmentPlace.Position.first),
+		(600.0, second_position),
+		(900.0, second_position.next()),
+	].all(|(lead, want)| lit_truck_of(lead).spot.place() == Ahead(want))
 
 expect
 	[
@@ -3105,15 +3132,15 @@ expect
 expect truck_seen_from({ ..origin, along: Along.metres(100.0) }, 0.25).is_err()
 expect truck_seen_from({ ..origin, along: Along.metres(100.0) }, 1.0).is_ok()
 
-## A still 50 pixels tall, standing as drawn on feet at (100, 200).
+## A still 50 pixels tall, standing as drawn on a foot at (100, 200).
 upright_still_anchor : StillShapes.Anchor
 upright_still_anchor = {
-	feet: Screen.point(100.0, 200.0),
+	foot: Screen.point(100.0, 200.0),
 	flip: AsDrawn,
 	height_on_screen: Pixels.of(50.0),
 }
 
-# A still of one flat polygon of colour 7, its three points all at the feet, is
+# A still of one flat polygon of colour 7, its three points all at the foot, is
 # drawn as one opaque polygon there.
 expect
 	StillShapes.still_shapes(

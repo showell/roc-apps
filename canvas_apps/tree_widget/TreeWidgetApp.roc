@@ -4,15 +4,21 @@
 ## crown `TreeShapes.crown_of` gives there.
 import game.Across
 import game.Along
+import game.Angle
 import game.Clock
 import game.Conifer
 import game.Distance
+import game.Geom
 import game.Lens
+import game.Pipeline
 import game.Pixels
+import game.RoadAhead
+import game.Route
 import game.Screen
+import game.SegmentPlace
 import game.Sky
-import game.Spot
 import game.TreeShapes
+import game.World
 import lib.CanvasApp
 import lib.Shapes
 import widget.ReadoutText
@@ -61,24 +67,38 @@ right_of = |{ forward, canvas_x }| {
 	forward.times(screen_x.minus(Screen.center_x).portion(Lens.resting_focal))
 }
 
-## The spot of a stand's tree, on the ground, if it is in front of the camera.
-stand_spot : Stand -> Try(Spot, [BehindCamera])
-stand_spot = |stand|
-	Spot.straight_ahead({
+## The road ahead of a rider on the route's first segment. The trees stand on
+## the rider's own segment, so no bend comes between them and the camera, and
+## the road runs straight ahead.
+straight_road : RoadAhead.RoadView
+straight_road = RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex.first)
+
+## The camera, at the start of the road, looking down it.
+eye : Geom.Vantage
+eye = {
+	along: Along.start,
+	across: Across.middle,
+	yaw: Angle.straight_ahead,
+}
+
+## A stand's tree as the camera sees it, on the ground, if it is in front of
+## the camera.
+stand_sighting : Stand -> Try(Pipeline.Sighted(Conifer), [BehindCamera])
+stand_sighting = |stand| {
+	placed_tree : Geom.Placed(Conifer)
+	placed_tree = {
 		road_point: {
-			along: Along.metres(stand.forward.to_metres()),
+			along: Along.at(stand.forward),
 			across: Across.right_of_middle(right_of(stand)),
 		},
 		lift: Distance.zero,
-		forward: stand.forward,
-	})
+		kind: conifer,
+	}
+	Pipeline.sighting_of(placed_tree, { road: straight_road, vantage: eye, place: Ahead(SegmentPlace.Position.first) })
+}
 
 tree_shapes : Stand -> List(Shapes.Shape)
-tree_shapes = |stand|
-	WidgetPage.resting_lens_shapes(
-		stand_spot(stand).map_ok(|spot| { spot, kind: conifer }),
-		{ nearer_tree_count: 0 },
-	)
+tree_shapes = |stand| WidgetPage.resting_lens_shapes(stand_sighting(stand), { nearer_tree_count: 0 })
 
 ## What `TreeShapes.crown_of` says at `forward`, as Roc would write it.
 crown_text : Distance -> Str
@@ -127,10 +147,10 @@ still_shapes = {
 ## 30 pixels tall on the canvas.
 is_plain_to_see : Stand -> Bool
 is_plain_to_see = |stand|
-	match stand_spot(stand) {
-		Ok(spot) => {
+	match stand_sighting(stand) {
+		Ok(sighting) => {
 			outline = TreeShapes.tree_outline(
-				spot,
+				sighting.spot,
 				{ height: conifer.scenery_height(), cam_focal: Lens.resting_focal },
 			)
 			foot_y = outline.foot.y.to_f64() * canvas_per_screen

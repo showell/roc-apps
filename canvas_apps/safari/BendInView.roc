@@ -109,15 +109,14 @@ expect right_bend.outer_edge() == Geom.left_edge
 expect left_bend.outer_edge() == Geom.right_edge
 
 # The segment after a bend, from each place the segment before can lie.
-expect sample_bend(
-	Ahead(SegmentPlace.Position.first),
-	Angle.straight_ahead,
-).position_after().to_i64() == 1
-expect sample_bend(
-	Ahead(SegmentPlace.Position.number(3)),
-	Angle.straight_ahead,
-).position_after().to_i64() == 4
-expect sample_bend(JustBehind, Angle.straight_ahead).position_after().to_i64() == 0
+expect {
+	first = SegmentPlace.Position.first
+	[
+		(Ahead(first), first.next()),
+		(Ahead(first.next().next()), first.next().next().next()),
+		(JustBehind, first),
+	].all(|(before, after)| sample_bend(before, Angle.straight_ahead).position_after() == after)
+}
 
 ## The outer corner of a bend of `turn` from a segment 300 m long, as (along,
 ## across) pairs: where the edge before ends, the apex, and where the edge

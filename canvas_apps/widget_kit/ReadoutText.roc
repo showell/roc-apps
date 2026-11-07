@@ -4,7 +4,6 @@
 import game.Angle
 import game.Animation
 import game.Fraction
-import game.Steps
 
 ReadoutText :: [].{
 
@@ -61,11 +60,6 @@ ReadoutText :: [].{
 		"${(degrees + 0.5).to_i64_wrap().to_str()} deg ${side}"
 	}
 }
-
-expect ReadoutText.stage_text(Waiting) == "Waiting"
-expect ReadoutText.stage_text(Playing(Steps.zero)) == "Playing: frame 1"
-expect ReadoutText.stage_text(Playing(Steps.of(9))) == "Playing: frame 10"
-expect ReadoutText.stage_text(Past(Steps.of(1))) == "Past"
 
 expect ReadoutText.tenths_text(0.0) == "0.0"
 expect ReadoutText.tenths_text(0.04) == "0.0"

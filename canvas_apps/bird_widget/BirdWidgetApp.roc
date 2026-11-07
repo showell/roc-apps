@@ -7,7 +7,7 @@
 ## Tree and PosedBird. Below it, the buttons and four lines of text that say what
 ## BirdFlight makes of the gap.
 import game.Across
-import game.Along
+import game.Angle
 import game.Animation
 import game.EncounterPlan
 import game.BirdFlight
@@ -17,10 +17,13 @@ import game.Distance
 import game.Lens
 import game.PosedBird
 import game.Geom
+import game.Pipeline
+import game.RoadAhead
+import game.Route
+import game.SegmentPlace
 import game.Speed
 import game.Trees
 import game.Sky
-import game.Spot
 import game.World
 import lib.CanvasApp
 import lib.Shapes
@@ -70,13 +73,6 @@ stage_at = |gap| BirdFlight.flight_stage(flight_timing(gap))
 eye_to_first_tree : Distance
 eye_to_first_tree = Distance.metres(18.0)
 
-## How far ahead of the picture's eye a place on the road is.
-forward_of : Along -> Distance
-forward_of = |along| {
-	past_first_tree = along.distance_from(World.first_bird_flight.from.road_point.along)
-	eye_to_first_tree.plus(past_first_tree)
-}
-
 ## How far ahead the road is drawn.
 road_end_forward : Distance
 road_end_forward = Distance.metres(2000.0)
@@ -117,27 +113,42 @@ road = {
 	[Camera.clipped_polygon({ color: RgbColor.of(0x8a8a8a), corners }, Lens.resting_focal)].keep_oks(|shape| shape)
 }
 
-## The spot of a thing standing at `along` and `across`, `lift` off the ground,
-## if it is in front of the picture's eye.
-spot_of : { along : Along, across : Across, lift : Distance, .. } -> Try(Spot, [BehindCamera])
-spot_of = |{ along, across, lift, .. }|
-	Spot.straight_ahead({ road_point: { along, across }, lift, forward: forward_of(along) })
+## The road ahead of a rider on the route's first segment. The trees and the
+## bird are placed on the rider's own segment, so no bend comes between them
+## and the eye, and the road runs straight up the picture.
+straight_road : RoadAhead.RoadView
+straight_road = RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex.first)
+
+## The picture's eye, on the middle of the road `eye_to_first_tree` short of
+## the first tree, looking down the road.
+eye : Geom.Vantage
+eye = {
+	along: World.first_bird_flight.from.road_point.along.minus(eye_to_first_tree),
+	across: Across.middle,
+	yaw: Angle.straight_ahead,
+}
+
+## `placed` as the picture's eye sees it, if it is in front of the eye.
+sighting_from_eye : Geom.Placed(kind) -> Try(Pipeline.Sighted(kind), [BehindCamera])
+sighting_from_eye = |placed|
+	Pipeline.sighting_of(placed, { road: straight_road, vantage: eye, place: Ahead(SegmentPlace.Position.first) })
 
 tree_shapes : Trees.RoadsideTree -> List(Shapes.Shape)
-tree_shapes = |tree|
-	WidgetPage.resting_lens_shapes(
-		spot_of({ along: tree.road_point.along, across: tree.road_point.across, lift: tree.lift })
-			.map_ok(|spot| { spot, kind: tree.kind }),
-		{ nearer_tree_count: 0 },
-	)
+tree_shapes = |tree| WidgetPage.resting_lens_shapes(sighting_from_eye(tree), { nearer_tree_count: 0 })
 
 ## The bird as `gap` finds it, drawn by Safari's own stills.
 bird_shapes : Distance -> List(Shapes.Shape)
 bird_shapes = |gap| {
 	instant = BirdFlight.instant_at(World.first_bird_flight, stage_at(gap))
+	location = instant.location
 	bird : PosedBird
 	bird = { pose: instant.pose }
-	WidgetPage.resting_lens_shapes(spot_of(instant.location).map_ok(|spot| { spot, kind: bird }), {})
+	placed_bird = {
+		road_point: { along: location.along, across: location.across },
+		lift: location.lift,
+		kind: bird,
+	}
+	WidgetPage.resting_lens_shapes(sighting_from_eye(placed_bird), {})
 }
 
 ## What BirdFlight says at `gap`, a line each.

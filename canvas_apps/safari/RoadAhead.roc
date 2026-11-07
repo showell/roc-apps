@@ -3,6 +3,7 @@
 ## rider's own first, and a point on any of them, or on the segment just behind,
 ## is carried back round the bends between to the rider's own segment and into
 ## the view of a camera standing there.
+import Distance
 import Geom
 import Route
 import Segment
@@ -91,10 +92,7 @@ RoadAhead :: [].{
 			Ahead(position) =>
 				rider_point_ahead(road, { vantage, position, road_point })
 			JustBehind =>
-				Geom.to_rider_point(
-					Geom.point_in_segment_after(road_point, bend_behind(road)),
-					vantage,
-				)
+				to_rider_point(Geom.point_in_segment_after(road_point, bend_behind(road)), vantage)
 		}
 }
 
@@ -130,7 +128,20 @@ rider_point_ahead = |road, { vantage, position, road_point }| {
 			road.route().segment_at(index).bend_out_of(),
 		),
 	)
-	Geom.to_rider_point(on_rider_segment, vantage)
+	to_rider_point(on_rider_segment, vantage)
+}
+
+## A point on the rider's segment, as the camera at `vantage` sees it.
+to_rider_point : Geom.RoadPoint, Geom.Vantage -> Geom.RiderPoint
+to_rider_point = |{ along, across }, vantage| {
+	ahead = along.distance_from(vantage.along).to_metres()
+	aside = across.distance_from(vantage.across).to_metres()
+	cos_yaw = vantage.yaw.to_radians().cos()
+	sin_yaw = vantage.yaw.to_radians().sin()
+	{
+		forward: Distance.metres(ahead * cos_yaw + aside * sin_yaw),
+		right: Distance.metres((0.0 - ahead) * sin_yaw + aside * cos_yaw),
+	}
 }
 
 ## The route's index of the segment at `position` on the road ahead.

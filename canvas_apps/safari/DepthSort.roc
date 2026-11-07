@@ -18,18 +18,24 @@ DepthSort :: [].{
 				depth_of,
 			})
 		}
-
-	## Whether depth `this` is farther than `that` by more than a tie's
-	## slack. The slack is relative to `that`, but never less than it is at
-	## a depth of 1.
-	is_farther : { this : Distance, that : Distance } -> Bool
-	is_farther = |{ this, that }| {
-		slack = tie_slack * that.to_metres().abs().max(1.0)
-		this.minus(that).to_metres() > slack
-	}
 }
 
-## About 6e-8, as its exact bits.
+## Whether depth `this` is farther than `that` by more than a tie's
+## slack. The slack is relative to `that`, but never less than it is at
+## a depth of 1.
+is_farther : { this : Distance, that : Distance } -> Bool
+is_farther = |{ this, that }| {
+	slack = tie_slack * that.to_metres().abs().max(1.0)
+	this.minus(that).to_metres() > slack
+}
+
+## How near two depths are, as a share of the depth, to count as a tie: about
+## 5.9e-8, one part in 17 million, a little under single precision's rounding
+## step. Two things that stand at one place but whose depths were worked out
+## by different sums can differ in their last bits; within this slack they keep
+## the order they came in, so which is painted over the other is decided by
+## that order, not by rounding. Held frames depend on every bit of it, so it is
+## written as its exact bits.
 tie_slack : F64
 tie_slack = F64.from_bits(4499125899939309867)
 
@@ -65,7 +71,7 @@ merge_onto : List(item),
 merge_onto = |merged, { first_items, second_items, depth_of, at_first, at_second }|
 	match (first_items.get(at_first), second_items.get(at_second)) {
 		(Ok(from_first), Ok(from_second)) =>
-			if DepthSort.is_farther({ this: depth_of(from_second), that: depth_of(from_first) }) {
+			if is_farther({ this: depth_of(from_second), that: depth_of(from_first) }) {
 				merge_onto(
 					merged.append(from_second),
 					{

@@ -9,6 +9,7 @@ app [main!] {
 	bird: "../../bird_widget/package.roc",
 	cat: "../../cat_widget/package.roc",
 	frame: "../../frame_widget/package.roc",
+	game: "../game.roc",
 	gaze: "../../gaze_widget/package.roc",
 	lib: "../../lib/main.roc",
 	rehearsal: "../../rehearsal_widget/package.roc",
@@ -34,12 +35,14 @@ import sky.SkyWidgetApp
 import step.StepWidgetApp
 import stills.StillsWidgetApp
 import tree.TreeWidgetApp
+import game.Steps
 import lib.CanvasApp
 import lib.Font
 import lib.Input
 import lib.Point
 import lib.Shapes
 import widget.Click
+import widget.ReadoutText
 import widget.WidgetPage
 
 main! = |_args| Ok({})
@@ -199,3 +202,7 @@ expect {
 	frames = stills_models.map(stills_frame_shapes)
 	is_each_pose_once and frames.all(is_type_left_of_still)
 }
+
+# A readout counts frames from one, though steps count from zero.
+expect ReadoutText.stage_text(Playing(Steps.zero)) == "Playing: frame 1"
+expect ReadoutText.stage_text(Playing(Steps.of(9))) == "Playing: frame 10"
