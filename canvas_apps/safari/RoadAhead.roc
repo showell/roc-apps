@@ -8,7 +8,6 @@ import Geom
 import Route
 import Segment
 import SegmentPlace
-import World
 
 RoadAhead :: [].{
 
@@ -90,16 +89,6 @@ RoadAhead :: [].{
 		}
 	}
 
-	## Whether the road in view goes on round the bend at the end of `in_view`:
-	## it does past every segment of the road ahead but the last, and past the
-	## segment just behind, which bends into the rider's.
-	has_bend_in_view : RoadAhead.RoadView, RoadAhead.SegmentInView -> Bool
-	has_bend_in_view = |road, in_view|
-		match in_view.place {
-			Ahead(position) => !position.is_last_in(road.segments_ahead())
-			JustBehind(_) => True
-		}
-
 	## How far ahead of a camera at `vantage`, along the road, a segment in view
 	## starts. The lengths of the road ahead's segments are added nearest first,
 	## and the segment just behind starts its own length behind the rider's.
@@ -175,10 +164,10 @@ RoadAhead :: [].{
 index_at : RoadAhead.RoadView, SegmentPlace.Position -> Route.SegmentIndex
 index_at = |road, position| {
 	segments_ahead = road.segments_ahead()
-	if position.is_past_end_of(segments_ahead) {
-		crash "RoadAhead.index_at: past the road's end"
-	} else {
+	if position.is_within_first(segments_ahead.count) {
 		Route.SegmentIndex.number(segments_ahead.first_index.to_u32() + position.to_u32())
+	} else {
+		crash "RoadAhead.index_at: past the road's end"
 	}
 }
 
@@ -189,23 +178,3 @@ segments_before = |road, position| {
 	first = road.segments_ahead().first_index.to_u32()
 	List.from_iter(U32.until(0, position.to_u32())).map(|n| Route.SegmentIndex.number(first + n))
 }
-
-expect RoadAhead.most_segments_ahead.to_i64() == 7
-
-## How many segments the road ahead holds for a rider on the route's segment
-## `number`.
-count_ahead_of : U32 -> U32
-count_ahead_of = |number| RoadAhead.indices_ahead(
-	World.route,
-	Route.SegmentIndex.number(number),
-).count
-
-expect
-	[
-		(0, 7),
-		(12, 7),
-		(13, 6),
-		(15, 4),
-		(18, 1),
-	].all(|(number, want)| count_ahead_of(number) == want)
-expect World.route.segment_count() == 19

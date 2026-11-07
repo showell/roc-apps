@@ -136,7 +136,7 @@ rail_points : RoadAhead.RoadView,
 	bend_view : BendView,
 } -> List(Geom.RiderPoint)
 rail_points = |road, { vantage, bend_view }| {
-	outer_edge = BendView.outer_edge(bend_view.turn())
+	outer_edge = bend_view.outer_edge()
 	place_after = Ahead(BendView.position_after(bend_view))
 	length_before = bend_view.bend.segment_length
 	end_before = RoadAhead.rider_point_at(

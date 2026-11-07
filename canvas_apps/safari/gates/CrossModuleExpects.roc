@@ -10,6 +10,7 @@ import game.Pixels
 import game.Across
 import game.Along
 import game.Angle
+import game.BendView
 import game.Billboard
 import game.BirdFlight
 import game.Cat
@@ -106,6 +107,135 @@ expect {
 		and length_at(SegmentPlace.Position.first) == length_of(2)
 		and length_at(SegmentPlace.Position.first.next()) == length_of(3)
 }
+
+# The road ahead holds as many segments as the rider can see, or the rest of
+# the route.
+expect World.route.segment_count() == 19
+expect
+	[
+		(0, 7),
+		(12, 7),
+		(13, 6),
+		(15, 4),
+		(18, 1),
+	].all(|(number, want)| road_from(number).segments_ahead().count == want)
+
+expect [
+	(0, 0),
+	(3, 3),
+].all(|(first, want)| RoadAhead.rider_segment(road_from(first)).to_i64() == want)
+
+## The route's number of the segment in view just behind a rider on the
+## world's segment `first`, or -1 at the route's start.
+number_behind : U32 -> I64
+number_behind = |first| {
+	behind = RoadAhead.segments_in_view(road_from(first)).find_last(
+		|in_view|
+			match in_view.place {
+				JustBehind(_) => True
+				Ahead(_) => False
+			},
+	)
+	match behind {
+		Ok(in_view) => in_view.index.to_i64()
+		Err(NotFound) => -1
+	}
+}
+
+expect
+	[
+		(0, -1),
+		(1, 0),
+		(3, 2),
+	].all(|(input, want)| number_behind(input) == want)
+
+## A camera 100 m along the rider's segment, 1 m right of the middle, turned
+## 0.2 radians to the right.
+turned_vantage : Geom.Vantage
+turned_vantage = {
+	along: Along.metres(100.0),
+	across: Across.metres(1.0),
+	yaw: Angle.Turn.radians(0.2),
+}
+
+## The point 50 m along and 1 m right on the segment at `place` on the road
+## ahead of a rider on the route's first segment, as `turned_vantage` sees it.
+turned_point_at : SegmentPlace -> Geom.RiderPoint
+turned_point_at = |place|
+	RoadAhead.rider_point_at(
+		road,
+		{
+			vantage: turned_vantage,
+			place,
+			road_point: { along: Along.metres(50.0), across: Across.metres(1.0) },
+		},
+	)
+
+expect {
+	at_d0 = turned_point_at(Ahead(SegmentPlace.Position.first))
+	second_segment_point = turned_point_at(Ahead(SegmentPlace.Position.number(1)))
+	[
+		(at_d0.right.to_metres(), 9.933466539753061),
+		(at_d0.forward.to_metres(), -49.00332889206208),
+		(second_segment_point.right.to_metres(), -48.11621135085446),
+		(second_segment_point.forward.to_metres(), 431.95658232777186),
+	].all(|(got, want)| (got - want).abs() <= 0.00000005 * want.abs().max(1.0))
+}
+
+m_prev_left : SegmentPlace
+m_prev_left = JustBehind({
+	segment_length: Distance.metres(300.0),
+	turn: Angle.Turn.radians(-1.2217304763960306),
+})
+
+m_prev_right : SegmentPlace
+m_prev_right = JustBehind({
+	segment_length: Distance.metres(300.0),
+	turn: Angle.Turn.radians(0.8726646259971648),
+})
+
+expect
+	[
+		(turned_point_at(m_prev_left).right.to_metres(), -194.76069932822074),
+		(turned_point_at(m_prev_left).forward.to_metres(), -231.63435691739767),
+		(turned_point_at(m_prev_right).right.to_metres(), 239.9883995667414),
+		(turned_point_at(m_prev_right).forward.to_metres(), -218.13274420105967),
+	].all(|(got, want)| (got - want).abs() <= 0.0000001 * want.abs().max(1.0))
+
+## The apex of a bend from a segment 300 m long, just behind the rider's.
+apex_after_turn : Angle.Turn -> Geom.RiderPoint
+apex_after_turn = |turn|
+	BendView.apex(
+		road,
+		{
+			vantage: turned_vantage,
+			bend_view: {
+				before: JustBehind({ segment_length: Distance.metres(300.0), turn }),
+				bend: { segment_length: Distance.metres(300.0), turn },
+			},
+		},
+	)
+
+# Each is within 1e-7 of its want, scaled up by a want past 1.
+expect
+	[
+		(
+			apex_after_turn(Angle.Turn.radians(0.8726646259971648)).right.to_metres(),
+			17.297297467543466,
+		),
+		(
+			apex_after_turn(Angle.Turn.radians(0.8726646259971648)).forward.to_metres(),
+			-100.43071597950589,
+		),
+		(
+			apex_after_turn(Angle.Turn.radians(-1.2217304763960306)).right.to_metres(),
+			21.403438709482494,
+		),
+		(
+			apex_after_turn(Angle.Turn.radians(-1.2217304763960306)).forward.to_metres(),
+			-100.55298847633645,
+		),
+	].all(|(got, want)| (got - want).abs() <= 0.0000001 * want.abs().max(1.0))
 
 polygon_of : Shapes.Shape -> { coordinates : List(F64), fill : Brush.Fill }
 polygon_of = |shape|

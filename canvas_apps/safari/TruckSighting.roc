@@ -61,15 +61,15 @@ TruckPlace : { along : Along, position : SegmentPlace.Position }
 ## segments it is past.
 truck_from : RoadAhead.RoadView, TruckPlace -> Try(TruckPlace, [NoTruck])
 truck_from = |road, { along, position }|
-	if position.is_past_end_of(road.segments_ahead()) {
-		Err(NoTruck)
-	} else {
+	if position.is_within_first(road.segments_ahead().count) {
 		segment = RoadAhead.segment_at(road, position)
 		if along > Along.at(segment.length) {
 			truck_from(road, { along: along.minus(segment.length), position: position.next() })
 		} else {
 			Ok({ along, position })
 		}
+	} else {
+		Err(NoTruck)
 	}
 
 ## The rider at the start of the route, looking straight down the road.

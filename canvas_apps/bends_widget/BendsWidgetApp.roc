@@ -99,10 +99,7 @@ camera = {
 ## The one bend on that road.
 bend_of : RoadAhead.RoadView -> BendView
 bend_of = |road|
-	BendView.of_segment(
-		RoadAhead.segment_at(road, SegmentPlace.Position.first),
-		Ahead(SegmentPlace.Position.first),
-	)
+	BendView.of_in_view(RoadAhead.segment_in_view_at(road, SegmentPlace.Position.first))
 
 ## The apex of a bend of `turn`.
 apex_of : Angle.Turn -> Geom.RiderPoint
@@ -222,9 +219,9 @@ turn_text = |turn| {
 }
 
 ## Which edge a bend's outer edge is, in words.
-edge_text : Angle.Turn -> Str
-edge_text = |turn|
-	if BendView.outer_edge(turn) == Geom.left_edge {
+edge_text : BendView -> Str
+edge_text = |bend_view|
+	if bend_view.outer_edge() == Geom.left_edge {
 		"left"
 	} else {
 		"right"
@@ -240,7 +237,7 @@ caption_lines = |turn| {
 	road = road_with(turn)
 	[
 		turn_text(turn),
-		"rail on the ${edge_text(turn)} edge",
+		"rail on the ${edge_text(bend_of(road))} edge",
 		"apex ${ReadoutText.tenths_text(apex_past_end(apex_of(turn)))} m past the end",
 		"${GroundSighting.patches_in_view(road, camera).len().to_str()} patches, ${RailSighting.rails_in_view(road, camera).len().to_str()} rail pieces",
 	]

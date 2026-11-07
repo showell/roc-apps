@@ -158,30 +158,30 @@ bend_paving = |road, { vantage, bend_view }| {
 	end = Along.at(length_before)
 	lead_end = chunk_end(length_after(road, bend_view), 1)
 	apex = BendView.apex(road, { vantage, bend_view })
-	left = Geom.left_edge
-	right = Geom.right_edge
+	outer = bend_view.outer_edge()
+	inner = bend_view.inner_edge()
 	corners =
 		if bend_view.turn().is_right() {
 			[
-				before(lead_start, left),
-				before(end, left),
+				before(lead_start, outer),
+				before(end, outer),
 				apex,
-				after(Along.start, left),
-				after(lead_end, left),
-				after(lead_end, right),
-				before(end, right),
-				before(lead_start, right),
+				after(Along.start, outer),
+				after(lead_end, outer),
+				after(lead_end, inner),
+				before(end, inner),
+				before(lead_start, inner),
 			]
 		} else {
 			[
-				before(lead_start, left),
-				before(end, left),
-				after(lead_end, left),
-				after(lead_end, right),
-				after(Along.start, right),
+				before(lead_start, inner),
+				before(end, inner),
+				after(lead_end, inner),
+				after(lead_end, outer),
+				after(Along.start, outer),
 				apex,
-				before(end, right),
-				before(lead_start, right),
+				before(end, outer),
+				before(lead_start, outer),
 			]
 		}
 	road_patch(corners)

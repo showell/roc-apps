@@ -36,10 +36,6 @@ SegmentPlace := [Ahead(SegmentPlace.Position), JustBehind(Geom.Bend)].{
 		is_last_in : SegmentPlace.Position, { count : U32, .. } -> Bool
 		is_last_in = |SegmentPlace.Position.(n), { count, .. }| n + 1 >= count
 
-		## Whether a road ahead of `count` segments stops before this position.
-		is_past_end_of : SegmentPlace.Position, { count : U32, .. } -> Bool
-		is_past_end_of = |SegmentPlace.Position.(n), { count, .. }| n >= count
-
 		## Whether this position is among the first `count` of the road ahead.
 		is_within_first : SegmentPlace.Position, U32 -> Bool
 		is_within_first = |SegmentPlace.Position.(n), count| n < count
