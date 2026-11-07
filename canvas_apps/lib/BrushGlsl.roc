@@ -6,25 +6,77 @@
 # with it.
 #
 # `Brush.shade` is the same arithmetic on the CPU, case for case, and the names
-# below are its cases, so the two can be read side by side. A player sets
-# `mode` to `mode_of` its fill, fills the colour and geometry uniforms the way
-# `Brush` lays them out, and draws the shape in white.
+# below are its cases, so the two can be read side by side. A player sends
+# `uniforms` of a shape's fill, each number converted to its own vector type,
+# and draws the shape in white. Which numbers go in which uniform is decided
+# here, beside the shader that reads them, so both ends of the contract are in
+# this one file.
 import Brush
 
 BrushGlsl :: [].{
-	# Which shading, as `mode`. The player sends these, and the shader's switch
-	# below names the same numbers, so both ends of the contract are in this
-	# one file.
-	mode_of : Brush.Fill -> F64
-	mode_of = |fill|
+	# One vec4 uniform's four numbers.
+	Quad : { x : F64, y : F64, z : F64, w : F64 }
+
+	# The values the fragment shader reads, by its uniforms' names: which
+	# shading, and the colours and geometry that shading wants. Every field is
+	# sent with every shape, so a slot the shading doesn't read is zero. A
+	# colour's red, green and blue go from 0..255 to the 0..1 a shader mixes.
+	Uniforms : {
+		mode : F64,
+		color_a : BrushGlsl.Quad,
+		color_b : BrushGlsl.Quad,
+		color_c : BrushGlsl.Quad,
+		geom_a : BrushGlsl.Quad,
+		geom_b : BrushGlsl.Quad,
+		geom_c : BrushGlsl.Quad,
+	}
+
+	# The fill as the uniforms the fragment shader reads.
+	uniforms : Brush.Fill -> BrushGlsl.Uniforms
+	uniforms = |fill| {
+		blank = { ..blank_uniforms, mode: mode_of(fill) }
 		match fill {
-			Flat(_) => 0.0
-			Span(_) => 1.0
-			Radial(_) => 2.0
-			Linear(_) => 3.0
-			Ellipse(_) => 4.0
-			Glow(_) => 5.0
+			Flat(c) => { ..blank, color_a: color_quad(c) }
+			Span(p) => {
+				..blank,
+				color_a: color_quad(p.edge_color),
+				color_b: color_quad(p.middle_color),
+				geom_a: { x: p.left_x, y: p.right_x, z: 0.0, w: 0.0 },
+			}
+			Radial(p) => {
+				..blank,
+				color_a: color_quad(p.inner_color),
+				color_b: color_quad(p.outer_color),
+				geom_a: { x: p.center.x, y: p.center.y, z: p.inner_radius, w: p.outer_radius },
+			}
+			Linear(p) => {
+				..blank,
+				color_a: color_quad(p.stops.start_color),
+				color_b: color_quad(p.stops.end_color),
+				geom_a: { x: p.stops.start_offset, y: p.stops.end_offset, z: 0.0, w: 0.0 },
+				geom_b: { x: p.start_point.x, y: p.start_point.y, z: p.end_point.x - p.start_point.x, w: p.end_point.y - p.start_point.y },
+			}
+			Ellipse(p) => {
+				inverse = Brush.ellipse_inverse({ axis_u: p.axis_u, axis_v: p.axis_v })
+				{
+					..blank,
+					color_a: color_quad(p.stops.start_color),
+					color_b: color_quad(p.stops.end_color),
+					geom_a: { x: p.stops.start_offset, y: p.stops.end_offset, z: 0.0, w: 0.0 },
+					geom_b: { x: p.center.x, y: p.center.y, z: 0.0, w: 0.0 },
+					geom_c: { x: inverse.top_row.x, y: inverse.top_row.y, z: inverse.bottom_row.x, w: inverse.bottom_row.y },
+				}
+			}
+			Glow(p) => {
+				..blank,
+				color_a: color_quad(p.inner_color),
+				color_b: color_quad(p.middle_color),
+				color_c: color_quad(p.outer_color),
+				geom_a: { x: p.center.x, y: p.center.y, z: p.inner_radius, w: p.outer_radius },
+				geom_b: { x: p.middle_offset, y: 0.0, z: 0.0, w: 0.0 },
+			}
 		}
+	}
 
 	# The scene position, through to the fragment shader. The camera is in the
 	# matrix, not in the vertices, so what arrives is the frame's own
@@ -115,4 +167,70 @@ BrushGlsl :: [].{
 		],
 		"\n",
 	)
+}
+
+# Which shading, as `mode`. The shader's switch names the same numbers.
+mode_of : Brush.Fill -> F64
+mode_of = |fill|
+	match fill {
+		Flat(_) => 0.0
+		Span(_) => 1.0
+		Radial(_) => 2.0
+		Linear(_) => 3.0
+		Ellipse(_) => 4.0
+		Glow(_) => 5.0
+	}
+
+zero_quad : BrushGlsl.Quad
+zero_quad = { x: 0.0, y: 0.0, z: 0.0, w: 0.0 }
+
+blank_uniforms : BrushGlsl.Uniforms
+blank_uniforms = {
+	mode: 0.0,
+	color_a: zero_quad,
+	color_b: zero_quad,
+	color_c: zero_quad,
+	geom_a: zero_quad,
+	geom_b: zero_quad,
+	geom_c: zero_quad,
+}
+
+color_quad : Brush.Rgba -> BrushGlsl.Quad
+color_quad = |c| { x: c.r / 255.0, y: c.g / 255.0, z: c.b / 255.0, w: c.a }
+
+# A glow fills all three colours and its middle offset, with each colour's red,
+# green and blue as a share of 255 and its alpha as it is.
+expect {
+	look = {
+		inner_color: { r: 255.0, g: 0.0, b: 0.0, a: 1.0 },
+		middle_color: { r: 0.0, g: 51.0, b: 0.0, a: 0.5 },
+		outer_color: { r: 0.0, g: 0.0, b: 255.0, a: 0.0 },
+		middle_offset: 0.25,
+		center: { x: 3.0, y: 4.0 },
+		inner_radius: 1.0,
+		outer_radius: 9.0,
+	}
+	BrushGlsl.uniforms(Glow(look))
+		== {
+			mode: 5.0,
+			color_a: { x: 1.0, y: 0.0, z: 0.0, w: 1.0 },
+			color_b: { x: 0.0, y: 0.2, z: 0.0, w: 0.5 },
+			color_c: { x: 0.0, y: 0.0, z: 1.0, w: 0.0 },
+			geom_a: { x: 3.0, y: 4.0, z: 1.0, w: 9.0 },
+			geom_b: { x: 0.25, y: 0.0, z: 0.0, w: 0.0 },
+			geom_c: zero_quad,
+		}
+}
+
+# A line sends its start and the step to its end, and an ellipse its center and
+# the inverse of its axes, in the order the shader reads them.
+expect {
+	stops = { start_color: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 }, end_color: { r: 255.0, g: 255.0, b: 255.0, a: 1.0 }, start_offset: 0.1, end_offset: 0.9 }
+	line = BrushGlsl.uniforms(Linear({ stops, start_point: { x: 1.0, y: 2.0 }, end_point: { x: 4.0, y: 6.0 } }))
+	ellipse = BrushGlsl.uniforms(Ellipse({ stops, center: { x: 7.0, y: 8.0 }, axis_u: { x: 3.0, y: 4.0 }, axis_v: { x: 5.0, y: 6.0 } }))
+	line.mode == 3.0
+		and line.geom_b == { x: 1.0, y: 2.0, z: 3.0, w: 4.0 }
+		and ellipse.mode == 4.0
+		and ellipse.geom_b == { x: 7.0, y: 8.0, z: 0.0, w: 0.0 }
+		and ellipse.geom_c == { x: -3.0, y: 2.5, z: 2.0, w: -1.5 }
 }
