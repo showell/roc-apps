@@ -3,7 +3,6 @@
 ## front of the camera and tall enough on screen to draw.
 import Pixels
 import BirdFlight
-import DepthSort
 import Distance
 import Chain
 import Geom
@@ -33,14 +32,6 @@ BirdSighting := {
 		positions = Chain.Position.positions_in(view.road.chain_indices)
 		positions.keep_oks(|position| segment_bird(view, position))
 	}
-
-	## The birds as the depth sort sees them: each one's distance ahead, and
-	## its position in `birds`. How high a bird is doesn't change how far away
-	## it is.
-	depth_keys : List(BirdSighting) -> List(DepthSort.DepthKey)
-	depth_keys = |birds| birds.map_with_index(
-		|bird, i| { forward: bird.forward, subject: Bird(i.to_u32_wrap()) },
-	)
 }
 
 ## The bird of the segment at `position` in the chain, if that segment has one

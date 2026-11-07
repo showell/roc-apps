@@ -1,8 +1,8 @@
 ## GroundSighting finds the ground under everything else in a frame, as patches
 ## for `Ground` to paint: the road, in chunks along each segment in view; the
 ## paved corner where one segment bends into the next; and the pond beside a
-## segment that ends at one. It has no `depth_keys`: the ground is painted first,
-## under everything, so nothing sorts it.
+## segment that ends at one. It is never depth sorted, because the ground is
+## painted first, under everything.
 import Along
 import Distance
 import Chain

@@ -3,7 +3,6 @@
 ## and which of its lights the drawing shows.
 import Across
 import Along
-import DepthSort
 import Distance
 import Chain
 import Geom
@@ -44,15 +43,6 @@ TruckSighting := [
 			)
 		} else {
 			NoTruck
-		}
-
-	## The truck as the depth sort sees it: its distance ahead, if it is in
-	## view.
-	depth_keys : TruckSighting -> List(DepthSort.DepthKey)
-	depth_keys = |truck|
-		match truck {
-			Ahead(truck_ahead) => [{ forward: truck_ahead.forward, subject: Truck }]
-			NoTruck => []
 		}
 }
 

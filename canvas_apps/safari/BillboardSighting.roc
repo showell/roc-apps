@@ -5,7 +5,6 @@
 ## keeps its animals.
 import Along
 import Billboard
-import DepthSort
 import Chain
 import Geom
 import Lens
@@ -124,14 +123,6 @@ BillboardSighting :: [].{
 		road,
 		{ place: Chain.place_behind(segment), segment },
 	)
-
-	## The depth-sort keys of the critters to draw, each naming its critter
-	## by its place in `critters`.
-	depth_keys : List(Geom.Sighted(Billboard)) -> List(DepthSort.DepthKey)
-	depth_keys = |critters|
-		critters.map_with_index(
-			|critter, i| { forward: critter.forward, subject: Cutout(i.to_u32_wrap()) },
-		)
 
 	## A critter, placed through `place` on the road's map, as the rider sees it.
 	## A critter's size is tested through the lens at rest, where a tree's is

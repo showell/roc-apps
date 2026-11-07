@@ -2,7 +2,6 @@
 ## planted along the chain of segments ahead that stand in front of the
 ## camera and are tall enough on screen to draw.
 import Conifer
-import DepthSort
 import Chain
 import Geom
 import Detail
@@ -43,11 +42,4 @@ TreeSighting :: [].{
 				size_test: { focal: view.cam_focal, smallest_px: Detail.min_scenery_px },
 			},
 		)
-
-	## The trees as the depth sort sees them: each one's distance ahead, and
-	## its position in `trees`.
-	depth_keys : List(Geom.Sighted(Conifer)) -> List(DepthSort.DepthKey)
-	depth_keys = |trees| trees.map_with_index(
-		|tree, i| { forward: tree.forward, subject: Tree(i.to_u32_wrap()) },
-	)
 }

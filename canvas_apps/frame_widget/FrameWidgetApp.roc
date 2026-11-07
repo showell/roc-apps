@@ -13,6 +13,7 @@ import game.DepthSort
 import game.Ground
 import game.GroundSighting
 import game.Mountains
+import game.Rendered
 import game.RideFocal
 import game.RideInstant
 import game.SafariApp
@@ -97,16 +98,24 @@ paused_tour = {
 	{ ..$tour, past_instants: [] }
 }
 
-## The layer a thing beside the road belongs to.
-subject_layer : DepthSort.Subject -> Layer
-subject_layer = |subject|
-	match subject {
-		Tree(_) => Trees
-		Tower(_) => Towers
-		Cutout(_) => Critters
-		Rail(_) => Rails
-		Cat(_) | Truck | Bird(_) => MovingThings
-	}
+## Each thing beside the road with the layer it belongs to, in the game's paint
+## order.
+scene_pieces : SceneShapes.ThingLists(Rendered) -> List(Piece)
+scene_pieces = |lists| {
+	on_layer = |renderings, layer| renderings.map(|rendering| { layer, rendering })
+	layered = SceneShapes.things_in_tie_order({
+		birds: on_layer(lists.birds, MovingThings),
+		trees: on_layer(lists.trees, Trees),
+		towers: on_layer(lists.towers, Towers),
+		critters: on_layer(lists.critters, Critters),
+		cats: on_layer(lists.cats, MovingThings),
+		trucks: on_layer(lists.trucks, MovingThings),
+		rails: on_layer(lists.rails, Rails),
+	})
+	DepthSort.sort_by(layered, |thing| thing.rendering.depth).map(
+		|thing| { layer: thing.layer, shapes: thing.rendering.picture.to_shapes() },
+	)
+}
 
 ## What `Backdrop.frame_shapes` paints under the ride's shapes: the sky, the grass, and
 ## what the sun adds when it's in view.
@@ -166,12 +175,7 @@ ride_pieces = |tour| {
 	)
 	[
 		[{ layer: Mountains, shapes: skyline }, { layer: Road, shapes: ground }],
-		scene.order_keys.map(
-			|depth_key| {
-				layer: subject_layer(depth_key.subject),
-				shapes: SceneShapes.scene_shapes({ ..scene, order_keys: [depth_key] }, view),
-			},
-		),
+		scene_pieces(SceneShapes.scene_renderings(scene, view)),
 	].join()
 }
 
@@ -358,15 +362,6 @@ expect shapes_in(frame_parts, [Grass, Sky]) == shapes_in(frame_parts, [Sky, Gras
 expect
 	shapes_in(frame_parts, [Grass, Sky])
 		== shapes_in(frame_parts, [Sky]).concat(shapes_in(frame_parts, [Grass]))
-
-# Every thing beside the road has a layer.
-expect subject_layer(Tree(0)) == Trees
-expect subject_layer(Tower(0)) == Towers
-expect subject_layer(Cutout(0)) == Critters
-expect subject_layer(Rail(0)) == Rails
-expect subject_layer(Cat(0)) == MovingThings
-expect subject_layer(Truck) == MovingThings
-expect subject_layer(Bird(0)) == MovingThings
 
 # The page's list of words, which a fence's word is looked up in, is the layers'
 # own: all of them, in order.

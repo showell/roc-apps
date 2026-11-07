@@ -1,5 +1,5 @@
-## SceneShapes paints the things beside the road in depth order, far to near,
-## each by its own kind's module.
+## SceneShapes renders the things beside the road, each by its own kind's module,
+## and paints them in depth order, far to near.
 import Pixels
 import CatShapes
 import Across
@@ -9,7 +9,6 @@ import Distance
 import Geom
 import World
 import CatSighting
-import DepthSort
 import Fraction
 import Chain
 import Conifer
@@ -28,10 +27,68 @@ import lib.Shapes
 
 SceneShapes :: [].{
 
+	## One list for each sort of thing beside the road.
+	ThingLists(thing) : {
+		birds : List(thing),
+		trees : List(thing),
+		towers : List(thing),
+		critters : List(thing),
+		cats : List(thing),
+		trucks : List(thing),
+		rails : List(thing),
+	}
+
 	## The scene's things, painted far to near.
 	scene_shapes : Scene, Chain.Viewpoint -> List(Shapes.Shape)
-	scene_shapes = |scene, view|
-		scene_renderings(scene, view).join_map(|rendering| rendering.picture.to_shapes())
+	scene_shapes = |scene, view| {
+		renderings = SceneShapes.things_in_tie_order(SceneShapes.scene_renderings(scene, view))
+		Rendered.depth_sorted_renderings(renderings).join_map(
+			|rendering| rendering.picture.to_shapes(),
+		)
+	}
+
+	## The scene's things, each as the frame paints it. A tree's context is the
+	## one a tree can't know alone, and a critter needs none.
+	scene_renderings : Scene, Chain.Viewpoint -> SceneShapes.ThingLists(Rendered)
+	scene_renderings = |scene, view| {
+		cam_focal = view.cam_focal
+		{
+			birds: scene.birds.map(
+				|bird| rendering_at(bird.forward, BirdShapes.bird_shapes(bird, cam_focal)),
+			),
+			trees: scene.trees.map(
+				|tree| SceneShapes.tree_rendering(tree, { trees: scene.trees, cam_focal }),
+			),
+			towers: scene.towers.map(
+				|tower| rendering_at(tower.forward, SceneShapes.tower_shapes(view, tower)),
+			),
+			critters: scene.critters.map(
+				|critter| Pipeline.rendering_of(critter, { cam_focal, context: {} }),
+			),
+			cats: scene.cats.map(
+				|cat| rendering_at(cat.forward, CatShapes.cat_shapes(cat, cam_focal)),
+			),
+			trucks: truck_renderings(view, scene.truck),
+			rails: scene.rails.map(
+				|quad| rendering_at(quad.forward, GuardRail.quad_shapes(quad, cam_focal)),
+			),
+		}
+	}
+
+	## Every list's things in one list. Things about as far away as each other
+	## keep this order through the depth sort, so it decides which of two tied
+	## things is painted over the other.
+	things_in_tie_order : SceneShapes.ThingLists(thing) -> List(thing)
+	things_in_tie_order = |lists|
+		[
+			lists.birds,
+			lists.trees,
+			lists.towers,
+			lists.critters,
+			lists.cats,
+			lists.trucks,
+			lists.rails,
+		].join()
 
 	## How many of `trees` are nearer than `forward`.
 	nearer_tree_count : List(Geom.Sighted(Conifer)), Distance -> U16
@@ -100,62 +157,27 @@ SceneShapes :: [].{
 		})
 }
 
-## Everything in the depth order, as the frame paints it.
-scene_renderings : Scene, Chain.Viewpoint -> List(Rendered)
-scene_renderings = |scene, view|
-	scene.order_keys.map(
-		|depth_key| {
-			depth: depth_key.forward,
-			picture: subject_picture(scene, { view, subject: depth_key.subject }),
-		},
-	)
+## A thing that doesn't go through `Pipeline`: its shapes, at `depth`.
+rendering_at : Distance, List(Shapes.Shape) -> Rendered
+rendering_at = |depth, shapes| { depth, picture: Picture.from_shapes(shapes) }
 
-## One thing in the depth order, looked up in its kind's list and drawn.
-subject_picture : Scene, { view : Chain.Viewpoint, subject : DepthSort.Subject } -> Picture
-subject_picture = |scene, { view, subject }| {
-	cam_focal = view.cam_focal
-	match subject {
-		Tree(place) =>
-			SceneShapes.tree_rendering(
-				thing_at(scene.trees, place),
-				{ trees: scene.trees, cam_focal },
-			).picture
-		Tower(place) =>
-			Picture.from_shapes(SceneShapes.tower_shapes(view, thing_at(scene.towers, place)))
-		Rail(place) =>
-			Picture.from_shapes(GuardRail.quad_shapes(thing_at(scene.rails, place), cam_focal))
-		Cutout(place) =>
-			Pipeline.rendering_of(
-				thing_at(scene.critters, place),
-				{ cam_focal, context: {} },
-			).picture
-		Cat(place) =>
-			Picture.from_shapes(CatShapes.cat_shapes(thing_at(scene.cats, place), cam_focal))
-		Truck => Picture.from_shapes(truck_shapes(view, scene.truck))
-		Bird(place) =>
-			Picture.from_shapes(BirdShapes.bird_shapes(thing_at(scene.birds, place), cam_focal))
-	}
-}
-
-## The thing at `place` in its kind's list.
-thing_at : List(thing), U32 -> thing
-thing_at = |things, place|
-	things.get(place.to_u64())
-		?? crash "SceneShapes.thing_at: the depth order names only places in its lists"
-
-## The truck, where its sighting found it and with the lights its sighting
-## gives it.
-truck_shapes : Chain.Viewpoint, TruckSighting -> List(Shapes.Shape)
-truck_shapes = |view, truck_at|
+## The truck, if it is in view, where its sighting found it and with the lights
+## its sighting gives it.
+truck_renderings : Chain.Viewpoint, TruckSighting -> List(Rendered)
+truck_renderings = |view, truck_at|
 	match truck_at {
-		Ahead(truck) =>
-			TruckPicture.truck_shapes({
-				view,
-				position: truck.position,
-				center: { along: truck.along, across: truck.across },
-				lights: truck.lights,
-			})
-		NoTruck => crash "SceneShapes.truck_shapes: the truck is in the depth order only in view"
+		Ahead(truck) => [
+			rendering_at(
+				truck.forward,
+				TruckPicture.truck_shapes({
+					view,
+					position: truck.position,
+					center: { along: truck.along, across: truck.across },
+					lights: truck.lights,
+				}),
+			),
+		]
+		NoTruck => []
 	}
 
 tree_at : F64 -> Geom.Sighted(Conifer)
@@ -366,31 +388,18 @@ expect
 expect planted_tree(0).kind == Conifer.BigGreen
 expect planted_tree(2).kind == Conifer.SmallGreen
 
-keys : List(DepthSort.DepthKey)
-keys = TreeSighting.depth_keys(first_sightings)
-
-## The depth key at `i`.
-key_at : U64 -> DepthSort.DepthKey
-key_at = |i| keys.get(i) ?? crash "SceneShapes: the first segment has 28 keys"
-
-## The position in the tree list that the key at `i` names.
-tree_place_at : U64 -> I64
-tree_place_at = |i|
-	match key_at(i).subject {
-		Tree(position) => position.to_i64()
-		Tower(_) | Cutout(_) | Cat(_) | Truck | Rail(_) | Bird(_) =>
-			crash "SceneShapes: a tree's key names a tree"
-	}
-
-expect keys.len() == 28
-expect tree_place_at(0) == 0
-expect tree_place_at(27) == 27
-expect TreeSighting.depth_keys([]).len() == 0
+# The order that settles a tie, each list in its own order.
 expect
-	[
-		(key_at(0).forward.to_metres(), 6.0),
-		(key_at(2).forward.to_metres(), 36.0),
-	].all(|(got, want)| (got - want).abs() <= 0.0001)
+	SceneShapes.things_in_tie_order({
+		birds: [1, 2],
+		trees: [3],
+		towers: [4],
+		critters: [5, 6],
+		cats: [7],
+		trucks: [8],
+		rails: [9],
+	})
+		== [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 expect
 	route_segments.map(|seg| seg.length.to_metres())
@@ -491,14 +500,9 @@ expect !is_ahead(lead_of(2000.0))
 expect !is_ahead(truck_seen_from({ ..origin, along: Along.metres(100.0) }, 0.25))
 expect is_ahead(truck_seen_from({ ..origin, along: Along.metres(100.0) }, 1.0))
 
-## The depth key of a truck in view.
-key_of : F64 -> DepthSort.DepthKey
-key_of = |lead|
-	TruckSighting.depth_keys(lead_of(lead)).first()
-		?? crash "SceneShapes: a truck in view has a depth key"
-
-expect TruckSighting.depth_keys(lead_of(100.0)).len() == 1
-expect TruckSighting.depth_keys(lead_of(2000.0)).len() == 0
-expect TruckSighting.depth_keys(NoTruck).len() == 0
-expect TruckSighting.depth_keys(lead_of(100.0)).count_if(|key| key.subject == Truck) == 1
-expect (key_of(499.0).forward.to_metres() - 499.0).abs() <= 0.0001
+expect truck_renderings(from_origin, lead_of(100.0)).len() == 1
+expect truck_renderings(from_origin, lead_of(2000.0)).len() == 0
+expect truck_renderings(from_origin, NoTruck).len() == 0
+expect
+	truck_renderings(from_origin, lead_of(499.0)).map(|rendering| rendering.depth.to_metres())
+		== [truck_ahead_of(499.0).forward.to_metres()]

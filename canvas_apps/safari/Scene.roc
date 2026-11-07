@@ -1,13 +1,12 @@
 ## Scene gathers what one frame shows beside the road: the trees, towers,
 ## critters, cats, guard rails, the truck and the birds in view, each kind
-## found by its own sighting, and the order to paint them in, far to near.
+## found by its own sighting.
 import Billboard
 import BirdSighting
 import CatSighting
 import Clock
 import Conifer
 import BillboardSighting
-import DepthSort
 import Distance
 import Chain
 import Geom
@@ -21,8 +20,7 @@ import BirdShapes
 import Speed
 import World
 
-## The things in view, each kind in its own list, and the depth order
-## that names each by its place in its list.
+## The things in view, each kind in its own list.
 Scene := {
 	trees : List(Geom.Sighted(Conifer)),
 	towers : List(TowerSighting),
@@ -31,7 +29,6 @@ Scene := {
 	rails : List(GuardRail.RailQuad),
 	truck : TruckSighting,
 	birds : List(BirdSighting),
-	order_keys : List(DepthSort.DepthKey),
 }.{
 
 	## What the sightings read beyond the road: the rider's speed, where the
@@ -63,18 +60,6 @@ Scene := {
 			lights: truck.lights,
 		})
 		birds = BirdSighting.birds_in_view(view)
-		# Keys about as far away as each other keep the order they are joined
-		# in, so this order decides which of two tied things is painted over
-		# the other.
-		keys = [
-			BirdSighting.depth_keys(birds),
-			TreeSighting.depth_keys(trees),
-			TowerSighting.depth_keys(towers),
-			BillboardSighting.depth_keys(critters),
-			CatSighting.depth_keys(cats),
-			TruckSighting.depth_keys(truck_at),
-			RailSighting.depth_keys(rails),
-		].join()
 		{
 			trees,
 			towers,
@@ -83,7 +68,6 @@ Scene := {
 			rails,
 			truck: truck_at,
 			birds,
-			order_keys: DepthSort.sort_by(keys, |key| key.forward),
 		}
 	}
 }

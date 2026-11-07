@@ -26,7 +26,9 @@ import game.Geom
 import game.Ground
 import game.GroundSighting
 import game.RailSighting
+import game.Rendered
 import game.Scene
+import game.SceneShapes
 import game.RideInstant
 import game.Rider
 import game.RiderState
@@ -215,19 +217,8 @@ two_segments = BirdSighting.birds_in_view({
 	cam_focal: Pixels.of(500.0),
 })
 
-## A key's place in the birds' list.
-bird_place : DepthSort.DepthKey -> I64
-bird_place = |key|
-	match key.subject {
-		Bird(place) => place.to_i64()
-		Tree(_) | Tower(_) | Cutout(_) | Cat(_) | Truck | Rail(_) =>
-			crash "CrossModuleExpects: a bird's key names a bird"
-	}
-
-expect BirdSighting.depth_keys(two_segments).map(bird_place) == [0, 1]
-
 expect
-	match BirdSighting.depth_keys(two_segments).map(|key| key.forward) {
+	match two_segments.map(|bird| bird.forward) {
 		[near, far] => near == Distance.metres(100.0) and near < far
 		_ => crash "CrossModuleExpects: each of two segments has a bird in view"
 	}
@@ -334,10 +325,6 @@ expect ride_sightings(500.0).len() == 1
 expect ride_sightings(600.0).len() == 0
 expect cats_on_chain([]).len() == 0
 expect cats_on_chain([World.SegmentIndex.first]).len() == 0
-
-# One cat in view gives one key, which names the first cat; none gives none.
-expect CatSighting.depth_keys(seen).map(|key| key.subject) == [Cat(0)]
-expect CatSighting.depth_keys([]).len() == 0
 
 # The sighting looks along the whole chain, and the reaction only at the rider's
 # own segment. They agree because a crossing starts on its own segment: even at
@@ -582,16 +569,19 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 # Scene, on the scene from the start of the route.
+scene_view : Chain.Viewpoint
+scene_view = {
+	road: {
+		route_segments: World.segments,
+		chain_indices: Chain.indices_ahead(World.segments, World.SegmentIndex.first),
+		vantage: origin,
+	},
+	cam_focal: Pixels.of(500.0),
+}
+
 scene : Scene
 scene = Scene.scene_in_view(
-	{
-		road: {
-			route_segments: World.segments,
-			chain_indices: Chain.indices_ahead(World.segments, World.SegmentIndex.first),
-			vantage: origin,
-		},
-		cam_focal: Pixels.of(500.0),
-	},
+	scene_view,
 	{
 		speed: VehicleLimits.base_speed,
 		truck: {
@@ -602,37 +592,51 @@ scene = Scene.scene_in_view(
 	},
 )
 
-expect {
-	kind_counts = [
-		TreeSighting.depth_keys(scene.trees).len(),
-		TowerSighting.depth_keys(scene.towers).len(),
-		BillboardSighting.depth_keys(scene.critters).len(),
-		CatSighting.depth_keys(scene.cats).len(),
-		TruckSighting.depth_keys(scene.truck).len(),
-		RailSighting.depth_keys(scene.rails).len(),
-		BirdSighting.depth_keys(scene.birds).len(),
-	]
-	scene.order_keys.len() == kind_counts.sum()
-}
+scene_lists : SceneShapes.ThingLists(Rendered)
+scene_lists = SceneShapes.scene_renderings(scene, scene_view)
+
+scene_renderings : List(Rendered)
+scene_renderings = Rendered.depth_sorted_renderings(SceneShapes.things_in_tie_order(scene_lists))
+
+# Each thing in view has its rendering. The start of the route has a truck
+# ahead, so `trucks` holds one.
+expect scene_lists.trees.len() == scene.trees.len()
+expect scene_lists.towers.len() == scene.towers.len()
+expect scene_lists.critters.len() == scene.critters.len()
+expect scene_lists.cats.len() == scene.cats.len()
+expect scene_lists.rails.len() == scene.rails.len()
+expect scene_lists.birds.len() == scene.birds.len()
+expect scene_lists.trucks.len() == 1
+expect
+	scene_renderings.len()
+		== [
+			scene.trees.len(),
+			scene.towers.len(),
+			scene.critters.len(),
+			scene.cats.len(),
+			scene_lists.trucks.len(),
+			scene.rails.len(),
+			scene.birds.len(),
+		].sum()
 
 expect scene.trees.len() > 0
 expect scene.towers.len() > 0
 expect scene.critters.len() > 0
 expect scene.rails.len() > 0
-expect scene.order_keys.len() > 0
+expect scene_renderings.len() > 0
 expect scene.towers.len().to_i64_wrap() <= TowerSighting.max_visible_towers
 expect scene.critters.len().to_i64_wrap() <= BillboardSighting.max_visible_critters
 
-## Whether no key in `keys` is farther than the one before it.
-is_far_to_near : List(DepthSort.DepthKey) -> Bool
-is_far_to_near = |keys|
-	keys.map2(
-		keys.drop_first(1),
-		|before, after| DepthSort.is_farther({ this: after.forward, that: before.forward }),
+## Whether no rendering in `renderings` is farther than the one before it.
+is_far_to_near : List(Rendered) -> Bool
+is_far_to_near = |renderings|
+	renderings.map2(
+		renderings.drop_first(1),
+		|before, after| DepthSort.is_farther({ this: after.depth, that: before.depth }),
 	)
 		.all(|is_out_of_order| !is_out_of_order)
 
-expect is_far_to_near(scene.order_keys)
+expect is_far_to_near(scene_renderings)
 expect is_far_to_near([])
 
 # GroundSighting's road, chunk by chunk.
