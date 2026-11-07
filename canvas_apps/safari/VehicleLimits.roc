@@ -20,6 +20,7 @@ VehicleLimits :: [].{
 	top_speed : Speed
 	top_speed = Speed.metres_a_step(2.5)
 
+	## How far short of a segment's end the rider starts to brake for its bend.
 	bend_approach : Distance
 	bend_approach = Distance.metres(60.0)
 
