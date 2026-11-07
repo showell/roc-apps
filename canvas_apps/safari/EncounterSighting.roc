@@ -12,6 +12,7 @@ import RoadAhead
 import SegmentPlace
 import Geom
 import Pipeline
+import Pixels
 import PosedBird
 import PosedCat
 import Speed
@@ -20,23 +21,34 @@ EncounterSighting :: [].{
 
 	## The cats in view of a rider at `speed`, in the order of
 	## `RoadAhead.segments_in_view`.
-	cats_in_view : RoadAhead.CameraView, Speed -> List(Pipeline.Sighted(PosedCat))
-	cats_in_view = |view, speed|
-		RoadAhead.segments_in_view(view.road)
-			.keep_oks(|in_view| segment_cat(view, { in_view, speed }))
+	cats_in_view : RoadAhead.RoadView,
+	{
+		camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
+		speed : Speed,
+	} -> List(Pipeline.Sighted(PosedCat))
+	cats_in_view = |road, { camera, speed }|
+		RoadAhead.segments_in_view(road)
+			.keep_oks(|in_view| segment_cat(road, { camera, in_view, speed }))
 
 	## The birds in view, in the order of `RoadAhead.segments_in_view`.
-	birds_in_view : RoadAhead.CameraView -> List(Pipeline.Sighted(PosedBird))
-	birds_in_view = |view|
-		RoadAhead.segments_in_view(view.road).keep_oks(|in_view| segment_bird(view, in_view))
+	birds_in_view : RoadAhead.RoadView,
+	{
+		vantage : Geom.Vantage,
+		cam_focal : Pixels,
+		..,
+	} -> List(Pipeline.Sighted(PosedBird))
+	birds_in_view = |road, camera|
+		RoadAhead.segments_in_view(road)
+			.keep_oks(|in_view| segment_bird(road, { camera, in_view }))
 
 	## The cat waiting on a segment in view, if it has one and it is in view.
-	segment_cat : RoadAhead.CameraView,
+	segment_cat : RoadAhead.RoadView,
 	{
+		camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
 		in_view : RoadAhead.SegmentInView,
 		speed : Speed,
 	} -> Try(Pipeline.Sighted(PosedCat), [NoCat, BehindCamera, TooSmall])
-	segment_cat = |view, { in_view, speed }|
+	segment_cat = |road, { camera, in_view, speed }|
 		match in_view.segment.encounter {
 			CatCrosses(crossing) => {
 				placed_cat : Distance -> Geom.Placed(PosedCat)
@@ -44,19 +56,27 @@ EncounterSighting :: [].{
 					instant = Cat.instant_at(crossing, { gap, speed })
 					Animation.placed_instant(instant)
 				}
-				encounter_in_view(view, { in_view, along: crossing.along, placed_at: placed_cat })
+				encounter_in_view(
+					road,
+					{
+						camera,
+						in_view,
+						along: crossing.along,
+						placed_at: placed_cat,
+					},
+				)
 			}
 			BirdHere(_) | QuietRoad => Err(NoCat)
 		}
 }
 
 ## The bird of a segment in view, if that segment has one and it is in view.
-segment_bird : RoadAhead.CameraView,
-RoadAhead.SegmentInView -> Try(
-	Pipeline.Sighted(PosedBird),
-	[NoBird, BehindCamera, TooSmall],
-)
-segment_bird = |view, in_view|
+segment_bird : RoadAhead.RoadView,
+{
+	camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
+	in_view : RoadAhead.SegmentInView,
+} -> Try(Pipeline.Sighted(PosedBird), [NoBird, BehindCamera, TooSmall])
+segment_bird = |road, { camera, in_view }|
 	match in_view.segment.encounter {
 		BirdHere(habit) => {
 			placed_bird : Distance -> Geom.Placed(PosedBird)
@@ -65,8 +85,13 @@ segment_bird = |view, in_view|
 				Animation.placed_instant(instant)
 			}
 			encounter_in_view(
-				view,
-				{ in_view, along: habit.perch.road_point.along, placed_at: placed_bird },
+				road,
+				{
+					camera,
+					in_view,
+					along: habit.perch.road_point.along,
+					placed_at: placed_bird,
+				},
 			)
 		}
 		CatCrosses(_) | QuietRoad => Err(NoBird)
@@ -74,32 +99,45 @@ segment_bird = |view, in_view|
 
 ## The animal a segment in view holds, `along` it, placed as `placed_at`
 ## finds it with the rider that far short of it, if it is in view.
-encounter_in_view : RoadAhead.CameraView,
+encounter_in_view : RoadAhead.RoadView,
 {
+	camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
 	in_view : RoadAhead.SegmentInView,
 	along : Along,
 	placed_at : Distance -> Geom.Placed(kind),
 } -> Try(Pipeline.Sighted(kind), [BehindCamera, TooSmall])
 	where [kind.scenery_height : kind -> Distance]
-encounter_in_view = |view, { in_view, along, placed_at }| {
-	gap = RoadAhead.gap_to_segment(view.road, in_view).plus(along.from_start())
-	animal_in_view(view, { place: in_view.place, animal: placed_at(gap) })
+encounter_in_view = |road, { camera, in_view, along, placed_at }| {
+	gap = RoadAhead.gap_to_segment(
+		road,
+		{ vantage: camera.vantage, in_view },
+	).plus(along.from_start())
+	animal_in_view(
+		road,
+		{
+			camera,
+			place: in_view.place,
+			animal: placed_at(gap),
+		},
+	)
 }
 
 ## An animal placed on the segment at `place`, if it is in view. Its size is
 ## tested through the camera's own lens, as a tree's is.
-animal_in_view : RoadAhead.CameraView,
+animal_in_view : RoadAhead.RoadView,
 {
+	camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
 	place : SegmentPlace,
 	animal : Geom.Placed(kind),
 } -> Try(Pipeline.Sighted(kind), [BehindCamera, TooSmall])
 	where [kind.scenery_height : kind -> Distance]
-animal_in_view = |view, { place, animal }|
+animal_in_view = |road, { camera, place, animal }|
 	Pipeline.tall_sighting_of(
 		animal,
 		{
-			road: view.road,
+			road,
+			vantage: camera.vantage,
 			place,
-			size_test: Pipeline.scenery_test(view),
+			size_test: Pipeline.scenery_test(camera),
 		},
 	)

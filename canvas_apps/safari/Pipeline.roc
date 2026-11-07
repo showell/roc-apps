@@ -33,22 +33,23 @@ Pipeline :: [].{
 
 	## The size test of scenery seen through the camera's own lens, so that what
 	## is at the edge of sight comes and goes as the camera widens.
-	scenery_test : RoadAhead.CameraView -> Pipeline.SizeTest
-	scenery_test = |view| {
-		focal_length: view.cam_focal,
+	scenery_test : { cam_focal : Pixels, .. } -> Pipeline.SizeTest
+	scenery_test = |camera| {
+		focal_length: camera.cam_focal,
 		smallest_height_on_screen: smallest_scenery_height_on_screen,
 	}
 
-	## `placed` as the rider sees it, on the segment at `place`, if it is at or
-	## past the camera's near plane.
+	## `placed` as the camera at `vantage` sees it, on the segment at `place`,
+	## if it is at or past the camera's near plane.
 	sighting_of : Geom.Placed(kind),
 	{
 		road : RoadAhead.RoadView,
+		vantage : Geom.Vantage,
 		place : SegmentPlace,
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera])
-	sighting_of = |placed, { road, place }| {
+	sighting_of = |placed, { road, vantage, place }| {
 		road_point = placed.road_point
-		seen = RoadAhead.rider_point_at(road, { place, road_point })
+		seen = RoadAhead.rider_point_at(road, { vantage, place, road_point })
 		foot = Geom.ahead_on_level(seen)?
 		Ok({ spot: Spot.at({ place, road_point, lift: placed.lift, foot }), kind: placed.kind })
 	}
@@ -57,12 +58,13 @@ Pipeline :: [].{
 	tall_sighting_of : Geom.Placed(kind),
 	{
 		road : RoadAhead.RoadView,
+		vantage : Geom.Vantage,
 		place : SegmentPlace,
 		size_test : Pipeline.SizeTest,
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera, TooSmall])
 		where [kind.scenery_height : kind -> Distance]
-	tall_sighting_of = |placed, { road, place, size_test }| {
-		sighting = sighting_of(placed, { road, place })?
+	tall_sighting_of = |placed, { road, vantage, place, size_test }| {
+		sighting = sighting_of(placed, { road, vantage, place })?
 		height_on_screen = Camera.height_on_screen(
 			{ height: placed.kind.scenery_height(), forward: sighting.spot.foot().forward() },
 			size_test.focal_length,
@@ -108,16 +110,16 @@ placed_post = |{ along, height }| {
 	kind: Post.({ height: height }),
 }
 
-## The route's first segment, seen from its start, looking down the road.
+## The road ahead of a rider on the route's first segment.
 first_road : RoadAhead.RoadView
-first_road = {
-	route: World.route,
-	segments_ahead: { first_index: Route.SegmentIndex.first, count: 1 },
-	vantage: {
-		along: Along.metres(0.0),
-		across: Across.metres(0.0),
-		yaw: Angle.straight_ahead,
-	},
+first_road = RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex.first)
+
+## The camera at the start of the route, looking down the road.
+first_vantage : Geom.Vantage
+first_vantage = {
+	along: Along.metres(0.0),
+	across: Across.metres(0.0),
+	yaw: Angle.straight_ahead,
 }
 
 first_place : SegmentPlace
@@ -128,7 +130,11 @@ post_sighting : Along -> Try(Pipeline.Sighted(Post), [BehindCamera])
 post_sighting = |along|
 	Pipeline.sighting_of(
 		placed_post({ along, height: Distance.metres(1.0) }),
-		{ road: first_road, place: first_place },
+		{
+			road: first_road,
+			vantage: first_vantage,
+			place: first_place,
+		},
 	)
 
 ## A post of `height`, 64 m ahead, if it stands 8 pixels tall through a lens of
@@ -139,6 +145,7 @@ tall_post_sighting = |height|
 		placed_post({ along: Along.metres(64.0), height }),
 		{
 			road: first_road,
+			vantage: first_vantage,
 			place: first_place,
 			size_test: {
 				focal_length: Pixels.of(512.0),

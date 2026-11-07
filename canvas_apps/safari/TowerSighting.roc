@@ -38,36 +38,43 @@ TowerSighting :: [].{
 	tower_yaw = Angle.Turn.degrees(30.0)
 
 	## The towers in view, in the order of `RoadAhead.segments_in_view`.
-	towers_in_view : RoadAhead.RoadView, Clock -> List(Pipeline.Sighted(Tower))
-	towers_in_view = |road, clock|
+	towers_in_view : RoadAhead.RoadView,
+	{
+		camera : { vantage : Geom.Vantage, .. },
+		clock : Clock,
+	} -> List(Pipeline.Sighted(Tower))
+	towers_in_view = |road, { camera, clock }|
 		RoadAhead.segments_in_view(road).join_map(
-			|in_view| segment_towers(road, { in_view, clock }),
+			|in_view| segment_towers(road, { vantage: camera.vantage, in_view, clock }),
 		)
 
 	## The towers in view of a segment in view: the one past its end, then the
 	## one halfway along.
 	segment_towers : RoadAhead.RoadView,
 	{
+		vantage : Geom.Vantage,
 		in_view : RoadAhead.SegmentInView,
 		clock : Clock,
 	} -> List(Pipeline.Sighted(Tower))
-	segment_towers = |road, { in_view, clock }|
+	segment_towers = |road, { vantage, in_view, clock }|
 		[
-			end_tower_of(road, { in_view, clock }),
-			mid_tower(road, { in_view, clock }),
+			end_tower_of(road, { vantage, in_view, clock }),
+			mid_tower(road, { vantage, in_view, clock }),
 		].keep_oks(|tower| tower)
 
 	## The tower past the end of a segment in view, if it is in front of the
 	## camera.
 	end_tower_of : RoadAhead.RoadView,
 	{
+		vantage : Geom.Vantage,
 		in_view : RoadAhead.SegmentInView,
 		clock : Clock,
 	} -> Try(Pipeline.Sighted(Tower), [BehindCamera])
-	end_tower_of = |road, { in_view, clock }|
+	end_tower_of = |road, { vantage, in_view, clock }|
 		tower_if_ahead(
 			road,
 			{
+				vantage,
 				clock,
 				place: in_view.place,
 				along: Along.at(in_view.segment.length.plus(tower_beyond)),
@@ -80,15 +87,17 @@ TowerSighting :: [].{
 	## The tower halfway along a segment in view, if it has one and it is in
 	## front of the camera.
 	mid_tower : RoadAhead.RoadView,
-	{ in_view : RoadAhead.SegmentInView, clock : Clock } -> Try(
-		Pipeline.Sighted(Tower),
-		[BehindCamera, NoMidTower],
-	)
-	mid_tower = |road, { in_view, clock }|
+	{
+		vantage : Geom.Vantage,
+		in_view : RoadAhead.SegmentInView,
+		clock : Clock,
+	} -> Try(Pipeline.Sighted(Tower), [BehindCamera, NoMidTower])
+	mid_tower = |road, { vantage, in_view, clock }|
 		if Segment.has_mid_tower(in_view.segment) {
 			tower_if_ahead(
 				road,
 				{
+					vantage,
 					clock,
 					place: in_view.place,
 					along: Along.at(in_view.segment.length.divided_by(2.0)),
@@ -113,6 +122,7 @@ mid_tower_key_offset = 60
 ## if it is in front of the camera, its beacon as bright as `clock` says.
 tower_if_ahead : RoadAhead.RoadView,
 {
+	vantage : Geom.Vantage,
 	clock : Clock,
 	place : SegmentPlace,
 	along : Along,
@@ -123,6 +133,7 @@ tower_if_ahead : RoadAhead.RoadView,
 tower_if_ahead = |
 	road,
 	{
+		vantage,
 		clock,
 		place,
 		along,
@@ -142,7 +153,7 @@ tower_if_ahead = |
 			),
 		},
 	}
-	Pipeline.sighting_of(placed_tower, { road, place })
+	Pipeline.sighting_of(placed_tower, { road, vantage, place })
 }
 
 expect TowerSighting.tower_beyond.to_metres() == 160.0
@@ -163,28 +174,48 @@ origin = {
 	yaw: Angle.straight_ahead,
 }
 
-## Three segments seen from the origin, the rider on the first of them, the
-## route's segment `rider_number`.
+## The road ahead of a rider on the route's segment `rider_number`, on a route
+## that ends three segments on, so the road ahead holds three.
 short_road : U32 -> RoadAhead.RoadView
 short_road = |rider_number| {
-	route: World.route,
-	segments_ahead: { first_index: Route.SegmentIndex.number(rider_number), count: 3 },
-	vantage: origin,
+	kept_count = rider_number.to_u64() + 3
+	kept_segments = World.route.route_segments().take_first(kept_count)
+	route = Route.from_segments(
+		kept_segments.map_with_index(
+			|segment, at|
+				if at + 1 == kept_count {
+					{ ..segment, ending: RouteEnds }
+				} else {
+					segment
+				},
+		),
+	)
+	RoadAhead.RoadView.ahead_of(route, Route.SegmentIndex.number(rider_number))
 }
 
 origin_road : RoadAhead.RoadView
 origin_road = short_road(0)
 
-## The start of the ride on `road`, on the rider's own segment.
-ride_start : RoadAhead.RoadView -> { in_view : RoadAhead.SegmentInView, clock : Clock }
+## The start of the ride on `road`, on the rider's own segment, seen from the
+## origin.
+ride_start : RoadAhead.RoadView -> {
+	vantage : Geom.Vantage,
+	in_view : RoadAhead.SegmentInView,
+	clock : Clock,
+}
 ride_start = |road| {
+	vantage: origin,
 	in_view: RoadAhead.segment_in_view_at(road, SegmentPlace.Position.first),
 	clock: Clock.start,
 }
 
+## The towers in view from the origin on `road` at `clock`.
+towers_on : RoadAhead.RoadView, Clock -> List(Pipeline.Sighted(Tower))
+towers_on = |road, clock| TowerSighting.towers_in_view(road, { camera: { vantage: origin }, clock })
+
 expect TowerSighting.segment_towers(origin_road, ride_start(origin_road)).len() == 1
 expect TowerSighting.mid_tower(origin_road, ride_start(origin_road)).is_err()
-expect TowerSighting.towers_in_view(origin_road, Clock.start).len() == 3
+expect towers_on(origin_road, Clock.start).len() == 3
 expect route_segments.all(|seg| !seg.has_mid_tower())
 
 ## The first tower in view on the segment at `position` on the road ahead.
@@ -192,6 +223,7 @@ first_tower_on : U32 -> Pipeline.Sighted(Tower)
 first_tower_on = |number| TowerSighting.segment_towers(
 	origin_road,
 	{
+		vantage: origin,
 		in_view: RoadAhead.segment_in_view_at(origin_road, SegmentPlace.Position.number(number)),
 		clock: Clock.start,
 	},
@@ -209,19 +241,18 @@ expect
 
 ## The 1200 m segment alone, a route of its own, seen from the origin.
 long_road : RoadAhead.RoadView
-long_road = {
-	route: Route.from_segments([
+long_road = RoadAhead.RoadView.ahead_of(
+	Route.from_segments([
 		{ ..World.route.segment_at(Route.SegmentIndex.number(6)), ending: RouteEnds },
 	]),
-	segments_ahead: { first_index: Route.SegmentIndex.first, count: 1 },
-	vantage: origin,
-}
+	Route.SegmentIndex.first,
+)
 
-expect TowerSighting.towers_in_view(long_road, Clock.start).len() == 2
+expect towers_on(long_road, Clock.start).len() == 2
 expect TowerSighting.mid_tower(long_road, ride_start(long_road)).is_ok()
 
 long_towers : List(Pipeline.Sighted(Tower))
-long_towers = TowerSighting.towers_in_view(long_road, Clock.start)
+long_towers = towers_on(long_road, Clock.start)
 
 ## The long segment's tower at `i`: its end tower, then its mid tower.
 long_tower : U64 -> Pipeline.Sighted(Tower)
@@ -242,7 +273,7 @@ expect
 ## then its mid tower.
 long_brightnesses_at : Clock -> List(F64)
 long_brightnesses_at = |clock|
-	TowerSighting.towers_in_view(long_road, clock)
+	towers_on(long_road, clock)
 		.map(|tower| tower.kind.beacon_brightness.to_f64())
 
 expect {
@@ -255,7 +286,7 @@ expect {
 ## How bright the first three segments' towers are at `clock`.
 brightnesses_at : Clock -> List(F64)
 brightnesses_at = |clock| {
-	towers = TowerSighting.towers_in_view(origin_road, clock)
+	towers = towers_on(origin_road, clock)
 	towers.map(|tower| tower.kind.beacon_brightness.to_f64())
 }
 
@@ -266,11 +297,11 @@ expect
 brightness_at : U32 -> F64
 brightness_at = |phase| Beacon.beacon_brightness(Steps.of(phase)).to_f64()
 
-expect TowerSighting.towers_in_view(short_road(0), Clock.start).len() == 3
-expect TowerSighting.towers_in_view(short_road(1), Clock.start).len() == 4
-expect TowerSighting.towers_in_view(short_road(2), Clock.start).len() == 4
+expect towers_on(short_road(0), Clock.start).len() == 3
+expect towers_on(short_road(1), Clock.start).len() == 4
+expect towers_on(short_road(2), Clock.start).len() == 4
 expect
-	TowerSighting.towers_in_view(short_road(1), Clock.start).map(|tower| tower.spot.place())
+	towers_on(short_road(1), Clock.start).map(|tower| tower.spot.place())
 		== [
 			Ahead(SegmentPlace.Position.number(0)),
 			Ahead(SegmentPlace.Position.number(1)),
@@ -278,6 +309,6 @@ expect
 			RoadAhead.place_behind(World.route.segment_at(Route.SegmentIndex.number(0))),
 		]
 expect TowerSighting.towers_in_view(
-	{ ..origin_road, vantage: { ..origin, along: Along.metres(5000.0) } },
-	Clock.start,
+	origin_road,
+	{ camera: { vantage: { ..origin, along: Along.metres(5000.0) } }, clock: Clock.start },
 ).len() == 0

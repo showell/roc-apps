@@ -7,9 +7,11 @@ import EncounterSighting
 import Conifer
 import BillboardSighting
 import Distance
+import Geom
 import RoadAhead
 import GuardRail
 import Pipeline
+import Pixels
 import PosedBird
 import PosedCat
 import RailSighting
@@ -39,17 +41,27 @@ Scene := {
 		clock : Clock,
 	}
 
-	## Everything in view from `view`.
-	scene_in_view : RoadAhead.CameraView, Scene.RideFacts -> Scene
-	scene_in_view = |view, { speed, truck, clock }| {
-		road = view.road
-		trees = TreeSighting.trees_in_view(view)
-		towers = TowerSighting.towers_in_view(road, clock)
-		billboards = BillboardSighting.billboards_in_view(road)
-		cats = EncounterSighting.cats_in_view(view, speed)
-		rails = RailSighting.rails_in_view(road)
-		truck_at = TruckSighting.truck_in_view(road, truck)
-		birds = EncounterSighting.birds_in_view(view)
+	## Everything `camera` sees of `road`.
+	scene_in_view : RoadAhead.RoadView,
+	{
+		camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
+		facts : Scene.RideFacts,
+	} -> Scene
+	scene_in_view = |road, { camera, facts }| {
+		trees = TreeSighting.trees_in_view(road, camera)
+		towers = TowerSighting.towers_in_view(road, { camera, clock: facts.clock })
+		billboards = BillboardSighting.billboards_in_view(road, camera)
+		cats = EncounterSighting.cats_in_view(road, { camera, speed: facts.speed })
+		rails = RailSighting.rails_in_view(road, camera)
+		truck_at = TruckSighting.truck_in_view(
+			road,
+			{
+				camera,
+				route_position: facts.truck.route_position,
+				lit_truck: facts.truck.lit_truck,
+			},
+		)
+		birds = EncounterSighting.birds_in_view(road, camera)
 		{
 			trees,
 			towers,

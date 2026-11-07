@@ -15,12 +15,12 @@ RailSighting :: [].{
 
 	## The rails at every bend in view: the bends along the road ahead, then
 	## the bend from the segment behind.
-	rails_in_view : RoadAhead.RoadView -> List(GuardRail.RailQuad)
-	rails_in_view = |road|
+	rails_in_view : RoadAhead.RoadView, { vantage : Geom.Vantage, .. } -> List(GuardRail.RailQuad)
+	rails_in_view = |road, camera|
 		RoadAhead.segments_in_view(road).join_map(
 			|in_view|
 				match BendView.bend_after(road, in_view) {
-					Ok(bend_view) => rails_at(road, bend_view)
+					Ok(bend_view) => rails_at(road, { vantage: camera.vantage, bend_view })
 					Err(RoadEndsInView) => []
 				},
 		)
@@ -30,18 +30,23 @@ RailSighting :: [].{
 	## segment's end.
 	runup_points : RoadAhead.RoadView,
 	{
+		vantage : Geom.Vantage,
 		place : SegmentPlace,
 		length : Distance,
 		across : Across,
 	} -> List(Geom.RiderPoint)
-	runup_points = |road, { place, length, across }| {
+	runup_points = |road, { vantage, place, length, across }| {
 		runout_metres = leg_pieces(rail_runout)
 		List.from_iter(U32.to(0, runout_metres)).map(
 			|metres_in| {
 				metres_left = Distance.metres((runout_metres - metres_in).to_f64())
 				RoadAhead.rider_point_at(
 					road,
-					{ place, road_point: { along: Along.at(length.minus(metres_left)), across } },
+					{
+						vantage,
+						place,
+						road_point: { along: Along.at(length.minus(metres_left)), across },
+					},
 				)
 			},
 		)
@@ -51,14 +56,19 @@ RailSighting :: [].{
 	## `across`: a point a metre, the first a metre in.
 	run_out_points : RoadAhead.RoadView,
 	{
+		vantage : Geom.Vantage,
 		place : SegmentPlace,
 		across : Across,
 	} -> List(Geom.RiderPoint)
-	run_out_points = |road, { place, across }|
+	run_out_points = |road, { vantage, place, across }|
 		List.from_iter(U32.to(1, leg_pieces(rail_runout))).map(
 			|metres_in| RoadAhead.rider_point_at(
 				road,
-				{ place, road_point: { along: Along.metres(metres_in.to_f64()), across } },
+				{
+					vantage,
+					place,
+					road_point: { along: Along.metres(metres_in.to_f64()), across },
+				},
 			),
 		)
 }
@@ -110,33 +120,47 @@ leg_points = |{ from, to }| {
 
 ## The guard rail at `bend_view`, as quads along its path. It stands alone so
 ## the tutorial can show the step from a bend to its rail by itself.
-rails_at : RoadAhead.RoadView, BendView -> List(GuardRail.RailQuad)
-rails_at = |road, bend_view| GuardRail.quads_along(rail_points(road, bend_view))
+rails_at : RoadAhead.RoadView,
+{
+	vantage : Geom.Vantage,
+	bend_view : BendView,
+} -> List(GuardRail.RailQuad)
+rails_at = |road, seen| GuardRail.quads_along(rail_points(road, seen))
 
 ## The path of the rail at a bend, along the road's outer edge: up to the
 ## bend, out to where the two outer edges meet, back to the next segment,
 ## and along it.
-rail_points : RoadAhead.RoadView, BendView -> List(Geom.RiderPoint)
-rail_points = |road, bend_view| {
+rail_points : RoadAhead.RoadView,
+{
+	vantage : Geom.Vantage,
+	bend_view : BendView,
+} -> List(Geom.RiderPoint)
+rail_points = |road, { vantage, bend_view }| {
 	outer_edge = BendView.outer_edge(bend_view.turn())
 	place_after = Ahead(BendView.position_after(bend_view))
 	length_before = bend_view.bend.segment_length
 	end_before = RoadAhead.rider_point_at(
 		road,
 		{
+			vantage,
 			place: bend_view.before,
 			road_point: { along: Along.at(length_before), across: outer_edge },
 		},
 	)
 	start_after = RoadAhead.rider_point_at(
 		road,
-		{ place: place_after, road_point: { along: Along.start, across: outer_edge } },
+		{
+			vantage,
+			place: place_after,
+			road_point: { along: Along.start, across: outer_edge },
+		},
 	)
-	apex = BendView.apex(road, bend_view)
+	apex = BendView.apex(road, { vantage, bend_view })
 	[
 		RailSighting.runup_points(
 			road,
 			{
+				vantage,
 				place: bend_view.before,
 				length: length_before,
 				across: outer_edge,
@@ -144,7 +168,7 @@ rail_points = |road, bend_view| {
 		),
 		leg_points({ from: end_before, to: apex }),
 		leg_points({ from: apex, to: start_after }),
-		RailSighting.run_out_points(road, { place: place_after, across: outer_edge }),
+		RailSighting.run_out_points(road, { vantage, place: place_after, across: outer_edge }),
 	].join()
 }
 

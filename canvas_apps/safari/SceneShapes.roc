@@ -21,10 +21,15 @@ import lib.Shapes
 
 SceneShapes :: [].{
 
-	## The scene's things as shapes, far to near.
-	scene_shapes : Scene, RoadAhead.CameraView -> List(Shapes.Shape)
-	scene_shapes = |scene, view|
-		SceneShapes.scene_renderings(scene, view).join_map(
+	## The scene's things as shapes, far to near, as `camera` sees them on
+	## `road`.
+	scene_shapes : Scene,
+	{
+		road : RoadAhead.RoadView,
+		camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
+	} -> List(Shapes.Shape)
+	scene_shapes = |scene, seen|
+		SceneShapes.scene_renderings(scene, seen).join_map(
 			|rendering| rendering.picture.to_shapes(),
 		)
 
@@ -34,20 +39,23 @@ SceneShapes :: [].{
 	## drawn over the other. A critter perched on a tree is drawn over it: a
 	## perched bird stands at its tree's own depth, so the trees come before the
 	## birds.
-	scene_renderings : Scene, RoadAhead.CameraView -> List(Rendered)
-	scene_renderings = |scene, view| {
-		cam_focal = view.cam_focal
+	scene_renderings : Scene,
+	{
+		road : RoadAhead.RoadView,
+		camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
+	} -> List(Rendered)
+	scene_renderings = |scene, { road, camera }| {
+		cam_focal = camera.cam_focal
+		on_road = { road, vantage: camera.vantage }
 		trucks =
 			match scene.truck {
-				Ok(truck) => [Pipeline.rendering_of(truck, { cam_focal, context: view.road })]
+				Ok(truck) => [Pipeline.rendering_of(truck, { cam_focal, context: on_road })]
 				Err(NoTruck) | Err(BehindCamera) => []
 			}
 		renderings = [
 			scene.trees.map(|tree| tree_rendering(tree, { trees: scene.trees, cam_focal })),
 			scene.birds.map(|bird| Pipeline.rendering_of(bird, { cam_focal, context: {} })),
-			scene.towers.map(
-				|tower| Pipeline.rendering_of(tower, { cam_focal, context: view.road }),
-			),
+			scene.towers.map(|tower| Pipeline.rendering_of(tower, { cam_focal, context: on_road })),
 			scene.billboards.map(
 				|billboard| Pipeline.rendering_of(billboard, { cam_focal, context: {} }),
 			),
@@ -86,16 +94,13 @@ origin = {
 	yaw: Angle.straight_ahead,
 }
 
-## The first three segments, seen from `origin`.
+## The road ahead of a rider on the route's first segment.
 first_road : RoadAhead.RoadView
-first_road = {
-	route: World.route,
-	segments_ahead: { first_index: Route.SegmentIndex.first, count: 3 },
-	vantage: origin,
-}
+first_road = RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex.first)
 
-from_origin : RoadAhead.CameraView
-from_origin = { road: first_road, cam_focal: Pixels.of(500.0) }
+## That road, seen from `origin`.
+from_origin : { road : RoadAhead.RoadView, camera : { vantage : Geom.Vantage, cam_focal : Pixels } }
+from_origin = { road: first_road, camera: { vantage: origin, cam_focal: Pixels.of(500.0) } }
 
 ## Something of `kind` `forward` metres straight ahead of the route's start, as
 ## its sighting finds it.
@@ -107,7 +112,11 @@ sighted_ahead = |kind, forward|
 			lift: Distance.zero,
 			kind,
 		},
-		{ road: first_road, place: Ahead(SegmentPlace.Position.first) },
+		{
+			road: first_road,
+			vantage: origin,
+			place: Ahead(SegmentPlace.Position.first),
+		},
 	)
 		?? crash "SceneShapes: a test's thing is past the near plane"
 

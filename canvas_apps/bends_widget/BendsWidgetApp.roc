@@ -82,11 +82,13 @@ two_segments = |turn|
 		),
 	)
 
-## The road as seen from the first segment, looking along it.
+## The road ahead of a rider on the first segment.
 road_with : Angle.Turn -> RoadAhead.RoadView
-road_with = |turn| {
-	route: two_segments(turn),
-	segments_ahead: { first_index: Route.SegmentIndex.first, count: 2 },
+road_with = |turn| RoadAhead.RoadView.ahead_of(two_segments(turn), Route.SegmentIndex.first)
+
+## The camera the road is seen from, on the first segment, looking along it.
+camera : { vantage : Geom.Vantage }
+camera = {
 	vantage: {
 		along: Along.at(segment_length.minus(rider_before_bend)),
 		across: Across.middle,
@@ -106,7 +108,7 @@ bend_of = |road|
 apex_of : Angle.Turn -> Geom.RiderPoint
 apex_of = |turn| {
 	road = road_with(turn)
-	BendView.apex(road, bend_of(road))
+	BendView.apex(road, { vantage: camera.vantage, bend_view: bend_of(road) })
 }
 
 ## Where the view is from, and so where every point is measured from.
@@ -198,8 +200,8 @@ bend_shapes : ShownBend -> List(Shapes.Shape)
 bend_shapes = |bend| {
 	road = road_with(bend.turn)
 	[
-		GroundSighting.patches_in_view(road).map(|patch| patch_shape(bend, patch.corners)),
-		RailSighting.rails_in_view(road).join_map(|rail| foot_shapes(bend, rail.corners)),
+		GroundSighting.patches_in_view(road, camera).map(|patch| patch_shape(bend, patch.corners)),
+		RailSighting.rails_in_view(road, camera).join_map(|rail| foot_shapes(bend, rail.corners)),
 		[
 			spot(bend, { at: apex_of(bend.turn), color: apex_color }),
 			spot(bend, { at: rider, color: rider_color }),
@@ -240,7 +242,7 @@ caption_lines = |turn| {
 		turn_text(turn),
 		"rail on the ${edge_text(turn)} edge",
 		"apex ${ReadoutText.tenths_text(apex_past_end(apex_of(turn)))} m past the end",
-		"${GroundSighting.patches_in_view(road).len().to_str()} patches, ${RailSighting.rails_in_view(road).len().to_str()} rail pieces",
+		"${GroundSighting.patches_in_view(road, camera).len().to_str()} patches, ${RailSighting.rails_in_view(road, camera).len().to_str()} rail pieces",
 	]
 }
 

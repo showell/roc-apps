@@ -8,7 +8,6 @@ import Geom
 import Pixels
 import RideFocal
 import RiderState
-import RoadAhead
 import Route
 
 RiderCamera := {
@@ -47,17 +46,6 @@ RiderCamera := {
 		}
 	}
 
-	## What the camera sees of `route`: the road in view from the camera's
-	## segment and vantage, and its focal length.
-	camera_view : RiderCamera, Route -> RoadAhead.CameraView
-	camera_view = |camera, route| {
-		road: {
-			route,
-			segments_ahead: RoadAhead.indices_ahead(route, camera.segment_index),
-			vantage: camera.vantage,
-		},
-		cam_focal: camera.cam_focal,
-	}
 }
 
 ## How far the head turns for each radian of lean.

@@ -18,20 +18,22 @@ TruckSighting :: [].{
 	TruckFate : Try(Pipeline.Sighted(LitTruck), [NoTruck, BehindCamera])
 
 	## The truck at `route_position` along the route, looking as `lit_truck`
-	## says, if it is ahead of the rider, on the road ahead, and in front of
+	## says, if it is ahead of the camera, on the road ahead, and in front of
 	## the camera.
 	truck_in_view : RoadAhead.RoadView,
 	{
+		camera : { vantage : Geom.Vantage, .. },
 		route_position : Distance,
 		lit_truck : LitTruck,
 	} -> TruckSighting.TruckFate
-	truck_in_view = |road, { route_position, lit_truck }| {
-		rider_distance = road.route.distance_along_route(
-			{ index: RoadAhead.rider_segment(road), along: road.vantage.along },
+	truck_in_view = |road, { camera, route_position, lit_truck }| {
+		vantage = camera.vantage
+		rider_distance = road.route().distance_along_route(
+			{ index: RoadAhead.rider_segment(road), along: vantage.along },
 		)
 		lead = route_position.minus(rider_distance)
 		if lead > Distance.zero {
-			start = { along: road.vantage.along.plus(lead), position: SegmentPlace.Position.first }
+			start = { along: vantage.along.plus(lead), position: SegmentPlace.Position.first }
 			match truck_from(road, start) {
 				Ok({ along, position }) => {
 					placed_truck : Geom.Placed(LitTruck)
@@ -40,7 +42,7 @@ TruckSighting :: [].{
 						lift: Distance.zero,
 						kind: lit_truck,
 					}
-					Pipeline.sighting_of(placed_truck, { road, place: Ahead(position) })
+					Pipeline.sighting_of(placed_truck, { road, vantage, place: Ahead(position) })
 				}
 				Err(NoTruck) => Err(NoTruck)
 			}
@@ -59,7 +61,7 @@ TruckPlace : { along : Along, position : SegmentPlace.Position }
 ## segments it is past.
 truck_from : RoadAhead.RoadView, TruckPlace -> Try(TruckPlace, [NoTruck])
 truck_from = |road, { along, position }|
-	if position.is_past_end_of(road.segments_ahead) {
+	if position.is_past_end_of(road.segments_ahead()) {
 		Err(NoTruck)
 	} else {
 		segment = RoadAhead.segment_at(road, position)
@@ -78,13 +80,17 @@ origin = {
 	yaw: Angle.straight_ahead,
 }
 
-## The first three segments, seen from `vantage`.
-first_road : Geom.Vantage -> RoadAhead.RoadView
-first_road = |vantage| {
-	route: World.route,
-	segments_ahead: { first_index: Route.SegmentIndex.first, count: 3 },
-	vantage,
-}
+## The route's first three segments, a route of their own, and the road ahead
+## of a rider on the first of them.
+first_road : RoadAhead.RoadView
+first_road = RoadAhead.RoadView.ahead_of(
+	Route.from_segments([
+		World.route.segment_at(Route.SegmentIndex.number(0)),
+		World.route.segment_at(Route.SegmentIndex.number(1)),
+		{ ..World.route.segment_at(Route.SegmentIndex.number(2)), ending: RouteEnds },
+	]),
+	Route.SegmentIndex.first,
+)
 
 ## What becomes of a truck `lead` metres ahead of a rider on the route's first
 ## segment, seen from `vantage`, with its lights off. On the first segment the
@@ -92,8 +98,9 @@ first_road = |vantage| {
 truck_seen_from : Geom.Vantage, F64 -> TruckSighting.TruckFate
 truck_seen_from = |vantage, lead|
 	TruckSighting.truck_in_view(
-		first_road(vantage),
+		first_road,
 		{
+			camera: { vantage: vantage },
 			route_position: Distance.metres(vantage.along.to_metres() + lead),
 			lit_truck: { headlights: Off, brake_lights: Off },
 		},
@@ -149,8 +156,12 @@ expect
 ## The lights a truck in view shows, when it has `lights` on.
 lights_shown = |lights| {
 	truck = TruckSighting.truck_in_view(
-		first_road(origin),
-		{ route_position: Distance.metres(100.0), lit_truck: lights },
+		first_road,
+		{
+			camera: { vantage: origin },
+			route_position: Distance.metres(100.0),
+			lit_truck: lights,
+		},
 	) ?? crash "TruckSighting: this lead puts the truck in view"
 	truck.kind
 }
