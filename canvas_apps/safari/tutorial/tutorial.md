@@ -1039,7 +1039,7 @@ Everything above the footprint is rods. Four legs run from the corners up to a p
 
 A ring of rods goes round the tower every 20 metres, and crossed braces fill the lowest two storeys. Each rod is a line between two points in the rider's view, and it needs some care, because a near tower can stand partly behind the camera:
 
-{{code Tower.rod_shapes}}
+{{code Geom.ahead_line}}
 
 The `match` is on a pair, so it has to cover all four combinations. A rod with one end behind the camera is cut where it crosses the camera's plane, and a rod with both ends behind isn't drawn.
 

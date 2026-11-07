@@ -3,6 +3,7 @@
 ## blink opposite each other at dusk, where a beacon shows up. The towers are drawn
 ## by Safari's own Tower, and how bright each is comes from Beacon. Below
 ## them, the buttons and four lines of text that read out the clock.
+import game.Angle
 import game.Beacon
 import game.Clock
 import game.Distance
@@ -90,14 +91,14 @@ picture_shapes = |clock|
 tower_shapes : Distance, Fraction -> List(Shapes.Shape)
 tower_shapes = |right, brightness|
 	match Geom.ahead_on_level({ right, forward: tower_forward }) {
-		Ok(center) => tower_shapes_at(center, brightness)
+		Ok(foot) => tower_shapes_at(foot, brightness)
 		Err(BehindCamera) => []
 	}
 
-## A tower whose foot is at `center`, its beacon at `brightness`.
+## A tower whose foot is at `foot`, unturned, its beacon at `brightness`.
 tower_shapes_at : Geom.LevelPoint, Fraction -> List(Shapes.Shape)
-tower_shapes_at = |center, brightness| {
-	right = center.right()
+tower_shapes_at = |foot, brightness| {
+	right = foot.right()
 	corner_point = |corner| {
 		offset = Tower.corner_offset(corner)
 		{
@@ -105,17 +106,19 @@ tower_shapes_at = |center, brightness| {
 			forward: tower_forward.plus(offset.along),
 		}
 	}
-	Tower.tower_shapes({
-		footprint: {
-			back_left: corner_point(BackLeft),
-			back_right: corner_point(BackRight),
-			front_right: corner_point(FrontRight),
-			front_left: corner_point(FrontLeft),
+	Tower.tower_shapes(
+		{ yaw: Angle.straight_ahead, beacon_brightness: brightness },
+		{
+			foot,
+			cam_focal: Lens.resting_focal,
+			context: {
+				back_left: corner_point(BackLeft),
+				back_right: corner_point(BackRight),
+				front_right: corner_point(FrontRight),
+				front_left: corner_point(FrontLeft),
+			},
 		},
-		center,
-		cam_focal: Lens.resting_focal,
-		beacon_brightness: brightness,
-	})
+	)
 }
 
 ## What the clock and the beacons say at `clock`, a line each.

@@ -260,6 +260,23 @@ Geom :: [].{
 		)
 	}
 
+	## The part of the line from `from` to `to` at or past the near plane: the
+	## whole line, or the line cut where it crosses the near plane. A line
+	## with both ends behind the near plane has no such part.
+	ahead_line : {
+		from : Geom.RaisedPoint,
+		to : Geom.RaisedPoint,
+	} -> Try({ from : Geom.AheadPoint, to : Geom.AheadPoint }, [BehindCamera])
+	ahead_line = |{ from, to }|
+		match (Geom.ahead_point(from), Geom.ahead_point(to)) {
+			(Ok(start), Ok(end)) => Ok({ from: start, to: end })
+			(Ok(start), Err(BehindCamera)) =>
+				Ok({ from: start, to: Geom.near_plane_crossing({ from, to }) })
+			(Err(BehindCamera), Ok(end)) =>
+				Ok({ from: Geom.near_plane_crossing({ from, to }), to: end })
+			(Err(BehindCamera), Err(BehindCamera)) => Err(BehindCamera)
+		}
+
 	## The polygon cut to what lies at or past the near plane.
 	clipped_points : List(Geom.RaisedPoint) -> List(Geom.AheadPoint)
 	clipped_points = |polygon_points| {
@@ -498,6 +515,24 @@ expect
 			forward: Distance.metres(0.4),
 			height: Distance.metres(20.0),
 		}
+
+## How far ahead each end of the part of a line straight ahead, from `from`
+## metres to `to` metres, lies at or past the near plane.
+ahead_line_ends : F64, F64 -> Try((F64, F64), [BehindCamera])
+ahead_line_ends = |from, to|
+	Geom.ahead_line({ from: straight_ahead(from), to: straight_ahead(to) }).map_ok(
+		|line| (line.from.forward().to_metres(), line.to.forward().to_metres()),
+	)
+
+# A line wholly past the near plane is whole, one that crosses it is cut there
+# whichever end is behind, and one wholly behind it has no part ahead. A line
+# with an end on the near plane is whole.
+expect ahead_line_ends(10.0, 30.0) == Ok((10.0, 30.0))
+expect ahead_line_ends(0.4, 30.0) == Ok((0.4, 30.0))
+expect ahead_line_ends(10.0, 0.0) == Ok((10.0, 0.4))
+expect ahead_line_ends(0.0, 10.0) == Ok((0.4, 10.0))
+expect ahead_line_ends(0.0, 0.39) == Err(BehindCamera)
+expect ahead_line_ends(-5.0, 0.2) == Err(BehindCamera)
 
 expect Geom.ground_drop({
 	right: Distance.metres(0.0),
