@@ -102,7 +102,7 @@ RideInstant := {
 				dusk: Sky.dusk_at(instant.clock),
 				cam_focal: view.cam_focal,
 			}),
-			ground.join_map(|patch| Ground.patch_shapes(patch, view.cam_focal)),
+			ground.keep_oks(|patch| Ground.patch_shape(patch, view.cam_focal)),
 			SceneShapes.scene_shapes(scene, view),
 		].join()
 	}

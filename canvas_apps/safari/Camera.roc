@@ -3,7 +3,9 @@
 import Distance
 import Pixels
 import Geom
+import Polygon
 import Screen
+import lib.Shapes
 
 Camera :: [].{
 
@@ -25,6 +27,21 @@ Camera :: [].{
 
 	projected_points : List(Geom.RaisedPoint), Pixels -> List(Screen.Point)
 	projected_points = |points, cam_focal| points.map(|p| project(p, cam_focal))
+
+	## A polygon of one color, in the rider's view.
+	FlatPolygon : { color : I64, corners : List(Geom.RaisedPoint) }
+
+	## A polygon on screen, cut at the near plane, unless it's wholly behind the
+	## camera.
+	clipped_polygon : Camera.FlatPolygon, Pixels -> Try(Shapes.Shape, [BehindCamera])
+	clipped_polygon = |{ color, corners }, cam_focal| {
+		in_front = Geom.near_points(corners)
+		if in_front.is_empty() {
+			Err(BehindCamera)
+		} else {
+			Ok(Polygon.flat_polygon(color, projected_points(in_front, cam_focal)))
+		}
+	}
 }
 
 screen_point : Geom.RaisedPoint -> Screen.Point
@@ -138,3 +155,33 @@ expect
 		]
 
 expect Camera.projected_points([], Pixels.of(800.0)).len() == 0
+
+# A triangle at these distances ahead, on the ground.
+sample_clipped_polygon : List(F64) -> Try(Shapes.Shape, [BehindCamera])
+sample_clipped_polygon = |forwards|
+	Camera.clipped_polygon(
+		{
+			color: 0x2F7E8C,
+			corners: forwards.map(
+				|forward| {
+					right: Distance.metres(forward),
+					forward: Distance.metres(forward),
+					height: Distance.zero,
+				},
+			),
+		},
+		Pixels.of(800.0),
+	)
+
+# The number of coordinates a triangle's polygon holds, 2 to a corner.
+clipped_coordinate_count : List(F64) -> U64
+clipped_coordinate_count = |forwards|
+	match sample_clipped_polygon(forwards) {
+		Ok(Poly(polygon)) => polygon.coordinates.len()
+		_ => 0
+	}
+
+expect clipped_coordinate_count([5.0, 6.0, 7.0]) == 6
+expect clipped_coordinate_count([-1.0, 5.0, 6.0]) == 8
+expect clipped_coordinate_count([-3.0, -2.0, -1.0]) == 0
+expect sample_clipped_polygon([-3.0, -2.0, -1.0]).is_err()

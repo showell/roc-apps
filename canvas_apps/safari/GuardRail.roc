@@ -6,7 +6,6 @@ import Pixels
 import Camera
 import Distance
 import Geom
-import Polygon
 import lib.Shapes
 
 GuardRail :: [].{
@@ -71,17 +70,11 @@ GuardRail :: [].{
 		)
 	}
 
-	## A quad on screen, cut at the camera's near plane; a quad wholly behind
-	## the camera draws nothing.
-	quad_shapes : GuardRail.RailQuad, Pixels -> List(Shapes.Shape)
-	quad_shapes = |quad, cam_focal| {
-		in_front = Geom.near_points(quad.corners)
-		if in_front.is_empty() {
-			[]
-		} else {
-			[Polygon.flat_polygon(quad.color, Camera.projected_points(in_front, cam_focal))]
-		}
-	}
+	## A quad on screen, cut at the camera's near plane, unless it's wholly
+	## behind the camera.
+	quad_shape : GuardRail.RailQuad, Pixels -> Try(Shapes.Shape, [BehindCamera])
+	quad_shape = |quad, cam_focal|
+		Camera.clipped_polygon({ color: quad.color, corners: quad.corners }, cam_focal)
 }
 
 ## A quad with these corners, in `color`.

@@ -287,7 +287,7 @@ So our rectangle is a `Poly`, not a `Rect`.
 
 `Polygon` makes shapes one at a time. A polygon needs at least three corners, so `flat_polygon` crashes if it gets fewer. That would be a bug in Safari Ride, and a bug shouldn't quietly paint nothing.
 
-Something made of several shapes is a list of them. A tree is nine: a trunk and eight tiers of foliage. A list can be empty, and that isn't a bug. `Ground.patch_shapes` knows that a patch of ground wholly behind the camera has nothing to show.
+Something made of several shapes is a list of them. A tree is nine: a trunk and eight tiers of foliage. A list can be empty, and that isn't a bug. `Ground.patch_shape` knows that a patch of ground wholly behind the camera has nothing to show.
 
 The order of the list is the order of painting, so the rectangle covers part of the triangle. A frame lists the sky and mountains, then the ground, then what stands on the ground, far to near.
 
@@ -2311,7 +2311,7 @@ A fold's step is a plain function of the list so far and one edge:
 
 `Ground`, `GuardRail` and `TruckShape` call it the same way. `patch.corners.map(...)` makes the `RaisedPoint`s, and what comes back is a shorter or longer list of the same type:
 
-{{code Ground.patch_shapes from "in_front = Geom.near_points(" to "Polygon.flat_polygon(patch.color, Camera.projected_points(in_front, cam_focal))"}}
+{{code Camera.clipped_polygon from "in_front = Geom.near_points(" to "Ok(Polygon.flat_polygon(color, projected_points(in_front, cam_focal)))"}}
 
 ### Arithmetic all the way down
 

@@ -5,7 +5,6 @@ import Pixels
 import Camera
 import Distance
 import Geom
-import Polygon
 import lib.Brush
 import lib.Shapes
 
@@ -22,17 +21,14 @@ Ground :: [].{
 		height: Geom.ground_drop(point).opposite(),
 	}
 
-	## A patch on screen, cut at the camera's near plane. A patch wholly behind
-	## the camera draws nothing.
-	patch_shapes : Ground.Patch, Pixels -> List(Shapes.Shape)
-	patch_shapes = |patch, cam_focal| {
-		in_front = Geom.near_points(patch.corners.map(Ground.ground_point))
-		if in_front.is_empty() {
-			[]
-		} else {
-			[Polygon.flat_polygon(patch.color, Camera.projected_points(in_front, cam_focal))]
-		}
-	}
+	## A patch on screen, cut at the camera's near plane, unless it's wholly
+	## behind the camera.
+	patch_shape : Ground.Patch, Pixels -> Try(Shapes.Shape, [BehindCamera])
+	patch_shape = |patch, cam_focal|
+		Camera.clipped_polygon(
+			{ color: patch.color, corners: patch.corners.map(Ground.ground_point) },
+			cam_focal,
+		)
 }
 
 expect Ground.ground_point({
@@ -58,8 +54,8 @@ expect
 			height: Distance.metres(-0.05078125),
 		}
 
-sample_patch_shapes : List(Geom.RiderPoint) -> List(Shapes.Shape)
-sample_patch_shapes = |corners| Ground.patch_shapes(
+sample_patch_shape : List(Geom.RiderPoint) -> Try(Shapes.Shape, [BehindCamera])
+sample_patch_shape = |corners| Ground.patch_shape(
 	{ corners, color: 0x2F7E8C },
 	Pixels.of(685.5110432362151),
 )
@@ -82,22 +78,21 @@ corners_ahead = |count|
 		},
 	)
 
-expect sample_patch_shapes(patch_corners_ahead).len() == 1
-expect sample_patch_shapes(corners_ahead(8)).len() == 1
-expect sample_patch_shapes(corners_ahead(9)).len() == 1
+expect sample_patch_shape(patch_corners_ahead).is_ok()
+expect sample_patch_shape(corners_ahead(8)).is_ok()
+expect sample_patch_shape(corners_ahead(9)).is_ok()
 
 expect
-	sample_patch_shapes([
+	sample_patch_shape([
 		{ right: Distance.metres(-5.0), forward: Distance.metres(-10.0) },
 		{ right: Distance.metres(5.0), forward: Distance.metres(-10.0) },
 		{ right: Distance.metres(5.0), forward: Distance.metres(-20.0) },
 		{ right: Distance.metres(-5.0), forward: Distance.metres(-20.0) },
-	]).len()
-		== 0
+	]).is_err()
 
 expect {
-	match sample_patch_shapes(patch_corners_ahead) {
-		[Poly(polygon)] =>
+	match sample_patch_shape(patch_corners_ahead) {
+		Ok(Poly(polygon)) =>
 			polygon.fill == Flat(Brush.opaque(0x2F7E8C)) and polygon.coordinates.len() == 8
 		_ => False
 	}
