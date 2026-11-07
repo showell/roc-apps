@@ -1,8 +1,8 @@
 ## TowerSighting finds the radio towers in front of the rider in a frame. A tower
 ## stands past the end of every segment, off to the right, and a long
-## segment has one more halfway along, off to the left. The tower past the
-## end of the segment behind the rider is seen too. Each tower's beacon blinks
-## on the ride's clock, and the sighting says how bright it is in the frame.
+## segment has one more halfway along, off to the left. Each tower's beacon
+## blinks on the ride's clock, and the sighting says how bright it is in the
+## frame.
 import Across
 import Along
 import Angle
@@ -33,8 +33,7 @@ TowerSighting :: [].{
 	tower_yaw : Angle.Turn
 	tower_yaw = Angle.Turn.degrees(30.0)
 
-	## The towers in view: those on the road ahead, then the one past the end
-	## of the segment behind the rider.
+	## The towers in view, in the order of `RoadAhead.segments_in_view`.
 	towers_in_view : RoadAhead.RoadView, Clock -> List(Pipeline.Sighted(Tower))
 	towers_in_view = |road, clock|
 		RoadAhead.segments_in_view(road).join_map(
@@ -42,20 +41,17 @@ TowerSighting :: [].{
 		)
 
 	## The towers in view of a segment in view: the one past its end, then the
-	## one halfway along. The segment just behind keeps only the tower past its
-	## end, because the rider has passed the one halfway along.
+	## one halfway along.
 	segment_towers : RoadAhead.RoadView,
 	{
 		in_view : RoadAhead.SegmentInView,
 		clock : Clock,
 	} -> List(Pipeline.Sighted(Tower))
-	segment_towers = |road, { in_view, clock }| {
-		end_tower = end_tower_of(road, { in_view, clock })
-		match in_view.place {
-			Ahead(_) => [end_tower, mid_tower(road, { in_view, clock })].keep_oks(|tower| tower)
-			JustBehind(_) => [end_tower].keep_oks(|tower| tower)
-		}
-	}
+	segment_towers = |road, { in_view, clock }|
+		[
+			end_tower_of(road, { in_view, clock }),
+			mid_tower(road, { in_view, clock }),
+		].keep_oks(|tower| tower)
 
 	## The tower past the end of a segment in view, if it is in front of the
 	## camera.

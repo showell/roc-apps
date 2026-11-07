@@ -247,6 +247,42 @@ expect
 		_ => crash "CrossModuleExpects: each of two segments has a bird in view"
 	}
 
+# TreeSighting looks at the segment just behind the rider too. A tree 5 m short
+# of the bend out of it stands in front of a rider at the bend once the bend is
+# sharper than a right angle, and behind the rider at a gentle bend.
+## The trees in view of a rider at the start of the second of two segments,
+## the first holding one tree 5 m short of its bend of `degrees`.
+past_bend_trees : F64 -> List(Pipeline.Sighted(Conifer))
+past_bend_trees = |degrees| {
+	segment_behind_rider = {
+		..segment_of([tree_at(195.0, 0.0)]),
+		exit_turn: Angle.Turn.degrees(degrees),
+		crossing: QuietRoad,
+	}
+	rider_segment = { ..segment_of([]), crossing: QuietRoad }
+	TreeSighting.trees_in_view({
+		road: {
+			route_segments: [segment_behind_rider, rider_segment],
+			segments_ahead: [1].map(World.SegmentIndex.number),
+			vantage: origin,
+		},
+		cam_focal: Pixels.of(500.0),
+	})
+}
+
+## Whether `trees` is one tree, sighted on the segment just behind the rider.
+is_one_tree_behind : List(Pipeline.Sighted(Conifer)) -> Bool
+is_one_tree_behind = |trees|
+	match trees.map(|tree| tree.place) {
+		[JustBehind(_)] => True
+		_ => False
+	}
+
+expect is_one_tree_behind(past_bend_trees(150.0))
+expect is_one_tree_behind(past_bend_trees(-150.0))
+expect past_bend_trees(30.0).len() == 0
+expect past_bend_trees(-80.0).len() == 0
+
 # CrossingSighting's cats: which cats are in view as the rider comes on them.
 ## The second segment, with a cat crossing it.
 cat_segment : World.Segment
@@ -489,7 +525,10 @@ expect count_from(1) >= count_from(2)
 expect BillboardSighting.segment_sightings(six_segments, segment_behind(4)).len() > 0
 expect BillboardSighting.duck_sightings(six_segments, segment_behind(12)).len() > 0
 expect BillboardSighting.duck_sightings(six_segments, segment_behind(0)).len() == 0
-expect BillboardSighting.farm_sightings(six_segments, segment_behind(0)).len() == 0
+expect {
+	fates = BillboardSighting.farm_sightings(six_segments, segment_behind(0))
+	fates.len() > 0 and fates.all(|fate| how_it_went(fate) == BehindCamera)
+}
 expect BillboardSighting.wildlife_sightings(six_segments, segment_behind(0)).len() > 0
 
 ## A billboard on the first segment, as the rider at its start sees it.
@@ -694,7 +733,7 @@ corners_of_chunk : U32 -> List(Geom.RiderPoint)
 corners_of_chunk = |chunk_number| GroundSighting.chunk_corners(
 	road,
 	{
-		position: RoadAhead.Position.first,
+		place: Ahead(RoadAhead.Position.first),
 		segment_length: Distance.metres(500.0),
 		chunk_count: 20,
 		chunk_number,
@@ -737,14 +776,14 @@ expect {
 }
 
 strip_shapes : List(Shapes.Shape)
-strip_shapes = patch_shapes(GroundSighting.road_patches(road, RoadAhead.Position.first))
+strip_shapes = patch_shapes(GroundSighting.road_patches(road, numbered_segment(road, 0)))
 
 expect strip_shapes.len() > 0
 expect strip_shapes.len().to_u32_wrap() <= GroundSighting.chunks_along(Distance.metres(500.0))
 expect patch_shapes(
 	GroundSighting.road_patches(
 		{ ..road, vantage: { ..origin, along: Along.metres(5000.0) } },
-		RoadAhead.Position.first,
+		numbered_segment(road, 0),
 	),
 ).len() == 0
 last_shape : Shapes.Shape

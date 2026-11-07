@@ -1,8 +1,6 @@
-## BillboardSighting sights every billboard on the road ahead from where the
-## rider is: the farm animals of the nearest segments, the safari animal and its
-## baby at each bend, and the ducks on each pond. The bend and the pond of the
-## segment before the rider's are sighted too, so the bend the rider has just
-## turned keeps its animals.
+## BillboardSighting sights every billboard on the segments in view from where
+## the rider is: the farm animals of the nearest segments, the safari animal and
+## its baby at each bend, and the ducks on each pond.
 import Along
 import Billboard
 import RoadAhead
@@ -36,8 +34,7 @@ BillboardSighting :: [].{
 	billboards_to_draw : List(BillboardSighting.Fate) -> List(Pipeline.Sighted(Billboard))
 	billboards_to_draw = |fates| fates.keep_oks(|fate| fate)
 
-	## Every billboard in view, nearest segment first, then those of the segment
-	## before the rider's, when there is one.
+	## Every billboard in view, in the order of `RoadAhead.segments_in_view`.
 	billboard_fates : RoadAhead.RoadView -> List(BillboardSighting.Fate)
 	billboard_fates = |road|
 		RoadAhead.segments_in_view(road)
@@ -53,20 +50,14 @@ BillboardSighting :: [].{
 			BillboardSighting.duck_sightings(road, in_view),
 		].join()
 
-	## The cows, then the pigs, of a segment in view. The farm animals stand
-	## along their segment, so the segment just behind, which the rider has
-	## passed, has none in view.
+	## The cows, then the pigs, of a segment in view.
 	farm_sightings : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(BillboardSighting.Fate)
 	farm_sightings = |road, { segment, place, index: _ }|
-		match place {
-			Ahead(position) =>
-				if position.is_within_first(farm_reach) {
-					segment.cows.concat(segment.pigs)
-						.map(|critter| sight_critter(road, { place, critter }))
-				} else {
-					[]
-				}
-			JustBehind(_) => []
+		if is_within_reach(place, farm_reach) {
+			segment.cows.concat(segment.pigs)
+				.map(|critter| sight_critter(road, { place, critter }))
+		} else {
+			[]
 		}
 
 	## The animals at the bend that ends a segment in view. The road's last
@@ -117,7 +108,8 @@ BillboardSighting :: [].{
 }
 
 ## Whether a segment at `place` is in reach: among the first `reach` of the
-## road ahead, or the segment just behind, whose bend the rider has just turned.
+## road ahead, or the segment just behind, which meets the rider's own at its
+## bend.
 is_within_reach : RoadAhead.SegmentPlace, U32 -> Bool
 is_within_reach = |place, reach|
 	match place {

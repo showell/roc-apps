@@ -15,10 +15,10 @@ import World
 
 GroundSighting :: [].{
 
-	## One chunk of the road along the segment at `position` on the road
-	## ahead, which is `segment_length` long and laid in `chunk_count` chunks.
+	## One chunk of the road along the segment at `place`, which is
+	## `segment_length` long and laid in `chunk_count` chunks.
 	RoadChunk : {
-		position : RoadAhead.Position,
+		place : RoadAhead.SegmentPlace,
 		segment_length : Distance,
 		chunk_count : U32,
 		chunk_number : U32,
@@ -36,8 +36,8 @@ GroundSighting :: [].{
 	lead_in_length : Distance
 	lead_in_length = Distance.metres(40.0)
 
-	## The ground in view, in paint order: each segment of the road ahead in
-	## turn, then the bend from the segment behind.
+	## The ground in view, in paint order: each segment in view in the order of
+	## `RoadAhead.segments_in_view`.
 	patches_in_view : RoadAhead.RoadView -> List(Ground.Patch)
 	patches_in_view = |road|
 		RoadAhead.segments_in_view(road).join_map(|in_view| ground_patches(road, in_view))
@@ -52,17 +52,17 @@ GroundSighting :: [].{
 		chunks.max(1).to_u32_wrap()
 	}
 
-	## The road along the segment at `position` on the road ahead, chunk by
-	## chunk.
-	road_patches : RoadAhead.RoadView, RoadAhead.Position -> List(Ground.Patch)
-	road_patches = |road, position| {
-		segment_length = RoadAhead.segment_at(road, position).length
+	## The road along a segment in view, chunk by chunk.
+	road_patches : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(Ground.Patch)
+	road_patches = |road, in_view| {
+		place = in_view.place
+		segment_length = in_view.segment.length
 		chunk_count = GroundSighting.chunks_along(segment_length)
 		List.from_iter(U32.until(0, chunk_count)).map(
 			|chunk_number| road_patch(
 				GroundSighting.chunk_corners(
 					road,
-					{ position, segment_length, chunk_count, chunk_number },
+					{ place, segment_length, chunk_count, chunk_number },
 				),
 			),
 		)
@@ -70,12 +70,12 @@ GroundSighting :: [].{
 
 	## A chunk's corners: across its near end, then back across its far end.
 	chunk_corners : RoadAhead.RoadView, GroundSighting.RoadChunk -> List(Geom.RiderPoint)
-	chunk_corners = |road, { position, segment_length, chunk_count, chunk_number }| {
+	chunk_corners = |road, { place, segment_length, chunk_count, chunk_number }| {
 		end_of_chunk = |number|
 			Along.at(segment_length.times(number.to_f64()).divided_by(chunk_count.to_f64()))
 		near_end = end_of_chunk(chunk_number)
 		far_end = end_of_chunk(chunk_number + 1)
-		corner = |along, across| RoadAhead.rider_point_ahead(road, { position, along, across })
+		corner = |along, across| RoadAhead.rider_point_at(road, { place, along, across })
 		[
 			corner(near_end, Geom.left_edge),
 			corner(near_end, Geom.right_edge),
@@ -90,18 +90,12 @@ road_patch : List(Geom.RiderPoint) -> Ground.Patch
 road_patch = |corners| { corners, color: GroundSighting.road_color }
 
 ## The ground of a segment in view: its road, the bend into the next segment
-## if the road in view goes on, and its pond if it ends at one. The road along
-## the segment just behind is left out, because the rider has passed it, and
-## its bend's paving reaches the rider's segment.
+## if the road in view goes on, and its pond if it ends at one.
 ground_patches : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(Ground.Patch)
 ground_patches = |road, in_view| {
 	segment = in_view.segment
 	place = in_view.place
-	road_along =
-		match place {
-			Ahead(position) => GroundSighting.road_patches(road, position)
-			JustBehind(_) => []
-		}
+	road_along = GroundSighting.road_patches(road, in_view)
 	bend =
 		if RoadAhead.has_bend_in_view(road, in_view) {
 			bend_patches(road, BendView.of_segment(segment, place))
