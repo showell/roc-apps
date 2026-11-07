@@ -176,6 +176,17 @@ Shapes :: [].{
 			},
 	)
 
+	## A picture `cols` by `rows` pixels, row by row, stretched over the box. A
+	## pixel list of any other length crashes: a painter would read past its end
+	## or leave some of it out.
+	image : { x : F64, y : F64, width : F64, height : F64, cols : U64, rows : U64, pixels : List(Brush.Rgba) } -> Shapes.Shape
+	image = |picture|
+		if picture.pixels.len() != picture.cols * picture.rows {
+			crash "Shapes.image: a picture's pixels number its cols times its rows"
+		} else {
+			Image(picture)
+		}
+
 	## Light in `color` at the middle, at the colour's own alpha, fading to
 	## nothing at `radius`.
 	halo : { center : Point.Point, radius : F64 }, Brush.Rgba -> Shapes.Shape
@@ -277,6 +288,13 @@ dot = Disc({ x: 1.0, y: 2.0, radius: 3.0, fill: ink })
 expect Shapes.added_light([dot]) == [Blend(Add), dot, Blend(Over)]
 expect Shapes.added_light([]) == [Blend(Add), Blend(Over)]
 expect Shapes.in_space(Screen, [dot]) == [View(Screen), dot, View(Screen)]
+
+# A picture two pixels wide and one high holds two pixels.
+expect {
+	white = { r: 255.0, g: 255.0, b: 255.0, a: 1.0 }
+	picture = { x: 0.0, y: 0.0, width: 4.0, height: 2.0, cols: 2, rows: 1, pixels: [white, white] }
+	Shapes.image(picture) == Image(picture)
+}
 
 # A flat polygon and a flat disc are squashed toward the axis with their fills.
 expect
