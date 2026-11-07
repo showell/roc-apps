@@ -67,7 +67,8 @@
 -- physics change that moves the ride can empty a frame: check each scene again
 -- after one.
 --
--- `part=page` runs canvas_apps/build.sh for safari's dev page, into a scratch
+-- `part=page` first runs gates/input_bits.shale, which holds the page's key and
+-- button bits equal to lib's. Then it runs canvas_apps/build.sh for safari's dev page, into a scratch
 -- folder so the dev channel doesn't move, and holds the hash of what it drew to
 -- gates/page.expected. With `release=1`, which publish.shale gives it, it builds
 -- the release page into the dev channel, held to the same hash.
@@ -163,6 +164,7 @@ end
 const SELF_PATH = "canvas_apps/safari/gates/run.shale"
 const TUTORIAL = "canvas_apps/safari/tutorial/build.shale"
 const BOOK_NAMES = "canvas_apps/safari/gates/book_names.shale"
+const INPUT_BITS = "canvas_apps/safari/gates/input_bits.shale"
 const EXPECT_ROOTS = {"gates/CrossModuleExpects.roc", "web.roc", "../lib/main.roc"}
 const WIDGET_ROOT = "gates/WidgetExpects.roc"
 const SAFARI_SOURCES = {":(glob)canvas_apps/safari/*.roc", ":(glob)canvas_apps/safari/gates/*.roc", ":(glob)canvas_apps/lib/*.roc"}
@@ -413,6 +415,7 @@ function proof()
 end
 
 function page()
+  print(trim(must(run({"shale", "--root", ".", INPUT_BITS}, {timeout_ms = 60000, tail = 40})).out))
   local scratch = fresh_dir("scratch:", "safari-page")
   local cache = child_cache("page")
   local argv = {"bash", "canvas_apps/build.sh", "safari"}
