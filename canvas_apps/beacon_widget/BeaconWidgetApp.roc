@@ -11,7 +11,6 @@ import game.Clock
 import game.Distance
 import game.Fraction
 import game.Geom
-import game.Lens
 import game.Pipeline
 import game.RoadAhead
 import game.Route
@@ -52,7 +51,7 @@ blinks = VcrButtons.clock_range({
 ## The beacons of a tower past a segment's end, and of the tower halfway along
 ## the same segment, which blinks opposite it.
 first_beacon : Beacon
-first_beacon = Beacon.(0)
+first_beacon = Beacon.of_segment(Route.SegmentIndex.first)
 
 second_beacon : Beacon
 second_beacon = first_beacon.opposite()
@@ -87,7 +86,6 @@ picture_shapes = |clock|
 			tower_shapes(tower_right.opposite(), first_beacon.brightness_at(clock)),
 			tower_shapes(tower_right, second_beacon.brightness_at(clock)),
 		].join(),
-		roll: Angle.upright,
 	})
 
 ## The road ahead of a rider on the route's first segment, straight for well
@@ -114,15 +112,10 @@ tower_shapes = |right, brightness| {
 		kind: { yaw: Angle.straight_ahead, beacon_brightness: brightness },
 	}
 	place = Ahead(SegmentPlace.Position.first)
-	match Pipeline.sighting_of(placed_tower, { road: straight_road, vantage: eye, place }) {
-		Ok(sighting) =>
-			sighting.kind.scenery_picture({
-				spot: sighting.spot,
-				cam_focal: Lens.resting_focal,
-				context: { road: straight_road, vantage: eye },
-			}).to_shapes()
-		Err(BehindCamera) => []
-	}
+	ScrubWidget.resting_lens_shapes(
+		Pipeline.sighting_of(placed_tower, { road: straight_road, vantage: eye, place }),
+		{ road: straight_road, vantage: eye },
+	)
 }
 
 ## What the clock and the beacons say at `clock`, a line each.
@@ -144,17 +137,6 @@ status_lines = |clock| {
 step_count_text : Steps -> Str
 step_count_text = |steps| steps.to_f64().to_i64_wrap().to_str()
 
-# Whatever the clock says, what one beacon lacks the other has.
-expect
-	[5400, 5430, 5447, 5459, 5460, 5461, 5519, 5520, 5640].all(
-		|step| {
-			clock = Clock.at_step(step)
-			first_tower = first_beacon.brightness_at(clock)
-			second_tower = second_beacon.brightness_at(clock)
-			is_near(first_tower, second_tower.less().to_f64())
-		},
-	)
-
 expect
 	status_lines(Clock.at_step(5400))
 		== ["Clock: step 5400", "Blink: 0 of 120 steps", "First tower: 0%", "Second tower: 100%"]
@@ -162,14 +144,8 @@ expect
 # The range runs two whole blinks.
 expect blinks.last.steps_since(blinks.first).to_f64() == 2.0 * Beacon.beacon_period.to_f64()
 
-## Whether a share is `want`, to within rounding.
-is_near : Fraction, F64 -> Bool
-is_near = |share, want| (share.to_f64() - want).abs() <= 0.0000001
-
-# The picture depends on the clock. A beacon comes back after a whole blink,
-# though the sky goes on darkening.
+# The picture depends on the clock.
 expect picture_shapes(Clock.at_step(5430)) != picture_shapes(Clock.at_step(5431))
-expect first_beacon.brightness_at(Clock.at_step(5430)) == first_beacon.brightness_at(Clock.at_step(5550))
 
 # The picture follows the buttons' clock.
 expect

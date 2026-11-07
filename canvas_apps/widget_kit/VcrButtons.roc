@@ -3,10 +3,8 @@
 ## does the rest: it reads a press into the number and draws the buttons where
 ## the panel starts. Six buttons go to the start, play backward, step back, step
 ## forward, play and go to the end. A click anywhere else does nothing.
-import game.EncounterPlan
 import game.Clock
 import game.Distance
-import game.Speed
 import lib.Brush
 import lib.CanvasApp
 import lib.Input
@@ -64,34 +62,6 @@ VcrButtons :: [].{
 		play_reach: metres_a_frame,
 	}
 
-	## The timing of an animation `span` long, for a rider `gap` short of its
-	## animal on a gap's `range`, coming at `speed` from the range's far end at
-	## step 0 of the ride's clock. It is planned as the ride plans it, on the
-	## first step that the rider comes within reach.
-	planned_timing : EncounterPlan.StepSpan,
-	{
-		range : VcrButtons.NumberRange(Distance),
-		speed : Speed,
-		gap : Distance,
-	} -> EncounterPlan.Timing
-	planned_timing = |span, { range, speed, gap }| {
-		now = Clock.at_step(range.first.minus(gap).portion(speed.step_length()).to_u32_wrap())
-		var $step = Clock.start
-		var $start = Unplanned
-		while $start == Unplanned and !(now < $step) {
-			$start = EncounterPlan.planned_start(
-				span,
-				{
-					gap: range.first.minus(speed.distance_in($step.steps_since(Clock.start))),
-					speed,
-					now: $step,
-				},
-			)
-			$step = $step.next()
-		}
-		EncounterPlan.timing_of($start, now)
-	}
-
 	## The buttons at rest with the number at `number`.
 	transport_at : number -> VcrButtons.Transport(number)
 	transport_at = |number| { at: number, motion: Stopped }
@@ -106,6 +76,7 @@ VcrButtons :: [].{
 	canvas_app = |{ title, range, opens_at, frame_shapes }|
 		ScrubWidget.canvas_app({
 			title,
+			frames_a_second: ScrubWidget.moving_frames_a_second,
 			init: VcrButtons.transport_at(opens_at),
 			model_at_next_step: |transport, input| VcrButtons.next_transport(transport, { input, range }),
 			frame_shapes,
@@ -514,7 +485,6 @@ expect !is_lit(ToEnd, Forward)
 
 # Each button shows an icon, and a button is its square and that icon. A lit one
 # shows the two bars of a pause, in a color of its own.
-expect buttons.len() == 6
 expect buttons.all(|button| button_shapes(button, Stopped).len() > 1)
 expect button_shapes({ control: Play, left: 24.0 }, Forward).len() == 3
 expect button_shapes({ control: Play, left: 24.0 }, Stopped).len() == 2

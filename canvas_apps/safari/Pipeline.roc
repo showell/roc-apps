@@ -92,8 +92,9 @@ Pipeline :: [].{
 	## for whatever else its kind needs.
 	rendering_of : Pipeline.Sighted(kind), { cam_focal : Pixels, context : context } -> Rendered
 		where [kind.scenery_picture : kind, Picture.Setting(context) -> Picture]
-	rendering_of = |sighting, { cam_focal, context }| {
-		depth: sighting.spot.foot().forward(),
-		picture: sighting.kind.scenery_picture({ spot: sighting.spot, cam_focal, context }),
-	}
+	rendering_of = |sighting, { cam_focal, context }|
+		Rendered.of(
+			sighting.spot.foot().forward(),
+			sighting.kind.scenery_picture({ spot: sighting.spot, cam_focal, context }),
+		)
 }

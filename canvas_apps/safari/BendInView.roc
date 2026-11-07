@@ -12,11 +12,14 @@ import Geom
 
 ## A bend as the rider sees it: where the segment before it lies, and the
 ## bend itself.
-BendInView := { before : SegmentPlace, bend : Geom.Bend }.{
+BendInView :: { before : SegmentPlace, bend : Geom.Bend }.{
 
 	## The bend at the end of `in_view`.
 	of_in_view : RoadAhead.SegmentInView -> BendInView
-	of_in_view = |in_view| { before: in_view.place, bend: in_view.segment.bend_out_of() }
+	of_in_view = |in_view| {
+		bend = in_view.segment.bend_out_of()
+		BendInView.({ before: in_view.place, bend })
+	}
 
 	## The bend at the end of `in_view`, unless the road in view ends there. It
 	## goes on past every segment of the road ahead but the last, and past the
@@ -37,13 +40,21 @@ BendInView := { before : SegmentPlace, bend : Geom.Bend }.{
 
 	## The turn the road makes at a bend, positive to the right.
 	turn : BendInView -> Angle.Turn
-	turn = |bend_in_view| bend_in_view.bend.turn
+	turn = |BendInView.(bend_in_view)| bend_in_view.bend.turn
+
+	## Where the segment before the bend lies from the rider.
+	place_before : BendInView -> SegmentPlace
+	place_before = |BendInView.(bend_in_view)| bend_in_view.before
+
+	## How long the segment before the bend is.
+	length_before : BendInView -> Distance
+	length_before = |BendInView.(bend_in_view)| bend_in_view.bend.segment_length
 
 	## Where on the road ahead the segment after a bend lies: next after the
 	## segment before, or the rider's own when the segment before is just behind
 	## the rider.
 	position_after : BendInView -> SegmentPlace.Position
-	position_after = |bend_in_view|
+	position_after = |BendInView.(bend_in_view)|
 		match bend_in_view.before {
 			Ahead(position) => position.next()
 			JustBehind => SegmentPlace.Position.first
@@ -51,7 +62,7 @@ BendInView := { before : SegmentPlace, bend : Geom.Bend }.{
 
 	## How far across the road its outer edge at a bend is.
 	outer_edge : BendInView -> Across
-	outer_edge = |bend_in_view|
+	outer_edge = |BendInView.(bend_in_view)|
 		match Geom.outer_side(bend_in_view.bend.turn) {
 			LeftSide => Geom.left_edge
 			RightSide => Geom.right_edge
@@ -68,7 +79,7 @@ BendInView := { before : SegmentPlace, bend : Geom.Bend }.{
 	}
 	outer_corner = |bend_in_view| {
 		across = outer_edge(bend_in_view)
-		bend = bend_in_view.bend
+		BendInView.({ bend, .. }) = bend_in_view
 		start_after = Geom.point_in_segment_before({ along: Along.start, across }, bend)
 		turn_radians = bend.turn.to_radians()
 		toward_edge = across.distance_from(start_after.across).to_metres()
@@ -83,7 +94,10 @@ BendInView := { before : SegmentPlace, bend : Geom.Bend }.{
 
 ## A bend of `turn` from a segment 300 m long at `before`.
 sample_bend : SegmentPlace, Angle.Turn -> BendInView
-sample_bend = |before, turn| { before, bend: { segment_length: Distance.metres(300.0), turn } }
+sample_bend = |before, turn| {
+	bend = { segment_length: Distance.metres(300.0), turn }
+	BendInView.({ before, bend })
+}
 
 right_bend : BendInView
 right_bend = sample_bend(Ahead(SegmentPlace.Position.first), Angle.Turn.degrees(50.0))

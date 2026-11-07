@@ -14,10 +14,18 @@
 const SAFARI = "canvas_apps/safari"
 const FILES = arg("files", "")
 
+-- The game's clients, which import its modules: a member only a widget calls
+-- has a real caller. The gates test the game, so their calls are a test's.
+const CLIENT_GLOBS = {"canvas_apps/*_widget/**/*.roc", "canvas_apps/widget_kit/**/*.roc"}
+const GATE_GLOB = SAFARI .. "/gates/**/*.roc"
+
 -- Every file any lint here reads, as globs from the checkout's root. With
 -- `reads=globs` this script prints them and stops, so fast.shale's record of
 -- the last green covers each file a lint reads, not only safari's.
-const TREE_GLOBS = {SAFARI .. "/**/*.roc", "canvas_apps/*_widget/**/*.roc", "canvas_apps/widget_kit/**/*.roc", "canvas_apps/lib/**/*.roc"}
+local tree_globs = {SAFARI .. "/**/*.roc"}
+for g in CLIENT_GLOBS do push(tree_globs, g) end
+push(tree_globs, "canvas_apps/lib/**/*.roc")
+const TREE_GLOBS = tree_globs
 
 -- More files than this go through each recipe at once, because a run may start
 -- only 64 programs.
@@ -54,7 +62,7 @@ const LINTS = {
   }, whole_tree = {"error_alias"}},
   {recipe = "nest_depth", args = {"min=4"}, budget = {}, counts = {{"nested", 0}}},
   {recipe = "parens", args = {}, budget = {}, counts = {{"paren_if", 0}, {"wrapped_body", 0}, {"else_block", 0}, {"lambda_if", 0}}},
-  {recipe = "boundaries", args = {"types=1", "root=" .. SAFARI .. "/web.roc"}, budget = {}, from_repo_root = true, counts = {
+  {recipe = "boundaries", args = {"types=1", "root=" .. SAFARI .. "/web.roc", "clients=" .. join(CLIENT_GLOBS, ","), "tests=" .. GATE_GLOB, "test_reach=dead"}, budget = {}, from_repo_root = true, counts = {
     {"single", 0}, {"fixed", 0}, {"entry", 0}, {"constant", 0}, {"bool_param", 0}, {"dead", 0},
   }, whole_tree = {"single", "fixed", "entry", "constant", "bool_param", "dead"}},
   {recipe = "stack", args = {}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 0}, {"to unstack", 0}, {"long", 0}},

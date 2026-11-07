@@ -4,7 +4,6 @@
 ## crown `TreeShapes.crown_of` gives there.
 import game.Across
 import game.Along
-import game.Angle
 import game.Clock
 import game.Conifer
 import game.Distance
@@ -77,12 +76,10 @@ stand_spot = |stand|
 
 tree_shapes : Stand -> List(Shapes.Shape)
 tree_shapes = |stand|
-	match stand_spot(stand) {
-		Ok(spot) =>
-			conifer.scenery_picture({ spot, cam_focal: Lens.resting_focal, context: { nearer_tree_count: 0 } })
-				.to_shapes()
-		Err(BehindCamera) => []
-	}
+	ScrubWidget.resting_lens_shapes(
+		stand_spot(stand).map_ok(|spot| { spot, kind: conifer }),
+		{ nearer_tree_count: 0 },
+	)
 
 ## What `TreeShapes.crown_of` says at `forward`, as Roc would write it.
 crown_text : Distance -> Str
@@ -123,7 +120,6 @@ still_shapes = {
 	picture_shapes = ScrubWidget.picture_shapes({
 		backdrop: { sky_colors: Sky.colors_at(Clock.start), sun_sighting: OutOfView },
 		ride_shapes: trees,
-		roll: Angle.upright,
 	})
 	ScrubWidget.frame_shapes({ picture_shapes, status_lines: [] }).concat(stands.join_map(caption_shapes))
 }

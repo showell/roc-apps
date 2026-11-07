@@ -17,7 +17,6 @@ import lib.CanvasApp
 import lib.Input
 import lib.Shapes
 import lib.RgbColor
-import lib.Trig
 import widget.Click
 import widget.PlanView
 import widget.ReadoutText
@@ -35,6 +34,7 @@ RehearsalWidgetApp :: [].{
 
 	canvas_app : CanvasApp.CanvasApp(RehearsalWidgetApp.Model)
 	canvas_app = ScrubWidget.canvas_app({
+		frames_a_second: ScrubWidget.moving_frames_a_second,
 		title: "Twelve rehearsals",
 		init: { stop: Start },
 		model_at_next_step: |model, input| { stop: stepped(model.stop, input) },
@@ -49,10 +49,6 @@ step_shown = 374
 ## The rider's motorcycle at that step, the ride's own.
 rider : Motorcycle
 rider = Tour.at_step(step_shown).instant.rider.motorcycle
-
-## Where the rider aims: the road's middle, as `LeanSearch.best_lean` does.
-target : Across
-target = Across.middle
 
 ## A point on an arc: how far along the road from the rider, and where across it.
 ArcPoint : { forward : F64, across : F64 }
@@ -203,7 +199,7 @@ road_shapes = {
 		}),
 		road_line({ across: -half_lane, color: line_color, width: 2.0 }),
 		road_line({ across: half_lane, color: line_color, width: 2.0 }),
-		road_line({ across: target.to_metres(), color: target_color, width: 1.0 }),
+		road_line({ across: LeanSearch.aimed_across.to_metres(), color: target_color, width: 1.0 }),
 	]
 }
 
@@ -304,7 +300,7 @@ hundredths_text = |number| {
 ## A lean in degrees, and which way.
 lean_text : Angle.Lean -> Str
 lean_text = |lean| {
-	degrees = lean.to_radians() / Trig.degree
+	degrees = lean.to_degrees()
 	if degrees < 0.0 {
 		"${hundredths_text(0.0 - degrees)} left"
 	} else {
@@ -354,7 +350,7 @@ status_lines = |stop|
 			[
 				"Step ${step_shown.to_str()}, just after a bend",
 				"Leaning ${lean_text(rider.lean)}",
-				"Aiming for ${across_text(target)}",
+				"Aiming for ${across_text(LeanSearch.aimed_across)}",
 				"Each mark is one try at a lean",
 			]
 		Shown(try) =>

@@ -174,13 +174,11 @@ crossing_timeline = |cat| {
 				{ ..on_the_way, lift }
 			}
 		}
-	Animation.Timeline.(
-		{
-			before: { pose: Rest, location: start },
-			frames: crossing_frames.map(|{ pose, way }| { pose, location: location_of(way) }),
-			after: { pose: Collapse, location: end },
-		},
-	)
+	Animation.Timeline.of({
+		before: { pose: Rest, location: start },
+		frames: crossing_frames.map(|{ pose, way }| { pose, location: location_of(way) }),
+		after: { pose: Collapse, location: end },
+	})
 }
 
 expect
