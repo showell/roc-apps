@@ -1,4 +1,4 @@
-## A billboard is a critter that stands in one place and always faces the
+## A billboard is an animal that stands in one place and always faces the
 ## camera: an emoji's still, at a height, facing left or right.
 import Distance
 import EmojiStills

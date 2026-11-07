@@ -14,8 +14,9 @@ import Trees
 CowHerd := {
 	cow_count : U64,
 
-	## How many cows stand in each column, one to a row.
-	rows : U64,
+	## How many rows stand behind the front row, nearest the road. Each column
+	## has one cow in each row, so a column holds one more cow than this.
+	rows_behind_front : U64,
 
 	## How far along the road behind the bull's place the first column stands.
 	gap_behind_bull : Distance,
@@ -88,8 +89,9 @@ is_calf = |cow_number| cow_number.rem_by(4) == 1
 ## along the road and 1.9 across it, are chosen by eye.
 herd_cow : CowHerd, { herd_along : Along, cow_number : U64 } -> Geom.Placed(Billboard)
 herd_cow = |herd, { herd_along, cow_number }| {
-	column = cow_number.div_trunc_by(herd.rows).to_f64()
-	row = cow_number.rem_by(herd.rows).to_f64()
+	cows_per_column = herd.rows_behind_front + 1
+	column = cow_number.div_trunc_by(cows_per_column).to_f64()
+	row = cow_number.rem_by(cows_per_column).to_f64()
 	herd_front = herd_along.plus(herd.gap_behind_bull)
 	column_place = herd_front.plus(herd.column_spacing.times(column))
 	in_line = column_place.plus(herd.row_stagger.times(row - 1.0))
@@ -134,7 +136,7 @@ expect
 fourteen_cows : CowHerd
 fourteen_cows = {
 	cow_count: 14,
-	rows: 3,
+	rows_behind_front: 2,
 	gap_behind_bull: Distance.metres(6.0),
 	column_spacing: Distance.metres(6.0),
 	row_stagger: Distance.metres(2.0),

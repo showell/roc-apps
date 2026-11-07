@@ -62,11 +62,11 @@ TreeShapes :: [].{
 	tree_outline : Spot, { height : Distance, cam_focal : Pixels } -> TreeShapes.TreeOutline
 	tree_outline = |spot, { height, cam_focal }|
 		outline_from_base({ base: base_of(spot), height, cam_focal })
-
-	## The tree is drawn 136 parts tall, and the shares below are parts of that.
-	tree_parts : U64
-	tree_parts = 136
 }
+
+## The tree is drawn 136 parts tall, and the shares below are parts of that.
+tree_parts : U64
+tree_parts = 136
 
 ## The middle of the foot of the tree at `spot`.
 base_of : Spot -> Geom.AheadPoint
@@ -191,7 +191,7 @@ trunk_color = RgbColor.of(0x5A3E22)
 
 ## Of the tree's parts, 55 are trunk below the crown.
 trunk_height_share : Fraction
-trunk_height_share = Fraction.of(55.0 / TreeShapes.tree_parts.to_f64())
+trunk_height_share = Fraction.of(55.0 / tree_parts.to_f64())
 
 ## The crown is the rest of the tree, so its tip is the tree's height.
 crown_height_share : Fraction
@@ -199,11 +199,11 @@ crown_height_share = trunk_height_share.less()
 
 ## The crown's widest half-width, as a fraction of the tree's height.
 crown_half_width_share : Fraction
-crown_half_width_share = Fraction.of(36.0 / TreeShapes.tree_parts.to_f64())
+crown_half_width_share = Fraction.of(36.0 / tree_parts.to_f64())
 
 ## The trunk's width, as a fraction of the tree's height.
 trunk_width_share : Fraction
-trunk_width_share = Fraction.of(10.0 / TreeShapes.tree_parts.to_f64())
+trunk_width_share = Fraction.of(10.0 / tree_parts.to_f64())
 
 ## However far off a tree is, its trunk is this wide.
 min_trunk_width : Pixels
@@ -212,7 +212,7 @@ min_trunk_width = Pixels.of(1.0)
 ## How far the trunk runs up inside the crown, as a fraction of the tree's
 ## height, so that no sky shows between them.
 trunk_overlap_share : Fraction
-trunk_overlap_share = Fraction.of(6.25 / TreeShapes.tree_parts.to_f64())
+trunk_overlap_share = Fraction.of(6.25 / tree_parts.to_f64())
 
 ## A cone's base is a ring of this many points.
 ring_point_count : U64

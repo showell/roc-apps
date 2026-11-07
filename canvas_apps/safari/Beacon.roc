@@ -4,10 +4,16 @@
 ## where they stand.
 import Clock
 import Fraction
+import Route
 import Steps
 
 ## A tower's beacon, by its key. Beacons with neighbouring keys blink apart.
-Beacon := U32.{
+Beacon :: U32.{
+
+	## The beacon of the tower past the end of the segment at `index`, keyed by
+	## that segment's number, so neighbouring segments' beacons blink apart.
+	of_segment : Route.SegmentIndex -> Beacon
+	of_segment = |index| Beacon.(index.to_u32())
 
 	## A beacon blinks once in this many steps of the ride.
 	beacon_period : Steps

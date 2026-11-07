@@ -31,7 +31,7 @@ farm_reach = 3
 wildlife_reach : U32
 wildlife_reach = 5
 
-## What became of a critter placed in the rider's view.
+## What became of a billboard placed in the rider's view.
 Fate : Try(Pipeline.Sighted(Billboard), [BehindCamera, TooSmall])
 
 ## What became of every billboard on the segments in view, in the order of
@@ -41,7 +41,7 @@ billboard_fates = |road, camera|
 	RoadAhead.segments_in_view(road)
 		.join_map(|in_view| segment_billboards(road, { vantage: camera.vantage, in_view }))
 
-## The critters of a segment in view: its farm animals, then what lives at
+## The billboards of a segment in view: its farm animals, then what lives at
 ## its end.
 segment_billboards : RoadAhead.RoadView,
 {
@@ -63,7 +63,7 @@ farm_sightings = |road, { vantage, in_view }| {
 	if is_within_reach(place, farm_reach) {
 		in_view.segment.segment_cows()
 			.concat(in_view.segment.segment_pigs())
-			.map(|critter| sight_critter(road, { vantage, place, critter }))
+			.map(|billboard| sight_billboard(road, { vantage, place, billboard }))
 	} else {
 		[]
 	}
@@ -79,26 +79,26 @@ bend_sightings : RoadAhead.RoadView,
 bend_sightings = |road, { vantage, in_view }| {
 	place = in_view.place
 	if is_within_reach(place, wildlife_reach) {
-		bend_life_critters(in_view.segment)
-			.map(|critter| sight_critter(road, { vantage, place, critter }))
+		bend_life_billboards(in_view.segment)
+			.map(|billboard| sight_billboard(road, { vantage, place, billboard }))
 	} else {
 		[]
 	}
 }
 
-## A critter, placed through `place` on the road's map, as the rider sees it.
-## A critter's size is tested through the lens at rest, where a tree's is
+## A billboard, placed through `place` on the road's map, as the rider sees it.
+## A billboard's size is tested through the lens at rest, where a tree's is
 ## tested through the camera's own. The camera's focal length is never longer
-## than that, so this keeps critters a tree's test would drop while the view
-## is wide. Giving critters the tree's test would change what the ride draws.
-sight_critter : RoadAhead.RoadView,
+## than that, so this keeps billboards a tree's test would drop while the view
+## is wide. Giving billboards the tree's test would change what the ride draws.
+sight_billboard : RoadAhead.RoadView,
 {
 	vantage : Geom.Vantage,
 	place : SegmentPlace,
-	critter : Geom.Placed(Billboard),
+	billboard : Geom.Placed(Billboard),
 } -> Fate
-sight_critter = |road, { vantage, place, critter }|
-	Pipeline.tall_sighting_of(critter, { road, vantage, place, size_focal: Lens.resting_focal })
+sight_billboard = |road, { vantage, place, billboard }|
+	Pipeline.tall_sighting_of(billboard, { road, vantage, place, size_focal: Lens.resting_focal })
 
 ## Whether a segment at `place` is in reach: among the first `reach` of the
 ## road ahead, or the segment just behind, which meets the rider's own at its
@@ -114,15 +114,15 @@ expect is_within_reach(Ahead(SegmentPlace.Position.number(2)), 3)
 expect !is_within_reach(Ahead(SegmentPlace.Position.number(3)), 3)
 expect is_within_reach(JustBehind, 3)
 
-## The critters at the end of `segment`, placed on it. A duck's place is
+## The billboards at the end of `segment`, placed on it. A duck's place is
 ## measured from the bend at the segment's end.
-bend_life_critters : Segment -> List(Geom.Placed(Billboard))
-bend_life_critters = |segment|
+bend_life_billboards : Segment -> List(Geom.Placed(Billboard))
+bend_life_billboards = |segment|
 	match segment.ending {
 		Bends({ bend_life, .. }) =>
 			match bend_life {
 				Animal(animal) =>
-					Wildlife.bend_critters({ animal, bend: segment.bend_out_of() })
+					Wildlife.bend_billboards({ animal, bend: segment.bend_out_of() })
 				DuckPond => Pond.placed_ducks(segment.bend_out_of())
 				Quiet => []
 			}

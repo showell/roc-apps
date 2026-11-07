@@ -96,13 +96,11 @@ flight_timeline = |{ from, to }| {
 			{ pose, location: flight_location({ from: ends.from, to: ends.to, through }) }
 		},
 	)
-	Animation.Timeline.(
-		{
-			before: sitting_on(from),
-			frames,
-			after: sitting_on(to),
-		},
-	)
+	Animation.Timeline.of({
+		before: sitting_on(from),
+		frames,
+		after: sitting_on(to),
+	})
 }
 
 ## The location on top of `tree`.

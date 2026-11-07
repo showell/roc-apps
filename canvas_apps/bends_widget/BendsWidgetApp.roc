@@ -105,7 +105,7 @@ apex_of = |turn| {
 		road,
 		{
 			vantage: camera.vantage,
-			place: bend_in_view.before,
+			place: bend_in_view.place_before(),
 			road_point: bend_in_view.outer_corner().apex,
 		},
 	)
@@ -151,19 +151,13 @@ patch_shape = |bend, corners|
 		fill: Brush.flat(PlanView.road_color),
 	})
 
-## The first two corners of a rail's quad, which lie along the ground.
-foot_shapes : ShownBend, List(Geom.RaisedPoint) -> List(Shapes.Shape)
-foot_shapes = |bend, corners|
-	match corners {
-		[a, b, ..] => {
-			from = canvas_point(bend, { right: a.right, forward: a.forward })
-			to = canvas_point(bend, { right: b.right, forward: b.forward })
-			[
-				Shapes.line({ from, to, width: 2.0 }, Brush.flat(rail_color)),
-			]
-		}
-		_ => []
-	}
+## The low edge of a rail's quad, which lies along the ground.
+foot_shape : ShownBend, { low_start : Geom.RaisedPoint, low_end : Geom.RaisedPoint, .. } -> Shapes.Shape
+foot_shape = |bend, { low_start, low_end, .. }| {
+	from = canvas_point(bend, { right: low_start.right, forward: low_start.forward })
+	to = canvas_point(bend, { right: low_end.right, forward: low_end.forward })
+	Shapes.line({ from, to, width: 2.0 }, Brush.flat(rail_color))
+}
 
 ## A disc at a place on the road.
 spot : ShownBend, { at : Geom.RiderPoint, color : RgbColor } -> Shapes.Shape
@@ -183,8 +177,8 @@ bend_shapes : ShownBend -> List(Shapes.Shape)
 bend_shapes = |bend| {
 	road = road_with(bend.turn)
 	[
-		GroundSighting.patches_in_view(road, camera).map(|patch| patch_shape(bend, patch.corners)),
-		RailSighting.rail_quads_in_view(road, camera).join_map(|rail| foot_shapes(bend, rail.corners)),
+		GroundSighting.patches_in_view(road, camera).map(|patch| patch_shape(bend, patch.corners())),
+		RailSighting.rail_quads_in_view(road, camera).map(|rail| foot_shape(bend, rail.corners)),
 		[
 			spot(bend, { at: apex_of(bend.turn), color: apex_color }),
 			spot(bend, { at: rider, color: PlanView.standout_color }),
