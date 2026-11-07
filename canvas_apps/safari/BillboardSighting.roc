@@ -84,8 +84,8 @@ BillboardSighting :: [].{
 				road,
 				place,
 				size_test: {
-					focal: Lens.resting_focal,
-					smallest_px: BillboardSighting.min_critter_px,
+					focal_length: Lens.resting_focal,
+					smallest_height_on_screen: BillboardSighting.min_critter_px,
 				},
 			},
 		)
