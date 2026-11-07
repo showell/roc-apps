@@ -8,13 +8,13 @@ ok  after 5000 steps: clock 5000, one back -> 4999
 every step back went back one step
 ShapesFrame 0: differ 0 of 576000, triangles 4820, shapes 2266
 ShapesFrame 100: differ 0 of 576000, triangles 4135, shapes 2205
-ShapesFrame 1570: differ 0 of 576000, triangles 10598, shapes 2588
-ShapesFrame 1590: differ 0 of 576000, triangles 7311, shapes 2285
-ShapesFrame 3000: differ 0 of 576000, triangles 18196, shapes 2507
-ShapesFrame 3742: differ 0 of 576000, triangles 2860, shapes 1378
-ShapesFrame 5700: differ 0 of 576000, triangles 12501, shapes 1513
-ShapesFrame 6553: differ 0 of 576000, triangles 9797, shapes 848
-ShapesFrame 9000: differ 0 of 576000, triangles 11933, shapes 1072
+ShapesFrame 1570: differ 0 of 576000, triangles 10591, shapes 2588
+ShapesFrame 1590: differ 0 of 576000, triangles 7300, shapes 2285
+ShapesFrame 3000: differ 0 of 576000, triangles 18189, shapes 2507
+ShapesFrame 3742: differ 0 of 576000, triangles 2855, shapes 1378
+ShapesFrame 5700: differ 0 of 576000, triangles 12497, shapes 1513
+ShapesFrame 6553: differ 0 of 576000, triangles 9791, shapes 848
+ShapesFrame 9000: differ 0 of 576000, triangles 11929, shapes 1072
 RasterFrame 0: hash 8fd5cc9c
 RasterFrame 100: hash 77ff1e4b
 RasterFrame 1570: hash f7bc3161
