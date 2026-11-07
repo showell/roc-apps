@@ -8,7 +8,6 @@ import FrameView
 import Route
 import World
 import RideInstant
-import Rider
 import Steps
 
 ## The route, the instant the ride has reached, and the instants before it.
@@ -22,39 +21,31 @@ Tour := {
 	initial = { route: World.route, instant: RideInstant.initial, past_instants: [] }
 
 	step_forward : Tour -> Tour
-	step_forward = |tour| {
-		finished = Rider.is_finished(tour.instant.rider, tour.route)
-		# Dropping one instant per step would copy the whole list every step, so
-		# half of it goes at once and the copy falls on one step in a thousand.
-		# The list holds the most recent instants. It starts empty, grows to a
-		# cap, and from then on is between half a cap and a cap deep, until the
-		# ride finishes and starts again with the list empty.
-		past_instants =
-			if finished {
-				[]
-			} else if tour.past_instants.len() < past_instants_cap {
-				tour.past_instants.append(tour.instant)
-			} else {
-				tour.past_instants.drop_first(past_instants_cap // 2).append(tour.instant)
-			}
-		{
-			route: tour.route,
-			instant: RideInstant.next_or_restart(tour.route, tour.instant),
-			past_instants,
+	step_forward = |tour|
+		match tour_after_step(tour) {
+			Continued(next_tour) | Restarted(next_tour) => next_tour
 		}
-	}
 
 	## The tour ridden from its start to `step`, with the instants it passed
-	## behind it.
+	## behind it. The ride must not finish before `step`.
 	at_step : U32 -> Tour
 	at_step = |step| {
 		goal = Clock.start.plus(Steps.of(step))
 		var $tour = Tour.initial
 		while $tour.instant.clock != goal {
-			$tour = Tour.step_forward($tour)
+			$tour =
+				match tour_after_step($tour) {
+					Continued(next_tour) => next_tour
+					Restarted(_) => crash "Tour.at_step: the ride finishes before step ${step.to_str()}"
+				}
 		}
 		$tour
 	}
+
+	## How many past instants a tour keeps for stepping back: about half the
+	## route. The newest are the ones kept.
+	steps_kept_back : Steps
+	steps_kept_back = Steps.of(2048)
 
 	step_back : Tour -> Tour
 	step_back = |tour| {
@@ -73,10 +64,33 @@ Tour := {
 	frame_view = |tour| FrameView.frame_view_at(tour.route, tour.instant)
 }
 
-# How far back a step back can go: 2048 instants, about half the route.
-# The newest are the ones kept.
-past_instants_cap : U64
-past_instants_cap = 2048
+## `tour` a step on, with its past instants kept. The ride that has finished
+## starts again with none.
+tour_after_step : Tour -> [Continued(Tour), Restarted(Tour)]
+tour_after_step = |tour|
+	match RideInstant.next_or_restart(tour.route, tour.instant) {
+		Continued(next_instant) =>
+			Continued({
+				route: tour.route,
+				instant: next_instant,
+				past_instants: past_instants_after(tour),
+			})
+		Restarted(start) => Restarted({ route: tour.route, instant: start, past_instants: [] })
+	}
+
+## `tour`'s past instants with its current one added. Dropping one instant per
+## step would copy the whole list every step, so half of it goes at once and the
+## copy falls on one step in a thousand. The list starts empty, grows to a cap,
+## and from then on is between half a cap and a cap deep.
+past_instants_after : Tour -> List(RideInstant)
+past_instants_after = |tour| {
+	cap = Tour.steps_kept_back.to_u32().to_u64()
+	if tour.past_instants.len() < cap {
+		tour.past_instants.append(tour.instant)
+	} else {
+		tour.past_instants.drop_first(cap // 2).append(tour.instant)
+	}
+}
 
 # A tour ridden to a step keeps every instant it passed, and none at the start.
 expect {
