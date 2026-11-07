@@ -12,25 +12,25 @@ import TruckAhead
 
 TruckSighting :: [].{
 
-	## What the truck is seen from: the road in view, how far ahead of the
-	## rider the truck is, and which of its lights are on.
-	Viewpoint : {
-		road : Chain.RoadView,
-		lead : Distance,
-		lights : Truck.Lights,
-	}
-
 	## What became of the truck in a frame.
 	TruckFate : Try(Pipeline.Sighted(TruckAhead), [NoTruck, BehindCamera])
 
-	## The truck, if it is ahead of the rider, on the chain, and in front of
-	## the camera.
-	truck_in_view : TruckSighting.Viewpoint -> TruckSighting.TruckFate
-	truck_in_view = |view|
-		if view.lead > Distance.zero {
+	## The truck `lead` ahead of the rider with `lights` on, if it is ahead of the
+	## rider, on the chain, and in front of the camera.
+	truck_in_view : Chain.RoadView,
+	{
+		lead : Distance,
+		lights : Truck.Lights,
+	} -> TruckSighting.TruckFate
+	truck_in_view = |road, { lead, lights }|
+		if lead > Distance.zero {
 			truck_from(
-				view,
-				{ along: view.road.vantage.along.plus(view.lead), position: Chain.Position.first },
+				road,
+				{
+					along: road.vantage.along.plus(lead),
+					position: Chain.Position.first,
+					lights,
+				},
 			)
 		} else {
 			Err(NoTruck)
@@ -40,36 +40,41 @@ TruckSighting :: [].{
 ## The truck at `along` measured from the start of the segment at
 ## `position` in the chain, found by walking on through the segments it is
 ## past.
-truck_from : TruckSighting.Viewpoint,
+truck_from : Chain.RoadView,
 {
 	along : Along,
 	position : Chain.Position,
+	lights : Truck.Lights,
 } -> TruckSighting.TruckFate
-truck_from = |view, { along, position }|
-	if position.is_past_end_of(view.road.chain_indices) {
+truck_from = |road, { along, position, lights }|
+	if position.is_past_end_of(road.chain_indices) {
 		Err(NoTruck)
 	} else {
-		segment = position.index_in(view.road.chain_indices).segment_in(view.road.route_segments)
+		segment = position.index_in(road.chain_indices).segment_in(road.route_segments)
 		if along > Along.at(segment.length) {
-			truck_from(view, { along: along.minus(segment.length), position: position.next() })
+			truck_from(
+				road,
+				{
+					along: along.minus(segment.length),
+					position: position.next(),
+					lights,
+				},
+			)
 		} else {
-			truck_on_segment(view, { along, position })
+			truck_on_segment(road, { along, position, lights })
 		}
 	}
 
 ## The truck at `along` on the segment at `position` in the chain, in the
 ## middle of the road, if it is in front of the camera.
-truck_on_segment : TruckSighting.Viewpoint,
+truck_on_segment : Chain.RoadView,
 {
 	along : Along,
 	position : Chain.Position,
+	lights : Truck.Lights,
 } -> TruckSighting.TruckFate
-truck_on_segment = |view, { along, position }| {
+truck_on_segment = |road, { along, position, lights }| {
 	placed_truck : Geom.Placed(TruckAhead)
-	placed_truck = {
-		along,
-		across: Across.middle,
-		kind: { lights: view.lights },
-	}
-	Pipeline.sighting_of(placed_truck, { road: view.road, place: InChain(position) })
+	placed_truck = { along, across: Across.middle, kind: { lights } }
+	Pipeline.sighting_of(placed_truck, { road, place: InChain(position) })
 }

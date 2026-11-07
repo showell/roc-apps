@@ -56,11 +56,10 @@ Scene := {
 			road.route_segments,
 			{ index: Chain.rider_segment(road), along: road.vantage.along },
 		)
-		truck_at = TruckSighting.truck_in_view({
+		truck_at = TruckSighting.truck_in_view(
 			road,
-			lead: truck.route_position.minus(rider_distance),
-			lights: truck.lights,
-		})
+			{ lead: truck.route_position.minus(rider_distance), lights: truck.lights },
+		)
 		birds = BirdSighting.birds_in_view(view)
 		{
 			trees,

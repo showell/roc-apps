@@ -232,17 +232,18 @@ up_road = {
 	half_width: Distance.metres(2.0),
 }
 
+## The first three segments, seen from `vantage`.
+first_road : Geom.Vantage -> Chain.RoadView
+first_road = |vantage| {
+	route_segments,
+	chain_indices: [0, 1, 2].map(World.SegmentIndex.number),
+	vantage,
+}
+
 ## The first three segments, seen from `vantage` through a camera of focal
 ## length `cam_focal`.
 view_from : Geom.Vantage, Pixels -> Chain.Viewpoint
-view_from = |vantage, cam_focal| {
-	road: {
-		route_segments,
-		chain_indices: [0, 1, 2].map(World.SegmentIndex.number),
-		vantage,
-	},
-	cam_focal,
-}
+view_from = |vantage, cam_focal| { road: first_road(vantage), cam_focal }
 
 from_origin : Chain.Viewpoint
 from_origin = view_from(origin, Pixels.of(500.0))
@@ -329,21 +330,14 @@ expect
 	route_segments.map(|seg| seg.length.to_metres())
 		== [500.0, 320.0, 400.0]
 
-## What a truck `lead` metres ahead of a rider at the start of the chain is
-## seen from, from `vantage`, with its lights off.
-truck_view : Geom.Vantage, F64 -> TruckSighting.Viewpoint
-truck_view = |vantage, lead| {
-	road: {
-		route_segments,
-		chain_indices: [0, 1, 2].map(World.SegmentIndex.number),
-		vantage,
-	},
-	lead: Distance.metres(lead),
-	lights: { headlights: Off, brake_lights: Off },
-}
-
+## What becomes of a truck `lead` metres ahead of a rider at the start of the
+## chain, seen from `vantage`, with its lights off.
 truck_seen_from : Geom.Vantage, F64 -> TruckSighting.TruckFate
-truck_seen_from = |vantage, lead| TruckSighting.truck_in_view(truck_view(vantage, lead))
+truck_seen_from = |vantage, lead|
+	TruckSighting.truck_in_view(
+		first_road(vantage),
+		{ lead: Distance.metres(lead), lights: { headlights: Off, brake_lights: Off } },
+	)
 
 lead_of : F64 -> TruckSighting.TruckFate
 lead_of = |lead| truck_seen_from(origin, lead)
@@ -389,8 +383,10 @@ expect
 
 ## The lights a truck in view shows, when it has `lights` on.
 lights_shown = |lights| {
-	truck = TruckSighting.truck_in_view({ ..truck_view(origin, 100.0), lights })
-		?? crash "SceneShapes: this lead puts the truck in view"
+	truck = TruckSighting.truck_in_view(
+		first_road(origin),
+		{ lead: Distance.metres(100.0), lights },
+	) ?? crash "SceneShapes: this lead puts the truck in view"
 	truck.kind.lights
 }
 
