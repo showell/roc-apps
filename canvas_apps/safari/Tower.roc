@@ -15,6 +15,7 @@ import Geom
 import Picture
 import Polygon
 import lib.Brush
+import lib.RgbColor
 import Screen
 import lib.Shapes
 import World
@@ -457,7 +458,7 @@ disc_shapes : {
 	beacon_alpha : Fraction,
 } -> List(Shapes.Shape)
 disc_shapes = |{ beacon_color, beacon_center, beacon_radius, beacon_alpha }| {
-	opaque = Brush.opaque(beacon_color)
+	opaque = Brush.opaque(RgbColor.of(beacon_color))
 	[
 		Disc({
 			x: beacon_center.x.to_f64(),
@@ -489,7 +490,7 @@ expect
 				x: 10.0,
 				y: 20.0,
 				r: 30.0,
-				fill: Flat({ ..Brush.opaque(333), a: 0.25 }),
+				fill: Flat({ ..Brush.opaque(RgbColor.of(333)), a: 0.25 }),
 			}),
 		]
 
@@ -682,7 +683,7 @@ expect
 	})
 		== Poly({
 			coordinates: [-4.0, 3.0, 26.0, 43.0, 34.0, 37.0, 4.0, -3.0],
-			fill: Flat(Brush.opaque(Tower.tower_metal)),
+			fill: Flat(Brush.opaque(RgbColor.of(Tower.tower_metal))),
 		})
 
 # A rod of no length is still one quad, all at its one point.
@@ -694,7 +695,7 @@ expect
 	})
 		== Poly({
 			coordinates: [5.0, 6.0, 5.0, 6.0, 5.0, 6.0, 5.0, 6.0],
-			fill: Flat(Brush.opaque(Tower.tower_metal)),
+			fill: Flat(Brush.opaque(RgbColor.of(Tower.tower_metal))),
 		})
 
 ## A rod's width on screen `forward` metres ahead, through a 500 px focal length.

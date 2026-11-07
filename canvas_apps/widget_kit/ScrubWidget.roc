@@ -12,6 +12,7 @@ import game.HexColor
 import game.Sky
 import game.Sun
 import lib.Brush
+import lib.RgbColor
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
@@ -56,7 +57,7 @@ ScrubWidget :: [].{
 	}
 
 	flat : I64 -> Brush.Fill
-	flat = |color| Flat(Brush.opaque(color))
+	flat = |color| Flat(Brush.opaque(RgbColor.of(color)))
 
 	## The size of the lines under the picture, and of the words in it, on a
 	## canvas of the usual width.
@@ -80,7 +81,7 @@ ScrubWidget :: [].{
 			size: readout_size,
 			face: Code,
 			align: Left,
-			color: Brush.opaque(color),
+			color: Brush.opaque(RgbColor.of(color)),
 		})
 
 	## A few words beside what they name, with their baseline at `y`.
@@ -97,7 +98,7 @@ ScrubWidget :: [].{
 			size: label_size,
 			face: Prose,
 			align: Left,
-			color: Brush.opaque(ink_color),
+			color: Brush.opaque(RgbColor.of(ink_color)),
 		})
 
 	## The picture, and the panel with the lines of text on it.
@@ -258,7 +259,7 @@ expect
 			size: ScrubWidget.readout_size,
 			face: Code,
 			align: Left,
-			color: Brush.opaque(0x202020),
+			color: Brush.opaque(RgbColor.of(0x202020)),
 		})
 
 # A label is words, set where it is asked.
@@ -275,5 +276,5 @@ expect
 			size: ScrubWidget.label_size,
 			face: Prose,
 			align: Left,
-			color: Brush.opaque(0x202020),
+			color: Brush.opaque(RgbColor.of(0x202020)),
 		})

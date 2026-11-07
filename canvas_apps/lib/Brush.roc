@@ -8,6 +8,7 @@
 # Hand-written. The tags are shapes_canvas.js's, and so is what they mean: gradients
 # mix unpremultiplied, as the canvas specification says, and an offset outside
 # [0, 1] is clamped as shapes_canvas.js clamps it.
+import RgbColor
 
 Brush :: [].{
 	# Red, green and blue in 0..255, alpha in 0..1.
@@ -81,10 +82,13 @@ Brush :: [].{
 	chan : I64, U8 -> F64
 	chan = |c, shift| c.shr_wrap(shift).bitwise_and(255).to_f64()
 
-	# 0xRRGGBB, opaque. A colour with alpha is an `ArgbColor`, and its
-	# `to_rgba` is its brush colour.
-	opaque : I64 -> Brush.Rgba
-	opaque = |c| { r: chan(c, 16), g: chan(c, 8), b: chan(c, 0), a: 1.0 }
+	# An opaque colour as a brush paints it. A colour with alpha is an
+	# `ArgbColor`, and its `to_rgba` is its brush colour.
+	opaque : RgbColor -> Brush.Rgba
+	opaque = |color| {
+		rgb = color.to_i64()
+		{ r: chan(rgb, 16), g: chan(rgb, 8), b: chan(rgb, 0), a: 1.0 }
+	}
 
 	mix : Brush.Rgba, Brush.Rgba, F64 -> Brush.Rgba
 	mix = |p, q, t| { r: p.r + (q.r - p.r) * t, g: p.g + (q.g - p.g) * t, b: p.b + (q.b - p.b) * t, a: p.a + (q.a - p.a) * t }

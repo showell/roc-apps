@@ -15,6 +15,7 @@
 # across is not visible anyway.
 import lib.Shapes
 import lib.Brush
+import lib.RgbColor
 
 Particles :: [].{
 	# Their window.
@@ -122,20 +123,20 @@ Particles :: [].{
 	palette : I64 -> Brush.Rgba
 	palette = |i|
 		if i == 0 {
-			Brush.opaque(0xffd166)
+			Brush.opaque(RgbColor.of(0xffd166))
 		} else if i == 1 {
-			Brush.opaque(0xef476f)
+			Brush.opaque(RgbColor.of(0xef476f))
 		} else if i == 2 {
-			Brush.opaque(0x06d6a0)
+			Brush.opaque(RgbColor.of(0x06d6a0))
 		} else {
-			Brush.opaque(0x118ab2)
+			Brush.opaque(RgbColor.of(0x118ab2))
 		}
 
 	shapes : Particles.Model -> List(Shapes.Shape)
 	shapes = |m| {
 		n = List.len(m.particles)
 		var $out = List.with_capacity(n + 1)
-		$out = List.append($out, Rect({ x: 0.0, y: 0.0, w: width, h: height, fill: Flat(Brush.opaque(0x0b0e17)) }))
+		$out = List.append($out, Rect({ x: 0.0, y: 0.0, w: width, h: height, fill: Flat(Brush.opaque(RgbColor.of(0x0b0e17))) }))
 		var $i = 0
 		while $i < n {
 			p = List.get(m.particles, $i) ?? crash ("particle")

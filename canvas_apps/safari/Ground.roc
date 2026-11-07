@@ -6,6 +6,7 @@ import Camera
 import Distance
 import Geom
 import lib.Brush
+import lib.RgbColor
 import lib.Shapes
 
 Ground :: [].{
@@ -148,7 +149,8 @@ expect
 expect {
 	match sample_patch_shape(patch_corners_ahead) {
 		Ok(Poly(polygon)) =>
-			polygon.fill == Flat(Brush.opaque(0x2F7E8C)) and polygon.coordinates.len() == 8
+			polygon.fill == Flat(Brush.opaque(RgbColor.of(0x2F7E8C)))
+				and polygon.coordinates.len() == 8
 		_ => False
 	}
 }

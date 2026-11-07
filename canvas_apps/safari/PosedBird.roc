@@ -12,6 +12,7 @@ import Picture
 import StillShapes
 import Distance
 import lib.Brush
+import lib.RgbColor
 import lib.Shapes
 
 PosedBird := { pose : BirdFlight.BirdPose, lift : Distance }.{
@@ -104,5 +105,5 @@ expect {
 		|pose| bird_shapes_at({ ..level_bird, pose }, Distance.metres(0.0)).map(fill_of),
 	)
 	stills = BirdStills.side_wings_down.concat(BirdStills.diving_polygons)
-	drawn == stills.map(|poly| Flat(Brush.opaque(poly.color)))
+	drawn == stills.map(|poly| Flat(Brush.opaque(RgbColor.of(poly.color))))
 }

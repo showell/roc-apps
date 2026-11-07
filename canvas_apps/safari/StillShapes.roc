@@ -5,6 +5,7 @@
 import Pixels
 import Polygon
 import lib.Brush
+import lib.RgbColor
 import Stills
 import Screen
 import lib.Shapes
@@ -180,5 +181,5 @@ expect
 	StillShapes.still_polygon(upright, flat_polygon(3))
 		== Poly({
 			coordinates: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0],
-			fill: Flat(Brush.opaque(7)),
+			fill: Flat(Brush.opaque(RgbColor.of(7))),
 		})

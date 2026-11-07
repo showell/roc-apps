@@ -5,6 +5,7 @@ import Fraction
 import HexColor
 import Pixels
 import lib.Brush
+import lib.RgbColor
 import Screen
 import Sun
 import lib.Shapes
@@ -62,8 +63,8 @@ Backdrop :: [].{
 			}),
 			glow_radius,
 			disc: Radial({
-				inner: Brush.opaque(0xffe6a3),
-				outer: Brush.opaque(0xff9d5c),
+				inner: Brush.opaque(RgbColor.of(0xffe6a3)),
+				outer: Brush.opaque(RgbColor.of(0xff9d5c)),
 				x: sun.x.to_f64(),
 				y: sun.y.to_f64(),
 				r0: 4.0 * scale,
@@ -86,8 +87,8 @@ Backdrop :: [].{
 		# The top colour to a fifth of the way down to the horizon at y 300,
 		# then the fade.
 		sky = Linear({
-			c0: Brush.opaque(HexColor.pack(sky_top_color)),
-			c1: Brush.opaque(HexColor.pack(sky_horizon_color)),
+			c0: Brush.opaque(RgbColor.of(HexColor.pack(sky_top_color))),
+			c1: Brush.opaque(RgbColor.of(HexColor.pack(sky_horizon_color))),
 			o0: sky_top_stop.to_f64(),
 			o1: 1.0,
 			ax: 0.0,
@@ -119,7 +120,7 @@ Backdrop :: [].{
 				y: Screen.grass_top_y.to_f64(),
 				w: 3120.0,
 				h: 1561.0,
-				fill: Flat(Brush.opaque(grass_color)),
+				fill: Flat(Brush.opaque(RgbColor.of(grass_color))),
 			}),
 		)
 		$out.concat(ride_shapes)

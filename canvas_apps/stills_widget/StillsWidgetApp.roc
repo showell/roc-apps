@@ -12,6 +12,7 @@ import game.Screen
 import game.StillShapes
 import game.Stills
 import lib.Brush
+import lib.RgbColor
 import lib.CanvasApp
 import lib.Font
 import lib.Input
@@ -305,7 +306,7 @@ picture_color : I64
 picture_color = 0xf7f5ef
 
 ink : Brush.Rgba
-ink = Brush.opaque(0x202020)
+ink = Brush.opaque(RgbColor.of(0x202020))
 
 point_count : List(Stills.StillPolygon) -> U64
 point_count = |polygons| polygons.fold(0, |sum, polygon| sum + polygon.points.len())

@@ -10,6 +10,7 @@
 import lib.Shapes
 import lib.ArgbColor
 import lib.Brush
+import lib.RgbColor
 import lib.Font
 import Board
 import Rules
@@ -23,25 +24,25 @@ SnakeDraw :: [].{
 	h = 600.0
 
 	field_top : Brush.Rgba
-	field_top = Brush.opaque(0x151d3a)
+	field_top = Brush.opaque(RgbColor.of(0x151d3a))
 	field_bottom : Brush.Rgba
-	field_bottom = Brush.opaque(0x060810)
+	field_bottom = Brush.opaque(RgbColor.of(0x060810))
 	board_fill : Brush.Rgba
-	board_fill = Brush.opaque(0x0b1226)
+	board_fill = Brush.opaque(RgbColor.of(0x0b1226))
 	board_edge : Brush.Rgba
-	board_edge = Brush.opaque(0x2a3566)
+	board_edge = Brush.opaque(RgbColor.of(0x2a3566))
 	grid_line : Brush.Rgba
-	grid_line = Brush.opaque(0x16203f)
+	grid_line = Brush.opaque(RgbColor.of(0x16203f))
 	snake_head : Brush.Rgba
-	snake_head = Brush.opaque(0x7ef7d1)
+	snake_head = Brush.opaque(RgbColor.of(0x7ef7d1))
 	snake_tail : Brush.Rgba
-	snake_tail = Brush.opaque(0x1d7fb8)
+	snake_tail = Brush.opaque(RgbColor.of(0x1d7fb8))
 	food_neon : Brush.Rgba
-	food_neon = Brush.opaque(0xff6b8b)
+	food_neon = Brush.opaque(RgbColor.of(0xff6b8b))
 	hud_color : Brush.Rgba
-	hud_color = Brush.opaque(0xd7e3ff)
+	hud_color = Brush.opaque(RgbColor.of(0xd7e3ff))
 	hint_color : Brush.Rgba
-	hint_color = Brush.opaque(0x6d7aa8)
+	hint_color = Brush.opaque(RgbColor.of(0x6d7aa8))
 
 	cell : F64
 	cell = 26.0

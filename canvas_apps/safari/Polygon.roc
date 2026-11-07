@@ -12,6 +12,7 @@ import HexColor
 import Screen
 import lib.ArgbColor
 import lib.Brush
+import lib.RgbColor
 import lib.Shapes
 
 Polygon :: [].{
@@ -29,7 +30,7 @@ Polygon :: [].{
 	flat_polygon = |color, corners|
 		Poly({
 			coordinates: polygon_coordinates("Polygon.flat_polygon", corners),
-			fill: Flat(Brush.opaque(color)),
+			fill: Flat(Brush.opaque(RgbColor.of(color))),
 		})
 
 	## Makes a triangle of one flat color.
@@ -258,11 +259,11 @@ width_shade : List(Screen.Point), { color : I64, strength : Fraction } -> Brush.
 width_shade = |corners, { color, strength }| {
 	span = x_span(corners)
 	if strength <= Fraction.zero or is_too_narrow_to_shade(span) {
-		Flat(Brush.opaque(color))
+		Flat(Brush.opaque(RgbColor.of(color)))
 	} else {
 		Span({
-			edge: Brush.opaque(width_shade_edge(color, strength)),
-			middle: Brush.opaque(width_shade_middle(color, strength)),
+			edge: Brush.opaque(RgbColor.of(width_shade_edge(color, strength))),
+			middle: Brush.opaque(RgbColor.of(width_shade_middle(color, strength))),
 			x0: span.min_x.to_f64(),
 			x1: span.max_x.to_f64(),
 		})
@@ -323,7 +324,7 @@ expect
 			third_corner: Screen.point(5.0, 6.0),
 		},
 	)
-		== Poly({ coordinates: triangle_coordinates, fill: Flat(Brush.opaque(111)) })
+		== Poly({ coordinates: triangle_coordinates, fill: Flat(Brush.opaque(RgbColor.of(111))) })
 
 sample_rectangle : { top_left : Screen.Point, bottom_right : Screen.Point }
 sample_rectangle = { top_left: Screen.point(1.0, 2.0), bottom_right: Screen.point(5.0, 8.0) }
@@ -337,7 +338,7 @@ expect Polygon.rectangle_corners(sample_rectangle) == [
 
 expect Polygon.rectangle(111, sample_rectangle) == Poly({
 	coordinates: [1.0, 2.0, 5.0, 2.0, 5.0, 8.0, 1.0, 8.0],
-	fill: Flat(Brush.opaque(111)),
+	fill: Flat(Brush.opaque(RgbColor.of(111))),
 })
 
 # A rectangle of no size still has its four corners.
@@ -348,7 +349,7 @@ expect
 	)
 		== Poly({
 			coordinates: [1.0, 2.0, 1.0, 2.0, 1.0, 2.0, 1.0, 2.0],
-			fill: Flat(Brush.opaque(111)),
+			fill: Flat(Brush.opaque(RgbColor.of(111))),
 		})
 
 # A gradient is too small just under the limit, and not at it.
@@ -369,7 +370,7 @@ expect radial_polygon(three_corners, Pixels.of(0.5)) == Ok(
 
 expect Polygon.flat_polygon(111, three_corners) == Poly({
 	coordinates: triangle_coordinates,
-	fill: Flat(Brush.opaque(111)),
+	fill: Flat(Brush.opaque(RgbColor.of(111))),
 })
 
 expect
@@ -377,8 +378,8 @@ expect
 		== Poly({
 			coordinates: triangle_coordinates,
 			fill: Span({
-				edge: Brush.opaque(155),
-				middle: Brush.opaque(255),
+				edge: Brush.opaque(RgbColor.of(155)),
+				middle: Brush.opaque(RgbColor.of(255)),
 				x0: 1.0,
 				x1: 5.0,
 			}),
@@ -562,8 +563,8 @@ expect
 		== Poly({
 			coordinates: [10.0, 1.0, 30.0, 2.0, 20.0, 3.0],
 			fill: Span({
-				edge: Brush.opaque(0x4D2613),
-				middle: Brush.opaque(0xA05028),
+				edge: Brush.opaque(RgbColor.of(0x4D2613)),
+				middle: Brush.opaque(RgbColor.of(0xA05028)),
 				x0: 10.0,
 				x1: 30.0,
 			}),
@@ -581,7 +582,7 @@ expect
 				20.0,
 				3.0,
 			],
-			fill: Flat(Brush.opaque(sample_color)),
+			fill: Flat(Brush.opaque(RgbColor.of(sample_color))),
 		})
 
 expect
@@ -595,5 +596,5 @@ expect
 				10.2,
 				3.0,
 			],
-			fill: Flat(Brush.opaque(sample_color)),
+			fill: Flat(Brush.opaque(RgbColor.of(sample_color))),
 		})

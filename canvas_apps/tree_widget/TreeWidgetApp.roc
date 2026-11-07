@@ -12,6 +12,7 @@ import game.Pixels
 import game.Screen
 import game.TreeShapes
 import lib.Brush
+import lib.RgbColor
 import lib.CanvasApp
 import lib.Shapes
 import widget.ScrubWidget
@@ -100,7 +101,7 @@ caption_line = |stand, { text, row }|
 		size: 13.0,
 		face: Code,
 		align: Center,
-		color: Brush.opaque(0x202020),
+		color: Brush.opaque(RgbColor.of(0x202020)),
 	})
 
 caption_shapes : Stand -> List(Shapes.Shape)

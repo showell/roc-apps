@@ -23,6 +23,7 @@
 # strokes of a constant width, and they look like what they are.
 import Shapes
 import Brush
+import RgbColor
 
 Font :: [].{
 	# How far the pen moves between glyph origins, in grid units.
@@ -346,15 +347,15 @@ sample_line = {
 	size: 50.0,
 	face: Prose,
 	align: Left,
-	color: Brush.opaque(0x202020),
+	color: Brush.opaque(RgbColor.of(0x202020)),
 }
 
 expect
 	Font.plotted(sample_line)
-		== Font.text_shapes("Hi", 100.0, 164.0, 36.0, Brush.opaque(0x202020))
+		== Font.text_shapes("Hi", 100.0, 164.0, 36.0, Brush.opaque(RgbColor.of(0x202020)))
 expect
 	Font.plotted({ ..sample_line, align: Center })
-		== Font.centered("Hi", 100.0, 164.0, 36.0, Brush.opaque(0x202020))
+		== Font.centered("Hi", 100.0, 164.0, 36.0, Brush.opaque(RgbColor.of(0x202020)))
 
 # A line's face is for a real typeface, and the strokes have only one.
 expect Font.plotted({ ..sample_line, face: Code }) == Font.plotted(sample_line)

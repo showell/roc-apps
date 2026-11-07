@@ -2,9 +2,9 @@
 # bits each of alpha, red, green and blue, alpha highest. A gradient's colours
 # are these, and so is any fill that is part way see-through.
 #
-# Safari's colour with no alpha, 0xRRGGBB, is its `HexColor`, a different type,
-# so neither can be passed where the other belongs. A 0xRRGGBB read as
-# 0xAARRGGBB has alpha 0 and paints nothing.
+# The colour with no alpha, 0xRRGGBB, is an `RgbColor`, a different type, so
+# neither can be passed where the other belongs. A 0xRRGGBB read as 0xAARRGGBB
+# has alpha 0 and paints nothing.
 import Brush
 
 ArgbColor :: I64.{
