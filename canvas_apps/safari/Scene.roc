@@ -40,14 +40,12 @@ Scene := {
 		clock : Clock,
 	}
 
-	## Everything in view from `view`, each kind that has a cap cut to it.
+	## Everything in view from `view`.
 	scene_in_view : RoadAhead.CameraView, Scene.RideFacts -> Scene
 	scene_in_view = |view, { speed, truck, clock }| {
 		road = view.road
 		trees = TreeSighting.trees_in_view(view)
-		towers =
-			TowerSighting.towers_in_view(road, clock)
-				.take_first(TowerSighting.max_visible_towers.to_u64_wrap())
+		towers = TowerSighting.towers_in_view(road, clock)
 		billboards = BillboardSighting.billboards_to_draw(BillboardSighting.billboard_fates(road))
 		cats = CrossingSighting.cats_in_view(view, speed)
 		rails = RailSighting.rails_in_view(road)
@@ -71,5 +69,3 @@ Scene := {
 		}
 	}
 }
-
-expect TowerSighting.max_visible_towers == 16
