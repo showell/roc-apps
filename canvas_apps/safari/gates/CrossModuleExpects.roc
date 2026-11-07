@@ -581,10 +581,12 @@ rail_ends : { start : Geom.RaisedPoint, end : Geom.RaisedPoint }
 rail_ends = {
 	quads = RailSighting.rail_quads_in_view(right_angle_road, { vantage: origin })
 	last_bar = (quads.len() - 1) / 2 - 1
-	corner_of = |quad_index, corner_index|
-		quads.get(quad_index).map_ok(|quad| quad.corners).ok_or([]).get(corner_index)
-			?? crash "CrossModuleExpects: a rail bar has four corners"
-	{ start: corner_of(0, 0), end: corner_of(last_bar, 1) }
+	corners_of = |quad_index|
+		match quads.get(quad_index) {
+			Ok(quad) => quad.corners
+			Err(OutOfBounds) => crash "CrossModuleExpects: the rail has a bar at each end of its path"
+		}
+	{ start: corners_of(0).low_start, end: corners_of(last_bar).low_end }
 }
 
 ## The point on the left edge `along` metres into the segment at `place` on the
@@ -783,7 +785,7 @@ expect route_cats.all(|{ crossing, .. }| cat_planning_gap < crossing.along.from_
 expect route_flights.len() == 4
 expect route_flights.all(|{ from, .. }| bird_planning_gap < from.road_point.along.from_start())
 
-# BillboardSighting: which critters are in view, on a road of one segment
+# BillboardSighting: which billboards are in view, on a road of one segment
 # holding one grown cow and nothing else.
 one_cow_segment : Segment
 one_cow_segment = {
@@ -864,40 +866,40 @@ expect
 
 # Wildlife: an animal and its baby at each of four bends, the first and third
 # turning right and the second and fourth left.
-four_critters : List(Geom.Placed(Billboard))
-four_critters = [
-	Wildlife.bend_critters({
+billboards_at_four_bends : List(Geom.Placed(Billboard))
+billboards_at_four_bends = [
+	Wildlife.bend_billboards({
 		animal: Elephant,
 		bend: { segment_length: Distance.metres(100.0), turn: Angle.Turn.degrees(50.0) },
 	}),
-	Wildlife.bend_critters({
+	Wildlife.bend_billboards({
 		animal: Giraffe,
 		bend: { segment_length: Distance.metres(50.0), turn: Angle.Turn.degrees(-70.0) },
 	}),
-	Wildlife.bend_critters({
+	Wildlife.bend_billboards({
 		animal: Zebra,
 		bend: { segment_length: Distance.metres(10.0), turn: Angle.Turn.degrees(50.0) },
 	}),
-	Wildlife.bend_critters({
+	Wildlife.bend_billboards({
 		animal: Rhino,
 		bend: { segment_length: Distance.metres(0.0), turn: Angle.Turn.degrees(-70.0) },
 	}),
 ].join()
 
 expect
-	four_critters.map(|critter| critter.road_point.across.to_metres())
+	billboards_at_four_bends.map(|billboard| billboard.road_point.across.to_metres())
 		== [-4.9, 0.0, 5.75, 0.0, -4.3, 0.0, 4.6, 0.0]
 
 expect
-	four_critters.map(|critter| critter.road_point.along.to_metres())
+	billboards_at_four_bends.map(|billboard| billboard.road_point.along.to_metres())
 		== [100.0, 114.0, 50.0, 64.0, 10.0, 24.0, 0.0, 14.0]
 
 expect
-	four_critters.map(|critter| critter.kind.height.to_metres())
+	billboards_at_four_bends.map(|billboard| billboard.kind.height.to_metres())
 		== [2.8, 1.4, 4.5, 2.25, 1.6, 0.8, 2.2, 1.1]
 
 expect
-	four_critters.map(|critter| critter.kind.facing)
+	billboards_at_four_bends.map(|billboard| billboard.kind.facing)
 		== [
 			FacesRight,
 			FacesRight,
