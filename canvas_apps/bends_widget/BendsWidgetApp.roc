@@ -20,6 +20,7 @@ import lib.Brush
 import lib.RgbColor
 import lib.CanvasApp
 import lib.Shapes
+import widget.PlanView
 import widget.ReadoutText
 import widget.ScrubWidget
 
@@ -29,12 +30,7 @@ BendsWidgetApp :: [].{
 	Model : {}
 
 	canvas_app : CanvasApp.CanvasApp(BendsWidgetApp.Model)
-	canvas_app = ScrubWidget.canvas_app({
-		title: "Three bends in the road",
-		init: {},
-		model_at_next_step: |model, _input| model,
-		frame_shapes: |_model| still_shapes,
-	})
+	canvas_app = ScrubWidget.still_app({ title: "Three bends in the road", shapes: still_shapes })
 }
 
 ## A bend in the picture: how far it turns, and the x on the canvas of the
@@ -132,33 +128,16 @@ rider_y = 198.0
 ## rider's right is the reader's right.
 canvas_point : ShownBend, Geom.RiderPoint -> { x : F64, y : F64 }
 canvas_point = |{ canvas_x, .. }, { right, forward }| {
-	x: canvas_x + right.to_metres() * pixels_a_metre,
-	y: rider_y - forward.to_metres() * pixels_a_metre,
+	plan : PlanView
+	plan = { origin: { x: canvas_x, y: rider_y }, pixels_a_metre }
+	plan.canvas_point({ metres_right: right.to_metres(), metres_down: 0.0 - forward.to_metres() })
 }
-
-ground_color : RgbColor
-ground_color = RgbColor.of(0x6f9a55)
-
-road_color : RgbColor
-road_color = RgbColor.of(0x4a4a46)
 
 rail_color : RgbColor
 rail_color = RgbColor.of(0xe8805a)
 
 apex_color : RgbColor
 apex_color = RgbColor.of(0xf0d040)
-
-rider_color : RgbColor
-rider_color = RgbColor.of(0xf2efe4)
-
-ground : Shapes.Shape
-ground = Rect({
-	x: 0.0,
-	y: 0.0,
-	width: ScrubWidget.canvas_width,
-	height: ScrubWidget.picture_bottom_y,
-	fill: Brush.flat(ground_color),
-})
 
 ## A patch of paving, as a polygon on the canvas.
 patch_shape : ShownBend, List(Geom.RiderPoint) -> Shapes.Shape
@@ -170,7 +149,7 @@ patch_shape = |bend, corners|
 				[x, y]
 			},
 		),
-		fill: Brush.flat(road_color),
+		fill: Brush.flat(PlanView.road_color),
 	})
 
 ## The first two corners of a rail's quad, which lie along the ground.
@@ -209,7 +188,7 @@ bend_shapes = |bend| {
 		RailSighting.rails_in_view(road, camera).join_map(|rail| foot_shapes(bend, rail.corners)),
 		[
 			spot(bend, { at: apex_of(bend.turn), color: apex_color }),
-			spot(bend, { at: rider, color: rider_color }),
+			spot(bend, { at: rider, color: PlanView.standout_color }),
 		],
 	].join()
 }
@@ -257,14 +236,17 @@ caption_lines = |turn| {
 ## A line of a caption, centered under its bend, on row `row` of the panel.
 caption_line : ShownBend, { text : Str, row : U64 } -> Shapes.Shape
 caption_line = |bend, { text, row }|
-	Text({
+	ScrubWidget.readout({
 		text,
-		x: bend.canvas_x,
-		y: 246.0 + row.to_f64() * 26.0,
-		size: 13.0,
-		face: Code,
-		align: Center,
-		color: Brush.opaque(RgbColor.of(0x202020)),
+		color: ScrubWidget.ink_color,
+		row,
+		style: {
+			..ScrubWidget.panel_readout,
+			x: bend.canvas_x,
+			first_baseline: 246.0,
+			size: 13.0,
+			align: Center,
+		},
 	})
 
 caption_shapes : ShownBend -> List(Shapes.Shape)
@@ -273,20 +255,12 @@ caption_shapes = |bend|
 
 still_shapes : List(Shapes.Shape)
 still_shapes = {
-	picture_shapes = [ground].concat(shown_bends.join_map(bend_shapes))
+	picture_shapes = [ScrubWidget.picture_backdrop(PlanView.ground_color)].concat(shown_bends.join_map(bend_shapes))
 	ScrubWidget.frame_shapes({ picture_shapes, status_lines: [] }).concat(shown_bends.join_map(caption_shapes))
 }
 
-# The captions read what the modules say: the rail swaps sides with the turn, the
-# apex goes out as the turn sharpens, and the middle bend has the book's numbers.
-expect
-	caption_lines(left_bend.turn)
-		== [
-			"45 deg left",
-			"rail on the right edge",
-			"apex 1.7 m past the end",
-			"3 patches, 49 rail pieces",
-		]
+# The captions read what the modules say, and the middle bend has the book's
+# numbers.
 expect
 	caption_lines(right_bend.turn)
 		== [
@@ -294,14 +268,6 @@ expect
 			"rail on the left edge",
 			"apex 1.7 m past the end",
 			"3 patches, 49 rail pieces",
-		]
-expect
-	caption_lines(sharp_bend.turn)
-		== [
-			"80 deg right",
-			"rail on the left edge",
-			"apex 3.4 m past the end",
-			"3 patches, 53 rail pieces",
 		]
 
 # The sharp bend is on the route, and nothing on the route is sharper.

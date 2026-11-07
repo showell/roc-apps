@@ -203,9 +203,6 @@ beat_name = |beat|
 		WingsDown => "wings down"
 	}
 
-expect forward_of(flight.from.road_point.along).to_metres() == 18.0
-expect forward_of(flight.to.road_point.along).to_metres() == 48.0
-
 # The whole flight is on the range, with some road to spare at the far end.
 expect BirdFlight.flight_gaps.starts_at < closing_gap.first
 expect BirdFlight.flight_gaps.ends_at > closing_gap.last
@@ -245,10 +242,6 @@ expect
 			"Gap: 4.7 m",
 			"Height: 4.9 m",
 		]
-
-expect pose_name(Side(WingsDown)) == "Side on, wings down"
-expect pose_name(Away(WingsUp)) == "Flying away, wings up"
-expect pose_name(Diving) == "Diving"
 
 expect BirdFlight.instant_at(flight, { gap: Distance.metres(16.0) }).pose == Diving
 

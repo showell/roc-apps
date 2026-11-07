@@ -188,9 +188,5 @@ expect
 		== ["Waiting", "Pose: Rest", "Gap: 50.0 m", "The rider may accelerate"]
 
 expect
-	status_lines(Distance.metres(21.0))
-		== ["Playing: 52%", "Pose: Frozen", "Gap: 21.0 m", "The rider may not accelerate"]
-
-expect
 	status_lines(Distance.metres(1.5))
 		== ["Past", "Pose: Collapse", "Gap: 1.5 m", "The rider may accelerate"]

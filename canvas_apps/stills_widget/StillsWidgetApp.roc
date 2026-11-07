@@ -17,17 +17,18 @@ import lib.Font
 import lib.Input
 import lib.Mouse
 import lib.Shapes
+import widget.Click
 import widget.ReadoutText
 import widget.ScrubWidget
 
 StillsWidgetApp :: [].{
 
-	## A pose's still: the pose's name, and its polygons.
-	PoseStill : { name : Str, polygons : Still }
+	## A pose of the cat or of the bird, each of which has its own still.
+	Pose : [Cat(PosedCat.CatPose), Bird(PosedBird.BirdPose)]
 
-	## The whole state of the widget: the still shown large, and whether the
-	## outlines of its polygons show.
-	Model : { large_still : StillsWidgetApp.PoseStill, outlines : [Hidden, Shown] }
+	## The whole state of the widget: the pose shown large, and whether the
+	## outlines of its still's polygons show.
+	Model : { large_pose : StillsWidgetApp.Pose, outlines : [Hidden, Shown] }
 
 	## Built by hand, not by `ScrubWidget.canvas_app`, because it runs at its own
 	## frame rate.
@@ -35,7 +36,7 @@ StillsWidgetApp :: [].{
 	canvas_app = {
 		size: { width: ScrubWidget.canvas_width, height: ScrubWidget.canvas_height },
 		fps: frames_a_second,
-		init: { large_still: cat_still(Rest), outlines: Hidden },
+		init: { large_pose: Cat(Rest), outlines: Hidden },
 		model_at_next_step: |model, input, _seconds| next_model(model, input),
 		frame_shapes: shapes_at,
 		sounds: |_model| 0,
@@ -49,14 +50,6 @@ StillsWidgetApp :: [].{
 frames_a_second : U32
 frames_a_second = 15
 
-## A part of the canvas, in pixels.
-Area : {
-	left : F64,
-	top : F64,
-	width : F64,
-	height : F64,
-}
-
 ## How far a still reaches in its own units, where its height is 1.
 StillExtent : {
 	left : F64,
@@ -65,10 +58,11 @@ StillExtent : {
 	top : F64,
 }
 
-## One small still: the area a click on it lands in, and where it stands there.
+## One small still: its pose, the area a click on it lands in, and where it
+## stands there.
 StillCell : {
-	still : StillsWidgetApp.PoseStill,
-	area : Area,
+	pose : StillsWidgetApp.Pose,
+	area : Click.Area,
 	anchor : StillShapes.Anchor,
 }
 
@@ -95,34 +89,42 @@ bird_pose_name = |pose|
 		Diving => "Diving"
 	}
 
-cat_still : PosedCat.CatPose -> StillsWidgetApp.PoseStill
-cat_still = |pose| { name: cat_pose_name(pose), polygons: PosedCat.pose_polygons(pose) }
+## The name the widget gives a pose.
+pose_name : StillsWidgetApp.Pose -> Str
+pose_name = |pose|
+	match pose {
+		Cat(cat_pose) => cat_pose_name(cat_pose)
+		Bird(bird_pose) => bird_pose_name(bird_pose)
+	}
 
-bird_still : PosedBird.BirdPose -> StillsWidgetApp.PoseStill
-bird_still = |pose| { name: bird_pose_name(pose), polygons: PosedBird.pose_polygons(pose) }
+## The polygons of a pose's still.
+pose_polygons : StillsWidgetApp.Pose -> Still
+pose_polygons = |pose|
+	match pose {
+		Cat(cat_pose) => PosedCat.pose_polygons(cat_pose)
+		Bird(bird_pose) => PosedBird.pose_polygons(bird_pose)
+	}
 
-cat_stills : List(StillsWidgetApp.PoseStill)
-cat_stills =
-	[
-		Rest,
-		Stride,
-		Frozen,
-		Coil,
-		Flight,
-		Land,
-		Collapse,
-	].map(cat_still)
+cat_poses : List(StillsWidgetApp.Pose)
+cat_poses = [
+	Cat(Rest),
+	Cat(Stride),
+	Cat(Frozen),
+	Cat(Coil),
+	Cat(Flight),
+	Cat(Land),
+	Cat(Collapse),
+]
 
-bird_stills : List(StillsWidgetApp.PoseStill)
-bird_stills =
-	[
-		Perched,
-		Side(WingsUp),
-		Side(WingsDown),
-		Away(WingsUp),
-		Away(WingsDown),
-		Diving,
-	].map(bird_still)
+bird_poses : List(StillsWidgetApp.Pose)
+bird_poses = [
+	Bird(Perched),
+	Bird(Side(WingsUp)),
+	Bird(Side(WingsDown)),
+	Bird(Away(WingsUp)),
+	Bird(Away(WingsDown)),
+	Bird(Diving),
+]
 
 extent_of : Still -> StillExtent
 extent_of = |still|
@@ -171,14 +173,15 @@ name_size = 13.0
 name_rise : F64
 name_rise = 10.0
 
-## The height that lets every still of a row fit a cell `cell_width` wide. A row
-## shares one height, so a pose keeps its true size beside the others.
-row_height_px : List(StillsWidgetApp.PoseStill), F64 -> F64
-row_height_px = |stills, cell_width| {
-	extents = stills.map(|still| extent_of(still.polygons))
+## The height on screen that lets every still of a row fit a cell `cell_width`
+## wide. A row shares one height, so a pose keeps its true size beside the
+## others.
+row_height_on_screen : List(StillsWidgetApp.Pose), F64 -> Pixels
+row_height_on_screen = |poses, cell_width| {
+	extents = poses.map(|pose| extent_of(pose_polygons(pose)))
 	widest = extents.fold(0.0, |most, extent| most.max(extent_width(extent)))
 	tallest = extents.fold(0.0, |most, extent| most.max(extent.top))
-	F64.min((cell_width - 2.0 * cell_padding) / widest, (cell_ground - cell_padding) / tallest)
+	Pixels.of(F64.min((cell_width - 2.0 * cell_padding) / widest, (cell_ground - cell_padding) / tallest))
 }
 
 ## Where a still stands with its middle at `mid_x` and its y 0 at `ground_y`.
@@ -186,27 +189,27 @@ standing_at : Still,
 {
 	mid_x : F64,
 	ground_y : F64,
-	height_px : F64,
+	height_on_screen : Pixels,
 } -> StillShapes.Anchor
-standing_at = |polygons, { mid_x, ground_y, height_px }| {
+standing_at = |polygons, { mid_x, ground_y, height_on_screen }| {
 	extent = extent_of(polygons)
 	{
-		feet: Screen.point(mid_x - height_px * (extent.left + extent.right) / 2.0, ground_y),
+		feet: Screen.point(mid_x - height_on_screen.to_f64() * (extent.left + extent.right) / 2.0, ground_y),
 		flip: AsDrawn,
-		height_on_screen: Pixels.of(height_px),
+		height_on_screen,
 	}
 }
 
 ## A row of stills across the canvas, between its side margins.
-row_cells : List(StillsWidgetApp.PoseStill), F64 -> List(StillCell)
-row_cells = |stills, row_top| {
-	cell_width = ScrubWidget.panel_width / stills.len().to_f64()
-	height_px = row_height_px(stills, cell_width)
-	stills.map_with_index(
-		|still, column| {
+row_cells : List(StillsWidgetApp.Pose), F64 -> List(StillCell)
+row_cells = |poses, row_top| {
+	cell_width = ScrubWidget.panel_width / poses.len().to_f64()
+	height_on_screen = row_height_on_screen(poses, cell_width)
+	poses.map_with_index(
+		|pose, column| {
 			left = ScrubWidget.side_margin + column.to_f64() * cell_width
 			{
-				still,
+				pose,
 				area: {
 					left,
 					top: row_top,
@@ -214,11 +217,11 @@ row_cells = |stills, row_top| {
 					height: cell_height,
 				},
 				anchor: standing_at(
-					still.polygons,
+					pose_polygons(pose),
 					{
 						mid_x: left + cell_width / 2.0,
 						ground_y: row_top + cell_ground,
-						height_px,
+						height_on_screen,
 					},
 				),
 			}
@@ -229,8 +232,8 @@ row_cells = |stills, row_top| {
 ## The cat's poses on the first row, and the bird's on the second.
 cells : List(StillCell)
 cells =
-	row_cells(cat_stills, ScrubWidget.picture_bottom_y)
-		.concat(row_cells(bird_stills, ScrubWidget.picture_bottom_y + cell_height))
+	row_cells(cat_poses, ScrubWidget.picture_bottom_y)
+		.concat(row_cells(bird_poses, ScrubWidget.picture_bottom_y + cell_height))
 
 ## Where the words stop and the large still starts.
 large_area_left : F64
@@ -241,7 +244,7 @@ large_area_margin : F64
 large_area_margin = 10.0
 
 ## Where the large still may reach, to the right of the words.
-large_area : Area
+large_area : Click.Area
 large_area = {
 	left: large_area_left,
 	top: large_area_margin,
@@ -263,25 +266,21 @@ large_anchor = |polygons| {
 		{
 			mid_x: middle.x,
 			ground_y: middle.y + height_px * (extent.top + extent.bottom) / 2.0,
-			height_px,
+			height_on_screen: Pixels.of(height_px),
 		},
 	)
 }
 
-middle_of : Area -> { x : F64, y : F64 }
+middle_of : Click.Area -> { x : F64, y : F64 }
 middle_of = |area| { x: area.left + area.width / 2.0, y: area.top + area.height / 2.0 }
-
-is_inside : Area, { x : F64, y : F64 } -> Bool
-is_inside = |area, { x, y }|
-	x >= area.left and x < area.left + area.width and y >= area.top and y < area.top + area.height
 
 ## `model` after a click at `spot`, which does nothing off the stills.
 model_after_click : StillsWidgetApp.Model, { x : F64, y : F64 } -> StillsWidgetApp.Model
 model_after_click = |model, spot|
-	match cells.find_first(|cell| is_inside(cell.area, spot)) {
-		Ok(cell) => { ..model, large_still: cell.still }
+	match cells.find_first(|cell| cell.area.contains(spot)) {
+		Ok(cell) => { ..model, large_pose: cell.pose }
 		Err(NotFound) =>
-			if is_inside(large_area, spot) {
+			if large_area.contains(spot) {
 				{ ..model, outlines: toggled_outlines(model.outlines) }
 			} else {
 				model
@@ -297,43 +296,41 @@ toggled_outlines = |outlines|
 
 next_model : StillsWidgetApp.Model, Input.Snapshot -> StillsWidgetApp.Model
 next_model = |model, input|
-	if input.mouse.button_pressed(Left) {
-		{ x, y } = input.mouse.position()
-		model_after_click(model, { x: x.to_f64(), y: y.to_f64() })
-	} else {
-		model
+	match Click.click_point(input) {
+		Ok(spot) => model_after_click(model, spot)
+		Err(NoClick) => model
 	}
 
 picture_color : RgbColor
 picture_color = RgbColor.of(0xf7f5ef)
 
 ink : Brush.Rgba
-ink = Brush.opaque(RgbColor.of(0x202020))
+ink = Brush.opaque(ScrubWidget.ink_color)
 
 point_count : Still -> U64
 point_count = |still| still.polygons().fold(0, |sum, polygon| sum + polygon.points.len())
 
-## What a still is made of, a line each.
-read_out_lines : StillsWidgetApp.PoseStill -> List(Str)
-read_out_lines = |still| [
-	still.name,
-	"${ReadoutText.count_text(still.polygons.polygons().len())} polygons",
-	"${ReadoutText.count_text(point_count(still.polygons))} points",
-]
+## What a pose's still is made of, a line each.
+read_out_lines : StillsWidgetApp.Pose -> List(Str)
+read_out_lines = |pose| {
+	polygons = pose_polygons(pose)
+	[
+		pose_name(pose),
+		"${ReadoutText.count_text(polygons.polygons().len())} polygons",
+		"${ReadoutText.count_text(point_count(polygons))} points",
+	]
+}
 
 read_out_size : F64
 read_out_size = 18.0
 
 read_out_line : Str, U64 -> Shapes.Shape
 read_out_line = |text, row|
-	Text({
+	ScrubWidget.readout({
 		text,
-		x: ScrubWidget.side_margin,
-		y: 42.0 + row.to_f64() * 26.0,
-		size: read_out_size,
-		face: Code,
-		align: Left,
-		color: ink,
+		color: ScrubWidget.ink_color,
+		row,
+		style: { ..ScrubWidget.panel_readout, first_baseline: 42.0, size: read_out_size },
 	})
 
 hint_lines : List(Str)
@@ -371,13 +368,14 @@ outline_shapes = |anchor, polygon| {
 
 ## The large still, with the outlines of its polygons if they show.
 large_shapes : StillsWidgetApp.Model -> List(Shapes.Shape)
-large_shapes = |{ large_still, outlines }| {
-	anchor = large_anchor(large_still.polygons)
-	drawn = StillShapes.still_shapes(anchor, large_still.polygons)
+large_shapes = |{ large_pose, outlines }| {
+	polygons = pose_polygons(large_pose)
+	anchor = large_anchor(polygons)
+	drawn = StillShapes.still_shapes(anchor, polygons)
 	match outlines {
 		Hidden => drawn
 		Shown => {
-			outline = large_still.polygons.polygons().join_map(|polygon| outline_shapes(anchor, polygon))
+			outline = polygons.polygons().join_map(|polygon| outline_shapes(anchor, polygon))
 			drawn.concat(outline)
 		}
 	}
@@ -387,26 +385,18 @@ large_shapes = |{ large_still, outlines }| {
 picture_shapes : StillsWidgetApp.Model -> List(Shapes.Shape)
 picture_shapes = |model|
 	[
-		[
-			Rect({
-				x: 0.0,
-				y: 0.0,
-				width: ScrubWidget.canvas_width,
-				height: ScrubWidget.picture_bottom_y,
-				fill: Brush.flat(picture_color),
-			}),
-		],
-		read_out_lines(model.large_still).map_with_index(read_out_line),
+		[ScrubWidget.picture_backdrop(picture_color)],
+		read_out_lines(model.large_pose).map_with_index(read_out_line),
 		hint_lines.map_with_index(hint_line),
 		large_shapes(model),
 	].join()
 
 ## One small still with its pose's name under it.
 cell_shapes : StillCell -> List(Shapes.Shape)
-cell_shapes = |{ still, area, anchor }|
-	StillShapes.still_shapes(anchor, still.polygons).append(
+cell_shapes = |{ pose, area, anchor }|
+	StillShapes.still_shapes(anchor, pose_polygons(pose)).append(
 		Text({
-			text: still.name,
+			text: pose_name(pose),
 			x: area.left + area.width / 2.0,
 			y: area.top + cell_name_top + name_rise,
 			size: name_size,
@@ -420,10 +410,10 @@ cell_shapes = |{ still, area, anchor }|
 grid_shapes : List(Shapes.Shape)
 grid_shapes = cells.join_map(cell_shapes)
 
-## The cell of the still shown large, lit as the picture above it is.
-mark_shapes : StillsWidgetApp.PoseStill -> List(Shapes.Shape)
-mark_shapes = |large_still|
-	cells.keep_if(|cell| cell.still.name == large_still.name).map(
+## The cell of the pose shown large, lit as the picture above it is.
+mark_shapes : StillsWidgetApp.Pose -> List(Shapes.Shape)
+mark_shapes = |large_pose|
+	cells.keep_if(|cell| cell.pose == large_pose).map(
 		|{ area, .. }|
 			Rect({
 				x: area.left,
@@ -438,7 +428,7 @@ mark_shapes = |large_still|
 shapes_at : StillsWidgetApp.Model -> List(Shapes.Shape)
 shapes_at = |model|
 	ScrubWidget.frame_shapes({ picture_shapes: picture_shapes(model), status_lines: [] })
-		.concat(mark_shapes(model.large_still))
+		.concat(mark_shapes(model.large_pose))
 		.concat(grid_shapes)
 
 ## Where a point of a still lands, as plain numbers.
@@ -449,9 +439,9 @@ landing_spot = |anchor, point| {
 }
 
 ## Whether every point of a still lands in `area`.
-stays_in : StillShapes.Anchor, { polygons : Still, area : Area } -> Bool
+stays_in : StillShapes.Anchor, { polygons : Still, area : Click.Area } -> Bool
 stays_in = |anchor, { polygons, area }|
-	polygons.polygons().all(|polygon| polygon.points.all(|point| is_inside(area, landing_spot(anchor, point))))
+	polygons.polygons().all(|polygon| polygon.points.all(|point| area.contains(landing_spot(anchor, point))))
 
 first_cell : StillCell
 first_cell = cells.first() ?? crash "StillsWidgetApp.first_cell: the grid has cells"
@@ -462,64 +452,24 @@ last_cell = cells.last() ?? crash "StillsWidgetApp.last_cell: the grid has cells
 start : StillsWidgetApp.Model
 start = StillsWidgetApp.canvas_app.init
 
-## A snapshot with the pointer at (`x`, `y`) and the buttons `held`, of which
-## those in `struck` were pressed just now.
-pointer_at : {
-	x : F64,
-	y : F64,
-	held : U32,
-	struck : U32,
-} -> Input.Snapshot
-pointer_at = |{ x, y, held, struck }|
-	Input.none.with_mouse(Mouse.of({ held, struck, at: { x: x.to_f32_wrap(), y: y.to_f32_wrap() }, wheel: 0.0 }))
-
 ## A left click at `spot` from `model`.
 left_click : StillsWidgetApp.Model, { x : F64, y : F64 } -> StillsWidgetApp.Model
-left_click = |model, { x, y }|
-	next_model(
-		model,
-		pointer_at({
-			x,
-			y,
-			held: 1,
-			struck: 1,
-		}),
-	)
+left_click = |model, spot| next_model(model, Click.click_at(spot))
 
 ## Whether `model` is unchanged from the start.
 is_as_started : StillsWidgetApp.Model -> Bool
-is_as_started = |{ large_still, outlines }|
-	large_still.name == start.large_still.name and outlines == start.outlines
+is_as_started = |model| model == start
 
-# Every pose is in the grid, the cat's first, and no two share a name.
-expect cat_stills.len() == 7
-expect bird_stills.len() == 6
+# Every pose is in the grid, the cat's first, and no two share a cell.
+expect cat_poses.len() == 7
+expect bird_poses.len() == 6
 expect cells.len() == 13
-expect cells.map(|cell| cell.still.name).take_first(2) == ["Rest", "Stride"]
-expect cells.all(|cell| cells.keep_if(|other| other.still.name == cell.still.name).len() == 1)
+expect cells.map(|cell| cell.pose).take_first(2) == [Cat(Rest), Cat(Stride)]
+expect cells.all(|cell| cells.keep_if(|other| other.pose == cell.pose).len() == 1)
 
-# Each tag has its own name, and each pose its own still.
-expect
-	[
-		(Rest, "Rest"),
-		(Stride, "Stride"),
-		(Frozen, "Frozen"),
-		(Coil, "Coil"),
-		(Flight, "Flight"),
-		(Land, "Land"),
-		(Collapse, "Collapse"),
-	].all(|(pose, name)| cat_pose_name(pose) == name)
-expect
-	[
-		(Perched, "Perched"),
-		(Side(WingsUp), "Side up"),
-		(Side(WingsDown), "Side down"),
-		(Away(WingsUp), "Away up"),
-		(Away(WingsDown), "Away down"),
-		(Diving, "Diving"),
-	].all(|(pose, name)| bird_pose_name(pose) == name)
-expect cat_still(Frozen).polygons.polygons().len() == PosedCat.pose_polygons(Frozen).polygons().len()
-expect point_count(bird_still(Diving).polygons) == point_count(BirdStills.diving_polygons)
+# Each pose has its own still.
+expect pose_polygons(Cat(Frozen)).polygons().len() == PosedCat.pose_polygons(Frozen).polygons().len()
+expect point_count(pose_polygons(Bird(Diving))) == point_count(BirdStills.diving_polygons)
 
 # The rows fill the space between the side margins, end to end.
 expect first_cell.area.left == ScrubWidget.side_margin
@@ -532,25 +482,25 @@ expect first_cell.area.top == ScrubWidget.picture_bottom_y
 expect last_cell.area.top + last_cell.area.height == ScrubWidget.canvas_height
 expect
 	cells.all(
-		|cell| cells.keep_if(|other| is_inside(other.area, middle_of(cell.area))).len() == 1,
+		|cell| cells.keep_if(|other| other.area.contains(middle_of(cell.area))).len() == 1,
 	)
 
 # A row shares one height, and no still leaves its cell or crosses its name.
 expect cells.take_first(7).all(|cell| cell.anchor.height_on_screen == first_cell.anchor.height_on_screen)
 expect cells.drop_first(7).all(|cell| cell.anchor.height_on_screen == last_cell.anchor.height_on_screen)
-expect cells.all(|{ still, area, anchor }| stays_in(anchor, { polygons: still.polygons, area }))
+expect cells.all(|{ pose, area, anchor }| stays_in(anchor, { polygons: pose_polygons(pose), area }))
 expect
 	cells.all(
-		|{ still, area, anchor }| {
+		|{ pose, area, anchor }| {
 			above_name = { ..area, height: cell_name_top }
-			stays_in(anchor, { polygons: still.polygons, area: above_name })
+			stays_in(anchor, { polygons: pose_polygons(pose), area: above_name })
 		},
 	)
 
 ## Whether a cell's still fills the cell's width, up to the padding.
 is_full_width : StillCell -> Bool
-is_full_width = |{ still, area, anchor }| {
-	still_width = anchor.height_on_screen.to_f64() * extent_width(extent_of(still.polygons))
+is_full_width = |{ pose, area, anchor }| {
+	still_width = anchor.height_on_screen.to_f64() * extent_width(extent_of(pose_polygons(pose)))
 	area.width - still_width <= 2.0 * cell_padding + 0.000001
 }
 
@@ -560,14 +510,14 @@ expect cells.drop_first(7).any(is_full_width)
 expect !is_full_width(first_cell)
 
 # Each name fits its cell, and one much longer would not.
-expect cells.all(|{ still, area, .. }| Font.room_for(still.name, name_size) <= area.width)
+expect cells.all(|{ pose, area, .. }| Font.room_for(pose_name(pose), name_size) <= area.width)
 expect Font.room_for("Collapse, and then some", name_size) > first_cell.area.width
 
 # The words all fit left of the large still.
 expect
 	cells.all(
-		|{ still, .. }|
-			read_out_lines(still).all(
+		|{ pose, .. }|
+			read_out_lines(pose).all(
 				|line| {
 					line_end = ScrubWidget.side_margin + Font.room_for(line, read_out_size)
 					line_end <= large_area.left
@@ -580,7 +530,7 @@ expect
 	)
 
 ## The large area with its far edges inside it, which a still may touch.
-large_area_edges_held : Area
+large_area_edges_held : Click.Area
 large_area_edges_held = {
 	..large_area,
 	width: large_area.width + 0.001,
@@ -590,17 +540,16 @@ large_area_edges_held = {
 # The large still stays in its area, for every still, and touches two of its sides.
 expect
 	cells.all(
-		|{ still, .. }|
-			stays_in(
-				large_anchor(still.polygons),
-				{ polygons: still.polygons, area: large_area_edges_held },
-			),
+		|{ pose, .. }| {
+			polygons = pose_polygons(pose)
+			stays_in(large_anchor(polygons), { polygons, area: large_area_edges_held })
+		},
 	)
 expect
 	cells.all(
-		|{ still, .. }| {
-			extent = extent_of(still.polygons)
-			height = large_anchor(still.polygons).height_on_screen.to_f64()
+		|{ pose, .. }| {
+			extent = extent_of(pose_polygons(pose))
+			height = large_anchor(pose_polygons(pose)).height_on_screen.to_f64()
 			wide_room = large_area.width - height * extent_width(extent)
 			tall_room = large_area.height - height * (extent.top - extent.bottom)
 			wide_room.min(tall_room).abs() <= 0.000001
@@ -610,9 +559,9 @@ expect
 # Its middle is the area's, either way.
 expect
 	cells.all(
-		|{ still, .. }| {
-			anchor = large_anchor(still.polygons)
-			extent = extent_of(still.polygons)
+		|{ pose, .. }| {
+			anchor = large_anchor(pose_polygons(pose))
+			extent = extent_of(pose_polygons(pose))
 			low = landing_spot(anchor, { x: extent.left, y: extent.bottom })
 			high = landing_spot(anchor, { x: extent.right, y: extent.top })
 			middle = middle_of(large_area)
@@ -649,38 +598,21 @@ expect
 			top: 2.0,
 		}
 
-## An area whose edges a click can be tried on.
-sample_area : Area
-sample_area = {
-	left: 10.0,
-	top: 20.0,
-	width: 30.0,
-	height: 40.0,
-}
-
-# An area holds its top left corner and stops short of its far edges.
-expect is_inside(sample_area, { x: 10.0, y: 20.0 })
-expect is_inside(sample_area, { x: 39.0, y: 59.0 })
-expect !is_inside(sample_area, { x: 40.0, y: 20.0 })
-expect !is_inside(sample_area, { x: 10.0, y: 60.0 })
-expect !is_inside(sample_area, { x: 9.0, y: 20.0 })
-expect !is_inside(sample_area, { x: 10.0, y: 19.0 })
-
 # The widget starts on the cat at rest, with no outlines.
-expect start.large_still.name == "Rest"
+expect start.large_pose == Cat(Rest)
 expect start.outlines == Hidden
 
 # A click on any cell shows that still large.
 expect
 	cells.all(
-		|cell| left_click(start, middle_of(cell.area)).large_still.name == cell.still.name,
+		|cell| left_click(start, middle_of(cell.area)).large_pose == cell.pose,
 	)
 
 # So does a click at a cell's corner, and the corner just past it is the next cell's.
 expect {
 	corner = { x: last_cell.area.left, y: last_cell.area.top }
-	model_after_click(start, corner).large_still.name == "Diving"
-		and model_after_click(start, { ..corner, x: corner.x - 1.0 }).large_still.name == "Away down"
+	model_after_click(start, corner).large_pose == Bird(Diving)
+		and model_after_click(start, { ..corner, x: corner.x - 1.0 }).large_pose == Bird(Away(WingsDown))
 }
 
 # A click on a cell leaves the outlines as they were, shown or hidden.
@@ -693,7 +625,7 @@ expect {
 	shown = left_click(start, middle_of(large_area))
 	left_click(shown, middle_of(large_area)).outlines == Hidden
 }
-expect left_click(start, middle_of(large_area)).large_still.name == "Rest"
+expect left_click(start, middle_of(large_area)).large_pose == Cat(Rest)
 
 # The large still's area ends where the words and the panel start.
 expect left_click(start, { x: large_area.left, y: large_area.top }).outlines == Shown
@@ -714,47 +646,31 @@ expect is_as_started(left_click(start, { x: 128.0, y: 144.0 }))
 # the right button, and not nothing at all.
 expect {
 	spot = middle_of(last_cell.area)
-	held = pointer_at({
-		x: spot.x,
-		y: spot.y,
-		held: 1,
-		struck: 0,
-	})
-	right = pointer_at({
-		x: spot.x,
-		y: spot.y,
-		held: 2,
-		struck: 2,
-	})
-	[held, right, Input.none].all(|input| is_as_started(next_model(start, input)))
+	right = Input.none.with_mouse(Mouse.of({ held: 2, struck: 2, at: { x: spot.x.to_f32_wrap(), y: spot.y.to_f32_wrap() }, wheel: 0.0 }))
+	[Click.held_at(spot), right, Input.none].all(|input| is_as_started(next_model(start, input)))
 }
 
 expect toggled_outlines(Hidden) == Shown
 expect toggled_outlines(Shown) == Hidden
 
-# The read-out is the data's, as CatStills and BirdStills hold their own counts.
-expect read_out_lines(cat_still(Rest)) == ["Rest", "46 polygons", "2,198 points"]
-expect read_out_lines(cat_still(Frozen)) == ["Frozen", "47 polygons", "2,197 points"]
-expect read_out_lines(cat_still(Coil)) == ["Coil", "34 polygons", "1,715 points"]
-expect read_out_lines(bird_still(Side(WingsUp))) == ["Side up", "6 polygons", "21 points"]
-expect read_out_lines(bird_still(Away(WingsDown))) == ["Away down", "4 polygons", "17 points"]
-expect read_out_lines(bird_still(Diving)) == ["Diving", "6 polygons", "22 points"]
+# The read-out names the pose and counts its still, with commas.
+expect read_out_lines(Cat(Rest)) == ["Rest", "46 polygons", "2,198 points"]
 
 # StillShapes leaves out what it won't draw, so the counts would lie if it left
 # out a polygon of these. It draws every one.
 expect
 	cells.all(
-		|{ still, anchor, .. }| {
-			drawn = StillShapes.still_shapes(anchor, still.polygons)
-			drawn.len() == still.polygons.polygons().len()
+		|{ pose, anchor, .. }| {
+			polygons = pose_polygons(pose)
+			StillShapes.still_shapes(anchor, polygons).len() == polygons.polygons().len()
 		},
 	)
 
 # The outlines add one line for each edge between two different corners, and
 # none when hidden.
-expect large_shapes(start).len() == start.large_still.polygons.polygons().len()
+expect large_shapes(start).len() == pose_polygons(start.large_pose).polygons().len()
 expect {
-	edge_count = start.large_still.polygons.polygons().fold(
+	edge_count = pose_polygons(start.large_pose).polygons().fold(
 		0,
 		|sum, polygon| {
 			points = polygon.points
@@ -762,7 +678,7 @@ expect {
 			sum + points.map2(ends, |from, to| from != to).keep_if(|differ| differ).len()
 		},
 	)
-	large_shapes({ ..start, outlines: Shown }).len() == start.large_still.polygons.polygons().len() + edge_count
+	large_shapes({ ..start, outlines: Shown }).len() == pose_polygons(start.large_pose).polygons().len() + edge_count
 }
 
 # A polygon's outline closes: its last line ends where its first starts.
@@ -804,8 +720,7 @@ expect shapes_at(start) != shapes_at(left_click(start, middle_of(last_cell.area)
 expect shapes_at(start) != shapes_at(left_click(start, middle_of(large_area)))
 expect shapes_at(start) == shapes_at(left_click(start, { x: 100.0, y: 60.0 }))
 
-# One cell is lit, the one shown large, and a still not in the grid lights none.
-expect mark_shapes(cat_still(Land)).len() == 1
-expect mark_shapes(bird_still(Diving)).len() == 1
-expect mark_shapes(cat_still(Land)) != mark_shapes(bird_still(Diving))
-expect mark_shapes({ name: "None", polygons: Still.([]) }).len() == 0
+# One cell is lit, the one shown large.
+expect mark_shapes(Cat(Land)).len() == 1
+expect mark_shapes(Bird(Diving)).len() == 1
+expect mark_shapes(Cat(Land)) != mark_shapes(Bird(Diving))
