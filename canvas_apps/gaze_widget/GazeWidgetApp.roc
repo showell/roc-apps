@@ -336,7 +336,7 @@ phase_text = |phase|
 ## How far the rider looks from the way the bike points, in degrees. A pig on the
 ## right turns the gaze right, so on this stretch it's never negative.
 gaze_degrees : RiderState -> F64
-gaze_degrees = |rider| rider.eyes.gaze_yaw.to_radians() / Trig.deg
+gaze_degrees = |rider| rider.eyes.gaze_yaw.to_radians() / Trig.degree
 
 ## The state at `step`, a line each.
 status_lines : RiderState, F64 -> List(Str)
@@ -461,7 +461,7 @@ expect {
 	played.all(|rider| gaze_degrees(rider) <= widest)
 		and gaze_degrees(state_at_step(played, look_end_step)) < widest
 		and gaze_degrees(state_at_step(played, look_end_step - 2)) < widest
-		and widest < Gaze.look_release_angle.to_radians() / Trig.deg
+		and widest < Gaze.look_release_angle.to_radians() / Trig.degree
 }
 
 # The gaze never turns left on this stretch, as `gaze_degrees` says.

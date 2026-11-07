@@ -95,7 +95,7 @@ is_close = |got, want| (got - want).abs() <= 0.000000001 * want.abs().max(1.0)
 expect
 	[
 		(Screen.width.to_f64(), 960.0),
-		(Lens.field_of_view.to_radians() / Trig.deg, 70.0),
+		(Lens.field_of_view.to_radians() / Trig.degree, 70.0),
 		(Lens.resting_focal.to_f64(), 685.5110432362151),
 	].all(|(got, want)| is_close(got, want))
 

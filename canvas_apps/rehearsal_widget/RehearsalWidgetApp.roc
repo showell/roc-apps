@@ -379,7 +379,7 @@ hundredths_text = |number| {
 ## A lean in degrees, and which way.
 lean_text : Angle.Lean -> Str
 lean_text = |lean| {
-	degrees = lean.to_radians() / Trig.deg
+	degrees = lean.to_radians() / Trig.degree
 	if degrees < 0.0 {
 		"${hundredths_text(0.0 - degrees)} left"
 	} else {
