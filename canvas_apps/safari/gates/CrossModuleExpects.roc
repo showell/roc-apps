@@ -895,7 +895,7 @@ runup_points_to_bend = RailSighting.runup_points(
 	},
 )
 
-expect RailSighting.run_out_points(
+expect RailSighting.runout_points(
 	road,
 	{
 		vantage: origin,

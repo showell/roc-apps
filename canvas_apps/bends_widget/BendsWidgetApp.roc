@@ -185,7 +185,7 @@ bend_shapes = |bend| {
 	road = road_with(bend.turn)
 	[
 		GroundSighting.patches_in_view(road, camera).map(|patch| patch_shape(bend, patch.corners)),
-		RailSighting.rails_in_view(road, camera).join_map(|rail| foot_shapes(bend, rail.corners)),
+		RailSighting.rail_quads_in_view(road, camera).join_map(|rail| foot_shapes(bend, rail.corners)),
 		[
 			spot(bend, { at: apex_of(bend.turn), color: apex_color }),
 			spot(bend, { at: rider, color: PlanView.standout_color }),
@@ -229,7 +229,7 @@ caption_lines = |turn| {
 		turn_text(turn),
 		"rail on the ${edge_text(bend_of(road))} edge",
 		"apex ${ReadoutText.tenths_text(apex_past_end(bend_of(road)))} m past the end",
-		"${GroundSighting.patches_in_view(road, camera).len().to_str()} patches, ${RailSighting.rails_in_view(road, camera).len().to_str()} rail pieces",
+		"${GroundSighting.patches_in_view(road, camera).len().to_str()} patches, ${RailSighting.rail_quads_in_view(road, camera).len().to_str()} rail pieces",
 	]
 }
 
