@@ -84,9 +84,12 @@ Roc's own rules are in the langref's
   three counting a preposition: `Animation.stage_over_gap`. The name hunt's
   `phrase_name` reports a pure function that starts with a preposition and
   gives no Bool. Three kinds pass, because each reads as what it is: a
-  constructor that gives its own module's type (`Clock.at_step`,
-  `Fraction.from_ratio`), a conversion (`Along.to_metres`, `Along.from_start`),
-  and a changed copy that gives its first argument's type (`Bike.with_lean`).
+  constructor that gives its own module's type (`Clock.at_step`), a conversion
+  (`Along.to_metres`, `Fraction.from_ratio`), and a changed copy that gives its
+  first argument's type (`Bike.with_lean`). A `from_*` is a conversion when it
+  takes or gives its own module's type, even inside a record, a union or a
+  `Try`'s success; in a `[].{}` module, which has no type to take or give, any
+  `from_<noun>` is.
 - **A verb in a pure function's name says what happens to its argument; a
   pretend effect goes, and the name becomes its answer.** `plus`, `clamp` and
   `project` say what happens to what they are given. `draw`, `fill`, `paint`,
