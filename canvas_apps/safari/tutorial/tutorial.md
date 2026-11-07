@@ -563,25 +563,23 @@ digraph roadside {
   subgraph cluster_once {
     label="once";
     World -> "Trees.roadside_trees";
-    "Trees.roadside_trees" -> "Trees.distance_from_middle";
   }
   subgraph cluster_frame {
     label="for each frame";
-    "TreeSighting.trees_in_view" -> "TreeSighting.segment_sightings";
-    "TreeSighting.segment_sightings" -> "TreeSighting.sighting_of";
+    "TreeSighting.trees_in_view" -> "segment_sightings";
+    "segment_sightings" -> "TreeSighting.sighting_of";
     "TreeSighting.sighting_of" -> "Pipeline.tall_sighting_of";
     "Pipeline.tall_sighting_of" -> "Pipeline.sighting_of";
-    "Pipeline.sighting_of" -> "Chain.rider_point_at";
-    "SceneShapes.tree_rendering" -> "SceneShapes.nearer_tree_count";
     "SceneShapes.tree_rendering" -> "Pipeline.rendering_of";
     "Pipeline.rendering_of" -> "Conifer.scenery_picture";
   }
-  "TreeSighting.segment_sightings" -> World [style=dotted, constraint=false];
+  "Trees.roadside_trees" -> "TreeSighting.trees_in_view" [style=dotted];
+  "Pipeline.sighting_of" -> "SceneShapes.tree_rendering" [style=dotted];
   "Conifer.scenery_picture" [style=bold];
 }
 ```
 
-A box is a function, and a solid arrow is a call. The dotted arrow is each frame reading the trees `World` planted. `Conifer.scenery_picture`, in bold, is where A simple tree began. It's the one place the two tree problems meet.
+A box is a function, and a solid arrow is a call. A dotted arrow is a step's answer going on to the next step: the trees that `World` planted, read again for each frame, and then the sightings, which go on to be rendered. `Conifer.scenery_picture`, in bold, is where A simple tree began. It's the one place the two tree problems meet.
 
 ### Planting
 
