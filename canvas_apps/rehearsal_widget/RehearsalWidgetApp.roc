@@ -10,7 +10,7 @@ import game.Across
 import game.Along
 import game.Angle
 import game.Coast
-import game.Bike
+import game.Motorcycle
 import game.Clock
 import game.Distance
 import game.LeanSearch
@@ -49,7 +49,7 @@ step_shown = 370
 
 ## The rider at that step, a record like any other. An `expect` below rides
 ## there and compares.
-rider : Bike.Motion({})
+rider : Motorcycle
 rider = {
 	along: Along.metres(4.90868673787897),
 	across: Across.metres(-1.930897632424363),
@@ -83,7 +83,7 @@ arc_edge = Geom.road_half_width.minus(Coast.straighten_margin)
 ## Whether an arc that has reached `motion` runs on. These are the tests in
 ## `Coast.project`, which answers with only where an arc ends. An `expect` below
 ## holds the two to the same end.
-runs_on : Bike.Motion({}) -> Bool
+runs_on : Motorcycle -> Bool
 runs_on = |motion| {
 	forward = motion.along.distance_from(rider.along)
 	on_road =
@@ -95,13 +95,12 @@ runs_on = |motion| {
 ## The way a rider coasts with `lean`: the call `Coast.project` makes.
 points_of : Angle.Lean -> List(ArcPoint)
 points_of = |lean| {
-	var $motion = Bike.with_lean(rider, lean)
+	var $motion = rider.with_lean(lean)
 	var $points = []
 	var $going = True
 	while $going {
-		$motion = Bike.bike_motion_at_next_step(
-			$motion,
-			{ lean_step: Angle.upright, acceleration: Acceleration.steady },
+		$motion = $motion.motorcycle_at_next_step(
+			{ lean_step: Angle.steady_lean, acceleration: Acceleration.steady },
 		)
 		$points = $points.append({
 			forward: $motion.along.distance_from(rider.along).to_metres(),
@@ -120,7 +119,7 @@ rehearsals_from = |{ low, high, at }|
 		[]
 	} else {
 		lean = low.halfway_to(high)
-		outcome = Coast.project(Bike.with_lean(rider, lean))
+		outcome = Coast.project(rider.with_lean(lean))
 		wants_more_right = LeanSearch.want_more_right(outcome, target)
 		next =
 			if wants_more_right {
@@ -576,7 +575,7 @@ ridden_to = |step| {
 
 # The record above is the real rider at that step, field by field.
 expect {
-	real = ridden_to(step_shown).instant.rider
+	real = ridden_to(step_shown).instant.rider.motorcycle
 	real.along == rider.along
 		and real.across == rider.across
 		and real.yaw == rider.yaw

@@ -1,44 +1,54 @@
-## The motorcycle's physics for one step. The lean steers the bike, and it
-## moves along the middle of the step's turn.
+## The motorcycle the rider sits on: where it is on its segment, which way it
+## points, how fast it goes and how far it leans, and the physics that moves it
+## a step. The lean steers the motorcycle, and it moves along the middle of the
+## step's turn.
 import Acceleration
 import Across
 import Along
 import Angle
 import Speed
+import VehicleLimits
 
-Bike :: [].{
+## The motorcycle at one step. `along` and `across` place it on its segment,
+## and `yaw` is its turn from the segment's axis; `heading` is its bearing in
+## the world. `lean` is how far it tips.
+Motorcycle := {
+	along : Along,
+	across : Across,
+	yaw : Angle.Turn,
+	speed : Speed,
+	lean : Angle.Lean,
+	heading : Angle.Bearing,
+}.{
 
-	## How far the bike turns in a step for each radian of lean.
+	initial : Motorcycle
+	initial = {
+		along: Along.start,
+		across: Across.middle,
+		yaw: Angle.straight_ahead,
+		speed: VehicleLimits.base_speed,
+		lean: Angle.upright,
+		heading: Angle.north,
+	}
+
+	## How far the motorcycle turns in a step for each radian of lean.
 	turn_per_lean : F64
 	turn_per_lean = 0.1
 
-	## What a physics step reads and writes. It is open so that a caller's
-	## larger record passes through a step with its other fields kept.
-	Motion(others) : {
-		along : Along,
-		across : Across,
-		yaw : Angle.Turn,
-		speed : Speed,
-		lean : Angle.Lean,
-		heading : Angle.Bearing,
-		..others,
-	}
-
-	## The bike one step on, after leaning by `lean_step` and speeding up by
-	## `acceleration`.
-	bike_motion_at_next_step : Bike.Motion(others),
+	## The motorcycle one step on, after its lean changes by `lean_step` and it
+	## speeds up by `acceleration`.
+	motorcycle_at_next_step : Motorcycle,
 	{
-		lean_step : Angle.Lean,
+		lean_step : Angle.LeanChange,
 		acceleration : Acceleration,
-	} -> Bike.Motion(others)
-	bike_motion_at_next_step = |s, { lean_step, acceleration }| {
+	} -> Motorcycle
+	motorcycle_at_next_step = |s, { lean_step, acceleration }| {
 		lean = s.lean.plus(lean_step)
 		speed = s.speed.accelerated_by(acceleration)
 		step_length = speed.step_length()
 		turn = lean.steer(turn_per_lean)
 		mid = s.yaw.plus(turn.times(0.5)).to_radians()
 		{
-			..s,
 			along: s.along.plus(step_length.times(mid.cos())),
 			across: s.across.plus(step_length.times(mid.sin())),
 			yaw: s.yaw.plus(turn),
@@ -48,45 +58,52 @@ Bike :: [].{
 		}
 	}
 
-	with_lean : Bike.Motion(others), Angle.Lean -> Bike.Motion(others)
+	with_lean : Motorcycle, Angle.Lean -> Motorcycle
 	with_lean = |s, lean| { ..s, lean }
+
+	is_eq : _
 }
 
-# Bike doesn't import RiderState, and `Motion` is open, so the records here stand in
-# for it: `segment_index`, `gaze_yaw` and `look_depth` are the caller's own fields.
+expect Motorcycle.initial.along.to_metres() == 0.0
+expect Motorcycle.initial.across.to_metres() == 0.0
+expect Motorcycle.initial.yaw.to_radians() == 0.0
+expect Motorcycle.initial.speed.to_metres_a_step() == 0.3
+expect Motorcycle.initial.lean.to_radians() == 0.0
+expect Motorcycle.initial.heading.to_radians() == 0.0
 
-## A rider well along a segment, leaning a little to the right.
+## A motorcycle well along a segment, leaning a little to the right.
+riding : Motorcycle
 riding = {
-	segment_index: 3,
 	along: Along.metres(120.5),
 	across: Across.metres(2.25),
 	yaw: Angle.Turn.radians(0.375),
 	speed: Speed.metres_a_step(0.8),
 	lean: Angle.Lean.radians(0.125),
 	heading: Angle.Bearing.radians(4.5),
-	gaze_yaw: Angle.Turn.radians(0.625),
-	look_depth: 0.25,
 }
 
-first_step = Bike.bike_motion_at_next_step(
+first_step : Motorcycle
+first_step = Motorcycle.motorcycle_at_next_step(
 	riding,
 	{
-		lean_step: Angle.Lean.radians(0.05),
+		lean_step: Angle.LeanChange.radians(0.05),
 		acceleration: Acceleration.metres_a_step_each_step(0.01),
 	},
 )
 
-second_step = Bike.bike_motion_at_next_step(
+second_step : Motorcycle
+second_step = Motorcycle.motorcycle_at_next_step(
 	first_step,
 	{
-		lean_step: Angle.Lean.radians(-0.02),
+		lean_step: Angle.LeanChange.radians(-0.02),
 		acceleration: Acceleration.metres_a_step_each_step(0.005),
 	},
 )
 
-third_step = Bike.bike_motion_at_next_step(
+third_step : Motorcycle
+third_step = Motorcycle.motorcycle_at_next_step(
 	second_step,
-	{ lean_step: Angle.upright, acceleration: Acceleration.steady },
+	{ lean_step: Angle.steady_lean, acceleration: Acceleration.steady },
 )
 
 expect
@@ -113,15 +130,6 @@ expect
 			4.548500000000001,
 		]
 
-# A step keeps the caller's own fields.
-expect first_step.gaze_yaw.to_radians() == 0.625
-expect first_step.look_depth == 0.25
-expect third_step.gaze_yaw.to_radians() == 0.625
-expect third_step.look_depth == 0.25
-expect first_step.segment_index == 3
-expect second_step.segment_index == 3
-expect third_step.segment_index == 3
-
 # Each is within 1e-9 of its want, scaled up by a want past 1.
 expect
 	[
@@ -134,22 +142,14 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.000000001 * want.abs().max(1.0))
 
 expect {
-	at_start = {
-		along: Along.start,
-		across: Across.middle,
-		yaw: Angle.straight_ahead,
-		speed: Speed.metres_a_step(0.3),
-		lean: Angle.upright,
-		heading: Angle.north,
-	}
-	a = Bike.bike_motion_at_next_step(
-		at_start,
-		{ lean_step: Angle.upright, acceleration: Acceleration.steady },
+	a = Motorcycle.motorcycle_at_next_step(
+		Motorcycle.initial,
+		{ lean_step: Angle.steady_lean, acceleration: Acceleration.steady },
 	)
-	b = Bike.bike_motion_at_next_step(
-		at_start,
+	b = Motorcycle.motorcycle_at_next_step(
+		Motorcycle.initial,
 		{
-			lean_step: Angle.Lean.radians(0.5),
+			lean_step: Angle.LeanChange.radians(0.5),
 			acceleration: Acceleration.metres_a_step_each_step(0.25),
 		},
 	)
@@ -163,7 +163,7 @@ expect {
 		b.speed.to_metres_a_step(),
 		b.yaw.to_radians(),
 		b.heading.to_radians(),
-		Bike.turn_per_lean,
+		Motorcycle.turn_per_lean,
 	]
 		== [
 			0.0,
@@ -179,18 +179,17 @@ expect {
 		]
 }
 
+probe : Motorcycle
 probe = {
-	segment_index: 7,
 	along: Along.metres(11.0),
 	across: Across.metres(2.5),
 	yaw: Angle.Turn.radians(0.75),
 	speed: Speed.metres_a_step(3.25),
 	lean: Angle.Lean.radians(0.125),
 	heading: Angle.Bearing.radians(4.5),
-	gaze_yaw: Angle.Turn.radians(0.375),
-	look_depth: 0.75,
 }
 
+numbers_of : Motorcycle -> List(F64)
 numbers_of = |s| [
 	s.along.to_metres(),
 	s.across.to_metres(),
@@ -198,15 +197,14 @@ numbers_of = |s| [
 	s.speed.to_metres_a_step(),
 	s.lean.to_radians(),
 	s.heading.to_radians(),
-	s.gaze_yaw.to_radians(),
-	s.look_depth,
 ]
 
-leaned_once = Bike.with_lean(probe, Angle.Lean.radians(1.5))
+leaned_once : Motorcycle
+leaned_once = Motorcycle.with_lean(probe, Angle.Lean.radians(1.5))
 
 # `with_lean` changes the lean and nothing else, and the last one holds.
 expect
-	numbers_of(Bike.with_lean(probe, Angle.Lean.radians(9.5)))
+	numbers_of(Motorcycle.with_lean(probe, Angle.Lean.radians(9.5)))
 		== [
 			11.0,
 			2.5,
@@ -214,14 +212,10 @@ expect
 			3.25,
 			9.5,
 			4.5,
-			0.375,
-			0.75,
 		]
 
-expect Bike.with_lean(probe, Angle.Lean.radians(9.5)).segment_index == 7
-
 expect
-	numbers_of(Bike.with_lean(leaned_once, Angle.Lean.radians(9.5)))
+	numbers_of(Motorcycle.with_lean(leaned_once, Angle.Lean.radians(9.5)))
 		== [
 			11.0,
 			2.5,
@@ -229,6 +223,4 @@ expect
 			3.25,
 			9.5,
 			4.5,
-			0.375,
-			0.75,
 		]

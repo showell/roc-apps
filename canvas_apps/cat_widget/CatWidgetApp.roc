@@ -11,6 +11,7 @@ import game.PosedCat
 import game.Geom
 import game.Speed
 import game.StillShapes
+import game.VehicleLimits
 import game.World
 import lib.CanvasApp
 import lib.RgbColor
@@ -141,7 +142,7 @@ status_lines : Distance -> List(Str)
 status_lines = |gap| {
 	approach = { gap, speed: rider_speed }
 	instant = Cat.instant_at(crossing, approach)
-	reaction = CrossingReaction.reaction_to(
+	throttle = CrossingReaction.crossing_throttle(
 		cat_segment,
 		{ along: crossing.along.minus(gap), speed: rider_speed },
 	)
@@ -149,7 +150,7 @@ status_lines = |gap| {
 		ScrubWidget.stage_text(Cat.crossing_stage(approach)),
 		"Pose: ${pose_name(instant.pose)}",
 		"Gap: ${ScrubWidget.tenths_text(gap.to_metres())} m",
-		throttle_text(reaction.throttle),
+		throttle_text(throttle),
 	]
 }
 
@@ -165,12 +166,13 @@ pose_name = |pose|
 		Collapse => "Collapse"
 	}
 
-## What a reaction's throttle means for the rider, in words.
-throttle_text : [MayAccelerate, NoAcceleration] -> Str
+## What the crossing asks of the throttle, in words. A crossing only ever holds
+## the acceleration at none.
+throttle_text : VehicleLimits.Limit -> Str
 throttle_text = |throttle|
 	match throttle {
-		MayAccelerate => "The rider may accelerate"
-		NoAcceleration => "The rider may not accelerate"
+		NoLimit => "The rider may accelerate"
+		AtMost(_) => "The rider may not accelerate"
 	}
 
 # The whole crossing is on the range, with some road to spare at the far end.

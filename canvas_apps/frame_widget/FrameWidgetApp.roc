@@ -145,12 +145,12 @@ ride_pieces = |tour| {
 			segments_ahead: RoadAhead.indices_ahead(tour.route_segments, rider.segment_index),
 			vantage: ViewYaw.vantage_for(rider),
 		},
-		cam_focal: RideFocal.ride_focal(tour.route_segments, rider),
+		cam_focal: RideFocal.ride_focal(rider, tour.route_segments),
 	}
 	scene = Scene.scene_in_view(
 		view,
 		{
-			speed: rider.speed,
+			speed: rider.motorcycle.speed,
 			truck: {
 				route_position: instant.truck.route_position,
 				truck_ahead: RideInstant.truck_lights(instant),

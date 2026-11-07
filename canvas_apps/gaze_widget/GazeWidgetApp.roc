@@ -11,6 +11,7 @@ import game.Angle
 import game.Billboard
 import game.Clock
 import game.Distance
+import game.Gawking
 import game.Gaze
 import game.Geom
 import game.Rider
@@ -78,14 +79,15 @@ played_a_frame = 8
 first_rider : RiderState
 first_rider = {
 	segment_index: World.SegmentIndex.number(2),
-	along: Along.metres(140.3590433880225),
-	across: Across.metres(-0.027010758256703966),
-	yaw: Angle.Turn.radians(-0.00037326865836414446),
-	speed: Speed.metres_a_step(1.6528903626175844),
-	lean: Angle.Lean.radians(-0.00020453077171767937),
-	heading: Angle.Bearing.radians(-0.3494391190572302),
-	gaze_yaw: Angle.straight_ahead,
-	look_depth: RiderState.initial.look_depth,
+	motorcycle: {
+		along: Along.metres(140.3590433880225),
+		across: Across.metres(-0.027010758256703966),
+		yaw: Angle.Turn.radians(-0.00037326865836414446),
+		speed: Speed.metres_a_step(1.6528903626175844),
+		lean: Angle.Lean.radians(-0.00020453077171767937),
+		heading: Angle.Bearing.radians(-0.3494391190572302),
+	},
+	eyes: RiderState.initial.eyes,
 }
 
 starting_model : GazeWidgetApp.Model
@@ -108,7 +110,7 @@ is_distracting = |segment|
 ## The pig that catches the rider's eye.
 gaze_pig : Geom.Placed(Billboard)
 gaze_pig =
-	match Gaze.eye_catching_pig(pig_segment) {
+	match Gawking.eye_catching_pig(pig_segment) {
 		CatchesEye(pig) => pig
 		NoPigCatchesEye => crash "GazeWidgetApp.gaze_pig: this segment's pigs catch the eye"
 	}
@@ -149,12 +151,12 @@ state_at = |played, offset|
 ## What the rider is doing about the pig in `rider`'s state.
 phase_of : RiderState -> GazePhase
 phase_of = |rider|
-	if !Gaze.is_gawking(rider, pig_segment) {
+	if !Gawking.is_gawking(rider.motorcycle, pig_segment) {
 		EyesOnRoad
 	} else {
-		match Gaze.desired_gaze(rider, pig_segment) {
+		match Gaze.desired_gaze(rider.motorcycle, pig_segment) {
 			OnPig(_) => LookingAtPig
-			OnRoad if rider.gaze_yaw == Angle.straight_ahead => EyesBack
+			OnRoad if rider.eyes.gaze_yaw == Angle.straight_ahead => EyesBack
 			OnRoad => EasingBack
 		}
 	}
@@ -285,10 +287,10 @@ pigs =
 ## road by the bike's yaw and the rider's gaze.
 sight_line : RiderState -> Shapes.Shape
 sight_line = |rider| {
-	x = screen_x(rider.along)
-	y = screen_y(rider.across)
-	turn = rider.yaw.plus(rider.gaze_yaw).to_radians()
-	reach = Gaze.notice_distance.to_metres() * pixels_a_metre
+	x = screen_x(rider.motorcycle.along)
+	y = screen_y(rider.motorcycle.across)
+	turn = rider.motorcycle.yaw.plus(rider.eyes.gaze_yaw).to_radians()
+	reach = Gawking.notice_distance.to_metres() * pixels_a_metre
 	Shapes.line(
 		x,
 		y,
@@ -308,8 +310,8 @@ picture_shapes = |rider|
 		[
 			sight_line(rider),
 			plan_disc({
-				along: rider.along,
-				across: rider.across,
+				along: rider.motorcycle.along,
+				across: rider.motorcycle.across,
 				radius: 5.0,
 				color: rider_color,
 			}),
@@ -329,16 +331,16 @@ phase_text = |phase|
 ## How far the rider looks from the way the bike points, in degrees. A pig on the
 ## right turns the gaze right, so on this stretch it's never negative.
 gaze_degrees : RiderState -> F64
-gaze_degrees = |rider| rider.gaze_yaw.to_radians() / Trig.deg
+gaze_degrees = |rider| rider.eyes.gaze_yaw.to_radians() / Trig.deg
 
 ## The state at `step`, a line each.
 status_lines : RiderState, F64 -> List(Str)
 status_lines = |rider, step|
 	[
 		phase_text(phase_of(rider)),
-		"Step ${step.to_u64_wrap().to_str()}: speed ${ScrubWidget.tenths_text(rider.speed.to_metres_a_step())} m a step",
+		"Step ${step.to_u64_wrap().to_str()}: speed ${ScrubWidget.tenths_text(rider.motorcycle.speed.to_metres_a_step())} m a step",
 		"Gaze yaw: ${ScrubWidget.tenths_text(gaze_degrees(rider))} degrees",
-		"Look depth: ${ScrubWidget.percent_text(rider.look_depth)}",
+		"Look depth: ${ScrubWidget.percent_text(rider.eyes.look_depth)}",
 	]
 
 ## The whole stretch, played, for the expects. As a constant it's ridden once, at
@@ -370,14 +372,8 @@ ridden_to = |step| {
 expect {
 	real = ridden_to(first_step).instant.rider
 	real.segment_index == first_rider.segment_index
-		and real.along == first_rider.along
-		and real.across == first_rider.across
-		and real.yaw == first_rider.yaw
-		and real.speed == first_rider.speed
-		and real.lean == first_rider.lean
-		and real.heading == first_rider.heading
-		and real.gaze_yaw == first_rider.gaze_yaw
-		and real.look_depth == first_rider.look_depth
+		and real.motorcycle == first_rider.motorcycle
+		and real.eyes == first_rider.eyes
 }
 
 # This stretch is on the route's first distracting segment.
@@ -417,9 +413,9 @@ expect {
 	].all(
 		|{ step, speed, gaze, look_depth }| {
 			rider = state_at_step(played, step)
-			(rider.speed.to_metres_a_step() - speed).abs() <= 0.00005
+			(rider.motorcycle.speed.to_metres_a_step() - speed).abs() <= 0.00005
 				and (gaze_degrees(rider) - gaze).abs() <= 0.00005
-				and (rider.look_depth.to_f64() - look_depth).abs() <= 0.00005
+				and (rider.eyes.look_depth.to_f64() - look_depth).abs() <= 0.00005
 		},
 	)
 }
@@ -446,10 +442,10 @@ expect {
 	before = state_at_step(played, 888)
 	first = state_at_step(played, 889)
 	next = state_at_step(played, 890)
-	!Gaze.is_gawking(before, pig_segment)
-		and Gaze.is_gawking(first, pig_segment)
-		and first.speed > before.speed
-		and next.speed < first.speed
+	!Gawking.is_gawking(before.motorcycle, pig_segment)
+		and Gawking.is_gawking(first.motorcycle, pig_segment)
+		and first.motorcycle.speed > before.motorcycle.speed
+		and next.motorcycle.speed < first.motorcycle.speed
 }
 
 # The gaze is at its widest on the look's last step, and the look ends short of
@@ -471,8 +467,8 @@ expect
 	stretch_states.all(
 		|rider|
 			rider.segment_index == first_rider.segment_index
-				and screen_x(rider.along) > 0.0
-				and screen_x(rider.along) < ScrubWidget.canvas_width,
+				and screen_x(rider.motorcycle.along) > 0.0
+				and screen_x(rider.motorcycle.along) < ScrubWidget.canvas_width,
 	)
 
 ## A model at its start, asking for `step`.
@@ -572,5 +568,11 @@ expect {
 }
 
 # The sight line moves with the gaze, and the picture with the rider.
-expect picture_shapes(first_rider) != picture_shapes({ ..first_rider, gaze_yaw: Angle.Turn.degrees(20.0) })
-expect picture_shapes(first_rider) != picture_shapes({ ..first_rider, along: Along.metres(200.0) })
+expect {
+	looking = { ..first_rider, eyes: { ..first_rider.eyes, gaze_yaw: Angle.Turn.degrees(20.0) } }
+	picture_shapes(first_rider) != picture_shapes(looking)
+}
+expect {
+	further = { ..first_rider, motorcycle: { ..first_rider.motorcycle, along: Along.metres(200.0) } }
+	picture_shapes(first_rider) != picture_shapes(further)
+}

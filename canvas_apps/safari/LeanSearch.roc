@@ -3,7 +3,7 @@
 import Across
 import Angle
 import Coast
-import Bike
+import Motorcycle
 import Distance
 import Steps
 
@@ -40,15 +40,15 @@ LeanSearch :: [].{
 		}
 
 	## The most the lean changes in one step.
-	max_lean_change : Angle.Lean
-	max_lean_change = Angle.Lean.degrees(1.0)
+	max_lean_change : Angle.LeanChange
+	max_lean_change = Angle.LeanChange.degrees(1.0)
 
 	lean_search_round_count : U8
 	lean_search_round_count = 12
 
 	## The lean between `low` and `high` whose coast ends nearest `target`
 	## across the road, by bisection.
-	search_lean : Bike.Motion(others),
+	search_lean : Motorcycle,
 	{
 		target : Across,
 		low : Angle.Lean,
@@ -59,7 +59,7 @@ LeanSearch :: [].{
 		var $high = high
 		for _ in 0..<lean_search_round_count {
 			mid = $low.halfway_to($high)
-			if want_more_right(Coast.project(Bike.with_lean(state, mid)), target) {
+			if want_more_right(Coast.project(state.with_lean(mid)), target) {
 				$low = mid
 			} else {
 				$high = mid
@@ -69,7 +69,7 @@ LeanSearch :: [].{
 	}
 
 	## The lean for the next step: within the most one step can change it.
-	best_lean : Bike.Motion(others) -> Angle.Lean
+	best_lean : Motorcycle -> Angle.Lean
 	best_lean = |state|
 		search_lean(
 			state,
@@ -115,3 +115,30 @@ expect !LeanSearch.want_more_right(off_right, Across.metres(0.5))
 expect LeanSearch.want_more_right(ending_at(0.4), Across.metres(0.5))
 expect !LeanSearch.want_more_right(ending_at(0.6), Across.metres(0.5))
 expect !LeanSearch.want_more_right(ending_at(0.5), Across.metres(0.5))
+
+## The lean the search picks for a motorcycle at the start of the segment, in
+## radians.
+searched_lean : F64, F64 -> F64
+searched_lean = |across, lean_radians|
+	LeanSearch.best_lean({
+		..Motorcycle.initial,
+		across: Across.metres(across),
+		lean: Angle.Lean.radians(lean_radians),
+	}).to_radians()
+
+max_correction : F64
+max_correction = LeanSearch.max_lean_change.to_radians()
+
+centred : F64
+centred = searched_lean(0.0, 0.0)
+
+offset : F64
+offset = searched_lean(1.0, 0.0)
+
+held : F64
+held = searched_lean(0.0, 0.5)
+
+expect offset.abs() <= max_correction
+expect (held - 0.5).abs() <= max_correction
+expect centred.abs() <= max_correction
+expect held > centred

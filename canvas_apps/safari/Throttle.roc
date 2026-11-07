@@ -1,12 +1,13 @@
-## Throttle decides how hard the rider speeds up or brakes. The acceleration
-## passes through a chain of limits, each of which can only lower it.
+## Throttle decides how hard the rider speeds up or brakes. Each of four limits
+## asks for nothing or for an acceleration no harder than its own, and the
+## acceleration offered is held to the least of them.
 import Acceleration
 import Along
 import Angle
 import Coast
 import CrossingReaction
-import Gaze
-import RiderState
+import Gawking
+import Motorcycle
 import Speed
 import Steps
 import lib.Trig
@@ -15,330 +16,254 @@ import World
 
 Throttle :: [].{
 
-	## The rider holds the throttle off while leaning this far or further.
-	lean_hold : Angle.Lean
-	lean_hold = Angle.Lean.degrees(2.0)
-
-	bend_brake : RiderState,
-	{
-		segment : World.Segment,
-		exit_speed : Speed,
-		offered_acceleration : Acceleration,
-	} -> Acceleration
-	bend_brake = |
-		state,
-		{
-			segment: seg,
-			exit_speed: v_end,
-			offered_acceleration: a,
-		},
-	| {
-		d = seg.commit_along.distance_from(state.along)
-		bend_a =
-			if d <= VehicleLimits.least_braking_distance {
-				Acceleration.steady
-			} else {
-				state.speed.acceleration_to({ target: v_end, within: d })
-			}
-		a.min(bend_a)
-	}
-
-	## The acceleration `a`, or none while the segment's crossing says the rider
-	## may not accelerate. It stops the rider speeding up, and never brakes.
-	crossing_limit : RiderState,
-	{
-		segment : World.Segment,
-		offered_acceleration : Acceleration,
-	} -> Acceleration
-	crossing_limit = |state, { segment: seg, offered_acceleration: a }|
-		match CrossingReaction.reaction_to(seg, state).throttle {
-			NoAcceleration => a.min(Acceleration.steady)
-			MayAccelerate => a
-		}
-
-	## The acceleration `a`, or the brake for the segment's pig, whichever is
-	## harder.
-	pig_limit : RiderState,
-	{
-		segment : World.Segment,
-		offered_acceleration : Acceleration,
-	} -> Acceleration
-	pig_limit = |state, { segment: seg, offered_acceleration: a }|
-		match Gaze.gawk_brake(state, seg) {
-			AtMost(brake) => a.min(brake)
-			NoLimit => a
-		}
-
-	brake_decay : Steps
-	brake_decay = Steps.of(20)
-
-	## The acceleration `a`, unless a coast from here leaves the road; then the
-	## brake for the shoulder it reaches. One of the limits `acceleration`
-	## passes the acceleration through in turn.
-	shoulder_brake : RiderState, Acceleration -> Acceleration
-	shoulder_brake = |state, a|
-		match Coast.project(state) {
-			EndsAt(_) => a
-			Leaves({ after: steps_to_shoulder, .. }) =>
-				shoulder_brake_at(state, { steps_to_shoulder, offered_acceleration: a })
-		}
-
-	## The acceleration `a`, or the brake for a coast that leaves the road in
-	## `steps_to_shoulder`, whichever is harder.
-	shoulder_brake_at : RiderState,
-	{
-		steps_to_shoulder : Steps,
-		offered_acceleration : Acceleration,
-	} -> Acceleration
-	shoulder_brake_at = |state, { steps_to_shoulder, offered_acceleration: a }| {
-		n = steps_to_shoulder.to_f64()
-		even_braking = (0.0 - state.speed.to_metres_a_step()) / (2.0 * n.max(1.0))
-		sa = Acceleration.metres_a_step_each_step(
-			even_braking * F64.e.pow((0.0 - n) / brake_decay.to_f64()),
-		)
-		a.min(sa)
-	}
-
-	## The speed the rider may reach: `next_speed`, held between rest and the top
-	## speed. Near the end of the segment a rider below the exit speed is lifted
-	## to it, unless they are gawking.
-	allowed_speed : RiderState,
-	{
-		segment : World.Segment,
-		exit_speed : Speed,
-		next_speed : Speed,
-		is_near_end : Bool,
-	} -> Speed
-	allowed_speed = |
-		state,
-		{
-			segment: seg,
-			exit_speed: v_end,
-			next_speed: v0,
-			is_near_end: near,
-		},
-	| {
-		v2 = v0.min(VehicleLimits.top_speed).max(Speed.at_rest)
-		if near {
-			if v2 < v_end {
-				if Gaze.is_gawking(state, seg) {
-					v2
-				} else {
-					v_end
-				}
-			} else {
-				v2
-			}
-		} else {
-			v2
-		}
-	}
-
-	acceleration : RiderState, World.Segment -> Acceleration
-	acceleration = |state, seg| {
-		a0 =
-			if state.lean.abs() >= lean_hold {
+	acceleration : Motorcycle, World.Segment -> Acceleration
+	acceleration = |motorcycle, seg| {
+		offered =
+			if motorcycle.lean.abs() >= lean_hold {
 				Acceleration.steady
 			} else {
 				VehicleLimits.cruise_acceleration
 			}
-		v_end =
-			match seg.ending {
-				Continues(_) => VehicleLimits.turn_speed(seg.exit_turn.abs())
-				Terminates => Speed.at_rest
-			}
-		left = Along.at(seg.length).distance_from(state.along)
-		near = left <= VehicleLimits.bend_approach
-		a1 =
-			if near {
-				bend_brake(
-					state,
-					{
-						segment: seg,
-						exit_speed: v_end,
-						offered_acceleration: a0,
-					},
-				)
-			} else {
-				a0
-			}
-		a2 = crossing_limit(state, { segment: seg, offered_acceleration: a1 })
-		a3 = pig_limit(state, { segment: seg, offered_acceleration: a2 })
-		a4 = shoulder_brake(state, a3)
+		v_end = exit_speed(seg)
+		limits = [
+			bend_limit(motorcycle, { segment: seg, exit_speed: v_end }),
+			CrossingReaction.crossing_throttle(seg, motorcycle),
+			Gawking.gawk_brake(motorcycle, seg),
+			shoulder_limit(motorcycle),
+		]
+		limited = limits.fold(offered, held_to)
 		allowed_speed(
-			state,
+			motorcycle,
 			{
 				segment: seg,
 				exit_speed: v_end,
-				next_speed: state.speed.accelerated_by(a4),
-				is_near_end: near,
+				next_speed: motorcycle.speed.accelerated_by(limited),
 			},
-		).change_from(state.speed)
+		).change_from(motorcycle.speed)
+	}
+}
+
+## The rider holds the throttle off while leaning this far or further.
+lean_hold : Angle.Lean
+lean_hold = Angle.Lean.degrees(2.0)
+
+brake_decay : Steps
+brake_decay = Steps.of(20)
+
+## The acceleration `a`, held to what `limit` asks.
+held_to : Acceleration, VehicleLimits.Limit -> Acceleration
+held_to = |a, limit|
+	match limit {
+		AtMost(most) => a.min(most)
+		NoLimit => a
+	}
+
+## The speed to leave `seg` at: the speed for its bend, or rest at the route's
+## end.
+exit_speed : World.Segment -> Speed
+exit_speed = |seg|
+	match seg.ending {
+		Continues(_) => VehicleLimits.turn_speed(seg.exit_turn.abs())
+		Terminates => Speed.at_rest
+	}
+
+## Whether the motorcycle is near enough the end of `seg` to brake for its bend.
+is_near_end : Motorcycle, World.Segment -> Bool
+is_near_end = |motorcycle, seg|
+	Along.at(seg.length).distance_from(motorcycle.along) <= VehicleLimits.bend_approach
+
+## Near the end of the segment, the brake that brings the rider to the exit
+## speed at the point where they commit to the turn. Past that point there is
+## no road left to brake on, and the limit holds the acceleration at none.
+bend_limit : Motorcycle, { segment : World.Segment, exit_speed : Speed } -> VehicleLimits.Limit
+bend_limit = |motorcycle, { segment: seg, exit_speed: v_end }|
+	if is_near_end(motorcycle, seg) {
+		d = seg.commit_along.distance_from(motorcycle.along)
+		bend_a =
+			if d <= VehicleLimits.least_braking_distance {
+				Acceleration.steady
+			} else {
+				motorcycle.speed.acceleration_to({ target: v_end, within: d })
+			}
+		AtMost(bend_a)
+	} else {
+		NoLimit
+	}
+
+## Nothing, unless a coast from here leaves the road; then the brake for the
+## shoulder it reaches.
+shoulder_limit : Motorcycle -> VehicleLimits.Limit
+shoulder_limit = |motorcycle|
+	match Coast.project(motorcycle) {
+		EndsAt(_) => NoLimit
+		Leaves({ after, .. }) => AtMost(shoulder_brake(motorcycle, after))
+	}
+
+## The brake for a coast that leaves the road in `steps_to_shoulder`.
+shoulder_brake : Motorcycle, Steps -> Acceleration
+shoulder_brake = |motorcycle, steps_to_shoulder| {
+	n = steps_to_shoulder.to_f64()
+	even_braking = (0.0 - motorcycle.speed.to_metres_a_step()) / (2.0 * n.max(1.0))
+	Acceleration.metres_a_step_each_step(even_braking * F64.e.pow((0.0 - n) / brake_decay.to_f64()))
+}
+
+## The speed the rider may reach: `next_speed`, held between rest and the top
+## speed. Near the end of the segment a rider below the exit speed is lifted
+## to it, unless they are gawking.
+allowed_speed : Motorcycle,
+{
+	segment : World.Segment,
+	exit_speed : Speed,
+	next_speed : Speed,
+} -> Speed
+allowed_speed = |
+	motorcycle,
+	{
+		segment: seg,
+		exit_speed: v_end,
+		next_speed: v0,
+	},
+| {
+	v2 = v0.min(VehicleLimits.top_speed).max(Speed.at_rest)
+	if is_near_end(motorcycle, seg) {
+		if v2 < v_end {
+			if Gawking.is_gawking(motorcycle, seg) {
+				v2
+			} else {
+				v_end
+			}
+		} else {
+			v2
+		}
+	} else {
+		v2
 	}
 }
 
 # Each is within 1e-12 of its want.
 expect
 	[
-		(Throttle.lean_hold.to_radians(), 0.03490658503988659),
-		(Throttle.brake_decay.to_f64(), 20.0),
-		(Throttle.lean_hold.to_radians() / Trig.deg, 2.0),
+		(lean_hold.to_radians(), 0.03490658503988659),
+		(brake_decay.to_f64(), 20.0),
+		(lean_hold.to_radians() / Trig.deg, 2.0),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 
 first_segment : World.Segment
 first_segment = World.route_segment(0)
 
-cat_segment : World.Segment
-cat_segment = World.route_segment(3)
-
-## A rider on the centre line, upright.
-centred_rider : F64, F64 -> RiderState
-centred_rider = |along, speed| {
-	..RiderState.initial,
+## A motorcycle on the centre line, upright.
+centred_motorcycle : F64, F64 -> Motorcycle
+centred_motorcycle = |along, speed| {
+	..Motorcycle.initial,
 	along: Along.metres(along),
 	speed: Speed.metres_a_step(speed),
 }
 
-## The bend brake for this rider, offered `offered`.
-bend_brake_at : RiderState, F64 -> F64
-bend_brake_at = |rider, offered|
-	Throttle.bend_brake(
-		rider,
-		{
-			segment: first_segment,
-			exit_speed: Speed.metres_a_step(0.222),
-			offered_acceleration: Acceleration.metres_a_step_each_step(offered),
-		},
-	).to_metres_a_step_each_step()
+## This many metres a step, each step.
+acceleration_of : F64 -> Acceleration
+acceleration_of = |metres| Acceleration.metres_a_step_each_step(metres)
 
-expect bend_brake_at(centred_rider(498.4, 0.3), 0.01) == 0.0
-expect bend_brake_at(centred_rider(600.0, 0.3), 0.01) == 0.0
-expect bend_brake_at(centred_rider(0.0, 0.3), -5.0) == -5.0
+# A limit lowers what it is offered, and never raises it.
+expect held_to(Acceleration.steady, NoLimit) == Acceleration.steady
+expect held_to(acceleration_of(-0.5), NoLimit) == acceleration_of(-0.5)
+expect held_to(acceleration_of(0.01), AtMost(acceleration_of(-0.5))) == acceleration_of(-0.5)
+expect held_to(acceleration_of(-0.5), AtMost(Acceleration.steady)) == acceleration_of(-0.5)
 
-expect bend_brake_at(centred_rider(0.0, 0.3), 0.01) <= 0.01
-expect bend_brake_at(centred_rider(0.0, 0.3), -5.0) <= -5.0
-expect {
-	fast = bend_brake_at(centred_rider(0.0, 2.0), 0.01)
-	slow = bend_brake_at(centred_rider(0.0, 0.3), 0.01)
-	fast < slow
-}
+expect exit_speed(first_segment).to_metres_a_step() == 0.222
+expect exit_speed(World.route_segment(18)) == Speed.at_rest
 
-## What the crossing limit lets through for a rider at `along` on `segment`.
-limit_at : { segment : World.Segment, along : Along }, F64 -> F64
-limit_at = |{ segment, along }, offered|
-	Throttle.crossing_limit(
-		{ ..centred_rider(0.0, 0.3), along },
-		{ segment, offered_acceleration: Acceleration.metres_a_step_each_step(offered) },
-	).to_metres_a_step_each_step()
+expect !is_near_end(centred_motorcycle(439.9, 0.3), first_segment)
+expect is_near_end(centred_motorcycle(440.0, 0.3), first_segment)
 
-expect limit_at({ segment: first_segment, along: Along.start }, 0.01) == 0.01
-expect limit_at({ segment: first_segment, along: Along.start }, -5.0) == -5.0
-expect limit_at({ segment: cat_segment, along: Along.metres(120.0) }, 0.01) == 0.0
-expect limit_at({ segment: cat_segment, along: Along.metres(120.0) }, -5.0) == -5.0
-expect limit_at({ segment: cat_segment, along: Along.start }, 0.01) == 0.01
+## The bend limit for this motorcycle on the first segment.
+bend_limit_at : Motorcycle -> VehicleLimits.Limit
+bend_limit_at = |motorcycle|
+	bend_limit(motorcycle, { segment: first_segment, exit_speed: Speed.metres_a_step(0.222) })
 
-## What the pig limit lets through for a rider at `along`, going 0.3 metres a
-## step, on the route's first segment with a pig that catches the eye.
-pig_limit_at : F64, F64 -> F64
-pig_limit_at = |along, offered|
-	Throttle.pig_limit(
-		centred_rider(along, 0.3),
-		{
-			segment: World.route_segment(2),
-			offered_acceleration: Acceleration.metres_a_step_each_step(offered),
-		},
-	).to_metres_a_step_each_step()
+## The brake the bend limit asks of this motorcycle, near the bend.
+bend_brake_at : Motorcycle -> F64
+bend_brake_at = |motorcycle|
+	match bend_limit_at(motorcycle) {
+		AtMost(most) => most.to_metres_a_step_each_step()
+		NoLimit => crash "Throttle's expects: this motorcycle is near the bend"
+	}
 
-# Short of the pig's stretch, anything offered goes through.
-expect pig_limit_at(100.0, 0.01) == 0.01
-expect pig_limit_at(100.0, -5.0) == -5.0
+# Far from the bend, it asks nothing; past the commit point, no acceleration.
+expect bend_limit_at(centred_motorcycle(0.0, 0.3)) == NoLimit
+expect bend_limit_at(centred_motorcycle(498.4, 0.3)) == AtMost(Acceleration.steady)
+expect bend_limit_at(centred_motorcycle(600.0, 0.3)) == AtMost(Acceleration.steady)
 
-# On it, the brake replaces a push, and a harder brake stands.
-expect pig_limit_at(300.0, 0.01) < 0.0
-expect pig_limit_at(300.0, 0.01) > -5.0
-expect pig_limit_at(300.0, -5.0) == -5.0
-
-# A segment with no pig to look at doesn't limit the throttle.
-expect
-	Throttle.pig_limit(
-		centred_rider(300.0, 0.3),
-		{ segment: first_segment, offered_acceleration: VehicleLimits.cruise_acceleration },
-	) == VehicleLimits.cruise_acceleration
+# Short of the commit point it brakes, and harder for a faster rider.
+expect bend_brake_at(centred_motorcycle(460.0, 0.3)) < 0.0
+expect bend_brake_at(centred_motorcycle(460.0, 2.0)) < bend_brake_at(centred_motorcycle(460.0, 0.3))
 
 ## Throttle doesn't import Distance or Across, so these places and lengths come
 ## from what it does see.
-across_at = |metres| RiderState.initial.across.plus(Speed.metres_a_step(metres).step_length())
+across_at = |metres| Motorcycle.initial.across.plus(Speed.metres_a_step(metres).step_length())
 
-## A rider steering hard left at `speed`.
-rider_off_left : F64 -> RiderState
-rider_off_left = |speed| { ..centred_rider(0.0, speed), yaw: Angle.Turn.radians(-1.5) }
+## A motorcycle steering hard left at `speed`.
+off_left : F64 -> Motorcycle
+off_left = |speed| { ..centred_motorcycle(0.0, speed), yaw: Angle.Turn.radians(-1.5) }
 
-expect Coast.project(rider_off_left(0.048)) == Leaves({ side: Left, after: Steps.of(40) })
-expect Coast.project(rider_off_left(0.7)) == Leaves({ side: Left, after: Steps.of(2) })
+expect Coast.project(off_left(0.048)) == Leaves({ side: Left, after: Steps.of(40) })
+expect Coast.project(off_left(0.7)) == Leaves({ side: Left, after: Steps.of(2) })
 
-# A coast that stays on the road takes what is offered, and one that leaves it
-# brakes.
-expect {
-	offered = VehicleLimits.cruise_acceleration
-	Throttle.shoulder_brake(centred_rider(0.0, 0.3), offered) == offered
-		and Throttle.shoulder_brake(rider_off_left(0.7), offered) < Acceleration.steady
-}
+# A coast that stays on the road asks nothing, and one that leaves it brakes.
+expect shoulder_limit(centred_motorcycle(0.0, 0.3)) == NoLimit
+expect shoulder_limit(off_left(0.7)) == AtMost(shoulder_brake(off_left(0.7), Steps.of(2)))
 
-## The shoulder brake for a rider going 1 metre a step, offered `offered`.
-brake_after : U32, F64 -> Acceleration
-brake_after = |steps_to_shoulder, offered|
-	Throttle.shoulder_brake_at(
-		centred_rider(0.0, 1.0),
-		{
-			steps_to_shoulder: Steps.of(steps_to_shoulder),
-			offered_acceleration: Acceleration.metres_a_step_each_step(offered),
-		},
-	)
+## The shoulder brake for a motorcycle going 1 metre a step.
+brake_after : U32 -> Acceleration
+brake_after = |steps_to_shoulder|
+	shoulder_brake(centred_motorcycle(0.0, 1.0), Steps.of(steps_to_shoulder))
 
-expect brake_after(40, 0.01) < Acceleration.steady
-expect brake_after(40, 0.01) > brake_after(2, 0.01)
-expect
-	brake_after(40, -9.0)
-		< Acceleration.metres_a_step_each_step(-8.999)
+expect brake_after(40) < Acceleration.steady
+expect brake_after(40) > brake_after(2)
 
 # A coast that leaves the road at once still brakes.
-expect brake_after(0, 0.01) < Acceleration.steady
+expect brake_after(0) < Acceleration.steady
 
-## The speed the clamp allows.
-clamped_speed : { next_speed : Speed, is_near_end : Bool } -> F64
-clamped_speed = |{ next_speed, is_near_end }|
-	Throttle.allowed_speed(
-		centred_rider(0.0, 0.3),
+## The speed the clamp allows this motorcycle, for `next_speed` metres a step.
+clamped_speed : Motorcycle, F64 -> F64
+clamped_speed = |motorcycle, next_speed|
+	allowed_speed(
+		motorcycle,
 		{
 			segment: first_segment,
 			exit_speed: Speed.metres_a_step(0.222),
-			next_speed,
-			is_near_end,
+			next_speed: Speed.metres_a_step(next_speed),
 		},
 	).to_metres_a_step()
 
-expect clamped_speed({ next_speed: Speed.metres_a_step(1.0), is_near_end: False }) == 1.0
-expect clamped_speed({ next_speed: Speed.metres_a_step(3.0), is_near_end: False }) == 2.5
-expect clamped_speed({ next_speed: Speed.metres_a_step(-1.0), is_near_end: False }) == 0.0
-expect clamped_speed({ next_speed: Speed.metres_a_step(0.1), is_near_end: True }) == 0.222
-expect clamped_speed({ next_speed: Speed.metres_a_step(0.5), is_near_end: True }) == 0.5
-expect clamped_speed({ next_speed: Speed.metres_a_step(0.1), is_near_end: False }) == 0.1
+## A motorcycle far from the bend, and one near it.
+far_from_bend : Motorcycle
+far_from_bend = centred_motorcycle(0.0, 0.3)
 
-## The whole decision for a rider at the start of the segment, on the centre
-## line.
+near_bend : Motorcycle
+near_bend = centred_motorcycle(460.0, 0.3)
+
+expect clamped_speed(far_from_bend, 1.0) == 1.0
+expect clamped_speed(far_from_bend, 3.0) == 2.5
+expect clamped_speed(far_from_bend, -1.0) == 0.0
+expect clamped_speed(near_bend, 0.1) == 0.222
+expect clamped_speed(near_bend, 0.5) == 0.5
+expect clamped_speed(far_from_bend, 0.1) == 0.1
+
+## The whole decision for a motorcycle at the start of the segment, on the
+## centre line.
 decide : Speed, F64 -> Acceleration
 decide = |speed, lean|
 	Throttle.acceleration(
-		{ ..RiderState.initial, speed, lean: Angle.Lean.radians(lean) },
+		{ ..Motorcycle.initial, speed, lean: Angle.Lean.radians(lean) },
 		first_segment,
 	)
 
-## The whole decision for a rider far off to the right.
+## The whole decision for a motorcycle far off to the right.
 wide_of_road : F64 -> Acceleration
 wide_of_road = |lean|
 	Throttle.acceleration(
 		{
-			..centred_rider(0.0, 0.3),
+			..centred_motorcycle(0.0, 0.3),
 			across: across_at(100.0),
 			lean: Angle.Lean.radians(lean),
 		},
@@ -346,7 +271,7 @@ wide_of_road = |lean|
 	)
 
 hold_radians : F64
-hold_radians = Throttle.lean_hold.to_radians()
+hold_radians = lean_hold.to_radians()
 
 # Each is within 1e-12 of its want.
 expect
@@ -363,14 +288,26 @@ expect decide(Speed.metres_a_step(0.3), hold_radians - 0.001) < Acceleration.ste
 expect decide(Speed.metres_a_step(0.3), 0.001) > Acceleration.steady
 expect decide(Speed.metres_a_step(0.3), -(hold_radians - 0.001)) < Acceleration.steady
 
+## The decision for a motorcycle at `along` on segment `index`, going 0.3
+## metres a step.
+decide_on : U32, F64 -> Acceleration
+decide_on = |index, along|
+	Throttle.acceleration(centred_motorcycle(along, 0.3), World.route_segment(index))
+
+# A crossing cat stops the throttle opening, and a gawking rider brakes.
+expect decide_on(3, 0.0) > Acceleration.steady
+expect decide_on(3, 120.0) == Acceleration.steady
+expect decide_on(2, 100.0) > Acceleration.steady
+expect decide_on(2, 300.0) < Acceleration.steady
+
 # These are Coast's projections. They sit here because Coast imports neither Speed
 # nor VehicleLimits, and Throttle sees both.
 
-## The coast of a rider at the start of the segment, going the base speed.
+## The coast of a motorcycle at the start of the segment, going the base speed.
 coast_of : F64, F64 -> Coast.Outcome
 coast_of = |across, lean_radians|
 	Coast.project({
-		..RiderState.initial,
+		..Motorcycle.initial,
 		across: across_at(across),
 		lean: Angle.Lean.radians(lean_radians),
 	})
@@ -382,7 +319,7 @@ wide : Coast.Outcome
 wide = coast_of(3.0, 0.0)
 
 stopped : Coast.Outcome
-stopped = Coast.project({ ..RiderState.initial, speed: Speed.at_rest })
+stopped = Coast.project({ ..Motorcycle.initial, speed: Speed.at_rest })
 
 leaning : Coast.Outcome
 leaning = coast_of(0.0, 0.2)
@@ -397,7 +334,7 @@ expect stopped == EndsAt(across_at(0.0))
 # A rider this slow and this far over circles on the road, and the coast still ends.
 expect {
 	circling = Coast.project({
-		..RiderState.initial,
+		..Motorcycle.initial,
 		speed: Speed.metres_a_step(0.01),
 		lean: Angle.Lean.radians(0.5),
 	})

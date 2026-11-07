@@ -1,4 +1,4 @@
-## Safari's angles, in radians, as three types.
+## Safari's angles, in radians, as four types.
 ##
 ## Anything that moves through the world, a rider, a camera or an aircraft,
 ## can rotate three ways. Yaw is turning left or right, about an axis that
@@ -18,7 +18,9 @@
 ##
 ## The third type, a lean, measures roll: how far the bike tips from
 ## upright. A lean is never added to a direction. It turns the bike only
-## through a rate (`steer`), the way a leaning bike follows a curve.
+## through a rate (`steer`), the way a leaning bike follows a curve. The
+## fourth, a lean change, is how far a lean moves in a step: a change added
+## to a lean gives a lean, and two leans give the change between them.
 import lib.Trig
 
 Angle :: [].{
@@ -122,11 +124,17 @@ Angle :: [].{
 		to_degrees : Angle.Lean -> F64
 		to_degrees = |Angle.Lean.(r)| r * degrees_per_radian
 
-		plus : Angle.Lean, Angle.Lean -> Angle.Lean
-		plus = |Angle.Lean.(l), Angle.Lean.(other)| Angle.Lean.(l + other)
+		## This lean, changed by `change`.
+		plus : Angle.Lean, Angle.LeanChange -> Angle.Lean
+		plus = |Angle.Lean.(l), Angle.LeanChange.(change)| Angle.Lean.(l + change)
 
-		minus : Angle.Lean, Angle.Lean -> Angle.Lean
-		minus = |Angle.Lean.(l), Angle.Lean.(other)| Angle.Lean.(l - other)
+		## This lean, changed by `change` the other way.
+		minus : Angle.Lean, Angle.LeanChange -> Angle.Lean
+		minus = |Angle.Lean.(l), Angle.LeanChange.(change)| Angle.Lean.(l - change)
+
+		## The change that takes `from` to this lean.
+		change_from : Angle.Lean, Angle.Lean -> Angle.LeanChange
+		change_from = |Angle.Lean.(l), Angle.Lean.(from)| Angle.LeanChange.(l - from)
 
 		## The lean halfway between this one and `other`.
 		halfway_to : Angle.Lean, Angle.Lean -> Angle.Lean
@@ -156,6 +164,30 @@ Angle :: [].{
 		is_eq : _
 	}
 
+	## How far a lean changes, measured from the lean before, as a lean is
+	## measured from upright.
+	LeanChange :: F64.{
+
+		radians : F64 -> Angle.LeanChange
+		radians = |r| Angle.LeanChange.(r)
+
+		## The change of this many degrees.
+		degrees : F64 -> Angle.LeanChange
+		degrees = |d| Angle.LeanChange.(d * Trig.deg)
+
+		to_radians : Angle.LeanChange -> F64
+		to_radians = |Angle.LeanChange.(r)| r
+
+		## The same change taken to the right.
+		abs : Angle.LeanChange -> Angle.LeanChange
+		abs = |Angle.LeanChange.(c)| Angle.LeanChange.(c.abs())
+
+		is_lte : Angle.LeanChange, Angle.LeanChange -> Bool
+		is_lte = |Angle.LeanChange.(c), Angle.LeanChange.(other)| c <= other
+
+		is_eq : _
+	}
+
 	north : Angle.Bearing
 	north = Angle.Bearing.(0.0)
 
@@ -164,6 +196,10 @@ Angle :: [].{
 
 	upright : Angle.Lean
 	upright = Angle.Lean.(0.0)
+
+	## No change of lean.
+	steady_lean : Angle.LeanChange
+	steady_lean = Angle.LeanChange.(0.0)
 }
 
 degrees_per_radian : F64
