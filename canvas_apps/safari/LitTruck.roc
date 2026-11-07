@@ -17,9 +17,8 @@ LitTruck := { headlights : [On, Off], brake_lights : [On, Off] }.{
 
 	is_eq : _
 
-	## Which of `truck`'s lights are on at `clock`: its headlights once the sun
-	## is behind the mountains, and its brake lights while its last step slowed
-	## it.
+	## The lights `truck` has on at `clock`: its headlights once the sun is
+	## behind the mountains, and its brake lights while its last step slowed it.
 	at : Truck, Clock -> LitTruck
 	at = |truck, clock| {
 		headlights: if Mountains.is_sun_behind_mountains(clock) {
