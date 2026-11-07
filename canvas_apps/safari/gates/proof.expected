@@ -6,15 +6,15 @@ ok  after 2049 steps: clock 2049, one back -> 2048
 ok  after 3000 steps: clock 3000, one back -> 2999
 ok  after 5000 steps: clock 5000, one back -> 4999
 every step back went back one step
-ShapesFrame 0: differ 0 of 576000, triangles 4820, shapes 2266
-ShapesFrame 100: differ 0 of 576000, triangles 4138, shapes 2205
-ShapesFrame 1529: differ 0 of 576000, triangles 10451, shapes 2589
-ShapesFrame 1542: differ 0 of 576000, triangles 7653, shapes 2308
-ShapesFrame 3000: differ 0 of 576000, triangles 10527, shapes 1985
-ShapesFrame 3698: differ 0 of 576000, triangles 1646, shapes 1104
-ShapesFrame 5700: differ 0 of 576000, triangles 12849, shapes 1322
-ShapesFrame 6250: differ 0 of 576000, triangles 8640, shapes 766
-ShapesFrame 9000: differ 0 of 576000, triangles 9343, shapes 2356
+ShapesFrame 0: differ 0 of 576000, triangles 4820, shapes 2247
+ShapesFrame 100: differ 0 of 576000, triangles 4153, shapes 2184
+ShapesFrame 1529: differ 0 of 576000, triangles 10485, shapes 2569
+ShapesFrame 1542: differ 0 of 576000, triangles 7693, shapes 2287
+ShapesFrame 3000: differ 0 of 576000, triangles 10549, shapes 1967
+ShapesFrame 3698: differ 0 of 576000, triangles 1688, shapes 1084
+ShapesFrame 5700: differ 0 of 576000, triangles 12893, shapes 1300
+ShapesFrame 6250: differ 0 of 576000, triangles 8670, shapes 745
+ShapesFrame 9000: differ 0 of 576000, triangles 9389, shapes 2335
 RasterFrame 0: hash 8fd5cc9c
 RasterFrame 100: hash 03a6e897
 RasterFrame 1529: hash ed70f6bd

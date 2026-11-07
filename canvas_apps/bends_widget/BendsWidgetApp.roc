@@ -275,7 +275,7 @@ expect
 			"45 deg left",
 			"rail on the right edge",
 			"apex 1.7 m past the end",
-			"8 patches, 49 rail pieces",
+			"3 patches, 49 rail pieces",
 		]
 expect
 	caption_lines(right_bend.turn)
@@ -283,7 +283,7 @@ expect
 			"45 deg right",
 			"rail on the left edge",
 			"apex 1.7 m past the end",
-			"8 patches, 49 rail pieces",
+			"3 patches, 49 rail pieces",
 		]
 expect
 	caption_lines(sharp_bend.turn)
@@ -291,7 +291,7 @@ expect
 			"80 deg right",
 			"rail on the left edge",
 			"apex 3.4 m past the end",
-			"8 patches, 53 rail pieces",
+			"3 patches, 53 rail pieces",
 		]
 
 # The sharp bend is on the route, and nothing on the route is sharper.

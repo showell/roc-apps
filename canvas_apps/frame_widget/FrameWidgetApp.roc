@@ -13,14 +13,13 @@ import game.FrameView
 import game.Ground
 import game.GroundSighting
 import game.Mountains
-import game.RideFocal
+import game.RiderCamera
 import game.SafariApp
 import game.Scene
 import game.SceneShapes
 import game.Screen
 import game.Sky
 import game.Tour
-import game.ViewYaw
 import lib.Brush
 import lib.RgbColor
 import lib.CanvasApp
@@ -49,7 +48,7 @@ FrameWidgetApp :: [].{
 }
 
 ## The picture doesn't change once it's open, so a few frames a second will do.
-frames_a_second : I32
+frames_a_second : U32
 frames_a_second = 15
 
 ## What can be switched on, in the order the book's chapters come to it.
@@ -131,7 +130,7 @@ scene_shapes_on = |on_layers| {
 ## what the sun adds when it's in view.
 backdrop_pieces : FrameView -> List(Piece)
 backdrop_pieces = |view| {
-	backdrop = Backdrop.backdrop_shapes({ sky_colors: view.sky_colors, sun_sighting: view.sun })
+	backdrop = Backdrop.backdrop_shapes({ sky_colors: view.sky_colors, sun_sighting: view.sun_sighting })
 	[
 		{ layer: Sky, shapes: [backdrop.sky] },
 		{ layer: Grass, shapes: [backdrop.grass] },
@@ -139,22 +138,12 @@ backdrop_pieces = |view| {
 	]
 }
 
-## The camera the ride sees through at `tour`'s instant.
-view_at : Tour -> RoadAhead.CameraView
-view_at = |tour| {
-	rider = tour.instant.rider
-	{
-		road: {
-			route: tour.route,
-			segments_ahead: RoadAhead.indices_ahead(tour.route, rider.segment_index),
-			vantage: ViewYaw.vantage_for(rider),
-		},
-		cam_focal: RideFocal.ride_focal(rider, tour.route),
-	}
-}
+## The camera the ride sees through at the step on show.
+paused_camera : RiderCamera
+paused_camera = RiderCamera.of(paused_tour.instant.rider, paused_tour.route)
 
 paused_view : RoadAhead.CameraView
-paused_view = view_at(paused_tour)
+paused_view = paused_camera.camera_view(paused_tour.route)
 
 ## What the camera shows at the step on show.
 paused_frame_view : FrameView
@@ -179,26 +168,14 @@ paused_scene = {
 
 ## The mountains and the road, which `FrameView.frame_view_at` puts under the things
 ## beside the road, each with its layer.
-ground_pieces : Tour -> List(Piece)
-ground_pieces = |tour| {
-	instant = tour.instant
-	rider = instant.rider
-	view = view_at(tour)
-	skyline = Mountains.mountain_shapes(
-		{ heading: ViewYaw.heading_for(rider), cam_focal: view.cam_focal },
-		Sky.dusk_at(instant.clock),
-	)
-	ground = GroundSighting.patches_in_view(view.road).keep_oks(
-		|patch| Ground.patch_shape(
-			patch,
-			view.cam_focal,
-		),
+ground_parts : List(Piece)
+ground_parts = {
+	skyline = Mountains.mountain_shapes(paused_camera, Sky.dusk_at(paused_tour.instant.clock))
+	ground = GroundSighting.patches_in_view(paused_view.road).keep_oks(
+		|patch| Ground.patch_shape(patch, paused_camera.cam_focal),
 	)
 	[{ layer: Mountains, shapes: skyline }, { layer: Road, shapes: ground }]
 }
-
-ground_parts : List(Piece)
-ground_parts = ground_pieces(paused_tour)
 
 backdrop_parts : List(Piece)
 backdrop_parts = backdrop_pieces(paused_frame_view)
@@ -366,7 +343,7 @@ expect ride_count(layers) == paused_frame_view.shapes.len()
 # Every layer has shapes of its own at this step but the sun, which is behind the
 # rider.
 expect layers.keep_if(|layer| frame_shapes_on([layer]).is_empty()) == [Sun]
-expect paused_frame_view.sun == OutOfView
+expect paused_frame_view.sun_sighting == OutOfView
 
 # The backdrop stays out of the running count.
 expect ride_count([Grass, Sun, Sky]) == 0
@@ -425,16 +402,16 @@ expect next_model(start, Input.none.with_key_pressed(KeyLeft)) == opened_after(0
 
 expect
 	status_lines(start)
-		== ["Shapes so far: 1,656 of 2,589", "Added: Trees"]
+		== ["Shapes so far: 1,656 of 2,569", "Added: Trees"]
 expect
 	status_lines(opened_after(2))
-		== ["Shapes so far: 1,656 of 2,589", "Added: The sun, out of view here"]
+		== ["Shapes so far: 1,656 of 2,569", "Added: The sun, out of view here"]
 expect
 	status_lines(opened_after(5))
-		== ["Shapes so far: 1,685 of 2,589", "Added: The road and pond"]
+		== ["Shapes so far: 1,665 of 2,569", "Added: The road and pond"]
 expect
 	status_lines(all_on)
-		== ["Shapes so far: 2,589 of 2,589", "Added: The moving things"]
+		== ["Shapes so far: 2,569 of 2,569", "Added: The moving things"]
 
 expect
 	layers.map(layer_name)

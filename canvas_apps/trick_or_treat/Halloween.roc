@@ -18,7 +18,7 @@
 # TrickOrTreatApp.roc is what a runner is handed; the scrubbing lives there,
 # as five keys.
 import lib.Shapes
-import lib.Eye
+import Eye
 import Walk
 import Night
 import Fence
@@ -48,7 +48,7 @@ Halloween :: [].{
 	# The eye, wherever the walk has it and whichever way the walk has it
 	# facing.
 	view_of : I64 -> Eye.Eye
-	view_of = |tick| { width: width, height: height, eye: Walk.eye(tick), focal: focal, heading: Walk.heading(tick) }
+	view_of = |tick| { width: width, height: height, eye_height: Walk.eye(tick), focal: focal, heading: Walk.heading(tick) }
 
 	shapes : Halloween.Model -> List(Shapes.Shape)
 	shapes = |m| {

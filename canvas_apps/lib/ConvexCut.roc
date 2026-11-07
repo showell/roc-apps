@@ -3,6 +3,7 @@
 ## polygon itself and doesn't ask for this. A frame paints the same either way,
 ## which the gates' ShapesFrame checks.
 import Brush
+import Point
 import RgbColor
 import Shapes
 
@@ -39,27 +40,29 @@ wound_triangles = |tris| {
 	m = tris.len() // 6
 	var $out = List.with_capacity(6 * m)
 	for k in 0..<m {
-		b = 6 * k
-		ax = at(tris, b)
-		ay = at(tris, b + 1)
-		bx = at(tris, b + 2)
-		by = at(tris, b + 3)
-		cx = at(tris, b + 4)
-		cy = at(tris, b + 5)
-		$out = if cross3(ax, ay, bx, by, cx, cy) > 0.0 {
-			$out.concat([ax, ay, cx, cy, bx, by])
+		a = corner(tris, 3 * k)
+		b = corner(tris, 3 * k + 1)
+		c = corner(tris, 3 * k + 2)
+		$out = if cross3({ a, b, c }) > 0.0 {
+			$out.append(a.x).append(a.y).append(c.x).append(c.y).append(b.x).append(b.y)
 		} else {
-			$out.concat([ax, ay, bx, by, cx, cy])
+			$out.append(a.x).append(a.y).append(b.x).append(b.y).append(c.x).append(c.y)
 		}
 	}
 	$out
 }
 
 at : List(F64), U64 -> F64
-at = |xs, i| xs.get(i) ?? 0.0
+at = |xs, i| xs.get(i) ?? crash "ConvexCut.at: an index past the end of the coordinates"
 
-cross3 : F64, F64, F64, F64, F64, F64 -> F64
-cross3 = |ax, ay, bx, by, cx, cy| (bx - ax) * (cy - ay) - (by - ay) * (cx - ax)
+## Corner `i` of a polygon written as x0, y0, x1, y1 and so on.
+corner : List(F64), U64 -> Point.Point
+corner = |coordinates, i| { x: at(coordinates, 2 * i), y: at(coordinates, 2 * i + 1) }
+
+## Twice the signed area of the triangle a b c: positive when it turns one
+## way, negative the other, and zero when its corners are in line.
+cross3 : { a : Point.Point, b : Point.Point, c : Point.Point } -> F64
+cross3 = |{ a, b, c }| (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)
 
 ## Twice the signed area, summed as roc-ray's host sums it.
 twice_area : List(F64) -> F64
@@ -105,19 +108,17 @@ is_convex = |coordinates| {
 		} else {
 			$k + 2
 		}
-		x0 = at(coordinates, 2 * $k)
-		y0 = at(coordinates, 2 * $k + 1)
-		x1 = at(coordinates, 2 * k1)
-		y1 = at(coordinates, 2 * k1 + 1)
-		turn = cross3(x0, y0, x1, y1, at(coordinates, 2 * k2), at(coordinates, 2 * k2 + 1))
+		here = corner(coordinates, $k)
+		next = corner(coordinates, k1)
+		turn = cross3({ a: here, b: next, c: corner(coordinates, k2) })
 		$bad = turn * $sign < 0.0
 		$sign = if $sign == 0.0 {
 			turn
 		} else {
 			$sign
 		}
-		dx = x1 - x0
-		dy = y1 - y0
+		dx = next.x - here.x
+		dy = next.y - here.y
 		$xflips = if dx != 0.0 and $xdir != 0.0 and (dx > 0.0) != ($xdir > 0.0) {
 			$xflips + 1
 		} else {
@@ -170,19 +171,16 @@ triangles = |coordinates| {
 		} else {
 			$i + 1
 		}
-		a = $indices.get(ip) ?? crash "vertex out of range"
-		b = $indices.get($i) ?? crash "vertex out of range"
-		c = $indices.get(inx) ?? crash "vertex out of range"
-		ax = at(coordinates, 2 * a)
-		ay = at(coordinates, 2 * a + 1)
-		bx = at(coordinates, 2 * b)
-		by = at(coordinates, 2 * b + 1)
-		cx = at(coordinates, 2 * c)
-		cy = at(coordinates, 2 * c + 1)
-		turn = cross3(ax, ay, bx, by, cx, cy) * orient
-		ear = turn >= 0.0 and !any_inside(coordinates, $indices, a, b, c, orient)
+		a = $indices.get(ip) ?? crash "ConvexCut.triangles: a corner index out of range"
+		b = $indices.get($i) ?? crash "ConvexCut.triangles: a corner index out of range"
+		c = $indices.get(inx) ?? crash "ConvexCut.triangles: a corner index out of range"
+		pa = corner(coordinates, a)
+		pb = corner(coordinates, b)
+		pc = corner(coordinates, c)
+		turn = cross3({ a: pa, b: pb, c: pc }) * orient
+		ear = turn >= 0.0 and !any_inside({ coordinates, indices: $indices, a, b, c, orient })
 		$out = if ear and turn > 0.0 {
-			$out.concat([ax, ay, bx, by, cx, cy])
+			$out.append(pa.x).append(pa.y).append(pb.x).append(pb.y).append(pc.x).append(pc.y)
 		} else {
 			$out
 		}
@@ -206,43 +204,50 @@ triangles = |coordinates| {
 			inx
 		}
 	}
-	fan(coordinates, $indices, $out)
+	fan({ coordinates, indices: $indices, out: $out })
 }
 
 ## Whether a remaining corner other than a, b and c lies strictly inside the
 ## triangle a b c.
-any_inside : List(F64), List(U64), U64, U64, U64, F64 -> Bool
-any_inside = |coordinates, indices, a, b, c, orient| {
-	ax = at(coordinates, 2 * a)
-	ay = at(coordinates, 2 * a + 1)
-	bx = at(coordinates, 2 * b)
-	by = at(coordinates, 2 * b + 1)
-	cx = at(coordinates, 2 * c)
-	cy = at(coordinates, 2 * c + 1)
+any_inside : {
+	coordinates : List(F64),
+	indices : List(U64),
+	a : U64,
+	b : U64,
+	c : U64,
+	orient : F64,
+} -> Bool
+any_inside = |{ coordinates, indices, a, b, c, orient }| {
+	pa = corner(coordinates, a)
+	pb = corner(coordinates, b)
+	pc = corner(coordinates, c)
 	indices.any(
 		|p| {
-			px = at(coordinates, 2 * p)
-			py = at(coordinates, 2 * p + 1)
-			p != a and p != b and p != c and cross3(ax, ay, bx, by, px, py) * orient > 0.0 and cross3(bx, by, cx, cy, px, py) * orient > 0.0 and cross3(cx, cy, ax, ay, px, py) * orient > 0.0
+			pp = corner(coordinates, p)
+			p != a and p != b and p != c and cross3({ a: pa, b: pb, c: pp }) * orient > 0.0 and cross3({ a: pb, b: pc, c: pp }) * orient > 0.0 and cross3({ a: pc, b: pa, c: pp }) * orient > 0.0
 		},
 	)
 }
 
 ## The remaining corners as a fan from the first, onto `out`.
-fan : List(F64), List(U64), List(F64) -> List(F64)
-fan = |coordinates, indices, out| {
-	m = indices.len()
-	first = indices.get(0) ?? 0
-	var $out = out
-	var $k = 1
-	while $k + 1 < m {
-		p = indices.get($k) ?? crash "vertex out of range"
-		q = indices.get($k + 1) ?? crash "vertex out of range"
-		$out = $out.concat([at(coordinates, 2 * first), at(coordinates, 2 * first + 1), at(coordinates, 2 * p), at(coordinates, 2 * p + 1), at(coordinates, 2 * q), at(coordinates, 2 * q + 1)])
-		$k = $k + 1
+fan : { coordinates : List(F64), indices : List(U64), out : List(F64) } -> List(F64)
+fan = |{ coordinates, indices, out }|
+	match indices {
+		[] => out
+		[first, ..] => {
+			m = indices.len()
+			pf = corner(coordinates, first)
+			var $out = out
+			var $k = 1
+			while $k + 1 < m {
+				p = corner(coordinates, indices.get($k) ?? crash "ConvexCut.fan: a corner index out of range")
+				q = corner(coordinates, indices.get($k + 1) ?? crash "ConvexCut.fan: a corner index out of range")
+				$out = $out.append(pf.x).append(pf.y).append(p.x).append(p.y).append(q.x).append(q.y)
+				$k = $k + 1
+			}
+			$out
+		}
 	}
-	$out
-}
 
 ink : Brush.Fill
 ink = Brush.flat(RgbColor.of(0x202020))

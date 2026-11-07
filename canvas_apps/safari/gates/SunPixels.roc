@@ -47,10 +47,10 @@ pixels_with_glow_and_disc = |pixels, { roll, sun }| {
 			p = roll.to_scene(ScreenRoll.pixel_point({ row, column }))
 			$px = if p.y < grass_top_y {
 				at = PixelGrid.pixel_index({ row, column, width: roll.width_px() })
-				lit = PixelGrid.blended_pixels($px, { at, color: Brush.shade(look.glow, p.x, p.y) })
+				lit = PixelGrid.blended_pixels($px, { at, color: Brush.shade(look.glow, p) })
 				distance = ((p.x - sun_x) * (p.x - sun_x) + (p.y - sun_y) * (p.y - sun_y)).sqrt()
 				if distance < disc_radius {
-					PixelGrid.blended_pixels(lit, { at, color: Brush.shade(look.disc, p.x, p.y) })
+					PixelGrid.blended_pixels(lit, { at, color: Brush.shade(look.disc, p) })
 				} else {
 					lit
 				}

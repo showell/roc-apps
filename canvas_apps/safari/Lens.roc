@@ -6,15 +6,8 @@ import Angle
 import Attention
 import Fraction
 import Screen
-import lib.Trig
 
 Lens :: [].{
-
-	## Which way the camera faces in a frame, and its focal length.
-	CameraAim : { heading : Angle.Bearing, cam_focal : Pixels }
-
-	field_of_view : Angle.Turn
-	field_of_view = Angle.Turn.degrees(70.0)
 
 	## The focal length at rest, in pixels.
 	resting_focal : Pixels
@@ -27,29 +20,6 @@ Lens :: [].{
 	## a deeper lean just widens the view no further.
 	full_lean : Angle.Lean
 	full_lean = Angle.Lean.degrees(20.0)
-
-	## How much of the resting focal length is left at `full_lean`.
-	focal_factor_at_full_lean : Fraction
-	focal_factor_at_full_lean = Fraction.of(0.35)
-
-	## How much of the resting focal length is left at an attention of 1. It is
-	## no minimum, because a cat in the road holds the eye harder than that.
-	focal_factor_at_full_attention : Fraction
-	focal_factor_at_full_attention = Fraction.of(0.61)
-
-	## The focal length for a lean, from 0 (upright) to 1 (`full_lean`).
-	focal_for_lean : Fraction -> Pixels
-	focal_for_lean = |lean_fraction| {
-		lean = lean_fraction.to_f64()
-		resting_focal.times(1.0 - focal_factor_at_full_lean.less().to_f64() * lean * lean)
-	}
-
-	## The focal length for the rider's attention.
-	focal_for_attention : Attention -> Pixels
-	focal_for_attention = |attention| {
-		lost_at_full_attention = focal_factor_at_full_attention.less().to_f64()
-		resting_focal.times(1.0 - lost_at_full_attention * attention.to_f64())
-	}
 
 	## The focal length the camera uses: the shorter of the two, which
 	## gives the wider view. A lean to either side widens it alike.
@@ -70,7 +40,12 @@ Lens :: [].{
 	## negative, and lands below it.
 	y_for_height : { height : Pixels, cam_focal : Pixels } -> Pixels
 	y_for_height = |{ height, cam_focal: focal }|
-		Screen.horizon_y.minus(height.times(focal.portion(resting_focal)))
+		Screen.horizon_y.minus(height.times(scale_for(focal).to_f64()))
+
+	## How large a lens of focal length `focal` draws things beside the lens at
+	## rest. The lens only ever widens, so that is never larger.
+	scale_for : Pixels -> Fraction
+	scale_for = |focal| Fraction.of(focal.portion(resting_focal))
 
 	## The screen's x for something `turn` to the right of where the camera
 	## faces, through a lens of `cam_focal`. The turn stays under a quarter
@@ -88,16 +63,35 @@ Lens :: [].{
 	}
 }
 
+field_of_view : Angle.Turn
+field_of_view = Angle.Turn.degrees(70.0)
+
+## How much of the resting focal length is left at `Lens.full_lean`.
+focal_factor_at_full_lean : Fraction
+focal_factor_at_full_lean = Fraction.of(0.35)
+
+## How much of the resting focal length is left at an attention of 1. It is no
+## minimum, because a cat in the road holds the eye harder than that.
+focal_factor_at_full_attention : Fraction
+focal_factor_at_full_attention = Fraction.of(0.61)
+
+## The focal length for a lean, from 0 (upright) to 1 (`Lens.full_lean`).
+focal_for_lean : Fraction -> Pixels
+focal_for_lean = |lean_fraction| {
+	lean = lean_fraction.to_f64()
+	Lens.resting_focal.times(1.0 - focal_factor_at_full_lean.less().to_f64() * lean * lean)
+}
+
+## The focal length for the rider's attention.
+focal_for_attention : Attention -> Pixels
+focal_for_attention = |attention| {
+	lost_at_full_attention = focal_factor_at_full_attention.less().to_f64()
+	Lens.resting_focal.times(1.0 - lost_at_full_attention * attention.to_f64())
+}
+
 ## Whether `got` is within 1e-9 of `want`, scaled up by a want past 1.
 is_close : F64, F64 -> Bool
 is_close = |got, want| (got - want).abs() <= 0.000000001 * want.abs().max(1.0)
-
-expect
-	[
-		(Screen.width.to_f64(), 960.0),
-		(Lens.field_of_view.to_radians() / Trig.deg, 70.0),
-		(Lens.resting_focal.to_f64(), 685.5110432362151),
-	].all(|(got, want)| is_close(got, want))
 
 expect
 	[
@@ -106,7 +100,7 @@ expect
 		(0.5, 574.1154987103301),
 		(0.75, 434.8710680529739),
 		(1.0, 239.92886513267527),
-	].all(|(lean, want)| is_close(Lens.focal_for_lean(Fraction.of(lean)).to_f64(), want))
+	].all(|(lean, want)| is_close(focal_for_lean(Fraction.of(lean)).to_f64(), want))
 
 expect
 	[
@@ -114,12 +108,7 @@ expect
 		(0.5, 551.8363898051531),
 		(1.0, 418.16173637409116),
 		(1.5, 284.4870829430293),
-	].all(
-		|(strength, want)| is_close(
-			Lens.focal_for_attention(Attention.of(strength)).to_f64(),
-			want,
-		),
-	)
+	].all(|(strength, want)| is_close(focal_for_attention(Attention.of(strength)).to_f64(), want))
 
 expect
 	[

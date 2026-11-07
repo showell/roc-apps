@@ -115,9 +115,9 @@ turn_to = |motorcycle, pig| Angle.Turn.radians(
 expect
 	[
 		(look_depth_decay.to_f64(), 0.0012),
-		(Gaze.look_release_angle.to_radians() / Trig.deg, 35.0),
-		(look_swivel_rate.to_radians() / Trig.deg, 4.0),
-		(look_return_rate.to_radians() / Trig.deg, 0.2),
+		(Gaze.look_release_angle.to_radians() / Trig.degree, 35.0),
+		(look_swivel_rate.to_radians() / Trig.degree, 4.0),
+		(look_return_rate.to_radians() / Trig.degree, 0.2),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 
 expect Gaze.gaze_attention(Fraction.of(0.25)).to_f64() == 0.15625
@@ -236,7 +236,7 @@ expect
 		(-2.0, -1.8),
 	].all(
 		|(from, to)|
-			(gaze_returning(head(from * Trig.deg)) / Trig.deg - to).abs() <= 0.000000000001,
+			(gaze_returning(head(from * Trig.degree)) / Trig.degree - to).abs() <= 0.000000000001,
 	)
 
 # A gaze within the return rate comes all the way home, exactly, and one just
@@ -249,15 +249,15 @@ expect gaze_returning(head(-return_rate * 1.5)) < 0.0
 expect gaze_returning(head(0.0)) == 0.0
 
 # A pig dead ahead is still a pig: the gaze swivels to it, and doesn't ease.
-expect gaze_after(head(2.0 * Trig.deg), 0.0) == 0.0
+expect gaze_after(head(2.0 * Trig.degree), 0.0) == 0.0
 
 ## Eyes with this look depth, looking `gaze_yaw` from straight ahead.
 eyes_at_depth : F64, F64 -> RiderEyes
 eyes_at_depth = |look_depth, gaze_yaw| { ..head(gaze_yaw), look_depth: Fraction.of(look_depth) }
 
 expect {
-	rising = depth_after(eyes_at_depth(0.0, 20.0 * Trig.deg), 20.0 * Trig.deg)
-	held = depth_after(eyes_at_depth(0.9, 1.0 * Trig.deg), 1.0 * Trig.deg)
+	rising = depth_after(eyes_at_depth(0.0, 20.0 * Trig.degree), 20.0 * Trig.degree)
+	held = depth_after(eyes_at_depth(0.9, 1.0 * Trig.degree), 1.0 * Trig.degree)
 	easing = depth_after(eyes_at_depth(0.9, 0.0), 0.0)
 	rising > 0.0 and held >= 0.9 and easing < 0.9 and easing > 0.0
 }
@@ -267,7 +267,7 @@ expect depth_after(eyes_at_depth(0.9, 0.0), return_rate / 10.0) == 0.9
 expect (depth_after(eyes_at_depth(0.9, 0.0), 0.0) - 0.8988).abs() <= 0.000000000001
 
 expect depth_after(eyes_at_depth(0.0, 0.0), 0.0) == 0.0
-expect depth_after(eyes_at_depth(0.0, 90.0 * Trig.deg), 90.0 * Trig.deg) == 1.0
+expect depth_after(eyes_at_depth(0.0, 90.0 * Trig.degree), 90.0 * Trig.degree) == 1.0
 
 # The gawking outlasts the look.
 expect !is_looking(rider(341.0))

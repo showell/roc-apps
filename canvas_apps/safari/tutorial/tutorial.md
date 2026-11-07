@@ -784,7 +784,7 @@ Opaque types do the most work from here on. A `Bearing` and a `Turn` are both fl
 
 `turn_from_view.abs() >= visible_turn_limit` compares two `Turn`s. The code never touches radians until `Sun.place` has to do trigonometry, because `.tan()` works on a float.
 
-{{code Sun.place from "scale =" to "y: Lens.y_for_height"}}
+{{code Sun.place}}
 
 Its caller, `RideInstant.sun`, is short enough to read whole:
 
@@ -958,15 +958,15 @@ A piece of ground is a list of corners and a color.
 
 That's what `Ground` paints. It's plain data, so it can be checked with numbers.
 
-{{code GroundSighting.bend_corners}}
+{{code GroundSighting.bend_paving}}
 
 Four points cut the corner: the two ends of the first segment, the apex, and the place where the second segment's outer edge starts.
 
-{{code GroundSighting.lead_points}}
+{{code GroundSighting.lead_in_length}}
 
 The last 40 metres before a bend get a patch of their own, laid after the road's chunks and before the corner.
 
-{{code GroundSighting.bend_patches}}
+{{code GroundSighting.road_along}}
 
 The road along a segment is laid in chunks of up to 25 metres. The widget's two segments are 60 metres each, which makes three chunks each, and `bend_patches` adds two patches. That's the widget's count of 8.
 
@@ -1539,7 +1539,7 @@ When the rider leans, the whole picture leans with it. This is all of that:
 
 A lean inside the deadband leaves the canvas level, and any other lean passes straight through. The last `expect` is a table of pairs, on both sides of the deadband and at its edge. It's called once a frame:
 
-{{code FrameView.frame_view_at from "roll: CanvasRoll" to "roll: CanvasRoll"}}
+{{code RiderCamera.of from "roll: CanvasRoll" to "roll: CanvasRoll"}}
 
 The camera turns as well. `ViewYaw` follows the rider's gaze, and turns a little with the lean, as a rider's head turns into a bend.
 
@@ -1730,7 +1730,7 @@ A twentieth of what's left never gets to zero, so the `OnRoad` branch first chec
 
 Nothing here turns the bike. The gaze goes to the camera, and to nothing else that moves:
 
-{{code ViewYaw.view_yaw_for}}
+{{code RiderCamera.view_yaw_for}}
 
 The second term is the rider's head going with the lean. So when the rider looks right, the road slides left on the page, and the bike keeps going where it was going.
 

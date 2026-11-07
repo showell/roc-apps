@@ -89,7 +89,7 @@ picture_shapes = |clock|
 			tower_shapes(tower_right.opposite(), brightness_at(clock, first_tower_key)),
 			tower_shapes(tower_right, brightness_at(clock, second_tower_key)),
 		].join(),
-		sun: OutOfView,
+		sun_sighting: OutOfView,
 		sky_colors: Sky.colors_at(clock),
 		roll: Angle.upright,
 	})

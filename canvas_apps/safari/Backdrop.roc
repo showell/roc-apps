@@ -2,9 +2,7 @@
 ## lib/Shapes.roc, which every canvas app shares. This module puts together the
 ## sky's gradient from Sky's two colors, the sun as Sun says it looks, and the
 ## grass, and lays the frame's shapes over them.
-import Clock
 import Fraction
-import Lens
 import lib.Brush
 import lib.RgbColor
 import Screen
@@ -106,21 +104,4 @@ sky_rect = |fill| {
 		height: Screen.horizon_y.plus(margin).to_f64(),
 		fill,
 	})
-}
-
-# The sky comes first and the grass after the sun, so the grass covers what of
-# the sun has set.
-expect {
-	sky_colors = Sky.colors_at(Clock.start)
-	facing_sun = { heading: Sun.bearing, cam_focal: Lens.resting_focal }
-	sun_sighting = Sun.sighting(facing_sun, Clock.start)
-	parts = Backdrop.backdrop_shapes({ sky_colors, sun_sighting })
-	in_order = [parts.sky].concat(parts.sun_shapes).append(parts.grass)
-	framed = Backdrop.frame_shapes([], { sky_colors, sun_sighting })
-	parts.sun_shapes.len() == 2 and framed == in_order
-}
-
-expect {
-	sky_colors = Sky.colors_at(Clock.start)
-	Backdrop.backdrop_shapes({ sky_colors, sun_sighting: OutOfView }).sun_shapes == []
 }

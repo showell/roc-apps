@@ -130,7 +130,7 @@ still_shapes = {
 	trees = stands.join_map(tree_shapes)
 	picture_shapes = ScrubWidget.ride_shapes({
 		shapes: trees,
-		sun: OutOfView,
+		sun_sighting: OutOfView,
 		sky_colors: Sky.colors_at(Clock.start),
 		roll: Angle.upright,
 	})
