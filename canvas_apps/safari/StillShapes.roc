@@ -5,6 +5,7 @@
 import Pixels
 import Polygon
 import lib.Brush
+import lib.RgbColor
 import Stills
 import Screen
 import lib.Shapes
@@ -171,7 +172,7 @@ expect
 # A solid polygon of colour 7 with `count` points, all at the feet.
 flat_polygon : U64 -> Stills.StillPolygon
 flat_polygon = |count| {
-	color: 7,
+	color: RgbColor.of(7),
 	gradients: [],
 	points: List.repeat({ x: 0.0, y: 0.0 }, count),
 }
@@ -180,5 +181,5 @@ expect
 	StillShapes.still_polygon(upright, flat_polygon(3))
 		== Poly({
 			coordinates: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0],
-			fill: Flat(Brush.opaque(7)),
+			fill: Flat(Brush.opaque(RgbColor.of(7))),
 		})

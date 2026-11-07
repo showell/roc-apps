@@ -8,6 +8,7 @@ import game.Distance
 import game.World
 import lib.CanvasApp
 import lib.Shapes
+import lib.RgbColor
 import lib.Trig
 import widget.ScrubWidget
 
@@ -122,20 +123,20 @@ canvas_point = |{ east, north }| {
 	y: ScrubWidget.picture_bottom_y / 2.0 - (north - (extent.south + extent.north) / 2.0) * map_scale,
 }
 
-ground_color : I64
-ground_color = 0x6f9a55
+ground_color : RgbColor
+ground_color = RgbColor.of(0x6f9a55)
 
-road_color : I64
-road_color = 0x4a4a46
+road_color : RgbColor
+road_color = RgbColor.of(0x4a4a46)
 
-read_out_color : I64
-read_out_color = 0xf2efe4
+read_out_color : RgbColor
+read_out_color = RgbColor.of(0xf2efe4)
 
-cat_color : I64
-cat_color = 0xd0603a
+cat_color : RgbColor
+cat_color = RgbColor.of(0xd0603a)
 
-bird_color : I64
-bird_color = 0x7a5cc0
+bird_color : RgbColor
+bird_color = RgbColor.of(0x7a5cc0)
 
 ground : Shapes.Shape
 ground = Rect({
@@ -147,7 +148,7 @@ ground = Rect({
 })
 
 ## A disc on the map.
-spot : MapPoint, { r : F64, color : I64 } -> Shapes.Shape
+spot : MapPoint, { r : F64, color : RgbColor } -> Shapes.Shape
 spot = |point, { r, color }| {
 	{ x, y } = canvas_point(point)
 	Disc({
@@ -159,7 +160,7 @@ spot = |point, { r, color }| {
 }
 
 ## One segment of road, `width` pixels wide with a round end at each corner.
-piece_shapes : LaidSegment, { width : F64, color : I64 } -> List(Shapes.Shape)
+piece_shapes : LaidSegment, { width : F64, color : RgbColor } -> List(Shapes.Shape)
 piece_shapes = |{ start, end, .. }, { width, color }| {
 	a = canvas_point(start)
 	b = canvas_point(end)
@@ -185,7 +186,7 @@ middle_of = |{ start, end, .. }| {
 }
 
 ## The colour that marks what crosses a segment, if anything does.
-crossing_color : World.SegmentPlan -> Try(I64, [NothingCrosses])
+crossing_color : World.SegmentPlan -> Try(RgbColor, [NothingCrosses])
 crossing_color = |plan|
 	match plan.crossing {
 		CatCrosses => Ok(cat_color)
@@ -204,7 +205,7 @@ mark_shapes = |segment|
 ## A coloured spot and the word for it, in the picture's empty corner.
 row_shapes : {
 	y : F64,
-	color : I64,
+	color : RgbColor,
 	word : Str,
 } -> List(Shapes.Shape)
 row_shapes = |{ y, color, word }|

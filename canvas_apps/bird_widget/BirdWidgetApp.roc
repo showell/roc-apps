@@ -21,6 +21,7 @@ import game.Screen
 import game.World
 import lib.CanvasApp
 import lib.Shapes
+import lib.RgbColor
 import widget.ScrubWidget
 import widget.VcrButtons
 
@@ -109,7 +110,7 @@ road = {
 		on_ground(half, road_end_forward),
 		on_ground(half.opposite(), road_end_forward),
 	]
-	[Camera.clipped_polygon({ color: 0x8a8a8a, corners }, Lens.resting_focal)].keep_oks(|shape| shape)
+	[Camera.clipped_polygon({ color: RgbColor.of(0x8a8a8a), corners }, Lens.resting_focal)].keep_oks(|shape| shape)
 }
 
 ## Where a thing standing at `along` and `across` is from the picture's eye, if

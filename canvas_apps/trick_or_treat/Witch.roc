@@ -14,6 +14,7 @@
 # coming to the door she is.
 import lib.Shapes
 import lib.Brush
+import lib.RgbColor
 import lib.View
 import Panels
 
@@ -21,9 +22,9 @@ Witch :: [].{
 	# She is between whoever is looking and the light behind her, so she has
 	# no colour of her own beyond the little there is to catch.
 	witch_c : Brush.Rgba
-	witch_c = Brush.opaque(0x090608)
+	witch_c = Brush.opaque(RgbColor.of(0x090608))
 	eye_c : Brush.Rgba
-	eye_c = Brush.opaque(0xc8f05a)
+	eye_c = Brush.opaque(RgbColor.of(0xc8f05a))
 
 	# How far back she starts.
 	comes_from : F64

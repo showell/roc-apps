@@ -4,6 +4,7 @@
 ## pictures, and StillShapes puts them on screen.
 
 import lib.ArgbColor
+import lib.RgbColor
 
 Stills :: [].{
 	StillPt : { x : F64, y : F64 }
@@ -32,7 +33,7 @@ Stills :: [].{
 
 	## One polygon of a still: its colour, and its gradient if it has one.
 	StillPolygon : {
-		color : I64,
+		color : RgbColor,
 		gradients : List(Stills.StillGradient),
 		points : List(Stills.StillPt),
 	}
@@ -51,7 +52,7 @@ has_no_length = |gradients|
 # A flat polygon of `count` corners, all at one point.
 polygon_of : U64 -> Stills.StillPolygon
 polygon_of = |count| {
-	color: 7,
+	color: RgbColor.of(7),
 	gradients: [],
 	points: List.repeat({ x: 0.0, y: 0.0 }, count),
 }
@@ -99,14 +100,14 @@ expect !Stills.is_drawable({ ..polygon_of(3), gradients: [gradient_in_place] })
 
 solid_polygon : Stills.StillPolygon
 solid_polygon = {
-	color: 9066271,
+	color: RgbColor.of(9066271),
 	gradients: [],
 	points: [sample_point, { x: 12.5, y: 13.5 }],
 }
 
 shaded_polygon : Stills.StillPolygon
 shaded_polygon = {
-	color: 4989733,
+	color: RgbColor.of(4989733),
 	gradients: [sample_gradient],
 	points: [sample_point],
 }
@@ -128,8 +129,8 @@ expect sample_gradient.kind == 2
 expect sample_gradient.color0 == ArgbColor.of(16711680)
 expect sample_gradient.color1 == ArgbColor.of(255)
 
-expect solid_polygon.color == 9066271
-expect shaded_polygon.color == 4989733
+expect solid_polygon.color == RgbColor.of(9066271)
+expect shaded_polygon.color == RgbColor.of(4989733)
 expect solid_polygon.gradients.len() == 0
 expect shaded_polygon.gradients.len() == 1
 expect solid_polygon.points.len() == 2

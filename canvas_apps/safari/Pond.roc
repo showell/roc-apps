@@ -6,6 +6,7 @@ import Along
 import Billboard
 import Distance
 import Geom
+import lib.RgbColor
 
 Pond :: [].{
 	PondPt : { along : Along, across : Across }
@@ -22,8 +23,8 @@ Pond :: [].{
 		{ along: Along.metres(16.0), across: Across.metres(-3.0) },
 	]
 
-	water_color : I64
-	water_color = 0x2F7E8C
+	water_color : RgbColor
+	water_color = RgbColor.of(0x2F7E8C)
 
 	bank_points : List(Pond.PondPt)
 	bank_points = [
@@ -35,8 +36,8 @@ Pond :: [].{
 		{ along: Along.metres(30.0), across: Across.metres(-7.0) },
 	]
 
-	bank_color : I64
-	bank_color = 0xC2B280
+	bank_color : RgbColor
+	bank_color = RgbColor.of(0xC2B280)
 
 	duck_codepoint : I64
 	duck_codepoint = 129414
@@ -94,8 +95,8 @@ expect
 	Pond.placed_ducks(Distance.metres(100.0)).map(|duck| duck.along.to_metres())
 		== [111.0, 117.0, 121.0, 106.0, 107.0, 108.0]
 expect Pond.placed_ducks(Distance.metres(100.0)).all(|duck| duck.kind.height == Pond.duck_height)
-expect Pond.water_color == 0x2F7E8C
-expect Pond.bank_color == 0xC2B280
+expect Pond.water_color == RgbColor.of(0x2F7E8C)
+expect Pond.bank_color == RgbColor.of(0xC2B280)
 expect Pond.duck_codepoint == 129414
 expect Pond.duck_height.to_metres() == 0.9
 

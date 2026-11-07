@@ -24,6 +24,7 @@ import game.Sky
 import game.Tour
 import game.ViewYaw
 import lib.Brush
+import lib.RgbColor
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
@@ -227,7 +228,7 @@ plain_background = Rect({
 	y: 0.0,
 	w: picture_width,
 	h: picture_height,
-	fill: ScrubWidget.flat(0xe8e6df),
+	fill: ScrubWidget.flat(RgbColor.of(0xe8e6df)),
 })
 
 panel : Shapes.Shape
@@ -236,7 +237,7 @@ panel = Rect({
 	y: picture_height,
 	w: canvas_width,
 	h: panel_height,
-	fill: ScrubWidget.flat(0xdcecf5),
+	fill: ScrubWidget.flat(RgbColor.of(0xdcecf5)),
 })
 
 ## An address that names a layer has the page press Right once for each layer
@@ -306,7 +307,7 @@ status_line = |text, row|
 		size: 22.0,
 		face: Code,
 		align: Left,
-		color: Brush.opaque(0x202020),
+		color: Brush.opaque(RgbColor.of(0x202020)),
 	})
 
 ## The layers on, in the game's paint order.

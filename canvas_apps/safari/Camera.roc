@@ -5,6 +5,7 @@ import Pixels
 import Geom
 import Polygon
 import Screen
+import lib.RgbColor
 import lib.Shapes
 
 Camera :: [].{
@@ -29,7 +30,7 @@ Camera :: [].{
 	projected_points = |points, cam_focal| points.map(|p| project(p, cam_focal))
 
 	## A polygon of one color, in the rider's view.
-	FlatPolygon : { color : I64, corners : List(Geom.RaisedPoint) }
+	FlatPolygon : { color : RgbColor, corners : List(Geom.RaisedPoint) }
 
 	## A polygon on screen, cut at the near plane, unless it's wholly behind the
 	## camera.
@@ -165,7 +166,7 @@ sample_clipped_polygon : List(F64) -> Try(Shapes.Shape, [BehindCamera])
 sample_clipped_polygon = |forwards|
 	Camera.clipped_polygon(
 		{
-			color: 0x2F7E8C,
+			color: RgbColor.of(0x2F7E8C),
 			corners: forwards.map(
 				|forward| {
 					right: Distance.metres(forward),

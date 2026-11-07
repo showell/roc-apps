@@ -13,6 +13,7 @@ import game.Speed
 import game.StillShapes
 import game.World
 import lib.CanvasApp
+import lib.RgbColor
 import lib.Shapes
 import widget.ScrubWidget
 import widget.VcrButtons
@@ -99,21 +100,21 @@ road_shapes = {
 			y: 0.0,
 			w: ScrubWidget.canvas_width,
 			h: ScrubWidget.picture_bottom_y,
-			fill: ScrubWidget.flat(0xdcecf5),
+			fill: ScrubWidget.flat(RgbColor.of(0xdcecf5)),
 		}),
 		Rect({
 			x: 0.0,
 			y: ground_top_y,
 			w: ScrubWidget.canvas_width,
 			h: ground_height,
-			fill: ScrubWidget.flat(0x7fa650),
+			fill: ScrubWidget.flat(RgbColor.of(0x7fa650)),
 		}),
 		Rect({
 			x: road_middle_x - road_width_px / 2.0,
 			y: ground_top_y,
 			w: road_width_px,
 			h: ground_height,
-			fill: ScrubWidget.flat(0x8a8a8a),
+			fill: ScrubWidget.flat(RgbColor.of(0x8a8a8a)),
 		}),
 	]
 }

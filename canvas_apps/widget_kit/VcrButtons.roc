@@ -10,6 +10,7 @@ import lib.CanvasApp
 import lib.Input
 import lib.Mouse
 import lib.Shapes
+import lib.RgbColor
 import ScrubWidget
 
 VcrButtons :: [].{
@@ -267,8 +268,8 @@ control_at = |spot|
 button_middle_y : F64
 button_middle_y = button_top + button_height / 2.0
 
-icon_color : I64
-icon_color = 0xf7f5f0
+icon_color : RgbColor
+icon_color = RgbColor.of(0xf7f5f0)
 
 ## A triangle pointing right when `reach` is positive, and left when it's not.
 triangle : F64, F64 -> Shapes.Shape
@@ -318,9 +319,9 @@ button_shapes = |button, motion| {
 	lit = is_lit(button.control, motion)
 	color =
 		if lit {
-			0xd0603a
+			RgbColor.of(0xd0603a)
 		} else {
-			0x303030
+			RgbColor.of(0x303030)
 		}
 	[
 		Rect({

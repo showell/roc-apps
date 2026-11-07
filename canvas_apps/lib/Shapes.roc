@@ -2,6 +2,7 @@
 ## of these shapes in the app's own coordinates, and each painter draws the list
 ## in order. What one app draws is built in that app's own folder.
 import Brush
+import RgbColor
 
 Shapes :: [].{
 
@@ -452,7 +453,7 @@ line_of_type = {
 	size: 16.0,
 	face: Code,
 	align: Center,
-	color: Brush.opaque(0x202020),
+	color: Brush.opaque(RgbColor.of(0x202020)),
 }
 
 expect Shapes.squashed_shapes([Text(line_of_type)], 0.0, 0.5) == [Text({ ..line_of_type, x: 50.0 })]

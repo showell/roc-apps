@@ -17,12 +17,13 @@
 # waves on one phase.
 import lib.Shapes
 import lib.Brush
+import lib.RgbColor
 
 Skeleton :: [].{
 	bone : Brush.Rgba
-	bone = Brush.opaque(0xf2f0e6)
+	bone = Brush.opaque(RgbColor.of(0xf2f0e6))
 	night : Brush.Rgba
-	night = Brush.opaque(0x0a0a0c)
+	night = Brush.opaque(RgbColor.of(0x0a0a0c))
 
 	# Where a bone of length `len` ends, leaving (x, y) at `angle` from straight
 	# down. y is down, so this is the screen's own arithmetic.

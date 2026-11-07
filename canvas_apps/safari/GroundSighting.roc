@@ -12,6 +12,7 @@ import BendView
 import Pond
 import Scenery
 import World
+import lib.RgbColor
 
 GroundSighting :: [].{
 
@@ -24,8 +25,8 @@ GroundSighting :: [].{
 		chunk_number : U32,
 	}
 
-	road_color : I64
-	road_color = 0x34353C
+	road_color : RgbColor
+	road_color = RgbColor.of(0x34353C)
 
 	## The road is laid in chunks no longer than this.
 	road_chunk_length : Distance
@@ -202,7 +203,7 @@ pond_patches = |road, { segment, place }|
 
 expect GroundSighting.road_chunk_length.to_metres() == 25.0
 expect GroundSighting.lead_in_length.to_metres() == 40.0
-expect GroundSighting.road_color == 0x34353C
+expect GroundSighting.road_color == RgbColor.of(0x34353C)
 expect
 	[
 		(25.0, 1),

@@ -43,6 +43,7 @@ import game.TruckSighting
 import game.VehicleLimits
 import game.World
 import lib.Brush
+import lib.RgbColor
 import lib.Shapes
 
 main! = |_args| Ok({})
@@ -91,15 +92,15 @@ polygon_of = |shape|
 coordinates_of : Shapes.Shape -> List(F64)
 coordinates_of = |shape| polygon_of(shape).coordinates
 
-## A flat polygon's colour, as 0xRRGGBB.
-flat_color_of : Shapes.Shape -> I64
+## A flat polygon's colour.
+flat_color_of : Shapes.Shape -> RgbColor
 flat_color_of = |shape|
 	match polygon_of(shape).fill {
 		Flat(color) => {
 			red = color.r.to_i64_wrap()
 			green = color.g.to_i64_wrap()
 			blue = color.b.to_i64_wrap()
-			red * 65536 + green * 256 + blue
+			RgbColor.of(red * 65536 + green * 256 + blue)
 		}
 		Skip | Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) =>
 			crash "CrossModuleExpects.flat_color_of: this polygon is not flat"
@@ -789,7 +790,7 @@ expect patch_shapes(
 last_shape : Shapes.Shape
 last_shape = strip_shapes.last() ?? crash "CrossModuleExpects: the road draws"
 
-expect flat_color_of(last_shape) == 0x34353C
+expect flat_color_of(last_shape) == RgbColor.of(0x34353C)
 expect {
 	coordinate_count = coordinates_of(last_shape).len()
 	coordinate_count >= 6 and coordinate_count <= 10

@@ -12,6 +12,7 @@ import game.HexColor
 import game.Sky
 import game.Sun
 import lib.Brush
+import lib.RgbColor
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
@@ -55,7 +56,7 @@ ScrubWidget :: [].{
 		title,
 	}
 
-	flat : I64 -> Brush.Fill
+	flat : RgbColor -> Brush.Fill
 	flat = |color| Flat(Brush.opaque(color))
 
 	## The size of the lines under the picture, and of the words in it, on a
@@ -69,7 +70,7 @@ ScrubWidget :: [].{
 	## A line of what the widget reads out, on row `row` of the panel.
 	readout : {
 		text : Str,
-		color : I64,
+		color : RgbColor,
 		row : U64,
 	} -> Shapes.Shape
 	readout = |{ text, color, row }|
@@ -182,11 +183,11 @@ ScrubWidget :: [].{
 	}
 }
 
-panel_color : I64
-panel_color = 0xdcecf5
+panel_color : RgbColor
+panel_color = RgbColor.of(0xdcecf5)
 
-ink_color : I64
-ink_color = 0x202020
+ink_color : RgbColor
+ink_color = RgbColor.of(0x202020)
 
 ## The text sits on this, and a widget's buttons do too.
 panel : Shapes.Shape
@@ -248,7 +249,7 @@ expect ScrubWidget.frame_shapes({ picture_shapes: [], status_lines: ["I"] }).len
 expect
 	ScrubWidget.readout({
 		text: "I",
-		color: 0x202020,
+		color: RgbColor.of(0x202020),
 		row: 1,
 	})
 		== Text({
@@ -258,7 +259,7 @@ expect
 			size: ScrubWidget.readout_size,
 			face: Code,
 			align: Left,
-			color: Brush.opaque(0x202020),
+			color: Brush.opaque(RgbColor.of(0x202020)),
 		})
 
 # A label is words, set where it is asked.
@@ -275,5 +276,5 @@ expect
 			size: ScrubWidget.label_size,
 			face: Prose,
 			align: Left,
-			color: Brush.opaque(0x202020),
+			color: Brush.opaque(RgbColor.of(0x202020)),
 		})

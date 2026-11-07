@@ -7,14 +7,15 @@
 import lib.Shapes
 import lib.ArgbColor
 import lib.Brush
+import lib.RgbColor
 import lib.View
 import Panels
 
 Streetlight :: [].{
 	lamp_c : Brush.Rgba
-	lamp_c = Brush.opaque(0xffe9a8)
+	lamp_c = Brush.opaque(RgbColor.of(0xffe9a8))
 	pole_c : Brush.Rgba
-	pole_c = Brush.opaque(0x101014)
+	pole_c = Brush.opaque(RgbColor.of(0x101014))
 
 	# Beside the path at the kerb, and four metres up.
 	stands_at : F64

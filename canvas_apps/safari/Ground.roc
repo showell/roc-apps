@@ -6,12 +6,13 @@ import Camera
 import Distance
 import Geom
 import lib.Brush
+import lib.RgbColor
 import lib.Shapes
 
 Ground :: [].{
 
 	## A patch of ground: its corners and its colour.
-	Patch : { corners : List(Geom.RiderPoint), color : I64 }
+	Patch : { corners : List(Geom.RiderPoint), color : RgbColor }
 
 	## A point on the ground, lowered by the earth's curve.
 	ground_point : Geom.RiderPoint -> Geom.RaisedPoint
@@ -71,7 +72,7 @@ expect
 
 sample_patch_shape : List(Geom.RiderPoint) -> Try(Shapes.Shape, [PastHorizon, BehindCamera])
 sample_patch_shape = |corners| Ground.patch_shape(
-	{ corners, color: 0x2F7E8C },
+	{ corners, color: RgbColor.of(0x2F7E8C) },
 	Pixels.of(685.5110432362151),
 )
 
@@ -148,7 +149,8 @@ expect
 expect {
 	match sample_patch_shape(patch_corners_ahead) {
 		Ok(Poly(polygon)) =>
-			polygon.fill == Flat(Brush.opaque(0x2F7E8C)) and polygon.coordinates.len() == 8
+			polygon.fill == Flat(Brush.opaque(RgbColor.of(0x2F7E8C)))
+				and polygon.coordinates.len() == 8
 		_ => False
 	}
 }

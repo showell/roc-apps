@@ -15,6 +15,7 @@ import Geom
 import Picture
 import Polygon
 import lib.Brush
+import lib.RgbColor
 import Screen
 import lib.Shapes
 import World
@@ -68,8 +69,8 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 	rod_w : Distance
 	rod_w = rod_half.times(2.0)
 
-	tower_metal : I64
-	tower_metal = 0x9AA0A8
+	tower_metal : RgbColor
+	tower_metal = RgbColor.of(0x9AA0A8)
 
 	## The radius a far tower sinks over, which hides it wholly at 1.8 km. It
 	## is tighter than `Geom.ground_curve_radius`, so a tower sinks visibly as
@@ -80,8 +81,8 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 	beacon_radius : Distance
 	beacon_radius = Distance.metres(3.0)
 
-	beacon_color : I64
-	beacon_color = 0xFF2FE6
+	beacon_color : RgbColor
+	beacon_color = RgbColor.of(0xFF2FE6)
 
 	## A corner of the tower's square footprint, as seen along the route.
 	Corner : [BackLeft, BackRight, FrontRight, FrontLeft]
@@ -451,7 +452,7 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 ## A beacon's disc, as a value: a list of one shape, seen through as far as
 ## `beacon_alpha` says.
 disc_shapes : {
-	beacon_color : I64,
+	beacon_color : RgbColor,
 	beacon_center : Screen.Point,
 	beacon_radius : Pixels,
 	beacon_alpha : Fraction,
@@ -470,7 +471,7 @@ disc_shapes = |{ beacon_color, beacon_center, beacon_radius, beacon_alpha }| {
 
 expect
 	disc_shapes({
-		beacon_color: 7,
+		beacon_color: RgbColor.of(7),
 		beacon_center: Screen.point(1.0, 2.0),
 		beacon_radius: Pixels.of(3.0),
 		beacon_alpha: Fraction.of(0.5),
@@ -479,7 +480,7 @@ expect
 
 expect
 	disc_shapes({
-		beacon_color: 333,
+		beacon_color: RgbColor.of(333),
 		beacon_center: Screen.point(10.0, 20.0),
 		beacon_radius: Pixels.of(30.0),
 		beacon_alpha: Fraction.of(0.25),
@@ -489,7 +490,7 @@ expect
 				x: 10.0,
 				y: 20.0,
 				r: 30.0,
-				fill: Flat({ ..Brush.opaque(333), a: 0.25 }),
+				fill: Flat({ ..Brush.opaque(RgbColor.of(333)), a: 0.25 }),
 			}),
 		]
 
@@ -555,8 +556,8 @@ expect Tower.sink_radius.to_metres() == 20000.0
 expect Tower.beacon_radius.to_metres() == 3.0
 
 expect Tower.brace_storeys == 2
-expect Tower.tower_metal == 0x9AA0A8
-expect Tower.beacon_color == 0xFF2FE6
+expect Tower.tower_metal == RgbColor.of(0x9AA0A8)
+expect Tower.beacon_color == RgbColor.of(0xFF2FE6)
 
 expect
 	Tower.corners.map(|corner| Tower.corner_offset(corner).across.ratio_to(Tower.tower_half))

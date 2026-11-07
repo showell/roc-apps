@@ -1,7 +1,7 @@
-## Polygon makes Safari's polygons as values, from screen points and
-## whole-number colors. Nothing here paints: what a maker gives back is data for
-## the page to paint. A color is 0xRRGGBB for a flat or a shaded polygon, and
-## 0xAARRGGBB for a gradient. Each maker gives one shape. A polygon of fewer than
+## Polygon makes Safari's polygons as values, from screen points and colors.
+## Nothing here paints: what a maker gives back is data for the page to paint. A
+## color is an `RgbColor` for a flat or a shaded polygon, and an `ArgbColor` for
+## a gradient. Each maker gives one shape. A polygon of fewer than
 ## three corners is a bug in the code that asked for it, so a maker crashes on one.
 ## A circular gradient can shrink out of sight as it goes away, so that maker
 ## answers a `Try`. A drawing module with nothing to draw says so itself, in the
@@ -12,6 +12,7 @@ import HexColor
 import Screen
 import lib.ArgbColor
 import lib.Brush
+import lib.RgbColor
 import lib.Shapes
 
 Polygon :: [].{
@@ -25,7 +26,7 @@ Polygon :: [].{
 	}
 
 	## Makes a polygon of one flat color. Nothing is painted here: this makes a value.
-	flat_polygon : I64, List(Screen.Point) -> Shapes.Shape
+	flat_polygon : RgbColor, List(Screen.Point) -> Shapes.Shape
 	flat_polygon = |color, corners|
 		Poly({
 			coordinates: polygon_coordinates("Polygon.flat_polygon", corners),
@@ -33,7 +34,7 @@ Polygon :: [].{
 		})
 
 	## Makes a triangle of one flat color.
-	triangle : I64,
+	triangle : RgbColor,
 	{
 		first_corner : Screen.Point,
 		second_corner : Screen.Point,
@@ -43,7 +44,7 @@ Polygon :: [].{
 		flat_polygon(color, [first_corner, second_corner, third_corner])
 
 	## Makes a rectangle of one flat color. Its sides run along the screen's edges.
-	rectangle : I64, { top_left : Screen.Point, bottom_right : Screen.Point } -> Shapes.Shape
+	rectangle : RgbColor, { top_left : Screen.Point, bottom_right : Screen.Point } -> Shapes.Shape
 	rectangle = |color, opposite_corners| flat_polygon(color, rectangle_corners(opposite_corners))
 
 	## A rectangle's four corners, clockwise on the screen from its top left.
@@ -60,7 +61,11 @@ Polygon :: [].{
 
 	## Makes a polygon shaded across its width, darker at its edges and lighter in
 	## its middle, or a solid one where it has no strength or is too narrow.
-	shaded_polygon : List(Screen.Point), { fill_color : I64, strength : Fraction } -> Shapes.Shape
+	shaded_polygon : List(Screen.Point),
+	{
+		fill_color : RgbColor,
+		strength : Fraction,
+	} -> Shapes.Shape
 	shaded_polygon = |corners, { fill_color, strength }| {
 		coordinates = polygon_coordinates("Polygon.shaded_polygon", corners)
 		Poly({ coordinates, fill: width_shade(corners, { color: fill_color, strength: strength }) })
@@ -199,12 +204,12 @@ shade_middle_lift : Fraction
 shade_middle_lift = Fraction.of(0.25)
 
 ## A shaded polygon's color at its edges.
-width_shade_edge : I64, Fraction -> I64
+width_shade_edge : RgbColor, Fraction -> RgbColor
 width_shade_edge = |color, strength|
 	HexColor.shade_color(color, 1.0 - shade_edge_darken.to_f64() * strength.to_f64())
 
 ## A shaded polygon's color in its middle.
-width_shade_middle : I64, Fraction -> I64
+width_shade_middle : RgbColor, Fraction -> RgbColor
 width_shade_middle = |color, strength| HexColor.shade_color(
 	color,
 	1.0 + shade_middle_lift.to_f64() * strength.to_f64(),
@@ -254,7 +259,7 @@ offsets_of = |stops| {
 }
 
 ## The fill of a polygon shaded across its width.
-width_shade : List(Screen.Point), { color : I64, strength : Fraction } -> Brush.Fill
+width_shade : List(Screen.Point), { color : RgbColor, strength : Fraction } -> Brush.Fill
 width_shade = |corners, { color, strength }| {
 	span = x_span(corners)
 	if strength <= Fraction.zero or is_too_narrow_to_shade(span) {
@@ -316,14 +321,14 @@ expect Polygon.flat_coordinates([]) == []
 # A triangle keeps its corners in the order given.
 expect
 	Polygon.triangle(
-		111,
+		RgbColor.of(111),
 		{
 			first_corner: Screen.point(1.0, 2.0),
 			second_corner: Screen.point(3.0, 4.0),
 			third_corner: Screen.point(5.0, 6.0),
 		},
 	)
-		== Poly({ coordinates: triangle_coordinates, fill: Flat(Brush.opaque(111)) })
+		== Poly({ coordinates: triangle_coordinates, fill: Flat(Brush.opaque(RgbColor.of(111))) })
 
 sample_rectangle : { top_left : Screen.Point, bottom_right : Screen.Point }
 sample_rectangle = { top_left: Screen.point(1.0, 2.0), bottom_right: Screen.point(5.0, 8.0) }
@@ -335,20 +340,20 @@ expect Polygon.rectangle_corners(sample_rectangle) == [
 	Screen.point(1.0, 8.0),
 ]
 
-expect Polygon.rectangle(111, sample_rectangle) == Poly({
+expect Polygon.rectangle(RgbColor.of(111), sample_rectangle) == Poly({
 	coordinates: [1.0, 2.0, 5.0, 2.0, 5.0, 8.0, 1.0, 8.0],
-	fill: Flat(Brush.opaque(111)),
+	fill: Flat(Brush.opaque(RgbColor.of(111))),
 })
 
 # A rectangle of no size still has its four corners.
 expect
 	Polygon.rectangle(
-		111,
+		RgbColor.of(111),
 		{ top_left: Screen.point(1.0, 2.0), bottom_right: Screen.point(1.0, 2.0) },
 	)
 		== Poly({
 			coordinates: [1.0, 2.0, 1.0, 2.0, 1.0, 2.0, 1.0, 2.0],
-			fill: Flat(Brush.opaque(111)),
+			fill: Flat(Brush.opaque(RgbColor.of(111))),
 		})
 
 # A gradient is too small just under the limit, and not at it.
@@ -367,18 +372,21 @@ expect radial_polygon(three_corners, Pixels.of(0.5)) == Ok(
 	}),
 )
 
-expect Polygon.flat_polygon(111, three_corners) == Poly({
+expect Polygon.flat_polygon(RgbColor.of(111), three_corners) == Poly({
 	coordinates: triangle_coordinates,
-	fill: Flat(Brush.opaque(111)),
+	fill: Flat(Brush.opaque(RgbColor.of(111))),
 })
 
 expect
-	Polygon.shaded_polygon(three_corners, { fill_color: 222, strength: Fraction.of(0.75) })
+	Polygon.shaded_polygon(
+		three_corners,
+		{ fill_color: RgbColor.of(222), strength: Fraction.of(0.75) },
+	)
 		== Poly({
 			coordinates: triangle_coordinates,
 			fill: Span({
-				edge: Brush.opaque(155),
-				middle: Brush.opaque(255),
+				edge: Brush.opaque(RgbColor.of(155)),
+				middle: Brush.opaque(RgbColor.of(255)),
 				x0: 1.0,
 				x1: 5.0,
 			}),
@@ -519,18 +527,18 @@ expect ellipse_of_height(0.011) != Poly({
 	fill: Flat(ArgbColor.to_rgba(ArgbColor.of(666))),
 })
 
-sample_color : I64
-sample_color = 0x804020
+sample_color : RgbColor
+sample_color = RgbColor.of(0x804020)
 
-expect width_shade_edge(sample_color, Fraction.whole) == 0x4D2613
-expect width_shade_middle(sample_color, Fraction.whole) == 0xA05028
-expect width_shade_edge(sample_color, Fraction.of(0.5)) == 0x66331A
-expect width_shade_middle(sample_color, Fraction.of(0.5)) == 0x904824
+expect width_shade_edge(sample_color, Fraction.whole) == RgbColor.of(0x4D2613)
+expect width_shade_middle(sample_color, Fraction.whole) == RgbColor.of(0xA05028)
+expect width_shade_edge(sample_color, Fraction.of(0.5)) == RgbColor.of(0x66331A)
+expect width_shade_middle(sample_color, Fraction.of(0.5)) == RgbColor.of(0x904824)
 expect width_shade_edge(sample_color, Fraction.zero) == sample_color
 expect width_shade_middle(sample_color, Fraction.zero) == sample_color
 
 # A lift past 255 holds at white.
-expect width_shade_middle(0xFAFAFA, Fraction.whole) == 0xFFFFFF
+expect width_shade_middle(RgbColor.of(0xFAFAFA), Fraction.whole) == RgbColor.of(0xFFFFFF)
 
 expect is_too_narrow_to_shade({ min_x: Pixels.of(10.0), max_x: Pixels.of(10.5) })
 expect !is_too_narrow_to_shade({ min_x: Pixels.of(10.0), max_x: Pixels.of(11.0) })
@@ -562,8 +570,8 @@ expect
 		== Poly({
 			coordinates: [10.0, 1.0, 30.0, 2.0, 20.0, 3.0],
 			fill: Span({
-				edge: Brush.opaque(0x4D2613),
-				middle: Brush.opaque(0xA05028),
+				edge: Brush.opaque(RgbColor.of(0x4D2613)),
+				middle: Brush.opaque(RgbColor.of(0xA05028)),
 				x0: 10.0,
 				x1: 30.0,
 			}),

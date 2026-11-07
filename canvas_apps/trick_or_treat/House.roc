@@ -6,24 +6,25 @@
 # and what comes out of it is somebody else's business.
 import lib.Shapes
 import lib.Brush
+import lib.RgbColor
 import lib.View
 import Panels
 
 House :: [].{
 	house_c : Brush.Rgba
-	house_c = Brush.opaque(0x14121c)
+	house_c = Brush.opaque(RgbColor.of(0x14121c))
 	roof_c : Brush.Rgba
-	roof_c = Brush.opaque(0x0c0a12)
+	roof_c = Brush.opaque(RgbColor.of(0x0c0a12))
 	lit : Brush.Rgba
-	lit = Brush.opaque(0xffb642)
+	lit = Brush.opaque(RgbColor.of(0xffb642))
 	door_c : Brush.Rgba
-	door_c = Brush.opaque(0x2a1c14)
+	door_c = Brush.opaque(RgbColor.of(0x2a1c14))
 	spill : Brush.Rgba
-	spill = Brush.opaque(0xe89a2c)
+	spill = Brush.opaque(RgbColor.of(0xe89a2c))
 	# The hall floor, which is the same light landing on boards rather than
 	# coming straight at you.
 	floor_c : Brush.Rgba
-	floor_c = Brush.opaque(0xb0701c)
+	floor_c = Brush.opaque(RgbColor.of(0xb0701c))
 
 	# How far back the lit floor goes, which is as far as anyone coming to the
 	# door is ever seen from.

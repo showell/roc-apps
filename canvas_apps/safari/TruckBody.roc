@@ -8,6 +8,7 @@ import Distance
 import Fraction
 import Geom
 import TruckShape
+import lib.RgbColor
 import lib.Shapes
 
 TruckBody :: [].{
@@ -16,7 +17,7 @@ TruckBody :: [].{
 	## distances ahead, by which the faces are ordered for painting. That mean
 	## is negative for a face behind the rider.
 	TruckFace : {
-		color : I64,
+		color : RgbColor,
 		depth : Distance,
 		corners : List(Geom.RaisedPoint),
 	}
@@ -37,7 +38,7 @@ TruckBody :: [].{
 			)
 
 	## A face of `color` with these corners.
-	face : I64, List(Geom.RaisedPoint) -> TruckBody.TruckFace
+	face : RgbColor, List(Geom.RaisedPoint) -> TruckBody.TruckFace
 	face = |color, corners| {
 		color,
 		depth: sum_of_forward(corners).divided_by(corners.len().to_f64()),
@@ -62,17 +63,17 @@ TruckBody :: [].{
 	}
 }
 
-body_color : I64
-body_color = 0x1C2E66
+body_color : RgbColor
+body_color = RgbColor.of(0x1C2E66)
 
-roof_color : I64
-roof_color = 0x3A52A8
+roof_color : RgbColor
+roof_color = RgbColor.of(0x3A52A8)
 
-side_color : I64
-side_color = 0x152150
+side_color : RgbColor
+side_color = RgbColor.of(0x152150)
 
-tire_color : I64
-tire_color = 0x15151A
+tire_color : RgbColor
+tire_color = RgbColor.of(0x15151A)
 
 ## How far in from each end of the trailer the middle of its pair of axles is.
 trailer_axle_inset : Distance
@@ -120,7 +121,7 @@ faces = |truck| {
 ## A face of `color` whose corners are the truck's points `corners`.
 face_in_view : TruckShape.TruckInView,
 {
-	color : I64,
+	color : RgbColor,
 	corners : List(TruckShape.TruckPoint),
 } -> TruckBody.TruckFace
 face_in_view = |truck, { color, corners }| TruckBody.face(
@@ -324,7 +325,7 @@ point_ahead = |forward| {
 
 quad_face : TruckBody.TruckFace
 quad_face = TruckBody.face(
-	0x1C2E66,
+	RgbColor.of(0x1C2E66),
 	[
 		point_ahead(10.0),
 		point_ahead(20.0),
@@ -335,7 +336,7 @@ quad_face = TruckBody.face(
 
 triangle_face : TruckBody.TruckFace
 triangle_face = TruckBody.face(
-	0x15151A,
+	RgbColor.of(0x15151A),
 	[
 		point_ahead(1.0),
 		point_ahead(2.0),
@@ -345,39 +346,39 @@ triangle_face = TruckBody.face(
 
 expect quad_face.depth.to_metres() == 25.0
 expect triangle_face.depth.to_metres() == 3.0
-expect quad_face.color == 0x1C2E66
+expect quad_face.color == RgbColor.of(0x1C2E66)
 expect quad_face.corners.len() == 4
-expect triangle_face.color == 0x15151A
+expect triangle_face.color == RgbColor.of(0x15151A)
 expect triangle_face.corners.len() == 3
 
 # A face that is only a colour and a depth, for the sort.
-marked_face : { color : I64, depth : Distance } -> TruckBody.TruckFace
+marked_face : { color : RgbColor, depth : Distance } -> TruckBody.TruckFace
 marked_face = |{ color, depth }| { color, depth, corners: [] }
 
-colors_by_depth : List({ color : I64, depth : Distance }) -> List(I64)
+colors_by_depth : List({ color : RgbColor, depth : Distance }) -> List(I64)
 colors_by_depth = |marks|
-	DepthSort.sort_by(marks.map(marked_face), |face| face.depth).map(|face| face.color)
+	DepthSort.sort_by(marks.map(marked_face), |face| face.depth).map(|face| face.color.to_i64())
 
 expect
 	colors_by_depth([
-		{ color: 1, depth: Distance.metres(30.0) },
-		{ color: 2, depth: Distance.metres(10.0) },
-		{ color: 3, depth: Distance.metres(30.0) },
-		{ color: 4, depth: Distance.metres(20.0) },
-		{ color: 5, depth: Distance.metres(30.0) },
+		{ color: RgbColor.of(1), depth: Distance.metres(30.0) },
+		{ color: RgbColor.of(2), depth: Distance.metres(10.0) },
+		{ color: RgbColor.of(3), depth: Distance.metres(30.0) },
+		{ color: RgbColor.of(4), depth: Distance.metres(20.0) },
+		{ color: RgbColor.of(5), depth: Distance.metres(30.0) },
 	])
 		== [1, 3, 5, 4, 2]
 
 expect
 	colors_by_depth([
-		{ color: 1, depth: Distance.metres(20.0) },
-		{ color: 2, depth: Distance.metres(20.000001) },
-		{ color: 3, depth: Distance.metres(20.01) },
-		{ color: 4, depth: Distance.metres(19.0) },
+		{ color: RgbColor.of(1), depth: Distance.metres(20.0) },
+		{ color: RgbColor.of(2), depth: Distance.metres(20.000001) },
+		{ color: RgbColor.of(3), depth: Distance.metres(20.01) },
+		{ color: RgbColor.of(4), depth: Distance.metres(19.0) },
 	])
 		== [3, 1, 2, 4]
 
 expect colors_by_depth([]).len() == 0
-expect colors_by_depth([{ color: 7, depth: Distance.metres(1.0) }]) == [7]
+expect colors_by_depth([{ color: RgbColor.of(7), depth: Distance.metres(1.0) }]) == [7]
 
 expect TruckBody.tire_sides == 16

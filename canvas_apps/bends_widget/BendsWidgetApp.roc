@@ -14,6 +14,7 @@ import game.BendView
 import game.RailSighting
 import game.World
 import lib.Brush
+import lib.RgbColor
 import lib.CanvasApp
 import lib.Shapes
 import widget.ScrubWidget
@@ -122,20 +123,20 @@ canvas_point = |{ canvas_x, .. }, { right, forward }| {
 	y: rider_y - forward.to_metres() * pixels_a_metre,
 }
 
-ground_color : I64
-ground_color = 0x6f9a55
+ground_color : RgbColor
+ground_color = RgbColor.of(0x6f9a55)
 
-road_color : I64
-road_color = 0x4a4a46
+road_color : RgbColor
+road_color = RgbColor.of(0x4a4a46)
 
-rail_color : I64
-rail_color = 0xe8805a
+rail_color : RgbColor
+rail_color = RgbColor.of(0xe8805a)
 
-apex_color : I64
-apex_color = 0xf0d040
+apex_color : RgbColor
+apex_color = RgbColor.of(0xf0d040)
 
-rider_color : I64
-rider_color = 0xf2efe4
+rider_color : RgbColor
+rider_color = RgbColor.of(0xf2efe4)
 
 ground : Shapes.Shape
 ground = Rect({
@@ -181,7 +182,7 @@ foot_shapes = |bend, corners|
 	}
 
 ## A disc at a place on the road.
-spot : ShownBend, { at : Geom.RiderPoint, color : I64 } -> Shapes.Shape
+spot : ShownBend, { at : Geom.RiderPoint, color : RgbColor } -> Shapes.Shape
 spot = |bend, { at, color }| {
 	{ x, y } = canvas_point(bend, at)
 	Disc({
@@ -254,7 +255,7 @@ caption_line = |bend, { text, row }|
 		size: 13.0,
 		face: Code,
 		align: Center,
-		color: Brush.opaque(0x202020),
+		color: Brush.opaque(RgbColor.of(0x202020)),
 	})
 
 caption_shapes : ShownBend -> List(Shapes.Shape)

@@ -8,6 +8,7 @@
 # `Blend(Add)` run covers all three.
 import lib.Shapes
 import lib.Brush
+import lib.RgbColor
 import lib.Color
 import lib.Font
 import lib.Math
@@ -20,7 +21,7 @@ PongDraw :: [].{
 	h = 600.0
 
 	dash : Brush.Rgba
-	dash = Brush.opaque(0x2a3566)
+	dash = Brush.opaque(RgbColor.of(0x2a3566))
 
 	## One complete Pong frame, back to front.
 	frame : Rules.World -> List(Shapes.Shape)

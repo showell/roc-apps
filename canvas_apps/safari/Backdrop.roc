@@ -5,6 +5,7 @@ import Fraction
 import HexColor
 import Pixels
 import lib.Brush
+import lib.RgbColor
 import Screen
 import Sun
 import lib.Shapes
@@ -12,8 +13,8 @@ import lib.Shapes
 Backdrop :: [].{
 
 	## The grass, from just above the horizon down.
-	grass_color : I64
-	grass_color = 0x4a8f43
+	grass_color : RgbColor
+	grass_color = RgbColor.of(0x4a8f43)
 
 	## How far down to the horizon the sky holds its top colour before it
 	## fades to the horizon's.
@@ -62,8 +63,8 @@ Backdrop :: [].{
 			}),
 			glow_radius,
 			disc: Radial({
-				inner: Brush.opaque(0xffe6a3),
-				outer: Brush.opaque(0xff9d5c),
+				inner: Brush.opaque(RgbColor.of(0xffe6a3)),
+				outer: Brush.opaque(RgbColor.of(0xff9d5c)),
 				x: sun.x.to_f64(),
 				y: sun.y.to_f64(),
 				r0: 4.0 * scale,

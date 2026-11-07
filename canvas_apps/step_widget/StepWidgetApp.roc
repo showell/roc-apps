@@ -12,6 +12,7 @@ import game.World
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
+import lib.RgbColor
 import widget.ScrubWidget
 import widget.VcrButtons
 
@@ -107,17 +108,17 @@ shapes_at = |model|
 		},
 	)
 
-ground_color : I64
-ground_color = 0x6f9a55
+ground_color : RgbColor
+ground_color = RgbColor.of(0x6f9a55)
 
-road_color : I64
-road_color = 0x4a4a46
+road_color : RgbColor
+road_color = RgbColor.of(0x4a4a46)
 
-rider_color : I64
-rider_color = 0xf2efe4
+rider_color : RgbColor
+rider_color = RgbColor.of(0xf2efe4)
 
-truck_color : I64
-truck_color = 0xd0603a
+truck_color : RgbColor
+truck_color = RgbColor.of(0xd0603a)
 
 ## The left end of the bar that stands for the whole route.
 route_left_x : F64
@@ -187,7 +188,7 @@ bar_shapes = {
 ## A disc on the bar with its name above or below it.
 marker_shapes : {
 	at : Distance,
-	color : I64,
+	color : RgbColor,
 	name : Str,
 	name_y : F64,
 } -> List(Shapes.Shape)
