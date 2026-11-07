@@ -1,5 +1,9 @@
-## A place along the road, in metres from an origin its holder names, most often
-## the start of a segment.
+## A place along one segment of the road, in metres from that segment's start,
+## which is the only origin an `Along` has. It may lie before the start or past
+## the end, as a point on the next segment does when it is measured on this one.
+## A place measured from anywhere else, such as the segment's end, is a
+## `Distance` named for where it is from, and becomes an `Along` only through
+## the segment's length.
 ## `Along` and `Across` mirror `Angle.Bearing` and `Angle.Turn`: a distance added
 ## to a place gives a place, and two places give the distance between them, but
 ## two places can't be added. A place along the road can't be passed as a place
