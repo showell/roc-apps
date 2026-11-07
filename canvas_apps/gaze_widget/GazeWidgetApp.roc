@@ -94,7 +94,6 @@ first_rider = {
 		yaw: Angle.Turn.radians(0.00011930961684185286),
 		speed: Speed.metres_a_step(1.6856901914963254),
 		lean: Angle.Lean.radians(-0.0004005394279478844),
-		heading: Angle.Bearing.radians(-0.34894654078202497),
 	},
 	eyes: RiderState.initial.eyes,
 }

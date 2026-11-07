@@ -10,15 +10,13 @@ import Speed
 import VehicleLimits
 
 ## The motorcycle at one step. `along` and `across` place it on its segment,
-## and `yaw` is its turn from the segment's axis; `heading` is its bearing in
-## the world. `lean` is how far it tips.
+## and `yaw` is its turn from the segment's axis. `lean` is how far it tips.
 Motorcycle := {
 	along : Along,
 	across : Across,
 	yaw : Angle.Turn,
 	speed : Speed,
 	lean : Angle.Lean,
-	heading : Angle.Bearing,
 }.{
 
 	initial : Motorcycle
@@ -28,7 +26,6 @@ Motorcycle := {
 		yaw: Angle.straight_ahead,
 		speed: VehicleLimits.starting_speed,
 		lean: Angle.upright,
-		heading: Angle.north,
 	}
 
 	## What the rider sets for a step: the lean the motorcycle takes, and the
@@ -47,7 +44,6 @@ Motorcycle := {
 			yaw: s.yaw.plus(turn),
 			speed,
 			lean,
-			heading: s.heading.plus(turn),
 		}
 	}
 
@@ -70,7 +66,6 @@ expect Motorcycle.initial.across.to_metres() == 0.0
 expect Motorcycle.initial.yaw.to_radians() == 0.0
 expect Motorcycle.initial.speed.to_metres_a_step() == 0.3
 expect Motorcycle.initial.lean.to_radians() == 0.0
-expect Motorcycle.initial.heading.to_radians() == 0.0
 
 ## A motorcycle well along a segment, leaning a little to the right.
 riding : Motorcycle
@@ -80,7 +75,6 @@ riding = {
 	yaw: Angle.Turn.radians(0.375),
 	speed: Speed.metres_a_step(0.8),
 	lean: Angle.Lean.radians(0.125),
-	heading: Angle.Bearing.radians(4.5),
 }
 
 # The first two steps change the lean and the speed a little from the step
@@ -102,26 +96,18 @@ third_step = second_step.motorcycle_at_next_step(second_step.steady_controls())
 
 expect
 	[first_step, second_step, third_step].join_map(
-		|s| [
-			s.yaw.to_radians(),
-			s.speed.to_metres_a_step(),
-			s.lean.to_radians(),
-			s.heading.to_radians(),
-		],
+		|s| [s.yaw.to_radians(), s.speed.to_metres_a_step(), s.lean.to_radians()],
 	)
 		== [
 			0.3925,
 			0.81,
 			0.175,
-			4.5175,
 			0.40800000000000003,
 			0.8150000000000001,
 			0.155,
-			4.533,
 			0.42350000000000004,
 			0.8150000000000001,
 			0.155,
-			4.548500000000001,
 		]
 
 # Each is within 1e-9 of its want, scaled up by a want past 1.
@@ -144,24 +130,20 @@ expect {
 	[
 		a.across.to_metres(),
 		a.yaw.to_radians(),
-		a.heading.to_radians(),
 		a.lean.to_radians(),
 		a.speed.to_metres_a_step(),
 		b.lean.to_radians(),
 		b.speed.to_metres_a_step(),
 		b.yaw.to_radians(),
-		b.heading.to_radians(),
 		turn_per_lean,
 	]
 		== [
 			0.0,
 			0.0,
 			0.0,
-			0.0,
 			0.3,
 			0.5,
 			0.55,
-			0.05,
 			0.05,
 			0.1,
 		]
@@ -174,7 +156,6 @@ probe = {
 	yaw: Angle.Turn.radians(0.75),
 	speed: Speed.metres_a_step(3.25),
 	lean: Angle.Lean.radians(0.125),
-	heading: Angle.Bearing.radians(4.5),
 }
 
 numbers_of : Motorcycle -> List(F64)
@@ -184,7 +165,6 @@ numbers_of = |s| [
 	s.yaw.to_radians(),
 	s.speed.to_metres_a_step(),
 	s.lean.to_radians(),
-	s.heading.to_radians(),
 ]
 
 leaned_once : Motorcycle
@@ -193,22 +173,8 @@ leaned_once = Motorcycle.with_lean(probe, Angle.Lean.radians(1.5))
 # `with_lean` changes the lean and nothing else, and the last one holds.
 expect
 	numbers_of(Motorcycle.with_lean(probe, Angle.Lean.radians(9.5)))
-		== [
-			11.0,
-			2.5,
-			0.75,
-			3.25,
-			9.5,
-			4.5,
-		]
+		== [11.0, 2.5, 0.75, 3.25, 9.5]
 
 expect
 	numbers_of(Motorcycle.with_lean(leaned_once, Angle.Lean.radians(9.5)))
-		== [
-			11.0,
-			2.5,
-			0.75,
-			3.25,
-			9.5,
-			4.5,
-		]
+		== [11.0, 2.5, 0.75, 3.25, 9.5]

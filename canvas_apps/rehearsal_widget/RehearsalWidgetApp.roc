@@ -53,7 +53,6 @@ rider = {
 	yaw: Angle.Turn.radians(0.05277873953607818),
 	speed: Speed.metres_a_step(0.14981295069969633),
 	lean: Angle.Lean.radians(0.0026077673394057635),
-	heading: Angle.Bearing.radians(0.9254433655332428),
 }
 
 ## Where the rider aims: the road's middle, as `LeanSearch.best_lean` does.
@@ -566,7 +565,6 @@ expect {
 		and real.yaw == rider.yaw
 		and real.speed == rider.speed
 		and real.lean == rider.lean
-		and real.heading == rider.heading
 }
 
 # The tries come to the lean the game's own search comes to.

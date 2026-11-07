@@ -2286,7 +2286,7 @@ A cat in the lane stops the rider opening the throttle, without braking, and wid
 
 {{code EncounterReaction.encounter_attention}}
 
-{{code RideFocal.ride_focal}}
+{{code RiderCamera.ride_focal}}
 
 This is the only feedback loop in the design. The rider's speed decides where the cat has got to, and the cat holds the rider's speed down. The loop settles, and it's why `stage_over_step_span` has to stay the cat's rule. A bird asks nothing of the rider, so it falls through to the same answer as an empty road.
 
