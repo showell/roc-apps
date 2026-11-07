@@ -8,7 +8,6 @@ import SegmentPlace
 import Geom
 import Lens
 import Pipeline
-import Pixels
 import Pond
 import Wildlife
 
@@ -21,10 +20,6 @@ BillboardSighting :: [].{
 	## Safari animals and ducks are sighted on this many.
 	wildlife_reach : U32
 	wildlife_reach = 5
-
-	## A critter shorter than this many pixels is too small to draw.
-	min_critter_px : Pixels
-	min_critter_px = Pixels.of(2.0)
 
 	## What became of a critter placed in the rider's view.
 	Fate : Try(Pipeline.Sighted(Billboard), [BehindCamera, TooSmall])
@@ -48,7 +43,7 @@ BillboardSighting :: [].{
 	billboard_fates = |road, camera|
 		RoadAhead.segments_in_view(road)
 			.join_map(
-				|in_view| BillboardSighting.segment_sightings(
+				|in_view| BillboardSighting.segment_billboards(
 					road,
 					{ vantage: camera.vantage, in_view },
 				),
@@ -56,12 +51,12 @@ BillboardSighting :: [].{
 
 	## The critters of a segment in view: its farm animals, then what lives at
 	## its end.
-	segment_sightings : RoadAhead.RoadView,
+	segment_billboards : RoadAhead.RoadView,
 	{
 		vantage : Geom.Vantage,
 		in_view : RoadAhead.SegmentInView,
 	} -> List(BillboardSighting.Fate)
-	segment_sightings = |road, seen|
+	segment_billboards = |road, seen|
 		BillboardSighting.farm_sightings(road, seen)
 			.concat(BillboardSighting.bend_sightings(road, seen))
 
@@ -111,18 +106,7 @@ BillboardSighting :: [].{
 		critter : Geom.Placed(Billboard),
 	} -> BillboardSighting.Fate
 	sight_critter = |road, { vantage, place, critter }|
-		Pipeline.tall_sighting_of(
-			critter,
-			{
-				road,
-				vantage,
-				place,
-				size_test: {
-					focal_length: Lens.resting_focal,
-					smallest_height_on_screen: BillboardSighting.min_critter_px,
-				},
-			},
-		)
+		Pipeline.tall_sighting_of(critter, { road, vantage, place, size_focal: Lens.resting_focal })
 }
 
 ## Whether a segment at `place` is in reach: among the first `reach` of the
@@ -149,6 +133,3 @@ bend_life_critters = |segment|
 			}
 		RouteEnds => []
 	}
-
-expect BillboardSighting.farm_reach.to_i64() == 3
-expect BillboardSighting.wildlife_reach.to_i64() == 5

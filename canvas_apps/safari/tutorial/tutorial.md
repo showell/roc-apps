@@ -688,11 +688,11 @@ For each frame, `trees_in_view` goes through the segments of the road ahead, the
 
 {{code TreeSighting.trees_in_view}}
 
-{{code TreeSighting.segment_sightings}}
+{{code TreeSighting.segment_trees}}
 
 From here on, things are measured from the camera, which travels with the rider. We don't need to know much about the rider yet.
 
-{{code TreeSighting.sighting_of}}
+{{code Pipeline.scenery_sighting_of}}
 
 `Ahead(position)` says which segment of the road ahead the tree stands on. The size test asks for 2 pixels, through the camera's own lens.
 
@@ -729,11 +729,11 @@ New in this chapter:
 
 `Backdrop` paints what's behind the ride. It has one color for grass:
 
-{{code Backdrop.grass_color}}
+{{code Grass.grass_color}}
 
 Its list of shapes starts with the sky, the sun and the grass, and this is the grass:
 
-{{code Backdrop.backdrop_shapes from "y: Screen.grass_top_y.to_f64()," to "fill: Brush.flat(grass_color),"}}
+{{code Screen.below_grass_top_rect}}
 
 It starts a pixel above the horizon, so no seam shows between the grass and the sky:
 
@@ -758,7 +758,7 @@ New in this chapter:
 
 A frame is a list of shapes, and a circle is one of them. `Disc` is a tag from `lib.Shapes`. This is the sun's, from the same list as the grass:
 
-{{code Backdrop.backdrop_shapes from "Disc({" to "fill: look.disc,"}}
+{{code Sun.sun_shapes from "Disc({" to "fill: look.disc,"}}
 
 A `Disc` has a center, a radius and a fill. The grass comes after it in the list and paints over whatever falls below the horizon, so the sun can sink behind the land with no more code.
 
@@ -855,7 +855,7 @@ Every color in the sky is a blend of two others, and a blend needs a ratio. `Fra
 
 `Backdrop` paints the two as a gradient, down to the horizon. It stays on the top color for the first fifth of the way, then fades:
 
-{{code Backdrop.backdrop_shapes from "sky = Linear({" to "end_point: { x: 0.0, y: Screen.horizon_y.to_f64() },"}}
+{{code Sky.sky_shape from "Linear({" to "end_point: { x: 0.0, y: Screen.horizon_y.to_f64() },"}}
 
 That's where a color finally becomes one integer, because a `Brush` wants `0xRRGGBB`. `pack` gets there with method calls on plain numbers. Static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `pack` a leaf: it calls nothing of Safari Ride's own.
 
@@ -1035,7 +1035,7 @@ A tower's footprint is a square, and four tags name its corners. Going round the
 
 Everything above the footprint is rods. Four legs run from the corners up to a point:
 
-{{code Tower.legs}}
+{{code Tower.leg_shapes}}
 
 A ring of rods goes round the tower every 20 metres, and crossed braces fill the lowest two storeys. Each rod is a line between two points in the rider's view, and it needs some care, because a near tower can stand partly behind the camera:
 
@@ -1300,11 +1300,11 @@ Each tower starts somewhere else in the cycle, so the towers along a road don't 
 
 The sighting calls both, adding the two `Steps`. `clock.minus(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride.
 
-{{code TowerSighting.tower_if_ahead from "placed_tower = {" to "clock.steps_since(Clock.start)"}}
+{{code Beacon.brightness_at}}
 
 Its caller gives each tower its key, the segment's index. Records with named fields stand in for what would otherwise be six arguments in a row, and `Ahead(position)` is a tag carrying a payload, saying where the segment lies from the rider:
 
-{{code TowerSighting.end_tower_of}}
+{{code TowerSighting.end_tower}}
 
 A tower halfway along a segment takes the key plus 60. That's a small piece of number theory hiding in a constant: 60 staggers of 37 steps come to 2,220, which is 18 periods of 120 and 60 left over, so the mid-tower blinks exactly opposite the end tower.
 

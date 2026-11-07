@@ -52,7 +52,7 @@ Scene := {
 		towers = TowerSighting.towers_in_view(road, { camera, clock: facts.clock })
 		billboards = BillboardSighting.billboards_in_view(road, camera)
 		cats = EncounterSighting.cats_in_view(road, { camera, speed: facts.speed })
-		rails = RailSighting.rails_in_view(road, camera)
+		rails = RailSighting.rail_quads_in_view(road, camera)
 		truck_at = TruckSighting.truck_in_view(
 			road,
 			{

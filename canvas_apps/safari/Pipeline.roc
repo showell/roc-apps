@@ -27,17 +27,10 @@ Pipeline :: [].{
 	## frame.
 	Sighted(kind) : { spot : Spot, kind : kind }
 
-	## How an object's size decides if it is drawn: it must stand at least
-	## `smallest_height_on_screen` tall through a lens of `focal_length`.
-	SizeTest : { focal_length : Pixels, smallest_height_on_screen : Pixels }
-
-	## The size test of scenery seen through the camera's own lens, so that what
-	## is at the edge of sight comes and goes as the camera widens.
-	scenery_test : { cam_focal : Pixels, .. } -> Pipeline.SizeTest
-	scenery_test = |camera| {
-		focal_length: camera.cam_focal,
-		smallest_height_on_screen: smallest_scenery_height_on_screen,
-	}
+	## The smallest thing worth drawing: an object that would stand less than
+	## this tall on the screen isn't drawn.
+	smallest_height_on_screen : Pixels
+	smallest_height_on_screen = Pixels.of(2.0)
 
 	## `placed` as the camera at `vantage` sees it, on the segment at `place`,
 	## if it is at or past the camera's near plane.
@@ -54,27 +47,51 @@ Pipeline :: [].{
 		Ok({ spot: Spot.at({ place, road_point, lift: placed.lift, foot }), kind: placed.kind })
 	}
 
-	## The sighting of `placed`, if it also passes `size_test`.
+	## The sighting of `placed`, if it stands at least
+	## `smallest_height_on_screen` tall through a lens of focal length
+	## `size_focal`. Which lens that is, the camera's or the one at rest, is
+	## the only way one kind's size test differs from another's.
 	tall_sighting_of : Geom.Placed(kind),
 	{
 		road : RoadAhead.RoadView,
 		vantage : Geom.Vantage,
 		place : SegmentPlace,
-		size_test : Pipeline.SizeTest,
+		size_focal : Pixels,
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera, TooSmall])
 		where [kind.scenery_height : kind -> Distance]
-	tall_sighting_of = |placed, { road, vantage, place, size_test }| {
+	tall_sighting_of = |placed, { road, vantage, place, size_focal }| {
 		sighting = sighting_of(placed, { road, vantage, place })?
 		height_on_screen = Camera.height_on_screen(
 			{ height: placed.kind.scenery_height(), forward: sighting.spot.foot().forward() },
-			size_test.focal_length,
+			size_focal,
 		)
-		if height_on_screen < size_test.smallest_height_on_screen {
+		if height_on_screen < Pipeline.smallest_height_on_screen {
 			Err(TooSmall)
 		} else {
 			Ok(sighting)
 		}
 	}
+
+	## The sighting of scenery `placed` on the segment at `place`, if it is tall
+	## enough through the camera's own lens, so that what is at the edge of
+	## sight comes and goes as the camera widens.
+	scenery_sighting_of : Geom.Placed(kind),
+	{
+		road : RoadAhead.RoadView,
+		camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
+		place : SegmentPlace,
+	} -> Try(Pipeline.Sighted(kind), [BehindCamera, TooSmall])
+		where [kind.scenery_height : kind -> Distance]
+	scenery_sighting_of = |placed, { road, camera, place }|
+		Pipeline.tall_sighting_of(
+			placed,
+			{
+				road,
+				vantage: camera.vantage,
+				place,
+				size_focal: camera.cam_focal,
+			},
+		)
 
 	## `sighting` drawn through a lens of focal length `cam_focal`, with `context`
 	## for whatever else its kind needs.
@@ -85,10 +102,6 @@ Pipeline :: [].{
 		picture: sighting.kind.scenery_picture({ spot: sighting.spot, cam_focal, context }),
 	}
 }
-
-## Scenery that would stand less than this tall on the screen isn't drawn.
-smallest_scenery_height_on_screen : Pixels
-smallest_scenery_height_on_screen = Pixels.of(2.0)
 
 ## A kind of object that exists for this file's expects: a post of some height,
 ## pictured as nothing.
@@ -137,8 +150,8 @@ post_sighting = |along|
 		},
 	)
 
-## A post of `height`, 64 m ahead, if it stands 8 pixels tall through a lens of
-## 512 pixels. A post 1 m tall stands exactly that.
+## A post of `height`, 64 m ahead, if it stands 2 pixels tall through a lens of
+## 128 pixels. A post 1 m tall stands exactly that.
 tall_post_sighting : Distance -> Try(Pipeline.Sighted(Post), [BehindCamera, TooSmall])
 tall_post_sighting = |height|
 	Pipeline.tall_sighting_of(
@@ -147,10 +160,7 @@ tall_post_sighting = |height|
 			road: first_road,
 			vantage: first_vantage,
 			place: first_place,
-			size_test: {
-				focal_length: Pixels.of(512.0),
-				smallest_height_on_screen: Pixels.of(8.0),
-			},
+			size_focal: Pixels.of(128.0),
 		},
 	)
 

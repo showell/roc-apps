@@ -12,11 +12,14 @@ import game.Distance
 import game.Fraction
 import game.Geom
 import game.Lens
+import game.Pipeline
+import game.RoadAhead
+import game.Route
 import game.SegmentPlace
 import game.Sky
-import game.Spot
 import game.Steps
 import game.Tower
+import game.World
 import lib.CanvasApp
 import lib.Shapes
 import widget.ReadoutText
@@ -46,22 +49,16 @@ blinks = VcrButtons.clock_range({
 	steps_a_frame: 1.0,
 })
 
-## The beacon keys of a tower past a segment's end, and of the tower halfway along
+## The beacons of a tower past a segment's end, and of the tower halfway along
 ## the same segment, which blinks opposite it.
-first_tower_key : U32
-first_tower_key = 0
+first_beacon : Beacon
+first_beacon = Beacon.(0)
 
-second_tower_key : U32
-second_tower_key = 60
+second_beacon : Beacon
+second_beacon = first_beacon.opposite()
 
-## How bright the beacon with `key` is at `clock`, as Beacon works it out.
-brightness_at : Clock, U32 -> Fraction
-brightness_at = |clock, key| {
-	offset = Beacon.beacon_offset_for(key)
-	Beacon.beacon_brightness(clock.steps_since(Clock.start).plus(offset))
-}
-
-## How far ahead of the picture's eye the towers stand, so that their tops fit.
+## How far down the road from the picture's eye the towers stand, so that their
+## tops fit.
 tower_forward : Distance
 tower_forward = Distance.metres(200.0)
 
@@ -86,56 +83,47 @@ picture_shapes : Clock -> List(Shapes.Shape)
 picture_shapes = |clock|
 	ScrubWidget.ride_shapes({
 		shapes: [
-			tower_shapes(tower_right.opposite(), brightness_at(clock, first_tower_key)),
-			tower_shapes(tower_right, brightness_at(clock, second_tower_key)),
+			tower_shapes(tower_right.opposite(), first_beacon.brightness_at(clock)),
+			tower_shapes(tower_right, second_beacon.brightness_at(clock)),
 		].join(),
 		sun_sighting: OutOfView,
 		sky_colors: Sky.colors_at(clock),
 		roll: Angle.upright,
 	})
 
-## A tower standing `right` of the road, its beacon at `brightness`, or nothing
-## if it stood behind the camera.
+## The road ahead of a rider on the route's first segment, straight for well
+## past the towers.
+straight_road : RoadAhead.RoadView
+straight_road = RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex.first)
+
+## The picture's eye, at the start of the route, looking down the road.
+eye : Geom.Vantage
+eye = {
+	along: Along.metres(0.0),
+	across: Across.metres(0.0),
+	yaw: Angle.straight_ahead,
+}
+
+## A tower standing `right` of the road's middle, unturned, its beacon at
+## `brightness`, or nothing if it stood behind the camera.
 tower_shapes : Distance, Fraction -> List(Shapes.Shape)
-tower_shapes = |right, brightness|
-	match Geom.ahead_on_level({ right, forward: tower_forward }) {
-		Ok(foot) => tower_shapes_at(foot, brightness)
+tower_shapes = |right, brightness| {
+	placed_tower : Geom.Placed(Tower)
+	placed_tower = {
+		road_point: { along: Along.at(tower_forward), across: Across.right_of_middle(right) },
+		lift: Distance.zero,
+		kind: { yaw: Angle.straight_ahead, beacon_brightness: brightness },
+	}
+	place = Ahead(SegmentPlace.Position.first)
+	match Pipeline.sighting_of(placed_tower, { road: straight_road, vantage: eye, place }) {
+		Ok(sighting) =>
+			sighting.kind.scenery_picture({
+				spot: sighting.spot,
+				cam_focal: Lens.resting_focal,
+				context: { road: straight_road, vantage: eye },
+			}).to_shapes()
 		Err(BehindCamera) => []
 	}
-
-## A tower whose foot is at `foot`, unturned, its beacon at `brightness`.
-tower_shapes_at : Geom.LevelPoint, Fraction -> List(Shapes.Shape)
-tower_shapes_at = |foot, brightness| {
-	right = foot.right()
-	corner_point = |corner| {
-		offset = Tower.corner_offset(corner)
-		{
-			right: right.plus(offset.across),
-			forward: tower_forward.plus(offset.along),
-		}
-	}
-	spot = Spot.at({
-		place: Ahead(SegmentPlace.Position.first),
-		road_point: {
-			along: Along.metres(tower_forward.to_metres()),
-			across: Across.metres(right.to_metres()),
-		},
-		lift: Distance.zero,
-		foot,
-	})
-	Tower.tower_shapes(
-		{ yaw: Angle.straight_ahead, beacon_brightness: brightness },
-		{
-			spot,
-			cam_focal: Lens.resting_focal,
-			context: {
-				back_left: corner_point(BackLeft),
-				back_right: corner_point(BackRight),
-				front_right: corner_point(FrontRight),
-				front_left: corner_point(FrontLeft),
-			},
-		},
-	)
 }
 
 ## What the clock and the beacons say at `clock`, a line each.
@@ -143,8 +131,8 @@ status_lines : Clock -> List(Str)
 status_lines = |clock| {
 	period = Beacon.beacon_period
 	into_blink = clock.steps_since(Clock.start).wrapped_to(period)
-	first_tower = ReadoutText.percent_text(brightness_at(clock, first_tower_key))
-	second_tower = ReadoutText.percent_text(brightness_at(clock, second_tower_key))
+	first_tower = ReadoutText.percent_text(first_beacon.brightness_at(clock))
+	second_tower = ReadoutText.percent_text(second_beacon.brightness_at(clock))
 	[
 		"Clock: step ${clock.to_str()}",
 		"Blink: ${step_count_text(into_blink)} of ${step_count_text(period)} steps",
@@ -162,8 +150,8 @@ expect
 	[5400, 5430, 5447, 5459, 5460, 5461, 5519, 5520, 5640].all(
 		|step| {
 			clock = Clock.at_step(step)
-			first_tower = brightness_at(clock, first_tower_key)
-			second_tower = brightness_at(clock, second_tower_key)
+			first_tower = first_beacon.brightness_at(clock)
+			second_tower = second_beacon.brightness_at(clock)
 			is_near(first_tower, second_tower.less().to_f64())
 		},
 	)
@@ -182,7 +170,7 @@ is_near = |share, want| (share.to_f64() - want).abs() <= 0.0000001
 # The picture depends on the clock. A beacon comes back after a whole blink,
 # though the sky goes on darkening.
 expect picture_shapes(Clock.at_step(5430)) != picture_shapes(Clock.at_step(5431))
-expect brightness_at(Clock.at_step(5430), 0) == brightness_at(Clock.at_step(5550), 0)
+expect first_beacon.brightness_at(Clock.at_step(5430)) == first_beacon.brightness_at(Clock.at_step(5550))
 
 # The picture follows the buttons' clock.
 expect

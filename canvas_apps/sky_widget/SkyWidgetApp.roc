@@ -1,7 +1,7 @@
 ## The widget for the Safari tutorial's setting sun. Six buttons, like a video
 ## recorder's, run the ride's clock forward and back or step it one at a time,
 ## and each frame is worked out from that clock alone. A click anywhere else does nothing. The picture is
-## the ride's own sky, looking straight at the sun, drawn by Backdrop at two
+## the ride's own sky, looking straight at the sun, drawn by Sky and Sun at two
 ## thirds of its size. Below it, lines of text read out the calls to Sky, and a
 ## small chart plots their answers over the whole sunset. The book opens it at
 ## one of three jobs, and each job adds a call.

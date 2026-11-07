@@ -1,6 +1,6 @@
 ## SafariFrame is test code, like everything in this gates folder: the game
 ## never runs any of it. SafariFrame paints one Safari frame into a list of
-## 0xRRGGBB pixels, in Roc: the sky and the grass (BackdropPixels), the sun
+## 0xRRGGBB pixels, in Roc: the sky and the grass (SkyAndGrassPixels), the sun
 ## (SunPixels), then the frame's shapes in paint order (ShapesPixels), all
 ## turned by the camera's roll (the rider's lean, which tilts the whole picture about the
 ## centre of the screen). Its pixels are exact and the same on every run.
@@ -27,12 +27,12 @@
 ## pixels, ScanlineFill fills polygons and discs, and ShapesPixels, the Roc twin
 ## of shapes_canvas.js, paints shapes with it.
 import game.Angle
-import BackdropPixels
 import game.FrameView
 import game.Screen
 import PixelGrid
 import ScreenRoll
 import ShapesPixels
+import SkyAndGrassPixels
 import SunPixels
 
 SafariFrame :: [].{
@@ -41,7 +41,7 @@ SafariFrame :: [].{
 	picture_pixels : FrameView -> List(U32)
 	picture_pixels = |scene| {
 		roll = SafariFrame.screen_roll(scene.roll)
-		var $px = BackdropPixels.backdrop_pixels(roll, scene.sky_colors)
+		var $px = SkyAndGrassPixels.sky_and_grass_pixels(roll, scene.sky_colors)
 		$px = SunPixels.pixels_with_sun($px, { roll, sun: scene.sun_sighting })
 		ShapesPixels.pixels_with_shapes($px, { roll, shapes: scene.shapes })
 	}

@@ -4,8 +4,11 @@ import Pixels
 import Clock
 import Fraction
 import HexColor
+import Screen
 import Sun
+import lib.Brush
 import lib.RgbColor
+import lib.Shapes
 
 Sky :: [].{
 
@@ -32,6 +35,28 @@ Sky :: [].{
 	## The sky's two colors at `clock`.
 	colors_at : Clock -> Sky.Colors
 	colors_at = |clock| { top: sky_top_color(clock), horizon: sky_horizon_color(clock) }
+
+	## How far down to the horizon the sky holds its top colour before it
+	## fades to the horizon's.
+	sky_top_stop : Fraction
+	sky_top_stop = Fraction.of(0.2)
+
+	## The sky in `colors`: a gradient from the top colour down to the
+	## horizon's, over the rectangle above the horizon.
+	sky_shape : Sky.Colors -> Shapes.Shape
+	sky_shape = |colors|
+		Screen.above_horizon_rect(
+			Linear({
+				stops: {
+					start_color: Brush.opaque(colors.top),
+					end_color: Brush.opaque(colors.horizon),
+					start_offset: sky_top_stop.to_f64(),
+					end_offset: 1.0,
+				},
+				start_point: { x: 0.0, y: 0.0 },
+				end_point: { x: 0.0, y: Screen.horizon_y.to_f64() },
+			}),
+		)
 }
 
 ## How far toward dusk the sky is when the sun has just set: a little over

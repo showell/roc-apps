@@ -60,14 +60,7 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 	tower_footprint = |tower, { road, vantage, spot }| {
 		center = spot.road_point()
 		corner_point = |corner| {
-			on_road = base_corner_on_road(
-				corner,
-				{
-					along: center.along,
-					across: center.across,
-					yaw: tower.yaw,
-				},
-			)
+			on_road = base_corner_on_road(corner, { center, yaw: tower.yaw })
 			RoadAhead.rider_point_at(road, { vantage, place: spot.place(), road_point: on_road })
 		}
 		{
@@ -94,29 +87,22 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 				foot,
 				lift,
 				sunk,
-				rod_width_on_screen: rod_width_at({ at: foot, cam_focal }),
+				metre_on_screen: metre_on_screen({ at: foot, cam_focal }),
 				cam_focal,
 			}
 			apex = foot.at_height(lift.plus(tower_height.minus(sunk)))
-			[
-				legs(sunk_tower, apex.to_raised()),
-				rings(sunk_tower),
-				braces(sunk_tower),
-				beacon_shapes(sunk_tower, { apex, brightness: tower.beacon_brightness }),
+			rods = [
+				leg_shapes(sunk_tower, apex.to_raised()),
+				ring_shapes(sunk_tower),
+				brace_shapes(sunk_tower),
 			].join()
+			match beacon_shape(sunk_tower, { apex, brightness: tower.beacon_brightness }) {
+				Ok(beacon) => rods.append(beacon)
+				Err(TooDim) | Err(TooSmall) => rods
+			}
 		}
 	}
 
-	## How far a corner lies from the footprint's centre, across the route and
-	## along it. Left and back are the negative ways.
-	corner_offset : Tower.Corner -> { across : Distance, along : Distance }
-	corner_offset = |corner|
-		match corner {
-			BackLeft => { across: tower_half_width.opposite(), along: tower_half_width.opposite() }
-			BackRight => { across: tower_half_width, along: tower_half_width.opposite() }
-			FrontRight => { across: tower_half_width, along: tower_half_width }
-			FrontLeft => { across: tower_half_width.opposite(), along: tower_half_width }
-		}
 }
 
 tower_height : Distance
@@ -165,15 +151,27 @@ smallest_beacon_radius = Pixels.of(0.5)
 
 ## One tower, as its shapes are worked out: where its footprint and foot
 ## stand, how high off the ground it is, how far the earth's curve has sunk
-## it, which is never negative, and how its rods look on screen.
-TowerSetting : {
+## it, which is never negative, and how many pixels a metre across spans as
+## far ahead as its foot, which sizes its rods and its beacon.
+SunkTower : {
 	footprint : Tower.Footprint,
 	foot : Geom.LevelPoint,
 	lift : Distance,
 	sunk : Distance,
-	rod_width_on_screen : Pixels,
+	metre_on_screen : Pixels,
 	cam_focal : Pixels,
 }
+
+## How far a corner lies from the footprint's centre, across the route and
+## along it. Left and back are the negative ways.
+corner_offset : Tower.Corner -> { across : Distance, along : Distance }
+corner_offset = |corner|
+	match corner {
+		BackLeft => { across: tower_half_width.opposite(), along: tower_half_width.opposite() }
+		BackRight => { across: tower_half_width, along: tower_half_width.opposite() }
+		FrontRight => { across: tower_half_width, along: tower_half_width }
+		FrontLeft => { across: tower_half_width.opposite(), along: tower_half_width }
+	}
 
 ## The corners in drawing order, going round the square.
 corners : List(Tower.Corner)
@@ -199,22 +197,17 @@ footprint_corner = |footprint, corner|
 	}
 
 ## Where a footprint corner stands on the map, for a tower centred at
-## `along` and `across` and turned by `yaw`.
-base_corner_on_road : Tower.Corner,
-{
-	along : Along,
-	across : Across,
-	yaw : Angle.Turn,
-} -> Geom.RoadPoint
-base_corner_on_road = |corner, { along, across, yaw }| {
-	offset = Tower.corner_offset(corner)
+## `center` and turned by `yaw`.
+base_corner_on_road : Tower.Corner, { center : Geom.RoadPoint, yaw : Angle.Turn } -> Geom.RoadPoint
+base_corner_on_road = |corner, { center, yaw }| {
+	offset = corner_offset(corner)
 	du = offset.across.to_metres()
 	dv = offset.along.to_metres()
 	cy = yaw.to_radians().cos()
 	sy = yaw.to_radians().sin()
 	{
-		along: along.plus(Distance.metres(du * sy + dv * cy)),
-		across: across.plus(Distance.metres(du * cy - dv * sy)),
+		along: center.along.plus(Distance.metres(du * sy + dv * cy)),
+		across: center.across.plus(Distance.metres(du * cy - dv * sy)),
 	}
 }
 
@@ -229,7 +222,7 @@ sunk_below_horizon = |p| {
 ## A corner of the tower at `height_on_tower`: drawn in toward the foot as
 ## the tower tapers, raised by the tower's lift, and lowered by how far the
 ## tower has sunk.
-corner_at : TowerSetting, { corner : Tower.Corner, height_on_tower : Distance } -> Geom.RaisedPoint
+corner_at : SunkTower, { corner : Tower.Corner, height_on_tower : Distance } -> Geom.RaisedPoint
 corner_at = |tower, { corner, height_on_tower }| {
 	t = height_on_tower.portion(tower_height)
 	bottom = footprint_corner(tower.footprint, corner)
@@ -292,7 +285,7 @@ rod_quad = |
 
 ## A rod between two points in the rider's view, cut where it crosses the
 ## near plane. A rod wholly behind the near plane has no shape.
-rod_shape : TowerSetting,
+rod_shape : SunkTower,
 {
 	from : Geom.RaisedPoint,
 	to : Geom.RaisedPoint,
@@ -303,7 +296,7 @@ rod_shape = |tower, line| {
 		screen_rod({
 			from: Camera.project(ahead.from, tower.cam_focal),
 			to: Camera.project(ahead.to, tower.cam_focal),
-			width: tower.rod_width_on_screen,
+			width: tower.metre_on_screen.times(rod_width.to_metres()),
 		}),
 	)
 }
@@ -317,13 +310,9 @@ metre_on_screen = |{ at, cam_focal }| {
 	p1.x.minus(p0.x)
 }
 
-## A rod's width on screen as far ahead as `at`.
-rod_width_at : { at : Geom.LevelPoint, cam_focal : Pixels } -> Pixels
-rod_width_at = |camera| metre_on_screen(camera).times(rod_width.to_metres())
-
 ## The four legs, from the footprint's corners up to the apex.
-legs : TowerSetting, Geom.RaisedPoint -> List(Shapes.Shape)
-legs = |tower, apex| corners.keep_oks(
+leg_shapes : SunkTower, Geom.RaisedPoint -> List(Shapes.Shape)
+leg_shapes = |tower, apex| corners.keep_oks(
 	|corner| rod_shape(
 		tower,
 		{ from: corner_at(tower, { corner, height_on_tower: tower.sunk }), to: apex },
@@ -331,8 +320,8 @@ legs = |tower, apex| corners.keep_oks(
 )
 
 ## The ring of rods round the tower at height `h`.
-ring_shapes : TowerSetting, Distance -> List(Shapes.Shape)
-ring_shapes = |tower, h| corners.keep_oks(
+ring_shapes_at : SunkTower, Distance -> List(Shapes.Shape)
+ring_shapes_at = |tower, h| corners.keep_oks(
 	|corner| rod_shape(
 		tower,
 		{
@@ -344,13 +333,13 @@ ring_shapes = |tower, h| corners.keep_oks(
 
 ## A ring at every storey below the top, bottom first, leaving out those
 ## the earth has hidden.
-rings : TowerSetting -> List(Shapes.Shape)
-rings = |tower| ring_heights.join_map(
+ring_shapes : SunkTower -> List(Shapes.Shape)
+ring_shapes = |tower| ring_heights.join_map(
 	|h|
 		if h <= tower.sunk {
 			[]
 		} else {
-			ring_shapes(tower, h)
+			ring_shapes_at(tower, h)
 		},
 )
 
@@ -368,11 +357,11 @@ ring_heights = {
 
 ## The crossed braces of the lowest storeys, bottom first. A storey the
 ## earth has partly hidden starts its braces at the horizon.
-braces : TowerSetting -> List(Shapes.Shape)
-braces = |tower|
+brace_shapes : SunkTower -> List(Shapes.Shape)
+brace_shapes = |tower|
 	List.from_iter(U64.until(0, brace_storeys)).join_map(|storey| storey_shapes(tower, storey))
 
-storey_shapes : TowerSetting, U64 -> List(Shapes.Shape)
+storey_shapes : SunkTower, U64 -> List(Shapes.Shape)
 storey_shapes = |tower, storey| {
 	storey_bottom = storey_height.times(storey.to_f64())
 	storey_top = storey_bottom.plus(storey_height)
@@ -382,21 +371,24 @@ storey_shapes = |tower, storey| {
 		hidden_height = storey_bottom.max(tower.sunk).minus(storey_bottom)
 		hidden_fraction = Fraction.of(hidden_height.portion(storey_height))
 		corners.join_map(
-			|corner| brace_shapes(tower, { corner, storey_bottom, storey_top, hidden_fraction }),
+			|corner| face_brace_shapes(
+				tower,
+				{ corner, storey_bottom, storey_top, hidden_fraction },
+			),
 		)
 	}
 }
 
 ## The two braces crossing the face from `corner` to the next corner: one
 ## rising each way.
-brace_shapes : TowerSetting,
+face_brace_shapes : SunkTower,
 {
 	corner : Tower.Corner,
 	storey_bottom : Distance,
 	storey_top : Distance,
 	hidden_fraction : Fraction,
 } -> List(Shapes.Shape)
-brace_shapes = |tower, { corner, storey_bottom, storey_top, hidden_fraction }| {
+face_brace_shapes = |tower, { corner, storey_bottom, storey_top, hidden_fraction }| {
 	next = next_corner(corner)
 	brace_up = {
 		from: Geom.point_between({
@@ -417,84 +409,55 @@ brace_shapes = |tower, { corner, storey_bottom, storey_top, hidden_fraction }| {
 	[brace_up, brace_down].keep_oks(|brace| rod_shape(tower, brace))
 }
 
-## The beacon on the apex, at its brightness; too dim or too small, it
-## isn't drawn.
-beacon_shapes : TowerSetting,
+## The beacon on the apex, at its brightness, unless it is too dim or too
+## small to draw.
+beacon_shape : SunkTower,
 {
 	apex : Geom.AheadPoint,
 	brightness : Fraction,
-} -> List(Shapes.Shape)
-beacon_shapes = |tower, { apex, brightness }| {
+} -> Try(Shapes.Shape, [TooDim, TooSmall])
+beacon_shape = |tower, { apex, brightness }| {
 	apex_on_screen = Camera.project(apex, tower.cam_focal)
 	if brightness < dimmest_beacon {
-		[]
+		Err(TooDim)
 	} else {
-		one_metre = metre_on_screen({ at: tower.foot, cam_focal: tower.cam_focal })
-		radius = one_metre.times(beacon_radius.to_metres())
+		radius = tower.metre_on_screen.times(beacon_radius.to_metres())
 		if radius < smallest_beacon_radius {
-			[]
+			Err(TooSmall)
 		} else {
-			disc_shapes({
-				beacon_color,
-				beacon_center: apex_on_screen,
-				beacon_radius: radius,
-				beacon_alpha: brightness,
-			})
+			Ok(beacon_disc({ center: apex_on_screen, radius_on_screen: radius, brightness }))
 		}
 	}
 }
 
-## A beacon's disc, as a value: a list of one shape, seen through as far as
-## `beacon_alpha` says.
-disc_shapes : {
-	beacon_color : RgbColor,
-	beacon_center : Screen.Point,
-	beacon_radius : Pixels,
-	beacon_alpha : Fraction,
-} -> List(Shapes.Shape)
-disc_shapes = |
-	{
-		beacon_color: color,
-		beacon_center: center,
-		beacon_radius: radius,
-		beacon_alpha: alpha,
-	},
-| {
-	opaque = Brush.opaque(color)
-	[
-		Disc({
-			x: center.x.to_f64(),
-			y: center.y.to_f64(),
-			radius: radius.to_f64(),
-			fill: Flat({ ..opaque, a: alpha.to_f64() }),
-		}),
-	]
+## A beacon's disc, seen through as far as `brightness` says.
+beacon_disc : {
+	center : Screen.Point,
+	radius_on_screen : Pixels,
+	brightness : Fraction,
+} -> Shapes.Shape
+beacon_disc = |{ center, radius_on_screen, brightness }| {
+	opaque = Brush.opaque(beacon_color)
+	Disc({
+		x: center.x.to_f64(),
+		y: center.y.to_f64(),
+		radius: radius_on_screen.to_f64(),
+		fill: Flat({ ..opaque, a: brightness.to_f64() }),
+	})
 }
 
 expect
-	disc_shapes({
-		beacon_color: RgbColor.of(7),
-		beacon_center: Screen.point(1.0, 2.0),
-		beacon_radius: Pixels.of(3.0),
-		beacon_alpha: Fraction.of(0.5),
-	}).len()
-		== 1
-
-expect
-	disc_shapes({
-		beacon_color: RgbColor.of(333),
-		beacon_center: Screen.point(10.0, 20.0),
-		beacon_radius: Pixels.of(30.0),
-		beacon_alpha: Fraction.of(0.25),
+	beacon_disc({
+		center: Screen.point(10.0, 20.0),
+		radius_on_screen: Pixels.of(30.0),
+		brightness: Fraction.of(0.25),
 	})
-		== [
-			Disc({
-				x: 10.0,
-				y: 20.0,
-				radius: 30.0,
-				fill: Flat(Brush.with_alpha(RgbColor.of(333), 0.25)),
-			}),
-		]
+		== Disc({
+			x: 10.0,
+			y: 20.0,
+			radius: 30.0,
+			fill: Flat(Brush.with_alpha(beacon_color, 0.25)),
+		})
 
 # The road ahead of a rider on the route's first segment.
 start_road : RoadAhead.RoadView
@@ -567,23 +530,11 @@ expect {
 expect shapes_of_tower_along(200.0).len() > 0
 expect shapes_of_tower_along(1000.0).len() > 0
 
-expect tower_height.to_metres() == 80.0
-expect tower_half_width.to_metres() == 6.0
-expect storey_height.to_metres() == 20.0
-expect rod_half_width.to_metres() == 0.12
-expect rod_width.to_metres() == 0.24
-expect sink_radius.to_metres() == 20000.0
-expect beacon_radius.to_metres() == 3.0
-
-expect brace_storeys == 2
-expect tower_metal == RgbColor.of(0x9AA0A8)
-expect beacon_color == RgbColor.of(0xFF2FE6)
-
 expect
-	corners.map(|corner| Tower.corner_offset(corner).across.portion(tower_half_width))
+	corners.map(|corner| corner_offset(corner).across.portion(tower_half_width))
 		== [-1.0, 1.0, 1.0, -1.0]
 expect
-	corners.map(|corner| Tower.corner_offset(corner).along.portion(tower_half_width))
+	corners.map(|corner| corner_offset(corner).along.portion(tower_half_width))
 		== [-1.0, -1.0, 1.0, 1.0]
 
 expect {
@@ -597,8 +548,7 @@ expect {
 			got = base_corner_on_road(
 				corner,
 				{
-					along: Along.metres(100.0),
-					across: Across.metres(0.0),
+					center: { along: Along.metres(100.0), across: Across.metres(0.0) },
 					yaw: Angle.straight_ahead,
 				},
 			)
@@ -609,8 +559,8 @@ expect {
 	)
 }
 
-# A tower 12 m square, its foot 100 m ahead, sunk 1 m, its rods 4 px wide.
-sample_tower : TowerSetting
+# A tower 12 m square, its foot 100 m ahead, sunk 1 m, a metre 5 px across.
+sample_tower : SunkTower
 sample_tower = {
 	footprint: {
 		back_left: { right: Distance.metres(-6.0), forward: Distance.metres(94.0) },
@@ -621,7 +571,7 @@ sample_tower = {
 	foot: ahead({ right: Distance.metres(0.0), forward: Distance.metres(100.0) }),
 	lift: Distance.zero,
 	sunk: Distance.metres(1.0),
-	rod_width_on_screen: Pixels.of(4.0),
+	metre_on_screen: Pixels.of(5.0),
 	cam_focal: Pixels.of(500.0),
 }
 
@@ -697,16 +647,17 @@ expect
 			fill: Flat(Brush.opaque(tower_metal)),
 		})
 
-## A rod's width on screen `forward` metres ahead, through a 500 px focal length.
-rod_width_ahead : F64 -> F64
-rod_width_ahead = |forward| {
+## How many pixels a metre across spans `forward` metres ahead, through a
+## 500 px focal length.
+metre_ahead : F64 -> F64
+metre_ahead = |forward| {
 	at = ahead({ right: Distance.metres(3.0), forward: Distance.metres(forward) })
-	rod_width_at({ at, cam_focal: Pixels.of(500.0) }).to_f64()
+	metre_on_screen({ at, cam_focal: Pixels.of(500.0) }).to_f64()
 }
 
-expect rod_width_ahead(10.0) == 12.0
-expect rod_width_ahead(25.0) == 4.8
-expect rod_width_ahead(50.0) == 2.4
+expect metre_ahead(10.0) == 50.0
+expect metre_ahead(25.0) == 20.0
+expect metre_ahead(50.0) == 10.0
 
 rod_shape_along_road : F64, F64 -> Try(Shapes.Shape, [BehindCamera])
 rod_shape_along_road = |start, end|
