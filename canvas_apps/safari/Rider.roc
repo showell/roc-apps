@@ -11,6 +11,7 @@ import Geom
 import LeanSearch
 import Motorcycle
 import RiderState
+import Segment
 import Speed
 import Throttle
 import VehicleLimits
@@ -19,7 +20,7 @@ import World
 Rider :: [].{
 	Decision : { lean_step : Angle.LeanChange, acceleration : Acceleration }
 
-	rider_state_at_next_step : RiderState, List(World.Segment) -> RiderState
+	rider_state_at_next_step : RiderState, List(Segment) -> RiderState
 	rider_state_at_next_step = |state, route_segments| {
 		seg = state.segment_index.segment_in(route_segments)
 		moved = {
@@ -35,7 +36,7 @@ Rider :: [].{
 		Gaze.next_rider_gaze(resolved, resolved.segment_index.segment_in(route_segments))
 	}
 
-	is_finished : RiderState, List(World.Segment) -> Bool
+	is_finished : RiderState, List(Segment) -> Bool
 	is_finished = |s, route_segments| {
 		seg = s.segment_index.segment_in(route_segments)
 		match seg.ending {
@@ -46,7 +47,7 @@ Rider :: [].{
 }
 
 ## The end of a segment that continues, and the segment it continues onto.
-Seam : { segment : World.Segment, next : World.SegmentIndex }
+Seam : { segment : Segment, next : World.SegmentIndex }
 
 ## A rider this slow near the route's end stops there.
 stopping_speed : Speed
@@ -54,7 +55,7 @@ stopping_speed = Speed.metres_a_step(0.1)
 
 ## The lean toward the best line, and the throttle for the motorcycle once it
 ## leans so.
-decide : Motorcycle, World.Segment -> Rider.Decision
+decide : Motorcycle, Segment -> Rider.Decision
 decide = |motorcycle, seg| {
 	lean_step = LeanSearch.best_lean(motorcycle).change_from(motorcycle.lean)
 	{
@@ -69,7 +70,7 @@ decide = |motorcycle, seg| {
 rider_on_next_segment : RiderState, Seam -> RiderState
 rider_on_next_segment = |rs, { segment: seg, next }| {
 	m = rs.motorcycle
-	bend = World.bend_out_of(seg)
+	bend = seg.bend_out_of()
 	on_next = Geom.point_in_segment_after({ along: m.along, across: m.across }, bend)
 	{
 		..rs,
@@ -83,7 +84,7 @@ rider_on_next_segment = |rs, { segment: seg, next }| {
 	}
 }
 
-stop_at_route_end : Motorcycle, World.Segment -> Motorcycle
+stop_at_route_end : Motorcycle, Segment -> Motorcycle
 stop_at_route_end = |moved, seg| {
 	end = Along.at(seg.length)
 	in_zone = end.distance_from(moved.along) < VehicleLimits.bend_approach
@@ -109,14 +110,14 @@ cross_if_on_road = |moved, seam| {
 	}
 }
 
-first_segments : List(World.Segment)
+first_segments : List(Segment)
 first_segments = [
 	World.route_segment(0),
 	World.route_segment(1),
 	World.route_segment(2),
 ]
 
-first_segment : World.Segment
+first_segment : Segment
 first_segment = World.route_segment(0)
 
 first_seam : Seam
@@ -179,7 +180,7 @@ expect crossed.motorcycle.lean.to_radians() == 0.05
 expect crossed.eyes.look_depth.to_f64() == 0.4
 expect crossed.motorcycle.heading.to_radians() - 0.7 == 0.0
 expect {
-	exit_turn = World.bend_out_of(first_segment).turn
+	exit_turn = first_segment.bend_out_of().turn
 	crossed.motorcycle.yaw.to_radians() - (0.1 - exit_turn.to_radians()) == 0.0
 }
 
@@ -193,7 +194,7 @@ expect {
 expect cross_if_on_road(rider_at(100.0, 0.0), first_seam).segment_index.to_i64() == 0
 expect cross_if_on_road(rider_at(499.0, 0.0), first_seam).segment_index.to_i64() == 1
 
-last_seg : World.Segment
+last_seg : Segment
 last_seg = World.route_segment(18)
 
 clamped_at_finish : F64, F64 -> Motorcycle

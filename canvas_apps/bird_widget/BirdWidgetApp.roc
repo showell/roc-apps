@@ -16,6 +16,7 @@ import game.Lens
 import game.Polygon
 import game.PosedBird
 import game.Geom
+import game.Segment
 import game.Trees
 import game.Screen
 import game.SegmentPlace
@@ -48,7 +49,7 @@ closing_gap : VcrButtons.NumberRange(Distance)
 closing_gap = VcrButtons.gap_range({ farthest: Distance.metres(75.0), metres_a_frame: 0.125 })
 
 ## The bird's flight on a segment that has one.
-segment_flight : World.Segment -> Try(BirdFlight.Flight, [NoFlight])
+segment_flight : Segment -> Try(BirdFlight.Flight, [NoFlight])
 segment_flight = |segment|
 	match segment.crossing {
 		BirdHere({ perch, leaves_for: FliesTo(to) }) => Ok({ from: perch, to })

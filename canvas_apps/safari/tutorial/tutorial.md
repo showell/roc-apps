@@ -1670,7 +1670,7 @@ Mind what `gaze_yaw` is measured from. The road has a direction, `yaw` is how fa
 
 Three small types say what a pig can do to the rider. Each one carries its payload only where it means something. A segment's `pig_interest` says what its pigs are to the rider, and only `Distracting` has a pig in it:
 
-{{code World.PigInterest}}
+{{code Segment.PigInterest}}
 
 The rider looks at a pig or at the road, and only a pig has an angle:
 
@@ -2222,7 +2222,7 @@ The caller's return type is written in place, a tag union that exists for this o
 
 And that's called from a `match` in the middle of a record, which is a reminder that `match` is an expression. The plan's plain `BirdHere` tag comes in, and `BirdHere(route_segments)` goes out:
 
-{{code World.built_segment from "crossing: match plan.crossing {" to "QuietRoad => QuietRoad"}}
+{{code Segment.from_choices from "crossing: match choices.crossing {" to "QuietRoad => QuietRoad"}}
 
 Each frame, a sighting reads the route back. The crossing is matched in full, so a third kind of crossing would stop here until someone says what a bird sighting should do about it:
 

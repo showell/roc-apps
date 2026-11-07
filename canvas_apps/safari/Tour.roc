@@ -4,6 +4,7 @@
 ## camera roll, the two sky colours and the sun. SafariApp turns it into a
 ## canvas app, with the keys, the pause, and the frame leaned by the roll.
 import Angle
+import Segment
 import World
 import RideInstant
 import Sky
@@ -16,7 +17,7 @@ import Lens
 
 ## The route, the instant the ride has reached, and the instants before it.
 Tour := {
-	route_segments : List(World.Segment),
+	route_segments : List(Segment),
 	instant : RideInstant,
 	past_instants : List(RideInstant),
 }.{

@@ -10,6 +10,7 @@ import Beacon
 import Clock
 import Distance
 import RoadAhead
+import Segment
 import SegmentPlace
 import Steps
 import Geom
@@ -83,7 +84,7 @@ TowerSighting :: [].{
 		[BehindCamera, NoMidTower],
 	)
 	mid_tower = |road, { in_view, clock }|
-		if World.has_mid_tower(in_view.segment) {
+		if Segment.has_mid_tower(in_view.segment) {
 			tower_if_ahead(
 				road,
 				{
@@ -148,7 +149,7 @@ expect TowerSighting.tower_beyond.to_metres() == 160.0
 expect TowerSighting.tower_right.to_metres() == 20.0
 expect TowerSighting.mid_tower_left.to_metres() == 100.0
 
-route_segments : List(World.Segment)
+route_segments : List(Segment)
 route_segments = [
 	World.route_segment(0),
 	World.route_segment(1),
@@ -188,7 +189,7 @@ ride_start = |road| {
 expect TowerSighting.segment_towers(origin_road, ride_start(origin_road)).len() == 1
 expect TowerSighting.mid_tower(origin_road, ride_start(origin_road)).is_err()
 expect TowerSighting.towers_in_view(origin_road, Clock.start).len() == 3
-expect route_segments.all(|seg| !World.has_mid_tower(seg))
+expect route_segments.all(|seg| !seg.has_mid_tower())
 
 ## The first tower in view on the segment at `position` on the road ahead.
 first_tower_on : U32 -> Pipeline.Sighted(Tower)

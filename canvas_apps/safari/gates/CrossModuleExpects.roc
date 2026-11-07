@@ -22,6 +22,7 @@ import game.Distance
 import game.EmojiStills
 import game.Fraction
 import game.RoadAhead
+import game.Segment
 import game.SegmentPlace
 import game.Geom
 import game.Ground
@@ -134,7 +135,7 @@ far_top : F64
 far_top = Conifer.Gold.scenery_height().to_metres()
 
 ## A straight segment 200 m long holding only `trees`.
-segment_of : List(Trees.RoadsideTree) -> World.Segment
+segment_of : List(Trees.RoadsideTree) -> Segment
 segment_of = |trees| {
 	..World.route_segment(0),
 	length: Distance.metres(200.0),
@@ -153,7 +154,7 @@ birds_on : List(Trees.RoadsideTree),
 birds_on = |trees, seen_from| birds_on_segment(segment_of(trees), seen_from)
 
 ## The birds on `segment_index`, for a rider `rider_along` metres into it.
-birds_on_segment : World.Segment,
+birds_on_segment : Segment,
 {
 	rider_along : F64,
 	cam_focal : Pixels,
@@ -216,7 +217,7 @@ bird_count : List(Trees.RoadsideTree), { rider_along : F64, cam_focal : Pixels }
 bird_count = |trees, seen_from| birds_on(trees, seen_from).len().to_i64_wrap()
 
 ## A segment where a cat crosses, with the same trees: it has no bird.
-segment_with_cat : World.Segment
+segment_with_cat : Segment
 segment_with_cat = { ..segment_of(left_trees), crossing: World.route_segment(3).crossing }
 
 expect bird_count(left_trees, { rider_along: 0.0, cam_focal: Pixels.of(500.0) }) == 1
@@ -289,10 +290,10 @@ expect past_bend_trees(-80.0).len() == 0
 
 # CrossingSighting's cats: which cats are in view as the rider comes on them.
 ## The second segment, with a cat crossing it.
-cat_segment : World.Segment
+cat_segment : Segment
 cat_segment = { ..World.route_segment(1), crossing: World.route_segment(3).crossing }
 
-cat_segments : List(World.Segment)
+cat_segments : List(Segment)
 cat_segments = [World.route_segment(0), cat_segment, World.route_segment(2)]
 
 ## The first three segments seen from the origin, at 1 m a step.
@@ -326,7 +327,7 @@ cat_at = |number| CrossingSighting.segment_cat(
 expect cat_segments.map(has_cat) == [False, True, False]
 
 ## Whether a segment has a cat waiting by the road.
-has_cat : World.Segment -> Bool
+has_cat : Segment -> Bool
 has_cat = |seg|
 	match seg.crossing {
 		CatCrosses(_) => True
@@ -402,7 +403,7 @@ expect cats_on_road([World.SegmentIndex.first]).len() == 0
 # top speed it starts closer to the cat than the cat is to the segment's start,
 # and a rider comes onto a segment no further along than that.
 ## The cats of the route, each with its segment.
-route_cats : List({ segment : World.Segment, crossing : Cat.Crossing })
+route_cats : List({ segment : Segment, crossing : Cat.Crossing })
 route_cats = World.segments.join_map(
 	|segment|
 		match segment.crossing {
@@ -421,7 +422,7 @@ expect farthest_start < Cat.cat_along.plus(Cat.cat_beyond_tree).from_start()
 expect route_cats.all(|{ crossing, .. }| farthest_start < crossing.along.from_start())
 
 ## The speed a rider leaves `segment` at: the bend's, or none at the route's end.
-leaving_speed : World.Segment -> Speed
+leaving_speed : Segment -> Speed
 leaving_speed = |segment|
 	match segment.ending {
 		Bends({ turn, .. }) => VehicleLimits.turn_speed(turn.abs())

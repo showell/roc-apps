@@ -9,12 +9,13 @@ import Fraction
 import Gaze
 import Lens
 import RiderState
+import Segment
 import World
 
 RideFocal :: [].{
 
 	## The camera's focal length for where the rider is and how they ride.
-	ride_focal : RiderState, List(World.Segment) -> Pixels
+	ride_focal : RiderState, List(Segment) -> Pixels
 	ride_focal = |rider, route_segments| {
 		seg = rider.segment_index.segment_in(route_segments)
 		attention =
@@ -24,11 +25,11 @@ RideFocal :: [].{
 	}
 }
 
-route_segments : List(World.Segment)
+route_segments : List(Segment)
 route_segments = [World.route_segment(0), cat_segment, World.route_segment(2)]
 
 ## The second segment, with a cat crossing it.
-cat_segment : World.Segment
+cat_segment : Segment
 cat_segment = { ..World.route_segment(1), crossing: World.route_segment(3).crossing }
 
 ## A rider at the start of the first segment, upright and looking ahead.
@@ -60,7 +61,7 @@ crossing_attention_of = |rider|
 	).to_f64()
 
 ## Whether a segment has a cat waiting by the road.
-has_cat : World.Segment -> Bool
+has_cat : Segment -> Bool
 has_cat = |seg|
 	match seg.crossing {
 		CatCrosses(_) => True

@@ -6,13 +6,13 @@
 import Along
 import Distance
 import RoadAhead
+import Segment
 import SegmentPlace
 import Geom
 import Ground
 import BendView
 import Pond
 import Scenery
-import World
 import lib.RgbColor
 
 GroundSighting :: [].{
@@ -178,11 +178,7 @@ bend_corners = |road, bend_view| {
 
 ## The pond past the end of `segment`, which lies at `place`: its water, then
 ## its bank. A segment that ends at no pond has none.
-pond_patches : RoadAhead.RoadView,
-{
-	segment : World.Segment,
-	place : SegmentPlace,
-} -> List(Ground.Patch)
+pond_patches : RoadAhead.RoadView, { segment : Segment, place : SegmentPlace } -> List(Ground.Patch)
 pond_patches = |road, { segment, place }| {
 	is_at_pond =
 		match segment.ending {

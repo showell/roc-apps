@@ -6,6 +6,7 @@ import Along
 import Angle
 import Distance
 import RoadAhead
+import Segment
 import SegmentPlace
 import Geom
 import World
@@ -15,8 +16,8 @@ import World
 BendView := { before : SegmentPlace, bend : Geom.Bend }.{
 
 	## The bend at the end of `segment`, which lies at `before`.
-	of_segment : World.Segment, SegmentPlace -> BendView
-	of_segment = |segment, before| { before, bend: World.bend_out_of(segment) }
+	of_segment : Segment, SegmentPlace -> BendView
+	of_segment = |segment, before| { before, bend: segment.bend_out_of() }
 
 	## The bend at the end of `in_view`, unless the road in view ends there.
 	bend_after : RoadAhead.RoadView, RoadAhead.SegmentInView -> Try(BendView, [RoadEndsInView])
@@ -210,7 +211,7 @@ at_d0 = RoadAhead.rider_point_ahead(
 	},
 )
 
-point_at_d1 : List(World.Segment) -> Geom.RiderPoint
+point_at_d1 : List(Segment) -> Geom.RiderPoint
 point_at_d1 = |route_segments| RoadAhead.rider_point_ahead(
 	{
 		route_segments,

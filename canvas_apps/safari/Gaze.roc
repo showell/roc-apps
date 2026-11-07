@@ -17,6 +17,7 @@ import Motorcycle
 import RiderEyes
 import RiderState
 import lib.Trig
+import Segment
 import World
 
 Gaze :: [].{
@@ -42,7 +43,7 @@ Gaze :: [].{
 	## Where the rider wants to look: at a distracting pig that is near enough
 	## to notice and less than the release angle from the way the motorcycle
 	## points, or else at the road.
-	desired_gaze : Motorcycle, World.Segment -> Gaze.GazeTarget
+	desired_gaze : Motorcycle, Segment -> Gaze.GazeTarget
 	desired_gaze = |motorcycle, seg|
 		match Gawking.eye_catching_pig(seg) {
 			CatchesEye(pig) if Gawking.is_gawking(motorcycle, seg) => {
@@ -58,7 +59,7 @@ Gaze :: [].{
 
 	## This rider with the eyes moved on a step, on `seg`, the segment the rider
 	## is on: the gaze, and the look depth it leaves.
-	next_rider_gaze : RiderState, World.Segment -> RiderState
+	next_rider_gaze : RiderState, Segment -> RiderState
 	next_rider_gaze = |state, seg| {
 		eyes = state.eyes
 		gaze_yaw = next_gaze_yaw(eyes, desired_gaze(state.motorcycle, seg))
@@ -138,10 +139,10 @@ expect
 
 expect Gaze.gaze_attention(Fraction.of(0.25)).to_f64() == 0.15625
 
-plain : World.Segment
+plain : Segment
 plain = World.route_segment(0)
 
-distracting : World.Segment
+distracting : Segment
 distracting = World.route_segment(2)
 
 ## A motorcycle `along` metres into the distracting segment, at rest in every

@@ -4,6 +4,7 @@
 import Acceleration
 import Distance
 import Fraction
+import Segment
 import Speed
 import VehicleLimits
 import World
@@ -28,7 +29,7 @@ Truck := {
 	at_next_step : Truck,
 	{
 		rider_distance : Distance,
-		route_segments : List(World.Segment),
+		route_segments : List(Segment),
 		route_length : Distance,
 	} -> Truck
 	at_next_step = |truck, { rider_distance, route_segments, route_length }| {
@@ -77,7 +78,7 @@ top_speed : Speed
 top_speed = VehicleLimits.top_speed.times(1.1)
 
 ## The next turn of `route_segments` past `route_position`.
-next_bend : List(World.Segment), Distance -> NextBend
+next_bend : List(Segment), Distance -> NextBend
 next_bend = |route_segments, route_position|
 	next_bend_on(route_segments, { route_position, segment_start: Distance.zero })
 
@@ -92,11 +93,7 @@ scheduled_position = |{ rider_distance, route_length }| {
 
 ## The next turn past `route_position` along `segments`, the first of which
 ## starts at `segment_start`. The route's last segment ends in no turn.
-next_bend_on : List(World.Segment),
-{
-	route_position : Distance,
-	segment_start : Distance,
-} -> NextBend
+next_bend_on : List(Segment), { route_position : Distance, segment_start : Distance } -> NextBend
 next_bend_on = |segments, { route_position, segment_start }|
 	match segments {
 		[] => NoBendAhead
@@ -194,17 +191,17 @@ expect schedule_at(1000.0) == 1100.0
 expect schedule_at(1000.0) - 1000.0 == 100.0
 expect schedule_at(0.0) - 0.0 == 500.0
 
-one_segment_list : List(World.Segment)
+one_segment_list : List(Segment)
 one_segment_list = [World.route_segment(0)]
 
-turn_distance : List(World.Segment), F64 -> F64
+turn_distance : List(Segment), F64 -> F64
 turn_distance = |route_segments, route_position|
 	match next_bend(route_segments, Distance.metres(route_position)) {
 		BendAhead(t) => t.distance.to_metres()
 		NoBendAhead => -1.0
 	}
 
-turn_v : List(World.Segment), F64 -> F64
+turn_v : List(Segment), F64 -> F64
 turn_v = |route_segments, route_position|
 	match next_bend(route_segments, Distance.metres(route_position)) {
 		BendAhead(t) => t.turn_speed.to_metres_a_step()
@@ -217,7 +214,7 @@ expect turn_distance(one_segment_list, 499.0) == 1.0
 expect turn_v(one_segment_list, 0.0) == 0.222
 expect turn_v(one_segment_list, 450.0) == 0.222
 expect {
-	first_turn = World.bend_out_of(World.route_segment(0)).turn
+	first_turn = World.route_segment(0).bend_out_of().turn
 	VehicleLimits.turn_speed(first_turn.abs()).to_metres_a_step() == 0.222
 }
 expect turn_distance(one_segment_list, 500.0) == -1.0
@@ -225,7 +222,7 @@ expect turn_distance(one_segment_list, 900.0) == -1.0
 expect turn_distance([World.route_segment(18)], 0.0) == -1.0
 expect turn_distance([], 0.0) == -1.0
 
-two_segments : List(World.Segment)
+two_segments : List(Segment)
 two_segments = [World.route_segment(0), World.route_segment(1)]
 
 expect turn_distance(two_segments, 0.0) == 500.0
@@ -236,7 +233,7 @@ expect turn_distance(two_segments, 820.0) == -1.0
 ## A rider at the start of a route 1000 m long, on the route's first segment.
 rider_on_one_segment : {
 	rider_distance : Distance,
-	route_segments : List(World.Segment),
+	route_segments : List(Segment),
 	route_length : Distance,
 }
 rider_on_one_segment = {

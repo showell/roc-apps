@@ -16,6 +16,7 @@ import game.Gaze
 import game.Geom
 import game.Rider
 import game.RiderState
+import game.Segment
 import game.Speed
 import game.Steps
 import game.Tour
@@ -95,13 +96,13 @@ starting_model : GazeWidgetApp.Model
 starting_model = { played: [first_rider], transport: VcrButtons.transport_at(stretch.first) }
 
 ## The first segment of the route whose pigs catch the rider's eye.
-pig_segment : World.Segment
+pig_segment : Segment
 pig_segment =
 	World.segments.find_first(is_distracting)
 		?? crash "GazeWidgetApp.pig_segment: the route has a distracting pig"
 
 ## Whether a segment's pigs catch the rider's eye.
-is_distracting : World.Segment -> Bool
+is_distracting : Segment -> Bool
 is_distracting = |segment|
 	match segment.pigs {
 		Herd({ interest: Distracting, .. }) => True
@@ -274,7 +275,7 @@ pig_disc = |pig|
 ## The segment's whole herd, and the name of the pig that catches the eye.
 pigs : List(Shapes.Shape)
 pigs =
-	World.segment_pigs(pig_segment)
+	pig_segment.segment_pigs()
 		.map(pig_disc)
 		.append(
 			ScrubWidget.label({
@@ -537,11 +538,11 @@ expect screen_y(Across.metres(-10.0)) == road_middle_y - 10.0 * pixels_a_metre
 expect screen_x(gaze_pig.along) < ScrubWidget.canvas_width
 expect screen_y(gaze_pig.across) < ScrubWidget.picture_bottom_y
 
-expect World.segment_pigs(pig_segment).len() == 49
+expect pig_segment.segment_pigs().len() == 49
 
 # Each pig of the herd is one disc, and the one that catches the eye is among them.
 expect pigs.len() == 50
-expect World.segment_pigs(pig_segment).count_if(|pig| pig == gaze_pig) == 1
+expect pig_segment.segment_pigs().count_if(|pig| pig == gaze_pig) == 1
 
 expect phase_text(EyesOnRoad) == "Eyes on the road"
 expect phase_text(LookingAtPig) == "Looking at the pig, and slowing"

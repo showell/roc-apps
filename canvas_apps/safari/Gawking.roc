@@ -6,6 +6,7 @@ import Billboard
 import Distance
 import Geom
 import Motorcycle
+import Segment
 import Speed
 import VehicleLimits
 import World
@@ -36,9 +37,9 @@ Gawking :: [].{
 
 	## The pig on `seg` that catches the rider's eye: the standout pig of a herd
 	## the rider finds distracting. A herd the rider passes by catches no eye.
-	eye_catching_pig : World.Segment -> [CatchesEye(Geom.Placed(Billboard)), NoPigCatchesEye]
+	eye_catching_pig : Segment -> [CatchesEye(Geom.Placed(Billboard)), NoPigCatchesEye]
 	eye_catching_pig = |seg|
-		match World.standout_pig(seg) {
+		match seg.standout_pig() {
 			Standout({ pig, interest: Distracting }) => CatchesEye(pig)
 			Standout({ interest: Unnoticed, .. }) | NoPigs => NoPigCatchesEye
 		}
@@ -50,7 +51,7 @@ Gawking :: [].{
 	## that. `gawk_brake` holds the rider down for as long as this is true, and
 	## Throttle's `allowed_speed` leaves a gawking rider below the segment's exit
 	## speed, where it lifts any other rider near the end up to it.
-	is_gawking : Motorcycle, World.Segment -> Bool
+	is_gawking : Motorcycle, Segment -> Bool
 	is_gawking = |motorcycle, seg|
 		match eye_catching_pig(seg) {
 			CatchesEye(pig) => motorcycle.along >= pig.along.minus(notice_distance)
@@ -59,7 +60,7 @@ Gawking :: [].{
 
 	## The brake for a gawking rider, who aims to be down to `gawk_speed` by
 	## the settle distance before the pig.
-	gawk_brake : Motorcycle, World.Segment -> VehicleLimits.Limit
+	gawk_brake : Motorcycle, Segment -> VehicleLimits.Limit
 	gawk_brake = |motorcycle, seg|
 		match eye_catching_pig(seg) {
 			CatchesEye(pig) if is_gawking(motorcycle, seg) => {
@@ -84,10 +85,10 @@ expect
 		(Gawking.gawk_least_distance.to_metres(), 1.0),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 
-plain : World.Segment
+plain : Segment
 plain = World.route_segment(0)
 
-distracting : World.Segment
+distracting : Segment
 distracting = World.route_segment(2)
 
 expect plain.pigs == NoPigs
@@ -103,7 +104,7 @@ watched_pig =
 	}
 
 # The rider watches a pig of the herd.
-expect World.segment_pigs(distracting).count_if(|pig| pig == watched_pig) == 1
+expect distracting.segment_pigs().count_if(|pig| pig == watched_pig) == 1
 
 ## A motorcycle `along` metres into its segment, at rest in every other way.
 ## Gawking doesn't import Along, so `along` is a distance from the segment's

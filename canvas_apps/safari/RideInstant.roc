@@ -9,6 +9,7 @@ import RiderState
 import Scene
 import RideFocal
 import Rider
+import Segment
 import Sky
 import Steps
 import Sun
@@ -35,7 +36,7 @@ RideInstant := {
 		clock: Clock.start,
 	}
 
-	next_or_restart : List(World.Segment), RideInstant -> RideInstant
+	next_or_restart : List(Segment), RideInstant -> RideInstant
 	next_or_restart = |route_segments, instant|
 		if Rider.is_finished(instant.rider, route_segments) {
 			initial
@@ -43,7 +44,7 @@ RideInstant := {
 			next(route_segments, instant)
 		}
 
-	next : List(World.Segment), RideInstant -> RideInstant
+	next : List(Segment), RideInstant -> RideInstant
 	next = |route_segments, instant| {
 		nx = Rider.rider_state_at_next_step(instant.rider, route_segments)
 		dist = World.distance_along_route(
@@ -85,7 +86,7 @@ RideInstant := {
 
 	## The frame at `instant`. The camera's heading and focal length are worked
 	## out once, for both the shapes and the sun.
-	frame_content : List(World.Segment), RideInstant -> RideInstant.FrameContent
+	frame_content : List(Segment), RideInstant -> RideInstant.FrameContent
 	frame_content = |route_segments, instant| {
 		aim = {
 			heading: ViewYaw.heading_for(instant.rider),
@@ -96,7 +97,7 @@ RideInstant := {
 
 	shapes : RideInstant,
 	{
-		route_segments : List(World.Segment),
+		route_segments : List(Segment),
 		aim : Lens.CameraAim,
 	} -> List(Shapes.Shape)
 	shapes = |instant, { route_segments, aim }| {

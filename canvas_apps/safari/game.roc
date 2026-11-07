@@ -58,6 +58,7 @@ package
 		SceneShapes,
 		Scenery,
 		Screen,
+		Segment,
 		SegmentPlace,
 		Sky,
 		Speed,

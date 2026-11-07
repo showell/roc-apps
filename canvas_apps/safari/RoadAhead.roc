@@ -8,6 +8,7 @@ import Across
 import Along
 import Distance
 import Geom
+import Segment
 import SegmentPlace
 import World
 
@@ -16,7 +17,7 @@ RoadAhead :: [].{
 	## The road in view: the route's segments, the indices of those ahead
 	## of the rider, and the rider's vantage.
 	RoadView : {
-		route_segments : List(World.Segment),
+		route_segments : List(Segment),
 		segments_ahead : List(World.SegmentIndex),
 		vantage : Geom.Vantage,
 	}
@@ -29,7 +30,7 @@ RoadAhead :: [].{
 	## it lies from the rider.
 	SegmentInView : {
 		index : World.SegmentIndex,
-		segment : World.Segment,
+		segment : Segment,
 		place : SegmentPlace,
 	}
 
@@ -42,7 +43,7 @@ RoadAhead :: [].{
 	rider_segment = |road| SegmentPlace.Position.first.index_in(road.segments_ahead)
 
 	## The segment at `position` on the road ahead.
-	segment_at : RoadAhead.RoadView, SegmentPlace.Position -> World.Segment
+	segment_at : RoadAhead.RoadView, SegmentPlace.Position -> Segment
 	segment_at = |road, position|
 		position.index_in(road.segments_ahead).segment_in(road.route_segments)
 
@@ -105,15 +106,15 @@ RoadAhead :: [].{
 
 	## The road ahead from the segment at `start`: as far as the rider can see, or
 	## to the route's end.
-	indices_ahead : List(World.Segment), World.SegmentIndex -> List(World.SegmentIndex)
+	indices_ahead : List(Segment), World.SegmentIndex -> List(World.SegmentIndex)
 	indices_ahead = |route_segments, start| indices_onto(
 		route_segments,
 		{ index: start, segments_ahead: [] },
 	)
 
 	## The place of `segment`, which is just behind the rider.
-	place_behind : World.Segment -> SegmentPlace
-	place_behind = |segment| JustBehind(World.bend_out_of(segment))
+	place_behind : Segment -> SegmentPlace
+	place_behind = |segment| JustBehind(segment.bend_out_of())
 
 	## A point on the segment at `position` on the road ahead, in the rider's view.
 	rider_point_ahead : RoadAhead.RoadView,
@@ -127,7 +128,7 @@ RoadAhead :: [].{
 			{ along, across },
 			|index, point| Geom.point_in_segment_before(
 				point,
-				World.bend_out_of(index.segment_in(road.route_segments)),
+				Segment.bend_out_of(index.segment_in(road.route_segments)),
 			),
 		)
 		Geom.to_rider_point(on_rider_segment, road.vantage)
@@ -155,7 +156,7 @@ RoadAhead :: [].{
 ## `segments_ahead` with the segment at `index` and those after it added, up to the
 ## limit. An accumulator is linear, where appending a recursive call's answer
 ## is quadratic.
-indices_onto : List(World.Segment),
+indices_onto : List(Segment),
 {
 	index : World.SegmentIndex,
 	segments_ahead : List(World.SegmentIndex),
@@ -177,7 +178,7 @@ indices_onto = |route_segments, { index, segments_ahead }|
 expect RoadAhead.most_segments_ahead.to_i64() == 7
 expect RoadAhead.indices_ahead(World.segments, World.SegmentIndex.first).len() == 7
 
-route_facts : List(World.Segment) -> List(U64)
+route_facts : List(Segment) -> List(U64)
 route_facts = |segments| [
 	segments.len(),
 	RoadAhead.indices_ahead(segments, World.SegmentIndex.first).len(),

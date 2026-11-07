@@ -3,6 +3,7 @@
 ## its baby at each bend, and the ducks on each pond.
 import Billboard
 import RoadAhead
+import Segment
 import SegmentPlace
 import Geom
 import Lens
@@ -10,7 +11,6 @@ import Pipeline
 import Pixels
 import Pond
 import Wildlife
-import World
 
 BillboardSighting :: [].{
 
@@ -50,8 +50,8 @@ BillboardSighting :: [].{
 	farm_sightings : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(BillboardSighting.Fate)
 	farm_sightings = |road, { segment, place, index: _ }|
 		if is_within_reach(place, farm_reach) {
-			World.segment_cows(segment)
-				.concat(World.segment_pigs(segment))
+			segment.segment_cows()
+				.concat(segment.segment_pigs())
 				.map(|critter| sight_critter(road, { place, critter }))
 		} else {
 			[]
@@ -103,13 +103,13 @@ is_within_reach = |place, reach|
 
 ## The critters at the end of `segment`, placed on it. A duck's place is
 ## measured from the bend at the segment's end.
-bend_life_critters : World.Segment -> List(Geom.Placed(Billboard))
+bend_life_critters : Segment -> List(Geom.Placed(Billboard))
 bend_life_critters = |segment|
 	match segment.ending {
 		Bends({ bend_life, .. }) =>
 			match bend_life {
 				Animal(animal) =>
-					Wildlife.bend_critters({ animal, bend: World.bend_out_of(segment) })
+					Wildlife.bend_critters({ animal, bend: segment.bend_out_of() })
 				DuckPond => Pond.placed_ducks(segment.length)
 				Quiet => []
 			}

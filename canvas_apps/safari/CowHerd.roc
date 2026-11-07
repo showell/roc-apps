@@ -129,3 +129,96 @@ expect
 		(5, True),
 		(13, True),
 	].all(|(cow_number, want)| is_calf(cow_number) == want)
+
+## A herd of fourteen cows in columns of three.
+fourteen_cows : CowHerd
+fourteen_cows = {
+	cow_count: 14,
+	rows: 3,
+	gap_behind_bull: Distance.metres(6.0),
+	column_spacing: Distance.metres(6.0),
+	row_stagger: Distance.metres(2.0),
+	row_depth: Distance.metres(5.0),
+	jitter_along: Distance.metres(1.5),
+	jitter_across: Distance.metres(1.2),
+}
+
+cows_with_bull : List(Geom.Placed(Billboard))
+cows_with_bull = fourteen_cows.herd_cows({ herd_along: Along.metres(24.0), bull: WithBull })
+
+cows_without_bull : List(Geom.Placed(Billboard))
+cows_without_bull = fourteen_cows.herd_cows({ herd_along: Along.metres(24.0), bull: NoBull })
+
+expect cows_with_bull.len() == 15
+expect cows_without_bull.len() == 14
+
+# The bull leads, facing left, and the cows follow him in their own order, facing
+# right.
+expect cows_with_bull.take_first(1).map(|leader| leader.along) == [Along.metres(24.0)]
+expect cows_with_bull.take_first(1).map(|leader| leader.kind.still.codepoint()) == [128002]
+expect cows_with_bull.drop_first(1) == cows_without_bull
+expect cows_with_bull.take_first(2).map(|critter| critter.kind.facing) == [FacesLeft, FacesRight]
+expect cows_without_bull.all(|member| member.kind.facing == FacesRight)
+expect cows_without_bull.all(|member| member.kind.still.codepoint() == 128004)
+
+expect
+	cows_without_bull.map(|member| member.kind.height.to_metres())
+		== [
+			1.4,
+			0.7,
+			1.4,
+			1.4,
+			1.4,
+			0.7,
+			1.4,
+			1.4,
+			1.4,
+			0.7,
+			1.4,
+			1.4,
+			1.4,
+			0.7,
+		]
+
+# Each cow strays from its place by no more than the jitter.
+expect {
+	places = [
+		28.0,
+		30.0,
+		32.0,
+		34.0,
+		36.0,
+		38.0,
+		40.0,
+		42.0,
+		44.0,
+		46.0,
+		48.0,
+		50.0,
+		52.0,
+		54.0,
+	]
+	misses = cows_without_bull.map2(places, |one, place| (one.along.to_metres() - place).abs())
+	misses.all(|miss| miss <= 1.5)
+}
+
+expect {
+	places = [
+		-12.0,
+		-17.0,
+		-22.0,
+		-12.0,
+		-17.0,
+		-22.0,
+		-12.0,
+		-17.0,
+		-22.0,
+		-12.0,
+		-17.0,
+		-22.0,
+		-12.0,
+		-17.0,
+	]
+	misses = cows_without_bull.map2(places, |one, place| (one.across.to_metres() - place).abs())
+	misses.all(|miss| miss <= 1.2)
+}

@@ -8,6 +8,7 @@ import game.Along
 import game.Angle
 import game.Distance
 import game.RoadAhead
+import game.Segment
 import game.SegmentPlace
 import game.Geom
 import game.GroundSighting
@@ -63,7 +64,7 @@ rider_before_bend : Distance
 rider_before_bend = Distance.metres(25.0)
 
 ## Two segments of the route, cut to length, with `turn` between.
-two_segments : Angle.Turn -> List(World.Segment)
+two_segments : Angle.Turn -> List(Segment)
 two_segments = |turn|
 	World.segments.take_first(2).map_with_index(
 		|segment, index| {

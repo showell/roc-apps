@@ -8,6 +8,7 @@ import Coast
 import CrossingReaction
 import Gawking
 import Motorcycle
+import Segment
 import Speed
 import Steps
 import lib.Trig
@@ -16,7 +17,7 @@ import World
 
 Throttle :: [].{
 
-	acceleration : Motorcycle, World.Segment -> Acceleration
+	acceleration : Motorcycle, Segment -> Acceleration
 	acceleration = |motorcycle, seg| {
 		offered =
 			if motorcycle.lean.abs() >= lean_hold {
@@ -60,7 +61,7 @@ held_to = |a, limit|
 
 ## The speed to leave `seg` at: the speed for its bend, or rest at the route's
 ## end.
-exit_speed : World.Segment -> Speed
+exit_speed : Segment -> Speed
 exit_speed = |seg|
 	match seg.ending {
 		Bends({ turn, .. }) => VehicleLimits.turn_speed(turn.abs())
@@ -68,17 +69,17 @@ exit_speed = |seg|
 	}
 
 ## Whether the motorcycle is near enough the end of `seg` to brake for its bend.
-is_near_end : Motorcycle, World.Segment -> Bool
+is_near_end : Motorcycle, Segment -> Bool
 is_near_end = |motorcycle, seg|
 	Along.at(seg.length).distance_from(motorcycle.along) <= VehicleLimits.bend_approach
 
 ## Near the end of the segment, the brake that brings the rider to the exit
 ## speed at the point where they commit to the turn. Past that point there is
 ## no road left to brake on, and the limit holds the acceleration at none.
-bend_limit : Motorcycle, { segment : World.Segment, exit_speed : Speed } -> VehicleLimits.Limit
+bend_limit : Motorcycle, { segment : Segment, exit_speed : Speed } -> VehicleLimits.Limit
 bend_limit = |motorcycle, { segment: seg, exit_speed: v_end }|
 	if is_near_end(motorcycle, seg) {
-		d = World.commit_along(seg).distance_from(motorcycle.along)
+		d = seg.commit_along().distance_from(motorcycle.along)
 		bend_a =
 			if d <= VehicleLimits.least_braking_distance {
 				Acceleration.steady
@@ -112,7 +113,7 @@ shoulder_brake = |motorcycle, steps_to_shoulder| {
 ## to it, unless they are gawking.
 allowed_speed : Motorcycle,
 {
-	segment : World.Segment,
+	segment : Segment,
 	exit_speed : Speed,
 	next_speed : Speed,
 } -> Speed
@@ -148,7 +149,7 @@ expect
 		(lean_hold.to_radians() / Trig.deg, 2.0),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 
-first_segment : World.Segment
+first_segment : Segment
 first_segment = World.route_segment(0)
 
 ## A motorcycle on the centre line, upright.
