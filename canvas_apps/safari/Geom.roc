@@ -67,6 +67,19 @@ Geom :: [].{
 	right_edge : Across
 	right_edge = Across.right_of_middle(road_half_width)
 
+	## The side of the road on the outside of a bend, where its guard rail runs.
+	OuterSide : [LeftSide, RightSide]
+
+	## The outside of a bend that turns `bend_turn`: the left side when the
+	## road turns right, the right side when it turns left.
+	outer_side : Angle.Turn -> Geom.OuterSide
+	outer_side = |bend_turn|
+		if bend_turn.is_right() {
+			LeftSide
+		} else {
+			RightSide
+		}
+
 	## How far from the middle of the road the nearest row of a herd stands.
 	herd_front_distance : Distance
 	herd_front_distance = road_half_width.plus(Distance.metres(10.0))
@@ -531,6 +544,8 @@ expect {
 expect Geom.road_half_width.to_metres() == 2.0
 expect Geom.left_edge.to_metres() == -2.0
 expect Geom.right_edge.to_metres() == 2.0
+expect Geom.outer_side(Angle.Turn.degrees(50.0)) == LeftSide
+expect Geom.outer_side(Angle.Turn.degrees(-70.0)) == RightSide
 
 ## A bend of `degrees` out of a 300 metre segment.
 bend_of : F64 -> Geom.Bend

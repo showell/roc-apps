@@ -165,8 +165,8 @@ bend_paving = |road, { vantage, bend_in_view }| {
 	outer = bend_in_view.outer_edge()
 	inner = bend_in_view.inner_edge()
 	corners =
-		if bend_in_view.turn().is_right() {
-			[
+		match Geom.outer_side(bend_in_view.turn()) {
+			LeftSide => [
 				before(lead_start, outer),
 				end_before,
 				apex,
@@ -176,8 +176,7 @@ bend_paving = |road, { vantage, bend_in_view }| {
 				before(end, inner),
 				before(lead_start, inner),
 			]
-		} else {
-			[
+			RightSide => [
 				before(lead_start, inner),
 				before(end, inner),
 				after(lead_end, inner),
