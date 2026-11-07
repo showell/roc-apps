@@ -39,14 +39,6 @@ const twoStops = (s) => [
   [stopAt(s.end_offset, stopAt(s.start_offset)), cssColor(s.end_offset <= 1 ? s.end_color : twoStopAt(s, 1))],
 ];
 
-// Brush.mix and Brush's two_stop, for a gradient with no length. A canvas paints
-// nothing there, and Brush.shade gives the colour at the far end, so this works
-// that colour out as Brush.shade does, step for step.
-const mix = (p, q, t) => ({ r: p.r + (q.r - p.r) * t, g: p.g + (q.g - p.g) * t, b: p.b + (q.b - p.b) * t, a: p.a + (q.a - p.a) * t });
-const twoStopAt = (s, t) => (t <= s.start_offset ? s.start_color
-  : t >= s.end_offset ? s.end_color
-    : mix(s.start_color, s.end_color, (t - s.start_offset) / (s.end_offset - s.start_offset)));
-
 // A fill becomes something canvas can paint with. An ellipse is the exception:
 // it paints through a transform, so it stays a descriptor.
 function paintFor(ctx, fill) {
