@@ -21,7 +21,7 @@ import lib.CanvasApp
 import lib.Shapes
 import widget.PlanView
 import widget.ReadoutText
-import widget.ScrubWidget
+import widget.WidgetPage
 
 BendsWidgetApp :: [].{
 
@@ -29,7 +29,7 @@ BendsWidgetApp :: [].{
 	Model : {}
 
 	canvas_app : CanvasApp.CanvasApp(BendsWidgetApp.Model)
-	canvas_app = ScrubWidget.still_app({ title: "Three bends in the road", shapes: still_shapes })
+	canvas_app = WidgetPage.still_app({ title: "Three bends in the road", shapes: still_shapes })
 }
 
 ## A bend in the picture: how far it turns, and the x on the canvas of the
@@ -216,12 +216,12 @@ caption_lines = |turn| {
 ## A line of a caption, centered under its bend, on row `row` of the panel.
 caption_line : ShownBend, { text : Str, row : U64 } -> Shapes.Shape
 caption_line = |bend, { text, row }|
-	ScrubWidget.readout({
+	WidgetPage.readout({
 		text,
-		color: ScrubWidget.ink_color,
+		color: WidgetPage.ink_color,
 		row,
 		style: {
-			..ScrubWidget.panel_readout,
+			..WidgetPage.panel_readout,
 			x: bend.canvas_x,
 			first_baseline: 246.0,
 			size: 13.0,
@@ -235,8 +235,8 @@ caption_shapes = |bend|
 
 still_shapes : List(Shapes.Shape)
 still_shapes = {
-	picture_shapes = [ScrubWidget.picture_backdrop(PlanView.ground_color)].concat(shown_bends.join_map(bend_shapes))
-	ScrubWidget.frame_shapes({ picture_shapes, status_lines: [] }).concat(shown_bends.join_map(caption_shapes))
+	picture_shapes = [WidgetPage.picture_backdrop(PlanView.ground_color)].concat(shown_bends.join_map(bend_shapes))
+	WidgetPage.frame_shapes({ picture_shapes, status_lines: [] }).concat(shown_bends.join_map(caption_shapes))
 }
 
 # The captions read what the modules say, and the middle bend has the book's
@@ -260,10 +260,10 @@ expect
 		|bend| {
 			apex = canvas_point(bend, apex_of(bend.turn))
 			rider_on_canvas = canvas_point(bend, rider)
-			third = ScrubWidget.canvas_width / 3.0
+			third = WidgetPage.canvas_width / 3.0
 			(apex.x - bend.canvas_x).abs() < third / 2.0
 				and apex.y > 0.0
-				and rider_on_canvas.y < ScrubWidget.picture_bottom_y
+				and rider_on_canvas.y < WidgetPage.picture_bottom_y
 		},
 	)
 

@@ -12,7 +12,7 @@ import lib.Shapes
 import lib.RgbColor
 import Click
 import PlanView
-import ScrubWidget
+import WidgetPage
 
 VcrButtons :: [].{
 
@@ -74,9 +74,9 @@ VcrButtons :: [].{
 		frame_shapes : VcrButtons.Transport(number) -> List(Shapes.Shape),
 	} -> CanvasApp.CanvasApp(VcrButtons.Transport(number))
 	canvas_app = |{ title, range, opens_at, frame_shapes }|
-		ScrubWidget.canvas_app({
+		WidgetPage.canvas_app({
 			title,
-			frames_a_second: ScrubWidget.moving_frames_a_second,
+			frames_a_second: WidgetPage.moving_frames_a_second,
 			init: VcrButtons.transport_at(opens_at),
 			model_at_next_step: |transport, input| VcrButtons.next_transport(transport, { input, range }),
 			frame_shapes,
@@ -129,7 +129,7 @@ VcrButtons :: [].{
 	} -> List(Shapes.Shape)
 	frame_shapes = |transport, { range, picture_shapes, status_lines }|
 		[
-			ScrubWidget.frame_shapes({ picture_shapes, status_lines }),
+			WidgetPage.frame_shapes({ picture_shapes, status_lines }),
 			buttons.join_map(|button| button_shapes(button, transport.motion)),
 			hint_shapes(transport, range),
 		].join()
@@ -219,7 +219,7 @@ buttons =
 	[ToStart, PlayBack, StepBack, StepForward, Play, ToEnd].map_with_index(
 		|control, index| {
 			control,
-			left: ScrubWidget.side_margin + index.to_f64() * button_spacing,
+			left: WidgetPage.side_margin + index.to_f64() * button_spacing,
 		},
 	)
 
@@ -234,7 +234,7 @@ button_gap : F64
 button_gap = 6.0
 
 button_top : F64
-button_top = ScrubWidget.picture_bottom_y + button_gap
+button_top = WidgetPage.picture_bottom_y + button_gap
 
 button_height : F64
 button_height = 24.0
@@ -341,9 +341,9 @@ hint_shapes = |transport, range|
 		transport.at,
 	) == place_in(range, range.first) {
 		gaps_before_last = (buttons.len() - 1).to_f64()
-		last_button_right = ScrubWidget.side_margin + gaps_before_last * button_spacing + button_width
+		last_button_right = WidgetPage.side_margin + gaps_before_last * button_spacing + button_width
 		[
-			ScrubWidget.label({
+			WidgetPage.label({
 				text: "Press play",
 				x: last_button_right + 14.0,
 				y: hint_baseline,
@@ -356,7 +356,7 @@ hint_shapes = |transport, range|
 ## The baseline of the hint's words, below the picture and level with the
 ## buttons.
 hint_baseline : F64
-hint_baseline = ScrubWidget.picture_bottom_y + 23.0
+hint_baseline = WidgetPage.picture_bottom_y + 23.0
 
 ## A range over steps 0 to 6000, eight steps a frame.
 sample_clock_run : VcrButtons.NumberRange(Clock)
@@ -543,7 +543,7 @@ expect
 		stopped_at(1),
 		{ range: sample_clock_run, picture_shapes: [], status_lines: [] },
 	).len()
-		> ScrubWidget.frame_shapes({ picture_shapes: [], status_lines: [] }).len()
+		> WidgetPage.frame_shapes({ picture_shapes: [], status_lines: [] }).len()
 expect
 	VcrButtons.frame_shapes(
 		stopped_at(0),

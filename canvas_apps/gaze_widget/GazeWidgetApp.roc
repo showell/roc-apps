@@ -26,7 +26,7 @@ import lib.Shapes
 import lib.RgbColor
 import widget.PlanView
 import widget.ReadoutText
-import widget.ScrubWidget
+import widget.WidgetPage
 import widget.VcrButtons
 
 GazeWidgetApp :: [].{
@@ -36,8 +36,8 @@ GazeWidgetApp :: [].{
 	Model : { played : List(RiderState), transport : VcrButtons.Transport(Clock) }
 
 	canvas_app : CanvasApp.CanvasApp(GazeWidgetApp.Model)
-	canvas_app = ScrubWidget.canvas_app({
-		frames_a_second: ScrubWidget.moving_frames_a_second,
+	canvas_app = WidgetPage.canvas_app({
+		frames_a_second: WidgetPage.moving_frames_a_second,
 		title: "The rider's gaze",
 		init: starting_model,
 		model_at_next_step: |model, input| played_on(with_buttons(model, input)),
@@ -194,7 +194,7 @@ road = {
 	Rect({
 		x: 0.0,
 		y: road_plan.origin.y - half_width,
-		width: ScrubWidget.canvas_width,
+		width: WidgetPage.canvas_width,
 		height: 2.0 * half_width,
 		fill: Brush.flat(PlanView.road_color),
 	})
@@ -243,7 +243,7 @@ pigs = {
 	pig_segment.segment_pigs()
 		.map(pig_disc)
 		.append(
-			ScrubWidget.label({
+			WidgetPage.label({
 				text: "the pig",
 				x: pig_on_canvas.x - 62.0,
 				y: pig_on_canvas.y + 20.0,
@@ -272,7 +272,7 @@ sight_line = |rider| {
 picture_shapes : RiderState -> List(Shapes.Shape)
 picture_shapes = |rider|
 	[
-		[ScrubWidget.picture_backdrop(PlanView.ground_color), road],
+		[WidgetPage.picture_backdrop(PlanView.ground_color), road],
 		pigs,
 		[
 			sight_line(rider),
@@ -426,7 +426,7 @@ expect
 		|rider|
 			rider.segment_index == first_rider.segment_index
 				and canvas_point({ along: rider.motorcycle.along, across: rider.motorcycle.across }).x > 0.0
-				and canvas_point({ along: rider.motorcycle.along, across: rider.motorcycle.across }).x < ScrubWidget.canvas_width,
+				and canvas_point({ along: rider.motorcycle.along, across: rider.motorcycle.across }).x < WidgetPage.canvas_width,
 	)
 
 ## A model at its start, asking for `step`.
@@ -484,8 +484,8 @@ expect {
 }
 
 # The pig that catches the eye is in the picture, and is one of the herd.
-expect canvas_point(gaze_pig.road_point).x < ScrubWidget.canvas_width
-expect canvas_point(gaze_pig.road_point).y < ScrubWidget.picture_bottom_y
+expect canvas_point(gaze_pig.road_point).x < WidgetPage.canvas_width
+expect canvas_point(gaze_pig.road_point).y < WidgetPage.picture_bottom_y
 expect pig_segment.segment_pigs().count_if(|pig| pig == gaze_pig) == 1
 
 expect

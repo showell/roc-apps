@@ -20,7 +20,7 @@ import lib.RgbColor
 import widget.Click
 import widget.PlanView
 import widget.ReadoutText
-import widget.ScrubWidget
+import widget.WidgetPage
 
 RehearsalWidgetApp :: [].{
 
@@ -33,8 +33,8 @@ RehearsalWidgetApp :: [].{
 	Model : { stop : RehearsalWidgetApp.Stop }
 
 	canvas_app : CanvasApp.CanvasApp(RehearsalWidgetApp.Model)
-	canvas_app = ScrubWidget.canvas_app({
-		frames_a_second: ScrubWidget.moving_frames_a_second,
+	canvas_app = WidgetPage.canvas_app({
+		frames_a_second: WidgetPage.moving_frames_a_second,
 		title: "Twelve rehearsals",
 		init: { stop: Start },
 		model_at_next_step: |model, input| { stop: stepped(model.stop, input) },
@@ -160,7 +160,7 @@ target_color = RgbColor.of(0xe8c84a)
 ## the picture, and 23 pixels to a metre along the road.
 road_plan : PlanView
 road_plan = {
-	origin: { x: 30.0, y: ScrubWidget.picture_bottom_y / 2.0 },
+	origin: { x: 30.0, y: WidgetPage.picture_bottom_y / 2.0 },
 	pixels_a_metre: 23.0,
 }
 
@@ -179,7 +179,7 @@ road_line : { across : F64, color : RgbColor, width : F64 } -> Shapes.Shape
 road_line = |{ across, color, width }| {
 	y = canvas_point({ forward: 0.0, across }).y
 	Shapes.line(
-		{ from: { x: 0.0, y }, to: { x: ScrubWidget.canvas_width, y }, width },
+		{ from: { x: 0.0, y }, to: { x: WidgetPage.canvas_width, y }, width },
 		Brush.flat(color),
 	)
 }
@@ -189,11 +189,11 @@ road_shapes : List(Shapes.Shape)
 road_shapes = {
 	half_lane = Geom.road_half_width.to_metres()
 	[
-		ScrubWidget.picture_backdrop(PlanView.ground_color),
+		WidgetPage.picture_backdrop(PlanView.ground_color),
 		Rect({
 			x: 0.0,
 			y: canvas_point({ forward: 0.0, across: -half_lane }).y,
-			width: ScrubWidget.canvas_width,
+			width: WidgetPage.canvas_width,
 			height: 2.0 * half_lane * across_stretch * road_plan.pixels_a_metre,
 			fill: Brush.flat(PlanView.road_color),
 		}),
@@ -258,7 +258,7 @@ rider_mark = {
 
 ## A line of words on the grass along the picture's bottom edge.
 caption_shapes : List(Shapes.Shape)
-caption_shapes = [ScrubWidget.label({ text: "from above, stretched x2 across the road", x: 10.0, y: 213.0 })]
+caption_shapes = [WidgetPage.label({ text: "from above, stretched x2 across the road", x: 10.0, y: 213.0 })]
 
 ## The road and the arcs so far. The newest try is drawn bold, and once the
 ## tries are over the arc that was chosen is.
@@ -387,7 +387,7 @@ marks_reach = 12.0
 ## Where the mark in place `number` of the row sits. Place 1 is the first, and
 ## there's one for each try and one for the choice.
 mark_x : U64 -> F64
-mark_x = |number| ScrubWidget.side_margin + 8.0 + (number.to_f64() - 1.0) * mark_spacing
+mark_x = |number| WidgetPage.side_margin + 8.0 + (number.to_f64() - 1.0) * mark_spacing
 
 ## The stop whose mark is at `spot`. Each mark's reach ends halfway to the next
 ## one, so no click is on two.
@@ -453,7 +453,7 @@ choice_mark = |current| {
 ## What to do, beside the marks.
 hint : Shapes.Shape
 hint =
-	ScrubWidget.label({
+	WidgetPage.label({
 		text: "Click a mark to see that try",
 		x: mark_x(last_stop) + 24.0,
 		y: marks_y + 5.0,
@@ -469,7 +469,7 @@ marks = |current|
 ## Everything on the canvas at `stop`.
 shapes_at : Stop -> List(Shapes.Shape)
 shapes_at = |stop|
-	ScrubWidget.frame_shapes({
+	WidgetPage.frame_shapes({
 		picture_shapes: picture_shapes(stop),
 		status_lines: status_lines(stop),
 	}).concat(marks(stop))

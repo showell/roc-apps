@@ -19,7 +19,7 @@ import lib.Shapes
 import lib.RgbColor
 import widget.PlanView
 import widget.ReadoutText
-import widget.ScrubWidget
+import widget.WidgetPage
 import widget.VcrButtons
 
 StepWidgetApp :: [].{
@@ -33,8 +33,8 @@ StepWidgetApp :: [].{
 	}
 
 	canvas_app : CanvasApp.CanvasApp(StepWidgetApp.Model)
-	canvas_app = ScrubWidget.canvas_app({
-		frames_a_second: ScrubWidget.moving_frames_a_second,
+	canvas_app = WidgetPage.canvas_app({
+		frames_a_second: WidgetPage.moving_frames_a_second,
 		title: "Three stored fields",
 		init: heading_for_step(0),
 		model_at_next_step: |model, input| moved(aimed(model, input)),
@@ -183,7 +183,7 @@ marker_shapes = |{ at, color, name, name_y }|
 			radius: 8.0,
 			fill: Brush.flat(color),
 		}),
-		ScrubWidget.label({
+		WidgetPage.label({
 			text: name,
 			x: route_x(at) - 16.0,
 			y: name_y + 12.0,
@@ -211,14 +211,14 @@ lean_shown_at = 3.0
 shapes_from_behind_rider : { across : Across, lean : Angle.Lean } -> List(Shapes.Shape)
 shapes_from_behind_rider = |{ across, lean }| {
 	road = Geom.road_half_width.to_metres() * pixels_a_metre
-	middle = ScrubWidget.canvas_width / 2.0
+	middle = WidgetPage.canvas_width / 2.0
 	foot = middle + across.to_metres() * pixels_a_metre
 	lean_shown = lean.to_radians() * lean_shown_at
 	head_x = foot + rider_height * lean_shown.sin()
 	head_y = surface_y - rider_height * lean_shown.cos()
 	[
 		[
-			ScrubWidget.label({
+			WidgetPage.label({
 				text: "from behind, lean x3",
 				x: 20.0,
 				y: surface_y - 12.0,
@@ -256,7 +256,7 @@ picture_shapes = |tour| {
 	rider = tour.instant.rider
 	truck = tour.instant.truck
 	[
-		[ScrubWidget.picture_backdrop(PlanView.ground_color)],
+		[WidgetPage.picture_backdrop(PlanView.ground_color)],
 		bar_shapes,
 		marker_shapes({
 			at: truck.route_position,

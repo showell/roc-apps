@@ -11,7 +11,7 @@ import lib.RgbColor
 import lib.Trig
 import widget.PlanView
 import widget.ReadoutText
-import widget.ScrubWidget
+import widget.WidgetPage
 
 RouteWidgetApp :: [].{
 
@@ -19,7 +19,7 @@ RouteWidgetApp :: [].{
 	Model : {}
 
 	canvas_app : CanvasApp.CanvasApp(RouteWidgetApp.Model)
-	canvas_app = ScrubWidget.still_app({ title: "The route", shapes: still_shapes })
+	canvas_app = WidgetPage.still_app({ title: "The route", shapes: still_shapes })
 }
 
 ## A place on the map, in metres from the route's start.
@@ -135,10 +135,10 @@ map_margin = 18.0
 ## and as many pixels a metre as let the whole road fit.
 map_plan : PlanView
 map_plan = {
-	origin: { x: ScrubWidget.canvas_width / 2.0, y: ScrubWidget.picture_bottom_y / 2.0 },
+	origin: { x: WidgetPage.canvas_width / 2.0, y: WidgetPage.picture_bottom_y / 2.0 },
 	pixels_a_metre: F64.min(
-		(ScrubWidget.canvas_width - 2.0 * map_margin) / (extent.east - extent.west),
-		(ScrubWidget.picture_bottom_y - 2.0 * map_margin) / (extent.north - extent.south),
+		(WidgetPage.canvas_width - 2.0 * map_margin) / (extent.east - extent.west),
+		(WidgetPage.picture_bottom_y - 2.0 * map_margin) / (extent.north - extent.south),
 	),
 }
 
@@ -221,7 +221,7 @@ row_shapes = |{ y, color, word }|
 			radius: 6.0,
 			fill: Brush.flat(color),
 		}),
-		ScrubWidget.label({
+		WidgetPage.label({
 			text: word,
 			x: 482.0,
 			y: y + 5.0,
@@ -258,7 +258,7 @@ read_out_shapes = piece_shapes(read_out_segment, { width: 7.0, color: read_out_c
 picture_shapes : List(Shapes.Shape)
 picture_shapes =
 	[
-		[ScrubWidget.picture_backdrop(PlanView.ground_color)],
+		[WidgetPage.picture_backdrop(PlanView.ground_color)],
 		road_shapes,
 		read_out_shapes,
 		segments.join_map(mark_shapes),
@@ -279,7 +279,7 @@ status_lines = {
 }
 
 still_shapes : List(Shapes.Shape)
-still_shapes = ScrubWidget.frame_shapes({ picture_shapes, status_lines: status_lines })
+still_shapes = WidgetPage.frame_shapes({ picture_shapes, status_lines: status_lines })
 
 expect segments.len() == World.segment_plans.len()
 
@@ -288,9 +288,9 @@ expect segments.map(|segment| segment.start).drop_first(1) == segments.map(|segm
 
 # The road stays inside the picture, on all four sides.
 expect corners.all(|corner| canvas_point(corner).x >= 0.0)
-expect corners.all(|corner| canvas_point(corner).x <= ScrubWidget.canvas_width)
+expect corners.all(|corner| canvas_point(corner).x <= WidgetPage.canvas_width)
 expect corners.all(|corner| canvas_point(corner).y >= 0.0)
-expect corners.all(|corner| canvas_point(corner).y <= ScrubWidget.picture_bottom_y)
+expect corners.all(|corner| canvas_point(corner).y <= WidgetPage.picture_bottom_y)
 
 # It is the longest segment, so it is plain on the map.
 expect segments.all(|segment| segment.plan.length.to_metres() <= read_out_segment.plan.length.to_metres())

@@ -22,7 +22,7 @@ import lib.CanvasApp
 import lib.Input
 import lib.Shapes
 import widget.ReadoutText
-import widget.ScrubWidget
+import widget.WidgetPage
 import "page.html" as page_html : Str
 
 FrameWidgetApp :: [].{
@@ -226,7 +226,7 @@ panel = Rect({
 	y: picture_height,
 	width: canvas_width,
 	height: panel_height,
-	fill: Brush.flat(ScrubWidget.panel_color),
+	fill: Brush.flat(WidgetPage.panel_color),
 })
 
 ## An address that names a layer has the page press Right once for each layer
@@ -294,7 +294,7 @@ status_line = |text, row|
 		size: 22.0,
 		face: Code,
 		align: Left,
-		color: Brush.opaque(ScrubWidget.ink_color),
+		color: Brush.opaque(WidgetPage.ink_color),
 	})
 
 ## The layers on, in the game's paint order.

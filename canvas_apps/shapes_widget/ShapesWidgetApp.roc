@@ -2,7 +2,7 @@
 ## makes, on a plain background, as a still picture with no controls.
 import lib.CanvasApp
 import lib.RgbColor
-import widget.ScrubWidget
+import widget.WidgetPage
 import TwoShapes
 
 ShapesWidgetApp :: [].{
@@ -11,8 +11,8 @@ ShapesWidgetApp :: [].{
 	Model : {}
 
 	canvas_app : CanvasApp.CanvasApp(ShapesWidgetApp.Model)
-	canvas_app = ScrubWidget.still_app({
+	canvas_app = WidgetPage.still_app({
 		title: "Two shapes",
-		shapes: [ScrubWidget.picture_backdrop(RgbColor.of(0xf7f5f0))].concat(TwoShapes.shapes),
+		shapes: [WidgetPage.picture_backdrop(RgbColor.of(0xf7f5f0))].concat(TwoShapes.shapes),
 	})
 }

@@ -17,7 +17,7 @@ import game.TreeShapes
 import lib.CanvasApp
 import lib.Shapes
 import widget.ReadoutText
-import widget.ScrubWidget
+import widget.WidgetPage
 
 TreeWidgetApp :: [].{
 
@@ -25,7 +25,7 @@ TreeWidgetApp :: [].{
 	Model : {}
 
 	canvas_app : CanvasApp.CanvasApp(TreeWidgetApp.Model)
-	canvas_app = ScrubWidget.still_app({ title: "Three conifers", shapes: still_shapes })
+	canvas_app = WidgetPage.still_app({ title: "Three conifers", shapes: still_shapes })
 }
 
 ## A tree in the picture: how far off it stands, and the x on the canvas of the
@@ -53,7 +53,7 @@ conifer = Conifer.Gold
 
 ## How many canvas pixels the picture gives a pixel of the ride's screen.
 canvas_per_screen : F64
-canvas_per_screen = ScrubWidget.canvas_width / Screen.width.to_f64()
+canvas_per_screen = WidgetPage.canvas_width / Screen.width.to_f64()
 
 ## How far right of the camera a stand's tree must be to land on its `canvas_x`.
 right_of : Stand -> Distance
@@ -76,7 +76,7 @@ stand_spot = |stand|
 
 tree_shapes : Stand -> List(Shapes.Shape)
 tree_shapes = |stand|
-	ScrubWidget.resting_lens_shapes(
+	WidgetPage.resting_lens_shapes(
 		stand_spot(stand).map_ok(|spot| { spot, kind: conifer }),
 		{ nearer_tree_count: 0 },
 	)
@@ -97,9 +97,9 @@ caption_lines = |forward|
 ## A line of a caption, centered under its tree, on row `row` of the panel.
 caption_line : Stand, { text : Str, row : U64 } -> Shapes.Shape
 caption_line = |stand, { text, row }|
-	ScrubWidget.readout({
+	WidgetPage.readout({
 		text,
-		color: ScrubWidget.ink_color,
+		color: WidgetPage.ink_color,
 		row,
 		style: {
 			x: stand.canvas_x,
@@ -117,11 +117,11 @@ caption_shapes = |stand|
 still_shapes : List(Shapes.Shape)
 still_shapes = {
 	trees = stands.join_map(tree_shapes)
-	picture_shapes = ScrubWidget.picture_shapes({
+	picture_shapes = WidgetPage.picture_shapes({
 		backdrop: { sky_colors: Sky.colors_at(Clock.start), sun_sighting: OutOfView },
 		ride_shapes: trees,
 	})
-	ScrubWidget.frame_shapes({ picture_shapes, status_lines: [] }).concat(stands.join_map(caption_shapes))
+	WidgetPage.frame_shapes({ picture_shapes, status_lines: [] }).concat(stands.join_map(caption_shapes))
 }
 
 ## Whether a stand's tree is all in the picture, on its `canvas_x`, and at least
@@ -138,7 +138,7 @@ is_plain_to_see = |stand|
 			tip_y = foot_y - outline.height_on_screen.to_f64() * canvas_per_screen
 			x = outline.foot.x.to_f64() * canvas_per_screen
 			tip_y >= 0.0
-				and foot_y <= ScrubWidget.picture_bottom_y
+				and foot_y <= WidgetPage.picture_bottom_y
 				and foot_y - tip_y >= 30.0
 				and (x - stand.canvas_x).abs() <= 0.000000001
 		}
