@@ -71,7 +71,7 @@ eye_to_first_tree = Distance.metres(18.0)
 ## How far ahead of the picture's eye a place on the road is.
 forward_of : Along -> Distance
 forward_of = |along| {
-	past_first_tree = along.from_start().minus(flight.from.along.from_start())
+	past_first_tree = along.distance_from(flight.from.along)
 	eye_to_first_tree.plus(past_first_tree)
 }
 
