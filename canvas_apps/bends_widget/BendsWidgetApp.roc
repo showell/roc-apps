@@ -93,8 +93,8 @@ road_with = |turn| {
 bend_of : Chain.RoadView -> BendView
 bend_of = |road|
 	BendView.of_segment(
-		Chain.Position.first.index_in(road.chain_indices).segment_in(road.route_segments),
-		{ before: InChain(Chain.Position.first), after: InChain(Chain.Position.first.next()) },
+		Chain.segment_at(road, Chain.Position.first),
+		InChain(Chain.Position.first),
 	)
 
 ## The apex of a bend of `turn`.

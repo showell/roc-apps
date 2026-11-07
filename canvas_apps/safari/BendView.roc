@@ -10,28 +10,30 @@ import Geom
 import Scenery
 import World
 
-## A bend as the rider sees it: where the segments before and after it lie,
-## the length of the one before, and the turn the road makes, positive to
-## the right.
+## A bend as the rider sees it: where the segment before it lies, that
+## segment's length, and the turn the road makes, positive to the right.
 BendView := {
 	before : Chain.SegmentPlace,
-	after : Chain.SegmentPlace,
 	length_before : Distance,
 	turn : Angle.Turn,
 }.{
 
 	## The bend at the end of `segment`, which lies at `before`.
-	of_segment : World.Segment,
-	{
-		before : Chain.SegmentPlace,
-		after : Chain.SegmentPlace,
-	} -> BendView
-	of_segment = |segment, { before, after }| {
+	of_segment : World.Segment, Chain.SegmentPlace -> BendView
+	of_segment = |segment, before| {
 		before,
-		after,
 		length_before: segment.length,
 		turn: segment.exit_turn,
 	}
+
+	## Where the segment after a bend lies: next in the chain, or the rider's
+	## own when the segment before is just behind the rider.
+	place_after : BendView -> Chain.SegmentPlace
+	place_after = |bend|
+		match bend.before {
+			InChain(position) => InChain(position.next())
+			JustBehind(_) => InChain(Chain.Position.first)
+		}
 
 	## How far across the road its outer edge at a bend is: the left edge
 	## when the road turns right, the right edge when it turns left.
@@ -49,7 +51,8 @@ BendView := {
 		across = outer_edge(bend.turn)
 		end_before = Along.at(bend.length_before)
 		point_before = |along| Chain.rider_point_at(road, { place: bend.before, along, across })
-		point_after = |along| Chain.rider_point_at(road, { place: bend.after, along, across })
+		place = place_after(bend)
+		point_after = |along| Chain.rider_point_at(road, { place, along, across })
 		Geom.line_crossing({
 			first_line: {
 				start_point: point_before(end_before),
@@ -92,11 +95,24 @@ apex_after_turn = |turn|
 				turn,
 				road_width: Distance.metres(4.0),
 			}),
-			after: InChain(Chain.Position.first),
 			length_before: Distance.metres(300.0),
 			turn,
 		},
 	)
+
+# The segment after a bend, from each place the segment before can lie.
+position_after : Chain.SegmentPlace -> I64
+position_after = |before| {
+	bend = BendView.of_segment(World.route_segment(0), before)
+	match BendView.place_after(bend) {
+		InChain(position) => position.to_i64()
+		JustBehind(_) => -1
+	}
+}
+
+expect position_after(InChain(Chain.Position.first)) == 1
+expect position_after(InChain(Chain.Position.number(3))) == 4
+expect position_after(m_prev_left) == 0
 
 # Each is within 1e-7 of its want, scaled up by a want past 1.
 expect

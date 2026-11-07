@@ -105,10 +105,7 @@ ground_patches = |road, position| {
 		if position.is_last_in(road.chain_indices) {
 			[]
 		} else {
-			bend_patches(
-				road,
-				BendView.of_segment(segment, { before: place, after: InChain(position.next()) }),
-			)
+			bend_patches(road, BendView.of_segment(segment, place))
 		}
 	[
 		GroundSighting.road_patches(road, position),
@@ -123,11 +120,9 @@ patches_behind : Chain.RoadView, World.SegmentIndex -> List(Ground.Patch)
 patches_behind = |road, index| {
 	segment = index.segment_in(road.route_segments)
 	before = Chain.place_behind(segment)
-	after = InChain(Chain.Position.first)
-	bend_patches(
-		road,
-		BendView.of_segment(segment, { before, after }),
-	).concat(pond_patches(road, { segment, place: before }))
+	bend_patches(road, BendView.of_segment(segment, before)).concat(
+		pond_patches(road, { segment, place: before }),
+	)
 }
 
 ## A bend's paving: the road just before it, then the corner it cuts.
@@ -177,7 +172,7 @@ bend_corners = |road, bend| {
 		Chain.rider_point_at(
 			road,
 			{
-				place: bend.after,
+				place: BendView.place_after(bend),
 				along: Along.start,
 				across: outer_edge,
 			},
