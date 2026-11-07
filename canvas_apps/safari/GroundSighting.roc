@@ -90,12 +90,21 @@ road_patch : List(Geom.RiderPoint) -> Ground.Patch
 road_patch = |corners| { corners, color: GroundSighting.road_color }
 
 ## The ground of a segment in view: its road, the bend into the next segment
-## if the road in view goes on, and its pond if it ends at one.
+## if the road in view goes on, and its pond if it ends at one. The segment
+## just behind lays no road along it, and its bend's paving stands for it,
+## because that paving lays the last `lead_in_length` of its road. The cut at the
+## near plane does not make this rule: just past a bend, the last chunk of road
+## behind reaches in front of the camera and would draw. Road further back on
+## it would show at a bend sharper than a right angle, and the route has none.
 ground_patches : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(Ground.Patch)
 ground_patches = |road, in_view| {
 	segment = in_view.segment
 	place = in_view.place
-	road_along = GroundSighting.road_patches(road, in_view)
+	road_along =
+		match place {
+			Ahead(_) => GroundSighting.road_patches(road, in_view)
+			JustBehind(_) => []
+		}
 	bend =
 		if RoadAhead.has_bend_in_view(road, in_view) {
 			bend_patches(road, BendView.of_segment(segment, place))
