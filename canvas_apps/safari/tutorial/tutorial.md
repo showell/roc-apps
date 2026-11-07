@@ -1081,7 +1081,7 @@ The sighting calls both, adding the two `Steps`. `clock.minus(Clock.start)` is h
 
 {{code TowerSighting.tower_if_ahead from "placed_tower = {" to "clock.minus(Clock.start)"}}
 
-Its caller gives each tower its key, the segment's index. Records with named fields stand in for what would otherwise be five arguments in a row, and `InChain(position)` is a tag carrying a payload, saying where the segment lies from the rider:
+Its caller gives each tower its key, the segment's index. Records with named fields stand in for what would otherwise be six arguments in a row, and `InChain(position)` is a tag carrying a payload, saying where the segment lies from the rider:
 
 {{code TowerSighting.segment_towers from "end_tower = tower_if_ahead(" to "[end_tower, mid_tower(road, { position, clock })].keep_oks(|tower| tower)"}}
 
