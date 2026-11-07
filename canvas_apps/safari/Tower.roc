@@ -103,16 +103,6 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 		}
 	}
 
-	## How far a corner lies from the footprint's centre, across the route and
-	## along it. Left and back are the negative ways.
-	corner_offset : Tower.Corner -> { across : Distance, along : Distance }
-	corner_offset = |corner|
-		match corner {
-			BackLeft => { across: tower_half_width.opposite(), along: tower_half_width.opposite() }
-			BackRight => { across: tower_half_width, along: tower_half_width.opposite() }
-			FrontRight => { across: tower_half_width, along: tower_half_width }
-			FrontLeft => { across: tower_half_width.opposite(), along: tower_half_width }
-		}
 }
 
 tower_height : Distance
@@ -172,6 +162,17 @@ SunkTower : {
 	cam_focal : Pixels,
 }
 
+## How far a corner lies from the footprint's centre, across the route and
+## along it. Left and back are the negative ways.
+corner_offset : Tower.Corner -> { across : Distance, along : Distance }
+corner_offset = |corner|
+	match corner {
+		BackLeft => { across: tower_half_width.opposite(), along: tower_half_width.opposite() }
+		BackRight => { across: tower_half_width, along: tower_half_width.opposite() }
+		FrontRight => { across: tower_half_width, along: tower_half_width }
+		FrontLeft => { across: tower_half_width.opposite(), along: tower_half_width }
+	}
+
 ## The corners in drawing order, going round the square.
 corners : List(Tower.Corner)
 corners = [BackLeft, BackRight, FrontRight, FrontLeft]
@@ -199,7 +200,7 @@ footprint_corner = |footprint, corner|
 ## `center` and turned by `yaw`.
 base_corner_on_road : Tower.Corner, { center : Geom.RoadPoint, yaw : Angle.Turn } -> Geom.RoadPoint
 base_corner_on_road = |corner, { center, yaw }| {
-	offset = Tower.corner_offset(corner)
+	offset = corner_offset(corner)
 	du = offset.across.to_metres()
 	dv = offset.along.to_metres()
 	cy = yaw.to_radians().cos()
@@ -530,10 +531,10 @@ expect shapes_of_tower_along(200.0).len() > 0
 expect shapes_of_tower_along(1000.0).len() > 0
 
 expect
-	corners.map(|corner| Tower.corner_offset(corner).across.portion(tower_half_width))
+	corners.map(|corner| corner_offset(corner).across.portion(tower_half_width))
 		== [-1.0, 1.0, 1.0, -1.0]
 expect
-	corners.map(|corner| Tower.corner_offset(corner).along.portion(tower_half_width))
+	corners.map(|corner| corner_offset(corner).along.portion(tower_half_width))
 		== [-1.0, -1.0, 1.0, 1.0]
 
 expect {

@@ -12,11 +12,14 @@ import game.Distance
 import game.Fraction
 import game.Geom
 import game.Lens
+import game.Pipeline
+import game.RoadAhead
+import game.Route
 import game.SegmentPlace
 import game.Sky
-import game.Spot
 import game.Steps
 import game.Tower
+import game.World
 import lib.CanvasApp
 import lib.Shapes
 import widget.ReadoutText
@@ -54,7 +57,8 @@ first_beacon = Beacon.(0)
 second_beacon : Beacon
 second_beacon = first_beacon.opposite()
 
-## How far ahead of the picture's eye the towers stand, so that their tops fit.
+## How far down the road from the picture's eye the towers stand, so that their
+## tops fit.
 tower_forward : Distance
 tower_forward = Distance.metres(200.0)
 
@@ -87,48 +91,39 @@ picture_shapes = |clock|
 		roll: Angle.upright,
 	})
 
-## A tower standing `right` of the road, its beacon at `brightness`, or nothing
-## if it stood behind the camera.
+## The road ahead of a rider on the route's first segment, straight for well
+## past the towers.
+straight_road : RoadAhead.RoadView
+straight_road = RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex.first)
+
+## The picture's eye, at the start of the route, looking down the road.
+eye : Geom.Vantage
+eye = {
+	along: Along.metres(0.0),
+	across: Across.metres(0.0),
+	yaw: Angle.straight_ahead,
+}
+
+## A tower standing `right` of the road's middle, unturned, its beacon at
+## `brightness`, or nothing if it stood behind the camera.
 tower_shapes : Distance, Fraction -> List(Shapes.Shape)
-tower_shapes = |right, brightness|
-	match Geom.ahead_on_level({ right, forward: tower_forward }) {
-		Ok(foot) => tower_shapes_at(foot, brightness)
+tower_shapes = |right, brightness| {
+	placed_tower : Geom.Placed(Tower)
+	placed_tower = {
+		road_point: { along: Along.at(tower_forward), across: Across.right_of_middle(right) },
+		lift: Distance.zero,
+		kind: { yaw: Angle.straight_ahead, beacon_brightness: brightness },
+	}
+	place = Ahead(SegmentPlace.Position.first)
+	match Pipeline.sighting_of(placed_tower, { road: straight_road, vantage: eye, place }) {
+		Ok(sighting) =>
+			sighting.kind.scenery_picture({
+				spot: sighting.spot,
+				cam_focal: Lens.resting_focal,
+				context: { road: straight_road, vantage: eye },
+			}).to_shapes()
 		Err(BehindCamera) => []
 	}
-
-## A tower whose foot is at `foot`, unturned, its beacon at `brightness`.
-tower_shapes_at : Geom.LevelPoint, Fraction -> List(Shapes.Shape)
-tower_shapes_at = |foot, brightness| {
-	right = foot.right()
-	corner_point = |corner| {
-		offset = Tower.corner_offset(corner)
-		{
-			right: right.plus(offset.across),
-			forward: tower_forward.plus(offset.along),
-		}
-	}
-	spot = Spot.at({
-		place: Ahead(SegmentPlace.Position.first),
-		road_point: {
-			along: Along.metres(tower_forward.to_metres()),
-			across: Across.metres(right.to_metres()),
-		},
-		lift: Distance.zero,
-		foot,
-	})
-	Tower.tower_shapes(
-		{ yaw: Angle.straight_ahead, beacon_brightness: brightness },
-		{
-			spot,
-			cam_focal: Lens.resting_focal,
-			context: {
-				back_left: corner_point(BackLeft),
-				back_right: corner_point(BackRight),
-				front_right: corner_point(FrontRight),
-				front_left: corner_point(FrontLeft),
-			},
-		},
-	)
 }
 
 ## What the clock and the beacons say at `clock`, a line each.
