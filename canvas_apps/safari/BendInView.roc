@@ -82,35 +82,35 @@ BendInView := { before : SegmentPlace, bend : Geom.Bend }.{
 }
 
 ## A bend of `turn` from a segment 300 m long at `before`.
-bend_at : SegmentPlace, Angle.Turn -> BendInView
-bend_at = |before, turn| { before, bend: { segment_length: Distance.metres(300.0), turn } }
+sample_bend : SegmentPlace, Angle.Turn -> BendInView
+sample_bend = |before, turn| { before, bend: { segment_length: Distance.metres(300.0), turn } }
 
 right_bend : BendInView
-right_bend = bend_at(Ahead(SegmentPlace.Position.first), Angle.Turn.degrees(50.0))
+right_bend = sample_bend(Ahead(SegmentPlace.Position.first), Angle.Turn.degrees(50.0))
 
 left_bend : BendInView
-left_bend = bend_at(Ahead(SegmentPlace.Position.first), Angle.Turn.degrees(-70.0))
+left_bend = sample_bend(Ahead(SegmentPlace.Position.first), Angle.Turn.degrees(-70.0))
 
 expect right_bend.outer_edge() == Geom.left_edge
 expect left_bend.outer_edge() == Geom.right_edge
 
 # The segment after a bend, from each place the segment before can lie.
-expect bend_at(
+expect sample_bend(
 	Ahead(SegmentPlace.Position.first),
 	Angle.straight_ahead,
 ).position_after().to_i64() == 1
-expect bend_at(
+expect sample_bend(
 	Ahead(SegmentPlace.Position.number(3)),
 	Angle.straight_ahead,
 ).position_after().to_i64() == 4
-expect bend_at(JustBehind, Angle.straight_ahead).position_after().to_i64() == 0
+expect sample_bend(JustBehind, Angle.straight_ahead).position_after().to_i64() == 0
 
 ## The outer corner of a bend of `turn` from a segment 300 m long, as (along,
 ## across) pairs: where the edge before ends, the apex, and where the edge
 ## after starts.
 outer_corner_pairs : Angle.Turn -> List((F64, F64))
 outer_corner_pairs = |turn| {
-	corner = bend_at(Ahead(SegmentPlace.Position.first), turn).outer_corner()
+	corner = sample_bend(Ahead(SegmentPlace.Position.first), turn).outer_corner()
 	[corner.end_before, corner.apex, corner.start_after].map(
 		|point| (point.along.to_metres(), point.across.to_metres()),
 	)
