@@ -128,7 +128,7 @@ paused_camera = FrameView.camera_at(paused_tour.route, paused_tour.instant)
 
 ## The road ahead of the rider at the step on show.
 paused_road : RoadAhead.RoadView
-paused_road = RoadAhead.RoadView.ahead_of(paused_tour.route, paused_camera.segment_index)
+paused_road = RoadAhead.RoadView.ahead_of(paused_tour.route, paused_camera.route_place.segment_index)
 
 ## What the camera shows at the step on show.
 paused_frame_view : FrameView
@@ -138,7 +138,10 @@ paused_frame_view = Tour.frame_view(paused_tour)
 paused_scene : Scene
 paused_scene = Scene.scene_in_view(
 	paused_road,
-	{ camera: paused_camera, facts: FrameView.ride_facts(paused_tour.instant) },
+	{
+		camera: { vantage: paused_camera.vantage(), cam_focal: paused_camera.cam_focal },
+		facts: FrameView.ride_facts(paused_tour.instant),
+	},
 )
 
 ## The mountains and the road, which `FrameView.frame_view_at` puts under the things

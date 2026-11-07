@@ -12,13 +12,14 @@ import Lens
 import Pixels
 import RiderState
 import Route
+import RoutePlace
 
 RiderCamera := {
-	## The segment the camera is on, which is the rider's.
-	segment_index : Route.SegmentIndex,
+	## Where the camera stands on the route, which is where the rider is.
+	route_place : RoutePlace,
 
-	## Where the camera stands on that segment, and which way it faces along it.
-	vantage : Geom.Vantage,
+	## Which way the camera faces, as a turn from its segment's axis.
+	yaw : Angle.Turn,
 
 	## The camera's bearing in the world.
 	heading : Angle.Bearing,
@@ -33,23 +34,28 @@ RiderCamera := {
 
 	## The camera for `rider` on `route`, with the encounter on their segment at
 	## `encounter_timing`. Its heading is the bearing the rider's segment sets off on,
-	## turned by the vantage's yaw.
+	## turned by the camera's yaw.
 	of : RiderState, { route : Route, encounter_timing : EncounterPlan.Timing } -> RiderCamera
 	of = |rider, { route, encounter_timing }| {
-		vantage = {
-			along: rider.motorcycle.route_place.along,
-			across: rider.motorcycle.route_place.across,
-			yaw: rider.motorcycle.yaw.plus(view_yaw_for(rider)),
-		}
+		route_place = rider.motorcycle.route_place
+		yaw = rider.motorcycle.yaw.plus(view_yaw_for(rider))
 		{
-			segment_index: rider.motorcycle.route_place.segment_index,
-			vantage,
-			heading: route.bearing_of(rider.motorcycle.route_place.segment_index).plus(vantage.yaw),
+			route_place,
+			yaw,
+			heading: route.bearing_of(route_place.segment_index).plus(yaw),
 			cam_focal: ride_focal(rider, { route, encounter_timing }),
 			roll: CanvasRoll.rider_roll(rider.motorcycle.lean),
 		}
 	}
 
+	## Where this camera stands on its segment, and which way it faces, as the
+	## projection onto the screen takes them.
+	vantage : RiderCamera -> Geom.Vantage
+	vantage = |camera| {
+		along: camera.route_place.along,
+		across: camera.route_place.across,
+		yaw: camera.yaw,
+	}
 }
 
 ## How far the head turns for each radian of lean.

@@ -91,7 +91,7 @@ FrameView := {
 	## ponds.
 	ground_shapes : RoadAhead.RoadView, RiderCamera -> List(Shapes.Shape)
 	ground_shapes = |road, camera|
-		GroundSighting.patches_in_view(road, camera).keep_oks(
+		GroundSighting.patches_in_view(road, { vantage: camera.vantage() }).keep_oks(
 			|patch| GroundPatch.patch_shape(patch, camera.cam_focal),
 		)
 }
@@ -100,8 +100,14 @@ FrameView := {
 ## beside the road.
 ride_shapes : RiderCamera, { instant : RideInstant, route : Route } -> List(Shapes.Shape)
 ride_shapes = |camera, { instant, route }| {
-	road = RoadAhead.RoadView.ahead_of(route, camera.segment_index)
-	scene = Scene.scene_in_view(road, { camera, facts: FrameView.ride_facts(instant) })
+	road = RoadAhead.RoadView.ahead_of(route, camera.route_place.segment_index)
+	scene = Scene.scene_in_view(
+		road,
+		{
+			camera: { vantage: camera.vantage(), cam_focal: camera.cam_focal },
+			facts: FrameView.ride_facts(instant),
+		},
+	)
 	[
 		FrameView.skyline_shapes(camera, instant.clock),
 		FrameView.ground_shapes(road, camera),
