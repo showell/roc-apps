@@ -741,6 +741,33 @@ expect
 		(600.0, False),
 	].all(|(forward, want)| is_cow_seen_from(forward) == want)
 
+# Billboard: a billboard is drawn while it stands a pixel tall.
+## How many shapes draw an elephant of `height` metres, `forward` metres
+## straight ahead, through a 500 px focal length.
+elephant_shape_count : { forward : F64, height : F64 } -> U64
+elephant_shape_count = |{ forward, height }| {
+	billboard : Billboard
+	billboard = { emoji: EmojiStills.elephant, height: Distance.metres(height), facing: FacesLeft }
+	foot =
+		Geom.ahead_on_level({ right: Distance.zero, forward: Distance.metres(forward) })
+			?? crash "CrossModuleExpects: a test's billboard is past the near plane"
+	spot = Spot.at({
+		place: Ahead(SegmentPlace.Position.first),
+		road_point: { along: Along.metres(forward), across: Across.middle },
+		lift: Distance.zero,
+		foot,
+	})
+	billboard.scenery_picture({ spot, cam_focal: Pixels.of(500.0), context: {} }).to_shapes().len()
+}
+
+expect
+	[
+		({ forward: 100.0, height: 2.0 }, 6),
+		({ forward: 1000.0, height: 2.0 }, 6),
+		({ forward: 1000.0, height: 1.9 }, 0),
+		({ forward: 2000.0, height: 2.0 }, 0),
+	].all(|(at, want)| elephant_shape_count(at) == want)
+
 # Tower: a tower that isn't turned stands on a square 12 m across, its corners
 # 6 m to either side of its middle and 6 m before and past it. Each leg rises
 # from its corner, from as high as the earth's curve hides it: 0.25 m for a

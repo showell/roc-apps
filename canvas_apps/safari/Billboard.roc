@@ -1,14 +1,9 @@
 ## A billboard is a critter that stands in one place and always faces the
 ## camera: an emoji's still, at a height, facing left or right.
-import Across
-import Along
 import Distance
 import EmojiStills
-import Geom
 import Picture
 import Pixels
-import SegmentPlace
-import Spot
 import StillShapes
 
 Billboard := {
@@ -66,57 +61,5 @@ Billboard := {
 
 	is_eq : _
 }
-
-# How many shapes draw a billboard of `height` metres, `forward` metres ahead.
-shape_count : {
-	forward : Distance,
-	height : Distance,
-	emoji : EmojiStills.EmojiStill,
-} -> U64
-shape_count = |{ forward, height, emoji }| {
-	billboard : Billboard
-	billboard = { emoji, height, facing: FacesLeft }
-	foot = Geom.ahead_on_level({
-		right: Distance.zero,
-		forward,
-	}) ?? crash "a test's billboard is past the near plane"
-	spot = Spot.at({
-		place: Ahead(SegmentPlace.Position.first),
-		road_point: { along: Along.metres(forward.to_metres()), across: Across.middle },
-		lift: Distance.zero,
-		foot,
-	})
-	billboard.scenery_picture({ spot, cam_focal: Pixels.of(500.0), context: {} }).to_shapes().len()
-}
-
-# A billboard is drawn while it stands a pixel tall.
-expect
-	shape_count({
-		forward: Distance.metres(1000.0),
-		height: Distance.metres(2.0),
-		emoji: EmojiStills.elephant,
-	})
-		== 6
-expect
-	shape_count({
-		forward: Distance.metres(2000.0),
-		height: Distance.metres(2.0),
-		emoji: EmojiStills.elephant,
-	})
-		== 0
-expect
-	shape_count({
-		forward: Distance.metres(1000.0),
-		height: Distance.metres(1.9),
-		emoji: EmojiStills.elephant,
-	})
-		== 0
-expect
-	shape_count({
-		forward: Distance.metres(100.0),
-		height: Distance.metres(2.0),
-		emoji: EmojiStills.elephant,
-	})
-		== 6
 
 expect EmojiStills.elephant.still().polygons().len() == 6
