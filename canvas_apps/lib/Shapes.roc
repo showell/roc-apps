@@ -32,14 +32,14 @@ Shapes :: [].{
 
 		## A line of words in a real typeface. `Font.plotted` gives a painter that has
 		## no typefaces the strokes of the same line.
-		Text(Shapes.Line),
+		Text(Shapes.TextLine),
 	]
 
 	## A line of type. `y` is its baseline, `x` its left end or its middle as `align`
 	## says, and `size` the height of its em square, as in CSS. The viewer's machine
 	## chooses the typeface and measures the words, so nothing in Roc knows how wide
 	## the line came out: `Font.room_for` is the room to leave for it.
-	Line : {
+	TextLine : {
 		text : Str,
 		x : F64,
 		y : F64,
@@ -237,7 +237,7 @@ corner_coordinates = |coordinates, { center, radius, start_angle, steps }| {
 }
 
 ## A line of type 100 px from the axis at 0.
-line_of_type : Shapes.Line
+line_of_type : Shapes.TextLine
 line_of_type = {
 	text: "Hi",
 	x: 100.0,

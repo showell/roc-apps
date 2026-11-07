@@ -44,7 +44,7 @@ Font :: [].{
 
 	## A line of type as strokes. The strokes' capitals stand as tall as a real
 	## typeface's do at the line's size.
-	plotted : Shapes.Line -> List(Shapes.Shape)
+	plotted : Shapes.TextLine -> List(Shapes.Shape)
 	plotted = |{ text: words, x, y, size, align, color, .. }| {
 		cap_height = size * cap_height_share
 		top = y - cap_height
@@ -198,7 +198,7 @@ glyph_strokes = |b|
 	}
 
 ## A line of type at 50 px, whose capitals stand 36 px tall.
-sample_line : Shapes.Line
+sample_line : Shapes.TextLine
 sample_line = {
 	text: "Hi",
 	x: 100.0,
