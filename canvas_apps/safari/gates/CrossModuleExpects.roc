@@ -1537,8 +1537,8 @@ expect !ride_at_step_one.rider.is_finished(World.route)
 
 ## A rider on the middle of the road at the starting speed, `along` metres down
 ## segment `index` of the route.
-rider_at : U32, F64 -> RiderState
-rider_at = |index, along| {
+placed_rider : U32, F64 -> RiderState
+placed_rider = |index, along| {
 	..RiderState.initial,
 	segment_index: Route.SegmentIndex.number(index),
 	motorcycle: { ..Motorcycle.initial, along: Along.metres(along) },
@@ -1552,14 +1552,14 @@ expect World.route.segment_at(Route.SegmentIndex.number(last_segment_index)).end
 
 # The ride is finished once the rider reaches the end of the last segment, and
 # not before, nor anywhere on a segment that bends into another.
-expect rider_at(last_segment_index, 300.0).is_finished(World.route)
-expect !rider_at(last_segment_index, 299.0).is_finished(World.route)
-expect !rider_at(0, 499.0).is_finished(World.route)
+expect placed_rider(last_segment_index, 300.0).is_finished(World.route)
+expect !placed_rider(last_segment_index, 299.0).is_finished(World.route)
+expect !placed_rider(0, 499.0).is_finished(World.route)
 
 ## That rider a step on.
 rider_a_step_after : U32, F64 -> RiderState
 rider_a_step_after = |index, along|
-	rider_at(index, along).next({ route: World.route, encounter_timing: Unplanned })
+	placed_rider(index, along).next({ route: World.route, encounter_timing: Unplanned })
 
 # A rider near the first bend crosses onto the next segment's road, and one well
 # short of it, which the bend would carry far off that road, stays.
