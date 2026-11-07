@@ -41,6 +41,11 @@ rider is", and a chain is also a bike's. The structure was fine, so only the
 name changed: `RoadAhead` begins "RoadAhead finds where the road ahead lies",
 which restates its name.
 
+**The name repeats the type.** A field or function name that ends in its
+type's unit says nothing the type doesn't. `rod_width_px : Pixels` became
+`rod_width_on_screen`, and `metre_px` became `metre_on_screen`. The type says
+pixels, so let the name say what is measured.
+
 ## Types
 
 **The return type is wider than the truth.** A function that gives one thing or
@@ -64,7 +69,22 @@ two homes. Location lives in `Geom.Placed` and `Pipeline.Sighted`, around the ki
 
 **A wrong state can be written down.** If a value can hold something the program
 must never see, the type is too loose. Prefer a type where that state has nowhere
-to live over a check that catches it.
+to live over a check that catches it. A two-row pig herd could be built with an
+empty front row, so finding its standout pig needed a crash. The front row now
+holds its standout pig as a field of its own, and the crash went.
+
+**A stored value restates another.** A field worked out from other fields can
+disagree with them, which makes it a wrong state the type allows.
+`World.Segment` held a `pigs` list beside the `pig_herd` it was built from.
+`TreeOutline` held `crown_top_y` beside the height it follows from, with an
+expect to keep the two equal. The truck's `brake_lights` repeated what its two
+speeds say. Store the source, and work the rest out where it's needed.
+
+**One input is packed several ways.** The same facts travel as one record, then
+another, then a third, renamed on the way. Tower took a `Picture.Setting`, then
+a record of its own with `center` for the setting's `foot`, then `TowerInView`.
+Conifer packed the foot again into a `TreeAhead`, and passed the camera on its
+own. Hand the first record along whole, and add only what is new.
 
 ## Behavior
 
@@ -80,11 +100,26 @@ owns, and it fails quietly on the day it's reached. Polygons were silently cut t
 and on the guard rail. Either the limit is a rule of the world and is named as
 one, or it goes.
 
+**A test restates a constant.** `expect Trees.tree_spacing ==
+Distance.metres(30.0)` is a second copy of the number, not a test, and it has to
+change whenever the number does. Test what the constant does.
+
 **A silent fallback.** A default that hides a missing case turns a bug into a
 wrong picture. The emoji default was one. Answer an error, or crash if it can't
 happen.
 
 ## Structure
+
+**A helper wears a public name.** Everything in a type's `.{ }` block is part of
+the type, so a block full of helpers makes the type look far bigger than it is.
+Tower's block had 31 members, and 3 were used outside its file. Pigs, Cows,
+Trees, Truck and Pond were the same. Keep in the block what other modules use,
+and move the rest below it. An expect in the same file can call a private name.
+
+**An empty type is a namespace.** `Pigs :: [].{ ... }` held two herd shapes, the
+route's choices, the pig's look and the rider's interest, because nothing said
+what belonged. Ask what the real types are, and give each its own home, as
+`Pig`, `PigHerd` and World's herds did.
 
 **The same step is written once per kind.** When two modules have the same five
 lines with different nouns, the steps belong in one place, and each kind supplies
