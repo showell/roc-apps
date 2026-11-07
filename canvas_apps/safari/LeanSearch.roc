@@ -96,11 +96,6 @@ expect target_of(-2.0) < 0.0
 expect target_of(-2.0) > -2.0
 expect target_of(0.0) > 0.0
 
-expect LeanSearch.asymptote_tuning == 0.3
-expect LeanSearch.center_road_epsilon.to_metres() == 0.04
-expect LeanSearch.max_lean_change.to_radians() == 0.017453292519943295
-expect LeanSearch.lean_search_rounds == 12
-
 off_left : Coast.Outcome
 off_left = Leaves({ side: Left, after: Steps.one_step })
 

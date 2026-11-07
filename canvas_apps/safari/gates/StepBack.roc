@@ -1,11 +1,9 @@
 # Does one step back go back exactly one step? Natively, at depths either side
 # of the history's cap.
 #
-# Hand-written, like ShapesFrame and RasterFrame beside it. It exists because
-# the answer used to be no: `advance` stopped recording once its list was full,
-# so the history was the FIRST 2048 frames and a step back from frame 3000
-# landed on 2047. Pressing J -- which advances until the segment changes --
-# fills that list quickly, which is how it was found.
+# Hand-written, like ShapesFrame and RasterFrame beside it. The history keeps the
+# newest instants, so a step back from past its cap still lands one step back.
+# Pressing J, which advances until the segment changes, fills it quickly.
 #
 #   roc build --opt=dev StepBack.roc --output=<bin>; <bin>
 app [main!] { game: "../game.roc", lib: "../../lib/main.roc" }

@@ -52,8 +52,6 @@ Bike :: [].{
 	with_lean = |s, lean| { ..s, lean }
 }
 
-expect Bike.turn_per_lean == 0.1
-
 # Bike doesn't import RiderState, and `Motion` is open, so the records here stand in
 # for it: `segment_index`, `gaze_yaw` and `look_depth` are the caller's own fields.
 

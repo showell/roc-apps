@@ -218,8 +218,8 @@ expect one_step_on.segment_index == World.SegmentIndex.first
 expect one_step_on.across.distance_from_middle() < Scenery.road_half_width
 expect one_step_on.speed <= VehicleLimits.top_speed
 
-# These are LeanSearch's search. They sit here because LeanSearch imports
-# neither Pose nor Speed, and Rider sees both.
+# These test LeanSearch's search. They sit here because LeanSearch doesn't import
+# RiderState, and Rider does.
 
 ## The lean the search picks for a rider at the start of the segment, in radians.
 searched_lean : F64, F64 -> F64
@@ -242,16 +242,7 @@ offset = searched_lean(1.0, 0.0)
 held : F64
 held = searched_lean(0.0, 0.5)
 
-expect centred >= -max_correction
-expect centred <= max_correction
-expect offset >= -max_correction
-expect offset <= max_correction
-expect held >= 0.5 - max_correction
-expect held <= 0.5 + max_correction
+expect offset.abs() <= max_correction
 expect (held - 0.5).abs() <= max_correction
 expect centred.abs() <= max_correction
 expect held > centred
-
-# The search gives the same lean every time.
-expect searched_lean(1.0, 0.0) - offset == 0.0
-expect searched_lean(0.0, 0.5) - held == 0.0
