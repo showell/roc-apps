@@ -103,7 +103,7 @@ SceneShapes :: [].{
 rail_rendering : GuardRail.RailQuad, Pixels -> Try(Rendered, [BehindCamera])
 rail_rendering = |quad, cam_focal|
 	GuardRail.quad_shape(quad, cam_focal).map_ok(
-		|shape| { depth: quad.forward, picture: Picture.from_shapes([shape]) },
+		|shape| { depth: GuardRail.quad_depth(quad), picture: Picture.from_shapes([shape]) },
 	)
 
 ## The truck, if it is in view, where its sighting found it and with the lights

@@ -740,15 +740,14 @@ expect is_far_to_near([])
 patch_shapes : List(Ground.Patch) -> List(Shapes.Shape)
 patch_shapes = |patches| patches.keep_oks(|patch| Ground.patch_shape(patch, Pixels.of(500.0)))
 
-## Chunk `chunk_number` of the first segment's 20, which is 500 m long.
+## Chunk `chunk_number` of the first segment's 20, each 25 m long.
 corners_of_chunk : U32 -> List(Geom.RiderPoint)
 corners_of_chunk = |chunk_number| GroundSighting.chunk_corners(
 	road,
 	{
 		place: Ahead(SegmentPlace.Position.first),
-		segment_length: Distance.metres(500.0),
-		chunk_count: 20,
-		chunk_number,
+		near_end: Along.metres(25.0 * chunk_number.to_f64()),
+		far_end: Along.metres(25.0 * (chunk_number + 1).to_f64()),
 	},
 )
 

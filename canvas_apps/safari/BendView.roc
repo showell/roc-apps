@@ -10,27 +10,32 @@ import SegmentPlace
 import Geom
 import World
 
-## A bend as the rider sees it: where the segment before it lies, that
-## segment's length, and the turn the road makes, positive to the right.
-BendView := {
-	before : SegmentPlace,
-	length_before : Distance,
-	turn : Angle.Turn,
-}.{
+## A bend as the rider sees it: where the segment before it lies, and the
+## bend itself.
+BendView := { before : SegmentPlace, bend : Geom.Bend }.{
 
 	## The bend at the end of `segment`, which lies at `before`.
 	of_segment : World.Segment, SegmentPlace -> BendView
-	of_segment = |segment, before| {
-		before,
-		length_before: segment.length,
-		turn: segment.exit_turn,
-	}
+	of_segment = |segment, before| { before, bend: World.bend_out_of(segment) }
+
+	## The bend at the end of `in_view`, unless the road in view ends there.
+	bend_after : RoadAhead.RoadView, RoadAhead.SegmentInView -> Try(BendView, [RoadEndsInView])
+	bend_after = |road, in_view|
+		if RoadAhead.has_bend_in_view(road, in_view) {
+			Ok(BendView.of_segment(in_view.segment, in_view.place))
+		} else {
+			Err(RoadEndsInView)
+		}
+
+	## The turn the road makes at a bend, positive to the right.
+	turn : BendView -> Angle.Turn
+	turn = |bend_view| bend_view.bend.turn
 
 	## Where the segment after a bend lies: next on the road ahead, or the
 	## rider's own when the segment before is just behind the rider.
 	place_after : BendView -> SegmentPlace
-	place_after = |bend|
-		match bend.before {
+	place_after = |bend_view|
+		match bend_view.before {
 			Ahead(position) => Ahead(position.next())
 			JustBehind(_) => Ahead(SegmentPlace.Position.first)
 		}
@@ -38,8 +43,8 @@ BendView := {
 	## How far across the road its outer edge at a bend is: the left edge
 	## when the road turns right, the right edge when it turns left.
 	outer_edge : Angle.Turn -> Across
-	outer_edge = |turn|
-		if turn.is_right() {
+	outer_edge = |bend_turn|
+		if bend_turn.is_right() {
 			Geom.left_edge
 		} else {
 			Geom.right_edge
@@ -47,11 +52,12 @@ BendView := {
 
 	## Where the outer edges of the two segments at a bend meet.
 	apex : RoadAhead.RoadView, BendView -> Geom.RiderPoint
-	apex = |road, bend| {
-		across = outer_edge(bend.turn)
-		end_before = Along.at(bend.length_before)
-		point_before = |along| RoadAhead.rider_point_at(road, { place: bend.before, along, across })
-		place = place_after(bend)
+	apex = |road, bend_view| {
+		across = outer_edge(bend_view.turn())
+		end_before = Along.at(bend_view.bend.segment_length)
+		before = bend_view.before
+		point_before = |along| RoadAhead.rider_point_at(road, { place: before, along, across })
+		place = place_after(bend_view)
 		point_after = |along| RoadAhead.rider_point_at(road, { place, along, across })
 		Geom.line_crossing({
 			first_line: {
@@ -90,8 +96,7 @@ apex_after_turn = |turn|
 		},
 		{
 			before: JustBehind({ segment_length: Distance.metres(300.0), turn }),
-			length_before: Distance.metres(300.0),
-			turn,
+			bend: { segment_length: Distance.metres(300.0), turn },
 		},
 	)
 
