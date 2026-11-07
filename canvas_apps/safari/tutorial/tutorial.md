@@ -1162,7 +1162,7 @@ New in this chapter:
 
 That's the record that the elephant and its baby came out as: two places, an emoji, a height and a way to face. A critter's `codepoint` is what finds its still, and that's one `match`, from a number to some polygons:
 
-{{code EmojiStills.emoji_polys_for}}
+{{code EmojiStills.EmojiStill}}
 
 That's a pig. One pig doesn't look like much of a farm, though.
 

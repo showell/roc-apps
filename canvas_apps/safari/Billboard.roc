@@ -1,5 +1,5 @@
 ## A billboard is a critter that stands in one place and always faces the
-## camera: the emoji still for its codepoint, at a height, facing left or right.
+## camera: an emoji's still, at a height, facing left or right.
 import Across
 import Along
 import Camera
@@ -13,7 +13,7 @@ import Spot
 import StillShapes
 
 Billboard := {
-	codepoint : U32,
+	still : EmojiStills.EmojiStill,
 	height : Distance,
 	facing : Billboard.Facing,
 }.{
@@ -22,12 +22,12 @@ Billboard := {
 	Facing : [FacesLeft, FacesRight]
 
 	## A kind of animal: its emoji, and how tall a grown one stands.
-	Species : { codepoint : U32, adult_height : Distance }
+	Species : { still : EmojiStills.EmojiStill, adult_height : Distance }
 
 	## A grown animal of `species`.
 	adult_billboard : Billboard.Species, Billboard.Facing -> Billboard
 	adult_billboard = |species, facing| {
-		codepoint: species.codepoint,
+		still: species.still,
 		height: species.adult_height,
 		facing,
 	}
@@ -35,7 +35,7 @@ Billboard := {
 	## A young animal of `species`, which stands half as tall as a grown one.
 	young_billboard : Billboard.Species, Billboard.Facing -> Billboard
 	young_billboard = |species, facing| {
-		codepoint: species.codepoint,
+		still: species.still,
 		height: species.adult_height.divided_by(2.0),
 		facing,
 	}
@@ -59,10 +59,7 @@ Billboard := {
 					FacesRight => Mirrored
 				}
 			Picture.from_shapes(
-				StillShapes.still_shapes(
-					{ feet, flip, height_px },
-					EmojiStills.emoji_polys_for(billboard.codepoint),
-				),
+				StillShapes.still_shapes({ feet, flip, height_px }, billboard.still.polygons()),
 			)
 		}
 	}
@@ -74,11 +71,11 @@ Billboard := {
 shape_count : {
 	forward : Distance,
 	height : Distance,
-	codepoint : U32,
+	still : EmojiStills.EmojiStill,
 } -> U64
-shape_count = |{ forward, height, codepoint }| {
+shape_count = |{ forward, height, still }| {
 	billboard : Billboard
-	billboard = { codepoint, height, facing: FacesLeft }
+	billboard = { still, height, facing: FacesLeft }
 	foot = Geom.ahead_on_level({
 		right: Distance.zero,
 		forward,
@@ -92,37 +89,34 @@ shape_count = |{ forward, height, codepoint }| {
 	billboard.scenery_picture({ spot, cam_focal: Pixels.of(500.0), context: {} }).to_shapes().len()
 }
 
-elephant : U32
-elephant = 128024
-
 # A billboard is drawn while it stands a pixel tall.
 expect
 	shape_count({
 		forward: Distance.metres(1000.0),
 		height: Distance.metres(2.0),
-		codepoint: elephant,
+		still: EmojiStills.elephant,
 	})
 		== 6
 expect
 	shape_count({
 		forward: Distance.metres(2000.0),
 		height: Distance.metres(2.0),
-		codepoint: elephant,
+		still: EmojiStills.elephant,
 	})
 		== 0
 expect
 	shape_count({
 		forward: Distance.metres(1000.0),
 		height: Distance.metres(1.9),
-		codepoint: elephant,
+		still: EmojiStills.elephant,
 	})
 		== 0
 expect
 	shape_count({
 		forward: Distance.metres(100.0),
 		height: Distance.metres(2.0),
-		codepoint: elephant,
+		still: EmojiStills.elephant,
 	})
 		== 6
 
-expect EmojiStills.emoji_polys_for(elephant).len() == 6
+expect EmojiStills.elephant.polygons().len() == 6

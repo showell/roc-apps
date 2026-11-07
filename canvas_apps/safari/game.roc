@@ -27,6 +27,7 @@ package
 		DepthSort,
 		Detail,
 		Distance,
+		EmojiStills,
 		Fraction,
 		Gaze,
 		Geom,

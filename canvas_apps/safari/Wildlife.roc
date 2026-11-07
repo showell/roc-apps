@@ -6,6 +6,7 @@ import Along
 import Angle
 import Billboard
 import Distance
+import EmojiStills
 import Geom
 import Scenery
 
@@ -23,10 +24,10 @@ Wildlife :: [].{
 	species_of : Scenery.Animal -> Billboard.Species
 	species_of = |animal|
 		match animal {
-			Elephant => { codepoint: 128024, adult_height: Distance.metres(2.8) }
-			Giraffe => { codepoint: 129426, adult_height: Distance.metres(4.5) }
-			Zebra => { codepoint: 129427, adult_height: Distance.metres(1.6) }
-			Rhino => { codepoint: 129423, adult_height: Distance.metres(2.2) }
+			Elephant => { still: EmojiStills.elephant, adult_height: Distance.metres(2.8) }
+			Giraffe => { still: EmojiStills.giraffe, adult_height: Distance.metres(4.5) }
+			Zebra => { still: EmojiStills.zebra, adult_height: Distance.metres(1.6) }
+			Rhino => { still: EmojiStills.rhino, adult_height: Distance.metres(2.2) }
 		}
 
 	## The animal and its baby at `bend`, the bend that ends a segment.
@@ -121,16 +122,16 @@ expect
 		]
 
 expect
-	four_critters.map(|critter| critter.kind.codepoint)
+	four_critters.map(|critter| critter.kind.still)
 		== [
-			128024,
-			128024,
-			129426,
-			129426,
-			129427,
-			129427,
-			129423,
-			129423,
+			EmojiStills.elephant,
+			EmojiStills.elephant,
+			EmojiStills.giraffe,
+			EmojiStills.giraffe,
+			EmojiStills.zebra,
+			EmojiStills.zebra,
+			EmojiStills.rhino,
+			EmojiStills.rhino,
 		]
 
 expect

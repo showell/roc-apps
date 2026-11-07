@@ -5,6 +5,7 @@ import Across
 import Along
 import Billboard
 import Distance
+import EmojiStills
 import Geom
 import lib.RgbColor
 
@@ -65,9 +66,9 @@ Pond :: [].{
 		)
 }
 
-## The duck emoji, and how tall a duck stands.
+## The duck's still, and how tall a duck stands.
 duck : Billboard.Species
-duck = { codepoint: 129414, adult_height: Distance.metres(0.9) }
+duck = { still: EmojiStills.duck, adult_height: Distance.metres(0.9) }
 
 ## A duck on the pond, where it floats and which way it faces.
 Duck : { at : Pond.PondPoint, facing : Billboard.Facing }

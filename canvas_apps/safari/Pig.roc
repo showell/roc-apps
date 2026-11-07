@@ -2,10 +2,11 @@
 ## looks the same, so one value says how.
 import Billboard
 import Distance
+import EmojiStills
 
 Pig :: [].{
 
 	## How every pig looks.
 	pig : Billboard.Species
-	pig = { codepoint: 128022, adult_height: Distance.metres(1.1) }
+	pig = { still: EmojiStills.pig, adult_height: Distance.metres(1.1) }
 }
