@@ -120,7 +120,7 @@ caption_shapes = |stand|
 still_shapes : List(Shapes.Shape)
 still_shapes = {
 	trees = stands.join_map(tree_shapes)
-	picture_shapes = ScrubWidget.ride_shapes({
+	picture_shapes = ScrubWidget.picture_shapes({
 		backdrop: { sky_colors: Sky.colors_at(Clock.start), sun_sighting: OutOfView },
 		ride_shapes: trees,
 		roll: Angle.upright,

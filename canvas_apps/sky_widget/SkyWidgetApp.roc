@@ -110,7 +110,7 @@ sky_colors = |job, clock|
 ## The ride's sky at `clock`, for a rider facing the sun.
 picture_shapes : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
 picture_shapes = |job, clock|
-	ScrubWidget.ride_shapes({
+	ScrubWidget.picture_shapes({
 		backdrop: {
 			sky_colors: sky_colors(job, clock),
 			sun_sighting: Sun.sighting({ heading: Sun.bearing, cam_focal: Lens.resting_focal }, clock),
