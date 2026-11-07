@@ -12,6 +12,7 @@ import Along
 import Distance
 import Easing
 import Fraction
+import Geom
 import Speed
 import Steps
 
@@ -82,6 +83,15 @@ Animation :: [].{
 
 	## A critter at one instant: how it looks, and where it is.
 	Instant(pose) : { pose : pose, spot : Animation.Spot }
+
+	## `instant` as an object on the road. A critter's kind says how it looks and
+	## how high it is, which is all of `instant` but where on the road it stands.
+	placed_instant : Animation.Instant(pose) -> Geom.Placed({ pose : pose, lift : Distance })
+	placed_instant = |instant| {
+		along: instant.spot.along,
+		across: instant.spot.across,
+		kind: { pose: instant.pose, lift: instant.spot.lift },
+	}
 
 	## A whole animation: the critter at rest before, the frames it plays through,
 	## each an equal share of the animation, and the critter at rest after.
@@ -255,6 +265,21 @@ empty_timeline = Animation.Timeline.(
 )
 
 expect empty_timeline.instant(Playing(Fraction.zero)).pose == AfterIt
+
+# A placed instant stands where the instant's spot is, and keeps the rest as its kind.
+expect {
+	spot = {
+		along: Along.metres(3.0),
+		across: Across.metres(-1.0),
+		lift: Distance.metres(2.0),
+	}
+	Animation.placed_instant({ pose: First, spot })
+		== {
+			along: spot.along,
+			across: spot.across,
+			kind: { pose: First, lift: spot.lift },
+		}
+}
 
 start_spot : Animation.Spot
 start_spot = {

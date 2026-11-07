@@ -1,15 +1,15 @@
 ## The widget for the Safari tutorial's beacons. Video recorder buttons run the
 ## ride's clock, and each frame is worked out from that clock alone, so two towers
 ## blink opposite each other at dusk, where a beacon shows up. The towers are drawn
-## by Safari's own Tower, and how bright each is comes from TowerSighting. Below
+## by Safari's own Tower, and how bright each is comes from Beacon. Below
 ## them, the buttons and four lines of text that read out the clock.
+import game.Beacon
 import game.Clock
 import game.Distance
 import game.Fraction
 import game.Lens
 import game.Steps
 import game.Tower
-import game.TowerSighting
 import lib.CanvasApp
 import lib.Shapes
 import widget.ScrubWidget
@@ -46,11 +46,11 @@ first_tower_key = 0
 second_tower_key : U32
 second_tower_key = 60
 
-## How bright the beacon with `key` is at `clock`, as TowerSighting works it out.
+## How bright the beacon with `key` is at `clock`, as Beacon works it out.
 brightness_at : Clock, U32 -> Fraction
 brightness_at = |clock, key| {
-	offset = TowerSighting.beacon_offset_for(key)
-	TowerSighting.beacon_brightness(clock.minus(Clock.start).plus(offset))
+	offset = Beacon.beacon_offset_for(key)
+	Beacon.beacon_brightness(clock.minus(Clock.start).plus(offset))
 }
 
 ## How far ahead of the picture's eye the towers stand, so that their tops fit.
@@ -111,7 +111,7 @@ tower_shapes = |right, brightness| {
 ## What the clock and the beacons say at `clock`, a line each.
 status_lines : Clock -> List(Str)
 status_lines = |clock| {
-	period = TowerSighting.beacon_period
+	period = Beacon.beacon_period
 	into_blink = clock.minus(Clock.start).wrapped_to(period)
 	first_tower = ScrubWidget.percent_text(brightness_at(clock, first_tower_key))
 	second_tower = ScrubWidget.percent_text(brightness_at(clock, second_tower_key))
@@ -128,8 +128,8 @@ step_count_text : Steps -> Str
 step_count_text = |steps| steps.to_f64().to_i64_wrap().to_str()
 
 # The real towers' key step: half a period past a whole number of periods.
-expect TowerSighting.beacon_offset_for(first_tower_key) == Steps.zero
-expect TowerSighting.beacon_offset_for(second_tower_key) == Steps.of(60)
+expect Beacon.beacon_offset_for(first_tower_key) == Steps.zero
+expect Beacon.beacon_offset_for(second_tower_key) == Steps.of(60)
 
 # Whatever the clock says, what one beacon lacks the other has.
 expect
@@ -157,7 +157,7 @@ expect
 # The range opens at the start of a blink and ends at the end of the second.
 expect blinks.first == Clock.at_step(5400)
 expect blinks.last == Clock.at_step(5640)
-expect blinks.last.minus(blinks.first).to_f64() == 2.0 * TowerSighting.beacon_period.to_f64()
+expect blinks.last.minus(blinks.first).to_f64() == 2.0 * Beacon.beacon_period.to_f64()
 
 ## Whether a share is `want`, to within rounding.
 is_near : Fraction, F64 -> Bool

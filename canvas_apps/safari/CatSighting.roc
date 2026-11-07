@@ -1,11 +1,11 @@
 ## CatSighting finds the cats the rider can see in a frame: each one waiting
 ## on a segment of the chain ahead, placed where its crossing has got to,
 ## if it is in front of the camera and tall enough on screen to draw.
+import Animation
 import Cat
 import CatShapes
 import Chain
 import Geom
-import Detail
 import Pipeline
 import Speed
 
@@ -47,17 +47,13 @@ cat_in_view = |view, { position, crossing, speed }| {
 	gap = Chain.gap_to_segment(view.road, position)
 	instant = Cat.instant_at(crossing, { gap: gap.plus(crossing.along.from_start()), speed })
 	placed_cat : Geom.Placed(CatShapes.PosedCat)
-	placed_cat = {
-		along: instant.spot.along,
-		across: instant.spot.across,
-		kind: { pose: instant.pose, lift: instant.spot.lift },
-	}
+	placed_cat = Animation.placed_instant(instant)
 	Pipeline.sighting_of(
 		placed_cat,
 		{
 			road: view.road,
 			place: InChain(position),
-			size_test: { focal: view.cam_focal, smallest_px: Detail.min_scenery_px },
+			size_test: Pipeline.scenery_test(view),
 		},
 	)
 }
