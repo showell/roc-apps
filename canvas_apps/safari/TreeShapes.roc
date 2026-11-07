@@ -12,6 +12,7 @@ import Picture
 import Polygon
 import Pixels
 import Screen
+import Spot
 import lib.Brush
 import lib.RgbColor
 import lib.Shapes
@@ -30,8 +31,8 @@ TreeShapes :: [].{
 		foliage_color : RgbColor,
 	} -> Picture
 	tree_picture = |{ spot, cam_focal, context }, { height, foliage_color }| {
-		base = spot.foot().at_height(spot.lift())
-		outline = tree_outline({ base, height, cam_focal })
+		base = base_of(spot)
+		outline = outline_from_base({ base, height, cam_focal })
 		inputs = {
 			base,
 			height,
@@ -56,22 +57,32 @@ TreeShapes :: [].{
 			Triangles
 		}
 
-	## Where a tree is on the screen, given its `base`, the middle of its foot,
-	## and its `height` above that, through a lens of focal length `cam_focal`.
-	tree_outline : {
-		base : Geom.AheadPoint,
-		height : Distance,
-		cam_focal : Pixels,
-	} -> TreeShapes.TreeOutline
-	tree_outline = |{ base, height, cam_focal }| {
-		foot = Camera.project(base, cam_focal)
-		top = Camera.project(base.at_height(base.height().plus(height)), cam_focal)
-		{ foot, height: foot.y.minus(top.y) }
-	}
+	## Where the tree at `spot` is on the screen, `height` tall, through a lens
+	## of focal length `cam_focal`.
+	tree_outline : Spot, { height : Distance, cam_focal : Pixels } -> TreeShapes.TreeOutline
+	tree_outline = |spot, { height, cam_focal }|
+		outline_from_base({ base: base_of(spot), height, cam_focal })
 
 	## The tree is drawn 136 parts tall, and the shares below are parts of that.
 	tree_parts : U64
 	tree_parts = 136
+}
+
+## The middle of the foot of the tree at `spot`.
+base_of : Spot -> Geom.AheadPoint
+base_of = |spot| spot.foot().at_height(spot.lift())
+
+## Where a tree is on the screen, given its `base`, the middle of its foot,
+## and its `height` above that, through a lens of focal length `cam_focal`.
+outline_from_base : {
+	base : Geom.AheadPoint,
+	height : Distance,
+	cam_focal : Pixels,
+} -> TreeShapes.TreeOutline
+outline_from_base = |{ base, height, cam_focal }| {
+	foot = Camera.project(base, cam_focal)
+	top = Camera.project(base.at_height(base.height().plus(height)), cam_focal)
+	{ foot, height: foot.y.minus(top.y) }
 }
 
 ## A tree nearer than this has cones for a crown.
@@ -412,7 +423,7 @@ sample_height : Distance
 sample_height = Distance.metres(4.352)
 
 sample_outline : TreeShapes.TreeOutline
-sample_outline = TreeShapes.tree_outline({
+sample_outline = outline_from_base({
 	base: sample_base(Distance.zero),
 	height: sample_height,
 	cam_focal: Pixels.of(500.0),
