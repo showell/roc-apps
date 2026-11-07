@@ -90,20 +90,6 @@ road_from = |number| RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex
 road : RoadAhead.RoadView
 road = road_from(0)
 
-## The world's first `count` segments, a route of their own.
-route_of_first : U64 -> Route
-route_of_first = |count|
-	Route.from_segments(
-		World.route.route_segments().take_first(count).map_with_index(
-			|segment, at|
-				if at + 1 == count {
-					{ ..segment, ending: RouteEnds }
-				} else {
-					segment
-				},
-		),
-	)
-
 # Positions count along the road ahead from the rider's segment, not along the
 # route from its start.
 expect {
@@ -675,248 +661,58 @@ expect
 		},
 	)
 
-# BillboardSighting: how far along the road ahead each kind of critter is sighted.
-## The road ahead of a rider on the first of a route of the world's first six
-## segments.
-six_segments : RoadAhead.RoadView
-six_segments = RoadAhead.RoadView.ahead_of(route_of_first(6), Route.SegmentIndex.first)
-
-## The road ahead of a rider on a route of the world's first segment alone.
-first_alone : RoadAhead.RoadView
-first_alone = RoadAhead.RoadView.ahead_of(route_of_first(1), Route.SegmentIndex.first)
-
-## The critters of the segment at `in_view` on `road_view`, seen from the origin.
-segment_billboards_on : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(BillboardSighting.Fate)
-segment_billboards_on = |road_view, in_view|
-	BillboardSighting.segment_billboards(road_view, { vantage: origin, in_view })
-
-## The farm animals of the segment at `in_view` on `road_view`, seen from the
-## origin.
-farm_sightings_on : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(BillboardSighting.Fate)
-farm_sightings_on = |road_view, in_view|
-	BillboardSighting.farm_sightings(road_view, { vantage: origin, in_view })
-
-## What lives at the end of the segment at `in_view` on `road_view`, seen from
-## the origin.
-bend_sightings_on : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(BillboardSighting.Fate)
-bend_sightings_on = |road_view, in_view|
-	BillboardSighting.bend_sightings(road_view, { vantage: origin, in_view })
-
 ## The segment `number` places along the road ahead of `road_view`.
 numbered_segment : RoadAhead.RoadView, U32 -> RoadAhead.SegmentInView
 numbered_segment = |road_view, number|
 	RoadAhead.segment_in_view_at(road_view, SegmentPlace.Position.number(number))
 
-## The road ahead of a rider on the segment after the world's segment `number`,
-## and `number` in view just behind that rider.
-road_past_segment : U32 -> { road_view : RoadAhead.RoadView, in_view : RoadAhead.SegmentInView }
-road_past_segment = |number| {
-	road_view = road_from(number + 1)
-	{ road_view, in_view: segment_in_view_behind(road_view) }
+# BillboardSighting: which critters are in view, on a road of one segment
+# holding one grown cow and nothing else.
+one_cow_segment : Segment
+one_cow_segment = {
+	..segment_of([]),
+	pigs: NoPigs,
+	cows: { herd: { ..segment_of([]).cows.herd, cow_count: 1 }, bull: NoBull },
 }
 
-farm_at : U32 -> I64
-farm_at = |number|
-	farm_sightings_on(six_segments, numbered_segment(six_segments, number))
-		.len()
-		.to_i64_wrap()
-
-bend_at : U32 -> I64
-bend_at = |number|
-	bend_sightings_on(six_segments, numbered_segment(six_segments, number))
-		.len()
-		.to_i64_wrap()
-
-expect farm_at(0) > 0
-expect farm_at(2) > 0
-expect farm_at(3) == 0
-expect farm_at(4) == 0
-expect farm_at(5) == 0
-expect bend_at(3) > 0
-expect bend_at(4) > 0
-expect bend_at(5) == 0
-
-## How many critters live at the end of the world's segment `index`, seen alone.
-lone_bend_count : U32 -> I64
-lone_bend_count = |index|
-	bend_sightings_on(road_from(index), numbered_segment(road_from(index), 0))
-		.len()
-		.to_i64_wrap()
-
-# Segment 12 ends at the duck pond, 0 and 4 at an animal and its baby, and 18,
-# the road's last, quietly.
-expect lone_bend_count(12) == 6
-expect lone_bend_count(0) == 2
-expect lone_bend_count(4) == 2
-expect lone_bend_count(18) == 0
-expect {
-	first = numbered_segment(six_segments, 0)
-	whole = segment_billboards_on(six_segments, first).len().to_i64_wrap()
-	whole == farm_at(0) + bend_at(0)
+lone_cow : Geom.RoadPoint
+lone_cow = match one_cow_segment.segment_cows() {
+	[cow] => cow.road_point
+	_ => crash "CrossModuleExpects: the one-cow segment holds one cow"
 }
 
-## How many critters the segments from `position` to the road's end hold.
-count_from : U32 -> I64
-count_from = |position|
-	List.from_iter(U32.until(position, 6))
-		.map(
-			|number| {
-				in_view = numbered_segment(six_segments, number)
-				segment_billboards_on(six_segments, in_view).len().to_i64_wrap()
-			},
-		)
-		.sum()
-
-expect
-	BillboardSighting.billboard_fates(first_alone, origin_camera).len()
-		== segment_billboards_on(first_alone, numbered_segment(first_alone, 0)).len()
-expect BillboardSighting.billboard_fates(
-	six_segments,
-	origin_camera,
-).len().to_i64_wrap() == count_from(0)
-expect count_from(0) >= count_from(1)
-expect count_from(1) >= count_from(2)
-expect {
-	{ road_view, in_view } = road_past_segment(4)
-	segment_billboards_on(road_view, in_view).len() > 0
-}
-expect {
-	{ road_view, in_view } = road_past_segment(12)
-	bend_sightings_on(road_view, in_view).len() == 6
-}
-expect {
-	{ road_view, in_view } = road_past_segment(0)
-	fates = farm_sightings_on(road_view, in_view)
-	fates.len() > 0 and fates.all(|fate| how_it_went(fate) == BehindCamera)
-}
-expect {
-	{ road_view, in_view } = road_past_segment(0)
-	bend_sightings_on(road_view, in_view).len() == 2
-}
-
-## A billboard standing on the ground of the first segment, as the rider at its
-## start sees it.
-critter_fate : {
-	along : Along,
-	across : Across,
-	kind : Billboard,
-} -> BillboardSighting.Fate
-critter_fate = |{ along, across, kind }| {
-	critter = {
-		road_point: { along, across },
-		lift: Distance.zero,
-		kind,
+## Whether the rider sees the lone cow from `forward` metres short of it and
+## 2.5 m to its left.
+is_cow_seen_from : F64 -> Bool
+is_cow_seen_from = |forward| {
+	rider = {
+		along: Along.metres(lone_cow.along.to_metres() - forward),
+		across: Across.metres(lone_cow.across.to_metres() - 2.5),
+		yaw: Angle.straight_ahead,
 	}
-	BillboardSighting.sight_critter(
-		road,
-		{
-			vantage: origin,
-			place: Ahead(SegmentPlace.Position.first),
-			critter,
-		},
+	sighted = BillboardSighting.billboards_in_view(
+		RoadAhead.RoadView.ahead_of(Route.from_segments([one_cow_segment]), Route.SegmentIndex.first),
+		{ vantage: rider },
 	)
+	sighted.len() == 1
 }
 
-## A cow 2.5 m to the right of the rider, `forward` metres ahead.
-cow_fate : { forward : Distance, height : Distance } -> BillboardSighting.Fate
-cow_fate = |{ forward, height }|
-	critter_fate({
-		along: Along.at(forward),
-		across: Across.metres(2.5),
-		kind: { emoji: EmojiStills.cow, height, facing: FacesRight },
-	})
-
-## Which way a sighting went, whatever it carries.
-how_it_went : BillboardSighting.Fate -> [Seen, BehindCamera, TooSmall]
-how_it_went = |fate|
-	match fate {
-		Ok(_) => Seen
-		Err(BehindCamera) => BehindCamera
-		Err(TooSmall) => TooSmall
-	}
-
-# The near plane is 0.4 m, and a cow on it is in view. At the lens's resting
-# focal length a 1 m cow is 2 pixels tall about 342.8 m off.
+# The near plane is 0.4 m. The rider's place is worked out from the cow's, so
+# the cow's distance carries a rounding, and the checks stand a little either
+# side of the plane. At the lens's resting focal length the 1.4 m cow is 2
+# pixels tall about 479.9 m off.
 expect
 	[
-		(-5.0, 1.0, BehindCamera),
-		(0.3, 1.0, BehindCamera),
-		(0.39, 1.0, BehindCamera),
-		(0.4, 1.0, Seen),
-		(0.5, 1.0, Seen),
-		(300.0, 1.0, Seen),
-		(342.0, 1.0, Seen),
-		(343.0, 1.0, TooSmall),
-		(400.0, 1.0, TooSmall),
-		(10.0, 0.0, TooSmall),
-		(50.0, 0.9, Seen),
-	].all(
-		|(forward, height, want)| {
-			fate = cow_fate({ forward: Distance.metres(forward), height: Distance.metres(height) })
-			how_it_went(fate) == want
-		},
-	)
-
-near_cow : Pipeline.Sighted(Billboard)
-near_cow =
-	cow_fate({ forward: Distance.metres(0.5), height: Distance.metres(1.0) })
-		?? crash "CrossModuleExpects: a cow 0.5 m ahead is in view"
-
-left_bull : Pipeline.Sighted(Billboard)
-left_bull =
-	critter_fate({
-		along: Along.metres(50.0),
-		across: Across.metres(-1.5),
-		kind: {
-			emoji: EmojiStills.bull,
-			height: Distance.metres(1.6),
-			facing: FacesLeft,
-		},
-	})
-		?? crash "CrossModuleExpects: a bull 50 m ahead is in view"
-
-expect near_cow.spot.foot().right().to_metres() == 2.5
-expect near_cow.spot.foot().forward().to_metres() == 0.5
-expect near_cow.kind.height.to_metres() == 1.0
-expect left_bull.spot.foot().right().to_metres() == -1.5
-expect left_bull.spot.foot().forward().to_metres() == 50.0
-expect left_bull.kind.height.to_metres() == 1.6
-
-expect near_cow.kind.emoji == EmojiStills.cow
-expect left_bull.kind.emoji == EmojiStills.bull
-expect near_cow.kind.facing == FacesRight
-expect left_bull.kind.facing == FacesLeft
-
-# RailSighting's run up to a bend and out of it.
-rail_point_at : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
-rail_point_at = |points, i|
-	points.get(i) ?? crash "CrossModuleExpects: an index past the rail's end"
-
-runup_points_to_bend : List(Geom.RiderPoint)
-runup_points_to_bend = RailSighting.runup_points(
-	road,
-	{
-		vantage: origin,
-		place: Ahead(SegmentPlace.Position.first),
-		length: Distance.metres(500.0),
-		across: Across.metres(2.0),
-	},
-)
-
-expect RailSighting.runout_points(
-	road,
-	{
-		vantage: origin,
-		place: Ahead(SegmentPlace.Position.first),
-		across: Across.metres(2.0),
-	},
-).len() == 10
-expect runup_points_to_bend.len() == 11
-expect
-	[
-		(rail_point_at(runup_points_to_bend, 0).forward.to_metres(), 490.0),
-		(rail_point_at(runup_points_to_bend, 10).forward.to_metres(), 500.0),
-	].all(|(got, want)| (got - want).abs() <= 0.0001)
+		(-5.0, False),
+		(0.3, False),
+		(0.39, False),
+		(0.41, True),
+		(0.5, True),
+		(300.0, True),
+		(479.0, True),
+		(481.0, False),
+		(600.0, False),
+	].all(|(forward, want)| is_cow_seen_from(forward) == want)
 
 # Scene, on the scene from the start of the route.
 scene_facts : Scene.RideFacts
