@@ -112,7 +112,7 @@ picture_shapes = |job, clock| {
 		{
 			sky_top_color: colors.top,
 			sky_horizon_color: colors.horizon,
-			sun_sighting: Sun.sighting({ heading: Sun.bearing, clock, cam_focal: Lens.focal }),
+			sun_sighting: Sun.sighting({ heading: Sun.bearing, clock, cam_focal: Lens.resting_focal }),
 		},
 	)
 }

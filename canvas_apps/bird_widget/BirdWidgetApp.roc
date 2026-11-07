@@ -108,7 +108,7 @@ road = {
 				forward,
 				height: Distance.zero,
 			},
-			Lens.focal,
+			Lens.resting_focal,
 		)
 	Polygon.flat_polygon(
 		0x8a8a8a,
@@ -126,7 +126,7 @@ tree_shapes = |tree|
 	tree.kind.scenery_picture({
 		right: Distance.metres(tree.across.to_metres()),
 		forward: forward_of(tree.along),
-		cam_focal: Lens.focal,
+		cam_focal: Lens.resting_focal,
 		context: { nearer_tree_count: 0 },
 	}).to_shapes()
 
@@ -139,7 +139,7 @@ bird_shapes = |gap| {
 	bird.scenery_picture({
 		right: Distance.metres(instant.spot.across.to_metres()),
 		forward: forward_of(instant.spot.along),
-		cam_focal: Lens.focal,
+		cam_focal: Lens.resting_focal,
 		context: {},
 	}).to_shapes()
 }

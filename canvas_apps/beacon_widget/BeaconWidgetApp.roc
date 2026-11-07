@@ -103,7 +103,7 @@ tower_shapes = |right, brightness| {
 			front_left: corner_point(FrontLeft),
 		},
 		center,
-		cam_focal: Lens.focal,
+		cam_focal: Lens.resting_focal,
 		beacon_brightness: brightness,
 	})
 }

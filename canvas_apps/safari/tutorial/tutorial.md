@@ -2256,9 +2256,9 @@ From there to the screen is a pinhole camera, which is similar triangles. Dividi
 
 {{code BirdShapes.PosedBird from "feet = Camera.project(" to "feet = Camera.project("}}
 
-The focal length comes from a lens. `focal` is a value computed from other values, with no function in sight, and `field_of_view` is a `Turn`, so taking half of it needs no comment about radians. [check: whether a value like this inside a `.{ }` block is evaluated at compile time, as top-level values are.]
+The focal length comes from a lens. `resting_focal` is a value computed from other values, with no function in sight, and `field_of_view` is a `Turn`, so taking half of it needs no comment about radians. [check: whether a value like this inside a `.{ }` block is evaluated at compile time, as top-level values are.]
 
-{{code Lens.focal}}
+{{code Lens.resting_focal}}
 
 The view widens as the rider leans. One `Fraction` goes in, and a focal length comes out. `RideFocal.ride_focal`, from the chapter on what a cat does to the rider, calls this through `cam_focal`, taking the wider of what the lean and the rider's attention ask for:
 

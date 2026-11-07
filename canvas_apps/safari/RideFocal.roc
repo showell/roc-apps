@@ -24,12 +24,11 @@ RideFocal :: [].{
 	## The camera's focal length for where the rider is and how they ride.
 	ride_focal : List(World.Segment), RiderState -> Pixels
 	ride_focal = |route_segments, rider| {
-		lean_fraction = Fraction.clamp(rider.lean.to_radians().abs() / Lens.full_lean.to_radians())
 		attention = crossing_attention(
 			route_segments,
 			rider,
 		).max(Gaze.gaze_attention(rider.look_depth))
-		Lens.cam_focal({ lean_fraction, attention })
+		Lens.cam_focal({ lean: rider.lean, attention })
 	}
 }
 
@@ -64,13 +63,13 @@ has_cat = |seg|
 expect !has_cat(World.route_segment(0))
 expect has_cat(cat_segment)
 
-expect RideFocal.ride_focal(route_segments, upright).minus(Lens.focal) == Pixels.zero
+expect RideFocal.ride_focal(route_segments, upright).minus(Lens.resting_focal) == Pixels.zero
 expect RideFocal.crossing_attention(route_segments, upright).to_f64() == 0.0
 expect Gaze.gaze_attention(Fraction.zero).to_f64() == 0.0
 expect Lens.cam_focal({
-	lean_fraction: Fraction.zero,
+	lean: upright.lean,
 	attention: Attention.none,
-}).minus(Lens.focal) == Pixels.zero
+}).minus(Lens.resting_focal) == Pixels.zero
 
 # RideFocal doesn't import Angle, so these leans are made from `Lens.full_lean`.
 focal_at_lean = |lean| RideFocal.ride_focal(route_segments, { ..upright, lean })
@@ -80,7 +79,7 @@ expect {
 	focal_at_lean(half) < focal_at_lean(upright.lean)
 		and focal_at_lean(Lens.full_lean) < focal_at_lean(half)
 		and focal_at_lean(upright.lean.minus(Lens.full_lean)) < focal_at_lean(upright.lean)
-		and focal_at_lean(upright.lean) <= Lens.focal
+		and focal_at_lean(upright.lean) <= Lens.resting_focal
 }
 
 # A lean past the greatest one widens the view no further.
@@ -134,6 +133,6 @@ expect
 expect lean_only.plus(gaze_only) > both
 expect both.to_f64() - lean_only.to_f64().min(gaze_only.to_f64()) == 0.0
 expect Lens.cam_focal({
-	lean_fraction: Fraction.whole,
+	lean: Lens.full_lean,
 	attention: Attention.none,
 }).minus(lean_only) == Pixels.zero

@@ -67,7 +67,7 @@ place : {
 	cam_focal : Pixels,
 } -> Sun.Place
 place = |{ turn_from_view, clock, cam_focal }| {
-	scale = Fraction.of(cam_focal.ratio_to(Lens.focal))
+	scale = Fraction.of(cam_focal.ratio_to(Lens.resting_focal))
 	slope = turn_from_view.to_radians().tan()
 	{
 		x: Screen.center_x.plus(cam_focal.times(slope)),
@@ -87,7 +87,7 @@ expect
 	Sun.sighting({
 		heading: Angle.Bearing.radians(-2.2176),
 		clock: Clock.start,
-		cam_focal: Lens.focal,
+		cam_focal: Lens.resting_focal,
 	})
 		== InView({
 			x: Pixels.of(480.0),
@@ -100,7 +100,7 @@ expect
 	Sun.sighting({
 		heading: Angle.Bearing.radians(-2.2176),
 		clock: Clock.start,
-		cam_focal: Lens.focal.times(0.5),
+		cam_focal: Lens.resting_focal.times(0.5),
 	})
 		== InView({
 			x: Pixels.of(480.0),
@@ -112,6 +112,6 @@ expect
 	Sun.sighting({
 		heading: Angle.north,
 		clock: Clock.start,
-		cam_focal: Lens.focal,
+		cam_focal: Lens.resting_focal,
 	})
 		== OutOfView

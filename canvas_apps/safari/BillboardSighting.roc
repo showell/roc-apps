@@ -143,7 +143,10 @@ BillboardSighting :: [].{
 			{
 				road,
 				place,
-				size_test: { focal: Lens.focal, smallest_px: BillboardSighting.min_critter_px },
+				size_test: {
+					focal: Lens.resting_focal,
+					smallest_px: BillboardSighting.min_critter_px,
+				},
 			},
 		)
 }

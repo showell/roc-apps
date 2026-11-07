@@ -220,7 +220,7 @@ horizon_y = Screen.horizon_y
 ## The screen's y for a height on the skyline.
 height_y : Sight, Pixels -> Pixels
 height_y = |sight, height| {
-	scale = sight.cam_focal.ratio_to(Lens.focal)
+	scale = sight.cam_focal.ratio_to(Lens.resting_focal)
 	horizon_y.minus(height.times(scale))
 }
 
@@ -290,13 +290,13 @@ expect rock == 0x5B6A8F
 expect rock_west == 0x39435F
 
 sight_at_rest : Sight
-sight_at_rest = { heading: Angle.north, cam_focal: Lens.focal }
+sight_at_rest = { heading: Angle.north, cam_focal: Lens.resting_focal }
 
 expect height_y(sight_at_rest, Pixels.of(100.0)) == Pixels.of(200.0)
 expect height_y(sight_at_rest, Pixels.zero) == Pixels.of(300.0)
 expect height_y(sight_at_rest, Pixels.of(-40.0)) == Pixels.of(340.0)
 expect
-	height_y({ ..sight_at_rest, cam_focal: Lens.focal.times(0.5) }, Pixels.of(100.0))
+	height_y({ ..sight_at_rest, cam_focal: Lens.resting_focal.times(0.5) }, Pixels.of(100.0))
 		== Pixels.of(250.0)
 
 expect color_at_dusk(rock, Fraction.zero) == 0x5B6A8F

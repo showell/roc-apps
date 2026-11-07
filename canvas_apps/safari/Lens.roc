@@ -14,8 +14,8 @@ Lens :: [].{
 	field_of_view = Angle.Turn.degrees(70.0)
 
 	## The focal length at rest, in pixels.
-	focal : Pixels
-	focal = {
+	resting_focal : Pixels
+	resting_focal = {
 		half_view = field_of_view.times(0.5)
 		Screen.width.divided_by(2.0).divided_by(half_view.to_radians().tan())
 	}
@@ -38,18 +38,21 @@ Lens :: [].{
 	focal_for_lean : Fraction -> Pixels
 	focal_for_lean = |lean_fraction| {
 		lean = lean_fraction.to_f64()
-		focal.times(1.0 - (1.0 - focal_factor_at_full_lean.to_f64()) * lean * lean)
+		resting_focal.times(1.0 - (1.0 - focal_factor_at_full_lean.to_f64()) * lean * lean)
 	}
 
 	## The focal length for the rider's attention.
 	focal_for_attention : Attention -> Pixels
-	focal_for_attention = |attention|
-		focal.times(1.0 - (1.0 - focal_factor_at_full_attention.to_f64()) * attention.to_f64())
+	focal_for_attention = |attention| {
+		lost_at_full_attention = 1.0 - focal_factor_at_full_attention.to_f64()
+		resting_focal.times(1.0 - lost_at_full_attention * attention.to_f64())
+	}
 
 	## The focal length the camera uses: the shorter of the two, which
-	## gives the wider view.
-	cam_focal : { lean_fraction : Fraction, attention : Attention } -> Pixels
-	cam_focal = |{ lean_fraction, attention }| {
+	## gives the wider view. A lean to either side widens it alike.
+	cam_focal : { lean : Angle.Lean, attention : Attention } -> Pixels
+	cam_focal = |{ lean, attention }| {
+		lean_fraction = Fraction.clamp(lean.to_radians().abs() / full_lean.to_radians())
 		for_lean = focal_for_lean(lean_fraction)
 		for_attention = focal_for_attention(attention)
 		if for_lean < for_attention {
@@ -68,7 +71,7 @@ expect
 	[
 		(Screen.width.to_f64(), 960.0),
 		(Lens.field_of_view.to_radians() / Trig.deg, 70.0),
-		(Lens.focal.to_f64(), 685.5110432362151),
+		(Lens.resting_focal.to_f64(), 685.5110432362151),
 	].all(|(got, want)| is_close(got, want))
 
 expect
@@ -104,7 +107,7 @@ expect
 	].all(
 		|((lean, strength), want)| {
 			got = Lens.cam_focal({
-				lean_fraction: Fraction.of(lean),
+				lean: Angle.Lean.degrees(lean * 20.0),
 				attention: Attention.of(strength),
 			})
 			is_close(got.to_f64(), want)
