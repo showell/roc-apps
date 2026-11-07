@@ -1,7 +1,9 @@
 ## RailSighting lays out the guard rail at each bend in view. The rail follows
 ## the outer edge of the road for the last few metres before the bend,
 ## cuts across the bend's corner to where the two outer edges meet and
-## back, and follows the next segment's outer edge for as far again.
+## back, and follows the next segment's outer edge for as far again. Unlike its
+## sibling sightings, it doesn't go through `Pipeline`: a rail is a path in the
+## rider's frame, not an object standing at a spot.
 import Across
 import Along
 import Distance

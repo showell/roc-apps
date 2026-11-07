@@ -1,5 +1,7 @@
 ## TruckSighting finds the truck ahead of the rider in a frame: how far along
-## the road ahead it is, and whether it is in front of the camera.
+## the road ahead it is, and whether it is in front of the camera. Unlike the
+## trees and the critters, the truck has no size test: it is drawn however
+## small it stands.
 import Across
 import Along
 import Angle

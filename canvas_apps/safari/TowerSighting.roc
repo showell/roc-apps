@@ -2,7 +2,8 @@
 ## stands past the end of every segment, off to the right, and a long
 ## segment has one more halfway along, off to the left. Each tower's beacon
 ## blinks on the ride's clock, and the sighting says how bright it is in the
-## frame.
+## frame. Unlike the trees and the critters, a tower has no size test: it is
+## drawn however small it stands, until the earth's curve sinks it.
 import Across
 import Along
 import Angle
