@@ -136,7 +136,7 @@ beam_edge = ArgbColor.of(0x45FFF8D6)
 
 ## A brake lamp spans from a tenth of the truck's width in from its side
 ## to just over a third, and from a fifth of the way up the trailer's back
-## to half way.
+## to half way: proportions chosen by eye.
 brake_lamp_outer_edge : Distance
 brake_lamp_outer_edge = TruckShape.truck_width.times(0.1)
 
@@ -163,7 +163,8 @@ glow_core = ArgbColor.of(0xE6FF503C)
 glow_edge : ArgbColor
 glow_edge = ArgbColor.of(brake_color.to_i64())
 
-## A glow reaches this many times as far as its lamp's farthest corner.
+## A glow reaches this many times as far as its lamp's farthest corner, a
+## reach chosen by eye.
 glow_reach : F64
 glow_reach = 3.2
 
