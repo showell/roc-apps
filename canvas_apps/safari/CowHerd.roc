@@ -9,7 +9,6 @@ import Distance
 import EmojiStills
 import Geom
 import Scatter
-import Scenery
 import Trees
 
 CowHerd := {
@@ -93,7 +92,7 @@ herd_cow = |herd, { herd_along, cow_number }| {
 	herd_front = herd_along.plus(herd.gap_behind_bull)
 	column_place = herd_front.plus(herd.column_spacing.times(column))
 	in_line = column_place.plus(herd.row_stagger.times(row - 1.0))
-	row_place = Scenery.herd_front_distance.plus(herd.row_depth.times(row))
+	row_place = Geom.herd_front_distance.plus(herd.row_depth.times(row))
 	stray = Scatter.offset(
 		cow_number,
 		{

@@ -58,7 +58,6 @@ package
 		SafariApp,
 		Scene,
 		SceneShapes,
-		Scenery,
 		Screen,
 		Segment,
 		SegmentPlace,

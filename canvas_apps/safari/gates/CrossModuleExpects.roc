@@ -39,7 +39,6 @@ import game.SceneShapes
 import game.RideInstant
 import game.Rider
 import game.RiderState
-import game.Scenery
 import game.Speed
 import game.TreeSighting
 import game.Trees

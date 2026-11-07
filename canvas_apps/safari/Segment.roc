@@ -14,8 +14,8 @@ import CowHerd
 import Distance
 import Geom
 import PigHerd
-import Scenery
 import Trees
+import Wildlife
 
 Segment := {
 	length : Distance,
@@ -34,11 +34,15 @@ Segment := {
 
 	## How the segment ends: by turning into the next, positive to the
 	## right, with what lives at the bend, or by ending the route.
-	ending : [Bends({ turn : Angle.Turn, bend_life : Scenery.BendLife }), RouteEnds],
+	ending : [Bends({ turn : Angle.Turn, bend_life : Segment.BendLife }), RouteEnds],
 }.{
 
 	## How the rider takes a herd, whatever its shape.
 	PigInterest : [Unnoticed, Distracting]
+
+	## What lives at the bend that ends a segment: nothing, a safari animal and
+	## its baby, or a pond with its ducks.
+	BendLife : [Quiet, Animal(Wildlife.Animal), DuckPond]
 
 	## A segment longer than this has a tower halfway along.
 	mid_tower_min_length : Distance
@@ -72,11 +76,11 @@ Segment := {
 	## for its scheme, and what the rider meets on it is placed among them.
 	from_choices : {
 		length : Distance,
-		scheme : Scenery.Scheme,
+		scheme : Trees.Scheme,
 		pigs : [NoPigs, Herd({ herd : PigHerd, interest : Segment.PigInterest })],
 		cows : { herd : CowHerd, bull : [WithBull, NoBull] },
 		encounter : [CatCrosses, BirdHere, QuietRoad],
-		ending : [Bends({ turn : Angle.Turn, bend_life : Scenery.BendLife }), RouteEnds],
+		ending : [Bends({ turn : Angle.Turn, bend_life : Segment.BendLife }), RouteEnds],
 	} -> Segment
 	from_choices = |choices| {
 		trees = Trees.roadside_trees({ scheme: choices.scheme, length: choices.length })

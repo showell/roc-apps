@@ -12,7 +12,6 @@ import Geom
 import Ground
 import BendView
 import Pond
-import Scenery
 import lib.RgbColor
 
 GroundSighting :: [].{
@@ -182,7 +181,11 @@ pond_patches : RoadAhead.RoadView, { segment : Segment, place : SegmentPlace } -
 pond_patches = |road, { segment, place }| {
 	is_at_pond =
 		match segment.ending {
-			Bends({ bend_life, .. }) => Scenery.is_pond(bend_life)
+			Bends({ bend_life, .. }) =>
+				match bend_life {
+					DuckPond => True
+					Animal(_) | Quiet => False
+				}
 			RouteEnds => False
 		}
 	if is_at_pond {

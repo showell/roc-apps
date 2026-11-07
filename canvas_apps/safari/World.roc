@@ -9,8 +9,8 @@ import CowHerd
 import Distance
 import PigHerd
 import Route
-import Scenery
 import Segment
+import Trees
 import lib.Trig
 
 World :: [].{
@@ -22,7 +22,7 @@ World :: [].{
 	## lives along it.
 	SegmentPlan : {
 		length : Distance,
-		scheme : Scenery.Scheme,
+		scheme : Trees.Scheme,
 		encounter : [CatCrosses, BirdHere, QuietRoad],
 		pigs : World.PigPresence,
 		bull : [WithBull, NoBull],
@@ -33,7 +33,7 @@ World :: [].{
 	BendingPlan : {
 		segment_plan : World.SegmentPlan,
 		turn : Angle.Turn,
-		bend_life : Scenery.BendLife,
+		bend_life : Segment.BendLife,
 	}
 
 	## Every segment of the route but the last, in order, each with its bend.
@@ -340,7 +340,7 @@ World :: [].{
 built_segment : World.SegmentPlan,
 {
 	index : Route.SegmentIndex,
-	ending : [Bends({ turn : Angle.Turn, bend_life : Scenery.BendLife }), RouteEnds],
+	ending : [Bends({ turn : Angle.Turn, bend_life : Segment.BendLife }), RouteEnds],
 } -> Segment
 built_segment = |plan, { index, ending }| {
 	earlier_herd_count = World.herd_count_before(index)

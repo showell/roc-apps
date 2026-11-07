@@ -8,9 +8,11 @@ import Along
 import Conifer
 import Distance
 import Geom
-import Scenery
 
 Trees :: [].{
+
+	## A segment's colour scheme: the accent its trees alternate with green.
+	Scheme : [AllGreen, GoldGreen, RedGreen]
 
 	## A tree beside the road: where it stands on its segment, and its kind.
 	RoadsideTree : Geom.Placed(Conifer)
@@ -25,7 +27,7 @@ Trees :: [].{
 
 	## A segment's trees, in pairs from its start, each pair's left tree
 	## first.
-	roadside_trees : { scheme : Scenery.Scheme, length : Distance } -> List(Trees.RoadsideTree)
+	roadside_trees : { scheme : Trees.Scheme, length : Distance } -> List(Trees.RoadsideTree)
 	roadside_trees = |{ scheme, length }| {
 		last_along = Along.at(length.minus(tree_end_inset))
 		var $along = Along.at(tree_start_inset)
@@ -71,7 +73,7 @@ tree_end_inset : Distance
 tree_end_inset = Distance.metres(85.0)
 
 ## The conifer that sets off a scheme's green.
-accent_conifer : Scenery.Scheme -> Conifer
+accent_conifer : Trees.Scheme -> Conifer
 accent_conifer = |scheme|
 	match scheme {
 		GoldGreen => Conifer.Gold
