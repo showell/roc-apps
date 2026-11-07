@@ -37,19 +37,20 @@ Wildlife :: [].{
 	bend_critters = |{ animal, bend }| {
 		species = species_of(animal)
 		bend_along = Along.at(bend.segment_length)
-		clear_of_rail = Geom.road_half_width.plus(adult_rail_buffer)
-		out_from_middle = clear_of_rail.plus(species.adult_height.divided_by(2.0))
-		{ across, facing } =
+		{ out_on_outside, facing } =
 			if bend.turn.is_right() {
-				{ across: Across.left_of_middle(out_from_middle), facing: FacesRight }
+				{ out_on_outside: Across.left_of_middle, facing: FacesRight }
 			} else {
-				{ across: Across.right_of_middle(out_from_middle), facing: FacesLeft }
+				{ out_on_outside: Across.right_of_middle, facing: FacesLeft }
 			}
+		adult = Billboard.adult_billboard(species, facing)
+		clear_of_rail = Geom.road_half_width.plus(adult_rail_buffer)
+		across = out_on_outside(clear_of_rail.plus(adult.half_width()))
 		[
 			{
 				road_point: { along: bend_along, across },
 				lift: Distance.zero,
-				kind: Billboard.adult_billboard(species, facing),
+				kind: adult,
 			},
 			{
 				road_point: { along: bend_along.plus(baby_beyond), across: Across.middle },
