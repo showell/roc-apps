@@ -1,5 +1,5 @@
 ## What a segment's crossing does to the rider. The rider reacts only to the
-## crossing on their own segment, though animations play along the chain ahead,
+## crossing on their own segment, though animations play along the road ahead,
 ## and this is the one place that knows which crossings ask anything of them.
 ## A cat in the road stops the rider opening the throttle, without braking, and
 ## draws their eye. A bird asks nothing. The pigs' gaze is no crossing, and is

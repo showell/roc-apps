@@ -7,7 +7,7 @@ import game.Across
 import game.Along
 import game.Angle
 import game.Distance
-import game.Chain
+import game.RoadAhead
 import game.Geom
 import game.GroundSighting
 import game.BendView
@@ -76,10 +76,10 @@ two_segments = |turn|
 	)
 
 ## The road as seen from the first segment, looking along it.
-road_with : Angle.Turn -> Chain.RoadView
+road_with : Angle.Turn -> RoadAhead.RoadView
 road_with = |turn| {
 	route_segments: two_segments(turn),
-	chain_indices: [World.SegmentIndex.number(0), World.SegmentIndex.number(1)],
+	segments_ahead: [World.SegmentIndex.number(0), World.SegmentIndex.number(1)],
 	vantage: {
 		along: Along.at(segment_length.minus(rider_before_bend)),
 		across: Across.middle,
@@ -88,11 +88,11 @@ road_with = |turn| {
 }
 
 ## The one bend on that road.
-bend_of : Chain.RoadView -> BendView
+bend_of : RoadAhead.RoadView -> BendView
 bend_of = |road|
 	BendView.of_segment(
-		Chain.segment_at(road, Chain.Position.first),
-		InChain(Chain.Position.first),
+		RoadAhead.segment_at(road, RoadAhead.Position.first),
+		Ahead(RoadAhead.Position.first),
 	)
 
 ## The apex of a bend of `turn`.

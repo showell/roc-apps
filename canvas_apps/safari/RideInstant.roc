@@ -1,5 +1,5 @@
 import Clock
-import Chain
+import RoadAhead
 import Ground
 import GroundSighting
 import SceneShapes
@@ -79,7 +79,7 @@ RideInstant := {
 		view = {
 			road: {
 				route_segments,
-				chain_indices: Chain.indices_ahead(route_segments, s.segment_index),
+				segments_ahead: RoadAhead.indices_ahead(route_segments, s.segment_index),
 				vantage: ViewYaw.vantage_for(s),
 			},
 			cam_focal: RideFocal.ride_focal(route_segments, s),

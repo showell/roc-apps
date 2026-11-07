@@ -7,7 +7,7 @@
 ## with no controls. The first line of text counts the shapes so far against the
 ## frame's total, and the second names the last layer on.
 import game.Backdrop
-import game.Chain
+import game.RoadAhead
 import game.Clock
 import game.DepthSort
 import game.Ground
@@ -146,7 +146,7 @@ ride_pieces = |tour| {
 	view = {
 		road: {
 			route_segments: tour.route_segments,
-			chain_indices: Chain.indices_ahead(tour.route_segments, rider.segment_index),
+			segments_ahead: RoadAhead.indices_ahead(tour.route_segments, rider.segment_index),
 			vantage: ViewYaw.vantage_for(rider),
 		},
 		cam_focal: RideFocal.ride_focal(tour.route_segments, rider),

@@ -7,7 +7,7 @@ import Angle
 import Distance
 import Geom
 import World
-import Chain
+import RoadAhead
 import Conifer
 import GuardRail
 import Picture
@@ -33,7 +33,7 @@ SceneShapes :: [].{
 	}
 
 	## The scene's things, painted far to near.
-	scene_shapes : Scene, Chain.CameraView -> List(Shapes.Shape)
+	scene_shapes : Scene, RoadAhead.CameraView -> List(Shapes.Shape)
 	scene_shapes = |scene, view| {
 		renderings = SceneShapes.things_in_tie_order(SceneShapes.scene_renderings(scene, view))
 		Rendered.depth_sorted_renderings(renderings).join_map(
@@ -44,7 +44,7 @@ SceneShapes :: [].{
 	## The scene's things, each as the frame paints it. A tree's context is the
 	## one a tree can't know alone, a critter needs none, and a tower and the
 	## truck are measured on the road.
-	scene_renderings : Scene, Chain.CameraView -> SceneShapes.ThingLists(Rendered)
+	scene_renderings : Scene, RoadAhead.CameraView -> SceneShapes.ThingLists(Rendered)
 	scene_renderings = |scene, view| {
 		cam_focal = view.cam_focal
 		{
@@ -112,7 +112,7 @@ rail_rendering = |quad, cam_focal|
 	)
 
 ## The road in view, and where on it `sighting` found the thing.
-road_context : Chain.CameraView, Pipeline.Sighted(kind) -> Chain.RoadContext
+road_context : RoadAhead.CameraView, Pipeline.Sighted(kind) -> RoadAhead.RoadContext
 road_context = |view, sighting| {
 	road: view.road,
 	place: sighting.place,
@@ -122,7 +122,7 @@ road_context = |view, sighting| {
 
 ## The truck, if it is in view, where its sighting found it and with the lights
 ## its sighting gives it.
-truck_renderings : Chain.CameraView, TruckSighting.TruckFate -> List(Rendered)
+truck_renderings : RoadAhead.CameraView, TruckSighting.TruckFate -> List(Rendered)
 truck_renderings = |view, truck_fate|
 	match truck_fate {
 		Ok(truck) => [
@@ -137,7 +137,7 @@ truck_renderings = |view, truck_fate|
 
 tree_at : F64 -> Pipeline.Sighted(Conifer)
 tree_at = |forward| {
-	place: InChain(Chain.Position.first),
+	place: Ahead(RoadAhead.Position.first),
 	along: Along.metres(forward),
 	across: Across.middle,
 	right: Distance.metres(0.0),
@@ -224,25 +224,25 @@ up_road = {
 }
 
 ## The first three segments, seen from `vantage`.
-first_road : Geom.Vantage -> Chain.RoadView
+first_road : Geom.Vantage -> RoadAhead.RoadView
 first_road = |vantage| {
 	route_segments,
-	chain_indices: [0, 1, 2].map(World.SegmentIndex.number),
+	segments_ahead: [0, 1, 2].map(World.SegmentIndex.number),
 	vantage,
 }
 
 ## The first three segments, seen from `vantage` through a camera of focal
 ## length `cam_focal`.
-view_from : Geom.Vantage, Pixels -> Chain.CameraView
+view_from : Geom.Vantage, Pixels -> RoadAhead.CameraView
 view_from = |vantage, cam_focal| { road: first_road(vantage), cam_focal }
 
-from_origin : Chain.CameraView
+from_origin : RoadAhead.CameraView
 from_origin = view_from(origin, Pixels.of(500.0))
 
 ## A green tree `along` metres into the first segment, 3.5 m right of the
 ## road's middle.
 green_tree_at = |along| {
-	position: Chain.Position.first,
+	position: RoadAhead.Position.first,
 	tree: {
 		along: Along.metres(along),
 		across: Across.metres(3.5),
@@ -279,13 +279,13 @@ expect
 		(view_from(origin, Pixels.of(1.0)), 0),
 	].all(
 		|(view, want)| {
-			trees = TreeSighting.segment_sightings(view, Chain.Position.first)
+			trees = TreeSighting.segment_sightings(view, RoadAhead.Position.first)
 			trees.len().to_i64_wrap() == want
 		},
 	)
 
 first_sightings : List(Pipeline.Sighted(Conifer))
-first_sightings = TreeSighting.segment_sightings(from_origin, Chain.Position.first)
+first_sightings = TreeSighting.segment_sightings(from_origin, RoadAhead.Position.first)
 
 ## The first segment's tree at `i`, in planting order.
 roadside_tree : U64 -> Pipeline.Sighted(Conifer)
@@ -322,7 +322,7 @@ expect
 		== [500.0, 320.0, 400.0]
 
 ## What becomes of a truck `lead` metres ahead of a rider at the start of the
-## chain, seen from `vantage`, with its lights off.
+## road ahead, seen from `vantage`, with its lights off.
 truck_seen_from : Geom.Vantage, F64 -> TruckSighting.TruckFate
 truck_seen_from = |vantage, lead|
 	TruckSighting.truck_in_view(
@@ -354,7 +354,7 @@ expect
 		(499.0, 0),
 		(600.0, 1),
 		(900.0, 2),
-	].all(|(lead, want)| truck_ahead_of(lead).place == InChain(Chain.Position.number(want)))
+	].all(|(lead, want)| truck_ahead_of(lead).place == Ahead(RoadAhead.Position.number(want)))
 
 expect
 	[

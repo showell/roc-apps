@@ -5,7 +5,7 @@ import Across
 import Along
 import Camera
 import Distance
-import Chain
+import RoadAhead
 import Fraction
 import Geom
 import lib.Shapes
@@ -28,8 +28,8 @@ TruckShape :: [].{
 	## A truck ready to draw: what it is seen from, where its segment lies from
 	## the rider, and the box it fills.
 	TruckInView : {
-		view : Chain.CameraView,
-		place : Chain.SegmentPlace,
+		view : RoadAhead.CameraView,
+		place : RoadAhead.SegmentPlace,
 		box : TruckShape.TruckBox,
 	}
 
@@ -84,7 +84,7 @@ TruckShape :: [].{
 	## ground has dropped beneath it.
 	point : TruckShape.TruckInView, TruckShape.TruckPoint -> Geom.RaisedPoint
 	point = |truck, { along, across, height }| {
-		on_ground = Chain.rider_point_at(truck.view.road, { place: truck.place, along, across })
+		on_ground = RoadAhead.rider_point_at(truck.view.road, { place: truck.place, along, across })
 		{
 			right: on_ground.right,
 			forward: on_ground.forward,

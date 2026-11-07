@@ -8,7 +8,7 @@
 ## where the object is.
 import Across
 import Along
-import Chain
+import RoadAhead
 import Detail
 import Distance
 import Geom
@@ -23,7 +23,7 @@ Pipeline :: [].{
 	## `forward` of the camera. It is ahead of the rider, so of those two lengths
 	## only `right` can be negative. It lasts one frame.
 	Sighted(kind) : {
-		place : Chain.SegmentPlace,
+		place : RoadAhead.SegmentPlace,
 		along : Along,
 		across : Across,
 		right : Distance,
@@ -37,18 +37,18 @@ Pipeline :: [].{
 
 	## The size test of scenery seen through the camera's own lens, so that what
 	## is at the edge of sight comes and goes as the camera widens.
-	scenery_test : Chain.CameraView -> Pipeline.SizeTest
+	scenery_test : RoadAhead.CameraView -> Pipeline.SizeTest
 	scenery_test = |view| { focal: view.cam_focal, smallest_px: Detail.min_scenery_px }
 
 	## `placed` as the rider sees it, on the segment at `place`, if it is past
 	## the camera's near plane.
 	sighting_of : Geom.Placed(kind),
 	{
-		road : Chain.RoadView,
-		place : Chain.SegmentPlace,
+		road : RoadAhead.RoadView,
+		place : RoadAhead.SegmentPlace,
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera])
 	sighting_of = |placed, { road, place }| {
-		seen = Chain.rider_point_at(road, { place, along: placed.along, across: placed.across })
+		seen = RoadAhead.rider_point_at(road, { place, along: placed.along, across: placed.across })
 		if seen.forward <= Geom.near_plane {
 			Err(BehindCamera)
 		} else {
@@ -66,8 +66,8 @@ Pipeline :: [].{
 	## The sighting of `placed`, if it also passes `size_test`.
 	tall_sighting_of : Geom.Placed(kind),
 	{
-		road : Chain.RoadView,
-		place : Chain.SegmentPlace,
+		road : RoadAhead.RoadView,
+		place : RoadAhead.SegmentPlace,
 		size_test : Pipeline.SizeTest,
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera, TooSmall])
 		where [kind.scenery_height : kind -> Distance]

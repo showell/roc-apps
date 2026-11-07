@@ -8,7 +8,7 @@ import Across
 import Along
 import Angle
 import Camera
-import Chain
+import RoadAhead
 import Distance
 import Fraction
 import Geom
@@ -24,7 +24,7 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 
 	## How a tower looks. Its footprint is measured on the road, so the road and
 	## where it stands there are its context.
-	scenery_picture : Tower, Picture.Setting(Chain.RoadContext) -> Picture
+	scenery_picture : Tower, Picture.Setting(RoadAhead.RoadContext) -> Picture
 	scenery_picture = |tower, { right, forward, cam_focal, context }|
 		Picture.from_shapes(
 			Tower.tower_shapes({
@@ -36,11 +36,11 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 		)
 
 	## Where a tower's four footprint corners stand in the rider's view.
-	tower_footprint : Tower, Chain.RoadContext -> Tower.Footprint
+	tower_footprint : Tower, RoadAhead.RoadContext -> Tower.Footprint
 	tower_footprint = |tower, { road, place, along, across }| {
 		corner_point = |corner| {
 			on_road = base_corner_on_road(corner, { along, across, yaw: tower.yaw })
-			Chain.rider_point_at(road, { place, along: on_road.along, across: on_road.across })
+			RoadAhead.rider_point_at(road, { place, along: on_road.along, across: on_road.across })
 		}
 		{
 			back_left: corner_point(BackLeft),
@@ -524,10 +524,10 @@ expect
 		]
 
 # The first three segments, seen from the start of the route.
-start_road : Chain.RoadView
+start_road : RoadAhead.RoadView
 start_road = {
 	route_segments: [0, 1, 2].map(World.route_segment),
-	chain_indices: [0, 1, 2].map(World.SegmentIndex.number),
+	segments_ahead: [0, 1, 2].map(World.SegmentIndex.number),
 	vantage: {
 		along: Along.metres(0.0),
 		across: Across.metres(0.0),
@@ -541,10 +541,10 @@ plain_tower = { yaw: Angle.straight_ahead, beacon_brightness: Fraction.zero }
 
 # The start of the route, and a place `along` metres down the first segment, 20 m
 # right of the road's middle.
-context_along : F64 -> Chain.RoadContext
+context_along : F64 -> RoadAhead.RoadContext
 context_along = |along| {
 	road: start_road,
-	place: InChain(Chain.Position.first),
+	place: Ahead(RoadAhead.Position.first),
 	along: Along.metres(along),
 	across: Across.metres(20.0),
 }

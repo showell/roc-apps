@@ -9,7 +9,7 @@ import Clock
 import Conifer
 import BillboardSighting
 import Distance
-import Chain
+import RoadAhead
 import GuardRail
 import Pipeline
 import RailSighting
@@ -42,7 +42,7 @@ Scene := {
 	}
 
 	## Everything in view from `view`, each kind that has a cap cut to it.
-	scene_in_view : Chain.CameraView, Scene.RideFacts -> Scene
+	scene_in_view : RoadAhead.CameraView, Scene.RideFacts -> Scene
 	scene_in_view = |view, { speed, truck, clock }| {
 		road = view.road
 		trees = TreeSighting.trees_in_view(view)
@@ -54,7 +54,7 @@ Scene := {
 		rails = RailSighting.rails_in_view(road)
 		rider_distance = World.distance_along_route(
 			road.route_segments,
-			{ index: Chain.rider_segment(road), along: road.vantage.along },
+			{ index: RoadAhead.rider_segment(road), along: road.vantage.along },
 		)
 		truck_at = TruckSighting.truck_in_view(
 			road,

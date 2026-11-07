@@ -22,7 +22,7 @@ import game.BillboardSighting
 import game.DepthSort
 import game.Distance
 import game.Fraction
-import game.Chain
+import game.RoadAhead
 import game.Geom
 import game.Ground
 import game.GroundSighting
@@ -59,26 +59,26 @@ origin = {
 }
 
 ## The first three segments, the rider at the start of the first.
-road : Chain.RoadView
+road : RoadAhead.RoadView
 road = {
 	route_segments: [
 		World.route_segment(0),
 		World.route_segment(1),
 		World.route_segment(2),
 	],
-	chain_indices: [0, 1, 2].map(World.SegmentIndex.number),
+	segments_ahead: [0, 1, 2].map(World.SegmentIndex.number),
 	vantage: origin,
 }
 
-# A chain's positions count along the chain, not along the route.
+# Positions count along the road ahead, not along the route.
 expect {
-	third_then_first = { ..road, chain_indices: [2, 0].map(World.SegmentIndex.number) }
-	length_at = |position| Chain.segment_at(third_then_first, position).length
+	third_then_first = { ..road, segments_ahead: [2, 0].map(World.SegmentIndex.number) }
+	length_at = |position| RoadAhead.segment_at(third_then_first, position).length
 	third_length = World.route_segment(2).length
 	first_length = World.route_segment(0).length
 	third_length != first_length
-		and length_at(Chain.Position.first) == third_length
-		and length_at(Chain.Position.first.next()) == first_length
+		and length_at(RoadAhead.Position.first) == third_length
+		and length_at(RoadAhead.Position.first.next()) == first_length
 }
 
 polygon_of : Shapes.Shape -> { coordinates : List(F64), fill : Brush.Fill }
@@ -160,7 +160,7 @@ birds_on_segment = |segment, { rider_along, cam_focal }|
 	BirdSighting.birds_in_view({
 		road: {
 			route_segments: [segment],
-			chain_indices: [World.SegmentIndex.first],
+			segments_ahead: [World.SegmentIndex.first],
 			vantage: { ..origin, along: Along.metres(rider_along) },
 		},
 		cam_focal,
@@ -228,12 +228,12 @@ expect
 	birds_on_segment(segment_with_cat, { rider_along: 0.0, cam_focal: Pixels.of(500.0) }).len()
 		== 0
 
-## Two segments in the chain, the rider at the start of the first.
+## Two segments on the road ahead, the rider at the start of the first.
 two_segments : List(Pipeline.Sighted(BirdShapes.PosedBird))
 two_segments = BirdSighting.birds_in_view({
 	road: {
 		route_segments: [segment_of(left_trees), segment_of(left_trees)],
-		chain_indices: [0, 1].map(World.SegmentIndex.number),
+		segments_ahead: [0, 1].map(World.SegmentIndex.number),
 		vantage: {
 			along: Along.metres(0.0),
 			across: Across.metres(0.0),
@@ -258,11 +258,11 @@ cat_segments : List(World.Segment)
 cat_segments = [World.route_segment(0), cat_segment, World.route_segment(2)]
 
 ## The first three segments seen from the origin, at 1 m a step.
-cats_from_origin : Chain.CameraView
+cats_from_origin : RoadAhead.CameraView
 cats_from_origin = {
 	road: {
 		route_segments: cat_segments,
-		chain_indices: [0, 1, 2].map(World.SegmentIndex.number),
+		segments_ahead: [0, 1, 2].map(World.SegmentIndex.number),
 		vantage: origin,
 	},
 	cam_focal: Pixels.of(500.0),
@@ -271,18 +271,18 @@ cats_from_origin = {
 metre_a_step : Speed
 metre_a_step = Speed.metres_a_step(1.0)
 
-## The cats seen from the origin on a road of only `chain_indices`.
-cats_on_chain : List(World.SegmentIndex) -> List(Pipeline.Sighted(CatShapes.PosedCat))
-cats_on_chain = |chain_indices| CatSighting.cats_in_view(
-	{ ..cats_from_origin, road: { ..cats_from_origin.road, chain_indices } },
+## The cats seen from the origin on a road of only `segments_ahead`.
+cats_on_road : List(World.SegmentIndex) -> List(Pipeline.Sighted(CatShapes.PosedCat))
+cats_on_road = |segments_ahead| CatSighting.cats_in_view(
+	{ ..cats_from_origin, road: { ..cats_from_origin.road, segments_ahead } },
 	metre_a_step,
 )
 
-## The cat on the segment at `number` in the chain, if it is in view.
+## The cat on the segment at `number` on the road ahead, if it is in view.
 cat_at : U32 -> Try(Pipeline.Sighted(CatShapes.PosedCat), [NoCat, BehindCamera, TooSmall])
 cat_at = |number| CatSighting.segment_cat(
 	cats_from_origin,
-	{ position: Chain.Position.number(number), speed: metre_a_step },
+	{ position: RoadAhead.Position.number(number), speed: metre_a_step },
 )
 
 expect cat_segments.map(has_cat) == [False, True, False]
@@ -307,9 +307,9 @@ expect
 		|
 			(along, number, want),
 		| {
-			gap = Chain.gap_to_segment(
+			gap = RoadAhead.gap_to_segment(
 				{ ..cats_from_origin.road, vantage: { ..origin, along: Along.metres(along) } },
-				Chain.Position.number(number),
+				RoadAhead.Position.number(number),
 			)
 			gap.to_metres() == want
 		},
@@ -349,11 +349,11 @@ expect ride_sightings(0.0).len() == 0
 expect ride_sightings(200.0).len() == 1
 expect ride_sightings(500.0).len() == 1
 expect ride_sightings(600.0).len() == 0
-expect cats_on_chain([]).len() == 0
-expect cats_on_chain([World.SegmentIndex.first]).len() == 0
+expect cats_on_road([]).len() == 0
+expect cats_on_road([World.SegmentIndex.first]).len() == 0
 
-# The sighting looks along the whole chain, and the reaction only at the rider's
-# own segment. They agree because a crossing starts on its own segment: even at
+# The sighting looks along the whole road ahead, and the reaction only at the
+# rider's own segment. They agree because a crossing starts on its own segment: even at
 # top speed it starts closer to the cat than the cat is to the segment's start,
 # and a rider comes onto a segment no further along than that.
 ## The cats of the route, each with its segment.
@@ -393,34 +393,34 @@ expect
 		},
 	)
 
-# BillboardSighting: how far along the chain each kind of critter is sighted.
-## The first six segments, chained in order.
-six_segments : Chain.RoadView
+# BillboardSighting: how far along the road ahead each kind of critter is sighted.
+## The first six segments ahead, in order.
+six_segments : RoadAhead.RoadView
 six_segments = {
 	route_segments: [0, 1, 2, 3, 4, 5].map(World.route_segment),
-	chain_indices: [0, 1, 2, 3, 4, 5].map(World.SegmentIndex.number),
+	segments_ahead: [0, 1, 2, 3, 4, 5].map(World.SegmentIndex.number),
 	vantage: origin,
 }
 
 ## The world's segment `index` alone.
-lone : U32 -> Chain.RoadView
+lone : U32 -> RoadAhead.RoadView
 lone = |index| {
 	route_segments: [World.route_segment(index)],
-	chain_indices: [0].map(World.SegmentIndex.number),
+	segments_ahead: [0].map(World.SegmentIndex.number),
 	vantage: origin,
 }
 
 farm_at : U32 -> I64
 farm_at = |number| BillboardSighting.farm_sightings(
 	six_segments,
-	Chain.Position.number(number),
+	RoadAhead.Position.number(number),
 ).len().to_i64_wrap()
 
 safari_at : U32 -> I64
 safari_at = |number|
 	BillboardSighting.wildlife_sightings(
 		six_segments,
-		Chain.Position.number(number),
+		RoadAhead.Position.number(number),
 	).len().to_i64_wrap()
 
 expect farm_at(0) > 0
@@ -431,41 +431,41 @@ expect farm_at(5) == 0
 expect safari_at(3) > 0
 expect safari_at(4) > 0
 expect safari_at(5) == 0
-expect BillboardSighting.wildlife_sightings(lone(18), Chain.Position.first).len() == 0
-expect BillboardSighting.wildlife_sightings(lone(0), Chain.Position.first).len() > 0
+expect BillboardSighting.wildlife_sightings(lone(18), RoadAhead.Position.first).len() == 0
+expect BillboardSighting.wildlife_sightings(lone(0), RoadAhead.Position.first).len() > 0
 
 duck_count : U32 -> I64
 duck_count = |index|
-	BillboardSighting.duck_sightings(lone(index), Chain.Position.first).len().to_i64_wrap()
+	BillboardSighting.duck_sightings(lone(index), RoadAhead.Position.first).len().to_i64_wrap()
 
 expect duck_count(12) > 0
 expect duck_count(0) == 0
 expect duck_count(4) == 0
 expect duck_count(18) == 0
-expect BillboardSighting.duck_sightings(six_segments, Chain.Position.number(5)).len() == 0
+expect BillboardSighting.duck_sightings(six_segments, RoadAhead.Position.number(5)).len() == 0
 expect duck_count(12) == 6
 expect {
-	first = Chain.Position.first
+	first = RoadAhead.Position.first
 	whole = BillboardSighting.sightings_at(six_segments, first).len().to_i64_wrap()
 	ducks = BillboardSighting.duck_sightings(six_segments, first).len().to_i64_wrap()
 	whole == farm_at(0) + safari_at(0) + ducks
 }
 
-## How many critters the segments from `position` to the chain's end hold.
+## How many critters the segments from `position` to the road's end hold.
 count_from : U32 -> I64
 count_from = |position|
 	List.from_iter(U32.until(position, 6))
 		.map(
-			|number| BillboardSighting.sightings_at(six_segments, Chain.Position.number(number))
+			|number| BillboardSighting.sightings_at(six_segments, RoadAhead.Position.number(number))
 				.len()
 				.to_i64_wrap(),
 		)
 		.sum()
 
-expect BillboardSighting.sightings_ahead({ ..six_segments, chain_indices: [] }).len() == 0
+expect BillboardSighting.sightings_ahead({ ..six_segments, segments_ahead: [] }).len() == 0
 expect
 	BillboardSighting.sightings_ahead(lone(0)).len()
-		== BillboardSighting.sightings_at(lone(0), Chain.Position.first).len()
+		== BillboardSighting.sightings_at(lone(0), RoadAhead.Position.first).len()
 expect BillboardSighting.sightings_ahead(six_segments).len().to_i64_wrap() == count_from(0)
 expect count_from(0) >= count_from(1)
 expect count_from(1) >= count_from(2)
@@ -476,7 +476,7 @@ expect BillboardSighting.ducks_behind(six_segments, World.route_segment(0)).len(
 ## A billboard on the first segment, as the rider at its start sees it.
 critter_fate : Geom.Placed(Billboard) -> BillboardSighting.Fate
 critter_fate = |critter|
-	BillboardSighting.sight_critter(road, { place: InChain(Chain.Position.first), critter })
+	BillboardSighting.sight_critter(road, { place: Ahead(RoadAhead.Position.first), critter })
 
 ## A cow 2.5 m to the right of the rider, `forward` metres ahead.
 cow_fate : { forward : Distance, height : Distance } -> BillboardSighting.Fate
@@ -577,7 +577,7 @@ runup_points_to_bend : List(Geom.RiderPoint)
 runup_points_to_bend = RailSighting.runup_points(
 	road,
 	{
-		place: InChain(Chain.Position.first),
+		place: Ahead(RoadAhead.Position.first),
 		length: Distance.metres(500.0),
 		across: Across.metres(2.0),
 	},
@@ -585,7 +585,7 @@ runup_points_to_bend = RailSighting.runup_points(
 
 expect RailSighting.run_out_points(
 	road,
-	{ place: InChain(Chain.Position.first), across: Across.metres(2.0) },
+	{ place: Ahead(RoadAhead.Position.first), across: Across.metres(2.0) },
 ).len() == 10
 expect runup_points_to_bend.len() == 11
 expect
@@ -595,11 +595,11 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 # Scene, on the scene from the start of the route.
-scene_view : Chain.CameraView
+scene_view : RoadAhead.CameraView
 scene_view = {
 	road: {
 		route_segments: World.segments,
-		chain_indices: Chain.indices_ahead(World.segments, World.SegmentIndex.first),
+		segments_ahead: RoadAhead.indices_ahead(World.segments, World.SegmentIndex.first),
 		vantage: origin,
 	},
 	cam_focal: Pixels.of(500.0),
@@ -675,7 +675,7 @@ corners_of_chunk : U32 -> List(Geom.RiderPoint)
 corners_of_chunk = |chunk_number| GroundSighting.chunk_corners(
 	road,
 	{
-		position: Chain.Position.first,
+		position: RoadAhead.Position.first,
 		segment_length: Distance.metres(500.0),
 		chunk_count: 20,
 		chunk_number,
@@ -718,14 +718,14 @@ expect {
 }
 
 strip_shapes : List(Shapes.Shape)
-strip_shapes = patch_shapes(GroundSighting.road_patches(road, Chain.Position.first))
+strip_shapes = patch_shapes(GroundSighting.road_patches(road, RoadAhead.Position.first))
 
 expect strip_shapes.len() > 0
 expect strip_shapes.len().to_u32_wrap() <= GroundSighting.chunks_along(Distance.metres(500.0))
 expect patch_shapes(
 	GroundSighting.road_patches(
 		{ ..road, vantage: { ..origin, along: Along.metres(5000.0) } },
-		Chain.Position.first,
+		RoadAhead.Position.first,
 	),
 ).len() == 0
 last_shape : Shapes.Shape
