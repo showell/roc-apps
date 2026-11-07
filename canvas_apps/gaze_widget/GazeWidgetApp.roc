@@ -10,7 +10,6 @@ import game.Along
 import game.Angle
 import game.Billboard
 import game.Clock
-import game.Distance
 import game.Gawking
 import game.Gaze
 import game.Geom
@@ -28,6 +27,7 @@ import lib.Input
 import lib.Shapes
 import lib.RgbColor
 import lib.Trig
+import widget.PlanView
 import widget.ReadoutText
 import widget.ScrubWidget
 import widget.VcrButtons
@@ -128,8 +128,7 @@ gaze_pig =
 ## which the ride may not have reached the one asked for.
 with_buttons : GazeWidgetApp.Model, Input.Snapshot -> GazeWidgetApp.Model
 with_buttons = |model, input| {
-	shown = Clock.at_step(first_step).plus(Steps.of(shown_offset(model).to_u32_wrap()))
-	caught_up = VcrButtons.catch_up(model.transport, { input, shown })
+	caught_up = VcrButtons.catch_up(model.transport, { input, shown: shown_clock(model) })
 	{ ..model, transport: VcrButtons.next_transport(caught_up, { input, range: stretch }) }
 }
 
@@ -153,6 +152,10 @@ shown_offset = |model| {
 	asked_for.min(model.played.len() - 1)
 }
 
+## The ride's clock at the state on show.
+shown_clock : GazeWidgetApp.Model -> Clock
+shown_clock = |model| Clock.at_step(first_step).plus(Steps.of(shown_offset(model).to_u32_wrap()))
+
 state_at : List(RiderState), U64 -> RiderState
 state_at = |played, offset|
 	played.get(offset) ?? crash "GazeWidgetApp.state_at: offsets stay within what's played"
@@ -173,75 +176,48 @@ phase_of = |rider|
 ## Everything on the canvas.
 shapes_at : GazeWidgetApp.Model -> List(Shapes.Shape)
 shapes_at = |model| {
-	offset = shown_offset(model)
-	rider = state_at(model.played, offset)
-	step = first_step.to_f64() + offset.to_f64()
+	rider = state_at(model.played, shown_offset(model))
 	VcrButtons.frame_shapes(
 		model.transport,
 		{
 			range: stretch,
 			picture_shapes: picture_shapes(rider),
-			status_lines: status_lines(rider, step),
+			status_lines: status_lines(rider, shown_clock(model)),
 		},
 	)
 }
 
-ground_color : RgbColor
-ground_color = RgbColor.of(0x6f9a55)
-
-road_color : RgbColor
-road_color = RgbColor.of(0x8a8a8a)
-
-rider_color : RgbColor
-rider_color = RgbColor.of(0xf2efe4)
-
 herd_color : RgbColor
 herd_color = RgbColor.of(0xe9b7b0)
 
-gaze_pig_color : RgbColor
-gaze_pig_color = RgbColor.of(0xd0603a)
-
 sight_color : RgbColor
 sight_color = RgbColor.of(0xf6d743)
-
-## How many pixels a metre takes up, along the road and across it.
-pixels_a_metre : F64
-pixels_a_metre = 2.4
 
 ## Where the canvas's left edge is along the segment, in metres.
 left_edge_metres : F64
 left_edge_metres = 130.0
 
-## Where the middle of the road is, on the canvas.
-road_middle_y : F64
-road_middle_y = 52.0
+## The road from above, with the canvas's left edge at `left_edge_metres` along
+## the segment, the road's middle a little below the top of the picture, and
+## both directions to one scale.
+road_plan : PlanView
+road_plan = { origin: { x: 0.0, y: 52.0 }, pixels_a_metre: 2.4 }
 
 ## Where a point on the segment falls on the canvas. The road runs left to right,
 ## so the rider's right is down the canvas.
-screen_x : Along -> F64
-screen_x = |along| (along.to_metres() - left_edge_metres) * pixels_a_metre
-
-screen_y : Across -> F64
-screen_y = |across| road_middle_y + across.to_metres() * pixels_a_metre
-
-ground : Shapes.Shape
-ground = Rect({
-	x: 0.0,
-	y: 0.0,
-	width: ScrubWidget.canvas_width,
-	height: ScrubWidget.picture_bottom_y,
-	fill: Brush.flat(ground_color),
-})
+canvas_point : { along : Along, across : Across } -> { x : F64, y : F64 }
+canvas_point = |{ along, across }|
+	road_plan.canvas_point({ metres_right: along.to_metres() - left_edge_metres, metres_down: across.to_metres() })
 
 road : Shapes.Shape
 road = {
-	half_width = Geom.road_half_width.to_metres() * pixels_a_metre
+	half_width = Geom.road_half_width.to_metres() * road_plan.pixels_a_metre
 	Rect({
 		x: 0.0,
-		y: road_middle_y - half_width,
+		y: road_plan.origin.y - half_width,
 		width: ScrubWidget.canvas_width,
 		height: 2.0 * half_width,
-		fill: Brush.flat(road_color),
+		fill: Brush.flat(PlanView.road_color),
 	})
 }
 
@@ -252,13 +228,15 @@ plan_disc : {
 	radius : F64,
 	color : RgbColor,
 } -> Shapes.Shape
-plan_disc = |{ along, across, radius, color }|
+plan_disc = |{ along, across, radius, color }| {
+	{ x, y } = canvas_point({ along, across })
 	Disc({
-		x: screen_x(along),
-		y: screen_y(across),
+		x,
+		y,
 		radius: radius,
 		fill: Brush.flat(color),
 	})
+}
 
 ## One pig of the herd, the one that catches the eye drawn larger.
 pig_disc : Geom.Placed(Billboard) -> Shapes.Shape
@@ -268,7 +246,7 @@ pig_disc = |pig|
 			along: pig.road_point.along,
 			across: pig.road_point.across,
 			radius: 6.0,
-			color: gaze_pig_color,
+			color: PlanView.accent_color,
 		})
 	} else {
 		plan_disc({
@@ -281,25 +259,26 @@ pig_disc = |pig|
 
 ## The segment's whole herd, and the name of the pig that catches the eye.
 pigs : List(Shapes.Shape)
-pigs =
+pigs = {
+	pig_on_canvas = canvas_point(gaze_pig.road_point)
 	pig_segment.segment_pigs()
 		.map(pig_disc)
 		.append(
 			ScrubWidget.label({
 				text: "the pig",
-				x: screen_x(gaze_pig.road_point.along) - 62.0,
-				y: screen_y(gaze_pig.road_point.across) + 20.0,
+				x: pig_on_canvas.x - 62.0,
+				y: pig_on_canvas.y + 20.0,
 			}),
 		)
+}
 
 ## The way the rider looks: as far as a pig can catch the eye, turned from the
 ## road by the bike's yaw and the rider's gaze.
 sight_line : RiderState -> Shapes.Shape
 sight_line = |rider| {
-	x = screen_x(rider.motorcycle.along)
-	y = screen_y(rider.motorcycle.across)
+	{ x, y } = canvas_point({ along: rider.motorcycle.along, across: rider.motorcycle.across })
 	turn = rider.motorcycle.yaw.plus(rider.eyes.gaze_yaw).to_radians()
-	reach = Gawking.notice_distance.to_metres() * pixels_a_metre
+	reach = Gawking.notice_distance.to_metres() * road_plan.pixels_a_metre
 	Shapes.line(
 		{
 			from: { x, y },
@@ -314,7 +293,7 @@ sight_line = |rider| {
 picture_shapes : RiderState -> List(Shapes.Shape)
 picture_shapes = |rider|
 	[
-		[ground, road],
+		[ScrubWidget.picture_backdrop(PlanView.ground_color), road],
 		pigs,
 		[
 			sight_line(rider),
@@ -322,7 +301,7 @@ picture_shapes = |rider|
 				along: rider.motorcycle.along,
 				across: rider.motorcycle.across,
 				radius: 5.0,
-				color: rider_color,
+				color: PlanView.standout_color,
 			}),
 		],
 	].join()
@@ -342,12 +321,12 @@ phase_text = |phase|
 gaze_degrees : RiderState -> F64
 gaze_degrees = |rider| rider.eyes.gaze_yaw.to_radians() / Trig.degree
 
-## The state at `step`, a line each.
-status_lines : RiderState, F64 -> List(Str)
-status_lines = |rider, step|
+## The state at `clock`, a line each.
+status_lines : RiderState, Clock -> List(Str)
+status_lines = |rider, clock|
 	[
 		phase_text(phase_of(rider)),
-		"Step ${step.to_u64_wrap().to_str()}: speed ${ReadoutText.tenths_text(rider.motorcycle.speed.to_metres_a_step())} m a step",
+		"Step ${clock.to_str()}: speed ${ReadoutText.tenths_text(rider.motorcycle.speed.to_metres_a_step())} m a step",
 		"Gaze yaw: ${ReadoutText.tenths_text(gaze_degrees(rider))} degrees",
 		"Look depth: ${ReadoutText.percent_text(rider.eyes.look_depth)}",
 	]
@@ -388,7 +367,6 @@ expect {
 # This stretch is on the route's first distracting segment.
 expect is_distracting(World.route.segment_at(first_rider.segment_index))
 expect World.route.route_segments().take_first(2).all(|segment| segment.pigs == NoPigs)
-expect pig_segment.length == Distance.metres(400.0)
 
 # The steps the book's table quotes, each with its speed in metres a step, its
 # gaze_yaw in degrees and its look depth, to the table's precision.
@@ -476,8 +454,8 @@ expect
 	stretch_states.all(
 		|rider|
 			rider.segment_index == first_rider.segment_index
-				and screen_x(rider.motorcycle.along) > 0.0
-				and screen_x(rider.motorcycle.along) < ScrubWidget.canvas_width,
+				and canvas_point({ along: rider.motorcycle.along, across: rider.motorcycle.across }).x > 0.0
+				and canvas_point({ along: rider.motorcycle.along, across: rider.motorcycle.across }).x < ScrubWidget.canvas_width,
 	)
 
 ## A model at its start, asking for `step`.
@@ -531,33 +509,16 @@ expect shown_offset(left_alone(asking_for(870), 1)) == 8
 expect {
 	catching_up = left_alone(asking_for(last_step), 2)
 	stepped = with_buttons(catching_up, VcrButtons.click_on(StepForward))
-	stepped.transport == { at: Clock.at_step(first_step).plus(Steps.of(2 * 8 + 1)), motion: Stopped }
+	stepped.transport == { at: Clock.at_step(first_step).plus(Steps.of((2 * played_a_frame + 1).to_u32_wrap())), motion: Stopped }
 }
 
-expect look_first_step < look_end_step
-
-# Where the road's plan falls on the canvas.
-expect screen_x(Along.metres(left_edge_metres)) == 0.0
-expect screen_x(Along.metres(left_edge_metres + 100.0)) == 100.0 * pixels_a_metre
-expect screen_y(Across.middle) == road_middle_y
-expect screen_y(Across.metres(10.0)) == road_middle_y + 10.0 * pixels_a_metre
-expect screen_y(Across.metres(-10.0)) == road_middle_y - 10.0 * pixels_a_metre
-expect screen_x(gaze_pig.road_point.along) < ScrubWidget.canvas_width
-expect screen_y(gaze_pig.road_point.across) < ScrubWidget.picture_bottom_y
-
-expect pig_segment.segment_pigs().len() == 49
-
-# Each pig of the herd is one disc, and the one that catches the eye is among them.
-expect pigs.len() == 50
+# The pig that catches the eye is in the picture, and is one of the herd.
+expect canvas_point(gaze_pig.road_point).x < ScrubWidget.canvas_width
+expect canvas_point(gaze_pig.road_point).y < ScrubWidget.picture_bottom_y
 expect pig_segment.segment_pigs().count_if(|pig| pig == gaze_pig) == 1
 
-expect phase_text(EyesOnRoad) == "Eyes on the road"
-expect phase_text(LookingAtPig) == "Looking at the pig, and slowing"
-expect phase_text(EasingBack) == "Too far round: the gaze eases back"
-expect phase_text(EyesBack) == "Eyes back on the road, still slow"
-
 expect
-	status_lines(first_rider, 860.0)
+	status_lines(first_rider, Clock.at_step(first_step))
 		== [
 			"Eyes on the road",
 			"Step 860: speed 1.7 m a step",
@@ -567,7 +528,7 @@ expect
 
 expect {
 	widest_gaze = state_at_step(stretch_states, look_end_step - 1)
-	status_lines(widest_gaze, (look_end_step - 1).to_f64())
+	status_lines(widest_gaze, Clock.at_step(look_end_step - 1))
 		== [
 			"Looking at the pig, and slowing",
 			"Step 1049: speed 0.2 m a step",

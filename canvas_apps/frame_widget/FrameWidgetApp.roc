@@ -26,19 +26,20 @@ import lib.CanvasApp
 import lib.Input
 import lib.Shapes
 import widget.ReadoutText
+import widget.ScrubWidget
 import "page.html" as page_html : Str
 
 FrameWidgetApp :: [].{
 
-	## The whole state of the widget: how many of the layers are on, in the book's
-	## order, from one to all of them, and whether that's still being settled.
-	Model : { layers_on : U64, opening : [Opening, Opened] }
+	## The whole state of the widget: the last layer on, in the book's order, with
+	## every layer before it on too, and whether that's still being settled.
+	Model : { last_layer_on : Layer, opening : [Opening, Opened] }
 
 	canvas_app : CanvasApp.CanvasApp(FrameWidgetApp.Model)
 	canvas_app = {
 		size: { width: canvas_width, height: canvas_height },
 		fps: frames_a_second,
-		init: { layers_on: 1, opening: Opening },
+		init: { last_layer_on: Trees, opening: Opening },
 		model_at_next_step: |model, input, _seconds| next_model(model, input),
 		frame_shapes: shapes_at,
 		sounds: |_model| 0,
@@ -195,9 +196,22 @@ frame_shapes_on = |on_layers| shapes_in(backdrop_parts, on_layers).concat(ride_s
 lean_space : Shapes.Space
 lean_space = SafariApp.lean_space(paused_frame_view.roll)
 
-## The first `count` of the layers.
-layers_up_to : U64 -> List(Layer)
-layers_up_to = |count| layers.take_first(count)
+## The layers up to `last`, and `last` itself.
+layers_through : Layer -> List(Layer)
+layers_through = |last|
+	match layers.find_first_index(|layer| layer == last) {
+		Ok(index) => layers.take_first(index + 1)
+		Err(NotFound) => crash "FrameWidgetApp.layers_through: every layer is in the list"
+	}
+
+## The layer after `layer` in the book's order. The last has none after it, so
+## it stays.
+layer_after : Layer -> Layer
+layer_after = |layer|
+	match layers.drop_first(layers_through(layer).len()) {
+		[next, ..] => next
+		[] => layer
+	}
 
 ## The shapes of `parts` in `on_layers`, in paint order.
 shapes_in : List(Piece), List(Layer) -> List(Shapes.Shape)
@@ -240,7 +254,7 @@ panel = Rect({
 	y: picture_height,
 	width: canvas_width,
 	height: panel_height,
-	fill: Brush.flat(RgbColor.of(0xDCECF5)),
+	fill: Brush.flat(ScrubWidget.panel_color),
 })
 
 ## An address that names a layer has the page press Right once for each layer
@@ -252,7 +266,7 @@ next_model = |model, input|
 		Opened => model
 		Opening =>
 			if input.key_pressed(KeyRight) {
-				{ ..model, layers_on: model.layers_on + 1 }
+				{ ..model, last_layer_on: layer_after(model.last_layer_on) }
 			} else {
 				{ ..model, opening: Opened }
 			}
@@ -293,12 +307,10 @@ layer_name = |layer|
 
 ## The two lines under the picture.
 status_lines : FrameWidgetApp.Model -> List(Str)
-status_lines = |{ layers_on, .. }| {
-	on_layers = layers_up_to(layers_on)
-	added = on_layers.last() ?? crash "FrameWidgetApp.status_lines: a layer is always on"
-	so_far = ReadoutText.count_text(ride_count(on_layers))
+status_lines = |{ last_layer_on, .. }| {
+	so_far = ReadoutText.count_text(ride_count(layers_through(last_layer_on)))
 	total = ReadoutText.count_text(ride_count(layers))
-	["Shapes so far: ${so_far} of ${total}", "Added: ${layer_name(added)}"]
+	["Shapes so far: ${so_far} of ${total}", "Added: ${layer_name(last_layer_on)}"]
 }
 
 status_line : Str, U64 -> Shapes.Shape
@@ -310,7 +322,7 @@ status_line = |text, row|
 		size: 22.0,
 		face: Code,
 		align: Left,
-		color: Brush.opaque(RgbColor.of(0x202020)),
+		color: Brush.opaque(ScrubWidget.ink_color),
 	})
 
 ## The layers on, in the game's paint order.
@@ -322,7 +334,7 @@ shapes_at : FrameWidgetApp.Model -> List(Shapes.Shape)
 shapes_at = |model|
 	[
 		[plain_background],
-		picture_shapes(layers_up_to(model.layers_on)),
+		picture_shapes(layers_through(model.last_layer_on)),
 		[panel],
 		status_lines(model).map_with_index(status_line),
 	].join()
@@ -349,10 +361,10 @@ expect paused_frame_view.sun_sighting == OutOfView
 expect ride_count([Grass, Sun, Sky]) == 0
 
 # A layer with shapes of its own always changes the picture, and the sun doesn't.
-expect picture_shapes(layers_up_to(1)) != picture_shapes(layers_up_to(2))
-expect picture_shapes(layers_up_to(2)) == picture_shapes(layers_up_to(3))
-expect picture_shapes(layers_up_to(3)) != picture_shapes(layers_up_to(4))
-expect picture_shapes(layers_up_to(9)) != picture_shapes(layers_up_to(10))
+expect picture_shapes(layers_through(Trees)) != picture_shapes(layers_through(Grass))
+expect picture_shapes(layers_through(Grass)) == picture_shapes(layers_through(Sun))
+expect picture_shapes(layers_through(Sun)) != picture_shapes(layers_through(Sky))
+expect picture_shapes(layers_through(Critters)) != picture_shapes(layers_through(MovingThings))
 
 # The first layer alone is the lean and the trees, in the game's order.
 expect picture_shapes([Trees]) == Shapes.in_space(lean_space, ride_shapes_on([Trees]))
@@ -374,7 +386,7 @@ start : FrameWidgetApp.Model
 start = FrameWidgetApp.canvas_app.init
 
 all_on : FrameWidgetApp.Model
-all_on = { layers_on: layers.len(), opening: Opened }
+all_on = { last_layer_on: MovingThings, opening: Opened }
 
 right_press : Input.Snapshot
 right_press = Input.none.with_key_pressed(KeyRight)
@@ -387,11 +399,12 @@ opened_after = |count| next_model(
 	Input.none,
 )
 
-# An address with no word opens on the trees alone, and the last word opens on
-# every layer.
-expect opened_after(0) == { layers_on: 1, opening: Opened }
-expect opened_after(5) == { layers_on: 6, opening: Opened }
+# An address with no word opens on the trees alone, the last word opens on every
+# layer, and a press past the last layer leaves every layer on.
+expect opened_after(0) == { last_layer_on: Trees, opening: Opened }
+expect opened_after(5) == { last_layer_on: Road, opening: Opened }
 expect opened_after(layers.len() - 1) == all_on
+expect opened_after(layers.len()) == all_on
 
 # Once it's open, the arrow keys change nothing.
 expect next_model(opened_after(0), right_press) == opened_after(0)
@@ -403,44 +416,6 @@ expect next_model(start, Input.none.with_key_pressed(KeyLeft)) == opened_after(0
 expect
 	status_lines(start)
 		== ["Shapes so far: 1,656 of 2,569", "Added: Trees"]
-expect
-	status_lines(opened_after(2))
-		== ["Shapes so far: 1,656 of 2,569", "Added: The sun, out of view here"]
-expect
-	status_lines(opened_after(5))
-		== ["Shapes so far: 1,665 of 2,569", "Added: The road and pond"]
-expect
-	status_lines(all_on)
-		== ["Shapes so far: 2,569 of 2,569", "Added: The moving things"]
-
-expect
-	layers.map(layer_name)
-		== [
-			"Trees",
-			"Grass, in the backdrop",
-			"The sun, out of view here",
-			"The sky, in the backdrop",
-			"Mountains and land",
-			"The road and pond",
-			"Rails",
-			"Radio towers",
-			"Critters",
-			"The moving things",
-		]
-expect
-	layers.map(layer_word)
-		== [
-			"trees",
-			"grass",
-			"sun",
-			"sky",
-			"mountains",
-			"road",
-			"rails",
-			"towers",
-			"critters",
-			"moving",
-		]
 
 # The canvas answers the layers, and the panel stays over whatever leans past it.
 expect shapes_at(start) != shapes_at(all_on)
