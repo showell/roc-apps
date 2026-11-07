@@ -14,7 +14,6 @@ app [main!] { game: "../game.roc", lib: "../../lib/main.roc" }
 import game.Along
 import game.Distance
 import game.Geom
-import game.Rider
 import game.Tour
 
 # A ride still going after this many steps never finishes. The route takes
@@ -67,7 +66,7 @@ main! = |_args| {
 	var $out = ""
 	var $widest = Distance.zero
 	var $widest_place = place_of(0, Tour.initial)
-	while !Rider.is_finished($tour.instant.rider, $tour.route) and $step < steps_cap {
+	while !$tour.instant.rider.is_finished($tour.route) and $step < steps_cap {
 		last_segment = $tour.instant.rider.segment_index.to_i64()
 		$tour = Tour.step_forward($tour)
 		$step = $step + 1
@@ -83,7 +82,7 @@ main! = |_args| {
 			$widest_place = place_of($step, $tour)
 		}
 	}
-	finished = Rider.is_finished($tour.instant.rider, $tour.route)
+	finished = $tour.instant.rider.is_finished($tour.route)
 	if !finished {
 		$bad = $bad + 1
 	}

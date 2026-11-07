@@ -56,7 +56,6 @@ import game.RailSighting
 import game.Rendered
 import game.Scene
 import game.RideInstant
-import game.Rider
 import game.RiderCamera
 import game.RiderState
 import game.Screen
@@ -1547,7 +1546,7 @@ expect {
 	var $crossings = 0
 	var $is_home_at_each = True
 	var $has_looked = False
-	while !Rider.is_finished($instant.rider, World.route) {
+	while !$instant.rider.is_finished(World.route) {
 		next = instant_after($instant)
 		if next.rider.segment_index != $instant.rider.segment_index {
 			$crossings = $crossings + 1
@@ -1560,7 +1559,7 @@ expect {
 	$crossings == 18 and $is_home_at_each and $has_looked
 }
 
-expect Rider.is_finished(done.rider, World.route)
+expect done.rider.is_finished(World.route)
 expect instant_after(done).truck.pace == NotSlowing
 
 # A ride that hasn't finished steps on: the clock by a step, the rider and the
@@ -1571,7 +1570,7 @@ ride_at_step_one = instant_after(RideInstant.initial)
 ride_at_step_two : RideInstant
 ride_at_step_two = instant_after(ride_at_step_one)
 
-expect !Rider.is_finished(RideInstant.initial.rider, World.route)
+expect !RideInstant.initial.rider.is_finished(World.route)
 expect ride_at_step_one.clock.to_f64() == 1.0
 expect ride_at_step_two.clock.to_f64() == 2.0
 expect ride_at_step_two.clock.steps_since(ride_at_step_one.clock) == Steps.one_step
@@ -1579,7 +1578,72 @@ expect ride_at_step_one.rider.motorcycle.along > RideInstant.initial.rider.motor
 expect ride_at_step_one.truck.route_position > RideInstant.initial.truck.route_position
 expect ride_at_step_two.rider.motorcycle.along > ride_at_step_one.rider.motorcycle.along
 expect ride_at_step_one.clock != Clock.start
-expect !Rider.is_finished(ride_at_step_one.rider, World.route)
+expect !ride_at_step_one.rider.is_finished(World.route)
+
+## A rider on the middle of the road at the starting speed, `along` metres down
+## segment `index` of the route.
+placed_rider : U32, F64 -> RiderState
+placed_rider = |index, along| {
+	..RiderState.initial,
+	segment_index: Route.SegmentIndex.number(index),
+	motorcycle: { ..Motorcycle.initial, along: Along.metres(along) },
+}
+
+## The route's last segment, which ends the route.
+last_segment_index : U32
+last_segment_index = 18
+
+expect World.route.segment_at(Route.SegmentIndex.number(last_segment_index)).ending == RouteEnds
+
+# The ride is finished once the rider reaches the end of the last segment, and
+# not before, nor anywhere on a segment that bends into another.
+expect placed_rider(last_segment_index, 300.0).is_finished(World.route)
+expect !placed_rider(last_segment_index, 299.0).is_finished(World.route)
+expect !placed_rider(0, 499.0).is_finished(World.route)
+
+## That rider a step on.
+rider_a_step_after : U32, F64 -> RiderState
+rider_a_step_after = |index, along|
+	placed_rider(index, along).next({ route: World.route, encounter_timing: Unplanned })
+
+# A rider near the first bend crosses onto the next segment's road, and one well
+# short of it, which the bend would carry far off that road, stays.
+expect rider_a_step_after(0, 499.0).segment_index.to_i64() == 1
+expect rider_a_step_after(0, 100.0).segment_index.to_i64() == 0
+
+# The ride ends stopped dead at the route's end, and a step short of the end
+# leaves the rider moving.
+expect {
+	stopped = ride_at_finish.rider.motorcycle
+	stopped.along.to_metres() == 300.0 and stopped.speed == Speed.at_rest
+}
+expect {
+	short = rider_a_step_after(last_segment_index, 290.0).motorcycle
+	short.along.to_metres() < 300.0 and short.speed > Speed.at_rest
+}
+
+## A motorcycle just short of the first bend, a little off the middle and
+## turned a little from the segment's axis.
+motorcycle_at_first_seam : Motorcycle
+motorcycle_at_first_seam = {
+	along: Along.metres(499.0),
+	across: Across.metres(0.5),
+	yaw: Angle.Turn.radians(0.1),
+	speed: Speed.metres_a_step(1.25),
+	lean: Angle.Lean.radians(0.05),
+}
+
+# The crossing keeps the motorcycle's bearing in the world: the yaw turns back
+# by the bend that turns the next segment's bearing. The two sums round apart,
+# by no more than a float's last bits.
+expect {
+	first = Route.SegmentIndex.first
+	at_seam = motorcycle_at_first_seam
+	on_next = at_seam.motorcycle_past_bend(World.route.segment_at(first).bend_out_of())
+	before = World.route.bearing_of(first).plus(at_seam.yaw)
+	after = World.route.bearing_of(first.next()).plus(on_next.yaw)
+	after.turn_from(before).abs() < Angle.Turn.radians(0.000000000001)
+}
 
 # The rider starts at the route's start and moves along it.
 expect RideInstant.rider_distance(World.route, RideInstant.initial) == Distance.zero
@@ -1591,7 +1655,7 @@ expect
 # crashes, since the ride starts again before reaching it.
 expect {
 	var $tour = Tour.initial
-	while !Rider.is_finished($tour.instant.rider, $tour.route) {
+	while !$tour.instant.rider.is_finished($tour.route) {
 		$tour = Tour.step_forward($tour)
 	}
 	finish = $tour.instant.clock
@@ -1683,12 +1747,16 @@ expect {
 # rule is strict that night comes and loose about when, so it holds no step.
 # The sky only darkens as the clock runs, so full darkness at the finish means it
 # came at or before it.
-expect {
+expect Sky.darkness_at(ride_at_finish.clock) == Fraction.whole
+
+## The ride at the step it finishes.
+ride_at_finish : RideInstant
+ride_at_finish = {
 	var $instant = RideInstant.initial
-	while !Rider.is_finished($instant.rider, World.route) {
+	while !$instant.rider.is_finished(World.route) {
 		$instant = instant_after($instant)
 	}
-	Sky.darkness_at($instant.clock) == Fraction.whole
+	$instant
 }
 
 ## What the encounters do over the whole ride: how many steps a bird is in
@@ -1709,13 +1777,13 @@ ride_encounters = {
 	var $is_bird_ahead_throughout = True
 	var $cat_exits = 0
 	var $is_faded_at_each_exit = True
-	while !Rider.is_finished($instant.rider, World.route) {
+	while !$instant.rider.is_finished(World.route) {
 		segment = World.route.segment_at($instant.rider.segment_index)
 		timing = RideInstant.encounter_timing($instant)
 		next = instant_after($instant)
 		is_leaving =
 			next.rider.segment_index != $instant.rider.segment_index
-				or Rider.is_finished(next.rider, World.route)
+				or next.rider.is_finished(World.route)
 		match segment.encounter {
 			BirdHere(flight) => {
 				stage = BirdFlight.flight_stage(timing)

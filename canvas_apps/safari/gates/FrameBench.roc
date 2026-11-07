@@ -9,7 +9,6 @@ app [main!] { game: "../game.roc", lib: "../../lib/main.roc" }
 import game.World
 import game.FrameView
 import game.RideInstant
-import game.Rider
 
 main! = |args| {
 	# With no argument, the run takes its usual number of steps.
@@ -28,7 +27,7 @@ main! = |args| {
 				Continued(next) | Restarted(next) => next
 			}
 	}
-	finished = if Rider.is_finished($instant.rider, route) {
+	finished = if $instant.rider.is_finished(route) {
 		"yes"
 	} else {
 		"no"

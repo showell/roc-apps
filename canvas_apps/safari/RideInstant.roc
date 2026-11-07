@@ -9,7 +9,6 @@ import Clock
 import Distance
 import Route
 import RiderState
-import Rider
 import Segment
 import Truck
 
@@ -36,7 +35,7 @@ RideInstant := {
 	## rider has finished; the tag says which.
 	next_or_restart : Route, RideInstant -> [Continued(RideInstant), Restarted(RideInstant)]
 	next_or_restart = |route, instant|
-		if Rider.is_finished(instant.rider, route) {
+		if instant.rider.is_finished(route) {
 			Restarted(initial)
 		} else {
 			Continued(next(route, instant))
@@ -53,10 +52,7 @@ RideInstant := {
 
 next : Route, RideInstant -> RideInstant
 next = |route, instant| {
-	nx = Rider.rider_state_at_next_step(
-		instant.rider,
-		{ route, encounter_timing: RideInstant.encounter_timing(instant) },
-	)
+	nx = instant.rider.next({ route, encounter_timing: RideInstant.encounter_timing(instant) })
 	dist = distance_of_rider(route, nx)
 	clock = instant.clock.next()
 	kept_start =
