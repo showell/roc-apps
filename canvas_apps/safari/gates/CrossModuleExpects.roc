@@ -10,6 +10,7 @@ import game.Pixels
 import game.Across
 import game.Along
 import game.Angle
+import game.Attention
 import game.Billboard
 import game.BirdFlight
 import game.Cat
@@ -21,14 +22,17 @@ import game.BillboardSighting
 import game.DepthSort
 import game.Distance
 import game.EmojiStills
+import game.EncounterReaction
 import game.Fraction
 import game.FrameView
+import game.Gaze
 import game.RoadAhead
 import game.Route
 import game.Segment
 import game.SegmentPlace
 import game.Geom
 import game.Mountains
+import game.Lens
 import game.Ground
 import game.GroundSighting
 import game.Pipeline
@@ -911,7 +915,6 @@ done = {
 			yaw: Angle.Turn.radians(0.0),
 			speed: Speed.at_rest,
 			lean: Angle.Lean.radians(0.0),
-			heading: Angle.Bearing.radians(0.0),
 		},
 		eyes: { gaze_yaw: Angle.Turn.radians(0.0), look_depth: Fraction.of(0.9) },
 	},
@@ -1025,11 +1028,7 @@ longest_segment_index = {
 
 # The route's longest segment heads within 20° of the sun, as the rider enters it.
 expect {
-	turns_before =
-		World.route.route_segments()
-			.take_first(longest_segment_index.count_before())
-			.map(|segment| segment.bend_out_of().turn)
-	bearing = turns_before.fold(Angle.north, |so_far, turn| so_far.plus(turn))
+	bearing = World.route.bearing_of(longest_segment_index)
 	Sun.bearing.turn_from(bearing).abs() < Angle.Turn.degrees(20.0)
 }
 
@@ -1111,25 +1110,35 @@ expect FrameView.frame_view_at(World.route, ride_at_step_one).shapes.len() > 0
 # The ride starts facing away from the sun.
 expect FrameView.frame_view_at(World.route, RideInstant.initial).sun_sighting == OutOfView
 
-## A rider on `heading`, leaning `lean` and looking `gaze_yaw` from the way the
-## motorcycle points.
+## A rider on the segment at `segment`, turned `yaw` from its axis, leaning
+## `lean` and looking `gaze_yaw` from the way the motorcycle points.
 rider_facing : {
-	heading : Angle.Bearing,
+	segment : U32,
+	yaw : Angle.Turn,
 	lean : Angle.Lean,
 	gaze_yaw : Angle.Turn,
 } -> RiderState
-rider_facing = |{ heading, lean, gaze_yaw }| {
+rider_facing = |{ segment, yaw, lean, gaze_yaw }| {
 	..RiderState.initial,
-	motorcycle: { ..RiderState.initial.motorcycle, heading, lean },
+	segment_index: Route.SegmentIndex.number(segment),
+	motorcycle: { ..RiderState.initial.motorcycle, yaw, lean },
 	eyes: { ..RiderState.initial.eyes, gaze_yaw },
 }
 
-# The camera's heading is the motorcycle's, turned by the gaze and the lean.
+# The camera's heading is the bearing the rider's segment sets off on, turned by
+# the motorcycle's yaw, the gaze and the lean (0.15 of it). The first two are on
+# the first segment, which sets off north: a rider looking straight ahead faces
+# north, and one turned 0.375 by the yaw, 0.375 by the gaze and 0.01875 by the
+# lean faces 0.76875. The third is the second segment's bearing alone, the first
+# bend's 50 degrees. The fourth is the long westward segment's bearing, minus
+# 120 degrees, turned 0.05 left. The fifth is the last segment's bearing, turned
+# 0.0125 right by a gaze to the right against a lean to the left.
 expect
 	[
 		(
 			{
-				heading: Angle.Bearing.radians(0.0),
+				segment: 0,
+				yaw: Angle.Turn.radians(0.0),
 				lean: Angle.Lean.radians(0.0),
 				gaze_yaw: Angle.Turn.radians(0.0),
 			},
@@ -1137,35 +1146,39 @@ expect
 		),
 		(
 			{
-				heading: Angle.Bearing.radians(4.5),
+				segment: 0,
+				yaw: Angle.Turn.radians(0.375),
 				lean: Angle.Lean.radians(0.125),
 				gaze_yaw: Angle.Turn.radians(0.375),
 			},
-			4.89375,
+			0.76875,
 		),
 		(
 			{
-				heading: Angle.Bearing.radians(1.0),
-				lean: Angle.Lean.radians(0.5),
-				gaze_yaw: Angle.Turn.radians(-0.25),
+				segment: 1,
+				yaw: Angle.Turn.radians(0.0),
+				lean: Angle.Lean.radians(0.0),
+				gaze_yaw: Angle.Turn.radians(0.0),
 			},
-			0.825,
+			0.8726646259971648,
 		),
 		(
 			{
-				heading: Angle.Bearing.radians(-2.0),
+				segment: longest_segment_index.to_u32(),
+				yaw: Angle.Turn.radians(-0.25),
+				lean: Angle.Lean.radians(0.5),
+				gaze_yaw: Angle.Turn.radians(0.125),
+			},
+			-2.144395102393195,
+		),
+		(
+			{
+				segment: 18,
+				yaw: Angle.Turn.radians(0.0),
 				lean: Angle.Lean.radians(-0.75),
 				gaze_yaw: Angle.Turn.radians(0.125),
 			},
-			-1.9875,
-		),
-		(
-			{
-				heading: Angle.Bearing.radians(0.5),
-				lean: Angle.Lean.radians(1.25),
-				gaze_yaw: Angle.Turn.radians(0.0),
-			},
-			0.6875,
+			-1.4710298641951802,
 		),
 	].all(
 		|(facing, heading)| {
@@ -1173,6 +1186,118 @@ expect
 			camera.heading.to_radians() == heading
 		},
 	)
+
+# The route sets off north, and each segment's bearing is the one before it
+# turned by the bend between them.
+expect World.route.bearing_of(Route.SegmentIndex.first) == Angle.north
+expect {
+	first_turn = World.route.segment_at(Route.SegmentIndex.first).bend_out_of().turn
+	World.route.bearing_of(Route.SegmentIndex.number(1)) == Angle.north.plus(first_turn)
+		and first_turn != Angle.straight_ahead
+}
+
+# The camera's focal length: the view widens as the rider leans, and as the
+# rider's attention is caught, by the cat on the road or by a look to the side.
+## The focal length of the camera for `rider` on the cat route.
+focal_of : RiderState -> Pixels
+focal_of = |rider| RiderCamera.of(rider, cat_route).cam_focal
+
+## A rider at the start of the first segment, upright and looking ahead.
+upright : RiderState
+upright = RiderState.initial
+
+## A rider 120 m along a segment: near enough to its cat, if it has one, to
+## notice it.
+rider_near_cat_on : U32 -> RiderState
+rider_near_cat_on = |number| {
+	segment_index: Route.SegmentIndex.number(number),
+	motorcycle: { ..upright.motorcycle, along: Along.metres(120.0) },
+	eyes: upright.eyes,
+}
+
+## The same rider leaning `lean`.
+leaning = |rider, lean| { ..rider, motorcycle: { ..rider.motorcycle, lean } }
+
+## The same rider as deep into a look as a rider goes.
+looking_hard : RiderState -> RiderState
+looking_hard = |rider| { ..rider, eyes: { ..rider.eyes, look_depth: Fraction.whole } }
+
+## How strongly the encounter on this rider's segment holds their attention.
+encounter_attention_of : RiderState -> F64
+encounter_attention_of = |rider|
+	EncounterReaction.encounter_attention(
+		cat_route.segment_at(rider.segment_index),
+		rider.motorcycle,
+	).to_f64()
+
+expect focal_of(upright).minus(Lens.resting_focal) == Pixels.zero
+expect encounter_attention_of(upright) == 0.0
+expect Gaze.gaze_attention(Fraction.zero).to_f64() == 0.0
+expect Lens.cam_focal({
+	lean: upright.motorcycle.lean,
+	attention: Attention.none,
+}).minus(Lens.resting_focal) == Pixels.zero
+
+focal_at_lean = |lean| focal_of(leaning(upright, lean))
+
+no_lean = upright.motorcycle.lean
+
+## The change from upright to the full lean.
+full_change = Lens.full_lean.change_from(no_lean)
+
+## The full lean, to the left.
+full_left = no_lean.minus(full_change)
+
+expect {
+	half = no_lean.halfway_to(Lens.full_lean)
+	focal_at_lean(half) < focal_at_lean(no_lean)
+		and focal_at_lean(Lens.full_lean) < focal_at_lean(half)
+		and focal_at_lean(full_left) < focal_at_lean(no_lean)
+		and focal_at_lean(no_lean) <= Lens.resting_focal
+}
+
+# A lean past the greatest one widens the view no further.
+expect focal_at_lean(Lens.full_lean) == focal_at_lean(full_left)
+
+expect {
+	twice = Lens.full_lean.plus(full_change)
+	twice_change = twice.change_from(no_lean)
+	ten_times = twice.plus(twice_change).plus(twice_change).plus(twice_change).plus(twice_change)
+	focal_at_lean(twice).minus(focal_at_lean(Lens.full_lean)) == Pixels.zero
+		and focal_at_lean(ten_times).minus(focal_at_lean(Lens.full_lean)) == Pixels.zero
+}
+
+expect encounter_attention_of(rider_near_cat_on(1)) > 0.0
+expect !(encounter_attention_of({ ..upright, segment_index: Route.SegmentIndex.number(1) }) > 0.0)
+expect !(encounter_attention_of(rider_near_cat_on(0)) > 0.0)
+expect focal_of(rider_near_cat_on(1)) < focal_of(rider_near_cat_on(0))
+expect focal_of(looking_hard(upright)) < focal_of(upright)
+expect {
+	half_look = { ..upright, eyes: { ..upright.eyes, look_depth: Fraction.of(0.5) } }
+	focal_of(looking_hard(upright)) < focal_of(half_look)
+}
+expect Gaze.gaze_attention(Fraction.whole).to_f64() > Gaze.gaze_attention(Fraction.zero).to_f64()
+
+both : Pixels
+both = focal_of(looking_hard(leaning(upright, Lens.full_lean)))
+
+lean_only : Pixels
+lean_only = focal_of(leaning(upright, Lens.full_lean))
+
+gaze_only : Pixels
+gaze_only = focal_of(looking_hard(upright))
+
+expect both <= lean_only
+expect both <= gaze_only
+expect
+	both.to_f64().to_bits()
+		== lean_only.to_f64().min(gaze_only.to_f64()).to_bits()
+expect lean_only.plus(gaze_only) > both
+expect both.to_f64() - lean_only.to_f64().min(gaze_only.to_f64()) == 0.0
+expect Lens.cam_focal({
+	lean: Lens.full_lean,
+	attention: Attention.none,
+}).minus(lean_only) == Pixels.zero
 
 ## A clock with the sun behind the mountains.
 after_sunset : Clock
