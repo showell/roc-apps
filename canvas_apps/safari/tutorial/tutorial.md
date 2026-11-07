@@ -1825,7 +1825,7 @@ And that's called from `RideInstant.next`, in the chapter on stepping, with the 
 
 Finding the next turn shows a list pattern. `[]` is the end of the route, and `[segment, .. as later_segments]` takes the first segment and names the rest. Recursion walks the list, carrying where the current segment starts. Elsewhere, the same walk is usually a `fold`.
 
-{{code Truck.next_bend_on from "match segments {" to "next_bend_on(later_segments, { route_position, segment_start: segment_end })"}}
+{{code Route.segments_with_ends}}
 
 It's called through a smaller function, which supplies the 0 so nobody else has to:
 

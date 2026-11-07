@@ -208,7 +208,7 @@ expect
 expect (eye_catcher.road_point.along.to_metres() - 940.80757).abs() <= 0.00001
 expect (eye_catcher.road_point.across.to_metres() - 11.0332).abs() <= 0.00001
 expect eye_catcher.kind.height.to_metres() == 1.1
-expect eye_catcher.kind.emoji == Pig.pig.still
+expect eye_catcher.kind.emoji == Pig.pig.emoji
 expect eye_catcher.kind.facing == FacesLeft
 
 all_pigs : List(Geom.Placed(Billboard))
@@ -221,8 +221,8 @@ expect all_pigs.len() == 49
 expect herd_pig_at(2) == eye_catcher
 expect all_pigs.count_if(|herd_member| herd_member == eye_catcher) == 1
 expect PigHerd.BigHerd(seven_by_seven).herd_pigs(Along.metres(440.0)).len() == 49
-expect herd_pig_at(0).kind.emoji == Pig.pig.still
-expect herd_pig_at(48).kind.emoji == Pig.pig.still
+expect herd_pig_at(0).kind.emoji == Pig.pig.emoji
+expect herd_pig_at(48).kind.emoji == Pig.pig.emoji
 
 # Rows 0, 3 and 6 along the road, each pig within the jitter of its place.
 expect

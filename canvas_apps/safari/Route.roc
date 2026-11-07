@@ -89,6 +89,21 @@ Route :: List(Segment).{
 	distance_along_route = |Route.(segments), { index, along }|
 		length_of(segments.take_first(index.count_before())).plus(along.from_start())
 
+	## Each of the route's segments, in order, with how far along the route it
+	## ends. The lengths are added from the first segment on: a float sum's
+	## rounding depends on its order, and another order can move a pixel.
+	segments_with_ends : Route -> List({ segment : Segment, end : Distance })
+	segments_with_ends = |Route.(segments)|
+		segments
+			.fold(
+				{ reached: Distance.zero, stretches: [] },
+				|{ reached, stretches }, segment| {
+					end = reached.plus(segment.length)
+					{ reached: end, stretches: stretches.append({ segment, end }) }
+				},
+			)
+			.stretches
+
 	## The bearing the segment at `index` sets off on: north, turned by the bend
 	## out of each segment before it. The turns are added from the first segment
 	## on: a float sum's rounding depends on its order, and another order can

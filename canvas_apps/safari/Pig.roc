@@ -8,5 +8,5 @@ Pig :: [].{
 
 	## How every pig looks.
 	pig : Billboard.Species
-	pig = { still: EmojiStills.pig, adult_height: Distance.metres(1.1) }
+	pig = { emoji: EmojiStills.pig, adult_height: Distance.metres(1.1) }
 }
