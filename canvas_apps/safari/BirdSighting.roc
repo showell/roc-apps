@@ -5,7 +5,6 @@ import BirdFlight
 import BirdShapes
 import Chain
 import Geom
-import Detail
 import Pipeline
 
 BirdSighting :: [].{
@@ -55,7 +54,7 @@ bird_in_view = |view, { position, instant }| {
 		{
 			road: view.road,
 			place: InChain(position),
-			size_test: { focal: view.cam_focal, smallest_px: Detail.min_scenery_px },
+			size_test: Pipeline.scenery_test(view),
 		},
 	)
 }
