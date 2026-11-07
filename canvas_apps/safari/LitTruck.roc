@@ -16,21 +16,14 @@ LitTruck := { headlights : [On, Off], brake_lights : [On, Off] }.{
 	## How the truck looks. Every point on it is measured on the road, from where
 	## its trailer is centred, so the road is its context.
 	scenery_picture : LitTruck, Picture.Setting(RoadAhead.RoadView) -> Picture
-	scenery_picture = |lit_truck, { spot, cam_focal, context: road }|
-		Picture.from_shapes(
-			truck_shapes(
-				lit_truck,
-				{
-					view: { road, cam_focal },
-					spot,
-					box: TruckShape.truck_box(spot.road_point()),
-				},
-			),
-		)
+	scenery_picture = |lit_truck, { spot, cam_focal, context: road }| {
+		box = TruckShape.truck_box(spot.road_point())
+		Picture.from_shapes(truck_shapes(lit_truck, { spot, cam_focal, context: { road, box } }))
+	}
 }
 
 ## The truck, filling its box.
-truck_shapes : LitTruck, TruckShape.TruckInView -> List(Shapes.Shape)
+truck_shapes : LitTruck, Picture.Setting(TruckShape.TruckOnRoad) -> List(Shapes.Shape)
 truck_shapes = |lit_truck, truck| {
 	beams =
 		match lit_truck.headlights {

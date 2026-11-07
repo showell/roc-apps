@@ -249,7 +249,7 @@ screen_rod = |{ from, to, width }| {
 	dx = to.x.minus(from.x).to_f64()
 	dy = to.y.minus(from.y).to_f64()
 	across = width.to_f64()
-	raw = (dx * dx + dy * dy).sqrt()
+	raw = Screen.distance({ from, to }).to_f64()
 	len = if raw < 0.0001 {
 		1.0
 	} else {

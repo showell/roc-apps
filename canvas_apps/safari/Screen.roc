@@ -11,6 +11,14 @@ Screen :: [].{
 	point : F64, F64 -> Screen.Point
 	point = |x, y| { x: Pixels.of(x), y: Pixels.of(y) }
 
+	## The distance between two points on the screen.
+	distance : { from : Screen.Point, to : Screen.Point } -> Pixels
+	distance = |{ from, to }| {
+		dx = from.x.minus(to.x).to_f64()
+		dy = from.y.minus(to.y).to_f64()
+		Pixels.of((dx * dx + dy * dy).sqrt())
+	}
+
 	width_px : I64
 	width_px = 960
 
@@ -46,6 +54,10 @@ Screen :: [].{
 	roll_margin : Pixels
 	roll_margin = Pixels.of(200.0)
 }
+
+expect Screen.distance({ from: Screen.point(3.0, 4.0), to: Screen.point(0.0, 0.0) }).to_f64() == 5.0
+expect Screen.distance({ from: Screen.point(0.0, 0.0), to: Screen.point(3.0, 4.0) }).to_f64() == 5.0
+expect Screen.distance({ from: Screen.point(0.0, 0.0), to: Screen.point(0.0, 0.0) }).to_f64() == 0.0
 
 # At a roll of 30°, the screen's corners turn no further from its middle than
 # the margin reaches: up and down, and left and right.
