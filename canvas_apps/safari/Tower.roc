@@ -425,7 +425,7 @@ beacon_shape = |tower, { apex, brightness }| {
 		if radius < smallest_beacon_radius {
 			Err(TooSmall)
 		} else {
-			Ok(beacon_disc({ center: apex_on_screen, radius, brightness }))
+			Ok(beacon_disc({ center: apex_on_screen, radius_on_screen: radius, brightness }))
 		}
 	}
 }
@@ -433,15 +433,15 @@ beacon_shape = |tower, { apex, brightness }| {
 ## A beacon's disc, seen through as far as `brightness` says.
 beacon_disc : {
 	center : Screen.Point,
-	radius : Pixels,
+	radius_on_screen : Pixels,
 	brightness : Fraction,
 } -> Shapes.Shape
-beacon_disc = |{ center, radius, brightness }| {
+beacon_disc = |{ center, radius_on_screen, brightness }| {
 	opaque = Brush.opaque(beacon_color)
 	Disc({
 		x: center.x.to_f64(),
 		y: center.y.to_f64(),
-		radius: radius.to_f64(),
+		radius: radius_on_screen.to_f64(),
 		fill: Flat({ ..opaque, a: brightness.to_f64() }),
 	})
 }
@@ -449,7 +449,7 @@ beacon_disc = |{ center, radius, brightness }| {
 expect
 	beacon_disc({
 		center: Screen.point(10.0, 20.0),
-		radius: Pixels.of(30.0),
+		radius_on_screen: Pixels.of(30.0),
 		brightness: Fraction.of(0.25),
 	})
 		== Disc({
