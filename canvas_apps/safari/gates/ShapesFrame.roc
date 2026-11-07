@@ -47,8 +47,7 @@ compare = |tour| {
 	scene = {
 		shapes: instant_shapes,
 		roll,
-		sky_top_color: Tour.sky_top_color(tour),
-		sky_horizon_color: Tour.sky_horizon_color(tour),
+		sky_colors: Tour.sky_colors(tour),
 		sun: frame.sun,
 	}
 	cut_shapes = Shapes.cut_shapes(instant_shapes)

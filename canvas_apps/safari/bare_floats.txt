@@ -27,8 +27,6 @@ Mountains.MountainRange: how many ridge waves fit a whole turn, a frequency
 Easing.lerp: the sum behind blending any unit, which a caller unwraps once
 
 # Numbers with a meaning no unit type here holds.
-HexColor.Rgb: a colour's channels, part way through a blend
-HexColor.whole_channel: one of a colour's channels, part way through a blend
 Polygon.min_ellipse_determinant: square pixels, the plain number two axes' determinant gives
 VehicleLimits.turn_speeds: whole degrees, a key looked up by equality after a turn rounds to it
 Stills: traced pictures, in units of the still's own height

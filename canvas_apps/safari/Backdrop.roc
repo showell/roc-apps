@@ -1,12 +1,14 @@
 ## Backdrop builds what is behind the ride, as shapes. The vocabulary is in
-## lib/Shapes.roc, which every canvas app shares. This module knows what is
-## behind the ride: the sky's gradient, the sun's glow and disc, and the grass.
+## lib/Shapes.roc, which every canvas app shares. This module puts together the
+## sky's gradient from Sky's two colors, the sun as Sun says it looks, and the
+## grass, and lays the frame's shapes over them.
+import Clock
 import Fraction
-import HexColor
-import Pixels
+import Lens
 import lib.Brush
 import lib.RgbColor
 import Screen
+import Sky
 import Sun
 import lib.Shapes
 
@@ -14,81 +16,34 @@ Backdrop :: [].{
 
 	## The grass, from just above the horizon down.
 	grass_color : RgbColor
-	grass_color = RgbColor.of(0x4a8f43)
+	grass_color = RgbColor.of(0x4A8F43)
 
 	## How far down to the horizon the sky holds its top colour before it
 	## fades to the horizon's.
 	sky_top_stop : Fraction
 	sky_top_stop = Fraction.of(0.2)
 
-	## The sun's paint: a glow out to `glow_radius`, and over it a disc of
-	## `disc_radius`.
-	SunFills : {
-		glow : Brush.Fill,
-		glow_radius : Pixels,
-		disc : Brush.Fill,
-		disc_radius : Pixels,
+	## What is behind the ride, each part by name.
+	BackdropShapes : {
+		## The sky's gradient.
+		sky : Shapes.Shape,
+
+		## The sun's glow and disc while it is in view, and nothing while it isn't.
+		sun_shapes : List(Shapes.Shape),
+
+		## The grass, which covers whatever of the sun has set.
+		grass : Shapes.Shape,
 	}
 
-	## The sun's glow and disc where it stands, sized by its scale.
-	sun_fills : Sun.Place -> Backdrop.SunFills
-	sun_fills = |sun| {
-		scale = sun.scale.to_f64()
-		glow_radius = Pixels.of(340.0).times(scale)
-		disc_radius = Sun.radius_px.times(scale)
-		{
-			glow: Glow({
-				c0: {
-					r: 255.0,
-					g: 201.0,
-					b: 128.0,
-					a: 0.85,
-				},
-				c1: {
-					r: 255.0,
-					g: 150.0,
-					b: 92.0,
-					a: 0.32,
-				},
-				c2: {
-					r: 255.0,
-					g: 150.0,
-					b: 92.0,
-					a: 0.0,
-				},
-				x: sun.x.to_f64(),
-				y: sun.y.to_f64(),
-				r0: 8.0 * scale,
-				r1: glow_radius.to_f64(),
-			}),
-			glow_radius,
-			disc: Radial({
-				inner: Brush.opaque(RgbColor.of(0xffe6a3)),
-				outer: Brush.opaque(RgbColor.of(0xff9d5c)),
-				x: sun.x.to_f64(),
-				y: sun.y.to_f64(),
-				r0: 4.0 * scale,
-				r1: disc_radius.to_f64(),
-			}),
-			disc_radius,
-		}
-	}
-
-	## The frame in paint order: the sky, the sun, the grass, then the ride's
-	## shapes. The grass covers whatever of the sun has set.
-	frame_shapes : List(Shapes.Shape),
-	{
-		sky_top_color : HexColor.Rgb,
-		sky_horizon_color : HexColor.Rgb,
+	## The backdrop under `sky_colors`, with the sun where `sun_sighting` says.
+	backdrop_shapes : {
+		sky_colors : Sky.Colors,
 		sun_sighting : Sun.Sighting,
-	} -> List(Shapes.Shape)
-	frame_shapes = |ride_shapes, { sky_top_color, sky_horizon_color, sun_sighting: sun }| {
-		var $out = List.with_capacity(ride_shapes.len() + 8)
-		# The top colour to a fifth of the way down to the horizon at y 300,
-		# then the fade.
+	} -> Backdrop.BackdropShapes
+	backdrop_shapes = |{ sky_colors, sun_sighting }| {
 		sky = Linear({
-			c0: Brush.opaque(HexColor.pack(sky_top_color)),
-			c1: Brush.opaque(HexColor.pack(sky_horizon_color)),
+			c0: Brush.opaque(sky_colors.top),
+			c1: Brush.opaque(sky_colors.horizon),
 			o0: sky_top_stop.to_f64(),
 			o1: 1.0,
 			ax: 0.0,
@@ -96,45 +51,76 @@ Backdrop :: [].{
 			dx: 0.0,
 			dy: Screen.horizon_y.to_f64(),
 		})
-		$out = $out.append(sky_rect(sky))
-		$out =
-			match sun {
+		sun_shapes =
+			match sun_sighting {
 				InView(place) => {
-					fills = sun_fills(place)
-					$out.concat([
-						sky_rect(fills.glow),
+					look = Sun.look(place)
+					[
+						sky_rect(look.glow),
 						Disc({
 							x: place.x.to_f64(),
 							y: place.y.to_f64(),
-							r: fills.disc_radius.to_f64(),
-							fill: fills.disc,
+							r: Sun.disc_radius_drawn(place).to_f64(),
+							fill: look.disc,
 						}),
-					])
+					]
 				}
-				OutOfView => $out
+				OutOfView => []
 			}
-		# From a pixel above the horizon, oversized as the sky is.
-		$out = $out.append(
-			Rect({
-				x: -1080.0,
-				y: Screen.grass_top_y.to_f64(),
-				w: 3120.0,
-				h: 1561.0,
-				fill: Flat(Brush.opaque(grass_color)),
-			}),
-		)
-		$out.concat(ride_shapes)
+		# From a pixel above the horizon down past the screen's foot, as wide
+		# as the sky.
+		margin = Screen.roll_margin
+		grass = Rect({
+			x: margin.opposite().to_f64(),
+			y: Screen.grass_top_y.to_f64(),
+			w: Screen.width.plus(margin).plus(margin).to_f64(),
+			h: Screen.height.minus(Screen.grass_top_y).plus(margin).to_f64(),
+			fill: Flat(Brush.opaque(grass_color)),
+		})
+		{ sky: sky_rect(sky), sun_shapes, grass }
+	}
+
+	## The frame in paint order: the sky, the sun, the grass, then the ride's
+	## shapes. The grass covers whatever of the sun has set.
+	frame_shapes : List(Shapes.Shape),
+	{
+		sky_colors : Sky.Colors,
+		sun_sighting : Sun.Sighting,
+	} -> List(Shapes.Shape)
+	frame_shapes = |ride_shapes, backdrop| {
+		parts = Backdrop.backdrop_shapes(backdrop)
+		[[parts.sky], parts.sun_shapes, [parts.grass], ride_shapes].join()
 	}
 }
 
-## The sky's rectangle down to the horizon, painted with `fill`. It is oversized,
-## so a rolled frame's corners stay filled, and the sun's glow takes it too.
+## The sky's rectangle, from `Screen.roll_margin` above the screen down to the
+## horizon, painted with `fill`. The margin keeps a rolled frame's corners
+## filled, and the sun's glow takes the same rectangle.
 sky_rect : Brush.Fill -> Shapes.Shape
-sky_rect = |fill|
+sky_rect = |fill| {
+	margin = Screen.roll_margin
 	Rect({
-		x: -1080.0,
-		y: -1260.0,
-		w: 3120.0,
-		h: 1560.0,
+		x: margin.opposite().to_f64(),
+		y: margin.opposite().to_f64(),
+		w: Screen.width.plus(margin).plus(margin).to_f64(),
+		h: Screen.horizon_y.plus(margin).to_f64(),
 		fill,
 	})
+}
+
+# The sky comes first and the grass after the sun, so the grass covers what of
+# the sun has set.
+expect {
+	sky_colors = Sky.colors_at(Clock.start)
+	facing_sun = { heading: Sun.bearing, cam_focal: Lens.resting_focal }
+	sun_sighting = Sun.sighting(facing_sun, Clock.start)
+	parts = Backdrop.backdrop_shapes({ sky_colors, sun_sighting })
+	in_order = [parts.sky].concat(parts.sun_shapes).append(parts.grass)
+	framed = Backdrop.frame_shapes([], { sky_colors, sun_sighting })
+	parts.sun_shapes.len() == 2 and framed == in_order
+}
+
+expect {
+	sky_colors = Sky.colors_at(Clock.start)
+	Backdrop.backdrop_shapes({ sky_colors, sun_sighting: OutOfView }).sun_shapes == []
+}

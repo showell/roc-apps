@@ -36,4 +36,33 @@ Screen :: [].{
 	## the two under the roll.
 	grass_top_y : Pixels
 	grass_top_y = horizon_y.minus(Pixels.of(1.0))
+
+	## How far past each edge of the screen the backdrop and the skyline reach,
+	## so the camera's roll never shows their edges. The roll turns the screen
+	## about its middle, and 200 pixels covers a roll of up to 30° either way.
+	## Nothing caps the roll, but the ride's leans stay under 18°. It is a whole,
+	## even number of pixels, so the skyline's columns, two pixels apart from
+	## this far left, land on the screen's own whole pixels.
+	roll_margin : Pixels
+	roll_margin = Pixels.of(200.0)
+}
+
+# At a roll of 30°, the screen's corners turn no further from its middle than
+# the margin reaches: up and down, and left and right.
+expect {
+	roll = 30.0 * F64.pi / 180.0
+	half_width = Screen.width.to_f64() / 2.0
+	half_height = Screen.height.to_f64() / 2.0
+	reach_down = half_width * roll.sin() + half_height * roll.cos()
+	reach_across = half_width * roll.cos() + half_height * roll.sin()
+	reach_down <= half_height + Screen.roll_margin.to_f64()
+		and reach_across <= half_width + Screen.roll_margin.to_f64()
+}
+
+# At 31°, the corners would pass the margin up and down.
+expect {
+	roll = 31.0 * F64.pi / 180.0
+	half_width = Screen.width.to_f64() / 2.0
+	half_height = Screen.height.to_f64() / 2.0
+	half_width * roll.sin() + half_height * roll.cos() > half_height + Screen.roll_margin.to_f64()
 }

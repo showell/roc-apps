@@ -6,7 +6,6 @@
 ## small chart plots their answers over the whole sunset. The book opens it at
 ## one of three jobs, and each job adds a call.
 import game.Clock
-import game.HexColor
 import game.Lens
 import game.Pixels
 import game.Sky
@@ -90,40 +89,37 @@ shapes_at = |{ transport, job }| {
 }
 
 ## The two colors of the sky, as far as `job` goes.
-sky_colors : SkyWidgetApp.Job, Clock -> { top : HexColor.Rgb, horizon : HexColor.Rgb }
+sky_colors : SkyWidgetApp.Job, Clock -> Sky.Colors
 sky_colors = |job, clock|
 	match job {
 		SunSets => {
-			day = Sky.sky_top_color(Clock.start)
+			day = Sky.colors_at(Clock.start).top
 			{ top: day, horizon: day }
 		}
 		SkyDarkens => {
-			now = Sky.sky_top_color(clock)
+			now = Sky.colors_at(clock).top
 			{ top: now, horizon: now }
 		}
-		HorizonWarms => { top: Sky.sky_top_color(clock), horizon: Sky.sky_horizon_color(clock) }
+		HorizonWarms => Sky.colors_at(clock)
 	}
 
 ## The ride's sky at `clock`, for a rider facing the sun.
 picture_shapes : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
-picture_shapes = |job, clock| {
-	colors = sky_colors(job, clock)
+picture_shapes = |job, clock|
 	ScrubWidget.ride_shapes_in(
 		[],
 		{
-			sky_top_color: colors.top,
-			sky_horizon_color: colors.horizon,
-			sun_sighting: Sun.sighting({ heading: Sun.bearing, clock, cam_focal: Lens.resting_focal }),
+			sky_colors: sky_colors(job, clock),
+			sun_sighting: Sun.sighting({ heading: Sun.bearing, cam_focal: Lens.resting_focal }, clock),
 		},
 	)
-}
 
 ## The calls this widget makes at `clock`, and their answers, a line each.
 status_lines : SkyWidgetApp.Job, Clock -> List(Str)
 status_lines = |job, clock|
 	[
 		"clock = step ${clock.to_str()}",
-		"Sun.height_px(clock) = ${height_text(Sun.height_px(clock))}",
+		"Sun.height(clock) = ${height_text(Sun.height(clock))}",
 		"Sky.dusk_at(clock) = ${ScrubWidget.percent_text(Sky.dusk_at(clock))}",
 		"Sky.sunset_warmth(clock) = ${ScrubWidget.percent_text(Sky.sunset_warmth(clock))}",
 	].take_first(curves_of(job) + 1)
@@ -150,13 +146,13 @@ clock_color : RgbColor
 clock_color = RgbColor.of(0x202020)
 
 sun_color : RgbColor
-sun_color = RgbColor.of(0x9a6a00)
+sun_color = RgbColor.of(0x9A6A00)
 
 dusk_color : RgbColor
-dusk_color = RgbColor.of(0x24406e)
+dusk_color = RgbColor.of(0x24406E)
 
 warmth_color : RgbColor
-warmth_color = RgbColor.of(0xc0392b)
+warmth_color = RgbColor.of(0xC0392B)
 
 ## The status lines, each in the color of its curve on the chart.
 call_lines : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
@@ -190,8 +186,8 @@ chart_y = |level| chart_bottom - (chart_bottom - chart_top) * level
 ## The sun's height as a level on the chart, from its lowest to its highest.
 sun_level : Clock -> F64
 sun_level = |clock| {
-	lowest = Sun.height_px(Clock.at_step(6000))
-	Sun.height_px(clock).minus(lowest).ratio_to(Sun.start_px.minus(lowest))
+	lowest = Sun.height(sunset.last)
+	Sun.height(clock).minus(lowest).ratio_to(Sun.height_at_start.minus(lowest))
 }
 
 dusk_level : Clock -> F64
@@ -277,7 +273,7 @@ expect
 	status_lines(HorizonWarms, Clock.start)
 		== [
 			"clock = step 0",
-			"Sun.height_px(clock) = 244.0 px",
+			"Sun.height(clock) = 244.0 px",
 			"Sky.dusk_at(clock) = 0%",
 			"Sky.sunset_warmth(clock) = 0%",
 		]
@@ -286,23 +282,23 @@ expect
 	status_lines(HorizonWarms, Clock.at_step(3000))
 		== [
 			"clock = step 3000",
-			"Sun.height_px(clock) = 60.3 px",
+			"Sun.height(clock) = 60.3 px",
 			"Sky.dusk_at(clock) = 24%",
 			"Sky.sunset_warmth(clock) = 45%",
 		]
 
 expect
-	status_lines(HorizonWarms, Clock.at_step(6000))
+	status_lines(HorizonWarms, sunset.last)
 		== [
 			"clock = step 6000",
-			"Sun.height_px(clock) = -123.5 px",
+			"Sun.height(clock) = -123.5 px",
 			"Sky.dusk_at(clock) = 100%",
 			"Sky.sunset_warmth(clock) = 0%",
 		]
 
 # The chart's levels stay on the chart: the sun runs from top to bottom.
 expect sun_level(Clock.start) == 1.0
-expect sun_level(Clock.at_step(6000)) == 0.0
+expect sun_level(sunset.last) == 0.0
 expect chart_clocks.len() == 61
 expect chart_shapes(HorizonWarms).len() == 180
 expect chart_shapes(SkyDarkens).len() == 120
@@ -339,7 +335,7 @@ expect pressed_on(at_start, Play).transport == { at: Clock.at_step(8), motion: F
 expect pressed_on(stopped_at(100), StepBack).transport.at == Clock.at_step(99)
 expect pressed_on(stopped_at(100), StepForward).transport.at == Clock.at_step(101)
 expect pressed_on(stopped_at(100), ToStart).transport.at == Clock.start
-expect pressed_on(at_start, ToEnd).transport.at == Clock.at_step(6000)
+expect pressed_on(at_start, ToEnd).transport.at == sunset.last
 
 # The Right key moves through the jobs, and the pointer leaves them alone.
 expect next_job(SunSets) == SkyDarkens
@@ -351,7 +347,7 @@ expect pressed_on({ ..at_start, job: SkyDarkens }, Play).job == SkyDarkens
 
 # The chart's two ends are the sunset's two ends.
 expect chart_point(Clock.start, dusk_level).x == chart_left
-expect chart_point(Clock.at_step(6000), dusk_level).x == chart_right
+expect chart_point(sunset.last, dusk_level).x == chart_right
 expect chart_point(Clock.start, dusk_level).y == chart_bottom
 expect chart_point(Clock.start, sun_level).y == chart_top
 

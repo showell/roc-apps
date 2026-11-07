@@ -51,11 +51,7 @@ SafariApp :: [].{
 		frame = Tour.frame_content(tour)
 		Backdrop.frame_shapes(
 			frame.shapes,
-			{
-				sky_top_color: Tour.sky_top_color(tour),
-				sky_horizon_color: Tour.sky_horizon_color(tour),
-				sun_sighting: frame.sun,
-			},
+			{ sky_colors: Tour.sky_colors(tour), sun_sighting: frame.sun },
 		).prepend(lean)
 	}
 

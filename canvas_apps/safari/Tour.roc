@@ -6,7 +6,6 @@
 import Angle
 import World
 import RideInstant
-import HexColor
 import Sky
 import Rider
 import CanvasRoll
@@ -73,10 +72,8 @@ Tour := {
 	roll : Tour -> Angle.Lean
 	roll = |tour| CanvasRoll.rider_roll(tour.instant.rider.lean)
 
-	# The sky's color at the top of the frame and at the horizon.
-	sky_top_color : Tour -> HexColor.Rgb
-	sky_top_color = |tour| Sky.sky_top_color(tour.instant.clock)
-
-	sky_horizon_color : Tour -> HexColor.Rgb
-	sky_horizon_color = |tour| Sky.sky_horizon_color(tour.instant.clock)
+	## The sky's colors at the tour's instant: at the top of the frame and at
+	## the horizon.
+	sky_colors : Tour -> Sky.Colors
+	sky_colors = |tour| Sky.colors_at(tour.instant.clock)
 }
