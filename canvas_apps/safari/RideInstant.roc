@@ -43,7 +43,7 @@ RideInstant := {
 
 	## How far along `route` the rider of `instant` is.
 	rider_distance : Route, RideInstant -> Distance
-	rider_distance = |route, instant| distance_of_rider(route, instant.rider)
+	rider_distance = |route, instant| instant.rider.motorcycle.route_place.distance_along(route)
 
 	## Where the encounter on the rider's segment stands at `instant`.
 	encounter_timing : RideInstant -> EncounterPlan.Timing
@@ -53,7 +53,6 @@ RideInstant := {
 next : Route, RideInstant -> RideInstant
 next = |route, instant| {
 	nx = instant.rider.next({ route, encounter_timing: RideInstant.encounter_timing(instant) })
-	dist = distance_of_rider(route, nx)
 	clock = instant.clock.next()
 	from = instant.rider.motorcycle.route_place
 	to = nx.motorcycle.route_place
@@ -65,7 +64,10 @@ next = |route, instant| {
 		}
 	{
 		rider: nx,
-		truck: Truck.at_next_step(instant.truck, { rider_distance: dist, route }),
+		truck: Truck.at_next_step(
+			instant.truck,
+			{ rider_distance: to.distance_along(route), route },
+		),
 		clock,
 		encounter_start: match kept_start {
 			StartsAt(_) => kept_start
@@ -73,11 +75,6 @@ next = |route, instant| {
 		},
 	}
 }
-
-## How far along `route` `rider` is.
-distance_of_rider : Route, RiderState -> Distance
-distance_of_rider = |route, rider|
-	rider.motorcycle.route_place.distance_along(route)
 
 ## The start the ride plans for `segment`'s encounter, with `rider` on it at
 ## `now`: unplanned until the rider comes within reach of it.
