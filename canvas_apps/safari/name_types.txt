@@ -7,3 +7,8 @@ count: U8, U16, U32, U64, I32, I64
 # An axis fits any plane: a still's x is in heights, and the raster gates' are past lib.Shapes.
 x: any
 y: any
+# A row or a column is a place in whichever grid holds it. A big herd's are plain
+# indices, multiplied into distances, and the raster gates' are PixelGrid places
+# that the game can't import.
+row: any
+column: any
