@@ -1,13 +1,13 @@
-## How a critter plays out on the ride. An encounter's animation runs on its own
+## How an animal plays out on the ride. An encounter's animation runs on its own
 ## clock, a frame a step from the step it starts at, and never looks at the
 ## rider. The ride picks that step once, when the rider first comes within
 ## reach, from how the rider is coming then, so that the animation ends as the
 ## rider arrives. A `Timing` says where the animation has got to as a `Stage`,
 ## and a timeline turns a `Stage` into an `Instant`.
 ##
-## A timeline is a list of frames, each a pose and a location, so a critter's
+## A timeline is a list of frames, each a pose and a location, so an animal's
 ## whole animation reads in one place. Nothing here plays a timeline but that lookup.
-## The instants before and after are the timeline's own, because a critter can
+## The instants before and after are the timeline's own, because an animal can
 ## rest somewhere no frame ever reaches.
 import Across
 import Along
@@ -44,10 +44,10 @@ Animation :: [].{
 	Stage : [Waiting, Playing(Steps), Past(Steps)]
 
 	## How many steps an animation plays for, a frame a step, and the gap from
-	## the rider to the critter it ends at.
+	## the rider to the animal it ends at.
 	StepSpan : { length : Steps, ends_at : Distance }
 
-	## How far from the critter an animation is planned for a rider at `speed`:
+	## How far from the animal an animation is planned for a rider at `speed`:
 	## the gap it ends at, and the road the rider covers while it plays. A
 	## faster rider has it planned farther off.
 	planning_gap : Animation.StepSpan, Speed -> Distance
@@ -55,11 +55,11 @@ Animation :: [].{
 
 	## The start of an animation that is to end as the rider comes within
 	## `ends_at`, planned at `now` from how the rider comes then: `gap` from the
-	## critter, at `speed`. It starts now on the first step that a rider keeping
+	## animal, at `speed`. It starts now on the first step that a rider keeping
 	## their speed would arrive within its length, so a faster rider has it
 	## start farther off. Till then, and while the rider is at rest, it isn't
 	## planned. The plan looks at the rider's speed that once: after it, the
-	## critter doesn't care what the rider does.
+	## animal doesn't care what the rider does.
 	##
 	## Planning on the step itself keeps the guess short, an animation's length
 	## ahead. A plan from farther off would take the speed to be steady for
@@ -96,7 +96,7 @@ Animation :: [].{
 			}
 		}
 
-	## Where a critter is: a place on its segment, and how high it is off the
+	## Where an animal is: a place on its segment, and how high it is off the
 	## ground.
 	Location : {
 		along : Along,
@@ -119,7 +119,7 @@ Animation :: [].{
 		}
 	}
 
-	## A critter at one instant: how it looks, and where it is.
+	## An animal at one instant: how it looks, and where it is.
 	Instant(pose) : { pose : pose, location : Animation.Location }
 
 	## `instant` as an object on the road: it stands at the instant's location,
@@ -131,8 +131,8 @@ Animation :: [].{
 		kind: { pose: pose },
 	}
 
-	## A whole animation: the critter at rest before, the frames it plays through,
-	## one a step, and the critter at rest after.
+	## A whole animation: the animal at rest before, the frames it plays through,
+	## one a step, and the animal at rest after.
 	Timeline(pose) := {
 		before : Animation.Instant(pose),
 		frames : List(Animation.Instant(pose)),
@@ -155,7 +155,7 @@ Animation :: [].{
 	}
 }
 
-## A span of 10 steps that ends 3 m short of the critter.
+## A span of 10 steps that ends 3 m short of the animal.
 ten_step_span : Animation.StepSpan
 ten_step_span = { length: Steps.of(10), ends_at: Distance.metres(3.0) }
 

@@ -17,7 +17,7 @@ EncounterPoses :: [].{
 
 	## An animal on a segment in view: where that segment lies from the rider,
 	## and where on it the animal stands and how it is posed.
-	PosedAnimal(pose) : { place : SegmentPlace, placed : Geom.Placed(pose) }
+	PosedAnimal(kind) : { place : SegmentPlace, animal : Geom.Placed(kind) }
 
 	## The cats on `road`, with the encounter on the rider's segment at
 	## `encounter_timing`, in the order of `RoadAhead.segments_in_view`.
@@ -47,7 +47,7 @@ segment_cat = |{ in_view, encounter_timing }|
 			stage = segment_stage(in_view, Cat.crossing_stage(encounter_timing))?
 			Ok({
 				place: in_view.place,
-				placed: Animation.placed_instant(Cat.instant_at(crossing, stage)),
+				animal: Animation.placed_instant(Cat.instant_at(crossing, stage)),
 			})
 		}
 		BirdHere(_) | QuietRoad => Err(NoCat)
@@ -64,7 +64,7 @@ segment_bird = |{ in_view, encounter_timing }|
 			stage = segment_stage(in_view, BirdFlight.flight_stage(encounter_timing))?
 			Ok({
 				place: in_view.place,
-				placed: Animation.placed_instant(BirdFlight.instant_at(flight, stage)),
+				animal: Animation.placed_instant(BirdFlight.instant_at(flight, stage)),
 			})
 		}
 		CatCrosses(_) | QuietRoad => Err(NoBird)
