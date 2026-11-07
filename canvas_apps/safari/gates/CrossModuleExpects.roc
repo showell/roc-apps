@@ -831,76 +831,72 @@ is_far_to_near = |renderings|
 expect is_far_to_near(scene_renderings)
 expect is_far_to_near([])
 
-# GroundSighting's road, chunk by chunk.
+# GroundSighting's road along the first segment, 500 m long: one patch, its
+# edges laid in 20 chunks of 25 m.
 ## A list of patches as a camera the drawing checks read paints them.
 patch_shapes : List(Ground.Patch) -> List(Shapes.Shape)
 patch_shapes = |patches| patches.keep_oks(|patch| Ground.patch_shape(patch, Pixels.of(500.0)))
 
-## Chunk `chunk_number` of the first segment's 20, each 25 m long.
-corners_of_chunk : U32 -> List(Geom.RiderPoint)
-corners_of_chunk = |chunk_number| GroundSighting.chunk_corners(
-	road,
-	{
-		place: Ahead(SegmentPlace.Position.first),
-		near_end: Along.metres(25.0 * chunk_number.to_f64()),
-		far_end: Along.metres(25.0 * (chunk_number + 1).to_f64()),
-	},
-)
+first_road : Ground.Patch
+first_road = GroundSighting.road_along(road, numbered_segment(road, 0))
 
 corner : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
-corner = |corners, i| corners.get(i) ?? crash "CrossModuleExpects: a chunk has four corners"
+corner = |corners, i| corners.get(i) ?? crash "CrossModuleExpects: the road has a corner at each chunk's end on either edge"
 
-first_chunk_corners : List(Geom.RiderPoint)
-first_chunk_corners = corners_of_chunk(0)
-
-last_chunk_corners : List(Geom.RiderPoint)
-last_chunk_corners = corners_of_chunk(19)
-
-expect first_chunk_corners.len() == 4
-expect last_chunk_corners.len() == 4
-expect
-	[
-		(0, -2.0),
-		(1, 2.0),
-		(2, 2.0),
-		(3, -2.0),
-	].all(|(i, want)| (corner(first_chunk_corners, i).right.to_metres() - want).abs() <= 0.0001)
-
-expect
-	[
-		(corner(first_chunk_corners, 0).forward.to_metres(), 0.0),
-		(corner(first_chunk_corners, 3).forward.to_metres(), 25.0),
-		(corner(last_chunk_corners, 0).forward.to_metres(), 475.0),
-		(corner(last_chunk_corners, 3).forward.to_metres(), 500.0),
-	].all(|(got, want)| (got - want).abs() <= 0.0001)
-
-expect {
-	before = corners_of_chunk(3)
-	after = corners_of_chunk(4)
-	corner(before, 3).forward == corner(after, 0).forward
-		and corner(before, 2).forward == corner(after, 1).forward
-		and corner(before, 3).right == corner(after, 0).right
+## The road's corners where chunk `number` starts, on the right edge and the
+## left: the start, then up the right edge, then back down the left.
+chunk_start_corners : U64 -> (Geom.RiderPoint, Geom.RiderPoint)
+chunk_start_corners = |number| {
+	left_index = if number == 0 {
+		0
+	} else {
+		42 - number
+	}
+	(corner(first_road.corners, number + 1), corner(first_road.corners, left_index))
 }
 
-strip_shapes : List(Shapes.Shape)
-strip_shapes = patch_shapes(GroundSighting.road_patches(road, numbered_segment(road, 0)))
+expect first_road.corners.len() == 42
+expect
+	List.from_iter(U64.until(0, 21)).all(
+		|number| {
+			(right_corner, left_corner) = chunk_start_corners(number)
+			want_forward = 25.0 * number.to_f64()
+			(right_corner.right.to_metres() - 2.0).abs() <= 0.0001
+				and (left_corner.right.to_metres() + 2.0).abs() <= 0.0001
+				and (right_corner.forward.to_metres() - want_forward).abs() <= 0.0001
+				and right_corner.forward == left_corner.forward
+		},
+	)
 
-expect strip_shapes.len() > 0
-expect strip_shapes.len().to_u32_wrap() <= GroundSighting.chunks_along(Distance.metres(500.0))
-expect patch_shapes(
-	GroundSighting.road_patches(
+strip_shapes : List(Shapes.Shape)
+strip_shapes = patch_shapes([first_road])
+
+expect strip_shapes.len() == 1
+expect patch_shapes([
+	GroundSighting.road_along(
 		{ ..road, vantage: { ..origin, along: Along.metres(5000.0) } },
 		numbered_segment(road, 0),
 	),
-).len() == 0
+]).len() == 0
 last_shape : Shapes.Shape
 last_shape = strip_shapes.last() ?? crash "CrossModuleExpects: the road draws"
 
 expect flat_color_of(last_shape) == RgbColor.of(0x34353C)
-expect {
-	coordinate_count = coordinates_of(last_shape).len()
-	coordinate_count >= 6 and coordinate_count <= 10
-}
+
+# Seen from its start, the road is cut at the near plane and at the horizon,
+# 490 m out, so it keeps its corners from 25 m to 475 m on both edges, and
+# gains two where each cut crosses its edges.
+expect coordinates_of(last_shape).len() == 2 * (2 * 19 + 4)
+
+# The paving of the first bend takes in 40 m of road on either side of it, so
+# its corners reach back to 460 m along the first segment.
+expect
+	match GroundSighting.patches_in_view(road).get(1) {
+		Ok(paving) =>
+			paving.corners.len() == 8
+				and paving.corners.any(|point| (point.forward.to_metres() - 460.0).abs() <= 0.0001)
+		Err(_) => False
+	}
 
 # A ride that has finished starts again.
 done : RideInstant

@@ -22,8 +22,8 @@ GroundSighting :: [].{
 	patches_in_view = |road|
 		RoadAhead.segments_in_view(road).join_map(|in_view| ground_patches(road, in_view))
 
-	## How many chunks the road along a segment `length` long is laid in:
-	## at least one.
+	## How many chunks the edges of the road along a segment `length` long
+	## are laid in: at least one.
 	chunks_along : Distance -> U32
 	chunks_along = |length| {
 		chunks =
@@ -32,52 +32,35 @@ GroundSighting :: [].{
 		chunks.max(1).to_u32_wrap()
 	}
 
-	## The road along a segment in view, chunk by chunk.
-	road_patches : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(Ground.Patch)
-	road_patches = |road, in_view| {
+	## The road along a segment in view, as one patch: across its start, up its
+	## right edge to the end of each chunk, then back down its left edge. It is
+	## one patch, not a patch a chunk, because a canvas smooths each patch's
+	## edges on its own, and where two patches meet the grass under them shows
+	## through as a pale seam.
+	road_along : RoadAhead.RoadView, RoadAhead.SegmentInView -> Ground.Patch
+	road_along = |road, in_view| {
 		place = in_view.place
 		segment_length = in_view.segment.length
 		chunk_count = GroundSighting.chunks_along(segment_length)
-		end_of_chunk = |number|
-			Along.at(segment_length.times(number.to_f64()).divided_by(chunk_count.to_f64()))
-		List.from_iter(U32.until(0, chunk_count)).map(
-			|chunk_number| road_patch(
-				GroundSighting.chunk_corners(
-					road,
-					{
-						place,
-						near_end: end_of_chunk(chunk_number),
-						far_end: end_of_chunk(chunk_number + 1),
-					},
-				),
-			),
-		)
-	}
-
-	## The corners of the chunk of road from `near_end` to `far_end` along the
-	## segment at `place`: across its near end, then back across its far end.
-	chunk_corners : RoadAhead.RoadView,
-	{
-		place : SegmentPlace,
-		near_end : Along,
-		far_end : Along,
-	} -> List(Geom.RiderPoint)
-	chunk_corners = |road, { place, near_end, far_end }| {
-		corner = |along, across| RoadAhead.rider_point_at(road, { place, along, across })
-		[
-			corner(near_end, Geom.left_edge),
-			corner(near_end, Geom.right_edge),
-			corner(far_end, Geom.right_edge),
-			corner(far_end, Geom.left_edge),
-		]
+		corner = |chunk_number, across| {
+			along = chunk_end(segment_length, chunk_number)
+			RoadAhead.rider_point_at(road, { place, along, across })
+		}
+		up_right_edge =
+			List.from_iter(U32.until(0, chunk_count + 1))
+				.map(|number| corner(number, Geom.right_edge))
+		down_left_edge =
+			List.from_iter(U32.until(0, chunk_count))
+				.map(|k| corner(chunk_count - k, Geom.left_edge))
+		road_patch([corner(0, Geom.left_edge)].concat(up_right_edge).concat(down_left_edge))
 	}
 }
 
 road_color : RgbColor
 road_color = RgbColor.of(0x34353C)
 
-## The road is laid in chunks no longer than this. Chunks at most 25 m long
-## keep the chord cut at the horizon below a pixel.
+## The road's edges are laid in chunks no longer than this. Chunks at most
+## 25 m long keep the chord cut at the horizon below a pixel.
 road_chunk_length : Distance
 road_chunk_length = Distance.metres(25.0)
 
@@ -85,6 +68,22 @@ road_chunk_length = Distance.metres(25.0)
 ## bends.
 lead_in_length : Distance
 lead_in_length = Distance.metres(40.0)
+
+## Where chunk `chunk_number` of the road along a segment `segment_length` long
+## ends, the chunks counted from 1. Chunk 0 ends where the segment starts.
+chunk_end : Distance, U32 -> Along
+chunk_end = |segment_length, chunk_number| {
+	chunk_count = GroundSighting.chunks_along(segment_length)
+	Along.at(segment_length.times(chunk_number.to_f64()).divided_by(chunk_count.to_f64()))
+}
+
+## How long the segment after a bend is.
+length_after : RoadAhead.RoadView, BendView -> Distance
+length_after = |road, bend_view|
+	match BendView.place_after(bend_view) {
+		Ahead(position) => RoadAhead.segment_at(road, position).length
+		JustBehind(_) => crash "GroundSighting.length_after: the segment after a bend is never behind the rider"
+	}
 
 ## A patch of road with these corners.
 road_patch : List(Geom.RiderPoint) -> Ground.Patch
@@ -94,85 +93,81 @@ road_patch = |corners| { corners, color: road_color }
 ## if the road in view goes on, and its pond if it ends at one. The segment
 ## just behind lays no road along it, and its bend's paving stands for it,
 ## because that paving lays the last `lead_in_length` of its road. The cut at the
-## near plane does not make this rule: just past a bend, the last chunk of road
+## near plane does not make this rule: just past a bend, the end of the road
 ## behind reaches in front of the camera and would draw. Road further back on
 ## it would show at a bend sharper than a right angle, and the route has none.
 ground_patches : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(Ground.Patch)
 ground_patches = |road, in_view| {
 	segment = in_view.segment
 	place = in_view.place
-	road_along =
+	along_segment =
 		match place {
-			Ahead(_) => GroundSighting.road_patches(road, in_view)
+			Ahead(_) => [GroundSighting.road_along(road, in_view)]
 			JustBehind(_) => []
 		}
 	bend =
 		match BendView.bend_after(road, in_view) {
-			Ok(bend_view) => bend_patches(road, bend_view)
+			Ok(bend_view) => [bend_paving(road, bend_view)]
 			Err(RoadEndsInView) => []
 		}
 	[
-		road_along,
+		along_segment,
 		bend,
 		pond_patches(road, { segment, place }),
 	].join()
 }
 
-## A bend's paving: the road just before it, then the corner it cuts.
-bend_patches : RoadAhead.RoadView, BendView -> List(Ground.Patch)
-bend_patches = |road, bend_view| [
-	road_patch(lead_points(road, bend_view)),
-	road_patch(bend_corners(road, bend_view)),
-]
-
-## The last `lead_in_length` of the road before a bend.
-lead_points : RoadAhead.RoadView, BendView -> List(Geom.RiderPoint)
-lead_points = |road, bend_view| {
-	before = bend_view.before
-	corner = |along, across| RoadAhead.rider_point_at(road, { place: before, along, across })
+## A bend's paving, as one patch: the last `lead_in_length` of the road before
+## the bend, the corner it cuts out to where the two outer edges meet, and the
+## first chunk of the road after it. It runs up the left edge and back down the
+## right, and the outer edge takes in the apex.
+##
+## The road along each segment ends inside the paving, so where they meet is
+## road over road, and no seam shows. The paving takes in the first chunk after
+## the bend for that reason, though that road is laid anyway, and it ends where
+## that chunk ends, so its edges there are the road's own.
+bend_paving : RoadAhead.RoadView, BendView -> Ground.Patch
+bend_paving = |road, bend_view| {
 	length_before = bend_view.bend.segment_length
-	end = Along.at(length_before)
-	start = Along.at(length_before.minus(lead_in_length))
-	[
-		corner(end, Geom.left_edge),
-		corner(end, Geom.right_edge),
-		corner(start, Geom.right_edge),
-		corner(start, Geom.left_edge),
-	]
-}
-
-## The corner a bend cuts: from the inner edge where the segment before
-## ends, to its outer edge there, out to where the two outer edges meet,
-## and back to the outer edge where the segment after starts.
-bend_corners : RoadAhead.RoadView, BendView -> List(Geom.RiderPoint)
-bend_corners = |road, bend_view| {
-	inner_edge = if bend_view.turn().is_right() {
-		Geom.right_edge
-	} else {
-		Geom.left_edge
-	}
-	outer_edge = BendView.outer_edge(bend_view.turn())
-	end_at = |across| RoadAhead.rider_point_at(
+	before = |along, across| RoadAhead.rider_point_at(
 		road,
-		{
-			place: bend_view.before,
-			along: Along.at(bend_view.bend.segment_length),
-			across,
-		},
+		{ place: bend_view.before, along, across },
 	)
-	[
-		end_at(inner_edge),
-		end_at(outer_edge),
-		BendView.apex(road, bend_view),
-		RoadAhead.rider_point_at(
-			road,
-			{
-				place: BendView.place_after(bend_view),
-				along: Along.start,
-				across: outer_edge,
-			},
-		),
-	]
+	after = |along, across| RoadAhead.rider_point_at(
+		road,
+		{ place: BendView.place_after(bend_view), along, across },
+	)
+	lead_start = Along.at(length_before.minus(lead_in_length))
+	end = Along.at(length_before)
+	lead_end = chunk_end(length_after(road, bend_view), 1)
+	apex = BendView.apex(road, bend_view)
+	left = Geom.left_edge
+	right = Geom.right_edge
+	corners =
+		if bend_view.turn().is_right() {
+			[
+				before(lead_start, left),
+				before(end, left),
+				apex,
+				after(Along.start, left),
+				after(lead_end, left),
+				after(lead_end, right),
+				before(end, right),
+				before(lead_start, right),
+			]
+		} else {
+			[
+				before(lead_start, left),
+				before(end, left),
+				after(lead_end, left),
+				after(lead_end, right),
+				after(Along.start, right),
+				apex,
+				before(end, right),
+				before(lead_start, right),
+			]
+		}
+	road_patch(corners)
 }
 
 ## The pond past the end of `segment`, which lies at `place`: its water, then

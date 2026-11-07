@@ -362,18 +362,18 @@ expect ride_shapes_on(layers) == paused_frame_view.shapes
 
 # The frame's total is the count the book's table gives for this step.
 expect ride_count(layers) == paused_frame_view.shapes.len()
-expect ride_count(layers) == 2588
+expect ride_count(layers) == 2568
 
 # Each layer's own shapes at this step. The sun is behind the rider, so it has none.
 expect
 	layers.map(|layer| frame_shapes_on([layer]).len())
-		== [1656, 1, 0, 1, 4, 24, 302, 187, 352, 63]
+		== [1656, 1, 0, 1, 4, 4, 302, 187, 352, 63]
 expect paused_frame_view.sun_sighting == OutOfView
 
 # The running count at each layer. The backdrop stays out of it.
 expect
 	List.from_iter(U64.until(1, layers.len() + 1)).map(|count| ride_count(layers_up_to(count)))
-		== [1656, 1656, 1656, 1656, 1660, 1684, 1986, 2173, 2525, 2588]
+		== [1656, 1656, 1656, 1656, 1660, 1664, 1966, 2153, 2505, 2568]
 
 # A layer with shapes of its own always changes the picture, and the sun doesn't.
 expect picture_shapes(layers_up_to(1)) != picture_shapes(layers_up_to(2))
@@ -429,16 +429,16 @@ expect next_model(start, Input.none.with_key_pressed(KeyLeft)) == opened_after(0
 
 expect
 	status_lines(start)
-		== ["Shapes so far: 1,656 of 2,588", "Added: Trees"]
+		== ["Shapes so far: 1,656 of 2,568", "Added: Trees"]
 expect
 	status_lines(opened_after(2))
-		== ["Shapes so far: 1,656 of 2,588", "Added: The sun, out of view here"]
+		== ["Shapes so far: 1,656 of 2,568", "Added: The sun, out of view here"]
 expect
 	status_lines(opened_after(5))
-		== ["Shapes so far: 1,684 of 2,588", "Added: The road and pond"]
+		== ["Shapes so far: 1,664 of 2,568", "Added: The road and pond"]
 expect
 	status_lines(all_on)
-		== ["Shapes so far: 2,588 of 2,588", "Added: The moving things"]
+		== ["Shapes so far: 2,568 of 2,568", "Added: The moving things"]
 
 expect
 	layers.map(layer_name)
