@@ -44,6 +44,7 @@ import game.Motorcycle
 import game.Mountains
 import game.LeanSearch
 import game.Lens
+import game.LitTruck
 import game.GroundPatch
 import game.GroundSighting
 import game.Picture
@@ -2613,3 +2614,111 @@ expect
 # left.
 expect LeanSearch.lean_correction(Leaves({ side: Left, after: Steps.one_step })) == MoreRight
 expect LeanSearch.lean_correction(Leaves({ side: Right, after: Steps.one_step })) == MoreLeft
+
+## A straight road of three segments, 500 m, 320 m and 400 m long, and the
+## road ahead of a rider on the first of them.
+truck_road : RoadAhead.RoadView
+truck_road = road_of([
+	{ ..going_straight_on(segment_of([])), length: Distance.metres(500.0) },
+	{ ..going_straight_on(segment_of([])), length: Distance.metres(320.0) },
+	{ ..segment_of([]), length: Distance.metres(400.0) },
+])
+
+## What becomes of a truck `lead` metres ahead of a rider on the truck road's
+## first segment, seen from `vantage`, with its lights off. On the first
+## segment the rider's distance along the route is the vantage's `along`.
+truck_seen_from : Geom.Vantage, F64 -> TruckSighting.TruckFate
+truck_seen_from = |vantage, lead|
+	TruckSighting.truck_in_view(
+		truck_road,
+		{
+			camera: { vantage: vantage },
+			route_position: Distance.metres(vantage.along.to_metres() + lead),
+			lit_truck: { headlights: Off, brake_lights: Off },
+		},
+	)
+
+## What becomes of a truck `lead` metres ahead of a rider at `origin`.
+truck_lead_of : F64 -> TruckSighting.TruckFate
+truck_lead_of = |lead| truck_seen_from(origin, lead)
+
+## Where the truck is, for a lead that puts it in view.
+lit_truck_of : F64 -> Pipeline.Sighted(LitTruck)
+lit_truck_of = |lead| truck_lead_of(lead) ?? crash "CrossModuleExpects: this lead puts the truck in view"
+
+# The truck is in view on the road ahead, and not past its end or behind the
+# rider.
+expect
+	[
+		(100.0, True),
+		(499.0, True),
+		(600.0, True),
+		(900.0, True),
+		(2000.0, False),
+		(0.0, False),
+		(-50.0, False),
+	].all(|(lead, want)| truck_lead_of(lead).is_ok() == want)
+
+# A truck past a segment's end stands on a later segment, measured from its
+# start, in the middle of the road.
+expect
+	[
+		(100.0, 0),
+		(499.0, 0),
+		(600.0, 1),
+		(900.0, 2),
+	].all(
+		|(lead, want)| {
+			place = lit_truck_of(lead).spot.place()
+			place == Ahead(SegmentPlace.Position.number(want))
+		},
+	)
+
+expect
+	[
+		(100.0, 100.0),
+		(499.0, 499.0),
+		(600.0, 100.0),
+		(900.0, 80.0),
+	].all(|(lead, want)| lit_truck_of(lead).spot.road_point().along.to_metres() == want)
+
+expect
+	[
+		(100.0, 0.0),
+		(499.0, 0.0),
+		(600.0, 0.0),
+		(900.0, 0.0),
+	].all(|(lead, want)| lit_truck_of(lead).spot.road_point().across.to_metres() == want)
+
+## The lights a truck in view shows, when it has `lights` on.
+lights_shown : LitTruck -> LitTruck
+lights_shown = |lights| {
+	truck = TruckSighting.truck_in_view(
+		truck_road,
+		{
+			camera: { vantage: origin },
+			route_position: Distance.metres(100.0),
+			lit_truck: lights,
+		},
+	) ?? crash "CrossModuleExpects: this lead puts the truck in view"
+	truck.kind
+}
+
+expect
+	[
+		{ headlights: Off, brake_lights: Off },
+		{ headlights: Off, brake_lights: On },
+		{ headlights: On, brake_lights: Off },
+		{ headlights: On, brake_lights: On },
+	].all(|lights| lights_shown(lights) == lights)
+
+expect
+	[
+		(lit_truck_of(100.0).spot.foot().forward().to_metres(), 100.0),
+		(lit_truck_of(499.0).spot.foot().forward().to_metres(), 499.0),
+		(lit_truck_of(100.0).spot.foot().right().to_metres(), 0.0),
+	].all(|(got, want)| (got - want).abs() <= 0.0001)
+
+# A truck in view must be past the near plane.
+expect truck_seen_from({ ..origin, along: Along.metres(100.0) }, 0.25).is_err()
+expect truck_seen_from({ ..origin, along: Along.metres(100.0) }, 1.0).is_ok()
