@@ -57,6 +57,7 @@ import game.Steps
 import game.StillShapes
 import game.Sun
 import game.Throttle
+import game.Tower
 import game.TowerSighting
 import game.TreeSighting
 import game.TruckSighting
@@ -713,6 +714,60 @@ expect
 		(481.0, False),
 		(600.0, False),
 	].all(|(forward, want)| is_cow_seen_from(forward) == want)
+
+# Tower: a tower that isn't turned stands on a square 12 m across, its corners
+# 6 m to either side of its middle and 6 m before and past it. Each leg rises
+# from its corner, from as high as the earth's curve hides it: 0.25 m for a
+# tower 100 m straight ahead, 1/320 of the tower's 80 m. The legs taper, so
+# each foot is drawn in toward the middle by 1/320 of 6 m.
+tower_shapes_100_ahead : List(Shapes.Shape)
+tower_shapes_100_ahead = {
+	tower_road = RoadAhead.RoadView.ahead_of(Route.from_segments([segment_of([])]), Route.SegmentIndex.first)
+	plain_tower : Tower
+	plain_tower = { yaw: Angle.straight_ahead, beacon_brightness: Fraction.zero }
+	sighted =
+		Pipeline.sighting_of(
+			{
+				road_point: { along: Along.metres(100.0), across: Across.middle },
+				lift: Distance.zero,
+				kind: plain_tower,
+			},
+			{ road: tower_road, vantage: origin, place: Ahead(SegmentPlace.Position.first) },
+		)
+			?? crash "CrossModuleExpects: a tower 100 m ahead is past the near plane"
+	sighted.kind.scenery_picture({
+		spot: sighted.spot,
+		cam_focal: origin_camera.cam_focal,
+		context: { road: tower_road, vantage: origin },
+	}).to_shapes()
+}
+
+## How far right of the screen's middle the foot of leg `index` is: the middle
+## of the rod's end at its corner.
+leg_foot_x : U64 -> F64
+leg_foot_x = |index| {
+	coordinates = coordinates_of(
+		tower_shapes_100_ahead.get(index) ?? crash "CrossModuleExpects: a tower has four legs",
+	)
+	match (coordinates.get(0), coordinates.get(6)) {
+		(Ok(near_side), Ok(far_side)) => (near_side + far_side) / 2.0 - Screen.center_x.to_f64()
+		_ => crash "CrossModuleExpects: a leg is a quad"
+	}
+}
+
+## How far a leg's foot is to the side of the tower's middle, and before or
+## past it.
+foot_offset : F64
+foot_offset = 6.0 * 319.0 / 320.0
+
+# The legs go back left, back right, front right, front left.
+expect
+	[
+		(leg_foot_x(0), -500.0 * foot_offset / (100.0 - foot_offset)),
+		(leg_foot_x(1), 500.0 * foot_offset / (100.0 - foot_offset)),
+		(leg_foot_x(2), 500.0 * foot_offset / (100.0 + foot_offset)),
+		(leg_foot_x(3), -500.0 * foot_offset / (100.0 + foot_offset)),
+	].all(|(got, want)| (got - want).abs() <= 0.000001)
 
 # Scene, on the scene from the start of the route.
 scene_facts : Scene.RideFacts
