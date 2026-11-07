@@ -1,18 +1,18 @@
 ## A Picture is how one object looks in one frame: the shapes that paint it,
 ## in order. Outside this module a picture is a single thing, handed along
 ## whole until something paints it.
-import Distance
+import Geom
 import Pixels
 import lib.Shapes
 
 Picture :: List(Shapes.Shape).{
 
-	## What a kind of object draws its picture from: where the object stands
-	## from the camera, the camera's focal length, and `context`, which is
-	## whatever else that kind needs. A kind that needs nothing more takes `{}`.
+	## What a kind of object draws its picture from: where its foot stands from
+	## the camera, on the rider's level and past the near plane, the camera's
+	## focal length, and `context`, which is whatever else that kind needs. A
+	## kind that needs nothing more takes `{}`.
 	Setting(context) : {
-		right : Distance,
-		forward : Distance,
+		foot : Geom.AheadPoint,
 		cam_focal : Pixels,
 		context : context,
 	}

@@ -19,15 +19,14 @@ import Rendered
 Pipeline :: [].{
 
 	## An object in the rider's view, and what kind of object it is. It stands at
-	## `along` and `across` on the segment at `place`, which is `right` and
-	## `forward` of the camera. It is ahead of the rider, so of those two lengths
-	## only `right` can be negative. It lasts one frame.
+	## `along` and `across` on the segment at `place`, and its `foot` is where
+	## that is from the camera, on the rider's level and past the near plane. It
+	## lasts one frame.
 	Sighted(kind) : {
 		place : RoadAhead.SegmentPlace,
 		along : Along,
 		across : Across,
-		right : Distance,
-		forward : Distance,
+		foot : Geom.AheadPoint,
 		kind : kind,
 	}
 
@@ -40,8 +39,8 @@ Pipeline :: [].{
 	scenery_test : RoadAhead.CameraView -> Pipeline.SizeTest
 	scenery_test = |view| { focal: view.cam_focal, smallest_px: Detail.min_scenery_px }
 
-	## `placed` as the rider sees it, on the segment at `place`, if it is past
-	## the camera's near plane.
+	## `placed` as the rider sees it, on the segment at `place`, if it is at or
+	## past the camera's near plane.
 	sighting_of : Geom.Placed(kind),
 	{
 		road : RoadAhead.RoadView,
@@ -49,18 +48,14 @@ Pipeline :: [].{
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera])
 	sighting_of = |placed, { road, place }| {
 		seen = RoadAhead.rider_point_at(road, { place, along: placed.along, across: placed.across })
-		if seen.forward <= Geom.near_plane {
-			Err(BehindCamera)
-		} else {
-			Ok({
-				place,
-				along: placed.along,
-				across: placed.across,
-				right: seen.right,
-				forward: seen.forward,
-				kind: placed.kind,
-			})
-		}
+		foot = Geom.ahead_on_level(seen)?
+		Ok({
+			place,
+			along: placed.along,
+			across: placed.across,
+			foot,
+			kind: placed.kind,
+		})
 	}
 
 	## The sighting of `placed`, if it also passes `size_test`.
@@ -73,7 +68,8 @@ Pipeline :: [].{
 		where [kind.scenery_height : kind -> Distance]
 	tall_sighting_of = |placed, { road, place, size_test }| {
 		sighting = sighting_of(placed, { road, place })?
-		height_px = size_test.focal.times(placed.kind.scenery_height().ratio_to(sighting.forward))
+		forward = sighting.foot.forward()
+		height_px = size_test.focal.times(placed.kind.scenery_height().ratio_to(forward))
 		if height_px < size_test.smallest_px {
 			Err(TooSmall)
 		} else {
@@ -86,12 +82,7 @@ Pipeline :: [].{
 	rendering_of : Pipeline.Sighted(kind), { cam_focal : Pixels, context : context } -> Rendered
 		where [kind.scenery_picture : kind, Picture.Setting(context) -> Picture]
 	rendering_of = |sighting, { cam_focal, context }| {
-		depth: sighting.forward,
-		picture: sighting.kind.scenery_picture({
-			right: sighting.right,
-			forward: sighting.forward,
-			cam_focal,
-			context,
-		}),
+		depth: sighting.foot.forward(),
+		picture: sighting.kind.scenery_picture({ foot: sighting.foot, cam_focal, context }),
 	}
 }

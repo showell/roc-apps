@@ -84,7 +84,8 @@ SceneShapes :: [].{
 
 	## How many of `trees` are nearer than `forward`.
 	nearer_tree_count : List(Pipeline.Sighted(Conifer)), Distance -> U16
-	nearer_tree_count = |trees, forward| trees.count_if(|tree| tree.forward < forward).to_u16_wrap()
+	nearer_tree_count = |trees, forward|
+		trees.count_if(|tree| tree.foot.forward() < forward).to_u16_wrap()
 
 	## A tree, told how many of `trees` are nearer, which is all it needs of
 	## the others.
@@ -93,14 +94,10 @@ SceneShapes :: [].{
 		trees : List(Pipeline.Sighted(Conifer)),
 		cam_focal : Pixels,
 	} -> Rendered
-	tree_rendering = |tree, { trees, cam_focal }|
-		Pipeline.rendering_of(
-			tree,
-			{
-				cam_focal,
-				context: { nearer_tree_count: SceneShapes.nearer_tree_count(trees, tree.forward) },
-			},
-		)
+	tree_rendering = |tree, { trees, cam_focal }| {
+		nearer_count = SceneShapes.nearer_tree_count(trees, tree.foot.forward())
+		Pipeline.rendering_of(tree, { cam_focal, context: { nearer_tree_count: nearer_count } })
+	}
 }
 
 ## A quad of the rail, which doesn't go through `Pipeline`, at its own depth,
@@ -135,13 +132,18 @@ truck_rendering = |view, truck_fate|
 		),
 	)
 
+## A tree's foot `forward` metres straight ahead, past the near plane.
+foot_ahead : F64 -> Geom.AheadPoint
+foot_ahead = |forward|
+	Geom.ahead_on_level({ right: Distance.metres(0.0), forward: Distance.metres(forward) })
+		?? crash "SceneShapes: a test's tree is past the near plane"
+
 tree_at : F64 -> Pipeline.Sighted(Conifer)
 tree_at = |forward| {
 	place: Ahead(RoadAhead.Position.first),
 	along: Along.metres(forward),
 	across: Across.middle,
-	right: Distance.metres(0.0),
-	forward: Distance.metres(forward),
+	foot: foot_ahead(forward),
 	kind: Conifer.BigGreen,
 }
 
@@ -190,8 +192,7 @@ expect
 expect
 	cluster_shapes(14.0)
 		== Conifer.BigGreen.scenery_picture({
-			right: Distance.metres(0.0),
-			forward: Distance.metres(14.0),
+			foot: foot_ahead(14.0),
 			cam_focal: Pixels.of(500.0),
 			context: { nearer_tree_count: 4 },
 		}).to_shapes()
@@ -258,15 +259,16 @@ lone_tree = TreeSighting.sighting_of(
 
 expect
 	[
-		(lone_tree.right.to_metres(), 3.5),
-		(lone_tree.forward.to_metres(), 120.0),
+		(lone_tree.foot.right().to_metres(), 3.5),
+		(lone_tree.foot.forward().to_metres(), 120.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 expect TreeSighting.sighting_of(from_origin, green_tree_at(120.0)).is_ok()
 expect lone_tree.kind == Conifer.BigGreen
 expect
 	[
-		(TreeSighting.sighting_of(from_origin, green_tree_at(0.4)), False),
+		(TreeSighting.sighting_of(from_origin, green_tree_at(0.39)), False),
+		(TreeSighting.sighting_of(from_origin, green_tree_at(0.4)), True),
 		(TreeSighting.sighting_of(from_origin, green_tree_at(0.5)), True),
 		(TreeSighting.sighting_of(view_from(origin, Pixels.of(1.0)), green_tree_at(120.0)), False),
 		(TreeSighting.sighting_of(from_origin, green_tree_at(2000.0)), False),
@@ -294,11 +296,11 @@ roadside_tree = |i|
 
 expect
 	[
-		(roadside_tree(0).forward.to_metres(), 6.0),
-		(roadside_tree(1).forward.to_metres(), 6.0),
-		(roadside_tree(2).forward.to_metres(), 36.0),
-		(roadside_tree(0).right.to_metres(), -3.5),
-		(roadside_tree(1).right.to_metres(), 3.5),
+		(roadside_tree(0).foot.forward().to_metres(), 6.0),
+		(roadside_tree(1).foot.forward().to_metres(), 6.0),
+		(roadside_tree(2).foot.forward().to_metres(), 36.0),
+		(roadside_tree(0).foot.right().to_metres(), -3.5),
+		(roadside_tree(1).foot.right().to_metres(), 3.5),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 expect roadside_tree(0).kind == Conifer.BigGreen
@@ -391,9 +393,9 @@ expect
 
 expect
 	[
-		(truck_ahead_of(100.0).forward.to_metres(), 100.0),
-		(truck_ahead_of(499.0).forward.to_metres(), 499.0),
-		(truck_ahead_of(100.0).right.to_metres(), 0.0),
+		(truck_ahead_of(100.0).foot.forward().to_metres(), 100.0),
+		(truck_ahead_of(499.0).foot.forward().to_metres(), 499.0),
+		(truck_ahead_of(100.0).foot.right().to_metres(), 0.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
 expect lead_of(2000.0).is_err()
@@ -406,4 +408,4 @@ expect truck_rendering(from_origin, Err(NoTruck)).is_err()
 expect truck_rendering(from_origin, Err(BehindCamera)).is_err()
 expect
 	truck_rendering(from_origin, lead_of(499.0)).map_ok(|rendering| rendering.depth.to_metres())
-		== Ok(truck_ahead_of(499.0).forward.to_metres())
+		== Ok(truck_ahead_of(499.0).foot.forward().to_metres())

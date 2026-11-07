@@ -25,11 +25,11 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 	## How a tower looks. Its footprint is measured on the road, so the road and
 	## where it stands there are its context.
 	scenery_picture : Tower, Picture.Setting(RoadAhead.RoadContext) -> Picture
-	scenery_picture = |tower, { right, forward, cam_focal, context }|
+	scenery_picture = |tower, { foot, cam_focal, context }|
 		Picture.from_shapes(
 			Tower.tower_shapes({
 				footprint: Tower.tower_footprint(tower, context),
-				center: { right, forward },
+				center: foot,
 				cam_focal,
 				beacon_brightness: tower.beacon_brightness,
 			}),
@@ -101,7 +101,7 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 	## has sunk it, which is never negative, and how its rods are drawn.
 	TowerInView : {
 		footprint : Tower.Footprint,
-		center : Geom.RiderPoint,
+		center : Geom.AheadPoint,
 		sunk : Distance,
 		view : Tower.RodView,
 	}
@@ -196,8 +196,8 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 		bottom = footprint_corner(tower.footprint, corner)
 		tapered = |start, end| start.plus(end.minus(start).times(t))
 		{
-			right: tapered(bottom.right, tower.center.right),
-			forward: tapered(bottom.forward, tower.center.forward),
+			right: tapered(bottom.right, tower.center.right()),
+			forward: tapered(bottom.forward, tower.center.forward()),
 			height: height_on_tower.minus(tower.sunk),
 		}
 	}
@@ -260,28 +260,16 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 		to : Geom.RaisedPoint,
 	} -> List(Shapes.Shape)
 	rod_shapes = |view, { from, to }|
-		match (sight_of(from), sight_of(to)) {
-			(InView, InView) => [rod_on_screen(view, { from, to })]
-			(InView, BehindCamera) =>
-				[rod_on_screen(view, { from, to: Geom.near_plane_crossing({ from, to }) })]
-			(BehindCamera, InView) =>
-				[rod_on_screen(view, { from: Geom.near_plane_crossing({ from, to }), to })]
-			(BehindCamera, BehindCamera) => []
+		match (Geom.ahead_point(from), Geom.ahead_point(to)) {
+			(Ok(start), Ok(end)) => [rod_on_screen(view, { from: start, to: end })]
+			(Ok(start), Err(BehindCamera)) =>
+				[rod_on_screen(view, { from: start, to: Geom.near_plane_crossing({ from, to }) })]
+			(Err(BehindCamera), Ok(end)) =>
+				[rod_on_screen(view, { from: Geom.near_plane_crossing({ from, to }), to: end })]
+			(Err(BehindCamera), Err(BehindCamera)) => []
 		}
 
-	sight_of : Geom.RaisedPoint -> [InView, BehindCamera]
-	sight_of = |point|
-		if Geom.is_in_view(point.forward) {
-			InView
-		} else {
-			BehindCamera
-		}
-
-	rod_on_screen : Tower.RodView,
-	{
-		from : Geom.RaisedPoint,
-		to : Geom.RaisedPoint,
-	} -> Shapes.Shape
+	rod_on_screen : Tower.RodView, { from : Geom.AheadPoint, to : Geom.AheadPoint } -> Shapes.Shape
 	rod_on_screen = |view, { from, to }|
 		screen_rod({
 			from: Camera.project(from, view.cam_focal),
@@ -289,23 +277,17 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 			width_px: view.rod_width_px,
 		})
 
-	## How many pixels one metre across spans at distance `forward`.
-	metre_px : { forward : Distance, cam_focal : Pixels } -> Pixels
-	metre_px = |{ forward, cam_focal }| {
-		p1 = Camera.project(
-			{
-				right: Distance.metres(1.0),
-				forward,
-				height: Distance.zero,
-			},
-			cam_focal,
-		)
-		p0 = Camera.project({ right: Distance.zero, forward, height: Distance.zero }, cam_focal)
+	## How many pixels one metre across spans as far ahead as `at`.
+	metre_px : { at : Geom.AheadPoint, cam_focal : Pixels } -> Pixels
+	metre_px = |{ at, cam_focal }| {
+		on_level = at.at_height(Distance.zero)
+		p1 = Camera.project(on_level.at_right(Distance.metres(1.0)), cam_focal)
+		p0 = Camera.project(on_level.at_right(Distance.zero), cam_focal)
 		p1.x.minus(p0.x)
 	}
 
-	## A rod's width on screen at distance `forward`.
-	rod_width_at : { forward : Distance, cam_focal : Pixels } -> Pixels
+	## A rod's width on screen as far ahead as `at`.
+	rod_width_at : { at : Geom.AheadPoint, cam_focal : Pixels } -> Pixels
 	rod_width_at = |camera| metre_px(camera).times(rod_w.to_metres())
 
 	## The four legs, from the footprint's corners up to the apex.
@@ -417,7 +399,7 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 	## isn't drawn.
 	beacon_shapes : Tower.TowerInView,
 	{
-		apex : Geom.RaisedPoint,
+		apex : Geom.AheadPoint,
 		brightness : Fraction,
 	} -> List(Shapes.Shape)
 	beacon_shapes = |tower, { apex, brightness }| {
@@ -425,10 +407,7 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 		if brightness < Fraction.of(0.02) {
 			[]
 		} else {
-			one_metre_px = metre_px({
-				forward: tower.center.forward,
-				cam_focal: tower.view.cam_focal,
-			})
+			one_metre_px = metre_px({ at: tower.center, cam_focal: tower.view.cam_focal })
 			radius = one_metre_px.times(beacon_radius.to_metres())
 			if radius < Pixels.of(0.5) {
 				[]
@@ -444,27 +423,23 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 	}
 
 	## The whole tower: legs, rings, braces and beacon, in that order. A tower
-	## behind the camera, or sunk wholly below the horizon, draws nothing.
+	## sunk wholly below the horizon draws nothing.
 	tower_shapes : {
 		footprint : Tower.Footprint,
-		center : Geom.RiderPoint,
+		center : Geom.AheadPoint,
 		cam_focal : Pixels,
 		beacon_brightness : Fraction,
 	} -> List(Shapes.Shape)
 	tower_shapes = |{ footprint, center, cam_focal, beacon_brightness }| {
-		sunk = sunk_below_horizon(center)
-		if !Geom.is_in_view(center.forward) or sunk >= tower_height {
+		sunk = sunk_below_horizon({ right: center.right(), forward: center.forward() })
+		if sunk >= tower_height {
 			[]
 		} else {
-			view = { rod_width_px: rod_width_at({ forward: center.forward, cam_focal }), cam_focal }
+			view = { rod_width_px: rod_width_at({ at: center, cam_focal }), cam_focal }
 			tower = { footprint, center, sunk, view }
-			apex = {
-				right: center.right,
-				forward: center.forward,
-				height: tower_height.minus(sunk),
-			}
+			apex = center.at_height(tower_height.minus(sunk))
 			[
-				legs(tower, apex),
+				legs(tower, apex.to_raised()),
 				rings(tower),
 				braces(tower),
 				beacon_shapes(tower, { apex, brightness: beacon_brightness }),
@@ -548,11 +523,15 @@ context_along = |along| {
 shapes_of_tower_along : F64 -> List(Shapes.Shape)
 shapes_of_tower_along = |along|
 	plain_tower.scenery_picture({
-		right: Distance.metres(20.0),
-		forward: Distance.metres(along),
+		foot: ahead({ right: Distance.metres(20.0), forward: Distance.metres(along) }),
 		cam_focal: Pixels.of(500.0),
 		context: context_along(along),
 	}).to_shapes()
+
+## `point` on the rider's level and past the near plane, which every such
+## point in these tests is.
+ahead : Geom.RiderPoint -> Geom.AheadPoint
+ahead = |point| Geom.ahead_on_level(point) ?? crash "a test's point is past the near plane"
 
 expect {
 	footprint = Tower.tower_footprint(plain_tower, context_along(200.0))
@@ -566,7 +545,6 @@ expect {
 
 expect shapes_of_tower_along(200.0).len() > 0
 expect shapes_of_tower_along(1000.0).len() > 0
-expect shapes_of_tower_along(-100.0).len() == 0
 
 expect Tower.tower_height.to_metres() == 80.0
 expect Tower.tower_half.to_metres() == 6.0
@@ -622,7 +600,7 @@ sample_tower = {
 		front_right: { right: Distance.metres(6.0), forward: Distance.metres(106.0) },
 		front_left: { right: Distance.metres(-6.0), forward: Distance.metres(106.0) },
 	},
-	center: { right: Distance.metres(0.0), forward: Distance.metres(100.0) },
+	center: ahead({ right: Distance.metres(0.0), forward: Distance.metres(100.0) }),
 	sunk: Distance.metres(1.0),
 	view: sample_rod_view,
 }
@@ -719,15 +697,17 @@ expect
 			fill: Flat(Brush.opaque(Tower.tower_metal)),
 		})
 
-expect
-	Tower.rod_width_at({ forward: Distance.metres(10.0), cam_focal: Pixels.of(500.0) }).to_f64()
-		== 12.0
-expect
-	Tower.rod_width_at({ forward: Distance.metres(25.0), cam_focal: Pixels.of(500.0) }).to_f64()
-		== 4.8
-expect
-	Tower.rod_width_at({ forward: Distance.metres(50.0), cam_focal: Pixels.of(500.0) }).to_f64()
-		== 2.4
+## A rod's width on screen `forward` metres ahead, through a 500 px focal length.
+rod_width_ahead : F64 -> F64
+rod_width_ahead = |forward| {
+	on_level = ahead({ right: Distance.metres(3.0), forward: Distance.metres(forward) })
+	at = on_level.at_height(Distance.metres(7.0))
+	Tower.rod_width_at({ at, cam_focal: Pixels.of(500.0) }).to_f64()
+}
+
+expect rod_width_ahead(10.0) == 12.0
+expect rod_width_ahead(25.0) == 4.8
+expect rod_width_ahead(50.0) == 2.4
 
 rod_shapes_along_road : F64, F64 -> List(Shapes.Shape)
 rod_shapes_along_road = |start, end|

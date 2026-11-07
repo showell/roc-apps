@@ -6,6 +6,7 @@ import game.Clock
 import game.Conifer
 import game.Distance
 import game.Fraction
+import game.Geom
 import game.Lens
 import game.Pixels
 import game.Screen
@@ -63,14 +64,18 @@ right_of = |{ forward, canvas_x }| {
 	forward.times(screen_x.minus(Screen.center_x).ratio_to(Lens.resting_focal))
 }
 
+## Where a stand's tree has its foot, if it is in front of the camera.
+stand_foot : Stand -> Try(Geom.AheadPoint, [BehindCamera])
+stand_foot = |stand| Geom.ahead_on_level({ right: right_of(stand), forward: stand.forward })
+
 tree_shapes : Stand -> List(Shapes.Shape)
 tree_shapes = |stand|
-	conifer.scenery_picture({
-		right: right_of(stand),
-		forward: stand.forward,
-		cam_focal: Lens.resting_focal,
-		context: { nearer_tree_count: 0 },
-	}).to_shapes()
+	match stand_foot(stand) {
+		Ok(foot) =>
+			conifer.scenery_picture({ foot, cam_focal: Lens.resting_focal, context: { nearer_tree_count: 0 } })
+				.to_shapes()
+		Err(BehindCamera) => []
+	}
 
 ## What `TreeShapes.crown_of` says at `forward`, as Roc would write it.
 crown_text : Distance -> Str
@@ -112,21 +117,21 @@ still_shapes = {
 ## Whether a stand's tree is all in the picture, on its `canvas_x`, and at least
 ## 30 pixels tall on the canvas.
 is_plain_to_see : Stand -> Bool
-is_plain_to_see = |stand| {
-	point = {
-		right: right_of(stand),
-		forward: stand.forward,
-		height: conifer.scenery_height(),
+is_plain_to_see = |stand|
+	match stand_foot(stand) {
+		Ok(foot) => {
+			tip = foot.at_height(conifer.scenery_height())
+			outline = TreeShapes.tree_outline(tip, Lens.resting_focal)
+			foot_y = outline.base_y.to_f64() * canvas_per_screen
+			tip_y = foot_y - outline.height_px.to_f64() * canvas_per_screen
+			x = outline.base_x.to_f64() * canvas_per_screen
+			tip_y >= 0.0
+				and foot_y <= ScrubWidget.picture_bottom_y
+				and foot_y - tip_y >= 30.0
+				and (x - stand.canvas_x).abs() <= 0.000000001
+		}
+		Err(BehindCamera) => False
 	}
-	outline = TreeShapes.tree_outline(point, Lens.resting_focal)
-	foot_y = outline.base_y.to_f64() * canvas_per_screen
-	tip_y = foot_y - outline.height_px.to_f64() * canvas_per_screen
-	x = outline.base_x.to_f64() * canvas_per_screen
-	tip_y >= 0.0
-		and foot_y <= ScrubWidget.picture_bottom_y
-		and foot_y - tip_y >= 30.0
-		and (x - stand.canvas_x).abs() <= 0.000000001
-}
 
 # Each tree shows one of the three things `crown_of` can say.
 expect TreeShapes.crown_of(far_stand.forward) == Triangles

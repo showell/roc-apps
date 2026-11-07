@@ -165,19 +165,77 @@ Geom :: [].{
 	is_in_view : Distance -> Bool
 	is_in_view = |forward| forward >= Geom.near_plane
 
+	## A point in the rider's view at or past the near plane, so the camera can
+	## put it on the screen. Only `ahead_point` and the near-plane cut build
+	## one.
+	AheadPoint :: Geom.RaisedPoint.{
+
+		right : Geom.AheadPoint -> Distance
+		right = |Geom.AheadPoint.(point)| point.right
+
+		forward : Geom.AheadPoint -> Distance
+		forward = |Geom.AheadPoint.(point)| point.forward
+
+		height : Geom.AheadPoint -> Distance
+		height = |Geom.AheadPoint.(point)| point.height
+
+		to_raised : Geom.AheadPoint -> Geom.RaisedPoint
+		to_raised = |Geom.AheadPoint.(point)| point
+
+		## The point at `height` instead. It is as far ahead, so still in view.
+		at_height : Geom.AheadPoint, Distance -> Geom.AheadPoint
+		at_height = |Geom.AheadPoint.(point), new_height|
+			Geom.AheadPoint.({ ..point, height: new_height })
+
+		## The point at `right` instead. It is as far ahead, so still in view.
+		at_right : Geom.AheadPoint, Distance -> Geom.AheadPoint
+		at_right = |Geom.AheadPoint.(point), new_right|
+			Geom.AheadPoint.({ ..point, right: new_right })
+
+		is_eq : _
+	}
+
+	## `point`, if it is at or past the near plane.
+	ahead_point : Geom.RaisedPoint -> Try(Geom.AheadPoint, [BehindCamera])
+	ahead_point = |point|
+		if Geom.is_in_view(point.forward) {
+			Ok(Geom.AheadPoint.(point))
+		} else {
+			Err(BehindCamera)
+		}
+
+	## `point` on the rider's level, if it is at or past the near plane.
+	ahead_on_level : Geom.RiderPoint -> Try(Geom.AheadPoint, [BehindCamera])
+	ahead_on_level = |{ right, forward }|
+		Geom.ahead_point({ right, forward, height: Distance.zero })
+
+	## Every one of `points`, in order, if all of them are at or past the near
+	## plane.
+	ahead_points : List(Geom.RaisedPoint) -> Try(List(Geom.AheadPoint), [BehindCamera])
+	ahead_points = |points|
+		points.fold(
+			Ok(List.with_capacity(points.len())),
+			|kept, point| {
+				ahead = Geom.ahead_point(point)?
+				Ok(kept?.append(ahead))
+			},
+		)
+
 	## Where an edge that has one end on each side crosses the near plane.
-	near_plane_crossing : { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> Geom.RaisedPoint
+	near_plane_crossing : { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> Geom.AheadPoint
 	near_plane_crossing = |{ from, to }| {
 		fraction = Geom.near_plane.minus(from.forward).ratio_to(to.forward.minus(from.forward))
-		{
-			right: from.right.plus(to.right.minus(from.right).times(fraction)),
-			forward: Geom.near_plane,
-			height: from.height.plus(to.height.minus(from.height).times(fraction)),
-		}
+		Geom.AheadPoint.(
+			{
+				right: from.right.plus(to.right.minus(from.right).times(fraction)),
+				forward: Geom.near_plane,
+				height: from.height.plus(to.height.minus(from.height).times(fraction)),
+			},
+		)
 	}
 
 	## The polygon cut to what lies at or past the near plane.
-	clipped_points : List(Geom.RaisedPoint) -> List(Geom.RaisedPoint)
+	clipped_points : List(Geom.RaisedPoint) -> List(Geom.AheadPoint)
 	clipped_points = |polygon_points| {
 		next_corners = polygon_points.drop_first(1).concat(polygon_points.take_first(1))
 		edges = polygon_points.map2(next_corners, |from, to| { from, to })
@@ -291,25 +349,92 @@ start_after = |bend| {
 ## `clipped` with what one edge of a polygon adds to it: the edge's first
 ## corner if that is in view, then the point where the edge crosses the near
 ## plane if it does.
-edge_points_onto : List(Geom.RaisedPoint),
+edge_points_onto : List(Geom.AheadPoint),
 {
 	from : Geom.RaisedPoint,
 	to : Geom.RaisedPoint,
-} -> List(Geom.RaisedPoint)
+} -> List(Geom.AheadPoint)
 edge_points_onto = |clipped, { from, to }| {
-	is_from_in_view = Geom.is_in_view(from.forward)
-	is_to_in_view = Geom.is_in_view(to.forward)
-	with_corner = if is_from_in_view {
-		clipped.append(from)
-	} else {
-		clipped
-	}
-	if is_from_in_view == is_to_in_view {
+	from_ahead = Geom.ahead_point(from)
+	with_corner =
+		match from_ahead {
+			Ok(corner) => clipped.append(corner)
+			Err(BehindCamera) => clipped
+		}
+	if from_ahead.is_ok() == Geom.ahead_point(to).is_ok() {
 		with_corner
 	} else {
 		with_corner.append(Geom.near_plane_crossing({ from, to }))
 	}
 }
+
+## A point `forward` metres straight ahead, on the rider's level.
+straight_ahead : F64 -> Geom.RaisedPoint
+straight_ahead = |forward| {
+	right: Distance.zero,
+	forward: Distance.metres(forward),
+	height: Distance.zero,
+}
+
+## A point 2 m right, 9 m ahead and 1 m up.
+sample_point : Geom.RaisedPoint
+sample_point = {
+	right: Distance.metres(2.0),
+	forward: Distance.metres(9.0),
+	height: Distance.metres(1.0),
+}
+
+# A point past the near plane gives back each of its parts.
+expect
+	match Geom.ahead_point(sample_point) {
+		Ok(point) =>
+			[point.right(), point.forward(), point.height()]
+				== [sample_point.right, sample_point.forward, sample_point.height]
+				and point.to_raised() == sample_point
+		Err(BehindCamera) => False
+	}
+
+# A point exactly on the near plane is in view, and one short of it, at the
+# camera, or behind it is not.
+expect Geom.ahead_point(straight_ahead(0.4)).is_ok()
+expect Geom.ahead_point(straight_ahead(0.41)).is_ok()
+expect Geom.ahead_point(straight_ahead(0.39)) == Err(BehindCamera)
+expect Geom.ahead_point(straight_ahead(0.0)) == Err(BehindCamera)
+expect Geom.ahead_point(straight_ahead(-5.0)) == Err(BehindCamera)
+
+# A point on the rider's level is past the near plane as a raised one is.
+expect {
+	on_level = Geom.ahead_on_level({ right: sample_point.right, forward: sample_point.forward })
+	on_level.map_ok(Geom.AheadPoint.to_raised) == Ok({ ..sample_point, height: Distance.zero })
+}
+expect {
+	short_of_plane = { right: Distance.zero, forward: Distance.metres(0.39) }
+	Geom.ahead_on_level(short_of_plane) == Err(BehindCamera)
+}
+
+# A list is ahead when every point is, one on the near plane included, and an
+# empty list is ahead.
+expect
+	Geom.ahead_points([10.0, 0.4, 30.0].map(straight_ahead)).map_ok(
+		|points| points.map(|point| point.forward().to_metres()),
+	)
+		== Ok([10.0, 0.4, 30.0])
+expect Geom.ahead_points([10.0, 0.2, 30.0].map(straight_ahead)) == Err(BehindCamera)
+expect Geom.ahead_points([straight_ahead(0.39)]) == Err(BehindCamera)
+expect Geom.ahead_points([]) == Ok([])
+
+# Moving a point past the near plane up or sideways keeps how far ahead it is.
+expect
+	match Geom.ahead_point(sample_point) {
+		Ok(point) =>
+			point.at_height(Distance.metres(3.0)).at_right(Distance.metres(-4.0)).to_raised()
+				== {
+					right: Distance.metres(-4.0),
+					forward: Distance.metres(9.0),
+					height: Distance.metres(3.0),
+				}
+		Err(BehindCamera) => False
+	}
 
 expect
 	Geom.near_plane_crossing({
@@ -323,7 +448,7 @@ expect
 			forward: Distance.metres(0.8),
 			height: Distance.metres(30.0),
 		},
-	})
+	}).to_raised()
 		== {
 			right: Distance.metres(4.0),
 			forward: Distance.metres(0.4),
@@ -499,7 +624,7 @@ expect
 			forward: Distance.metres(-1.0),
 			height: Distance.metres(1.5),
 		},
-	])
+	]).map(Geom.AheadPoint.to_raised)
 		== [
 			{
 				right: Distance.metres(-1.0),
