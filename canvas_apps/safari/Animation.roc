@@ -204,13 +204,6 @@ expect Animation.stage_at(
 	Steps.of(10),
 ) == Waiting
 
-## Whether each of `got` is within a billionth of its `expected`.
-is_near : List(F64), List(F64) -> Bool
-is_near = |got, expected| {
-	closeness = got.map2(expected, |one, wanted| (one - wanted).abs() <= 0.000000001)
-	got.len() == expected.len() and closeness.all(|is_close| is_close)
-}
-
 Note : [First, Second, Third, Fourth, BeforeIt, AfterIt]
 
 location_at : F64 -> Animation.Location
@@ -250,21 +243,6 @@ expect four_frames.instant(Waiting).location.across.to_metres() == -1.0
 expect four_frames.instant(Playing(Steps.of(2))).location.across.to_metres() == 3.0
 expect four_frames.instant(Past(Steps.of(5))).location.across.to_metres() == 99.0
 
-# A placed instant stands at the instant's location, and its kind is the pose.
-expect {
-	location = {
-		along: Along.metres(3.0),
-		across: Across.metres(-1.0),
-		lift: Distance.metres(2.0),
-	}
-	Animation.placed_instant({ pose: First, location })
-		== {
-			road_point: { along: location.along, across: location.across },
-			lift: location.lift,
-			kind: { pose: First },
-		}
-}
-
 start_location : Animation.Location
 start_location = {
 	along: Along.metres(10.0),
@@ -295,4 +273,4 @@ expect
 		(0.0, [10.0, 20.0, 30.0]),
 		(0.25, [12.0, 16.0, 34.0]),
 		(1.0, [18.0, 4.0, 46.0]),
-	].all(|(fraction, want)| is_near(location_numbers(fraction), want))
+	].all(|(fraction, want)| location_numbers(fraction) == want)

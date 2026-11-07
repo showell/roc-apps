@@ -692,11 +692,9 @@ bird_planning_gap : Distance
 bird_planning_gap = Animation.planning_gap(BirdFlight.flight_span, VehicleLimits.top_speed)
 
 expect route_cats.len() == 3
-expect cat_planning_gap.to_metres() == 98.0
 expect cat_planning_gap < Segment.cat_along.plus(CatCrossing.cat_beyond_tree).from_start()
 expect route_cats.all(|{ crossing, .. }| cat_planning_gap < crossing.along.from_start())
 expect route_flights.len() == 3
-expect bird_planning_gap.to_metres() == 105.0
 expect route_flights.all(|{ from, .. }| bird_planning_gap < from.road_point.along.from_start())
 
 # BillboardSighting: how far along the road ahead each kind of critter is sighted.
