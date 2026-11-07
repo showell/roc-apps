@@ -5,6 +5,7 @@
 ##
 ## It has a module of its own because a kind's picture names it, and World,
 ## which holds the kinds, sits under RoadAhead and Pipeline.
+import Across
 import Distance
 import Geom
 import SegmentPlace
@@ -19,8 +20,7 @@ Spot :: {
 	## The spot of an object standing at `road_point` on the segment at `place`,
 	## `lift` off the ground, its foot at `foot` in the rider's view. A sighting
 	## builds each spot in play from the road, so the foot follows from the
-	## place. A kind's test or a widget builds one here, to draw from a foot it
-	## chooses.
+	## place. A kind's test builds one here, to draw from a foot it chooses.
 	at : {
 		place : SegmentPlace,
 		road_point : Geom.RoadPoint,
@@ -28,6 +28,29 @@ Spot :: {
 		foot : Geom.LevelPoint,
 	} -> Spot
 	at = |parts| Spot.(parts)
+
+	## The spot of an object on a straight road that runs ahead from under the
+	## camera: standing at `road_point` on the first segment ahead, `lift` off
+	## the ground, and `forward` ahead of the camera. A widget that draws a
+	## straight road builds its spots here.
+	straight_ahead : {
+		road_point : Geom.RoadPoint,
+		lift : Distance,
+		forward : Distance,
+	} -> Try(Spot, [BehindCamera])
+	straight_ahead = |{ road_point, lift, forward }| {
+		right = road_point.across.distance_from(Across.middle)
+		Geom.ahead_on_level({ right, forward }).map_ok(
+			|foot| Spot.(
+				{
+					place: Ahead(SegmentPlace.Position.first),
+					road_point,
+					lift,
+					foot,
+				},
+			),
+		)
+	}
 
 	## The place of the object's segment, relative to the rider.
 	place : Spot -> SegmentPlace

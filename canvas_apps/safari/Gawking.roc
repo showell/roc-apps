@@ -84,7 +84,7 @@ plain : Segment
 plain = World.route.segment_at(Route.SegmentIndex.number(0))
 
 distracting : Segment
-distracting = World.route.segment_at(Route.SegmentIndex.number(2))
+distracting = World.first_distracting_segment
 
 expect plain.pigs == NoPigs
 expect Gawking.eye_catching_pig(plain) == NoPigCatchesEye

@@ -9,11 +9,9 @@ import game.Clock
 import game.Conifer
 import game.Distance
 import game.Fraction
-import game.Geom
 import game.Lens
 import game.Pixels
 import game.Screen
-import game.SegmentPlace
 import game.Sky
 import game.Spot
 import game.TreeShapes
@@ -65,26 +63,24 @@ right_of = |{ forward, canvas_x }| {
 	forward.times(screen_x.minus(Screen.center_x).portion(Lens.resting_focal))
 }
 
-## Where a stand's tree has its foot, if it is in front of the camera.
-stand_foot : Stand -> Try(Geom.LevelPoint, [BehindCamera])
-stand_foot = |stand| Geom.ahead_on_level({ right: right_of(stand), forward: stand.forward })
+## The spot of a stand's tree, on the ground, if it is in front of the camera.
+stand_spot : Stand -> Try(Spot, [BehindCamera])
+stand_spot = |stand|
+	Spot.straight_ahead({
+		road_point: {
+			along: Along.metres(stand.forward.to_metres()),
+			across: Across.right_of_middle(right_of(stand)),
+		},
+		lift: Distance.zero,
+		forward: stand.forward,
+	})
 
 tree_shapes : Stand -> List(Shapes.Shape)
 tree_shapes = |stand|
-	match stand_foot(stand) {
-		Ok(foot) => {
-			spot = Spot.at({
-				place: Ahead(SegmentPlace.Position.first),
-				road_point: {
-					along: Along.metres(stand.forward.to_metres()),
-					across: Across.metres(right_of(stand).to_metres()),
-				},
-				lift: Distance.zero,
-				foot,
-			})
+	match stand_spot(stand) {
+		Ok(spot) =>
 			conifer.scenery_picture({ spot, cam_focal: Lens.resting_focal, context: { nearer_tree_count: 0 } })
 				.to_shapes()
-		}
 		Err(BehindCamera) => []
 	}
 
@@ -137,13 +133,12 @@ still_shapes = {
 ## 30 pixels tall on the canvas.
 is_plain_to_see : Stand -> Bool
 is_plain_to_see = |stand|
-	match stand_foot(stand) {
-		Ok(foot) => {
-			outline = TreeShapes.tree_outline({
-				base: foot.at_height(Distance.zero),
-				height: conifer.scenery_height(),
-				cam_focal: Lens.resting_focal,
-			})
+	match stand_spot(stand) {
+		Ok(spot) => {
+			outline = TreeShapes.tree_outline(
+				spot,
+				{ height: conifer.scenery_height(), cam_focal: Lens.resting_focal },
+			)
 			foot_y = outline.foot.y.to_f64() * canvas_per_screen
 			tip_y = foot_y - outline.height.to_f64() * canvas_per_screen
 			x = outline.foot.x.to_f64() * canvas_per_screen

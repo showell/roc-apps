@@ -115,7 +115,7 @@ plain : Segment
 plain = World.route.segment_at(Route.SegmentIndex.number(0))
 
 distracting : Segment
-distracting = World.route.segment_at(Route.SegmentIndex.number(2))
+distracting = World.first_distracting_segment
 
 ## A motorcycle `along` metres into the distracting segment, at rest in every
 ## other way. Gaze doesn't import Along, so `along` is a distance from the
