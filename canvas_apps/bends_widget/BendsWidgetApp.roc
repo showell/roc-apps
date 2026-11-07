@@ -105,7 +105,7 @@ apex_of = |turn| {
 		road,
 		{
 			vantage: camera.vantage,
-			place: bend_in_view.before,
+			place: bend_in_view.place_before(),
 			road_point: bend_in_view.outer_corner().apex,
 		},
 	)
