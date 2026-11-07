@@ -20,11 +20,11 @@ TreeShapes :: [].{
 
 	## A tree in front of the camera, so of its lengths only `right` can be
 	## negative. A record with more in it can be handed to `tree_shapes` as it is.
-	TreeAhead(others) : {
+	TreeAhead(rest) : {
 		right : Distance,
 		forward : Distance,
 		conifer : Conifer,
-		..others,
+		..rest,
 	}
 
 	## Where a tree stands on the screen, and how big it looks there.
@@ -49,11 +49,8 @@ TreeShapes :: [].{
 	## The tree on the screen: its trunk, then its tiers top to bottom. The
 	## nearest trees have a shaded trunk. The crown is cones, shaded by how near
 	## they are, within Detail.cone_reach, and triangles beyond it.
-	tree_shapes : {
-		tree : TreeShapes.TreeAhead(others),
-		nearer_tree_count : U16,
-	},
-	Pixels -> List(Shapes.Shape)
+	tree_shapes :
+		{ tree : TreeShapes.TreeAhead(rest), nearer_tree_count : U16 }, Pixels -> List(Shapes.Shape)
 	tree_shapes = |{ tree, nearer_tree_count }, cam_focal| {
 		tip = {
 			right: tree.right,

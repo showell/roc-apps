@@ -317,7 +317,7 @@ Four more types carry a tree to the screen:
 
 | Type | What it is |
 |---|---|
-| `TreeShapes.TreeAhead(others)` | Any record with a `right`, a `forward` and a `conifer`, and `others` stands for whatever else is in it |
+| `TreeShapes.TreeAhead(rest)` | Any record with a `right`, a `forward` and a `conifer`, and `rest` stands for whatever else is in it |
 | `Geom.RaisedPoint` | A point in the rider's view: `right` and `forward` of the camera, and `height` above the ground |
 | `TreeShapes.Tier` | One layer of the crown, as fractions of the crown |
 | `TreeShapes.TreeOnScreen` | Where a tree landed, and how big it looks, in `Pixels` |
