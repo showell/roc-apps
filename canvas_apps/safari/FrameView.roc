@@ -15,17 +15,16 @@ import Sun
 import lib.Shapes
 
 ## What the camera shows at one instant of the ride, worked out from the
-## instant RideInstant keeps: the shapes in paint order, the sun, the sky's two
-## colors, and the roll the camera is held at.
+## instant RideInstant keeps: the backdrop, the ride's shapes in paint order,
+## and the roll the camera is held at.
 FrameView := {
+	## What the ride is drawn over: the sky's colors, at the top of the frame
+	## and at the horizon, and where the sun stands in the sky, if it is in
+	## view.
+	backdrop : { sky_colors : Sky.Colors, sun_sighting : Sun.Sighting },
+
 	## The ride's shapes in paint order, drawn over the backdrop.
-	shapes : List(Shapes.Shape),
-
-	## Where the sun stands in the sky, if it is in view.
-	sun_sighting : Sun.Sighting,
-
-	## The sky's colors, at the top of the frame and at the horizon.
-	sky_colors : Sky.Colors,
+	ride_shapes : List(Shapes.Shape),
 
 	## The camera's roll: the whole frame, backdrop and shapes, turns by minus
 	## this about the screen's centre.
@@ -38,27 +37,30 @@ FrameView := {
 	frame_view_at = |route, instant| {
 		camera = RiderCamera.of(instant.rider, route)
 		{
-			shapes: shapes(camera, { instant, route }),
-			sun_sighting: Sun.sighting(camera, instant.clock),
-			sky_colors: Sky.colors_at(instant.clock),
+			backdrop: {
+				sky_colors: Sky.colors_at(instant.clock),
+				sun_sighting: Sun.sighting(camera, instant.clock),
+			},
+			ride_shapes: ride_shapes(camera, { instant, route }),
 			roll: camera.roll,
 		}
 	}
 
-	## The whole frame in `space`, in paint order: the sky, the sun, the grass,
-	## then the ride's shapes, which start with the mountains. The grass covers
-	## whatever of the sun has set.
+	## The backdrop's shapes in paint order: the sky, the sun, then the grass,
+	## which covers whatever of the sun has set.
+	backdrop_shapes : FrameView -> List(Shapes.Shape)
+	backdrop_shapes = |view|
+		[
+			[Sky.sky_shape(view.backdrop.sky_colors)],
+			Sun.sun_shapes(view.backdrop.sun_sighting),
+			[Grass.grass_shape],
+		].join()
+
+	## The whole frame in `space`, in paint order: the backdrop, then the
+	## ride's shapes, which start with the mountains.
 	framed_shapes : FrameView, Shapes.Space -> List(Shapes.Shape)
 	framed_shapes = |view, space|
-		Shapes.in_space(
-			space,
-			[
-				[Sky.sky_shape(view.sky_colors)],
-				Sun.sun_shapes(view.sun_sighting),
-				[Grass.grass_shape],
-				view.shapes,
-			].join(),
-		)
+		Shapes.in_space(space, FrameView.backdrop_shapes(view).concat(view.ride_shapes))
 
 	## What the sightings read from `instant` beyond the road: the rider's
 	## speed, where the truck is and which of its lights are on, and the clock.
@@ -85,8 +87,10 @@ FrameView := {
 		)
 }
 
-shapes : RiderCamera, { instant : RideInstant, route : Route } -> List(Shapes.Shape)
-shapes = |camera, { instant, route }| {
+## The ride's shapes in paint order: the skyline, the ground, then the things
+## beside the road.
+ride_shapes : RiderCamera, { instant : RideInstant, route : Route } -> List(Shapes.Shape)
+ride_shapes = |camera, { instant, route }| {
 	road = RoadAhead.RoadView.ahead_of(route, camera.segment_index)
 	scene = Scene.scene_in_view(road, { camera, facts: FrameView.ride_facts(instant) })
 	[

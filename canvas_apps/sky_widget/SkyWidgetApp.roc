@@ -111,9 +111,11 @@ sky_colors = |job, clock|
 picture_shapes : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
 picture_shapes = |job, clock|
 	ScrubWidget.ride_shapes({
-		shapes: [],
-		sun_sighting: Sun.sighting({ heading: Sun.bearing, cam_focal: Lens.resting_focal }, clock),
-		sky_colors: sky_colors(job, clock),
+		backdrop: {
+			sky_colors: sky_colors(job, clock),
+			sun_sighting: Sun.sighting({ heading: Sun.bearing, cam_focal: Lens.resting_focal }, clock),
+		},
+		ride_shapes: [],
 		roll: Angle.upright,
 	})
 

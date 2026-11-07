@@ -82,12 +82,11 @@ shapes_at = |transport|
 picture_shapes : Clock -> List(Shapes.Shape)
 picture_shapes = |clock|
 	ScrubWidget.ride_shapes({
-		shapes: [
+		backdrop: { sky_colors: Sky.colors_at(clock), sun_sighting: OutOfView },
+		ride_shapes: [
 			tower_shapes(tower_right.opposite(), first_beacon.brightness_at(clock)),
 			tower_shapes(tower_right, second_beacon.brightness_at(clock)),
 		].join(),
-		sun_sighting: OutOfView,
-		sky_colors: Sky.colors_at(clock),
 		roll: Angle.upright,
 	})
 

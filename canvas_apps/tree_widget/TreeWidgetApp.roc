@@ -121,9 +121,8 @@ still_shapes : List(Shapes.Shape)
 still_shapes = {
 	trees = stands.join_map(tree_shapes)
 	picture_shapes = ScrubWidget.ride_shapes({
-		shapes: trees,
-		sun_sighting: OutOfView,
-		sky_colors: Sky.colors_at(Clock.start),
+		backdrop: { sky_colors: Sky.colors_at(Clock.start), sun_sighting: OutOfView },
+		ride_shapes: trees,
 		roll: Angle.upright,
 	})
 	ScrubWidget.frame_shapes({ picture_shapes, status_lines: [] }).concat(stands.join_map(caption_shapes))
