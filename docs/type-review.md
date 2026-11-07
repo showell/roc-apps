@@ -143,7 +143,7 @@ stop that fix and say so in your report. Another lane may be changing it.
 Run only the fast tier, from your worktree's root:
 
 ```
-cd /home/steve/showell_repos/lanes/<lane> && nice -n 19 shale canvas_apps/safari/gates/fast.shale <<'TAG'
+cd /home/steve/showell_repos/lanes/<lane> && shale canvas_apps/safari/gates/fast.shale <<'TAG'
 TAG
 ```
 
