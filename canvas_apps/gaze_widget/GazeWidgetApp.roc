@@ -108,14 +108,16 @@ with_buttons = |model, input| {
 	{ ..model, transport: VcrButtons.next_transport(caught_up, { input, range: stretch }) }
 }
 
-## `model` a frame on, with a few more steps played until the stretch is.
+## `model` a frame on, with a few more steps played until the stretch is. The
+## stretch's segment is a quiet road, so the rider has no encounter to plan.
 played_on : GazeWidgetApp.Model -> GazeWidgetApp.Model
 played_on = |model| {
 	reach = stretch_length.min(model.played.len() + played_a_frame)
 	var $played = model.played
 	while $played.len() < reach {
 		latest = $played.last() ?? crash "GazeWidgetApp.played_on: the stretch starts with a state"
-		$played = $played.append(Rider.rider_state_at_next_step(latest, World.route))
+		next = Rider.rider_state_at_next_step(latest, { route: World.route, encounter: Unplanned })
+		$played = $played.append(next)
 	}
 	{ ..model, played: $played }
 }
@@ -322,8 +324,13 @@ stretch_states = {
 state_at_step : List(RiderState), U32 -> RiderState
 state_at_step = |played, step| state_at(played, (step - first_step).to_u64())
 
-# This stretch is on the route's first distracting segment.
+# This stretch is on the route's first distracting segment, a quiet road.
 expect World.is_distracting(World.route.segment_at(first_rider.segment_index))
+expect
+	match pig_segment.encounter {
+		QuietRoad => True
+		CatCrosses(_) | BirdHere(_) => False
+	}
 expect World.route.route_segments().take_first(2).all(|segment| segment.pigs == NoPigs)
 
 # The steps the book's table quotes, each with its speed in metres a step, its

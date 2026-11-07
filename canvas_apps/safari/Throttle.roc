@@ -4,6 +4,7 @@
 import Acceleration
 import Along
 import Angle
+import Animation
 import Coast
 import Distance
 import EncounterReaction
@@ -18,29 +19,30 @@ import World
 
 Throttle :: [].{
 
-	## The speed the motorcycle goes on the next step.
-	next_speed : Motorcycle, Segment -> Speed
-	next_speed = |motorcycle, seg| {
+	## The speed the motorcycle goes on the next step, on `segment`, whose
+	## encounter stands at `encounter`.
+	next_speed : Motorcycle, { segment : Segment, encounter : Animation.Timing } -> Speed
+	next_speed = |motorcycle, { segment: seg, encounter }| {
 		offered = VehicleLimits.cruise_acceleration
 		limits = [
 			bend_limit(motorcycle, seg),
-			EncounterReaction.encounter_throttle(seg, motorcycle),
+			EncounterReaction.encounter_throttle(seg, encounter),
 			Gawking.gawk_brake(motorcycle, seg),
 			shoulder_limit(motorcycle),
 		]
 		limited = limits.fold(offered, held_to)
 		allowed_speed(motorcycle.speed.accelerated_by(limited))
 	}
-
-	## The speed to leave `seg` at: the speed for its bend, or rest at the
-	## route's end.
-	exit_speed : Segment -> Speed
-	exit_speed = |seg|
-		match seg.ending {
-			Bends({ turn, .. }) => VehicleLimits.turn_speed(turn)
-			RouteEnds => Speed.at_rest
-		}
 }
+
+## The speed to leave `seg` at: the speed for its bend, or rest at the route's
+## end.
+exit_speed : Segment -> Speed
+exit_speed = |seg|
+	match seg.ending {
+		Bends({ turn, .. }) => VehicleLimits.turn_speed(turn)
+		RouteEnds => Speed.at_rest
+	}
 
 ## How fast the shoulder brake fades with the steps left to the shoulder: it
 ## falls to about a third every 20 steps, a time constant chosen by eye.
@@ -70,7 +72,7 @@ bend_approach = Distance.metres(60.0)
 bend_limit : Motorcycle, Segment -> VehicleLimits.Limit
 bend_limit = |motorcycle, seg|
 	if is_near_end(motorcycle, seg) {
-		v_end = Throttle.exit_speed(seg)
+		v_end = exit_speed(seg)
 		d = seg.commit_along().distance_from(motorcycle.along)
 		AtMost(VehicleLimits.braking_to(motorcycle.speed, { target: v_end, within: d }))
 	} else {
@@ -121,8 +123,8 @@ expect held_to(acceleration_of(-0.5), NoLimit) == acceleration_of(-0.5)
 expect held_to(acceleration_of(0.01), AtMost(acceleration_of(-0.5))) == acceleration_of(-0.5)
 expect held_to(acceleration_of(-0.5), AtMost(Acceleration.steady)) == acceleration_of(-0.5)
 
-expect Throttle.exit_speed(first_segment).to_metres_a_step() == 0.222
-expect Throttle.exit_speed(World.route.segment_at(Route.SegmentIndex.number(18))) == Speed.at_rest
+expect exit_speed(first_segment).to_metres_a_step() == 0.222
+expect exit_speed(World.route.segment_at(Route.SegmentIndex.number(18))) == Speed.at_rest
 
 expect !is_near_end(centred_motorcycle(439.9, 0.3), first_segment)
 expect is_near_end(centred_motorcycle(440.0, 0.3), first_segment)
@@ -184,9 +186,13 @@ expect clamped_speed(0.0) == 0.0
 expect clamped_speed(-1.0) == 0.0
 
 ## The change of speed that `Throttle.next_speed` makes for this motorcycle on
-## `seg`.
+## `seg`, before its encounter is planned.
 speed_change : Motorcycle, Segment -> Acceleration
-speed_change = |motorcycle, seg| Throttle.next_speed(motorcycle, seg).change_from(motorcycle.speed)
+speed_change = |motorcycle, seg|
+	Throttle.next_speed(
+		motorcycle,
+		{ segment: seg, encounter: Unplanned },
+	).change_from(motorcycle.speed)
 
 ## The whole decision for a motorcycle at the start of the segment, on the
 ## centre line.
@@ -217,8 +223,8 @@ decide_on = |index, along|
 		World.route.segment_at(Route.SegmentIndex.number(index)),
 	)
 
-# A crossing cat stops the throttle opening, and a gawking rider brakes.
+# A gawking rider brakes. A crossing cat's hold is CrossModuleExpects', which can
+# name a step of the clock.
 expect decide_on(3, 0.0) > Acceleration.steady
-expect decide_on(3, 120.0) == Acceleration.steady
 expect decide_on(2, 100.0) > Acceleration.steady
 expect decide_on(2, 300.0) < Acceleration.steady

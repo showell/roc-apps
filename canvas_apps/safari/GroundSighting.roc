@@ -7,7 +7,7 @@ import Along
 import Distance
 import RoadAhead
 import Geom
-import Ground
+import GroundPatch
 import BendInView
 import Pond
 import lib.RgbColor
@@ -16,7 +16,7 @@ GroundSighting :: [].{
 
 	## The ground in view, in paint order: each segment in view in the order of
 	## `RoadAhead.segments_in_view`.
-	patches_in_view : RoadAhead.RoadView, { vantage : Geom.Vantage, .. } -> List(Ground.Patch)
+	patches_in_view : RoadAhead.RoadView, { vantage : Geom.Vantage, .. } -> List(GroundPatch)
 	patches_in_view = |road, camera|
 		RoadAhead.segments_in_view(road).join_map(
 			|in_view| ground_patches(road, { vantage: camera.vantage, in_view }),
@@ -43,7 +43,7 @@ road_along : RoadAhead.RoadView,
 {
 	vantage : Geom.Vantage,
 	in_view : RoadAhead.SegmentInView,
-} -> Ground.Patch
+} -> GroundPatch
 road_along = |road, { vantage, in_view }| {
 	place = in_view.place
 	segment_length = in_view.segment.length
@@ -90,7 +90,7 @@ length_after = |road, bend_in_view| RoadAhead.segment_at(
 ).length
 
 ## A patch of road with these corners.
-road_patch : List(Geom.RiderPoint) -> Ground.Patch
+road_patch : List(Geom.RiderPoint) -> GroundPatch
 road_patch = |corners| { corners, color: road_color }
 
 ## The ground of a segment in view: its road, the bend into the next segment
@@ -104,7 +104,7 @@ ground_patches : RoadAhead.RoadView,
 {
 	vantage : Geom.Vantage,
 	in_view : RoadAhead.SegmentInView,
-} -> List(Ground.Patch)
+} -> List(GroundPatch)
 ground_patches = |road, { vantage, in_view }| {
 	along_segment =
 		match in_view.place {
@@ -136,7 +136,7 @@ bend_paving : RoadAhead.RoadView,
 {
 	vantage : Geom.Vantage,
 	bend_in_view : BendInView,
-} -> Ground.Patch
+} -> GroundPatch
 bend_paving = |road, { vantage, bend_in_view }| {
 	length_before = bend_in_view.bend.segment_length
 	rider_point_before = |road_point| RoadAhead.rider_point_at(
@@ -193,7 +193,7 @@ pond_patches : RoadAhead.RoadView,
 {
 	vantage : Geom.Vantage,
 	in_view : RoadAhead.SegmentInView,
-} -> List(Ground.Patch)
+} -> List(GroundPatch)
 pond_patches = |road, { vantage, in_view }| {
 	is_at_pond =
 		match in_view.segment.ending {

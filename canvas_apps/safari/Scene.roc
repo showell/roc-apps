@@ -2,6 +2,7 @@
 ## billboards, cats, guard rails, the truck and the birds in view, each found by
 ## its own sighting and rendered as soon as it is found. Past the sighting
 ## nothing asks what kind a thing is, so each field holds only renderings.
+import Animation
 import Clock
 import Conifer
 import Distance
@@ -18,7 +19,6 @@ import TowerSighting
 import TreeSighting
 import LitTruck
 import TruckSighting
-import Speed
 import lib.Shapes
 
 ## The things in view, rendered, one field for each sighting that found them.
@@ -32,10 +32,10 @@ Scene := {
 	rails : List(Rendered),
 }.{
 
-	## What the sightings read beyond the road: the rider's speed, where the
-	## truck is and how it looks, and the clock.
+	## What the sightings read beyond the road: where the encounter on the
+	## rider's segment stands, where the truck is and how it looks, and the clock.
 	RideFacts : {
-		speed : Speed,
+		encounter : Animation.Timing,
 		truck : { route_position : Distance, lit_truck : LitTruck },
 		clock : Clock,
 	}
@@ -49,6 +49,7 @@ Scene := {
 	scene_in_view = |road, { camera, facts }| {
 		cam_focal = camera.cam_focal
 		on_road = { road, vantage: camera.vantage }
+		birds_seen = EncounterSighting.birds_in_view(road, { camera, encounter: facts.encounter })
 		truck_at = TruckSighting.truck_in_view(
 			road,
 			{
@@ -59,16 +60,14 @@ Scene := {
 		)
 		{
 			trees: Scene.tree_renderings(TreeSighting.trees_in_view(road, camera), cam_focal),
-			birds: EncounterSighting.birds_in_view(road, camera).map(
-				|bird| Pipeline.rendering_of(bird, { cam_focal, context: {} }),
-			),
+			birds: birds_seen.map(|bird| Pipeline.rendering_of(bird, { cam_focal, context: {} })),
 			towers: TowerSighting.towers_in_view(road, { camera, clock: facts.clock }).map(
 				|tower| Pipeline.rendering_of(tower, { cam_focal, context: on_road }),
 			),
 			billboards: BillboardSighting.billboards_in_view(road, camera).map(
 				|billboard| Pipeline.rendering_of(billboard, { cam_focal, context: {} }),
 			),
-			cats: EncounterSighting.cats_in_view(road, { camera, speed: facts.speed }).map(
+			cats: EncounterSighting.cats_in_view(road, { camera, encounter: facts.encounter }).map(
 				|cat| Pipeline.rendering_of(cat, { cam_focal, context: {} }),
 			),
 			truck: truck_at.map_ok(

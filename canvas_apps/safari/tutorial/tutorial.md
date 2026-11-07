@@ -71,7 +71,7 @@ Most of Safari Ride's small modules look like this: a comment saying what the th
 
 Safari Ride calls it once a step, like this:
 
-{{code RideInstant.next from "clock: instant.clock.next()," to "clock: instant.clock.next(),"}}
+{{code RideInstant.next from "clock = instant.clock.next()" to "clock = instant.clock.next()"}}
 
 `instant.clock.next()` is static dispatch: `next` comes from the type of `instant.clock`, so the call needs no import.
 
@@ -331,7 +331,7 @@ Fewer than three would be a bug in Safari Ride, and a bug shouldn't quietly pain
 
 Some things can rightly have nothing to show. A `Ground.Patch` is a patch of ground, a list of corners on the ground and a color, and one wholly behind the camera has nothing to show. So `Ground.patch_shape` answers a `Try`:
 
-{{signatures Ground.patch_shape}}
+{{signatures GroundPatch.patch_shape}}
 
 Its second argument is the lens's focal length, in pixels, which turns corners on the ground into places on the screen. A simple tree says more about the lens. A `Try` is either `Ok` holding a shape, or `Err` holding a reason, here `BehindCamera`. Both answers are in the type, so whoever calls `patch_shape` can't forget the ground behind the camera.
 
@@ -1639,7 +1639,7 @@ Each limit takes the lower of two opaque `Acceleration`s with `min`. `NoAccelera
 
 The first limit, `bend_brake`, makes the `a1` that the chain above starts from. It calls this for the distance left to the point where the rider commits to the turn. Three modules use that one line of physics: this one, `Gaze` to slow for a pig, and `Truck`.
 
-{{code Throttle.bend_limit from "v_end = Throttle.exit_speed(seg)" to "AtMost(VehicleLimits.braking_to(motorcycle.speed, { target: v_end, within: d }))"}}
+{{code Throttle.bend_limit from "v_end = exit_speed(seg)" to "AtMost(VehicleLimits.braking_to(motorcycle.speed, { target: v_end, within: d }))"}}
 
 After the limits, `Throttle.acceleration` hands its result to `allowed_speed`, not quoted here, which holds the speed between rest and the top speed. The chain works in accelerations and that step works in speeds, so the answer is taken back with `.change_from(state.speed)`, the other half of the same pair of types.
 
@@ -1934,7 +1934,7 @@ A crossing and an approach go in, and the cat at that instant comes out. The sam
 
 `CrossingSighting.cat_in_view` calls it, adding the distance to the segment to get the gap:
 
-{{code EncounterSighting.encounter_in_view}}
+{{code EncounterSighting.segment_cat}}
 
 What `Cat` gets from `Animation` comes down to one type, `Stage`:
 
@@ -2005,7 +2005,7 @@ The rule lives in `Animation`. It takes the cat's numbers and an `Approach`, whi
 
 `stage_over_step_span` destructures its first argument in place, and the `Approach` after it, so the body reads in plain names:
 
-{{code Animation.stage_over_step_span}}
+{{code Animation.planned_start}}
 
 Neither field of an `Approach` is a plain number. `Distance`, `Speed` and `Beats` are opaque types, like `Clock` and `Angle`. A distance can't be passed as a speed, and a place in an animation can't be passed as a step of the ride. `distance_in`, on the second line, multiplies a speed by some beats and gives a `Distance`. `Speed` also derives `is_eq`, which is what lets `speed == Speed.at_rest` work with an ordinary operator.
 
@@ -2160,7 +2160,7 @@ A rule turns where the rider is into a `Stage`. The cat's rule was `stage_over_s
 
 The first argument of each is destructured in place, and both answer the same tag union. `stage_over_gap` has a shorter job, so here it is first. `Fraction.clamp` fits here because a rider far off gives a ratio well outside 0 to 1, and `<=` works on a `Fraction` because `Fraction` defines `is_lte`:
 
-{{code Animation.stage_over_gap}}
+{{code Animation.stage_at}}
 
 The bird calls it with two constants, and passes no speed, since this rule doesn't take one:
 
@@ -2168,7 +2168,7 @@ The bird calls it with two constants, and passes no speed, since this rule doesn
 
 Beside it, again, is the cat's rule. Its second argument is the whole `Approach`:
 
-{{code Animation.stage_over_step_span}}
+{{code Animation.planned_start}}
 
 The extra case in `stage_over_step_span` is there because its ratio divides by a stretch that a stopped rider makes zero. `stage_over_gap` divides only by constants, so it has no such case. That hanging bird is real: nothing in `stage_over_gap` knows a bird can't hover. The rider never drops below 1.1 metres a step inside a bird's 45 metres on this route, so it doesn't come up.
 
@@ -2214,7 +2214,7 @@ The stills are data too. Nested tags get checked all the way down, so a `match` 
 
 Where a bird flies is decided once, when the world is built. `habit_from` shows the plain end of Roc's list functions. `keep_if` takes a closure, and `is_far_enough` is one, closing over `from`. `first()` answers a `Try`, which is one of the few that Safari Ride opens by hand. A route is a tag union with two tags: a bird with no tree to fly to `Sits`, which beats a flight of length zero.
 
-{{code BirdFlight.habit_from}}
+{{code BirdFlight.flight_from}}
 
 The caller's return type is written in place, a tag union that exists for this one function and fits straight into the `crossing` field of a segment:
 
@@ -2511,7 +2511,7 @@ This is what lets `CrossingSighting`, `TowerSighting`, `TreeSighting` and the re
 
 The ground also curves away. That's one formula, the small-angle drop of a sphere, with a record destructured in the parameter list and `right` and `forward` taken out to metres before they're squared. There are two radii in the program, and neither is the earth's. `Geom.ground_curve_radius`, 100 km, is the surface the road and the truck stand on, and it puts the horizon 490 metres out. `Tower.sink_radius`, 20 km, only sets how soon a far tower goes: a tower is gone at 1.8 km, where the ground's curve would leave it in view to 4 km.
 
-{{code Ground.ground_drop}}
+{{code EarthCurve.ground_drop}}
 
 ### Cutting a polygon
 
