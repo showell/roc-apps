@@ -57,14 +57,6 @@ target = Across.middle
 ## A point on an arc: how far along the road from the rider, and where across it.
 ArcPoint : { forward : F64, across : F64 }
 
-## The search's bounds, as `LeanSearch.best_lean` starts it.
-search : { target : Across, low : Angle.Lean, high : Angle.Lean }
-search = {
-	target,
-	low: rider.lean.minus(LeanSearch.max_lean_change),
-	high: rider.lean.plus(LeanSearch.max_lean_change),
-}
-
 ## One try of the search, and the way its coast drew it.
 Rehearsal : { lean_try : LeanSearch.LeanTry, path_points : List(ArcPoint) }
 
@@ -80,17 +72,17 @@ points_of = |lean|
 
 rehearsals : List(Rehearsal)
 rehearsals =
-	LeanSearch.search_tries(rider, search).map(
+	LeanSearch.search_tries(rider).map(
 		|lean_try| { lean_try, path_points: points_of(LeanSearch.tried_lean(lean_try)) },
 	)
 
 ## Which way the search went after a try.
 lean_correction_of : Rehearsal -> [MoreRight, MoreLeft]
-lean_correction_of = |{ lean_try, .. }| LeanSearch.lean_correction(lean_try.outcome, target)
+lean_correction_of = |{ lean_try, .. }| LeanSearch.lean_correction(lean_try.outcome)
 
 ## The lean the search settled on.
 chosen_lean : Angle.Lean
-chosen_lean = LeanSearch.search_lean(rider, search)
+chosen_lean = LeanSearch.best_lean(rider)
 
 chosen_points : List(ArcPoint)
 chosen_points = points_of(chosen_lean)
@@ -489,9 +481,6 @@ shapes_at = |stop|
 ## How many tries the search makes.
 round_count : U64
 round_count = LeanSearch.lean_search_round_count.to_u64()
-
-# The tries come to the lean the game's own search comes to.
-expect chosen_lean.to_radians() == LeanSearch.best_lean(rider).to_radians()
 
 # Every arc of this step stays on the road, and the search goes both ways.
 expect rehearsals.all(|{ lean_try, .. }| color_of(lean_try.outcome) == kept_color)

@@ -71,7 +71,7 @@ Most of Safari Ride's small modules look like this: a comment saying what the th
 
 Safari Ride calls it once a step, like this:
 
-{{code RideInstant.next from "clock: instant.clock.next()," to "clock: instant.clock.next(),"}}
+{{code RideInstant.next from "clock = instant.clock.next()" to "clock = instant.clock.next()"}}
 
 `instant.clock.next()` is static dispatch: `next` comes from the type of `instant.clock`, so the call needs no import.
 
@@ -1343,10 +1343,10 @@ The first three are opaque. Each is still a number, and the type gives it a name
 
 | Job | Function | Its type |
 |---|---|---|
-{{types row Sun.height Move the sun}}
-{{types row Sky.dusk_at Darken the sky}}
+{{types row Sun.height_at Move the sun}}
+{{types row Sky.darkness_at Darken the sky}}
 {{types row Sky.sky_top_color}}
-{{types row Sky.sunset_warmth Warm the horizon}}
+{{types row Sky.horizon_warmth_at Warm the horizon}}
 {{types row Sky.sky_horizon_color}}
 
 Every one is a `->`, and every one starts from a `Clock`. That's most of the design, before we've read a line of code.
@@ -1392,7 +1392,7 @@ This widget does only the first job, so the sky stays blue. For each frame it ca
 
 The sun chapter showed how `Sun.sighting` places a sun. All it needs from the clock is a height:
 
-{{code Sun.height}}
+{{code Sun.height_at}}
 
 ### Job two: the sky darkens
 
@@ -1406,11 +1406,11 @@ This widget adds one call, `Sky.dusk_at`, and the sky finally does something. It
 
 `dusk_at` works out that `Fraction`:
 
-{{code Sky.dusk_at}}
+{{code Sky.darkness_at}}
 
 It asks for the sun's height, then picks one of two shapes. They meet when the sun has fully set, one radius below the horizon, and you can see the join in the blue line at step 4,735. Before that, dusk grows with the square of how far the sun has fallen. After that, it runs on in a straight line to full dark.
 
-{{signatures Sky.dusk_while_up Sky.dusk_after_set}}
+{{signatures Sky.darkness_while_up Sky.darkness_after_set}}
 
 As always, anything outside a module's block is private, so these two are helpers without any keyword.
 
@@ -1430,7 +1430,7 @@ The horizon is the same sky, warmed toward red:
 
 `sunset_warmth` asks for the sun's height, just as dusk did:
 
-{{code Sky.sunset_warmth}}
+{{code Sky.horizon_warmth_at}}
 
 The horizon is warmest when the sun's height is zero. `ratio_to` says how far away the sun is, as a share of 110 pixels, and `abs` makes the two sides match, which gives the red line its tent. `Fraction.clamp` holds everything past 110 pixels at no warmth at all.
 
@@ -1639,7 +1639,7 @@ Each limit takes the lower of two opaque `Acceleration`s with `min`. `NoAccelera
 
 The first limit, `bend_brake`, makes the `a1` that the chain above starts from. It calls this for the distance left to the point where the rider commits to the turn. Three modules use that one line of physics: this one, `Gaze` to slow for a pig, and `Truck`.
 
-{{code Throttle.bend_limit from "bend_a =" to "motorcycle.speed.acceleration_to({ target: v_end, within: d })"}}
+{{code Throttle.bend_limit from "v_end = exit_speed(seg)" to "AtMost(VehicleLimits.braking_to(motorcycle.speed, { target: v_end, within: d }))"}}
 
 After the limits, `Throttle.acceleration` hands its result to `allowed_speed`, not quoted here, which holds the speed between rest and the top speed. The chain works in accelerations and that step works in speeds, so the answer is taken back with `.change_from(state.speed)`, the other half of the same pair of types.
 
@@ -1815,11 +1815,11 @@ The truck is what the rider chases. It starts 500 metres ahead and keeps to a sc
 
 The schedule is a straight line, and a pure function of the rider's progress, destructured from a record so the call site has to name both `Distance`s:
 
-{{code Truck.scheduled_position}}
+{{code Truck.tease_position}}
 
 Its one caller is the truck's step function, the same shape as the rider's. `NextBend` is a tag union with a payload on one side, so the only way to read a `distance` is to be inside the branch where there is one:
 
-{{code Truck.at_next_step from "schedule = scheduled_position(" to "NoBendAhead => scheduled_state_at_next_step(truck, schedule)"}}
+{{code Truck.at_next_step from "tease = tease_position(" to "NoBendAhead => chasing_state_at_next_step(truck, tease)"}}
 
 And that's called from `RideInstant.next`, in the chapter on stepping, with the rider's distance as the only thing the truck knows of the rider. Nothing in `Rider` imports `Truck`, and nothing in `Truck` imports `Rider`. The chase is one record literal in `RideInstant`.
 
@@ -1835,7 +1835,7 @@ Then the two ways to take a step. Both sit below the block, private, and both ar
 
 {{code Truck.braking_state_at_next_step}}
 
-{{code Truck.scheduled_state_at_next_step}}
+{{code Truck.chasing_state_at_next_step}}
 
 `brake_lights` is state because it's a fact about the last step. Headlights aren't, and they stay out of `TruckState`. That's three of the four kinds in one vehicle: the place and speed are stepped, the headlights are clock-driven, and the tires don't change.
 
@@ -1878,7 +1878,7 @@ The truck's headlights come on once the sun has gone behind the mountains, at st
 
 `RideInstant` puts it together. It's the only place that can. `Truck` is in the ride half of the system and `Mountains` is in the view, and no arrow goes from the first to the second. `RideInstant` imports both.
 
-{{code FrameView.lit_truck}}
+{{code LitTruck.at}}
 
 Lamps are plain data. The sighting carries them, and the drawing does what they say, with each `match` covering both tags:
 
@@ -1934,7 +1934,7 @@ A crossing and an approach go in, and the cat at that instant comes out. The sam
 
 `CrossingSighting.cat_in_view` calls it, adding the distance to the segment to get the gap:
 
-{{code EncounterSighting.encounter_in_view}}
+{{code EncounterPoses.segment_cat}}
 
 What `Cat` gets from `Animation` comes down to one type, `Stage`:
 
@@ -2005,7 +2005,7 @@ The rule lives in `Animation`. It takes the cat's numbers and an `Approach`, whi
 
 `stage_over_step_span` destructures its first argument in place, and the `Approach` after it, so the body reads in plain names:
 
-{{code Animation.stage_over_step_span}}
+{{code Animation.planned_start}}
 
 Neither field of an `Approach` is a plain number. `Distance`, `Speed` and `Beats` are opaque types, like `Clock` and `Angle`. A distance can't be passed as a speed, and a place in an animation can't be passed as a step of the ride. `distance_in`, on the second line, multiplies a speed by some beats and gives a `Distance`. `Speed` also derives `is_eq`, which is what lets `speed == Speed.at_rest` work with an ordinary operator.
 
@@ -2096,11 +2096,11 @@ digraph screen {
 
 `cat_in_view` places the cat and decides whether it's big enough to draw. An empty list or a list of one is how it says "maybe".
 
-{{code EncounterSighting.segment_cat}}
+{{code EncounterPoses.segment_cat}}
 
 `segment_cat` calls it for a segment with a cat, and `cats_in_view` flattens the answers with `join_map`, so a "no" simply disappears:
 
-{{code EncounterSighting.cats_in_view}}
+{{code EncounterPoses.cat_poses}}
 
 Looking back over the chapter, notice what isn't in it: a cat in `RideInstant`, an update loop, or a flag saying the cat has already crossed.
 
@@ -2160,7 +2160,7 @@ A rule turns where the rider is into a `Stage`. The cat's rule was `stage_over_s
 
 The first argument of each is destructured in place, and both answer the same tag union. `stage_over_gap` has a shorter job, so here it is first. `Fraction.clamp` fits here because a rider far off gives a ratio well outside 0 to 1, and `<=` works on a `Fraction` because `Fraction` defines `is_lte`:
 
-{{code Animation.stage_over_gap}}
+{{code Animation.stage_at}}
 
 The bird calls it with two constants, and passes no speed, since this rule doesn't take one:
 
@@ -2168,7 +2168,7 @@ The bird calls it with two constants, and passes no speed, since this rule doesn
 
 Beside it, again, is the cat's rule. Its second argument is the whole `Approach`:
 
-{{code Animation.stage_over_step_span}}
+{{code Animation.planned_start}}
 
 The extra case in `stage_over_step_span` is there because its ratio divides by a stretch that a stopped rider makes zero. `stage_over_gap` divides only by constants, so it has no such case. That hanging bird is real: nothing in `stage_over_gap` knows a bird can't hover. The rider never drops below 1.1 metres a step inside a bird's 45 metres on this route, so it doesn't come up.
 
@@ -2214,7 +2214,7 @@ The stills are data too. Nested tags get checked all the way down, so a `match` 
 
 Where a bird flies is decided once, when the world is built. `habit_from` shows the plain end of Roc's list functions. `keep_if` takes a closure, and `is_far_enough` is one, closing over `from`. `first()` answers a `Try`, which is one of the few that Safari Ride opens by hand. A route is a tag union with two tags: a bird with no tree to fly to `Sits`, which beats a flight of length zero.
 
-{{code BirdFlight.habit_from}}
+{{code BirdFlight.flight_from}}
 
 The caller's return type is written in place, a tag union that exists for this one function and fits straight into the `crossing` field of a segment:
 
@@ -2226,7 +2226,7 @@ And that's called from a `match` in the middle of a record, which is a reminder 
 
 Each frame, a sighting reads the route back. The crossing is matched in full, so a third kind of crossing would stop here until someone says what a bird sighting should do about it:
 
-{{code EncounterSighting.segment_bird}}
+{{code EncounterPoses.segment_bird}}
 
 We didn't need any new machinery for the bird. Above their `expect`s, the four bird modules come to about 450 lines, a quarter of them coordinates for the stills. `Animation` has nothing in it about birds.
 
@@ -2336,7 +2336,7 @@ digraph rehearsal {
 
 `LeanSearch` asks `Coast` that question at a dozen different leans. The rider wants the coast to end somewhere near the middle of the lane, and more lean to the right moves the end of a coast to the right, so this is a bisection. It's a `for` loop, with `$low` and `$high` closing in on each other. `Bike.with_lean(state, mid)` is a rider who doesn't exist, handed to `Coast`, who gets a future that didn't happen:
 
-{{code LeanSearch.search_tries from "mid = $bounds.low.halfway_to($bounds.high)" to "$bounds = bounds_after(lean_try, target)"}}
+{{code LeanSearch.search_tries from "mid = $bounds.low.halfway_to($bounds.high)" to "$bounds = bounds_after(lean_try)"}}
 
 The decision about which way to go is a `match` on what the rehearsal found. Running off the left means more right, running off the right means less, and staying on the road compares the end of the coast with the target:
 
@@ -2487,7 +2487,7 @@ The view widens as the rider leans. One `Fraction` goes in, and a focal length c
 
 {{code Lens.focal_for_lean}}
 
-{{code Lens.cam_focal}}
+{{code Lens.focal_for}}
 
 ### Round the bends
 

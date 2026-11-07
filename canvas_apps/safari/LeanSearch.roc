@@ -10,24 +10,20 @@ LeanSearch :: [].{
 
 	## Which way the next try should lean, from where this try's coast went:
 	## off the left shoulder means more right, off the right means more left,
-	## and a coast that stays on the road compares its end with `target`. A
-	## coast that ends exactly on the target means lean left.
-	lean_correction : Coast.Outcome, Across -> [MoreRight, MoreLeft]
-	lean_correction = |coast, target|
+	## and a coast that stays on the road compares its end with the road's
+	## middle. A coast that ends exactly on the middle means lean left.
+	lean_correction : Coast.Outcome -> [MoreRight, MoreLeft]
+	lean_correction = |coast|
 		match coast {
 			Leaves({ side: Left, .. }) => MoreRight
 			Leaves({ side: Right, .. }) => MoreLeft
 			EndsAt(end_across) =>
-				if end_across < target {
+				if end_across < Across.middle {
 					MoreRight
 				} else {
 					MoreLeft
 				}
 		}
-
-	## The most the lean changes in one step.
-	max_lean_change : Angle.LeanChange
-	max_lean_change = Angle.LeanChange.degrees(1.0)
 
 	## How many times the search halves its bounds. They start 2° wide, a
 	## degree either side of the lean, so 12 halvings narrow them to about
@@ -47,64 +43,48 @@ LeanSearch :: [].{
 	tried_lean : LeanTry -> Angle.Lean
 	tried_lean = |{ low, high, .. }| low.halfway_to(high)
 
-	## The tries of the bisection between `low` and `high` toward `target`,
-	## first first. Each try's bounds are the half of the one before it that its
-	## coast pointed to.
-	search_tries : Motorcycle,
-	{
-		target : Across,
-		low : Angle.Lean,
-		high : Angle.Lean,
-	} -> List(LeanSearch.LeanTry)
-	search_tries = |state, { target, low, high }| {
-		var $bounds = { low, high }
+	## The tries of the bisection over the leans one step can reach from the
+	## motorcycle's own, first first. Each try's bounds are the half of the one
+	## before it that its coast pointed to.
+	search_tries : Motorcycle -> List(LeanSearch.LeanTry)
+	search_tries = |motorcycle| {
+		var $bounds = {
+			low: motorcycle.lean.minus(max_lean_change),
+			high: motorcycle.lean.plus(max_lean_change),
+		}
 		var $tries = []
 		for _ in 0..<lean_search_round_count {
 			mid = $bounds.low.halfway_to($bounds.high)
 			lean_try = {
 				low: $bounds.low,
 				high: $bounds.high,
-				outcome: Coast.project(state.with_lean(mid)),
+				outcome: Coast.project(motorcycle.with_lean(mid)),
 			}
 			$tries = $tries.append(lean_try)
-			$bounds = bounds_after(lean_try, target)
+			$bounds = bounds_after(lean_try)
 		}
 		$tries
 	}
 
-	## The lean between `low` and `high` whose coast ends nearest `target`
-	## across the road: halfway between the bounds the last try narrowed to.
-	search_lean : Motorcycle,
-	{
-		target : Across,
-		low : Angle.Lean,
-		high : Angle.Lean,
-	} -> Angle.Lean
-	search_lean = |state, search| {
-		last_try = LeanSearch.search_tries(state, search).last() ?? crash "LeanSearch.search_lean: the search makes at least one try"
-		narrowed = bounds_after(last_try, search.target)
+	## The lean for the next step, whose coast ends nearest the road's middle:
+	## halfway between the bounds the last try narrowed to.
+	best_lean : Motorcycle -> Angle.Lean
+	best_lean = |motorcycle| {
+		last_try = LeanSearch.search_tries(motorcycle).last() ?? crash "LeanSearch.best_lean: the search makes at least one try"
+		narrowed = bounds_after(last_try)
 		narrowed.low.halfway_to(narrowed.high)
 	}
-
-	## The lean for the next step, aimed at the road's middle: within the most
-	## one step can change it.
-	best_lean : Motorcycle -> Angle.Lean
-	best_lean = |state|
-		search_lean(
-			state,
-			{
-				target: Across.middle,
-				low: state.lean.minus(max_lean_change),
-				high: state.lean.plus(max_lean_change),
-			},
-		)
 }
 
+## The most the lean changes in one step.
+max_lean_change : Angle.LeanChange
+max_lean_change = Angle.LeanChange.degrees(1.0)
+
 ## The half of a try's bounds its coast points to.
-bounds_after : LeanSearch.LeanTry, Across -> { low : Angle.Lean, high : Angle.Lean }
-bounds_after = |lean_try, target| {
+bounds_after : LeanSearch.LeanTry -> { low : Angle.Lean, high : Angle.Lean }
+bounds_after = |lean_try| {
 	mid = LeanSearch.tried_lean(lean_try)
-	match LeanSearch.lean_correction(lean_try.outcome, target) {
+	match LeanSearch.lean_correction(lean_try.outcome) {
 		MoreRight => { low: mid, high: lean_try.high }
 		MoreLeft => { low: lean_try.low, high: mid }
 	}
@@ -120,11 +100,11 @@ off_right = Leaves({ side: Right, after: Steps.one_step })
 ending_at : F64 -> Coast.Outcome
 ending_at = |metres| EndsAt(Across.metres(metres))
 
-expect LeanSearch.lean_correction(off_left, Across.metres(0.5)) == MoreRight
-expect LeanSearch.lean_correction(off_right, Across.metres(0.5)) == MoreLeft
-expect LeanSearch.lean_correction(ending_at(0.4), Across.metres(0.5)) == MoreRight
-expect LeanSearch.lean_correction(ending_at(0.6), Across.metres(0.5)) == MoreLeft
-expect LeanSearch.lean_correction(ending_at(0.5), Across.metres(0.5)) == MoreLeft
+expect LeanSearch.lean_correction(off_left) == MoreRight
+expect LeanSearch.lean_correction(off_right) == MoreLeft
+expect LeanSearch.lean_correction(ending_at(-0.1)) == MoreRight
+expect LeanSearch.lean_correction(ending_at(0.1)) == MoreLeft
+expect LeanSearch.lean_correction(ending_at(0.0)) == MoreLeft
 
 ## The lean the search picks for a motorcycle at the start of the segment, in
 ## radians.

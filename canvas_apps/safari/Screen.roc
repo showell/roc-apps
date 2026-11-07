@@ -51,21 +51,33 @@ Screen :: [].{
 	roll_margin : Pixels
 	roll_margin = Pixels.of(200.0)
 
+	## The left edge of what the backdrop and the skyline draw: `roll_margin`
+	## left of the screen.
+	drawn_left : Pixels
+	drawn_left = roll_margin.opposite()
+
+	## The right edge of what the backdrop and the skyline draw: `roll_margin`
+	## right of the screen.
+	drawn_right : Pixels
+	drawn_right = width.plus(roll_margin)
+
+	## A rectangle from `top` down to `bottom`, painted with `fill`, from
+	## `drawn_left` across to `drawn_right`.
+	margin_rect : { top : Pixels, bottom : Pixels }, Brush.Fill -> Shapes.Shape
+	margin_rect = |{ top, bottom }, fill|
+		Rect({
+			x: drawn_left.to_f64(),
+			y: top.to_f64(),
+			width: drawn_right.minus(drawn_left).to_f64(),
+			height: bottom.minus(top).to_f64(),
+			fill,
+		})
+
 	## The rectangle above the horizon, painted with `fill`: from `roll_margin`
 	## above the screen down to the horizon, and `roll_margin` past each side.
 	above_horizon_rect : Brush.Fill -> Shapes.Shape
 	above_horizon_rect = |fill|
-		Rect({
-			x: roll_margin.opposite().to_f64(),
-			y: roll_margin.opposite().to_f64(),
-			width: width_with_margins.to_f64(),
-			height: horizon_y.plus(roll_margin).to_f64(),
-			fill,
-		})
-
-	## The screen's width with `roll_margin` past each side.
-	width_with_margins : Pixels
-	width_with_margins = width.plus(roll_margin).plus(roll_margin)
+		margin_rect({ top: roll_margin.opposite(), bottom: horizon_y }, fill)
 }
 
 expect Screen.distance({ from: Screen.point(3.0, 4.0), to: Screen.point(0.0, 0.0) }).to_f64() == 5.0

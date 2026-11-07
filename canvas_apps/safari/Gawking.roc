@@ -27,24 +27,32 @@ Gawking :: [].{
 			Standout({ interest: Unnoticed, .. }) | NoPigs => NoPigCatchesEye
 		}
 
-	## Whether the rider is gawking at this segment's pig. It starts where the
-	## pig is noticed and asks only where the motorcycle is, so it stays true
-	## past the pig to the end of the segment: `gawk_brake` holds the rider down
-	## for as long as this is true, so the rider doesn't open the throttle until
-	## the next segment.
+	## The pig the rider is gawking at on this segment, if any. The gawking
+	## starts where an eye-catching pig is noticed and asks only where the
+	## motorcycle is, so it lasts past the pig to the end of the segment:
+	## `gawk_brake` holds the rider down for as long as it lasts, so the rider
+	## doesn't open the throttle until the next segment.
+	gawked_pig : Motorcycle, Segment -> [GawkingAt(Geom.Placed(Billboard)), NotGawking]
+	gawked_pig = |motorcycle, seg|
+		match eye_catching_pig(seg) {
+			CatchesEye(pig) if is_past_notice(motorcycle, pig) => GawkingAt(pig)
+			CatchesEye(_) | NoPigCatchesEye => NotGawking
+		}
+
+	## Whether the rider is gawking at this segment's pig.
 	is_gawking : Motorcycle, Segment -> Bool
 	is_gawking = |motorcycle, seg|
-		match eye_catching_pig(seg) {
-			CatchesEye(pig) => is_past_notice(motorcycle, pig)
-			NoPigCatchesEye => False
+		match gawked_pig(motorcycle, seg) {
+			GawkingAt(_) => True
+			NotGawking => False
 		}
 
 	## The brake for a gawking rider, who aims to be down to `gawk_speed` by
 	## the settle distance before the pig.
 	gawk_brake : Motorcycle, Segment -> VehicleLimits.Limit
 	gawk_brake = |motorcycle, seg|
-		match eye_catching_pig(seg) {
-			CatchesEye(pig) if is_past_notice(motorcycle, pig) => {
+		match gawked_pig(motorcycle, seg) {
+			GawkingAt(pig) => {
 				gap = pig.road_point.along.distance_from(motorcycle.along)
 				room = gap.minus(gawk_settle_distance)
 				AtMost(
@@ -54,7 +62,7 @@ Gawking :: [].{
 					}),
 				)
 			}
-			CatchesEye(_) | NoPigCatchesEye => NoLimit
+			NotGawking => NoLimit
 		}
 }
 
