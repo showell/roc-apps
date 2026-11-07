@@ -10,7 +10,6 @@ import Gawking
 import Motorcycle
 import Speed
 import Steps
-import lib.Trig
 import VehicleLimits
 import World
 
@@ -19,12 +18,7 @@ Throttle :: [].{
 	## The speed the motorcycle goes on the next step.
 	next_speed : Motorcycle, World.Segment -> Speed
 	next_speed = |motorcycle, seg| {
-		offered =
-			if motorcycle.lean.abs() >= lean_hold {
-				Acceleration.steady
-			} else {
-				VehicleLimits.cruise_acceleration
-			}
+		offered = VehicleLimits.cruise_acceleration
 		limits = [
 			bend_limit(motorcycle, { segment: seg, exit_speed: exit_speed(seg) }),
 			CrossingReaction.crossing_throttle(seg, motorcycle),
@@ -35,10 +29,6 @@ Throttle :: [].{
 		allowed_speed(motorcycle.speed.accelerated_by(limited))
 	}
 }
-
-## The rider holds the throttle off while leaning this far or further.
-lean_hold : Angle.Lean
-lean_hold = Angle.Lean.degrees(2.0)
 
 brake_decay : Steps
 brake_decay = Steps.of(20)
@@ -106,13 +96,7 @@ shoulder_brake = |motorcycle, steps_to_shoulder| {
 allowed_speed : Speed -> Speed
 allowed_speed = |next_speed| next_speed.min(VehicleLimits.top_speed).max(Speed.at_rest)
 
-# Each is within 1e-12 of its want.
-expect
-	[
-		(lean_hold.to_radians(), 0.03490658503988659),
-		(brake_decay.to_f64(), 20.0),
-		(lean_hold.to_radians() / Trig.deg, 2.0),
-	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
+expect brake_decay.to_f64() == 20.0
 
 first_segment : World.Segment
 first_segment = World.route_segment(0)
@@ -225,23 +209,23 @@ wide_of_road = |lean|
 		first_segment,
 	)
 
-hold_radians : F64
-hold_radians = lean_hold.to_radians()
-
-# Each is within 1e-12 of its want.
+# Each is within 1e-12 of its want. A rider far off to the right, whose coast
+# crosses no shoulder, opens the throttle however far they lean.
 expect
 	[
 		(decide(Speed.metres_a_step(0.3), 0.0), 0.01),
 		(decide(VehicleLimits.top_speed, 0.0), 0.0),
 		(decide(Speed.at_rest, 0.0), 0.01),
 		(wide_of_road(-0.001), 0.01),
-		(wide_of_road(-hold_radians), 0.0),
-		(wide_of_road(-hold_radians - 0.5), 0.0),
+		(wide_of_road(-0.035), 0.01),
+		(wide_of_road(-0.535), 0.01),
 	].all(|(got, want)| (got.to_metres_a_step_each_step() - want).abs() <= 0.000000000001)
 
-expect decide(Speed.metres_a_step(0.3), hold_radians - 0.001) < Acceleration.steady
+# On the middle of the road, a lean that coasts off it brakes, either way, and a
+# slight one speeds up.
+expect decide(Speed.metres_a_step(0.3), 0.034) < Acceleration.steady
 expect decide(Speed.metres_a_step(0.3), 0.001) > Acceleration.steady
-expect decide(Speed.metres_a_step(0.3), -(hold_radians - 0.001)) < Acceleration.steady
+expect decide(Speed.metres_a_step(0.3), -0.034) < Acceleration.steady
 
 ## The decision for a motorcycle at `along` on segment `index`, going 0.3
 ## metres a step.
