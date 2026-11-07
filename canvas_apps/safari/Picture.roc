@@ -1,6 +1,6 @@
 ## A Picture is how one object looks in one frame: the shapes that paint it,
 ## in order. Outside this module a picture is a single thing, handed along
-## whole, and the painter is the one reader of its shapes.
+## whole until something paints it.
 import Distance
 import Pixels
 import lib.Shapes

@@ -446,7 +446,7 @@ Those two lives are two records, and each says where the tree stands in a differ
 | Type | Where the tree is | Lasts |
 |---|---|---|
 | `Trees.RoadsideTree` | `along` and `across` its segment | The whole ride |
-| `TreeSighting` | `right` of the camera and `forward` of the camera | One frame |
+| `Geom.Sighted(Conifer)` | `right` of the camera and `forward` of the camera | One frame |
 
 `Along` is a place along a segment, and `Across` is a place across the road. Both are opaque, so passing one as the other is a compile-time error. In any function, the field names say which of the two it's working in.
 
@@ -910,7 +910,7 @@ A segment's `bend_life` field says what's at its bend. `Wildlife.bend_critters` 
 
 `Quiet` and `DuckPond` have no animals, so they answer with an empty list. An `Animal` answers with a list of two. `inward` is 1 or -1, so one line of arithmetic places the grown animal on either side of the road.
 
-An elephant has no state. It's a plain record, with a place, an emoji, a height and a way to face. `StillShapes` looks up the emoji's still and draws it at that height. The baby is the same still at half the height.
+An elephant has no state. It's a plain record, with a place, an emoji, a height and a way to face. `Billboard` looks up the emoji's still and draws it at that height. The baby is the same still at half the height.
 
 Nothing in that function says "elephant". That's what makes the next chapter short.
 
