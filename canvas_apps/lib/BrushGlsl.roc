@@ -1,21 +1,20 @@
-# BrushGlsl -- Brush.shade on a GPU, and the numbers that say which shading.
+# BrushGlsl is Brush.shade on a GPU, with the numbers that say which shading.
+# It shades the six fills a shape can carry on the scene position, for a
+# platform whose fragment shader can do the arithmetic itself. It sits beside
+# Brush because it belongs to Brush. No app owns any of it:
+# native/CanvasAppRunner.roc compiles it once and shades every app's gradients
+# with it.
 #
-# Hand-written, beside Brush because it belongs to Brush: the six fills a
-# command can name, shaded on the scene position, for a platform whose fragment
-# shader can do the arithmetic itself. **Nothing here belongs to any one
-# app**: native/CanvasAppRunner.roc compiles it once and shades every app's
-# gradients with it.
-#
-# `Brush.shade` is the same arithmetic on the CPU, case for case; the names
+# `Brush.shade` is the same arithmetic on the CPU, case for case, and the names
 # below are its cases, so the two can be read side by side. A player sets
 # `mode` to `mode_of` its fill, fills the colour and geometry uniforms the way
 # `Brush` lays them out, and draws the shape in white.
 import Brush
 
 BrushGlsl :: [].{
-	# Which shading, as `mode`. The player sends these; the shader switches on
-	# them. **The contract is here so it is in ONE file**: it used to be bare
-	# numbers at both ends, agreeing by hand.
+	# Which shading, as `mode`. The player sends these, and the shader's switch
+	# below names the same numbers, so both ends of the contract are in this
+	# one file.
 	mode_of : Brush.Fill -> F64
 	mode_of = |fill|
 		match fill {

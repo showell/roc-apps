@@ -2736,7 +2736,9 @@ What the game hands back each frame is a `List(Shapes.Shape)`. A shape is a tag:
 
 The rider's lean is one of those marks. The whole picture banks into a turn, backdrop included, so `SafariApp.frame_shapes` builds a camera out of nested tags and puts it at the front. The rest is `Tour` answering questions, each a one-liner:
 
-{{code SafariApp.frame_shapes from "centre = {" to ").prepend(lean)"}}
+{{code SafariApp.frame_shapes}}
+
+{{code SafariApp.lean_space}}
 
 ### Where the effects went
 

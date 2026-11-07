@@ -8,7 +8,7 @@
 import lib.Shapes
 import lib.Brush
 import lib.RgbColor
-import lib.View
+import lib.Eye
 import Panels
 
 Night :: [].{
@@ -32,31 +32,31 @@ Night :: [].{
 
 	# The moon is a body a long way off, not a spot on the glass, so it goes
 	# behind you when you turn round the same as everything else does.
-	moon_at : View.At
+	moon_at : Eye.At
 	moon_at = { right: 150.0, forward: 360.0, height: 160.0 }
 
 	# The sky down to the horizon, the ground below it, and the moon.
-	backdrop : View.View -> List(Shapes.Shape)
+	backdrop : Eye.Eye -> List(Shapes.Shape)
 	backdrop = |v| {
 		horizon = v.height / 2.0
 		var $out = [
 			Rect({ x: 0.0, y: 0.0, width: v.width, height: horizon + 1.0, fill: Linear({ stops: { start_color: sky_high, end_color: sky_low, start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: horizon } }) }),
 			Rect({ x: 0.0, y: horizon, width: v.width, height: v.height - horizon, fill: Flat(lawn) }),
 		]
-		if View.ahead(v, moon_at) {
-			c = View.turn(v, moon_at)
-			p = View.flat(v, c)
-			List.append($out, Disc({ x: p.x, y: p.y, radius: 32.0 * View.pixels_per_metre(v, c.forward), fill: Flat(moon_c) }))
+		if Eye.ahead(v, moon_at) {
+			c = Eye.turn(v, moon_at)
+			p = Eye.flat(v, c)
+			List.append($out, Disc({ x: p.x, y: p.y, radius: 32.0 * Eye.pixels_per_metre(v, c.forward), fill: Flat(moon_c) }))
 		} else {
 			$out
 		}
 	}
 
 	# The street the child came from, which is only ever seen on the way back.
-	street : View.View, F64 -> List(Shapes.Shape)
+	street : Eye.Eye, F64 -> List(Shapes.Shape)
 	street = |v, now| Panels.strip(v, 14.0, 0.0 - 9.0 - now, 0.0 - 0.6 - now, Flat(street_c))
 
 	# The walkway, from the pavement to the doorstep.
-	path : View.View, F64, F64 -> List(Shapes.Shape)
+	path : Eye.Eye, F64, F64 -> List(Shapes.Shape)
 	path = |v, now, house_at| Panels.strip(v, path_half, 0.0 - now, house_at - now, Flat(path_c))
 }

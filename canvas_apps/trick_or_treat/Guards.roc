@@ -9,7 +9,7 @@
 # turned through, and a negative factor mirrors it as well, so the two files
 # flanking the path face each other rather than both facing right.
 import lib.Shapes
-import lib.View
+import lib.Eye
 import Skeleton
 
 Guards :: [].{
@@ -44,7 +44,7 @@ Guards :: [].{
 	# the child is and `lag` is where they were; `tilt` is how far off facing
 	# the child each one stands, which goes to nothing while the child is
 	# stopped.
-	shapes : View.View, I64, F64, F64, F64 -> List(Shapes.Shape)
+	shapes : Eye.Eye, I64, F64, F64, F64 -> List(Shapes.Shape)
 	shapes = |v, tick, now, lag, tilt| {
 		beat = I64.to_f64(tick) / dance_frames * F64.tau
 		var $out = List.with_capacity(120)
@@ -62,13 +62,13 @@ Guards :: [].{
 	# One skeleton standing at (right, forward) in the world, as big as that
 	# distance makes it and as wide as the way it is facing leaves it. Nothing
 	# is drawn for one that has been walked past.
-	one : View.View, F64, F64, F64, F64, F64, F64, F64 -> List(Shapes.Shape)
+	one : Eye.Eye, F64, F64, F64, F64, F64, F64, F64 -> List(Shapes.Shape)
 	one = |v, sx, sz, now, lag, t, tilt, side| {
 		spot = { right: sx, forward: sz - now, height: 0.0 }
-		if View.ahead(v, spot) {
-			c = View.turn(v, spot)
-			feet = View.flat(v, c)
-			s = View.pixels_per_metre(v, c.forward) * bone_metres / bone_pixels
+		if Eye.ahead(v, spot) {
+			c = Eye.turn(v, spot)
+			feet = Eye.flat(v, c)
+			s = Eye.pixels_per_metre(v, c.forward) * bone_metres / bone_pixels
 			# Too small to read, or entirely off one side of the frame.
 			if s < 0.04 or feet.x + 120.0 * s < 0.0 or feet.x - 120.0 * s > v.width {
 				[]

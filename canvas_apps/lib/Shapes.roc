@@ -8,22 +8,21 @@ Shapes :: [].{
 
 	## One thing in a frame. A later shape in the list paints over an earlier one.
 	Shape : [
-		## A polygon, as x0, y0, x1, y1 and so on. It can be any polygon, until `cut_shapes`
-		## leaves only convex ones for a painter that fills nothing else.
+		## A polygon, as x0, y0, x1, y1 and so on. It can be any polygon. A painter
+		## that fills only convex ones has `ConvexCut` cut the rest into triangles.
 		Poly({ coordinates : List(F64), fill : Brush.Fill }),
-
-		## The triangles of one concave polygon, six numbers each. Only `cut_shapes` makes these.
-		Pieces({ triangle_coordinates : List(F64), fill : Brush.Fill }),
 
 		Disc({ x : F64, y : F64, radius : F64, fill : Brush.Fill }),
 		Rect({ x : F64, y : F64, width : F64, height : F64, fill : Brush.Fill }),
 
 		## A mark, not a shape: how the shapes after it combine, until the next `Blend`.
 		## A painter holds this as a mode, so a mark in the list says it directly.
+		## `Shapes.added_light` writes the pair of marks around a run of shapes.
 		Blend(Shapes.Mode),
 
 		## A mark, not a shape: the space the shapes after it are in, until the next
-		## `View`. It is a mark for the same reason `Blend` is.
+		## `View`. It is a mark for the same reason `Blend` is. `Shapes.in_space`
+		## writes the pair of marks around a run of shapes.
 		View(Shapes.Space),
 
 		## `cols` by `rows` pixels stretched over the box without smoothing. It carries
@@ -67,46 +66,59 @@ Shapes :: [].{
 		World({ target : { x : F64, y : F64 }, offset : { x : F64, y : F64 }, rotation : F64, zoom : F64 }),
 	]
 
-	## The mark back to the game's own pixels, which a HUD is drawn in.
-	screen : Shapes.Shape
-	screen = View(Screen)
+	## The shapes lit in `Add` mode, so each adds its light to what is under it,
+	## and the mode back to `Over` after them.
+	added_light : List(Shapes.Shape) -> List(Shapes.Shape)
+	added_light = |shapes| shapes.prepend(Blend(Add)).append(Blend(Over))
 
-	## A line `w` pixels wide between two points, as the quad it is, so no painter
-	## has to learn a stroke. It has no cap and no join, which suits a gridline.
-	line : F64, F64, F64, F64, F64, Brush.Fill -> Shapes.Shape
-	line = |x0, y0, x1, y1, w, fill| {
-		dx = x1 - x0
-		dy = y1 - y0
-		len = (dx * dx + dy * dy).sqrt()
-		if len == 0.0 {
-			Poly({ coordinates: [], fill })
+	## The shapes in `space`, and the space back to the screen after them.
+	in_space : Shapes.Space, List(Shapes.Shape) -> List(Shapes.Shape)
+	in_space = |space, shapes| shapes.prepend(View(space)).append(View(Screen))
+
+	## A line `width` pixels wide between two points, as the quad it is, so no
+	## painter has to learn a stroke. It has no cap and no join, which suits a
+	## gridline. A line from a point to itself has no direction to be wide
+	## across, and crashes.
+	line : { from : { x : F64, y : F64 }, to : { x : F64, y : F64 }, width : F64 }, Brush.Fill -> Shapes.Shape
+	line = |{ from, to, width }, fill| {
+		dx = to.x - from.x
+		dy = to.y - from.y
+		length = (dx * dx + dy * dy).sqrt()
+		if length == 0.0 {
+			crash "Shapes.line: a line from a point to itself"
 		} else {
 			# The unit normal, half a width each way.
-			nx = 0.0 - dy / len * (w / 2.0)
-			ny = dx / len * (w / 2.0)
-			Poly({ coordinates: [x0 + nx, y0 + ny, x1 + nx, y1 + ny, x1 - nx, y1 - ny, x0 - nx, y0 - ny], fill })
+			nx = 0.0 - dy / length * (width / 2.0)
+			ny = dx / length * (width / 2.0)
+			Poly({ coordinates: [from.x + nx, from.y + ny, to.x + nx, to.y + ny, to.x - nx, to.y - ny, from.x - nx, from.y - ny], fill })
 		}
 	}
 
-	## A circle's outline, as `sides` quads around the rim. A disc under a smaller
-	## disc makes a ring too, but only on a background of a known flat color.
-	ring_shapes : F64, F64, F64, F64, U64, Brush.Fill -> List(Shapes.Shape)
-	ring_shapes = |x, y, r, w, sides, fill| {
-		n = if sides < 3 {
-			3
+	## A circle's outline, as `sides` lines `line_width` wide around the rim. A
+	## disc under a smaller disc makes a ring too, but only on a background of a
+	## known flat color. Fewer than three sides enclose nothing, and crash.
+	ring_shapes : { center : { x : F64, y : F64 }, radius : F64, line_width : F64, sides : U64 }, Brush.Fill -> List(Shapes.Shape)
+	ring_shapes = |{ center, radius, line_width, sides }, fill|
+		if sides < 3 {
+			crash "Shapes.ring_shapes: a ring needs at least three sides"
 		} else {
-			sides
+			var $out = List.with_capacity(sides)
+			for k in 0..<sides {
+				a0 = F64.tau * k.to_f64() / sides.to_f64()
+				a1 = F64.tau * (k + 1).to_f64() / sides.to_f64()
+				$out = $out.append(
+					line(
+						{
+							from: { x: center.x + radius * a0.cos(), y: center.y + radius * a0.sin() },
+							to: { x: center.x + radius * a1.cos(), y: center.y + radius * a1.sin() },
+							width: line_width,
+						},
+						fill,
+					),
+				)
+			}
+			$out
 		}
-		var $out = List.with_capacity(n)
-		for k in 0..<n {
-			a0 = F64.tau * k.to_f64() / n.to_f64()
-			a1 = F64.tau * (k + 1).to_f64() / n.to_f64()
-			$out = $out.append(
-				line(x + r * a0.cos(), y + r * a0.sin(), x + r * a1.cos(), y + r * a1.sin(), w, fill),
-			)
-		}
-		$out
-	}
 
 	## Every x pulled toward `axis` by `k`, so a figure drawn face-on reads as one
 	## turned away by the angle whose cosine is `k`. A negative `k` mirrors it as
@@ -117,7 +129,6 @@ Shapes :: [].{
 		|shape|
 			match shape {
 				Poly(p) => Poly({ coordinates: pulled(p.coordinates, axis, k), fill: p.fill })
-				Pieces(p) => Pieces({ triangle_coordinates: pulled(p.triangle_coordinates, axis, k), fill: p.fill })
 				Disc(d) => Disc({ x: axis + (d.x - axis) * k, y: d.y, radius: d.radius, fill: d.fill })
 				# A mirror sends a rectangle's left edge to its right, and a width is never
 				# negative.
@@ -157,291 +168,66 @@ Shapes :: [].{
 			},
 	)
 
-	pulled : List(F64), F64, F64 -> List(F64)
-	pulled = |xs, axis, k| {
-		n = xs.len()
-		var $out = List.with_capacity(n)
-		var $i = 0
-		while $i + 1 < n {
-			$out = $out.append(axis + (at(xs, $i) - axis) * k)
-			$out = $out.append(at(xs, $i + 1))
-			$i = $i + 2
-		}
-		$out
-	}
-
-	## Light that fades to nothing at `r`.
-	halo : F64, F64, F64, Brush.Rgba, F64 -> Shapes.Shape
-	halo = |x, y, r, colour, alpha|
+	## Light in `color` at the middle, at the colour's own alpha, fading to
+	## nothing at `radius`.
+	halo : { center : { x : F64, y : F64 }, radius : F64 }, Brush.Rgba -> Shapes.Shape
+	halo = |{ center, radius }, color|
 		Disc({
-			x,
-			y,
-			radius: r,
-			fill: Radial({ inner_color: { ..colour, a: alpha }, outer_color: { ..colour, a: 0.0 }, center: { x, y }, inner_radius: 0.0, outer_radius: r }),
+			x: center.x,
+			y: center.y,
+			radius,
+			fill: Radial({ inner_color: color, outer_color: { ..color, a: 0.0 }, center, inner_radius: 0.0, outer_radius: radius }),
 		})
 
-	## A rectangle whose corners are rounded by `r`, each corner drawn in `segments`
-	## steps. A radius of zero gives the plain box, and a radius too big for the box
-	## is held to half its shorter side.
-	rounded_rect : F64, F64, F64, F64, F64, I64, Brush.Fill -> Shapes.Shape
-	rounded_rect = |x, y, w, h, r, segments, fill| {
-		rr = r.min((w / 2.0).min(h / 2.0))
-		if rr <= 0.0 or segments < 1 {
-			Poly({ coordinates: [x, y, x + w, y, x + w, y + h, x, y + h], fill })
+	## A rectangle whose corners are rounded by `corner_radius`, each corner drawn in
+	## `corner_steps` steps. A radius of zero or no steps gives the plain box, and a
+	## radius too big for the box is held to half its shorter side.
+	rounded_rect : { x : F64, y : F64, width : F64, height : F64, corner_radius : F64, corner_steps : U64 }, Brush.Fill -> Shapes.Shape
+	rounded_rect = |{ x, y, width, height, corner_radius, corner_steps }, fill| {
+		radius = corner_radius.min((width / 2.0).min(height / 2.0))
+		if radius <= 0.0 or corner_steps == 0 {
+			Poly({ coordinates: [x, y, x + width, y, x + width, y + height, x, y + height], fill })
 		} else {
-			var $coordinates = List.with_capacity((8 * (segments + 1)).to_u64_wrap())
+			var $coordinates = List.with_capacity(8 * (corner_steps + 1))
 			# Clockwise from the top-left corner, each swept from its own start angle.
-			$coordinates = corner_coordinates($coordinates, x + rr, y + rr, rr, half_pi * 2.0, segments)
-			$coordinates = corner_coordinates($coordinates, x + w - rr, y + rr, rr, -half_pi, segments)
-			$coordinates = corner_coordinates($coordinates, x + w - rr, y + h - rr, rr, 0.0, segments)
-			$coordinates = corner_coordinates($coordinates, x + rr, y + h - rr, rr, half_pi, segments)
+			$coordinates = corner_coordinates($coordinates, { center: { x: x + radius, y: y + radius }, radius, start_angle: half_pi * 2.0, steps: corner_steps })
+			$coordinates = corner_coordinates($coordinates, { center: { x: x + width - radius, y: y + radius }, radius, start_angle: -half_pi, steps: corner_steps })
+			$coordinates = corner_coordinates($coordinates, { center: { x: x + width - radius, y: y + height - radius }, radius, start_angle: 0.0, steps: corner_steps })
+			$coordinates = corner_coordinates($coordinates, { center: { x: x + radius, y: y + height - radius }, radius, start_angle: half_pi, steps: corner_steps })
 			Poly({ coordinates: $coordinates, fill })
 		}
 	}
+}
 
-	half_pi : F64
-	half_pi = F64.pi / 2.0
-
-	## The coordinates of a quarter turn about (cx, cy), starting at the angle `from`.
-	corner_coordinates : List(F64), F64, F64, F64, F64, I64 -> List(F64)
-	corner_coordinates = |coordinates, cx, cy, r, from, segments| {
-		var $out = coordinates
-		for k in 0..=segments {
-			a = from + half_pi * k.to_f64() / segments.to_f64()
-			$out = $out.concat([cx + r * a.cos(), cy + r * a.sin()])
-		}
-		$out
+pulled : List(F64), F64, F64 -> List(F64)
+pulled = |xs, axis, k| {
+	n = xs.len()
+	var $out = List.with_capacity(n)
+	var $i = 0
+	while $i + 1 < n {
+		$out = $out.append(axis + (at(xs, $i) - axis) * k)
+		$out = $out.append(at(xs, $i + 1))
+		$i = $i + 2
 	}
+	$out
+}
 
-	## The frame with each concave polygon cut into triangles, for a painter that
-	## fills only convex polygons, as roc-ray does. A canvas fills a concave polygon
-	## itself and doesn't ask for this. A frame paints the same either way, which the
-	## gates' ShapesFrame checks.
-	cut_shapes : List(Shapes.Shape) -> List(Shapes.Shape)
-	cut_shapes = |shapes| shapes.join_map(
-		|shape|
-			match shape {
-				Poly(p) =>
-					if is_convex(p.coordinates) {
-						[Poly(p)]
-					} else {
-						[Pieces({ triangle_coordinates: wound_triangles(triangles(p.coordinates)), fill: p.fill })]
-					}
-				other => [other]
-			},
-	)
+at : List(F64), U64 -> F64
+at = |xs, i| xs.get(i) ?? crash "Shapes.at: an index past the end of the coordinates"
 
-	## Each triangle wound as roc-ray's convex fill winds one: its second and third
-	## corners swapped when its signed area is positive.
-	wound_triangles : List(F64) -> List(F64)
-	wound_triangles = |tris| {
-		m = tris.len() // 6
-		var $out = List.with_capacity(6 * m)
-		for k in 0..<m {
-			b = 6 * k
-			ax = at(tris, b)
-			ay = at(tris, b + 1)
-			bx = at(tris, b + 2)
-			by = at(tris, b + 3)
-			cx = at(tris, b + 4)
-			cy = at(tris, b + 5)
-			$out = if cross3(ax, ay, bx, by, cx, cy) > 0.0 {
-				$out.concat([ax, ay, cx, cy, bx, by])
-			} else {
-				$out.concat([ax, ay, bx, by, cx, cy])
-			}
-		}
-		$out
+half_pi : F64
+half_pi = F64.pi / 2.0
+
+## The coordinates of a quarter turn about `center`, starting at `start_angle`,
+## onto `coordinates`.
+corner_coordinates : List(F64), { center : { x : F64, y : F64 }, radius : F64, start_angle : F64, steps : U64 } -> List(F64)
+corner_coordinates = |coordinates, { center, radius, start_angle, steps }| {
+	var $out = coordinates
+	for k in 0..=steps {
+		a = start_angle + half_pi * k.to_f64() / steps.to_f64()
+		$out = $out.concat([center.x + radius * a.cos(), center.y + radius * a.sin()])
 	}
-
-	at : List(F64), U64 -> F64
-	at = |xs, i| xs.get(i) ?? 0.0
-
-	cross3 : F64, F64, F64, F64, F64, F64 -> F64
-	cross3 = |ax, ay, bx, by, cx, cy| (bx - ax) * (cy - ay) - (by - ay) * (cx - ax)
-
-	## Twice the signed area, summed as roc-ray's host sums it.
-	twice_area : List(F64) -> F64
-	twice_area = |coordinates| {
-		n = coordinates.len() // 2
-		var $sum = 0.0
-		for k in 0..<n {
-			k1 = if k + 1 == n {
-				0
-			} else {
-				k + 1
-			}
-			$sum = $sum + at(coordinates, 2 * k) * at(coordinates, 2 * k1 + 1) - at(coordinates, 2 * k1) * at(coordinates, 2 * k + 1)
-		}
-		$sum
-	}
-
-	## A convex boundary reverses its horizontal and vertical direction at most twice
-	## each.
-	flip_limit : U64
-	flip_limit = 2
-
-	## Convex when every corner turns the same way and the boundary stays within
-	## `flip_limit`, which rules out a star whose corners all turn one way.
-	is_convex : List(F64) -> Bool
-	is_convex = |coordinates| {
-		n = coordinates.len() // 2
-		var $sign = 0.0
-		var $bad = False
-		var $xflips = 0
-		var $yflips = 0
-		var $xdir = 0.0
-		var $ydir = 0.0
-		var $k = 0
-		while $k < n and !$bad {
-			k1 = if $k + 1 >= n {
-				$k + 1 - n
-			} else {
-				$k + 1
-			}
-			k2 = if $k + 2 >= n {
-				$k + 2 - n
-			} else {
-				$k + 2
-			}
-			x0 = at(coordinates, 2 * $k)
-			y0 = at(coordinates, 2 * $k + 1)
-			x1 = at(coordinates, 2 * k1)
-			y1 = at(coordinates, 2 * k1 + 1)
-			turn = cross3(x0, y0, x1, y1, at(coordinates, 2 * k2), at(coordinates, 2 * k2 + 1))
-			$bad = turn * $sign < 0.0
-			$sign = if $sign == 0.0 {
-				turn
-			} else {
-				$sign
-			}
-			dx = x1 - x0
-			dy = y1 - y0
-			$xflips = if dx != 0.0 and $xdir != 0.0 and (dx > 0.0) != ($xdir > 0.0) {
-				$xflips + 1
-			} else {
-				$xflips
-			}
-			$yflips = if dy != 0.0 and $ydir != 0.0 and (dy > 0.0) != ($ydir > 0.0) {
-				$yflips + 1
-			} else {
-				$yflips
-			}
-			$xdir = if dx != 0.0 {
-				dx
-			} else {
-				$xdir
-			}
-			$ydir = if dy != 0.0 {
-				dy
-			} else {
-				$ydir
-			}
-			$k = $k + 1
-		}
-		!$bad and $xflips <= flip_limit and $yflips <= flip_limit
-	}
-
-	## The polygon cut into triangles by ear clipping, six numbers a triangle. A
-	## corner in line with its neighbors is dropped without a triangle. A polygon
-	## that crosses itself can run out of ears, and what is left is fanned.
-	triangles : List(F64) -> List(F64)
-	triangles = |coordinates| {
-		n = coordinates.len() // 2
-		orient = if twice_area(coordinates) >= 0.0 {
-			1.0
-		} else {
-			-1.0
-		}
-		var $indices = List.from_iter(U64.until(0, n))
-		var $out = List.with_capacity(6 * n)
-		var $i = 0
-		var $misses = 0
-		while $indices.len() > 3 and $misses < $indices.len() {
-			m = $indices.len()
-			ip = if $i == 0 {
-				m - 1
-			} else {
-				$i - 1
-			}
-			inx = if $i + 1 >= m {
-				0
-			} else {
-				$i + 1
-			}
-			a = $indices.get(ip) ?? crash "vertex out of range"
-			b = $indices.get($i) ?? crash "vertex out of range"
-			c = $indices.get(inx) ?? crash "vertex out of range"
-			ax = at(coordinates, 2 * a)
-			ay = at(coordinates, 2 * a + 1)
-			bx = at(coordinates, 2 * b)
-			by = at(coordinates, 2 * b + 1)
-			cx = at(coordinates, 2 * c)
-			cy = at(coordinates, 2 * c + 1)
-			turn = cross3(ax, ay, bx, by, cx, cy) * orient
-			ear = turn >= 0.0 and !any_inside(coordinates, $indices, a, b, c, orient)
-			$out = if ear and turn > 0.0 {
-				$out.concat([ax, ay, bx, by, cx, cy])
-			} else {
-				$out
-			}
-			$indices = if ear {
-				$indices.drop_at($i)
-			} else {
-				$indices
-			}
-			$misses = if ear {
-				0
-			} else {
-				$misses + 1
-			}
-			$i = if ear {
-				if $i >= $indices.len() {
-					0
-				} else {
-					$i
-				}
-			} else {
-				inx
-			}
-		}
-		fan(coordinates, $indices, $out)
-	}
-
-	## Whether a remaining corner other than a, b and c lies strictly inside the
-	## triangle a b c.
-	any_inside : List(F64), List(U64), U64, U64, U64, F64 -> Bool
-	any_inside = |coordinates, indices, a, b, c, orient| {
-		ax = at(coordinates, 2 * a)
-		ay = at(coordinates, 2 * a + 1)
-		bx = at(coordinates, 2 * b)
-		by = at(coordinates, 2 * b + 1)
-		cx = at(coordinates, 2 * c)
-		cy = at(coordinates, 2 * c + 1)
-		indices.any(
-			|p| {
-				px = at(coordinates, 2 * p)
-				py = at(coordinates, 2 * p + 1)
-				p != a and p != b and p != c and cross3(ax, ay, bx, by, px, py) * orient > 0.0 and cross3(bx, by, cx, cy, px, py) * orient > 0.0 and cross3(cx, cy, ax, ay, px, py) * orient > 0.0
-			},
-		)
-	}
-
-	## The remaining corners as a fan from the first, onto `out`.
-	fan : List(F64), List(U64), List(F64) -> List(F64)
-	fan = |coordinates, indices, out| {
-		m = indices.len()
-		first = indices.get(0) ?? 0
-		var $out = out
-		var $k = 1
-		while $k + 1 < m {
-			p = indices.get($k) ?? crash "vertex out of range"
-			q = indices.get($k + 1) ?? crash "vertex out of range"
-			$out = $out.concat([at(coordinates, 2 * first), at(coordinates, 2 * first + 1), at(coordinates, 2 * p), at(coordinates, 2 * p + 1), at(coordinates, 2 * q), at(coordinates, 2 * q + 1)])
-			$k = $k + 1
-		}
-		$out
-	}
+	$out
 }
 
 ## A line of type 100 px from the axis at 0.
@@ -459,3 +245,19 @@ line_of_type = {
 expect Shapes.squashed_shapes([Text(line_of_type)], 0.0, 0.5) == [Text({ ..line_of_type, x: 50.0 })]
 expect Shapes.squashed_shapes([Text(line_of_type)], 0.0, -1.0) == [Text({ ..line_of_type, x: -100.0 })]
 expect Shapes.squashed_shapes([Text(line_of_type)], 100.0, 0.5) == [Text(line_of_type)]
+
+## A dot of light, as the shape both brackets hold.
+dot : Shapes.Shape
+dot = Disc({ x: 1.0, y: 2.0, radius: 3.0, fill: Flat(Brush.opaque(RgbColor.of(0x202020))) })
+
+expect Shapes.added_light([dot]) == [Blend(Add), dot, Blend(Over)]
+expect Shapes.added_light([]) == [Blend(Add), Blend(Over)]
+expect Shapes.in_space(Screen, [dot]) == [View(Screen), dot, View(Screen)]
+
+# A horizontal line two wide stands one each side of its axis.
+expect
+	Shapes.line({ from: { x: 0.0, y: 0.0 }, to: { x: 10.0, y: 0.0 }, width: 2.0 }, Flat(Brush.opaque(RgbColor.of(0x202020))))
+		== Poly({ coordinates: [0.0, 1.0, 10.0, 1.0, 10.0, -1.0, 0.0, -1.0], fill: Flat(Brush.opaque(RgbColor.of(0x202020))) })
+
+# The fewest sides a ring may have make three lines.
+expect Shapes.ring_shapes({ center: { x: 0.0, y: 0.0 }, radius: 5.0, line_width: 1.0, sides: 3 }, Flat(Brush.opaque(RgbColor.of(0x202020)))).len() == 3

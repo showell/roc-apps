@@ -87,25 +87,10 @@ Sun :: [].{
 	look = |sun| {
 		scale = sun.scale.to_f64()
 		{
-			glow: Glow({
-				inner_color: {
-					r: 255.0,
-					g: 201.0,
-					b: 128.0,
-					a: 0.85,
-				},
-				middle_color: {
-					r: 255.0,
-					g: 150.0,
-					b: 92.0,
-					a: 0.32,
-				},
-				outer_color: {
-					r: 255.0,
-					g: 150.0,
-					b: 92.0,
-					a: 0.0,
-				},
+			glow: Brush.glow({
+				inner_color: Brush.with_alpha(RgbColor.of(0xFFC980), 0.85),
+				middle_color: Brush.with_alpha(RgbColor.of(0xFF965C), 0.32),
+				outer_color: Brush.with_alpha(RgbColor.of(0xFF965C), 0.0),
 				middle_offset: 0.4,
 				center: { x: sun.x.to_f64(), y: sun.y.to_f64() },
 				inner_radius: glow_inner_radius.times(scale).to_f64(),

@@ -35,24 +35,30 @@ SafariApp :: [].{
 	##
 	## The whole frame leans, backdrop and all, so the world banks into a turn.
 	## That is a camera whose target and offset are both the middle of the
-	## screen and whose rotation is the roll, the other way round: a `View`
-	## mark in front of everything else.
+	## screen and whose rotation is the roll, the other way round: a space
+	## around everything else.
 	frame_shapes : Tour -> List(Shapes.Shape)
 	frame_shapes = |tour| {
-		centre = { x: Screen.width.to_f64() / 2.0, y: Screen.height.to_f64() / 2.0 }
-		lean = View(
-			World({
-				target: centre,
-				offset: centre,
-				rotation: 0.0 - Tour.roll(tour).to_degrees(),
-				zoom: 1.0,
-			}),
-		)
 		frame = Tour.frame_content(tour)
-		Backdrop.frame_shapes(
-			frame.shapes,
-			{ sky_colors: Tour.sky_colors(tour), sun_sighting: frame.sun },
-		).prepend(lean)
+		Shapes.in_space(
+			lean_space(tour),
+			Backdrop.frame_shapes(
+				frame.shapes,
+				{ sky_colors: Tour.sky_colors(tour), sun_sighting: frame.sun },
+			),
+		)
+	}
+
+	## The space the whole frame leans in.
+	lean_space : Tour -> Shapes.Space
+	lean_space = |tour| {
+		centre = { x: Screen.width.to_f64() / 2.0, y: Screen.height.to_f64() / 2.0 }
+		World({
+			target: centre,
+			offset: centre,
+			rotation: 0.0 - Tour.roll(tour).to_degrees(),
+			zoom: 1.0,
+		})
 	}
 
 	model_at_next_step : SafariApp.Model, Input.Snapshot -> SafariApp.Model

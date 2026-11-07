@@ -33,6 +33,7 @@ import rr.Shader
 import lib.Brush
 import lib.BrushGlsl
 import lib.CanvasApp
+import lib.ConvexCut
 import lib.Font
 import lib.Input
 import lib.Keys
@@ -232,7 +233,7 @@ CanvasAppRunner :: [].{
 		the_frame = game.frame_shapes
 		# roc-ray fills convex polygons only, so a concave one is cut here. A
 		# game does not know or care; a canvas does not ask.
-		shapes = Shapes.cut_shapes(the_frame(model.state))
+		shapes = ConvexCut.cut_shapes(the_frame(model.state))
 		frame.with_render_texture!(
 			model.target,
 			|big| {
@@ -263,7 +264,7 @@ CanvasAppRunner :: [].{
 	# there does not disturb the blend; cutting the frame twice here, once per
 	# mark, would have reset the mode at every view boundary and lit a glow on
 	# a page that was flat natively.
-	draw_runs! : Shader(CanvasAppRunner.BrushUniforms), { width : F64, height : F64 }, Draw.Frame, List(Shapes.Shape) => {}
+	draw_runs! : Shader(CanvasAppRunner.BrushUniforms), { width : F64, height : F64 }, Draw.Frame, List(ConvexCut.CutShape) => {}
 	draw_runs! = |shader, size, frame, shapes| {
 		n = List.len(shapes)
 		var $run = List.with_capacity(n)
@@ -272,12 +273,12 @@ CanvasAppRunner :: [].{
 		var $k = 0
 		while $k < n {
 			match List.get(shapes, $k) ?? crash ("shape out of range") {
-				Blend(next) => {
+				Uncut(Blend(next)) => {
 					draw_run!(shader, size, frame, $run, $space, $mode)
 					$run = List.with_capacity(n - $k)
 					$mode = next
 				}
-				View(next) => {
+				Uncut(View(next)) => {
 					draw_run!(shader, size, frame, $run, $space, $mode)
 					$run = List.with_capacity(n - $k)
 					$space = next
@@ -291,7 +292,7 @@ CanvasAppRunner :: [].{
 		draw_run!(shader, size, frame, $run, $space, $mode)
 	}
 
-	draw_run! : Shader(CanvasAppRunner.BrushUniforms), { width : F64, height : F64 }, Draw.Frame, List(Shapes.Shape), Shapes.Space, Shapes.Mode => {}
+	draw_run! : Shader(CanvasAppRunner.BrushUniforms), { width : F64, height : F64 }, Draw.Frame, List(ConvexCut.CutShape), Shapes.Space, Shapes.Mode => {}
 	draw_run! = |shader, size, frame, run, space, mode|
 		if List.is_empty(run) {
 			{}
@@ -309,7 +310,7 @@ CanvasAppRunner :: [].{
 			}
 		}
 
-	draw_under! : Shader(CanvasAppRunner.BrushUniforms), Draw.Frame, List(Shapes.Shape), Shapes.Mode => {}
+	draw_under! : Shader(CanvasAppRunner.BrushUniforms), Draw.Frame, List(ConvexCut.CutShape), Shapes.Mode => {}
 	draw_under! = |shader, frame, run, mode|
 		match mode {
 			Over => draw_all!(shader, frame, run)
@@ -346,7 +347,7 @@ CanvasAppRunner :: [].{
 				})
 		}
 
-	draw_all! : Shader(CanvasAppRunner.BrushUniforms), Draw.Frame, List(Shapes.Shape) => {}
+	draw_all! : Shader(CanvasAppRunner.BrushUniforms), Draw.Frame, List(ConvexCut.CutShape) => {}
 	draw_all! = |shader, frame, shapes| {
 		n = List.len(shapes)
 		var $k = 0
@@ -357,24 +358,28 @@ CanvasAppRunner :: [].{
 		{}
 	}
 
-	draw_shape! : Shader(CanvasAppRunner.BrushUniforms), Draw.Frame, Shapes.Shape => {}
-	draw_shape! = |shader, frame, shape|
-		match shape {
-			Poly(p) => with_fill!(shader, frame, p.fill, |f, col| f.convex_polygon!({ points: points(p.coordinates), style: Draw.filled(col) }))
-			Pieces(p) => with_fill!(shader, frame, p.fill, |f, col| draw_triangles!(f, p.triangle_coordinates, col))
-			Disc(d) => with_fill!(shader, frame, d.fill, |f, col| f.circle!({ center: point(d.x, d.y), radius: F64.to_f32_wrap(d.radius), style: Draw.filled(col) }))
-			Rect(r) => with_fill!(shader, frame, r.fill, |f, col| f.rectangle!({ x: F64.to_f32_wrap(r.x), y: F64.to_f32_wrap(r.y), width: F64.to_f32_wrap(r.width), height: F64.to_f32_wrap(r.height), style: Draw.filled(col) }))
-			# **roc-ray IS HANDED THE RECTANGLES**, as it is handed triangles
-			# for a concave polygon: each painter gets a frame in the form it
-			# can paint. A canvas has `putImageData`; here a texture would be
-			# a GPU resource created and dropped every frame, since `render!`
-			# cannot keep one.
-			Image(i) => draw_pixels!(frame, i)
-			# roc-ray is handed no typeface, so a line of type arrives as strokes.
-			Text(line) => draw_all!(shader, frame, Font.plotted(line))
-			# Runs are split before this, so a mark never reaches here.
-			Blend(_) => {}
-			View(_) => {}
+	draw_shape! : Shader(CanvasAppRunner.BrushUniforms), Draw.Frame, ConvexCut.CutShape => {}
+	draw_shape! = |shader, frame, cut_shape|
+		match cut_shape {
+			Triangles(t) => with_fill!(shader, frame, t.fill, |f, col| draw_triangles!(f, t.triangle_coordinates, col))
+			Uncut(shape) =>
+				match shape {
+					Poly(p) => with_fill!(shader, frame, p.fill, |f, col| f.convex_polygon!({ points: points(p.coordinates), style: Draw.filled(col) }))
+					Disc(d) => with_fill!(shader, frame, d.fill, |f, col| f.circle!({ center: point(d.x, d.y), radius: F64.to_f32_wrap(d.radius), style: Draw.filled(col) }))
+					Rect(r) => with_fill!(shader, frame, r.fill, |f, col| f.rectangle!({ x: F64.to_f32_wrap(r.x), y: F64.to_f32_wrap(r.y), width: F64.to_f32_wrap(r.width), height: F64.to_f32_wrap(r.height), style: Draw.filled(col) }))
+					# **roc-ray IS HANDED THE RECTANGLES**, as it is handed triangles
+					# for a concave polygon: each painter gets a frame in the form it
+					# can paint. A canvas has `putImageData`; here a texture would be
+					# a GPU resource created and dropped every frame, since `render!`
+					# cannot keep one.
+					Image(i) => draw_pixels!(frame, i)
+					# roc-ray is handed no typeface, so a line of type arrives as
+					# strokes, each a quad and so convex already.
+					Text(line) => draw_all!(shader, frame, Font.plotted(line).map(|stroke| Uncut(stroke)))
+					# Runs are split before this, so a mark never reaches here.
+					Blend(_) => {}
+					View(_) => {}
+				}
 		}
 
 	draw_pixels! : Draw.Frame, { x : F64, y : F64, width : F64, height : F64, cols : U64, rows : U64, pixels : List(Brush.Rgba) } => {}

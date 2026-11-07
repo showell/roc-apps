@@ -1,20 +1,21 @@
 # CameraDraw -- roc-ray's examples/camera as a frame value.
 #
 # Upstream's `render!` opens a camera scope and draws into it; this answers a
-# list, and the scope is two marks in that list. **THE MARKS ARE THE WHOLE
-# DIFFERENCE**: `eye.view()` says the shapes after it are in the world, and
-# `Shapes.screen` says the ones after that are back in the window. Between
-# them is upstream's `draw_world!`, point for point.
+# list, and the scope is a pair of marks in that list. **THE MARKS ARE THE
+# WHOLE DIFFERENCE**: `Shapes.in_space(eye.space(), ...)` puts the shapes it
+# holds in the world, and the window takes the ones after it. What it holds is
+# upstream's `draw_world!`, point for point.
 #
 # The text is bigger than upstream's per character -- a plotter alphabet is
 # wider than a typeface -- so the panel is wider and the sizes are smaller.
 # The words are upstream's, with `+` spelled as a comma because a stroke font
 # with no plus sign draws nothing at all and says nothing about it.
 import lib.Brush
+import lib.ArgbColor
 import lib.Camera
-import lib.Color
 import lib.Font
 import lib.Math
+import lib.RgbColor
 import lib.Shapes
 import Rules
 
@@ -27,11 +28,7 @@ CameraDraw :: [].{
 		seen = eye.viewport(Rules.screen)
 
 		var $out = [backdrop]
-		# Everything after this mark is in the world.
-		$out = List.append($out, eye.view())
-		$out = List.concat($out, world_shapes(world.player, mouse_world, seen))
-		# And everything after this one is back in the window.
-		$out = List.append($out, Shapes.screen)
+		$out = List.concat($out, Shapes.in_space(eye.space(), world_shapes(world.player, mouse_world, seen)))
 		$out = List.concat($out, pointer_mark(mouse_screen))
 		List.concat($out, hud(world, mouse_world))
 	}
@@ -56,20 +53,20 @@ CameraDraw :: [].{
 		bottom = f(Rules.world_bottom)
 
 		var $out = [Rect({ x: left, y: top, width: right - left, height: bottom - top, fill: Flat(hex(0x16222b)) })]
-		$out = List.concat($out, box(left, top, right, bottom, 3.0, dim(0x5fa8d3, 90)))
+		$out = List.concat($out, box({ left, top, right, bottom, line_width: 3.0 }, dim(0x5a5fa8d3)))
 		$out = List.concat($out, grid(seen))
 
 		$out = List.concat($out, landmark(-320.0, -160.0, 360.0, 260.0, hex(0x3b6f8f)))
 		$out = List.concat($out, landmark(280.0, 120.0, 520.0, 340.0, hex(0x4c8f5f)))
 		$out = List.concat($out, landmark(860.0, -280.0, 420.0, 460.0, hex(0x8f6540)))
 
-		axis_color = dim(0xffd166, 200)
-		$out = List.append($out, Shapes.line(left, 0.0, right, 0.0, 3.0, Flat(axis_color)))
-		$out = List.append($out, Shapes.line(0.0, top, 0.0, bottom, 3.0, Flat(axis_color)))
+		axis_color = dim(0xc8ffd166)
+		$out = List.append($out, Shapes.line({ from: { x: left, y: 0.0 }, to: { x: right, y: 0.0 }, width: 3.0 }, Flat(axis_color)))
+		$out = List.append($out, Shapes.line({ from: { x: 0.0, y: top }, to: { x: 0.0, y: bottom }, width: 3.0 }, Flat(axis_color)))
 
 		$out = List.concat($out, marker(f(player.x), f(player.y)))
 		# The pointer, where it actually is in the world.
-		List.concat($out, Shapes.ring_shapes(f(mouse_world.x), f(mouse_world.y), 10.0, 2.0, 20, Flat(hex(0xffd166))))
+		List.concat($out, Shapes.ring_shapes({ center: { x: f(mouse_world.x), y: f(mouse_world.y) }, radius: 10.0, line_width: 2.0, sides: 20 }, Flat(hex(0xffd166))))
 	}
 
 	# A world landmark: a soft shadow, the slab, and a lighter cap so the world
@@ -77,23 +74,23 @@ CameraDraw :: [].{
 	landmark : F64, F64, F64, F64, Brush.Rgba -> List(Shapes.Shape)
 	landmark = |x, y, w, h, color|
 		[
-			Rect({ x: x + 10.0, y: y + 14.0, width: w, height: h, fill: Flat({ r: 0.0, g: 0.0, b: 0.0, a: 90.0 / 255.0 }) }),
+			Rect({ x: x + 10.0, y: y + 14.0, width: w, height: h, fill: Flat(dim(0x5A000000)) }),
 			Rect({ x, y, width: w, height: h, fill: Flat(color) }),
-			Rect({ x, y, width: w, height: 10.0, fill: Flat({ r: 255.0, g: 255.0, b: 255.0, a: 45.0 / 255.0 }) }),
+			Rect({ x, y, width: w, height: 10.0, fill: Flat(dim(0x2Dffffff)) }),
 		]
 
 	# The player: a shadow, the disc, its white rim, and the cross that shows
 	# which way the world is turned.
 	marker : F64, F64 -> List(Shapes.Shape)
 	marker = |x, y| {
-		white = { r: 255.0, g: 255.0, b: 255.0, a: 1.0 }
+		white = hex(0xffffff)
 		var $out = [
-			Disc({ x, y: y + 6.0, radius: 26.0, fill: Flat({ r: 0.0, g: 0.0, b: 0.0, a: 110.0 / 255.0 }) }),
+			Disc({ x, y: y + 6.0, radius: 26.0, fill: Flat(dim(0x6E000000)) }),
 			Disc({ x, y, radius: 26.0, fill: Flat(hex(0xef476f)) }),
 		]
-		$out = List.concat($out, Shapes.ring_shapes(x, y, 26.0, 4.0, 28, Flat(white)))
-		$out = List.append($out, Shapes.line(x - 42.0, y, x + 42.0, y, 3.0, Flat(white)))
-		List.append($out, Shapes.line(x, y - 42.0, x, y + 42.0, 3.0, Flat(white)))
+		$out = List.concat($out, Shapes.ring_shapes({ center: { x, y }, radius: 26.0, line_width: 4.0, sides: 28 }, Flat(white)))
+		$out = List.append($out, Shapes.line({ from: { x: x - 42.0, y }, to: { x: x + 42.0, y }, width: 3.0 }, Flat(white)))
+		List.append($out, Shapes.line({ from: { x, y: y - 42.0 }, to: { x, y: y + 42.0 }, width: 3.0 }, Flat(white)))
 	}
 
 	# **THE GRID IS WHY THE CAMERA HAS TO BE A VALUE THE GAME HOLDS.** Every
@@ -102,7 +99,7 @@ CameraDraw :: [].{
 	# which of them can be seen, and only the camera knows.
 	grid : Math.Rect -> List(Shapes.Shape)
 	grid = |seen| {
-		faint = Flat(dim(0xffffff, 55))
+		faint = Flat(dim(0x37ffffff))
 		top = f(Rules.world_top)
 		bottom = f(Rules.world_bottom)
 		left = f(Rules.world_left)
@@ -112,7 +109,7 @@ CameraDraw :: [].{
 		var $x = left
 		while $x <= right {
 			if $x >= f(seen.x) and $x <= f(seen.x) + f(seen.width) {
-				$out = List.append($out, Shapes.line($x, top, $x, bottom, 1.0, faint))
+				$out = List.append($out, Shapes.line({ from: { x: $x, y: top }, to: { x: $x, y: bottom }, width: 1.0 }, faint))
 			} else {
 				{}
 			}
@@ -121,7 +118,7 @@ CameraDraw :: [].{
 		var $y = top
 		while $y <= bottom {
 			if $y >= f(seen.y) and $y <= f(seen.y) + f(seen.height) {
-				$out = List.append($out, Shapes.line(left, $y, right, $y, 1.0, faint))
+				$out = List.append($out, Shapes.line({ from: { x: left, y: $y }, to: { x: right, y: $y }, width: 1.0 }, faint))
 			} else {
 				{}
 			}
@@ -138,24 +135,24 @@ CameraDraw :: [].{
 	pointer_mark = |at| {
 		x = f(at.x)
 		y = f(at.y)
-		arm = Flat(dim(0xffd166, 140))
-		var $out = Shapes.ring_shapes(x, y, 7.0, 2.0, 16, Flat(hex(0xffd166)))
-		$out = List.append($out, Shapes.line(x - 14.0, y, x + 14.0, y, 1.0, arm))
-		List.append($out, Shapes.line(x, y - 14.0, x, y + 14.0, 1.0, arm))
+		arm = Flat(dim(0x8Cffd166))
+		var $out = Shapes.ring_shapes({ center: { x, y }, radius: 7.0, line_width: 2.0, sides: 16 }, Flat(hex(0xffd166)))
+		$out = List.append($out, Shapes.line({ from: { x: x - 14.0, y }, to: { x: x + 14.0, y }, width: 1.0 }, arm))
+		List.append($out, Shapes.line({ from: { x, y: y - 14.0 }, to: { x, y: y + 14.0 }, width: 1.0 }, arm))
 	}
 
 	hud : Rules.World, Math.Vec2 -> List(Shapes.Shape)
 	hud = |world, mouse_world| {
 		var $out = [
-			Shapes.rounded_rect(15.0, 15.0, 462.0, 128.0, 13.0, 8, Flat(dim(0xffffff, 40))),
-			Shapes.rounded_rect(16.0, 16.0, 460.0, 126.0, 12.0, 8, Flat(dim(0x0b1219, 215))),
+			Shapes.rounded_rect({ x: 15.0, y: 15.0, width: 462.0, height: 128.0, corner_radius: 13.0, corner_steps: 8 }, Flat(dim(0x28ffffff))),
+			Shapes.rounded_rect({ x: 16.0, y: 16.0, width: 460.0, height: 126.0, corner_radius: 12.0, corner_steps: 8 }, Flat(dim(0xD70b1219))),
 		]
-		$out = List.concat($out, Font.text_shapes("Camera world", 32.0, 28.0, 20.0, hex(0xffffff)))
-		$out = List.concat($out, Font.text_shapes("world-space draw, screen-space HUD", 32.0, 58.0, 12.0, hex(0x8fa3b8)))
-		$out = List.append($out, Shapes.line(32.0, 80.0, 460.0, 80.0, 1.0, Flat(dim(0xffffff, 30))))
+		$out = List.concat($out, Font.text_shapes("Camera world", { top_left: { x: 32.0, y: 28.0 }, size: 20.0, color: hex(0xffffff) }))
+		$out = List.concat($out, Font.text_shapes("world-space draw, screen-space HUD", { top_left: { x: 32.0, y: 58.0 }, size: 12.0, color: hex(0x8fa3b8) }))
+		$out = List.append($out, Shapes.line({ from: { x: 32.0, y: 80.0 }, to: { x: 460.0, y: 80.0 }, width: 1.0 }, Flat(dim(0x1Effffff))))
 		# The pointer in both spaces at once, which is the whole demonstration.
-		$out = List.concat($out, Font.text_shapes(readout(world, mouse_world), 32.0, 88.0, 13.0, hex(0xffd166)))
-		List.concat($out, Font.text_shapes("WASD move, wheel zoom, Q/E rotate, R reset", 32.0, 112.0, 10.0, hex(0x8fa3b8)))
+		$out = List.concat($out, Font.text_shapes(readout(world, mouse_world), { top_left: { x: 32.0, y: 88.0 }, size: 13.0, color: hex(0xffd166) }))
+		List.concat($out, Font.text_shapes("WASD move, wheel zoom, Q/E rotate, R reset", { top_left: { x: 32.0, y: 112.0 }, size: 10.0, color: hex(0x8fa3b8) }))
 	}
 
 	readout : Rules.World, Math.Vec2 -> Str
@@ -172,22 +169,27 @@ CameraDraw :: [].{
 	# ── the small arithmetic ───────────────────────────────────────────────
 
 	# A rectangle's outline, as the four lines it is.
-	box : F64, F64, F64, F64, F64, Brush.Rgba -> List(Shapes.Shape)
-	box = |left, top, right, bottom, w, color| {
+	box : { left : F64, top : F64, right : F64, bottom : F64, line_width : F64 }, Brush.Rgba -> List(Shapes.Shape)
+	box = |{ left, top, right, bottom, line_width }, color| {
 		fill = Flat(color)
+		top_left = { x: left, y: top }
+		top_right = { x: right, y: top }
+		bottom_right = { x: right, y: bottom }
+		bottom_left = { x: left, y: bottom }
 		[
-			Shapes.line(left, top, right, top, w, fill),
-			Shapes.line(right, top, right, bottom, w, fill),
-			Shapes.line(right, bottom, left, bottom, w, fill),
-			Shapes.line(left, bottom, left, top, w, fill),
+			Shapes.line({ from: top_left, to: top_right, width: line_width }, fill),
+			Shapes.line({ from: top_right, to: bottom_right, width: line_width }, fill),
+			Shapes.line({ from: bottom_right, to: bottom_left, width: line_width }, fill),
+			Shapes.line({ from: bottom_left, to: top_left, width: line_width }, fill),
 		]
 	}
 
 	hex : I64 -> Brush.Rgba
-	hex = |value| Color.brush(Color.from_hex_rgb(value))
+	hex = |rgb| Brush.opaque(RgbColor.of(rgb))
 
-	dim : I64, U8 -> Brush.Rgba
-	dim = |value, alpha| Color.brush(Color.with_alpha(Color.from_hex_rgb(value), alpha))
+	# A colour with its alpha byte, 0xAARRGGBB.
+	dim : I64 -> Brush.Rgba
+	dim = |argb| Brush.translucent(ArgbColor.of(argb))
 
 	# The world is written in F32, as roc-ray's examples are; a frame is F64.
 	f : F32 -> F64

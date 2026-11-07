@@ -253,11 +253,11 @@ shapes_from_behind_rider = |{ across, lean }| {
 				fill: ScrubWidget.flat(road_color),
 			}),
 			Shapes.line(
-				foot,
-				surface_y,
-				head_x,
-				head_y,
-				6.0,
+				{
+					from: { x: foot, y: surface_y },
+					to: { x: head_x, y: head_y },
+					width: 6.0,
+				},
 				ScrubWidget.flat(rider_color),
 			),
 			Disc({

@@ -2,7 +2,7 @@
 #
 # **THE FIRST MOVIE HERE WITH A WORLD IN IT.** capture_plot and particles draw
 # in screen coordinates; the skeletons used to dance on a flat black rectangle.
-# This one puts things in metres -- right, forward, height -- and asks View
+# This one puts things in metres -- right, forward, height -- and asks Eye
 # where they land, so walking is one number changing and everything else
 # follows: the house grows, the path widens, the skeletons pass by.
 #
@@ -18,7 +18,7 @@
 # TrickOrTreatApp.roc is what a runner is handed; the scrubbing lives there,
 # as five keys.
 import lib.Shapes
-import lib.View
+import lib.Eye
 import Walk
 import Night
 import Fence
@@ -47,7 +47,7 @@ Halloween :: [].{
 
 	# The eye, wherever the walk has it and whichever way the walk has it
 	# facing.
-	view_of : I64 -> View.View
+	view_of : I64 -> Eye.Eye
 	view_of = |tick| { width: width, height: height, eye: Walk.eye(tick), focal: focal, heading: Walk.heading(tick) }
 
 	shapes : Halloween.Model -> List(Shapes.Shape)
@@ -61,7 +61,7 @@ Halloween :: [].{
 		$out = List.concat($out, Night.street(v, now))
 		$out = List.concat($out, Fence.shapes(v, now))
 		$out = List.concat($out, Streetlight.shapes(v, 0.0 - 1.1 - now))
-		$out = if hf > View.near {
+		$out = if hf > Eye.near {
 			List.concat($out, House.shapes(v, hf, Walk.door_open(tick)))
 		} else {
 			$out

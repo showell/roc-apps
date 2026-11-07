@@ -1,6 +1,6 @@
 ## ShapesFrame checks that cutting a frame changes nothing on screen. The
 ## browser fills a concave polygon itself, but roc-ray fills only convex ones,
-## so the native runner draws what Shapes.cut makes of a frame: each concave
+## so the native runner draws what ConvexCut makes of a frame: each concave
 ## polygon as triangles. Safari's gate runs this check (see SafariFrame for
 ## more context). It paints a frame twice with ShapesPixels: once as
 ## SafariFrame paints it, with its polygons whole, and once with them cut.
@@ -20,18 +20,37 @@ app [main!] { game: "../game.roc", lib: "../../lib/main.roc" }
 import game.Tour
 import SafariFrame
 import ShapesPixels
+import lib.ConvexCut
 import lib.Shapes
 import game.Screen
 import Hex
 import ProofRide
 
-triangles : List(Shapes.Shape) -> U64
-triangles = |shapes| shapes.fold(
+triangles : List(ConvexCut.CutShape) -> U64
+triangles = |cut_shapes| cut_shapes.fold(
 	0,
-	|n, s|
-		match s {
-			Pieces(p) => n + p.triangle_coordinates.len() // 6
-			_ => n
+	|n, cut_shape|
+		match cut_shape {
+			Triangles(t) => n + t.triangle_coordinates.len() // 6
+			Uncut(_) => n
+		},
+)
+
+## The cut frame as shapes ShapesPixels paints: each triangle a polygon of its
+## own, with its polygon's fill.
+shapes_of_cut : List(ConvexCut.CutShape) -> List(Shapes.Shape)
+shapes_of_cut = |cut_shapes| cut_shapes.join_map(
+	|cut_shape|
+		match cut_shape {
+			Uncut(shape) => [shape]
+			Triangles(t) =>
+				List.from_iter(U64.until(0, t.triangle_coordinates.len() // 6)).map(
+					|k|
+						Poly({
+							coordinates: t.triangle_coordinates.sublist({ start: 6 * k, len: 6 }),
+							fill: t.fill,
+						}),
+				)
 		},
 )
 
@@ -50,12 +69,12 @@ compare = |tour| {
 		sky_colors: Tour.sky_colors(tour),
 		sun: frame.sun,
 	}
-	cut_shapes = Shapes.cut_shapes(instant_shapes)
+	cut_shapes = ConvexCut.cut_shapes(instant_shapes)
 	a = SafariFrame.picture_pixels(scene)
 	backdrop = SafariFrame.picture_pixels({ ..scene, shapes: [] })
 	b = ShapesPixels.pixels_with_shapes(
 		backdrop,
-		{ roll: SafariFrame.screen_roll(roll), shapes: cut_shapes },
+		{ roll: SafariFrame.screen_roll(roll), shapes: shapes_of_cut(cut_shapes) },
 	)
 	n = a.len()
 	var $differ = 0

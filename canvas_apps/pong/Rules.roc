@@ -3,9 +3,10 @@
 ##
 ## Ported from roc-ray's examples/pong, which keeps all of this in main.roc
 ## beside its drawing and its driver. The rules are lifted verbatim, tests and
-## all; only the two import lines differ, because `lib.Math` and `lib.Random`
-## offer what `rr.Math` and `rr.Random` offer, under the same names.
-import lib.Color
+## all. `lib.Math` and `lib.Random` offer what `rr.Math` and `rr.Random` offer,
+## under the same names, and the palette's colours are `RgbColor`s, the canvas
+## apps' one way to write a colour.
+import lib.RgbColor
 import lib.Math
 import lib.Random
 
@@ -35,7 +36,7 @@ Rules :: [].{
 		trail : List(Math.Vec2),
 		flash : {
 			intensity : F32,
-			color : Color.Rgba,
+			color : RgbColor,
 		},
 
 		## Simulation randomness lives in the model, so a serve is drawn on the
@@ -89,17 +90,17 @@ Rules :: [].{
 	trail_spacing = 11.F32
 
 	# --- Palette: one dark field, two rival neons, one warm ball ---
-	field_top = Color.from_hex_rgb(0x141a35)
+	field_top = RgbColor.of(0x141a35)
 
-	field_bottom = Color.from_hex_rgb(0x05060f)
+	field_bottom = RgbColor.of(0x05060f)
 
-	left_neon = Color.from_hex_rgb(0x38e8ff)
+	left_neon = RgbColor.of(0x38e8ff)
 
-	right_neon = Color.from_hex_rgb(0xff4fa3)
+	right_neon = RgbColor.of(0xff4fa3)
 
-	ball_neon = Color.from_hex_rgb(0xffe7a3)
+	ball_neon = RgbColor.of(0xffe7a3)
 
-	hint_color = Color.from_hex_rgb(0x6d7aa8)
+	hint_color = RgbColor.of(0x6d7aa8)
 
 	# A random vertical serve speed in px/second, so each serve leaves at a
 	# different angle instead of the same predictable line.

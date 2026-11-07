@@ -31,7 +31,7 @@ Skeleton :: [].{
 	end_of = |x, y, angle, len| { x: x + angle.sin() * len, y: y + angle.cos() * len }
 
 	rib : F64, F64, F64, F64, F64 -> Shapes.Shape
-	rib = |x0, y0, x1, y1, w| Shapes.line(x0, y0, x1, y1, w, Flat(bone))
+	rib = |x0, y0, x1, y1, w| Shapes.line({ from: { x: x0, y: y0 }, to: { x: x1, y: y1 }, width: w }, Flat(bone))
 
 	joint : F64, F64, F64 -> Shapes.Shape
 	joint = |x, y, r| Disc({ x: x, y: y, radius: r, fill: Flat(bone) })

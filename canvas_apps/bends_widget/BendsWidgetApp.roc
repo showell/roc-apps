@@ -169,14 +169,7 @@ foot_shapes = |bend, corners|
 			from = canvas_point(bend, { right: a.right, forward: a.forward })
 			to = canvas_point(bend, { right: b.right, forward: b.forward })
 			[
-				Shapes.line(
-					from.x,
-					from.y,
-					to.x,
-					to.y,
-					2.0,
-					ScrubWidget.flat(rail_color),
-				),
+				Shapes.line({ from, to, width: 2.0 }, ScrubWidget.flat(rail_color)),
 			]
 		}
 		_ => []

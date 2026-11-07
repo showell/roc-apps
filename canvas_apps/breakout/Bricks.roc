@@ -1,16 +1,16 @@
 ## The authored brick wall and operations that change it.
 ##
-## Ported from roc-ray's examples/breakout. `lib.Math` and `lib.Color` offer
-## what `rr.Math` and `rr.Color` offer under the same names, so the import line
-## is the whole diff.
-import lib.Color
+## Ported from roc-ray's examples/breakout. `lib.Math` offers what `rr.Math`
+## offers under the same names, and a brick's colour is an RgbColor, the canvas
+## apps' one way to write a colour.
+import lib.RgbColor
 import lib.Math
 
 Bricks := [].{
 	Brick : {
 		id : U64,
 		rect : Math.Rect,
-		color : Color.Rgba,
+		color : RgbColor,
 	}
 
 	score = 10.U64
@@ -61,14 +61,14 @@ row_index = |kind|
 	}
 
 ## Gives each brick row its canvas_apps color.
-row_color : Row -> Color.Rgba
+row_color : Row -> RgbColor
 row_color = |kind|
 	match kind {
-		Red => Color.from_hex_rgb(0xff4f7d)
-		Orange => Color.from_hex_rgb(0xff9f45)
-		Yellow => Color.from_hex_rgb(0xffe066)
-		Green => Color.from_hex_rgb(0x4ce0b3)
-		Blue => Color.from_hex_rgb(0x5a9dff)
+		Red => RgbColor.of(0xff4f7d)
+		Orange => RgbColor.of(0xff9f45)
+		Yellow => RgbColor.of(0xffe066)
+		Green => RgbColor.of(0x4ce0b3)
+		Blue => RgbColor.of(0x5a9dff)
 	}
 
 ## Builds the brick at one row and column of the authored wall.

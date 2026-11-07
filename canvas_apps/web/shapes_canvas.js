@@ -169,7 +169,7 @@ function paintFrame(ctx, shapes, scale = 1) {
         fillShape(ctx, p.fill);
         break;
       default:
-        throw new Error(`shapes_canvas: a page is never sent ${shape.tag}`);
+        throw new Error(`shapes_canvas: no shape ${shape.tag}`);
     }
   }
   ctx.globalCompositeOperation = 'source-over';
