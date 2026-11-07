@@ -34,12 +34,8 @@ Still := List(Still.Polygon).{
 		),
 	]
 
-	## One polygon of a still: its colour, and its gradient if it has one.
-	Polygon : {
-		color : RgbColor,
-		gradients : List(Still.Gradient),
-		points : List(Still.Vertex),
-	}
+	## One polygon of a still: how it is filled, and its corners.
+	Polygon : { fill : [Flat(RgbColor), Shaded(Still.Gradient)], points : List(Still.Vertex) }
 
 	## The still's polygons, in the order they are drawn.
 	polygons : Still -> List(Still.Polygon)

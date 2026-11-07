@@ -170,5 +170,12 @@ expect {
 	)
 	side_down = BirdStills.side_wings_down_polygons.polygons()
 	stills = side_down.concat(BirdStills.diving_polygons.polygons())
-	drawn == stills.map(|poly| Flat(Brush.opaque(poly.color)))
+	drawn
+		== stills.map(
+			|poly|
+				match poly.fill {
+					Flat(color) => Flat(Brush.opaque(color))
+					Shaded(_) => crash "a bird's still is flat"
+				},
+		)
 }

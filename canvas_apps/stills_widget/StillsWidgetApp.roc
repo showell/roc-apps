@@ -629,13 +629,11 @@ expect
 		Still.(
 			[
 				{
-					color: RgbColor.of(0),
-					gradients: [],
+					fill: Flat(RgbColor.of(0)),
 					points: [{ x: 0.5, y: 0.25 }, { x: -1.0, y: 2.0 }],
 				},
 				{
-					color: RgbColor.of(0),
-					gradients: [],
+					fill: Flat(RgbColor.of(0)),
 					points: [{ x: 3.0, y: -4.0 }],
 				},
 			],
@@ -767,8 +765,7 @@ expect {
 # A polygon's outline closes: its last line ends where its first starts.
 expect {
 	square = {
-		color: RgbColor.of(0),
-		gradients: [],
+		fill: Flat(RgbColor.of(0)),
 		points: [
 			{ x: 0.0, y: 0.0 },
 			{ x: 1.0, y: 0.0 },
@@ -795,7 +792,7 @@ expect {
 		flip: AsDrawn,
 		height_on_screen: Pixels.of(10.0),
 	}
-	outline_of = |points| outline_shapes(anchor, { color: RgbColor.of(0), gradients: [], points })
+	outline_of = |points| outline_shapes(anchor, { fill: Flat(RgbColor.of(0)), points })
 	outline_of([{ x: 1.0, y: 1.0 }]) == [] and outline_of([{ x: 1.0, y: 1.0 }, { x: 1.0, y: 0.0 }]).len() == 2
 }
 

@@ -56,9 +56,9 @@ StillShapes :: [].{
 	still_polygon : StillShapes.Anchor, Still.Polygon -> Shapes.Shape
 	still_polygon = |anchor, poly| {
 		points = StillShapes.screen_points(anchor, poly.points)
-		match poly.gradients.first() {
-			Ok(gradient) => still_gradient_polygon(anchor, { gradient, points })
-			Err(ListWasEmpty) => Polygon.flat_polygon(points, poly.color)
+		match poly.fill {
+			Flat(color) => Polygon.flat_polygon(points, color)
+			Shaded(gradient) => still_gradient_polygon(anchor, { gradient, points })
 		}
 	}
 
@@ -181,8 +181,7 @@ expect
 # A solid polygon of colour 7 with `count` points, all at the feet.
 flat_polygon : U64 -> Still.Polygon
 flat_polygon = |count| {
-	color: RgbColor.of(7),
-	gradients: [],
+	fill: Flat(RgbColor.of(7)),
 	points: List.repeat({ x: 0.0, y: 0.0 }, count),
 }
 
