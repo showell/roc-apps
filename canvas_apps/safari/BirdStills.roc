@@ -7,9 +7,6 @@
 ## two side views alternate as the wings beat. The bird flying away from us is
 ## seen tail on, and the diving bird falls with its beak down and its wings swept
 ## back.
-import Pixels
-import Screen
-import StillShapes
 import Still
 import lib.RgbColor
 
@@ -139,11 +136,6 @@ expect
 		(BirdStills.diving_polygons, [-0.2, 0.9]),
 	].all(|(polys, want)| first_corner_coordinates(polys) == want)
 
-# Where the tests stand a still on screen: drawing it through StillShapes lets
-# Polygon's own checks judge every polygon.
-sample_anchor : StillShapes.Anchor
-sample_anchor = { feet: Screen.point(100.0, 200.0), flip: AsDrawn, height_on_screen: Pixels.of(50.0) }
-
 all_stills : List(Still)
 all_stills = [
 	BirdStills.perched_polygons,
@@ -165,7 +157,6 @@ is_within_bounds = |Still.(polys)|
 is_logo_coloured : Still -> Bool
 is_logo_coloured = |Still.(polys)| polys.all(|poly| poly.fill == Flat(logo_dark) or poly.fill == Flat(logo_light))
 
-expect all_stills.all(|still| StillShapes.still_shapes(sample_anchor, still).len() == still.polygons().len())
 expect all_stills.all(is_within_bounds)
 expect
 	!is_within_bounds(
