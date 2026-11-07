@@ -20,7 +20,9 @@ TAG
 
 Shale is a small Lua-like language:
 
-- **Running a program:** `local r = run({"git", "status"}, {timeout_ms = 60000, whole = 20000, want = "any"})`, then `print(r.code)` and `print(r.out)`. A text tool such as grep needs a reason, as in `want = "any: callers"`.
+- **Running a program:** `local r = run({"git", "status"}, {timeout_ms = 60000, whole = 20000, want = "any"})`, then `print(r.code)` and `print(r.out)`. Both `timeout_ms` and a keep (`whole`, `head` or `tail`) are required. A text tool such as grep needs a reason, as in `want = "any: callers"`.
+- **Never read `~/.config/shale/mounts`, and never run `shale --help`.** Both show the path of the secrets folder. The `scratch:` mount is `/tmp/claude-1000`, so write scratch files there under `/tmp/claude-1000/<lane>/`.
+- **A scratch Roc module** must declare a type named after its file.
 - **Files:** read with the Read tool, and edit with Edit and Write.
 - **Not in the language:** `table.*`, `local function`, and `type()`.
   - Declare a function with `function name()` at the top level.
@@ -30,7 +32,7 @@ Shale is a small Lua-like language:
 
 Never push, never merge, and never touch a checkout that isn't yours.
 
-Several agents share one scratch area, so keep your scratch files under Shale's `scratch:` mount, in a subfolder named for your lane or review, such as `scratch:<lane>/`, or another agent may overwrite them. Never put scratch files in a repo or a worktree.
+Several agents share one scratch area, so keep your scratch files under Shale's `scratch:` mount (`/tmp/claude-1000`), in a subfolder named for your lane or review, such as `scratch:<lane>/`, or another agent may overwrite them. Never put scratch files in a repo or a worktree.
 
 ## Read first, every time
 
