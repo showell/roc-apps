@@ -161,7 +161,7 @@ bend_sightings = |road, { place, segment }|
 		bend_life: segment.bend_life,
 		bend_along: Along.at(segment.length),
 		turn: segment.exit_turn,
-		road_half_width: Scenery.road_half_width,
+		road_half_width: Geom.road_half_width,
 	})
 		.map(|critter| BillboardSighting.sight_critter(road, { place, critter }))
 

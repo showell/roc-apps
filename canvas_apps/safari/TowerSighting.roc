@@ -190,7 +190,6 @@ origin = {
 	along: Along.metres(0.0),
 	across: Across.metres(0.0),
 	yaw: Angle.straight_ahead,
-	half_width: Distance.metres(2.0),
 }
 
 ## Three segments seen from the origin, the rider on the first of them, the

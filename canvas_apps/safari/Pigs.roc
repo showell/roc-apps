@@ -124,7 +124,7 @@ Pigs :: [].{
 	two_rows : Distance -> List(Geom.Placed(Billboard))
 	two_rows = |length| {
 		herd_along = pigs_place(length)
-		edge = Scenery.road_half_width.plus(Scenery.herd_road_offset)
+		edge = Geom.road_half_width.plus(Scenery.herd_road_offset)
 		front_across = Across.right_of_middle(edge)
 		back_across = Across.right_of_middle(edge.plus(pig_back_row_offset))
 		row_pigs(herd_along, { across: front_across, offsets: front_row_offsets })
@@ -155,7 +155,7 @@ herd_pig = |herd_along, { row, column }| {
 	first_column = herd_along.plus(Pigs.pig_herd_first_column)
 	in_column = first_column.plus(Pigs.pig_column_spacing.times(fc))
 	in_line = in_column.plus(Pigs.pig_row_depth.times(fr))
-	edge = Scenery.road_half_width.plus(Scenery.herd_road_offset)
+	edge = Geom.road_half_width.plus(Scenery.herd_road_offset)
 	in_row = edge.plus(Pigs.pig_row_depth.times(fr))
 	out_from_middle = in_row.plus(Pigs.pig_jitter_across.times((i * 1.7).cos()))
 	pig({

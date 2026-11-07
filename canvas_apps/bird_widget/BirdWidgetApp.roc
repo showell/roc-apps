@@ -14,7 +14,7 @@ import game.Distance
 import game.Lens
 import game.Polygon
 import game.BirdShapes
-import game.Scenery
+import game.Geom
 import game.Trees
 import game.Screen
 import game.World
@@ -99,7 +99,7 @@ picture_shapes = |gap|
 ## The road, running up the picture from under the eye.
 road : Shapes.Shape
 road = {
-	half = Scenery.road_width.divided_by(2.0)
+	half = Geom.road_half_width
 	road_start = Distance.metres(1.0)
 	on_ground = |right, forward|
 		Camera.project(

@@ -8,7 +8,6 @@ import Across
 import Along
 import Distance
 import Geom
-import Scenery
 import World
 
 Chain :: [].{
@@ -121,17 +120,9 @@ Chain :: [].{
 		{ index: start, chain_indices: [] },
 	)
 
-	## The bend at the end of `segment`.
-	bend_out_of : World.Segment -> Geom.Bend
-	bend_out_of = |segment| {
-		segment_length: segment.length,
-		turn: segment.exit_turn,
-		road_width: Scenery.road_width,
-	}
-
 	## The place of `segment`, which is just behind the rider.
 	place_behind : World.Segment -> Chain.SegmentPlace
-	place_behind = |segment| JustBehind(bend_out_of(segment))
+	place_behind = |segment| JustBehind(World.bend_out_of(segment))
 
 	## A point on the segment at `position` in the chain, in the rider's view.
 	rider_point_ahead : Chain.RoadView,
@@ -142,10 +133,10 @@ Chain :: [].{
 	} -> Geom.RiderPoint
 	rider_point_ahead = |road, { position, along, across }| {
 		on_rider_segment = position.segments_before(road.chain_indices).fold_rev(
-			edge_point({ along, across }),
+			{ along, across },
 			|index, point| Geom.point_in_segment_before(
 				point,
-				bend_out_of(index.segment_in(road.route_segments)),
+				World.bend_out_of(index.segment_in(road.route_segments)),
 			),
 		)
 		Geom.to_rider_point(on_rider_segment, road.vantage)
@@ -162,19 +153,13 @@ Chain :: [].{
 		match place {
 			InChain(position) =>
 				rider_point_ahead(road, { position, along, across })
-			JustBehind(bend) => {
-				on_segment_behind = edge_point({ along, across })
+			JustBehind(bend) =>
 				Geom.to_rider_point(
-					Geom.point_in_segment_after(on_segment_behind, bend),
+					Geom.point_in_segment_after({ along, across }, bend),
 					road.vantage,
 				)
-			}
 		}
 }
-
-## A road point, measured from the road's left edge.
-edge_point : Geom.RoadPoint -> Geom.EdgePoint
-edge_point = |{ along, across }| { along, from_left: across.distance_from(Scenery.left_edge) }
 
 ## `chain_indices` with the segment at `index` and those after it added, up to the
 ## limit. An accumulator is linear, where appending a recursive call's answer
@@ -213,12 +198,3 @@ expect route_facts(World.segments) == [19, 7, 4, 1]
 
 expect Chain.Position.number(3).to_i64() == 3
 expect Chain.Position.first.next().to_i64() == 1
-
-expect
-	[
-		(Scenery.left_edge, 0.0),
-		(Across.middle, 2.0),
-		(Scenery.right_edge, 4.0),
-	].all(|(across, want)| edge_point({ along: Along.start, across }).from_left.to_metres() == want)
-
-expect edge_point({ along: Along.metres(1.0), across: Across.middle }).along == Along.metres(1.0)

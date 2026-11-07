@@ -3,7 +3,6 @@
 import Angle
 import Geom
 import RiderState
-import Scenery
 
 ViewYaw :: [].{
 
@@ -25,7 +24,6 @@ ViewYaw :: [].{
 		along: s.along,
 		across: s.across,
 		yaw: s.yaw.plus(view_yaw_for(s)),
-		half_width: Scenery.road_half_width,
 	}
 }
 

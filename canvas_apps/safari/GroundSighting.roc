@@ -82,10 +82,10 @@ GroundSighting :: [].{
 		far_end = end_of_chunk(chunk_number + 1)
 		corner = |along, across| Chain.rider_point_ahead(road, { position, along, across })
 		[
-			corner(near_end, Scenery.left_edge),
-			corner(near_end, Scenery.right_edge),
-			corner(far_end, Scenery.right_edge),
-			corner(far_end, Scenery.left_edge),
+			corner(near_end, Geom.left_edge),
+			corner(near_end, Geom.right_edge),
+			corner(far_end, Geom.right_edge),
+			corner(far_end, Geom.left_edge),
 		]
 	}
 }
@@ -139,10 +139,10 @@ lead_points = |road, bend| {
 	end = Along.at(bend.length_before)
 	start = Along.at(bend.length_before.minus(GroundSighting.lead_in_length))
 	[
-		corner(end, Scenery.left_edge),
-		corner(end, Scenery.right_edge),
-		corner(start, Scenery.right_edge),
-		corner(start, Scenery.left_edge),
+		corner(end, Geom.left_edge),
+		corner(end, Geom.right_edge),
+		corner(start, Geom.right_edge),
+		corner(start, Geom.left_edge),
 	]
 }
 
@@ -152,9 +152,9 @@ lead_points = |road, bend| {
 bend_corners : Chain.RoadView, BendView -> List(Geom.RiderPoint)
 bend_corners = |road, bend| {
 	inner_edge = if bend.turn.is_right() {
-		Scenery.right_edge
+		Geom.right_edge
 	} else {
-		Scenery.left_edge
+		Geom.left_edge
 	}
 	outer_edge = BendView.outer_edge(bend.turn)
 	end_at = |across| Chain.rider_point_at(
