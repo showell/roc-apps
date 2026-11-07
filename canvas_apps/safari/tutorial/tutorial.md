@@ -2303,7 +2303,7 @@ The corner behind the camera has gone, and two new ones stand on the camera's pl
 
 Anything that crosses the camera's plane has to be cut, or dividing by `forward` flips it across the screen. The textbook algorithm walks a polygon's edges, keeping corners in view and adding a new corner wherever an edge crosses the plane. In Roc, that's a pairing and a `fold`. `map2` zips each corner with the next one, which is the list rotated by one, and `fold` builds the new polygon. `List.with_capacity` is the one line about performance, and `edge_points_onto` is passed by name:
 
-{{code Geom.near_points}}
+{{code Geom.clipped_points}}
 
 A fold's step is a plain function of the list so far and one edge:
 
@@ -2311,7 +2311,7 @@ A fold's step is a plain function of the list so far and one edge:
 
 `Ground`, `GuardRail` and `TruckShape` call it the same way. `patch.corners.map(...)` makes the `RaisedPoint`s, and what comes back is a shorter or longer list of the same type:
 
-{{code Camera.clipped_polygon from "in_front = Geom.near_points(" to "Ok(Polygon.flat_polygon(color, projected_points(in_front, cam_focal)))"}}
+{{code Camera.clipped_polygon from "in_front = Geom.clipped_points(" to "Ok(Polygon.flat_polygon(color, projected_points(in_front, cam_focal)))"}}
 
 ### Arithmetic all the way down
 

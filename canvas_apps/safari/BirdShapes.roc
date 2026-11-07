@@ -50,7 +50,7 @@ BirdShapes :: [].{
 # A perched bird with its feet at the camera's height, so that straight ahead
 # they land on the horizon in the middle of the screen.
 level_bird : BirdShapes.PosedBird
-level_bird = { lift: Camera.eye_h, pose: Perched }
+level_bird = { lift: Camera.eye_height, pose: Perched }
 
 ## `bird` 110 m ahead and `right` of the camera, through a 500 px focal length.
 bird_shapes_at : BirdShapes.PosedBird, Distance -> List(Shapes.Shape)
@@ -89,7 +89,7 @@ expect {
 			[Poly(polygon), ..] => polygon.coordinates.take_first(2)
 			_ => crash "a bird draws polygons"
 		}
-	raised_bird = { ..level_bird, lift: Camera.eye_h.plus(Distance.metres(11.0)) }
+	raised_bird = { ..level_bird, lift: Camera.eye_height.plus(Distance.metres(11.0)) }
 	[
 		(level_bird, Distance.metres(0.0), [479.656, 294.285]),
 		(raised_bird, Distance.metres(11.0), [529.656, 244.285]),

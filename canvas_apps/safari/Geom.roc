@@ -192,8 +192,8 @@ Geom :: [].{
 	near_plane = Distance.metres(0.4)
 
 	## The polygon cut to what lies at or past the near plane.
-	near_points : List(Geom.RaisedPoint) -> List(Geom.RaisedPoint)
-	near_points = |polygon_points| {
+	clipped_points : List(Geom.RaisedPoint) -> List(Geom.RaisedPoint)
+	clipped_points = |polygon_points| {
 		next_corners = polygon_points.drop_first(1).concat(polygon_points.take_first(1))
 		edges = polygon_points.map2(next_corners, |from, to| { from, to })
 		edges.fold(List.with_capacity(2 * polygon_points.len()), edge_points_onto)
@@ -458,7 +458,7 @@ expect
 		== { right: Distance.metres(0.0), forward: Distance.metres(4.0) }
 
 expect
-	Geom.near_points([
+	Geom.clipped_points([
 		{
 			right: Distance.metres(-1.0),
 			forward: Distance.metres(2.0),

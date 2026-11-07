@@ -10,15 +10,15 @@ import lib.Shapes
 Camera :: [].{
 
 	## The camera's height above the ground, in metres.
-	eye_h : Distance
-	eye_h = Distance.metres(1.2)
+	eye_height : Distance
+	eye_height = Distance.metres(1.2)
 
 	## Where a point in front of the camera lands on the screen, through a
 	## lens of focal length `cam_focal` in pixels.
 	project : Geom.RaisedPoint, Pixels -> Screen.Point
 	project = |p, cam_focal| {
 		slope_right = p.right.ratio_to(p.forward)
-		slope_up = p.height.minus(eye_h).ratio_to(p.forward)
+		slope_up = p.height.minus(eye_height).ratio_to(p.forward)
 		{
 			x: Screen.center_x.plus(cam_focal.times(slope_right)),
 			y: Screen.horizon_y.minus(cam_focal.times(slope_up)),
@@ -35,7 +35,7 @@ Camera :: [].{
 	## camera.
 	clipped_polygon : Camera.FlatPolygon, Pixels -> Try(Shapes.Shape, [BehindCamera])
 	clipped_polygon = |{ color, corners }, cam_focal| {
-		in_front = Geom.near_points(corners)
+		in_front = Geom.clipped_points(corners)
 		if in_front.is_empty() {
 			Err(BehindCamera)
 		} else {
@@ -125,7 +125,7 @@ expect screen_point({
 	height: Distance.metres(5.2),
 }).y.to_f64() == 100.0
 expect Screen.height.to_f64() == 600.0
-expect Camera.eye_h.to_metres() == 1.2
+expect Camera.eye_height.to_metres() == 1.2
 
 expect
 	Camera.projected_points(
