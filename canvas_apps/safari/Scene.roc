@@ -2,7 +2,7 @@
 ## billboards, cats, guard rails, the truck and the birds in view, each found by
 ## its own sighting and rendered as soon as it is found. Past the sighting
 ## nothing asks what kind a thing is, so each field holds only renderings.
-import Animation
+import EncounterPlan
 import Clock
 import Conifer
 import Distance
@@ -36,7 +36,7 @@ Scene := {
 	## What the sightings read beyond the road: where the encounter on the
 	## rider's segment stands, where the truck is and how it looks, and the clock.
 	RideFacts : {
-		encounter : Animation.Timing,
+		encounter_timing : EncounterPlan.Timing,
 		truck : { route_position : Distance, lit_truck : LitTruck },
 		clock : Clock,
 	}
@@ -50,8 +50,8 @@ Scene := {
 	scene_in_view = |road, { camera, facts }| {
 		cam_focal = camera.cam_focal
 		on_road = { road, vantage: camera.vantage }
-		cats = EncounterPoses.cat_poses(road, facts.encounter)
-		birds = EncounterPoses.bird_poses(road, facts.encounter)
+		cats = EncounterPoses.cat_poses(road, facts.encounter_timing)
+		birds = EncounterPoses.bird_poses(road, facts.encounter_timing)
 		birds_seen = EncounterSighting.animals_in_view(road, { camera, animals: birds })
 		cats_seen = EncounterSighting.animals_in_view(road, { camera, animals: cats })
 		trucks =

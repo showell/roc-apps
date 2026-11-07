@@ -5,9 +5,8 @@
 ## picture looks down the road at the cat, with the road's width to scale. Below
 ## it, the buttons and four lines of text that say what Cat and EncounterReaction
 ## make of the gap.
-import game.Animation
+import game.EncounterPlan
 import game.Cat
-import game.Clock
 import game.EncounterReaction
 import game.Distance
 import game.Pixels
@@ -109,29 +108,10 @@ road_shapes = {
 	]
 }
 
-## The ride's clock with the rider `gap` short of the cat: the whole steps since
-## the far end of the range, at step 0.
-clock_at : Distance -> Clock
-clock_at = |gap| Clock.at_step(closing_gap.first.minus(gap).portion(rider_speed.step_length()).to_u32_wrap())
-
-## The crossing's timing with the rider `gap` short of the cat: planned as the
-## ride plans it, on the first step from the far end of the range that the rider
-## comes within reach.
-crossing_timing : Distance -> Animation.Timing
-crossing_timing = |gap| {
-	now = clock_at(gap)
-	var $step = Clock.start
-	var $start = Unplanned
-	while $start == Unplanned and !(now < $step) {
-		approach = {
-			gap: closing_gap.first.minus(rider_speed.distance_in($step.steps_since(Clock.start))),
-			speed: rider_speed,
-		}
-		$start = Animation.planned_start(Cat.crossing_span, { approach, now: $step })
-		$step = $step.next()
-	}
-	Animation.timing_of($start, now)
-}
+## The crossing's timing with the rider `gap` short of the cat.
+crossing_timing : Distance -> EncounterPlan.Timing
+crossing_timing = |gap|
+	VcrButtons.planned_timing(Cat.crossing_span, { range: closing_gap, speed: rider_speed, gap })
 
 ## The cat as `gap` finds it, drawn by Safari's own stills.
 cat_shapes : Distance -> List(Shapes.Shape)
@@ -187,8 +167,8 @@ throttle_text = |throttle|
 	}
 
 # The whole crossing is on the range, with some road to spare at the far end.
-expect Cat.clear_gap.plus(rider_speed.distance_in(Cat.crossing_steps)) < closing_gap.first
-expect Cat.clear_gap > closing_gap.last
+expect EncounterPlan.planning_gap(Cat.crossing_span, rider_speed) < closing_gap.first
+expect Cat.crossing_span.ends_at > closing_gap.last
 
 expect
 	status_lines(Distance.metres(50.0))

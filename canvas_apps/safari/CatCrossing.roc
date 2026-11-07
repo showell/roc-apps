@@ -74,7 +74,6 @@ expect the_cat.along.to_metres() == 102.0
 expect the_cat.start_across.to_metres() == 4.5
 expect the_cat_by_a_far_tree.start_across.to_metres() == 9.5
 expect the_cat_by_a_far_tree.end_across == the_cat.end_across
-expect CatCrossing.mid_across.to_metres() == 0.425
 expect
 	[
 		(the_cat.end_across.to_metres(), -3.49),

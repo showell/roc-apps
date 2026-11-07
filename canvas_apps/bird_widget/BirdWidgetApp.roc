@@ -10,6 +10,7 @@ import game.Across
 import game.Along
 import game.Angle
 import game.Animation
+import game.EncounterPlan
 import game.BirdFlight
 import game.Camera
 import game.Clock
@@ -63,29 +64,10 @@ segment_flight = |segment|
 		CatCrosses(_) | QuietRoad => Err(NoFlight)
 	}
 
-## The ride's clock with the rider `gap` from the bird's first tree: the whole
-## steps since the far end of the range, at step 0.
-clock_at : Distance -> Clock
-clock_at = |gap| Clock.at_step(closing_gap.first.minus(gap).portion(rider_speed.step_length()).to_u32_wrap())
-
-## The flight's timing with the rider `gap` from the bird's first tree: planned
-## as the ride plans it, on the first step from the far end of the range that the
-## rider comes within reach.
-flight_timing : Distance -> Animation.Timing
-flight_timing = |gap| {
-	now = clock_at(gap)
-	var $step = Clock.start
-	var $start = Unplanned
-	while $start == Unplanned and !(now < $step) {
-		approach = {
-			gap: closing_gap.first.minus(rider_speed.distance_in($step.steps_since(Clock.start))),
-			speed: rider_speed,
-		}
-		$start = Animation.planned_start(BirdFlight.flight_span, { approach, now: $step })
-		$step = $step.next()
-	}
-	Animation.timing_of($start, now)
-}
+## The flight's timing with the rider `gap` from the bird's first tree.
+flight_timing : Distance -> EncounterPlan.Timing
+flight_timing = |gap|
+	VcrButtons.planned_timing(BirdFlight.flight_span, { range: closing_gap, speed: rider_speed, gap })
 
 ## Where the flight has got to with the rider `gap` from the bird's first tree.
 stage_at : Distance -> Animation.Stage
@@ -217,7 +199,7 @@ beat_name = |beat|
 ## The gap the flight starts at, for a rider at `rider_speed`: 15 m for the gap
 ## it lands at and 45 m for its 36 steps.
 takeoff_gap : Distance
-takeoff_gap = BirdFlight.flight_span.ends_at.plus(rider_speed.distance_in(BirdFlight.flight_span.length))
+takeoff_gap = EncounterPlan.planning_gap(BirdFlight.flight_span, rider_speed)
 
 # The whole flight is on the range, with some road to spare at the far end.
 expect takeoff_gap < closing_gap.first

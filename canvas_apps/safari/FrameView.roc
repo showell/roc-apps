@@ -49,7 +49,10 @@ FrameView := {
 	## The camera the frame at `instant` is seen through.
 	camera_at : Route, RideInstant -> RiderCamera
 	camera_at = |route, instant|
-		RiderCamera.of(instant.rider, { route, encounter: RideInstant.encounter_timing(instant) })
+		RiderCamera.of(
+			instant.rider,
+			{ route, encounter_timing: RideInstant.encounter_timing(instant) },
+		)
 
 	## The backdrop's shapes in paint order: the sky, the sun, then the grass,
 	## which covers whatever of the sun has set.
@@ -72,7 +75,7 @@ FrameView := {
 	## its lights are on, and the clock.
 	ride_facts : RideInstant -> Scene.RideFacts
 	ride_facts = |instant| {
-		encounter: RideInstant.encounter_timing(instant),
+		encounter_timing: RideInstant.encounter_timing(instant),
 		truck: {
 			route_position: instant.truck.route_position,
 			lit_truck: LitTruck.at(instant.truck, instant.clock),

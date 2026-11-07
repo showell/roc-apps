@@ -20,9 +20,9 @@ EncounterSighting :: [].{
 		where [kind.scenery_height : kind -> Distance]
 	animals_in_view = |road, { camera, animals }|
 		animals.keep_oks(
-			|animal| {
-				seen_on = { road, camera, place: animal.place }
-				Pipeline.scenery_sighting_of(animal.placed, seen_on)
+			|posed| {
+				seen_on = { road, camera, place: posed.place }
+				Pipeline.scenery_sighting_of(posed.animal, seen_on)
 			},
 		)
 }

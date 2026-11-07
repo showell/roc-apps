@@ -3,9 +3,8 @@
 ## far verge, a frame a step at its own pace. The ride plans its start so that
 ## it is across as the rider comes within `clear_gap` of it. The rider's eye is
 ## drawn to it while it crosses, and lets it go after.
-import Across
-import Along
 import Animation
+import EncounterPlan
 import Attention
 import CatCrossing
 import Distance
@@ -16,24 +15,13 @@ import Steps
 
 Cat :: [].{
 
-	## How long a crossing takes, at a frame a step.
-	crossing_steps : Steps
-	crossing_steps = {
-		frames = walking_poses.len() + frozen_frames + leap_frames.len()
-		Steps.of(frames.to_u32_wrap())
-	}
-
-	## How far short of the cat the rider is when its crossing ends.
-	clear_gap : Distance
-	clear_gap = Distance.metres(3.0)
-
 	## What the ride plans a crossing by: its length, and the gap it ends at.
-	crossing_span : Animation.StepSpan
+	crossing_span : EncounterPlan.StepSpan
 	crossing_span = { length: crossing_steps, ends_at: clear_gap }
 
 	## Where the crossing has got to at `timing`.
-	crossing_stage : Animation.Timing -> Animation.Stage
-	crossing_stage = |timing| Animation.stage_at(timing, crossing_steps)
+	crossing_stage : EncounterPlan.Timing -> Animation.Stage
+	crossing_stage = |timing| EncounterPlan.stage_at(timing, crossing_steps)
 
 	## Whether the cat is crossing in front of the rider at `stage`. The rider
 	## eases off while it does, which is the rider reacting to the cat; the cat
@@ -65,6 +53,14 @@ Cat :: [].{
 	instant_at : CatCrossing, Animation.Stage -> Animation.Instant(PosedCat.CatPose)
 	instant_at = |cat, stage| crossing_timeline(cat).instant(stage)
 }
+
+## How long a crossing takes, at a frame a step.
+crossing_steps : Steps
+crossing_steps = Steps.of(crossing_frames.len().to_u32_wrap())
+
+## How far short of the cat the rider is when its crossing ends.
+clear_gap : Distance
+clear_gap = Distance.metres(3.0)
 
 ## How the cat looks walking out: two strides, a frame each step.
 walking_poses : List(PosedCat.CatPose)
@@ -129,6 +125,33 @@ peak_attention = Attention.of(1.8)
 attention_fade : Steps
 attention_fade = Steps.of(83)
 
+## Where a cat is on its way across in one frame: walking out, this much of
+## the way to the middle of the road; standing frozen there; or leaping, this
+## much of the way on to the far verge and this high.
+CrossingWay : [
+	WalkingOut(Fraction),
+	StandingFrozen,
+	Leaping({ way_to_verge : Fraction, lift : Distance }),
+]
+
+## The frames of any crossing, one a step, before they are put on a road. Both
+## the crossing's length and its timeline come from this one list, so the two
+## can't disagree.
+crossing_frames : List({ pose : PosedCat.CatPose, way : CrossingWay })
+crossing_frames = {
+	walking = walking_poses.map_with_index(
+		|pose, frame| {
+			pose,
+			way: WalkingOut(Fraction.of(frame.to_f64() / walking_poses.len().to_f64())),
+		},
+	)
+	frozen = List.repeat({ pose: Frozen, way: StandingFrozen }, frozen_frames)
+	leaping = leap_frames.map(
+		|{ pose, way_to_verge, lift }| { pose, way: Leaping({ way_to_verge, lift }) },
+	)
+	[walking, frozen, leaping].join()
+}
+
 ## The whole of a crossing, a frame a step: the cat walks out to the middle
 ## of the road, freezes there, and leaps clear to the far verge.
 crossing_timeline : CatCrossing -> Animation.Timeline(PosedCat.CatPose)
@@ -137,39 +160,29 @@ crossing_timeline = |cat| {
 	start = on_road(cat.start_across)
 	middle = on_road(CatCrossing.mid_across)
 	end = on_road(cat.end_across)
-	walking = walking_poses.map_with_index(
-		|pose, frame| {
-			fraction = Fraction.of(frame.to_f64() / walking_poses.len().to_f64())
-			{ pose, location: Animation.location_between({ from: start, to: middle, fraction }) }
-		},
-	)
-	frozen = List.repeat({ pose: Frozen, location: middle }, frozen_frames)
-	leaping = leap_frames.map(
-		|{ pose, way_to_verge, lift }| {
-			on_the_way = Animation.location_between({
-				from: middle,
-				to: end,
-				fraction: way_to_verge,
-			})
-			{ pose, location: { ..on_the_way, lift } }
-		},
-	)
+	location_of = |way|
+		match way {
+			WalkingOut(fraction) =>
+				Animation.location_between({ from: start, to: middle, fraction })
+			StandingFrozen => middle
+			Leaping({ way_to_verge, lift }) => {
+				on_the_way = Animation.location_between({
+					from: middle,
+					to: end,
+					fraction: way_to_verge,
+				})
+				{ ..on_the_way, lift }
+			}
+		}
 	Animation.Timeline.(
 		{
 			before: { pose: Rest, location: start },
-			frames: [walking, frozen, leaping].join(),
+			frames: crossing_frames.map(|{ pose, way }| { pose, location: location_of(way) }),
 			after: { pose: Collapse, location: end },
 		},
 	)
 }
 
-the_cat : CatCrossing
-the_cat = CatCrossing.by_tree({
-	road_half_width: Distance.metres(2.0),
-	tree: { along: Along.metres(100.0), across: Across.metres(3.0) },
-})
-
-expect Cat.crossing_steps == Steps.of(38)
 expect
 	[
 		(Waiting, False),
@@ -190,65 +203,3 @@ expect attention_at(Past(Steps.of(42))) > 0.0
 expect attention_at(Past(Steps.of(42))) < 1.8
 expect attention_at(Past(Steps.of(83))) == 0.0
 expect attention_at(Past(Steps.of(200))) == 0.0
-
-## The cat `steps_in` steps into its crossing.
-frame_of : U32 -> Animation.Instant(PosedCat.CatPose)
-frame_of = |steps_in| Cat.instant_at(the_cat, Playing(Steps.of(steps_in)))
-
-## The frames of a crossing, one a step.
-the_frames : List(Animation.Instant(PosedCat.CatPose))
-the_frames = List.from_iter(U32.until(0, 38)).map(frame_of)
-
-## The poses frames `from` to `to` of the crossing show.
-poses_of : U64, U64 -> List(PosedCat.CatPose)
-poses_of = |from, to| the_frames.sublist({
-	start: from,
-	len: to - from + 1,
-}).map(|frame| frame.pose)
-
-expect the_frames.len() == 38
-expect poses_of(0, 9) == walking_poses
-expect poses_of(10, 33).all(|pose| pose == Frozen)
-expect poses_of(34, 37) == [Coil, Flight, Flight, Land]
-expect Cat.instant_at(the_cat, Waiting).pose == Rest
-expect Cat.instant_at(the_cat, Past(Steps.zero)).pose == Collapse
-
-## How far across the road the cat is `steps_in` steps into its crossing.
-across_at : U32 -> F64
-across_at = |steps_in| frame_of(steps_in).location.across.to_metres()
-
-## How high the cat is `steps_in` steps into its crossing.
-lift_at : U32 -> F64
-lift_at = |steps_in| frame_of(steps_in).location.lift.to_metres()
-
-# It walks the first ten frames in even steps, and then stands in the middle of
-# the road, and every frame is on the ground until it leaves it.
-expect
-	[
-		(0, 4.5),
-		(1, 4.0925),
-		(9, 0.8325),
-		(10, 0.425),
-		(33, 0.425),
-		(34, 0.425),
-	].all(|(steps_in, want)| (across_at(steps_in) - want).abs() <= 0.000000000001)
-expect [0, 9, 10, 33, 34, 37].all(|steps_in| lift_at(steps_in) == 0.0)
-
-# In the air, it is on its way and off the ground.
-expect
-	[(35, -1.141, 0.27), (36, -2.90275, 0.17)].all(
-		|(steps_in, across, lift)|
-			(across_at(steps_in) - across).abs() <= 0.000000000001
-				and (lift_at(steps_in) - lift).abs() <= 0.000000000001,
-	)
-
-expect (across_at(37) - -3.49).abs() <= 0.000000000001
-expect (
-	Cat.instant_at(
-		the_cat,
-		Past(Steps.zero),
-	).location.across.to_metres() - -3.49
-).abs() <= 0.000000000001
-
-# Every crossing is on its own road.
-expect the_frames.all(|frame| frame.location.along == the_cat.along)

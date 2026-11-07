@@ -4,7 +4,7 @@
 import Across
 import Along
 import Angle
-import Animation
+import EncounterPlan
 import Gaze
 import Geom
 import LeanSearch
@@ -19,18 +19,18 @@ import World
 Rider :: [].{
 
 	## The rider a step on along `route`, with the encounter on their segment at
-	## `encounter`.
+	## `encounter_timing`.
 	rider_state_at_next_step : RiderState,
 	{
 		route : Route,
-		encounter : Animation.Timing,
+		encounter_timing : EncounterPlan.Timing,
 	} -> RiderState
-	rider_state_at_next_step = |state, { route, encounter }| {
+	rider_state_at_next_step = |state, { route, encounter_timing }| {
 		seg = route.segment_at(state.segment_index)
 		moved = {
 			..state,
 			motorcycle: state.motorcycle.motorcycle_at_next_step(
-				decide(state.motorcycle, { segment: seg, encounter }),
+				decide(state.motorcycle, { segment: seg, encounter_timing }),
 			),
 		}
 		resolved =
@@ -65,7 +65,11 @@ Rider :: [].{
 
 ## The lean toward the best line, and the speed the throttle gives the
 ## motorcycle once it leans so.
-decide : Motorcycle, { segment : Segment, encounter : Animation.Timing } -> Motorcycle.Controls
+decide : Motorcycle,
+{
+	segment : Segment,
+	encounter_timing : EncounterPlan.Timing,
+} -> Motorcycle.Controls
 decide = |motorcycle, road| {
 	lean = LeanSearch.best_lean(motorcycle)
 	{ lean, speed: Throttle.next_speed(motorcycle.with_lean(lean), road) }
@@ -222,7 +226,7 @@ expect !Rider.is_finished(rider_at(499.0, 0.0), World.route)
 one_step_on : RiderState
 one_step_on = Rider.rider_state_at_next_step(
 	RiderState.initial,
-	{ route: World.route, encounter: Unplanned },
+	{ route: World.route, encounter_timing: Unplanned },
 )
 
 expect one_step_on.motorcycle.along > Along.start
