@@ -301,7 +301,7 @@ World :: [].{
 	cow_herd : CowHerd
 	cow_herd = {
 		cow_count: 14,
-		rows: 3,
+		rows_behind_front: 2,
 		gap_behind_bull: Distance.metres(6.0),
 		column_spacing: Distance.metres(6.0),
 		row_stagger: Distance.metres(2.0),
