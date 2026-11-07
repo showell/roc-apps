@@ -41,7 +41,7 @@ Pond :: [].{
 ## pond is mirrored to the right, and so is every duck.
 facing_at : Billboard.Facing, Geom.Bend -> Billboard.Facing
 facing_at = |facing, bend|
-	match (BendInView.outer_side(bend.turn), facing) {
+	match (Geom.outer_side(bend.turn), facing) {
 		(LeftSide, _) => facing
 		(RightSide, FacesLeft) => FacesRight
 		(RightSide, FacesRight) => FacesLeft
