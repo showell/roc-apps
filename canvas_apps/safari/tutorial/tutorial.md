@@ -100,8 +100,8 @@ digraph system {
   subgraph cluster_view {
     label="the view";
     sky [label="the sky\nSky, Mountains", style=dashed];
-    drawing [label="the drawing\nSceneDraw, CatShapes, BirdShapes, TreeShapes, ...", style=dashed];
-    sightings [label="the sightings\nScene, CatSighting, BirdSighting, TreeSighting, ...", style=dashed];
+    drawing [label="the drawing\nSceneShapes, PosedCat, PosedBird, TreeShapes, ...", style=dashed];
+    sightings [label="the sightings\nScene, CrossingSighting, TreeSighting, ...", style=dashed];
   }
   app -> RideInstant;
   RideInstant -> Rider;
@@ -1913,9 +1913,9 @@ digraph cat {
   World -> Cat;
   CrossingReaction -> Cat;
   CrossingReaction -> World;
-  CatSighting -> Cat;
-  CatShapes -> Cat;
-  CatShapes -> CatStills;
+  CrossingSighting -> Cat;
+  PosedCat -> Cat;
+  PosedCat -> CatStills;
   CatStills -> Cat;
   Cat -> Animation;
   Cat -> Easing;
@@ -2077,17 +2077,17 @@ The modules that put a cat on screen
 ```dot
 digraph screen {
   node [shape=box, fontname="Helvetica"];
-  CatSighting [style=bold];
-  CatShapes [style=bold];
+  CrossingSighting [style=bold];
+  PosedCat [style=bold];
   SceneShapes -> Scene;
-  SceneShapes -> CatShapes;
-  SceneShapes -> CatSighting;
-  Scene -> CatSighting;
-  CatSighting -> Cat;
-  CatSighting -> RoadAhead;
-  CatSighting -> DepthSort;
-  CatShapes -> Cat;
-  CatShapes -> CatStills;
+  SceneShapes -> PosedCat;
+  SceneShapes -> CrossingSighting;
+  Scene -> CrossingSighting;
+  CrossingSighting -> Cat;
+  CrossingSighting -> RoadAhead;
+  CrossingSighting -> DepthSort;
+  PosedCat -> Cat;
+  PosedCat -> CatStills;
   CatStills -> Cat;
 }
 ```
@@ -2129,12 +2129,12 @@ digraph bird {
   node [shape=box, fontname="Helvetica"];
   BirdFlight [style=bold];
   World -> BirdFlight;
-  BirdSighting -> BirdFlight;
-  BirdSighting -> BirdShapes;
-  BirdSighting -> Animation;
-  BirdShapes -> BirdFlight;
-  BirdShapes -> BirdStills;
-  BirdShapes -> StillShapes;
+  CrossingSighting -> BirdFlight;
+  CrossingSighting -> PosedBird;
+  CrossingSighting -> Animation;
+  PosedBird -> BirdFlight;
+  PosedBird -> BirdStills;
+  PosedBird -> StillShapes;
   BirdStills -> BirdFlight;
   BirdStills -> Stills;
   StillShapes -> Stills;

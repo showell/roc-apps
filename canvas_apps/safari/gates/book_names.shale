@@ -13,7 +13,9 @@
 --               book quotes;
 --   table       the names that are rightly not in those sources, each with a
 --               reason, by default canvas_apps/safari/book_names.txt;
---   held        how many stale names to expect, which the merge gate gives it.
+--   held        how many stale names to expect, which the merge gate gives it;
+--   held_diagram  how many stale diagram names to expect alongside `held`, 0
+--               by default.
 --
 -- The prose is every line outside a ``` fence, except a line that starts `{{`.
 -- A span that holds a `/` and no space is a path, not a name, and is skipped.
@@ -22,6 +24,17 @@
 -- `roc test` are all read the same way. A name is a run of words joined by dots,
 -- with an optional `!`, and a word can't start with a digit, so `0x8ecae6` and
 -- `2as` hold none. A name counts once on a line.
+--
+-- The diagrams are the ```dot fences, and their names are read by line too. A
+-- node ID that is quoted counts when the whole of it is a name, so
+-- `"TreeShapes.tree_picture"` and `"tier_shape"` count and `"width of the
+-- view"` doesn't. A bare node ID counts unless it is one of dot's own words,
+-- such as `digraph` or `node`. Graph and subgraph names, and every `key=value`
+-- attribute, are skipped. An ID given a `label` is only a handle, since the
+-- label shows instead, so it doesn't count. From the text of a label, of a node,
+-- an edge or a cluster, a dotted name that starts with a capital counts, and so
+-- does a word in camel case, such as `SceneShapes`. Other words of a label are
+-- prose, so `the clock`, `Cat` and `web.roc` aren't read there.
 --
 -- The code comes from Roc's parser through roc_tree. The tree holds no comments
 -- and a string is a kind of node that is not read here, so a word that is only
@@ -50,13 +63,16 @@
 --
 --   stale_name        A name on a line of the prose that the code doesn't have
 --                     and the table doesn't excuse.
---   unused_exception  A line of the table that no prose holds, or that excuses
---                     nothing because the code has the name.
+--   stale_diagram_name  The same for a name on a line of a diagram.
+--   unused_exception  A line of the table that neither the prose nor a diagram
+--                     holds, or that excuses nothing because the code has the
+--                     name.
 --
 -- The output is the counts, one line per finding, and the counts again
 -- (cookbook/roc/findings.shale). The run fails if there is a finding. Given
--- `held`, it passes with that many stale names, printing only the counts, and
--- fails with any other number, more or fewer, or with an unused exception.
+-- `held`, it passes with that many stale names and `held_diagram` stale diagram
+-- names, printing only the counts, and fails with any other numbers, more or
+-- fewer, or with an unused exception.
 
 use("cookbook:roc/findings.shale")
 
@@ -64,8 +80,12 @@ const MANUSCRIPT = arg("manuscript", "canvas_apps/safari/tutorial/tutorial.md")
 const SOURCES = arg("sources", "canvas_apps/safari,canvas_apps/safari/gates,canvas_apps/lib,canvas_apps/shapes_widget")
 const TABLE_FILE = arg("table", "canvas_apps/safari/book_names.txt")
 const HELD = arg("held", "")
+const HELD_DIAGRAM = arg("held_diagram", "0")
 
 const NAME = "[A-Za-z_][A-Za-z0-9_]*!?(?:\\.[A-Za-z_][A-Za-z0-9_]*!?)*"
+
+-- The words of dot itself that stand where a node ID could.
+const DOT_KEYWORDS = {digraph = true, edge = true, graph = true, node = true, strict = true, subgraph = true}
 
 -- Which attribute of a node holds a word of the code, by the node's kind. A
 -- field node has its word under `field` or under `name`.
@@ -189,6 +209,77 @@ function span_names(span)
   return names
 end
 
+-- The code names in a label's text: a dotted name that starts with a capital,
+-- such as `Timeline.instant` or the `Geom.Placed` of `Geom.Placed(kind)`, and a
+-- single word in camel case, such as `SceneDraw`. Plain words, a single
+-- capitalized word such as `Cat`, and lower-case dotted names such as `web.roc`
+-- are not read.
+function label_names(value)
+  local names = {}
+  for m in re_find_all(substitute(value, "\\n", " "), "\\b(" .. NAME .. ")") do
+    local name = m.groups[1]
+    if re_find(name, "^[A-Z][A-Za-z0-9_]*\\.") ~= nil or re_find(name, "^[A-Z][a-z0-9]+[A-Z][A-Za-z0-9]*$") ~= nil then
+      push(names, name)
+    end
+  end
+  return names
+end
+
+-- The node IDs in a fence that carry a `label`, which shows instead of the ID.
+function labeled_ids(fence)
+  local labeled = {}
+  for row in fence do
+    local m = re_find(row.text, "^ *(\"[^\"]*\"|[A-Za-z_][A-Za-z0-9_]*) *\\[[^\\]]*\\blabel *=")
+    if m ~= nil then labeled[substitute(m.groups[1], "\"", "")] = true end
+  end
+  return labeled
+end
+
+-- The names on one line of a dot fence.
+function dot_line_names(text, labeled)
+  local names = {}
+  for m in re_find_all(text, "\\blabel *= *\"([^\"]*)\"") do
+    for name in label_names(m.groups[1]) do push(names, name) end
+  end
+  local ids = re_replace(text, "\\[[^\\]]*\\]", " ")
+  ids = re_replace(ids, "\\b[A-Za-z_]+ *= *(\"[^\"]*\"|[^ ;]*)", " ")
+  ids = re_replace(ids, "^ *(strict +)?(di)?graph +[^{]*|^ *subgraph +[^{]*", " ")
+  for m in re_find_all(ids, "\"([^\"]*)\"|([A-Za-z_][A-Za-z0-9_]*)") do
+    local quoted = m.groups[1]
+    local bare = m.groups[2]
+    if quoted ~= "" and re_find(quoted, "^" .. NAME .. "$") ~= nil and not has_key(labeled, quoted) then push(names, quoted) end
+    if bare ~= "" and not has_key(DOT_KEYWORDS, bare) and not has_key(labeled, bare) then push(names, bare) end
+  end
+  return names
+end
+
+-- Every name of the dot fences, as `{line, name}`, once for each line that
+-- holds it.
+function diagram_names(text)
+  local fences = {}
+  local fence = nil
+  local number = 0
+  for l in split(text, "\n") do
+    number = number + 1
+    if fence == nil then
+      if starts_with(l, "```dot") then fence = {} end
+    elseif starts_with(l, "```") then
+      push(fences, fence)
+      fence = nil
+    else
+      push(fence, {line = number, text = l})
+    end
+  end
+  local found = {}
+  for f in fences do
+    local labeled = labeled_ids(f)
+    for row in f do
+      for name in unique(dot_line_names(row.text, labeled)) do push(found, {line = row.line, name = name}) end
+    end
+  end
+  return found
+end
+
 -- Every name of the prose, as `{line, name}`, once for each line that holds it.
 function prose_names(text)
   local found = {}
@@ -242,14 +333,9 @@ function unused_lines(exceptions, in_prose, excused)
   return found
 end
 
--- The verdict as `{stale, unused, summary}`, the first two lists of finding lines.
-function judged_names()
-  local code = code_names()
-  local exceptions = exception_table()
-  local names = prose_names(read(MANUSCRIPT))
-  if #names == 0 then fail("book_names: no backticked names in " .. MANUSCRIPT) end
-  local in_prose = {}
-  local excused = {}
+-- Judges each of `names` against the code and the table. Marks what the table
+-- covers in `in_prose` and `excused`, and returns the finding lines, of `check`.
+function stale_lines(code, exceptions, names, check, in_prose, excused)
   local stale = {}
   for found in names do
     local is_excepted = has_key(exceptions.by_name, found.name)
@@ -258,18 +344,35 @@ function judged_names()
       if is_excepted then
         excused[found.name] = true
       else
-        push(stale, MANUSCRIPT .. ":" .. found.line .. ": stale_name: `" .. found.name .. "`")
+        push(stale, MANUSCRIPT .. ":" .. found.line .. ": " .. check .. ": `" .. found.name .. "`")
       end
     end
   end
+  return stale
+end
+
+-- The verdict as `{stale, stale_diagram, unused, summary}`, the first three
+-- lists of finding lines.
+function judged_names()
+  local code = code_names()
+  local exceptions = exception_table()
+  local text = read(MANUSCRIPT)
+  local names = prose_names(text)
+  if #names == 0 then fail("book_names: no backticked names in " .. MANUSCRIPT) end
+  local diagram = diagram_names(text)
+  local in_prose = {}
+  local excused = {}
+  local stale = stale_lines(code, exceptions, names, "stale_name", in_prose, excused)
+  local stale_diagram = stale_lines(code, exceptions, diagram, "stale_diagram_name", in_prose, excused)
   local unused = unused_lines(exceptions, in_prose, excused)
-  local summary = "book_names: stale_name " .. #stale .. ", unused_exception " .. #unused .. ", " .. #names .. " names read, " .. #exceptions.rows .. " in the table"
-  return {stale = stale, unused = unused, summary = summary}
+  local summary = "book_names: stale_name " .. #stale .. ", stale_diagram_name " .. #stale_diagram .. ", unused_exception " .. #unused .. ", " .. #names .. " names read, " .. #diagram .. " diagram names read, " .. #exceptions.rows .. " in the table"
+  return {stale = stale, stale_diagram = stale_diagram, unused = unused, summary = summary}
 end
 
 function all_findings(verdict)
   local found = {}
   for l in verdict.stale do push(found, l) end
+  for l in verdict.stale_diagram do push(found, l) end
   for l in verdict.unused do push(found, l) end
   return found
 end
@@ -277,10 +380,10 @@ end
 -- This `fail` stands at the top level so the summary is the last line a
 -- caller reads: a stop inside a function prints the calls after it.
 const VERDICT = judged_names()
-if HELD ~= "" and #VERDICT.stale == tonumber(HELD) and #VERDICT.unused == 0 then
+if HELD ~= "" and #VERDICT.stale == tonumber(HELD) and #VERDICT.stale_diagram == tonumber(HELD_DIAGRAM) and #VERDICT.unused == 0 then
   print(VERDICT.summary .. ", as held")
 else
   print_findings(VERDICT.summary, all_findings(VERDICT))
-  if HELD ~= "" then fail("book_names: held at stale_name " .. HELD .. " and unused_exception 0") end
-  if #VERDICT.stale + #VERDICT.unused > 0 then fail(VERDICT.summary) end
+  if HELD ~= "" then fail("book_names: held at stale_name " .. HELD .. ", stale_diagram_name " .. HELD_DIAGRAM .. " and unused_exception 0") end
+  if #VERDICT.stale + #VERDICT.stale_diagram + #VERDICT.unused > 0 then fail(VERDICT.summary) end
 end
