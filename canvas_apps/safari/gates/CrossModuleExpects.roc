@@ -40,6 +40,7 @@ import game.Scene
 import game.SceneShapes
 import game.RideInstant
 import game.Rider
+import game.RiderCamera
 import game.RiderState
 import game.Screen
 import game.Sky
@@ -1108,6 +1109,69 @@ expect FrameView.frame_view_at(World.route, ride_at_step_one).shapes.len() > 0
 
 # The ride starts facing away from the sun.
 expect FrameView.frame_view_at(World.route, RideInstant.initial).sun_sighting == OutOfView
+
+## A rider on `heading`, leaning `lean` and looking `gaze_yaw` from the way the
+## motorcycle points.
+rider_facing : {
+	heading : Angle.Bearing,
+	lean : Angle.Lean,
+	gaze_yaw : Angle.Turn,
+} -> RiderState
+rider_facing = |{ heading, lean, gaze_yaw }| {
+	..RiderState.initial,
+	motorcycle: { ..RiderState.initial.motorcycle, heading, lean },
+	eyes: { ..RiderState.initial.eyes, gaze_yaw },
+}
+
+# The camera's heading is the motorcycle's, turned by the gaze and the lean.
+expect
+	[
+		(
+			{
+				heading: Angle.Bearing.radians(0.0),
+				lean: Angle.Lean.radians(0.0),
+				gaze_yaw: Angle.Turn.radians(0.0),
+			},
+			0.0,
+		),
+		(
+			{
+				heading: Angle.Bearing.radians(4.5),
+				lean: Angle.Lean.radians(0.125),
+				gaze_yaw: Angle.Turn.radians(0.375),
+			},
+			4.89375,
+		),
+		(
+			{
+				heading: Angle.Bearing.radians(1.0),
+				lean: Angle.Lean.radians(0.5),
+				gaze_yaw: Angle.Turn.radians(-0.25),
+			},
+			0.825,
+		),
+		(
+			{
+				heading: Angle.Bearing.radians(-2.0),
+				lean: Angle.Lean.radians(-0.75),
+				gaze_yaw: Angle.Turn.radians(0.125),
+			},
+			-1.9875,
+		),
+		(
+			{
+				heading: Angle.Bearing.radians(0.5),
+				lean: Angle.Lean.radians(1.25),
+				gaze_yaw: Angle.Turn.radians(0.0),
+			},
+			0.6875,
+		),
+	].all(
+		|(facing, heading)| {
+			camera = RiderCamera.of(rider_facing(facing), World.route)
+			camera.heading.to_radians() == heading
+		},
+	)
 
 ## A clock with the sun behind the mountains.
 after_sunset : Clock

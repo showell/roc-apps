@@ -57,15 +57,16 @@ Sun :: [].{
 	height : Clock -> Pixels
 	height = |clock| height_at_start.minus(drop_per_step.times(clock.to_f64()))
 
-	## The sun in a frame, for a camera aimed as `aim` says. It is in view while
-	## it is in front of the camera and its glow reaches the screen.
-	sighting : Lens.CameraAim, Clock -> Sun.Sighting
-	sighting = |aim, clock| {
-		turn_from_view = bearing.turn_from(aim.heading)
+	## The sun in a frame, for a camera facing `heading` through a lens of
+	## `cam_focal`. It is in view while it is in front of the camera and its glow
+	## reaches the screen.
+	sighting : { heading : Angle.Bearing, cam_focal : Pixels, .. }, Clock -> Sun.Sighting
+	sighting = |camera, clock| {
+		turn_from_view = bearing.turn_from(camera.heading)
 		if turn_from_view.abs() >= quarter_turn {
 			OutOfView
 		} else {
-			sun = place({ turn_from_view, clock, cam_focal: aim.cam_focal })
+			sun = place({ turn_from_view, clock, cam_focal: camera.cam_focal })
 			if is_glow_on_screen(sun) {
 				InView(sun)
 			} else {

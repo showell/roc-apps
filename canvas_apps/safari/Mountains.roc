@@ -26,9 +26,11 @@ Mountains :: [].{
 		sun_top < skyline_height(Sun.bearing)
 	}
 
-	## The skyline, back to front, for a camera aimed as `aim` says: the west
-	## range, the north range, the north's snow, then the land.
-	mountain_shapes : Lens.CameraAim, Fraction -> List(Shapes.Shape)
+	## The skyline, back to front, for a camera facing `heading` through a lens
+	## of `cam_focal`: the west range, the north range, the north's snow, then the
+	## land.
+	mountain_shapes :
+		{ heading : Angle.Bearing, cam_focal : Pixels, .. }, Fraction -> List(Shapes.Shape)
 	mountain_shapes = |aim, dusk| {
 		snow_shapes =
 			match snow_shape(aim, snow_color(dusk)) {
@@ -150,7 +152,7 @@ snowline = |bearing| {
 }
 
 ## The bearing seen at `x` across the screen.
-bearing_at : Lens.CameraAim, Pixels -> Angle.Bearing
+bearing_at : { heading : Angle.Bearing, cam_focal : Pixels, .. }, Pixels -> Angle.Bearing
 bearing_at = |aim, x| aim.heading.plus(Lens.turn_at_x({ x, cam_focal: aim.cam_focal }))
 
 ## The skyline's height at `bearing`: the highest of the land and the two
@@ -242,7 +244,7 @@ land_base_y = Screen.horizon_y
 ## A silhouette across the screen, its top at `height_at` each bearing but never
 ## below `base_y`, closed along `base_y`.
 silhouette :
-	Lens.CameraAim,
+	{ heading : Angle.Bearing, cam_focal : Pixels, .. },
 	{
 		height_at : Angle.Bearing -> Pixels,
 		color : RgbColor,
@@ -276,7 +278,8 @@ thinnest_snow = Pixels.of(0.01)
 ## The north range's snow: along its crest where the range is above the
 ## snowline, then back along the snowline, unless fewer than two columns of
 ## the screen show snow.
-snow_shape : Lens.CameraAim, RgbColor -> Try(Shapes.Shape, [NoSnow])
+snow_shape :
+	{ heading : Angle.Bearing, cam_focal : Pixels, .. }, RgbColor -> Try(Shapes.Shape, [NoSnow])
 snow_shape = |aim, color| {
 	snowy = columns({ from: Pixels.zero, to: Screen.width }).keep_if(
 		|x| {
@@ -312,7 +315,7 @@ north_by = |radians| Angle.Bearing.radians(radians)
 west_by : F64 -> Angle.Bearing
 west_by = |radians| west_range_bearing.plus(Angle.Turn.radians(radians))
 
-aim_at_rest : Lens.CameraAim
+aim_at_rest : { heading : Angle.Bearing, cam_focal : Pixels }
 aim_at_rest = { heading: Angle.north, cam_focal: Lens.resting_focal }
 
 expect rock_color_at_dusk(north_rock, Fraction.zero) == RgbColor.of(0x5B6A8F)
@@ -388,7 +391,7 @@ lowest_y = |shape| corner_ys(shape).fold(-F64.infinity, |low, y| low.max(y))
 highest_y : Shapes.Shape -> F64
 highest_y = |shape| corner_ys(shape).fold(F64.infinity, |high, y| high.min(y))
 
-range_silhouette : Lens.CameraAim -> Shapes.Shape
+range_silhouette : { heading : Angle.Bearing, cam_focal : Pixels } -> Shapes.Shape
 range_silhouette = |aim| silhouette(
 	aim,
 	{
@@ -398,7 +401,7 @@ range_silhouette = |aim| silhouette(
 	},
 )
 
-land_silhouette : Lens.CameraAim -> Shapes.Shape
+land_silhouette : { heading : Angle.Bearing, cam_focal : Pixels } -> Shapes.Shape
 land_silhouette = |aim| silhouette(
 	aim,
 	{

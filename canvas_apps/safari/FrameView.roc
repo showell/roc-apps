@@ -1,20 +1,16 @@
 import Angle
 import Backdrop
-import CanvasRoll
 import Ground
 import GroundSighting
-import Lens
 import LitTruck
 import Mountains
-import RideFocal
 import RideInstant
-import RoadAhead
+import RiderCamera
 import Route
 import Scene
 import SceneShapes
 import Sky
 import Sun
-import ViewYaw
 import lib.Shapes
 
 ## What the camera shows at one instant of the ride, worked out from the
@@ -35,19 +31,16 @@ FrameView := {
 	roll : Angle.Lean,
 }.{
 
-	## The frame at `instant`. The camera's heading and focal length are worked
-	## out once, for both the shapes and the sun.
+	## The frame at `instant`. The camera is worked out once, for the shapes,
+	## the sun and the roll.
 	frame_view_at : Route, RideInstant -> FrameView
 	frame_view_at = |route, instant| {
-		aim = {
-			heading: ViewYaw.heading_for(instant.rider),
-			cam_focal: RideFocal.ride_focal(instant.rider, route),
-		}
+		camera = RiderCamera.of(instant.rider, route)
 		{
-			shapes: shapes(instant, { route, aim }),
-			sun_sighting: Sun.sighting(aim, instant.clock),
+			shapes: shapes(camera, { instant, route }),
+			sun_sighting: Sun.sighting(camera, instant.clock),
 			sky_colors: Sky.colors_at(instant.clock),
-			roll: CanvasRoll.rider_roll(instant.rider.motorcycle.lean),
+			roll: camera.roll,
 		}
 	}
 
@@ -78,18 +71,10 @@ FrameView := {
 	}
 }
 
-shapes : RideInstant, { route : Route, aim : Lens.CameraAim } -> List(Shapes.Shape)
-shapes = |instant, { route, aim }| {
-	cam_focal = aim.cam_focal
+shapes : RiderCamera, { instant : RideInstant, route : Route } -> List(Shapes.Shape)
+shapes = |camera, { instant, route }| {
 	s = instant.rider
-	view = {
-		road: {
-			route,
-			segments_ahead: RoadAhead.indices_ahead(route, s.segment_index),
-			vantage: ViewYaw.vantage_for(s),
-		},
-		cam_focal,
-	}
+	view = camera.camera_view(route)
 	scene = Scene.scene_in_view(
 		view,
 		{
@@ -103,8 +88,8 @@ shapes = |instant, { route, aim }| {
 	)
 	ground = GroundSighting.patches_in_view(view.road)
 	[
-		Mountains.mountain_shapes(aim, Sky.dusk_at(instant.clock)),
-		ground.keep_oks(|patch| Ground.patch_shape(patch, cam_focal)),
+		Mountains.mountain_shapes(camera, Sky.dusk_at(instant.clock)),
+		ground.keep_oks(|patch| Ground.patch_shape(patch, camera.cam_focal)),
 		SceneShapes.scene_shapes(scene, view),
 	].join()
 }
