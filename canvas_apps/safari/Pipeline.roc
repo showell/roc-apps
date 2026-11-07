@@ -97,10 +97,11 @@ Pipeline :: [].{
 	## for whatever else its kind needs.
 	rendering_of : Pipeline.Sighted(kind), { cam_focal : Pixels, context : context } -> Rendered
 		where [kind.scenery_picture : kind, Picture.Setting(context) -> Picture]
-	rendering_of = |sighting, { cam_focal, context }| {
-		depth: sighting.spot.foot().forward(),
-		picture: sighting.kind.scenery_picture({ spot: sighting.spot, cam_focal, context }),
-	}
+	rendering_of = |sighting, { cam_focal, context }|
+		Rendered.of(
+			sighting.spot.foot().forward(),
+			sighting.kind.scenery_picture({ spot: sighting.spot, cam_focal, context }),
+		)
 }
 
 ## A kind of object that exists for this file's expects: a post of some height,
@@ -184,6 +185,6 @@ expect
 		|along| {
 			sighting = post_sighting(Along.metres(along)) ?? crash "Pipeline: a post 30 m or more ahead is in view"
 			rendered = Pipeline.rendering_of(sighting, { cam_focal: Pixels.of(512.0), context: {} })
-			rendered.depth == Distance.metres(along)
+			rendered.depth() == Distance.metres(along)
 		},
 	)

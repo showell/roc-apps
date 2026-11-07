@@ -24,7 +24,6 @@ import lib.CanvasApp
 import lib.Input
 import lib.Shapes
 import lib.RgbColor
-import lib.Trig
 import widget.PlanView
 import widget.ReadoutText
 import widget.ScrubWidget
@@ -38,6 +37,7 @@ GazeWidgetApp :: [].{
 
 	canvas_app : CanvasApp.CanvasApp(GazeWidgetApp.Model)
 	canvas_app = ScrubWidget.canvas_app({
+		frames_a_second: ScrubWidget.moving_frames_a_second,
 		title: "The rider's gaze",
 		init: starting_model,
 		model_at_next_step: |model, input| played_on(with_buttons(model, input)),
@@ -298,7 +298,7 @@ phase_text = |phase|
 ## How far the rider looks from the way the bike points, in degrees. A pig on the
 ## right turns the gaze right, so on this stretch it's never negative.
 gaze_degrees : RiderState -> F64
-gaze_degrees = |rider| rider.eyes.gaze_yaw.to_radians() / Trig.degree
+gaze_degrees = |rider| rider.eyes.gaze_yaw.to_degrees()
 
 ## The state at `clock`, a line each.
 status_lines : RiderState, Clock -> List(Str)
@@ -414,7 +414,7 @@ expect {
 	played.all(|rider| gaze_degrees(rider) <= widest)
 		and gaze_degrees(state_at_step(played, look_end_step)) < widest
 		and gaze_degrees(state_at_step(played, look_end_step - 2)) < widest
-		and widest < Gaze.look_release_angle.to_radians() / Trig.degree
+		and widest < Gaze.look_release_angle.to_degrees()
 }
 
 # The gaze never turns left on this stretch, as `gaze_degrees` says.

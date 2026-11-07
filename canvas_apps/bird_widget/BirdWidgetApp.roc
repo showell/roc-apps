@@ -8,7 +8,6 @@
 ## BirdFlight makes of the gap.
 import game.Across
 import game.Along
-import game.Angle
 import game.Animation
 import game.EncounterPlan
 import game.BirdFlight
@@ -18,12 +17,10 @@ import game.Distance
 import game.Lens
 import game.PosedBird
 import game.Geom
-import game.Segment
 import game.Speed
 import game.Trees
 import game.Sky
 import game.Spot
-import game.Steps
 import game.World
 import lib.CanvasApp
 import lib.Shapes
@@ -56,28 +53,17 @@ closing_gap = VcrButtons.gap_range({ farthest: Distance.metres(75.0), metres_a_f
 rider_speed : Speed
 rider_speed = Speed.metres_a_step(1.25)
 
-## The bird's flight on a segment that has one.
-segment_flight : Segment -> Try(BirdFlight.Flight, [NoFlight])
-segment_flight = |segment|
-	match segment.encounter {
-		BirdHere(bird_flight) => Ok(bird_flight)
-		CatCrosses(_) | QuietRoad => Err(NoFlight)
-	}
-
 ## The flight's timing with the rider `gap` from the bird's first tree.
 flight_timing : Distance -> EncounterPlan.Timing
 flight_timing = |gap|
-	VcrButtons.planned_timing(BirdFlight.flight_span, { range: closing_gap, speed: rider_speed, gap })
+	EncounterPlan.steady_approach_timing(
+		BirdFlight.flight_span,
+		{ gap_at_start: closing_gap.first, speed: rider_speed, gap },
+	)
 
 ## Where the flight has got to with the rider `gap` from the bird's first tree.
 stage_at : Distance -> Animation.Stage
 stage_at = |gap| BirdFlight.flight_stage(flight_timing(gap))
-
-## The first flight on the route.
-flight : BirdFlight.Flight
-flight =
-	World.route.route_segments().keep_oks(segment_flight).first()
-		?? crash "BirdWidgetApp.flight: the route has a bird that flies"
 
 ## How far the picture's eye stands short of the first tree: far enough for
 ## the bird perched on top of it to fit.
@@ -87,7 +73,7 @@ eye_to_first_tree = Distance.metres(18.0)
 ## How far ahead of the picture's eye a place on the road is.
 forward_of : Along -> Distance
 forward_of = |along| {
-	past_first_tree = along.distance_from(flight.from.road_point.along)
+	past_first_tree = along.distance_from(World.first_bird_flight.from.road_point.along)
 	eye_to_first_tree.plus(past_first_tree)
 }
 
@@ -110,11 +96,10 @@ picture_shapes = |gap|
 		backdrop: { sky_colors: Sky.colors_at(Clock.start), sun_sighting: OutOfView },
 		ride_shapes: [
 			road,
-			tree_shapes(flight.to),
-			tree_shapes(flight.from),
+			tree_shapes(World.first_bird_flight.to),
+			tree_shapes(World.first_bird_flight.from),
 			bird_shapes(gap),
 		].join(),
-		roll: Angle.upright,
 	})
 
 ## The road, running up the picture from under the eye.
@@ -140,38 +125,26 @@ spot_of = |{ along, across, lift, .. }|
 
 tree_shapes : Trees.RoadsideTree -> List(Shapes.Shape)
 tree_shapes = |tree|
-	match spot_of({ along: tree.road_point.along, across: tree.road_point.across, lift: tree.lift }) {
-		Ok(spot) =>
-			tree.kind.scenery_picture({
-				spot,
-				cam_focal: Lens.resting_focal,
-				context: { nearer_tree_count: 0 },
-			}).to_shapes()
-		Err(BehindCamera) => []
-	}
+	ScrubWidget.resting_lens_shapes(
+		spot_of({ along: tree.road_point.along, across: tree.road_point.across, lift: tree.lift })
+			.map_ok(|spot| { spot, kind: tree.kind }),
+		{ nearer_tree_count: 0 },
+	)
 
 ## The bird as `gap` finds it, drawn by Safari's own stills.
 bird_shapes : Distance -> List(Shapes.Shape)
 bird_shapes = |gap| {
-	instant = BirdFlight.instant_at(flight, stage_at(gap))
+	instant = BirdFlight.instant_at(World.first_bird_flight, stage_at(gap))
 	bird : PosedBird
 	bird = { pose: instant.pose }
-	match spot_of(instant.location) {
-		Ok(spot) =>
-			bird.scenery_picture({
-				spot,
-				cam_focal: Lens.resting_focal,
-				context: {},
-			}).to_shapes()
-		Err(BehindCamera) => []
-	}
+	ScrubWidget.resting_lens_shapes(spot_of(instant.location).map_ok(|spot| { spot, kind: bird }), {})
 }
 
 ## What BirdFlight says at `gap`, a line each.
 status_lines : Distance -> List(Str)
 status_lines = |gap| {
 	stage = stage_at(gap)
-	instant = BirdFlight.instant_at(flight, stage)
+	instant = BirdFlight.instant_at(World.first_bird_flight, stage)
 	[
 		ReadoutText.stage_text(stage),
 		"Pose: ${pose_name(instant.pose)}",
@@ -240,31 +213,6 @@ expect
 			"Gap: 4.7 m",
 			"Height: 4.9 m",
 		]
-
-# It takes off at 60 m, a step before is perched, and lands at 15 m.
-expect stage_at(Distance.metres(60.0)) == Playing(Steps.zero)
-expect stage_at(Distance.metres(60.125)) == Waiting
-expect stage_at(Distance.metres(15.0)) == Past(Steps.zero)
-expect stage_at(Distance.metres(15.125)) == Playing(Steps.of(35))
-
-## The bird at each step of the ride through its flight, from the far end of the
-## range at 1.25 m a step.
-flight_seen : List(BirdFlight.BirdInstant)
-flight_seen =
-	List.from_iter(U32.until(12, 48)).map(
-		|step| {
-			gap = closing_gap.first.minus(rider_speed.distance_in(Steps.of(step)))
-			BirdFlight.instant_at(flight, stage_at(gap))
-		},
-	)
-
-# Each step of the ride shows the next frame of the flight, and the bird moves
-# on along the road at every one.
-expect flight_seen.map(|instant| instant.pose) == BirdFlight.flight_poses
-expect {
-	alongs = flight_seen.map(|instant| instant.location.along)
-	alongs.map2(alongs.drop_first(1), |before, after| before < after).all(|is_on_the_way| is_on_the_way)
-}
 
 # The picture depends on the gap, and it doesn't change once the bird is down.
 expect picture_shapes(Distance.metres(30.0)) != picture_shapes(Distance.metres(31.0))

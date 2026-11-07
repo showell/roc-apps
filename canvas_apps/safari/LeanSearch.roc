@@ -8,17 +8,21 @@ import Steps
 
 LeanSearch :: [].{
 
+	## Where the search aims a coast to end: the road's middle.
+	aimed_across : Across
+	aimed_across = Across.middle
+
 	## Which way the next try should lean, from where this try's coast went:
 	## off the left shoulder means more right, off the right means more left,
-	## and a coast that stays on the road compares its end with the road's
-	## middle. A coast that ends exactly on the middle means lean left.
+	## and a coast that stays on the road compares its end with
+	## `aimed_across`. A coast that ends exactly there means lean left.
 	lean_correction : Coast.Outcome -> [MoreRight, MoreLeft]
 	lean_correction = |coast|
 		match coast {
 			Leaves({ side: Left, .. }) => MoreRight
 			Leaves({ side: Right, .. }) => MoreLeft
 			EndsAt(end_across) =>
-				if end_across < Across.middle {
+				if end_across < LeanSearch.aimed_across {
 					MoreRight
 				} else {
 					MoreLeft

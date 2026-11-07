@@ -9,12 +9,20 @@ import lib.RgbColor
 import lib.Shapes
 
 ## A patch of ground: its corners and its colour.
-GroundPatch := { corners : List(Geom.RiderPoint), color : RgbColor }.{
+GroundPatch :: { corners : List(Geom.RiderPoint), color : RgbColor }.{
+
+	## The patch with these corners, in this colour.
+	of : List(Geom.RiderPoint), RgbColor -> GroundPatch
+	of = |corners, color| GroundPatch.({ corners, color })
+
+	## The patch's corners, in the order its outline runs.
+	corners : GroundPatch -> List(Geom.RiderPoint)
+	corners = |GroundPatch.(patch)| patch.corners
 
 	## A patch on screen, cut at the horizon and at the camera's near plane,
 	## unless nothing of it is left.
 	patch_shape : GroundPatch, Pixels -> Try(Shapes.Shape, [PastHorizon, BehindCamera])
-	patch_shape = |patch, cam_focal| {
+	patch_shape = |GroundPatch.(patch), cam_focal| {
 		before_horizon = EarthCurve.points_before_horizon(patch.corners)
 		if before_horizon.is_empty() {
 			Err(PastHorizon)

@@ -4,6 +4,7 @@
 ## its segments, such as which herds are big and which the rider finds
 ## distracting, and this module resolves them before each segment is built.
 import Angle
+import BirdFlight
 import CatCrossing
 import CowHerd
 import Distance
@@ -298,6 +299,20 @@ World :: [].{
 			BirdHere(_) | QuietRoad => crash "World.first_cat_crossing: the first cat segment has a cat"
 		}
 
+	## The route's first segment with a bird.
+	first_bird_segment : Segment
+	first_bird_segment =
+		World.route.route_segments().find_first(has_bird)
+			?? crash "World.first_bird_segment: the route has a bird"
+
+	## The bird's flight on the route's first segment with a bird.
+	first_bird_flight : BirdFlight.Flight
+	first_bird_flight =
+		match World.first_bird_segment.encounter {
+			BirdHere(flight) => flight
+			CatCrosses(_) | QuietRoad => crash "World.first_bird_flight: the first bird segment has a bird"
+		}
+
 	## The route's first segment whose pigs draw the rider's eye.
 	first_distracting_segment : Segment
 	first_distracting_segment =
@@ -488,6 +503,14 @@ exit_turn_of = |segment| segment.bend_out_of().turn
 ## Whether a segment ends by turning right.
 turns_right : Segment -> Bool
 turns_right = |segment| exit_turn_of(segment).is_right()
+
+## Whether a segment has a bird in it.
+has_bird : Segment -> Bool
+has_bird = |segment|
+	match segment.encounter {
+		BirdHere(_) => True
+		CatCrosses(_) | QuietRoad => False
+	}
 
 ## The cat crossing at a segment that has one.
 crossing_at : U32 -> CatCrossing

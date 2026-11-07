@@ -7,7 +7,11 @@
 import Polygon
 import lib.RgbColor
 
-Still := List(Still.Polygon).{
+Still :: List(Still.Polygon).{
+
+	## The still made of `polygons`, drawn in their order.
+	of : List(Still.Polygon) -> Still
+	of = |polygons| Still.(polygons)
 
 	## A corner of a still's polygon, in the still's frame.
 	Vertex : { x : F64, y : F64 }
