@@ -48,7 +48,7 @@ Rider :: [].{
 		seg = route.segment_at(s.segment_index)
 		match seg.ending {
 			Bends(_) => False
-			RouteEnds => s.motorcycle.along >= Along.at(seg.length)
+			RouteEnds => is_at_segment_end(s.motorcycle, seg)
 		}
 	}
 }
@@ -84,14 +84,16 @@ rider_on_next_segment = |rs, route| {
 ## The motorcycle held at the route's end once it reaches it. The throttle
 ## brakes it to rest there, and this catches the last step's overrun.
 stop_at_route_end : Motorcycle, Segment -> Motorcycle
-stop_at_route_end = |moved, seg| {
-	end = Along.at(seg.length)
-	if moved.along >= end {
-		stopped_at(moved, end)
+stop_at_route_end = |moved, seg|
+	if is_at_segment_end(moved, seg) {
+		stopped_at(moved, Along.at(seg.length))
 	} else {
 		moved
 	}
-}
+
+## Whether the motorcycle has reached the end of `seg`, or gone past it.
+is_at_segment_end : Motorcycle, Segment -> Bool
+is_at_segment_end = |motorcycle, seg| motorcycle.along >= Along.at(seg.length)
 
 ## This motorcycle stopped dead at `at`. The book shows it as the plainest
 ## record update, so it stands alone.

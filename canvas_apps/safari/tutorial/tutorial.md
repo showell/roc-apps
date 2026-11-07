@@ -1639,7 +1639,7 @@ Each limit takes the lower of two opaque `Acceleration`s with `min`. `NoAccelera
 
 The first limit, `bend_brake`, makes the `a1` that the chain above starts from. It calls this for the distance left to the point where the rider commits to the turn. Three modules use that one line of physics: this one, `Gaze` to slow for a pig, and `Truck`.
 
-{{code Throttle.bend_limit from "bend_a =" to "motorcycle.speed.acceleration_to({ target: v_end, within: d })"}}
+{{code Throttle.bend_limit from "v_end = Throttle.exit_speed(seg)" to "AtMost(VehicleLimits.braking_to(motorcycle.speed, { target: v_end, within: d }))"}}
 
 After the limits, `Throttle.acceleration` hands its result to `allowed_speed`, not quoted here, which holds the speed between rest and the top speed. The chain works in accelerations and that step works in speeds, so the answer is taken back with `.change_from(state.speed)`, the other half of the same pair of types.
 

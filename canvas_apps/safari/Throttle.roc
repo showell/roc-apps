@@ -42,6 +42,8 @@ Throttle :: [].{
 		}
 }
 
+## How fast the shoulder brake fades with the steps left to the shoulder: it
+## falls to about a third every 20 steps, a time constant chosen by eye.
 brake_decay : Steps
 brake_decay = Steps.of(20)
 
@@ -81,16 +83,16 @@ shoulder_limit : Motorcycle -> VehicleLimits.Limit
 shoulder_limit = |motorcycle|
 	match Coast.project(motorcycle) {
 		EndsAt(_) => NoLimit
-		Leaves({ after, .. }) => AtMost(shoulder_brake(motorcycle, after))
+		Leaves({ after, .. }) => AtMost(shoulder_brake(motorcycle.speed, after))
 	}
 
-## The brake for a coast that leaves the road in `steps_to_shoulder`, which is
-## at least one step.
-shoulder_brake : Motorcycle, Steps -> Acceleration
-shoulder_brake = |motorcycle, steps_to_shoulder| {
+## The brake at `speed` for a coast that leaves the road in
+## `steps_to_shoulder`, which is at least one step.
+shoulder_brake : Speed, Steps -> Acceleration
+shoulder_brake = |speed, steps_to_shoulder| {
 	n = steps_to_shoulder.to_f64()
-	even_braking = (0.0 - motorcycle.speed.to_metres_a_step()) / (2.0 * n)
-	Acceleration.metres_a_step_each_step(even_braking * F64.e.pow((0.0 - n) / brake_decay.to_f64()))
+	even_braking = -speed.to_metres_a_step() / (2.0 * n)
+	Acceleration.metres_a_step_each_step(even_braking * F64.e.pow(-n / brake_decay.to_f64()))
 }
 
 ## The speed the rider may reach: `next_speed`, held between rest and the top
@@ -155,12 +157,12 @@ expect Coast.project(off_left(0.7)) == Leaves({ side: Left, after: Steps.of(3) }
 
 # A coast that stays on the road asks nothing, and one that leaves it brakes.
 expect shoulder_limit(centred_motorcycle(0.0, 0.3)) == NoLimit
-expect shoulder_limit(off_left(0.7)) == AtMost(shoulder_brake(off_left(0.7), Steps.of(3)))
+expect shoulder_limit(off_left(0.7)) == AtMost(shoulder_brake(off_left(0.7).speed, Steps.of(3)))
 
-## The shoulder brake for a motorcycle going 1 metre a step.
+## The shoulder brake at 1 metre a step.
 brake_after : U32 -> Acceleration
 brake_after = |steps_to_shoulder|
-	shoulder_brake(centred_motorcycle(0.0, 1.0), Steps.of(steps_to_shoulder))
+	shoulder_brake(Speed.metres_a_step(1.0), Steps.of(steps_to_shoulder))
 
 expect brake_after(40) < Acceleration.steady
 expect brake_after(40) > brake_after(2)

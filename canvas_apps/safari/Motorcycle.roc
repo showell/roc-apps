@@ -89,20 +89,17 @@ third_step : Motorcycle
 third_step = second_step.motorcycle_at_next_step(second_step.steady_controls())
 
 expect
-	[first_step, second_step, third_step].join_map(
-		|s| [s.yaw.to_radians(), s.speed.to_metres_a_step(), s.lean.to_radians()],
-	)
-		== [
-			0.3925,
-			0.81,
-			0.175,
-			0.40800000000000003,
-			0.8150000000000001,
-			0.155,
-			0.42350000000000004,
-			0.8150000000000001,
-			0.155,
-		]
+	[
+		(first_step.yaw.to_radians(), 0.3925),
+		(first_step.speed.to_metres_a_step(), 0.81),
+		(first_step.lean.to_radians(), 0.175),
+		(second_step.yaw.to_radians(), 0.40800000000000003),
+		(second_step.speed.to_metres_a_step(), 0.8150000000000001),
+		(second_step.lean.to_radians(), 0.155),
+		(third_step.yaw.to_radians(), 0.42350000000000004),
+		(third_step.speed.to_metres_a_step(), 0.8150000000000001),
+		(third_step.lean.to_radians(), 0.155),
+	].all(|(got, want)| got == want)
 
 # Each is within 1e-9 of its want, scaled up by a want past 1.
 expect
@@ -122,21 +119,12 @@ expect {
 		{ lean: Angle.Lean.radians(0.5), speed: Speed.metres_a_step(0.55) },
 	)
 	[
-		a.across.to_metres(),
-		a.yaw.to_radians(),
-		a.lean.to_radians(),
-		a.speed.to_metres_a_step(),
-		b.lean.to_radians(),
-		b.speed.to_metres_a_step(),
-		b.yaw.to_radians(),
-	]
-		== [
-			0.0,
-			0.0,
-			0.0,
-			0.3,
-			0.5,
-			0.55,
-			0.05,
-		]
+		(a.across.to_metres(), 0.0),
+		(a.yaw.to_radians(), 0.0),
+		(a.lean.to_radians(), 0.0),
+		(a.speed.to_metres_a_step(), 0.3),
+		(b.lean.to_radians(), 0.5),
+		(b.speed.to_metres_a_step(), 0.55),
+		(b.yaw.to_radians(), 0.05),
+	].all(|(got, want)| got == want)
 }
