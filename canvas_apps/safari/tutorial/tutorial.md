@@ -1047,7 +1047,7 @@ The `match` is on a pair, so it has to cover all four combinations. A rod with o
 
 As a tower gets further away, it sinks below the horizon from the bottom up:
 
-{{code Tower.sunk_below_horizon}}
+{{code EarthCurve.exaggerated_drop}}
 
 A real tower wouldn't go so soon. `sink_radius` is 20 km, a much smaller earth than ours, so a tower is gone at 1.8 km. That way, you can see it sink.
 

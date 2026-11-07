@@ -139,7 +139,7 @@ is_plain_to_see = |stand|
 				{ height: conifer.scenery_height(), cam_focal: Lens.resting_focal },
 			)
 			foot_y = outline.foot.y.to_f64() * canvas_per_screen
-			tip_y = foot_y - outline.height.to_f64() * canvas_per_screen
+			tip_y = foot_y - outline.height_on_screen.to_f64() * canvas_per_screen
 			x = outline.foot.x.to_f64() * canvas_per_screen
 			tip_y >= 0.0
 				and foot_y <= ScrubWidget.picture_bottom_y

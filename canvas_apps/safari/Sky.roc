@@ -1,7 +1,7 @@
 ## The sky through the ride: it darkens toward dusk as the sun sinks, and the
 ## horizon warms red while the sun is near it.
-import Pixels
 import Clock
+import FarHeight
 import Fraction
 import HexColor
 import Screen
@@ -69,8 +69,8 @@ darkness_at_set = Fraction.of(0.6)
 
 ## How far above or below the horizon the sun warms it. Once the sun is
 ## further away than this, the horizon has the sky's own color.
-warmth_reach : Pixels
-warmth_reach = Pixels.of(110.0)
+warmth_reach : FarHeight
+warmth_reach = FarHeight.of(110.0)
 
 day_sky : RgbColor
 day_sky = RgbColor.of(0x8ECAE6)
@@ -102,9 +102,9 @@ sky_horizon_color = |clock| HexColor.color_between({
 	fraction: Sky.horizon_warmth_at(clock).times(horizon_warmth_at_most),
 })
 
-## How dark the sky is while the sun, `height` pixels up, is
+## How dark the sky is while the sun, `height` up, is
 ## still above the line where it has fully set.
-darkness_while_up : Pixels -> Fraction
+darkness_while_up : FarHeight -> Fraction
 darkness_while_up = |height| {
 	whole_fall = Sun.height_at_start.minus(Sun.height_when_set)
 	set_so_far = Fraction.of(Sun.height_at_start.minus(height).portion(whole_fall))
@@ -113,9 +113,9 @@ darkness_while_up = |height| {
 
 ## How dark the sky is once the sun has fully set, darkening on to full
 ## night as it sinks a further radius.
-darkness_after_set : Pixels -> Fraction
+darkness_after_set : FarHeight -> Fraction
 darkness_after_set = |height| {
-	sunk_past_set = Sun.height_when_set.minus(height).portion(Sun.radius)
+	sunk_past_set = Sun.height_when_set.minus(height).portion(Sun.radius_as_height)
 	Fraction.clamp(darkness_at_set.to_f64() + sunk_past_set * darkness_at_set.less().to_f64())
 }
 
