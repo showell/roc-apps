@@ -26,7 +26,7 @@ GuardRail :: [].{
 	quad_rendering : GuardRail.RailQuad, Pixels -> Try(Rendered, [BehindCamera])
 	quad_rendering = |quad, cam_focal|
 		quad_shape(quad, cam_focal).map_ok(
-			|shape| { depth: quad_depth(quad), picture: Picture.from_shapes([shape]) },
+			|shape| Rendered.of(quad_depth(quad), Picture.from_shapes([shape])),
 		)
 }
 
@@ -174,7 +174,7 @@ behind_bar = bar({
 # A quad stands at its own depth, and one wholly behind the camera isn't drawn.
 expect {
 	first_bar_depth = GuardRail.quad_rendering(first_bar, Pixels.of(500.0)).map_ok(
-		|rendering| rendering.depth.to_metres(),
+		|rendering| rendering.depth().to_metres(),
 	)
 	first_bar_depth == Ok(15.0)
 }

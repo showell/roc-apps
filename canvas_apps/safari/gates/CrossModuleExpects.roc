@@ -1074,7 +1074,7 @@ cat_scene = Scene.scene_in_view(
 
 ## The depths of `renderings`, in their order.
 depths_of : List(Rendered) -> List(Distance)
-depths_of = |renderings| renderings.map(|rendering| rendering.depth)
+depths_of = |renderings| renderings.map(|rendering| rendering.depth())
 
 ## How far ahead each of `sightings` stands, in their order.
 sighted_depths : List(Pipeline.Sighted(kind)) -> List(Distance)
@@ -1222,7 +1222,7 @@ cluster_renderings = Scene.tree_renderings(
 cluster_shapes : U64 -> List(Shapes.Shape)
 cluster_shapes = |index|
 	match cluster_renderings.get(index) {
-		Ok(rendering) => rendering.picture.to_shapes()
+		Ok(rendering) => rendering.picture().to_shapes()
 		Err(OutOfBounds) => crash "CrossModuleExpects: the cluster has five trees"
 	}
 
@@ -1260,7 +1260,7 @@ is_far_to_near : List(Rendered) -> Bool
 is_far_to_near = |renderings|
 	renderings.map2(
 		renderings.drop_first(1),
-		|before, after| DepthSort.is_farther({ this: after.depth, that: before.depth }),
+		|before, after| DepthSort.is_farther({ this: after.depth(), that: before.depth() }),
 	)
 		.all(|is_out_of_order| !is_out_of_order)
 
