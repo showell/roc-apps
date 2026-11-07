@@ -5,13 +5,13 @@
 ## comes nearer. The rock darkens at dusk, and the snow goes blue.
 import Pixels
 import Angle
+import Backdrop
 import Clock
 import Fraction
 import Lens
 import HexColor
 import Polygon
 import Screen
-import Sky
 import Sun
 import lib.Shapes
 
@@ -26,21 +26,18 @@ Mountains :: [].{
 	rock_west : I64
 	rock_west = 0x39435F
 
-	land : I64
-	land = 0x4A8F43
-
 	## How much of its light the rock loses at full dusk.
 	rock_night_dim : Fraction
 	rock_night_dim = Fraction.of(0.5)
 
-	snow_day : Sky.Rgb
+	snow_day : HexColor.Rgb
 	snow_day = {
 		r: 238.0,
 		g: 243.0,
 		b: 248.0,
 	}
 
-	snow_night : Sky.Rgb
+	snow_night : HexColor.Rgb
 	snow_night = {
 		r: 70.0,
 		g: 84.0,
@@ -49,18 +46,12 @@ Mountains :: [].{
 
 	## A rock colour at `dusk`, from 0 (day) to 1 (night).
 	color_at_dusk : I64, Fraction -> I64
-	color_at_dusk = |color, dusk| {
-		light = rock_night_dim.times(dusk).complement().to_f64()
-		Sky.pack({
-			r: Sky.whole_channel(HexColor.red_of(color).to_f64() * light),
-			g: Sky.whole_channel(HexColor.green_of(color).to_f64() * light),
-			b: Sky.whole_channel(HexColor.blue_of(color).to_f64() * light),
-		})
-	}
+	color_at_dusk = |color, dusk|
+		HexColor.shade_color(color, rock_night_dim.times(dusk).complement().to_f64())
 
 	snow_color : Fraction -> I64
-	snow_color = |dusk| Sky.pack(
-		Sky.color_between({
+	snow_color = |dusk| HexColor.pack(
+		HexColor.color_between({
 			from: snow_day,
 			to: snow_night,
 			fraction: dusk,
@@ -159,7 +150,7 @@ Mountains :: [].{
 				silhouette(sight, { height_at: north_range, color: color_at_dusk(rock, dusk) }),
 			],
 			snow_shapes(sight, snow_color(dusk)),
-			[silhouette(sight, { height_at: ground_base, color: land })],
+			[silhouette(sight, { height_at: ground_base, color: Backdrop.grass_color })],
 		].join()
 	}
 }
@@ -290,7 +281,6 @@ west_by = |radians| Mountains.west_range_bearing.plus(Angle.Turn.radians(radians
 
 expect Mountains.rock == 0x5B6A8F
 expect Mountains.rock_west == 0x39435F
-expect Mountains.land == 0x4A8F43
 
 sight_at_rest : Mountains.Sight
 sight_at_rest = { heading: Angle.north, cam_focal: Lens.focal }
@@ -304,17 +294,15 @@ expect
 
 expect Mountains.color_at_dusk(Mountains.rock, Fraction.zero) == 0x5B6A8F
 expect Mountains.color_at_dusk(Mountains.rock_west, Fraction.zero) == 0x39435F
-expect Mountains.color_at_dusk(Mountains.land, Fraction.zero) == 0x4A8F43
 expect Mountains.color_at_dusk(Mountains.rock, Fraction.whole) == 0x2E3548
 expect Mountains.color_at_dusk(Mountains.rock_west, Fraction.whole) == 0x1D2230
-expect Mountains.color_at_dusk(Mountains.land, Fraction.whole) == 0x254822
 expect Mountains.color_at_dusk(Mountains.rock, Fraction.of(0.5)) == 0x44506B
 
 expect Mountains.snow_color(Fraction.zero) == 0xEEF3F8
 expect Mountains.snow_color(Fraction.whole) == 0x465468
 expect Mountains.snow_color(Fraction.of(0.5)) == 0x9AA4B0
-expect Sky.pack(Mountains.snow_day) == 0xEEF3F8
-expect Sky.pack(Mountains.snow_night) == 0x465468
+expect HexColor.pack(Mountains.snow_day) == 0xEEF3F8
+expect HexColor.pack(Mountains.snow_night) == 0x465468
 
 expect Mountains.snow_color(Fraction.whole) > Mountains.color_at_dusk(
 	Mountains.rock,

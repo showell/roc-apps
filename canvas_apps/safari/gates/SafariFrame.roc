@@ -28,7 +28,7 @@
 ## shapes_canvas.js, paints shapes with it.
 import game.Angle
 import BackdropPixels
-import game.Sky
+import game.HexColor
 import game.Sun
 import game.Screen
 import PixelGrid
@@ -43,8 +43,8 @@ SafariFrame :: [].{
 	FrameContents : {
 		shapes : List(Shapes.Shape),
 		roll : Angle.Lean,
-		sky_top_color : Sky.Rgb,
-		sky_horizon_color : Sky.Rgb,
+		sky_top_color : HexColor.Rgb,
+		sky_horizon_color : HexColor.Rgb,
 		sun : Sun.Sighting,
 	}
 

@@ -35,6 +35,7 @@ package
 		Geom,
 		Ground,
 		GroundSighting,
+		HexColor,
 		LeanSearch,
 		Lens,
 		Mountains,

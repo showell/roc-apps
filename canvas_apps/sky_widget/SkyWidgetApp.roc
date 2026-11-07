@@ -6,6 +6,7 @@
 ## small chart plots their answers over the whole sunset. The book opens it at
 ## one of three jobs, and each job adds a call.
 import game.Clock
+import game.HexColor
 import game.Lens
 import game.Pixels
 import game.Sky
@@ -88,7 +89,7 @@ shapes_at = |{ transport, job }| {
 }
 
 ## The two colors of the sky, as far as `job` goes.
-sky_colors : SkyWidgetApp.Job, Clock -> { top : Sky.Rgb, horizon : Sky.Rgb }
+sky_colors : SkyWidgetApp.Job, Clock -> { top : HexColor.Rgb, horizon : HexColor.Rgb }
 sky_colors = |job, clock|
 	match job {
 		SunSets => {

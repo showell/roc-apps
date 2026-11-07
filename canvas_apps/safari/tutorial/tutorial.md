@@ -618,9 +618,9 @@ The sky is two colors, the top of the sky and the horizon. Here they are at five
 
 Every color in the sky is a blend of two others, and a blend needs a ratio. `Fraction` is another small opaque type, a ratio from 0 to 1, and only its own block can build one, so a `Fraction` is always in range. It has two ways in. `Fraction.of` takes a ratio that can only be in range and crashes on anything else, because that would be a bug in the sum. `Fraction.clamp` takes a ratio that can rightly fall outside, and holds it at the nearest end.
 
-`color_between` takes one record argument, destructured in its parameter list, so callers name every field. Each channel moves the same share of the way. `Sky.Rgb` is a plain record alias: three floats with nothing to guard.
+`color_between` takes one record argument, destructured in its parameter list, so callers name every field. Each channel moves the same share of the way. `HexColor.Rgb` is a plain record alias: three floats with nothing to guard.
 
-{{code Sky.color_between}}
+{{code HexColor.color_between}}
 
 `sky_top_color`, the one `Tour.sky_top_color` asked at the start of this chapter, calls it to blend day into dusk. `dusk_at` says how far the day has gone. That's a `Fraction` too, and The setting sun works it out.
 
@@ -636,7 +636,7 @@ Every color in the sky is a blend of two others, and a blend needs a ratio. `Fra
 
 That's where a color finally becomes one integer, because a `Brush` wants `0xRRGGBB`. `pack` gets there with method calls on plain numbers. Static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `pack` a leaf: it calls nothing of Safari Ride's own.
 
-{{code Sky.pack}}
+{{code HexColor.pack}}
 
 One more thing in the frame goes dark with the sky: the mountains.
 
@@ -1114,7 +1114,7 @@ The types do the work, and a sunset needs four:
 | `Clock` | A step of the ride | A `U32` |
 | `Pixels` | A length on screen, like the sun's height | An `F64`, because a shape can sit between two pixels |
 | `Fraction` | A ratio from 0 to 1, like how far toward dusk we are | An `F64` |
-| `Sky.Rgb` | A color | A record of three floats |
+| `HexColor.Rgb` | A color | A record of three floats |
 
 The first three are opaque. Each is still a number, and the type gives it a name, so a height can't be passed where a dusk is wanted. With those in hand, each job is a signature:
 
