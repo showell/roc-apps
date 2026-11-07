@@ -42,6 +42,11 @@ Billboard := {
 	scenery_height : Billboard -> Distance
 	scenery_height = |billboard| billboard.height
 
+	## How far a billboard reaches to each side of its middle. A still is
+	## square, so this is half its height.
+	half_width : Billboard -> Distance
+	half_width = |billboard| billboard.height.divided_by(2.0)
+
 	## How a billboard looks. An emoji faces left, so a billboard facing right
 	## is its still mirrored. One less than a pixel tall isn't drawn.
 	scenery_picture : Billboard, Picture.Setting({}) -> Picture

@@ -1,8 +1,10 @@
-## The duck pond past the bend at a segment's end: its water, its bank, and
-## the ducks on it. A point on the pond is measured along the road past the
-## end of the segment, and across it from the middle of the road, in metres.
+## The duck pond past a bend, on the outside of the turn: its water, its bank,
+## and the ducks on it. A point on the pond is measured along the road past the
+## end of the segment, and out from the middle of the road on the outside of
+## the bend, in metres.
 import Across
 import Along
+import BendView
 import Billboard
 import Distance
 import EmojiStills
@@ -11,58 +13,96 @@ import lib.RgbColor
 
 Pond :: [].{
 
-	## A point on the pond, `past_end` along the road past the segment's end
-	## and `across` from the middle of the road.
-	PondPoint : { past_end : Distance, across : Across }
-
-	water_points : List(Pond.PondPoint)
-	water_points = [
-		{ past_end: Distance.metres(3.0), across: Across.metres(-4.0) },
-		{ past_end: Distance.metres(3.0), across: Across.metres(-30.0) },
-		{ past_end: Distance.metres(14.0), across: Across.metres(-33.0) },
-		{ past_end: Distance.metres(28.0), across: Across.metres(-28.0) },
-		{ past_end: Distance.metres(32.0), across: Across.metres(-17.0) },
-		{ past_end: Distance.metres(29.0), across: Across.metres(-7.0) },
-		{ past_end: Distance.metres(16.0), across: Across.metres(-3.0) },
-	]
-
-	water_color : RgbColor
-	water_color = RgbColor.of(0x2F7E8C)
-
-	bank_points : List(Pond.PondPoint)
-	bank_points = [
-		{ past_end: Distance.metres(29.0), across: Across.metres(-7.0) },
-		{ past_end: Distance.metres(32.0), across: Across.metres(-17.0) },
-		{ past_end: Distance.metres(28.0), across: Across.metres(-28.0) },
-		{ past_end: Distance.metres(29.0), across: Across.metres(-28.0) },
-		{ past_end: Distance.metres(33.0), across: Across.metres(-17.0) },
-		{ past_end: Distance.metres(30.0), across: Across.metres(-7.0) },
-	]
-
-	bank_color : RgbColor
-	bank_color = RgbColor.of(0xC2B280)
-
-	## Where `point` lies on a segment `length` long, whose end it is measured
-	## from. This is the one place a pond point becomes an `Along`.
-	segment_point : Pond.PondPoint, Distance -> Geom.RoadPoint
-	segment_point = |point, length| {
-		along: Along.at(length).plus(point.past_end),
-		across: point.across,
+	## The pond's outlines on the road around `bend`, the bend that ends a
+	## segment, in the order they are painted: its bank, then its water over
+	## the bank's inner edge.
+	pond_outlines : Geom.Bend -> List({ corners : List(Geom.RoadPoint), color : RgbColor })
+	pond_outlines = |bend| {
+		on_road = |outline| outline.map(|point| segment_point(point, bend))
+		[
+			{ corners: on_road(bank_points), color: bank_color },
+			{ corners: on_road(water_points), color: water_color },
+		]
 	}
 
-	## The ducks, placed on a segment `length` long.
-	placed_ducks : Distance -> List(Geom.Placed(Billboard))
-	placed_ducks = |length|
+	## The ducks, placed at `bend`, the bend that ends a segment.
+	placed_ducks : Geom.Bend -> List(Geom.Placed(Billboard))
+	placed_ducks = |bend|
 		ducks.map(
 			|pond_duck| {
-				on_segment = Pond.segment_point(pond_duck.at, length)
-				{
-					road_point: { along: on_segment.along, across: on_segment.across },
-					lift: Distance.zero,
-					kind: Billboard.adult_billboard(duck, pond_duck.facing),
-				}
+				road_point: segment_point(pond_duck.at, bend),
+				lift: Distance.zero,
+				kind: Billboard.adult_billboard(duck, pond_duck.facing),
 			},
 		)
+}
+
+## A point on the pond, `past_end` along the road past the segment's end and
+## `out_from_middle` from the middle of the road, on the outside of the bend.
+PondPoint : { past_end : Distance, out_from_middle : Distance }
+
+## The water's shore on the bend's side, from where it comes nearest the road
+## round to the far shore.
+near_shore_points : List(PondPoint)
+near_shore_points = [
+	{ past_end: Distance.metres(16.0), out_from_middle: Distance.metres(3.0) },
+	{ past_end: Distance.metres(3.0), out_from_middle: Distance.metres(4.0) },
+	{ past_end: Distance.metres(3.0), out_from_middle: Distance.metres(30.0) },
+	{ past_end: Distance.metres(14.0), out_from_middle: Distance.metres(33.0) },
+]
+
+## The water's shore farthest along the road, where the bank meets it.
+far_shore_points : List(PondPoint)
+far_shore_points = [
+	{ past_end: Distance.metres(28.0), out_from_middle: Distance.metres(28.0) },
+	{ past_end: Distance.metres(32.0), out_from_middle: Distance.metres(17.0) },
+	{ past_end: Distance.metres(29.0), out_from_middle: Distance.metres(7.0) },
+]
+
+water_points : List(PondPoint)
+water_points = near_shore_points.concat(far_shore_points)
+
+water_color : RgbColor
+water_color = RgbColor.of(0x2F7E8C)
+
+## The bank's edge away from the water, running the way the far shore runs.
+bank_outer_points : List(PondPoint)
+bank_outer_points = [
+	{ past_end: Distance.metres(29.0), out_from_middle: Distance.metres(28.0) },
+	{ past_end: Distance.metres(33.0), out_from_middle: Distance.metres(17.0) },
+	{ past_end: Distance.metres(30.0), out_from_middle: Distance.metres(7.0) },
+]
+
+## How far back from the far shore the bank's inner edge runs, under the
+## water. Two polygons that share an edge show a seam where the browser
+## antialiases both, so the bank lies under the water's edge instead, and the
+## water hides the overlap. A distance along the road shrinks fast on screen,
+## so the overlap is generous; it only has to keep the inner edge inside the
+## water. The bank's ends still meet the far shore's ends, because each end of
+## the bank lies straight along the road from its inner corner.
+bank_under_water : Distance
+bank_under_water = Distance.metres(10.0)
+
+## The bank: the far shore, moved back under the water, then its outer edge.
+bank_points : List(PondPoint)
+bank_points = {
+	under_water = |point| { ..point, past_end: point.past_end.minus(bank_under_water) }
+	inner_points = far_shore_points.fold_rev([], |point, out| out.append(under_water(point)))
+	inner_points.concat(bank_outer_points)
+}
+
+bank_color : RgbColor
+bank_color = RgbColor.of(0xC2B280)
+
+## Where `point` lies on the road around `bend`, the bend that ends a segment.
+## This is the one place a pond point becomes a road point.
+segment_point : PondPoint, Geom.Bend -> Geom.RoadPoint
+segment_point = |point, bend| {
+	along: Along.at(bend.segment_length).plus(point.past_end),
+	across: match BendView.outer_side(bend.turn) {
+		LeftSide => Across.left_of_middle(point.out_from_middle)
+		RightSide => Across.right_of_middle(point.out_from_middle)
+	},
 }
 
 ## The duck's still, and how tall a duck stands.
@@ -70,37 +110,45 @@ duck : Billboard.Species
 duck = { still: EmojiStills.duck, adult_height: Distance.metres(0.9) }
 
 ## A duck on the pond, where it floats and which way it faces.
-Duck : { at : Pond.PondPoint, facing : Billboard.Facing }
+Duck : { at : PondPoint, facing : Billboard.Facing }
 
 ducks : List(Duck)
 ducks = [
-	{ at: { past_end: Distance.metres(11.0), across: Across.metres(-10.0) }, facing: FacesRight },
-	{ at: { past_end: Distance.metres(17.0), across: Across.metres(-18.0) }, facing: FacesLeft },
-	{ at: { past_end: Distance.metres(21.0), across: Across.metres(-11.0) }, facing: FacesRight },
-	{ at: { past_end: Distance.metres(6.0), across: Across.metres(-6.0) }, facing: FacesRight },
-	{ at: { past_end: Distance.metres(7.0), across: Across.metres(-14.0) }, facing: FacesLeft },
-	{ at: { past_end: Distance.metres(8.0), across: Across.metres(-22.0) }, facing: FacesRight },
+	{
+		at: { past_end: Distance.metres(11.0), out_from_middle: Distance.metres(10.0) },
+		facing: FacesRight,
+	},
+	{
+		at: { past_end: Distance.metres(17.0), out_from_middle: Distance.metres(18.0) },
+		facing: FacesLeft,
+	},
+	{
+		at: { past_end: Distance.metres(21.0), out_from_middle: Distance.metres(11.0) },
+		facing: FacesRight,
+	},
+	{
+		at: { past_end: Distance.metres(6.0), out_from_middle: Distance.metres(6.0) },
+		facing: FacesRight,
+	},
+	{
+		at: { past_end: Distance.metres(7.0), out_from_middle: Distance.metres(14.0) },
+		facing: FacesLeft,
+	},
+	{
+		at: { past_end: Distance.metres(8.0), out_from_middle: Distance.metres(22.0) },
+		facing: FacesRight,
+	},
 ]
 
-expect
-	Pond.segment_point(
-		{ past_end: Distance.metres(6.0), across: Across.metres(-22.0) },
-		Distance.metres(100.0),
-	)
-		== { along: Along.metres(106.0), across: Across.metres(-22.0) }
-expect
-	Pond.placed_ducks(Distance.metres(100.0)).map(|placed| placed.road_point.along.to_metres())
-		== [111.0, 117.0, 121.0, 106.0, 107.0, 108.0]
-expect Pond.placed_ducks(Distance.metres(100.0)).all(|placed| placed.kind.height.to_metres() == 0.9)
-
-## Whether a duck floats within the water's reach, along the road and across it.
+## Whether a duck floats within the water's reach, along the road and out from
+## its middle.
 is_on_water : Duck -> Bool
 is_on_water = |pond_duck| {
 	is_within = |value, bounds|
 		bounds.any(|bound| bound <= value) and bounds.any(|bound| bound >= value)
-	acrosses = Pond.water_points.map(|point| point.across.to_metres())
-	past_ends = Pond.water_points.map(|point| point.past_end.to_metres())
-	is_within(pond_duck.at.across.to_metres(), acrosses)
+	outs = water_points.map(|point| point.out_from_middle.to_metres())
+	past_ends = water_points.map(|point| point.past_end.to_metres())
+	is_within(pond_duck.at.out_from_middle.to_metres(), outs)
 		and is_within(pond_duck.at.past_end.to_metres(), past_ends)
 }
 
@@ -109,10 +157,10 @@ expect ducks.all(is_on_water)
 # A duck just past each edge of the water is off it.
 expect
 	[
-		{ past_end: Distance.metres(2.9), across: Across.metres(-10.0) },
-		{ past_end: Distance.metres(32.1), across: Across.metres(-10.0) },
-		{ past_end: Distance.metres(10.0), across: Across.metres(-2.9) },
-		{ past_end: Distance.metres(10.0), across: Across.metres(-33.1) },
+		{ past_end: Distance.metres(2.9), out_from_middle: Distance.metres(10.0) },
+		{ past_end: Distance.metres(32.1), out_from_middle: Distance.metres(10.0) },
+		{ past_end: Distance.metres(10.0), out_from_middle: Distance.metres(2.9) },
+		{ past_end: Distance.metres(10.0), out_from_middle: Distance.metres(33.1) },
 	].all(|at| !is_on_water({ at, facing: FacesRight }))
 
 expect

@@ -68,14 +68,15 @@ bull_tree_gap = Distance.metres(0.5)
 herd_bull : Along -> Geom.Placed(Billboard)
 herd_bull = |herd_along| {
 	tree_line = Trees.tree_line_distance(Conifer.Green)
-	bull_middle = tree_line.plus(bull.adult_height.divided_by(2.0))
+	bull_billboard = Billboard.adult_billboard(bull, FacesLeft)
+	bull_middle = tree_line.plus(bull_billboard.half_width())
 	{
 		road_point: {
 			along: herd_along,
 			across: Across.left_of_middle(bull_middle.plus(bull_tree_gap)),
 		},
 		lift: Distance.zero,
-		kind: Billboard.adult_billboard(bull, FacesLeft),
+		kind: bull_billboard,
 	}
 }
 

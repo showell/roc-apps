@@ -45,6 +45,7 @@ package
 		Pipeline,
 		Pixels,
 		Polygon,
+		Pond,
 		PosedBird,
 		PosedCat,
 		RailSighting,

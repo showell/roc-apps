@@ -170,8 +170,8 @@ bend_paving = |road, bend_view| {
 	road_patch(corners)
 }
 
-## The pond past the end of `segment`, which lies at `place`: its water, then
-## its bank. A segment that ends at no pond has none.
+## The pond past the end of `segment`, which lies at `place`: its bank, then
+## its water. A segment that ends at no pond has none.
 pond_patches : RoadAhead.RoadView, { segment : Segment, place : SegmentPlace } -> List(Ground.Patch)
 pond_patches = |road, { segment, place }| {
 	is_at_pond =
@@ -184,20 +184,14 @@ pond_patches = |road, { segment, place }| {
 			RouteEnds => False
 		}
 	if is_at_pond {
-		on_map = |outline|
-			outline.map(
-				|point| {
-					on_segment = Pond.segment_point(point, segment.length)
-					RoadAhead.rider_point_at(
-						road,
-						{ place, along: on_segment.along, across: on_segment.across },
-					)
-				},
+		rider_point = |road_point|
+			RoadAhead.rider_point_at(
+				road,
+				{ place, along: road_point.along, across: road_point.across },
 			)
-		[
-			{ corners: on_map(Pond.water_points), color: Pond.water_color },
-			{ corners: on_map(Pond.bank_points), color: Pond.bank_color },
-		]
+		Pond.pond_outlines(segment.bend_out_of()).map(
+			|outline| { corners: outline.corners.map(rider_point), color: outline.color },
+		)
 	} else {
 		[]
 	}
