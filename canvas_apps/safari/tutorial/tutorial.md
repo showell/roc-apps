@@ -1985,7 +1985,7 @@ The stills are data too. Nested tags get checked all the way down, so a `match` 
 
 {{code BirdStills.pose_polygons}}
 
-`BirdShapes.bird_shapes` hands that to `StillShapes.still_shapes`, the function that also draws a cow. A bird's feet reach the screen through `Camera.project`, as a tree's top does, and the math layer chapter shows how. That's the drawing.
+`PosedBird.scenery_picture` hands that to `StillShapes.still_shapes`, the function that also draws a cow. A bird's feet reach the screen through `Camera.project`, as a tree's top does, and the math layer chapter shows how. That's the drawing.
 
 ### Finding a tree
 
@@ -2252,7 +2252,7 @@ From there to the screen is a pinhole camera, which is similar triangles. Dividi
 
 {{code Camera.project}}
 
-`BirdShapes.bird_shapes` calls it with a record built on the spot for the bird's feet:
+`PosedBird.scenery_picture` calls it with a record built on the spot for the bird's feet:
 
 {{code BirdShapes.PosedBird from "feet = Camera.project(" to "feet = Camera.project("}}
 
