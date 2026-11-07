@@ -207,10 +207,9 @@ turn_text = |turn| {
 ## Which edge a bend's outer edge is, in words.
 edge_text : BendInView -> Str
 edge_text = |bend_in_view|
-	if bend_in_view.outer_edge() == Geom.left_edge {
-		"left"
-	} else {
-		"right"
+	match Geom.outer_side(bend_in_view.turn()) {
+		LeftSide => "left"
+		RightSide => "right"
 	}
 
 ## How far past the end of the segment before `bend_in_view` its apex lies.

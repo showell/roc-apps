@@ -21,10 +21,9 @@ Wildlife :: [].{
 		species = species_of(animal)
 		bend_along = Along.at(bend.segment_length)
 		{ out_on_outside, facing } =
-			if bend.turn.is_right() {
-				{ out_on_outside: Across.left_of_middle, facing: FacesRight }
-			} else {
-				{ out_on_outside: Across.right_of_middle, facing: FacesLeft }
+			match Geom.outer_side(bend.turn) {
+				LeftSide => { out_on_outside: Across.left_of_middle, facing: FacesRight }
+				RightSide => { out_on_outside: Across.right_of_middle, facing: FacesLeft }
 			}
 		adult = Billboard.adult_billboard(species, facing)
 		clear_of_rail = Geom.road_half_width.plus(adult_rail_buffer)
