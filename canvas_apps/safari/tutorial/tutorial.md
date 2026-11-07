@@ -245,7 +245,7 @@ Nothing in this chapter moves, and that's true of the next few chapters too, as 
 
 ## Shapes
 
-Our Roc app doesn't draw anything. For each frame, Roc answers with a list of shapes, and something else paints them. The painter on this page is JavaScript on a canvas, but it could as well be wasm compiled from Odin or Zig. The Roc is the same either way.
+Before we draw a tree, we need to know what drawing means here, because our Roc app doesn't draw anything. For each frame, Roc answers with a list of shapes, and a painter puts them on a canvas. The painter on this page is JavaScript, but it could as well be a wasm host written in Odin or Zig. The Roc is the same either way.
 
 So `Polygon.triangle` doesn't put a triangle on the canvas. It makes a value that describes one.
 
@@ -263,11 +263,20 @@ A color is a whole number in hex, with the six digits a web page writes after it
 
 New in this chapter:
 
-- Modules: `TwoShapes`, `Shapes`, `Polygon`, `Screen`
+- Roc: a record taken apart in a parameter list, `Try`
+- Modules: `TwoShapes`, `Shapes`, `Polygon`, `Screen`, `Picture`
 
 ### Get the types right
 
-Safari Ride's frames are for a canvas 960 pixels wide and 600 pixels tall. A `Screen.Point` is a place given as an `x` and a `y`, in pixels from the top left of the canvas, so `y` grows downward. `Screen.point`, in the code above, makes one:
+Three types carry everything a frame paints:
+
+| Type | What it is |
+|---|---|
+| `Screen.Point` | A place on the canvas, as an `x` and a `y` in `Pixels` from its top left |
+| `Shapes.Shape` | One thing to paint, such as a polygon |
+| `Picture` | The shapes that paint one object, in the order they're painted |
+
+Safari Ride's frames are for a canvas 960 pixels wide and 600 pixels tall, and `y` grows downward. `Pixels` is a length on the screen. It's opaque like `Clock`, and it's an `F64` underneath, because a corner can fall between two pixels. `Screen.point`, in the code above, makes a point:
 
 {{code Screen.Point}}
 
@@ -277,70 +286,133 @@ A frame is a list of `Shapes.Shape`:
 
 That type serves every app under `canvas_apps`, so some of its tags are for apps other than Safari Ride. `Image`, for example, is for a pixel paint program. A frame of Safari Ride often holds more than 2,000 shapes, and nearly all of them are `Poly`.
 
-`Polygon.triangle` and `Polygon.rectangle` both call `flat_polygon`, which makes a `Poly` of one color from a list of corners:
+The two shapes, from the top
+```dot
+digraph shapes {
+  node [shape=box, fontname="Helvetica"];
+  painter [label="the painter\nJavaScript, or a wasm host", style=dashed];
+  painter -> "TwoShapes.shapes" [label="  asks for the frame"];
+  "TwoShapes.shapes" -> "Polygon.triangle";
+  "TwoShapes.shapes" -> "Polygon.rectangle";
+  "Polygon.triangle" -> "Polygon.flat_polygon";
+  "Polygon.rectangle" -> "Polygon.flat_polygon";
+  "Polygon.flat_polygon" [style=bold];
+}
+```
+
+A box is a function, and an arrow is a call. The dashed box isn't Roc. The painter asks for the frame's list, and paints whatever comes back.
+
+### The functions
+
+`Polygon` makes shapes, one for each call. `Polygon.triangle` hands its three corners to `flat_polygon`:
+
+{{code Polygon.triangle}}
+
+The triangle takes two arguments: a color, and a record of three corners. Between the bars, `{ first_corner, second_corner, third_corner }` takes that record apart into three names. To a Python programmer, it's like three keyword arguments that all have to be given.
+
+`Polygon.rectangle` hands over its four corners the same way, and `flat_polygon` makes a `Poly` of one color from any list of corners:
 
 {{code Polygon.flat_polygon}}
 
-So our rectangle is a `Poly`, not a `Rect`.
+So our rectangle is a `Poly`, not a `Rect`. A polygon needs at least three corners, so `flat_polygon` crashes if it gets fewer. That would be a bug in Safari Ride, and a bug shouldn't quietly paint nothing.
 
-### Shapes and lists of shapes
+Some things honestly have nothing to show. A patch of ground wholly behind the camera is one, so `Ground.patch_shape` answers a `Try`:
 
-`Polygon` makes shapes one at a time. A polygon needs at least three corners, so `flat_polygon` crashes if it gets fewer. That would be a bug in Safari Ride, and a bug shouldn't quietly paint nothing.
+{{signatures Ground.patch_shape}}
 
-Something made of several shapes is a list of them. A tree is nine: a trunk and eight tiers of foliage. A list can be empty, and that isn't a bug. `Ground.patch_shape` knows that a patch of ground wholly behind the camera has nothing to show.
+A `Try` is either `Ok` holding a shape, or `Err` holding a reason, here `BehindCamera`. Python would raise an exception or return `None`. Roc puts both answers in the type, so whoever calls `patch_shape` can't forget the ground behind the camera.
 
-The order of the list is the order of painting, so the rectangle covers part of the triangle. A frame lists the sky and mountains, then the ground, then what stands on the ground, far to near.
+### Pictures
+
+Something made of several shapes is a list of them. A tree is nine: a trunk and eight tiers of foliage. The shapes that paint one object, in order, make a `Picture`:
+
+{{signatures Picture.from_shapes Picture.to_shapes}}
+
+`Picture` is opaque, and a `List(Shapes.Shape)` underneath. Outside its module, a picture is one thing, handed along whole until something paints it.
+
+The order of a list is the order of painting, so in our frame the rectangle covers part of the triangle. A frame paints the backdrop, the mountains and the ground first, then a series of pictures, far to near.
 
 For the next few chapters, the work is choosing corners and choosing their order. We'll start with a tree.
 
 ## A simple tree
 
-Let's draw a tree. Forget the road for now, and the rider, and the ride.
+Let's draw a tree. Forget the road for now, and the rider, and the ride. All we know is what kind of tree it is, and where it stands from the camera.
 
-Drawing a tree and placing trees along a road are two nearly unrelated problems. In this chapter and the next, we learn how to draw a tree. In the chapter after that, we learn how to orient trees in the world, relative to the road and the rider.
+Drawing a tree and placing trees along a road are two nearly separate problems. This chapter and the next draw one tree. The chapter after that, Roadside trees, puts trees in the world, relative to the road and the rider.
 
-The concept is small. A tree is a trunk under eight tiers of foliage, and a tier is a flat triangle. Every tree a long way off is drawn exactly this way.
+The concept is small. A tree is a trunk under eight tiers of foliage, and a far tree's tiers are flat triangles. Every tree a long way off is drawn exactly this way. The tree's kind decides how tall it is and what color, and nothing about where it stands.
 
 New in this chapter:
 
+- Roc: nominal types, record update
 - Modules: `Conifer`, `TreeShapes`, `Distance`
 
 ### Get the types right
 
-There are only four kinds of tree, and the kind decides how tall it is. That's a whole module:
-
-{{module Conifer}}
-
-`Distance` is a length in metres, and it's opaque like `Clock`. A tree doesn't store its height, because a stored copy could disagree with its kind.
-
-Four more types carry a tree to the screen:
+A tree passes through these types on its way to the screen:
 
 | Type | What it is |
 |---|---|
-| `TreeShapes.TreeAhead` | Any record with a `right`, a `forward` and a `conifer`, and `rest` stands for whatever else is in it |
-| `Geom.RaisedPoint` | A point in the rider's view: `right` and `forward` of the camera, and `height` above the ground |
+| `Conifer` | A tree's kind: `BigGreen`, `SmallGreen`, `Red` or `Gold` |
+| `Distance` | A length in metres, opaque like `Clock` and an `F64` underneath |
+| `Picture.Setting` | What any object draws from: `right` and `forward` of the camera, the lens's focal length, and a `context` for whatever else its kind needs |
+| `TreeShapes.TreeAhead` | A tree as `TreeShapes` sees it: `right`, `forward`, `height` and `foliage_color` |
+| `Geom.RaisedPoint` | A point in front of the camera: `right`, `forward`, and `height` above the ground |
+| `TreeShapes.TreeOnScreen` | Where a tree lands on the screen, and how big it looks there, in `Pixels` |
 | `TreeShapes.Tier` | One layer of the crown, as fractions of the crown |
-| `TreeShapes.TreeOnScreen` | Where a tree landed, and how big it looks, in `Pixels` |
 
-So the job is three signatures:
+A conifer's `context` is how many trees are nearer than it, so its setting is a `Picture.Setting({ nearer_tree_count : U16 })`. That count only matters up close, and it can wait.
+
+Each step of the job is a signature:
 
 | Job | Function | Its type |
 |---|---|---|
-{{types row Conifer.scenery_height Know how tall it is}}
+{{types row Conifer.scenery_picture Draw a conifer}}
+{{types row TreeShapes.tree_picture Draw a tree of any height and color}}
 {{types row TreeShapes.tree_on_screen Find it on the screen}}
-{{types row TreeShapes.tree_picture Make its picture}}
+{{types row TreeShapes.tier_triangle Make one tier}}
+
+One tree, from the top
+```dot
+digraph tree {
+  node [shape=box, fontname="Helvetica"];
+  "Conifer.scenery_picture" [style=bold];
+  "Conifer.scenery_picture" -> "Conifer.scenery_height";
+  "Conifer.scenery_picture" -> "foliage_color";
+  "Conifer.scenery_picture" -> "TreeShapes.tree_picture";
+  "TreeShapes.tree_picture" -> "TreeShapes.tree_on_screen";
+  "TreeShapes.tree_on_screen" -> "Camera.project";
+  "TreeShapes.tree_picture" -> "trunk_shape";
+  "TreeShapes.tree_picture" -> "tier_shape";
+  "tier_shape" -> "tier_triangle";
+}
+```
+
+A box is a function, and an arrow is a call. The top row knows the four kinds of conifer. Everything from `TreeShapes.tree_picture` down knows only a height and a color. `Conifer` imports `TreeShapes`, and `TreeShapes` doesn't import `Conifer`, so a fifth kind of tree wouldn't touch a line of `TreeShapes`.
 
 ### The functions
 
-`tree_picture` calls the others, and it reads like the concept: find the tree on the screen, then make a trunk and eight tiers.
+Here's all of `Conifer`:
+
+{{module Conifer}}
+
+`Conifer := [BigGreen, SmallGreen, Red, Gold].{ ... }` is a nominal type. Like `Clock`, it carries a block of definitions. Unlike `Clock`, it isn't opaque, so its tags are open to everyone. `Trees` plants a gold tree with the tag `Gold`.
+
+The kind holds how a tree looks, its height and its color, and never where it is. No tree stores its height, either. `scenery_height` works it out from the kind, so there's no stored copy to disagree with it.
+
+`scenery_picture` takes the kind and a setting, and the bars take the setting apart, as `Polygon.triangle` did with its corners. Where the tree stands, `right` and `forward`, comes in with the setting, and it's gone again once the picture is made. The rest goes on to `TreeShapes.tree_picture`, in the record that function wants.
+
+`tree_picture` reads like the concept: find the tree on the screen, then make a trunk and eight tiers.
 
 {{code TreeShapes.tree_picture}}
 
-`|{ tree, nearer_tree_count }, cam_focal|` unpacks a record argument into two names. What `nearer_tree_count` and `crown` do for near trees can wait. For now, every tier is a triangle.
+`tip` is the top of the tree, as a point in front of the camera. `tiers.map(...)` makes a shape from each tier, as a Python list comprehension would, and `[trunk].concat(...)` puts the trunk first, so the tiers paint over it. What `trunk_finish` and `crown` do for near trees can wait. For now, every tier is a triangle.
 
-`Camera.project` turns a point in front of the camera into a place on the screen, and `cam_focal` is the lens's focal length, in pixels. `tree_on_screen` calls it twice, once for the tree's foot and once for its tip. The difference between them is how tall the tree looks. `{ ..tip, height: Distance.zero }` is a copy of `tip` with a new `height`.
+`Camera.project` turns a point in front of the camera into a place on the screen, and `cam_focal` is the lens's focal length, in pixels. `tree_on_screen` calls it twice, once for the tree's foot and once for its tip. The difference between them is how tall the tree looks.
 
 {{code TreeShapes.tree_on_screen}}
+
+`{ ..tip, height: Distance.zero }` is a copy of `tip` with a new `height`, the way Python copies a dataclass with replace. That copy is the tree's foot.
 
 The trunk and the crown split the tree's height between them:
 
@@ -348,7 +420,7 @@ The trunk and the crown split the tree's height between them:
 
 {{code TreeShapes.crown_height_share}}
 
-`complement` is one minus a `Fraction`, a number from 0 to 1, so the two shares add up to 1 by construction.
+A `Fraction` is a number from 0 to 1, and `complement` is one minus it, so the two shares add up to 1 by construction.
 
 ### Triangles
 
@@ -356,7 +428,7 @@ A tier is three fractions:
 
 {{code TreeShapes.Tier}}
 
-`tiers` is a list of eight of these, and each overlaps the next. A tier is one triangle, worked out in pixels:
+`tiers` is a list of eight of these, and each overlaps the next. A tier is one triangle, worked out in pixels, with its apex on the tree's middle line and its base across the tier's bottom:
 
 {{code TreeShapes.tier_triangle}}
 
@@ -364,7 +436,7 @@ That's a tree, and from a distance nobody can tell it's flat. Ride close to one,
 
 ## A conifer
 
-A near tree needs to look round, and it has to fatten as you ride past it. So Safari Ride draws two kinds of crown: flat triangles far off, and 3-D cones up close.
+A near tree needs to look round, and it has to fatten as you ride past it. So Safari Ride draws two kinds of crown: flat triangles far off, and 3-D cones up close. The tree is still alone in front of the camera, and the road can wait one more chapter.
 
 New in this chapter:
 
@@ -388,19 +460,45 @@ The parentheses are where it leaves `Enum` behind. A tag can carry a value, call
 
 In Python you might write a class with a `kind` and a `shade`, set `shade` to `None` for triangles, and remember not to read it. Here there's nothing to remember. A triangle has nowhere to put a shade, and a cone can't be missing one. The only way to reach a `shade` is a `match` branch for `Cones`, and we'll see one shortly.
 
-This function answers with that type:
+The rest of the chapter is three signatures:
+
+| Job | Function | Its type |
+|---|---|---|
+{{types row TreeShapes.crown_of Decide, once for the tree}}
+{{types row TreeShapes.tier_shape Act on it, for each tier}}
+{{types row TreeShapes.convex_hull_points Outline a cone}}
+
+A near tree's tiers
+```dot
+digraph cone {
+  node [shape=box, fontname="Helvetica"];
+  "TreeShapes.tree_picture" -> "TreeShapes.crown_of";
+  "TreeShapes.tree_picture" -> "tier_shape";
+  "tier_shape" -> "tier_triangle";
+  "tier_shape" -> "tier_cone";
+  "tier_cone" -> "Camera.project";
+  "tier_cone" -> "convex_hull_points";
+  "convex_hull_points" -> "trim_hull";
+  "trim_hull" -> "trim_hull";
+  "TreeShapes.crown_of" [style=bold];
+}
+```
+
+`tree_picture` asks `crown_of` once, and hands the answer to `tier_shape` for every tier. The arrow from `trim_hull` to itself is a function calling itself, and we'll see why.
+
+### The functions
+
+`crown_of` answers with a `Crown`:
 
 {{code TreeShapes.crown_of}}
 
 `Detail` holds the thresholds that decide how much of a thing gets drawn, and `cone_reach` is 200 metres. Shade fades from full at the camera to none at 80 metres.
 
 ```widget tree
-Three gold trees, each made by `TreeShapes.tree_picture`. Under each are its distance and what `crown_of` said.
+Three gold trees, each drawn by `Conifer.scenery_picture`. Under each are its distance and what `crown_of` said.
 ```
 
-### The functions
-
-`tier_shape` acts on that decision:
+`tier_shape` acts on that decision. Its `TierInputs` is the record `tree_picture` built as `inputs`: what every tier of one tree needs, from the tree's tip and the lens to its color and its crown.
 
 {{code TreeShapes.tier_shape}}
 
@@ -414,7 +512,7 @@ That leaves 17 points on the screen, and a cone's outline is whatever wraps arou
 
 {{code TreeShapes.convex_hull_points}}
 
-This is Andrew's monotone chain. Sort the points from left to right, walk along the top, and walk back along the bottom. `fold` is Python's `reduce`, and `fold_rev` is the same from the far end, with its arguments the other way round. `trim_hull` serves both walks: before a point goes on, it drops any recent points that would make a dent. `[.., a, b]` is a list pattern that takes the last two items.
+This is Andrew's monotone chain, which A. M. Andrew published in 1979. Sort the points from left to right, walk along the top, and walk back along the bottom. `fold` is Python's `reduce`, and `fold_rev` is the same from the far end, with its arguments the other way around. `trim_hull` serves both walks: before a point goes on, it drops the last point of the hull while that point would make a dent, and it calls itself until none does. `[.., a, b]` is a list pattern that takes the last two items.
 
 {{code TreeShapes.trim_hull}}
 
@@ -424,78 +522,118 @@ That's one tree. Safari Ride plants 392.
 
 ## Roadside trees
 
-Here's the other tree problem. Safari Ride plants 392 trees along its road, and most of them are out of sight at any moment. How a tree looks plays no part in this chapter.
+Here's the other tree problem. Safari Ride plants 392 trees along its road, and most of them are out of sight at any moment. For each frame, it has to find the ones the rider can see, and say where each one stands from the camera. This chapter is about the forest, not the trees: once a tree is found, `Conifer.scenery_picture` from A simple tree draws it, and how it looks plays no other part here.
 
 ```widget frame trees
 Step 1,570 of the ride, with only the trees on.
 ```
 
-This is step 1,570 again, the frame with the frozen cat, showing only its trees. Each tree here is a sighting from `TreeSighting.trees_in_view`, turned into shapes by `TreeShapes.tree_picture`. They make up 1,656 of the 2,713 shapes in that frame, more than everything else put together.
+This is step 1,570 again, the frame with the frozen cat, showing only its trees. They make up 1,656 of the 2,713 shapes in that frame, more than everything else put together.
 
-So a tree has two lives. It's planted once, and that lasts the whole ride. Each frame that can see it makes a fresh sighting, and that lasts one frame. This chapter takes them in that order.
+So a tree has two lives. It's planted once, and that lasts the whole ride. For each frame that can see it, it's sighted, and that sighting lasts one frame. The sighting is then rendered: drawn as a picture that knows how far away it stands, so that far trees can be painted before near ones.
 
 New in this chapter:
 
 - Roc: `var` and `while` in a pure function
-- Modules: `TreeSighting`, `Scenery`, `Along`, `Across`
+- Modules: `TreeSighting`, `Pipeline`, `Rendered`, `Scenery`, `Along`, `Across`
 
 ### Get the types right
 
-Those two lives are two records, and each says where the tree stands in a different way:
+A tree takes three forms, and each says where it is in its own way:
 
-| Type | Where the tree is | Lasts |
+| Type | What it holds | Lasts |
 |---|---|---|
-| `Trees.RoadsideTree` | `along` and `across` its segment | The whole ride |
-| `Pipeline.Sighted(Conifer)` | `right` of the camera and `forward` of the camera | One frame |
+| `Trees.RoadsideTree` | The tree's kind, and where it stands: `along` and `across` its segment | The whole ride |
+| `Pipeline.Sighted(Conifer)` | All of that, and where the rider sees it: `right` and `forward` of the camera | One frame |
+| `Rendered` | The tree's picture, and its depth: how far ahead of the camera it stands | One frame |
 
-`Along` is a place along a segment, and `Across` is a place across the road. Both are opaque, so passing one as the other is a compile-time error. In any function, the field names say which of the two it's working in.
+`Trees.RoadsideTree` is `Geom.Placed(Conifer)`: a record of `along`, `across` and `kind`, and its kind is a `Conifer`. `Pipeline.Sighted(Conifer)` is the record we met in The modules, with a `Conifer` in its `kind` field. In both, the kind holds how the tree looks, and the other fields hold where it is.
 
-A `TreeSighting` also fits `TreeShapes.TreeAhead`, so `TreeShapes` doesn't import it. The problems really are separate.
+`Along` is a place along a segment, and `Across` is a place across the road. Both are opaque, so passing one as the other is a compile-time error.
+
+A sighting also keeps the segment the tree was planted on, as `place`, beside its `along` and `across`. A tree never looks at them again, but a radio tower will.
 
 | Job | Function | Its type |
 |---|---|---|
 {{types row Trees.roadside_trees Plant a segment, once}}
-{{types row TreeSighting.trees_in_view Find the trees in view, each frame}}
+{{types row TreeSighting.trees_in_view Find the trees in view, for each frame}}
+{{types row SceneShapes.tree_rendering Render one, for each frame}}
+
+A tree's two lives
+```dot
+digraph roadside {
+  node [shape=box, fontname="Helvetica"];
+  fontname="Helvetica";
+  subgraph cluster_once {
+    label="once";
+    World -> "Trees.roadside_trees";
+    "Trees.roadside_trees" -> "Trees.distance_from_middle";
+  }
+  subgraph cluster_frame {
+    label="for each frame";
+    "TreeSighting.trees_in_view" -> "TreeSighting.segment_sightings";
+    "TreeSighting.segment_sightings" -> "TreeSighting.sighting_of";
+    "TreeSighting.sighting_of" -> "Pipeline.tall_sighting_of";
+    "Pipeline.tall_sighting_of" -> "Pipeline.sighting_of";
+    "Pipeline.sighting_of" -> "Chain.rider_point_at";
+    "SceneShapes.tree_rendering" -> "SceneShapes.nearer_tree_count";
+    "SceneShapes.tree_rendering" -> "Pipeline.rendering_of";
+    "Pipeline.rendering_of" -> "Conifer.scenery_picture";
+  }
+  "TreeSighting.segment_sightings" -> World [style=dotted, constraint=false];
+  "Conifer.scenery_picture" [style=bold];
+}
+```
+
+A box is a function, and a solid arrow is a call. The dotted arrow is each frame reading the trees `World` planted. `Conifer.scenery_picture`, in bold, is where A simple tree began. It's the one place the two tree problems meet.
 
 ### Planting
 
-Planting walks along a segment and keeps a list, and a loop says that best. `$` marks the names that change. The function still has a `->`, because nothing outside it can see them change.
+Planting walks along a segment and keeps a list, and a loop says that best.
 
 {{code Trees.roadside_trees}}
 
-Trees stand in pairs, one each side of the road, every 30 metres. The pairs take turns: a big green pair, then a pair of the segment's accent, which is small green, red or gold, then big green again. A gold pair stands further from the road, because it's so much taller:
+`var` makes a name that can change, and a `$` marks every use of one, so the names that change stand out. The function is still pure. Nothing outside it can see them change, so its type is still a plain `->`.
+
+Trees stand in pairs, one on each side of the road, every 30 metres. `{ ..left_tree, across: ... }` makes the right tree from the left one, with the record update from A simple tree. The pairs take turns: a big green pair, then a pair of the segment's accent, which is small green, red or gold, then big green again. A gold pair stands farther from the road, because it's so much taller:
 
 {{code Trees.distance_from_middle}}
 
 ### Seeing the trees
 
-For each frame, `trees_in_view` goes through the segments of the road ahead. `join_map` is a `map` followed by a flatten:
+For each frame, `trees_in_view` goes through the segments of the road ahead, which Safari Ride calls the chain. `join_map` is a `map` followed by a flatten:
 
 {{code TreeSighting.trees_in_view}}
 
 {{code TreeSighting.segment_sightings}}
 
-From here on, things are measured from the camera, which is where the rider stands. We don't need to know much about the rider yet.
+From here on, things are measured from the camera, which travels with the rider. We don't need to know much about the rider yet.
 
 {{code TreeSighting.sighting_of}}
 
+`InChain(position)` says which segment of the chain the tree stands on. The size test asks for 2 pixels, through the camera's own lens.
+
+`Pipeline.tall_sighting_of` serves everything that stands by the road, not only trees. It starts by asking for the plain sighting:
+
 {{code Pipeline.sighting_of}}
 
-{{code Pipeline.tall_sighting_of}}
-
-`Chain.rider_point_at` finds where a point on the road lies from the rider, and the math layer chapter shows how. After that, there are two ways to lose a tree. It can be behind the camera, or it can be under 2 pixels tall. The answer is a `Try`, either a sighting or `OutOfView`, and `keep_oks` keeps the sightings.
+Here `kind` is `Conifer`. `Chain.rider_point_at` finds where a point on the road lies from the rider, and the math layer chapter shows how. A point no more than 0.4 metres ahead, the camera's near plane, is `BehindCamera`. Then `tall_sighting_of` asks the conifer for its `scenery_height`, works out how tall the tree stands on the screen, and calls a tree under 2 pixels `TooSmall`. So the answer is a `Try`: a sighting, or one of those two reasons. `keep_oks`, in `segment_sightings`, keeps the sightings and drops the reasons.
 
 ### Spending the detail
 
 Most of that 1,656 is far off, and far trees are cheap. They get eight triangles and a plain trunk. A cone costs a ring of 16 points and a hull, so only trees within 200 metres get cones, and only the nearest few get a shaded trunk.
 
-"The nearest few" is the one thing a tree alone can't tell us, because it depends on the other trees. So `SceneShapes` counts them, and that's the `nearer_tree_count` from A simple tree:
+"The nearest few" is the one thing a tree alone can't tell us, because it depends on the other trees. So `SceneShapes` counts them, and the count goes in as the conifer's context, the `nearer_tree_count` from A simple tree:
 
 {{code SceneShapes.tree_rendering}}
 
+{{code SceneShapes.nearer_tree_count}}
+
+`Pipeline.rendering_of` hands the sighting's `right` and `forward`, the lens and that context to `Conifer.scenery_picture`. It pairs the picture with the sighting's `forward` as its depth, and that's a `Rendered`. Everything beside the road ends up as a `Rendered`, so trees, towers and critters meet in one list, and a depth sort puts that list in order, far to near.
+
 So `World` holds every tree's place for the whole ride, and no frame remembers anything. Every sighting is thrown away, and the next frame makes them all again.
 
-Most things in a frame work this way: a plain record that lasts, a sighting that doesn't, and a list of shapes. Grass needs none of that.
+Most things in a frame work this way: placed once, then sighted and rendered for each frame. Grass needs none of that.
 
 ## Grass
 
