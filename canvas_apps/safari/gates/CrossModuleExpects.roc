@@ -580,10 +580,12 @@ rail_ends : { start : Geom.RaisedPoint, end : Geom.RaisedPoint }
 rail_ends = {
 	quads = RailSighting.rail_quads_in_view(right_angle_road, { vantage: origin })
 	last_bar = (quads.len() - 1) / 2 - 1
-	corner_of = |quad_index, corner_index|
-		quads.get(quad_index).map_ok(|quad| quad.corners).ok_or([]).get(corner_index)
-			?? crash "CrossModuleExpects: a rail bar has four corners"
-	{ start: corner_of(0, 0), end: corner_of(last_bar, 1) }
+	corners_of = |quad_index|
+		match quads.get(quad_index) {
+			Ok(quad) => quad.corners
+			Err(OutOfBounds) => crash "CrossModuleExpects: the rail has a bar at each end of its path"
+		}
+	{ start: corners_of(0).low_start, end: corners_of(last_bar).low_end }
 }
 
 ## The point on the left edge `along` metres into the segment at `place` on the
