@@ -84,15 +84,17 @@ StillShapes :: [].{
 		}
 	}
 
-	## A still `height` tall, standing on its feet at the setting's spot.
+	## A still `height` tall, as drawn, standing on its feet at the setting's
+	## spot.
 	standing_still_shapes : Picture.Setting({}),
 	{
 		height : Distance,
-		flip : StillShapes.Flip,
 		polygons : List(Stills.StillPolygon),
 	} -> List(Shapes.Shape)
-	standing_still_shapes = |setting, { height, flip, polygons }|
-		StillShapes.still_shapes(StillShapes.standing_anchor(setting, { height, flip }), polygons)
+	standing_still_shapes = |setting, { height, polygons }| {
+		anchor = StillShapes.standing_anchor(setting, { height, flip: AsDrawn })
+		StillShapes.still_shapes(anchor, polygons)
+	}
 }
 
 ## A still's gradient is linear when its kind is 1, and radial otherwise.

@@ -33,11 +33,7 @@ PosedCat := { pose : PosedCat.CatPose }.{
 		Picture.from_shapes(
 			StillShapes.standing_still_shapes(
 				setting,
-				{
-					height: PosedCat.cat_height,
-					flip: AsDrawn,
-					polygons: PosedCat.pose_polygons(cat.pose),
-				},
+				{ height: PosedCat.cat_height, polygons: PosedCat.pose_polygons(cat.pose) },
 			),
 		)
 
