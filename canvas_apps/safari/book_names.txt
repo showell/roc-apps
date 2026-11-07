@@ -1,0 +1,42 @@
+# The names the book's prose may hold that aren't in safari's code. The rule is
+# in gates/book_names.shale, which reads this table.
+
+# Roc's own words, which the parser's tree holds as syntax and not as names.
+_: Roc's wildcard, in a pattern or an annotation
+as: a Roc keyword, in a list pattern
+crash: a Roc keyword
+expect: a Roc keyword
+for: a Roc keyword
+if: a Roc keyword
+match: a Roc keyword
+return: a Roc keyword
+var: a Roc keyword
+while: a Roc keyword
+
+# Roc's builtins, which the book calls by their full names.
+F64.e.pow: a Roc builtin, the constant e and its method
+I64.until: a Roc builtin
+List.from_iter: a Roc builtin
+List.with_capacity: a Roc builtin
+
+# Roc's command line.
+glue: the `roc glue` command
+roc: the Roc command
+test: the `roc test` command
+PASS: what `roc test --verbose` prints for an expect
+
+# Other languages, for comparison.
+Enum: Python's, compared with a tag union
+None: Python's, compared with a tag's payload
+null: other languages' missing value, which Roc doesn't have
+reduce: Python's, compared with `fold`
+
+# Files and folders the book names, which aren't Roc names.
+canvas_app_runner.js: a file of the JavaScript platform
+canvas_apps: the folder of every canvas app
+game.roc: the package file that lists the game's modules
+main.roc: the native app's root file
+roc_glue.js: the file `roc glue` generates
+shapes_canvas.js: a file of the JavaScript platform
+turn_as_bearing: a failing program in tutorial/fails, which the build runs
+web.roc: the web app's root file
