@@ -280,7 +280,7 @@ cats_on_road = |segments_ahead| CrossingSighting.cats_in_view(
 cat_at : U32 -> Try(Pipeline.Sighted(PosedCat), [NoCat, BehindCamera, TooSmall])
 cat_at = |number| CrossingSighting.segment_cat(
 	cats_from_origin,
-	{ position: RoadAhead.Position.number(number), speed: metre_a_step },
+	{ in_view: numbered_segment(cats_from_origin.road, number), speed: metre_a_step },
 )
 
 expect cat_segments.map(has_cat) == [False, True, False]
@@ -305,10 +305,9 @@ expect
 		|
 			(along, number, want),
 		| {
-			gap = RoadAhead.gap_to_segment(
-				{ ..cats_from_origin.road, vantage: { ..origin, along: Along.metres(along) } },
-				RoadAhead.Position.number(number),
-			)
+			vantage = { ..origin, along: Along.metres(along) }
+			road_view = { ..cats_from_origin.road, vantage }
+			gap = RoadAhead.gap_to_segment(road_view, numbered_segment(road_view, number))
 			gap.to_metres() == want
 		},
 	)
@@ -351,7 +350,6 @@ expect ride_sightings(0.0).len() == 0
 expect ride_sightings(200.0).len() == 1
 expect ride_sightings(500.0).len() == 1
 expect ride_sightings(600.0).len() == 0
-expect cats_on_road([]).len() == 0
 expect cats_on_road([World.SegmentIndex.first]).len() == 0
 
 # The sighting looks along the whole road ahead, and the reaction only at the

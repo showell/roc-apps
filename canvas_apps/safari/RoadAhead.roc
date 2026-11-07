@@ -149,14 +149,21 @@ RoadAhead :: [].{
 			JustBehind(_) => True
 		}
 
-	## How far ahead of the rider the segment at `position` on the road ahead starts.
-	## The segments' lengths are added nearest first.
-	gap_to_segment : RoadAhead.RoadView, RoadAhead.Position -> Distance
-	gap_to_segment = |road, position|
-		position.segments_before(road.segments_ahead).fold(
-			road.vantage.along.from_start().opposite(),
-			|gap, index| gap.plus(index.segment_in(road.route_segments).length),
-		)
+	## How far ahead of the rider, along the road, a segment in view starts. The
+	## lengths of the road ahead's segments are added nearest first, and the
+	## segment just behind starts its own length behind the rider's.
+	gap_to_segment : RoadAhead.RoadView, RoadAhead.SegmentInView -> Distance
+	gap_to_segment = |road, in_view| {
+		gap_to_rider_segment = road.vantage.along.from_start().opposite()
+		match in_view.place {
+			Ahead(position) =>
+				position.segments_before(road.segments_ahead).fold(
+					gap_to_rider_segment,
+					|gap, index| gap.plus(index.segment_in(road.route_segments).length),
+				)
+			JustBehind(_) => gap_to_rider_segment.minus(in_view.segment.length)
+		}
+	}
 
 	## The road ahead from the segment at `start`: as far as the rider can see, or
 	## to the route's end.
