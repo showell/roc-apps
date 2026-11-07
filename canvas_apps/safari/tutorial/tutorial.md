@@ -2336,7 +2336,7 @@ digraph rehearsal {
 
 `LeanSearch` asks `Coast` that question at a dozen different leans. The rider wants the coast to end somewhere near the middle of the lane, and more lean to the right moves the end of a coast to the right, so this is a bisection. It's a `for` loop, with `$low` and `$high` closing in on each other. `Bike.with_lean(state, mid)` is a rider who doesn't exist, handed to `Coast`, who gets a future that didn't happen:
 
-{{code LeanSearch.search_tries from "mid = $bounds.low.halfway_to($bounds.high)" to "$bounds = bounds_after(lean_try, target)"}}
+{{code LeanSearch.search_tries from "mid = $bounds.low.halfway_to($bounds.high)" to "$bounds = bounds_after(lean_try)"}}
 
 The decision about which way to go is a `match` on what the rehearsal found. Running off the left means more right, running off the right means less, and staying on the road compares the end of the coast with the target:
 
