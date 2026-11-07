@@ -37,6 +37,8 @@ Shale is a small Lua-like language:
   - Join a list with `join(l, sep)`.
 - **Paths:** they're relative to the folder you `cd` to. A `repos:` path names a repo under ~/showell_repos.
 
+The gate enforces this for every agent: any other Bash command is refused. For a real need Shale can't meet, the escape is a first line `# want: <tag>: <text>`, which runs the command and logs it so Steve can see what agents reach for. Use it rarely, and say so in your report.
+
 Never push, never merge, and never touch a checkout that isn't yours.
 
 Several agents share one scratch area, so keep your scratch files under Shale's `scratch:` mount (`/tmp/claude-1000`), in a subfolder named for your lane or review, such as `scratch:<lane>/`, or another agent may overwrite them. Never put scratch files in a repo or a worktree.
