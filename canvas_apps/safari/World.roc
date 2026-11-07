@@ -8,8 +8,8 @@ import Angle
 import Billboard
 import BirdFlight
 import Cat
+import CowHerd
 import Distance
-import Cows
 import Geom
 import PigHerd
 import Scenery
@@ -85,9 +85,8 @@ World :: [].{
 	Segment : {
 		length : Distance,
 		trees : List(Trees.RoadsideTree),
-		cows : List(Geom.Placed(Billboard)),
-		pigs : List(Geom.Placed(Billboard)),
 		pig_herd : PigHerd,
+		bull : [WithBull, NoBull],
 
 		## How the rider takes the segment's herd. A segment with no pigs has
 		## nothing to notice, so its pigs are `Unnoticed`.
@@ -352,6 +351,33 @@ World :: [].{
 		back_row_offset: Distance.metres(6.0),
 	}
 
+	## The route's cow herd, fourteen cows in columns of three.
+	cow_herd : CowHerd
+	cow_herd = {
+		cow_count: 14,
+		rows: 3,
+		gap_behind_bull: Distance.metres(6.0),
+		column_spacing: Distance.metres(6.0),
+		row_stagger: Distance.metres(2.0),
+		row_depth: Distance.metres(5.0),
+		jitter_along: Distance.metres(1.5),
+		jitter_across: Distance.metres(1.2),
+	}
+
+	## Where the cow herd stands along its segment: the bull's place, with the
+	## cows behind him.
+	cow_herd_along : Along
+	cow_herd_along = Along.metres(24.0)
+
+	## The pigs of `segment`'s herd.
+	segment_pigs : World.Segment -> List(Geom.Placed(Billboard))
+	segment_pigs = |segment| segment.pig_herd.herd_pigs(pig_herd_along(segment.length))
+
+	## The cows of `segment`'s herd, led by its bull if it has one.
+	segment_cows : World.Segment -> List(Geom.Placed(Billboard))
+	segment_cows = |segment|
+		World.cow_herd.herd_cows({ herd_along: World.cow_herd_along, bull: segment.bull })
+
 	## The pig of `segment`'s herd that stands out.
 	standout_pig : World.Segment -> [Standout(Geom.Placed(Billboard)), NoPigs]
 	standout_pig = |segment| segment.pig_herd.standout_pig(pig_herd_along(segment.length))
@@ -423,9 +449,8 @@ built_segment = |plan, index| {
 	{
 		length: plan.length,
 		trees,
-		cows: Cows.herd_cows(plan.bull),
-		pigs: pig_herd.herd_pigs(pig_herd_along(plan.length)),
 		pig_herd,
+		bull: plan.bull,
 		pig_interest,
 		exit_turn: plan.turn,
 		commit_along: match plan.ending {
@@ -549,12 +574,12 @@ expect
 		(seg(6).commit_along.to_metres(), 1199.647346038583),
 	].all(|(got, want)| (got - want).abs() <= 0.00000001)
 
-expect seg(0).pigs.len() == 0
-expect seg(2).pigs.len() == 49
-expect seg(10).pigs.len() == 49
-expect seg(11).pigs.len() == 10
-expect seg(13).pigs.len() == 10
-expect seg(18).pigs.len() == 10
+expect World.segment_pigs(seg(0)).len() == 0
+expect World.segment_pigs(seg(2)).len() == 49
+expect World.segment_pigs(seg(10)).len() == 49
+expect World.segment_pigs(seg(11)).len() == 10
+expect World.segment_pigs(seg(13)).len() == 10
+expect World.segment_pigs(seg(18)).len() == 10
 expect
 	[
 		(0, False),
@@ -573,10 +598,10 @@ expect
 		(18, PigHerd.TwoRows(World.two_row_pig_herd)),
 	].all(|(index, want)| seg(index).pig_herd == want)
 
-expect seg(0).cows.len() == 14
-expect seg(3).cows.len() == 14
-expect seg(4).cows.len() == 15
-expect seg(18).cows.len() == 15
+expect World.segment_cows(seg(0)).len() == 14
+expect World.segment_cows(seg(3)).len() == 14
+expect World.segment_cows(seg(4)).len() == 15
+expect World.segment_cows(seg(18)).len() == 15
 expect seg(0).trees.len() == 28
 expect seg(1).trees.len() == 16
 expect seg(6).trees.len() == 74
@@ -811,3 +836,83 @@ expect World.big_pig_herd.column_spacing.to_metres() == 4.0
 expect World.big_pig_herd.row_depth.to_metres() == 6.0
 expect World.big_pig_herd.jitter_along.to_metres() == 1.2
 expect World.big_pig_herd.jitter_across.to_metres() == 1.0
+
+cows_with_bull : List(Geom.Placed(Billboard))
+cows_with_bull = World.cow_herd.herd_cows({ herd_along: World.cow_herd_along, bull: WithBull })
+
+cows_without_bull : List(Geom.Placed(Billboard))
+cows_without_bull = World.cow_herd.herd_cows({ herd_along: World.cow_herd_along, bull: NoBull })
+
+expect cows_with_bull.len() == 15
+expect cows_without_bull.len() == 14
+
+# The bull leads, facing left, and the cows follow him in their own order, facing
+# right.
+expect cows_with_bull.take_first(1).map(|bull| bull.along) == [Along.metres(24.0)]
+expect cows_with_bull.take_first(1).map(|bull| bull.kind.codepoint) == [128002]
+expect cows_with_bull.drop_first(1) == cows_without_bull
+expect cows_with_bull.take_first(2).map(|critter| critter.kind.facing) == [FacesLeft, FacesRight]
+expect cows_without_bull.all(|cow| cow.kind.facing == FacesRight)
+expect cows_without_bull.all(|cow| cow.kind.codepoint == 128004)
+
+expect
+	cows_without_bull.map(|cow| cow.kind.height.to_metres())
+		== [
+			1.4,
+			0.7,
+			1.4,
+			1.4,
+			1.4,
+			0.7,
+			1.4,
+			1.4,
+			1.4,
+			0.7,
+			1.4,
+			1.4,
+			1.4,
+			0.7,
+		]
+
+# Each cow strays from its place by no more than the jitter.
+expect {
+	places = [
+		28.0,
+		30.0,
+		32.0,
+		34.0,
+		36.0,
+		38.0,
+		40.0,
+		42.0,
+		44.0,
+		46.0,
+		48.0,
+		50.0,
+		52.0,
+		54.0,
+	]
+	misses = cows_without_bull.map2(places, |cow, place| (cow.along.to_metres() - place).abs())
+	misses.all(|miss| miss <= 1.5)
+}
+
+expect {
+	places = [
+		-12.0,
+		-17.0,
+		-22.0,
+		-12.0,
+		-17.0,
+		-22.0,
+		-12.0,
+		-17.0,
+		-22.0,
+		-12.0,
+		-17.0,
+		-22.0,
+		-12.0,
+		-17.0,
+	]
+	misses = cows_without_bull.map2(places, |cow, place| (cow.across.to_metres() - place).abs())
+	misses.all(|miss| miss <= 1.2)
+}

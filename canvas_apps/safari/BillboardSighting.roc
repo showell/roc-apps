@@ -1,7 +1,6 @@
 ## BillboardSighting sights every billboard on the segments in view from where
 ## the rider is: the farm animals of the nearest segments, the safari animal and
 ## its baby at each bend, and the ducks on each pond.
-import Along
 import Billboard
 import RoadAhead
 import Geom
@@ -10,7 +9,6 @@ import Pipeline
 import Pixels
 import Pond
 import Wildlife
-import Scenery
 import World
 
 BillboardSighting :: [].{
@@ -40,45 +38,30 @@ BillboardSighting :: [].{
 		RoadAhead.segments_in_view(road)
 			.join_map(|in_view| BillboardSighting.segment_sightings(road, in_view))
 
-	## The critters of a segment in view: its farm animals, its bend's
-	## animals, then its pond's ducks.
+	## The critters of a segment in view: its farm animals, then what lives at
+	## its end.
 	segment_sightings : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(BillboardSighting.Fate)
 	segment_sightings = |road, in_view|
-		[
-			BillboardSighting.farm_sightings(road, in_view),
-			BillboardSighting.wildlife_sightings(road, in_view),
-			BillboardSighting.duck_sightings(road, in_view),
-		].join()
+		BillboardSighting.farm_sightings(road, in_view)
+			.concat(BillboardSighting.bend_sightings(road, in_view))
 
 	## The cows, then the pigs, of a segment in view.
 	farm_sightings : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(BillboardSighting.Fate)
 	farm_sightings = |road, { segment, place, index: _ }|
 		if is_within_reach(place, farm_reach) {
-			segment.cows.concat(segment.pigs)
+			World.segment_cows(segment)
+				.concat(World.segment_pigs(segment))
 				.map(|critter| sight_critter(road, { place, critter }))
 		} else {
 			[]
 		}
 
-	## The animals at the bend that ends a segment in view. The road's last
-	## segment ends with no bend.
-	wildlife_sightings : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(BillboardSighting.Fate)
-	wildlife_sightings = |road, { segment, place, index: _ }|
-		match segment.ending {
-			Continues(_) =>
-				if is_within_reach(place, wildlife_reach) {
-					bend_sightings(road, { place, segment })
-				} else {
-					[]
-				}
-			Terminates => []
-		}
-
-	## The ducks of a segment in view, if it has a pond.
-	duck_sightings : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(BillboardSighting.Fate)
-	duck_sightings = |road, { segment, place, index: _ }|
+	## What lives at the end of a segment in view: the animal and its baby at
+	## its bend, or the ducks on its pond. The road's last segment ends quiet.
+	bend_sightings : RoadAhead.RoadView, RoadAhead.SegmentInView -> List(BillboardSighting.Fate)
+	bend_sightings = |road, { segment, place, index: _ }|
 		if is_within_reach(place, wildlife_reach) {
-			pond_sightings(road, { place, segment })
+			bend_life_critters(segment).map(|critter| sight_critter(road, { place, critter }))
 		} else {
 			[]
 		}
@@ -117,33 +100,14 @@ is_within_reach = |place, reach|
 		JustBehind(_) => True
 	}
 
-bend_sightings : RoadAhead.RoadView,
-{
-	place : RoadAhead.SegmentPlace,
-	segment : World.Segment,
-} -> List(BillboardSighting.Fate)
-bend_sightings = |road, { place, segment }|
-	Wildlife.bend_critters({
-		bend_life: segment.bend_life,
-		bend_along: Along.at(segment.length),
-		turn: segment.exit_turn,
-		road_half_width: Geom.road_half_width,
-	})
-		.map(|critter| BillboardSighting.sight_critter(road, { place, critter }))
-
-## The ducks on `segment`'s pond, if it has one. A duck's place is measured
-## from the bend at the segment's end.
-pond_sightings : RoadAhead.RoadView,
-{
-	place : RoadAhead.SegmentPlace,
-	segment : World.Segment,
-} -> List(BillboardSighting.Fate)
-pond_sightings = |road, { place, segment }|
-	if Scenery.is_pond(segment.bend_life) {
-		Pond.placed_ducks(segment.length)
-			.map(|critter| BillboardSighting.sight_critter(road, { place, critter }))
-	} else {
-		[]
+## The critters at the end of `segment`, placed on it. A duck's place is
+## measured from the bend at the segment's end.
+bend_life_critters : World.Segment -> List(Geom.Placed(Billboard))
+bend_life_critters = |segment|
+	match segment.bend_life {
+		Animal(animal) => Wildlife.bend_critters({ animal, bend: World.bend_out_of(segment) })
+		DuckPond => Pond.placed_ducks(segment.length)
+		Quiet => []
 	}
 
 expect BillboardSighting.farm_reach.to_i64() == 3

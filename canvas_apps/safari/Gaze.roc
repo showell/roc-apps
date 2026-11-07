@@ -262,7 +262,7 @@ watched_pig =
 	}
 
 # The rider watches a pig of the herd.
-expect distracting.pigs.count_if(|pig| pig == watched_pig) == 1
+expect World.segment_pigs(distracting).count_if(|pig| pig == watched_pig) == 1
 
 ## A rider on the distracting segment, `metres` short of the pig.
 rider_short_of_pig : F64 -> RiderState

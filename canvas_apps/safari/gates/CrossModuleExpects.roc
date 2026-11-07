@@ -469,9 +469,9 @@ farm_at = |number|
 		.len()
 		.to_i64_wrap()
 
-safari_at : U32 -> I64
-safari_at = |number|
-	BillboardSighting.wildlife_sightings(six_segments, numbered_segment(six_segments, number))
+bend_at : U32 -> I64
+bend_at = |number|
+	BillboardSighting.bend_sightings(six_segments, numbered_segment(six_segments, number))
 		.len()
 		.to_i64_wrap()
 
@@ -480,29 +480,27 @@ expect farm_at(2) > 0
 expect farm_at(3) == 0
 expect farm_at(4) == 0
 expect farm_at(5) == 0
-expect safari_at(3) > 0
-expect safari_at(4) > 0
-expect safari_at(5) == 0
-expect BillboardSighting.wildlife_sightings(lone(18), numbered_segment(lone(18), 0)).len() == 0
-expect BillboardSighting.wildlife_sightings(lone(0), numbered_segment(lone(0), 0)).len() > 0
+expect bend_at(3) > 0
+expect bend_at(4) > 0
+expect bend_at(5) == 0
 
-duck_count : U32 -> I64
-duck_count = |index|
-	BillboardSighting.duck_sightings(lone(index), numbered_segment(lone(index), 0))
+## How many critters live at the end of the world's segment `index`, seen alone.
+lone_bend_count : U32 -> I64
+lone_bend_count = |index|
+	BillboardSighting.bend_sightings(lone(index), numbered_segment(lone(index), 0))
 		.len()
 		.to_i64_wrap()
 
-expect duck_count(12) > 0
-expect duck_count(0) == 0
-expect duck_count(4) == 0
-expect duck_count(18) == 0
-expect BillboardSighting.duck_sightings(six_segments, numbered_segment(six_segments, 5)).len() == 0
-expect duck_count(12) == 6
+# Segment 12 ends at the duck pond, 0 and 4 at an animal and its baby, and 18,
+# the road's last, quietly.
+expect lone_bend_count(12) == 6
+expect lone_bend_count(0) == 2
+expect lone_bend_count(4) == 2
+expect lone_bend_count(18) == 0
 expect {
 	first = numbered_segment(six_segments, 0)
 	whole = BillboardSighting.segment_sightings(six_segments, first).len().to_i64_wrap()
-	ducks = BillboardSighting.duck_sightings(six_segments, first).len().to_i64_wrap()
-	whole == farm_at(0) + safari_at(0) + ducks
+	whole == farm_at(0) + bend_at(0)
 }
 
 ## How many critters the segments from `position` to the road's end hold.
@@ -524,13 +522,12 @@ expect BillboardSighting.billboard_fates(six_segments).len().to_i64_wrap() == co
 expect count_from(0) >= count_from(1)
 expect count_from(1) >= count_from(2)
 expect BillboardSighting.segment_sightings(six_segments, segment_behind(4)).len() > 0
-expect BillboardSighting.duck_sightings(six_segments, segment_behind(12)).len() > 0
-expect BillboardSighting.duck_sightings(six_segments, segment_behind(0)).len() == 0
+expect BillboardSighting.bend_sightings(six_segments, segment_behind(12)).len() == 6
 expect {
 	fates = BillboardSighting.farm_sightings(six_segments, segment_behind(0))
 	fates.len() > 0 and fates.all(|fate| how_it_went(fate) == BehindCamera)
 }
-expect BillboardSighting.wildlife_sightings(six_segments, segment_behind(0)).len() > 0
+expect BillboardSighting.bend_sightings(six_segments, segment_behind(0)).len() == 2
 
 ## A billboard on the first segment, as the rider at its start sees it.
 critter_fate : Geom.Placed(Billboard) -> BillboardSighting.Fate

@@ -1063,7 +1063,7 @@ is the base; these rules sharpen it.
   also runs one inside the block, but a gate counts the lines that start
   `expect`, so the source is the count, and each must pass exactly once
   (safari's `gates/run.shale`, roc-chat's `tools/verify.shale`). Below the
-  block it names members as a caller does (`Cows.cows`) and helpers bare.
+  block it names members as a caller does (`PigHerd.NoPigs.herd_pigs(...)`) and helpers bare.
 - **An `expect` that no one module can write goes in a gates-only app.** A
   check may need two modules that don't import each other, and a production
   import added only for a test is the wrong fix. Safari's
