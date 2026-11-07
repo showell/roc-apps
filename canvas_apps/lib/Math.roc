@@ -1,9 +1,8 @@
-# Math -- the geometry roc-ray's own Math module offers, under the same name.
-#
-# Hand-written, and the same trick as Keys and Random: a game ported from an
-# example says `import lib.Math` instead of `import rr.Math` and every `Math.`
-# in its rules is left alone. Only what the games here actually ask for is
-# implemented; roc-ray's is larger.
+# Math is the geometry roc-ray's own Math module offers, under the same name.
+# As with Keys and Random, a game ported from an example says
+# `import lib.Math` instead of `import rr.Math`, and every `Math.` in its rules
+# is left alone. Only what the games here ask for is written, and roc-ray's
+# is larger.
 #
 # Pixels, in F32, because that is what the examples are written in.
 

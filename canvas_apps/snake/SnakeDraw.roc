@@ -126,7 +126,7 @@ SnakeDraw :: [].{
 				U64.to_f64($i) / U64.to_f64(n - 1)
 			}
 			p = cell_at(c)
-			$out = List.append($out, Shapes.rounded_rect({ x: p.x + 2.0, y: p.y + 2.0, width: cell - 4.0, height: cell - 4.0, corner_radius: 5.0, corner_steps: 6 }, Flat(Brush.mix(snake_head, snake_tail, t))))
+			$out = List.append($out, Shapes.rounded_rect({ x: p.x + 2.0, y: p.y + 2.0, width: cell - 4.0, height: cell - 4.0, corner_radius: 5.0, corner_steps: 6 }, Flat(Brush.mix({ from: snake_head, to: snake_tail, fraction: t }))))
 			$i = $i + 1
 		}
 		$out

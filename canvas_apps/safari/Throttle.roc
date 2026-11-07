@@ -147,7 +147,7 @@ expect
 	[
 		(lean_hold.to_radians(), 0.03490658503988659),
 		(brake_decay.to_f64(), 20.0),
-		(lean_hold.to_radians() / Trig.deg, 2.0),
+		(lean_hold.to_radians() / Trig.degree, 2.0),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 
 first_segment : Segment

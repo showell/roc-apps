@@ -43,7 +43,7 @@ Layout : {
 ## The compass bearing the road sets off on. Nothing in the ride says which way
 ## is north, so this one is chosen to lay the road along the wide picture.
 start_heading : F64
-start_heading = 150.0 * Trig.deg
+start_heading = 150.0 * Trig.degree
 
 ## `layout` with one more segment on the end.
 laid_onto : Layout, World.SegmentPlan -> Layout

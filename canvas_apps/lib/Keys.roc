@@ -1,8 +1,6 @@
-# Keys -- the keys a game can ask about.
-#
-# Hand-written, and named as roc-ray names it: `Keys.Key` is the enum,
-# `Input.Snapshot` is what a tick is handed, shaped like roc-ray's
-# `Devices.Snapshot`. Keeping the key names means a
+# Keys names the keys a game can ask about, as roc-ray names them: `Keys.Key`
+# is the enum, and `Input.Snapshot`, shaped like roc-ray's
+# `Devices.Snapshot`, is what a tick is handed. With the key names kept, a
 # game's `read_controls` ports with its import line changed and nothing else.
 
 Keys :: [].{
@@ -10,10 +8,10 @@ Keys :: [].{
 	# list is short on purpose: adding one is a bit and a line in
 	# canvas_app_runner.js.
 	#
-	# **ESCAPE AND F ARE NOT HERE.** They belong to the runners -- Escape
-	# closes a native window and F shows its frame rate -- and a page can do
-	# neither. A key a game could bind on one end and not the other is a key
-	# that behaves differently on the two, so no game is given them at all.
+	# Escape and F belong to the runners, not to games: Escape closes a
+	# native window and F shows its frame rate, and a page can do neither.
+	# A key a game could bind on one end and not the other would behave
+	# differently on the two, so no game is given them at all.
 	Key := [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEnter, KeyP, KeyR, KeyQ, KeyE, KeyC, KeyJ, Key1, Key2, Key3, Key4].{
 		is_eq : _
 	}

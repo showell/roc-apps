@@ -48,7 +48,7 @@ FrameWidgetApp :: [].{
 }
 
 ## The picture doesn't change once it's open, so a few frames a second will do.
-frames_a_second : I32
+frames_a_second : U32
 frames_a_second = 15
 
 ## What can be switched on, in the order the book's chapters come to it.
