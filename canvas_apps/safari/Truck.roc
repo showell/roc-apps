@@ -107,12 +107,10 @@ scheduled_position = |{ rider_distance, route_length }| {
 braking_state_at_next_step : Truck, ComingBend -> Truck
 braking_state_at_next_step = |truck, turn| {
 	target_speed = turn.turn_speed.times(turn_caution.to_f64())
-	acceleration =
-		if turn.distance > VehicleLimits.least_braking_distance {
-			truck.speed.acceleration_to({ target: target_speed, within: turn.distance })
-		} else {
-			Acceleration.steady
-		}
+	acceleration = VehicleLimits.braking_to(
+		truck.speed,
+		{ target: target_speed, within: turn.distance },
+	)
 	speed = target_speed.max(truck.speed.accelerated_by(acceleration))
 	{
 		route_position: truck.route_position.plus(speed.step_length()),

@@ -65,13 +65,7 @@ bend_limit = |motorcycle, seg|
 	if is_near_end(motorcycle, seg) {
 		v_end = Throttle.exit_speed(seg)
 		d = seg.commit_along().distance_from(motorcycle.along)
-		bend_a =
-			if d <= VehicleLimits.least_braking_distance {
-				Acceleration.steady
-			} else {
-				motorcycle.speed.acceleration_to({ target: v_end, within: d })
-			}
-		AtMost(bend_a)
+		AtMost(VehicleLimits.braking_to(motorcycle.speed, { target: v_end, within: d }))
 	} else {
 		NoLimit
 	}

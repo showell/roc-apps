@@ -24,10 +24,19 @@ VehicleLimits :: [].{
 	bend_approach : Distance
 	bend_approach = Distance.metres(60.0)
 
-	## The braking for a turn is worked out over the distance left to it, so a
-	## turn closer than this counts as reached, and no division is by zero.
-	least_braking_distance : Distance
-	least_braking_distance = Distance.metres(0.000001)
+	## The acceleration that brings `speed` to `target` within a distance. A
+	## target closer than `least_braking_distance` counts as reached, and the
+	## speed holds. That keeps the division off zero, and it has a second job:
+	## braking to rest at the route's end closes on the end geometrically, each
+	## step covering a share of what is left, and never gets there. Holding the
+	## speed once the end is that close is what lets the rider arrive.
+	braking_to : Speed, { target : Speed, within : Distance } -> Acceleration
+	braking_to = |speed, { target, within }|
+		if within <= least_braking_distance {
+			Acceleration.steady
+		} else {
+			speed.acceleration_to({ target, within })
+		}
 
 	## The speed a turn can be taken at, to the right or the left alike. A turn
 	## counts as the whole degree its size rounds to, and that must be one in
@@ -44,6 +53,10 @@ VehicleLimits :: [].{
 		}
 	}
 }
+
+## The shortest distance `braking_to` works a brake out over.
+least_braking_distance : Distance
+least_braking_distance = Distance.metres(0.000001)
 
 ## The turns a route can make, in whole degrees, and the speed each is taken at.
 turn_speeds : List({ degrees : F64, speed : Speed })
