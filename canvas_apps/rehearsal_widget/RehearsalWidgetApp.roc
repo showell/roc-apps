@@ -44,22 +44,23 @@ RehearsalWidgetApp :: [].{
 
 ## The step of the ride this widget looks inside.
 step_shown : U32
-step_shown = 372
+step_shown = 374
 
 ## The rider at that step, a record like any other. An `expect` below rides
 ## there and compares.
 rider : Motorcycle
 rider = {
-	along: Along.metres(5.476396379271859),
-	across: Across.metres(-1.9331715114218482),
-	yaw: Angle.Turn.radians(0.03386262589257824),
-	speed: Speed.metres_a_step(0.12693087415782917),
-	lean: Angle.Lean.radians(0.00968112319465637),
-	heading: Angle.Bearing.radians(0.9065272518897429),
+	along: Along.metres(5.841825521510666),
+	across: Across.metres(-1.9030035046601446),
+	yaw: Angle.Turn.radians(0.05277873953607818),
+	speed: Speed.metres_a_step(0.14981295069969633),
+	lean: Angle.Lean.radians(0.0026077673394057635),
+	heading: Angle.Bearing.radians(0.9254433655332428),
 }
 
+## Where the rider aims: the road's middle, as `LeanSearch.best_lean` does.
 target : Across
-target = LeanSearch.lean_target(rider.across)
+target = Across.middle
 
 ## A point on an arc: how far along the road from the rider, and where across it.
 ArcPoint : { forward : F64, across : F64 }
