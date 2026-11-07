@@ -5,7 +5,8 @@
 --
 -- It runs on demand and at publish, and never in the fast tier. It expands
 -- tutorial.md with build.shale, splits the result at each chapter heading, and
--- draws each ```dot fence with Graphviz. A diagram's title is the line above its
+-- draws each ```dot fence with Graphviz, in child runs of this script with
+-- `diagrams=1`. A diagram's title is the line above its
 -- fence, which goes with the drawing to be set as its caption. A diagram wider
 -- than a phone is drawn a second way for a phone, turned and tightened, and
 -- book.css shows one of the two. make_book.roc then renders every page in one
@@ -35,9 +36,12 @@ const EXPANDED = "canvas_apps/safari/tutorial/build/tutorial.md"
 const NEXT = "build:roc-apps/next"
 const STAGE = arg("stage", "")
 const LOOKS = arg("looks", "") == "1"
--- A Shale run holds 64 programs, and diagrams and pages use most of them, so the
--- widgets' release builds run as a run of their own.
+-- A Shale run holds 64 programs, so the widgets' release builds run as a run of
+-- their own, and the diagrams are drawn in runs of their own, DIAGRAMS_PER_RUN
+-- at a time, as each takes Graphviz once or twice.
 const WIDGETS_ONLY = arg("widgets", "") == "1"
+const DIAGRAMS_ONLY = arg("diagrams", "") == "1"
+const DIAGRAMS_PER_RUN = 30
 const STAGED_NAME = STAGE == "" and "tutorial.staging" or STAGE
 const STAGING = "build:roc-apps/next/" .. STAGED_NAME
 const DEST = "build:roc-apps/next/tutorial"
@@ -120,16 +124,58 @@ function phone_options(source)
   return options
 end
 
--- A diagram's drawing, and a phone's beside it if it needs one.
+-- A diagram's drawing, and a phone's beside it if it needs one. The source is
+-- the fence's lines, which `manuscript` writes to the diagram's .dot file.
 function diagram_svg(id, source)
   local path = WORK .. "/" .. id .. ".dot"
-  replace(path, join(source, "\n") .. "\n")
   local plain = drawing(path, {}, "diagram")
   if plain.width <= PHONE_POINTS then return plain.svg end
   local phone_path = WORK .. "/" .. id .. "-phone.dot"
   replace(phone_path, phone_source(source))
   local wide = join(split(plain.svg, "<svg class=\"diagram\""), "<svg class=\"diagram diagram-wide\"")
   return wide .. drawing(phone_path, phone_options(source), "diagram diagram-phone").svg
+end
+
+-- The lines of a diagram's .dot file, which ends with the one newline that
+-- `manuscript` adds after the fence's last line.
+function dot_lines(id)
+  local all = split(read(WORK .. "/" .. id .. ".dot"), "\n")
+  return take(all, #all - 1)
+end
+
+function diagram_id(n)
+  return "diagram-" .. n
+end
+
+-- The child run's work: draw diagrams `first` to `last` into their .svg files.
+function draw_diagrams(first, last)
+  for n = first, last do
+    local id = diagram_id(n)
+    replace(WORK .. "/" .. id .. ".svg", diagram_svg(id, dot_lines(id)))
+  end
+  return nil
+end
+
+-- Each diagram takes Graphviz once or twice, so the drawing runs in child runs
+-- of DIAGRAMS_PER_RUN diagrams each, and the book holds any number of them.
+-- A child that fails stops the build, and so does a drawing it didn't leave.
+function draw_all(diagrams)
+  local count = #diagrams
+  local first = 1
+  while first <= count do
+    local last = first + DIAGRAMS_PER_RUN - 1
+    if last > count then last = count end
+    local argv = {"shale", "--root", ".", TUTORIAL .. "/book.shale", "diagrams=1", "first=" .. first, "last=" .. last}
+    must(run(argv, {timeout_ms = 600000, tail = 20, want = DOT_WANT}), "drawing diagrams " .. first .. " to " .. last)
+    first = last + 1
+  end
+  local drawn = {}
+  for diagram in diagrams do
+    local svg = WORK .. "/" .. diagram.id .. ".svg"
+    if not exists(svg) then fail("book: no drawing of " .. diagram.id .. " at " .. svg) end
+    push(drawn, {id = diagram.id, title = diagram.title, svg = read(svg)})
+  end
+  return drawn
 end
 
 -- The pages of the expanded tutorial and its diagrams. Each ```dot fence gets
@@ -149,8 +195,9 @@ function manuscript(text)
       if l == "```" then
         in_fence = false
         if dot ~= nil then
-          local id = "diagram-" .. (#diagrams + 1)
-          push(diagrams, {id = id, title = title, svg = diagram_svg(id, dot)})
+          local id = diagram_id(#diagrams + 1)
+          replace(WORK .. "/" .. id .. ".dot", join(dot, "\n") .. "\n")
+          push(diagrams, {id = id, title = title})
           dot = nil
         end
       elseif dot ~= nil then
@@ -162,7 +209,7 @@ function manuscript(text)
       dot = {}
       title = page[#page]
       page = take(page, #page - 1)
-      push(page, "```dot diagram-" .. (#diagrams + 1))
+      push(page, "```dot " .. diagram_id(#diagrams + 1))
     elseif starts_with(l, "```") then
       in_fence = true
       push(page, l)
@@ -177,7 +224,7 @@ function manuscript(text)
   end
   if in_fence then fail("book: a fence never closes in " .. EXPANDED) end
   push(pages, join(page, "\n"))
-  return {pages = pages, diagrams = diagrams}
+  return {pages = pages, diagrams = draw_all(diagrams)}
 end
 
 function widget_folders()
@@ -317,6 +364,8 @@ end
 
 if WIDGETS_ONLY then
   build_widgets(widget_folders())
+elseif DIAGRAMS_ONLY then
+  draw_diagrams(tonumber(arg("first", "")), tonumber(arg("last", "")))
 else
   main()
 end
