@@ -2552,12 +2552,12 @@ The answer rests on one fact from the ride instant chapter. Three fields decide 
 |---|---|---|---|
 {{proof row 0 The start of the ride}}
 {{proof row 100 A bird in flight}}
-{{proof row 1570 A cat frozen in the lane}}
-{{proof row 1590 The same cat in mid-leap}}
+{{proof row 1529 A cat frozen in the lane}}
+{{proof row 1542 The same cat in mid-leap}}
 {{proof row 3000 The ride under way}}
-{{proof row 3742 A distant truck, its glow barely a pixel}}
+{{proof row 3698 A distant truck, its glow barely a pixel}}
 {{proof row 5700 The truck at dusk, lights on}}
-{{proof row 6553 The truck braking in plain view}}
+{{proof row 6250 The truck braking in plain view}}
 {{proof row 9000 Past the end, on the second lap}}
 
 Each row is one frame of the ride. Run the ride to that step today and you get that hash and that many shapes, and a change to the program has to leave every row as it is. This page's numbers come from the same file the check reads, `gates/proof.expected`.

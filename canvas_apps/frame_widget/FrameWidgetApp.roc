@@ -1,5 +1,5 @@
 ## The widget for the first half of the Safari tutorial, which walks through one
-## page of the flipbook a chapter at a time. It holds step 1,570 of the ride, with
+## page of the flipbook a chapter at a time. It holds step 1,529 of the ride, with
 ## the cat frozen in the road, and shows that frame one layer at a time. The
 ## shapes are the game's own for that step, sorted into layers and painted in the
 ## game's order, because depth sorting interleaves the things beside the road.
@@ -85,7 +85,7 @@ Piece : { layer : Layer, shapes : List(Shapes.Shape) }
 
 ## The step on show.
 frame_step : U32
-frame_step = 1570
+frame_step = 1529
 
 ## The ride at `frame_step`, with no history to step back through.
 paused_tour : Tour
@@ -352,7 +352,7 @@ shapes_at = |model|
 
 # The step is the one the book holds, and the ride's own record of it.
 expect paused_tour.instant.clock == Clock.at_step(frame_step)
-expect frame_step == 1570
+expect frame_step == 1529
 
 # All the layers on is the game's own frame, shape for shape and in its order.
 expect picture_shapes(layers) == SafariApp.frame_shapes(paused_tour)
@@ -425,16 +425,16 @@ expect next_model(start, Input.none.with_key_pressed(KeyLeft)) == opened_after(0
 
 expect
 	status_lines(start)
-		== ["Shapes so far: 1,620 of 2,514", "Added: Trees"]
+		== ["Shapes so far: 1,656 of 2,589", "Added: Trees"]
 expect
 	status_lines(opened_after(2))
-		== ["Shapes so far: 1,620 of 2,514", "Added: The sun, out of view here"]
+		== ["Shapes so far: 1,656 of 2,589", "Added: The sun, out of view here"]
 expect
 	status_lines(opened_after(5))
-		== ["Shapes so far: 1,651 of 2,514", "Added: The road and pond"]
+		== ["Shapes so far: 1,685 of 2,589", "Added: The road and pond"]
 expect
 	status_lines(all_on)
-		== ["Shapes so far: 2,514 of 2,514", "Added: The moving things"]
+		== ["Shapes so far: 2,589 of 2,589", "Added: The moving things"]
 
 expect
 	layers.map(layer_name)
