@@ -36,10 +36,6 @@ Sun :: [].{
 	bearing : Angle.Bearing
 	bearing = Angle.Bearing.radians(-2.2176)
 
-	## The sun's radius at rest.
-	radius : Pixels
-	radius = Pixels.of(46.0)
-
 	## The sun's radius as a far height: how far its top stands above its
 	## middle, and its bottom below.
 	radius_as_height : FarHeight
@@ -157,6 +153,10 @@ is_glow_on_screen = |sun| {
 	reach = Screen.drawn_right.minus(Screen.center_x)
 	from_middle.minus(Sun.glow_radius_drawn(sun)) < reach
 }
+
+## The sun's radius at rest.
+radius : Pixels
+radius = Pixels.of(46.0)
 
 ## How far the glow reaches from the sun's middle at rest.
 glow_radius : Pixels
