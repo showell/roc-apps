@@ -13,6 +13,7 @@ import Distance
 import Easing
 import Fraction
 import Geom
+import Pigs
 import RiderState
 import Scenery
 import Speed
@@ -84,13 +85,26 @@ Gaze :: [].{
 	gaze_attention : Fraction -> Attention
 	gaze_attention = |look_depth| Attention.from_fraction(Easing.smoothstep(look_depth))
 
+	## The pig on `seg` that catches the rider's eye: the standout pig of a herd
+	## the rider finds distracting. A herd the rider passes by catches no eye.
+	eye_catching_pig : World.Segment -> [CatchesEye(Geom.Placed(Billboard)), NoPigCatchesEye]
+	eye_catching_pig = |seg|
+		match seg.pig_interest {
+			Distracting =>
+				match Pigs.standout_pig(seg.pig_herd, seg.length) {
+					Standout(pig) => CatchesEye(pig)
+					NoPigs => NoPigCatchesEye
+				}
+			Unnoticed => NoPigCatchesEye
+		}
+
 	## Where the rider wants to look: at a distracting pig that is near enough
 	## to notice and less than the release angle from the way the bike points,
 	## or else at the road.
 	desired_gaze : RiderState, World.Segment -> Gaze.GazeTarget
 	desired_gaze = |state, seg|
-		match seg.pig_interest {
-			Distracting(pig) if is_gawking(state, seg) => {
+		match eye_catching_pig(seg) {
+			CatchesEye(pig) if is_gawking(state, seg) => {
 				turn = turn_to(state, pig)
 				if turn.abs() < look_release_angle {
 					OnPig(turn)
@@ -98,7 +112,7 @@ Gaze :: [].{
 					OnRoad
 				}
 			}
-			Distracting(_) | Unnoticed | NoPigs => OnRoad
+			CatchesEye(_) | NoPigCatchesEye => OnRoad
 		}
 
 	## The gaze one step on. It swivels toward a pig by at most the swivel rate.
@@ -154,17 +168,17 @@ Gaze :: [].{
 	## speed, where it lifts any other rider near the end up to it.
 	is_gawking : RiderState, World.Segment -> Bool
 	is_gawking = |state, seg|
-		match seg.pig_interest {
-			Distracting(pig) => state.along >= pig.along.minus(notice_distance)
-			Unnoticed | NoPigs => False
+		match eye_catching_pig(seg) {
+			CatchesEye(pig) => state.along >= pig.along.minus(notice_distance)
+			NoPigCatchesEye => False
 		}
 
 	## The brake for a gawking rider, who aims to be down to `gawk_speed` by
 	## the settle distance before the pig.
 	gawk_brake : RiderState, World.Segment -> Gaze.GawkBrake
 	gawk_brake = |state, seg|
-		match seg.pig_interest {
-			Distracting(pig) if is_gawking(state, seg) => {
+		match eye_catching_pig(seg) {
+			CatchesEye(pig) if is_gawking(state, seg) => {
 				room = pig.along.distance_from(state.along).minus(gawk_settle_distance)
 				AtMost(
 					state.speed.acceleration_to({
@@ -173,7 +187,7 @@ Gaze :: [].{
 					}),
 				)
 			}
-			Distracting(_) | Unnoticed | NoPigs => NoLimit
+			CatchesEye(_) | NoPigCatchesEye => NoLimit
 		}
 }
 
@@ -209,7 +223,9 @@ plain = World.route_segment(0)
 distracting : World.Segment
 distracting = World.route_segment(2)
 
-expect plain.pig_interest == NoPigs
+expect plain.pig_herd == NoPigs
+expect Gaze.eye_catching_pig(plain) == NoPigCatchesEye
+expect Gaze.eye_catching_pig(World.route_segment(11)) == NoPigCatchesEye
 
 ## A rider on the distracting segment, at rest in every other way. Gaze doesn't
 ## import Along, so `along` is a distance from the segment's start.
@@ -241,9 +257,9 @@ expect Gaze.desired_gaze(rider(341.0), distracting) == OnRoad
 ## The pig that catches the eye on the distracting segment.
 watched_pig : Geom.Placed(Billboard)
 watched_pig =
-	match distracting.pig_interest {
-		Distracting(pig) => pig
-		NoPigs | Unnoticed => crash "Gaze's expects: this segment's pigs catch the eye"
+	match Gaze.eye_catching_pig(distracting) {
+		CatchesEye(pig) => pig
+		NoPigCatchesEye => crash "Gaze's expects: this segment's pigs catch the eye"
 	}
 
 # The rider watches a pig of the herd.
