@@ -28,10 +28,16 @@ Rider :: [].{
 		}
 		resolved =
 			match seg.ending {
-				Continues({ next }) => cross_if_on_road(moved, { segment: seg, next })
-				Terminates => { ..moved, motorcycle: stop_at_route_end(moved.motorcycle, seg) }
+				Continues({ next }) => {
+					seam = { segment: seg, next }
+					cross_if_on_road(moved, { seam, route_segments })
+				}
+				Terminates => {
+					stopped = { ..moved, motorcycle: stop_at_route_end(moved.motorcycle, seg) }
+					{ rider: stopped, segment: seg }
+				}
 			}
-		Gaze.next_rider_gaze(resolved, resolved.segment_index.segment_in(route_segments))
+		Gaze.next_rider_gaze(resolved.rider, resolved.segment)
 	}
 
 	is_finished : RiderState, List(World.Segment) -> Bool
@@ -46,6 +52,9 @@ Rider :: [].{
 
 ## The end of a segment that continues, and the segment it continues onto.
 Seam : { segment : World.Segment, next : World.SegmentIndex }
+
+## A rider, and the segment of the route they are on.
+RiderOnSegment : { rider : RiderState, segment : World.Segment }
 
 ## A rider this slow near the route's end stops there.
 stopping_speed : Speed
@@ -100,13 +109,19 @@ stop_at_route_end = |moved, seg| {
 stopped_at : Motorcycle, Along -> Motorcycle
 stopped_at = |m, at| { ..m, along: at, speed: Speed.at_rest }
 
-cross_if_on_road : RiderState, Seam -> RiderState
-cross_if_on_road = |moved, seam| {
+## The rider on the next segment if that puts them on its road, else where
+## they were, with the segment they end on.
+cross_if_on_road : RiderState,
+{
+	seam : Seam,
+	route_segments : List(World.Segment),
+} -> RiderOnSegment
+cross_if_on_road = |moved, { seam, route_segments }| {
 	on_next = rider_on_next_segment(moved, seam)
 	if on_next.motorcycle.across.distance_from_middle() < Geom.road_half_width {
-		on_next
+		{ rider: on_next, segment: seam.next.segment_in(route_segments) }
 	} else {
-		moved
+		{ rider: moved, segment: seam.segment }
 	}
 }
 
@@ -189,8 +204,17 @@ expect {
 	far.motorcycle.across.distance_from_middle() >= Geom.road_half_width
 }
 
-expect cross_if_on_road(rider_at(100.0, 0.0), first_seam).segment_index.to_i64() == 0
-expect cross_if_on_road(rider_at(499.0, 0.0), first_seam).segment_index.to_i64() == 1
+## Where `cross_if_on_road` leaves a rider at `along` on the first segment.
+crossed_from : F64 -> RiderOnSegment
+crossed_from = |along|
+	cross_if_on_road(rider_at(along, 0.0), { seam: first_seam, route_segments: first_segments })
+
+# A rider short of the seam stays on the first segment, and one at it crosses,
+# each with the segment they end on.
+expect crossed_from(100.0).rider.segment_index.to_i64() == 0
+expect crossed_from(100.0).segment == first_segment
+expect crossed_from(499.0).rider.segment_index.to_i64() == 1
+expect crossed_from(499.0).segment == World.route_segment(1)
 
 last_seg : World.Segment
 last_seg = World.route_segment(18)
