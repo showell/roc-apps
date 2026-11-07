@@ -103,10 +103,9 @@ brake_color = RgbColor.of(0xFF2A18)
 glow_core : ArgbColor
 glow_core = ArgbColor.of(0xE6FF503C)
 
-## The glow fades out to the brake lamp's own colour at no opacity:
-## `brake_color`'s top byte is 0.
+## The glow fades out to the brake lamp's own colour at no opacity.
 glow_edge : ArgbColor
-glow_edge = ArgbColor.of(brake_color.to_i64())
+glow_edge = ArgbColor.from_rgb(brake_color, { alpha: 0 })
 
 ## A glow reaches this many times as far as its lamp's farthest corner, a
 ## reach chosen by eye.

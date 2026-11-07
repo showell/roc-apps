@@ -74,7 +74,7 @@ Guards :: [].{
 				[]
 			} else {
 				k = facing(sx, sz, now, lag, tilt, side)
-				Shapes.squashed_shapes(Skeleton.figure(t, feet.x, feet.y, s), feet.x, k)
+				Shapes.squashed_shapes(Skeleton.figure(t, feet.x, feet.y, s), { axis: feet.x, cosine: k })
 			}
 		} else {
 			[]

@@ -490,7 +490,7 @@ expect
 				x: 10.0,
 				y: 20.0,
 				radius: 30.0,
-				fill: Flat({ ..Brush.opaque(RgbColor.of(333)), a: 0.25 }),
+				fill: Flat(Brush.with_alpha(RgbColor.of(333), 0.25)),
 			}),
 		]
 

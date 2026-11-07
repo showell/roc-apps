@@ -40,8 +40,8 @@ SnakeDraw :: [].{
 	food_neon = Brush.opaque(RgbColor.of(0xff6b8b))
 	hud_color : Brush.Rgba
 	hud_color = Brush.opaque(RgbColor.of(0xd7e3ff))
-	hint_color : Brush.Rgba
-	hint_color = Brush.opaque(RgbColor.of(0x6d7aa8))
+	hint_color : RgbColor
+	hint_color = RgbColor.of(0x6d7aa8)
 
 	cell : F64
 	cell = 26.0
@@ -76,7 +76,7 @@ SnakeDraw :: [].{
 		hint = "ARROWS / WASD TURN    SPACE RESTART"
 		var $out = Font.text_shapes("SNAKE", { top_left: { x: left, y: 26.0 }, size: 30.0, color: snake_head })
 		$out = List.concat($out, Font.text_shapes(score, { top_left: { x: w - left - Font.width_of(score, 24.0), y: 30.0 }, size: 24.0, color: hud_color }))
-		List.concat($out, Font.centered(hint, { top_center: { x: w / 2.0, y: 572.0 }, size: 17.0, color: hint_color }))
+		List.concat($out, Font.centered(hint, { top_center: { x: w / 2.0, y: 572.0 }, size: 17.0, color: Brush.opaque(hint_color) }))
 	}
 
 	## The bordered playfield and its faint lattice.
@@ -168,7 +168,7 @@ SnakeDraw :: [].{
 				alpha = 0.59 + 0.41 * Trig.pulse(elapsed)
 				var $out = [Rect({ x: left - 8.0, y: 236.0, width: board_w + 16.0, height: 140.0, fill: Flat(Brush.translucent(ArgbColor.of(0xe1060810))) })]
 				$out = List.concat($out, Font.centered(over, { top_center: { x: w / 2.0, y: 262.0 }, size: 40.0, color: food_neon }))
-				List.concat($out, Font.centered(again, { top_center: { x: w / 2.0, y: 326.0 }, size: 19.0, color: { ..hint_color, a: alpha } }))
+				List.concat($out, Font.centered(again, { top_center: { x: w / 2.0, y: 326.0 }, size: 19.0, color: Brush.with_alpha(hint_color, alpha) }))
 			}
 		}
 }

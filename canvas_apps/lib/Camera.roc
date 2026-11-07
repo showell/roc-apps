@@ -1,18 +1,16 @@
-# Camera -- a 2D camera as a value, under roc-ray's own name and surface.
+# Camera is a 2D camera as a value, with roc-ray's own name and surface. A game
+# ported from a roc-ray example says `import lib.Camera` in place of
+# `import rr.Camera`, as it does for Keys, Math and Random, and every `Camera.`
+# in it stays as it is. Only what a game here asks for is written; roc-ray's
+# camera does more.
 #
-# Hand-written, the same trick as Keys, Math and Random: a game ported
-# from an example says `import lib.Camera` instead of `import rr.Camera` and
-# every `Camera.` in it is left alone. Only what a game here asks for is
-# implemented; roc-ray's is larger.
+# A camera does two jobs, and both are here. It is arithmetic the game itself
+# needs: `screen_to_world` turns a pointer in pixels into a point in the world,
+# which no runner can answer for the game. It is also the space a frame's
+# shapes can be put in, which is `space`. None of it is an effect.
 #
-# **A CAMERA IS TWO THINGS AND THEY ARE BOTH HERE.** It is arithmetic the game
-# itself needs -- `screen_to_world` is how a pointer in pixels becomes a point
-# in the world, and no runner can answer that for it -- and it is the space a
-# frame's shapes can be put in. `space` is the second; everything else is the
-# first, and none of it is an effect.
-#
-# Pixels in F32, because that is what the examples are written in. `space`
-# widens to the F64 a frame is made of.
+# Pixels are F32, because the examples are written in F32. `space` widens them
+# to the F64 a frame is made of.
 import Math
 import Shapes
 
