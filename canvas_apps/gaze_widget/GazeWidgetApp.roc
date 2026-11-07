@@ -8,9 +8,11 @@
 import game.Across
 import game.Along
 import game.Angle
+import game.Billboard
 import game.Clock
 import game.Distance
 import game.Gaze
+import game.Geom
 import game.Rider
 import game.RiderState
 import game.Scenery
@@ -104,7 +106,7 @@ is_distracting = |segment|
 	}
 
 ## The pig that catches the rider's eye.
-gaze_pig : Scenery.Critter
+gaze_pig : Geom.Placed(Billboard)
 gaze_pig =
 	match pig_segment.pig_interest {
 		Distracting(pig) => pig
@@ -249,7 +251,7 @@ plan_disc = |{ along, across, radius, color }|
 	})
 
 ## One pig of the herd, the one that catches the eye drawn larger.
-pig_disc : Scenery.Critter -> Shapes.Shape
+pig_disc : Geom.Placed(Billboard) -> Shapes.Shape
 pig_disc = |pig|
 	if pig == gaze_pig {
 		plan_disc({

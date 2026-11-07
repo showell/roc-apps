@@ -8,9 +8,11 @@
 import Acceleration
 import Angle
 import Attention
+import Billboard
 import Distance
 import Easing
 import Fraction
+import Geom
 import RiderState
 import Scenery
 import Speed
@@ -177,7 +179,7 @@ Gaze :: [].{
 }
 
 ## How far `pig` stands from the way the bike points.
-turn_to : RiderState, Scenery.Critter -> Angle.Turn
+turn_to : RiderState, Geom.Placed(Billboard) -> Angle.Turn
 turn_to = |state, pig| Angle.Turn.radians(
 	F64.atan2({
 		x: pig.along.distance_from(state.along).to_metres(),
@@ -238,7 +240,7 @@ expect Gaze.desired_gaze(rider(100.0), distracting) == OnRoad
 expect Gaze.desired_gaze(rider(341.0), distracting) == OnRoad
 
 ## The pig that catches the eye on the distracting segment.
-watched_pig : Scenery.Critter
+watched_pig : Geom.Placed(Billboard)
 watched_pig =
 	match distracting.pig_interest {
 		Distracting(pig) => pig

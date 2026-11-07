@@ -9,7 +9,6 @@ import Distance
 import Geom
 import World
 import CatSighting
-import StillShapes
 import DepthSort
 import Fraction
 import Chain
@@ -125,7 +124,11 @@ subject_picture = |scene, { view, subject }| {
 			Picture.from_shapes(SceneShapes.tower_shapes(view, thing_at(scene.towers, place)))
 		Rail(place) =>
 			Picture.from_shapes(GuardRail.quad_shapes(thing_at(scene.rails, place), cam_focal))
-		Cutout(place) => StillShapes.cutout_picture(thing_at(scene.cutouts, place), cam_focal)
+		Cutout(place) =>
+			Pipeline.rendering_of(
+				thing_at(scene.critters, place),
+				{ cam_focal, context: {} },
+			).picture
 		Cat(place) =>
 			Picture.from_shapes(CatShapes.cat_shapes(thing_at(scene.cats, place), cam_focal))
 		Truck => Picture.from_shapes(truck_shapes(view, scene.truck))
@@ -236,6 +239,23 @@ second_shape_points = |shapes|
 		[_, Poly(polygon), ..] => polygon.coordinates.len()
 		_ => crash "a tree in view draws a trunk and tiers"
 	}
+
+# A tree's rendering stands at the tree's own depth, and its picture is the
+# conifer's, told how many of the others are nearer.
+expect
+	SceneShapes.tree_rendering(
+		tree_at(14.0),
+		{ trees: cluster_sightings, cam_focal: Pixels.of(500.0) },
+	).depth
+		== Distance.metres(14.0)
+expect
+	cluster_shapes(14.0)
+		== Conifer.BigGreen.scenery_picture({
+			right: Distance.metres(0.0),
+			forward: Distance.metres(14.0),
+			cam_focal: Pixels.of(500.0),
+			context: { nearer_tree_count: 4 },
+		}).to_shapes()
 
 # A near tree's tiers are cones, in more detail than a far tree's triangles.
 expect cluster_shapes(10.0).len() > 0

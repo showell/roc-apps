@@ -174,7 +174,7 @@ A sighting answers one question each frame: which of these can the rider see rig
 
 `Scene` gathers every sighting's answer, a depth sort puts them in order, and `SceneShapes` hands each one to the module that paints it. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. So a sighting decides what's visible, and the drawing code only paints what it's told.
 
-Cows, pigs and the other animals by the road are all sighted the same way, by `CutoutSighting`, and `Cutouts` decides which of them get drawn. `Detail` holds the thresholds behind that kind of decision: how near a tree shows its full detail, and how few pixels tall something may be and still be drawn.
+Cows, pigs and the other animals by the road are all sighted the same way, by `BillboardSighting`, which decides which of them get drawn. `Detail` holds the thresholds behind that kind of decision: how near a tree shows its full detail, and how few pixels tall something may be and still be drawn.
 
 Everything in this chapter happens within a single frame, and none of it survives to the next one. Very little carries over from step to step, and we'll come to that. First, let's hold one frame still and see what's in it.
 
@@ -217,7 +217,7 @@ A piece of the world can be just a value. Here's the second whole module. `Pond`
 
 Above its `expect`s, there are no functions here at all. The ducks are read where the critters are sighted:
 
-{{code CutoutSighting.pond_sightings from "if Scenery.is_pond" to "Pond.ducks.map("}}
+{{code BillboardSighting.pond_sightings from "if Scenery.is_pond" to "Pond.placed_ducks(segment.length)"}}
 
 `World` turns a route, a plain list of records, into segments of road. A plan for a segment shows how much tag unions can do with no declaration. `[WithBull, NoBull]` is written right in the field's type, and it says more than a boolean would at every place a segment is written down.
 
@@ -897,7 +897,7 @@ Now that we can draw a critter, we can stand one by the road.
 
 ## The elephant
 
-The critters in this stretch of the book are billboards: flat pictures that stand in one place and never change. The code calls them cutouts. We'll start with the elephant. It stands at 14 of the route's 19 bends, so it's the animal you'll see most. A grown elephant waits beyond the guard rail on the outside of the bend, and its baby stands in the middle of the road a little further on.
+The critters in this stretch of the book are billboards: flat pictures that stand in one place and never change. The code calls them billboards too. We'll start with the elephant. It stands at 14 of the route's 19 bends, so it's the animal you'll see most. A grown elephant waits beyond the guard rail on the outside of the bend, and its baby stands in the middle of the road a little further on.
 
 New in this chapter:
 
@@ -2636,7 +2636,7 @@ This book uses these words in one sense only.
 | Across | A place across the road, measured from its middle. Left is negative. |
 | Along | A place along a segment, measured from its start. |
 | Backdrop | The sky, the grass and the sun. It's the first thing in every frame. |
-| Billboard | A critter that stands still and always faces the camera, like the elephant. The code calls these cutouts. The bull is the fanciest one, with gradients in its still. |
+| Billboard | A critter that stands still and always faces the camera, like the elephant. The bull is the fanciest one, with gradients in its still. |
 | Canvas | Where the painter puts shapes. Safari Ride's frames are for a canvas 960 pixels wide and 600 pixels tall. |
 | Chain | The rider's segment and the segments after it, as far as the rider can see. |
 | Corner | One of the points of a polygon. |

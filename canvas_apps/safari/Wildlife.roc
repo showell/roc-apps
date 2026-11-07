@@ -4,8 +4,10 @@
 import Across
 import Along
 import Angle
+import Billboard
 import Distance
 import Fraction
+import Geom
 import Scenery
 
 Wildlife :: [].{
@@ -42,7 +44,7 @@ Wildlife :: [].{
 		bend_along : Along,
 		turn : Angle.Turn,
 		road_half_width : Distance,
-	} -> List(Scenery.Critter)
+	} -> List(Geom.Placed(Billboard))
 	bend_critters = |{ bend_life, bend_along, turn, road_half_width }|
 		match bend_life {
 			Quiet | DuckPond => []
@@ -60,16 +62,20 @@ Wildlife :: [].{
 					{
 						along: bend_along,
 						across: Across.right_of_middle(out_from_middle.times(-inward)),
-						codepoint: species.codepoint,
-						height: species.adult_height,
-						facing,
+						kind: {
+							codepoint: species.codepoint,
+							height: species.adult_height,
+							facing,
+						},
 					},
 					{
 						along: bend_along.plus(baby_beyond),
 						across: Across.middle,
-						codepoint: species.codepoint,
-						height: species.adult_height.times(baby_ratio.to_f64()),
-						facing,
+						kind: {
+							codepoint: species.codepoint,
+							height: species.adult_height.times(baby_ratio.to_f64()),
+							facing,
+						},
 					},
 				]
 			}
@@ -98,7 +104,7 @@ expect Wildlife.baby_beyond.to_metres() == 14.0
 
 ## An animal and its baby at each of four bends, the first and third turning
 ## right and the second and fourth left.
-four_critters : List(Scenery.Critter)
+four_critters : List(Geom.Placed(Billboard))
 four_critters = [
 	Wildlife.bend_critters({
 		bend_life: Animal(Elephant),
@@ -153,7 +159,7 @@ expect
 		]
 
 expect
-	four_critters.map(|critter| critter.height.to_metres())
+	four_critters.map(|critter| critter.kind.height.to_metres())
 		== [
 			2.8,
 			1.4,
@@ -166,7 +172,7 @@ expect
 		]
 
 expect
-	four_critters.map(|critter| critter.codepoint)
+	four_critters.map(|critter| critter.kind.codepoint)
 		== [
 			128024,
 			128024,
@@ -179,7 +185,7 @@ expect
 		]
 
 expect
-	four_critters.map(|critter| critter.facing)
+	four_critters.map(|critter| critter.kind.facing)
 		== [
 			FacesRight,
 			FacesRight,

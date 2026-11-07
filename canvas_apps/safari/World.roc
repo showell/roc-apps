@@ -5,10 +5,12 @@
 import Across
 import Along
 import Angle
+import Billboard
 import BirdFlight
 import Cat
 import Distance
 import Cows
+import Geom
 import Pigs
 import Scenery
 import Trees
@@ -77,8 +79,8 @@ World :: [].{
 	Segment : {
 		length : Distance,
 		trees : List(Trees.Tree),
-		cows : List(Scenery.Critter),
-		pigs : List(Scenery.Critter),
+		cows : List(Geom.Placed(Billboard)),
+		pigs : List(Geom.Placed(Billboard)),
 		pig_interest : Pigs.PigInterest,
 
 		## The turn into the next segment: positive to the right, negative to

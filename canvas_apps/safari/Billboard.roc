@@ -1,0 +1,99 @@
+## A billboard is a critter that stands in one place and always faces the
+## camera: the emoji still for its codepoint, at a height, facing left or right.
+import Camera
+import Distance
+import EmojiStills
+import Picture
+import Pixels
+import StillShapes
+
+Billboard := {
+	codepoint : I64,
+	height : Distance,
+	facing : Billboard.Facing,
+}.{
+
+	## Which way a billboard faces on screen.
+	Facing : [FacesLeft, FacesRight]
+
+	scenery_height : Billboard -> Distance
+	scenery_height = |billboard| billboard.height
+
+	## How a billboard looks. An emoji faces left, so a billboard facing right
+	## is its still mirrored. One less than a pixel tall isn't drawn.
+	scenery_picture : Billboard, Picture.Setting({}) -> Picture
+	scenery_picture = |billboard, { right, forward, cam_focal, .. }| {
+		projected = |height| Camera.project({ right, forward, height }, cam_focal)
+		feet = projected(Distance.zero)
+		height_px = feet.y.minus(projected(billboard.height).y)
+		if height_px < Pixels.of(1.0) {
+			Picture.from_shapes([])
+		} else {
+			flip =
+				match billboard.facing {
+					FacesLeft => AsDrawn
+					FacesRight => Mirrored
+				}
+			Picture.from_shapes(
+				StillShapes.still_shapes(
+					{ feet, flip, height_px },
+					EmojiStills.emoji_polys_for(billboard.codepoint),
+				),
+			)
+		}
+	}
+
+	is_eq : _
+}
+
+# How many shapes draw a billboard of `height` metres, `forward` metres ahead.
+shape_count : {
+	forward : Distance,
+	height : Distance,
+	codepoint : I64,
+} -> U64
+shape_count = |{ forward, height, codepoint }| {
+	billboard : Billboard
+	billboard = { codepoint, height, facing: FacesLeft }
+	billboard.scenery_picture({
+		right: Distance.metres(0.0),
+		forward,
+		cam_focal: Pixels.of(500.0),
+		context: {},
+	}).to_shapes().len()
+}
+
+elephant : I64
+elephant = 128024
+
+# A billboard is drawn while it stands a pixel tall.
+expect
+	shape_count({
+		forward: Distance.metres(1000.0),
+		height: Distance.metres(2.0),
+		codepoint: elephant,
+	})
+		== 6
+expect
+	shape_count({
+		forward: Distance.metres(2000.0),
+		height: Distance.metres(2.0),
+		codepoint: elephant,
+	})
+		== 0
+expect
+	shape_count({
+		forward: Distance.metres(1000.0),
+		height: Distance.metres(1.9),
+		codepoint: elephant,
+	})
+		== 0
+expect
+	shape_count({
+		forward: Distance.metres(100.0),
+		height: Distance.metres(2.0),
+		codepoint: elephant,
+	})
+		== 6
+
+expect EmojiStills.emoji_polys_for(elephant).len() == 6

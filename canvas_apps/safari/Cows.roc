@@ -3,8 +3,10 @@
 ## front of the herd, by the trees.
 import Across
 import Along
+import Billboard
 import Conifer
 import Distance
+import Geom
 import Scenery
 import Trees
 
@@ -60,7 +62,7 @@ Cows :: [].{
 	herd_jitter_across = Distance.metres(1.2)
 
 	## The bull, when the herd has one.
-	bull_of : [WithBull, NoBull] -> Try(Scenery.Critter, [NoBull])
+	bull_of : [WithBull, NoBull] -> Try(Geom.Placed(Billboard), [NoBull])
 	bull_of = |bull|
 		match bull {
 			WithBull => {
@@ -69,9 +71,11 @@ Cows :: [].{
 				Ok({
 					along: bull_along,
 					across: Across.left_of_middle(bull_middle.plus(bull_tree_gap)),
-					codepoint: bull_codepoint,
-					height: bull_height,
-					facing: FacesLeft,
+					kind: {
+						codepoint: bull_codepoint,
+						height: bull_height,
+						facing: FacesLeft,
+					},
 				})
 			}
 			NoBull => Err(NoBull)
@@ -79,15 +83,15 @@ Cows :: [].{
 
 	## The herd's cows, column by column from the front. Every fourth cow,
 	## from the second, is a calf.
-	cows : List(Scenery.Critter)
+	cows : List(Geom.Placed(Billboard))
 	cows = List.from_iter(I64.until(0, herd_size)).map(cow_at)
 
 	## The bull, if there is one, then the cows.
-	herd_cows : [WithBull, NoBull] -> List(Scenery.Critter)
+	herd_cows : [WithBull, NoBull] -> List(Geom.Placed(Billboard))
 	herd_cows = |bull| [Cows.bull_of(bull)].keep_oks(|critter| critter).concat(Cows.cows)
 }
 
-cow_at : I64 -> Scenery.Critter
+cow_at : I64 -> Geom.Placed(Billboard)
 cow_at = |i| {
 	fi = i.to_f64()
 	column = i.div_trunc_by(3).to_f64()
@@ -101,26 +105,28 @@ cow_at = |i| {
 	{
 		along: in_line.plus(Cows.herd_jitter_along.times((fi * 2.7).sin())),
 		across: Across.left_of_middle(out_from_road),
-		codepoint: Cows.cow_codepoint,
-		height: if i.rem_by(4) == 1 {
-			Cows.calf_height
-		} else {
-			Cows.cow_height
+		kind: {
+			codepoint: Cows.cow_codepoint,
+			height: if i.rem_by(4) == 1 {
+				Cows.calf_height
+			} else {
+				Cows.cow_height
+			},
+			facing: FacesRight,
 		},
-		facing: FacesRight,
 	}
 }
 
 expect Cows.bull_codepoint == 128002
 expect Cows.cow_codepoint == 128004
 
-expect Cows.bull_of(WithBull).map_ok(|bull| bull.codepoint) == Ok(128002)
+expect Cows.bull_of(WithBull).map_ok(|bull| bull.kind.codepoint) == Ok(128002)
 expect Cows.bull_of(NoBull).is_err()
 expect Cows.herd_cows(WithBull).len() == 15
 expect Cows.herd_cows(NoBull).len() == 14
 
 # The bull faces left and the cows right.
-expect Cows.herd_cows(WithBull).take_first(2).map(|critter| critter.facing) == [
+expect Cows.herd_cows(WithBull).take_first(2).map(|critter| critter.kind.facing) == [
 	FacesLeft,
 	FacesRight,
 ]
@@ -136,11 +142,11 @@ expect Cows.calf_height == Distance.metres(0.7)
 expect (Cows.bull_height.to_metres() - 1.61).abs() <= 0.000000000001
 expect {
 	bull = Cows.bull_of(WithBull) ?? crash "Cows: WithBull gives the bull"
-	(bull.height.to_metres() - 1.61).abs() <= 0.000000000001
+	(bull.kind.height.to_metres() - 1.61).abs() <= 0.000000000001
 }
 
 expect
-	Cows.cows.map(|cow| cow.height.to_metres())
+	Cows.cows.map(|cow| cow.kind.height.to_metres())
 		== [
 			1.4,
 			0.7,
@@ -159,7 +165,7 @@ expect
 		]
 
 expect Cows.cows.len() == 14
-expect Cows.cows.all(|cow| cow.codepoint == 128004)
+expect Cows.cows.all(|cow| cow.kind.codepoint == 128004)
 
 # The bull leads, and the cows follow him in their own order.
 expect Cows.herd_cows(WithBull).take_first(1).map(|bull| bull.along) == [Along.metres(24.0)]

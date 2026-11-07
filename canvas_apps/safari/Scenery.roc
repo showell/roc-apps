@@ -1,21 +1,12 @@
 ## Scenery holds the words the world is built from: a segment's colour scheme,
-## the animals, a critter's place by the road, and how wide the road is.
+## the animals, and how wide the road is.
 import Across
-import Along
-import Cutouts
 import Distance
 
 Scenery :: [].{
 	Scheme : [AllGreen, GoldGreen, RedGreen]
 	Animal : [Elephant, Giraffe, Zebra, Rhino]
 	BendLife : [Quiet, Animal(Scenery.Animal), DuckPond]
-	Critter : {
-		along : Along,
-		across : Across,
-		codepoint : I64,
-		height : Distance,
-		facing : Cutouts.Facing,
-	}
 
 	road_width : Distance
 	road_width = Distance.metres(4.0)

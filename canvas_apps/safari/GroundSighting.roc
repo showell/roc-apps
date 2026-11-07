@@ -201,14 +201,13 @@ pond_patches = |road, { segment, place }|
 	if Scenery.is_pond(segment.bend_life) {
 		on_map = |outline|
 			outline.map(
-				|point| Chain.rider_point_at(
-					road,
-					{
-						place,
-						along: Along.at(segment.length).plus(point.along.from_start()),
-						across: point.across,
-					},
-				),
+				|point| {
+					on_segment = Pond.segment_point(point, segment.length)
+					Chain.rider_point_at(
+						road,
+						{ place, along: on_segment.along, across: on_segment.across },
+					)
+				},
 			)
 		[
 			{ corners: on_map(Pond.water_outline_points), color: Pond.water_color },

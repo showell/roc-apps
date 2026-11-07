@@ -10,13 +10,14 @@ import game.Pixels
 import game.Across
 import game.Along
 import game.Angle
+import game.Billboard
 import game.BirdFlight
 import game.BirdSighting
 import game.Cat
 import game.CatSighting
 import game.Clock
 import game.Conifer
-import game.CutoutSighting
+import game.BillboardSighting
 import game.DepthSort
 import game.Distance
 import game.Fraction
@@ -379,7 +380,7 @@ expect
 		},
 	)
 
-# CutoutSighting: how far along the chain each kind of critter is sighted.
+# BillboardSighting: how far along the chain each kind of critter is sighted.
 ## The first six segments, chained in order.
 six_segments : Chain.RoadView
 six_segments = {
@@ -397,14 +398,14 @@ lone = |index| {
 }
 
 farm_at : U32 -> I64
-farm_at = |number| CutoutSighting.farm_sightings(
+farm_at = |number| BillboardSighting.farm_sightings(
 	six_segments,
 	Chain.Position.number(number),
 ).len().to_i64_wrap()
 
 safari_at : U32 -> I64
 safari_at = |number|
-	CutoutSighting.wildlife_sightings(
+	BillboardSighting.wildlife_sightings(
 		six_segments,
 		Chain.Position.number(number),
 	).len().to_i64_wrap()
@@ -417,23 +418,23 @@ expect farm_at(5) == 0
 expect safari_at(3) > 0
 expect safari_at(4) > 0
 expect safari_at(5) == 0
-expect CutoutSighting.wildlife_sightings(lone(18), Chain.Position.first).len() == 0
-expect CutoutSighting.wildlife_sightings(lone(0), Chain.Position.first).len() > 0
+expect BillboardSighting.wildlife_sightings(lone(18), Chain.Position.first).len() == 0
+expect BillboardSighting.wildlife_sightings(lone(0), Chain.Position.first).len() > 0
 
 duck_count : U32 -> I64
 duck_count = |index|
-	CutoutSighting.duck_sightings(lone(index), Chain.Position.first).len().to_i64_wrap()
+	BillboardSighting.duck_sightings(lone(index), Chain.Position.first).len().to_i64_wrap()
 
 expect duck_count(12) > 0
 expect duck_count(0) == 0
 expect duck_count(4) == 0
 expect duck_count(18) == 0
-expect CutoutSighting.duck_sightings(six_segments, Chain.Position.number(5)).len() == 0
+expect BillboardSighting.duck_sightings(six_segments, Chain.Position.number(5)).len() == 0
 expect duck_count(12) == 6
 expect {
 	first = Chain.Position.first
-	whole = CutoutSighting.sightings_at(six_segments, first).len().to_i64_wrap()
-	ducks = CutoutSighting.duck_sightings(six_segments, first).len().to_i64_wrap()
+	whole = BillboardSighting.sightings_at(six_segments, first).len().to_i64_wrap()
+	ducks = BillboardSighting.duck_sightings(six_segments, first).len().to_i64_wrap()
 	whole == farm_at(0) + safari_at(0) + ducks
 }
 
@@ -442,22 +443,117 @@ count_from : U32 -> I64
 count_from = |position|
 	List.from_iter(U32.until(position, 6))
 		.map(
-			|number| CutoutSighting.sightings_at(six_segments, Chain.Position.number(number))
+			|number| BillboardSighting.sightings_at(six_segments, Chain.Position.number(number))
 				.len()
 				.to_i64_wrap(),
 		)
 		.sum()
 
-expect CutoutSighting.sightings_ahead({ ..six_segments, chain_indices: [] }).len() == 0
+expect BillboardSighting.sightings_ahead({ ..six_segments, chain_indices: [] }).len() == 0
 expect
-	CutoutSighting.sightings_ahead(lone(0)).len()
-		== CutoutSighting.sightings_at(lone(0), Chain.Position.first).len()
-expect CutoutSighting.sightings_ahead(six_segments).len().to_i64_wrap() == count_from(0)
+	BillboardSighting.sightings_ahead(lone(0)).len()
+		== BillboardSighting.sightings_at(lone(0), Chain.Position.first).len()
+expect BillboardSighting.sightings_ahead(six_segments).len().to_i64_wrap() == count_from(0)
 expect count_from(0) >= count_from(1)
 expect count_from(1) >= count_from(2)
-expect CutoutSighting.sightings_behind(six_segments, World.SegmentIndex.number(4)).len() > 0
-expect CutoutSighting.ducks_behind(six_segments, World.route_segment(12)).len() > 0
-expect CutoutSighting.ducks_behind(six_segments, World.route_segment(0)).len() == 0
+expect BillboardSighting.sightings_behind(six_segments, World.SegmentIndex.number(4)).len() > 0
+expect BillboardSighting.ducks_behind(six_segments, World.route_segment(12)).len() > 0
+expect BillboardSighting.ducks_behind(six_segments, World.route_segment(0)).len() == 0
+
+## A billboard on the first segment, as the rider at its start sees it.
+critter_fate : Geom.Placed(Billboard) -> BillboardSighting.Fate
+critter_fate = |critter|
+	BillboardSighting.sight_critter(road, { place: InChain(Chain.Position.first), critter })
+
+## A cow 2.5 m to the right of the rider, `forward` metres ahead.
+cow_fate : { forward : Distance, height : Distance } -> BillboardSighting.Fate
+cow_fate = |{ forward, height }|
+	critter_fate({
+		along: Along.at(forward),
+		across: Across.metres(2.5),
+		kind: { codepoint: 128004, height, facing: FacesRight },
+	})
+
+## Which way a sighting went, whatever it carries.
+how_it_went : BillboardSighting.Fate -> [Seen, BehindCamera, TooSmall]
+how_it_went = |fate|
+	match fate {
+		Ok(_) => Seen
+		Err(BehindCamera) => BehindCamera
+		Err(TooSmall) => TooSmall
+	}
+
+# The near plane is 0.4 m, and at the lens's resting focal length a 1 m cow is 2
+# pixels tall about 342.8 m off.
+expect
+	[
+		(-5.0, 1.0, BehindCamera),
+		(0.3, 1.0, BehindCamera),
+		(0.4, 1.0, BehindCamera),
+		(0.5, 1.0, Seen),
+		(300.0, 1.0, Seen),
+		(342.0, 1.0, Seen),
+		(343.0, 1.0, TooSmall),
+		(400.0, 1.0, TooSmall),
+		(10.0, 0.0, TooSmall),
+		(50.0, 0.9, Seen),
+	].all(
+		|(forward, height, want)| {
+			fate = cow_fate({ forward: Distance.metres(forward), height: Distance.metres(height) })
+			how_it_went(fate) == want
+		},
+	)
+
+near_cow : Geom.Sighted(Billboard)
+near_cow =
+	cow_fate({ forward: Distance.metres(0.5), height: Distance.metres(1.0) })
+		?? crash "CrossModuleExpects: a cow 0.5 m ahead is in view"
+
+left_bull : Geom.Sighted(Billboard)
+left_bull =
+	critter_fate({
+		along: Along.metres(50.0),
+		across: Across.metres(-1.5),
+		kind: {
+			codepoint: 128002,
+			height: Distance.metres(1.6),
+			facing: FacesLeft,
+		},
+	})
+		?? crash "CrossModuleExpects: a bull 50 m ahead is in view"
+
+expect near_cow.right.to_metres() == 2.5
+expect near_cow.forward.to_metres() == 0.5
+expect near_cow.kind.height.to_metres() == 1.0
+expect left_bull.right.to_metres() == -1.5
+expect left_bull.forward.to_metres() == 50.0
+expect left_bull.kind.height.to_metres() == 1.6
+
+expect near_cow.kind.codepoint == 128004
+expect left_bull.kind.codepoint == 128002
+expect near_cow.kind.facing == FacesRight
+expect left_bull.kind.facing == FacesLeft
+
+expect BillboardSighting.min_critter_px.to_f64() == 2.0
+expect BillboardSighting.max_visible_critters == 320
+
+## How many of `in_view` critters are drawn, among `out_of_view` others before
+## them. A count past the cap is cut to it, and one out of view takes no place.
+drawn_count : { out_of_view : U64, in_view : U64 } -> U64
+drawn_count = |{ out_of_view, in_view }|
+	BillboardSighting.critters_to_draw(
+		List.repeat(Err(TooSmall), out_of_view).concat(List.repeat(Ok(near_cow), in_view)),
+	).len()
+
+expect
+	[
+		({ out_of_view: 0, in_view: 319 }, 319),
+		({ out_of_view: 0, in_view: 320 }, 320),
+		({ out_of_view: 0, in_view: 321 }, 320),
+		({ out_of_view: 400, in_view: 5 }, 5),
+		({ out_of_view: 400, in_view: 321 }, 320),
+		({ out_of_view: 0, in_view: 0 }, 0),
+	].all(|(counts, want)| drawn_count(counts) == want)
 
 # RailSighting's run up to a bend and out of it.
 rail_point_at : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
@@ -510,7 +606,7 @@ expect {
 	kind_counts = [
 		TreeSighting.depth_keys(scene.trees).len(),
 		TowerSighting.depth_keys(scene.towers).len(),
-		CutoutSighting.depth_keys(scene.cutouts).len(),
+		BillboardSighting.depth_keys(scene.critters).len(),
 		CatSighting.depth_keys(scene.cats).len(),
 		TruckSighting.depth_keys(scene.truck).len(),
 		RailSighting.depth_keys(scene.rails).len(),
@@ -521,11 +617,11 @@ expect {
 
 expect scene.trees.len() > 0
 expect scene.towers.len() > 0
-expect scene.cutouts.len() > 0
+expect scene.critters.len() > 0
 expect scene.rails.len() > 0
 expect scene.order_keys.len() > 0
 expect scene.towers.len().to_i64_wrap() <= TowerSighting.max_visible_towers
-expect scene.cutouts.len().to_i64_wrap() <= CutoutSighting.max_visible_cutouts
+expect scene.critters.len().to_i64_wrap() <= BillboardSighting.max_visible_critters
 
 ## Whether no key in `keys` is farther than the one before it.
 is_far_to_near : List(DepthSort.DepthKey) -> Bool
