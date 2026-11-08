@@ -97,7 +97,7 @@ tower_shapes = |tower, { footprint, spot, focal_length }| {
 	if sunk >= tower_height {
 		[]
 	} else {
-		sunk_tower = {
+		geometry = {
 			footprint,
 			foot,
 			lift,
@@ -107,13 +107,13 @@ tower_shapes = |tower, { footprint, spot, focal_length }| {
 		}
 		apex = foot.at_height(lift.plus(tower_height.minus(sunk)))
 		rods = [
-			leg_shapes(sunk_tower, apex.to_raised()),
-			ring_shapes(sunk_tower),
-			brace_shapes(sunk_tower),
+			leg_shapes(geometry, apex.to_raised()),
+			ring_shapes(geometry),
+			brace_shapes(geometry),
 		].join()
 		beacon_disc = tower.beacon().disc({
 			center: Camera.project(apex, focal_length),
-			metre_on_screen: sunk_tower.metre_on_screen,
+			metre_on_screen: geometry.metre_on_screen,
 		})
 		match beacon_disc {
 			Ok(disc) => rods.append(disc)
@@ -143,11 +143,12 @@ rod_width = rod_half_width.times(2.0)
 tower_color : RgbColor
 tower_color = RgbColor.of(0x9AA0A8)
 
-## One tower, as its shapes are worked out: where its footprint and foot
-## stand, how high off the ground it is, how far the earth's curve has sunk
-## it, which is never negative, and how many pixels a metre across spans as
-## far ahead as its foot, which sizes its rods and its beacon.
-SunkTower : {
+## A tower's measurements in this frame, which its rods are worked out from:
+## where its footprint and foot stand, how high off the ground it is, how far
+## the earth's curve has sunk it, which is never negative, and how many pixels
+## a metre across spans as far ahead as its foot, which sizes its rods and its
+## beacon.
+TowerGeometry : {
 	footprint : Footprint,
 	foot : RiderView.RiderPointAhead,
 	lift : Distance,
@@ -210,7 +211,7 @@ base_corner_on_road = |corner, { center, yaw }| {
 ## A corner of the tower at `height_on_tower`: drawn in toward the foot as
 ## the tower tapers, raised by the tower's lift, and lowered by how far the
 ## tower has sunk.
-corner_at : SunkTower, { corner : Corner, height_on_tower : Distance } -> RiderView.RaisedPoint
+corner_at : TowerGeometry, { corner : Corner, height_on_tower : Distance } -> RiderView.RaisedPoint
 corner_at = |tower, { corner, height_on_tower }| {
 	taper_fraction = height_on_tower.ratio_to(tower_height)
 	bottom = footprint_corner(tower.footprint, corner)
@@ -272,7 +273,7 @@ rod_quad = |{ from, to, offset_x, offset_y }| Polygon.flat_polygon(
 
 ## A rod between two points in the rider's view, cut where it crosses the
 ## near plane. A rod wholly behind the near plane has no shape.
-rod_shape : SunkTower,
+rod_shape : TowerGeometry,
 {
 	from : RiderView.RaisedPoint,
 	to : RiderView.RaisedPoint,
@@ -298,7 +299,7 @@ metre_on_screen = |{ at, focal_length }| {
 }
 
 ## The four legs, from the footprint's corners up to the apex.
-leg_shapes : SunkTower, RiderView.RaisedPoint -> List(Shapes.Shape)
+leg_shapes : TowerGeometry, RiderView.RaisedPoint -> List(Shapes.Shape)
 leg_shapes = |tower, apex| corners.keep_oks(
 	|corner| rod_shape(
 		tower,
@@ -307,7 +308,7 @@ leg_shapes = |tower, apex| corners.keep_oks(
 )
 
 ## The ring of rods round the tower at `ring_height`.
-ring_shapes_at : SunkTower, Distance -> List(Shapes.Shape)
+ring_shapes_at : TowerGeometry, Distance -> List(Shapes.Shape)
 ring_shapes_at = |tower, ring_height| corners.keep_oks(
 	|corner| rod_shape(
 		tower,
@@ -320,7 +321,7 @@ ring_shapes_at = |tower, ring_height| corners.keep_oks(
 
 ## A ring at every storey below the top, bottom first, leaving out those
 ## the earth has hidden.
-ring_shapes : SunkTower -> List(Shapes.Shape)
+ring_shapes : TowerGeometry -> List(Shapes.Shape)
 ring_shapes = |tower| ring_heights.join_map(
 	|ring_height|
 		if ring_height <= tower.sunk {
@@ -344,11 +345,11 @@ ring_heights = {
 
 ## The crossed braces of the lowest storeys, bottom first. A storey the
 ## earth has partly hidden starts its braces at the horizon.
-brace_shapes : SunkTower -> List(Shapes.Shape)
+brace_shapes : TowerGeometry -> List(Shapes.Shape)
 brace_shapes = |tower|
 	List.from_iter(U64.until(0, brace_storeys)).join_map(|storey| storey_shapes(tower, storey))
 
-storey_shapes : SunkTower, U64 -> List(Shapes.Shape)
+storey_shapes : TowerGeometry, U64 -> List(Shapes.Shape)
 storey_shapes = |tower, storey| {
 	storey_bottom = storey_height.times(storey.to_f64())
 	storey_top = storey_bottom.plus(storey_height)
@@ -368,7 +369,7 @@ storey_shapes = |tower, storey| {
 
 ## The two braces crossing the face from `corner` to the next corner: one
 ## rising each way.
-face_brace_shapes : SunkTower,
+face_brace_shapes : TowerGeometry,
 {
 	corner : Corner,
 	storey_bottom : Distance,
@@ -402,7 +403,7 @@ ahead : RiderView.RiderPoint -> RiderView.RiderPointAhead
 ahead = |point| RiderView.rider_point_ahead(point) ?? crash "a test's point is past the near plane"
 
 # A tower 12 m square, its foot 100 m ahead, sunk 1 m, a metre 5 px across.
-sample_tower : SunkTower
+sample_tower : TowerGeometry
 sample_tower = {
 	footprint: {
 		back_left: { right: Distance.metres(-6.0), forward: Distance.metres(94.0) },
