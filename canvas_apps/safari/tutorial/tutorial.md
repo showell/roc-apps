@@ -405,7 +405,7 @@ digraph forms {
 }
 ```
 
-A box is a type, and an arrow is a function that makes the next one. The kind goes in at the top and comes out of `Pipeline.rendering_of` as a picture. `Rendered` has no kind, so a tree's rendering and a cow's are the same type, and every rendering in the frame goes in one list for the depth sort.
+A box is a type, and an arrow is a function that makes the next one. The kind goes in at the top and comes out of `Pipeline.rendering_of` as a picture. `Rendered` has no kind, so a tree's rendering and a cow's are the same type, and every rendering in the frame goes in one list for the depth sort. That sort is `DepthSort`, a stable merge sort that orders the list from far to near.
 
 ### A type with a type variable
 
@@ -1856,9 +1856,9 @@ That's the direction to the pig, less the way the bike points. The pig stands be
 
 {{code RiderEyes.next_gaze_yaw}}
 
-Toward a pig, the gaze turns by at most 4 degrees a step, and `clamped_within` holds the change to that limit on either side. On the way back it gives up a twentieth of its angle each step, and never more than 0.2 degrees.
+Toward a pig, the gaze turns by at most 4 degrees a step, and `clamped_within` holds the change to that limit on either side. On the way back the same clamp holds it to 0.2 degrees a step.
 
-A twentieth of what's left never gets to zero, so the `OnRoad` branch first checks whether the gaze is nearly home. Within 0.02 degrees, it snaps to straight ahead, and the return ends.
+A gaze within 0.2 degrees of straight ahead goes all the way there, so the last step of the return lands exactly home, and the return ends.
 
 Nothing here turns the bike. The gaze goes to the camera, and to nothing else that moves:
 
@@ -1870,7 +1870,7 @@ The second term is the rider's head going with the lean. So when the rider looks
 
 {{code RiderEyes.next_look_depth}}
 
-While the gaze is off straight ahead, the depth rises with how far it has turned, and it doesn't drop. Once the gaze is home, the depth fades by 0.0012 a step. That's why the table in the rider chapter has a `look_depth` of 0.67 at step 1,570, with no pig in sight. The gaze came home 262 steps before.
+While the gaze is off straight ahead, the depth rises with how far it has turned, and it doesn't drop. Once the gaze is home, the depth fades by 0.0012 a step, so a full look takes more than 800 steps to fade.
 
 The depth has one job. It widens the view:
 
@@ -1900,12 +1900,12 @@ Here's all of that on the third segment of the route:
 
 | Step | What happens | Speed | `gaze_yaw` | `look_depth` |
 |---|---|---|---|---|
-| 889 | The rider looks, with the pig just inside 150 metres | 1.94 metres a step | 4.0 degrees | 0.114 |
-| 1,050 | The gaze is at its widest | 0.2 metres a step | 34.7 degrees | 0.991 |
-| 1,051 | The rider lets the pig go | 0.2 metres a step | 34.5 degrees | 0.991 |
-| 1,308 | The gaze is back on the road | 0.2 metres a step | 0 degrees | 0.989 |
+| 885 | The rider looks, with the pig just inside 150 metres | 1.94 metres a step | 4.0 degrees | 0.114 |
+| 1,049 | The gaze is at its widest | 0.2 metres a step | 34.95 degrees | 0.999 |
+| 1,050 | The rider lets the pig go | 0.2 metres a step | 34.75 degrees | 0.999 |
+| 1,224 | The gaze is back on the road | 0.2 metres a step | 0 degrees | 0.997 |
 
-The look takes 162 steps, and getting the eyes back takes 257. The rider crawls for 90 steps more with nothing to look at, and the segment ends at step 1,398. The gaze is home at every one of the ride's 18 crossings, and an expect holds that. A crossing needs no reset anyway: the bike doesn't turn at a seam, and `gaze_yaw` is measured from the bike.
+The look takes 165 steps, and getting the eyes back takes 174. The rider crawls for 173 steps more with nothing to look at, and reaches the next segment at step 1,397. The gaze is home at every one of the ride's 18 crossings, and an expect holds that. A crossing needs no reset anyway: the bike doesn't turn at a seam, and `gaze_yaw` is measured from the bike.
 
 That's the pig's part of the rider's step. The truck is the other stepped thing.
 
