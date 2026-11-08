@@ -123,7 +123,8 @@ kind_size = |part, { road, camera, instant }| {
 	} else if part == "trees_sight" {
 		TreeSighting.trees_in_view(road, cam).len()
 	} else if part == "trees" {
-		shape_count(Scene.tree_renderings(TreeSighting.trees_in_view(road, cam), focal_length))
+		trees_seen = TreeSighting.trees_in_view(road, cam)
+		shape_count(TreeSighting.tree_renderings(trees_seen, focal_length))
 	} else if part == "towers_sight" {
 		TowerSighting.towers_in_view(road, { camera: cam, clock: facts.clock }).len()
 	} else if part == "towers" {

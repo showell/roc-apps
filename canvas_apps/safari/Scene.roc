@@ -4,7 +4,6 @@
 ## nothing asks what kind a thing is, so each field holds only renderings.
 import EncounterPlan
 import Clock
-import Conifer
 import Distance
 import EncounterPoses
 import EncounterSighting
@@ -12,11 +11,9 @@ import BillboardSighting
 import RoadAhead
 import GuardRail
 import Pipeline
-import Pixels
 import RailSighting
 import Rendered
 import TowerSighting
-import TreeShapes
 import TreeSighting
 import LitTruck
 import TruckSighting
@@ -63,7 +60,7 @@ Scene := {
 				Err(NoTruck) | Err(BehindCamera) => []
 			}
 		{
-			trees: Scene.tree_renderings(trees_seen, focal_length),
+			trees: TreeSighting.tree_renderings(trees_seen, focal_length),
 			birds: birds_seen.map(
 				|bird| Pipeline.rendering_of(bird, { focal_length, context: {} }),
 			),
@@ -107,41 +104,4 @@ Scene := {
 				scene.rails,
 			].join(),
 		)
-
-	## Each of `trees` rendered, told how many of the others are nearer, which is
-	## all a tree needs of them. It is public for FramePartsBench, which times
-	## the trees alone.
-	tree_renderings : List(Pipeline.Sighted(Conifer)), Pixels -> List(Rendered)
-	tree_renderings = |trees, focal_length| {
-		forwards = trees.map(|tree| tree.spot.foot().forward())
-		trees.map(
-			|tree| {
-				nearer_count = nearer_tree_count(forwards, tree.spot.foot().forward())
-				detail : TreeShapes.Detail
-				detail = { nearer_tree_count: nearer_count }
-				Pipeline.rendering_of(tree, { focal_length, context: detail })
-			},
-		)
-	}
 }
-
-## How many of the trees at `forwards` are nearer than `forward`.
-nearer_tree_count : List(Distance), Distance -> U64
-nearer_tree_count = |forwards, forward| forwards.count_if(|other| other < forward)
-
-spread_forwards : List(Distance)
-spread_forwards = [10.0, 20.0, 30.0, 40.0, 50.0].map(Distance.metres)
-
-expect nearer_tree_count(spread_forwards, Distance.metres(10.0)) == 0
-expect nearer_tree_count(spread_forwards, Distance.metres(30.0)) == 2
-expect nearer_tree_count(spread_forwards, Distance.metres(50.0)) == 4
-expect nearer_tree_count(spread_forwards, Distance.metres(60.0)) == 5
-expect nearer_tree_count(spread_forwards, Distance.metres(5.0)) == 0
-expect nearer_tree_count([], Distance.metres(10.0)) == 0
-
-tied_forwards : List(Distance)
-tied_forwards = List.repeat(Distance.metres(20.0), 4)
-
-expect nearer_tree_count(tied_forwards, Distance.metres(20.0)) == 0
-expect nearer_tree_count(tied_forwards, Distance.metres(20.1)) == 4
-expect nearer_tree_count(tied_forwards, Distance.metres(19.9)) == 0

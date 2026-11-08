@@ -641,7 +641,7 @@ A placed tree has a name of its own: `Trees.RoadsideTree` is another name for `G
 |---|---|---|
 {{types row Trees.roadside_trees Place a segment's trees, once}}
 {{types row TreeSighting.trees_in_view Find the trees in view, for each frame}}
-{{types row Scene.tree_renderings Render them, for each frame}}
+{{types row TreeSighting.tree_renderings Render them, for each frame}}
 
 A tree, once and for each frame
 ```dot
@@ -705,9 +705,9 @@ Far trees are cheap. They get eight triangles and a plain trunk. A cone costs a 
 
 "The nearest few" is the one thing a tree alone can't tell us, because it depends on the other trees. So `SceneShapes` counts them, and the count goes in as the conifer's context, the `nearer_tree_count` from Nature types:
 
-{{code Scene.tree_renderings}}
+{{code TreeSighting.tree_renderings}}
 
-{{code Scene.nearer_tree_count}}
+{{code TreeSighting.nearer_tree_count}}
 
 `count_if` answers a `U64`, and `to_u16_wrap` turns it into the `U16` the context wants, wrapping around past 65,535. A frame never sees more than the 392 trees there are, so it never wraps.
 
