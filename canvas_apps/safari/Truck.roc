@@ -11,7 +11,7 @@ import Speed
 import VehicleLimits
 
 ## How far along the route the truck is, how fast it is going, and whether
-## its last step slowed it.
+## its last step slowed it. Nominal, not opaque: other modules read its fields.
 Truck := {
 	route_position : Distance,
 	speed : Speed,

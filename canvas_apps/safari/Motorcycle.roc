@@ -11,7 +11,8 @@ import Speed
 import VehicleLimits
 
 ## The motorcycle at one step. `route_place` places it on the route, and `yaw`
-## is its turn from its segment's axis. `lean` is how far it tips.
+## is its turn from its segment's axis. `lean` is how far it tips. Nominal, not
+## opaque: other modules read its fields.
 Motorcycle := {
 	route_place : RoutePlace,
 	yaw : Angle.Turn,

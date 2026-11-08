@@ -25,8 +25,8 @@ BirdFlight :: [].{
 	## it takes off, seven flaps seen from behind, and a flap's length of diving.
 	flight_poses : List(PosedBird.BirdPose)
 	flight_poses = [
-		flap_poses(Side(WingsUp), Side(WingsDown)),
-		List.repeat(flap_poses(Away(WingsUp), Away(WingsDown)), 7).join(),
+		flap_poses({ up: Side(WingsUp), down: Side(WingsDown) }),
+		List.repeat(flap_poses({ up: Away(WingsUp), down: Away(WingsDown) }), 7).join(),
 		List.repeat(Diving, frames_a_flap),
 	].join()
 
@@ -73,9 +73,7 @@ flight_arc = Distance.metres(5.0)
 shortest_hop : Distance
 shortest_hop = Distance.metres(25.0)
 
-## How many steps one flap of the wings takes, half of them up and half down.
-## At the rider's cruising 1.25 m a step a flap spans 5 m of road, as it did
-## when a flight played by the road, eight frames a metre, 40 to a flap.
+## How many steps one flap of the wings takes, half up and half down.
 frames_a_flap : U64
 frames_a_flap = 4
 
@@ -110,8 +108,8 @@ tree_top = |tree| {
 }
 
 ## One flap of the wings: `up` for half its frames and `down` for the rest.
-flap_poses : PosedBird.BirdPose, PosedBird.BirdPose -> List(PosedBird.BirdPose)
-flap_poses = |up, down| {
+flap_poses : { up : PosedBird.BirdPose, down : PosedBird.BirdPose } -> List(PosedBird.BirdPose)
+flap_poses = |{ up, down }| {
 	half = frames_a_flap // 2
 	List.repeat(up, half).concat(List.repeat(down, half))
 }

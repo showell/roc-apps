@@ -47,7 +47,7 @@ LeanSearch :: [].{
 	tried_lean = |{ low, high, .. }| low.halfway_to(high)
 
 	## The tries of the bisection over the leans one step can reach from the
-	## motorcycle's own, first first. Each try's bounds are the half of the one
+	## motorcycle's own, in the order tried. Each try's bounds are the half of the one
 	## before it that its coast pointed to.
 	search_tries : Motorcycle -> List(LeanSearch.LeanTry)
 	search_tries = |motorcycle| {
