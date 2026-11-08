@@ -80,7 +80,7 @@ end_tower = |road, { vantage, in_view, clock }| {
 				along: Along.at(in_view.segment.length.plus(end_tower_beyond_end)),
 				across: Across.right_of_middle(end_tower_right_of_middle),
 			},
-			tower: { yaw: end_tower_yaw, beacon_brightness },
+			tower: Tower.standing({ yaw: end_tower_yaw, beacon_brightness }),
 		},
 	)
 }
@@ -105,7 +105,7 @@ mid_tower = |road, { vantage, in_view, clock }|
 					along: Along.at(in_view.segment.length.divided_by(2.0)),
 					across: Across.left_of_middle(mid_tower_left_of_middle),
 				},
-				tower: { yaw: Angle.straight_ahead, beacon_brightness },
+				tower: Tower.standing({ yaw: Angle.straight_ahead, beacon_brightness }),
 			},
 		)
 	} else {

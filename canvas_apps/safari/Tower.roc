@@ -21,7 +21,19 @@ import Screen
 import lib.Shapes
 
 ## A tower in a frame: how it is turned, and how bright its beacon is.
-Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
+Tower :: { yaw : Angle.Turn, beacon_brightness : Fraction }.{
+
+	## A tower turned by `yaw`, its beacon at `beacon_brightness`.
+	standing : { yaw : Angle.Turn, beacon_brightness : Fraction } -> Tower
+	standing = |{ yaw, beacon_brightness }| Tower.({ yaw, beacon_brightness })
+
+	## How far the tower is turned from square with the road.
+	yaw : Tower -> Angle.Turn
+	yaw = |Tower.(tower)| tower.yaw
+
+	## How bright the tower's beacon is in this frame.
+	beacon_brightness : Tower -> Fraction
+	beacon_brightness = |Tower.(tower)| tower.beacon_brightness
 
 	## How a tower looks. Its footprint is measured on the road and seen from the
 	## camera's vantage, so those are its context.
@@ -58,7 +70,7 @@ tower_footprint : Tower,
 tower_footprint = |tower, { road, vantage, spot }| {
 	center = spot.road_point()
 	corner_point = |corner| {
-		on_road = base_corner_on_road(corner, { center, yaw: tower.yaw })
+		on_road = base_corner_on_road(corner, { center, yaw: tower.yaw() })
 		RoadAhead.rider_point_at(road, { vantage, place: spot.place(), road_point: on_road })
 	}
 	{
@@ -98,7 +110,7 @@ tower_shapes = |tower, { footprint, spot, focal_length }| {
 			ring_shapes(sunk_tower),
 			brace_shapes(sunk_tower),
 		].join()
-		match beacon_shape(sunk_tower, { apex, brightness: tower.beacon_brightness }) {
+		match beacon_shape(sunk_tower, { apex, brightness: tower.beacon_brightness() }) {
 			Ok(beacon) => rods.append(beacon)
 			Err(TooDim) | Err(TooSmall) => rods
 		}

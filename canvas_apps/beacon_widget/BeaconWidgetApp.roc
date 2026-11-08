@@ -109,7 +109,7 @@ tower_shapes = |right, brightness| {
 	placed_tower = {
 		road_point: { along: Along.at(tower_forward), across: Across.right_of_middle(right) },
 		lift: Distance.zero,
-		kind: { yaw: Angle.straight_ahead, beacon_brightness: brightness },
+		kind: Tower.standing({ yaw: Angle.straight_ahead, beacon_brightness: brightness }),
 	}
 	place = Ahead(SegmentPlace.Position.first)
 	WidgetPage.resting_lens_shapes(
