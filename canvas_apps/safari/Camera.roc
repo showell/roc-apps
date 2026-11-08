@@ -28,7 +28,7 @@ Camera :: [].{
 	## camera, through a lens of `focal_length`.
 	height_on_screen : { height : Distance, forward : Distance }, Pixels -> Pixels
 	height_on_screen = |{ height, forward }, focal_length|
-		focal_length.times(height.ratio_to(forward))
+		Lens.height_for_slope({ slope: height.ratio_to(forward), focal_length })
 
 	## An upright object on the screen: where its foot is, and how far up the
 	## screen its top is from there. A tree, a still and a billboard all stand
