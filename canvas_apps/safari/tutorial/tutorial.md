@@ -2482,7 +2482,7 @@ All this time, a layer of math has been doing the measuring. This chapter works 
 
 New in this chapter:
 
-- Roc: records as coordinate systems, `fold`, `fold_rev` and `map2`
+- Roc: records as coordinate systems, `fold` and `map2`, a record type with a type variable for a region
 - Modules: `Lens`, and `Geom`, `RoadAhead` and `Camera` in full
 
 A lot of Safari Ride is math and physics, and most of it is geometry a reader could do on paper. It's here because this kind of code suits a compiled functional language unusually well, for a short list of reasons:
@@ -2494,44 +2494,48 @@ A lot of Safari Ride is math and physics, and most of it is geometry a reader co
 
 ### The most imported modules
 
-Safari Ride has 79 modules, not counting `web.roc`, `main.roc` and `game.roc`. The import graph is lopsided in a good way. Counting who imports what, leaving out the test programs, a handful stand out, and the lines here are the ones above each module's `expect`s:
+Safari Ride has 94 modules, not counting `web.roc`, `main.roc` and `game.roc`. The import graph is lopsided in a good way. Counting who imports what, leaving out the test programs, a handful stand out, and the lines here are the ones above each module's `expect`s:
 
 | Module | Imported by | Lines | What it is |
 |---|---|---|---|
-| `Distance` | 44 | 62 | A length in metres |
-| `Along` | 29 | 57 | A place along a segment |
-| `Across` | 27 | 73 | A place across the road |
-| `Angle` | 21 | 172 | Three opaque types for rotation |
-| `Pixels` | 21 | 86 | A length on screen |
-| `Geom` | 20 | 213 | Road points, rider points, and how to turn one into the other |
-| `Fraction` | 19 | 92 | A ratio from 0 to 1 |
-| `World` | 17 | 415 | The route |
-| `RoadAhead` | 16 | 172 | Where the road ahead lies from where the rider is |
-| `Scenery` | 15 | 48 | The words the world is built from, and the road's width |
+| `Distance` | 54 | 66 | A length in metres |
+| `Fraction` | 28 | 88 | A ratio from 0 to 1 |
+| `Geom` | 24 | 146 | Road points, bends, and how a point moves round one |
+| `Angle` | 20 | 194 | Three opaque types for rotation |
+| `Along` | 19 | 61 | A place along a segment |
+| `Pixels` | 18 | 69 | A length on screen |
+| `Across` | 16 | 68 | A place across the road |
+| `RoadAhead` | 15 | 208 | Where the road ahead lies from where the rider is |
+| `RiderView` | 15 | | Points measured from the rider, and the near plane |
+| `Screen` | 13 | 101 | The canvas: its size, its middle, its horizon |
 
-After those ten the count drops to 12, for `Screen`, 11 for `Speed` and 10 for `DepthSort`. Most modules are imported by one, two or three others. `Shapes` is imported about as widely. It's in `lib/`, a folder of modules shared with the repository's other canvas apps.
+After those ten the count drops to 12, for `Segment` and `Steps`. Most modules are imported by one, two or three others. `Shapes` is imported about as widely. It's in `lib/`, a folder of modules shared with the repository's other canvas apps.
 
-These are the core utility modules. There are only ten, and nearly everything else is a small module that takes one of these and adds a single idea. Six of the ten are nothing but numbers with rules, and the top three are under 80 lines each. A cat, a tower and a truck are all found on the road through `RoadAhead`, and all reach the screen through `Camera`.
+These are the core utility modules. There are only ten, and nearly everything else is a small module that takes one of these and adds a single idea. Six of the ten are nothing but numbers with rules, and most of those are under 100 lines. A cat, a tower and a truck are all found on the road through `RoadAhead`, and all reach the screen through `Camera`.
 
 The modules of the math layer
 ```dot
 digraph math {
   node [shape=box, fontname="Helvetica"];
-  LeanSearch -> Coast;
-  LeanSearch -> Bike;
-  Coast -> Bike;
-  Coast -> Angle;
-  Bike -> Angle;
-  RoadAhead -> Geom;
-  Camera -> Geom;
-  Camera -> Screen;
-  Lens -> Angle;
-  Lens -> Screen;
-  Geom -> Angle;
+  LeanSearch -> Coast [label="  coasts a try"];
+  LeanSearch -> Motorcycle [label="  tries a lean"];
+  LeanSearch -> Angle [label="  bounds a lean"];
+  Coast -> Motorcycle [label="  steps it"];
+  Coast -> Geom [label="  reads the road's width"];
+  Motorcycle -> Angle [label="  turns by its lean"];
+  Motorcycle -> Geom [label="  moves on the road"];
+  RoadAhead -> Geom [label="  carries points round bends"];
+  RoadAhead -> RiderView [label="  answers rider points"];
+  Camera -> Lens [label="  asks the pinhole"];
+  Camera -> RiderView [label="  takes rider points"];
+  Camera -> Screen [label="  answers screen points"];
+  Lens -> Angle [label="  turns by the view"];
+  Lens -> Screen [label="  finds the horizon"];
+  Geom -> Angle [label="  turns by the bend"];
 }
 ```
 
-Two families share `Angle` and don't otherwise meet: `Geom`, `RoadAhead`, `Camera` and `Lens` say how the world looks from the bike, and `Bike`, `Coast` and `LeanSearch` say where it's going.
+Two families meet only at `Angle` and `Geom`: `RoadAhead`, `Camera` and `Lens` say how the world looks from the bike, and `Motorcycle`, `Coast` and `LeanSearch` say where it's going.
 
 ### Numbers with units
 
@@ -2539,7 +2543,7 @@ Here we add a speed to a length:
 
 {{fails speed_as_distance}}
 
-Eighteen small opaque types run through Safari Ride, and the tour has met most of them one at a time. Set side by side, they're a system:
+Seventeen small opaque types run through Safari Ride, and the tour has met most of them one at a time. Set side by side, they're a system:
 
 | Type | Under it | What it measures |
 |---|---|---|
@@ -2548,24 +2552,26 @@ Eighteen small opaque types run through Safari Ride, and the tour has met most o
 | `Angle.Bearing` | `F64` | A place on the compass |
 | `Angle.Turn` | `F64` | The angle between two bearings |
 | `Angle.Lean` | `F64` | Roll, which only reaches direction through a rate |
+| `Angle.LeanChange` | `F64` | How much a lean changes |
 | `Distance` | `F64` | A length in metres |
 | `Along` | `F64` | A place along a segment |
 | `Across` | `F64` | A place across the road |
 | `Pixels` | `F64` | A length on screen |
+| `FarHeight` | `F64` | A height far off, as the resting lens draws it |
 | `Speed` | `F64` | Metres a step |
 | `Acceleration` | `F64` | Metres a step, each step |
 | `Fraction` | `F64` | A ratio from 0 to 1 |
 | `Attention` | `F64` | How strongly something holds the eye, from 0 up |
-| `World.SegmentIndex` | `U32` | A place in the route |
+| `Route.SegmentIndex` | `U32` | A place in the route |
 | `SegmentPlace.Position` | `U32` | A place on the road ahead |
 
 This is the opaque type doing the job of a unit. The block after each type is a small statement of dimensional analysis. `Speed.distance_in` takes `Steps` and gives a `Distance`. `Along.plus` takes a `Distance`, and two `Along`s give one back. `Lean.steer` takes a rate and gives a `Turn`. There's no `Bearing.plus(Bearing)`, because that sum has no meaning. If you try to write one, the compiler stops you.
 
 The bug these prevent is the most common one in this kind of code: a correct formula with the wrong number in it. Most physics bugs type-check in a language where everything's a float.
 
-The price is a long list of short methods, and a certain amount of `.to_radians()`. The headers of the float ones all say the same thing: "Each operation does the plain float arithmetic its name says." We'll see why that sentence matters in the proving chapter.
+The price is a long list of short methods, and a certain amount of `.to_radians()`.
 
-The units run from the road to the screen. Once a point is measured from the rider, its `right` and `forward` are `Distance`s, and a length on screen is `Pixels`. `Pixels` is signed, because a place on screen is measured from the corner, so a point off the left of the screen is negative, and so is the height of a sun below the horizon. It stops at the edge of `lib.Shapes`, which takes plain numbers. A formula wants floats, so `.to_metres()` unwraps one at the top of a function that's about to do trigonometry, and the answer is wrapped again at the end. `Along` can't be passed as `Across`, which rules out the classic swap in a function with both.
+The units run from the road to the screen. Once a point is measured from the rider, its `right` and `forward` are `Distance`s, and a length on screen is `Pixels`. `Pixels` is signed, because a place on screen is measured from the corner, so a point off the left of the screen is negative, and so is one above its top edge. It stops at the edge of `lib.Shapes`, which takes plain numbers. A formula wants floats, so `.to_metres()` unwraps one at the top of a function that's about to do trigonometry, and the answer is wrapped again at the end. `Along` can't be passed as `Across`, which rules out the classic swap in a function with both.
 
 ### One record per space
 
@@ -2593,15 +2599,15 @@ From there to the screen is a pinhole camera, which is similar triangles. Dividi
 
 {{code Camera.project}}
 
-`Bird.scenery_picture` calls it with a record built on the spot for the bird's feet:
+`StillShapes.standing_still_shapes` calls it with a record built on the spot for a critter's feet:
 
 {{code Camera.upright_on_screen}}
 
-The focal length comes from a lens. `resting_focal` is a value computed from other values, with no function in sight, and `field_of_view` is a `Turn`, so taking half of it needs no comment about radians. [check: whether a value like this inside a `.{ }` block is evaluated at compile time, as top-level values are.]
+The focal length comes from a lens. `resting_focal_length` is a value computed from other values, with no function in sight, and `field_of_view` is a `Turn`, so taking half of it needs no comment about radians. [check: whether a value like this inside a `.{ }` block is evaluated at compile time, as top-level values are.]
 
 {{code Lens.resting_focal_length}}
 
-The view widens as the rider leans. One `Fraction` goes in, and a focal length comes out. `RideFocal.ride_focal`, from the chapter on what a cat does to the rider, calls this through `cam_focal`, taking the wider of what the lean and the rider's attention ask for:
+The view widens as the rider leans. One `Fraction` goes in, and a focal length comes out. `RiderCamera.ride_focal` calls `focal_length_for`, which takes the shorter of the two focal lengths, the lean's and the attention's, so the wider view wins:
 
 {{code RiderCamera.focal_length_for_lean}}
 
@@ -2613,11 +2619,11 @@ The view widens as the rider leans. One `Fraction` goes in, and a focal length c
 The route again. This map comes from adding up the turns, which the ride itself never does. The white stretch is the record quoted below.
 ```
 
-The road has no global coordinates. A point on it is measured within one segment, `along` and `across`, and nothing in the game holds a world coordinate for it. Each segment knows only its length and the turn at its end. `World.plans` is nineteen records like this one, and it reads like configuration: a list of plain values, with the tags declared by `SegmentPlan` and an opaque `Distance` and `Turn` built from their units. It's checked like any other Roc, so a misspelled tag is a compile-time error.
+The road has no global coordinates. A point on it is measured within one segment, `along` and `across`, and nothing in the game holds a world coordinate for it. Each segment knows only its length and the turn at its end. `World.bending_plans` is eighteen records like this one, and a last plan ends the route. It reads like configuration: a list of plain values, with tags declared by the types `SegmentPlan` and `BendingPlan` name, and an opaque `Distance` and `Turn` built from their units. It's checked like any other Roc, so a misspelled tag is a compile-time error.
 
 {{code World.bending_plans from "length: Distance.metres(1200.0)," to "bend_life: Animal(Rhino),"}}
 
-So to see something three segments ahead, a point has to be carried back round each bend between it and the rider, one at a time. That's one rotation per bend, and `fold_rev` is the shape of it. The accumulator is a `RoadPoint`, it starts on the far segment, and each step moves it onto the segment before. `segments_before` gives the segments between, and the closure is the only thing the loop does. The last line does the one translation and rotation from above:
+So to see something three segments ahead, a point has to be carried back round each bend between it and the rider, one at a time. That's one rotation per bend. A `while` walks the road view's worked bends backward. The point starts on the far segment, and each pass moves it onto the segment before. The last line does the one translation and rotation from above:
 
 {{code RoadAhead.rider_point_ahead from "var $point = road_point" to "to_rider_point($point, vantage)"}}
 
@@ -2625,11 +2631,11 @@ The rotation itself is plain, with two cases, because a right-hand bend pivots o
 
 {{code Geom.point_before_worked_bend}}
 
-This is what lets `CrossingSighting`, `TowerSighting`, `TreeSighting` and the rest not care where a segment is. They name a position on the road ahead and a point on that segment, and they get back a `RiderPoint`. That's why `RoadAhead` has sixteen importers.
+This is what lets the sightings not care where a segment is. They name a position on the road ahead and a point on that segment, and they get back a `RiderPoint`. That's why `RoadAhead` has fifteen importers.
 
-The ground also curves away. That's one formula, the small-angle drop of a sphere, with a record destructured in the parameter list and `right` and `forward` taken out to metres before they're squared. There are two radii in the program, and neither is the earth's. `Geom.ground_curve_radius`, 100 km, is the surface the road and the truck stand on, and it puts the horizon 490 metres out. `Tower.sink_radius`, 20 km, only sets how soon a far tower goes: a tower is gone at 1.8 km, where the ground's curve would leave it in view to 4 km.
+The ground also curves away. That's one formula, the small-angle drop of a sphere, with a record destructured in the parameter list and `right` and `forward` taken out to metres before they're squared. There are two radii in `EarthCurve`, and neither is the earth's. The ground's curve, 100 km, is the surface the road and the truck stand on, and it puts the horizon 490 metres out. The exaggerated curve, 20 km, only sets how soon a far tower goes: a tower is gone at 1.8 km, where the ground's curve would leave it in view to 4 km.
 
-{{code EarthCurve.ground_drop}}
+{{code EarthCurve.drop_over_radius}}
 
 ### Cutting a polygon
 
@@ -2642,21 +2648,31 @@ Here's a triangle with one corner behind the rider, before and after cutting:
 
 The corner behind the camera has gone, and two new ones stand on the camera's plane, 0.4 metres ahead.
 
-Anything that crosses the camera's plane has to be cut, or dividing by `forward` flips it across the screen. The textbook algorithm walks a polygon's edges, keeping corners in view and adding a new corner wherever an edge crosses the plane. In Roc, that's a pairing and a `fold`. `map2` zips each corner with the next one, which is the list rotated by one, and `fold` builds the new polygon. `List.with_capacity` is the one line about performance, and `edge_points_onto` is passed by name:
+Anything that crosses the camera's plane has to be cut, or dividing by `forward` flips it across the screen. The textbook algorithm walks a polygon's edges, keeping corners in view and adding a new corner wherever an edge crosses the plane. The cut is written once, for any region with an edge, as a record with a type variable for the kind of point:
 
-{{code RiderView.clipped_points}}
+{{code RiderView.Region}}
+
+In Roc, the walk is a pairing and a `fold`. `map2` zips each corner with the next one, which is the list rotated by one, and `fold` builds the new polygon. `List.with_capacity` is the one line about performance, and `edge_points_onto` is passed by name:
+
+{{code RiderView.points_in_region}}
 
 A fold's step is a plain function of the list so far and one edge:
 
 {{code RiderView.edge_points_onto}}
 
-`GroundPatch`, `GuardRail` and `TruckShape` call it the same way. `patch.corners.map(...)` makes the `RaisedPoint`s, and what comes back is a shorter or longer list of the same type:
+The near plane is one region, and cutting by it is one line:
+
+{{code RiderView.clipped_points}}
+
+The ground's horizon is the other region, a circle round the rider.
+
+`GroundPatch`, `GuardRail`, `TruckBody` and `TruckLights` call it the same way, and what comes back is a shorter or longer list of the same type. `GroundPatch` first cuts its corners at the horizon, with `EarthCurve.points_before_horizon`:
 
 {{code Polygon.clipped_polygon from "in_front = RiderView.clipped_points(" to "Ok(Polygon.flat_polygon(Camera.projected_points(in_front, focal_length), color))"}}
 
 ### Arithmetic all the way down
 
-At the very bottom are Roc's own builtins: `.sin()`, `.cos()`, `.sqrt()` and the rest. `Throttle.shoulder_brake_at` uses `F64.e.pow(x)` to turn a rehearsed coast's length into a braking force.
+At the very bottom are Roc's own builtins: `.sin()`, `.cos()`, `.sqrt()` and the rest. `Throttle.shoulder_brake` uses `F64.e.pow(x)` to turn a rehearsed coast's length into a braking force.
 
 So from top to bottom, a rider chooses a lean by simulating physics, and the physics is plain arithmetic on opaque numbers. None of it has any effects. In the next chapter, we'll see what that's worth when the program has to change.
 

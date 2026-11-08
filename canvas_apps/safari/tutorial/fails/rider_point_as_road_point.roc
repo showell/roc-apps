@@ -1,18 +1,12 @@
 app [main!] { game: "../../game.roc", lib: "../../../lib/main.roc" }
 
-import game.Across
-import game.Along
 import game.Angle
 import game.Distance
 import game.Geom
 
 main! = |_args| {
 	ahead = { right: Distance.zero, forward: Distance.metres(5.0) }
-	vantage = {
-		along: Along.start,
-		across: Across.middle,
-		yaw: Angle.straight_ahead,
-	}
-	echo!(Geom.to_rider_point(ahead, vantage).forward.to_metres().to_str())
+	bend = { segment_length: Distance.metres(100.0), turn: Angle.Turn.degrees(30.0) }
+	echo!(Geom.point_in_segment_before(ahead, bend).along.to_metres().to_str())
 	Ok({})
 }
