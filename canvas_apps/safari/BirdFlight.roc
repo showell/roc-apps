@@ -78,9 +78,9 @@ flight_arc = Distance.metres(5.0)
 shortest_hop : Distance
 shortest_hop = Distance.metres(25.0)
 
-## How many steps one flap of the wings takes, half up and half down.
-frames_a_flap : U64
-frames_a_flap = 4
+## How many steps each half of a flap of the wings takes, up or down.
+frames_a_half_flap : U64
+frames_a_half_flap = 2
 
 ## Whether `tree` stands on the far side of the road from where a bird starts:
 ## on the right, with a positive `across`. A bird starts on the left, because
@@ -109,7 +109,7 @@ flight_poses : List(PosedBird.BirdPose)
 flight_poses = [
 	flap_poses({ up: Side(WingsUp), down: Side(WingsDown) }),
 	List.repeat(flap_poses({ up: Away(WingsUp), down: Away(WingsDown) }), 7).join(),
-	List.repeat(Diving, frames_a_flap),
+	List.repeat(Diving, 2 * frames_a_half_flap),
 ].join()
 
 ## The whole of a flight: `flight_poses`, on one smooth path that rises in
@@ -138,11 +138,11 @@ tree_top = |tree| {
 	lift: tree.kind.scenery_height(),
 }
 
-## One flap of the wings: `up` for half its frames and `down` for the rest.
+## One flap of the wings: `up` for its first half and `down` for its second.
 flap_poses : { up : PosedBird.BirdPose, down : PosedBird.BirdPose } -> List(PosedBird.BirdPose)
 flap_poses = |{ up, down }| {
-	half = frames_a_flap // 2
-	List.repeat(up, half).concat(List.repeat(down, half))
+	half_up = List.repeat(up, frames_a_half_flap)
+	half_up.concat(List.repeat(down, frames_a_half_flap))
 }
 
 ## The location `through` a flight between `from` and `to`, easing out and in along
