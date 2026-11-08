@@ -17,10 +17,10 @@ Camera :: [].{
 	project : RiderView.RaisedPointAhead, Pixels -> Screen.Point
 	project = |p, focal_length| {
 		slope_right = p.right().ratio_to(p.forward())
-		above_eye = { height: p.height().minus(eye_height), forward: p.forward() }
+		slope_up = p.height().minus(eye_height).ratio_to(p.forward())
 		{
 			x: Lens.x_for_slope({ slope: slope_right, focal_length }),
-			y: Screen.horizon_y.minus(height_on_screen(above_eye, focal_length)),
+			y: Lens.y_for_slope({ slope: slope_up, focal_length }),
 		}
 	}
 
