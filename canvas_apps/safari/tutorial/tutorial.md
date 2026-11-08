@@ -1462,12 +1462,12 @@ digraph stepped {
   RideInstant [style=bold];
   RideInstant -> RiderMind;
   RideInstant -> Truck;
-  RideInstant -> RiderState;
+  RideInstant -> Rider;
   RiderMind -> Bike;
   RiderMind -> Throttle;
   RiderMind -> LeanSearch;
   RiderMind -> Gaze;
-  RiderMind -> RiderState;
+  RiderMind -> Rider;
   RiderMind -> VehicleLimits;
   Truck -> VehicleLimits;
   Throttle -> Gaze;
@@ -1509,15 +1509,15 @@ This is the rider at step 1,570, with the cat ahead:
 New in this chapter:
 
 - Roc: a nominal record with no bare floats, a value for a bike that doesn't exist
-- Modules: `RiderState`, `RiderEyes`, `RiderMind`, `CanvasRoll`, `Speed`
+- Modules: `Rider`, `RiderEyes`, `RiderMind`, `CanvasRoll`, `Speed`
 
 A nominal record holds the rider, and `RideInstant` stores one. Count the opaque types: `SegmentIndex`, `Along`, `Across`, `Turn`, `Speed`, `Lean`, `Bearing` and `Fraction`. Nothing in it is a bare float. Four fields of this one record are angles, of three different types, and passing one type where another is wanted is a compile-time error. The last two fields say where the rider is looking, and they get a chapter of their own.
 
-{{code RiderState.RiderState}}
+{{code Rider.Rider}}
 
 The step does four things in order, and the code reads that way. Static dispatch finds `segment_in` on the `SegmentIndex`. The `match` on `seg.ending` has two tags, and `Continues(_)` ignores its payload:
 
-{{code RiderState.next}}
+{{code Rider.next}}
 
 The rider steers by leaning, so a decision is a record of two opaque values: a change of lean and an acceleration. There's something to notice in the last line of this next function. `Throttle`, which picks the acceleration, is asked about a bike that doesn't exist yet: the rider as it would be with the new lean, which `Bike.with_lean` makes by building a new record. The real rider isn't touched, because nothing can touch it.
 
@@ -1577,7 +1577,7 @@ digraph bike {
 
 {{code Motorcycle.Motorcycle}}
 
-A structural type like this has to be named when it appears twice. Here it appears in the argument and in the result, and that's the promise: what goes in comes out with the same other fields. A `RiderState` goes in, with its `segment`, `gaze_yaw` and `attention`, and a `RiderState` comes out, though `Bike` has never heard of a gaze.
+A structural type like this has to be named when it appears twice. Here it appears in the argument and in the result, and that's the promise: what goes in comes out with the same other fields. A `Rider` goes in, with its `segment`, `gaze_yaw` and `attention`, and a `Rider` comes out, though `Bike` has never heard of a gaze.
 
 Call this *a narrow view of a wide record*. A module says exactly which fields it cares about, and the compiler takes care of the rest, with no base class and no copying fields across by hand. The smallest example in the program is a function with one job:
 
@@ -2280,7 +2280,7 @@ Let's follow this back to `Cat`, to two small questions about the same `Stage`.
 
 {{code Cat.attention}}
 
-`CrossingReaction.reaction_to` calls both. `..` in the argument's type makes it an open record, like `Bike.Motion`, though this one is only read and nothing comes back. This function needs `along` and `speed`, and accepts any record that has them, so it doesn't depend on `RiderState`, the rider's record. `speed` here is the opaque `Speed` again, and `match` on `segment.crossing` has to name every tag.
+`CrossingReaction.reaction_to` calls both. `..` in the argument's type makes it an open record, like `Bike.Motion`, though this one is only read and nothing comes back. This function needs `along` and `speed`, and accepts any record that has them, so it doesn't depend on `Rider`, the rider's record. `speed` here is the opaque `Speed` again, and `match` on `segment.crossing` has to name every tag.
 
 {{code EncounterReaction.encounter_throttle}}
 
@@ -2636,7 +2636,7 @@ The second of these two proofs is here because of a real bug:
 
 The rest of the testing is ordinary `expect`s. An `expect` sits at the top level of a module, under the code it checks, and `roc test` runs it. There are over a thousand, and they're Safari Ride's only other tests. The tour has already shown twenty-six of them, in the whole of `Clock` and `Pond`. A pure function needs nothing else: literal arguments, literal answer. Each `expect` asserts one thing, and they cover both sides. `Clock`'s check that a clock equals itself one step on is false, so it's written with `!`.
 
-A test's data can sit beside it as a plain definition. `Bike` doesn't import `RiderState`, and `Motion` is open, so its fixture is a record that has the six fields and makes up the rest. `segment` and `attention` are bare numbers here, because `Bike` carries them through and never looks. A narrow view of a wide record pays off twice: the test needs nothing the module doesn't.
+A test's data can sit beside it as a plain definition. `Bike` doesn't import `Rider`, and `Motion` is open, so its fixture is a record that has the six fields and makes up the rest. `segment` and `attention` are bare numbers here, because `Bike` carries them through and never looks. A narrow view of a wide record pays off twice: the test needs nothing the module doesn't.
 
 {{code Motorcycle.riding}}
 
@@ -2644,7 +2644,7 @@ It's called like any other value, and the steps that follow are named, so three 
 
 {{code Motorcycle.first_step}}
 
-The gate makes `expect` honest in one further way. The gate takes its count from the source: every line that starts `expect`, in a module that one of its `roc test` runs compiles, has to print `PASS` exactly once. An `expect` that nothing compiles fails, and so does one that's indented out of reach. One more consequence: an `expect` can only name what its module imports, so a check sits where its test data can be seen, and a module doesn't take on an import for a test's sake. `Coast`'s projections are checked in `Throttle`, which can see a `Speed`, and `LeanSearch`'s search in `RiderMind`, which can see a `RiderState`.
+The gate makes `expect` honest in one further way. The gate takes its count from the source: every line that starts `expect`, in a module that one of its `roc test` runs compiles, has to print `PASS` exactly once. An `expect` that nothing compiles fails, and so does one that's indented out of reach. One more consequence: an `expect` can only name what its module imports, so a check sits where its test data can be seen, and a module doesn't take on an import for a test's sake. `Coast`'s projections are checked in `Throttle`, which can see a `Speed`, and `LeanSearch`'s search in `RiderMind`, which can see a `Rider`.
 
 Even a truck can be checked this way, though it can't be asked about step 4,000 cold. A `TruckState` is a record, so a test writes one down and calls `Truck.truck_state_at_next_step` once.
 

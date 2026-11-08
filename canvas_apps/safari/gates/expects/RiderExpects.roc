@@ -21,7 +21,7 @@ import game.Motorcycle
 import game.Pixels
 import game.RideInstant
 import game.RiderCamera
-import game.RiderState
+import game.Rider
 import game.Route
 import game.Segment
 import game.Speed
@@ -40,19 +40,19 @@ rider_facing : {
 	yaw : Angle.Turn,
 	lean : Angle.Lean,
 	gaze_yaw : Angle.Turn,
-} -> RiderState
+} -> Rider
 rider_facing = |{ segment, yaw, lean, gaze_yaw }| {
-	..RiderState.initial,
+	..Rider.initial,
 	motorcycle: {
-		..RiderState.initial.motorcycle,
+		..Rider.initial.motorcycle,
 		route_place: {
-			..RiderState.initial.motorcycle.route_place,
+			..Rider.initial.motorcycle.route_place,
 			segment_index: Route.SegmentIndex.number(segment),
 		},
 		yaw,
 		lean,
 	},
-	eyes: { ..RiderState.initial.eyes, gaze_yaw },
+	eyes: { ..Rider.initial.eyes, gaze_yaw },
 }
 
 # The camera's heading is the bearing the rider's segment sets off on, turned by
@@ -131,7 +131,7 @@ expect {
 # rider's attention is caught, by the cat on the road or by a look to the side.
 ## The focal length of the camera for `rider` on the cat route, before any
 ## encounter is planned.
-focal_of : RiderState -> Pixels
+focal_of : Rider -> Pixels
 focal_of = |rider|
 	RiderCamera.of(rider, { route: Fixtures.cat_route, encounter_timing: Unplanned }).cam_focal
 
@@ -141,18 +141,18 @@ ten_steps_in = EncounterPlan.timing_of(StartsAt(Clock.at_step(100)), Clock.at_st
 
 ## The focal length of the camera for `rider` on the cat route, with the
 ## encounter on their segment ten steps in.
-focal_ten_steps_in : RiderState -> Pixels
+focal_ten_steps_in : Rider -> Pixels
 focal_ten_steps_in = |rider| RiderCamera.of(
 	rider,
 	{ route: Fixtures.cat_route, encounter_timing: ten_steps_in },
 ).cam_focal
 
 ## A rider at the start of the first segment, upright and looking ahead.
-upright : RiderState
-upright = RiderState.initial
+upright : Rider
+upright = Rider.initial
 
 ## An upright rider on the segment at `number`.
-rider_on : U32 -> RiderState
+rider_on : U32 -> Rider
 rider_on = |number| {
 	..upright,
 	motorcycle: {
@@ -168,12 +168,12 @@ rider_on = |number| {
 leaning = |rider, lean| { ..rider, motorcycle: { ..rider.motorcycle, lean } }
 
 ## The same rider as deep into a look as a rider goes.
-looking_hard : RiderState -> RiderState
+looking_hard : Rider -> Rider
 looking_hard = |rider| { ..rider, eyes: { ..rider.eyes, look_depth: Fraction.whole } }
 
 ## How strongly the encounter on this rider's segment, at `encounter_timing`, holds
 ## their attention.
-encounter_attention_of : RiderState, EncounterPlan.Timing -> F64
+encounter_attention_of : Rider, EncounterPlan.Timing -> F64
 encounter_attention_of = |rider, encounter_timing|
 	EncounterReaction.encounter_attention(
 		Fixtures.cat_route.segment_at(rider.motorcycle.route_place.segment_index),
@@ -601,7 +601,7 @@ first_pig_instants = {
 }
 
 ## The rider at `step` of the real ride.
-rider_at_step : U32 -> RiderState
+rider_at_step : U32 -> Rider
 rider_at_step = |step| {
 	instant =
 		first_pig_instants.get(step.to_u64())
@@ -610,7 +610,7 @@ rider_at_step = |step| {
 }
 
 ## How far `rider` looks from the way the motorcycle points, in degrees.
-gaze_degrees_of : RiderState -> F64
+gaze_degrees_of : Rider -> F64
 gaze_degrees_of = |rider| rider.eyes.gaze_yaw.to_degrees()
 
 # The steps the table quotes, each with its speed in metres a step, its gaze_yaw

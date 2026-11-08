@@ -11,7 +11,7 @@ import Gaze
 import Geom
 import Lens
 import Pixels
-import RiderState
+import Rider
 import Route
 import RoutePlace
 
@@ -39,7 +39,7 @@ RiderCamera := {
 	## The camera for `rider` on `route`, with the encounter on their segment at
 	## `encounter_timing`. Its heading is the bearing the rider's segment sets off on,
 	## turned by the camera's yaw.
-	of : RiderState, { route : Route, encounter_timing : EncounterPlan.Timing } -> RiderCamera
+	of : Rider, { route : Route, encounter_timing : EncounterPlan.Timing } -> RiderCamera
 	of = |rider, { route, encounter_timing }| {
 		route_place = rider.motorcycle.route_place
 		yaw = rider.motorcycle.yaw.plus(view_yaw_for(rider))
@@ -86,13 +86,13 @@ head_turn_per_lean : F64
 head_turn_per_lean = 0.15
 
 ## The camera's turn from the way the motorcycle points.
-view_yaw_for : RiderState -> Angle.Turn
+view_yaw_for : Rider -> Angle.Turn
 view_yaw_for = |s| s.eyes.gaze_yaw.plus(s.motorcycle.lean.steer(head_turn_per_lean))
 
 ## The camera's focal length for where the rider is and how they ride. The
 ## view widens as the rider leans, and as the rider's attention is caught, by
 ## an encounter on the road or by a look to the side.
-ride_focal : RiderState, { route : Route, encounter_timing : EncounterPlan.Timing } -> Pixels
+ride_focal : Rider, { route : Route, encounter_timing : EncounterPlan.Timing } -> Pixels
 ride_focal = |rider, { route, encounter_timing }| {
 	seg = rider.motorcycle.route_place.segment_on(route)
 	attention =
@@ -181,9 +181,9 @@ expect
 # far as the rider looks.
 expect {
 	gaze_yaw = Angle.Turn.radians(0.375)
-	upright = { ..RiderState.initial.motorcycle, lean: Angle.Lean.radians(0.0) }
-	eyes = { ..RiderState.initial.eyes, gaze_yaw }
-	looking = { ..RiderState.initial, motorcycle: upright, eyes }
+	upright = { ..Rider.initial.motorcycle, lean: Angle.Lean.radians(0.0) }
+	eyes = { ..Rider.initial.eyes, gaze_yaw }
+	looking = { ..Rider.initial, motorcycle: upright, eyes }
 	view_yaw_for(looking) == gaze_yaw
 }
 

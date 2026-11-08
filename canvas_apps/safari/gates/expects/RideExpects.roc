@@ -16,7 +16,7 @@ import game.FrameView
 import game.Motorcycle
 import game.Mountains
 import game.RideInstant
-import game.RiderState
+import game.Rider
 import game.Route
 import game.Sky
 import game.Speed
@@ -121,9 +121,9 @@ expect ride_at_step_one.truck.route_position > RideInstant.initial.truck.route_p
 
 ## A rider on the middle of the road at the starting speed, `along` metres down
 ## segment `index` of the route.
-placed_rider : U32, F64 -> RiderState
+placed_rider : U32, F64 -> Rider
 placed_rider = |index, along| {
-	..RiderState.initial,
+	..Rider.initial,
 	motorcycle: {
 		..Motorcycle.initial,
 		route_place: {
@@ -145,7 +145,7 @@ expect !placed_rider(last_segment_index, 299.0).is_finished(World.route)
 expect !placed_rider(0, 499.0).is_finished(World.route)
 
 ## That rider a step on.
-rider_a_step_after : U32, F64 -> RiderState
+rider_a_step_after : U32, F64 -> Rider
 rider_a_step_after = |index, along|
 	placed_rider(index, along).next({ route: World.route, encounter_timing: Unplanned })
 

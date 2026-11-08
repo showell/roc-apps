@@ -13,7 +13,7 @@ import game.Clock
 import game.Gawking
 import game.Gaze
 import game.Geom
-import game.RiderState
+import game.Rider
 import game.Segment
 import game.Steps
 import game.Tour
@@ -32,7 +32,7 @@ GazeWidgetApp :: [].{
 
 	## The whole state of the widget: the states of the stretch played so far,
 	## first step first, and the buttons, which hold the step asked for.
-	Model : { played : List(RiderState), transport : VcrButtons.Transport(Clock) }
+	Model : { played : List(Rider), transport : VcrButtons.Transport(Clock) }
 
 	canvas_app : CanvasApp.CanvasApp(GazeWidgetApp.Model)
 	canvas_app = WidgetPage.canvas_app({
@@ -81,7 +81,7 @@ played_a_frame : U64
 played_a_frame = 8
 
 ## The rider at `first_step`, the ride's own.
-first_rider : RiderState
+first_rider : Rider
 first_rider = Tour.at_step(first_step).instant().rider
 
 starting_model : GazeWidgetApp.Model
@@ -134,12 +134,12 @@ shown_offset = |model| {
 shown_clock : GazeWidgetApp.Model -> Clock
 shown_clock = |model| Clock.at_step(first_step).plus(Steps.of(shown_offset(model).to_u32_wrap()))
 
-state_at : List(RiderState), U64 -> RiderState
+state_at : List(Rider), U64 -> Rider
 state_at = |played, offset|
 	played.get(offset) ?? crash "GazeWidgetApp.state_at: offsets stay within what's played"
 
 ## What the rider is doing about the pig in `rider`'s state.
-phase_of : RiderState -> GazePhase
+phase_of : Rider -> GazePhase
 phase_of = |rider|
 	if !Gawking.is_gawking(rider.motorcycle, pig_segment) {
 		EyesOnRoad
@@ -252,7 +252,7 @@ pigs = {
 
 ## The way the rider looks: as far as a pig can catch the eye, turned from the
 ## road by the bike's yaw and the rider's gaze.
-sight_line : RiderState -> Shapes.Shape
+sight_line : Rider -> Shapes.Shape
 sight_line = |rider| {
 	{ x, y } = canvas_point(rider.motorcycle.route_place.road_point())
 	turn = rider.motorcycle.yaw.plus(rider.eyes.gaze_yaw).to_radians()
@@ -268,7 +268,7 @@ sight_line = |rider| {
 }
 
 ## The road from above, with the pigs, the rider and the rider's sight line.
-picture_shapes : RiderState -> List(Shapes.Shape)
+picture_shapes : Rider -> List(Shapes.Shape)
 picture_shapes = |rider|
 	[
 		[WidgetPage.picture_backdrop(PlanView.ground_color), road],
@@ -296,11 +296,11 @@ phase_text = |phase|
 
 ## How far the rider looks from the way the bike points, in degrees. A pig on the
 ## right turns the gaze right, so on this stretch it's never negative.
-gaze_degrees : RiderState -> F64
+gaze_degrees : Rider -> F64
 gaze_degrees = |rider| rider.eyes.gaze_yaw.to_degrees()
 
 ## The state at `clock`, a line each.
-status_lines : RiderState, Clock -> List(Str)
+status_lines : Rider, Clock -> List(Str)
 status_lines = |rider, clock|
 	[
 		phase_text(phase_of(rider)),
@@ -311,7 +311,7 @@ status_lines = |rider, clock|
 
 ## The whole stretch, played, for the expects. As a constant it's ridden once, at
 ## compile time, which adds under half a second to a check.
-stretch_states : List(RiderState)
+stretch_states : List(Rider)
 stretch_states = {
 	var $model = starting_model
 	while $model.played.len() < stretch_length {
@@ -321,7 +321,7 @@ stretch_states = {
 }
 
 ## The state at `step` of a played stretch.
-state_at_step : List(RiderState), U32 -> RiderState
+state_at_step : List(Rider), U32 -> Rider
 state_at_step = |played, step| state_at(played, (step - first_step).to_u64())
 
 # This stretch is on the route's first distracting segment, and with its

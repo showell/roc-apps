@@ -8,7 +8,7 @@ import Cat
 import Clock
 import Distance
 import Route
-import RiderState
+import Rider
 import Segment
 import Truck
 
@@ -18,7 +18,7 @@ import Truck
 ## starts. Everything else that changes is worked out from these four. It is
 ## nominal, not opaque: other modules read its fields.
 RideInstant := {
-	rider : RiderState,
+	rider : Rider,
 	truck : Truck,
 	clock : Clock,
 	encounter_start : EncounterPlan.Start,
@@ -26,7 +26,7 @@ RideInstant := {
 
 	initial : RideInstant
 	initial = {
-		rider: RiderState.initial,
+		rider: Rider.initial,
 		truck: Truck.initial,
 		clock: Clock.start,
 		encounter_start: Unplanned,
@@ -81,7 +81,7 @@ next = |route, instant| {
 
 ## The start the ride plans for `segment`'s encounter, with `rider` on it at
 ## `now`: unplanned until the rider comes within reach of it.
-planned_start : Segment, { rider : RiderState, now : Clock } -> EncounterPlan.Start
+planned_start : Segment, { rider : Rider, now : Clock } -> EncounterPlan.Start
 planned_start = |segment, { rider, now }| {
 	plan_for = |span, animal_along|
 		EncounterPlan.planned_start(
