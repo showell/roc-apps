@@ -12,6 +12,7 @@
 ## Pixels are F32, because the examples are written in F32. `space` widens them
 ## to the F64 a frame is made of.
 import Math
+import Point
 import Shapes
 import Trig
 
@@ -85,8 +86,8 @@ Camera :: [].{
 		space : Camera2D -> Shapes.Space
 		space = |camera|
 			Shapes.world_space({
-				target: { x: camera.target.x.to_f64(), y: camera.target.y.to_f64() },
-				offset: { x: camera.offset.x.to_f64(), y: camera.offset.y.to_f64() },
+				target: point_of_vec2(camera.target),
+				offset: point_of_vec2(camera.offset),
 				rotation: camera.rotation.to_f64(),
 				zoom: camera.zoom.to_f64(),
 			})
@@ -109,6 +110,10 @@ Camera :: [].{
 	follow = |target, { screen, zoom }|
 		new({ target, offset: { x: screen.x / 2, y: screen.y / 2 }, rotation: 0, zoom })
 }
+
+## `v`, widened to the F64 a frame is made of.
+point_of_vec2 : Math.Vec2 -> Point.Point
+point_of_vec2 = |v| { x: v.x.to_f64(), y: v.y.to_f64() }
 
 # A number that is not finite has no place on a camera, and comes only from a
 # bug in the game.
