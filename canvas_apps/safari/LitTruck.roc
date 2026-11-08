@@ -1,8 +1,7 @@
 ## LitTruck is how the truck on the road looks in a frame: which of its lights
 ## are on. Its picture is its headlight beams first, then its body, then its
 ## brake lights, so each paints over the one before.
-import Clock
-import Mountains
+import Fraction
 import Picture
 import Truck
 import TruckBody
@@ -15,12 +14,12 @@ LitTruck := { headlights : [On, Off], brake_lights : [On, Off] }.{
 
 	is_eq : _
 
-	## The lights a truck going at `pace` has on at `clock`: its headlights once
-	## the sun is behind the mountains, and its brake lights while its last step
-	## slowed it.
-	at : Truck.Pace, Clock -> LitTruck
-	at = |pace, clock| {
-		headlights: if Mountains.is_sun_behind_mountains(clock) {
+	## The lights a truck going at `pace` has on under a sky of `darkness`: its
+	## headlights once the sky is dark enough, like a light sensor on the lamps,
+	## and its brake lights while its last step slowed it.
+	at : Truck.Pace, Fraction -> LitTruck
+	at = |pace, darkness| {
+		headlights: if darkness >= headlights_on_darkness {
 			On
 		} else {
 			Off
@@ -38,6 +37,13 @@ LitTruck := { headlights : [On, Off], brake_lights : [On, Off] }.{
 	scenery_picture = |lit_truck, setting| Picture.from_shapes(truck_shapes(lit_truck, setting))
 }
 
+## The headlights come on at 41.2% of dusk. The value was measured once, so the
+## lights come on at the very step they did when they waited for the sun to sink
+## behind the west range: the sky is a little darker than this there, and a
+## little lighter a step before. gates/expects/RideExpects.roc pins that step.
+headlights_on_darkness : Fraction
+headlights_on_darkness = Fraction.of(0.412)
+
 ## The truck, filling its box.
 truck_shapes : LitTruck, TruckShape.TruckSetting -> List(Shapes.Shape)
 truck_shapes = |lit_truck, setting| {
@@ -54,11 +60,10 @@ truck_shapes = |lit_truck, setting| {
 	[beams, TruckBody.body_shapes(setting), brake_lights].join()
 }
 
-## A clock with the sun behind the mountains.
-after_sunset : Clock
-after_sunset = Clock.at_step(5700)
-
-expect LitTruck.at(NotSlowing, Clock.start) == { headlights: Off, brake_lights: Off }
-expect LitTruck.at(Slowing, Clock.start) == { headlights: Off, brake_lights: On }
-expect LitTruck.at(NotSlowing, after_sunset) == { headlights: On, brake_lights: Off }
-expect LitTruck.at(Slowing, after_sunset) == { headlights: On, brake_lights: On }
+expect LitTruck.at(NotSlowing, Fraction.of(0.4119)) == { headlights: Off, brake_lights: Off }
+expect LitTruck.at(Slowing, Fraction.of(0.4119)) == { headlights: Off, brake_lights: On }
+expect LitTruck.at(NotSlowing, headlights_on_darkness) == { headlights: On, brake_lights: Off }
+expect LitTruck.at(Slowing, headlights_on_darkness) == { headlights: On, brake_lights: On }
+expect LitTruck.at(NotSlowing, Fraction.of(0.4121)) == { headlights: On, brake_lights: Off }
+expect LitTruck.at(Slowing, Fraction.zero) == { headlights: Off, brake_lights: On }
+expect LitTruck.at(NotSlowing, Fraction.whole) == { headlights: On, brake_lights: Off }

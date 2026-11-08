@@ -6,7 +6,6 @@
 ## nearer. The rock darkens at dusk, and the snow goes blue.
 import Pixels
 import Angle
-import Clock
 import FarHeight
 import Fraction
 import Grass
@@ -14,18 +13,26 @@ import Lens
 import ColorShade
 import Polygon
 import Screen
-import Sun
 import lib.RgbColor
 import lib.Shapes
 
 Mountains :: [].{
 
-	## Whether the sun, at `clock`, has sunk behind the skyline.
-	is_sun_behind_mountains : Clock -> Bool
-	is_sun_behind_mountains = |clock| {
-		sun = Sun.direction_at(clock)
-		sun.height.plus(Sun.radius_as_height) < skyline_height(sun.bearing)
-	}
+	## The rolling land: low, and all the way round. It stands 18 pixels high on
+	## average and rises and falls 12 either side of that, in 0.9 of a wave all
+	## the way round, a little under one. The 1.9 sets where along the wave north
+	## falls. Each number was tuned by eye.
+	land_height : Angle.Bearing -> FarHeight
+	land_height = |bearing|
+		FarHeight.of(18.0 + 12.0 * (bearing.turn_from_north().to_radians() * 0.9 + 1.9).sin())
+
+	## The north range's height at `bearing`.
+	north_range_height : Angle.Bearing -> FarHeight
+	north_range_height = |bearing| range_height(north_range, bearing)
+
+	## The west range's height at `bearing`.
+	west_range_height : Angle.Bearing -> FarHeight
+	west_range_height = |bearing| range_height(west_range, bearing)
 
 	## The skyline, back to front, for a camera facing `heading` through a lens
 	## of `focal_length`: the west range, the north range, the north's snow, then the
@@ -48,7 +55,7 @@ Mountains :: [].{
 					sky_columns,
 					{
 						focal_length: aim.focal_length,
-						height_at: |column| west_range_height(column.bearing),
+						height_at: |column| Mountains.west_range_height(column.bearing),
 						color: rock_color_at_darkness(west_rock, darkness),
 						base_y: range_base_y,
 					},
@@ -69,7 +76,7 @@ Mountains :: [].{
 					sky_columns,
 					{
 						focal_length: aim.focal_length,
-						height_at: |column| land_height(column.bearing),
+						height_at: |column| Mountains.land_height(column.bearing),
 						color: Grass.grass_color,
 						base_y: land_base_y,
 					},
@@ -96,7 +103,7 @@ sky_columns_for = |aim|
 	columns({ from: Screen.drawn_left, to: Screen.drawn_right }).map(
 		|x| {
 			bearing = bearing_at(aim, x)
-			{ x, bearing, north_height: north_range_height(bearing) }
+			{ x, bearing, north_height: Mountains.north_range_height(bearing) }
 		},
 	)
 
@@ -143,28 +150,14 @@ snow_dip = FarHeight.of(10.0)
 column_step : Pixels
 column_step = Pixels.of(2.0)
 
-## The rolling land: low, and all the way round. It stands 18 pixels high on
-## average and rises and falls 12 either side of that, in 0.9 of a wave all
-## the way round, a little under one. The 1.9 sets where along the wave north
-## falls. Each number was tuned by eye.
-land_height : Angle.Bearing -> FarHeight
-land_height = |bearing|
-	FarHeight.of(18.0 + 12.0 * (bearing.turn_from_north().to_radians() * 0.9 + 1.9).sin())
-
-north_range_height : Angle.Bearing -> FarHeight
-north_range_height = |bearing| range_height(north_range, bearing)
-
-west_range_height : Angle.Bearing -> FarHeight
-west_range_height = |bearing| range_height(west_range, bearing)
-
 ## The height of the north range's highest peak, as its samples find it.
 snow_peak_height : FarHeight
 snow_peak_height = {
 	first = Angle.Bearing.radians(-0.5)
-	var $highest = north_range_height(first)
+	var $highest = Mountains.north_range_height(first)
 	var $at = first.plus(peak_sample_step)
 	while $at <= Angle.Bearing.radians(0.5) {
-		$highest = $highest.max(north_range_height($at))
+		$highest = $highest.max(Mountains.north_range_height($at))
 		$at = $at.plus(peak_sample_step)
 	}
 	$highest
@@ -183,14 +176,6 @@ snowline_under = |north_height| {
 ## The bearing seen at `x` across the screen.
 bearing_at : { heading : Angle.Bearing, focal_length : Pixels, .. }, Pixels -> Angle.Bearing
 bearing_at = |aim, x| aim.heading.plus(Lens.turn_at_x({ x, focal_length: aim.focal_length }))
-
-## The skyline's height at `bearing`: the highest of the land and the two
-## ranges.
-skyline_height : Angle.Bearing -> FarHeight
-skyline_height = |bearing| {
-	north_or_land = north_range_height(bearing).max(land_height(bearing))
-	west_range_height(bearing).max(north_or_land)
-}
 
 ## A mountain range: the bearing of its middle, how far it reaches either
 ## side, the height it never passes, and the two frequencies of the ridges
@@ -378,7 +363,7 @@ expect
 
 expect
 	[0.95, 1.0, 2.0, -0.95, -3.0].all(
-		|radians| north_range_height(north_by(radians)) == FarHeight.zero,
+		|radians| Mountains.north_range_height(north_by(radians)) == FarHeight.zero,
 	)
 expect
 	[
@@ -386,21 +371,21 @@ expect
 		west_by(-0.8),
 		north_by(0.0),
 		north_by(1.5),
-	].all(|bearing| west_range_height(bearing) == FarHeight.zero)
+	].all(|bearing| Mountains.west_range_height(bearing) == FarHeight.zero)
 
-expect north_range_height(north_by(0.0)) > FarHeight.zero
-expect north_range_height(north_by(0.94)) > FarHeight.zero
-expect north_range_height(north_by(0.0)) > snow_threshold
-expect !(north_range_height(north_by(0.9)) > snow_threshold)
-expect west_range_height(west_range_bearing) > FarHeight.zero
+expect Mountains.north_range_height(north_by(0.0)) > FarHeight.zero
+expect Mountains.north_range_height(north_by(0.94)) > FarHeight.zero
+expect Mountains.north_range_height(north_by(0.0)) > snow_threshold
+expect !(Mountains.north_range_height(north_by(0.9)) > snow_threshold)
+expect Mountains.west_range_height(west_range_bearing) > FarHeight.zero
 
-expect snowline_under(north_range_height(north_by(0.9))) == snow_threshold
-expect snowline_under(north_range_height(north_by(2.0))) == snow_threshold
+expect snowline_under(Mountains.north_range_height(north_by(0.9))) == snow_threshold
+expect snowline_under(Mountains.north_range_height(north_by(2.0))) == snow_threshold
 
-expect snowline_under(north_range_height(north_by(0.0))) < snow_threshold
-expect snowline_under(north_range_height(north_by(0.0))) > snow_threshold.minus(snow_dip)
-expect snowline_under(north_range_height(north_by(0.5))) <= snow_threshold
-expect snowline_under(north_range_height(north_by(0.5))) >= snow_threshold.minus(snow_dip)
+expect snowline_under(Mountains.north_range_height(north_by(0.0))) < snow_threshold
+expect snowline_under(Mountains.north_range_height(north_by(0.0))) > snow_threshold.minus(snow_dip)
+expect snowline_under(Mountains.north_range_height(north_by(0.5))) <= snow_threshold
+expect snowline_under(Mountains.north_range_height(north_by(0.5))) >= snow_threshold.minus(snow_dip)
 
 expect snow_peak_height > snow_threshold
 
@@ -445,7 +430,7 @@ land_silhouette = |aim| silhouette(
 	sky_columns_for(aim),
 	{
 		focal_length: aim.focal_length,
-		height_at: |column| land_height(column.bearing),
+		height_at: |column| Mountains.land_height(column.bearing),
 		color: Grass.grass_color,
 		base_y: land_base_y,
 	},
@@ -467,6 +452,3 @@ expect {
 # The land closes along its own base, below the ranges'.
 expect lowest_y(land_silhouette(aim_at_rest)) == land_base_y.to_f64()
 expect highest_y(land_silhouette(aim_at_rest)) < range_base_y.to_f64()
-
-expect !Mountains.is_sun_behind_mountains(Clock.at_step(0))
-expect Mountains.is_sun_behind_mountains(Clock.at_step(6000))

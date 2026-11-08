@@ -10,6 +10,7 @@ import game.Distance
 import game.Geom
 import game.LitTruck
 import game.RideInstant
+import game.Sky
 import game.Tour
 import game.World
 import lib.Brush
@@ -285,7 +286,7 @@ status_lines = |model| {
 	[
 		"clock: step ${clock.to_str()}",
 		"rider: segment ${(rider.motorcycle.route_place.segment_index.to_u32() + 1).to_str()}, ${ReadoutText.tenths_text(rider.motorcycle.route_place.along.to_metres())} m, speed ${ReadoutText.tenths_text(rider.motorcycle.speed.to_metres_a_step())}",
-		"truck: ${ReadoutText.tenths_text(truck.route_position.to_metres())} m, speed ${ReadoutText.tenths_text(truck.speed.to_metres_a_step())}, brake ${Str.inspect(LitTruck.at(truck.pace, clock).brake_lights)}",
+		"truck: ${ReadoutText.tenths_text(truck.route_position.to_metres())} m, speed ${ReadoutText.tenths_text(truck.speed.to_metres_a_step())}, brake ${Str.inspect(LitTruck.at(truck.pace, Sky.darkness_at(clock)).brake_lights)}",
 		move_text(model),
 	]
 }

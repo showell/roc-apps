@@ -1912,8 +1912,6 @@ digraph headlights {
 
 The truck's headlights come on once the sun has gone behind the mountains, at step 4,039 of a ride that lasts 7,071. `Mountains` knows the skyline and already imports `Sky`, so the question is asked there. The argument is an opaque `Clock`, and the answer is a plain `Bool`, which is about to be turned into something better:
 
-{{code Mountains.is_sun_behind_mountains}}
-
 `Truck.Lights` is a record of two tag unions. Two independent lamps aren't one state with four values, so they're two fields:
 
 {{code LitTruck.LitTruck from "Which of" to "LitTruck := {"}}

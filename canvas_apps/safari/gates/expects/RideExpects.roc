@@ -11,8 +11,10 @@ import game.Cat
 import game.Clock
 import game.Distance
 import game.EncounterReaction
+import game.FarHeight
 import game.Fraction
 import game.FrameView
+import game.LitTruck
 import game.Motorcycle
 import game.Mountains
 import game.RideInstant
@@ -226,6 +228,42 @@ first_step_where = |holds| {
 	$clock
 }
 
+## Whether the truck's headlights are on at `clock`.
+headlights_on : Clock -> Bool
+headlights_on = |clock| {
+	lit_truck = LitTruck.at(NotSlowing, Sky.darkness_at(clock))
+	lit_truck == { headlights: On, brake_lights: Off }
+}
+
+# The headlights come on at step 3,555, the first step the sun is behind the
+# mountains, and are off the step before. Their threshold was measured to keep
+# that step, so this holds the threshold and the step together.
+expect {
+	onset = Clock.at_step(3555)
+	headlights_on(onset)
+		and !headlights_on(onset.minus(Steps.one_step))
+		and first_step_where(is_sun_behind_mountains) == onset
+}
+
+## The skyline's height at `bearing`: the highest of the land and the two
+## ranges. Only the ride's timing asks for it: the ride draws each range on
+## its own.
+skyline_height : Angle.Bearing -> FarHeight
+skyline_height = |bearing| {
+	north_or_land = Mountains.north_range_height(bearing).max(Mountains.land_height(bearing))
+	Mountains.west_range_height(bearing).max(north_or_land)
+}
+
+## Whether the sun, at `clock`, has sunk behind the skyline.
+is_sun_behind_mountains : Clock -> Bool
+is_sun_behind_mountains = |clock| {
+	sun = Sun.direction_at(clock)
+	sun.height.plus(Sun.radius_as_height) < skyline_height(sun.bearing)
+}
+
+expect !is_sun_behind_mountains(Clock.at_step(0))
+expect is_sun_behind_mountains(Clock.at_step(6000))
+
 ## The climax of the sunset: the step the sun's lower edge meets the west range,
 ## where the sun starts to set on screen. The range stands above the horizon at
 ## the sun's bearing, so the sun's touching the horizon is never seen. The sun's
@@ -234,7 +272,7 @@ first_step_where = |holds| {
 ## higher.
 sunset_climax : Clock
 sunset_climax = {
-	hidden_at = first_step_where(Mountains.is_sun_behind_mountains)
+	hidden_at = first_step_where(is_sun_behind_mountains)
 	range_top = Sun.height_at(hidden_at).plus(Sun.radius_as_height)
 	first_step_where(|clock| Sun.height_at(clock).minus(Sun.radius_as_height) < range_top)
 }

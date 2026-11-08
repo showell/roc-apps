@@ -107,7 +107,7 @@ FrameView := {
 		encounter_timing: RideInstant.encounter_timing(instant),
 		truck: {
 			route_position: instant.truck.route_position,
-			lit_truck: LitTruck.at(instant.truck.pace, instant.clock),
+			lit_truck: LitTruck.at(instant.truck.pace, Sky.darkness_at(instant.clock)),
 		},
 		clock: instant.clock,
 	}
