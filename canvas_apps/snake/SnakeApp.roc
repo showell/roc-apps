@@ -20,13 +20,13 @@ SnakeApp :: [].{
 	canvas_app : CanvasApp.CanvasApp(SnakeApp.Model)
 	canvas_app = {
 		size: { width: SnakeDraw.w, height: SnakeDraw.h },
-		fps: 60,
+		frames_a_second: 60,
 		init: { world: Rules.new_world(Random.seed(1)), elapsed: 0.0, sounds: 0 },
 		model_at_next_step: |m, keys, dt| step(m, keys, dt),
 		frame_shapes: |m| SnakeDraw.frame(m.world, m.elapsed),
 		sounds: |m| m.sounds,
 		# Eaten, crashed, started -- the three tones upstream generates.
-		tones: [{ freq: 620, ms: 70 }, { freq: 120, ms: 180 }, { freq: 360, ms: 80 }],
+		tones: [{ hertz: 620, milliseconds: 70 }, { hertz: 120, milliseconds: 180 }, { hertz: 360, milliseconds: 80 }],
 		title: "Snake",
 	}
 

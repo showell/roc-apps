@@ -17,13 +17,13 @@ BreakoutApp :: [].{
 	canvas_app : CanvasApp.CanvasApp(BreakoutApp.Model)
 	canvas_app = {
 		size: { width: BreakoutDraw.w, height: BreakoutDraw.h },
-		fps: 60,
+		frames_a_second: 60,
 		init: { world: Rules.new_world(), elapsed: 0.0, sounds: 0 },
 		model_at_next_step: |m, keys, dt| step(m, keys, dt),
 		frame_shapes: |m| BreakoutDraw.frame(m.world, m.elapsed),
 		sounds: |m| m.sounds,
 		# Start, wall, paddle, brick, lost -- the five tones upstream generates.
-		tones: [{ freq: 360, ms: 80 }, { freq: 220, ms: 50 }, { freq: 440, ms: 60 }, { freq: 660, ms: 45 }, { freq: 120, ms: 180 }],
+		tones: [{ hertz: 360, milliseconds: 80 }, { hertz: 220, milliseconds: 50 }, { hertz: 440, milliseconds: 60 }, { hertz: 660, milliseconds: 45 }, { hertz: 120, milliseconds: 180 }],
 		title: "Breakout",
 	}
 

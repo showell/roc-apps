@@ -20,13 +20,13 @@ PongApp :: [].{
 	canvas_app : CanvasApp.CanvasApp(PongApp.Model)
 	canvas_app = {
 		size: { width: 800.0, height: 600.0 },
-		fps: 60,
+		frames_a_second: 60,
 		init: { world: Rules.new_match(Rules.opening(Random.seed(7))), sounds: 0 },
 		model_at_next_step: |m, keys, dt| step(m, keys, dt),
 		frame_shapes: |m| PongDraw.frame(m.world),
 		sounds: |m| m.sounds,
 		# Paddle, wall, point -- the three tones upstream generates.
-		tones: [{ freq: 440, ms: 60 }, { freq: 220, ms: 50 }, { freq: 160, ms: 200 }],
+		tones: [{ hertz: 440, milliseconds: 60 }, { hertz: 220, milliseconds: 50 }, { hertz: 160, milliseconds: 200 }],
 		title: "Pong",
 	}
 

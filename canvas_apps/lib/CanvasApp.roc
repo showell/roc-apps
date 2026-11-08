@@ -13,7 +13,7 @@ CanvasApp :: [].{
 
 	## A sound an app can set off: a pitch in hertz and a length in
 	## milliseconds, which is all either runner needs to make it.
-	Tone : { freq : U32, ms : U32 }
+	Tone : { hertz : U32, milliseconds : U32 }
 
 	CanvasApp(model) : {
 		# How big a frame is, in the game's own coordinates.
@@ -22,15 +22,15 @@ CanvasApp :: [].{
 		# How often it is meant to be stepped. The runner paces to this and
 		# passes a fixed step, so the rules are deterministic: the same keys
 		# at the same ticks play the same game.
-		fps : U32,
+		frames_a_second : U32,
 
 		init : model,
 
 		# One step, given what the keyboard looks like now and how long the
 		# step covers. The snapshot is a value, so the browser's event loop
 		# can make one and a test can write one down. The seconds are always
-		# `1 / fps`: a runner paces to that and passes it, so no game writes
-		# its own sixtieth that might disagree with `fps`.
+		# `1 / frames_a_second`: a runner paces to that and passes it, so no game writes
+		# its own sixtieth that might disagree with `frames_a_second`.
 		model_at_next_step : model, Input.Snapshot, F32 -> model,
 
 		# What to draw.

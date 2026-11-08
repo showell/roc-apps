@@ -66,7 +66,7 @@ WidgetPage :: [].{
 	} -> CanvasApp.CanvasApp(model)
 	canvas_app = |{ title, frames_a_second, init, model_at_next_step, frame_shapes }| {
 		size: { width: canvas_width, height: canvas_height },
-		fps: frames_a_second,
+		frames_a_second,
 		init,
 		model_at_next_step: CanvasApp.untimed_model_at_next_step(model_at_next_step),
 		frame_shapes,

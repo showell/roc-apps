@@ -33,7 +33,7 @@ FrameWidgetApp :: [].{
 	canvas_app : CanvasApp.CanvasApp(FrameWidgetApp.Model)
 	canvas_app = {
 		size: { width: canvas_width, height: canvas_height },
-		fps: frames_a_second,
+		frames_a_second,
 		init: { last_layer_on: Trees, opening: Opening },
 		model_at_next_step: |model, input, _seconds| next_model(model, input),
 		frame_shapes: shapes_at,

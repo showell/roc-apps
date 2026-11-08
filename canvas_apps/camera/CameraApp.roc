@@ -17,7 +17,7 @@ CameraApp :: [].{
 	canvas_app : CanvasApp.CanvasApp(CameraApp.Model)
 	canvas_app = {
 		size: { width: 800.0, height: 600.0 },
-		fps: 60,
+		frames_a_second: 60,
 		init: Rules.start,
 		model_at_next_step: |m, input, dt| Rules.step(m, input, dt),
 		frame_shapes: |m| CameraDraw.frame(m),

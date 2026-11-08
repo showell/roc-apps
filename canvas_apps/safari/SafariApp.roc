@@ -21,7 +21,7 @@ SafariApp :: [].{
 		size: { width: Screen.width.to_f64(), height: Screen.height.to_f64() },
 		# The ride's motion is written per step, and thirty steps a second is the
 		# speed it is meant to look like, chosen by eye.
-		fps: 30,
+		frames_a_second: 30,
 		init: initial_model,
 		model_at_next_step: CanvasApp.untimed_model_at_next_step(model_at_next_step),
 		frame_shapes: |m| frame_shapes(m.tour),
