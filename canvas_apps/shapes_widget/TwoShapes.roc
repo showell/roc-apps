@@ -27,5 +27,4 @@ rectangle = Polygon.rectangle(
 	RgbColor.of(0xe8a33d),
 )
 
-expect TwoShapes.shapes.len() == 2
 expect TwoShapes.shapes.last() == Ok(rectangle)

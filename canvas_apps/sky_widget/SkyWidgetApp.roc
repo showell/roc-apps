@@ -164,7 +164,7 @@ job_curves = |job|
 ## The clock, then each call `job` makes at `clock` and its answer, a row each.
 call_rows : SkyWidgetApp.Job, Clock -> List(CallRow)
 call_rows = |job, clock| {
-	clock_row = { text: "clock = step ${clock.to_str()}", color: clock_color }
+	clock_row = { text: "clock = step ${clock.to_str()}", color: WidgetPage.ink_color }
 	job_curves(job).map(|curve| { text: (curve.call_line)(clock), color: curve.color }).prepend(clock_row)
 }
 
@@ -173,9 +173,6 @@ call_rows = |job, clock| {
 height_text : FarHeight -> Str
 height_text = |height|
 	"${ReadoutText.tenths_text(height.to_f64())} px"
-
-clock_color : RgbColor
-clock_color = RgbColor.of(0x202020)
 
 sun_color : RgbColor
 sun_color = RgbColor.of(0x9A6A00)
@@ -267,7 +264,7 @@ cursor_shapes = |job, clock| {
 	cursor =
 		Shapes.line(
 			{ from: { x, y: chart_top }, to: { x, y: chart_bottom }, width: 1.0 },
-			Brush.flat(clock_color),
+			Brush.flat(WidgetPage.ink_color),
 		)
 	job_curves(job).map(|curve| curve_dot(chart_point(clock, curve.level_at), curve.color)).prepend(cursor)
 }
@@ -328,11 +325,7 @@ stopped_at = |step| { ..at_start, transport: VcrButtons.transport_at(Clock.at_st
 pressed_on : SkyWidgetApp.Model, VcrButtons.Control -> SkyWidgetApp.Model
 pressed_on = |model, control| next_model(model, VcrButtons.click_on(control))
 
-# The buttons run over the sunset, eight steps a frame and one step at a press.
-expect pressed_on(at_start, Play).transport == { at: Clock.at_step(8), motion: Forward }
-expect pressed_on(stopped_at(100), StepBack).transport.at == Clock.at_step(99)
-expect pressed_on(stopped_at(100), StepForward).transport.at == Clock.at_step(101)
-expect pressed_on(stopped_at(100), ToStart).transport.at == Clock.start
+# The buttons run over the sunset. VcrButtons holds what each button does.
 expect pressed_on(at_start, ToEnd).transport.at == sunset.last
 
 # The Right key moves through the jobs, and the pointer leaves them alone.

@@ -212,7 +212,7 @@ plan_disc = |{ along, across, radius, color }| {
 	Disc({
 		x,
 		y,
-		radius: radius,
+		radius,
 		fill: Brush.flat(color),
 	})
 }
@@ -380,7 +380,7 @@ left_alone = |model, frames| {
 # A frame plays a few steps, and playing stops at the end of the stretch.
 expect played_on(starting_model).played.len() == 1 + played_a_frame
 expect left_alone(starting_model, 2).played.len() == 1 + 2 * played_a_frame
-expect left_alone(starting_model, 57).played.len() == 457
+expect left_alone(starting_model, 57).played.len() == 1 + 57 * played_a_frame
 expect left_alone(starting_model, 58).played.len() == stretch_length
 expect left_alone(starting_model, 59).played.len() == stretch_length
 
