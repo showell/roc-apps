@@ -336,15 +336,12 @@ hint_line = |text, row|
 		y: 138.0 + row.to_f64() * 18.0,
 	})
 
-## The lines round one polygon. A still repeats a point here and there, and the
-## line between two such points is empty.
+## The lines round one polygon.
 outline_shapes : StillShapes.Anchor, Still.Polygon -> List(Shapes.Shape)
 outline_shapes = |anchor, polygon| {
 	corners = StillShapes.screen_points(anchor, polygon.points)
-	# A baked still repeats some corners, and a repeated corner has no edge.
 	corners
 		.map2(corners.drop_first(1).concat(corners.take_first(1)), |from, to| { from, to })
-		.keep_if(|{ from, to }| from != to)
 		.map(
 			|{ from, to }|
 				Shapes.line(
@@ -616,22 +613,11 @@ expect toggled_outlines(Hidden) == Shown
 expect toggled_outlines(Shown) == Hidden
 
 # The read-out names the pose and counts its still, with commas.
-expect read_out_lines(Cat(Rest)) == ["Rest", "46 polygons", "2,198 points"]
+expect read_out_lines(Cat(Rest)) == ["Rest", "46 polygons", "2,158 points"]
 
-# The outlines add one line for each edge between two different corners, and
-# none when hidden.
+# The outlines add one line for each corner, and none when hidden.
 expect large_shapes(start).len() == pose_still(start.large_pose).polygons().len()
-expect {
-	edge_count = pose_still(start.large_pose).polygons().fold(
-		0,
-		|sum, polygon| {
-			points = polygon.points
-			ends = points.drop_first(1).concat(points.take_first(1))
-			sum + points.map2(ends, |from, to| from != to).keep_if(|differ| differ).len()
-		},
-	)
-	large_shapes({ ..start, outlines: Shown }).len() == pose_still(start.large_pose).polygons().len() + edge_count
-}
+expect large_shapes({ ..start, outlines: Shown }).len() == pose_still(start.large_pose).polygons().len() + 2158
 
 # A polygon's outline closes: its last line ends where its first starts.
 expect {
@@ -653,18 +639,6 @@ expect {
 		[_, _, _, Poly({ coordinates, .. })] => coordinates == [-0.5, 0.0, -0.5, 10.0, 0.5, 10.0, 0.5, 0.0]
 		_ => False
 	}
-}
-
-# A repeated corner makes no line, so a still of one point has no outline, and
-# one of two points has a line there and one back.
-expect {
-	anchor = {
-		foot: Screen.point(0.0, 0.0),
-		flip: AsDrawn,
-		height_on_screen: Pixels.of(10.0),
-	}
-	outline_of = |points| outline_shapes(anchor, { fill: Flat(RgbColor.of(0)), points })
-	outline_of([{ x: 1.0, y: 1.0 }]) == [] and outline_of([{ x: 1.0, y: 1.0 }, { x: 1.0, y: 0.0 }]).len() == 2
 }
 
 # The picture answers each click.
