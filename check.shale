@@ -1,7 +1,8 @@
 -- This script holds every hand-written Roc file in roc-apps to the bar that
 -- CLAUDE.md §3 sets: `roc fmt --check` passes over all of them, and
 -- `roc check` finds no errors and no warnings in any app. It runs the
--- pinned compiler (`roc-version`, installed at tools:roc-<pin>/roc) and
+-- pinned compiler (`roc-version`, installed at tools:roc-<pin>/roc, found
+-- by the repository's prelude, `.shale/prelude.shale`) and
 -- prints a line for each app that fails, then one verdict line.
 --
 --   cd <roc-apps checkout> && shale check.shale
@@ -37,16 +38,6 @@ function excepted(path)
   return false
 end
 
-function roc_path()
-  if not exists("roc-version") then fail("check: no roc-version here: run from the roc-apps root") end
-  local pin = trim(read("roc-version"))
-  local roc = "tools:roc-" .. pin .. "/roc"
-  if not exists(roc) then fail("check: no " .. roc .. ": install " .. pin .. " at ~/tools/roc-" .. pin .. "/") end
-  local v = run({real(roc), "version"}, {timeout_ms = 30000, whole = 4000, want = WANT})
-  if trim(v.out) ~= "Roc compiler version " .. pin then fail("check: " .. roc .. " is " .. trim(v.out) .. ", not " .. pin) end
-  return real(roc)
-end
-
 -- The tracked Roc files that aren't excepted; with `apps_only`, the apps.
 function roc_files(apps_only)
   local argv = {"git", "ls-files", "*.roc"}
@@ -75,7 +66,7 @@ end
 -- One chunk of the apps, run as a child so each child has its own budget of
 -- programs.
 function part(k)
-  local roc = roc_path()
+  local roc = pinned_roc("check")
   local apps = roc_files(true)
   local bad = 0
   local first = (k - 1) * CHUNK + 1
@@ -95,7 +86,7 @@ function part(k)
 end
 
 function all()
-  local roc = roc_path()
+  local roc = pinned_roc("check")
   local files = roc_files(false)
   local fmt = {roc, "fmt", "--check"}
   for f in files do push(fmt, f) end

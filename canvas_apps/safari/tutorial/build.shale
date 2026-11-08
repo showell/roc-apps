@@ -79,7 +79,6 @@
 const SAFARI = "canvas_apps/safari"
 const SOURCE = "canvas_apps/safari/tutorial/tutorial.md"
 const OUTPUT = "canvas_apps/safari/tutorial/build/tutorial.md"
-const PIN_FILE = "roc-version"
 const WANT = "roc-pin: roc-apps' pinned nightly, for the tutorial's failing programs"
 const INCLUDE = "^\\{\\{code ([A-Z][A-Za-z0-9_]*|web)\\.([A-Za-z_][A-Za-z0-9_]*!?)(?: from \"([^\"]+)\" to \"([^\"]+)\")?\\}\\}$"
 const SIGNATURES = "^\\{\\{signatures ([A-Z][A-Za-z0-9_.! ]*[a-zA-Z0-9_!])\\}\\}$"
@@ -422,21 +421,6 @@ function fenced_module(entry, folder, notes)
   return titled_block(shown_path(folder, entry.whole_module) .. ", the whole file", "roc", text)
 end
 
-function check_version(roc, pin, said)
-  if trim(said) ~= "Roc compiler version " .. pin then
-    fail("tutorial: " .. roc .. " is " .. trim(said) .. ", not " .. pin)
-  end
-end
-
-function pinned_roc(pin_file)
-  if not exists(pin_file) then fail("tutorial: no " .. pin_file .. ": run from the roc-apps root") end
-  local pin = trim(read(pin_file))
-  local roc = "tools:roc-" .. pin .. "/roc"
-  if not exists(roc) then fail("tutorial: no " .. roc .. ": install roc-apps' pinned nightly " .. pin .. " at ~/tools/roc-" .. pin .. "/") end
-  check_version(roc, pin, run({real(roc), "version"}, {timeout_ms = 30000, whole = 4000, want = WANT}).out)
-  return real(roc)
-end
-
 -- How many errors `roc check` reports. A clean run says "No errors found", a
 -- run with only warnings reports 0, and a crash reports nothing: all are 0.
 function errors_reported(said)
@@ -556,7 +540,7 @@ function build(source, output, folder)
   check_titles(entries)
   local trees = parse_modules(entries)
   local roc = ""
-  if needs_roc(entries) then roc = pinned_roc(PIN_FILE) end
+  if needs_roc(entries) then roc = pinned_roc("tutorial") end
   local numbers = {}
   if needs_proof(entries) then
     numbers = proof_numbers(folder .. PROOF_FILE)
@@ -1012,15 +996,15 @@ function self_test()
   check_annotation_rules(checks, folder)
   check_reach_rule(checks, top, folder)
 
-  local no_file = attempt(pinned_roc, folder .. "/no-pin")
+  local no_file = attempt(pinned_roc, "tutorial", folder .. "/no-pin")
   if no_file.ok or no_file.error ~= "tutorial: no " .. folder .. "/no-pin: run from the roc-apps root" then fail("self_test: no pin file gave " .. json_write(no_file)) end
   push(checks, "no pin file")
   replace(folder .. "/pin", "nightly-none\n")
-  local no_roc = attempt(pinned_roc, folder .. "/pin")
+  local no_roc = attempt(pinned_roc, "tutorial", folder .. "/pin")
   if no_roc.ok or not starts_with(no_roc.error, "tutorial: no tools:roc-nightly-none/roc: ") then fail("self_test: no compiler gave " .. json_write(no_roc)) end
   push(checks, "no compiler")
-  if not attempt(check_version, "r", "p", "Roc compiler version p\n").ok then fail("self_test: the pin was refused") end
-  local wrong = attempt(check_version, "r", "p", "Roc compiler version q\n")
+  if not attempt(check_roc_version, "tutorial", "r", "p", "Roc compiler version p\n").ok then fail("self_test: the pin was refused") end
+  local wrong = attempt(check_roc_version, "tutorial", "r", "p", "Roc compiler version q\n")
   if wrong.ok or wrong.error ~= "tutorial: r is Roc compiler version q, not p" then fail("self_test: the wrong compiler gave " .. json_write(wrong)) end
   push(checks, "the pinned version, and another")
 

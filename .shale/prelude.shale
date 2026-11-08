@@ -1,0 +1,28 @@
+-- This is roc-apps' prelude: every Shale script run from the repository's
+-- root has its functions. It holds the one home of roc-apps' compiler for
+-- Shale, as pinned-roc.sh is for bash: the nightly named in roc-version,
+-- installed side by side at tools:roc-<pin>/roc (~/tools/ on the box,
+-- CLAUDE.md §2). A missing pin file, a missing binary and a binary whose
+-- `roc version` isn't the pin each stop the run, named for `who`.
+
+-- The pinned Roc's real path. `pin_file` names another pin file, for a
+-- self-test of these refusals.
+function pinned_roc(who, pin_file?)
+  local file = "roc-version"
+  if pin_file ~= nil then file = pin_file end
+  if not exists(file) then fail(who .. ": no " .. file .. ": run from the roc-apps root") end
+  local pin = trim(read(file))
+  local roc = "tools:roc-" .. pin .. "/roc"
+  if not exists(roc) then fail(who .. ": no " .. roc .. ": install roc-apps' pinned nightly " .. pin .. " at ~/tools/roc-" .. pin .. "/") end
+  local said = run({real(roc), "version"}, {timeout_ms = 30000, whole = 4000, want = "roc-pin: roc-apps' pinned nightly"})
+  check_roc_version(who, roc, pin, said.out)
+  return real(roc)
+end
+
+-- Nothing, or a stop when `said`, what `roc version` printed, isn't the pin.
+function check_roc_version(who, roc, pin, said)
+  if trim(said) ~= "Roc compiler version " .. pin then
+    fail(who .. ": " .. roc .. " is " .. trim(said) .. ", not " .. pin)
+  end
+  return nil
+end

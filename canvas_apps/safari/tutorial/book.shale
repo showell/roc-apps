@@ -56,7 +56,7 @@ const PAGE_WANT = "script: canvas_apps/build.sh builds and checks a page, and re
 const CHECK_WANT = "script: book_check.mjs drives the staged pages in headless Chromium"
 const PHONE_POINTS = 300
 const MOVE_WANT = "move: the staged book takes the channel's place in one rename"
-const INPUTS = {"canvas_apps", ":(exclude)canvas_apps/safari/tutorial", ":(exclude)canvas_apps/safari/gates", ":(exclude,glob)**/*.md", "roc-version", "pinned-roc.sh"}
+const INPUTS = {"canvas_apps", ":(exclude)canvas_apps/safari/tutorial", ":(exclude)canvas_apps/safari/gates", ":(exclude,glob)**/*.md", "roc-version", "pinned-roc.sh", ".shale/prelude.shale"}
 
 function must(r, what)
   if r.ended ~= "exit" or get(r, "code", -1) ~= 0 then
@@ -69,13 +69,6 @@ end
 function remove_if_there(path)
   if exists(path) then remove_tree(path) end
   return nil
-end
-
-function pinned_roc()
-  local pin = trim(read("roc-version"))
-  local roc = "tools:roc-" .. pin .. "/roc"
-  if not exists(roc) then fail("book: no " .. roc .. ": install " .. pin .. " at ~/tools/roc-" .. pin .. "/") end
-  return real(roc)
 end
 
 -- The drawing of one diagram, ready to sit in a page, and how wide it is in
@@ -326,7 +319,7 @@ function move_into_place()
 end
 
 function main()
-  local roc = pinned_roc()
+  local roc = pinned_roc("book")
   mkdir(CACHE)
   local env = {XDG_CACHE_HOME = real(CACHE)}
   print(trim(must(run({"shale", "--root", ".", TUTORIAL .. "/build.shale"}, {timeout_ms = 120000, tail = 20, env = env}), "build.shale").out))
