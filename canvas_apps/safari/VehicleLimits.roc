@@ -79,27 +79,30 @@ turn_speeds = [
 ]
 
 ## One step of `braking_to`'s brake, from `speed`.
-speed_after_braking : F64, { target : F64, within : F64 } -> F64
-speed_after_braking = |speed, { target, within }| {
-	start = Speed.metres_a_step(speed)
-	brake = VehicleLimits.braking_to(
-		start,
-		{ target: Speed.metres_a_step(target), within: Distance.metres(within) },
-	)
-	start.accelerated_by(brake).to_metres_a_step()
-}
+speed_after_braking : Speed, { target : Speed, within : Distance } -> Speed
+speed_after_braking = |speed, { target, within }|
+	speed.accelerated_by(VehicleLimits.braking_to(speed, { target, within }))
 
 # A brake that lands exactly at rest is the hardest one allowed, and it
 # returns its acceleration. One harder would go below zero, which crashes, and
 # an expect can't test a crash, so this is the boundary from the side that
 # holds.
-expect speed_after_braking(0.5, { target: 0.0, within: 0.25 }) == 0.0
+expect
+	speed_after_braking(
+		Speed.metres_a_step(0.5),
+		{ target: Speed.at_rest, within: Distance.metres(0.25) },
+	)
+		== Speed.at_rest
 
 # At the first bend the steady brake lands a little under the bend's speed,
 # and that undershoot is kept.
 expect {
-	landed = speed_after_braking(0.239, { target: 0.222, within: 0.115 })
-	landed < 0.222 and landed > 0.204
+	bend_speed = Speed.metres_a_step(0.222)
+	landed = speed_after_braking(
+		Speed.metres_a_step(0.239),
+		{ target: bend_speed, within: Distance.metres(0.115) },
+	)
+	landed < bend_speed and landed > Speed.metres_a_step(0.204)
 }
 
 ## The speed for a turn of this many degrees.
