@@ -1,7 +1,5 @@
-published 2026-11-07T21:57:26Z
+published 2026-11-08T12:58:42Z
 roc nightly-2026-11-03-34bd006
 opt speed
-roc-apps ba7b71c5
-rocemit ad9a0e7
-cobblestone  
-sha256 1363dcbf98576cde  679800 bytes  safari.wasm
+roc-apps 056a9c83
+sha256 fb559c79e193db97  612922 bytes  safari.wasm
