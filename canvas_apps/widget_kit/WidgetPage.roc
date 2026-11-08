@@ -4,8 +4,8 @@
 ## state. This module holds the page's sizes and colors, the canvas app around a
 ## widget, and laying out the picture and the text. ReadoutText puts a widget's numbers
 ## into words for those lines, VcrButtons reads a widget's buttons into its
-## state, Click reads where the pointer was pressed, and PlanView draws a picture
-## that looks down on the road.
+## state, Click reads where the pointer was pressed, and PlanView holds the colors
+## and the one mapping of the pictures that look down on the road.
 import game.Angle
 import game.FrameView
 import game.Lens

@@ -20,8 +20,8 @@ Click :: [].{
 
 		## Whether `spot` is in the area.
 		contains : Click.Area, Point.Point -> Bool
-		contains = |area, { x, y }|
-			x >= area.left and x < area.left + area.width and y >= area.top and y < area.top + area.height
+		contains = |area, spot|
+			spot.x >= area.left and spot.x < area.left + area.width and spot.y >= area.top and spot.y < area.top + area.height
 	}
 
 	## Where this frame's click is, if there is one.
