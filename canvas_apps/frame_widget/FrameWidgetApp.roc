@@ -127,7 +127,10 @@ paused_camera = FrameView.camera_at(paused_tour.route(), paused_tour.instant())
 
 ## The road ahead of the rider at the step on show.
 paused_road : RoadAhead.RoadView
-paused_road = RoadAhead.RoadView.ahead_of(paused_tour.route(), paused_camera.route_place.segment_index)
+paused_road = RoadAhead.RoadView.ahead_of(
+	paused_tour.route(),
+	paused_camera.route_place.segment_index,
+)
 
 ## What the camera shows at the step on show.
 paused_frame_view : FrameView
@@ -137,10 +140,7 @@ paused_frame_view = FrameView.frame_view_at(paused_tour.route(), paused_tour.ins
 paused_scene : Scene
 paused_scene = Scene.scene_in_view(
 	paused_road,
-	{
-		camera: paused_camera.sighting_camera(),
-		facts: FrameView.ride_facts(paused_tour.instant()),
-	},
+	{ camera: paused_camera.sighting_camera(), facts: FrameView.ride_facts(paused_tour.instant()) },
 )
 
 ## The mountains and the road, which `FrameView.frame_view_at` puts under the things
@@ -160,29 +160,35 @@ backdrop_parts = backdrop_pieces(paused_frame_view)
 ## asks for them one at a time, and an `expect` below holds them to those lists
 ## joined.
 ride_shapes_on : List(Layer) -> List(Shapes.Shape)
-ride_shapes_on = |on_layers| piece_shapes(ground_parts, on_layers).concat(scene_shapes_on(on_layers))
+ride_shapes_on = |on_layers| piece_shapes(
+	ground_parts,
+	on_layers,
+).concat(scene_shapes_on(on_layers))
 
 ## The frame's shapes on `on_layers`, backdrop and all, in paint order.
 frame_shapes_on : List(Layer) -> List(Shapes.Shape)
-frame_shapes_on = |on_layers| piece_shapes(backdrop_parts, on_layers).concat(ride_shapes_on(on_layers))
+frame_shapes_on = |on_layers| piece_shapes(
+	backdrop_parts,
+	on_layers,
+).concat(ride_shapes_on(on_layers))
 
 ## The space the paused frame leans in, which the game puts the whole frame in.
 lean_space : Shapes.Space
 lean_space = FrameView.lean_space(paused_frame_view.roll)
 
 ## The layers up to `last`, and `last` itself.
-layers_through : Layer -> List(Layer)
-layers_through = |last|
+layers_to : Layer -> List(Layer)
+layers_to = |last|
 	match layers.find_first_index(|layer| layer == last) {
 		Ok(index) => layers.take_first(index + 1)
-		Err(NotFound) => crash "FrameWidgetApp.layers_through: every layer is in the list"
+		Err(NotFound) => crash "FrameWidgetApp.layers_to: every layer is in the list"
 	}
 
 ## The layer after `layer` in the book's order. The last has none after it, so
 ## it stays.
 layer_after : Layer -> Layer
 layer_after = |layer|
-	match layers.drop_first(layers_through(layer).len()) {
+	match layers.drop_first(layers_to(layer).len()) {
 		[next, ..] => next
 		[] => layer
 	}
@@ -282,7 +288,7 @@ layer_name = |layer|
 ## The two lines under the picture.
 status_lines : FrameWidgetApp.Model -> List(Str)
 status_lines = |{ last_layer_on, .. }| {
-	so_far = ReadoutText.count_text(ride_count(layers_through(last_layer_on)))
+	so_far = ReadoutText.count_text(ride_count(layers_to(last_layer_on)))
 	total = ReadoutText.count_text(ride_count(layers))
 	["Shapes so far: ${so_far} of ${total}", "Added: ${layer_name(last_layer_on)}"]
 }
@@ -299,7 +305,12 @@ status_readout = {
 }
 
 status_line : Str, U64 -> Shapes.Shape
-status_line = |text, row| WidgetPage.readout({ text, color: WidgetPage.ink_color, row, style: status_readout })
+status_line = |text, row| WidgetPage.readout({
+	text,
+	color: WidgetPage.ink_color,
+	row,
+	style: status_readout,
+})
 
 ## The layers on, in the game's paint order.
 picture_shapes : List(Layer) -> List(Shapes.Shape)
@@ -310,7 +321,7 @@ shapes_at : FrameWidgetApp.Model -> List(Shapes.Shape)
 shapes_at = |model|
 	[
 		[plain_background],
-		picture_shapes(layers_through(model.last_layer_on)),
+		picture_shapes(layers_to(model.last_layer_on)),
 		[panel],
 		status_lines(model).map_with_index(status_line),
 	].join()
@@ -336,10 +347,10 @@ expect paused_frame_view.backdrop.sun_sighting == OutOfView
 expect ride_count([Grass, Sun, Sky]) == 0
 
 # A layer with shapes of its own always changes the picture, and the sun doesn't.
-expect picture_shapes(layers_through(Trees)) != picture_shapes(layers_through(Grass))
-expect picture_shapes(layers_through(Grass)) == picture_shapes(layers_through(Sun))
-expect picture_shapes(layers_through(Sun)) != picture_shapes(layers_through(Sky))
-expect picture_shapes(layers_through(Critters)) != picture_shapes(layers_through(MovingThings))
+expect picture_shapes(layers_to(Trees)) != picture_shapes(layers_to(Grass))
+expect picture_shapes(layers_to(Grass)) == picture_shapes(layers_to(Sun))
+expect picture_shapes(layers_to(Sun)) != picture_shapes(layers_to(Sky))
+expect picture_shapes(layers_to(Critters)) != picture_shapes(layers_to(MovingThings))
 
 # The first layer alone is the lean and the trees, in the game's order.
 expect picture_shapes([Trees]) == Shapes.shapes_in_space(lean_space, ride_shapes_on([Trees]))

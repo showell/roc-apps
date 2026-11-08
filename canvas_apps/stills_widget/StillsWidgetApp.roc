@@ -162,7 +162,9 @@ row_height_on_screen = |poses, cell_width| {
 	extents = poses.map(|pose| extent_of(pose_still(pose)))
 	widest = extents.fold(0.0, |most, extent| most.max(extent_width(extent)))
 	tallest = extents.fold(0.0, |most, extent| most.max(extent.top))
-	Pixels.of(F64.min((cell_width - 2.0 * cell_padding) / widest, (cell_ground - cell_padding) / tallest))
+	Pixels.of(
+		F64.min((cell_width - 2.0 * cell_padding) / widest, (cell_ground - cell_padding) / tallest),
+	)
 }
 
 ## Where a still stands with its middle at `mid_x` and its y 0 at `ground_y`.
@@ -175,7 +177,10 @@ standing_at : Still,
 standing_at = |still, { mid_x, ground_y, height_on_screen }| {
 	extent = extent_of(still)
 	{
-		foot: Screen.point(mid_x - height_on_screen.to_f64() * (extent.left + extent.right) / 2.0, ground_y),
+		foot: Screen.point(
+			mid_x - height_on_screen.to_f64() * (extent.left + extent.right) / 2.0,
+			ground_y,
+		),
 		flip: AsDrawn,
 		height_on_screen,
 	}
@@ -419,7 +424,9 @@ landing_spot = |anchor, point| {
 ## Whether every point of a still lands in `area`.
 stays_in : StillShapes.Anchor, { still : Still, area : Click.Area } -> Bool
 stays_in = |anchor, { still, area }|
-	still.polygons().all(|polygon| polygon.points.all(|point| area.contains(landing_spot(anchor, point))))
+	still.polygons().all(
+		|polygon| polygon.points.all(|point| area.contains(landing_spot(anchor, point))),
+	)
 
 first_cell : StillCell
 first_cell = cells.first() ?? crash "StillsWidgetApp.first_cell: the grid has cells"
@@ -455,13 +462,17 @@ expect (last_cell.area.width - WidgetPage.panel_width / bird_poses.len().to_f64(
 expect first_cell.area.top == WidgetPage.picture_bottom_y
 expect last_cell.area.top + last_cell.area.height == WidgetPage.canvas_height
 expect
-	cells.all(
-		|cell| cells.keep_if(|other| other.area.contains(middle_of(cell.area))).len() == 1,
-	)
+	cells.all(|cell| cells.keep_if(|other| other.area.contains(middle_of(cell.area))).len() == 1)
 
 # A row shares one height, and no still leaves its cell or crosses its name.
-expect cells.take_first(cat_poses.len()).all(|cell| cell.anchor.height_on_screen == first_cell.anchor.height_on_screen)
-expect cells.drop_first(cat_poses.len()).all(|cell| cell.anchor.height_on_screen == last_cell.anchor.height_on_screen)
+expect {
+	first_height = first_cell.anchor.height_on_screen
+	cells.take_first(cat_poses.len()).all(|cell| cell.anchor.height_on_screen == first_height)
+}
+expect {
+	last_height = last_cell.anchor.height_on_screen
+	cells.drop_first(cat_poses.len()).all(|cell| cell.anchor.height_on_screen == last_height)
+}
 expect cells.all(|{ pose, area, anchor }| stays_in(anchor, { still: pose_still(pose), area }))
 expect
 	cells.all(
@@ -556,15 +567,16 @@ expect start.outlines == Hidden
 
 # A click on any cell shows that still large.
 expect
-	cells.all(
-		|cell| left_click(start, middle_of(cell.area)).large_pose == cell.pose,
-	)
+	cells.all(|cell| left_click(start, middle_of(cell.area)).large_pose == cell.pose)
 
 # So does a click at a cell's corner, and the corner just past it is the next cell's.
 expect {
 	corner = { x: last_cell.area.left, y: last_cell.area.top }
 	model_after_click(start, corner).large_pose == Bird(Diving)
-		and model_after_click(start, { ..corner, x: corner.x - 1.0 }).large_pose == Bird(Away(WingsDown))
+		and model_after_click(
+			start,
+			{ ..corner, x: corner.x - 1.0 },
+		).large_pose == Bird(Away(WingsDown))
 }
 
 # A click on a cell leaves the outlines as they were, shown or hidden.
@@ -609,7 +621,10 @@ expect read_out_lines(Cat(Rest)) == ["Rest", "46 polygons", "2,158 points"]
 
 # The outlines add one line for each corner, and none when hidden.
 expect large_shapes(start).len() == pose_still(start.large_pose).polygons().len()
-expect large_shapes({ ..start, outlines: Shown }).len() == pose_still(start.large_pose).polygons().len() + 2158
+expect large_shapes({
+	..start,
+	outlines: Shown,
+}).len() == pose_still(start.large_pose).polygons().len() + 2158
 
 # A polygon's outline closes: its last line ends where its first starts.
 expect {
@@ -627,8 +642,9 @@ expect {
 		flip: AsDrawn,
 		height_on_screen: Pixels.of(10.0),
 	}
+	flipped_square = [-0.5, 0.0, -0.5, 10.0, 0.5, 10.0, 0.5, 0.0]
 	match outline_shapes(anchor, square) {
-		[_, _, _, Poly({ coordinates, .. })] => coordinates == [-0.5, 0.0, -0.5, 10.0, 0.5, 10.0, 0.5, 0.0]
+		[_, _, _, Poly({ coordinates, .. })] => coordinates == flipped_square
 		_ => False
 	}
 }

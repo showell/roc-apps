@@ -1,10 +1,11 @@
 ## The widget for the Safari tutorial's setting sun. Six buttons, like a video
 ## recorder's, run the ride's clock forward and back or step it one at a time,
-## and each frame is worked out from that clock alone. A click anywhere else does nothing. The picture is
-## the ride's own sky, looking straight at the sun, drawn by Sky and Sun at two
-## thirds of its size. Below it, lines of text read out the calls to Sky, and a
-## small chart plots their answers over the whole sunset. The book opens it at
-## one of three jobs, and each job adds a call.
+## and each frame is worked out from that clock alone. A click anywhere else
+## does nothing. The picture is the ride's own sky, looking straight at the
+## sun, drawn by Sky and Sun at two thirds of its size. Below it, lines of text
+## read out the calls to Sky, and a small chart plots their answers over the
+## whole sunset. The book opens it at one of three jobs, and each job adds a
+## call.
 import game.Clock
 import game.FarHeight
 import game.Lens
@@ -114,7 +115,10 @@ picture_shapes = |job, clock|
 	WidgetPage.picture_shapes({
 		backdrop: {
 			sky_colors: sky_colors(job, clock),
-			sun_sighting: Sun.sun_in_view({ heading: Sun.bearing_at(clock), focal_length: Lens.resting_focal_length }, clock),
+			sun_sighting: Sun.sun_in_view(
+				{ heading: Sun.bearing_at(clock), focal_length: Lens.resting_focal_length },
+				clock,
+			),
 		},
 		ride_shapes: [],
 	})
@@ -165,7 +169,9 @@ job_curves = |job|
 call_rows : SkyWidgetApp.Job, Clock -> List(CallRow)
 call_rows = |job, clock| {
 	clock_row = { text: "clock = step ${clock.to_str()}", color: WidgetPage.ink_color }
-	job_curves(job).map(|curve| { text: (curve.call_line)(clock), color: curve.color }).prepend(clock_row)
+	job_curves(job).map(
+		|curve| { text: (curve.call_line)(clock), color: curve.color },
+	).prepend(clock_row)
 }
 
 ## How high the sun stands, in pixels at the resting lens, negative below the
@@ -187,7 +193,12 @@ warmth_color = RgbColor.of(0xC0392B)
 call_lines : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
 call_lines = |job, clock|
 	call_rows(job, clock).map_with_index(
-		|{ text, color }, row| WidgetPage.readout({ text, color, row, style: WidgetPage.panel_readout }),
+		|{ text, color }, row| WidgetPage.readout({
+			text,
+			color,
+			row,
+			style: WidgetPage.panel_readout,
+		}),
 	)
 
 chart_left : F64
@@ -239,7 +250,9 @@ chart_spacing = Steps.of(100)
 chart_clocks : List(Clock)
 chart_clocks = {
 	spaces = sunset.last.steps_since(sunset.first).to_u32() // chart_spacing.to_u32()
-	List.from_iter(U32.until(0, spaces + 1)).map(|space| sunset.first.plus(chart_spacing.times(space)))
+	List.from_iter(
+		U32.until(0, spaces + 1),
+	).map(|space| sunset.first.plus(chart_spacing.times(space)))
 }
 
 ## One curve of the chart.
@@ -249,7 +262,14 @@ curve_shapes = |{ level_at, color, .. }| {
 	List.map2(
 		points,
 		points.drop_first(1),
-		|a, b| Shapes.line({ from: a, to: b, width: 2.0 }, Brush.flat(color)),
+		|a, b| Shapes.line(
+			{
+				from: a,
+				to: b,
+				width: 2.0,
+			},
+			Brush.flat(color),
+		),
 	)
 }
 
@@ -263,10 +283,16 @@ cursor_shapes = |job, clock| {
 	x = chart_point(clock, darkness_level).x
 	cursor =
 		Shapes.line(
-			{ from: { x, y: chart_top }, to: { x, y: chart_bottom }, width: 1.0 },
+			{
+				from: { x, y: chart_top },
+				to: { x, y: chart_bottom },
+				width: 1.0,
+			},
 			Brush.flat(WidgetPage.ink_color),
 		)
-	job_curves(job).map(|curve| curve_dot(chart_point(clock, curve.level_at), curve.color)).prepend(cursor)
+	job_curves(job).map(
+		|curve| curve_dot(chart_point(clock, curve.level_at), curve.color),
+	).prepend(cursor)
 }
 
 curve_dot : Point.Point, RgbColor -> Shapes.Shape
@@ -347,4 +373,7 @@ expect cursor_shapes(SunSets, Clock.at_step(3000)).len() == 2
 expect shapes_at(at_start).len() > shapes_at(stopped_at(1)).len()
 
 # The picture depends on the clock.
-expect picture_shapes(HorizonWarms, Clock.at_step(3000)) != picture_shapes(HorizonWarms, Clock.at_step(3001))
+expect picture_shapes(
+	HorizonWarms,
+	Clock.at_step(3000),
+) != picture_shapes(HorizonWarms, Clock.at_step(3001))

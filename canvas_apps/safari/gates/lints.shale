@@ -54,6 +54,19 @@ const MOST_ONE_AT_A_TIME = 6
 -- held there to the same counts as in safari.
 const SHARED_FOLDERS = {"canvas_apps/lib", "canvas_apps/widget_kit"}
 
+-- The tutorial's widgets, one glob from the checkout's root over every widget
+-- folder, which the merge gate names among CLIENT_GLOBS. A lint that names it
+-- among its `folders` runs once over all of them, from the root, held to the
+-- same counts as in safari.
+const WIDGETS = "canvas_apps/*_widget/**/*.roc"
+if not has_item(CLIENT_GLOBS, WIDGETS) then
+  fail("safari lints: the merge gate's widget globs no longer name " .. WIDGETS)
+end
+local shared_and_widgets = {}
+for f in SHARED_FOLDERS do push(shared_and_widgets, f) end
+push(shared_and_widgets, WIDGETS)
+const SHARED_AND_WIDGETS = shared_and_widgets
+
 -- `bool_param` has types only for what web.roc reaches, which is every game
 -- module. roc-types can't read the rest, so a file here is judged without
 -- types, and a game module web.roc stops reaching fails the run. The gates and
@@ -81,24 +94,26 @@ const LINTS = {
     {"taken_word", 0}, {"bare_participle", 0},
     {"phrase_name", 0},
     {"singular_list", 0}, {"world_verb", 0}, {"where_name", 0},
-  }, whole_tree = {"command_tense", "mixed_tense"}, folders = SHARED_FOLDERS},
+  }, whole_tree = {"command_tense", "mixed_tense"}, folders = SHARED_AND_WIDGETS},
   {recipe = "errors", args = {}, budget = {}, counts = {
     {"error_alias", 0}, {"optional_tag", 0}, {"set_fallback", 0}, {"placeholder", 0},
-  }, whole_tree = {"error_alias"}, folders = SHARED_FOLDERS},
-  {recipe = "nest_depth", args = {"min=4"}, budget = {}, counts = {{"nested", 0}}},
-  {recipe = "parens", args = {}, budget = {}, counts = {{"paren_if", 0}, {"wrapped_body", 0}, {"else_block", 0}, {"lambda_if", 0}}},
+  }, whole_tree = {"error_alias"}, folders = SHARED_AND_WIDGETS},
+  {recipe = "nest_depth", args = {"min=4"}, budget = {}, counts = {{"nested", 0}}, folders = {WIDGETS}},
+  {recipe = "parens", args = {}, budget = {}, counts = {{"paren_if", 0}, {"wrapped_body", 0}, {"else_block", 0}, {"lambda_if", 0}},
+    folders = {WIDGETS}},
   {recipe = "boundaries", args = {"types=1", "root=" .. SAFARI .. "/web.roc", "clients=" .. join(CLIENT_GLOBS, ","), "tests=" .. GATE_GLOB, "test_reach=dead"}, budget = {}, from_repo_root = true, counts = {
     {"single", 0}, {"fixed", 0}, {"entry", 0}, {"constant", 0}, {"bool_param", 0}, {"dead", 0},
   }, whole_tree = {"single", "fixed", "entry", "constant", "bool_param", "dead"}},
   {recipe = "stack", args = {}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 0}, {"to unstack", 0}, {"long", 0}},
-    skip = {"BirdStills.roc", "CatStills.roc", "EmojiStills.roc"}},
-  {recipe = "vocabulary", args = {"words=vocabulary.txt"}, budget = {}, counts = {{"retired_name", 0}, {"retired_comment", 0}}},
+    skip = {"BirdStills.roc", "CatStills.roc", "EmojiStills.roc"}, folders = {WIDGETS}},
+  {recipe = "vocabulary", args = {"words=vocabulary.txt"}, budget = {}, counts = {{"retired_name", 0}, {"retired_comment", 0}},
+    folders = {WIDGETS}},
   {recipe = "name_types", args = {"table=name_types.txt"}, budget = {}, counts = {{"name_type", 0}, {"bare_beside_unit", 0}, {"no_value", 0}},
     whole_tree = {"bare_beside_unit"}},
   {recipe = "bare_floats", args = {"table=bare_floats.txt"}, budget = {}, counts = {{"bare_float", 0}, {"unused_exception", 0}}},
   {recipe = "families", args = {}, budget = {}, counts = {{"family", 0}, {"twin_name", 0}}, whole_tree = {"family", "twin_name"}},
   {recipe = "plain_names", args = {}, budget = {}, counts = {{"pure_mutator", 0}, {"abbreviation", 0}, {"module_doc", 0}},
-    folders = SHARED_FOLDERS},
+    folders = SHARED_AND_WIDGETS},
   {recipe = "unused_imports", args = {}, budget = {}, from_repo_root = true, counts = {{"unused_import", 0}},
     tree_globs = TREE_GLOBS},
 }
@@ -154,13 +169,30 @@ function lint_run(lint, glob)
 end
 
 -- The run of `lint` over the Roc files of `folder`, one of its `folders`.
+-- WIDGETS runs from the checkout's root, so a table it reads is named from
+-- there.
 function folder_run(lint, folder)
   local argv = {"shale"}
   for b in lint.budget do push(argv, b) end
   push(argv, real("cookbook:roc/" .. lint.recipe .. ".shale"))
+  if folder == WIDGETS then
+    push(argv, "glob=" .. WIDGETS)
+    for a in lint.args do
+      local m = re_find(a, "^(?:words|table)=(.+)$")
+      if m == nil then push(argv, a) else push(argv, sub(a, 1, #a - #m.group) .. SAFARI .. "/" .. m.group) end
+    end
+    return run(argv, {timeout_ms = 600000, whole = 4000000})
+  end
   push(argv, "glob=*.roc")
   for a in lint.args do push(argv, a) end
   return run(argv, {timeout_ms = 600000, whole = 4000000, cwd = folder})
+end
+
+-- How a finding's line from `folder_run` names its file: a folder's run names
+-- it from the folder, and WIDGETS's from the checkout's root.
+function folder_finding(folder, line)
+  if folder == WIDGETS then return line end
+  return folder .. "/" .. line
 end
 
 const NOT_REACHED = "not reached by "
@@ -273,7 +305,7 @@ function judge_folder_part(lint, folder)
       local got = count_in_summary(summary, c[1])
       if got == nil then fail("safari lints: " .. lint.recipe .. " in " .. folder .. ": no count for " .. c[1] .. " in its last line: " .. summary) end
       if got ~= c[2] then
-        for l in findings_of(r.out, c[1]) do print(folder .. "/" .. l) end
+        for l in findings_of(r.out, c[1]) do print(folder_finding(folder, l)) end
         fail("safari lints: " .. lint.recipe .. ": " .. got .. " " .. c[1] .. " in " .. folder .. ", held at " .. c[2])
       end
     end
@@ -332,7 +364,7 @@ function judge_tree()
         if got == nil then
           push(wrong, lint.recipe .. " in " .. folder .. ": no count for " .. c[1] .. " in its last line: " .. folder_summary)
         elseif got ~= c[2] then
-          for l in findings_of(fr.out, c[1]) do print(folder .. "/" .. l) end
+          for l in findings_of(fr.out, c[1]) do print(folder_finding(folder, l)) end
           push(wrong, lint.recipe .. " in " .. folder .. ": " .. c[1] .. " is " .. got .. ", held at " .. c[2])
         end
         push(folder_said, c[1] .. " " .. tostring(got))

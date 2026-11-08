@@ -90,11 +90,21 @@ stand_sighting = |stand| {
 		lift: Distance.zero,
 		kind: conifer,
 	}
-	Pipeline.sighting_of(placed_tree, { road: straight_road, vantage: eye, place: Ahead(SegmentPlace.Position.first) })
+	Pipeline.sighting_of(
+		placed_tree,
+		{
+			road: straight_road,
+			vantage: eye,
+			place: Ahead(SegmentPlace.Position.first),
+		},
+	)
 }
 
 tree_shapes : Stand -> List(Shapes.Shape)
-tree_shapes = |stand| WidgetPage.resting_lens_shapes(stand_sighting(stand), { nearer_tree_count: 0 })
+tree_shapes = |stand| WidgetPage.resting_lens_shapes(
+	stand_sighting(stand),
+	{ nearer_tree_count: 0 },
+)
 
 ## What `TreeShapes.crown_of` says at `forward`, as Roc would write it.
 crown_text : Distance -> Str
@@ -136,7 +146,10 @@ still_shapes = {
 		backdrop: { sky_colors: Sky.colors_at(Clock.start), sun_sighting: OutOfView },
 		ride_shapes: trees,
 	})
-	WidgetPage.frame_shapes({ picture_shapes, status_lines: [] }).concat(stands.join_map(caption_shapes))
+	WidgetPage.frame_shapes({
+		picture_shapes,
+		status_lines: [],
+	}).concat(stands.join_map(caption_shapes))
 }
 
 ## Whether a stand's tree is all in the picture, on its `canvas_x`, and at least

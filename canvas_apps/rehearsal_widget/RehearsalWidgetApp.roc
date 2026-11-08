@@ -39,7 +39,7 @@ RehearsalWidgetApp :: [].{
 		frames_a_second: WidgetPage.moving_frames_a_second,
 		title: "Twelve rehearsals",
 		init: { stop: Start },
-		model_at_next_step: |model, input| { stop: stepped(model.stop, input) },
+		model_at_next_step: |model, input| { stop: stop_after_input(model.stop, input) },
 		frame_shapes: |model| shapes_at(model.stop),
 	})
 }
@@ -63,8 +63,11 @@ points_of : Angle.Lean -> List(ArcPoint)
 points_of = |lean|
 	Coast.coast_path(motorcycle.with_lean(lean)).path_motorcycles.map(
 		|path_motorcycle| {
-			forward: path_motorcycle.route_place.along.distance_from(motorcycle.route_place.along).to_metres(),
-			across: path_motorcycle.route_place.across.to_metres(),
+			place = path_motorcycle.route_place
+			{
+				forward: place.along.distance_from(motorcycle.route_place.along).to_metres(),
+				across: place.across.to_metres(),
+			}
 		},
 	)
 
@@ -129,8 +132,8 @@ previous_stop = |stop|
 
 ## The stop after this step's clicks and keys. A click that isn't on a mark
 ## leaves the stop as it was.
-stepped : Stop, Input.Snapshot -> Stop
-stepped = |stop, input|
+stop_after_input : Stop, Input.Snapshot -> Stop
+stop_after_input = |stop, input|
 	match Click.click_point(input) {
 		Ok(spot) =>
 			match mark_under(spot) {
@@ -165,10 +168,7 @@ target_color = RgbColor.of(0xe8c84a)
 ## The road from above, with the rider on the road's middle line at the left of
 ## the picture, and 23 pixels to a metre along the road.
 road_plan : PlanView
-road_plan = {
-	origin: { x: 30.0, y: WidgetPage.picture_bottom_y / 2.0 },
-	pixels_a_metre: 23.0,
-}
+road_plan = { origin: { x: 30.0, y: WidgetPage.picture_bottom_y / 2.0 }, pixels_a_metre: 23.0 }
 
 ## How many times its true width the road is drawn across. At its true width
 ## the arcs would be too close together to tell apart.
@@ -181,11 +181,19 @@ canvas_point = |{ forward, across }|
 	road_plan.canvas_point({ metres_right: forward, metres_down: across * across_stretch })
 
 ## A line right along the road, `across` metres from its middle.
-road_line : { across : F64, color : RgbColor, width : F64 } -> Shapes.Shape
+road_line : {
+	across : F64,
+	color : RgbColor,
+	width : F64,
+} -> Shapes.Shape
 road_line = |{ across, color, width }| {
 	y = canvas_point({ forward: 0.0, across }).y
 	Shapes.line(
-		{ from: { x: 0.0, y }, to: { x: WidgetPage.canvas_width, y }, width },
+		{
+			from: { x: 0.0, y },
+			to: { x: WidgetPage.canvas_width, y },
+			width,
+		},
 		Brush.flat(color),
 	)
 }
@@ -193,19 +201,31 @@ road_line = |{ across, color, width }| {
 ## The road from above, with the line the rider is aiming for.
 road_shapes : List(Shapes.Shape)
 road_shapes = {
-	half_lane = Geom.road_half_width.to_metres()
+	half_road = Geom.road_half_width.to_metres()
 	[
 		WidgetPage.picture_backdrop(PlanView.ground_color),
 		Rect({
 			x: 0.0,
-			y: canvas_point({ forward: 0.0, across: -half_lane }).y,
+			y: canvas_point({ forward: 0.0, across: -half_road }).y,
 			width: WidgetPage.canvas_width,
-			height: 2.0 * half_lane * across_stretch * road_plan.pixels_a_metre,
+			height: 2.0 * half_road * across_stretch * road_plan.pixels_a_metre,
 			fill: Brush.flat(PlanView.road_color),
 		}),
-		road_line({ across: -half_lane, color: line_color, width: 2.0 }),
-		road_line({ across: half_lane, color: line_color, width: 2.0 }),
-		road_line({ across: LeanSearch.aimed_across.to_metres(), color: target_color, width: 1.0 }),
+		road_line({
+			across: -half_road,
+			color: line_color,
+			width: 2.0,
+		}),
+		road_line({
+			across: half_road,
+			color: line_color,
+			width: 2.0,
+		}),
+		road_line({
+			across: LeanSearch.aimed_across.to_metres(),
+			color: target_color,
+			width: 1.0,
+		}),
 	]
 }
 
@@ -249,7 +269,12 @@ outcome_color = |outcome|
 ## The arcs for a list of tries.
 tries_shapes : List(Rehearsal), F64 -> List(Shapes.Shape)
 tries_shapes = |tries, width|
-	tries.join_map(|{ path_points, lean_try }| arc_shapes(path_points, { color: outcome_color(lean_try.outcome), width }))
+	tries.join_map(
+		|{ path_points, lean_try }| arc_shapes(
+			path_points,
+			{ color: outcome_color(lean_try.outcome), width },
+		),
+	)
 
 rider_mark : Shapes.Shape
 rider_mark = {
@@ -276,12 +301,7 @@ caption_shapes = [
 ## tries are over the arc that was chosen is.
 picture_shapes : Stop -> List(Shapes.Shape)
 picture_shapes = |stop|
-	[
-		road_shapes,
-		arcs_shown(stop),
-		[rider_mark],
-		caption_shapes,
-	].join()
+	[road_shapes, arcs_shown(stop), [rider_mark], caption_shapes].join()
 
 ## The arcs on show at `stop`, the boldest last.
 arcs_shown : Stop -> List(Shapes.Shape)
@@ -293,7 +313,9 @@ arcs_shown = |stop|
 			newest = rehearsals.drop_first(try - 1).take_first(1)
 			tries_shapes(earlier, 1.0).concat(tries_shapes(newest, 4.0))
 		}
-		Choice => tries_shapes(rehearsals, 1.0).concat(arc_shapes(chosen_points, { color: kept_color, width: 4.0 }))
+		Choice => tries_shapes(rehearsals, 1.0).concat(
+			arc_shapes(chosen_points, { color: kept_color, width: 4.0 }),
+		)
 	}
 
 ## A lean in degrees, and which way.
@@ -354,13 +376,15 @@ status_lines = |stop|
 			]
 		Shown(try) =>
 			match rehearsals.get(try - 1) {
-				Ok(rehearsal) =>
+				Ok(rehearsal) => {
+					tried = lean_text(LeanSearch.tried_lean(rehearsal.lean_try))
 					[
-						"Try ${try.to_str()} of ${rehearsals.len().to_str()}: lean ${lean_text(LeanSearch.tried_lean(rehearsal.lean_try))}",
+						"Try ${try.to_str()} of ${rehearsals.len().to_str()}: lean ${tried}",
 						"Between ${lean_text(rehearsal.lean_try.low)} and ${lean_text(rehearsal.lean_try.high)}",
 						outcome_text(rehearsal),
 						verdict_text(lean_correction_of(rehearsal)),
 					]
+				}
 				Err(OutOfBounds) => crash "RehearsalWidgetApp.status_lines: this try is in the list"
 			}
 		Choice =>
@@ -496,7 +520,7 @@ expect previous_stop(Start) == Start
 
 ## The stop after a click at `spot` from the third try.
 clicked_from_three : Point.Point -> Stop
-clicked_from_three = |spot| stepped(Shown(3), Click.click_at(spot))
+clicked_from_three = |spot| stop_after_input(Shown(3), Click.click_at(spot))
 
 # A click on a mark goes straight to that stop, either way along the row.
 expect clicked_from_three({ x: mark_x(9), y: marks_y }) == Shown(9)
@@ -512,8 +536,8 @@ expect clicked_from_three({ x: 2.0, y: marks_y }) == Shown(3)
 expect clicked_from_three({ x: 620.0, y: marks_y }) == Shown(3)
 
 # Holding the button on another mark isn't a click, and nor is nothing at all.
-expect stepped(Shown(3), Click.held_at({ x: mark_x(9), y: marks_y })) == Shown(3)
-expect stepped(Shown(3), Input.none) == Shown(3)
+expect stop_after_input(Shown(3), Click.held_at({ x: mark_x(9), y: marks_y })) == Shown(3)
+expect stop_after_input(Shown(3), Input.none) == Shown(3)
 
 # Each mark reaches halfway to the next, and the row's reach ends above and below.
 expect mark_under({ x: mark_x(5) + 10.0, y: marks_y }) == Ok(Shown(5))
@@ -535,7 +559,10 @@ expect
 expect mark_color({ mark: Shown(5), current: Shown(5) }) == current_color
 expect mark_color({ mark: Shown(4), current: Shown(5) }) != current_color
 expect mark_color({ mark: Shown(6), current: Shown(5) }) != current_color
-expect mark_color({ mark: Shown(4), current: Shown(5) }) != mark_color({ mark: Shown(6), current: Shown(5) })
+expect mark_color({
+	mark: Shown(4),
+	current: Shown(5),
+}) != mark_color({ mark: Shown(6), current: Shown(5) })
 
 # A mark for each try and one for the choice, then the words.
 expect marks(Start).len() > last_stop

@@ -186,7 +186,10 @@ road_plan = { origin: { x: 0.0, y: 52.0 }, pixels_a_metre: 2.4 }
 ## so the rider's right is down the canvas.
 canvas_point : { along : Along, across : Across } -> Point.Point
 canvas_point = |{ along, across }|
-	road_plan.canvas_point({ metres_right: along.to_metres() - left_edge_metres, metres_down: across.to_metres() })
+	road_plan.canvas_point({
+		metres_right: along.to_metres() - left_edge_metres,
+		metres_down: across.to_metres(),
+	})
 
 road : Shapes.Shape
 road = {
@@ -331,8 +334,10 @@ expect World.route.segment_at(first_rider.motorcycle.route_place.segment_index).
 expect {
 	played = state_at_step(stretch_states, last_step)
 	ridden = Tour.at_step(last_step).instant().rider
-	played.motorcycle.route_place.segment_index == ridden.motorcycle.route_place.segment_index
-		and played.motorcycle.route_place.along.to_metres() == ridden.motorcycle.route_place.along.to_metres()
+	played_place = played.motorcycle.route_place
+	ridden_place = ridden.motorcycle.route_place
+	played_place.segment_index == ridden_place.segment_index
+		and played_place.along.to_metres() == ridden_place.along.to_metres()
 		and played.motorcycle.speed.to_metres_a_step() == ridden.motorcycle.speed.to_metres_a_step()
 		and played.eyes.gaze_yaw == ridden.eyes.gaze_yaw
 		and played.eyes.look_depth.to_f64() == ridden.eyes.look_depth.to_f64()
@@ -355,10 +360,13 @@ expect stretch_states.all(|rider| gaze_degrees(rider) >= 0.0)
 # The whole stretch stays on the canvas, and on the one segment.
 expect
 	stretch_states.all(
-		|rider|
-			rider.motorcycle.route_place.segment_index == first_rider.motorcycle.route_place.segment_index
-				and canvas_point(rider.motorcycle.route_place.road_point()).x > 0.0
-				and canvas_point(rider.motorcycle.route_place.road_point()).x < WidgetPage.canvas_width,
+		|rider| {
+			place = rider.motorcycle.route_place
+			canvas_x = canvas_point(place.road_point()).x
+			place.segment_index == first_rider.motorcycle.route_place.segment_index
+				and canvas_x > 0.0
+				and canvas_x < WidgetPage.canvas_width
+		},
 	)
 
 ## A model at its start, asking for `step`.
@@ -412,7 +420,10 @@ expect shown_offset(left_alone(asking_for(870), 1)) == 8
 expect {
 	catching_up = left_alone(asking_for(last_step), 2)
 	stepped = with_buttons(catching_up, VcrButtons.click_on(StepForward))
-	stepped.transport == { at: Clock.at_step(first_step).plus(Steps.of((2 * played_a_frame + 1).to_u32_wrap())), motion: Stopped }
+	stepped.transport == {
+		at: Clock.at_step(first_step).plus(Steps.of((2 * played_a_frame + 1).to_u32_wrap())),
+		motion: Stopped,
+	}
 }
 
 # The pig that catches the eye is in the picture, and is one of the herd.
