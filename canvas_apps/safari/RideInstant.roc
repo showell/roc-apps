@@ -45,6 +45,10 @@ RideInstant := {
 	rider_distance : Route, RideInstant -> Distance
 	rider_distance = |route, instant| instant.rider.motorcycle.route_place.distance_along(route)
 
+	## The index of the segment the rider of `instant` is on.
+	rider_segment_index : RideInstant -> Route.SegmentIndex
+	rider_segment_index = |instant| instant.rider.motorcycle.route_place.segment_index
+
 	## Where the encounter on the rider's segment of `route` has got to at
 	## `instant`.
 	encounter_stage : Route, RideInstant -> Animation.Stage

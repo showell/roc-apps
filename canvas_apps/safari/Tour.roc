@@ -125,7 +125,7 @@ tour_after_step = |Tour.(tour)|
 
 ## The index of the segment the rider is on.
 rider_segment_index : Tour -> Route.SegmentIndex
-rider_segment_index = |Tour.(tour)| tour.instant.rider.motorcycle.route_place.segment_index
+rider_segment_index = |Tour.(tour)| tour.instant.rider_segment_index()
 
 # The next segment from the start is the second, reached on the step that
 # leaves the first.
