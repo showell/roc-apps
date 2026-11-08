@@ -25,10 +25,7 @@ Beacon :: Fraction.{
 	## The beacon of the tower at `place` on the segment at `segment`, as it
 	## shines at `clock`.
 	at : { segment : Route.SegmentIndex, place : Beacon.TowerPlace }, Clock -> Beacon
-	at = |{ segment, place }, clock| {
-		phase = clock.steps_since(Clock.start).plus(head_start({ segment, place }))
-		Beacon.(beacon_brightness(phase))
-	}
+	at = |tower, clock| Beacon.(beacon_brightness(Beacon.blink_phase(tower, clock)))
 
 	## The phase of the beacon of the tower at `place` on the segment at
 	## `segment` at `clock`: the steps since the ride's start, plus the
@@ -226,23 +223,6 @@ expect
 		|(segment, place, step, want)| {
 			phase = Beacon.blink_phase({ segment, place }, Clock.at_step(step))
 			phase.wrapped_to(Beacon.beacon_period).to_f64() == want
-		},
-	)
-
-# A beacon's brightness is its phase's, so the phase a widget reads out is the
-# one the beacon shines by.
-expect
-	[
-		(0, AtEnd, 0),
-		(1, Midway, 30),
-		(4, AtEnd, 5431),
-		(7, Midway, 5519),
-	].all(
-		|(n, place, step)| {
-			tower = { segment: Route.SegmentIndex.number(n), place }
-			clock = Clock.at_step(step)
-			phase = Beacon.blink_phase(tower, clock)
-			Beacon.at(tower, clock).brightness() == beacon_brightness(phase)
 		},
 	)
 
