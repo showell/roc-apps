@@ -19,11 +19,13 @@ clicks through one step's twelve tries at a lean, `stills_widget` lays out
 every pose of the cat and the bird and shows the one clicked large, with its
 polygons counted, `gaze_widget` drags the rider past the pig that catches
 the eye, `tree_widget` is a still picture of three conifers at the three
-distances where their crowns differ, `frame_widget` is a still of step 1,570 of the ride
+distances where their crowns differ, `truck_widget` is a still picture of the
+plain truck seen from behind, from behind and to the left, and from the left,
+`frame_widget` is a still of step 1,570 of the ride
 with the layers its address names, and `shapes_widget` is a still picture
 of a triangle and a rectangle, for the book to quote the code under it.
 
-Six of the twenty-one — all but `safari`, `trick_or_treat` and the widgets — are
+Six of the twenty-two — all but `safari`, `trick_or_treat` and the widgets — are
 roc-ray's own examples, by Luke Boswell, taken with only small changes to fit this scheme.
 
 **The native side runs on roc-ray 0.12.0** (`23eec6e`), with the

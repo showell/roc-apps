@@ -1891,6 +1891,10 @@ That's the pig's part of the rider's step. The truck is the other stepped thing.
 
 All through the ride, the rider follows a truck up the road. How the truck moves comes in the next chapter, and its lights in the one after. This chapter draws it: a plain truck, standing at a place on the road that's already known, and facing along the road.
 
+```widget truck
+A truck from behind, from behind and to one side, and from the side.
+```
+
 New in this chapter:
 
 - Modules: `TruckSighting`, `TruckShape`, `TruckBody`
