@@ -3,8 +3,8 @@
 ## It turns with the rider's gaze, and a little with the motorcycle's lean, as a
 ## rider's head turns into a bend.
 import Angle
+import Animation
 import Attention
-import EncounterPlan
 import Fraction
 import Geom
 import Lens
@@ -36,17 +36,17 @@ RiderCamera := {
 }.{
 
 	## The camera for `rider` on `route`, with the encounter on their segment at
-	## `encounter_timing`. Its heading is the bearing the rider's segment sets off on,
+	## `encounter_stage`. Its heading is the bearing the rider's segment sets off on,
 	## turned by the camera's yaw.
-	of : Rider, { route : Route, encounter_timing : EncounterPlan.Timing } -> RiderCamera
-	of = |rider, { route, encounter_timing }| {
+	of : Rider, { route : Route, encounter_stage : Animation.Stage } -> RiderCamera
+	of = |rider, { route, encounter_stage }| {
 		route_place = rider.motorcycle.route_place
 		yaw = rider.motorcycle.yaw.plus(rider.head_yaw())
 		{
 			route_place,
 			yaw,
 			heading: route.bearing_of(route_place.segment_index).plus(yaw),
-			focal_length: ride_focal(rider, { route, encounter_timing }),
+			focal_length: ride_focal(rider, { route, encounter_stage }),
 			roll: rider_roll(rider.motorcycle.lean),
 		}
 	}
@@ -87,10 +87,10 @@ rider_roll = |lean|
 ## The camera's focal length for where the rider is and how they ride. The
 ## view widens as the rider leans, and as the rider's attention is caught, by
 ## an encounter on the road or by a look to the side.
-ride_focal : Rider, { route : Route, encounter_timing : EncounterPlan.Timing } -> Pixels
-ride_focal = |rider, { route, encounter_timing }| {
+ride_focal : Rider, { route : Route, encounter_stage : Animation.Stage } -> Pixels
+ride_focal = |rider, { route, encounter_stage }| {
 	segment = rider.motorcycle.route_place.segment_on(route)
-	attention = rider.attention({ segment, encounter_timing })
+	attention = rider.attention({ segment, encounter_stage })
 	focal_length_for({ lean: rider.motorcycle.lean, attention })
 }
 

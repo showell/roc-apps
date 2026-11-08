@@ -1,7 +1,7 @@
 ## The rider's mind: every decision the rider makes in a step. It chooses how
 ## far to lean, how hard to accelerate and where to look. Motorcycle and
 ## RiderEyes hold the dynamics, which carry those choices out.
-import EncounterPlan
+import Animation
 import Gaze
 import LeanSearch
 import Motorcycle
@@ -12,11 +12,11 @@ RiderMind :: [].{
 
 	## The lean toward the best line, and the acceleration the throttle gives
 	## the motorcycle once it leans so, on `segment`, the one it is on, with the
-	## segment's encounter at `encounter_timing`.
+	## segment's encounter at `encounter_stage`.
 	controls : Motorcycle,
 	{
 		segment : Segment,
-		encounter_timing : EncounterPlan.Timing,
+		encounter_stage : Animation.Stage,
 	} -> Motorcycle.Controls
 	controls = |motorcycle, ride| {
 		lean = LeanSearch.best_lean(motorcycle)

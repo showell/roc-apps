@@ -5,9 +5,6 @@
 ## segment behind ended before the rider left it, so it has no pose. A segment
 ## holds one encounter at most, a cat's or a bird's.
 import Animation
-import EncounterPlan
-import BirdFlight
-import CatCrossing
 import Geom
 import PosedBird
 import PosedCat
@@ -21,53 +18,43 @@ EncounterPoses :: [].{
 	PosedAnimal(kind) : { place : SegmentPlace, animal : Geom.Placed(kind) }
 
 	## The cats on `road`, with the encounter on the rider's segment at
-	## `encounter_timing`, in the order of `RoadAhead.segments_in_view`.
-	cat_poses : RoadAhead.RoadView,
-	EncounterPlan.Timing -> List(
-		EncounterPoses.PosedAnimal(PosedCat),
-	)
-	cat_poses = |road, encounter_timing|
+	## `encounter_stage`, in the order of `RoadAhead.segments_in_view`.
+	cat_poses : RoadAhead.RoadView, Animation.Stage -> List(EncounterPoses.PosedAnimal(PosedCat))
+	cat_poses = |road, encounter_stage|
 		RoadAhead.segments_in_view(road).keep_oks(
-			|in_view| segment_cat({ in_view, encounter_timing }),
+			|in_view| segment_cat({ in_view, encounter_stage }),
 		)
 
 	## The birds on `road`, with the encounter on the rider's segment at
-	## `encounter_timing`, in the order of `RoadAhead.segments_in_view`.
-	bird_poses : RoadAhead.RoadView,
-	EncounterPlan.Timing -> List(
-		EncounterPoses.PosedAnimal(PosedBird),
-	)
-	bird_poses = |road, encounter_timing|
+	## `encounter_stage`, in the order of `RoadAhead.segments_in_view`.
+	bird_poses : RoadAhead.RoadView, Animation.Stage -> List(EncounterPoses.PosedAnimal(PosedBird))
+	bird_poses = |road, encounter_stage|
 		RoadAhead.segments_in_view(road).keep_oks(
-			|in_view| segment_bird({ in_view, encounter_timing }),
+			|in_view| segment_bird({ in_view, encounter_stage }),
 		)
 }
 
 ## The cat on a segment in view, if it has one that isn't over.
 segment_cat : {
 	in_view : RoadAhead.SegmentInView,
-	encounter_timing : EncounterPlan.Timing,
+	encounter_stage : Animation.Stage,
 } -> Try(EncounterPoses.PosedAnimal(PosedCat), [NoPose])
-segment_cat = |{ in_view, encounter_timing }|
+segment_cat = |{ in_view, encounter_stage }|
 	match in_view.segment.encounter {
-		CatCrosses(crossing) => {
-			rider_stage = CatCrossing.crossing_stage(encounter_timing)
-			posed_in_view(in_view, rider_stage, |stage| crossing.instant_at(stage))
-		}
+		CatCrosses(crossing) =>
+			posed_in_view(in_view, encounter_stage, |stage| crossing.instant_at(stage))
 		BirdHere(_) | QuietRoad => Err(NoPose)
 	}
 
 ## The bird on a segment in view, if it has one that isn't over.
 segment_bird : {
 	in_view : RoadAhead.SegmentInView,
-	encounter_timing : EncounterPlan.Timing,
+	encounter_stage : Animation.Stage,
 } -> Try(EncounterPoses.PosedAnimal(PosedBird), [NoPose])
-segment_bird = |{ in_view, encounter_timing }|
+segment_bird = |{ in_view, encounter_stage }|
 	match in_view.segment.encounter {
-		BirdHere(flight) => {
-			rider_stage = BirdFlight.flight_stage(encounter_timing)
-			posed_in_view(in_view, rider_stage, |stage| flight.instant_at(stage))
-		}
+		BirdHere(flight) =>
+			posed_in_view(in_view, encounter_stage, |stage| flight.instant_at(stage))
 		CatCrosses(_) | QuietRoad => Err(NoPose)
 	}
 

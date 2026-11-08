@@ -50,11 +50,14 @@ birds_seen_on : RoadAhead.RoadView,
 	camera : Pipeline.SightingCamera,
 	encounter_timing : EncounterPlan.Timing,
 } -> List(Pipeline.Sighted(PosedBird))
-birds_seen_on = |road_view, { camera, encounter_timing }|
+birds_seen_on = |road_view, { camera, encounter_timing }| {
+	rider_segment = RoadAhead.segment_at(road_view, SegmentPlace.Position.first)
+	encounter_stage = rider_segment.encounter_stage(encounter_timing)
 	EncounterSighting.animals_in_view(
 		road_view,
-		{ camera, animals: EncounterPoses.bird_poses(road_view, encounter_timing) },
+		{ camera, animals: EncounterPoses.bird_poses(road_view, encounter_stage) },
 	)
+}
 
 ## The cats in view on the cat route, before its encounter is planned, for a
 ## rider `along` metres into its first segment.
@@ -68,7 +71,7 @@ ride_sightings = |along| {
 				..Fixtures.origin_camera,
 				vantage: { ..Fixtures.origin, along: Along.metres(along) },
 			},
-			animals: EncounterPoses.cat_poses(road_view, Unplanned),
+			animals: EncounterPoses.cat_poses(road_view, Waiting),
 		},
 	)
 }
@@ -243,7 +246,7 @@ cat_right = |along| first_cat(along).spot.foot().right()
 
 # The cat route's one cat is on its second segment.
 expect
-	EncounterPoses.cat_poses(Fixtures.cat_road, Unplanned).map(|cat| cat.place)
+	EncounterPoses.cat_poses(Fixtures.cat_road, Waiting).map(|cat| cat.place)
 		== [Ahead(Fixtures.second_position)]
 expect
 	[
@@ -364,11 +367,13 @@ expect {
 ## Whether `segment`'s encounter holds back the throttle at step `now`, its
 ## animation having started at step 100.
 is_throttle_held : Segment, U32 -> Bool
-is_throttle_held = |segment, now|
-	match EncounterReaction.encounter_throttle(segment, flight_at_step(now)) {
+is_throttle_held = |segment, now| {
+	stage = segment.encounter_stage(flight_at_step(now))
+	match EncounterReaction.encounter_throttle(segment, stage) {
 		AtMost(_) => True
 		NoLimit => False
 	}
+}
 
 # The rider eases off for a cat for exactly the steps it crosses, and never for a
 # bird.

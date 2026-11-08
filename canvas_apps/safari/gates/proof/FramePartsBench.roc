@@ -98,7 +98,8 @@ part_size = |part, { route, instant }| {
 			} else if part == "ground" {
 				FrameView.ground_shapes(road, camera).len()
 			} else {
-				kind_size(part, { road, camera, instant })
+				facts = FrameView.ride_facts(route, instant)
+				kind_size(part, { road, camera, facts })
 			}
 		}
 	}
@@ -110,12 +111,11 @@ kind_size : Str,
 {
 	road : RoadAhead.RoadView,
 	camera : RiderCamera,
-	instant : RideInstant,
+	facts : Scene.RideFacts,
 } -> U64
-kind_size = |part, { road, camera, instant }| {
+kind_size = |part, { road, camera, facts }| {
 	cam = RiderCamera.sighting_camera(camera)
 	focal_length = cam.focal_length
-	facts = FrameView.ride_facts(instant)
 	if part == "scene" {
 		Scene.scene_shape_lists(Scene.scene_in_view(road, { camera: cam, facts })).join().len()
 	} else if part == "scene_in_view" {
@@ -143,14 +143,14 @@ kind_size = |part, { road, camera, instant }| {
 			),
 		)
 	} else if part == "cats" {
-		cats = EncounterPoses.cat_poses(road, facts.encounter_timing)
+		cats = EncounterPoses.cat_poses(road, facts.encounter_stage)
 		shape_count(
 			EncounterSighting.animals_in_view(road, { camera: cam, animals: cats }).map(
 				|cat| Pipeline.rendering_of(cat, { focal_length, context: {} }),
 			),
 		)
 	} else if part == "birds" {
-		birds = EncounterPoses.bird_poses(road, facts.encounter_timing)
+		birds = EncounterPoses.bird_poses(road, facts.encounter_stage)
 		shape_count(
 			EncounterSighting.animals_in_view(road, { camera: cam, animals: birds }).map(
 				|bird| Pipeline.rendering_of(bird, { focal_length, context: {} }),
@@ -251,7 +251,7 @@ counts_line = |route, instant| {
 	camera = FrameView.camera_at(route, instant)
 	road = RoadAhead.RoadView.ahead_of(route, camera.route_place.segment_index)
 	cam = RiderCamera.sighting_camera(camera)
-	scene = Scene.scene_in_view(road, { camera: cam, facts: FrameView.ride_facts(instant) })
+	scene = Scene.scene_in_view(road, { camera: cam, facts: FrameView.ride_facts(route, instant) })
 	kinds = [
 		("trees", scene.trees),
 		("birds", scene.birds),

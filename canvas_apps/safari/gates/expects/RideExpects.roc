@@ -149,7 +149,7 @@ expect !placed_rider(0, 499.0).is_finished(World.route)
 ## That rider a step on.
 rider_a_step_after : U32, F64 -> Rider
 rider_a_step_after = |index, along|
-	placed_rider(index, along).next({ route: World.route, encounter_timing: Unplanned })
+	placed_rider(index, along).next({ route: World.route, encounter_stage: Waiting })
 
 # A rider near the first bend crosses onto the next segment's road, and one well
 # short of it, which the bend would carry far off that road, stays.
@@ -346,14 +346,13 @@ ride_encounters = {
 	var $is_faded_at_each_exit = True
 	while !$instant.rider.is_finished(World.route) {
 		segment = World.route.segment_at(rider_segment_index($instant))
-		timing = RideInstant.encounter_timing($instant)
+		stage = RideInstant.encounter_stage(World.route, $instant)
 		next = instant_after($instant)
 		is_leaving =
 			rider_segment_index(next) != rider_segment_index($instant)
 				or next.rider.is_finished(World.route)
 		match segment.encounter {
 			BirdHere(flight) => {
-				stage = BirdFlight.flight_stage(timing)
 				match stage {
 					Playing(_) => {
 						bird = flight.instant_at(stage)
@@ -365,7 +364,7 @@ ride_encounters = {
 				}
 			}
 			CatCrosses(_) => {
-				match CatCrossing.crossing_stage(timing) {
+				match stage {
 					Playing(_) => {
 						$crossing_step_count = $crossing_step_count + 1
 					}
@@ -374,7 +373,7 @@ ride_encounters = {
 				if is_leaving {
 					$cat_exits = $cat_exits + 1
 					$is_faded_at_each_exit = $is_faded_at_each_exit
-						and EncounterReaction.encounter_attention(segment, timing) == Attention.none
+						and EncounterReaction.encounter_attention(segment, stage) == Attention.none
 				}
 			}
 			QuietRoad => {}
