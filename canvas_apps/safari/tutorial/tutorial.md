@@ -2051,7 +2051,7 @@ Each lamp switches on its own, so each gets its own field:
 
 Each frame, `FrameView` reads the truck's pace and the sky's darkness, and hands both to `Truck`:
 
-{{code FrameView.ride_facts from "lit_truck: Truck.at(" to "lit_truck: Truck.at("}}
+{{code FrameView.ride_facts from "truck: Truck.at(" to "truck: Truck.at("}}
 
 `Truck` applies both rules to what it's handed, in one function:
 

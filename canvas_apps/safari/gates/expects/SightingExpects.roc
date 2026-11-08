@@ -508,7 +508,7 @@ truck_seen_from = |vantage, lead|
 			camera: { ..Fixtures.origin_camera, vantage },
 			truck: {
 				route_position: Distance.metres(vantage.along.to_metres() + lead),
-				lit_truck: { headlights: Off, brake_lights: Off },
+				truck: { headlights: Off, brake_lights: Off },
 			},
 		},
 	)
@@ -518,8 +518,8 @@ truck_lead_of : F64 -> TruckSighting.TruckFate
 truck_lead_of = |lead| truck_seen_from(Fixtures.origin, lead)
 
 ## Where the truck is, for a lead that puts it in view.
-lit_truck_of : F64 -> Pipeline.Sighted(Truck)
-lit_truck_of = |lead| truck_lead_of(lead) ?? crash "SightingExpects: this lead puts the truck in view"
+sighted_truck_of : F64 -> Pipeline.Sighted(Truck)
+sighted_truck_of = |lead| truck_lead_of(lead) ?? crash "SightingExpects: this lead puts the truck in view"
 
 # The truck is in view on the road ahead, and not past its end or behind the
 # rider.
@@ -542,7 +542,7 @@ expect
 		(499.0, SegmentPlace.Position.first),
 		(600.0, Fixtures.second_position),
 		(900.0, Fixtures.second_position.next()),
-	].all(|(lead, want)| lit_truck_of(lead).spot.place() == Ahead(want))
+	].all(|(lead, want)| sighted_truck_of(lead).spot.place() == Ahead(want))
 
 expect
 	[
@@ -550,7 +550,7 @@ expect
 		(499.0, 499.0),
 		(600.0, 100.0),
 		(900.0, 80.0),
-	].all(|(lead, want)| lit_truck_of(lead).spot.road_point().along.to_metres() == want)
+	].all(|(lead, want)| sighted_truck_of(lead).spot.road_point().along.to_metres() == want)
 
 # The route's herds, through World. PigHerd and CowHerd don't import World. The
 # route's big herd is seven rows of seven, and its two-row herd four pigs in front

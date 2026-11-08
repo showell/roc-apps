@@ -37,7 +37,7 @@ Truck := { headlights : Truck.Lamp, brake_lights : Truck.Lamp }.{
 	## its trailer is centered, and seen from the camera's vantage, so those are
 	## its context.
 	scenery_picture : Truck, TruckShape.TruckSetting -> Picture
-	scenery_picture = |lit_truck, setting| Picture.from_shapes(truck_shapes(lit_truck, setting))
+	scenery_picture = |truck, setting| Picture.from_shapes(truck_shapes(truck, setting))
 }
 
 ## The headlights come on once the sky is 41.2% dark, about when the sun sinks
@@ -48,14 +48,14 @@ headlights_on_darkness = Fraction.of(0.412)
 
 ## The truck's shapes: the beams under the body, the brake lights over it.
 truck_shapes : Truck, TruckShape.TruckSetting -> List(Shapes.Shape)
-truck_shapes = |lit_truck, setting| {
+truck_shapes = |truck, setting| {
 	beams =
-		match lit_truck.headlights {
+		match truck.headlights {
 			On => TruckLights.headlight_beam_shapes(setting)
 			Off => []
 		}
 	brake_lights =
-		match lit_truck.brake_lights {
+		match truck.brake_lights {
 			On => TruckLights.brake_light_shapes(setting)
 			Off => []
 		}

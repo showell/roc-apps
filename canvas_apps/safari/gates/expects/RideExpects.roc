@@ -231,8 +231,8 @@ first_step_where = |holds| {
 ## Whether the truck's headlights are on at `clock`.
 headlights_on : Clock -> Bool
 headlights_on = |clock| {
-	lit_truck = Truck.at(NotSlowing, Sky.darkness_at(clock))
-	lit_truck == { headlights: On, brake_lights: Off }
+	truck = Truck.at(NotSlowing, Sky.darkness_at(clock))
+	truck == { headlights: On, brake_lights: Off }
 }
 
 # The headlights come on at step 3,555, the first step the sun is behind the
