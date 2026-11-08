@@ -87,7 +87,7 @@ part_size = |part, { route, instant }| {
 		camera = FrameView.camera_at(route, instant)
 		if part == "sky" {
 			sky = Sky.colors_at(instant.clock)
-			sun = Sun.sighting(camera, instant.clock)
+			sun = Sun.sun_in_view(camera, instant.clock)
 			[[Sky.sky_shape(sky)], Sun.sun_shapes(sun), [Grass.grass_shape]].join().len()
 		} else if part == "skyline" {
 			FrameView.skyline_shapes(camera, instant.clock).len()

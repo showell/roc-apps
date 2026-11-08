@@ -780,11 +780,11 @@ Two tags say whether the sun is in view, so there's no `null` and no off-screen 
 
 Opaque types do the most work from here on. A `Bearing` and a `Turn` are both floats underneath, but only the `Angle` module can build or open one. `Sun.sighting` also takes one record argument, destructured in its parameter list.
 
-{{code Sun.sighting}}
+{{code Sun.sun_in_view}}
 
 `turn_from_view.abs() >= visible_turn_limit` compares two `Turn`s. The code never touches radians until `Sun.place` has to do trigonometry, because `.tan()` works on a float.
 
-{{code Sun.place}}
+{{code Sun.sun_on_screen}}
 
 Its caller, `RideInstant.sun`, is short enough to read whole:
 
@@ -2523,13 +2523,13 @@ From there to the screen is a pinhole camera, which is similar triangles. Dividi
 
 The focal length comes from a lens. `resting_focal` is a value computed from other values, with no function in sight, and `field_of_view` is a `Turn`, so taking half of it needs no comment about radians. [check: whether a value like this inside a `.{ }` block is evaluated at compile time, as top-level values are.]
 
-{{code Lens.resting_focal}}
+{{code Lens.resting_focal_length}}
 
 The view widens as the rider leans. One `Fraction` goes in, and a focal length comes out. `RideFocal.ride_focal`, from the chapter on what a cat does to the rider, calls this through `cam_focal`, taking the wider of what the lean and the rider's attention ask for:
 
-{{code RiderCamera.focal_for_lean}}
+{{code RiderCamera.focal_length_for_lean}}
 
-{{code RiderCamera.focal_for}}
+{{code RiderCamera.focal_length_for}}
 
 ### Round the bends
 

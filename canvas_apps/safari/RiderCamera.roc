@@ -103,16 +103,16 @@ ride_focal = |rider, { route, encounter_timing }| {
 	attention =
 		EncounterReaction.encounter_attention(seg, encounter_timing)
 			.max(Gaze.gaze_attention(rider.eyes.look_depth))
-	focal_for({ lean: rider.motorcycle.lean, attention })
+	focal_length_for({ lean: rider.motorcycle.lean, attention })
 }
 
 ## The focal length the camera uses: the shorter of the two, which
 ## gives the wider view. A lean to either side widens it alike.
-focal_for : { lean : Angle.Lean, attention : Attention } -> Pixels
-focal_for = |{ lean, attention }| {
+focal_length_for : { lean : Angle.Lean, attention : Attention } -> Pixels
+focal_length_for = |{ lean, attention }| {
 	lean_fraction = Fraction.clamp(lean.abs().ratio_to(RiderCamera.full_lean))
-	for_lean = focal_for_lean(lean_fraction)
-	for_attention = focal_for_attention(attention)
+	for_lean = focal_length_for_lean(lean_fraction)
+	for_attention = focal_length_for_attention(attention)
 	if for_lean < for_attention {
 		for_lean
 	} else {
@@ -121,26 +121,27 @@ focal_for = |{ lean, attention }| {
 }
 
 ## How much of the resting focal length is left at `RiderCamera.full_lean`.
-focal_factor_at_full_lean : Fraction
-focal_factor_at_full_lean = Fraction.of(0.35)
+focal_length_share_at_full_lean : Fraction
+focal_length_share_at_full_lean = Fraction.of(0.35)
 
 ## How much of the resting focal length is left at an attention of 1. It is no
 ## minimum, because a cat in the road holds the eye harder than that.
-focal_factor_at_full_attention : Fraction
-focal_factor_at_full_attention = Fraction.of(0.61)
+focal_length_share_at_full_attention : Fraction
+focal_length_share_at_full_attention = Fraction.of(0.61)
 
 ## The focal length for a lean, from 0 (upright) to 1 (`RiderCamera.full_lean`).
-focal_for_lean : Fraction -> Pixels
-focal_for_lean = |lean_fraction| {
+focal_length_for_lean : Fraction -> Pixels
+focal_length_for_lean = |lean_fraction| {
 	lean = lean_fraction.to_f64()
-	Lens.resting_focal.times(1.0 - focal_factor_at_full_lean.complement().to_f64() * lean * lean)
+	lost_at_full_lean = focal_length_share_at_full_lean.complement().to_f64()
+	Lens.resting_focal_length.times(1.0 - lost_at_full_lean * lean * lean)
 }
 
 ## The focal length for the rider's attention.
-focal_for_attention : Attention -> Pixels
-focal_for_attention = |attention| {
-	lost_at_full_attention = focal_factor_at_full_attention.complement().to_f64()
-	Lens.resting_focal.times(1.0 - lost_at_full_attention * attention.to_f64())
+focal_length_for_attention : Attention -> Pixels
+focal_length_for_attention = |attention| {
+	lost_at_full_attention = focal_length_share_at_full_attention.complement().to_f64()
+	Lens.resting_focal_length.times(1.0 - lost_at_full_attention * attention.to_f64())
 }
 
 ## Whether `got` is within 1e-9 of `want`, scaled up by a want past 1.
@@ -154,7 +155,7 @@ expect
 		(0.5, 574.1154987103301),
 		(0.75, 434.8710680529739),
 		(1.0, 239.92886513267527),
-	].all(|(lean, want)| is_close(focal_for_lean(Fraction.of(lean)).to_f64(), want))
+	].all(|(lean, want)| is_close(focal_length_for_lean(Fraction.of(lean)).to_f64(), want))
 
 expect
 	[
@@ -162,7 +163,12 @@ expect
 		(0.5, 551.8363898051531),
 		(1.0, 418.16173637409116),
 		(1.5, 284.4870829430293),
-	].all(|(strength, want)| is_close(focal_for_attention(Attention.of(strength)).to_f64(), want))
+	].all(
+		|(strength, want)| {
+			got = focal_length_for_attention(Attention.of(strength)).to_f64()
+			is_close(got, want)
+		},
+	)
 
 expect
 	[
@@ -174,7 +180,7 @@ expect
 		((0.6, 0.5), 525.1014591189407),
 	].all(
 		|((lean, strength), want)| {
-			got = focal_for({
+			got = focal_length_for({
 				lean: Angle.Lean.degrees(lean * 20.0),
 				attention: Attention.of(strength),
 			})

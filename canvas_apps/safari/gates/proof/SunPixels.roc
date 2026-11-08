@@ -22,11 +22,11 @@ SunPixels :: [].{
 		}
 }
 
-pixels_with_glow_and_disc : List(U32), { roll : ScreenRoll, sun : Sun.Place } -> List(U32)
+pixels_with_glow_and_disc : List(U32), { roll : ScreenRoll, sun : Sun.OnScreen } -> List(U32)
 pixels_with_glow_and_disc = |pixels, { roll, sun }| {
 	look = Sun.look(sun)
-	glow_radius = Sun.glow_radius_drawn(sun).to_f64()
-	disc_radius = Sun.disc_radius_drawn(sun).to_f64()
+	glow_radius = Sun.glow_radius_on_screen(sun).to_f64()
+	disc_radius = Sun.disc_radius_on_screen(sun).to_f64()
 	sun_x = sun.x.to_f64()
 	sun_y = sun.y.to_f64()
 	grass_top_y = Grass.grass_top_y.to_f64()

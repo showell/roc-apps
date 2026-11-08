@@ -152,10 +152,10 @@ land_height = |bearing|
 	FarHeight.of(18.0 + 12.0 * (bearing.turn_from_north().to_radians() * 0.9 + 1.9).sin())
 
 north_range_height : Angle.Bearing -> FarHeight
-north_range_height = |bearing| range_height(north, bearing)
+north_range_height = |bearing| range_height(north_range, bearing)
 
 west_range_height : Angle.Bearing -> FarHeight
-west_range_height = |bearing| range_height(west, bearing)
+west_range_height = |bearing| range_height(west_range, bearing)
 
 ## The height of the north range's highest peak, as its samples find it.
 snow_peak_height : FarHeight
@@ -204,8 +204,8 @@ MountainRange : {
 	fine_ridge_waves : F64,
 }
 
-north : MountainRange
-north = {
+north_range : MountainRange
+north_range = {
 	center: Angle.north,
 	half_width: Angle.Turn.radians(0.95),
 	height_ceiling: FarHeight.of(150.0),
@@ -213,8 +213,8 @@ north = {
 	fine_ridge_waves: 21.0,
 }
 
-west : MountainRange
-west = {
+west_range : MountainRange
+west_range = {
 	center: west_range_bearing,
 	half_width: Angle.Turn.radians(0.72),
 	height_ceiling: FarHeight.of(120.0),
@@ -351,7 +351,7 @@ west_by : F64 -> Angle.Bearing
 west_by = |radians| west_range_bearing.plus(Angle.Turn.radians(radians))
 
 aim_at_rest : { heading : Angle.Bearing, focal_length : Pixels }
-aim_at_rest = { heading: Angle.north, focal_length: Lens.resting_focal }
+aim_at_rest = { heading: Angle.north, focal_length: Lens.resting_focal_length }
 
 expect rock_color_at_darkness(north_rock, Fraction.zero) == RgbColor.of(0x5B6A8F)
 expect rock_color_at_darkness(west_rock, Fraction.zero) == RgbColor.of(0x39435F)
