@@ -260,7 +260,7 @@ shapes_of_tower_100_ahead : List(Shapes.Shape)
 shapes_of_tower_100_ahead = {
 	tower_road = Fixtures.crafted_road([Fixtures.segment_of([])])
 	plain_tower : Tower
-	plain_tower = { yaw: Angle.straight_ahead, beacon_brightness: Fraction.zero }
+	plain_tower = Tower.standing({ yaw: Angle.straight_ahead, beacon_brightness: Fraction.zero })
 	sighted =
 		Pipeline.sighting_of(
 			{
@@ -337,7 +337,7 @@ tower_numbers : Pipeline.Sighted(Tower) -> List(F64)
 tower_numbers = |tower| [
 	tower.spot.road_point().along.to_metres(),
 	tower.spot.road_point().across.to_metres(),
-	tower.kind.yaw.to_radians(),
+	tower.kind.yaw().to_radians(),
 ]
 
 expect {

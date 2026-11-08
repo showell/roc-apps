@@ -32,20 +32,20 @@ TowerSighting :: [].{
 }
 
 ## How far past the end of its segment a tower stands.
-tower_beyond : Distance
-tower_beyond = Distance.metres(160.0)
+end_tower_beyond_end : Distance
+end_tower_beyond_end = Distance.metres(160.0)
 
 ## How far right of the road's middle a tower past a segment's end stands.
-tower_right : Distance
-tower_right = Distance.metres(20.0)
+end_tower_right_of_middle : Distance
+end_tower_right_of_middle = Distance.metres(20.0)
 
 ## How far left of the road's middle a tower halfway along a segment stands.
-mid_tower_left : Distance
-mid_tower_left = Distance.metres(100.0)
+mid_tower_left_of_middle : Distance
+mid_tower_left_of_middle = Distance.metres(100.0)
 
-## How far a tower past a segment's end is turned: 30 degrees.
-tower_yaw : Angle.Turn
-tower_yaw = Angle.Turn.degrees(30.0)
+## How far a tower past a segment's end is turned from square with the road.
+end_tower_yaw : Angle.Turn
+end_tower_yaw = Angle.Turn.degrees(30.0)
 
 ## The towers in view of a segment in view: the one past its end, then the
 ## one halfway along.
@@ -77,10 +77,10 @@ end_tower = |road, { vantage, in_view, clock }| {
 			vantage,
 			place: in_view.place,
 			road_point: {
-				along: Along.at(in_view.segment.length.plus(tower_beyond)),
-				across: Across.right_of_middle(tower_right),
+				along: Along.at(in_view.segment.length.plus(end_tower_beyond_end)),
+				across: Across.right_of_middle(end_tower_right_of_middle),
 			},
-			tower: { yaw: tower_yaw, beacon_brightness },
+			tower: Tower.standing({ yaw: end_tower_yaw, beacon_brightness }),
 		},
 	)
 }
@@ -103,9 +103,9 @@ mid_tower = |road, { vantage, in_view, clock }|
 				place: in_view.place,
 				road_point: {
 					along: Along.at(in_view.segment.length.divided_by(2.0)),
-					across: Across.left_of_middle(mid_tower_left),
+					across: Across.left_of_middle(mid_tower_left_of_middle),
 				},
-				tower: { yaw: Angle.straight_ahead, beacon_brightness },
+				tower: Tower.standing({ yaw: Angle.straight_ahead, beacon_brightness }),
 			},
 		)
 	} else {

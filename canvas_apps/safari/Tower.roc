@@ -1,6 +1,6 @@
-## A radio tower: a square lattice that tapers from a 12 m footprint to a
-## point 80 m up. It is drawn as rods (four legs, a ring every 20 m, and
-## crossed braces in the lowest two storeys) with a blinking beacon on top.
+## A radio tower: a square lattice that tapers from its footprint to a point
+## at its top. It is drawn as rods (four legs, a ring at every storey, and
+## crossed braces in the lowest storeys) with a blinking beacon on top.
 ## The earth curves away under a far tower, so it sinks below the horizon
 ## from the bottom up.
 import Pixels
@@ -21,7 +21,19 @@ import Screen
 import lib.Shapes
 
 ## A tower in a frame: how it is turned, and how bright its beacon is.
-Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
+Tower :: { yaw : Angle.Turn, beacon_brightness : Fraction }.{
+
+	## A tower turned by `yaw`, its beacon at `beacon_brightness`.
+	standing : { yaw : Angle.Turn, beacon_brightness : Fraction } -> Tower
+	standing = |{ yaw, beacon_brightness }| Tower.({ yaw, beacon_brightness })
+
+	## How far the tower is turned from square with the road.
+	yaw : Tower -> Angle.Turn
+	yaw = |Tower.(tower)| tower.yaw
+
+	## How bright the tower's beacon is in this frame.
+	beacon_brightness : Tower -> Fraction
+	beacon_brightness = |Tower.(tower)| tower.beacon_brightness
 
 	## How a tower looks. Its footprint is measured on the road and seen from the
 	## camera's vantage, so those are its context.
@@ -58,7 +70,7 @@ tower_footprint : Tower,
 tower_footprint = |tower, { road, vantage, spot }| {
 	center = spot.road_point()
 	corner_point = |corner| {
-		on_road = base_corner_on_road(corner, { center, yaw: tower.yaw })
+		on_road = base_corner_on_road(corner, { center, yaw: tower.yaw() })
 		RoadAhead.rider_point_at(road, { vantage, place: spot.place(), road_point: on_road })
 	}
 	{
@@ -98,7 +110,7 @@ tower_shapes = |tower, { footprint, spot, focal_length }| {
 			ring_shapes(sunk_tower),
 			brace_shapes(sunk_tower),
 		].join()
-		match beacon_shape(sunk_tower, { apex, brightness: tower.beacon_brightness }) {
+		match beacon_shape(sunk_tower, { apex, brightness: tower.beacon_brightness() }) {
 			Ok(beacon) => rods.append(beacon)
 			Err(TooDim) | Err(TooSmall) => rods
 		}
@@ -123,8 +135,8 @@ rod_half_width = Distance.metres(0.12)
 rod_width : Distance
 rod_width = rod_half_width.times(2.0)
 
-tower_metal : RgbColor
-tower_metal = RgbColor.of(0x9AA0A8)
+tower_color : RgbColor
+tower_color = RgbColor.of(0x9AA0A8)
 
 beacon_radius : Distance
 beacon_radius = Distance.metres(3.0)
@@ -195,13 +207,15 @@ footprint_corner = |footprint, corner|
 base_corner_on_road : Corner, { center : Geom.RoadPoint, yaw : Angle.Turn } -> Geom.RoadPoint
 base_corner_on_road = |corner, { center, yaw }| {
 	offset = corner_offset(corner)
-	du = offset.across.to_metres()
-	dv = offset.along.to_metres()
-	cy = yaw.to_radians().cos()
-	sy = yaw.to_radians().sin()
+	across_metres = offset.across.to_metres()
+	along_metres = offset.along.to_metres()
+	yaw_cos = yaw.to_radians().cos()
+	yaw_sin = yaw.to_radians().sin()
+	along_shift = across_metres * yaw_sin + along_metres * yaw_cos
+	across_shift = across_metres * yaw_cos - along_metres * yaw_sin
 	{
-		along: center.along.plus(Distance.metres(du * sy + dv * cy)),
-		across: center.across.plus(Distance.metres(du * cy - dv * sy)),
+		along: center.along.plus(Distance.metres(along_shift)),
+		across: center.across.plus(Distance.metres(across_shift)),
 	}
 }
 
@@ -210,15 +224,21 @@ base_corner_on_road = |corner, { center, yaw }| {
 ## tower has sunk.
 corner_at : SunkTower, { corner : Corner, height_on_tower : Distance } -> RiderView.RaisedPoint
 corner_at = |tower, { corner, height_on_tower }| {
-	t = height_on_tower.ratio_to(tower_height)
+	taper_fraction = height_on_tower.ratio_to(tower_height)
 	bottom = footprint_corner(tower.footprint, corner)
-	tapered = |start, end| start.plus(end.minus(start).times(t))
+	tapered = |start, end| start.plus(end.minus(start).times(taper_fraction))
 	{
 		right: tapered(bottom.right, tower.foot.right()),
 		forward: tapered(bottom.forward, tower.foot.forward()),
 		height: tower.lift.plus(height_on_tower.minus(tower.sunk)),
 	}
 }
+
+## The shortest rod on screen that has a direction to turn its width across.
+## A shorter one is drawn as if one pixel long, so its quad shrinks to its
+## point rather than dividing by nearly nothing.
+shortest_rod_with_direction : Pixels
+shortest_rod_with_direction = Pixels.of(0.0001)
 
 ## A rod between two points on screen, `width` wide.
 screen_rod : {
@@ -227,20 +247,20 @@ screen_rod : {
 	width : Pixels,
 } -> Shapes.Shape
 screen_rod = |{ from, to, width }| {
-	dx = to.x.minus(from.x).to_f64()
-	dy = to.y.minus(from.y).to_f64()
+	x_change = to.x.minus(from.x).to_f64()
+	y_change = to.y.minus(from.y).to_f64()
 	across = width.to_f64()
-	raw = Screen.distance({ from, to }).to_f64()
-	len = if raw < 0.0001 {
+	measured_length = Screen.distance({ from, to }).to_f64()
+	rod_length = if measured_length < shortest_rod_with_direction.to_f64() {
 		1.0
 	} else {
-		raw
+		measured_length
 	}
 	rod_quad({
 		from,
 		to,
-		offset_x: Pixels.of(across * ((0.0 - dy) / len) / 2.0),
-		offset_y: Pixels.of(across * (dx / len) / 2.0),
+		offset_x: Pixels.of(across * ((0.0 - y_change) / rod_length) / 2.0),
+		offset_y: Pixels.of(across * (x_change / rod_length) / 2.0),
 	})
 }
 
@@ -252,21 +272,14 @@ rod_quad : {
 	offset_x : Pixels,
 	offset_y : Pixels,
 } -> Shapes.Shape
-rod_quad = |
-	{
-		from: a,
-		to: b,
-		offset_x: ox,
-		offset_y: oy,
-	},
-| Polygon.flat_polygon(
+rod_quad = |{ from, to, offset_x, offset_y }| Polygon.flat_polygon(
 	[
-		{ x: a.x.plus(ox), y: a.y.plus(oy) },
-		{ x: b.x.plus(ox), y: b.y.plus(oy) },
-		{ x: b.x.minus(ox), y: b.y.minus(oy) },
-		{ x: a.x.minus(ox), y: a.y.minus(oy) },
+		{ x: from.x.plus(offset_x), y: from.y.plus(offset_y) },
+		{ x: to.x.plus(offset_x), y: to.y.plus(offset_y) },
+		{ x: to.x.minus(offset_x), y: to.y.minus(offset_y) },
+		{ x: from.x.minus(offset_x), y: from.y.minus(offset_y) },
 	],
-	tower_metal,
+	tower_color,
 )
 
 ## A rod between two points in the rider's view, cut where it crosses the
@@ -291,9 +304,9 @@ rod_shape = |tower, line| {
 metre_on_screen : { at : RiderView.RiderPointAhead, focal_length : Pixels } -> Pixels
 metre_on_screen = |{ at, focal_length }| {
 	on_level = at.at_height(Distance.zero)
-	p1 = Camera.project(on_level.at_right(Distance.metres(1.0)), focal_length)
-	p0 = Camera.project(on_level.at_right(Distance.zero), focal_length)
-	p1.x.minus(p0.x)
+	one_metre_right = Camera.project(on_level.at_right(Distance.metres(1.0)), focal_length)
+	on_level_point = Camera.project(on_level.at_right(Distance.zero), focal_length)
+	one_metre_right.x.minus(on_level_point.x)
 }
 
 ## The four legs, from the footprint's corners up to the apex.
@@ -305,14 +318,14 @@ leg_shapes = |tower, apex| corners.keep_oks(
 	),
 )
 
-## The ring of rods round the tower at height `h`.
+## The ring of rods round the tower at `ring_height`.
 ring_shapes_at : SunkTower, Distance -> List(Shapes.Shape)
-ring_shapes_at = |tower, h| corners.keep_oks(
+ring_shapes_at = |tower, ring_height| corners.keep_oks(
 	|corner| rod_shape(
 		tower,
 		{
-			from: corner_at(tower, { corner, height_on_tower: h }),
-			to: corner_at(tower, { corner: next_corner(corner), height_on_tower: h }),
+			from: corner_at(tower, { corner, height_on_tower: ring_height }),
+			to: corner_at(tower, { corner: next_corner(corner), height_on_tower: ring_height }),
 		},
 	),
 )
@@ -321,11 +334,11 @@ ring_shapes_at = |tower, h| corners.keep_oks(
 ## the earth has hidden.
 ring_shapes : SunkTower -> List(Shapes.Shape)
 ring_shapes = |tower| ring_heights.join_map(
-	|h|
-		if h <= tower.sunk {
+	|ring_height|
+		if ring_height <= tower.sunk {
 			[]
 		} else {
-			ring_shapes_at(tower, h)
+			ring_shapes_at(tower, ring_height)
 		},
 )
 
@@ -510,7 +523,7 @@ expect
 	})
 		== Poly({
 			coordinates: [-4.0, 3.0, 26.0, 43.0, 34.0, 37.0, 4.0, -3.0],
-			fill: Flat(Brush.opaque(tower_metal)),
+			fill: Flat(Brush.opaque(tower_color)),
 		})
 
 # A rod of no length is still one quad, all at its one point.
@@ -522,7 +535,7 @@ expect
 	})
 		== Poly({
 			coordinates: [5.0, 6.0, 5.0, 6.0, 5.0, 6.0, 5.0, 6.0],
-			fill: Flat(Brush.opaque(tower_metal)),
+			fill: Flat(Brush.opaque(tower_color)),
 		})
 
 ## How many pixels a metre across spans `forward` metres ahead, through a
