@@ -34,14 +34,6 @@ PigHerd := [BigHerd(PigHerd.BigPigHerd), TwoRows(PigHerd.TwoRowPigHerd)].{
 		jitter_along : Distance,
 		jitter_across : Distance,
 	}.{
-
-		## The herd's pig that stands out, about `herd_along`.
-		standout_pig : PigHerd.BigPigHerd, Along -> Geom.Placed(Billboard)
-		standout_pig = |herd, herd_along| {
-			column = herd.columns_before_standout
-			herd_pig(herd, { herd_along, row: 0, column })
-		}
-
 		is_eq : _
 	}
 
@@ -64,14 +56,6 @@ PigHerd := [BigHerd(PigHerd.BigPigHerd), TwoRows(PigHerd.TwoRowPigHerd)].{
 		## How much farther from the road the back row stands than the front.
 		back_row_depth : Distance,
 	}.{
-
-		## The herd's pig that stands out, about `herd_along`.
-		standout_pig : PigHerd.TwoRowPigHerd, Along -> Geom.Placed(Billboard)
-		standout_pig = |herd, herd_along| {
-			along = herd_along.plus(herd.front_row.standout_offset)
-			placed_pig({ along, across: front_row_across })
-		}
-
 		is_eq : _
 	}
 
@@ -87,8 +71,8 @@ PigHerd := [BigHerd(PigHerd.BigPigHerd), TwoRows(PigHerd.TwoRowPigHerd)].{
 	standout_pig : PigHerd, Along -> Geom.Placed(Billboard)
 	standout_pig = |herd, herd_along|
 		match herd {
-			BigHerd(big_herd) => big_herd.standout_pig(herd_along)
-			TwoRows(two_rows) => two_rows.standout_pig(herd_along)
+			BigHerd(big_herd) => big_herd_standout_pig(big_herd, herd_along)
+			TwoRows(two_rows) => two_row_standout_pig(two_rows, herd_along)
 		}
 
 	is_eq : _
@@ -122,6 +106,13 @@ big_herd_pigs = |herd, herd_along| {
 		.join_map(|row| columns.map(|column| herd_pig(herd, { herd_along, row, column })))
 }
 
+## The big herd's pig that stands out, about `herd_along`.
+big_herd_standout_pig : PigHerd.BigPigHerd, Along -> Geom.Placed(Billboard)
+big_herd_standout_pig = |herd, herd_along| {
+	column = herd.columns_before_standout
+	herd_pig(herd, { herd_along, row: 0, column })
+}
+
 ## How many columns the big herd has: those either side of the standout pig's,
 ## and its own.
 column_count : PigHerd.BigPigHerd -> U64
@@ -133,6 +124,13 @@ front_offsets : PigHerd.TwoRowPigHerd -> List(Distance)
 front_offsets = |herd| {
 	row = herd.front_row
 	row.offsets_before.append(row.standout_offset).concat(row.offsets_after)
+}
+
+## The two-row herd's pig that stands out, about `herd_along`.
+two_row_standout_pig : PigHerd.TwoRowPigHerd, Along -> Geom.Placed(Billboard)
+two_row_standout_pig = |herd, herd_along| {
+	along = herd_along.plus(herd.front_row.standout_offset)
+	placed_pig({ along, across: front_row_across })
 }
 
 ## The two-row herd's pigs about `herd_along`, front row first.
