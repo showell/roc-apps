@@ -10,6 +10,7 @@ package
 		Animation,
 		Attention,
 		Beacon,
+		BendAnimal,
 		BendInView,
 		Billboard,
 		BillboardSighting,
@@ -88,7 +89,6 @@ package
 		Truck,
 		TruckSighting,
 		VehicleLimits,
-		Wildlife,
 		World,
 	]
 	{ lib: "../lib/main.roc" }

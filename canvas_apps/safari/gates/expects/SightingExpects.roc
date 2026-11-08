@@ -6,6 +6,7 @@ import game.Across
 import game.Along
 import game.Angle
 import game.Beacon
+import game.BendAnimal
 import game.Billboard
 import game.BillboardSighting
 import game.Clock
@@ -31,7 +32,6 @@ import game.TowerSighting
 import game.TreeSighting
 import game.Truck
 import game.TruckSighting
-import game.Wildlife
 import game.World
 import lib.Shapes
 
@@ -213,26 +213,22 @@ expect
 		(600.0, False),
 	].all(|(forward, want)| is_cow_seen_from(forward) == want)
 
-# Wildlife: an animal and its baby at each of four bends, the first and third
+# BendAnimal: an animal and its baby at each of four bends, the first and third
 # turning right and the second and fourth left.
 billboards_at_four_bends : List(Geom.Placed(Billboard))
 billboards_at_four_bends = [
-	Wildlife.bend_billboards({
-		animal: Elephant,
-		bend: { segment_length: Distance.metres(100.0), turn: Angle.Turn.degrees(50.0) },
-	}),
-	Wildlife.bend_billboards({
-		animal: Giraffe,
-		bend: { segment_length: Distance.metres(50.0), turn: Angle.Turn.degrees(-70.0) },
-	}),
-	Wildlife.bend_billboards({
-		animal: Zebra,
-		bend: { segment_length: Distance.metres(10.0), turn: Angle.Turn.degrees(50.0) },
-	}),
-	Wildlife.bend_billboards({
-		animal: Rhino,
-		bend: { segment_length: Distance.metres(0.0), turn: Angle.Turn.degrees(-70.0) },
-	}),
+	BendAnimal.Elephant.bend_billboards(
+		{ segment_length: Distance.metres(100.0), turn: Angle.Turn.degrees(50.0) },
+	),
+	BendAnimal.Giraffe.bend_billboards(
+		{ segment_length: Distance.metres(50.0), turn: Angle.Turn.degrees(-70.0) },
+	),
+	BendAnimal.Zebra.bend_billboards(
+		{ segment_length: Distance.metres(10.0), turn: Angle.Turn.degrees(50.0) },
+	),
+	BendAnimal.Rhino.bend_billboards(
+		{ segment_length: Distance.metres(0.0), turn: Angle.Turn.degrees(-70.0) },
+	),
 ].join()
 
 expect

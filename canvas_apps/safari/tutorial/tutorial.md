@@ -216,7 +216,7 @@ A piece of the world can be just a value. Here's the second whole module. `Pond`
 
 Above its `expect`s, there are no functions here at all. The ducks are read where the critters are sighted:
 
-{{code BillboardSighting.bend_life_billboards}}
+{{code Segment.segment_bend_billboards}}
 
 `World` turns a route, a plain list of records, into segments of road. A plan for a segment shows how much tag unions can do with no declaration. `[WithBull, NoBull]` is written right in the field's type, and it says more than a boolean would at every place a segment is written down.
 
@@ -1147,7 +1147,7 @@ New in this chapter:
 
 A segment's `bend_life` field says what's at its bend. `Wildlife.bend_critters` turns that into critters:
 
-{{code Wildlife.bend_billboards}}
+{{code BendAnimal.bend_billboards}}
 
 `Quiet` and `DuckPond` have no animals, so they answer with an empty list. An `Animal` answers with a list of two. `inward` is 1 or -1, so one line of arithmetic places the grown animal on either side of the road.
 
@@ -1159,7 +1159,7 @@ Nothing in that function says "elephant". That's what makes the next chapter sho
 
 A giraffe, a rhino and a zebra have one bend each. They all use the same code as the elephant, and they differ by one row:
 
-{{code Wildlife.species_of}}
+{{code BendAnimal.species_of}}
 
 Each animal is a tag, and each answers with its emoji and how tall it stands. The `match` has to cover all four.
 
