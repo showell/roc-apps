@@ -14,6 +14,14 @@ BookText := [].{
 	escaped_text : Str -> Str
 	escaped_text = |text| BookText.text_from_bytes(Md.escape(text.to_utf8()))
 
+	## The text split at each `opening`, each piece after the first rewritten,
+	## and joined back together with the `opening`s where they were.
+	rewritten_after : Str, { opening : Str, rewrite : Str -> Str } -> Str
+	rewritten_after = |text, { opening, rewrite }| match text.split_on(opening) {
+		[before_any, .. as pieces] => Str.join_with([before_any].concat(pieces.map(rewrite)), opening)
+		[] => crash "book: Str.split_on answered no pieces"
+	}
+
 	## A line of Markdown as HTML that can sit inside a caption, so without the
 	## paragraph the renderer puts around it.
 	inline_html : Str -> Str

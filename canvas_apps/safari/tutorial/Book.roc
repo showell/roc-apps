@@ -172,12 +172,7 @@ section_open = "<h2 id=\""
 
 ## Each section's heading with a link to itself, for a reader to copy.
 with_section_links : Str -> Str
-with_section_links = |html| match html.split_on(section_open) {
-	[before_any, .. as sections] => {
-		Str.join_with([before_any].concat(sections.map(section_with_link)), section_open)
-	}
-	[] => html
-}
+with_section_links = |html| BookText.rewritten_after(html, { opening: section_open, rewrite: section_with_link })
 
 ## One piece after a heading's opening: its id, the heading, and what follows.
 section_with_link : Str -> Str
