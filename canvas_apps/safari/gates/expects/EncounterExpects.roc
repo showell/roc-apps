@@ -171,7 +171,7 @@ expect place_numbers(bird_at(85.0, flight_at_step(136))) == [6.0, 45.0, far_top]
 # In flight, the bird is where its flight's frame for the step says.
 expect {
 	bird = bird_at(40.0, flight_at_step(118))
-	frame = bird_flight.instant_at(Playing(Steps.of(18)))
+	frame = bird_flight.bird_instant_at(Playing(Steps.of(18)))
 	frame_point = frame.location.road_point
 	[
 		(bird.spot.foot().right().to_metres(), frame_point.across.to_metres()),
@@ -321,10 +321,10 @@ crossing_cat = CatCrossing.by_tree({
 
 ## The cat `steps_in` steps into its crossing.
 crossing_frame_of : U32 -> Animation.Instant(Cat.CatPose)
-crossing_frame_of = |steps_in| crossing_cat.instant_at(Playing(Steps.of(steps_in)))
+crossing_frame_of = |steps_in| crossing_cat.cat_instant_at(Playing(Steps.of(steps_in)))
 
-expect crossing_cat.instant_at(Waiting).pose == Rest
-expect crossing_cat.instant_at(Past(Steps.zero)).pose == Collapse
+expect crossing_cat.cat_instant_at(Waiting).pose == Rest
+expect crossing_cat.cat_instant_at(Past(Steps.zero)).pose == Collapse
 
 ## How far across the road the cat is `steps_in` steps into its crossing.
 crossing_across_at : U32 -> F64
@@ -357,7 +357,8 @@ expect
 
 expect (crossing_across_at(37) - -3.49).abs() <= 0.000000000001
 expect {
-	across_after = crossing_cat.instant_at(Past(Steps.zero)).location.road_point.across.to_metres()
+	after = crossing_cat.cat_instant_at(Past(Steps.zero))
+	across_after = after.location.road_point.across.to_metres()
 	(across_after - -3.49).abs() <= 0.000000000001
 }
 
@@ -420,24 +421,24 @@ expect chosen_tree_numbers([flight_left_tree, Fixtures.tree_at(140.0, -6.0)]) ==
 
 ## The sample bird `steps_in` steps into its flight.
 flight_frame_of : U32 -> BirdFlight.BirdInstant
-flight_frame_of = |steps_in| sample_flight.instant_at(Playing(Steps.of(steps_in)))
+flight_frame_of = |steps_in| sample_flight.bird_instant_at(Playing(Steps.of(steps_in)))
 
 expect {
-	location = sample_flight.instant_at(Waiting).location
+	location = sample_flight.bird_instant_at(Waiting).location
 	location.road_point.along.to_metres() == 100.0
 		and location.road_point.across.to_metres() == -6.0
 		and location.lift.to_metres() == left_top
 }
 
 expect {
-	location = sample_flight.instant_at(Past(Steps.zero)).location
+	location = sample_flight.bird_instant_at(Past(Steps.zero)).location
 	location.road_point.along.to_metres() == 140.0
 		and location.road_point.across.to_metres() == 6.0
 		and location.lift.to_metres() == far_top
 }
 
-expect sample_flight.instant_at(Waiting).pose == Perched
-expect sample_flight.instant_at(Past(Steps.zero)).pose == Perched
+expect sample_flight.bird_instant_at(Waiting).pose == Perched
+expect sample_flight.bird_instant_at(Past(Steps.zero)).pose == Perched
 
 # A flap side on, seven from behind, and one of diving, four steps to a flap.
 expect
@@ -456,7 +457,7 @@ expect
 
 # The flight starts on the first tree's tip and ends on the second's, and its
 # path rises over the straight line between them.
-expect flight_frame_of(0).location == sample_flight.instant_at(Waiting).location
+expect flight_frame_of(0).location == sample_flight.bird_instant_at(Waiting).location
 expect {
 	last = flight_frame_of(35).location
 	[

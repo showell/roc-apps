@@ -88,6 +88,8 @@ package
 		Trees,
 		Truck,
 		TruckBody,
+		TruckBrakeLights,
+		TruckHeadlights,
 		TruckJourney,
 		TruckShape,
 		TruckSighting,

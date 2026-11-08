@@ -122,7 +122,7 @@ crossing_timing = |gap|
 ## The cat at the crossing's `timing`, drawn by Safari's own stills.
 cat_shapes : EncounterPlan.Timing -> List(Shapes.Shape)
 cat_shapes = |timing| {
-	instant = World.first_cat_crossing.instant_at(CatCrossing.crossing_stage(timing))
+	instant = World.first_cat_crossing.cat_instant_at(CatCrossing.crossing_stage(timing))
 	across = instant.location.road_point.across
 	cat : Cat
 	cat = { pose: instant.pose }
@@ -144,7 +144,7 @@ cat_shapes = |timing| {
 status_lines : { gap : Distance, timing : EncounterPlan.Timing } -> List(Str)
 status_lines = |{ gap, timing }| {
 	stage = CatCrossing.crossing_stage(timing)
-	instant = World.first_cat_crossing.instant_at(stage)
+	instant = World.first_cat_crossing.cat_instant_at(stage)
 	throttle = EncounterReaction.encounter_throttle(World.first_cat_segment, stage)
 	[
 		ReadoutText.stage_text(stage),

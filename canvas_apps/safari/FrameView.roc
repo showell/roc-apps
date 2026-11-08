@@ -15,7 +15,8 @@ import Screen
 import Sky
 import Skyline
 import Sun
-import Truck
+import TruckBrakeLights
+import TruckHeadlights
 import lib.Shapes
 
 ## What the camera shows at one instant of the ride, worked out from the
@@ -134,7 +135,10 @@ FrameView := {
 		encounter_stage: RideInstant.encounter_stage(route, instant),
 		truck: {
 			route_position: instant.truck.route_position,
-			truck: Truck.at(instant.truck.pace, Sky.darkness_at(instant.clock)),
+			truck: {
+				headlights: TruckHeadlights.at(Sky.darkness_at(instant.clock)),
+				brake_lights: TruckBrakeLights.at(instant.truck.pace),
+			},
 		},
 		clock: instant.clock,
 	}

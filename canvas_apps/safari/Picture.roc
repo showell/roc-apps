@@ -21,4 +21,8 @@ Picture :: List(Shapes.Shape).{
 
 	to_shapes : Picture -> List(Shapes.Shape)
 	to_shapes = |Picture.(shapes)| shapes
+
+	## One picture of several, each painted over the ones before it.
+	composite : List(Picture) -> Picture
+	composite = |pictures| Picture.(pictures.join_map(Picture.to_shapes))
 }

@@ -48,8 +48,8 @@ BirdFlight := { from : Trees.RoadsideTree, to : Trees.RoadsideTree }.{
 	flight_stage = |timing| EncounterPlan.stage_at(timing, flight_span.length)
 
 	## The bird at `stage` of its flight.
-	instant_at : BirdFlight, Animation.Stage -> BirdFlight.BirdInstant
-	instant_at = |flight, stage| flight_timeline(flight).instant(stage)
+	bird_instant_at : BirdFlight, Animation.Stage -> BirdFlight.BirdInstant
+	bird_instant_at = |flight, stage| flight_timeline(flight).instant(stage)
 }
 
 ## How far short of the tree it left the rider is when the bird lands, so
