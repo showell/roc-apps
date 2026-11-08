@@ -112,10 +112,7 @@ leg_points : {
 	to : RiderView.RiderPoint,
 } -> List(RiderView.RiderPoint)
 leg_points = |{ from, to }| {
-	rightward = to.right.minus(from.right).to_metres()
-	forward = to.forward.minus(from.forward).to_metres()
-	distance = (rightward * rightward + forward * forward).sqrt()
-	pieces = leg_pieces(Distance.metres(distance))
+	pieces = leg_pieces(RiderView.ground_distance({ from, to }))
 	evenly_spaced({ from, to, pieces }).drop_first(1)
 }
 
