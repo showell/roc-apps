@@ -10,8 +10,6 @@ import game.Distance
 import game.Geom
 import game.Lens
 import game.Pipeline
-import game.RoadAhead
-import game.Route
 import game.SegmentPlace
 import game.Sky
 import game.TruckBody
@@ -98,11 +96,6 @@ truck_middle_ahead = {
 	box.rear.plus(box.nose).divided_by(2.0)
 }
 
-## The road ahead of a rider on the route's first segment. The truck and the
-## cameras are all on it, so no bend comes between them.
-straight_road : RoadAhead.RoadView
-straight_road = RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex.first)
-
 ## The camera for `view`: `view.distance` from the middle of the truck, round
 ## from behind it by `view.seen_from`, and turned so that the middle of the truck
 ## lands on `view.canvas_x`.
@@ -129,7 +122,7 @@ view_setting = |view| {
 	sighting_result = Pipeline.sighting_of(
 		placed_truck,
 		{
-			road: straight_road,
+			road: World.road_at_start,
 			camera: { vantage, focal_length: Lens.resting_focal_length },
 			place: Ahead(SegmentPlace.Position.first),
 		},
@@ -138,7 +131,7 @@ view_setting = |view| {
 		Ok(sighting) => {
 			spot: sighting.spot,
 			focal_length: Lens.resting_focal_length,
-			context: { road: straight_road, vantage },
+			context: { road: World.road_at_start, vantage },
 		}
 		Err(BehindCamera) => crash "TruckWidgetApp.view_setting: every camera faces the truck"
 	}

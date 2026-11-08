@@ -11,8 +11,6 @@ import game.Distance
 import game.Geom
 import game.Lens
 import game.Pipeline
-import game.RoadAhead
-import game.Route
 import game.Screen
 import game.SegmentPlace
 import game.Sky
@@ -62,12 +60,6 @@ right_of = |{ forward, canvas_x }| {
 	forward.times(screen_x.minus(Screen.center_x).ratio_to(Lens.resting_focal_length))
 }
 
-## The road ahead of a rider on the route's first segment. The trees stand on
-## the rider's own segment, so no bend comes between them and the camera, and
-## the road runs straight ahead.
-straight_road : RoadAhead.RoadView
-straight_road = RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex.first)
-
 ## The camera, at the start of the road, looking down it.
 eye : Geom.Vantage
 eye = {
@@ -92,7 +84,7 @@ stand_sighting = |stand| {
 	Pipeline.sighting_of(
 		placed_tree,
 		{
-			road: straight_road,
+			road: World.road_at_start,
 			camera: { vantage: eye, focal_length: Lens.resting_focal_length },
 			place: Ahead(SegmentPlace.Position.first),
 		},
