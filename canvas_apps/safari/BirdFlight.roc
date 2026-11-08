@@ -60,6 +60,11 @@ BirdFlight :: [].{
 		}
 	}
 
+	## Where along its segment the ride plans `flight` by: the tree the bird
+	## leaves.
+	planned_along : BirdFlight.Flight -> Along
+	planned_along = |flight| flight.from.road_point.along
+
 	## Where the flight has got to at `timing`.
 	flight_stage : EncounterPlan.Timing -> Animation.Stage
 	flight_stage = |timing| EncounterPlan.stage_at(timing, flight_span.length)

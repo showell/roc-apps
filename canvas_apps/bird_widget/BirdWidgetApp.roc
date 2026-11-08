@@ -125,7 +125,7 @@ straight_road = RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex.firs
 ## the first tree, looking down the road.
 eye : Geom.Vantage
 eye = {
-	along: World.first_bird_flight.from.road_point.along.minus(eye_to_first_tree),
+	along: BirdFlight.planned_along(World.first_bird_flight).minus(eye_to_first_tree),
 	across: Across.middle,
 	yaw: Angle.straight_ahead,
 }
