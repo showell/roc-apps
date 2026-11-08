@@ -92,6 +92,7 @@ package
 		TruckBrakeLights,
 		TruckHeadlights,
 		TruckJourney,
+		TruckPlacement,
 		TruckShape,
 		TruckSighting,
 		VehicleLimits,

@@ -3,12 +3,12 @@
 ## its side.
 import Camera
 import Distance
-import EarthCurve
 import Fraction
 import Picture
 import Polygon
 import RiderView
 import Screen
+import TruckPlacement
 import TruckShape
 import lib.ArgbColor
 import lib.Shapes
@@ -30,7 +30,7 @@ TruckHeadlights := [On, Off].{
 
 	## How the headlights look: their two beams while they are on, and nothing
 	## while they are off.
-	picture : TruckHeadlights, TruckShape.TruckSetting -> Picture
+	picture : TruckHeadlights, TruckPlacement.TruckSetting -> Picture
 	picture = |headlights, truck|
 		match headlights {
 			On => Picture.from_shapes(beam_shapes(truck))
@@ -73,7 +73,7 @@ beam_edge : ArgbColor
 beam_edge = ArgbColor.of(0x45FFF8D6)
 
 ## The two headlight beams, each a little in from its side.
-beam_shapes : TruckShape.TruckSetting -> List(Shapes.Shape)
+beam_shapes : TruckPlacement.TruckSetting -> List(Shapes.Shape)
 beam_shapes = |truck| {
 	box = TruckShape.truck_box
 	[
@@ -85,14 +85,14 @@ beam_shapes = |truck| {
 ## The beam of the headlight `rightward` of the truck's centre line,
 ## brightest at the lamp. A beam with a corner behind the camera is not
 ## drawn.
-headlight_beam : TruckShape.TruckSetting, Distance -> Try(Shapes.Shape, [BehindCamera, TooSmall])
+headlight_beam : TruckPlacement.TruckSetting,
+Distance -> Try(
+	Shapes.Shape,
+	[BehindCamera, TooSmall],
+)
 headlight_beam = |truck, rightward| {
 	nose = TruckShape.truck_box.nose
-	on_truck = |ahead, height|
-		EarthCurve.raised_ground_point(
-			truck.context,
-			TruckShape.road_point_on_truck(truck, { ahead, rightward, height }),
-		)
+	on_truck = |ahead, height| TruckPlacement.raised_point(truck, { ahead, rightward, height })
 	at_lamp = |height| on_truck(nose, height)
 	at_far_end = |height| on_truck(nose.plus(beam_length), height)
 	lamp_bottom = at_lamp(headlight_height.minus(beam_half_height_at_lamp))

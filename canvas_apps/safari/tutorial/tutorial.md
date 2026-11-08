@@ -656,7 +656,7 @@ Here's the other tree problem. Safari Ride places 392 trees along its road, and 
 Step 1,529 of the ride, with only the trees on.
 ```
 
-This is step 1,529 again, the frame with the frozen cat, showing only its trees. There are 184 of them, out of 392. At nine shapes each, they make up 1,656 of the 2,474 shapes in that frame, more than everything else put together.
+This is step 1,529 again, the frame with the frozen cat, showing only its trees. There are 136 of them, out of 392. At nine shapes each, they make up 1,224 of the 2,121 shapes in that frame, more than everything else put together.
 
 A tree goes through the three forms from the Nature types chapter, with a `Conifer` as its kind. It's placed once, for the whole ride, and sighted and rendered for each frame that can see it.
 
@@ -1081,7 +1081,7 @@ A rail is never stored. Every frame works out its bars and posts again, from the
 
 The radio towers stand well back from the road. One stands past the end of every segment, off to the right, and a long segment has one more halfway along, off to the left. Each is a lattice of thin rods, 80 metres tall.
 
-A tower raises two problems a tree doesn't. Far off, it should sink over the horizon, and up close, it can stand partly behind the camera. It comes in three parts: a place by the road, worked out each frame from its segment; one deliberate cheat, an earth that curves much faster than ours; and a shape, a lattice of rods on a square footprint.
+A tower raises two problems a tree doesn't. Far off, it should sink over the horizon, and up close, it can stand partly behind the camera. It comes in three parts: a place by the road, worked out each frame from its segment; the horizon, which hides it from the bottom up as it recedes; and a shape, a lattice of rods on a square footprint.
 
 New in this chapter:
 
@@ -1094,7 +1094,7 @@ The tower itself is two facts: which way it's turned, and its beacon. The tower 
 
 {{code Tower.Tower from "A tower in a frame" to "Tower :: {"}}
 
-While its shapes are worked out, a tower's measurements for this frame travel together, including how far the earth's curve has sunk it:
+While its shapes are worked out, a tower's measurements for this frame travel together, including how far the ground has dropped beneath it and how much of it the horizon hides:
 
 {{code Tower.TowerGeometry}}
 
@@ -1104,7 +1104,7 @@ Each step of the job is a signature:
 |---|---|---|
 {{types row TowerSighting.end_tower Place a tower past a segment's end}}
 {{types row Tower.scenery_picture Draw it}}
-{{types row EarthCurve.exaggerated_drop Sink it}}
+{{types row EarthCurve.lowest_visible_height Hide its foot}}
 {{types row RiderView.line_ahead Make one rod}}
 
 ### Where a tower stands
@@ -1121,15 +1121,19 @@ To draw a tower, `scenery_picture` also needs the road and where the camera stan
 
 ### Over the horizon
 
-As a tower gets further away, it sinks below the horizon from the bottom up:
+The ride's ground curves away, with a radius of 100 km, and everything stands on it: a tower is lowered by how far the ground has dropped beneath its foot, like a tree or the truck. From the rider's eye, 1.2 metres up, the ground curves out of sight 490 metres out, and that's the horizon. Past it, the lowest thing the rider can see is on the line from the eye that grazes the ground there:
 
-{{code EarthCurve.exaggerated_drop}}
+{{code EarthCurve.lowest_visible_height}}
 
-The ride's ground already curves, with a radius of 100 km. Towers sink over a tighter curve, 20 km, so an 80-metre tower is gone by 1.8 km instead of 4 km, and you can watch it go. Once the curve has sunk all of it, its sighting refuses it with `BelowHorizon`, as a tree too small to see is refused with `TooSmall`. So a sighted tower always has something to draw.
+A tower hides whatever part of it is under that line, so as it gets further away, it sinks below the horizon from the bottom up. An 80-metre tower shows its tip until about 4.5 km. Once all of it is under the line, its sighting refuses it with `BelowHorizon`, as a tree too small to see is refused with `TooSmall`. The rule is the same for every kind with a height:
+
+{{code Pipeline.sighting_above_horizon_of}}
+
+So a sighted tower always has something to draw.
 
 ### Rods
 
-Here's the whole tower, from the top. A tower the curve hides wholly never gets here, so that case is a crash. Otherwise come the legs, the rings and the braces, and the beacon's disc last, at the top:
+Here's the whole tower, from the top. A tower the horizon hides wholly never gets here, so that case is a crash. Otherwise come the legs, the rings and the braces, and the beacon's disc last, at the top:
 
 {{code Tower.tower_shapes}}
 
@@ -1137,7 +1141,7 @@ A tower's footprint is a square, and four tags name its corners. Going round the
 
 {{code Tower.next_corner}}
 
-Four legs run from the corners up to the top. Each starts at the geometry's `sunk`, the height the curve has hidden, so nothing below the horizon is drawn:
+Four legs run from the corners up to the top. Each starts at the geometry's `hidden`, the height the horizon hides, so nothing below the horizon is drawn:
 
 {{code Tower.leg_shapes}}
 
@@ -1943,70 +1947,92 @@ A truck from behind, from behind and to one side, and from the side.
 
 New in this chapter:
 
-- Modules: `TruckSighting`, `TruckShape`, `TruckBody`
+- Modules: `TruckShape`, `TruckSighting`, `TruckPlacement`, `TruckBody`, `Truck`
+
+### What the truck looks like
+
+The truck is blue. `truck_blue`, a navy, paints the back of its trailer, its windshield and its nose. Its sides are `side_blue`, a darker navy, and its roof is `roof_blue`, a lighter blue. Its tires are `tire_black`. There's no glass: the windshield is painted the truck's blue.
+
+`TruckShape` says what the truck looks like, and nothing else. It doesn't know where the truck is, or that there's a road. Each part of the truck is a face, a color and its corners:
+
+{{code TruckShape.TruckFace}}
+
+A corner is a point in the truck's own frame, three distances measured from the middle of the trailer:
+
+{{code TruckShape.TruckPoint}}
+
+The sides come first. Each one is a single outline, the trailer and the cab together, walked from the back of the trailer to the nose and back:
+
+{{code TruckShape.sides}}
+
+The trailer's back, the roof, the windshield and the nose are each a strip across the truck. Here's the windshield, sloping down from the cab's roof to its nose:
+
+{{code TruckShape.windshield}}
+
+The tires are circles standing on the road, one on each side of each axle:
+
+{{code TruckShape.tires}}
+
+And the whole truck is its faces, in one list:
+
+{{code TruckShape.truck_faces}}
+
+### Shape, placement, projection
+
+That shape gets to the screen in three stages:
+
+| Stage | What it does |
+|---|---|
+| Shape | Says where each corner of each face is in the truck's own frame |
+| Placement | Turns one point by the truck's heading, carries it out from the truck's foot, and lowers it by the ground's drop |
+| Projection | Turns one whole face into a polygon on the screen |
+
+Placement works a point at a time. Projection works a face at a time, for two reasons. A face that reaches behind the camera is clipped, and clipping can cut corners off a face and add new ones, so it needs the whole outline. And the faces are sorted by depth before they're drawn, and the sort orders faces, not points.
 
 The modules that draw the truck
 ```dot
 digraph truck_drawing {
   node [shape=box, fontname="Helvetica"];
-  TruckBody [style=bold];
+  TruckPlacement [style=bold];
   Scene -> TruckSighting [label="  finds it with truck_in_view"];
-  TruckSighting -> Truck [label="  sights a Truck"];
+  Scene -> Truck [label="  draws it with truck_picture"];
   Truck -> TruckBody [label="  draws its body with body_picture"];
-  TruckBody -> TruckShape [label="  places each corner with road_point_on_truck"];
-  TruckBody -> EarthCurve [label="  lowers it with raised_ground_point"];
+  TruckBody -> TruckShape [label="  reads the faces of"];
+  TruckBody -> TruckPlacement [label="  places each face with placed_face"];
 }
 ```
 
-`TruckSighting` finds the truck on the road ahead. What it finds is a `Truck`, the truck with its lights, and with the lights off that's just the body this chapter draws. The truck is drawn however small it stands, because the rider is always looking for it.
+### Placement: one rigid body
 
-### Shape, placement, projection
+A truck doesn't bend. So it's placed the way any 3D program places a rigid thing: every corner moves together. `TruckSighting` finds the truck on the road ahead, and works out three things once. The truck's spot, which holds its foot in the rider's view and the ground's drop beneath it. Which way it heads against the camera. And which of its lights are on:
 
-The truck is a real box, with a back, two sides, a roof, a windshield and a nose. It gets to the screen in three stages:
+{{code Truck.SightedTruck}}
 
-| Stage | What it does |
-|---|---|
-| Shape | Says where each corner is in the truck's own frame, measured from the middle of the trailer |
-| Placement | Carries one point onto the road at the truck's spot, then lowers it for the earth's curve |
-| Projection | Turns one whole face into a polygon on the screen |
+The heading is the road's direction at the truck's spot. A segment comes into the rider's view by turns and shifts alone, so the way from the spot to a point one metre further along is the road's way all along the segment:
 
-Placement works a point at a time, because each corner stands at its own place on the road. Projection works a face at a time, for two reasons. A face that reaches behind the camera is clipped, and clipping can cut corners off a face and add new ones, so it needs the whole outline. And the faces are sorted by depth before they're drawn, and the sort orders faces, not points.
+{{code TruckSighting.road_heading}}
 
-### Get the types right
+What the truck is drawn from is that sighting and the camera's lens:
 
-A point in the truck's own frame is three distances, measured from the middle of the trailer:
+{{code TruckPlacement.TruckSetting}}
 
-{{code TruckShape.TruckPoint}}
+Placement is one function. It turns a point by the heading, carries it out from the foot, and lifts it. The headlights and the brake lights use it too:
 
-A `TruckSetting` is what the truck is drawn from. It's a `Picture.Setting`, the setting every kind of thing beside the road draws from:
+{{code TruckPlacement.raised_point}}
 
-{{code Picture.Setting}}
+Every corner is lowered by the same drop, how far the ground has curved away beneath the truck's spot. Across a 12-metre truck the drop changes by a few centimetres at most, far less than a pixel.
 
-{{code TruckShape.TruckSetting}}
+### Drawing it
 
-The truck's context is the road its points are measured on, and the camera's vantage:
-
-{{code TruckShape.TruckOnRoad}}
-
-### The functions
-
-Placement is two functions. `TruckShape` moves one point along and across the road from the truck's spot, and lifts it:
-
-{{code TruckShape.road_point_on_truck}}
-
-`EarthCurve` finds where that lands in the rider's view, and lowers it by however far the ground has curved away beneath it. The headlights and the brake lights use it too:
-
-{{code EarthCurve.raised_ground_point}}
-
-`TruckBody.face` places each corner of a face that way. So a face is just a color and a list of `TruckPoint`s. Here's a side, walked around its outline from the back of the trailer to the nose and back:
-
-{{code TruckBody.side}}
-
-The back, the roof, the windshield and the nose are each a strip across the truck, so they share `TruckShape.strip_corners`. The tires are circles standing on the road.
-
-Projection comes last. `TruckBody` sorts the faces far to near, so a nearer face drawn later covers a farther one, and then clips and projects each one:
+`TruckPlacement.placed_face` places each corner of a face. Then `TruckBody` sorts the faces far to near, so a nearer face drawn later covers a farther one, and clips and projects each one:
 
 {{code TruckBody.body_picture}}
+
+One function draws the whole truck from its sighting. The lens goes beside the sighting, as it does for every sighting in the game: a sighting says where a thing is, and the frame's lens draws it.
+
+{{code Truck.truck_picture}}
+
+With the lights off, the beams and the brake lights are empty pictures, and that's just the body. The truck is drawn however small it stands, because the rider is always looking for it.
 
 That's a truck. Next, it moves.
 
@@ -2110,51 +2136,53 @@ That's a truck you can chase. The next chapter lights it.
 
 The ride runs from day into night, so the truck's headlights come on near the end. The truck brakes for bends, so its brake lights show whenever you're close to it, even by day. The truck drives exactly the same with its lights on or off.
 
-New in this chapter:
-
-- Modules: `Truck`, `TruckHeadlights`, `TruckBrakeLights`
-
-### One module per lamp
-
-Each kind of lamp gets a module, and each module owns two things: whether its lamp is on, and how the lamp looks.
-
-The headlights work like a light sensor on the lamps themselves: once the sky is dark enough, they're on. The Sky module tells us how dark it is: `Sky.darkness_at` answers a `Fraction`, 0 by day and 1 at full dark. The sensor reads that.
-
-The brake lights come on while the truck is slowing down. That's a fact about the truck's own last step, its `Pace`, so they follow the truck.
-
-### Get the types right
-
-`TruckHeadlights` and `TruckBrakeLights` are each `[On, Off]`. A `Truck` is the truck as the scene draws it this frame, so it holds one field per lamp:
-
-{{code Truck.Truck from "Which of" to "Truck := {"}}
-
-### The functions
-
-Each frame, `FrameView` builds the `Truck`. It hands the sky's darkness to `TruckHeadlights` and the truck's pace to `TruckBrakeLights`:
+Each frame, `FrameView` builds both lamps together. It hands the sky's darkness to `TruckHeadlights` and the truck's pace to `TruckBrakeLights`:
 
 {{code FrameView.ride_facts from "headlights: TruckHeadlights.at(" to "brake_lights: TruckBrakeLights.at("}}
 
-Each lamp's module applies its own rule:
+New in this chapter:
+
+- Modules: `TruckHeadlights`, `TruckBrakeLights`
+
+Each kind of lamp gets a module, and each module owns two things: whether its lamp is on, and how the lamp looks. Both are `[On, Off]`, and a `Truck` holds one field per lamp:
+
+{{code Truck.Truck from "Which of" to "Truck := {"}}
+
+### The headlights
+
+The headlights work like a light sensor on the lamps themselves: once the sky is dark enough, they're on. `Sky.darkness_at` answers a `Fraction`, 0 by day and 1 at full dark, and the sensor reads that:
 
 {{code TruckHeadlights.at}}
 
-{{code TruckBrakeLights.at}}
-
-The headlights come on at this darkness:
+They come on at this darkness:
 
 {{code TruckHeadlights.headlights_on_darkness}}
 
 On this ride, that's step 3,555 of 6,746. Once on, they stay on, because from there the sky only darkens.
 
-Each lamp's `picture` matches both tags, and an `Off` lamp is an empty picture. `TruckHeadlights` paints the beams as wedges that fade from the lamp toward their far end. `TruckBrakeLights` paints two lamps on the back of the trailer, each with a glow around it. Both place their points the way the body does, with `TruckShape.road_point_on_truck` and `EarthCurve.raised_ground_point`.
+Their `picture` matches both tags, and an `Off` lamp is an empty picture. When they're on, it paints two beams as wedges that fade from the lamp toward their far end. Their points are placed the way the body's are, with `TruckPlacement.raised_point`:
 
-`Truck` puts the three pictures together. `Picture.composite` makes one picture of several, each painted over the ones before:
+{{code TruckHeadlights.picture}}
+
+### The brake lights
+
+The brake lights have a twist: they don't read the light at all. They follow the truck's pace, so they're on while its last step slowed it, by day or by night:
+
+{{code TruckBrakeLights.at}}
+
+Their picture works the same way as the headlights': two lamps on the back of the trailer, each with a glow around it, and nothing when they're off:
+
+{{code TruckBrakeLights.picture}}
+
+### All together
+
+`Picture.composite` makes one picture of several, each painted over the ones before:
 
 {{code Picture.composite}}
 
-The beams go first, then the body, then the brake lights:
+`Truck.truck_picture`, from the chapter that drew the truck, puts the beams first, then the body, then the brake lights:
 
-{{code Truck.scenery_picture}}
+{{code Truck.truck_picture from "Picture.composite([" to "lights.brake_lights.picture(setting),"}}
 
 `TruckBody` knows nothing of the lights: they're drawn around it.
 
@@ -2726,9 +2754,9 @@ The rotation itself is one formula: turn the point by the bend, then move it to 
 
 This is why a sighting never needs to know where a segment is. It hands `RoadAhead.rider_point_at` which segment the point is on, the point's place on that segment, and the camera's vantage, and gets back a `RiderPoint`.
 
-The ground also curves away. That's one formula, the small-angle drop of a sphere, with a record destructured in the parameter list and `right` and `forward` taken out to metres before they're squared. There are two radii in `EarthCurve`, and neither is the earth's. The ground's curve, 100 km, is the surface the road and the truck stand on, and it puts the horizon 490 metres out. The exaggerated curve, 20 km, only sets how soon a far tower goes: an 80 m tower is gone at 1.8 km, where the ground's curve would leave it in view to 4 km.
+The ground also curves away. That's one formula, the small-angle drop of a sphere, with `right` and `forward` taken out to metres before they're squared. Its radius, 100 km, isn't the earth's. It's the surface everything by the road stands on, and it puts the horizon 490 metres out. A sighting asks it once per object, at the object's foot, and the whole object is lowered by that one drop.
 
-{{code EarthCurve.drop_over_radius}}
+{{code EarthCurve.ground_drop}}
 
 ### Cutting a polygon
 
@@ -2958,8 +2986,8 @@ The ride instant chapter showed `SafariApp.model_at_next_step` reading a snapsho
 
 | What's in the shapes of step 1,529 | How many |
 |---|---|
-| `Poly` | 2,467 |
-| `Disc` | 7 |
+| `Poly` | 2,113 |
+| `Disc` | 8 |
 
 What the game hands back each frame is a `List(Shapes.Shape)`. A shape is a tag: `Poly`, `Disc`, `Rect` and a few more, each with its fill. The table counts the shapes of step 1,529, the cat frozen in the road: 2,474 in all, the count in the proving chapter's table, and nearly all of them polygons. Two of the tags aren't shapes. `Blend` and `View` are marks in the list that change how what comes after them is painted. A frame is a flat list, so a mark is the cheapest way to say that.
 

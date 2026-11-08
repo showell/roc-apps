@@ -142,10 +142,5 @@ tower_if_ahead : RoadAhead.RoadView,
 tower_if_ahead = |road, { camera, place, road_point, tower }| {
 	placed_tower : Geom.Placed(Tower)
 	placed_tower = { road_point, lift: Distance.zero, kind: tower }
-	sighting = Pipeline.sighting_of(placed_tower, { road, camera, place })?
-	if Tower.is_wholly_sunk(sighting.spot.foot()) {
-		Err(BelowHorizon)
-	} else {
-		Ok(sighting)
-	}
+	Pipeline.sighting_above_horizon_of(placed_tower, { road, camera, place })
 }

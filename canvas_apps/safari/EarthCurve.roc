@@ -1,47 +1,53 @@
 ## EarthCurve is the earth's curve under the rider: how far the ground drops below
-## level as it goes away from the rider, where a point above the road lands in
-## the rider's view once the ground has dropped beneath it, and the horizon where
-## the ground curves out of sight.
+## level as it goes away from the rider, and the horizon where the ground curves
+## out of sight, which hides what stands low enough beyond it.
 import Camera
 import Distance
 import Fraction
-import Geom
 import RiderView
-import RoadAhead
-import SegmentFromRider
 
 EarthCurve :: [].{
-
-	## A point above the road: the segment it is on, where on the road it
-	## stands, and how high above the road it is.
-	PointOverRoad : {
-		place : SegmentFromRider,
-		road_point : Geom.RoadPoint,
-		height : Distance,
-	}
-
-	## What a point over the road is seen from: the road ahead of the rider,
-	## and the camera's vantage.
-	RoadSight : { road : RoadAhead.RoadView, vantage : Geom.Vantage }
-
-	## Where `point` lands in the view of the camera at `vantage` on `road`.
-	## The ground curves away from the rider, so the point is lowered by how far
-	## the ground has dropped beneath it.
-	raised_ground_point : EarthCurve.RoadSight, EarthCurve.PointOverRoad -> RiderView.RaisedPoint
-	raised_ground_point = |{ road, vantage }, { place, road_point, height }|
-		lowered_point(RoadAhead.rider_point_at(road, { vantage, place, road_point }), height)
 
 	## How far the ground has curved away below level at `point`, which is
 	## never negative.
 	ground_drop : RiderView.RiderPoint -> Distance
-	ground_drop = |point| drop_over_radius(point, ground_curve_radius)
+	ground_drop = |point| {
+		r = point.right.to_metres()
+		f = point.forward.to_metres()
+		Distance.metres((r * r + f * f) / (2.0 * ground_curve_radius.to_metres()))
+	}
 
-	## How far a curve much tighter than the ground's has dropped below level
-	## at `point`, which is never negative. It is exaggerated on purpose, so a
-	## far tower visibly sinks as it recedes: it hides an 80 m tower wholly at
-	## 1.8 km, where on the ground's own curve it would stay in view to 4 km.
-	exaggerated_drop : RiderView.RiderPoint -> Distance
-	exaggerated_drop = |point| drop_over_radius(point, exaggerated_curve_radius)
+	## The lowest height at `point`, measured from the rider's level, that the
+	## rider's eye can see. Within the horizon it is the ground itself. Past it,
+	## the ground has curved out of sight, and the lowest line of sight is the
+	## one from the eye that grazes the ground at the horizon.
+	##
+	## The ground `s` metres out lies s²/2R below level, for the ground's radius
+	## R. A line falling k metres per metre from the eye, at height h, touches
+	## it where h - k s = -s²/2R has one root: k = √(2h/R), at s = √(2hR), which
+	## is the horizon's distance H. So k is 2h/H, and `d` metres out the
+	## grazing line stands at h - 2h d/H. At the horizon that is -h, the
+	## ground's own height there, so the two halves meet.
+	lowest_visible_height : RiderView.RiderPoint -> Distance
+	lowest_visible_height = |point| {
+		reach = distance_from_rider(point).to_metres()
+		horizon = horizon_distance.to_metres()
+		if reach <= horizon {
+			EarthCurve.ground_drop(point).opposite()
+		} else {
+			eye = Camera.eye_height.to_metres()
+			Distance.metres(eye - 2.0 * eye * reach / horizon)
+		}
+	}
+
+	## Whether something standing at `point` past the horizon, its top `top`
+	## above the rider's level, is hidden wholly behind the curve of the ground.
+	## Within the horizon nothing is: the ground there is all in view.
+	is_below_horizon : { point : RiderView.RiderPoint, top : Distance } -> Bool
+	is_below_horizon = |{ point, top }| {
+		is_past_horizon = distance_from_rider(point) > horizon_distance
+		is_past_horizon and top <= EarthCurve.lowest_visible_height(point)
+	}
 
 	## The outline through `points`, each lowered by the earth's curve, cut at
 	## the horizon. It is empty when all of it lies past the horizon.
@@ -55,17 +61,10 @@ EarthCurve :: [].{
 ground_curve_radius : Distance
 ground_curve_radius = Distance.metres(100000.0)
 
-## The radius of `EarthCurve.exaggerated_drop`, a fifth of the ground's.
-exaggerated_curve_radius : Distance
-exaggerated_curve_radius = Distance.metres(20000.0)
-
-## How far a curve of `radius` has dropped below level at `point`.
-drop_over_radius : RiderView.RiderPoint, Distance -> Distance
-drop_over_radius = |{ right, forward }, radius| {
-	r = right.to_metres()
-	f = forward.to_metres()
-	Distance.metres((r * r + f * f) / (2.0 * radius.to_metres()))
-}
+## How far `point` is from the rider, along the ground.
+distance_from_rider : RiderView.RiderPoint -> Distance
+distance_from_rider = |point|
+	RiderView.ground_distance({ from: { right: Distance.zero, forward: Distance.zero }, to: point })
 
 ## How far from the rider the ground curves out of sight. A lowered point
 ## further out lands lower on screen again, so ground past here would show
@@ -76,18 +75,13 @@ horizon_distance = {
 	Distance.metres((2.0 * radius * Camera.eye_height.to_metres()).sqrt())
 }
 
-## A point `height` above the rider's level at `point`, lowered by how far
-## the ground has curved away beneath it.
-lowered_point : RiderView.RiderPoint, Distance -> RiderView.RaisedPoint
-lowered_point = |point, height| {
-	right: point.right,
-	forward: point.forward,
-	height: height.minus(EarthCurve.ground_drop(point)),
-}
-
 ## A point on the ground, lowered by the earth's curve.
 ground_point : RiderView.RiderPoint -> RiderView.RaisedPoint
-ground_point = |point| lowered_point(point, Distance.zero)
+ground_point = |point| {
+	right: point.right,
+	forward: point.forward,
+	height: EarthCurve.ground_drop(point).opposite(),
+}
 
 ## The part of the rider's view within `reach` of the rider, measured on the
 ## ground: a circle round the rider.
@@ -162,18 +156,30 @@ expect EarthCurve.ground_drop({
 	forward: Distance.metres(100.0),
 }).to_metres() == 0.05078125
 
-expect EarthCurve.exaggerated_drop({
-	right: Distance.metres(0.0),
-	forward: Distance.metres(200.0),
-}).to_metres() == 1.0
-expect EarthCurve.exaggerated_drop({
-	right: Distance.metres(100.0),
-	forward: Distance.metres(100.0),
-}).to_metres() == 0.5
-expect EarthCurve.exaggerated_drop({
-	right: Distance.metres(0.0),
-	forward: Distance.metres(0.0),
-}).to_metres() == 0.0
+## A point `forward` metres straight ahead of the rider.
+straight_ahead : F64 -> RiderView.RiderPoint
+straight_ahead = |forward| { right: Distance.zero, forward: Distance.metres(forward) }
+
+# The horizon is 490 m out. Within it the lowest height in view is the
+# ground's: 400 m out it has dropped 0.8 m. At the horizon the grazing line
+# meets the ground, 1.2 m down, the eye's height below level. 1000 m out the
+# grazing line stands 3.699 m below level.
+expect
+	[
+		(400.0, -0.8),
+		(horizon_distance.to_metres(), -1.2),
+		(1000.0, -3.698979485566356),
+	].all(
+		|(forward, lowest)|
+			(EarthCurve.lowest_visible_height(straight_ahead(forward)).to_metres() - lowest).abs()
+				<= 0.000000001,
+	)
+
+# 1000 m out, a top 3.6 m below level shows over the horizon, and one 3.8 m below
+# is hidden. Within the horizon nothing is hidden, even a top down on the ground.
+expect !EarthCurve.is_below_horizon({ point: straight_ahead(1000.0), top: Distance.metres(-3.6) })
+expect EarthCurve.is_below_horizon({ point: straight_ahead(1000.0), top: Distance.metres(-3.8) })
+expect !EarthCurve.is_below_horizon({ point: straight_ahead(400.0), top: Distance.metres(-0.8) })
 
 ## A point on the level of the rider, `right` and `forward` in metres.
 level_at : F64, F64 -> RiderView.RaisedPoint

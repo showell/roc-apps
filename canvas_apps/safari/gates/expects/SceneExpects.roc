@@ -153,6 +153,27 @@ expect
 				== outcome,
 	)
 
+# A post 1000 m along stands 5 m below level, where the ground has dropped, and
+# the line from the eye that grazes the horizon passes 3.699 m below level there.
+# A post 1.4 m tall shows its top over the horizon; one 1.2 m tall is hidden.
+expect
+	[(Distance.metres(1.2), Err(BelowHorizon)), (Distance.metres(1.4), Ok(Seen))].all(
+		|(height, outcome)|
+			Pipeline.sighting_above_horizon_of(
+				{
+					road_point: { along: Along.metres(1000.0), across: Across.metres(1.5) },
+					lift: Distance.zero,
+					kind: Post.({ height: height }),
+				},
+				{
+					road: one_segment_road,
+					camera: Fixtures.origin_camera,
+					place: Ahead(SegmentFromRider.Position.first),
+				},
+			).map_ok(|_| Seen)
+				== outcome,
+	)
+
 ## A big green tree `forward` metres straight ahead of the route's start.
 green_tree_ahead : F64 -> Pipeline.Sighted(Conifer)
 green_tree_ahead = |forward| sighted_ahead(Conifer.Green, forward)
@@ -242,12 +263,12 @@ is_disc = |shape|
 		Poly(_) | Rect(_) | Blend(_) | View(_) | Image(_) | Text(_) => False
 	}
 
-# The Roadside trees chapter: 184 trees in view. The platform chapter's shapes
+# The Roadside trees chapter: 136 trees in view. The platform chapter's shapes
 # by tag: every one of them is a Poly or a Disc.
-expect book_view.scene.trees.len() == 184
-expect book_shapes.len() == 2474
-expect book_shapes.keep_if(is_polygon).len() == 2467
-expect book_shapes.keep_if(is_disc).len() == 7
+expect book_view.scene.trees.len() == 136
+expect book_shapes.len() == 2121
+expect book_shapes.keep_if(is_polygon).len() == 2113
+expect book_shapes.keep_if(is_disc).len() == 8
 
 # The modules chapter's sighting: one cat, frozen on the ground about 0.38 m
 # right of the camera and 23.63 m ahead.

@@ -6,6 +6,7 @@
 ## It has a module of its own because a kind's picture names it, and Segment
 ## and Trees, which hold the kinds, sit under RoadAhead and Pipeline.
 import Distance
+import EarthCurve
 import Geom
 import RiderView
 import SegmentFromRider
@@ -46,8 +47,16 @@ Spot :: {
 	foot : Spot -> RiderView.RiderPointAhead
 	foot = |Spot.(spot)| spot.foot
 
+	## How far the ground has curved away below the rider's level beneath the
+	## object's foot. Every part of an object is lowered by this one drop: it
+	## changes by a few centimetres at most across anything we draw, well under
+	## a pixel, so working it out once per object is enough.
+	drop : Spot -> Distance
+	drop = |spot| EarthCurve.ground_drop(spot.foot().to_rider())
+
 	## The middle of the object's foot, raised as high off the ground as the
-	## object is: where an upright object stands.
+	## object is, on the ground as it curves away: where an upright object
+	## stands.
 	base : Spot -> RiderView.RaisedPointAhead
-	base = |spot| spot.foot().at_height(spot.lift())
+	base = |spot| spot.foot().at_height(spot.lift().minus(spot.drop()))
 }

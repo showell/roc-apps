@@ -26,6 +26,7 @@ import game.Sun
 import game.TowerSighting
 import game.TreeSighting
 import game.BillboardSighting
+import game.Truck
 import game.TruckSighting
 import game.World
 import lib.Shapes
@@ -80,7 +81,10 @@ part_size = |part, { route, instant }| {
 	} else if part == "view" {
 		FrameView.ride_shape_lists(FrameView.frame_view_at(route, instant)).join().len()
 	} else if part == "camera" {
-		FrameView.camera_at(route, instant).focal_length.to_f64().to_u64_try() ?? crash "FramePartsBench: a focal length is a finite number"
+		FrameView.camera_at(
+			route,
+			instant,
+		).focal_length.to_f64().to_u64_try() ?? crash "FramePartsBench: a focal length is a finite number"
 	} else {
 		camera = FrameView.camera_at(route, instant)
 		if part == "sky" {
@@ -210,10 +214,9 @@ truck_renderings : RoadAhead.RoadView,
 	facts : Scene.RideFacts,
 } -> List(Rendered)
 truck_renderings = |road, { cam, facts }| {
-	on_road = { road, vantage: cam.vantage }
 	match TruckSighting.truck_in_view(road, { camera: cam, truck: facts.truck }) {
 		Ok(truck) =>
-			[Pipeline.rendering_of(truck, { focal_length: cam.focal_length, context: on_road })]
+			[Rendered.of(truck.spot.foot().forward(), Truck.truck_picture(truck, cam.focal_length))]
 		Err(NoTruck) | Err(BehindCamera) => []
 	}
 }

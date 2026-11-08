@@ -13,7 +13,9 @@ import game.Pipeline
 import game.SegmentFromRider
 import game.Sky
 import game.TruckBody
+import game.TruckPlacement
 import game.TruckShape
+import game.TruckSighting
 import game.World
 import lib.CanvasApp
 import lib.Point
@@ -113,11 +115,12 @@ view_vantage = |view| {
 	}
 }
 
-## How the truck is drawn for `view`: its spot as that view's camera sees it,
-## and the road and the vantage its points are measured from.
-view_setting : TruckView -> TruckShape.TruckSetting
+## How the truck is drawn for `view`: its spot and its heading as that view's
+## camera sees them.
+view_setting : TruckView -> TruckPlacement.TruckSetting
 view_setting = |view| {
 	vantage = view_vantage(view)
+	place = Ahead(SegmentFromRider.Position.first)
 	placed_truck : Geom.Placed({})
 	placed_truck = { road_point: truck_road_point, lift: Distance.zero, kind: {} }
 	sighting_result = Pipeline.sighting_of(
@@ -125,14 +128,17 @@ view_setting = |view| {
 		{
 			road: World.road_at_start,
 			camera: { vantage, focal_length: Lens.resting_focal_length },
-			place: Ahead(SegmentFromRider.Position.first),
+			place,
 		},
 	)
 	match sighting_result {
 		Ok(sighting) => {
 			spot: sighting.spot,
+			heading: TruckSighting.road_heading(
+				World.road_at_start,
+				{ vantage, place, road_point: truck_road_point },
+			),
 			focal_length: Lens.resting_focal_length,
-			context: { road: World.road_at_start, vantage },
 		}
 		Err(BehindCamera) => crash "TruckWidgetApp.view_setting: every camera faces the truck"
 	}
