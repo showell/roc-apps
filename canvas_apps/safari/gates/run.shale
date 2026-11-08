@@ -193,10 +193,11 @@ const DEPTHS = {"0", "100", "1529", "1542", "3000", "3698", "5700", "6250", "900
 -- game: a constant nudged in one drawing module moved it for 12 of 17
 -- modules, where 3000 moved for 9 and 1586 for 7.
 const FAST_FRAME_DEPTH = "5700"
--- The widgets' budget is set from a cold cache after a change to a module they
--- all import: 23 s of CPU for 13 widgets' checks and their one test run, and
--- 17 s warm, measured 2026-11-07.
-const CPU_BUDGET_MS = {lints = 25000, expects = 50000, widgets = 35000, tutorial = 5000, book_names = 2000, proof = 60000, page = 25000}
+-- The widgets' budget is about twice their warm time: 25 s of CPU for 13
+-- widgets' checks, their one test run and their 13 wasm builds, which cost about
+-- 7 s of it, measured 2026-11-08. A cold run of the checks and the test took
+-- 23 s on 2026-11-07, before the builds.
+const CPU_BUDGET_MS = {lints = 25000, expects = 50000, widgets = 50000, tutorial = 5000, book_names = 2000, proof = 60000, page = 25000}
 const COLD = arg("cold", "") == "1"
 const RELEASE = arg("release", "") == "1"
 
@@ -413,6 +414,23 @@ function check_widget(roc, env, folder)
   return 1
 end
 
+-- The web platform's host, which canvas_apps/build.sh builds with Zig, and
+-- which every widget's wasm links against.
+const WEB_HOST = "canvas_apps/web/platform/targets/wasm32/host.wasm"
+
+-- One widget's web.roc built to wasm on the dev backend into the folder `bin`:
+-- how many things went wrong. `roc check` passing says nothing about this, since
+-- a build can still crash the compiler.
+function build_widget(roc, env, bin, folder)
+  local wasm = bin .. "/" .. folder .. ".wasm"
+  local b = run({roc, "build", "web.roc", "--target=wasm32", "--opt=dev", "--output=" .. real(bin) .. "/" .. folder .. ".wasm"},
+    {timeout_ms = 300000, cwd = "canvas_apps/" .. folder, whole = 200000, want = WANT, env = env})
+  print("roc build " .. folder .. " (wasm, dev): " .. b.ms .. " ms")
+  if b.ended == "exit" and re_find(b.out, ROC_ERROR_MARK) == nil and exists(wasm) then return 0 end
+  print("FAIL roc build " .. folder .. " (wasm, dev) ended " .. b.ended .. " " .. get(b, "code", -1) .. ": " .. trim(sub(b.out, 1, 2000)))
+  return 1
+end
+
 -- The lines of `passed` that a widget, widget_kit or WidgetExpects.roc holds.
 -- The rest are the game's and lib's, which `part=expects` counts.
 function widget_lines(passed)
@@ -446,7 +464,10 @@ end
 -- `roc test` runs the expects of every module a root reaches, packages on a
 -- path included, and has no way to run only some, so the game's expects run
 -- here too, once. A widget that doesn't check isn't tested, so the test waits
--- for them all.
+-- for them all. Last, each widget's web.roc is built to wasm on the dev
+-- backend, which links against WEB_HOST, because a widget can check clean and
+-- still crash the compiler's build. The page check build.sh adds is left to
+-- publish: it took 146 s for the 13 widgets (2026-11-08).
 function widgets()
   local roc = roc_path()
   local cache = child_cache("widgets")
@@ -456,11 +477,22 @@ function widgets()
   local wrong = widgets_unrooted(folders)
   for folder in folders do wrong = wrong + check_widget(roc, env, folder) end
   if wrong == 0 then wrong = test_root(roc, env, WIDGET_ROOT_FROM_SAFARI, passed) end
+  local built = 0
+  if wrong == 0 then
+    if not exists(WEB_HOST) then fail("safari gates: no " .. WEB_HOST .. ", which the widgets' wasm links against: build it once with `canvas_apps/build.sh safari`") end
+    local bin = fresh_dir("scratch:", "safari-widget-wasm")
+    for folder in folders do
+      local bad = build_widget(roc, env, bin, folder)
+      if bad == 0 then built = built + 1 end
+      wrong = wrong + bad
+    end
+    if wrong > 0 then print("safari gates: the widgets' wasm kept in " .. bin) else remove_tree(bin) end
+  end
   drop_child_cache(cache)
   local source = written_expects(widget_sources())
   if #keys(source.written) == 0 then fail("safari gates: no expects found in the widgets") end
   if wrong == 0 then wrong = expects_unheld(source, widget_lines(passed)) end
-  print("widgets: " .. #folders .. " checked, " .. #keys(source.written) .. " expects in the source, " .. #keys(passed) .. " passed in one roc test, " .. wrong .. " wrong")
+  print("widgets: " .. #folders .. " checked, " .. built .. " built to wasm, " .. #keys(source.written) .. " expects in the source, " .. #keys(passed) .. " passed in one roc test, " .. wrong .. " wrong")
   if wrong > 0 then fail("safari gates: the widgets failed") end
   return nil
 end
