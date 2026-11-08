@@ -80,10 +80,6 @@ Geom :: [].{
 			RightSide
 		}
 
-	## How far from the middle of the road the nearest row of a herd stands.
-	herd_front_distance : Distance
-	herd_front_distance = road_half_width.plus(Distance.metres(10.0))
-
 	## A point on the segment after `bend`, measured on the segment before it:
 	## turned by the bend, then moved to where the segment after starts.
 	point_in_segment_before : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
