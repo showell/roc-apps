@@ -7,6 +7,7 @@
 import Pixels
 import Angle
 import FarHeight
+import FarRise
 import Fraction
 import Grass
 import Lens
@@ -146,8 +147,8 @@ snow_threshold : FarHeight
 snow_threshold = FarHeight.of(124.0)
 
 ## How far the snowline dips below the threshold under the highest peak.
-snow_dip : FarHeight
-snow_dip = FarHeight.of(10.0)
+snow_dip : FarRise
+snow_dip = FarRise.of(10.0)
 
 ## The silhouettes are sampled every `column_step` pixels across the screen.
 column_step : Pixels
@@ -175,7 +176,7 @@ snowline_under = |north_height| {
 	above_threshold = north_height.minus(snow_threshold)
 	peak_above_threshold = snow_peak_height.minus(snow_threshold)
 	above_fraction = Fraction.clamp(above_threshold.ratio_to(peak_above_threshold))
-	snow_threshold.minus(snow_dip.scaled_by(above_fraction))
+	snow_threshold.lowered_by(snow_dip.scaled_by(above_fraction))
 }
 
 ## The bearing seen at `x` across the screen.
@@ -183,13 +184,13 @@ bearing_at : { heading : Angle.Bearing, focal_length : Pixels, .. }, Pixels -> A
 bearing_at = |aim, x| aim.heading.plus(Lens.turn_at_x({ x, focal_length: aim.focal_length }))
 
 ## A mountain range: the bearing of its middle, how far it reaches either
-## side, the height it never passes, and the two frequencies of the ridges
+## side, how far above the horizon it reaches at most, and the two frequencies of the ridges
 ## along it, broad and fine. Each ridge frequency is how many waves would fit
 ## a whole turn.
 MountainRange : {
 	center : Angle.Bearing,
 	half_width : Angle.Turn,
-	height_ceiling : FarHeight,
+	height_ceiling : FarRise,
 	broad_ridge_waves : F64,
 	fine_ridge_waves : F64,
 }
@@ -198,7 +199,7 @@ north_range : MountainRange
 north_range = {
 	center: Angle.north,
 	half_width: Angle.Turn.radians(0.95),
-	height_ceiling: FarHeight.of(150.0),
+	height_ceiling: FarRise.of(150.0),
 	broad_ridge_waves: 8.0,
 	fine_ridge_waves: 21.0,
 }
@@ -207,7 +208,7 @@ west_range : MountainRange
 west_range = {
 	center: west_range_bearing,
 	half_width: Angle.Turn.radians(0.72),
-	height_ceiling: FarHeight.of(120.0),
+	height_ceiling: FarRise.of(120.0),
 	broad_ridge_waves: 11.0,
 	fine_ridge_waves: 27.0,
 }
@@ -230,7 +231,7 @@ range_height = |range, bearing| {
 		first_wave = 0.24 * (radians * range.broad_ridge_waves).cos()
 		second_wave = 0.16 * (radians * range.fine_ridge_waves + 1.0).cos()
 		ridge = 0.6 + first_wave + second_wave
-		range.height_ceiling.times(envelope).times(ridge)
+		FarHeight.zero.plus(range.height_ceiling.times(envelope).times(ridge))
 	}
 }
 
@@ -292,8 +293,8 @@ silhouette = |sky_columns, { focal_length, height_at, color, base_y }| {
 
 ## Snow thinner than this, between the range's crest and the snowline, isn't
 ## drawn.
-thinnest_snow : FarHeight
-thinnest_snow = FarHeight.of(0.01)
+thinnest_snow : FarRise
+thinnest_snow = FarRise.of(0.01)
 
 ## The north range's snow: along its crest where the range is above the
 ## snowline, then back along the snowline, unless fewer than two of
@@ -389,9 +390,15 @@ expect snowline_under(Skyline.north_range_height(north_by(0.9))) == snow_thresho
 expect snowline_under(Skyline.north_range_height(north_by(2.0))) == snow_threshold
 
 expect snowline_under(Skyline.north_range_height(north_by(0.0))) < snow_threshold
-expect snowline_under(Skyline.north_range_height(north_by(0.0))) > snow_threshold.minus(snow_dip)
+expect {
+	deepest_snowline = snow_threshold.lowered_by(snow_dip)
+	snowline_under(Skyline.north_range_height(north_by(0.0))) > deepest_snowline
+}
 expect snowline_under(Skyline.north_range_height(north_by(0.5))) <= snow_threshold
-expect snowline_under(Skyline.north_range_height(north_by(0.5))) >= snow_threshold.minus(snow_dip)
+expect {
+	deepest_snowline = snow_threshold.lowered_by(snow_dip)
+	snowline_under(Skyline.north_range_height(north_by(0.5))) >= deepest_snowline
+}
 
 expect snow_peak_height > snow_threshold
 

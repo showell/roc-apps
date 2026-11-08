@@ -265,7 +265,7 @@ sunset_climax : Clock
 sunset_climax = {
 	hidden_at = first_step_where(is_sun_behind_mountains)
 	range_top = SunPath.height_at(hidden_at).plus(SunPath.radius)
-	first_step_where(|clock| SunPath.height_at(clock).minus(SunPath.radius) < range_top)
+	first_step_where(|clock| SunPath.height_at(clock).lowered_by(SunPath.radius) < range_top)
 }
 
 ## How many steps before and after the sunset's climax the rider must be on the
