@@ -23,6 +23,7 @@ package
 		Coast,
 		ColorShade,
 		Conifer,
+		ConvexHull,
 		DepthSort,
 		Distance,
 		EarthCurve,

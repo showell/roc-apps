@@ -561,7 +561,7 @@ Three functions carry the decision:
 |---|---|---|
 {{types row TreeShapes.crown_of Decide, once for the tree}}
 {{types row TreeShapes.tier_shape Act on it, for each tier}}
-{{types row TreeShapes.convex_hull_points Outline a cone}}
+{{types row ConvexHull.convex_hull_points Outline a cone}}
 
 A near tree's tiers
 ```dot
@@ -607,11 +607,11 @@ A frame has no cones, only polygons, so we work out the polygon a cone would mak
 
 That leaves 17 points on the screen, and a cone's outline is whatever wraps around them. That's a convex hull:
 
-{{code TreeShapes.convex_hull_points}}
+{{code ConvexHull.convex_hull_points}}
 
 This is Andrew's monotone chain, which A. M. Andrew published in 1979. Sort the points from left to right, walk along the top, and walk back along the bottom. `sort_with` sorts by a function that compares two points and answers `Before`, `Same` or `After`, and `left_to_right` is that function: left first, and the higher of two at one x. The top walk ends on the rightmost point, where the bottom walk starts, and the bottom walk ends on the leftmost, where the top walk started. So each walk drops its last point before the `concat`, and no corner appears twice. `fold` walks a list from the front, carrying an answer from item to item, and `fold_rev` is the same from the far end, with its arguments the other way around. `trim_hull` serves both walks: before a point goes on, it drops the last point of the hull while that point would make a dent, and it calls itself until none does. `[.., a, b]` is a list pattern that takes the last two items.
 
-{{code TreeShapes.trim_hull}}
+{{code ConvexHull.trim_hull}}
 
 A whole cone comes out as one polygon. The ring gets wider on the screen as it gets nearer, so the tree fattens as you pass.
 
