@@ -659,19 +659,19 @@ digraph roadside {
   fontname="Helvetica";
   subgraph cluster_once {
     label="once";
-    "World.built_segment" -> "Trees.roadside_trees";
+    "World.built_segment" -> "Segment.from_choices" [label="  builds a segment with"];
+    "Segment.from_choices" -> "Trees.roadside_trees" [label="  places its trees with"];
   }
   subgraph cluster_frame {
     label="for each frame";
-    "TreeSighting.trees_in_view" -> "segment_sightings";
-    "segment_sightings" -> "TreeSighting.sighting_of";
-    "TreeSighting.sighting_of" -> "Pipeline.tall_sighting_of";
-    "Pipeline.tall_sighting_of" -> "Pipeline.sighting_of";
-    "SceneShapes.tree_rendering" -> "Pipeline.rendering_of";
-    "Pipeline.rendering_of" -> "Conifer.scenery_picture";
+    "TreeSighting.trees_in_view" -> "TreeSighting.segment_trees" [label="  asks for each segment's"];
+    "TreeSighting.segment_trees" -> "Pipeline.scenery_sighting_of" [label="  sights each tree with"];
+    "Pipeline.scenery_sighting_of" -> "Pipeline.sighting_of" [label="  starts with"];
+    "TreeSighting.tree_renderings" -> "Pipeline.rendering_of" [label="  renders each tree with"];
+    "Pipeline.rendering_of" -> "Conifer.scenery_picture" [label="  calls through its where clause"];
   }
-  "Trees.roadside_trees" -> "TreeSighting.trees_in_view" [style=dotted];
-  "Pipeline.sighting_of" -> "SceneShapes.tree_rendering" [style=dotted];
+  "Trees.roadside_trees" -> "TreeSighting.trees_in_view" [style=dotted, label="  the trees, read again"];
+  "TreeSighting.trees_in_view" -> "TreeSighting.tree_renderings" [style=dotted, label="  the sightings, handed on by Scene"];
   "Conifer.scenery_picture" [style=bold];
 }
 ```
@@ -704,21 +704,21 @@ From here on, things are measured from the camera, which travels with the rider.
 
 `Ahead(position)` says which segment of the road ahead the tree stands on. The size test asks for 2 pixels, through the camera's own lens.
 
-`Pipeline.tall_sighting_of`, from Nature types, starts with `Pipeline.sighting_of`, which asks `RoadAhead.rider_point_at` where the tree's spot on the road lies from the rider. The math layer chapter shows how. If that spot is no farther ahead than the near plane from A conifer, the answer is `BehindCamera`. Otherwise it's a sighting.
+`Pipeline.scenery_sighting_of`, from Nature types, starts with `Pipeline.sighting_of`, which asks `RoadAhead.rider_point_at` where the tree's spot on the road lies from the rider. The math layer chapter shows how. If that spot is no farther ahead than the near plane from A conifer, the answer is `BehindCamera`. Otherwise it's a sighting.
 
-Then `tall_sighting_of` calls a tree under 2 pixels tall on the screen `TooSmall`. So the answer is a `Try`: a sighting, or one of those two reasons. `keep_oks`, in `segment_sightings`, keeps the sightings and drops the reasons.
+Then `scenery_sighting_of` calls a tree under 2 pixels tall on the screen `TooSmall`. So the answer is a `Try`: a sighting, or one of those two reasons. `keep_oks`, in `segment_trees`, keeps the sightings and drops the reasons.
 
 ### Spending the detail
 
 Far trees are cheap. They get eight triangles and a plain trunk. A cone costs a ring of 16 points and a hull, so only trees within 200 metres get cones. A shaded trunk looks round, and the effect only shows on a trunk wide enough on the screen, so it goes to the nearest four trees and no others.
 
-"The nearest few" is the one thing a tree alone can't tell us, because it depends on the other trees. So `SceneShapes` counts them, and the count goes in as the conifer's context, the `nearer_tree_count` from Nature types:
+"The nearest few" is the one thing a tree alone can't tell us, because it depends on the other trees. So `tree_renderings` counts them, and the count goes in as the conifer's context, the `nearer_tree_count` from Nature types:
 
 {{code TreeSighting.tree_renderings}}
 
 {{code TreeSighting.nearer_tree_count}}
 
-`count_if` answers a `U64`, and `to_u16_wrap` turns it into the `U16` the context wants, wrapping around past 65,535. A frame never sees more than the 392 trees there are, so it never wraps.
+`count_if` answers a `U64`, and that's the type the context wants, so the count goes in as it is.
 
 `Pipeline.rendering_of` hands that context to `Conifer.scenery_picture`, and the tree's `Rendered` joins the towers' and the critters' in the frame's one list.
 
@@ -733,13 +733,13 @@ The grass is one rectangle.
 New in this chapter:
 
 - Roc: nothing new
-- Modules: `Backdrop`
+- Modules: `Grass`
 
-`Backdrop` paints what's behind the ride. It has one color for grass:
+`Grass` has one color:
 
 {{code Grass.grass_color}}
 
-Its list of shapes starts with the sky, the sun and the grass, and this is the grass:
+The backdrop is what's behind the ride. `FrameView.backdrop_shapes` paints it as the sky, the sun and the grass, and this is the grass:
 
 {{code Grass.grass_shape}}
 
@@ -751,7 +751,7 @@ It's much wider than the screen because the whole picture tilts when the rider l
 
 Nothing else in the program draws grass. A segment doesn't have any, and there's no sighting for it. The grass is whatever hasn't been painted over.
 
-The other big thing in `Backdrop` is more interesting.
+The other big thing in the backdrop is more interesting.
 
 ## The sun
 
@@ -764,17 +764,17 @@ New in this chapter:
 
 ### A circle
 
-A frame is a list of shapes, and a circle is one of them. `Disc` is a tag from `lib.Shapes`. This is the sun's, from the same list as the grass:
+A frame is a list of shapes, and a circle is one of them. `Disc` is a tag from `lib.Shapes`. This is the sun's, from `Sun.sun_shapes`:
 
 {{code Sun.sun_shapes from "Disc({" to "fill: look.disc,"}}
 
 A `Disc` has a center, a radius and a fill. The grass comes after it in the list and paints over whatever falls below the horizon, so the sun can sink behind the land with no more code.
 
-The fill makes it look like a sun. `sun_fills` builds two, a disc and a glow behind it:
+The fill makes it look like a sun. `Sun.look` builds two, a disc and a glow behind it:
 
 {{code Sun.look}}
 
-`Radial` runs from pale yellow in the middle to orange at the edge. `Glow` is a wide haze that fades to nothing. Both are tags with records inside, so a fill is plain data, and the browser does the painting. `scale` is how large the sun is drawn, because a wider view makes it look smaller.
+`Radial` runs from pale yellow in the middle to orange at the edge. `Glow` is a wide haze that fades to nothing. Both are tags with records inside, so a fill is plain data, and the browser does the painting. The lens's `focal_length` sets how large the sun is drawn, because a wider view makes it look smaller.
 
 ### Angles that can't be mixed up
 
@@ -786,15 +786,15 @@ Two tags say whether the sun is in view, so there's no `null` and no off-screen 
 
 {{code Sun.Sighting}}
 
-Opaque types do the most work from here on. A `Bearing` and a `Turn` are both floats underneath, but only the `Angle` module can build or open one. `Sun.sighting` also takes one record argument, destructured in its parameter list.
+Opaque types do the most work from here on. A `Bearing` and a `Turn` are both floats underneath, but only the `Angle` module can build or open one.
 
 {{code Sun.sun_in_view}}
 
-`turn_from_view.abs() >= visible_turn_limit` compares two `Turn`s. The code never touches radians until `Sun.place` has to do trigonometry, because `.tan()` works on a float.
+`sun_in_view` asks `Lens.far_point` where the sun lands on the screen. `far_point` takes one record argument, destructured in its parameter list. `turn.abs() >= quarter_turn` compares two `Turn`s. The code never touches radians until it has to do trigonometry, because `.tan()` works on a float.
 
 {{code Lens.far_point}}
 
-Its caller, `RideInstant.sun`, is short enough to read whole:
+Its caller, `FrameView.frame_view_at`, is short enough to read whole:
 
 {{code FrameView.frame_view_at}}
 
@@ -816,22 +816,19 @@ The modules around `Sky`
 digraph sky {
   node [shape=box, fontname="Helvetica"];
   Sky [style=bold];
-  RideInstant -> Sky;
-  Tour -> Sky;
-  Backdrop -> Sky;
-  Mountains -> Sky;
-  Sky -> Sun;
-  Sky -> Fraction;
-  Sun -> Fraction;
-  Sun -> Angle;
+  FrameView -> Sky [label="  asks for the colors and the darkness"];
+  Sky -> SunPath [label="  asks how high the sun is"];
+  Sky -> ColorShade [label="  blends two colors"];
+  Sky -> Fraction [label="  measures darkness and warmth"];
+  ColorShade -> Fraction [label="  takes a share of the way"];
 }
 ```
 
-`Sky` sits near the bottom of the system. It imports `Sun` and a few small types, and it knows nothing of the rider, the road or the drawing. Those above it each ask for a color at a given clock.
+`Sky` sits near the bottom of the system. It imports `SunPath` and a few small types, and it knows nothing of the rider or the road. `FrameView`, above it, asks for the colors at a given clock, and for how dark the sky is.
 
 Every function in this chapter has a `->` arrow, not `=>`. That tells you the function has no effects, and the compiler holds it to that. So the same clock always gives the same sky. If you don't see a `=>`, you only have to think about what the function is given.
 
-Here's one of the questions being asked. `Tour` holds the ride, and we'll come back to it. `Tour.sky_top_color` takes the clock from the current instant and hands it to `Sky`.
+Here's the question being asked. `FrameView.frame_view_at` takes the clock from the current instant and hands it to `Sky.colors_at`, which answers both colors.
 
 {{code FrameView.frame_view_at from "sky_colors: Sky.colors_at" to "sky_colors: Sky.colors_at"}}
 
@@ -849,11 +846,11 @@ The sky is two colors, the top of the sky and the horizon. Here they are at five
 
 Every color in the sky is a blend of two others, and a blend needs a ratio. `Fraction` is another small opaque type, a ratio from 0 to 1, and only its own block can build one, so a `Fraction` is always in range. It has two ways in. `Fraction.of` takes a ratio that can only be in range and crashes on anything else, because that would be a bug in the sum. `Fraction.clamp` takes a ratio that can rightly fall outside, and holds it at the nearest end.
 
-`color_between` takes one record argument, destructured in its parameter list, so callers name every field. Each channel moves the same share of the way. `HexColor.Rgb` is a plain record alias: three floats with nothing to guard.
+`color_between` takes one record argument, destructured in its parameter list, so callers name every field. Each channel moves the same share of the way. An `RgbColor` is opaque, and its `red`, `green` and `blue` each answer a `U8`.
 
 {{code ColorShade.color_between}}
 
-`sky_top_color`, the one `Tour.sky_top_color` asked at the start of this chapter, calls it to blend day into dusk. `dusk_at` says how far the day has gone. That's a `Fraction` too, and The setting sun works it out.
+`sky_top_color`, one of the two colors `Sky.colors_at` answers, calls it to blend day into night. `Sky.darkness_at` says how dark the sky is. That's a `Fraction` too, and The setting sun works it out.
 
 {{code Sky.sky_top_color}}
 
@@ -861,11 +858,11 @@ Every color in the sky is a blend of two others, and a blend needs a ratio. `Fra
 
 {{code Sky.sky_horizon_color}}
 
-`Backdrop` paints the two as a gradient, down to the horizon. It stays on the top color for the first fifth of the way, then fades:
+`Sky.sky_shape` paints the two as a gradient, down to the horizon. It stays on the top color for the first fifth of the way, then fades:
 
 {{code Sky.sky_shape from "Linear({" to "end_point: { x: 0.0, y: Screen.horizon_y.to_f64() },"}}
 
-That's where a color finally becomes one integer, because a `Brush` wants `0xRRGGBB`. `pack` gets there with method calls on plain numbers. Static dispatch finds `to_i64_wrap`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `pack` a leaf: it calls nothing of Safari Ride's own.
+A color is one integer all along, `0xRRGGBB`, the form a `Brush` wants. `RgbColor.from_channels` builds one from three channels with method calls on plain numbers. Static dispatch finds `to_i64`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `from_channels` a leaf: it calls nothing of Safari Ride's own.
 
 {{code RgbColor.from_channels}}
 
@@ -878,7 +875,7 @@ However far the rider goes, the mountains never get any closer. They only turn a
 New in this chapter:
 
 - Roc: a function in a record field
-- Modules: `Mountains`, `HexColor`
+- Modules: `Skyline`
 
 There are two ranges, one to the north with snow on its peaks, and a lower one to the west. A range is a record:
 
@@ -894,11 +891,11 @@ To draw a range, we go across the screen two pixels at a time and ask how high t
 
 {{code Skyline.silhouette}}
 
-`Mountains.mountain_shapes` paints them back to front:
+`Skyline.skyline_shapes` paints them back to front:
 
 {{code Skyline.skyline_shapes}}
 
-The rock darkens with `dusk`, the same `Fraction` that darkens the sky, and the snow goes blue. `snow_color` uses the sky's own `color_between`:
+The rock darkens with `darkness`, the same `Fraction` that darkens the sky, and the snow goes blue. `snow_color` uses the sky's own `ColorShade.color_between`:
 
 {{code Skyline.snow_color}}
 
@@ -926,15 +923,15 @@ The modules around `BendInView`
 digraph road {
   node [shape=box, fontname="Helvetica"];
   BendInView [style=bold];
-  GroundSighting -> BendInView;
-  RailSighting -> BendInView;
-  GroundSighting -> GroundPatch;
-  GroundSighting -> Pond;
-  RailSighting -> GuardRail;
-  GroundSighting -> RoadAhead;
-  RailSighting -> RoadAhead;
-  BendInView -> RoadAhead;
-  BendInView -> Geom;
+  GroundSighting -> BendInView [label="  asks about a bend"];
+  RailSighting -> BendInView [label="  asks about a bend"];
+  GroundSighting -> GroundPatch [label="  makes patches"];
+  GroundSighting -> Pond [label="  asks for its outlines"];
+  RailSighting -> GuardRail [label="  cuts the path into quads"];
+  GroundSighting -> RoadAhead [label="  sees road points from the rider"];
+  RailSighting -> RoadAhead [label="  sees road points from the rider"];
+  BendInView -> RoadAhead [label="  sees road points from the rider"];
+  BendInView -> Geom [label="  finds the outer edge"];
 }
 ```
 
@@ -1019,7 +1016,9 @@ digraph rail {
   out [label="leg_points:\nout to the apex"];
   back [label="leg_points:\nback to the\nsecond segment"];
   on [label="runout_points:\n10 metres along\nthe second segment"];
-  up -> out -> back -> on;
+  up -> out [label="  turns out"];
+  out -> back [label="  turns back"];
+  back -> on [label="  runs on"];
 }
 ```
 
@@ -1395,17 +1394,17 @@ The modules behind a beacon
 digraph beacon {
   node [shape=box, fontname="Helvetica"];
   Beacon [style=bold];
-  Scene -> TowerSighting;
-  Scene -> Clock;
-  TowerSighting -> Beacon;
-  TowerSighting -> Tower;
-  TowerSighting -> Clock;
-  Beacon -> Clock;
-  Beacon -> Steps;
-  Beacon -> Fraction;
-  Beacon -> Route;
-  Clock -> Steps;
-  Tower -> Beacon;
+  Scene -> TowerSighting [label="  hands it the clock"];
+  Scene -> Clock [label="  carries the clock"];
+  TowerSighting -> Beacon [label="  lights each beacon"];
+  TowerSighting -> Tower [label="  stands each tower"];
+  TowerSighting -> Clock [label="  reads the step"];
+  Beacon -> Clock [label="  counts steps since the start"];
+  Beacon -> Steps [label="  holds its head start"];
+  Beacon -> Fraction [label="  measures its brightness"];
+  Beacon -> Route [label="  takes a segment's index"];
+  Clock -> Steps [label="  measures time between clocks"];
+  Tower -> Beacon [label="  holds it, lit"];
 }
 ```
 
