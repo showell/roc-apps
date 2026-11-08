@@ -92,7 +92,7 @@ road_shapes = {
 			y: 0.0,
 			width: WidgetPage.canvas_width,
 			height: WidgetPage.picture_bottom_y,
-			fill: Brush.flat(RgbColor.of(0xdcecf5)),
+			fill: Brush.flat(WidgetPage.panel_color),
 		}),
 		Rect({
 			x: 0.0,
@@ -106,7 +106,7 @@ road_shapes = {
 			y: ground_top_y,
 			width: road_width_px,
 			height: ground_height,
-			fill: Brush.flat(RgbColor.of(0x8a8a8a)),
+			fill: Brush.flat(WidgetPage.side_road_color),
 		}),
 	]
 }

@@ -21,6 +21,7 @@ import lib.Point
 import widget.Click
 import widget.PlanView
 import widget.ReadoutText
+import widget.VcrButtons
 import widget.WidgetPage
 
 RehearsalWidgetApp :: [].{
@@ -405,7 +406,7 @@ mark_color = |{ mark, current }|
 	if mark == current {
 		current_color
 	} else if stop_number(mark) < stop_number(current) {
-		RgbColor.of(0x303030)
+		VcrButtons.unlit_button_color
 	} else {
 		RgbColor.of(0xb8b8b8)
 	}
