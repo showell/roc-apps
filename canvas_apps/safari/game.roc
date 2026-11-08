@@ -63,6 +63,7 @@ package
 		RiderCamera,
 		RiderEyes,
 		RiderMind,
+		RiderView,
 		RoadAhead,
 		Route,
 		RoutePlace,

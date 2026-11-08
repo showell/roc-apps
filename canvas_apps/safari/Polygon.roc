@@ -4,7 +4,10 @@
 ## a gradient. Each maker gives one shape. A polygon of fewer than
 ## three corners is a bug in the code that asked for it, so a maker crashes on one.
 ## A circular gradient can shrink out of sight as it goes away, so that maker
-## answers a `Try`.
+## answers a `Try`. It also cuts a polygon in the rider's view at the near plane
+## and puts it on the screen.
+import Camera
+import RiderView
 import Pixels
 import Fraction
 import ColorShade
@@ -136,6 +139,18 @@ Polygon :: [].{
 				Err(TooThin) => crash "Polygon.elliptical_gradient_polygon: an ellipse too thin for Brush to invert"
 			}
 		Poly({ coordinates: polygon_coordinates("Polygon.elliptical_gradient_polygon", corners), fill })
+	}
+
+	## A polygon on screen, cut at the near plane, unless it's wholly behind the
+	## camera.
+	clipped_polygon : RiderView.FlatPolygon, Pixels -> Try(Shapes.Shape, [BehindCamera])
+	clipped_polygon = |{ color, corners }, focal_length| {
+		in_front = RiderView.clipped_points(corners)
+		if in_front.is_empty() {
+			Err(BehindCamera)
+		} else {
+			Ok(Polygon.flat_polygon(Camera.projected_points(in_front, focal_length), color))
+		}
 	}
 }
 

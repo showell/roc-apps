@@ -35,7 +35,7 @@ The rest have been rewritten by hand.
 | `Tour.roc` | the whole ride for any platform: the current instant and the instants behind it for stepping back |
 | `FrameView.roc` | what the camera shows at one instant: the backdrop (the sky's colours and the sun), the ride's shapes and the roll, and the whole frame in paint order, leaned by the roll |
 | `Sky.roc`, `Sun.roc` and `Grass.roc` | what is behind the ride: the sky's gradient, the sun and its glow, and the grass, each drawn by its own module over `Screen.roc`'s rectangles, which reach past a rolled screen's corners |
-| `Polygon.roc` | makers that turn screen points and colours into `Shapes.Shape` values, for the drawing modules |
+| `Polygon.roc` | makers that turn screen points and colours into `Shapes.Shape` values, for the drawing modules, and `clipped_polygon`, which cuts a polygon in the rider's view at the near plane and puts it on the screen |
 | `ColorShade.roc` | lib's `RgbColor` shaded by a factor or blended toward another, channel by channel |
 | `gates/proof/SafariFrame.roc` | a frame painted into pixels in Roc, for the proof tools below |
 | `RideInstant.roc` and the chapter modules | one instant of the ride, the world, the route, the rider, the animals, the scenery, and how each is drawn |

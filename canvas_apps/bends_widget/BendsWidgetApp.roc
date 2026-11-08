@@ -11,6 +11,7 @@ import game.RoadAhead
 import game.Route
 import game.SegmentPlace
 import game.Geom
+import game.RiderView
 import game.GroundSighting
 import game.BendInView
 import game.RailSighting
@@ -97,7 +98,7 @@ bend_of = |road|
 	BendInView.of_in_view(RoadAhead.segment_in_view_at(road, SegmentPlace.Position.first))
 
 ## The apex of a bend of `turn`, as the camera sees it.
-apex_of : Angle.Turn -> Geom.RiderPoint
+apex_of : Angle.Turn -> RiderView.RiderPoint
 apex_of = |turn| {
 	road = road_with(turn)
 	bend_in_view = bend_of(road)
@@ -112,7 +113,7 @@ apex_of = |turn| {
 }
 
 ## Where the view is from, and so where every point is measured from.
-rider : Geom.RiderPoint
+rider : RiderView.RiderPoint
 rider = { right: Distance.zero, forward: Distance.zero }
 
 ## How many pixels a metre takes up.
@@ -125,7 +126,7 @@ rider_y = 198.0
 
 ## Where `point` falls on the canvas. The rider faces up the picture, so the
 ## rider's right is the reader's right.
-canvas_point : ShownBend, Geom.RiderPoint -> { x : F64, y : F64 }
+canvas_point : ShownBend, RiderView.RiderPoint -> { x : F64, y : F64 }
 canvas_point = |{ canvas_x, .. }, { right, forward }| {
 	plan : PlanView
 	plan = { origin: { x: canvas_x, y: rider_y }, pixels_a_metre }
@@ -139,7 +140,7 @@ apex_color : RgbColor
 apex_color = RgbColor.of(0xf0d040)
 
 ## A patch of paving, as a polygon on the canvas.
-patch_shape : ShownBend, List(Geom.RiderPoint) -> Shapes.Shape
+patch_shape : ShownBend, List(RiderView.RiderPoint) -> Shapes.Shape
 patch_shape = |bend, corners|
 	Poly({
 		coordinates: corners.join_map(
@@ -152,7 +153,7 @@ patch_shape = |bend, corners|
 	})
 
 ## The low edge of a rail's quad, which lies along the ground.
-foot_shape : ShownBend, { low_start : Geom.RaisedPoint, low_end : Geom.RaisedPoint, .. } -> Shapes.Shape
+foot_shape : ShownBend, { low_start : RiderView.RaisedPoint, low_end : RiderView.RaisedPoint, .. } -> Shapes.Shape
 foot_shape = |bend, { low_start, low_end, .. }| {
 	from = canvas_point(bend, { right: low_start.right, forward: low_start.forward })
 	to = canvas_point(bend, { right: low_end.right, forward: low_end.forward })
@@ -160,7 +161,7 @@ foot_shape = |bend, { low_start, low_end, .. }| {
 }
 
 ## A disc at a place on the road.
-spot : ShownBend, { at : Geom.RiderPoint, color : RgbColor } -> Shapes.Shape
+spot : ShownBend, { at : RiderView.RiderPoint, color : RgbColor } -> Shapes.Shape
 spot = |bend, { at, color }| {
 	{ x, y } = canvas_point(bend, at)
 	Disc({

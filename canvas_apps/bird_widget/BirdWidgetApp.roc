@@ -11,12 +11,12 @@ import game.Angle
 import game.Animation
 import game.EncounterPlan
 import game.BirdFlight
-import game.Camera
 import game.Clock
 import game.Distance
 import game.Lens
 import game.PosedBird
 import game.Geom
+import game.Polygon
 import game.Pipeline
 import game.RoadAhead
 import game.Route
@@ -110,7 +110,7 @@ road = {
 		on_ground(half, road_end_forward),
 		on_ground(half.opposite(), road_end_forward),
 	]
-	[Camera.clipped_polygon({ color: RgbColor.of(0x8a8a8a), corners }, Lens.resting_focal)].keep_oks(|shape| shape)
+	[Polygon.clipped_polygon({ color: RgbColor.of(0x8a8a8a), corners }, Lens.resting_focal)].keep_oks(|shape| shape)
 }
 
 ## The road ahead of a rider on the route's first segment. The trees and the

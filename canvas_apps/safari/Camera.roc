@@ -5,11 +5,8 @@ import Distance
 import FarHeight
 import Lens
 import Pixels
-import Geom
-import Polygon
+import RiderView
 import Screen
-import lib.RgbColor
-import lib.Shapes
 
 Camera :: [].{
 
@@ -19,7 +16,7 @@ Camera :: [].{
 
 	## Where a point in front of the camera lands on the screen, through a
 	## lens of `focal_length` in pixels.
-	project : Geom.AheadPoint, Pixels -> Screen.Point
+	project : RiderView.RaisedPointAhead, Pixels -> Screen.Point
 	project = |p, focal_length| {
 		slope_right = p.right().ratio_to(p.forward())
 		slope_up = p.height().minus(eye_height).ratio_to(p.forward())
@@ -68,7 +65,7 @@ Camera :: [].{
 	## put on the screen, and `height_on_screen`, how far up the screen its top
 	## is from there, `height` above `base`. A tree, a still and a billboard all
 	## stand this way.
-	upright_on_screen : Geom.AheadPoint,
+	upright_on_screen : RiderView.RaisedPointAhead,
 	{
 		height : Distance,
 		focal_length : Pixels,
@@ -81,23 +78,8 @@ Camera :: [].{
 
 	## Each of `points` put on the screen, in order, through a lens of focal
 	## length `focal_length`.
-	projected_points : List(Geom.AheadPoint), Pixels -> List(Screen.Point)
+	projected_points : List(RiderView.RaisedPointAhead), Pixels -> List(Screen.Point)
 	projected_points = |points, focal_length| points.map(|p| project(p, focal_length))
-
-	## A polygon of one color, in the rider's view.
-	FlatPolygon : { color : RgbColor, corners : List(Geom.RaisedPoint) }
-
-	## A polygon on screen, cut at the near plane, unless it's wholly behind the
-	## camera.
-	clipped_polygon : Camera.FlatPolygon, Pixels -> Try(Shapes.Shape, [BehindCamera])
-	clipped_polygon = |{ color, corners }, focal_length| {
-		in_front = Geom.clipped_points(corners)
-		if in_front.is_empty() {
-			Err(BehindCamera)
-		} else {
-			Ok(Polygon.flat_polygon(projected_points(in_front, focal_length), color))
-		}
-	}
 }
 
 ## The pinhole's rule across the screen: the x for a line of sight that goes
@@ -107,10 +89,10 @@ x_for_slope : F64, Pixels -> Pixels
 x_for_slope = |slope, focal_length| Screen.center_x.plus(focal_length.times(slope))
 
 ## `point` past the near plane, which every point in these tests is.
-ahead : Geom.RaisedPoint -> Geom.AheadPoint
-ahead = |point| Geom.ahead_point(point) ?? crash "a test's point is past the near plane"
+ahead : RiderView.RaisedPoint -> RiderView.RaisedPointAhead
+ahead = |point| RiderView.raised_point_ahead(point) ?? crash "a test's point is past the near plane"
 
-screen_point : Geom.RaisedPoint -> Screen.Point
+screen_point : RiderView.RaisedPoint -> Screen.Point
 screen_point = |point| Camera.project(ahead(point), Pixels.of(800.0))
 
 expect screen_point({
@@ -279,33 +261,3 @@ expect
 			(back.to_radians() - radians).abs() <= 0.000000001
 		},
 	)
-
-# A triangle at these distances ahead, on the ground.
-sample_clipped_polygon : List(F64) -> Try(Shapes.Shape, [BehindCamera])
-sample_clipped_polygon = |forwards|
-	Camera.clipped_polygon(
-		{
-			color: RgbColor.of(0x2F7E8C),
-			corners: forwards.map(
-				|forward| {
-					right: Distance.metres(forward),
-					forward: Distance.metres(forward),
-					height: Distance.zero,
-				},
-			),
-		},
-		Pixels.of(800.0),
-	)
-
-# The number of coordinates a triangle's polygon holds, 2 to a corner.
-clipped_coordinate_count : List(F64) -> U64
-clipped_coordinate_count = |forwards|
-	match sample_clipped_polygon(forwards) {
-		Ok(Poly(polygon)) => polygon.coordinates.len()
-		_ => 0
-	}
-
-expect clipped_coordinate_count([5.0, 6.0, 7.0]) == 6
-expect clipped_coordinate_count([-1.0, 5.0, 6.0]) == 8
-expect clipped_coordinate_count([-3.0, -2.0, -1.0]) == 0
-expect sample_clipped_polygon([-3.0, -2.0, -1.0]).is_err()

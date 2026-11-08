@@ -9,9 +9,11 @@ import game.Angle
 import game.BendInView
 import game.Distance
 import game.Geom
+import game.RiderView
 import game.GroundPatch
 import game.GroundSighting
 import game.Pixels
+import game.Polygon
 import game.RoadAhead
 import game.Route
 import game.RoutePlace
@@ -90,7 +92,7 @@ turned_vantage = {
 
 ## The point 50 m along and 1 m right on the segment at `place` on `road_view`,
 ## as `turned_vantage` sees it.
-turned_point_at : RoadAhead.RoadView, SegmentPlace -> Geom.RiderPoint
+turned_point_at : RoadAhead.RoadView, SegmentPlace -> RiderView.RiderPoint
 turned_point_at = |road_view, place|
 	RoadAhead.rider_point_at(
 		road_view,
@@ -165,7 +167,7 @@ segment_in_view_behind = |road_view|
 
 ## The apex of a bend from a segment 300 m long, just behind the rider's, as
 ## `turned_vantage` sees it.
-apex_after_turn : Angle.Turn -> Geom.RiderPoint
+apex_after_turn : Angle.Turn -> RiderView.RiderPoint
 apex_after_turn = |turn| {
 	road_view = road_past_bend(turn)
 	bend_in_view = BendInView.of_in_view(segment_in_view_behind(road_view))
@@ -260,7 +262,7 @@ expect {
 
 # GroundPatch's shapes. A ground patch's checks sit here because the corners
 # need Distance and the fill needs Brush, and GroundPatch imports neither.
-sample_patch_shape : List(Geom.RiderPoint) -> Try(Shapes.Shape, [PastHorizon, BehindCamera])
+sample_patch_shape : List(RiderView.RiderPoint) -> Try(Shapes.Shape, [PastHorizon, BehindCamera])
 sample_patch_shape = |corners| GroundPatch.patch_shape(
 	GroundPatch.of(corners, RgbColor.of(0x2F7E8C)),
 	Pixels.of(685.5110432362151),
@@ -319,7 +321,7 @@ patches_seen_from = |rider_vantage|
 first_road : GroundPatch
 first_road = patches_seen_from(Fixtures.origin).first() ?? crash "RoadExpects: the first segment lays road"
 
-corner : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
+corner : List(RiderView.RiderPoint), U64 -> RiderView.RiderPoint
 corner = |
 	corners,
 	i,
@@ -327,7 +329,7 @@ corner = |
 
 ## The road's corners where chunk `number` starts, on the right edge and the
 ## left: the start, then up the right edge, then back down the left.
-chunk_start_corners : U64 -> (Geom.RiderPoint, Geom.RiderPoint)
+chunk_start_corners : U64 -> (RiderView.RiderPoint, RiderView.RiderPoint)
 chunk_start_corners = |number| {
 	left_index = if number == 0 {
 		0
@@ -416,3 +418,33 @@ expect
 			place.distance_along(Fixtures.three_segment_road.route()).to_metres() == metres
 		},
 	)
+
+# A triangle at these distances ahead, on the ground.
+sample_clipped_polygon : List(F64) -> Try(Shapes.Shape, [BehindCamera])
+sample_clipped_polygon = |forwards|
+	Polygon.clipped_polygon(
+		{
+			color: RgbColor.of(0x2F7E8C),
+			corners: forwards.map(
+				|forward| {
+					right: Distance.metres(forward),
+					forward: Distance.metres(forward),
+					height: Distance.zero,
+				},
+			),
+		},
+		Pixels.of(800.0),
+	)
+
+# The number of coordinates a triangle's polygon holds, 2 to a corner.
+clipped_coordinate_count : List(F64) -> U64
+clipped_coordinate_count = |forwards|
+	match sample_clipped_polygon(forwards) {
+		Ok(Poly(polygon)) => polygon.coordinates.len()
+		_ => 0
+	}
+
+expect clipped_coordinate_count([5.0, 6.0, 7.0]) == 6
+expect clipped_coordinate_count([-1.0, 5.0, 6.0]) == 8
+expect clipped_coordinate_count([-3.0, -2.0, -1.0]) == 0
+expect sample_clipped_polygon([-3.0, -2.0, -1.0]).is_err()

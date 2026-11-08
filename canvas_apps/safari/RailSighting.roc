@@ -10,6 +10,7 @@ import Distance
 import RoadAhead
 import SegmentPlace
 import Geom
+import RiderView
 import GuardRail
 import BendInView
 
@@ -44,7 +45,7 @@ runup_points : RoadAhead.RoadView,
 	place : SegmentPlace,
 	length : Distance,
 	across : Across,
-} -> List(Geom.RiderPoint)
+} -> List(RiderView.RiderPoint)
 runup_points = |road, { vantage, place, length, across }| {
 	run_on_metres = leg_pieces(rail_run_on)
 	List.from_iter(U32.to(0, run_on_metres)).map(
@@ -69,7 +70,7 @@ runout_points : RoadAhead.RoadView,
 	vantage : Geom.Vantage,
 	place : SegmentPlace,
 	across : Across,
-} -> List(Geom.RiderPoint)
+} -> List(RiderView.RiderPoint)
 runout_points = |road, { vantage, place, across }|
 	List.from_iter(U32.to(1, leg_pieces(rail_run_on))).map(
 		|metres_in| RoadAhead.rider_point_at(
@@ -98,10 +99,10 @@ leg_pieces = |distance| {
 
 ## `pieces` + 1 points evenly spaced from `from` to `to`, both included.
 evenly_spaced : {
-	from : Geom.RiderPoint,
-	to : Geom.RiderPoint,
+	from : RiderView.RiderPoint,
+	to : RiderView.RiderPoint,
 	pieces : U32,
-} -> List(Geom.RiderPoint)
+} -> List(RiderView.RiderPoint)
 evenly_spaced = |{ from, to, pieces }| {
 	rightward = to.right.minus(from.right)
 	forward = to.forward.minus(from.forward)
@@ -118,7 +119,10 @@ evenly_spaced = |{ from, to, pieces }| {
 
 ## A leg of rail from `from` to `to`: a point about every metre, the
 ## last at `to`, and none at `from`, which ends the leg before it.
-leg_points : { from : Geom.RiderPoint, to : Geom.RiderPoint } -> List(Geom.RiderPoint)
+leg_points : {
+	from : RiderView.RiderPoint,
+	to : RiderView.RiderPoint,
+} -> List(RiderView.RiderPoint)
 leg_points = |{ from, to }| {
 	rightward = to.right.minus(from.right).to_metres()
 	forward = to.forward.minus(from.forward).to_metres()
@@ -134,7 +138,7 @@ rail_points : RoadAhead.RoadView,
 {
 	vantage : Geom.Vantage,
 	bend_in_view : BendInView,
-} -> List(Geom.RiderPoint)
+} -> List(RiderView.RiderPoint)
 rail_points = |road, { vantage, bend_in_view }| {
 	outer_edge = bend_in_view.outer_edge()
 	place_after = Ahead(BendInView.position_after(bend_in_view))
@@ -177,13 +181,13 @@ expect
 		(50.0, 50),
 	].all(|(distance, want)| leg_pieces(Distance.metres(distance)).to_i64() == want)
 
-origin_pt : Geom.RiderPoint
+origin_pt : RiderView.RiderPoint
 origin_pt = { right: Distance.metres(0.0), forward: Distance.metres(0.0) }
 
-point_at : List(Geom.RiderPoint), U64 -> Geom.RiderPoint
+point_at : List(RiderView.RiderPoint), U64 -> RiderView.RiderPoint
 point_at = |points, i| points.get(i) ?? crash "RailSighting: an index past the leg's end"
 
-straight_points : List(Geom.RiderPoint)
+straight_points : List(RiderView.RiderPoint)
 straight_points = leg_points({
 	from: origin_pt,
 	to: { right: Distance.metres(0.0), forward: Distance.metres(10.0) },
@@ -196,7 +200,7 @@ expect point_at(straight_points, 9).forward.to_metres() == 10.0
 expect point_at(straight_points, 0).right.to_metres() == 0.0
 expect point_at(straight_points, 9).right.to_metres() == 0.0
 
-diagonal_points : List(Geom.RiderPoint)
+diagonal_points : List(RiderView.RiderPoint)
 diagonal_points = leg_points({
 	from: origin_pt,
 	to: { right: Distance.metres(30.0), forward: Distance.metres(40.0) },

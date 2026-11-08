@@ -12,6 +12,7 @@ import Spot
 import Distance
 import Fraction
 import Geom
+import RiderView
 import Picture
 import Polygon
 import lib.Brush
@@ -40,10 +41,10 @@ Corner : [BackLeft, BackRight, FrontRight, FrontLeft]
 
 ## Where the footprint's four corners stand in the rider's view.
 Footprint : {
-	back_left : Geom.RiderPoint,
-	back_right : Geom.RiderPoint,
-	front_right : Geom.RiderPoint,
-	front_left : Geom.RiderPoint,
+	back_left : RiderView.RiderPoint,
+	back_right : RiderView.RiderPoint,
+	front_right : RiderView.RiderPoint,
+	front_left : RiderView.RiderPoint,
 }
 
 ## Where the four footprint corners of a tower standing at `spot` on `road`
@@ -148,7 +149,7 @@ smallest_beacon_radius = Pixels.of(0.5)
 ## far ahead as its foot, which sizes its rods and its beacon.
 SunkTower : {
 	footprint : Footprint,
-	foot : Geom.LevelPoint,
+	foot : RiderView.RiderPointAhead,
 	lift : Distance,
 	sunk : Distance,
 	metre_on_screen : Pixels,
@@ -180,7 +181,7 @@ next_corner = |corner|
 		FrontLeft => BackLeft
 	}
 
-footprint_corner : Footprint, Corner -> Geom.RiderPoint
+footprint_corner : Footprint, Corner -> RiderView.RiderPoint
 footprint_corner = |footprint, corner|
 	match corner {
 		BackLeft => footprint.back_left
@@ -207,7 +208,7 @@ base_corner_on_road = |corner, { center, yaw }| {
 ## A corner of the tower at `height_on_tower`: drawn in toward the foot as
 ## the tower tapers, raised by the tower's lift, and lowered by how far the
 ## tower has sunk.
-corner_at : SunkTower, { corner : Corner, height_on_tower : Distance } -> Geom.RaisedPoint
+corner_at : SunkTower, { corner : Corner, height_on_tower : Distance } -> RiderView.RaisedPoint
 corner_at = |tower, { corner, height_on_tower }| {
 	t = height_on_tower.ratio_to(tower_height)
 	bottom = footprint_corner(tower.footprint, corner)
@@ -272,11 +273,11 @@ rod_quad = |
 ## near plane. A rod wholly behind the near plane has no shape.
 rod_shape : SunkTower,
 {
-	from : Geom.RaisedPoint,
-	to : Geom.RaisedPoint,
+	from : RiderView.RaisedPoint,
+	to : RiderView.RaisedPoint,
 } -> Try(Shapes.Shape, [BehindCamera])
 rod_shape = |tower, line| {
-	ahead = Geom.ahead_line(line)?
+	ahead = RiderView.ahead_line(line)?
 	Ok(
 		screen_rod({
 			from: Camera.project(ahead.from, tower.focal_length),
@@ -287,7 +288,7 @@ rod_shape = |tower, line| {
 }
 
 ## How many pixels one metre across spans as far ahead as `at`.
-metre_on_screen : { at : Geom.LevelPoint, focal_length : Pixels } -> Pixels
+metre_on_screen : { at : RiderView.RiderPointAhead, focal_length : Pixels } -> Pixels
 metre_on_screen = |{ at, focal_length }| {
 	on_level = at.at_height(Distance.zero)
 	p1 = Camera.project(on_level.at_right(Distance.metres(1.0)), focal_length)
@@ -296,7 +297,7 @@ metre_on_screen = |{ at, focal_length }| {
 }
 
 ## The four legs, from the footprint's corners up to the apex.
-leg_shapes : SunkTower, Geom.RaisedPoint -> List(Shapes.Shape)
+leg_shapes : SunkTower, RiderView.RaisedPoint -> List(Shapes.Shape)
 leg_shapes = |tower, apex| corners.keep_oks(
 	|corner| rod_shape(
 		tower,
@@ -376,7 +377,7 @@ face_brace_shapes : SunkTower,
 face_brace_shapes = |tower, { corner, storey_bottom, storey_top, hidden_fraction }| {
 	next = next_corner(corner)
 	brace_up = {
-		from: Geom.point_between({
+		from: RiderView.point_between({
 			from: corner_at(tower, { corner, height_on_tower: storey_bottom }),
 			to: corner_at(tower, { corner: next, height_on_tower: storey_top }),
 			fraction: hidden_fraction,
@@ -384,7 +385,7 @@ face_brace_shapes = |tower, { corner, storey_bottom, storey_top, hidden_fraction
 		to: corner_at(tower, { corner: next, height_on_tower: storey_top }),
 	}
 	brace_down = {
-		from: Geom.point_between({
+		from: RiderView.point_between({
 			from: corner_at(tower, { corner: next, height_on_tower: storey_bottom }),
 			to: corner_at(tower, { corner, height_on_tower: storey_top }),
 			fraction: hidden_fraction,
@@ -398,7 +399,7 @@ face_brace_shapes = |tower, { corner, storey_bottom, storey_top, hidden_fraction
 ## small to draw.
 beacon_shape : SunkTower,
 {
-	apex : Geom.AheadPoint,
+	apex : RiderView.RaisedPointAhead,
 	brightness : Fraction,
 } -> Try(Shapes.Shape, [TooDim, TooSmall])
 beacon_shape = |tower, { apex, brightness }| {
@@ -446,8 +447,8 @@ expect
 
 ## `point` on the rider's level and past the near plane, which every such
 ## point in these tests is.
-ahead : Geom.RiderPoint -> Geom.LevelPoint
-ahead = |point| Geom.ahead_on_level(point) ?? crash "a test's point is past the near plane"
+ahead : RiderView.RiderPoint -> RiderView.RiderPointAhead
+ahead = |point| RiderView.rider_point_ahead(point) ?? crash "a test's point is past the near plane"
 
 # A tower 12 m square, its foot 100 m ahead, sunk 1 m, a metre 5 px across.
 sample_tower : SunkTower

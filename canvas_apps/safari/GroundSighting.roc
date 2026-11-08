@@ -7,6 +7,7 @@ import Along
 import Distance
 import RoadAhead
 import Geom
+import RiderView
 import GroundPatch
 import BendInView
 import Pond
@@ -90,7 +91,7 @@ length_after = |road, bend_in_view| RoadAhead.segment_at(
 ).length
 
 ## A patch of road with these corners.
-road_patch : List(Geom.RiderPoint) -> GroundPatch
+road_patch : List(RiderView.RiderPoint) -> GroundPatch
 road_patch = |corners| GroundPatch.of(corners, road_color)
 
 ## The ground of a segment in view: its road, the bend into the next segment

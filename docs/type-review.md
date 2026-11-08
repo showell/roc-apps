@@ -141,7 +141,7 @@ it plain, and don't write long prose. For each finding, worst first, give:
   why it matters.
 - **Fix:** the change you recommend, as concrete as a signature. Show a short
   before and after for the worst one or two findings.
-- **Reach:** the files the fix touches. Mark any shared module (Geom, Camera,
+- **Reach:** the files the fix touches. Mark any shared module (Geom, RiderView, Camera,
   Picture, Pipeline, RoadAhead, World, Segment, Route, Scene, anything in `lib`,
   `Distance`, `Along`, `Across`, `Fraction`, `Pixels`, `Angle`), and any widget
   that imports the module.

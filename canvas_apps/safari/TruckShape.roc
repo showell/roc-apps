@@ -5,6 +5,7 @@ import Distance
 import RoadAhead
 import Fraction
 import Geom
+import RiderView
 import EarthCurve
 import Picture
 
@@ -88,7 +89,7 @@ TruckShape :: [].{
 	## the truck is off the ground. The point is carried from the truck's frame
 	## onto the road at the truck's spot. The ground curves away from the rider,
 	## so the point is lowered by how far the ground has dropped beneath it.
-	raised_point_on_truck : TruckShape.TruckSetting, TruckShape.TruckPoint -> Geom.RaisedPoint
+	raised_point_on_truck : TruckShape.TruckSetting, TruckShape.TruckPoint -> RiderView.RaisedPoint
 	raised_point_on_truck = |truck, { ahead, rightward, height }| {
 		place = truck.spot.place()
 		center = truck.spot.road_point()

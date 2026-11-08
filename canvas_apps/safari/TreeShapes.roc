@@ -8,7 +8,7 @@ import Camera
 import ConvexHull
 import Distance
 import Fraction
-import Geom
+import RiderView
 import Picture
 import Polygon
 import Pixels
@@ -118,7 +118,7 @@ Tier : {
 ## What every tier of one tree needs. `base` is the middle of the tree's foot,
 ## and `height` how far its tip stands above that.
 TierInputs : {
-	base : Geom.AheadPoint,
+	base : RiderView.RaisedPointAhead,
 	height : Distance,
 	focal_length : Pixels,
 	outline : TreeShapes.TreeOutline,
@@ -299,11 +299,11 @@ cone_ring_points : Tier,
 {
 	inputs : TierInputs,
 	cone_radius : Distance,
-} -> Try(List(Geom.AheadPoint), [BehindCamera])
+} -> Try(List(RiderView.RaisedPointAhead), [BehindCamera])
 cone_ring_points = |tier, { inputs, cone_radius }| {
 	base = inputs.base
 	ring_height = height_down_crown(inputs, tier.bottom)
-	Geom.ahead_points(
+	RiderView.raised_points_ahead(
 		ring_units.map(
 			|unit| {
 				right: base.right().plus(cone_radius.times(unit.cos)),
@@ -318,7 +318,7 @@ cone_ring_points = |tier, { inputs, cone_radius }| {
 tier_cone : Tier,
 {
 	inputs : TierInputs,
-	ring_points : List(Geom.AheadPoint),
+	ring_points : List(RiderView.RaisedPointAhead),
 	shade : Fraction,
 } -> Shapes.Shape
 tier_cone = |tier, { inputs, ring_points, shade }| {
@@ -349,9 +349,9 @@ expect [0, 3].all(|count| trunk_finish_of(count) == Shaded)
 expect [4, 9].all(|count| trunk_finish_of(count) == Flat)
 
 ## The sample tree's base, the middle of its foot, at `lift` off the ground.
-sample_base : Distance -> Geom.AheadPoint
+sample_base : Distance -> RiderView.RaisedPointAhead
 sample_base = |lift|
-	Geom.ahead_point({
+	RiderView.raised_point_ahead({
 		right: Distance.metres(0.0),
 		forward: Distance.metres(2.0),
 		height: lift,

@@ -7,13 +7,14 @@
 ## and Trees, which hold the kinds, sit under RoadAhead and Pipeline.
 import Distance
 import Geom
+import RiderView
 import SegmentPlace
 
 Spot :: {
 	place : SegmentPlace,
 	road_point : Geom.RoadPoint,
 	lift : Distance,
-	foot : Geom.LevelPoint,
+	foot : RiderView.RiderPointAhead,
 }.{
 
 	## The spot of an object standing at `road_point` on the segment at `place`,
@@ -24,7 +25,7 @@ Spot :: {
 		place : SegmentPlace,
 		road_point : Geom.RoadPoint,
 		lift : Distance,
-		foot : Geom.LevelPoint,
+		foot : RiderView.RiderPointAhead,
 	} -> Spot
 	at = |parts| Spot.(parts)
 
@@ -42,11 +43,11 @@ Spot :: {
 
 	## Where the object's foot is in the rider's view, on the rider's level and
 	## past the near plane.
-	foot : Spot -> Geom.LevelPoint
+	foot : Spot -> RiderView.RiderPointAhead
 	foot = |Spot.(spot)| spot.foot
 
 	## The middle of the object's foot, raised as high off the ground as the
 	## object is: where an upright object stands.
-	base : Spot -> Geom.AheadPoint
+	base : Spot -> RiderView.RaisedPointAhead
 	base = |spot| spot.foot().at_height(spot.lift())
 }

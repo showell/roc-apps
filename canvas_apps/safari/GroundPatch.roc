@@ -2,21 +2,21 @@
 ## how it shows on screen as one polygon that follows the earth's curve down as
 ## it goes away from the rider.
 import Pixels
-import Camera
-import Geom
+import RiderView
+import Polygon
 import EarthCurve
 import lib.RgbColor
 import lib.Shapes
 
 ## A patch of ground: its corners and its colour.
-GroundPatch :: { corners : List(Geom.RiderPoint), color : RgbColor }.{
+GroundPatch :: { corners : List(RiderView.RiderPoint), color : RgbColor }.{
 
 	## The patch with these corners, in this colour.
-	of : List(Geom.RiderPoint), RgbColor -> GroundPatch
+	of : List(RiderView.RiderPoint), RgbColor -> GroundPatch
 	of = |corners, color| GroundPatch.({ corners, color })
 
 	## The patch's corners, in the order its outline runs.
-	corners : GroundPatch -> List(Geom.RiderPoint)
+	corners : GroundPatch -> List(RiderView.RiderPoint)
 	corners = |GroundPatch.(patch)| patch.corners
 
 	## A patch on screen, cut at the horizon and at the camera's near plane,
@@ -28,7 +28,7 @@ GroundPatch :: { corners : List(Geom.RiderPoint), color : RgbColor }.{
 			Err(PastHorizon)
 		} else {
 			polygon = { color: patch.color, corners: before_horizon }
-			shape = Camera.clipped_polygon(polygon, focal_length)?
+			shape = Polygon.clipped_polygon(polygon, focal_length)?
 			Ok(shape)
 		}
 	}

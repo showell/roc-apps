@@ -18,7 +18,7 @@ import game.EncounterPlan
 import game.EncounterPoses
 import game.EncounterSighting
 import game.Fraction
-import game.Geom
+import game.RiderView
 import game.Pipeline
 import game.Pixels
 import game.PosedBird
@@ -457,7 +457,7 @@ posed_spot_at : {
 } -> Spot
 posed_spot_at = |{ forward, right, lift }| {
 	foot =
-		Geom.ahead_on_level({ right, forward })
+		RiderView.rider_point_ahead({ right, forward })
 			?? crash "EncounterExpects: a test's animal is past the near plane"
 	Spot.at({
 		place: Ahead(SegmentPlace.Position.first),

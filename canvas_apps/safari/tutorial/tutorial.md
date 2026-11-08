@@ -1039,7 +1039,7 @@ Everything above the footprint is rods. Four legs run from the corners up to a p
 
 A ring of rods goes round the tower every 20 metres, and crossed braces fill the lowest two storeys. Each rod is a line between two points in the rider's view, and it needs some care, because a near tower can stand partly behind the camera:
 
-{{code Geom.ahead_line}}
+{{code RiderView.ahead_line}}
 
 The `match` is on a pair, so it has to cover all four combinations. A rod with one end behind the camera is cut where it crosses the camera's plane, and a rod with both ends behind isn't drawn.
 
@@ -2461,9 +2461,9 @@ The points are plain records. They don't need to be opaque, since a record's typ
 
 {{code Geom.RoadPoint}}
 
-{{code Geom.RiderPoint}}
+{{code RiderView.RiderPoint}}
 
-{{code Geom.RaisedPoint}}
+{{code RiderView.RaisedPoint}}
 
 {{code Screen.Point}}
 
@@ -2528,15 +2528,15 @@ The corner behind the camera has gone, and two new ones stand on the camera's pl
 
 Anything that crosses the camera's plane has to be cut, or dividing by `forward` flips it across the screen. The textbook algorithm walks a polygon's edges, keeping corners in view and adding a new corner wherever an edge crosses the plane. In Roc, that's a pairing and a `fold`. `map2` zips each corner with the next one, which is the list rotated by one, and `fold` builds the new polygon. `List.with_capacity` is the one line about performance, and `edge_points_onto` is passed by name:
 
-{{code Geom.clipped_points}}
+{{code RiderView.clipped_points}}
 
 A fold's step is a plain function of the list so far and one edge:
 
-{{code Geom.edge_points_onto}}
+{{code RiderView.edge_points_onto}}
 
 `Ground`, `GuardRail` and `TruckShape` call it the same way. `patch.corners.map(...)` makes the `RaisedPoint`s, and what comes back is a shorter or longer list of the same type:
 
-{{code Camera.clipped_polygon from "in_front = Geom.clipped_points(" to "Ok(Polygon.flat_polygon(projected_points(in_front, focal_length), color))"}}
+{{code Polygon.clipped_polygon from "in_front = RiderView.clipped_points(" to "Ok(Polygon.flat_polygon(Camera.projected_points(in_front, focal_length), color))"}}
 
 ### Arithmetic all the way down
 

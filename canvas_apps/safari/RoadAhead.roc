@@ -5,6 +5,7 @@
 ## the view of a camera standing there.
 import Distance
 import Geom
+import RiderView
 import Route
 import Segment
 import SegmentPlace
@@ -102,7 +103,7 @@ RoadAhead :: [].{
 		vantage : Geom.Vantage,
 		place : SegmentPlace,
 		road_point : Geom.RoadPoint,
-	} -> Geom.RiderPoint
+	} -> RiderView.RiderPoint
 	rider_point_at = |road, { vantage, place, road_point }|
 		match place {
 			Ahead(position) =>
@@ -151,7 +152,7 @@ rider_point_ahead : RoadAhead.RoadView,
 	vantage : Geom.Vantage,
 	position : SegmentPlace.Position,
 	road_point : Geom.RoadPoint,
-} -> Geom.RiderPoint
+} -> RiderView.RiderPoint
 rider_point_ahead = |road, { vantage, position, road_point }| {
 	bends = bends_ahead(road)
 	var $point = road_point
@@ -165,7 +166,7 @@ rider_point_ahead = |road, { vantage, position, road_point }| {
 }
 
 ## A point on the rider's segment, as the camera at `vantage` sees it.
-to_rider_point : Geom.RoadPoint, Geom.Vantage -> Geom.RiderPoint
+to_rider_point : Geom.RoadPoint, Geom.Vantage -> RiderView.RiderPoint
 to_rider_point = |{ along, across }, vantage| {
 	ahead = along.distance_from(vantage.along).to_metres()
 	aside = across.distance_from(vantage.across).to_metres()

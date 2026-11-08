@@ -12,6 +12,7 @@ import game.Conifer
 import game.Distance
 import game.Fraction
 import game.Geom
+import game.RiderView
 import game.Lens
 import game.LitTruck
 import game.Pipeline
@@ -88,7 +89,7 @@ right_angle_road = Fixtures.crafted_road([
 ## Where the rail's path starts and ends, as the rider sees it. Each bar joins
 ## two points of the path, and the posts follow the bars, one at each point, so
 ## a path of `n` points makes `2n - 1` quads, and the last bar ends the path.
-rail_ends : { start : Geom.RaisedPoint, end : Geom.RaisedPoint }
+rail_ends : { start : RiderView.RaisedPoint, end : RiderView.RaisedPoint }
 rail_ends = {
 	quads = RailSighting.rail_quads_in_view(right_angle_road, { vantage: Fixtures.origin })
 	last_bar = (quads.len() - 1) / 2 - 1
@@ -102,7 +103,7 @@ rail_ends = {
 
 ## The point on the left edge `along` metres into the segment at `place` on the
 ## right-angle road, as the rider sees it.
-left_edge_point : SegmentPlace, F64 -> Geom.RiderPoint
+left_edge_point : SegmentPlace, F64 -> RiderView.RiderPoint
 left_edge_point = |place, along|
 	RoadAhead.rider_point_at(
 		right_angle_road,

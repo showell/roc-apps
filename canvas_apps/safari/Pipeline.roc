@@ -11,6 +11,7 @@ import SegmentPlace
 import Camera
 import Distance
 import Geom
+import RiderView
 import Picture
 import Pixels
 import Rendered
@@ -37,7 +38,7 @@ Pipeline :: [].{
 	sighting_of = |placed, { road, vantage, place }| {
 		road_point = placed.road_point
 		rider_point = RoadAhead.rider_point_at(road, { vantage, place, road_point })
-		foot = Geom.ahead_on_level(rider_point)?
+		foot = RiderView.rider_point_ahead(rider_point)?
 		Ok({ spot: Spot.at({ place, road_point, lift: placed.lift, foot }), kind: placed.kind })
 	}
 

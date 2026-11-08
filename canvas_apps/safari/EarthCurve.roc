@@ -4,27 +4,27 @@
 import Camera
 import Distance
 import Fraction
-import Geom
+import RiderView
 
 EarthCurve :: [].{
 
 	## How far the ground has curved away below level at `point`, which is
 	## never negative.
-	ground_drop : Geom.RiderPoint -> Distance
+	ground_drop : RiderView.RiderPoint -> Distance
 	ground_drop = |point| drop_over_radius(point, ground_curve_radius)
 
 	## How far a curve much tighter than the ground's has dropped below level
 	## at `point`, which is never negative. It is exaggerated on purpose, so a
 	## far tower visibly sinks as it recedes: it hides an 80 m tower wholly at
 	## 1.8 km, where on the ground's own curve it would stay in view to 4 km.
-	exaggerated_drop : Geom.RiderPoint -> Distance
+	exaggerated_drop : RiderView.RiderPoint -> Distance
 	exaggerated_drop = |point| drop_over_radius(point, exaggerated_curve_radius)
 
 	## The outline through `points`, each lowered by the earth's curve, cut at
 	## the horizon. It is empty when all of it lies past the horizon.
-	points_before_horizon : List(Geom.RiderPoint) -> List(Geom.RaisedPoint)
+	points_before_horizon : List(RiderView.RiderPoint) -> List(RiderView.RaisedPoint)
 	points_before_horizon = |points|
-		Geom.points_in_region(points.map(ground_point), region_within(horizon_distance))
+		RiderView.points_in_region(points.map(ground_point), region_within(horizon_distance))
 }
 
 ## The radius the ground curves away over. From the rider's eye it puts
@@ -37,7 +37,7 @@ exaggerated_curve_radius : Distance
 exaggerated_curve_radius = Distance.metres(20000.0)
 
 ## How far a curve of `radius` has dropped below level at `point`.
-drop_over_radius : Geom.RiderPoint, Distance -> Distance
+drop_over_radius : RiderView.RiderPoint, Distance -> Distance
 drop_over_radius = |{ right, forward }, radius| {
 	r = right.to_metres()
 	f = forward.to_metres()
@@ -54,7 +54,7 @@ horizon_distance = {
 }
 
 ## A point on the ground, lowered by the earth's curve.
-ground_point : Geom.RiderPoint -> Geom.RaisedPoint
+ground_point : RiderView.RiderPoint -> RiderView.RaisedPoint
 ground_point = |point| {
 	right: point.right,
 	forward: point.forward,
@@ -63,7 +63,7 @@ ground_point = |point| {
 
 ## The part of the rider's view within `reach` of the rider, measured on the
 ## ground: a circle round the rider.
-region_within : Distance -> Geom.Region(Geom.RaisedPoint)
+region_within : Distance -> RiderView.Region(RiderView.RaisedPoint)
 region_within = |reach| {
 	corner_in_region: |point|
 		if is_within(point, reach) {
@@ -72,13 +72,13 @@ region_within = |reach| {
 			Err(Outside)
 		},
 	edge_crossings: |{ from, to }| {
-		point_at = |fraction| Geom.point_between({ from, to, fraction })
+		point_at = |fraction| RiderView.point_between({ from, to, fraction })
 		circle_crossings({ from, to, reach }).map(point_at)
 	},
 }
 
 ## Whether `point` is within `reach` of the rider, measured on the ground.
-is_within : Geom.RaisedPoint, Distance -> Bool
+is_within : RiderView.RaisedPoint, Distance -> Bool
 is_within = |point, reach| {
 	r = point.right.to_metres()
 	f = point.forward.to_metres()
@@ -93,8 +93,8 @@ is_within = |point, reach| {
 ## the circle where its squared distance equals the squared reach, a quadratic
 ## in t.
 circle_crossings : {
-	from : Geom.RaisedPoint,
-	to : Geom.RaisedPoint,
+	from : RiderView.RaisedPoint,
+	to : RiderView.RaisedPoint,
 	reach : Distance,
 } -> List(Fraction)
 circle_crossings = |{ from, to, reach }| {
@@ -148,7 +148,7 @@ expect EarthCurve.exaggerated_drop({
 }).to_metres() == 0.0
 
 ## A point on the level of the rider, `right` and `forward` in metres.
-level_at : F64, F64 -> Geom.RaisedPoint
+level_at : F64, F64 -> RiderView.RaisedPoint
 level_at = |right, forward| {
 	right: Distance.metres(right),
 	forward: Distance.metres(forward),
@@ -156,7 +156,7 @@ level_at = |right, forward| {
 }
 
 ## Whether a point is within a nanometre of `right` and `forward`, in metres.
-is_level_near : Geom.RaisedPoint, (F64, F64) -> Bool
+is_level_near : RiderView.RaisedPoint, (F64, F64) -> Bool
 is_level_near = |point, (right, forward)| {
 	right_miss = (point.right.to_metres() - right).abs()
 	forward_miss = (point.forward.to_metres() - forward).abs()
@@ -164,17 +164,17 @@ is_level_near = |point, (right, forward)| {
 }
 
 ## Whether each point is near its want.
-are_near : List(Geom.RaisedPoint), List((F64, F64)) -> Bool
+are_near : List(RiderView.RaisedPoint), List((F64, F64)) -> Bool
 are_near = |got_points, wants| {
 	is_each_near = got_points.map2(wants, is_level_near).all(|is_close| is_close)
 	got_points.len() == wants.len() and is_each_near
 }
 
 ## The polygon cut to what lies within 10 m of the rider.
-points_within_ten_metres : List(Geom.RaisedPoint) -> List(Geom.RaisedPoint)
+points_within_ten_metres : List(RiderView.RaisedPoint) -> List(RiderView.RaisedPoint)
 points_within_ten_metres = |polygon_points| {
 	reach = region_within(Distance.metres(10.0))
-	Geom.points_in_region(polygon_points, reach)
+	RiderView.points_in_region(polygon_points, reach)
 }
 
 # A square that reaches past 10 m of the rider keeps two corners, then where its

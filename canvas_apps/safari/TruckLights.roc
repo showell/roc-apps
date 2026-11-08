@@ -4,7 +4,7 @@
 import Pixels
 import Camera
 import Distance
-import Geom
+import RiderView
 import Polygon
 import TruckShape
 import Screen
@@ -157,8 +157,8 @@ headlight_beam = |truck, rightward| {
 	lamp_top = at_lamp(headlight_height.plus(beam_half_height_at_lamp))
 	far_top = at_far_end(beam_far_center.plus(beam_far_half_height))
 	far_bottom = at_far_end(beam_far_center.minus(beam_far_half_height))
-	corners = Geom.ahead_points([lamp_bottom, lamp_top, far_top, far_bottom])?
-	lamp = Geom.ahead_point(at_lamp(headlight_height))?
+	corners = RiderView.raised_points_ahead([lamp_bottom, lamp_top, far_top, far_bottom])?
+	lamp = RiderView.raised_point_ahead(at_lamp(headlight_height))?
 	on_screen = Camera.projected_points(corners, truck.focal_length)
 	lamp_on_screen = Camera.project(lamp, truck.focal_length)
 	Polygon.circular_gradient_polygon(
@@ -187,7 +187,7 @@ brake_shapes = |truck, lamp_sides| {
 			},
 		).map(|corner| TruckShape.raised_point_on_truck(truck, corner))
 	glow = [brake_glow(truck, lamp)].keep_oks(|shape| shape)
-	match Camera.clipped_polygon({ color: brake_color, corners: lamp }, truck.focal_length) {
+	match Polygon.clipped_polygon({ color: brake_color, corners: lamp }, truck.focal_length) {
 		Ok(lamp_polygon) => glow.append(lamp_polygon)
 		Err(BehindCamera) => glow
 	}
@@ -196,12 +196,12 @@ brake_shapes = |truck, lamp_sides| {
 ## The glow round a brake lamp. A lamp with a corner behind the camera has
 ## no glow; the lamp itself is cut at the near plane like the body's faces.
 brake_glow : TruckShape.TruckSetting,
-List(Geom.RaisedPoint) -> Try(
+List(RiderView.RaisedPoint) -> Try(
 	Shapes.Shape,
 	[BehindCamera, TooSmall],
 )
 brake_glow = |truck, lamp_points| {
-	lamp_ahead = Geom.ahead_points(lamp_points)?
+	lamp_ahead = RiderView.raised_points_ahead(lamp_points)?
 	on_screen = Camera.projected_points(lamp_ahead, truck.focal_length)
 	center = center_of(on_screen)
 	radius = glow_radius(on_screen, center)
