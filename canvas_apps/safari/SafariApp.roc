@@ -54,44 +54,43 @@ SafariApp :: [].{
 			zoom: 1.0,
 		})
 	}
-
-	model_at_next_step : SafariApp.Model, Input.Snapshot -> SafariApp.Model
-	model_at_next_step = |m, input|
-		if input.key_pressed(KeyR) {
-			initial_model
-		} else {
-			motion = if input.key_pressed(KeySpace) {
-				match m.motion {
-					Playing => Paused
-					Paused => Playing
-				}
-			} else {
-				m.motion
-			}
-			steps_a_press = match motion {
-				Paused => 1
-				Playing => 4
-			}
-			moved =
-				if input.key_down(KeyRight) {
-					m.tour.steps_forward(steps_a_press)
-				} else if input.key_down(KeyLeft) {
-					m.tour.steps_back(steps_a_press)
-				} else {
-					match motion {
-						Paused => m.tour
-						Playing => Tour.step_forward(m.tour)
-					}
-				}
-			tour = if input.key_pressed(KeyJ) {
-				moved.at_next_segment()
-			} else {
-				moved
-			}
-			{ tour, motion }
-		}
-
 }
+
+model_at_next_step : SafariApp.Model, Input.Snapshot -> SafariApp.Model
+model_at_next_step = |m, input|
+	if input.key_pressed(KeyR) {
+		initial_model
+	} else {
+		motion = if input.key_pressed(KeySpace) {
+			match m.motion {
+				Playing => Paused
+				Paused => Playing
+			}
+		} else {
+			m.motion
+		}
+		steps_a_press = match motion {
+			Paused => 1
+			Playing => 4
+		}
+		moved =
+			if input.key_down(KeyRight) {
+				m.tour.steps_forward(steps_a_press)
+			} else if input.key_down(KeyLeft) {
+				m.tour.steps_back(steps_a_press)
+			} else {
+				match motion {
+					Paused => m.tour
+					Playing => Tour.step_forward(m.tour)
+				}
+			}
+		tour = if input.key_pressed(KeyJ) {
+			moved.at_next_segment()
+		} else {
+			moved
+		}
+		{ tour, motion }
+	}
 
 ## The ride at its start, playing.
 initial_model : SafariApp.Model
