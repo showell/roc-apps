@@ -1025,7 +1025,7 @@ A tower isn't placed when the world is built. Its sighting works out where it st
 
 {{code TowerSighting.mid_tower}}
 
-`MidTower` is a tag on the segment, and that's all the world knows about towers.
+`Segment.has_mid_tower` asks whether the segment is longer than a kilometre, and that's all the world knows about towers.
 
 ### Rods
 
@@ -1296,7 +1296,7 @@ Three of them are the same number underneath, and that's the point. A step of th
 
 Two clocks give the steps between them. A clock and some steps give a later clock, or an earlier one. Two clocks can't be added, because step 5,400 plus step 30 means nothing, so there's no function for it, and because `Clock` is opaque, nobody outside it can add the numbers underneath. `Steps` add to `Steps`, which does mean something. Call this *places and distances*: one opaque type for where something is, a second for how far apart two of them are, and only the sums that make sense. It comes back again and again.
 
-`steps_since` refuses a clock earlier than the one it counts from, and `minus` refuses to go back past step 0, because the ride has no step before it. A `U32` that quietly wrapped around would be far worse than a crash.
+`steps_since` refuses a clock earlier than the one it counts from, and `minus` refuses to go back past step 0, because the ride has no step before it. Roc would crash there anyway, since arithmetic on a `U32` crashes rather than wrap around. The checks are there to say why.
 
 A `Beacon` is a key that nobody outside `Beacon` can read. You get one from a segment, you can ask for the one opposite it, and you can ask how bright it is:
 
@@ -1335,7 +1335,7 @@ Now down into `Beacon`:
 
 {{code Beacon.brightness_at}}
 
-`clock.steps_since(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride. Adding the beacon's own offset gives how far into its blink that beacon is. A cosine turns that into a brightness:
+`clock.steps_since(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride. Adding the beacon's own offset gives its phase, and a cosine turns that into a brightness:
 
 {{code Beacon.beacon_brightness}}
 
@@ -1355,7 +1355,7 @@ That's a small piece of number theory hiding in a constant. 60 staggers of 37 st
 
 ### Where the clock stops
 
-Notice how far the clock reaches. `Tower` holds its beacon's brightness as a `Fraction`, and it doesn't import `Clock`. `Beacon` knows the clock but not the tower. In the game, `TowerSighting` is the one place where both meet.
+Notice how far the clock reaches. `Tower` holds its beacon's brightness as a `Fraction`, and it doesn't import `Clock`. It draws the beacon as a magenta disc that's only as opaque as that `Fraction`, and leaves it out when it's too dim to see. `Beacon` knows the clock but not the tower. In the game, `TowerSighting` is the one place where both meet.
 
 There's no blink abstraction, because nothing else in the game blinks.
 
