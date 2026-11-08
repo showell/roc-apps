@@ -2152,7 +2152,7 @@ The rule lives in `Animation`. It takes the cat's numbers and an `Approach`, whi
 
 `stage_over_step_span` destructures its first argument in place, and the `Approach` after it, so the body reads in plain names:
 
-{{code EncounterPlan.planned_start}}
+{{code EncounterPlan.plan_for}}
 
 Neither field of an `Approach` is a plain number. `Distance`, `Speed` and `Beats` are opaque types, like `Clock` and `Angle`. A distance can't be passed as a speed, and a place in an animation can't be passed as a step of the ride. `distance_in`, on the second line, multiplies a speed by some beats and gives a `Distance`. `Speed` also derives `is_eq`, which is what lets `speed == Speed.at_rest` work with an ordinary operator.
 
@@ -2315,7 +2315,7 @@ The bird calls it with two constants, and passes no speed, since this rule doesn
 
 Beside it, again, is the cat's rule. Its second argument is the whole `Approach`:
 
-{{code EncounterPlan.planned_start}}
+{{code EncounterPlan.plan_for}}
 
 The extra case in `stage_over_step_span` is there because its ratio divides by a stretch that a stopped rider makes zero. `stage_over_gap` divides only by constants, so it has no such case. That hanging bird is real: nothing in `stage_over_gap` knows a bird can't hover. The rider never drops below 1.1 metres a step inside a bird's 45 metres on this route, so it doesn't come up.
 

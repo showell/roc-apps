@@ -47,44 +47,49 @@ EncounterPoses :: [].{
 segment_cat : {
 	in_view : RoadAhead.SegmentInView,
 	encounter_timing : EncounterPlan.Timing,
-} -> Try(EncounterPoses.PosedAnimal(PosedCat), [NoCat, Over])
+} -> Try(EncounterPoses.PosedAnimal(PosedCat), [NoPose])
 segment_cat = |{ in_view, encounter_timing }|
 	match in_view.segment.encounter {
 		CatCrosses(crossing) => {
-			stage = segment_stage(in_view, CatCrossing.crossing_stage(encounter_timing))?
-			Ok({
-				place: in_view.place,
-				animal: Animation.placed_instant(crossing.instant_at(stage)),
-			})
+			rider_stage = CatCrossing.crossing_stage(encounter_timing)
+			posed_in_view(in_view, rider_stage, |stage| crossing.instant_at(stage))
 		}
-		BirdHere(_) | QuietRoad => Err(NoCat)
+		BirdHere(_) | QuietRoad => Err(NoPose)
 	}
 
 ## The bird on a segment in view, if it has one that isn't over.
 segment_bird : {
 	in_view : RoadAhead.SegmentInView,
 	encounter_timing : EncounterPlan.Timing,
-} -> Try(EncounterPoses.PosedAnimal(PosedBird), [NoBird, Over])
+} -> Try(EncounterPoses.PosedAnimal(PosedBird), [NoPose])
 segment_bird = |{ in_view, encounter_timing }|
 	match in_view.segment.encounter {
 		BirdHere(flight) => {
-			stage = segment_stage(in_view, BirdFlight.flight_stage(encounter_timing))?
-			Ok({ place: in_view.place, animal: Animation.placed_instant(flight.instant_at(stage)) })
+			rider_stage = BirdFlight.flight_stage(encounter_timing)
+			posed_in_view(in_view, rider_stage, |stage| flight.instant_at(stage))
 		}
-		CatCrosses(_) | QuietRoad => Err(NoBird)
+		CatCrosses(_) | QuietRoad => Err(NoPose)
 	}
 
-## Where the encounter on a segment in view has got to, with the one on the
-## rider's own segment at `rider_stage`: one ahead hasn't begun, and one behind
-## is over.
-segment_stage : RoadAhead.SegmentInView, Animation.Stage -> Try(Animation.Stage, [Over])
-segment_stage = |in_view, rider_stage|
+## The animal on a segment in view, shown by `instant_at`, with the encounter on
+## the rider's own segment at `rider_stage`: one ahead hasn't begun, and one
+## behind is over, so it has no pose.
+posed_in_view : RoadAhead.SegmentInView,
+Animation.Stage,
+(Animation.Stage -> Animation.Instant(pose)) -> Try(
+	EncounterPoses.PosedAnimal({ pose : pose }),
+	[NoPose],
+)
+posed_in_view = |in_view, rider_stage, instant_at| {
+	posed = |stage|
+		Ok({ place: in_view.place, animal: Animation.placed_instant(instant_at(stage)) })
 	match in_view.place {
 		Ahead(position) =>
 			if position == SegmentPlace.Position.first {
-				Ok(rider_stage)
+				posed(rider_stage)
 			} else {
-				Ok(Waiting)
+				posed(Waiting)
 			}
-		JustBehind => Err(Over)
+		JustBehind => Err(NoPose)
 	}
+}

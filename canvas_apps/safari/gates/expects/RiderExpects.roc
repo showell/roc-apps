@@ -137,7 +137,7 @@ focal_length_of = |rider|
 
 ## An encounter ten steps in.
 ten_steps_in : EncounterPlan.Timing
-ten_steps_in = EncounterPlan.timing_of(StartsAt(Clock.at_step(100)), Clock.at_step(110))
+ten_steps_in = EncounterPlan.timing_at(StartsAt(Clock.at_step(100)), Clock.at_step(110))
 
 ## The focal length of the camera for `rider` on the cat route, with the
 ## encounter on their segment ten steps in.
@@ -248,7 +248,7 @@ throttle_change_at = |motorcycle, encounter_timing| {
 expect cat_throttle_change(ten_steps_in) == 0.0
 expect cat_throttle_change(Unplanned) > 0.0
 expect {
-	before_it = EncounterPlan.timing_of(StartsAt(Clock.at_step(100)), Clock.at_step(99))
+	before_it = EncounterPlan.timing_at(StartsAt(Clock.at_step(100)), Clock.at_step(99))
 	cat_throttle_change(before_it) > 0.0
 }
 expect focal_length_of(looking_hard(upright)) < focal_length_of(upright)

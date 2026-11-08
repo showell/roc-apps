@@ -11,22 +11,21 @@ import Distance
 import Speed
 import Steps
 
-EncounterPlan :: [].{
+## When the encounter on the rider's segment starts: not planned yet, or at a
+## step of the ride's clock. The ride keeps one, and forgets it at each new
+## segment, since only the encounter on the rider's own segment is ever live.
+EncounterPlan := [Unplanned, StartsAt(Clock)].{
 
-	## When the encounter on the rider's segment starts: not planned yet, or at
-	## a step of the ride's clock. The ride keeps one, and forgets it at each new
-	## segment, since only the encounter on the rider's own segment is ever live.
-	Start : [Unplanned, StartsAt(Clock)]
+	is_eq : _
 
 	## Where an encounter's clock stands: not planned yet, or planned to start
 	## at `first_step`, with the ride's clock at `now`.
 	Timing : [Unplanned, Planned({ first_step : Clock, now : Clock })]
 
-	## The timing of an encounter that starts at `start`, with the ride's clock
-	## at `now`.
-	timing_of : EncounterPlan.Start, Clock -> EncounterPlan.Timing
-	timing_of = |start, now|
-		match start {
+	## The timing of the encounter `plan` starts, with the ride's clock at `now`.
+	timing_at : EncounterPlan, Clock -> EncounterPlan.Timing
+	timing_at = |plan, now|
+		match plan {
 			Unplanned => Unplanned
 			StartsAt(first_step) => Planned({ first_step, now })
 		}
@@ -52,13 +51,13 @@ EncounterPlan :: [].{
 	## Planning on the step itself keeps the guess short, an animation's length
 	## ahead. A plan from farther off would take the speed to be steady for
 	## longer, and a rider speeding up meanwhile would arrive before the end.
-	planned_start : EncounterPlan.StepSpan,
+	plan_for : EncounterPlan.StepSpan,
 	{
 		gap : Distance,
 		speed : Speed,
 		now : Clock,
-	} -> EncounterPlan.Start
-	planned_start = |span, { gap, speed, now }|
+	} -> EncounterPlan
+	plan_for = |span, { gap, speed, now }|
 		if speed == Speed.at_rest {
 			Unplanned
 		} else if gap <= EncounterPlan.planning_gap(span, speed) {
@@ -69,8 +68,9 @@ EncounterPlan :: [].{
 
 	## The timing of an animation `span` long, for a rider `gap` short of its
 	## animal, coming at a steady `speed` from `gap_at_start` at step 0 of the
-	## ride's clock. It is planned as the ride plans it, on the first step that
-	## the rider comes within reach.
+	## ride's clock. It is planned by `plan_for`, on the first step that such a
+	## rider comes within reach. The ride's rider is not steady, so on the ride
+	## the same animation may start on another step.
 	steady_approach_timing : EncounterPlan.StepSpan,
 	{
 		gap_at_start : Distance,
@@ -80,9 +80,9 @@ EncounterPlan :: [].{
 	steady_approach_timing = |span, { gap_at_start, speed, gap }| {
 		now = Clock.start.plus(speed.steps_to_cover(gap_at_start.minus(gap)))
 		var $step = Clock.start
-		var $start = Unplanned
-		while $start == Unplanned and !(now < $step) {
-			$start = EncounterPlan.planned_start(
+		var $plan = Unplanned
+		while $plan == Unplanned and !(now < $step) {
+			$plan = EncounterPlan.plan_for(
 				span,
 				{
 					gap: gap_at_start.minus(speed.distance_in($step.steps_since(Clock.start))),
@@ -92,7 +92,7 @@ EncounterPlan :: [].{
 			)
 			$step = $step.next()
 		}
-		EncounterPlan.timing_of($start, now)
+		EncounterPlan.timing_at($plan, now)
 	}
 
 	## Where an animation `length` steps long has got to at `timing`.
@@ -118,9 +118,9 @@ ten_step_span : EncounterPlan.StepSpan
 ten_step_span = { length: Steps.of(10), ends_at: Distance.metres(3.0) }
 
 ## The start a rider `gap` metres off at `speed` metres a step plans at step 100.
-planned_at : F64, F64 -> EncounterPlan.Start
+planned_at : F64, F64 -> EncounterPlan
 planned_at = |gap, speed|
-	EncounterPlan.planned_start(
+	EncounterPlan.plan_for(
 		ten_step_span,
 		{
 			gap: Distance.metres(gap),
@@ -148,7 +148,7 @@ expect planned_at(28.0, 2.5) == StartsAt(Clock.at_step(100))
 stage_now : U32 -> Animation.Stage
 stage_now = |now|
 	EncounterPlan.stage_at(
-		EncounterPlan.timing_of(StartsAt(Clock.at_step(50)), Clock.at_step(now)),
+		EncounterPlan.timing_at(StartsAt(Clock.at_step(50)), Clock.at_step(now)),
 		Steps.of(10),
 	)
 
@@ -158,6 +158,6 @@ expect stage_now(59) == Playing(Steps.of(9))
 expect stage_now(60) == Past(Steps.zero)
 expect stage_now(65) == Past(Steps.of(5))
 expect EncounterPlan.stage_at(
-	EncounterPlan.timing_of(Unplanned, Clock.at_step(60)),
+	EncounterPlan.timing_at(Unplanned, Clock.at_step(60)),
 	Steps.of(10),
 ) == Waiting

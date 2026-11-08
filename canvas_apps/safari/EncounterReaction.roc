@@ -56,10 +56,8 @@ cat_attention = |stage|
 		}
 	}
 
-## Over how many steps the rider's eye lets a cat go. The fade starts when the
-## crossing ends, with the rider the crossing's `ends_at` gap short of the cat,
-## so at the rider's nominal metre a step the eye lets go about 80 metres past
-## the cat: 80 metres plus that 3-metre gap.
+## Over how many steps the rider's eye lets a cat go, from when the crossing
+## ends: 83 steps, chosen by eye, about 80 metres past the cat at a metre a step.
 attention_fade : Steps
 attention_fade = Steps.of(83)
 
