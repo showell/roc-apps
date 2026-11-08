@@ -44,8 +44,8 @@ Pixels :: F64.{
 	abs = |Pixels.(p)| Pixels.(p.abs())
 
 	## How many of `whole` this is, which can pass 1 or go negative.
-	portion : Pixels, Pixels -> F64
-	portion = |Pixels.(p), Pixels.(whole)| p / whole
+	ratio_to : Pixels, Pixels -> F64
+	ratio_to = |Pixels.(p), Pixels.(whole)| p / whole
 
 	## The larger of this length and `other`.
 	max : Pixels, Pixels -> Pixels

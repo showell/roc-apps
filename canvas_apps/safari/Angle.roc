@@ -89,8 +89,8 @@ Angle :: [].{
 			Angle.Turn.((0.0 - limit).max(limit.min(t)))
 
 		## How many of `whole` this turn is: negative for a turn to the left.
-		portion : Angle.Turn, Angle.Turn -> F64
-		portion = |Angle.Turn.(t), Angle.Turn.(whole)| t / whole
+		ratio_to : Angle.Turn, Angle.Turn -> F64
+		ratio_to = |Angle.Turn.(t), Angle.Turn.(whole)| t / whole
 
 		## Whether this turn goes right. Straight ahead counts as right, so
 		## every turn lies on one side or the other.
@@ -145,8 +145,8 @@ Angle :: [].{
 		abs = |Angle.Lean.(l)| Angle.Lean.(l.abs())
 
 		## How many of `whole` this lean is: negative for a lean to the left.
-		portion : Angle.Lean, Angle.Lean -> F64
-		portion = |Angle.Lean.(l), Angle.Lean.(whole)| l / whole
+		ratio_to : Angle.Lean, Angle.Lean -> F64
+		ratio_to = |Angle.Lean.(l), Angle.Lean.(whole)| l / whole
 
 		## The turn this lean makes at `rate` radians of turn for each radian
 		## of lean.
@@ -192,4 +192,4 @@ Angle :: [].{
 	upright = Angle.Lean.(0.0)
 }
 
-expect Angle.Lean.radians(-0.5).portion(Angle.Lean.radians(2.0)) == -0.25
+expect Angle.Lean.radians(-0.5).ratio_to(Angle.Lean.radians(2.0)) == -0.25

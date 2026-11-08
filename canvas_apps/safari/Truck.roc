@@ -102,7 +102,7 @@ next_bend = |route, route_position|
 ## truck can run past the mark on a straight, and it brakes for every turn.
 tease_position : { rider_distance : Distance, route_length : Distance } -> Distance
 tease_position = |{ rider_distance, route_length }| {
-	fraction_left = 1.0 - rider_distance.portion(route_length)
+	fraction_left = 1.0 - rider_distance.ratio_to(route_length)
 	extra_lead = tease_start_lead.minus(tease_finish_lead).times(fraction_left)
 	rider_distance.plus(tease_finish_lead).plus(extra_lead)
 }

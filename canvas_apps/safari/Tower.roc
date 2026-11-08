@@ -209,7 +209,7 @@ base_corner_on_road = |corner, { center, yaw }| {
 ## tower has sunk.
 corner_at : SunkTower, { corner : Corner, height_on_tower : Distance } -> Geom.RaisedPoint
 corner_at = |tower, { corner, height_on_tower }| {
-	t = height_on_tower.portion(tower_height)
+	t = height_on_tower.ratio_to(tower_height)
 	bottom = footprint_corner(tower.footprint, corner)
 	tapered = |start, end| start.plus(end.minus(start).times(t))
 	{
@@ -354,7 +354,7 @@ storey_shapes = |tower, storey| {
 		[]
 	} else {
 		hidden_height = storey_bottom.max(tower.sunk).minus(storey_bottom)
-		hidden_fraction = Fraction.of(hidden_height.portion(storey_height))
+		hidden_fraction = Fraction.of(hidden_height.ratio_to(storey_height))
 		corners.join_map(
 			|corner| face_brace_shapes(
 				tower,

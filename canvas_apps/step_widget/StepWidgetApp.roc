@@ -132,7 +132,7 @@ route_length = World.route.route_length()
 
 ## Where `distance` along the route falls on the bar.
 route_x : Distance -> F64
-route_x = |distance| route_left_x + route_width * distance.portion(route_length)
+route_x = |distance| route_left_x + route_width * distance.ratio_to(route_length)
 
 ## The route as a straight bar, with a mark where each segment ends.
 bar_shapes : List(Shapes.Shape)

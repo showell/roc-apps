@@ -29,7 +29,7 @@ GroundSighting :: [].{
 chunk_count : Distance -> U32
 chunk_count = |length| {
 	chunks =
-		length.portion(road_chunk_length).ceiling_to_i64_try()
+		length.ratio_to(road_chunk_length).ceiling_to_i64_try()
 			?? crash "GroundSighting.chunk_count: a segment's length is finite"
 	chunks.max(1).to_u32_wrap()
 }

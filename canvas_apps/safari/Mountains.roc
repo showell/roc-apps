@@ -120,7 +120,7 @@ snow_night = RgbColor.of(0x465468)
 ## A rock colour at `darkness`, from 0 (day) to 1 (night).
 rock_color_at_darkness : RgbColor, Fraction -> RgbColor
 rock_color_at_darkness = |color, darkness|
-	ColorShade.shade_color(color, rock_night_dim.times(darkness).less().to_f64())
+	ColorShade.shade_color(color, rock_night_dim.times(darkness).complement().to_f64())
 
 snow_color : Fraction -> RgbColor
 snow_color = |darkness| ColorShade.color_between({
@@ -177,7 +177,7 @@ snowline_under : FarHeight -> FarHeight
 snowline_under = |north_height| {
 	above_threshold = north_height.minus(snow_threshold)
 	peak_above_threshold = snow_peak_height.minus(snow_threshold)
-	above_fraction = Fraction.clamp(above_threshold.portion(peak_above_threshold))
+	above_fraction = Fraction.clamp(above_threshold.ratio_to(peak_above_threshold))
 	snow_threshold.minus(snow_dip.scaled_by(above_fraction))
 }
 
@@ -232,7 +232,7 @@ west = {
 range_height : MountainRange, Angle.Bearing -> FarHeight
 range_height = |range, bearing| {
 	from_center = bearing.turn_from(range.center)
-	fraction = from_center.portion(range.half_width)
+	fraction = from_center.ratio_to(range.half_width)
 	if fraction.abs() >= 1.0 {
 		FarHeight.zero
 	} else {
