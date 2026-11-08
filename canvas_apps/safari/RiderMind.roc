@@ -1,5 +1,8 @@
-## The rider's mind: how far to lean and how hard to accelerate.
+## The rider's mind: every decision the rider makes in a step. It chooses how
+## far to lean, how hard to accelerate and where to look. Motorcycle and
+## RiderEyes hold the dynamics, which carry those choices out.
 import EncounterPlan
+import Gaze
 import LeanSearch
 import Motorcycle
 import Segment
@@ -19,4 +22,9 @@ RiderMind :: [].{
 		lean = LeanSearch.best_lean(motorcycle)
 		{ lean, acceleration: Throttle.next_acceleration(motorcycle.with_lean(lean), ride) }
 	}
+
+	## Where the rider wants to look from `motorcycle`, on `segment`, the one
+	## it is on.
+	gaze_target : Motorcycle, Segment -> Gaze.GazeTarget
+	gaze_target = |motorcycle, segment| Gaze.desired_gaze(motorcycle, segment)
 }
