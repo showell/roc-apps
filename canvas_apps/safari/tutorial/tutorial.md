@@ -1931,7 +1931,7 @@ A truck from behind, from behind and to one side, and from the side.
 
 New in this chapter:
 
-- Modules: `TruckSighting`, `TruckShape`, `TruckBody`
+- Modules: `TruckSighting`, `TruckShape`, `TruckPlacement`, `TruckBody`
 
 The modules that draw the truck
 ```dot
@@ -1941,7 +1941,8 @@ digraph truck_drawing {
   Scene -> TruckSighting [label="  finds it with truck_in_view"];
   TruckSighting -> Truck [label="  sights a Truck"];
   Truck -> TruckBody [label="  draws its body with body_picture"];
-  TruckBody -> TruckShape [label="  places each corner with raised_point_on_truck"];
+  TruckBody -> TruckPlacement [label="  places each face with placed_face"];
+  TruckPlacement -> TruckShape [label="  reads the faces of"];
 }
 ```
 
@@ -1969,23 +1970,23 @@ A `TruckSetting` is what the truck is drawn from. It's a `Picture.Setting`, the 
 
 {{code Picture.Setting}}
 
-{{code TruckShape.TruckSetting}}
+{{code TruckPlacement.TruckSetting}}
 
 The truck's context is the road its points are measured on, and the camera's vantage:
 
-{{code TruckShape.TruckOnRoad}}
+{{code TruckPlacement.TruckOnRoad}}
 
 ### The functions
 
-Placement is one function. `TruckShape` moves one point along and across the road from the truck's spot, finds where that lands in the rider's view, and lifts it. The headlights and the brake lights use it too:
+Placement is one function. `TruckPlacement` moves one point along and across the road from the truck's spot, finds where that lands in the rider's view, and lifts it. The headlights and the brake lights use it too:
 
-{{code TruckShape.raised_point_on_truck}}
+{{code TruckPlacement.raised_point}}
 
 The truck can stand across a bend, so each corner finds its own place on the road. But every corner is lowered by the same drop, how far the ground has curved away beneath the truck's spot. Across a 12-metre truck the drop changes by a few centimetres at most, far less than a pixel.
 
-`TruckBody.face` places each corner of a face that way. So a face is just a color and a list of `TruckPoint`s. Here's a side, walked around its outline from the back of the trailer to the nose and back:
+`TruckPlacement.placed_face` places each corner of a face that way. So a face is just a color and a list of `TruckPoint`s. Here are the sides, each walked around its outline from the back of the trailer to the nose and back:
 
-{{code TruckBody.side}}
+{{code TruckShape.sides}}
 
 The back, the roof, the windshield and the nose are each a strip across the truck, so they share `TruckShape.strip_corners`. The tires are circles standing on the road.
 
@@ -2131,7 +2132,7 @@ The headlights come on at this darkness:
 
 On this ride, that's step 3,555 of 6,746. Once on, they stay on, because from there the sky only darkens.
 
-Each lamp's `picture` matches both tags, and an `Off` lamp is an empty picture. `TruckHeadlights` paints the beams as wedges that fade from the lamp toward their far end. `TruckBrakeLights` paints two lamps on the back of the trailer, each with a glow around it. Both place their points the way the body does, with `TruckShape.raised_point_on_truck`.
+Each lamp's `picture` matches both tags, and an `Off` lamp is an empty picture. `TruckHeadlights` paints the beams as wedges that fade from the lamp toward their far end. `TruckBrakeLights` paints two lamps on the back of the trailer, each with a glow around it. Both place their points the way the body does, with `TruckPlacement.raised_point`.
 
 `Truck` puts the three pictures together. `Picture.composite` makes one picture of several, each painted over the ones before:
 

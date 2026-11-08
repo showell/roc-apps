@@ -13,6 +13,7 @@ import game.Pipeline
 import game.SegmentFromRider
 import game.Sky
 import game.TruckBody
+import game.TruckPlacement
 import game.TruckShape
 import game.World
 import lib.CanvasApp
@@ -115,7 +116,7 @@ view_vantage = |view| {
 
 ## How the truck is drawn for `view`: its spot as that view's camera sees it,
 ## and the road and the vantage its points are measured from.
-view_setting : TruckView -> TruckShape.TruckSetting
+view_setting : TruckView -> TruckPlacement.TruckSetting
 view_setting = |view| {
 	vantage = view_vantage(view)
 	placed_truck : Geom.Placed({})

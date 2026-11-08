@@ -5,7 +5,7 @@ import Picture
 import TruckBody
 import TruckBrakeLights
 import TruckHeadlights
-import TruckShape
+import TruckPlacement
 
 ## Which of the truck's lights are on.
 Truck := { headlights : TruckHeadlights, brake_lights : TruckBrakeLights }.{
@@ -15,7 +15,7 @@ Truck := { headlights : TruckHeadlights, brake_lights : TruckBrakeLights }.{
 	## How the truck looks. Every point on it is measured on the road, from where
 	## its trailer is centered, and seen from the camera's vantage, so those are
 	## its context.
-	scenery_picture : Truck, TruckShape.TruckSetting -> Picture
+	scenery_picture : Truck, TruckPlacement.TruckSetting -> Picture
 	scenery_picture = |truck, setting|
 		Picture.composite([
 			truck.headlights.picture(setting),

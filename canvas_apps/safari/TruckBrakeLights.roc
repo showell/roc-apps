@@ -8,6 +8,7 @@ import RiderView
 import Camera
 import Screen
 import TruckJourney
+import TruckPlacement
 import TruckShape
 import lib.ArgbColor
 import lib.RgbColor
@@ -29,7 +30,7 @@ TruckBrakeLights := [On, Off].{
 
 	## How the brake lights look: the two lamps and their glows while they are
 	## on, and nothing while they are off.
-	picture : TruckBrakeLights, TruckShape.TruckSetting -> Picture
+	picture : TruckBrakeLights, TruckPlacement.TruckSetting -> Picture
 	picture = |brake_lights, truck|
 		match brake_lights {
 			On => Picture.from_shapes(lamp_pair_shapes(truck))
@@ -73,7 +74,7 @@ glow_sides : I64
 glow_sides = 16
 
 ## The two brake lights, one in from each side of the trailer's back.
-lamp_pair_shapes : TruckShape.TruckSetting -> List(Shapes.Shape)
+lamp_pair_shapes : TruckPlacement.TruckSetting -> List(Shapes.Shape)
 lamp_pair_shapes = |truck| {
 	box = TruckShape.truck_box
 	brake_shapes(
@@ -120,7 +121,11 @@ outline_points = |{ center, outline_radius }|
 ## A brake light on the back of the trailer, its sides `left` and `right`
 ## measured rightward of the truck's centre line: its glow, then the lamp
 ## over the glow.
-brake_shapes : TruckShape.TruckSetting, { left : Distance, right : Distance } -> List(Shapes.Shape)
+brake_shapes : TruckPlacement.TruckSetting,
+{
+	left : Distance,
+	right : Distance,
+} -> List(Shapes.Shape)
 brake_shapes = |truck, lamp_sides| {
 	rear = TruckShape.truck_box.rear
 	lamp =
@@ -130,7 +135,7 @@ brake_shapes = |truck, lamp_sides| {
 				near: { ahead: rear, height: brake_lamp_bottom },
 				far: { ahead: rear, height: brake_lamp_top },
 			},
-		).map(|corner| TruckShape.raised_point_on_truck(truck, corner))
+		).map(|corner| TruckPlacement.raised_point(truck, corner))
 	glow = [brake_glow(truck, lamp)].keep_oks(|shape| shape)
 	match Polygon.clipped_polygon({ color: brake_color, corners: lamp }, truck.focal_length) {
 		Ok(lamp_polygon) => glow.append(lamp_polygon)
@@ -140,7 +145,7 @@ brake_shapes = |truck, lamp_sides| {
 
 ## The glow round a brake lamp. A lamp with a corner behind the camera has
 ## no glow; the lamp itself is cut at the near plane like the body's faces.
-brake_glow : TruckShape.TruckSetting,
+brake_glow : TruckPlacement.TruckSetting,
 List(RiderView.RaisedPoint) -> Try(
 	Shapes.Shape,
 	[BehindCamera, TooSmall],
