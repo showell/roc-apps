@@ -1,6 +1,6 @@
 ## The widget for the Safari tutorial's chapter on the Roc bird. Video recorder
 ## buttons run how far the rider is from the tree the bird starts on, coming at
-## the cruising 1.25 m a step, and each frame is worked out from that gap alone:
+## a steady 1.25 m a step, and each frame is worked out from that gap alone:
 ## the step of the ride it is, and the start the ride plans for the flight, so the
 ## flight plays forward and backward. The picture stays still, looking up the road from a place short of
 ## the first tree, so the bird shrinks as it flies off. It is drawn by Safari's own
@@ -52,7 +52,9 @@ BirdWidgetApp :: [].{
 closing_gap : VcrButtons.NumberRange(Distance)
 closing_gap = VcrButtons.gap_range({ farthest: Distance.metres(75.0), metres_a_frame: 0.125 })
 
-## The rider's speed: the cruising speed the bird's flap is set by.
+## The rider's speed, steady, and the widget's own choice. The flight plays a
+## frame a step, so this is how much of the gap each frame of the flight takes,
+## and it sets the gap the flight starts at.
 rider_speed : Speed
 rider_speed = Speed.metres_a_step(1.25)
 
