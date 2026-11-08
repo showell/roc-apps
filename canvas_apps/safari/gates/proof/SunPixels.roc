@@ -22,7 +22,7 @@ SunPixels :: [].{
 		}
 }
 
-pixels_with_glow_and_disc : List(U32), { roll : ScreenRoll, sun : Sun.Place } -> List(U32)
+pixels_with_glow_and_disc : List(U32), { roll : ScreenRoll, sun : Sun.OnScreen } -> List(U32)
 pixels_with_glow_and_disc = |pixels, { roll, sun }| {
 	look = Sun.look(sun)
 	glow_radius = Sun.glow_radius_on_screen(sun).to_f64()
