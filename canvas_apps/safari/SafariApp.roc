@@ -11,6 +11,7 @@ import lib.CanvasApp
 import lib.Input
 import lib.Shapes
 import Angle
+import FrameView
 import Screen
 import Tour
 
@@ -39,7 +40,7 @@ SafariApp :: [].{
 	## around everything else.
 	frame_shapes : Tour -> List(Shapes.Shape)
 	frame_shapes = |tour| {
-		view = Tour.frame_view(tour)
+		view = FrameView.frame_view_at(tour.route(), tour.instant())
 		view.framed_shapes(lean_space(view.roll))
 	}
 

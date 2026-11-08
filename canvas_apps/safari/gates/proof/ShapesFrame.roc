@@ -17,6 +17,7 @@
 ##   <bin> held 0 100 3000
 app [main!] { game: "../../game.roc", lib: "../../../lib/main.roc" }
 
+import game.FrameView
 import game.Tour
 import SafariFrame
 import ShapesPixels
@@ -60,7 +61,7 @@ Comparison : { pixels : List(U32), counts : Str }
 
 compare : Tour -> Comparison
 compare = |tour| {
-	view = Tour.frame_view(tour)
+	view = FrameView.frame_view_at(tour.route(), tour.instant())
 	instant_shapes = view.ride_shape_lists.join()
 	cut_shapes = ConvexCut.cut_shapes(instant_shapes)
 	a = SafariFrame.picture_pixels(view)

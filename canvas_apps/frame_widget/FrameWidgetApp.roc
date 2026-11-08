@@ -132,7 +132,7 @@ paused_road = RoadAhead.RoadView.ahead_of(paused_tour.route(), paused_camera.rou
 
 ## What the camera shows at the step on show.
 paused_frame_view : FrameView
-paused_frame_view = Tour.frame_view(paused_tour)
+paused_frame_view = FrameView.frame_view_at(paused_tour.route(), paused_tour.instant())
 
 ## The things in view at the step on show.
 paused_scene : Scene
@@ -156,7 +156,7 @@ ground_parts = {
 backdrop_parts : List(Piece)
 backdrop_parts = backdrop_pieces(paused_frame_view)
 
-## The part of the ride's shapes in `Tour.frame_view(tour)` on `on_layers`, in
+## The part of the ride's shapes in `paused_frame_view` on `on_layers`, in
 ## their order. The frame view keeps them in the lists they are made in, so this
 ## asks for them one at a time, and an `expect` below holds them to those lists
 ## joined.

@@ -8,6 +8,7 @@
 ##   <bin> held 0 100 3000
 app [main!] { game: "../../game.roc", lib: "../../../lib/main.roc" }
 
+import game.FrameView
 import game.Tour
 import SafariFrame
 import game.Screen
@@ -37,7 +38,10 @@ hash = |pixels| pixels.fold(
 )
 
 frame_pixels : Tour -> List(U32)
-frame_pixels = |tour| SafariFrame.picture_pixels(Tour.frame_view(tour))
+frame_pixels = |tour| {
+	view = FrameView.frame_view_at(tour.route(), tour.instant())
+	SafariFrame.picture_pixels(view)
+}
 
 ## The bytes `hash 1234abcd`.
 hash_line : List(U32) -> List(U8)
