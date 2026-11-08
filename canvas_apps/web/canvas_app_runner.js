@@ -232,21 +232,16 @@ function bindApp(exports) {
     // that order to host.zig's and lib/WasmApp.roc's.
     advance: ({ key_held, key_struck, button_held, button_struck, x, y, wheel }) =>
       exports.advance(key_held, key_struck, button_held, button_struck, x, y, wheel),
-    // **ONE CALL, SO THERE IS NO ORDER TO GET WRONG.** `computeFrame` is the
-    // effect and answers where it put the answer: two words, the frame's
-    // start and its length. Reading the start from a second export is what
-    // this replaces, and what it replaces caught two people.
-    // **THE FRAME IS READ BY GENERATED CODE.** computeFrame answers the
-    // address of the Roc list itself; RocGlue's reader, emitted from the
-    // compiler's type table, turns it into shapes.
+    // `computeFrame` is the effect, and it answers the address of the Roc
+    // list that holds the frame. RocGlue's reader, generated from the
+    // compiler's type table, turns that list into shapes.
     //
-    // **THE VIEW IS MADE AFTER THE CALL, ON ITS OWN LINE.** Asking for the
-    // frame allocates, which can grow wasm memory, which DETACHES every
-    // DataView over the old buffer. Written as one expression --
-    // `read(new DataView(memory.buffer), computeFrame())` -- JavaScript
+    // The view is made after the call, on its own line. Asking for the frame
+    // allocates, which can grow wasm memory, which detaches every DataView
+    // over the old buffer. Written as one expression,
+    // `read(new DataView(memory.buffer), computeFrame())`, JavaScript
     // evaluates left to right and builds the view first, so the page dies on
-    // the frame that happens to grow memory. That is the third costume this
-    // one bug has worn.
+    // the frame that happens to grow memory.
     frame: () => {
       const computeStart = performance.now();
       const at = exports.computeFrame();
@@ -426,11 +421,11 @@ async function main(show) {
     });
   };
 
-  // **A LOOP THAT RE-ARMS ITSELF LAST STOPS DEAD ON A THROW**, and this one
-  // clears to black before it decodes, so the page went black and silent and
-  // stayed that way. Every good message in this layer -- the unknown brush
-  // mode, the word-exactness check, a Roc crash arriving as `unreachable` --
-  // used to end there. `main`'s catch cannot help: it settled at startup.
+  // A loop that re-arms itself last stops dead on a throw, and this one
+  // clears to black before it decodes, so an uncaught error would leave the
+  // page black and silent. So each tick's error stops the page with its
+  // message: an unknown brush mode, a Roc crash arriving as `unreachable`.
+  // `main`'s catch can't help, because it settled at startup.
   const loop = (now) => {
     try {
       tick(now);
