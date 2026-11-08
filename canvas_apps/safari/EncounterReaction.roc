@@ -46,11 +46,11 @@ cat_attention = |stage|
 	match stage {
 		Waiting => Attention.none
 		Playing(steps_in) => {
-			progress = Fraction.of(steps_in.to_f64() / CatCrossing.crossing_span.length.to_f64())
+			progress = Fraction.of(steps_in.ratio_to(CatCrossing.crossing_span.length))
 			CatCrossing.peak_attention.scaled_by(Easing.smoothstep(progress))
 		}
 		Past(steps_past) => {
-			faded = Fraction.clamp(steps_past.to_f64() / attention_fade.to_f64())
+			faded = Fraction.clamp(steps_past.ratio_to(attention_fade))
 			CatCrossing.peak_attention.scaled_by(Easing.smoothstep(faded).complement())
 		}
 	}

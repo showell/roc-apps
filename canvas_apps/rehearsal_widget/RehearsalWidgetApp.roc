@@ -7,6 +7,7 @@
 ## shows the lean the real rider took.
 import game.Across
 import game.Angle
+import game.Clock
 import game.Coast
 import game.Motorcycle
 import game.LeanSearch
@@ -50,7 +51,7 @@ step_shown = 374
 
 ## The rider's motorcycle at that step, the ride's own.
 motorcycle : Motorcycle
-motorcycle = Tour.at_step(step_shown).instant().rider.motorcycle
+motorcycle = Tour.at_step(Clock.at_step(step_shown)).instant().rider.motorcycle
 
 ## A point on an arc: how far along the road from the rider, and where across it.
 ArcPoint : { forward : F64, across : F64 }

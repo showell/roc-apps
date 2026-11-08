@@ -6,6 +6,7 @@
 ## The address picks how many layers are on, and from there it's a still picture
 ## with no controls. The first line of text counts the shapes so far against the
 ## frame's total, and the second names the last layer on.
+import game.Clock
 import game.FrameView
 import game.Grass
 import game.Screen
@@ -76,12 +77,12 @@ layers = [
 Piece : { layer : Layer, shapes : List(Shapes.Shape) }
 
 ## The step on show.
-frame_step : U32
-frame_step = 1529
+frame_clock : Clock
+frame_clock = Clock.at_step(1529)
 
-## The ride at `frame_step`.
+## The ride at `frame_clock`.
 paused_tour : Tour
-paused_tour = Tour.at_step(frame_step)
+paused_tour = Tour.at_step(frame_clock)
 
 ## `things` if `layer` is one of `on_layers`, else none.
 things_on : List(thing), { on_layers : List(Layer), layer : Layer } -> List(thing)

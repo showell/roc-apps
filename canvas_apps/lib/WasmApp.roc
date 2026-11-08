@@ -44,7 +44,7 @@ WasmApp :: [].{
 			# doesn't, so the host returns the frame rather than freeing it.
 			release: |_frame| {},
 			sounds: |boxed_model| sounds(Box.unbox(boxed_model)),
-			tone_count: |{}| game.tones.len().to_u32_try() ?? crash "WasmApp.program: more tones than a U32 can count",
+			tone_count: |{}| tone_count_of(game.tones),
 			tone_freq: |i| tone_at(game.tones, i).hertz,
 			tone_ms: |i| tone_at(game.tones, i).milliseconds,
 			width: |{}| game.size.width.to_u32_try() ?? crash "WasmApp.program: a width outside a U32's range",
@@ -53,6 +53,24 @@ WasmApp :: [].{
 		}
 	}
 }
+
+## How many tones an app may have: `CanvasApp.sounds` answers a U32, one bit
+## for each tone.
+most_tones : U64
+most_tones = 32
+
+## How many tones `tones` holds, for the host. A tone past `most_tones` has no
+## bit in `sounds`, so the app could never set it off, and that crashes.
+tone_count_of : List(CanvasApp.Tone) -> U32
+tone_count_of = |tones|
+	if tones.len() > most_tones {
+		crash "WasmApp.program: an app has ${tones.len().to_str()} tones, and CanvasApp.sounds has a bit for only ${most_tones.to_str()}"
+	} else {
+		tones.len().to_u32_wrap()
+	}
+
+expect tone_count_of([]) == 0
+expect tone_count_of(List.repeat({ hertz: 440, milliseconds: 80 }, 32)) == 32
 
 # The host asks only for a tone below the count it was given, so one past the
 # end is a bug on the host's side.
