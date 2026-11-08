@@ -116,6 +116,8 @@ braking_state_at_next_step = |truck, turn| {
 		truck.speed,
 		{ target: target_speed, within: turn.distance },
 	)
+	# The steady brake may land a little under its target; `VehicleLimits.braking_to`
+	# says why. The truck alone keeps to the target here.
 	speed = target_speed.max(truck.speed.accelerated_by(acceleration))
 	{
 		route_position: truck.route_position.plus(speed.step_length()),
