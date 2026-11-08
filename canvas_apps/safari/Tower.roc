@@ -43,7 +43,16 @@ Tower :: { yaw : Angle.Turn, beacon : Beacon }.{
 		Picture.from_shapes(tower_shapes(tower, { footprint, spot, focal_length }))
 	}
 
+	## Whether a tower whose foot stands at `foot` in the rider's view is sunk
+	## wholly below the horizon, so that nothing of it shows.
+	is_wholly_sunk : RiderView.RiderPointAhead -> Bool
+	is_wholly_sunk = |foot| sunk_depth(foot) >= tower_height
 }
+
+## How far the earth's curve has sunk a tower whose foot stands at `foot`. It
+## sinks over the exaggerated curve, so a far tower visibly goes down.
+sunk_depth : RiderView.RiderPointAhead -> Distance
+sunk_depth = |foot| EarthCurve.exaggerated_drop(foot.to_rider())
 
 ## A corner of the tower's square footprint, as seen along the route.
 Corner : [BackLeft, BackRight, FrontRight, FrontLeft]
@@ -79,7 +88,8 @@ tower_footprint = |tower, { road, vantage, spot }| {
 }
 
 ## The whole tower standing on `footprint`: legs, rings, braces and beacon, in
-## that order. A tower sunk wholly below the horizon has no shapes.
+## that order. Its sighting refuses a tower sunk wholly below the horizon, so
+## there is always something to draw.
 tower_shapes : Tower,
 {
 	footprint : Footprint,
@@ -89,10 +99,10 @@ tower_shapes : Tower,
 tower_shapes = |Tower.(tower), { footprint, spot, focal_length }| {
 	foot = spot.foot()
 	lift = spot.lift()
-	sunk = EarthCurve.exaggerated_drop(foot.to_rider())
-	if sunk >= tower_height {
-		[]
+	if Tower.is_wholly_sunk(foot) {
+		crash "Tower.tower_shapes: a tower sunk wholly below the horizon is refused at its sighting"
 	} else {
+		sunk = sunk_depth(foot)
 		geometry = {
 			footprint,
 			foot,
@@ -499,6 +509,16 @@ metre_ahead = |forward| {
 expect metre_ahead(10.0) == 50.0
 expect metre_ahead(25.0) == 20.0
 expect metre_ahead(50.0) == 10.0
+
+# The exaggerated curve drops 80 m, the tower's whole height, where the foot
+# is 800 m right and 1600 m ahead, so a tower there is just sunk, and one a
+# metre nearer the road still shows its tip.
+expect Tower.is_wholly_sunk(foot_1600_ahead(800.0))
+expect !Tower.is_wholly_sunk(foot_1600_ahead(799.0))
+
+## A tower's foot 1600 m ahead and `right` metres to the right.
+foot_1600_ahead : F64 -> RiderView.RiderPointAhead
+foot_1600_ahead = |right| ahead({ right: Distance.metres(right), forward: Distance.metres(1600.0) })
 
 rod_shape_along_road : F64, F64 -> Try(Shapes.Shape, [BehindCamera])
 rod_shape_along_road = |start, end|
