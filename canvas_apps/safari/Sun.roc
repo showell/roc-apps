@@ -6,7 +6,6 @@ import Angle
 import Camera
 import Clock
 import FarHeight
-import Fraction
 import Lens
 import Pixels
 import Screen
@@ -16,12 +15,12 @@ import lib.Shapes
 
 Sun :: [].{
 
-	## Where the sun stands on the screen, and how large it is drawn beside
-	## its size at rest. The lens only ever widens, so that is never larger.
+	## Where the sun stands on the screen, and the focal length of the lens it
+	## is seen through, which sizes its glow and disc.
 	Place : {
 		x : Pixels,
 		y : Pixels,
-		scale : Fraction,
+		cam_focal : Pixels,
 	}
 
 	## The sun in a frame: in view at its place, or out of view, too far to
@@ -83,11 +82,11 @@ Sun :: [].{
 
 	## How far the glow reaches from the sun's middle where it stands.
 	glow_radius_drawn : Sun.Place -> Pixels
-	glow_radius_drawn = |sun| glow_radius.times(sun.scale.to_f64())
+	glow_radius_drawn = |sun| size_drawn(glow_radius, sun)
 
 	## The disc's radius where the sun stands.
 	disc_radius_drawn : Sun.Place -> Pixels
-	disc_radius_drawn = |sun| radius.times(sun.scale.to_f64())
+	disc_radius_drawn = |sun| size_drawn(radius, sun)
 
 	## The sun's shapes in a frame: while it is in view, its glow over the
 	## rectangle above the horizon and its disc over that, and nothing while it
@@ -110,10 +109,9 @@ Sun :: [].{
 			OutOfView => []
 		}
 
-	## The sun's glow and disc where it stands, sized by its scale.
+	## The sun's glow and disc where it stands, sized by its lens.
 	look : Sun.Place -> Sun.Look
-	look = |sun| {
-		scale = sun.scale.to_f64()
+	look = |sun|
 		{
 			glow: Brush.glow({
 				inner_color: Brush.with_alpha(RgbColor.of(0xFFC980), 0.85),
@@ -121,19 +119,24 @@ Sun :: [].{
 				outer_color: Brush.with_alpha(RgbColor.of(0xFF965C), 0.0),
 				middle_offset: 0.4,
 				center: { x: sun.x.to_f64(), y: sun.y.to_f64() },
-				inner_radius: glow_inner_radius.times(scale).to_f64(),
+				inner_radius: size_drawn(glow_inner_radius, sun).to_f64(),
 				outer_radius: Sun.glow_radius_drawn(sun).to_f64(),
 			}),
 			disc: Radial({
 				inner_color: Brush.opaque(RgbColor.of(0xFFE6A3)),
 				outer_color: Brush.opaque(RgbColor.of(0xFF9D5C)),
 				center: { x: sun.x.to_f64(), y: sun.y.to_f64() },
-				inner_radius: disc_inner_radius.times(scale).to_f64(),
+				inner_radius: size_drawn(disc_inner_radius, sun).to_f64(),
 				outer_radius: Sun.disc_radius_drawn(sun).to_f64(),
 			}),
 		}
-	}
 }
+
+## How long `size_at_rest`, one of the sun's sizes as the lens at rest draws
+## it, is drawn where `sun` stands.
+size_drawn : Pixels, Sun.Place -> Pixels
+size_drawn = |size_at_rest, sun|
+	Lens.size_on_screen({ size: FarHeight.of(size_at_rest.to_f64()), cam_focal: sun.cam_focal })
 
 ## How far the sun sinks with each step, to fall from where it starts to
 ## where it has fully set by `fully_set_at`.
@@ -182,7 +185,7 @@ place = |{ turn_from_view, clock, cam_focal }| {
 	{
 		x: Camera.x_for_turn({ turn: turn_from_view, cam_focal }),
 		y: Lens.y_for_height({ height: Sun.height_at(clock), cam_focal }),
-		scale: Lens.scale_for(cam_focal),
+		cam_focal,
 	}
 }
 
@@ -196,17 +199,21 @@ expect
 		== InView({
 			x: Pixels.of(480.0),
 			y: Pixels.of(56.0),
-			scale: Fraction.whole,
+			cam_focal: Lens.resting_focal,
 		})
 
-# A lens at half its focal length draws the sun at half its size.
-expect
-	Sun.sighting({ heading: Sun.bearing, cam_focal: Lens.resting_focal.times(0.5) }, Clock.start)
-		== InView({
-			x: Pixels.of(480.0),
-			y: Pixels.of(178.0),
-			scale: Fraction.of(0.5),
-		})
+# A lens at half its focal length draws the sun nearer the horizon, and at
+# half its size.
+expect {
+	half_focal = Lens.resting_focal.times(0.5)
+	sighting = Sun.sighting({ heading: Sun.bearing, cam_focal: half_focal }, Clock.start)
+	half_place = {
+		x: Pixels.of(480.0),
+		y: Pixels.of(178.0),
+		cam_focal: half_focal,
+	}
+	sighting == InView(half_place) and Sun.disc_radius_drawn(half_place) == radius.times(0.5)
+}
 
 expect {
 	facing_north = { heading: Angle.north, cam_focal: Lens.resting_focal }

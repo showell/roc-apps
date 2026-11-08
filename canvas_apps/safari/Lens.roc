@@ -41,14 +41,23 @@ Lens :: [].{
 	## negative, and lands below it. This is the one place a far height
 	## becomes pixels.
 	y_for_height : { height : FarHeight, cam_focal : Pixels } -> Pixels
-	y_for_height = |{ height, cam_focal: focal }|
-		Screen.horizon_y.minus(Pixels.of(height.to_f64() * scale_for(focal).to_f64()))
+	y_for_height = |{ height, cam_focal }|
+		Screen.horizon_y.minus(size_on_screen({ size: height, cam_focal }))
 
-	## How large a lens of focal length `focal` draws things beside the lens at
-	## rest. The lens only ever widens, so that is never larger.
-	scale_for : Pixels -> Fraction
-	scale_for = |focal| Fraction.of(focal.portion(resting_focal))
+	## How long something infinitely far away is drawn through a lens of
+	## `cam_focal`, when the lens at rest draws it `size` pixels long. It takes
+	## any such length as a far height: a height above the horizon, or a size
+	## kept in pixels at rest, such as the sun's radii. The lens only ever
+	## widens, so it is never drawn longer than at rest.
+	size_on_screen : { size : FarHeight, cam_focal : Pixels } -> Pixels
+	size_on_screen = |{ size, cam_focal }|
+		Pixels.of(size.to_f64() * scale_for(cam_focal).to_f64())
 }
+
+## How large a lens of focal length `focal` draws things beside the lens at
+## rest. The lens only ever widens, so that is never larger.
+scale_for : Pixels -> Fraction
+scale_for = |focal| Fraction.of(focal.portion(Lens.resting_focal))
 
 field_of_view : Angle.Turn
 field_of_view = Angle.Turn.degrees(70.0)
