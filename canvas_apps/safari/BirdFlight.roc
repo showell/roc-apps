@@ -129,11 +129,7 @@ flight_timeline = |{ from, to }| {
 
 ## The location on top of `tree`.
 tree_top : Trees.RoadsideTree -> Animation.Location
-tree_top = |tree| {
-	along: tree.road_point.along,
-	across: tree.road_point.across,
-	lift: tree.kind.scenery_height(),
-}
+tree_top = |tree| { road_point: tree.road_point, lift: tree.kind.scenery_height() }
 
 ## One flap of the wings: `up` for its first half and `down` for its second.
 flap_poses : { up : PosedBird.BirdPose, down : PosedBird.BirdPose } -> List(PosedBird.BirdPose)

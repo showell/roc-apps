@@ -21,11 +21,7 @@ Animation :: [].{
 
 	## Where an animal is: a place on its segment, and how high it is off the
 	## ground.
-	Location : {
-		along : Along,
-		across : Across,
-		lift : Distance,
-	}
+	Location : { road_point : Geom.RoadPoint, lift : Distance }
 
 	## The location `fraction` of the way from `from` to `to`, in a straight line.
 	location_between : {
@@ -36,8 +32,14 @@ Animation :: [].{
 	location_between = |{ from, to, fraction }| {
 		between = |start, end| Easing.lerp({ from: start, to: end, fraction })
 		{
-			along: Along.metres(between(from.along.to_metres(), to.along.to_metres())),
-			across: Across.metres(between(from.across.to_metres(), to.across.to_metres())),
+			road_point: {
+				along: Along.metres(
+					between(from.road_point.along.to_metres(), to.road_point.along.to_metres()),
+				),
+				across: Across.metres(
+					between(from.road_point.across.to_metres(), to.road_point.across.to_metres()),
+				),
+			},
 			lift: Distance.metres(between(from.lift.to_metres(), to.lift.to_metres())),
 		}
 	}
@@ -49,7 +51,7 @@ Animation :: [].{
 	## and its kind is the instant's pose.
 	placed_instant : Animation.Instant(pose) -> Geom.Placed({ pose : pose })
 	placed_instant = |{ pose, location }| {
-		road_point: { along: location.along, across: location.across },
+		road_point: location.road_point,
 		lift: location.lift,
 		kind: { pose: pose },
 	}
@@ -97,8 +99,7 @@ Note : [First, Second, Third, Fourth, BeforeIt, AfterIt]
 
 sideways_location : F64 -> Animation.Location
 sideways_location = |across| {
-	along: Along.metres(0.0),
-	across: Across.metres(across),
+	road_point: { along: Along.metres(0.0), across: Across.metres(across) },
 	lift: Distance.zero,
 }
 
@@ -118,7 +119,7 @@ four_frames = Animation.Timeline.of({
 four_frames_at : Animation.Stage -> (Note, F64)
 four_frames_at = |stage| {
 	instant = four_frames.instant(stage)
-	(instant.pose, instant.location.across.to_metres())
+	(instant.pose, instant.location.road_point.across.to_metres())
 }
 
 # The first and last frames play with their own numbers; before them and past
@@ -134,15 +135,13 @@ expect
 
 start_location : Animation.Location
 start_location = {
-	along: Along.metres(10.0),
-	across: Across.metres(20.0),
+	road_point: { along: Along.metres(10.0), across: Across.metres(20.0) },
 	lift: Distance.metres(30.0),
 }
 
 end_location : Animation.Location
 end_location = {
-	along: Along.metres(18.0),
-	across: Across.metres(4.0),
+	road_point: { along: Along.metres(18.0), across: Across.metres(4.0) },
 	lift: Distance.metres(46.0),
 }
 
@@ -154,7 +153,8 @@ location_numbers = |fraction| {
 		to: end_location,
 		fraction: Fraction.of(fraction),
 	})
-	[location.along.to_metres(), location.across.to_metres(), location.lift.to_metres()]
+	point = location.road_point
+	[point.along.to_metres(), point.across.to_metres(), location.lift.to_metres()]
 }
 
 expect

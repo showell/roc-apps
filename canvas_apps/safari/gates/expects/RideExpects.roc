@@ -359,7 +359,7 @@ ride_encounters = {
 						bird = flight.instant_at(stage)
 						$flying_step_count = $flying_step_count + 1
 						$is_bird_ahead_throughout = $is_bird_ahead_throughout
-							and bird.location.along > rider_along($instant)
+							and bird.location.road_point.along > rider_along($instant)
 					}
 					Waiting | Past(_) => {}
 				}

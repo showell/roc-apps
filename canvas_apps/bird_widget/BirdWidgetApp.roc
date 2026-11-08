@@ -160,15 +160,8 @@ tree_shapes = |tree| WidgetPage.resting_lens_shapes(
 ## The bird as `gap` finds it, drawn by Safari's own stills.
 bird_shapes : Distance -> List(Shapes.Shape)
 bird_shapes = |gap| {
-	instant = World.first_bird_flight.instant_at(stage_at(gap))
-	location = instant.location
-	bird : PosedBird
-	bird = { pose: instant.pose }
-	placed_bird = {
-		road_point: { along: location.along, across: location.across },
-		lift: location.lift,
-		kind: bird,
-	}
+	placed_bird : Geom.Placed(PosedBird)
+	placed_bird = Animation.placed_instant(World.first_bird_flight.instant_at(stage_at(gap)))
 	WidgetPage.resting_lens_shapes(sighting_from_eye(placed_bird), {})
 }
 
