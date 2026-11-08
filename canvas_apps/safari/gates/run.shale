@@ -154,6 +154,7 @@ end
 
 const SELF_PATH = GATES .. "/run.shale"
 const TUTORIAL = "canvas_apps/safari/tutorial/build.shale"
+const COLOR_ROC = "canvas_apps/safari/tutorial/color_roc.shale"
 const BOOK_NAMES = GATES .. "/book_names.shale"
 const INPUT_BITS = GATES .. "/input_bits.shale"
 -- The root that reaches nearly every expect, the one fast.shale runs.
@@ -604,11 +605,13 @@ function page()
 end
 
 -- tutorial/build.shale's self-test, then the tutorial's build, so a name it
--- includes that is gone from the code fails the gates.
+-- includes that is gone from the code fails the gates. Then color_roc.shale's
+-- self-test, which book.shale also runs, so a change to it is tested before
+-- the next book build.
 function tutorial()
   local cache = child_cache("tutorial")
   local env = cache_env(cache)
-  for argv in {{"shale", "--root", ".", TUTORIAL, "self_test=1"}, {"shale", "--root", ".", TUTORIAL}} do
+  for argv in {{"shale", "--root", ".", TUTORIAL, "self_test=1"}, {"shale", "--root", ".", TUTORIAL}, {"shale", "--root", ".", COLOR_ROC, "self_test=1"}} do
     print(trim(must(run(argv, {timeout_ms = 60000, tail = 20, env = env})).out))
   end
   drop_child_cache(cache)
