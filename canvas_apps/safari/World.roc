@@ -321,7 +321,7 @@ built_segment = |plan, { index, ending }| {
 					if earlier_herd_count < big_herd_count {
 						PigHerd.BigHerd(big_pig_herd)
 					} else {
-						PigHerd.TwoRows(two_row_pig_herd)
+						PigHerd.TwoRows
 					}
 				interest =
 					if earlier_herd_count < pig_novelty_count {
@@ -360,45 +360,11 @@ big_pig_herd = {
 	columns_before_standout: 2,
 	columns_after_standout: 4,
 	rows_behind_front: 6,
-	first_column_offset: Distance.metres(-6.0),
-	column_spacing: Distance.metres(4.0),
-	row_depth: Distance.metres(6.0),
-	jitter_along: Distance.metres(1.2),
-	jitter_across: Distance.metres(1.0),
-}
-
-## The route's two-row herd, four pigs in front and six behind. The third pig
-## of the front row stands out.
-two_row_pig_herd : PigHerd.TwoRowPigHerd
-two_row_pig_herd = {
-	front_row: {
-		offsets_before: [-6.0, -2.0].map(Distance.metres),
-		standout_offset: Distance.metres(2.0),
-		offsets_after: [6.0].map(Distance.metres),
-	},
-	back_offsets: [
-		-10.0,
-		-6.0,
-		-2.0,
-		2.0,
-		6.0,
-		10.0,
-	].map(Distance.metres),
-	back_row_depth: Distance.metres(6.0),
 }
 
 ## The route's cow herd, fourteen cows in columns of three.
 cow_herd : CowHerd
-cow_herd = {
-	cow_count: 14,
-	rows_behind_front: 2,
-	gap_behind_bull: Distance.metres(6.0),
-	column_spacing: Distance.metres(6.0),
-	row_stagger: Distance.metres(2.0),
-	row_depth: Distance.metres(5.0),
-	jitter_along: Distance.metres(1.5),
-	jitter_across: Distance.metres(1.2),
-}
+cow_herd = { cow_count: 14, rows_behind_front: 2 }
 
 ## How many of the segments before `index` have pigs.
 herd_count_before : Route.SegmentIndex -> U32
