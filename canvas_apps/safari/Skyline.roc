@@ -129,7 +129,7 @@ snow_night = RgbColor.of(0x465468)
 ## A rock colour at `darkness`, from 0 (day) to 1 (night).
 rock_color_at_darkness : RgbColor, Fraction -> RgbColor
 rock_color_at_darkness = |color, darkness|
-	ColorShade.shade_color(color, rock_night_dim.times(darkness).complement().to_f64())
+	ColorShade.shade_color(color, Darkened(rock_night_dim.times(darkness)))
 
 snow_color : Fraction -> RgbColor
 snow_color = |darkness| ColorShade.color_between({
