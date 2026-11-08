@@ -1,8 +1,9 @@
 -- The code of the official Roc tutorial, without its prose.
 --
--- Run it from anywhere, with no settings:
+-- Run it from the roc-apps root, whose prelude has `plain_text`, with no
+-- settings:
 --
---   shale canvas_apps/safari/tutorial/roc_tutorial_code.shale
+--   cd <roc-apps checkout> && shale canvas_apps/safari/tutorial/roc_tutorial_code.shale
 --
 -- It reads a saved copy of the page, scratch:roc-tutorial/tutorial.html, and
 -- fetches that copy only when it is missing. Delete the copy to read the page
@@ -25,16 +26,6 @@ function saved_page()
     replace(SAVED_PAGE, answer.body)
   end
   return read(SAVED_PAGE)
-end
-
-function plain_text(html)
-  local text = re_replace(html, "<[^>]+>", "")
-  text = re_replace(text, "&lt;", "<")
-  text = re_replace(text, "&gt;", ">")
-  text = re_replace(text, "&quot;", "\"")
-  text = re_replace(text, "&#39;", "'")
-  text = re_replace(text, "&#x27;", "'")
-  return re_replace(text, "&amp;", "&")
 end
 
 function block_kind(html)
