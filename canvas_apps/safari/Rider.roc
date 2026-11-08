@@ -45,13 +45,15 @@ Rider := { motorcycle : Motorcycle, eyes : RiderEyes }.{
 		}
 	}
 
-	## How strongly something holds the rider's eye on `segment`, with its
-	## encounter at `encounter_stage`: the stronger of what the encounter asks
-	## and what the rider's own look holds.
-	attention : Rider, { segment : Segment, encounter_stage : Animation.Stage } -> Attention
-	attention = |rider, { segment, encounter_stage }|
+	## How strongly something holds the rider's eye on their segment of `route`,
+	## with its encounter at `encounter_stage`: the stronger of what the
+	## encounter asks and what the rider's own look holds.
+	attention : Rider, { route : Route, encounter_stage : Animation.Stage } -> Attention
+	attention = |rider, { route, encounter_stage }| {
+		segment = rider.motorcycle.route_place.segment_on(route)
 		EncounterReaction.encounter_attention(segment, encounter_stage)
 			.max(rider.eyes.attention())
+	}
 
 	## How far the rider's head turns from the way the motorcycle points: the
 	## gaze, and a little more with the lean, as a rider's head turns into a bend.
