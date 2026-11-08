@@ -1,8 +1,9 @@
-## The truck the rider chases. It teases him: it starts well ahead and lets him
-## close in over the whole route, unevenly, as if the driver saw him. The tease
-## is `tease_position`, and plain physics carries it out: the truck speeds up
-## while it is short of the tease, holds its speed otherwise, and slows for a
-## turn when one is close.
+## TruckJourney is the truck's travel along the route, as the rider chases it.
+## The truck teases him: it starts well ahead and lets him close in over the
+## whole route, unevenly, as if the driver saw him. The tease is
+## `tease_position`, and plain physics carries it out: the truck speeds up while
+## it is short of the tease, holds its speed otherwise, and slows for a turn when
+## one is close.
 import Acceleration
 import Distance
 import Fraction
@@ -12,10 +13,10 @@ import VehicleLimits
 
 ## How far along the route the truck is, how fast it is going, and whether
 ## its last step slowed it. Nominal, not opaque: other modules read its fields.
-Truck := {
+TruckJourney := {
 	route_position : Distance,
 	speed : Speed,
-	pace : Truck.Pace,
+	pace : TruckJourney.Pace,
 }.{
 
 	## Whether the truck's last step slowed it.
@@ -23,7 +24,7 @@ Truck := {
 		is_eq : _
 	}
 
-	initial : Truck
+	initial : TruckJourney
 	initial = {
 		route_position: tease_start_lead,
 		speed: VehicleLimits.starting_speed,
@@ -32,7 +33,7 @@ Truck := {
 
 	## The truck one step on: where the rider is along the route, and the
 	## route itself, decide its pace.
-	truck_at_next_step : Truck, { rider_distance : Distance, route : Route } -> Truck
+	truck_at_next_step : TruckJourney, { rider_distance : Distance, route : Route } -> TruckJourney
 	truck_at_next_step = |truck, { rider_distance, route }| {
 		tease = tease_position({ rider_distance, route_length: route.route_length() })
 		match next_bend(route, truck.route_position) {
@@ -115,7 +116,7 @@ tease_position = |{ rider_distance, route_length }| {
 
 ## The truck one step on, slowing for `bend`, so that it reaches the bend at a
 ## cautious speed.
-braking_truck_at_next_step : Truck, ComingBend -> Truck
+braking_truck_at_next_step : TruckJourney, ComingBend -> TruckJourney
 braking_truck_at_next_step = |truck, bend| {
 	target_speed = bend.turn_speed.scaled_by(turn_caution)
 	acceleration = VehicleLimits.braking_to(
@@ -138,7 +139,7 @@ braking_truck_at_next_step = |truck, bend| {
 
 ## The truck one step on with no bend close: it speeds up while it is short of
 ## `tease`, and otherwise holds its speed.
-chasing_truck_at_next_step : Truck, Distance -> Truck
+chasing_truck_at_next_step : TruckJourney, Distance -> TruckJourney
 chasing_truck_at_next_step = |truck, tease| {
 	speed =
 		if truck.route_position < tease {

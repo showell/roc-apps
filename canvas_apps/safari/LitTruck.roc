@@ -3,7 +3,7 @@
 ## brake lights, so each paints over the one before.
 import Fraction
 import Picture
-import Truck
+import TruckJourney
 import TruckBody
 import TruckLights
 import TruckShape
@@ -17,7 +17,7 @@ LitTruck := { headlights : [On, Off], brake_lights : [On, Off] }.{
 	## The lights a truck going at `pace` has on under a sky of `darkness`: its
 	## headlights once the sky is dark enough, like a light sensor on the lamps,
 	## and its brake lights while its last step slowed it.
-	at : Truck.Pace, Fraction -> LitTruck
+	at : TruckJourney.Pace, Fraction -> LitTruck
 	at = |pace, darkness| {
 		headlights: if darkness >= headlights_on_darkness {
 			On

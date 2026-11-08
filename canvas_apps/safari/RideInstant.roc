@@ -9,7 +9,7 @@ import Distance
 import Route
 import Rider
 import Segment
-import Truck
+import TruckJourney
 
 ## One instant of the ride, and all that is kept from one step to the next: the
 ## rider and the truck, each moved once a step from where it was, the clock,
@@ -18,7 +18,7 @@ import Truck
 ## nominal, not opaque: other modules read its fields.
 RideInstant := {
 	rider : Rider,
-	truck : Truck,
+	truck : TruckJourney,
 	clock : Clock,
 	encounter_plan : EncounterPlan,
 }.{
@@ -26,7 +26,7 @@ RideInstant := {
 	initial : RideInstant
 	initial = {
 		rider: Rider.initial,
-		truck: Truck.initial,
+		truck: TruckJourney.initial,
 		clock: Clock.start,
 		encounter_plan: Unplanned,
 	}
@@ -72,7 +72,7 @@ next = |route, instant| {
 		}
 	{
 		rider: next_rider,
-		truck: Truck.truck_at_next_step(
+		truck: TruckJourney.truck_at_next_step(
 			instant.truck,
 			{ rider_distance: to.distance_along(route), route },
 		),

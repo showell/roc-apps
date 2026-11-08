@@ -1958,7 +1958,7 @@ The closest the rider gets is 50 metres, at step 6,374. After that the rider slo
 
 New in this chapter:
 
-- Modules: `Truck`
+- Modules: `TruckJourney`
 
 ### A tease, carried out by physics
 
@@ -1970,60 +1970,60 @@ Everything else is plain physics. The truck speeds up while it's short of that m
 
 The truck's state is three fields:
 
-{{code Truck.Truck from "How far along" to "pace : Truck.Pace,"}}
+{{code TruckJourney.TruckJourney from "How far along" to "pace : TruckJourney.Pace,"}}
 
 `route_position` is a `Distance` along the whole route, the same measure as the rider's progress, so the two can be compared directly. `Pace` says whether the truck's last step slowed it down:
 
-{{code Truck.Pace}}
+{{code TruckJourney.Pace}}
 
 A bend ahead of the truck is its own type, and so is the answer to "is there one":
 
-{{code Truck.ComingBend}}
+{{code TruckJourney.ComingBend}}
 
-{{code Truck.NextBend}}
+{{code TruckJourney.NextBend}}
 
 `BendAhead` carries a `ComingBend`, how far off the bend is and how fast it can be taken. `NoBendAhead` carries nothing: the route ends before another bend, or the truck is already past the end. The only way to read a bend's distance is inside the branch where there is a bend.
 
 ### The functions
 
-The modules around `Truck`
+The modules around `TruckJourney`
 ```dot
 digraph truck_motion {
   node [shape=box, fontname="Helvetica"];
-  Truck [style=bold];
-  RideInstant -> Truck;
-  Truck -> Route;
-  Truck -> VehicleLimits;
-  Truck -> Speed;
-  Truck -> Acceleration;
+  TruckJourney [style=bold];
+  RideInstant -> TruckJourney;
+  TruckJourney -> Route;
+  TruckJourney -> VehicleLimits;
+  TruckJourney -> Speed;
+  TruckJourney -> Acceleration;
 }
 ```
 
 `RideInstant` moves the truck once a step. All it hands over is how far along the route the rider has just got to, and the route itself:
 
-{{code RideInstant.next from "truck: Truck.truck_at_next_step(" to "{ rider_distance: to.distance_along(route), route },"}}
+{{code RideInstant.next from "truck: TruckJourney.truck_at_next_step(" to "{ rider_distance: to.distance_along(route), route },"}}
 
-That record is the whole of the chase. `Truck` imports none of the rider's modules, and the rider's modules don't import `Truck`. What the two share is `VehicleLimits`, the limits both keep to, which is where the truck's 10% comes from.
+That record is the whole of the chase. `TruckJourney` imports none of the rider's modules, and the rider's modules don't import `TruckJourney`. What the two share is `VehicleLimits`, the limits both keep to, which is where the truck's 10% comes from.
 
 The step works out the tease, then looks for the next bend:
 
-{{code Truck.truck_at_next_step}}
+{{code TruckJourney.truck_at_next_step}}
 
 Here's the tease itself. The lead shrinks in step with the rider's progress along the route:
 
-{{code Truck.tease_position}}
+{{code TruckJourney.tease_position}}
 
 Finding the next bend walks the route's segments with their ends, and takes the first one that ends past the truck:
 
-{{code Truck.next_bend}}
+{{code TruckJourney.next_bend}}
 
 Then the two ways to take a step. Both sit below the type's block, so they're private, and both are arithmetic on `Speed`. Within 60 metres of a bend, the truck aims to reach it at 80% of the bend's top speed, to leave a margin, and brakes if it's going faster than that:
 
-{{code Truck.braking_truck_at_next_step}}
+{{code TruckJourney.braking_truck_at_next_step}}
 
 `VehicleLimits.braking_to` works out one steady brake that reaches the target speed at the bend. A steady brake can land a little under the target, so `target_speed.max(...)` holds the truck there. A brake that would take the speed below zero is a bug, and `braking_to` crashes on one. Otherwise, the truck chases:
 
-{{code Truck.chasing_truck_at_next_step}}
+{{code TruckJourney.chasing_truck_at_next_step}}
 
 That's a truck you can chase. The next chapter lights it.
 
