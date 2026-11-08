@@ -93,7 +93,11 @@ Motorcycle := {
 	is_eq : _
 }
 
-## How far the motorcycle turns in a step for each radian of lean.
+## How far the motorcycle turns in a step for each radian of lean. This is an
+## honest cheat, chosen by eye: a real bike's turn at a given lean depends on
+## its speed, and here it doesn't. The ride never asks for more, because the
+## lean search picks each step's lean by coasting this same physics, so the
+## rider leans for the turn the bike really makes at any speed.
 turn_per_lean : F64
 turn_per_lean = 0.1
 
