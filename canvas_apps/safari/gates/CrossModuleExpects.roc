@@ -76,6 +76,7 @@ import game.Trees
 import game.VehicleLimits
 import game.Wildlife
 import game.World
+import lib.ArgbColor
 import lib.Brush
 import lib.RgbColor
 import lib.Shapes
@@ -3153,3 +3154,72 @@ expect
 				fill: Flat(Brush.opaque(RgbColor.of(7))),
 			}),
 		]
+
+## Colour stops with an alpha byte and offsets inside 0 to 1, as a still holds
+## them.
+still_stops : Still.ColorStops
+still_stops = {
+	start_color: ArgbColor.of(0x80FFE9A8),
+	end_color: ArgbColor.of(0xFF000000),
+	start_offset: Fraction.of(0.25),
+	end_offset: Fraction.of(0.75),
+}
+
+## The same stops as a brush takes them.
+brush_stops : Brush.TwoStops
+brush_stops = {
+	start_color: Brush.translucent(ArgbColor.of(0x80FFE9A8)),
+	end_color: Brush.translucent(ArgbColor.of(0xFF000000)),
+	start_offset: 0.25,
+	end_offset: 0.75,
+}
+
+## Three corners of a still, at the foot and up the still's middle.
+still_corners : List(Still.Vertex)
+still_corners = [{ x: 0.0, y: 0.0 }, { x: 0.5, y: 0.0 }, { x: 0.0, y: 1.0 }]
+
+## The shapes of a still of one polygon, on `still_corners`, filled by
+## `gradient`.
+shaded_still_shapes : Still.Gradient -> List(Shapes.Shape)
+shaded_still_shapes = |gradient|
+	StillShapes.still_shapes(
+		upright_still_anchor,
+		Still.of([{ fill: Shaded(gradient), points: still_corners }]),
+	)
+
+## Where `still_corners` land on screen.
+still_corner_coordinates : List(F64)
+still_corner_coordinates = [100.0, 200.0, 125.0, 200.0, 100.0, 150.0]
+
+# A linear gradient keeps its stops' alphas and offsets, and runs between its
+# two points on screen.
+expect {
+	gradient = Linear({
+		stops: still_stops,
+		start: { x: 0.0, y: 0.0 },
+		end: { x: 0.0, y: 1.0 },
+	})
+	fill = Linear({
+		stops: brush_stops,
+		start_point: { x: 100.0, y: 200.0 },
+		end_point: { x: 100.0, y: 150.0 },
+	})
+	shaded_still_shapes(gradient) == [Poly({ coordinates: still_corner_coordinates, fill })]
+}
+
+# A radial gradient keeps its stops the same way, its axes as steps on screen.
+expect {
+	gradient = Radial({
+		stops: still_stops,
+		center: { x: 0.0, y: 0.5 },
+		axis_u: { x: 0.5, y: 0.0 },
+		axis_v: { x: 0.0, y: 0.5 },
+	})
+	fill = Ellipse({
+		stops: brush_stops,
+		center: { x: 100.0, y: 175.0 },
+		axis_u: { x: 25.0, y: 0.0 },
+		axis_v: { x: 0.0, y: -25.0 },
+	})
+	shaded_still_shapes(gradient) == [Poly({ coordinates: still_corner_coordinates, fill })]
+}

@@ -4,7 +4,8 @@
 ## still that is wider than it is tall, such as a flying bird, has x past 1.
 ## EmojiStills, CatStills and BirdStills hold the pictures, and StillShapes
 ## puts them on screen.
-import Polygon
+import Fraction
+import lib.ArgbColor
 import lib.RgbColor
 
 Still :: List(Still.Polygon).{
@@ -16,6 +17,16 @@ Still :: List(Still.Polygon).{
 	## A corner of a still's polygon, in the still's frame.
 	Vertex : { x : F64, y : F64 }
 
+	## A gradient's two colours, and where each sits along it: the start
+	## colour up to `start_offset`, the end colour from `end_offset`, and a
+	## mix of the two between.
+	ColorStops : {
+		start_color : ArgbColor,
+		end_color : ArgbColor,
+		start_offset : Fraction,
+		end_offset : Fraction,
+	}
+
 	## A polygon's gradient as traced, with its two colours and where each
 	## sits along it. A linear one runs from `start` to `end`. A radial one
 	## spreads over an ellipse about `center`, whose two axes are the steps
@@ -23,14 +34,14 @@ Still :: List(Still.Polygon).{
 	Gradient : [
 		Linear(
 			{
-				stops : Polygon.ColorStops,
+				stops : Still.ColorStops,
 				start : Still.Vertex,
 				end : Still.Vertex,
 			},
 		),
 		Radial(
 			{
-				stops : Polygon.ColorStops,
+				stops : Still.ColorStops,
 				center : Still.Vertex,
 				axis_u : Still.Vertex,
 				axis_v : Still.Vertex,
