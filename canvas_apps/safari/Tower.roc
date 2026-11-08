@@ -178,6 +178,15 @@ next_corner = |corner|
 		FrontLeft => BackLeft
 	}
 
+# Going round the square from the first corner meets `corners` in order, then
+# comes back to the first.
+expect {
+	second = next_corner(BackLeft)
+	third = next_corner(second)
+	fourth = next_corner(third)
+	[BackLeft, second, third, fourth] == corners and next_corner(fourth) == BackLeft
+}
+
 footprint_corner : Footprint, Corner -> RiderView.RiderPoint
 footprint_corner = |footprint, corner|
 	match corner {
