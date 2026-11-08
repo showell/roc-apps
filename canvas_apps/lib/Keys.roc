@@ -19,8 +19,8 @@ Keys :: [].{
 
 	## Every key, once each. safari/gates/input_bits.shale holds it to the
 	## branches of `bit`, so a key added to the enum is added here too.
-	all : List(Keys.Key)
-	all = [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEnter, KeyP, KeyR, KeyQ, KeyE, KeyC, KeyJ, Key1, Key2, Key3, Key4]
+	all_keys : List(Keys.Key)
+	all_keys = [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEnter, KeyP, KeyR, KeyQ, KeyE, KeyC, KeyJ, Key1, Key2, Key3, Key4]
 
 	bit : Keys.Key -> U32
 	bit = |key|

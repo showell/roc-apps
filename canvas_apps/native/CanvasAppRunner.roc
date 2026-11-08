@@ -89,7 +89,7 @@ CanvasAppRunner :: [].{
 	input_of : Devices.Snapshot -> Input.Snapshot
 	input_of = |devices| {
 		var $keys = Input.none
-		for key in Keys.all {
+		for key in Keys.all_keys {
 			$keys = if host_key_pressed(devices, key) {
 				$keys.with_key_pressed(key)
 			} else if host_key_down(devices, key) {

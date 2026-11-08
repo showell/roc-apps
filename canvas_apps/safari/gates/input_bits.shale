@@ -2,7 +2,7 @@
 -- lib/Mouse.roc number each key and button by hand in their `bit`, and
 -- web/canvas_app_runner.js copies the numbers into KEY_BIT and MOUSE_BIT. A
 -- number that differs would bind the wrong key, silently, so this reads both
--- sides and fails on any difference. It also holds `Keys.all`, which the
+-- sides and fails on any difference. It also holds `Keys.all_keys`, which the
 -- native runner walks, to the keys `bit` numbers, and the names of the tick's
 -- seven numbers, in order, equal on every side of the wasm edge.
 --
@@ -104,25 +104,25 @@ function differences(what, roc, page, rename)
   return wrong
 end
 
--- The tags of the list `all` in `path`, in order.
+-- The tags of the list `all_keys` in `path`, in order.
 function roc_all(path)
   local nodes = roc_tree({path})[1].nodes
   for n in nodes do
-    if n.kind == "p-ident" and get(n, "raw", "") == "all" and nodes[n.parent].kind == "s-decl" then
+    if n.kind == "p-ident" and get(n, "raw", "") == "all_keys" and nodes[n.parent].kind == "s-decl" then
       local list = nodes[nodes[n.parent].kids[2]]
-      if list.kind ~= "e-list" then fail("input_bits: " .. path .. "'s all is not a list") end
+      if list.kind ~= "e-list" then fail("input_bits: " .. path .. "'s all_keys is not a list") end
       local tags = {}
       for k in list.kids do
-        if nodes[k].kind ~= "e-tag" then fail("input_bits: " .. path .. "'s all holds something that isn't a tag") end
+        if nodes[k].kind ~= "e-tag" then fail("input_bits: " .. path .. "'s all_keys holds something that isn't a tag") end
         tags[#tags + 1] = nodes[k].raw
       end
       return tags
     end
   end
-  fail("input_bits: no all in " .. path)
+  fail("input_bits: no all_keys in " .. path)
 end
 
--- How many ways Keys.all and the branches of `bit` differ: a key in one and
+-- How many ways Keys.all_keys and the branches of `bit` differ: a key in one and
 -- not the other, or a key twice in `all`; each is printed.
 function all_differences(all, bits)
   local wrong = 0
@@ -130,18 +130,18 @@ function all_differences(all, bits)
   for tag in all do
     if has_key(seen, tag) then
       wrong = wrong + 1
-      print("FAIL keys: Keys.all names " .. tag .. " twice")
+      print("FAIL keys: Keys.all_keys names " .. tag .. " twice")
     end
     seen[tag] = true
     if not has_key(bits, tag) then
       wrong = wrong + 1
-      print("FAIL keys: Keys.all names " .. tag .. ", and bit has no branch for it")
+      print("FAIL keys: Keys.all_keys names " .. tag .. ", and bit has no branch for it")
     end
   end
   for tag in sort(keys(bits)) do
     if not has_key(seen, tag) then
       wrong = wrong + 1
-      print("FAIL keys: bit has a branch for " .. tag .. ", and Keys.all leaves it out")
+      print("FAIL keys: bit has a branch for " .. tag .. ", and Keys.all_keys leaves it out")
     end
   end
   return wrong
@@ -232,5 +232,5 @@ if #sides[1].names ~= 7 then
   print("FAIL advance: " .. sides[1].where .. " takes " .. #sides[1].names .. " numbers, not 7")
 end
 wrong = wrong + advance_differences(sides)
-print("input_bits: " .. #keys(keys_roc) .. " keys and " .. #keys(mouse_roc) .. " buttons, Keys.all of " .. #keys_all .. ", advance named alike on " .. #sides .. " sides, " .. wrong .. " different")
+print("input_bits: " .. #keys(keys_roc) .. " keys and " .. #keys(mouse_roc) .. " buttons, Keys.all_keys of " .. #keys_all .. ", advance named alike on " .. #sides .. " sides, " .. wrong .. " different")
 if wrong > 0 then fail("input_bits: the page's input is not lib's") end
