@@ -91,7 +91,7 @@ Book := [].{
 	## build, so renaming a chapter can't quietly lose one.
 	pages : Manuscript.Contents, List(Book.Divider) -> List(Book.Page)
 	pages = |manuscript, dividers_wanted| {
-		fence = BookFence.hook(manuscript)
+		fence = BookFence.fence_hook(manuscript)
 		match manuscript.pages.map(|text| chapter_of(text, fence)) {
 			[] => crash "book: no pages"
 			[front, .. as unnumbered] => {
