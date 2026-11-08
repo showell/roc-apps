@@ -63,7 +63,7 @@ Animation :: [].{
 	Timeline(frame, pose) :: {
 		before : Animation.Instant(pose),
 		frames : List(frame),
-		frame_instant : frame, U64 -> Animation.Instant(pose),
+		frame_instant : frame, Steps -> Animation.Instant(pose),
 		after : Animation.Instant(pose),
 	}.{
 
@@ -72,7 +72,7 @@ Animation :: [].{
 		of : {
 			before : Animation.Instant(pose),
 			frames : List(frame),
-			frame_instant : frame, U64 -> Animation.Instant(pose),
+			frame_instant : frame, Steps -> Animation.Instant(pose),
 			after : Animation.Instant(pose),
 		} -> Animation.Timeline(frame, pose)
 		of = |parts| Animation.Timeline.(parts)
@@ -85,7 +85,7 @@ Animation :: [].{
 				Playing(steps_in) => {
 					frame_number = steps_in.to_u32().to_u64()
 					match timeline.frames.get(frame_number) {
-						Ok(frame) => (timeline.frame_instant)(frame, frame_number)
+						Ok(frame) => (timeline.frame_instant)(frame, steps_in)
 						Err(OutOfBounds) =>
 							crash "Animation.Timeline.instant: a stage plays past the last frame, so the span it was staged by disagrees with its timeline"
 					}
