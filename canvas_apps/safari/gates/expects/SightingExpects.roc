@@ -5,12 +5,12 @@ import Fixtures
 import game.Across
 import game.Along
 import game.Angle
+import game.Beacon
 import game.Billboard
 import game.BillboardSighting
 import game.Clock
 import game.Conifer
 import game.Distance
-import game.Fraction
 import game.Geom
 import game.RiderView
 import game.Lens
@@ -259,8 +259,9 @@ expect
 shapes_of_tower_100_ahead : List(Shapes.Shape)
 shapes_of_tower_100_ahead = {
 	tower_road = Fixtures.crafted_road([Fixtures.segment_of([])])
+	dark_beacon = Beacon.of_segment(Route.SegmentIndex.first).lit_at(Clock.start)
 	plain_tower : Tower
-	plain_tower = Tower.standing({ yaw: Angle.straight_ahead, beacon_brightness: Fraction.zero })
+	plain_tower = Tower.standing({ yaw: Angle.straight_ahead, beacon: dark_beacon })
 	sighted =
 		Pipeline.sighting_of(
 			{
