@@ -79,10 +79,7 @@ Segment := {
 			cows: choices.cows,
 			encounter: match choices.encounter {
 				CatCrosses => CatCrosses(
-					CatCrossing.by_tree({
-						road_half_width: Geom.road_half_width,
-						tree: nearest_tree_ahead(trees, cat_along).road_point,
-					}),
+					CatCrossing.by_tree({ tree: nearest_tree_ahead(trees, cat_along).road_point }),
 				)
 				BirdHere =>
 					match fifth_left_tree(trees) {

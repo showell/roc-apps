@@ -162,7 +162,7 @@ crossing_timeline = |cat| {
 	on_road = |across| { along: cat.along(), across, lift: Distance.zero }
 	start = on_road(cat.start_across())
 	middle = on_road(CatCrossing.mid_across)
-	end = on_road(cat.end_across())
+	end = on_road(CatCrossing.end_across)
 	location_of = |way|
 		match way {
 			WalkingOut(fraction) =>
