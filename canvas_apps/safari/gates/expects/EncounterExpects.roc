@@ -22,7 +22,7 @@ import game.RiderView
 import game.Pipeline
 import game.Pixels
 import game.PosedBird
-import game.PosedCat
+import game.Cat
 import game.RoadAhead
 import game.Route
 import game.Screen
@@ -58,7 +58,7 @@ birds_seen_on = |road_view, { camera, encounter_timing }| {
 
 ## The cats in view on the cat route, before its encounter is planned, for a
 ## rider `along` metres into its first segment.
-ride_sightings : F64 -> List(Pipeline.Sighted(PosedCat))
+ride_sightings : F64 -> List(Pipeline.Sighted(Cat))
 ride_sightings = |along| {
 	road_view = Fixtures.cat_road
 	EncounterSighting.cats_in_view(
@@ -228,7 +228,7 @@ expect
 # EncounterSighting's cats: which cats are in view as the rider comes on them.
 
 ## The first cat in view for a rider `along` metres in.
-first_cat : F64 -> Pipeline.Sighted(PosedCat)
+first_cat : F64 -> Pipeline.Sighted(Cat)
 first_cat = |along|
 	ride_sightings(along).first() ?? crash "EncounterExpects: the second segment's cat is in view"
 
@@ -320,7 +320,7 @@ crossing_cat = CatCrossing.by_tree({
 })
 
 ## The cat `steps_in` steps into its crossing.
-crossing_frame_of : U32 -> Animation.Instant(PosedCat.CatPose)
+crossing_frame_of : U32 -> Animation.Instant(Cat.CatPose)
 crossing_frame_of = |steps_in| crossing_cat.instant_at(Playing(Steps.of(steps_in)))
 
 expect crossing_cat.instant_at(Waiting).pose == Rest
@@ -467,7 +467,7 @@ expect {
 }
 expect flight_frame_of(18).location.lift.to_metres() > (left_top + far_top) / 2.0 + 4.0
 
-# PosedCat and PosedBird on screen.
+# Cat and PosedBird on screen.
 ## The spot `forward` ahead on the rider's own segment, `right` of the camera
 ## and `lift` off the ground.
 posed_spot_at : {
@@ -492,7 +492,7 @@ posed_spot_at = |{ forward, right, lift }| {
 
 ## `cat` 100 m straight ahead through a 500 px focal length, `lift` off the
 ## ground: on the ground its feet land at (480, 306), and it stands 8.5 px tall.
-sample_cat_shapes : PosedCat, Distance -> List(Shapes.Shape)
+sample_cat_shapes : Cat, Distance -> List(Shapes.Shape)
 sample_cat_shapes = |cat, lift|
 	cat.scenery_picture({
 		spot: posed_spot_at({
@@ -506,7 +506,7 @@ sample_cat_shapes = |cat, lift|
 
 ## The first corner `cat` draws, `lift` off the ground: its still's first
 ## corner's coordinates, on screen.
-first_cat_corner_coordinates : PosedCat, Distance -> List(F64)
+first_cat_corner_coordinates : Cat, Distance -> List(F64)
 first_cat_corner_coordinates = |cat, lift|
 	match sample_cat_shapes(cat, lift) {
 		[Poly(polygon), ..] => polygon.coordinates.take_first(2)
@@ -541,7 +541,7 @@ expect
 	].all(
 		|pose| {
 			shapes = sample_cat_shapes({ pose: pose }, Distance.zero)
-			shapes.len() == PosedCat.pose_still(pose).polygons().len()
+			shapes.len() == Cat.pose_still(pose).polygons().len()
 		},
 	)
 

@@ -12,13 +12,13 @@ import Distance
 import EncounterPlan
 import Fraction
 import Geom
-import PosedCat
+import Cat
 import Steps
 
 CatCrossing :: { tree : Geom.RoadPoint }.{
 
 	## A cat at one instant: how it looks, and where it is.
-	CatInstant : Animation.Instant(PosedCat.CatPose)
+	CatInstant : Animation.Instant(Cat.CatPose)
 
 	## Where the tree the cat crosses by stands.
 	tree : CatCrossing -> Geom.RoadPoint
@@ -37,11 +37,11 @@ CatCrossing :: { tree : Geom.RoadPoint }.{
 	end_across : Across
 	end_across =
 		Across.left_of_middle(Geom.road_half_width.plus(grass_toehold))
-			.minus(PosedCat.collapsed_hip_reach)
+			.minus(Cat.collapsed_hip_reach)
 
 	## Where every cat freezes across the road: with its head over the middle.
 	mid_across : Across
-	mid_across = Across.right_of_middle(PosedCat.frozen_head_reach)
+	mid_across = Across.right_of_middle(Cat.frozen_head_reach)
 
 	## The crossing of a cat by `tree`, on the right of the road.
 	by_tree : { tree : Geom.RoadPoint } -> CatCrossing
@@ -87,7 +87,7 @@ clear_gap : Distance
 clear_gap = Distance.metres(3.0)
 
 ## How the cat looks walking out: two strides, a frame each step.
-walking_poses : List(PosedCat.CatPose)
+walking_poses : List(Cat.CatPose)
 walking_poses = [
 	Stride,
 	Stride,
@@ -131,7 +131,7 @@ CrossingWay : [
 
 ## One frame of any crossing before it is put on a road: how the cat looks, and
 ## where it is on its way across.
-CrossingFrame : { pose : PosedCat.CatPose, way : CrossingWay }
+CrossingFrame : { pose : Cat.CatPose, way : CrossingWay }
 
 ## The frames of any crossing, one a step. Both the crossing's length and its
 ## timeline come from this one list, so the two can't disagree.
@@ -149,7 +149,7 @@ crossing_frames = {
 
 ## The whole of a crossing, a frame a step: the cat walks out to the middle
 ## of the road, freezes there, and leaps clear to the far verge.
-crossing_timeline : CatCrossing -> Animation.Timeline(CrossingFrame, PosedCat.CatPose)
+crossing_timeline : CatCrossing -> Animation.Timeline(CrossingFrame, Cat.CatPose)
 crossing_timeline = |crossing| {
 	on_road = |across| { road_point: { along: crossing.along(), across }, lift: Distance.zero }
 	start = on_road(crossing.start_across())

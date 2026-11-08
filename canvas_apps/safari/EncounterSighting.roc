@@ -7,7 +7,7 @@ import Distance
 import EncounterPoses
 import Pipeline
 import PosedBird
-import PosedCat
+import Cat
 import RoadAhead
 
 EncounterSighting :: [].{
@@ -18,7 +18,7 @@ EncounterSighting :: [].{
 	{
 		camera : Pipeline.SightingCamera,
 		encounter_stage : Animation.Stage,
-	} -> List(Pipeline.Sighted(PosedCat))
+	} -> List(Pipeline.Sighted(Cat))
 	cats_in_view = |road, { camera, encounter_stage }|
 		animals_in_view(road, { camera, animals: EncounterPoses.cat_poses(road, encounter_stage) })
 

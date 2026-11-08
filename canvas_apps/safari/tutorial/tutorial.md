@@ -2097,8 +2097,8 @@ digraph cat {
   CrossingReaction -> Cat;
   CrossingReaction -> World;
   CrossingSighting -> Cat;
-  PosedCat -> Cat;
-  PosedCat -> CatStills;
+  Cat -> Cat;
+  Cat -> CatStills;
   CatStills -> Cat;
   Cat -> Animation;
   Cat -> Easing;
@@ -2211,7 +2211,7 @@ A timeline is data, so the cat's whole performance reads in one place. This is t
 
 The words are tags. `Through` and `Before` say where a stretch ends, and `Holds` and `Alternates` say how the cat looks. The poses are a closed tag union, so a `match` that misses one is a compile-time error.
 
-{{code PosedCat.CatPose}}
+{{code Cat.CatPose}}
 
 A timeline is divided into stretches, and a cut is where one stretch ends and the next begins. A cut has to say which stretch its own beat belongs to, and two tags say that better than a boolean would. `crossing_timeline`'s comment says why it matters: the beats of the leap add up to a float just under the beat they stand for.
 
@@ -2261,21 +2261,21 @@ The modules that put a cat on screen
 digraph screen {
   node [shape=box, fontname="Helvetica"];
   CrossingSighting [style=bold];
-  PosedCat [style=bold];
+  Cat [style=bold];
   SceneShapes -> Scene;
-  SceneShapes -> PosedCat;
+  SceneShapes -> Cat;
   SceneShapes -> CrossingSighting;
   Scene -> CrossingSighting;
   CrossingSighting -> Cat;
   CrossingSighting -> RoadAhead;
   CrossingSighting -> DepthSort;
-  PosedCat -> Cat;
-  PosedCat -> CatStills;
+  Cat -> Cat;
+  Cat -> CatStills;
   CatStills -> Cat;
 }
 ```
 
-`CrossingSighting` and `PosedCat` never import each other. `SceneShapes` is what carries a sighting's answer to the drawing.
+`CrossingSighting` and `Cat` never import each other. `SceneShapes` is what carries a sighting's answer to the drawing.
 
 `cat_in_view` places the cat and decides whether it's big enough to draw. An empty list or a list of one is how it says "maybe".
 

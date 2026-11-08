@@ -10,7 +10,7 @@ import game.CatCrossing
 import game.EncounterReaction
 import game.Distance
 import game.Pixels
-import game.PosedCat
+import game.Cat
 import game.Geom
 import game.Speed
 import game.StillShapes
@@ -131,9 +131,9 @@ cat_shapes = |timing| {
 				y: Pixels.of(feet_y - instant.location.lift.to_metres() * pixels_a_metre),
 			},
 			flip: AsDrawn,
-			height_on_screen: Pixels.of(PosedCat.cat_height.to_metres() * pixels_a_metre),
+			height_on_screen: Pixels.of(Cat.cat_height.to_metres() * pixels_a_metre),
 		},
-		PosedCat.pose_still(instant.pose),
+		Cat.pose_still(instant.pose),
 	)
 }
 

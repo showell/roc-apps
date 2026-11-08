@@ -7,7 +7,7 @@
 import Animation
 import Geom
 import PosedBird
-import PosedCat
+import Cat
 import RoadAhead
 import SegmentPlace
 
@@ -19,7 +19,7 @@ EncounterPoses :: [].{
 
 	## The cats on `road`, with the encounter on the rider's segment at
 	## `encounter_stage`, in the order of `RoadAhead.segments_in_view`.
-	cat_poses : RoadAhead.RoadView, Animation.Stage -> List(EncounterPoses.PosedAnimal(PosedCat))
+	cat_poses : RoadAhead.RoadView, Animation.Stage -> List(EncounterPoses.PosedAnimal(Cat))
 	cat_poses = |road, encounter_stage|
 		RoadAhead.segments_in_view(road).keep_oks(
 			|in_view| segment_cat({ in_view, encounter_stage }),
@@ -38,7 +38,7 @@ EncounterPoses :: [].{
 segment_cat : {
 	in_view : RoadAhead.SegmentInView,
 	encounter_stage : Animation.Stage,
-} -> Try(EncounterPoses.PosedAnimal(PosedCat), [NoPose])
+} -> Try(EncounterPoses.PosedAnimal(Cat), [NoPose])
 segment_cat = |{ in_view, encounter_stage }|
 	match in_view.segment.encounter {
 		CatCrosses(crossing) =>

@@ -5,7 +5,7 @@
 ## on the large one shows or hides the outline of each polygon.
 import game.Pixels
 import game.PosedBird
-import game.PosedCat
+import game.Cat
 import game.Screen
 import game.StillShapes
 import game.Still
@@ -22,7 +22,7 @@ import widget.WidgetPage
 StillsWidgetApp :: [].{
 
 	## A pose of the cat or of the bird, each of which has its own still.
-	Pose : [Cat(PosedCat.CatPose), Bird(PosedBird.BirdPose)]
+	Pose : [Cat(Cat.CatPose), Bird(PosedBird.BirdPose)]
 
 	## The whole state of the widget: the pose shown large, and whether the
 	## outlines of its still's polygons show.
@@ -82,7 +82,7 @@ pose_name = |pose|
 pose_still : StillsWidgetApp.Pose -> Still
 pose_still = |pose|
 	match pose {
-		Cat(cat_pose) => PosedCat.pose_still(cat_pose)
+		Cat(cat_pose) => Cat.pose_still(cat_pose)
 		Bird(bird_pose) => PosedBird.pose_still(bird_pose)
 	}
 
@@ -538,7 +538,7 @@ expect
 
 # Stills that reach past 1 and below 0 are measured from their points.
 expect {
-	frozen = extent_of(PosedCat.pose_still(Frozen))
+	frozen = extent_of(Cat.pose_still(Frozen))
 	frozen.top > 1.0 and frozen.bottom < 0.0 and frozen.left < 0.0 and frozen.right > 1.0
 }
 expect
