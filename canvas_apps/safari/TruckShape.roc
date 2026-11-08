@@ -11,9 +11,9 @@ import Picture
 TruckShape :: [].{
 
 	## The box the truck fills, in the truck's own frame. Four offsets run
-	## ahead of the trailer's centre, from the back of the trailer to the front
+	## ahead of the trailer's center, from the back of the trailer to the front
 	## of the cab, so `rear` is negative. The two sides are offsets to the
-	## right of the trailer's centre line, so `left` is negative. The cab's flat
+	## right of the trailer's center line, so `left` is negative. The cab's flat
 	## roof ends at `roof_front`, where its windshield slopes down to the nose.
 	TruckBox : {
 		rear : Distance,
@@ -28,8 +28,12 @@ TruckShape :: [].{
 	## its points are measured on, and the camera's vantage.
 	TruckOnRoad : { road : RoadAhead.RoadView, vantage : Geom.Vantage }
 
+	## How a truck is drawn: its spot, the camera's lens, and the road and
+	## vantage its points are seen from.
+	TruckSetting : Picture.Setting(TruckShape.TruckOnRoad)
+
 	## A point on the truck, in the truck's own frame: how far ahead of the
-	## trailer's centre and how far to the right of it, each negative the other
+	## trailer's center and how far to the right of it, each negative the other
 	## way, and how high above the road under the truck.
 	TruckPoint : {
 		ahead : Distance,
@@ -65,7 +69,7 @@ TruckShape :: [].{
 	trailer_height : Distance
 	trailer_height = truck_height.minus(trailer_bottom)
 
-	## The box the truck fills, in its own frame, centred where its trailer
+	## The box the truck fills, in its own frame, centered where its trailer
 	## is; the cab is ahead of the trailer.
 	truck_box : TruckShape.TruckBox
 	truck_box = {
@@ -84,7 +88,7 @@ TruckShape :: [].{
 	## the truck is off the ground. The point is carried from the truck's frame
 	## onto the road at the truck's spot. The ground curves away from the rider,
 	## so the point is lowered by how far the ground has dropped beneath it.
-	raised_point_on_truck : TruckSetting, TruckShape.TruckPoint -> Geom.RaisedPoint
+	raised_point_on_truck : TruckShape.TruckSetting, TruckShape.TruckPoint -> Geom.RaisedPoint
 	raised_point_on_truck = |truck, { ahead, rightward, height }| {
 		place = truck.spot.place()
 		center = truck.spot.road_point()
@@ -144,10 +148,6 @@ TruckShape :: [].{
 		I64.until(0, sides),
 	).map(|corner| corner.to_f64() / sides.to_f64() * F64.tau)
 }
-
-## How a truck is drawn: its spot, the camera's lens, and the road and vantage
-## its points are seen from.
-TruckSetting : Picture.Setting(TruckShape.TruckOnRoad)
 
 trailer_length : Distance
 trailer_length = Distance.metres(8.4)
