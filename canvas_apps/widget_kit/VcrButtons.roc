@@ -46,7 +46,7 @@ VcrButtons :: [].{
 	clock_range = |{ first_step, last_step, steps_a_frame }| {
 		first: Clock.at_step(first_step),
 		last: Clock.at_step(last_step),
-		place_of: Clock.to_f64,
+		place_of: |clock| clock.steps_since(Clock.start).to_f64(),
 		number_at: |step| Clock.at_step(step.to_u32_wrap()),
 		play_reach: steps_a_frame,
 	}

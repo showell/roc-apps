@@ -44,9 +44,6 @@ Clock :: U32.{
 	is_lt : Clock, Clock -> Bool
 	is_lt = |Clock.(n), Clock.(other)| n < other
 
-	to_f64 : Clock -> F64
-	to_f64 = |Clock.(n)| n.to_f64()
-
 	to_str : Clock -> Str
 	to_str = |Clock.(n)| n.to_str()
 

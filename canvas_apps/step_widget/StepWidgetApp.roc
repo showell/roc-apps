@@ -77,14 +77,14 @@ moved : StepWidgetApp.Model -> StepWidgetApp.Model
 moved = |model| {
 	now = model.tour.instant().clock
 	wanted = model.transport.at
-	if now.to_f64() < wanted.to_f64() {
+	if now < wanted {
 		count = steps_a_frame.min(wanted.steps_since(now).to_u32())
 		{
 			..model,
 			tour: model.tour.steps_forward(count),
 			last_move: Played,
 		}
-	} else if now.to_f64() > wanted.to_f64() {
+	} else if wanted < now {
 		count = read_back_a_frame.min(now.steps_since(wanted).to_u32())
 		{
 			..model,
@@ -319,7 +319,7 @@ left_alone = |model, frames| {
 }
 
 clock_of : StepWidgetApp.Model -> F64
-clock_of = |model| model.tour.instant().clock.to_f64()
+clock_of = |model| model.tour.instant().clock.steps_since(Clock.start).to_f64()
 
 # Going forward, a frame plays a few steps and no more than it takes.
 expect clock_of(moved(heading_for_step(100))) == steps_a_frame.to_f64()

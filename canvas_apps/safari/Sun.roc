@@ -60,7 +60,10 @@ Sun :: [].{
 	## How high the sun stands above the horizon at `clock`; below it once
 	## negative.
 	height_at : Clock -> FarHeight
-	height_at = |clock| height_at_start.minus(drop_per_step.times(clock.to_f64()))
+	height_at = |clock| {
+		steps_in = clock.steps_since(Clock.start).to_f64()
+		height_at_start.minus(drop_per_step.times(steps_in))
+	}
 
 	## The sun in a frame, for a camera facing `heading` through a lens of
 	## `cam_focal`. It is in view while it is in front of the camera and its glow
@@ -141,7 +144,10 @@ size_drawn = |size_at_rest, sun|
 ## How far the sun sinks with each step, to fall from where it starts to
 ## where it has fully set by `fully_set_at`.
 drop_per_step : FarHeight
-drop_per_step = Sun.height_at_start.minus(Sun.height_when_set).divided_by(Sun.fully_set_at.to_f64())
+drop_per_step = {
+	steps_to_set = Sun.fully_set_at.steps_since(Clock.start).to_f64()
+	Sun.height_at_start.minus(Sun.height_when_set).divided_by(steps_to_set)
+}
 
 ## A quarter turn. The camera sees only what is less than this to either side
 ## of where it faces, in front of it.

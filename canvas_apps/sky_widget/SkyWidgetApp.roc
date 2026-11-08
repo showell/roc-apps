@@ -228,8 +228,9 @@ warmth_level = |clock| Sky.horizon_warmth_at(clock).to_f64()
 ## Where the chart shows `level_at` at `clock`.
 chart_point : Clock, (Clock -> F64) -> { x : F64, y : F64 }
 chart_point = |clock, level_at| {
-	x: chart_x(clock.to_f64() / sunset.last.to_f64()),
-	y: chart_y(level_at(clock)),
+	steps_in = clock.steps_since(Clock.start).to_f64()
+	steps_in_sunset = sunset.last.steps_since(Clock.start).to_f64()
+	{ x: chart_x(steps_in / steps_in_sunset), y: chart_y(level_at(clock)) }
 }
 
 ## How far apart the clocks a curve is drawn through are.

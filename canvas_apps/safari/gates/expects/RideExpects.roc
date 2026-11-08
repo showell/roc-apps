@@ -70,7 +70,7 @@ rider_along = |instant| instant.rider.motorcycle.route_place.along
 expect
 	match RideInstant.next_or_restart(World.route, done) {
 		Restarted(instant) =>
-			instant.clock.to_f64() == 0.0
+			instant.clock == Clock.start
 				and instant.rider.motorcycle.route_place.along.to_metres() == 0.0
 				and instant.rider.motorcycle.speed.to_metres_a_step() == 0.3
 				and instant.truck.route_position.to_metres() == 500.0
@@ -118,8 +118,8 @@ ride_at_step_two : RideInstant
 ride_at_step_two = instant_after(ride_at_step_one)
 
 expect !RideInstant.initial.rider.is_finished(World.route)
-expect ride_at_step_one.clock.to_f64() == 1.0
-expect ride_at_step_two.clock.to_f64() == 2.0
+expect ride_at_step_one.clock == Clock.at_step(1)
+expect ride_at_step_two.clock == Clock.at_step(2)
 expect ride_at_step_two.clock.steps_since(ride_at_step_one.clock) == Steps.one_step
 expect rider_along(ride_at_step_one) > rider_along(RideInstant.initial)
 expect ride_at_step_one.truck.route_position > RideInstant.initial.truck.route_position

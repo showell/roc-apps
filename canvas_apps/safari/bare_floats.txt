@@ -12,7 +12,6 @@ FarHeight: a unit type
 Fraction: a unit type
 Pixels: a unit type
 Speed: a unit type
-Clock.to_f64: a whole count's way into float sums
 Steps.to_f64: a whole count's way into float sums
 
 # Factors and ratios, which have no unit.
