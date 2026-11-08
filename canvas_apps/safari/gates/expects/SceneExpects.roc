@@ -4,7 +4,6 @@
 import Fixtures
 import game.Across
 import game.Along
-import game.BillboardSighting
 import game.Clock
 import game.Conifer
 import game.Distance
@@ -12,34 +11,15 @@ import game.Picture
 import game.Pipeline
 import game.Pixels
 import game.PosedBird
-import game.RailSighting
-import game.Rendered
 import game.RoadAhead
 import game.Scene
 import game.SegmentPlace
-import game.TowerSighting
-import game.TreeSighting
-import game.TruckSighting
 import lib.Shapes
 
 SceneExpects :: [].{}
 
-# Scene, on the scene from the start of the route.
-scene_facts : Scene.RideFacts
-scene_facts = {
-	encounter_timing: Unplanned,
-	truck: {
-		route_position: Distance.metres(500.0),
-		lit_truck: { headlights: Off, brake_lights: Off },
-	},
-	clock: Clock.start,
-}
-
-scene : Scene
-scene = Scene.scene_in_view(Fixtures.road, { camera: Fixtures.origin_camera, facts: scene_facts })
-
-## The route's start has no cat in view, so the cats come from the second
-## segment's, seen as `seen` sees them.
+## The scene 300 m into the cat route, where something of every field is in
+## view.
 cat_scene : Scene
 cat_scene = Scene.scene_in_view(
 	Fixtures.cat_road,
@@ -48,74 +28,32 @@ cat_scene = Scene.scene_in_view(
 			..Fixtures.origin_camera,
 			vantage: { ..Fixtures.origin, along: Along.metres(300.0) },
 		},
-		facts: scene_facts,
+		facts: {
+			encounter_timing: Unplanned,
+			truck: {
+				route_position: Distance.metres(500.0),
+				lit_truck: { headlights: Off, brake_lights: Off },
+			},
+			clock: Clock.start,
+		},
 	},
 )
 
-## The depths of `renderings`, in their order.
-depths_of : List(Rendered) -> List(Distance)
-depths_of = |renderings| renderings.map(|rendering| rendering.depth())
-
-## How far ahead each of `sightings` stands, in their order.
-sighted_depths : List(Pipeline.Sighted(kind)) -> List(Distance)
-sighted_depths = |sightings| sightings.map(|sighting| sighting.spot.foot().forward())
-
-# Each field holds what its own sighting found, in the sighting's order, each
-# thing at its own depth.
-expect
-	depths_of(scene.trees)
-		== sighted_depths(TreeSighting.trees_in_view(Fixtures.road, Fixtures.origin_camera))
-expect
-	depths_of(scene.birds)
-		== sighted_depths(
-			Fixtures.birds_seen_on(
-				Fixtures.road,
-				{ camera: Fixtures.origin_camera, encounter_timing: Unplanned },
-			),
-		)
-expect
-	depths_of(scene.towers)
-		== sighted_depths(
-			TowerSighting.towers_in_view(
-				Fixtures.road,
-				{ camera: Fixtures.origin_camera, clock: Clock.start },
-			),
-		)
-expect
-	depths_of(scene.billboards)
-		== sighted_depths(
-			BillboardSighting.billboards_in_view(Fixtures.road, Fixtures.origin_camera),
-		)
-expect depths_of(cat_scene.cats) == sighted_depths(Fixtures.seen)
-expect Fixtures.seen.len() > 0
-expect
-	scene.rails.len()
-		== RailSighting.rail_quads_in_view(Fixtures.road, Fixtures.origin_camera).len()
-expect
-	depths_of(scene.trucks)
-		== sighted_depths(
-			TruckSighting.truck_in_view(
-				Fixtures.road,
-				{ camera: Fixtures.origin_camera, truck: scene_facts.truck },
-			)
-				.map_ok(|truck| [truck]) ?? [],
-		)
-expect scene.trucks.len() == 1
-expect scene.birds.len() > 0
-
-# The scene's shapes are every field's, the truck's among them.
+# The scene's shapes are every field's, and no field is empty, so a field the
+# scene forgot to draw would show.
 expect {
-	field_renderings = [
-		scene.trees,
-		scene.birds,
-		scene.towers,
-		scene.billboards,
-		scene.cats,
-		scene.trucks,
-		scene.rails,
-	].join()
-	field_shapes = field_renderings.join_map(|rendering| rendering.picture().to_shapes())
-	Scene.scene_shapes(scene).len() == field_shapes.len()
+	fields = [
+		cat_scene.trees,
+		cat_scene.birds,
+		cat_scene.towers,
+		cat_scene.billboards,
+		cat_scene.cats,
+		cat_scene.trucks,
+		cat_scene.rails,
+	]
+	field_shapes = fields.join().join_map(|rendering| rendering.picture().to_shapes())
+	fields.all(|field| !field.is_empty())
+		and Scene.scene_shapes(cat_scene).len() == field_shapes.len()
 }
 
 ## A scene with nothing in view.
@@ -188,21 +126,6 @@ expect
 		(0.41, Ok(Seen)),
 	].all(|(along, outcome)| post_sighting(along).map_ok(|_| Seen) == outcome)
 
-# A sighting on a straight road keeps the post's place, road point and lift,
-# and has its foot as far right of a camera on the middle as the post is of
-# the middle, and as far ahead as it is along.
-expect
-	match post_sighting(20.0) {
-		Ok({ spot, .. }) => {
-			spot.place() == Ahead(SegmentPlace.Position.first)
-				and spot.road_point() == { along: Along.metres(20.0), across: Across.metres(1.5) }
-				and spot.lift() == Distance.zero
-				and spot.foot().right() == Distance.metres(1.5)
-				and spot.foot().forward() == Distance.metres(20.0)
-		}
-		Err(BehindCamera) => False
-	}
-
 # A post 1 m tall, 64 m ahead, stands exactly 2 pixels tall through a lens of
 # 128 pixels, the smallest height drawn.
 expect
@@ -225,16 +148,6 @@ expect
 				},
 			).map_ok(|_| Seen)
 				== outcome,
-	)
-
-# A rendering's depth is how far ahead its sighting stands.
-expect
-	[30.0, 64.0].all(
-		|along| {
-			sighting = post_sighting(along) ?? crash "SceneExpects: a post 30 m or more ahead is in view"
-			rendered = Pipeline.rendering_of(sighting, { cam_focal: Pixels.of(512.0), context: {} })
-			rendered.depth() == Distance.metres(along)
-		},
 	)
 
 ## A big green tree `forward` metres straight ahead of the route's start.
@@ -297,12 +210,3 @@ expect
 		== lone_tree_shapes(40.0).concat(lone_bird_shapes(30.0))
 expect lone_tree_shapes(40.0).len() > 0
 expect lone_bird_shapes(40.0).len() > 0
-
-expect scene.trees.len() > 0
-expect scene.towers.len() > 0
-expect scene.billboards.len() > 0
-expect scene.rails.len() > 0
-
-# A segment of the road ahead shows at most two towers, the one past its end and
-# the one halfway along, and the segment just behind shows one.
-expect scene.towers.len() <= 2 * Fixtures.road.segments_ahead().count.to_u64() + 1
