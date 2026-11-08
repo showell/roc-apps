@@ -66,7 +66,7 @@ end_tower : RoadAhead.RoadView,
 	clock : Clock,
 } -> Try(Pipeline.Sighted(Tower), [BehindCamera])
 end_tower = |road, { camera, in_view, clock }| {
-	beacon = Beacon.of_segment(in_view.index).lit_at(clock)
+	beacon = Beacon.at({ segment: in_view.index, place: AtEnd }, clock)
 	tower_if_ahead(
 		road,
 		{
@@ -91,7 +91,7 @@ mid_tower : RoadAhead.RoadView,
 } -> Try(Pipeline.Sighted(Tower), [BehindCamera, NoMidTower])
 mid_tower = |road, { camera, in_view, clock }| {
 	road_point = Segment.mid_tower_point(in_view.segment)?
-	beacon = Beacon.of_segment(in_view.index).opposite().lit_at(clock)
+	beacon = Beacon.at({ segment: in_view.index, place: Midway }, clock)
 	tower_if_ahead(
 		road,
 		{

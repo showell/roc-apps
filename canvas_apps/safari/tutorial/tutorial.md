@@ -405,7 +405,7 @@ digraph forms {
 }
 ```
 
-A box is a type, and an arrow is a function that makes the next one. The kind goes in at the top and comes out of `Pipeline.rendering_of` as a picture. `Rendered` has no kind, so a tree's rendering and a cow's are the same type, and every rendering in the frame goes in one list for the depth sort.
+A box is a type, and an arrow is a function that makes the next one. The kind goes in at the top and comes out of `Pipeline.rendering_of` as a picture. `Rendered` has no kind, so a tree's rendering and a cow's are the same type, and every rendering in the frame goes in one list for the depth sort. That sort is `DepthSort`, a stable merge sort that orders the list from far to near.
 
 ### A type with a type variable
 
@@ -1095,7 +1095,7 @@ Trees get their spots once, when the world is built. A tower doesn't: each frame
 
 {{code TowerSighting.end_tower}}
 
-The `beacon` line lights the beacon for this step. The tower halfway along is the same, with `.opposite()` on its beacon, a square yaw, and a second way to fail, `NoMidTower`. `Segment.mid_tower_point` says whether a segment is longer than a kilometre, and where its halfway tower stands, and that's all the world knows about towers.
+The `beacon` line lights the beacon for this step. The tower halfway along is the same, with `Midway` for its beacon, a square yaw, and a second way to fail, `NoMidTower`. `Segment.mid_tower_point` says whether a segment is longer than a kilometre, and where its halfway tower stands, and that's all the world knows about towers.
 
 To draw a tower, `scenery_picture` also needs the road and where the camera stands, to find the four corners of its base in the rider's view. So those two go in as its extra input, its context:
 
@@ -1373,14 +1373,13 @@ None of those rules needs a memory. Ask a beacon about step 5,430 cold, and it c
 
 ### Get the types right
 
-A beacon needs four types, all opaque:
+A beacon needs three types, all opaque:
 
 | Type | What it is | Under it |
 |---|---|---|
 | `Clock` | Which step of the ride it is | A `U32` |
 | `Steps` | How many steps something lasts | A `U32` |
-| `Beacon` | A beacon, by its head start into the blink | A `Steps` |
-| `Beacon.LitBeacon` | A beacon at one moment of its blink | A `Fraction`, how bright it is |
+| `Beacon` | A beacon at one moment of its blink | A `Fraction`, how bright it is |
 
 `Clock` and `Steps` are the same type of number underneath, so only the types tell them apart. A step of the ride and a length of time are different questions, and neither can stand in for the other.
 
@@ -1390,11 +1389,11 @@ A `Clock` is the ride's own time. It counts the ride's steps, from 0 at the star
 
 A clock is a place in time, and `Steps` is a distance between two of them. Two clocks give the steps between them, and a clock and some steps give a later clock, or an earlier one. Adding two clocks means nothing, so there's no function for it. Adding two `Steps` does mean something, so `Steps` has a `plus`. This book calls the pattern *places and distances*: one opaque type says where something is, a second says how far apart two of them are, and only the sums that make sense get a function.
 
-A `Beacon` is the light on a tower, known by its head start: how far into its blink it is when the ride starts. A tower's beacon comes from the index of its segment. You can ask for the beacon opposite it, and for how it shines at a step of the ride:
+A `Beacon` is the light on a tower as the scene draws it: a magenta disc, at a brightness. You ask for one by the index of the tower's segment, whether the tower stands at the segment's end or midway along it, and the step of the ride:
 
-{{signatures Beacon.of_segment Beacon.opposite Beacon.lit_at}}
+{{signatures Beacon.at}}
 
-A `LitBeacon` knows how bright it is, and it draws itself. Give it where its middle goes on the screen and how many pixels a metre spans there, and it gives back a magenta disc, as opaque as it is bright, or says it's too dim or too small to draw.
+A beacon knows how bright it is, and it draws itself. Give it where its middle goes on the screen and how many pixels a metre spans there, and it gives back a magenta disc, as opaque as it is bright, or says it's too dim or too small to draw.
 
 ### The functions
 
@@ -1405,49 +1404,45 @@ digraph beacon {
   Beacon [style=bold];
   Scene -> TowerSighting [label="  hands it the clock"];
   Scene -> Clock [label="  carries the clock"];
-  TowerSighting -> Beacon [label="  lights each beacon"];
+  TowerSighting -> Beacon [label="  asks for each beacon"];
   TowerSighting -> Tower [label="  stands each tower"];
   TowerSighting -> Clock [label="  reads the step"];
   Beacon -> Clock [label="  counts steps since the start"];
-  Beacon -> Steps [label="  holds its head start"];
+  Beacon -> Steps [label="  works out its head start"];
   Beacon -> Fraction [label="  measures its brightness"];
   Beacon -> Route [label="  takes a segment's index"];
   Clock -> Steps [label="  measures time between clocks"];
-  Tower -> Beacon [label="  holds it, lit"];
+  Tower -> Beacon [label="  holds it"];
 }
 ```
 
-A box is a module, and an arrow is an import. Each frame, `Scene` hands the clock to `TowerSighting`, which finds the towers in view and lights each tower's beacon for that frame. The clock goes no further. A tower holds its beacon already lit and decides where it sits, at the tower's top, and the beacon does the rest. Here's the line where the tower past the end of a segment gets its beacon:
+A box is a module, and an arrow is an import. Each frame, `Scene` hands the clock to `TowerSighting`, which finds the towers in view and asks for each tower's beacon at that frame. The clock goes no further. A tower holds its beacon as it shines that frame and decides where it sits, at the tower's top, and the beacon does the rest. Here's the line where the tower past the end of a segment gets its beacon:
 
-{{code TowerSighting.end_tower from "beacon = Beacon.of_segment" to "beacon = Beacon.of_segment"}}
+{{code TowerSighting.end_tower from "beacon = Beacon.at" to "beacon = Beacon.at"}}
 
-The segment's index makes a beacon, and the clock lights it. The tower halfway along a segment has the same line with `.opposite()` in the middle.
+The segment's index and the tower's place say which beacon, and the clock says how bright it is. The tower halfway along a segment has the same line with `Midway` in place of `AtEnd`.
 
 Now down into `Beacon`:
 
-{{code Beacon.lit_at}}
+{{code Beacon.at}}
 
-Inside the module, `Beacon.(head_start)` opens a beacon to read its head start, and `Beacon.LitBeacon.(...)` builds a lit one. No other module can do either. `clock.steps_since(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride. Adding the beacon's head start gives its phase, and a cosine turns that into a brightness:
+Inside the module, `Beacon.(...)` builds a beacon from its brightness. No other module can. `clock.steps_since(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride. Adding the beacon's head start gives its phase, and a cosine turns that into a brightness:
 
 {{code Beacon.beacon_brightness}}
 
 `wrapped_to` is the only `%` that `Steps` offers, so a phase of 130 is a phase of 10. (The period is written `Beacon.beacon_period`, with its type's name, even here, because it's defined in the type's block.) `(1 - cos) / 2` runs from 0 up to 1 and back to 0 over one period, and it can't leave that range. So `Fraction.of`, which crashes on a ratio outside 0 to 1, is safe here.
 
-Each segment's beacon gets its head start from the segment's index:
+A beacon gets its head start from its segment's index and its tower's place:
 
-{{code Beacon.of_segment}}
+{{code Beacon.head_start}}
 
 Each segment's beacon starts 37 steps further into its blink than the last one's, so towers along the road don't blink in unison, which would be boring. 37 shares no factor with 120, so the first 120 segments' beacons all start at different points of the blink. Plenty of other numbers would do.
 
-The tower halfway along a segment blinks opposite the one at its end:
+The tower halfway along a segment blinks opposite the one at its end, and opposite means half a blink on. `half_period` is worked out from the period, so it stays right if the period changes.
 
-{{code Beacon.opposite}}
+The widget's two beacons are the first segment's: the one at its end, with no head start, and the midway one, half a blink on. Step 5,400 is 45 whole blinks in, so the first is dark there and the second is at full brightness. A quarter of a blink later, at step 5,430, they're equally bright, and by step 5,460 they've changed places.
 
-Opposite means half a blink on. `half_period` is worked out from the period, so it stays right if the period changes.
-
-The widget's two beacons are the first segment's, with no head start, and the one opposite it, half a blink on. Step 5,400 is 45 whole blinks in, so the first is dark there and the second is at full brightness. A quarter of a blink later, at step 5,430, they're equally bright, and by step 5,460 they've changed places.
-
-Because the beacon draws itself, its tests need no tower. `Beacon`'s own tests check that a beacon blinks, that its opposite blinks the other way, and that its disc comes out the right size and color, or not at all when it's too dim.
+Because the beacon draws itself, its tests need no tower. `Beacon`'s own tests check that a beacon blinks, that the midway one blinks the other way, and that its disc comes out the right size and color, or not at all when it's too dim.
 
 There's no blink abstraction, because nothing else in the game blinks. A beacon goes round and round. The sun goes one way, and a lot more hangs on it.
 
@@ -1861,9 +1856,9 @@ That's the direction to the pig, less the way the bike points. The pig stands be
 
 {{code RiderEyes.next_gaze_yaw}}
 
-Toward a pig, the gaze turns by at most 4 degrees a step, and `clamped_within` holds the change to that limit on either side. On the way back it gives up a twentieth of its angle each step, and never more than 0.2 degrees.
+Toward a pig, the gaze turns by at most 4 degrees a step, and `clamped_within` holds the change to that limit on either side. On the way back the same clamp holds it to 0.2 degrees a step.
 
-A twentieth of what's left never gets to zero, so the `OnRoad` branch first checks whether the gaze is nearly home. Within 0.02 degrees, it snaps to straight ahead, and the return ends.
+A gaze within 0.2 degrees of straight ahead goes all the way there, so the last step of the return lands exactly home, and the return ends.
 
 Nothing here turns the bike. The gaze goes to the camera, and to nothing else that moves:
 
@@ -1875,7 +1870,7 @@ The second term is the rider's head going with the lean. So when the rider looks
 
 {{code RiderEyes.next_look_depth}}
 
-While the gaze is off straight ahead, the depth rises with how far it has turned, and it doesn't drop. Once the gaze is home, the depth fades by 0.0012 a step. That's why the table in the rider chapter has a `look_depth` of 0.67 at step 1,570, with no pig in sight. The gaze came home 262 steps before.
+While the gaze is off straight ahead, the depth rises with how far it has turned, and it doesn't drop. Once the gaze is home, the depth fades by 0.0012 a step, so a full look takes more than 800 steps to fade.
 
 The depth has one job. It widens the view:
 
@@ -1905,12 +1900,12 @@ Here's all of that on the third segment of the route:
 
 | Step | What happens | Speed | `gaze_yaw` | `look_depth` |
 |---|---|---|---|---|
-| 889 | The rider looks, with the pig just inside 150 metres | 1.94 metres a step | 4.0 degrees | 0.114 |
-| 1,050 | The gaze is at its widest | 0.2 metres a step | 34.7 degrees | 0.991 |
-| 1,051 | The rider lets the pig go | 0.2 metres a step | 34.5 degrees | 0.991 |
-| 1,308 | The gaze is back on the road | 0.2 metres a step | 0 degrees | 0.989 |
+| 885 | The rider looks, with the pig just inside 150 metres | 1.94 metres a step | 4.0 degrees | 0.114 |
+| 1,049 | The gaze is at its widest | 0.2 metres a step | 34.95 degrees | 0.999 |
+| 1,050 | The rider lets the pig go | 0.2 metres a step | 34.75 degrees | 0.999 |
+| 1,224 | The gaze is back on the road | 0.2 metres a step | 0 degrees | 0.997 |
 
-The look takes 162 steps, and getting the eyes back takes 257. The rider crawls for 90 steps more with nothing to look at, and the segment ends at step 1,398. The gaze is home at every one of the ride's 18 crossings, and an expect holds that. A crossing needs no reset anyway: the bike doesn't turn at a seam, and `gaze_yaw` is measured from the bike.
+The look takes 165 steps, and getting the eyes back takes 174. The rider crawls for 173 steps more with nothing to look at, and reaches the next segment at step 1,397. The gaze is home at every one of the ride's 18 crossings, and an expect holds that. A crossing needs no reset anyway: the bike doesn't turn at a seam, and `gaze_yaw` is measured from the bike.
 
 That's the pig's part of the rider's step. The truck is the other stepped thing.
 
@@ -1941,9 +1936,17 @@ digraph truck_drawing {
 
 `TruckSighting` finds the truck on the road ahead. What it finds is a `Truck`, the truck with its lights, and with the lights off that's just the body this chapter draws. The truck is drawn however small it stands, because the rider is always looking for it.
 
-### Three maps
+### Shape, placement, projection
 
-The truck is a real box, with a back, two sides, a roof, a windshield and a nose. Each corner of it goes through three maps on its way to the screen. Its shape is written in the truck's own frame. Its placement carries that frame onto the road at the truck's spot. Its projection is the camera turning the result into a point on the screen.
+The truck is a real box, with a back, two sides, a roof, a windshield and a nose. It gets to the screen in three stages:
+
+| Stage | What it does |
+|---|---|
+| Shape | Says where each corner is in the truck's own frame, measured from the middle of the trailer |
+| Placement | Carries one point onto the road at the truck's spot, then lowers it for the earth's curve |
+| Projection | Turns one whole face into a polygon on the screen |
+
+Placement works a point at a time, because each corner stands at its own place on the road. Projection works a face at a time, for two reasons. A face that reaches behind the camera is clipped, and clipping can cut corners off a face and add new ones, so it needs the whole outline. And the faces are sorted by depth before they're drawn, and the sort orders faces, not points.
 
 ### Get the types right
 
@@ -1951,25 +1954,33 @@ A point in the truck's own frame is three distances, measured from the middle of
 
 {{code TruckShape.TruckPoint}}
 
-A `TruckSetting` holds what a point is drawn from: the truck's spot on the road, including how far the road under it is lifted, and the camera's vantage.
+A `TruckSetting` is what the truck is drawn from. It's a `Picture.Setting`, the setting every kind of thing beside the road draws from:
+
+{{code Picture.Setting}}
+
+{{code TruckShape.TruckSetting}}
+
+The truck's context is the road its points are measured on, and the camera's vantage:
+
+{{code TruckShape.TruckOnRoad}}
 
 ### The functions
 
-Two functions do the first two maps. `TruckShape` moves the point along and across the road from the truck's spot:
+Placement is two functions. `TruckShape` moves one point along and across the road from the truck's spot, and lifts it:
 
 {{code TruckShape.road_point_on_truck}}
 
-`EarthCurve` finds where that lands in the rider's view, and lowers it by however far the ground has curved away beneath it:
+`EarthCurve` finds where that lands in the rider's view, and lowers it by however far the ground has curved away beneath it. The headlights and the brake lights use it too:
 
 {{code EarthCurve.raised_ground_point}}
 
-So a face is just a list of `TruckPoint`s. Here's a side, walked around its outline from the back of the trailer to the nose and back:
+`TruckBody.face` places each corner of a face that way. So a face is just a color and a list of `TruckPoint`s. Here's a side, walked around its outline from the back of the trailer to the nose and back:
 
 {{code TruckBody.side}}
 
 The back, the roof, the windshield and the nose are each a strip across the truck, so they share `TruckShape.strip_corners`. The tires are circles standing on the road.
 
-The third map happens last. `TruckBody` sorts the faces far to near, so a nearer face drawn later covers a farther one, and then projects each one, clipping whatever is behind the camera:
+Projection comes last. `TruckBody` sorts the faces far to near, so a nearer face drawn later covers a farther one, and then clips and projects each one:
 
 {{code TruckBody.body_picture}}
 
@@ -1998,6 +2009,14 @@ The truck's driver is teasing the rider: staying ahead, but letting the rider ga
 
 Everything else is plain physics. The truck speeds up while it's short of that mark and holds its speed once it's past it. It slows for the bends, and that's mostly where the rider gains. The tease only ever speeds the truck up, so near the end the rider can get closer than the 100 metres it aims for. The truck can always pull away again, because it outdoes the rider by 10%, in both its acceleration and its top speed.
 
+### Remembered, not worked out
+
+The sun is worked out from the clock. `sun_direction_at` takes a clock, so you can ask about any step and get an answer, without running the ride up to it.
+
+The truck can't be worked out that way, because where it is depends on where the rider has been. So the truck is carried forward. Its step, `truck_progress_at_next_step`, takes a `TruckProgress` and returns the next one. The ride remembers four things from one step to the next, the rider, the truck, the clock and the encounter plan, and the truck is one of them.
+
+That's what makes the order of a step matter. The rider moves first, and then the truck reads where the rider has got to. The rider never reads the truck.
+
 ### Get the types right
 
 The truck's state is three fields:
@@ -2014,7 +2033,7 @@ A bend ahead of the truck is its own type, and so is the answer to "is there one
 
 {{code TruckJourney.NextBend}}
 
-`BendAhead` carries a `ComingBend`, how far off the bend is and how sharply it turns. `NoBendAhead` carries nothing: the route ends before another bend, or the truck is already past the end. The only way to read a bend's distance is inside the branch where there is a bend.
+`BendAhead` carries a `ComingBend`: how far off the bend is, and its turn, an angle. `NoBendAhead` carries nothing: the route ends before another bend, or the truck is already past the end. The only way to read a bend's distance is inside the branch where there is a bend.
 
 ### The functions
 
@@ -2023,11 +2042,11 @@ The modules around `TruckJourney`
 digraph truck_motion {
   node [shape=box, fontname="Helvetica"];
   TruckJourney [style=bold];
-  RideInstant -> TruckJourney;
-  TruckJourney -> Route;
-  TruckJourney -> VehicleLimits;
-  TruckJourney -> Speed;
-  TruckJourney -> Acceleration;
+  RideInstant -> TruckJourney [label="  steps it"];
+  TruckJourney -> Route [label="  finds the next bend on"];
+  TruckJourney -> VehicleLimits [label="  keeps to the limits"];
+  TruckJourney -> Speed [label="  measures how fast it goes in"];
+  TruckJourney -> Acceleration [label="  measures speeding up in"];
 }
 ```
 
@@ -2049,7 +2068,9 @@ Finding the next bend walks the route's segments with their ends, and takes the 
 
 {{code TruckJourney.next_bend}}
 
-Then the two ways to take a step. Both sit below the module's block, so they're private, and both are arithmetic on `Speed`. Within 60 metres of a bend, the truck aims to reach it at 80% of the bend's top speed, to leave a margin, and brakes if it's going faster than that:
+Read its signature out loud: `next_bend : Route, Distance -> NextBend`. The next bend, on a route, past a distance. That's what a signature should do: say what the function is for, before you read its body.
+
+Then the two ways to take a step. Both sit below the module's block, so they're private, and both are arithmetic on `Speed`. Within 60 metres of a bend, the truck brakes so it reaches the bend at its cautious speed. `VehicleLimits.turn_speed` is the speed a turn allows, and the rider's throttle asks it too. The truck's own rule is that limit times its caution, 80%, to leave a margin:
 
 {{code TruckJourney.cautious_turn_speed}}
 
@@ -2063,27 +2084,29 @@ That's a truck you can chase. The next chapter lights it.
 
 ## The truck's lights
 
-The truck drives exactly the same with its lights on or off. The lights are a layer on top: two kinds of lamp, each with its own rule.
+The ride runs from day into night, so the truck's headlights come on near the end. The truck brakes for bends, so its brake lights show whenever you're close to it, even by day. The truck drives exactly the same with its lights on or off.
 
 New in this chapter:
 
 - Modules: `Truck`, `TruckHeadlights`, `TruckBrakeLights`
 
-### Two lamps, two rules
+### One module per lamp
 
-The headlights come on when it gets dark. They work like a light sensor on the lamps themselves: once the sky is dark enough, they're on. The sky knows how dark it is: `Sky.darkness_at` answers a `Fraction`, 0 by day and 1 at full dark. The sensor reads that.
+Each kind of lamp gets a module, and each module owns two things: whether its lamp is on, and how the lamp looks.
+
+The headlights work like a light sensor on the lamps themselves: once the sky is dark enough, they're on. The Sky module tells us how dark it is: `Sky.darkness_at` answers a `Fraction`, 0 by day and 1 at full dark. The sensor reads that.
 
 The brake lights come on while the truck is slowing down. That's a fact about the truck's own last step, its `Pace`, so they follow the truck.
 
 ### Get the types right
 
-Each lamp switches on its own, so each gets its own field:
+`TruckHeadlights` and `TruckBrakeLights` are each `[On, Off]`. A `Truck` is the truck as the scene draws it this frame, so it holds one field per lamp:
 
 {{code Truck.Truck from "Which of" to "Truck := {"}}
 
 ### The functions
 
-Each frame, `FrameView` hands the sky's darkness to `TruckHeadlights` and the truck's pace to `TruckBrakeLights`:
+Each frame, `FrameView` builds the `Truck`. It hands the sky's darkness to `TruckHeadlights` and the truck's pace to `TruckBrakeLights`:
 
 {{code FrameView.ride_facts from "headlights: TruckHeadlights.at(" to "brake_lights: TruckBrakeLights.at("}}
 
@@ -2099,11 +2122,17 @@ The headlights come on at this darkness:
 
 On this ride, that's step 3,555 of 6,746. Once on, they stay on, because from there the sky only darkens.
 
-The drawing does what the lamps say, with each lamp's `picture` matching both tags. The beams go first, then the body, then the brake lights, so each paints over the one before:
+Each lamp's `picture` matches both tags, and an `Off` lamp is an empty picture. `TruckHeadlights` paints the beams as wedges that fade from the lamp toward their far end. `TruckBrakeLights` paints two lamps on the back of the trailer, each with a glow around it. Both place their points the way the body does, with `TruckShape.road_point_on_truck` and `EarthCurve.raised_ground_point`.
+
+`Truck` puts the three pictures together. `Picture.composite` makes one picture of several, each painted over the ones before:
+
+{{code Picture.composite}}
+
+The beams go first, then the body, then the brake lights:
 
 {{code Truck.scenery_picture}}
 
-`TruckHeadlights` paints the beams as wedges that fade from the lamp toward their far end, and `TruckBrakeLights` paints the brake lights, each with a glow around it. `TruckBody` knows nothing of the lights: they're drawn around it.
+`TruckBody` knows nothing of the lights: they're drawn around it.
 
 Step the ride back past step 3,555, and the headlights go off again. Nothing turns them off; they only ever read the sky. The brake lights read the truck's last step, which the ride keeps, so they come back with it.
 
