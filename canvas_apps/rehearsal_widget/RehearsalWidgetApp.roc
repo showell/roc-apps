@@ -132,7 +132,11 @@ previous_stop = |stop|
 stepped : Stop, Input.Snapshot -> Stop
 stepped = |stop, input|
 	match Click.click_point(input) {
-		Ok(spot) => mark_under(spot) ?? stop
+		Ok(spot) =>
+			match mark_under(spot) {
+				Ok(mark) => mark
+				Err(NoMark) => stop
+			}
 		Err(NoClick) =>
 			if input.key_pressed(KeyRight) {
 				next_stop(stop)
@@ -217,7 +221,7 @@ drawn_points = |path_points| {
 	spaced = numbered.keep_if(|{ index, .. }| index % steps_a_line == 0).map(|{ point, .. }| point)
 	match path_points.last() {
 		Ok(end) => spaced.append(end)
-		Err(_) => spaced
+		Err(ListWasEmpty) => spaced
 	}
 }
 
@@ -357,7 +361,7 @@ status_lines = |stop|
 						outcome_text(rehearsal),
 						verdict_text(lean_correction_of(rehearsal)),
 					]
-				Err(_) => crash "RehearsalWidgetApp.status_lines: this try is in the list"
+				Err(OutOfBounds) => crash "RehearsalWidgetApp.status_lines: this try is in the list"
 			}
 		Choice =>
 			[
