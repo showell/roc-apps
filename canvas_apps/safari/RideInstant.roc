@@ -68,7 +68,7 @@ RideInstant := {
 next : Route, RideInstant -> RideInstant
 next = |route, instant| {
 	stage_before = RideInstant.encounter_stage(route, instant)
-	rider = instant.rider.next({ route, encounter_stage: stage_before })
+	rider = instant.rider.rider_at_next_step({ route, encounter_stage: stage_before })
 	clock = instant.clock.next()
 	rider_place = rider.motorcycle.route_place
 	truck = TruckJourney.truck_progress_at_next_step(

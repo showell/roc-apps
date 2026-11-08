@@ -145,7 +145,7 @@ expect !placed_rider(0, 499.0).is_finished(World.route)
 ## That rider a step on.
 rider_a_step_after : U32, F64 -> Rider
 rider_a_step_after = |index, along|
-	placed_rider(index, along).next({ route: World.route, encounter_stage: Waiting })
+	placed_rider(index, along).rider_at_next_step({ route: World.route, encounter_stage: Waiting })
 
 # A rider near the first bend crosses onto the next segment's road, and one well
 # short of it, which the bend would carry far off that road, stays.

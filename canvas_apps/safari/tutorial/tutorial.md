@@ -1597,7 +1597,7 @@ Here's the step again, this time whole. Its body is a block: names, then a recor
 
 {{code RideInstant.next}}
 
-`Clock.next`, `Rider.next` and `TruckJourney.truck_progress_at_next_step` all have the same shape: a value goes in, and the next value comes out. Call that *the step function*. There's no mutable rider being nudged. There's a rider, and another rider one step on.
+`Clock.next`, `Rider.rider_at_next_step` and `TruckJourney.truck_progress_at_next_step` all have the same shape: a value goes in, and the next value comes out. Call that *the step function*. There's no mutable rider being nudged. There's a rider, and another rider one step on.
 
 Stepping has a cost, which shows up when we compare it with the sun:
 
@@ -1631,7 +1631,7 @@ Nothing in the rider is a bare float. Three of the fields under it are angles, o
 
 The step does its work in order, and the code reads that way: decide, move, cross a bend or stop, then choose where to look:
 
-{{code Rider.next}}
+{{code Rider.rider_at_next_step}}
 
 Static dispatch finds `segment_on` on the `RoutePlace`. The `match` on `segment.segment_ending()` has two tags, and `..` in `Bends({ bend, .. })` ignores the rest of its payload.
 
@@ -2433,7 +2433,7 @@ digraph rehearsal {
   controls [label="RiderMind.controls"];
   best [label="LeanSearch.best_lean"];
   search [label="LeanSearch.search_tries"];
-  project [label="Coast.project"];
+  project [label="Coast.coast_outcome"];
   keeping [label="Coast.coast_keeping"];
   advance [label="Motorcycle.motorcycle_at_next_step"];
   throttle [label="Throttle.next_acceleration"];
@@ -2449,9 +2449,9 @@ digraph rehearsal {
 
 `Coast` answers one question. If the rider stopped changing anything now, and coasted, what would happen? It takes the motorcycle alone, never the eyes, and runs the physics. The step is the same `Motorcycle.motorcycle_at_next_step` that moves the real rider, handed `steady_controls()`: the current lean, and no acceleration. The step is a function, so a pretend motorcycle can be stepped as easily as the real one.
 
-{{code Coast.project}}
+{{code Coast.coast_outcome}}
 
-`project` is a coast that drops the path it took. The loop itself is in `coast_keeping`:
+`coast_outcome` is a coast that drops the path it took. The loop itself is in `coast_keeping`:
 
 {{code Coast.coast_keeping}}
 
@@ -2461,7 +2461,7 @@ The coast's bounds are the road's edges, 5 centimetres in, or wherever it starts
 
 `LeanSearch` asks `Coast` that question at a dozen different leans. The rider wants the coast to end near the middle of the road, and more lean to the right moves the end of a coast to the right, so this is a bisection. It's a `for` loop, with `$bounds.low` and `$bounds.high` closing in on each other. `motorcycle.with_lean(mid)` is a motorcycle that doesn't exist, handed to `Coast`, which gives it a future that didn't happen:
 
-{{code LeanSearch.search_tries from "mid = $bounds.low.halfway_to($bounds.high)" to "$bounds = bounds_after(lean_try)"}}
+{{code LeanSearch.search_tries from "mid = middle_lean($bounds)" to "$bounds = bounds_after(lean_try)"}}
 
 The search starts with bounds a degree either side of the current lean, `max_lean_change`, so the lean it picks is never more than a degree from the last. That's what stops the bike flicking from one lean to another. Which way each try sends the next is a `match` on what the rehearsal found. Running off the left means more right, running off the right means less, and staying on the road compares the end of the coast with the target:
 
@@ -2951,7 +2951,7 @@ Eight patterns kept turning up in the tour. They're patterns in the loose sense:
 | A sighting decides, drawing paints | A pure function answers with plain data, and something else draws it | `EncounterSighting`, `TowerSighting` |
 | Places and distances | One opaque type for where, a second for how far apart, and only the sums that make sense | `Clock` and `Steps`, `Bearing` and `Turn`, `Along` and `Distance`, `Speed` and `Acceleration` |
 | Rule and timeline | One function says how far along, and one piece of data says what that looks like | `BirdFlight.flight_stage` and `BirdFlight.flight_timeline` |
-| The step function | A value goes in, and the next value comes out | `Rider.next`, `TruckJourney.truck_progress_at_next_step`, `Tour.step_forward` |
+| The step function | A value goes in, and the next value comes out | `Rider.rider_at_next_step`, `TruckJourney.truck_progress_at_next_step`, `Tour.step_forward` |
 | The chain of limits | One value passes through independent rules, each of which can only lower it | `Throttle.next_acceleration` |
 | One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `RaisedPoint`, `Screen.Point` |
 | Rehearsal | Run the real rules on a pretend copy, read the result, and throw it away | `Coast`, `LeanSearch`, `Motorcycle.cross_bend_if_on_road` |

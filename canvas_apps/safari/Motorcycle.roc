@@ -86,9 +86,9 @@ Motorcycle := {
 		speed: Speed.at_rest,
 	}
 
-	## Whether this motorcycle has come `length` along its segment, or gone past.
-	has_reached : Motorcycle, Distance -> Bool
-	has_reached = |motorcycle, length| motorcycle.route_place.along >= Along.at(length)
+	## Whether this motorcycle has come to `at` on its segment, or gone past.
+	has_reached : Motorcycle, Along -> Bool
+	has_reached = |motorcycle, at| motorcycle.route_place.along >= at
 
 	is_eq : _
 }
@@ -222,6 +222,6 @@ expect {
 	crossed.route_place.segment_index == next_index and crossed.yaw.to_radians() == -0.3
 }
 
-expect motorcycle_at(300.0).has_reached(Distance.metres(300.0))
-expect motorcycle_at(310.0).has_reached(Distance.metres(300.0))
-expect !motorcycle_at(299.99).has_reached(Distance.metres(300.0))
+expect motorcycle_at(300.0).has_reached(Along.metres(300.0))
+expect motorcycle_at(310.0).has_reached(Along.metres(300.0))
+expect !motorcycle_at(299.99).has_reached(Along.metres(300.0))

@@ -89,8 +89,7 @@ rider_roll = |lean|
 ## an encounter on the road or by a look to the side.
 ride_focal : Rider, { route : Route, encounter_stage : Animation.Stage } -> Pixels
 ride_focal = |rider, { route, encounter_stage }| {
-	segment = rider.motorcycle.route_place.segment_on(route)
-	attention = rider.attention({ segment, encounter_stage })
+	attention = rider.attention({ route, encounter_stage })
 	focal_length_for({ lean: rider.motorcycle.lean, attention })
 }
 

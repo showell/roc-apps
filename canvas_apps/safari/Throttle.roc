@@ -89,19 +89,23 @@ bend_limit = |motorcycle, segment|
 ## shoulder it reaches.
 shoulder_limit : Motorcycle -> ThrottleLimit
 shoulder_limit = |motorcycle|
-	match Coast.project(motorcycle) {
+	match Coast.coast_outcome(motorcycle) {
 		EndsAt(_) => NoLimit
 		Leaves({ after, .. }) => AtMost(shoulder_brake(motorcycle.speed, after))
 	}
 
 ## The brake at `speed` for a coast that leaves the road in
-## `steps_to_shoulder`, which is at least one step.
+## `steps_to_shoulder`. A coast counts the step that leaves, so zero steps
+## means the count behind it is wrong.
 shoulder_brake : Speed, Steps -> Acceleration
-shoulder_brake = |speed, steps_to_shoulder| {
-	n = steps_to_shoulder.to_f64()
-	even_braking = -speed.to_metres_a_step() / (2.0 * n)
-	Acceleration.metres_a_step_each_step(even_braking * F64.e.pow(-n / brake_decay.to_f64()))
-}
+shoulder_brake = |speed, steps_to_shoulder|
+	if steps_to_shoulder == Steps.zero {
+		crash "Throttle.shoulder_brake: a coast leaves the road after zero steps, but a coast counts the step that leaves"
+	} else {
+		n = steps_to_shoulder.to_f64()
+		even_braking = -speed.to_metres_a_step() / (2.0 * n)
+		Acceleration.metres_a_step_each_step(even_braking * F64.e.pow(-n / brake_decay.to_f64()))
+	}
 
 ## This many metres a step, each step.
 acceleration_of : F64 -> Acceleration

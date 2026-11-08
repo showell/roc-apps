@@ -37,10 +37,9 @@ VehicleLimits :: [].{
 			Acceleration.steady
 		} else {
 			acceleration = speed.acceleration_to({ target, within })
-			if speed.to_metres_a_step() + acceleration.to_metres_a_step_each_step() < 0.0 {
-				crash "VehicleLimits.braking_to: a brake that would take the speed below zero; the ride never brakes this hard"
-			} else {
-				acceleration
+			match speed.accelerated_by_try(acceleration) {
+				Ok(_) => acceleration
+				Err(BelowRest) => crash "VehicleLimits.braking_to: a brake that would take the speed below zero; the ride never brakes this hard"
 			}
 		}
 
