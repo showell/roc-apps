@@ -18,10 +18,10 @@ import game.ThrottleLimit
 import game.World
 import lib.Brush
 import lib.CanvasApp
+import lib.RgbColor
 import lib.Shapes
 import widget.ReadoutText
 import widget.WidgetPage
-import widget.WidgetPalette
 import widget.VcrButtons
 
 CatWidgetApp :: [].{
@@ -81,32 +81,38 @@ ground_bottom_y = 215.0
 feet_y : F64
 feet_y = 190.0
 
+## The sky behind the cat, pale like the panel below it.
+sky_color : RgbColor
+sky_color = RgbColor.of(0xDCECF5)
+
+## The grass either side of the road, seen level with it.
+side_ground_color : RgbColor
+side_ground_color = RgbColor.of(0x7fa650)
+
+## The road, seen level with it.
+side_road_color : RgbColor
+side_road_color = RgbColor.of(0x8a8a8a)
+
 ## The sky, the grass, and the road between the verges.
 road_shapes : List(Shapes.Shape)
 road_shapes = {
 	road_width = Geom.road_half_width.to_metres() * 2.0 * pixels_a_metre
 	ground_height = ground_bottom_y - ground_top_y
 	[
-		Rect({
-			x: 0.0,
-			y: 0.0,
-			width: WidgetPage.canvas_width,
-			height: WidgetPage.picture_bottom_y,
-			fill: Brush.flat(WidgetPalette.panel_color),
-		}),
+		WidgetPage.picture_backdrop(sky_color),
 		Rect({
 			x: 0.0,
 			y: ground_top_y,
 			width: WidgetPage.canvas_width,
 			height: ground_height,
-			fill: Brush.flat(WidgetPalette.side_ground_color),
+			fill: Brush.flat(side_ground_color),
 		}),
 		Rect({
 			x: road_middle_x - road_width / 2.0,
 			y: ground_top_y,
 			width: road_width,
 			height: ground_height,
-			fill: Brush.flat(WidgetPalette.side_road_color),
+			fill: Brush.flat(side_road_color),
 		}),
 	]
 }
