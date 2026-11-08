@@ -138,7 +138,10 @@ expect searched_lean(-1.0, 0.0) > 0.0
 expect {
 	start = { ..Motorcycle.initial, lean: Angle.Lean.radians(0.1) }
 	LeanSearch.search_tries(start).all(
-		|lean_try| Coast.coast_outcome(LeanSearch.tried_motorcycle(start, lean_try)) == lean_try.outcome,
+		|lean_try| {
+			tried = LeanSearch.tried_motorcycle(start, lean_try)
+			Coast.coast_outcome(tried) == lean_try.outcome
+		},
 	)
 }
 

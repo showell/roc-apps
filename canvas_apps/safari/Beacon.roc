@@ -232,11 +232,17 @@ expect
 # A beacon's brightness is its phase's, so the phase a widget reads out is the
 # one the beacon shines by.
 expect
-	[(0, AtEnd, 0), (1, Midway, 30), (4, AtEnd, 5431), (7, Midway, 5519)].all(
+	[
+		(0, AtEnd, 0),
+		(1, Midway, 30),
+		(4, AtEnd, 5431),
+		(7, Midway, 5519),
+	].all(
 		|(n, place, step)| {
 			tower = { segment: Route.SegmentIndex.number(n), place }
 			clock = Clock.at_step(step)
-			Beacon.at(tower, clock).brightness() == beacon_brightness(Beacon.blink_phase(tower, clock))
+			phase = Beacon.blink_phase(tower, clock)
+			Beacon.at(tower, clock).brightness() == beacon_brightness(phase)
 		},
 	)
 
