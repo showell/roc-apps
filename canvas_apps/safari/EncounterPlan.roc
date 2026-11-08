@@ -68,8 +68,9 @@ EncounterPlan := [Unplanned, StartsAt(Clock)].{
 
 	## The timing of an animation `span` long, for a rider `gap` short of its
 	## animal, coming at a steady `speed` from `gap_at_start` at step 0 of the
-	## ride's clock. It is planned as the ride plans it, on the first step that
-	## the rider comes within reach.
+	## ride's clock. It is planned by `plan_for`, on the first step that such a
+	## rider comes within reach. The ride's rider is not steady, so on the ride
+	## the same animation may start on another step.
 	steady_approach_timing : EncounterPlan.StepSpan,
 	{
 		gap_at_start : Distance,
