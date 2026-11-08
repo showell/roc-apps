@@ -1911,10 +1911,10 @@ The modules that draw the truck
 digraph truck_drawing {
   node [shape=box, fontname="Helvetica"];
   TruckBody [style=bold];
-  Scene -> TruckSighting;
-  TruckSighting -> Truck;
-  Truck -> TruckBody;
-  TruckBody -> TruckShape;
+  Scene -> TruckSighting [label="  finds it with truck_in_view"];
+  TruckSighting -> Truck [label="  sights a Truck"];
+  Truck -> TruckBody [label="  draws its body with body_shapes"];
+  TruckBody -> TruckShape [label="  places each corner with raised_point_on_truck"];
 }
 ```
 
@@ -2080,20 +2080,30 @@ Step the ride back past step 3,555, and the headlights go off again. Nothing tur
 
 ## The cat
 
-A cat walks out into the lane, freezes as the rider bears down on it, and leaps clear at the last possible instant. It's one of the most elaborate effects in Safari Ride, so this chapter takes some concentration. Unlike the sun, which follows the clock alone, the cat reacts to the rider.
+A cat walks out into the lane, freezes as the rider bears down on it, and leaps clear at the last possible moment. It's one of the most elaborate effects in Safari Ride, and it's where the rider and the world start to push on each other.
 
 ```widget cat
 Press play and watch the crossing.
 ```
 
-Play it, and the gap falls from 50 metres to 0, with the rider held at a metre a step. The cat rests on the right verge until 41 metres, where the last line changes to "The rider may not accelerate". It walks out, and at 31 metres it freezes in the lane. It stays frozen down to 7 metres, coils, and is in the air from 6 metres to 4. At 3 metres it has collapsed on the far verge and the rider may accelerate again. Below that, nothing changes.
+Play it, and the gap falls from 50 metres to 0, with the rider held at a metre a step. The cat waits behind a tree on the right until 41 metres, where the last line changes to "The rider may not accelerate". It walks out, and at 31 metres it freezes in the lane. It stays frozen down to 7 metres, coils, leaps at 6 metres and lands at 4. At 3 metres it has collapsed on the far verge, and the rider may accelerate again. Below that, nothing changes.
 
 New in this chapter:
 
-- Roc: type parameters, operators on opaque types, `var`, `for` and `return` in a pure function
-- Modules: `Cat`, `CatCrossing`, `Animation`, `Beat`, `Beats`, `CatHeights`
+- Roc: a list of frames as data; a `crash` that the data rules out
+- Modules: `CatCrossing`, `Cat`, `Animation`, `EncounterPlan`, `EncounterPoses`, `EncounterSighting`
 
-The cat is one function, `Cat.instant_at`, with two jobs: work out how far along the crossing is, and look up what the cat does at that point. The module `Animation` sits under both.
+### Two halves, and one fact remembered
+
+A crossing comes in two halves. `CatCrossing` is what the cat does: where it crosses, and what it does at each step of its crossing. `Cat` is how it looks this frame, which is just its pose:
+
+{{code Cat.Cat from "Cat := {" to "}.{"}}
+
+The animation itself is a list of frames, played one a step on the ride's clock. All the ride has to remember is the step it started on. That's an `EncounterPlan`:
+
+{{code EncounterPlan.EncounterPlan from "When the encounter" to "].{"}}
+
+Everything else about the cat is worked out from that one step and the clock.
 
 The modules around `CatCrossing`
 ```dot
@@ -2101,80 +2111,22 @@ digraph cat {
   node [shape=box, fontname="Helvetica"];
   CatCrossing [style=bold];
   World -> CatCrossing;
+  Segment -> CatCrossing;
+  RideInstant -> EncounterPlan;
   EncounterReaction -> CatCrossing;
+  EncounterPoses -> Cat;
   EncounterSighting -> Cat;
   CatCrossing -> Cat;
-  Cat -> CatStills;
-  CatStills -> Cat;
   CatCrossing -> Animation;
-  CatCrossing -> Easing;
-  Animation -> Easing;
-  Animation -> Speed;
+  CatCrossing -> EncounterPlan;
+  EncounterPlan -> Animation;
+  Cat -> CatStills;
 }
 ```
-
-`Cat` says what a cat does, and `Animation` holds what a cat shares with a bird. Everything that uses a cat imports it, and `Cat` imports none of them: it doesn't know it's drawn, sighted or reacted to.
-
-The widget isn't playing a video. Every gap it shows is a call to `Cat.instant_at`. The arrow is `->` again, so the type already says there's no hidden cat being updated somewhere. A timeline is a record of what the cat does at each point. Method syntax chains the two jobs: `.instant(...)` is defined on the `Timeline` that `crossing_timeline` returns.
-
-{{code CatCrossing.instant_at}}
-
-A crossing and an approach go in, and the cat at that instant comes out. The same crossing at the same approach gives the same cat, a thousand frames apart.
-
-`CrossingSighting.cat_in_view` calls it, adding the distance to the segment to get the gap:
-
-{{code EncounterPoses.segment_cat}}
-
-What `Cat` gets from `Animation` comes down to one type, `Stage`:
-
-{{code Animation.Stage}}
-
-`Stage` is the type where the function's two jobs meet. It's a tag union, and two of its tags carry a payload. You might expect `Waiting` and `Past` to be the same as progress of 0 and 1, but a critter can rest somewhere its animation never goes. If `Waiting` were just 0, a perched bird would show the first frame of its flight.
-
-An `Approach` says how the rider is coming, and an `Instant` is the cat at one point in the crossing.
-
-A rule turns an `Approach` into a `Stage`, and a timeline turns a `Stage` into an `Instant`. `crossing_stage` decides how far along things are, and `crossing_timeline` decides what that looks like. They know nothing of each other.
-
-Here are the calls. In this diagram a box is a function, not a module, and an arrow is a call.
-
-The calls from `Cat` into `Animation`
-```dot
-digraph cat_calls {
-  node [shape=box, fontname="Helvetica"];
-  fontname="Helvetica";
-  subgraph cluster_cat {
-    label="Cat";
-    instant_at [style=bold];
-    crossing_stage;
-    crossing_timeline;
-  }
-  subgraph cluster_animation {
-    label="Animation";
-    stage_over_step_span;
-    instant [label="Timeline.instant"];
-    at_beat [label="Timeline.at_beat"];
-    playing_at;
-    pose_of;
-    path_spot;
-  }
-  instant_at -> crossing_stage;
-  instant_at -> crossing_timeline;
-  instant_at -> instant;
-  crossing_stage -> stage_over_step_span;
-  instant -> at_beat;
-  at_beat -> playing_at;
-  at_beat -> pose_of;
-  at_beat -> path_spot;
-}
-```
-
-`Cat` reaches into `Animation` twice, once for each job. `crossing_timeline` calls nothing there, because all it does is build a record of what the cat does at each point in the crossing.
-
-The rest of this chapter has three parts. First, we'll see when a crossing plays. Then we'll read the timeline, which says what the cat does at each point. Last, we'll see how it gets on screen.
 
 ### When it plays
 
-How far off the crossing starts depends on the rider's speed:
+The ride plans the crossing once, when the rider first comes within reach, from how fast the rider is coming then. The aim is for the cat to be across just as the rider arrives 3 metres short of it. A faster rider covers more road while the crossing plays, so the plan is made farther off:
 
 | Rider's speed | The crossing starts at a gap of |
 |---|---|
@@ -2182,116 +2134,85 @@ How far off the crossing starts depends on the rider's speed:
 | 1.5 metres a step | 60 metres |
 | 2 metres a step | 79 metres |
 
-A faster rider sets the cat off sooner, so it's clear of the lane in time.
-
-`Cat.crossing_stage` calls the rule with the cat's own numbers. A crossing takes 38 beats: 10 to walk out, 24 frozen, and 4 for the escape. A beat is the animation's own unit of progress, and it's tied to no clock.
-
-{{code CatCrossing.crossing_stage}}
-
-The rule lives in `Animation`. It takes the cat's numbers and an `Approach`, which says how the rider is coming:
+What the ride plans by is a span: how many steps the animation takes, and the gap it ends at.
 
 {{code EncounterPlan.StepSpan}}
 
-`stage_over_step_span` destructures its first argument in place, and the `Approach` after it, so the body reads in plain names:
+The cat's span is its 38 frames, ending 3 metres short:
+
+{{code CatCrossing.crossing_span}}
+
+The plan is made on the first step where a rider keeping their speed would arrive within the span. Until then, and while the rider is at rest, nothing is planned:
 
 {{code EncounterPlan.plan_for}}
 
-Neither field of an `Approach` is a plain number. `Distance`, `Speed` and `Beats` are opaque types, like `Clock` and `Angle`. A distance can't be passed as a speed, and a place in an animation can't be passed as a step of the ride. `distance_in`, on the second line, multiplies a speed by some beats and gives a `Distance`. `Speed` also derives `is_eq`, which is what lets `speed == Speed.at_rest` work with an ordinary operator.
+After that one look, the cat doesn't care what the rider does. If the rider brakes, the cat still crosses on time, and the rider simply arrives a little later.
 
+Once a plan exists, the ride's clock says where the animation has got to. That's a `Stage`:
 
-The cat plays over beats rather than over a stretch of road because it has to finish before the rider reaches it, however fast the rider comes. A faster rider makes it start earlier. The bird uses `stage_over_gap`, because a bird simply reacts to how close the rider is. Each critter picks the rule that suits it.
+{{code Animation.Stage}}
+
+`Waiting` before it starts, `Playing` while it runs, counting steps in, and `Past` after it ends, counting steps since. The tags carry only what each case needs, so there's no step count to misread while the cat is waiting.
+
+{{code EncounterPlan.stage_at}}
+
+### Who moves first
+
+Each step, the world and the rider change each other, and the order matters. The rider reacts to the cat as it stood at the start of the step: if the crossing is playing, the throttle holds. Then, with the rider moved, the ride looks again. If the rider has just come within reach, the plan is made now, at the new clock. And at each new segment the plan is forgotten, because only the encounter on the rider's own segment is ever live.
+
+So within one step, the rider answers the world, and then the world answers the rider. The cat never sees the rider again once it's planned, but the rider sees the cat every step.
 
 ### What it looks like
 
-The two tracks of a crossing, in beats
-```dot
-digraph tracks {
-  node [shape=record, fontname="Helvetica"];
-  looks [label="looks|Stride and Rest\nto 10|Frozen\nto 34|Coil\nto 34.8|Flight\nto 36.8|Land\nto 37.8|Collapse"];
-  path [label="path|Line across\nto 10|StaysAt\nto 35|Arc\nto 37|StaysAt"];
-  looks -> path [style=invis];
-}
-```
+The whole crossing is a list of frames, one a step:
 
-A timeline is data, so the cat's whole performance reads in one place. This is the part of `crossing_timeline` that says how the cat looks:
+| Frames | Steps | What the cat does |
+|---|---|---|
+| walking out | 0 to 9 | strides and rests, from behind its tree to the middle of the road |
+| frozen | 10 to 33 | stands in the lane |
+| the leap | 34 to 37 | coils, flies twice, lands on the far verge |
 
-The words are tags. `Through` and `Before` say where a stretch ends, and `Holds` and `Alternates` say how the cat looks. The poses are a closed tag union, so a `match` that misses one is a compile-time error.
+After the last frame it lies collapsed on the far verge. Each frame is a pose and where the cat is on its way across:
 
-{{code Cat.CatPose}}
+{{code CatCrossing.CrossingFrame}}
 
-A timeline is divided into stretches, and a cut is where one stretch ends and the next begins. A cut has to say which stretch its own beat belongs to, and two tags say that better than a boolean would. `crossing_timeline`'s comment says why it matters: the beats of the leap add up to a float just under the beat they stand for.
+{{code CatCrossing.CrossingWay}}
 
-There are two tracks because a cat's looks and its movement change at different instants. Its body moves just ahead of its path, so the `looks` track above cuts at 0.8, 2.8 and 3.8 beats into the escape, while the `path` track cuts at 1 and 3. One list of phases tying them together wouldn't fit the cat or the bird.
+The leap is four keyframes, set by eye:
 
-The `path` track needs three places on the road. `spot_across` makes one, as a single record. It sits below `Cat`'s block, so it's private. `Along.start`, the first place on a segment, is a value and not a call, so this function calls nothing of Safari Ride's.
+{{code CatCrossing.leap_frames}}
 
-`crossing_timeline` calls it three times before the timeline starts:
+`crossing_timeline` puts the frames on the road. A closure, `location_of`, turns each frame's way across into a place by this crossing's tree:
 
-Here's the `path` track:
+{{code CatCrossing.crossing_timeline}}
 
-`Timeline` is nominal, the middle ground: unlike an alias it can carry methods, and unlike an opaque type anyone can build one, which is right for data that needs no guarding. `Timeline(pose, lift)` takes two type parameters, which is how a cat and a bird share it. A cat fills the first with its own poses and the second with `CatHeights`, because a cat's lift off the ground is measured in its own height.
-
-{{code Animation.Timeline from "## A whole animation" to "}.{"}}
+The span and the timeline both come from the one list, `crossing_frames`, so the animation's length and its frames can't disagree.
 
 ### How a timeline plays
 
-A timeline is data, so something has to play it. This section shows how, and it's where Roc's `var` and `for` appear inside a pure function. If you'd rather get back to the cat, you can skip to "Getting it on screen".
-
-The code that plays a timeline is in `Animation`, and we'll start at an operator. `Beat.is_lte` opens two `Beat`s and compares the floats inside.
-
-
-`is_short_of` is one `match`, and it looks like a leaf. It isn't, because `<=` on two `Beat`s is a call to `is_lte`, and `<` is a call to `is_lt`. An operator on an opaque type runs code of Safari Ride's own.
-
-Finding the stretch that's playing shows one more Roc idea. In `playing_at`, `var $from` is a local variable that a `for` loop reassigns, inside a pure function. Roc allows that because nothing outside can see it: `playing_at` still has a `->` arrow, and the `$` marks what changes. An early `return` ends the loop.
-
-`Timeline.at_beat` calls it once for each track, which is what lets the two tracks cut wherever they like. `Animation.Timeline.(timeline)` in a parameter list opens the nominal type, the way `Clock.(n)` opens an opaque one. `pose_of` and `path_spot` turn what's playing into a pose and a spot, and the bird chapter reads `path_spot`.
-
-`Timeline.instant` is the one place that knows about stages. Its `match` covers all three tags, and `portion` turns a `Fraction` of the way through into a beat. It answers with an `Instant`, the cat at that point:
-
-{{code Animation.Instant}}
-
-{{code Animation.Timeline from "## The animal at `stage`." to "Past(_) => timeline.after"}}
-
-Back at the top, nothing in `instant_at` is unknown any more.
+Asking for the cat at a stage is one function:
 
 {{code CatCrossing.instant_at}}
 
-`crossing_stage(approach)` is the rule with the cat's numbers, `crossing_timeline(cat)` is the timeline, and `.instant` plays the one at the other. A `Stage` is all that passes between them.
+The timeline answers with a `match` on the stage and a lookup in the list:
+
+{{code Animation.Timeline from "instant : Animation.Timeline" to "Past(_) => timeline.after"}}
+
+A `Playing` stage past the end of the frames would be a bug, and the timeline crashes rather than guess. It can't happen here, because the length the ride plans by is the length of the list.
 
 ### Getting it on screen
 
-The last step is finding the cat in the rider's view.
-
-The modules that put a cat on screen
-```dot
-digraph screen {
-  node [shape=box, fontname="Helvetica"];
-  EncounterSighting [style=bold];
-  Cat [style=bold];
-  Scene -> EncounterSighting;
-  EncounterSighting -> Cat;
-  EncounterSighting -> RoadAhead;
-  CatCrossing -> Cat;
-  Cat -> CatStills;
-  CatStills -> Cat;
-}
-```
-
-`EncounterSighting` and `Cat` never import each other. `Scene` is what carries a sighting's answer to the drawing.
-
-`cat_in_view` places the cat and decides whether it's big enough to draw. An empty list or a list of one is how it says "maybe".
-
-{{code EncounterPoses.segment_cat}}
-
-`segment_cat` calls it for a segment with a cat, and `cats_in_view` flattens the answers with `join_map`, so a "no" simply disappears:
+Seeing the cat takes two steps, and the camera is only in the second. First, `EncounterPoses` works out where each cat in view stands this frame, with no camera at all. Only the rider's own segment plays its crossing; a cat on a segment ahead is still waiting behind its tree:
 
 {{code EncounterPoses.cat_poses}}
 
-Looking back over the chapter, notice what isn't in it: a cat in `RideInstant`, an update loop, or a flag saying the cat has already crossed.
+Then `EncounterSighting` asks where the camera sees each one, and drops any too small to matter:
 
-Roc doesn't force that, but pure functions make the stateless version the easy one to write, and every `->` shows it stayed that way.
+{{code EncounterSighting.cats_in_view}}
 
-The cat also has an effect on the rider. A cat in the lane stops the rider speeding up, and that holds the rider back while the crossing plays. We'll come to that after the bird.
+From there, a cat is a kind like a tree or a cow, and it joins the frame's depth sort.
+
+The ride remembers one step for the cat, and works out everything else, frame by frame, from it and the clock. What the cat asks of the rider while it crosses, the held throttle and the eye, is the rider's side of the story, and it comes later.
 
 ## The bird
 
