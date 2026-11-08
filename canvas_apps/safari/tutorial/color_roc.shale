@@ -6,7 +6,10 @@
 -- like. A page's text must stay the same byte for byte once the spans are taken
 -- away, or the build stops.
 --
---   cd <roc-apps checkout> && shale canvas_apps/safari/tutorial/color_roc.shale
+--   cd <roc-apps checkout> && shale canvas_apps/safari/tutorial/color_roc.shale pages=<folder> order=<pages>
+--
+-- `pages=` names the folder of the staged pages, which book.shale gives as its
+-- STAGING, the one home of that folder.
 --
 -- A block is often part of a definition, which Roc can't parse alone. Every
 -- block comes from a file, though, so the file is parsed whole. build.shale
@@ -25,7 +28,6 @@
 -- for each.
 --
 -- `self_test=1` proves both sides of each rule on a module written here.
-const PAGES = "build:roc-apps/next/tutorial.staging"
 const NOTES = "canvas_apps/safari/tutorial/build/blocks.jsonl"
 const OPEN = "<pre><code class=\"language-roc\">"
 const CLOSE = "</code></pre>"
@@ -540,9 +542,11 @@ end
 if arg("self_test", "") == "1" then
   self_test()
 else
+  local pages = arg("pages", "")
+  if pages == "" then fail("color_roc: pages= names the folder of the staged pages") end
   local order = arg("order", "")
   if order == "" then fail("color_roc: order= names the pages, in book order") end
-  local tally = color_pages(arg("pages", PAGES), split(order, " "), read_notes(read(NOTES)))
+  local tally = color_pages(pages, split(order, " "), read_notes(read(NOTES)))
   for line in tally.plain do print("color_roc: plain, " .. line) end
   print("color_roc: " .. tally.colored .. " blocks colored, " .. #tally.plain .. " plain")
 end
