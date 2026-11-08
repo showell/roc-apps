@@ -22,10 +22,10 @@ import Screen
 import lib.Shapes
 
 ## A tower in a frame: how it is turned, and its beacon as it shines.
-Tower :: { yaw : Angle.Turn, beacon : Beacon.LitBeacon }.{
+Tower :: { yaw : Angle.Turn, beacon : Beacon }.{
 
 	## A tower turned by `yaw`, with `beacon` on top.
-	standing : { yaw : Angle.Turn, beacon : Beacon.LitBeacon } -> Tower
+	standing : { yaw : Angle.Turn, beacon : Beacon } -> Tower
 	standing = |{ yaw, beacon }| Tower.({ yaw, beacon })
 
 	## How far the tower is turned from square with the road.

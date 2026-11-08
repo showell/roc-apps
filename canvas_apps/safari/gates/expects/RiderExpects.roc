@@ -36,7 +36,7 @@ RiderExpects :: [].{}
 ## A rider on the segment at `segment`, turned `yaw` from its axis, leaning
 ## `lean` and looking `gaze_yaw` from the way the motorcycle points.
 rider_facing : {
-	segment : U32,
+	segment : Route.SegmentIndex,
 	yaw : Angle.Turn,
 	lean : Angle.Lean,
 	gaze_yaw : Angle.Turn,
@@ -45,10 +45,7 @@ rider_facing = |{ segment, yaw, lean, gaze_yaw }| {
 	..Rider.initial,
 	motorcycle: {
 		..Rider.initial.motorcycle,
-		route_place: {
-			..Rider.initial.motorcycle.route_place,
-			segment_index: Route.SegmentIndex.number(segment),
-		},
+		route_place: { ..Rider.initial.motorcycle.route_place, segment_index: segment },
 		yaw,
 		lean,
 	},
@@ -67,7 +64,7 @@ expect
 	[
 		(
 			{
-				segment: 0,
+				segment: Route.SegmentIndex.first,
 				yaw: Angle.Turn.radians(0.0),
 				lean: Angle.Lean.radians(0.0),
 				gaze_yaw: Angle.Turn.radians(0.0),
@@ -76,7 +73,7 @@ expect
 		),
 		(
 			{
-				segment: 0,
+				segment: Route.SegmentIndex.first,
 				yaw: Angle.Turn.radians(0.375),
 				lean: Angle.Lean.radians(0.125),
 				gaze_yaw: Angle.Turn.radians(0.375),
@@ -85,7 +82,7 @@ expect
 		),
 		(
 			{
-				segment: 1,
+				segment: Route.SegmentIndex.number(1),
 				yaw: Angle.Turn.radians(0.0),
 				lean: Angle.Lean.radians(0.0),
 				gaze_yaw: Angle.Turn.radians(0.0),
@@ -94,7 +91,7 @@ expect
 		),
 		(
 			{
-				segment: Fixtures.longest_segment_index.to_u32(),
+				segment: Fixtures.longest_segment_index,
 				yaw: Angle.Turn.radians(-0.25),
 				lean: Angle.Lean.radians(0.5),
 				gaze_yaw: Angle.Turn.radians(0.125),
@@ -103,7 +100,7 @@ expect
 		),
 		(
 			{
-				segment: 18,
+				segment: Route.SegmentIndex.number(18),
 				yaw: Angle.Turn.radians(0.0),
 				lean: Angle.Lean.radians(-0.75),
 				gaze_yaw: Angle.Turn.radians(0.125),
