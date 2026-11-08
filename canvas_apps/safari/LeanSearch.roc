@@ -46,10 +46,12 @@ LeanSearch :: [].{
 	tried_lean : LeanTry -> Angle.Lean
 	tried_lean = |{ low, high, .. }| middle_lean({ low, high })
 
-	## The motorcycle a try coasted: `motorcycle`, the one the search started
-	## from, with the lean the try tried.
-	tried_motorcycle : Motorcycle, LeanTry -> Motorcycle
-	tried_motorcycle = |motorcycle, lean_try| motorcycle.with_lean(LeanSearch.tried_lean(lean_try))
+	## The motorcycle a try coasts: `motorcycle`, the one the search started
+	## from, with the lean halfway between the try's bounds. It takes the bounds
+	## alone, so the search can ask for it before the try has an outcome.
+	tried_motorcycle : Motorcycle, { low : Angle.Lean, high : Angle.Lean, .. } -> Motorcycle
+	tried_motorcycle = |motorcycle, { low, high, .. }|
+		motorcycle.with_lean(middle_lean({ low, high }))
 
 	## The tries of the bisection over the leans one step can reach from the
 	## motorcycle's own, in the order tried. Each try's bounds are the half of the one
@@ -62,11 +64,10 @@ LeanSearch :: [].{
 		}
 		var $tries = []
 		for _ in 0..<lean_search_round_count {
-			mid = middle_lean($bounds)
 			lean_try = {
 				low: $bounds.low,
 				high: $bounds.high,
-				outcome: Coast.coast_outcome(motorcycle.with_lean(mid)),
+				outcome: Coast.coast_outcome(LeanSearch.tried_motorcycle(motorcycle, $bounds)),
 			}
 			$tries = $tries.append(lean_try)
 			$bounds = bounds_after(lean_try)
@@ -132,18 +133,6 @@ searched_lean = |across, lean_radians|
 # right.
 expect searched_lean(1.0, 0.0) < 0.0
 expect searched_lean(-1.0, 0.0) > 0.0
-
-# Each try's outcome is the coast of the motorcycle `tried_motorcycle` gives
-# for it, so a widget that draws that coast draws the try the search made.
-expect {
-	start = { ..Motorcycle.initial, lean: Angle.Lean.radians(0.1) }
-	LeanSearch.search_tries(start).all(
-		|lean_try| {
-			tried = LeanSearch.tried_motorcycle(start, lean_try)
-			Coast.coast_outcome(tried) == lean_try.outcome
-		},
-	)
-}
 
 # A lean held to the right stays further right than an upright rider's.
 expect {
