@@ -1,10 +1,9 @@
 ## Tour is the whole ride, for any platform that draws it. It keeps the
 ## current instant of the ride and every instant behind it, back to the ride's
 ## start, so stepping back can reach step 0. The whole ride's instants come to
-## under a megabyte. A restart clears them. It also
-## gives the FrameView of the current instant: what a painter needs for a
-## frame. SafariApp turns it into a canvas app, with the keys, the pause, and
-## the frame leaned by the roll.
+## under a megabyte. A restart clears them. It also gives the FrameView of the
+## current instant: what a painter needs for a frame. SafariApp turns it into a
+## canvas app, with the keys, the pause, and the frame leaned by the roll.
 import Clock
 import FrameView
 import Route

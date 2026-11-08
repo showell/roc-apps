@@ -23,6 +23,8 @@ import TruckSighting
 import lib.Shapes
 
 ## The things in view, rendered, one field for each sighting that found them.
+## It is nominal, not opaque: other modules read its fields, and the frame
+## widget builds a scene of some of them to draw a few layers alone.
 Scene := {
 	trees : List(Rendered),
 	birds : List(Rendered),

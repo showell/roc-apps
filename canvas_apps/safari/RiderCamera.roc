@@ -14,6 +14,9 @@ import RiderState
 import Route
 import RoutePlace
 
+## Where the camera stands, which way it faces, its lens and its roll. It is
+## nominal, not opaque: other modules read its fields, and Sun and Mountains
+## take it as an open record of the heading and the lens.
 RiderCamera := {
 	## Where the camera stands on the route, which is where the rider is.
 	route_place : RoutePlace,
