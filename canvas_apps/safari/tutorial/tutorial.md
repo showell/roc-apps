@@ -176,12 +176,12 @@ Safari Ride runs in a browser, and that takes a thin layer of JavaScript. The Ro
 
 ### What's a sighting?
 
-At step 1,570 of the ride, a cat is frozen in the lane. This is what `EncounterSighting` answers about it on that frame:
+At step 1,529 of the ride, a cat is frozen in the road. This is what `EncounterSighting` answers about it on that frame:
 
 | Field | Value |
 |---|---|
-| `right` | 0.32 metres |
-| `forward` | 30.42 metres |
+| `right` | 0.38 metres |
+| `forward` | 23.63 metres |
 | `pose` | `Frozen` |
 | `lift` | 0 |
 
@@ -645,10 +645,10 @@ So much for one tree. The road has hundreds.
 Here's the other tree problem. Safari Ride places 392 trees along its road, and only some of them are in view at any moment. For each frame, it has to find those, and say where each one stands from the camera. Once a tree is found, `Conifer.scenery_picture` from A simple tree draws it. The kind still matters here in two places: a gold tree is placed farther from the road, and a tree's height decides whether it's tall enough on the screen to draw.
 
 ```widget frame trees
-Step 1,570 of the ride, with only the trees on.
+Step 1,529 of the ride, with only the trees on.
 ```
 
-This is step 1,570 again, the frame with the frozen cat, showing only its trees. There are 184 of them, out of 392. At nine shapes each, they make up 1,656 of the 2,713 shapes in that frame, more than everything else put together.
+This is step 1,529 again, the frame with the frozen cat, showing only its trees. There are 184 of them, out of 392. At nine shapes each, they make up 1,656 of the 2,474 shapes in that frame, more than everything else put together.
 
 A tree goes through the three forms from Nature types, with a `Conifer` as its kind. It's placed once, for the whole ride, and sighted and rendered for each frame that can see it.
 
@@ -2940,9 +2940,9 @@ The ride instant chapter showed `SafariApp.model_at_next_step` reading a snapsho
 
 ### A frame is a list
 
-| What's in the shapes of step 1,570 | How many |
+| What's in the shapes of step 1,529 | How many |
 |---|---|
-| `Poly` | 2,706 |
+| `Poly` | 2,467 |
 | `Disc` | 7 |
 
 What the game hands back each frame is a `List(Shapes.Shape)`. A shape is a tag: `Poly`, `Disc`, `Rect` and a few more, each with its fill. Two of them aren't shapes. `Blend` and `View` are marks in the list that change how what comes after them is painted, because a frame is a list, and a mark is the cheapest way to say that.
