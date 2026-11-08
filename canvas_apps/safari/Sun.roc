@@ -16,11 +16,7 @@ Sun :: [].{
 
 	## Where the sun stands on the screen, and the focal length of the lens it
 	## is seen through, which sizes its glow and disc.
-	OnScreen : {
-		x : Pixels,
-		y : Pixels,
-		focal_length : Pixels,
-	}
+	OnScreen : { center : Screen.Point, focal_length : Pixels }
 
 	## The sun in a frame: in view at its place, or out of view, too far to
 	## the side of where the rider faces.
@@ -42,11 +38,7 @@ Sun :: [].{
 		})
 		match far_point {
 			Ok(point) => {
-				sun = {
-					x: point.x,
-					y: point.y,
-					focal_length: camera.focal_length,
-				}
+				sun = { center: point, focal_length: camera.focal_length }
 				if is_glow_on_screen(sun) {
 					InView(sun)
 				} else {
@@ -76,8 +68,8 @@ Sun :: [].{
 				[
 					Screen.above_horizon_rect(look.glow),
 					Disc({
-						x: sun.x.to_f64(),
-						y: sun.y.to_f64(),
+						x: sun.center.x.to_f64(),
+						y: sun.center.y.to_f64(),
 						radius: Sun.disc_radius_on_screen(sun).to_f64(),
 						fill: look.disc,
 					}),
@@ -95,14 +87,14 @@ Sun :: [].{
 				middle_color: Brush.with_alpha(RgbColor.of(0xFF965C), 0.32),
 				outer_color: Brush.with_alpha(RgbColor.of(0xFF965C), 0.0),
 				middle_offset: 0.4,
-				center: { x: sun.x.to_f64(), y: sun.y.to_f64() },
+				center: { x: sun.center.x.to_f64(), y: sun.center.y.to_f64() },
 				inner_radius: sun_size_on_screen(glow_inner_radius, sun).to_f64(),
 				outer_radius: Sun.glow_radius_on_screen(sun).to_f64(),
 			}),
 			disc: Radial({
 				inner_color: Brush.opaque_rgba(RgbColor.of(0xFFE6A3)),
 				outer_color: Brush.opaque_rgba(RgbColor.of(0xFF9D5C)),
-				center: { x: sun.x.to_f64(), y: sun.y.to_f64() },
+				center: { x: sun.center.x.to_f64(), y: sun.center.y.to_f64() },
 				inner_radius: sun_size_on_screen(disc_inner_radius, sun).to_f64(),
 				outer_radius: Sun.disc_radius_on_screen(sun).to_f64(),
 			}),
@@ -118,7 +110,7 @@ sun_size_on_screen = |size, sun| Lens.size_on_screen({ size, focal_length: sun.f
 ## which every roll of the screen stays inside.
 is_glow_on_screen : Sun.OnScreen -> Bool
 is_glow_on_screen = |sun| {
-	from_middle = sun.x.minus(Screen.center_x).abs()
+	from_middle = sun.center.x.minus(Screen.center_x).abs()
 	reach = Screen.drawn_right.minus(Screen.center_x)
 	from_middle.minus(Sun.glow_radius_on_screen(sun)) < reach
 }
@@ -146,8 +138,8 @@ is_in_view_at : Sun.Sighting,
 is_in_view_at = |sun_sighting, { x, y, focal_length }|
 	match sun_sighting {
 		InView(sun) => {
-			is_near_y = sun.y.minus(Pixels.of(y)).abs() < Pixels.of(0.001)
-			sun.x == Pixels.of(x) and is_near_y and sun.focal_length == focal_length
+			is_near_y = sun.center.y.minus(Pixels.of(y)).abs() < Pixels.of(0.001)
+			sun.center.x == Pixels.of(x) and is_near_y and sun.focal_length == focal_length
 		}
 		OutOfView => False
 	}
@@ -175,11 +167,7 @@ expect {
 	half_focal_length = Lens.resting_focal_length.times(0.5)
 	facing_sun = { heading: SunPath.bearing_at(Clock.start), focal_length: half_focal_length }
 	sighting = Sun.sun_in_view(facing_sun, Clock.start)
-	half_on_screen = {
-		x: Pixels.of(480.0),
-		y: Pixels.of(168.744),
-		focal_length: half_focal_length,
-	}
+	half_on_screen = { center: Screen.point(480.0, 168.744), focal_length: half_focal_length }
 	is_in_view_at(
 		sighting,
 		{
