@@ -3,8 +3,8 @@
 ## it ends. It is built once, from choices the route has already made, and this
 ## module answers the questions asked of one segment: where its herds stand,
 ## which trees its cat and its bird wait by, where the rider commits to its
-## bend, whether a tower stands halfway along it, and what on it may catch the
-## rider's eye.
+## bend, whether a tower stands halfway along it and where, and what on it may
+## catch the rider's eye.
 import Across
 import Along
 import Angle
@@ -172,9 +172,18 @@ Segment := {
 			RouteEnds => Along.at(segment.length)
 		}
 
-	## Whether `segment` has a tower halfway along.
-	has_mid_tower : Segment -> Bool
-	has_mid_tower = |segment| segment.length > mid_tower_min_length
+	## Where `segment`'s tower halfway along stands, off to the left, if the
+	## segment is long enough to have one.
+	mid_tower_point : Segment -> Try(Geom.RoadPoint, [NoMidTower])
+	mid_tower_point = |segment|
+		if segment.length > mid_tower_min_length {
+			Ok({
+				along: Along.at(segment.length.divided_by(2.0)),
+				across: Across.left_of_middle(mid_tower_left_of_middle),
+			})
+		} else {
+			Err(NoMidTower)
+		}
 
 	## Whether a segment has a cat waiting by the road.
 	has_cat : Segment -> Bool
@@ -231,6 +240,10 @@ Segment := {
 mid_tower_min_length : Distance
 mid_tower_min_length = Distance.metres(1000.0)
 
+## How far left of the road's middle a tower halfway along a segment stands.
+mid_tower_left_of_middle : Distance
+mid_tower_left_of_middle = Distance.metres(100.0)
+
 ## How far before the end of its segment a herd of pigs stands.
 pig_distance_before_end : Distance
 pig_distance_before_end = Distance.metres(60.0)
@@ -280,6 +293,24 @@ expect nearest_tree_ahead(gold_trees, Along.metres(90.0)).road_point.across == A
 expect nearest_tree_ahead(gold_trees, Along.metres(90.0)).road_point.along == Along.metres(96.0)
 expect nearest_tree_ahead(gold_trees, Along.metres(96.0)).road_point.along == Along.metres(96.0)
 expect nearest_tree_ahead(gold_trees, Along.metres(96.5)).road_point.along == Along.metres(126.0)
+
+## A segment `metres` long with nothing on its road, which ends the route.
+quiet_segment : F64 -> Segment
+quiet_segment = |metres|
+	Segment.from_choices({
+		length: Distance.metres(metres),
+		scheme: AllGreen,
+		pigs: NoPigs,
+		cows: { herd: { cow_count: 1, rows_behind_front: 0 }, bull: NoBull },
+		encounter: QuietRoad,
+		ending: RouteEnds,
+	})
+
+# Only a segment longer than a kilometre has a tower halfway along.
+expect quiet_segment(1000.0).mid_tower_point() == Err(NoMidTower)
+expect
+	quiet_segment(1000.5).mid_tower_point()
+		== Ok({ along: Along.metres(500.25), across: Across.metres(-100.0) })
 
 ## A tree at `along` and `across` metres, of whatever kind a gold segment starts
 ## with.

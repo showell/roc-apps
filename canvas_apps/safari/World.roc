@@ -384,13 +384,6 @@ expect
 		(18, True),
 	].all(|(index, want)| is_route_end(route_segment_at(index)) == want)
 
-expect
-	[
-		(0, False),
-		(6, True),
-		(9, False),
-	].all(|(index, want)| route_segment_at(index).has_mid_tower() == want)
-
 # The rider commits to the route's end at the end of its last segment.
 expect route_segment_at(18).commit_along().to_metres() == 300.0
 
