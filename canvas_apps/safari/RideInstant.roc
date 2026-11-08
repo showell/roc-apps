@@ -76,7 +76,7 @@ next = |route, instant| {
 		{ rider_distance: rider_place.distance_along(route), route },
 	)
 	segment_change =
-		if rider_place.segment_index == instant.rider.motorcycle.route_place.segment_index {
+		if rider_place.segment_index == RideInstant.rider_segment_index(instant) {
 			SameSegment
 		} else {
 			NewSegment

@@ -581,7 +581,7 @@ end
 -- is held to PAGE_EXPECTED. With `release=1`, which tutorial/book.shale gives
 -- it, it builds the release page into the dev channel, held to the same hash.
 function page()
-  print(trim(must(run({"shale", "--root", ".", INPUT_BITS}, {timeout_ms = 60000, tail = 40})).out))
+  print(trim(must(run({"shale", "--root", ".", INPUT_BITS}, {timeout_ms = 60000, whole = 100000})).out))
   local scratch = fresh_dir("scratch:", "safari-page")
   local cache = child_cache("page")
   local argv = {"bash", "canvas_apps/build.sh", "safari"}
