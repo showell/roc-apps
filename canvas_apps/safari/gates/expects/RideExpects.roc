@@ -61,10 +61,6 @@ instant_after = |instant|
 		Continued(next) | Restarted(next) => next
 	}
 
-## The segment the rider of `instant` is on.
-rider_segment_index : RideInstant -> Route.SegmentIndex
-rider_segment_index = |instant| instant.rider.motorcycle.route_place.segment_index
-
 ## How far along their segment the rider of `instant` is.
 rider_along : RideInstant -> Along
 rider_along = |instant| instant.rider.motorcycle.route_place.along
@@ -101,7 +97,7 @@ expect {
 	var $has_looked = False
 	while !$instant.rider.is_finished(World.route) {
 		next = instant_after($instant)
-		if rider_segment_index(next) != rider_segment_index($instant) {
+		if next.rider_segment_index() != $instant.rider_segment_index() {
 			$crossings = $crossings + 1
 			is_home = $instant.rider.eyes.gaze_yaw == Angle.straight_ahead
 			$is_home_at_each = $is_home_at_each and is_home
@@ -303,11 +299,11 @@ expect {
 	}
 	var $is_on_long_segment = True
 	while $instant.clock != until {
-		is_on_it = rider_segment_index($instant) == Fixtures.longest_segment_index
+		is_on_it = $instant.rider_segment_index() == Fixtures.longest_segment_index
 		$is_on_long_segment = $is_on_long_segment and is_on_it
 		$instant = instant_after($instant)
 	}
-	$is_on_long_segment and rider_segment_index($instant) == Fixtures.longest_segment_index
+	$is_on_long_segment and $instant.rider_segment_index() == Fixtures.longest_segment_index
 }
 
 # Steve's rule: the ride reaches full night, past dusk, before it finishes. The
@@ -345,11 +341,11 @@ ride_encounters = {
 	var $cat_exits = 0
 	var $is_faded_at_each_exit = True
 	while !$instant.rider.is_finished(World.route) {
-		segment = World.route.segment_at(rider_segment_index($instant))
+		segment = World.route.segment_at($instant.rider_segment_index())
 		stage = RideInstant.encounter_stage(World.route, $instant)
 		next = instant_after($instant)
 		is_leaving =
-			rider_segment_index(next) != rider_segment_index($instant)
+			next.rider_segment_index() != $instant.rider_segment_index()
 				or next.rider.is_finished(World.route)
 		match segment.encounter {
 			BirdHere(flight) => {
