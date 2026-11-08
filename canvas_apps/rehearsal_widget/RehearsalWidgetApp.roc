@@ -9,6 +9,7 @@ import game.Across
 import game.Angle
 import game.Clock
 import game.Coast
+import game.Distance
 import game.Motorcycle
 import game.LeanSearch
 import game.Geom
@@ -58,7 +59,7 @@ motorcycle : Motorcycle
 motorcycle = Tour.at_step(Clock.at_step(step_shown)).instant().rider.motorcycle
 
 ## A point on an arc: how far along the road from the rider, and where across it.
-ArcPoint : { forward : F64, across : F64 }
+ArcPoint : { forward : Distance, across : Across }
 
 ## One try of the search, and the way its coast drew it.
 Rehearsal : { lean_try : LeanSearch.LeanTry, path_points : List(ArcPoint) }
@@ -70,10 +71,7 @@ path_points_of = |coasting|
 		|path_motorcycle| {
 			point = path_motorcycle.route_place.road_point
 			start_along = motorcycle.route_place.road_point.along
-			{
-				forward: point.along.distance_from(start_along).to_metres(),
-				across: point.across.to_metres(),
-			}
+			{ forward: point.along.distance_from(start_along), across: point.across }
 		},
 	)
 
@@ -187,16 +185,16 @@ across_stretch = 2.0
 ## The right of the road is down the canvas, for a rider heading across it.
 canvas_point : ArcPoint -> Point.Point
 canvas_point = |{ forward, across }|
-	road_plan.canvas_point({ metres_right: forward, metres_down: across * across_stretch })
+	road_plan.canvas_point({ metres_right: forward.to_metres(), metres_down: across.to_metres() * across_stretch })
 
-## A line right along the road, `across` metres from its middle.
+## A line right along the road, at `across`.
 road_line : {
-	across : F64,
+	across : Across,
 	color : RgbColor,
 	width : F64,
 } -> Shapes.Shape
 road_line = |{ across, color, width }| {
-	y = canvas_point({ forward: 0.0, across }).y
+	y = canvas_point({ forward: Distance.zero, across }).y
 	Shapes.line(
 		{
 			from: { x: 0.0, y },
@@ -210,28 +208,28 @@ road_line = |{ across, color, width }| {
 ## The road from above, with the line the rider is aiming for.
 road_shapes : List(Shapes.Shape)
 road_shapes = {
-	half_road = Geom.road_half_width.to_metres()
+	left_edge = Across.left_of_middle(Geom.road_half_width)
 	[
 		WidgetPage.picture_backdrop(WidgetPalette.plan_ground_color),
 		Rect({
 			x: 0.0,
-			y: canvas_point({ forward: 0.0, across: -half_road }).y,
+			y: canvas_point({ forward: Distance.zero, across: left_edge }).y,
 			width: WidgetPage.canvas_width,
-			height: 2.0 * half_road * across_stretch * road_plan.pixels_a_metre,
+			height: 2.0 * Geom.road_half_width.to_metres() * across_stretch * road_plan.pixels_a_metre,
 			fill: Brush.flat(WidgetPalette.plan_road_color),
 		}),
 		road_line({
-			across: -half_road,
+			across: left_edge,
 			color: line_color,
 			width: 2.0,
 		}),
 		road_line({
-			across: half_road,
+			across: Across.right_of_middle(Geom.road_half_width),
 			color: line_color,
 			width: 2.0,
 		}),
 		road_line({
-			across: LeanSearch.aimed_across.to_metres(),
+			across: LeanSearch.aimed_across,
 			color: target_color,
 			width: 1.0,
 		}),
@@ -258,7 +256,7 @@ drawn_points = |path_points| {
 ## two of its points, as at its end, where no line is drawn.
 arc_shapes : List(ArcPoint), { color : RgbColor, width : F64 } -> List(Shapes.Shape)
 arc_shapes = |path_points, { color, width }| {
-	start = { forward: 0.0, across: motorcycle.route_place.road_point.across.to_metres() }
+	start = { forward: Distance.zero, across: motorcycle.route_place.road_point.across }
 	points = drawn_points(path_points).prepend(start).map(canvas_point)
 	points
 		.map2(points.drop_first(1), |from, to| { from, to })
@@ -287,8 +285,7 @@ tries_shapes = |tries, width|
 
 rider_mark : Shapes.Shape
 rider_mark = {
-	across = motorcycle.route_place.road_point.across.to_metres()
-	{ x, y } = canvas_point({ forward: 0.0, across })
+	{ x, y } = canvas_point({ forward: Distance.zero, across: motorcycle.route_place.road_point.across })
 	Disc({
 		x,
 		y,
@@ -563,7 +560,7 @@ expect
 	rehearsals.all(
 		|{ lean_try, path_points }|
 			match (lean_try.outcome, path_points.last()) {
-				(EndsAt(end_across), Ok(end)) => end.across == end_across.to_metres()
+				(EndsAt(end_across), Ok(end)) => end.across == end_across
 				(Leaves({ after, .. }), Ok(_)) => path_points.len() == after.to_u32().to_u64()
 				(_, Err(ListWasEmpty)) => False
 			},
