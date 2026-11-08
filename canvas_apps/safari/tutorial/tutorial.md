@@ -1382,7 +1382,7 @@ The first three are opaque. Each is still a number, and the type gives it a name
 
 | Job | Function | Its type |
 |---|---|---|
-{{types row Sun.height_at Move the sun}}
+{{types row SunPath.height_at Move the sun}}
 {{types row Sky.darkness_at Darken the sky}}
 {{types row Sky.sky_top_color}}
 {{types row Sky.horizon_warmth_at Warm the horizon}}
@@ -1431,7 +1431,7 @@ This widget does only the first job, so the sky stays blue. For each frame it ca
 
 The sun chapter showed how `Sun.sighting` places a sun. All it needs from the clock is a height:
 
-{{code Sun.height_at}}
+{{code SunPath.height_at}}
 
 ### Job two: the sky darkens
 

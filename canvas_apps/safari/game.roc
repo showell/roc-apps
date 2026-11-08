@@ -78,6 +78,7 @@ package
 		Still,
 		StillShapes,
 		Sun,
+		SunPath,
 		Throttle,
 		Tour,
 		Tower,

@@ -5,7 +5,7 @@ import FarHeight
 import Fraction
 import ColorShade
 import Screen
-import Sun
+import SunPath
 import lib.Brush
 import lib.RgbColor
 import lib.Shapes
@@ -19,8 +19,8 @@ Sky :: [].{
 	## How dark the sky is at `clock`, from 0 (day) to 1 (night).
 	darkness_at : Clock -> Fraction
 	darkness_at = |clock| {
-		height = Sun.height_at(clock)
-		if height >= Sun.height_when_set {
+		height = SunPath.height_at(clock)
+		if height >= SunPath.height_when_set {
 			darkness_while_up(height)
 		} else {
 			darkness_after_set(height)
@@ -31,7 +31,7 @@ Sky :: [].{
 	## once the sun is `warmth_reach` above or below.
 	horizon_warmth_at : Clock -> Fraction
 	horizon_warmth_at = |clock| {
-		from_horizon = Sun.height_at(clock).abs()
+		from_horizon = SunPath.height_at(clock).abs()
 		Fraction.clamp(from_horizon.ratio_to(warmth_reach)).complement()
 	}
 
@@ -106,8 +106,8 @@ sky_horizon_color = |clock| ColorShade.color_between({
 ## still above the line where it has fully set.
 darkness_while_up : FarHeight -> Fraction
 darkness_while_up = |height| {
-	whole_fall = Sun.height_at_start.minus(Sun.height_when_set)
-	set_so_far = Fraction.of(Sun.height_at_start.minus(height).ratio_to(whole_fall))
+	whole_fall = SunPath.height_at_start.minus(SunPath.height_when_set)
+	set_so_far = Fraction.of(SunPath.height_at_start.minus(height).ratio_to(whole_fall))
 	darkness_at_set.times(set_so_far).times(set_so_far)
 }
 
@@ -119,15 +119,15 @@ night_depth = FarHeight.of(46.0)
 ## night as it sinks a further `night_depth`.
 darkness_after_set : FarHeight -> Fraction
 darkness_after_set = |height| {
-	sunk_past_set = Sun.height_when_set.minus(height).ratio_to(night_depth)
+	sunk_past_set = SunPath.height_when_set.minus(height).ratio_to(night_depth)
 	Fraction.clamp(darkness_at_set.to_f64() + sunk_past_set * darkness_at_set.complement().to_f64())
 }
 
 # The sky is at least at darkness_at_set as the sun fully sets, and darker a
 # step later. A step earlier is in gates/expects/RideExpects.roc, which counts
 # steps.
-expect Sky.darkness_at(Sun.fully_set_at) >= darkness_at_set
-expect darkness_at_set < Sky.darkness_at(Sun.fully_set_at.next())
+expect Sky.darkness_at(SunPath.fully_set_at) >= darkness_at_set
+expect darkness_at_set < Sky.darkness_at(SunPath.fully_set_at.next())
 expect Sky.darkness_at(Clock.at_step(0)).to_f64() == 0.0
 expect Sky.horizon_warmth_at(Clock.at_step(0)).to_f64() == 0.0
 expect Sky.darkness_at(Clock.at_step(6000)).to_f64() == 1.0
