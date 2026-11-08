@@ -5,7 +5,6 @@
 ## pigs' gaze is no encounter, and is Gaze's.
 import Acceleration
 import Animation
-import EncounterPlan
 import Attention
 import CatCrossing
 import Easing
@@ -16,26 +15,26 @@ import ThrottleLimit
 
 EncounterReaction :: [].{
 
-	## What `segment`'s encounter, at `timing`, asks of the throttle of a rider
+	## What `segment`'s encounter, at `stage`, asks of the throttle of a rider
 	## on that segment: while a cat crosses, the rider eases off, holding the
 	## acceleration at none, which stops them speeding up and never brakes.
-	encounter_throttle : Segment, EncounterPlan.Timing -> ThrottleLimit
-	encounter_throttle = |segment, timing|
+	encounter_throttle : Segment, Animation.Stage -> ThrottleLimit
+	encounter_throttle = |segment, stage|
 		match segment.encounter {
 			CatCrosses(_) =>
-				match CatCrossing.crossing_stage(timing) {
+				match stage {
 					Playing(_) => AtMost(Acceleration.steady)
 					Waiting | Past(_) => NoLimit
 				}
 			BirdHere(_) | QuietRoad => NoLimit
 		}
 
-	## How hard `segment`'s encounter, at `timing`, holds the eye of a rider on
+	## How hard `segment`'s encounter, at `stage`, holds the eye of a rider on
 	## that segment.
-	encounter_attention : Segment, EncounterPlan.Timing -> Attention
-	encounter_attention = |segment, timing|
+	encounter_attention : Segment, Animation.Stage -> Attention
+	encounter_attention = |segment, stage|
 		match segment.encounter {
-			CatCrosses(_) => cat_attention(CatCrossing.crossing_stage(timing))
+			CatCrosses(_) => cat_attention(stage)
 			BirdHere(_) | QuietRoad => Attention.none
 		}
 }

@@ -29,7 +29,7 @@ cat_scene = Scene.scene_in_view(
 			vantage: { ..Fixtures.origin, along: Along.metres(300.0) },
 		},
 		facts: {
-			encounter_timing: Unplanned,
+			encounter_stage: Waiting,
 			truck: {
 				route_position: Distance.metres(500.0),
 				lit_truck: { headlights: Off, brake_lights: Off },

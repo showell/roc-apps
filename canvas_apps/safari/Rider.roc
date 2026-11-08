@@ -2,8 +2,8 @@
 ## where on the route it is, and where their eyes are.
 import Along
 import Angle
+import Animation
 import Attention
-import EncounterPlan
 import EncounterReaction
 import Motorcycle
 import RiderEyes
@@ -18,13 +18,13 @@ Rider := { motorcycle : Motorcycle, eyes : RiderEyes }.{
 	initial = { motorcycle: Motorcycle.initial, eyes: RiderEyes.initial }
 
 	## The rider a step on along `route`, with the encounter on their segment at
-	## `encounter_timing`: the move, the crossing onto the next segment, the stop
+	## `encounter_stage`: the move, the crossing onto the next segment, the stop
 	## at the route's end, and then where the rider looks.
-	next : Rider, { route : Route, encounter_timing : EncounterPlan.Timing } -> Rider
-	next = |rider, { route, encounter_timing }| {
+	next : Rider, { route : Route, encounter_stage : Animation.Stage } -> Rider
+	next = |rider, { route, encounter_stage }| {
 		segment = rider.motorcycle.route_place.segment_on(route)
 		moved = rider.motorcycle.motorcycle_at_next_step(
-			RiderMind.controls(rider.motorcycle, { segment, encounter_timing }),
+			RiderMind.controls(rider.motorcycle, { segment, encounter_stage }),
 		)
 		motorcycle =
 			match segment.segment_ending() {
@@ -46,11 +46,11 @@ Rider := { motorcycle : Motorcycle, eyes : RiderEyes }.{
 	}
 
 	## How strongly something holds the rider's eye on `segment`, with its
-	## encounter at `encounter_timing`: the stronger of what the encounter asks
+	## encounter at `encounter_stage`: the stronger of what the encounter asks
 	## and what the rider's own look holds.
-	attention : Rider, { segment : Segment, encounter_timing : EncounterPlan.Timing } -> Attention
-	attention = |rider, { segment, encounter_timing }|
-		EncounterReaction.encounter_attention(segment, encounter_timing)
+	attention : Rider, { segment : Segment, encounter_stage : Animation.Stage } -> Attention
+	attention = |rider, { segment, encounter_stage }|
+		EncounterReaction.encounter_attention(segment, encounter_stage)
 			.max(rider.eyes.attention())
 
 	## How far the rider's head turns from the way the motorcycle points: the

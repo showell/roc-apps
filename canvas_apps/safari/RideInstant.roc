@@ -2,6 +2,7 @@
 ## the next: the rider and the truck each move once, the clock ticks, and the
 ## encounter on the rider's segment is planned as the rider nears it. A ride
 ## that has finished starts again from the beginning.
+import Animation
 import EncounterPlan
 import Clock
 import Distance
@@ -44,17 +45,21 @@ RideInstant := {
 	rider_distance : Route, RideInstant -> Distance
 	rider_distance = |route, instant| instant.rider.motorcycle.route_place.distance_along(route)
 
-	## Where the encounter on the rider's segment stands at `instant`.
-	encounter_timing : RideInstant -> EncounterPlan.Timing
-	encounter_timing = |instant| instant.encounter_plan.timing_at(instant.clock)
+	## Where the encounter on the rider's segment of `route` has got to at
+	## `instant`.
+	encounter_stage : Route, RideInstant -> Animation.Stage
+	encounter_stage = |route, instant|
+		instant.rider.motorcycle.route_place.segment_on(route).encounter_stage(
+			instant.encounter_plan.timing_at(instant.clock),
+		)
 }
 
 ## The instant a step after `instant`. The rider steps with the encounter's
-## timing at the old clock: the hand of god moves the cat, then the rider reacts.
+## stage at the old clock: the hand of god moves the cat, then the rider reacts.
 next : Route, RideInstant -> RideInstant
 next = |route, instant| {
 	next_rider = instant.rider.next(
-		{ route, encounter_timing: RideInstant.encounter_timing(instant) },
+		{ route, encounter_stage: RideInstant.encounter_stage(route, instant) },
 	)
 	clock = instant.clock.next()
 	from = instant.rider.motorcycle.route_place

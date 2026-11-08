@@ -7,6 +7,7 @@
 import Across
 import Along
 import Angle
+import Animation
 import BendAnimal
 import Billboard
 import BirdFlight
@@ -198,6 +199,17 @@ Segment := {
 			BirdHere(flight) =>
 				Ok({ span: BirdFlight.flight_span, planned_along: flight.planned_along() })
 			QuietRoad => Err(QuietRoad)
+		}
+
+	## Where `segment`'s encounter has got to at `timing`, as long as its
+	## animal's animation lasts. A quiet road has nothing to wait for, so it
+	## stays `Waiting`.
+	encounter_stage : Segment, EncounterPlan.Timing -> Animation.Stage
+	encounter_stage = |segment, timing|
+		match segment.encounter {
+			CatCrosses(_) => CatCrossing.crossing_stage(timing)
+			BirdHere(_) => BirdFlight.flight_stage(timing)
+			QuietRoad => Waiting
 		}
 
 	## Whether a segment's pigs draw the rider's eye.

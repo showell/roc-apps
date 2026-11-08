@@ -114,7 +114,7 @@ expect
 		|(facing, heading)| {
 			camera = RiderCamera.of(
 				rider_facing(facing),
-				{ route: World.route, encounter_timing: Unplanned },
+				{ route: World.route, encounter_stage: Waiting },
 			)
 			camera.heading.to_radians() == heading
 		},
@@ -133,7 +133,7 @@ expect {
 ## encounter is planned.
 focal_length_of : Rider -> Pixels
 focal_length_of = |rider|
-	RiderCamera.of(rider, { route: Fixtures.cat_route, encounter_timing: Unplanned }).focal_length
+	RiderCamera.of(rider, { route: Fixtures.cat_route, encounter_stage: Waiting }).focal_length
 
 ## An encounter ten steps in.
 ten_steps_in : EncounterPlan.Timing
@@ -142,10 +142,13 @@ ten_steps_in = EncounterPlan.timing_at(StartsAt(Clock.at_step(100)), Clock.at_st
 ## The focal length of the camera for `rider` on the cat route, with the
 ## encounter on their segment ten steps in.
 focal_length_ten_steps_in : Rider -> Pixels
-focal_length_ten_steps_in = |rider| RiderCamera.of(
-	rider,
-	{ route: Fixtures.cat_route, encounter_timing: ten_steps_in },
-).focal_length
+focal_length_ten_steps_in = |rider| {
+	segment = rider.motorcycle.route_place.segment_on(Fixtures.cat_route)
+	RiderCamera.of(
+		rider,
+		{ route: Fixtures.cat_route, encounter_stage: segment.encounter_stage(ten_steps_in) },
+	).focal_length
+}
 
 ## A rider at the start of the first segment, upright and looking ahead.
 upright : Rider
@@ -174,11 +177,11 @@ looking_hard = |rider| { ..rider, eyes: { ..rider.eyes, look_depth: Fraction.who
 ## How strongly the encounter on this rider's segment, at `encounter_timing`, holds
 ## their attention.
 encounter_attention_of : Rider, EncounterPlan.Timing -> F64
-encounter_attention_of = |rider, encounter_timing|
-	EncounterReaction.encounter_attention(
-		Fixtures.cat_route.segment_at(rider.motorcycle.route_place.segment_index),
-		encounter_timing,
-	).to_f64()
+encounter_attention_of = |rider, encounter_timing| {
+	segment = Fixtures.cat_route.segment_at(rider.motorcycle.route_place.segment_index)
+	stage = segment.encounter_stage(encounter_timing)
+	EncounterReaction.encounter_attention(segment, stage).to_f64()
+}
 
 expect focal_length_of(upright).minus(Lens.resting_focal_length) == Pixels.zero
 
@@ -240,7 +243,10 @@ cat_throttle_change = |encounter_timing| {
 throttle_change_at : Motorcycle, EncounterPlan.Timing -> F64
 throttle_change_at = |motorcycle, encounter_timing| {
 	segment = motorcycle.route_place.segment_on(World.route)
-	acceleration = Throttle.next_acceleration(motorcycle, { segment, encounter_timing })
+	acceleration = Throttle.next_acceleration(
+		motorcycle,
+		{ segment, encounter_stage: segment.encounter_stage(encounter_timing) },
+	)
 	next = motorcycle.motorcycle_at_next_step({ lean: motorcycle.lean, acceleration })
 	next.speed.to_metres_a_step() - motorcycle.speed.to_metres_a_step()
 }

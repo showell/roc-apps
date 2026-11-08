@@ -64,7 +64,7 @@ FrameView := {
 			ground_patch_shapes: FrameView.ground_shapes(road, camera),
 			scene: Scene.scene_in_view(
 				road,
-				{ camera: camera.sighting_camera(), facts: FrameView.ride_facts(instant) },
+				{ camera: camera.sighting_camera(), facts: FrameView.ride_facts(route, instant) },
 			),
 			roll: camera.roll,
 		}
@@ -81,7 +81,7 @@ FrameView := {
 	camera_at = |route, instant|
 		RiderCamera.of(
 			instant.rider,
-			{ route, encounter_timing: RideInstant.encounter_timing(instant) },
+			{ route, encounter_stage: RideInstant.encounter_stage(route, instant) },
 		)
 
 	## The backdrop's shapes in paint order: the sky, the sun, then the grass,
@@ -116,12 +116,12 @@ FrameView := {
 		Shapes.lists_in_space(painted.space, [backdrop].concat(painted.ride_shape_lists))
 	}
 
-	## What the sightings read from `instant` beyond the road: where the
-	## encounter on the rider's segment stands, where the truck is and which of
-	## its lights are on, and the clock.
-	ride_facts : RideInstant -> Scene.RideFacts
-	ride_facts = |instant| {
-		encounter_timing: RideInstant.encounter_timing(instant),
+	## What the sightings read from `instant` on `route` beyond the road: where
+	## the encounter on the rider's segment has got to, where the truck is and
+	## which of its lights are on, and the clock.
+	ride_facts : Route, RideInstant -> Scene.RideFacts
+	ride_facts = |route, instant| {
+		encounter_stage: RideInstant.encounter_stage(route, instant),
 		truck: {
 			route_position: instant.truck.route_position,
 			lit_truck: LitTruck.at(instant.truck.pace, Sky.darkness_at(instant.clock)),

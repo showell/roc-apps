@@ -3,7 +3,7 @@
 ## acceleration offered is held to the least of them.
 import Acceleration
 import Along
-import EncounterPlan
+import Animation
 import Coast
 import Distance
 import EncounterReaction
@@ -18,17 +18,17 @@ import VehicleLimits
 Throttle :: [].{
 
 	## The acceleration the motorcycle takes on the next step, on `segment`, the
-	## one it is on, with the segment's encounter at `encounter_timing`.
+	## one it is on, with the segment's encounter at `encounter_stage`.
 	next_acceleration : Motorcycle,
 	{
 		segment : Segment,
-		encounter_timing : EncounterPlan.Timing,
+		encounter_stage : Animation.Stage,
 	} -> Acceleration
-	next_acceleration = |motorcycle, { segment, encounter_timing }| {
+	next_acceleration = |motorcycle, { segment, encounter_stage }| {
 		offered = VehicleLimits.cruise_acceleration
 		limits = [
 			bend_limit(motorcycle, segment),
-			EncounterReaction.encounter_throttle(segment, encounter_timing),
+			EncounterReaction.encounter_throttle(segment, encounter_stage),
 			Gawking.gawk_brake(motorcycle, segment),
 			shoulder_limit(motorcycle),
 		]
