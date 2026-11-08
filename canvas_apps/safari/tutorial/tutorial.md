@@ -1931,64 +1931,92 @@ A truck from behind, from behind and to one side, and from the side.
 
 New in this chapter:
 
-- Modules: `TruckSighting`, `TruckShape`, `TruckPlacement`, `TruckBody`
+- Modules: `TruckShape`, `TruckSighting`, `TruckPlacement`, `TruckBody`, `Truck`
+
+### What the truck looks like
+
+The truck is blue. `truck_blue`, a navy, paints the back of its trailer, its windshield and its nose. Its sides are `side_blue`, a darker navy, and its roof is `roof_blue`, a lighter blue. Its tires are `tire_black`. There's no glass: the windshield is painted the truck's blue.
+
+`TruckShape` says what the truck looks like, and nothing else. It doesn't know where the truck is, or that there's a road. Each part of the truck is a face, a color and its corners:
+
+{{code TruckShape.TruckFace}}
+
+A corner is a point in the truck's own frame, three distances measured from the middle of the trailer:
+
+{{code TruckShape.TruckPoint}}
+
+The sides come first. Each one is a single outline, the trailer and the cab together, walked from the back of the trailer to the nose and back:
+
+{{code TruckShape.sides}}
+
+The trailer's back, the roof, the windshield and the nose are each a strip across the truck. Here's the windshield, sloping down from the cab's roof to its nose:
+
+{{code TruckShape.windshield}}
+
+The tires are circles standing on the road, one on each side of each axle:
+
+{{code TruckShape.tires}}
+
+And the whole truck is its faces, in one list:
+
+{{code TruckShape.truck_faces}}
+
+### Shape, placement, projection
+
+That shape gets to the screen in three stages:
+
+| Stage | What it does |
+|---|---|
+| Shape | Says where each corner of each face is in the truck's own frame |
+| Placement | Turns one point by the truck's heading, carries it out from the truck's foot, and lowers it by the ground's drop |
+| Projection | Turns one whole face into a polygon on the screen |
+
+Placement works a point at a time. Projection works a face at a time, for two reasons. A face that reaches behind the camera is clipped, and clipping can cut corners off a face and add new ones, so it needs the whole outline. And the faces are sorted by depth before they're drawn, and the sort orders faces, not points.
 
 The modules that draw the truck
 ```dot
 digraph truck_drawing {
   node [shape=box, fontname="Helvetica"];
-  TruckBody [style=bold];
+  TruckPlacement [style=bold];
   Scene -> TruckSighting [label="  finds it with truck_in_view"];
-  TruckSighting -> Truck [label="  sights a Truck"];
+  Scene -> Truck [label="  draws it with truck_picture"];
   Truck -> TruckBody [label="  draws its body with body_picture"];
+  TruckBody -> TruckShape [label="  reads the faces of"];
   TruckBody -> TruckPlacement [label="  places each face with placed_face"];
-  TruckPlacement -> TruckShape [label="  reads the faces of"];
 }
 ```
 
-`TruckSighting` finds the truck on the road ahead. What it finds is a `Truck`, the truck with its lights, and with the lights off that's just the body this chapter draws. The truck is drawn however small it stands, because the rider is always looking for it.
+### Placement: one rigid body
 
-### Shape, placement, projection
+A truck doesn't bend. So it's placed the way any 3D program places a rigid thing: every corner moves together. `TruckSighting` finds the truck on the road ahead, and works out three things once. The truck's spot, which holds its foot in the rider's view and the ground's drop beneath it. Which way it heads against the camera. And which of its lights are on:
 
-The truck is a real box, with a back, two sides, a roof, a windshield and a nose. It gets to the screen in three stages:
+{{code Truck.SightedTruck}}
 
-| Stage | What it does |
-|---|---|
-| Shape | Says where each corner is in the truck's own frame, measured from the middle of the trailer |
-| Placement | Carries one point onto the road at the truck's spot, then lowers it by the ground's drop beneath the spot |
-| Projection | Turns one whole face into a polygon on the screen |
+The heading is the road's direction at the truck's spot. A segment comes into the rider's view by turns and shifts alone, so the way from the spot to a point one metre further along is the road's way all along the segment:
 
-Placement works a point at a time, because each corner stands at its own place on the road. Projection works a face at a time, for two reasons. A face that reaches behind the camera is clipped, and clipping can cut corners off a face and add new ones, so it needs the whole outline. And the faces are sorted by depth before they're drawn, and the sort orders faces, not points.
+{{code TruckSighting.road_heading}}
 
-### Get the types right
-
-A point in the truck's own frame is three distances, measured from the middle of the trailer:
-
-{{code TruckShape.TruckPoint}}
-
-A `TruckSetting` is what the truck is drawn from. It's a `Picture.Setting`, the setting every kind of thing beside the road draws from:
-
-{{code Picture.Setting}}
+What the truck is drawn from is that sighting and the camera's lens:
 
 {{code TruckPlacement.TruckSetting}}
 
-### The functions
-
-Placement is one function. `TruckPlacement` moves one point along and across the road from the truck's spot, finds where that lands in the rider's view, and lifts it. The headlights and the brake lights use it too:
+Placement is one function. It turns a point by the heading, carries it out from the foot, and lifts it. The headlights and the brake lights use it too:
 
 {{code TruckPlacement.raised_point}}
 
-The truck can stand across a bend, so each corner finds its own place on the road. But every corner is lowered by the same drop, how far the ground has curved away beneath the truck's spot. Across a 12-metre truck the drop changes by a few centimetres at most, far less than a pixel.
+Every corner is lowered by the same drop, how far the ground has curved away beneath the truck's spot. Across a 12-metre truck the drop changes by a few centimetres at most, far less than a pixel.
 
-`TruckPlacement.placed_face` places each corner of a face that way. So a face is just a color and a list of `TruckPoint`s. Here are the sides, each walked around its outline from the back of the trailer to the nose and back:
+### Drawing it
 
-{{code TruckShape.sides}}
-
-The back, the roof, the windshield and the nose are each a strip across the truck, so they share `TruckShape.strip_corners`. The tires are circles standing on the road.
-
-Projection comes last. `TruckBody` sorts the faces far to near, so a nearer face drawn later covers a farther one, and then clips and projects each one:
+`TruckPlacement.placed_face` places each corner of a face. Then `TruckBody` sorts the faces far to near, so a nearer face drawn later covers a farther one, and clips and projects each one:
 
 {{code TruckBody.body_picture}}
+
+One function draws the whole truck from its sighting. The lens goes beside the sighting, as it does for every sighting in the game: a sighting says where a thing is, and the frame's lens draws it.
+
+{{code Truck.truck_picture}}
+
+With the lights off, the beams and the brake lights are empty pictures, and that's just the body. The truck is drawn however small it stands, because the rider is always looking for it.
 
 That's a truck. Next, it moves.
 
@@ -2092,51 +2120,53 @@ That's a truck you can chase. The next chapter lights it.
 
 The ride runs from day into night, so the truck's headlights come on near the end. The truck brakes for bends, so its brake lights show whenever you're close to it, even by day. The truck drives exactly the same with its lights on or off.
 
-New in this chapter:
-
-- Modules: `Truck`, `TruckHeadlights`, `TruckBrakeLights`
-
-### One module per lamp
-
-Each kind of lamp gets a module, and each module owns two things: whether its lamp is on, and how the lamp looks.
-
-The headlights work like a light sensor on the lamps themselves: once the sky is dark enough, they're on. The Sky module tells us how dark it is: `Sky.darkness_at` answers a `Fraction`, 0 by day and 1 at full dark. The sensor reads that.
-
-The brake lights come on while the truck is slowing down. That's a fact about the truck's own last step, its `Pace`, so they follow the truck.
-
-### Get the types right
-
-`TruckHeadlights` and `TruckBrakeLights` are each `[On, Off]`. A `Truck` is the truck as the scene draws it this frame, so it holds one field per lamp:
-
-{{code Truck.Truck from "Which of" to "Truck := {"}}
-
-### The functions
-
-Each frame, `FrameView` builds the `Truck`. It hands the sky's darkness to `TruckHeadlights` and the truck's pace to `TruckBrakeLights`:
+Each frame, `FrameView` builds both lamps together. It hands the sky's darkness to `TruckHeadlights` and the truck's pace to `TruckBrakeLights`:
 
 {{code FrameView.ride_facts from "headlights: TruckHeadlights.at(" to "brake_lights: TruckBrakeLights.at("}}
 
-Each lamp's module applies its own rule:
+New in this chapter:
+
+- Modules: `TruckHeadlights`, `TruckBrakeLights`
+
+Each kind of lamp gets a module, and each module owns two things: whether its lamp is on, and how the lamp looks. Both are `[On, Off]`, and a `Truck` holds one field per lamp:
+
+{{code Truck.Truck from "Which of" to "Truck := {"}}
+
+### The headlights
+
+The headlights work like a light sensor on the lamps themselves: once the sky is dark enough, they're on. `Sky.darkness_at` answers a `Fraction`, 0 by day and 1 at full dark, and the sensor reads that:
 
 {{code TruckHeadlights.at}}
 
-{{code TruckBrakeLights.at}}
-
-The headlights come on at this darkness:
+They come on at this darkness:
 
 {{code TruckHeadlights.headlights_on_darkness}}
 
 On this ride, that's step 3,555 of 6,746. Once on, they stay on, because from there the sky only darkens.
 
-Each lamp's `picture` matches both tags, and an `Off` lamp is an empty picture. `TruckHeadlights` paints the beams as wedges that fade from the lamp toward their far end. `TruckBrakeLights` paints two lamps on the back of the trailer, each with a glow around it. Both place their points the way the body does, with `TruckPlacement.raised_point`.
+Their `picture` matches both tags, and an `Off` lamp is an empty picture. When they're on, it paints two beams as wedges that fade from the lamp toward their far end. Their points are placed the way the body's are, with `TruckPlacement.raised_point`:
 
-`Truck` puts the three pictures together. `Picture.composite` makes one picture of several, each painted over the ones before:
+{{code TruckHeadlights.picture}}
+
+### The brake lights
+
+The brake lights have a twist: they don't read the light at all. They follow the truck's pace, so they're on while its last step slowed it, by day or by night:
+
+{{code TruckBrakeLights.at}}
+
+Their picture works the same way as the headlights': two lamps on the back of the trailer, each with a glow around it, and nothing when they're off:
+
+{{code TruckBrakeLights.picture}}
+
+### All together
+
+`Picture.composite` makes one picture of several, each painted over the ones before:
 
 {{code Picture.composite}}
 
-The beams go first, then the body, then the brake lights:
+`Truck.truck_picture`, from the chapter that drew the truck, puts the beams first, then the body, then the brake lights:
 
-{{code Truck.truck_picture}}
+{{code Truck.truck_picture from "Picture.composite([" to "lights.brake_lights.picture(setting),"}}
 
 `TruckBody` knows nothing of the lights: they're drawn around it.
 
