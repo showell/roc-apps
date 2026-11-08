@@ -47,7 +47,7 @@ FrameView := {
 		{
 			backdrop: {
 				sky_colors: Sky.colors_at(instant.clock),
-				sun_sighting: Sun.sighting(camera, instant.clock),
+				sun_sighting: Sun.sun_in_view(camera, instant.clock),
 			},
 			ride_shape_lists: ride_shape_lists(camera, { instant, route }),
 			roll: camera.roll,

@@ -95,8 +95,8 @@ Sun :: [].{
 	## The sun in a frame, for a camera facing `heading` through a lens of
 	## `focal_length`. It is in view while it is in front of the camera and its glow
 	## reaches the screen.
-	sighting : { heading : Angle.Bearing, focal_length : Pixels, .. }, Clock -> Sun.Sighting
-	sighting = |camera, clock| {
+	sun_in_view : { heading : Angle.Bearing, focal_length : Pixels, .. }, Clock -> Sun.Sighting
+	sun_in_view = |camera, clock| {
 		direction = direction_at(clock)
 		turn_from_view = direction.bearing.turn_from(camera.heading)
 		if turn_from_view.abs() >= quarter_turn {
@@ -298,7 +298,7 @@ is_in_view_at = |sun_sighting, { x, y, focal_length }|
 expect {
 	facing_sun = { heading: Sun.bearing_at(Clock.start), focal_length: Lens.resting_focal_length }
 	is_in_view_at(
-		Sun.sighting(facing_sun, Clock.start),
+		Sun.sun_in_view(facing_sun, Clock.start),
 		{
 			x: 480.0,
 			y: 37.487,
@@ -312,7 +312,7 @@ expect {
 expect {
 	half_focal_length = Lens.resting_focal_length.times(0.5)
 	facing_sun = { heading: Sun.bearing_at(Clock.start), focal_length: half_focal_length }
-	sighting = Sun.sighting(facing_sun, Clock.start)
+	sighting = Sun.sun_in_view(facing_sun, Clock.start)
 	half_place = {
 		x: Pixels.of(480.0),
 		y: Pixels.of(168.744),
@@ -332,7 +332,7 @@ expect {
 # Facing north at the start, the rider faces away from the sun.
 expect {
 	facing_north = { heading: Angle.north, focal_length: Lens.resting_focal_length }
-	Sun.sighting(facing_north, Clock.start) == OutOfView
+	Sun.sun_in_view(facing_north, Clock.start) == OutOfView
 }
 
 ## Whether the sun is in view at the ride's start, for a camera at rest that
@@ -340,7 +340,7 @@ expect {
 is_in_view_beside : F64 -> Bool
 is_in_view_beside = |radians| {
 	heading = Sun.bearing_at(Clock.start).plus(Angle.Turn.radians(0.0 - radians))
-	match Sun.sighting({ heading, focal_length: Lens.resting_focal_length }, Clock.start) {
+	match Sun.sun_in_view({ heading, focal_length: Lens.resting_focal_length }, Clock.start) {
 		InView(_) => True
 		OutOfView => False
 	}

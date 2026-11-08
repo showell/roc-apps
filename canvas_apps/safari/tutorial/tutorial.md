@@ -780,7 +780,7 @@ Two tags say whether the sun is in view, so there's no `null` and no off-screen 
 
 Opaque types do the most work from here on. A `Bearing` and a `Turn` are both floats underneath, but only the `Angle` module can build or open one. `Sun.sighting` also takes one record argument, destructured in its parameter list.
 
-{{code Sun.sighting}}
+{{code Sun.sun_in_view}}
 
 `turn_from_view.abs() >= visible_turn_limit` compares two `Turn`s. The code never touches radians until `Sun.place` has to do trigonometry, because `.tan()` works on a float.
 

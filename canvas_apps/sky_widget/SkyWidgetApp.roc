@@ -113,7 +113,7 @@ picture_shapes = |job, clock|
 	WidgetPage.picture_shapes({
 		backdrop: {
 			sky_colors: sky_colors(job, clock),
-			sun_sighting: Sun.sighting({ heading: Sun.bearing_at(clock), focal_length: Lens.resting_focal_length }, clock),
+			sun_sighting: Sun.sun_in_view({ heading: Sun.bearing_at(clock), focal_length: Lens.resting_focal_length }, clock),
 		},
 		ride_shapes: [],
 	})
