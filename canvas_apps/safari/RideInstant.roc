@@ -54,49 +54,46 @@ RideInstant := {
 		)
 }
 
-## The instant a step after `instant`. The rider steps with the encounter's
-## stage at the old clock: the hand of god moves the cat, then the rider reacts.
+## The instant a step after `instant`. The world and the rider change each
+## other within one step, in this order. First the rider reads the world as it
+## stands at the old clock: the stage of the encounter on the rider's segment.
+## Then the rider steps, and the clock ticks. Then the world answers the rider
+## that has just moved. The truck aims at how far along the route this step's
+## rider is, and the encounter plan is kept, forgotten at a new segment, or made
+## from this step's rider at the new clock. The rider never reads the truck.
 next : Route, RideInstant -> RideInstant
 next = |route, instant| {
-	next_rider = instant.rider.next(
-		{ route, encounter_stage: RideInstant.encounter_stage(route, instant) },
-	)
+	stage_before = RideInstant.encounter_stage(route, instant)
+	rider = instant.rider.next({ route, encounter_stage: stage_before })
 	clock = instant.clock.next()
-	from = instant.rider.motorcycle.route_place
-	to = next_rider.motorcycle.route_place
-	kept_plan =
-		if to.segment_index == from.segment_index {
-			instant.encounter_plan
+	rider_place = rider.motorcycle.route_place
+	truck = TruckJourney.truck_at_next_step(
+		instant.truck,
+		{ rider_distance: rider_place.distance_along(route), route },
+	)
+	segment_change =
+		if rider_place.segment_index == instant.rider.motorcycle.route_place.segment_index {
+			SameSegment
 		} else {
-			Unplanned
+			NewSegment
 		}
-	{
-		rider: next_rider,
-		truck: TruckJourney.truck_at_next_step(
-			instant.truck,
-			{ rider_distance: to.distance_along(route), route },
-		),
-		clock,
-		encounter_plan: match kept_plan {
-			StartsAt(_) => kept_plan
-			Unplanned => planned_start(to.segment_on(route), { rider: next_rider, now: clock })
-		},
-	}
+	encounter_plan = instant.encounter_plan.plan_at_next_step({
+		segment_change,
+		approach: encounter_approach(rider_place.segment_on(route), rider),
+		now: clock,
+	})
+	{ rider, truck, clock, encounter_plan }
 }
 
-## The plan the ride makes for `segment`'s encounter, with `rider` on it at
-## `now`: unplanned until the rider comes within reach of it.
-planned_start : Segment, { rider : Rider, now : Clock } -> EncounterPlan
-planned_start = |segment, { rider, now }|
+## How `rider` comes at `segment`'s encounter, or none on a quiet road.
+encounter_approach : Segment, Rider -> EncounterPlan.Approach
+encounter_approach = |segment, rider|
 	match segment.encounter_span() {
 		Ok({ span, planned_along }) =>
-			EncounterPlan.plan_for(
+			Approaching({
 				span,
-				{
-					gap: planned_along.distance_from(rider.motorcycle.route_place.along),
-					speed: rider.motorcycle.speed,
-					now,
-				},
-			)
-		Err(QuietRoad) => Unplanned
+				gap: planned_along.distance_from(rider.motorcycle.route_place.along),
+				speed: rider.motorcycle.speed,
+			})
+		Err(QuietRoad) => QuietRoad
 	}

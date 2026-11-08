@@ -2008,7 +2008,7 @@ digraph truck_motion {
 
 `RideInstant` moves the truck once a step. All it hands over is how far along the route the rider has just got to, and the route itself:
 
-{{code RideInstant.next from "truck: TruckJourney.truck_at_next_step(" to "{ rider_distance: to.distance_along(route), route },"}}
+{{code RideInstant.next from "truck = TruckJourney.truck_at_next_step(" to "{ rider_distance: rider_place.distance_along(route), route },"}}
 
 That record is the whole of the chase. `TruckJourney` imports none of the rider's modules, and the rider's modules don't import `TruckJourney`. What the two share is `VehicleLimits`, the limits both keep to, which is where the truck's 10% comes from.
 
