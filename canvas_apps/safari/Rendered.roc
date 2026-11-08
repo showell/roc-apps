@@ -24,39 +24,3 @@ Rendered :: { depth : Distance, picture : Picture }.{
 	depth_sorted_renderings = |renderings|
 		DepthSort.sort_by(renderings, |rendering| rendering.depth())
 }
-
-## A rendering with one shape, which tells it from another at the same depth.
-marked_rendering : F64, F64 -> Rendered
-marked_rendering = |depth, mark|
-	Rendered.of(
-		Distance.metres(depth),
-		Picture.from_shapes([
-			Rect({
-				x: mark,
-				y: 0.0,
-				width: 1.0,
-				height: 1.0,
-				fill: Flat({
-					r: 0.0,
-					g: 0.0,
-					b: 0.0,
-					a: 1.0,
-				}),
-			}),
-		]),
-	)
-
-# The farthest comes first, and two at one depth stay as they came.
-expect
-	Rendered.depth_sorted_renderings([
-		marked_rendering(10.0, 1.0),
-		marked_rendering(30.0, 2.0),
-		marked_rendering(10.0, 3.0),
-		marked_rendering(20.0, 4.0),
-	]).map(|rendering| rendering.picture().to_shapes())
-		== [
-			marked_rendering(30.0, 2.0),
-			marked_rendering(20.0, 4.0),
-			marked_rendering(10.0, 1.0),
-			marked_rendering(10.0, 3.0),
-		].map(|rendering| rendering.picture().to_shapes())

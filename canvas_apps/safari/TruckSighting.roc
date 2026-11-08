@@ -19,7 +19,7 @@ TruckSighting :: [].{
 	## `lit_truck` says, if it is on the road ahead and in front of the camera.
 	truck_in_view : RoadAhead.RoadView,
 	{
-		camera : { vantage : Geom.Vantage, .. },
+		camera : Pipeline.SightingCamera,
 		truck : { route_position : Distance, lit_truck : LitTruck },
 	} -> TruckSighting.TruckFate
 	truck_in_view = |road, { camera, truck }| {
@@ -31,8 +31,7 @@ TruckSighting :: [].{
 			lift: Distance.zero,
 			kind: truck.lit_truck,
 		}
-		vantage = camera.vantage
-		Pipeline.sighting_of(placed_truck, { road, vantage, place: Ahead(position) })
+		Pipeline.sighting_of(placed_truck, { road, camera, place: Ahead(position) })
 	}
 }
 

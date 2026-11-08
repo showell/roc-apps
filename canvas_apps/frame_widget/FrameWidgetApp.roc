@@ -6,11 +6,8 @@
 ## The address picks how many layers are on, and from there it's a still picture
 ## with no controls. The first line of text counts the shapes so far against the
 ## frame's total, and the second names the last layer on.
-import game.RoadAhead
 import game.FrameView
 import game.Grass
-import game.RiderCamera
-import game.Scene
 import game.Screen
 import game.Sky
 import game.Sun
@@ -95,21 +92,27 @@ things_on = |things, { on_layers, layer }|
 		[]
 	}
 
-## The things beside the road on `on_layers`, in the game's paint order. A scene
-## that holds only some of the things draws them in the order the whole scene
-## does, so the game's own `Scene` orders each layer among the others.
-scene_shapes_on : List(Layer) -> List(Shapes.Shape)
-scene_shapes_on = |on_layers| {
-	only = {
-		trees: things_on(paused_scene.trees, { on_layers, layer: Trees }),
-		towers: things_on(paused_scene.towers, { on_layers, layer: Towers }),
-		billboards: things_on(paused_scene.billboards, { on_layers, layer: Critters }),
-		cats: things_on(paused_scene.cats, { on_layers, layer: MovingThings }),
-		rails: things_on(paused_scene.rails, { on_layers, layer: Rails }),
-		trucks: things_on(paused_scene.trucks, { on_layers, layer: MovingThings }),
-		birds: things_on(paused_scene.birds, { on_layers, layer: MovingThings }),
+## The paused frame's view with only the ride's layers on `on_layers`. A view
+## that holds only some of the layers draws them in the order the whole view
+## does, so the game's own `FrameView` orders each layer among the others.
+view_on : List(Layer) -> FrameView
+view_on = |on_layers| {
+	view = paused_frame_view
+	scene = view.scene
+	{
+		..view,
+		mountain_shapes: things_on(view.mountain_shapes, { on_layers, layer: Mountains }),
+		ground_patch_shapes: things_on(view.ground_patch_shapes, { on_layers, layer: Road }),
+		scene: {
+			trees: things_on(scene.trees, { on_layers, layer: Trees }),
+			towers: things_on(scene.towers, { on_layers, layer: Towers }),
+			billboards: things_on(scene.billboards, { on_layers, layer: Critters }),
+			cats: things_on(scene.cats, { on_layers, layer: MovingThings }),
+			rails: things_on(scene.rails, { on_layers, layer: Rails }),
+			trucks: things_on(scene.trucks, { on_layers, layer: MovingThings }),
+			birds: things_on(scene.birds, { on_layers, layer: MovingThings }),
+		},
 	}
-	Scene.scene_shapes(only)
 }
 
 ## The frame's backdrop, layer by layer in `FrameView.backdrop_shapes`'s order:
@@ -121,49 +124,17 @@ backdrop_pieces = |view| [
 	{ layer: Grass, shapes: [Grass.grass_shape] },
 ]
 
-## The camera the ride sees through at the step on show.
-paused_camera : RiderCamera
-paused_camera = FrameView.camera_at(paused_tour.route(), paused_tour.instant())
-
-## The road ahead of the rider at the step on show.
-paused_road : RoadAhead.RoadView
-paused_road = RoadAhead.RoadView.ahead_of(
-	paused_tour.route(),
-	paused_camera.route_place.segment_index,
-)
-
 ## What the camera shows at the step on show.
 paused_frame_view : FrameView
 paused_frame_view = FrameView.frame_view_at(paused_tour.route(), paused_tour.instant())
-
-## The things in view at the step on show.
-paused_scene : Scene
-paused_scene = Scene.scene_in_view(
-	paused_road,
-	{ camera: paused_camera.sighting_camera(), facts: FrameView.ride_facts(paused_tour.instant()) },
-)
-
-## The mountains and the road, which `FrameView.frame_view_at` puts under the things
-## beside the road, each with its layer.
-ground_parts : List(Piece)
-ground_parts = {
-	skyline = FrameView.skyline_shapes(paused_camera, paused_tour.instant().clock)
-	ground = FrameView.ground_shapes(paused_road, paused_camera)
-	[{ layer: Mountains, shapes: skyline }, { layer: Road, shapes: ground }]
-}
 
 backdrop_parts : List(Piece)
 backdrop_parts = backdrop_pieces(paused_frame_view)
 
 ## The part of the ride's shapes in `paused_frame_view` on `on_layers`, in
-## their order. The frame view keeps them in the lists they are made in, so this
-## asks for them one at a time, and an `expect` below holds them to those lists
-## joined.
+## the game's paint order.
 ride_shapes_on : List(Layer) -> List(Shapes.Shape)
-ride_shapes_on = |on_layers| piece_shapes(
-	ground_parts,
-	on_layers,
-).concat(scene_shapes_on(on_layers))
+ride_shapes_on = |on_layers| FrameView.ride_shape_lists(view_on(on_layers)).join()
 
 ## The frame's shapes on `on_layers`, backdrop and all, in paint order.
 frame_shapes_on : List(Layer) -> List(Shapes.Shape)
@@ -329,14 +300,8 @@ shapes_at = |model|
 # All the layers on is the game's own frame, shape for shape and in its order.
 expect picture_shapes(layers) == paused_frame_view.framed_shapes(lean_space)
 
-# The ride's parts are the game's own shapes, in the game's order.
-expect ride_shapes_on(layers) == paused_frame_view.ride_shape_lists.join()
-
 # The backdrop's parts are the game's own backdrop, in its order.
-expect piece_shapes(backdrop_parts, layers) == FrameView.backdrop_shapes(paused_frame_view)
-
-# The frame's total is the game's own count of its shapes.
-expect ride_count(layers) == paused_frame_view.ride_shape_lists.join().len()
+expect piece_shapes(backdrop_parts, layers) == FrameView.backdrop_shapes(paused_frame_view.backdrop)
 
 # Every layer has shapes of its own at this step but the sun, which is behind the
 # rider.

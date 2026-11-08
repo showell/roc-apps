@@ -22,12 +22,12 @@ TowerSighting :: [].{
 	## The towers in view, in the order of `RoadAhead.segments_in_view`.
 	towers_in_view : RoadAhead.RoadView,
 	{
-		camera : { vantage : Geom.Vantage, .. },
+		camera : Pipeline.SightingCamera,
 		clock : Clock,
 	} -> List(Pipeline.Sighted(Tower))
 	towers_in_view = |road, { camera, clock }|
 		RoadAhead.segments_in_view(road).join_map(
-			|in_view| segment_towers(road, { vantage: camera.vantage, in_view, clock }),
+			|in_view| segment_towers(road, { camera, in_view, clock }),
 		)
 }
 
@@ -51,30 +51,30 @@ end_tower_yaw = Angle.Turn.degrees(30.0)
 ## one halfway along.
 segment_towers : RoadAhead.RoadView,
 {
-	vantage : Geom.Vantage,
+	camera : Pipeline.SightingCamera,
 	in_view : RoadAhead.SegmentInView,
 	clock : Clock,
 } -> List(Pipeline.Sighted(Tower))
-segment_towers = |road, { vantage, in_view, clock }|
+segment_towers = |road, { camera, in_view, clock }|
 	[
-		end_tower(road, { vantage, in_view, clock }),
-		mid_tower(road, { vantage, in_view, clock }),
+		end_tower(road, { camera, in_view, clock }),
+		mid_tower(road, { camera, in_view, clock }),
 	].keep_oks(|tower| tower)
 
 ## The tower past the end of a segment in view, if it is in front of the
 ## camera.
 end_tower : RoadAhead.RoadView,
 {
-	vantage : Geom.Vantage,
+	camera : Pipeline.SightingCamera,
 	in_view : RoadAhead.SegmentInView,
 	clock : Clock,
 } -> Try(Pipeline.Sighted(Tower), [BehindCamera])
-end_tower = |road, { vantage, in_view, clock }| {
+end_tower = |road, { camera, in_view, clock }| {
 	beacon = Beacon.of_segment(in_view.index).lit_at(clock)
 	tower_if_ahead(
 		road,
 		{
-			vantage,
+			camera,
 			place: in_view.place,
 			road_point: {
 				along: Along.at(in_view.segment.length.plus(end_tower_beyond_end)),
@@ -89,17 +89,17 @@ end_tower = |road, { vantage, in_view, clock }| {
 ## front of the camera.
 mid_tower : RoadAhead.RoadView,
 {
-	vantage : Geom.Vantage,
+	camera : Pipeline.SightingCamera,
 	in_view : RoadAhead.SegmentInView,
 	clock : Clock,
 } -> Try(Pipeline.Sighted(Tower), [BehindCamera, NoMidTower])
-mid_tower = |road, { vantage, in_view, clock }|
+mid_tower = |road, { camera, in_view, clock }|
 	if Segment.has_mid_tower(in_view.segment) {
 		beacon = Beacon.of_segment(in_view.index).opposite().lit_at(clock)
 		tower_if_ahead(
 			road,
 			{
-				vantage,
+				camera,
 				place: in_view.place,
 				road_point: {
 					along: Along.at(in_view.segment.length.divided_by(2.0)),
@@ -113,16 +113,16 @@ mid_tower = |road, { vantage, in_view, clock }|
 	}
 
 ## `tower` standing on the ground at `road_point` in the segment that `place`
-## maps, if it is in front of the camera at `vantage`.
+## maps, if it is in front of `camera`.
 tower_if_ahead : RoadAhead.RoadView,
 {
-	vantage : Geom.Vantage,
+	camera : Pipeline.SightingCamera,
 	place : SegmentPlace,
 	road_point : Geom.RoadPoint,
 	tower : Tower,
 } -> Try(Pipeline.Sighted(Tower), [BehindCamera])
-tower_if_ahead = |road, { vantage, place, road_point, tower }| {
+tower_if_ahead = |road, { camera, place, road_point, tower }| {
 	placed_tower : Geom.Placed(Tower)
 	placed_tower = { road_point, lift: Distance.zero, kind: tower }
-	Pipeline.sighting_of(placed_tower, { road, vantage, place })
+	Pipeline.sighting_of(placed_tower, { road, camera, place })
 }

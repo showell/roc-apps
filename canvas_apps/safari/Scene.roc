@@ -78,10 +78,6 @@ Scene := {
 		}
 	}
 
-	## The scene's things as shapes, far to near.
-	scene_shapes : Scene -> List(Shapes.Shape)
-	scene_shapes = |scene| Scene.scene_shape_lists(scene).join()
-
 	## The scene's things as shapes, far to near: a list for each thing.
 	scene_shape_lists : Scene -> List(List(Shapes.Shape))
 	scene_shape_lists = |scene|

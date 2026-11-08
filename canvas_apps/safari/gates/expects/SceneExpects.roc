@@ -53,7 +53,7 @@ expect {
 	]
 	field_shapes = fields.join().join_map(|rendering| rendering.picture().to_shapes())
 	fields.all(|field| !field.is_empty())
-		and Scene.scene_shapes(cat_scene).len() == field_shapes.len()
+		and Scene.scene_shape_lists(cat_scene).join().len() == field_shapes.len()
 }
 
 ## A scene with nothing in view.
@@ -80,7 +80,7 @@ sighted_ahead = |kind, forward|
 		},
 		{
 			road: Fixtures.road,
-			vantage: Fixtures.origin,
+			camera: Fixtures.origin_camera,
 			place: Ahead(SegmentPlace.Position.first),
 		},
 	)
@@ -113,7 +113,7 @@ post_sighting = |along|
 		},
 		{
 			road: one_segment_road,
-			vantage: Fixtures.origin,
+			camera: Fixtures.origin_camera,
 			place: Ahead(SegmentPlace.Position.first),
 		},
 	)
@@ -190,14 +190,14 @@ lone_bird_scene = |forward| {
 tree_and_bird_shapes : { tree_ahead : F64, bird_ahead : F64 } -> List(Shapes.Shape)
 tree_and_bird_shapes = |{ tree_ahead, bird_ahead }| {
 	tree_and_bird = { ..lone_tree_scene(tree_ahead), birds: lone_bird_scene(bird_ahead).birds }
-	Scene.scene_shapes(tree_and_bird)
+	Scene.scene_shape_lists(tree_and_bird).join()
 }
 
 lone_tree_shapes : F64 -> List(Shapes.Shape)
-lone_tree_shapes = |forward| Scene.scene_shapes(lone_tree_scene(forward))
+lone_tree_shapes = |forward| Scene.scene_shape_lists(lone_tree_scene(forward)).join()
 
 lone_bird_shapes : F64 -> List(Shapes.Shape)
-lone_bird_shapes = |forward| Scene.scene_shapes(lone_bird_scene(forward))
+lone_bird_shapes = |forward| Scene.scene_shape_lists(lone_bird_scene(forward)).join()
 
 # A bird perched on a tree stands at the tree's depth and is drawn over it.
 # A bird at a different depth from the tree is drawn by its own depth: behind a

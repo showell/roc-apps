@@ -268,7 +268,7 @@ shapes_of_tower_100_ahead = {
 			},
 			{
 				road: tower_road,
-				vantage: Fixtures.origin,
+				camera: Fixtures.origin_camera,
 				place: Ahead(SegmentPlace.Position.first),
 			},
 		)
@@ -372,7 +372,10 @@ expect
 	TowerSighting.towers_in_view(
 		Fixtures.crafted_road([Fixtures.segment_of([])]),
 		{
-			camera: { vantage: { ..Fixtures.origin, along: Along.metres(5000.0) } },
+			camera: {
+				..Fixtures.origin_camera,
+				vantage: { ..Fixtures.origin, along: Along.metres(5000.0) },
+			},
 			clock: Clock.start,
 		},
 	).len()
@@ -502,7 +505,7 @@ truck_seen_from = |vantage, lead|
 	TruckSighting.truck_in_view(
 		Fixtures.three_segment_road,
 		{
-			camera: { vantage: vantage },
+			camera: { ..Fixtures.origin_camera, vantage },
 			truck: {
 				route_position: Distance.metres(vantage.along.to_metres() + lead),
 				lit_truck: { headlights: Off, brake_lights: Off },
