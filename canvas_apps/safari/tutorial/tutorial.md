@@ -1535,11 +1535,13 @@ Record update does most of the writing in this module. Its plainest use is stopp
 
 When the rider leans, the whole picture leans with it. This is all of that:
 
-{{module CanvasRoll}}
+{{code RiderCamera.roll_deadband}}
+
+{{code RiderCamera.rider_roll}}
 
 A lean inside the deadband leaves the canvas level, and any other lean passes straight through. The last `expect` is a table of pairs, on both sides of the deadband and at its edge. It's called once a frame:
 
-{{code RiderCamera.of from "roll: CanvasRoll" to "roll: CanvasRoll"}}
+{{code RiderCamera.of from "roll: rider_roll" to "roll: rider_roll"}}
 
 The camera turns as well. `ViewYaw` follows the rider's gaze, and turns a little with the lean, as a rider's head turns into a bend.
 

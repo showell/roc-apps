@@ -5,7 +5,6 @@
 import Angle
 import Attention
 import EncounterPlan
-import CanvasRoll
 import EncounterReaction
 import Fraction
 import Gaze
@@ -49,7 +48,7 @@ RiderCamera := {
 			yaw,
 			heading: route.bearing_of(route_place.segment_index).plus(yaw),
 			cam_focal: ride_focal(rider, { route, encounter_timing }),
-			roll: CanvasRoll.rider_roll(rider.motorcycle.lean),
+			roll: rider_roll(rider.motorcycle.lean),
 		}
 	}
 
@@ -67,6 +66,20 @@ RiderCamera := {
 	full_lean : Angle.Lean
 	full_lean = Angle.Lean.degrees(20.0)
 }
+
+## A lean smaller than this leaves the canvas level.
+roll_deadband : Angle.Lean
+roll_deadband = Angle.Lean.radians(0.001)
+
+## How far the canvas rolls with the rider's `lean`: not at all inside the
+## deadband, and with the lean past it.
+rider_roll : Angle.Lean -> Angle.Lean
+rider_roll = |lean|
+	if lean.abs() < roll_deadband {
+		Angle.upright
+	} else {
+		lean
+	}
 
 ## How far the head turns for each radian of lean.
 head_turn_per_lean : F64
@@ -173,3 +186,20 @@ expect {
 	looking = { ..RiderState.initial, motorcycle: upright, eyes }
 	view_yaw_for(looking) == gaze_yaw
 }
+
+# Inside the deadband the canvas stays level; at its edge and past it, either
+# way, the canvas rolls with the rider.
+expect
+	[
+		(0.0, 0.0),
+		(0.00001, 0.0),
+		(0.0005, 0.0),
+		(-0.0005, 0.0),
+		(0.0009999, 0.0),
+		(0.001, 0.001),
+		(-0.001, -0.001),
+		(0.002, 0.002),
+		(-0.002, -0.002),
+		(0.35, 0.35),
+		(-0.42, -0.42),
+	].all(|(lean, roll)| rider_roll(Angle.Lean.radians(lean)).to_radians() == roll)
