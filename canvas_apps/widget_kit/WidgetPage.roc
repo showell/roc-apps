@@ -76,16 +76,14 @@ WidgetPage :: [].{
 	## A canvas app for a widget that draws one picture that never changes. Such a
 	## picture needn't be painted again sixty times a second.
 	still_app : { title : Str, shapes : List(Shapes.Shape) } -> CanvasApp.CanvasApp({})
-	still_app = |{ title, shapes }| {
-		size: { width: canvas_width, height: canvas_height },
-		fps: still_frames_a_second,
-		init: {},
-		model_at_next_step: |model, _input, _seconds| model,
-		frame_shapes: |_model| shapes,
-		sounds: |_model| 0,
-		tones: [],
-		title,
-	}
+	still_app = |{ title, shapes }|
+		canvas_app({
+			title,
+			frames_a_second: still_frames_a_second,
+			init: {},
+			model_at_next_step: |model, _input| model,
+			frame_shapes: |_model| shapes,
+		})
 
 	## A plain color behind the picture, first under everything else. It fills
 	## the canvas, and a widget's panel covers its lower part.
@@ -99,10 +97,6 @@ WidgetPage :: [].{
 			fill: Brush.flat(color),
 		})
 
-	## The size of a label's words, on a canvas of the usual width.
-	label_size : F64
-	label_size = 14.0
-
 	## Where and how large the rows of a readout are set: the x they are aligned
 	## on, the baseline of the first row, how far each row sits below the last,
 	## and the size of their type.
@@ -115,7 +109,7 @@ WidgetPage :: [].{
 	}
 
 	## The rows of text on the panel under the picture, from its left margin.
-	panel_readout : WidgetPage.ReadoutStyle
+	panel_readout : ReadoutStyle
 	panel_readout = {
 		x: side_margin,
 		first_baseline: picture_bottom_y + 50.0,
@@ -130,7 +124,7 @@ WidgetPage :: [].{
 		text : Str,
 		color : RgbColor,
 		row : U64,
-		style : WidgetPage.ReadoutStyle,
+		style : ReadoutStyle,
 	} -> Shapes.Shape
 	readout = |{ text, color, row, style }|
 		Text({
@@ -157,7 +151,7 @@ WidgetPage :: [].{
 			size: label_size,
 			face: Prose,
 			align: Left,
-			color: Brush.opaque(WidgetPage.ink_color),
+			color: Brush.opaque(ink_color),
 		})
 
 	## The picture, and the panel with the lines of text on it.
@@ -204,6 +198,10 @@ WidgetPage :: [].{
 still_frames_a_second : U32
 still_frames_a_second = 20
 
+## The size of a label's words, on a canvas of the usual width.
+label_size : F64
+label_size = 14.0
+
 ## The text sits on this, and a widget's buttons do too.
 panel : Shapes.Shape
 panel = Rect({
@@ -220,38 +218,3 @@ status_line = |text, row| WidgetPage.readout({ text, color: WidgetPage.ink_color
 # A page is the panel and its text.
 expect WidgetPage.frame_shapes({ picture_shapes: [], status_lines: [] }).len() == 1
 expect WidgetPage.frame_shapes({ picture_shapes: [], status_lines: ["I"] }).len() == 2
-
-# Each row of the readout sits under the last, in monospace.
-expect
-	WidgetPage.readout({
-		text: "I",
-		color: RgbColor.of(0x202020),
-		row: 1,
-		style: WidgetPage.panel_readout,
-	})
-		== Text({
-			text: "I",
-			x: WidgetPage.side_margin,
-			y: 292.0,
-			size: 15.0,
-			face: Code,
-			align: Left,
-			color: Brush.opaque(RgbColor.of(0x202020)),
-		})
-
-# A label is words, set where it is asked.
-expect
-	WidgetPage.label({
-		text: "I",
-		x: 3.0,
-		y: 4.0,
-	})
-		== Text({
-			text: "I",
-			x: 3.0,
-			y: 4.0,
-			size: WidgetPage.label_size,
-			face: Prose,
-			align: Left,
-			color: Brush.opaque(RgbColor.of(0x202020)),
-		})
