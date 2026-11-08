@@ -5,7 +5,6 @@
 import Animation
 import Clock
 import Distance
-import EncounterPoses
 import EncounterSighting
 import BillboardSighting
 import RoadAhead
@@ -50,10 +49,9 @@ Scene := {
 	scene_in_view = |road, { camera, facts }| {
 		focal_length = camera.focal_length
 		on_road = { road, vantage: camera.vantage }
-		cats = EncounterPoses.cat_poses(road, facts.encounter_stage)
-		birds = EncounterPoses.bird_poses(road, facts.encounter_stage)
-		birds_seen = EncounterSighting.animals_in_view(road, { camera, animals: birds })
-		cats_seen = EncounterSighting.animals_in_view(road, { camera, animals: cats })
+		encounter = { camera, encounter_stage: facts.encounter_stage }
+		birds_seen = EncounterSighting.birds_in_view(road, encounter)
+		cats_seen = EncounterSighting.cats_in_view(road, encounter)
 		trees_seen = TreeSighting.trees_in_view(road, camera)
 		trucks =
 			match TruckSighting.truck_in_view(road, { camera, truck: facts.truck }) {

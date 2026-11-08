@@ -53,10 +53,7 @@ birds_seen_on : RoadAhead.RoadView,
 birds_seen_on = |road_view, { camera, encounter_timing }| {
 	rider_segment = RoadAhead.segment_at(road_view, SegmentPlace.Position.first)
 	encounter_stage = rider_segment.encounter_stage(encounter_timing)
-	EncounterSighting.animals_in_view(
-		road_view,
-		{ camera, animals: EncounterPoses.bird_poses(road_view, encounter_stage) },
-	)
+	EncounterSighting.birds_in_view(road_view, { camera, encounter_stage })
 }
 
 ## The cats in view on the cat route, before its encounter is planned, for a
@@ -64,14 +61,14 @@ birds_seen_on = |road_view, { camera, encounter_timing }| {
 ride_sightings : F64 -> List(Pipeline.Sighted(PosedCat))
 ride_sightings = |along| {
 	road_view = Fixtures.cat_road
-	EncounterSighting.animals_in_view(
+	EncounterSighting.cats_in_view(
 		road_view,
 		{
 			camera: {
 				..Fixtures.origin_camera,
 				vantage: { ..Fixtures.origin, along: Along.metres(along) },
 			},
-			animals: EncounterPoses.cat_poses(road_view, Waiting),
+			encounter_stage: Waiting,
 		},
 	)
 }

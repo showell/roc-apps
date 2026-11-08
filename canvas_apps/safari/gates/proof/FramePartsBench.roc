@@ -10,7 +10,6 @@ app [main!] { game: "../../game.roc", lib: "../../../lib/main.roc" }
 
 import game.Distance
 import game.FrameView
-import game.EncounterPoses
 import game.EncounterSighting
 import game.GuardRail
 import game.Pipeline
@@ -143,16 +142,16 @@ kind_size = |part, { road, camera, facts }| {
 			),
 		)
 	} else if part == "cats" {
-		cats = EncounterPoses.cat_poses(road, facts.encounter_stage)
+		encounter = { camera: cam, encounter_stage: facts.encounter_stage }
 		shape_count(
-			EncounterSighting.animals_in_view(road, { camera: cam, animals: cats }).map(
+			EncounterSighting.cats_in_view(road, encounter).map(
 				|cat| Pipeline.rendering_of(cat, { focal_length, context: {} }),
 			),
 		)
 	} else if part == "birds" {
-		birds = EncounterPoses.bird_poses(road, facts.encounter_stage)
+		encounter = { camera: cam, encounter_stage: facts.encounter_stage }
 		shape_count(
-			EncounterSighting.animals_in_view(road, { camera: cam, animals: birds }).map(
+			EncounterSighting.birds_in_view(road, encounter).map(
 				|bird| Pipeline.rendering_of(bird, { focal_length, context: {} }),
 			),
 		)
