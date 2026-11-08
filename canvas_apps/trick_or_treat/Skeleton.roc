@@ -21,9 +21,9 @@ import lib.RgbColor
 
 Skeleton :: [].{
 	bone : Brush.Rgba
-	bone = Brush.opaque(RgbColor.of(0xf2f0e6))
+	bone = Brush.opaque_rgba(RgbColor.of(0xf2f0e6))
 	night : Brush.Rgba
-	night = Brush.opaque(RgbColor.of(0x0a0a0c))
+	night = Brush.opaque_rgba(RgbColor.of(0x0a0a0c))
 
 	# Where a bone of length `len` ends, leaving (x, y) at `angle` from straight
 	# down. y is down, so this is the screen's own arithmetic.

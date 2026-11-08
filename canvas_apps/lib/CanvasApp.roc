@@ -1,11 +1,11 @@
-# CanvasApp is what a runner needs from an app, as a type. An app is a model
-# you can step with a keyboard and a pointer and ask for a picture, and the
-# picture is a list of shapes. Games, a world you fly around, a paint program
-# and a movie you can scrub are all one of these, and nothing in this file
-# names any of them.
-#
-# It is a record, not a module found by name. Each app says which value it is
-# out loud and hands it to a runner, and a runner is a function of one.
+## CanvasApp is what a runner needs from an app, as a type. An app is a model
+## you can step with a keyboard and a pointer and ask for a picture, and the
+## picture is a list of shapes. Games, a world you fly around, a paint program
+## and a movie you can scrub are all one of these, and nothing in this file
+## names any of them.
+##
+## It is a record, not a module found by name. Each app says which value it is
+## out loud and hands it to a runner, and a runner is a function of one.
 import Shapes
 import Input
 

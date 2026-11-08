@@ -298,7 +298,7 @@ picture_color : RgbColor
 picture_color = RgbColor.of(0xf7f5ef)
 
 ink : Brush.Rgba
-ink = Brush.opaque(WidgetPage.ink_color)
+ink = Brush.opaque_rgba(WidgetPage.ink_color)
 
 point_count : Still -> U64
 point_count = |still| still.polygons().fold(0, |sum, polygon| sum + polygon.points.len())

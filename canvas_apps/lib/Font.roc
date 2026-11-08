@@ -1,21 +1,21 @@
-# Font gives letters as strokes, so a game or a movie can put words on the
-# screen. The games write with this alphabet, on every painter. Words that
-# should read well, such as a tutorial widget's, are a `Text` shape in the
-# viewer's own typeface; `plotted` here is that shape for a painter that has no
-# typefaces, and `room_for` is the room such a line wants.
-#
-# A letter is a few strokes, and a stroke is a polygon, the same quad
-# `Shapes.line` builds. So text needs no new shape, no new brush, and nothing
-# new on any wire, and it looks the same on the GPU, on the canvas and in
-# ScanlineFill, because by then it is only polygons.
-#
-# The grid is 5 wide and 6 tall, x 0..4 and y 0..6 with y down. The cap height
-# is at 0, the x-height at 2 and the baseline at 6, and descenders reach 8. A
-# glyph advances 6. `size` is the height from cap to baseline, so a 24 px label
-# has units of 4 px.
-#
-# It is a plotter's alphabet rather than a typeface: its strokes have one
-# width, and they look like what they are.
+## Font gives letters as strokes, so a game or a movie can put words on the
+## screen. The games write with this alphabet, on every painter. Words that
+## should read well, such as a tutorial widget's, are a `Text` shape in the
+## viewer's own typeface; `plotted_shapes` here is that shape for a painter that has no
+## typefaces, and `room_for` is the room such a line wants.
+##
+## A letter is a few strokes, and a stroke is a polygon, the same quad
+## `Shapes.line` builds. So text needs no new shape, no new brush, and nothing
+## new on any wire, and it looks the same on the GPU, on the canvas and in
+## ScanlineFill, because by then it is only polygons.
+##
+## The grid is 5 wide and 6 tall, x 0..4 and y 0..6 with y down. The cap height
+## is at 0, the x-height at 2 and the baseline at 6, and descenders reach 8. A
+## glyph advances 6. `size` is the height from cap to baseline, so a 24 px label
+## has units of 4 px.
+##
+## It is a plotter's alphabet rather than a typeface: its strokes have one
+## width, and they look like what they are.
 import Shapes
 import Brush
 import Point
@@ -37,19 +37,19 @@ Font :: [].{
 
 	## A string centred on `top_center`, the middle of its top edge, which is
 	## what a title, a banner and a hint all want.
-	centered : Str, { top_center : Point.Point, size : F64, color : Brush.Rgba } -> List(Shapes.Shape)
-	centered = |words, { top_center, size, color }|
+	centered_text_shapes : Str, { top_center : Point.Point, size : F64, color : Brush.Rgba } -> List(Shapes.Shape)
+	centered_text_shapes = |words, { top_center, size, color }|
 		text_shapes(words, { top_left: { x: top_center.x - width_of(words, size) / 2.0, y: top_center.y }, size, color })
 
 	## A line of type as strokes. The strokes' capitals stand as tall as a real
 	## typeface's do at the line's size.
-	plotted : Shapes.TextLine -> List(Shapes.Shape)
-	plotted = |{ text: words, x, y, size, align, color, .. }| {
+	plotted_shapes : Shapes.TextLine -> List(Shapes.Shape)
+	plotted_shapes = |{ text: words, x, y, size, align, color, .. }| {
 		cap_height = size * cap_height_share
 		top = y - cap_height
 		match align {
 			Left => text_shapes(words, { top_left: { x, y: top }, size: cap_height, color })
-			Center => centered(words, { top_center: { x, y: top }, size: cap_height, color })
+			Center => centered_text_shapes(words, { top_center: { x, y: top }, size: cap_height, color })
 		}
 	}
 
@@ -91,8 +91,8 @@ glyph_shapes = |byte, { top_left, unit, stroke_width, color }| {
 			$out = $out.append(
 				Shapes.line(
 					{
-						from: { x: top_left.x + at(coordinates, 2 * (j - 1)) * unit, y: top_left.y + at(coordinates, 2 * (j - 1) + 1) * unit },
-						to: { x: top_left.x + at(coordinates, 2 * j) * unit, y: top_left.y + at(coordinates, 2 * j + 1) * unit },
+						from: { x: top_left.x + coordinate_at(coordinates, 2 * (j - 1)) * unit, y: top_left.y + coordinate_at(coordinates, 2 * (j - 1) + 1) * unit },
+						to: { x: top_left.x + coordinate_at(coordinates, 2 * j) * unit, y: top_left.y + coordinate_at(coordinates, 2 * j + 1) * unit },
 						width: stroke_width,
 					},
 					Flat(color),
@@ -103,8 +103,8 @@ glyph_shapes = |byte, { top_left, unit, stroke_width, color }| {
 	$out
 }
 
-at : List(F64), U64 -> F64
-at = |xs, i| xs.get(i) ?? crash "Font.at: an index past the end of the stroke"
+coordinate_at : List(F64), U64 -> F64
+coordinate_at = |xs, i| xs.get(i) ?? crash "Font.coordinate_at:an index past the end of the stroke"
 
 # The strokes of one glyph. A byte with no glyph crashes, because `width_of`
 # would still leave room for it.
@@ -209,14 +209,14 @@ sample_line = {
 }
 
 expect
-	Font.plotted(sample_line)
+	Font.plotted_shapes(sample_line)
 		== Font.text_shapes("Hi", { top_left: { x: 100.0, y: 164.0 }, size: 36.0, color: sample_line.color })
 expect
-	Font.plotted({ ..sample_line, align: Center })
-		== Font.centered("Hi", { top_center: { x: 100.0, y: 164.0 }, size: 36.0, color: sample_line.color })
+	Font.plotted_shapes({ ..sample_line, align: Center })
+		== Font.centered_text_shapes("Hi", { top_center: { x: 100.0, y: 164.0 }, size: 36.0, color: sample_line.color })
 
 # A line's face is for a real typeface, and the strokes have only one.
-expect Font.plotted({ ..sample_line, face: Code }) == Font.plotted(sample_line)
+expect Font.plotted_shapes({ ..sample_line, face: Code }) == Font.plotted_shapes(sample_line)
 
 expect Font.room_for("", 50.0) == 0.0
 expect Font.room_for("Hi", 50.0) == 62.0

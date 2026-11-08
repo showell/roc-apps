@@ -642,7 +642,7 @@ expect {
 		== [
 			Poly({
 				coordinates: [100.0, 200.0, 150.0, 200.0, 100.0, 150.0],
-				fill: Flat(Brush.opaque(RgbColor.of(7))),
+				fill: Flat(Brush.opaque_rgba(RgbColor.of(7))),
 			}),
 		]
 }

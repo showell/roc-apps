@@ -2,7 +2,7 @@
 #
 # Upstream's `render!` opens a camera scope and draws into it; this answers a
 # list, and the scope is a pair of marks in that list. **THE MARKS ARE THE
-# WHOLE DIFFERENCE**: `Shapes.in_space(eye.space(), ...)` puts the shapes it
+# WHOLE DIFFERENCE**: `Shapes.shapes_in_space(eye.space(), ...)` puts the shapes it
 # holds in the world, and the window takes the ones after it. What it holds is
 # upstream's `draw_world!`, point for point.
 #
@@ -27,7 +27,7 @@ CameraDraw :: [].{
 		seen = eye.viewport(Rules.screen)
 
 		var $out = [backdrop]
-		$out = List.concat($out, Shapes.in_space(eye.space(), world_shapes(world.player, mouse_world, seen)))
+		$out = List.concat($out, Shapes.shapes_in_space(eye.space(), world_shapes(world.player, mouse_world, seen)))
 		$out = List.concat($out, pointer_mark(mouse_screen))
 		List.concat($out, hud(world, mouse_world))
 	}
@@ -184,7 +184,7 @@ CameraDraw :: [].{
 	}
 
 	hex : I64 -> Brush.Rgba
-	hex = |rgb| Brush.opaque(RgbColor.of(rgb))
+	hex = |rgb| Brush.opaque_rgba(RgbColor.of(rgb))
 
 	# A colour with its alpha byte, 0xAARRGGBB.
 	dim : I64 -> Brush.Rgba

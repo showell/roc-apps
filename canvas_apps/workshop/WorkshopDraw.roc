@@ -63,7 +63,7 @@ WorkshopDraw :: [].{
 				height: side,
 				cols: Rules.grid_side,
 				rows: Rules.grid_side,
-				pixels: List.map(world.pixels, Brush.opaque),
+				pixels: List.map(world.pixels, Brush.opaque_rgba),
 			}),
 		)
 		$out = List.concat($out, outline({ x: x - 2.0, y: y - 2.0, width: side + 4.0, height: side + 4.0, thickness: 2.0 }, theme.edge))
@@ -175,7 +175,7 @@ WorkshopDraw :: [].{
 	white = hex(0xffffff)
 
 	hex : I64 -> Brush.Rgba
-	hex = |rgb| Brush.opaque(RgbColor.of(rgb))
+	hex = |rgb| Brush.opaque_rgba(RgbColor.of(rgb))
 
 	count : U64 -> F64
 	count = |n| I64.to_f64(U64.to_i64_wrap(n))

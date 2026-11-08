@@ -16,7 +16,7 @@ import Panels
 
 Fence :: [].{
 	fence_c : Brush.Rgba
-	fence_c = Brush.opaque(RgbColor.of(0x272430))
+	fence_c = Brush.opaque_rgba(RgbColor.of(0x272430))
 
 	fence_at : F64
 	fence_at = 0.2

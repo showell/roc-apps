@@ -13,17 +13,17 @@ import Panels
 
 Night :: [].{
 	sky_high : Brush.Rgba
-	sky_high = Brush.opaque(RgbColor.of(0x090c1c))
+	sky_high = Brush.opaque_rgba(RgbColor.of(0x090c1c))
 	sky_low : Brush.Rgba
-	sky_low = Brush.opaque(RgbColor.of(0x2a2144))
+	sky_low = Brush.opaque_rgba(RgbColor.of(0x2a2144))
 	lawn : Brush.Rgba
-	lawn = Brush.opaque(RgbColor.of(0x121a14))
+	lawn = Brush.opaque_rgba(RgbColor.of(0x121a14))
 	path_c : Brush.Rgba
-	path_c = Brush.opaque(RgbColor.of(0x3a3630))
+	path_c = Brush.opaque_rgba(RgbColor.of(0x3a3630))
 	street_c : Brush.Rgba
-	street_c = Brush.opaque(RgbColor.of(0x24232a))
+	street_c = Brush.opaque_rgba(RgbColor.of(0x24232a))
 	moon_c : Brush.Rgba
-	moon_c = Brush.opaque(RgbColor.of(0xf4f0dc))
+	moon_c = Brush.opaque_rgba(RgbColor.of(0xf4f0dc))
 
 	# Half the walkway, in metres. Narrow enough that a skeleton standing
 	# beside it is standing over the child.

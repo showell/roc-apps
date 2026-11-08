@@ -51,8 +51,8 @@ Sky :: [].{
 		Screen.above_horizon_rect(
 			Linear({
 				stops: {
-					start_color: Brush.opaque(colors.top),
-					end_color: Brush.opaque(colors.horizon),
+					start_color: Brush.opaque_rgba(colors.top),
+					end_color: Brush.opaque_rgba(colors.horizon),
 					start_offset: sky_top_stop.to_f64(),
 					end_offset: 1.0,
 				},

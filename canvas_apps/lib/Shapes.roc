@@ -17,11 +17,11 @@ Shapes :: [].{
 
 		## A mark, not a shape: how the shapes after it combine, until the next `Blend`.
 		## A painter holds this as a mode, so a mark in the list says it directly.
-		## `Shapes.added_light` writes the pair of marks around a run of shapes.
+		## `Shapes.added_light_shapes` writes the pair of marks around a run of shapes.
 		Blend(Shapes.Mode),
 
 		## A mark, not a shape: the space the shapes after it are in, until the next
-		## `View`. It is a mark for the same reason `Blend` is. `Shapes.in_space`
+		## `View`. It is a mark for the same reason `Blend` is. `Shapes.shapes_in_space`
 		## writes the pair of marks around a run of shapes.
 		View(Shapes.Space),
 
@@ -29,7 +29,7 @@ Shapes :: [].{
 		## the pixels, not a handle, so there is no second copy of them to keep in step.
 		Image({ x : F64, y : F64, width : F64, height : F64, cols : U64, rows : U64, pixels : List(Brush.Rgba) }),
 
-		## A line of words in a real typeface. `Font.plotted` gives a painter that has
+		## A line of words in a real typeface. `Font.plotted_shapes` gives a painter that has
 		## no typefaces the strokes of the same line.
 		Text(Shapes.TextLine),
 	]
@@ -71,15 +71,15 @@ Shapes :: [].{
 
 	## The shapes lit in `Add` mode, so each adds its light to what is under it,
 	## and the mode back to `Over` after them.
-	added_light : List(Shapes.Shape) -> List(Shapes.Shape)
-	added_light = |shapes| shapes.prepend(Blend(Add)).append(Blend(Over))
+	added_light_shapes : List(Shapes.Shape) -> List(Shapes.Shape)
+	added_light_shapes = |shapes| shapes.prepend(Blend(Add)).append(Blend(Over))
 
 	## The shapes in `space`, and the space back to the screen after them.
-	in_space : Shapes.Space, List(Shapes.Shape) -> List(Shapes.Shape)
-	in_space = |space, shapes| Shapes.lists_in_space(space, [shapes])
+	shapes_in_space : Shapes.Space, List(Shapes.Shape) -> List(Shapes.Shape)
+	shapes_in_space = |space, shapes| Shapes.lists_in_space(space, [shapes])
 
 	## The shapes of each of `shape_lists` in turn, in `space`, and the space back
-	## to the screen after them: what `in_space` gives for the lists joined, with
+	## to the screen after them: what `shapes_in_space` gives for the lists joined, with
 	## every shape copied once.
 	lists_in_space : Shapes.Space, List(List(Shapes.Shape)) -> List(Shapes.Shape)
 	lists_in_space = |space, shape_lists| [[View(space)]].concat(shape_lists).append([View(Screen)]).join()
@@ -142,7 +142,7 @@ Shapes :: [].{
 	squashed_shapes = |shapes, { axis, cosine: k }| shapes.map(
 		|shape|
 			match shape {
-				Poly(p) => Poly({ coordinates: pulled(p.coordinates, { axis, cosine: k }), fill: squashable_fill(p.fill) })
+				Poly(p) => Poly({ coordinates: pulled_coordinates(p.coordinates, { axis, cosine: k }), fill: squashable_fill(p.fill) })
 				Disc(d) => Disc({ x: axis + (d.x - axis) * k, y: d.y, radius: d.radius, fill: squashable_fill(d.fill) })
 				# A mirror sends a rectangle's left edge to its right, and a width is never
 				# negative.
@@ -221,14 +221,14 @@ squashable_fill = |fill|
 	}
 
 ## Every x of the coordinates pulled toward `axis` by `cosine`.
-pulled : List(F64), { axis : F64, cosine : F64 } -> List(F64)
-pulled = |xs, { axis, cosine: k }| {
+pulled_coordinates : List(F64), { axis : F64, cosine : F64 } -> List(F64)
+pulled_coordinates = |xs, { axis, cosine: k }| {
 	n = xs.len()
 	var $out = List.with_capacity(n)
 	var $i = 0
 	while $i + 1 < n {
-		$out = $out.append(axis + (at(xs, $i) - axis) * k)
-		$out = $out.append(at(xs, $i + 1))
+		$out = $out.append(axis + (coordinate_at(xs, $i) - axis) * k)
+		$out = $out.append(coordinate_at(xs, $i + 1))
 		$i = $i + 2
 	}
 	$out
@@ -244,8 +244,8 @@ pulled_span = |{ x, width }, { axis, cosine: k }| {
 	{ x: start_x.min(end_x), width: (end_x - start_x).abs() }
 }
 
-at : List(F64), U64 -> F64
-at = |xs, i| xs.get(i) ?? crash "Shapes.at: an index past the end of the coordinates"
+coordinate_at : List(F64), U64 -> F64
+coordinate_at = |xs, i| xs.get(i) ?? crash "Shapes.coordinate_at:an index past the end of the coordinates"
 
 half_pi : F64
 half_pi = F64.pi / 2.0
@@ -287,10 +287,10 @@ ink = Flat({ r: 32.0, g: 32.0, b: 32.0, a: 1.0 })
 dot : Shapes.Shape
 dot = Disc({ x: 1.0, y: 2.0, radius: 3.0, fill: ink })
 
-expect Shapes.added_light([dot]) == [Blend(Add), dot, Blend(Over)]
-expect Shapes.added_light([]) == [Blend(Add), Blend(Over)]
-expect Shapes.in_space(Screen, [dot]) == [View(Screen), dot, View(Screen)]
-expect Shapes.in_space(Screen, []) == [View(Screen), View(Screen)]
+expect Shapes.added_light_shapes([dot]) == [Blend(Add), dot, Blend(Over)]
+expect Shapes.added_light_shapes([]) == [Blend(Add), Blend(Over)]
+expect Shapes.shapes_in_space(Screen, [dot]) == [View(Screen), dot, View(Screen)]
+expect Shapes.shapes_in_space(Screen, []) == [View(Screen), View(Screen)]
 expect Shapes.lists_in_space(Screen, [[dot], [], [ink_dot, dot]]) == [View(Screen), dot, ink_dot, dot, View(Screen)]
 expect Shapes.lists_in_space(Screen, []) == [View(Screen), View(Screen)]
 

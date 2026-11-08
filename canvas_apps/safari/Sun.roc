@@ -158,8 +158,8 @@ Sun :: [].{
 				outer_radius: Sun.glow_radius_on_screen(sun).to_f64(),
 			}),
 			disc: Radial({
-				inner_color: Brush.opaque(RgbColor.of(0xFFE6A3)),
-				outer_color: Brush.opaque(RgbColor.of(0xFF9D5C)),
+				inner_color: Brush.opaque_rgba(RgbColor.of(0xFFE6A3)),
+				outer_color: Brush.opaque_rgba(RgbColor.of(0xFF9D5C)),
 				center: { x: sun.x.to_f64(), y: sun.y.to_f64() },
 				inner_radius: sun_size_on_screen(disc_inner_radius, sun).to_f64(),
 				outer_radius: Sun.disc_radius_on_screen(sun).to_f64(),

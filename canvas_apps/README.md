@@ -197,8 +197,8 @@ A mark is not drawn. It changes how the shapes after it are painted, until the
 next mark of its kind. `Blend(Add)` lights rather than paints. `View(World(c))`
 puts the shapes after it in a camera's world and `View(Screen)` brings them
 back to the window. A frame starts on the screen, painting over. An app writes
-the marks in pairs around a run of shapes, with `Shapes.added_light` and
-`Shapes.in_space`.
+the marks in pairs around a run of shapes, with `Shapes.added_light_shapes` and
+`Shapes.shapes_in_space`.
 
 A `Brush.Fill` is a flat colour or one of five gradients — `Span`,
 `Radial`, `Linear`, `Ellipse`, `Glow` — each carrying its geometry in scene
@@ -213,7 +213,7 @@ sets it with `fillText` in the viewer's own fonts, a sans serif for `Prose` and 
 monospace for `Code`, so a page loads no font. The viewer's machine measures the
 line, so Roc can't know its width: `Font.room_for` is the room to leave, and a
 line that must sit in the middle says `Center`. The native runner draws
-`Font.plotted`, the same line as strokes. `ShapesPixels`, which paints only what
+`Font.plotted_shapes`, the same line as strokes. `ShapesPixels`, which paints only what
 the ride draws, refuses one.
 
 ## Input
