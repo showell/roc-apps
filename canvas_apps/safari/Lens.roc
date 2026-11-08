@@ -13,6 +13,7 @@
 import Pixels
 import Angle
 import FarHeight
+import FarRise
 import Fraction
 import Screen
 
@@ -91,17 +92,19 @@ Lens :: [].{
 	## The screen's y for something infinitely far away, `height` above the
 	## horizon, through a lens of `focal_length`. A height below the horizon is
 	## negative, and lands below it. This is the one place a far height
-	## becomes pixels, and the y of `far_point`; the skyline asks for it alone,
-	## since it walks the screen's columns and already has each x.
+	## becomes pixels, as the far rise up to it from the horizon, and the y of
+	## `far_point`; the skyline asks for it alone, since it walks the screen's
+	## columns and already has each x.
 	y_for_height : { height : FarHeight, focal_length : Pixels } -> Pixels
 	y_for_height = |{ height, focal_length }|
-		Screen.horizon_y.minus(size_on_screen({ size: height, focal_length }))
+		Screen.horizon_y.minus(size_on_screen({ size: height.minus(FarHeight.zero), focal_length }))
 
 	## How long something infinitely far away is drawn through a lens of
-	## `focal_length`, when the lens at rest draws it `size` pixels long: a
-	## height above the horizon, or a size such as the sun's radii. The lens
-	## only ever widens, so it is never drawn longer than at rest.
-	size_on_screen : { size : FarHeight, focal_length : Pixels } -> Pixels
+	## `focal_length`, when the lens at rest draws it `size` pixels long: the
+	## rise from the horizon up to a far height, or a size such as the sun's
+	## radii. The lens only ever widens, so it is never drawn longer than at
+	## rest.
+	size_on_screen : { size : FarRise, focal_length : Pixels } -> Pixels
 	size_on_screen = |{ size, focal_length }|
 		Pixels.of(size.to_f64() * lens_scale(focal_length).to_f64())
 }

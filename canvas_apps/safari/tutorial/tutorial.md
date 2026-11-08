@@ -2548,7 +2548,7 @@ A lot of Safari Ride is math and physics, and most of it is geometry a reader co
 
 ### The most imported modules
 
-Safari Ride has 94 modules, not counting `web.roc`, `main.roc` and `game.roc`. The import graph is lopsided in a good way. Counting who imports what, leaving out the test programs, a handful stand out, and the lines here are the ones above each module's `expect`s:
+Safari Ride has 96 modules, not counting `web.roc`, `main.roc` and `game.roc`. The import graph is lopsided in a good way. Counting who imports what, leaving out the test programs, a handful stand out, and the lines here are the ones above each module's `expect`s:
 
 | Module | Imported by | Lines | What it is |
 |---|---|---|---|
@@ -2597,7 +2597,7 @@ Here we add a speed to a length:
 
 {{fails speed_as_distance}}
 
-Seventeen small opaque types run through Safari Ride, and the tour has met most of them one at a time. Set side by side, they're a system:
+Eighteen small opaque types run through Safari Ride, and the tour has met most of them one at a time. Set side by side, they're a system:
 
 | Type | Under it | What it measures |
 |---|---|---|
@@ -2611,7 +2611,8 @@ Seventeen small opaque types run through Safari Ride, and the tour has met most 
 | `Along` | `F64` | A place along a segment |
 | `Across` | `F64` | A place across the road |
 | `Pixels` | `F64` | A length on screen |
-| `FarHeight` | `F64` | A height far off, as the resting lens draws it |
+| `FarHeight` | `F64` | A place above the horizon, far off, as the resting lens draws it |
+| `FarRise` | `F64` | How far apart two far heights stand |
 | `Speed` | `F64` | Metres a step |
 | `Acceleration` | `F64` | Metres a step, each step |
 | `Fraction` | `F64` | A ratio from 0 to 1 |

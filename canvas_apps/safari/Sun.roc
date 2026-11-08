@@ -3,7 +3,7 @@
 ## look too, a glow and a disc over it.
 import Angle
 import Clock
-import FarHeight
+import FarRise
 import Lens
 import Pixels
 import Screen
@@ -102,7 +102,7 @@ Sun :: [].{
 }
 
 ## How long `size`, one of the sun's sizes, is drawn where `sun` stands.
-sun_size_on_screen : FarHeight, Sun.OnScreen -> Pixels
+sun_size_on_screen : FarRise, Sun.OnScreen -> Pixels
 sun_size_on_screen = |size, sun| Lens.size_on_screen({ size, focal_length: sun.focal_length })
 
 ## Whether any of the glow around `sun` reaches across the screen, as far out
@@ -116,16 +116,16 @@ is_glow_on_screen = |sun| {
 }
 
 ## How far the glow reaches from the sun's middle.
-glow_radius : FarHeight
-glow_radius = FarHeight.of(340.0)
+glow_radius : FarRise
+glow_radius = FarRise.of(340.0)
 
 ## Where the glow's fade starts, near the sun's middle.
-glow_inner_radius : FarHeight
-glow_inner_radius = FarHeight.of(8.0)
+glow_inner_radius : FarRise
+glow_inner_radius = FarRise.of(8.0)
 
 ## Where the disc's shading from pale to orange starts.
-disc_inner_radius : FarHeight
-disc_inner_radius = FarHeight.of(4.0)
+disc_inner_radius : FarRise
+disc_inner_radius = FarRise.of(4.0)
 
 ## Whether `sun_sighting` is in view at `x` across the screen and within a
 ## thousandth of a pixel of `y` up it, as `focal_length` draws it.

@@ -2,6 +2,7 @@
 ## horizon warms red while the sun is near it.
 import Clock
 import FarHeight
+import FarRise
 import Fraction
 import ColorShade
 import Screen
@@ -31,7 +32,7 @@ Sky :: [].{
 	## once the sun is `warmth_reach` above or below.
 	horizon_warmth_at : Clock -> Fraction
 	horizon_warmth_at = |clock| {
-		from_horizon = SunPath.height_at(clock).abs()
+		from_horizon = SunPath.height_at(clock).minus(FarHeight.zero).abs()
 		Fraction.clamp(from_horizon.ratio_to(warmth_reach)).complement()
 	}
 
@@ -69,8 +70,8 @@ darkness_at_set = Fraction.of(0.6)
 
 ## How far above or below the horizon the sun warms it. Once the sun is
 ## further away than this, the horizon has the sky's own color.
-warmth_reach : FarHeight
-warmth_reach = FarHeight.of(110.0)
+warmth_reach : FarRise
+warmth_reach = FarRise.of(110.0)
 
 day_sky : RgbColor
 day_sky = RgbColor.of(0x8ECAE6)
@@ -112,8 +113,8 @@ darkness_while_up = |height| {
 }
 
 ## How far below fully set the sun sinks before the sky is full night.
-night_depth : FarHeight
-night_depth = FarHeight.of(46.0)
+night_depth : FarRise
+night_depth = FarRise.of(46.0)
 
 ## How dark the sky is once the sun has fully set, darkening on to full
 ## night as it sinks a further `night_depth`.

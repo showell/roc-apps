@@ -2,11 +2,12 @@
 ## through the lens at rest: the sun, the mountains, the rolling land. It is the
 ## ride's cheat for the far scenery. Such a thing is placed only by its bearing
 ## and this height, so it never comes nearer however far the rider goes, and
-## only the lens changes how tall it is drawn. It is signed, and below the
+## only the lens changes how high it is drawn. It is signed, and below the
 ## horizon it is negative.
 ##
-## A far height becomes pixels on the screen only through `Lens.size_on_screen`.
-import Fraction
+## A far height is a place. How far apart two stand is a `FarRise`, and only a
+## far rise moves a far height up or down. Two far heights never add.
+import FarRise
 
 FarHeight :: F64.{
 
@@ -20,33 +21,17 @@ FarHeight :: F64.{
 	zero : FarHeight
 	zero = FarHeight.(0.0)
 
-	plus : FarHeight, FarHeight -> FarHeight
-	plus = |FarHeight.(h), FarHeight.(other)| FarHeight.(h + other)
+	## This height raised by `rise`.
+	plus : FarHeight, FarRise -> FarHeight
+	plus = |FarHeight.(h), rise| FarHeight.(h + rise.to_f64())
 
-	minus : FarHeight, FarHeight -> FarHeight
-	minus = |FarHeight.(h), FarHeight.(other)| FarHeight.(h - other)
+	## This height lowered by `rise`.
+	lowered_by : FarHeight, FarRise -> FarHeight
+	lowered_by = |FarHeight.(h), rise| FarHeight.(h - rise.to_f64())
 
-	times : FarHeight, F64 -> FarHeight
-	times = |FarHeight.(h), factor| FarHeight.(h * factor)
-
-	## This fraction of this height.
-	scaled_by : FarHeight, Fraction -> FarHeight
-	scaled_by = |FarHeight.(h), fraction| FarHeight.(h * fraction.to_f64())
-
-	divided_by : FarHeight, F64 -> FarHeight
-	divided_by = |FarHeight.(h), divisor| FarHeight.(h / divisor)
-
-	## This height measured the other way from the horizon.
-	opposite : FarHeight -> FarHeight
-	opposite = |FarHeight.(h)| FarHeight.(0.0 - h)
-
-	## How far from the horizon this height is, above or below.
-	abs : FarHeight -> FarHeight
-	abs = |FarHeight.(h)| FarHeight.(h.abs())
-
-	## How many of `whole` this is, which can pass 1 or go negative.
-	ratio_to : FarHeight, FarHeight -> F64
-	ratio_to = |FarHeight.(h), FarHeight.(whole)| h / whole
+	## How far this height stands above `other`, below it once negative.
+	minus : FarHeight, FarHeight -> FarRise
+	minus = |FarHeight.(h), FarHeight.(other)| FarRise.of(h - other)
 
 	## The higher of this height and `other`.
 	max : FarHeight, FarHeight -> FarHeight
@@ -67,14 +52,22 @@ FarHeight :: F64.{
 	is_eq : _
 }
 
-# The sums downstream can see the sign of a zero, so `opposite` is a subtraction.
-expect FarHeight.zero.opposite().to_f64().to_bits() == (0.0).to_bits()
-
 lower : FarHeight
 lower = FarHeight.of(-1.0)
 
 higher : FarHeight
 higher = FarHeight.of(2.0)
+
+expect higher.minus(lower) == FarRise.of(3.0)
+expect lower.minus(higher) == FarRise.of(-3.0)
+expect lower.plus(FarRise.of(3.0)) == higher
+expect higher.lowered_by(FarRise.of(3.0)) == lower
+expect lower.max(higher) == higher
+expect higher.max(lower) == higher
+
+# The sums downstream can see the sign of a zero, so lowering the horizon by
+# nothing stays a positive zero.
+expect FarHeight.zero.lowered_by(FarRise.of(0.0)).to_f64().to_bits() == (0.0).to_bits()
 
 expect lower < higher
 expect !(higher < higher)

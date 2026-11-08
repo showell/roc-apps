@@ -5,6 +5,7 @@
 import Angle
 import Clock
 import FarHeight
+import FarRise
 import Lens
 import Steps
 
@@ -48,8 +49,8 @@ SunPath :: [].{
 
 	## The sun's radius: how far its top stands above its middle, and its
 	## bottom below.
-	radius : FarHeight
-	radius = FarHeight.of(46.0)
+	radius : FarRise
+	radius = FarRise.of(46.0)
 
 	## How high the sun stands above the horizon as the ride starts.
 	height_at_start : FarHeight
@@ -57,7 +58,7 @@ SunPath :: [].{
 
 	## How high the sun stands once it has fully set: its top on the horizon.
 	height_when_set : FarHeight
-	height_when_set = radius.opposite()
+	height_when_set = FarHeight.zero.lowered_by(radius)
 
 	## The first step at which the sun has fully set, its whole disc below the
 	## horizon. The sky's turning places it; `sunset_climax` in

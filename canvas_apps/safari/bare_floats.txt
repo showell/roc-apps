@@ -9,6 +9,7 @@ Angle: the unit types for bearings, turns and leans
 Attention: a unit type
 Distance: a unit type
 FarHeight: a unit type
+FarRise: a unit type
 Fraction: a unit type
 Pixels: a unit type
 Speed: a unit type
