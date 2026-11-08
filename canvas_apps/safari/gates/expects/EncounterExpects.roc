@@ -134,7 +134,7 @@ birds_on : Segment,
 } -> List(Pipeline.Sighted(PosedBird))
 birds_on = |segment, { rider_along, cam_focal, encounter_timing }|
 	birds_seen_on(
-		RoadAhead.RoadView.ahead_of(Route.from_segments([segment]), Route.SegmentIndex.first),
+		Fixtures.crafted_road([segment]),
 		{
 			camera: { vantage: { ..Fixtures.origin, along: Along.metres(rider_along) }, cam_focal },
 			encounter_timing,
@@ -148,7 +148,7 @@ bird_at = |rider_along, encounter_timing|
 	birds_on(bird_segment, { rider_along, cam_focal: Pixels.of(500.0), encounter_timing }).first()
 		?? crash "EncounterExpects: this rider sees a bird"
 
-## How far off a bird is, across the road and up.
+## How far off a bird is: right of the camera, forward of it, and its lift.
 place_numbers : Pipeline.Sighted(PosedBird) -> List(F64)
 place_numbers = |bird| [
 	bird.spot.foot().right().to_metres(),
@@ -198,28 +198,22 @@ expect bird_count({ rider_along: 0.0, cam_focal: Pixels.of(91.0) }) == 1
 expect bird_count({ rider_along: 0.0, cam_focal: Pixels.of(90.0) }) == 0
 expect
 	birds_seen_on(
-		RoadAhead.RoadView.ahead_of(
-			Route.from_segments([segment_with_cat]),
-			Route.SegmentIndex.first,
-		),
+		Fixtures.crafted_road([segment_with_cat]),
 		{ camera: Fixtures.origin_camera, encounter_timing: Unplanned },
 	).len()
 		== 0
 
-## Two segments on the road ahead, the rider at the start of the first, whose
-## bird is in flight.
-two_segments : List(Pipeline.Sighted(PosedBird))
-two_segments = birds_seen_on(
-	RoadAhead.RoadView.ahead_of(
-		Route.from_segments([Fixtures.going_straight_on(bird_segment), bird_segment]),
-		Route.SegmentIndex.first,
-	),
+## The birds on two segments on the road ahead, the rider at the start of the
+## first, whose bird is in flight.
+birds_on_two_segments : List(Pipeline.Sighted(PosedBird))
+birds_on_two_segments = birds_seen_on(
+	Fixtures.crafted_road([Fixtures.going_straight_on(bird_segment), bird_segment]),
 	{ camera: Fixtures.origin_camera, encounter_timing: flight_at_step(118) },
 )
 
 # Only the rider's own segment plays its encounter: the bird ahead still sits.
 expect
-	match two_segments.map(|bird| bird.kind.pose) {
+	match birds_on_two_segments.map(|bird| bird.kind.pose) {
 		[near, far] => near != Perched and far == Perched
 		_ => crash "EncounterExpects: each of two segments has a bird in view"
 	}
@@ -571,7 +565,7 @@ expect {
 	].all(|(perch, want)| is_near_each(first_corner(perch), want))
 }
 
-# Each still's polygons, in their colours, as a bird in each pose draws them.
+# Each still's polygons, in their colors, as a bird in each pose draws them.
 expect {
 	fill_of = |shape|
 		match shape {
@@ -633,7 +627,7 @@ upright_still_anchor = {
 	height_on_screen: Pixels.of(50.0),
 }
 
-# A still of one flat polygon of colour 7, a corner at the foot, is drawn as one
+# A still of one flat polygon of color 7, a corner at the foot, is drawn as one
 # opaque polygon there.
 expect {
 	corners = [{ x: 0.0, y: 0.0 }, { x: 1.0, y: 0.0 }, { x: 0.0, y: 1.0 }]
@@ -647,7 +641,7 @@ expect {
 		]
 }
 
-## Colour stops with an alpha byte and offsets inside 0 to 1, as a still holds
+## Color stops with an alpha byte and offsets inside 0 to 1, as a still holds
 ## them.
 still_stops : Still.ColorStops
 still_stops = {

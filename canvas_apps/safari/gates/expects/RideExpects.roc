@@ -27,13 +27,13 @@ import game.World
 
 RideExpects :: [].{}
 
-# A ride that has finished starts again.
-done : RideInstant
-done = {
+## A ride on the last segment, past its end.
+finished_ride : RideInstant
+finished_ride = {
 	rider: {
 		motorcycle: {
 			route_place: {
-				segment_index: Route.SegmentIndex.number(18),
+				segment_index: Route.SegmentIndex.number(last_segment_index),
 				along: Along.metres(400.0),
 				across: Across.metres(0.0),
 			},
@@ -67,8 +67,9 @@ rider_segment_index = |instant| instant.rider.motorcycle.route_place.segment_ind
 rider_along : RideInstant -> Along
 rider_along = |instant| instant.rider.motorcycle.route_place.along
 
+# A ride that has finished starts again.
 expect
-	match RideInstant.next_or_restart(World.route, done) {
+	match RideInstant.next_or_restart(World.route, finished_ride) {
 		Restarted(instant) => {
 			initial = RideInstant.initial
 			instant.clock == initial.clock

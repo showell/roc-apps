@@ -85,19 +85,15 @@ Fixtures :: [].{
 		ending: Bends({ turn: Angle.straight_ahead, bend_life: Animal(Elephant) }),
 	}
 
-	## The second segment, with a cat crossing it.
-	cat_segment : Segment
-	cat_segment = {
-		..World.route.segment_at(Route.SegmentIndex.number(1)),
-		encounter: World.route.segment_at(Route.SegmentIndex.number(3)).encounter,
-	}
-
 	## The route's first three segments, a route of their own, with a cat crossing
 	## the second.
 	cat_route : Route
 	cat_route = Route.from_segments([
 		World.route.segment_at(Route.SegmentIndex.first),
-		cat_segment,
+		{
+			..World.route.segment_at(Route.SegmentIndex.number(1)),
+			encounter: World.route.segment_at(Route.SegmentIndex.number(3)).encounter,
+		},
 		{ ..World.route.segment_at(Route.SegmentIndex.number(2)), ending: RouteEnds },
 	])
 
@@ -135,8 +131,8 @@ Fixtures :: [].{
 
 	## A straight road of three segments, 500 m, 320 m and 400 m long, and the
 	## road ahead of a rider on the first of them.
-	truck_road : RoadAhead.RoadView
-	truck_road = crafted_road([
+	three_segment_road : RoadAhead.RoadView
+	three_segment_road = crafted_road([
 		{ ..going_straight_on(segment_of([])), length: Distance.metres(500.0) },
 		{ ..going_straight_on(segment_of([])), length: Distance.metres(320.0) },
 		{ ..segment_of([]), length: Distance.metres(400.0) },

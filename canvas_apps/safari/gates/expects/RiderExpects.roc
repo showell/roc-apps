@@ -246,20 +246,20 @@ expect {
 	focal_of(looking_hard(upright)) < focal_of(half_look)
 }
 
-both : Pixels
-both = focal_of(looking_hard(leaning(upright, RiderCamera.full_lean)))
+focal_leaning_and_looking : Pixels
+focal_leaning_and_looking = focal_of(looking_hard(leaning(upright, RiderCamera.full_lean)))
 
-lean_only : Pixels
-lean_only = focal_of(leaning(upright, RiderCamera.full_lean))
+focal_leaning : Pixels
+focal_leaning = focal_of(leaning(upright, RiderCamera.full_lean))
 
-gaze_only : Pixels
-gaze_only = focal_of(looking_hard(upright))
+focal_looking : Pixels
+focal_looking = focal_of(looking_hard(upright))
 
 # A full lean and a hard look together widen the view as far as the wider of the
 # two alone, and no further.
 expect
-	both.to_f64().to_bits()
-		== lean_only.to_f64().min(gaze_only.to_f64()).to_bits()
+	focal_leaning_and_looking.to_f64().to_bits()
+		== focal_leaning.to_f64().min(focal_looking.to_f64()).to_bits()
 
 # Coast's projections. Coast imports neither Angle nor Speed, which these need.
 
@@ -361,8 +361,8 @@ expect [-0.001, -0.035, -0.535].all(|lean| (wide_of_road(lean) - 0.01).abs() <= 
 
 ## A motorcycle on the middle of the road, upright, `along` metres down the
 ## real route's first segment, going `speed` metres a step.
-centred_motorcycle : F64, F64 -> Motorcycle
-centred_motorcycle = |along, speed| {
+centered_motorcycle : F64, F64 -> Motorcycle
+centered_motorcycle = |along, speed| {
 	..Motorcycle.initial,
 	route_place: { ..Motorcycle.initial.route_place, along: Along.metres(along) },
 	speed: Speed.metres_a_step(speed),
@@ -385,25 +385,25 @@ throttle_change = |motorcycle| {
 
 # The rider brakes for the bend from 60 m short of the segment's end, and not a
 # centimetre sooner.
-expect throttle_change(centred_motorcycle(439.9, 0.3)) > 0.0
-expect throttle_change(centred_motorcycle(440.0, 0.3)) < 0.0
+expect throttle_change(centered_motorcycle(439.9, 0.3)) > 0.0
+expect throttle_change(centered_motorcycle(440.0, 0.3)) < 0.0
 
 # Past the commit point there is no road left to brake on, and the throttle holds
 # the acceleration at none.
-expect [498.4, 600.0].all(|along| throttle_change(centred_motorcycle(along, 0.3)) == 0.0)
+expect [498.4, 600.0].all(|along| throttle_change(centered_motorcycle(along, 0.3)) == 0.0)
 
 # Short of the commit point a faster rider brakes harder.
 expect {
-	fast_brake = throttle_change(centred_motorcycle(460.0, 2.0))
-	fast_brake < throttle_change(centred_motorcycle(460.0, 0.3))
+	fast_brake = throttle_change(centered_motorcycle(460.0, 2.0))
+	fast_brake < throttle_change(centered_motorcycle(460.0, 0.3))
 }
 
 # A rider already at the first bend's speed of 0.222 holds it into the bend. On
 # the last segment, which ends the route, the same rider brakes to rest, but not
 # before the approach.
-expect throttle_change(centred_motorcycle(460.0, 0.222)) == 0.0
-expect throttle_change(with_segment(centred_motorcycle(260.0, 0.222), 18)) < 0.0
-expect throttle_change(with_segment(centred_motorcycle(200.0, 0.222), 18)) > 0.0
+expect throttle_change(centered_motorcycle(460.0, 0.222)) == 0.0
+expect throttle_change(with_segment(centered_motorcycle(260.0, 0.222), 18)) < 0.0
+expect throttle_change(with_segment(centered_motorcycle(200.0, 0.222), 18)) > 0.0
 
 ## The change at the start of the first segment, going `speed` and leaning
 ## `lean` radians.
@@ -428,7 +428,7 @@ expect change_leaning(Speed.metres_a_step(0.3), -0.034) < 0.0
 ## A motorcycle at the start of the first segment, steering hard left at
 ## `speed`.
 off_left : F64 -> Motorcycle
-off_left = |speed| { ..centred_motorcycle(0.0, speed), yaw: Angle.Turn.radians(-1.5) }
+off_left = |speed| { ..centered_motorcycle(0.0, speed), yaw: Angle.Turn.radians(-1.5) }
 
 # Its coast leaves the road on the third step, and the throttle gives it the
 # shoulder brake for three steps at 0.7 m a step, within 1e-12.
@@ -438,9 +438,9 @@ expect (throttle_change(off_left(0.7)) - -0.10041593058292341).abs() <= 0.000000
 # A gawking rider brakes. On segment 2 the rider opens the throttle short of
 # where its pig is noticed, and brakes past it; at the start of segment 3 nothing
 # holds the rider back.
-expect throttle_change(with_segment(centred_motorcycle(0.0, 0.3), 3)) > 0.0
-expect throttle_change(with_segment(centred_motorcycle(100.0, 0.3), 2)) > 0.0
-expect throttle_change(with_segment(centred_motorcycle(300.0, 0.3), 2)) < 0.0
+expect throttle_change(with_segment(centered_motorcycle(0.0, 0.3), 3)) > 0.0
+expect throttle_change(with_segment(centered_motorcycle(100.0, 0.3), 2)) > 0.0
+expect throttle_change(with_segment(centered_motorcycle(300.0, 0.3), 2)) < 0.0
 
 ## A segment with no pigs.
 pigless_segment : Segment

@@ -378,15 +378,15 @@ expect
 		Err(_) => False
 	}
 
-## The place `metres` along the truck road's route.
-truck_route_place : F64 -> Try(RoutePlace, [PastRouteEnd])
-truck_route_place = |metres|
-	RoutePlace.at_distance(Fixtures.truck_road.route(), Distance.metres(metres))
+## The place `metres` along the three-segment road's route.
+three_segment_route_place : F64 -> Try(RoutePlace, [PastRouteEnd])
+three_segment_route_place = |metres|
+	RoutePlace.at_distance(Fixtures.three_segment_road.route(), Distance.metres(metres))
 
-## The place on the truck road's segment at `count_before`, `along` metres
+## The place on the three-segment road's segment at `count_before`, `along` metres
 ## from its start, on the middle of the road.
-truck_route_place_on : U32, F64 -> RoutePlace
-truck_route_place_on = |count_before, along| {
+three_segment_route_place_on : U32, F64 -> RoutePlace
+three_segment_route_place_on = |count_before, along| {
 	segment_index: Route.SegmentIndex.number(count_before),
 	along: Along.metres(along),
 	across: Across.middle,
@@ -397,22 +397,22 @@ truck_route_place_on = |count_before, along| {
 # route's end is past it.
 expect
 	[
-		(0.0, Ok(truck_route_place_on(0, 0.0))),
-		(250.0, Ok(truck_route_place_on(0, 250.0))),
-		(500.0, Ok(truck_route_place_on(0, 500.0))),
-		(500.5, Ok(truck_route_place_on(1, 0.5))),
-		(660.0, Ok(truck_route_place_on(1, 160.0))),
-		(820.0, Ok(truck_route_place_on(1, 320.0))),
-		(1000.0, Ok(truck_route_place_on(2, 180.0))),
-		(1220.0, Ok(truck_route_place_on(2, 400.0))),
+		(0.0, Ok(three_segment_route_place_on(0, 0.0))),
+		(250.0, Ok(three_segment_route_place_on(0, 250.0))),
+		(500.0, Ok(three_segment_route_place_on(0, 500.0))),
+		(500.5, Ok(three_segment_route_place_on(1, 0.5))),
+		(660.0, Ok(three_segment_route_place_on(1, 160.0))),
+		(820.0, Ok(three_segment_route_place_on(1, 320.0))),
+		(1000.0, Ok(three_segment_route_place_on(2, 180.0))),
+		(1220.0, Ok(three_segment_route_place_on(2, 400.0))),
 		(1220.5, Err(PastRouteEnd)),
-	].all(|(metres, want)| truck_route_place(metres) == want)
+	].all(|(metres, want)| three_segment_route_place(metres) == want)
 
 # `distance_along` undoes `at_distance`, at each segment's end and in its middle.
 expect
 	[0.0, 250.0, 500.0, 660.0, 820.0, 1000.0, 1220.0].all(
 		|metres| {
-			place = truck_route_place(metres) ?? crash "RoadExpects: the place is on the truck road"
-			place.distance_along(Fixtures.truck_road.route()).to_metres() == metres
+			place = three_segment_route_place(metres) ?? crash "RoadExpects: the place is on the three-segment road"
+			place.distance_along(Fixtures.three_segment_road.route()).to_metres() == metres
 		},
 	)
