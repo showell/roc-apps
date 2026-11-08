@@ -1821,7 +1821,7 @@ That's the pig's part of the rider's step. The truck is the other stepped thing.
 
 ## The truck
 
-The truck stays ahead of the rider all the way:
+The truck is what the rider chases. It starts 500 metres up the road, and over the whole ride the rider closes in on it, but not steadily:
 
 | Step | Rider, along the route | Truck, along the route | Lead |
 |---|---|---|---|
@@ -1832,8 +1832,31 @@ The truck stays ahead of the rider all the way:
 
 New in this chapter:
 
-- Roc: list patterns
-- Modules: `Truck`, `TruckAhead`
+- Modules: `Truck`, `TruckSighting`, `TruckShape`, `TruckBody`
+
+### A tease, carried out by physics
+
+The truck's driver is teasing the rider: staying ahead, but letting him gain. That's the hand of god, and it's one function, `tease_position`. Given how far the rider has come, it says where the truck would like to be. The lead it aims for shrinks from 500 metres at the start of the route to 100 at the end.
+
+Everything else is plain physics. The truck speeds up while it's short of that mark and holds its speed once it's past it. It never slows down to keep to the mark, so it can run well past it on a long straight. It brakes for every turn, and that's where the rider gains. The lead closes, but in jumps.
+
+The truck can always pull away, because it outdoes the rider by 10%, in both its acceleration and its top speed.
+
+### Get the types right
+
+The truck's state is three fields:
+
+{{code Truck.Truck from "How far along" to "pace : Truck.Pace,"}}
+
+`route_position` is a `Distance` along the whole route, the same measure as the rider's progress, so the two can be compared directly. `Pace` says whether the truck's last step slowed it down. Nothing in this chapter reads it; the truck's lights do, in the next.
+
+A turn ahead of the truck is its own type, and so is the answer to "is there one":
+
+{{code Truck.NextBend}}
+
+`BendAhead` carries a `ComingBend`, how far off the turn is and how fast it can be taken. `NoBendAhead` carries nothing, because the route ends first. The only way to read a turn's distance is inside the branch where there is a turn.
+
+### The functions
 
 The modules around `Truck`
 ```dot
@@ -1841,92 +1864,95 @@ digraph truck {
   node [shape=box, fontname="Helvetica"];
   Truck [style=bold];
   RideInstant -> Truck;
-  Scene -> Truck;
-  TruckSighting -> Truck;
-  TruckAhead -> Truck;
-  Truck -> World;
+  Truck -> Route;
   Truck -> VehicleLimits;
   Truck -> Speed;
   Truck -> Acceleration;
+  Scene -> TruckSighting;
+  TruckSighting -> LitTruck;
+  LitTruck -> Truck;
+  LitTruck -> TruckBody;
+  TruckBody -> TruckShape;
 }
 ```
 
-The truck is what the rider chases. It starts 500 metres ahead and keeps to a schedule that brings it to within 100 at the route's end. Its state is three fields:
+`RideInstant` moves the truck once a step. All it hands over is how far along the route the rider is, and the route itself:
 
-{{code Truck.Truck from "How far along" to "pace : Truck.Pace,"}}
+{{code RideInstant.next from "truck: Truck.truck_at_next_step(" to "{ rider_distance: to.distance_along(route), route },"}}
 
-The schedule is a straight line, and a pure function of the rider's progress, destructured from a record so the call site has to name both `Distance`s:
+That record is the whole of the chase. `Truck` doesn't import anything about the rider, and the rider's modules don't import `Truck`.
+
+The step works out the tease, then looks for the next turn:
+
+{{code Truck.truck_at_next_step}}
+
+Here's the tease itself. The lead shrinks in step with the rider's progress along the route:
 
 {{code Truck.tease_position}}
 
-Its one caller is the truck's step function, the same shape as the rider's. `NextBend` is a tag union with a payload on one side, so the only way to read a `distance` is to be inside the branch where there is one:
-
-{{code Truck.truck_at_next_step from "tease = tease_position(" to "NoBendAhead => chasing_truck_at_next_step(truck, tease)"}}
-
-And that's called from `RideInstant.next`, in the chapter on stepping, with the rider's distance as the only thing the truck knows of the rider. Nothing in `Rider` imports `Truck`, and nothing in `Truck` imports `Rider`. The chase is one record literal in `RideInstant`.
-
-Finding the next turn shows a list pattern. `[]` is the end of the route, and `[segment, .. as later_segments]` takes the first segment and names the rest. Recursion walks the list, carrying where the current segment starts. Elsewhere, the same walk is usually a `fold`.
-
-{{code Route.segments_with_ends}}
-
-It's called through a smaller function, which supplies the 0 so nobody else has to:
+Finding the next turn walks the route's segments with their ends, and takes the first one that ends past the truck:
 
 {{code Truck.next_bend}}
 
-Then the two ways to take a step. Both sit below the block, private, and both are arithmetic on `Speed` by name. `target_speed.max(...)` keeps braking from undershooting, and `speed < truck.speed` is the whole of what turns on the brake lights. They're on while the truck is slowing down, and they go off when it's settled at the speed for the turn, even with the turn still ahead.
+Then the two ways to take a step. Both sit below the type's block, so they're private, and both are arithmetic on `Speed`. Within 60 metres of a turn, the truck brakes, aiming to reach the turn at 80% of the speed it allows:
 
 {{code Truck.braking_truck_at_next_step}}
 
+`target_speed.max(...)` keeps the truck from braking past its target. `VehicleLimits.braking_to` works out a steady brake, and it crashes, rather than pretend, if a brake would ever take the speed below zero. Otherwise, the truck chases:
+
 {{code Truck.chasing_truck_at_next_step}}
 
-`brake_lights` is state because it's a fact about the last step. Headlights aren't, and they stay out of `TruckState`. That's three of the four kinds in one vehicle: the place and speed are stepped, the headlights are clock-driven, and the tires don't change.
+### Drawing the truck
 
-`TruckSighting` calls the distance to the truck `lead`, because the truck is being chased.
+`TruckSighting` finds the truck on the road ahead, the way the other sightings find trees and towers. Unlike the trees, the truck has no size test: it's drawn however small it stands, because the rider is always looking for it.
 
-### One switch
+The truck's shape lives in `TruckShape`. It's a box measured in the truck's own frame, from the back of the trailer to the nose of the cab, with a point on it given as how far ahead, how far right, and how high. `TruckBody` turns that box into the faces of the trailer and the cab and the tires, sorted far to near, so a nearer face drawn later covers a farther one.
 
-Here are the truck's lights at three frames of the ride:
+That's a truck you can chase, and for a long time it was the whole truck. The lights came later.
 
-| Step | Headlights | Brake lights |
-|---|---|---|
-| 3,742 | `Off` | `On` |
-| 5,700 | `On` | `Off` |
-| 6,553 | `On` | `On` |
+## The truck's lights
 
-The modules behind the headlights
-```dot
-digraph headlights {
-  node [shape=box, fontname="Helvetica"];
-  RideInstant [style=bold];
-  RideInstant -> Mountains;
-  RideInstant -> Sky;
-  RideInstant -> Truck;
-  RideInstant -> SceneShapes;
-  Mountains -> Sky;
-  Mountains -> Clock;
-  Sky -> Clock;
-  SceneShapes -> TruckAhead;
-  TruckAhead -> Truck;
-}
-```
+The truck drives exactly the same with its lights on or off. The lights are a layer on top: two kinds of lamp, each with its own rule.
 
-The truck's headlights come on once the sun has gone behind the mountains, at step 4,039 of a ride that lasts 7,071. `Mountains` knows the skyline and already imports `Sky`, so the question is asked there. The argument is an opaque `Clock`, and the answer is a plain `Bool`, which is about to be turned into something better:
+New in this chapter:
 
-`Truck.Lights` is a record of two tag unions. Two independent lamps aren't one state with four values, so they're two fields:
+- Modules: `LitTruck`, `TruckLights`
+
+### Two lamps, two rules
+
+The headlights come on when it gets dark. They work like a light sensor on the lamps themselves: once the sky is dark enough, they're on. The sky already knows how dark it is, from the sunset, so the headlights only have to ask it.
+
+The brake lights come on while the truck is slowing down. That's a fact about the truck's own last step, its `Pace`, so they ask the truck.
+
+### Get the types right
+
+Two independent lamps aren't one state with four values, so they're two fields:
 
 {{code LitTruck.LitTruck from "Which of" to "LitTruck := {"}}
 
-`RideInstant` puts it together. It's the only place that can. `Truck` is in the ride half of the system and `Mountains` is in the view, and no arrow goes from the first to the second. `RideInstant` imports both.
+### The functions
+
+Each frame, `FrameView` lights the truck from the truck's pace and the sky's darkness:
+
+{{code FrameView.ride_facts from "lit_truck: LitTruck.at(" to "lit_truck: LitTruck.at("}}
+
+Both rules are in one function:
 
 {{code LitTruck.at}}
 
-Lamps are plain data. The sighting carries them, and the drawing does what they say, with each `match` covering both tags:
+The headlights' threshold is a measured number with a plain reason:
 
-{{code LitTruck.truck_shapes from "beams =" to "].join()"}}
+{{code LitTruck.headlights_on_darkness}}
 
-`TruckAhead` leaves the painting to two modules. `TruckBody` paints the trailer, the cab and the tires, far to near, and `TruckLights` paints the beams and the brake lights, each with its glow.
+On this ride, that's step 3,555 of about 7,000. The headlights never go off again on the way down, because the sky only gets darker.
 
-The sun and the beacons follow the clock alone. The cat has a more nuanced rule: the timing of its crossing depends on the rider's position.
+The drawing does what the lamps say, with each `match` covering both tags. The beams go first, then the body, then the brake lights, so each paints over the one before:
+
+{{code LitTruck.truck_shapes}}
+
+`TruckLights` paints the beams and the brake lights, each with its glow. `TruckBody`, from the last chapter, is untouched: the lights are drawn around it.
+
+The sun and the beacons follow the clock alone. The cat has a more nuanced rule: the timing of its crossing depends on where the rider is.
 
 ## The cat
 
