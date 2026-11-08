@@ -15,7 +15,8 @@ import Truck
 ## One instant of the ride, and all that is kept from one step to the next: the
 ## rider and the truck, each moved once a step from where it was, the clock,
 ## which counts the steps, and when the encounter on the rider's segment
-## starts. Everything else that changes is worked out from these four.
+## starts. Everything else that changes is worked out from these four. It is
+## nominal, not opaque: other modules read its fields.
 RideInstant := {
 	rider : RiderState,
 	truck : Truck,
@@ -50,6 +51,8 @@ RideInstant := {
 	encounter_timing = |instant| EncounterPlan.timing_of(instant.encounter_start, instant.clock)
 }
 
+## The instant a step after `instant`. The rider steps with the encounter's
+## timing at the old clock: the hand of god moves the cat, then the rider reacts.
 next : Route, RideInstant -> RideInstant
 next = |route, instant| {
 	nx = instant.rider.next({ route, encounter_timing: RideInstant.encounter_timing(instant) })

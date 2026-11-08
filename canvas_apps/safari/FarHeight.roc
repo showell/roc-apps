@@ -5,7 +5,7 @@
 ## only the lens changes how tall it is drawn. It is signed, and below the
 ## horizon it is negative.
 ##
-## A far height becomes pixels on the screen only through `Lens.y_for_height`.
+## A far height becomes pixels on the screen only through `Lens.size_on_screen`.
 
 FarHeight :: F64.{
 

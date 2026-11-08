@@ -28,17 +28,17 @@ bad_lines_cap = 10
 # Where the ride is at `step`, for a line of the output.
 place_of : I64, Tour -> Str
 place_of = |step, tour| {
-	segment = tour.instant.rider.motorcycle.route_place.segment_index
-	"step ${step.to_str()} on segment ${segment.to_i64().to_str()}"
+	segment = tour.instant().rider.motorcycle.route_place.segment_index
+	"step ${step.to_str()} on segment ${segment.to_u32().to_str()}"
 }
 
 # What is wrong with the tour that `step` just reached, coming from segment
 # `last_segment`: a line for each rule it breaks.
-broken_rules : Tour, { step : I64, last_segment : I64 } -> List(Str)
+broken_rules : Tour, { step : I64, last_segment : U32 } -> List(Str)
 broken_rules = |tour, { step, last_segment }| {
-	place_on_route = tour.instant.rider.motorcycle.route_place
-	segment = place_on_route.segment_index.to_i64()
-	segment_end = Along.at(place_on_route.segment_on(tour.route).length)
+	place_on_route = tour.instant().rider.motorcycle.route_place
+	segment = place_on_route.segment_index.to_u32()
+	segment_end = Along.at(place_on_route.segment_on(tour.route()).length)
 	from_middle = place_on_route.across.distance_from_middle()
 	place = place_of(step, tour)
 	off_road =
@@ -69,8 +69,8 @@ main! = |_args| {
 	var $out = ""
 	var $widest = Distance.zero
 	var $widest_place = place_of(0, Tour.initial)
-	while !$tour.instant.rider.is_finished($tour.route) and $step < steps_cap {
-		last_segment = $tour.instant.rider.motorcycle.route_place.segment_index.to_i64()
+	while !$tour.instant().rider.is_finished($tour.route()) and $step < steps_cap {
+		last_segment = $tour.instant().rider.motorcycle.route_place.segment_index.to_u32()
 		$tour = Tour.step_forward($tour)
 		$step = $step + 1
 		for line in broken_rules($tour, { step: $step, last_segment }) {
@@ -79,13 +79,13 @@ main! = |_args| {
 			}
 			$bad = $bad + 1
 		}
-		from_middle = $tour.instant.rider.motorcycle.route_place.across.distance_from_middle()
+		from_middle = $tour.instant().rider.motorcycle.route_place.across.distance_from_middle()
 		if from_middle > $widest {
 			$widest = from_middle
 			$widest_place = place_of($step, $tour)
 		}
 	}
-	finished = $tour.instant.rider.is_finished($tour.route)
+	finished = $tour.instant().rider.is_finished($tour.route())
 	if !finished {
 		$bad = $bad + 1
 	}

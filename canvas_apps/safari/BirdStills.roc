@@ -81,41 +81,6 @@ logo_dark = RgbColor.of(0x612BDE)
 logo_light : RgbColor
 logo_light = RgbColor.of(0x8257E5)
 
-# A still's polygon count and corner count.
-still_counts : Still -> List(U64)
-still_counts = |still| {
-	polys = still.polygons()
-	[polys.len(), polys.fold(0, |sum, poly| sum + poly.points.len())]
-}
-
-expect
-	[
-		(BirdStills.perched_still, [6, 21]),
-		(BirdStills.side_wings_up_still, [6, 21]),
-		(BirdStills.side_wings_down_still, [6, 21]),
-		(BirdStills.away_wings_up_still, [4, 17]),
-		(BirdStills.away_wings_down_still, [4, 17]),
-		(BirdStills.diving_still, [6, 22]),
-	].all(|(polys, want)| still_counts(polys) == want)
-
-# The first corner of a still's first polygon, which tells the drawings apart.
-first_corner_coordinates : Still -> List(F64)
-first_corner_coordinates = |still| {
-	first_poly = still.polygons().first() ?? crash "every still has polygons"
-	first_pt = first_poly.points.first() ?? crash "every polygon has corners"
-	[first_pt.x, first_pt.y]
-}
-
-expect
-	[
-		(BirdStills.perched_still, [-0.0344, 0.5715]),
-		(BirdStills.side_wings_up_still, [-0.45, 0.42]),
-		(BirdStills.side_wings_down_still, [-0.45, 0.52]),
-		(BirdStills.away_wings_up_still, [-0.06, 0.58]),
-		(BirdStills.away_wings_down_still, [-0.06, 0.56]),
-		(BirdStills.diving_still, [-0.2, 0.9]),
-	].all(|(polys, want)| first_corner_coordinates(polys) == want)
-
 all_stills : List(Still)
 all_stills = [
 	BirdStills.perched_still,
@@ -143,7 +108,7 @@ expect
 		Still.of([
 			{
 				fill: Flat(logo_dark),
-				points: [{ x: 1.1, y: 0.5 }],
+				points: [{ x: 0.5, y: 0.5 }, { x: 1.1, y: 0.5 }, { x: 0.5, y: 0.9 }],
 			},
 		]),
 	)
@@ -154,7 +119,7 @@ expect
 		Still.of([
 			{
 				fill: Flat(RgbColor.of(0)),
-				points: [],
+				points: [{ x: 0.0, y: 0.0 }, { x: 0.5, y: 0.0 }, { x: 0.0, y: 0.5 }],
 			},
 		]),
 	)

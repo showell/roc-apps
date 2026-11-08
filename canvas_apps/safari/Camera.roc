@@ -1,5 +1,6 @@
 ## The rider's camera: a pinhole at eye height, looking straight ahead. It
 ## puts a point in the rider's view onto the screen.
+import Angle
 import Distance
 import Pixels
 import Geom
@@ -21,9 +22,23 @@ Camera :: [].{
 		slope_right = p.right().portion(p.forward())
 		slope_up = p.height().minus(eye_height).portion(p.forward())
 		{
-			x: Screen.center_x.plus(cam_focal.times(slope_right)),
+			x: x_for_slope(slope_right, cam_focal),
 			y: Screen.horizon_y.minus(cam_focal.times(slope_up)),
 		}
+	}
+
+	## The screen's x for something infinitely far away, `turn` to the right of
+	## where the camera faces, through a lens of `cam_focal`. The turn stays
+	## under a quarter turn either way, in front of the camera.
+	x_for_turn : { turn : Angle.Turn, cam_focal : Pixels } -> Pixels
+	x_for_turn = |{ turn, cam_focal }| x_for_slope(turn.to_radians().tan(), cam_focal)
+
+	## How far to the right of where the camera faces the screen's `x` looks,
+	## through a lens of `cam_focal`: the way back from `x_for_turn`.
+	turn_at_x : { x : Pixels, cam_focal : Pixels } -> Angle.Turn
+	turn_at_x = |{ x, cam_focal }| {
+		slope = x.minus(Screen.center_x).portion(cam_focal)
+		Angle.Turn.radians(slope.atan())
 	}
 
 	## How tall something of `height` stands on the screen, `forward` of the
@@ -66,6 +81,12 @@ Camera :: [].{
 		}
 	}
 }
+
+## The pinhole's rule across the screen: the x for a line of sight that goes
+## `slope` to the right for every unit forward, through a lens of `cam_focal`.
+## A near point's slope and a far direction's both land here.
+x_for_slope : F64, Pixels -> Pixels
+x_for_slope = |slope, cam_focal| Screen.center_x.plus(cam_focal.times(slope))
 
 ## `point` past the near plane, which every point in these tests is.
 ahead : Geom.RaisedPoint -> Geom.AheadPoint
@@ -194,6 +215,29 @@ expect
 		]
 
 expect Camera.projected_points([], Pixels.of(800.0)).len() == 0
+
+## The screen's x at a turn of `radians`, through a lens of 800 pixels.
+x_at_turn : F64 -> Pixels
+x_at_turn = |radians| {
+	turn = Angle.Turn.radians(radians)
+	Camera.x_for_turn({ turn, cam_focal: Pixels.of(800.0) })
+}
+
+# Straight ahead is the middle of the screen, a turn to the right lands right of
+# it, and a turn to the left left of it.
+expect x_at_turn(0.0) == Screen.center_x
+expect x_at_turn(0.3) > Screen.center_x
+expect x_at_turn(-0.3) < Screen.center_x
+expect Camera.turn_at_x({ x: Screen.center_x, cam_focal: Pixels.of(800.0) }).to_radians() == 0.0
+
+# The turn at an x is the way back from the x at a turn.
+expect
+	[-1.2, -0.3, 0.0, 0.4, 1.3].all(
+		|radians| {
+			back = Camera.turn_at_x({ x: x_at_turn(radians), cam_focal: Pixels.of(800.0) })
+			(back.to_radians() - radians).abs() <= 0.000000001
+		},
+	)
 
 # A triangle at these distances ahead, on the ground.
 sample_clipped_polygon : List(F64) -> Try(Shapes.Shape, [BehindCamera])

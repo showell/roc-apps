@@ -16,20 +16,12 @@ import lib.Shapes
 
 Polygon :: [].{
 
-	## A gradient's two colors, and where each sits along it.
-	ColorStops : {
-		start_color : ArgbColor,
-		end_color : ArgbColor,
-		start_offset : Fraction,
-		end_offset : Fraction,
-	}
-
 	## Makes a polygon of one flat color.
 	flat_polygon : List(Screen.Point), RgbColor -> Shapes.Shape
 	flat_polygon = |corners, color|
 		Poly({
 			coordinates: polygon_coordinates("Polygon.flat_polygon", corners),
-			fill: Flat(Brush.opaque(color)),
+			fill: Brush.flat(color),
 		})
 
 	## Makes a triangle of one flat color.
@@ -99,11 +91,11 @@ Polygon :: [].{
 	## has no direction, so that crashes.
 	linear_gradient_polygon : List(Screen.Point),
 	{
-		color_stops : Polygon.ColorStops,
+		stops : Brush.TwoStops,
 		start_point : Screen.Point,
 		end_point : Screen.Point,
 	} -> Shapes.Shape
-	linear_gradient_polygon = |corners, { color_stops, start_point, end_point }| {
+	linear_gradient_polygon = |corners, { stops, start_point, end_point }| {
 		dx = end_point.x.minus(start_point.x).to_f64()
 		dy = end_point.y.minus(start_point.y).to_f64()
 		if dx * dx + dy * dy == 0.0 {
@@ -112,7 +104,7 @@ Polygon :: [].{
 			Poly({
 				coordinates: polygon_coordinates("Polygon.linear_gradient_polygon", corners),
 				fill: Linear({
-					stops: brush_stops(color_stops),
+					stops,
 					start_point: { x: start_point.x.to_f64(), y: start_point.y.to_f64() },
 					end_point: { x: end_point.x.to_f64(), y: end_point.y.to_f64() },
 				}),
@@ -121,18 +113,19 @@ Polygon :: [].{
 	}
 
 	## Makes a polygon filled by a gradient on an ellipse, which is `axis_u` and
-	## `axis_v` about `center_point`. An ellipse too thin to invert is filled with
-	## its first color.
+	## `axis_v` about `center_point`. An ellipse too thin for Brush to invert
+	## crashes: a still, the only caller, is never drawn small enough to thin
+	## its ellipses past Brush's limit, as `Still.of` checks.
 	elliptical_gradient_polygon : List(Screen.Point),
 	{
-		color_stops : Polygon.ColorStops,
+		stops : Brush.TwoStops,
 		center_point : Screen.Point,
 		axis_u : Screen.Point,
 		axis_v : Screen.Point,
 	} -> Shapes.Shape
-	elliptical_gradient_polygon = |corners, { color_stops, center_point, axis_u, axis_v }| {
+	elliptical_gradient_polygon = |corners, { stops, center_point, axis_u, axis_v }| {
 		ellipse = Brush.ellipse({
-			stops: brush_stops(color_stops),
+			stops,
 			center: { x: center_point.x.to_f64(), y: center_point.y.to_f64() },
 			axis_u: { x: axis_u.x.to_f64(), y: axis_u.y.to_f64() },
 			axis_v: { x: axis_v.x.to_f64(), y: axis_v.y.to_f64() },
@@ -140,8 +133,7 @@ Polygon :: [].{
 		fill =
 			match ellipse {
 				Ok(gradient) => gradient
-				# The ellipse covers far less than a pixel, so its first color stands in for it.
-				Err(TooThin) => Flat(Brush.translucent(color_stops.start_color))
+				Err(TooThin) => crash "Polygon.elliptical_gradient_polygon: an ellipse too thin for Brush to invert"
 			}
 		Poly({ coordinates: polygon_coordinates("Polygon.elliptical_gradient_polygon", corners), fill })
 	}
@@ -226,21 +218,12 @@ x_span = |corners|
 		[] => crash "Polygon.x_span: a polygon has a corner"
 	}
 
-## The stops as a brush takes them.
-brush_stops : Polygon.ColorStops -> Brush.TwoStops
-brush_stops = |stops| {
-	start_color: Brush.translucent(stops.start_color),
-	end_color: Brush.translucent(stops.end_color),
-	start_offset: stops.start_offset.to_f64(),
-	end_offset: stops.end_offset.to_f64(),
-}
-
 ## The fill of a polygon shaded across its width.
 width_shade : List(Screen.Point), { color : RgbColor, strength : Fraction } -> Brush.Fill
 width_shade = |corners, { color, strength }| {
 	span = x_span(corners)
 	if strength <= Fraction.zero or is_too_narrow_to_shade(span) {
-		Flat(Brush.opaque(color))
+		Brush.flat(color)
 	} else {
 		Span({
 			edge_color: Brush.opaque(width_shade_edge(color, strength)),
@@ -264,20 +247,12 @@ triangle_coordinates = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
 origin : Screen.Point
 origin = Screen.point(0.0, 0.0)
 
-plain_stops : Polygon.ColorStops
-plain_stops = {
-	start_color: ArgbColor.of(7),
-	end_color: ArgbColor.of(8),
-	start_offset: Fraction.zero,
-	end_offset: Fraction.whole,
-}
-
-inner_stops : Polygon.ColorStops
+inner_stops : Brush.TwoStops
 inner_stops = {
-	start_color: ArgbColor.of(666),
-	end_color: ArgbColor.of(667),
-	start_offset: Fraction.of(0.25),
-	end_offset: Fraction.of(0.75),
+	start_color: Brush.translucent(ArgbColor.of(666)),
+	end_color: Brush.translucent(ArgbColor.of(667)),
+	start_offset: 0.25,
+	end_offset: 0.75,
 }
 
 radial_polygon : List(Screen.Point), Pixels -> Try(Shapes.Shape, [TooSmall])
@@ -392,11 +367,11 @@ expect
 	Polygon.linear_gradient_polygon(
 		three_corners,
 		{
-			color_stops: {
-				start_color: ArgbColor.of(555),
-				end_color: ArgbColor.of(556),
-				start_offset: Fraction.of(0.25),
-				end_offset: Fraction.of(0.75),
+			stops: {
+				start_color: Brush.translucent(ArgbColor.of(555)),
+				end_color: Brush.translucent(ArgbColor.of(556)),
+				start_offset: 0.25,
+				end_offset: 0.75,
 			},
 			start_point: Screen.point(1.0, 2.0),
 			end_point: Screen.point(3.0, 4.0),
@@ -420,7 +395,7 @@ expect
 	Polygon.elliptical_gradient_polygon(
 		three_corners,
 		{
-			color_stops: inner_stops,
+			stops: inner_stops,
 			center_point: Screen.point(1.0, 2.0),
 			axis_u: Screen.point(3.0, 4.0),
 			axis_v: Screen.point(5.0, 6.0),
@@ -440,28 +415,6 @@ expect
 				axis_v: { x: 5.0, y: 6.0 },
 			}),
 		})
-
-ellipse_of_height : F64 -> Shapes.Shape
-ellipse_of_height = |height|
-	Polygon.elliptical_gradient_polygon(
-		three_corners,
-		{
-			color_stops: inner_stops,
-			center_point: Screen.point(1.0, 2.0),
-			axis_u: Screen.point(0.01, 0.0),
-			axis_v: { x: Pixels.zero, y: Pixels.of(height) },
-		},
-	)
-
-# An ellipse just under the limit is flat, and one just over it is not.
-expect ellipse_of_height(0.009) == Poly({
-	coordinates: triangle_coordinates,
-	fill: Flat(Brush.translucent(ArgbColor.of(666))),
-})
-expect ellipse_of_height(0.011) != Poly({
-	coordinates: triangle_coordinates,
-	fill: Flat(Brush.translucent(ArgbColor.of(666))),
-})
 
 sample_color : RgbColor
 sample_color = RgbColor.of(0x804020)
