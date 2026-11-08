@@ -124,6 +124,8 @@ cat_shapes : EncounterPlan.Timing -> List(Shapes.Shape)
 cat_shapes = |timing| {
 	instant = World.first_cat_crossing.instant_at(CatCrossing.crossing_stage(timing))
 	across = instant.location.road_point.across
+	cat : Cat
+	cat = { pose: instant.pose }
 	StillShapes.still_shapes(
 		{
 			foot: {
@@ -131,7 +133,7 @@ cat_shapes = |timing| {
 				y: Pixels.of(feet_y - instant.location.lift.to_metres() * pixels_a_metre),
 			},
 			flip: AsDrawn,
-			height_on_screen: Pixels.of(Cat.cat_height.to_metres() * pixels_a_metre),
+			height_on_screen: Pixels.of(cat.scenery_height().to_metres() * pixels_a_metre),
 		},
 		Cat.pose_still(instant.pose),
 	)
