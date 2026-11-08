@@ -29,7 +29,7 @@ Polygon :: [].{
 	flat_polygon = |corners, color|
 		Poly({
 			coordinates: polygon_coordinates("Polygon.flat_polygon", corners),
-			fill: Flat(Brush.opaque(color)),
+			fill: Brush.flat(color),
 		})
 
 	## Makes a triangle of one flat color.
@@ -240,7 +240,7 @@ width_shade : List(Screen.Point), { color : RgbColor, strength : Fraction } -> B
 width_shade = |corners, { color, strength }| {
 	span = x_span(corners)
 	if strength <= Fraction.zero or is_too_narrow_to_shade(span) {
-		Flat(Brush.opaque(color))
+		Brush.flat(color)
 	} else {
 		Span({
 			edge_color: Brush.opaque(width_shade_edge(color, strength)),
