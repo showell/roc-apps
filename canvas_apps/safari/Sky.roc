@@ -119,9 +119,10 @@ darkness_after_set = |height| {
 	Fraction.clamp(darkness_at_set.to_f64() + sunk_past_set * darkness_at_set.less().to_f64())
 }
 
-# The sky is at darkness_at_set as the sun fully sets, and darker a step later.
-# A step earlier is in gates/expects/RideExpects.roc, which counts steps.
-expect Sky.darkness_at(Sun.fully_set_at) == darkness_at_set
+# The sky is at least at darkness_at_set as the sun fully sets, and darker a
+# step later. A step earlier is in gates/expects/RideExpects.roc, which counts
+# steps.
+expect Sky.darkness_at(Sun.fully_set_at) >= darkness_at_set
 expect darkness_at_set < Sky.darkness_at(Sun.fully_set_at.next())
 expect Sky.darkness_at(Clock.at_step(0)).to_f64() == 0.0
 expect Sky.horizon_warmth_at(Clock.at_step(0)).to_f64() == 0.0
@@ -132,10 +133,10 @@ expect Sky.horizon_warmth_at(Clock.at_step(6000)).to_f64() == 0.0
 expect
 	[
 		(0, RgbColor.of(0x8ECAE6), RgbColor.of(0x8ECAE6)),
-		(1000, RgbColor.of(0x8BC6E2), RgbColor.of(0x8BC6E2)),
-		(2000, RgbColor.of(0x83BBD7), RgbColor.of(0x83BBD7)),
-		(3000, RgbColor.of(0x74A7C5), RgbColor.of(0x9D898D)),
-		(4000, RgbColor.of(0x618CAC), RgbColor.of(0xCA6047)),
-		(5000, RgbColor.of(0x3F5F81), RgbColor.of(0x7A5C65)),
+		(1000, RgbColor.of(0x8DC8E5), RgbColor.of(0x8DC8E5)),
+		(2000, RgbColor.of(0x86BFDB), RgbColor.of(0x86BFDB)),
+		(3000, RgbColor.of(0x73A6C4), RgbColor.of(0x9A898F)),
+		(4000, RgbColor.of(0x517697), RgbColor.of(0x9C6662)),
+		(5000, RgbColor.of(0x243A5E), RgbColor.of(0x243A5E)),
 		(6000, RgbColor.of(0x243A5E), RgbColor.of(0x243A5E)),
 	].all(|(step, top, horizon)| Sky.colors_at(Clock.at_step(step)) == { top, horizon })

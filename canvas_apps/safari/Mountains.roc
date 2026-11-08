@@ -24,8 +24,8 @@ Mountains :: [].{
 	## Whether the sun, at `clock`, has sunk behind the skyline.
 	is_sun_behind_mountains : Clock -> Bool
 	is_sun_behind_mountains = |clock| {
-		sun_top = Sun.height_at(clock).plus(Sun.radius_as_height)
-		sun_top < skyline_height(Sun.bearing)
+		sun = Sun.direction_at(clock)
+		sun.height.plus(Sun.radius_as_height) < skyline_height(sun.bearing)
 	}
 
 	## The skyline, back to front, for a camera facing `heading` through a lens
