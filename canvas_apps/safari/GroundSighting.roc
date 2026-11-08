@@ -140,11 +140,14 @@ bend_paving : RoadAhead.RoadView,
 } -> GroundPatch
 bend_paving = |road, { vantage, bend_in_view }| {
 	length_before = bend_in_view.length_before()
-	rider_point_before = |road_point| RoadAhead.rider_point_at(
+	before = |along, across| RoadAhead.rider_point_at(
 		road,
-		{ vantage, place: bend_in_view.place_before(), road_point },
+		{
+			vantage,
+			place: bend_in_view.place_before(),
+			road_point: { along, across },
+		},
 	)
-	before = |along, across| rider_point_before({ along, across })
 	after = |along, across| RoadAhead.rider_point_at(
 		road,
 		{
