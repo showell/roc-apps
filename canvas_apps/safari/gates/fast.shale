@@ -44,6 +44,10 @@ end
 function hashes_of(paths)
   local r = run({"git", "hash-object", "--stdin-paths"}, {timeout_ms = 30000, whole = 1000000, stdin = join(paths, "\n") .. "\n"})
   local hashes = lines(trim(r.out))
+  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 or #hashes ~= #paths then
+    print(trim(r.out))
+    fail("safari fast: git hash-object ended " .. r.ended .. " " .. get(r, "code", -1) .. " with " .. #hashes .. " hashes for " .. #paths .. " paths")
+  end
   local found = {}
   local k = 1
   while k <= #paths do
@@ -53,29 +57,35 @@ function hashes_of(paths)
   return found
 end
 
+-- What lints.shale says it reads, `reads=globs` or `reads=rules`, a line each.
+function lints_reads(which)
+  local g = run({"shale", "--root", ".", LINTS, "reads=" .. which}, {timeout_ms = 30000, whole = 100000})
+  local named = {}
+  for l in lines(trim(g.out)) do
+    if not starts_with(l, "──") then push(named, l) end
+  end
+  if g.ended ~= "exit" or get(g, "code", -1) ~= 0 or #named == 0 then
+    print(trim(g.out))
+    fail("safari fast: lints.shale didn't name its " .. which)
+  end
+  return named
+end
+
 -- Every file a lint reads, committed or not, from the globs lints.shale holds:
 -- safari's, and the widgets', widget_kit's and lib's too.
 function lint_read_files()
-  local g = run({"shale", "--root", ".", LINTS, "reads=globs"}, {timeout_ms = 30000, whole = 100000})
-  if g.ended ~= "exit" or get(g, "code", -1) ~= 0 then
-    print(trim(g.out))
-    fail("safari fast: lints.shale didn't name the files it reads")
-  end
   local argv = {"git", "ls-files", "--cached", "--others", "--exclude-standard", "--"}
-  for glob in lines(trim(g.out)) do push(argv, ":(glob)" .. glob) end
+  for glob in lints_reads("globs") do push(argv, ":(glob)" .. glob) end
   local r = run(argv, {timeout_ms = 30000, whole = 1000000})
   local kept = {}
   for f in lines(trim(r.out)) do
     if exists(f) then push(kept, f) end
   end
+  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 or #kept == 0 then
+    print(trim(r.out))
+    fail("safari fast: git ls-files ended " .. r.ended .. " " .. get(r, "code", -1) .. " and named no file a lint reads")
+  end
   return kept
-end
-
--- What the lints' verdicts rest on, beside the file judged.
-function rule_files()
-  local rules = {LINTS, SAFARI .. "/vocabulary.txt", SAFARI .. "/name_types.txt", SAFARI .. "/bare_floats.txt"}
-  for f in glob("cookbook:roc/*.shale") do push(rules, real(f)) end
-  return rules
 end
 
 function record_of(hashes)
@@ -200,7 +210,7 @@ function main()
   local sources = lint_read_files()
   local judged = {}
   for f in sources do push(judged, f) end
-  for f in rule_files() do push(judged, f) end
+  for f in lints_reads("rules") do push(judged, f) end
   local hashes = hashes_of(judged)
   check(roc, env)
   formatted()

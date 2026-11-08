@@ -77,6 +77,28 @@ const LINTS = {
     tree_globs = TREE_GLOBS},
 }
 
+-- What the lints' verdicts rest on, beside the files judged: this script, the
+-- tables its lints read (a `words=` or `table=` argument, from safari's
+-- folder), and the cookbook's Roc recipes. With `reads=rules` this script
+-- prints them and stops, so fast.shale judges every file again when one
+-- changes.
+function rule_files()
+  local rules = {SAFARI .. "/gates/lints.shale"}
+  for lint in LINTS do
+    for a in lint.args do
+      local m = re_find(a, "^(?:words|table)=(.+)$")
+      if m ~= nil then push(rules, SAFARI .. "/" .. m.group) end
+    end
+  end
+  for f in rules do
+    if not exists(f) then fail("safari lints: no rule file " .. f) end
+  end
+  local recipes = glob("cookbook:roc/*.shale")
+  if #recipes == 0 then fail("safari lints: no recipes in cookbook:roc/") end
+  for f in recipes do push(rules, real(f)) end
+  return rules
+end
+
 function runs_from_repo_root(lint)
   return get(lint, "from_repo_root", false)
 end
@@ -255,8 +277,13 @@ end
 if not exists(SAFARI) then
   fail("safari lints: no " .. SAFARI .. " here; run this from the roc-apps root")
 end
-if arg("reads", "") == "globs" then
+const READS = arg("reads", "")
+if READS == "globs" then
   print(join(TREE_GLOBS, "\n"))
+elseif READS == "rules" then
+  print(join(rule_files(), "\n"))
+elseif READS ~= "" then
+  fail("safari lints: reads= is globs or rules")
 elseif FILES == "" then
   judge_tree()
 else
