@@ -136,27 +136,29 @@ expect
 		(13, True),
 	].all(|(cow_number, want)| is_calf(cow_number) == want)
 
-## A herd of fourteen cows in columns of three.
-fourteen_cows : CowHerd
-fourteen_cows = {
-	cow_count: 14,
-	rows_behind_front: 2,
-	gap_behind_bull: Distance.metres(6.0),
-	column_spacing: Distance.metres(6.0),
-	row_stagger: Distance.metres(2.0),
+## A herd of five cows in columns of two, its last column one cow short. Its
+## gap behind the bull, column spacing, row stagger and row depth all differ,
+## so a mix-up of any two shows.
+five_cows : CowHerd
+five_cows = {
+	cow_count: 5,
+	rows_behind_front: 1,
+	gap_behind_bull: Distance.metres(4.0),
+	column_spacing: Distance.metres(10.0),
+	row_stagger: Distance.metres(3.0),
 	row_depth: Distance.metres(5.0),
 	jitter_along: Distance.metres(1.5),
 	jitter_across: Distance.metres(1.2),
 }
 
 cows_with_bull : List(Geom.Placed(Billboard))
-cows_with_bull = fourteen_cows.herd_cows({ herd_along: Along.metres(24.0), bull: WithBull })
+cows_with_bull = five_cows.herd_cows({ herd_along: Along.metres(24.0), bull: WithBull })
 
 cows_without_bull : List(Geom.Placed(Billboard))
-cows_without_bull = fourteen_cows.herd_cows({ herd_along: Along.metres(24.0), bull: NoBull })
+cows_without_bull = five_cows.herd_cows({ herd_along: Along.metres(24.0), bull: NoBull })
 
-expect cows_with_bull.len() == 15
-expect cows_without_bull.len() == 14
+expect cows_with_bull.len() == 6
+expect cows_without_bull.len() == 5
 
 # The bull leads, facing left, and the cows follow him in their own order, facing
 # right.
@@ -167,51 +169,23 @@ expect cows_with_bull.take_first(2).map(|critter| critter.kind.facing) == [Faces
 expect cows_without_bull.all(|member| member.kind.facing == FacesRight)
 expect cows_without_bull.all(|member| member.kind.emoji == EmojiStills.cow)
 
-# Each cow strays from its place by no more than the jitter.
+# Column by column from the front, each cow strays from its place by no more
+# than the jitter: along the road and across it.
 expect {
 	places = [
-		28.0,
-		30.0,
-		32.0,
-		34.0,
-		36.0,
-		38.0,
-		40.0,
-		42.0,
-		44.0,
-		46.0,
-		48.0,
-		50.0,
-		52.0,
-		54.0,
+		(25.0, -12.0),
+		(28.0, -17.0),
+		(35.0, -12.0),
+		(38.0, -17.0),
+		(45.0, -12.0),
 	]
 	misses = cows_without_bull.map2(
 		places,
-		|one, place| (one.road_point.along.to_metres() - place).abs(),
+		|one, (along, across)| (
+			(one.road_point.along.to_metres() - along).abs(),
+			(one.road_point.across.to_metres() - across).abs(),
+		),
 	)
-	misses.all(|miss| miss <= 1.5)
-}
-
-expect {
-	places = [
-		-12.0,
-		-17.0,
-		-22.0,
-		-12.0,
-		-17.0,
-		-22.0,
-		-12.0,
-		-17.0,
-		-22.0,
-		-12.0,
-		-17.0,
-		-22.0,
-		-12.0,
-		-17.0,
-	]
-	misses = cows_without_bull.map2(
-		places,
-		|one, place| (one.road_point.across.to_metres() - place).abs(),
-	)
-	misses.all(|miss| miss <= 1.2)
+	within_jitter = misses.all(|(along_miss, across_miss)| along_miss <= 1.5 and across_miss <= 1.2)
+	misses.len() == 5 and within_jitter
 }

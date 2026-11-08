@@ -16,6 +16,7 @@ import game.RiderView
 import game.Lens
 import game.LitTruck
 import game.Pipeline
+import game.PigHerd
 import game.Pixels
 import game.Pond
 import game.RailSighting
@@ -551,3 +552,121 @@ expect
 		(600.0, 100.0),
 		(900.0, 80.0),
 	].all(|(lead, want)| lit_truck_of(lead).spot.road_point().along.to_metres() == want)
+
+# The route's herds, through World. PigHerd and CowHerd don't import World. The
+# route's big herd is seven rows of seven, and its two-row herd four pigs in front
+# and six behind; in each, the third pig of the front row stands out. Its cow
+# herd is fourteen cows in columns of three.
+## Where the route's herds of pigs stand along the road, for these expects.
+route_herd_along : Along
+route_herd_along = Along.metres(940.0)
+
+## The route's herds of pigs, in the order the rider meets them.
+route_pig_herds : List(PigHerd)
+route_pig_herds =
+	World.route.route_segments().join_map(
+		|segment|
+			match segment.pigs {
+				Herd({ herd, .. }) => [herd]
+				NoPigs => []
+			},
+	)
+
+## Whether `herd` is a big herd rather than one of two rows.
+is_big_herd : PigHerd -> Bool
+is_big_herd = |herd|
+	match herd {
+		BigHerd(_) => True
+		TwoRows(_) => False
+	}
+
+## The route's first herd of `shape`.
+route_herd_of : [Big, TwoRows] -> PigHerd
+route_herd_of = |shape| {
+	want_big = shape == Big
+	route_pig_herds.find_first(|herd| is_big_herd(herd) == want_big)
+		?? crash "SightingExpects: the route has a herd of each shape"
+}
+
+route_big_herd_pigs : List(Geom.Placed(Billboard))
+route_big_herd_pigs = route_herd_of(Big).herd_pigs(route_herd_along)
+
+route_big_standout : Geom.Placed(Billboard)
+route_big_standout = route_herd_of(Big).standout_pig(route_herd_along)
+
+expect route_big_herd_pigs.len() == 49
+expect route_big_herd_pigs.get(2) == Ok(route_big_standout)
+expect route_big_herd_pigs.count_if(|herd_member| herd_member == route_big_standout) == 1
+
+# The third pig of the row nearest the road, strayed from its place.
+expect (route_big_standout.road_point.along.to_metres() - 940.80757).abs() <= 0.00001
+expect (route_big_standout.road_point.across.to_metres() - 11.0332).abs() <= 0.00001
+
+route_two_row_pigs : List(Geom.Placed(Billboard))
+route_two_row_pigs = route_herd_of(TwoRows).herd_pigs(route_herd_along)
+
+route_two_row_standout : Geom.Placed(Billboard)
+route_two_row_standout = route_herd_of(TwoRows).standout_pig(route_herd_along)
+
+expect
+	route_two_row_pigs.map(|critter| critter.road_point.along.to_metres())
+		== [
+			934.0,
+			938.0,
+			942.0,
+			946.0,
+			930.0,
+			934.0,
+			938.0,
+			942.0,
+			946.0,
+			950.0,
+		]
+
+expect
+	route_two_row_pigs.map(|critter| critter.road_point.across.to_metres())
+		== [
+			12.0,
+			12.0,
+			12.0,
+			12.0,
+			18.0,
+			18.0,
+			18.0,
+			18.0,
+			18.0,
+			18.0,
+		]
+
+expect route_two_row_standout.road_point.along.to_metres() == 942.0
+expect route_two_row_standout.road_point.across.to_metres() == 12.0
+expect route_two_row_pigs.get(2) == Ok(route_two_row_standout)
+
+## The route's cows behind 24 m, without a bull.
+route_cows : List(Geom.Placed(Billboard))
+route_cows =
+	World.route.segment_at(Route.SegmentIndex.first).cows.herd.herd_cows(
+		{ herd_along: Along.metres(24.0), bull: NoBull },
+	)
+
+# Fourteen cows in columns of three, each within the jitter of its row.
+expect {
+	places = [
+		-12.0,
+		-17.0,
+		-22.0,
+		-12.0,
+		-17.0,
+		-22.0,
+		-12.0,
+		-17.0,
+		-22.0,
+		-12.0,
+		-17.0,
+		-22.0,
+		-12.0,
+		-17.0,
+	]
+	misses = route_cows.map2(places, |one, place| (one.road_point.across.to_metres() - place).abs())
+	route_cows.len() == 14 and misses.all(|miss| miss <= 1.2)
+}
