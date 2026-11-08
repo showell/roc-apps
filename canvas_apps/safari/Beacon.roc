@@ -1,9 +1,8 @@
 ## Beacon is the light on top of a radio tower: how it blinks and how it looks.
 ## A beacon blinks by the ride's clock, each a little apart from the last, and
-## lit, it is a magenta disc 3 m across its middle, seen through as far as it is
-## dim. A beacon is known by its key, and it knows nothing of towers or of where
-## they stand: whatever holds it says where its middle is on screen and how many
-## pixels a metre spans there.
+## lit, it is a magenta disc 3 m in radius, seen through as far as it is dim. A
+## beacon is known by its key. Whatever holds it says where its middle is on
+## screen and how many pixels a metre spans there.
 import Clock
 import Distance
 import Fraction
@@ -182,7 +181,7 @@ disc_of = |brightness, metre|
 		metre_on_screen: Pixels.of(metre),
 	})
 
-# A lit beacon's disc is 3 m across its middle, magenta, and seen through as
+# A lit beacon's disc is 3 m in radius, magenta, and seen through as
 # far as it is dim.
 expect
 	disc_of(0.25, 10.0)
