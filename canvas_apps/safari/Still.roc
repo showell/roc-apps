@@ -10,9 +10,22 @@ import lib.RgbColor
 
 Still :: List(Still.Polygon).{
 
-	## The still made of `polygons`, drawn in their order.
+	## The still made of `polygons`, drawn in their order. Each polygon is
+	## checked once, here, and a flawed one crashes with a reason that says
+	## where it is in the still's frame: a polygon of fewer than three
+	## corners, colour stops whose start offset is past their end offset, a
+	## linear gradient that starts where it ends, or a radial one whose axes
+	## span less than `min_axes_area`.
 	of : List(Still.Polygon) -> Still
-	of = |polygons| Still.(polygons)
+	of = |polygons| {
+		for polygon in polygons {
+			match polygon_flaw(polygon) {
+				Sound => {}
+				Flawed(reason) => crash "Still.of: ${reason}"
+			}
+		}
+		Still.(polygons)
+	}
 
 	## A place in the still's frame: a corner of a polygon, or where a
 	## gradient starts, ends or is centred.
@@ -66,3 +79,145 @@ Still :: List(Still.Polygon).{
 
 	is_eq : _
 }
+
+## What is wrong with a polygon, if anything, as a reason that names where it
+## is in the still's frame.
+Flaw : [Sound, Flawed(Str)]
+
+## The least area, in the still's square units, that a radial gradient's two
+## axes may span. A still is never drawn under 2 pixels tall (Pipeline's
+## smallest height on screen), where this area is 4 times as many square
+## pixels: 0.0001, the least that Brush can invert.
+min_axes_area : F64
+min_axes_area = 0.000025
+
+## A place in the still's frame, written as `(x, y)`.
+place : Still.Point -> Str
+place = |point| "(${point.x.to_str()}, ${point.y.to_str()})"
+
+polygon_flaw : Still.Polygon -> Flaw
+polygon_flaw = |polygon|
+	match polygon.points {
+		[] => Flawed("a polygon has no corners, and it needs three")
+		[first, .. as rest] if rest.len() < 2 =>
+			Flawed("the polygon from ${place(first)} has ${(rest.len() + 1).to_str()} corners, and it needs three")
+		_ =>
+			match polygon.fill {
+				Flat(_) => Sound
+				Shaded(gradient) => gradient_flaw(gradient)
+			}
+	}
+
+gradient_flaw : Still.Gradient -> Flaw
+gradient_flaw = |gradient|
+	match gradient {
+		Linear({ stops, start, end }) =>
+			if start == end {
+				Flawed("the linear gradient from ${place(start)} ends where it starts")
+			} else {
+				stops_flaw(stops, "the linear gradient from ${place(start)}")
+			}
+		Radial({ stops, center, axis_u, axis_v }) => {
+			area = (axis_u.x * axis_v.y - axis_u.y * axis_v.x).abs()
+			if area < min_axes_area {
+				least = min_axes_area.to_str()
+				Flawed("the radial gradient about ${place(center)} has axes that span ${area.to_str()}, under ${least}")
+			} else {
+				stops_flaw(stops, "the radial gradient about ${place(center)}")
+			}
+		}
+	}
+
+## The stops' flaw, if any, for the gradient named by `gradient_name`.
+stops_flaw : Still.ColorStops, Str -> Flaw
+stops_flaw = |stops, gradient_name|
+	if stops.end_offset < stops.start_offset {
+		start = stops.start_offset.to_f64().to_str()
+		end = stops.end_offset.to_f64().to_str()
+		Flawed("${gradient_name} has its start offset ${start} past its end offset ${end}")
+	} else {
+		Sound
+	}
+
+sample_stops : Still.ColorStops
+sample_stops = {
+	start_color: ArgbColor.of(0xFF000000),
+	end_color: ArgbColor.of(0xFFFFFFFF),
+	start_offset: Fraction.of(0.25),
+	end_offset: Fraction.of(0.75),
+}
+
+sample_corners : List(Still.Point)
+sample_corners = [{ x: 0.5, y: 0.0 }, { x: 1.0, y: 0.0 }, { x: 0.5, y: 1.0 }]
+
+## A polygon on `sample_corners` filled by a linear gradient from (0.5, 0) to
+## `end`, with `stops`.
+linear_polygon : Still.ColorStops, Still.Point -> Still.Polygon
+linear_polygon = |stops, end| {
+	gradient = Linear({
+		stops,
+		start: { x: 0.5, y: 0.0 },
+		end,
+	})
+	{ fill: Shaded(gradient), points: sample_corners }
+}
+
+## A polygon on `sample_corners` filled by a radial gradient about (0.5, 0.25)
+## with the two axes.
+radial_polygon : Still.Step, Still.Step -> Still.Polygon
+radial_polygon = |axis_u, axis_v| {
+	gradient = Radial({
+		stops: sample_stops,
+		center: { x: 0.5, y: 0.25 },
+		axis_u,
+		axis_v,
+	})
+	{ fill: Shaded(gradient), points: sample_corners }
+}
+
+## A radial polygon whose axes span `area`.
+radial_of_area : F64 -> Still.Polygon
+radial_of_area = |area| radial_polygon({ x: area, y: 0.0 }, { x: 0.0, y: 1.0 })
+
+## A flat polygon on `corners`.
+flat_polygon : List(Still.Point) -> Still.Polygon
+flat_polygon = |corners| { fill: Flat(RgbColor.of(7)), points: corners }
+
+# Three corners are a polygon, and two or none are not.
+expect polygon_flaw(flat_polygon(sample_corners)) == Sound
+expect
+	polygon_flaw(flat_polygon(sample_corners.take_first(2)))
+		== Flawed("the polygon from (0.5, 0) has 2 corners, and it needs three")
+expect polygon_flaw(flat_polygon([])) == Flawed("a polygon has no corners, and it needs three")
+
+# Stops whose offsets meet are sound, and a start past the end is not.
+expect stops_flaw({ ..sample_stops, end_offset: Fraction.of(0.25) }, "g") == Sound
+expect {
+	crossed_stops = {
+		..sample_stops,
+		start_offset: Fraction.of(0.75),
+		end_offset: Fraction.of(0.25),
+	}
+	stops_flaw(crossed_stops, "g") == Flawed("g has its start offset 0.75 past its end offset 0.25")
+}
+
+# A linear gradient with any length is sound, and one with none is not.
+expect polygon_flaw(linear_polygon(sample_stops, { x: 0.5, y: 1.0 })) == Sound
+expect
+	polygon_flaw(linear_polygon(sample_stops, { x: 0.5, y: 0.0 }))
+		== Flawed("the linear gradient from (0.5, 0) ends where it starts")
+
+# A shaded polygon's stops are checked too.
+expect {
+	crossed_stops = { ..sample_stops, start_offset: Fraction.whole }
+	polygon_flaw(linear_polygon(crossed_stops, { x: 0.5, y: 1.0 }))
+		== Flawed("the linear gradient from (0.5, 0) has its start offset 1 past its end offset 0.75")
+}
+
+# Axes that span the least area are sound, and ones just under it, or
+# parallel, are not.
+expect polygon_flaw(radial_of_area(min_axes_area)) == Sound
+expect polygon_flaw(radial_of_area(0.00002)) != Sound
+expect
+	polygon_flaw(radial_polygon({ x: 0.5, y: 0.5 }, { x: 0.25, y: 0.25 }))
+		== Flawed("the radial gradient about (0.5, 0.25) has axes that span 0, under 2.5e-5")

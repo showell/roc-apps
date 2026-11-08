@@ -115,7 +115,7 @@ Polygon :: [].{
 	## Makes a polygon filled by a gradient on an ellipse, which is `axis_u` and
 	## `axis_v` about `center_point`. An ellipse too thin for Brush to invert
 	## crashes: a still, the only caller, is never drawn small enough to thin
-	## its ellipses past Brush's limit.
+	## its ellipses past Brush's limit, as `Still.of` checks.
 	elliptical_gradient_polygon : List(Screen.Point),
 	{
 		stops : Brush.TwoStops,

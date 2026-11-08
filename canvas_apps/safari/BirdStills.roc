@@ -108,7 +108,7 @@ expect
 		Still.of([
 			{
 				fill: Flat(logo_dark),
-				points: [{ x: 1.1, y: 0.5 }],
+				points: [{ x: 0.5, y: 0.5 }, { x: 1.1, y: 0.5 }, { x: 0.5, y: 0.9 }],
 			},
 		]),
 	)
@@ -119,7 +119,7 @@ expect
 		Still.of([
 			{
 				fill: Flat(RgbColor.of(0)),
-				points: [],
+				points: [{ x: 0.0, y: 0.0 }, { x: 0.5, y: 0.0 }, { x: 0.0, y: 0.5 }],
 			},
 		]),
 	)
