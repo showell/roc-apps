@@ -23,7 +23,6 @@ import game.Scene
 import game.Screen
 import game.Sky
 import game.Sun
-import game.Grass
 import game.TowerSighting
 import game.TreeSighting
 import game.BillboardSighting
@@ -85,9 +84,10 @@ part_size = |part, { route, instant }| {
 	} else {
 		camera = FrameView.camera_at(route, instant)
 		if part == "sky" {
-			sky = Sky.colors_at(instant.clock)
-			sun = Sun.sun_in_view(camera, instant.clock)
-			[[Sky.sky_shape(sky)], Sun.sun_shapes(sun), [Grass.grass_shape]].join().len()
+			FrameView.backdrop_shapes({
+				sky_colors: Sky.colors_at(instant.clock),
+				sun_sighting: Sun.sun_in_view(camera, instant.clock),
+			}).len()
 		} else if part == "skyline" {
 			FrameView.skyline_shapes(camera, instant.clock).len()
 		} else {
