@@ -1,6 +1,6 @@
 # Safari Ride: a tour of a real Roc program
 
-A long walk through one program of about eighty Roc modules: the big picture, the details, and the big picture again.
+A long walk through one program of about ninety Roc modules: the big picture, the details, and the big picture again.
 
 ## Introduction
 
@@ -32,10 +32,10 @@ digraph problem {
   move [label="move the rider and the truck"];
   look [label="look around:\nwhat's near enough to see?"];
   draw [label="draw it against the backdrop"];
-  world -> step;
-  step -> move;
-  move -> look;
-  look -> draw;
+  world -> step [label="  starts the clock"];
+  step -> move [label="  moves on"];
+  move -> look [label="  then looks"];
+  look -> draw [label="  hands what it sees"];
   draw -> step [label="  next step"];
 }
 ```
@@ -69,15 +69,17 @@ Most of Safari Ride's small modules look like this: a comment saying what the th
 
 `is_eq : _` asks Roc to derive equality for us. Below the type, each `expect` is a test, and `roc test` runs them all.
 
+The error names `Steps`, a count of steps, because `+` on a clock is its `plus`, and `plus` takes a `Steps`, not a plain number.
+
 Safari Ride calls it once a step, like this:
 
 {{code RideInstant.next from "clock = instant.clock.next()" to "clock = instant.clock.next()"}}
 
-`instant.clock.next()` is static dispatch: `next` comes from the type of `instant.clock`, so the call needs no import.
+`instant.clock.next()` is static dispatch: `next` is found from the type of `instant.clock`, so the call is written `next()`, not `Clock.next(...)`.
 
-Because a clock is an ordinary value, a test about one fits on a single line. The `expect` above that starts at step 5,699 uses `Clock.at_step` to get there directly, so the test doesn't have to run the ride for 5,699 steps first.
+Because a clock is an ordinary value, a test about one fits on a single line. The `expect` above that checks `Clock.at_step(9).plus(Steps.of(3))` uses `Clock.at_step` to start at step 9 directly, so the test doesn't have to run the ride for nine steps first.
 
-That's one module out of about eighty. In the next chapter, we'll see how the rest fit together.
+That's one module out of about ninety. In the next chapter, we'll see how the rest fit together.
 
 ## The modules
 
@@ -90,42 +92,50 @@ The whole system, simplified
 digraph system {
   node [shape=box, fontname="Helvetica"];
   fontname="Helvetica";
-  app [label="the app\nweb.roc, SafariApp, Tour", style=dashed];
+  web [label="web.roc"];
+  SafariApp; Tour; FrameView;
   subgraph cluster_ride {
     label="the ride";
-    Rider; TruckJourney; World;
-    critters [label="the critters\nCat, BirdFlight, Animation", style=dashed];
-    scenery [label="the scenery\nTrees, Cows, Pigs", style=dashed];
+    RideInstant; Rider; TruckJourney; World; Segment;
+    critters [label="the critters\nCatCrossing, BirdFlight", style=dashed];
   }
   subgraph cluster_view {
     label="the view";
-    sky [label="the sky\nSky, Mountains", style=dashed];
-    drawing [label="the drawing\nSceneShapes, Cat, Bird, TreeShapes, ...", style=dashed];
-    sightings [label="the sightings\nScene, CrossingSighting, TreeSighting, ...", style=dashed];
+    sky [label="the backdrop\nSky, Skyline, Sun", style=dashed];
+    Scene; RoadAhead;
+    sightings [label="the sightings\nEncounterSighting, TreeSighting, ...", style=dashed];
+    drawing [label="the drawing\nCat, Bird, TreeShapes, ...", style=dashed];
   }
-  app -> RideInstant;
-  RideInstant -> Rider;
-  RideInstant -> TruckJourney;
-  Rider -> World;
-  World -> critters;
-  World -> scenery;
-  RideInstant -> sky;
-  RideInstant -> drawing;
-  drawing -> sightings;
-  sightings -> World [style=dotted, constraint=false];
+  web -> SafariApp [label="  runs"];
+  SafariApp -> Tour [label="  steps the ride with"];
+  SafariApp -> FrameView [label="  draws each frame with"];
+  Tour -> RideInstant [label="  steps"];
+  Tour -> World [label="  starts on"];
+  RideInstant -> Rider [label="  moves"];
+  RideInstant -> TruckJourney [label="  moves"];
+  World -> Segment [label="  builds"];
+  Segment -> critters [label="  holds"];
+  FrameView -> RideInstant [label="  reads"];
+  FrameView -> sky [label="  paints"];
+  FrameView -> Scene [label="  gathers sightings with"];
+  Scene -> sightings [label="  asks"];
+  sightings -> RoadAhead [label="  finds segments with"];
+  RoadAhead -> Segment [label="  reads"];
+  sightings -> drawing [label="  draws with"];
+  critters -> drawing [label="  borrows pose names from", style=dotted];
 }
 ```
 
 New in this chapter:
 
 - Roc: imports that can't form a cycle
-- Modules: `SafariApp`, `Scene`, `SceneShapes`, `CrossingSighting`
+- Modules: `SafariApp`, `FrameView`, `Scene`, `EncounterSighting`
 
-There are two halves. The ride is `Rider`, `TruckJourney` and `World`. `World` puts the route together from its scenery and critters. Nothing in the ride knows anything about drawing.
+There are two halves. The ride is `RideInstant`, `Rider`, `TruckJourney` and `World`. `RideInstant` holds one instant of the ride and steps to the next. `World` puts the route together from segments, and the segments hold the critters.
 
-The view is everything that turns the ride into a picture. The sightings work out what's visible, and the drawing code makes its shapes. The dotted arrow shows the view reading the ride. No arrow goes the other way.
+The view is everything that turns the ride into a picture. `Scene` gathers the sightings, which work out what's visible, and the drawing code makes its shapes. The dotted arrow is the one place the ride reaches into the view: the critters borrow their pose names, and a few of the cat's sizes, from the drawing side.
 
-`RideInstant` sits above both halves. It holds one instant of the ride and steps to the next. The browser only ever sees `SafariApp`, which gives it a list of shapes each frame.
+`FrameView` joins the two halves. It reads one instant of the ride and draws it. `Tour` steps the ride. The browser only ever sees `SafariApp`, which gives it a list of shapes each frame.
 
 ### The part that isn't Roc
 
@@ -144,8 +154,8 @@ digraph tick {
     advance [label="the next step"];
     frame [label="this frame's shapes"];
   }
-  runner -> advance;
-  advance -> frame;
+  runner -> advance [label="  calls"];
+  advance -> frame [label="  makes"];
   frame -> paint [label="  a list of shapes"];
 }
 ```
@@ -154,7 +164,7 @@ Safari Ride runs in a browser, and that takes a thin layer of JavaScript. The Ro
 
 ### What's a sighting?
 
-At step 1,570 of the ride, a cat is frozen in the lane. This is what `CrossingSighting` answers about it on that frame:
+At step 1,570 of the ride, a cat is frozen in the lane. This is what `EncounterSighting` answers about it on that frame:
 
 | Field | Value |
 |---|---|
@@ -165,15 +175,15 @@ At step 1,570 of the ride, a cat is frozen in the lane. This is what `CrossingSi
 
 That's a sighting: where the rider sees something, and how it should look.
 
-Most things in the view come in pairs, and the names say which half is which: `CrossingSighting` and `Cat`, `TreeSighting` and `TreeShapes`, `TowerSighting` and `Tower`, `TruckSighting` and `Truck`.
+Most things in the view come in pairs, and the names say which half is which: `EncounterSighting` and `Cat` or `Bird`, `TreeSighting` and `TreeShapes`, `TowerSighting` and `Tower`, `TruckSighting` and `Truck`.
 
-A sighting answers one question each frame: which of these can the rider see right now, and how should each one look? `CrossingSighting` goes through the stretches of road ahead, which Safari Ride calls segments, asks `Cat` where it is, works out where that lands in the rider's view, and drops any cat behind the camera or too small to matter. What it hands back is a plain record with no drawing in it:
+A sighting answers one question each frame: which of these can the rider see right now, and how should each one look? `EncounterSighting` goes through the stretches of road ahead, which Safari Ride calls segments, asks `EncounterPoses.cat_poses` where each cat is and how it stands, works out where that lands in the rider's view, and drops any cat behind the camera or too small to matter. What it hands back is a plain record with no drawing in it:
 
 {{code Pipeline.Sighted}}
 
-`Scene` gathers every sighting's answer. `SceneShapes` renders each one through `Pipeline.rendering_of`, which asks the kind's own module for a picture and attaches the depth, making a `Rendered`, and a depth sort puts those in order, far to near. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. So a sighting decides what's visible, and the drawing code only paints what it's told.
+`Scene.scene_in_view` gathers every sighting's answer and renders each one through `Pipeline.rendering_of`, which asks the kind's own module for a picture and attaches the depth, making a `Rendered`. Trees go through `TreeSighting.tree_renderings`, which does the same after counting the nearer trees. Then `Scene.scene_renderings` puts the renderings in order, far to near. Because a sighting's answer is plain data, it can be checked with numbers, without drawing anything. So a sighting decides what's visible, and the drawing code only paints what it's told.
 
-Cows, pigs and the other animals by the road are all sighted the same way, by `BillboardSighting`, which decides which of them get drawn. `Detail` holds the thresholds behind that kind of decision: how near a tree shows its full detail, and how few pixels tall something may be and still be drawn.
+Cows, pigs and the other animals by the road are all sighted the same way, by `BillboardSighting`, which decides which of them get drawn. The thresholds behind that kind of decision sit with the code that uses them. `Pipeline.smallest_height_on_screen`, 2 pixels, is how short something may look and still be drawn. `TreeShapes.cone_reach` and `TreeShapes.round_trunk_limit` decide how near a tree shows its full detail.
 
 Everything in this chapter happens within a single frame, and none of it survives to the next one. Very little carries over from step to step, and we'll come to that. First, let's hold one frame still and see what's in it.
 
@@ -185,40 +195,39 @@ Some of Safari Ride never changes. Trees, cows, the pond and the road are built 
 The whole route in one picture. The white stretch is segment 7, and the lines under the map read out its record.
 ```
 
-Each stretch of this map is one record of a list called `World.plans`, and the lines under the map read out the one in white. The marks on the map are the six segments with a cat or a bird. We drew the map for this page: the ride itself never has one.
+Each stretch of this map is one record of a list called `World.segment_plans`, and the lines under the map read out the one in white. The marks on the map are the seven segments with a cat or a bird. We drew the map for this page: the ride itself never has one.
 
 New in this chapter:
 
-- Roc: void modules, tag unions written in a field's type, `match` that has to cover every tag, `crash`
-- Modules: `World`, `Pond`, `Trees`
+- Roc: void modules, record update, small tag unions in place of booleans, `match` that has to cover every tag, `var`, `crash`, tuples
+- Modules: `World`, `Pond`, `Trees`, `Segment`, `Route`
 
 The modules around `World`
 ```dot
 digraph world {
   node [shape=box, fontname="Helvetica"];
   World [style=bold];
-  World -> Trees;
-  World -> Cows;
-  World -> Pigs;
-  World -> Scenery;
-  World -> Cat;
-  World -> BirdFlight;
-  Cows -> Trees;
-  Cows -> Scenery;
-  Trees -> Scenery;
-  Pigs -> Scenery;
+  World -> Route [label="  puts together"];
+  World -> Segment [label="  builds"];
+  World -> Trees [label="  picks a tree scheme from"];
+  World -> CowHerd [label="  plans the cows with"];
+  World -> PigHerd [label="  sizes the herds with"];
+  World -> CatCrossing [label="  finds the first"];
+  World -> BirdFlight [label="  finds the first"];
+  Route -> Segment [label="  holds"];
+  Segment -> Pond [label="  places the ducks of"];
 }
 ```
 
-A piece of the world can be just a value. Here's the second whole module. `Pond` is a void module: a type with no values, whose block holds definitions. This one has two record aliases and six ducks.
+A piece of the world can be just a value. Here's the second whole module. `Pond` is a void module: a type with no values, whose block holds definitions. This one has three record aliases and six ducks.
 
 {{module Pond}}
 
-Above its `expect`s, there are no functions here at all. The ducks are read where the critters are sighted:
+Its block holds two functions: the pond's outlines, and its ducks placed at a bend. `bank_inner_points` uses a record update. `{ ..point, past_end: ... }` is a copy of `point` with a new `past_end`, and `point` itself doesn't change. The ducks are read where a bend's life is placed:
 
-{{code Segment.segment_bend_billboards}}
+{{code Segment.BendLife}}
 
-`World` turns a route, a plain list of records, into segments of road. A plan for a segment shows how much tag unions can do with no declaration. `[WithBull, NoBull]` is written right in the field's type, and it says more than a boolean would at every place a segment is written down.
+`World` turns a route, a plain list of records, into segments of road. A plan for a segment shows how much a small tag union can do. `CowHerd.Bull` is just `[WithBull, NoBull]`, and it says more than a boolean would at every place a segment is written down.
 
 {{code World.SegmentPlan}}
 
@@ -226,19 +235,19 @@ A `match` on a closed union has to cover it: leaving out a tag is a compile-time
 
 {{code Trees.accent_conifer}}
 
-Here's where it's called, picking the color for a pair of small trees:
+Here's where it's called. Trees stand in pairs, and after a green pair this `match` picks the kind of the next pair: `Gold`, `Red` or `SmallGreen`. `$conifer` is a `var`, a name the loop around it gives a new value each time, and the `$` marks it.
 
 {{code Trees.roadside_trees from "match $conifer {" to "Green => accent_conifer(scheme)"}}
 
-`SegmentIndex` is another small opaque type, a `U32` for a segment's place in the route. A place in the route can't be confused with a count of trees, because nothing outside can do arithmetic on it. `crash` appears here too. It isn't for error handling: an index that isn't in the world is a bug in Safari Ride, not a case to handle.
+`Route.SegmentIndex` is another small opaque type, a `U32` for a segment's place in the route. A place in the route can't be confused with a count of trees, because nothing outside can do arithmetic on it. `crash` appears here too. It isn't for error handling: an index that isn't in the world is a bug in Safari Ride, not a case to handle.
 
 {{code Route.segment_at}}
 
-A value that never changes can be checked once, whole. `Pond`'s one function is below its block, and it's there for a test:
+A value that never changes can be checked once, whole. `Pond` has four functions below its block, and `is_on_water` is there for a test:
 
 {{code Pond.is_on_water}}
 
-The `expect` under it, in the module above, runs that over all six ducks. One line covers the whole pond.
+The `expect` under it, in the module above, runs that over all six ducks. One line covers the whole pond. The `expect` under `is_inside_water` checks a list of pairs. Each pair in parentheses is a tuple, a fixed group of values whose types needn't match, and `all` checks every one.
 
 Nothing in this chapter moves, and that's true of the next few chapters too, as we go through what's on one page of the flipbook. First, a word about what a page is made of.
 
@@ -271,9 +280,9 @@ A frame is a list of `Shapes.Shape`:
 
 {{code Shapes.Shape}}
 
-Each tag here carries a value in parentheses, called its payload. A `Poly` carries a record of its coordinates and its fill, and a `Disc` carries its center, radius, fill and clip. A conifer comes back to payloads. A fill is a `Brush.Fill`, another tag union: `Flat` with one color, or one of several kinds of shading and gradient.
+Each tag here carries a value in parentheses, called its payload. A `Poly` carries a record of its coordinates and its fill, and a `Disc` carries its center, as an `x` and a `y`, its radius and its fill. A conifer comes back to payloads. A fill is a `Brush.Fill`, another tag union: `Flat` with one color, or one of several kinds of shading and gradient.
 
-That type serves every app under `canvas_apps`, so some of its tags are for apps other than Safari Ride. `Image`, for example, is for a pixel paint program. Two of its tags, `Blend` and `View`, aren't shapes at all. They're marks that change how the shapes after them are painted. A frame of Safari Ride often holds more than 2,000 shapes, and nearly all of them are `Poly`.
+That type serves every app under `canvas_apps`. Two of its tags, `Blend` and `View`, aren't shapes at all. They're marks that change how the shapes after them are painted. A frame of Safari Ride often holds more than 2,000 shapes, and nearly all of them are `Poly`.
 
 Here's a frame with a triangle and a rectangle in it:
 
@@ -287,13 +296,13 @@ The two shapes, from the top
 ```dot
 digraph shapes {
   node [shape=box, fontname="Helvetica"];
-  "TwoShapes.shapes" -> "triangle";
-  "TwoShapes.shapes" -> "rectangle";
-  "triangle" -> "Polygon.triangle";
-  "rectangle" -> "Polygon.rectangle";
-  "Polygon.rectangle" -> "rectangle_corners";
-  "Polygon.triangle" -> "Polygon.flat_polygon";
-  "Polygon.rectangle" -> "Polygon.flat_polygon";
+  "TwoShapes.shapes" -> "triangle" [label="  lists"];
+  "TwoShapes.shapes" -> "rectangle" [label="  lists"];
+  "triangle" -> "Polygon.triangle" [label="  calls"];
+  "rectangle" -> "Polygon.rectangle" [label="  calls"];
+  "Polygon.rectangle" -> "rectangle_corners" [label="  calls"];
+  "Polygon.triangle" -> "Polygon.flat_polygon" [label="  calls"];
+  "Polygon.rectangle" -> "Polygon.flat_polygon" [label="  calls"];
   "Polygon.flat_polygon" [style=bold];
 }
 ```
@@ -312,13 +321,13 @@ A color is a whole number in hex, with the six digits a web page writes after it
 
 {{code Polygon.triangle}}
 
-The triangle takes two arguments: a color, and a record of three corners. Between the bars, `{ first_corner, second_corner, third_corner }` takes that record apart into three names. A caller gives all three by name, in any order, and can't leave one out.
+The triangle takes two arguments: a record of three corners, and a color. Between the bars, `{ first_corner, second_corner, third_corner }` takes that record apart into three names. A caller gives all three by name, in any order, and can't leave one out.
 
 `Polygon.rectangle` takes two opposite corners, and `rectangle_corners` works out all four, clockwise from the top left. Either way, `flat_polygon` makes a `Poly` of one color from a list of corners:
 
 {{code Polygon.flat_polygon}}
 
-`Brush.opaque` turns a hex color into the color a painter wants, with no transparency, and `Flat` wraps it as a fill of one color.
+`Brush.flat` turns a hex color into the color a painter wants, with no transparency, and wraps it in `Flat`, a fill of one color.
 
 So our rectangle is a `Poly`, not a `Rect`. A rectangle is just a polygon with four corners, so it goes through the same `flat_polygon` as a triangle or a tier, and every polygon reaches the painter the same way.
 
@@ -369,7 +378,7 @@ A sighting and a rendering last one frame. How long a placing lasts depends on t
 
 The first two forms hold the object's kind. A kind, such as `Conifer` or `Billboard`, holds how the object looks right now, and never where it is. The forms around it hold where. A kind is asked for its height, to see whether the object stands tall enough on the screen to draw, and for its picture, which goes into the rendering. A rendering keeps the picture and not the kind.
 
-`Conifer` is one of four tags, `BigGreen`, `SmallGreen`, `Red` or `Gold`, and the tag alone settles a tree's height and color. `Billboard` is a record of an emoji's codepoint, a height and which way it faces, and a cow, a pig or one of the ducks on the pond is one. Neither has a field for a place.
+`Conifer` is one of four tags, `Green`, `SmallGreen`, `Red` or `Gold`, and the tag alone settles a tree's height and color. `Billboard` is a record of an emoji's still, the emoji drawn as polygons, a height and which way it faces, and a cow, a pig or one of the ducks on the pond is one. Neither has a field for a place.
 
 ### Get the types right
 
@@ -390,7 +399,7 @@ digraph forms {
   sighted [label="Pipeline.Sighted(kind)\nspot, kind"];
   rendered [label="Rendered\ndepth, picture"];
   sorted [label="List(Rendered)\nfar to near"];
-  placed -> sighted [label="  Pipeline.tall_sighting_of\n  asks the kind's scenery_height"];
+  placed -> sighted [label="  Pipeline.scenery_sighting_of\n  asks the kind's scenery_height"];
   sighted -> rendered [label="  Pipeline.rendering_of\n  asks the kind's scenery_picture"];
   rendered -> sorted [label="  Rendered.depth_sorted_renderings"];
 }
@@ -410,7 +419,7 @@ The `kind` in its head, `Placed(kind)`, is lowercase, and that makes it a type v
 
 A type's head declares its variables. A function's annotation needs no head: a lowercase name in it is a type variable, and it means one type wherever it appears in that annotation. `Pipeline.sighting_of` takes a `Geom.Placed(kind)` and answers with a `Try` that holds a `Pipeline.Sighted(kind)` when the object isn't behind the camera. Both name the same `kind`, so a placed conifer can only come back as a sighted conifer, never as a sighted cow.
 
-`Picture.Setting(context)` has a variable named `context`. A conifer's context is `{ nearer_tree_count : U16 }`, how many trees are nearer than it. A billboard needs nothing more, so its context is `{}`, the empty record.
+`Picture.Setting(context)` has a variable named `context`. A conifer's context is a `TreeShapes.Detail`, `{ nearer_tree_count : U64 }`, how many trees are nearer than it. A billboard needs nothing more, so its context is `{}`, the empty record.
 
 ### Asking a kind by name
 
@@ -418,7 +427,7 @@ A type's head declares its variables. A function's annotation needs no head: a l
 
 {{code Pipeline.rendering_of}}
 
-It hands the sighting's `right` and `forward`, the lens and the context to the kind's own `scenery_picture`. It answers with a `Rendered`: the picture it gets back, and the sighting's `forward` as the depth.
+It hands the sighting's whole `spot`, the lens and the context to the kind's own `scenery_picture`. It answers with a `Rendered`: the picture it gets back, and how far forward the spot's foot is, `spot.foot().forward()`, as the depth.
 
 The second line of the annotation, indented under the first, is a `where` clause. Its square brackets hold a list of requirements on the annotation's type variables, here one. `kind.scenery_picture : kind, Picture.Setting(context) -> Picture` says that the type `kind` has a method named `scenery_picture`, of the type after the colon. A kind meets it by having a method of that name and that type. `Conifer` has one, and so does `Billboard`. Neither says it meets a requirement, and no interface names the two. The name and the type are the whole contract, and the compiler checks them wherever `rendering_of` is called.
 
@@ -426,7 +435,7 @@ The second line of the annotation, indented under the first, is a `where` clause
 
 {{fails conifer_without_context}}
 
-`Pipeline.tall_sighting_of` asks for a kind's height the same way, with `where [kind.scenery_height : kind -> Distance]`, where a `Distance` is a length in metres. It finds the sighting, then asks the kind for its `scenery_height`, to see whether the object stands tall enough on the screen to draw. A tower and the truck skip that test, through `Pipeline.sighting_of`, which has no `where` at all.
+`Pipeline.scenery_sighting_of` asks for a kind's height the same way, with `where [kind.scenery_height : kind -> Distance]`, where a `Distance` is a length in metres. It finds the sighting, then asks the kind for its `scenery_height`, to see whether the object stands tall enough on the screen to draw, and answers `TooSmall` when it doesn't. A tower and the truck skip that test, through `Pipeline.sighting_of`, which has no `where` at all.
 
 Because a name and a type are the whole contract, the name has to say what it's for. A kind could well have a method called `height`, of type `kind -> Distance`, that measures something else, and a `where` clause that asked for `height` would take it without a word. The first word of `scenery_height` and `scenery_picture` says that the method is there for the objects along the road, so a kind meets the contract only on purpose.
 
@@ -442,7 +451,7 @@ A tree is a trunk under eight tiers of foliage, and a far tree's tiers are flat 
 
 New in this chapter:
 
-- Roc: nominal types, record update, one branch for two tags
+- Roc: nominal types, one branch for two tags
 - Modules: `Conifer`, `TreeShapes`, `Distance`, `Fraction`, `Camera`
 
 ### Get the types right
@@ -451,14 +460,13 @@ A tree passes through these types on its way to the screen:
 
 | Type | What it is |
 |---|---|
-| `Conifer` | A tree's kind: `BigGreen`, `SmallGreen`, `Red` or `Gold` |
+| `Conifer` | A tree's kind: `Green`, `SmallGreen`, `Red` or `Gold` |
 | `Distance` | A length in metres, opaque like `Clock` and an `F64` underneath |
-| `TreeShapes.TreeAhead` | A tree as `TreeShapes` sees it: `right`, `forward`, `height` and `foliage_color` |
-| `Geom.RaisedPoint` | A point in the rider's view: `right` and `forward` of the camera, and `height` above the rider's level, negative where the ground curves away |
-| `TreeShapes.TreeOutline` | Where a tree lands on the screen, and how big it looks there, in `Pixels` |
+| `RiderView.RaisedPointAhead` | A point in front of the camera: `right` and `forward` of it, and `height` above the rider's level. `spot.base()` gives the middle of a tree's foot as one |
+| `Camera.Upright` | Where an upright thing lands on the screen: its `foot`, and its `height_on_screen` in `Pixels` |
 | `TreeShapes.Tier` | One layer of the crown, as fractions of the crown |
 
-A conifer draws from a `Picture.Setting({ nearer_tree_count : U16 })`, the setting from Nature types with the count of nearer trees as its context.
+A conifer draws from a `Picture.Setting(TreeShapes.Detail)`, the setting from Nature types with the count of nearer trees as its context.
 
 Each step of the job is a signature:
 
@@ -474,12 +482,12 @@ One tree, from the top
 digraph tree {
   node [shape=box, fontname="Helvetica"];
   "Conifer.scenery_picture" [style=bold];
-  "Conifer.scenery_picture" -> "TreeShapes.tree_picture";
-  "TreeShapes.tree_picture" -> "tree_outline";
-  "tree_outline" -> "Camera.project";
-  "TreeShapes.tree_picture" -> "trunk_shape";
-  "TreeShapes.tree_picture" -> "tier_shape";
-  "tier_shape" -> "tier_triangle";
+  "Conifer.scenery_picture" -> "TreeShapes.tree_picture" [label="  hands the height and color to"];
+  "TreeShapes.tree_picture" -> "tier_inputs_of" [label="  calls"];
+  "tier_inputs_of" -> "Camera.upright_on_screen" [label="  finds the outline with"];
+  "TreeShapes.tree_picture" -> "trunk_shape" [label="  calls"];
+  "TreeShapes.tree_picture" -> "tier_shape" [label="  calls"];
+  "tier_shape" -> "tier_triangle" [label="  calls"];
 }
 ```
 
@@ -491,23 +499,23 @@ Here's all of `Conifer`:
 
 {{module Conifer}}
 
-`Conifer := [BigGreen, SmallGreen, Red, Gold].{ ... }` is a nominal type. Like `Clock`, it carries a block of definitions. Unlike `Clock`, it isn't opaque. The one symbol that differs, `:=` here against `::` for `Clock`, is what decides that. Because it isn't opaque, other modules can use its tags. `Trees.accent_conifer`, back in The world, picks `Gold` for a scheme of gold and green.
+`Conifer := [Green, SmallGreen, Red, Gold].{ ... }` is a nominal type. Like `Clock`, it carries a block of definitions. Unlike `Clock`, it isn't opaque. The one symbol that differs, `:=` here against `::` for `Clock`, is what decides that. Because it isn't opaque, other modules can use its tags. `Trees.accent_conifer`, back in The world, picks `Gold` for a scheme of gold and green.
 
-No tree stores its height. `scenery_height` works it out from the kind, so there's no stored copy to disagree with it. In `foliage_color`, `BigGreen | SmallGreen =>` is one branch for two tags, because both greens share one color. The first `expect` checks a list of pairs. Each pair in parentheses is a tuple, a fixed group of values whose types needn't match, and `all` checks every one.
+No tree stores its height. `scenery_height` works it out from the kind, so there's no stored copy to disagree with it. In `foliage_color`, `Green | SmallGreen =>` is one branch for two tags, because both greens share one color.
 
-`scenery_picture` takes the kind and a setting, and the bars take the setting apart, as `Polygon.triangle` did with its corners. The tree's `right` and `forward` go on to `TreeShapes.tree_picture` with its height and color, in the record that function wants.
+`scenery_picture` takes the kind and a setting, and hands the setting whole to `TreeShapes.tree_picture`, with the tree's height and color in the record that function wants.
 
-`tree_picture` finds the tree on the screen, then makes a trunk and eight tiers.
+`tree_picture` finds the tree on the screen, then makes a trunk and eight tiers. Its bars take the setting apart into `spot`, `focal_length` and `context`, as `Polygon.triangle` did with its corners.
 
 {{code TreeShapes.tree_picture}}
 
-`tip` is the top of the tree, as a point in the rider's view. `trunk_shape` makes the trunk, a rectangle, and `tier_shape` makes each tier. `tiers.map(...)` calls it for every tier and gives back the list of answers, and `[trunk].concat(...)` puts the trunk first, so the tiers paint over it. What `trunk_finish` and `crown` do for near trees can wait, but notice the tags in `trunk_finish`. `Shaded` and `Flat` are written on the spot, as in The world, and this `Flat` has nothing to do with the fill `Flat` from Shapes. Two tags with one name in two unrelated unions are two different tags. For a far tree, `tier_shape` answers with `tier_triangle`, and the next chapter shows the rest of it.
+`spot.base()` is the middle of the tree's foot, as a point in front of the camera. `tier_inputs_of` works out from it what every tier needs, among them the tree's `outline` on the screen. `trunk_shape` makes the trunk, a rectangle, and `tier_shape` makes each tier. `tiers.map(...)` calls it for every tier and gives back the list of answers, and `[trunk].concat(...)` puts the trunk first, so the tiers paint over it. What `trunk_finish_of` and the crown do for near trees can wait, but notice the tags of `TrunkFinish`, `[Shaded, Flat]`. This `Flat` has nothing to do with the fill `Flat` from Shapes. Two tags with one name in two unrelated unions are two different tags. For a far tree, `tier_shape` answers with `tier_triangle`, and the next chapter shows the rest of it.
 
-`Camera.project` turns a point in front of the camera into a place on the screen, and `cam_focal` is the lens's focal length, in pixels. `tree_outline` calls it twice, once for the tree's foot and once for its tip. The difference between them is how tall the tree looks.
+The tree's outline is where it lands on the screen, and how tall it looks there:
 
 {{code TreeShapes.tree_outline}}
 
-`{ ..tip, height: Distance.zero }` is a copy of `tip` with a new `height`, and `tip` itself doesn't change. That copy is the tree's foot.
+`Camera.upright_on_screen` projects two points through the lens: the tree's foot, and its top, `height` above the foot. The difference between them on the screen is how tall the tree looks.
 
 The trunk and the crown split the tree's height between them:
 
