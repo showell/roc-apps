@@ -15,7 +15,7 @@ import Screen
 import Tour
 
 SafariApp :: [].{
-	Model : { tour : Tour, paused : Bool }
+	Model : { tour : Tour, motion : [Playing, Paused] }
 
 	canvas_app : CanvasApp.CanvasApp(SafariApp.Model)
 	canvas_app = {
@@ -23,7 +23,7 @@ SafariApp :: [].{
 		# The ride's motion is written per step, and thirty steps a second is the
 		# speed it is meant to look like, chosen by eye.
 		fps: 30,
-		init: { tour: Tour.initial, paused: False },
+		init: initial_model,
 		model_at_next_step: CanvasApp.untimed_model_at_next_step(model_at_next_step),
 		frame_shapes: |m| frame_shapes(m.tour),
 		sounds: |_m| 0,
@@ -58,49 +58,37 @@ SafariApp :: [].{
 	model_at_next_step : SafariApp.Model, Input.Snapshot -> SafariApp.Model
 	model_at_next_step = |m, input|
 		if input.key_pressed(KeyR) {
-			{ tour: Tour.initial, paused: False }
+			initial_model
 		} else {
-			paused = if input.key_pressed(KeySpace) {
-				!m.paused
+			motion = if input.key_pressed(KeySpace) {
+				match m.motion {
+					Playing => Paused
+					Paused => Playing
+				}
 			} else {
-				m.paused
+				m.motion
+			}
+			steps_a_press = match motion {
+				Paused => 1
+				Playing => 4
 			}
 			moved =
 				if input.key_down(KeyRight) {
-					repeat(
-						m.tour,
-						{
-							step_count: if paused {
-								1
-							} else {
-								4
-							},
-							step_once: Tour.step_forward,
-						},
-					)
+					repeat(m.tour, { step_count: steps_a_press, step_once: Tour.step_forward })
 				} else if input.key_down(KeyLeft) {
-					repeat(
-						m.tour,
-						{
-							step_count: if paused {
-								1
-							} else {
-								4
-							},
-							step_once: Tour.step_back,
-						},
-					)
-				} else if paused {
-					m.tour
+					repeat(m.tour, { step_count: steps_a_press, step_once: Tour.step_back })
 				} else {
-					Tour.step_forward(m.tour)
+					match motion {
+						Paused => m.tour
+						Playing => Tour.step_forward(m.tour)
+					}
 				}
 			tour = if input.key_pressed(KeyJ) {
 				next_segment(moved)
 			} else {
 				moved
 			}
-			{ tour, paused }
+			{ tour, motion }
 		}
 
 	## The tour after `step_once` has moved it `step_count` times.
@@ -132,3 +120,7 @@ SafariApp :: [].{
 	step_guard : I64
 	step_guard = 200000
 }
+
+## The ride at its start, playing.
+initial_model : SafariApp.Model
+initial_model = { tour: Tour.initial, motion: Playing }
