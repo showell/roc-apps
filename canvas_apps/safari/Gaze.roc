@@ -37,8 +37,8 @@ Gaze :: [].{
 	## to notice and less than the release angle from the way the motorcycle
 	## points, or else at the road.
 	desired_gaze : Motorcycle, Segment -> Gaze.GazeTarget
-	desired_gaze = |motorcycle, seg|
-		match Gawking.gawked_pig(motorcycle, seg) {
+	desired_gaze = |motorcycle, segment|
+		match Gawking.gawked_pig(motorcycle, segment) {
 			GawkingAt(pig) => {
 				turn = turn_to(motorcycle, pig)
 				if turn.abs() < look_release_angle {

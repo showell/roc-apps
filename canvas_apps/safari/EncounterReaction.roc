@@ -32,7 +32,7 @@ EncounterReaction :: [].{
 	encounter_attention : Segment, EncounterPlan.Timing -> Attention
 	encounter_attention = |segment, timing|
 		match segment.encounter {
-			CatCrosses(_) => Cat.attention(Cat.crossing_stage(timing))
+			CatCrosses(_) => Cat.cat_attention(Cat.crossing_stage(timing))
 			BirdHere(_) | QuietRoad => Attention.none
 		}
 }

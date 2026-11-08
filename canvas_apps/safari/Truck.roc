@@ -32,17 +32,17 @@ Truck := {
 
 	## The truck one step on: where the rider is along the route, and the
 	## route itself, decide its pace.
-	at_next_step : Truck, { rider_distance : Distance, route : Route } -> Truck
-	at_next_step = |truck, { rider_distance, route }| {
+	truck_at_next_step : Truck, { rider_distance : Distance, route : Route } -> Truck
+	truck_at_next_step = |truck, { rider_distance, route }| {
 		tease = tease_position({ rider_distance, route_length: route.route_length() })
 		match next_bend(route, truck.route_position) {
 			BendAhead(bend) =>
 				if bend.distance <= brake_distance {
-					braking_state_at_next_step(truck, bend)
+					braking_truck_at_next_step(truck, bend)
 				} else {
-					chasing_state_at_next_step(truck, tease)
+					chasing_truck_at_next_step(truck, tease)
 				}
-			NoBendAhead => chasing_state_at_next_step(truck, tease)
+			NoBendAhead => chasing_truck_at_next_step(truck, tease)
 		}
 	}
 }
@@ -70,13 +70,18 @@ turn_caution = Fraction.of(0.8)
 brake_distance : Distance
 brake_distance = Distance.metres(60.0)
 
-## 10% over the rider's own cruise acceleration.
-chase_acceleration : Acceleration
-chase_acceleration = VehicleLimits.cruise_acceleration.times(1.1)
+## The truck outdoes the rider by 10%, in both its acceleration and its top
+## speed.
+chase_margin : F64
+chase_margin = 1.1
 
-## 10% over the rider's own top speed.
+## The rider's own cruise acceleration, outdone by `chase_margin`.
+chase_acceleration : Acceleration
+chase_acceleration = VehicleLimits.cruise_acceleration.times(chase_margin)
+
+## The rider's own top speed, outdone by `chase_margin`.
 chase_top_speed : Speed
-chase_top_speed = VehicleLimits.top_speed.times(1.1)
+chase_top_speed = VehicleLimits.top_speed.times(chase_margin)
 
 ## The next turn of `route` past `route_position`.
 next_bend : Route, Distance -> NextBend
@@ -91,7 +96,7 @@ next_bend = |route, route_position|
 					})
 				RouteEnds => NoBendAhead
 			}
-		Err(_) => NoBendAhead
+		Err(NotFound) => NoBendAhead
 	}
 
 ## The tease: where the truck aims to be along the route when the rider is
@@ -109,8 +114,8 @@ tease_position = |{ rider_distance, route_length }| {
 
 ## The truck one step on, slowing for `turn`, so that it reaches the turn at a
 ## cautious speed.
-braking_state_at_next_step : Truck, ComingBend -> Truck
-braking_state_at_next_step = |truck, turn| {
+braking_truck_at_next_step : Truck, ComingBend -> Truck
+braking_truck_at_next_step = |truck, turn| {
 	target_speed = turn.turn_speed.scaled_by(turn_caution)
 	acceleration = VehicleLimits.braking_to(
 		truck.speed,
@@ -132,8 +137,8 @@ braking_state_at_next_step = |truck, turn| {
 
 ## The truck one step on with no turn close: it speeds up while it is short of
 ## `tease`, and otherwise holds its speed.
-chasing_state_at_next_step : Truck, Distance -> Truck
-chasing_state_at_next_step = |truck, tease| {
+chasing_truck_at_next_step : Truck, Distance -> Truck
+chasing_truck_at_next_step = |truck, tease| {
 	speed =
 		if truck.route_position < tease {
 			chase_top_speed.min(truck.speed.accelerated_by(chase_acceleration))

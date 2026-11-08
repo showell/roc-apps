@@ -16,11 +16,11 @@ Gawking :: [].{
 	notice_distance : Distance
 	notice_distance = Distance.metres(150.0)
 
-	## The pig on `seg` that catches the rider's eye: the standout pig of a herd
+	## The pig on `segment` that catches the rider's eye: the standout pig of a herd
 	## the rider finds distracting. A herd the rider passes by catches no eye.
 	eye_catching_pig : Segment -> [CatchesEye(Geom.Placed(Billboard)), NoPigCatchesEye]
-	eye_catching_pig = |seg|
-		match seg.segment_standout_pig() {
+	eye_catching_pig = |segment|
+		match segment.segment_standout_pig() {
 			Standout({ pig, interest: Distracting }) => CatchesEye(pig)
 			Standout({ interest: Unnoticed, .. }) | NoPigs => NoPigCatchesEye
 		}
@@ -31,16 +31,16 @@ Gawking :: [].{
 	## `gawk_brake` holds the rider down for as long as it lasts, so the rider
 	## doesn't open the throttle until the next segment.
 	gawked_pig : Motorcycle, Segment -> [GawkingAt(Geom.Placed(Billboard)), NotGawking]
-	gawked_pig = |motorcycle, seg|
-		match eye_catching_pig(seg) {
+	gawked_pig = |motorcycle, segment|
+		match eye_catching_pig(segment) {
 			CatchesEye(pig) if is_past_notice(motorcycle, pig) => GawkingAt(pig)
 			CatchesEye(_) | NoPigCatchesEye => NotGawking
 		}
 
 	## Whether the rider is gawking at this segment's pig.
 	is_gawking : Motorcycle, Segment -> Bool
-	is_gawking = |motorcycle, seg|
-		match gawked_pig(motorcycle, seg) {
+	is_gawking = |motorcycle, segment|
+		match gawked_pig(motorcycle, segment) {
 			GawkingAt(_) => True
 			NotGawking => False
 		}
@@ -48,8 +48,8 @@ Gawking :: [].{
 	## The brake for a gawking rider, who aims to be down to `gawk_speed` by
 	## the settle distance before the pig.
 	gawk_brake : Motorcycle, Segment -> VehicleLimits.Limit
-	gawk_brake = |motorcycle, seg|
-		match gawked_pig(motorcycle, seg) {
+	gawk_brake = |motorcycle, segment|
+		match gawked_pig(motorcycle, segment) {
 			GawkingAt(pig) => {
 				gap = pig.road_point.along.distance_from(motorcycle.route_place.along)
 				room = gap.minus(gawk_settle_distance)

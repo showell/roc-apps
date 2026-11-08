@@ -47,8 +47,8 @@ step_shown : U32
 step_shown = 374
 
 ## The rider's motorcycle at that step, the ride's own.
-rider : Motorcycle
-rider = Tour.at_step(step_shown).instant().rider.motorcycle
+motorcycle : Motorcycle
+motorcycle = Tour.at_step(step_shown).instant().rider.motorcycle
 
 ## A point on an arc: how far along the road from the rider, and where across it.
 ArcPoint : { forward : F64, across : F64 }
@@ -59,16 +59,16 @@ Rehearsal : { lean_try : LeanSearch.LeanTry, path_points : List(ArcPoint) }
 ## Where a coast with `lean` goes, each step as a point on the arc.
 points_of : Angle.Lean -> List(ArcPoint)
 points_of = |lean|
-	Coast.coast_path(rider.with_lean(lean)).path_motorcycles.map(
-		|motion| {
-			forward: motion.route_place.along.distance_from(rider.route_place.along).to_metres(),
-			across: motion.route_place.across.to_metres(),
+	Coast.coast_path(motorcycle.with_lean(lean)).path_motorcycles.map(
+		|path_motorcycle| {
+			forward: path_motorcycle.route_place.along.distance_from(motorcycle.route_place.along).to_metres(),
+			across: path_motorcycle.route_place.across.to_metres(),
 		},
 	)
 
 rehearsals : List(Rehearsal)
 rehearsals =
-	LeanSearch.search_tries(rider).map(
+	LeanSearch.search_tries(motorcycle).map(
 		|lean_try| { lean_try, path_points: points_of(LeanSearch.tried_lean(lean_try)) },
 	)
 
@@ -78,7 +78,7 @@ lean_correction_of = |{ lean_try, .. }| LeanSearch.lean_correction(lean_try.outc
 
 ## The lean the search settled on.
 chosen_lean : Angle.Lean
-chosen_lean = LeanSearch.best_lean(rider)
+chosen_lean = LeanSearch.best_lean(motorcycle)
 
 chosen_points : List(ArcPoint)
 chosen_points = points_of(chosen_lean)
@@ -223,7 +223,7 @@ drawn_points = |path_points| {
 ## two of its points, as at its end, where no line is drawn.
 arc_shapes : List(ArcPoint), { color : RgbColor, width : F64 } -> List(Shapes.Shape)
 arc_shapes = |path_points, { color, width }| {
-	start = { forward: 0.0, across: rider.route_place.across.to_metres() }
+	start = { forward: 0.0, across: motorcycle.route_place.across.to_metres() }
 	points = drawn_points(path_points).prepend(start).map(canvas_point)
 	points
 		.map2(points.drop_first(1), |from, to| { from, to })
@@ -247,7 +247,7 @@ tries_shapes = |tries, width|
 
 rider_mark : Shapes.Shape
 rider_mark = {
-	{ x, y } = canvas_point({ forward: 0.0, across: rider.route_place.across.to_metres() })
+	{ x, y } = canvas_point({ forward: 0.0, across: motorcycle.route_place.across.to_metres() })
 	Disc({
 		x,
 		y,
@@ -349,7 +349,7 @@ status_lines = |stop|
 		Start =>
 			[
 				"Step ${step_shown.to_str()}, just after a bend",
-				"Leaning ${lean_text(rider.lean)}",
+				"Leaning ${lean_text(motorcycle.lean)}",
 				"Aiming for ${across_text(LeanSearch.aimed_across)}",
 				"Each mark is one try at a lean",
 			]

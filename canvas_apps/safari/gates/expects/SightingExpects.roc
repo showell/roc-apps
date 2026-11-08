@@ -413,7 +413,7 @@ expect {
 		and pond_acrosses(left_pond_bend).all(|across| across > Geom.right_edge)
 }
 
-# The truck on the real route, through Truck.at_next_step. Truck doesn't import
+# The truck on the real route, through Truck.truck_at_next_step. Truck doesn't import
 # World. The real route's first bends are at 500 m and 820 m, its last at 7220 m,
 # and it ends at 7520 m.
 
@@ -422,7 +422,7 @@ expect {
 ## ahead.
 truck_after : F64, F64 -> Truck
 truck_after = |route_position, speed|
-	Truck.at_next_step(
+	Truck.truck_at_next_step(
 		{
 			..Truck.initial,
 			route_position: Distance.metres(route_position),
@@ -471,7 +471,7 @@ expect
 expect braking_truck.pace == Slowing
 
 settled_truck : Truck
-settled_truck = Truck.at_next_step(
+settled_truck = Truck.truck_at_next_step(
 	{
 		route_position: Distance.metres(450.0),
 		speed: Speed.metres_a_step(0.1776),

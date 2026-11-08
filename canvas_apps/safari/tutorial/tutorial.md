@@ -1681,7 +1681,7 @@ Each limit takes the lower of two opaque `Acceleration`s with `min`. `NoAccelera
 
 The first limit, `bend_brake`, makes the `a1` that the chain above starts from. It calls this for the distance left to the point where the rider commits to the turn. Three modules use that one line of physics: this one, `Gaze` to slow for a pig, and `Truck`.
 
-{{code Throttle.bend_limit from "v_end = exit_speed(seg)" to "AtMost(VehicleLimits.braking_to(motorcycle.speed, { target: v_end, within: d }))"}}
+{{code Throttle.bend_limit}}
 
 After the limits, `Throttle.acceleration` hands its result to `allowed_speed`, not quoted here, which holds the speed between rest and the top speed. The chain works in accelerations and that step works in speeds, so the answer is taken back with `.change_from(state.speed)`, the other half of the same pair of types.
 
@@ -1798,7 +1798,7 @@ It starts at the same 150 metres, but it only asks where the rider is. There's n
 
 `pig_limit` is the third link in the throttle's chain. It asks `Gaze` for a brake, and takes it if that's harder than what it was offered:
 
-{{code Throttle.next_speed from "Gawking.gawk_brake(motorcycle, seg)," to "Gawking.gawk_brake(motorcycle, seg),"}}
+{{code Throttle.next_speed from "Gawking.gawk_brake(motorcycle, segment)," to "Gawking.gawk_brake(motorcycle, segment),"}}
 
 {{code Gawking.gawk_brake}}
 
@@ -1861,7 +1861,7 @@ The schedule is a straight line, and a pure function of the rider's progress, de
 
 Its one caller is the truck's step function, the same shape as the rider's. `NextBend` is a tag union with a payload on one side, so the only way to read a `distance` is to be inside the branch where there is one:
 
-{{code Truck.at_next_step from "tease = tease_position(" to "NoBendAhead => chasing_state_at_next_step(truck, tease)"}}
+{{code Truck.truck_at_next_step from "tease = tease_position(" to "NoBendAhead => chasing_truck_at_next_step(truck, tease)"}}
 
 And that's called from `RideInstant.next`, in the chapter on stepping, with the rider's distance as the only thing the truck knows of the rider. Nothing in `Rider` imports `Truck`, and nothing in `Truck` imports `Rider`. The chase is one record literal in `RideInstant`.
 
@@ -1875,9 +1875,9 @@ It's called through a smaller function, which supplies the 0 so nobody else has 
 
 Then the two ways to take a step. Both sit below the block, private, and both are arithmetic on `Speed` by name. `target_speed.max(...)` keeps braking from undershooting, and `speed < truck.speed` is the whole of what turns on the brake lights. They're on while the truck is slowing down, and they go off when it's settled at the speed for the turn, even with the turn still ahead.
 
-{{code Truck.braking_state_at_next_step}}
+{{code Truck.braking_truck_at_next_step}}
 
-{{code Truck.chasing_state_at_next_step}}
+{{code Truck.chasing_truck_at_next_step}}
 
 `brake_lights` is state because it's a fact about the last step. Headlights aren't, and they stay out of `TruckState`. That's three of the four kinds in one vehicle: the place and speed are stepped, the headlights are clock-driven, and the tires don't change.
 
@@ -2318,7 +2318,7 @@ Let's follow this back to `Cat`, to two small questions about the same `Stage`.
 
 `attention` is where `Past`'s payload is used. A cat in the lane also draws the rider's attention, which widens the view. `beyond` is how far past the end of the crossing the rider has come, and that attention fades over that distance, counted in beats. `beats_to_cover` divides by the speed, so a rider at a standstill gets an answer first. `Attention` is another opaque type.
 
-{{code Cat.attention}}
+{{code Cat.cat_attention}}
 
 `CrossingReaction.reaction_to` calls both. `..` in the argument's type makes it an open record, like `Bike.Motion`, though this one is only read and nothing comes back. This function needs `along` and `speed`, and accepts any record that has them, so it doesn't depend on `Rider`, the rider's record. `speed` here is the opaque `Speed` again, and `match` on `segment.crossing` has to name every tag.
 

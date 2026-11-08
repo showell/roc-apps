@@ -35,8 +35,8 @@ Cat :: [].{
 
 	## How hard the cat holds the rider's eye at `stage`: rising as it crosses,
 	## then fading once it is across.
-	attention : Animation.Stage -> Attention
-	attention = |stage|
+	cat_attention : Animation.Stage -> Attention
+	cat_attention = |stage|
 		match stage {
 			Waiting => Attention.none
 			Playing(steps_in) => {
@@ -195,7 +195,7 @@ expect
 
 ## How hard the cat holds the eye at `stage`.
 attention_at : Animation.Stage -> F64
-attention_at = |stage| Cat.attention(stage).to_f64()
+attention_at = |stage| Cat.cat_attention(stage).to_f64()
 
 expect attention_at(Waiting) == 0.0
 expect attention_at(Playing(Steps.zero)) == 0.0
