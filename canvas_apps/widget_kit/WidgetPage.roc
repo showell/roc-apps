@@ -124,7 +124,7 @@ WidgetPage :: [].{
 	## Where and how large the rows of a readout are set: the x they are aligned
 	## on, the baseline of the first row, how far each row sits below the last,
 	## and the size of their type.
-	ReadoutStyle : {
+	ReadoutRows : {
 		x : F64,
 		first_baseline : F64,
 		row_spacing : F64,
@@ -133,8 +133,8 @@ WidgetPage :: [].{
 	}
 
 	## The rows of text on the panel under the picture, from its left margin.
-	panel_readout : ReadoutStyle
-	panel_readout = {
+	panel_rows : ReadoutRows
+	panel_rows = {
 		x: side_margin,
 		first_baseline: picture_bottom_y + 50.0,
 		row_spacing: 26.0,
@@ -144,13 +144,13 @@ WidgetPage :: [].{
 
 	## A line of what the widget reads out, on row `row` of `style`, in
 	## monospace.
-	readout : {
+	readout_line : {
 		text : Str,
 		color : RgbColor,
 		row : U64,
-		style : ReadoutStyle,
+		style : ReadoutRows,
 	} -> Shapes.Shape
-	readout = |{ text, color, row, style }|
+	readout_line = |{ text, color, row, style }|
 		Text({
 			text,
 			x: style.x,
@@ -241,7 +241,7 @@ panel = Rect({
 })
 
 status_line : Str, U64 -> Shapes.Shape
-status_line = |text, row| WidgetPage.readout({ text, color: WidgetPage.ink_color, row, style: WidgetPage.panel_readout })
+status_line = |text, row| WidgetPage.readout_line({ text, color: WidgetPage.ink_color, row, style: WidgetPage.panel_rows })
 
 # A page is the panel and its text.
 expect WidgetPage.frame_shapes({ picture_shapes: [], status_lines: [] }).len() == 1

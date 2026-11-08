@@ -150,11 +150,11 @@ truck_shapes = |view| TruckBody.body_shapes(view_setting(view))
 ## The words under a truck, centered on it, on the panel's first row.
 caption_shape : TruckView -> Shapes.Shape
 caption_shape = |view|
-	WidgetPage.readout({
+	WidgetPage.readout_line({
 		text: view.caption,
 		color: WidgetPage.ink_color,
 		row: 0,
-		style: { ..WidgetPage.panel_readout, x: view.canvas_x, align: Center },
+		style: { ..WidgetPage.panel_rows, x: view.canvas_x, align: Center },
 	})
 
 still_shapes : List(Shapes.Shape)

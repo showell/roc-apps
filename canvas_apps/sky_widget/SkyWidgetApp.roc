@@ -194,11 +194,11 @@ warmth_color = RgbColor.of(0xC0392B)
 call_lines : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
 call_lines = |job, clock|
 	call_rows(job, clock).map_with_index(
-		|{ text, color }, row| WidgetPage.readout({
+		|{ text, color }, row| WidgetPage.readout_line({
 			text,
 			color,
 			row,
-			style: WidgetPage.panel_readout,
+			style: WidgetPage.panel_rows,
 		}),
 	)
 

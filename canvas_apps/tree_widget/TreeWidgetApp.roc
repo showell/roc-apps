@@ -121,7 +121,7 @@ caption_lines = |forward|
 ## A line of a caption, centered under its tree, on row `row` of the panel.
 caption_line : Stand, { text : Str, row : U64 } -> Shapes.Shape
 caption_line = |stand, { text, row }|
-	WidgetPage.readout({
+	WidgetPage.readout_line({
 		text,
 		color: WidgetPage.ink_color,
 		row,

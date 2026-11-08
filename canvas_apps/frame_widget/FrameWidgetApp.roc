@@ -266,7 +266,7 @@ status_lines = |{ last_layer_on, .. }| {
 
 ## The panel's rows of text, in type sized for the whole frame, larger than a
 ## widget page's.
-status_readout : WidgetPage.ReadoutStyle
+status_readout : WidgetPage.ReadoutRows
 status_readout = {
 	x: WidgetPage.side_margin,
 	first_baseline: picture_height + 40.0,
@@ -276,7 +276,7 @@ status_readout = {
 }
 
 status_line : Str, U64 -> Shapes.Shape
-status_line = |text, row| WidgetPage.readout({
+status_line = |text, row| WidgetPage.readout_line({
 	text,
 	color: WidgetPage.ink_color,
 	row,
