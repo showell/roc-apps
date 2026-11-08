@@ -46,7 +46,7 @@ RiderCamera := {
 			route_place,
 			yaw,
 			heading: route.bearing_of(route_place.segment_index).plus(yaw),
-			focal_length: ride_focal(rider, { route, encounter_stage }),
+			focal_length: ride_focal_length(rider, { route, encounter_stage }),
 			roll: rider_roll(rider.motorcycle.lean),
 		}
 	}
@@ -87,8 +87,8 @@ rider_roll = |lean|
 ## The camera's focal length for where the rider is and how they ride. The
 ## view widens as the rider leans, and as the rider's attention is caught, by
 ## an encounter on the road or by a look to the side.
-ride_focal : Rider, { route : Route, encounter_stage : Animation.Stage } -> Pixels
-ride_focal = |rider, { route, encounter_stage }| {
+ride_focal_length : Rider, { route : Route, encounter_stage : Animation.Stage } -> Pixels
+ride_focal_length = |rider, { route, encounter_stage }| {
 	attention = rider.attention({ route, encounter_stage })
 	focal_length_for({ lean: rider.motorcycle.lean, attention })
 }

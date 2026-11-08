@@ -1863,7 +1863,7 @@ The depth has one job. It widens the view:
 
 {{code RiderEyes.attention}}
 
-`RideFocal.ride_focal`, which sets how wide the view is, takes the stronger of this and what a crossing on the road asks for, which we'll meet with the cat. So a pig widens the view, and the view stays wide for a while after.
+`RiderCamera.ride_focal_length`, which sets how wide the view is, takes the stronger of this and what a crossing on the road asks for, which we'll meet with the cat. So a pig widens the view, and the view stays wide for a while after.
 
 ### Gawking
 
@@ -2616,7 +2616,7 @@ The focal length comes from a lens. `resting_focal_length` is a value computed f
 
 {{code Lens.resting_focal_length}}
 
-The view widens as the rider leans. One `Fraction` goes in, and a focal length comes out. `RiderCamera.ride_focal` calls `focal_length_for`, which takes the shorter of the two focal lengths, the lean's and the attention's, so the wider view wins:
+The view widens as the rider leans. One `Fraction` goes in, and a focal length comes out. `RiderCamera.ride_focal_length` calls `focal_length_for`, which takes the shorter of the two focal lengths, the lean's and the attention's, so the wider view wins:
 
 {{code RiderCamera.focal_length_for_lean}}
 
