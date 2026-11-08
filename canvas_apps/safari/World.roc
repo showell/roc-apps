@@ -240,16 +240,6 @@ World :: [].{
 		},
 	]
 
-	## The route's last segment, which ends it.
-	last_plan : World.SegmentPlan
-	last_plan = {
-		length: Distance.metres(300.0),
-		scheme: RedGreen,
-		encounter: CatCrosses,
-		pigs: WithPigs,
-		bull: WithBull,
-	}
-
 	## Every segment's plan, in order.
 	segment_plans : List(World.SegmentPlan)
 	segment_plans = bending_plans.map(|bending| bending.segment_plan).append(last_plan)
@@ -301,6 +291,16 @@ World :: [].{
 	first_distracting_segment =
 		World.route.route_segments().find_first(Segment.is_distracting)
 			?? crash "World.first_distracting_segment: the route has a distracting herd"
+}
+
+## The route's last segment, which ends it.
+last_plan : World.SegmentPlan
+last_plan = {
+	length: Distance.metres(300.0),
+	scheme: RedGreen,
+	encounter: CatCrosses,
+	pigs: WithPigs,
+	bull: WithBull,
 }
 
 ## The route's first segment with a bird.
@@ -389,13 +389,6 @@ expect
 		(17, False),
 		(18, True),
 	].all(|(index, want)| is_route_end(route_segment_at(index)) == want)
-
-expect
-	[
-		(0, False),
-		(6, True),
-		(9, False),
-	].all(|(index, want)| route_segment_at(index).has_mid_tower() == want)
 
 # The rider commits to the route's end at the end of its last segment.
 expect route_segment_at(18).commit_along().to_metres() == 300.0

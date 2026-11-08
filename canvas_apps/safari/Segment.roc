@@ -2,8 +2,9 @@
 ## next: its length, its trees, its herds, what the rider meets on it, and how
 ## it ends. It is built once, from choices the route has already made, and this
 ## module answers the questions asked of one segment: where its herds stand,
-## where the rider commits to its bend, whether a tower stands halfway along
-## it, and what on it may catch the rider's eye.
+## which trees its cat and its bird wait by, where the rider commits to its
+## bend, whether a tower stands halfway along it and where, and what on it may
+## catch the rider's eye.
 import Across
 import Along
 import Angle
@@ -49,7 +50,19 @@ Segment := {
 
 	## What lives at the bend that ends a segment: nothing, a safari animal and
 	## its baby, or a pond with its ducks.
-	BendLife : [Quiet, Animal(BendAnimal), DuckPond]
+	BendLife := [Quiet, Animal(BendAnimal), DuckPond].{
+
+		## The billboards of `bend_life`, placed on the segment that ends at
+		## `bend`: the animal and its baby, or the ducks on the pond, whose
+		## places are measured from the bend.
+		bend_billboards : Segment.BendLife, Geom.Bend -> List(Geom.Placed(Billboard))
+		bend_billboards = |bend_life, bend|
+			match bend_life {
+				Animal(animal) => animal.bend_billboards(bend)
+				DuckPond => Pond.placed_ducks(bend)
+				Quiet => []
+			}
+	}
 
 	## How a segment ends: by turning into the next, positive to the right,
 	## with what lives at the bend, or by ending the route.
@@ -85,10 +98,15 @@ Segment := {
 					CatCrossing.by_tree({ tree: nearest_tree_ahead(trees, cat_along).road_point }),
 				)
 				BirdHere =>
-					match BirdFlight.segment_flight(trees) {
-						Ok(flight) => BirdHere(flight)
-						Err(NoPerch) | Err(NoTreeToFlyTo) =>
-							crash "Segment.from_choices: a segment planned with a bird has a tree for it to start on and one to fly to"
+					match fifth_left_tree(trees) {
+						Ok(perch) =>
+							match BirdFlight.flight_from(trees, perch) {
+								Ok(flight) => BirdHere(flight)
+								Err(NoTreeToFlyTo) =>
+									crash "Segment.from_choices: a segment planned with a bird has a tree for it to fly to"
+							}
+						Err(NoPerch) =>
+							crash "Segment.from_choices: a segment planned with a bird has a tree for it to start on"
 					}
 				QuietRoad => QuietRoad
 			},
@@ -109,18 +127,12 @@ Segment := {
 	segment_cows = |segment|
 		segment.cows.herd.herd_cows({ herd_along: cow_herd_along, bull: segment.cows.bull })
 
-	## The billboards at the end of `segment`, placed on it: the animal and its
-	## baby at its bend, or the ducks on its pond. A duck's place is measured
-	## from the bend at the segment's end.
+	## The billboards at the end of `segment`, placed on it: what lives at its
+	## bend, or nothing at the route's end.
 	segment_bend_billboards : Segment -> List(Geom.Placed(Billboard))
 	segment_bend_billboards = |segment|
 		match segment.segment_ending() {
-			Bends({ bend, bend_life }) =>
-				match bend_life {
-					Animal(animal) => animal.bend_billboards(bend)
-					DuckPond => Pond.placed_ducks(bend)
-					Quiet => []
-				}
+			Bends({ bend, bend_life }) => bend_life.bend_billboards(bend)
 			RouteEnds => []
 		}
 
@@ -166,9 +178,18 @@ Segment := {
 			RouteEnds => Along.at(segment.length)
 		}
 
-	## Whether `segment` has a tower halfway along.
-	has_mid_tower : Segment -> Bool
-	has_mid_tower = |segment| segment.length > mid_tower_min_length
+	## Where `segment`'s tower halfway along stands, off to the left, if the
+	## segment is long enough to have one.
+	mid_tower_point : Segment -> Try(Geom.RoadPoint, [NoMidTower])
+	mid_tower_point = |segment|
+		if segment.length > mid_tower_min_length {
+			Ok({
+				along: Along.at(segment.length.divided_by(2.0)),
+				across: Across.left_of_middle(mid_tower_left_of_middle),
+			})
+		} else {
+			Err(NoMidTower)
+		}
 
 	## Whether a segment has a cat waiting by the road.
 	has_cat : Segment -> Bool
@@ -225,6 +246,10 @@ Segment := {
 mid_tower_min_length : Distance
 mid_tower_min_length = Distance.metres(1000.0)
 
+## How far left of the road's middle a tower halfway along a segment stands.
+mid_tower_left_of_middle : Distance
+mid_tower_left_of_middle = Distance.metres(100.0)
+
 ## How far before the end of its segment a herd of pigs stands.
 pig_distance_before_end : Distance
 pig_distance_before_end = Distance.metres(60.0)
@@ -249,6 +274,15 @@ nearest_tree_ahead = |trees, along|
 	)
 		?? crash "Segment.nearest_tree_ahead: a segment with a cat is long enough to have its tree"
 
+## The tree a segment's bird perches on until its flight starts: the fifth on
+## the left, with a negative `across`, among `trees`.
+fifth_left_tree : List(Trees.RoadsideTree) -> Try(Trees.RoadsideTree, [NoPerch])
+fifth_left_tree = |trees|
+	match trees.keep_if(|tree| tree.road_point.across < Across.middle).drop_first(4).first() {
+		Ok(tree) => Ok(tree)
+		Err(ListWasEmpty) => Err(NoPerch)
+	}
+
 ## Where a herd of pigs stands on a segment `length` long.
 pig_herd_along : Distance -> Along
 pig_herd_along = |length| Along.at(length.minus(pig_distance_before_end))
@@ -265,3 +299,53 @@ expect nearest_tree_ahead(gold_trees, Along.metres(90.0)).road_point.across == A
 expect nearest_tree_ahead(gold_trees, Along.metres(90.0)).road_point.along == Along.metres(96.0)
 expect nearest_tree_ahead(gold_trees, Along.metres(96.0)).road_point.along == Along.metres(96.0)
 expect nearest_tree_ahead(gold_trees, Along.metres(96.5)).road_point.along == Along.metres(126.0)
+
+## A segment `metres` long with nothing on its road, which ends the route.
+quiet_segment : F64 -> Segment
+quiet_segment = |metres|
+	Segment.from_choices({
+		length: Distance.metres(metres),
+		scheme: AllGreen,
+		pigs: NoPigs,
+		cows: { herd: { cow_count: 1, rows_behind_front: 0 }, bull: NoBull },
+		encounter: QuietRoad,
+		ending: RouteEnds,
+	})
+
+# Only a segment longer than a kilometre has a tower halfway along.
+expect quiet_segment(1000.0).mid_tower_point() == Err(NoMidTower)
+expect
+	quiet_segment(1000.5).mid_tower_point()
+		== Ok({ along: Along.metres(500.25), across: Across.metres(-100.0) })
+
+## A tree at `along` and `across` metres, of whatever kind a gold segment starts
+## with.
+tree_at : F64, F64 -> Trees.RoadsideTree
+tree_at = |along, across| {
+	..(gold_trees.first() ?? crash "Segment.tree_at: a gold segment has trees"),
+	road_point: { along: Along.metres(along), across: Across.metres(across) },
+}
+
+## A left and a right tree at each of `alongs`.
+pairs_at : List(F64) -> List(Trees.RoadsideTree)
+pairs_at = |alongs| alongs.join_map(|along| [tree_at(along, -6.0), tree_at(along, 6.0)])
+
+## How far along the fifth left tree of `trees` is, if there is one.
+fifth_along : List(Trees.RoadsideTree) -> Try(F64, [NoPerch])
+fifth_along = |trees|
+	match fifth_left_tree(trees) {
+		Ok(tree) => Ok(tree.road_point.along.to_metres())
+		Err(NoPerch) => Err(NoPerch)
+	}
+
+# Only trees on the left count toward the fifth, and a segment too short for five
+# of them has none.
+expect fifth_along([]) == Err(NoPerch)
+expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0])) == Err(NoPerch)
+expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0])) == Ok(50.0)
+expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0, 60.0])) == Ok(50.0)
+expect fifth_along([50.0, 60.0, 70.0, 80.0, 90.0].map(|along| tree_at(along, 6.0))) == Err(NoPerch)
+expect {
+	short_trees = Trees.roadside_trees({ scheme: RedGreen, length: Distance.metres(50.0) })
+	fifth_along(short_trees) == Err(NoPerch)
+}
