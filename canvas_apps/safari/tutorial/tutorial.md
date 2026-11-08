@@ -1842,7 +1842,7 @@ While the gaze is off straight ahead, the depth rises with how far it has turned
 
 The depth has one job. It widens the view:
 
-{{code Gaze.gaze_attention}}
+{{code RiderEyes.attention}}
 
 `RideFocal.ride_focal`, which sets how wide the view is, takes the stronger of this and what a crossing on the road asks for, which we'll meet with the cat. So a pig widens the view, and the view stays wide for a while after.
 

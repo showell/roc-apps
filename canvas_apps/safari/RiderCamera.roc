@@ -5,9 +5,7 @@
 import Angle
 import Attention
 import EncounterPlan
-import EncounterReaction
 import Fraction
-import Gaze
 import Geom
 import Lens
 import Pipeline
@@ -99,10 +97,8 @@ view_yaw_for = |s| s.eyes.gaze_yaw.plus(s.motorcycle.lean.steer(head_turn_per_le
 ## an encounter on the road or by a look to the side.
 ride_focal : Rider, { route : Route, encounter_timing : EncounterPlan.Timing } -> Pixels
 ride_focal = |rider, { route, encounter_timing }| {
-	seg = rider.motorcycle.route_place.segment_on(route)
-	attention =
-		EncounterReaction.encounter_attention(seg, encounter_timing)
-			.max(Gaze.gaze_attention(rider.eyes.look_depth))
+	segment = rider.motorcycle.route_place.segment_on(route)
+	attention = rider.attention({ segment, encounter_timing })
 	focal_length_for({ lean: rider.motorcycle.lean, attention })
 }
 

@@ -1,7 +1,9 @@
 ## The rider from one step to the next: the motorcycle they ride, which knows
 ## where on the route it is, and where their eyes are.
 import Along
+import Attention
 import EncounterPlan
+import EncounterReaction
 import Motorcycle
 import RiderEyes
 import RiderMind
@@ -41,6 +43,14 @@ Rider := { motorcycle : Motorcycle, eyes : RiderEyes }.{
 			RouteEnds => rider.motorcycle.has_reached(segment.length)
 		}
 	}
+
+	## How strongly something holds the rider's eye on `segment`, with its
+	## encounter at `encounter_timing`: the stronger of what the encounter asks
+	## and what the rider's own look holds.
+	attention : Rider, { segment : Segment, encounter_timing : EncounterPlan.Timing } -> Attention
+	attention = |rider, { segment, encounter_timing }|
+		EncounterReaction.encounter_attention(segment, encounter_timing)
+			.max(rider.eyes.attention())
 }
 
 ## The motorcycle held at the route's end once it reaches it. The throttle

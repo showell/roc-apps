@@ -8,11 +8,8 @@
 ## and it lasts to the end of the segment; it is Gawking's, which reads the
 ## noticing from here.
 import Angle
-import Attention
 import Billboard
 import Distance
-import Easing
-import Fraction
 import Geom
 import Motorcycle
 import Segment
@@ -53,11 +50,6 @@ Gaze :: [].{
 	look_release_angle : Angle.Turn
 	look_release_angle = Angle.Turn.degrees(35.0)
 
-	## How strongly a look of this depth holds the rider's eye. The easing keeps
-	## a shallow look from widening the view much.
-	gaze_attention : Fraction -> Attention
-	gaze_attention = |look_depth| Attention.from_fraction(Easing.smoothstep(look_depth))
-
 	## Where the rider wants to look: at a distracting pig that is near enough
 	## to notice and less than the release angle from the way the motorcycle
 	## points, or else at the road.
@@ -89,5 +81,3 @@ turn_to = |motorcycle, pig| Angle.Turn.radians(
 		y: pig.road_point.across.distance_from(motorcycle.route_place.across).to_metres(),
 	}),
 ).minus(motorcycle.yaw)
-
-expect Gaze.gaze_attention(Fraction.of(0.25)).to_f64() == 0.15625
