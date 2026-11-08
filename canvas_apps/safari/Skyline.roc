@@ -353,9 +353,10 @@ expect snow_color(Fraction.zero) == RgbColor.of(0xEEF3F8)
 expect snow_color(Fraction.whole) == RgbColor.of(0x465468)
 expect snow_color(Fraction.of(0.5)) == RgbColor.of(0x9AA4B0)
 
-## A color's brightness: the sum of its three channels.
+## A color's brightness: the sum of its three channels, widened first because
+## the sum can pass a channel's 255.
 brightness : RgbColor -> I64
-brightness = |color| color.red() + color.green() + color.blue()
+brightness = |color| color.red().to_i64() + color.green().to_i64() + color.blue().to_i64()
 
 # The snow stays brighter than the rock it lies on, by day and at dusk.
 expect

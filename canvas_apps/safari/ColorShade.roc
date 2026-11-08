@@ -39,26 +39,31 @@ ColorShade :: [].{
 ## One channel `fraction` of the way from `from` to `to`, rounded to a whole
 ## value, half up.
 channel_between : {
-	from : I64,
-	to : I64,
+	from : U8,
+	to : U8,
 	fraction : Fraction,
-} -> I64
+} -> U8
 channel_between = |{ from, to, fraction }| {
 	start = from.to_f64()
 	blended = start + (to.to_f64() - start) * fraction.to_f64()
-	blended.round_to_i64_try() ?? crash "ColorShade.channel_between: a blended channel is a finite number"
+	rounded = blended.round_to_i64_try() ?? crash "ColorShade.channel_between: a blended channel is a finite number"
+	# A fraction lies from 0 to 1, so the blend lies between two channels.
+	rounded.to_u8_try() ?? crash "ColorShade.channel_between: a blend lies between its two channels"
 }
 
-## One channel scaled by `factor`, rounded, and held at 255 at most.
-shade_channel : I64, F64 -> I64
+## One channel scaled by `factor`, rounded, and held at 255 at most. A
+## negative factor has no colour to make, and crashes.
+shade_channel : U8, F64 -> U8
 shade_channel = |channel, factor| {
 	scaled =
 		(channel.to_f64() * factor).round_to_i64_try()
 			?? crash "ColorShade.shade_channel: a shaded channel is a finite number"
-	if scaled > 255 {
+	if scaled < 0 {
+		crash "ColorShade.shade_channel: a negative factor makes a negative channel"
+	} else if scaled > 255 {
 		255
 	} else {
-		scaled
+		scaled.to_u8_wrap()
 	}
 }
 
@@ -72,6 +77,7 @@ expect shade_channel(250, 1.25) == 255
 expect shade_channel(255, 1.0) == 255
 expect shade_channel(255, 2.0) == 255
 expect shade_channel(0, 1.25) == 0
+expect shade_channel(200, 0.0) == 0
 expect ColorShade.shade_color(sample_color, 0.6) == RgbColor.of(0x4D2613)
 
 # A channel part way rounds half up, and lands on each end exactly.

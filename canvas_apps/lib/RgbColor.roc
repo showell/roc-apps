@@ -16,47 +16,33 @@ RgbColor :: I64.{
 			RgbColor.(rgb)
 		}
 
-	## A colour from its three channels. Crashes, naming the channel, on one
-	## outside 0..255, which would spill into its neighbour.
+	## A colour from its three channels. Each is a U8, so none can spill into
+	## its neighbour.
 	from_channels : {
-		red : I64,
-		green : I64,
-		blue : I64,
+		red : U8,
+		green : U8,
+		blue : U8,
 	} -> RgbColor
-	from_channels = |channels|
-		if !is_channel(channels.red) {
-			crash "RgbColor.from_channels: red outside 0 to 255"
-		} else if !is_channel(channels.green) {
-			crash "RgbColor.from_channels: green outside 0 to 255"
-		} else if !is_channel(channels.blue) {
-			crash "RgbColor.from_channels: blue outside 0 to 255"
-		} else {
-			red_bits = channels.red.shl_wrap(16)
-			green_bits = channels.green.shl_wrap(8)
-			RgbColor.(red_bits.bitwise_or(green_bits).bitwise_or(channels.blue))
-		}
+	from_channels = |channels| {
+		red_bits = channels.red.to_i64().shl_wrap(16)
+		green_bits = channels.green.to_i64().shl_wrap(8)
+		RgbColor.(red_bits.bitwise_or(green_bits).bitwise_or(channels.blue.to_i64()))
+	}
 
 	to_i64 : RgbColor -> I64
 	to_i64 = |RgbColor.(rgb)| rgb
 
-	## The red channel, 0..255.
-	red : RgbColor -> I64
-	red = |RgbColor.(rgb)| rgb.shr_wrap(16).bitwise_and(255)
+	red : RgbColor -> U8
+	red = |RgbColor.(rgb)| rgb.shr_wrap(16).bitwise_and(255).to_u8_wrap()
 
-	## The green channel, 0..255.
-	green : RgbColor -> I64
-	green = |RgbColor.(rgb)| rgb.shr_wrap(8).bitwise_and(255)
+	green : RgbColor -> U8
+	green = |RgbColor.(rgb)| rgb.shr_wrap(8).bitwise_and(255).to_u8_wrap()
 
-	## The blue channel, 0..255.
-	blue : RgbColor -> I64
-	blue = |RgbColor.(rgb)| rgb.bitwise_and(255)
+	blue : RgbColor -> U8
+	blue = |RgbColor.(rgb)| rgb.bitwise_and(255).to_u8_wrap()
 
 	is_eq : _
 }
-
-## Whether a number fits in one eight-bit channel, `from_channels`' check.
-is_channel : I64 -> Bool
-is_channel = |value| value >= 0 and value <= 255
 
 expect RgbColor.of(0xFFE9A8).to_i64() == 0xFFE9A8
 expect RgbColor.of(0).to_i64() == 0
@@ -82,7 +68,3 @@ expect
 		({ red: 0, green: 0, blue: 255 }, 0x0000FF),
 		({ red: 0, green: 255, blue: 0 }, 0x00FF00),
 	].all(|(channels, rgb)| RgbColor.from_channels(channels) == RgbColor.of(rgb))
-
-# A channel fits from 0 to 255, and not just past either end.
-expect [0, 1, 254, 255].all(is_channel)
-expect [-1, 256, 0x10000].all(|value| !is_channel(value))
