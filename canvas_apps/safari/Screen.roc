@@ -42,9 +42,12 @@ Screen :: [].{
 
 	## The camera looks at the middle of the screen, across its width.
 	center_x : Pixels
-	center_x = width.divided_by(2.0)
+	center_x = middle.x
 
-	## The horizon crosses the middle of the screen.
+	## The horizon crosses the screen halfway down, by rule: the camera looks
+	## level, and a level line of sight lands halfway down the screen. It sits
+	## at `middle.y` only because of that choice; a camera tilted up or down
+	## would move it.
 	horizon_y : Pixels
 	horizon_y = height.divided_by(2.0)
 
