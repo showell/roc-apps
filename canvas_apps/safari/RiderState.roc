@@ -25,8 +25,8 @@ RiderState := { motorcycle : Motorcycle, eyes : RiderEyes }.{
 			Rider.controls(state.motorcycle, { route, encounter_timing }),
 		)
 		motorcycle =
-			match seg.ending {
-				Bends(_) => moved.cross_bend_if_on_road(seg.bend_out_of())
+			match seg.segment_ending() {
+				Bends({ bend, .. }) => moved.cross_bend_if_on_road(bend)
 				RouteEnds => stop_at_route_end(moved, seg)
 			}
 		{ motorcycle, eyes: Gaze.eyes_at_next_step(state.eyes, { motorcycle, route }) }
@@ -36,7 +36,7 @@ RiderState := { motorcycle : Motorcycle, eyes : RiderEyes }.{
 	is_finished : RiderState, Route -> Bool
 	is_finished = |state, route| {
 		seg = state.motorcycle.route_place.segment_on(route)
-		match seg.ending {
+		match seg.segment_ending() {
 			Bends(_) => False
 			RouteEnds => state.motorcycle.has_reached(seg.length)
 		}
