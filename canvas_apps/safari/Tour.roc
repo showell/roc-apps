@@ -41,6 +41,27 @@ Tour :: {
 			Continued(next_tour) | Restarted(next_tour) => next_tour
 		}
 
+	## The tour `step_count` steps on.
+	steps_forward : Tour, U32 -> Tour
+	steps_forward = |tour, step_count| {
+		var $tour = tour
+		for _ in 0..<step_count {
+			$tour = Tour.step_forward($tour)
+		}
+		$tour
+	}
+
+	## The tour `step_count` steps back, or at the ride's start if that is
+	## nearer.
+	steps_back : Tour, U32 -> Tour
+	steps_back = |tour, step_count| {
+		var $tour = tour
+		for _ in 0..<step_count {
+			$tour = Tour.step_back($tour)
+		}
+		$tour
+	}
+
 	## The tour ridden from its start to `step`, with the instants it passed
 	## behind it. The ride must not finish before `step`.
 	at_step : U32 -> Tour
@@ -92,13 +113,13 @@ expect {
 }
 expect Tour.past_instant_count(Tour.at_step(0)) == 0
 
+# Stepping forward a number of steps lands where riding to that step does.
+expect Tour.instant(Tour.steps_forward(Tour.at_step(2), 3)).clock == Clock.at_step(5)
+
 # A tour stepped back from step 5 is one step short of the start after 4 backs,
 # at step 0 after 5, and still there after a sixth.
 expect {
-	var $tour = Tour.at_step(5)
-	for _ in 0..<4 {
-		$tour = Tour.step_back($tour)
-	}
+	var $tour = Tour.steps_back(Tour.at_step(5), 4)
 	after_four = Tour.instant($tour).clock
 	$tour = Tour.step_back($tour)
 	after_five = Tour.instant($tour).clock

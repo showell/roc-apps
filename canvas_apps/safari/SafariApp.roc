@@ -74,9 +74,9 @@ SafariApp :: [].{
 			}
 			moved =
 				if input.key_down(KeyRight) {
-					repeat(m.tour, { step_count: steps_a_press, step_once: Tour.step_forward })
+					m.tour.steps_forward(steps_a_press)
 				} else if input.key_down(KeyLeft) {
-					repeat(m.tour, { step_count: steps_a_press, step_once: Tour.step_back })
+					m.tour.steps_back(steps_a_press)
 				} else {
 					match motion {
 						Paused => m.tour
@@ -90,16 +90,6 @@ SafariApp :: [].{
 			}
 			{ tour, motion }
 		}
-
-	## The tour after `step_once` has moved it `step_count` times.
-	repeat : Tour, { step_count : I64, step_once : Tour -> Tour } -> Tour
-	repeat = |tour, { step_count: n, step_once: move }| {
-		var $tour = tour
-		for _ in 0..<n {
-			$tour = move($tour)
-		}
-		$tour
-	}
 
 	# The route's segments are its scenes, and reaching the next one means
 	# stepping until the segment changes.

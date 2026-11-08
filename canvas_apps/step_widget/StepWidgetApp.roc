@@ -72,16 +72,6 @@ aimed = |model, input| {
 	{ ..model, transport: VcrButtons.next_transport(caught_up, { input, range: journey }) }
 }
 
-## `step_once` applied `count` times.
-repeated : Tour, { count : U32, step_once : Tour -> Tour } -> Tour
-repeated = |tour, { count, step_once }| {
-	var $tour = tour
-	for _ in 0..<count {
-		$tour = step_once($tour)
-	}
-	$tour
-}
-
 ## `model` a frame on: closer to the step it's heading for, or left alone.
 moved : StepWidgetApp.Model -> StepWidgetApp.Model
 moved = |model| {
@@ -91,14 +81,14 @@ moved = |model| {
 		count = steps_a_frame.min(wanted.steps_since(now).to_u32())
 		{
 			..model,
-			tour: repeated(model.tour, { count, step_once: Tour.step_forward }),
+			tour: model.tour.steps_forward(count),
 			last_move: Played,
 		}
 	} else if now.to_f64() > wanted.to_f64() {
 		count = read_back_a_frame.min(now.steps_since(wanted).to_u32())
 		{
 			..model,
-			tour: repeated(model.tour, { count, step_once: Tour.step_back }),
+			tour: model.tour.steps_back(count),
 			last_move: ReadBack,
 		}
 	} else {

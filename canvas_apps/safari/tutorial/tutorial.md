@@ -2719,11 +2719,11 @@ An app here is a record, handed to a runner. `CanvasApp(model)` has a type param
 
 The ride instant chapter showed `SafariApp.model_at_next_step` reading a snapshot of the keys. A snapshot is a value, so a test could write one down. Everything the keys do is a function from `Tour` to `Tour`, so moving four steps or one, forward or back, is one helper with a function in a record field. `var` is back, in a function that's still pure. `$tour` can't be seen from outside.
 
-{{code SafariApp.repeat}}
+{{code Tour.steps_forward}}
 
 `Tour.step_forward` and `Tour.step_back` are plain values to pass here:
 
-{{code SafariApp.model_at_next_step from "if input.key_down(KeyRight) {" to "step_once: Tour.step_forward })"}}
+{{code SafariApp.model_at_next_step from "if input.key_down(KeyRight) {" to "m.tour.steps_forward(steps_a_press)"}}
 
 ### A frame is a list
 
