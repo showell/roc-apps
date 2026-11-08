@@ -36,7 +36,7 @@ Scene := {
 	## clock.
 	RideFacts : {
 		encounter_stage : Animation.Stage,
-		truck : { route_position : Distance, lit_truck : Truck },
+		truck : { route_position : Distance, truck : Truck },
 		clock : Clock,
 	}
 

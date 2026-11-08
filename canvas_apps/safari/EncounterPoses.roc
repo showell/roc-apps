@@ -15,11 +15,11 @@ EncounterPoses :: [].{
 
 	## An animal on a segment in view: where that segment lies from the rider,
 	## and where on it the animal stands and how it is posed.
-	PosedAnimal(kind) : { place : SegmentPlace, animal : Geom.Placed(kind) }
+	PlacedAnimal(kind) : { place : SegmentPlace, animal : Geom.Placed(kind) }
 
 	## The cats on `road`, with the encounter on the rider's segment at
 	## `encounter_stage`, in the order of `RoadAhead.segments_in_view`.
-	cat_poses : RoadAhead.RoadView, Animation.Stage -> List(EncounterPoses.PosedAnimal(Cat))
+	cat_poses : RoadAhead.RoadView, Animation.Stage -> List(EncounterPoses.PlacedAnimal(Cat))
 	cat_poses = |road, encounter_stage|
 		RoadAhead.segments_in_view(road).keep_oks(
 			|in_view| segment_cat({ in_view, encounter_stage }),
@@ -27,7 +27,7 @@ EncounterPoses :: [].{
 
 	## The birds on `road`, with the encounter on the rider's segment at
 	## `encounter_stage`, in the order of `RoadAhead.segments_in_view`.
-	bird_poses : RoadAhead.RoadView, Animation.Stage -> List(EncounterPoses.PosedAnimal(Bird))
+	bird_poses : RoadAhead.RoadView, Animation.Stage -> List(EncounterPoses.PlacedAnimal(Bird))
 	bird_poses = |road, encounter_stage|
 		RoadAhead.segments_in_view(road).keep_oks(
 			|in_view| segment_bird({ in_view, encounter_stage }),
@@ -38,7 +38,7 @@ EncounterPoses :: [].{
 segment_cat : {
 	in_view : RoadAhead.SegmentInView,
 	encounter_stage : Animation.Stage,
-} -> Try(EncounterPoses.PosedAnimal(Cat), [NoPose])
+} -> Try(EncounterPoses.PlacedAnimal(Cat), [NoPose])
 segment_cat = |{ in_view, encounter_stage }|
 	match in_view.segment.encounter {
 		CatCrosses(crossing) =>
@@ -50,7 +50,7 @@ segment_cat = |{ in_view, encounter_stage }|
 segment_bird : {
 	in_view : RoadAhead.SegmentInView,
 	encounter_stage : Animation.Stage,
-} -> Try(EncounterPoses.PosedAnimal(Bird), [NoPose])
+} -> Try(EncounterPoses.PlacedAnimal(Bird), [NoPose])
 segment_bird = |{ in_view, encounter_stage }|
 	match in_view.segment.encounter {
 		BirdHere(flight) =>
@@ -64,7 +64,7 @@ segment_bird = |{ in_view, encounter_stage }|
 posed_in_view : RoadAhead.SegmentInView,
 Animation.Stage,
 (Animation.Stage -> Animation.Instant(pose)) -> Try(
-	EncounterPoses.PosedAnimal({ pose : pose }),
+	EncounterPoses.PlacedAnimal({ pose : pose }),
 	[NoPose],
 )
 posed_in_view = |in_view, rider_stage, instant_at| {

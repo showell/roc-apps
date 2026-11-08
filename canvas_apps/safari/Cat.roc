@@ -14,22 +14,19 @@ Cat := { pose : Cat.CatPose }.{
 	## collapse after.
 	CatPose : [Rest, Stride, Frozen, Coil, Flight, Land, Collapse]
 
-	cat_height : Distance
-	cat_height = Distance.metres(1.7)
-
 	## How far ahead of its feet the frozen cat's head is. Its still's head runs
 	## from 0.02 to 0.49 of its height ahead of them, so this is the head's
 	## centre.
 	frozen_head_reach : Distance
-	frozen_head_reach = Cat.cat_height.times(0.25)
+	frozen_head_reach = cat_height.times(0.25)
 
 	## How far behind its feet the collapsed cat's hips lie: about 0.7 of its
 	## height in its still, with the hind feet themselves nearer 0.6.
 	collapsed_hip_reach : Distance
-	collapsed_hip_reach = Cat.cat_height.times(0.7)
+	collapsed_hip_reach = cat_height.times(0.7)
 
 	scenery_height : Cat -> Distance
-	scenery_height = |_cat| Cat.cat_height
+	scenery_height = |_cat| cat_height
 
 	## A cat on screen, its feet where it is.
 	scenery_picture : Cat, Picture.Setting({}) -> Picture
@@ -37,7 +34,7 @@ Cat := { pose : Cat.CatPose }.{
 		Picture.from_shapes(
 			StillShapes.standing_still_shapes(
 				setting,
-				{ height: Cat.cat_height, still: Cat.pose_still(cat.pose) },
+				{ height: cat_height, still: Cat.pose_still(cat.pose) },
 			),
 		)
 
@@ -54,3 +51,7 @@ Cat := { pose : Cat.CatPose }.{
 			Collapse => CatStills.collapse_still
 		}
 }
+
+## How tall a cat stands.
+cat_height : Distance
+cat_height = Distance.metres(1.7)

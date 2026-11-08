@@ -16,11 +16,11 @@ TruckSighting :: [].{
 	TruckFate : Try(Pipeline.Sighted(Truck), [NoTruck, BehindCamera])
 
 	## The truck at its `route_position` along the route, looking as its
-	## `lit_truck` says, if it is on the road ahead and in front of the camera.
+	## `truck` says, if it is on the road ahead and in front of the camera.
 	truck_in_view : RoadAhead.RoadView,
 	{
 		camera : Pipeline.SightingCamera,
-		truck : { route_position : Distance, lit_truck : Truck },
+		truck : { route_position : Distance, truck : Truck },
 	} -> TruckSighting.TruckFate
 	truck_in_view = |road, { camera, truck }| {
 		place = RoutePlace.at_distance(road.route(), truck.route_position) ? |PastRouteEnd| NoTruck
@@ -29,7 +29,7 @@ TruckSighting :: [].{
 		placed_truck = {
 			road_point: place.road_point(),
 			lift: Distance.zero,
-			kind: truck.lit_truck,
+			kind: truck.truck,
 		}
 		Pipeline.sighting_of(placed_truck, { road, camera, place: Ahead(position) })
 	}

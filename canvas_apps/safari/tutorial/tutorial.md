@@ -2058,7 +2058,7 @@ Each lamp switches on its own, so each gets its own field:
 
 Each frame, `FrameView` reads the truck's pace and the sky's darkness, and hands both to `Truck`:
 
-{{code FrameView.ride_facts from "lit_truck: Truck.at(" to "lit_truck: Truck.at("}}
+{{code FrameView.ride_facts from "truck: Truck.at(" to "truck: Truck.at("}}
 
 `Truck` applies both rules to what it's handed, in one function:
 
@@ -2101,9 +2101,8 @@ digraph cat {
   node [shape=box, fontname="Helvetica"];
   CatCrossing [style=bold];
   World -> CatCrossing;
-  CrossingReaction -> CatCrossing;
-  CrossingReaction -> World;
-  CrossingSighting -> Cat;
+  EncounterReaction -> CatCrossing;
+  EncounterSighting -> Cat;
   CatCrossing -> Cat;
   Cat -> CatStills;
   CatStills -> Cat;
@@ -2267,22 +2266,18 @@ The modules that put a cat on screen
 ```dot
 digraph screen {
   node [shape=box, fontname="Helvetica"];
-  CrossingSighting [style=bold];
+  EncounterSighting [style=bold];
   Cat [style=bold];
-  SceneShapes -> Scene;
-  SceneShapes -> Cat;
-  SceneShapes -> CrossingSighting;
-  Scene -> CrossingSighting;
-  CrossingSighting -> Cat;
-  CrossingSighting -> RoadAhead;
-  CrossingSighting -> DepthSort;
+  Scene -> EncounterSighting;
+  EncounterSighting -> Cat;
+  EncounterSighting -> RoadAhead;
   CatCrossing -> Cat;
   Cat -> CatStills;
   CatStills -> Cat;
 }
 ```
 
-`CrossingSighting` and `Cat` never import each other. `SceneShapes` is what carries a sighting's answer to the drawing.
+`EncounterSighting` and `Cat` never import each other. `Scene` is what carries a sighting's answer to the drawing.
 
 `cat_in_view` places the cat and decides whether it's big enough to draw. An empty list or a list of one is how it says "maybe".
 
