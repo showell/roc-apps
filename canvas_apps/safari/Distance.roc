@@ -1,6 +1,7 @@
 ## A length in metres: how long a segment is, how tall a tree stands, how far
 ## the rider is from a cat. A length measured toward something can run past it,
 ## so a gap goes negative once the rider is beyond what it is measured to.
+import Fraction
 
 Distance :: F64.{
 
@@ -22,6 +23,10 @@ Distance :: F64.{
 
 	times : Distance, F64 -> Distance
 	times = |Distance.(d), factor| Distance.(d * factor)
+
+	## This fraction of this length.
+	scaled_by : Distance, Fraction -> Distance
+	scaled_by = |Distance.(d), fraction| Distance.(d * fraction.to_f64())
 
 	divided_by : Distance, F64 -> Distance
 	divided_by = |Distance.(d), divisor| Distance.(d / divisor)

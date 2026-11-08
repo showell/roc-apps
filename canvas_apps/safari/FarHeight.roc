@@ -6,6 +6,7 @@
 ## horizon it is negative.
 ##
 ## A far height becomes pixels on the screen only through `Lens.size_on_screen`.
+import Fraction
 
 FarHeight :: F64.{
 
@@ -27,6 +28,10 @@ FarHeight :: F64.{
 
 	times : FarHeight, F64 -> FarHeight
 	times = |FarHeight.(h), factor| FarHeight.(h * factor)
+
+	## This fraction of this height.
+	scaled_by : FarHeight, Fraction -> FarHeight
+	scaled_by = |FarHeight.(h), fraction| FarHeight.(h * fraction.to_f64())
 
 	divided_by : FarHeight, F64 -> FarHeight
 	divided_by = |FarHeight.(h), divisor| FarHeight.(h / divisor)

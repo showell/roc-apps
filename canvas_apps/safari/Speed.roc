@@ -4,6 +4,7 @@
 ## takes one, and `acceleration_to` gives one.
 import Acceleration
 import Distance
+import Fraction
 import Steps
 
 Speed :: F64.{
@@ -39,6 +40,10 @@ Speed :: F64.{
 
 	times : Speed, F64 -> Speed
 	times = |Speed.(s), factor| Speed.(s * factor)
+
+	## This fraction of this speed.
+	scaled_by : Speed, Fraction -> Speed
+	scaled_by = |Speed.(s), fraction| Speed.(s * fraction.to_f64())
 
 	## How many of `whole` this speed is, which can pass 1.
 	portion : Speed, Speed -> F64

@@ -5,6 +5,7 @@
 ##
 ## Pixels stop at the edge of `lib.Shapes`, which takes plain numbers, and at
 ## trigonometry.
+import Fraction
 
 Pixels :: F64.{
 
@@ -26,6 +27,10 @@ Pixels :: F64.{
 
 	times : Pixels, F64 -> Pixels
 	times = |Pixels.(p), factor| Pixels.(p * factor)
+
+	## This fraction of this length.
+	scaled_by : Pixels, Fraction -> Pixels
+	scaled_by = |Pixels.(p), fraction| Pixels.(p * fraction.to_f64())
 
 	divided_by : Pixels, F64 -> Pixels
 	divided_by = |Pixels.(p), divisor| Pixels.(p / divisor)
