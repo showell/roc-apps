@@ -27,6 +27,7 @@ import lib.Point
 import widget.PlanView
 import widget.ReadoutText
 import widget.WidgetPage
+import widget.WidgetPalette
 import widget.VcrButtons
 
 GazeWidgetApp :: [].{
@@ -199,7 +200,7 @@ road = {
 		y: road_plan.origin.y - half_width,
 		width: WidgetPage.canvas_width,
 		height: 2.0 * half_width,
-		fill: Brush.flat(PlanView.road_color),
+		fill: Brush.flat(WidgetPalette.plan_road_color),
 	})
 }
 
@@ -228,7 +229,7 @@ pig_disc = |pig|
 			along: pig.road_point.along,
 			across: pig.road_point.across,
 			radius: 6.0,
-			color: PlanView.accent_color,
+			color: WidgetPalette.accent_color,
 		})
 	} else {
 		plan_disc({
@@ -275,7 +276,7 @@ sight_line = |rider| {
 picture_shapes : Rider -> List(Shapes.Shape)
 picture_shapes = |rider|
 	[
-		[WidgetPage.picture_backdrop(PlanView.ground_color), road],
+		[WidgetPage.picture_backdrop(WidgetPalette.plan_ground_color), road],
 		pigs,
 		[
 			sight_line(rider),
@@ -283,7 +284,7 @@ picture_shapes = |rider|
 				along: rider.motorcycle.route_place.along,
 				across: rider.motorcycle.route_place.across,
 				radius: 5.0,
-				color: PlanView.standout_color,
+				color: WidgetPalette.highlight_color,
 			}),
 		],
 	].join()

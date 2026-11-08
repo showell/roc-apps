@@ -22,8 +22,8 @@ import lib.Point
 import widget.Click
 import widget.PlanView
 import widget.ReadoutText
-import widget.VcrButtons
 import widget.WidgetPage
+import widget.WidgetPalette
 
 RehearsalWidgetApp :: [].{
 
@@ -161,7 +161,7 @@ off_right_color : RgbColor
 off_right_color = RgbColor.of(0xe8805a)
 
 kept_color : RgbColor
-kept_color = PlanView.standout_color
+kept_color = WidgetPalette.highlight_color
 
 target_color : RgbColor
 target_color = RgbColor.of(0xe8c84a)
@@ -204,13 +204,13 @@ road_shapes : List(Shapes.Shape)
 road_shapes = {
 	half_road = Geom.road_half_width.to_metres()
 	[
-		WidgetPage.picture_backdrop(PlanView.ground_color),
+		WidgetPage.picture_backdrop(WidgetPalette.plan_ground_color),
 		Rect({
 			x: 0.0,
 			y: canvas_point({ forward: 0.0, across: -half_road }).y,
 			width: WidgetPage.canvas_width,
 			height: 2.0 * half_road * across_stretch * road_plan.pixels_a_metre,
-			fill: Brush.flat(PlanView.road_color),
+			fill: Brush.flat(WidgetPalette.plan_road_color),
 		}),
 		road_line({
 			across: -half_road,
@@ -435,13 +435,13 @@ mark_color = |{ mark, current }|
 	if mark == current {
 		current_color
 	} else if stop_number(mark) < stop_number(current) {
-		VcrButtons.unlit_button_color
+		WidgetPalette.unlit_button_color
 	} else {
 		RgbColor.of(0xb8b8b8)
 	}
 
 current_color : RgbColor
-current_color = PlanView.accent_color
+current_color = WidgetPalette.accent_color
 
 ## The mark for one try: a disc, larger when it's the current one.
 try_mark : MarkAndStop -> Shapes.Shape

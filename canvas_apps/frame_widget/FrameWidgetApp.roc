@@ -20,6 +20,7 @@ import lib.Input
 import lib.Shapes
 import widget.ReadoutText
 import widget.WidgetPage
+import widget.WidgetPalette
 import "page.html" as page_html : Str
 
 FrameWidgetApp :: [].{
@@ -206,7 +207,7 @@ panel = Rect({
 	y: picture_height,
 	width: canvas_width,
 	height: panel_height,
-	fill: Brush.flat(WidgetPage.panel_color),
+	fill: Brush.flat(WidgetPalette.panel_color),
 })
 
 ## An address that names a layer has the page press Right once for each layer
@@ -279,7 +280,7 @@ status_readout = {
 status_line : Str, U64 -> Shapes.Shape
 status_line = |text, row| WidgetPage.readout_line({
 	text,
-	color: WidgetPage.ink_color,
+	color: WidgetPalette.ink_color,
 	row,
 	style: status_readout,
 })

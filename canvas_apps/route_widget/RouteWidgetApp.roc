@@ -15,6 +15,7 @@ import lib.Point
 import widget.PlanView
 import widget.ReadoutText
 import widget.WidgetPage
+import widget.WidgetPalette
 
 RouteWidgetApp :: [].{
 
@@ -151,10 +152,10 @@ canvas_point = |{ east, north }|
 	})
 
 read_out_color : RgbColor
-read_out_color = PlanView.standout_color
+read_out_color = WidgetPalette.highlight_color
 
 cat_color : RgbColor
-cat_color = PlanView.accent_color
+cat_color = WidgetPalette.accent_color
 
 bird_color : RgbColor
 bird_color = RgbColor.of(0x7a5cc0)
@@ -250,7 +251,7 @@ legend_shapes =
 
 road_shapes : List(Shapes.Shape)
 road_shapes = segments.join_map(
-	|each| piece_shapes(each, { width: 5.0, color: PlanView.road_color }),
+	|each| piece_shapes(each, { width: 5.0, color: WidgetPalette.plan_road_color }),
 )
 
 ## The stretch that the lines under the map read out.
@@ -260,7 +261,7 @@ read_out_shapes = piece_shapes(read_out_segment, { width: 7.0, color: read_out_c
 picture_shapes : List(Shapes.Shape)
 picture_shapes =
 	[
-		[WidgetPage.picture_backdrop(PlanView.ground_color)],
+		[WidgetPage.picture_backdrop(WidgetPalette.plan_ground_color)],
 		road_shapes,
 		read_out_shapes,
 		segments.join_map(mark_shapes),

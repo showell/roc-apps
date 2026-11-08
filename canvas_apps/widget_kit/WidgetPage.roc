@@ -1,11 +1,12 @@
 ## A widget page is the canvas a Safari tutorial widget is drawn on: a picture
 ## across the top, and a panel under it for the lines of text and any buttons.
 ## A widget is a small canvas app, and every frame is a pure function of its
-## state. This module holds the page's sizes and colors, the canvas app around a
-## widget, and laying out the picture and the text. ReadoutText puts a widget's numbers
+## state. This module holds the page's sizes, the canvas app around a widget,
+## and laying out the picture and the text. ReadoutText puts a widget's numbers
 ## into words for those lines, VcrButtons reads a widget's buttons into its
-## state, Click reads where the pointer was pressed, and PlanView holds the colors
-## and the one mapping of the pictures that look down on the road.
+## state, Click reads where the pointer was pressed, PlanView holds the one
+## mapping of the pictures that look down on the road, and WidgetPalette holds
+## the colors the widgets share.
 import game.FrameView
 import game.Lens
 import game.Picture
@@ -18,6 +19,7 @@ import lib.CanvasApp
 import lib.Input
 import lib.Point
 import lib.Shapes
+import WidgetPalette
 
 WidgetPage :: [].{
 
@@ -58,19 +60,6 @@ WidgetPage :: [].{
 	## How wide the panel is between its margins.
 	panel_width : F64
 	panel_width = canvas_width - 2.0 * side_margin
-
-	## The words and the lines on the panel.
-	ink_color : RgbColor
-	ink_color = RgbColor.of(0x202020)
-
-	## The panel under the picture, which the text and the buttons sit on.
-	panel_color : RgbColor
-	panel_color = RgbColor.of(0xDCECF5)
-
-	## The road in a picture seen level with it, rather than from above as
-	## PlanView's are.
-	side_road_color : RgbColor
-	side_road_color = RgbColor.of(0x8a8a8a)
 
 	## How often a widget whose picture moves is painted: as often as a page
 	## paints.
@@ -175,7 +164,7 @@ WidgetPage :: [].{
 			size: label_size,
 			face: Prose,
 			align: Left,
-			color: Brush.opaque_rgba(ink_color),
+			color: Brush.opaque_rgba(WidgetPalette.ink_color),
 		})
 
 	## The picture, and the panel with the lines of text on it.
@@ -237,11 +226,11 @@ panel = Rect({
 	y: WidgetPage.picture_bottom_y,
 	width: WidgetPage.canvas_width,
 	height: WidgetPage.canvas_height - WidgetPage.picture_bottom_y,
-	fill: Brush.flat(WidgetPage.panel_color),
+	fill: Brush.flat(WidgetPalette.panel_color),
 })
 
 status_line : Str, U64 -> Shapes.Shape
-status_line = |text, row| WidgetPage.readout_line({ text, color: WidgetPage.ink_color, row, style: WidgetPage.panel_rows })
+status_line = |text, row| WidgetPage.readout_line({ text, color: WidgetPalette.ink_color, row, style: WidgetPage.panel_rows })
 
 # A page is the panel and its text.
 expect WidgetPage.frame_shapes({ picture_shapes: [], status_lines: [] }).len() == 1

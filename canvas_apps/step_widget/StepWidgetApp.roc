@@ -18,9 +18,9 @@ import lib.CanvasApp
 import lib.Input
 import lib.Shapes
 import lib.RgbColor
-import widget.PlanView
 import widget.ReadoutText
 import widget.WidgetPage
+import widget.WidgetPalette
 import widget.VcrButtons
 
 StepWidgetApp :: [].{
@@ -110,10 +110,10 @@ shapes_at = |model|
 	)
 
 rider_color : RgbColor
-rider_color = PlanView.standout_color
+rider_color = WidgetPalette.highlight_color
 
 truck_color : RgbColor
-truck_color = PlanView.accent_color
+truck_color = WidgetPalette.accent_color
 
 ## The left end of the bar that stands for the whole route.
 route_left_x : F64
@@ -141,7 +141,7 @@ bar_shapes =
 			y: route_y - 4.0,
 			width: route_width,
 			height: 8.0,
-			fill: Brush.flat(PlanView.road_color),
+			fill: Brush.flat(WidgetPalette.plan_road_color),
 		}),
 	].concat(
 		World.route.segments_with_ends().map(
@@ -151,7 +151,7 @@ bar_shapes =
 					y: route_y - 8.0,
 					width: 2.0,
 					height: 16.0,
-					fill: Brush.flat(PlanView.road_color),
+					fill: Brush.flat(WidgetPalette.plan_road_color),
 				}),
 		),
 	)
@@ -218,7 +218,7 @@ shapes_from_behind_rider = |{ across, lean }| {
 				y: surface_y,
 				width: 2.0 * road_half_width_on_canvas,
 				height: 8.0,
-				fill: Brush.flat(PlanView.road_color),
+				fill: Brush.flat(WidgetPalette.plan_road_color),
 			}),
 			Shapes.line(
 				{
@@ -244,7 +244,7 @@ picture_shapes = |tour| {
 	rider = tour.instant().rider
 	truck = tour.instant().truck
 	[
-		[WidgetPage.picture_backdrop(PlanView.ground_color)],
+		[WidgetPage.picture_backdrop(WidgetPalette.plan_ground_color)],
 		bar_shapes,
 		marker_shapes({
 			at: truck.route_position,

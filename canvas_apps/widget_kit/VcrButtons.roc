@@ -9,11 +9,10 @@ import lib.Brush
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
-import lib.RgbColor
 import lib.Point
 import Click
-import PlanView
 import WidgetPage
+import WidgetPalette
 
 VcrButtons :: [].{
 
@@ -37,10 +36,6 @@ VcrButtons :: [].{
 
 	## The whole state of the buttons: the number, and which way it's running.
 	Transport(number) : { at : number, motion : VcrButtons.Motion }
-
-	## A button that isn't running the number.
-	unlit_button_color : RgbColor
-	unlit_button_color = RgbColor.of(0x303030)
 
 	## A range over the ride's clock, where one step is one step of the ride.
 	clock_range : {
@@ -272,9 +267,6 @@ control_at = |spot|
 button_middle_y : F64
 button_middle_y = button_top + button_height / 2.0
 
-icon_color : RgbColor
-icon_color = RgbColor.of(0xf7f5f0)
-
 ## A triangle pointing right when `reach` is positive, and left when it's not.
 triangle : { tip_x : F64, reach : F64 } -> Shapes.Shape
 triangle = |{ tip_x, reach }|
@@ -287,7 +279,7 @@ triangle = |{ tip_x, reach }|
 			tip_x - reach,
 			button_middle_y + 7.0,
 		],
-		fill: Brush.flat(icon_color),
+		fill: Brush.flat(WidgetPalette.button_icon_color),
 	})
 
 ## A bar across a button's height, for a pause or a stop at either end.
@@ -298,7 +290,7 @@ bar = |x|
 		y: button_middle_y - 7.0,
 		width: 3.0,
 		height: 14.0,
-		fill: Brush.flat(icon_color),
+		fill: Brush.flat(WidgetPalette.button_icon_color),
 	})
 
 ## What a button shows, around `middle`. A lit play button shows a pause.
@@ -323,9 +315,9 @@ button_shapes = |button, motion| {
 	lit = is_lit(button.control, motion)
 	color =
 		if lit {
-			PlanView.accent_color
+			WidgetPalette.accent_color
 		} else {
-			VcrButtons.unlit_button_color
+			WidgetPalette.unlit_button_color
 		}
 	[
 		Rect({

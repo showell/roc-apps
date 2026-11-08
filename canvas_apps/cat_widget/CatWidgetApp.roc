@@ -18,10 +18,10 @@ import game.ThrottleLimit
 import game.World
 import lib.Brush
 import lib.CanvasApp
-import lib.RgbColor
 import lib.Shapes
 import widget.ReadoutText
 import widget.WidgetPage
+import widget.WidgetPalette
 import widget.VcrButtons
 
 CatWidgetApp :: [].{
@@ -92,21 +92,21 @@ road_shapes = {
 			y: 0.0,
 			width: WidgetPage.canvas_width,
 			height: WidgetPage.picture_bottom_y,
-			fill: Brush.flat(WidgetPage.panel_color),
+			fill: Brush.flat(WidgetPalette.panel_color),
 		}),
 		Rect({
 			x: 0.0,
 			y: ground_top_y,
 			width: WidgetPage.canvas_width,
 			height: ground_height,
-			fill: Brush.flat(RgbColor.of(0x7fa650)),
+			fill: Brush.flat(WidgetPalette.side_ground_color),
 		}),
 		Rect({
 			x: road_middle_x - road_width / 2.0,
 			y: ground_top_y,
 			width: road_width,
 			height: ground_height,
-			fill: Brush.flat(WidgetPage.side_road_color),
+			fill: Brush.flat(WidgetPalette.side_road_color),
 		}),
 	]
 }
