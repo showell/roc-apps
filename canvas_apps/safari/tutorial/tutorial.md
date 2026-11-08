@@ -1327,7 +1327,7 @@ That gives three kinds of moving thing, and the rest of the tour is organized ar
 
 Trees and cows are a fourth kind, the easiest of all: they never change.
 
-The game itself has no effectful functions at all. It has no `!` names and no `=>` arrows. Effects live in the platform. A `?` appears in nine places, such as `Pipeline.scenery_sighting_of`, and it isn't an effect: it hands an `Err`, such as `BehindCamera`, straight back to the caller.
+The game itself has no effectful functions at all. No function's name ends in `!`, and no function's type has the `=>` arrow that marks an effect. Effects live in the platform. A `?` appears in nine places, such as `Pipeline.scenery_sighting_of`, and it isn't an effect: it hands an `Err`, such as `BehindCamera`, straight back to the caller.
 
 ### Pausing and stepping
 
