@@ -28,7 +28,7 @@ CatCrossing :: {
 
 	## Where every cat freezes across the road: with its head over the middle.
 	mid_across : Across
-	mid_across = Across.right_of_middle(frozen_head_reach)
+	mid_across = Across.right_of_middle(PosedCat.frozen_head_reach)
 
 	## How far behind its tree, away from the road, the cat starts.
 	cat_behind_tree : Distance
@@ -50,22 +50,11 @@ CatCrossing :: {
 			{
 				along: tree.along.plus(CatCrossing.cat_beyond_tree),
 				start_across: tree.across.plus(CatCrossing.cat_behind_tree),
-				end_across: far_verge.minus(collapsed_hip_reach),
+				end_across: far_verge.minus(PosedCat.collapsed_hip_reach),
 			},
 		)
 	}
 }
-
-## How far ahead of its feet the frozen cat's head is. Its still's head runs
-## from 0.02 to 0.49 of its height ahead of them, so this is the head's
-## centre.
-frozen_head_reach : Distance
-frozen_head_reach = PosedCat.cat_height.times(0.25)
-
-## How far behind its feet the collapsed cat's hips lie: about 0.7 of its
-## height in its still, with the hind feet themselves nearer 0.6.
-collapsed_hip_reach : Distance
-collapsed_hip_reach = PosedCat.cat_height.times(0.7)
 
 ## How far onto the far verge's grass the collapsed cat's hips lie.
 grass_toehold : Distance
