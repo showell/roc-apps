@@ -929,7 +929,16 @@ digraph road {
 }
 ```
 
-A bend's corner is worked out on the road first, then seen from the rider.
+### Get the types right
+
+A bend's corner lives in two frames. On the road, a point is a `Geom.RoadPoint`, measured along and across the segment before the bend. From the rider, it's a `RiderView.RiderPoint`, right and forward of the camera. `RoadAhead.rider_point_at` is the one map between them. The corner is worked out on the road first, then seen from the rider, and the paving and the rail only ever take rider points.
+
+| Job | Function | Its type |
+|---|---|---|
+{{types row BendInView.outer_edge Find the outer edge}}
+{{types row BendInView.outer_corner Find the corner, on the road}}
+{{types row BendInView.outer_corner_in_view See the corner from the rider}}
+{{types row GroundSighting.bend_paving Pave it}}
 
 ### Where two segments meet
 
