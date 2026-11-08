@@ -1,7 +1,7 @@
 ## The widget for the Safari tutorial's beacons. Video recorder buttons run the
 ## ride's clock, and each frame is worked out from that clock alone, so two towers
 ## blink opposite each other at dusk, where a beacon shows up. The towers are drawn
-## by Safari's own Tower, and how bright each is comes from Beacon. Below
+## by Safari's own Tower, and each beacon's blink comes from Beacon. Below
 ## them, the buttons and four lines of text that read out the clock.
 import game.Across
 import game.Along
@@ -9,7 +9,6 @@ import game.Angle
 import game.Beacon
 import game.Clock
 import game.Distance
-import game.Fraction
 import game.Geom
 import game.Pipeline
 import game.RoadAhead
@@ -83,8 +82,8 @@ picture_shapes = |clock|
 	WidgetPage.picture_shapes({
 		backdrop: { sky_colors: Sky.colors_at(clock), sun_sighting: OutOfView },
 		ride_shapes: [
-			tower_shapes(tower_right.opposite(), first_beacon.brightness_at(clock)),
-			tower_shapes(tower_right, second_beacon.brightness_at(clock)),
+			tower_shapes(tower_right.opposite(), first_beacon.lit_at(clock)),
+			tower_shapes(tower_right, second_beacon.lit_at(clock)),
 		].join(),
 	})
 
@@ -101,15 +100,15 @@ eye = {
 	yaw: Angle.straight_ahead,
 }
 
-## A tower standing `right` of the road's middle, unturned, its beacon at
-## `brightness`, or nothing if it stood behind the camera.
-tower_shapes : Distance, Fraction -> List(Shapes.Shape)
-tower_shapes = |right, brightness| {
+## A tower standing `right` of the road's middle, unturned, with `beacon` on
+## top, or nothing if it stood behind the camera.
+tower_shapes : Distance, Beacon.LitBeacon -> List(Shapes.Shape)
+tower_shapes = |right, beacon| {
 	placed_tower : Geom.Placed(Tower)
 	placed_tower = {
 		road_point: { along: Along.at(tower_forward), across: Across.right_of_middle(right) },
 		lift: Distance.zero,
-		kind: Tower.standing({ yaw: Angle.straight_ahead, beacon_brightness: brightness }),
+		kind: Tower.standing({ yaw: Angle.straight_ahead, beacon }),
 	}
 	place = Ahead(SegmentPlace.Position.first)
 	WidgetPage.resting_lens_shapes(
@@ -123,8 +122,8 @@ status_lines : Clock -> List(Str)
 status_lines = |clock| {
 	period = Beacon.beacon_period
 	into_blink = clock.steps_since(Clock.start).wrapped_to(period)
-	first_tower = ReadoutText.percent_text(first_beacon.brightness_at(clock))
-	second_tower = ReadoutText.percent_text(second_beacon.brightness_at(clock))
+	first_tower = ReadoutText.percent_text(first_beacon.lit_at(clock).brightness())
+	second_tower = ReadoutText.percent_text(second_beacon.lit_at(clock).brightness())
 	[
 		"Clock: step ${clock.to_str()}",
 		"Blink: ${step_count_text(into_blink)} of ${step_count_text(period)} steps",

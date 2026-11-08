@@ -5,6 +5,7 @@
 ## from the bottom up.
 import Pixels
 import Angle
+import Beacon
 import Camera
 import EarthCurve
 import RoadAhead
@@ -20,20 +21,20 @@ import lib.RgbColor
 import Screen
 import lib.Shapes
 
-## A tower in a frame: how it is turned, and how bright its beacon is.
-Tower :: { yaw : Angle.Turn, beacon_brightness : Fraction }.{
+## A tower in a frame: how it is turned, and its beacon as it shines.
+Tower :: { yaw : Angle.Turn, beacon : Beacon.LitBeacon }.{
 
-	## A tower turned by `yaw`, its beacon at `beacon_brightness`.
-	standing : { yaw : Angle.Turn, beacon_brightness : Fraction } -> Tower
-	standing = |{ yaw, beacon_brightness }| Tower.({ yaw, beacon_brightness })
+	## A tower turned by `yaw`, with `beacon` on top.
+	standing : { yaw : Angle.Turn, beacon : Beacon.LitBeacon } -> Tower
+	standing = |{ yaw, beacon }| Tower.({ yaw, beacon })
 
 	## How far the tower is turned from square with the road.
 	yaw : Tower -> Angle.Turn
 	yaw = |Tower.(tower)| tower.yaw
 
-	## How bright the tower's beacon is in this frame.
-	beacon_brightness : Tower -> Fraction
-	beacon_brightness = |Tower.(tower)| tower.beacon_brightness
+	## The tower's beacon, as it shines in this frame.
+	beacon : Tower -> Beacon.LitBeacon
+	beacon = |Tower.(tower)| tower.beacon
 
 	## How a tower looks. Its footprint is measured on the road and seen from the
 	## camera's vantage, so those are its context.
@@ -110,8 +111,12 @@ tower_shapes = |tower, { footprint, spot, focal_length }| {
 			ring_shapes(sunk_tower),
 			brace_shapes(sunk_tower),
 		].join()
-		match beacon_shape(sunk_tower, { apex, brightness: tower.beacon_brightness() }) {
-			Ok(beacon) => rods.append(beacon)
+		beacon_disc = tower.beacon().disc({
+			center: Camera.project(apex, focal_length),
+			metre_on_screen: sunk_tower.metre_on_screen,
+		})
+		match beacon_disc {
+			Ok(disc) => rods.append(disc)
 			Err(TooDim) | Err(TooSmall) => rods
 		}
 	}
@@ -137,23 +142,6 @@ rod_width = rod_half_width.times(2.0)
 
 tower_color : RgbColor
 tower_color = RgbColor.of(0x9AA0A8)
-
-beacon_radius : Distance
-beacon_radius = Distance.metres(3.0)
-
-beacon_color : RgbColor
-beacon_color = RgbColor.of(0xFF2FE6)
-
-## The dimmest beacon that is drawn. A dimmer one would tint the sky by less
-## than one part in fifty, too little to see; the figure was chosen by eye.
-dimmest_beacon : Fraction
-dimmest_beacon = Fraction.of(0.02)
-
-## The smallest beacon radius that is drawn. A disc under a pixel across
-## covers no pixel whole, so a far beacon is left out rather than drawn as a
-## speck.
-smallest_beacon_radius : Pixels
-smallest_beacon_radius = Pixels.of(0.5)
 
 ## One tower, as its shapes are worked out: where its footprint and foot
 ## stand, how high off the ground it is, how far the earth's curve has sunk
@@ -407,56 +395,6 @@ face_brace_shapes = |tower, { corner, storey_bottom, storey_top, hidden_fraction
 	}
 	[brace_up, brace_down].keep_oks(|brace| rod_shape(tower, brace))
 }
-
-## The beacon on the apex, at its brightness, unless it is too dim or too
-## small to draw.
-beacon_shape : SunkTower,
-{
-	apex : RiderView.RaisedPointAhead,
-	brightness : Fraction,
-} -> Try(Shapes.Shape, [TooDim, TooSmall])
-beacon_shape = |tower, { apex, brightness }| {
-	apex_on_screen = Camera.project(apex, tower.focal_length)
-	if brightness < dimmest_beacon {
-		Err(TooDim)
-	} else {
-		radius = tower.metre_on_screen.times(beacon_radius.to_metres())
-		if radius < smallest_beacon_radius {
-			Err(TooSmall)
-		} else {
-			Ok(beacon_disc({ center: apex_on_screen, radius_on_screen: radius, brightness }))
-		}
-	}
-}
-
-## A beacon's disc, seen through as far as `brightness` says.
-beacon_disc : {
-	center : Screen.Point,
-	radius_on_screen : Pixels,
-	brightness : Fraction,
-} -> Shapes.Shape
-beacon_disc = |{ center, radius_on_screen, brightness }| {
-	opaque = Brush.opaque(beacon_color)
-	Disc({
-		x: center.x.to_f64(),
-		y: center.y.to_f64(),
-		radius: radius_on_screen.to_f64(),
-		fill: Flat({ ..opaque, a: brightness.to_f64() }),
-	})
-}
-
-expect
-	beacon_disc({
-		center: Screen.point(10.0, 20.0),
-		radius_on_screen: Pixels.of(30.0),
-		brightness: Fraction.of(0.25),
-	})
-		== Disc({
-			x: 10.0,
-			y: 20.0,
-			radius: 30.0,
-			fill: Flat(Brush.with_alpha(beacon_color, 0.25)),
-		})
 
 ## `point` on the rider's level and past the near plane, which every such
 ## point in these tests is.

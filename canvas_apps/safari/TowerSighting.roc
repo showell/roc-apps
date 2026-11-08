@@ -1,8 +1,8 @@
 ## TowerSighting finds the radio towers in front of the rider in a frame. A tower
 ## stands past the end of every segment, off to the right, and a long
 ## segment has one more halfway along, off to the left. Each tower's beacon
-## blinks on the ride's clock, and the sighting says how bright it is in the
-## frame. Unlike the trees and the critters, a tower has no size test: it is
+## blinks on the ride's clock, and the sighting lights it for the frame.
+## Unlike the trees and the critters, a tower has no size test: it is
 ## drawn however small it stands, until the earth's curve sinks it.
 import Across
 import Along
@@ -70,7 +70,7 @@ end_tower : RoadAhead.RoadView,
 	clock : Clock,
 } -> Try(Pipeline.Sighted(Tower), [BehindCamera])
 end_tower = |road, { vantage, in_view, clock }| {
-	beacon_brightness = Beacon.of_segment(in_view.index).brightness_at(clock)
+	beacon = Beacon.of_segment(in_view.index).lit_at(clock)
 	tower_if_ahead(
 		road,
 		{
@@ -80,7 +80,7 @@ end_tower = |road, { vantage, in_view, clock }| {
 				along: Along.at(in_view.segment.length.plus(end_tower_beyond_end)),
 				across: Across.right_of_middle(end_tower_right_of_middle),
 			},
-			tower: Tower.standing({ yaw: end_tower_yaw, beacon_brightness }),
+			tower: Tower.standing({ yaw: end_tower_yaw, beacon }),
 		},
 	)
 }
@@ -95,7 +95,7 @@ mid_tower : RoadAhead.RoadView,
 } -> Try(Pipeline.Sighted(Tower), [BehindCamera, NoMidTower])
 mid_tower = |road, { vantage, in_view, clock }|
 	if Segment.has_mid_tower(in_view.segment) {
-		beacon_brightness = Beacon.of_segment(in_view.index).opposite().brightness_at(clock)
+		beacon = Beacon.of_segment(in_view.index).opposite().lit_at(clock)
 		tower_if_ahead(
 			road,
 			{
@@ -105,7 +105,7 @@ mid_tower = |road, { vantage, in_view, clock }|
 					along: Along.at(in_view.segment.length.divided_by(2.0)),
 					across: Across.left_of_middle(mid_tower_left_of_middle),
 				},
-				tower: Tower.standing({ yaw: Angle.straight_ahead, beacon_brightness }),
+				tower: Tower.standing({ yaw: Angle.straight_ahead, beacon }),
 			},
 		)
 	} else {

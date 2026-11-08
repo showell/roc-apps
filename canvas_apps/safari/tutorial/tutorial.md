@@ -1051,7 +1051,7 @@ As a tower gets further away, it sinks below the horizon from the bottom up:
 
 A real tower wouldn't go so soon. `sink_radius` is 20 km, a much smaller earth than ours, so a tower is gone at 1.8 km. That way, you can see it sink.
 
-Each tower has a beacon on top, and `beacon_brightness` is a field of its sighting. Beacons blink, so we'll leave them until things start to move.
+Each tower has a beacon on top, and `beacon` is a field of its sighting. Beacons blink, so we'll leave them until things start to move.
 
 The truck is man-made too, and it waits for the same reason. That leaves the animals.
 
@@ -1297,11 +1297,11 @@ A clock is a place in time, and `Steps` is a distance between two of them. Two c
 
 You've seen this shape before, with `Along`, a place along a segment, and `Distance`, a length. One opaque type says where something is, a second says how far apart two of them are, and only the sums that make sense get a function. This book calls it *places and distances*.
 
-A `Beacon` is a key that nobody outside `Beacon` can read. You get one from a segment's index, which becomes its key. You can ask for the beacon opposite it, and you can ask how bright it is:
+A `Beacon` is a key that nobody outside `Beacon` can read. You get one from a segment's index, which becomes its key. You can ask for the beacon opposite it, and you can ask how it shines at a step of the ride:
 
-{{signatures Beacon.of_segment Beacon.opposite Beacon.brightness_at}}
+{{signatures Beacon.of_segment Beacon.opposite Beacon.lit_at}}
 
-`Beacon` has never heard of a tower. A beacon and a clock make a `Fraction`, and that's all.
+`Beacon` has never heard of a tower. A beacon and a clock make a `LitBeacon`, which knows how bright it is and how to draw itself, and that's all.
 
 ### The functions
 
@@ -1320,19 +1320,19 @@ digraph beacon {
   Beacon -> Fraction;
   Beacon -> Route;
   Clock -> Steps;
-  Tower -> Fraction;
+  Tower -> Beacon;
 }
 ```
 
-A box is a module, and an arrow is an import. Each frame, `Scene` hands the clock to `TowerSighting`, which finds the towers in view. Look at where the clock stops. `Tower` has no arrow to `Clock`: it holds its beacon's brightness as a `Fraction`, and draws the beacon as a magenta disc that's only as opaque as that, leaving it out when it's too dim to see. `TowerSighting` is the one module in the game that knows both the tower and the clock. Here's the line where the tower past the end of a segment asks for its beacon:
+A box is a module, and an arrow is an import. Each frame, `Scene` hands the clock to `TowerSighting`, which finds the towers in view. Look at where the clock stops. `Tower` has no arrow to `Clock`: it holds its beacon already lit, and only says where on screen the beacon's middle goes and how big a metre is there. The beacon draws itself as a magenta disc that's only as opaque as it is bright, leaving itself out when it's too dim to see. `TowerSighting` is the one module in the game that knows both the tower and the clock. Here's the line where the tower past the end of a segment asks for its beacon:
 
-{{code TowerSighting.end_tower from "beacon_brightness = Beacon.of_segment" to "beacon_brightness = Beacon.of_segment"}}
+{{code TowerSighting.end_tower from "beacon = Beacon.of_segment" to "beacon = Beacon.of_segment"}}
 
 That line is all the towers' sighting knows of beacons. Back in the radio towers chapter, `mid_tower` had the same line with `.opposite()` in the middle.
 
 Now down into `Beacon`:
 
-{{code Beacon.brightness_at}}
+{{code Beacon.lit_at}}
 
 `Beacon.(key)` unwraps a beacon, the way `Clock.(n)` unwraps a clock. `clock.steps_since(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride. Adding the beacon's own offset gives its phase, and a cosine turns that into a brightness:
 
