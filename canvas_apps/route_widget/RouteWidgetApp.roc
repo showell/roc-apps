@@ -29,7 +29,11 @@ RouteWidgetApp :: [].{
 MapPoint : { east : F64, north : F64 }
 
 ## One segment of the route, laid out on the map.
-LaidSegment : { plan : World.SegmentPlan, start : MapPoint, end : MapPoint }
+LaidSegment : {
+	plan : World.SegmentPlan,
+	start : MapPoint,
+	end : MapPoint,
+}
 
 ## Where the road has reached while the map is being laid out.
 Layout : { laid : List(LaidSegment), at : MapPoint }
@@ -58,7 +62,10 @@ segments =
 	World.segment_plans
 		.fold_with_index(
 			{ laid: [], at: { east: 0.0, north: 0.0 } },
-			|layout, plan, at| laid_onto(layout, { plan, index: Route.SegmentIndex.number(at.to_u32_wrap()) }),
+			|layout, plan, at| laid_onto(
+				layout,
+				{ plan, index: Route.SegmentIndex.number(at.to_u32_wrap()) },
+			),
 		)
 		.laid
 
@@ -242,7 +249,9 @@ legend_shapes =
 	].join()
 
 road_shapes : List(Shapes.Shape)
-road_shapes = segments.join_map(|each| piece_shapes(each, { width: 5.0, color: PlanView.road_color }))
+road_shapes = segments.join_map(
+	|each| piece_shapes(each, { width: 5.0, color: PlanView.road_color }),
+)
 
 ## The stretch that the lines under the map read out.
 read_out_shapes : List(Shapes.Shape)
@@ -263,8 +272,9 @@ status_lines : List(Str)
 status_lines = {
 	plan = read_out_plan.segment_plan
 	metres = ReadoutText.whole_text(plan.length.to_metres())
+	turn = ReadoutText.turn_text(read_out_plan.turn)
 	[
-		"Segment ${read_out_number.to_str()} of ${segments.len().to_str()}: ${metres} m, ${ReadoutText.turn_text(read_out_plan.turn)}",
+		"Segment ${read_out_number.to_str()} of ${segments.len().to_str()}: ${metres} m, ${turn}",
 		"encounter: ${Str.inspect(plan.encounter)}, pigs: ${Str.inspect(plan.pigs)}",
 		"bull: ${Str.inspect(plan.bull)}, scheme: ${Str.inspect(plan.scheme)}",
 		"bend_life: ${Str.inspect(read_out_plan.bend_life)}",
@@ -277,7 +287,11 @@ still_shapes = WidgetPage.frame_shapes({ picture_shapes, status_lines })
 expect segments.len() == World.segment_plans.len()
 
 # Each segment starts where the one before it ends.
-expect segments.map(|segment| segment.start).drop_first(1) == segments.map(|segment| segment.end).drop_last(1)
+expect {
+	starts = segments.map(|segment| segment.start)
+	ends = segments.map(|segment| segment.end)
+	starts.drop_first(1) == ends.drop_last(1)
+}
 
 # The road stays inside the picture, on all four sides.
 expect corners.all(|corner| canvas_point(corner).x >= 0.0)
@@ -286,7 +300,10 @@ expect corners.all(|corner| canvas_point(corner).y >= 0.0)
 expect corners.all(|corner| canvas_point(corner).y <= WidgetPage.picture_bottom_y)
 
 # It is the longest segment, so it is plain on the map.
-expect segments.all(|segment| segment.plan.length.to_metres() <= read_out_segment.plan.length.to_metres())
+expect {
+	longest = read_out_segment.plan.length.to_metres()
+	segments.all(|segment| segment.plan.length.to_metres() <= longest)
+}
 
 # The stretch that's read out goes down over the road.
 expect picture_shapes.drop_first(1 + road_shapes.len()).starts_with(read_out_shapes)

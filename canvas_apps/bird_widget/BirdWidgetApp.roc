@@ -2,10 +2,10 @@
 ## buttons run how far the rider is from the tree the bird starts on, coming at
 ## a steady 1.25 m a step, and each frame is worked out from that gap alone:
 ## the step of the ride it is, and the start the ride plans for the flight, so the
-## flight plays forward and backward. The picture stays still, looking up the road from a place short of
-## the first tree, so the bird shrinks as it flies off. It is drawn by Safari's own
-## Tree and PosedBird. Below it, the buttons and four lines of text that say what
-## BirdFlight makes of the gap.
+## flight plays forward and backward. The picture stays still, looking up the
+## road from a place short of the first tree, so the bird shrinks as it flies
+## off. It is drawn by Safari's own Tree and PosedBird. Below it, the buttons
+## and four lines of text that say what BirdFlight makes of the gap.
 import game.Across
 import game.Angle
 import game.Animation
@@ -84,7 +84,11 @@ shapes_at : BirdWidgetApp.Model -> List(Shapes.Shape)
 shapes_at = |transport|
 	VcrButtons.frame_shapes(
 		transport,
-		{ range: closing_gap, picture_shapes: picture_shapes(transport.at), status_lines: status_lines(transport.at) },
+		{
+			range: closing_gap,
+			picture_shapes: picture_shapes(transport.at),
+			status_lines: status_lines(transport.at),
+		},
 	)
 
 ## The road and the two trees, far things first, and the bird at `gap`.
@@ -112,7 +116,12 @@ road_shapes = {
 		on_ground(half, road_end_forward),
 		on_ground(half.opposite(), road_end_forward),
 	]
-	[Polygon.clipped_polygon({ color: RgbColor.of(0x8a8a8a), corners }, Lens.resting_focal_length)].keep_oks(|shape| shape)
+	[
+		Polygon.clipped_polygon(
+			{ color: RgbColor.of(0x8a8a8a), corners },
+			Lens.resting_focal_length,
+		),
+	].keep_oks(|shape| shape)
 }
 
 ## The road ahead of a rider on the route's first segment. The trees and the
@@ -133,10 +142,20 @@ eye = {
 ## `placed` as the picture's eye sees it, if it is in front of the eye.
 sighting_from_eye : Geom.Placed(kind) -> Try(Pipeline.Sighted(kind), [BehindCamera])
 sighting_from_eye = |placed|
-	Pipeline.sighting_of(placed, { road: straight_road, vantage: eye, place: Ahead(SegmentPlace.Position.first) })
+	Pipeline.sighting_of(
+		placed,
+		{
+			road: straight_road,
+			vantage: eye,
+			place: Ahead(SegmentPlace.Position.first),
+		},
+	)
 
 tree_shapes : Trees.RoadsideTree -> List(Shapes.Shape)
-tree_shapes = |tree| WidgetPage.resting_lens_shapes(sighting_from_eye(tree), { nearer_tree_count: 0 })
+tree_shapes = |tree| WidgetPage.resting_lens_shapes(
+	sighting_from_eye(tree),
+	{ nearer_tree_count: 0 },
+)
 
 ## The bird as `gap` finds it, drawn by Safari's own stills.
 bird_shapes : Distance -> List(Shapes.Shape)
@@ -193,39 +212,19 @@ expect BirdFlight.flight_span.ends_at > closing_gap.last
 
 expect
 	status_lines(Distance.metres(61.0))
-		== [
-			"Waiting",
-			"Pose: Perched",
-			"Gap: 61.0 m",
-			"Height: 6.4 m",
-		]
+		== ["Waiting", "Pose: Perched", "Gap: 61.0 m", "Height: 6.4 m"]
 
 expect
 	status_lines(Distance.metres(58.0))
-		== [
-			"Playing: frame 2",
-			"Pose: Side on, wings up",
-			"Gap: 58.0 m",
-			"Height: 6.9 m",
-		]
+		== ["Playing: frame 2", "Pose: Side on, wings up", "Gap: 58.0 m", "Height: 6.9 m"]
 
 expect
 	status_lines(Distance.metres(30.0))
-		== [
-			"Playing: frame 25",
-			"Pose: Flying away, wings up",
-			"Gap: 30.0 m",
-			"Height: 9.6 m",
-		]
+		== ["Playing: frame 25", "Pose: Flying away, wings up", "Gap: 30.0 m", "Height: 9.6 m"]
 
 expect
 	status_lines(Distance.metres(4.7))
-		== [
-			"Past",
-			"Pose: Perched",
-			"Gap: 4.7 m",
-			"Height: 4.9 m",
-		]
+		== ["Past", "Pose: Perched", "Gap: 4.7 m", "Height: 4.9 m"]
 
 # The picture depends on the gap, and it doesn't change once the bird is down.
 expect picture_shapes(Distance.metres(30.0)) != picture_shapes(Distance.metres(31.0))

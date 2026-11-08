@@ -25,7 +25,7 @@ import widget.VcrButtons
 
 StepWidgetApp :: [].{
 
-	## The whole state of the widget: the journey, the buttons, which hold the
+	## The whole state of the widget: the tour, the buttons, which hold the
 	## step it's heading for, and how it last moved.
 	Model : {
 		tour : Tour,
@@ -38,7 +38,7 @@ StepWidgetApp :: [].{
 		frames_a_second: WidgetPage.moving_frames_a_second,
 		title: "Three stored fields",
 		init: heading_for_step(0),
-		model_at_next_step: |model, input| moved(aimed(model, input)),
+		model_at_next_step: |model, input| move_tour(aim_transport(model, input)),
 		frame_shapes: shapes_at,
 	})
 }
@@ -48,18 +48,18 @@ steps_a_frame : U32
 steps_a_frame = 8
 
 ## The steps the buttons reach. Play goes as fast as the ride can be worked out.
-journey : VcrButtons.NumberRange(Clock)
-journey = VcrButtons.clock_range({
+step_range : VcrButtons.NumberRange(Clock)
+step_range = VcrButtons.clock_range({
 	first_step: 0,
-	last_step: journey_last_step,
+	last_step: step_range_end,
 	steps_a_frame: steps_a_frame.to_f64(),
 })
 
 ## Where the range ends: a round 2000 steps, which is far enough along the bar
 ## to see the rider and the truck move, and near enough that To the end, which
 ## has to play every step, gets there in about four seconds.
-journey_last_step : U32
-journey_last_step = 2000
+step_range_end : U32
+step_range_end = 2000
 
 ## How many instants are taken back off the list in one frame of the widget.
 read_back_a_frame : U32
@@ -67,15 +67,15 @@ read_back_a_frame = 200
 
 ## `model` with its buttons setting the step it's heading for. A press counts from
 ## where the ride is, which may not have reached the step it was heading for.
-aimed : StepWidgetApp.Model, Input.Snapshot -> StepWidgetApp.Model
-aimed = |model, input| {
+aim_transport : StepWidgetApp.Model, Input.Snapshot -> StepWidgetApp.Model
+aim_transport = |model, input| {
 	caught_up = VcrButtons.catch_up(model.transport, { input, shown: model.tour.instant().clock })
-	{ ..model, transport: VcrButtons.next_transport(caught_up, { input, range: journey }) }
+	{ ..model, transport: VcrButtons.next_transport(caught_up, { input, range: step_range }) }
 }
 
 ## `model` a frame on: closer to the step it's heading for, or left alone.
-moved : StepWidgetApp.Model -> StepWidgetApp.Model
-moved = |model| {
+move_tour : StepWidgetApp.Model -> StepWidgetApp.Model
+move_tour = |model| {
 	now = model.tour.instant().clock
 	wanted = model.transport.at
 	if now < wanted {
@@ -103,7 +103,7 @@ shapes_at = |model|
 	VcrButtons.frame_shapes(
 		model.transport,
 		{
-			range: journey,
+			range: step_range,
 			picture_shapes: picture_shapes(model.tour),
 			status_lines: status_lines(model),
 		},
@@ -280,10 +280,17 @@ status_lines = |model| {
 	rider = model.tour.instant().rider
 	truck = model.tour.instant().truck
 	clock = model.tour.instant().clock
+	rider_place = rider.motorcycle.route_place
+	rider_segment = (rider_place.segment_index.to_u32() + 1).to_str()
+	rider_along = ReadoutText.tenths_text(rider_place.along.to_metres())
+	rider_speed = ReadoutText.tenths_text(rider.motorcycle.speed.to_metres_a_step())
+	truck_along = ReadoutText.tenths_text(truck.route_position.to_metres())
+	truck_speed = ReadoutText.tenths_text(truck.speed.to_metres_a_step())
+	brake_lights = LitTruck.at(truck.pace, Sky.darkness_at(clock)).brake_lights
 	[
 		"clock: step ${clock.to_str()}",
-		"rider: segment ${(rider.motorcycle.route_place.segment_index.to_u32() + 1).to_str()}, ${ReadoutText.tenths_text(rider.motorcycle.route_place.along.to_metres())} m, speed ${ReadoutText.tenths_text(rider.motorcycle.speed.to_metres_a_step())}",
-		"truck: ${ReadoutText.tenths_text(truck.route_position.to_metres())} m, speed ${ReadoutText.tenths_text(truck.speed.to_metres_a_step())}, brake ${Str.inspect(LitTruck.at(truck.pace, Sky.darkness_at(clock)).brake_lights)}",
+		"rider: segment ${rider_segment}, ${rider_along} m, speed ${rider_speed}",
+		"truck: ${truck_along} m, speed ${truck_speed}, brake ${Str.inspect(brake_lights)}",
 		move_text(model),
 	]
 }
@@ -297,12 +304,12 @@ heading_for_step = |step| {
 }
 
 ## `model` heading for `step` instead.
-heading_on_to : StepWidgetApp.Model, U32 -> StepWidgetApp.Model
-heading_on_to = |model, step| { ..model, transport: VcrButtons.transport_at(Clock.at_step(step)) }
+head_for_step : StepWidgetApp.Model, U32 -> StepWidgetApp.Model
+head_for_step = |model, step| { ..model, transport: VcrButtons.transport_at(Clock.at_step(step)) }
 
 ## A frame of `model` with a press of `control`.
 pressed_on : StepWidgetApp.Model, VcrButtons.Control -> StepWidgetApp.Model
-pressed_on = |model, control| moved(aimed(model, VcrButtons.click_on(control)))
+pressed_on = |model, control| move_tour(aim_transport(model, VcrButtons.click_on(control)))
 
 ## `model` after `frames` frames with nobody touching it.
 left_alone : StepWidgetApp.Model, U64 -> StepWidgetApp.Model
@@ -310,7 +317,7 @@ left_alone = |model, frames| {
 	var $model = model
 	var $left = frames
 	while $left > 0 {
-		$model = moved($model)
+		$model = move_tour($model)
 		$left = $left - 1
 	}
 	$model
@@ -320,26 +327,26 @@ steps_in : StepWidgetApp.Model -> F64
 steps_in = |model| model.tour.instant().clock.steps_since(Clock.start).to_f64()
 
 # Going forward, a frame plays a few steps and no more than it takes.
-expect steps_in(moved(heading_for_step(100))) == steps_a_frame.to_f64()
-expect steps_in(moved(heading_for_step(3))) == 3.0
+expect steps_in(move_tour(heading_for_step(100))) == steps_a_frame.to_f64()
+expect steps_in(move_tour(heading_for_step(3))) == 3.0
 expect steps_in(left_alone(heading_for_step(20), 10)) == 20.0
 
 # A model at the step it's heading for doesn't move.
-expect steps_in(moved(heading_for_step(0))) == 0.0
-expect moved(heading_for_step(0)).last_move == NotYet
+expect steps_in(move_tour(heading_for_step(0))) == 0.0
+expect move_tour(heading_for_step(0)).last_move == NotYet
 
 # Going back, one frame covers far more than a frame of playing does.
 expect {
 	played = left_alone(heading_for_step(300), 40)
-	back = moved(heading_on_to(played, 100))
+	back = move_tour(head_for_step(played, 100))
 	steps_in(played) == 300.0 and steps_in(back) == 100.0 and back.last_move == ReadBack
 }
 
 # Going back lands on the very instant the ride passed through.
 expect {
 	on_the_way = left_alone(heading_for_step(16), 2)
-	past_it = left_alone(heading_on_to(on_the_way, 40), 3)
-	back = moved(heading_on_to(past_it, 16))
+	past_it = left_alone(head_for_step(on_the_way, 40), 3)
+	back = move_tour(head_for_step(past_it, 16))
 	back_motorcycle = back.tour.instant().rider.motorcycle
 	on_the_way_motorcycle = on_the_way.tour.instant().rider.motorcycle
 	back_motorcycle.route_place.along == on_the_way_motorcycle.route_place.along
@@ -350,7 +357,7 @@ expect {
 expect steps_in(pressed_on(heading_for_step(0), Play)) == steps_a_frame.to_f64()
 expect {
 	playing = pressed_on(heading_for_step(0), Play)
-	on = moved(aimed(playing, Input.none))
+	on = move_tour(aim_transport(playing, Input.none))
 	paused = pressed_on(on, Play)
 	steps_in(on) == 2.0 * steps_a_frame.to_f64()
 		and steps_in(paused) == steps_in(on)
@@ -367,7 +374,7 @@ expect {
 
 # To the end has to play there, and to the start reads back almost at once.
 expect steps_in(pressed_on(heading_for_step(0), ToEnd)) == steps_a_frame.to_f64()
-expect pressed_on(heading_for_step(0), ToEnd).transport.at == journey.last
+expect pressed_on(heading_for_step(0), ToEnd).transport.at == step_range.last
 expect {
 	played = left_alone(heading_for_step(300), 40)
 	steps_in(pressed_on(played, ToStart)) == 100.0
@@ -388,9 +395,5 @@ expect route_x(route_length) == route_left_x + route_width
 expect {
 	lines = status_lines(heading_for_step(0))
 	[lines.take_first(2), lines.drop_first(3)].join()
-		== [
-			"clock: step 0",
-			"rider: segment 1, 0.0 m, speed 0.3",
-			"Play it forward, then go back",
-		]
+		== ["clock: step 0", "rider: segment 1, 0.0 m, speed 0.3", "Play it forward, then go back"]
 }

@@ -154,7 +154,12 @@ patch_shape = |bend, corners|
 	})
 
 ## The low edge of a rail's quad, which lies along the ground.
-foot_shape : ShownBend, { low_start : RiderView.RaisedPoint, low_end : RiderView.RaisedPoint, .. } -> Shapes.Shape
+foot_shape : ShownBend,
+{
+	low_start : RiderView.RaisedPoint,
+	low_end : RiderView.RaisedPoint,
+	..,
+} -> Shapes.Shape
 foot_shape = |bend, { low_start, low_end, .. }| {
 	from = canvas_point(bend, { right: low_start.right, forward: low_start.forward })
 	to = canvas_point(bend, { right: low_end.right, forward: low_end.forward })
@@ -179,7 +184,9 @@ bend_shapes : ShownBend -> List(Shapes.Shape)
 bend_shapes = |bend| {
 	road = road_with(bend.turn)
 	[
-		GroundSighting.patches_in_view(road, camera).map(|patch| patch_shape(bend, patch.corners())),
+		GroundSighting.patches_in_view(road, camera).map(
+			|patch| patch_shape(bend, patch.corners()),
+		),
 		RailSighting.rail_quads_in_view(road, camera).map(|rail| foot_shape(bend, rail.corners)),
 		[
 			spot(bend, { at: apex_of(bend.turn), color: apex_color }),
@@ -207,11 +214,13 @@ apex_past_end = |bend_in_view| {
 caption_lines : Angle.Turn -> List(Str)
 caption_lines = |turn| {
 	road = road_with(turn)
+	patches = GroundSighting.patches_in_view(road, camera).len()
+	rail_pieces = RailSighting.rail_quads_in_view(road, camera).len()
 	[
 		ReadoutText.turn_text(turn),
 		"rail on the ${edge_text(bend_of(road))} edge",
 		"apex ${ReadoutText.tenths_text(apex_past_end(bend_of(road)))} m past the end",
-		"${GroundSighting.patches_in_view(road, camera).len().to_str()} patches, ${RailSighting.rail_quads_in_view(road, camera).len().to_str()} rail pieces",
+		"${patches.to_str()} patches, ${rail_pieces.to_str()} rail pieces",
 	]
 }
 
@@ -237,8 +246,12 @@ caption_shapes = |bend|
 
 still_shapes : List(Shapes.Shape)
 still_shapes = {
-	picture_shapes = [WidgetPage.picture_backdrop(PlanView.ground_color)].concat(shown_bends.join_map(bend_shapes))
-	WidgetPage.frame_shapes({ picture_shapes, status_lines: [] }).concat(shown_bends.join_map(caption_shapes))
+	backdrop = WidgetPage.picture_backdrop(PlanView.ground_color)
+	picture_shapes = [backdrop].concat(shown_bends.join_map(bend_shapes))
+	WidgetPage.frame_shapes({
+		picture_shapes,
+		status_lines: [],
+	}).concat(shown_bends.join_map(caption_shapes))
 }
 
 # The captions read what the modules say, and the middle bend has the book's
