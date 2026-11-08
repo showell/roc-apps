@@ -90,10 +90,15 @@ BendInView :: { before : SegmentPlace, bend : Geom.Bend }.{
 		BendInView.({ bend, .. }) = bend_in_view
 		start_after = Geom.point_in_segment_before({ along: Along.start, across }, bend)
 		turn_radians = bend.turn.to_radians()
+		turn_sine = turn_radians.sin()
+		# Edges that run on straight, or fold straight back, never meet.
+		if turn_sine == 0.0 {
+			crash "BendInView.outer_corner: a bend that turns 0 or 180 degrees has no apex"
+		}
 		toward_edge = across.distance_from(start_after.across).to_metres()
 		# Negative below a right angle, where the apex is back from start_after,
 		# and positive past one.
-		along_to_apex = toward_edge * turn_radians.cos() / turn_radians.sin()
+		along_to_apex = toward_edge * turn_radians.cos() / turn_sine
 		{
 			end_before: { along: Along.at(bend.segment_length), across },
 			apex: { along: start_after.along.plus(Distance.metres(along_to_apex)), across },

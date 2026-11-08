@@ -157,15 +157,23 @@ expect
 			(3.5, 6.0),
 		]
 expect tree_places([planted_out_of_order], Pixels.of(1.0)) == []
-expect
-	tree_places(
+# A tree past a bend is in view too. The second segment turns 15 degrees right
+# about the inner edge, 2 m right and 190 m ahead, so its tree 16 m along and
+# 3.5 m left stands 16 cos 15 + 5.5 sin 15 past the bend and
+# 2 + 16 sin 15 - 5.5 cos 15 to the right.
+expect {
+	got = tree_places(
 		[
-			Fixtures.going_straight_on(Fixtures.segment_of([Fixtures.tree_at(46.0, 3.5)])),
+			Fixtures.bending_right(Fixtures.segment_of([Fixtures.tree_at(46.0, 3.5)])),
 			Fixtures.segment_of([Fixtures.tree_at(16.0, -3.5)]),
 		],
 		Pixels.of(500.0),
 	)
-		== [(3.5, 36.0), (-3.5, 206.0)]
+	wanted = [(3.5, 36.0), (0.8285126770, 206.8783179687)]
+	is_near_place = |(right, forward), (want_right, want_forward)|
+		(right - want_right).abs() <= 0.000000001 and (forward - want_forward).abs() <= 0.000000001
+	got.len() == wanted.len() and got.map2(wanted, is_near_place).all(|is_near| is_near)
+}
 
 # BillboardSighting: which billboards are in view, on a road of one segment
 # holding one grown cow and nothing else.
@@ -315,15 +323,12 @@ long_segment : Segment
 long_segment = { ..Fixtures.segment_of([]), length: Distance.metres(1200.0) }
 
 ## The towers in view at `clock` from the origin of the segment at `rider_number` on a
-## route of a 200 m segment going straight on into the long one.
+## route of a 200 m segment bending right into the long one.
 towers_on_short_then_long : U32, Clock -> List(Pipeline.Sighted(Tower))
 towers_on_short_then_long = |rider_number, clock|
 	TowerSighting.towers_in_view(
 		RoadAhead.RoadView.ahead_of(
-			Route.from_segments([
-				Fixtures.going_straight_on(Fixtures.segment_of([])),
-				long_segment,
-			]),
+			Route.from_segments([Fixtures.bending_right(Fixtures.segment_of([])), long_segment]),
 			Route.SegmentIndex.number(rider_number),
 		),
 		{ camera: Fixtures.origin_camera, clock },
