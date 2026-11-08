@@ -300,6 +300,7 @@ status_readout = {
 
 status_line : Str, U64 -> Shapes.Shape
 status_line = |text, row| WidgetPage.readout({ text, color: WidgetPage.ink_color, row, style: status_readout })
+
 ## The layers on, in the game's paint order.
 picture_shapes : List(Layer) -> List(Shapes.Shape)
 picture_shapes = |on_layers| Shapes.shapes_in_space(lean_space, frame_shapes_on(on_layers))
