@@ -41,7 +41,7 @@ RiderCamera := {
 	of : Rider, { route : Route, encounter_timing : EncounterPlan.Timing } -> RiderCamera
 	of = |rider, { route, encounter_timing }| {
 		route_place = rider.motorcycle.route_place
-		yaw = rider.motorcycle.yaw.plus(view_yaw_for(rider))
+		yaw = rider.motorcycle.yaw.plus(rider.head_yaw())
 		{
 			route_place,
 			yaw,
@@ -83,14 +83,6 @@ rider_roll = |lean|
 	} else {
 		lean
 	}
-
-## How far the head turns for each radian of lean.
-head_turn_per_lean : F64
-head_turn_per_lean = 0.15
-
-## The camera's turn from the way the motorcycle points.
-view_yaw_for : Rider -> Angle.Turn
-view_yaw_for = |s| s.eyes.gaze_yaw.plus(s.motorcycle.lean.steer(head_turn_per_lean))
 
 ## The camera's focal length for where the rider is and how they ride. The
 ## view widens as the rider leans, and as the rider's attention is caught, by
@@ -183,16 +175,6 @@ expect
 			is_close(got.to_f64(), want)
 		},
 	)
-
-# With no lean, the camera turns from the way the motorcycle points exactly as
-# far as the rider looks.
-expect {
-	gaze_yaw = Angle.Turn.radians(0.375)
-	upright = { ..Rider.initial.motorcycle, lean: Angle.Lean.radians(0.0) }
-	eyes = { ..Rider.initial.eyes, gaze_yaw }
-	looking = { ..Rider.initial, motorcycle: upright, eyes }
-	view_yaw_for(looking) == gaze_yaw
-}
 
 # Inside the deadband the canvas stays level; at its edge and past it, either
 # way, the canvas rolls with the rider.
