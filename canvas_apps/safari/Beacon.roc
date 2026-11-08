@@ -22,17 +22,22 @@ Beacon :: Fraction.{
 	## along it.
 	TowerPlace : [AtEnd, Midway]
 
+	## Where a tower stands on the route: the segment, and its place on it.
+	TowerSite : { segment : Route.SegmentIndex, place : Beacon.TowerPlace }
+
 	## The beacon of the tower at `place` on the segment at `segment`, as it
 	## shines at `clock`.
-	at : { segment : Route.SegmentIndex, place : Beacon.TowerPlace }, Clock -> Beacon
+	at : Beacon.TowerSite, Clock -> Beacon
 	at = |tower, clock| Beacon.(beacon_brightness(Beacon.steps_into_blink(tower, clock)))
 
 	## How many steps into its blink the beacon of the tower at `place` on the
 	## segment at `segment` is at `clock`, counted from where the blink starts
 	## dark.
-	steps_into_blink : { segment : Route.SegmentIndex, place : Beacon.TowerPlace }, Clock -> Steps
-	steps_into_blink = |{ segment, place }, clock|
-		clock.steps_since(Clock.start).plus(head_start({ segment, place })).wrapped_to(Beacon.beacon_period)
+	steps_into_blink : Beacon.TowerSite, Clock -> Steps
+	steps_into_blink = |{ segment, place }, clock| {
+		since_start = clock.steps_since(Clock.start)
+		since_start.plus(head_start({ segment, place })).wrapped_to(Beacon.beacon_period)
+	}
 
 	## A beacon blinks once in this many steps of the ride.
 	beacon_period : Steps
@@ -67,7 +72,7 @@ Beacon :: Fraction.{
 ## further into its blink than the last one's, so neighbouring segments'
 ## beacons blink apart, and the tower halfway along starts half a blink on
 ## from the one at the end, so the two blink opposite each other.
-head_start : { segment : Route.SegmentIndex, place : Beacon.TowerPlace } -> Steps
+head_start : Beacon.TowerSite -> Steps
 head_start = |{ segment, place }| {
 	at_end = beacon_stagger.times(segment.to_u32()).wrapped_to(Beacon.beacon_period)
 	match place {

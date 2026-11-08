@@ -186,8 +186,10 @@ across_stretch = 2.0
 
 ## The right of the road is down the canvas, for a rider heading across it.
 canvas_point : ArcPoint -> Point.Point
-canvas_point = |{ forward, across }|
-	road_plan.canvas_point({ metres_right: forward.to_metres(), metres_down: across.to_metres() * across_stretch })
+canvas_point = |{ forward, across }| {
+	metres_down = across.to_metres() * across_stretch
+	road_plan.canvas_point({ metres_right: forward.to_metres(), metres_down })
+}
 
 ## A line right along the road, at `across`.
 road_line : {
@@ -211,13 +213,14 @@ road_line = |{ across, color, width }| {
 road_shapes : List(Shapes.Shape)
 road_shapes = {
 	left_edge = Across.left_of_middle(Geom.road_half_width)
+	half_road = Geom.road_half_width.to_metres()
 	[
 		WidgetPage.picture_backdrop(WidgetPalette.plan_ground_color),
 		Rect({
 			x: 0.0,
 			y: canvas_point({ forward: Distance.zero, across: left_edge }).y,
 			width: WidgetPage.canvas_width,
-			height: 2.0 * Geom.road_half_width.to_metres() * across_stretch * road_plan.pixels_a_metre,
+			height: 2.0 * half_road * across_stretch * road_plan.pixels_a_metre,
 			fill: Brush.flat(WidgetPalette.plan_road_color),
 		}),
 		road_line({
@@ -287,7 +290,8 @@ tries_shapes = |tries, width|
 
 rider_mark : Shapes.Shape
 rider_mark = {
-	{ x, y } = canvas_point({ forward: Distance.zero, across: motorcycle.route_place.road_point.across })
+	rider_across = motorcycle.route_place.road_point.across
+	{ x, y } = canvas_point({ forward: Distance.zero, across: rider_across })
 	Disc({
 		x,
 		y,

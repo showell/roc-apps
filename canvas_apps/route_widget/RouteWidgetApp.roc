@@ -146,11 +146,15 @@ map_margin = 18.0
 ## and as many pixels a metre as let the whole road fit.
 map_plan : PlanView
 map_plan = {
-	origin: { x: WidgetPage.canvas_width / 2.0, y: WidgetPage.picture_bottom_y / 2.0 },
-	pixels_a_metre: F64.min(
-		(WidgetPage.canvas_width - 2.0 * map_margin) / extent.east.minus(extent.west).to_metres(),
-		(WidgetPage.picture_bottom_y - 2.0 * map_margin) / extent.north.minus(extent.south).to_metres(),
-	),
+	road_width = extent.east.minus(extent.west).to_metres()
+	road_height = extent.north.minus(extent.south).to_metres()
+	{
+		origin: { x: WidgetPage.canvas_width / 2.0, y: WidgetPage.picture_bottom_y / 2.0 },
+		pixels_a_metre: F64.min(
+			(WidgetPage.canvas_width - 2.0 * map_margin) / road_width,
+			(WidgetPage.picture_bottom_y - 2.0 * map_margin) / road_height,
+		),
+	}
 }
 
 ## Where `point` falls on the canvas. North is up the picture.

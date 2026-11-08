@@ -49,7 +49,8 @@ LeanSearch :: [].{
 	## The motorcycle a try coasts: `motorcycle` with the lean halfway between
 	## the try's bounds.
 	tried_motorcycle : Motorcycle, { low : Angle.Lean, high : Angle.Lean, .. } -> Motorcycle
-	tried_motorcycle = |motorcycle, { low, high, .. }| motorcycle.with_lean(middle_lean({ low, high }))
+	tried_motorcycle = |motorcycle, { low, high, .. }|
+		motorcycle.with_lean(middle_lean({ low, high }))
 
 	## The tries of the bisection over the leans one step can reach from the
 	## motorcycle's own, in the order tried. Each try's bounds are the half of the one
