@@ -88,6 +88,8 @@ package
 		TreeSighting,
 		Trees,
 		Truck,
+		TruckBody,
+		TruckShape,
 		TruckSighting,
 		VehicleLimits,
 		World,

@@ -19,6 +19,7 @@ app [main!] {
 	step: "../../step_widget/package.roc",
 	stills: "../../stills_widget/package.roc",
 	tree: "../../tree_widget/package.roc",
+	truck: "../../truck_widget/package.roc",
 	widget: "../../widget_kit/main.roc",
 }
 
@@ -35,6 +36,7 @@ import sky.SkyWidgetApp
 import step.StepWidgetApp
 import stills.StillsWidgetApp
 import tree.TreeWidgetApp
+import truck.TruckWidgetApp
 import game.Steps
 import lib.CanvasApp
 import lib.Font
@@ -98,6 +100,7 @@ expect {
 		words_shown(StepWidgetApp.canvas_app, []),
 		words_shown(StillsWidgetApp.canvas_app, []),
 		words_shown(TreeWidgetApp.canvas_app, []),
+		words_shown(TruckWidgetApp.canvas_app, []),
 	].join()
 	words.all(Font.can_plot)
 		and words.contains("Added: The moving things")
