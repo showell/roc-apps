@@ -54,7 +54,8 @@ TreeShapes :: [].{
 		Camera.upright_on_screen(spot.base(), { height, focal_length })
 }
 
-## The tree is drawn 136 parts tall, and the shares below are parts of that.
+## The tree is drawn 136 parts tall, and the shares below are parts of that,
+## all chosen by eye.
 tree_parts : U64
 tree_parts = 136
 
@@ -182,7 +183,7 @@ tiers = [
 trunk_color : RgbColor
 trunk_color = RgbColor.of(0x5A3E22)
 
-## Of the tree's parts, 55 are trunk below the crown.
+## Of the tree's parts, 55 are trunk below the crown, chosen by eye.
 trunk_height_share : Fraction
 trunk_height_share = Fraction.of(55.0 / tree_parts.to_f64())
 
@@ -190,11 +191,13 @@ trunk_height_share = Fraction.of(55.0 / tree_parts.to_f64())
 crown_height_share : Fraction
 crown_height_share = trunk_height_share.complement()
 
-## The crown's widest half-width, as a fraction of the tree's height.
+## The crown's widest half-width, as a fraction of the tree's height: 36
+## parts, chosen by eye.
 crown_half_width_share : Fraction
 crown_half_width_share = Fraction.of(36.0 / tree_parts.to_f64())
 
-## The trunk's width, as a fraction of the tree's height.
+## The trunk's width, as a fraction of the tree's height: 10 parts, chosen by
+## eye.
 trunk_width_share : Fraction
 trunk_width_share = Fraction.of(10.0 / tree_parts.to_f64())
 
@@ -203,7 +206,7 @@ min_trunk_width : Pixels
 min_trunk_width = Pixels.of(1.0)
 
 ## How far the trunk runs up inside the crown, as a fraction of the tree's
-## height, so that no sky shows between them.
+## height, so that no sky shows between them: 6.25 parts, chosen by eye.
 trunk_overlap_share : Fraction
 trunk_overlap_share = Fraction.of(6.25 / tree_parts.to_f64())
 
