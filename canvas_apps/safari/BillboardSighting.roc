@@ -3,11 +3,8 @@
 ## its baby at each bend, and the ducks on each pond.
 import Billboard
 import RoadAhead
-import Segment
 import SegmentPlace
-import Geom
 import Pipeline
-import Pond
 
 BillboardSighting :: [].{
 
@@ -69,7 +66,7 @@ bend_sightings : RoadAhead.RoadView,
 bend_sightings = |road, { camera, in_view }| {
 	place = in_view.place
 	if is_within_reach(place, wildlife_reach) {
-		bend_life_billboards(in_view.segment)
+		in_view.segment.segment_bend_billboards()
 			.map(|billboard| Pipeline.scenery_sighting_of(billboard, { road, camera, place }))
 	} else {
 		[]
@@ -93,17 +90,3 @@ third_position = SegmentPlace.Position.first.next().next()
 expect is_within_reach(Ahead(third_position), 3)
 expect !is_within_reach(Ahead(third_position.next()), 3)
 expect is_within_reach(JustBehind, 3)
-
-## The billboards at the end of `segment`, placed on it. A duck's place is
-## measured from the bend at the segment's end.
-bend_life_billboards : Segment -> List(Geom.Placed(Billboard))
-bend_life_billboards = |segment|
-	match segment.segment_ending() {
-		Bends({ bend, bend_life }) =>
-			match bend_life {
-				Animal(animal) => animal.bend_billboards(bend)
-				DuckPond => Pond.placed_ducks(bend)
-				Quiet => []
-			}
-		RouteEnds => []
-	}

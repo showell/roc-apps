@@ -15,6 +15,7 @@ import CowHerd
 import Distance
 import Geom
 import PigHerd
+import Pond
 import Trees
 
 Segment := {
@@ -105,6 +106,21 @@ Segment := {
 	segment_cows : Segment -> List(Geom.Placed(Billboard))
 	segment_cows = |segment|
 		segment.cows.herd.herd_cows({ herd_along: cow_herd_along, bull: segment.cows.bull })
+
+	## The billboards at the end of `segment`, placed on it: the animal and its
+	## baby at its bend, or the ducks on its pond. A duck's place is measured
+	## from the bend at the segment's end.
+	segment_bend_billboards : Segment -> List(Geom.Placed(Billboard))
+	segment_bend_billboards = |segment|
+		match segment.segment_ending() {
+			Bends({ bend, bend_life }) =>
+				match bend_life {
+					Animal(animal) => animal.bend_billboards(bend)
+					DuckPond => Pond.placed_ducks(bend)
+					Quiet => []
+				}
+			RouteEnds => []
+		}
 
 	## The pig of `segment`'s herd that stands out, and how the rider takes the
 	## herd.
