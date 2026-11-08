@@ -4,8 +4,8 @@ import Across
 import Along
 import Billboard
 import Distance
+import EmojiStills
 import Geom
-import Pig
 import Scatter
 
 PigHerd := [BigHerd(PigHerd.BigPigHerd), TwoRows(PigHerd.TwoRowPigHerd)].{
@@ -69,7 +69,7 @@ PigHerd := [BigHerd(PigHerd.BigPigHerd), TwoRows(PigHerd.TwoRowPigHerd)].{
 		standout_pig : PigHerd.TwoRowPigHerd, Along -> Geom.Placed(Billboard)
 		standout_pig = |herd, herd_along| {
 			along = herd_along.plus(herd.front_row.standout_offset)
-			pig({ along, across: front_row_across })
+			placed_pig({ along, across: front_row_across })
 		}
 
 		is_eq : _
@@ -103,11 +103,15 @@ front_row_distance = Geom.road_half_width.plus(Distance.metres(10.0))
 front_row_across : Across
 front_row_across = Across.right_of_middle(front_row_distance)
 
-pig : { along : Along, across : Across } -> Geom.Placed(Billboard)
-pig = |{ along, across }| {
+## How every pig looks: the pig emoji, a little over a metre tall.
+pig_species : Billboard.Species
+pig_species = { emoji: EmojiStills.pig, adult_height: Distance.metres(1.1) }
+
+placed_pig : { along : Along, across : Across } -> Geom.Placed(Billboard)
+placed_pig = |{ along, across }| {
 	road_point: { along, across },
 	lift: Distance.zero,
-	kind: Billboard.adult_billboard(Pig.pig, FacesLeft),
+	kind: Billboard.adult_billboard(pig_species, FacesLeft),
 }
 
 ## The big herd's pigs about `herd_along`, row by row from the road.
@@ -163,12 +167,12 @@ herd_pig = |herd, { herd_along, row, column }| {
 			jitter_across: herd.jitter_across,
 		},
 	)
-	pig({ along: in_line.plus(stray.along), across: in_row.plus(stray.across) })
+	placed_pig({ along: in_line.plus(stray.along), across: in_row.plus(stray.across) })
 }
 
 row_pigs : Along, { across : Across, offsets : List(Distance) } -> List(Geom.Placed(Billboard))
 row_pigs = |herd_along, { across, offsets }|
-	offsets.map(|offset| pig({ along: herd_along.plus(offset), across }))
+	offsets.map(|offset| placed_pig({ along: herd_along.plus(offset), across }))
 
 ## A big herd of seven rows of seven. The third pig of the row nearest the road
 ## stands out.

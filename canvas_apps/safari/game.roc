@@ -48,7 +48,6 @@ package
 		Motorcycle,
 		Mountains,
 		Picture,
-		Pig,
 		PigHerd,
 		Pipeline,
 		Pixels,
