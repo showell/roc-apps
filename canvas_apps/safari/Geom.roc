@@ -274,9 +274,9 @@ Geom :: [].{
 		fraction : Fraction,
 	} -> Geom.RaisedPoint
 	point_between = |{ from, to, fraction }| {
-		right: from.right.plus(to.right.minus(from.right).times(fraction.to_f64())),
-		forward: from.forward.plus(to.forward.minus(from.forward).times(fraction.to_f64())),
-		height: from.height.plus(to.height.minus(from.height).times(fraction.to_f64())),
+		right: from.right.plus(to.right.minus(from.right).scaled_by(fraction)),
+		forward: from.forward.plus(to.forward.minus(from.forward).scaled_by(fraction)),
+		height: from.height.plus(to.height.minus(from.height).scaled_by(fraction)),
 	}
 }
 

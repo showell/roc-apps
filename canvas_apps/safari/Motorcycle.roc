@@ -110,13 +110,13 @@ riding = {
 # before, and the third keeps them.
 first_step : Motorcycle
 first_step = riding.motorcycle_at_next_step({
-	lean: riding.lean.plus(Angle.LeanChange.radians(0.05)),
+	lean: Angle.Lean.radians(0.175),
 	speed: Speed.metres_a_step(0.81),
 })
 
 second_step : Motorcycle
 second_step = first_step.motorcycle_at_next_step({
-	lean: first_step.lean.plus(Angle.LeanChange.radians(-0.02)),
+	lean: Angle.Lean.radians(0.155),
 	speed: Speed.metres_a_step(0.8150000000000001),
 })
 

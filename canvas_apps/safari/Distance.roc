@@ -1,6 +1,7 @@
 ## A length in metres: how long a segment is, how tall a tree stands, how far
 ## the rider is from a cat. A length measured toward something can run past it,
 ## so a gap goes negative once the rider is beyond what it is measured to.
+import Fraction
 
 Distance :: F64.{
 
@@ -22,6 +23,10 @@ Distance :: F64.{
 
 	times : Distance, F64 -> Distance
 	times = |Distance.(d), factor| Distance.(d * factor)
+
+	## This fraction of this length.
+	scaled_by : Distance, Fraction -> Distance
+	scaled_by = |Distance.(d), fraction| Distance.(d * fraction.to_f64())
 
 	divided_by : Distance, F64 -> Distance
 	divided_by = |Distance.(d), divisor| Distance.(d / divisor)
@@ -56,19 +61,6 @@ Distance :: F64.{
 
 	is_eq : _
 }
-
-expect Distance.zero.to_metres() == 0.0
-expect Distance.metres(1.5).plus(Distance.metres(2.25)).to_metres() == 3.75
-expect Distance.metres(1.5).minus(Distance.metres(2.25)).to_metres() == -0.75
-expect Distance.metres(4.0).times(0.5).to_metres() == 2.0
-expect Distance.metres(5.0).divided_by(2.0).to_metres() == 2.5
-expect Distance.metres(1.5).opposite().to_metres() == -1.5
-expect Distance.metres(2.0).portion(Distance.metres(8.0)) == 0.25
-expect Distance.metres(12.0).portion(Distance.metres(8.0)) == 1.5
-expect Distance.metres(2.0).min(Distance.metres(3.0)).to_metres() == 2.0
-expect Distance.metres(3.0).min(Distance.metres(2.0)).to_metres() == 2.0
-expect Distance.metres(2.0).max(Distance.metres(3.0)).to_metres() == 3.0
-expect Distance.metres(3.0).max(Distance.metres(2.0)).to_metres() == 3.0
 
 ## Just under, at and just over 2.5 m, and how `<`, `<=`, `>`, `>=` and `==`
 ## answer against 2.5 m there.

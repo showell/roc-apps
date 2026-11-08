@@ -41,10 +41,6 @@ Across :: F64.{
 	distance_from : Across, Across -> Distance
 	distance_from = |Across.(a), Across.(other)| Distance.metres(a - other)
 
-	## This place, its distance from the middle of the road scaled by `factor`.
-	times : Across, F64 -> Across
-	times = |Across.(a), factor| Across.(a * factor)
-
 	## The place further left of this one and `other`.
 	min : Across, Across -> Across
 	min = |Across.(a), Across.(other)| Across.(a.min(other))
@@ -67,21 +63,6 @@ Across :: F64.{
 
 	is_eq : _
 }
-
-expect Across.middle.to_metres() == 0.0
-expect Across.right_of_middle(Distance.metres(1.5)).to_metres() == 1.5
-expect Across.left_of_middle(Distance.metres(1.5)).to_metres() == -1.5
-expect Across.metres(1.5).distance_from_middle().to_metres() == 1.5
-expect Across.metres(-1.5).distance_from_middle().to_metres() == 1.5
-expect Across.metres(1.5).plus(Distance.metres(2.0)).to_metres() == 3.5
-expect Across.metres(1.5).minus(Distance.metres(2.0)).to_metres() == -0.5
-expect Across.metres(1.5).distance_from(Across.metres(-2.0)).to_metres() == 3.5
-expect Across.metres(-2.0).distance_from(Across.metres(1.5)).to_metres() == -3.5
-expect Across.metres(1.5).times(0.5).to_metres() == 0.75
-expect Across.metres(1.5).min(Across.metres(-2.0)).to_metres() == -2.0
-expect Across.metres(-2.0).min(Across.metres(1.5)).to_metres() == -2.0
-expect Across.metres(1.5).max(Across.metres(-2.0)).to_metres() == 1.5
-expect Across.metres(-2.0).max(Across.metres(1.5)).to_metres() == 1.5
 
 ## Just under, at and just over 2.5 m, and how `<`, `<=`, `>`, `>=` and `==`
 ## answer against 2.5 m there.

@@ -73,7 +73,7 @@ axles = {
 		back_pair.plus(half_gap),
 		front_pair.minus(half_gap),
 		front_pair.plus(half_gap),
-		box.trailer_front.plus(TruckShape.cab_length.times(cab_axle_fraction.to_f64())),
+		box.trailer_front.plus(TruckShape.cab_length.scaled_by(cab_axle_fraction)),
 	]
 }
 

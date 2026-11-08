@@ -40,12 +40,11 @@ VehicleLimits :: [].{
 	turn_speed : Angle.Turn -> Speed
 	turn_speed = |turn| {
 		whole_degrees =
-			(turn.abs().to_radians() * 180.0 / F64.pi).round_to_i64_try()
+			turn.abs().to_degrees().round_to_u32_try()
 				?? crash "VehicleLimits.turn_speed: a turn is a finite angle"
-		degrees = whole_degrees.to_f64()
-		match turn_speeds.find_first(|row| row.degrees == degrees) {
+		match turn_speeds.find_first(|row| row.whole_degrees == whole_degrees) {
 			Ok(row) => row.speed
-			Err(NotFound) => crash "VehicleLimits.turn_speed: no speed for a turn of ${degrees.to_str()} degrees"
+			Err(NotFound) => crash "VehicleLimits.turn_speed: no speed for a turn of ${whole_degrees.to_str()} degrees"
 		}
 	}
 }
@@ -55,14 +54,14 @@ least_braking_distance : Distance
 least_braking_distance = Distance.metres(0.000001)
 
 ## The turns a route can make, in whole degrees, and the speed each is taken at.
-turn_speeds : List({ degrees : F64, speed : Speed })
+turn_speeds : List({ whole_degrees : U32, speed : Speed })
 turn_speeds = [
-	{ degrees: 15.0, speed: Speed.metres_a_step(1.297) },
-	{ degrees: 20.0, speed: Speed.metres_a_step(0.84) },
-	{ degrees: 30.0, speed: Speed.metres_a_step(0.461) },
-	{ degrees: 50.0, speed: Speed.metres_a_step(0.222) },
-	{ degrees: 70.0, speed: Speed.metres_a_step(0.139) },
-	{ degrees: 80.0, speed: Speed.metres_a_step(0.117) },
+	{ whole_degrees: 15, speed: Speed.metres_a_step(1.297) },
+	{ whole_degrees: 20, speed: Speed.metres_a_step(0.84) },
+	{ whole_degrees: 30, speed: Speed.metres_a_step(0.461) },
+	{ whole_degrees: 50, speed: Speed.metres_a_step(0.222) },
+	{ whole_degrees: 70, speed: Speed.metres_a_step(0.139) },
+	{ whole_degrees: 80, speed: Speed.metres_a_step(0.117) },
 ]
 
 ## The speed for a turn of this many degrees.

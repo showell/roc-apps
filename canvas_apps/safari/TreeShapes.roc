@@ -95,7 +95,7 @@ trunk_finish_of = |nearer_tree_count|
 
 ## How tall a tree's crown looks on the screen.
 crown_height : TreeShapes.TreeOutline -> Pixels
-crown_height = |outline| outline.height_on_screen.times(crown_height_share.to_f64())
+crown_height = |outline| outline.height_on_screen.scaled_by(crown_height_share)
 
 ## Where the top of a tree's crown is on the screen: the tree's tip.
 crown_top_y : TreeShapes.TreeOutline -> Pixels
@@ -104,7 +104,7 @@ crown_top_y = |outline| outline.foot.y.minus(outline.height_on_screen)
 ## How far the crown reaches either side of the trunk at its widest, on the
 ## screen.
 crown_half_width : TreeShapes.TreeOutline -> Pixels
-crown_half_width = |outline| outline.height_on_screen.times(crown_half_width_share.to_f64())
+crown_half_width = |outline| outline.height_on_screen.scaled_by(crown_half_width_share)
 
 ## One tier of the crown: where its top and its bottom are, as fractions of
 ## the crown's height down from its top, and how wide its bottom is, as a
@@ -210,9 +210,9 @@ crown_shade = |forward| Fraction.clamp(forward.portion(crown_shade_reach)).less(
 
 trunk_shape : TreeShapes.TreeOutline, [Shaded, Flat] -> Shapes.Shape
 trunk_shape = |outline, finish| {
-	width = outline.height_on_screen.times(trunk_width_share.to_f64()).max(min_trunk_width)
-	below_crown = outline.height_on_screen.times(trunk_height_share.to_f64())
-	height = below_crown.plus(outline.height_on_screen.times(trunk_overlap_share.to_f64()))
+	width = outline.height_on_screen.scaled_by(trunk_width_share).max(min_trunk_width)
+	below_crown = outline.height_on_screen.scaled_by(trunk_height_share)
+	height = below_crown.plus(outline.height_on_screen.scaled_by(trunk_overlap_share))
 	left = outline.foot.x.minus(width.divided_by(2.0))
 	top = outline.foot.y.minus(height)
 	trunk_box = {
@@ -233,9 +233,9 @@ trunk_shape = |outline, finish| {
 tier_triangle : TreeShapes.TreeOutline, { tier : Tier, foliage_color : RgbColor } -> Shapes.Shape
 tier_triangle = |outline, { tier, foliage_color }| {
 	crown_top = crown_top_y(outline)
-	bottom_y = crown_top.plus(crown_height(outline).times(tier.bottom.to_f64()))
-	top_y = crown_top.plus(crown_height(outline).times(tier.top.to_f64()))
-	half_base = crown_half_width(outline).times(tier.width.to_f64())
+	bottom_y = crown_top.plus(crown_height(outline).scaled_by(tier.bottom))
+	top_y = crown_top.plus(crown_height(outline).scaled_by(tier.top))
+	half_base = crown_half_width(outline).scaled_by(tier.width)
 	Polygon.triangle(
 		{
 			first_corner: { x: outline.foot.x, y: top_y },

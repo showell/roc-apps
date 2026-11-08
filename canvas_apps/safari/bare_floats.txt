@@ -12,7 +12,6 @@ FarHeight: a unit type
 Fraction: a unit type
 Pixels: a unit type
 Speed: a unit type
-Clock.to_f64: a whole count's way into float sums
 Steps.to_f64: a whole count's way into float sums
 
 # Factors and ratios, which have no unit.
@@ -28,7 +27,6 @@ Camera.x_for_slope: a line of sight's slope, sideways over forward, a distance o
 Easing.lerp: the sum behind blending any unit, which a caller unwraps once
 
 # Numbers with a meaning no unit type here holds.
-VehicleLimits.turn_speeds: whole degrees, a key looked up by equality after a turn rounds to it
 Still: traced pictures, in units of the still's own height
 
 # Trigonometry.

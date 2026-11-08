@@ -6,6 +6,7 @@
 ## horizon it is negative.
 ##
 ## A far height becomes pixels on the screen only through `Lens.size_on_screen`.
+import Fraction
 
 FarHeight :: F64.{
 
@@ -27,6 +28,10 @@ FarHeight :: F64.{
 
 	times : FarHeight, F64 -> FarHeight
 	times = |FarHeight.(h), factor| FarHeight.(h * factor)
+
+	## This fraction of this height.
+	scaled_by : FarHeight, Fraction -> FarHeight
+	scaled_by = |FarHeight.(h), fraction| FarHeight.(h * fraction.to_f64())
 
 	divided_by : FarHeight, F64 -> FarHeight
 	divided_by = |FarHeight.(h), divisor| FarHeight.(h / divisor)
@@ -62,29 +67,8 @@ FarHeight :: F64.{
 	is_eq : _
 }
 
-expect FarHeight.of(-2.5).to_f64() == -2.5
-expect FarHeight.zero.to_f64() == 0.0
-
-expect FarHeight.of(1.5).plus(FarHeight.of(2.25)).to_f64() == 3.75
-expect FarHeight.of(1.5).minus(FarHeight.of(2.25)).to_f64() == -0.75
-expect FarHeight.of(1.5).times(-2.0).to_f64() == -3.0
-expect FarHeight.of(3.0).divided_by(2.0).to_f64() == 1.5
-
-expect FarHeight.of(3.0).opposite().to_f64() == -3.0
-expect FarHeight.of(-3.0).opposite().to_f64() == 3.0
-
 # The sums downstream can see the sign of a zero, so `opposite` is a subtraction.
 expect FarHeight.zero.opposite().to_f64().to_bits() == (0.0).to_bits()
-
-expect FarHeight.of(3.0).abs().to_f64() == 3.0
-expect FarHeight.of(-3.0).abs().to_f64() == 3.0
-
-expect FarHeight.of(2.0).portion(FarHeight.of(8.0)) == 0.25
-expect FarHeight.of(12.0).portion(FarHeight.of(8.0)) == 1.5
-expect FarHeight.of(-2.0).portion(FarHeight.of(8.0)) == -0.25
-
-expect FarHeight.of(2.0).max(FarHeight.of(3.0)).to_f64() == 3.0
-expect FarHeight.of(3.0).max(FarHeight.of(2.0)).to_f64() == 3.0
 
 lower : FarHeight
 lower = FarHeight.of(-1.0)

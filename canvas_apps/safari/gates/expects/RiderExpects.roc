@@ -187,7 +187,7 @@ focal_at_lean = |lean| focal_of(leaning(upright, lean))
 no_lean = upright.motorcycle.lean
 
 ## The change from upright to the full lean.
-full_change = Angle.LeanChange.radians(RiderCamera.full_lean.to_radians() - no_lean.to_radians())
+full_change = Angle.LeanChange.degrees(20.0)
 
 ## The full lean, to the left.
 full_left = no_lean.minus(full_change)
@@ -205,7 +205,7 @@ expect focal_at_lean(RiderCamera.full_lean) == focal_at_lean(full_left)
 
 expect {
 	twice = RiderCamera.full_lean.plus(full_change)
-	twice_change = Angle.LeanChange.radians(twice.to_radians() - no_lean.to_radians())
+	twice_change = Angle.LeanChange.degrees(40.0)
 	ten_times = twice.plus(twice_change).plus(twice_change).plus(twice_change).plus(twice_change)
 	focal_at_lean(twice).minus(focal_at_lean(RiderCamera.full_lean)) == Pixels.zero
 		and focal_at_lean(ten_times).minus(focal_at_lean(RiderCamera.full_lean)) == Pixels.zero

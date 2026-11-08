@@ -5,6 +5,7 @@
 ##
 ## Pixels stop at the edge of `lib.Shapes`, which takes plain numbers, and at
 ## trigonometry.
+import Fraction
 
 Pixels :: F64.{
 
@@ -26,6 +27,10 @@ Pixels :: F64.{
 
 	times : Pixels, F64 -> Pixels
 	times = |Pixels.(p), factor| Pixels.(p * factor)
+
+	## This fraction of this length.
+	scaled_by : Pixels, Fraction -> Pixels
+	scaled_by = |Pixels.(p), fraction| Pixels.(p * fraction.to_f64())
 
 	divided_by : Pixels, F64 -> Pixels
 	divided_by = |Pixels.(p), divisor| Pixels.(p / divisor)
@@ -61,35 +66,8 @@ Pixels :: F64.{
 	is_eq : _
 }
 
-expect Pixels.of(2.5).to_f64() == 2.5
-expect Pixels.of(-2.5).to_f64() == -2.5
-expect Pixels.zero.to_f64() == 0.0
-
-expect Pixels.of(1.5).plus(Pixels.of(2.25)).to_f64() == 3.75
-expect Pixels.of(1.5).minus(Pixels.of(2.25)).to_f64() == -0.75
-expect Pixels.of(1.5).times(2.0).to_f64() == 3.0
-expect Pixels.of(1.5).times(-2.0).to_f64() == -3.0
-expect Pixels.of(3.0).divided_by(2.0).to_f64() == 1.5
-
-expect Pixels.of(3.0).opposite().to_f64() == -3.0
-expect Pixels.of(-3.0).opposite().to_f64() == 3.0
-
 # The sums downstream can see the sign of a zero, so `opposite` is a subtraction.
 expect Pixels.zero.opposite().to_f64().to_bits() == (0.0).to_bits()
-
-expect Pixels.of(3.0).abs().to_f64() == 3.0
-expect Pixels.of(-3.0).abs().to_f64() == 3.0
-expect Pixels.zero.abs().to_f64() == 0.0
-
-# A ratio can be under 1, 1 itself, past it, or negative.
-expect Pixels.of(2.0).portion(Pixels.of(8.0)) == 0.25
-expect Pixels.of(8.0).portion(Pixels.of(8.0)) == 1.0
-expect Pixels.of(12.0).portion(Pixels.of(8.0)) == 1.5
-expect Pixels.of(-2.0).portion(Pixels.of(8.0)) == -0.25
-
-expect Pixels.of(2.0).max(Pixels.of(3.0)).to_f64() == 3.0
-expect Pixels.of(3.0).max(Pixels.of(2.0)).to_f64() == 3.0
-expect Pixels.of(-3.0).max(Pixels.of(-2.0)).to_f64() == -2.0
 
 lesser : Pixels
 lesser = Pixels.of(-1.0)

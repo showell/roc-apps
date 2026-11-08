@@ -176,7 +176,7 @@ snowline_under = |north_height| {
 	above_threshold = north_height.minus(snow_threshold)
 	peak_above_threshold = snow_peak_height.minus(snow_threshold)
 	above_fraction = Fraction.clamp(above_threshold.portion(peak_above_threshold))
-	snow_threshold.minus(snow_dip.times(above_fraction.to_f64()))
+	snow_threshold.minus(snow_dip.scaled_by(above_fraction))
 }
 
 ## The bearing seen at `x` across the screen.

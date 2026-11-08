@@ -111,7 +111,7 @@ tease_position = |{ rider_distance, route_length }| {
 ## cautious speed.
 braking_state_at_next_step : Truck, ComingBend -> Truck
 braking_state_at_next_step = |truck, turn| {
-	target_speed = turn.turn_speed.times(turn_caution.to_f64())
+	target_speed = turn.turn_speed.scaled_by(turn_caution)
 	acceleration = VehicleLimits.braking_to(
 		truck.speed,
 		{ target: target_speed, within: turn.distance },

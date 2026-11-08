@@ -6,6 +6,10 @@ Trig :: [].{
 	degree : F64
 	degree = 0.017453292519943295
 
+	## Degrees in a radian.
+	degrees_per_radian : F64
+	degrees_per_radian = 57.29577951308232
+
 	## The turn `x`, taken a whole circle at a time to between minus pi and pi. A
 	## turn of more than `most_wrapped_circles` circles crashes, because no angle
 	## here grows that far unless it is a bug.

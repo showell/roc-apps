@@ -73,7 +73,7 @@ TruckShape :: [].{
 		{
 			rear: trailer_length.divided_by(2.0).opposite(),
 			trailer_front,
-			roof_front: trailer_front.plus(cab_length.times(cab_roof_fraction.to_f64())),
+			roof_front: trailer_front.plus(cab_length.scaled_by(cab_roof_fraction)),
 			nose: trailer_front.plus(cab_length),
 			left: truck_width.divided_by(2.0).opposite(),
 			right: truck_width.divided_by(2.0),
