@@ -36,6 +36,7 @@ import game.Gawking
 import game.Gaze
 import game.RoadAhead
 import game.Route
+import game.RoutePlace
 import game.Segment
 import game.SegmentPlace
 import game.Geom
@@ -3037,6 +3038,44 @@ truck_road = crafted_road([
 	{ ..going_straight_on(segment_of([])), length: Distance.metres(320.0) },
 	{ ..segment_of([]), length: Distance.metres(400.0) },
 ])
+
+## The place `metres` along the truck road's route.
+truck_route_place : F64 -> Try(RoutePlace, [PastRouteEnd])
+truck_route_place = |metres| RoutePlace.at_distance(truck_road.route(), Distance.metres(metres))
+
+## The place on the truck road's segment at `count_before`, `along` metres
+## from its start, on the middle of the road.
+truck_route_place_on : U32, F64 -> RoutePlace
+truck_route_place_on = |count_before, along| {
+	segment_index: Route.SegmentIndex.number(count_before),
+	along: Along.metres(along),
+	across: Across.middle,
+}
+
+# A place found by its distance is on the segment it falls on, and a distance at
+# a segment's end is that segment's end, not the next one's start; just past the
+# route's end is past it.
+expect
+	[
+		(0.0, Ok(truck_route_place_on(0, 0.0))),
+		(250.0, Ok(truck_route_place_on(0, 250.0))),
+		(500.0, Ok(truck_route_place_on(0, 500.0))),
+		(500.5, Ok(truck_route_place_on(1, 0.5))),
+		(660.0, Ok(truck_route_place_on(1, 160.0))),
+		(820.0, Ok(truck_route_place_on(1, 320.0))),
+		(1000.0, Ok(truck_route_place_on(2, 180.0))),
+		(1220.0, Ok(truck_route_place_on(2, 400.0))),
+		(1220.5, Err(PastRouteEnd)),
+	].all(|(metres, want)| truck_route_place(metres) == want)
+
+# `distance_along` undoes `at_distance`, at each segment's end and in its middle.
+expect
+	[0.0, 250.0, 500.0, 660.0, 820.0, 1000.0, 1220.0].all(
+		|metres| {
+			place = truck_route_place(metres) ?? crash "CrossModuleExpects: the place is on the truck road"
+			place.distance_along(truck_road.route()).to_metres() == metres
+		},
+	)
 
 ## What becomes of a truck `lead` metres ahead of a rider on the truck road's
 ## first segment, seen from `vantage`, with its lights off. On the first

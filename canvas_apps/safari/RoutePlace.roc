@@ -40,6 +40,26 @@ RoutePlace := {
 	distance_along = |place, route|
 		route.distance_along_route({ index: place.segment_index, along: place.along })
 
+	## The place `distance` along `route`, on the middle of the road: the inverse
+	## of `distance_along`. A distance at a segment's end is on that segment,
+	## at its end, not at the start of the next.
+	at_distance : Route, Distance -> Try(RoutePlace, [PastRouteEnd])
+	at_distance = |route, distance|
+		match route.segments_with_ends().find_first_index(|stretch| distance <= stretch.end) {
+			Ok(count_before) => {
+				index = Route.SegmentIndex.number(
+					count_before.to_u32_try() ?? crash "RoutePlace.at_distance: a route holds fewer than 2^32 segments",
+				)
+				start = route.distance_along_route({ index, along: Along.start })
+				Ok({
+					segment_index: index,
+					along: Along.at(distance.minus(start)),
+					across: Across.middle,
+				})
+			}
+			Err(NotFound) => Err(PastRouteEnd)
+		}
+
 	## Where this place is on its segment, without the segment.
 	road_point : RoutePlace -> Geom.RoadPoint
 	road_point = |place| { along: place.along, across: place.across }
