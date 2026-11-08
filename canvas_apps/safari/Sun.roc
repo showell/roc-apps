@@ -4,7 +4,6 @@
 ## sky, the mountains and the truck's headlights. It knows its own look too, a
 ## glow and a disc over it.
 import Angle
-import Camera
 import Clock
 import FarHeight
 import Lens
@@ -248,7 +247,7 @@ place : {
 	focal_length : Pixels,
 } -> Sun.Place
 place = |{ turn_from_view, height, focal_length }| {
-	on_screen = Camera.far_point({ turn: turn_from_view, height, focal_length })
+	on_screen = Lens.far_point({ turn: turn_from_view, height, focal_length })
 	{ x: on_screen.x, y: on_screen.y, focal_length }
 }
 

@@ -6,7 +6,6 @@
 ## nearer. The rock darkens at dusk, and the snow goes blue.
 import Pixels
 import Angle
-import Camera
 import Clock
 import FarHeight
 import Fraction
@@ -183,7 +182,7 @@ snowline_under = |north_height| {
 
 ## The bearing seen at `x` across the screen.
 bearing_at : { heading : Angle.Bearing, focal_length : Pixels, .. }, Pixels -> Angle.Bearing
-bearing_at = |aim, x| aim.heading.plus(Camera.turn_at_x({ x, focal_length: aim.focal_length }))
+bearing_at = |aim, x| aim.heading.plus(Lens.turn_at_x({ x, focal_length: aim.focal_length }))
 
 ## The skyline's height at `bearing`: the highest of the land and the two
 ## ranges.
