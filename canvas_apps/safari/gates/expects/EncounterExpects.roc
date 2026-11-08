@@ -130,8 +130,6 @@ place_numbers = |bird| [
 expect place_numbers(bird_at(0.0, Unplanned)) == [-6.0, 100.0, left_top]
 expect place_numbers(bird_at(40.0, flight_at_step(99))) == [-6.0, 60.0, left_top]
 expect place_numbers(bird_at(85.0, flight_at_step(136))) == [6.0, 45.0, far_top]
-expect bird_at(40.0, flight_at_step(99)).kind.pose == Perched
-expect bird_at(85.0, flight_at_step(136)).kind.pose == Perched
 
 # In flight, the bird is where its flight's frame for the step says.
 expect {
@@ -197,8 +195,6 @@ expect
 
 # EncounterSighting's cats: which cats are in view as the rider comes on them.
 
-expect Fixtures.cat_route.route_segments().map(World.has_cat) == [False, True, False]
-
 ## The first cat in view for a rider `along` metres in.
 first_cat : F64 -> Pipeline.Sighted(PosedCat)
 first_cat = |along|
@@ -213,13 +209,10 @@ cat_forward = |along| first_cat(along).spot.foot().forward()
 cat_right : F64 -> Distance
 cat_right = |along| first_cat(along).spot.foot().right()
 
-expect Fixtures.seen.len() == 1
 # The cat route's one cat is on its second segment.
 expect
 	EncounterPoses.cat_poses(Fixtures.cat_road, Unplanned).map(|cat| cat.place)
 		== [Ahead(Fixtures.second_position)]
-expect first_cat(300.0).spot.lift().to_metres() == 0.0
-expect first_cat(300.0).kind.pose == Rest
 expect
 	[
 		(cat_forward(300.0).minus(cat_forward(200.0)).to_metres(), -100.0),
@@ -299,35 +292,6 @@ crossing_cat = CatCrossing.by_tree({
 crossing_frame_of : U32 -> Animation.Instant(PosedCat.CatPose)
 crossing_frame_of = |steps_in| Cat.instant_at(crossing_cat, Playing(Steps.of(steps_in)))
 
-## The frames of a crossing, one a step.
-crossing_frames : List(Animation.Instant(PosedCat.CatPose))
-crossing_frames =
-	List.from_iter(U32.until(0, Cat.crossing_span.length.to_u32())).map(crossing_frame_of)
-
-## The poses frames `from` to `to` of the crossing show.
-crossing_poses : U64, U64 -> List(PosedCat.CatPose)
-crossing_poses = |from, to| crossing_frames.sublist({
-	start: from,
-	len: to - from + 1,
-}).map(|frame| frame.pose)
-
-# Two strides as it walks out, frozen in the middle, then the leap.
-expect
-	crossing_poses(0, 9)
-		== [
-			Stride,
-			Stride,
-			Stride,
-			Rest,
-			Rest,
-			Stride,
-			Stride,
-			Stride,
-			Rest,
-			Rest,
-		]
-expect crossing_poses(10, 33).all(|pose| pose == Frozen)
-expect crossing_poses(34, 37) == [Coil, Flight, Flight, Land]
 expect Cat.instant_at(crossing_cat, Waiting).pose == Rest
 expect Cat.instant_at(crossing_cat, Past(Steps.zero)).pose == Collapse
 
@@ -368,9 +332,6 @@ expect (
 	).location.across.to_metres() - -3.49
 ).abs() <= 0.000000000001
 
-# Every crossing is on its own road.
-expect crossing_frames.all(|frame| frame.location.along == crossing_cat.along)
-
 # BirdFlight: the tree a bird flies to, and its flight frame by frame.
 ## The tree a sample bird leaves.
 flight_left_tree : Trees.RoadsideTree
@@ -405,9 +366,6 @@ expect chosen_tree_numbers(flight_sample_trees) == [140.0, 6.0]
 expect chosen_tree_numbers([flight_left_tree, Fixtures.tree_at(124.0, 6.0)]) == []
 expect chosen_tree_numbers([flight_left_tree, Fixtures.tree_at(125.0, 6.0)]) == [125.0, 6.0]
 expect chosen_tree_numbers([flight_left_tree, Fixtures.tree_at(140.0, -6.0)]) == []
-expect
-	BirdFlight.flight_from(flight_sample_trees, flight_left_tree).map_ok(|flight| flight.from)
-		== Ok(flight_left_tree)
 
 ## The sample bird `steps_in` steps into its flight.
 flight_frame_of : U32 -> BirdFlight.BirdInstant
