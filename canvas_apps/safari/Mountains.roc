@@ -153,13 +153,15 @@ snow_dip = FarHeight.of(10.0)
 column_step : Pixels
 column_step = Pixels.of(2.0)
 
-## The height of the north range's highest peak, as its samples find it.
+## The height of the north range's highest peak, as its samples across the
+## whole range find it.
 snow_peak_height : FarHeight
 snow_peak_height = {
-	first = Angle.Bearing.radians(-0.5)
+	first = north_range.center.plus(Angle.straight_ahead.minus(north_range.half_width))
+	last = north_range.center.plus(north_range.half_width)
 	var $highest = Mountains.north_range_height(first)
 	var $at = first.plus(peak_sample_step)
-	while $at <= Angle.Bearing.radians(0.5) {
+	while $at <= last {
 		$highest = $highest.max(Mountains.north_range_height($at))
 		$at = $at.plus(peak_sample_step)
 	}
