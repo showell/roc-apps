@@ -2324,7 +2324,7 @@ Where a bird flies is decided once, when the world is built. `habit_from` shows 
 
 The caller's return type is written in place, a tag union that exists for this one function and fits straight into the `crossing` field of a segment:
 
-{{code BirdFlight.fifth_left_tree}}
+{{code Segment.fifth_left_tree}}
 
 And that's called from a `match` in the middle of a record, which is a reminder that `match` is an expression. The plan's plain `BirdHere` tag comes in, and `BirdHere(route_segments)` goes out:
 
