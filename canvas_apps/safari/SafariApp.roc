@@ -39,7 +39,7 @@ SafariApp :: [].{
 	frame_shapes : Tour -> List(Shapes.Shape)
 	frame_shapes = |tour| {
 		view = FrameView.frame_view_at(tour.route(), tour.instant())
-		view.framed_shapes(FrameView.lean_space(view.roll))
+		view.framed_shapes(Screen.leaned_by(view.roll))
 	}
 }
 

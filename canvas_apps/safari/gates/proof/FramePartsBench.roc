@@ -21,6 +21,7 @@ import game.RiderCamera
 import game.RoadAhead
 import game.Route
 import game.Scene
+import game.Screen
 import game.Sky
 import game.Sun
 import game.Grass
@@ -78,7 +79,7 @@ part_size = |part, { route, instant }| {
 		0
 	} else if part == "full" {
 		view = FrameView.frame_view_at(route, instant)
-		view.framed_shapes(FrameView.lean_space(view.roll)).len()
+		view.framed_shapes(Screen.leaned_by(view.roll)).len()
 	} else if part == "view" {
 		FrameView.ride_shape_lists(FrameView.frame_view_at(route, instant)).join().len()
 	} else if part == "camera" {
@@ -187,7 +188,7 @@ prepared_size = |part, { route, instant, reps }| {
 	painted = {
 		backdrop: view.backdrop,
 		ride_shape_lists: FrameView.ride_shape_lists(view),
-		space: FrameView.lean_space(view.roll),
+		space: Screen.leaned_by(view.roll),
 	}
 	var $sum = 0
 	for _ in 0..<reps {

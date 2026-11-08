@@ -145,7 +145,7 @@ frame_shapes_on = |on_layers| piece_shapes(
 
 ## The space the paused frame leans in, which the game puts the whole frame in.
 lean_space : Shapes.Space
-lean_space = FrameView.lean_space(paused_frame_view.roll)
+lean_space = Screen.leaned_by(paused_frame_view.roll)
 
 ## The layers up to `last`, and `last` itself.
 layers_to : Layer -> List(Layer)

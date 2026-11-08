@@ -1,5 +1,7 @@
 ## The screen Safari draws on: its size in pixels, and where the horizon
-## crosses it before the camera rolls.
+## crosses it before the camera rolls, and the space the frame leans in once it
+## does.
+import Angle
 import Pixels
 import lib.Brush
 import lib.Shapes
@@ -78,6 +80,19 @@ Screen :: [].{
 	above_horizon_rect : Brush.Fill -> Shapes.Shape
 	above_horizon_rect = |fill|
 		margin_rect({ top: roll_margin.opposite(), bottom: horizon_y }, fill)
+
+	## The space the whole frame is drawn in when the camera rolls by `roll`:
+	## the screen turns by minus the roll about its middle.
+	leaned_by : Angle.Lean -> Shapes.Space
+	leaned_by = |roll| {
+		middle = { x: width.to_f64() / 2.0, y: height.to_f64() / 2.0 }
+		World({
+			target: middle,
+			offset: middle,
+			rotation: 0.0 - roll.to_degrees(),
+			zoom: 1.0,
+		})
+	}
 }
 
 expect Screen.distance({ from: Screen.point(3.0, 4.0), to: Screen.point(0.0, 0.0) }).to_f64() == 5.0
