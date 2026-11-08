@@ -107,7 +107,6 @@ digraph system {
   RideInstant -> Rider;
   RideInstant -> Truck;
   Rider -> World;
-  Truck -> World;
   World -> critters;
   World -> scenery;
   RideInstant -> sky;
@@ -166,7 +165,7 @@ At step 1,570 of the ride, a cat is frozen in the lane. This is what `CrossingSi
 
 That's a sighting: where the rider sees something, and how it should look.
 
-Most things in the view come in pairs, and the names say which half is which: `CrossingSighting` and `PosedCat`, `TreeSighting` and `TreeShapes`, `TowerSighting` and `Tower`, `TruckSighting` and `TruckAhead`.
+Most things in the view come in pairs, and the names say which half is which: `CrossingSighting` and `PosedCat`, `TreeSighting` and `TreeShapes`, `TowerSighting` and `Tower`, `TruckSighting` and `LitTruck`.
 
 A sighting answers one question each frame: which of these can the rider see right now, and how should each one look? `CrossingSighting` goes through the stretches of road ahead, which Safari Ride calls segments, asks `Cat` where it is, works out where that lands in the rider's view, and drops any cat behind the camera or too small to matter. What it hands back is a plain record with no drawing in it:
 
@@ -1516,11 +1515,11 @@ digraph stepped {
 }
 ```
 
-Here's the step again, this time whole. Its body is a block: names, then a record, which is the value of the block. The rider moves first, and the truck reads where the rider has just got to, so the order of those lines is a rule of the game, and `dist` is what carries it.
+Here's the step again, this time whole. Its body is a block: names, then a record, which is the value of the block. The rider moves first, and the truck reads where the rider has just got to, so the order of those lines is a rule of the game, and `to` is what carries it.
 
 {{code RideInstant.next}}
 
-`Clock.next`, `Rider.rider_state_at_next_step` and `Truck.truck_state_at_next_step` all have the same shape: a value goes in, and the next value comes out. Call that *the step function*. There's no mutable rider being nudged. There's a rider, and another rider one step on.
+`Clock.next`, `Rider.next` and `Truck.truck_at_next_step` all have the same shape: a value goes in, and the next value comes out. Call that *the step function*. There's no mutable rider being nudged. There's a rider, and another rider one step on.
 
 Stepping has a cost, which shows up when we compare it with the sun:
 
@@ -1830,7 +1829,7 @@ The truck is what the rider chases. It starts 500 metres up the road, and for mo
 | 4,000 | 4,796 metres | 5,051 metres | 255 metres |
 | 6,000 | 6,790 metres | 6,931 metres | 141 metres |
 
-The closest the rider gets is 50 metres, at step 6,374. After that the rider slows to stop at the route's end, at step 6,746. The truck doesn't wait. It drives on past the end of the route and vanishes, since nothing is drawn beyond the end. You never catch it. Some riders have complained about the darn truck, and that's the design.
+The closest the rider gets is 50 metres, at step 6,374. After that the rider slows to stop at the route's end, at step 6,746. The truck doesn't wait. It drives on past the end of the route and vanishes, since nothing is drawn beyond the end. You never catch it. Some riders have complained about the darn truck, and that's the design. At least for now haha.
 
 New in this chapter:
 
@@ -1838,9 +1837,9 @@ New in this chapter:
 
 ### A tease, carried out by physics
 
-The truck's driver is teasing the rider: staying ahead, but letting him gain. That's the hand of god, and it's one function, `tease_position`. Given how far the rider has come, it says where the truck would like to be. The lead it aims for shrinks from 500 metres at the start of the route to 100 at the end.
+The truck's driver is teasing the rider: staying ahead, but letting the rider gain. That's the hand of god, and it's one function, `tease_position`. Given how far the rider has come, it says where the truck would like to be. The lead it aims for shrinks from 500 metres at the start of the route to 100 at the end.
 
-Everything else is plain physics. The truck speeds up while it's short of that mark and holds its speed once it's past it. It never slows down to keep to the mark, so it can run well past it on a long straight. It brakes for every turn, and that's where the rider gains: the lead shrinks while the truck brakes and grows a little the rest of the time.
+Everything else is plain physics. The truck speeds up while it's short of that mark and holds its speed once it's past it. It never slows down to keep to the mark, so it can run well past it on a long straight. It slows for the turns, and that's mostly where the rider gains.
 
 The truck can always pull away, because it outdoes the rider by 10%, in both its acceleration and its top speed.
 
@@ -1858,7 +1857,7 @@ A turn ahead of the truck is its own type, and so is the answer to "is there one
 
 {{code Truck.NextBend}}
 
-`BendAhead` carries a `ComingBend`, how far off the turn is and how fast it can be taken. `NoBendAhead` carries nothing, because the route ends first. The only way to read a turn's distance is inside the branch where there is a turn.
+`BendAhead` carries a `ComingBend`, how far off the turn is and how fast it can be taken. `NoBendAhead` carries nothing: the route ends before another turn, or the truck is already past the end. The only way to read a turn's distance is inside the branch where there is a turn.
 
 ### The functions
 
@@ -1877,14 +1876,15 @@ digraph truck {
   LitTruck -> Truck;
   LitTruck -> TruckBody;
   TruckBody -> TruckShape;
+  FrameView -> LitTruck;
 }
 ```
 
-`RideInstant` moves the truck once a step. All it hands over is how far along the route the rider is, and the route itself:
+`RideInstant` moves the truck once a step. All it hands over is how far along the route the rider has just got to, and the route itself:
 
 {{code RideInstant.next from "truck: Truck.truck_at_next_step(" to "{ rider_distance: to.distance_along(route), route },"}}
 
-That record is the whole of the chase. `Truck` doesn't import anything about the rider, and the rider's modules don't import `Truck`.
+That record is the whole of the chase. `Truck` imports none of the rider's modules, and the rider's modules don't import `Truck`. What the two share is `VehicleLimits`, the limits both keep to, which is where the truck's 10% comes from.
 
 The step works out the tease, then looks for the next turn:
 
@@ -1898,7 +1898,7 @@ Finding the next turn walks the route's segments with their ends, and takes the 
 
 {{code Truck.next_bend}}
 
-Then the two ways to take a step. Both sit below the type's block, so they're private, and both are arithmetic on `Speed`. Within 60 metres of a turn, the truck brakes, aiming to reach the turn at 80% of the speed it allows:
+Then the two ways to take a step. Both sit below the type's block, so they're private, and both are arithmetic on `Speed`. Within 60 metres of a turn, the truck aims to reach it at 80% of the speed it allows, and brakes if it's going faster than that:
 
 {{code Truck.braking_truck_at_next_step}}
 
@@ -1924,9 +1924,9 @@ New in this chapter:
 
 ### Two lamps, two rules
 
-The headlights come on when it gets dark. They work like a light sensor on the lamps themselves: once the sky is dark enough, they're on. The sky already knows how dark it is, from the sunset, so the headlights only have to ask it.
+The headlights come on when it gets dark. They work like a light sensor on the lamps themselves: once the sky is dark enough, they're on. The sky already knows how dark it is, from the sunset, so the sensor reads the sky.
 
-The brake lights come on while the truck is slowing down. That's a fact about the truck's own last step, its `Pace`, so they ask the truck.
+The brake lights come on while the truck is slowing down. That's a fact about the truck's own last step, its `Pace`, so they follow the truck.
 
 ### Get the types right
 
@@ -1936,11 +1936,11 @@ Two independent lamps aren't one state with four values, so they're two fields:
 
 ### The functions
 
-Each frame, `FrameView` lights the truck from the truck's pace and the sky's darkness:
+Each frame, `FrameView` reads the truck's pace and the sky's darkness, and hands both to `LitTruck`:
 
 {{code FrameView.ride_facts from "lit_truck: LitTruck.at(" to "lit_truck: LitTruck.at("}}
 
-Both rules are in one function:
+`LitTruck` applies both rules to what it's handed, in one function:
 
 {{code LitTruck.at}}
 
@@ -1954,7 +1954,7 @@ The drawing does what the lamps say, with each `match` covering both tags. The b
 
 {{code LitTruck.truck_shapes}}
 
-`TruckLights` paints the beams as wedges that fade toward their edges, and the brake lights, each with a glow around it. `TruckBody`, from the last chapter, is untouched: the lights are drawn around it.
+`TruckLights` paints the beams as wedges that fade from the lamp toward their far end, and the brake lights, each with a glow around it. `TruckBody`, from the last chapter, is untouched: the lights are drawn around it.
 
 The sun and the beacons follow the clock alone. The cat has a more nuanced rule: the timing of its crossing depends on where the rider is.
 
