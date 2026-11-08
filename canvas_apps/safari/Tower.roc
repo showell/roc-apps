@@ -1,6 +1,6 @@
-## A radio tower: a square lattice that tapers from a 12 m footprint to a
-## point 80 m up. It is drawn as rods (four legs, a ring every 20 m, and
-## crossed braces in the lowest two storeys) with a blinking beacon on top.
+## A radio tower: a square lattice that tapers from its footprint to a point
+## at its top. It is drawn as rods (four legs, a ring at every storey, and
+## crossed braces in the lowest storeys) with a blinking beacon on top.
 ## The earth curves away under a far tower, so it sinks below the horizon
 ## from the bottom up.
 import Pixels
