@@ -128,7 +128,7 @@ happen.
 **A helper wears a public name.** Everything in a type's `.{ }` block is part of
 the type, so a block full of helpers makes the type look far bigger than it is.
 Tower's block had 31 members, and 3 were used outside its file. Pigs, Cows,
-Trees, Truck and Pond were the same. Keep in the block what other modules use,
+Trees, TruckJourney and Pond were the same. Keep in the block what other modules use,
 and move the rest below it. An expect in the same file can call a private name.
 
 **An empty type is a namespace.** `Pigs :: [].{ ... }` held two herd shapes, the
