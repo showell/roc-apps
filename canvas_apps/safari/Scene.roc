@@ -16,6 +16,7 @@ import Pixels
 import RailSighting
 import Rendered
 import TowerSighting
+import TreeShapes
 import TreeSighting
 import LitTruck
 import TruckSighting
@@ -116,21 +117,17 @@ Scene := {
 		trees.map(
 			|tree| {
 				nearer_count = nearer_tree_count(forwards, tree.spot.foot().forward())
-				Pipeline.rendering_of(
-					tree,
-					{ focal_length, context: { nearer_tree_count: nearer_count } },
-				)
+				detail : TreeShapes.Detail
+				detail = { nearer_tree_count: nearer_count }
+				Pipeline.rendering_of(tree, { focal_length, context: detail })
 			},
 		)
 	}
 }
 
 ## How many of the trees at `forwards` are nearer than `forward`.
-nearer_tree_count : List(Distance), Distance -> U16
-nearer_tree_count = |forwards, forward| {
-	count = forwards.count_if(|other| other < forward)
-	count.to_u16_try() ?? crash "Scene.nearer_tree_count: more than 65,535 trees in view"
-}
+nearer_tree_count : List(Distance), Distance -> U64
+nearer_tree_count = |forwards, forward| forwards.count_if(|other| other < forward)
 
 spread_forwards : List(Distance)
 spread_forwards = [10.0, 20.0, 30.0, 40.0, 50.0].map(Distance.metres)

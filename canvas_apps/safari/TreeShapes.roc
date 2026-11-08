@@ -18,10 +18,13 @@ import lib.Shapes
 
 TreeShapes :: [].{
 
+	## What a tree's detail depends on beyond itself: how many trees are nearer.
+	Detail : { nearer_tree_count : U64 }
+
 	## The tree on the screen: its trunk, then its tiers top to bottom. The
 	## nearest trees have a shaded trunk. The crown is cones, shaded by how near
 	## they are, within cone_reach, and triangles beyond it.
-	tree_picture : Picture.Setting({ nearer_tree_count : U16 }),
+	tree_picture : Picture.Setting(TreeShapes.Detail),
 	{
 		height : Distance,
 		foliage_color : RgbColor,
@@ -66,11 +69,14 @@ crown_shade_reach = Distance.metres(80.0)
 
 ## A tree with fewer than this many trees nearer than it gets a shaded
 ## trunk, which looks round.
-round_trunk_limit : U16
+round_trunk_limit : U64
 round_trunk_limit = 4
 
+## How a tree's trunk is drawn: shaded, which looks round, or flat.
+TrunkFinish : [Shaded, Flat]
+
 ## How a tree's trunk is drawn, with `nearer_tree_count` trees nearer than it.
-trunk_finish_of : U16 -> [Shaded, Flat]
+trunk_finish_of : U64 -> TrunkFinish
 trunk_finish_of = |nearer_tree_count|
 	if nearer_tree_count < round_trunk_limit {
 		Shaded
@@ -210,7 +216,7 @@ ring_point_count = 16
 crown_shade : Distance -> Fraction
 crown_shade = |forward| Fraction.clamp(forward.ratio_to(crown_shade_reach)).complement()
 
-trunk_shape : Camera.Upright, [Shaded, Flat] -> Shapes.Shape
+trunk_shape : Camera.Upright, TrunkFinish -> Shapes.Shape
 trunk_shape = |outline, finish| {
 	width = outline.height_on_screen.scaled_by(trunk_width_share).max(min_trunk_width)
 	below_crown = outline.height_on_screen.scaled_by(trunk_height_share)
@@ -346,7 +352,7 @@ expect TreeShapes.crown_of(Distance.metres(40.0)) == Cones({ shade: Fraction.of(
 expect TreeShapes.crown_of(Distance.metres(199.0)) == Cones({ shade: Fraction.zero })
 expect TreeShapes.crown_of(Distance.metres(200.0)) == Triangles
 
-# The three nearest trees have a shaded trunk, and the fourth has a flat one.
+# The four nearest trees have a shaded trunk, and the fifth has a flat one.
 expect [0, 3].all(|count| trunk_finish_of(count) == Shaded)
 expect [4, 9].all(|count| trunk_finish_of(count) == Flat)
 

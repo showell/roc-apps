@@ -21,7 +21,7 @@ Conifer := [Green, SmallGreen, Red, Gold].{
 
 	## How a conifer looks. How much detail it gets depends on how many trees
 	## are nearer than it, which it can't know alone, so that is its context.
-	scenery_picture : Conifer, Picture.Setting({ nearer_tree_count : U16 }) -> Picture
+	scenery_picture : Conifer, Picture.Setting(TreeShapes.Detail) -> Picture
 	scenery_picture = |conifer, setting|
 		TreeShapes.tree_picture(
 			setting,
