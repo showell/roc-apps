@@ -3,25 +3,14 @@
 ## the rider comes. BirdFlight says where a bird is and how it looks,
 ## EncounterSighting finds the birds in view, and BirdStills holds their
 ## drawings.
+import BirdFlight
 import BirdStills
 import Picture
 import StillShapes
 import Still
 import Distance
 
-Bird := { pose : Bird.BirdPose }.{
-
-	## Where the wings are in a beat.
-	WingBeat : [WingsUp, WingsDown]
-
-	## How the bird looks: sitting; side on as it takes off; seen from behind
-	## as it flies off; and dropping onto its tree.
-	BirdPose : [
-		Perched,
-		Side(Bird.WingBeat),
-		Away(Bird.WingBeat),
-		Diving,
-	]
+Bird := { pose : BirdFlight.BirdPose }.{
 
 	scenery_height : Bird -> Distance
 	scenery_height = |_bird| bird_height
@@ -42,7 +31,7 @@ Bird := { pose : Bird.BirdPose }.{
 		)
 
 	## The drawing for a pose.
-	pose_still : Bird.BirdPose -> Still
+	pose_still : BirdFlight.BirdPose -> Still
 	pose_still = |pose|
 		match pose {
 			Perched => BirdStills.perched_still

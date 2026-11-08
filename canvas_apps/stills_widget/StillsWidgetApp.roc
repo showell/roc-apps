@@ -5,7 +5,9 @@
 ## on the large one shows or hides the outline of each polygon.
 import game.Pixels
 import game.Bird
+import game.BirdFlight
 import game.Cat
+import game.CatCrossing
 import game.Screen
 import game.StillShapes
 import game.Still
@@ -22,7 +24,7 @@ import widget.WidgetPage
 StillsWidgetApp :: [].{
 
 	## A pose of the cat or of the bird, each of which has its own still.
-	Pose : [Cat(Cat.CatPose), Bird(Bird.BirdPose)]
+	Pose : [Cat(CatCrossing.CatPose), Bird(BirdFlight.BirdPose)]
 
 	## The whole state of the widget: the pose shown large, and whether the
 	## outlines of its still's polygons show.
@@ -59,7 +61,7 @@ StillCell : {
 	anchor : StillShapes.Anchor,
 }
 
-bird_pose_name : Bird.BirdPose -> Str
+bird_pose_name : BirdFlight.BirdPose -> Str
 bird_pose_name = |pose|
 	match pose {
 		Perched => "Perched"
