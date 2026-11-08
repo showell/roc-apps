@@ -9,6 +9,7 @@ import game.Clock
 import game.Distance
 import game.Geom
 import game.RideInstant
+import game.Steps
 import game.Tour
 import game.TruckBrakeLights
 import game.World
@@ -43,8 +44,8 @@ StepWidgetApp :: [].{
 }
 
 ## How many steps of the ride are worked out in one frame of the widget.
-steps_a_frame : U32
-steps_a_frame = 8
+steps_a_frame : Steps
+steps_a_frame = Steps.of(8)
 
 ## The steps the buttons reach. Play goes as fast as the ride can be worked out.
 step_range : VcrButtons.NumberRange(Clock)
@@ -61,8 +62,8 @@ step_range_end : U32
 step_range_end = 2000
 
 ## How many instants are taken back off the list in one frame of the widget.
-read_back_a_frame : U32
-read_back_a_frame = 200
+read_back_a_frame : Steps
+read_back_a_frame = Steps.of(200)
 
 ## `model` with its buttons setting the step it's heading for. A press counts from
 ## where the ride is, which may not have reached the step it was heading for.
@@ -78,17 +79,17 @@ move_tour = |model| {
 	now = model.tour.instant().clock
 	wanted = model.transport.at
 	if now < wanted {
-		count = steps_a_frame.min(wanted.steps_since(now).to_u32())
+		length = steps_a_frame.min(wanted.steps_since(now))
 		{
 			..model,
-			tour: model.tour.steps_forward(count),
+			tour: model.tour.steps_forward(length),
 			last_move: Played,
 		}
 	} else if wanted < now {
-		count = read_back_a_frame.min(now.steps_since(wanted).to_u32())
+		length = read_back_a_frame.min(now.steps_since(wanted))
 		{
 			..model,
-			tour: model.tour.steps_back(count),
+			tour: model.tour.steps_back(length),
 			last_move: ReadBack,
 		}
 	} else {

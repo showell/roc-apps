@@ -83,7 +83,7 @@ played_a_frame = 8
 
 ## The rider at `first_step`, the ride's own.
 first_rider : Rider
-first_rider = Tour.at_step(first_step).instant().rider
+first_rider = Tour.at_step(Clock.at_step(first_step)).instant().rider
 
 starting_model : GazeWidgetApp.Model
 starting_model = { played: [first_rider], transport: VcrButtons.transport_at(stretch.first) }
@@ -333,7 +333,7 @@ state_at_step = |played, step| rider_at(played, (step - first_step).to_u64())
 expect World.route.segment_at(first_rider.motorcycle.route_place.segment_index).is_distracting()
 expect {
 	played = state_at_step(stretch_states, last_step)
-	ridden = Tour.at_step(last_step).instant().rider
+	ridden = Tour.at_step(Clock.at_step(last_step)).instant().rider
 	played_place = played.motorcycle.route_place
 	ridden_place = ridden.motorcycle.route_place
 	played_place.segment_index == ridden_place.segment_index

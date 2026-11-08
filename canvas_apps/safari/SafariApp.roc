@@ -10,6 +10,7 @@ import lib.CanvasApp
 import lib.Input
 import FrameView
 import Screen
+import Steps
 import Tour
 
 SafariApp :: [].{
@@ -44,8 +45,8 @@ model_at_next_step = |m, input|
 			m.motion
 		}
 		steps_a_frame = match motion {
-			Paused => 1
-			Playing => 4
+			Paused => Steps.one_step
+			Playing => Steps.of(4)
 		}
 		moved =
 			if input.key_down(KeyRight) {

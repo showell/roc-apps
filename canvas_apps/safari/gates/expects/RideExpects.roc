@@ -203,7 +203,7 @@ expect {
 		$tour = Tour.step_forward($tour)
 	}
 	finish = $tour.instant().clock
-	Tour.at_step(finish.steps_since(Clock.start).to_u32()).instant().clock == finish
+	Tour.at_step(finish).instant().clock == finish
 }
 
 # The sun's disc is not yet wholly set a step before `fully_set_at`, and the sky

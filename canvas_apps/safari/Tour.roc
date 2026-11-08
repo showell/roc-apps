@@ -39,38 +39,37 @@ Tour :: {
 			Continued(next_tour) | Restarted(next_tour) => next_tour
 		}
 
-	## The tour `step_count` steps on.
-	steps_forward : Tour, U32 -> Tour
-	steps_forward = |tour, step_count| {
+	## The tour `length` steps on.
+	steps_forward : Tour, Steps -> Tour
+	steps_forward = |tour, length| {
 		var $tour = tour
-		for _ in 0..<step_count {
+		for _ in 0..<length.to_u32() {
 			$tour = Tour.step_forward($tour)
 		}
 		$tour
 	}
 
-	## The tour `step_count` steps back, or at the ride's start if that is
+	## The tour `length` steps back, or at the ride's start if that is
 	## nearer.
-	steps_back : Tour, U32 -> Tour
-	steps_back = |tour, step_count| {
+	steps_back : Tour, Steps -> Tour
+	steps_back = |tour, length| {
 		var $tour = tour
-		for _ in 0..<step_count {
+		for _ in 0..<length.to_u32() {
 			$tour = Tour.step_back($tour)
 		}
 		$tour
 	}
 
-	## The tour ridden from its start to `step`, with the instants it passed
-	## behind it. The ride must not finish before `step`.
-	at_step : U32 -> Tour
-	at_step = |step| {
-		goal = Clock.start.plus(Steps.of(step))
+	## The tour ridden from its start to `goal`, with the instants it passed
+	## behind it. The ride must not finish before `goal`.
+	at_step : Clock -> Tour
+	at_step = |goal| {
 		var $tour = Tour.initial
 		while Tour.instant($tour).clock != goal {
 			$tour =
 				match tour_after_step($tour) {
 					Continued(next_tour) => next_tour
-					Restarted(_) => crash "Tour.at_step: the ride finishes before step ${step.to_str()}"
+					Restarted(_) => crash "Tour.at_step: the ride finishes before step ${goal.to_str()}"
 				}
 		}
 		$tour
@@ -140,18 +139,21 @@ expect {
 
 # A tour ridden to a step keeps every instant it passed, and none at the start.
 expect {
-	ridden = Tour.at_step(3)
+	ridden = Tour.at_step(Clock.at_step(3))
 	Tour.instant(ridden).clock == Clock.at_step(3) and Tour.past_instant_count(ridden) == 3
 }
-expect Tour.past_instant_count(Tour.at_step(0)) == 0
+expect Tour.past_instant_count(Tour.at_step(Clock.start)) == 0
 
 # Stepping forward a number of steps lands where riding to that step does.
-expect Tour.instant(Tour.steps_forward(Tour.at_step(2), 3)).clock == Clock.at_step(5)
+expect {
+	at_two = Tour.at_step(Clock.at_step(2))
+	Tour.instant(Tour.steps_forward(at_two, Steps.of(3))).clock == Clock.at_step(5)
+}
 
 # A tour stepped back from step 5 is one step short of the start after 4 backs,
 # at step 0 after 5, and still there after a sixth.
 expect {
-	var $tour = Tour.steps_back(Tour.at_step(5), 4)
+	var $tour = Tour.steps_back(Tour.at_step(Clock.at_step(5)), Steps.of(4))
 	after_four = Tour.instant($tour).clock
 	$tour = Tour.step_back($tour)
 	after_five = Tour.instant($tour).clock
