@@ -7,9 +7,8 @@
 --
 -- Run it from the roc-apps root: every path is the checkout's, so a worktree
 -- gates its own tree on its own caches, and gates in several worktrees can run
--- at once. It takes about three and a half minutes on a busy box
--- (2026-11-08), a quarter of that each the lints, the expects, the widgets and
--- the proof tools.
+-- at once. It takes about three minutes warm on a busy box (2026-11-08),
+-- most of it in the lints, the expects, the widgets and the proof tools.
 --
 -- The lints (gates/lints.shale) run first. Then each gate is a child run of
 -- this script, `part=expects`, `part=widgets`, `part=tutorial`,
