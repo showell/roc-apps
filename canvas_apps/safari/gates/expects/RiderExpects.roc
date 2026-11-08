@@ -239,7 +239,8 @@ cat_throttle_change = |encounter_timing| {
 ## metres a step each step.
 throttle_change_at : Motorcycle, EncounterPlan.Timing -> F64
 throttle_change_at = |motorcycle, encounter_timing| {
-	acceleration = Throttle.next_acceleration(motorcycle, { route: World.route, encounter_timing })
+	segment = motorcycle.route_place.segment_on(World.route)
+	acceleration = Throttle.next_acceleration(motorcycle, { segment, encounter_timing })
 	next = motorcycle.motorcycle_at_next_step({ lean: motorcycle.lean, acceleration })
 	next.speed.to_metres_a_step() - motorcycle.speed.to_metres_a_step()
 }

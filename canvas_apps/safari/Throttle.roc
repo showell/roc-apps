@@ -9,7 +9,6 @@ import Distance
 import EncounterReaction
 import Gawking
 import Motorcycle
-import Route
 import Segment
 import Speed
 import Steps
@@ -17,15 +16,14 @@ import VehicleLimits
 
 Throttle :: [].{
 
-	## The acceleration the motorcycle takes on the next step, on `route`, with
-	## the encounter on the motorcycle's segment at `encounter_timing`.
+	## The acceleration the motorcycle takes on the next step, on `segment`, the
+	## one it is on, with the segment's encounter at `encounter_timing`.
 	next_acceleration : Motorcycle,
 	{
-		route : Route,
+		segment : Segment,
 		encounter_timing : EncounterPlan.Timing,
 	} -> Acceleration
-	next_acceleration = |motorcycle, { route, encounter_timing }| {
-		segment = motorcycle.route_place.segment_on(route)
+	next_acceleration = |motorcycle, { segment, encounter_timing }| {
 		offered = VehicleLimits.cruise_acceleration
 		limits = [
 			bend_limit(motorcycle, segment),

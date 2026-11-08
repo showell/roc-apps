@@ -21,7 +21,7 @@ Rider := { motorcycle : Motorcycle, eyes : RiderEyes }.{
 	next = |rider, { route, encounter_timing }| {
 		segment = rider.motorcycle.route_place.segment_on(route)
 		moved = rider.motorcycle.motorcycle_at_next_step(
-			RiderMind.controls(rider.motorcycle, { route, encounter_timing }),
+			RiderMind.controls(rider.motorcycle, { segment, encounter_timing }),
 		)
 		motorcycle =
 			match segment.segment_ending() {
