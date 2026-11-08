@@ -5,7 +5,6 @@
 ## module cuts lines and polygons at the near plane.
 import Distance
 import Fraction
-import lib.RgbColor
 
 RiderView :: [].{
 
@@ -164,9 +163,6 @@ RiderView :: [].{
 		forward: from.forward.plus(to.forward.minus(from.forward).scaled_by(fraction)),
 		height: from.height.plus(to.height.minus(from.height).scaled_by(fraction)),
 	}
-
-	## A polygon of one color, in the rider's view.
-	FlatPolygon : { color : RgbColor, corners : List(RiderView.RaisedPoint) }
 }
 
 ## The closest distance ahead that the camera can see.
