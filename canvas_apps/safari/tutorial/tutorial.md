@@ -249,7 +249,7 @@ Before we draw a tree, we need to know what drawing means here, because our Roc 
 New in this chapter:
 
 - Roc: a record taken apart in a parameter list, `Try`
-- Modules: `TwoShapes`, `Shapes`, `Polygon`, `Screen`, `Pixels`, `Picture`, `Ground`
+- Modules: `TwoShapes`, `Shapes`, `Polygon`, `Screen`, `Pixels`, `Picture`, `GroundPatch`
 
 ### Get the types right
 
@@ -328,11 +328,11 @@ A polygon needs at least three corners, and `polygon_coordinates` checks:
 
 Fewer than three would be a bug in Safari Ride, and a bug shouldn't quietly paint nothing, so it crashes. `maker` names the function that asked, so the crash says where the bug is.
 
-Some things can rightly have nothing to show. A `Ground.Patch` is a patch of ground, a list of corners on the ground and a color, and one wholly behind the camera has nothing to show. So `Ground.patch_shape` answers a `Try`:
+Some things can rightly have nothing to show. A `GroundPatch` is a patch of ground, a list of corners on the ground and a color, and one wholly behind the camera has nothing to show. So `GroundPatch.patch_shape` answers a `Try`:
 
 {{signatures GroundPatch.patch_shape}}
 
-Its second argument is the lens's focal length, in pixels, which turns corners on the ground into places on the screen. A simple tree says more about the lens. A `Try` is either `Ok` holding a shape, or `Err` holding a reason, here `BehindCamera`. Both answers are in the type, so whoever calls `patch_shape` can't forget the ground behind the camera.
+Its second argument is the lens's focal length, in pixels, which turns corners on the ground into places on the screen. A simple tree says more about the lens. A `Try` is either `Ok` holding a shape, or `Err` holding a reason, here `BehindCamera` or `PastHorizon`. Both answers are in the type, so whoever calls `patch_shape` can't forget the ground behind the camera.
 
 ### Pictures
 
@@ -375,7 +375,7 @@ The first two forms hold the object's kind. A kind, such as `Conifer` or `Billbo
 
 | Type | What it is |
 |---|---|
-| `Geom.Placed(kind)` | An object on the road: `along` and `across` its segment, and its `kind` |
+| `Geom.Placed(kind)` | An object on the road: its `road_point` on its segment, its `lift` off the ground, and its `kind` |
 | `Pipeline.Sighted(kind)` | All of that, where its segment lies from the rider as `place`, and where the rider sees it, `right` and `forward` of the camera |
 | `Picture.Setting(context)` | What a kind draws from: `right` and `forward`, the lens's focal length as `cam_focal`, and a `context` for whatever else the kind needs |
 | `Picture` | The object's shapes, in order, from the Shapes chapter |
@@ -385,7 +385,7 @@ One object through one frame
 ```dot
 digraph forms {
   node [shape=box, fontname="Helvetica"];
-  placed [label="Geom.Placed(kind)\nalong, across, kind"];
+  placed [label="Geom.Placed(kind)\nroad_point, lift, kind"];
   sighted [label="Pipeline.Sighted(kind)\nplace, along, across,\nright, forward, kind"];
   rendered [label="Rendered\ndepth, picture"];
   sorted [label="List(Rendered)\nfar to near"];
@@ -403,7 +403,7 @@ We've used types that take an argument since Shapes. A `Picture` is a `List(Shap
 
 {{code Geom.Placed}}
 
-The `kind` in its head, `Placed(kind)`, is lowercase, and that makes it a type variable: a name for whatever type goes in the parentheses. The fields use it like any other type. So `Geom.Placed(Conifer)` is a record of an `along`, an `across`, and a `kind` that holds a `Conifer`, just as `List(Shapes.Shape)` is a list that holds shapes. A cow is a `Geom.Placed(Billboard)`.
+The `kind` in its head, `Placed(kind)`, is lowercase, and that makes it a type variable: a name for whatever type goes in the parentheses. The fields use it like any other type. So `Geom.Placed(Conifer)` is a record of a `road_point`, a `lift`, and a `kind` that holds a `Conifer`, just as `List(Shapes.Shape)` is a list that holds shapes. A cow is a `Geom.Placed(Billboard)`.
 
 `Along` is a place along a segment, and `Across` is a place across the road, measured from its middle. Both are opaque, like `Clock`, so passing one as the other is a compile-time error.
 
@@ -907,7 +907,7 @@ Each road here is two segments, seen from above, and the white dot is where the 
 
 New in this chapter:
 
-- Roc: a closure that gives a repeated call a short name
+- Roc: closures that give a repeated call a short name
 - Modules: `BendInView`, `GroundSighting`
 
 `BendInView` knows where two segments meet. `GroundSighting` and `RailSighting` each ask it about a bend, and each answers with plain data for another module to draw.
@@ -945,7 +945,7 @@ A bend to the right has its outer edge on the left. That's why the rail changes 
 
 {{code BendInView.outer_corner}}
 
-All three points are measured on the segment before. `start_after` is where the next segment's outer edge starts, carried back onto this one. From there, the apex is a run along the road to the outer edge, worked out from the turn's angle. That's the yellow dot.
+All three points are measured on the segment before. `start_after` is where the next segment's outer edge starts, carried back onto this one. From there, the apex is a run back along the road to the outer edge, worked out from the turn's angle. That's the yellow dot.
 
 The road is 4 metres wide, so at a turn of 45 degrees the apex lies 4 × tan(22.5°) past the end of the first segment, which is the 1.7 metres the widget shows.
 
@@ -973,13 +973,13 @@ A segment's road is one patch, with its edges cut every 25 metres or less. The w
 
 {{code GroundSighting.pond_patches}}
 
-A pond is ground too. A segment that ends at a pond gets two more patches, its bank and then the water over it, and their outlines come from `Pond`. `rider_point` is another closure, and it moves an outline from the pond's own record into the rider's view.
+A pond is ground too. A segment that ends at a pond gets two more patches, its bank and then the water over it, `Pond` lays their outlines on the road, and `rider_point`, another closure, moves each corner from the segment into the rider's view.
 
 The corner has its paving. Next, it needs a rail.
 
 ## Rails
 
-The rail is a path along the outer edge, out to the apex, and back.
+The rail is a path along the outer edge, out to the apex, back, and on along the next segment.
 
 New in this chapter:
 
@@ -2622,7 +2622,7 @@ A fold's step is a plain function of the list so far and one edge:
 
 {{code RiderView.edge_points_onto}}
 
-`Ground`, `GuardRail` and `TruckShape` call it the same way. `patch.corners.map(...)` makes the `RaisedPoint`s, and what comes back is a shorter or longer list of the same type:
+`GroundPatch`, `GuardRail` and `TruckShape` call it the same way. `patch.corners.map(...)` makes the `RaisedPoint`s, and what comes back is a shorter or longer list of the same type:
 
 {{code Polygon.clipped_polygon from "in_front = RiderView.clipped_points(" to "Ok(Polygon.flat_polygon(Camera.projected_points(in_front, focal_length), color))"}}
 
