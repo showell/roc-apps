@@ -1910,7 +1910,29 @@ Then the two ways to take a step. Both sit below the type's block, so they're pr
 
 `TruckSighting` finds the truck on the road ahead, the way the other sightings find trees and towers. What it finds is a `LitTruck`, the truck with its lights, which the next chapter covers; with the lights off, that's just the body. Unlike the trees, the truck has no size test: it's drawn however small it stands, because the rider is always looking for it.
 
-The truck's shape lives in `TruckShape`. It's a box measured in the truck's own frame, from the back of the trailer to the nose of the cab, with a point on it given as how far ahead, how far right, and how high. `TruckBody` turns that box into the faces of the trailer and the cab and the tires, sorted far to near, so a nearer face drawn later covers a farther one.
+The truck is a real box, with a back, two sides, a roof, a windshield and a nose. Each corner of it goes through three maps on its way to the screen:
+
+- **the shape:** a corner is written in the truck's own frame;
+- **the placement:** that frame is carried onto the road at the truck's spot;
+- **the projection:** the camera turns the result into a point on the screen.
+
+A point in the truck's own frame is three distances, measured from the middle of the trailer:
+
+{{code TruckShape.TruckPoint}}
+
+One function does the first two maps. It moves the point along and across the road from the truck's spot, finds where that lands in the rider's view, and lowers it by however far the ground has curved away beneath it:
+
+{{code TruckShape.raised_point_on_truck}}
+
+So a face is just a list of `TruckPoint`s. Here's a side, walked around its outline from the back of the trailer to the nose and back:
+
+{{code TruckBody.side}}
+
+The back, the roof, the windshield and the nose are each a strip across the truck, so they share `TruckShape.strip_corners`. The tires are circles standing on the road.
+
+The third map happens last. `TruckBody` sorts the faces far to near, so a nearer face drawn later covers a farther one, and then projects each one, clipping whatever is behind the camera:
+
+{{code TruckBody.body_shapes}}
 
 That's a truck you can chase. The next chapter lights it.
 
