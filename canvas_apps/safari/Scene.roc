@@ -89,12 +89,10 @@ Scene := {
 	scene_shape_lists = |scene|
 		Scene.scene_renderings(scene).map(|rendering| rendering.picture().to_shapes())
 
-	## The scene's renderings far to near. Two about as far away as each other
-	## keep the order of the fields they come from, so that order decides which
-	## of two tied things is drawn over the other. An animal perched on a tree is
-	## drawn over it: a perched bird stands at its tree's own depth, so the trees
-	## come before the birds. It is public for FramePartsBench, which times the
-	## sort alone.
+	## The scene's renderings far to near. The order of the fields they come
+	## from breaks ties, so the trees go before the birds: a perched bird stands
+	## at its tree's own depth and is drawn over it. It is public for
+	## FramePartsBench, which times the sort alone.
 	scene_renderings : Scene -> List(Rendered)
 	scene_renderings = |scene|
 		Rendered.depth_sorted_renderings(
