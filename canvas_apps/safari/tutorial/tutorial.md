@@ -1325,11 +1325,11 @@ digraph beacon {
 }
 ```
 
-A box is a module, and an arrow is an import. Each frame, `Scene` hands the clock to `TowerSighting`, which finds the towers in view. Here's the tower past the end of a segment:
+A box is a module, and an arrow is an import. Each frame, `Scene` hands the clock to `TowerSighting`, which finds the towers in view. Here's the line where the tower past the end of a segment asks for its beacon:
 
-{{code TowerSighting.end_tower}}
+{{code TowerSighting.end_tower from "beacon_brightness = Beacon.of_segment" to "beacon_brightness = Beacon.of_segment"}}
 
-Its first line is the whole of the beacon, as far as the tower is concerned. The segment's index makes a beacon, and the clock makes a brightness. Back in the radio towers chapter, `mid_tower` had the same line with `.opposite()` in the middle.
+That line is the whole of the beacon, as far as the tower is concerned. The segment's index makes a beacon, and the clock makes a brightness. Back in the radio towers chapter, `mid_tower` had the same line with `.opposite()` in the middle.
 
 Now down into `Beacon`:
 
