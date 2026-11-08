@@ -175,7 +175,7 @@ Roc's own rules are in the langref's
   like `point_in_segment_before` and `point_in_segment_after`. The name hunt's
   `preposition_split` holds this.
 - **A name's last word promises its type.** A `*_count` is an integer
-  (`nearer_tree_count : U16`) and a `*_path` is a `Str` or a path type. A project
+  (`nearer_tree_count : U64`) and a `*_path` is a `Str` or a path type. A project
   adds its own words in a table: safari's `name_types.txt` ties `fraction` to
   `Fraction` and `steps` to `Steps`. Both are checked as `name_type`.
 - **Modules that look alike are spelled alike, and one type name means one
