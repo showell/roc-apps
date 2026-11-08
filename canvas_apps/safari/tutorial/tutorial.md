@@ -903,7 +903,7 @@ A road of straight segments still has to get round its bends. Where two segments
 Three bends from above. The rail changes sides with the bend, and a sharper bend pushes the apex further out.
 ```
 
-Each road here is two segments, seen from above, and the white dot is where the view is from. The rail runs along the outer edge of the bend, and the yellow dot is the apex, where the outer edges of the two segments meet. The left bend and the right bend have their outer edges on opposite sides.
+Each road here is two segments, seen from above, and the white dot is where the view is from. The rail runs along the outer edge of the bend, and the yellow dot is the apex, where the outer edges of the two segments meet. The first bend turns left and the second right, so their outer edges are on opposite sides. The third is a sharper turn to the right.
 
 New in this chapter:
 
@@ -931,7 +931,7 @@ digraph road {
 
 ### Get the types right
 
-A bend's corner lives in two frames. On the road, a point is a `Geom.RoadPoint`, measured along and across the segment before the bend. From the rider, it's a `RiderView.RiderPoint`, right and forward of the camera. `RoadAhead.rider_point_at` is the one map between them. The corner is worked out on the road first, then seen from the rider, and the paving and the rail only ever take rider points.
+A point at a bend can be measured two ways. On the road, a point is a `Geom.RoadPoint`, measured along and across the segment before the bend. From the rider, it's a `RiderView.RiderPoint`, right and forward of the camera. `RoadAhead.rider_point_at` is the one map between them. The corner is worked out on the road first, then seen from the rider, and the paving and the rail only ever take rider points.
 
 | Job | Function | Its type |
 |---|---|---|
@@ -946,17 +946,21 @@ A bend is a small record.
 
 {{code BendInView.BendInView from "A bend as the rider sees it" to "}.{"}}
 
-`before` says where the first segment lies from the rider, and `bend` holds its length and its turn. The turn is positive to the right. The segment after comes from `position_after`.
+`before` says where the first segment lies from the rider, and `bend` holds its length and its turn. The turn is positive to the right. Where the segment after lies comes from `place_after`.
 
 {{code BendInView.outer_edge}}
 
 A bend to the right has its outer edge on the left. That's why the rail changes sides between the first two bends.
 
+The outer corner is three points, and its type takes the kind of point as a type variable, so the same record holds road points or rider points:
+
+{{code BendInView.OuterCorner}}
+
 {{code BendInView.outer_corner}}
 
-All three points are measured on the segment before. `start_after` is where the next segment's outer edge starts, carried back onto this one. From there, the apex is a run back along the road to the outer edge, worked out from the turn's angle. That's the yellow dot.
+All three points are measured on the segment before. `end_before` is where its outer edge ends. The next segment is turned, so its outer edge starts a little past that end and a little in from the edge: that's `start_after`, carried back onto this segment. Follow the next segment's outer edge from `start_after` until it meets this segment's outer edge, and that's the apex, the yellow dot. For a turn under a right angle, that's a run back along the road, so `along_to_apex` comes out negative.
 
-The road is 4 metres wide, so at a turn of 45 degrees the apex lies 4 × tan(22.5°) past the end of the first segment, which is the 1.7 metres the widget shows.
+The road is 4 metres wide, and the apex sits halfway round the turn, so at a turn of 45 degrees it lies 4 × tan(22.5°) past the end of the first segment. That's the 1.7 metres the widget shows.
 
 `outer_corner_in_view` turns the three points into the rider's view, for the paving and the rail.
 
@@ -966,34 +970,40 @@ A piece of ground is a list of corners and a color.
 
 {{code GroundSighting.road_patch}}
 
-That's what `GroundPatch` paints. It's plain data, so it can be checked with numbers.
-
-{{code GroundSighting.bend_paving}}
-
-The corner's points are the two corners at the end of the first segment, the apex, and the place where the second segment's outer edge starts. `before` and `after` are closures. Each gives a repeated call a short name, so the lines that use them read alike.
-
-{{code GroundSighting.lead_in_length}}
-
-The bend's patch is one piece of ground. It runs from 40 metres before the bend, round the corner, to the end of the next segment's first chunk.
+That's what `GroundPatch` paints. It's plain data, so it can be checked with numbers. The widget counts 3 patches, and here's where they come from.
 
 {{code GroundSighting.road_along}}
 
-A segment's road is one patch, with its edges cut every 25 metres or less. The widget's two segments make two patches, and the bend adds one: that's the widget's count of 3.
+A segment's road is one patch. Its edges are cut into chunks of 25 metres or less, which keeps each straight cut within a pixel of the curve where the road meets the horizon. The widget's two segments make two patches, and the bend makes the third.
+
+{{code GroundSighting.lead_in_length}}
+
+The bend's patch also lays the last 40 metres of the road before it, so the bend's own paving is all the rider needs from a segment just behind.
+
+{{code GroundSighting.bend_paving}}
+
+The patch goes round in order: up the left edge, across the end of the next segment's first chunk, and back down the right. The side on the outside of the turn takes a detour through the outer corner's three points. `before` and `after` are closures: they capture `road` and `vantage`, so each call names only its point, and the two lists read alike.
 
 {{code GroundSighting.pond_patches}}
 
-A pond is ground too. A segment that ends at a pond gets two more patches, its bank and then the water over it, `Pond` lays their outlines on the road, and `rider_point`, another closure, moves each corner from the segment into the rider's view.
+A pond is ground too. A segment that ends at a pond gets two more patches: its bank, then the water over it. `Pond` lays their outlines on the road, and `rider_point`, another closure, moves each of their corners into the rider's view.
 
 The corner has its paving. Next, it needs a rail.
 
 ## Rails
 
-The rail is a path along the outer edge, out to the apex, back, and on along the next segment.
+A guard rail is a metal bar on thin posts, along a path on the ground. At each bend, the path runs along the outer edge, out to the apex, back, and on along the next segment.
 
 New in this chapter:
 
 - Roc: nothing new
 - Modules: `RailSighting`, `GuardRail`
+
+For every bend in view, `RailSighting` finds the rail's path and cuts it into quads: flat four-cornered pieces, one for each stretch of bar and one for each post. Each quad goes into the depth sort on its own, so a tree can stand in front of one post and behind the next.
+
+{{code RailSighting.rail_quads_in_view}}
+
+The bends come from the road ahead, and then from the segment just behind, whose bend may still be in sight.
 
 The path of a guard rail
 ```dot
@@ -1014,11 +1024,9 @@ The four parts of the list are the four boxes.
 
 {{code RailSighting.leg_points}}
 
-A leg gets a point about every metre. It leaves out its first point, which is the last point of the leg before it.
+A leg gets a point about every metre, because a post stands at every point. It leaves out its first point, which is the last point of the leg before it.
 
-{{code RailSighting.rail_quads_in_view}}
-
-`GuardRail.quads_along` turns the path into rails and posts for the depth sort. At a turn of 45 degrees, that's the 49 pieces in the last chapter's widget.
+`GuardRail.quads_along` turns the path into quads: the bars between neighbouring points, then a post at each point. At a turn of 45 degrees, the path has 25 points, so the rail is 24 bars and 25 posts.
 
 All of this is worked out again on every frame, from the route and the rider. A bend's corner lasts one frame.
 
