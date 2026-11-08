@@ -40,6 +40,14 @@ Route :: List(Segment).{
 		count_before : Route.SegmentIndex -> U64
 		count_before = |Route.SegmentIndex.(n)| n.to_u64()
 
+		## The segment with `count` segments before it, the inverse of
+		## `count_before`.
+		from_count_before : U64 -> Route.SegmentIndex
+		from_count_before = |count|
+			Route.SegmentIndex.(
+				count.to_u32_try() ?? crash "Route.SegmentIndex.from_count_before: a route holds fewer than 2^32 segments",
+			)
+
 		is_eq : _
 	}
 
@@ -127,3 +135,7 @@ Route :: List(Segment).{
 			.take_first(index.count_before())
 			.fold(Angle.north, |bearing, segment| bearing.plus(segment.bend_out_of().turn))
 }
+
+# A count of segments before and a segment index are one number, either way.
+expect
+	[0, 1, 18].all(|n| Route.SegmentIndex.from_count_before(n).count_before() == n)

@@ -18,11 +18,15 @@ import lib.Shapes
 ## A tower's beacon at one moment of its blink, by how bright it is.
 Beacon :: Fraction.{
 
+	## Where on its segment a tower stands: past the segment's end, or halfway
+	## along it.
+	TowerPlace : [AtEnd, Midway]
+
 	## The beacon of the tower at `place` on the segment at `segment`, as it
-	## shines at `clock`: past the segment's end, or halfway along it.
-	at : { segment : Route.SegmentIndex, place : [AtEnd, Midway] }, Clock -> Beacon
-	at = |tower, clock| {
-		phase = clock.steps_since(Clock.start).plus(head_start(tower))
+	## shines at `clock`.
+	at : { segment : Route.SegmentIndex, place : Beacon.TowerPlace }, Clock -> Beacon
+	at = |{ segment, place }, clock| {
+		phase = clock.steps_since(Clock.start).plus(head_start({ segment, place }))
 		Beacon.(beacon_brightness(phase))
 	}
 
@@ -59,7 +63,7 @@ Beacon :: Fraction.{
 ## further into its blink than the last one's, so neighbouring segments'
 ## beacons blink apart, and the tower halfway along starts half a blink on
 ## from the one at the end, so the two blink opposite each other.
-head_start : { segment : Route.SegmentIndex, place : [AtEnd, Midway] } -> Steps
+head_start : { segment : Route.SegmentIndex, place : Beacon.TowerPlace } -> Steps
 head_start = |{ segment, place }| {
 	at_end = beacon_stagger.times(segment.to_u32()).wrapped_to(Beacon.beacon_period)
 	match place {
@@ -177,7 +181,7 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.0000001)
 
 ## How bright the first segment's beacon at `place` is at `step` of the ride.
-first_brightness_at : [AtEnd, Midway], U32 -> F64
+first_brightness_at : Beacon.TowerPlace, U32 -> F64
 first_brightness_at = |place, step| {
 	beacon = Beacon.at({ segment: Route.SegmentIndex.first, place }, Clock.at_step(step))
 	beacon.brightness().to_f64()

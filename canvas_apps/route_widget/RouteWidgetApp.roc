@@ -64,7 +64,7 @@ segments =
 			{ laid: [], at: { east: 0.0, north: 0.0 } },
 			|layout, plan, at| laid_onto(
 				layout,
-				{ plan, index: Route.SegmentIndex.number(at.to_u32_wrap()) },
+				{ plan, index: Route.SegmentIndex.from_count_before(at) },
 			),
 		)
 		.laid

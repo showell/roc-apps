@@ -3,8 +3,7 @@
 ## it ends. It is built once, from choices the route has already made, and this
 ## module answers the questions asked of one segment: where its herds stand,
 ## which trees its cat and its bird wait by, where the rider commits to its
-## bend, whether a tower stands halfway along it and where, and what on it may
-## catch the rider's eye.
+## bend, and what on it may catch the rider's eye.
 import Across
 import Along
 import Angle
@@ -50,19 +49,7 @@ Segment := {
 
 	## What lives at the bend that ends a segment: nothing, a safari animal and
 	## its baby, or a pond with its ducks.
-	BendLife := [Quiet, Animal(BendAnimal), DuckPond].{
-
-		## The billboards of `bend_life`, placed on the segment that ends at
-		## `bend`: the animal and its baby, or the ducks on the pond, whose
-		## places are measured from the bend.
-		bend_billboards : Segment.BendLife, Geom.Bend -> List(Geom.Placed(Billboard))
-		bend_billboards = |bend_life, bend|
-			match bend_life {
-				Animal(animal) => animal.bend_billboards(bend)
-				DuckPond => Pond.placed_ducks(bend)
-				Quiet => []
-			}
-	}
+	BendLife := [Quiet, Animal(BendAnimal), DuckPond]
 
 	## How a segment ends: by turning into the next, positive to the right,
 	## with what lives at the bend, or by ending the route.
@@ -132,7 +119,7 @@ Segment := {
 	segment_bend_billboards : Segment -> List(Geom.Placed(Billboard))
 	segment_bend_billboards = |segment|
 		match segment.segment_ending() {
-			Bends({ bend, bend_life }) => bend_life.bend_billboards(bend)
+			Bends({ bend, bend_life }) => bend_billboards(bend_life, bend)
 			RouteEnds => []
 		}
 
@@ -178,19 +165,6 @@ Segment := {
 			RouteEnds => Along.at(segment.length)
 		}
 
-	## Where `segment`'s tower halfway along stands, off to the left, if the
-	## segment is long enough to have one.
-	mid_tower_point : Segment -> Try(Geom.RoadPoint, [NoMidTower])
-	mid_tower_point = |segment|
-		if segment.length > mid_tower_min_length {
-			Ok({
-				along: Along.at(segment.length.divided_by(2.0)),
-				across: Across.left_of_middle(mid_tower_left_of_middle),
-			})
-		} else {
-			Err(NoMidTower)
-		}
-
 	## Whether a segment has a cat waiting by the road.
 	has_cat : Segment -> Bool
 	has_cat = |segment|
@@ -234,21 +208,24 @@ Segment := {
 		}
 
 	## Whether a segment's pigs draw the rider's eye.
-	is_distracting : Segment -> Bool
-	is_distracting = |segment|
+	has_distracting_pigs : Segment -> Bool
+	has_distracting_pigs = |segment|
 		match segment.pigs {
 			Herd({ interest: Distracting, .. }) => True
 			Herd({ interest: Unnoticed, .. }) | NoPigs => False
 		}
 }
 
-## A segment longer than this has a tower halfway along.
-mid_tower_min_length : Distance
-mid_tower_min_length = Distance.metres(1000.0)
-
-## How far left of the road's middle a tower halfway along a segment stands.
-mid_tower_left_of_middle : Distance
-mid_tower_left_of_middle = Distance.metres(100.0)
+## The billboards of `bend_life`, placed on the segment that ends at `bend`:
+## the animal and its baby, or the ducks on the pond, whose places are measured
+## from the bend.
+bend_billboards : Segment.BendLife, Geom.Bend -> List(Geom.Placed(Billboard))
+bend_billboards = |bend_life, bend|
+	match bend_life {
+		Animal(animal) => animal.bend_billboards(bend)
+		DuckPond => Pond.placed_ducks(bend)
+		Quiet => []
+	}
 
 ## How far before the end of its segment a herd of pigs stands.
 pig_distance_before_end : Distance
@@ -299,24 +276,6 @@ expect nearest_tree_ahead(gold_trees, Along.metres(90.0)).road_point.across == A
 expect nearest_tree_ahead(gold_trees, Along.metres(90.0)).road_point.along == Along.metres(96.0)
 expect nearest_tree_ahead(gold_trees, Along.metres(96.0)).road_point.along == Along.metres(96.0)
 expect nearest_tree_ahead(gold_trees, Along.metres(96.5)).road_point.along == Along.metres(126.0)
-
-## A segment `metres` long with nothing on its road, which ends the route.
-quiet_segment : F64 -> Segment
-quiet_segment = |metres|
-	Segment.from_choices({
-		length: Distance.metres(metres),
-		scheme: AllGreen,
-		pigs: NoPigs,
-		cows: { herd: { cow_count: 1, rows_behind_front: 0 }, bull: NoBull },
-		encounter: QuietRoad,
-		ending: RouteEnds,
-	})
-
-# Only a segment longer than a kilometre has a tower halfway along.
-expect quiet_segment(1000.0).mid_tower_point() == Err(NoMidTower)
-expect
-	quiet_segment(1000.5).mid_tower_point()
-		== Ok({ along: Along.metres(500.25), across: Across.metres(-100.0) })
 
 ## A tree at `along` and `across` metres, of whatever kind a gold segment starts
 ## with.

@@ -250,11 +250,11 @@ World :: [].{
 	route = {
 		bending_segments = bending_plans.map_with_index(
 			|{ segment_plan, turn, bend_life }, at| {
-				index = Route.SegmentIndex.number(at.to_u32_wrap())
+				index = Route.SegmentIndex.from_count_before(at)
 				built_segment(segment_plan, { index, ending: Bends({ turn, bend_life }) })
 			},
 		)
-		last_index = Route.SegmentIndex.number(bending_plans.len().to_u32_wrap())
+		last_index = Route.SegmentIndex.from_count_before(bending_plans.len())
 		last_segment = built_segment(last_plan, { index: last_index, ending: RouteEnds })
 		Route.from_segments(bending_segments.append(last_segment))
 	}
@@ -289,7 +289,7 @@ World :: [].{
 	## The route's first segment whose pigs draw the rider's eye.
 	first_distracting_segment : Segment
 	first_distracting_segment =
-		World.route.route_segments().find_first(Segment.is_distracting)
+		World.route.route_segments().find_first(Segment.has_distracting_pigs)
 			?? crash "World.first_distracting_segment: the route has a distracting herd"
 }
 
@@ -351,12 +351,12 @@ built_segment = |plan, { index, ending }| {
 
 ## How many of the route's herds, from its first, are big. The rest stand in
 ## two rows.
-big_herd_count : U32
+big_herd_count : U64
 big_herd_count = 2
 
 ## How many of the route's herds, from its first, the rider finds distracting.
 ## The rider passes the rest by.
-pig_novelty_count : U32
+pig_novelty_count : U64
 pig_novelty_count = 2
 
 ## The route's big herd, seven rows of seven. The third pig of the front row
@@ -373,12 +373,11 @@ cow_herd : CowHerd
 cow_herd = { cow_count: 14, rows_behind_front: 2 }
 
 ## How many of the segments before `index` have pigs.
-herd_count_before : Route.SegmentIndex -> U32
+herd_count_before : Route.SegmentIndex -> U64
 herd_count_before = |index|
 	World.segment_plans
 		.take_first(index.count_before())
 		.count_if(|plan| plan.pigs == WithPigs)
-		.to_u32_wrap()
 
 route_segment_at : U32 -> Segment
 route_segment_at = |i| World.route.segment_at(Route.SegmentIndex.number(i))
@@ -388,7 +387,7 @@ expect
 		(0, False),
 		(17, False),
 		(18, True),
-	].all(|(index, want)| is_route_end(route_segment_at(index)) == want)
+	].all(|(index, want)| is_last_segment(route_segment_at(index)) == want)
 
 # The rider commits to the route's end at the end of its last segment.
 expect route_segment_at(18).commit_along().to_metres() == 300.0
@@ -409,9 +408,9 @@ expect
 		},
 	)
 
-## Whether the route ends with a segment.
-is_route_end : Segment -> Bool
-is_route_end = |segment|
+## Whether `segment` ends the route.
+is_last_segment : Segment -> Bool
+is_last_segment = |segment|
 	match segment.ending {
 		Bends(_) => False
 		RouteEnds => True
