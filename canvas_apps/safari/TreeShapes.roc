@@ -12,16 +12,11 @@ import RiderView
 import Picture
 import Polygon
 import Pixels
-import Screen
 import Spot
 import lib.RgbColor
 import lib.Shapes
 
 TreeShapes :: [].{
-
-	## Where a tree's foot stands on the screen, and how tall it looks there:
-	## what `Camera.upright_on_screen` gives.
-	TreeOutline : { foot : Screen.Point, height_on_screen : Pixels }
 
 	## The tree on the screen: its trunk, then its tiers top to bottom. The
 	## nearest trees have a shaded trunk. The crown is cones, shaded by how near
@@ -60,7 +55,7 @@ TreeShapes :: [].{
 
 	## Where the tree at `spot` is on the screen, `height` tall, through a lens
 	## of `focal_length`.
-	tree_outline : Spot, { height : Distance, focal_length : Pixels } -> TreeShapes.TreeOutline
+	tree_outline : Spot, { height : Distance, focal_length : Pixels } -> Camera.Upright
 	tree_outline = |spot, { height, focal_length }|
 		Camera.upright_on_screen(spot.base(), { height, focal_length })
 }
@@ -93,16 +88,16 @@ trunk_finish_of = |nearer_tree_count|
 	}
 
 ## How tall a tree's crown looks on the screen.
-crown_height : TreeShapes.TreeOutline -> Pixels
+crown_height : Camera.Upright -> Pixels
 crown_height = |outline| outline.height_on_screen.scaled_by(crown_height_share)
 
 ## Where the top of a tree's crown is on the screen: the tree's tip.
-crown_top_y : TreeShapes.TreeOutline -> Pixels
+crown_top_y : Camera.Upright -> Pixels
 crown_top_y = |outline| outline.foot.y.minus(outline.height_on_screen)
 
 ## How far the crown reaches either side of the trunk at its widest, on the
 ## screen.
-crown_half_width : TreeShapes.TreeOutline -> Pixels
+crown_half_width : Camera.Upright -> Pixels
 crown_half_width = |outline| outline.height_on_screen.scaled_by(crown_half_width_share)
 
 ## One tier of the crown: where its top and its bottom are, as fractions of
@@ -120,7 +115,7 @@ TierInputs : {
 	base : RiderView.RaisedPointAhead,
 	height : Distance,
 	focal_length : Pixels,
-	outline : TreeShapes.TreeOutline,
+	outline : Camera.Upright,
 	foliage_color : RgbColor,
 	crown : TreeShapes.Crown,
 }
@@ -207,7 +202,7 @@ ring_point_count = 16
 crown_shade : Distance -> Fraction
 crown_shade = |forward| Fraction.clamp(forward.ratio_to(crown_shade_reach)).complement()
 
-trunk_shape : TreeShapes.TreeOutline, [Shaded, Flat] -> Shapes.Shape
+trunk_shape : Camera.Upright, [Shaded, Flat] -> Shapes.Shape
 trunk_shape = |outline, finish| {
 	width = outline.height_on_screen.scaled_by(trunk_width_share).max(min_trunk_width)
 	below_crown = outline.height_on_screen.scaled_by(trunk_height_share)
@@ -229,7 +224,7 @@ trunk_shape = |outline, finish| {
 
 ## A tier as a flat triangle: its apex at the tier's top, its base across its
 ## bottom.
-tier_triangle : TreeShapes.TreeOutline, { tier : Tier, foliage_color : RgbColor } -> Shapes.Shape
+tier_triangle : Camera.Upright, { tier : Tier, foliage_color : RgbColor } -> Shapes.Shape
 tier_triangle = |outline, { tier, foliage_color }| {
 	crown_top = crown_top_y(outline)
 	bottom_y = crown_top.plus(crown_height(outline).scaled_by(tier.bottom))
@@ -360,7 +355,7 @@ sample_base = |lift|
 sample_height : Distance
 sample_height = Distance.metres(4.352)
 
-sample_outline : TreeShapes.TreeOutline
+sample_outline : Camera.Upright
 sample_outline = Camera.upright_on_screen(
 	sample_base(Distance.zero),
 	{ height: sample_height, focal_length: Pixels.of(500.0) },
