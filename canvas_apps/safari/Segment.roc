@@ -13,6 +13,7 @@ import BirdFlight
 import CatCrossing
 import CowHerd
 import Distance
+import EncounterPlan
 import Geom
 import PigHerd
 import Pond
@@ -182,6 +183,21 @@ Segment := {
 		match segment.encounter {
 			BirdHere(_) => True
 			CatCrosses(_) | QuietRoad => False
+		}
+
+	## What the ride plans `segment`'s encounter by: its animation's span, and
+	## where along the segment its animal is, or none on a quiet road.
+	encounter_span : Segment -> Try(
+		{ span : EncounterPlan.StepSpan, planned_along : Along },
+		[QuietRoad],
+	)
+	encounter_span = |segment|
+		match segment.encounter {
+			CatCrosses(crossing) =>
+				Ok({ span: CatCrossing.crossing_span, planned_along: crossing.along() })
+			BirdHere(flight) =>
+				Ok({ span: BirdFlight.flight_span, planned_along: flight.planned_along() })
+			QuietRoad => Err(QuietRoad)
 		}
 
 	## Whether a segment's pigs draw the rider's eye.

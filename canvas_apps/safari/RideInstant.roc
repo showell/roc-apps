@@ -3,8 +3,6 @@
 ## encounter on the rider's segment is planned as the rider nears it. A ride
 ## that has finished starts again from the beginning.
 import EncounterPlan
-import BirdFlight
-import CatCrossing
 import Clock
 import Distance
 import Route
@@ -84,19 +82,16 @@ next = |route, instant| {
 ## The plan the ride makes for `segment`'s encounter, with `rider` on it at
 ## `now`: unplanned until the rider comes within reach of it.
 planned_start : Segment, { rider : Rider, now : Clock } -> EncounterPlan
-planned_start = |segment, { rider, now }| {
-	plan_for = |span, animal_along|
-		EncounterPlan.plan_for(
-			span,
-			{
-				gap: animal_along.distance_from(rider.motorcycle.route_place.along),
-				speed: rider.motorcycle.speed,
-				now,
-			},
-		)
-	match segment.encounter {
-		CatCrosses(crossing) => plan_for(CatCrossing.crossing_span, crossing.along())
-		BirdHere(flight) => plan_for(BirdFlight.flight_span, flight.planned_along())
-		QuietRoad => Unplanned
+planned_start = |segment, { rider, now }|
+	match segment.encounter_span() {
+		Ok({ span, planned_along }) =>
+			EncounterPlan.plan_for(
+				span,
+				{
+					gap: planned_along.distance_from(rider.motorcycle.route_place.along),
+					speed: rider.motorcycle.speed,
+					now,
+				},
+			)
+		Err(QuietRoad) => Unplanned
 	}
-}
