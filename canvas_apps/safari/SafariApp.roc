@@ -8,7 +8,6 @@
 ## ride again.
 import lib.CanvasApp
 import lib.Input
-import lib.Shapes
 import FrameView
 import Screen
 import Tour
@@ -24,22 +23,10 @@ SafariApp :: [].{
 		frames_a_second: 30,
 		init: initial_model,
 		model_at_next_step: CanvasApp.untimed_model_at_next_step(model_at_next_step),
-		frame_shapes: |m| frame_shapes(m.tour),
+		frame_shapes: |m| FrameView.frame_view_at(m.tour.route(), m.tour.instant()).leaned_shapes(),
 		sounds: |_m| 0,
 		tones: [],
 		title: "Safari",
-	}
-
-	## What to draw, turned by the rider's lean.
-	##
-	## The whole frame leans, backdrop and all, so the world banks into a turn.
-	## That is a camera whose target and offset are both the middle of the
-	## screen and whose rotation is the roll, the other way round: a space
-	## around everything else.
-	frame_shapes : Tour -> List(Shapes.Shape)
-	frame_shapes = |tour| {
-		view = FrameView.frame_view_at(tour.route(), tour.instant())
-		view.framed_shapes(Screen.leaned_by(view.roll))
 	}
 }
 

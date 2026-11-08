@@ -48,7 +48,7 @@ The rest have been rewritten by hand.
 
 **The rider's lean is a camera.** The whole frame, backdrop and all, turns by
 minus the roll about the middle of the screen, so the world banks into a turn.
-`SafariApp.frame_shapes` puts that in front of the frame as a `View(World(...))` mark,
+`FrameView.leaned_shapes` puts that in front of the frame as a `View(World(...))` mark,
 and both runners paint it the way they paint any camera.
 
 ## The native proof tools

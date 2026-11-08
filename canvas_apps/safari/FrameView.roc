@@ -11,6 +11,7 @@ import RoadAhead
 import RiderCamera
 import Route
 import Scene
+import Screen
 import Sky
 import Skyline
 import Sun
@@ -103,6 +104,15 @@ FrameView := {
 			ride_shape_lists: FrameView.ride_shape_lists(view),
 			space,
 		})
+
+	## The whole frame turned by the camera's roll.
+	##
+	## The whole frame leans, backdrop and all, so the world banks into a turn.
+	## That is a camera whose target and offset are both the middle of the
+	## screen and whose rotation is the roll, the other way round: a space
+	## around everything else.
+	leaned_shapes : FrameView -> List(Shapes.Shape)
+	leaned_shapes = |view| view.framed_shapes(Screen.leaned_by(view.roll))
 
 	## `ride_shape_lists`, already in paint order, over `backdrop`, all in
 	## `space`.
