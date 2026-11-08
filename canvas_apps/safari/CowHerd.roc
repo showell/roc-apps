@@ -4,7 +4,6 @@
 import Across
 import Along
 import Billboard
-import Conifer
 import Distance
 import EmojiStills
 import Geom
@@ -70,9 +69,8 @@ bull_tree_gap = Distance.metres(0.5)
 ## The bull at `herd_along`, by the trees.
 herd_bull : Along -> Geom.Placed(Billboard)
 herd_bull = |herd_along| {
-	tree_line = Trees.tree_line_distance(Conifer.Green)
 	bull_billboard = Billboard.adult_billboard(bull, FacesLeft)
-	bull_middle = tree_line.plus(bull_billboard.half_width())
+	bull_middle = Trees.near_tree_line.plus(bull_billboard.half_width())
 	{
 		road_point: {
 			along: herd_along,
