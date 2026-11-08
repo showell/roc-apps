@@ -12,7 +12,6 @@ import PigHerd
 import Route
 import Segment
 import Trees
-import lib.Trig
 
 World :: [].{
 
@@ -460,9 +459,9 @@ expect
 
 expect
 	[
-		(exit_turn_of(seg(0)).abs().to_radians() / Trig.degree, 50.0),
-		(exit_turn_of(seg(1)).abs().to_radians() / Trig.degree, 70.0),
-		(exit_turn_of(seg(6)).abs().to_radians() / Trig.degree, 80.0),
+		(exit_turn_of(seg(0)).abs().to_degrees(), 50.0),
+		(exit_turn_of(seg(1)).abs().to_degrees(), 70.0),
+		(exit_turn_of(seg(6)).abs().to_degrees(), 80.0),
 		(seg(18).commit_along().to_metres(), 300.0),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 

@@ -68,7 +68,7 @@ Angle :: [].{
 
 		## This turn in degrees: negative for a turn to the left.
 		to_degrees : Angle.Turn -> F64
-		to_degrees = |Angle.Turn.(r)| r * degrees_per_radian
+		to_degrees = |Angle.Turn.(r)| r * Trig.degrees_per_radian
 
 		plus : Angle.Turn, Angle.Turn -> Angle.Turn
 		plus = |Angle.Turn.(t), Angle.Turn.(other)| Angle.Turn.(t + other)
@@ -126,7 +126,7 @@ Angle :: [].{
 
 		## This lean in degrees, as a canvas takes a rotation.
 		to_degrees : Angle.Lean -> F64
-		to_degrees = |Angle.Lean.(r)| r * degrees_per_radian
+		to_degrees = |Angle.Lean.(r)| r * Trig.degrees_per_radian
 
 		## This lean, changed by `change`.
 		plus : Angle.Lean, Angle.LeanChange -> Angle.Lean
@@ -205,9 +205,6 @@ Angle :: [].{
 	steady_lean : Angle.LeanChange
 	steady_lean = Angle.LeanChange.(0.0)
 }
-
-degrees_per_radian : F64
-degrees_per_radian = 57.29577951308232
 
 expect Angle.upright.to_degrees() == 0.0
 expect Angle.Lean.radians(1.0).to_degrees() == 57.29577951308232
