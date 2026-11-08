@@ -1240,7 +1240,7 @@ Mostly, Safari Ride is a screensaver: you sit back and watch it. You can also ta
 
 `SafariApp.model_at_next_step` handles all of that. It takes the model, which is the `Tour` and a pause flag, and a snapshot of the input. It returns the next model:
 
-{{code SafariApp.model_at_next_step from "paused = if input.key_pressed(KeySpace)" to "Tour.step_forward(m.tour)"}}
+{{code SafariApp.model_at_next_step from "motion = if input.key_pressed(KeySpace)" to "Tour.step_forward(m.tour)"}}
 
 There's no event handler here. Each frame, the platform hands `model_at_next_step` a snapshot, and `model_at_next_step` reads it. `key_pressed` says a key went down since the last frame, so one tap of Space pauses the ride once. `key_down` says a key is being held, so holding Right keeps the ride moving.
 
@@ -2719,11 +2719,11 @@ An app here is a record, handed to a runner. `CanvasApp(model)` has a type param
 
 The ride instant chapter showed `SafariApp.model_at_next_step` reading a snapshot of the keys. A snapshot is a value, so a test could write one down. Everything the keys do is a function from `Tour` to `Tour`, so moving four steps or one, forward or back, is one helper with a function in a record field. `var` is back, in a function that's still pure. `$tour` can't be seen from outside.
 
-{{code SafariApp.repeat}}
+{{code Tour.steps_forward}}
 
 `Tour.step_forward` and `Tour.step_back` are plain values to pass here:
 
-{{code SafariApp.model_at_next_step from "if input.key_down(KeyRight) {" to "step_once: Tour.step_forward,"}}
+{{code SafariApp.model_at_next_step from "if input.key_down(KeyRight) {" to "m.tour.steps_forward(steps_a_press)"}}
 
 ### A frame is a list
 
