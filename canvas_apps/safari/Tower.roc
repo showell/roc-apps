@@ -32,10 +32,6 @@ Tower :: { yaw : Angle.Turn, beacon : Beacon.LitBeacon }.{
 	yaw : Tower -> Angle.Turn
 	yaw = |Tower.(tower)| tower.yaw
 
-	## The tower's beacon, as it shines in this frame.
-	beacon : Tower -> Beacon.LitBeacon
-	beacon = |Tower.(tower)| tower.beacon
-
 	## How a tower looks. Its footprint is measured on the road and seen from the
 	## camera's vantage, so those are its context.
 	scenery_picture : Tower,
@@ -90,7 +86,7 @@ tower_shapes : Tower,
 	spot : Spot,
 	focal_length : Pixels,
 } -> List(Shapes.Shape)
-tower_shapes = |tower, { footprint, spot, focal_length }| {
+tower_shapes = |Tower.(tower), { footprint, spot, focal_length }| {
 	foot = spot.foot()
 	lift = spot.lift()
 	sunk = EarthCurve.exaggerated_drop(foot.to_rider())
@@ -111,7 +107,7 @@ tower_shapes = |tower, { footprint, spot, focal_length }| {
 			ring_shapes(geometry),
 			brace_shapes(geometry),
 		].join()
-		beacon_disc = tower.beacon().disc({
+		beacon_disc = tower.beacon.disc({
 			center: Camera.project(apex, focal_length),
 			metre_on_screen: geometry.metre_on_screen,
 		})
