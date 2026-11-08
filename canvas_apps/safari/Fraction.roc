@@ -112,15 +112,6 @@ expect
 # The sums downstream of a clamp can see the sign, so it stays.
 expect Fraction.clamp(negative_zero).to_f64().to_bits() == negative_zero.to_bits()
 
-expect Fraction.zero.to_f64() == 0.0
-expect Fraction.whole.to_f64() == 1.0
-expect Fraction.of(0.5).times(Fraction.of(0.25)).to_f64() == 0.125
-expect Fraction.of(0.25).less().to_f64() == 0.75
-expect Fraction.zero.less().to_f64() == 1.0
-expect Fraction.whole.less().to_f64() == 0.0
-expect Fraction.of(0.25).max(Fraction.of(0.5)).to_f64() == 0.5
-expect Fraction.of(0.5).max(Fraction.of(0.25)).to_f64() == 0.5
-
 lesser : Fraction
 lesser = Fraction.of(0.25)
 

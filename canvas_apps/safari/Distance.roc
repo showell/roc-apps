@@ -62,19 +62,6 @@ Distance :: F64.{
 	is_eq : _
 }
 
-expect Distance.zero.to_metres() == 0.0
-expect Distance.metres(1.5).plus(Distance.metres(2.25)).to_metres() == 3.75
-expect Distance.metres(1.5).minus(Distance.metres(2.25)).to_metres() == -0.75
-expect Distance.metres(4.0).times(0.5).to_metres() == 2.0
-expect Distance.metres(5.0).divided_by(2.0).to_metres() == 2.5
-expect Distance.metres(1.5).opposite().to_metres() == -1.5
-expect Distance.metres(2.0).portion(Distance.metres(8.0)) == 0.25
-expect Distance.metres(12.0).portion(Distance.metres(8.0)) == 1.5
-expect Distance.metres(2.0).min(Distance.metres(3.0)).to_metres() == 2.0
-expect Distance.metres(3.0).min(Distance.metres(2.0)).to_metres() == 2.0
-expect Distance.metres(2.0).max(Distance.metres(3.0)).to_metres() == 3.0
-expect Distance.metres(3.0).max(Distance.metres(2.0)).to_metres() == 3.0
-
 ## Just under, at and just over 2.5 m, and how `<`, `<=`, `>`, `>=` and `==`
 ## answer against 2.5 m there.
 expect

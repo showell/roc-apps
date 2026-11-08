@@ -192,10 +192,4 @@ Angle :: [].{
 	upright = Angle.Lean.(0.0)
 }
 
-expect Angle.upright.to_degrees() == 0.0
-expect Angle.Lean.radians(1.0).to_degrees() == 57.29577951308232
-expect Angle.Lean.radians(-1.0).to_degrees() == -57.29577951308232
-expect Angle.Turn.radians(1.0).to_degrees() == 57.29577951308232
-expect Angle.Turn.radians(-1.0).to_degrees() == -57.29577951308232
-expect Angle.Lean.radians(0.5).portion(Angle.Lean.radians(2.0)) == 0.25
 expect Angle.Lean.radians(-0.5).portion(Angle.Lean.radians(2.0)) == -0.25

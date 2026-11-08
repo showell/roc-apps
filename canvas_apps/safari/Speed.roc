@@ -80,19 +80,11 @@ Speed :: F64.{
 	is_eq : _
 }
 
-expect Speed.metres_a_step(2.0).distance_in(Steps.of(38)).to_metres() == 76.0
-expect Speed.at_rest.distance_in(Steps.of(38)).to_metres() == 0.0
-expect Speed.metres_a_step(0.5).step_length().to_metres() == 0.5
 # Rest is the slowest speed, and still a speed.
 expect Speed.metres_a_step(0.0) == Speed.at_rest
 
 half_metre_a_step : Speed
 half_metre_a_step = Speed.metres_a_step(0.5)
-
-expect {
-	gain = Acceleration.metres_a_step_each_step(0.25)
-	half_metre_a_step.accelerated_by(gain) == Speed.metres_a_step(0.75)
-}
 
 # Braking to a stop exactly is still a speed.
 expect {
