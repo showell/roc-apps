@@ -28,6 +28,6 @@ The same app also builds on roc-ray: `<app>/main.roc` hands the value to `native
 
 ## How it's checked
 
-Roc can't run a canvas, so the JS has its own checks. `web/page_check.mjs` runs every built page against a stand-in canvas. Safari's gate paints frames with `safari/gates/ShapesPixels.roc`, the Roc twin of `shapes_canvas.js`, and compares exact pixel hashes.
+Roc can't run a canvas, so the JS has its own checks. `web/page_check.mjs` runs every built page against a stand-in canvas. Safari's gate paints frames with `safari/gates/proof/ShapesPixels.roc`, the Roc twin of `shapes_canvas.js`, and compares exact pixel hashes.
 
 `README.md` covers the layout and how to add an app.

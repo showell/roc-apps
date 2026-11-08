@@ -77,7 +77,7 @@
 use("cookbook:roc/findings.shale")
 
 const MANUSCRIPT = arg("manuscript", "canvas_apps/safari/tutorial/tutorial.md")
-const SOURCES = arg("sources", "canvas_apps/safari,canvas_apps/safari/gates,canvas_apps/lib,canvas_apps/shapes_widget")
+const SOURCES = arg("sources", "canvas_apps/safari,canvas_apps/safari/gates,canvas_apps/safari/gates/proof,canvas_apps/lib,canvas_apps/shapes_widget")
 const TABLE_FILE = arg("table", "canvas_apps/safari/book_names.txt")
 const HELD = arg("held", "")
 const HELD_DIAGRAM = arg("held_diagram", "0")

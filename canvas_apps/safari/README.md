@@ -37,14 +37,14 @@ The rest have been rewritten by hand.
 | `Sky.roc`, `Sun.roc` and `Grass.roc` | what is behind the ride: the sky's gradient, the sun and its glow, and the grass, each drawn by its own module over `Screen.roc`'s rectangles, which reach past a rolled screen's corners |
 | `Polygon.roc` | makers that turn screen points and colours into `Shapes.Shape` values, for the drawing modules |
 | `ColorShade.roc` | lib's `RgbColor` shaded by a factor or blended toward another, channel by channel |
-| `gates/SafariFrame.roc` | a frame painted into pixels in Roc, for the proof tools below |
+| `gates/proof/SafariFrame.roc` | a frame painted into pixels in Roc, for the proof tools below |
 | `RideInstant.roc` and the chapter modules | one instant of the ride, the world, the route, the rider, the animals, the scenery, and how each is drawn |
 | `PosedBird.roc` | the bird, the first thing here that was never Codex, with `BirdFlight.roc`, `EncounterSighting.roc` and `BirdStills.roc` |
 | `Pipeline.roc` | the steps every kind of object takes through a frame: placed (`Geom.Placed`), sighted (`Pipeline.Sighted`), then rendered (`Rendered.roc`, a `Picture.roc` and its depth). `Conifer.roc`, `Billboard.roc`, `Tower.roc` and `LitTruck.roc` are among the kinds that go through it, and the depth sort orders the renderings |
 | `Animation.roc` | what the cat and the bird share: a timeline that turns a stage into an instant |
 | `EncounterPlan.roc` | the ride's plan for the encounter on the rider's segment: when its animation starts, and so the stage it has got to |
 | `EncounterReaction.roc` | what a segment's encounter does to the rider, the one place that matches on it for `Throttle` and `RiderCamera`'s focal length |
-| `gates/` | test code the game never runs: the tiers `fast.shale`, `run.shale` and `publish.shale`, and the lints; `CrossModuleExpects.roc`, the expects that need more than the module they check imports; the proof tools and the modules only they use. They reach the game's modules through the package `game.roc` |
+| `gates/` | test code the game never runs: the tiers `fast.shale`, `run.shale` and `publish.shale`, and the lints; `CrossModuleExpects.roc`, the expects that need more than the module they check imports; and, in `proof/`, the proof tools and the modules only they use. They reach the game's modules through the package `game.roc` |
 
 **The rider's lean is a camera.** The whole frame, backdrop and all, turns by
 minus the roll about the middle of the screen, so the world banks into a turn.
@@ -53,7 +53,7 @@ and both runners paint it the way they paint any camera.
 
 ## The native proof tools
 
-Everything here lives in `gates/`. `SafariFrame.roc` paints a frame into exact pixels; its
+Everything here lives in `gates/proof/`. `SafariFrame.roc` paints a frame into exact pixels; its
 header says what it is for, why the game paints differently, and which
 generic modules it builds on.
 
@@ -61,8 +61,9 @@ Four programs check the frame without a screen: `RasterFrame.roc` prints one
 frame's pixels as hex with a hash (`pixels_png.mjs` turns that into a PNG),
 `ShapesFrame.roc` paints the frame with its polygons whole and again with them
 cut into triangles, and counts the pixels that differ, `StepBack.roc` checks that one step back goes back exactly one step at
-several depths, at the finish and at the start, and `FrameBench.roc` is a loop over
-the frame for `perf`. RasterFrame and ShapesFrame write their hex through
+several depths, at the finish and at the start, and `OnRoad.roc` checks that the
+ride stays on the road. `FrameBench.roc` and `FramePartsBench.roc` are loops over
+the frame and its parts for `perf`. RasterFrame and ShapesFrame write their hex through
 `Hex.roc`.
 
 They are not built by `build.sh` or `native.sh`; the gates build and judge

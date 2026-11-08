@@ -15,7 +15,7 @@
 ##
 ##   roc build --opt=dev ShapesFrame.roc --output=<bin>; <bin> [steps] | node pixels_png.mjs <png>
 ##   <bin> held 0 100 3000
-app [main!] { game: "../game.roc", lib: "../../lib/main.roc" }
+app [main!] { game: "../../game.roc", lib: "../../../lib/main.roc" }
 
 import game.Tour
 import SafariFrame

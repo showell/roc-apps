@@ -9,7 +9,7 @@
 # rule is what the gate checks.
 #
 #   roc build --opt=dev OnRoad.roc --output=<bin>; <bin>
-app [main!] { game: "../game.roc", lib: "../../lib/main.roc" }
+app [main!] { game: "../../game.roc", lib: "../../../lib/main.roc" }
 
 import game.Along
 import game.Distance

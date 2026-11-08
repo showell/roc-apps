@@ -6,7 +6,7 @@
 ## shapes and polygon points of each kind at each step instead.
 ##
 ##   roc build --opt=speed FramePartsBench.roc --output=<bin>; <bin> trees 0 0 200
-app [main!] { game: "../game.roc", lib: "../../lib/main.roc" }
+app [main!] { game: "../../game.roc", lib: "../../../lib/main.roc" }
 
 import game.Distance
 import game.FrameView

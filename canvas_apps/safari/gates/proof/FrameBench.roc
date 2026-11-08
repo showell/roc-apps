@@ -4,7 +4,7 @@
 ## build, where the wasm module has no names; the gate doesn't run it.
 ##
 ##   roc build --opt=speed FrameBench.roc --output=<bin>; <bin> 60
-app [main!] { game: "../game.roc", lib: "../../lib/main.roc" }
+app [main!] { game: "../../game.roc", lib: "../../../lib/main.roc" }
 
 import game.World
 import game.FrameView

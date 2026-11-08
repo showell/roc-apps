@@ -32,8 +32,9 @@ use("cookbook:times.shale")
 
 const SAFARI = "canvas_apps/safari"
 -- The folder of the proof tools' sources, StepBack, OnRoad, ShapesFrame and
--- RasterFrame, where they build.
-const PROOF_TOOLS = "canvas_apps/safari/gates"
+-- RasterFrame, where they build, with the modules only they use and the
+-- benchmarks FrameBench and FramePartsBench, which no gate builds.
+const PROOF_TOOLS = "canvas_apps/safari/gates/proof"
 const PROOF_EXPECTED = "canvas_apps/safari/gates/proof.expected"
 const PAGE_EXPECTED = "canvas_apps/safari/gates/page.expected"
 -- The widgets: each folder of canvas_apps that WIDGET_APPS matches is one,

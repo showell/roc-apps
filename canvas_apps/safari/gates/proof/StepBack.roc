@@ -8,7 +8,7 @@
 # printed.
 #
 #   roc build --opt=dev StepBack.roc --output=<bin>; <bin>
-app [main!] { game: "../game.roc", lib: "../../lib/main.roc" }
+app [main!] { game: "../../game.roc", lib: "../../../lib/main.roc" }
 
 import game.Clock
 import game.Tour
