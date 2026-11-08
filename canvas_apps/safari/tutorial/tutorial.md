@@ -1062,7 +1062,7 @@ The tower itself is two facts: which way it's turned, and its beacon. The tower 
 
 While its shapes are worked out, a tower also carries what every rod needs for this frame, including how far the earth's curve has sunk it:
 
-{{code Tower.SunkTower}}
+{{code Tower.TowerGeometry}}
 
 Each step of the job is a signature:
 
