@@ -2975,7 +2975,7 @@ digraph opened {
   node [shape=box, fontname="Helvetica"];
   world [label="design the world (once)\nThe world, The road"];
   tick [label="the clock steps\nOne whole module"];
-  move [label="move the rider and the truck\nStepping through the ride to The truck,\nRehearsal"];
+  move [label="move the rider and the truck\nStepping through the ride to The truck's motion,\nRehearsal"];
   look [label="look around\nThe modules, The cat, The bird"];
   draw [label="draw it against the backdrop\nThe sky, The platform"];
   world -> tick;
@@ -2986,7 +2986,39 @@ digraph opened {
 }
 ```
 
-*[This chapter is still to be written. It returns to the flipbook and the first diagram: the clock steps, and everything composes from the four stored fields.]*
+### Four things remembered
+
+Here's the whole book in one sentence: four things are remembered, and everything else is worked out.
+
+{{code RideInstant.RideInstant from "One instant of the ride" to "}.{"}}
+
+Those four fields are all the state there is. The sky's colors, where the sun stands, the beacons, the headlights, the cat's pose and the bird's, every sighting and every picture are worked out again from them on every page of the flipbook, and thrown away. `Tour` keeps a list of the instants before this one, for stepping back, but each of those is the same record of four fields.
+
+### One step, in order
+
+The four don't move independently. They read each other, so the order within a step is part of the game:
+
+{{code RideInstant.next}}
+
+1. The rider reads the world as it stood at the old clock: where the encounter on the rider's segment has got to. If a cat is crossing, the throttle holds.
+2. The rider moves, and the clock ticks.
+3. The truck reads how far along the route the new rider is, and aims at that. The rider never reads the truck.
+4. The encounter plan is kept, forgotten if the rider has just reached a new segment, or made now, from the new rider at the new clock.
+
+The rider reacts to the cat every step. The cat reacts to the rider once, when its plan is made, and never again: after that, it plays on the clock alone. So on the step a crossing is planned, the rider hasn't felt it yet.
+
+Swap two of those lines and you get a different ride. A truck that read the rider from before the move would aim at a different mark, and the frame hashes in Proving it are held exactly, so they'd catch any change that moved the truck. Going backward never meets the order at all: `Tour.step_back` takes an old instant off the list, and nothing is replayed.
+
+### All four at a glance
+
+| Remembered | Type | What moves it each step | What reads it |
+|---|---|---|---|
+| The rider | `Rider` | `Rider.rider_at_next_step`, reading the encounter's stage at the old clock | The camera, and so every sighting; the truck and the plan, within the step |
+| The truck | `TruckJourney.TruckProgress` | `TruckJourney.truck_progress_at_next_step`, reading how far along the new rider is | `TruckSighting`, and the brake lights |
+| The clock | `Clock` | `Clock.next` | The sky, the sun, the mountains, the beacons, the headlights, and the encounter's stage |
+| The encounter plan | `EncounterPlan` | `plan_at_next_step`: kept, forgotten at a new segment, or made from the new rider at the new clock | With the clock, the encounter's stage: the cat's and the bird's poses, and the rider's held throttle and look |
+
+That's the loop from the start of the tour, with every box opened. The patterns that kept turning up along the way are gathered in the appendix that follows.
 
 ## Appendix: the patterns
 
