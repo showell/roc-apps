@@ -2016,9 +2016,9 @@ Everything else is plain physics. The truck speeds up while it's short of that m
 
 ### Remembered, not worked out
 
-Four things move in front of the rider: the sun, the cat, the bird and the truck. Three of them are worked out from the clock. `sun_direction_at` takes a clock, and the cat and the bird, which come later in the book, are worked out the same way by `cat_instant_at` and `bird_instant_at`. Ask about any step, and they answer.
+The sun is worked out from the clock. `sun_direction_at` takes a clock, so you can ask about any step and get an answer, without running the ride up to it.
 
-The truck can't be worked out that way, because where it is depends on where the rider has been. So the truck is carried forward. Its step, `truck_progress_at_next_step`, takes a `TruckProgress` and returns the next one. It's the one mover whose step takes and returns its own type. The ride remembers four things from one step to the next, the rider, the truck, the clock and the encounter plan, and the truck is one of them.
+The truck can't be worked out that way, because where it is depends on where the rider has been. So the truck is carried forward. Its step, `truck_progress_at_next_step`, takes a `TruckProgress` and returns the next one. The ride remembers four things from one step to the next, the rider, the truck, the clock and the encounter plan, and the truck is one of them.
 
 That's what makes the order of a step matter. The rider moves first, and then the truck reads where the rider has got to. The rider never reads the truck.
 
@@ -2050,8 +2050,8 @@ digraph truck_motion {
   RideInstant -> TruckJourney [label="  steps it"];
   TruckJourney -> Route [label="  finds the next bend on"];
   TruckJourney -> VehicleLimits [label="  keeps to the limits"];
-  TruckJourney -> Speed [label="  keeps its speed as"];
-  TruckJourney -> Acceleration [label="  speeds up with"];
+  TruckJourney -> Speed [label="  measures how fast it goes in"];
+  TruckJourney -> Acceleration [label="  measures speeding up in"];
 }
 ```
 
