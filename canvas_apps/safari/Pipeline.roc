@@ -27,17 +27,17 @@ Pipeline :: [].{
 	## the focal length of its lens.
 	SightingCamera : { vantage : Geom.Vantage, focal_length : Pixels }
 
-	## `placed` as the camera at `vantage` sees it, on the segment at `place`,
-	## if it is at or past the camera's near plane.
+	## `placed` as `camera` sees it, on the segment at `place`, if it is at or
+	## past the camera's near plane.
 	sighting_of : Geom.Placed(kind),
 	{
 		road : RoadAhead.RoadView,
-		vantage : Geom.Vantage,
+		camera : Pipeline.SightingCamera,
 		place : SegmentPlace,
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera])
-	sighting_of = |placed, { road, vantage, place }| {
+	sighting_of = |placed, { road, camera, place }| {
 		road_point = placed.road_point
-		rider_point = RoadAhead.rider_point_at(road, { vantage, place, road_point })
+		rider_point = RoadAhead.rider_point_at(road, { vantage: camera.vantage, place, road_point })
 		foot = RiderView.rider_point_ahead(rider_point)?
 		Ok({ spot: Spot.at({ place, road_point, lift: placed.lift, foot }), kind: placed.kind })
 	}
@@ -54,7 +54,7 @@ Pipeline :: [].{
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera, TooSmall])
 		where [kind.scenery_height : kind -> Distance]
 	scenery_sighting_of = |placed, { road, camera, place }| {
-		sighting = sighting_of(placed, { road, vantage: camera.vantage, place })?
+		sighting = sighting_of(placed, { road, camera, place })?
 		height_on_screen = Camera.height_on_screen(
 			{ height: placed.kind.scenery_height(), forward: sighting.spot.foot().forward() },
 			camera.focal_length,

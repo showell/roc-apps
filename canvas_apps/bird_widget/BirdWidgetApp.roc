@@ -146,7 +146,7 @@ sighting_from_eye = |placed|
 		placed,
 		{
 			road: straight_road,
-			vantage: eye,
+			camera: { vantage: eye, focal_length: Lens.resting_focal_length },
 			place: Ahead(SegmentPlace.Position.first),
 		},
 	)

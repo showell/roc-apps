@@ -10,6 +10,7 @@ import game.Beacon
 import game.Clock
 import game.Distance
 import game.Geom
+import game.Lens
 import game.Pipeline
 import game.RoadAhead
 import game.Route
@@ -110,8 +111,9 @@ tower_shapes = |right, beacon| {
 		kind: Tower.standing({ yaw: Angle.straight_ahead, beacon }),
 	}
 	place = Ahead(SegmentPlace.Position.first)
+	camera = { vantage: eye, focal_length: Lens.resting_focal_length }
 	WidgetPage.resting_lens_shapes(
-		Pipeline.sighting_of(placed_tower, { road: straight_road, vantage: eye, place }),
+		Pipeline.sighting_of(placed_tower, { road: straight_road, camera, place }),
 		{ road: straight_road, vantage: eye },
 	)
 }

@@ -80,7 +80,7 @@ sighted_ahead = |kind, forward|
 		},
 		{
 			road: Fixtures.road,
-			vantage: Fixtures.origin,
+			camera: Fixtures.origin_camera,
 			place: Ahead(SegmentPlace.Position.first),
 		},
 	)
@@ -113,7 +113,7 @@ post_sighting = |along|
 		},
 		{
 			road: one_segment_road,
-			vantage: Fixtures.origin,
+			camera: Fixtures.origin_camera,
 			place: Ahead(SegmentPlace.Position.first),
 		},
 	)
