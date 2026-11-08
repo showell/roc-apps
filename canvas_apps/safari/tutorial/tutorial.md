@@ -1611,42 +1611,41 @@ The rider's step is the bigger of the two, and it takes up the next four chapter
 
 ## The rider
 
-This is the rider at step 1,570, with the cat ahead:
+The rider is two things: a motorcycle, and a pair of eyes.
 
-| Field | Type | Value |
-|---|---|---|
-| `segment_index` | `World.SegmentIndex` | 3 |
-| `along` | `Along` | 97.58 metres |
-| `across` | `Across` | -0.12 metres |
-| `yaw` | `Angle.Turn` | 0.0081 radians |
-| `speed` | `Speed` | 1.22 metres a step |
-| `lean` | `Angle.Lean` | -0.0048 radians |
-| `heading` | `Angle.Bearing` | 0.0081 radians |
-| `gaze_yaw` | `Angle.Turn` | 0 radians |
-| `look_depth` | `Fraction` | 0.67 |
+| Part | Field | Type | What it is |
+|---|---|---|---|
+| motorcycle | `route_place` | `RoutePlace` | which segment, and where along and across it |
+| | `yaw` | `Angle.Turn` | which way the bike points |
+| | `speed` | `Speed` | how far it goes in a step |
+| | `lean` | `Angle.Lean` | how far it leans |
+| eyes | `gaze_yaw` | `Angle.Turn` | where the rider is looking |
+| | `look_depth` | `Fraction` | how deep the last look went |
 
 New in this chapter:
 
-- Roc: a nominal record with no bare floats, a value for a bike that doesn't exist
-- Modules: `Rider`, `RiderEyes`, `RiderMind`, `CanvasRoll`, `Speed`
+- Roc: a nominal record of nominal records, a value for a motorcycle that doesn't exist
+- Modules: `Rider`, `Motorcycle`, `RiderEyes`, `RiderMind`, `Speed`
 
-A nominal record holds the rider, and `RideInstant` stores one. Count the opaque types: `SegmentIndex`, `Along`, `Across`, `Turn`, `Speed`, `Lean`, `Bearing` and `Fraction`. Nothing in it is a bare float. Four fields of this one record are angles, of three different types, and passing one type where another is wanted is a compile-time error. The last two fields say where the rider is looking, and they get a chapter of their own.
+{{code Rider.Rider from "Rider := {" to "}.{"}}
 
-{{code Rider.Rider}}
+Nothing in the rider is a bare float. Three of its fields are angles, of two different types, and passing a `Lean` where a `Turn` is wanted is a compile-time error. The eyes get a chapter of their own.
 
-The step does four things in order, and the code reads that way. Static dispatch finds `segment_in` on the `SegmentIndex`. The `match` on `seg.ending` has two tags, and `Continues(_)` ignores its payload:
+The step does its work in order, and the code reads that way: decide, move, cross a bend or stop, then choose where to look:
 
 {{code Rider.next}}
 
-The rider steers by leaning, so a decision is a record of two opaque values: a change of lean and an acceleration. There's something to notice in the last line of this next function. `Throttle`, which picks the acceleration, is asked about a bike that doesn't exist yet: the rider as it would be with the new lean, which `Bike.with_lean` makes by building a new record. The real rider isn't touched, because nothing can touch it.
+Static dispatch finds `segment_on` on the `RoutePlace`. The `match` on `segment.segment_ending()` has two tags, and `..` in `Bends({ bend, .. })` ignores the rest of its payload.
+
+Every decision the rider makes is `RiderMind`'s. The bike's controls are the lean to take and an acceleration. There's something to notice in the last line here. `Throttle`, which picks the acceleration, is asked about a motorcycle that doesn't exist yet: the motorcycle as it would be at the new lean, which `Motorcycle.with_lean` makes by building a new record. The real one isn't touched, because nothing can touch it.
 
 {{code RiderMind.controls}}
 
-The Rehearsal chapter takes that idea much further. A small version of it decides what happens at the end of a segment. `cross_if_on_road` works out the rider on the next segment and keeps that only if it lands inside the lane. The rejected rider simply stops being referred to, and nothing has to be undone:
+The Rehearsal chapter takes that idea much further. A small version of it decides what happens at the end of a segment. `cross_bend_if_on_road` carries the motorcycle past the bend onto the next segment, and keeps that only if it lands on the road. The rejected motorcycle simply stops being referred to, and nothing has to be undone:
 
 {{code Motorcycle.cross_bend_if_on_road}}
 
-Record update does most of the writing in this module. Its plainest use is stopping dead, where `..s` keeps everything but the two fields named:
+Record update does most of the writing here. Its plainest use is stopping dead, where `..motorcycle` keeps everything but the fields named, and `route_place` is updated one level down:
 
 {{code Motorcycle.stopped_at}}
 
@@ -1658,13 +1657,13 @@ When the rider leans, the whole picture leans with it. This is all of that:
 
 {{code RiderCamera.rider_roll}}
 
-A lean inside the deadband leaves the canvas level, and any other lean passes straight through. The last `expect` is a table of pairs, on both sides of the deadband and at its edge. It's called once a frame:
+A lean inside the deadband leaves the canvas level, and any other lean passes straight through. It's called once a frame:
 
 {{code RiderCamera.of from "roll: rider_roll" to "roll: rider_roll"}}
 
-The camera turns as well. `ViewYaw` follows the rider's gaze, and turns a little with the lean, as a rider's head turns into a bend.
+The camera turns as well. `Rider.head_yaw` follows the gaze and turns a little with the lean, as a rider's head turns into a bend, and the camera adds it to the motorcycle's yaw.
 
-So a decision is a lean and an acceleration. `Bike` is what turns them into movement.
+So a decision is a lean and an acceleration. The motorcycle is what turns them into movement.
 
 ## The bike
 
@@ -1672,43 +1671,47 @@ A lean of 1 degree turns the bike by a tenth of a degree each step, so at a metr
 
 New in this chapter:
 
-- Roc: a named open record
-- Modules: `Bike`
+- Roc: record update two levels deep
+- Modules: `Motorcycle`
 
-The modules around `Bike`
+The modules around `Motorcycle`
 ```dot
 digraph bike {
   node [shape=box, fontname="Helvetica"];
-  Bike [style=bold];
-  RiderMind -> Bike;
-  RiderMind -> LeanSearch;
-  Coast -> Bike;
-  LeanSearch -> Bike;
-  LeanSearch -> Coast;
-  RideFocal -> Bike;
-  Bike -> Angle;
-  Bike -> Speed;
-  Bike -> Acceleration;
+  Motorcycle [style=bold];
+  Rider -> Motorcycle [label="  steps it"];
+  RiderMind -> Motorcycle [label="  makes its controls"];
+  Coast -> Motorcycle [label="  steps a pretend one"];
+  LeanSearch -> Motorcycle [label="  tries leans on it"];
+  Motorcycle -> RoutePlace [label="  holds its place"];
+  Motorcycle -> VehicleLimits [label="  keeps to the top speed"];
+  Motorcycle -> Angle [label="  turns by its lean"];
 }
 ```
 
-`Bike` holds the physics. It's under 60 lines, not counting its `expect`s. Its type is the first one in the tour that names the rest of a record. `..others` makes `Motion` open: it's any record with these six fields and whatever else, with `others` standing for the whatever else.
+The motorcycle is four fields: where it is on the route, which way it points, how fast it goes, and how far it leans. Its controls are a lean and an acceleration:
 
-{{code Motorcycle.Motorcycle}}
+{{code Motorcycle.Motorcycle from "Motorcycle := {" to "}.{"}}
 
-A structural type like this has to be named when it appears twice. Here it appears in the argument and in the result, and that's the promise: what goes in comes out with the same other fields. A `Rider` goes in, with its `segment`, `gaze_yaw` and `attention`, and a `Rider` comes out, though `Bike` has never heard of a gaze.
+{{code Motorcycle.Controls}}
 
-Call this *a narrow view of a wide record*. A module says exactly which fields it cares about, and the compiler takes care of the rest, with no base class and no copying fields across by hand. The smallest example in the program is a function with one job:
-
-{{code Motorcycle.with_lean}}
-
-`{ ..s, lean }` is record update with a shorthand: the field and the local have the same name. `RiderMind.decide` called it in the last chapter. Here's the step, which `Rider.rider_state_at_next_step` called:
+The step is the whole of the physics, in order:
 
 {{code Motorcycle.motorcycle_at_next_step}}
 
-Reading down, the types do their share of explaining. A `Lean` can't be added to anything but a `Lean`, and it only reaches direction through `lean.steer(turn_per_lean)`, which is the single door from roll to yaw. The bike then moves along the middle of the step's turn, which is what `s.yaw.plus(turn.times(0.5))` means. `speed.step_length()` is a `Distance`, and `Along.plus` takes one, so the move itself is places and distances. `to_radians()` waits until the last line, where `.cos()` needs a float.
+First the speed: the acceleration is applied, and the result is held to the top speed. Then the turn: a `Lean` can't be added to anything but a `Lean`, and it only reaches direction through `lean.steer(turn_per_lean)`, the single door from roll to yaw. Then the move: the bike goes along the middle of the step's turn, and `speed.step_length()` is a `Distance`, so the move is places and distances. The new place is written with record update two levels deep, inside `route_place`.
 
-A bike does what it's told. Choosing the lean has to wait for the Rehearsal chapter. Choosing the acceleration is the throttle's job.
+The bike turns the same amount per step at any speed. That's a cheat, chosen by eye, and it's fine here because the rider chooses each step's lean by trying it out on this same physics.
+
+Two small helpers let the rest of the program pretend:
+
+{{code Motorcycle.with_lean}}
+
+{{code Motorcycle.steady_controls}}
+
+`{ ..motorcycle, lean }` is record update with a shorthand: the field and the local have the same name. Both of these make values for a motorcycle that doesn't exist, and the Rehearsal chapter runs thousands of them.
+
+So the work is split. The throttle chooses an acceleration, and the bike turns it into a speed. Choosing the lean has to wait for the Rehearsal chapter.
 
 ## The throttle
 
@@ -1716,21 +1719,20 @@ The rider is always deciding whether to accelerate, brake or hold steady. `Throt
 
 New in this chapter:
 
-- Modules: `Throttle`, `Acceleration`
+- Modules: `Throttle`, `ThrottleLimit`, `Acceleration`, `VehicleLimits`
 
 The modules around `Throttle`
 ```dot
 digraph throttle {
   node [shape=box, fontname="Helvetica"];
   Throttle [style=bold];
-  RiderMind -> Throttle;
-  Throttle -> Coast;
-  Throttle -> CrossingReaction;
-  Throttle -> Gaze;
-  Throttle -> VehicleLimits;
-  Throttle -> Acceleration;
-  Throttle -> Speed;
-  Speed -> Acceleration;
+  RiderMind -> Throttle [label="  asks for an acceleration"];
+  Throttle -> EncounterReaction [label="  asks about the encounter"];
+  Throttle -> Gawking [label="  asks about a pig"];
+  Throttle -> Coast [label="  coasts once"];
+  Throttle -> ThrottleLimit [label="  folds limits"];
+  Throttle -> VehicleLimits [label="  starts from the cruise acceleration"];
+  Speed -> Acceleration [label="  makes one"];
 }
 ```
 
@@ -1739,34 +1741,33 @@ The chain of limits
 digraph limits {
   rankdir=LR;
   node [shape=box, fontname="Helvetica"];
-  bend_brake -> crossing_limit -> pig_limit -> shoulder_brake;
-  shoulder_brake -> allowed_speed;
+  offered -> bend_limit -> encounter_throttle -> gawk_brake -> shoulder_limit -> acceleration;
 }
 ```
 
-The rider has several reasons to slow down, and they don't know about each other. A turn is coming. A cat is in the lane. There's a pig to look at. The road is about to run out. `Throttle` writes them as a line of limits. An `Acceleration` goes in, a limit lets it through or lowers it, and the next limit gets what's left:
+The rider has several reasons to slow down, and they don't know about each other. A bend is coming. A cat is in the lane. There's a pig to look at. The road is about to run out. `Throttle` writes them as a line of limits. It starts from the cruise acceleration, and each limit lets that through or lowers it:
 
 {{code Throttle.next_acceleration from "limits = [" to "limits.fold(offered, held_to)"}}
 
 Call this *the chain of limits*. Each limit has the same shape and can be read alone, and adding a reason is one more line. It reads like a list of rules because that's what it is.
 
-Each limit takes the lower of two opaque `Acceleration`s with `min`. `NoAcceleration` comes from the cat: it stops the rider opening the throttle, and a rider already braking stays braking. We'll see how once we've met the cat.
+Each limit is a `ThrottleLimit`: nothing, or at most some acceleration. `held_to` takes the lower:
+
+{{code ThrottleLimit.ThrottleLimit}}
 
 {{code Throttle.held_to}}
 
-`Speed` and `Acceleration` are places and distances again: two speeds make an acceleration, and an acceleration moves a speed. The formula behind braking for a turn is the first line of a physics textbook, `v² = u² + 2as`, solved for `a`. This function is a good example of how far opaque types reach into a parameter list. `target: Speed.(t)` opens the field's `Speed` where it's destructured:
+The throttle answers an acceleration, and the motorcycle turns it into a speed.
+
+`Speed` and `Acceleration` are places and distances again: two speeds make an acceleration, and an acceleration moves a speed. The formula behind braking for a bend is the first line of a physics textbook, `v² = u² + 2as`, solved for `a`. `target: Speed.(t)` opens the field's `Speed` where it's destructured:
 
 {{code Speed.acceleration_to}}
 
-The first limit, `bend_brake`, makes the `a1` that the chain above starts from. It calls this for the distance left to the point where the rider commits to the turn. Three modules use that one line of physics: this one, `Gaze` to slow for a pig, and `TruckJourney`.
+It has one caller, `VehicleLimits.braking_to`, which also holds the speed steady when the target is within a micrometre, and crashes on a brake that would take the speed below zero. The rider's bend brake, the gawk brake and the truck all brake through it. The first limit is the bend's:
 
 {{code Throttle.bend_limit}}
 
-After the limits, `Throttle.acceleration` hands its result to `allowed_speed`, not quoted here, which holds the speed between rest and the top speed. The chain works in accelerations and that step works in speeds, so the answer is taken back with `.change_from(state.speed)`, the other half of the same pair of types.
-
-The last limit, `shoulder_brake`, comes back in the Rehearsal chapter, because it simulates the bike ahead of itself.
-
-The two limits in the middle come from what the rider sees. `crossing_limit` is the cat's, and `pig_limit` is the pig's. The cat's has to wait until we've met the cat, so we'll take the pig first.
+The last limit, `shoulder_limit`, comes back in the Rehearsal chapter, because it simulates the bike ahead of itself. The two in the middle come from what the rider sees: `encounter_throttle` is the cat's, and `gawk_brake` the pig's. The cat's has its own chapter, so we'll take the pig first.
 
 ## The rider's gaze
 
