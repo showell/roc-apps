@@ -85,14 +85,10 @@ Segment := {
 					}),
 				)
 				BirdHere =>
-					match fifth_left_tree(trees) {
-						Found(perch) =>
-							match BirdFlight.flight_from(trees, perch) {
-								Ok(flight) => BirdHere(flight)
-								Err(NoTreeToFlyTo) =>
-									crash "Segment.from_choices: a segment planned with a bird has a tree to fly to"
-							}
-						NoTree => crash "Segment.from_choices: a segment planned with a bird has a fifth tree on the left"
+					match BirdFlight.segment_flight(trees) {
+						Ok(flight) => BirdHere(flight)
+						Err(NoPerch) | Err(NoTreeToFlyTo) =>
+							crash "Segment.from_choices: a segment planned with a bird has a tree for it to start on and one to fly to"
 					}
 				QuietRoad => QuietRoad
 			},
@@ -202,16 +198,6 @@ cow_herd_along = Along.metres(24.0)
 cat_along : Along
 cat_along = Along.metres(105.0)
 
-## The tree a segment's bird starts on, the fifth with a negative `across`.
-## Those are on the left, and an unflipped still's beak points toward +x, so
-## from there the bird faces the road.
-fifth_left_tree : List(Trees.RoadsideTree) -> [Found(Trees.RoadsideTree), NoTree]
-fifth_left_tree = |trees|
-	match trees.keep_if(|tree| tree.road_point.across < Across.middle).drop_first(4).first() {
-		Ok(tree) => Found(tree)
-		Err(ListWasEmpty) => NoTree
-	}
-
 ## The nearest tree on the right at or past `along`, which a segment's cat waits
 ## by. A segment's trees are planted in order along the road, so the first found
 ## is the nearest.
@@ -238,35 +224,3 @@ expect nearest_tree_ahead(gold_trees, Along.metres(90.0)).road_point.across == A
 expect nearest_tree_ahead(gold_trees, Along.metres(90.0)).road_point.along == Along.metres(96.0)
 expect nearest_tree_ahead(gold_trees, Along.metres(96.0)).road_point.along == Along.metres(96.0)
 expect nearest_tree_ahead(gold_trees, Along.metres(96.5)).road_point.along == Along.metres(126.0)
-
-## A tree at `along` and `across` metres, of whatever kind a gold segment starts
-## with.
-tree_at : F64, F64 -> Trees.RoadsideTree
-tree_at = |along, across| {
-	..(gold_trees.first() ?? crash "Segment.tree_at: a gold segment has trees"),
-	road_point: { along: Along.metres(along), across: Across.metres(across) },
-}
-
-## A left and a right tree at each of `alongs`.
-pairs_at : List(F64) -> List(Trees.RoadsideTree)
-pairs_at = |alongs| alongs.join_map(|along| [tree_at(along, -6.0), tree_at(along, 6.0)])
-
-## How far along the fifth left tree of `trees` is, if there is one.
-fifth_along : List(Trees.RoadsideTree) -> Try(F64, [NoTree])
-fifth_along = |trees|
-	match fifth_left_tree(trees) {
-		Found(tree) => Ok(tree.road_point.along.to_metres())
-		NoTree => Err(NoTree)
-	}
-
-# Only trees on the left count toward the fifth, and a segment too short for five
-# of them has none.
-expect fifth_along([]) == Err(NoTree)
-expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0])) == Err(NoTree)
-expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0])) == Ok(50.0)
-expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0, 60.0])) == Ok(50.0)
-expect fifth_along([50.0, 60.0, 70.0, 80.0, 90.0].map(|along| tree_at(along, 6.0))) == Err(NoTree)
-expect {
-	short_trees = Trees.roadside_trees({ scheme: RedGreen, length: Distance.metres(50.0) })
-	fifth_along(short_trees) == Err(NoTree)
-}

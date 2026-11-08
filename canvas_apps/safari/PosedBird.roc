@@ -30,8 +30,7 @@ PosedBird := { pose : PosedBird.BirdPose }.{
 	scenery_picture : PosedBird, Picture.Setting({}) -> Picture
 	scenery_picture = |bird, setting|
 		Picture.from_shapes(
-			# As drawn, never mirrored, because every bird starts on a left-hand
-			# tree.
+			# As drawn, never mirrored: BirdFlight's `is_far_side` says why.
 			StillShapes.standing_still_shapes(
 				setting,
 				{ height: bird_height, still: PosedBird.pose_still(bird.pose) },
