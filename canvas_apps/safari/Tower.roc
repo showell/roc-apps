@@ -123,8 +123,8 @@ rod_half_width = Distance.metres(0.12)
 rod_width : Distance
 rod_width = rod_half_width.times(2.0)
 
-tower_metal : RgbColor
-tower_metal = RgbColor.of(0x9AA0A8)
+tower_color : RgbColor
+tower_color = RgbColor.of(0x9AA0A8)
 
 beacon_radius : Distance
 beacon_radius = Distance.metres(3.0)
@@ -267,7 +267,7 @@ rod_quad = |{ from, to, offset_x, offset_y }| Polygon.flat_polygon(
 		{ x: to.x.minus(offset_x), y: to.y.minus(offset_y) },
 		{ x: from.x.minus(offset_x), y: from.y.minus(offset_y) },
 	],
-	tower_metal,
+	tower_color,
 )
 
 ## A rod between two points in the rider's view, cut where it crosses the
@@ -511,7 +511,7 @@ expect
 	})
 		== Poly({
 			coordinates: [-4.0, 3.0, 26.0, 43.0, 34.0, 37.0, 4.0, -3.0],
-			fill: Flat(Brush.opaque(tower_metal)),
+			fill: Flat(Brush.opaque(tower_color)),
 		})
 
 # A rod of no length is still one quad, all at its one point.
@@ -523,7 +523,7 @@ expect
 	})
 		== Poly({
 			coordinates: [5.0, 6.0, 5.0, 6.0, 5.0, 6.0, 5.0, 6.0],
-			fill: Flat(Brush.opaque(tower_metal)),
+			fill: Flat(Brush.opaque(tower_color)),
 		})
 
 ## How many pixels a metre across spans `forward` metres ahead, through a
