@@ -1278,7 +1278,7 @@ That's every critter that stands still, and the end of what we can say about one
 
 ## The ride instant
 
-We've held one frame still for a long time. Now it's time to turn the page. Each time the clock ticks, Safari Ride moves the rider and the truck and draws everything again. `RideInstant` is the one record it keeps from one tick to the next, and it holds the rider, the truck and the clock. One tick is a step.
+We've held one frame still for a long time. Now it's time to turn the page. Each time the clock ticks, Safari Ride moves the rider and the truck and draws everything again. `RideInstant` is the one record it keeps from one tick to the next, and it holds the rider, the truck's journey, the clock, and the plan for the encounter on the rider's segment. One tick is a step.
 
 ```widget step
 Press play to run the ride, and the outer buttons to go to either end.
@@ -1295,7 +1295,7 @@ A record is the plainest shape in Roc, and it's nearly all this needs. `RideInst
 
 {{code RideInstant.RideInstant from "One instant of the ride" to "}.{"}}
 
-Those three fields are the whole of what Safari Ride keeps from one step to the next. The cat has no state, and neither does the bird, the sun or the beacons. Each frame works them all out again from the rider, the truck and the clock. Call this *worked out, not stored*: keep the few things that have to last, and work out the rest. We'll see it everywhere from here on.
+Those four fields are the whole of what Safari Ride keeps from one step to the next. The sun and the beacons keep nothing. The cat and the bird keep one thing between them, the step their animation started on, which is the plan. Each frame works everything else out again from those four. Call this *worked out, not stored*: keep the few things that have to last, and work out the rest. We'll see it everywhere from here on.
 
 That gives three kinds of moving thing, and the rest of the tour is organized around them:
 
@@ -1303,7 +1303,7 @@ That gives three kinds of moving thing, and the rest of the tour is organized ar
 |---|---|---|
 | Clock-driven | The sun, the sky, the beacons, the headlights | Worked out from the clock, with nothing stored |
 | Stepped | The rider, the truck | Stored in `RideInstant`, and moved once a step from where it was |
-| Rider-driven | The cat, the bird | Worked out from how the rider is approaching, with nothing stored |
+| Rider-driven | The cat, the bird | Worked out from the clock and one stored start step, planned from how the rider is approaching |
 
 Trees and cows are a fourth kind, the easiest of all: they never change.
 
@@ -1557,7 +1557,7 @@ The sun and the beacons can be asked about any step, cold. Hand `Sky.dusk_at` a 
 
 ## Stepping through the ride: RideInstant
 
-Where the rider and the truck are depends on where they were, so their state has to be kept, and it's the only state there is. This chapter and the next few are about the two fields of `RideInstant` that aren't a clock.
+Where the rider and the truck are depends on where they were, so their state has to be kept, and it's the only state there is. This chapter and the next few are about the rider and the truck, the two of `RideInstant`'s fields that move by their own physics.
 
 ```widget step
 Press the last button, then the first.
@@ -2086,7 +2086,7 @@ A cat walks out into the lane, freezes as the rider bears down on it, and leaps 
 Press play and watch the crossing.
 ```
 
-Play it, and the gap falls from 50 metres to 0, with the rider held at a metre a step. The cat waits behind a tree on the right until 41 metres, where the last line changes to "The rider may not accelerate". It walks out, and at 31 metres it freezes in the lane. It stays frozen down to 7 metres, coils, leaps at 6 metres and lands at 4. At 3 metres it has collapsed on the far verge, and the rider may accelerate again. Below that, nothing changes.
+Play it, and the gap falls from 50 metres to 0, with the rider held at a metre a step. The cat waits on the right verge until 41 metres, where the last line changes to "The rider may not accelerate". It walks out, and at 31 metres it freezes in the lane. It stays frozen until 7 metres, where it coils, leaps at 6 and lands at 4. At 3 metres it has collapsed on the far verge, and the rider may accelerate again. Below that, nothing changes.
 
 New in this chapter:
 
@@ -2110,17 +2110,17 @@ The modules around `CatCrossing`
 digraph cat {
   node [shape=box, fontname="Helvetica"];
   CatCrossing [style=bold];
-  World -> CatCrossing;
-  Segment -> CatCrossing;
-  RideInstant -> EncounterPlan;
-  EncounterReaction -> CatCrossing;
-  EncounterPoses -> Cat;
-  EncounterSighting -> Cat;
-  CatCrossing -> Cat;
-  CatCrossing -> Animation;
-  CatCrossing -> EncounterPlan;
-  EncounterPlan -> Animation;
-  Cat -> CatStills;
+  World -> CatCrossing [label="  puts one by a tree"];
+  Segment -> CatCrossing [label="  holds it"];
+  RideInstant -> EncounterPlan [label="  keeps the plan"];
+  EncounterReaction -> CatCrossing [label="  reacts to it"];
+  EncounterSighting -> EncounterPoses [label="  places it, then sights it"];
+  EncounterPoses -> Cat [label="  poses it"];
+  CatCrossing -> Cat [label="  picks a pose"];
+  CatCrossing -> Animation [label="  plays its frames"];
+  CatCrossing -> EncounterPlan [label="  is planned by its span"];
+  EncounterPlan -> Animation [label="  answers a Stage"];
+  Cat -> CatStills [label="  draws a still"];
 }
 ```
 
@@ -2154,6 +2154,14 @@ Once a plan exists, the ride's clock says where the animation has got to. That's
 
 `Waiting` before it starts, `Playing` while it runs, counting steps in, and `Past` after it ends, counting steps since. The tags carry only what each case needs, so there's no step count to misread while the cat is waiting.
 
+A plan and the clock together make a `Timing`:
+
+{{code EncounterPlan.Timing}}
+
+{{code EncounterPlan.timing_at}}
+
+and a `Timing` and a length make the `Stage`:
+
 {{code EncounterPlan.stage_at}}
 
 ### Who moves first
@@ -2166,11 +2174,13 @@ So within one step, the rider answers the world, and then the world answers the 
 
 The whole crossing is a list of frames, one a step:
 
-| Frames | Steps | What the cat does |
+| Frames | Frame numbers | What the cat does |
 |---|---|---|
-| walking out | 0 to 9 | strides and rests, from behind its tree to the middle of the road |
-| frozen | 10 to 33 | stands in the lane |
-| the leap | 34 to 37 | coils, flies twice, lands on the far verge |
+| walking out | 1 to 10 | strides and rests, from behind its tree most of the way to the middle of the road |
+| frozen | 11 to 34 | stands in the lane |
+| the leap | 35 to 38 | coils, flies twice, lands on the far verge |
+
+That counts frames from 1, as the widget does; in the code, a `Playing` stage counts the steps in from 0.
 
 After the last frame it lies collapsed on the far verge. Each frame is a pose and where the cat is on its way across:
 
@@ -2206,7 +2216,7 @@ Seeing the cat takes two steps, and the camera is only in the second. First, `En
 
 {{code EncounterPoses.cat_poses}}
 
-Then `EncounterSighting` asks where the camera sees each one, and drops any too small to matter:
+Then `EncounterSighting` asks where the camera sees each one. Through `Pipeline.scenery_sighting_of`, it drops any behind the camera or too small to draw:
 
 {{code EncounterSighting.cats_in_view}}
 
@@ -2265,6 +2275,14 @@ A rule turns where the rider is into a `Stage`. The cat's rule was `stage_over_s
 | A stopped rider | Leaves the bird hanging where the gap puts it | Holds the cat at the start of its crossing |
 
 The first argument of each is destructured in place, and both answer the same tag union. `stage_over_gap` has a shorter job, so here it is first. `Fraction.clamp` fits here because a rider far off gives a ratio well outside 0 to 1, and `<=` works on a `Fraction` because `Fraction` defines `is_lte`:
+
+A plan and the clock together make a `Timing`:
+
+{{code EncounterPlan.Timing}}
+
+{{code EncounterPlan.timing_at}}
+
+and a `Timing` and a length make the `Stage`:
 
 {{code EncounterPlan.stage_at}}
 
