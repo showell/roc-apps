@@ -1,4 +1,4 @@
-## Throttle decides the rider's speed for the next step. Each of four limits
+## Throttle decides the rider's speed for the next step. Each limit
 ## asks for nothing or for an acceleration no harder than its own, and the
 ## acceleration offered is held to the least of them.
 import Acceleration
