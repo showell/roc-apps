@@ -2,7 +2,6 @@
 ## headlights, reaching along the road ahead of the cab, and its two brake
 ## lights on the back of the trailer, each with a glow around it.
 import Pixels
-import Across
 import Camera
 import Distance
 import Geom
@@ -76,9 +75,10 @@ beam_core = ArgbColor.of(0xC3FFF8D6)
 beam_edge : ArgbColor
 beam_edge = ArgbColor.of(0x45FFF8D6)
 
-## A brake lamp spans from a tenth of the truck's width in from its side
-## to just over a third, and from a fifth of the way up the trailer's back
-## to half way: proportions chosen by eye.
+## A brake lamp sits near a side of the trailer's back, in its lower half,
+## where a real trailer carries its lamps. Its edges are set as shares of
+## the truck's size, chosen by eye, so the lamps keep their place on the
+## back as the truck's measurements change.
 brake_lamp_outer_edge : Distance
 brake_lamp_outer_edge = TruckShape.truck_width.times(0.1)
 
@@ -145,16 +145,17 @@ outline_points = |{ center, outline_radius }|
 		},
 	)
 
-## The beam of the headlight at `across`, brightest at the lamp. A beam
-## with a corner behind the camera is not drawn.
+## The beam of the headlight `rightward` of the truck's centre line,
+## brightest at the lamp. A beam with a corner behind the camera is not
+## drawn.
 headlight_beam : Picture.Setting(TruckShape.TruckOnRoad),
-Across -> Try(
+Distance -> Try(
 	Shapes.Shape,
 	[BehindCamera, TooSmall],
 )
-headlight_beam = |truck, across| {
+headlight_beam = |truck, rightward| {
 	nose = TruckShape.truck_box.nose
-	on_truck = |along, height| TruckShape.raised_point_on_truck(truck, { along, across, height })
+	on_truck = |ahead, height| TruckShape.raised_point_on_truck(truck, { ahead, rightward, height })
 	at_lamp = |height| on_truck(nose, height)
 	at_far_end = |height| on_truck(nose.plus(beam_length), height)
 	lamp_bottom = at_lamp(headlight_height.minus(beam_half_height_at_lamp))
@@ -176,12 +177,13 @@ headlight_beam = |truck, across| {
 	)
 }
 
-## A brake light on the back of the trailer, from `left` to `right` across
-## it: its glow, then the lamp over the glow.
+## A brake light on the back of the trailer, its sides `left` and `right`
+## measured rightward of the truck's centre line: its glow, then the lamp
+## over the glow.
 brake_shapes : Picture.Setting(TruckShape.TruckOnRoad),
 {
-	left : Across,
-	right : Across,
+	left : Distance,
+	right : Distance,
 } -> List(Shapes.Shape)
 brake_shapes = |truck, lamp_sides| {
 	rear = TruckShape.truck_box.rear
@@ -189,8 +191,8 @@ brake_shapes = |truck, lamp_sides| {
 		TruckShape.strip_corners(
 			lamp_sides,
 			{
-				near: { along: rear, height: brake_lamp_bottom },
-				far: { along: rear, height: brake_lamp_top },
+				near: { ahead: rear, height: brake_lamp_bottom },
+				far: { ahead: rear, height: brake_lamp_top },
 			},
 		).map(|corner| TruckShape.raised_point_on_truck(truck, corner))
 	glow = [brake_glow(truck, lamp)].keep_oks(|shape| shape)
