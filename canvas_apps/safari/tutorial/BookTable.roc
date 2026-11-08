@@ -8,7 +8,10 @@ BookTable := [].{
 
 	## Each table's code with its break points marked.
 	with_break_points : Str -> Str
-	with_break_points = |html| BookText.rewritten_after(html, { opening: table_open, rewrite: marked_table })
+	with_break_points = |html| BookText.rewritten_after(
+		html,
+		{ opening: table_open, rewrite: marked_table },
+	)
 }
 
 table_open : Str

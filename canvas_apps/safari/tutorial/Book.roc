@@ -107,14 +107,7 @@ Book := [].{
 						{ previous, next } = neighbours(chapters, i)
 						{
 							file: chapter.file,
-							html: chapter_html(
-								chapter,
-								{
-									chapters,
-									previous,
-									next,
-								},
-							),
+							html: chapter_html(chapter, { chapters, previous, next }),
 						}
 					},
 				)
@@ -196,7 +189,10 @@ section_open = "<h2 id=\""
 
 ## Each section's heading with a link to itself, for a reader to copy.
 with_section_links : Str -> Str
-with_section_links = |html| BookText.rewritten_after(html, { opening: section_open, rewrite: section_with_link })
+with_section_links = |html| BookText.rewritten_after(
+	html,
+	{ opening: section_open, rewrite: section_with_link },
+)
 
 ## One piece after a heading's opening: its id, the heading, and what follows.
 section_with_link : Str -> Str
@@ -363,7 +359,7 @@ page_html :
 	} -> Str
 page_html = |{ title, body_class, nav, main }| {
 	embed =
-		if main.contains(BookFence.widget_frame_class) {
+		if main.contains("class=\"${BookFence.widget_frame_class}\"") {
 			"<script src=\"embed.js\"></script>"
 		} else {
 			""
@@ -452,7 +448,10 @@ expect Book.pages(plain_book, []).map(|page| page.file) == [
 	"appendix-more.html",
 ]
 expect Book.pages(plain_book, []).all(|page| !page.html.contains("embed.js"))
-expect Book.pages(widget_book, []).map(|page| page.html.contains("embed.js")) == [Bool.False, Bool.True]
+expect Book.pages(widget_book, []).map(|page| page.html.contains("embed.js")) == [
+	Bool.False,
+	Bool.True,
+]
 expect Book.pages(
 	plain_book,
 	[{ ..a_part, before: "One" }],
@@ -488,5 +487,11 @@ expect neighbours([one_section], 0) == { previous: Front, next: NoChapter }
 expect
 	neighbours([one_section, other_section, one_section], 1)
 		== { previous: Chapter(one_section), next: Chapter(one_section) }
-expect neighbours([one_section, other_section], 1) == { previous: Chapter(one_section), next: NoChapter }
-expect neighbours([one_section, other_section], 0) == { previous: Front, next: Chapter(other_section) }
+expect neighbours([one_section, other_section], 1) == {
+	previous: Chapter(one_section),
+	next: NoChapter,
+}
+expect neighbours([one_section, other_section], 0) == {
+	previous: Front,
+	next: Chapter(other_section),
+}

@@ -11,8 +11,14 @@ DraftNotes := [].{
 	## `*[...]*` placeholder.
 	highlight : Str -> Str
 	highlight = |html| {
-		placeholders_marked = BookText.rewritten_after(html, { opening: "<p", rewrite: placeholder_marked })
-		notes_closed = BookText.rewritten_after(placeholders_marked, { opening: check_open, rewrite: check_note_end })
+		placeholders_marked = BookText.rewritten_after(
+			html,
+			{ opening: "<p", rewrite: placeholder_marked },
+		)
+		notes_closed = BookText.rewritten_after(
+			placeholders_marked,
+			{ opening: check_open, rewrite: check_note_end },
+		)
 		notes_closed.replace_each(check_open, "<span class=\"draft-note\">${check_open}")
 	}
 }
@@ -25,7 +31,9 @@ check_open = "[check: "
 ## one paragraph.
 placeholder_marked : Str -> Str
 placeholder_marked = |piece| match piece.split_first("]</em></p>") {
-	Ok({ before, .. }) if before.starts_with("><em>[") and !before.contains("</em>") and !before.contains("</p>") => " class=\"draft-note\"${piece}"
+	Ok(
+		{ before, .. },
+	) if before.starts_with("><em>[") and !before.contains("</em>") and !before.contains("</p>") => " class=\"draft-note\"${piece}"
 	Ok({ .. }) => piece
 	Err(NotFound) => piece
 }

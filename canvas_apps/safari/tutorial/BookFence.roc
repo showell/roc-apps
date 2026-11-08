@@ -10,9 +10,9 @@ import Manuscript
 
 BookFence := [].{
 
-	## The attribute on a widget's frame, which is how a page knows it holds one.
+	## The class of a widget's frame, which is how a page knows it holds one.
 	widget_frame_class : Str
-	widget_frame_class = "class=\"canvas-app\""
+	widget_frame_class = "canvas-app"
 
 	## The hook for a manuscript. Roc's hook is pure, so a diagram has to be
 	## drawn before the render and a widget's folder looked for before it. A
@@ -28,7 +28,9 @@ BookFence := [].{
 				}
 				Html(widget_html(manuscript.widget_folders, fence).to_utf8())
 			}
-			"dot" => Html(diagram_html(manuscript.diagrams, BookText.text_from_bytes(args)).to_utf8())
+			"dot" => Html(
+				diagram_html(manuscript.diagrams, BookText.text_from_bytes(args)).to_utf8(),
+			)
 			_ if args.is_empty() => Pass
 			language => {
 				listing = {
@@ -99,9 +101,11 @@ widget_html = |folders, { words, caption }| {
 	}
 	safe_caption = BookText.escaped_text(caption)
 	caption_html = BookText.inline_html(caption)
-	figure =
-		\\<figure class="widget"><iframe ${BookFence.widget_frame_class} src="../${frame.folder}/${address_end}" title="${safe_caption}" loading="${loading_html(frame.loading)}" style="aspect-ratio: ${frame.aspect}"></iframe><figcaption>${caption_html}</figcaption></figure>
-	figure
+	frame_class = BookFence.widget_frame_class
+	loading = loading_html(frame.loading)
+	iframe =
+		\\<iframe class="${frame_class}" src="../${frame.folder}/${address_end}" title="${safe_caption}" loading="${loading}" style="aspect-ratio: ${frame.aspect}"></iframe>
+	"<figure class=\"widget\">${iframe}<figcaption>${caption_html}</figcaption></figure>"
 }
 
 ## The drawing, or a phone's and a desktop's for a wide diagram, over its title.
@@ -109,7 +113,9 @@ widget_html = |folders, { words, caption }| {
 ## stops the build: it could close the page early with a forged page mark.
 diagram_html : List(Manuscript.Diagram), Str -> Str
 diagram_html = |diagrams, id| match diagrams.find_first(|diagram| diagram.id == id) {
-	Ok({ svg, .. }) if svg.contains("<!--") => crash "book: the drawing for the diagram `${id}` holds an HTML comment"
+	Ok(
+		{ svg, .. },
+	) if svg.contains("<!--") => crash "book: the drawing for the diagram `${id}` holds an HTML comment"
 	Ok({ title, svg, .. }) => {
 		named = svg.replace_each(
 			"role=\"img\"",
@@ -138,7 +144,11 @@ expect frame_of("ride").folder == "safari"
 expect frame_of("sky").folder == "sky_widget"
 expect frame_of("frame").folder == "frame_widget"
 expect frame_of("frame").aspect == "960 / 700"
-expect [frame_of("ride"), frame_of("frame"), frame_of("sky")].map(|frame| loading_html(frame.loading)) == ["eager", "lazy", "lazy"]
+expect [
+	frame_of("ride"),
+	frame_of("frame"),
+	frame_of("sky"),
+].map(|frame| loading_html(frame.loading)) == ["eager", "lazy", "lazy"]
 expect widget_html(
 	["sky_widget"],
 	{ words: "sky", caption: "a <b>" },
