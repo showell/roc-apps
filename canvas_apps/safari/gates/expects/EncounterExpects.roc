@@ -666,6 +666,22 @@ brush_stops = {
 	end_offset: 0.75,
 }
 
+# A radial gradient whose axes span Still's least area, in a still drawn at
+# Pipeline's smallest height, is one Brush can just invert, and one a little
+# thinner is not.
+expect {
+	height = Pipeline.smallest_height_on_screen.to_f64()
+	ellipse_spanning = |area|
+		Brush.ellipse({
+			stops: brush_stops,
+			center: { x: 0.0, y: 0.0 },
+			axis_u: { x: area * height, y: 0.0 },
+			axis_v: { x: 0.0, y: height },
+		})
+	least = Still.min_axes_area
+	ellipse_spanning(least).is_ok() and ellipse_spanning(least * 0.99).is_err()
+}
+
 ## Three corners of a still, at the foot and up the still's middle.
 still_corners : List(Still.FramePoint)
 still_corners = [{ x: 0.0, y: 0.0 }, { x: 0.5, y: 0.0 }, { x: 0.0, y: 1.0 }]
