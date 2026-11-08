@@ -1,14 +1,16 @@
 ## The widget for the Safari tutorial's chapter on what never changes: a still
 ## map of the whole route, with no controls. Each stretch is one record of
 ## `World.segment_plans`, and the lines of text read out the record of the stretch in
-## white. The ride has no such map: a segment knows only its length and its
-## turn, so this widget lays the map out itself by adding up the turns.
+## white. The route gives the bearing each segment sets off on
+## (`Route.bearing_of`), and the widget lays the road out along those bearings,
+## with the whole map turned so the road lies along the wide picture.
+import game.Angle
+import game.Route
 import game.World
 import lib.Brush
 import lib.CanvasApp
 import lib.Shapes
 import lib.RgbColor
-import lib.Trig
 import lib.Point
 import widget.PlanView
 import widget.ReadoutText
@@ -30,45 +32,35 @@ MapPoint : { east : F64, north : F64 }
 LaidSegment : { plan : World.SegmentPlan, start : MapPoint, end : MapPoint }
 
 ## Where the road has reached while the map is being laid out.
-Layout : {
-	laid : List(LaidSegment),
-	at : MapPoint,
-	heading : F64,
-}
+Layout : { laid : List(LaidSegment), at : MapPoint }
 
-## The compass bearing the road sets off on. Nothing in the ride says which way
-## is north, so this one is chosen to lay the road along the wide picture.
-start_heading : F64
-start_heading = 150.0 * Trig.degree
+## How far the map is turned from the ride's north, to lay the road along the
+## wide picture.
+map_rotation : Angle.Turn
+map_rotation = Angle.Turn.degrees(150.0)
 
-## `layout` with one more segment on the end.
-laid_onto : Layout, World.SegmentPlan -> Layout
-laid_onto = |{ laid, at, heading }, plan| {
+## The bearing on the map of the segment at `index`: the route's bearing for
+## it, turned with the map.
+map_bearing : Route.SegmentIndex -> Angle.Bearing
+map_bearing = |index| World.route.bearing_of(index).plus(map_rotation)
+
+## `layout` with the segment at `index` on the end.
+laid_onto : Layout, { plan : World.SegmentPlan, index : Route.SegmentIndex } -> Layout
+laid_onto = |{ laid, at }, { plan, index }| {
 	metres = plan.length.to_metres()
-	end = { east: at.east + metres * heading.sin(), north: at.north + metres * heading.cos() }
-	{ laid: laid.append({ plan, start: at, end }), at: end, heading }
-}
-
-## `layout` with one more segment on the end, and the road turned into the next.
-bent_onto : Layout, World.BendingPlan -> Layout
-bent_onto = |layout, { segment_plan, turn, .. }| {
-	laid = laid_onto(layout, segment_plan)
-	{ ..laid, heading: laid.heading + turn.to_radians() }
+	bearing = map_bearing(index).to_radians()
+	end = { east: at.east + metres * bearing.sin(), north: at.north + metres * bearing.cos() }
+	{ laid: laid.append({ plan, start: at, end }), at: end }
 }
 
 segments : List(LaidSegment)
-segments = {
-	bent =
-		World.bending_plans.fold(
-			{
-				laid: [],
-				at: { east: 0.0, north: 0.0 },
-				heading: start_heading,
-			},
-			bent_onto,
+segments =
+	World.segment_plans
+		.fold_with_index(
+			{ laid: [], at: { east: 0.0, north: 0.0 } },
+			|layout, plan, at| laid_onto(layout, { plan, index: Route.SegmentIndex.number(at.to_u32_wrap()) }),
 		)
-	laid_onto(bent, World.last_plan).laid
-}
+		.laid
 
 ## The segment read out under the map, counted from 1. It's the longest on the
 ## route, the first of them if two tie, and the one the book quotes in its
