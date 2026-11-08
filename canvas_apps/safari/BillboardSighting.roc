@@ -3,7 +3,7 @@
 ## its baby at each bend, and the ducks on each pond.
 import Billboard
 import RoadAhead
-import SegmentPlace
+import SegmentFromRider
 import Pipeline
 
 BillboardSighting :: [].{
@@ -73,7 +73,7 @@ bend_sightings = |road, { camera, in_view }| {
 ## Whether a segment at `place` is in reach: among the first `reach` of the
 ## road ahead, or the segment just behind, which meets the rider's own at its
 ## bend.
-is_within_reach : SegmentPlace, U32 -> Bool
+is_within_reach : SegmentFromRider, U32 -> Bool
 is_within_reach = |place, reach|
 	match place {
 		Ahead(position) => position.is_within_first(reach)
@@ -81,8 +81,8 @@ is_within_reach = |place, reach|
 	}
 
 ## The third segment of the road ahead, the rider's own first.
-third_position : SegmentPlace.Position
-third_position = SegmentPlace.Position.first.next().next()
+third_position : SegmentFromRider.Position
+third_position = SegmentFromRider.Position.first.next().next()
 
 expect is_within_reach(Ahead(third_position), 3)
 expect !is_within_reach(Ahead(third_position.next()), 3)

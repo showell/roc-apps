@@ -14,7 +14,7 @@ import game.Pixels
 import game.RoadAhead
 import game.Route
 import game.Segment
-import game.SegmentPlace
+import game.SegmentFromRider
 import game.Trees
 import game.World
 import lib.Shapes
@@ -44,8 +44,8 @@ Fixtures :: [].{
 	road = world_road_at(0)
 
 	## The segment after the rider's own on the road ahead.
-	second_position : SegmentPlace.Position
-	second_position = SegmentPlace.Position.first.next()
+	second_position : SegmentFromRider.Position
+	second_position = SegmentFromRider.Position.first.next()
 
 	## A polygon's coordinates, flat as x0, y0, x1, y1, ...
 	coordinates_of : Shapes.Shape -> List(F64)

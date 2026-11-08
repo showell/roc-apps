@@ -68,7 +68,7 @@ package
 		Scene,
 		Screen,
 		Segment,
-		SegmentPlace,
+		SegmentFromRider,
 		Sky,
 		Skyline,
 		Speed,

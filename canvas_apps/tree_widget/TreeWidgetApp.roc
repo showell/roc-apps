@@ -11,7 +11,7 @@ import game.Distance
 import game.Geom
 import game.Lens
 import game.Pipeline
-import game.SegmentPlace
+import game.SegmentFromRider
 import game.Sky
 import game.TreeShapes
 import game.World
@@ -86,7 +86,7 @@ stand_sighting = |stand| {
 		{
 			road: World.road_at_start,
 			camera: { vantage: eye, focal_length: Lens.resting_focal_length },
-			place: Ahead(SegmentPlace.Position.first),
+			place: Ahead(SegmentFromRider.Position.first),
 		},
 	)
 }

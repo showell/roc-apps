@@ -11,7 +11,7 @@ import Beacon
 import Clock
 import Distance
 import RoadAhead
-import SegmentPlace
+import SegmentFromRider
 import Geom
 import Pipeline
 import Tower
@@ -134,7 +134,7 @@ mid_tower = |road, { camera, in_view, clock }| {
 tower_if_ahead : RoadAhead.RoadView,
 {
 	camera : Pipeline.SightingCamera,
-	place : SegmentPlace,
+	place : SegmentFromRider,
 	road_point : Geom.RoadPoint,
 	tower : Tower,
 } -> Try(Pipeline.Sighted(Tower), [BehindCamera])

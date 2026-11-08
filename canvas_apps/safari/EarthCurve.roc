@@ -8,14 +8,14 @@ import Fraction
 import Geom
 import RiderView
 import RoadAhead
-import SegmentPlace
+import SegmentFromRider
 
 EarthCurve :: [].{
 
 	## A point above the road: the segment it is on, where on the road it
 	## stands, and how high above the road it is.
 	PointOverRoad : {
-		place : SegmentPlace,
+		place : SegmentFromRider,
 		road_point : Geom.RoadPoint,
 		height : Distance,
 	}

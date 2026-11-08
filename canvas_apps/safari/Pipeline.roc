@@ -7,7 +7,7 @@
 ## for. A kind holds how the object looks right now, and the form around it holds
 ## where the object is.
 import RoadAhead
-import SegmentPlace
+import SegmentFromRider
 import Camera
 import Distance
 import Geom
@@ -33,7 +33,7 @@ Pipeline :: [].{
 	{
 		road : RoadAhead.RoadView,
 		camera : Pipeline.SightingCamera,
-		place : SegmentPlace,
+		place : SegmentFromRider,
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera])
 	sighting_of = |placed, { road, camera, place }| {
 		road_point = placed.road_point
@@ -50,7 +50,7 @@ Pipeline :: [].{
 	{
 		road : RoadAhead.RoadView,
 		camera : Pipeline.SightingCamera,
-		place : SegmentPlace,
+		place : SegmentFromRider,
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera, TooSmall])
 		where [kind.scenery_height : kind -> Distance]
 	scenery_sighting_of = |placed, { road, camera, place }| {

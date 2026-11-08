@@ -8,7 +8,7 @@ import Geom
 import RiderView
 import Route
 import Segment
-import SegmentPlace
+import SegmentFromRider
 
 RoadAhead :: [].{
 
@@ -58,11 +58,11 @@ RoadAhead :: [].{
 	SegmentInView : {
 		index : Route.SegmentIndex,
 		segment : Segment,
-		place : SegmentPlace,
+		place : SegmentFromRider,
 	}
 
 	## The segment at `position` on the road ahead.
-	segment_at : RoadAhead.RoadView, SegmentPlace.Position -> Segment
+	segment_at : RoadAhead.RoadView, SegmentFromRider.Position -> Segment
 	segment_at = |road, position| road.route().segment_at(index_at(road, position))
 
 	## The segments in view: those of the road ahead, the rider's own first, then
@@ -70,7 +70,7 @@ RoadAhead :: [].{
 	segments_in_view : RoadAhead.RoadView -> List(RoadAhead.SegmentInView)
 	segments_in_view = |road| {
 		segments_ahead =
-			SegmentPlace.Position.positions_in(road.segments_ahead())
+			SegmentFromRider.Position.positions_in(road.segments_ahead())
 				.map(|position| segment_in_view_at(road, position))
 		match previous_segment_index(road) {
 			Previous(index) => {
@@ -81,11 +81,11 @@ RoadAhead :: [].{
 		}
 	}
 
-	## Where the route's segment at `index` is on the road ahead, unless the
-	## road ahead doesn't hold it.
-	position_of : RoadAhead.RoadView, Route.SegmentIndex -> Try(SegmentPlace.Position, [NotAhead])
+	## Where the route's segment at `index` is on the road ahead, or `NotAhead`
+	## when the road ahead doesn't hold it.
+	position_of : RoadAhead.RoadView, Route.SegmentIndex -> Try(SegmentFromRider.Position, _)
 	position_of = |road, index| {
-		positions = SegmentPlace.Position.positions_in(road.segments_ahead())
+		positions = SegmentFromRider.Position.positions_in(road.segments_ahead())
 		match positions.find_first(|position| index_at(road, position) == index) {
 			Ok(position) => Ok(position)
 			Err(NotFound) => Err(NotAhead)
@@ -93,7 +93,7 @@ RoadAhead :: [].{
 	}
 
 	## The segment at `position` on the road ahead, as a segment in view.
-	segment_in_view_at : RoadAhead.RoadView, SegmentPlace.Position -> RoadAhead.SegmentInView
+	segment_in_view_at : RoadAhead.RoadView, SegmentFromRider.Position -> RoadAhead.SegmentInView
 	segment_in_view_at = |road, position| {
 		index = index_at(road, position)
 		{
@@ -108,7 +108,7 @@ RoadAhead :: [].{
 	rider_point_at : RoadAhead.RoadView,
 	{
 		vantage : Geom.Vantage,
-		place : SegmentPlace,
+		place : SegmentFromRider,
 		road_point : Geom.RoadPoint,
 	} -> RiderView.RiderPoint
 	rider_point_at = |road, { vantage, place, road_point }|
@@ -161,7 +161,7 @@ previous_segment_index = |road| rider_segment_index(road).previous()
 rider_point_ahead : RoadAhead.RoadView,
 {
 	vantage : Geom.Vantage,
-	position : SegmentPlace.Position,
+	position : SegmentFromRider.Position,
 	road_point : Geom.RoadPoint,
 } -> RiderView.RiderPoint
 rider_point_ahead = |road, { vantage, position, road_point }| {
@@ -190,7 +190,7 @@ to_rider_point = |{ along, across }, vantage| {
 }
 
 ## The route's index of the segment at `position` on the road ahead.
-index_at : RoadAhead.RoadView, SegmentPlace.Position -> Route.SegmentIndex
+index_at : RoadAhead.RoadView, SegmentFromRider.Position -> Route.SegmentIndex
 index_at = |road, position| {
 	segments_ahead = road.segments_ahead()
 	if position.is_within_first(segments_ahead.count) {

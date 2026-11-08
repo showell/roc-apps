@@ -42,9 +42,7 @@ RoutePlace := {
 	at_distance = |route, distance|
 		match route.segments_with_ends().find_first_index(|stretch| distance <= stretch.end) {
 			Ok(count_before) => {
-				index = Route.SegmentIndex.number(
-					count_before.to_u32_try() ?? crash "RoutePlace.at_distance: a route holds fewer than 2^32 segments",
-				)
+				index = Route.SegmentIndex.from_count_before(count_before)
 				start = route.distance_along_route({ index, along: Along.start })
 				Ok({
 					segment_index: index,

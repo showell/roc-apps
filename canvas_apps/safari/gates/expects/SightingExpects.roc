@@ -24,7 +24,7 @@ import game.RoadAhead
 import game.Route
 import game.Screen
 import game.Segment
-import game.SegmentPlace
+import game.SegmentFromRider
 import game.Speed
 import game.Tower
 import game.TowerSighting
@@ -104,7 +104,7 @@ rail_ends = {
 
 ## The point on the left edge `along` metres into the segment at `place` on the
 ## right-angle road, as the rider sees it.
-left_edge_point : SegmentPlace, F64 -> RiderView.RiderPoint
+left_edge_point : SegmentFromRider, F64 -> RiderView.RiderPoint
 left_edge_point = |place, along|
 	RoadAhead.rider_point_at(
 		right_angle_road,
@@ -116,7 +116,7 @@ left_edge_point = |place, along|
 	)
 
 expect {
-	start = left_edge_point(Ahead(SegmentPlace.Position.first), 290.0)
+	start = left_edge_point(Ahead(SegmentFromRider.Position.first), 290.0)
 	end = left_edge_point(Ahead(Fixtures.second_position), 10.0)
 	[
 		(rail_ends.start.right, start.right),
@@ -277,7 +277,7 @@ shapes_of_tower_100_ahead = {
 			{
 				road: tower_road,
 				camera: Fixtures.origin_camera,
-				place: Ahead(SegmentPlace.Position.first),
+				place: Ahead(SegmentFromRider.Position.first),
 			},
 		)
 			?? crash "SightingExpects: a tower 100 m ahead is past the near plane"
@@ -360,7 +360,7 @@ expect {
 	]
 	towers.map(|tower| tower.spot.place())
 		== [
-			Ahead(SegmentPlace.Position.first),
+			Ahead(SegmentFromRider.Position.first),
 			Ahead(Fixtures.second_position),
 			Ahead(Fixtures.second_position),
 		]
@@ -372,7 +372,11 @@ expect {
 # a rider far past every tower sees none.
 expect
 	towers_on_short_then_long(1, Clock.start).map(|tower| tower.spot.place())
-		== [Ahead(SegmentPlace.Position.first), Ahead(SegmentPlace.Position.first), JustBehind]
+		== [
+			Ahead(SegmentFromRider.Position.first),
+			Ahead(SegmentFromRider.Position.first),
+			JustBehind,
+		]
 expect
 	TowerSighting.towers_in_view(
 		Fixtures.crafted_road([Fixtures.segment_of([])]),
@@ -543,8 +547,8 @@ expect
 # start.
 expect
 	[
-		(100.0, SegmentPlace.Position.first),
-		(499.0, SegmentPlace.Position.first),
+		(100.0, SegmentFromRider.Position.first),
+		(499.0, SegmentFromRider.Position.first),
 		(600.0, Fixtures.second_position),
 		(900.0, Fixtures.second_position.next()),
 	].all(|(lead, want)| sighted_truck_of(lead).spot.place() == Ahead(want))

@@ -17,7 +17,7 @@ import game.Polygon
 import game.RoadAhead
 import game.Route
 import game.RoutePlace
-import game.SegmentPlace
+import game.SegmentFromRider
 import game.World
 import lib.RgbColor
 import lib.Shapes
@@ -32,8 +32,8 @@ expect {
 	length_of = |number| World.route.segment_at(Route.SegmentIndex.number(number)).length
 	length_of(2) != length_of(0)
 		and length_of(3) != length_of(1)
-		and length_at(SegmentPlace.Position.first) == length_of(2)
-		and length_at(SegmentPlace.Position.first.next()) == length_of(3)
+		and length_at(SegmentFromRider.Position.first) == length_of(2)
+		and length_at(SegmentFromRider.Position.first.next()) == length_of(3)
 }
 
 # The road ahead holds as many segments as the rider can see, seven, or the rest
@@ -89,7 +89,7 @@ expect {
 	position_on_road = |number| RoadAhead.position_of(road_view, Route.SegmentIndex.number(number))
 	[
 		(1, Err(NotAhead)),
-		(2, Ok(SegmentPlace.Position.first)),
+		(2, Ok(SegmentFromRider.Position.first)),
 		(3, Ok(Fixtures.second_position)),
 		(9, Err(NotAhead)),
 	].all(|(number, want)| position_on_road(number) == want)
@@ -106,7 +106,7 @@ turned_vantage = {
 
 ## The point 50 m along and 1 m right on the segment at `place` on `road_view`,
 ## as `turned_vantage` sees it.
-turned_point_at : RoadAhead.RoadView, SegmentPlace -> RiderView.RiderPoint
+turned_point_at : RoadAhead.RoadView, SegmentFromRider -> RiderView.RiderPoint
 turned_point_at = |road_view, place|
 	RoadAhead.rider_point_at(
 		road_view,
@@ -118,7 +118,7 @@ turned_point_at = |road_view, place|
 	)
 
 expect {
-	at_d0 = turned_point_at(Fixtures.road, Ahead(SegmentPlace.Position.first))
+	at_d0 = turned_point_at(Fixtures.road, Ahead(SegmentFromRider.Position.first))
 	second_segment_point = turned_point_at(Fixtures.road, Ahead(Fixtures.second_position))
 	[
 		(at_d0.right.to_metres(), 9.933466539753061),
@@ -229,7 +229,7 @@ expect {
 					across: Across.metres(0.5),
 					yaw: Angle.Turn.radians(yaw),
 				},
-				place: Ahead(SegmentPlace.Position.first),
+				place: Ahead(SegmentFromRider.Position.first),
 				road_point,
 			},
 		)
