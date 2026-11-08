@@ -61,10 +61,6 @@ RoadAhead :: [].{
 		place : SegmentPlace,
 	}
 
-	## The index of the segment the rider is on, which is the road ahead's first.
-	rider_segment_index : RoadAhead.RoadView -> Route.SegmentIndex
-	rider_segment_index = |road| road.segments_ahead().first_index
-
 	## The segment at `position` on the road ahead.
 	segment_at : RoadAhead.RoadView, SegmentPlace.Position -> Segment
 	segment_at = |road, position| road.route().segment_at(index_at(road, position))
@@ -141,9 +137,13 @@ bends_ahead = |RoadAhead.RoadView.(road)| road.bends_ahead
 bend_behind : RoadAhead.RoadView -> [Behind(Geom.WorkedBend), AtRouteStart]
 bend_behind = |RoadAhead.RoadView.(road)| road.bend_behind
 
+## The index of the segment the rider is on, which is the road ahead's first.
+rider_segment_index : RoadAhead.RoadView -> Route.SegmentIndex
+rider_segment_index = |road| road.segments_ahead().first_index
+
 ## The segment behind the rider's, unless the rider's is the route's first.
 previous_segment_index : RoadAhead.RoadView -> [Previous(Route.SegmentIndex), AtRouteStart]
-previous_segment_index = |road| RoadAhead.rider_segment_index(road).previous()
+previous_segment_index = |road| rider_segment_index(road).previous()
 
 ## A point on the segment at `position` on the road ahead, as the camera at
 ## `vantage` on the rider's segment sees it.

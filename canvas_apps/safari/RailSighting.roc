@@ -143,14 +143,7 @@ rail_points = |road, { vantage, bend_in_view }| {
 	outer_edge = bend_in_view.outer_edge()
 	place_after = Ahead(BendInView.position_after(bend_in_view))
 	length_before = bend_in_view.length_before()
-	corner = bend_in_view.outer_corner()
-	rider_point_before = |road_point| RoadAhead.rider_point_at(
-		road,
-		{ vantage, place: bend_in_view.place_before(), road_point },
-	)
-	end_before = rider_point_before(corner.end_before)
-	apex = rider_point_before(corner.apex)
-	start_after = rider_point_before(corner.start_after)
+	{ end_before, apex, start_after } = bend_in_view.outer_corner_in_view({ road, vantage })
 	[
 		runup_points(
 			road,
@@ -181,15 +174,15 @@ expect
 		(50.0, 50),
 	].all(|(distance, want)| leg_pieces(Distance.metres(distance)).to_i64() == want)
 
-origin_pt : RiderView.RiderPoint
-origin_pt = { right: Distance.metres(0.0), forward: Distance.metres(0.0) }
+origin_point : RiderView.RiderPoint
+origin_point = { right: Distance.metres(0.0), forward: Distance.metres(0.0) }
 
 point_at : List(RiderView.RiderPoint), U64 -> RiderView.RiderPoint
 point_at = |points, i| points.get(i) ?? crash "RailSighting: an index past the leg's end"
 
 straight_points : List(RiderView.RiderPoint)
 straight_points = leg_points({
-	from: origin_pt,
+	from: origin_point,
 	to: { right: Distance.metres(0.0), forward: Distance.metres(10.0) },
 })
 
@@ -202,7 +195,7 @@ expect point_at(straight_points, 9).right.to_metres() == 0.0
 
 diagonal_points : List(RiderView.RiderPoint)
 diagonal_points = leg_points({
-	from: origin_pt,
+	from: origin_point,
 	to: { right: Distance.metres(30.0), forward: Distance.metres(40.0) },
 })
 
@@ -224,7 +217,7 @@ expect {
 
 expect {
 	spaced = evenly_spaced({
-		from: origin_pt,
+		from: origin_point,
 		to: { right: Distance.metres(0.0), forward: Distance.metres(10.0) },
 		pieces: 10,
 	})

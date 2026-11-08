@@ -59,29 +59,29 @@ quad_shape = |quad, focal_length|
 		Polygon.clipped_polygon({ color: quad.color, corners }, focal_length)
 	}
 
-rail_height : Distance
-rail_height = Distance.metres(0.5)
+bar_middle_height : Distance
+bar_middle_height = Distance.metres(0.5)
 
-rail_thickness : Distance
-rail_thickness = Distance.metres(0.1)
+bar_thickness : Distance
+bar_thickness = Distance.metres(0.1)
 
-rail_post_width : Distance
-rail_post_width = Distance.metres(0.02)
+post_width : Distance
+post_width = Distance.metres(0.02)
 
-rail_metal : RgbColor
-rail_metal = RgbColor.of(0xC2C7CF)
+bar_color : RgbColor
+bar_color = RgbColor.of(0xC2C7CF)
 
-rail_post_metal : RgbColor
-rail_post_metal = RgbColor.of(0x9AA0A8)
+post_color : RgbColor
+post_color = RgbColor.of(0x9AA0A8)
 
 bar_top : Distance
-bar_top = rail_height.plus(rail_thickness.divided_by(2.0))
+bar_top = bar_middle_height.plus(bar_thickness.divided_by(2.0))
 
 bar_bottom : Distance
-bar_bottom = rail_height.minus(rail_thickness.divided_by(2.0))
+bar_bottom = bar_middle_height.minus(bar_thickness.divided_by(2.0))
 
 post_half_width : Distance
-post_half_width = rail_post_width.divided_by(2.0)
+post_half_width = post_width.divided_by(2.0)
 
 ## A stretch of bar between each two neighbouring points of `path_points`.
 bars : List(RiderView.RiderPoint) -> List(GuardRail.RailQuad)
@@ -114,7 +114,7 @@ bar = |{ from, to }| {
 		high_end: raised_point(to, bar_top),
 		high_start: raised_point(from, bar_top),
 	},
-	color: rail_metal,
+	color: bar_color,
 }
 
 ## The post at `at`, half its width to each side of it along the path from
@@ -145,7 +145,7 @@ post = |at, { previous, next }| {
 			high_end: raised_point(front, bar_top),
 			high_start: raised_point(back, bar_top),
 		},
-		color: rail_post_metal,
+		color: post_color,
 	}
 }
 

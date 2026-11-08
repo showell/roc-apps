@@ -7,6 +7,7 @@ import Along
 import Angle
 import Distance
 import RoadAhead
+import RiderView
 import SegmentPlace
 import Geom
 
@@ -88,6 +89,27 @@ BendInView :: { before : SegmentPlace, bend : Geom.Bend }.{
 			end_before: { along: Along.at(bend.segment_length), across },
 			apex: { along: start_after.along.plus(Distance.metres(run_to_edge)), across },
 			start_after,
+		}
+	}
+
+	## The outer corner of a bend, as the camera at `vantage` on the rider's
+	## segment of `road` sees it.
+	outer_corner_in_view : BendInView,
+	{ road : RoadAhead.RoadView, vantage : Geom.Vantage } -> {
+		end_before : RiderView.RiderPoint,
+		apex : RiderView.RiderPoint,
+		start_after : RiderView.RiderPoint,
+	}
+	outer_corner_in_view = |bend_in_view, { road, vantage }| {
+		corner = bend_in_view.outer_corner()
+		rider_point_before = |road_point| RoadAhead.rider_point_at(
+			road,
+			{ vantage, place: bend_in_view.place_before(), road_point },
+		)
+		{
+			end_before: rider_point_before(corner.end_before),
+			apex: rider_point_before(corner.apex),
+			start_after: rider_point_before(corner.start_after),
 		}
 	}
 }
