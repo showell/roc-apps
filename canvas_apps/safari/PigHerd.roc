@@ -94,9 +94,15 @@ PigHerd := [BigHerd(PigHerd.BigPigHerd), TwoRows(PigHerd.TwoRowPigHerd)].{
 	is_eq : _
 }
 
+## How far from the middle of the road the row of pigs nearest it stands, 10
+## metres off the road's edge. A cow herd's front row stands as far today, but
+## each herd sets its own.
+front_row_distance : Distance
+front_row_distance = Geom.road_half_width.plus(Distance.metres(10.0))
+
 ## Where the row of pigs nearest the road stands across it.
 front_row_across : Across
-front_row_across = Across.right_of_middle(Geom.herd_front_distance)
+front_row_across = Across.right_of_middle(front_row_distance)
 
 pig : { along : Along, across : Across } -> Geom.Placed(Billboard)
 pig = |{ along, across }| {

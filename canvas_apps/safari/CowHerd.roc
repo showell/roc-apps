@@ -80,6 +80,12 @@ herd_bull = |herd_along| {
 	}
 }
 
+## How far from the middle of the road the herd's front row stands, 10 metres
+## off the road's edge. A pig herd's front row stands as far today, but each
+## herd sets its own.
+front_row_distance : Distance
+front_row_distance = Geom.road_half_width.plus(Distance.metres(10.0))
+
 ## Every fourth cow, from the second, is a calf.
 is_calf : U64 -> Bool
 is_calf = |cow_number| cow_number.rem_by(4) == 1
@@ -94,7 +100,7 @@ herd_cow = |herd, { herd_along, cow_number }| {
 	herd_front = herd_along.plus(herd.gap_behind_bull)
 	column_place = herd_front.plus(herd.column_spacing.times(column))
 	in_line = column_place.plus(herd.row_stagger.times(row - 1.0))
-	row_place = Geom.herd_front_distance.plus(herd.row_depth.times(row))
+	row_place = front_row_distance.plus(herd.row_depth.times(row))
 	stray = Scatter.offset(
 		cow_number,
 		{
