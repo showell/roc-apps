@@ -38,6 +38,10 @@ VcrButtons :: [].{
 	## The whole state of the buttons: the number, and which way it's running.
 	Transport(number) : { at : number, motion : VcrButtons.Motion }
 
+	## A button that isn't running the number.
+	unlit_button_color : RgbColor
+	unlit_button_color = RgbColor.of(0x303030)
+
 	## A range over the ride's clock, where one step is one step of the ride.
 	clock_range : {
 		first_step : U32,
@@ -321,7 +325,7 @@ button_shapes = |button, motion| {
 		if lit {
 			PlanView.accent_color
 		} else {
-			RgbColor.of(0x303030)
+			VcrButtons.unlit_button_color
 		}
 	[
 		Rect({

@@ -1,9 +1,11 @@
-## The words a widget's readout gives a number: any number to a tenth, a fraction
+## The words a widget's readout gives a number: any number to a tenth, to a
+## hundredth or to a whole one, a fraction
 ## as a percentage, a count with commas, a turn in degrees, and where an
-## animation has got to.
+## animation has got to, and the cat's pose.
 import game.Angle
 import game.Animation
 import game.Fraction
+import game.PosedCat
 
 ReadoutText :: [].{
 
@@ -21,6 +23,37 @@ ReadoutText :: [].{
 	tenths_text = |number| {
 		tenths = (number.abs() * 10.0 + 0.5).to_u64_wrap()
 		digits = "${(tenths // 10).to_str()}.${(tenths % 10).to_str()}"
+		if number < 0.0 {
+			"-${digits}"
+		} else {
+			digits
+		}
+	}
+
+	## A number to two decimal places, with a minus sign when it's negative.
+	hundredths_text : F64 -> Str
+	hundredths_text = |number| {
+		hundredths = (number.abs() * 100.0 + 0.5).to_u64_wrap()
+		whole = (hundredths // 100).to_str()
+		part = hundredths % 100
+		digits =
+			if part < 10 {
+				"${whole}.0${part.to_str()}"
+			} else {
+				"${whole}.${part.to_str()}"
+			}
+		if number < 0.0 {
+			"-${digits}"
+		} else {
+			digits
+		}
+	}
+
+	## A number rounded to the nearest whole one, a half rounding away from zero,
+	## with a minus sign when it's negative.
+	whole_text : F64 -> Str
+	whole_text = |number| {
+		digits = (number.abs() + 0.5).to_u64_wrap().to_str()
 		if number < 0.0 {
 			"-${digits}"
 		} else {
@@ -59,6 +92,19 @@ ReadoutText :: [].{
 		}
 		"${(degrees + 0.5).to_i64_wrap().to_str()} deg ${side}"
 	}
+
+	## The cat's pose, by its name.
+	cat_pose_text : PosedCat.CatPose -> Str
+	cat_pose_text = |pose|
+		match pose {
+			Rest => "Rest"
+			Stride => "Stride"
+			Frozen => "Frozen"
+			Coil => "Coil"
+			Flight => "Flight"
+			Land => "Land"
+			Collapse => "Collapse"
+		}
 }
 
 expect ReadoutText.tenths_text(0.0) == "0.0"
@@ -71,6 +117,29 @@ expect ReadoutText.tenths_text(9.96) == "10.0"
 expect ReadoutText.tenths_text(-0.04) == "-0.0"
 expect ReadoutText.tenths_text(-0.06) == "-0.1"
 expect ReadoutText.tenths_text(-1.5) == "-1.5"
+
+expect ReadoutText.hundredths_text(0.0) == "0.00"
+expect ReadoutText.hundredths_text(0.004) == "0.00"
+expect ReadoutText.hundredths_text(0.006) == "0.01"
+expect ReadoutText.hundredths_text(0.5) == "0.50"
+expect ReadoutText.hundredths_text(12.05) == "12.05"
+expect ReadoutText.hundredths_text(9.996) == "10.00"
+
+# A negative rounds as its size does, with the sign in front.
+expect ReadoutText.hundredths_text(-0.004) == "-0.00"
+expect ReadoutText.hundredths_text(-0.006) == "-0.01"
+expect ReadoutText.hundredths_text(-12.5) == "-12.50"
+
+expect ReadoutText.whole_text(0.0) == "0"
+expect ReadoutText.whole_text(2.4) == "2"
+expect ReadoutText.whole_text(2.5) == "3"
+expect ReadoutText.whole_text(2.6) == "3"
+expect ReadoutText.whole_text(120.0) == "120"
+
+# A negative rounds as its size does, with the sign in front.
+expect ReadoutText.whole_text(-0.4) == "-0"
+expect ReadoutText.whole_text(-2.5) == "-3"
+expect ReadoutText.whole_text(-2.4) == "-2"
 
 expect ReadoutText.percent_text(Fraction.zero) == "0%"
 expect ReadoutText.percent_text(Fraction.of(0.529)) == "52%"

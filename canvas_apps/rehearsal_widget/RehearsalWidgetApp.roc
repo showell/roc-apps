@@ -21,6 +21,7 @@ import lib.Point
 import widget.Click
 import widget.PlanView
 import widget.ReadoutText
+import widget.VcrButtons
 import widget.WidgetPage
 
 RehearsalWidgetApp :: [].{
@@ -131,7 +132,11 @@ previous_stop = |stop|
 stepped : Stop, Input.Snapshot -> Stop
 stepped = |stop, input|
 	match Click.click_point(input) {
-		Ok(spot) => mark_under(spot) ?? stop
+		Ok(spot) =>
+			match mark_under(spot) {
+				Ok(mark) => mark
+				Err(NoMark) => stop
+			}
 		Err(NoClick) =>
 			if input.key_pressed(KeyRight) {
 				next_stop(stop)
@@ -216,7 +221,7 @@ drawn_points = |path_points| {
 	spaced = numbered.keep_if(|{ index, .. }| index % steps_a_line == 0).map(|{ point, .. }| point)
 	match path_points.last() {
 		Ok(end) => spaced.append(end)
-		Err(_) => spaced
+		Err(ListWasEmpty) => spaced
 	}
 }
 
@@ -233,8 +238,8 @@ arc_shapes = |path_points, { color, width }| {
 }
 
 ## The colour that says where an arc ended.
-color_of : Coast.Outcome -> RgbColor
-color_of = |outcome|
+outcome_color : Coast.Outcome -> RgbColor
+outcome_color = |outcome|
 	match outcome {
 		Leaves({ side: Left, .. }) => off_left_color
 		Leaves({ side: Right, .. }) => off_right_color
@@ -244,7 +249,7 @@ color_of = |outcome|
 ## The arcs for a list of tries.
 tries_shapes : List(Rehearsal), F64 -> List(Shapes.Shape)
 tries_shapes = |tries, width|
-	tries.join_map(|{ path_points, lean_try }| arc_shapes(path_points, { color: color_of(lean_try.outcome), width }))
+	tries.join_map(|{ path_points, lean_try }| arc_shapes(path_points, { color: outcome_color(lean_try.outcome), width }))
 
 rider_mark : Shapes.Shape
 rider_mark = {
@@ -259,7 +264,13 @@ rider_mark = {
 
 ## A line of words on the grass along the picture's bottom edge.
 caption_shapes : List(Shapes.Shape)
-caption_shapes = [WidgetPage.label({ text: "from above, stretched x2 across the road", x: 10.0, y: 213.0 })]
+caption_shapes = [
+	WidgetPage.label({
+		text: "from above, stretched x${ReadoutText.whole_text(across_stretch)} across the road",
+		x: 10.0,
+		y: 213.0,
+	}),
+]
 
 ## The road and the arcs so far. The newest try is drawn bold, and once the
 ## tries are over the arc that was chosen is.
@@ -285,27 +296,14 @@ arcs_shown = |stop|
 		Choice => tries_shapes(rehearsals, 1.0).concat(arc_shapes(chosen_points, { color: kept_color, width: 4.0 }))
 	}
 
-## A number of at least zero, to two decimal places.
-hundredths_text : F64 -> Str
-hundredths_text = |number| {
-	hundredths = (number * 100.0 + 0.5).to_i64_wrap()
-	whole = (hundredths // 100).to_str()
-	part = hundredths % 100
-	if part < 10 {
-		"${whole}.0${part.to_str()}"
-	} else {
-		"${whole}.${part.to_str()}"
-	}
-}
-
 ## A lean in degrees, and which way.
 lean_text : Angle.Lean -> Str
 lean_text = |lean| {
 	degrees = lean.to_degrees()
 	if degrees < 0.0 {
-		"${hundredths_text(0.0 - degrees)} left"
+		"${ReadoutText.hundredths_text(degrees.abs())} left"
 	} else {
-		"${hundredths_text(degrees)} right"
+		"${ReadoutText.hundredths_text(degrees)} right"
 	}
 }
 
@@ -363,7 +361,7 @@ status_lines = |stop|
 						outcome_text(rehearsal),
 						verdict_text(lean_correction_of(rehearsal)),
 					]
-				Err(_) => crash "RehearsalWidgetApp.status_lines: this try is in the list"
+				Err(OutOfBounds) => crash "RehearsalWidgetApp.status_lines: this try is in the list"
 			}
 		Choice =>
 			[
@@ -412,7 +410,7 @@ mark_color = |{ mark, current }|
 	if mark == current {
 		current_color
 	} else if stop_number(mark) < stop_number(current) {
-		RgbColor.of(0x303030)
+		VcrButtons.unlit_button_color
 	} else {
 		RgbColor.of(0xb8b8b8)
 	}
@@ -480,7 +478,7 @@ round_count : U64
 round_count = LeanSearch.lean_search_round_count.to_u64()
 
 # Every arc of this step stays on the road, and the search goes both ways.
-expect rehearsals.all(|{ lean_try, .. }| color_of(lean_try.outcome) == kept_color)
+expect rehearsals.all(|{ lean_try, .. }| outcome_color(lean_try.outcome) == kept_color)
 expect rehearsals.any(|rehearsal| lean_correction_of(rehearsal) == MoreRight)
 expect rehearsals.any(|rehearsal| lean_correction_of(rehearsal) == MoreLeft)
 

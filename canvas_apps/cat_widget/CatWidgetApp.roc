@@ -84,7 +84,7 @@ feet_y = 190.0
 ## The sky, the grass, and the road between the verges.
 road_shapes : List(Shapes.Shape)
 road_shapes = {
-	road_width_px = Geom.road_half_width.to_metres() * 2.0 * pixels_a_metre
+	road_width = Geom.road_half_width.to_metres() * 2.0 * pixels_a_metre
 	ground_height = ground_bottom_y - ground_top_y
 	[
 		Rect({
@@ -92,7 +92,7 @@ road_shapes = {
 			y: 0.0,
 			width: WidgetPage.canvas_width,
 			height: WidgetPage.picture_bottom_y,
-			fill: Brush.flat(RgbColor.of(0xdcecf5)),
+			fill: Brush.flat(WidgetPage.panel_color),
 		}),
 		Rect({
 			x: 0.0,
@@ -102,11 +102,11 @@ road_shapes = {
 			fill: Brush.flat(RgbColor.of(0x7fa650)),
 		}),
 		Rect({
-			x: road_middle_x - road_width_px / 2.0,
+			x: road_middle_x - road_width / 2.0,
 			y: ground_top_y,
-			width: road_width_px,
+			width: road_width,
 			height: ground_height,
-			fill: Brush.flat(RgbColor.of(0x8a8a8a)),
+			fill: Brush.flat(WidgetPage.side_road_color),
 		}),
 	]
 }
@@ -145,23 +145,11 @@ status_lines = |{ gap, timing }| {
 	throttle = EncounterReaction.encounter_throttle(World.first_cat_segment, timing)
 	[
 		ReadoutText.stage_text(stage),
-		"Pose: ${pose_name(instant.pose)}",
+		"Pose: ${ReadoutText.cat_pose_text(instant.pose)}",
 		"Gap: ${ReadoutText.tenths_text(gap.to_metres())} m",
 		throttle_text(throttle),
 	]
 }
-
-pose_name : PosedCat.CatPose -> Str
-pose_name = |pose|
-	match pose {
-		Rest => "Rest"
-		Stride => "Stride"
-		Frozen => "Frozen"
-		Coil => "Coil"
-		Flight => "Flight"
-		Land => "Land"
-		Collapse => "Collapse"
-	}
 
 ## What the crossing asks of the throttle, in words. A crossing only ever holds
 ## the acceleration at none.

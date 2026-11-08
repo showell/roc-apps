@@ -15,7 +15,6 @@ import game.RoadAhead
 import game.Route
 import game.SegmentPlace
 import game.Sky
-import game.Steps
 import game.Tower
 import game.World
 import lib.CanvasApp
@@ -126,15 +125,11 @@ status_lines = |clock| {
 	second_tower = ReadoutText.percent_text(second_beacon.lit_at(clock).brightness())
 	[
 		"Clock: step ${clock.to_str()}",
-		"Blink: ${step_count_text(into_blink)} of ${step_count_text(period)} steps",
+		"Blink: ${ReadoutText.whole_text(into_blink.to_f64())} of ${ReadoutText.whole_text(period.to_f64())} steps",
 		"First tower: ${first_tower}",
 		"Second tower: ${second_tower}",
 	]
 }
-
-## A whole number of steps, as a number.
-step_count_text : Steps -> Str
-step_count_text = |steps| steps.to_f64().to_i64_wrap().to_str()
 
 expect
 	status_lines(Clock.at_step(5400))

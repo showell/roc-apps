@@ -50,6 +50,11 @@ WidgetPage :: [].{
 	panel_color : RgbColor
 	panel_color = RgbColor.of(0xDCECF5)
 
+	## The road in a picture seen level with it, rather than from above as
+	## PlanView's are.
+	side_road_color : RgbColor
+	side_road_color = RgbColor.of(0x8a8a8a)
+
 	## How often a widget whose picture moves is painted: as often as a page
 	## paints.
 	moving_frames_a_second : U32

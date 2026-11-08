@@ -109,9 +109,6 @@ shapes_at = |model|
 		},
 	)
 
-road_color : RgbColor
-road_color = PlanView.road_color
-
 rider_color : RgbColor
 rider_color = PlanView.standout_color
 
@@ -144,7 +141,7 @@ bar_shapes =
 			y: route_y - 4.0,
 			width: route_width,
 			height: 8.0,
-			fill: Brush.flat(road_color),
+			fill: Brush.flat(PlanView.road_color),
 		}),
 	].concat(
 		World.route.segments_with_ends().map(
@@ -154,7 +151,7 @@ bar_shapes =
 					y: route_y - 8.0,
 					width: 2.0,
 					height: 16.0,
-					fill: Brush.flat(road_color),
+					fill: Brush.flat(PlanView.road_color),
 				}),
 		),
 	)
@@ -201,7 +198,7 @@ lean_shown_at = 3.0
 ## The road from behind, with the rider at `across`, leaning by `lean`.
 shapes_from_behind_rider : { across : Across, lean : Angle.Lean } -> List(Shapes.Shape)
 shapes_from_behind_rider = |{ across, lean }| {
-	road = Geom.road_half_width.to_metres() * pixels_a_metre
+	road_half_width_on_canvas = Geom.road_half_width.to_metres() * pixels_a_metre
 	middle = WidgetPage.canvas_width / 2.0
 	foot = middle + across.to_metres() * pixels_a_metre
 	lean_shown = lean.to_radians() * lean_shown_at
@@ -210,18 +207,18 @@ shapes_from_behind_rider = |{ across, lean }| {
 	[
 		[
 			WidgetPage.label({
-				text: "from behind, lean x3",
+				text: "from behind, lean x${ReadoutText.whole_text(lean_shown_at)}",
 				x: 20.0,
 				y: surface_y - 12.0,
 			}),
 		],
 		[
 			Rect({
-				x: middle - road,
+				x: middle - road_half_width_on_canvas,
 				y: surface_y,
-				width: 2.0 * road,
+				width: 2.0 * road_half_width_on_canvas,
 				height: 8.0,
-				fill: Brush.flat(road_color),
+				fill: Brush.flat(PlanView.road_color),
 			}),
 			Shapes.line(
 				{
@@ -319,23 +316,23 @@ left_alone = |model, frames| {
 	$model
 }
 
-clock_of : StepWidgetApp.Model -> F64
-clock_of = |model| model.tour.instant().clock.steps_since(Clock.start).to_f64()
+steps_in : StepWidgetApp.Model -> F64
+steps_in = |model| model.tour.instant().clock.steps_since(Clock.start).to_f64()
 
 # Going forward, a frame plays a few steps and no more than it takes.
-expect clock_of(moved(heading_for_step(100))) == steps_a_frame.to_f64()
-expect clock_of(moved(heading_for_step(3))) == 3.0
-expect clock_of(left_alone(heading_for_step(20), 10)) == 20.0
+expect steps_in(moved(heading_for_step(100))) == steps_a_frame.to_f64()
+expect steps_in(moved(heading_for_step(3))) == 3.0
+expect steps_in(left_alone(heading_for_step(20), 10)) == 20.0
 
 # A model at the step it's heading for doesn't move.
-expect clock_of(moved(heading_for_step(0))) == 0.0
+expect steps_in(moved(heading_for_step(0))) == 0.0
 expect moved(heading_for_step(0)).last_move == NotYet
 
 # Going back, one frame covers far more than a frame of playing does.
 expect {
 	played = left_alone(heading_for_step(300), 40)
 	back = moved(heading_on_to(played, 100))
-	clock_of(played) == 300.0 and clock_of(back) == 100.0 and back.last_move == ReadBack
+	steps_in(played) == 300.0 and steps_in(back) == 100.0 and back.last_move == ReadBack
 }
 
 # Going back lands on the very instant the ride passed through.
@@ -350,37 +347,37 @@ expect {
 }
 
 # Play keeps pace with the ride, and pausing leaves the ride where it is.
-expect clock_of(pressed_on(heading_for_step(0), Play)) == steps_a_frame.to_f64()
+expect steps_in(pressed_on(heading_for_step(0), Play)) == steps_a_frame.to_f64()
 expect {
 	playing = pressed_on(heading_for_step(0), Play)
 	on = moved(aimed(playing, Input.none))
 	paused = pressed_on(on, Play)
-	clock_of(on) == 2.0 * steps_a_frame.to_f64()
-		and clock_of(paused) == clock_of(on)
+	steps_in(on) == 2.0 * steps_a_frame.to_f64()
+		and steps_in(paused) == steps_in(on)
 		and paused.transport.motion == Stopped
 }
 
 # A step moves the ride exactly one, either way.
-expect clock_of(pressed_on(heading_for_step(0), StepForward)) == 1.0
+expect steps_in(pressed_on(heading_for_step(0), StepForward)) == 1.0
 expect {
 	played = left_alone(heading_for_step(40), 5)
 	stepped = pressed_on(played, StepBack)
-	clock_of(stepped) == 39.0 and stepped.last_move == ReadBack
+	steps_in(stepped) == 39.0 and stepped.last_move == ReadBack
 }
 
 # To the end has to play there, and to the start reads back almost at once.
-expect clock_of(pressed_on(heading_for_step(0), ToEnd)) == steps_a_frame.to_f64()
+expect steps_in(pressed_on(heading_for_step(0), ToEnd)) == steps_a_frame.to_f64()
 expect pressed_on(heading_for_step(0), ToEnd).transport.at == journey.last
 expect {
 	played = left_alone(heading_for_step(300), 40)
-	clock_of(pressed_on(played, ToStart)) == 100.0
+	steps_in(pressed_on(played, ToStart)) == 100.0
 }
 
 # A step while the ride is playing up to the end stops it where it is.
 expect {
 	chasing = pressed_on(heading_for_step(0), ToEnd)
 	stepped = pressed_on(chasing, StepBack)
-	clock_of(stepped) == steps_a_frame.to_f64() - 1.0 and stepped.transport.at == Clock.at_step(7)
+	steps_in(stepped) == steps_a_frame.to_f64() - 1.0 and stepped.transport.at == Clock.at_step(7)
 }
 
 expect route_x(Distance.zero) == route_left_x
