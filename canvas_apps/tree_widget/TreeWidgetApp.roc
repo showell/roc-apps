@@ -11,7 +11,6 @@ import game.Distance
 import game.Geom
 import game.Lens
 import game.Pipeline
-import game.Screen
 import game.SegmentPlace
 import game.Sky
 import game.TreeShapes
@@ -57,7 +56,7 @@ conifer = Conifer.Gold
 right_of : Stand -> Distance
 right_of = |{ forward, canvas_x }| {
 	screen_x = WidgetPage.screen_x_at_canvas_x(canvas_x)
-	forward.times(screen_x.minus(Screen.center_x).ratio_to(Lens.resting_focal_length))
+	forward.times(Lens.slope_at_x({ x: screen_x, focal_length: Lens.resting_focal_length }))
 }
 
 ## The camera, at the start of the road, looking down it.

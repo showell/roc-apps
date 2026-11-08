@@ -27,6 +27,7 @@ GroundPatch :: { corners : List(RiderView.RiderPoint), color : RgbColor }.{
 		if before_horizon.is_empty() {
 			Err(PastHorizon)
 		} else {
+			polygon : Polygon.FlatPolygon
 			polygon = { color: patch.color, corners: before_horizon }
 			shape = Polygon.clipped_polygon(polygon, focal_length)?
 			Ok(shape)

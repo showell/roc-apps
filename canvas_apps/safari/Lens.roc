@@ -1,13 +1,15 @@
-## The camera's lens: a 70° view across the screen at rest, the far height an
-## elevation stands at, and where something infinitely far away lands on the
-## screen through a lens of any focal length. How far the view widens from rest
-## is the rider camera's to say.
+## The camera's lens: the pinhole's rule on both axes of the screen, a 70° view
+## across it at rest, the far height an elevation stands at, and where something
+## infinitely far away lands through a lens of any focal length. How far the
+## view widens from rest is the rider camera's to say.
 ##
-## The two axes of a far direction use different models. Across the screen, a
-## turn lands the focal length times its tangent beside the middle, as a pinhole
-## puts it. Up the screen, a far height is only scaled with the focal length:
-## it isn't stretched toward the screen's sides, as a pinhole would stretch it,
-## so a far height stays level across the view as the rider turns.
+## A line of sight's slope lands the focal length times that slope from the
+## middle of the screen, across it (`x_for_slope`) and up it (`y_for_slope`).
+## A far direction cheats up the screen. Across, a turn lands the focal length
+## times its tangent beside the middle, as the pinhole puts it. Up, a far height
+## is only scaled with the focal length: it isn't stretched toward the screen's
+## sides, as a pinhole would stretch it, so a far height stays level across the
+## view as the rider turns.
 import Pixels
 import Angle
 import FarHeight
@@ -61,13 +63,22 @@ Lens :: [].{
 	x_for_slope : { slope : F64, focal_length : Pixels } -> Pixels
 	x_for_slope = |{ slope, focal_length }| Screen.center_x.plus(focal_length.times(slope))
 
+	## The pinhole's rule up the screen: the y for a line of sight that climbs
+	## `slope` for every unit forward, through a lens of `focal_length`. A near
+	## point's height above the eye (`Camera.project`) lands here.
+	y_for_slope : { slope : F64, focal_length : Pixels } -> Pixels
+	y_for_slope = |{ slope, focal_length }| Screen.horizon_y.minus(focal_length.times(slope))
+
+	## The slope to the right, for every unit forward, of the line of sight
+	## through the screen's `x`, through a lens of `focal_length`: the way back
+	## from `x_for_slope`.
+	slope_at_x : { x : Pixels, focal_length : Pixels } -> F64
+	slope_at_x = |{ x, focal_length }| x.minus(Screen.center_x).ratio_to(focal_length)
+
 	## How far to the right of where the camera faces the screen's `x` looks,
 	## through a lens of `focal_length`: the way back from `far_point`'s x.
 	turn_at_x : { x : Pixels, focal_length : Pixels } -> Angle.Turn
-	turn_at_x = |{ x, focal_length }| {
-		slope = x.minus(Screen.center_x).ratio_to(focal_length)
-		Angle.Turn.radians(slope.atan())
-	}
+	turn_at_x = |{ x, focal_length }| Angle.Turn.radians(slope_at_x({ x, focal_length }).atan())
 
 	## The screen's y for something infinitely far away, `height` above the
 	## horizon, through a lens of `focal_length`. A height below the horizon is

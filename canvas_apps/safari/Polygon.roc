@@ -141,9 +141,12 @@ Polygon :: [].{
 		Poly({ coordinates: polygon_coordinates("Polygon.elliptical_gradient_polygon", corners), fill })
 	}
 
+	## A polygon of one color, in the rider's view.
+	FlatPolygon : { color : RgbColor, corners : List(RiderView.RaisedPoint) }
+
 	## A polygon on screen, cut at the near plane, unless it's wholly behind the
 	## camera.
-	clipped_polygon : RiderView.FlatPolygon, Pixels -> Try(Shapes.Shape, [BehindCamera])
+	clipped_polygon : Polygon.FlatPolygon, Pixels -> Try(Shapes.Shape, [BehindCamera])
 	clipped_polygon = |{ color, corners }, focal_length| {
 		in_front = RiderView.clipped_points(corners)
 		if in_front.is_empty() {

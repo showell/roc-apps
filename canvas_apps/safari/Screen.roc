@@ -36,6 +36,10 @@ Screen :: [].{
 	height : Pixels
 	height = Pixels.of(height_px.to_f64())
 
+	## The middle of the screen, halfway across it and halfway down.
+	middle : Screen.Point
+	middle = { x: width.divided_by(2.0), y: height.divided_by(2.0) }
+
 	## The camera looks at the middle of the screen, across its width.
 	center_x : Pixels
 	center_x = width.divided_by(2.0)
@@ -85,10 +89,10 @@ Screen :: [].{
 	## the screen turns by minus the roll about its middle.
 	leaned_by : Angle.Lean -> Shapes.Space
 	leaned_by = |roll| {
-		middle = { x: width.to_f64() / 2.0, y: height.to_f64() / 2.0 }
+		middle_coordinates = { x: middle.x.to_f64(), y: middle.y.to_f64() }
 		World({
-			target: middle,
-			offset: middle,
+			target: middle_coordinates,
+			offset: middle_coordinates,
 			rotation: 0.0 - roll.to_degrees(),
 			zoom: 1.0,
 		})

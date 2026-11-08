@@ -5,7 +5,6 @@
 ## module cuts lines and polygons at the near plane.
 import Distance
 import Fraction
-import lib.RgbColor
 
 RiderView :: [].{
 
@@ -164,9 +163,6 @@ RiderView :: [].{
 		forward: from.forward.plus(to.forward.minus(from.forward).scaled_by(fraction)),
 		height: from.height.plus(to.height.minus(from.height).scaled_by(fraction)),
 	}
-
-	## A polygon of one color, in the rider's view.
-	FlatPolygon : { color : RgbColor, corners : List(RiderView.RaisedPoint) }
 }
 
 ## The closest distance ahead that the camera can see.
@@ -184,14 +180,9 @@ near_plane_crossing : {
 	to : RiderView.RaisedPoint,
 } -> RiderView.RaisedPointAhead
 near_plane_crossing = |{ from, to }| {
-	fraction = near_plane.minus(from.forward).ratio_to(to.forward.minus(from.forward))
-	RiderView.RaisedPointAhead.(
-		{
-			right: from.right.plus(to.right.minus(from.right).times(fraction)),
-			forward: near_plane,
-			height: from.height.plus(to.height.minus(from.height).times(fraction)),
-		},
-	)
+	fraction = Fraction.of(near_plane.minus(from.forward).ratio_to(to.forward.minus(from.forward)))
+	crossing = RiderView.point_between({ from, to, fraction })
+	RiderView.RaisedPointAhead.({ ..crossing, forward: near_plane })
 }
 
 ## `kept_points` with what one edge of a polygon adds to it: the edge's first

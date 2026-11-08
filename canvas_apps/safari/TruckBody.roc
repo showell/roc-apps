@@ -4,7 +4,6 @@
 import DepthSort
 import Distance
 import Fraction
-import RiderView
 import Polygon
 import TruckShape
 import lib.RgbColor
@@ -72,7 +71,7 @@ axles = {
 
 ## The truck's faces: its two sides, its back, its roof, its windshield, its
 ## nose, then its tires, the left side's and then the right's.
-faces : TruckShape.TruckSetting -> List(RiderView.FlatPolygon)
+faces : TruckShape.TruckSetting -> List(Polygon.FlatPolygon)
 faces = |truck| {
 	box = TruckShape.truck_box
 	[
@@ -94,7 +93,7 @@ face : TruckShape.TruckSetting,
 {
 	color : RgbColor,
 	corners : List(TruckShape.TruckPoint),
-} -> RiderView.FlatPolygon
+} -> Polygon.FlatPolygon
 face = |truck, { color, corners }| {
 	color,
 	corners: corners.map(|corner| TruckShape.raised_point_on_truck(truck, corner)),
@@ -103,7 +102,7 @@ face = |truck, { color, corners }| {
 ## A side of the truck `rightward` of its centre line: up the back of the
 ## trailer, along its roof and the cab's, down the windshield's edge and the
 ## nose, back along the cab's floor, and down to the trailer's floor.
-side : TruckShape.TruckSetting, Distance -> RiderView.FlatPolygon
+side : TruckShape.TruckSetting, Distance -> Polygon.FlatPolygon
 side = |truck, rightward| {
 	box = TruckShape.truck_box
 	face(
@@ -123,7 +122,7 @@ side = |truck, rightward| {
 	)
 }
 
-back : TruckShape.TruckSetting -> RiderView.FlatPolygon
+back : TruckShape.TruckSetting -> Polygon.FlatPolygon
 back = |truck| {
 	box = TruckShape.truck_box
 	face(
@@ -142,7 +141,7 @@ back = |truck| {
 }
 
 ## The roof of the trailer and the cab, one flat face.
-roof : TruckShape.TruckSetting -> RiderView.FlatPolygon
+roof : TruckShape.TruckSetting -> Polygon.FlatPolygon
 roof = |truck| {
 	box = TruckShape.truck_box
 	face(
@@ -160,7 +159,7 @@ roof = |truck| {
 	)
 }
 
-windshield : TruckShape.TruckSetting -> RiderView.FlatPolygon
+windshield : TruckShape.TruckSetting -> Polygon.FlatPolygon
 windshield = |truck| {
 	box = TruckShape.truck_box
 	face(
@@ -178,7 +177,7 @@ windshield = |truck| {
 	)
 }
 
-nose : TruckShape.TruckSetting -> RiderView.FlatPolygon
+nose : TruckShape.TruckSetting -> Polygon.FlatPolygon
 nose = |truck| {
 	box = TruckShape.truck_box
 	face(
@@ -198,7 +197,7 @@ nose = |truck| {
 
 ## The tire on the axle `axle` ahead of the trailer's centre, on the side
 ## `rightward` of its centre line: a circle standing on the road.
-tire : TruckShape.TruckSetting, { axle : Distance, rightward : Distance } -> RiderView.FlatPolygon
+tire : TruckShape.TruckSetting, { axle : Distance, rightward : Distance } -> Polygon.FlatPolygon
 tire = |truck, { axle, rightward }| {
 	radius = TruckShape.tire_radius
 	face(
