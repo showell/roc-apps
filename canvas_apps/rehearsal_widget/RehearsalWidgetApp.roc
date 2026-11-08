@@ -259,7 +259,13 @@ rider_mark = {
 
 ## A line of words on the grass along the picture's bottom edge.
 caption_shapes : List(Shapes.Shape)
-caption_shapes = [WidgetPage.label({ text: "from above, stretched x2 across the road", x: 10.0, y: 213.0 })]
+caption_shapes = [
+	WidgetPage.label({
+		text: "from above, stretched x${across_stretch.to_i64_wrap().to_str()} across the road",
+		x: 10.0,
+		y: 213.0,
+	}),
+]
 
 ## The road and the arcs so far. The newest try is drawn bold, and once the
 ## tries are over the arc that was chosen is.
