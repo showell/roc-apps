@@ -1315,7 +1315,7 @@ Mostly, Safari Ride is a screensaver: you sit back and watch it. You can also ta
 
 `SafariApp.model_at_next_step` handles all of that. It takes the model, which is the `Tour` and a pause flag, and a snapshot of the input. It returns the next model:
 
-{{code SafariApp.model_at_next_step from "motion = if input.key_pressed(KeySpace)" to "Tour.step_forward(m.tour)"}}
+{{code SafariApp.model_at_next_step from "motion = if input.key_pressed(KeySpace)" to "m.tour.step_forward()"}}
 
 There's no event handler here. Each frame, the platform hands `model_at_next_step` a snapshot, and `model_at_next_step` reads it. `key_pressed` says a key went down since the last frame, so one tap of Space pauses the ride once. `key_down` says a key is being held, so holding Right keeps the ride moving.
 
