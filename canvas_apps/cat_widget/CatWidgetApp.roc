@@ -84,7 +84,7 @@ feet_y = 190.0
 ## The sky, the grass, and the road between the verges.
 road_shapes : List(Shapes.Shape)
 road_shapes = {
-	road_width_px = Geom.road_half_width.to_metres() * 2.0 * pixels_a_metre
+	road_width = Geom.road_half_width.to_metres() * 2.0 * pixels_a_metre
 	ground_height = ground_bottom_y - ground_top_y
 	[
 		Rect({
@@ -102,9 +102,9 @@ road_shapes = {
 			fill: Brush.flat(RgbColor.of(0x7fa650)),
 		}),
 		Rect({
-			x: road_middle_x - road_width_px / 2.0,
+			x: road_middle_x - road_width / 2.0,
 			y: ground_top_y,
-			width: road_width_px,
+			width: road_width,
 			height: ground_height,
 			fill: Brush.flat(WidgetPage.side_road_color),
 		}),

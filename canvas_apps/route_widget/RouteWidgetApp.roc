@@ -153,13 +153,13 @@ bird_color : RgbColor
 bird_color = RgbColor.of(0x7a5cc0)
 
 ## A disc on the map.
-spot : MapPoint, { r : F64, color : RgbColor } -> Shapes.Shape
-spot = |point, { r, color }| {
+spot : MapPoint, { radius : F64, color : RgbColor } -> Shapes.Shape
+spot = |point, { radius, color }| {
 	{ x, y } = canvas_point(point)
 	Disc({
 		x,
 		y,
-		radius: r,
+		radius,
 		fill: Brush.flat(color),
 	})
 }
@@ -171,8 +171,8 @@ piece_shapes = |{ start, end, .. }, { width, color }| {
 	b = canvas_point(end)
 	[
 		Shapes.line({ from: a, to: b, width }, Brush.flat(color)),
-		spot(start, { r: width / 2.0, color }),
-		spot(end, { r: width / 2.0, color }),
+		spot(start, { radius: width / 2.0, color }),
+		spot(end, { radius: width / 2.0, color }),
 	]
 }
 
@@ -196,7 +196,7 @@ encounter_color = |plan|
 mark_shapes : LaidSegment -> List(Shapes.Shape)
 mark_shapes = |segment|
 	match encounter_color(segment.plan) {
-		Ok(color) => [spot(middle_of(segment), { r: 6.0, color })]
+		Ok(color) => [spot(middle_of(segment), { radius: 6.0, color })]
 		Err(NoEncounter) => []
 	}
 
@@ -272,7 +272,7 @@ status_lines = {
 }
 
 still_shapes : List(Shapes.Shape)
-still_shapes = WidgetPage.frame_shapes({ picture_shapes, status_lines: status_lines })
+still_shapes = WidgetPage.frame_shapes({ picture_shapes, status_lines })
 
 expect segments.len() == World.segment_plans.len()
 

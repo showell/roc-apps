@@ -238,8 +238,8 @@ arc_shapes = |path_points, { color, width }| {
 }
 
 ## The colour that says where an arc ended.
-color_of : Coast.Outcome -> RgbColor
-color_of = |outcome|
+outcome_color : Coast.Outcome -> RgbColor
+outcome_color = |outcome|
 	match outcome {
 		Leaves({ side: Left, .. }) => off_left_color
 		Leaves({ side: Right, .. }) => off_right_color
@@ -249,7 +249,7 @@ color_of = |outcome|
 ## The arcs for a list of tries.
 tries_shapes : List(Rehearsal), F64 -> List(Shapes.Shape)
 tries_shapes = |tries, width|
-	tries.join_map(|{ path_points, lean_try }| arc_shapes(path_points, { color: color_of(lean_try.outcome), width }))
+	tries.join_map(|{ path_points, lean_try }| arc_shapes(path_points, { color: outcome_color(lean_try.outcome), width }))
 
 rider_mark : Shapes.Shape
 rider_mark = {
@@ -478,7 +478,7 @@ round_count : U64
 round_count = LeanSearch.lean_search_round_count.to_u64()
 
 # Every arc of this step stays on the road, and the search goes both ways.
-expect rehearsals.all(|{ lean_try, .. }| color_of(lean_try.outcome) == kept_color)
+expect rehearsals.all(|{ lean_try, .. }| outcome_color(lean_try.outcome) == kept_color)
 expect rehearsals.any(|rehearsal| lean_correction_of(rehearsal) == MoreRight)
 expect rehearsals.any(|rehearsal| lean_correction_of(rehearsal) == MoreLeft)
 

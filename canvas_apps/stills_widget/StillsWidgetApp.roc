@@ -237,7 +237,7 @@ large_area = {
 large_anchor : Still -> StillShapes.Anchor
 large_anchor = |still| {
 	extent = extent_of(still)
-	height_px = F64.min(
+	still_height = F64.min(
 		large_area.width / extent_width(extent),
 		large_area.height / (extent.top - extent.bottom),
 	)
@@ -246,8 +246,8 @@ large_anchor = |still| {
 		still,
 		{
 			mid_x: middle.x,
-			ground_y: middle.y + height_px * (extent.top + extent.bottom) / 2.0,
-			height_on_screen: Pixels.of(height_px),
+			ground_y: middle.y + still_height * (extent.top + extent.bottom) / 2.0,
+			height_on_screen: Pixels.of(still_height),
 		},
 	)
 }
