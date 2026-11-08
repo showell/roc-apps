@@ -13,6 +13,7 @@ import RoadAhead
 import RiderCamera
 import Route
 import Scene
+import Screen
 import Sky
 import Sun
 import lib.Shapes
@@ -76,6 +77,18 @@ FrameView := {
 	framed_shapes = |view, space| {
 		backdrop = FrameView.backdrop_shapes(view)
 		Shapes.lists_in_space(space, [backdrop].concat(view.ride_shape_lists))
+	}
+
+	## The space the whole frame leans in, at the camera's `roll`.
+	lean_space : Angle.Lean -> Shapes.Space
+	lean_space = |roll| {
+		centre = { x: Screen.width.to_f64() / 2.0, y: Screen.height.to_f64() / 2.0 }
+		World({
+			target: centre,
+			offset: centre,
+			rotation: 0.0 - roll.to_degrees(),
+			zoom: 1.0,
+		})
 	}
 
 	## What the sightings read from `instant` beyond the road: where the

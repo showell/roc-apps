@@ -2738,7 +2738,7 @@ The rider's lean is one of those marks. The whole picture banks into a turn, bac
 
 {{code SafariApp.frame_shapes}}
 
-{{code SafariApp.lean_space}}
+{{code FrameView.lean_space}}
 
 ### Where the effects went
 

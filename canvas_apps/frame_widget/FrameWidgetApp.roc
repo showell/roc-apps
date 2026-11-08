@@ -10,7 +10,6 @@ import game.RoadAhead
 import game.FrameView
 import game.Grass
 import game.RiderCamera
-import game.SafariApp
 import game.Scene
 import game.Screen
 import game.Sky
@@ -167,10 +166,9 @@ ride_shapes_on = |on_layers| shapes_in(ground_parts, on_layers).concat(scene_sha
 frame_shapes_on : List(Layer) -> List(Shapes.Shape)
 frame_shapes_on = |on_layers| shapes_in(backdrop_parts, on_layers).concat(ride_shapes_on(on_layers))
 
-## The space the paused frame leans in, which `SafariApp.frame_shapes` puts
-## the whole frame in.
+## The space the paused frame leans in, which the game puts the whole frame in.
 lean_space : Shapes.Space
-lean_space = SafariApp.lean_space(paused_frame_view.roll)
+lean_space = FrameView.lean_space(paused_frame_view.roll)
 
 ## The layers up to `last`, and `last` itself.
 layers_through : Layer -> List(Layer)
@@ -316,7 +314,7 @@ shapes_at = |model|
 	].join()
 
 # All the layers on is the game's own frame, shape for shape and in its order.
-expect picture_shapes(layers) == SafariApp.frame_shapes(paused_tour)
+expect picture_shapes(layers) == paused_frame_view.framed_shapes(lean_space)
 
 # The ride's parts are the game's own shapes, in the game's order.
 expect ride_shapes_on(layers) == paused_frame_view.ride_shape_lists.join()

@@ -20,7 +20,6 @@ import game.RideInstant
 import game.RiderCamera
 import game.RoadAhead
 import game.Route
-import game.SafariApp
 import game.Scene
 import game.Sky
 import game.Sun
@@ -79,7 +78,7 @@ part_size = |part, { route, instant }| {
 		0
 	} else if part == "full" {
 		view = FrameView.frame_view_at(route, instant)
-		view.framed_shapes(SafariApp.lean_space(view.roll)).len()
+		view.framed_shapes(FrameView.lean_space(view.roll)).len()
 	} else if part == "view" {
 		FrameView.frame_view_at(route, instant).ride_shape_lists.join().len()
 	} else if part == "camera" {
@@ -196,7 +195,7 @@ prepared_size = |part, { route, instant, reps }| {
 				} else if part == "flatten_only" {
 					sorted.join_map(|rendering| rendering.picture().to_shapes()).len()
 				} else {
-					view.framed_shapes(SafariApp.lean_space(view.roll)).len()
+					view.framed_shapes(FrameView.lean_space(view.roll)).len()
 				}
 			)
 	}
