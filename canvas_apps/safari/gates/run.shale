@@ -617,9 +617,9 @@ end
 
 -- gates/book_names.shale finds a backticked name in the tutorial's prose, or a
 -- node name in its diagrams, that is gone from the code.
--- The book is parked until its chapters are rewritten (Steve, 2026-11-07), so
--- the stale names are counted and printed, loudly, but no count is held: a held
--- count only tracked how broken the parked prose was, and churned at every merge.
+-- The book is parked until its chapters are rewritten, so the stale names are
+-- counted and printed, loudly, but no count is held: a held count would only
+-- track how broken the parked prose is, and churn at every merge.
 function book_names()
   -- A crash prints no counts, so the run fails without them: the counts go
   -- unheld, but the lint must still run to its verdict.

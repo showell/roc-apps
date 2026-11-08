@@ -676,8 +676,7 @@ function excused(module)
   return false
 end
 
--- Stops the build on any module beside the others in `folder` that `text`
--- doesn't name as a whole word.
+-- The modules in `folder` that `text` doesn't name as a whole word, sorted.
 function unnamed_modules(folder, text)
   local unnamed = {}
   for path in glob(folder .. "/*.roc") do
@@ -1017,9 +1016,12 @@ if arg("self_test", "") == "1" then
 else
   local expanded = build(SOURCE, OUTPUT, SAFARI)
   print("tutorial: " .. expanded .. " includes expanded into " .. OUTPUT)
-  -- The book is parked until its chapters are rewritten (Steve, 2026-11-07),
-  -- so the rule that it names every module is skipped, loudly, rather than
-  -- satisfied with module lists added to prose that will be rewritten.
-  local unnamed = unnamed_modules(SAFARI, read(SOURCE))
-  print("tutorial: SKIPPED while the book is parked: the book names every module (" .. #unnamed .. " unnamed: " .. join(unnamed, ", ") .. ")")
+  -- The book is parked until its chapters are rewritten, so the rule that it
+  -- names every module is reported, loudly, but doesn't stop the build.
+  local named = attempt(check_modules_named, SAFARI, read(SOURCE))
+  if named.ok then
+    print("tutorial: the book names every module")
+  else
+    print(named.error .. ": SKIPPED while the book is parked")
+  end
 end
