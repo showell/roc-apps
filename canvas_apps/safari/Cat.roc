@@ -85,34 +85,15 @@ frozen_frames = 24
 ## middle of the road to the far verge it has come, and how high its feet are.
 ## These are keyframes set by eye, not measured off the stills, and each shows
 ## for one step.
-leap_frames : List(
-	{
-		pose : PosedCat.CatPose,
-		way_to_verge : Fraction,
-		lift : Distance,
-	},
-)
+leap_frames : List(CrossingFrame)
 leap_frames = [
-	{
-		pose: Coil,
-		way_to_verge: Fraction.zero,
-		lift: Distance.zero,
-	},
+	{ pose: Coil, way: Leaping({ way_to_verge: Fraction.zero, lift: Distance.zero }) },
+	{ pose: Flight, way: Leaping({ way_to_verge: Fraction.of(0.4), lift: Distance.metres(0.27) }) },
 	{
 		pose: Flight,
-		way_to_verge: Fraction.of(0.4),
-		lift: Distance.metres(0.27),
+		way: Leaping({ way_to_verge: Fraction.of(0.85), lift: Distance.metres(0.17) }),
 	},
-	{
-		pose: Flight,
-		way_to_verge: Fraction.of(0.85),
-		lift: Distance.metres(0.17),
-	},
-	{
-		pose: Land,
-		way_to_verge: Fraction.whole,
-		lift: Distance.zero,
-	},
+	{ pose: Land, way: Leaping({ way_to_verge: Fraction.whole, lift: Distance.zero }) },
 ]
 
 ## How hard the cat holds the rider's eye at its strongest.
@@ -149,10 +130,7 @@ crossing_frames = {
 		},
 	)
 	frozen = List.repeat({ pose: Frozen, way: StandingFrozen }, frozen_frames)
-	leaping = leap_frames.map(
-		|{ pose, way_to_verge, lift }| { pose, way: Leaping({ way_to_verge, lift }) },
-	)
-	[walking, frozen, leaping].join()
+	[walking, frozen, leap_frames].join()
 }
 
 ## The whole of a crossing, a frame a step: the cat walks out to the middle
