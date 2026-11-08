@@ -37,7 +37,7 @@ The rest have been rewritten by hand.
 | `Sky.roc`, `Sun.roc` and `Grass.roc` | what is behind the ride: the sky's gradient, the sun and its glow, and the grass, each drawn by its own module over `Screen.roc`'s rectangles, which reach past a rolled screen's corners |
 | `Polygon.roc` | makers that turn screen points and colours into `Shapes.Shape` values, for the drawing modules |
 | `ColorShade.roc` | lib's `RgbColor` shaded by a factor or blended toward another, channel by channel |
-| `SafariFrame.roc` | a frame painted into pixels in Roc, for the proof tools below |
+| `gates/SafariFrame.roc` | a frame painted into pixels in Roc, for the proof tools below |
 | `RideInstant.roc` and the chapter modules | one instant of the ride, the world, the route, the rider, the animals, the scenery, and how each is drawn |
 | `PosedBird.roc` | the bird, the first thing here that was never Codex, with `BirdFlight.roc`, `EncounterSighting.roc` and `BirdStills.roc` |
 | `Pipeline.roc` | the steps every kind of object takes through a frame: placed (`Geom.Placed`), sighted (`Pipeline.Sighted`), then rendered (`Rendered.roc`, a `Picture.roc` and its depth). `Conifer.roc`, `Billboard.roc`, `Tower.roc` and `LitTruck.roc` are among the kinds that go through it, and the depth sort orders the renderings |
@@ -48,7 +48,7 @@ The rest have been rewritten by hand.
 
 **The rider's lean is a camera.** The whole frame, backdrop and all, turns by
 minus the roll about the middle of the screen, so the world banks into a turn.
-`SafariApp.frame` puts that in front of the frame as a `View(World(...))` mark,
+`SafariApp.frame_shapes` puts that in front of the frame as a `View(World(...))` mark,
 and both runners paint it the way they paint any camera.
 
 ## The native proof tools
@@ -61,7 +61,7 @@ Four programs check the frame without a screen: `RasterFrame.roc` prints one
 frame's pixels as hex with a hash (`pixels_png.mjs` turns that into a PNG),
 `ShapesFrame.roc` paints the frame with its polygons whole and again with them
 cut into triangles, and counts the pixels that differ, `StepBack.roc` checks that one step back goes back exactly one step at
-depths either side of the history's cap, and `FrameBench.roc` is a loop over
+several depths, at the finish and at the start, and `FrameBench.roc` is a loop over
 the frame for `perf`. RasterFrame and ShapesFrame write their hex through
 `Hex.roc`.
 
@@ -105,8 +105,7 @@ cleared past run.shale's `CHECKOUT_CEILING_MB`, and a removed worktree's goes at
 in any checkout.
 
 An `expect` sits below the block of the module it checks. Where it needs a
-module that one doesn't import, it sits in a module that sees both, such as
-`SceneShapes.roc`, or else in `gates/CrossModuleExpects.roc`.
+module that one doesn't import, it sits in `gates/CrossModuleExpects.roc`.
 
 `emitted.sh` and `retest.sh`, which emitted the Roc from Codex, refuse to run:
 the modules they would rewrite are source now.

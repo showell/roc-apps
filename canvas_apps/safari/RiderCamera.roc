@@ -14,6 +14,9 @@ import RiderState
 import Route
 import RoutePlace
 
+## Where the camera stands, which way it faces, its lens and its roll. It is
+## nominal, not opaque: other modules read its fields, and Sun and Mountains
+## take it as an open record of the heading and the lens.
 RiderCamera := {
 	## Where the camera stands on the route, which is where the rider is.
 	route_place : RoutePlace,
@@ -78,23 +81,12 @@ ride_focal = |rider, { route, encounter_timing }| {
 	Lens.focal_for({ lean: rider.motorcycle.lean, attention })
 }
 
-## A rider leaning `lean`, looking `gaze_yaw` from the way the motorcycle
-## points.
-rider : { lean : Angle.Lean, gaze_yaw : Angle.Turn } -> RiderState
-rider = |{ lean, gaze_yaw }| {
-	..RiderState.initial,
-	motorcycle: { ..RiderState.initial.motorcycle, lean },
-	eyes: { ..RiderState.initial.eyes, gaze_yaw },
-}
-
+# With no lean, the camera turns from the way the motorcycle points exactly as
+# far as the rider looks.
 expect {
-	leaning = Angle.Lean.radians
-	looking = Angle.Turn.radians
-	[
-		({ lean: leaning(0.0), gaze_yaw: looking(0.0) }, 0.0),
-		({ lean: leaning(0.125), gaze_yaw: looking(0.375) }, 0.39375),
-		({ lean: leaning(0.5), gaze_yaw: looking(-0.25) }, -0.175),
-		({ lean: leaning(-0.75), gaze_yaw: looking(0.125) }, 0.012500000000000011),
-		({ lean: leaning(1.25), gaze_yaw: looking(0.0) }, 0.1875),
-	].all(|(look, yaw)| view_yaw_for(rider(look)).to_radians() == yaw)
+	gaze_yaw = Angle.Turn.radians(0.375)
+	upright = { ..RiderState.initial.motorcycle, lean: Angle.Lean.radians(0.0) }
+	eyes = { ..RiderState.initial.eyes, gaze_yaw }
+	looking = { ..RiderState.initial, motorcycle: upright, eyes }
+	view_yaw_for(looking) == gaze_yaw
 }

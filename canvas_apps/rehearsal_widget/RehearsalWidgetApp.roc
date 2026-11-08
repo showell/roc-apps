@@ -48,7 +48,7 @@ step_shown = 374
 
 ## The rider's motorcycle at that step, the ride's own.
 rider : Motorcycle
-rider = Tour.at_step(step_shown).instant.rider.motorcycle
+rider = Tour.at_step(step_shown).instant().rider.motorcycle
 
 ## A point on an arc: how far along the road from the rider, and where across it.
 ArcPoint : { forward : F64, across : F64 }
