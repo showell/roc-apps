@@ -195,7 +195,7 @@ WidgetPage :: [].{
 		FrameView.painted_shapes({
 			backdrop,
 			ride_shape_lists: [ride_shapes],
-			space: World({
+			space: Shapes.world_space({
 				target: corner,
 				offset: corner,
 				rotation: 0.0,

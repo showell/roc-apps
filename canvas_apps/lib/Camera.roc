@@ -84,7 +84,7 @@ Camera :: [].{
 		## This camera's world, as the space `Shapes.shapes_in_space` puts shapes in.
 		space : Camera2D -> Shapes.Space
 		space = |camera|
-			World({
+			Shapes.world_space({
 				target: { x: camera.target.x.to_f64(), y: camera.target.y.to_f64() },
 				offset: { x: camera.offset.x.to_f64(), y: camera.offset.y.to_f64() },
 				rotation: camera.rotation.to_f64(),

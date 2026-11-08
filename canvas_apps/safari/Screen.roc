@@ -93,7 +93,7 @@ Screen :: [].{
 	leaned_by : Angle.Lean -> Shapes.Space
 	leaned_by = |roll| {
 		middle_coordinates = { x: middle.x.to_f64(), y: middle.y.to_f64() }
-		World({
+		Shapes.world_space({
 			target: middle_coordinates,
 			offset: middle_coordinates,
 			rotation: 0.0 - roll.to_degrees(),

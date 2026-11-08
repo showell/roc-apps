@@ -62,12 +62,23 @@ Shapes :: [].{
 	## pixels, where every frame starts. `World` carries plain numbers rather than a
 	## Camera, because the mark crosses to JavaScript, which has no such type. As in
 	## a Camera, the world point `target` lands on the screen point `offset`, turned
-	## clockwise by `rotation` degrees and scaled by `zoom`, which is never zero:
-	## `Camera.space` makes one from a camera that checked it.
+	## clockwise by `rotation` degrees and scaled by `zoom`. `world_space` is the
+	## way to make a `World`, because it checks the zoom.
 	Space : [
 		Screen,
 		World({ target : Point.Point, offset : Point.Point, rotation : F64, zoom : F64 }),
 	]
+
+	## A `World` space, its zoom checked. A zoom of zero has no inverse, so a
+	## painter could not map the screen back into this space, and a zoom that is
+	## not finite comes only from a bug; either crashes.
+	world_space : { target : Point.Point, offset : Point.Point, rotation : F64, zoom : F64 } -> Shapes.Space
+	world_space = |world|
+		if world.zoom == 0.0 or !world.zoom.is_finite() {
+			crash "Shapes.world_space: a zoom must be finite and not zero"
+		} else {
+			World(world)
+		}
 
 	## The shapes lit in `Add` mode, so each adds its light to what is under it,
 	## and the mode back to `Over` after them.
@@ -220,18 +231,23 @@ squashable_fill = |fill|
 			crash "Shapes.squashed_shapes: a gradient fill would not move with its shape"
 	}
 
-## Every x of the coordinates pulled toward `axis` by `cosine`.
+## Every x of the coordinates pulled toward `axis` by `cosine`. An odd count
+## leaves an x with no y, which no polygon has, so it crashes.
 pulled_coordinates : List(F64), { axis : F64, cosine : F64 } -> List(F64)
 pulled_coordinates = |xs, { axis, cosine: k }| {
 	n = xs.len()
-	var $out = List.with_capacity(n)
-	var $i = 0
-	while $i + 1 < n {
-		$out = $out.append(axis + (coordinate_at(xs, $i) - axis) * k)
-		$out = $out.append(coordinate_at(xs, $i + 1))
-		$i = $i + 2
+	if n % 2 != 0 {
+		crash "Shapes.squashed_shapes: a polygon's coordinates come in x, y pairs"
+	} else {
+		var $out = List.with_capacity(n)
+		var $i = 0
+		while $i < n {
+			$out = $out.append(axis + (coordinate_at(xs, $i) - axis) * k)
+			$out = $out.append(coordinate_at(xs, $i + 1))
+			$i = $i + 2
+		}
+		$out
 	}
-	$out
 }
 
 ## A span across x pulled toward `axis` by `cosine`, each edge on its own. A
@@ -297,6 +313,13 @@ expect Shapes.lists_in_space(Screen, []) == [View(Screen), View(Screen)]
 ## A second dot, so an order shows.
 ink_dot : Shapes.Shape
 ink_dot = Disc({ x: 5.0, y: 6.0, radius: 1.0, fill: ink })
+
+# A small zoom, near the zero it refuses, makes a world space.
+expect {
+	corner = { x: 0.0, y: 0.0 }
+	world = { target: corner, offset: corner, rotation: 0.0, zoom: 0.001 }
+	Shapes.world_space(world) == World(world)
+}
 
 # A picture two pixels wide and one high holds two pixels.
 expect {
