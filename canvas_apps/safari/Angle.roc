@@ -20,7 +20,7 @@
 ## upright. A lean is never added to a direction. It turns the bike only
 ## through a rate (`steer`), the way a leaning bike follows a curve. The
 ## fourth, a lean change, is how far a lean moves in a step: a change added
-## to a lean gives a lean, and two leans give the change between them.
+## to a lean gives a lean.
 import lib.Trig
 
 Angle :: [].{
@@ -172,22 +172,12 @@ Angle :: [].{
 	## measured from upright.
 	LeanChange :: F64.{
 
-		radians : F64 -> Angle.LeanChange
-		radians = |r| Angle.LeanChange.(r)
-
 		## The change of this many degrees.
 		degrees : F64 -> Angle.LeanChange
 		degrees = |d| Angle.LeanChange.(d * Trig.degree)
 
 		to_radians : Angle.LeanChange -> F64
 		to_radians = |Angle.LeanChange.(r)| r
-
-		## The same change taken to the right.
-		abs : Angle.LeanChange -> Angle.LeanChange
-		abs = |Angle.LeanChange.(c)| Angle.LeanChange.(c.abs())
-
-		is_lte : Angle.LeanChange, Angle.LeanChange -> Bool
-		is_lte = |Angle.LeanChange.(c), Angle.LeanChange.(other)| c <= other
 
 		is_eq : _
 	}
@@ -200,10 +190,6 @@ Angle :: [].{
 
 	upright : Angle.Lean
 	upright = Angle.Lean.(0.0)
-
-	## No change of lean.
-	steady_lean : Angle.LeanChange
-	steady_lean = Angle.LeanChange.(0.0)
 }
 
 expect Angle.upright.to_degrees() == 0.0
