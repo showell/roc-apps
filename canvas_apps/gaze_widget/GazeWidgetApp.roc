@@ -95,7 +95,7 @@ pig_segment = World.first_distracting_segment
 ## The pig that catches the rider's eye.
 gaze_pig : Geom.Placed(Billboard)
 gaze_pig =
-	match Gawking.eye_catching_pig(pig_segment) {
+	match Gaze.eye_catching_pig(pig_segment) {
 		CatchesEye(pig) => pig
 		NoPigCatchesEye => crash "GazeWidgetApp.gaze_pig: this segment's pigs catch the eye"
 	}
@@ -260,7 +260,7 @@ sight_line : Rider -> Shapes.Shape
 sight_line = |rider| {
 	{ x, y } = canvas_point(rider.motorcycle.route_place.road_point())
 	turn = rider.motorcycle.yaw.plus(rider.eyes.gaze_yaw).to_radians()
-	reach = Gawking.notice_distance.to_metres() * road_plan.pixels_a_metre
+	reach = Gaze.notice_distance.to_metres() * road_plan.pixels_a_metre
 	Shapes.line(
 		{
 			from: { x, y },

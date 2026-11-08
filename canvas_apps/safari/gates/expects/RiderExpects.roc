@@ -463,18 +463,18 @@ pigless_segment = Fixtures.segment_of([])
 distracting_segment : Segment
 distracting_segment = World.first_distracting_segment
 
-expect Gawking.eye_catching_pig(pigless_segment) == NoPigCatchesEye
+expect Gaze.eye_catching_pig(pigless_segment) == NoPigCatchesEye
 
 ## A segment of the route whose herd the rider passes by.
 passed_by_segment : Segment
 passed_by_segment = World.route.segment_at(Route.SegmentIndex.number(11))
 
-expect Gawking.eye_catching_pig(passed_by_segment) == NoPigCatchesEye
+expect Gaze.eye_catching_pig(passed_by_segment) == NoPigCatchesEye
 
 ## The pig that catches the eye on the distracting segment.
 watched_pig : Geom.Placed(Billboard)
 watched_pig =
-	match Gawking.eye_catching_pig(distracting_segment) {
+	match Gaze.eye_catching_pig(distracting_segment) {
 		CatchesEye(pig) => pig
 		NoPigCatchesEye => crash "RiderExpects: this segment's pigs catch the eye"
 	}
@@ -508,7 +508,7 @@ expect Gawking.is_gawking(motorcycle_at(200.0), distracting_segment)
 expect Gawking.is_gawking(motorcycle_at(341.0), distracting_segment)
 
 # The gawking starts where the pig is noticed, and not a centimetre sooner.
-expect Gawking.is_gawking(short_of_pig(Gawking.notice_distance.to_metres()), distracting_segment)
+expect Gawking.is_gawking(short_of_pig(Gaze.notice_distance.to_metres()), distracting_segment)
 expect !Gawking.is_gawking(short_of_pig(150.01), distracting_segment)
 
 expect Gawking.gawk_brake(motorcycle_at(200.0), pigless_segment) == NoLimit
