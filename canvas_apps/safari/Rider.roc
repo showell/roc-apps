@@ -19,26 +19,26 @@ Rider := { motorcycle : Motorcycle, eyes : RiderEyes }.{
 	## `encounter_timing`: the move, the crossing onto the next segment, the stop
 	## at the route's end, and then where the rider looks.
 	next : Rider, { route : Route, encounter_timing : EncounterPlan.Timing } -> Rider
-	next = |state, { route, encounter_timing }| {
-		segment = state.motorcycle.route_place.segment_on(route)
-		moved = state.motorcycle.motorcycle_at_next_step(
-			RiderMind.controls(state.motorcycle, { route, encounter_timing }),
+	next = |rider, { route, encounter_timing }| {
+		segment = rider.motorcycle.route_place.segment_on(route)
+		moved = rider.motorcycle.motorcycle_at_next_step(
+			RiderMind.controls(rider.motorcycle, { route, encounter_timing }),
 		)
 		motorcycle =
 			match segment.segment_ending() {
 				Bends({ bend, .. }) => moved.cross_bend_if_on_road(bend)
 				RouteEnds => stop_at_route_end(moved, segment)
 			}
-		{ motorcycle, eyes: Gaze.eyes_at_next_step(state.eyes, { motorcycle, route }) }
+		{ motorcycle, eyes: Gaze.eyes_at_next_step(rider.eyes, { motorcycle, route }) }
 	}
 
 	## Whether the rider has reached the end of the route.
 	is_finished : Rider, Route -> Bool
-	is_finished = |state, route| {
-		segment = state.motorcycle.route_place.segment_on(route)
+	is_finished = |rider, route| {
+		segment = rider.motorcycle.route_place.segment_on(route)
 		match segment.segment_ending() {
 			Bends(_) => False
-			RouteEnds => state.motorcycle.has_reached(segment.length)
+			RouteEnds => rider.motorcycle.has_reached(segment.length)
 		}
 	}
 }

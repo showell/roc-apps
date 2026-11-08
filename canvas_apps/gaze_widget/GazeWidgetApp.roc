@@ -134,9 +134,9 @@ shown_offset = |model| {
 shown_clock : GazeWidgetApp.Model -> Clock
 shown_clock = |model| Clock.at_step(first_step).plus(Steps.of(shown_offset(model).to_u32_wrap()))
 
-state_at : List(Rider), U64 -> Rider
-state_at = |played, offset|
-	played.get(offset) ?? crash "GazeWidgetApp.state_at: offsets stay within what's played"
+rider_at : List(Rider), U64 -> Rider
+rider_at = |played, offset|
+	played.get(offset) ?? crash "GazeWidgetApp.rider_at: offsets stay within what's played"
 
 ## What the rider is doing about the pig in `rider`'s state.
 phase_of : Rider -> GazePhase
@@ -154,7 +154,7 @@ phase_of = |rider|
 ## Everything on the canvas.
 shapes_at : GazeWidgetApp.Model -> List(Shapes.Shape)
 shapes_at = |model| {
-	rider = state_at(model.played, shown_offset(model))
+	rider = rider_at(model.played, shown_offset(model))
 	VcrButtons.frame_shapes(
 		model.transport,
 		{
@@ -322,7 +322,7 @@ stretch_states = {
 
 ## The state at `step` of a played stretch.
 state_at_step : List(Rider), U32 -> Rider
-state_at_step = |played, step| state_at(played, (step - first_step).to_u64())
+state_at_step = |played, step| rider_at(played, (step - first_step).to_u64())
 
 # This stretch is on the route's first distracting segment, and with its
 # encounter unplanned it still ends where the ride does.
