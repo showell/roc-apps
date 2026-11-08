@@ -116,12 +116,12 @@ Sun :: [].{
 	}
 
 	## How far the glow reaches from the sun's middle where it stands.
-	glow_radius_drawn : Sun.Place -> Pixels
-	glow_radius_drawn = |sun| size_drawn(glow_radius, sun)
+	glow_radius_on_screen : Sun.Place -> Pixels
+	glow_radius_on_screen = |sun| sun_size_on_screen(glow_radius, sun)
 
 	## The disc's radius where the sun stands.
-	disc_radius_drawn : Sun.Place -> Pixels
-	disc_radius_drawn = |sun| size_drawn(radius, sun)
+	disc_radius_on_screen : Sun.Place -> Pixels
+	disc_radius_on_screen = |sun| sun_size_on_screen(radius, sun)
 
 	## The sun's shapes in a frame: while it is in view, its glow over the
 	## rectangle above the horizon and its disc over that, and nothing while it
@@ -136,7 +136,7 @@ Sun :: [].{
 					Disc({
 						x: sun.x.to_f64(),
 						y: sun.y.to_f64(),
-						radius: Sun.disc_radius_drawn(sun).to_f64(),
+						radius: Sun.disc_radius_on_screen(sun).to_f64(),
 						fill: look.disc,
 					}),
 				]
@@ -154,23 +154,23 @@ Sun :: [].{
 				outer_color: Brush.with_alpha(RgbColor.of(0xFF965C), 0.0),
 				middle_offset: 0.4,
 				center: { x: sun.x.to_f64(), y: sun.y.to_f64() },
-				inner_radius: size_drawn(glow_inner_radius, sun).to_f64(),
-				outer_radius: Sun.glow_radius_drawn(sun).to_f64(),
+				inner_radius: sun_size_on_screen(glow_inner_radius, sun).to_f64(),
+				outer_radius: Sun.glow_radius_on_screen(sun).to_f64(),
 			}),
 			disc: Radial({
 				inner_color: Brush.opaque(RgbColor.of(0xFFE6A3)),
 				outer_color: Brush.opaque(RgbColor.of(0xFF9D5C)),
 				center: { x: sun.x.to_f64(), y: sun.y.to_f64() },
-				inner_radius: size_drawn(disc_inner_radius, sun).to_f64(),
-				outer_radius: Sun.disc_radius_drawn(sun).to_f64(),
+				inner_radius: sun_size_on_screen(disc_inner_radius, sun).to_f64(),
+				outer_radius: Sun.disc_radius_on_screen(sun).to_f64(),
 			}),
 		}
 }
 
 ## How long `size_at_rest`, one of the sun's sizes as the lens at rest draws
 ## it, is drawn where `sun` stands.
-size_drawn : Pixels, Sun.Place -> Pixels
-size_drawn = |size_at_rest, sun|
+sun_size_on_screen : Pixels, Sun.Place -> Pixels
+sun_size_on_screen = |size_at_rest, sun|
 	Lens.size_on_screen({
 		size: FarHeight.of(size_at_rest.to_f64()),
 		focal_length: sun.focal_length,
@@ -219,7 +219,7 @@ is_glow_on_screen : Sun.Place -> Bool
 is_glow_on_screen = |sun| {
 	from_middle = sun.x.minus(Screen.center_x).abs()
 	reach = Screen.drawn_right.minus(Screen.center_x)
-	from_middle.minus(Sun.glow_radius_drawn(sun)) < reach
+	from_middle.minus(Sun.glow_radius_on_screen(sun)) < reach
 }
 
 ## The sun's radius at rest.
@@ -326,7 +326,7 @@ expect {
 			focal_length: half_focal_length,
 		},
 	)
-		and Sun.disc_radius_drawn(half_place) == radius.times(0.5)
+		and Sun.disc_radius_on_screen(half_place) == radius.times(0.5)
 }
 
 # Facing north at the start, the rider faces away from the sun.
