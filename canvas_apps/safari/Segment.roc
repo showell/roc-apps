@@ -25,7 +25,7 @@ Segment := {
 	pigs : Segment.Pigs,
 
 	## The segment's herd of cows, led by a bull or not.
-	cows : { herd : CowHerd, bull : CowHerd.Bull },
+	cows : Segment.Cows,
 
 	## What the rider meets on the road here, at most one thing, so that the
 	## rider has one experience at a time. Most of the road is quiet, so that an
@@ -40,6 +40,9 @@ Segment := {
 
 	## A segment's herd of pigs, if it has one, and how the rider takes it.
 	Pigs : [NoPigs, Herd({ herd : PigHerd, interest : Segment.PigInterest })]
+
+	## A segment's herd of cows, led by a bull or not.
+	Cows : { herd : CowHerd, bull : CowHerd.Bull }
 
 	## What lives at the bend that ends a segment: nothing, a safari animal and
 	## its baby, or a pond with its ducks.
@@ -63,7 +66,7 @@ Segment := {
 		length : Distance,
 		scheme : Trees.Scheme,
 		pigs : Segment.Pigs,
-		cows : { herd : CowHerd, bull : CowHerd.Bull },
+		cows : Segment.Cows,
 		encounter : Segment.PlannedEncounter,
 		ending : Segment.Ending,
 	} -> Segment
