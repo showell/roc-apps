@@ -1889,6 +1889,58 @@ That's the pig's part of the rider's step. The truck is the other stepped thing.
 
 ## The truck
 
+All through the ride, the rider follows a truck up the road. How the truck moves comes in the next chapter, and its lights in the one after. This chapter draws it: a plain truck, standing at a place on the road that's already known, and facing along the road.
+
+New in this chapter:
+
+- Modules: `TruckSighting`, `TruckShape`, `TruckBody`
+
+The modules that draw the truck
+```dot
+digraph truck_drawing {
+  node [shape=box, fontname="Helvetica"];
+  TruckBody [style=bold];
+  Scene -> TruckSighting;
+  TruckSighting -> LitTruck;
+  LitTruck -> TruckBody;
+  TruckBody -> TruckShape;
+}
+```
+
+`TruckSighting` finds the truck on the road ahead. What it finds is a `LitTruck`, the truck with its lights, and with the lights off that's just the body this chapter draws. The truck is drawn however small it stands, because the rider is always looking for it.
+
+### Three maps
+
+The truck is a real box, with a back, two sides, a roof, a windshield and a nose. Each corner of it goes through three maps on its way to the screen. Its shape is written in the truck's own frame. Its placement carries that frame onto the road at the truck's spot. Its projection is the camera turning the result into a point on the screen.
+
+### Get the types right
+
+A point in the truck's own frame is three distances, measured from the middle of the trailer:
+
+{{code TruckShape.TruckPoint}}
+
+A `TruckSetting` holds what a point is drawn from: the truck's spot on the road, including how far the road under it is lifted, and the camera's vantage.
+
+### The functions
+
+One function does the first two maps. It moves the point along and across the road from the truck's spot, finds where that lands in the rider's view, and lowers it by however far the ground has curved away beneath it:
+
+{{code TruckShape.raised_point_on_truck}}
+
+So a face is just a list of `TruckPoint`s. Here's a side, walked around its outline from the back of the trailer to the nose and back:
+
+{{code TruckBody.side}}
+
+The back, the roof, the windshield and the nose are each a strip across the truck, so they share `TruckShape.strip_corners`. The tires are circles standing on the road.
+
+The third map happens last. `TruckBody` sorts the faces far to near, so a nearer face drawn later covers a farther one, and then projects each one, clipping whatever is behind the camera:
+
+{{code TruckBody.body_shapes}}
+
+That's a truck. Next, it moves.
+
+## The truck's motion
+
 The truck is what the rider chases. It starts 500 metres up the road, and for most of the ride the rider closes in on it, but not steadily:
 
 | Step | Rider, along the route | Truck, along the route | Lead |
@@ -1902,7 +1954,7 @@ The closest the rider gets is 50 metres, at step 6,374. After that the rider slo
 
 New in this chapter:
 
-- Modules: `Truck`, `TruckSighting`, `TruckShape`, `TruckBody`
+- Modules: `Truck`
 
 ### A tease, carried out by physics
 
@@ -1932,7 +1984,7 @@ A bend ahead of the truck is its own type, and so is the answer to "is there one
 
 The modules around `Truck`
 ```dot
-digraph truck {
+digraph truck_motion {
   node [shape=box, fontname="Helvetica"];
   Truck [style=bold];
   RideInstant -> Truck;
@@ -1940,12 +1992,6 @@ digraph truck {
   Truck -> VehicleLimits;
   Truck -> Speed;
   Truck -> Acceleration;
-  Scene -> TruckSighting;
-  TruckSighting -> LitTruck;
-  LitTruck -> Truck;
-  LitTruck -> TruckBody;
-  TruckBody -> TruckShape;
-  FrameView -> LitTruck;
 }
 ```
 
@@ -1974,30 +2020,6 @@ Then the two ways to take a step. Both sit below the type's block, so they're pr
 `VehicleLimits.braking_to` works out one steady brake that reaches the target speed at the bend. A steady brake can land a little under the target, so `target_speed.max(...)` holds the truck there. A brake that would take the speed below zero is a bug, and `braking_to` crashes on one. Otherwise, the truck chases:
 
 {{code Truck.chasing_truck_at_next_step}}
-
-### Drawing the truck
-
-`TruckSighting` finds the truck on the road ahead. What it finds is a `LitTruck`: which of the truck's lights are on. This chapter draws the body, which is all there is with the lights off. The truck is drawn however small it stands, because the rider is always looking for it.
-
-The truck is a real box, with a back, two sides, a roof, a windshield and a nose. Each corner of it goes through three maps on its way to the screen. Its shape is written in the truck's own frame. Its placement carries that frame onto the road at the truck's spot. Its projection is the camera turning the result into a point on the screen.
-
-A point in the truck's own frame is three distances, measured from the middle of the trailer:
-
-{{code TruckShape.TruckPoint}}
-
-A `TruckSetting` holds what a point is drawn from: the truck's spot on the road, including how far the road under it is lifted, and the camera's vantage. One function does the first two maps. It moves the point along and across the road from the truck's spot, finds where that lands in the rider's view, and lowers it by however far the ground has curved away beneath it:
-
-{{code TruckShape.raised_point_on_truck}}
-
-So a face is just a list of `TruckPoint`s. Here's a side, walked around its outline from the back of the trailer to the nose and back:
-
-{{code TruckBody.side}}
-
-The back, the roof, the windshield and the nose are each a strip across the truck, so they share `TruckShape.strip_corners`. The tires are circles standing on the road.
-
-The third map happens last. `TruckBody` sorts the faces far to near, so a nearer face drawn later covers a farther one, and then projects each one, clipping whatever is behind the camera:
-
-{{code TruckBody.body_shapes}}
 
 That's a truck you can chase. The next chapter lights it.
 
