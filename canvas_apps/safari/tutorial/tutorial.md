@@ -44,6 +44,8 @@ It works like a flipbook, the little stack of drawings that seems to move when y
 
 The most interesting box is the middle one: looking around. On a real safari, a guide scans the land and calls out what's there: a cat by the third tree, a bird on the far side. We'll call each of those a sighting. A sighting is only true for the moment it's made, so Safari Ride throws them all away and makes new ones for every page.
 
+Only four things carry over from one step to the next: the rider, the truck, the clock, and the encounter plan, which says when the next cat or bird encounter starts. Everything else is worked out again each frame.
+
 Next, let's look at what one of those boxes looks like in Roc.
 
 ## One whole module
@@ -185,7 +187,7 @@ A sighting answers one question each frame: which of these can the rider see rig
 
 Cows, pigs and the other animals by the road are all sighted the same way, by `BillboardSighting`, which decides which of them get drawn. The thresholds behind that kind of decision sit with the code that uses them. `Pipeline.smallest_height_on_screen`, 2 pixels, is how short something may look and still be drawn. `TreeShapes.cone_reach` and `TreeShapes.round_trunk_limit` decide how near a tree shows its full detail.
 
-Everything in this chapter happens within a single frame, and none of it survives to the next one. Very little carries over from step to step, and we'll come to that. First, let's hold one frame still and see what's in it.
+Everything in this chapter happens within a single frame, and none of it survives to the next one. Only the four things from The problem carry over from step to step: the rider, the truck, the clock and the encounter plan. First, let's hold one frame still and see what's in it.
 
 ## The world
 
@@ -223,9 +225,7 @@ A piece of the world can be just a value. Here's the second whole module. `Pond`
 
 {{module Pond}}
 
-Its block holds two functions: the pond's outlines, and its ducks placed at a bend. `bank_inner_points` uses a record update. `{ ..point, past_end: ... }` is a copy of `point` with a new `past_end`, and `point` itself doesn't change. The ducks are read where a bend's life is placed:
-
-{{code Segment.BendLife}}
+Its block holds two functions: the pond's outlines, and its ducks placed at a bend. `bank_inner_points` uses a record update. `{ ..point, past_end: ... }` is a copy of `point` with a new `past_end`, and `point` itself doesn't change. The ducks are read in `Segment.BendLife`, whose `DuckPond` case calls `Pond.placed_ducks`.
 
 `World` turns a route, a plain list of records, into segments of road. A plan for a segment shows how much a small tag union can do. `CowHerd.Bull` is just `[WithBull, NoBull]`, and it says more than a boolean would at every place a segment is written down.
 
@@ -243,11 +243,7 @@ Here's where it's called. Trees stand in pairs, and after a green pair this `mat
 
 {{code Route.segment_at}}
 
-A value that never changes can be checked once, whole. Below its block, `Pond` keeps a function that's there for its tests:
-
-{{code Pond.is_inside_water}}
-
-An `expect` under it, in the module above, runs that over all six ducks. One line covers the whole pond. Another `expect` under `is_inside_water` checks a list of pairs. Each pair in parentheses is a tuple, a fixed group of values whose types needn't match, and `all` checks every one.
+A value that never changes can be checked once, whole. Below its block, `Pond` keeps a function that's there for its tests, `is_inside_water`, in the module above. An `expect` under it runs that over all six ducks. One line covers the whole pond. Another `expect` under `is_inside_water` checks a list of pairs. Each pair in parentheses is a tuple, a fixed group of values whose types needn't match, and `all` checks every one.
 
 Nothing in this chapter moves, and that's true of the next few chapters too, as we go through what's on one page of the flipbook. First, a word about what a page is made of.
 
@@ -362,7 +358,7 @@ The ride has six kinds of object: trees, towers, billboards such as the cows, th
 New in this chapter:
 
 - Roc: defining a type with a type variable, `where`
-- Modules: `Geom`, `Along`, `Across`, `Billboard`
+- Modules: `Geom`, `Along`, `Across`
 
 `Pipeline` and `Rendered` came up in The modules, and here we look at them properly.
 
@@ -596,7 +592,7 @@ digraph cone {
 
 {{code TreeShapes.crown_of}}
 
-`Detail` holds the thresholds that decide how much of a thing gets drawn, and `cone_reach` is 200 metres. Shade fades from full at the camera to none at 80 metres.
+Two `TreeShapes` thresholds decide how much of a tree gets drawn: `cone_reach`, 200 metres, and `round_trunk_limit`, 4 nearer trees. Shade fades from full at the camera to none at 80 metres.
 
 ```widget tree
 Three gold trees, each drawn by `Conifer.scenery_picture`. Under each are its distance and what `crown_of` said.
@@ -695,7 +691,7 @@ Placing a segment's trees walks along the segment and keeps a list, and a loop s
 
 `var` makes a name that can change, and a `$` marks every use of one, so the names that change stand out. The function is still pure, because nothing outside it can see them change.
 
-Trees stand in pairs, one on each side of the road, every 30 metres. `{ ..left_tree, across: ... }` makes the right tree from the left one, with the record update from A simple tree. The pairs take turns: a big green pair, then a pair of the segment's accent, which is small green, red or gold, then big green again. A gold pair stands farther from the road, because it's so much taller:
+Trees stand in pairs, one on each side of the road, every 30 metres. `{ ..left_tree, across: ... }` makes the right tree from the left one, with the record update from The world. The pairs take turns: a big green pair, then a pair of the segment's accent, which is small green, red or gold, then big green again. A gold pair stands farther from the road, because it's so much taller:
 
 {{code Trees.tree_line_distance}}
 
@@ -711,7 +707,7 @@ From here on, things are measured from the camera, which travels with the rider.
 
 {{code Pipeline.scenery_sighting_of}}
 
-`Ahead(position)` says which segment of the road ahead the tree stands on. The size test asks for 2 pixels, through the camera's own lens.
+`place` says which segment of the road ahead the tree stands on. It's usually `Ahead(position)`: a segment so many ahead of the rider's. The size test asks for 2 pixels, through the camera's own lens.
 
 `Pipeline.scenery_sighting_of`, from Nature types, starts with `Pipeline.sighting_of`, which asks `RoadAhead.rider_point_at` where the tree's spot on the road lies from the rider. The math layer chapter shows how. If that spot is no farther ahead than the near plane from A conifer, the answer is `BehindCamera`. Otherwise it's a sighting.
 
@@ -791,11 +787,11 @@ The sun stands in one direction, and the rider may not be facing it. That needs 
 
 {{fails turn_as_bearing}}
 
+Opaque types do the most work from here on. A `Bearing` and a `Turn` are both floats underneath, but only the `Angle` module can build or open one.
+
 Two tags say whether the sun is in view, so there's no `null` and no off-screen sentinel value. A caller has to handle `OutOfView`, because `match` must cover every tag.
 
 {{code Sun.Sighting}}
-
-Opaque types do the most work from here on. A `Bearing` and a `Turn` are both floats underneath, but only the `Angle` module can build or open one.
 
 {{code Sun.sun_in_view}}
 
@@ -922,7 +918,7 @@ Each road here is two segments, seen from above, and the white dot is where the 
 
 New in this chapter:
 
-- Roc: closures that give a repeated call a short name
+- Roc: closures that give a repeated call a short name, `List.from_iter` with `until`
 - Modules: `BendInView`, `GroundSighting`
 
 `BendInView` knows where two segments meet. `GroundSighting` and `RailSighting` each ask it about a bend, and each answers with plain data for another module to draw.
@@ -990,6 +986,8 @@ A piece of ground is a list of corners and a color.
 That's what `GroundPatch` paints. It's plain data, so it can be checked with numbers. The widget counts three patches, and here's where they come from.
 
 {{code GroundSighting.road_along}}
+
+Every whole-number type has an `until`, like `U64.until`, and the `U32` one here counts from 0 up to just short of its second argument. `List.from_iter` collects that count into a list.
 
 A segment's road is one patch. Its edges are cut into chunks of 25 metres or less, which keeps each straight cut within a pixel of the curve where the road meets the horizon. The widget's two segments make two patches, and the bend makes the third.
 
@@ -1263,7 +1261,7 @@ Safari Ride's farms are crowds of animals, and a crowd is just a list of critter
 
 New in this chapter:
 
-- Roc: `List.from_iter` with `U64.until`
+- Roc: nothing new
 - Modules: `CowHerd`, `Scatter`
 
 ### Cows
@@ -1308,12 +1306,14 @@ The first three lines under the picture read three of that record's four fields,
 
 New in this chapter:
 
-- Roc: nominal types
+- Roc: nothing new
 - Modules: `RideInstant`, `Tour`, `FrameView`
 
-A record is the plainest shape in Roc, and it's nearly all this needs. `RideInstant := { ... }.{ ... }` makes the module's own type out of one. That's a nominal type, which can carry a block of definitions, and unlike an opaque type it leaves its fields readable.
+`RideInstant := { ... }.{ ... }` is a nominal type, from A simple tree: a record with a block of definitions, whose fields stay readable.
 
 {{code RideInstant.RideInstant from "One instant of the ride" to "}.{"}}
+
+### Worked out, not stored
 
 Those four fields are the whole of what Safari Ride keeps from one step to the next. The sun and the beacons keep nothing. The cat and the bird keep one thing between them, the step their animation started on, which is the plan. Each frame works everything else out again from those four. Call this *worked out, not stored*: keep the few things that have to last, and work out the rest. We'll see it everywhere from here on.
 
@@ -1327,7 +1327,7 @@ That gives three kinds of moving thing, and the rest of the tour is organized ar
 
 Trees and cows are a fourth kind, the easiest of all: they never change.
 
-The game itself has no effectful functions at all. It has no `!` names, no `=>` arrows and no `?`. Effects live in the platform.
+The game itself has no effectful functions at all. It has no `!` names and no `=>` arrows. Effects live in the platform. A `?` appears in nine places, such as `Pipeline.scenery_sighting_of`, and it isn't an effect: it hands an `Err`, such as `BehindCamera`, straight back to the caller.
 
 ### Pausing and stepping
 
@@ -1359,7 +1359,7 @@ The widget stands two towers side by side, with beacons that blink opposite each
 
 New in this chapter:
 
-- Modules: `Beacon`, `Steps`
+- Modules: `Beacon`
 
 ### Three rules
 
