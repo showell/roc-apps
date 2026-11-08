@@ -30,15 +30,17 @@ Camera :: [].{
 	height_on_screen = |{ height, forward }, focal_length|
 		focal_length.times(height.ratio_to(forward))
 
-	## Where an upright object stands on the screen: `foot`, its foot at `base`
-	## put on the screen, and `height_on_screen`, how far up the screen its top
-	## is from there, `height` above `base`. A tree, a still and a billboard all
-	## stand this way.
+	## An upright object on the screen: where its foot is, and how far up the
+	## screen its top is from there. A tree, a still and a billboard all stand
+	## this way.
+	Upright : { foot : Screen.Point, height_on_screen : Pixels }
+
+	## The object standing at `base`, `height` tall, on the screen.
 	upright_on_screen : RiderView.RaisedPointAhead,
 	{
 		height : Distance,
 		focal_length : Pixels,
-	} -> { foot : Screen.Point, height_on_screen : Pixels }
+	} -> Camera.Upright
 	upright_on_screen = |base, { height, focal_length }| {
 		foot = project(base, focal_length)
 		top = project(base.at_height(base.height().plus(height)), focal_length)

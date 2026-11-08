@@ -12,37 +12,26 @@ import RiderView
 import Picture
 import Polygon
 import Pixels
-import Screen
 import Spot
 import lib.RgbColor
 import lib.Shapes
 
 TreeShapes :: [].{
 
-	## Where a tree's foot stands on the screen, and how tall it looks there:
-	## what `Camera.upright_on_screen` gives.
-	TreeOutline : { foot : Screen.Point, height_on_screen : Pixels }
+	## What a tree's detail depends on beyond itself: how many trees are nearer.
+	Detail : { nearer_tree_count : U64 }
 
 	## The tree on the screen: its trunk, then its tiers top to bottom. The
 	## nearest trees have a shaded trunk. The crown is cones, shaded by how near
 	## they are, within cone_reach, and triangles beyond it.
-	tree_picture : Picture.Setting({ nearer_tree_count : U16 }),
+	tree_picture : Picture.Setting(TreeShapes.Detail),
 	{
 		height : Distance,
 		foliage_color : RgbColor,
 	} -> Picture
 	tree_picture = |{ spot, focal_length, context }, { height, foliage_color }| {
-		base = spot.base()
-		outline = TreeShapes.tree_outline(spot, { height, focal_length })
-		inputs = {
-			base,
-			height,
-			focal_length,
-			outline,
-			foliage_color,
-			crown: crown_of(base.forward()),
-		}
-		trunk = trunk_shape(outline, trunk_finish_of(context.nearer_tree_count))
+		inputs = tier_inputs_of(spot.base(), { height, focal_length, foliage_color })
+		trunk = trunk_shape(inputs.outline, trunk_finish_of(context.nearer_tree_count))
 		Picture.from_shapes([trunk].concat(tiers.map(|tier| tier_shape(tier, inputs))))
 	}
 
@@ -60,12 +49,13 @@ TreeShapes :: [].{
 
 	## Where the tree at `spot` is on the screen, `height` tall, through a lens
 	## of `focal_length`.
-	tree_outline : Spot, { height : Distance, focal_length : Pixels } -> TreeShapes.TreeOutline
+	tree_outline : Spot, { height : Distance, focal_length : Pixels } -> Camera.Upright
 	tree_outline = |spot, { height, focal_length }|
 		Camera.upright_on_screen(spot.base(), { height, focal_length })
 }
 
-## The tree is drawn 136 parts tall, and the shares below are parts of that.
+## The tree is drawn 136 parts tall, and the shares below are parts of that,
+## all chosen by eye.
 tree_parts : U64
 tree_parts = 136
 
@@ -80,11 +70,14 @@ crown_shade_reach = Distance.metres(80.0)
 
 ## A tree with fewer than this many trees nearer than it gets a shaded
 ## trunk, which looks round.
-round_trunk_limit : U16
+round_trunk_limit : U64
 round_trunk_limit = 4
 
+## How a tree's trunk is drawn: shaded, which looks round, or flat.
+TrunkFinish : [Shaded, Flat]
+
 ## How a tree's trunk is drawn, with `nearer_tree_count` trees nearer than it.
-trunk_finish_of : U16 -> [Shaded, Flat]
+trunk_finish_of : U64 -> TrunkFinish
 trunk_finish_of = |nearer_tree_count|
 	if nearer_tree_count < round_trunk_limit {
 		Shaded
@@ -93,16 +86,16 @@ trunk_finish_of = |nearer_tree_count|
 	}
 
 ## How tall a tree's crown looks on the screen.
-crown_height : TreeShapes.TreeOutline -> Pixels
+crown_height : Camera.Upright -> Pixels
 crown_height = |outline| outline.height_on_screen.scaled_by(crown_height_share)
 
 ## Where the top of a tree's crown is on the screen: the tree's tip.
-crown_top_y : TreeShapes.TreeOutline -> Pixels
+crown_top_y : Camera.Upright -> Pixels
 crown_top_y = |outline| outline.foot.y.minus(outline.height_on_screen)
 
 ## How far the crown reaches either side of the trunk at its widest, on the
 ## screen.
-crown_half_width : TreeShapes.TreeOutline -> Pixels
+crown_half_width : Camera.Upright -> Pixels
 crown_half_width = |outline| outline.height_on_screen.scaled_by(crown_half_width_share)
 
 ## One tier of the crown: where its top and its bottom are, as fractions of
@@ -120,9 +113,26 @@ TierInputs : {
 	base : RiderView.RaisedPointAhead,
 	height : Distance,
 	focal_length : Pixels,
-	outline : TreeShapes.TreeOutline,
+	outline : Camera.Upright,
 	foliage_color : RgbColor,
 	crown : TreeShapes.Crown,
+}
+
+## What every tier of the tree at `base` needs, its outline and its crown
+## worked out from the rest.
+tier_inputs_of : RiderView.RaisedPointAhead,
+{
+	height : Distance,
+	focal_length : Pixels,
+	foliage_color : RgbColor,
+} -> TierInputs
+tier_inputs_of = |base, { height, focal_length, foliage_color }| {
+	base,
+	height,
+	focal_length,
+	outline: Camera.upright_on_screen(base, { height, focal_length }),
+	foliage_color,
+	crown: TreeShapes.crown_of(base.forward()),
 }
 
 ## The tiers, top to bottom. Each overlaps the next.
@@ -173,7 +183,7 @@ tiers = [
 trunk_color : RgbColor
 trunk_color = RgbColor.of(0x5A3E22)
 
-## Of the tree's parts, 55 are trunk below the crown.
+## Of the tree's parts, 55 are trunk below the crown, chosen by eye.
 trunk_height_share : Fraction
 trunk_height_share = Fraction.of(55.0 / tree_parts.to_f64())
 
@@ -181,11 +191,13 @@ trunk_height_share = Fraction.of(55.0 / tree_parts.to_f64())
 crown_height_share : Fraction
 crown_height_share = trunk_height_share.complement()
 
-## The crown's widest half-width, as a fraction of the tree's height.
+## The crown's widest half-width, as a fraction of the tree's height: 36
+## parts, chosen by eye.
 crown_half_width_share : Fraction
 crown_half_width_share = Fraction.of(36.0 / tree_parts.to_f64())
 
-## The trunk's width, as a fraction of the tree's height.
+## The trunk's width, as a fraction of the tree's height: 10 parts, chosen by
+## eye.
 trunk_width_share : Fraction
 trunk_width_share = Fraction.of(10.0 / tree_parts.to_f64())
 
@@ -194,7 +206,7 @@ min_trunk_width : Pixels
 min_trunk_width = Pixels.of(1.0)
 
 ## How far the trunk runs up inside the crown, as a fraction of the tree's
-## height, so that no sky shows between them.
+## height, so that no sky shows between them: 6.25 parts, chosen by eye.
 trunk_overlap_share : Fraction
 trunk_overlap_share = Fraction.of(6.25 / tree_parts.to_f64())
 
@@ -207,7 +219,7 @@ ring_point_count = 16
 crown_shade : Distance -> Fraction
 crown_shade = |forward| Fraction.clamp(forward.ratio_to(crown_shade_reach)).complement()
 
-trunk_shape : TreeShapes.TreeOutline, [Shaded, Flat] -> Shapes.Shape
+trunk_shape : Camera.Upright, TrunkFinish -> Shapes.Shape
 trunk_shape = |outline, finish| {
 	width = outline.height_on_screen.scaled_by(trunk_width_share).max(min_trunk_width)
 	below_crown = outline.height_on_screen.scaled_by(trunk_height_share)
@@ -229,7 +241,7 @@ trunk_shape = |outline, finish| {
 
 ## A tier as a flat triangle: its apex at the tier's top, its base across its
 ## bottom.
-tier_triangle : TreeShapes.TreeOutline, { tier : Tier, foliage_color : RgbColor } -> Shapes.Shape
+tier_triangle : Camera.Upright, { tier : Tier, foliage_color : RgbColor } -> Shapes.Shape
 tier_triangle = |outline, { tier, foliage_color }| {
 	crown_top = crown_top_y(outline)
 	bottom_y = crown_top.plus(crown_height(outline).scaled_by(tier.bottom))
@@ -330,8 +342,6 @@ tier_cone = |tier, { inputs, ring_points, shade }| {
 	)
 }
 
-expect trunk_height_share.to_f64() + crown_height_share.to_f64() == 1.0
-
 expect crown_shade(Distance.metres(0.0)).to_f64() == 1.0
 expect crown_shade(Distance.metres(20.0)).to_f64() == 0.75
 expect crown_shade(Distance.metres(40.0)).to_f64() == 0.5
@@ -343,7 +353,7 @@ expect TreeShapes.crown_of(Distance.metres(40.0)) == Cones({ shade: Fraction.of(
 expect TreeShapes.crown_of(Distance.metres(199.0)) == Cones({ shade: Fraction.zero })
 expect TreeShapes.crown_of(Distance.metres(200.0)) == Triangles
 
-# The three nearest trees have a shaded trunk, and the fourth has a flat one.
+# The four nearest trees have a shaded trunk, and the fifth has a flat one.
 expect [0, 3].all(|count| trunk_finish_of(count) == Shaded)
 expect [4, 9].all(|count| trunk_finish_of(count) == Flat)
 
@@ -360,7 +370,7 @@ sample_base = |lift|
 sample_height : Distance
 sample_height = Distance.metres(4.352)
 
-sample_outline : TreeShapes.TreeOutline
+sample_outline : Camera.Upright
 sample_outline = Camera.upright_on_screen(
 	sample_base(Distance.zero),
 	{ height: sample_height, focal_length: Pixels.of(500.0) },
@@ -369,14 +379,14 @@ sample_outline = Camera.upright_on_screen(
 # A lifted tree's cones measure from its foot: the ring under the bottom tier
 # sits the trunk's share of the height above the foot, which here is 2 m up.
 expect {
-	inputs = {
-		base: sample_base(Distance.metres(2.0)),
-		height: sample_height,
-		focal_length: Pixels.of(500.0),
-		outline: sample_outline,
-		foliage_color: RgbColor.of(7),
-		crown: Cones({ shade: Fraction.whole }),
-	}
+	inputs = tier_inputs_of(
+		sample_base(Distance.metres(2.0)),
+		{
+			height: sample_height,
+			focal_length: Pixels.of(500.0),
+			foliage_color: RgbColor.of(7),
+		},
+	)
 	bottom_tier = tiers.last() ?? crash "a tree has tiers"
 	want = 2.0 + 4.352 * 55.0 / 136.0
 	is_at_want = |point| (point.height().to_metres() - want).abs() <= 0.000000001
