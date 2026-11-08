@@ -11,7 +11,6 @@ import Beacon
 import Clock
 import Distance
 import RoadAhead
-import Segment
 import SegmentPlace
 import Geom
 import Pipeline
@@ -42,6 +41,33 @@ end_tower_right_of_middle = Distance.metres(20.0)
 ## How far a tower past a segment's end is turned from square with the road.
 end_tower_yaw : Angle.Turn
 end_tower_yaw = Angle.Turn.degrees(30.0)
+
+## A segment longer than this has a tower halfway along.
+mid_tower_min_length : Distance
+mid_tower_min_length = Distance.metres(1000.0)
+
+## How far left of the road's middle a tower halfway along a segment stands.
+mid_tower_left_of_middle : Distance
+mid_tower_left_of_middle = Distance.metres(100.0)
+
+## Where the tower halfway along a segment `segment_length` long stands, off
+## to the left, if the segment is long enough to have one.
+mid_tower_point : Distance -> Try(Geom.RoadPoint, [NoMidTower])
+mid_tower_point = |segment_length|
+	if segment_length > mid_tower_min_length {
+		Ok({
+			along: Along.at(segment_length.divided_by(2.0)),
+			across: Across.left_of_middle(mid_tower_left_of_middle),
+		})
+	} else {
+		Err(NoMidTower)
+	}
+
+# Only a segment longer than a kilometre has a tower halfway along.
+expect mid_tower_point(Distance.metres(1000.0)) == Err(NoMidTower)
+expect
+	mid_tower_point(Distance.metres(1000.5))
+		== Ok({ along: Along.metres(500.25), across: Across.metres(-100.0) })
 
 ## The towers in view of a segment in view: the one past its end, then the
 ## one halfway along.
@@ -90,7 +116,7 @@ mid_tower : RoadAhead.RoadView,
 	clock : Clock,
 } -> Try(Pipeline.Sighted(Tower), [BehindCamera, NoMidTower])
 mid_tower = |road, { camera, in_view, clock }| {
-	road_point = Segment.mid_tower_point(in_view.segment)?
+	road_point = mid_tower_point(in_view.segment.length)?
 	beacon = Beacon.at({ segment: in_view.index, place: Midway }, clock)
 	tower_if_ahead(
 		road,
