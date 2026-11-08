@@ -17,7 +17,7 @@ ConvexHull :: [].{
 		if count < 2 {
 			convex_hull_points(ring_points.append(apex))
 		} else {
-			ring_hull_points({ ring_points, count, apex })
+			ring_hull_points({ ring_points, apex })
 		}
 	}
 }
@@ -43,42 +43,39 @@ hull_points_of_sorted = |sorted| {
 	top_chain.drop_last(1).concat(bottom_chain.drop_last(1))
 }
 
-## What `cone_hull_points` gives for a ring of `count` points, two or more.
-ring_hull_points : {
-	ring_points : List(Screen.Point),
-	count : U64,
-	apex : Screen.Point,
-} -> List(Screen.Point)
-ring_hull_points = |{ ring_points, count, apex }| {
+## What `cone_hull_points` gives for a ring of two or more points.
+ring_hull_points : { ring_points : List(Screen.Point), apex : Screen.Point } -> List(Screen.Point)
+ring_hull_points = |{ ring_points, apex }| {
+	count = ring_points.len()
 	point_at = |index| ring_points.get(index % count) ?? crash "ConvexHull: a ring index wraps round the ring"
 	first_point = point_at(0)
-	var $leftmost = 0
+	var $leftmost_index = 0
 	var $left_point = first_point
-	var $rightmost = 0
+	var $rightmost_index = 0
 	var $right_point = first_point
 	for index in 1..<count {
 		point = point_at(index)
 		if is_before(point, $left_point) {
-			$leftmost = index
+			$leftmost_index = index
 			$left_point = point
 		} else if is_before($right_point, point) {
-			$rightmost = index
+			$rightmost_index = index
 			$right_point = point
 		} else {
 			{}
 		}
 	}
-	forward_count = ($rightmost + count - $leftmost) % count + 1
+	forward_count = ($rightmost_index + count - $leftmost_index) % count + 1
 	back_count = count - forward_count
-	var $sorted = List.with_capacity(count + 1)
+	var $merged = List.with_capacity(count + 1)
 	var $forward_at = 0
 	var $back_at = 0
 	var $apex_placement = Unplaced
 	var $order = InOrder
 	var $previous = $left_point
 	while $forward_at < forward_count or $back_at < back_count {
-		forward_point = point_at($leftmost + $forward_at)
-		back_point = point_at($leftmost + count - 1 - $back_at)
+		forward_point = point_at($leftmost_index + $forward_at)
+		back_point = point_at($leftmost_index + count - 1 - $back_at)
 		is_forward_done = $forward_at == forward_count
 		is_back_before = $back_at < back_count and is_before(back_point, forward_point)
 		takes_back = is_forward_done or is_back_before
@@ -92,24 +89,24 @@ ring_hull_points = |{ ring_points, count, apex }| {
 			}
 		if $apex_placement == Unplaced and is_before(apex, point) {
 			$order = order_after($order, { previous: $previous, point: apex })
-			$sorted = $sorted.append(apex)
+			$merged = $merged.append(apex)
 			$previous = apex
 			$apex_placement = Placed
 		} else {
 			{}
 		}
 		$order = order_after($order, { previous: $previous, point })
-		$sorted = $sorted.append(point)
+		$merged = $merged.append(point)
 		$previous = point
 	}
 	if $apex_placement == Unplaced {
 		$order = order_after($order, { previous: $previous, point: apex })
-		$sorted = $sorted.append(apex)
+		$merged = $merged.append(apex)
 	} else {
 		{}
 	}
 	match $order {
-		InOrder => hull_points_of_sorted($sorted)
+		InOrder => hull_points_of_sorted($merged)
 		OutOfOrder => convex_hull_points(ring_points.append(apex))
 	}
 }
@@ -227,12 +224,6 @@ expect convex_hull_points(repeated_points) == [
 	Screen.point(4.0, 4.0),
 ]
 
-expect convex_hull_points(square_and_inside_points).len() == 4
-expect convex_hull_points(triangle_points).len() == 3
-expect convex_hull_points(line_points).len() == 2
-expect convex_hull_points(pair_points).len() == 2
-expect convex_hull_points(repeated_points).len() == 3
-
 expect
 	square_and_inside_points.sort_with(left_to_right)
 		== [
@@ -284,7 +275,3 @@ expect {
 	apex = Screen.point(100.0, 0.0)
 	ConvexHull.cone_hull_points(shuffled, apex) == convex_hull_points(shuffled.append(apex))
 }
-
-expect left_to_right(Screen.point(1.0, 9.0), Screen.point(2.0, 0.0)) == Before
-expect left_to_right(Screen.point(2.0, 0.0), Screen.point(1.0, 9.0)) == After
-expect left_to_right(Screen.point(1.0, 2.0), Screen.point(1.0, 2.0)) == Same
