@@ -6,11 +6,14 @@
 ## physics run on a rider who doesn't exist. After the twelfth, the picture
 ## shows the lean the real rider took.
 import game.Across
+import game.Along
 import game.Angle
 import game.Clock
 import game.Coast
+import game.Distance
 import game.Motorcycle
 import game.LeanSearch
+import game.Route
 import game.Geom
 import game.Tour
 import lib.Brush
@@ -45,6 +48,10 @@ RehearsalWidgetApp :: [].{
 	})
 }
 
+# The title's "Twelve rehearsals", and "After the twelfth" in the header above,
+# count the search's tries.
+expect round_count == 12
+
 ## The step of the ride this widget looks inside.
 step_shown : U32
 step_shown = 374
@@ -54,29 +61,29 @@ motorcycle : Motorcycle
 motorcycle = Tour.at_step(Clock.at_step(step_shown)).instant().rider.motorcycle
 
 ## A point on an arc: how far along the road from the rider, and where across it.
-ArcPoint : { forward : F64, across : F64 }
+ArcPoint : { forward : Distance, across : Across }
 
 ## One try of the search, and the way its coast drew it.
 Rehearsal : { lean_try : LeanSearch.LeanTry, path_points : List(ArcPoint) }
 
-## Where a coast with `lean` goes, each step as a point on the arc.
-points_of : Angle.Lean -> List(ArcPoint)
-points_of = |lean|
-	Coast.coast_path(motorcycle.with_lean(lean)).path_motorcycles.map(
+## Where a coast of `coasting` goes, each step as a point on the arc.
+path_points_of : Motorcycle -> List(ArcPoint)
+path_points_of = |coasting|
+	Coast.coast_path(coasting).path_motorcycles.map(
 		|path_motorcycle| {
 			point = path_motorcycle.route_place.road_point
 			start_along = motorcycle.route_place.road_point.along
-			{
-				forward: point.along.distance_from(start_along).to_metres(),
-				across: point.across.to_metres(),
-			}
+			{ forward: point.along.distance_from(start_along), across: point.across }
 		},
 	)
 
 rehearsals : List(Rehearsal)
 rehearsals =
 	LeanSearch.search_tries(motorcycle).map(
-		|lean_try| { lean_try, path_points: points_of(LeanSearch.tried_lean(lean_try)) },
+		|lean_try| {
+			tried = LeanSearch.tried_motorcycle(motorcycle, lean_try)
+			{ lean_try, path_points: path_points_of(tried) }
+		},
 	)
 
 ## Which way the search went after a try.
@@ -88,7 +95,7 @@ chosen_lean : Angle.Lean
 chosen_lean = LeanSearch.best_lean(motorcycle)
 
 chosen_points : List(ArcPoint)
-chosen_points = points_of(chosen_lean)
+chosen_points = path_points_of(motorcycle.with_lean(chosen_lean))
 
 ## The place of the choice's mark in the row, after one for each try.
 last_stop : U64
@@ -179,17 +186,19 @@ across_stretch = 2.0
 
 ## The right of the road is down the canvas, for a rider heading across it.
 canvas_point : ArcPoint -> Point.Point
-canvas_point = |{ forward, across }|
-	road_plan.canvas_point({ metres_right: forward, metres_down: across * across_stretch })
+canvas_point = |{ forward, across }| {
+	metres_down = across.to_metres() * across_stretch
+	road_plan.canvas_point({ metres_right: forward.to_metres(), metres_down })
+}
 
-## A line right along the road, `across` metres from its middle.
+## A line right along the road, at `across`.
 road_line : {
-	across : F64,
+	across : Across,
 	color : RgbColor,
 	width : F64,
 } -> Shapes.Shape
 road_line = |{ across, color, width }| {
-	y = canvas_point({ forward: 0.0, across }).y
+	y = canvas_point({ forward: Distance.zero, across }).y
 	Shapes.line(
 		{
 			from: { x: 0.0, y },
@@ -203,28 +212,29 @@ road_line = |{ across, color, width }| {
 ## The road from above, with the line the rider is aiming for.
 road_shapes : List(Shapes.Shape)
 road_shapes = {
+	left_edge = Across.left_of_middle(Geom.road_half_width)
 	half_road = Geom.road_half_width.to_metres()
 	[
 		WidgetPage.picture_backdrop(WidgetPalette.plan_ground_color),
 		Rect({
 			x: 0.0,
-			y: canvas_point({ forward: 0.0, across: -half_road }).y,
+			y: canvas_point({ forward: Distance.zero, across: left_edge }).y,
 			width: WidgetPage.canvas_width,
 			height: 2.0 * half_road * across_stretch * road_plan.pixels_a_metre,
 			fill: Brush.flat(WidgetPalette.plan_road_color),
 		}),
 		road_line({
-			across: -half_road,
+			across: left_edge,
 			color: line_color,
 			width: 2.0,
 		}),
 		road_line({
-			across: half_road,
+			across: Across.right_of_middle(Geom.road_half_width),
 			color: line_color,
 			width: 2.0,
 		}),
 		road_line({
-			across: LeanSearch.aimed_across.to_metres(),
+			across: LeanSearch.aimed_across,
 			color: target_color,
 			width: 1.0,
 		}),
@@ -251,7 +261,7 @@ drawn_points = |path_points| {
 ## two of its points, as at its end, where no line is drawn.
 arc_shapes : List(ArcPoint), { color : RgbColor, width : F64 } -> List(Shapes.Shape)
 arc_shapes = |path_points, { color, width }| {
-	start = { forward: 0.0, across: motorcycle.route_place.road_point.across.to_metres() }
+	start = { forward: Distance.zero, across: motorcycle.route_place.road_point.across }
 	points = drawn_points(path_points).prepend(start).map(canvas_point)
 	points
 		.map2(points.drop_first(1), |from, to| { from, to })
@@ -280,8 +290,8 @@ tries_shapes = |tries, width|
 
 rider_mark : Shapes.Shape
 rider_mark = {
-	across = motorcycle.route_place.road_point.across.to_metres()
-	{ x, y } = canvas_point({ forward: 0.0, across })
+	rider_across = motorcycle.route_place.road_point.across
+	{ x, y } = canvas_point({ forward: Distance.zero, across: rider_across })
 	Disc({
 		x,
 		y,
@@ -548,6 +558,24 @@ expect mark_under({ x: mark_x(5) + 12.0, y: marks_y }) == Ok(Shown(6))
 expect mark_under({ x: mark_x(5), y: marks_y + marks_reach }) == Ok(Shown(5))
 expect mark_under({ x: mark_x(5), y: marks_y + marks_reach + 1.0 }) == Err(NoMark)
 expect mark_under({ x: mark_x(5), y: marks_y - marks_reach - 1.0 }) == Err(NoMark)
+
+# Each try's drawn path ends where the search's own coast of that try said it
+# would: across the road where it stayed on, or after as many steps as it took
+# to leave.
+expect
+	rehearsals.all(
+		|{ lean_try, path_points }|
+			match (lean_try.outcome, path_points.last()) {
+				(EndsAt(end_across), Ok(end)) => end.across == end_across
+				(Leaves({ after, .. }), Ok(_)) => path_points.len() == after.to_u32().to_u64()
+				(_, Err(ListWasEmpty)) => False
+			},
+	)
+
+# The step shown is just after the first bend: the rider is on the second
+# segment, under 10 metres along it.
+expect motorcycle.route_place.segment_index == Route.SegmentIndex.number(1)
+expect motorcycle.route_place.road_point.along < Along.metres(10.0)
 
 # An arc is drawn by fewer points than it has, and it still ends at its end.
 expect

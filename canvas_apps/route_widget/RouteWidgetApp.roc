@@ -5,6 +5,7 @@
 ## (`Route.bearing_of`), and the widget lays the road out along those bearings,
 ## with the whole map turned so the road lies along the wide picture.
 import game.Angle
+import game.Distance
 import game.Route
 import game.World
 import lib.Brush
@@ -26,8 +27,13 @@ RouteWidgetApp :: [].{
 	canvas_app = WidgetPage.still_app({ title: "The route", shapes: still_shapes })
 }
 
-## A place on the map, in metres from the route's start.
-MapPoint : { east : F64, north : F64 }
+## A place on the map, by how far east and north of the route's start it is;
+## either can be negative.
+MapPoint : { east : Distance, north : Distance }
+
+## The route's start, where the map is laid out from.
+map_start : MapPoint
+map_start = { east: Distance.zero, north: Distance.zero }
 
 ## One segment of the route, laid out on the map.
 LaidSegment : {
@@ -54,7 +60,10 @@ laid_onto : Layout, { plan : World.SegmentPlan, index : Route.SegmentIndex } -> 
 laid_onto = |{ laid, at }, { plan, index }| {
 	metres = plan.length.to_metres()
 	bearing = map_bearing(index).to_radians()
-	end = { east: at.east + metres * bearing.sin(), north: at.north + metres * bearing.cos() }
+	end = {
+		east: Distance.metres(at.east.to_metres() + metres * bearing.sin()),
+		north: Distance.metres(at.north.to_metres() + metres * bearing.cos()),
+	}
 	{ laid: laid.append({ plan, start: at, end }), at: end }
 }
 
@@ -62,7 +71,7 @@ segments : List(LaidSegment)
 segments =
 	World.segment_plans
 		.fold_with_index(
-			{ laid: [], at: { east: 0.0, north: 0.0 } },
+			{ laid: [], at: map_start },
 			|layout, plan, at| laid_onto(
 				layout,
 				{ plan, index: Route.SegmentIndex.from_count_before(at) },
@@ -101,24 +110,25 @@ read_out_plan =
 
 ## Every corner of the road.
 corners : List(MapPoint)
-corners = segments.map(|segment| segment.end).prepend({ east: 0.0, north: 0.0 })
+corners = segments.map(|segment| segment.end).prepend(map_start)
 
-## The extent of the road on the map.
+## The extent of the road on the map, each edge by how far east or north of the
+## route's start it is.
 Extent : {
-	west : F64,
-	east : F64,
-	south : F64,
-	north : F64,
+	west : Distance,
+	east : Distance,
+	south : Distance,
+	north : Distance,
 }
 
 extent : Extent
 extent =
 	corners.fold(
 		{
-			west: 0.0,
-			east: 0.0,
-			south: 0.0,
-			north: 0.0,
+			west: Distance.zero,
+			east: Distance.zero,
+			south: Distance.zero,
+			north: Distance.zero,
 		},
 		|{ west, east, south, north }, corner| {
 			west: west.min(corner.east),
@@ -136,20 +146,29 @@ map_margin = 18.0
 ## and as many pixels a metre as let the whole road fit.
 map_plan : PlanView
 map_plan = {
-	origin: { x: WidgetPage.canvas_width / 2.0, y: WidgetPage.picture_bottom_y / 2.0 },
-	pixels_a_metre: F64.min(
-		(WidgetPage.canvas_width - 2.0 * map_margin) / (extent.east - extent.west),
-		(WidgetPage.picture_bottom_y - 2.0 * map_margin) / (extent.north - extent.south),
-	),
+	road_width = extent.east.minus(extent.west).to_metres()
+	road_height = extent.north.minus(extent.south).to_metres()
+	{
+		origin: { x: WidgetPage.canvas_width / 2.0, y: WidgetPage.picture_bottom_y / 2.0 },
+		pixels_a_metre: F64.min(
+			(WidgetPage.canvas_width - 2.0 * map_margin) / road_width,
+			(WidgetPage.picture_bottom_y - 2.0 * map_margin) / road_height,
+		),
+	}
 }
 
 ## Where `point` falls on the canvas. North is up the picture.
 canvas_point : MapPoint -> Point.Point
-canvas_point = |{ east, north }|
+canvas_point = |{ east, north }| {
+	west_edge = extent.west.to_metres()
+	east_edge = extent.east.to_metres()
+	south_edge = extent.south.to_metres()
+	north_edge = extent.north.to_metres()
 	map_plan.canvas_point({
-		metres_right: east - (extent.west + extent.east) / 2.0,
-		metres_down: (extent.south + extent.north) / 2.0 - north,
+		metres_right: east.to_metres() - (west_edge + east_edge) / 2.0,
+		metres_down: (south_edge + north_edge) / 2.0 - north.to_metres(),
 	})
+}
 
 read_out_color : RgbColor
 read_out_color = WidgetPalette.highlight_color
@@ -187,8 +206,8 @@ piece_shapes = |{ start, end, .. }, { width, color }| {
 ## The middle of a segment.
 middle_of : LaidSegment -> MapPoint
 middle_of = |{ start, end, .. }| {
-	east: (start.east + end.east) / 2.0,
-	north: (start.north + end.north) / 2.0,
+	east: start.east.plus(end.east).divided_by(2.0),
+	north: start.north.plus(end.north).divided_by(2.0),
 }
 
 ## The colour that marks what the rider meets on a segment, if anything.
