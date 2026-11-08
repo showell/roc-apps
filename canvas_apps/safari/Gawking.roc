@@ -1,9 +1,8 @@
 ## Gawking is what a pig by the road does to the rider's speed. A rider who
 ## notices a pig that catches the eye slows for it, and stays slow to the end
-## of the segment. The eyes' part, the look, is Gaze's.
-import Billboard
+## of the segment. The noticing and the look are the eyes', and Gaze's.
 import Distance
-import Geom
+import Gaze
 import Motorcycle
 import Segment
 import Speed
@@ -11,46 +10,22 @@ import VehicleLimits
 
 Gawking :: [].{
 
-	## How far short of a pig the rider notices it, measured along the road.
-	## The look and the gawking both start here.
-	notice_distance : Distance
-	notice_distance = Distance.metres(150.0)
-
-	## The pig on `segment` that catches the rider's eye: the standout pig of a herd
-	## the rider finds distracting. A herd the rider passes by catches no eye.
-	eye_catching_pig : Segment -> [CatchesEye(Geom.Placed(Billboard)), NoPigCatchesEye]
-	eye_catching_pig = |segment|
-		match segment.segment_standout_pig() {
-			Standout({ pig, interest: Distracting }) => CatchesEye(pig)
-			Standout({ interest: Unnoticed, .. }) | NoPigs => NoPigCatchesEye
-		}
-
-	## The pig the rider is gawking at on this segment, if any. The gawking
-	## starts where an eye-catching pig is noticed and asks only where the
-	## motorcycle is, so it lasts past the pig to the end of the segment:
-	## `gawk_brake` holds the rider down for as long as it lasts, so the rider
-	## doesn't open the throttle until the next segment.
-	gawked_pig : Motorcycle, Segment -> [GawkingAt(Geom.Placed(Billboard)), NotGawking]
-	gawked_pig = |motorcycle, segment|
-		match eye_catching_pig(segment) {
-			CatchesEye(pig) if is_past_notice(motorcycle, pig) => GawkingAt(pig)
-			CatchesEye(_) | NoPigCatchesEye => NotGawking
-		}
-
-	## Whether the rider is gawking at this segment's pig.
+	## Whether the rider is gawking: whether they have noticed this segment's
+	## pig.
 	is_gawking : Motorcycle, Segment -> Bool
 	is_gawking = |motorcycle, segment|
-		match gawked_pig(motorcycle, segment) {
-			GawkingAt(_) => True
-			NotGawking => False
+		match Gaze.noticed_pig(motorcycle, segment) {
+			Noticed(_) => True
+			NothingNoticed => False
 		}
 
 	## The brake for a gawking rider, who aims to be down to `gawk_speed` by
-	## the settle distance before the pig.
+	## the settle distance before the pig. The noticing lasts to the end of
+	## the segment, so the brake holds the rider down until the next one.
 	gawk_brake : Motorcycle, Segment -> VehicleLimits.Limit
 	gawk_brake = |motorcycle, segment|
-		match gawked_pig(motorcycle, segment) {
-			GawkingAt(pig) => {
+		match Gaze.noticed_pig(motorcycle, segment) {
+			Noticed(pig) => {
 				gap = pig.road_point.along.distance_from(motorcycle.route_place.along)
 				room = gap.minus(gawk_settle_distance)
 				AtMost(
@@ -60,14 +35,9 @@ Gawking :: [].{
 					),
 				)
 			}
-			NotGawking => NoLimit
+			NothingNoticed => NoLimit
 		}
 }
-
-## Whether the motorcycle has reached the place where `pig` is noticed.
-is_past_notice : Motorcycle, Geom.Placed(Billboard) -> Bool
-is_past_notice = |motorcycle, pig|
-	motorcycle.route_place.along >= pig.road_point.along.minus(Gawking.notice_distance)
 
 ## The speed a gawking rider brakes down to.
 gawk_speed : Speed
