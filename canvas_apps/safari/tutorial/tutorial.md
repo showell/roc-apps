@@ -234,11 +234,11 @@ Here's where it's called, picking the color for a pair of small trees:
 
 {{code Route.segment_at}}
 
-A value that never changes can be checked once, whole. `Pond`'s one function is below its block, and it's there for a test:
+A value that never changes can be checked once, whole. Below its block, `Pond` keeps a function that's there for its tests:
 
-{{code Pond.is_on_water}}
+{{code Pond.is_inside_water}}
 
-The `expect` under it, in the module above, runs that over all six ducks. One line covers the whole pond.
+An `expect` under it, in the module above, runs that over all six ducks. One line covers the whole pond.
 
 Nothing in this chapter moves, and that's true of the next few chapters too, as we go through what's on one page of the flipbook. First, a word about what a page is made of.
 
