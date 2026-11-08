@@ -1,87 +1,32 @@
 -- budget: steps=40000000 reads=20000 read_bytes=400000000 output_bytes=200000
 -- This is safari's merge gate. It runs everything in safari before a push, and
--- reports every failure. fast.shale is the tier for each edit, and publish.shale
--- runs this one from cold caches.
+-- reports every failure. fast.shale is the tier for each edit, and
+-- publish.shale runs this one from cold caches.
 --
 --   cd <roc-apps checkout> && nice -n 19 shale canvas_apps/safari/gates/run.shale
 --
--- Run from the roc-apps root: every path is the checkout's, so a worktree
--- gates its own tree, on its own caches, so gates in several worktrees can run
--- at once.
--- It takes about 75 seconds, half of that the proof tools.
+-- Run it from the roc-apps root: every path is the checkout's, so a worktree
+-- gates its own tree on its own caches, and gates in several worktrees can run
+-- at once. It takes about three and a half minutes on a busy box
+-- (2026-11-08), a quarter of that each the lints, the expects, the widgets and
+-- the proof tools.
+--
+-- The lints (gates/lints.shale) run first. Then each gate is a child run of
+-- this script, `part=expects`, `part=widgets`, `part=tutorial`,
+-- `part=book_names`, `part=proof` and `part=page`, which also runs alone
+-- (`... run.shale part=proof`); each part's function says what it holds.
+-- fast.shale and lints.shale ask this script for what they share with it, by
+-- the parts at the bottom.
 --
 -- Each stage has a CPU budget, about twice its warm time, in CPU_BUDGET_MS. A
--- stage over it stops the run, since a slow gate is a fault to find, and a cold
--- run has no budgets. Stage times go in `build:times/safari.tsv`, and a large
--- change from the recent ones prints a line (cookbook/times.shale).
---
--- The gates run as child runs of this script, `part=expects`, `part=widgets`,
--- `part=tutorial`, `part=book_names`, `part=proof` and `part=page`, one program
--- of this run's each.
--- A child runs alone the same way (`... run.shale part=proof`).
---
--- The lints (gates/lints.shale) run first: shale's Roc lints, each count held
--- to the table there.
---
--- `part=tutorial` runs tutorial/build.shale's self-test, then builds the
--- tutorial, so a name it quotes that is gone from the code fails the gates.
---
--- `part=book_names` runs gates/book_names.shale, which finds a backticked name
--- in the tutorial's prose, or a node name in its diagrams, that is gone from the
--- code. While the book is parked it only prints its counts, marked SKIPPED, and
--- holds none; when the chapters are rewritten, it goes back to holding them.
---
--- `part=expects` runs `roc test --verbose` from each of EXPECT_ROOTS, whose
--- reach together is every expect: gates/CrossModuleExpects.roc reaches nearly
--- all of them, web.roc the game's modules that only the running game imports,
--- and lib's package root all of lib. The source is the count, so no number
--- needs keeping: every line of a `.roc` file in safari, gates/ or lib that
--- starts `expect` must print `PASS` once in a run that reaches it, and a `PASS`
--- must name such a line. An expect sits at the top level of its file. One
--- indented into a block or a function fails here, and so does one in a module
--- no root reaches. The roots overlap, so a line that two roots reach counts
--- once. It also runs `part=format`, `roc fmt --check` over safari, lib,
--- widget_kit and the widgets, the check fast.shale runs too.
---
--- `part=widgets` runs `roc check` on each widget's web.roc, because the widgets
--- import the game through game.roc and a change to a type they use breaks them.
--- Then it runs `roc test --verbose` once, on gates/WidgetExpects.roc, which
--- reaches every widget's app module through the package.roc in its folder. The
--- widgets are the `*_widget` folders of canvas_apps, found by listing it, and
--- finding none fails, as does a widget the root doesn't name. Every expect in a
--- widget, in widget_kit or in WidgetExpects.roc itself must pass, counted as in
--- `part=expects`. `roc test`
--- runs the expects of every module a root reaches, packages on a path included,
--- and has no way to run only some, so the game's expects run here too, once.
---
--- The proof tools: StepBack passes on "every step back went back one step",
--- OnRoad on "the ride stayed on the road", and ShapesFrame on "differ 0" at
--- every depth. All their output but OnRoad's, and RasterFrame's hash of the
--- frame at each depth, is held exactly to gates/proof.expected. A change that
--- rightly alters the picture changes that file with it, and the commit says
--- why. OnRoad's widest point and finishing step move with every physics
--- change, so they are printed and not held.
--- A depth is there for what its frame shows: at 100 a Roc bird is in flight,
--- at 1529 a cat is frozen in the road, at 1542 it is in mid-leap, at 3698 the
--- truck brakes about 600 m off and its glow is about a pixel across, at 5700
--- the truck is ahead at dusk with its lights on, and at 6250 it is braking in
--- plain view with its brake lights on. Each is a step of the ride's timing, so a
--- physics change that moves the ride can empty a frame: check each scene again
--- after one.
---
--- `part=page` first runs gates/input_bits.shale, which holds the page's key and
--- button bits equal to lib's. Then it runs canvas_apps/build.sh for safari's dev page, into a scratch
--- folder so the dev channel doesn't move, and holds the hash of what it drew to
--- gates/page.expected. With `release=1`, which publish.shale gives it, it builds
--- the release page into the dev channel, held to the same hash.
+-- stage over it stops the run, since a slow gate is a fault to find.
+-- cookbook/times.shale keeps the stages' times in `build:times/safari.tsv`,
+-- prints a line for a large change, and holds a cold run to no budget.
 --
 -- Roc is roc-apps' pin, the nightly named in `roc-version`, installed at
--- `tools:roc-<pin>/roc` (`~/tools/` on the box).
---
--- Every Roc here runs on the checkout's warm cache, under `build:` (CACHES).
--- `cold=1`, which publish.shale gives it, runs each child on an empty cache
--- instead. `part=caches` runs only the cache upkeep the full gate starts with.
---
+-- `tools:roc-<pin>/roc` (`~/tools/` on the box). Every Roc here runs on the
+-- checkout's warm cache, under `build:` (CACHES); `cold=1`, which
+-- publish.shale gives it, runs each child on an empty cache instead.
 -- Each child's binaries and outputs go in a folder of its own under `scratch:`
 -- (`fresh_dir`), removed when the child passes and kept, named, when it fails.
 use("cookbook:times.shale")
@@ -209,6 +154,13 @@ const WIDGET_ROOT = "gates/WidgetExpects.roc"
 const WIDGET_EXPECTS = "canvas_apps/safari/gates/WidgetExpects.roc"
 -- The tutorial's fails/ are apps that must not compile, so no root reaches them.
 const SAFARI_SOURCES = {":(glob)canvas_apps/safari/**/*.roc", ":(exclude,glob)canvas_apps/safari/tutorial/fails/**", ":(glob)canvas_apps/lib/*.roc", ":(exclude)" .. WIDGET_EXPECTS}
+-- A depth is there for what its frame shows: at 100 a Roc bird is in flight,
+-- at 1529 a cat is frozen in the road, at 1542 it is in mid-leap, at 3698 the
+-- truck brakes about 600 m off and its glow is about a pixel across, at 5700
+-- the truck is ahead at dusk with its lights on, and at 6250 it is braking in
+-- plain view with its brake lights on. Each is a step of the ride's timing, so
+-- a physics change that moves the ride can empty a frame: check each scene
+-- again after one.
 const DEPTHS = {"0", "100", "1529", "1542", "3000", "3698", "5700", "6250", "9000"}
 -- fast.shale's one frame stands in for the other depths, because an
 -- arithmetic slip no expect covers moves the picture. It's 5700, the truck
@@ -401,6 +353,16 @@ function format()
   return nil
 end
 
+-- `roc test --verbose` from each of EXPECT_ROOTS, whose reach together is
+-- every expect: gates/CrossModuleExpects.roc reaches nearly all of them,
+-- web.roc the game's modules that only the running game imports, lib's
+-- package root all of lib, and make_book.roc the tutorial's. The source is the
+-- count, so no number needs keeping: every line of a `.roc` file in
+-- SAFARI_SOURCES that starts `expect` must print `PASS` once in a run that
+-- reaches it, and a `PASS` must name such a line. An expect sits at the top
+-- level of its file. One indented into a block or a function fails here, and
+-- so does one in a module no root reaches. The roots overlap, so a line that
+-- two roots reach counts once. It also runs `part=format`'s check.
 function expects()
   local roc = roc_path()
   local cache = child_cache("expects")
@@ -450,7 +412,16 @@ function widgets_unrooted(folders)
   return missing
 end
 
--- A widget that doesn't check isn't tested, so the test waits for them all.
+-- `roc check` on each widget's web.roc, because the widgets import the game
+-- through game.roc and a change to a type they use breaks them. Then `roc test
+-- --verbose` once, on gates/WidgetExpects.roc, which reaches every widget's app
+-- module through the package.roc in its folder. Finding no widget fails, as
+-- does a widget the root doesn't name. Every expect in a widget, in widget_kit
+-- or in WidgetExpects.roc itself must pass, counted as in `part=expects`.
+-- `roc test` runs the expects of every module a root reaches, packages on a
+-- path included, and has no way to run only some, so the game's expects run
+-- here too, once. A widget that doesn't check isn't tested, so the test waits
+-- for them all.
 function widgets()
   local roc = roc_path()
   local cache = child_cache("widgets")
@@ -486,6 +457,13 @@ function held_args()
   return args
 end
 
+-- The proof tools: StepBack passes on "every step back went back one step",
+-- OnRoad on "the ride stayed on the road", and ShapesFrame on "differ 0" at
+-- every depth. All their output but OnRoad's, and RasterFrame's hash of the
+-- frame at each depth, is held exactly to PROOF_EXPECTED. A change that
+-- rightly alters the picture changes that file with it, and the commit says
+-- why. OnRoad's widest point and finishing step move with every physics
+-- change, so they are printed and not held.
 function proof()
   local roc = roc_path()
   local scratch = fresh_dir("scratch:", "safari-proof")
@@ -531,6 +509,11 @@ function proof()
   return nil
 end
 
+-- gates/input_bits.shale first, which holds the page's key and button bits
+-- equal to lib's. Then canvas_apps/build.sh builds safari's dev page into a
+-- scratch folder, so the dev channel doesn't move, and the hash of what it drew
+-- is held to PAGE_EXPECTED. With `release=1`, which tutorial/book.shale gives
+-- it, it builds the release page into the dev channel, held to the same hash.
 function page()
   print(trim(must(run({"shale", "--root", ".", INPUT_BITS}, {timeout_ms = 60000, tail = 40})).out))
   local scratch = fresh_dir("scratch:", "safari-page")
@@ -555,6 +538,8 @@ function page()
   return nil
 end
 
+-- tutorial/build.shale's self-test, then the tutorial's build, so a name it
+-- includes that is gone from the code fails the gates.
 function tutorial()
   local cache = child_cache("tutorial")
   local env = cache_env(cache)
@@ -565,6 +550,8 @@ function tutorial()
   return nil
 end
 
+-- gates/book_names.shale finds a backticked name in the tutorial's prose, or a
+-- node name in its diagrams, that is gone from the code.
 -- The book is parked until its chapters are rewritten (Steve, 2026-11-07), so
 -- the stale names are counted and printed, loudly, but no count is held: a held
 -- count only tracked how broken the parked prose was, and churned at every merge.
@@ -669,6 +656,7 @@ function all()
   if not COLD then print("NOT RUN, left to publish: check.shale, cold caches, release wasm, the widgets' page builds") end
 end
 
+-- `part=caches` runs only the cache upkeep the full gate starts with.
 const PART = arg("part", "")
 if PART == "" then
   all()

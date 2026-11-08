@@ -13,6 +13,8 @@
 
 const SAFARI = "canvas_apps/safari"
 const FILES = arg("files", "")
+-- The glob, from safari's folder, that stands for the whole tree.
+const WHOLE_TREE = "**/*.roc"
 
 -- The globs of the widgets' sources, which the merge gate holds.
 function widget_globs()
@@ -123,14 +125,14 @@ function lint_argv(lint, glob)
   for b in lint.budget do push(argv, b) end
   push(argv, real("cookbook:roc/" .. lint.recipe .. ".shale"))
   local tree_globs = get(lint, "tree_globs", {})
-  if #tree_globs > 0 and glob == "**/*.roc" then
+  if #tree_globs > 0 and glob == WHOLE_TREE then
     push(argv, "glob=" .. join(tree_globs, ","))
   else
     push(argv, "glob=" .. (runs_from_repo_root(lint) and (SAFARI .. "/") or "") .. glob)
   end
   for a in lint.args do push(argv, a) end
   local skip = get(lint, "skip", {})
-  if #skip > 0 and glob == "**/*.roc" then push(argv, "skip=" .. join(skip, ",")) end
+  if #skip > 0 and glob == WHOLE_TREE then push(argv, "skip=" .. join(skip, ",")) end
   return argv
 end
 
@@ -189,7 +191,7 @@ end
 
 -- The number a summary line gives for `check`: "check N", or "N check" for
 -- stack's "N to stack" and "N long".
-function count_in(line, check)
+function count_in_summary(line, check)
   local after = re_find(line, check .. " ([0-9]+)")
   if after ~= nil then return tonumber(after.group) end
   local before = re_find(line, "([0-9]+) " .. check)
@@ -226,10 +228,10 @@ function judge_part(lint, glob)
   local summary = lint_summary(r.out)
   for c in lint.counts do
     if not is_whole_tree(lint, c[1]) then
-      local got = count_in(summary, c[1])
+      local got = count_in_summary(summary, c[1])
       if got == nil then fail("safari lints: " .. lint.recipe .. ": no count for " .. c[1] .. " in its last line: " .. summary) end
       if got > 0 then
-        if c[2] == 0 or glob ~= "**/*.roc" then
+        if c[2] == 0 or glob ~= WHOLE_TREE then
           for l in findings_of(r.out, c[1]) do print(l) end
         end
         if c[2] == 0 then fail("safari lints: " .. lint.recipe .. ": " .. got .. " " .. c[1] .. " in " .. glob .. ", held at zero") end
@@ -242,7 +244,7 @@ end
 
 function judge_files()
   local files = split(FILES, ",")
-  if FILES == "every" or #files > MOST_ONE_AT_A_TIME then files = {"**/*.roc"} end
+  if FILES == "every" or #files > MOST_ONE_AT_A_TIME then files = {WHOLE_TREE} end
   local whole = {}
   for lint in LINTS do
     if #named_checks(lint) == 0 then
@@ -261,16 +263,16 @@ end
 function judge_tree()
   local wrong = {}
   for lint in LINTS do
-    local r = lint_run(lint, "**/*.roc")
+    local r = lint_run(lint, WHOLE_TREE)
     local summary = lint_summary(r.out)
     judge_reach(lint, r.out, summary, wrong)
     -- A recipe that stopped before its counts says why, as when Roc's checker
     -- rejects web.roc.
     local stopped = find(r.out, "── stopped")
-    if stopped ~= nil and count_in(summary, lint.counts[1][1]) == nil then print(sub(r.out, stopped)) end
+    if stopped ~= nil and count_in_summary(summary, lint.counts[1][1]) == nil then print(sub(r.out, stopped)) end
     local said = {}
     for c in lint.counts do
-      local got = count_in(summary, c[1])
+      local got = count_in_summary(summary, c[1])
       if got == nil then
         push(wrong, lint.recipe .. ": no count for " .. c[1] .. " in its last line: " .. summary)
       elseif got ~= c[2] then

@@ -13,7 +13,7 @@
 const RUN = "canvas_apps/safari/gates/run.shale"
 const BOOK = "canvas_apps/safari/tutorial/book.shale"
 
-function say(r, what)
+function report_stage(r, what)
   for l in lines(trim(r.out)) do
     if not starts_with(l, "── budgets") then print(l) end
   end
@@ -23,11 +23,11 @@ function say(r, what)
 end
 
 function main()
-  say(run({"shale", "--root", ".", RUN, "cold=1"}, {timeout_ms = 1800000, tail = 200}), "the merge gate, cold")
+  report_stage(run({"shale", "--root", ".", RUN, "cold=1"}, {timeout_ms = 1800000, tail = 200}), "the merge gate, cold")
   local cache = fresh_dir("scratch:", "safari-check-cache")
-  say(run({"shale", "--root", ".", "check.shale"}, {timeout_ms = 1800000, tail = 40, env = {XDG_CACHE_HOME = real(cache)}}), "check.shale, cold")
+  report_stage(run({"shale", "--root", ".", "check.shale"}, {timeout_ms = 1800000, tail = 40, env = {XDG_CACHE_HOME = real(cache)}}), "check.shale, cold")
   remove_tree(cache)
-  say(run({"shale", "--root", ".", BOOK}, {timeout_ms = 1800000, tail = 60}), "the book, with safari's page and every widget's as release")
+  report_stage(run({"shale", "--root", ".", BOOK}, {timeout_ms = 1800000, tail = 60}), "the book, with safari's page and every widget's as release")
   print("safari publish: every stage passed; site/publish.sh takes each page from the dev channel")
   return nil
 end
