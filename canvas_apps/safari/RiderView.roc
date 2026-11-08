@@ -184,14 +184,9 @@ near_plane_crossing : {
 	to : RiderView.RaisedPoint,
 } -> RiderView.RaisedPointAhead
 near_plane_crossing = |{ from, to }| {
-	fraction = near_plane.minus(from.forward).ratio_to(to.forward.minus(from.forward))
-	RiderView.RaisedPointAhead.(
-		{
-			right: from.right.plus(to.right.minus(from.right).times(fraction)),
-			forward: near_plane,
-			height: from.height.plus(to.height.minus(from.height).times(fraction)),
-		},
-	)
+	fraction = Fraction.of(near_plane.minus(from.forward).ratio_to(to.forward.minus(from.forward)))
+	crossing = RiderView.point_between({ from, to, fraction })
+	RiderView.RaisedPointAhead.({ ..crossing, forward: near_plane })
 }
 
 ## `kept_points` with what one edge of a polygon adds to it: the edge's first
