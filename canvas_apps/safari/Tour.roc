@@ -82,7 +82,7 @@ Tour :: {
 				past_instants = tour.past_instants.drop_last(1)
 				Tour.({ ..tour, instant: previous_instant, past_instants })
 			}
-			Err(_) => Tour.(tour)
+			Err(ListWasEmpty) => Tour.(tour)
 		}
 	}
 

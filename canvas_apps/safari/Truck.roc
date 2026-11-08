@@ -96,7 +96,7 @@ next_bend = |route, route_position|
 					})
 				RouteEnds => NoBendAhead
 			}
-		Err(_) => NoBendAhead
+		Err(NotFound) => NoBendAhead
 	}
 
 ## The tease: where the truck aims to be along the route when the rider is
