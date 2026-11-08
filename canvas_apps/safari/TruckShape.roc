@@ -63,6 +63,14 @@ TruckShape :: [].{
 	cab_bottom : Distance
 	cab_bottom = tire_radius
 
+	## Where the windshield meets the nose: half the truck's height.
+	hood_height : Distance
+	hood_height = truck_height.divided_by(2.0)
+
+	## How tall the trailer is, from its floor to its roof.
+	trailer_height : Distance
+	trailer_height = truck_height.minus(trailer_bottom)
+
 	## The box the truck fills, in its own frame, centred where its trailer
 	## is; the cab is ahead of the trailer.
 	truck_box : TruckShape.TruckBox

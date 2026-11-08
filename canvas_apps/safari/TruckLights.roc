@@ -88,14 +88,11 @@ brake_lamp_outer_edge = TruckShape.truck_width.times(0.1)
 brake_lamp_inner_edge : Distance
 brake_lamp_inner_edge = TruckShape.truck_width.times(0.36)
 
-trailer_height : Distance
-trailer_height = TruckShape.truck_height.minus(TruckShape.trailer_bottom)
-
 brake_lamp_bottom : Distance
-brake_lamp_bottom = TruckShape.trailer_bottom.plus(trailer_height.times(0.2))
+brake_lamp_bottom = TruckShape.trailer_bottom.plus(TruckShape.trailer_height.times(0.2))
 
 brake_lamp_top : Distance
-brake_lamp_top = TruckShape.trailer_bottom.plus(trailer_height.times(0.5))
+brake_lamp_top = TruckShape.trailer_bottom.plus(TruckShape.trailer_height.times(0.5))
 
 brake_color : RgbColor
 brake_color = RgbColor.of(0xFF2A18)
@@ -247,3 +244,8 @@ expect center_of(panel_points) == Screen.point(4.0, 4.0)
 expect center_of(triangle_points) == Screen.point(1.0, 2.0)
 
 expect farthest_from(panel_points, Screen.point(0.0, 0.0)).to_f64() == 10.0
+
+# The headlight's lamp lies on the cab's nose face, above the cab's floor and
+# below its hood.
+expect headlight_height.minus(beam_half_height_at_lamp) >= TruckShape.cab_bottom
+expect headlight_height.plus(beam_half_height_at_lamp) <= TruckShape.hood_height

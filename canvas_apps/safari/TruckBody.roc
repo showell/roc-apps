@@ -52,10 +52,6 @@ axle_pair_gap = Distance.metres(1.2)
 cab_axle_fraction : Fraction
 cab_axle_fraction = Fraction.of(0.55)
 
-## Where the windshield meets the nose: half the truck's height.
-hood_height : Distance
-hood_height = TruckShape.truck_height.divided_by(2.0)
-
 ## The mean of the corners' distances ahead, negative for a face behind the
 ## rider. The sum runs from the last corner to the first; a float sum's
 ## rounding depends on its order, and another order can move a pixel.
@@ -127,7 +123,7 @@ side = |truck, across| {
 				{ along: box.rear, across, height: TruckShape.trailer_bottom },
 				{ along: box.rear, across, height: TruckShape.truck_height },
 				{ along: box.roof_front, across, height: TruckShape.truck_height },
-				{ along: box.nose, across, height: hood_height },
+				{ along: box.nose, across, height: TruckShape.hood_height },
 				{ along: box.nose, across, height: TruckShape.cab_bottom },
 				{ along: box.trailer_front, across, height: TruckShape.cab_bottom },
 				{ along: box.trailer_front, across, height: TruckShape.trailer_bottom },
@@ -184,7 +180,7 @@ windshield = |truck| {
 				{ left: box.left, right: box.right },
 				{
 					near: { along: box.roof_front, height: TruckShape.truck_height },
-					far: { along: box.nose, height: hood_height },
+					far: { along: box.nose, height: TruckShape.hood_height },
 				},
 			),
 		},
@@ -201,7 +197,7 @@ nose = |truck| {
 			corners: TruckShape.strip_corners(
 				{ left: box.left, right: box.right },
 				{
-					near: { along: box.nose, height: hood_height },
+					near: { along: box.nose, height: TruckShape.hood_height },
 					far: { along: box.nose, height: TruckShape.cab_bottom },
 				},
 			),
