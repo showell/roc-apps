@@ -8,7 +8,6 @@ import SegmentPlace
 import Geom
 import Pipeline
 import Pond
-import Wildlife
 
 BillboardSighting :: [].{
 
@@ -102,7 +101,7 @@ bend_life_billboards = |segment|
 	match segment.segment_ending() {
 		Bends({ bend, bend_life }) =>
 			match bend_life {
-				Animal(animal) => Wildlife.bend_billboards({ animal, bend })
+				Animal(animal) => animal.bend_billboards(bend)
 				DuckPond => Pond.placed_ducks(bend)
 				Quiet => []
 			}

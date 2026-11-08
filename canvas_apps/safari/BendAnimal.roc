@@ -9,14 +9,12 @@ import Distance
 import EmojiStills
 import Geom
 
-Wildlife :: [].{
-
-	## The safari animals that stand at a bend.
-	Animal : [Elephant, Giraffe, Zebra, Rhino]
+## The safari animals that stand at a bend.
+BendAnimal := [Elephant, Giraffe, Zebra, Rhino].{
 
 	## The animal and its baby at `bend`, the bend that ends a segment.
-	bend_billboards : { animal : Wildlife.Animal, bend : Geom.Bend } -> List(Geom.Placed(Billboard))
-	bend_billboards = |{ animal, bend }| {
+	bend_billboards : BendAnimal, Geom.Bend -> List(Geom.Placed(Billboard))
+	bend_billboards = |animal, bend| {
 		species = species_of(animal)
 		bend_along = Along.at(bend.segment_length)
 		{ out_on_outside, facing } =
@@ -52,7 +50,7 @@ baby_beyond : Distance
 baby_beyond = Distance.metres(14.0)
 
 ## The species of a bend's animal.
-species_of : Wildlife.Animal -> Billboard.Species
+species_of : BendAnimal -> Billboard.Species
 species_of = |animal|
 	match animal {
 		Elephant => { emoji: EmojiStills.elephant, adult_height: Distance.metres(2.8) }

@@ -1139,7 +1139,7 @@ New in this chapter:
 
 A segment's `bend_life` field says what's at its bend. `Wildlife.bend_critters` turns that into critters:
 
-{{code Wildlife.bend_billboards}}
+{{code BendAnimal.bend_billboards}}
 
 `Quiet` and `DuckPond` have no animals, so they answer with an empty list. An `Animal` answers with a list of two. `inward` is 1 or -1, so one line of arithmetic places the grown animal on either side of the road.
 
@@ -1151,7 +1151,7 @@ Nothing in that function says "elephant". That's what makes the next chapter sho
 
 A giraffe, a rhino and a zebra have one bend each. They all use the same code as the elephant, and they differ by one row:
 
-{{code Wildlife.species_of}}
+{{code BendAnimal.species_of}}
 
 Each animal is a tag, and each answers with its emoji and how tall it stands. The `match` has to cover all four.
 

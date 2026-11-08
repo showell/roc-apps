@@ -7,6 +7,7 @@
 import Across
 import Along
 import Angle
+import BendAnimal
 import Billboard
 import BirdFlight
 import CatCrossing
@@ -15,7 +16,6 @@ import Distance
 import Geom
 import PigHerd
 import Trees
-import Wildlife
 
 Segment := {
 	length : Distance,
@@ -46,7 +46,7 @@ Segment := {
 
 	## What lives at the bend that ends a segment: nothing, a safari animal and
 	## its baby, or a pond with its ducks.
-	BendLife : [Quiet, Animal(Wildlife.Animal), DuckPond]
+	BendLife : [Quiet, Animal(BendAnimal), DuckPond]
 
 	## How a segment ends: by turning into the next, positive to the right,
 	## with what lives at the bend, or by ending the route.
