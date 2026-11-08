@@ -98,20 +98,25 @@ Sun :: [].{
 	sun_in_view : { heading : Angle.Bearing, focal_length : Pixels, .. }, Clock -> Sun.Sighting
 	sun_in_view = |camera, clock| {
 		direction = direction_at(clock)
-		turn_from_view = direction.bearing.turn_from(camera.heading)
-		if turn_from_view.abs() >= quarter_turn {
-			OutOfView
-		} else {
-			sun = sun_on_screen({
-				turn_from_view,
-				height: direction.height,
-				focal_length: camera.focal_length,
-			})
-			if is_glow_on_screen(sun) {
-				InView(sun)
-			} else {
-				OutOfView
+		far_point = Lens.far_point({
+			turn: direction.bearing.turn_from(camera.heading),
+			height: direction.height,
+			focal_length: camera.focal_length,
+		})
+		match far_point {
+			Ok(point) => {
+				sun = {
+					x: point.x,
+					y: point.y,
+					focal_length: camera.focal_length,
+				}
+				if is_glow_on_screen(sun) {
+					InView(sun)
+				} else {
+					OutOfView
+				}
 			}
+			Err(BehindCamera) => OutOfView
 		}
 	}
 
@@ -202,11 +207,6 @@ hour_angle_at = |clock| {
 	hour_angle_at_start.plus(Angle.Turn.degrees(15.0).times(hours_in))
 }
 
-## A quarter turn. The camera sees only what is less than this to either side
-## of where it faces, in front of it.
-quarter_turn : Angle.Turn
-quarter_turn = Angle.Turn.radians(F64.pi / 2.0)
-
 ## Whether any of the glow around `sun` reaches across the screen, as far out
 ## as the frame is drawn, from `Screen.drawn_left` to `Screen.drawn_right`,
 ## which every roll of the screen stays inside.
@@ -228,19 +228,6 @@ glow_inner_radius = FarHeight.of(8.0)
 ## Where the disc's shading from pale to orange starts.
 disc_inner_radius : FarHeight
 disc_inner_radius = FarHeight.of(4.0)
-
-## Where the sun stands on the screen, `turn_from_view` to the right of where
-## the camera faces and `height` above the horizon, through a lens of
-## `focal_length`.
-sun_on_screen : {
-	turn_from_view : Angle.Turn,
-	height : FarHeight,
-	focal_length : Pixels,
-} -> Sun.OnScreen
-sun_on_screen = |{ turn_from_view, height, focal_length }| {
-	on_screen = Lens.far_point({ turn: turn_from_view, height, focal_length })
-	{ x: on_screen.x, y: on_screen.y, focal_length }
-}
 
 # Part of the disc is still above the horizon a step before `fully_set_at`,
 # which gates/expects/RideExpects.roc holds, and none of it from then on.

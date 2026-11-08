@@ -38,16 +38,21 @@ Lens :: [].{
 	## the resting lens holds it, its tangent times the resting focal length
 	## (`height_at_elevation`), so straight ahead both axes follow one rule: the
 	## focal length times the tangent of the angle off the middle of the view.
-	## The turn stays under a quarter turn either way, in front of the camera.
+	## A turn of a quarter turn or more either way is behind the camera.
 	far_point : {
 		turn : Angle.Turn,
 		height : FarHeight,
 		focal_length : Pixels,
-	} -> Screen.Point
-	far_point = |{ turn, height, focal_length }| {
-		x: x_for_slope({ slope: turn.to_radians().tan(), focal_length }),
-		y: y_for_height({ height, focal_length }),
-	}
+	} -> Try(Screen.Point, [BehindCamera])
+	far_point = |{ turn, height, focal_length }|
+		if turn.abs() >= quarter_turn {
+			Err(BehindCamera)
+		} else {
+			Ok({
+				x: x_for_slope({ slope: turn.to_radians().tan(), focal_length }),
+				y: y_for_height({ height, focal_length }),
+			})
+		}
 
 	## The pinhole's rule across the screen: the x for a line of sight that goes
 	## `slope` to the right for every unit forward, through a lens of
@@ -90,6 +95,11 @@ lens_scale = |focal_length| Fraction.of(focal_length.ratio_to(Lens.resting_focal
 field_of_view : Angle.Turn
 field_of_view = Angle.Turn.degrees(70.0)
 
+## A quarter turn. The camera sees only what is less than this to either side
+## of where it faces, in front of it.
+quarter_turn : Angle.Turn
+quarter_turn = Angle.Turn.radians(F64.pi / 2.0)
+
 # Level with the horizon is no height. An elevation of half the view stands as
 # high as the screen is half wide, as a turn that far lands at its edge. Below
 # the horizon is negative.
@@ -116,11 +126,39 @@ expect
 		},
 	)
 
+## Where a far point on the horizon lands at a turn of `radians`, through the
+## lens at rest.
+far_point_at_turn : F64 -> Try(Screen.Point, [BehindCamera])
+far_point_at_turn = |radians|
+	Lens.far_point({
+		turn: Angle.Turn.radians(radians),
+		height: FarHeight.zero,
+		focal_length: Lens.resting_focal_length,
+	})
+
 ## The screen's x at a turn of `radians`, through the lens at rest.
 x_at_turn : F64 -> Pixels
-x_at_turn = |radians| {
-	turn = Angle.Turn.radians(radians)
-	Lens.far_point({ turn, height: FarHeight.zero, focal_length: Lens.resting_focal_length }).x
+x_at_turn = |radians|
+	match far_point_at_turn(radians) {
+		Ok(point) => point.x
+		Err(BehindCamera) => crash "Lens.x_at_turn: ${radians.to_str()} radians is behind the camera"
+	}
+
+## Whether a far direction `radians` to the right of where the camera faces is
+## in front of it.
+is_in_front_at : F64 -> Bool
+is_in_front_at = |radians|
+	match far_point_at_turn(radians) {
+		Ok(_) => True
+		Err(BehindCamera) => False
+	}
+
+# Just under a quarter turn either way is in front of the camera, and a quarter
+# turn or more is behind it.
+expect [0.0, 1.57, -1.57].all(is_in_front_at)
+expect {
+	quarter = quarter_turn.to_radians()
+	[quarter, 0.0 - quarter, 2.0, -3.0].all(|radians| !is_in_front_at(radians))
 }
 
 # A far direction at an elevation lands the focal length times the elevation's
@@ -136,13 +174,19 @@ expect
 		|(degrees, focal_length)| {
 			elevation = Angle.Turn.degrees(degrees)
 			height = Lens.height_at_elevation(elevation)
-			got = Lens.far_point({
+			want = Screen.horizon_y.minus(Pixels.of(focal_length * elevation.to_radians().tan()))
+			far_point = Lens.far_point({
 				turn: Angle.straight_ahead,
 				height,
 				focal_length: Pixels.of(focal_length),
 			})
-			want = Screen.horizon_y.minus(Pixels.of(focal_length * elevation.to_radians().tan()))
-			got.y.minus(want).abs() <= Pixels.of(0.000000001) and got.x == Screen.center_x
+			match far_point {
+				Ok(got) => {
+					is_near_y = got.y.minus(want).abs() <= Pixels.of(0.000000001)
+					is_near_y and got.x == Screen.center_x
+				}
+				Err(BehindCamera) => False
+			}
 		},
 	)
 
