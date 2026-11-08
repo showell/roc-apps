@@ -83,11 +83,11 @@ next = |route, instant| {
 ## `now`: unplanned until the rider comes within reach of it.
 planned_start : Segment, { rider : RiderState, now : Clock } -> EncounterPlan.Start
 planned_start = |segment, { rider, now }| {
-	plan_for = |span, critter_along|
+	plan_for = |span, animal_along|
 		EncounterPlan.planned_start(
 			span,
 			{
-				gap: critter_along.distance_from(rider.motorcycle.route_place.along),
+				gap: animal_along.distance_from(rider.motorcycle.route_place.along),
 				speed: rider.motorcycle.speed,
 				now,
 			},

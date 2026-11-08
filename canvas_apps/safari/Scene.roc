@@ -89,7 +89,7 @@ Scene := {
 
 	## The scene's renderings far to near. Two about as far away as each other
 	## keep the order of the fields they come from, so that order decides which
-	## of two tied things is drawn over the other. A critter perched on a tree is
+	## of two tied things is drawn over the other. An animal perched on a tree is
 	## drawn over it: a perched bird stands at its tree's own depth, so the trees
 	## come before the birds. It is public for FramePartsBench, which times the
 	## sort alone.
