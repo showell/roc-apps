@@ -12,6 +12,7 @@ import game.Lens
 import game.Sky
 import game.Steps
 import game.Sun
+import game.SunPath
 import lib.Brush
 import lib.CanvasApp
 import lib.Input
@@ -116,7 +117,7 @@ picture_shapes = |job, clock|
 		backdrop: {
 			sky_colors: sky_colors(job, clock),
 			sun_sighting: Sun.sun_in_view(
-				{ heading: Sun.bearing_at(clock), focal_length: Lens.resting_focal_length },
+				{ heading: SunPath.bearing_at(clock), focal_length: Lens.resting_focal_length },
 				clock,
 			),
 		},
@@ -137,7 +138,7 @@ CallRow : { text : Str, color : RgbColor }
 
 sun_curve : Curve
 sun_curve = {
-	call_line: |clock| "Sun.height_at(clock) = ${height_text(Sun.height_at(clock))}",
+	call_line: |clock| "SunPath.height_at(clock) = ${height_text(SunPath.height_at(clock))}",
 	level_at: sun_level,
 	color: sun_color,
 }
@@ -224,8 +225,8 @@ chart_y = |level| chart_bottom - (chart_bottom - chart_top) * level
 ## The sun's height as a level on the chart, from its lowest to its highest.
 sun_level : Clock -> F64
 sun_level = |clock| {
-	lowest = Sun.height_at(sunset.last)
-	Sun.height_at(clock).minus(lowest).ratio_to(Sun.height_at_start.minus(lowest))
+	lowest = SunPath.height_at(sunset.last)
+	SunPath.height_at(clock).minus(lowest).ratio_to(SunPath.height_at_start.minus(lowest))
 }
 
 darkness_level : Clock -> F64
@@ -312,7 +313,7 @@ expect
 	row_texts(HorizonWarms, Clock.start)
 		== [
 			"clock = step 0",
-			"Sun.height_at(clock) = 262.5 px",
+			"SunPath.height_at(clock) = 262.5 px",
 			"Sky.darkness_at(clock) = 0%",
 			"Sky.horizon_warmth_at(clock) = 0%",
 		]

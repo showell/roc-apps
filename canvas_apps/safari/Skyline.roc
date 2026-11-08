@@ -16,7 +16,7 @@ import Screen
 import lib.RgbColor
 import lib.Shapes
 
-Mountains :: [].{
+Skyline :: [].{
 
 	## The rolling land: low, and all the way round. It stands 18 pixels high on
 	## average and rises and falls 12 either side of that, in 0.9 of a wave all
@@ -38,11 +38,11 @@ Mountains :: [].{
 	## of `focal_length`: the west range, the north range, the north's snow, then the
 	## land. `darkness` is how far the sky has darkened, and the rock and snow
 	## darken as far.
-	mountain_shapes : { heading : Angle.Bearing, focal_length : Pixels, .. },
+	skyline_shapes : { heading : Angle.Bearing, focal_length : Pixels, .. },
 	{
 		darkness : Fraction,
 	} -> List(Shapes.Shape)
-	mountain_shapes = |aim, { darkness }| {
+	skyline_shapes = |aim, { darkness }| {
 		sky_columns = sky_columns_for(aim)
 		snow_shapes =
 			match snow_shape(
@@ -58,7 +58,7 @@ Mountains :: [].{
 					sky_columns,
 					{
 						focal_length: aim.focal_length,
-						height_at: |column| Mountains.west_range_height(column.bearing),
+						height_at: |column| Skyline.west_range_height(column.bearing),
 						color: rock_color_at_darkness(west_rock, darkness),
 						base_y: range_base_y,
 					},
@@ -79,7 +79,7 @@ Mountains :: [].{
 					sky_columns,
 					{
 						focal_length: aim.focal_length,
-						height_at: |column| Mountains.land_height(column.bearing),
+						height_at: |column| Skyline.land_height(column.bearing),
 						color: Grass.grass_color,
 						base_y: land_base_y,
 					},
@@ -92,7 +92,7 @@ Mountains :: [].{
 ## A column of the skyline: where it is across the screen, the bearing seen
 ## there, and the north range's height at that bearing, which the north range's
 ## silhouette and its snow both need.
-SkyColumn : {
+SkylineColumn : {
 	x : Pixels,
 	bearing : Angle.Bearing,
 	north_height : FarHeight,
@@ -101,12 +101,12 @@ SkyColumn : {
 ## The skyline's columns, every `column_step` pixels from `Screen.drawn_left` to
 ## `Screen.drawn_right`, for a camera facing `heading` through a lens of
 ## `focal_length`.
-sky_columns_for : { heading : Angle.Bearing, focal_length : Pixels, .. } -> List(SkyColumn)
+sky_columns_for : { heading : Angle.Bearing, focal_length : Pixels, .. } -> List(SkylineColumn)
 sky_columns_for = |aim|
 	columns({ from: Screen.drawn_left, to: Screen.drawn_right }).map(
 		|x| {
 			bearing = bearing_at(aim, x)
-			{ x, bearing, north_height: Mountains.north_range_height(bearing) }
+			{ x, bearing, north_height: Skyline.north_range_height(bearing) }
 		},
 	)
 
@@ -159,10 +159,10 @@ snow_peak_height : FarHeight
 snow_peak_height = {
 	first = north_range.center.plus(Angle.straight_ahead.minus(north_range.half_width))
 	last = north_range.center.plus(north_range.half_width)
-	var $highest = Mountains.north_range_height(first)
+	var $highest = Skyline.north_range_height(first)
 	var $at = first.plus(peak_sample_step)
 	while $at <= last {
-		$highest = $highest.max(Mountains.north_range_height($at))
+		$highest = $highest.max(Skyline.north_range_height($at))
 		$at = $at.plus(peak_sample_step)
 	}
 	$highest
@@ -264,10 +264,10 @@ land_base_y = Screen.horizon_y
 ## through a lens of `focal_length`, but never below `base_y`, closed along
 ## `base_y`.
 silhouette :
-	List(SkyColumn),
+	List(SkylineColumn),
 	{
 		focal_length : Pixels,
-		height_at : SkyColumn -> FarHeight,
+		height_at : SkylineColumn -> FarHeight,
 		color : RgbColor,
 		base_y : Pixels,
 	} -> Shapes.Shape
@@ -299,7 +299,7 @@ thinnest_snow = FarHeight.of(0.01)
 ## snowline, then back along the snowline, unless fewer than two of
 ## `sky_columns` on the screen itself show snow.
 snow_shape :
-	List(SkyColumn), { focal_length : Pixels, color : RgbColor } -> Try(Shapes.Shape, [NoSnow])
+	List(SkylineColumn), { focal_length : Pixels, color : RgbColor } -> Try(Shapes.Shape, [NoSnow])
 snow_shape = |sky_columns, { focal_length, color }| {
 	snowy =
 		sky_columns
@@ -368,7 +368,7 @@ expect
 
 expect
 	[0.95, 1.0, 2.0, -0.95, -3.0].all(
-		|radians| Mountains.north_range_height(north_by(radians)) == FarHeight.zero,
+		|radians| Skyline.north_range_height(north_by(radians)) == FarHeight.zero,
 	)
 expect
 	[
@@ -376,21 +376,21 @@ expect
 		west_by(-0.8),
 		north_by(0.0),
 		north_by(1.5),
-	].all(|bearing| Mountains.west_range_height(bearing) == FarHeight.zero)
+	].all(|bearing| Skyline.west_range_height(bearing) == FarHeight.zero)
 
-expect Mountains.north_range_height(north_by(0.0)) > FarHeight.zero
-expect Mountains.north_range_height(north_by(0.94)) > FarHeight.zero
-expect Mountains.north_range_height(north_by(0.0)) > snow_threshold
-expect !(Mountains.north_range_height(north_by(0.9)) > snow_threshold)
-expect Mountains.west_range_height(west_range_bearing) > FarHeight.zero
+expect Skyline.north_range_height(north_by(0.0)) > FarHeight.zero
+expect Skyline.north_range_height(north_by(0.94)) > FarHeight.zero
+expect Skyline.north_range_height(north_by(0.0)) > snow_threshold
+expect !(Skyline.north_range_height(north_by(0.9)) > snow_threshold)
+expect Skyline.west_range_height(west_range_bearing) > FarHeight.zero
 
-expect snowline_under(Mountains.north_range_height(north_by(0.9))) == snow_threshold
-expect snowline_under(Mountains.north_range_height(north_by(2.0))) == snow_threshold
+expect snowline_under(Skyline.north_range_height(north_by(0.9))) == snow_threshold
+expect snowline_under(Skyline.north_range_height(north_by(2.0))) == snow_threshold
 
-expect snowline_under(Mountains.north_range_height(north_by(0.0))) < snow_threshold
-expect snowline_under(Mountains.north_range_height(north_by(0.0))) > snow_threshold.minus(snow_dip)
-expect snowline_under(Mountains.north_range_height(north_by(0.5))) <= snow_threshold
-expect snowline_under(Mountains.north_range_height(north_by(0.5))) >= snow_threshold.minus(snow_dip)
+expect snowline_under(Skyline.north_range_height(north_by(0.0))) < snow_threshold
+expect snowline_under(Skyline.north_range_height(north_by(0.0))) > snow_threshold.minus(snow_dip)
+expect snowline_under(Skyline.north_range_height(north_by(0.5))) <= snow_threshold
+expect snowline_under(Skyline.north_range_height(north_by(0.5))) >= snow_threshold.minus(snow_dip)
 
 expect snow_peak_height > snow_threshold
 
@@ -410,7 +410,7 @@ corner_ys = |shape|
 					is_y: !walk.is_y,
 				},
 			).ys
-		_ => crash "Mountains: a silhouette is a polygon"
+		_ => crash "Skyline: a silhouette is a polygon"
 	}
 
 lowest_y : Shapes.Shape -> F64
@@ -435,7 +435,7 @@ land_silhouette = |aim| silhouette(
 	sky_columns_for(aim),
 	{
 		focal_length: aim.focal_length,
-		height_at: |column| Mountains.land_height(column.bearing),
+		height_at: |column| Skyline.land_height(column.bearing),
 		color: Grass.grass_color,
 		base_y: land_base_y,
 	},

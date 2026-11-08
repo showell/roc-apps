@@ -23,7 +23,7 @@ Truck.chase_margin: a factor that passes 1, the truck's edge over the rider
 ColorShade.shade_channel: a factor that passes 1 on a colour channel
 ColorShade.shade_color: a factor that passes 1 on a colour
 StillShapes.x_sign: a sign, 1 or -1, multiplied into a still's x
-Mountains.MountainRange: how many ridge waves fit a whole turn, a frequency
+Skyline.MountainRange: how many ridge waves fit a whole turn, a frequency
 Lens.x_for_slope: a line of sight's slope, sideways over forward, a distance over a distance
 Easing.lerp: the sum behind blending any unit, which a caller unwraps once
 

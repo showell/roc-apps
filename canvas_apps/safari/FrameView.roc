@@ -8,7 +8,6 @@ import Grass
 import GroundPatch
 import GroundSighting
 import LitTruck
-import Mountains
 import RideInstant
 import RoadAhead
 import RiderCamera
@@ -16,6 +15,7 @@ import Route
 import Scene
 import Screen
 import Sky
+import Skyline
 import Sun
 import lib.Shapes
 
@@ -116,7 +116,7 @@ FrameView := {
 	skyline_shapes : RiderCamera, Clock -> List(Shapes.Shape)
 	skyline_shapes = |camera, clock| {
 		sky_darkness = Sky.darkness_at(clock)
-		Mountains.mountain_shapes(camera, { darkness: sky_darkness })
+		Skyline.skyline_shapes(camera, { darkness: sky_darkness })
 	}
 
 	## The road's ground that `camera` sees of `road`: the road itself and its

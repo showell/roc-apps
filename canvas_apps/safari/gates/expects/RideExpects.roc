@@ -16,14 +16,14 @@ import game.Fraction
 import game.FrameView
 import game.LitTruck
 import game.Motorcycle
-import game.Mountains
 import game.RideInstant
 import game.Rider
 import game.Route
 import game.Sky
+import game.Skyline
 import game.Speed
 import game.Steps
-import game.Sun
+import game.SunPath
 import game.Tour
 import game.World
 
@@ -213,9 +213,9 @@ expect {
 # The sun's disc is not yet wholly set a step before `fully_set_at`, and the sky
 # is lighter than when it is.
 expect {
-	step_before_set = Sun.fully_set_at.minus(Steps.one_step)
-	Sun.height_at(step_before_set) > Sun.height_when_set
-		and Sky.darkness_at(step_before_set) < Sky.darkness_at(Sun.fully_set_at)
+	step_before_set = SunPath.fully_set_at.minus(Steps.one_step)
+	SunPath.height_at(step_before_set) > SunPath.height_when_set
+		and Sky.darkness_at(step_before_set) < Sky.darkness_at(SunPath.fully_set_at)
 }
 
 ## The first step of the ride at which `holds` holds.
@@ -250,15 +250,15 @@ expect {
 ## its own.
 skyline_height : Angle.Bearing -> FarHeight
 skyline_height = |bearing| {
-	north_or_land = Mountains.north_range_height(bearing).max(Mountains.land_height(bearing))
-	Mountains.west_range_height(bearing).max(north_or_land)
+	north_or_land = Skyline.north_range_height(bearing).max(Skyline.land_height(bearing))
+	Skyline.west_range_height(bearing).max(north_or_land)
 }
 
 ## Whether the sun, at `clock`, has sunk behind the skyline.
 is_sun_behind_mountains : Clock -> Bool
 is_sun_behind_mountains = |clock| {
-	sun = Sun.direction_at(clock)
-	sun.height.plus(Sun.radius) < skyline_height(sun.bearing)
+	sun = SunPath.direction_at(clock)
+	sun.height.plus(SunPath.radius) < skyline_height(sun.bearing)
 }
 
 expect !is_sun_behind_mountains(Clock.at_step(0))
@@ -273,8 +273,8 @@ expect is_sun_behind_mountains(Clock.at_step(6000))
 sunset_climax : Clock
 sunset_climax = {
 	hidden_at = first_step_where(is_sun_behind_mountains)
-	range_top = Sun.height_at(hidden_at).plus(Sun.radius)
-	first_step_where(|clock| Sun.height_at(clock).minus(Sun.radius) < range_top)
+	range_top = SunPath.height_at(hidden_at).plus(SunPath.radius)
+	first_step_where(|clock| SunPath.height_at(clock).minus(SunPath.radius) < range_top)
 }
 
 ## How many steps before and after the sunset's climax the rider must be on the
@@ -288,7 +288,7 @@ sunset_margin = Steps.of(150)
 # sun at the sunset's climax.
 expect {
 	bearing = World.route.bearing_of(Fixtures.longest_segment_index)
-	Sun.bearing_at(sunset_climax).turn_from(bearing).abs() < Angle.Turn.degrees(20.0)
+	SunPath.bearing_at(sunset_climax).turn_from(bearing).abs() < Angle.Turn.degrees(20.0)
 }
 
 # Steve's rule: the climax of the sunset happens on the really long road segment
