@@ -1128,7 +1128,7 @@ Every pose of the cat and the bird. Click one to see it large, and click it agai
 New in this chapter:
 
 - Roc: a large table of plain data
-- Modules: `Stills`, `StillShapes`, `CatStills`, `BirdStills`, `EmojiStills`
+- Modules: `Still`, `StillShapes`, `CatStills`, `BirdStills`, `EmojiStills`
 
 The stills are the least readable code in Safari Ride, and nobody is meant to read them. They're generated data, encoded as Roc, and this chapter ends with how they got made. Here's how much data each set holds:
 
@@ -1140,7 +1140,7 @@ The stills are the least readable code in Safari Ride, and nobody is meant to re
 
 The distinction matters. The cat and the bird were drawn for this game, and they have poses. The animals by the road started as emoji, and each has one picture.
 
-A polygon is one record. It has a color, an optional gradient and a list of points:
+A polygon is one record: its fill, which is either one flat color or a gradient, and its points:
 
 {{code Still.Polygon}}
 
@@ -1156,7 +1156,7 @@ Drawing a still is then one sum for each point. The height in pixels scales the 
 
 {{code StillShapes.screen_point}}
 
-That's all there is to drawing a critter. Each set of stills has a `pose_polygons` function that turns a pose into its polygons, and `StillShapes.still_shapes` puts them on screen.
+That's all there is to drawing a critter. Each stills module names its stills, a posed kind picks one with a `match` on its pose, and `StillShapes.still_shapes` puts it on screen.
 
 ### How the stills got made
 
@@ -1170,7 +1170,7 @@ So the developer wrote a baker, a small program that ran the real drawing code o
 
 The emoji-based animals took a different route. They come from Microsoft's Fluent Emoji, in its Flat style. That set draws every animal whole and from the side, where another set draws a rhino as a face, which looks like a bug beside a road. A second baker read each SVG file, walked its shapes in painting order, and cut each curve into short straight lines.
 
-The bull is a hybrid. It comes from the same emoji set, but in its Color style, which is shaded. It's the only still with gradients, on 40 of its 43 polygons, which is why a `StillPolygon` has a place for one. Its 2,309 points are nearly half of `EmojiStills`.
+The bull is a hybrid. It comes from the same emoji set, but in its Color style, which is shaded. It's the only still with gradients, on 40 of its 43 polygons, which is why a polygon's fill can be `Shaded`. Its 2,309 points are nearly half of `EmojiStills`.
 
 The Roc bird came last. Its perched pose is the logo, and Claude drew the five flight poses to match, directly as polygons, in the logo's two purples.
 
@@ -1182,20 +1182,24 @@ Now that we can draw a critter, we can stand one by the road.
 
 ## The elephant
 
-The critters in this stretch of the book are billboards: flat pictures that stand in one place and never change. The code calls them billboards too. We'll start with the elephant. It stands at 14 of the route's 19 bends, so it's the animal you'll see most. A grown elephant waits beyond the guard rail on the outside of the bend, and its baby stands in the middle of the road a little further on.
+The critters in this stretch of the book are billboards: flat pictures that stand in one place and never change. The code calls them billboards too. We'll start with the elephant. It stands at 14 of the route's 18 bends, so it's the animal you'll see most. A grown elephant waits beyond the guard rail on the outside of the bend, and its baby stands 14 metres straight on past the bend, where the road would run if it didn't turn.
 
 New in this chapter:
 
 - Roc: a `match` that answers with a list
-- Modules: `Wildlife`
+- Modules: `BendAnimal`, `Billboard`
 
-A segment's `bend_life` field says what's at its bend. `Wildlife.bend_critters` turns that into critters:
+A segment's ending carries its `bend_life`, what's at its bend. The segment turns that into billboards:
+
+{{code Segment.segment_bend_billboards}}
+
+A quiet bend and the route's end give nothing, a pond gives its ducks, and an animal gives two billboards, itself and its baby:
 
 {{code BendAnimal.bend_billboards}}
 
-`Quiet` and `DuckPond` have no animals, so they answer with an empty list. An `Animal` answers with a list of two. `inward` is 1 or -1, so one line of arithmetic places the grown animal on either side of the road.
+A `match` on the bend's outer side picks which side of the road the grown animal stands on, and which way it faces. It stands just beyond the rail, a metre and a half past the road's edge plus half its own width.
 
-An elephant has no state. It's a plain record, with a place, an emoji, a height and a way to face. `Billboard` looks up the emoji's still and draws it at that height. The baby is the same still at half the height.
+An elephant has no state. A billboard is three facts: its still, its height and which way it faces. Where it stands is the `Geom.Placed` around it. The baby is the same still at half the height.
 
 Nothing in that function says "elephant". That's what makes the next chapter short.
 
@@ -1213,29 +1217,31 @@ These animals stand at the bends. Most of the others come in crowds, and a crowd
 
 ## A pig
 
-A pig is the simplest critter in Safari Ride. It isn't tied to a bend. Here's how we build one:
+A pig is the simplest critter in Safari Ride. It isn't tied to a bend. Here's its species:
 
 {{code PigHerd.pig_species}}
 
 New in this chapter:
 
-- Roc: a `match` on numbers, with a default branch
-- Modules: `Pigs`
+- Roc: a wrapper only one module can build
+- Modules: `PigHerd`
 
-That's the record that the elephant and its baby came out as: two places, an emoji, a height and a way to face. A critter's `codepoint` is what finds its still, and that's one `match`, from a number to some polygons:
+That's the same shape as each animal's row in `species_of`: an emoji and a height. `Billboard.adult_billboard` turns it into a billboard. The emoji is a named still, such as `EmojiStills.elephant`, and only `EmojiStills` can make one:
 
 {{code EmojiStills.EmojiStill}}
+
+So a billboard always holds a still that exists.
 
 That's a pig. One pig doesn't look like much of a farm, though.
 
 ## Herds: cows and pigs
 
-Safari Ride's farms are crowds of animals, and a crowd is just a list of critters. Both herds are worked out once, when the world is built.
+Safari Ride's farms are crowds of animals, and a crowd is just a list of critters. The world stores only each herd's counts or shape. Its segment says where along the road the herd stands, and the herd's own module lays out the animals whenever it's asked.
 
 New in this chapter:
 
-- Roc: `List.from_iter` with `I64.until`
-- Modules: `Cows`, `Scatter`
+- Roc: `List.from_iter` with `U64.until`
+- Modules: `CowHerd`, `Scatter`
 
 ### Cows
 
@@ -1259,7 +1265,7 @@ Pigs graze on the right of the road, near the end of a segment. The first two se
 
 {{code PigHerd.herd_pigs}}
 
-The `match` has three branches, because a segment's pigs can be three things to the rider. `Distracting` is the one a cow doesn't have. One pig in a big herd catches the rider's eye, and the rider slows down to look. That's about the rider more than the pig, so it waits for the rider's chapters.
+The `match` is on the herd's two shapes. How the rider takes a herd is a separate choice the route makes, `Unnoticed` or `Distracting`, and `Distracting` is one a cow doesn't have. One pig in a big herd catches the rider's eye, and the rider slows down to look. That's about the rider more than the pig, so it waits for the rider's chapters.
 
 That's every critter that stands still, and the end of what we can say about one frame.
 
