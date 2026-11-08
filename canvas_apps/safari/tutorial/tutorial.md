@@ -1048,14 +1048,18 @@ The rail stays close to the road. The radio towers stand well back from it. One 
 
 New in this chapter:
 
-- Roc: `match` on a pair
+- Roc: a closer look at a `match` on a pair
 - Modules: `TowerSighting`, `Tower`
 
-A tower isn't placed when the world is built. Its sighting works out where it stands from the segment. This one is for the tower halfway along:
+A tower is two facts: which way it's turned, and its beacon.
+
+{{code Tower.Tower}}
+
+A tower isn't placed when the world is built. Its sighting works out where it stands from the segment, and its footprint is then measured on the road from that spot. This one is for the tower halfway along:
 
 {{code TowerSighting.mid_tower}}
 
-`Segment.has_mid_tower` asks whether the segment is longer than a kilometre, and that's all the world knows about towers.
+`Segment.has_mid_tower` asks whether the segment is longer than a kilometre, and that's all the world knows about towers. The `beacon` line lights the beacon for this step, which the beacons chapter explains.
 
 ### Rods
 
@@ -1063,7 +1067,7 @@ A tower's footprint is a square, and four tags name its corners. Going round the
 
 {{code Tower.next_corner}}
 
-Everything above the footprint is rods. Four legs run from the corners up to a point:
+Everything above the footprint is rods. Four legs run from the corners up to a point, starting as high as the earth's curve lets them show:
 
 {{code Tower.leg_shapes}}
 
@@ -1071,7 +1075,7 @@ A ring of rods goes round the tower every 20 metres, and crossed braces fill the
 
 {{code RiderView.line_ahead}}
 
-The `match` is on a pair, so it has to cover all four combinations. A rod with one end behind the camera is cut where it crosses the camera's plane, and a rod with both ends behind isn't drawn.
+The `match` is on a pair, so it has to cover all four combinations. A rod with one end behind the near plane, 0.4 metres ahead of the camera, is cut where it crosses that plane, and a rod with both ends behind it isn't drawn.
 
 ### Over the horizon
 
@@ -1079,9 +1083,9 @@ As a tower gets further away, it sinks below the horizon from the bottom up:
 
 {{code EarthCurve.exaggerated_drop}}
 
-A real tower wouldn't go so soon. `sink_radius` is 20 km, a much smaller earth than ours, so a tower is gone at 1.8 km. That way, you can see it sink.
+A real tower wouldn't go so soon. `exaggerated_curve_radius` is 20 km, a fifth of the radius of the ground's own curve and far smaller than our earth's, so a tower is gone at 1.8 km. That way, you can see it sink.
 
-Each tower has a beacon on top, and `beacon` is a field of its sighting. Beacons blink, so we'll leave them until things start to move.
+Each tower has a beacon on top, the `beacon` field beside its `yaw`. Beacons blink, so we'll leave them until things start to move.
 
 The truck is man-made too, and it waits for the same reason. That leaves the animals.
 
