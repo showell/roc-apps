@@ -2738,7 +2738,7 @@ So from top to bottom, a rider chooses a lean by simulating physics, and the phy
 
 There are no animals in this chapter. It's about what happens to a program of this size when something has to change, which is the question a reader who cares whether Roc scales should ask.
 
-The answer rests on one fact from the ride instant chapter. Three fields decide a frame, and a frame is a value. So a frame can be compared, exactly, with the same frame from an hour ago.
+The answer rests on one fact from the ride instant chapter. Four fields decide a frame, and a frame is a value. So a frame can be compared, exactly, with the same frame from an hour ago.
 
 | Step | What the frame shows | Hash of its pixels | Shapes |
 |---|---|---|---|
@@ -2978,10 +2978,10 @@ digraph opened {
   move [label="move the rider and the truck\nStepping through the ride to The truck's motion,\nRehearsal"];
   look [label="look around\nThe modules, The cat, The bird"];
   draw [label="draw it against the backdrop\nThe sky, The platform"];
-  world -> tick;
-  tick -> move;
-  move -> look;
-  look -> draw;
+  world -> tick [label="  starts the clock"];
+  tick -> move [label="  each step"];
+  move -> look [label="  from the new places"];
+  look -> draw [label="  hands what it sees"];
   draw -> tick [label="  next step"];
 }
 ```
@@ -3007,7 +3007,7 @@ The four don't move independently. They read each other, so the order within a s
 
 The rider reacts to the cat every step. The cat reacts to the rider once, when its plan is made, and never again: after that, it plays on the clock alone. So on the step a crossing is planned, the rider hasn't felt it yet.
 
-Swap two of those lines and you get a different ride. A truck that read the rider from before the move would aim at a different mark, and the frame hashes in Proving it are held exactly, so they'd catch any change that moved the truck. Going backward never meets the order at all: `Tour.step_back` takes an old instant off the list, and nothing is replayed.
+Swap two of those lines and you get a different ride: a truck that read the rider from before the move would aim at a mark one step behind. Going backward never meets the order at all: `Tour.step_back` takes an old instant off the list, and nothing is replayed.
 
 ### All four at a glance
 
@@ -3016,7 +3016,7 @@ Swap two of those lines and you get a different ride. A truck that read the ride
 | The rider | `Rider` | `Rider.rider_at_next_step`, reading the encounter's stage at the old clock | The camera, and so every sighting; the truck and the plan, within the step |
 | The truck | `TruckJourney.TruckProgress` | `TruckJourney.truck_progress_at_next_step`, reading how far along the new rider is | `TruckSighting`, and the brake lights |
 | The clock | `Clock` | `Clock.next` | The sky, the sun, the mountains, the beacons, the headlights, and the encounter's stage |
-| The encounter plan | `EncounterPlan` | `plan_at_next_step`: kept, forgotten at a new segment, or made from the new rider at the new clock | With the clock, the encounter's stage: the cat's and the bird's poses, and the rider's held throttle and look |
+| The encounter plan | `EncounterPlan` | `EncounterPlan.plan_at_next_step`: kept, forgotten at a new segment, or made from the new rider at the new clock | With the clock, the encounter's stage: the cat's and the bird's poses, and the rider's held throttle and look |
 
 That's the loop from the start of the tour, with every box opened. The patterns that kept turning up along the way are gathered in the appendix that follows.
 
