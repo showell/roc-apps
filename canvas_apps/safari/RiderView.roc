@@ -13,6 +13,14 @@ RiderView :: [].{
 	## behind the rider.
 	RiderPoint : { right : Distance, forward : Distance }
 
+	## How far apart two points on the ground are, along the ground.
+	ground_distance : { from : RiderView.RiderPoint, to : RiderView.RiderPoint } -> Distance
+	ground_distance = |{ from, to }| {
+		rightward = to.right.minus(from.right).to_metres()
+		forward = to.forward.minus(from.forward).to_metres()
+		Distance.metres((rightward * rightward + forward * forward).sqrt())
+	}
+
 	## A point in the rider's view, at a height above the level of the rider.
 	## All three parts are signed: `right` and `forward` as on a `RiderPoint`,
 	## and a negative `height` is below that level, where the ground curves
@@ -413,3 +421,15 @@ expect
 			forward: Distance.metres(15.0),
 			height: Distance.metres(15.0),
 		}
+
+# Along the ground, whichever way the second point lies from the first.
+expect
+	[
+		({ right: Distance.metres(-1.0), forward: Distance.metres(2.0) }, 5.0),
+		({ right: Distance.metres(2.0), forward: Distance.metres(6.0) }, 0.0),
+	].all(
+		|(from, want)| {
+			to = { right: Distance.metres(2.0), forward: Distance.metres(6.0) }
+			RiderView.ground_distance({ from, to }).to_metres() == want
+		},
+	)

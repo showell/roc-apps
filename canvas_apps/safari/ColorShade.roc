@@ -5,13 +5,17 @@ import lib.RgbColor
 
 ColorShade :: [].{
 
-	## A color with each channel scaled by `factor`, as `shade_channel` scales it.
-	shade_color : RgbColor, F64 -> RgbColor
-	shade_color = |color, factor|
+	## How a color is shaded: darkened by a fraction of each channel, or
+	## lightened by one.
+	Shade : [Darkened(Fraction), Lightened(Fraction)]
+
+	## A color with each channel shaded, as `shade_channel` shades it.
+	shade_color : RgbColor, ColorShade.Shade -> RgbColor
+	shade_color = |color, shade|
 		RgbColor.from_channels({
-			red: shade_channel(color.red(), factor),
-			green: shade_channel(color.green(), factor),
-			blue: shade_channel(color.blue(), factor),
+			red: shade_channel(color.red(), shade),
+			green: shade_channel(color.green(), shade),
+			blue: shade_channel(color.blue(), shade),
 		})
 
 	## The color `fraction` of the way from `from` to `to`, each channel
@@ -51,34 +55,61 @@ channel_between = |{ from, to, fraction }| {
 	rounded.to_u8_try() ?? crash "ColorShade.channel_between: a blend lies between its two channels"
 }
 
-## One channel scaled by `factor`, rounded, and held at 255 at most. A
-## negative factor has no colour to make, and crashes.
-shade_channel : U8, F64 -> U8
-shade_channel = |channel, factor| {
-	scaled =
-		(channel.to_f64() * factor).round_to_i64_try()
-			?? crash "ColorShade.shade_channel: a shaded channel is a finite number"
-	if scaled < 0 {
-		crash "ColorShade.shade_channel: a negative factor makes a negative channel"
-	} else if scaled > 255 {
-		255
-	} else {
-		scaled.to_u8_wrap()
+## One channel shaded and rounded. Darkened by `f`, it is scaled by the
+## whole less `f`; lightened by `f`, by one and `f`, and held at 255 at most.
+shade_channel : U8, ColorShade.Shade -> U8
+shade_channel = |channel, shade|
+	match shade {
+		Darkened(darkening) => {
+			scaled =
+				(channel.to_f64() * darkening.complement().to_f64()).round_to_i64_try()
+					?? crash "ColorShade.shade_channel: a darkened channel is a finite number"
+			# The scale lies from 0 to 1, so the channel can only fall.
+			scaled.to_u8_try() ?? crash "ColorShade.shade_channel: a darkened channel lies from 0 to its own value"
+		}
+		Lightened(lightening) => {
+			scaled =
+				(channel.to_f64() * (1.0 + lightening.to_f64())).round_to_i64_try()
+					?? crash "ColorShade.shade_channel: a lightened channel is a finite number"
+			if scaled > 255 {
+				255
+			} else {
+				scaled.to_u8_wrap()
+			}
+		}
 	}
-}
 
 sample_color : RgbColor
 sample_color = RgbColor.of(0x804020)
 
-expect shade_channel(128, 0.6) == 77
-expect shade_channel(64, 0.6) == 38
-expect shade_channel(32, 0.6) == 19
-expect shade_channel(250, 1.25) == 255
-expect shade_channel(255, 1.0) == 255
-expect shade_channel(255, 2.0) == 255
-expect shade_channel(0, 1.25) == 0
-expect shade_channel(200, 0.0) == 0
-expect ColorShade.shade_color(sample_color, 0.6) == RgbColor.of(0x4D2613)
+expect
+	[
+		((128, 0.4), 77),
+		((64, 0.4), 38),
+		((32, 0.4), 19),
+		((255, 0.0), 255),
+		((0, 0.0), 0),
+		((200, 1.0), 0),
+		((255, 1.0), 0),
+	].all(|((channel, share), want)| shade_channel(channel, Darkened(Fraction.of(share))) == want)
+
+# Lightened by a quarter, 203 rounds to 254, 204 lands on 255, and 205 and past
+# are held there.
+expect
+	[
+		((203, 0.25), 254),
+		((204, 0.25), 255),
+		((205, 0.25), 255),
+		((250, 0.25), 255),
+		((255, 0.0), 255),
+		((0, 1.0), 0),
+		((127, 1.0), 254),
+		((128, 1.0), 255),
+		((255, 1.0), 255),
+	].all(|((channel, share), want)| shade_channel(channel, Lightened(Fraction.of(share))) == want)
+
+expect ColorShade.shade_color(sample_color, Darkened(Fraction.of(0.4))) == RgbColor.of(0x4D2613)
+expect ColorShade.shade_color(sample_color, Lightened(Fraction.of(0.25))) == RgbColor.of(0xA05028)
 
 # A channel part way rounds half up, and lands on each end exactly.
 expect

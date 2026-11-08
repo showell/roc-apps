@@ -128,7 +128,7 @@ post : RiderView.RiderPoint,
 post = |at, { previous, next }| {
 	rightward = next.right.minus(previous.right).to_metres()
 	forward = next.forward.minus(previous.forward).to_metres()
-	length = (rightward * rightward + forward * forward).sqrt()
+	length = RiderView.ground_distance({ from: previous, to: next }).to_metres()
 	run = if length.to_bits() == 0 {
 		1.0
 	} else {

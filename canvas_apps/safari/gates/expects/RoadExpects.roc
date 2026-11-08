@@ -40,7 +40,7 @@ expect {
 # of the route. Here the route has nine.
 expect {
 	nine_segments =
-		List.repeat(Fixtures.going_straight_on(Fixtures.segment_of([])), 8)
+		List.repeat(Fixtures.bending_right(Fixtures.segment_of([])), 8)
 			.append(Fixtures.segment_of([]))
 	route = Route.from_segments(nine_segments)
 	[
@@ -208,14 +208,8 @@ expect
 expect {
 	stretches =
 		Route.from_segments([
-			{
-				..Fixtures.going_straight_on(Fixtures.segment_of([])),
-				length: Distance.metres(300.0),
-			},
-			{
-				..Fixtures.going_straight_on(Fixtures.segment_of([])),
-				length: Distance.metres(150.0),
-			},
+			{ ..Fixtures.bending_right(Fixtures.segment_of([])), length: Distance.metres(300.0) },
+			{ ..Fixtures.bending_right(Fixtures.segment_of([])), length: Distance.metres(150.0) },
 			{ ..Fixtures.segment_of([]), length: Distance.metres(50.0) },
 		]).segments_with_ends()
 	lengths = stretches.map(|stretch| stretch.segment.length.to_metres())

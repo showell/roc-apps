@@ -83,13 +83,6 @@ chunk_end = |segment_length, chunk_number| {
 	Along.at(segment_length.times(chunk_number.to_f64()).divided_by(segment_chunk_count.to_f64()))
 }
 
-## How long the segment after a bend is.
-length_after : RoadAhead.RoadView, BendInView -> Distance
-length_after = |road, bend_in_view| RoadAhead.segment_at(
-	road,
-	BendInView.position_after(bend_in_view),
-).length
-
 ## A patch of road with these corners.
 road_patch : List(RiderView.RiderPoint) -> GroundPatch
 road_patch = |corners| GroundPatch.of(corners, road_color)
@@ -140,25 +133,13 @@ bend_paving : RoadAhead.RoadView,
 } -> GroundPatch
 bend_paving = |road, { vantage, bend_in_view }| {
 	length_before = bend_in_view.length_before()
-	before = |along, across| RoadAhead.rider_point_at(
-		road,
-		{
-			vantage,
-			place: bend_in_view.place_before(),
-			road_point: { along, across },
-		},
-	)
-	after = |along, across| RoadAhead.rider_point_at(
-		road,
-		{
-			vantage,
-			place: bend_in_view.place_after(),
-			road_point: { along, across },
-		},
-	)
+	before = |along, across|
+		bend_in_view.rider_point_before({ road, vantage, road_point: { along, across } })
+	after = |along, across|
+		bend_in_view.rider_point_after({ road, vantage, road_point: { along, across } })
 	lead_start = Along.at(length_before.minus(lead_in_length))
 	end = Along.at(length_before)
-	lead_end = chunk_end(length_after(road, bend_in_view), 1)
+	lead_end = chunk_end(bend_in_view.length_after(road), 1)
 	{ end_before, apex, start_after } = bend_in_view.outer_corner_in_view({ road, vantage })
 	left = Geom.left_edge
 	right = Geom.right_edge

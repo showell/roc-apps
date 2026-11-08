@@ -194,14 +194,12 @@ shade_middle_lift = Fraction.of(0.25)
 ## A shaded polygon's color at its edges.
 width_shade_edge : RgbColor, Fraction -> RgbColor
 width_shade_edge = |color, strength|
-	ColorShade.shade_color(color, shade_edge_darken.times(strength).complement().to_f64())
+	ColorShade.shade_color(color, Darkened(shade_edge_darken.times(strength)))
 
 ## A shaded polygon's color in its middle.
 width_shade_middle : RgbColor, Fraction -> RgbColor
-width_shade_middle = |color, strength| ColorShade.shade_color(
-	color,
-	1.0 + shade_middle_lift.to_f64() * strength.to_f64(),
-)
+width_shade_middle = |color, strength|
+	ColorShade.shade_color(color, Lightened(shade_middle_lift.times(strength)))
 
 narrowest_shaded_width : Pixels
 narrowest_shaded_width = Pixels.of(1.0)

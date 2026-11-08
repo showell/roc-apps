@@ -79,11 +79,12 @@ Fixtures :: [].{
 	crafted_road = |segments|
 		RoadAhead.RoadView.ahead_of(Route.from_segments(segments), Route.SegmentIndex.first)
 
-	## `segment`, bending straight on into another.
-	going_straight_on : Segment -> Segment
-	going_straight_on = |segment| {
+	## `segment`, bending 15 degrees right into another. A bend always turns:
+	## a road that runs straight on has no bend.
+	bending_right : Segment -> Segment
+	bending_right = |segment| {
 		..segment,
-		ending: Bends({ turn: Angle.straight_ahead, bend_life: Animal(Elephant) }),
+		ending: Bends({ turn: Angle.Turn.degrees(15.0), bend_life: Animal(Elephant) }),
 	}
 
 	## The route's first three segments, a route of their own, with a cat crossing
@@ -130,12 +131,12 @@ Fixtures :: [].{
 		Route.SegmentIndex.number(longest_at.to_u32_wrap())
 	}
 
-	## A straight road of three segments, 500 m, 320 m and 400 m long, and the
-	## road ahead of a rider on the first of them.
+	## A road of three segments, 500 m, 320 m and 400 m long, each bending
+	## right into the next, and the road ahead of a rider on the first of them.
 	three_segment_road : RoadAhead.RoadView
 	three_segment_road = crafted_road([
-		{ ..going_straight_on(segment_of([])), length: Distance.metres(500.0) },
-		{ ..going_straight_on(segment_of([])), length: Distance.metres(320.0) },
+		{ ..bending_right(segment_of([])), length: Distance.metres(500.0) },
+		{ ..bending_right(segment_of([])), length: Distance.metres(320.0) },
 		{ ..segment_of([]), length: Distance.metres(400.0) },
 	])
 }

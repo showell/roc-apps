@@ -214,7 +214,7 @@ expect
 ## first, whose bird is in flight.
 birds_on_two_segments : List(Pipeline.Sighted(Bird))
 birds_on_two_segments = birds_seen_on(
-	Fixtures.crafted_road([Fixtures.going_straight_on(bird_segment), bird_segment]),
+	Fixtures.crafted_road([Fixtures.bending_right(bird_segment), bird_segment]),
 	{ camera: Fixtures.origin_camera, encounter_timing: flight_at_step(118) },
 )
 

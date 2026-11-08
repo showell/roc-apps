@@ -55,6 +55,33 @@ BendInView :: { before : SegmentPlace, bend : Geom.Bend }.{
 	length_before : BendInView -> Distance
 	length_before = |BendInView.(bend_in_view)| bend_in_view.bend.segment_length
 
+	## How long the segment after the bend is, on `road`.
+	length_after : BendInView, RoadAhead.RoadView -> Distance
+	length_after = |bend_in_view, road|
+		RoadAhead.segment_at(road, BendInView.position_after(bend_in_view)).length
+
+	## A point on the segment before the bend, as the camera at `vantage` on the
+	## rider's segment of `road` sees it.
+	rider_point_before : BendInView,
+	{
+		road : RoadAhead.RoadView,
+		vantage : Geom.Vantage,
+		road_point : Geom.RoadPoint,
+	} -> RiderView.RiderPoint
+	rider_point_before = |bend_in_view, { road, vantage, road_point }|
+		RoadAhead.rider_point_at(road, { vantage, place: bend_in_view.place_before(), road_point })
+
+	## A point on the segment after the bend, as the camera at `vantage` on the
+	## rider's segment of `road` sees it.
+	rider_point_after : BendInView,
+	{
+		road : RoadAhead.RoadView,
+		vantage : Geom.Vantage,
+		road_point : Geom.RoadPoint,
+	} -> RiderView.RiderPoint
+	rider_point_after = |bend_in_view, { road, vantage, road_point }|
+		RoadAhead.rider_point_at(road, { vantage, place: bend_in_view.place_after(), road_point })
+
 	## Where on the road ahead the segment after a bend lies: next after the
 	## segment before, or the rider's own when the segment before is just behind
 	## the rider.
@@ -90,10 +117,15 @@ BendInView :: { before : SegmentPlace, bend : Geom.Bend }.{
 		BendInView.({ bend, .. }) = bend_in_view
 		start_after = Geom.point_in_segment_before({ along: Along.start, across }, bend)
 		turn_radians = bend.turn.to_radians()
+		turn_sine = turn_radians.sin()
+		# Edges that run on straight, or fold straight back, never meet.
+		if turn_sine == 0.0 {
+			crash "BendInView.outer_corner: a bend that turns 0 or 180 degrees has no apex"
+		}
 		toward_edge = across.distance_from(start_after.across).to_metres()
 		# Negative below a right angle, where the apex is back from start_after,
 		# and positive past one.
-		along_to_apex = toward_edge * turn_radians.cos() / turn_radians.sin()
+		along_to_apex = toward_edge * turn_radians.cos() / turn_sine
 		{
 			end_before: { along: Along.at(bend.segment_length), across },
 			apex: { along: start_after.along.plus(Distance.metres(along_to_apex)), across },
@@ -110,14 +142,11 @@ BendInView :: { before : SegmentPlace, bend : Geom.Bend }.{
 	} -> BendInView.OuterCorner(RiderView.RiderPoint)
 	outer_corner_in_view = |bend_in_view, { road, vantage }| {
 		corner = bend_in_view.outer_corner()
-		rider_point_before = |road_point| RoadAhead.rider_point_at(
-			road,
-			{ vantage, place: bend_in_view.place_before(), road_point },
-		)
+		seen = |road_point| bend_in_view.rider_point_before({ road, vantage, road_point })
 		{
-			end_before: rider_point_before(corner.end_before),
-			apex: rider_point_before(corner.apex),
-			start_after: rider_point_before(corner.start_after),
+			end_before: seen(corner.end_before),
+			apex: seen(corner.apex),
+			start_after: seen(corner.start_after),
 		}
 	}
 }
