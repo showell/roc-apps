@@ -435,18 +435,12 @@ expect
 		(route_segment_at(6).commit_along().to_metres(), 1199.647346038583),
 	].all(|(got, want)| (got - want).abs() <= 0.00000001)
 
-# Each cat starts behind a tree that is really there, and just past it.
+# Each cat crosses by a tree that is really there.
 expect
 	[3, 9, 18].all(
 		|index| {
-			crossing = crossing_at(index)
-			beyond = CatCrossing.cat_beyond_tree
-			behind = CatCrossing.cat_behind_tree
-			route_segment_at(index).trees.any(
-				|{ road_point, .. }|
-					road_point.along.plus(beyond) == crossing.along()
-						and road_point.across.plus(behind) == crossing.start_across(),
-			)
+			cat_tree = crossing_at(index).tree()
+			route_segment_at(index).trees.any(|tree| tree.road_point == cat_tree)
 		},
 	)
 

@@ -17,6 +17,17 @@ PosedCat := { pose : PosedCat.CatPose }.{
 	cat_height : Distance
 	cat_height = Distance.metres(1.7)
 
+	## How far ahead of its feet the frozen cat's head is. Its still's head runs
+	## from 0.02 to 0.49 of its height ahead of them, so this is the head's
+	## centre.
+	frozen_head_reach : Distance
+	frozen_head_reach = PosedCat.cat_height.times(0.25)
+
+	## How far behind its feet the collapsed cat's hips lie: about 0.7 of its
+	## height in its still, with the hind feet themselves nearer 0.6.
+	collapsed_hip_reach : Distance
+	collapsed_hip_reach = PosedCat.cat_height.times(0.7)
+
 	scenery_height : PosedCat -> Distance
 	scenery_height = |_cat| PosedCat.cat_height
 

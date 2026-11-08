@@ -315,7 +315,6 @@ expect steady_flight_stage(15.125) == Playing(Steps.of(35))
 ## middle of a road 2 m either side.
 crossing_cat : CatCrossing
 crossing_cat = CatCrossing.by_tree({
-	road_half_width: Distance.metres(2.0),
 	tree: { along: Along.metres(100.0), across: Across.metres(3.0) },
 })
 
