@@ -66,8 +66,8 @@ CatCrossing :: { tree : Geom.RoadPoint }.{
 	peak_attention = Attention.of(1.8)
 
 	## The cat at `stage` of its crossing.
-	instant_at : CatCrossing, Animation.Stage -> CatCrossing.CatInstant
-	instant_at = |crossing, stage| crossing_timeline(crossing).instant(stage)
+	cat_instant_at : CatCrossing, Animation.Stage -> CatCrossing.CatInstant
+	cat_instant_at = |crossing, stage| crossing_timeline(crossing).instant(stage)
 }
 
 ## How far behind its tree, away from the road, the cat starts.

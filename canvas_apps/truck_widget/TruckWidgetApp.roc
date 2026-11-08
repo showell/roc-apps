@@ -1,6 +1,6 @@
 ## The widget for the Safari tutorial's chapter on the truck: a still picture of
 ## one plain truck seen three ways, in daytime, with no controls. Each truck is
-## `TruckBody.body_shapes`, drawn from a camera set round it at its own angle, and
+## `TruckBody.body_picture`, drawn from a camera set round it at its own angle, and
 ## under each is the way it is seen from.
 import game.Across
 import game.Along
@@ -138,7 +138,7 @@ view_setting = |view| {
 }
 
 truck_shapes : TruckView -> List(Shapes.Shape)
-truck_shapes = |view| TruckBody.body_shapes(view_setting(view))
+truck_shapes = |view| TruckBody.body_picture(view_setting(view)).to_shapes()
 
 ## The words under a truck, centered on it, on the panel's first row.
 caption_shape : TruckView -> Shapes.Shape

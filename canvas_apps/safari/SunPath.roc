@@ -20,8 +20,8 @@ SunPath :: [].{
 	## stands `latitude` above the north horizon. Turning that into the
 	## rider's frame is the one piece of spherical trig: the sun's direction
 	## as a unit vector, up, north and east.
-	direction_at : Clock -> SunPath.Direction
-	direction_at = |clock| {
+	sun_direction_at : Clock -> SunPath.Direction
+	sun_direction_at = |clock| {
 		pole = latitude.to_radians()
 		from_equator = declination.to_radians()
 		hour = hour_angle_at(clock).to_radians()
@@ -39,12 +39,12 @@ SunPath :: [].{
 	## The sun's bearing at `clock`. It starts a little west of south and
 	## swings west as it sinks.
 	bearing_at : Clock -> Angle.Bearing
-	bearing_at = |clock| direction_at(clock).bearing
+	bearing_at = |clock| sun_direction_at(clock).bearing
 
 	## How high the sun stands above the horizon at `clock`; below it once
 	## negative.
 	height_at : Clock -> FarHeight
-	height_at = |clock| direction_at(clock).height
+	height_at = |clock| sun_direction_at(clock).height
 
 	## The sun's radius: how far its top stands above its middle, and its
 	## bottom below.
@@ -113,7 +113,7 @@ expect SunPath.height_at(SunPath.fully_set_at) <= SunPath.height_when_set
 expect {
 	noon = Lens.height_at_elevation(Angle.Turn.degrees(21.56))
 	a_little_lower = Lens.height_at_elevation(Angle.Turn.degrees(20.5))
-	start = SunPath.direction_at(Clock.start)
+	start = SunPath.sun_direction_at(Clock.start)
 	west_of_south = start.bearing.turn_from(Angle.Bearing.radians(F64.pi))
 	start.height < noon and start.height > a_little_lower and west_of_south > Angle.straight_ahead
 }
@@ -121,7 +121,7 @@ expect {
 # The sun swings west as it sinks, and sinks faster the lower it is: the
 # second hour of the ride takes it further down than the first.
 expect {
-	at_hour = |hour| SunPath.direction_at(Clock.at_step(hour * 1000))
+	at_hour = |hour| SunPath.sun_direction_at(Clock.at_step(hour * 1000))
 	first_drop = at_hour(0).height.minus(at_hour(1).height)
 	second_drop = at_hour(1).height.minus(at_hour(2).height)
 	at_hour(2).bearing.turn_from(at_hour(1).bearing) > Angle.straight_ahead

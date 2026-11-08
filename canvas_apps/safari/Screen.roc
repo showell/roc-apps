@@ -23,6 +23,15 @@ Screen :: [].{
 		Pixels.of((dx * dx + dy * dy).sqrt())
 	}
 
+	## How far the farthest of `points` is from `center`, or zero for no
+	## points.
+	farthest_distance : List(Screen.Point), Screen.Point -> Pixels
+	farthest_distance = |points, center|
+		points.fold_rev(
+			Pixels.zero,
+			|corner, farthest| Screen.distance({ from: corner, to: center }).max(farthest),
+		)
+
 	width_px : I64
 	width_px = 960
 
@@ -102,6 +111,18 @@ Screen :: [].{
 expect Screen.distance({ from: Screen.point(3.0, 4.0), to: Screen.point(0.0, 0.0) }).to_f64() == 5.0
 expect Screen.distance({ from: Screen.point(0.0, 0.0), to: Screen.point(3.0, 4.0) }).to_f64() == 5.0
 expect Screen.distance({ from: Screen.point(0.0, 0.0), to: Screen.point(0.0, 0.0) }).to_f64() == 0.0
+
+expect
+	Screen.farthest_distance(
+		[
+			Screen.point(3.0, 4.0),
+			Screen.point(6.0, 8.0),
+			Screen.point(0.0, 0.0),
+			Screen.point(7.0, 4.0),
+		],
+		Screen.point(0.0, 0.0),
+	).to_f64()
+		== 10.0
 
 # At a roll of 30°, the screen's corners turn no further from its middle than
 # the margin reaches: up and down, and left and right.

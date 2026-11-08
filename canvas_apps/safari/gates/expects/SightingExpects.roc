@@ -414,16 +414,16 @@ expect {
 		and pond_acrosses(left_pond_bend).all(|across| across > Geom.right_edge)
 }
 
-# The truck on the real route, through TruckJourney.truck_at_next_step. TruckJourney doesn't import
-# World. The real route's first bends are at 500 m and 820 m, its last at 7220 m,
-# and it ends at 7520 m.
+# The truck on the real route, through TruckJourney.truck_progress_at_next_step.
+# TruckJourney doesn't import World. The real route's first bends are at 500 m
+# and 820 m, its last at 7220 m, and it ends at 7520 m.
 
 ## The truck a step after one at `route_position` metres going `speed` metres a
 ## step, with the rider at the start of the real route, where the tease is 500 m
 ## ahead.
-truck_after : F64, F64 -> TruckJourney
+truck_after : F64, F64 -> TruckJourney.TruckProgress
 truck_after = |route_position, speed|
-	TruckJourney.truck_at_next_step(
+	TruckJourney.truck_progress_at_next_step(
 		{
 			..TruckJourney.initial,
 			route_position: Distance.metres(route_position),
@@ -432,7 +432,7 @@ truck_after = |route_position, speed|
 		{ rider_distance: Distance.zero, route: World.route },
 	)
 
-chasing_truck : TruckJourney
+chasing_truck : TruckJourney.TruckProgress
 chasing_truck = truck_after(100.0, 0.3)
 
 expect
@@ -441,10 +441,10 @@ expect
 		(chasing_truck.route_position.to_metres(), 100.311),
 	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
 
-truck_past_tease : TruckJourney
+truck_past_tease : TruckJourney.TruckProgress
 truck_past_tease = truck_after(600.0, 0.5)
 
-truck_short_of_tease : TruckJourney
+truck_short_of_tease : TruckJourney.TruckProgress
 truck_short_of_tease = truck_after(400.0, 0.5)
 
 expect
@@ -460,7 +460,7 @@ expect truck_after(100.0, 5.0).speed < Speed.metres_a_step(5.0)
 expect chasing_truck.pace == NotSlowing
 
 ## A truck 50 m short of the first bend.
-braking_truck : TruckJourney
+braking_truck : TruckJourney.TruckProgress
 braking_truck = truck_after(450.0, 0.3)
 
 expect
@@ -471,8 +471,8 @@ expect
 
 expect braking_truck.pace == Slowing
 
-settled_truck : TruckJourney
-settled_truck = TruckJourney.truck_at_next_step(
+settled_truck : TruckJourney.TruckProgress
+settled_truck = TruckJourney.truck_progress_at_next_step(
 	{
 		route_position: Distance.metres(450.0),
 		speed: Speed.metres_a_step(0.1776),

@@ -24,7 +24,7 @@ import game.Speed
 import game.Steps
 import game.SunPath
 import game.Tour
-import game.Truck
+import game.TruckHeadlights
 import game.World
 
 RideExpects :: [].{}
@@ -230,10 +230,7 @@ first_step_where = |holds| {
 
 ## Whether the truck's headlights are on at `clock`.
 headlights_on : Clock -> Bool
-headlights_on = |clock| {
-	truck = Truck.at(NotSlowing, Sky.darkness_at(clock))
-	truck == { headlights: On, brake_lights: Off }
-}
+headlights_on = |clock| TruckHeadlights.at(Sky.darkness_at(clock)) == On
 
 # The headlights come on at step 3,555, the first step the sun is behind the
 # mountains, and are off the step before. Their threshold was measured to keep
@@ -257,7 +254,7 @@ skyline_height = |bearing| {
 ## Whether the sun, at `clock`, has sunk behind the skyline.
 is_sun_behind_mountains : Clock -> Bool
 is_sun_behind_mountains = |clock| {
-	sun = SunPath.direction_at(clock)
+	sun = SunPath.sun_direction_at(clock)
 	sun.height.plus(SunPath.radius) < skyline_height(sun.bearing)
 }
 
@@ -355,7 +352,7 @@ ride_encounters = {
 			BirdHere(flight) => {
 				match stage {
 					Playing(_) => {
-						bird = flight.instant_at(stage)
+						bird = flight.bird_instant_at(stage)
 						$flying_step_count = $flying_step_count + 1
 						$is_bird_ahead_throughout = $is_bird_ahead_throughout
 							and bird.location.road_point.along > rider_along($instant)

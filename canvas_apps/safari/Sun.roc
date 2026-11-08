@@ -34,7 +34,7 @@ Sun :: [].{
 	## reaches the screen.
 	sun_in_view : { heading : Angle.Bearing, focal_length : Pixels, .. }, Clock -> Sun.Sighting
 	sun_in_view = |camera, clock| {
-		direction = SunPath.direction_at(clock)
+		direction = SunPath.sun_direction_at(clock)
 		far_point = Lens.far_point({
 			turn: direction.bearing.turn_from(camera.heading),
 			height: direction.height,

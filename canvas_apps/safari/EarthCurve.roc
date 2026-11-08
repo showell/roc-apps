@@ -1,12 +1,35 @@
 ## EarthCurve is the earth's curve under the rider: how far the ground drops below
-## level as it goes away from the rider, and the horizon where it curves out of
-## sight.
+## level as it goes away from the rider, where a point above the road lands in
+## the rider's view once the ground has dropped beneath it, and the horizon where
+## the ground curves out of sight.
 import Camera
 import Distance
 import Fraction
+import Geom
 import RiderView
+import RoadAhead
+import SegmentPlace
 
 EarthCurve :: [].{
+
+	## A point above the road: the segment it is on, where on the road it
+	## stands, and how high above the road it is.
+	PointOverRoad : {
+		place : SegmentPlace,
+		road_point : Geom.RoadPoint,
+		height : Distance,
+	}
+
+	## What a point over the road is seen from: the road ahead of the rider,
+	## and the camera's vantage.
+	RoadSight : { road : RoadAhead.RoadView, vantage : Geom.Vantage }
+
+	## Where `point` lands in the view of the camera at `vantage` on `road`.
+	## The ground curves away from the rider, so the point is lowered by how far
+	## the ground has dropped beneath it.
+	raised_ground_point : EarthCurve.RoadSight, EarthCurve.PointOverRoad -> RiderView.RaisedPoint
+	raised_ground_point = |{ road, vantage }, { place, road_point, height }|
+		lowered_point(RoadAhead.rider_point_at(road, { vantage, place, road_point }), height)
 
 	## How far the ground has curved away below level at `point`, which is
 	## never negative.
@@ -53,13 +76,18 @@ horizon_distance = {
 	Distance.metres((2.0 * radius * Camera.eye_height.to_metres()).sqrt())
 }
 
-## A point on the ground, lowered by the earth's curve.
-ground_point : RiderView.RiderPoint -> RiderView.RaisedPoint
-ground_point = |point| {
+## A point `height` above the rider's level at `point`, lowered by how far
+## the ground has curved away beneath it.
+lowered_point : RiderView.RiderPoint, Distance -> RiderView.RaisedPoint
+lowered_point = |point, height| {
 	right: point.right,
 	forward: point.forward,
-	height: EarthCurve.ground_drop(point).opposite(),
+	height: height.minus(EarthCurve.ground_drop(point)),
 }
+
+## A point on the ground, lowered by the earth's curve.
+ground_point : RiderView.RiderPoint -> RiderView.RaisedPoint
+ground_point = |point| lowered_point(point, Distance.zero)
 
 ## The part of the rider's view within `reach` of the rider, measured on the
 ## ground: a circle round the rider.

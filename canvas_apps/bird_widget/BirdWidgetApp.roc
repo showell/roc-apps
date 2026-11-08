@@ -152,7 +152,7 @@ tree_shapes = |tree| WidgetPage.resting_lens_shapes(
 bird_shapes : Distance -> List(Shapes.Shape)
 bird_shapes = |gap| {
 	placed_bird : Geom.Placed(Bird)
-	placed_bird = Animation.placed_instant(World.first_bird_flight.instant_at(stage_at(gap)))
+	placed_bird = Animation.placed_instant(World.first_bird_flight.bird_instant_at(stage_at(gap)))
 	WidgetPage.resting_lens_shapes(sighting_from_eye(placed_bird), {})
 }
 
@@ -160,7 +160,7 @@ bird_shapes = |gap| {
 status_lines : Distance -> List(Str)
 status_lines = |gap| {
 	stage = stage_at(gap)
-	instant = World.first_bird_flight.instant_at(stage)
+	instant = World.first_bird_flight.bird_instant_at(stage)
 	[
 		ReadoutText.stage_text(stage),
 		"Pose: ${pose_name(instant.pose)}",

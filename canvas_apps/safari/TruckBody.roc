@@ -1,25 +1,28 @@
-## TruckBody gives the shapes of the truck's body: the six faces of its
+## TruckBody gives the picture of the truck's body: the six faces of its
 ## trailer and cab, and its tires. The shapes come sorted far to near, so a
 ## nearer face drawn later covers a farther one.
 import DepthSort
 import Distance
+import EarthCurve
 import Fraction
+import Picture
 import Polygon
 import TruckShape
 import lib.RgbColor
-import lib.Shapes
 
 TruckBody :: [].{
 
 	## The truck's body, its farthest faces first. A face is ordered by the
 	## mean of its corners' distances ahead.
-	body_shapes : TruckShape.TruckSetting -> List(Shapes.Shape)
-	body_shapes = |truck|
-		DepthSort.sort_by(
-			faces(truck),
-			|face| DepthSort.mean_depth(face.corners.map(|corner| corner.forward)),
+	body_picture : TruckShape.TruckSetting -> Picture
+	body_picture = |truck|
+		Picture.from_shapes(
+			DepthSort.sort_by(
+				faces(truck),
+				|face| DepthSort.mean_depth(face.corners.map(|corner| corner.forward)),
+			)
+				.keep_oks(|face| Polygon.clipped_polygon(face, truck.focal_length)),
 		)
-			.keep_oks(|face| Polygon.clipped_polygon(face, truck.focal_length))
 }
 
 body_color : RgbColor
@@ -96,7 +99,12 @@ face : TruckShape.TruckSetting,
 } -> Polygon.FlatPolygon
 face = |truck, { color, corners }| {
 	color,
-	corners: corners.map(|corner| TruckShape.raised_point_on_truck(truck, corner)),
+	corners: corners.map(
+		|corner| {
+			over_road = TruckShape.road_point_on_truck(truck, corner)
+			EarthCurve.raised_ground_point(truck.context, over_road)
+		},
+	),
 }
 
 ## A side of the truck `rightward` of its centre line: up the back of the

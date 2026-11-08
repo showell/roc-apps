@@ -18,7 +18,7 @@ import TruckJourney
 ## nominal, not opaque: other modules read its fields.
 RideInstant := {
 	rider : Rider,
-	truck : TruckJourney,
+	truck : TruckJourney.TruckProgress,
 	clock : Clock,
 	encounter_plan : EncounterPlan,
 }.{
@@ -67,7 +67,7 @@ next = |route, instant| {
 	rider = instant.rider.next({ route, encounter_stage: stage_before })
 	clock = instant.clock.next()
 	rider_place = rider.motorcycle.route_place
-	truck = TruckJourney.truck_at_next_step(
+	truck = TruckJourney.truck_progress_at_next_step(
 		instant.truck,
 		{ rider_distance: rider_place.distance_along(route), route },
 	)

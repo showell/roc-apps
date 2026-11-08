@@ -42,7 +42,7 @@ segment_cat : {
 segment_cat = |{ in_view, encounter_stage }|
 	match in_view.segment.encounter {
 		CatCrosses(crossing) =>
-			posed_in_view(in_view, encounter_stage, |stage| crossing.instant_at(stage))
+			posed_in_view(in_view, encounter_stage, |stage| crossing.cat_instant_at(stage))
 		BirdHere(_) | QuietRoad => Err(NoPose)
 	}
 
@@ -54,11 +54,11 @@ segment_bird : {
 segment_bird = |{ in_view, encounter_stage }|
 	match in_view.segment.encounter {
 		BirdHere(flight) =>
-			posed_in_view(in_view, encounter_stage, |stage| flight.instant_at(stage))
+			posed_in_view(in_view, encounter_stage, |stage| flight.bird_instant_at(stage))
 		CatCrosses(_) | QuietRoad => Err(NoPose)
 	}
 
-## The animal on a segment in view, shown by `instant_at`, with the encounter on
+## The animal on a segment in view, shown by `animal_instant_at`, with the encounter on
 ## the rider's own segment at `rider_stage`: one ahead hasn't begun, and one
 ## behind is over, so it has no pose.
 posed_in_view : RoadAhead.SegmentInView,
@@ -67,9 +67,9 @@ Animation.Stage,
 	EncounterPoses.PlacedAnimal({ pose : pose }),
 	[NoPose],
 )
-posed_in_view = |in_view, rider_stage, instant_at| {
+posed_in_view = |in_view, rider_stage, animal_instant_at| {
 	posed = |stage|
-		Ok({ place: in_view.place, animal: Animation.placed_instant(instant_at(stage)) })
+		Ok({ place: in_view.place, animal: Animation.placed_instant(animal_instant_at(stage)) })
 	match in_view.place {
 		Ahead(position) =>
 			if position == SegmentPlace.Position.first {
