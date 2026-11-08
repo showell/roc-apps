@@ -155,7 +155,11 @@ is_plain_to_see = |stand|
 			)
 			foot_on_screen = { x: outline.foot.x.to_f64(), y: outline.foot.y.to_f64() }
 			foot = WidgetPage.canvas_point_of_screen(foot_on_screen)
-			tip = WidgetPage.canvas_point_of_screen({ ..foot_on_screen, y: foot_on_screen.y - outline.height_on_screen.to_f64() })
+			tip_on_screen = {
+				x: foot_on_screen.x,
+				y: foot_on_screen.y - outline.height_on_screen.to_f64(),
+			}
+			tip = WidgetPage.canvas_point_of_screen(tip_on_screen)
 			WidgetPage.is_in_picture(tip)
 				and WidgetPage.is_in_picture(foot)
 				and foot.y - tip.y >= 30.0
