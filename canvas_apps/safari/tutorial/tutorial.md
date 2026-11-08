@@ -2347,7 +2347,7 @@ A crossing cat asks two things of the rider: hold the throttle, and look. Both a
 
 New in this chapter:
 
-- Roc: a `match` inside a `match`; `|` to give two patterns one branch
+- Roc: a `match` inside a `match`
 - Modules: `EncounterReaction`, `ThrottleLimit`, `Attention`
 
 The modules around `EncounterReaction`
@@ -2369,7 +2369,7 @@ digraph reaction {
 
 The order inside a step matters here. The rider reacts to the cat as it stood at the start of the step, then moves. Only after the move does the ride make its plan, if the rider has just come within reach. So on the step the crossing is planned, the rider hasn't felt it yet; the hold starts on the next step. The camera, drawing the frame, reads the cat as it stands now.
 
-Once planned, the cat never reads the rider again. The rider's speed sets the cat off once, and from then on the effect runs one way: the cat holds the rider back, and nothing the rider does moves the cat.
+Once planned, the cat never reads the rider again. The rider's speed sets the cat off once, and from then on the effect runs one way: the cat keeps the rider from speeding up, and nothing the rider does moves the cat.
 
 ### Hold the throttle
 
@@ -2381,9 +2381,9 @@ While a cat crosses, the rider may not speed up. That's `AtMost(Acceleration.ste
 
 {{code EncounterReaction.encounter_throttle}}
 
-The outer `match` asks what's on the segment, and the inner one asks where the crossing has got to. `Waiting | Past(_)` gives two patterns one branch, and `_` ignores a payload. A bird and a quiet road both answer `NoLimit`.
+The outer `match` asks what's on the segment, and the inner one asks where the crossing has got to. `Waiting | Past(_)` is one branch for two tags, and `_` ignores a payload. A bird and a quiet road both answer `NoLimit`.
 
-The cat's limit is one of four that the throttle folds together, with the bends, the gawking and the road's shoulder, and the lowest wins. Holding at steady also keeps the rider close to the steady speed the plan assumed, so the cat is across about when the rider arrives.
+The cat's limit is one of four that the throttle folds together, with the bends, the gawking and the road's shoulder, starting from the cruise acceleration and held to the lowest. Holding at steady also keeps the rider from going faster than the plan assumed, so the cat is across before the rider arrives.
 
 ### Look
 
@@ -2397,23 +2397,23 @@ The cat's pull rises as it crosses, up to its peak of 1.8, then fades over 83 st
 
 `Playing` and `Past` both carry a step count, and this is where both are used: one says how far into the crossing, the other how long since it ended.
 
-The rider takes the stronger of the cat's pull and the pull of wherever the eyes are already turned, and the camera widens its view to match. That's how a crossing cat seems to fill more of the picture.
+The rider takes the stronger of the cat's pull and what's left of the rider's last look, its depth, which lingers after the eyes come home. The camera widens its view to at least match, or wider if the rider is leaning harder. That's how a crossing cat seems to fill more of the picture.
 
-Each segment has exactly one encounter. A cat asks for both, a bird for neither, and the rider's reactions to everything else, the bends and the pigs, live in the rider's own chapters.
+Each segment has one encounter at most: a cat, a bird, or a quiet road. A cat asks for both, a bird for neither, and the rider's reactions to everything else, the bends and the pigs, live in the rider's own chapters.
 
 ## Rehearsal
 
-Safari Ride's rider steers by rehearsing. Each step it tries twelve leans, then takes the one halfway between where the last try left its bounds.
+Safari Ride's rider steers by rehearsing. Each step it tries twelve leans, each narrowing its bounds, and then takes the lean halfway between the bounds the twelfth try left.
 
 ```widget rehearsal
 Click a mark to see that try at a lean.
 ```
 
-Each try lets a motorcycle that doesn't exist coast down the road with one lean, and the white arc is where it goes. The yellow line is where the real rider wants to end up. A try that ends on the wrong side of it sends the next try the other way, and by the twelfth they've closed in. This is step 374 of the ride, just after a bend.
+Each try lets a motorcycle that doesn't exist coast down the road with one lean, and the white arc is where it goes. The yellow line is the road's middle, where the search wants each coast to end. A try that ends left of it sends the next try further right, and one that ends right of it sends the next further left, and by the twelfth they've closed in. This is step 374 of the ride, just after a bend.
 
 New in this chapter:
 
-- Roc: a `while` that stops early, with `return`
+- Roc: a `while` that stops early, with `return`; `for` over a range
 - Modules: `Coast`, `LeanSearch`
 
 The rider has no steering wheel. Nothing tells it where to go. Each step, it has to choose a lean, and it does that by working out what would happen.
@@ -2425,11 +2425,18 @@ digraph rehearsal {
   node [shape=box, fontname="Helvetica"];
   controls [label="RiderMind.controls"];
   best [label="LeanSearch.best_lean"];
+  search [label="LeanSearch.search_tries"];
   project [label="Coast.project"];
+  keeping [label="Coast.coast_keeping"];
   advance [label="Motorcycle.motorcycle_at_next_step"];
+  throttle [label="Throttle.next_acceleration"];
   controls -> best [label="  asks for a lean"];
-  best -> project [label="  coasts each of 12 tries"];
-  project -> advance [label="  a step at a time"];
+  best -> search [label="  runs 12 tries"];
+  search -> project [label="  coasts each try"];
+  controls -> throttle [label="  asks about that lean"];
+  throttle -> project [label="  the 13th coast"];
+  project -> keeping [label="  drops the path"];
+  keeping -> advance [label="  a step at a time"];
 }
 ```
 
@@ -2441,7 +2448,7 @@ digraph rehearsal {
 
 {{code Coast.coast_keeping}}
 
-The coast's bounds are the road's edges, 5 centimetres in, or wherever it starts if that's further out. The `while` moves the motorcycle a step at a time until the coast reaches the shoulder, makes 25 metres of progress along the road, or runs for 2,000 steps, and `return` leaves the function from inside the loop. The answer says where the coast went:
+The coast's bounds are the road's edges, 5 centimetres in, or wherever it starts if that's further out. The `while` moves the motorcycle a step at a time until it crosses one of those bounds, gets 25 metres further along its segment, or runs for 2,000 steps, and `return` leaves the function from inside the loop. The answer says where the coast went:
 
 {{code Coast.Outcome}}
 
@@ -2449,7 +2456,7 @@ The coast's bounds are the road's edges, 5 centimetres in, or wherever it starts
 
 {{code LeanSearch.search_tries from "mid = $bounds.low.halfway_to($bounds.high)" to "$bounds = bounds_after(lean_try)"}}
 
-The search starts with bounds of at most a degree either side of the current lean, `max_lean_change`. That's what stops the bike flicking from one lean to another. Which way each try sends the next is a `match` on what the rehearsal found. Running off the left means more right, running off the right means less, and staying on the road compares the end of the coast with the target:
+The search starts with bounds a degree either side of the current lean, `max_lean_change`, so the lean it picks is never more than a degree from the last. That's what stops the bike flicking from one lean to another. Which way each try sends the next is a `match` on what the rehearsal found. Running off the left means more right, running off the right means less, and staying on the road compares the end of the coast with the target:
 
 {{code LeanSearch.lean_correction}}
 
