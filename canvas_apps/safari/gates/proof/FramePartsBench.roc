@@ -117,7 +117,7 @@ kind_size = |part, { road, camera, instant }| {
 	focal_length = cam.focal_length
 	facts = FrameView.ride_facts(instant)
 	if part == "scene" {
-		Scene.scene_shapes(Scene.scene_in_view(road, { camera: cam, facts })).len()
+		Scene.scene_shape_lists(Scene.scene_in_view(road, { camera: cam, facts })).join().len()
 	} else if part == "scene_in_view" {
 		scene_rendering_count(Scene.scene_in_view(road, { camera: cam, facts }))
 	} else if part == "trees_sight" {
