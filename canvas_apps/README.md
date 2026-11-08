@@ -366,7 +366,9 @@ An app's `expect`s are the third check, and the compiler runs them:
 
     ~/build/roc-apps/next/<name>/                 the page and its shot.png, served at :9210/<name>/
     ~/build/roc-apps/canvas_apps/<name>/          the native binary
-    ~/build/roc-apps/gen/canvas_apps/<name>-web.log   what to read when a page build fails
+
+A page build that fails prints its Roc or glue log; the logs live in the
+build's staging folder, so builds in two worktrees never read each other's.
 
 `build.sh` clears the page directory first, so yesterday's files cannot be
 served beside today's. Both scripts take `ROC=` and `build.sh` takes `ZIG=`,
