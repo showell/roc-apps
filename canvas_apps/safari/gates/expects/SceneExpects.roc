@@ -150,6 +150,27 @@ expect
 				== outcome,
 	)
 
+# A post 1000 m along stands 5 m below level, where the ground has dropped, and
+# the line from the eye that grazes the horizon passes 3.699 m below level there.
+# A post 1.4 m tall shows its top over the horizon; one 1.2 m tall is hidden.
+expect
+	[(Distance.metres(1.2), Err(BelowHorizon)), (Distance.metres(1.4), Ok(Seen))].all(
+		|(height, outcome)|
+			Pipeline.sighting_above_horizon_of(
+				{
+					road_point: { along: Along.metres(1000.0), across: Across.metres(1.5) },
+					lift: Distance.zero,
+					kind: Post.({ height: height }),
+				},
+				{
+					road: one_segment_road,
+					camera: Fixtures.origin_camera,
+					place: Ahead(SegmentFromRider.Position.first),
+				},
+			).map_ok(|_| Seen)
+				== outcome,
+	)
+
 ## A big green tree `forward` metres straight ahead of the route's start.
 green_tree_ahead : F64 -> Pipeline.Sighted(Conifer)
 green_tree_ahead = |forward| sighted_ahead(Conifer.Green, forward)

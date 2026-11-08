@@ -3,7 +3,6 @@
 ## its side.
 import Camera
 import Distance
-import EarthCurve
 import Fraction
 import Picture
 import Polygon
@@ -88,11 +87,7 @@ beam_shapes = |truck| {
 headlight_beam : TruckShape.TruckSetting, Distance -> Try(Shapes.Shape, [BehindCamera, TooSmall])
 headlight_beam = |truck, rightward| {
 	nose = TruckShape.truck_box.nose
-	on_truck = |ahead, height|
-		EarthCurve.raised_ground_point(
-			truck.context,
-			TruckShape.road_point_on_truck(truck, { ahead, rightward, height }),
-		)
+	on_truck = |ahead, height| TruckShape.raised_point_on_truck(truck, { ahead, rightward, height })
 	at_lamp = |height| on_truck(nose, height)
 	at_far_end = |height| on_truck(nose.plus(beam_length), height)
 	lamp_bottom = at_lamp(headlight_height.minus(beam_half_height_at_lamp))

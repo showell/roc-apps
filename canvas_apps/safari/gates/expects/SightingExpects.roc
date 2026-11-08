@@ -257,10 +257,9 @@ expect
 		]
 
 # Tower: a tower that isn't turned stands on a square 12 m across, its corners
-# 6 m to either side of its middle and 6 m before and past it. Each leg rises
-# from its corner, from as high as the earth's curve hides it: 0.25 m for a
-# tower 100 m straight ahead, 1/320 of the tower's 80 m. The legs taper, so
-# each foot is drawn in toward the middle by 1/320 of 6 m.
+# 6 m to either side of its middle and 6 m before and past it. A tower 100 m
+# straight ahead stands well within the horizon, so none of it is hidden, and
+# each leg rises from its corner.
 shapes_of_tower_100_ahead : List(Shapes.Shape)
 shapes_of_tower_100_ahead = {
 	tower_road = Fixtures.crafted_road([Fixtures.segment_of([])])
@@ -302,9 +301,9 @@ leg_foot_x = |index| {
 }
 
 ## How far a leg's foot is to the side of the tower's middle, and before or
-## past it.
+## past it: half the footprint's width.
 foot_offset : F64
-foot_offset = 6.0 * 319.0 / 320.0
+foot_offset = 6.0
 
 # The legs go back left, back right, front right, front left.
 expect
@@ -399,11 +398,11 @@ tower_yaws_on_lone_segment = |length|
 		{ camera: Fixtures.origin_camera, clock: Clock.start },
 	).map(|tower| (tower.kind.yaw().to_degrees() + 0.5).to_i64_wrap())
 
-# The tower past the end of a segment 1640 m long stands 1800 m ahead, where
-# the curve has sunk all 80 m of it, so only the tower halfway along is
-# sighted. Past a segment 1620 m long, 1780 m ahead, its tip still shows.
-expect tower_yaws_on_lone_segment(Distance.metres(1640.0)) == [0]
-expect tower_yaws_on_lone_segment(Distance.metres(1620.0)) == [30, 0]
+# The tower past the end of a segment 4340 m long stands 4500 m ahead, where
+# the horizon hides all 80 m of it, so only the tower halfway along is
+# sighted. Past a segment 4320 m long, 4480 m ahead, its tip still shows.
+expect tower_yaws_on_lone_segment(Distance.metres(4340.0)) == [0]
+expect tower_yaws_on_lone_segment(Distance.metres(4320.0)) == [30, 0]
 
 ## A pond's bend at the end of a segment 100 m long, turning 15° right.
 right_pond_bend : Geom.Bend

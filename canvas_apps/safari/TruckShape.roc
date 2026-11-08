@@ -1,12 +1,12 @@
 ## A truck's shape: its size, the box it fills on the road, and where a
-## point on it stands over the road. TruckBody, TruckHeadlights and
+## point on it stands in the rider's view. TruckBody, TruckHeadlights and
 ## TruckBrakeLights build their polygons from these.
 import Distance
 import RoadAhead
 import Fraction
 import Geom
-import EarthCurve
 import Picture
+import RiderView
 
 TruckShape :: [].{
 
@@ -84,16 +84,23 @@ TruckShape :: [].{
 		}
 	}
 
-	## Where a point on the truck stands over the road: carried from the
-	## truck's frame onto the road at the truck's spot, and raised as far as the
-	## truck is off the ground.
-	road_point_on_truck : TruckShape.TruckSetting, TruckShape.TruckPoint -> EarthCurve.PointOverRoad
-	road_point_on_truck = |truck, { ahead, rightward, height }| {
-		center = truck.spot.road_point()
+	## Where a point on the truck stands in the rider's view: carried from the
+	## truck's frame onto the road at the truck's spot, which can lie across a
+	## bend, then raised as far as the truck is off the ground and lowered by
+	## the ground's drop beneath the truck's spot.
+	raised_point_on_truck : TruckShape.TruckSetting, TruckShape.TruckPoint -> RiderView.RaisedPoint
+	raised_point_on_truck = |truck, { ahead, rightward, height }| {
+		spot = truck.spot
+		center = spot.road_point()
+		road_point = { along: center.along.plus(ahead), across: center.across.plus(rightward) }
+		on_level = RoadAhead.rider_point_at(
+			truck.context.road,
+			{ vantage: truck.context.vantage, place: spot.place(), road_point },
+		)
 		{
-			place: truck.spot.place(),
-			road_point: { along: center.along.plus(ahead), across: center.across.plus(rightward) },
-			height: truck.spot.lift().plus(height),
+			right: on_level.right,
+			forward: on_level.forward,
+			height: spot.lift().plus(height).minus(spot.drop()),
 		}
 	}
 

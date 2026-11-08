@@ -3,7 +3,6 @@
 ## nearer face drawn later covers a farther one.
 import DepthSort
 import Distance
-import EarthCurve
 import Fraction
 import Picture
 import Polygon
@@ -99,12 +98,7 @@ face : TruckShape.TruckSetting,
 } -> Polygon.FlatPolygon
 face = |truck, { color, corners }| {
 	color,
-	corners: corners.map(
-		|corner| {
-			over_road = TruckShape.road_point_on_truck(truck, corner)
-			EarthCurve.raised_ground_point(truck.context, over_road)
-		},
-	),
+	corners: corners.map(|corner| TruckShape.raised_point_on_truck(truck, corner)),
 }
 
 ## A side of the truck `rightward` of its centre line: up the back of the

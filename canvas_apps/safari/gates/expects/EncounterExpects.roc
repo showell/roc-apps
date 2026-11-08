@@ -492,7 +492,8 @@ posed_spot_at = |{ forward, right, lift }| {
 }
 
 ## `cat` 100 m straight ahead through a 500 px focal length, `lift` off the
-## ground: on the ground its feet land at (480, 306), and it stands 8.5 px tall.
+## ground: on the ground, which has curved 5 cm away below level there, its feet
+## land at (480, 306.25), and it stands 8.5 px tall.
 sample_cat_shapes : Cat, Distance -> List(Shapes.Shape)
 sample_cat_shapes = |cat, lift|
 	cat.scenery_picture({
@@ -525,8 +526,8 @@ is_near_each = |got, expected| {
 # raises it 5 px without moving it across.
 expect
 	[
-		(Distance.zero, [480.0782, 302.16395]),
-		(Distance.metres(1.0), [480.0782, 297.16395]),
+		(Distance.zero, [480.0782, 302.41395]),
+		(Distance.metres(1.0), [480.0782, 297.41395]),
 	].all(|(lift, want)| is_near_each(first_cat_corner_coordinates({ pose: Rest }, lift), want))
 
 # Each cat pose draws every polygon of its still.
@@ -547,8 +548,8 @@ expect
 	)
 
 ## `bird` 110 m ahead, `right` of the camera and `lift` off the ground, through
-## a 500 px focal length. A lift of the camera's height puts its feet on the
-## horizon.
+## a 500 px focal length. A lift of the camera's height puts its feet level with
+## the eye, less the ground's drop beneath them: 6 cm, about a quarter of a pixel.
 bird_shapes_at : Bird, { right : Distance, lift : Distance } -> List(Shapes.Shape)
 bird_shapes_at = |bird, { right, lift }| {
 	spot = posed_spot_at({ forward: Distance.metres(110.0), right, lift })
@@ -577,8 +578,9 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.000000001)
 
 # The perched still's first corner is (-0.0344, 0.5715), at a height of 10 px
-# from feet at (480, 300). 11 m to the right and 11 m above the camera, at
-# 110 m, is 50 px each way.
+# from feet at (480, 300.275), lowered 0.275 px by the ground's drop. 11 m to the
+# right and 11 m above the camera, at 110 m, is 50 px each way, and the drop
+# there lowers the feet 0.27775 px.
 expect {
 	first_corner = |perch|
 		match bird_shapes_at({ pose: Perched }, perch) {
@@ -587,8 +589,8 @@ expect {
 		}
 	raised = { right: Distance.metres(11.0), lift: Camera.eye_height.plus(Distance.metres(11.0)) }
 	[
-		({ right: Distance.metres(0.0), lift: Camera.eye_height }, [479.656, 294.285]),
-		(raised, [529.656, 244.285]),
+		({ right: Distance.metres(0.0), lift: Camera.eye_height }, [479.656, 294.56]),
+		(raised, [529.656, 244.56275]),
 	].all(|(perch, want)| is_near_each(first_corner(perch), want))
 }
 

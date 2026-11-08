@@ -43,16 +43,17 @@ Tower :: { yaw : Angle.Turn, beacon : Beacon }.{
 		Picture.from_shapes(tower_shapes(tower, { footprint, spot, focal_length }))
 	}
 
-	## Whether a tower whose foot stands at `foot` in the rider's view is sunk
-	## wholly below the horizon, so that nothing of it shows.
-	is_wholly_sunk : RiderView.RiderPointAhead -> Bool
-	is_wholly_sunk = |foot| sunk_depth(foot) >= tower_height
+	## How tall a tower stands, from its foot to its apex.
+	scenery_height : Tower -> Distance
+	scenery_height = |_tower| tower_height
 }
 
-## How far the earth's curve has sunk a tower whose foot stands at `foot`. It
-## sinks over the exaggerated curve, so a far tower visibly goes down.
-sunk_depth : RiderView.RiderPointAhead -> Distance
-sunk_depth = |foot| EarthCurve.exaggerated_drop(foot.to_rider())
+## How far up a tower the horizon hides it, when its foot stands at `foot` in
+## the rider's view, `base_height` above the rider's level: the part below the
+## lowest height the rider can see there, which is never negative.
+hidden_height : { foot : RiderView.RiderPoint, base_height : Distance } -> Distance
+hidden_height = |{ foot, base_height }|
+	EarthCurve.lowest_visible_height(foot).minus(base_height).max(Distance.zero)
 
 ## A corner of the tower's square footprint, as seen along the route.
 Corner : [BackLeft, BackRight, FrontRight, FrontLeft]
@@ -88,7 +89,7 @@ tower_footprint = |tower, { road, vantage, spot }| {
 }
 
 ## The whole tower standing on `footprint`: legs, rings, braces and beacon, in
-## that order. Its sighting refuses a tower sunk wholly below the horizon, so
+## that order. Its sighting refuses a tower hidden wholly below the horizon, so
 ## there is always something to draw.
 tower_shapes : Tower,
 {
@@ -98,16 +99,16 @@ tower_shapes : Tower,
 } -> List(Shapes.Shape)
 tower_shapes = |Tower.(tower), { footprint, spot, focal_length }| {
 	foot = spot.foot()
-	lift = spot.lift()
-	if Tower.is_wholly_sunk(foot) {
-		crash "Tower.tower_shapes: a tower sunk wholly below the horizon is refused at its sighting"
+	hidden = hidden_height({ foot: foot.to_rider(), base_height: spot.lift().minus(spot.drop()) })
+	if hidden >= tower_height {
+		crash "Tower.tower_shapes: a tower hidden wholly below the horizon is refused at its sighting"
 	} else {
-		sunk = sunk_depth(foot)
 		geometry = {
 			footprint,
 			foot,
-			lift,
-			sunk,
+			lift: spot.lift(),
+			drop: spot.drop(),
+			hidden,
 			metre_on_screen: metre_on_screen({ at: foot, focal_length }),
 			focal_length,
 		}
@@ -151,14 +152,15 @@ tower_color = RgbColor.of(0x9AA0A8)
 
 ## A tower's measurements in this frame, which its rods are worked out from:
 ## where its footprint and foot stand, how high off the ground it is, how far
-## the earth's curve has sunk it, which is never negative, and how many pixels
-## a metre across spans as far ahead as its foot, which sizes its rods and its
-## beacon.
+## the ground has dropped beneath it, how far up it the horizon hides it, and
+## how many pixels a metre across spans as far ahead as its foot, which sizes
+## its rods and its beacon.
 TowerGeometry : {
 	footprint : Footprint,
 	foot : RiderView.RiderPointAhead,
 	lift : Distance,
-	sunk : Distance,
+	drop : Distance,
+	hidden : Distance,
 	metre_on_screen : Pixels,
 	focal_length : Pixels,
 }
@@ -224,14 +226,14 @@ base_corner_on_road = |corner, { center, yaw }| {
 }
 
 ## How high a point `height_on_tower` up the tower stands in the rider's
-## view: raised by the tower's lift, and lowered by how far it has sunk.
+## view: raised by the tower's lift, and lowered by the ground's drop.
 height_in_view : TowerGeometry, Distance -> Distance
 height_in_view = |geometry, height_on_tower|
-	geometry.lift.plus(height_on_tower.minus(geometry.sunk))
+	geometry.lift.plus(height_on_tower.minus(geometry.drop))
 
 ## A corner of the tower at `height_on_tower`: drawn in toward the foot as
-## the tower tapers, raised by the tower's lift, and lowered by how far the
-## tower has sunk.
+## the tower tapers, raised by the tower's lift, and lowered by the ground's
+## drop.
 corner_at : TowerGeometry, { corner : Corner, height_on_tower : Distance } -> RiderView.RaisedPoint
 corner_at = |geometry, { corner, height_on_tower }| {
 	taper_fraction = height_on_tower.ratio_to(tower_height)
@@ -324,7 +326,7 @@ leg_shapes : TowerGeometry, RiderView.RaisedPoint -> List(Shapes.Shape)
 leg_shapes = |geometry, apex| corners.keep_oks(
 	|corner| rod_shape(
 		geometry,
-		{ from: corner_at(geometry, { corner, height_on_tower: geometry.sunk }), to: apex },
+		{ from: corner_at(geometry, { corner, height_on_tower: geometry.hidden }), to: apex },
 	),
 )
 
@@ -345,7 +347,7 @@ ring_shapes_at = |geometry, ring_height| corners.keep_oks(
 ring_shapes : TowerGeometry -> List(Shapes.Shape)
 ring_shapes = |geometry| ring_heights.join_map(
 	|ring_height|
-		if ring_height <= geometry.sunk {
+		if ring_height <= geometry.hidden {
 			[]
 		} else {
 			ring_shapes_at(geometry, ring_height)
@@ -374,11 +376,11 @@ storey_shapes : TowerGeometry, U64 -> List(Shapes.Shape)
 storey_shapes = |geometry, storey| {
 	storey_bottom = storey_height.times(storey.to_f64())
 	storey_top = storey_bottom.plus(storey_height)
-	if storey_top <= geometry.sunk {
+	if storey_top <= geometry.hidden {
 		[]
 	} else {
-		hidden_height = storey_bottom.max(geometry.sunk).minus(storey_bottom)
-		hidden_fraction = Fraction.of(hidden_height.ratio_to(storey_height))
+		hidden_in_storey = storey_bottom.max(geometry.hidden).minus(storey_bottom)
+		hidden_fraction = Fraction.of(hidden_in_storey.ratio_to(storey_height))
 		corners.join_map(
 			|corner| face_brace_shapes(
 				geometry,
@@ -423,7 +425,8 @@ face_brace_shapes = |geometry, { corner, storey_bottom, storey_top, hidden_fract
 ahead : RiderView.RiderPoint -> RiderView.RiderPointAhead
 ahead = |point| RiderView.rider_point_ahead(point) ?? crash "a test's point is past the near plane"
 
-# A tower 12 m square, its foot 100 m ahead, sunk 1 m, a metre 5 px across.
+# A tower 12 m square, its foot 100 m ahead, the ground dropped 1 m beneath it
+# and none of it hidden, a metre 5 px across.
 sample_geometry : TowerGeometry
 sample_geometry = {
 	footprint: {
@@ -434,7 +437,8 @@ sample_geometry = {
 	},
 	foot: ahead({ right: Distance.metres(0.0), forward: Distance.metres(100.0) }),
 	lift: Distance.zero,
-	sunk: Distance.metres(1.0),
+	drop: Distance.metres(1.0),
+	hidden: Distance.zero,
 	metre_on_screen: Pixels.of(5.0),
 	focal_length: Pixels.of(500.0),
 }
@@ -510,15 +514,33 @@ expect metre_ahead(10.0) == 50.0
 expect metre_ahead(25.0) == 20.0
 expect metre_ahead(50.0) == 10.0
 
-# The exaggerated curve drops 80 m, the tower's whole height, where the foot
-# is 800 m right and 1600 m ahead, so a tower there is just sunk, and one a
-# metre nearer the road still shows its tip.
-expect Tower.is_wholly_sunk(foot_1600_ahead(800.0))
-expect !Tower.is_wholly_sunk(foot_1600_ahead(799.0))
+## How far up a tower standing on the ground `forward` metres straight ahead
+## the horizon hides it, and whether its sighting refuses it as below the
+## horizon.
+hidden_ahead : F64 -> { hidden : F64, is_below_horizon : Bool }
+hidden_ahead = |forward| {
+	foot = { right: Distance.zero, forward: Distance.metres(forward) }
+	base_height = EarthCurve.ground_drop(foot).opposite()
+	top = base_height.plus(tower_height)
+	{
+		hidden: hidden_height({ foot, base_height }).to_metres(),
+		is_below_horizon: EarthCurve.is_below_horizon({ point: foot, top }),
+	}
+}
 
-## A tower's foot 1600 m ahead and `right` metres to the right.
-foot_1600_ahead : F64 -> RiderView.RiderPointAhead
-foot_1600_ahead = |right| ahead({ right: Distance.metres(right), forward: Distance.metres(1600.0) })
+# Within the horizon nothing of a tower is hidden. 4 km out the horizon hides
+# its lowest 61.6 m. Its tip shows to 4489 m, and a metre further the whole
+# tower is hidden, which is where its sighting refuses it.
+expect hidden_ahead(400.0) == { hidden: 0.0, is_below_horizon: False }
+expect (hidden_ahead(4000.0).hidden - 61.604082).abs() <= 0.000001
+expect {
+	shown = hidden_ahead(4489.0)
+	shown.hidden < 80.0 and !shown.is_below_horizon
+}
+expect {
+	sunk = hidden_ahead(4490.0)
+	sunk.hidden >= 80.0 and sunk.is_below_horizon
+}
 
 rod_shape_along_road : F64, F64 -> Try(Shapes.Shape, [BehindCamera])
 rod_shape_along_road = |start, end|

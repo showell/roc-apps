@@ -10,6 +10,7 @@ import RoadAhead
 import SegmentFromRider
 import Camera
 import Distance
+import EarthCurve
 import Geom
 import RiderView
 import Picture
@@ -42,19 +43,42 @@ Pipeline :: [].{
 		Ok({ spot: Spot.at({ place, road_point, lift: placed.lift, foot }), kind: placed.kind })
 	}
 
-	## The sighting of scenery `placed` on the segment at `place`, if it stands
-	## at least `smallest_height_on_screen` tall through the camera's own lens,
-	## so that what is at the edge of sight comes and goes as the camera widens.
-	## Every kind with a size test takes it here.
+	## The sighting of `placed` on the segment at `place`, if some of it shows
+	## over the horizon: its top, its kind's height above its lift and lowered
+	## by the ground's drop, is not hidden behind the curve of the ground. Every
+	## kind with a height takes this test here.
+	sighting_above_horizon_of : Geom.Placed(kind),
+	{
+		road : RoadAhead.RoadView,
+		camera : Pipeline.SightingCamera,
+		place : SegmentFromRider,
+	} -> Try(Pipeline.Sighted(kind), [BehindCamera, BelowHorizon])
+		where [kind.scenery_height : kind -> Distance]
+	sighting_above_horizon_of = |placed, { road, camera, place }| {
+		sighting = sighting_of(placed, { road, camera, place })?
+		spot = sighting.spot
+		top = spot.lift().plus(placed.kind.scenery_height()).minus(spot.drop())
+		if EarthCurve.is_below_horizon({ point: spot.foot().to_rider(), top }) {
+			Err(BelowHorizon)
+		} else {
+			Ok(sighting)
+		}
+	}
+
+	## The sighting of scenery `placed` on the segment at `place`, if it shows
+	## over the horizon and stands at least `smallest_height_on_screen` tall
+	## through the camera's own lens, so that what is at the edge of sight
+	## comes and goes as the camera widens. Every kind with a size test takes
+	## it here.
 	scenery_sighting_of : Geom.Placed(kind),
 	{
 		road : RoadAhead.RoadView,
 		camera : Pipeline.SightingCamera,
 		place : SegmentFromRider,
-	} -> Try(Pipeline.Sighted(kind), [BehindCamera, TooSmall])
+	} -> Try(Pipeline.Sighted(kind), [BehindCamera, BelowHorizon, TooSmall])
 		where [kind.scenery_height : kind -> Distance]
 	scenery_sighting_of = |placed, { road, camera, place }| {
-		sighting = sighting_of(placed, { road, camera, place })?
+		sighting = sighting_above_horizon_of(placed, { road, camera, place })?
 		height_on_screen = Camera.height_on_screen(
 			{ height: placed.kind.scenery_height(), forward: sighting.spot.foot().forward() },
 			camera.focal_length,

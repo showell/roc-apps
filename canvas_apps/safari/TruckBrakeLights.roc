@@ -1,7 +1,6 @@
 ## TruckBrakeLights is whether the truck's brake lights are on, and how they
 ## look: two lamps on the back of the trailer, each with a glow around it.
 import Distance
-import EarthCurve
 import Picture
 import Pixels
 import Polygon
@@ -131,12 +130,7 @@ brake_shapes = |truck, lamp_sides| {
 				near: { ahead: rear, height: brake_lamp_bottom },
 				far: { ahead: rear, height: brake_lamp_top },
 			},
-		).map(
-			|corner| {
-				over_road = TruckShape.road_point_on_truck(truck, corner)
-				EarthCurve.raised_ground_point(truck.context, over_road)
-			},
-		)
+		).map(|corner| TruckShape.raised_point_on_truck(truck, corner))
 	glow = [brake_glow(truck, lamp)].keep_oks(|shape| shape)
 	match Polygon.clipped_polygon({ color: brake_color, corners: lamp }, truck.focal_length) {
 		Ok(lamp_polygon) => glow.append(lamp_polygon)
