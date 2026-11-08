@@ -78,7 +78,7 @@ EncounterPlan :: [].{
 		gap : Distance,
 	} -> EncounterPlan.Timing
 	steady_approach_timing = |span, { gap_at_start, speed, gap }| {
-		now = Clock.at_step(gap_at_start.minus(gap).portion(speed.step_length()).to_u32_wrap())
+		now = Clock.start.plus(speed.steps_to_cover(gap_at_start.minus(gap)))
 		var $step = Clock.start
 		var $start = Unplanned
 		while $start == Unplanned and !(now < $step) {

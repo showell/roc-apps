@@ -56,6 +56,24 @@ Speed :: F64.{
 	distance_in : Speed, Steps -> Distance
 	distance_in = |Speed.(s), length| Distance.metres(s * length.to_f64())
 
+	## How many whole steps this speed takes to cover `distance`, a part step
+	## dropped. Nothing goes backwards, and a speed at rest covers nothing, so
+	## either means the sum behind it is wrong.
+	steps_to_cover : Speed, Distance -> Steps
+	steps_to_cover = |Speed.(s), distance| {
+		metres = distance.to_metres()
+		if metres < 0.0 {
+			crash "Speed.steps_to_cover: this distance is below zero, so the sum behind it is wrong"
+		} else if s == 0.0 {
+			crash "Speed.steps_to_cover: a speed at rest covers nothing, so the sum behind it is wrong"
+		} else {
+			whole_steps =
+				(metres / s).floor_to_u32_try()
+					?? crash "Speed.steps_to_cover: more steps than a ride's clock counts"
+			Steps.of(whole_steps)
+		}
+	}
+
 	## How far this speed covers in one step.
 	step_length : Speed -> Distance
 	step_length = |Speed.(s)| Distance.metres(s)
@@ -82,6 +100,21 @@ Speed :: F64.{
 
 # Rest is the slowest speed, and still a speed.
 expect Speed.metres_a_step(0.0) == Speed.at_rest
+
+# A part step is dropped: just short of a whole number of steps, at it, and
+# just past it.
+expect
+	[
+		(0.0, 0),
+		(9.9, 7),
+		(10.0, 8),
+		(10.1, 8),
+	].all(
+		|(metres, steps)| {
+			speed = Speed.metres_a_step(1.25)
+			speed.steps_to_cover(Distance.metres(metres)) == Steps.of(steps)
+		},
+	)
 
 half_metre_a_step : Speed
 half_metre_a_step = Speed.metres_a_step(0.5)
