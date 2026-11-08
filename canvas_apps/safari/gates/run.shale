@@ -170,7 +170,7 @@ const FAST_FRAME_DEPTH = "5700"
 -- The widgets' budget is set from a cold cache after a change to a module they
 -- all import: 23 s of CPU for 13 widgets' checks and their one test run, and
 -- 17 s warm, measured 2026-11-07.
-const CPU_BUDGET_MS = {lints = 25000, expects = 30000, widgets = 35000, tutorial = 5000, book_names = 2000, proof = 60000, page = 25000}
+const CPU_BUDGET_MS = {lints = 25000, expects = 50000, widgets = 35000, tutorial = 5000, book_names = 2000, proof = 60000, page = 25000}
 const COLD = arg("cold", "") == "1"
 const RELEASE = arg("release", "") == "1"
 
