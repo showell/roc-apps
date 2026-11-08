@@ -72,7 +72,7 @@ Polygon :: [].{
 	} -> Try(Shapes.Shape, [TooSmall])
 	circular_gradient_polygon = |corners, gradient| {
 		center = gradient.gradient_center
-		if gradient.gradient_radius < min_gradient_radius {
+		if gradient.gradient_radius < smallest_gradient_radius {
 			Err(TooSmall)
 		} else {
 			Ok(
@@ -175,8 +175,8 @@ polygon_coordinates = |maker, corners|
 	}
 
 ## A radial gradient smaller than this is too small to see.
-min_gradient_radius : Pixels
-min_gradient_radius = Pixels.of(0.5)
+smallest_gradient_radius : Pixels
+smallest_gradient_radius = Pixels.of(0.5)
 
 ## The span of x a polygon covers. Either end is negative for a polygon off the
 ## left of the screen.
@@ -200,11 +200,11 @@ width_shade_middle = |color, strength| ColorShade.shade_color(
 	1.0 + shade_middle_lift.to_f64() * strength.to_f64(),
 )
 
-min_shade_width : Pixels
-min_shade_width = Pixels.of(1.0)
+narrowest_shaded_width : Pixels
+narrowest_shaded_width = Pixels.of(1.0)
 
 is_too_narrow_to_shade : Span -> Bool
-is_too_narrow_to_shade = |span| span.max_x.minus(span.min_x) < min_shade_width
+is_too_narrow_to_shade = |span| span.max_x.minus(span.min_x) < narrowest_shaded_width
 
 ## The span of x over a polygon's corners. It has at least one corner.
 x_span : List(Screen.Point) -> Span

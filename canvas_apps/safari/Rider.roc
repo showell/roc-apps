@@ -9,7 +9,7 @@ import RiderMind
 import Route
 import Segment
 
-## The rider at one step.
+## The rider at one step. Nominal, not opaque: other modules read its fields.
 Rider := { motorcycle : Motorcycle, eyes : RiderEyes }.{
 
 	initial : Rider

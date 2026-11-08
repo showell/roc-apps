@@ -19,9 +19,7 @@ Rendered :: { depth : Distance, picture : Picture }.{
 	picture : Rendered -> Picture
 	picture = |Rendered.(rendering)| rendering.picture
 
-	## `renderings` from far to near. Two about as far away as each other keep
-	## the order they came in, so that order decides which is painted over the
-	## other.
+	## `renderings` from far to near, sorted by `DepthSort.sort_by`.
 	depth_sorted_renderings : List(Rendered) -> List(Rendered)
 	depth_sorted_renderings = |renderings|
 		DepthSort.sort_by(renderings, |rendering| rendering.depth())

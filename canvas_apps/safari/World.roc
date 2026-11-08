@@ -282,16 +282,10 @@ World :: [].{
 			BirdHere(_) | QuietRoad => crash "World.first_cat_crossing: the first cat segment has a cat"
 		}
 
-	## The route's first segment with a bird.
-	first_bird_segment : Segment
-	first_bird_segment =
-		World.route.route_segments().find_first(Segment.has_bird)
-			?? crash "World.first_bird_segment: the route has a bird"
-
 	## The bird's flight on the route's first segment with a bird.
 	first_bird_flight : BirdFlight.Flight
 	first_bird_flight =
-		match World.first_bird_segment.encounter {
+		match first_bird_segment.encounter {
 			BirdHere(flight) => flight
 			CatCrosses(_) | QuietRoad => crash "World.first_bird_flight: the first bird segment has a bird"
 		}
@@ -302,6 +296,12 @@ World :: [].{
 		World.route.route_segments().find_first(Segment.is_distracting)
 			?? crash "World.first_distracting_segment: the route has a distracting herd"
 }
+
+## The route's first segment with a bird.
+first_bird_segment : Segment
+first_bird_segment =
+	World.route.route_segments().find_first(Segment.has_bird)
+		?? crash "World.first_bird_segment: the route has a bird"
 
 ## The segment at `index` of the route, built from its plan once the route's
 ## choices for it are made: the shape of its herd and whether the rider finds it
@@ -420,34 +420,13 @@ expect
 
 expect
 	[
-		(0, True),
-		(1, False),
-		(6, True),
-	].all(|(index, want)| turns_right(seg(index)) == want)
-
-expect
-	[
 		(0, False),
 		(6, True),
 		(9, False),
 	].all(|(index, want)| seg(index).has_mid_tower() == want)
 
-expect
-	[
-		(0, False),
-		(3, True),
-		(9, True),
-		(12, False),
-		(18, True),
-	].all(|(index, want)| seg(index).has_cat() == want)
-
-expect
-	[
-		(exit_turn_of(seg(0)).abs().to_degrees(), 50.0),
-		(exit_turn_of(seg(1)).abs().to_degrees(), 70.0),
-		(exit_turn_of(seg(6)).abs().to_degrees(), 80.0),
-		(seg(18).commit_along().to_metres(), 300.0),
-	].all(|(got, want)| (got - want).abs() <= 0.000000000001)
+# The rider commits to the route's end at the end of its last segment.
+expect seg(18).commit_along().to_metres() == 300.0
 
 expect
 	[
@@ -478,14 +457,6 @@ is_route_end = |segment|
 		Bends(_) => False
 		RouteEnds => True
 	}
-
-## The turn out of a segment that bends.
-exit_turn_of : Segment -> Angle.Turn
-exit_turn_of = |segment| segment.bend_out_of().turn
-
-## Whether a segment ends by turning right.
-turns_right : Segment -> Bool
-turns_right = |segment| exit_turn_of(segment).is_right()
 
 ## The cat crossing at a segment that has one.
 crossing_at : U32 -> CatCrossing

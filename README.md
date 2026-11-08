@@ -202,10 +202,11 @@ others at `~/tools/roc-<pin>/roc`, and nothing uses `roc` from the PATH:
 
 `shale check.shale` holds the whole repository to the pin: every
 hand-written file formatted, and every app checked with no errors or
-warnings, apart from the trees it names and says why. Every script that
-runs Roc sources `pinned-roc.sh`, which refuses a compiler
-whose `roc version` isn't the pin; the safari gate makes the same check, and
-the Windows and macOS workflows name the same tag. To move the pin: install
+warnings, apart from the trees it names and says why. Every bash script
+that runs Roc sources `pinned-roc.sh`, which refuses a compiler whose
+`roc version` isn't the pin; every Shale script asks `pinned_roc` in the
+repository's prelude, `.shale/prelude.shale`, which makes the same
+refusals, and the Windows and macOS workflows name the same tag. To move the pin: install
 the new nightly, change `roc-version` and the two workflows, run `roc fmt`
 over the repository and commit that apart, then run every tree's own
 checks.

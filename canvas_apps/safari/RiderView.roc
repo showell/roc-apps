@@ -112,11 +112,11 @@ RiderView :: [].{
 	## The part of the line from `from` to `to` at or past the near plane: the
 	## whole line, or the line cut where it crosses the near plane. A line
 	## with both ends behind the near plane has no such part.
-	ahead_line : {
+	line_ahead : {
 		from : RiderView.RaisedPoint,
 		to : RiderView.RaisedPoint,
 	} -> Try({ from : RiderView.RaisedPointAhead, to : RiderView.RaisedPointAhead }, [BehindCamera])
-	ahead_line = |{ from, to }|
+	line_ahead = |{ from, to }|
 		match (RiderView.raised_point_ahead(from), RiderView.raised_point_ahead(to)) {
 			(Ok(start), Ok(end)) => Ok({ from: start, to: end })
 			(Ok(start), Err(BehindCamera)) =>
@@ -343,7 +343,7 @@ expect
 ## metres to `to` metres, lies at or past the near plane.
 ahead_line_ends : F64, F64 -> Try((F64, F64), [BehindCamera])
 ahead_line_ends = |from, to|
-	RiderView.ahead_line({ from: straight_ahead(from), to: straight_ahead(to) }).map_ok(
+	RiderView.line_ahead({ from: straight_ahead(from), to: straight_ahead(to) }).map_ok(
 		|line| (line.from.forward().to_metres(), line.to.forward().to_metres()),
 	)
 

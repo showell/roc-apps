@@ -14,7 +14,6 @@ import Polygon
 import Pixels
 import Screen
 import Spot
-import lib.Brush
 import lib.RgbColor
 import lib.Shapes
 
@@ -407,10 +406,16 @@ expect
 		[480.0, 600.0, 1088.0, 648.0, 288.0],
 	)
 
-expect
+expect {
+	trunk_brown = {
+		r: 0x5A,
+		g: 0x3E,
+		b: 0x22,
+		a: 1.0,
+	}
 	match trunk_shape(sample_outline, Flat) {
 		Poly(polygon) =>
-			polygon.fill == Flat(Brush.opaque(RgbColor.of(0x5A3E22)))
+			polygon.fill == Flat(trunk_brown)
 				and is_near(
 					polygon.coordinates,
 					[
@@ -426,17 +431,31 @@ expect
 				)
 		_ => False
 	}
+}
 
 # A shaded trunk is the same colour, lighter in the middle of its width.
-expect
+expect {
+	edge_brown = {
+		r: 0x36,
+		g: 0x25,
+		b: 0x14,
+		a: 1.0,
+	}
+	middle_brown = {
+		r: 0x71,
+		g: 0x4E,
+		b: 0x2B,
+		a: 1.0,
+	}
 	match trunk_shape(sample_outline, Shaded) {
 		Poly({ coordinates, fill: Span({ edge_color, middle_color, left_x, right_x }) }) =>
-			edge_color == Brush.opaque(RgbColor.of(0x362514))
-				and middle_color == Brush.opaque(RgbColor.of(0x714E2B))
+			edge_color == edge_brown
+				and middle_color == middle_brown
 				and is_near([left_x, right_x], [440.0, 520.0])
 				and is_near(coordinates, [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0])
 		_ => False
 	}
+}
 
 expect {
 	corners_of = |tier|
