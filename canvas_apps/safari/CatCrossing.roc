@@ -9,15 +9,19 @@ import Distance
 import Geom
 import PosedCat
 
-CatCrossing :: { along : Along, start_across : Across }.{
+CatCrossing :: { tree : Geom.RoadPoint }.{
 
-	## How far along its segment the cat crosses.
+	## Where the tree the cat crosses by stands.
+	tree : CatCrossing -> Geom.RoadPoint
+	tree = |CatCrossing.(crossing)| crossing.tree
+
+	## How far along its segment the cat crosses: just past its tree.
 	along : CatCrossing -> Along
-	along = |CatCrossing.(crossing)| crossing.along
+	along = |crossing| crossing.tree().along.plus(cat_beyond_tree)
 
 	## Where across the road the cat starts, behind its tree.
 	start_across : CatCrossing -> Across
-	start_across = |CatCrossing.(crossing)| crossing.start_across
+	start_across = |crossing| crossing.tree().across.plus(cat_behind_tree)
 
 	## Where across the road every cat ends: on the far verge, its hips on the
 	## grass.
@@ -30,24 +34,18 @@ CatCrossing :: { along : Along, start_across : Across }.{
 	mid_across : Across
 	mid_across = Across.right_of_middle(PosedCat.frozen_head_reach)
 
-	## How far behind its tree, away from the road, the cat starts.
-	cat_behind_tree : Distance
-	cat_behind_tree = Distance.metres(1.5)
-
-	## How far past its tree, along the road, the cat crosses.
-	cat_beyond_tree : Distance
-	cat_beyond_tree = Distance.metres(2.0)
-
 	## The crossing of a cat by `tree`, on the right of the road.
-	by_tree : { tree : { along : Along, across : Across, .. } } -> CatCrossing
-	by_tree = |{ tree }|
-		CatCrossing.(
-			{
-				along: tree.along.plus(CatCrossing.cat_beyond_tree),
-				start_across: tree.across.plus(CatCrossing.cat_behind_tree),
-			},
-		)
+	by_tree : { tree : Geom.RoadPoint } -> CatCrossing
+	by_tree = |{ tree: tree_point }| CatCrossing.({ tree: tree_point })
 }
+
+## How far behind its tree, away from the road, the cat starts.
+cat_behind_tree : Distance
+cat_behind_tree = Distance.metres(1.5)
+
+## How far past its tree, along the road, the cat crosses.
+cat_beyond_tree : Distance
+cat_beyond_tree = Distance.metres(2.0)
 
 ## How far onto the far verge's grass the collapsed cat's hips lie.
 grass_toehold : Distance
