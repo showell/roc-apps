@@ -10,7 +10,6 @@ import game.Angle
 import game.Coast
 import game.Motorcycle
 import game.LeanSearch
-import game.RiderMind
 import game.Geom
 import game.Tour
 import lib.Brush
@@ -74,7 +73,7 @@ points_of = |lean|
 
 rehearsals : List(Rehearsal)
 rehearsals =
-	LeanSearch.search_tries(motorcycle, RiderMind.max_lean_change).map(
+	LeanSearch.search_tries(motorcycle).map(
 		|lean_try| { lean_try, path_points: points_of(LeanSearch.tried_lean(lean_try)) },
 	)
 
@@ -84,7 +83,7 @@ lean_correction_of = |{ lean_try, .. }| LeanSearch.lean_correction(lean_try.outc
 
 ## The lean the search settled on.
 chosen_lean : Angle.Lean
-chosen_lean = LeanSearch.best_lean(motorcycle, RiderMind.max_lean_change)
+chosen_lean = LeanSearch.best_lean(motorcycle)
 
 chosen_points : List(ArcPoint)
 chosen_points = points_of(chosen_lean)

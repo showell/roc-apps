@@ -1,6 +1,5 @@
-## How far the rider leans. A bisection over the leans within the rider's
-## most lean change of the current one finds the lean whose coast ends nearest
-## the road's middle.
+## How far the rider leans. A bisection over leans near the current one
+## finds the lean whose coast ends nearest the road's middle.
 import Across
 import Angle
 import Coast
@@ -29,10 +28,9 @@ LeanSearch :: [].{
 				}
 		}
 
-	## How many times the search halves its bounds. They start the rider's
-	## most lean change either side of the lean, and 12 halvings narrow them to
-	## about 1/4096 of that: RiderMind's degree either side ends about 0.0005°
-	## wide.
+	## How many times the search halves its bounds. They start 2° wide, a
+	## degree either side of the lean, so 12 halvings narrow them to about
+	## 0.0005°.
 	lean_search_round_count : U8
 	lean_search_round_count = 12
 
@@ -48,11 +46,11 @@ LeanSearch :: [].{
 	tried_lean : LeanTry -> Angle.Lean
 	tried_lean = |{ low, high, .. }| low.halfway_to(high)
 
-	## The tries of the bisection over the leans within `max_lean_change` of
-	## the motorcycle's own, in the order tried. Each try's bounds are the half
-	## of the one before it that its coast pointed to.
-	search_tries : Motorcycle, Angle.LeanChange -> List(LeanSearch.LeanTry)
-	search_tries = |motorcycle, max_lean_change| {
+	## The tries of the bisection over the leans one step can reach from the
+	## motorcycle's own, in the order tried. Each try's bounds are the half of the one
+	## before it that its coast pointed to.
+	search_tries : Motorcycle -> List(LeanSearch.LeanTry)
+	search_tries = |motorcycle| {
 		var $bounds = {
 			low: motorcycle.lean.minus(max_lean_change),
 			high: motorcycle.lean.plus(max_lean_change),
@@ -72,15 +70,18 @@ LeanSearch :: [].{
 	}
 
 	## The lean for the next step, whose coast ends nearest the road's middle:
-	## halfway between the bounds the last try narrowed to, within
-	## `max_lean_change` of the motorcycle's lean.
-	best_lean : Motorcycle, Angle.LeanChange -> Angle.Lean
-	best_lean = |motorcycle, max_lean_change| {
-		last_try = LeanSearch.search_tries(motorcycle, max_lean_change).last() ?? crash "LeanSearch.best_lean: the search makes at least one try"
+	## halfway between the bounds the last try narrowed to.
+	best_lean : Motorcycle -> Angle.Lean
+	best_lean = |motorcycle| {
+		last_try = LeanSearch.search_tries(motorcycle).last() ?? crash "LeanSearch.best_lean: the search makes at least one try"
 		narrowed = bounds_after(last_try)
 		narrowed.low.halfway_to(narrowed.high)
 	}
 }
+
+## The most the lean changes in one step.
+max_lean_change : Angle.LeanChange
+max_lean_change = Angle.LeanChange.degrees(1.0)
 
 ## The half of a try's bounds its coast points to.
 bounds_after : LeanSearch.LeanTry -> { low : Angle.Lean, high : Angle.Lean }
@@ -100,18 +101,15 @@ expect LeanSearch.lean_correction(ending_at(-0.1)) == MoreRight
 expect LeanSearch.lean_correction(ending_at(0.1)) == MoreLeft
 expect LeanSearch.lean_correction(ending_at(0.0)) == MoreLeft
 
-## The lean the search picks, within a degree, for a motorcycle at the start
-## of the segment, in radians.
+## The lean the search picks for a motorcycle at the start of the segment, in
+## radians.
 searched_lean : F64, F64 -> F64
 searched_lean = |across, lean_radians|
-	LeanSearch.best_lean(
-		{
-			..Motorcycle.initial,
-			route_place: { ..Motorcycle.initial.route_place, across: Across.metres(across) },
-			lean: Angle.Lean.radians(lean_radians),
-		},
-		Angle.LeanChange.degrees(1.0),
-	).to_radians()
+	LeanSearch.best_lean({
+		..Motorcycle.initial,
+		route_place: { ..Motorcycle.initial.route_place, across: Across.metres(across) },
+		lean: Angle.Lean.radians(lean_radians),
+	}).to_radians()
 
 # An upright rider right of the middle leans left, and one left of it leans
 # right.
