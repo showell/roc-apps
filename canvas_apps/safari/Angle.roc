@@ -83,10 +83,15 @@ Angle :: [].{
 		abs : Angle.Turn -> Angle.Turn
 		abs = |Angle.Turn.(t)| Angle.Turn.(t.abs())
 
-		## This turn, held to no more than `limit` either way.
+		## This turn, held to no more than `limit` either way. A limit below zero
+		## is no range, so it crashes.
 		clamped_within : Angle.Turn, Angle.Turn -> Angle.Turn
 		clamped_within = |Angle.Turn.(t), Angle.Turn.(limit)|
-			Angle.Turn.((0.0 - limit).max(limit.min(t)))
+			if limit < 0.0 {
+				crash "Angle.Turn.clamped_within: a limit below zero is no range to hold a turn to"
+			} else {
+				Angle.Turn.((0.0 - limit).max(limit.min(t)))
+			}
 
 		## How many of `whole` this turn is: negative for a turn to the left.
 		ratio_to : Angle.Turn, Angle.Turn -> F64
@@ -193,6 +198,23 @@ Angle :: [].{
 }
 
 expect Angle.Lean.radians(-0.5).ratio_to(Angle.Lean.radians(2.0)) == -0.25
+
+# A turn inside the limit stays, one past it is held to it on either side, and
+# a limit of zero holds every turn straight ahead.
+expect {
+	clamped = |turn, limit| {
+		held = Angle.Turn.radians(turn).clamped_within(Angle.Turn.radians(limit))
+		held.to_radians()
+	}
+	[
+		(0.3, 0.5, 0.3),
+		(0.5, 0.5, 0.5),
+		(0.7, 0.5, 0.5),
+		(-0.7, 0.5, -0.5),
+		(0.7, 0.0, 0.0),
+		(-0.7, 0.0, 0.0),
+	].all(|(turn, limit, want)| clamped(turn, limit) == want)
+}
 
 ## The turn `x`, taken a whole circle at a time to between minus pi and pi. A
 ## turn of more than `most_wrapped_circles` circles crashes, because no angle
