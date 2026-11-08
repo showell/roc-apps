@@ -24,6 +24,14 @@ ArgbColor :: I64.{
 	from_rgb : RgbColor, { alpha : U8 } -> ArgbColor
 	from_rgb = |color, { alpha }| ArgbColor.(alpha.to_i64().shl_wrap(24).bitwise_or(color.to_i64()))
 
+	## The alpha byte, 0 for none and 255 for whole.
+	alpha : ArgbColor -> U8
+	alpha = |ArgbColor.(argb)| argb.shr_wrap(24).to_u8_wrap()
+
+	## The colour without its alpha.
+	rgb : ArgbColor -> RgbColor
+	rgb = |ArgbColor.(argb)| RgbColor.of(argb.bitwise_and(0xFFFFFF))
+
 	to_i64 : ArgbColor -> I64
 	to_i64 = |ArgbColor.(argb)| argb
 

@@ -45,16 +45,6 @@ RoadAhead :: [].{
 		## The segments of the route the road ahead holds.
 		segments_ahead : RoadAhead.RoadView -> RoadAhead.SegmentsAhead
 		segments_ahead = |RoadAhead.RoadView.(road)| road.segments_ahead
-
-		## The bend out of each segment of the road ahead but its last, the
-		## rider's own first, worked out.
-		bends_ahead : RoadAhead.RoadView -> List(Geom.WorkedBend)
-		bends_ahead = |RoadAhead.RoadView.(road)| road.bends_ahead
-
-		## The bend from the segment just behind the rider into the rider's
-		## own, worked out, unless the rider's is the route's first.
-		bend_behind : RoadAhead.RoadView -> [Behind(Geom.WorkedBend), AtRouteStart]
-		bend_behind = |RoadAhead.RoadView.(road)| road.bend_behind
 	}
 
 	## The segments of the route ahead of the rider: the index of the rider's
@@ -118,7 +108,7 @@ RoadAhead :: [].{
 			Ahead(position) =>
 				rider_point_ahead(road, { vantage, position, road_point })
 			JustBehind =>
-				match road.bend_behind() {
+				match bend_behind(road) {
 					Behind(bend) => {
 						on_rider_segment = Geom.point_after_worked_bend(road_point, bend)
 						to_rider_point(on_rider_segment, vantage)
@@ -140,6 +130,16 @@ segments_ahead_of = |route, start| {
 most_segments_ahead : U32
 most_segments_ahead = 7
 
+## The bend out of each segment of the road ahead but its last, the rider's
+## own first, worked out.
+bends_ahead : RoadAhead.RoadView -> List(Geom.WorkedBend)
+bends_ahead = |RoadAhead.RoadView.(road)| road.bends_ahead
+
+## The bend from the segment just behind the rider into the rider's own,
+## worked out, unless the rider's is the route's first.
+bend_behind : RoadAhead.RoadView -> [Behind(Geom.WorkedBend), AtRouteStart]
+bend_behind = |RoadAhead.RoadView.(road)| road.bend_behind
+
 ## The segment behind the rider's, unless the rider's is the route's first.
 previous_segment_index : RoadAhead.RoadView -> [Previous(Route.SegmentIndex), AtRouteStart]
 previous_segment_index = |road| RoadAhead.rider_segment_index(road).previous()
@@ -153,7 +153,7 @@ rider_point_ahead : RoadAhead.RoadView,
 	road_point : Geom.RoadPoint,
 } -> Geom.RiderPoint
 rider_point_ahead = |road, { vantage, position, road_point }| {
-	bends = road.bends_ahead()
+	bends = bends_ahead(road)
 	var $point = road_point
 	var $bends_left = position.to_u32().to_u64()
 	while $bends_left > 0 {

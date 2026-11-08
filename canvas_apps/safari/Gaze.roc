@@ -110,8 +110,8 @@ turn_to = |motorcycle, pig| Angle.Turn.radians(
 expect Gaze.gaze_attention(Fraction.of(0.25)).to_f64() == 0.15625
 
 ## Radians in `d` degrees.
-degrees : F64 -> F64
-degrees = |d| Angle.Turn.degrees(d).to_radians()
+radians_of_degrees : F64 -> F64
+radians_of_degrees = |d| Angle.Turn.degrees(d).to_radians()
 
 ## Eyes looking `gaze_yaw` from straight ahead.
 head : F64 -> RiderEyes
@@ -148,8 +148,10 @@ expect
 		(2.0, 1.8),
 		(-2.0, -1.8),
 	].all(
-		|(from, to)|
-			(gaze_returning(head(degrees(from))) / degrees(1.0) - to).abs() <= 0.000000000001,
+		|(from, to)| {
+			returned = gaze_returning(head(radians_of_degrees(from)))
+			(returned / radians_of_degrees(1.0) - to).abs() <= 0.000000000001
+		},
 	)
 
 # A gaze within the return rate comes all the way home, exactly, and one just
@@ -162,15 +164,15 @@ expect gaze_returning(head(-return_rate * 1.5)) < 0.0
 expect gaze_returning(head(0.0)) == 0.0
 
 # A pig dead ahead is still a pig: the gaze swivels to it, and doesn't ease.
-expect gaze_after(head(degrees(2.0)), 0.0) == 0.0
+expect gaze_after(head(radians_of_degrees(2.0)), 0.0) == 0.0
 
 ## Eyes with this look depth, looking `gaze_yaw` from straight ahead.
 eyes_at_depth : F64, F64 -> RiderEyes
 eyes_at_depth = |look_depth, gaze_yaw| { ..head(gaze_yaw), look_depth: Fraction.of(look_depth) }
 
 expect {
-	rising = depth_after(eyes_at_depth(0.0, degrees(20.0)), degrees(20.0))
-	held = depth_after(eyes_at_depth(0.9, degrees(1.0)), degrees(1.0))
+	rising = depth_after(eyes_at_depth(0.0, radians_of_degrees(20.0)), radians_of_degrees(20.0))
+	held = depth_after(eyes_at_depth(0.9, radians_of_degrees(1.0)), radians_of_degrees(1.0))
 	easing = depth_after(eyes_at_depth(0.9, 0.0), 0.0)
 	rising > 0.0 and held >= 0.9 and easing < 0.9 and easing > 0.0
 }
@@ -180,4 +182,4 @@ expect depth_after(eyes_at_depth(0.9, 0.0), return_rate / 10.0) == 0.9
 expect (depth_after(eyes_at_depth(0.9, 0.0), 0.0) - 0.8988).abs() <= 0.000000000001
 
 expect depth_after(eyes_at_depth(0.0, 0.0), 0.0) == 0.0
-expect depth_after(eyes_at_depth(0.0, degrees(90.0)), degrees(90.0)) == 1.0
+expect depth_after(eyes_at_depth(0.0, radians_of_degrees(90.0)), radians_of_degrees(90.0)) == 1.0

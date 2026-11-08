@@ -41,11 +41,11 @@ CowHerd := {
 	## The herd's cows behind `herd_along`, column by column from the front,
 	## led by the bull at `herd_along` if the herd has one.
 	herd_cows : CowHerd, { herd_along : Along, bull : CowHerd.Bull } -> List(Geom.Placed(Billboard))
-	herd_cows = |herd, { herd_along, bull: with_bull }| {
+	herd_cows = |herd, { herd_along, bull }| {
 		cows =
 			List.from_iter(U64.until(0, herd.cow_count))
 				.map(|cow_number| herd_cow(herd, { herd_along, cow_number }))
-		match with_bull {
+		match bull {
 			WithBull => [herd_bull(herd_along)].concat(cows)
 			NoBull => cows
 		}
@@ -81,8 +81,7 @@ herd_bull = |herd_along| {
 }
 
 ## How far from the middle of the road the herd's front row stands, 10 metres
-## off the road's edge. A pig herd's front row stands as far today, but each
-## herd sets its own.
+## off the road's edge. Each herd sets its own.
 front_row_distance : Distance
 front_row_distance = Geom.road_half_width.plus(Distance.metres(10.0))
 

@@ -2,9 +2,7 @@
 ## are on. Its picture is its headlight beams first, then its body, then its
 ## brake lights, so each paints over the one before.
 import Clock
-import Geom
 import Mountains
-import RoadAhead
 import Picture
 import Truck
 import TruckBody
@@ -34,29 +32,26 @@ LitTruck := { headlights : [On, Off], brake_lights : [On, Off] }.{
 	}
 
 	## How the truck looks. Every point on it is measured on the road, from where
-	## its trailer is centred, and seen from the camera's vantage, so those are
+	## its trailer is centered, and seen from the camera's vantage, so those are
 	## its context.
-	scenery_picture : LitTruck,
-	Picture.Setting(
-		{ road : RoadAhead.RoadView, vantage : Geom.Vantage },
-	) -> Picture
-	scenery_picture = |lit_truck, truck| Picture.from_shapes(truck_shapes(lit_truck, truck))
+	scenery_picture : LitTruck, TruckShape.TruckSetting -> Picture
+	scenery_picture = |lit_truck, setting| Picture.from_shapes(truck_shapes(lit_truck, setting))
 }
 
 ## The truck, filling its box.
-truck_shapes : LitTruck, Picture.Setting(TruckShape.TruckOnRoad) -> List(Shapes.Shape)
-truck_shapes = |lit_truck, truck| {
+truck_shapes : LitTruck, TruckShape.TruckSetting -> List(Shapes.Shape)
+truck_shapes = |lit_truck, setting| {
 	beams =
 		match lit_truck.headlights {
-			On => TruckLights.headlight_beam_shapes(truck)
+			On => TruckLights.headlight_beam_shapes(setting)
 			Off => []
 		}
 	brake_lights =
 		match lit_truck.brake_lights {
-			On => TruckLights.brake_light_shapes(truck)
+			On => TruckLights.brake_light_shapes(setting)
 			Off => []
 		}
-	[beams, TruckBody.body_shapes(truck), brake_lights].join()
+	[beams, TruckBody.body_shapes(setting), brake_lights].join()
 }
 
 ## A clock with the sun behind the mountains.

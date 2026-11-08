@@ -15,8 +15,8 @@ Rider :: [].{
 		route : Route,
 		encounter_timing : EncounterPlan.Timing,
 	} -> Motorcycle.Controls
-	controls = |motorcycle, road| {
+	controls = |motorcycle, ride| {
 		lean = LeanSearch.best_lean(motorcycle)
-		{ lean, speed: Throttle.next_speed(motorcycle.with_lean(lean), road) }
+		{ lean, speed: Throttle.next_speed(motorcycle.with_lean(lean), ride) }
 	}
 }

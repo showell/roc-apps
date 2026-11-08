@@ -6,7 +6,6 @@ import DepthSort
 import Distance
 import Fraction
 import Geom
-import Picture
 import TruckShape
 import lib.RgbColor
 import lib.Shapes
@@ -15,7 +14,7 @@ TruckBody :: [].{
 
 	## The truck's body, its farthest faces first. A face is ordered by the
 	## mean of its corners' distances ahead.
-	body_shapes : Picture.Setting(TruckShape.TruckOnRoad) -> List(Shapes.Shape)
+	body_shapes : TruckShape.TruckSetting -> List(Shapes.Shape)
 	body_shapes = |truck|
 		DepthSort.sort_by(faces(truck), |face| mean_forward(face.corners))
 			.keep_oks(|face| Camera.clipped_polygon(face, truck.cam_focal))
@@ -79,7 +78,7 @@ axles = {
 
 ## The truck's faces: its two sides, its back, its roof, its windshield, its
 ## nose, then its tires, the left side's and then the right's.
-faces : Picture.Setting(TruckShape.TruckOnRoad) -> List(Camera.FlatPolygon)
+faces : TruckShape.TruckSetting -> List(Camera.FlatPolygon)
 faces = |truck| {
 	box = TruckShape.truck_box
 	[
@@ -97,7 +96,7 @@ faces = |truck| {
 }
 
 ## A face of `color` whose corners are the truck's points `corners`.
-face : Picture.Setting(TruckShape.TruckOnRoad),
+face : TruckShape.TruckSetting,
 {
 	color : RgbColor,
 	corners : List(TruckShape.TruckPoint),
@@ -110,7 +109,7 @@ face = |truck, { color, corners }| {
 ## A side of the truck `rightward` of its centre line: up the back of the
 ## trailer, along its roof and the cab's, down the windshield's edge and the
 ## nose, back along the cab's floor, and down to the trailer's floor.
-side : Picture.Setting(TruckShape.TruckOnRoad), Distance -> Camera.FlatPolygon
+side : TruckShape.TruckSetting, Distance -> Camera.FlatPolygon
 side = |truck, rightward| {
 	box = TruckShape.truck_box
 	face(
@@ -130,7 +129,7 @@ side = |truck, rightward| {
 	)
 }
 
-back : Picture.Setting(TruckShape.TruckOnRoad) -> Camera.FlatPolygon
+back : TruckShape.TruckSetting -> Camera.FlatPolygon
 back = |truck| {
 	box = TruckShape.truck_box
 	face(
@@ -149,7 +148,7 @@ back = |truck| {
 }
 
 ## The roof of the trailer and the cab, one flat face.
-roof : Picture.Setting(TruckShape.TruckOnRoad) -> Camera.FlatPolygon
+roof : TruckShape.TruckSetting -> Camera.FlatPolygon
 roof = |truck| {
 	box = TruckShape.truck_box
 	face(
@@ -167,7 +166,7 @@ roof = |truck| {
 	)
 }
 
-windshield : Picture.Setting(TruckShape.TruckOnRoad) -> Camera.FlatPolygon
+windshield : TruckShape.TruckSetting -> Camera.FlatPolygon
 windshield = |truck| {
 	box = TruckShape.truck_box
 	face(
@@ -185,7 +184,7 @@ windshield = |truck| {
 	)
 }
 
-nose : Picture.Setting(TruckShape.TruckOnRoad) -> Camera.FlatPolygon
+nose : TruckShape.TruckSetting -> Camera.FlatPolygon
 nose = |truck| {
 	box = TruckShape.truck_box
 	face(
@@ -205,11 +204,7 @@ nose = |truck| {
 
 ## The tire on the axle `axle` ahead of the trailer's centre, on the side
 ## `rightward` of its centre line: a circle standing on the road.
-tire : Picture.Setting(TruckShape.TruckOnRoad),
-{
-	axle : Distance,
-	rightward : Distance,
-} -> Camera.FlatPolygon
+tire : TruckShape.TruckSetting, { axle : Distance, rightward : Distance } -> Camera.FlatPolygon
 tire = |truck, { axle, rightward }| {
 	radius = TruckShape.tire_radius
 	face(

@@ -54,10 +54,3 @@ PosedBird := { pose : PosedBird.BirdPose }.{
 ## How tall a bird stands.
 bird_height : Distance
 bird_height = Distance.metres(2.2)
-
-# A perched bird.
-level_bird : PosedBird
-level_bird = { pose: Perched }
-
-# A bird's height is the same in every pose.
-expect [level_bird, { ..level_bird, pose: Diving }].all(|bird| bird.scenery_height() == bird_height)

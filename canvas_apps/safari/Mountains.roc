@@ -35,9 +35,11 @@ Mountains :: [].{
 		{ heading : Angle.Bearing, cam_focal : Pixels, .. }, Fraction -> List(Shapes.Shape)
 	mountain_shapes = |aim, darkness| {
 		sky_columns = sky_columns_for(aim)
-		snow_lens_and_color = { cam_focal: aim.cam_focal, color: snow_color(darkness) }
 		snow_shapes =
-			match snow_shape(sky_columns, snow_lens_and_color) {
+			match snow_shape(
+				sky_columns,
+				{ cam_focal: aim.cam_focal, color: snow_color(darkness) },
+			) {
 				Ok(snow) => [snow]
 				Err(NoSnow) => []
 			}

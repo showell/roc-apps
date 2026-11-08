@@ -77,7 +77,7 @@ x_sign = |flip|
 	}
 
 ## How far, and which way, a step in the still goes on screen.
-screen_vector : StillShapes.Anchor, Still.Step -> Screen.Point
+screen_vector : StillShapes.Anchor, Still.FrameVector -> Screen.Point
 screen_vector = |anchor, step| {
 	x: anchor.height_on_screen.times(x_sign(anchor.flip) * step.x),
 	y: anchor.height_on_screen.times(step.y).opposite(),

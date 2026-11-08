@@ -180,7 +180,7 @@ crossing_timeline = |cat| {
 	Animation.Timeline.of({
 		before: { pose: Rest, location: start },
 		frames: crossing_frames,
-		frame_instant: |{ pose, way }, _frame| { pose, location: location_of(way) },
+		frame_instant: |{ pose, way }, _frame_number| { pose, location: location_of(way) },
 		after: { pose: Collapse, location: end },
 	})
 }

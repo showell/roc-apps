@@ -1,6 +1,7 @@
 ## FrameView works out what the camera shows at one instant of the ride: the
 ## backdrop, the ride's shapes in paint order, and the roll, from the camera it
-## places for the rider.
+## places for the rider. It also gives the space the whole frame leans in at
+## that roll.
 import Angle
 import Clock
 import Grass
@@ -82,10 +83,10 @@ FrameView := {
 	## The space the whole frame leans in, at the camera's `roll`.
 	lean_space : Angle.Lean -> Shapes.Space
 	lean_space = |roll| {
-		centre = { x: Screen.width.to_f64() / 2.0, y: Screen.height.to_f64() / 2.0 }
+		center = { x: Screen.width.to_f64() / 2.0, y: Screen.height.to_f64() / 2.0 }
 		World({
-			target: centre,
-			offset: centre,
+			target: center,
+			offset: center,
 			rotation: 0.0 - roll.to_degrees(),
 			zoom: 1.0,
 		})

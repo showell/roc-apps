@@ -5,7 +5,6 @@ import Pixels
 import Camera
 import Distance
 import Geom
-import Picture
 import Polygon
 import TruckShape
 import Screen
@@ -16,7 +15,7 @@ import lib.Shapes
 TruckLights :: [].{
 
 	## The two headlight beams, each a little in from its side.
-	headlight_beam_shapes : Picture.Setting(TruckShape.TruckOnRoad) -> List(Shapes.Shape)
+	headlight_beam_shapes : TruckShape.TruckSetting -> List(Shapes.Shape)
 	headlight_beam_shapes = |truck| {
 		box = TruckShape.truck_box
 		[
@@ -26,7 +25,7 @@ TruckLights :: [].{
 	}
 
 	## The two brake lights, one in from each side of the trailer's back.
-	brake_light_shapes : Picture.Setting(TruckShape.TruckOnRoad) -> List(Shapes.Shape)
+	brake_light_shapes : TruckShape.TruckSetting -> List(Shapes.Shape)
 	brake_light_shapes = |truck| {
 		box = TruckShape.truck_box
 		brake_shapes(
@@ -148,11 +147,7 @@ outline_points = |{ center, outline_radius }|
 ## The beam of the headlight `rightward` of the truck's centre line,
 ## brightest at the lamp. A beam with a corner behind the camera is not
 ## drawn.
-headlight_beam : Picture.Setting(TruckShape.TruckOnRoad),
-Distance -> Try(
-	Shapes.Shape,
-	[BehindCamera, TooSmall],
-)
+headlight_beam : TruckShape.TruckSetting, Distance -> Try(Shapes.Shape, [BehindCamera, TooSmall])
 headlight_beam = |truck, rightward| {
 	nose = TruckShape.truck_box.nose
 	on_truck = |ahead, height| TruckShape.raised_point_on_truck(truck, { ahead, rightward, height })
@@ -180,11 +175,7 @@ headlight_beam = |truck, rightward| {
 ## A brake light on the back of the trailer, its sides `left` and `right`
 ## measured rightward of the truck's centre line: its glow, then the lamp
 ## over the glow.
-brake_shapes : Picture.Setting(TruckShape.TruckOnRoad),
-{
-	left : Distance,
-	right : Distance,
-} -> List(Shapes.Shape)
+brake_shapes : TruckShape.TruckSetting, { left : Distance, right : Distance } -> List(Shapes.Shape)
 brake_shapes = |truck, lamp_sides| {
 	rear = TruckShape.truck_box.rear
 	lamp =
@@ -204,7 +195,7 @@ brake_shapes = |truck, lamp_sides| {
 
 ## The glow round a brake lamp. A lamp with a corner behind the camera has
 ## no glow; the lamp itself is cut at the near plane like the body's faces.
-brake_glow : Picture.Setting(TruckShape.TruckOnRoad),
+brake_glow : TruckShape.TruckSetting,
 List(Geom.RaisedPoint) -> Try(
 	Shapes.Shape,
 	[BehindCamera, TooSmall],

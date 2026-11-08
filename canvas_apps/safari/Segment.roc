@@ -49,6 +49,10 @@ Segment := {
 	## with what lives at the bend, or by ending the route.
 	Ending : [Bends({ turn : Angle.Turn, bend_life : Segment.BendLife }), RouteEnds]
 
+	## How a segment ends, with its bend measured: the segment's `Ending`, its
+	## turn joined by the segment's length.
+	MeasuredEnding : [Bends({ bend : Geom.Bend, bend_life : Segment.BendLife }), RouteEnds]
+
 	## What the route plans for the rider to meet on a segment, before the
 	## segment's trees say where.
 	PlannedEncounter : [CatCrosses, BirdHere, QuietRoad]
@@ -121,10 +125,7 @@ Segment := {
 
 	## How `segment` ends: at the bend into the next segment, with what lives
 	## there, or at the end of the route.
-	segment_ending : Segment -> [
-		Bends({ bend : Geom.Bend, bend_life : Segment.BendLife }),
-		RouteEnds,
-	]
+	segment_ending : Segment -> Segment.MeasuredEnding
 	segment_ending = |segment|
 		match segment.ending {
 			Bends({ turn, bend_life }) => {
@@ -137,8 +138,8 @@ Segment := {
 	## The bend at the end of `segment`, which some segment follows.
 	bend_out_of : Segment -> Geom.Bend
 	bend_out_of = |segment|
-		match segment.ending {
-			Bends({ turn, .. }) => { segment_length: segment.length, turn }
+		match segment.segment_ending() {
+			Bends({ bend, .. }) => bend
 			RouteEnds => crash "Segment.bend_out_of: nothing follows the route's last segment"
 		}
 
@@ -146,8 +147,8 @@ Segment := {
 	## next segment's road, or the end of the route.
 	commit_along : Segment -> Along
 	commit_along = |segment|
-		match segment.ending {
-			Bends({ turn, .. }) => Geom.commit_along({ segment_length: segment.length, turn })
+		match segment.segment_ending() {
+			Bends({ bend, .. }) => Geom.commit_along(bend)
 			RouteEnds => Along.at(segment.length)
 		}
 

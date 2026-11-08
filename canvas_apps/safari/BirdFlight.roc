@@ -93,8 +93,8 @@ flight_timeline = |{ from, to }| {
 	Animation.Timeline.of({
 		before: sitting_on(from),
 		frames: BirdFlight.flight_poses,
-		frame_instant: |pose, frame| {
-			through = Fraction.of(frame.to_f64() / last_frame)
+		frame_instant: |pose, frame_number| {
+			through = Fraction.of(frame_number.to_f64() / last_frame)
 			{ pose, location: flight_location({ from: ends.from, to: ends.to, through }) }
 		},
 		after: sitting_on(to),
