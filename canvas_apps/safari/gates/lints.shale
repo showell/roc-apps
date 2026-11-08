@@ -3,7 +3,7 @@
 --
 --   cd <roc-apps checkout> && shale canvas_apps/safari/gates/lints.shale
 --
--- It takes about 26 seconds (2026-11-08), and run.shale runs it first. This
+-- It takes about 15 seconds (2026-11-08), and run.shale runs it first. This
 -- header is the one home of that figure; the docs point here.
 --
 -- With `files=`, which fast.shale gives it, it judges only those files, named
@@ -49,6 +49,11 @@ const TREE_GLOBS = tree_globs
 -- only 64 programs.
 const MOST_ONE_AT_A_TIME = 6
 
+-- The shared code under safari, from the checkout's root. A lint that names
+-- these as its `folders` runs once more in each, over its own files, and is
+-- held there to the same counts as in safari.
+const SHARED_FOLDERS = {"canvas_apps/lib", "canvas_apps/widget_kit"}
+
 -- `bool_param` has types only for what web.roc reaches, which is every game
 -- module. roc-types can't read the rest, so a file here is judged without
 -- types, and a game module web.roc stops reaching fails the run. The gates and
@@ -65,7 +70,9 @@ const UNTYPED_PATHS = {"game.roc", "main.roc", "gates/", "tutorial/"}
 -- checkout's root, where `types=1` finds `roc-version`. `tree_globs`, from the
 -- root, stands for the whole tree in place of safari's folder: unused_imports
 -- reads the widgets, widget_kit and lib too, because Roc doesn't warn of an
--- unused import, and the widgets import the game.
+-- unused import, and the widgets import the game. `folders` names the shared
+-- folders a lint also judges, each in a run of its own, since these recipes
+-- take one glob and a glob can't climb out of safari's folder.
 const LINTS = {
   {recipe = "name_hunt", args = {}, budget = {}, counts = {
     {"state_effect", 0}, {"question", 0}, {"vague", 0}, {"name_type", 0}, {"negative", 0},
@@ -74,10 +81,10 @@ const LINTS = {
     {"taken_word", 0}, {"bare_participle", 0},
     {"phrase_name", 0},
     {"singular_list", 0}, {"world_verb", 0}, {"where_name", 0},
-  }, whole_tree = {"command_tense", "mixed_tense"}},
+  }, whole_tree = {"command_tense", "mixed_tense"}, folders = SHARED_FOLDERS},
   {recipe = "errors", args = {}, budget = {}, counts = {
     {"error_alias", 0}, {"optional_tag", 0}, {"set_fallback", 0}, {"placeholder", 0},
-  }, whole_tree = {"error_alias"}},
+  }, whole_tree = {"error_alias"}, folders = SHARED_FOLDERS},
   {recipe = "nest_depth", args = {"min=4"}, budget = {}, counts = {{"nested", 0}}},
   {recipe = "parens", args = {}, budget = {}, counts = {{"paren_if", 0}, {"wrapped_body", 0}, {"else_block", 0}, {"lambda_if", 0}}},
   {recipe = "boundaries", args = {"types=1", "root=" .. SAFARI .. "/web.roc", "clients=" .. join(CLIENT_GLOBS, ","), "tests=" .. GATE_GLOB, "test_reach=dead"}, budget = {}, from_repo_root = true, counts = {
@@ -90,7 +97,8 @@ const LINTS = {
     whole_tree = {"bare_beside_unit"}},
   {recipe = "bare_floats", args = {"table=bare_floats.txt"}, budget = {}, counts = {{"bare_float", 0}, {"unused_exception", 0}}},
   {recipe = "families", args = {}, budget = {}, counts = {{"family", 0}, {"twin_name", 0}}, whole_tree = {"family", "twin_name"}},
-  {recipe = "plain_names", args = {}, budget = {}, counts = {{"pure_mutator", 0}, {"abbreviation", 0}, {"module_doc", 0}}},
+  {recipe = "plain_names", args = {}, budget = {}, counts = {{"pure_mutator", 0}, {"abbreviation", 0}, {"module_doc", 0}},
+    folders = SHARED_FOLDERS},
   {recipe = "unused_imports", args = {}, budget = {}, from_repo_root = true, counts = {{"unused_import", 0}},
     tree_globs = TREE_GLOBS},
 }
@@ -143,6 +151,16 @@ function lint_run(lint, glob)
   local opts = {timeout_ms = 600000, whole = 4000000}
   if not runs_from_repo_root(lint) then opts.cwd = SAFARI end
   return run(lint_argv(lint, glob), opts)
+end
+
+-- The run of `lint` over the Roc files of `folder`, one of its `folders`.
+function folder_run(lint, folder)
+  local argv = {"shale"}
+  for b in lint.budget do push(argv, b) end
+  push(argv, real("cookbook:roc/" .. lint.recipe .. ".shale"))
+  push(argv, "glob=*.roc")
+  for a in lint.args do push(argv, a) end
+  return run(argv, {timeout_ms = 600000, whole = 4000000, cwd = folder})
 end
 
 const NOT_REACHED = "not reached by "
@@ -244,6 +262,25 @@ function judge_part(lint, glob)
   return nil
 end
 
+-- One recipe's run over one of its shared `folders`, judged as `judge_part`
+-- judges safari's files.
+function judge_folder_part(lint, folder)
+  local r = folder_run(lint, folder)
+  if contains(r.out, "refused: ") then fail("safari lints: " .. lint.recipe .. " refused " .. folder .. ": " .. trim(r.out)) end
+  local summary = lint_summary(r.out)
+  for c in lint.counts do
+    if not is_whole_tree(lint, c[1]) then
+      local got = count_in_summary(summary, c[1])
+      if got == nil then fail("safari lints: " .. lint.recipe .. " in " .. folder .. ": no count for " .. c[1] .. " in its last line: " .. summary) end
+      if got ~= c[2] then
+        for l in findings_of(r.out, c[1]) do print(folder .. "/" .. l) end
+        fail("safari lints: " .. lint.recipe .. ": " .. got .. " " .. c[1] .. " in " .. folder .. ", held at " .. c[2])
+      end
+    end
+  end
+  return nil
+end
+
 function judge_files()
   local files = split(FILES, ",")
   if FILES == "every" or #files > MOST_ONE_AT_A_TIME then files = {WHOLE_TREE} end
@@ -254,6 +291,9 @@ function judge_files()
     else
       for f in files do
         if not has_item(get(lint, "skip", {}), f) then judge_part(lint, f) end
+      end
+      if files[1] == WHOLE_TREE then
+        for folder in get(lint, "folders", {}) do judge_folder_part(lint, folder) end
       end
       for c in get(lint, "whole_tree", {}) do push(whole, c) end
     end
@@ -283,6 +323,22 @@ function judge_tree()
       push(said, c[1] .. " " .. tostring(got))
     end
     print(lint.recipe .. ": " .. join(said, ", "))
+    for folder in get(lint, "folders", {}) do
+      local fr = folder_run(lint, folder)
+      local folder_summary = lint_summary(fr.out)
+      local folder_said = {}
+      for c in lint.counts do
+        local got = count_in_summary(folder_summary, c[1])
+        if got == nil then
+          push(wrong, lint.recipe .. " in " .. folder .. ": no count for " .. c[1] .. " in its last line: " .. folder_summary)
+        elseif got ~= c[2] then
+          for l in findings_of(fr.out, c[1]) do print(folder .. "/" .. l) end
+          push(wrong, lint.recipe .. " in " .. folder .. ": " .. c[1] .. " is " .. got .. ", held at " .. c[2])
+        end
+        push(folder_said, c[1] .. " " .. tostring(got))
+      end
+      print(lint.recipe .. " in " .. folder .. ": " .. join(folder_said, ", "))
+    end
   end
   if #wrong > 0 then
     for w in wrong do print("WRONG " .. w) end
