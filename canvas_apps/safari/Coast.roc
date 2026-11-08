@@ -37,9 +37,9 @@ Coast :: [].{
 coast_keeping : Motorcycle, [KeepPath, DropPath] -> Coast.Path
 coast_keeping = |motorcycle, keeping| {
 	start = motorcycle.route_place
-	inset_hw = Geom.road_half_width.minus(shoulder_margin)
-	right_bound = Across.right_of_middle(inset_hw).max(start.across)
-	left_bound = Across.left_of_middle(inset_hw).min(start.across)
+	inset_half_width = Geom.road_half_width.minus(shoulder_margin)
+	right_bound = Across.right_of_middle(inset_half_width).max(start.across)
+	left_bound = Across.left_of_middle(inset_half_width).min(start.across)
 	var $motorcycle = motorcycle
 	var $steps_run = Steps.zero
 	var $path = []

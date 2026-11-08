@@ -78,9 +78,9 @@ Tour :: {
 	step_back : Tour -> Tour
 	step_back = |Tour.(tour)| {
 		match tour.past_instants.last() {
-			Ok(prev) => {
+			Ok(previous_instant) => {
 				past_instants = tour.past_instants.drop_last(1)
-				Tour.({ ..tour, instant: prev, past_instants })
+				Tour.({ ..tour, instant: previous_instant, past_instants })
 			}
 			Err(_) => Tour.(tour)
 		}

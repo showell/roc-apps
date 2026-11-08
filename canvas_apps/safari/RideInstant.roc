@@ -55,10 +55,12 @@ RideInstant := {
 ## timing at the old clock: the hand of god moves the cat, then the rider reacts.
 next : Route, RideInstant -> RideInstant
 next = |route, instant| {
-	nx = instant.rider.next({ route, encounter_timing: RideInstant.encounter_timing(instant) })
+	next_rider = instant.rider.next(
+		{ route, encounter_timing: RideInstant.encounter_timing(instant) },
+	)
 	clock = instant.clock.next()
 	from = instant.rider.motorcycle.route_place
-	to = nx.motorcycle.route_place
+	to = next_rider.motorcycle.route_place
 	kept_start =
 		if to.segment_index == from.segment_index {
 			instant.encounter_start
@@ -66,7 +68,7 @@ next = |route, instant| {
 			Unplanned
 		}
 	{
-		rider: nx,
+		rider: next_rider,
 		truck: Truck.truck_at_next_step(
 			instant.truck,
 			{ rider_distance: to.distance_along(route), route },
@@ -74,7 +76,7 @@ next = |route, instant| {
 		clock,
 		encounter_start: match kept_start {
 			StartsAt(_) => kept_start
-			Unplanned => planned_start(to.segment_on(route), { rider: nx, now: clock })
+			Unplanned => planned_start(to.segment_on(route), { rider: next_rider, now: clock })
 		},
 	}
 }

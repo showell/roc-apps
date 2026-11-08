@@ -71,9 +71,14 @@ bend_approach = Distance.metres(60.0)
 bend_limit : Motorcycle, Segment -> VehicleLimits.Limit
 bend_limit = |motorcycle, segment|
 	if is_near_end(motorcycle, segment) {
-		v_end = exit_speed(segment)
-		d = segment.commit_along().distance_from(motorcycle.route_place.along)
-		AtMost(VehicleLimits.braking_to(motorcycle.speed, { target: v_end, within: d }))
+		segment_exit_speed = exit_speed(segment)
+		room_to_commit = segment.commit_along().distance_from(motorcycle.route_place.along)
+		AtMost(
+			VehicleLimits.braking_to(
+				motorcycle.speed,
+				{ target: segment_exit_speed, within: room_to_commit },
+			),
+		)
 	} else {
 		NoLimit
 	}
