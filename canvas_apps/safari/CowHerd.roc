@@ -70,15 +70,14 @@ front_row_distance = Geom.road_half_width.plus(Distance.metres(10.0))
 ## How far along the road behind the bull's place the first column's place is,
 ## chosen by eye.
 gap_behind_bull : Distance
-gap_behind_bull = Distance.metres(6.0)
+gap_behind_bull = Distance.metres(4.0)
 
 ## The distance between the herd's columns, along the road, chosen by eye.
 column_spacing : Distance
 column_spacing = Distance.metres(6.0)
 
 ## How far along the road each row back is moved from the one in front, chosen
-## by eye. A column's place is where its second row stands, so its front row
-## stands this far short of it, toward the bull.
+## by eye. A column's place is where its front row stands.
 row_stagger : Distance
 row_stagger = Distance.metres(2.0)
 
@@ -107,8 +106,7 @@ herd_cow = |herd, { herd_along, cow_number }| {
 	row = cow_number.rem_by(cows_per_column).to_f64()
 	herd_front = herd_along.plus(gap_behind_bull)
 	column_place = herd_front.plus(column_spacing.times(column))
-	rows_behind_second = row - 1.0
-	in_line = column_place.plus(row_stagger.times(rows_behind_second))
+	in_line = column_place.plus(row_stagger.times(row))
 	row_place = front_row_distance.plus(row_depth.times(row))
 	stray = Scatter.stray_of(
 		cow_number,
