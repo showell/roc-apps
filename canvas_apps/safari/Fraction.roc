@@ -42,8 +42,8 @@ Fraction :: F64.{
 	times = |Fraction.(f), Fraction.(other)| Fraction.(f * other)
 
 	## What is left of the whole after this fraction: the whole less it.
-	less : Fraction -> Fraction
-	less = |Fraction.(f)| Fraction.(1.0 - f)
+	complement : Fraction -> Fraction
+	complement = |Fraction.(f)| Fraction.(1.0 - f)
 
 	## The larger of this fraction and `other`.
 	max : Fraction, Fraction -> Fraction

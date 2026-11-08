@@ -32,7 +32,7 @@ Sky :: [].{
 	horizon_warmth_at : Clock -> Fraction
 	horizon_warmth_at = |clock| {
 		from_horizon = Sun.height_at(clock).abs()
-		Fraction.clamp(from_horizon.portion(warmth_reach)).less()
+		Fraction.clamp(from_horizon.ratio_to(warmth_reach)).complement()
 	}
 
 	## The sky's two colors at `clock`.
@@ -107,7 +107,7 @@ sky_horizon_color = |clock| ColorShade.color_between({
 darkness_while_up : FarHeight -> Fraction
 darkness_while_up = |height| {
 	whole_fall = Sun.height_at_start.minus(Sun.height_when_set)
-	set_so_far = Fraction.of(Sun.height_at_start.minus(height).portion(whole_fall))
+	set_so_far = Fraction.of(Sun.height_at_start.minus(height).ratio_to(whole_fall))
 	darkness_at_set.times(set_so_far).times(set_so_far)
 }
 
@@ -115,8 +115,8 @@ darkness_while_up = |height| {
 ## night as it sinks a further radius.
 darkness_after_set : FarHeight -> Fraction
 darkness_after_set = |height| {
-	sunk_past_set = Sun.height_when_set.minus(height).portion(Sun.radius_as_height)
-	Fraction.clamp(darkness_at_set.to_f64() + sunk_past_set * darkness_at_set.less().to_f64())
+	sunk_past_set = Sun.height_when_set.minus(height).ratio_to(Sun.radius_as_height)
+	Fraction.clamp(darkness_at_set.to_f64() + sunk_past_set * darkness_at_set.complement().to_f64())
 }
 
 # The sky is at least at darkness_at_set as the sun fully sets, and darker a

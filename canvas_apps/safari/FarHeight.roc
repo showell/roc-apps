@@ -45,8 +45,8 @@ FarHeight :: F64.{
 	abs = |FarHeight.(h)| FarHeight.(h.abs())
 
 	## How many of `whole` this is, which can pass 1 or go negative.
-	portion : FarHeight, FarHeight -> F64
-	portion = |FarHeight.(h), FarHeight.(whole)| h / whole
+	ratio_to : FarHeight, FarHeight -> F64
+	ratio_to = |FarHeight.(h), FarHeight.(whole)| h / whole
 
 	## The higher of this height and `other`.
 	max : FarHeight, FarHeight -> FarHeight

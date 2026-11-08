@@ -21,8 +21,8 @@ Camera :: [].{
 	## lens of focal length `cam_focal` in pixels.
 	project : Geom.AheadPoint, Pixels -> Screen.Point
 	project = |p, cam_focal| {
-		slope_right = p.right().portion(p.forward())
-		slope_up = p.height().minus(eye_height).portion(p.forward())
+		slope_right = p.right().ratio_to(p.forward())
+		slope_up = p.height().minus(eye_height).ratio_to(p.forward())
 		{
 			x: x_for_slope(slope_right, cam_focal),
 			y: Screen.horizon_y.minus(cam_focal.times(slope_up)),
@@ -54,14 +54,14 @@ Camera :: [].{
 	## through a lens of `cam_focal`: the way back from `far_point`'s x.
 	turn_at_x : { x : Pixels, cam_focal : Pixels } -> Angle.Turn
 	turn_at_x = |{ x, cam_focal }| {
-		slope = x.minus(Screen.center_x).portion(cam_focal)
+		slope = x.minus(Screen.center_x).ratio_to(cam_focal)
 		Angle.Turn.radians(slope.atan())
 	}
 
 	## How tall something of `height` stands on the screen, `forward` of the
 	## camera, through a lens of focal length `cam_focal` in pixels.
 	height_on_screen : { height : Distance, forward : Distance }, Pixels -> Pixels
-	height_on_screen = |{ height, forward }, cam_focal| cam_focal.times(height.portion(forward))
+	height_on_screen = |{ height, forward }, cam_focal| cam_focal.times(height.ratio_to(forward))
 
 	## Where an upright object stands on the screen: `foot`, its foot at `base`
 	## put on the screen, and `height_on_screen`, how far up the screen its top

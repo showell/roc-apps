@@ -292,7 +292,7 @@ is_in_view = |forward| forward >= near_plane
 ## Where an edge that has one end on each side crosses the near plane.
 near_plane_crossing : { from : Geom.RaisedPoint, to : Geom.RaisedPoint } -> Geom.AheadPoint
 near_plane_crossing = |{ from, to }| {
-	fraction = near_plane.minus(from.forward).portion(to.forward.minus(from.forward))
+	fraction = near_plane.minus(from.forward).ratio_to(to.forward.minus(from.forward))
 	Geom.AheadPoint.(
 		{
 			right: from.right.plus(to.right.minus(from.right).times(fraction)),

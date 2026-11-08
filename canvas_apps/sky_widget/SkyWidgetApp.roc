@@ -216,7 +216,7 @@ chart_y = |level| chart_bottom - (chart_bottom - chart_top) * level
 sun_level : Clock -> F64
 sun_level = |clock| {
 	lowest = Sun.height_at(sunset.last)
-	Sun.height_at(clock).minus(lowest).portion(Sun.height_at_start.minus(lowest))
+	Sun.height_at(clock).minus(lowest).ratio_to(Sun.height_at_start.minus(lowest))
 }
 
 darkness_level : Clock -> F64

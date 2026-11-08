@@ -47,7 +47,7 @@ Lens :: [].{
 ## How large a lens of focal length `focal` draws things beside the lens at
 ## rest. The lens only ever widens, so that is never larger.
 scale_for : Pixels -> Fraction
-scale_for = |focal| Fraction.of(focal.portion(Lens.resting_focal))
+scale_for = |focal| Fraction.of(focal.ratio_to(Lens.resting_focal))
 
 field_of_view : Angle.Turn
 field_of_view = Angle.Turn.degrees(70.0)

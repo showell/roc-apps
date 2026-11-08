@@ -45,7 +45,7 @@ Cat :: [].{
 			}
 			Past(steps_past) => {
 				faded = Fraction.clamp(steps_past.to_f64() / attention_fade.to_f64())
-				peak_attention.scaled_by(Easing.smoothstep(faded).less())
+				peak_attention.scaled_by(Easing.smoothstep(faded).complement())
 			}
 		}
 

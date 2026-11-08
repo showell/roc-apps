@@ -36,8 +36,8 @@ Distance :: F64.{
 	opposite = |Distance.(d)| Distance.(0.0 - d)
 
 	## How many of `whole` this is, which can pass 1.
-	portion : Distance, Distance -> F64
-	portion = |Distance.(d), Distance.(whole)| d / whole
+	ratio_to : Distance, Distance -> F64
+	ratio_to = |Distance.(d), Distance.(whole)| d / whole
 
 	## The smaller of this length and `other`.
 	min : Distance, Distance -> Distance

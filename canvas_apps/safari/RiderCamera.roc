@@ -105,7 +105,7 @@ ride_focal = |rider, { route, encounter_timing }| {
 ## gives the wider view. A lean to either side widens it alike.
 focal_for : { lean : Angle.Lean, attention : Attention } -> Pixels
 focal_for = |{ lean, attention }| {
-	lean_fraction = Fraction.clamp(lean.abs().portion(RiderCamera.full_lean))
+	lean_fraction = Fraction.clamp(lean.abs().ratio_to(RiderCamera.full_lean))
 	for_lean = focal_for_lean(lean_fraction)
 	for_attention = focal_for_attention(attention)
 	if for_lean < for_attention {
@@ -128,13 +128,13 @@ focal_factor_at_full_attention = Fraction.of(0.61)
 focal_for_lean : Fraction -> Pixels
 focal_for_lean = |lean_fraction| {
 	lean = lean_fraction.to_f64()
-	Lens.resting_focal.times(1.0 - focal_factor_at_full_lean.less().to_f64() * lean * lean)
+	Lens.resting_focal.times(1.0 - focal_factor_at_full_lean.complement().to_f64() * lean * lean)
 }
 
 ## The focal length for the rider's attention.
 focal_for_attention : Attention -> Pixels
 focal_for_attention = |attention| {
-	lost_at_full_attention = focal_factor_at_full_attention.less().to_f64()
+	lost_at_full_attention = focal_factor_at_full_attention.complement().to_f64()
 	Lens.resting_focal.times(1.0 - lost_at_full_attention * attention.to_f64())
 }
 

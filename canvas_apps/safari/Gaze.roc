@@ -95,7 +95,7 @@ next_look_depth = |eyes, gaze_yaw|
 	if gaze_yaw == Angle.straight_ahead {
 		Fraction.clamp(eyes.look_depth.to_f64() - look_depth_decay.to_f64())
 	} else {
-		eyes.look_depth.max(Fraction.clamp(gaze_yaw.abs().portion(Gaze.look_release_angle)))
+		eyes.look_depth.max(Fraction.clamp(gaze_yaw.abs().ratio_to(Gaze.look_release_angle)))
 	}
 
 ## How far `pig` stands from the way the motorcycle points.

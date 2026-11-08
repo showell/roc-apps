@@ -64,7 +64,7 @@ canvas_per_screen = WidgetPage.canvas_width / Screen.width.to_f64()
 right_of : Stand -> Distance
 right_of = |{ forward, canvas_x }| {
 	screen_x = Pixels.of(canvas_x / canvas_per_screen)
-	forward.times(screen_x.minus(Screen.center_x).portion(Lens.resting_focal))
+	forward.times(screen_x.minus(Screen.center_x).ratio_to(Lens.resting_focal))
 }
 
 ## The road ahead of a rider on the route's first segment. The trees stand on
