@@ -73,9 +73,7 @@ flight_arc = Distance.metres(5.0)
 shortest_hop : Distance
 shortest_hop = Distance.metres(25.0)
 
-## How many steps one flap of the wings takes, half of them up and half down.
-## At the rider's cruising 1.25 m a step a flap spans 5 m of road, as it did
-## when a flight played by the road, eight frames a metre, 40 to a flap.
+## How many steps one flap of the wings takes, half up and half down.
 frames_a_flap : U64
 frames_a_flap = 4
 
