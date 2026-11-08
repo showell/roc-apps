@@ -3,6 +3,29 @@
 ## on it, and how it turns into the next. The route makes some choices across
 ## its segments, such as which herds are big and which the rider finds
 ## distracting, and this module resolves them before each segment is built.
+##
+## The world is built once and never changes during the ride. It holds these.
+## The route is a list of segments, each known by its place in the list, a
+## `Route.SegmentIndex` counted from 0; `World.route` builds it from
+## `World.segment_plans`, and `Route.from_segments` checks that every segment
+## but the last bends.
+## A segment's trees are a list, each tree known by where it stands on its
+## segment, along and across the road; `Trees.roadside_trees` plants them from
+## the segment's scheme and length.
+## A segment has at most one herd of pigs, whose shape and whether it distracts
+## the rider `built_segment` chooses here, and one herd of cows, led by a bull or
+## not; each animal's place is worked out from its herd when it is asked for
+## (`Segment.segment_pigs`, `Segment.segment_cows`), not kept.
+## A segment has one encounter, a cat crossing, a bird's flight or a quiet road,
+## and `Segment.from_choices` places the cat by one of its trees and the bird on
+## another.
+## A segment ends by bending into the next, with its turn and what lives at the
+## bend (an animal and its baby, a pond with its ducks, or nothing), or by ending
+## the route; a pond is known by the segment whose bend it lies at, and its
+## ducks, like the animal, are placed from that bend.
+## Towers aren't kept at all: each follows from its segment, one past the end of
+## every segment and one halfway along a segment longer than a kilometre, so a
+## tower is known by its segment and its `Beacon.TowerPlace`.
 import Angle
 import BirdFlight
 import CatCrossing
