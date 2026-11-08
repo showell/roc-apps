@@ -444,9 +444,12 @@ expect cells.all(|cell| cells.keep_if(|other| other.pose == cell.pose).len() == 
 
 # The rows fill the space between the side margins, end to end.
 expect first_cell.area.left == WidgetPage.side_margin
-expect (last_cell.area.left + last_cell.area.width - 616.0).abs() <= 0.000001
-expect (first_cell.area.width - 592.0 / 7.0).abs() <= 0.000001
-expect (last_cell.area.width - 592.0 / 6.0).abs() <= 0.000001
+expect {
+	row_right = WidgetPage.canvas_width - WidgetPage.side_margin
+	(last_cell.area.left + last_cell.area.width - row_right).abs() <= 0.000001
+}
+expect (first_cell.area.width - WidgetPage.panel_width / cat_poses.len().to_f64()).abs() <= 0.000001
+expect (last_cell.area.width - WidgetPage.panel_width / bird_poses.len().to_f64()).abs() <= 0.000001
 
 # The two rows fill the panel, top to bottom, and no two cells overlap.
 expect first_cell.area.top == WidgetPage.picture_bottom_y
@@ -457,8 +460,8 @@ expect
 	)
 
 # A row shares one height, and no still leaves its cell or crosses its name.
-expect cells.take_first(7).all(|cell| cell.anchor.height_on_screen == first_cell.anchor.height_on_screen)
-expect cells.drop_first(7).all(|cell| cell.anchor.height_on_screen == last_cell.anchor.height_on_screen)
+expect cells.take_first(cat_poses.len()).all(|cell| cell.anchor.height_on_screen == first_cell.anchor.height_on_screen)
+expect cells.drop_first(cat_poses.len()).all(|cell| cell.anchor.height_on_screen == last_cell.anchor.height_on_screen)
 expect cells.all(|{ pose, area, anchor }| stays_in(anchor, { still: pose_still(pose), area }))
 expect
 	cells.all(
@@ -476,8 +479,8 @@ is_full_width = |{ pose, area, anchor }| {
 }
 
 # The widest still of each row just fits, so no row is smaller than it must be.
-expect cells.take_first(7).any(is_full_width)
-expect cells.drop_first(7).any(is_full_width)
+expect cells.take_first(cat_poses.len()).any(is_full_width)
+expect cells.drop_first(cat_poses.len()).any(is_full_width)
 expect !is_full_width(first_cell)
 
 ## The large area with its far edges inside it, which a still may touch.
