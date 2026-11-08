@@ -376,8 +376,9 @@ The first two forms hold the object's kind. A kind, such as `Conifer` or `Billbo
 | Type | What it is |
 |---|---|
 | `Geom.Placed(kind)` | An object on the road: its `road_point` on its segment, its `lift` off the ground, and its `kind` |
-| `Pipeline.Sighted(kind)` | All of that, where its segment lies from the rider as `place`, and where the rider sees it, `right` and `forward` of the camera |
-| `Picture.Setting(context)` | What a kind draws from: `right` and `forward`, the lens's focal length as `cam_focal`, and a `context` for whatever else the kind needs |
+| `Spot` | Where an object stands in one frame: its segment's `place` from the rider, its `road_point`, its `lift`, and its `foot` in the rider's view |
+| `Pipeline.Sighted(kind)` | An object in view: its `spot` and its `kind` |
+| `Picture.Setting(context)` | What a kind draws from: its `spot`, the lens's `focal_length`, and a `context` for whatever else the kind needs |
 | `Picture` | The object's shapes, in order, from the Shapes chapter |
 | `Rendered` | The object's `picture`, and its `depth`: how far ahead of the camera it stands |
 
@@ -386,7 +387,7 @@ One object through one frame
 digraph forms {
   node [shape=box, fontname="Helvetica"];
   placed [label="Geom.Placed(kind)\nroad_point, lift, kind"];
-  sighted [label="Pipeline.Sighted(kind)\nplace, along, across,\nright, forward, kind"];
+  sighted [label="Pipeline.Sighted(kind)\nspot, kind"];
   rendered [label="Rendered\ndepth, picture"];
   sorted [label="List(Rendered)\nfar to near"];
   placed -> sighted [label="  Pipeline.tall_sighting_of\n  asks the kind's scenery_height"];
@@ -596,7 +597,7 @@ Three gold trees, each drawn by `Conifer.scenery_picture`. Under each are its di
 
 {{code TreeShapes.tier_shape}}
 
-`Camera.project` needs points in front of the camera, and `Geom` draws that line at its near plane, `Geom.near_plane`, 0.4 metres ahead. So a tier whose ring reaches back past the near plane falls back to the flat triangle. The `if` after the pattern is a guard, and it adds a condition to a branch. A `match` tries its branches from the top down and takes the first that fits, so the guarded branch has to come before the plain `Cones` one. `_` fits any payload and names none, because that branch doesn't need the shade.
+`Camera.project` needs points in front of the camera, and `RiderView` draws that line at its near plane, 0.4 metres ahead. So a tier whose ring reaches back past the near plane falls back to the flat triangle. The `if` after the pattern is a guard, and it adds a condition to a branch. A `match` tries its branches from the top down and takes the first that fits, so the guarded branch has to come before the plain `Cones` one. `_` fits any payload and names none, because that branch doesn't need the shade.
 
 A frame has no cones, only polygons, so we work out the polygon a cone would make. We leave pixels behind for a moment and work in metres. `base_height` and `apex_height` are how high the tier's bottom and top stand. `top` and `bottom` count down from the crown's tip, so `1.0 - bottom` is the share up from the crown's foot. We take a ring of 16 points around the base and one point at the top, and we project them all onto the screen:
 
@@ -1048,14 +1049,14 @@ The rail stays close to the road. The radio towers stand well back from it. One 
 
 New in this chapter:
 
-- Roc: a closer look at a `match` on a pair
+- Roc: a `match` on a pair
 - Modules: `TowerSighting`, `Tower`
 
 A tower is two facts: which way it's turned, and its beacon.
 
 {{code Tower.Tower}}
 
-A tower isn't placed when the world is built. Its sighting works out where it stands from the segment, and its footprint is then measured on the road from that spot. This one is for the tower halfway along:
+A tower isn't placed when the world is built. Its sighting works out where it stands from the segment. When it's drawn, `scenery_picture` measures its footprint on the road around that spot, which is why its context is the road and the camera's vantage. This one is for the tower halfway along:
 
 {{code TowerSighting.mid_tower}}
 
@@ -1067,11 +1068,11 @@ A tower's footprint is a square, and four tags name its corners. Going round the
 
 {{code Tower.next_corner}}
 
-Everything above the footprint is rods. Four legs run from the corners up to a point, starting as high as the earth's curve lets them show:
+Everything above the footprint is rods, with the beacon's disc on top. Four legs run from the corners up to a point, starting as high as the earth's curve lets them show:
 
 {{code Tower.leg_shapes}}
 
-A ring of rods goes round the tower every 20 metres, and crossed braces fill the lowest two storeys. Each rod is a line between two points in the rider's view, and it needs some care, because a near tower can stand partly behind the camera:
+A ring of rods goes round the tower at each storey, 20 metres apart, below the top, and crossed braces fill the lowest two storeys. Each rod is a line between two points in the rider's view, and it needs some care, because a near tower can stand partly behind the camera:
 
 {{code RiderView.line_ahead}}
 
