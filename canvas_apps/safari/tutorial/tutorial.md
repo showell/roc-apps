@@ -2114,12 +2114,12 @@ The modules around `CatCrossing`
 digraph cat {
   node [shape=box, fontname="Helvetica"];
   CatCrossing [style=bold];
-  World -> CatCrossing [label="  puts one by a tree"];
-  Segment -> CatCrossing [label="  holds it"];
+  World -> Segment [label="  marks some segments CatCrosses"];
+  Segment -> CatCrossing [label="  builds and holds it"];
   RideInstant -> EncounterPlan [label="  keeps the plan"];
   EncounterReaction -> CatCrossing [label="  reacts to it"];
-  EncounterSighting -> EncounterPoses [label="  places it, then sights it"];
-  EncounterPoses -> Cat [label="  poses it"];
+  EncounterSighting -> EncounterPoses [label="  asks where it stands"];
+  EncounterPoses -> CatCrossing [label="  asks for its instant"];
   CatCrossing -> Cat [label="  picks a pose"];
   CatCrossing -> Animation [label="  plays its frames"];
   CatCrossing -> EncounterPlan [label="  is planned by its span"];
@@ -2236,7 +2236,7 @@ The bird is Roc's logo, sitting on a treetop. As the rider comes near it takes o
 Press play and watch the bird fly.
 ```
 
-Play it, and the gap falls from 75 metres to 0, with the rider held at 1.25 metres a step. The bird sits on the tip of the left tree, 6.4 metres up, until 60 metres. It takes off side on, turns away at about 55 metres, and reaches 10.7 metres near the middle of its flight, shrinking as it goes. It dives from 20 metres, and at 15 it's perched on the tip of the far tree, 4.9 metres up. Below that, the picture stays as it is.
+The picture is a fixed eye, 18 metres short of the first tree; the gap only drives the clock. Play it, and the gap falls from 75 metres to 0, with the rider held at 1.25 metres a step. The bird sits on the tip of the left tree, 6.4 metres up, until 60 metres. It takes off side on, turns away at about 55 metres, and reaches 10.7 metres near the middle of its flight, shrinking as it goes. It dives from 20 metres, and at 15 it's perched on the tip of the far tree, 4.9 metres up. Below that, the picture stays as it is.
 
 New in this chapter:
 
@@ -2249,7 +2249,7 @@ A bird comes in the same two halves as a cat. `BirdFlight` is what it does: the 
 
 {{code Bird.Bird from "Bird := {" to "}.{"}}
 
-A pose can carry a pose of its own. A bird side on or seen from behind has its wings up or down, so those tags take a second tag:
+A pose can carry a tag of its own. A bird side on or seen from behind has its wings up or down, so those tags carry a `WingBeat`:
 
 {{code Bird.BirdPose}}
 
@@ -2258,11 +2258,12 @@ The modules around `BirdFlight`
 digraph bird {
   node [shape=box, fontname="Helvetica"];
   BirdFlight [style=bold];
-  World -> BirdFlight [label="  plans one per segment"];
-  Segment -> BirdFlight [label="  holds it"];
+  World -> Segment [label="  marks some segments BirdHere"];
+  Segment -> BirdFlight [label="  builds and holds it"];
+  Scene -> EncounterSighting [label="  asks for the birds in view"];
   RideInstant -> EncounterPlan [label="  keeps the plan"];
-  EncounterSighting -> EncounterPoses [label="  places it, then sights it"];
-  EncounterPoses -> Bird [label="  poses it"];
+  EncounterSighting -> EncounterPoses [label="  asks where it stands"];
+  EncounterPoses -> BirdFlight [label="  asks for its instant"];
   BirdFlight -> Bird [label="  picks a pose"];
   BirdFlight -> Animation [label="  plays its frames"];
   BirdFlight -> EncounterPlan [label="  is planned by its span"];
@@ -2272,7 +2273,7 @@ digraph bird {
 
 ### When it plays
 
-The ride plans the flight the way it plans a cat's crossing: once, when the rider first comes within reach, from how fast the rider is coming. A flight is 36 frames, and it ends as the rider comes within 15 metres of the tree the bird left, so the rider sees it land before passing that tree:
+The ride plans the flight the way it plans a cat's crossing: once, when the rider first comes within reach, from how fast the rider is coming. A flight is 36 frames, and it's planned to end as a rider keeping their speed comes within 15 metres of the tree the bird left, so the rider sees it land before passing that tree:
 
 {{code BirdFlight.flight_span}}
 
@@ -2316,11 +2317,11 @@ A segment's bird is chosen when the world is built. The segment picks the perch,
 
 {{code Segment.fifth_left_tree}}
 
-Then the bird picks where to fly: the first tree on the far side of the road that's far enough along.
+Then the bird picks where to fly: the first tree on the far side of the road at least 25 metres farther along.
 
 {{code BirdFlight.flight_from}}
 
-`find_first` answers a `Try`, and the `match` opens it by hand, turning "not found" into the bird's own error, `NoTreeToFlyTo`. The bird always starts on the left because its stills are drawn facing right and are never mirrored, so on a left tree it faces the road.
+`find_first` answers a `Try`, and the `match` opens it by hand, turning "not found" into the bird's own error, `NoTreeToFlyTo`. The bird always starts on the left because its perched and side-on stills face right and are never mirrored, so on a left tree it faces the road.
 
 The segment puts the two together. A route that plans a bird on a segment with no tree for it is a bug, so each failure crashes with its own reason:
 
