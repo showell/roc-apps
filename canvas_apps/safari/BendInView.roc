@@ -47,6 +47,10 @@ BendInView :: { before : SegmentPlace, bend : Geom.Bend }.{
 	place_before : BendInView -> SegmentPlace
 	place_before = |BendInView.(bend_in_view)| bend_in_view.before
 
+	## Where the segment after the bend lies from the rider.
+	place_after : BendInView -> SegmentPlace
+	place_after = |bend_in_view| Ahead(BendInView.position_after(bend_in_view))
+
 	## How long the segment before the bend is.
 	length_before : BendInView -> Distance
 	length_before = |BendInView.(bend_in_view)| bend_in_view.bend.segment_length
@@ -69,25 +73,30 @@ BendInView :: { before : SegmentPlace, bend : Geom.Bend }.{
 			RightSide => Geom.right_edge
 		}
 
-	## The corner the road's outer edge turns at a bend, measured on the segment
-	## before it: where that segment's outer edge ends, the apex where it meets
-	## the outer edge of the segment after, carried straight on, and where the
-	## outer edge of the segment after starts.
-	outer_corner : BendInView -> {
-		end_before : Geom.RoadPoint,
-		apex : Geom.RoadPoint,
-		start_after : Geom.RoadPoint,
+	## The corner the road's outer edge turns at a bend: where the outer edge of
+	## the segment before ends, the apex where it meets the outer edge of the
+	## segment after, carried straight on, and where the outer edge of the
+	## segment after starts.
+	OuterCorner(point) : {
+		end_before : point,
+		apex : point,
+		start_after : point,
 	}
+
+	## The outer corner of a bend, measured on the segment before it.
+	outer_corner : BendInView -> BendInView.OuterCorner(Geom.RoadPoint)
 	outer_corner = |bend_in_view| {
 		across = outer_edge(bend_in_view)
 		BendInView.({ bend, .. }) = bend_in_view
 		start_after = Geom.point_in_segment_before({ along: Along.start, across }, bend)
 		turn_radians = bend.turn.to_radians()
 		toward_edge = across.distance_from(start_after.across).to_metres()
-		run_to_edge = toward_edge * turn_radians.cos() / turn_radians.sin()
+		# Negative below a right angle, where the apex is back from start_after,
+		# and positive past one.
+		along_to_apex = toward_edge * turn_radians.cos() / turn_radians.sin()
 		{
 			end_before: { along: Along.at(bend.segment_length), across },
-			apex: { along: start_after.along.plus(Distance.metres(run_to_edge)), across },
+			apex: { along: start_after.along.plus(Distance.metres(along_to_apex)), across },
 			start_after,
 		}
 	}
@@ -95,11 +104,10 @@ BendInView :: { before : SegmentPlace, bend : Geom.Bend }.{
 	## The outer corner of a bend, as the camera at `vantage` on the rider's
 	## segment of `road` sees it.
 	outer_corner_in_view : BendInView,
-	{ road : RoadAhead.RoadView, vantage : Geom.Vantage } -> {
-		end_before : RiderView.RiderPoint,
-		apex : RiderView.RiderPoint,
-		start_after : RiderView.RiderPoint,
-	}
+	{
+		road : RoadAhead.RoadView,
+		vantage : Geom.Vantage,
+	} -> BendInView.OuterCorner(RiderView.RiderPoint)
 	outer_corner_in_view = |bend_in_view, { road, vantage }| {
 		corner = bend_in_view.outer_corner()
 		rider_point_before = |road_point| RoadAhead.rider_point_at(
