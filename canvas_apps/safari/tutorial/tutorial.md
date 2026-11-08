@@ -33,8 +33,8 @@ digraph problem {
   look [label="look around:\nwhat's near enough to see?"];
   draw [label="draw it against the backdrop"];
   world -> step [label="  starts the clock"];
-  step -> move [label="  moves on"];
-  move -> look [label="  then looks"];
+  step -> move [label="  each step"];
+  move -> look [label="  from the new places"];
   look -> draw [label="  hands what it sees"];
   draw -> step [label="  next step"];
 }
@@ -211,9 +211,9 @@ digraph world {
   World -> Segment [label="  builds"];
   World -> Trees [label="  picks a tree scheme from"];
   World -> CowHerd [label="  plans the cows with"];
-  World -> PigHerd [label="  sizes the herds with"];
-  World -> CatCrossing [label="  finds the first"];
-  World -> BirdFlight [label="  finds the first"];
+  World -> PigHerd [label="  plans the pigs with"];
+  World -> CatCrossing [label="  plans the cats' crossings"];
+  World -> BirdFlight [label="  plans the birds' flights"];
   Route -> Segment [label="  holds"];
   Segment -> Pond [label="  places the ducks of"];
 }
