@@ -210,14 +210,7 @@ truck_renderings : RoadAhead.RoadView,
 } -> List(Rendered)
 truck_renderings = |road, { cam, facts }| {
 	on_road = { road, vantage: cam.vantage }
-	match TruckSighting.truck_in_view(
-		road,
-		{
-			camera: cam,
-			route_position: facts.truck.route_position,
-			lit_truck: facts.truck.lit_truck,
-		},
-	) {
+	match TruckSighting.truck_in_view(road, { camera: cam, truck: facts.truck }) {
 		Ok(truck) => [Pipeline.rendering_of(truck, { cam_focal: cam.cam_focal, context: on_road })]
 		Err(NoTruck) | Err(BehindCamera) => []
 	}

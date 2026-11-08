@@ -1,8 +1,6 @@
 ## TruckBody gives the shapes of the truck's body: the five faces of its
-## trailer and cab, and its tires. They are painted far to near, so a nearer
-## face covers a farther one.
-import Across
-import Along
+## trailer and cab, and its tires. The shapes come sorted far to near, so a
+## nearer face drawn later covers a farther one.
 import Camera
 import DepthSort
 import Distance
@@ -15,8 +13,8 @@ import lib.Shapes
 
 TruckBody :: [].{
 
-	## The truck's body, its farthest faces painted first. A face is ordered by
-	## the mean of its corners' distances ahead.
+	## The truck's body, its farthest faces first. A face is ordered by the
+	## mean of its corners' distances ahead.
 	body_shapes : Picture.Setting(TruckShape.TruckOnRoad) -> List(Shapes.Shape)
 	body_shapes = |truck|
 		DepthSort.sort_by(faces(truck), |face| mean_forward(face.corners))
@@ -61,10 +59,10 @@ mean_forward = |corners|
 		.fold_rev(Distance.zero, |corner, sum| corner.forward.plus(sum))
 		.divided_by(corners.len().to_f64())
 
-## Where the truck's axles are along the road, back to front: a pair
-## under the back of the trailer, a pair under its front, and one under
-## the cab.
-axles : List(Along)
+## How far ahead of the trailer's centre each of the truck's axles is, back
+## to front: a pair under the back of the trailer, a pair under its front,
+## and one under the cab.
+axles : List(Distance)
 axles = {
 	box = TruckShape.truck_box
 	back_pair = box.rear.plus(trailer_axle_inset)
@@ -93,8 +91,8 @@ faces = |truck| {
 			windshield(truck),
 			nose(truck),
 		],
-		axles.map(|axle| tire(truck, { axle, across: box.left })),
-		axles.map(|axle| tire(truck, { axle, across: box.right })),
+		axles.map(|axle| tire(truck, { axle, rightward: box.left })),
+		axles.map(|axle| tire(truck, { axle, rightward: box.right })),
 	].join()
 }
 
@@ -109,24 +107,24 @@ face = |truck, { color, corners }| {
 	corners: corners.map(|corner| TruckShape.raised_point_on_truck(truck, corner)),
 }
 
-## A side of the truck at `across`: up the back of the trailer, along its
-## roof and the cab's, down the windshield's edge and the nose, back along
-## the cab's floor, and down to the trailer's floor.
-side : Picture.Setting(TruckShape.TruckOnRoad), Across -> Camera.FlatPolygon
-side = |truck, across| {
+## A side of the truck `rightward` of its centre line: up the back of the
+## trailer, along its roof and the cab's, down the windshield's edge and the
+## nose, back along the cab's floor, and down to the trailer's floor.
+side : Picture.Setting(TruckShape.TruckOnRoad), Distance -> Camera.FlatPolygon
+side = |truck, rightward| {
 	box = TruckShape.truck_box
 	face(
 		truck,
 		{
 			color: side_color,
 			corners: [
-				{ along: box.rear, across, height: TruckShape.trailer_bottom },
-				{ along: box.rear, across, height: TruckShape.truck_height },
-				{ along: box.roof_front, across, height: TruckShape.truck_height },
-				{ along: box.nose, across, height: TruckShape.hood_height },
-				{ along: box.nose, across, height: TruckShape.cab_bottom },
-				{ along: box.trailer_front, across, height: TruckShape.cab_bottom },
-				{ along: box.trailer_front, across, height: TruckShape.trailer_bottom },
+				{ ahead: box.rear, rightward, height: TruckShape.trailer_bottom },
+				{ ahead: box.rear, rightward, height: TruckShape.truck_height },
+				{ ahead: box.roof_front, rightward, height: TruckShape.truck_height },
+				{ ahead: box.nose, rightward, height: TruckShape.hood_height },
+				{ ahead: box.nose, rightward, height: TruckShape.cab_bottom },
+				{ ahead: box.trailer_front, rightward, height: TruckShape.cab_bottom },
+				{ ahead: box.trailer_front, rightward, height: TruckShape.trailer_bottom },
 			],
 		},
 	)
@@ -142,8 +140,8 @@ back = |truck| {
 			corners: TruckShape.strip_corners(
 				{ left: box.left, right: box.right },
 				{
-					near: { along: box.rear, height: TruckShape.trailer_bottom },
-					far: { along: box.rear, height: TruckShape.truck_height },
+					near: { ahead: box.rear, height: TruckShape.trailer_bottom },
+					far: { ahead: box.rear, height: TruckShape.truck_height },
 				},
 			),
 		},
@@ -161,8 +159,8 @@ roof = |truck| {
 			corners: TruckShape.strip_corners(
 				{ left: box.left, right: box.right },
 				{
-					near: { along: box.rear, height: TruckShape.truck_height },
-					far: { along: box.roof_front, height: TruckShape.truck_height },
+					near: { ahead: box.rear, height: TruckShape.truck_height },
+					far: { ahead: box.roof_front, height: TruckShape.truck_height },
 				},
 			),
 		},
@@ -179,8 +177,8 @@ windshield = |truck| {
 			corners: TruckShape.strip_corners(
 				{ left: box.left, right: box.right },
 				{
-					near: { along: box.roof_front, height: TruckShape.truck_height },
-					far: { along: box.nose, height: TruckShape.hood_height },
+					near: { ahead: box.roof_front, height: TruckShape.truck_height },
+					far: { ahead: box.nose, height: TruckShape.hood_height },
 				},
 			),
 		},
@@ -197,22 +195,22 @@ nose = |truck| {
 			corners: TruckShape.strip_corners(
 				{ left: box.left, right: box.right },
 				{
-					near: { along: box.nose, height: TruckShape.hood_height },
-					far: { along: box.nose, height: TruckShape.cab_bottom },
+					near: { ahead: box.nose, height: TruckShape.hood_height },
+					far: { ahead: box.nose, height: TruckShape.cab_bottom },
 				},
 			),
 		},
 	)
 }
 
-## The tire on the axle at `axle` along the road, on the side at `across`:
-## a circle standing on the road.
+## The tire on the axle `axle` ahead of the trailer's centre, on the side
+## `rightward` of its centre line: a circle standing on the road.
 tire : Picture.Setting(TruckShape.TruckOnRoad),
 {
-	axle : Along,
-	across : Across,
+	axle : Distance,
+	rightward : Distance,
 } -> Camera.FlatPolygon
-tire = |truck, { axle, across }| {
+tire = |truck, { axle, rightward }| {
 	radius = TruckShape.tire_radius
 	face(
 		truck,
@@ -220,8 +218,8 @@ tire = |truck, { axle, across }| {
 			color: tire_color,
 			corners: TruckShape.circle_angles(tire_sides).map(
 				|angle| {
-					along: axle.plus(radius.times(angle.cos())),
-					across,
+					ahead: axle.plus(radius.times(angle.cos())),
+					rightward,
 					height: radius.plus(radius.times(angle.sin())),
 				},
 			),

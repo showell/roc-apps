@@ -1,7 +1,8 @@
 ## FrameBench is a native bench for the frame: it builds the world, rides N
 ## steps, renders each frame, and prints the total number of shapes
 ## and whether the ride finished. It is for `perf` on a native --opt=speed
-## build, where the wasm module has no names; the gate doesn't run it.
+## build, where the wasm module has no names; the gate checks it but doesn't
+## run it.
 ##
 ##   roc build --opt=speed FrameBench.roc --output=<bin>; <bin> 60
 app [main!] { game: "../../game.roc", lib: "../../../lib/main.roc" }

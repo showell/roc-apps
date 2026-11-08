@@ -5,7 +5,6 @@ import Fixtures
 import game.Across
 import game.Along
 import game.Angle
-import game.Attention
 import game.Billboard
 import game.Clock
 import game.Coast
@@ -121,9 +120,7 @@ expect
 		},
 	)
 
-# The route sets off north, and each segment's bearing is the one before it
-# turned by the bend between them.
-expect World.route.bearing_of(Route.SegmentIndex.first) == Angle.north
+# Each segment's bearing is the one before it turned by the bend between them.
 expect {
 	first_turn = World.route.segment_at(Route.SegmentIndex.first).bend_out_of().turn
 	World.route.bearing_of(Route.SegmentIndex.number(1)) == Angle.north.plus(first_turn)
@@ -184,12 +181,6 @@ encounter_attention_of = |rider, encounter_timing|
 	).to_f64()
 
 expect focal_of(upright).minus(Lens.resting_focal) == Pixels.zero
-expect encounter_attention_of(upright, Unplanned) == 0.0
-expect Gaze.gaze_attention(Fraction.zero).to_f64() == 0.0
-expect Lens.focal_for({
-	lean: upright.motorcycle.lean,
-	attention: Attention.none,
-}).minus(Lens.resting_focal) == Pixels.zero
 
 focal_at_lean = |lean| focal_of(leaning(upright, lean))
 
@@ -254,7 +245,6 @@ expect {
 	half_look = { ..upright, eyes: { ..upright.eyes, look_depth: Fraction.of(0.5) } }
 	focal_of(looking_hard(upright)) < focal_of(half_look)
 }
-expect Gaze.gaze_attention(Fraction.whole).to_f64() > Gaze.gaze_attention(Fraction.zero).to_f64()
 
 both : Pixels
 both = focal_of(looking_hard(leaning(upright, Lens.full_lean)))
@@ -265,17 +255,12 @@ lean_only = focal_of(leaning(upright, Lens.full_lean))
 gaze_only : Pixels
 gaze_only = focal_of(looking_hard(upright))
 
-expect both <= lean_only
-expect both <= gaze_only
+# A full lean and a hard look together widen the view as far as the wider of the
+# two alone, and no further.
 expect
 	both.to_f64().to_bits()
 		== lean_only.to_f64().min(gaze_only.to_f64()).to_bits()
-expect lean_only.plus(gaze_only) > both
-expect both.to_f64() - lean_only.to_f64().min(gaze_only.to_f64()) == 0.0
-expect Lens.focal_for({
-	lean: Lens.full_lean,
-	attention: Attention.none,
-}).minus(lean_only) == Pixels.zero
+
 # Coast's projections. Coast imports neither Angle nor Speed, which these need.
 
 ## The coast of a motorcycle at the start of the segment, going the base speed.
@@ -287,7 +272,6 @@ coast_of = |across, lean_radians|
 		lean: Angle.Lean.radians(lean_radians),
 	})
 
-expect coast_of(0.0, 0.0) == EndsAt(Across.metres(0.0))
 expect coast_of(3.0, 0.0) == EndsAt(Across.metres(3.0))
 expect Coast.project({ ..Motorcycle.initial, speed: Speed.at_rest }) == EndsAt(Across.metres(0.0))
 

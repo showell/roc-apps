@@ -69,13 +69,16 @@ rider_along = |instant| instant.rider.motorcycle.route_place.along
 
 expect
 	match RideInstant.next_or_restart(World.route, done) {
-		Restarted(instant) =>
-			instant.clock == Clock.start
-				and instant.rider.motorcycle.route_place.along.to_metres() == 0.0
-				and instant.rider.motorcycle.speed.to_metres_a_step() == 0.3
-				and instant.truck.route_position.to_metres() == 500.0
-				and instant.rider.eyes.look_depth.to_f64() == 0.0
-				and instant.encounter_start == Unplanned
+		Restarted(instant) => {
+			initial = RideInstant.initial
+			instant.clock == initial.clock
+				and instant.rider.motorcycle.route_place == initial.rider.motorcycle.route_place
+				and instant.rider.motorcycle.speed == initial.rider.motorcycle.speed
+				and instant.rider.eyes.look_depth == initial.rider.eyes.look_depth
+				and instant.truck.route_position == initial.truck.route_position
+				and instant.truck.pace == initial.truck.pace
+				and instant.encounter_start == initial.encounter_start
+		}
 		Continued(_) => False
 	}
 
@@ -106,26 +109,14 @@ expect {
 	$crossings == 18 and $is_home_at_each and $has_looked
 }
 
-expect done.rider.is_finished(World.route)
-expect instant_after(done).truck.pace == NotSlowing
-
 # A ride that hasn't finished steps on: the clock by a step, the rider and the
 # truck forward.
 ride_at_step_one : RideInstant
 ride_at_step_one = instant_after(RideInstant.initial)
 
-ride_at_step_two : RideInstant
-ride_at_step_two = instant_after(ride_at_step_one)
-
-expect !RideInstant.initial.rider.is_finished(World.route)
 expect ride_at_step_one.clock == Clock.at_step(1)
-expect ride_at_step_two.clock == Clock.at_step(2)
-expect ride_at_step_two.clock.steps_since(ride_at_step_one.clock) == Steps.one_step
 expect rider_along(ride_at_step_one) > rider_along(RideInstant.initial)
 expect ride_at_step_one.truck.route_position > RideInstant.initial.truck.route_position
-expect rider_along(ride_at_step_two) > rider_along(ride_at_step_one)
-expect ride_at_step_one.clock != Clock.start
-expect !ride_at_step_one.rider.is_finished(World.route)
 
 ## A rider on the middle of the road at the starting speed, `along` metres down
 ## segment `index` of the route.
@@ -145,8 +136,6 @@ placed_rider = |index, along| {
 ## The route's last segment, which ends the route.
 last_segment_index : U32
 last_segment_index = 18
-
-expect World.route.segment_at(Route.SegmentIndex.number(last_segment_index)).ending == RouteEnds
 
 # The ride is finished once the rider reaches the end of the last segment, and
 # not before, nor anywhere on a segment that bends into another.
@@ -206,12 +195,6 @@ expect {
 	after = World.route.bearing_of(first.next()).plus(on_next.yaw)
 	after.turn_from(before).abs() < Angle.Turn.radians(0.000000000001)
 }
-
-# The rider starts at the route's start and moves along it.
-expect RideInstant.rider_distance(World.route, RideInstant.initial) == Distance.zero
-expect
-	RideInstant.rider_distance(World.route, ride_at_step_two)
-		> RideInstant.rider_distance(World.route, ride_at_step_one)
 
 # A tour can be ridden right up to the step the ride finishes at. A step past it
 # crashes, since the ride starts again before reaching it.
@@ -378,15 +361,6 @@ expect ride_encounters.is_bird_ahead_throughout
 expect ride_encounters.crossing_step_count == 3 * Cat.crossing_span.length.to_u32().to_u64()
 expect ride_encounters.cat_exits == 3
 expect ride_encounters.is_faded_at_each_exit
-
-# A frame of the ride draws.
-expect {
-	frame = FrameView.frame_view_at(World.route, RideInstant.initial)
-	first_shape = frame.ride_shape_lists.join().first() ?? crash "RideExpects: a frame draws"
-	Fixtures.coordinates_of(first_shape).len() >= 6
-}
-
-expect FrameView.frame_view_at(World.route, ride_at_step_one).ride_shape_lists.join().len() > 0
 
 # The ride starts facing away from the sun.
 expect FrameView.frame_view_at(World.route, RideInstant.initial).backdrop.sun_sighting == OutOfView

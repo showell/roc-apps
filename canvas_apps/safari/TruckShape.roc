@@ -1,8 +1,6 @@
 ## A truck's shape: its size, the box it fills on the road, and where a
 ## point on it lands in the rider's view. TruckBody and TruckLights build
 ## their polygons from these, and `truck_polygon` makes a shape of one.
-import Across
-import Along
 import Camera
 import Distance
 import RoadAhead
@@ -14,29 +12,30 @@ import lib.Shapes
 
 TruckShape :: [].{
 
-	## The box the truck fills: four places along the road, from the back
-	## of the trailer to the front of the cab, and its two sides across the
-	## road. The cab's flat roof ends at `roof_front`, where its windshield
-	## slopes down to the nose.
+	## The box the truck fills, in the truck's own frame. Four offsets run
+	## ahead of the trailer's centre, from the back of the trailer to the front
+	## of the cab, so `rear` is negative. The two sides are offsets to the
+	## right of the trailer's centre line, so `left` is negative. The cab's flat
+	## roof ends at `roof_front`, where its windshield slopes down to the nose.
 	TruckBox : {
-		rear : Along,
-		trailer_front : Along,
-		roof_front : Along,
-		nose : Along,
-		left : Across,
-		right : Across,
+		rear : Distance,
+		trailer_front : Distance,
+		roof_front : Distance,
+		nose : Distance,
+		left : Distance,
+		right : Distance,
 	}
 
 	## What a truck is drawn from beyond its spot and the camera's lens: the road
 	## its points are measured on, and the camera's vantage.
 	TruckOnRoad : { road : RoadAhead.RoadView, vantage : Geom.Vantage }
 
-	## A point on the truck, in the truck's own frame: how far along the road
-	## and how far across it from where the trailer is centred, and how high
-	## above the road under the truck.
+	## A point on the truck, in the truck's own frame: how far ahead of the
+	## trailer's centre and how far to the right of it, each negative the other
+	## way, and how high above the road under the truck.
 	TruckPoint : {
-		along : Along,
-		across : Across,
+		ahead : Distance,
+		rightward : Distance,
 		height : Distance,
 	}
 
@@ -72,14 +71,14 @@ TruckShape :: [].{
 	## is; the cab is ahead of the trailer.
 	truck_box : TruckShape.TruckBox
 	truck_box = {
-		trailer_front = Along.start.plus(trailer_length.divided_by(2.0))
+		trailer_front = trailer_length.divided_by(2.0)
 		{
-			rear: Along.start.minus(trailer_length.divided_by(2.0)),
+			rear: trailer_length.divided_by(2.0).opposite(),
 			trailer_front,
 			roof_front: trailer_front.plus(cab_length.scaled_by(cab_roof_fraction)),
 			nose: trailer_front.plus(cab_length),
-			left: Across.middle.minus(truck_width.divided_by(2.0)),
-			right: Across.middle.plus(truck_width.divided_by(2.0)),
+			left: truck_width.divided_by(2.0).opposite(),
+			right: truck_width.divided_by(2.0),
 		}
 	}
 
@@ -88,7 +87,7 @@ TruckShape :: [].{
 	## onto the road at the truck's spot. The ground curves away from the rider,
 	## so the point is lowered by how far the ground has dropped beneath it.
 	raised_point_on_truck : TruckSetting, TruckShape.TruckPoint -> Geom.RaisedPoint
-	raised_point_on_truck = |truck, { along, across, height }| {
+	raised_point_on_truck = |truck, { ahead, rightward, height }| {
 		place = truck.spot.place()
 		center = truck.spot.road_point()
 		on_ground = RoadAhead.rider_point_at(
@@ -97,8 +96,8 @@ TruckShape :: [].{
 				vantage: truck.context.vantage,
 				place,
 				road_point: {
-					along: center.along.plus(along.from_start()),
-					across: center.across.plus(across.distance_from(Across.middle)),
+					along: center.along.plus(ahead),
+					across: center.across.plus(rightward),
 				},
 			},
 		)
@@ -112,30 +111,30 @@ TruckShape :: [].{
 	## The four corners of a strip across the truck from `left` to `right`,
 	## between its `near` edge and its `far` edge: near left, near right, far
 	## right, far left.
-	strip_corners : { left : Across, right : Across },
+	strip_corners : { left : Distance, right : Distance },
 	{
-		near : { along : Along, height : Distance },
-		far : { along : Along, height : Distance },
+		near : { ahead : Distance, height : Distance },
+		far : { ahead : Distance, height : Distance },
 	} -> List(TruckShape.TruckPoint)
 	strip_corners = |{ left, right }, { near, far }| [
 		{
-			along: near.along,
-			across: left,
+			ahead: near.ahead,
+			rightward: left,
 			height: near.height,
 		},
 		{
-			along: near.along,
-			across: right,
+			ahead: near.ahead,
+			rightward: right,
 			height: near.height,
 		},
 		{
-			along: far.along,
-			across: right,
+			ahead: far.ahead,
+			rightward: right,
 			height: far.height,
 		},
 		{
-			along: far.along,
-			across: left,
+			ahead: far.ahead,
+			rightward: left,
 			height: far.height,
 		},
 	]
@@ -167,12 +166,18 @@ cab_roof_fraction = Fraction.of(0.3)
 
 expect
 	TruckShape.strip_corners(
-		{ left: Across.metres(-1.0), right: Across.metres(1.0) },
+		{ left: Distance.metres(-1.0), right: Distance.metres(1.0) },
 		{
-			near: { along: Along.metres(2.0), height: Distance.metres(3.0) },
-			far: { along: Along.metres(5.0), height: Distance.metres(7.0) },
+			near: { ahead: Distance.metres(2.0), height: Distance.metres(3.0) },
+			far: { ahead: Distance.metres(5.0), height: Distance.metres(7.0) },
 		},
-	).map(|corner| (corner.along.to_metres(), corner.across.to_metres(), corner.height.to_metres()))
+	).map(
+		|corner| (
+			corner.ahead.to_metres(),
+			corner.rightward.to_metres(),
+			corner.height.to_metres(),
+		),
+	)
 		== [
 			(2.0, -1.0, 3.0),
 			(2.0, 1.0, 3.0),

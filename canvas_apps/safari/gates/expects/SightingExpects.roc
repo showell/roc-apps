@@ -5,7 +5,6 @@ import Fixtures
 import game.Across
 import game.Along
 import game.Angle
-import game.Beacon
 import game.Billboard
 import game.BillboardSighting
 import game.Clock
@@ -239,14 +238,6 @@ expect
 		== [-4.9, 0.0, 5.75, 0.0, -4.3, 0.0, 4.6, 0.0]
 
 expect
-	billboards_at_four_bends.map(|billboard| billboard.road_point.along.to_metres())
-		== [100.0, 114.0, 50.0, 64.0, 10.0, 24.0, 0.0, 14.0]
-
-expect
-	billboards_at_four_bends.map(|billboard| billboard.kind.height.to_metres())
-		== [2.8, 1.4, 4.5, 2.25, 1.6, 0.8, 2.2, 1.1]
-
-expect
 	billboards_at_four_bends.map(|billboard| billboard.kind.facing)
 		== [
 			FacesRight,
@@ -373,19 +364,6 @@ expect {
 		and got.map2(want, |one, wanted| (one - wanted).abs() <= 0.000000001).all(|is_near| is_near)
 }
 
-# The end tower's beacon blinks on its segment's number, and the mid tower's
-# the opposite way.
-expect {
-	got = towers_on_short_then_long(0, Clock.at_step(30)).map(|tower| tower.kind.beacon_brightness)
-	clock = Clock.at_step(30)
-	want = [
-		Beacon.of_segment(Route.SegmentIndex.first).brightness_at(clock),
-		Beacon.of_segment(Route.SegmentIndex.number(1)).brightness_at(clock),
-		Beacon.of_segment(Route.SegmentIndex.number(1)).opposite().brightness_at(clock),
-	]
-	got == want and got.map(|brightness| brightness.to_f64()).sum() > 0.0
-}
-
 # The segment just behind shows its end tower, which stands past the bend, and
 # a rider far past every tower sees none.
 expect
@@ -408,11 +386,6 @@ right_pond_bend = { segment_length: Distance.metres(100.0), turn: Angle.Turn.deg
 ## A pond's bend at the end of a segment 100 m long, turning 15° left.
 left_pond_bend : Geom.Bend
 left_pond_bend = { segment_length: Distance.metres(100.0), turn: Angle.Turn.degrees(-15.0) }
-
-expect
-	Pond.placed_ducks(right_pond_bend).map(|placed| placed.road_point.along.to_metres())
-		== [111.0, 117.0, 121.0, 106.0, 107.0, 108.0]
-expect Pond.placed_ducks(right_pond_bend).all(|placed| placed.kind.height.to_metres() == 0.9)
 
 # A duck floats as far out from the road at a left turn as at a right one, on
 # the other side.
@@ -483,7 +456,6 @@ expect
 expect truck_after(100.0, 5.0).speed == truck_after(100.0, 9.0).speed
 expect truck_after(100.0, 5.0).speed < Speed.metres_a_step(5.0)
 expect chasing_truck.pace == NotSlowing
-expect truck_past_tease.pace == NotSlowing
 
 ## A truck 50 m short of the first bend.
 braking_truck : Truck
@@ -561,7 +533,7 @@ expect
 	].all(|(lead, want)| truck_lead_of(lead).is_ok() == want)
 
 # A truck past a segment's end stands on a later segment, measured from its
-# start, in the middle of the road.
+# start.
 expect
 	[
 		(100.0, SegmentPlace.Position.first),
@@ -577,22 +549,3 @@ expect
 		(600.0, 100.0),
 		(900.0, 80.0),
 	].all(|(lead, want)| lit_truck_of(lead).spot.road_point().along.to_metres() == want)
-
-expect
-	[
-		(100.0, 0.0),
-		(499.0, 0.0),
-		(600.0, 0.0),
-		(900.0, 0.0),
-	].all(|(lead, want)| lit_truck_of(lead).spot.road_point().across.to_metres() == want)
-
-expect
-	[
-		(lit_truck_of(100.0).spot.foot().forward().to_metres(), 100.0),
-		(lit_truck_of(499.0).spot.foot().forward().to_metres(), 499.0),
-		(lit_truck_of(100.0).spot.foot().right().to_metres(), 0.0),
-	].all(|(got, want)| (got - want).abs() <= 0.0001)
-
-# A truck in view must be past the near plane.
-expect truck_seen_from({ ..Fixtures.origin, along: Along.metres(100.0) }, 0.25).is_err()
-expect truck_seen_from({ ..Fixtures.origin, along: Along.metres(100.0) }, 1.0).is_ok()

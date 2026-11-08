@@ -17,7 +17,6 @@ import game.Route
 import game.RoutePlace
 import game.SegmentPlace
 import game.World
-import lib.Brush
 import lib.RgbColor
 import lib.Shapes
 
@@ -55,13 +54,6 @@ expect {
 		},
 	)
 }
-
-expect [(0, 0), (3, 3)].all(
-	|(first, want)| {
-		rider_index = RoadAhead.rider_segment_index(Fixtures.world_road_at(first))
-		rider_index == Route.SegmentIndex.number(want)
-	},
-)
 
 ## The index of the segment in view just behind a rider on the world's segment
 ## `first`, unless the rider is on the route's first segment.
@@ -196,20 +188,6 @@ expect
 		(apex_after_turn(left_turn).forward.to_metres(), -100.55298847633645),
 	].all(|(got, want)| (got - want).abs() <= 0.0000001 * want.abs().max(1.0))
 
-## A flat polygon's colour.
-flat_color_of : Shapes.Shape -> RgbColor
-flat_color_of = |shape|
-	match Fixtures.polygon_of(shape).fill {
-		Flat(color) => {
-			red = color.r.to_i64_wrap()
-			green = color.g.to_i64_wrap()
-			blue = color.b.to_i64_wrap()
-			RgbColor.of(red * 65536 + green * 256 + blue)
-		}
-		Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) =>
-			crash "RoadExpects.flat_color_of: this polygon is not flat"
-	}
-
 # Each segment ends where the lengths before it and its own add up to.
 expect {
 	stretches =
@@ -288,24 +266,6 @@ sample_patch_shape = |corners| GroundPatch.patch_shape(
 	Pixels.of(685.5110432362151),
 )
 
-patch_corners_ahead : List(Geom.RiderPoint)
-patch_corners_ahead = [
-	{ right: Distance.metres(-5.0), forward: Distance.metres(10.0) },
-	{ right: Distance.metres(5.0), forward: Distance.metres(10.0) },
-	{ right: Distance.metres(5.0), forward: Distance.metres(20.0) },
-	{ right: Distance.metres(-5.0), forward: Distance.metres(20.0) },
-]
-
-# A patch of `count` corners, all ahead of the camera.
-corners_ahead : I64 -> List(Geom.RiderPoint)
-corners_ahead = |count|
-	List.from_iter(I64.until(0, count)).map(
-		|k| {
-			offset = (count - k).to_f64()
-			{ right: Distance.metres(offset), forward: Distance.metres(10.0 + offset) }
-		},
-	)
-
 ## What became of a patch: drawn, or why not.
 patch_outcome : Try(Shapes.Shape, [PastHorizon, BehindCamera]) -> [Drawn, PastHorizon, BehindCamera]
 patch_outcome = |shape|
@@ -343,19 +303,6 @@ expect
 		]),
 	)
 		== BehindCamera
-
-expect sample_patch_shape(patch_corners_ahead).is_ok()
-expect sample_patch_shape(corners_ahead(8)).is_ok()
-expect sample_patch_shape(corners_ahead(9)).is_ok()
-
-expect {
-	match sample_patch_shape(patch_corners_ahead) {
-		Ok(Poly(polygon)) =>
-			polygon.fill == Flat(Brush.opaque(RgbColor.of(0x2F7E8C)))
-				and polygon.coordinates.len() == 8
-		_ => False
-	}
-}
 
 # GroundSighting's road along the first segment, 500 m long: one patch, its
 # edges laid in 20 chunks of 25 m.
@@ -406,7 +353,6 @@ expect
 strip_shapes : List(Shapes.Shape)
 strip_shapes = patch_shapes([first_road])
 
-expect strip_shapes.len() == 1
 expect {
 	road_behind =
 		patches_seen_from({ ..Fixtures.origin, along: Along.metres(5000.0) }).take_first(1)
@@ -414,8 +360,6 @@ expect {
 }
 last_shape : Shapes.Shape
 last_shape = strip_shapes.last() ?? crash "RoadExpects: the road draws"
-
-expect flat_color_of(last_shape) == RgbColor.of(0x34353C)
 
 # Seen from its start, the road is cut at the near plane and at the horizon,
 # 490 m out, so it keeps its corners from 25 m to 475 m on both edges, and

@@ -33,8 +33,10 @@ use("cookbook:times.shale")
 const SAFARI = "canvas_apps/safari"
 -- The folder of the proof tools' sources, StepBack, OnRoad, ShapesFrame and
 -- RasterFrame, where they build, with the modules only they use and the
--- benchmarks FrameBench and FramePartsBench, which no gate builds.
+-- benches, the tools for measuring a frame's cost, which `part=proof` checks
+-- but never builds or runs.
 const PROOF_TOOLS = "canvas_apps/safari/gates/proof"
+const BENCHES = {"FrameBench", "FramePartsBench"}
 const PROOF_EXPECTED = "canvas_apps/safari/gates/proof.expected"
 const PAGE_EXPECTED = "canvas_apps/safari/gates/page.expected"
 -- The widgets: each folder of canvas_apps that WIDGET_APPS matches is one,
@@ -99,6 +101,15 @@ function tool_build(roc, bin, n, env)
     return false
   end
   return exists(bin .. "/" .. n)
+end
+
+-- One bench's `roc check`: how many things went wrong.
+function check_bench(roc, env, n)
+  local r = run({roc, "check", n .. ".roc"}, {timeout_ms = 120000, cwd = PROOF_TOOLS, head = 40, want = WANT, env = env})
+  print("roc check " .. n .. ": " .. r.ms .. " ms")
+  if r.ended == "exit" and get(r, "code", -1) == 0 and contains(r.out, ROC_CHECK_CLEAN) then return 0 end
+  print("FAIL roc check " .. n .. ": " .. trim(r.out))
+  return 1
 end
 
 -- Where `roc test`, run in safari's folder, says a source line is.
@@ -463,7 +474,9 @@ end
 -- frame at each depth, is held exactly to PROOF_EXPECTED. A change that
 -- rightly alters the picture changes that file with it, and the commit says
 -- why. OnRoad's widest point and finishing step move with every physics
--- change, so they are printed and not held.
+-- change, so they are printed and not held. Each of BENCHES must pass `roc
+-- check` with no error or warning, so a change to the game can't leave them
+-- broken unseen.
 function proof()
   local roc = roc_path()
   local scratch = fresh_dir("scratch:", "safari-proof")
@@ -480,6 +493,7 @@ function proof()
     {name = "RasterFrame", args = held_args(), held = true},
   }
   local unheld = ""
+  for n in BENCHES do bad = bad + check_bench(roc, env, n) end
   for tool in tools do
     local out = nil
     if tool_build(roc, bin, tool.name, env) then out = held_run(bin, tool.name, tool.args) end
