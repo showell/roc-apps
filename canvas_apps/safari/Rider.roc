@@ -2,6 +2,7 @@
 ## where on the route it is, and where their eyes are.
 import Along
 import EncounterPlan
+import Gaze
 import Motorcycle
 import RiderEyes
 import RiderMind
@@ -28,7 +29,8 @@ Rider := { motorcycle : Motorcycle, eyes : RiderEyes }.{
 				Bends({ bend, .. }) => moved.cross_bend_if_on_road(bend)
 				RouteEnds => stop_at_route_end(moved, segment)
 			}
-		{ motorcycle, eyes: rider.eyes.eyes_at_next_step({ motorcycle, route }) }
+		gaze_target = Gaze.desired_gaze(motorcycle, motorcycle.route_place.segment_on(route))
+		{ motorcycle, eyes: rider.eyes.eyes_at_next_step(gaze_target) }
 	}
 
 	## Whether the rider has reached the end of the route.
