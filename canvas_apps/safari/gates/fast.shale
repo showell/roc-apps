@@ -3,33 +3,27 @@
 --
 --   cd <roc-apps checkout> && nice -n 19 shale canvas_apps/safari/gates/fast.shale
 --
--- It runs `roc check`, then the merge gate's `part=format`, then `roc test` from
--- gates/CrossModuleExpects.roc, then the one-file lints (lints.shale) on the
--- .roc files changed since this checkout's last green, then builds RasterFrame
--- and holds one frame to its line in gates/proof.expected. A changed file that a
--- lint reads outside safari, in lib or a widget, judges every file. Every run
--- names what it left to the merge gate.
+-- It runs the merge gate's parts for this tier: `part=fast_check` (`roc
+-- check`), `part=format`, and `part=fast_expects` (`roc test` from the main
+-- expect root); then the one-file lints (lints.shale) on the .roc files changed
+-- since this checkout's last green; then `part=fast_frame`, which builds
+-- RasterFrame and holds one frame to its line in gates/proof.expected. A
+-- changed file that a lint reads outside safari, in lib or a widget, judges
+-- every file. Every run names what it left to the merge gate.
 -- It takes about ten seconds once its cache is warm and a green is on record.
 --
--- A frame stands in for the other depths because an arithmetic slip no expect
--- covers moves the picture. FRAME_DEPTH is 5700, the truck ahead at dusk with
--- its lights on, because that scene shows the most of the game: a constant
--- nudged in one drawing module moved it for 12 of 17 modules, where 3000 moved
--- for 9 and 1586 for 7.
---
+-- The merge gate is the one home of the Roc, the paths and the checks, so
+-- this script only names its siblings and keeps the record of the last green.
 -- Each checkout has a folder under the box's build folder, named by the merge
--- gate (`part=fast_cache`), with its own Roc cache and its record of the last
--- green. The record holds a hash of each file
--- it judged, and of the rules, so a change to the rules judges every file again.
+-- gate (`part=fast_cache`), with its own Roc cache and that record. The record
+-- holds a hash of each file it judged, and of the lints' rules, so a change to
+-- the rules judges every file again.
 
-use("cookbook:roc/pinned.shale")
-
-const SAFARI = "canvas_apps/safari"
-const PROOF_EXPECTED = "canvas_apps/safari/gates/proof.expected"
-const LINTS = "canvas_apps/safari/gates/lints.shale"
-const MERGE_GATE = "canvas_apps/safari/gates/run.shale"
-const WANT = "roc-pin: roc-apps' pinned nightly, and the binary it builds"
-const FRAME_DEPTH = "5700"
+const GATES = "canvas_apps/safari/gates"
+-- The lints name files from safari's folder.
+const SAFARI = dirname(GATES)
+const LINTS = GATES .. "/lints.shale"
+const MERGE_GATE = GATES .. "/run.shale"
 
 -- The merge gate is the one home of where each checkout's caches live.
 function checkout_folder()
@@ -44,6 +38,10 @@ end
 function hashes_of(paths)
   local r = run({"git", "hash-object", "--stdin-paths"}, {timeout_ms = 30000, whole = 1000000, stdin = join(paths, "\n") .. "\n"})
   local hashes = lines(trim(r.out))
+  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 or #hashes ~= #paths then
+    print(trim(r.out))
+    fail("safari fast: git hash-object ended " .. r.ended .. " " .. get(r, "code", -1) .. " with " .. #hashes .. " hashes for " .. #paths .. " paths")
+  end
   local found = {}
   local k = 1
   while k <= #paths do
@@ -53,29 +51,35 @@ function hashes_of(paths)
   return found
 end
 
+-- What lints.shale says it reads, `reads=globs` or `reads=rules`, a line each.
+function lints_reads(which)
+  local g = run({"shale", "--root", ".", LINTS, "reads=" .. which}, {timeout_ms = 30000, whole = 100000})
+  local named = {}
+  for l in lines(trim(g.out)) do
+    if not starts_with(l, "──") then push(named, l) end
+  end
+  if g.ended ~= "exit" or get(g, "code", -1) ~= 0 or #named == 0 then
+    print(trim(g.out))
+    fail("safari fast: lints.shale didn't name its " .. which)
+  end
+  return named
+end
+
 -- Every file a lint reads, committed or not, from the globs lints.shale holds:
 -- safari's, and the widgets', widget_kit's and lib's too.
 function lint_read_files()
-  local g = run({"shale", "--root", ".", LINTS, "reads=globs"}, {timeout_ms = 30000, whole = 100000})
-  if g.ended ~= "exit" or get(g, "code", -1) ~= 0 then
-    print(trim(g.out))
-    fail("safari fast: lints.shale didn't name the files it reads")
-  end
   local argv = {"git", "ls-files", "--cached", "--others", "--exclude-standard", "--"}
-  for glob in lines(trim(g.out)) do push(argv, ":(glob)" .. glob) end
+  for glob in lints_reads("globs") do push(argv, ":(glob)" .. glob) end
   local r = run(argv, {timeout_ms = 30000, whole = 1000000})
   local kept = {}
   for f in lines(trim(r.out)) do
     if exists(f) then push(kept, f) end
   end
+  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 or #kept == 0 then
+    print(trim(r.out))
+    fail("safari fast: git ls-files ended " .. r.ended .. " " .. get(r, "code", -1) .. " and named no file a lint reads")
+  end
   return kept
-end
-
--- What the lints' verdicts rest on, beside the file judged.
-function rule_files()
-  local rules = {LINTS, SAFARI .. "/vocabulary.txt", SAFARI .. "/name_types.txt", SAFARI .. "/bare_floats.txt"}
-  for f in glob("cookbook:roc/*.shale") do push(rules, real(f)) end
-  return rules
 end
 
 function record_of(hashes)
@@ -119,39 +123,20 @@ function changed_files(held, hashes, sources)
   return join(changed, ",")
 end
 
-function check(roc, env)
-  local r = run({roc, "check", "web.roc"}, {timeout_ms = 120000, cwd = SAFARI, whole = 4000000, want = WANT, env = env})
-  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 or not contains(r.out, "No errors found") then
-    print(trim(r.out))
-    fail("safari fast: roc check failed")
+-- One of the merge gate's parts for this tier; it stops the run on a failure.
+function merge_gate_part(part)
+  local r = run({"shale", "--root", ".", MERGE_GATE, "part=" .. part}, {timeout_ms = 600000, tail = 200})
+  for l in lines(trim(r.out)) do
+    if not starts_with(l, "── ") then print(l) end
   end
-  print("roc check web.roc: clean, " .. r.ms .. " ms")
-  return nil
-end
-
--- The merge gate holds the list of what's formatted, so the tiers can't differ.
-function formatted()
-  local r = run({"shale", "--root", ".", MERGE_GATE, "part=format"}, {timeout_ms = 60000, tail = 40})
   if r.ended ~= "exit" or get(r, "code", -1) ~= 0 then
-    print(trim(r.out))
-    fail("safari fast: roc fmt would change a file")
+    if r.ended ~= "exit" then print(trim(r.out)) end
+    fail("safari fast: the merge gate's part=" .. part .. " failed")
   end
-  print("roc fmt --check: clean, " .. r.ms .. " ms")
   return nil
 end
 
-function test(roc, env)
-  local r = run({roc, "test", "gates/CrossModuleExpects.roc"}, {timeout_ms = 120000, cwd = SAFARI, whole = 4000000, want = WANT, env = env})
-  local summary = re_find(r.out, "All \\(([0-9]+)\\) tests passed")
-  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 or summary == nil or tonumber(summary.group) == 0 then
-    print(trim(r.out))
-    fail("safari fast: roc test failed")
-  end
-  print("roc test gates/CrossModuleExpects.roc: " .. summary.group .. " passed, " .. r.ms .. " ms")
-  return nil
-end
-
-function lint(files)
+function lint_changed_files(files)
   if files == "" then
     print("lints: nothing changed since this checkout's last green")
     return nil
@@ -165,51 +150,23 @@ function lint(files)
   return nil
 end
 
-function held_frame()
-  local mark = "RasterFrame " .. FRAME_DEPTH .. ": "
-  for l in lines(read(PROOF_EXPECTED)) do
-    if starts_with(l, mark) then return l end
-  end
-  fail("safari fast: " .. PROOF_EXPECTED .. " holds no line for " .. mark)
-end
-
-function frame(roc, folder, env)
-  local tool = folder .. "/RasterFrame"
-  if exists(tool) then remove(tool) end
-  local b = run({roc, "build", "--opt=dev", "RasterFrame.roc", "--output=" .. real(folder) .. "/RasterFrame"},
-    {timeout_ms = 120000, cwd = SAFARI .. "/gates", re = "✗|●", head = 40, want = WANT, env = env})
-  if b.matched_lines > 0 or not exists(tool) then
-    print(trim(b.out))
-    fail("safari fast: RasterFrame didn't build")
-  end
-  local r = run({real(tool), "held", FRAME_DEPTH}, {timeout_ms = 120000, whole = 1000, want = WANT})
-  local got = trim(r.out)
-  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 or got ~= held_frame() then
-    fail("safari fast: the frame moved: this tree draws `" .. got .. "`, and " .. PROOF_EXPECTED .. " holds `" .. held_frame() .. "`")
-  end
-  print(got .. ", as held; built in " .. b.ms .. " ms, drawn in " .. r.ms .. " ms")
-  return nil
-end
-
 function main()
-  local roc = roc_bin("safari fast", false)
   local folder = checkout_folder()
   if not exists(folder) then mkdir(folder) end
-  local env = {XDG_CACHE_HOME = real(folder)}
   local record = folder .. "/green.txt"
   local sources = lint_read_files()
   local judged = {}
   for f in sources do push(judged, f) end
-  for f in rule_files() do push(judged, f) end
+  for f in lints_reads("rules") do push(judged, f) end
   local hashes = hashes_of(judged)
-  check(roc, env)
-  formatted()
-  test(roc, env)
-  lint(changed_files(read_record(record), hashes, sources))
-  frame(roc, folder, env)
+  merge_gate_part("fast_check")
+  merge_gate_part("format")
+  merge_gate_part("fast_expects")
+  lint_changed_files(changed_files(read_record(record), hashes, sources))
+  merge_gate_part("fast_frame")
   replace(record, record_of(hashes))
   print("safari fast: green")
-  print("NOT RUN, left to the merge gate: the roots web.roc and lib, the widgets, the whole-tree lints and held counts, the tutorial, StepBack, OnRoad, ShapesFrame, the other held depths, the page")
+  print("NOT RUN, left to the merge gate: the roots web.roc, lib and the tutorial, the widgets, the whole-tree lints and held counts, the tutorial's build, StepBack, OnRoad, ShapesFrame, the other held depths, the page")
   return nil
 end
 

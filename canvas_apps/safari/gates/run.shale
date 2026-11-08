@@ -1,95 +1,53 @@
 -- budget: steps=40000000 reads=20000 read_bytes=400000000 output_bytes=200000
 -- This is safari's merge gate. It runs everything in safari before a push, and
--- reports every failure. fast.shale is the tier for each edit, and publish.shale
--- runs this one from cold caches.
+-- reports every failure. fast.shale is the tier for each edit, and
+-- publish.shale runs this one from cold caches.
 --
 --   cd <roc-apps checkout> && nice -n 19 shale canvas_apps/safari/gates/run.shale
 --
--- Run from the roc-apps root: every path is the checkout's, so a worktree
--- gates its own tree, on its own caches, so gates in several worktrees can run
--- at once.
--- It takes about 75 seconds, half of that the proof tools.
+-- Run it from the roc-apps root: every path is the checkout's, so a worktree
+-- gates its own tree on its own caches, and gates in several worktrees can run
+-- at once. It takes about three minutes warm on a busy box (2026-11-08),
+-- most of it in the lints, the expects, the widgets and the proof tools.
+--
+-- The lints (gates/lints.shale) run first. Then each gate is a child run of
+-- this script, `part=expects`, `part=widgets`, `part=tutorial`,
+-- `part=book_names`, `part=proof` and `part=page`, which also runs alone
+-- (`... run.shale part=proof`); each part's function says what it holds.
+-- fast.shale and lints.shale ask this script for what they share with it, by
+-- the parts at the bottom.
 --
 -- Each stage has a CPU budget, about twice its warm time, in CPU_BUDGET_MS. A
--- stage over it stops the run, since a slow gate is a fault to find, and a cold
--- run has no budgets. Stage times go in `build:times/safari.tsv`, and a large
--- change from the recent ones prints a line (cookbook/times.shale).
---
--- The gates run as child runs of this script, `part=expects`, `part=widgets`,
--- `part=tutorial`, `part=book_names`, `part=proof` and `part=page`, one program
--- of this run's each.
--- A child runs alone the same way (`... run.shale part=proof`).
---
--- The lints (gates/lints.shale) run first: shale's Roc lints, each count held
--- to the table there.
---
--- `part=tutorial` runs tutorial/build.shale's self-test, then builds the
--- tutorial, so a name it quotes that is gone from the code fails the gates.
---
--- `part=book_names` runs gates/book_names.shale, which finds a backticked name
--- in the tutorial's prose, or a node name in its diagrams, that is gone from the
--- code. While the book is parked it only prints its counts, marked SKIPPED, and
--- holds none; when the chapters are rewritten, it goes back to holding them.
---
--- `part=expects` runs `roc test --verbose` from each of EXPECT_ROOTS, whose
--- reach together is every expect: gates/CrossModuleExpects.roc reaches nearly
--- all of them, web.roc the game's modules that only the running game imports,
--- and lib's package root all of lib. The source is the count, so no number
--- needs keeping: every line of a `.roc` file in safari, gates/ or lib that
--- starts `expect` must print `PASS` once in a run that reaches it, and a `PASS`
--- must name such a line. An expect sits at the top level of its file. One
--- indented into a block or a function fails here, and so does one in a module
--- no root reaches. The roots overlap, so a line that two roots reach counts
--- once. It also runs `part=format`, `roc fmt --check` over safari, lib,
--- widget_kit and the widgets, the check fast.shale runs too.
---
--- `part=widgets` runs `roc check` on each widget's web.roc, because the widgets
--- import the game through game.roc and a change to a type they use breaks them.
--- Then it runs `roc test --verbose` once, on gates/WidgetExpects.roc, which
--- reaches every widget's app module through the package.roc in its folder. The
--- widgets are the `*_widget` folders of canvas_apps, found by listing it, and
--- finding none fails, as does a widget the root doesn't name. Every expect in a
--- widget, in widget_kit or in WidgetExpects.roc itself must pass, counted as in
--- `part=expects`. `roc test`
--- runs the expects of every module a root reaches, packages on a path included,
--- and has no way to run only some, so the game's expects run here too, once.
---
--- The proof tools: StepBack passes on "every step back went back one step",
--- OnRoad on "the ride stayed on the road", and ShapesFrame on "differ 0" at
--- every depth. All their output but OnRoad's, and RasterFrame's hash of the
--- frame at each depth, is held exactly to gates/proof.expected. A change that
--- rightly alters the picture changes that file with it, and the commit says
--- why. OnRoad's widest point and finishing step move with every physics
--- change, so they are printed and not held.
--- A depth is there for what its frame shows: at 100 a Roc bird is in flight,
--- at 1529 a cat is frozen in the road, at 1542 it is in mid-leap, at 3698 the
--- truck brakes about 600 m off and its glow is about a pixel across, at 5700
--- the truck is ahead at dusk with its lights on, and at 6250 it is braking in
--- plain view with its brake lights on. Each is a step of the ride's timing, so a
--- physics change that moves the ride can empty a frame: check each scene again
--- after one.
---
--- `part=page` first runs gates/input_bits.shale, which holds the page's key and
--- button bits equal to lib's. Then it runs canvas_apps/build.sh for safari's dev page, into a scratch
--- folder so the dev channel doesn't move, and holds the hash of what it drew to
--- gates/page.expected. With `release=1`, which publish.shale gives it, it builds
--- the release page into the dev channel, held to the same hash.
+-- stage over it stops the run, since a slow gate is a fault to find.
+-- cookbook/times.shale keeps the stages' times in `build:times/safari.tsv`,
+-- prints a line for a large change, and holds a cold run to no budget.
 --
 -- Roc is roc-apps' pin, the nightly named in `roc-version`, installed at
--- `tools:roc-<pin>/roc` (`~/tools/` on the box).
---
--- Every Roc here runs on the checkout's warm cache, under `build:` (CACHES).
--- `cold=1`, which publish.shale gives it, runs each child on an empty cache
--- instead. `part=caches` runs only the cache upkeep the full gate starts with.
---
+-- `tools:roc-<pin>/roc` (`~/tools/` on the box). Every Roc here runs on the
+-- checkout's warm cache, under `build:` (CACHES); `cold=1`, which
+-- publish.shale gives it, runs each child on an empty cache instead.
 -- Each child's binaries and outputs go in a folder of its own under `scratch:`
 -- (`fresh_dir`), removed when the child passes and kept, named, when it fails.
 use("cookbook:times.shale")
 
 const SAFARI = "canvas_apps/safari"
+-- The folder of the proof tools' sources, StepBack, OnRoad, ShapesFrame and
+-- RasterFrame, where they build.
+const PROOF_TOOLS = "canvas_apps/safari/gates"
 const PROOF_EXPECTED = "canvas_apps/safari/gates/proof.expected"
 const PAGE_EXPECTED = "canvas_apps/safari/gates/page.expected"
+-- The widgets: each folder of canvas_apps that WIDGET_APPS matches is one,
+-- with a web.roc, and WIDGET_KIT is what they share. Every list here of the
+-- widgets' folders or sources comes from these two, and so does lints.shale's,
+-- which it asks for with `part=widget_globs`.
+const WIDGET_APPS = "canvas_apps/*_widget"
+const WIDGET_KIT = "canvas_apps/widget_kit"
+const WIDGET_SOURCE_GLOBS = {WIDGET_APPS .. "/**/*.roc", WIDGET_KIT .. "/**/*.roc"}
 const WANT = "roc-pin: roc-apps' pinned nightly, and the binaries it builds"
+-- What Roc prints at an error or a warning, the verdict for a build, since
+-- Roc exits non-zero for a warning; and what a clean `roc check` says.
+const ROC_ERROR_MARK = "✗|●"
+const ROC_CHECK_CLEAN = "No errors found"
 const PAGE_WANT = "script: canvas_apps/build.sh builds and checks a page, and refuses another Roc"
 
 -- The tiers' Roc caches, never the user's default one. Each checkout has a
@@ -130,10 +88,10 @@ function cache_env(folder)
   return {XDG_CACHE_HOME = real(folder)}
 end
 
--- One tool of gates/ built into the folder `bin`; whether it built clean.
+-- One proof tool built into the folder `bin`; whether it built clean.
 function tool_build(roc, bin, n, env)
   local b = run({roc, "build", "--opt=dev", n .. ".roc", "--output=" .. real(bin) .. "/" .. n},
-    {timeout_ms = 600000, cwd = SAFARI .. "/gates", re = "✗|●", head = 40, want = WANT, env = env})
+    {timeout_ms = 600000, cwd = PROOF_TOOLS, re = ROC_ERROR_MARK, head = 40, want = WANT, env = env})
   print("build " .. n .. ": " .. b.ms .. " ms, " .. b.matched_lines .. " errors or warnings")
   if b.matched_lines > 0 then
     print(trim(b.out))
@@ -183,13 +141,32 @@ const SELF_PATH = "canvas_apps/safari/gates/run.shale"
 const TUTORIAL = "canvas_apps/safari/tutorial/build.shale"
 const BOOK_NAMES = "canvas_apps/safari/gates/book_names.shale"
 const INPUT_BITS = "canvas_apps/safari/gates/input_bits.shale"
-const EXPECT_ROOTS = {"gates/CrossModuleExpects.roc", "web.roc", "../lib/main.roc"}
+-- The root that reaches nearly every expect, the one fast.shale runs.
+const MAIN_EXPECT_ROOT = "gates/CrossModuleExpects.roc"
+const EXPECT_ROOTS = {MAIN_EXPECT_ROOT, "web.roc", "../lib/main.roc", "tutorial/make_book.roc"}
+-- The packages of other repos that a root reaches. Their expects run, and are
+-- that repo's to count, so they are neither held here nor a failure. A `PASS`
+-- outside the checkout from any other folder fails.
+const OTHER_REPO_PACKAGES = {"../../../roc-markdown/package/"}
 const WIDGET_ROOT = "gates/WidgetExpects.roc"
 -- WidgetExpects.roc's own expects are the widgets', since only it reaches them.
 const WIDGET_EXPECTS = "canvas_apps/safari/gates/WidgetExpects.roc"
-const SAFARI_SOURCES = {":(glob)canvas_apps/safari/*.roc", ":(glob)canvas_apps/safari/gates/*.roc", ":(glob)canvas_apps/lib/*.roc", ":(exclude)" .. WIDGET_EXPECTS}
-const WIDGET_SOURCES = {":(glob)canvas_apps/*_widget/*.roc", ":(glob)canvas_apps/widget_kit/*.roc", WIDGET_EXPECTS}
+-- The tutorial's fails/ are apps that must not compile, so no root reaches them.
+const SAFARI_SOURCES = {":(glob)canvas_apps/safari/**/*.roc", ":(exclude,glob)canvas_apps/safari/tutorial/fails/**", ":(glob)canvas_apps/lib/*.roc", ":(exclude)" .. WIDGET_EXPECTS}
+-- A depth is there for what its frame shows: at 100 a Roc bird is in flight,
+-- at 1529 a cat is frozen in the road, at 1542 it is in mid-leap, at 3698 the
+-- truck brakes about 600 m off and its glow is about a pixel across, at 5700
+-- the truck is ahead at dusk with its lights on, and at 6250 it is braking in
+-- plain view with its brake lights on. Each is a step of the ride's timing, so
+-- a physics change that moves the ride can empty a frame: check each scene
+-- again after one.
 const DEPTHS = {"0", "100", "1529", "1542", "3000", "3698", "5700", "6250", "9000"}
+-- fast.shale's one frame stands in for the other depths, because an
+-- arithmetic slip no expect covers moves the picture. It's 5700, the truck
+-- ahead at dusk with its lights on, because that scene shows the most of the
+-- game: a constant nudged in one drawing module moved it for 12 of 17
+-- modules, where 3000 moved for 9 and 1586 for 7.
+const FAST_FRAME_DEPTH = "5700"
 -- The widgets' budget is set from a cold cache after a change to a module they
 -- all import: 23 s of CPU for 13 widgets' checks and their one test run, and
 -- 17 s warm, measured 2026-11-07.
@@ -237,8 +214,9 @@ function prune_removed_checkouts()
   return nil
 end
 
--- Clears this checkout's caches when they pass the ceiling; whether they're
--- empty now, so the run is cold.
+-- Clears this checkout's caches when they pass the ceiling; whether the merge
+-- gate's cache is empty now, so the run is cold. The checkout's folder also
+-- holds fast.shale's cache, so it can be there while the merge cache isn't.
 function clear_full_caches()
   local folder = checkout_caches()
   if not exists(folder) then return true end
@@ -248,14 +226,22 @@ function clear_full_caches()
     remove_tree(folder)
     return true
   end
-  return false
+  local merge = folder .. "/merge"
+  return not exists(merge) or #ls(merge) == 0
 end
 
--- `run`'s options for a stage, with its budget when the caches are warm.
+-- `run`'s options for a stage. A cold one goes to `timed_run`, which drops
+-- the budget and keeps the run out of the times history.
 function stage_opts(stage, tail, is_cold)
-  local opts = {timeout_ms = 1800000, tail = tail}
-  if not is_cold then opts.cpu_budget_ms = CPU_BUDGET_MS[stage] end
-  return opts
+  return {timeout_ms = 1800000, tail = tail, cpu_budget_ms = CPU_BUDGET_MS[stage], cold = is_cold}
+end
+
+-- Whether `at`, a `PASS` line's place, is in a package of OTHER_REPO_PACKAGES.
+function other_repo_package(at)
+  for p in OTHER_REPO_PACKAGES do
+    if starts_with(at, p) then return true end
+  end
+  return false
 end
 
 -- One root's run: what it passed goes in `passed`, and the answer is how many
@@ -266,17 +252,27 @@ function test_root(roc, env, root, passed)
   local here = {}
   local wrong = 0
   local printed = 0
+  local other_repos = 0
   for l in lines(r.out) do
     if starts_with(l, "PASS: ") then
       local at = trim(sub(l, 7))
       printed = printed + 1
-      if has_key(here, at) then
-        wrong = wrong + 1
-        print("FAIL passed twice from " .. root .. ": " .. at)
+      if starts_with(at, "../../../") then
+        if other_repo_package(at) then
+          other_repos = other_repos + 1
+        else
+          wrong = wrong + 1
+          print("FAIL passed from outside the checkout, in no package of OTHER_REPO_PACKAGES: " .. at)
+        end
+      else
+        if has_key(here, at) then
+          wrong = wrong + 1
+          print("FAIL passed twice from " .. root .. ": " .. at)
+        end
+        here[at] = true
+        passed[at] = true
       end
-      here[at] = true
-      passed[at] = true
-    elseif contains(l, "✗") or contains(l, "●") or contains(l, "TEST FAILURE") then
+    elseif re_match(l, ROC_ERROR_MARK) or contains(l, "TEST FAILURE") then
       wrong = wrong + 1
       print("FAIL " .. root .. ": " .. trim(l))
     end
@@ -286,7 +282,9 @@ function test_root(roc, env, root, passed)
     wrong = wrong + 1
     print("FAIL roc test " .. root .. " ended " .. r.ended .. " " .. get(r, "code", -1) .. " with " .. printed .. " PASS lines: " .. trim(sub(r.out, #r.out - 300)))
   end
-  print("roc test " .. root .. ": " .. printed .. " passed, " .. r.ms .. " ms")
+  local others = ""
+  if other_repos > 0 then others = " (" .. other_repos .. " of them other repos', not counted)" end
+  print("roc test " .. root .. ": " .. printed .. " passed" .. others .. ", " .. r.ms .. " ms")
   return wrong
 end
 
@@ -313,15 +311,34 @@ end
 function widget_folders()
   local folders = {}
   for name in ls("canvas_apps") do
-    if ends_with(name, "_widget") and is_dir("canvas_apps/" .. name) then push(folders, name) end
+    if match_path("canvas_apps/" .. name, WIDGET_APPS) and is_dir("canvas_apps/" .. name) then push(folders, name) end
   end
-  if #folders == 0 then fail("safari gates: no *_widget folders in canvas_apps") end
+  if #folders == 0 then fail("safari gates: no folders " .. WIDGET_APPS) end
   return folders
+end
+
+-- The widgets' sources, as git pathspecs.
+function widget_sources()
+  local sources = {}
+  for g in WIDGET_SOURCE_GLOBS do push(sources, ":(glob)" .. g) end
+  push(sources, WIDGET_EXPECTS)
+  return sources
+end
+
+-- Whether `at`, a place `roc test` printed from safari's folder, is in a
+-- widget or in widget_kit.
+function is_widget_source(at)
+  local m = re_find(at, "^\\.\\./(.+):[0-9]+$")
+  if m == nil then return false end
+  for g in WIDGET_SOURCE_GLOBS do
+    if match_path("canvas_apps/" .. m.group, g) then return true end
+  end
+  return false
 end
 
 -- How many things are wrong with the formatting. `roc fmt` keeps no cache.
 function format_wrong(roc)
-  local argv = {roc, "fmt", "--check", ".", "../lib", "../widget_kit"}
+  local argv = {roc, "fmt", "--check", ".", "../lib", "../" .. basename(WIDGET_KIT)}
   for folder in widget_folders() do push(argv, "../" .. folder) end
   local fmt = run(argv, {timeout_ms = 60000, cwd = SAFARI, tail = 40, want = WANT})
   if fmt.ended == "exit" and get(fmt, "code", -1) == 0 then return 0 end
@@ -331,9 +348,20 @@ end
 
 function format()
   if format_wrong(roc_path()) > 0 then fail("safari gates: roc fmt would change a file") end
+  print("roc fmt --check: clean")
   return nil
 end
 
+-- `roc test --verbose` from each of EXPECT_ROOTS, whose reach together is
+-- every expect: gates/CrossModuleExpects.roc reaches nearly all of them,
+-- web.roc the game's modules that only the running game imports, lib's
+-- package root all of lib, and make_book.roc the tutorial's. The source is the
+-- count, so no number needs keeping: every line of a `.roc` file in
+-- SAFARI_SOURCES that starts `expect` must print `PASS` once in a run that
+-- reaches it, and a `PASS` must name such a line. An expect sits at the top
+-- level of its file. One indented into a block or a function fails here, and
+-- so does one in a module no root reaches. The roots overlap, so a line that
+-- two roots reach counts once. It also runs `part=format`'s check.
 function expects()
   local roc = roc_path()
   local cache = child_cache("expects")
@@ -354,7 +382,7 @@ end
 function check_widget(roc, env, folder)
   local r = run({roc, "check", "web.roc"}, {timeout_ms = 120000, cwd = "canvas_apps/" .. folder, head = 40, want = WANT, env = env})
   print("roc check " .. folder .. ": " .. r.ms .. " ms")
-  if r.ended == "exit" and get(r, "code", -1) == 0 and contains(r.out, "No errors found") then return 0 end
+  if r.ended == "exit" and get(r, "code", -1) == 0 and contains(r.out, ROC_CHECK_CLEAN) then return 0 end
   print("FAIL roc check " .. folder .. ": " .. trim(r.out))
   return 1
 end
@@ -364,7 +392,7 @@ end
 function widget_lines(passed)
   local kept = {}
   for at in keys(passed) do
-    if contains(at, "_widget/") or starts_with(at, "../widget_kit/") or starts_with(at, WIDGET_ROOT .. ":") then kept[at] = true end
+    if is_widget_source(at) or starts_with(at, WIDGET_ROOT .. ":") then kept[at] = true end
   end
   return kept
 end
@@ -383,7 +411,16 @@ function widgets_unrooted(folders)
   return missing
 end
 
--- A widget that doesn't check isn't tested, so the test waits for them all.
+-- `roc check` on each widget's web.roc, because the widgets import the game
+-- through game.roc and a change to a type they use breaks them. Then `roc test
+-- --verbose` once, on gates/WidgetExpects.roc, which reaches every widget's app
+-- module through the package.roc in its folder. Finding no widget fails, as
+-- does a widget the root doesn't name. Every expect in a widget, in widget_kit
+-- or in WidgetExpects.roc itself must pass, counted as in `part=expects`.
+-- `roc test` runs the expects of every module a root reaches, packages on a
+-- path included, and has no way to run only some, so the game's expects run
+-- here too, once. A widget that doesn't check isn't tested, so the test waits
+-- for them all.
 function widgets()
   local roc = roc_path()
   local cache = child_cache("widgets")
@@ -394,7 +431,7 @@ function widgets()
   for folder in folders do wrong = wrong + check_widget(roc, env, folder) end
   if wrong == 0 then wrong = test_root(roc, env, WIDGET_ROOT, passed) end
   drop_child_cache(cache)
-  local source = written_expects(WIDGET_SOURCES)
+  local source = written_expects(widget_sources())
   if #keys(source.written) == 0 then fail("safari gates: no expects found in the widgets") end
   if wrong == 0 then wrong = expects_unheld(source, widget_lines(passed)) end
   print("widgets: " .. #folders .. " checked, " .. #keys(source.written) .. " expects in the source, " .. #keys(passed) .. " passed in one roc test, " .. wrong .. " wrong")
@@ -419,6 +456,13 @@ function held_args()
   return args
 end
 
+-- The proof tools: StepBack passes on "every step back went back one step",
+-- OnRoad on "the ride stayed on the road", and ShapesFrame on "differ 0" at
+-- every depth. All their output but OnRoad's, and RasterFrame's hash of the
+-- frame at each depth, is held exactly to PROOF_EXPECTED. A change that
+-- rightly alters the picture changes that file with it, and the commit says
+-- why. OnRoad's widest point and finishing step move with every physics
+-- change, so they are printed and not held.
 function proof()
   local roc = roc_path()
   local scratch = fresh_dir("scratch:", "safari-proof")
@@ -464,6 +508,11 @@ function proof()
   return nil
 end
 
+-- gates/input_bits.shale first, which holds the page's key and button bits
+-- equal to lib's. Then canvas_apps/build.sh builds safari's dev page into a
+-- scratch folder, so the dev channel doesn't move, and the hash of what it drew
+-- is held to PAGE_EXPECTED. With `release=1`, which tutorial/book.shale gives
+-- it, it builds the release page into the dev channel, held to the same hash.
 function page()
   print(trim(must(run({"shale", "--root", ".", INPUT_BITS}, {timeout_ms = 60000, tail = 40})).out))
   local scratch = fresh_dir("scratch:", "safari-page")
@@ -488,6 +537,8 @@ function page()
   return nil
 end
 
+-- tutorial/build.shale's self-test, then the tutorial's build, so a name it
+-- includes that is gone from the code fails the gates.
 function tutorial()
   local cache = child_cache("tutorial")
   local env = cache_env(cache)
@@ -498,16 +549,78 @@ function tutorial()
   return nil
 end
 
+-- gates/book_names.shale finds a backticked name in the tutorial's prose, or a
+-- node name in its diagrams, that is gone from the code.
 -- The book is parked until its chapters are rewritten (Steve, 2026-11-07), so
 -- the stale names are counted and printed, loudly, but no count is held: a held
 -- count only tracked how broken the parked prose was, and churned at every merge.
 function book_names()
+  -- A crash prints no counts, so the run fails without them: the counts go
+  -- unheld, but the lint must still run to its verdict.
   local r = run({"shale", "--root", ".", BOOK_NAMES, "held=0", "held_diagram=0"}, {timeout_ms = 60000, tail = 100})
-  local summary = "no summary line"
+  local summary = nil
   for line in lines(r.out) do
-    if starts_with(line, "book_names:") then summary = line end
+    if re_match(line, "^book_names: stale_name [0-9]+, ") then summary = line end
+  end
+  if r.ended ~= "exit" or summary == nil then
+    print(trim(r.out))
+    fail("safari gates: book_names ended " .. r.ended .. " " .. get(r, "code", -1) .. " with no `book_names: stale_name N, ...` line")
   end
   print("book_names: SKIPPED while the book is parked: " .. summary)
+  return nil
+end
+
+-- fast.shale's parts. Each runs on the checkout's fast cache, which also
+-- holds fast's record of its last green and its RasterFrame.
+function fast_cache()
+  return checkout_caches() .. "/fast"
+end
+
+function fast_check()
+  local roc = roc_path()
+  local r = run({roc, "check", "web.roc"}, {timeout_ms = 120000, cwd = SAFARI, whole = 4000000, want = WANT, env = cache_env(fast_cache())})
+  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 or not contains(r.out, ROC_CHECK_CLEAN) then
+    print(trim(r.out))
+    fail("safari gates: roc check web.roc failed")
+  end
+  print("roc check web.roc: clean, " .. r.ms .. " ms")
+  return nil
+end
+
+function fast_expects()
+  local roc = roc_path()
+  local r = run({roc, "test", MAIN_EXPECT_ROOT}, {timeout_ms = 120000, cwd = SAFARI, whole = 4000000, want = WANT, env = cache_env(fast_cache())})
+  local summary = re_find(r.out, "All \\(([0-9]+)\\) tests passed")
+  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 or summary == nil or tonumber(summary.group) == 0 then
+    print(trim(r.out))
+    fail("safari gates: roc test " .. MAIN_EXPECT_ROOT .. " failed")
+  end
+  print("roc test " .. MAIN_EXPECT_ROOT .. ": " .. summary.group .. " passed, " .. r.ms .. " ms")
+  return nil
+end
+
+-- The line of PROOF_EXPECTED that RasterFrame draws at FAST_FRAME_DEPTH.
+function held_fast_frame()
+  local mark = "RasterFrame " .. FAST_FRAME_DEPTH .. ": "
+  for l in lines(read(PROOF_EXPECTED)) do
+    if starts_with(l, mark) then return l end
+  end
+  fail("safari gates: " .. PROOF_EXPECTED .. " holds no line for " .. mark)
+end
+
+function fast_frame()
+  local roc = roc_path()
+  local folder = fast_cache()
+  local env = cache_env(folder)
+  local tool = folder .. "/RasterFrame"
+  if exists(tool) then remove(tool) end
+  if not tool_build(roc, folder, "RasterFrame", env) then fail("safari gates: RasterFrame didn't build") end
+  local r = run({real(tool), "held", FAST_FRAME_DEPTH}, {timeout_ms = 120000, whole = 1000, want = WANT})
+  local got = trim(r.out)
+  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 or got ~= held_fast_frame() then
+    fail("safari gates: the frame moved: this tree draws `" .. got .. "`, and " .. PROOF_EXPECTED .. " holds `" .. held_fast_frame() .. "`")
+  end
+  print(got .. ", as held; drawn in " .. r.ms .. " ms")
   return nil
 end
 
@@ -538,10 +651,11 @@ function all()
   end
   print("safari gates: " .. join(times, ", "))
   if #bad > 0 then fail("safari gates: " .. #bad .. " failed: " .. join(bad, ", ")) end
-  print("safari gates: expects held, widgets checked, tutorial built, book names held, proof tools ok, page drawn")
+  print("safari gates: expects held, widgets checked, tutorial built, book names SKIPPED (the book is parked), proof tools ok, page drawn")
   if not COLD then print("NOT RUN, left to publish: check.shale, cold caches, release wasm, the widgets' page builds") end
 end
 
+-- `part=caches` runs only the cache upkeep the full gate starts with.
 const PART = arg("part", "")
 if PART == "" then
   all()
@@ -559,11 +673,19 @@ elseif PART == "book_names" then
   book_names()
 elseif PART == "page" then
   page()
+elseif PART == "widget_globs" then
+  print(join(WIDGET_SOURCE_GLOBS, "\n"))
 elseif PART == "fast_cache" then
-  print(checkout_caches() .. "/fast")
+  print(fast_cache())
+elseif PART == "fast_check" then
+  fast_check()
+elseif PART == "fast_expects" then
+  fast_expects()
+elseif PART == "fast_frame" then
+  fast_frame()
 elseif PART == "caches" then
   prune_removed_checkouts()
   if clear_full_caches() then print("safari gates: caches empty, a run would be cold") else print("safari gates: caches warm, under " .. CHECKOUT_CEILING_MB .. " MB") end
 else
-  fail("safari gates: part= is expects, widgets, format, proof, tutorial, book_names, page, fast_cache or caches (none runs them all)")
+  fail("safari gates: part= is expects, widgets, format, proof, tutorial, book_names, page, caches, lints.shale's widget_globs, or fast.shale's fast_cache, fast_check, fast_expects or fast_frame (none runs them all)")
 end
