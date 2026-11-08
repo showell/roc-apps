@@ -145,23 +145,11 @@ status_lines = |{ gap, timing }| {
 	throttle = EncounterReaction.encounter_throttle(World.first_cat_segment, timing)
 	[
 		ReadoutText.stage_text(stage),
-		"Pose: ${pose_name(instant.pose)}",
+		"Pose: ${ReadoutText.cat_pose_text(instant.pose)}",
 		"Gap: ${ReadoutText.tenths_text(gap.to_metres())} m",
 		throttle_text(throttle),
 	]
 }
-
-pose_name : PosedCat.CatPose -> Str
-pose_name = |pose|
-	match pose {
-		Rest => "Rest"
-		Stride => "Stride"
-		Frozen => "Frozen"
-		Coil => "Coil"
-		Flight => "Flight"
-		Land => "Land"
-		Collapse => "Collapse"
-	}
 
 ## What the crossing asks of the throttle, in words. A crossing only ever holds
 ## the acceleration at none.

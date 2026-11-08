@@ -59,18 +59,6 @@ StillCell : {
 	anchor : StillShapes.Anchor,
 }
 
-cat_pose_name : PosedCat.CatPose -> Str
-cat_pose_name = |pose|
-	match pose {
-		Rest => "Rest"
-		Stride => "Stride"
-		Frozen => "Frozen"
-		Coil => "Coil"
-		Flight => "Flight"
-		Land => "Land"
-		Collapse => "Collapse"
-	}
-
 bird_pose_name : PosedBird.BirdPose -> Str
 bird_pose_name = |pose|
 	match pose {
@@ -86,7 +74,7 @@ bird_pose_name = |pose|
 pose_name : StillsWidgetApp.Pose -> Str
 pose_name = |pose|
 	match pose {
-		Cat(cat_pose) => cat_pose_name(cat_pose)
+		Cat(cat_pose) => ReadoutText.cat_pose_text(cat_pose)
 		Bird(bird_pose) => bird_pose_name(bird_pose)
 	}
 
