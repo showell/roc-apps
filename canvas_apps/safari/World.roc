@@ -408,31 +408,31 @@ herd_count_before = |index|
 		.count_if(|plan| plan.pigs == WithPigs)
 		.to_u32_wrap()
 
-seg : U32 -> Segment
-seg = |i| World.route.segment_at(Route.SegmentIndex.number(i))
+route_segment_at : U32 -> Segment
+route_segment_at = |i| World.route.segment_at(Route.SegmentIndex.number(i))
 
 expect
 	[
 		(0, False),
 		(17, False),
 		(18, True),
-	].all(|(index, want)| is_route_end(seg(index)) == want)
+	].all(|(index, want)| is_route_end(route_segment_at(index)) == want)
 
 expect
 	[
 		(0, False),
 		(6, True),
 		(9, False),
-	].all(|(index, want)| seg(index).has_mid_tower() == want)
+	].all(|(index, want)| route_segment_at(index).has_mid_tower() == want)
 
 # The rider commits to the route's end at the end of its last segment.
-expect seg(18).commit_along().to_metres() == 300.0
+expect route_segment_at(18).commit_along().to_metres() == 300.0
 
 expect
 	[
-		(seg(0).commit_along().to_metres(), 498.32180073764545),
-		(seg(1).commit_along().to_metres(), 319.2720595314676),
-		(seg(6).commit_along().to_metres(), 1199.647346038583),
+		(route_segment_at(0).commit_along().to_metres(), 498.32180073764545),
+		(route_segment_at(1).commit_along().to_metres(), 319.2720595314676),
+		(route_segment_at(6).commit_along().to_metres(), 1199.647346038583),
 	].all(|(got, want)| (got - want).abs() <= 0.00000001)
 
 # Each cat starts behind a tree that is really there, and just past it.
@@ -442,7 +442,7 @@ expect
 			crossing = crossing_at(index)
 			beyond = CatCrossing.cat_beyond_tree
 			behind = CatCrossing.cat_behind_tree
-			seg(index).trees.any(
+			route_segment_at(index).trees.any(
 				|{ road_point, .. }|
 					road_point.along.plus(beyond) == crossing.along()
 						and road_point.across.plus(behind) == crossing.start_across(),
@@ -461,7 +461,7 @@ is_route_end = |segment|
 ## The cat crossing at a segment that has one.
 crossing_at : U32 -> CatCrossing
 crossing_at = |index|
-	match seg(index).encounter {
+	match route_segment_at(index).encounter {
 		CatCrosses(crossing) => crossing
 		BirdHere(_) | QuietRoad => crash "World.crossing_at: the segment has a cat"
 	}

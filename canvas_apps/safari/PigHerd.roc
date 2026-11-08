@@ -152,12 +152,12 @@ herd_pig : PigHerd.BigPigHerd,
 	column : U64,
 } -> Geom.Placed(Billboard)
 herd_pig = |herd, { herd_along, row, column }| {
-	fr = row.to_f64()
-	fc = column.to_f64()
+	rows_back = row.to_f64()
+	columns_along = column.to_f64()
 	first_column = herd_along.plus(herd.first_column)
-	in_column = first_column.plus(herd.column_spacing.times(fc))
-	in_line = in_column.plus(herd.row_depth.times(fr))
-	in_row = front_row_across.plus(herd.row_depth.times(fr))
+	in_column = first_column.plus(herd.column_spacing.times(columns_along))
+	in_line = in_column.plus(herd.row_depth.times(rows_back))
+	in_row = front_row_across.plus(herd.row_depth.times(rows_back))
 	stray = Scatter.offset(
 		row * column_count(herd) + column,
 		{
