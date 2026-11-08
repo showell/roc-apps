@@ -1,13 +1,13 @@
 ## Font gives letters as strokes, so a game or a movie can put words on the
-## screen. The games write with this alphabet, on every painter. Words that
-## should read well, such as a tutorial widget's, are a `Text` shape in the
-## viewer's own typeface; `plotted_shapes` here is that shape for a painter that has no
-## typefaces, and `room_for` is the room such a line wants.
+## screen. It looks the same on every painter. Words that should read well are
+## a `Text` shape in the viewer's own typeface; `plotted_shapes` here is that
+## shape for a painter that has no typefaces, and `room_for` is the room such a
+## line wants.
 ##
 ## A letter is a few strokes, and a stroke is a polygon, the same quad
 ## `Shapes.line` builds. So text needs no new shape, no new brush, and nothing
-## new on any wire, and it looks the same on the GPU, on the canvas and in
-## ScanlineFill, because by then it is only polygons.
+## new on any wire, and it looks the same on the GPU, on the canvas and in a CPU
+## painter, because by then it is only polygons.
 ##
 ## The grid is 5 wide and 6 tall, x 0..4 and y 0..6 with y down. The cap height
 ## is at 0, the x-height at 2 and the baseline at 6, and descenders reach 8. A

@@ -16,8 +16,7 @@
 ## and shapes_canvas.js on a canvas, all from what is here. The tags are the ones
 ## shapes_canvas.js reads, and so is what they mean: gradients mix
 ## unpremultiplied, as the canvas specification says, and an offset outside
-## [0, 1] is clamped as shapes_canvas.js clamps it. Every canvas app paints
-## with brushes, so the module sits in lib/ rather than in safari/.
+## [0, 1] is clamped as shapes_canvas.js clamps it.
 import ArgbColor
 import Point
 import RgbColor

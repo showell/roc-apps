@@ -6,8 +6,8 @@
 Keys :: [].{
 
 	## The keys a game here can ask about. A tick sends two bit sets, so the
-	## list is short on purpose: adding one is a bit and a line in
-	## canvas_app_runner.js, which safari/gates/input_bits.shale holds equal.
+	## list is short on purpose: adding one is a bit here and a line in
+	## canvas_app_runner.js, and a gate holds the two lists equal.
 	##
 	## Escape and F belong to the runners, not to games: Escape closes a
 	## native window and F shows its frame rate, and a page can do neither.
@@ -17,8 +17,8 @@ Keys :: [].{
 		is_eq : _
 	}
 
-	## Every key, once each. safari/gates/input_bits.shale holds it to the
-	## branches of `bit`, so a key added to the enum is added here too.
+	## Every key, once each. A gate holds it to the branches of `bit`, so a key
+	## added to the enum is added here too.
 	all_keys : List(Keys.Key)
 	all_keys = [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEnter, KeyP, KeyR, KeyQ, KeyE, KeyC, KeyJ, Key1, Key2, Key3, Key4]
 

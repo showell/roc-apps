@@ -1,7 +1,6 @@
 ## ArgbColor is a colour with its alpha, as one whole number, 0xAARRGGBB: eight
-## bits each of alpha, red, green and blue, alpha highest. A gradient's colours
-## are these, and so is any fill that is part way see-through.
-## `Brush.translucent` turns one into a brush colour.
+## bits each of alpha, red, green and blue, alpha highest. `Brush.translucent`
+## turns one into a brush colour.
 ##
 ## The colour with no alpha, 0xRRGGBB, is an `RgbColor`, a different type, so
 ## neither can be passed where the other belongs. A 0xRRGGBB read as 0xAARRGGBB
