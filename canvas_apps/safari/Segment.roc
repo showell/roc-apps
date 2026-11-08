@@ -49,19 +49,7 @@ Segment := {
 
 	## What lives at the bend that ends a segment: nothing, a safari animal and
 	## its baby, or a pond with its ducks.
-	BendLife := [Quiet, Animal(BendAnimal), DuckPond].{
-
-		## The billboards of `bend_life`, placed on the segment that ends at
-		## `bend`: the animal and its baby, or the ducks on the pond, whose
-		## places are measured from the bend.
-		bend_billboards : Segment.BendLife, Geom.Bend -> List(Geom.Placed(Billboard))
-		bend_billboards = |bend_life, bend|
-			match bend_life {
-				Animal(animal) => animal.bend_billboards(bend)
-				DuckPond => Pond.placed_ducks(bend)
-				Quiet => []
-			}
-	}
+	BendLife := [Quiet, Animal(BendAnimal), DuckPond]
 
 	## How a segment ends: by turning into the next, positive to the right,
 	## with what lives at the bend, or by ending the route.
@@ -131,7 +119,7 @@ Segment := {
 	segment_bend_billboards : Segment -> List(Geom.Placed(Billboard))
 	segment_bend_billboards = |segment|
 		match segment.segment_ending() {
-			Bends({ bend, bend_life }) => bend_life.bend_billboards(bend)
+			Bends({ bend, bend_life }) => bend_billboards(bend_life, bend)
 			RouteEnds => []
 		}
 
@@ -227,6 +215,17 @@ Segment := {
 			Herd({ interest: Unnoticed, .. }) | NoPigs => False
 		}
 }
+
+## The billboards of `bend_life`, placed on the segment that ends at `bend`:
+## the animal and its baby, or the ducks on the pond, whose places are measured
+## from the bend.
+bend_billboards : Segment.BendLife, Geom.Bend -> List(Geom.Placed(Billboard))
+bend_billboards = |bend_life, bend|
+	match bend_life {
+		Animal(animal) => animal.bend_billboards(bend)
+		DuckPond => Pond.placed_ducks(bend)
+		Quiet => []
+	}
 
 ## How far before the end of its segment a herd of pigs stands.
 pig_distance_before_end : Distance

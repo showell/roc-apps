@@ -1235,7 +1235,7 @@ A segment's ending carries its `bend_life`, what's at its bend. The segment turn
 
 What's at the bend gives its own billboards. A quiet bend gives nothing, a pond gives its ducks, and an animal gives two, itself and its baby:
 
-{{code Segment.BendLife from "bend_billboards :" to "Quiet => []"}}
+{{code Segment.bend_billboards}}
 
 The animal places itself:
 
