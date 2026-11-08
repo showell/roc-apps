@@ -1,6 +1,6 @@
 ## Fixtures holds what two or more of the expects' modules share: the crafted
-## roads, segments and routes, the cats and birds seen on the cat route, and
-## the helpers that read a polygon's corners.
+## roads, segments and routes, the cat route, and the helper that reads a
+## polygon's corners.
 
 import game.Across
 import game.Along
@@ -8,21 +8,14 @@ import game.Angle
 import game.BirdFlight
 import game.Conifer
 import game.Distance
-import game.EncounterPlan
-import game.EncounterPoses
-import game.EncounterSighting
 import game.Geom
-import game.Pipeline
 import game.Pixels
-import game.PosedBird
-import game.PosedCat
 import game.RoadAhead
 import game.Route
 import game.Segment
 import game.SegmentPlace
 import game.Trees
 import game.World
-import lib.Brush
 import lib.Shapes
 
 Fixtures :: [].{
@@ -53,17 +46,14 @@ Fixtures :: [].{
 	second_position : SegmentPlace.Position
 	second_position = SegmentPlace.Position.first.next()
 
-	polygon_of : Shapes.Shape -> { coordinates : List(F64), fill : Brush.Fill }
-	polygon_of = |shape|
-		match shape {
-			Poly(polygon) => polygon
-			Disc(_) | Rect(_) | Blend(_) | View(_) | Image(_) | Text(_) =>
-				crash "Fixtures.polygon_of: this shape is not a polygon"
-		}
-
 	## A polygon's coordinates, flat as x0, y0, x1, y1, ...
 	coordinates_of : Shapes.Shape -> List(F64)
-	coordinates_of = |shape| polygon_of(shape).coordinates
+	coordinates_of = |shape|
+		match shape {
+			Poly(polygon) => polygon.coordinates
+			Disc(_) | Rect(_) | Blend(_) | View(_) | Image(_) | Text(_) =>
+				crash "Fixtures.coordinates_of: this shape is not a polygon"
+		}
 
 	tree_at : F64, F64 -> Trees.RoadsideTree
 	tree_at = |along, across| {
@@ -114,45 +104,6 @@ Fixtures :: [].{
 	## The road ahead of a rider on the cat route's first segment.
 	cat_road : RoadAhead.RoadView
 	cat_road = RoadAhead.RoadView.ahead_of(cat_route, Route.SegmentIndex.first)
-
-	## The birds the camera sees on `road_view`, with the encounter on the
-	## rider's segment at `encounter_timing`.
-	birds_seen_on : RoadAhead.RoadView,
-	{
-		camera : { vantage : Geom.Vantage, cam_focal : Pixels },
-		encounter_timing : EncounterPlan.Timing,
-	} -> List(Pipeline.Sighted(PosedBird))
-	birds_seen_on = |road_view, { camera, encounter_timing }|
-		EncounterSighting.animals_in_view(
-			road_view,
-			{ camera, animals: EncounterPoses.bird_poses(road_view, encounter_timing) },
-		)
-
-	## The cats the camera sees on `road_view`, with the encounter on the rider's
-	## segment at `encounter_timing`.
-	cats_seen_on : RoadAhead.RoadView,
-	{
-		camera : { vantage : Geom.Vantage, cam_focal : Pixels },
-		encounter_timing : EncounterPlan.Timing,
-	} -> List(Pipeline.Sighted(PosedCat))
-	cats_seen_on = |road_view, { camera, encounter_timing }|
-		EncounterSighting.animals_in_view(
-			road_view,
-			{ camera, animals: EncounterPoses.cat_poses(road_view, encounter_timing) },
-		)
-
-	## The cats in view for a rider `along` metres into the first segment.
-	ride_sightings : F64 -> List(Pipeline.Sighted(PosedCat))
-	ride_sightings = |along| cats_seen_on(
-		cat_road,
-		{
-			camera: { ..origin_camera, vantage: { ..origin, along: Along.metres(along) } },
-			encounter_timing: Unplanned,
-		},
-	)
-
-	seen : List(Pipeline.Sighted(PosedCat))
-	seen = ride_sightings(300.0)
 
 	## The flights of the route.
 	route_flights : List(BirdFlight.Flight)

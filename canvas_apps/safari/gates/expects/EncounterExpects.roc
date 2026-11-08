@@ -16,6 +16,7 @@ import game.Distance
 import game.EmojiStills
 import game.EncounterPlan
 import game.EncounterPoses
+import game.EncounterSighting
 import game.Fraction
 import game.Geom
 import game.Pipeline
@@ -41,6 +42,36 @@ import lib.RgbColor
 import lib.Shapes
 
 EncounterExpects :: [].{}
+
+## The birds the camera sees on `road_view`, with the encounter on the
+## rider's segment at `encounter_timing`.
+birds_seen_on : RoadAhead.RoadView,
+{
+	camera : { vantage : Geom.Vantage, cam_focal : Pixels },
+	encounter_timing : EncounterPlan.Timing,
+} -> List(Pipeline.Sighted(PosedBird))
+birds_seen_on = |road_view, { camera, encounter_timing }|
+	EncounterSighting.animals_in_view(
+		road_view,
+		{ camera, animals: EncounterPoses.bird_poses(road_view, encounter_timing) },
+	)
+
+## The cats in view on the cat route, before its encounter is planned, for a
+## rider `along` metres into its first segment.
+ride_sightings : F64 -> List(Pipeline.Sighted(PosedCat))
+ride_sightings = |along| {
+	road_view = Fixtures.cat_road
+	EncounterSighting.animals_in_view(
+		road_view,
+		{
+			camera: {
+				..Fixtures.origin_camera,
+				vantage: { ..Fixtures.origin, along: Along.metres(along) },
+			},
+			animals: EncounterPoses.cat_poses(road_view, Unplanned),
+		},
+	)
+}
 
 # EncounterSighting's birds, on a straight segment with its fifth left tree 100 m along: a bird
 # sits, flies and lands as the rider comes, stays where no tree is far enough to
@@ -102,7 +133,7 @@ birds_on : Segment,
 	encounter_timing : EncounterPlan.Timing,
 } -> List(Pipeline.Sighted(PosedBird))
 birds_on = |segment, { rider_along, cam_focal, encounter_timing }|
-	Fixtures.birds_seen_on(
+	birds_seen_on(
 		RoadAhead.RoadView.ahead_of(Route.from_segments([segment]), Route.SegmentIndex.first),
 		{
 			camera: { vantage: { ..Fixtures.origin, along: Along.metres(rider_along) }, cam_focal },
@@ -166,7 +197,7 @@ expect bird_count({ rider_along: 120.0, cam_focal: Pixels.of(500.0) }) == 0
 expect bird_count({ rider_along: 0.0, cam_focal: Pixels.of(91.0) }) == 1
 expect bird_count({ rider_along: 0.0, cam_focal: Pixels.of(90.0) }) == 0
 expect
-	Fixtures.birds_seen_on(
+	birds_seen_on(
 		RoadAhead.RoadView.ahead_of(
 			Route.from_segments([segment_with_cat]),
 			Route.SegmentIndex.first,
@@ -178,7 +209,7 @@ expect
 ## Two segments on the road ahead, the rider at the start of the first, whose
 ## bird is in flight.
 two_segments : List(Pipeline.Sighted(PosedBird))
-two_segments = Fixtures.birds_seen_on(
+two_segments = birds_seen_on(
 	RoadAhead.RoadView.ahead_of(
 		Route.from_segments([Fixtures.going_straight_on(bird_segment), bird_segment]),
 		Route.SegmentIndex.first,
@@ -198,7 +229,7 @@ expect
 ## The first cat in view for a rider `along` metres in.
 first_cat : F64 -> Pipeline.Sighted(PosedCat)
 first_cat = |along|
-	Fixtures.ride_sightings(along).first() ?? crash "EncounterExpects: the second segment's cat is in view"
+	ride_sightings(along).first() ?? crash "EncounterExpects: the second segment's cat is in view"
 
 ## How far ahead the first cat in view is for a rider `along` metres in.
 cat_forward : F64 -> Distance
@@ -220,10 +251,10 @@ expect
 		(cat_right(300.0).minus(cat_right(200.0)).to_metres(), 0.0),
 	].all(|(got, want)| (got - want).abs() <= 0.0001)
 
-expect Fixtures.ride_sightings(0.0).len() == 0
-expect Fixtures.ride_sightings(200.0).len() == 1
-expect Fixtures.ride_sightings(500.0).len() == 1
-expect Fixtures.ride_sightings(600.0).len() == 0
+expect ride_sightings(0.0).len() == 0
+expect ride_sightings(200.0).len() == 1
+expect ride_sightings(500.0).len() == 1
+expect ride_sightings(600.0).len() == 0
 
 # The sighting plays only the rider's own segment's encounter, and the ride
 # plans that encounter only once the rider is on its segment. They agree because
