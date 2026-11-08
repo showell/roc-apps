@@ -1288,17 +1288,17 @@ A beacon needs four types, and all four are opaque:
 | `Beacon` | Which beacon, by a key | A `U32` |
 | `Fraction` | How bright, from 0 to 1 | An `F64` |
 
-Three of them are the same number underneath, and that's the point. A step of the ride, a length of time and a beacon's key are three different questions, and the types won't let one answer stand in for another.
+`Beacon :: U32.{ ... }` is how one is declared: a `U32` underneath, `::` to make it opaque, and a block of its functions after the dot. Three of the four are the same number underneath, and that's the point. A step of the ride, a length of time and a beacon's key are three different questions, and the types won't let one answer stand in for another.
 
-`Clock` and `Steps` are a pair. A clock is a place in time, and `Steps` is a distance between two of them. These are a clock's sums with `Steps`:
+`Clock` and `Steps` are a pair. A clock is a place in time, and `Steps` is a distance between two of them. This is a clock's arithmetic:
 
 {{signatures Clock.steps_since Clock.plus Clock.minus}}
 
 Two clocks give the steps between them. A clock and some steps give a later clock, or an earlier one. Two clocks can't be added, because step 5,400 plus step 30 means nothing, so there's no function for it, and because `Clock` is opaque, nobody outside it can add the numbers underneath. `Steps` add to `Steps`, which does mean something. Call this *places and distances*: one opaque type for where something is, a second for how far apart two of them are, and only the sums that make sense. It comes back again and again.
 
-`steps_since` refuses a clock earlier than the one it counts from, and `minus` refuses to go back past step 0, because the ride has no step before it. Roc would crash there anyway, since arithmetic on a `U32` crashes rather than wrap around. The checks are there to say why.
+`steps_since` crashes on a clock earlier than the one it counts from, and `minus` crashes rather than go back past step 0, because the ride has no step before it. Roc would crash on that arithmetic anyway, since a `U32` crashes rather than wrap around, so the checks only add a message saying why.
 
-A `Beacon` is a key that nobody outside `Beacon` can read. You get one from a segment, you can ask for the one opposite it, and you can ask how bright it is:
+A `Beacon` is a key that nobody outside `Beacon` can read. You get one from a segment's index, which becomes its key, you can ask for the one opposite it, and you can ask how bright it is:
 
 {{signatures Beacon.of_segment Beacon.opposite Beacon.brightness_at}}
 
@@ -1329,17 +1329,17 @@ A box is a module, and an arrow is an import. Each frame, `Scene` hands the cloc
 
 {{code TowerSighting.end_tower from "beacon_brightness = Beacon.of_segment" to "beacon_brightness = Beacon.of_segment"}}
 
-That line is the whole of the beacon, as far as the tower is concerned. The segment's index makes a beacon, and the clock makes a brightness. Back in the radio towers chapter, `mid_tower` had the same line with `.opposite()` in the middle.
+That line is all the towers' sighting knows of beacons. The segment's index makes a beacon, and the clock makes a brightness. Back in the radio towers chapter, `mid_tower` had the same line with `.opposite()` in the middle.
 
 Now down into `Beacon`:
 
 {{code Beacon.brightness_at}}
 
-`clock.steps_since(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride. Adding the beacon's own offset gives its phase, and a cosine turns that into a brightness:
+Inside the module, the pattern `Beacon.(key)` opens a beacon, and `Beacon.(...)` builds one. Nowhere else can do either. `clock.steps_since(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride. Adding the beacon's own offset gives its phase, and a cosine turns that into a brightness:
 
 {{code Beacon.beacon_brightness}}
 
-`wrapped_to` is `Steps`'s one way to reach `%`, so a phase of 130 is a phase of 10. `(1 - cos) / 2` runs from 0 up to 1 and back to 0 over one period, and it can't leave that range, so the answer is built with `Fraction.of`. `of` crashes on a ratio outside 0 to 1, because a ratio like that would mean the sum behind it is wrong.
+`wrapped_to` is the only `%` that `Steps` offers, so a phase of 130 is a phase of 10. The offset was already wrapped, but adding it to the clock can pass 120 again. Even inside its own module, the period is written `Beacon.beacon_period`, with its type's name, because it's defined in the type's block. `(1 - cos) / 2` runs from 0 up to 1 and back to 0 over one period, and it can't leave that range. So `Fraction.of`, which crashes on a ratio outside 0 to 1, is safe here. A ratio like that would mean the sum behind it is wrong.
 
 Each beacon's offset comes from its key:
 
@@ -1351,11 +1351,11 @@ The tower halfway along a segment blinks opposite the one at its end:
 
 {{code Beacon.opposite}}
 
-That's a small piece of number theory hiding in a constant. 60 staggers of 37 steps come to 2,220, which is 18 whole blinks and 60 steps left over, so the opposite beacon is always exactly half a blink away. The widget's two beacons are the first segment's, key 0, and the one opposite it, key 60. Step 5,400 is 45 whole blinks in, so one is dark there and the other is at full brightness.
+That's a small piece of number theory hiding in a constant. `opposite_key_offset` is 60, and 60 staggers of 37 steps come to 2,220, which is 18 whole blinks and 60 steps left over, so the opposite beacon is always exactly half a blink away. The widget's two beacons are the first segment's, key 0, and the one opposite it, key 60. Step 5,400 is 45 whole blinks in, so one is dark there and the other is at full brightness.
 
 ### Where the clock stops
 
-Notice how far the clock reaches. `Tower` holds its beacon's brightness as a `Fraction`, and it doesn't import `Clock`. It draws the beacon as a magenta disc that's only as opaque as that `Fraction`, and leaves it out when it's too dim to see. `Beacon` knows the clock but not the tower. In the game, `TowerSighting` is the one place where both meet.
+Notice where the clock stops. `Tower` holds its beacon's brightness as a `Fraction`, and it doesn't import `Clock`. It draws the beacon as a magenta disc that's only as opaque as that `Fraction`, and leaves it out when it's too dim to see. `Beacon` knows the clock but not the tower. In the game, `TowerSighting` is the one place where both meet.
 
 There's no blink abstraction, because nothing else in the game blinks.
 
