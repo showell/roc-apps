@@ -2558,7 +2558,7 @@ That's the last of the rider.
 
 ## The math layer
 
-All this time, a layer of math has been doing the measuring. This chapter works up from the floor.
+All this time, a layer of math has been doing the measuring. This chapter opens it up, from the modules everything imports down to Roc's own arithmetic.
 
 New in this chapter:
 
@@ -2574,24 +2574,24 @@ A lot of Safari Ride is math and physics, and most of it is geometry a reader co
 
 ### The most imported modules
 
-Safari Ride has 96 modules, not counting `web.roc`, `main.roc` and `game.roc`. The import graph is lopsided in a good way. Counting who imports what, leaving out the test programs, a handful stand out, and the lines here are the ones above each module's `expect`s:
+Safari Ride has 96 modules, not counting `web.roc`, `main.roc` and `game.roc`. The import graph is lopsided in a good way: a handful of modules are imported by many others. The table counts importers among the game's modules, leaving out the test programs, and its Lines column counts each module's code above its `expect`s:
 
 | Module | Imported by | Lines | What it is |
 |---|---|---|---|
 | `Distance` | 55 | 66 | A length in metres |
 | `Fraction` | 28 | 88 | A ratio from 0 to 1 |
 | `Geom` | 25 | 146 | Road points, bends, and how a point moves round one |
-| `Angle` | 21 | 194 | Four opaque types for rotation |
+| `Angle` | 21 | 199 | Four opaque types for rotation |
 | `Along` | 19 | 61 | A place along a segment |
 | `Pixels` | 18 | 69 | A length on screen |
-| `RoadAhead` | 16 | 208 | Where the road ahead lies from where the rider is |
+| `RoadAhead` | 16 | 219 | Where the road ahead lies from where the rider is |
 | `Across` | 15 | 68 | A place across the road |
-| `RiderView` | 15 | 241 | Points measured from the rider, and the near plane |
-| `Screen` | 15 | 104 | The canvas: its size, its middle, its horizon |
+| `RiderView` | 15 | 249 | Points measured from the rider, and the near plane |
+| `Screen` | 15 | 113 | The canvas: its size, its middle, its horizon |
 
-`Picture` is imported by 15 as well. It's how one object looks in one frame, so every kind of object that draws one imports it. After those the count drops to 13, for `Animation` and `Steps`, and then 11, for `Segment`. Most modules are imported by one, two or three others. `Shapes` is imported about as widely. It's in `lib/`, a folder of modules shared with the repository's other canvas apps.
+`Picture` is imported by 15 as well. It's how one object looks in one frame, so every kind of object that draws one imports it. `Shapes` is imported about as widely as the modules in the table, but the table leaves it out because it's in `lib/`, a folder of modules shared with the repository's other canvas apps. After those the count drops to 13, for `Animation` and `Steps`, and then 11, for `Segment`. Most modules are imported by one, two or three others.
 
-These are the core utility modules. There are only ten, and nearly everything else is a small module that takes one of these and adds a single idea. Six of the ten are nothing but numbers with rules, and most of those are under 100 lines. A cat, a tower and a truck are all found on the road through `RoadAhead`, and all reach the screen through `Camera`.
+These ten are the core utility modules, and nearly everything else is a small module that takes one of them and adds a single idea. Six of the ten are nothing but numbers with rules, and most of those are under 100 lines. Two modules carry every object to the screen: `RoadAhead` finds a cat, a tower or a truck on the road, and `Camera`, which isn't in the table, puts it on the screen.
 
 The modules of the math layer
 ```dot
@@ -2615,7 +2615,7 @@ digraph math {
 }
 ```
 
-In this picture, which leaves out the unit types everyone shares, two families meet only at `Angle` and `Geom`: `RoadAhead`, `Camera` and `Lens` say how the world looks from the bike, and `Motorcycle`, `Coast` and `LeanSearch` say where it's going.
+The picture leaves out the unit types that everyone shares. What's left is two families that meet only at `Angle` and `Geom`. `RoadAhead`, `Camera` and `Lens` say how the world looks from the bike, and `Motorcycle`, `Coast` and `LeanSearch` say where it's going.
 
 ### Numbers with units
 
@@ -2646,13 +2646,13 @@ Eighteen small opaque types run through Safari Ride, and the tour has met most o
 | `Route.SegmentIndex` | `U32` | A place in the route |
 | `SegmentFromRider.Position` | `U32` | How many segments ahead of the rider |
 
-This is the opaque type doing the job of a unit. The block after each type is a small statement of dimensional analysis. `Speed.distance_in` takes `Steps` and gives a `Distance`. `Along.plus` takes a `Distance`, and two `Along`s give a `Distance`. `Lean.steer` takes a rate and gives a `Turn`. There's no `Bearing.plus(Bearing)`, because that sum has no meaning. If you try to write one, the compiler stops you.
+This is the opaque type doing the job of a unit. The methods in the block after each type's declaration are a small statement of dimensional analysis. `Speed.distance_in` takes `Steps` and gives a `Distance`. `Along.plus` takes a `Distance` and gives an `Along`, and `Along.distance_from` takes two `Along`s and gives a `Distance`. `Lean.steer` takes a rate and gives a `Turn`. There's no `Bearing.plus(Bearing)`, because that sum has no meaning. If you try to write one, the compiler stops you.
 
 The bug these prevent is the most common one in this kind of code: a correct formula with the wrong number in it. Most physics bugs type-check in a language where everything's a float.
 
 The price is a long list of short methods, and a certain amount of `.to_radians()`.
 
-The units run from the road to the screen. Once a point is measured from the rider, its `right` and `forward` are `Distance`s, and a length on screen is `Pixels`. `Pixels` is signed, because a place on screen is measured from the corner, so a point off the left of the screen is negative, and so is one above its top edge. It stops at the edge of `lib.Shapes`, which takes plain numbers. A formula wants floats, so `.to_metres()` unwraps one at the top of a function that's about to do trigonometry, and the answer is wrapped again at the end. `Along` can't be passed as `Across`, which rules out the classic swap in a function with both.
+The units run from the road to the screen. Once a point is measured from the rider, its `right` and `forward` are `Distance`s, and a length on screen is `Pixels`. `Pixels` is signed, because a place on screen is measured from the top left corner, so a point off the left of the screen is negative, and so is one above its top edge. The units stop at `lib.Shapes`, which takes plain numbers. Inside a function, a formula wants plain floats too. So a function that's about to do trigonometry unwraps its arguments at the top, with `.to_metres()` and the like, and wraps its answer again at the end. And because `Along` can't be passed as `Across`, a function that takes both can't have them swapped.
 
 ### One record per space
 
@@ -2670,7 +2670,7 @@ The points are plain records. They don't need to be opaque, since a record's typ
 
 {{code Screen.Point}}
 
-Structural records give us *one record per space* at no cost: `along` and `across` are on the road, `right` and `forward` are from the rider, `right`, `forward` and `height` are from the rider with a height, and `x` and `y` are pixels. Reading any function, the field names say where it is.
+Roc's records are structural: a record's type is just its field names and their types. That gives *one record per space* at no cost: `along` and `across` are on the road, `right` and `forward` are from the rider, `right`, `forward` and `height` are from the rider with a height, and `x` and `y` are pixels. Reading any function, the field names say where it is.
 
 Going from the road to the rider is a translation and a rotation, and this is the function where the opaque places give way to floats. `distance_from` makes the translation, and the rotation is written the way it would be on paper:
 
@@ -2682,11 +2682,11 @@ From there to the screen is a pinhole camera, which is similar triangles. Dividi
 
 `project` takes a `RaisedPointAhead`, and that one is opaque. The only way to make one is to check the point against the near plane, a little ahead of the camera, so `forward` is never zero or negative by the time it's divided by.
 
-A thing standing on the ground is projected twice, at its feet and at its head. `StillShapes.standing_anchor` calls `upright_on_screen` with a record of the height and focal length built on the spot:
+A thing standing on the ground is projected twice, at its feet and at its head. `StillShapes.standing_anchor` calls `upright_on_screen` with a record of the height and the focal length, written right there in the call:
 
 {{code Camera.upright_on_screen}}
 
-These two functions cover two of the three kinds of thing from The problem, and the third needs neither:
+These two functions cover two of the three sorts of thing from the problem chapter, and the third needs neither:
 
 | Sort | Examples | Has | Lacks |
 |---|---|---|---|
@@ -2694,13 +2694,13 @@ These two functions cover two of the three kinds of thing from The problem, and 
 | Cards | the cat, the bird, the cows, pigs and other animals by the road, the far trees | a foot on the road, and a width and a height on the screen | depth: they're flat, and always face you |
 | Far scenery | the sun, the mountains, the rolling land | a direction and a height above the horizon | distance: they never come nearer |
 
-A solid is projected corner by corner, each corner through `project`, as `Polygon.clipped_polygon` does for the truck's faces, the rails and the ground. A card is one projected foot plus a size, which is `upright_on_screen`. Far scenery needs no projection of distance at all: its direction picks a place across the screen, and its height above the horizon is already in pixels. A tree is the one thing that changes kind. Far off it's a card, but up close its crown is cones, and every point of a cone's ring goes through `project` like a solid's corner.
+A solid is projected corner by corner, each corner through `project`, as `Polygon.clipped_polygon` does for the truck's faces, the rails and the ground. A card is one projected foot plus a size, which is `upright_on_screen`. Far scenery needs no projection of distance at all: its direction picks a place across the screen, and its height above the horizon is already in pixels. A tree is the one thing that changes sort. Far off it's a card, but up close its crown is cones, and every point of a cone's ring goes through `project` like a solid's corner.
 
 The focal length comes from a lens. `resting_focal_length` is a value computed from other values, with no function in sight, and `field_of_view` is a `Turn`, so taking half of it needs no comment about radians.
 
 {{code Lens.resting_focal_length}}
 
-The view widens as the rider leans. One `Fraction` goes in, and a focal length comes out. `RiderCamera.ride_focal_length` calls `focal_length_for`, which takes the shorter of the two focal lengths, the lean's and the attention's, so the wider view wins:
+The view widens as the rider leans. `focal_length_for_lean` takes the lean as a `Fraction` of the full lean, 20 degrees, and gives a focal length. `RiderCamera.ride_focal_length` calls `focal_length_for`, which works out one focal length for the lean and one for the attention and takes the shorter, so the wider view wins:
 
 {{code RiderCamera.focal_length_for_lean}}
 
@@ -2712,19 +2712,19 @@ The view widens as the rider leans. One `Fraction` goes in, and a focal length c
 The route again. This map comes from adding up the turns, which the ride itself never does. The white stretch is the record quoted below.
 ```
 
-The road has no global coordinates. A point on it is measured within one segment, `along` and `across`, and nothing in the game holds a world coordinate for it. Each segment knows only its length and the turn at its end. `World.bending_plans` is eighteen records like this one, and a last plan ends the route. It reads like configuration: a list of plain values, with tags declared by the types that `SegmentPlan` and `BendingPlan` name, and an opaque `Distance` and `Turn` built from their units. It's checked like any other Roc, so a misspelled tag is a compile-time error. Here's the inside of one plan:
+The road has no global coordinates. A point on it is measured within one segment, `along` and `across`, and nothing in the game holds a world coordinate for it. Each segment knows only its length and the turn at its end. Those come from `World.bending_plans`, a list of eighteen records like the one below, and a last plan ends the route. It reads like configuration, but it's ordinary Roc: plain values, tags whose types `SegmentPlan` and `BendingPlan` declare, and a `Distance` and a `Turn` built from their units. So a misspelled tag is a compile-time error. Here's the inside of one plan:
 
 {{code World.bending_plans from "length: Distance.metres(1200.0)," to "bend_life: Animal(Rhino),"}}
 
-So to see something three segments ahead, a point has to be carried back round each bend between it and the rider, one at a time. That's one rotation per bend. A `while` walks the road view's worked bends backward. The point starts on the far segment, and each pass moves it onto the segment before. The last line does the one translation and rotation from above:
+So to see something three segments ahead, a point has to be carried back round each bend between it and the rider, one at a time. That's one rotation per bend. The road ahead, a `RoadAhead.RoadView`, keeps its bends already worked out: each bend's cosine and sine, and where the segment after it starts, computed once for all the points carried across them. A `while` walks those bends backward. The point starts on the far segment, and each pass moves it onto the segment before. The last line does the one translation and rotation from above:
 
 {{code RoadAhead.rider_point_ahead from "var $point = road_point" to "to_rider_point($point, vantage)"}}
 
-The rotation itself is one formula. Where the next segment starts was worked out once per bend, and the two segments share the corner on the inside of the bend, whichever way it turns:
+The rotation itself is one formula: turn the point by the bend, then move it to where the next segment starts. The two segments share the corner on the inside of the bend, whichever way it turns, so the next segment starts a little past the end of this one, toward the turn:
 
 {{code Geom.point_before_worked_bend}}
 
-This is what lets the sightings not care where a segment is. They hand `RoadAhead.rider_point_at` a place on the road ahead and a point on that segment, and they get back a `RiderPoint`.
+This is why a sighting never needs to know where a segment is. It hands `RoadAhead.rider_point_at` which segment the point is on, the point's place on that segment, and the camera's vantage, and gets back a `RiderPoint`.
 
 The ground also curves away. That's one formula, the small-angle drop of a sphere, with a record destructured in the parameter list and `right` and `forward` taken out to metres before they're squared. There are two radii in `EarthCurve`, and neither is the earth's. The ground's curve, 100 km, is the surface the road and the truck stand on, and it puts the horizon 490 metres out. The exaggerated curve, 20 km, only sets how soon a far tower goes: an 80 m tower is gone at 1.8 km, where the ground's curve would leave it in view to 4 km.
 
@@ -2741,11 +2741,11 @@ Here's a triangle with one corner behind the rider, before and after cutting:
 
 The corner behind the camera has gone, and two new ones stand on the near plane, 0.4 metres ahead.
 
-Anything that crosses the near plane has to be cut, or dividing by `forward` flips it across the screen. The textbook algorithm walks a polygon's edges, keeping corners in view and adding a new corner wherever an edge crosses the plane. The cut is written once, for any region with an edge, as a record with a type variable for the kind of point:
+Anything that crosses the near plane has to be cut, or dividing by `forward` flips it across the screen. The textbook algorithm walks a polygon's edges, keeping the corners in view and adding a new corner wherever an edge crosses the plane. Safari Ride writes the cut once, for any region with an edge. A `Region` is a record of two functions: one says whether a corner is inside, and one says where an edge crosses the boundary. Its type variable, `point`, is the type of point the cut gives back:
 
 {{code RiderView.Region}}
 
-In Roc, the walk is a pairing and a `fold`. `map2` zips each corner with the next one, which is the list rotated by one, and `fold` builds the new polygon. `List.with_capacity` is the one line about performance, and `edge_points_onto` is passed by name:
+In Roc, the walk is a pairing and a `fold`. `next_corners` is the list of corners rotated by one, so `map2` pairs each corner with the one after it, and the last with the first. Each pair is an edge. `fold` then builds the new polygon from the edges, one at a time. `List.with_capacity` is the one line about performance, and `edge_points_onto` is passed by name:
 
 {{code RiderView.points_in_region}}
 
@@ -2757,9 +2757,9 @@ The near plane is one region, and cutting by it is one line:
 
 {{code RiderView.clipped_points}}
 
-The ground's horizon is the other region, a circle round the rider.
+The ground's horizon is a second region, a circle round the rider.
 
-The cut can change the kind of point as well as the count. The near plane takes `RaisedPoint`s and gives back `RaisedPointAhead`s, the kind `project` will take, while the horizon gives back `RaisedPoint`s. That's what the type variable is for.
+The cut can change the type of point as well as the count. The near plane takes `RaisedPoint`s and gives back `RaisedPointAhead`s, the type `project` takes, while the horizon gives back `RaisedPoint`s. That's what the type variable is for.
 
 `GroundPatch`, `GuardRail`, `TruckBody` and `TruckBrakeLights` all cut through `Polygon.clipped_polygon`. `GroundPatch` first cuts its corners at the horizon, with `EarthCurve.points_before_horizon`:
 
@@ -2767,7 +2767,7 @@ The cut can change the kind of point as well as the count. The near plane takes 
 
 ### Arithmetic all the way down
 
-At the very bottom are Roc's own builtins: `.sin()`, `.cos()`, `.sqrt()` and the rest. `Throttle.shoulder_brake` uses `F64.e.pow(x)` to turn the steps a rehearsed coast takes to reach the shoulder into a braking limit.
+At the very bottom are Roc's own builtins: `.sin()`, `.cos()`, `.sqrt()` and the rest. `Throttle.shoulder_brake` uses `F64.e.pow(x)`. It takes the number of steps a rehearsed coast needs to reach the shoulder, and turns that into a braking limit.
 
 So from top to bottom, a rider chooses a lean by simulating physics, and the physics is plain arithmetic on opaque numbers. None of it has any effects. In the next chapter, we'll see what that's worth when the program has to change.
 
@@ -2775,7 +2775,7 @@ So from top to bottom, a rider chooses a lean by simulating physics, and the phy
 
 There are no animals in this chapter. It's about what happens to a program of this size when something has to change, which is the question a reader who cares whether Roc scales should ask.
 
-A language with no hidden state doesn't make a refactor safe by itself. It makes it possible to write a test strict enough to be trusted, and that rests on one fact from the ride instant chapter. Four fields decide a frame, and a frame is a value. So a frame can be compared, exactly, with the same frame from an hour ago.
+A language with no hidden state doesn't make a refactor safe by itself. It makes it possible to write a test strict enough to be trusted. Such a test rests on one fact from the ride instant chapter: four fields decide a frame, and a frame is a value. So a frame can be compared, exactly, with the same frame from an hour ago.
 
 | Step | What the frame shows | Hash of its pixels | Shapes |
 |---|---|---|---|
@@ -2812,11 +2812,11 @@ digraph proving {
 }
 ```
 
-Everything here lives in `gates/`, and the game never runs any of it. The merge gate is the check a change has to pass before it lands. It runs the lints, every `expect`, the tutorial's build and the proof tools. Its programs reach the game through `game.roc`, a package whose only job is to list the modules they read.
+Everything here lives in `gates/`, and the game never runs any of it. The merge gate is the check a change has to pass before it lands. It runs the lints, every `expect`, the tutorial's build and the proof tools. The gate's programs reach the game's modules through `game.roc`, a package whose only job is to list them.
 
 ### A fixture is a value
 
-Getting a test to step 1,529 of a game normally takes some doing. Here it takes a loop. `Tour.initial` is a value, and `Tour.step_forward` is the outermost step function. It wraps `RideInstant.next_or_restart`, quoted below, which either continues the ride or starts it again. A `match` takes the next tour either way:
+Getting a test to step 1,529 of a game normally takes some doing. Here it takes a loop. `Tour.initial` is a value, and `Tour.step_forward` is the outermost step function. Underneath it is `RideInstant.next_or_restart`, quoted below, which either continues the ride or starts it again. The step answers `Continued` or `Restarted`, each carrying the next tour. `step_forward` doesn't care which, so one `match` branch takes the next tour from either tag:
 
 {{code Tour.step_forward}}
 
@@ -2828,7 +2828,7 @@ Testing here is just calling a function. There are no mocks, no fakes, no browse
 
 ### The frame hash
 
-`RasterFrame` rides to a step, paints the frame into 576,000 exact pixels, and prints an FNV-1a hash of them. The painter is `SafariFrame`, in pure Roc. Its `ShapesPixels` does what `shapes_canvas.js`, the JavaScript that paints the page, does on a canvas. The gate holds each hash to a line of `gates/proof.expected`, exactly. There's no tolerance: one different pixel in one frame fails it.
+`RasterFrame` rides to a step, paints the frame into 576,000 exact pixels, and prints an FNV-1a hash of them. The painter is `SafariFrame`, in pure Roc. It uses `ShapesPixels`, which does in Roc what `shapes_canvas.js`, the JavaScript that paints the page, does on a canvas. The gate holds each hash to a line of `gates/proof.expected`, exactly. There's no tolerance: one different pixel in one frame fails it.
 
 A frame is only evidence for what's in it, so the steps in the table at the top of this chapter aren't arbitrary. Most are there for a scene. Step 0 is the start, and 3,000 shows the ride under way, with no scene of its own. Step 9,000 is past the end: the ride lasts 7,071 steps, so the clock at step 9,000 reads 1,928, and the frame shows the ride started again.
 
@@ -2838,30 +2838,30 @@ Exact hashes have a consequence that reaches into the code. Float addition isn't
 
 {{code Route.segments_with_ends}}
 
-That's also why each operation on `Speed`, `Fraction`, `Angle` and the rest does the plain float arithmetic its name says. An opaque type adds names and takes nothing away. A retyping that adds `Speed` to a module changes the types throughout, and if it leaves the arithmetic alone, every hash stays where it is. If a hash moves, the retyping changed the program, and the gate says so.
+That's also why each operation on `Speed`, `Fraction`, `Angle` and the rest does exactly the float arithmetic its name says, and nothing more. Wrapping a number in an opaque type changes the names, not the sums. So a change that retypes a module, say to use `Speed` where it used bare floats, changes the types throughout, and if it leaves the arithmetic alone, every hash stays where it is. If a hash moves, the retyping changed the program, and the gate says so.
 
 This is how the code in this tour got its shape. Its modules were renamed, retyped and reorganized, and each merge had to leave the frames alone. Roc's types caught what they catch, the hashes caught the rest, and the picture didn't change.
 
-There's one limit to all this. The hash proves `ShapesPixels`'s pixels, and the page's pixels come from the browser's canvas, with anti-aliasing. What the two share is the list of shapes. `web/page_check.mjs` runs each built page against a stand-in canvas, and past that the JS has only its own checks.
+There's one limit to all this. The hash proves the pixels `ShapesPixels` paints, but the page's pixels come from the browser's canvas, with anti-aliasing. What the two share is the list of shapes. `web/page_check.mjs` runs each built page against a stand-in canvas, and beyond that the JavaScript is tested only by its own checks.
 
 ### Two more proofs
 
-The second of these two proofs is here because of a real bug:
+`ShapesFrame` paints each frame twice: once with its polygons whole, as the browser gets them, and once cut into triangles, as the native program gets them. It counts the pixels that differ, and the gate requires zero of 576,000, at every step in the table.
+
+`StepBack` checks that one step back goes back exactly one step, at every depth of the whole ride, and that as many steps back as the ride took land on step 0. It's in the gate because of a real bug. `Tour` keeps a list of the instants before the current one, for stepping back, and that list once stopped recording when it was full:
 
 | | One step back from step 3,000 lands on |
 |---|---|
-| When the history kept its first 2,048 instants | 2,047 |
+| When the list kept only its first 2,048 instants | 2,047 |
 | Now | 2,999 |
 
-`ShapesFrame` paints each frame twice: once with its polygons whole, as the browser gets them, and once cut into triangles, as the native program gets them. It counts the pixels that differ, and the gate requires zero of 576,000, at every step in the table.
-
-`StepBack` checks that one step back goes back exactly one step, at every depth of the whole ride, and that as many steps back as the ride took land on step 0. It's in the gate because the answer was once no: the list stopped recording when full, so a step back from frame 3,000 landed on 2,047. Holding the first 2,048 instants was a perfectly consistent thing for a list to do. The test works by asking `Tour.step_back` and comparing clocks, and since `Tour.step_back` is this small, there isn't much else to ask:
+Holding the first 2,048 instants was a perfectly consistent thing for a list to do, so nothing else caught it. The test asks `Tour.step_back` and compares clocks, and since `Tour.step_back` is this small, there isn't much else to ask:
 
 {{code Tour.step_back}}
 
 ### `expect`
 
-The rest of the testing is ordinary `expect`s. An `expect` sits at the top level of a module, under the code it checks, and `roc test` runs it. There are over a thousand, and they're Safari Ride's only other tests. The tour has already shown sixteen of them, in the whole of `Clock` and `Pond`. A pure function needs nothing else: literal arguments, literal answer. Each `expect` asserts one thing, and they cover both sides. Two of `Clock`'s checks say a clock is not less than another, that step 9 isn't less than itself and step 10 isn't less than step 9, so they're written with `!`.
+The rest of the testing is ordinary `expect`s. An `expect` sits at the top level of a module, under the code it checks, and `roc test` runs it. There are over a thousand, and they're Safari Ride's only other tests. The tour has already shown sixteen of them, in the whole of `Clock` and `Pond`. A pure function needs nothing else: literal arguments, literal answer. Each `expect` asserts one thing, and the checks test both answers a function can give, not just the one it usually gives. Two of `Clock`'s checks say a clock is not less than another, that step 9 isn't less than itself and step 10 isn't less than step 9, so they're written with `!`, Roc's boolean not.
 
 A test's data can sit beside it as a plain definition. Here's a motorcycle to step, with no rider around it, because `Motorcycle` doesn't import `Rider`. The test needs nothing the module doesn't:
 
@@ -2871,9 +2871,9 @@ It's called like any other value, and the steps that follow are named, so three 
 
 {{code Motorcycle.first_step}}
 
-The gate makes `expect` honest in one further way. The gate takes its count from the source: every line that starts `expect`, in a module that one of its `roc test` runs compiles, has to print `PASS` exactly once. An `expect` that nothing compiles fails, and so does one that's indented out of reach. One more consequence: an `expect` can only name what its module imports, so a check sits where its test data can be seen, and a module doesn't take on an import for a test's sake. A check that needs more than one module goes in `gates/expects/`, a folder of expect modules, one for each topic, that import whatever their checks need. `Coast`'s projections and `LeanSearch`'s search are checked in its `RiderExpects`, the one for the rider.
+The gate makes `expect` honest in one further way. It counts the lines that start with `expect` in the source, and each of them has to print `PASS` exactly once when the gate's `roc test` runs. So an `expect` in a module that no test run compiles fails the gate, and so does one indented out of `roc test`'s reach. An `expect` can only name what its module imports, so a check sits where its test data can be seen, and a module never takes on an import just for a test. A check that needs more than one module goes in `gates/expects/`, a folder of expect modules, one for each topic, each importing whatever its checks need. The checks of `Coast`'s projections and `LeanSearch`'s search are in `RiderExpects`, the expect module for the rider.
 
-Even a truck can be checked this way, though it can't be asked about step 4,000 cold. A `TruckJourney.TruckProgress` is a record, so a test writes one down and calls `TruckJourney.truck_progress_at_next_step` once.
+Even a truck can be checked this way. A test can't ask where the truck is at step 4,000 without riding there, but it doesn't need to. A `TruckJourney.TruckProgress` is a record, so a test writes one down and calls `TruckJourney.truck_progress_at_next_step` once.
 
 ### Crashes that help
 
@@ -2881,7 +2881,7 @@ Even a truck can be checked this way, though it can't be asked about step 4,000 
 
 Every `Fraction.of` in the game is an assertion, and the gate runs a lot of them. A ratio outside 0 to 1 stops the program, with a sentence saying the sum behind it is wrong. `Try` is the right answer when a value can honestly be absent. This isn't that case. A wrong ratio is a bug, and the sooner it's a crash the better.
 
-Here's one of the many places it's used, with `smoothstep` trusting its own algebra. A proof run rides through it thousands of times, so if the algebra were wrong, the gate would be first to know.
+Here's one of the many places it's used. `smoothstep` wraps its answer in `Fraction.of` because its algebra says the answer stays between 0 and 1, and nothing else checks that. A proof run rides through it thousands of times, so if the algebra were wrong, the gate would be first to know.
 
 {{code Easing.smoothstep}}
 
@@ -2889,9 +2889,9 @@ The same holds for the code's other `crash`es, including two dozen `?? crash`es 
 
 ### The page itself
 
-This tutorial is built from the code. Every fenced snippet here came through Roc's own parser, by name, and each failing program is run through the compiler, which is quoted. The gate builds the page. So renaming a function quoted here fails the gate until the prose catches up, and the compiler message under `turn_as_bearing`, in The sun, is the compiler's.
+This tutorial is built from the code. Every fenced snippet here came through Roc's own parser, by name. Each program shown failing is run through the compiler, and the compiler's message is quoted as it printed it. The gate builds the page, so renaming a function quoted here fails the gate until the prose catches up, and the message under `turn_as_bearing`, in the sun chapter, is the compiler's own.
 
-Lints round it out: a set of lints for Roc source runs first, with each count held exactly, and every count is at zero. A name that's vague or a boolean parameter that should be a tag fails before a single hash is computed.
+The gate also runs a set of lints over the Roc source, before anything else. Each lint's count of violations is held exactly, and every count is zero. So a vague name, or a boolean parameter that should be a tag, fails the gate before a single hash is computed.
 
 All of that runs without a screen. The tour still hasn't said how a list of shapes reaches one, or where the effects went.
 
@@ -2940,7 +2940,7 @@ New in this chapter:
 
 An app here is a record, handed to a runner. `CanvasApp(model)` has a type parameter for whatever the app keeps. Safari Ride's model is its `Tour` and a pause flag, and the app reads like configuration, because almost all of it is.
 
-`CanvasApp.untimed_model_at_next_step` takes a function and answers a function, the same one with a seconds argument to ignore. Safari Ride counts steps, and this is the place that says so: a runner offers the seconds, and they go nowhere.
+`CanvasApp.untimed_model_at_next_step` takes a step function and gives back the same function with one more argument, a number of seconds, which it ignores. Safari Ride counts steps, not seconds, and this is the one place that says so: the runner offers the seconds, and they go nowhere.
 
 `web.roc` is ten lines. Its last is `program = WasmApp.program(SafariApp.canvas_app)`, and that's the whole connection between the game and the web.
 
@@ -2961,9 +2961,9 @@ The ride instant chapter showed `SafariApp.model_at_next_step` reading a snapsho
 | `Poly` | 2,467 |
 | `Disc` | 7 |
 
-What the game hands back each frame is a `List(Shapes.Shape)`. A shape is a tag: `Poly`, `Disc`, `Rect` and a few more, each with its fill. Two of them aren't shapes. `Blend` and `View` are marks in the list that change how what comes after them is painted, because a frame is a list, and a mark is the cheapest way to say that.
+What the game hands back each frame is a `List(Shapes.Shape)`. A shape is a tag: `Poly`, `Disc`, `Rect` and a few more, each with its fill. The table counts the shapes of step 1,529, the cat frozen in the road: 2,474 in all, the count in the proving chapter's table, and nearly all of them polygons. Two of the tags aren't shapes. `Blend` and `View` are marks in the list that change how what comes after them is painted. A frame is a flat list, so a mark is the cheapest way to say that.
 
-The rider's lean is one of those marks. The whole picture banks into a turn, backdrop included, so `FrameView.leaned_shapes` builds a camera out of nested tags and puts it at the front. The rest is `Tour` answering questions, each a one-liner:
+The rider's lean is one of those marks. The whole picture banks into a turn, backdrop included, so `FrameView.leaned_shapes` puts the whole frame, backdrop first, inside one view: a camera built from nested tags by `Screen.leaned_by`, turned by the rider's roll:
 
 {{code FrameView.leaned_shapes}}
 
@@ -2986,13 +2986,11 @@ digraph one_tick {
 }
 ```
 
-The game has no effectful functions, so where did the effects go? They never got as far as Roc. The wasm platform asks for a record of functions over a boxed model:
+The game has no effectful functions, so where did the effects go? They never got as far as Roc. The wasm platform asks the app for a record of eleven functions over a boxed model, a `Box(model)`: the model behind a pointer, which the host can hold without knowing what's inside. They are `init`, `model_at_next_step`, `frame_shapes`, `release`, `sounds`, `width`, `height` and `fps`, and for sound, which Safari Ride leaves empty, `tone_count`, `tone_freq` and `tone_ms`. Every one has a thin arrow, `->`, so none of them has effects. The host, in `web/platform/host.zig`, keeps the box, and all that crosses between it and Roc is numbers and a list of shapes. Wasm's edge has no records, so the snapshot of the keys is flattened into seven numbers, and `Input.of` rebuilds it. `roc glue` reads `web/platform/Frame.roc` and generates `roc_glue.js`, which knows the layout of a frame in wasm memory, so `roc_glue.js` is never edited by hand.
 
-`init`, `model_at_next_step`, `frame_shapes`, `release`, `sounds`, `width`, `height` and `fps`, and for sound, which Safari Ride leaves empty, `tone_count`, `tone_freq` and `tone_ms`. Every one has a thin arrow, `->`. The host in `web/platform/host.zig` keeps the box, and all that crosses is numbers and a list of shapes. Wasm's edge has no records, so the input is flattened into seven numbers, and `Input.of` rebuilds it. `roc glue` generates `roc_glue.js`, which knows the layout of a frame in wasm memory, from `web/platform/Frame.roc`, so `roc_glue.js` is never edited.
+Each step goes like this, as the diagram shows. `canvas_app_runner.js` paces the clock and gathers the keys. It calls `model_at_next_step`, then `frame_shapes`, in Roc. The platform hands those two to the host as its advance and frame functions, which is why the diagram calls them that. The runner reads the shapes back through the generated glue, and `shapes_canvas.js` paints them on a canvas. The host keeps the list until the next frame, then hands it back so that Roc can drop it. That's `release`, a function whose body is `{}`: Roc knows the layout of what it's dropping, and the host shouldn't have to.
 
-Each step goes like this. `canvas_app_runner.js` paces the clock and gathers the keys. It calls `model_at_next_step`, then `frame_shapes`, in Roc. It reads the shapes back through the generated glue, and `shapes_canvas.js` paints them on a canvas. The host keeps the list until the next frame, then hands it back so that Roc can drop it. That's `release`, a function whose body is `{}`: Roc knows the layout of what it's dropping, and the host shouldn't have to.
-
-The JS is about 490 lines for every canvas app there is. It knows nothing of cats. The only `!` names near Safari Ride are the `main!` and `echo!` of the gate programs, which are ordinary command-line apps, and the proof tools need them to print a hash.
+The JS is about 490 lines for every canvas app there is. It knows nothing of cats. A name ending in `!` marks a function with effects, and the only ones near Safari Ride are the `main!` and `echo!` of the gate programs. Those are ordinary command-line apps, and the proof tools need effects to print a hash.
 
 The roc-ray build is the spike that proved the idea, and it isn't kept current, as Safari Ride's README says.
 
@@ -3033,7 +3031,7 @@ Those four fields are all the state there is. The sky's colors, where the sun st
 
 ### One step, in order
 
-The four don't move independently. They read each other, so the order within a step is part of the game. `RideInstant.next`, shown in full in Stepping through the ride, takes them in this order:
+The four don't move independently. They read each other, so the order within a step is part of the game. `RideInstant.next`, shown in full in the chapter on stepping through the ride, takes them in this order:
 
 1. The rider reads the world as it stood at the old clock: where the encounter on the rider's segment has got to. If a cat is crossing, the throttle holds.
 2. The rider moves, and the clock ticks.
@@ -3042,7 +3040,7 @@ The four don't move independently. They read each other, so the order within a s
 
 The rider reacts to the cat every step. The cat reacts to the rider once, when its plan is made, and never again: after that, it plays on the clock alone. So on the step a crossing is planned, the rider hasn't felt it yet.
 
-Swap two of those lines and you get a different ride: a truck that read the rider from before the move would aim at a mark one step behind. Going backward never meets the order at all: `Tour.step_back` takes an old instant off the list, and nothing is replayed.
+Swap two of those lines and you get a different ride: a truck that read the rider from before the move would aim at a mark one step behind. Stepping back never runs the four in any order at all: `Tour.step_back` takes an old instant off the list, and nothing is replayed.
 
 ### All four at a glance
 
@@ -3057,14 +3055,14 @@ That's the loop from the start of the tour. The patterns that kept turning up al
 
 ## Appendix: the patterns
 
-Eight patterns kept turning up in the tour. They're patterns in the loose sense: shapes that kept turning up, and that Roc makes easy to write and hard to break.
+Eight patterns kept turning up in the tour. They're patterns in a loose sense: shapes of code that Roc makes easy to write and hard to break.
 
 | Name | What it is | Where to see it |
 |---|---|---|
 | Worked out, not stored | Keep the few things that must persist, and derive the rest each frame | `RideInstant`, `Cat`, `Sky` |
 | A sighting decides, drawing paints | A pure function answers with plain data, and something else draws it | `EncounterSighting`, `TowerSighting` |
 | Places and distances | One opaque type for where, a second for how far apart, and only the sums that make sense | `Clock` and `Steps`, `Bearing` and `Turn`, `Along` and `Distance`, `Speed` and `Acceleration` |
-| Rule and timeline | One function says how far along, and one piece of data says what that looks like | `BirdFlight.flight_stage` and `BirdFlight.flight_timeline` |
+| Rule and timeline | One function says how far along an animation is, and a timeline, plain data, says what the animal looks like at each stage | `BirdFlight.flight_stage` and `BirdFlight.flight_timeline` |
 | The step function | A value goes in, and the next value comes out | `Rider.rider_at_next_step`, `TruckJourney.truck_progress_at_next_step`, `Tour.step_forward` |
 | The chain of limits | One value passes through independent rules, each of which can only lower it | `Throttle.next_acceleration` |
 | One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `RaisedPoint`, `Screen.Point` |
@@ -3090,8 +3088,8 @@ This page lists what catches a reader of Roc out in Safari Ride, sorted by what 
 
 | What you see | What's going on | Chapter |
 |---|---|---|
-| A crash with a sentence about a sum | `Fraction.of` takes a ratio that can only be in range. A ratio that can rightly fall outside the range has to be held to it first | The sky, Proving it |
-| The first frame of an animation shown too soon | `Waiting` and `Past` aren't progress of 0 and 1, because a critter can rest where no part of its animation reaches | The cat |
+| A crash with a sentence about a sum | `Fraction.of` crashes on a ratio outside 0 to 1, because such a ratio means the sum behind it is wrong. A ratio that can rightly fall outside the range goes through `Fraction.clamp` instead | The sky, Proving it |
+| The first frame of an animation shown too soon | `Waiting` and `Past` aren't progress of 0 and 1. Before its animation starts and after it ends, a critter can rest in a place or pose that no frame of the animation shows | The cat |
 | Beacons that stop, or run backward | The clock counts steps, not seconds, so pausing freezes them and stepping back reverses them | The beacons |
 | A frame hash that moves after a sum was reordered | Float addition isn't associative, so a sum's order is part of its meaning | Proving it |
 | A green gate over a wrong brake light | The gate is blind to whatever no listed frame shows | Proving it |
@@ -3112,17 +3110,18 @@ This book uses these words in one sense only.
 | Corner | One of the points of a polygon. |
 | Critter | Any animal in the ride, from the cat to the elephant. It's just our word for them: other people would say animals. A tree or a tower is never a critter. Critters come in two sorts: billboards, and motion critters. |
 | Depth | How far ahead of the camera something is. Far things come first in a frame. |
+| Encounter | The one event a segment can hold: a cat crossing, a bird flying, or neither, a quiet road. |
 | Encounter plan | One of the four things remembered: whether the encounter on the rider's segment is planned yet, and the step it starts at. |
 | Far scenery | The sun, the mountains and the rolling land: a direction and a height above the horizon, and never any nearer. |
 | Frame | Everything shown for one step: the backdrop, the mountains and the ground, then a series of pictures, far to near. |
-| Gawking | What the speed does for a pig: it drops, and it stays down to the end of the segment. |
+| Gawking | What the speed does for a pig: the rider slows for it, and stays slow to the end of the segment. |
 | Kind | Which sort of object something is, like `Conifer`. |
-| Look | What the eyes do for a pig: they follow it until it's too far round. |
+| Look | What the eyes do for a pig: they turn toward it, and follow it until it's too far round. A crossing cat holds the eye without a look: it raises the rider's attention, which widens the view. |
 | Motion critter | A hand-drawn critter that moves, like the cat and the bird. |
-| Near plane | The closest the camera can see, 0.4 metres ahead, where anything that crosses it is cut. |
+| Near plane | The closest the camera can see, 0.4 metres ahead. Anything that crosses it is cut there. |
 | Object | A thing in the picture with a place of its own: a tree, a tower, a critter or the truck. |
 | Painter | What puts shapes on the canvas. The page's painter is the browser's canvas, and the proof's is written in Roc. |
-| Picture | How one object looks in one frame. A frame holds a series of pictures, so the app never draws "a new picture" at each step. |
+| Picture | How one object looks in one frame. A frame holds many pictures, one for each object in view, so "a picture" never means the whole frame. |
 | Placed | Put on the road, measured `along` and `across` a segment, and `lift` off the ground. |
 | Polygon | A shape with three or more corners, and nearly every shape in a frame is one. |
 | Rendered | Made into a picture, with its depth attached. |
