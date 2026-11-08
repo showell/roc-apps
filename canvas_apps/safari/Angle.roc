@@ -40,11 +40,11 @@ Angle :: [].{
 		## The shortest turn from `from` round to this bearing, between minus
 		## and plus a half turn.
 		turn_from : Angle.Bearing, Angle.Bearing -> Angle.Turn
-		turn_from = |Angle.Bearing.(b), Angle.Bearing.(from)| Angle.Turn.(Trig.wrap(b - from))
+		turn_from = |Angle.Bearing.(b), Angle.Bearing.(from)| Angle.Turn.(wrap(b - from))
 
 		## The shortest turn from north round to this bearing.
 		turn_from_north : Angle.Bearing -> Angle.Turn
-		turn_from_north = |Angle.Bearing.(b)| Angle.Turn.(Trig.wrap(b))
+		turn_from_north = |Angle.Bearing.(b)| Angle.Turn.(wrap(b))
 
 		## Whether this bearing is no further right than `other`, read without
 		## going round: for a sweep across a stretch of bearings.
@@ -193,3 +193,40 @@ Angle :: [].{
 }
 
 expect Angle.Lean.radians(-0.5).ratio_to(Angle.Lean.radians(2.0)) == -0.25
+
+## The turn `x`, taken a whole circle at a time to between minus pi and pi. A
+## turn of more than `most_wrapped_circles` circles crashes, because no angle
+## here grows that far unless it is a bug.
+wrap : F64 -> F64
+wrap = |x| wrap_within(x, most_wrapped_circles)
+
+most_wrapped_circles : I64
+most_wrapped_circles = 64
+
+## The turn `x`, taken to between minus pi and pi in at most `circles_left` circles.
+wrap_within : F64, I64 -> F64
+wrap_within = |x, circles_left|
+	if x > F64.pi and circles_left > 0 {
+		wrap_within(x - F64.tau, circles_left - 1)
+	} else if x < -F64.pi and circles_left > 0 {
+		wrap_within(x + F64.tau, circles_left - 1)
+	} else if x > F64.pi or x < -F64.pi {
+		crash "Angle.wrap: a turn of more circles than an angle here can reach"
+	} else {
+		x
+	}
+
+expect
+	[
+		(0.0, 0.0),
+		(3.0, 3.0),
+		(-3.0, -3.0),
+		(4.0, 4.0 - F64.tau),
+		(-4.0, F64.tau - 4.0),
+		(8.0, 8.0 - F64.tau),
+	].all(|(x, want)| wrap(x) == want)
+
+# The most circles a turn can be taken round, one way or the other.
+expect wrap_within(8.0, 1) == 8.0 - F64.tau
+expect wrap_within(-8.0, 1) == F64.tau - 8.0
+expect wrap_within(3.0, 0) == 3.0
