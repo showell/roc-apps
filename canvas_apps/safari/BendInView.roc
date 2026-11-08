@@ -47,6 +47,10 @@ BendInView :: { before : SegmentPlace, bend : Geom.Bend }.{
 	place_before : BendInView -> SegmentPlace
 	place_before = |BendInView.(bend_in_view)| bend_in_view.before
 
+	## Where the segment after the bend lies from the rider.
+	place_after : BendInView -> SegmentPlace
+	place_after = |bend_in_view| Ahead(BendInView.position_after(bend_in_view))
+
 	## How long the segment before the bend is.
 	length_before : BendInView -> Distance
 	length_before = |BendInView.(bend_in_view)| bend_in_view.bend.segment_length

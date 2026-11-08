@@ -149,7 +149,7 @@ bend_paving = |road, { vantage, bend_in_view }| {
 		road,
 		{
 			vantage,
-			place: Ahead(BendInView.position_after(bend_in_view)),
+			place: bend_in_view.place_after(),
 			road_point: { along, across },
 		},
 	)
