@@ -121,8 +121,9 @@ Polygon :: [].{
 	}
 
 	## Makes a polygon filled by a gradient on an ellipse, which is `axis_u` and
-	## `axis_v` about `center_point`. An ellipse too thin to invert is filled with
-	## its first color.
+	## `axis_v` about `center_point`. An ellipse too thin for Brush to invert
+	## crashes: a still, the only caller, is never drawn small enough to thin
+	## its ellipses past Brush's limit.
 	elliptical_gradient_polygon : List(Screen.Point),
 	{
 		color_stops : Polygon.ColorStops,
@@ -140,8 +141,7 @@ Polygon :: [].{
 		fill =
 			match ellipse {
 				Ok(gradient) => gradient
-				# The ellipse covers far less than a pixel, so its first color stands in for it.
-				Err(TooThin) => Flat(Brush.translucent(color_stops.start_color))
+				Err(TooThin) => crash "Polygon.elliptical_gradient_polygon: an ellipse too thin for Brush to invert"
 			}
 		Poly({ coordinates: polygon_coordinates("Polygon.elliptical_gradient_polygon", corners), fill })
 	}
@@ -440,28 +440,6 @@ expect
 				axis_v: { x: 5.0, y: 6.0 },
 			}),
 		})
-
-ellipse_of_height : F64 -> Shapes.Shape
-ellipse_of_height = |height|
-	Polygon.elliptical_gradient_polygon(
-		three_corners,
-		{
-			color_stops: inner_stops,
-			center_point: Screen.point(1.0, 2.0),
-			axis_u: Screen.point(0.01, 0.0),
-			axis_v: { x: Pixels.zero, y: Pixels.of(height) },
-		},
-	)
-
-# An ellipse just under the limit is flat, and one just over it is not.
-expect ellipse_of_height(0.009) == Poly({
-	coordinates: triangle_coordinates,
-	fill: Flat(Brush.translucent(ArgbColor.of(666))),
-})
-expect ellipse_of_height(0.011) != Poly({
-	coordinates: triangle_coordinates,
-	fill: Flat(Brush.translucent(ArgbColor.of(666))),
-})
 
 sample_color : RgbColor
 sample_color = RgbColor.of(0x804020)
