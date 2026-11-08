@@ -243,11 +243,11 @@ Here's where it's called. Trees stand in pairs, and after a green pair this `mat
 
 {{code Route.segment_at}}
 
-A value that never changes can be checked once, whole. `Pond` has four functions below its block, and `is_on_water` is there for a test:
+A value that never changes can be checked once, whole. Below its block, `Pond` keeps a function that's there for its tests:
 
-{{code Pond.is_on_water}}
+{{code Pond.is_inside_water}}
 
-The `expect` under it, in the module above, runs that over all six ducks. One line covers the whole pond. The `expect` under `is_inside_water` checks a list of pairs. Each pair in parentheses is a tuple, a fixed group of values whose types needn't match, and `all` checks every one.
+An `expect` under it, in the module above, runs that over all six ducks. One line covers the whole pond. Another `expect` under `is_inside_water` checks a list of pairs. Each pair in parentheses is a tuple, a fixed group of values whose types needn't match, and `all` checks every one.
 
 Nothing in this chapter moves, and that's true of the next few chapters too, as we go through what's on one page of the flipbook. First, a word about what a page is made of.
 
@@ -1872,7 +1872,7 @@ The depth has one job. It widens the view:
 
 {{code RiderEyes.attention}}
 
-`RiderCamera.ride_focal`, which sets how wide the view is, asks `Rider.attention`, which takes the stronger of this and what a crossing on the road asks for, which we'll meet with the cat. So a pig widens the view, and the view stays wide for a while after.
+`RiderCamera.ride_focal_length`, which sets how wide the view is, asks `Rider.attention`, which takes the stronger of this and what a crossing on the road asks for, which we'll meet with the cat. So a pig widens the view, and the view stays wide for a while after.
 
 ### Gawking
 
@@ -2625,7 +2625,7 @@ The focal length comes from a lens. `resting_focal_length` is a value computed f
 
 {{code Lens.resting_focal_length}}
 
-The view widens as the rider leans. One `Fraction` goes in, and a focal length comes out. `RiderCamera.ride_focal` calls `focal_length_for`, which takes the shorter of the two focal lengths, the lean's and the attention's, so the wider view wins:
+The view widens as the rider leans. One `Fraction` goes in, and a focal length comes out. `RiderCamera.ride_focal_length` calls `focal_length_for`, which takes the shorter of the two focal lengths, the lean's and the attention's, so the wider view wins:
 
 {{code RiderCamera.focal_length_for_lean}}
 

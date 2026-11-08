@@ -144,9 +144,9 @@ duck : Billboard.Species
 duck = { emoji: EmojiStills.duck, adult_height: Distance.metres(0.9) }
 
 ## A duck on the pond, where it floats and which way it faces.
-Duck : { at : PondPoint, facing : Billboard.Facing }
+PondDuck : { at : PondPoint, facing : Billboard.Facing }
 
-ducks : List(Duck)
+ducks : List(PondDuck)
 ducks = [
 	{
 		at: { past_end: Distance.metres(11.0), out_from_middle: Distance.metres(10.0) },
@@ -174,20 +174,6 @@ ducks = [
 	},
 ]
 
-## Whether a duck floats within the water's reach, along the road and out from
-## its middle.
-is_on_water : Duck -> Bool
-is_on_water = |pond_duck| {
-	is_within = |value, bounds|
-		bounds.any(|bound| bound <= value) and bounds.any(|bound| bound >= value)
-	outs = water_points.map(|point| point.out_from_middle.to_metres())
-	past_ends = water_points.map(|point| point.past_end.to_metres())
-	is_within(pond_duck.at.out_from_middle.to_metres(), outs)
-		and is_within(pond_duck.at.past_end.to_metres(), past_ends)
-}
-
-expect ducks.all(is_on_water)
-
 ## Whether `point` lies inside the water's outline: a line from it, out along
 ## the road, crosses the outline an odd number of times.
 is_inside_water : PondPoint -> Bool
@@ -207,6 +193,8 @@ is_inside_water = |point| {
 	edges.keep_if(is_crossed).len() % 2 == 1
 }
 
+expect ducks.all(|pond_duck| is_inside_water(pond_duck.at))
+
 # The bank's inner edge lies under the water, where the water hides it. Moved
 # back as far as the near shore, it would show.
 expect bank_inner_points.all(is_inside_water)
@@ -221,15 +209,6 @@ expect
 		({ past_end: Distance.metres(10.0), out_from_middle: Distance.metres(3.9) }, True),
 		({ past_end: Distance.metres(10.0), out_from_middle: Distance.metres(3.3) }, False),
 	].all(|(at, inside)| is_inside_water(at) == inside)
-
-# A duck just past each edge of the water is off it.
-expect
-	[
-		{ past_end: Distance.metres(2.9), out_from_middle: Distance.metres(10.0) },
-		{ past_end: Distance.metres(32.1), out_from_middle: Distance.metres(10.0) },
-		{ past_end: Distance.metres(10.0), out_from_middle: Distance.metres(2.9) },
-		{ past_end: Distance.metres(10.0), out_from_middle: Distance.metres(33.1) },
-	].all(|at| !is_on_water({ at, facing: FacesRight }))
 
 expect
 	ducks.map(|pond_duck| pond_duck.facing == FacesRight)

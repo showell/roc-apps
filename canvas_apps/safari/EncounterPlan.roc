@@ -40,32 +40,6 @@ EncounterPlan := [Unplanned, StartsAt(Clock)].{
 	planning_gap : EncounterPlan.StepSpan, Speed -> Distance
 	planning_gap = |span, speed| span.ends_at.plus(speed.distance_in(span.length))
 
-	## The start of an animation that is to end as the rider comes within
-	## `ends_at`, planned at `now` from how the rider comes then: `gap` from the
-	## animal, at `speed`. It starts now on the first step that a rider keeping
-	## their speed would arrive within its length, so a faster rider has it
-	## start farther off. Till then, and while the rider is at rest, it isn't
-	## planned. The plan looks at the rider's speed that once: after it, the
-	## animal doesn't care what the rider does.
-	##
-	## Planning on the step itself keeps the guess short, an animation's length
-	## ahead. A plan from farther off would take the speed to be steady for
-	## longer, and a rider speeding up meanwhile would arrive before the end.
-	plan_for : EncounterPlan.StepSpan,
-	{
-		gap : Distance,
-		speed : Speed,
-		now : Clock,
-	} -> EncounterPlan
-	plan_for = |span, { gap, speed, now }|
-		if speed == Speed.at_rest {
-			Unplanned
-		} else if gap <= EncounterPlan.planning_gap(span, speed) {
-			StartsAt(now)
-		} else {
-			Unplanned
-		}
-
 	## How the rider comes at the encounter on their segment: `gap` short of
 	## its animal at `speed`, for an animation `span` long, or none on a quiet
 	## road.
@@ -102,7 +76,7 @@ EncounterPlan := [Unplanned, StartsAt(Clock)].{
 			Unplanned =>
 				match approach {
 					Approaching({ span, gap, speed }) =>
-						EncounterPlan.plan_for(span, { gap, speed, now })
+						plan_for(span, { gap, speed, now })
 					QuietRoad => Unplanned
 				}
 		}
@@ -124,7 +98,7 @@ EncounterPlan := [Unplanned, StartsAt(Clock)].{
 		var $step = Clock.start
 		var $plan = Unplanned
 		while $plan == Unplanned and !(now < $step) {
-			$plan = EncounterPlan.plan_for(
+			$plan = plan_for(
 				span,
 				{
 					gap: gap_at_start.minus(speed.distance_in($step.steps_since(Clock.start))),
@@ -155,36 +129,63 @@ EncounterPlan := [Unplanned, StartsAt(Clock)].{
 		}
 }
 
+## The start of an animation that is to end as the rider comes within
+## `ends_at`, planned at `now` from how the rider comes then: `gap` from the
+## animal, at `speed`. It starts now on the first step that a rider keeping
+## their speed would arrive within its length, so a faster rider has it
+## start farther off. Till then, and while the rider is at rest, it isn't
+## planned. The plan looks at the rider's speed that once: after it, the
+## animal doesn't care what the rider does.
+##
+## Planning on the step itself keeps the guess short, an animation's length
+## ahead. A plan from farther off would take the speed to be steady for
+## longer, and a rider speeding up meanwhile would arrive before the end.
+plan_for : EncounterPlan.StepSpan,
+{
+	gap : Distance,
+	speed : Speed,
+	now : Clock,
+} -> EncounterPlan
+plan_for = |span, { gap, speed, now }|
+	if speed == Speed.at_rest {
+		Unplanned
+	} else if gap <= EncounterPlan.planning_gap(span, speed) {
+		StartsAt(now)
+	} else {
+		Unplanned
+	}
+
 ## A span of 10 steps that ends 3 m short of the animal.
 ten_step_span : EncounterPlan.StepSpan
 ten_step_span = { length: Steps.of(10), ends_at: Distance.metres(3.0) }
 
-## The start a rider `gap` metres off at `speed` metres a step plans at step 100.
-planned_at : F64, F64 -> EncounterPlan
-planned_at = |gap, speed|
-	EncounterPlan.plan_for(
+## The start a rider `metres_off` the animal, going `metres_a_step`, plans at
+## step 100.
+planned_at : { metres_off : F64, metres_a_step : F64 } -> EncounterPlan
+planned_at = |{ metres_off, metres_a_step }|
+	plan_for(
 		ten_step_span,
 		{
-			gap: Distance.metres(gap),
-			speed: Speed.metres_a_step(speed),
+			gap: Distance.metres(metres_off),
+			speed: Speed.metres_a_step(metres_a_step),
 			now: Clock.at_step(100),
 		},
 	)
 
 # At 1 m a step the rider is 10 steps from the end 13 m off: the animation
 # starts there and nearer, and not farther off. At 2 m a step that is 23 m off.
-expect planned_at(13.0, 1.0) == StartsAt(Clock.at_step(100))
-expect planned_at(13.1, 1.0) == Unplanned
-expect planned_at(8.0, 1.0) == StartsAt(Clock.at_step(100))
-expect planned_at(23.0, 2.0) == StartsAt(Clock.at_step(100))
-expect planned_at(23.1, 2.0) == Unplanned
+expect planned_at({ metres_off: 13.0, metres_a_step: 1.0 }) == StartsAt(Clock.at_step(100))
+expect planned_at({ metres_off: 13.1, metres_a_step: 1.0 }) == Unplanned
+expect planned_at({ metres_off: 8.0, metres_a_step: 1.0 }) == StartsAt(Clock.at_step(100))
+expect planned_at({ metres_off: 23.0, metres_a_step: 2.0 }) == StartsAt(Clock.at_step(100))
+expect planned_at({ metres_off: 23.1, metres_a_step: 2.0 }) == Unplanned
 
 # A rider at rest plans nothing, however near.
-expect planned_at(2.0, 0.0) == Unplanned
+expect planned_at({ metres_off: 2.0, metres_a_step: 0.0 }) == Unplanned
 
 # At 2.5 m a step the plan is made 3 + 2.5 × 10 = 28 m off.
 expect EncounterPlan.planning_gap(ten_step_span, Speed.metres_a_step(2.5)) == Distance.metres(28.0)
-expect planned_at(28.0, 2.5) == StartsAt(Clock.at_step(100))
+expect planned_at({ metres_off: 28.0, metres_a_step: 2.5 }) == StartsAt(Clock.at_step(100))
 
 ## A rider 8 m off the animal at 1 m a step, whom `plan_for` plans for at
 ## step 100.

@@ -46,7 +46,7 @@ RiderCamera := {
 			route_place,
 			yaw,
 			heading: route.bearing_of(route_place.segment_index).plus(yaw),
-			focal_length: ride_focal(rider, { route, encounter_stage }),
+			focal_length: ride_focal_length(rider, { route, encounter_stage }),
 			roll: rider_roll(rider.motorcycle.lean),
 		}
 	}
@@ -63,12 +63,12 @@ RiderCamera := {
 	## This camera as a sighting takes it: its vantage and its lens.
 	sighting_camera : RiderCamera -> Pipeline.SightingCamera
 	sighting_camera = |camera| { vantage: camera.vantage(), focal_length: camera.focal_length }
-
-	## The lean that widens the view all it can. Nothing holds the bike to it:
-	## a deeper lean just widens the view no further.
-	full_lean : Angle.Lean
-	full_lean = Angle.Lean.degrees(20.0)
 }
+
+## The lean that widens the view all it can. Nothing holds the bike to it:
+## a deeper lean just widens the view no further.
+full_lean : Angle.Lean
+full_lean = Angle.Lean.degrees(20.0)
 
 ## A lean smaller than this leaves the canvas level.
 roll_deadband : Angle.Lean
@@ -87,8 +87,8 @@ rider_roll = |lean|
 ## The camera's focal length for where the rider is and how they ride. The
 ## view widens as the rider leans, and as the rider's attention is caught, by
 ## an encounter on the road or by a look to the side.
-ride_focal : Rider, { route : Route, encounter_stage : Animation.Stage } -> Pixels
-ride_focal = |rider, { route, encounter_stage }| {
+ride_focal_length : Rider, { route : Route, encounter_stage : Animation.Stage } -> Pixels
+ride_focal_length = |rider, { route, encounter_stage }| {
 	attention = rider.attention({ route, encounter_stage })
 	focal_length_for({ lean: rider.motorcycle.lean, attention })
 }
@@ -97,7 +97,7 @@ ride_focal = |rider, { route, encounter_stage }| {
 ## gives the wider view. A lean to either side widens it alike.
 focal_length_for : { lean : Angle.Lean, attention : Attention } -> Pixels
 focal_length_for = |{ lean, attention }| {
-	lean_fraction = Fraction.clamp(lean.abs().ratio_to(RiderCamera.full_lean))
+	lean_fraction = Fraction.clamp(lean.abs().ratio_to(full_lean))
 	for_lean = focal_length_for_lean(lean_fraction)
 	for_attention = focal_length_for_attention(attention)
 	if for_lean < for_attention {
@@ -107,7 +107,7 @@ focal_length_for = |{ lean, attention }| {
 	}
 }
 
-## How much of the resting focal length is left at `RiderCamera.full_lean`.
+## How much of the resting focal length is left at `full_lean`.
 focal_length_share_at_full_lean : Fraction
 focal_length_share_at_full_lean = Fraction.of(0.35)
 
@@ -116,7 +116,7 @@ focal_length_share_at_full_lean = Fraction.of(0.35)
 focal_length_share_at_full_attention : Fraction
 focal_length_share_at_full_attention = Fraction.of(0.61)
 
-## The focal length for a lean, from 0 (upright) to 1 (`RiderCamera.full_lean`).
+## The focal length for a lean, from 0 (upright) to 1 (`full_lean`).
 focal_length_for_lean : Fraction -> Pixels
 focal_length_for_lean = |lean_fraction| {
 	lean = lean_fraction.to_f64()
@@ -174,6 +174,44 @@ expect
 			is_close(got.to_f64(), want)
 		},
 	)
+
+## The focal length for `lean`, with nothing holding the rider's eye.
+focal_length_at_lean : Angle.Lean -> Pixels
+focal_length_at_lean = |lean| focal_length_for({ lean, attention: Attention.none })
+
+## The full lean, to the left.
+full_left_lean : Angle.Lean
+full_left_lean = Angle.Lean.radians(-full_lean.to_radians())
+
+# The view widens as the rider leans, either way, and widest at the full lean.
+expect {
+	half = Angle.upright.halfway_to(full_lean)
+	focal_length_at_lean(half) < focal_length_at_lean(Angle.upright)
+		and focal_length_at_lean(full_lean) < focal_length_at_lean(half)
+		and focal_length_at_lean(full_left_lean) < focal_length_at_lean(Angle.upright)
+		and focal_length_at_lean(Angle.upright) <= Lens.resting_focal_length
+}
+
+# A lean past the full one widens the view no further.
+expect focal_length_at_lean(full_lean) == focal_length_at_lean(full_left_lean)
+
+expect {
+	twice = Angle.Lean.radians(2.0 * full_lean.to_radians())
+	ten_times = Angle.Lean.radians(10.0 * full_lean.to_radians())
+	at_full_lean = focal_length_at_lean(full_lean)
+	focal_length_at_lean(twice).minus(at_full_lean) == Pixels.zero
+		and focal_length_at_lean(ten_times).minus(at_full_lean) == Pixels.zero
+}
+
+# A full lean and the attention of a hard look together widen the view as far
+# as the wider of the two alone, and no further.
+expect {
+	hard_look = Attention.from_fraction(Fraction.whole)
+	both = focal_length_for({ lean: full_lean, attention: hard_look })
+	looking = focal_length_for({ lean: Angle.upright, attention: hard_look })
+	wider = focal_length_at_lean(full_lean).to_f64().min(looking.to_f64())
+	both.to_f64().to_bits() == wider.to_bits()
+}
 
 # Inside the deadband the canvas stays level; at its edge and past it, either
 # way, the canvas rolls with the rider.

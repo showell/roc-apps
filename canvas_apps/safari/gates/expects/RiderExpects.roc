@@ -195,25 +195,9 @@ full_change = Angle.LeanChange.degrees(20.0)
 ## The full lean, to the left.
 full_left = no_lean.minus(full_change)
 
-expect {
-	half = no_lean.halfway_to(RiderCamera.full_lean)
-	focal_length_at_lean(half) < focal_length_at_lean(no_lean)
-		and focal_length_at_lean(RiderCamera.full_lean) < focal_length_at_lean(half)
-		and focal_length_at_lean(full_left) < focal_length_at_lean(no_lean)
-		and focal_length_at_lean(no_lean) <= Lens.resting_focal_length
-}
-
-# A lean past the greatest one widens the view no further.
-expect focal_length_at_lean(RiderCamera.full_lean) == focal_length_at_lean(full_left)
-
-expect {
-	twice = RiderCamera.full_lean.plus(full_change)
-	twice_change = Angle.LeanChange.degrees(40.0)
-	ten_times = twice.plus(twice_change).plus(twice_change).plus(twice_change).plus(twice_change)
-	at_full_lean = focal_length_at_lean(RiderCamera.full_lean)
-	focal_length_at_lean(twice).minus(at_full_lean) == Pixels.zero
-		and focal_length_at_lean(ten_times).minus(at_full_lean) == Pixels.zero
-}
+# The camera widens its view with the motorcycle's lean. How far, for each
+# lean, is RiderCamera's to test.
+expect focal_length_at_lean(full_left) < focal_length_at_lean(no_lean)
 
 expect encounter_attention_of(rider_on(1), ten_steps_in) > 0.0
 expect !(encounter_attention_of(rider_on(1), Unplanned) > 0.0)
@@ -262,24 +246,6 @@ expect {
 	half_look = { ..upright, eyes: { ..upright.eyes, look_depth: Fraction.of(0.5) } }
 	focal_length_of(looking_hard(upright)) < focal_length_of(half_look)
 }
-
-focal_length_leaning_and_looking : Pixels
-focal_length_leaning_and_looking = {
-	leaning_hard = leaning(upright, RiderCamera.full_lean)
-	focal_length_of(looking_hard(leaning_hard))
-}
-
-focal_length_leaning : Pixels
-focal_length_leaning = focal_length_of(leaning(upright, RiderCamera.full_lean))
-
-focal_length_looking : Pixels
-focal_length_looking = focal_length_of(looking_hard(upright))
-
-# A full lean and a hard look together widen the view as far as the wider of the
-# two alone, and no further.
-expect
-	focal_length_leaning_and_looking.to_f64().to_bits()
-		== focal_length_leaning.to_f64().min(focal_length_looking.to_f64()).to_bits()
 
 # Coast's outcomes. Coast imports neither Angle nor Speed, which these need.
 
