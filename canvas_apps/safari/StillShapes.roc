@@ -27,14 +27,14 @@ StillShapes :: [].{
 	}
 
 	## Where a point of the still lands on screen.
-	screen_point : StillShapes.Anchor, Still.Point -> Screen.Point
+	screen_point : StillShapes.Anchor, Still.FramePoint -> Screen.Point
 	screen_point = |anchor, point| {
 		x: anchor.foot.x.plus(anchor.height_on_screen.times(x_sign(anchor.flip) * point.x)),
 		y: anchor.foot.y.minus(anchor.height_on_screen.times(point.y)),
 	}
 
 	## Where each of a still's `points` lands on screen, in order.
-	screen_points : StillShapes.Anchor, List(Still.Point) -> List(Screen.Point)
+	screen_points : StillShapes.Anchor, List(Still.FramePoint) -> List(Screen.Point)
 	screen_points = |anchor, points| points.map(|point| StillShapes.screen_point(anchor, point))
 
 	## A whole still, its polygons in order.

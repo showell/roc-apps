@@ -29,7 +29,7 @@ Still :: List(Still.Polygon).{
 
 	## A place in the still's frame: a corner of a polygon, or where a
 	## gradient starts, ends or is centred.
-	Point : { x : F64, y : F64 }
+	FramePoint : { x : F64, y : F64 }
 
 	## A step across the still's frame, a direction and a length but not a
 	## place: one of a radial gradient's axes, measured from its center.
@@ -53,14 +53,14 @@ Still :: List(Still.Polygon).{
 		Linear(
 			{
 				stops : Still.ColorStops,
-				start : Still.Point,
-				end : Still.Point,
+				start : Still.FramePoint,
+				end : Still.FramePoint,
 			},
 		),
 		Radial(
 			{
 				stops : Still.ColorStops,
-				center : Still.Point,
+				center : Still.FramePoint,
 				axis_u : Still.Step,
 				axis_v : Still.Step,
 			},
@@ -71,7 +71,7 @@ Still :: List(Still.Polygon).{
 	Fill : [Flat(RgbColor), Shaded(Still.Gradient)]
 
 	## One polygon of a still: how it is filled, and its corners.
-	Polygon : { fill : Still.Fill, points : List(Still.Point) }
+	Polygon : { fill : Still.Fill, points : List(Still.FramePoint) }
 
 	## The still's polygons, in the order they are drawn.
 	polygons : Still -> List(Still.Polygon)
@@ -92,7 +92,7 @@ min_axes_area : F64
 min_axes_area = 0.000025
 
 ## A place in the still's frame, written as `(x, y)`.
-place : Still.Point -> Str
+place : Still.FramePoint -> Str
 place = |point| "(${point.x.to_str()}, ${point.y.to_str()})"
 
 polygon_flaw : Still.Polygon -> Flaw
@@ -147,12 +147,12 @@ sample_stops = {
 	end_offset: Fraction.of(0.75),
 }
 
-sample_corners : List(Still.Point)
+sample_corners : List(Still.FramePoint)
 sample_corners = [{ x: 0.5, y: 0.0 }, { x: 1.0, y: 0.0 }, { x: 0.5, y: 1.0 }]
 
 ## A polygon on `sample_corners` filled by a linear gradient from (0.5, 0) to
 ## `end`, with `stops`.
-linear_polygon : Still.ColorStops, Still.Point -> Still.Polygon
+linear_polygon : Still.ColorStops, Still.FramePoint -> Still.Polygon
 linear_polygon = |stops, end| {
 	gradient = Linear({
 		stops,
@@ -180,7 +180,7 @@ radial_of_area : F64 -> Still.Polygon
 radial_of_area = |area| radial_polygon({ x: area, y: 0.0 }, { x: 0.0, y: 1.0 })
 
 ## A flat polygon on `corners`.
-flat_polygon : List(Still.Point) -> Still.Polygon
+flat_polygon : List(Still.FramePoint) -> Still.Polygon
 flat_polygon = |corners| { fill: Flat(RgbColor.of(7)), points: corners }
 
 # Three corners are a polygon, and two or none are not.

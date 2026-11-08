@@ -3175,7 +3175,7 @@ brush_stops = {
 }
 
 ## Three corners of a still, at the foot and up the still's middle.
-still_corners : List(Still.Point)
+still_corners : List(Still.FramePoint)
 still_corners = [{ x: 0.0, y: 0.0 }, { x: 0.5, y: 0.0 }, { x: 0.0, y: 1.0 }]
 
 ## The shapes of a still of one polygon, on `still_corners`, filled by
