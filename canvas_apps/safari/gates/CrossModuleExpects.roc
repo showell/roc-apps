@@ -1704,11 +1704,11 @@ expect
 # crashes, since the ride starts again before reaching it.
 expect {
 	var $tour = Tour.initial
-	while !$tour.instant.rider.is_finished($tour.route) {
+	while !$tour.instant().rider.is_finished($tour.route()) {
 		$tour = Tour.step_forward($tour)
 	}
-	finish = $tour.instant.clock
-	Tour.at_step(finish.steps_since(Clock.start).to_u32()).instant.clock == finish
+	finish = $tour.instant().clock
+	Tour.at_step(finish.steps_since(Clock.start).to_u32()).instant().clock == finish
 }
 
 # The sun's disc is not yet wholly set a step before `fully_set_at`, and the sky
@@ -2936,8 +2936,13 @@ expect
 ## the road. As a constant it is ridden once, at compile time.
 first_pig_instants : List(RideInstant)
 first_pig_instants = {
-	tour = Tour.at_step(1320)
-	tour.past_instants.append(tour.instant)
+	var $tour = Tour.initial
+	var $instants = [$tour.instant()]
+	for _ in 0..<1320 {
+		$tour = Tour.step_forward($tour)
+		$instants = $instants.append($tour.instant())
+	}
+	$instants
 }
 
 ## The rider at `step` of the real ride.

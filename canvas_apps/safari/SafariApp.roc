@@ -117,7 +117,7 @@ SafariApp :: [].{
 	# stepping until the segment changes.
 	next_segment : Tour -> Tour
 	next_segment = |tour| {
-		segment_of = |at| at.instant.rider.motorcycle.route_place.segment_index
+		segment_of = |at| at.instant().rider.motorcycle.route_place.segment_index
 		from = segment_of(tour)
 		var $tour = Tour.step_forward(tour)
 		var $guard = 0

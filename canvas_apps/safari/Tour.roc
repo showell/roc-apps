@@ -13,14 +13,27 @@ import RideInstant
 import Steps
 
 ## The route, the instant the ride has reached, and the instants before it.
-Tour := {
+Tour :: {
 	route : Route,
 	instant : RideInstant,
 	past_instants : List(RideInstant),
 }.{
 
 	initial : Tour
-	initial = { route: World.route, instant: RideInstant.initial, past_instants: [] }
+	initial = Tour.({ route: World.route, instant: RideInstant.initial, past_instants: [] })
+
+	## The instant the ride has reached.
+	instant : Tour -> RideInstant
+	instant = |Tour.(tour)| tour.instant
+
+	## The route the ride is on.
+	route : Tour -> Route
+	route = |Tour.(tour)| tour.route
+
+	## How many instants are kept behind the current one: how far back the
+	## tour can step.
+	past_instant_count : Tour -> U64
+	past_instant_count = |Tour.(tour)| tour.past_instants.len()
 
 	step_forward : Tour -> Tour
 	step_forward = |tour|
@@ -34,7 +47,7 @@ Tour := {
 	at_step = |step| {
 		goal = Clock.start.plus(Steps.of(step))
 		var $tour = Tour.initial
-		while $tour.instant.clock != goal {
+		while Tour.instant($tour).clock != goal {
 			$tour =
 				match tour_after_step($tour) {
 					Continued(next_tour) => next_tour
@@ -45,42 +58,39 @@ Tour := {
 	}
 
 	step_back : Tour -> Tour
-	step_back = |tour| {
+	step_back = |Tour.(tour)| {
 		match tour.past_instants.last() {
 			Ok(prev) => {
-				route: tour.route,
-				instant: prev,
-				past_instants: tour.past_instants.drop_last(1),
+				past_instants = tour.past_instants.drop_last(1)
+				Tour.({ ..tour, instant: prev, past_instants })
 			}
-			Err(_) => tour
+			Err(_) => Tour.(tour)
 		}
 	}
 
 	## What the camera shows at the tour's instant.
 	frame_view : Tour -> FrameView
-	frame_view = |tour| FrameView.frame_view_at(tour.route, tour.instant)
+	frame_view = |Tour.(tour)| FrameView.frame_view_at(tour.route, tour.instant)
 }
 
 ## `tour` a step on, with its past instants kept. The ride that has finished
 ## starts again with none.
 tour_after_step : Tour -> [Continued(Tour), Restarted(Tour)]
-tour_after_step = |tour|
+tour_after_step = |Tour.(tour)|
 	match RideInstant.next_or_restart(tour.route, tour.instant) {
-		Continued(next_instant) =>
-			Continued({
-				route: tour.route,
-				instant: next_instant,
-				past_instants: tour.past_instants.append(tour.instant),
-			})
-		Restarted(start) => Restarted({ route: tour.route, instant: start, past_instants: [] })
+		Continued(next_instant) => {
+			past_instants = tour.past_instants.append(tour.instant)
+			Continued(Tour.({ ..tour, instant: next_instant, past_instants }))
+		}
+		Restarted(start) => Restarted(Tour.({ ..tour, instant: start, past_instants: [] }))
 	}
 
 # A tour ridden to a step keeps every instant it passed, and none at the start.
 expect {
 	ridden = Tour.at_step(3)
-	ridden.instant.clock == Clock.at_step(3) and ridden.past_instants.len() == 3
+	Tour.instant(ridden).clock == Clock.at_step(3) and Tour.past_instant_count(ridden) == 3
 }
-expect Tour.at_step(0).past_instants.is_empty()
+expect Tour.past_instant_count(Tour.at_step(0)) == 0
 
 # A tour stepped back from step 5 is one step short of the start after 4 backs,
 # at step 0 after 5, and still there after a sixth.
@@ -89,10 +99,10 @@ expect {
 	for _ in 0..<4 {
 		$tour = Tour.step_back($tour)
 	}
-	after_four = $tour.instant.clock
+	after_four = Tour.instant($tour).clock
 	$tour = Tour.step_back($tour)
-	after_five = $tour.instant.clock
+	after_five = Tour.instant($tour).clock
 	$tour = Tour.step_back($tour)
-	after_six = $tour.instant.clock
+	after_six = Tour.instant($tour).clock
 	after_four == Clock.at_step(1) and after_five == Clock.start and after_six == Clock.start
 }

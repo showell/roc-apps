@@ -68,7 +68,7 @@ read_back_a_frame = 200
 ## where the ride is, which may not have reached the step it was heading for.
 aimed : StepWidgetApp.Model, Input.Snapshot -> StepWidgetApp.Model
 aimed = |model, input| {
-	caught_up = VcrButtons.catch_up(model.transport, { input, shown: model.tour.instant.clock })
+	caught_up = VcrButtons.catch_up(model.transport, { input, shown: model.tour.instant().clock })
 	{ ..model, transport: VcrButtons.next_transport(caught_up, { input, range: journey }) }
 }
 
@@ -85,7 +85,7 @@ repeated = |tour, { count, step_once }| {
 ## `model` a frame on: closer to the step it's heading for, or left alone.
 moved : StepWidgetApp.Model -> StepWidgetApp.Model
 moved = |model| {
-	now = model.tour.instant.clock
+	now = model.tour.instant().clock
 	wanted = model.transport.at
 	if now.to_f64() < wanted.to_f64() {
 		count = steps_a_frame.min(wanted.steps_since(now).to_u32())
@@ -253,8 +253,8 @@ shapes_from_behind_rider = |{ across, lean }| {
 ## Where the rider and the truck are on the route, and the rider from behind.
 picture_shapes : Tour -> List(Shapes.Shape)
 picture_shapes = |tour| {
-	rider = tour.instant.rider
-	truck = tour.instant.truck
+	rider = tour.instant().rider
+	truck = tour.instant().truck
 	[
 		[WidgetPage.picture_backdrop(PlanView.ground_color)],
 		bar_shapes,
@@ -265,7 +265,7 @@ picture_shapes = |tour| {
 			name_y: route_y - 28.0,
 		}),
 		marker_shapes({
-			at: RideInstant.rider_distance(tour.route, tour.instant),
+			at: RideInstant.rider_distance(tour.route(), tour.instant()),
 			color: rider_color,
 			name: "rider",
 			name_y: route_y + 16.0,
@@ -283,15 +283,15 @@ move_text = |model|
 	match model.last_move {
 		NotYet => "Play it forward, then go back"
 		Played => "Played on, one step at a time"
-		ReadBack => "Read back: ${model.tour.past_instants.len().to_str()} instants kept"
+		ReadBack => "Read back: ${model.tour.past_instant_count().to_str()} instants kept"
 	}
 
 ## The three stored fields, and how they got there.
 status_lines : StepWidgetApp.Model -> List(Str)
 status_lines = |model| {
-	rider = model.tour.instant.rider
-	truck = model.tour.instant.truck
-	clock = model.tour.instant.clock
+	rider = model.tour.instant().rider
+	truck = model.tour.instant().truck
+	clock = model.tour.instant().clock
 	[
 		"clock: step ${clock.to_str()}",
 		"rider: segment ${(rider.motorcycle.route_place.segment_index.to_u32() + 1).to_str()}, ${ReadoutText.tenths_text(rider.motorcycle.route_place.along.to_metres())} m, speed ${ReadoutText.tenths_text(rider.motorcycle.speed.to_metres_a_step())}",
@@ -329,7 +329,7 @@ left_alone = |model, frames| {
 }
 
 clock_of : StepWidgetApp.Model -> F64
-clock_of = |model| model.tour.instant.clock.to_f64()
+clock_of = |model| model.tour.instant().clock.to_f64()
 
 # Going forward, a frame plays a few steps and no more than it takes.
 expect clock_of(moved(heading_for_step(100))) == steps_a_frame.to_f64()
@@ -352,8 +352,8 @@ expect {
 	on_the_way = left_alone(heading_for_step(16), 2)
 	past_it = left_alone(heading_on_to(on_the_way, 40), 3)
 	back = moved(heading_on_to(past_it, 16))
-	back_motorcycle = back.tour.instant.rider.motorcycle
-	on_the_way_motorcycle = on_the_way.tour.instant.rider.motorcycle
+	back_motorcycle = back.tour.instant().rider.motorcycle
+	on_the_way_motorcycle = on_the_way.tour.instant().rider.motorcycle
 	back_motorcycle.route_place.along == on_the_way_motorcycle.route_place.along
 		and back_motorcycle.speed == on_the_way_motorcycle.speed
 }
