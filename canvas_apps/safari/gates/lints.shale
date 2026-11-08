@@ -3,7 +3,8 @@
 --
 --   cd <roc-apps checkout> && shale canvas_apps/safari/gates/lints.shale
 --
--- It takes about 16 seconds, and run.shale runs it first.
+-- It takes about 26 seconds (2026-11-08), and run.shale runs it first. This
+-- header is the one home of that figure; the docs point here.
 --
 -- With `files=`, which fast.shale gives it, it judges only those files, named
 -- from safari's folder and separated by commas, or `files=every`, and only by
@@ -12,13 +13,14 @@
 -- its findings are reported and pass.
 
 const SAFARI = "canvas_apps/safari"
+const GATES = SAFARI .. "/gates"
 const FILES = arg("files", "")
 -- The glob, from safari's folder, that stands for the whole tree.
 const WHOLE_TREE = "**/*.roc"
 
 -- The globs of the widgets' sources, which the merge gate holds.
 function widget_globs()
-  local r = run({"shale", "--root", ".", SAFARI .. "/gates/run.shale", "part=widget_globs"}, {timeout_ms = 30000, whole = 10000})
+  local r = run({"shale", "--root", ".", GATES .. "/run.shale", "part=widget_globs"}, {timeout_ms = 30000, whole = 10000})
   local globs = {}
   for l in lines(trim(r.out)) do
     if not starts_with(l, "──") then push(globs, l) end
@@ -33,7 +35,7 @@ end
 -- The game's clients, which import its modules: a member only a widget calls
 -- has a real caller. The gates test the game, so their calls are a test's.
 const CLIENT_GLOBS = widget_globs()
-const GATE_GLOB = SAFARI .. "/gates/**/*.roc"
+const GATE_GLOB = GATES .. "/**/*.roc"
 
 -- Every file any lint here reads, as globs from the checkout's root. With
 -- `reads=globs` this script prints them and stops, so fast.shale's record of
@@ -99,7 +101,7 @@ const LINTS = {
 -- prints them and stops, so fast.shale judges every file again when one
 -- changes.
 function rule_files()
-  local rules = {SAFARI .. "/gates/lints.shale"}
+  local rules = {GATES .. "/lints.shale"}
   for lint in LINTS do
     for a in lint.args do
       local m = re_find(a, "^(?:words|table)=(.+)$")
