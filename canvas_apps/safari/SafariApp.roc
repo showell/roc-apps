@@ -84,31 +84,13 @@ SafariApp :: [].{
 					}
 				}
 			tour = if input.key_pressed(KeyJ) {
-				next_segment(moved)
+				moved.at_next_segment()
 			} else {
 				moved
 			}
 			{ tour, motion }
 		}
 
-	# The route's segments are its scenes, and reaching the next one means
-	# stepping until the segment changes.
-	next_segment : Tour -> Tour
-	next_segment = |tour| {
-		segment_of = |at| at.instant().rider.motorcycle.route_place.segment_index
-		from = segment_of(tour)
-		var $tour = Tour.step_forward(tour)
-		var $guard = 0
-		while segment_of($tour) == from and $guard < step_guard {
-			$tour = Tour.step_forward($tour)
-			$guard = $guard + 1
-		}
-		$tour
-	}
-
-	# A segment is long, but not unbounded.
-	step_guard : I64
-	step_guard = 200000
 }
 
 ## The ride at its start, playing.

@@ -89,6 +89,30 @@ Tour :: {
 		}
 	}
 
+	## The tour stepped on until the rider is on another of the route's
+	## segments, which are its scenes. Every ride finishes and starts again on
+	## the first segment, so this ends: on the next segment, or on the first
+	## after the last. A route of one segment would never leave it, so that
+	## crashes.
+	at_next_segment : Tour -> Tour
+	at_next_segment = |tour| {
+		from = rider_segment_index(tour)
+		var $tour = tour
+		while rider_segment_index($tour) == from {
+			$tour =
+				match tour_after_step($tour) {
+					Continued(next_tour) => next_tour
+					Restarted(next_tour) =>
+						if rider_segment_index(next_tour) == from {
+							crash "Tour.at_next_segment: the ride started again on the segment it set out from, so the route has only one"
+						} else {
+							next_tour
+						}
+				}
+		}
+		$tour
+	}
+
 	## What the camera shows at the tour's instant.
 	frame_view : Tour -> FrameView
 	frame_view = |Tour.(tour)| FrameView.frame_view_at(tour.route, tour.instant)
@@ -105,6 +129,30 @@ tour_after_step = |Tour.(tour)|
 		}
 		Restarted(start) => Restarted(Tour.({ ..tour, instant: start, past_instants: [] }))
 	}
+
+## The index of the segment the rider is on.
+rider_segment_index : Tour -> Route.SegmentIndex
+rider_segment_index = |Tour.(tour)| tour.instant.rider.motorcycle.route_place.segment_index
+
+# The next segment from the start is the second, reached on the step that
+# leaves the first.
+expect {
+	reached = Tour.at_next_segment(Tour.initial)
+	rider_segment_index(reached) == Route.SegmentIndex.number(1)
+		and rider_segment_index(Tour.step_back(reached)) == Route.SegmentIndex.first
+}
+
+# Jumping a segment at a time goes through every segment once, and from the
+# last back to the first.
+expect {
+	var $tour = Tour.at_next_segment(Tour.initial)
+	var $jumps = 1
+	while rider_segment_index($tour) != Route.SegmentIndex.first {
+		$tour = Tour.at_next_segment($tour)
+		$jumps = $jumps + 1
+	}
+	$jumps == World.route.route_segments().len()
+}
 
 # A tour ridden to a step keeps every instant it passed, and none at the start.
 expect {
