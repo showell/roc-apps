@@ -20,46 +20,16 @@ ReadoutText :: [].{
 
 	## A number to one decimal place, with a minus sign when it's negative.
 	tenths_text : F64 -> Str
-	tenths_text = |number| {
-		tenths = (number.abs() * 10.0 + 0.5).to_u64_wrap()
-		digits = "${(tenths // 10).to_str()}.${(tenths % 10).to_str()}"
-		if number < 0.0 {
-			"-${digits}"
-		} else {
-			digits
-		}
-	}
+	tenths_text = |number| decimal_text(number, { places: 1 })
 
 	## A number to two decimal places, with a minus sign when it's negative.
 	hundredths_text : F64 -> Str
-	hundredths_text = |number| {
-		hundredths = (number.abs() * 100.0 + 0.5).to_u64_wrap()
-		whole = (hundredths // 100).to_str()
-		part = hundredths % 100
-		digits =
-			if part < 10 {
-				"${whole}.0${part.to_str()}"
-			} else {
-				"${whole}.${part.to_str()}"
-			}
-		if number < 0.0 {
-			"-${digits}"
-		} else {
-			digits
-		}
-	}
+	hundredths_text = |number| decimal_text(number, { places: 2 })
 
 	## A number rounded to the nearest whole one, a half rounding away from zero,
 	## with a minus sign when it's negative.
 	whole_text : F64 -> Str
-	whole_text = |number| {
-		digits = (number.abs() + 0.5).to_u64_wrap().to_str()
-		if number < 0.0 {
-			"-${digits}"
-		} else {
-			digits
-		}
-	}
+	whole_text = |number| decimal_text(number, { places: 0 })
 
 	## A fraction as a whole percentage, rounded down.
 	percent_text : Fraction -> Str
@@ -106,6 +76,36 @@ ReadoutText :: [].{
 			Collapse => "Collapse"
 		}
 }
+
+## A number to `places` decimal places, a half rounding away from zero, with a
+## minus sign when it's negative.
+decimal_text : F64, { places : U64 } -> Str
+decimal_text = |number, { places }| {
+	scale = power_of_ten(places)
+	rounded = (number.abs() * scale.to_f64() + 0.5).to_u64_wrap()
+	whole = (rounded // scale).to_str()
+	# Adding the scale writes the fraction with its leading zeros, after a 1.
+	fraction = (scale + rounded % scale).to_str().drop_prefix("1")
+	digits =
+		if places == 0 {
+			whole
+		} else {
+			"${whole}.${fraction}"
+		}
+	if number < 0.0 {
+		"-${digits}"
+	} else {
+		digits
+	}
+}
+
+power_of_ten : U64 -> U64
+power_of_ten = |exponent|
+	if exponent == 0 {
+		1
+	} else {
+		10 * power_of_ten(exponent - 1)
+	}
 
 expect ReadoutText.tenths_text(0.0) == "0.0"
 expect ReadoutText.tenths_text(0.04) == "0.0"
