@@ -187,8 +187,8 @@ declination = Angle.Turn.degrees(-23.44)
 steps_an_hour : Steps
 steps_an_hour = Steps.of(1000)
 
-## How far past noon the ride starts: forty minutes, a sixth of a turn less
-## than an hour's 15°.
+## How far past noon the ride starts: 10°, forty minutes at the sky's 15° an
+## hour.
 hour_angle_at_start : Angle.Turn
 hour_angle_at_start = Angle.Turn.degrees(10.0)
 
