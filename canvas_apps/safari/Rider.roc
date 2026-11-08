@@ -41,7 +41,11 @@ Rider := { motorcycle : Motorcycle, eyes : RiderEyes }.{
 		segment = rider.motorcycle.route_place.segment_on(route)
 		match segment.segment_ending() {
 			Bends(_) => False
-			RouteEnds => rider.motorcycle.has_reached(segment.length)
+			RouteEnds =>
+				match route_end_arrival(rider.motorcycle, segment) {
+					AtEnd(_) => True
+					ShortOfEnd => False
+				}
 		}
 	}
 
@@ -69,11 +73,22 @@ head_turn_per_lean = 0.15
 ## brakes it to rest there, and this catches the last step's overrun.
 stop_at_route_end : Motorcycle, Segment -> Motorcycle
 stop_at_route_end = |moved, segment|
-	if moved.has_reached(segment.length) {
-		moved.stopped_at(Along.at(segment.length))
-	} else {
-		moved
+	match route_end_arrival(moved, segment) {
+		AtEnd(route_end) => moved.stopped_at(route_end)
+		ShortOfEnd => moved
 	}
+
+## Whether `motorcycle` has reached the route's end on `segment`, the route's
+## last, and where on the segment that end is.
+route_end_arrival : Motorcycle, Segment -> [AtEnd(Along), ShortOfEnd]
+route_end_arrival = |motorcycle, segment| {
+	route_end = Along.at(segment.length)
+	if motorcycle.has_reached(route_end) {
+		AtEnd(route_end)
+	} else {
+		ShortOfEnd
+	}
+}
 
 # With no lean, the head turns from the way the motorcycle points exactly as
 # far as the rider looks.
