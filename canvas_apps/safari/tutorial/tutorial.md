@@ -1260,7 +1260,7 @@ Every radio tower has a beacon on top, and the beacons blink. A beacon is the si
 Press play and watch the two towers blink out of step.
 ```
 
-The widget stands two towers side by side, with beacons that blink opposite each other, and plays two whole blinks, from step 5,400 to step 5,640. Before reading on, guess the step where the two are equally bright.
+The widget stands two towers side by side, with beacons that blink opposite each other, and plays two whole blinks, from step 5,400 to step 5,640.
 
 New in this chapter:
 
