@@ -32,12 +32,12 @@ Still :: List(Still.Polygon).{
 	}
 
 	## A place in the still's frame: a corner of a polygon, or where a
-	## gradient starts, ends or is centred.
+	## gradient starts, ends or is centered.
 	FramePoint : { x : F64, y : F64 }
 
-	## A step across the still's frame, a direction and a length but not a
+	## A vector in the still's frame, a direction and a length but not a
 	## place: one of a radial gradient's axes, measured from its center.
-	Step : { x : F64, y : F64 }
+	FrameVector : { x : F64, y : F64 }
 
 	## A gradient's two colours, and where each sits along it: the start
 	## colour up to `start_offset`, the end colour from `end_offset`, and a
@@ -65,8 +65,8 @@ Still :: List(Still.Polygon).{
 			{
 				stops : Still.ColorStops,
 				center : Still.FramePoint,
-				axis_u : Still.Step,
-				axis_v : Still.Step,
+				axis_u : Still.FrameVector,
+				axis_v : Still.FrameVector,
 			},
 		),
 	]
@@ -176,7 +176,7 @@ linear_polygon = |stops, end| {
 
 ## A polygon on `sample_corners` filled by a radial gradient about (0.5, 0.25)
 ## with the two axes.
-radial_polygon : Still.Step, Still.Step -> Still.Polygon
+radial_polygon : Still.FrameVector, Still.FrameVector -> Still.Polygon
 radial_polygon = |axis_u, axis_v| {
 	gradient = Radial({
 		stops: sample_stops,

@@ -1,7 +1,6 @@
 ## SafariApp is the ride as a value the canvas apps can run. It sits between the
 ## ride and what a runner wants: Tour holds the ride and its history, FrameView
-## says what the camera shows, and this module says which keys move it and how
-## the camera leans.
+## says what the camera shows, and this module says which keys move it.
 ##
 ## The ride plays on its own. Space pauses it. Left steps back through the ride's
 ## history and Right forward, a frame at a time while paused and faster while it
@@ -57,15 +56,15 @@ model_at_next_step = |m, input|
 		} else {
 			m.motion
 		}
-		steps_a_press = match motion {
+		steps_a_frame = match motion {
 			Paused => 1
 			Playing => 4
 		}
 		moved =
 			if input.key_down(KeyRight) {
-				m.tour.steps_forward(steps_a_press)
+				m.tour.steps_forward(steps_a_frame)
 			} else if input.key_down(KeyLeft) {
-				m.tour.steps_back(steps_a_press)
+				m.tour.steps_back(steps_a_frame)
 			} else {
 				match motion {
 					Paused => m.tour

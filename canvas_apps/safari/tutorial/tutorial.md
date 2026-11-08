@@ -2725,7 +2725,7 @@ The ride instant chapter showed `SafariApp.model_at_next_step` reading a snapsho
 
 `Tour.step_forward` and `Tour.step_back` are plain values to pass here:
 
-{{code SafariApp.model_at_next_step from "if input.key_down(KeyRight) {" to "m.tour.steps_forward(steps_a_press)"}}
+{{code SafariApp.model_at_next_step from "if input.key_down(KeyRight) {" to "m.tour.steps_forward(steps_a_frame)"}}
 
 ### A frame is a list
 
