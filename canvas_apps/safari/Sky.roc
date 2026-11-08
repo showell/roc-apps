@@ -115,7 +115,7 @@ darkness_while_up = |height| {
 ## night as it sinks a further radius.
 darkness_after_set : FarHeight -> Fraction
 darkness_after_set = |height| {
-	sunk_past_set = Sun.height_when_set.minus(height).ratio_to(Sun.radius_as_height)
+	sunk_past_set = Sun.height_when_set.minus(height).ratio_to(Sun.radius)
 	Fraction.clamp(darkness_at_set.to_f64() + sunk_past_set * darkness_at_set.complement().to_f64())
 }
 

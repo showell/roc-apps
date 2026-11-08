@@ -74,10 +74,9 @@ Lens :: [].{
 		Screen.horizon_y.minus(size_on_screen({ size: height, focal_length }))
 
 	## How long something infinitely far away is drawn through a lens of
-	## `focal_length`, when the lens at rest draws it `size` pixels long. It takes
-	## any such length as a far height: a height above the horizon, or a size
-	## kept in pixels at rest, such as the sun's radii. The lens only ever
-	## widens, so it is never drawn longer than at rest.
+	## `focal_length`, when the lens at rest draws it `size` pixels long: a
+	## height above the horizon, or a size such as the sun's radii. The lens
+	## only ever widens, so it is never drawn longer than at rest.
 	size_on_screen : { size : FarHeight, focal_length : Pixels } -> Pixels
 	size_on_screen = |{ size, focal_length }|
 		Pixels.of(size.to_f64() * lens_scale(focal_length).to_f64())

@@ -67,10 +67,10 @@ Sun :: [].{
 	height_at : Clock -> FarHeight
 	height_at = |clock| direction_at(clock).height
 
-	## The sun's radius as a far height: how far its top stands above its
-	## middle, and its bottom below.
-	radius_as_height : FarHeight
-	radius_as_height = FarHeight.of(radius.to_f64())
+	## The sun's radius: how far its top stands above its middle, and its
+	## bottom below.
+	radius : FarHeight
+	radius = FarHeight.of(46.0)
 
 	## How high the sun stands above the horizon as the ride starts.
 	height_at_start : FarHeight
@@ -78,7 +78,7 @@ Sun :: [].{
 
 	## How high the sun stands once it has fully set: its top on the horizon.
 	height_when_set : FarHeight
-	height_when_set = radius_as_height.opposite()
+	height_when_set = radius.opposite()
 
 	## The first step at which the sun has fully set, its whole disc below the
 	## horizon. The sky's turning places it; `sunset_climax` in
@@ -167,14 +167,9 @@ Sun :: [].{
 		}
 }
 
-## How long `size_at_rest`, one of the sun's sizes as the lens at rest draws
-## it, is drawn where `sun` stands.
-sun_size_on_screen : Pixels, Sun.OnScreen -> Pixels
-sun_size_on_screen = |size_at_rest, sun|
-	Lens.size_on_screen({
-		size: FarHeight.of(size_at_rest.to_f64()),
-		focal_length: sun.focal_length,
-	})
+## How long `size`, one of the sun's sizes, is drawn where `sun` stands.
+sun_size_on_screen : FarHeight, Sun.OnScreen -> Pixels
+sun_size_on_screen = |size, sun| Lens.size_on_screen({ size, focal_length: sun.focal_length })
 
 ## How far the sky's pole stands above the north horizon, which is the
 ## latitude the ride is at: 45°, halfway from the equator to the pole. The
@@ -222,21 +217,17 @@ is_glow_on_screen = |sun| {
 	from_middle.minus(Sun.glow_radius_on_screen(sun)) < reach
 }
 
-## The sun's radius at rest.
-radius : Pixels
-radius = Pixels.of(46.0)
+## How far the glow reaches from the sun's middle.
+glow_radius : FarHeight
+glow_radius = FarHeight.of(340.0)
 
-## How far the glow reaches from the sun's middle at rest.
-glow_radius : Pixels
-glow_radius = Pixels.of(340.0)
+## Where the glow's fade starts, near the sun's middle.
+glow_inner_radius : FarHeight
+glow_inner_radius = FarHeight.of(8.0)
 
-## Where the glow's fade starts, near the sun's middle, at rest.
-glow_inner_radius : Pixels
-glow_inner_radius = Pixels.of(8.0)
-
-## Where the disc's shading from pale to orange starts, at rest.
-disc_inner_radius : Pixels
-disc_inner_radius = Pixels.of(4.0)
+## Where the disc's shading from pale to orange starts.
+disc_inner_radius : FarHeight
+disc_inner_radius = FarHeight.of(4.0)
 
 ## Where the sun stands on the screen, `turn_from_view` to the right of where
 ## the camera faces and `height` above the horizon, through a lens of
@@ -326,7 +317,7 @@ expect {
 			focal_length: half_focal_length,
 		},
 	)
-		and Sun.disc_radius_on_screen(half_on_screen) == radius.times(0.5)
+		and Sun.disc_radius_on_screen(half_on_screen).to_f64() == Sun.radius.times(0.5).to_f64()
 }
 
 # Facing north at the start, the rider faces away from the sun.
