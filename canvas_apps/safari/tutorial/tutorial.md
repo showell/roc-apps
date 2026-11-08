@@ -1830,7 +1830,7 @@ The truck is what the rider chases. It starts 500 metres up the road, and for mo
 | 4,000 | 4,796 metres | 5,051 metres | 255 metres |
 | 6,000 | 6,790 metres | 6,931 metres | 141 metres |
 
-The closest the rider gets is 50 metres, at step 6,374. After that the rider slows to stop at the route's end, at step 6,746, and the truck drives on past it.
+The closest the rider gets is 50 metres, at step 6,374. After that the rider slows to stop at the route's end, at step 6,746. The truck doesn't wait. It drives on past the end of the route and vanishes, since nothing is drawn beyond the end. You never catch it. Some riders have complained about the darn truck, and that's the design.
 
 New in this chapter:
 
