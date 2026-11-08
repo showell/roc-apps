@@ -37,10 +37,6 @@ WidgetPage :: [].{
 	canvas_point_of_screen : Point.Point -> Point.Point
 	canvas_point_of_screen = |{ x, y }| { x: x * canvas_per_screen, y: y * canvas_per_screen }
 
-	## Where the ride's horizon crosses the picture.
-	horizon_y : F64
-	horizon_y = Screen.horizon_y.to_f64() * canvas_per_screen
-
 	## How much ground shows below the horizon, chosen by eye.
 	ground_depth : F64
 	ground_depth = 16.0
@@ -208,6 +204,10 @@ WidgetPage :: [].{
 ## How many canvas pixels the picture gives a pixel of the ride's screen.
 canvas_per_screen : F64
 canvas_per_screen = WidgetPage.canvas_width / Screen.width.to_f64()
+
+## Where the ride's horizon crosses the picture.
+horizon_y : F64
+horizon_y = Screen.horizon_y.to_f64() * canvas_per_screen
 
 ## How often a still picture is painted: seldom, since it never changes, but
 ## often enough that a page's check, which runs a page for a few frames, sees
