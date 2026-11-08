@@ -15,7 +15,6 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # The compiler every roc-apps build uses, so both ends of a game are built
 # by one.
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../pinned-roc.sh"
-ZIG="${ZIG:-$HOME/zig-0.16.0/zig}"
 name="${1:?usage: canvas_apps/build.sh <app> [release]}"
 case "${2:-}" in
     "") opt=dev ;;
@@ -44,7 +43,7 @@ if [ "$opt" = speed ] || [ -z "${XDG_CACHE_HOME:-}" ]; then
     export XDG_CACHE_HOME="$MADE_CACHE"
 fi
 trap 'rm -rf "$OUT" $MADE_CACHE' EXIT
-(cd "$HERE/web" && "$ZIG" build --cache-dir "$HOME/build/roc-apps/zig-cache" --global-cache-dir "$HOME/build/zig-global")
+"$HERE/web/build_host.sh"
 
 # The logs live in the staging folder, so two builds at once never read each
 # other's. A failure prints its log before the trap removes the folder.
