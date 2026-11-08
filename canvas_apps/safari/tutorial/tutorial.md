@@ -1052,9 +1052,24 @@ New in this chapter:
 - Roc: a `match` on a pair
 - Modules: `TowerSighting`, `Tower`
 
-A tower is two facts: which way it's turned, and its beacon.
+### Get the types right
+
+A tower is a shape, a placement and an honest cheat. Its shape is a lattice of rods on a square footprint. Its placement is worked out each frame from its segment, and never stored. The cheat is an earth that curves much faster than ours, so a tower visibly sinks as it gets further away.
+
+The tower itself is two facts: which way it's turned, and its beacon.
 
 {{code Tower.Tower}}
+
+Each step of the job is a signature:
+
+| Job | Function | Its type |
+|---|---|---|
+{{types row TowerSighting.mid_tower Place the tower halfway along}}
+{{types row Tower.scenery_picture Draw it}}
+{{types row EarthCurve.exaggerated_drop Sink it}}
+{{types row RiderView.line_ahead Make one rod}}
+
+### Where a tower stands
 
 A tower isn't placed when the world is built. Its sighting works out where it stands from the segment. When it's drawn, `scenery_picture` measures its footprint on the road around that spot, which is why its context is the road and the camera's vantage. This one is for the tower halfway along:
 
