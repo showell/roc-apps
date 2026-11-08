@@ -1079,7 +1079,7 @@ Trees get their spots once, when the world is built. A tower doesn't: each frame
 
 {{code TowerSighting.end_tower}}
 
-The `beacon` line lights the beacon for this step. The tower halfway along is the same, with `.opposite()` on its beacon, a square yaw, and a second way to fail, `NoMidTower`. `Segment.has_mid_tower` asks whether the segment is longer than a kilometre, and that's all the world knows about towers.
+The `beacon` line lights the beacon for this step. The tower halfway along is the same, with `.opposite()` on its beacon, a square yaw, and a second way to fail, `NoMidTower`. `Segment.mid_tower_point` says whether a segment is longer than a kilometre, and where its halfway tower stands, and that's all the world knows about towers.
 
 To draw a tower, `scenery_picture` also needs the road and where the camera stands, to find the four corners of its base in the rider's view. So those two go in as its extra input, its context:
 
@@ -1217,7 +1217,11 @@ A segment's ending carries its `bend_life`, what's at its bend. The segment turn
 
 {{code Segment.segment_bend_billboards}}
 
-A quiet bend and the route's end give nothing, a pond gives its ducks, and an animal gives two billboards, itself and its baby:
+What's at the bend gives its own billboards. A quiet bend gives nothing, a pond gives its ducks, and an animal gives two, itself and its baby:
+
+{{code Segment.BendLife from "bend_billboards :" to "Quiet => []"}}
+
+The animal places itself:
 
 {{code BendAnimal.bend_billboards}}
 
@@ -2226,135 +2230,115 @@ The ride remembers one step for the cat, and works out everything else, frame by
 
 ## The bird
 
-The cat is built on a shared module, `Animation`, and one critter can't show whether that module was written for critters in general or just for cats. The bird is the second critter to use it. It's Roc's logo, sitting on a treetop. As the rider comes near it takes off, flies across the road and ahead, and drops onto a tree on the far side. It's a rider-driven thing like the cat, and it cost much less.
+The bird is Roc's logo, sitting on a treetop. As the rider comes near it takes off, flies across the road and ahead, and drops onto a tree on the far side. It moves the way the cat does, through the same plan and the same kind of timeline, and it cost much less.
 
 ```widget bird
 Press play and watch the bird fly.
 ```
 
-Play it, and the gap falls from 75 metres to 0. The bird sits on the tip of the left tree, 6.4 metres up, until 60 metres. It takes off side on, turns away at about 55 metres, and reaches 10.7 metres near the middle of its flight, shrinking as it goes. It dives from 20 metres, and at 15 it's perched on the tip of the far tree, 4.9 metres up. Below that, the picture stays as it is.
+Play it, and the gap falls from 75 metres to 0, with the rider held at 1.25 metres a step. The bird sits on the tip of the left tree, 6.4 metres up, until 60 metres. It takes off side on, turns away at about 55 metres, and reaches 10.7 metres near the middle of its flight, shrinking as it goes. It dives from 20 metres, and at 15 it's perched on the tip of the far tree, 4.9 metres up. Below that, the picture stays as it is.
 
 New in this chapter:
 
-- Roc: record update, tags inside tags, opening a `Try` by hand, `match` as an expression
-- Modules: `BirdFlight`, `CrossingSighting`, `Bird`
+- Roc: tags inside tags, opening a `Try` by hand, `match` as an expression
+- Modules: `BirdFlight`, `Bird`
+
+### Two halves
+
+A bird comes in the same two halves as a cat. `BirdFlight` is what it does: the tree it leaves and the tree it flies to. `Bird` is how it looks this frame, which is its pose:
+
+{{code Bird.Bird from "Bird := {" to "}.{"}}
+
+A pose can carry a pose of its own. A bird side on or seen from behind has its wings up or down, so those tags take a second tag:
+
+{{code Bird.BirdPose}}
 
 The modules around `BirdFlight`
 ```dot
 digraph bird {
   node [shape=box, fontname="Helvetica"];
   BirdFlight [style=bold];
-  World -> BirdFlight;
-  CrossingSighting -> BirdFlight;
-  CrossingSighting -> Bird;
-  CrossingSighting -> Animation;
-  Bird -> BirdFlight;
-  Bird -> BirdStills;
-  Bird -> StillShapes;
-  BirdStills -> BirdFlight;
-  BirdStills -> Stills;
-  StillShapes -> Stills;
-  BirdFlight -> Animation;
+  World -> BirdFlight [label="  plans one per segment"];
+  Segment -> BirdFlight [label="  holds it"];
+  RideInstant -> EncounterPlan [label="  keeps the plan"];
+  EncounterSighting -> EncounterPoses [label="  places it, then sights it"];
+  EncounterPoses -> Bird [label="  poses it"];
+  BirdFlight -> Bird [label="  picks a pose"];
+  BirdFlight -> Animation [label="  plays its frames"];
+  BirdFlight -> EncounterPlan [label="  is planned by its span"];
+  Bird -> BirdStills [label="  draws a still"];
 }
 ```
 
-The family has the cat's shape. `BirdFlight` says what a bird does and imports nothing that draws it. `CrossingSighting` finds it, `Bird` draws it, and `BirdStills` holds its pictures. `Animation` is underneath, and most of what the bird does is ask `Animation` for something.
+### When it plays
 
-`BirdFlight` does one addition, a tree's place plus `shortest_hop`, the shortest flight a bird will make. The rest is constants, tags and one timeline.
+The ride plans the flight the way it plans a cat's crossing: once, when the rider first comes within reach, from how fast the rider is coming. A flight is 36 frames, and it ends as the rider comes within 15 metres of the tree the bird left, so the rider sees it land before passing that tree:
 
-### Two rules
+{{code BirdFlight.flight_span}}
 
-A rule turns where the rider is into a `Stage`. The cat's rule was `stage_over_step_span`, and the bird's is `stage_over_gap`. They say different things about the same road:
+So a faster rider sets the bird off sooner:
 
-| | `stage_over_gap` | `stage_over_step_span` |
-|---|---|---|
-| It reads | The gap | The gap and the speed |
-| It starts | 60 metres off, always | Earlier for a faster rider |
-| It ends | 15 metres off, always | `ends_at` metres short, always |
-| It's for | Something that reacts to how close the rider is | Something that has to finish in time |
-| A stopped rider | Leaves the bird hanging where the gap puts it | Holds the cat at the start of its crossing |
+| Rider's speed | The flight starts at a gap of |
+|---|---|
+| 1 metre a step | 51 metres |
+| 1.25 metres a step | 60 metres |
+| 2 metres a step | 87 metres |
 
-The first argument of each is destructured in place, and both answer the same tag union. `stage_over_gap` has a shorter job, so here it is first. `Fraction.clamp` fits here because a rider far off gives a ratio well outside 0 to 1, and `<=` works on a `Fraction` because `Fraction` defines `is_lte`:
-
-A plan and the clock together make a `Timing`:
-
-{{code EncounterPlan.Timing}}
-
-{{code EncounterPlan.timing_at}}
-
-and a `Timing` and a length make the `Stage`:
-
-{{code EncounterPlan.stage_at}}
-
-The bird calls it with two constants, and passes no speed, since this rule doesn't take one:
+The widget's rider comes at 1.25 metres a step, so the bird takes off at 60. Once it's planned, the flight plays on the ride's clock, a frame a step, whatever the rider does. Its stage is worked out exactly as the cat's is, from the plan's timing and the flight's own length:
 
 {{code BirdFlight.flight_stage}}
 
-Beside it, again, is the cat's rule. Its second argument is the whole `Approach`:
+### What it looks like
 
-{{code EncounterPlan.plan_for}}
+A flight is a list of poses, one a step: a flap side on as it takes off, seven flaps seen from behind, then a flap's length of diving.
 
-The extra case in `stage_over_step_span` is there because its ratio divides by a stretch that a stopped rider makes zero. `stage_over_gap` divides only by constants, so it has no such case. That hanging bird is real: nothing in `stage_over_gap` knows a bird can't hover. The rider never drops below 1.1 metres a step inside a bird's 45 metres on this route, so it doesn't come up.
+| Frames | What the bird does |
+|---|---|
+| 1 to 4 | one flap, side on |
+| 5 to 32 | seven flaps, seen from behind |
+| 33 to 36 | dives |
 
-Now the one-liners, side by side. A bird's and a cat's `instant_at` have the same shape:
+That counts frames from 1, as the widget does. Before the first frame the bird sits on the tree it leaves, and after the last it sits on the tree it flew to.
 
-{{code BirdFlight.instant_at}}
+`flight_timeline` puts the poses on a path:
 
-{{code CatCrossing.instant_at}}
+{{code BirdFlight.flight_timeline}}
 
-Each is a rule's `Stage` handed to a timeline's `instant`. Neither half knows which other half it's been paired with. Call this *rule and timeline*: one function says how far along things are, and one piece of data says what that looks like. A third critter can take either rule with a timeline of its own, and a new rule would work with both timelines already written.
+The path eases along the straight line between the two treetops, and rises above it in an arc 5 metres high at the middle:
 
-### A timeline one beat long
+{{code BirdFlight.flight_location}}
 
-The two tracks of a flight, in shares of one beat
-```dot
-digraph flight_score {
-  node [shape=record, fontname="Helvetica"];
-  looks [label="looks|Side, wings beating\nto 0.12|Away, wings beating\nto 0.88|Diving"];
-  path [label="path|Arc, from tree to tree"];
-  looks -> path [style=invis];
-}
-```
-
-`BirdFlight` sets the length of a flight to one beat, so that a cut on the timeline is simply a share of the flight:
-
-The bird needs one small helper. It sits below the block, so it's private, and it builds an `Alternates` from two poses. `Animation.Looks(BirdFlight.BirdPose)` is `Looks(pose)` with the type parameter filled in, which is how the cat's timeline type came to fit a bird:
-
-Then the timeline. `Animation.Timeline.( ... )` wraps a record in the nominal type, and `Side(WingsUp)` is a tag whose payload is another tag. `flight_beats.portion(takeoff_share)` is a method on the opaque `Beats`, and `Beat.at` makes a place of the length it gives. It reads almost like configuration, and most of it is:
-
-Wings beat all the way through the first two stretches. `count` runs from the start of the timeline, so the wing beat carries on across the cut from side-on to from-behind without restarting.
-
-The path track shows why a `Track` has `finally`. A flight is one unbroken curve, so it has no cuts at all:
-
-That `Arc` is a tag. `path_spot` is where it's played. `{ ..on_line, lift: ... }` is record update: the spot on the straight line, with one field replaced. The curve is `4t(1 - t)`, a parabola that's 0 at both ends and 1 at the middle, so `rise` means what its comment says.
-
-The stills are data too. Nested tags get checked all the way down, so a `match` that forgets `Away(WingsDown)` is a compile-time error. The function reads as a table, and there's nothing else in it:
-
-{{code Bird.pose_still}}
-
-`Bird.scenery_picture` hands that to `StillShapes.still_shapes`, the function that also draws a cow. A bird's feet reach the screen through `Camera.project`, as a tree's top does, and the math layer chapter shows how. That's the drawing.
+`4t(1 − t)` is 0 at both ends and 1 halfway, so the arc starts and ends on the line. The last line is a record update: everything about the point on the line, with its lift raised.
 
 ### Finding a tree
 
-Where a bird flies is decided once, when the world is built. `habit_from` shows the plain end of Roc's list functions. `keep_if` takes a closure, and `is_far_enough` is one, closing over `from`. `first()` answers a `Try`, which is one of the few that Safari Ride opens by hand. A route is a tag union with two tags: a bird with no tree to fly to `Sits`, which beats a flight of length zero.
-
-{{code BirdFlight.flight_from}}
-
-The caller's return type is written in place, a tag union that exists for this one function and fits straight into the `crossing` field of a segment:
+A segment's bird is chosen when the world is built. The segment picks the perch, the fifth tree on the left:
 
 {{code Segment.fifth_left_tree}}
 
-And that's called from a `match` in the middle of a record, which is a reminder that `match` is an expression. The plan's plain `BirdHere` tag comes in, and `BirdHere(route_segments)` goes out:
+Then the bird picks where to fly: the first tree on the far side of the road that's far enough along.
 
-{{code Segment.from_choices from "encounter: match choices.encounter {" to "QuietRoad => QuietRoad"}}
+{{code BirdFlight.flight_from}}
 
-Each frame, a sighting reads the route back. The crossing is matched in full, so a third kind of crossing would stop here until someone says what a bird sighting should do about it:
+`find_first` answers a `Try`, and the `match` opens it by hand, turning "not found" into the bird's own error, `NoTreeToFlyTo`. The bird always starts on the left because its stills are drawn facing right and are never mirrored, so on a left tree it faces the road.
 
-{{code EncounterPoses.segment_bird}}
+The segment puts the two together. A route that plans a bird on a segment with no tree for it is a bug, so each failure crashes with its own reason:
 
-We didn't need any new machinery for the bird. Above their `expect`s, the four bird modules come to about 450 lines, a quarter of them coordinates for the stills. `Animation` has nothing in it about birds.
+{{code Segment.from_choices from "BirdHere =>" to "QuietRoad => QuietRoad"}}
 
-The bird asks nothing of the rider. The cat does.
+`match` is an expression here. Its answer is the value of the `encounter` field.
+
+### Getting it on screen
+
+The bird reaches the screen the way the cat does: `EncounterPoses` places it with no camera, and `EncounterSighting` asks where the camera sees it. Only the rider's own segment plays its flight. A bird on a segment ahead is still perched on its first tree.
+
+`Bird` draws it from its still, at its height:
+
+{{code Bird.scenery_picture}}
+
+A perched bird stands exactly where its tree's top is, at the same depth, and the scene puts trees before birds when depths tie, so the bird is drawn over its tree.
+
+The bird asks nothing of the rider, so the rider's reactions pass it by. All it adds to the game is a list of poses, a path, and the stills to draw them.
 
 ## What a cat does to the rider
 
