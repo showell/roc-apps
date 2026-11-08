@@ -263,12 +263,12 @@ is_disc = |shape|
 		Poly(_) | Rect(_) | Blend(_) | View(_) | Image(_) | Text(_) => False
 	}
 
-# The Roadside trees chapter: 184 trees in view. The platform chapter's shapes
+# The Roadside trees chapter: 136 trees in view. The platform chapter's shapes
 # by tag: every one of them is a Poly or a Disc.
-expect book_view.scene.trees.len() == 184
-expect book_shapes.len() == 2474
-expect book_shapes.keep_if(is_polygon).len() == 2467
-expect book_shapes.keep_if(is_disc).len() == 7
+expect book_view.scene.trees.len() == 136
+expect book_shapes.len() == 2121
+expect book_shapes.keep_if(is_polygon).len() == 2113
+expect book_shapes.keep_if(is_disc).len() == 8
 
 # The modules chapter's sighting: one cat, frozen on the ground about 0.38 m
 # right of the camera and 23.63 m ahead.

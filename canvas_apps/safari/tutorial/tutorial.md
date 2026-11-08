@@ -656,7 +656,7 @@ Here's the other tree problem. Safari Ride places 392 trees along its road, and 
 Step 1,529 of the ride, with only the trees on.
 ```
 
-This is step 1,529 again, the frame with the frozen cat, showing only its trees. There are 184 of them, out of 392. At nine shapes each, they make up 1,656 of the 2,474 shapes in that frame, more than everything else put together.
+This is step 1,529 again, the frame with the frozen cat, showing only its trees. There are 136 of them, out of 392. At nine shapes each, they make up 1,224 of the 2,121 shapes in that frame, more than everything else put together.
 
 A tree goes through the three forms from the Nature types chapter, with a `Conifer` as its kind. It's placed once, for the whole ride, and sighted and rendered for each frame that can see it.
 
@@ -2986,8 +2986,8 @@ The ride instant chapter showed `SafariApp.model_at_next_step` reading a snapsho
 
 | What's in the shapes of step 1,529 | How many |
 |---|---|
-| `Poly` | 2,467 |
-| `Disc` | 7 |
+| `Poly` | 2,113 |
+| `Disc` | 8 |
 
 What the game hands back each frame is a `List(Shapes.Shape)`. A shape is a tag: `Poly`, `Disc`, `Rect` and a few more, each with its fill. Two of them aren't shapes. `Blend` and `View` are marks in the list that change how what comes after them is painted, because a frame is a list, and a mark is the cheapest way to say that.
 
