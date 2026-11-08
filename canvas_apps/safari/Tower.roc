@@ -461,7 +461,7 @@ expect
 	})
 		== Poly({
 			coordinates: [-4.0, 3.0, 26.0, 43.0, 34.0, 37.0, 4.0, -3.0],
-			fill: Flat(Brush.opaque(tower_color)),
+			fill: Flat(Brush.opaque_rgba(tower_color)),
 		})
 
 # A rod of no length is still one quad, all at its one point.
@@ -473,7 +473,7 @@ expect
 	})
 		== Poly({
 			coordinates: [5.0, 6.0, 5.0, 6.0, 5.0, 6.0, 5.0, 6.0],
-			fill: Flat(Brush.opaque(tower_color)),
+			fill: Flat(Brush.opaque_rgba(tower_color)),
 		})
 
 ## How many pixels a metre across spans `forward` metres ahead, through a

@@ -296,12 +296,12 @@ status_line = |text, row|
 		size: 22.0,
 		face: Code,
 		align: Left,
-		color: Brush.opaque(WidgetPage.ink_color),
+		color: Brush.opaque_rgba(WidgetPage.ink_color),
 	})
 
 ## The layers on, in the game's paint order.
 picture_shapes : List(Layer) -> List(Shapes.Shape)
-picture_shapes = |on_layers| Shapes.in_space(lean_space, frame_shapes_on(on_layers))
+picture_shapes = |on_layers| Shapes.shapes_in_space(lean_space, frame_shapes_on(on_layers))
 
 ## Everything on the canvas.
 shapes_at : FrameWidgetApp.Model -> List(Shapes.Shape)
@@ -340,7 +340,7 @@ expect picture_shapes(layers_through(Sun)) != picture_shapes(layers_through(Sky)
 expect picture_shapes(layers_through(Critters)) != picture_shapes(layers_through(MovingThings))
 
 # The first layer alone is the lean and the trees, in the game's order.
-expect picture_shapes([Trees]) == Shapes.in_space(lean_space, ride_shapes_on([Trees]))
+expect picture_shapes([Trees]) == Shapes.shapes_in_space(lean_space, ride_shapes_on([Trees]))
 
 # Sky is painted before grass, whichever the book comes to first.
 expect frame_shapes_on([Grass, Sky]) == frame_shapes_on([Sky, Grass])

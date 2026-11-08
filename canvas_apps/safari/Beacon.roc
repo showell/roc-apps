@@ -113,7 +113,7 @@ beacon_disc : {
 	brightness : Fraction,
 } -> Shapes.Shape
 beacon_disc = |{ center, radius_on_screen, brightness }| {
-	opaque = Brush.opaque(beacon_color)
+	opaque = Brush.opaque_rgba(beacon_color)
 	Disc({
 		x: center.x.to_f64(),
 		y: center.y.to_f64(),

@@ -51,12 +51,12 @@ wound_triangles = |triangle_coordinates| {
 	$out
 }
 
-at : List(F64), U64 -> F64
-at = |xs, i| xs.get(i) ?? crash "ConvexCut.at: an index past the end of the coordinates"
+coordinate_at : List(F64), U64 -> F64
+coordinate_at = |xs, i| xs.get(i) ?? crash "ConvexCut.coordinate_at:an index past the end of the coordinates"
 
 ## Corner `i` of a polygon written as x0, y0, x1, y1 and so on.
 corner : List(F64), U64 -> Point.Point
-corner = |coordinates, i| { x: at(coordinates, 2 * i), y: at(coordinates, 2 * i + 1) }
+corner = |coordinates, i| { x: coordinate_at(coordinates, 2 * i), y: coordinate_at(coordinates, 2 * i + 1) }
 
 ## Twice the signed area of the triangle a b c: positive when it turns one
 ## way, negative the other, and zero when its corners are in line.
@@ -74,7 +74,7 @@ twice_area = |coordinates| {
 		} else {
 			k + 1
 		}
-		$sum = $sum + at(coordinates, 2 * k) * at(coordinates, 2 * next_k + 1) - at(coordinates, 2 * next_k) * at(coordinates, 2 * k + 1)
+		$sum = $sum + coordinate_at(coordinates, 2 * k) * coordinate_at(coordinates, 2 * next_k + 1) - coordinate_at(coordinates, 2 * next_k) * coordinate_at(coordinates, 2 * k + 1)
 	}
 	$sum
 }

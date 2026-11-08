@@ -136,7 +136,7 @@ WidgetPage :: [].{
 			size: style.size,
 			face: Code,
 			align: style.align,
-			color: Brush.opaque(color),
+			color: Brush.opaque_rgba(color),
 		})
 
 	## A few words beside what they name, with their baseline at `y`.
@@ -153,7 +153,7 @@ WidgetPage :: [].{
 			size: label_size,
 			face: Prose,
 			align: Left,
-			color: Brush.opaque(ink_color),
+			color: Brush.opaque_rgba(ink_color),
 		})
 
 	## The picture, and the panel with the lines of text on it.

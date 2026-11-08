@@ -1,6 +1,6 @@
 ## RgbColor is an opaque colour as one whole number, 0xRRGGBB: eight bits each
 ## of red, green and blue, red highest. A flat fill's colour is one of these, and
-## `Brush.opaque` is what turns it into a brush colour.
+## `Brush.opaque_rgba` is what turns it into a brush colour.
 ##
 ## A colour with alpha is an `ArgbColor`, a different type, so neither can be
 ## passed where the other belongs.

@@ -123,13 +123,13 @@ Particles :: [].{
 	palette : I64 -> Brush.Rgba
 	palette = |i|
 		if i == 0 {
-			Brush.opaque(RgbColor.of(0xffd166))
+			Brush.opaque_rgba(RgbColor.of(0xffd166))
 		} else if i == 1 {
-			Brush.opaque(RgbColor.of(0xef476f))
+			Brush.opaque_rgba(RgbColor.of(0xef476f))
 		} else if i == 2 {
-			Brush.opaque(RgbColor.of(0x06d6a0))
+			Brush.opaque_rgba(RgbColor.of(0x06d6a0))
 		} else {
-			Brush.opaque(RgbColor.of(0x118ab2))
+			Brush.opaque_rgba(RgbColor.of(0x118ab2))
 		}
 
 	shapes : Particles.Model -> List(Shapes.Shape)

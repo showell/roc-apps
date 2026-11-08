@@ -23,23 +23,23 @@ SnakeDraw :: [].{
 	h = 600.0
 
 	field_top : Brush.Rgba
-	field_top = Brush.opaque(RgbColor.of(0x151d3a))
+	field_top = Brush.opaque_rgba(RgbColor.of(0x151d3a))
 	field_bottom : Brush.Rgba
-	field_bottom = Brush.opaque(RgbColor.of(0x060810))
+	field_bottom = Brush.opaque_rgba(RgbColor.of(0x060810))
 	board_fill : Brush.Rgba
-	board_fill = Brush.opaque(RgbColor.of(0x0b1226))
+	board_fill = Brush.opaque_rgba(RgbColor.of(0x0b1226))
 	board_edge : Brush.Rgba
-	board_edge = Brush.opaque(RgbColor.of(0x2a3566))
+	board_edge = Brush.opaque_rgba(RgbColor.of(0x2a3566))
 	grid_line : Brush.Rgba
-	grid_line = Brush.opaque(RgbColor.of(0x16203f))
+	grid_line = Brush.opaque_rgba(RgbColor.of(0x16203f))
 	snake_head : Brush.Rgba
-	snake_head = Brush.opaque(RgbColor.of(0x7ef7d1))
+	snake_head = Brush.opaque_rgba(RgbColor.of(0x7ef7d1))
 	snake_tail : Brush.Rgba
-	snake_tail = Brush.opaque(RgbColor.of(0x1d7fb8))
+	snake_tail = Brush.opaque_rgba(RgbColor.of(0x1d7fb8))
 	food_neon : Brush.Rgba
-	food_neon = Brush.opaque(RgbColor.of(0xff6b8b))
+	food_neon = Brush.opaque_rgba(RgbColor.of(0xff6b8b))
 	hud_color : Brush.Rgba
-	hud_color = Brush.opaque(RgbColor.of(0xd7e3ff))
+	hud_color = Brush.opaque_rgba(RgbColor.of(0xd7e3ff))
 	hint_color : RgbColor
 	hint_color = RgbColor.of(0x6d7aa8)
 
@@ -76,7 +76,7 @@ SnakeDraw :: [].{
 		hint = "ARROWS / WASD TURN    SPACE RESTART"
 		var $out = Font.text_shapes("SNAKE", { top_left: { x: left, y: 26.0 }, size: 30.0, color: snake_head })
 		$out = List.concat($out, Font.text_shapes(score, { top_left: { x: w - left - Font.width_of(score, 24.0), y: 30.0 }, size: 24.0, color: hud_color }))
-		List.concat($out, Font.centered(hint, { top_center: { x: w / 2.0, y: 572.0 }, size: 17.0, color: Brush.opaque(hint_color) }))
+		List.concat($out, Font.centered_text_shapes(hint, { top_center: { x: w / 2.0, y: 572.0 }, size: 17.0, color: Brush.opaque_rgba(hint_color) }))
 	}
 
 	## The bordered playfield and its faint lattice.
@@ -140,7 +140,7 @@ SnakeDraw :: [].{
 		head_center = middle_of(world.snake.head())
 		food_r = cell * (1.0 + 0.5 * beat)
 		head_r = cell * 1.5
-		Shapes.added_light([
+		Shapes.added_light_shapes([
 			Shapes.halo({ center: food_center, radius: food_r }, Brush.translucent(ArgbColor.of(0x50ff6b8b))),
 			Shapes.halo({ center: head_center, radius: head_r }, Brush.translucent(ArgbColor.of(0x407ef7d1))),
 		])
@@ -167,8 +167,8 @@ SnakeDraw :: [].{
 				again = "PRESS SPACE TO PLAY AGAIN"
 				alpha = 0.59 + 0.41 * Trig.pulse(elapsed)
 				var $out = [Rect({ x: left - 8.0, y: 236.0, width: board_w + 16.0, height: 140.0, fill: Flat(Brush.translucent(ArgbColor.of(0xe1060810))) })]
-				$out = List.concat($out, Font.centered(over, { top_center: { x: w / 2.0, y: 262.0 }, size: 40.0, color: food_neon }))
-				List.concat($out, Font.centered(again, { top_center: { x: w / 2.0, y: 326.0 }, size: 19.0, color: Brush.with_alpha(hint_color, alpha) }))
+				$out = List.concat($out, Font.centered_text_shapes(over, { top_center: { x: w / 2.0, y: 262.0 }, size: 40.0, color: food_neon }))
+				List.concat($out, Font.centered_text_shapes(again, { top_center: { x: w / 2.0, y: 326.0 }, size: 19.0, color: Brush.with_alpha(hint_color, alpha) }))
 			}
 		}
 }

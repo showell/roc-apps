@@ -21,8 +21,8 @@ SkyAndGrassPixels :: [].{
 	## whose arithmetic rounds differently.
 	sky_and_grass_pixels : ScreenRoll, Sky.Colors -> List(U32)
 	sky_and_grass_pixels = |roll, sky_colors| {
-		top_color = Brush.opaque(sky_colors.top)
-		horizon_color = Brush.opaque(sky_colors.horizon)
+		top_color = Brush.opaque_rgba(sky_colors.top)
+		horizon_color = Brush.opaque_rgba(sky_colors.horizon)
 		width = roll.width_px()
 		height = roll.height_px()
 		var $px = List.with_capacity(width.to_u64() * height.to_u64())

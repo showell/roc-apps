@@ -134,8 +134,8 @@ Brush :: [].{
 	}
 
 	## An opaque colour as a brush paints it.
-	opaque : RgbColor -> Brush.Rgba
-	opaque = |color| {
+	opaque_rgba : RgbColor -> Brush.Rgba
+	opaque_rgba = |color| {
 		r: color.red().to_f64(),
 		g: color.green().to_f64(),
 		b: color.blue().to_f64(),
@@ -144,12 +144,12 @@ Brush :: [].{
 
 	## An opaque colour as a flat fill.
 	flat : RgbColor -> Brush.Fill
-	flat = |color| Flat(opaque(color))
+	flat = |color| Flat(opaque_rgba(color))
 
 	## A colour with its alpha byte as a brush paints it, the alpha as a share
 	## of 255.
 	translucent : ArgbColor -> Brush.Rgba
-	translucent = |color| { ..opaque(color.rgb()), a: color.alpha().to_f64() / 255.0 }
+	translucent = |color| { ..opaque_rgba(color.rgb()), a: color.alpha().to_f64() / 255.0 }
 
 	## An opaque colour made part way see-through by an alpha from 0 to 1, for
 	## an alpha chosen as a share rather than as a byte. An alpha byte belongs
@@ -159,7 +159,7 @@ Brush :: [].{
 		if alpha < 0.0 or alpha > 1.0 {
 			crash "Brush.with_alpha: an alpha outside 0 to 1"
 		} else {
-			{ ..opaque(color), a: alpha }
+			{ ..opaque_rgba(color), a: alpha }
 		}
 
 	## The glow as a fill, its middle offset checked: at 0 or 1, one half of the
@@ -233,7 +233,7 @@ expect sample_inverse == { top_row: { x: -3.0, y: 2.5 }, bottom_row: { x: 2.0, y
 # An ellipse whose axes span the least area is a gradient, one just under it
 # is too thin, either way round, and parallel axes are too thin.
 expect {
-	stops = { start_color: Brush.opaque(RgbColor.of(0x000000)), end_color: Brush.opaque(RgbColor.of(0xFFFFFF)), start_offset: 0.0, end_offset: 1.0 }
+	stops = { start_color: Brush.opaque_rgba(RgbColor.of(0x000000)), end_color: Brush.opaque_rgba(RgbColor.of(0xFFFFFF)), start_offset: 0.0, end_offset: 1.0 }
 	at_least = { stops, center: { x: 0.0, y: 0.0 }, axis_u: { x: 0.0001, y: 0.0 }, axis_v: { x: 0.0, y: 1.0 } }
 	under = { ..at_least, axis_u: { x: 0.00009, y: 0.0 } }
 	under_flipped = { ..under, axis_v: { x: 0.0, y: -1.0 } }
@@ -250,20 +250,20 @@ expect Brush.translucent(ArgbColor.of(0xFF000000)) == { r: 0.0, g: 0.0, b: 0.0, 
 # A colour with no alpha byte is invisible.
 expect Brush.translucent(ArgbColor.of(0x00FFE9A8)).a == 0.0
 
-expect Brush.opaque(RgbColor.of(0xFFE9A8)) == { r: 255.0, g: 233.0, b: 168.0, a: 1.0 }
+expect Brush.opaque_rgba(RgbColor.of(0xFFE9A8)) == { r: 255.0, g: 233.0, b: 168.0, a: 1.0 }
 
 expect Brush.flat(RgbColor.of(0xFFE9A8)) == Flat({ r: 255.0, g: 233.0, b: 168.0, a: 1.0 })
 
 # An alpha share is kept as it is, at either end and between.
 expect Brush.with_alpha(RgbColor.of(0xFFC980), 0.85) == { r: 255.0, g: 201.0, b: 128.0, a: 0.85 }
 expect Brush.with_alpha(RgbColor.of(0xFFC980), 0.0).a == 0.0
-expect Brush.with_alpha(RgbColor.of(0xFFC980), 1.0) == Brush.opaque(RgbColor.of(0xFFC980))
+expect Brush.with_alpha(RgbColor.of(0xFFC980), 1.0) == Brush.opaque_rgba(RgbColor.of(0xFFC980))
 
 # A span whose edges meet gives its edge colour everywhere, and one with any
 # width still gives its middle colour halfway.
 expect {
-	edge = Brush.opaque(RgbColor.of(0x000000))
-	middle = Brush.opaque(RgbColor.of(0xFFFFFF))
+	edge = Brush.opaque_rgba(RgbColor.of(0x000000))
+	middle = Brush.opaque_rgba(RgbColor.of(0xFFFFFF))
 	met = Span({ edge_color: edge, middle_color: middle, left_x: 5.0, right_x: 5.0 })
 	wide = Span({ edge_color: edge, middle_color: middle, left_x: 4.0, right_x: 6.0 })
 	Brush.shade(met, { x: 5.0, y: 0.0 }) == edge and Brush.shade(wide, { x: 5.0, y: 0.0 }) == middle
@@ -272,7 +272,7 @@ expect {
 # A line from a point to itself gives its end colour everywhere, and a line
 # with any length gives its start colour at its start.
 expect {
-	stops = { start_color: Brush.opaque(RgbColor.of(0x000000)), end_color: Brush.opaque(RgbColor.of(0xFFFFFF)), start_offset: 0.0, end_offset: 1.0 }
+	stops = { start_color: Brush.opaque_rgba(RgbColor.of(0x000000)), end_color: Brush.opaque_rgba(RgbColor.of(0xFFFFFF)), start_offset: 0.0, end_offset: 1.0 }
 	point = Linear({ stops, start_point: { x: 1.0, y: 1.0 }, end_point: { x: 1.0, y: 1.0 } })
 	line = Linear({ stops, start_point: { x: 1.0, y: 1.0 }, end_point: { x: 1.0, y: 3.0 } })
 	Brush.shade(point, { x: 1.0, y: 1.0 }) == stops.end_color and Brush.shade(line, { x: 1.0, y: 1.0 }) == stops.start_color

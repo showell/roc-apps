@@ -372,7 +372,7 @@ CanvasAppRunner :: [].{
 					Image(i) => draw_pixels!(frame, i)
 					# roc-ray is handed no typeface, so a line of type arrives as
 					# strokes, each a quad and so convex already.
-					Text(line) => draw_all!(shader, frame, Font.plotted(line).map(|stroke| Uncut(stroke)))
+					Text(line) => draw_all!(shader, frame, Font.plotted_shapes(line).map(|stroke| Uncut(stroke)))
 					# Runs are split before this, so a mark never reaches here.
 					Blend(_) => {}
 					View(_) => {}

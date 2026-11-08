@@ -241,8 +241,8 @@ width_shade = |corners, { color, strength }| {
 		Brush.flat(color)
 	} else {
 		Span({
-			edge_color: Brush.opaque(width_shade_edge(color, strength)),
-			middle_color: Brush.opaque(width_shade_middle(color, strength)),
+			edge_color: Brush.opaque_rgba(width_shade_edge(color, strength)),
+			middle_color: Brush.opaque_rgba(width_shade_middle(color, strength)),
 			left_x: span.min_x.to_f64(),
 			right_x: span.max_x.to_f64(),
 		})
@@ -295,7 +295,10 @@ expect
 		},
 		RgbColor.of(111),
 	)
-		== Poly({ coordinates: triangle_coordinates, fill: Flat(Brush.opaque(RgbColor.of(111))) })
+		== Poly({
+			coordinates: triangle_coordinates,
+			fill: Flat(Brush.opaque_rgba(RgbColor.of(111))),
+		})
 
 sample_rectangle : { top_left : Screen.Point, bottom_right : Screen.Point }
 sample_rectangle = { top_left: Screen.point(1.0, 2.0), bottom_right: Screen.point(5.0, 8.0) }
@@ -309,7 +312,7 @@ expect Polygon.rectangle_corners(sample_rectangle) == [
 
 expect Polygon.rectangle(sample_rectangle, RgbColor.of(111)) == Poly({
 	coordinates: [1.0, 2.0, 5.0, 2.0, 5.0, 8.0, 1.0, 8.0],
-	fill: Flat(Brush.opaque(RgbColor.of(111))),
+	fill: Flat(Brush.opaque_rgba(RgbColor.of(111))),
 })
 
 # A rectangle of no size still has its four corners.
@@ -320,7 +323,7 @@ expect
 	)
 		== Poly({
 			coordinates: [1.0, 2.0, 1.0, 2.0, 1.0, 2.0, 1.0, 2.0],
-			fill: Flat(Brush.opaque(RgbColor.of(111))),
+			fill: Flat(Brush.opaque_rgba(RgbColor.of(111))),
 		})
 
 # A gradient is too small just under the limit, and not at it.
@@ -340,7 +343,7 @@ expect radial_polygon(three_corners, Pixels.of(0.5)) == Ok(
 
 expect Polygon.flat_polygon(three_corners, RgbColor.of(111)) == Poly({
 	coordinates: triangle_coordinates,
-	fill: Flat(Brush.opaque(RgbColor.of(111))),
+	fill: Flat(Brush.opaque_rgba(RgbColor.of(111))),
 })
 
 expect
@@ -348,8 +351,8 @@ expect
 		== Poly({
 			coordinates: triangle_coordinates,
 			fill: Span({
-				edge_color: Brush.opaque(RgbColor.of(155)),
-				middle_color: Brush.opaque(RgbColor.of(255)),
+				edge_color: Brush.opaque_rgba(RgbColor.of(155)),
+				middle_color: Brush.opaque_rgba(RgbColor.of(255)),
 				left_x: 1.0,
 				right_x: 5.0,
 			}),
@@ -470,8 +473,8 @@ expect
 		== Poly({
 			coordinates: [10.0, 1.0, 30.0, 2.0, 20.0, 3.0],
 			fill: Span({
-				edge_color: Brush.opaque(RgbColor.of(0x4D2613)),
-				middle_color: Brush.opaque(RgbColor.of(0xA05028)),
+				edge_color: Brush.opaque_rgba(RgbColor.of(0x4D2613)),
+				middle_color: Brush.opaque_rgba(RgbColor.of(0xA05028)),
 				left_x: 10.0,
 				right_x: 30.0,
 			}),
@@ -489,7 +492,7 @@ expect
 				20.0,
 				3.0,
 			],
-			fill: Flat(Brush.opaque(sample_color)),
+			fill: Flat(Brush.opaque_rgba(sample_color)),
 		})
 
 expect
@@ -503,5 +506,5 @@ expect
 				10.2,
 				3.0,
 			],
-			fill: Flat(Brush.opaque(sample_color)),
+			fill: Flat(Brush.opaque_rgba(sample_color)),
 		})

@@ -40,7 +40,7 @@ BreakoutDraw :: [].{
 	## One complete Breakout frame, back to front.
 	frame : Rules.World, F64 -> List(Shapes.Shape)
 	frame = |world, elapsed| {
-		var $out = [Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Linear({ stops: { start_color: Brush.opaque(field_top), end_color: Brush.opaque(field_bottom), start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: h } }) })]
+		var $out = [Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Linear({ stops: { start_color: Brush.opaque_rgba(field_top), end_color: Brush.opaque_rgba(field_bottom), start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: h } }) })]
 		$out = List.concat($out, hud(world))
 		$out = List.concat($out, bricks(world.bricks))
 		$out = List.concat($out, glow(world))
@@ -54,11 +54,11 @@ BreakoutDraw :: [].{
 		score = Str.concat("SCORE ", U64.to_str(world.score))
 		lives = Str.concat("LIVES ", U64.to_str(world.lives))
 		hint = "LEFT / RIGHT MOVE    SPACE LAUNCH"
-		var $out = Font.text_shapes("BREAKOUT", { top_left: { x: 44.0, y: 22.0 }, size: 26.0, color: Brush.opaque(paddle_neon) })
-		$out = List.concat($out, Font.text_shapes(score, { top_left: { x: 330.0, y: 26.0 }, size: 22.0, color: Brush.opaque(hud_color) }))
-		$out = List.concat($out, Font.text_shapes(lives, { top_left: { x: 560.0, y: 26.0 }, size: 22.0, color: Brush.opaque(hud_color) }))
+		var $out = Font.text_shapes("BREAKOUT", { top_left: { x: 44.0, y: 22.0 }, size: 26.0, color: Brush.opaque_rgba(paddle_neon) })
+		$out = List.concat($out, Font.text_shapes(score, { top_left: { x: 330.0, y: 26.0 }, size: 22.0, color: Brush.opaque_rgba(hud_color) }))
+		$out = List.concat($out, Font.text_shapes(lives, { top_left: { x: 560.0, y: 26.0 }, size: 22.0, color: Brush.opaque_rgba(hud_color) }))
 		$out = List.append($out, Shapes.line({ from: { x: 44.0, y: 58.0 }, to: { x: 756.0, y: 58.0 }, width: 2.0 }, Brush.flat(rule_color)))
-		List.concat($out, Font.centered(hint, { top_center: { x: w / 2.0, y: 572.0 }, size: 17.0, color: Brush.opaque(hint_color) }))
+		List.concat($out, Font.centered_text_shapes(hint, { top_center: { x: w / 2.0, y: 572.0 }, size: 17.0, color: Brush.opaque_rgba(hint_color) }))
 	}
 
 	## Every brick still standing, each with a bright top-edge sheen.
@@ -84,7 +84,7 @@ BreakoutDraw :: [].{
 	glow : Rules.World -> List(Shapes.Shape)
 	glow = |world| {
 		p = Math.center(world.paddle.rect())
-		Shapes.added_light([
+		Shapes.added_light_shapes([
 			halo(F32.to_f64(p.x), F32.to_f64(p.y), 90.0, paddle_neon),
 			halo(F32.to_f64(world.ball.pos.x), F32.to_f64(world.ball.pos.y), 46.0, ball_neon),
 		])
@@ -122,7 +122,7 @@ BreakoutDraw :: [].{
 		match world.state {
 			Ready => {
 				line = "PRESS SPACE TO LAUNCH"
-				Font.centered(line, { top_center: { x: w / 2.0, y: 340.0 }, size: 22.0, color: Brush.with_alpha(hud_color, prompt_alpha(elapsed)) })
+				Font.centered_text_shapes(line, { top_center: { x: w / 2.0, y: 340.0 }, size: 22.0, color: Brush.with_alpha(hud_color, prompt_alpha(elapsed)) })
 			}
 			Playing => []
 			Won => banner("WALL CLEARED", RgbColor.of(0x4ce0b3), elapsed)
@@ -136,7 +136,7 @@ BreakoutDraw :: [].{
 			Shapes.rounded_rect({ x: 188.0, y: 274.0, width: 424.0, height: 128.0, corner_radius: 18.0, corner_steps: 8 }, Flat(Brush.with_alpha(accent, 0.47))),
 			Shapes.rounded_rect({ x: 190.0, y: 276.0, width: 420.0, height: 124.0, corner_radius: 17.0, corner_steps: 8 }, Flat(Brush.with_alpha(field_bottom, 0.91))),
 		]
-		$out = List.concat($out, Font.centered(line, { top_center: { x: w / 2.0, y: 304.0 }, size: 30.0, color: Brush.opaque(accent) }))
-		List.concat($out, Font.centered(again, { top_center: { x: w / 2.0, y: 356.0 }, size: 17.0, color: Brush.with_alpha(hint_color, prompt_alpha(elapsed)) }))
+		$out = List.concat($out, Font.centered_text_shapes(line, { top_center: { x: w / 2.0, y: 304.0 }, size: 30.0, color: Brush.opaque_rgba(accent) }))
+		List.concat($out, Font.centered_text_shapes(again, { top_center: { x: w / 2.0, y: 356.0 }, size: 17.0, color: Brush.with_alpha(hint_color, prompt_alpha(elapsed)) }))
 	}
 }

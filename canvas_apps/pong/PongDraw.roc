@@ -20,17 +20,17 @@ PongDraw :: [].{
 	h = 600.0
 
 	dash : Brush.Rgba
-	dash = Brush.opaque(RgbColor.of(0x2a3566))
+	dash = Brush.opaque_rgba(RgbColor.of(0x2a3566))
 
 	## One complete Pong frame, back to front.
 	frame : Rules.World -> List(Shapes.Shape)
 	frame = |world| {
 		var $out = List.with_capacity(140)
 		# The field, a dark vertical gradient rather than flat black.
-		$out = List.append($out, Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Linear({ stops: { start_color: Brush.opaque(Rules.field_top), end_color: Brush.opaque(Rules.field_bottom), start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: h } }) }))
+		$out = List.append($out, Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Linear({ stops: { start_color: Brush.opaque_rgba(Rules.field_top), end_color: Brush.opaque_rgba(Rules.field_bottom), start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: h } }) }))
 		$out = List.concat($out, center_line({}))
 		$out = List.concat($out, scores(world))
-		$out = List.concat($out, Shapes.added_light([trail(world), glow(world), wash(world)].join()))
+		$out = List.concat($out, Shapes.added_light_shapes([trail(world), glow(world), wash(world)].join()))
 		$out = List.concat($out, bodies(world))
 		List.concat($out, banner(world))
 	}
@@ -109,8 +109,8 @@ PongDraw :: [].{
 		left = U64.to_str(world.left.score)
 		right = U64.to_str(world.right.score)
 		List.concat(
-			Font.centered(left, { top_center: { x: w * 0.32, y: 30.0 }, size: 44.0, color: Brush.opaque(Rules.left_neon) }),
-			Font.centered(right, { top_center: { x: w * 0.68, y: 30.0 }, size: 44.0, color: Brush.opaque(Rules.right_neon) }),
+			Font.centered_text_shapes(left, { top_center: { x: w * 0.32, y: 30.0 }, size: 44.0, color: Brush.opaque_rgba(Rules.left_neon) }),
+			Font.centered_text_shapes(right, { top_center: { x: w * 0.68, y: 30.0 }, size: 44.0, color: Brush.opaque_rgba(Rules.right_neon) }),
 		)
 	}
 
@@ -118,7 +118,7 @@ PongDraw :: [].{
 	banner : Rules.World -> List(Shapes.Shape)
 	banner = |world| {
 		hint = "W / S MOVE    SPACE NEW MATCH"
-		var $out = Font.centered(hint, { top_center: { x: w / 2.0, y: h - 34.0 }, size: 17.0, color: Brush.opaque(Rules.hint_color) })
+		var $out = Font.centered_text_shapes(hint, { top_center: { x: w / 2.0, y: h - 34.0 }, size: 17.0, color: Brush.opaque_rgba(Rules.hint_color) })
 		if Rules.is_over(world) {
 			left_won = world.left.score >= 5
 			won = if left_won {
@@ -133,8 +133,8 @@ PongDraw :: [].{
 				Rules.right_neon
 			}
 			$out = List.concat([Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Flat(Brush.with_alpha(Rules.field_bottom, 0.75)) })], $out)
-			$out = List.concat($out, Font.centered(won, { top_center: { x: w / 2.0, y: 248.0 }, size: 40.0, color: Brush.opaque(tint) }))
-			List.concat($out, Font.centered(again, { top_center: { x: w / 2.0, y: 316.0 }, size: 19.0, color: Brush.opaque(Rules.hint_color) }))
+			$out = List.concat($out, Font.centered_text_shapes(won, { top_center: { x: w / 2.0, y: 248.0 }, size: 40.0, color: Brush.opaque_rgba(tint) }))
+			List.concat($out, Font.centered_text_shapes(again, { top_center: { x: w / 2.0, y: 316.0 }, size: 19.0, color: Brush.opaque_rgba(Rules.hint_color) }))
 		} else {
 			$out
 		}

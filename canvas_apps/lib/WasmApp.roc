@@ -1,8 +1,8 @@
-# WasmApp turns a CanvasApp into what the canvas apps' wasm platform asks
-# for, which is the same for every app. The platform asks for eleven
-# functions over a boxed model: box it, step it with the tick's keys, answer
-# its shapes, and say which tones went off. `program` takes a CanvasApp and
-# names none, so an app's wasm file only names its app.
+## WasmApp turns a CanvasApp into what the canvas apps' wasm platform asks
+## for, which is the same for every app. The platform asks for eleven
+## functions over a boxed model: box it, step it with the tick's keys, answer
+## its shapes, and say which tones went off. `program` takes a CanvasApp and
+## names none, so an app's wasm file only names its app.
 import CanvasApp
 import Input
 import Mouse

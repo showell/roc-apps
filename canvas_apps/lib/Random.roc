@@ -1,24 +1,26 @@
-# Random is a reproducible number, with roc-ray's own shape. roc-ray's
-# `Random` re-exports the roc-random package, and the canvas apps' wasm build
-# is a flat pile of Roc with no package manifest, so this offers the same
-# names: `seed`, `step`, `next`, `bounded_i32`, and a `Generation` carrying
-# `value` and `state`. A game ported from an example changes its import line
-# and nothing else.
-#
-# The sequence is not roc-random's, so a game's food lands somewhere other
-# than where it does upstream. It is reproducible from its seed, which is all
-# the rules ask of it.
-#
-# It is a linear congruential generator with Numerical Recipes' constants,
-# kept in a U64 and masked back to 32 bits. The mask keeps the multiply from
-# ever overflowing, since `*` on a fixed-width integer crashes rather than
-# wraps, and the state is opaque so that only `seed` and a draw can make one.
+## Random is a reproducible number, with roc-ray's own shape. roc-ray's
+## `Random` re-exports the roc-random package, and the canvas apps' wasm build
+## is a flat pile of Roc with no package manifest, so this offers the same
+## names: `seed`, `step`, `next`, `bounded_i32`, and a `Generation` carrying
+## `value` and `state`. A game ported from an example changes its import line
+## and nothing else.
+##
+## The sequence is not roc-random's, so a game's food lands somewhere other
+## than where it does upstream. It is reproducible from its seed, which is all
+## the rules ask of it.
+##
+## It is a linear congruential generator with Numerical Recipes' constants,
+## kept in a U64 and masked back to 32 bits. The mask keeps the multiply from
+## ever overflowing, since `*` on a fixed-width integer crashes rather than
+## wraps, and the state is opaque so that only `seed` and a draw can make one.
 
 Random :: [].{
 	State :: U64.{
 		is_eq : _
 	}
 
+	## A draw's value, the number drawn, and the state to draw the next from,
+	## under roc-ray's names, so a ported game reads them unchanged.
 	Generation(value) : { value : value, state : Random.State }
 
 	Generator(value) : Random.State -> Random.Generation(value)
