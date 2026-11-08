@@ -289,7 +289,7 @@ World :: [].{
 	## The route's first segment whose pigs draw the rider's eye.
 	first_distracting_segment : Segment
 	first_distracting_segment =
-		World.route.route_segments().find_first(Segment.is_distracting)
+		World.route.route_segments().find_first(Segment.has_distracting_pigs)
 			?? crash "World.first_distracting_segment: the route has a distracting herd"
 }
 
@@ -387,7 +387,7 @@ expect
 		(0, False),
 		(17, False),
 		(18, True),
-	].all(|(index, want)| is_route_end(route_segment_at(index)) == want)
+	].all(|(index, want)| is_last_segment(route_segment_at(index)) == want)
 
 # The rider commits to the route's end at the end of its last segment.
 expect route_segment_at(18).commit_along().to_metres() == 300.0
@@ -408,9 +408,9 @@ expect
 		},
 	)
 
-## Whether the route ends with a segment.
-is_route_end : Segment -> Bool
-is_route_end = |segment|
+## Whether `segment` ends the route.
+is_last_segment : Segment -> Bool
+is_last_segment = |segment|
 	match segment.ending {
 		Bends(_) => False
 		RouteEnds => True

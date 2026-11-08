@@ -220,8 +220,8 @@ Segment := {
 		}
 
 	## Whether a segment's pigs draw the rider's eye.
-	is_distracting : Segment -> Bool
-	is_distracting = |segment|
+	has_distracting_pigs : Segment -> Bool
+	has_distracting_pigs = |segment|
 		match segment.pigs {
 			Herd({ interest: Distracting, .. }) => True
 			Herd({ interest: Unnoticed, .. }) | NoPigs => False

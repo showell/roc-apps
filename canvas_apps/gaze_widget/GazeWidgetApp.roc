@@ -330,7 +330,8 @@ state_at_step = |played, step| rider_at(played, (step - first_step).to_u64())
 
 # This stretch is on the route's first distracting segment, and with its
 # encounter unplanned it still ends where the ride does.
-expect World.route.segment_at(first_rider.motorcycle.route_place.segment_index).is_distracting()
+expect
+	World.route.segment_at(first_rider.motorcycle.route_place.segment_index).has_distracting_pigs()
 expect {
 	played = state_at_step(stretch_states, last_step)
 	ridden = Tour.at_step(Clock.at_step(last_step)).instant().rider
