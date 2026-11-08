@@ -170,7 +170,10 @@ WidgetPage :: [].{
 		view : FrameView
 		view = { backdrop, ride_shape_lists: [ride_shapes], roll: Angle.upright }
 		corner = { x: 0.0, y: 0.0 }
-		view.framed_shapes(
+		# The module call, because `view.framed_shapes(...)` here crashes the
+		# pinned Roc's wasm build (findings/widget-method-segv/).
+		FrameView.framed_shapes(
+			view,
 			World({
 				target: corner,
 				offset: corner,
