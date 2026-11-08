@@ -15,7 +15,6 @@ import game.RoadAhead
 import game.Route
 import game.SegmentPlace
 import game.Sky
-import game.Steps
 import game.Tower
 import game.World
 import lib.CanvasApp
