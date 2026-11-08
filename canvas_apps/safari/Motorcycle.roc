@@ -185,14 +185,18 @@ place_past_bend = |along| motorcycle_at(along).route_place.route_place_past_bend
 # the next segment.
 expect place_past_bend(100.0).across.distance_from_middle() > Distance.metres(100.0)
 expect place_past_bend(500.0).is_on_road()
-expect [100.0, 500.0].all(|along| place_past_bend(along).segment_index.to_i64() == 1)
+expect {
+	next_index = RoutePlace.route_start.segment_index.next()
+	[100.0, 500.0].all(|along| place_past_bend(along).segment_index == next_index)
+}
 
 # So from well short of the bend the motorcycle stays where it was, and from the
 # bend it crosses, turned to the next segment's axis.
 expect motorcycle_at(100.0).cross_bend_if_on_road(gentle_bend) == motorcycle_at(100.0)
 expect {
 	crossed = motorcycle_at(500.0).cross_bend_if_on_road(gentle_bend)
-	crossed.route_place.segment_index.to_i64() == 1 and crossed.yaw.to_radians() == -0.3
+	next_index = RoutePlace.route_start.segment_index.next()
+	crossed.route_place.segment_index == next_index and crossed.yaw.to_radians() == -0.3
 }
 
 expect motorcycle_at(300.0).has_reached(Distance.metres(300.0))

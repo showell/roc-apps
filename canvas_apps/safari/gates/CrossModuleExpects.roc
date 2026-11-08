@@ -140,15 +140,17 @@ expect {
 	)
 }
 
-expect [
-	(0, 0),
-	(3, 3),
-].all(|(first, want)| RoadAhead.rider_segment_index(world_road_at(first)).to_i64() == want)
+expect [(0, 0), (3, 3)].all(
+	|(first, want)| {
+		rider_index = RoadAhead.rider_segment_index(world_road_at(first))
+		rider_index == Route.SegmentIndex.number(want)
+	},
+)
 
-## The route's number of the segment in view just behind a rider on the
-## world's segment `first`, or -1 at the route's start.
-number_behind : U32 -> I64
-number_behind = |first| {
+## The index of the segment in view just behind a rider on the world's segment
+## `first`, unless the rider is on the route's first segment.
+index_behind : U32 -> [JustBehind(Route.SegmentIndex), NoneBehind]
+index_behind = |first| {
 	behind = RoadAhead.segments_in_view(world_road_at(first)).find_last(
 		|in_view|
 			match in_view.place {
@@ -157,17 +159,17 @@ number_behind = |first| {
 			},
 	)
 	match behind {
-		Ok(in_view) => in_view.index.to_i64()
-		Err(NotFound) => -1
+		Ok(in_view) => JustBehind(in_view.index)
+		Err(NotFound) => NoneBehind
 	}
 }
 
 expect
 	[
-		(0, -1),
-		(1, 0),
-		(3, 2),
-	].all(|(input, want)| number_behind(input) == want)
+		(0, NoneBehind),
+		(1, JustBehind(Route.SegmentIndex.number(0))),
+		(3, JustBehind(Route.SegmentIndex.number(2))),
+	].all(|(input, want)| index_behind(input) == want)
 
 ## A camera 100 m along the rider's segment, 1 m right of the middle, turned
 ## 0.2 radians to the right.
@@ -1612,8 +1614,14 @@ rider_a_step_after = |index, along|
 
 # A rider near the first bend crosses onto the next segment's road, and one well
 # short of it, which the bend would carry far off that road, stays.
-expect rider_a_step_after(0, 499.0).motorcycle.route_place.segment_index.to_i64() == 1
-expect rider_a_step_after(0, 100.0).motorcycle.route_place.segment_index.to_i64() == 0
+expect {
+	crossed = rider_a_step_after(0, 499.0).motorcycle.route_place
+	crossed.segment_index == Route.SegmentIndex.number(1)
+}
+expect {
+	stayed = rider_a_step_after(0, 100.0).motorcycle.route_place
+	stayed.segment_index == Route.SegmentIndex.number(0)
+}
 
 # The ride ends stopped dead at the route's end, and a step short of the end
 # leaves the rider moving.

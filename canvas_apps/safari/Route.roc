@@ -20,9 +20,6 @@ Route :: List(Segment).{
 		to_u32 : Route.SegmentIndex -> U32
 		to_u32 = |Route.SegmentIndex.(n)| n
 
-		to_i64 : Route.SegmentIndex -> I64
-		to_i64 = |Route.SegmentIndex.(n)| n.to_i64()
-
 		## The route's first segment.
 		first : Route.SegmentIndex
 		first = Route.SegmentIndex.(0)
