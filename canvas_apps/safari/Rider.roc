@@ -20,14 +20,14 @@ Rider := { motorcycle : Motorcycle, eyes : RiderEyes }.{
 	## at the route's end, and then where the rider looks.
 	next : Rider, { route : Route, encounter_timing : EncounterPlan.Timing } -> Rider
 	next = |state, { route, encounter_timing }| {
-		seg = state.motorcycle.route_place.segment_on(route)
+		segment = state.motorcycle.route_place.segment_on(route)
 		moved = state.motorcycle.motorcycle_at_next_step(
 			RiderMind.controls(state.motorcycle, { route, encounter_timing }),
 		)
 		motorcycle =
-			match seg.segment_ending() {
+			match segment.segment_ending() {
 				Bends({ bend, .. }) => moved.cross_bend_if_on_road(bend)
-				RouteEnds => stop_at_route_end(moved, seg)
+				RouteEnds => stop_at_route_end(moved, segment)
 			}
 		{ motorcycle, eyes: Gaze.eyes_at_next_step(state.eyes, { motorcycle, route }) }
 	}
@@ -35,10 +35,10 @@ Rider := { motorcycle : Motorcycle, eyes : RiderEyes }.{
 	## Whether the rider has reached the end of the route.
 	is_finished : Rider, Route -> Bool
 	is_finished = |state, route| {
-		seg = state.motorcycle.route_place.segment_on(route)
-		match seg.segment_ending() {
+		segment = state.motorcycle.route_place.segment_on(route)
+		match segment.segment_ending() {
 			Bends(_) => False
-			RouteEnds => state.motorcycle.has_reached(seg.length)
+			RouteEnds => state.motorcycle.has_reached(segment.length)
 		}
 	}
 }
@@ -46,9 +46,9 @@ Rider := { motorcycle : Motorcycle, eyes : RiderEyes }.{
 ## The motorcycle held at the route's end once it reaches it. The throttle
 ## brakes it to rest there, and this catches the last step's overrun.
 stop_at_route_end : Motorcycle, Segment -> Motorcycle
-stop_at_route_end = |moved, seg|
-	if moved.has_reached(seg.length) {
-		moved.stopped_at(Along.at(seg.length))
+stop_at_route_end = |moved, segment|
+	if moved.has_reached(segment.length) {
+		moved.stopped_at(Along.at(segment.length))
 	} else {
 		moved
 	}
