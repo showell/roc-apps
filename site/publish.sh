@@ -33,8 +33,9 @@ LIVE="${LIVE:-$HERE/live}"
 ROCEMIT_REPO="${ROCEMIT_REPO:-$HOME/showell_repos/rust-codex-compiler}"
 COBBLESTONE="${COBBLESTONE:-$HOME/showell_repos/cobblestone-u66rel}"
 
-# Whether an app's build read rocemit and Cobblestone. An app this doesn't
-# name is refused, so a new one gets a decision rather than a blank line.
+# Whether an app's build read rocemit and Cobblestone. A canvas app never does,
+# so it passes unnamed; any other app this doesn't name is refused, so a new
+# one gets a decision rather than a blank line.
 reads_emitted_codex() {
     case "$1" in
         gpu|games|machine|framebuffer) return 0 ;;

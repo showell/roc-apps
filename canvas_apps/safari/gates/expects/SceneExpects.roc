@@ -98,10 +98,10 @@ Post := { height : Distance }.{
 }
 
 ## The road ahead of a rider on a straight route of one segment.
-straight_road : RoadAhead.RoadView
-straight_road = Fixtures.crafted_road([Fixtures.segment_of([])])
+one_segment_road : RoadAhead.RoadView
+one_segment_road = Fixtures.crafted_road([Fixtures.segment_of([])])
 
-## A post 1 m tall, `along` the straight road and 1.5 m right of its middle, as
+## A post 1 m tall, `along` the one-segment road and 1.5 m right of its middle, as
 ## a camera at `origin` sees it.
 post_sighting : F64 -> Try(Pipeline.Sighted(Post), [BehindCamera])
 post_sighting = |along|
@@ -112,7 +112,7 @@ post_sighting = |along|
 			kind: Post.({ height: Distance.metres(1.0) }),
 		},
 		{
-			road: straight_road,
+			road: one_segment_road,
 			vantage: Fixtures.origin,
 			place: Ahead(SegmentPlace.Position.first),
 		},
@@ -142,7 +142,7 @@ expect
 					kind: Post.({ height: height }),
 				},
 				{
-					road: straight_road,
+					road: one_segment_road,
 					camera: { vantage: Fixtures.origin, cam_focal: Pixels.of(128.0) },
 					place: Ahead(SegmentPlace.Position.first),
 				},
@@ -197,8 +197,8 @@ lone_bird_shapes : F64 -> List(Shapes.Shape)
 lone_bird_shapes = |forward| Scene.scene_shapes(lone_bird_scene(forward))
 
 # A bird perched on a tree stands at the tree's depth and is drawn over it.
-# A bird that isn't perched is drawn by its own depth: behind a nearer tree,
-# and over a farther one.
+# A bird at a different depth from the tree is drawn by its own depth: behind a
+# nearer tree, and over a farther one.
 expect
 	tree_and_bird_shapes({ tree_ahead: 40.0, bird_ahead: 40.0 })
 		== lone_tree_shapes(40.0).concat(lone_bird_shapes(40.0))

@@ -495,13 +495,13 @@ expect
 		|route_position| truck_after(route_position, 0.3).speed == Speed.metres_a_step(0.3),
 	)
 
-## What becomes of a truck `lead` metres ahead of a rider on the truck road's
+## What becomes of a truck `lead` metres ahead of a rider on the three-segment road's
 ## first segment, seen from `vantage`, with its lights off. On the first
 ## segment the rider's distance along the route is the vantage's `along`.
 truck_seen_from : Geom.Vantage, F64 -> TruckSighting.TruckFate
 truck_seen_from = |vantage, lead|
 	TruckSighting.truck_in_view(
-		Fixtures.truck_road,
+		Fixtures.three_segment_road,
 		{
 			camera: { vantage: vantage },
 			truck: {

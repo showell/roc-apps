@@ -256,21 +256,28 @@ function bindApp(exports) {
 
 const CATCH_UP = 4; // steps one animation frame may take before time is dropped
 
-// The last frame's time in the wasm (computing its shapes) and in the glue
-// (decoding them out of the wasm's memory), for the timing log.
-const FRAME_SPLIT = { computeMs: 0, decodeMs: 0 };
+// The last frame's time in the wasm (computing its shapes), in the glue
+// (decoding them out of the wasm's memory) and on the canvas (painting them),
+// for the timing log.
+const FRAME_SPLIT = { computeMs: 0, decodeMs: 0, paintMs: 0 };
 
 // With `?timing=1` in the address, the first frames' times go to the console:
-// how long the wasm took to load, then per frame the gap since the last one,
-// the steps taken, and the milliseconds spent stepping and drawing. It tells a
-// slow start (the engine still on its first, unoptimized code) from a slow
-// ride. Without it nothing is recorded.
+// how long the wasm took to load and compile and to take its opening presses,
+// then per frame the gap since the last one, the steps taken, and the
+// milliseconds spent stepping and drawing. Comparing the first TIMED_WINDOW of
+// the TIMED_FRAMES frames with the last tells a slow start (the engine still on
+// its first, unoptimized code) from a slow ride. Without it nothing is
+// recorded.
 const TIMED_FRAMES = 120;
+const TIMED_WINDOW = 30;
 function frameTimer() {
   if (new URLSearchParams(location.search).get('timing') !== '1') return null;
   const rows = [];
+  const first = [0, TIMED_WINDOW];
+  const last = [TIMED_FRAMES - TIMED_WINDOW, TIMED_FRAMES];
   return {
-    loaded: (ms) => console.log(`canvas_app_runner: wasm loaded and compiled in ${ms.toFixed(0)} ms`),
+    loaded: (ms) =>
+      console.log(`canvas_app_runner: wasm loaded, compiled and through its opening presses in ${ms.toFixed(0)} ms`),
     frame: (row) => {
       if (rows.length >= TIMED_FRAMES) return;
       rows.push(row);
@@ -281,13 +288,14 @@ function frameTimer() {
         (rows.slice(from, to).reduce((sum, r) => sum + r[key], 0) / (to - from)).toFixed(1);
       const steps = (from, to) => rows.slice(from, to).reduce((sum, r) => sum + r.steps, 0);
       console.log(
-        `canvas_app_runner: frames over 16 ms of work: first 30 ${slow(0, 30)}, last 30 ${slow(90, 120)}; ` +
-          `mean step ms ${mean(0, 30, 'stepMs')} then ${mean(90, 120, 'stepMs')}, ` +
-          `mean draw ms ${mean(0, 30, 'drawMs')} then ${mean(90, 120, 'drawMs')} ` +
-          `(wasm ${mean(0, 30, 'computeMs')} then ${mean(90, 120, 'computeMs')}, ` +
-          `decode ${mean(0, 30, 'decodeMs')} then ${mean(90, 120, 'decodeMs')}, ` +
-          `paint ${mean(0, 30, 'paintMs')} then ${mean(90, 120, 'paintMs')}), ` +
-          `steps taken ${steps(0, 30)} then ${steps(90, 120)}`,
+        `canvas_app_runner: frames over 16 ms of work: first ${TIMED_WINDOW} ${slow(...first)}, ` +
+          `last ${TIMED_WINDOW} ${slow(...last)}; ` +
+          `mean step ms ${mean(...first, 'stepMs')} then ${mean(...last, 'stepMs')}, ` +
+          `mean draw ms ${mean(...first, 'drawMs')} then ${mean(...last, 'drawMs')} ` +
+          `(wasm ${mean(...first, 'computeMs')} then ${mean(...last, 'computeMs')}, ` +
+          `decode ${mean(...first, 'decodeMs')} then ${mean(...last, 'decodeMs')}, ` +
+          `paint ${mean(...first, 'paintMs')} then ${mean(...last, 'paintMs')}), ` +
+          `steps taken ${steps(...first)} then ${steps(...last)}`,
       );
     },
   };
@@ -401,7 +409,7 @@ async function main(show) {
       drawMs: +(performance.now() - drawStart).toFixed(1),
       computeMs: stepped ? +FRAME_SPLIT.computeMs.toFixed(1) : 0,
       decodeMs: stepped ? +FRAME_SPLIT.decodeMs.toFixed(1) : 0,
-      paintMs: stepped ? +(FRAME_SPLIT.paintMs ?? 0).toFixed(1) : 0,
+      paintMs: stepped ? +FRAME_SPLIT.paintMs.toFixed(1) : 0,
     });
   };
 

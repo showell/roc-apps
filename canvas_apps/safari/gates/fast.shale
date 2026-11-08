@@ -25,8 +25,9 @@ const SAFARI = dirname(GATES)
 const LINTS = GATES .. "/lints.shale"
 const MERGE_GATE = GATES .. "/run.shale"
 
--- The merge gate is the one home of where each checkout's caches live.
-function checkout_folder()
+-- This checkout's fast cache folder, which the merge gate names, since it is
+-- the one home of where each checkout's caches live.
+function fast_cache_folder()
   local r = must(run({"shale", "--root", ".", MERGE_GATE, "part=fast_cache"}, {timeout_ms = 30000, whole = 4000}))
   for l in lines(r.out) do
     if starts_with(l, "build:") then return trim(l) end
@@ -151,7 +152,7 @@ function lint_changed_files(files)
 end
 
 function main()
-  local folder = checkout_folder()
+  local folder = fast_cache_folder()
   if not exists(folder) then mkdir(folder) end
   local record = folder .. "/green.txt"
   local sources = lint_read_files()
@@ -166,7 +167,7 @@ function main()
   merge_gate_part("fast_frame")
   replace(record, record_of(hashes))
   print("safari fast: green")
-  print("NOT RUN, left to the merge gate: the roots web.roc, lib and the tutorial, the widgets, the whole-tree lints and held counts, the tutorial's build, StepBack, OnRoad, ShapesFrame, the other held depths, the page")
+  print("NOT RUN, left to the merge gate: the roots web.roc, lib and the tutorial, the widgets, the whole-tree lints, the tutorial's build, the benches' roc check, StepBack, OnRoad, ShapesFrame, the other held depths, the page")
   return nil
 end
 

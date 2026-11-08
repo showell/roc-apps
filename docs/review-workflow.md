@@ -52,7 +52,7 @@ Cleanup agents run the quick tier, about a minute in all:
 - `roc check` in every widget the change reaches
 - for apps other than Safari, `roc check` only: that's Steve's bar for them
 
-The orchestrator runs the full gate (`gates/run.shale`, about two minutes) before every push.
+The orchestrator runs the full gate (`gates/run.shale`, whose header says how long it takes) before every push.
 
 Things the quick tier has missed, which the brief now covers:
 - **Whole-tree lints:** a new parameter that's always the same value, or a field name clashing with a unit type elsewhere.

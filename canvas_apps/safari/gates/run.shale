@@ -7,8 +7,9 @@
 --
 -- Run it from the roc-apps root: every path is the checkout's, so a worktree
 -- gates its own tree on its own caches, and gates in several worktrees can run
--- at once. It takes about three minutes warm on a busy box (2026-11-08),
--- most of it in the lints, the expects, the widgets and the proof tools.
+-- at once. It takes about two minutes warm (112 s, 2026-11-08), most of it in
+-- the lints, the expects and the proof tools. This header is the one home of
+-- that figure; the docs point here.
 --
 -- The lints (gates/lints.shale) run first. Then each gate is a child run of
 -- this script, `part=expects`, `part=widgets`, `part=tutorial`,
@@ -31,14 +32,16 @@
 use("cookbook:times.shale")
 
 const SAFARI = "canvas_apps/safari"
+const GATES = SAFARI .. "/gates"
+const LINTS = GATES .. "/lints.shale"
 -- The folder of the proof tools' sources, StepBack, OnRoad, ShapesFrame and
 -- RasterFrame, where they build, with the modules only they use and the
 -- benches, the tools for measuring a frame's cost, which `part=proof` checks
 -- but never builds or runs.
-const PROOF_TOOLS = "canvas_apps/safari/gates/proof"
+const PROOF_TOOLS = GATES .. "/proof"
 const BENCHES = {"FrameBench", "FramePartsBench"}
-const PROOF_EXPECTED = "canvas_apps/safari/gates/proof.expected"
-const PAGE_EXPECTED = "canvas_apps/safari/gates/page.expected"
+const PROOF_EXPECTED = GATES .. "/proof.expected"
+const PAGE_EXPECTED = GATES .. "/page.expected"
 -- The widgets: each folder of canvas_apps that WIDGET_APPS matches is one,
 -- with a web.roc, and WIDGET_KIT is what they share. Every list here of the
 -- widgets' folders or sources comes from these two, and so does lints.shale's,
@@ -51,6 +54,8 @@ const WANT = "roc-pin: roc-apps' pinned nightly, and the binaries it builds"
 -- Roc exits non-zero for a warning; and what a clean `roc check` says.
 const ROC_ERROR_MARK = "✗|●"
 const ROC_CHECK_CLEAN = "No errors found"
+-- What `roc test` says when every expect passed, with their count.
+const ROC_TEST_PASSED = "All \\(([0-9]+)\\) tests passed"
 const PAGE_WANT = "script: canvas_apps/build.sh builds and checks a page, and refuses another Roc"
 
 -- The tiers' Roc caches, never the user's default one. Each checkout has a
@@ -103,12 +108,19 @@ function tool_build(roc, bin, n, env)
   return exists(bin .. "/" .. n)
 end
 
+-- One `roc check` of `file`, run in the folder `cwd`: the run, and whether it
+-- is clean, which takes both an exit of 0 and ROC_CHECK_CLEAN in its output.
+function roc_check(roc, env, cwd, file)
+  local r = run({roc, "check", file}, {timeout_ms = 120000, cwd = cwd, whole = 4000000, want = WANT, env = env})
+  return {run = r, is_clean = r.ended == "exit" and get(r, "code", -1) == 0 and contains(r.out, ROC_CHECK_CLEAN)}
+end
+
 -- One bench's `roc check`: how many things went wrong.
 function check_bench(roc, env, n)
-  local r = run({roc, "check", n .. ".roc"}, {timeout_ms = 120000, cwd = PROOF_TOOLS, head = 40, want = WANT, env = env})
-  print("roc check " .. n .. ": " .. r.ms .. " ms")
-  if r.ended == "exit" and get(r, "code", -1) == 0 and contains(r.out, ROC_CHECK_CLEAN) then return 0 end
-  print("FAIL roc check " .. n .. ": " .. trim(r.out))
+  local checked = roc_check(roc, env, PROOF_TOOLS, n .. ".roc")
+  print("roc check " .. n .. ": " .. checked.run.ms .. " ms")
+  if checked.is_clean then return 0 end
+  print("FAIL roc check " .. n .. ": " .. trim(checked.run.out))
   return 1
 end
 
@@ -149,10 +161,10 @@ function drawn_wrong(out)
   return nil
 end
 
-const SELF_PATH = "canvas_apps/safari/gates/run.shale"
+const SELF_PATH = GATES .. "/run.shale"
 const TUTORIAL = "canvas_apps/safari/tutorial/build.shale"
-const BOOK_NAMES = "canvas_apps/safari/gates/book_names.shale"
-const INPUT_BITS = "canvas_apps/safari/gates/input_bits.shale"
+const BOOK_NAMES = GATES .. "/book_names.shale"
+const INPUT_BITS = GATES .. "/input_bits.shale"
 -- The root that reaches nearly every expect, the one fast.shale runs.
 const MAIN_EXPECT_ROOT = "gates/expects/main.roc"
 const EXPECT_ROOTS = {MAIN_EXPECT_ROOT, "web.roc", "../lib/main.roc", "tutorial/make_book.roc"}
@@ -160,11 +172,13 @@ const EXPECT_ROOTS = {MAIN_EXPECT_ROOT, "web.roc", "../lib/main.roc", "tutorial/
 -- that repo's to count, so they are neither held here nor a failure. A `PASS`
 -- outside the checkout from any other folder fails.
 const OTHER_REPO_PACKAGES = {"../../../roc-markdown/package/"}
-const WIDGET_ROOT = "gates/WidgetExpects.roc"
--- WidgetExpects.roc's own expects are the widgets', since only it reaches them.
-const WIDGET_EXPECTS = "canvas_apps/safari/gates/WidgetExpects.roc"
+-- The widgets' expect root, from safari's folder, where `roc test` runs, and
+-- from the checkout's root, for git. Its own expects are the widgets', since
+-- only it reaches them.
+const WIDGET_ROOT_FROM_SAFARI = "gates/WidgetExpects.roc"
+const WIDGET_ROOT_FROM_CHECKOUT = SAFARI .. "/" .. WIDGET_ROOT_FROM_SAFARI
 -- The tutorial's fails/ are apps that must not compile, so no root reaches them.
-const SAFARI_SOURCES = {":(glob)canvas_apps/safari/**/*.roc", ":(exclude,glob)canvas_apps/safari/tutorial/fails/**", ":(glob)canvas_apps/lib/*.roc", ":(exclude)" .. WIDGET_EXPECTS}
+const SAFARI_SOURCES = {":(glob)canvas_apps/safari/**/*.roc", ":(exclude,glob)canvas_apps/safari/tutorial/fails/**", ":(glob)canvas_apps/lib/*.roc", ":(exclude)" .. WIDGET_ROOT_FROM_CHECKOUT}
 -- A depth is there for what its frame shows: at 100 a Roc bird is in flight,
 -- at 1529 a cat is frozen in the road, at 1542 it is in mid-leap, at 3698 the
 -- truck brakes about 600 m off and its glow is about a pixel across, at 5700
@@ -289,7 +303,7 @@ function test_root(roc, env, root, passed)
       print("FAIL " .. root .. ": " .. trim(l))
     end
   end
-  local summary = re_find(r.out, "All \\(([0-9]+)\\) tests passed")
+  local summary = re_find(r.out, ROC_TEST_PASSED)
   if r.ended ~= "exit" or get(r, "code", -1) ~= 0 or summary == nil or tonumber(summary.group) ~= printed then
     wrong = wrong + 1
     print("FAIL roc test " .. root .. " ended " .. r.ended .. " " .. get(r, "code", -1) .. " with " .. printed .. " PASS lines: " .. trim(sub(r.out, #r.out - 300)))
@@ -333,7 +347,7 @@ end
 function widget_sources()
   local sources = {}
   for g in WIDGET_SOURCE_GLOBS do push(sources, ":(glob)" .. g) end
-  push(sources, WIDGET_EXPECTS)
+  push(sources, WIDGET_ROOT_FROM_CHECKOUT)
   return sources
 end
 
@@ -392,10 +406,10 @@ end
 
 -- One widget's `roc check`: how many things went wrong.
 function check_widget(roc, env, folder)
-  local r = run({roc, "check", "web.roc"}, {timeout_ms = 120000, cwd = "canvas_apps/" .. folder, head = 40, want = WANT, env = env})
-  print("roc check " .. folder .. ": " .. r.ms .. " ms")
-  if r.ended == "exit" and get(r, "code", -1) == 0 and contains(r.out, ROC_CHECK_CLEAN) then return 0 end
-  print("FAIL roc check " .. folder .. ": " .. trim(r.out))
+  local checked = roc_check(roc, env, "canvas_apps/" .. folder, "web.roc")
+  print("roc check " .. folder .. ": " .. checked.run.ms .. " ms")
+  if checked.is_clean then return 0 end
+  print("FAIL roc check " .. folder .. ": " .. trim(checked.run.out))
   return 1
 end
 
@@ -404,20 +418,20 @@ end
 function widget_lines(passed)
   local kept = {}
   for at in keys(passed) do
-    if is_widget_source(at) or starts_with(at, WIDGET_ROOT .. ":") then kept[at] = true end
+    if is_widget_source(at) or starts_with(at, WIDGET_ROOT_FROM_SAFARI .. ":") then kept[at] = true end
   end
   return kept
 end
 
--- How many widget folders WIDGET_ROOT leaves out, each named. A widget with no
--- expects of its own would otherwise go untested unnoticed.
+-- How many widget folders the widgets' expect root leaves out, each named. A
+-- widget with no expects of its own would otherwise go untested unnoticed.
 function widgets_unrooted(folders)
-  local root = read(SAFARI .. "/" .. WIDGET_ROOT)
+  local root = read(WIDGET_ROOT_FROM_CHECKOUT)
   local missing = 0
   for folder in folders do
     if not contains(root, "\"../../" .. folder .. "/package.roc\"") then
       missing = missing + 1
-      print("FAIL " .. WIDGET_ROOT .. " doesn't reach " .. folder .. "/package.roc")
+      print("FAIL " .. WIDGET_ROOT_FROM_SAFARI .. " doesn't reach " .. folder .. "/package.roc")
     end
   end
   return missing
@@ -441,7 +455,7 @@ function widgets()
   local folders = widget_folders()
   local wrong = widgets_unrooted(folders)
   for folder in folders do wrong = wrong + check_widget(roc, env, folder) end
-  if wrong == 0 then wrong = test_root(roc, env, WIDGET_ROOT, passed) end
+  if wrong == 0 then wrong = test_root(roc, env, WIDGET_ROOT_FROM_SAFARI, passed) end
   drop_child_cache(cache)
   local source = written_expects(widget_sources())
   if #keys(source.written) == 0 then fail("safari gates: no expects found in the widgets") end
@@ -451,7 +465,7 @@ function widgets()
   return nil
 end
 
--- A tool's run over the held depths: its output, once it has ended well.
+-- A proof tool's run: its output, once it has ended well.
 function held_run(bin, n, args)
   local argv = {real(bin .. "/" .. n)}
   for a in args do push(argv, a) end
@@ -593,19 +607,19 @@ end
 
 function fast_check()
   local roc = roc_path()
-  local r = run({roc, "check", "web.roc"}, {timeout_ms = 120000, cwd = SAFARI, whole = 4000000, want = WANT, env = cache_env(fast_cache())})
-  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 or not contains(r.out, ROC_CHECK_CLEAN) then
-    print(trim(r.out))
+  local checked = roc_check(roc, cache_env(fast_cache()), SAFARI, "web.roc")
+  if not checked.is_clean then
+    print(trim(checked.run.out))
     fail("safari gates: roc check web.roc failed")
   end
-  print("roc check web.roc: clean, " .. r.ms .. " ms")
+  print("roc check web.roc: clean, " .. checked.run.ms .. " ms")
   return nil
 end
 
 function fast_expects()
   local roc = roc_path()
   local r = run({roc, "test", MAIN_EXPECT_ROOT}, {timeout_ms = 120000, cwd = SAFARI, whole = 4000000, want = WANT, env = cache_env(fast_cache())})
-  local summary = re_find(r.out, "All \\(([0-9]+)\\) tests passed")
+  local summary = re_find(r.out, ROC_TEST_PASSED)
   if r.ended ~= "exit" or get(r, "code", -1) ~= 0 or summary == nil or tonumber(summary.group) == 0 then
     print(trim(r.out))
     fail("safari gates: roc test " .. MAIN_EXPECT_ROOT .. " failed")
@@ -647,7 +661,7 @@ function all()
   local is_cold = clear_full_caches() or COLD
   local bad = {}
   local times = {}
-  local lints = timed_run("safari", "lints", {"shale", "--root", ".", SAFARI .. "/gates/lints.shale"}, stage_opts("lints", 40, is_cold))
+  local lints = timed_run("safari", "lints", {"shale", "--root", ".", LINTS}, stage_opts("lints", 40, is_cold))
   for l in lines(lints.out) do
     if not starts_with(l, "── ") then print(l) end
   end
