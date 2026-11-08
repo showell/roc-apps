@@ -48,7 +48,7 @@ blinks = VcrButtons.clock_range({
 
 ## The beacon at `clock` of a tower on the first segment: past its end for the
 ## first tower, and halfway along it, blinking opposite, for the second.
-beacon_at : [AtEnd, Midway], Clock -> Beacon
+beacon_at : Beacon.TowerPlace, Clock -> Beacon
 beacon_at = |place, clock| Beacon.at({ segment: Route.SegmentIndex.first, place }, clock)
 
 ## How far down the road from the picture's eye the towers stand, so that their
