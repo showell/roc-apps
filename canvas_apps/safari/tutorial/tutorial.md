@@ -1284,10 +1284,10 @@ A beacon needs four types, all opaque:
 |---|---|---|
 | `Clock` | Which step of the ride it is | A `U32` |
 | `Steps` | How many steps something lasts | A `U32` |
-| `Beacon` | Which beacon, by a key | A `U32` |
+| `Beacon` | A beacon, by its head start into the blink | A `Steps` |
 | `Beacon.LitBeacon` | A beacon at one moment of its blink | A `Fraction`, how bright it is |
 
-Three of the four are the same type of number underneath, so only the types tell them apart. A step of the ride, a length of time and a beacon's key are three different questions, and none can stand in for another.
+`Clock` and `Steps` are the same type of number underneath, so only the types tell them apart. A step of the ride and a length of time are different questions, and neither can stand in for the other.
 
 A `Clock` is the ride's own time. It counts the ride's steps, from 0 at the start to about 7,000 at the end, and it moves on one step each frame. The game draws 30 frames a second, so the clock keeps roughly in step with real time, but it's simulated time: pause the ride and it stops, and step back and it runs backward. This is all the arithmetic a clock does with `Steps`:
 
@@ -1295,7 +1295,7 @@ A `Clock` is the ride's own time. It counts the ride's steps, from 0 at the star
 
 A clock is a place in time, and `Steps` is a distance between two of them. Two clocks give the steps between them, and a clock and some steps give a later clock, or an earlier one. Adding two clocks means nothing, so there's no function for it. Adding two `Steps` does mean something, so `Steps` has a `plus`. This book calls the pattern *places and distances*: one opaque type says where something is, a second says how far apart two of them are, and only the sums that make sense get a function.
 
-A `Beacon` is the light on a tower, known by a key: the index of the segment whose end its tower stands past. You can ask for the beacon opposite it, and for how it shines at a step of the ride:
+A `Beacon` is the light on a tower, known by its head start: how far into its blink it is when the ride starts. A tower's beacon comes from the index of its segment. You can ask for the beacon opposite it, and for how it shines at a step of the ride:
 
 {{signatures Beacon.of_segment Beacon.opposite Beacon.lit_at}}
 
@@ -1332,25 +1332,25 @@ Now down into `Beacon`:
 
 {{code Beacon.lit_at}}
 
-Inside the module, `Beacon.(key)` opens a beacon to read its key, and `Beacon.LitBeacon.(...)` builds a lit one. No other module can do either. `clock.steps_since(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride. Adding the beacon's own offset gives its phase, and a cosine turns that into a brightness:
+Inside the module, `Beacon.(head_start)` opens a beacon to read its head start, and `Beacon.LitBeacon.(...)` builds a lit one. No other module can do either. `clock.steps_since(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride. Adding the beacon's head start gives its phase, and a cosine turns that into a brightness:
 
 {{code Beacon.beacon_brightness}}
 
 `wrapped_to` is the only `%` that `Steps` offers, so a phase of 130 is a phase of 10. (The period is written `Beacon.beacon_period`, with its type's name, even here, because it's defined in the type's block.) `(1 - cos) / 2` runs from 0 up to 1 and back to 0 over one period, and it can't leave that range. So `Fraction.of`, which crashes on a ratio outside 0 to 1, is safe here.
 
-Each beacon's offset comes from its key:
+Each segment's beacon gets its head start from the segment's index:
 
-{{code Beacon.beacon_offset_for}}
+{{code Beacon.of_segment}}
 
-This function is one line of method calls, and every call in it is on a `Steps`. The stagger is 37 steps, and 37 shares no factor with 120, so the first 120 keys all start their blinks at different points. Neighbors are 37 steps apart, close to a third of a blink.
+Each segment's beacon starts 37 steps further into its blink than the last one's, so towers along the road don't blink in unison, which would be boring. 37 shares no factor with 120, so the first 120 segments' beacons all start at different points of the blink. Plenty of other numbers would do.
 
 The tower halfway along a segment blinks opposite the one at its end:
 
 {{code Beacon.opposite}}
 
-That's a small piece of number theory hiding in a constant. `opposite_key_offset` is 60, and 60 staggers of 37 steps come to 2,220, which is 18 whole blinks and 60 steps left over, so the opposite beacon is always exactly half a blink away.
+Opposite means half a blink on. `half_period` is worked out from the period, so it stays right if the period changes.
 
-The widget's two beacons are the first segment's, key 0, and the one opposite it, key 60. Step 5,400 is 45 whole blinks in, so the first is dark there and the second is at full brightness. A quarter of a blink later, at step 5,430, they're equally bright, and by step 5,460 they've changed places.
+The widget's two beacons are the first segment's, with no head start, and the one opposite it, half a blink on. Step 5,400 is 45 whole blinks in, so the first is dark there and the second is at full brightness. A quarter of a blink later, at step 5,430, they're equally bright, and by step 5,460 they've changed places.
 
 Because the beacon draws itself, its tests need no tower. `Beacon`'s own tests check that a beacon blinks, that its opposite blinks the other way, and that its disc comes out the right size and color, or not at all when it's too dim.
 
