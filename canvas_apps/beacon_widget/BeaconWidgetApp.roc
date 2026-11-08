@@ -12,7 +12,6 @@ import game.Distance
 import game.Geom
 import game.Lens
 import game.Pipeline
-import game.RoadAhead
 import game.Route
 import game.SegmentPlace
 import game.Sky
@@ -87,11 +86,6 @@ picture_shapes = |clock|
 		].join(),
 	})
 
-## The road ahead of a rider on the route's first segment, straight for well
-## past the towers.
-straight_road : RoadAhead.RoadView
-straight_road = RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex.first)
-
 ## The picture's eye, at the start of the route, looking down the road.
 eye : Geom.Vantage
 eye = {
@@ -113,8 +107,8 @@ tower_shapes = |right, beacon| {
 	place = Ahead(SegmentPlace.Position.first)
 	camera = { vantage: eye, focal_length: Lens.resting_focal_length }
 	WidgetPage.resting_lens_shapes(
-		Pipeline.sighting_of(placed_tower, { road: straight_road, camera, place }),
-		{ road: straight_road, vantage: eye },
+		Pipeline.sighting_of(placed_tower, { road: World.road_at_start, camera, place }),
+		{ road: World.road_at_start, vantage: eye },
 	)
 }
 

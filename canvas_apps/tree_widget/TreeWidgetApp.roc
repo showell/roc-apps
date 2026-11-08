@@ -11,9 +11,6 @@ import game.Distance
 import game.Geom
 import game.Lens
 import game.Pipeline
-import game.Pixels
-import game.RoadAhead
-import game.Route
 import game.Screen
 import game.SegmentPlace
 import game.Sky
@@ -59,15 +56,9 @@ conifer = Conifer.Gold
 ## How far right of the camera a stand's tree must be to land on its `canvas_x`.
 right_of : Stand -> Distance
 right_of = |{ forward, canvas_x }| {
-	screen_x = Pixels.of(canvas_x / WidgetPage.canvas_per_screen)
+	screen_x = WidgetPage.screen_x_at_canvas_x(canvas_x)
 	forward.times(screen_x.minus(Screen.center_x).ratio_to(Lens.resting_focal_length))
 }
-
-## The road ahead of a rider on the route's first segment. The trees stand on
-## the rider's own segment, so no bend comes between them and the camera, and
-## the road runs straight ahead.
-straight_road : RoadAhead.RoadView
-straight_road = RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex.first)
 
 ## The camera, at the start of the road, looking down it.
 eye : Geom.Vantage
@@ -93,7 +84,7 @@ stand_sighting = |stand| {
 	Pipeline.sighting_of(
 		placed_tree,
 		{
-			road: straight_road,
+			road: World.road_at_start,
 			camera: { vantage: eye, focal_length: Lens.resting_focal_length },
 			place: Ahead(SegmentPlace.Position.first),
 		},
@@ -122,7 +113,7 @@ caption_lines = |forward|
 ## A line of a caption, centered under its tree, on row `row` of the panel.
 caption_line : Stand, { text : Str, row : U64 } -> Shapes.Shape
 caption_line = |stand, { text, row }|
-	WidgetPage.readout({
+	WidgetPage.readout_line({
 		text,
 		color: WidgetPage.ink_color,
 		row,
@@ -162,13 +153,17 @@ is_plain_to_see = |stand|
 				sighting.spot,
 				{ height: conifer.scenery_height(), focal_length: Lens.resting_focal_length },
 			)
-			foot_y = outline.foot.y.to_f64() * WidgetPage.canvas_per_screen
-			tip_y = foot_y - outline.height_on_screen.to_f64() * WidgetPage.canvas_per_screen
-			x = outline.foot.x.to_f64() * WidgetPage.canvas_per_screen
-			tip_y >= 0.0
-				and foot_y <= WidgetPage.picture_bottom_y
-				and foot_y - tip_y >= 30.0
-				and (x - stand.canvas_x).abs() <= 0.000000001
+			foot_on_screen = { x: outline.foot.x.to_f64(), y: outline.foot.y.to_f64() }
+			foot = WidgetPage.canvas_point_of_screen(foot_on_screen)
+			tip_on_screen = {
+				x: foot_on_screen.x,
+				y: foot_on_screen.y - outline.height_on_screen.to_f64(),
+			}
+			tip = WidgetPage.canvas_point_of_screen(tip_on_screen)
+			WidgetPage.is_in_picture(tip)
+				and WidgetPage.is_in_picture(foot)
+				and foot.y - tip.y >= 30.0
+				and (foot.x - stand.canvas_x).abs() <= 0.000000001
 		}
 		Err(BehindCamera) => False
 	}

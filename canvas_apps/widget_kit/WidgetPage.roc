@@ -9,12 +9,14 @@
 import game.FrameView
 import game.Lens
 import game.Picture
+import game.Pixels
 import game.Pipeline
 import game.Screen
 import lib.Brush
 import lib.RgbColor
 import lib.CanvasApp
 import lib.Input
+import lib.Point
 import lib.Shapes
 
 WidgetPage :: [].{
@@ -25,13 +27,29 @@ WidgetPage :: [].{
 	canvas_height : F64
 	canvas_height = 360.0
 
-	## How many canvas pixels the picture gives a pixel of the ride's screen.
-	canvas_per_screen : F64
-	canvas_per_screen = canvas_width / Screen.width.to_f64()
+	## The x on the ride's screen that the picture shows at `canvas_x`.
+	screen_x_at_canvas_x : F64 -> Pixels
+	screen_x_at_canvas_x = |canvas_x| Pixels.of(canvas_x / canvas_per_screen)
+
+	## Where the picture shows a point of the ride's screen, given in pixels.
+	canvas_point_of_screen : Point.Point -> Point.Point
+	canvas_point_of_screen = |{ x, y }| { x: x * canvas_per_screen, y: y * canvas_per_screen }
+
+	## Where the ride's horizon crosses the picture.
+	horizon_y : F64
+	horizon_y = Screen.horizon_y.to_f64() * canvas_per_screen
+
+	## How much ground shows below the horizon, chosen by eye.
+	ground_depth : F64
+	ground_depth = 16.0
 
 	## The picture fills the canvas above this line.
 	picture_bottom_y : F64
-	picture_bottom_y = 216.0
+	picture_bottom_y = horizon_y + ground_depth
+
+	## Whether `point` is in the picture, edges included.
+	is_in_picture : Point.Point -> Bool
+	is_in_picture = |{ x, y }| x >= 0.0 and x <= canvas_width and y >= 0.0 and y <= picture_bottom_y
 
 	## The space left and right of what sits on the panel.
 	side_margin : F64
@@ -106,7 +124,7 @@ WidgetPage :: [].{
 	## Where and how large the rows of a readout are set: the x they are aligned
 	## on, the baseline of the first row, how far each row sits below the last,
 	## and the size of their type.
-	ReadoutStyle : {
+	ReadoutRows : {
 		x : F64,
 		first_baseline : F64,
 		row_spacing : F64,
@@ -115,8 +133,8 @@ WidgetPage :: [].{
 	}
 
 	## The rows of text on the panel under the picture, from its left margin.
-	panel_readout : ReadoutStyle
-	panel_readout = {
+	panel_rows : ReadoutRows
+	panel_rows = {
 		x: side_margin,
 		first_baseline: picture_bottom_y + 50.0,
 		row_spacing: 26.0,
@@ -126,13 +144,13 @@ WidgetPage :: [].{
 
 	## A line of what the widget reads out, on row `row` of `style`, in
 	## monospace.
-	readout : {
+	readout_line : {
 		text : Str,
 		color : RgbColor,
 		row : U64,
-		style : ReadoutStyle,
+		style : ReadoutRows,
 	} -> Shapes.Shape
-	readout = |{ text, color, row, style }|
+	readout_line = |{ text, color, row, style }|
 		Text({
 			text,
 			x: style.x,
@@ -198,6 +216,10 @@ WidgetPage :: [].{
 		}
 }
 
+## How many canvas pixels the picture gives a pixel of the ride's screen.
+canvas_per_screen : F64
+canvas_per_screen = WidgetPage.canvas_width / Screen.width.to_f64()
+
 ## How often a still picture is painted: seldom, since it never changes, but
 ## often enough that a page's check, which runs a page for a few frames, sees
 ## it painted more than once.
@@ -219,7 +241,7 @@ panel = Rect({
 })
 
 status_line : Str, U64 -> Shapes.Shape
-status_line = |text, row| WidgetPage.readout({ text, color: WidgetPage.ink_color, row, style: WidgetPage.panel_readout })
+status_line = |text, row| WidgetPage.readout_line({ text, color: WidgetPage.ink_color, row, style: WidgetPage.panel_rows })
 
 # A page is the panel and its text.
 expect WidgetPage.frame_shapes({ picture_shapes: [], status_lines: [] }).len() == 1

@@ -18,8 +18,6 @@ import game.Bird
 import game.Geom
 import game.Polygon
 import game.Pipeline
-import game.RoadAhead
-import game.Route
 import game.SegmentPlace
 import game.Speed
 import game.Trees
@@ -27,7 +25,6 @@ import game.Sky
 import game.World
 import lib.CanvasApp
 import lib.Shapes
-import lib.RgbColor
 import widget.ReadoutText
 import widget.WidgetPage
 import widget.VcrButtons
@@ -118,17 +115,11 @@ road_shapes = {
 	]
 	[
 		Polygon.clipped_polygon(
-			{ color: RgbColor.of(0x8a8a8a), corners },
+			{ color: WidgetPage.side_road_color, corners },
 			Lens.resting_focal_length,
 		),
 	].keep_oks(|shape| shape)
 }
-
-## The road ahead of a rider on the route's first segment. The trees and the
-## bird are placed on the rider's own segment, so no bend comes between them
-## and the eye, and the road runs straight up the picture.
-straight_road : RoadAhead.RoadView
-straight_road = RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex.first)
 
 ## The picture's eye, on the middle of the road `eye_to_first_tree` short of
 ## the first tree, looking down the road.
@@ -145,7 +136,7 @@ sighting_from_eye = |placed|
 	Pipeline.sighting_of(
 		placed,
 		{
-			road: straight_road,
+			road: World.road_at_start,
 			camera: { vantage: eye, focal_length: Lens.resting_focal_length },
 			place: Ahead(SegmentPlace.Position.first),
 		},

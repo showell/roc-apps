@@ -227,12 +227,12 @@ caption_lines = |turn| {
 ## A line of a caption, centered under its bend, on row `row` of the panel.
 caption_line : ShownBend, { text : Str, row : U64 } -> Shapes.Shape
 caption_line = |bend, { text, row }|
-	WidgetPage.readout({
+	WidgetPage.readout_line({
 		text,
 		color: WidgetPage.ink_color,
 		row,
 		style: {
-			..WidgetPage.panel_readout,
+			..WidgetPage.panel_rows,
 			x: bend.canvas_x,
 			first_baseline: 246.0,
 			size: 13.0,

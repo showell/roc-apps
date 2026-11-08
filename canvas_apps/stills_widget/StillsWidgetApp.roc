@@ -312,11 +312,11 @@ read_out_size = 18.0
 
 read_out_line : Str, U64 -> Shapes.Shape
 read_out_line = |text, row|
-	WidgetPage.readout({
+	WidgetPage.readout_line({
 		text,
 		color: WidgetPage.ink_color,
 		row,
-		style: { ..WidgetPage.panel_readout, first_baseline: 42.0, size: read_out_size },
+		style: { ..WidgetPage.panel_rows, first_baseline: 42.0, size: read_out_size },
 	})
 
 hint_lines : List(Str)

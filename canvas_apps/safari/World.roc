@@ -9,6 +9,7 @@ import CatCrossing
 import CowHerd
 import Distance
 import PigHerd
+import RoadAhead
 import Route
 import Segment
 import Trees
@@ -267,6 +268,11 @@ World :: [].{
 		last_segment = built_segment(last_plan, { index: last_index, ending: RouteEnds })
 		Route.from_segments(bending_segments.append(last_segment))
 	}
+
+	## The road ahead of a rider on the route's first segment. What stands on
+	## that segment has no bend between it and the rider.
+	road_at_start : RoadAhead.RoadView
+	road_at_start = RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex.first)
 
 	## The route's first segment with a cat.
 	first_cat_segment : Segment

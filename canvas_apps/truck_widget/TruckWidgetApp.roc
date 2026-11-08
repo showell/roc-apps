@@ -10,9 +10,6 @@ import game.Distance
 import game.Geom
 import game.Lens
 import game.Pipeline
-import game.Pixels
-import game.RoadAhead
-import game.Route
 import game.SegmentPlace
 import game.Sky
 import game.TruckBody
@@ -47,7 +44,7 @@ TruckView : {
 third_width : F64
 third_width = WidgetPage.canvas_width / 3.0
 
-## The picture ends 16 canvas pixels below the horizon, so a truck's nearest
+## The picture ends `WidgetPage.ground_depth` below the horizon, so a truck's nearest
 ## tires stand above the panel only once they are about 34 metres ahead of the
 ## camera, measured along the way it faces. A truck toward the canvas's edge is
 ## seen at a slant, so it must stand further off still. This is far enough for
@@ -99,11 +96,6 @@ truck_middle_ahead = {
 	box.rear.plus(box.nose).divided_by(2.0)
 }
 
-## The road ahead of a rider on the route's first segment. The truck and the
-## cameras are all on it, so no bend comes between them.
-straight_road : RoadAhead.RoadView
-straight_road = RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex.first)
-
 ## The camera for `view`: `view.distance` from the middle of the truck, round
 ## from behind it by `view.seen_from`, and turned so that the middle of the truck
 ## lands on `view.canvas_x`.
@@ -111,7 +103,7 @@ view_vantage : TruckView -> Geom.Vantage
 view_vantage = |view| {
 	middle_along = truck_road_point.along.plus(truck_middle_ahead)
 	seen_from_radians = view.seen_from.to_radians()
-	middle_x = Pixels.of(view.canvas_x / WidgetPage.canvas_per_screen)
+	middle_x = WidgetPage.screen_x_at_canvas_x(view.canvas_x)
 	middle_turn = Lens.turn_at_x({ x: middle_x, focal_length: Lens.resting_focal_length })
 	{
 		along: middle_along.minus(view.distance.times(seen_from_radians.cos())),
@@ -130,7 +122,7 @@ view_setting = |view| {
 	sighting_result = Pipeline.sighting_of(
 		placed_truck,
 		{
-			road: straight_road,
+			road: World.road_at_start,
 			camera: { vantage, focal_length: Lens.resting_focal_length },
 			place: Ahead(SegmentPlace.Position.first),
 		},
@@ -139,7 +131,7 @@ view_setting = |view| {
 		Ok(sighting) => {
 			spot: sighting.spot,
 			focal_length: Lens.resting_focal_length,
-			context: { road: straight_road, vantage },
+			context: { road: World.road_at_start, vantage },
 		}
 		Err(BehindCamera) => crash "TruckWidgetApp.view_setting: every camera faces the truck"
 	}
@@ -151,11 +143,11 @@ truck_shapes = |view| TruckBody.body_shapes(view_setting(view))
 ## The words under a truck, centered on it, on the panel's first row.
 caption_shape : TruckView -> Shapes.Shape
 caption_shape = |view|
-	WidgetPage.readout({
+	WidgetPage.readout_line({
 		text: view.caption,
 		color: WidgetPage.ink_color,
 		row: 0,
-		style: { ..WidgetPage.panel_readout, x: view.canvas_x, align: Center },
+		style: { ..WidgetPage.panel_rows, x: view.canvas_x, align: Center },
 	})
 
 still_shapes : List(Shapes.Shape)
@@ -186,7 +178,7 @@ canvas_corners : List(Shapes.Shape) -> List(Point.Point)
 canvas_corners = |shapes| {
 	corner_of = |pair|
 		match pair {
-			[x, y] => { x: x * WidgetPage.canvas_per_screen, y: y * WidgetPage.canvas_per_screen }
+			[x, y] => WidgetPage.canvas_point_of_screen({ x, y })
 			_ => crash "TruckWidgetApp.canvas_corners: a polygon's coordinates come in pairs"
 		}
 	polygon_coordinates(shapes).join_map(|coordinates| coordinates.chunks_of(2).map(corner_of))
@@ -198,8 +190,7 @@ is_in_its_third : TruckView -> Bool
 is_in_its_third = |view| {
 	half_third = third_width / 2.0
 	is_inside = |corner|
-		corner.y >= 0.0
-			and corner.y <= WidgetPage.picture_bottom_y
+		WidgetPage.is_in_picture(corner)
 			and (corner.x - view.canvas_x).abs() <= half_third
 	corners = canvas_corners(truck_shapes(view))
 	!corners.is_empty() and corners.all(is_inside)
