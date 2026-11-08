@@ -250,11 +250,11 @@ World :: [].{
 	route = {
 		bending_segments = bending_plans.map_with_index(
 			|{ segment_plan, turn, bend_life }, at| {
-				index = Route.SegmentIndex.number(at.to_u32_wrap())
+				index = Route.SegmentIndex.from_count_before(at)
 				built_segment(segment_plan, { index, ending: Bends({ turn, bend_life }) })
 			},
 		)
-		last_index = Route.SegmentIndex.number(bending_plans.len().to_u32_wrap())
+		last_index = Route.SegmentIndex.from_count_before(bending_plans.len())
 		last_segment = built_segment(last_plan, { index: last_index, ending: RouteEnds })
 		Route.from_segments(bending_segments.append(last_segment))
 	}
@@ -351,12 +351,12 @@ built_segment = |plan, { index, ending }| {
 
 ## How many of the route's herds, from its first, are big. The rest stand in
 ## two rows.
-big_herd_count : U32
+big_herd_count : U64
 big_herd_count = 2
 
 ## How many of the route's herds, from its first, the rider finds distracting.
 ## The rider passes the rest by.
-pig_novelty_count : U32
+pig_novelty_count : U64
 pig_novelty_count = 2
 
 ## The route's big herd, seven rows of seven. The third pig of the front row
@@ -373,12 +373,11 @@ cow_herd : CowHerd
 cow_herd = { cow_count: 14, rows_behind_front: 2 }
 
 ## How many of the segments before `index` have pigs.
-herd_count_before : Route.SegmentIndex -> U32
+herd_count_before : Route.SegmentIndex -> U64
 herd_count_before = |index|
 	World.segment_plans
 		.take_first(index.count_before())
 		.count_if(|plan| plan.pigs == WithPigs)
-		.to_u32_wrap()
 
 route_segment_at : U32 -> Segment
 route_segment_at = |i| World.route.segment_at(Route.SegmentIndex.number(i))

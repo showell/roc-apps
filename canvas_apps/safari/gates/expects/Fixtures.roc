@@ -128,7 +128,7 @@ Fixtures :: [].{
 							(best_length, best_at)
 						},
 				)
-		Route.SegmentIndex.number(longest_at.to_u32_wrap())
+		Route.SegmentIndex.from_count_before(longest_at)
 	}
 
 	## A road of three segments, 500 m, 320 m and 400 m long, each bending
