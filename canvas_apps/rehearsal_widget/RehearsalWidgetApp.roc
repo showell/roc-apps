@@ -59,10 +59,10 @@ ArcPoint : { forward : F64, across : F64 }
 ## One try of the search, and the way its coast drew it.
 Rehearsal : { lean_try : LeanSearch.LeanTry, path_points : List(ArcPoint) }
 
-## Where a coast with `lean` goes, each step as a point on the arc.
-points_of : Angle.Lean -> List(ArcPoint)
-points_of = |lean|
-	Coast.coast_path(motorcycle.with_lean(lean)).path_motorcycles.map(
+## Where a coast of `coasting` goes, each step as a point on the arc.
+path_points_of : Motorcycle -> List(ArcPoint)
+path_points_of = |coasting|
+	Coast.coast_path(coasting).path_motorcycles.map(
 		|path_motorcycle| {
 			point = path_motorcycle.route_place.road_point
 			start_along = motorcycle.route_place.road_point.along
@@ -76,7 +76,10 @@ points_of = |lean|
 rehearsals : List(Rehearsal)
 rehearsals =
 	LeanSearch.search_tries(motorcycle).map(
-		|lean_try| { lean_try, path_points: points_of(LeanSearch.tried_lean(lean_try)) },
+		|lean_try| {
+			tried = LeanSearch.tried_motorcycle(motorcycle, lean_try)
+			{ lean_try, path_points: path_points_of(tried) }
+		},
 	)
 
 ## Which way the search went after a try.
@@ -88,7 +91,7 @@ chosen_lean : Angle.Lean
 chosen_lean = LeanSearch.best_lean(motorcycle)
 
 chosen_points : List(ArcPoint)
-chosen_points = points_of(chosen_lean)
+chosen_points = path_points_of(motorcycle.with_lean(chosen_lean))
 
 ## The place of the choice's mark in the row, after one for each try.
 last_stop : U64
@@ -548,6 +551,19 @@ expect mark_under({ x: mark_x(5) + 12.0, y: marks_y }) == Ok(Shown(6))
 expect mark_under({ x: mark_x(5), y: marks_y + marks_reach }) == Ok(Shown(5))
 expect mark_under({ x: mark_x(5), y: marks_y + marks_reach + 1.0 }) == Err(NoMark)
 expect mark_under({ x: mark_x(5), y: marks_y - marks_reach - 1.0 }) == Err(NoMark)
+
+# Each try's drawn path ends where the search's own coast of that try said it
+# would: across the road where it stayed on, or after as many steps as it took
+# to leave.
+expect
+	rehearsals.all(
+		|{ lean_try, path_points }|
+			match (lean_try.outcome, path_points.last()) {
+				(EndsAt(end_across), Ok(end)) => end.across == end_across.to_metres()
+				(Leaves({ after, .. }), Ok(_)) => path_points.len() == after.to_u32().to_u64()
+				(_, Err(ListWasEmpty)) => False
+			},
+	)
 
 # An arc is drawn by fewer points than it has, and it still ends at its end.
 expect
