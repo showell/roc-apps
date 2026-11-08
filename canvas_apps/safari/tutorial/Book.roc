@@ -339,7 +339,7 @@ page_html :
 	} -> Str
 page_html = |{ title, body_class, nav, main }| {
 	embed =
-		if main.contains("class=\"canvas-app\"") {
+		if main.contains(BookFence.widget_frame_class) {
 			"<script src=\"embed.js\"></script>"
 		} else {
 			""
@@ -401,6 +401,13 @@ plain_book = {
 	widget_folders: [],
 }
 
+widget_book : Manuscript.Contents
+widget_book = {
+	pages: ["# Front\n", "# One\n\n```widget sky\nThe sky.\n```\n"],
+	diagrams: [],
+	widget_folders: ["sky_widget"],
+}
+
 expect nav_entry(
 	one_section,
 	one_section,
@@ -418,6 +425,7 @@ expect Book.pages(plain_book, []).map(|page| page.file) == [
 	"appendix-more.html",
 ]
 expect Book.pages(plain_book, []).all(|page| !page.html.contains("embed.js"))
+expect Book.pages(widget_book, []).map(|page| page.html.contains("embed.js")) == [Bool.False, Bool.True]
 expect Book.pages(
 	plain_book,
 	[{ ..a_part, before: "One" }],

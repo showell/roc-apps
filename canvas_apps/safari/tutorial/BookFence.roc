@@ -10,6 +10,10 @@ import Manuscript
 
 BookFence := [].{
 
+	## The attribute on a widget's frame, which is how a page knows it holds one.
+	widget_frame_class : Str
+	widget_frame_class = "class=\"canvas-app\""
+
 	## The hook for a manuscript. Roc's hook is pure, so a diagram has to be
 	## drawn before the render and a widget's folder looked for before it. A
 	## fence that names something missing crashes the program, which stops the
@@ -91,7 +95,7 @@ widget_html = |folders, { words, caption }| {
 	safe_caption = BookText.escaped_text(caption)
 	caption_html = BookText.inline_html(caption)
 	figure =
-		\\<figure class="widget"><iframe class="canvas-app" src="../${frame.folder}/${address_end}" title="${safe_caption}" loading="${frame.loading}" style="aspect-ratio: ${frame.aspect}"></iframe><figcaption>${caption_html}</figcaption></figure>
+		\\<figure class="widget"><iframe ${BookFence.widget_frame_class} src="../${frame.folder}/${address_end}" title="${safe_caption}" loading="${frame.loading}" style="aspect-ratio: ${frame.aspect}"></iframe><figcaption>${caption_html}</figcaption></figure>
 	figure
 }
 
