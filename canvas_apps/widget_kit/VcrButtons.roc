@@ -139,12 +139,16 @@ VcrButtons :: [].{
 place_in : VcrButtons.NumberRange(number), number -> F64
 place_in = |range, number| (range.place_of)(number)
 
-## Whether `control` is the one that's running the number.
-is_lit : VcrButtons.Control, VcrButtons.Motion -> Bool
-is_lit = |control, motion|
+## Whether a button is lit: it is when `control` is the one that's running the
+## number.
+ButtonLight : [Lit, Unlit]
+
+## The light of `control`'s button while the number is in `motion`.
+button_light : VcrButtons.Control, VcrButtons.Motion -> ButtonLight
+button_light = |control, motion|
 	match (control, motion) {
-		(Play, Forward) | (PlayBack, Backward) => True
-		_ => False
+		(Play, Forward) | (PlayBack, Backward) => Lit
+		_ => Unlit
 	}
 
 ## `wanted`, or stopped if the number is already `running` that way.
@@ -294,30 +298,29 @@ bar = |x|
 	})
 
 ## What a button shows, around `middle`. A lit play button shows a pause.
-icon_shapes : VcrButtons.Control, { middle : F64, lit : Bool } -> List(Shapes.Shape)
-icon_shapes = |control, { middle, lit }|
-	if lit {
-		[bar(middle - 5.0), bar(middle + 2.0)]
-	} else {
-		match control {
-			ToStart => [bar(middle - 9.0), triangle({ tip_x: middle - 5.0, reach: -11.0 })]
-			PlayBack => [triangle({ tip_x: middle - 6.0, reach: -12.0 })]
-			StepBack => [triangle({ tip_x: middle - 7.0, reach: -9.0 }), bar(middle + 5.0)]
-			StepForward => [bar(middle - 8.0), triangle({ tip_x: middle + 7.0, reach: 9.0 })]
-			Play => [triangle({ tip_x: middle + 6.0, reach: 12.0 })]
-			ToEnd => [triangle({ tip_x: middle + 5.0, reach: 11.0 }), bar(middle + 6.0)]
-		}
+icon_shapes : VcrButtons.Control, { middle : F64, light : ButtonLight } -> List(Shapes.Shape)
+icon_shapes = |control, { middle, light }|
+	match light {
+		Lit => [bar(middle - 5.0), bar(middle + 2.0)]
+		Unlit =>
+			match control {
+				ToStart => [bar(middle - 9.0), triangle({ tip_x: middle - 5.0, reach: -11.0 })]
+				PlayBack => [triangle({ tip_x: middle - 6.0, reach: -12.0 })]
+				StepBack => [triangle({ tip_x: middle - 7.0, reach: -9.0 }), bar(middle + 5.0)]
+				StepForward => [bar(middle - 8.0), triangle({ tip_x: middle + 7.0, reach: 9.0 })]
+				Play => [triangle({ tip_x: middle + 6.0, reach: 12.0 })]
+				ToEnd => [triangle({ tip_x: middle + 5.0, reach: 11.0 }), bar(middle + 6.0)]
+			}
 	}
 
 ## A button on the canvas, lit if it's running the number.
 button_shapes : Button, VcrButtons.Motion -> List(Shapes.Shape)
 button_shapes = |button, motion| {
-	lit = is_lit(button.control, motion)
+	light = button_light(button.control, motion)
 	color =
-		if lit {
-			WidgetPalette.accent_color
-		} else {
-			WidgetPalette.unlit_button_color
+		match light {
+			Lit => WidgetPalette.accent_color
+			Unlit => WidgetPalette.unlit_button_color
 		}
 	[
 		Rect({
@@ -327,7 +330,7 @@ button_shapes = |button, motion| {
 			height: button_height,
 			fill: Brush.flat(color),
 		}),
-	].concat(icon_shapes(button.control, { middle: button.left + button_width / 2.0, lit }))
+	].concat(icon_shapes(button.control, { middle: button.left + button_width / 2.0, light }))
 }
 
 ## A word for a reader who hasn't touched the widget yet, right of the buttons.
@@ -472,13 +475,13 @@ expect transport_after_press(
 expect clock_after_press(stopped_at(0), PlayBack) == stopped_at(0)
 
 # The lit button is the one running the number, and nothing is lit at rest.
-expect is_lit(Play, Forward)
-expect is_lit(PlayBack, Backward)
-expect !is_lit(Play, Stopped)
-expect !is_lit(PlayBack, Stopped)
-expect !is_lit(Play, Backward)
-expect !is_lit(PlayBack, Forward)
-expect !is_lit(ToEnd, Forward)
+expect button_light(Play, Forward) == Lit
+expect button_light(PlayBack, Backward) == Lit
+expect button_light(Play, Stopped) == Unlit
+expect button_light(PlayBack, Stopped) == Unlit
+expect button_light(Play, Backward) == Unlit
+expect button_light(PlayBack, Forward) == Unlit
+expect button_light(ToEnd, Forward) == Unlit
 
 # Each button shows an icon, and a button is its square and that icon. A lit one
 # shows the two bars of a pause, in a color of its own.
