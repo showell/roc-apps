@@ -543,7 +543,7 @@ A near tree needs to look round, and it has to fatten as you ride past it. So Sa
 
 New in this chapter:
 
-- Roc: a payload that exists only where it means something, a guard, a list pattern that takes from the end
+- Roc: a payload that exists only where it means something, a list pattern that takes from the end
 - Modules: nothing new
 
 ### Get the types right
@@ -605,9 +605,9 @@ Three gold trees, each drawn by `Conifer.scenery_picture`. Under each are its di
 
 {{code TreeShapes.tier_shape}}
 
-`Camera.project` needs points in front of the camera, and `RiderView` draws that line at its near plane, 0.4 metres ahead. So a tier whose ring reaches back past the near plane falls back to the flat triangle. The `if` after the pattern is a guard, and it adds a condition to a branch. A `match` tries its branches from the top down and takes the first that fits, so the guarded branch has to come before the plain `Cones` one. `_` fits any payload and names none, because that branch doesn't need the shade.
+`Camera.project` needs points in front of the camera, and `RiderView` draws that line at its near plane, 0.4 metres ahead. `cone_ring_points` builds a ring of 16 points around the tier's base, and it answers `Err(BehindCamera)` if any of them reaches back past the near plane. Then the tier falls back to the flat triangle.
 
-A frame has no cones, only polygons, so we work out the polygon a cone would make. We leave pixels behind for a moment and work in metres. `base_height` and `apex_height` are how high the tier's bottom and top stand. `top` and `bottom` count down from the crown's tip, so `1.0 - bottom` is the share up from the crown's foot. We take a ring of 16 points around the base and one point at the top, and we project them all onto the screen:
+A frame has no cones, only polygons, so we work out the polygon a cone would make. We leave pixels behind for a moment and work in metres. `height_down_crown` says how high a point stands, given how far down the crown it is. `top` and `bottom` count down from the crown's tip, so the ring stands at the tier's `bottom` and the apex at its `top`. `tier_cone` projects the ring and the apex onto the screen:
 
 {{code TreeShapes.tier_cone}}
 
@@ -1295,7 +1295,7 @@ We've held one frame still for a long time. Now it's time to turn the page. Each
 Press play to run the ride, and the outer buttons to go to either end.
 ```
 
-The first three lines under the picture are that record's three fields, read from a real ride. Press the last button, and the ride plays up to step 2,000, eight steps a frame. Press the first, and it's back at the start almost at once, because the steps it has been through are kept in a list.
+The first three lines under the picture read three of that record's four fields, the clock, the rider and the truck, from a real ride. Press the last button, and the ride plays up to step 2,000, eight steps a frame. Press the first, and it's back at the start almost at once, because the steps it has been through are kept in a list.
 
 New in this chapter:
 
@@ -1461,11 +1461,11 @@ The types do the work, and a sunset needs four:
 | Type | What it is | Under it |
 |---|---|---|
 | `Clock` | A step of the ride | A `U32` |
-| `Pixels` | A length on screen, like the sun's height | An `F64`, because a shape can sit between two pixels |
+| `FarHeight` | A height above the horizon of something far off, like the sun, in pixels through the lens at rest | An `F64`, because a shape can sit between two pixels |
 | `Fraction` | A ratio from 0 to 1, like how far toward dusk we are | An `F64` |
-| `HexColor.Rgb` | A color | A record of three floats |
+| `RgbColor` | A color | An `I64`, `0xRRGGBB` |
 
-The first three are opaque. Each is still a number, and the type gives it a name, so a height can't be passed where a dusk is wanted. With those in hand, each job is a signature:
+All four are opaque. Each is still a number, and the type gives it a name, so a height can't be passed where a dusk is wanted. With those in hand, each job is a signature:
 
 | Job | Function | Its type |
 |---|---|---|
@@ -1484,29 +1484,30 @@ The sunset, from the top
 digraph sunset {
   node [shape=box, fontname="Helvetica"];
   frame [label="each frame"];
-  frame -> "Sun.sighting";
-  frame -> "Sky.sky_top_color";
-  frame -> "Sky.sky_horizon_color";
-  "Sun.sighting" -> "Sun.place";
-  "Sky.sky_top_color" -> "Sky.dusk_at";
-  "Sky.sky_horizon_color" -> "Sky.sky_top_color";
-  "Sky.sky_horizon_color" -> "Sky.sunset_warmth";
-  "Sun.place" -> "Sun.height_px";
-  "Sky.dusk_at" -> "Sun.height_px";
-  "Sky.sunset_warmth" -> "Sun.height_px";
-  "Sun.height_px" [style=bold];
+  frame -> "Sun.sun_in_view" [label="  places the sun"];
+  frame -> "Sky.colors_at" [label="  colors the sky"];
+  "Sky.colors_at" -> "Sky.sky_top_color" [label="  colors the top"];
+  "Sky.colors_at" -> "Sky.sky_horizon_color" [label="  colors the horizon"];
+  "Sky.sky_top_color" -> "Sky.darkness_at" [label="  asks how dark"];
+  "Sky.sky_horizon_color" -> "Sky.sky_top_color" [label="  starts from the top"];
+  "Sky.sky_horizon_color" -> "Sky.horizon_warmth_at" [label="  asks how warm"];
+  "Sun.sun_in_view" -> "SunPath.sun_direction_at" [label="  asks where the sun stands"];
+  "Sky.darkness_at" -> "SunPath.height_at" [label="  asks how high"];
+  "Sky.horizon_warmth_at" -> "SunPath.height_at" [label="  asks how high"];
+  "SunPath.height_at" -> "SunPath.sun_direction_at" [label="  reads the height"];
+  "SunPath.sun_direction_at" [style=bold];
   clock [label="the clock"];
-  "Sun.height_px" -> clock;
+  "SunPath.sun_direction_at" -> clock [label="  turns the sky by"];
 }
 ```
 
-A box is a function, and an arrow is a call. The three boxes under the frame are the three jobs: the sun, the top of the sky and the horizon. They all end at `Sun.height_px`, because everything in a sunset comes down to how high the sun is.
+A box is a function, and an arrow is a call. Under the frame, `Sun.sun_in_view` does the first job, and `Sky.colors_at` does the other two: the top of the sky and the horizon. They all end at `SunPath.sun_direction_at`, because everything in a sunset comes down to where the sun stands.
 
-Here's the top of that diagram in code. Each frame, the game asks for three things and hands them to `Backdrop`:
+Here's the top of that diagram in code. Each frame, the game asks for two things, and they make the backdrop:
 
-{{code FrameView.framed_shapes}}
+{{code FrameView.frame_view_at from "backdrop: {" to "sun_sighting: Sun.sun_in_view"}}
 
-`Tour` holds the clock and hands it straight to `Sun` and `Sky`, so everything from here on is in those two. Let's take the three jobs in order.
+`FrameView` hands the clock straight to `Sun` and `Sky`, so everything from here on is in those two and `SunPath`. Let's take the three jobs in order.
 
 ### Job one: the sun goes down
 
@@ -1514,9 +1515,9 @@ Here's the top of that diagram in code. Each frame, the game asks for three thin
 Press play. The two middle buttons step one frame at a time, for the patient.
 ```
 
-This widget does only the first job, so the sky stays blue. For each frame it calls `Sun.height_px`, reads out the answer, and marks it on the chart's gold line.
+This widget does only the first job, so the sky stays blue. For each frame it calls `SunPath.height_at`, reads out the answer, and marks it on the chart's gold line.
 
-The sun chapter showed how `Sun.sighting` places a sun. All it needs from the clock is a height:
+The sun chapter showed how `Sun.sun_in_view` places a sun. All it needs from the clock is a height:
 
 {{code SunPath.height_at}}
 
@@ -1526,11 +1527,11 @@ The sun chapter showed how `Sun.sighting` places a sun. All it needs from the cl
 Press play. Now the sky darkens too.
 ```
 
-This widget adds one call, `Sky.dusk_at`, and the sky finally does something. Its answer is the blue line. The top of the sky blends day into dusk, by that `Fraction`:
+This widget adds one call, `Sky.darkness_at`, and the sky finally does something. Its answer is the blue line. The top of the sky blends day into night, by that `Fraction`:
 
 {{code Sky.sky_top_color}}
 
-`dusk_at` works out that `Fraction`:
+`darkness_at` works out that `Fraction`:
 
 {{code Sky.darkness_at}}
 
@@ -1548,13 +1549,13 @@ Neither has heard of the clock. The outer functions take a clock, because that's
 Press play. This is the whole sunset.
 ```
 
-This widget adds `Sky.sunset_warmth`, the red line. This job is polish. A sunset without it is still a sunset, just a sad one.
+This widget adds `Sky.horizon_warmth_at`, the red line. This job is polish. A sunset without it is still a sunset, just a sad one.
 
 The horizon is the same sky, warmed toward red:
 
 {{code Sky.sky_horizon_color}}
 
-`sunset_warmth` asks for the sun's height, just as dusk did:
+`horizon_warmth_at` asks for the sun's height, just as dusk did:
 
 {{code Sky.horizon_warmth_at}}
 
@@ -1564,7 +1565,7 @@ The horizon is warmest when the sun's height is zero. `ratio_to` says how far aw
 
 Play any of those widgets backward, and the sun rises. No code does that. Every function here takes a clock and answers, so it doesn't matter which way the clock runs.
 
-The sun and the beacons can be asked about any step, cold. Hand `Sky.dusk_at` a clock and it answers. The rider and the truck can't do that.
+The sun and the beacons can be asked about any step, cold. Hand `Sky.darkness_at` a clock and it answers. The rider and the truck can't do that.
 
 ## Stepping through the ride: RideInstant
 
@@ -1763,7 +1764,7 @@ Each limit is a `ThrottleLimit`: nothing, or at most some acceleration. `held_to
 
 The throttle answers an acceleration, and the motorcycle turns it into a speed.
 
-`Speed` and `Acceleration` are places and distances again: two speeds and a distance make an acceleration, and an acceleration moves a speed. The formula behind braking for a bend is the first line of a physics textbook, `v² = u² + 2as`, solved for `a`. `target: Speed.(t)` opens the field's `Speed` where it's destructured:
+`Speed` and `Acceleration` are places and distances again: two speeds and a distance make an acceleration, and an acceleration moves a speed. The formula behind braking for a bend is the first line of a physics textbook, v² = u² + 2as, solved for a. In the code the speed goes from `s` to `t` within a distance. `target: Speed.(t)` opens the field's `Speed` where it's destructured:
 
 {{code Speed.acceleration_to}}
 
@@ -1780,7 +1781,7 @@ The herds chapter left one pig waiting. On the first two segments with pigs, one
 Those are two different things, and they don't last the same time. The eyes follow the pig, and they give up once it's too far round. The speed drops for the pig, and it stays down until the segment ends. So `Gaze` has two words. A *look* is what the eyes do, and *gawking* is what the speed does. This chapter takes them in that order.
 
 ```widget gaze
-Press play to ride the stretch around the first distracting pig, seen from above. Each step is one call to `Rider.rider_state_at_next_step`, and the lines under the picture read the rider's `speed`, `gaze_yaw` and `look_depth`.
+Press play to ride the stretch around the first distracting pig, seen from above. Each step is one call to `Rider.rider_at_next_step`, and the lines under the picture read the rider's `speed`, `gaze_yaw` and `look_depth`.
 ```
 
 ### Get the types right
@@ -1794,9 +1795,9 @@ The rider's record has two fields we skipped:
 
 Mind what `gaze_yaw` is measured from. The road has a direction, `yaw` is how far the bike points from the road, and `gaze_yaw` is how far the eyes point from the bike. Each is measured from the one before it, which is what a `Turn` is.
 
-Three small types say what a pig can do to the rider. Each one carries its payload only where it means something. A segment's `pig_interest` says what its pigs are to the rider, and only `Distracting` has a pig in it:
+Three small types say what a pig can do to the rider. Each one carries its payload only where it means something. A segment's `pigs` says whether it has a herd, and only a `Herd` has one. Its `interest` is `Distracting` or `Unnoticed`, which says whether the herd catches the rider's eye:
 
-{{code Segment.PigInterest}}
+{{code Segment.Pigs}}
 
 The rider looks at a pig or at the road, and only a pig has an angle:
 
@@ -1821,18 +1822,19 @@ One step of the gaze
 digraph gaze {
   rankdir=LR;
   node [shape=box, fontname="Helvetica"];
-  desired_gaze -> next_gaze_yaw -> next_look_depth;
-  next_gaze_yaw -> camera;
-  next_look_depth -> "width of the view";
-  is_gawking -> gawk_brake -> pig_limit -> speed;
+  desired_gaze -> next_gaze_yaw [label="  aims"];
+  next_gaze_yaw -> next_look_depth [label="  hands its yaw to"];
+  next_gaze_yaw -> camera [label="  turns"];
+  next_look_depth -> "width of the view" [label="  widens"];
+  gawk_brake -> speed [label="  lowers"];
 }
 ```
 
-The chain from `desired_gaze` is the look, and the chain from `is_gawking` is the gawking. Nothing joins them. Both ask about the same pig, and neither asks about the other.
+The chain from `desired_gaze` is the look, and `gawk_brake` is the gawking. Nothing joins them. Both ask about the same pig, and neither asks about the other.
 
 ### The look
 
-`Rider.rider_state_at_next_step` moves the eyes last, after the bike has moved:
+`Rider.rider_at_next_step` moves the eyes last, after the bike has moved:
 
 {{code RiderEyes.eyes_at_next_step}}
 
@@ -1870,7 +1872,7 @@ The depth has one job. It widens the view:
 
 {{code RiderEyes.attention}}
 
-`RideFocal.ride_focal`, which sets how wide the view is, takes the stronger of this and what a crossing on the road asks for, which we'll meet with the cat. So a pig widens the view, and the view stays wide for a while after.
+`RiderCamera.ride_focal`, which sets how wide the view is, asks `Rider.attention`, which takes the stronger of this and what a crossing on the road asks for, which we'll meet with the cat. So a pig widens the view, and the view stays wide for a while after.
 
 ### Gawking
 
@@ -1880,7 +1882,7 @@ Whether the rider is gawking is a plainer question than whether it's looking:
 
 It starts at the same 150 metres, but it only asks where the rider is. There's no angle in it, so it outlasts the look.
 
-`pig_limit` is the third link in the throttle's chain. It asks `Gaze` for a brake, and takes it if that's harder than what it was offered:
+`gawk_brake` is the third link in the throttle's chain. It gives a brake while the rider has noticed a pig, and `held_to` takes it if that's harder than what it was offered:
 
 {{code Throttle.next_acceleration from "Gawking.gawk_brake(motorcycle, segment)," to "Gawking.gawk_brake(motorcycle, segment),"}}
 
@@ -2725,13 +2727,13 @@ digraph proving {
   node [shape=box, fontname="Helvetica"];
   gates [label="the proof tools\nRasterFrame, ShapesFrame, StepBack", style=dashed];
   Tour [style=bold];
-  gates -> Tour;
-  gates -> SafariFrame;
-  gates -> ShapesPixels;
-  SafariFrame -> ShapesPixels;
-  SafariFrame -> backdrop;
-  ShapesPixels -> ScanlineFill;
-  backdrop [label="the backdrop\nBackdropPixels, SunPixels", style=dashed];
+  gates -> Tour [label="  ride it"];
+  gates -> SafariFrame [label="  paint the frame"];
+  gates -> ShapesPixels [label="  paint the shapes alone"];
+  SafariFrame -> ShapesPixels [label="  paints the shapes"];
+  SafariFrame -> backdrop [label="  paints the backdrop"];
+  ShapesPixels -> ScanlineFill [label="  fills each shape"];
+  backdrop [label="the backdrop\nSkyAndGrassPixels, SunPixels", style=dashed];
 }
 ```
 
@@ -2757,7 +2759,7 @@ A frame is only evidence for what's in it, so the steps in the table at the top 
 
 We add a frame whenever something could go wrong without any listed frame changing. A brake light wired to `Off`, for example, would have passed every hash until we added step 6,553.
 
-Exact hashes have a consequence that reaches into the code. Float addition isn't associative, so a sum's order is part of its meaning here. `World.route_length` says so in its doc comment, and it's one of the few places in Safari Ride where the direction of a fold is a decision:
+Exact hashes have a consequence that reaches into the code. Float addition isn't associative, so a sum's order is part of its meaning here. `Route.segments_with_ends` says so in its doc comment, and it's one of the few places in Safari Ride where the direction of a fold is a decision:
 
 {{code Route.segments_with_ends}}
 
@@ -2886,7 +2888,7 @@ The ride instant chapter showed `SafariApp.model_at_next_step` reading a snapsho
 
 What the game hands back each frame is a `List(Shapes.Shape)`. A shape is a tag: `Poly`, `Disc`, `Rect` and a few more, each with its fill. Two of them aren't shapes. `Blend` and `View` are marks in the list that change how what comes after them is painted, because a frame is a list, and a mark is the cheapest way to say that.
 
-The rider's lean is one of those marks. The whole picture banks into a turn, backdrop included, so `SafariApp.frame_shapes` builds a camera out of nested tags and puts it at the front. The rest is `Tour` answering questions, each a one-liner:
+The rider's lean is one of those marks. The whole picture banks into a turn, backdrop included, so `FrameView.leaned_shapes` builds a camera out of nested tags and puts it at the front. The rest is `Tour` answering questions, each a one-liner:
 
 {{code FrameView.leaned_shapes}}
 

@@ -3,7 +3,6 @@
 
 # Roc's own words, which the parser's tree holds as syntax and not as names.
 _: Roc's wildcard, in a pattern or an annotation
-as: a Roc keyword, in a list pattern
 crash: a Roc keyword
 expect: a Roc keyword
 for: a Roc keyword
