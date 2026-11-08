@@ -13,7 +13,7 @@ import game.Pixels
 import game.Bird
 import game.RoadAhead
 import game.Scene
-import game.SegmentPlace
+import game.SegmentFromRider
 import lib.Shapes
 
 SceneExpects :: [].{}
@@ -81,7 +81,7 @@ sighted_ahead = |kind, forward|
 		{
 			road: Fixtures.road,
 			camera: Fixtures.origin_camera,
-			place: Ahead(SegmentPlace.Position.first),
+			place: Ahead(SegmentFromRider.Position.first),
 		},
 	)
 		?? crash "SceneExpects: a test's thing is past the near plane"
@@ -114,7 +114,7 @@ post_sighting = |along|
 		{
 			road: one_segment_road,
 			camera: Fixtures.origin_camera,
-			place: Ahead(SegmentPlace.Position.first),
+			place: Ahead(SegmentFromRider.Position.first),
 		},
 	)
 
@@ -144,7 +144,7 @@ expect
 				{
 					road: one_segment_road,
 					camera: { vantage: Fixtures.origin, focal_length: Pixels.of(128.0) },
-					place: Ahead(SegmentPlace.Position.first),
+					place: Ahead(SegmentFromRider.Position.first),
 				},
 			).map_ok(|_| Seen)
 				== outcome,

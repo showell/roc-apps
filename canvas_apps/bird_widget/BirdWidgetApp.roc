@@ -18,7 +18,7 @@ import game.Bird
 import game.Geom
 import game.Polygon
 import game.Pipeline
-import game.SegmentPlace
+import game.SegmentFromRider
 import game.Speed
 import game.Trees
 import game.Sky
@@ -139,7 +139,7 @@ sighting_from_eye = |placed|
 		{
 			road: World.road_at_start,
 			camera: { vantage: eye, focal_length: Lens.resting_focal_length },
-			place: Ahead(SegmentPlace.Position.first),
+			place: Ahead(SegmentFromRider.Position.first),
 		},
 	)
 

@@ -9,7 +9,7 @@ import game.Angle
 import game.Distance
 import game.RoadAhead
 import game.Route
-import game.SegmentPlace
+import game.SegmentFromRider
 import game.Geom
 import game.RiderView
 import game.GroundSighting
@@ -97,7 +97,7 @@ camera = {
 ## The one bend on that road.
 bend_of : RoadAhead.RoadView -> BendInView
 bend_of = |road|
-	BendInView.of_in_view(RoadAhead.segment_in_view_at(road, SegmentPlace.Position.first))
+	BendInView.of_in_view(RoadAhead.segment_in_view_at(road, SegmentFromRider.Position.first))
 
 ## The apex of a bend of `turn`, as the camera sees it.
 apex_of : Angle.Turn -> RiderView.RiderPoint

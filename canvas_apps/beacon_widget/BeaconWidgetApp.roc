@@ -13,7 +13,7 @@ import game.Geom
 import game.Lens
 import game.Pipeline
 import game.Route
-import game.SegmentPlace
+import game.SegmentFromRider
 import game.Sky
 import game.Tower
 import game.World
@@ -101,7 +101,7 @@ tower_shapes = |right, beacon| {
 		lift: Distance.zero,
 		kind: Tower.standing({ yaw: Angle.straight_ahead, beacon }),
 	}
-	place = Ahead(SegmentPlace.Position.first)
+	place = Ahead(SegmentFromRider.Position.first)
 	camera = { vantage: eye, focal_length: Lens.resting_focal_length }
 	WidgetPage.resting_lens_shapes(
 		Pipeline.sighting_of(placed_tower, { road: World.road_at_start, camera, place }),

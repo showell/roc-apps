@@ -8,10 +8,10 @@
 import Distance
 import Geom
 import RiderView
-import SegmentPlace
+import SegmentFromRider
 
 Spot :: {
-	place : SegmentPlace,
+	place : SegmentFromRider,
 	road_point : Geom.RoadPoint,
 	lift : Distance,
 	foot : RiderView.RiderPointAhead,
@@ -22,15 +22,15 @@ Spot :: {
 	## builds each spot in play from the road, so the foot follows from the
 	## place. A kind's test builds one here, to draw from a foot it chooses.
 	at : {
-		place : SegmentPlace,
+		place : SegmentFromRider,
 		road_point : Geom.RoadPoint,
 		lift : Distance,
 		foot : RiderView.RiderPointAhead,
 	} -> Spot
 	at = |parts| Spot.(parts)
 
-	## The place of the object's segment, relative to the rider.
-	place : Spot -> SegmentPlace
+	## Where the object's segment lies, seen from the rider.
+	place : Spot -> SegmentFromRider
 	place = |Spot.(spot)| spot.place
 
 	## Where the object stands on its segment.

@@ -27,7 +27,7 @@ import game.RoadAhead
 import game.Route
 import game.Screen
 import game.Segment
-import game.SegmentPlace
+import game.SegmentFromRider
 import game.Speed
 import game.Spot
 import game.Steps
@@ -51,7 +51,7 @@ birds_seen_on : RoadAhead.RoadView,
 	encounter_timing : EncounterPlan.Timing,
 } -> List(Pipeline.Sighted(Bird))
 birds_seen_on = |road_view, { camera, encounter_timing }| {
-	rider_segment = RoadAhead.segment_at(road_view, SegmentPlace.Position.first)
+	rider_segment = RoadAhead.segment_at(road_view, SegmentFromRider.Position.first)
 	encounter_stage = rider_segment.encounter_stage(encounter_timing)
 	EncounterSighting.birds_in_view(road_view, { camera, encounter_stage })
 }
@@ -481,7 +481,7 @@ posed_spot_at = |{ forward, right, lift }| {
 		RiderView.rider_point_ahead({ right, forward })
 			?? crash "EncounterExpects: a test's animal is past the near plane"
 	Spot.at({
-		place: Ahead(SegmentPlace.Position.first),
+		place: Ahead(SegmentFromRider.Position.first),
 		road_point: {
 			along: Along.metres(forward.to_metres()),
 			across: Across.metres(right.to_metres()),

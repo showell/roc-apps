@@ -9,13 +9,13 @@ import Geom
 import Bird
 import Cat
 import RoadAhead
-import SegmentPlace
+import SegmentFromRider
 
 EncounterPoses :: [].{
 
 	## An animal on a segment in view: where that segment lies from the rider,
 	## and where on it the animal stands and how it is posed.
-	PlacedAnimal(kind) : { place : SegmentPlace, animal : Geom.Placed(kind) }
+	PlacedAnimal(kind) : { place : SegmentFromRider, animal : Geom.Placed(kind) }
 
 	## The cats on `road`, with the encounter on the rider's segment at
 	## `encounter_stage`, in the order of `RoadAhead.segments_in_view`.
@@ -83,7 +83,7 @@ posed_in_view = |in_view, { rider_stage, animal_instant_at }| {
 		Ok({ place: in_view.place, animal: Animation.placed_instant(animal_instant_at(stage)) })
 	match in_view.place {
 		Ahead(position) =>
-			if position == SegmentPlace.Position.first {
+			if position == SegmentFromRider.Position.first {
 				posed(rider_stage)
 			} else {
 				posed(Waiting)
