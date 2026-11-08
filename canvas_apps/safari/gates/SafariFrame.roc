@@ -43,7 +43,7 @@ SafariFrame :: [].{
 		roll = SafariFrame.screen_roll(scene.roll)
 		var $px = SkyAndGrassPixels.sky_and_grass_pixels(roll, scene.backdrop.sky_colors)
 		$px = SunPixels.pixels_with_sun($px, { roll, sun: scene.backdrop.sun_sighting })
-		ShapesPixels.pixels_with_shapes($px, { roll, shapes: scene.ride_shapes })
+		ShapesPixels.pixels_with_shapes($px, { roll, shapes: scene.ride_shapes() })
 	}
 
 	## Safari's screen, seen through the camera's roll.

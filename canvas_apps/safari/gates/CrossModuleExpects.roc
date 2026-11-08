@@ -1293,8 +1293,10 @@ lone_bird_scene = |forward| {
 ## The shapes of a tree and a bird, these many metres ahead, in the order the
 ## frame draws them.
 tree_and_bird_shapes : { tree_ahead : F64, bird_ahead : F64 } -> List(Shapes.Shape)
-tree_and_bird_shapes = |{ tree_ahead, bird_ahead }|
-	Scene.scene_shapes({ ..lone_tree_scene(tree_ahead), birds: lone_bird_scene(bird_ahead).birds })
+tree_and_bird_shapes = |{ tree_ahead, bird_ahead }| {
+	tree_and_bird = { ..lone_tree_scene(tree_ahead), birds: lone_bird_scene(bird_ahead).birds }
+	Scene.scene_shapes(tree_and_bird)
+}
 
 lone_tree_shapes : F64 -> List(Shapes.Shape)
 lone_tree_shapes = |forward| Scene.scene_shapes(lone_tree_scene(forward))
@@ -1885,7 +1887,7 @@ expect ride_encounters.is_faded_at_each_exit
 # A frame of the ride draws.
 expect {
 	frame = FrameView.frame_view_at(World.route, RideInstant.initial)
-	first_shape = frame.ride_shapes.first() ?? crash "CrossModuleExpects: a frame draws"
+	first_shape = frame.ride_shapes().first() ?? crash "CrossModuleExpects: a frame draws"
 	coordinates_of(first_shape).len() >= 6
 }
 
@@ -2236,7 +2238,7 @@ expect {
 	)
 }
 
-expect FrameView.frame_view_at(World.route, ride_at_step_one).ride_shapes.len() > 0
+expect FrameView.frame_view_at(World.route, ride_at_step_one).ride_shapes().len() > 0
 
 # The ride starts facing away from the sun.
 expect FrameView.frame_view_at(World.route, RideInstant.initial).backdrop.sun_sighting == OutOfView

@@ -318,13 +318,13 @@ shapes_at = |model|
 expect picture_shapes(layers) == SafariApp.frame_shapes(paused_tour)
 
 # The ride's parts are the game's own shapes, in the game's order.
-expect ride_shapes_on(layers) == paused_frame_view.ride_shapes
+expect ride_shapes_on(layers) == paused_frame_view.ride_shapes()
 
 # The backdrop's parts are the game's own backdrop, in its order.
 expect shapes_in(backdrop_parts, layers) == FrameView.backdrop_shapes(paused_frame_view)
 
 # The frame's total is the game's own count of its shapes.
-expect ride_count(layers) == paused_frame_view.ride_shapes.len()
+expect ride_count(layers) == paused_frame_view.ride_shapes().len()
 
 # Every layer has shapes of its own at this step but the sun, which is behind the
 # rider.

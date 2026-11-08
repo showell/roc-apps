@@ -104,8 +104,12 @@ Scene := {
 
 	## The scene's things as shapes, far to near.
 	scene_shapes : Scene -> List(Shapes.Shape)
-	scene_shapes = |scene|
-		Scene.scene_renderings(scene).join_map(|rendering| rendering.picture().to_shapes())
+	scene_shapes = |scene| Scene.scene_shape_lists(scene).join()
+
+	## The scene's things as shapes, far to near: a list for each thing.
+	scene_shape_lists : Scene -> List(List(Shapes.Shape))
+	scene_shape_lists = |scene|
+		Scene.scene_renderings(scene).map(|rendering| rendering.picture().to_shapes())
 
 	## Each of `trees` rendered, told how many of the others are nearer, which is
 	## all a tree needs of them.

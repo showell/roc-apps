@@ -76,7 +76,13 @@ Shapes :: [].{
 
 	## The shapes in `space`, and the space back to the screen after them.
 	in_space : Shapes.Space, List(Shapes.Shape) -> List(Shapes.Shape)
-	in_space = |space, shapes| shapes.prepend(View(space)).append(View(Screen))
+	in_space = |space, shapes| Shapes.lists_in_space(space, [shapes])
+
+	## The shapes of each of `shape_lists` in turn, in `space`, and the space back
+	## to the screen after them: what `in_space` gives for the lists joined, with
+	## every shape copied once.
+	lists_in_space : Shapes.Space, List(List(Shapes.Shape)) -> List(Shapes.Shape)
+	lists_in_space = |space, shape_lists| [[View(space)]].concat(shape_lists).append([View(Screen)]).join()
 
 	## A line `width` pixels wide between two points, as the quad it is, so no
 	## painter has to learn a stroke. It has no cap and no join, which suits a
@@ -288,6 +294,13 @@ dot = Disc({ x: 1.0, y: 2.0, radius: 3.0, fill: ink })
 expect Shapes.added_light([dot]) == [Blend(Add), dot, Blend(Over)]
 expect Shapes.added_light([]) == [Blend(Add), Blend(Over)]
 expect Shapes.in_space(Screen, [dot]) == [View(Screen), dot, View(Screen)]
+expect Shapes.in_space(Screen, []) == [View(Screen), View(Screen)]
+expect Shapes.lists_in_space(Screen, [[dot], [], [ink_dot, dot]]) == [View(Screen), dot, ink_dot, dot, View(Screen)]
+expect Shapes.lists_in_space(Screen, []) == [View(Screen), View(Screen)]
+
+## A second dot, so an order shows.
+ink_dot : Shapes.Shape
+ink_dot = Disc({ x: 5.0, y: 6.0, radius: 1.0, fill: ink })
 
 # A picture two pixels wide and one high holds two pixels.
 expect {
