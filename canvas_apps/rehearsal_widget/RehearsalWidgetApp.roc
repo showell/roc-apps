@@ -45,6 +45,10 @@ RehearsalWidgetApp :: [].{
 	})
 }
 
+# The title's "Twelve rehearsals", and "After the twelfth" in the header above,
+# count the search's tries.
+expect round_count == 12
+
 ## The step of the ride this widget looks inside.
 step_shown : U32
 step_shown = 374
