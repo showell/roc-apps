@@ -101,18 +101,20 @@ Book := [].{
 					crash "book: a divider stands above a chapter that isn't in the book"
 				}
 				chapters = numbered.map(|chapter| with_opening(chapter, dividers_wanted))
-				in_order = [{ ..front, file: front_file }].concat(chapters)
 				chapter_pages = chapters.map_with_index(
 					|chapter, i| {
-						file: chapter.file,
-						html: chapter_html(
-							chapter,
-							{
-								chapters,
-								previous: in_order.get(i),
-								next: in_order.get(i + 2),
-							},
-						),
+						{ previous, next } = neighbours(chapters, i)
+						{
+							file: chapter.file,
+							html: chapter_html(
+								chapter,
+								{
+									chapters,
+									previous,
+									next,
+								},
+							),
+						}
 					},
 				)
 				[{ file: front_file, html: front_html(front, chapters) }].concat(chapter_pages)
@@ -138,7 +140,26 @@ Chapter : {
 	opening : Str,
 }
 
-Neighbour : Try(Chapter, [OutOfBounds])
+## The page a chapter's turn link goes to on one side.
+Neighbour : [Front, Chapter(Chapter), NoChapter]
+
+## The pages on either side of chapter `i`: the front comes before the first
+## chapter, and nothing comes after the last.
+neighbours : List(Chapter), U64 -> { previous : Neighbour, next : Neighbour }
+neighbours = |chapters, i| {
+	previous = if i == 0 {
+		Front
+	} else {
+		neighbour_at(chapters, i - 1)
+	}
+	{ previous, next: neighbour_at(chapters, i + 1) }
+}
+
+neighbour_at : List(Chapter), U64 -> Neighbour
+neighbour_at = |chapters, i| match chapters.get(i) {
+	Ok(chapter) => Chapter(chapter)
+	Err(OutOfBounds) => NoChapter
+}
 
 ## A chapter's source has one top heading, and the rest of its headings are its
 ## sections. Anything else means the split went wrong, so it stops the build.
@@ -325,9 +346,9 @@ section_entry = |chapter, section| {
 ## span, which keeps the other link on its own side.
 turn_link : Neighbour, { rel : Str, word : Str } -> Str
 turn_link = |neighbour, { rel, word }| match neighbour {
-	Ok(chapter) if chapter.file == front_file => "<a rel=\"${rel}\" href=\"${front_file}\"><small>${word}</small>Contents</a>"
-	Ok(chapter) => "<a rel=\"${rel}\" href=\"${chapter.file}\"><small>${word}</small>${BookText.escaped_text(chapter.title)}</a>"
-	Err(OutOfBounds) => "<span></span>"
+	Front => "<a rel=\"${rel}\" href=\"${front_file}\"><small>${word}</small>Contents</a>"
+	Chapter(chapter) => "<a rel=\"${rel}\" href=\"${chapter.file}\"><small>${word}</small>${BookText.escaped_text(chapter.title)}</a>"
+	NoChapter => "<span></span>"
 }
 
 page_html :
@@ -372,6 +393,9 @@ one_section = {
 	sections: [{ id: "s", title: "S" }],
 	opening: "",
 }
+
+other_section : Chapter
+other_section = { ..one_section, file: "b.html", title: "B" }
 
 a_part : Book.Divider
 a_part = {
@@ -448,12 +472,18 @@ expect with_section_links("<p>no sections</p>") == "<p>no sections</p>"
 expect
 	with_section_links("<h1 id=\"a\">A</h1><h2 id=\"b\">B <code>c</code></h2>d<h2 id=\"e\">E</h2>")
 		== "<h1 id=\"a\">A</h1><h2 id=\"b\">B <code>c</code> <a class=\"section-link\" href=\"#b\" aria-label=\"Link to this section\">§</a></h2>d<h2 id=\"e\">E <a class=\"section-link\" href=\"#e\" aria-label=\"Link to this section\">§</a></h2>"
-expect turn_link(Err(OutOfBounds), { rel: "next", word: "Next" }) == "<span></span>"
+expect turn_link(NoChapter, { rel: "next", word: "Next" }) == "<span></span>"
 expect turn_link(
-	Ok(one_section),
+	Chapter(one_section),
 	{ rel: "next", word: "Next" },
 ) == "<a rel=\"next\" href=\"a.html\"><small>Next</small>A</a>"
 expect turn_link(
-	Ok({ ..one_section, file: "index.html" }),
+	Front,
 	{ rel: "prev", word: "Previous" },
 ) == "<a rel=\"prev\" href=\"index.html\"><small>Previous</small>Contents</a>"
+expect neighbours([one_section], 0) == { previous: Front, next: NoChapter }
+expect
+	neighbours([one_section, other_section, one_section], 1)
+		== { previous: Chapter(one_section), next: Chapter(one_section) }
+expect neighbours([one_section, other_section], 1) == { previous: Chapter(one_section), next: NoChapter }
+expect neighbours([one_section, other_section], 0) == { previous: Front, next: Chapter(other_section) }
