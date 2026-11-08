@@ -1839,9 +1839,7 @@ New in this chapter:
 
 The truck's driver is teasing the rider: staying ahead, but letting the rider gain. That's the hand of god, a rule that bends the world on purpose, for the story. Here it's one function, `tease_position`. Given how far the rider has come, it says where the truck would like to be. The lead it aims for shrinks from 500 metres at the start of the route to 100 at the end.
 
-Everything else is plain physics. The truck speeds up while it's short of that mark and holds its speed once it's past it. It never slows down to keep to the mark, so it can run well past it on a long straight. It slows for the bends, and that's mostly where the rider gains. The tease only ever speeds the truck up, so near the end the rider can get closer than the 100 metres it aims for.
-
-The truck can always pull away, because it outdoes the rider by 10%, in both its acceleration and its top speed.
+Everything else is plain physics. The truck speeds up while it's short of that mark and holds its speed once it's past it. It slows for the bends, and that's mostly where the rider gains. The tease only ever speeds the truck up, so near the end the rider can get closer than the 100 metres it aims for. The truck can always pull away again, because it outdoes the rider by 10%, in both its acceleration and its top speed.
 
 ### Get the types right
 
@@ -1910,13 +1908,9 @@ Then the two ways to take a step. Both sit below the type's block, so they're pr
 
 ### Drawing the truck
 
-`TruckSighting` finds the truck on the road ahead, the way the other sightings find trees and towers. What it finds is a `LitTruck`: which of the truck's lights are on. This chapter draws the body, which is all there is with the lights off. Unlike the trees, the truck has no size test: it's drawn however small it stands, because the rider is always looking for it.
+`TruckSighting` finds the truck on the road ahead. What it finds is a `LitTruck`: which of the truck's lights are on. This chapter draws the body, which is all there is with the lights off. The truck is drawn however small it stands, because the rider is always looking for it.
 
-The truck is a real box, with a back, two sides, a roof, a windshield and a nose. Each corner of it goes through three maps on its way to the screen:
-
-- **the shape:** a corner is written in the truck's own frame;
-- **the placement:** that frame is carried onto the road at the truck's spot;
-- **the projection:** the camera turns the result into a point on the screen.
+The truck is a real box, with a back, two sides, a roof, a windshield and a nose. Each corner of it goes through three maps on its way to the screen. Its shape is written in the truck's own frame. Its placement carries that frame onto the road at the truck's spot. Its projection is the camera turning the result into a point on the screen.
 
 A point in the truck's own frame is three distances, measured from the middle of the trailer:
 
@@ -1948,7 +1942,7 @@ New in this chapter:
 
 ### Two lamps, two rules
 
-The headlights come on when it gets dark. They work like a light sensor on the lamps themselves: once the sky is dark enough, they're on. The sky already knows how dark it is, from the sunset, so the sensor reads the sky.
+The headlights come on when it gets dark. They work like a light sensor on the lamps themselves: once the sky is dark enough, they're on. The sky knows how dark it is: `Sky.darkness_at` answers a `Fraction`, 0 by day and 1 at full dark. The sensor reads that.
 
 The brake lights come on while the truck is slowing down. That's a fact about the truck's own last step, its `Pace`, so they follow the truck.
 
@@ -1968,7 +1962,7 @@ Each frame, `FrameView` reads the truck's pace and the sky's darkness, and hands
 
 {{code LitTruck.at}}
 
-The headlights' threshold was measured once:
+The headlights come on at this darkness:
 
 {{code LitTruck.headlights_on_darkness}}
 
@@ -1979,6 +1973,8 @@ The drawing does what the lamps say, with each `match` covering both tags. The b
 {{code LitTruck.truck_shapes}}
 
 `TruckLights` paints the beams as wedges that fade from the lamp toward their far end, and the brake lights, each with a glow around it. `TruckBody` knows nothing of the lights: they're drawn around it.
+
+Step the ride back past step 3,555, and the headlights go off again. Nothing turns them off; they only ever read the sky. The brake lights read the truck's last step, which the ride keeps, so they come back with it.
 
 ## The cat
 
