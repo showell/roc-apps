@@ -124,11 +124,20 @@ focal_length_for_lean = |lean_fraction| {
 	Lens.resting_focal_length.times(1.0 - lost_at_full_lean * lean * lean)
 }
 
-## The focal length for the rider's attention.
+## The focal length for the rider's attention. The length shrinks as the
+## attention grows and reaches zero at an attention of about 2.56, the lens's
+## limit; past it the lens has no length, so this crashes rather than draw
+## through it.
 focal_length_for_attention : Attention -> Pixels
 focal_length_for_attention = |attention| {
 	lost_at_full_attention = focal_length_share_at_full_attention.complement().to_f64()
-	Lens.resting_focal_length.times(1.0 - lost_at_full_attention * attention.to_f64())
+	share_left = 1.0 - lost_at_full_attention * attention.to_f64()
+	focal_length = Lens.resting_focal_length.times(share_left)
+	if focal_length > Pixels.zero {
+		focal_length
+	} else {
+		crash "RiderCamera.focal_length_for_attention: the attention is past the lens's limit, so the focal length is not positive"
+	}
 }
 
 ## Whether `got` is within 1e-9 of `want`, scaled up by a want past 1.
@@ -156,6 +165,17 @@ expect
 			is_close(got, want)
 		},
 	)
+
+# The lens holds a positive length at a crossing cat's peak attention, 1.8, and
+# just short of its limit, where the length is down to about a pixel.
+expect {
+	at_peak = focal_length_for_attention(Attention.of(1.8)).to_f64()
+	near_limit = focal_length_for_attention(Attention.of(2.56)).to_f64()
+	at_peak > 0.0
+		and is_close(at_peak, 204.2822908843921)
+		and near_limit > 0.0
+		and is_close(near_limit, 1.0968176691779442)
+}
 
 expect
 	[
