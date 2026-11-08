@@ -243,13 +243,55 @@ function bindApp(exports) {
     // the frame that happens to grow memory. That is the third costume this
     // one bug has worn.
     frame: () => {
+      const computeStart = performance.now();
       const at = exports.computeFrame();
-      return RocGlue.frame(new DataView(exports.memory.buffer), at);
+      const decodeStart = performance.now();
+      const shapes = RocGlue.frame(new DataView(exports.memory.buffer), at);
+      FRAME_SPLIT.computeMs = decodeStart - computeStart;
+      FRAME_SPLIT.decodeMs = performance.now() - decodeStart;
+      return shapes;
     },
   };
 }
 
 const CATCH_UP = 4; // steps one animation frame may take before time is dropped
+
+// The last frame's time in the wasm (computing its shapes) and in the glue
+// (decoding them out of the wasm's memory), for the timing log.
+const FRAME_SPLIT = { computeMs: 0, decodeMs: 0 };
+
+// With `?timing=1` in the address, the first frames' times go to the console:
+// how long the wasm took to load, then per frame the gap since the last one,
+// the steps taken, and the milliseconds spent stepping and drawing. It tells a
+// slow start (the engine still on its first, unoptimized code) from a slow
+// ride. Without it nothing is recorded.
+const TIMED_FRAMES = 120;
+function frameTimer() {
+  if (new URLSearchParams(location.search).get('timing') !== '1') return null;
+  const rows = [];
+  return {
+    loaded: (ms) => console.log(`canvas_app_runner: wasm loaded and compiled in ${ms.toFixed(0)} ms`),
+    frame: (row) => {
+      if (rows.length >= TIMED_FRAMES) return;
+      rows.push(row);
+      if (rows.length < TIMED_FRAMES) return;
+      console.table(rows);
+      const slow = (from, to) => rows.slice(from, to).filter((r) => r.stepMs + r.drawMs > 16).length;
+      const mean = (from, to, key) =>
+        (rows.slice(from, to).reduce((sum, r) => sum + r[key], 0) / (to - from)).toFixed(1);
+      const steps = (from, to) => rows.slice(from, to).reduce((sum, r) => sum + r.steps, 0);
+      console.log(
+        `canvas_app_runner: frames over 16 ms of work: first 30 ${slow(0, 30)}, last 30 ${slow(90, 120)}; ` +
+          `mean step ms ${mean(0, 30, 'stepMs')} then ${mean(90, 120, 'stepMs')}, ` +
+          `mean draw ms ${mean(0, 30, 'drawMs')} then ${mean(90, 120, 'drawMs')} ` +
+          `(wasm ${mean(0, 30, 'computeMs')} then ${mean(90, 120, 'computeMs')}, ` +
+          `decode ${mean(0, 30, 'decodeMs')} then ${mean(90, 120, 'decodeMs')}, ` +
+          `paint ${mean(0, 30, 'paintMs')} then ${mean(90, 120, 'paintMs')}), ` +
+          `steps taken ${steps(0, 30)} then ${steps(90, 120)}`,
+      );
+    },
+  };
+}
 
 // How many times the app hears Right before its first frame: the place in
 // `opensAt` of the word the address names. An app has no way to hear an address,
@@ -270,6 +312,8 @@ async function main(show) {
   loading.textContent = show.loading ?? 'Loading…';
   document.body.appendChild(loading);
 
+  const timer = frameTimer();
+  const loadStart = performance.now();
   const { instance } = await WebAssembly.instantiateStreaming(fetch(show.wasm), { env: {} });
   const game = bindApp(instance.exports);
   const width = game.width();
@@ -330,7 +374,10 @@ async function main(show) {
     ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, width, height);
-    ShapesCanvas.paint(ctx, game.frame(), scale);
+    const shapes = game.frame();
+    const paintStart = performance.now();
+    ShapesCanvas.paint(ctx, shapes, scale);
+    FRAME_SPLIT.paintMs = performance.now() - paintStart;
     drawSpeaker(ctx, width, height, toneCount, ringing, now);
   };
 
@@ -339,11 +386,23 @@ async function main(show) {
   let owed = 0;
   let last = performance.now();
   const tick = (now) => {
-    owed = Math.min(owed + (now - last), stepMs * CATCH_UP);
+    const gap = now - last;
+    owed = Math.min(owed + gap, stepMs * CATCH_UP);
     last = now;
     let stepped = 0;
+    const stepStart = performance.now();
     while (owed >= stepMs) { step(now); owed -= stepMs; stepped++; }
+    const drawStart = performance.now();
     if (stepped) draw(now);
+    timer?.frame({
+      gapMs: +gap.toFixed(1),
+      steps: stepped,
+      stepMs: +(drawStart - stepStart).toFixed(1),
+      drawMs: +(performance.now() - drawStart).toFixed(1),
+      computeMs: stepped ? +FRAME_SPLIT.computeMs.toFixed(1) : 0,
+      decodeMs: stepped ? +FRAME_SPLIT.decodeMs.toFixed(1) : 0,
+      paintMs: stepped ? +(FRAME_SPLIT.paintMs ?? 0).toFixed(1) : 0,
+    });
   };
 
   // **A LOOP THAT RE-ARMS ITSELF LAST STOPS DEAD ON A THROW**, and this one
@@ -370,6 +429,8 @@ async function main(show) {
   for (let press = pressesToOpen(show); press > 0; press--) {
     game.advance(0, KEY_BIT.ArrowRight, 0, 0, 0, 0, 0);
   }
+
+  timer?.loaded(performance.now() - loadStart);
 
   loading.remove();
   document.body.appendChild(canvas);
