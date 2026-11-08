@@ -106,7 +106,7 @@ face : Picture.Setting(TruckShape.TruckOnRoad),
 } -> Camera.FlatPolygon
 face = |truck, { color, corners }| {
 	color,
-	corners: corners.map(|corner| TruckShape.point(truck, corner)),
+	corners: corners.map(|corner| TruckShape.raised_point_on_truck(truck, corner)),
 }
 
 ## A side of the truck at `across`: up the back of the trailer, along its

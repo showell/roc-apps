@@ -47,12 +47,12 @@ truck_shapes : LitTruck, Picture.Setting(TruckShape.TruckOnRoad) -> List(Shapes.
 truck_shapes = |lit_truck, truck| {
 	beams =
 		match lit_truck.headlights {
-			On => TruckLights.headlight_beams(truck)
+			On => TruckLights.headlight_beam_shapes(truck)
 			Off => []
 		}
 	brake_lights =
 		match lit_truck.brake_lights {
-			On => TruckLights.brake_lights(truck)
+			On => TruckLights.brake_light_shapes(truck)
 			Off => []
 		}
 	[beams, TruckBody.body_shapes(truck), brake_lights].join()

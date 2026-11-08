@@ -40,9 +40,6 @@ TruckShape :: [].{
 		height : Distance,
 	}
 
-	trailer_length : Distance
-	trailer_length = Distance.metres(8.4)
-
 	truck_width : Distance
 	truck_width = Distance.metres(2.4)
 
@@ -90,8 +87,8 @@ TruckShape :: [].{
 	## the truck is off the ground. The point is carried from the truck's frame
 	## onto the road at the truck's spot. The ground curves away from the rider,
 	## so the point is lowered by how far the ground has dropped beneath it.
-	point : Picture.Setting(TruckShape.TruckOnRoad), TruckShape.TruckPoint -> Geom.RaisedPoint
-	point = |truck, { along, across, height }| {
+	raised_point_on_truck : TruckSetting, TruckShape.TruckPoint -> Geom.RaisedPoint
+	raised_point_on_truck = |truck, { along, across, height }| {
 		place = truck.spot.place()
 		center = truck.spot.road_point()
 		on_ground = RoadAhead.rider_point_at(
@@ -152,13 +149,16 @@ TruckShape :: [].{
 
 	## A flat-coloured polygon on the truck, cut at the near plane and
 	## projected, unless it's wholly behind the camera.
-	truck_polygon : Picture.Setting(TruckShape.TruckOnRoad),
-	Camera.FlatPolygon -> Try(
-		Shapes.Shape,
-		[BehindCamera],
-	)
+	truck_polygon : TruckSetting, Camera.FlatPolygon -> Try(Shapes.Shape, [BehindCamera])
 	truck_polygon = |truck, polygon| Camera.clipped_polygon(polygon, truck.cam_focal)
 }
+
+## How a truck is drawn: its spot, the camera's lens, and the road and vantage
+## its points are seen from.
+TruckSetting : Picture.Setting(TruckShape.TruckOnRoad)
+
+trailer_length : Distance
+trailer_length = Distance.metres(8.4)
 
 ## How far forward of the trailer the cab's flat roof reaches, as a fraction
 ## of the cab's length, a proportion chosen by eye.

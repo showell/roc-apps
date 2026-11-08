@@ -19,8 +19,8 @@ import lib.Shapes
 TruckLights :: [].{
 
 	## The two headlight beams, each a little in from its side.
-	headlight_beams : Picture.Setting(TruckShape.TruckOnRoad) -> List(Shapes.Shape)
-	headlight_beams = |truck| {
+	headlight_beam_shapes : Picture.Setting(TruckShape.TruckOnRoad) -> List(Shapes.Shape)
+	headlight_beam_shapes = |truck| {
 		box = TruckShape.truck_box
 		[
 			headlight_beam(truck, box.left.plus(headlight_inset)),
@@ -29,8 +29,8 @@ TruckLights :: [].{
 	}
 
 	## The two brake lights, one in from each side of the trailer's back.
-	brake_lights : Picture.Setting(TruckShape.TruckOnRoad) -> List(Shapes.Shape)
-	brake_lights = |truck| {
+	brake_light_shapes : Picture.Setting(TruckShape.TruckOnRoad) -> List(Shapes.Shape)
+	brake_light_shapes = |truck| {
 		box = TruckShape.truck_box
 		brake_shapes(
 			truck,
@@ -157,8 +157,9 @@ Across -> Try(
 )
 headlight_beam = |truck, across| {
 	nose = TruckShape.truck_box.nose
-	at_lamp = |height| TruckShape.point(truck, { along: nose, across, height })
-	at_far_end = |height| TruckShape.point(truck, { along: nose.plus(beam_length), across, height })
+	on_truck = |along, height| TruckShape.raised_point_on_truck(truck, { along, across, height })
+	at_lamp = |height| on_truck(nose, height)
+	at_far_end = |height| on_truck(nose.plus(beam_length), height)
 	lamp_bottom = at_lamp(headlight_height.minus(beam_half_height_at_lamp))
 	lamp_top = at_lamp(headlight_height.plus(beam_half_height_at_lamp))
 	far_top = at_far_end(beam_far_center.plus(beam_far_half_height))
@@ -194,7 +195,7 @@ brake_shapes = |truck, lamp_sides| {
 				near: { along: rear, height: brake_lamp_bottom },
 				far: { along: rear, height: brake_lamp_top },
 			},
-		).map(|corner| TruckShape.point(truck, corner))
+		).map(|corner| TruckShape.raised_point_on_truck(truck, corner))
 	glow = [brake_glow(truck, lamp)].keep_oks(|shape| shape)
 	match TruckShape.truck_polygon(truck, { color: brake_color, corners: lamp }) {
 		Ok(lamp_polygon) => glow.append(lamp_polygon)
