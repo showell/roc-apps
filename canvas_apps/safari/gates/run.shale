@@ -242,8 +242,9 @@ function prune_removed_checkouts()
   return nil
 end
 
--- Clears this checkout's caches when they pass the ceiling; whether they're
--- empty now, so the run is cold.
+-- Clears this checkout's caches when they pass the ceiling; whether the merge
+-- gate's cache is empty now, so the run is cold. The checkout's folder also
+-- holds fast.shale's cache, so it can be there while the merge cache isn't.
 function clear_full_caches()
   local folder = checkout_caches()
   if not exists(folder) then return true end
@@ -253,14 +254,14 @@ function clear_full_caches()
     remove_tree(folder)
     return true
   end
-  return false
+  local merge = folder .. "/merge"
+  return not exists(merge) or #ls(merge) == 0
 end
 
--- `run`'s options for a stage, with its budget when the caches are warm.
+-- `run`'s options for a stage. A cold one goes to `timed_run`, which drops
+-- the budget and keeps the run out of the times history.
 function stage_opts(stage, tail, is_cold)
-  local opts = {timeout_ms = 1800000, tail = tail}
-  if not is_cold then opts.cpu_budget_ms = CPU_BUDGET_MS[stage] end
-  return opts
+  return {timeout_ms = 1800000, tail = tail, cpu_budget_ms = CPU_BUDGET_MS[stage], cold = is_cold}
 end
 
 -- Whether `at`, a `PASS` line's place, is in a package of OTHER_REPO_PACKAGES.
