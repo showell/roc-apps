@@ -1489,11 +1489,11 @@ The types do the work, and a sunset needs four:
 | Type | What it is | Under it |
 |---|---|---|
 | `Clock` | A step of the ride | A `U32` |
-| `FarHeight` | A height above the horizon of something far off, like the sun, in pixels through the lens at rest | An `F64`, because a shape can sit between two pixels |
+| `FarHeight` | A height above the horizon of something far off, like the sun, in pixels, as the lens draws it before the view widens | An `F64`, because a shape can sit between two pixels |
 | `Fraction` | A ratio from 0 to 1, like how far toward dusk we are | An `F64` |
 | `RgbColor` | A color | An `I64`, `0xRRGGBB` |
 
-All four are opaque. Each is still a number, and the type gives it a name, so a height can't be passed where a dusk is wanted. With those in hand, each job is a signature:
+All four are opaque. Each is still a number, and the type gives it a name, so a height can't be passed where a fraction is wanted. With those in hand, each job is one or two signatures. The two jobs that change a color have a second row: the first function works out a `Fraction`, and the second turns it into a color.
 
 | Job | Function | Its type |
 |---|---|---|
@@ -1529,7 +1529,7 @@ digraph sunset {
 }
 ```
 
-A box is a function, and an arrow is a call. Under the frame, `Sun.sun_in_view` does the first job, and `Sky.colors_at` does the other two: the top of the sky and the horizon. They all end at `SunPath.sun_direction_at`, because everything in a sunset comes down to where the sun stands.
+A box is a function, and an arrow is a call. Under the frame, `Sun.sun_in_view` does the first job. `Sky.colors_at` does the other two, as the color of the top of the sky and the color of the horizon. Every path ends at `SunPath.sun_direction_at`, the only box that does anything with the clock but pass it on, because everything in a sunset comes down to where the sun stands.
 
 Here's the top of that diagram in code. Each frame, the game asks for two things, and they make the backdrop:
 
@@ -1545,7 +1545,7 @@ Press play. The two middle buttons step one frame at a time, for the patient.
 
 This widget does only the first job, so the sky stays blue. For each frame it calls `SunPath.height_at`, reads out the answer, and marks it on the chart's gold line.
 
-The sun chapter showed how `Sun.sun_in_view` places a sun. All it needs from the clock is a height:
+The sun chapter showed how `Sun.sun_in_view` places the sun on the screen. From the clock, it takes the sun's direction, a bearing and a height, from `SunPath.sun_direction_at`. The rest of the sunset needs only the height:
 
 {{code SunPath.height_at}}
 
@@ -1563,13 +1563,13 @@ This widget adds one call, `Sky.darkness_at`, and the sky finally does something
 
 {{code Sky.darkness_at}}
 
-It asks for the sun's height, then picks one of two shapes. They meet when the sun has fully set, one radius below the horizon, and you can see the join in the blue line. Before that, dusk grows with the square of how far the sun has fallen. After that, it runs on in a straight line to full dark.
+It asks for the sun's height, then picks one of two shapes. They meet when the sun has fully set, one radius below the horizon, and you can see the join in the blue line. Before that, the darkness grows with the square of how far the sun has fallen since the ride began, and reaches 0.6 as the sun fully sets. After that, it rises in a straight line to full dark as the sun sinks one more radius.
 
 {{signatures Sky.darkness_while_up Sky.darkness_after_set}}
 
-As always, anything outside a module's block is private, so these two are helpers without any keyword.
+Both sit below the module's block, so they're private. Roc needs no keyword for that.
 
-Neither has heard of the clock. The outer functions take a clock, because that's what the frame has to give. The helpers take a height, because that's what dusk depends on, and now that's all it can depend on.
+Neither has heard of the clock. The outer functions take a clock, because that's what the frame has to give. The helpers take a height, because the darkness depends on the height, and since they take nothing else, the height is all it can depend on.
 
 ### Job three: the horizon warms
 
@@ -1579,7 +1579,7 @@ Press play. This is the whole sunset.
 
 This widget adds `Sky.horizon_warmth_at`, the red line. This job is polish. A sunset without it is still a sunset, just a sad one.
 
-The horizon is the same sky, warmed toward red:
+The horizon starts from the top color and blends toward sunset red by the warmth. The warmth is scaled by `horizon_warmth_at_most`, 0.85, so a little of the sky's own color always shows:
 
 {{code Sky.sky_horizon_color}}
 
@@ -1587,7 +1587,7 @@ The horizon is the same sky, warmed toward red:
 
 {{code Sky.horizon_warmth_at}}
 
-The horizon is warmest when the sun's height is zero. `ratio_to` says how far away the sun is, as a share of 110 pixels, and `abs` makes the two sides match, which gives the red line its tent. `Fraction.clamp` holds that share at one for everything past 110 pixels. The share measures distance, and the horizon gets cooler with distance, so `complement` turns it into warmth: one minus the share. A height of zero gives full warmth, and anything past 110 pixels gives no warmth at all.
+The horizon is warmest when the sun's height is zero. `from_horizon` is how far the sun is from the horizon, above or below it. `abs` makes the two sides match, which gives the red line its tent. `ratio_to(warmth_reach)` turns that distance into a share of 110 pixels, and `Fraction.clamp` holds the share at 1 for anything farther. The share grows with distance, but warmth should shrink with it, so `complement` turns the share into warmth: one minus the share. A height of zero gives full warmth, and 110 pixels or more gives none.
 
 ### Going backward
 
@@ -1629,7 +1629,9 @@ digraph stepped {
 }
 ```
 
-Here's the step again, this time whole. Its body is a block: names, then a record, which is the value of the block. The order of those names is a rule of the game. First the rider reads the stage of the encounter on its segment, at the old clock. Then the rider steps, and then the clock ticks. Then the truck and the encounter plan answer the rider who has just moved. The rider never reads the truck.
+A box is a module, and an arrow points to a module it calls.
+
+Here's the step again, this time whole. Its body is a block: names, then a record, which is the value of the block. The names come in a fixed order, and the order matters. First the rider reads how far the encounter on its segment has got, at the old clock. The code calls that its stage, and the cat chapter explains it. Then the rider steps, and then the clock ticks. Then the truck and the encounter plan answer the rider who has just moved. The rider never reads the truck.
 
 {{code RideInstant.next}}
 
@@ -1641,13 +1643,13 @@ Stepping has a cost, which shows up when we compare it with the sun:
 - A wrong sky only affects the frames it touches. A wrong step moves the rider for the rest of the ride.
 - The lines of `RideInstant.next` have to run in order. Frames can be worked out in any order.
 
-The rider's step is the bigger of the two, and it takes up the next four chapters. The truck gets the chapter after those.
+The rider's step is the bigger of the two, and it takes up the next four chapters. The truck gets the three chapters after those.
 
 ## The rider
 
 The rider is two things: a motorcycle, and a pair of eyes.
 
-| Part | Its parts' fields | Type | What it is |
+| Part | Field | Type | What it is |
 |---|---|---|---|
 | motorcycle | `route_place` | `RoutePlace` | which segment, and its `road_point` on it, along and across |
 | | `yaw` | `Angle.Turn` | which way the bike points |
@@ -1663,7 +1665,7 @@ New in this chapter:
 
 {{code Rider.Rider from "Rider := {" to "}.{"}}
 
-Nothing in the rider is a bare float. Three of the fields under it are angles, of two different types, and passing a `Lean` where a `Turn` is wanted is a compile-time error. The eyes get a chapter of their own.
+`Rider := { ... }` is a nominal record, like `RideInstant`, and both of its fields are nominal records too: `Motorcycle` and `RiderEyes`. Nothing in the rider is a bare float. Three of the fields in the table are angles, of two types: `yaw` and `gaze_yaw` are `Turn`s, and `lean` is a `Lean`. Passing a `Lean` where a `Turn` is wanted is a compile-time error. The eyes get a chapter of their own.
 
 The step does its work in order, and the code reads that way: decide, move, cross a bend or stop, then choose where to look:
 
@@ -1671,11 +1673,11 @@ The step does its work in order, and the code reads that way: decide, move, cros
 
 Static dispatch finds `segment_on` on the `RoutePlace`. The `match` on `segment.segment_ending()` has two tags, and `..` in `Bends({ bend, .. })` ignores the rest of its payload.
 
-Every decision the rider makes is `RiderMind`'s. The bike's controls are the lean to take and an acceleration. There's something to notice in the last line here. `Throttle`, which picks the acceleration, is asked about a motorcycle that doesn't exist yet: the motorcycle as it would be at the new lean, which `Motorcycle.with_lean` makes by building a new record. The real one isn't touched, because nothing can touch it.
-
 {{code RiderMind.controls}}
 
-The Rehearsal chapter takes that idea much further. A small version of it decides what happens at the end of a segment. `cross_bend_if_on_road` carries the motorcycle past the bend onto the next segment, and keeps that only if it lands on the road. The rejected motorcycle simply stops being referred to, and nothing has to be undone:
+Every decision the rider makes is `RiderMind`'s. `RiderMind.controls` answers the bike's controls: a lean and an acceleration. Notice its last line. `Throttle` picks the acceleration, and it's asked about a motorcycle that doesn't exist: this motorcycle as it would be at the new lean. `motorcycle.with_lean(lean)` builds that one as a new record. The real motorcycle isn't touched, because no Roc value can be changed.
+
+The Rehearsal chapter takes that idea much further. A small version of it decides what happens at the end of a segment. `cross_bend_if_on_road` makes a motorcycle carried past the bend onto the next segment. If that motorcycle is on the road, it's the answer. If not, the old one is. The rejected motorcycle simply stops being referred to, and nothing has to be undone:
 
 {{code Motorcycle.cross_bend_if_on_road}}
 
@@ -1732,7 +1734,7 @@ The step is the whole of the physics, in order:
 
 {{code Motorcycle.motorcycle_at_next_step}}
 
-First the speed: the acceleration is applied, and the result is held to the top speed. Then the turn: a `Lean` changes only by a `LeanChange`, and it reaches direction only through `lean.steer(turn_per_lean)`, the single door from roll to yaw. Then the move: the bike goes along the middle of the step's turn, and `speed.step_length()` is a `Distance`, so the move is places and distances. The new place is a record update of `route_place` with a new `road_point`, inside a new motorcycle.
+The step works in three parts. First the speed: the acceleration is applied, and `allowed_speed` holds the result to the top speed. Then the turn: `lean.steer(turn_per_lean)` turns the lean into a change of direction, a `Turn`. That's the only way a lean affects where the bike points. Then the move: the bike goes one step's length in the direction halfway through the step's turn, `mid`. `along.plus(...)` adds a `Distance` to a place, which is places and distances again. The new place is a record update of `route_place` with a new `road_point`, inside a new motorcycle.
 
 The bike turns the same amount per step at any speed. That's a cheat, chosen by eye, and it's fine here because the rider chooses each step's lean by trying it out on this same physics.
 
@@ -1742,7 +1744,7 @@ Two small helpers let the rest of the program pretend:
 
 {{code Motorcycle.steady_controls}}
 
-`{ ..motorcycle, lean }` is record update with a shorthand: the field and the local have the same name. Both of these make values for a motorcycle that doesn't exist, and the Rehearsal chapter runs hundreds of them every step.
+`{ ..motorcycle, lean }` is record update with a shorthand: the field and the local have the same name. `with_lean` makes a motorcycle that doesn't exist, and `steady_controls` makes the controls to coast one on. The Rehearsal chapter uses both hundreds of times a step.
 
 So the work is split. The throttle chooses an acceleration, and the bike turns it into a speed. Choosing the lean has to wait for the Rehearsal chapter.
 
@@ -1778,7 +1780,7 @@ digraph limits {
 }
 ```
 
-The rider has several reasons to slow down, and they don't know about each other. A bend is coming. A cat is in the lane. There's a pig to look at. Coasting on would carry the bike off the road. `Throttle` writes them as a line of limits. It starts from the cruise acceleration, and each limit lets that through or lowers it:
+The rider has several reasons to slow down, and they don't know about each other. A bend is coming. A cat is in the lane. There's a pig to look at. Coasting on would carry the bike off the road. `Throttle` writes them as a list of limits, the chain in the second diagram. It starts from `offered`, the cruise acceleration. `fold` hands each limit in turn to `held_to`, with the acceleration so far, and each limit lets it through or lowers it:
 
 {{code Throttle.next_acceleration from "limits = [" to "limits.fold(offered, held_to)"}}
 
@@ -1792,21 +1794,21 @@ Each limit is a `ThrottleLimit`: nothing, or at most some acceleration. `held_to
 
 The throttle answers an acceleration, and the motorcycle turns it into a speed.
 
-`Speed` and `Acceleration` are places and distances again. A speed is the place, and an acceleration is the change from one speed to another, so an acceleration moves a speed. The `Distance` in `acceleration_to` is a different thing: it's how much road the change has to happen in. The formula behind braking for a bend is the first line of a physics textbook, v² = u² + 2as, solved for a. In the code the speed goes from `s` to `t` within a distance. `target: Speed.(t)` opens the field's `Speed` where it's destructured:
+`Speed` and `Acceleration` are places and distances again: a speed is the place, and an acceleration is the change from one speed to another. To brake for a bend, the rider needs the steady acceleration that takes its speed to a target within so much road. That's `Speed.acceleration_to`. Its `within` is a `Distance`: the road the change has to happen in. The formula is the first line of a physics textbook, v² = u² + 2as, solved for a, with the speed going from `s` to `t`. In the parameter list, `Speed.(s)` and `target: Speed.(t)` unwrap the two speeds into plain numbers, as `Clock.(n)` did in the One whole module chapter:
 
 {{code Speed.acceleration_to}}
 
-It has one caller, `VehicleLimits.braking_to`, which also holds the speed steady when the target is within a micrometre, and crashes on a brake that would take the speed below zero. The rider's bend brake, the gawk brake and the truck all brake through it. The first limit is the bend's:
+It has one caller, `VehicleLimits.braking_to`. That function also holds the speed steady when less than a micrometre of road is left, and crashes on a brake that would take the speed below zero. The rider's bend brake, the gawk brake and the truck all brake through it. The first limit is the bend's:
 
 {{code Throttle.bend_limit}}
 
-The last limit, `shoulder_limit`, comes back in the Rehearsal chapter, because it simulates the bike ahead of itself. The two in the middle come from what the rider sees: `encounter_throttle` is the cat's, and `gawk_brake` the pig's. The cat's has its own chapter, so we'll take the pig first.
+The last limit, `shoulder_limit`, comes back in the Rehearsal chapter, because it runs a pretend copy of the bike forward, which is what that chapter is about. The two in the middle come from what the rider sees: `encounter_throttle` is the cat's, and `gawk_brake` the pig's. The cat's has its own chapter, so we'll take the pig first.
 
 ## The rider's gaze
 
 The herds chapter left one pig waiting. On the first two segments with pigs, one pig in the big herd catches the rider's eye. The rider turns to look and slows down, and the camera turns too.
 
-Those are two different things, and they don't last the same time. The eyes follow the pig, and they give up once it's too far round. The speed drops for the pig, and it stays down until the segment ends. So `Gaze` has two words. A *look* is what the eyes do, and *gawking* is what the speed does. This chapter takes them in that order.
+Looking and slowing down are two different things, and they last different lengths of time. The eyes follow the pig, and they give up once it's too far to the side. The speed drops for the pig, and it stays down until the segment ends. So the code has two words for them. A *look* is what the eyes do, and *gawking* is what the speed does. This chapter takes them in that order.
 
 ```widget gaze
 Press play to ride the stretch around the first distracting pig, seen from above. Each step is one call to `Rider.rider_at_next_step`, and the lines under the picture read the rider's `speed`, `gaze_yaw` and `look_depth`.
@@ -1823,7 +1825,7 @@ The rider's record has two fields we haven't used yet:
 
 Mind what `gaze_yaw` is measured from. The road has a direction, `yaw` is how far the bike points from the road, and `gaze_yaw` is how far the eyes point from the bike. Each is measured from the one before it, which is what a `Turn` is.
 
-Three small types say what a pig can do to the rider. Each one carries its payload only where it means something. A segment's `pigs` says whether it has a herd, and only a `Herd` has one. Its `interest` is `Distracting` or `Unnoticed`, which says whether the herd catches the rider's eye:
+Three small types say what a pig can do to the rider. Each one carries its payload only where it means something. A segment's `pigs` field is `NoPigs` or `Herd`, and only `Herd` carries a payload: the herd itself, and its `interest`. The interest is `Distracting` or `Unnoticed`, which says whether the herd catches the rider's eye:
 
 {{code Segment.Pigs}}
 
@@ -1831,7 +1833,7 @@ The rider looks at a pig or at the road, and only a pig has an angle:
 
 {{code Gaze.GazeTarget}}
 
-A pig asks something of the throttle, or it doesn't, and that's the `ThrottleLimit` from The throttle.
+A pig asks something of the throttle, or it doesn't, and that's the `ThrottleLimit` from the throttle chapter.
 
 So the job is a short list:
 
@@ -1864,7 +1866,7 @@ The chain from `desired_gaze` is the look, and `gawk_brake` is the gawking. Noth
 
 {{code RiderEyes.eyes_at_next_step}}
 
-Choosing where to look comes first. The rider asks `RiderMind.gaze_target`, since every decision is `RiderMind`'s, and it hands the question to the gaze's own rule:
+Before the eyes move, the rider chooses where to look. `Rider.rider_at_next_step` asks `RiderMind.gaze_target`, since every decision is `RiderMind`'s, and `gaze_target` hands the question to `Gaze.desired_gaze`:
 
 {{code Gaze.desired_gaze}}
 
@@ -1898,7 +1900,7 @@ The depth has one job. It widens the view:
 
 {{code RiderEyes.attention}}
 
-`RiderCamera.ride_focal_length`, which sets how wide the view is, asks `Rider.attention`, which takes the stronger of this and what a crossing on the road asks for, which we'll meet with the cat. So a pig widens the view, and the view stays wide for a while after.
+`RiderCamera.ride_focal_length` sets how wide the view is. It asks `Rider.attention`, which takes the stronger of two pulls: this look's, and a crossing cat's, which the cat chapters cover. So a pig widens the view, and the view stays wide for a while after.
 
 ### Gawking
 
@@ -1906,9 +1908,9 @@ Whether the rider is gawking is a plainer question than whether it's looking:
 
 {{code Gawking.is_gawking}}
 
-It starts at the same 150 metres, but it only asks where the rider is. There's no angle in it, so it outlasts the look.
+Like the look, it starts when the pig is within 150 metres. It only asks where the rider is, with no angle, so it lasts until the segment ends, long after the look.
 
-`gawk_brake` is the third link in the throttle's chain. It gives a brake while the rider has noticed a pig, and `held_to` takes it if that's harder than what it was offered:
+`gawk_brake` is the third link in the throttle's chain. It gives a brake while the rider has noticed a pig, and `held_to` keeps the brake when it's lower than the acceleration so far:
 
 {{code Throttle.next_acceleration from "Gawking.gawk_brake(motorcycle, segment)," to "Gawking.gawk_brake(motorcycle, segment),"}}
 
@@ -2175,7 +2177,7 @@ New in this chapter:
 
 ### Two halves, and one fact remembered
 
-A crossing comes in two halves. `CatCrossing` is what the cat does: where it crosses, and what it does at each step of its crossing. `Cat` is how it looks this frame, which is just its pose. The poses are `CatCrossing`'s, because the crossing is what changes them:
+A crossing comes in two halves. `CatCrossing` is what the cat does: where it crosses, and what it does at each step of its crossing. `Cat` is how it looks this frame, which is just its pose. The pose type, `CatPose`, is defined in `CatCrossing`, not in `Cat`, because the crossing is what changes the pose:
 
 {{code Cat.Cat from "Cat := {" to "}.{"}}
 
@@ -2206,7 +2208,7 @@ digraph cat {
 
 ### When it plays
 
-The ride plans the crossing once, when the rider first comes within reach, from how fast the rider is coming then. The aim is for the cat to be across just as the rider arrives 3 metres short of it. A faster rider covers more road while the crossing plays, so the plan is made farther off:
+The ride plans the crossing once, from how fast the rider is coming. The aim is for the cat to be across just as the rider arrives 3 metres short of it. The crossing takes 38 steps, so the plan is made when a rider who kept their speed would cover the rest of the gap, down to 3 metres, in 38 steps. That's what coming within reach means. A faster rider covers more road in that time, so the plan is made farther off:
 
 | Rider's speed | The crossing starts at a gap of |
 |---|---|
@@ -2222,7 +2224,7 @@ The cat's span is its 38 frames, ending 3 metres short:
 
 {{code CatCrossing.crossing_span}}
 
-The plan is made on the first step where a rider keeping their speed would arrive within the span. Until then, and while the rider is at rest, nothing is planned:
+The plan is made on the first step where the rider is within reach. Until then, and while the rider is at rest, nothing is planned:
 
 {{code EncounterPlan.plan_for}}
 
@@ -2240,13 +2242,13 @@ A plan and the clock together make a `Timing`:
 
 {{code EncounterPlan.timing_at}}
 
-and a `Timing` and a length make the `Stage`:
+A `Timing` and the animation's length make the `Stage`:
 
 {{code EncounterPlan.stage_at}}
 
 ### Who moves first
 
-Each step, the world and the rider change each other, and the order matters. The rider reacts to the cat as it stood at the start of the step: if the crossing is playing, the throttle holds. Then, with the rider moved, the ride looks again. If the rider has just come within reach, the plan is made now, at the new clock. And at each new segment the plan is forgotten, because only the encounter on the rider's own segment is ever live.
+Each step, the world and the rider change each other, and the order matters. The rider reacts to the cat as it stood at the start of the step: if the crossing is playing, the throttle holds. Then the rider moves, and the ride checks the plan again. If the moved rider has just come within reach, the plan is made at the new clock. At each new segment the plan is forgotten, because only the encounter on the rider's own segment is ever live.
 
 So within one step, the rider answers the world, and then the world answers the rider. The cat never sees the rider again once it's planned, but the rider sees the cat every step.
 
@@ -2292,7 +2294,7 @@ A `Playing` stage past the end of the frames would be a bug, and the timeline cr
 
 ### Getting it on screen
 
-Seeing the cat takes two steps, and the camera is only in the second. First, `EncounterPoses` works out where each cat in view stands this frame, with no camera at all. Only the rider's own segment plays its crossing; a cat on a segment ahead is still waiting behind its tree:
+The cat reaches the screen in two parts, and the camera is only in the second. First, `EncounterPoses` works out where each cat in view stands this frame, with no camera at all. Only the rider's own segment plays its crossing; a cat on a segment ahead is still waiting behind its tree:
 
 {{code EncounterPoses.cat_poses}}
 
@@ -2302,17 +2304,17 @@ Then `EncounterSighting` asks where the camera sees each one. Through `Pipeline.
 
 From there, a cat is a kind like a tree or a cow, and it joins the frame's depth sort.
 
-The ride remembers one step for the cat, and works out everything else, frame by frame, from it and the clock. What the cat asks of the rider while it crosses, the held throttle and the eye, is the rider's side of the story, and it comes later.
+The ride remembers one step for the cat, and works out everything else, frame by frame, from it and the clock. While it crosses, the cat also asks two things of the rider: hold the throttle, and look. That's the rider's side of the story, and it comes two chapters on.
 
 ## The bird
 
-The bird is Roc's logo, sitting on a treetop. As the rider comes near it takes off, flies across the road and ahead, and drops onto a tree on the far side. It moves the way the cat does, through the same plan and the same kind of timeline, and it cost much less.
+The bird is Roc's logo, sitting on a treetop. As the rider comes near it takes off, flies across the road and ahead, and drops onto a tree on the far side. It moves the way the cat does, through the same plan and the same kind of timeline, and it took much less code.
 
 ```widget bird
 Press play and watch the bird fly.
 ```
 
-The picture is a fixed eye, 18 metres short of the first tree; the gap only drives the clock. Play it, and the gap falls from 75 metres to 0, with the rider held at 1.25 metres a step. The bird sits on the tip of the left tree, 6.4 metres up, until 60 metres. It takes off side on, turns away at about 55 metres, and reaches 10.7 metres near the middle of its flight, shrinking as it goes. It dives from 20 metres, and at 15 it's perched on the tip of the far tree, 4.9 metres up. Below that, the picture stays as it is.
+The widget's camera stays put, 18 metres short of the first tree. The gap counts down as if a rider were coming, and it only drives the clock. Play it, and the gap falls from 75 metres to 0, with the rider held at 1.25 metres a step. The bird sits on the tip of the left tree, 6.4 metres up, until a gap of 60 metres. It takes off side on, turns away at about 55 metres, and is highest, 10.7 metres up, near the middle of its flight, shrinking as it goes. It starts to dive at a gap of 20 metres, and at 15 it's perched on the tip of the far tree, 4.9 metres up. Below that, the picture stays as it is.
 
 New in this chapter:
 
@@ -2325,7 +2327,7 @@ A bird comes in the same two halves as a cat. `BirdFlight` is what it does: the 
 
 {{code Bird.Bird from "Bird := {" to "}.{"}}
 
-A pose can carry a tag of its own. A bird side on or seen from behind has its wings up or down, so those tags carry a `WingBeat`. As with the cat, the poses are the flight's:
+A pose can carry a tag of its own. A bird side on or seen from behind has its wings up or down, so those tags carry a `WingBeat`. As with the cat, the pose type is defined in the module that changes it, `BirdFlight`:
 
 {{code BirdFlight.BirdPose}}
 
@@ -2349,11 +2351,11 @@ digraph bird {
 
 ### When it plays
 
-The ride plans the flight the way it plans a cat's crossing: once, when the rider first comes within reach, from how fast the rider is coming. A flight is 36 frames, and it's planned to end as a rider keeping their speed comes within 15 metres of the tree the bird left, so the rider sees it land before passing that tree:
+The ride plans the flight the way it plans a cat's crossing: once, when the rider first comes within reach, from how fast the rider is coming. A flight is 36 frames. It's planned to end when a rider who kept their speed would be 15 metres short of the tree the bird left, so the rider sees it land before passing that tree:
 
 {{code BirdFlight.flight_span}}
 
-So a faster rider sets the bird off sooner:
+So a faster rider sets the bird off farther away:
 
 | Rider's speed | The flight starts at a gap of |
 |---|---|
@@ -2385,7 +2387,7 @@ The path eases along the straight line between the two treetops, and rises above
 
 {{code BirdFlight.flight_location}}
 
-`4t(1 − t)` is 0 at both ends and 1 halfway, so the arc starts and ends on the line. The last line is a record update: everything about the point on the line, with its lift raised.
+With `t` for `share`, how far through the flight the bird is, `4t(1 − t)` is 0 at both ends and 1 halfway, so the arc starts and ends on the line. The last line is a record update: everything about the point on the line, with its lift raised.
 
 ### Finding a tree
 
@@ -2413,13 +2415,13 @@ The bird reaches the screen the way the cat does: `EncounterPoses` places it wit
 
 {{code Bird.scenery_picture}}
 
-A perched bird stands exactly where its tree's top is, at the same depth, and the scene puts trees before birds when depths tie, so the bird is drawn over its tree.
+A perched bird stands exactly where its tree's top is, at the same depth, and the scene paints trees before birds when depths tie, so the bird is drawn over its tree.
 
 The bird asks nothing of the rider, so the rider's reactions pass it by. All it adds to the game is a list of poses, a path, and the stills to draw them.
 
 ## What a cat does to the rider
 
-A crossing cat asks two things of the rider: hold the throttle, and look. Both are the rider's own reactions, and they live on the rider's side, in one module that knows which encounters ask anything of the rider at all.
+A crossing cat asks two things of the rider: hold the throttle, and look. Both are the rider's own reactions. They live on the rider's side, in one module, `EncounterReaction`, which knows which encounters ask anything of the rider.
 
 New in this chapter:
 
@@ -2449,7 +2451,7 @@ Once planned, the cat never reads the rider again. The rider's speed sets the ca
 
 ### Hold the throttle
 
-A limit on the throttle is a `ThrottleLimit`, from The throttle: either nothing, or at most some acceleration.
+A limit on the throttle is a `ThrottleLimit`, from the throttle chapter: either nothing, or at most some acceleration.
 
 While a cat crosses, the rider may not speed up. That's `AtMost(Acceleration.steady)`, which caps the acceleration at zero without braking:
 
@@ -2457,7 +2459,7 @@ While a cat crosses, the rider may not speed up. That's `AtMost(Acceleration.ste
 
 The outer `match` asks what's on the segment, and the inner one asks where the crossing has got to. `Waiting | Past(_)` is one branch for two tags, and `_` ignores a payload. A bird and a quiet road both answer `NoLimit`.
 
-The cat's limit is one of four that the throttle folds together, with the bends, the gawking and the road's shoulder, starting from the cruise acceleration and held to the lowest. Holding at steady also keeps the rider from going faster than the plan assumed, so the cat is across before the rider arrives.
+The cat's limit is one of the four in the throttle's chain of limits, beside the bend, the gawking and the road's shoulder. The chain starts from the cruise acceleration and keeps the lowest. Holding at steady also keeps the rider from going faster than the plan assumed, so the cat is across before the rider arrives.
 
 ### Look
 
@@ -2475,7 +2477,7 @@ The cat's pull rises as it crosses, up to its peak of 1.8, then fades over 83 st
 
 `Playing` and `Past` both carry a step count, and this is where both are used: one says how far into the crossing, the other how long since it ended.
 
-The rider takes the stronger of the cat's pull and what's left of the rider's last look, its depth, which lingers after the eyes come home. The camera widens its view to at least match, or wider if the rider is leaning harder. That's how a crossing cat seems to fill more of the picture.
+`Rider.attention` takes the stronger of two pulls: the cat's, and the depth of the rider's last look, which lingers after the eyes come home. The camera widens its view for that attention, or for the lean, whichever asks for the wider view. That's how a crossing cat seems to fill more of the picture.
 
 Each segment has one encounter at most: a cat, a bird, or a quiet road. A cat asks for both, a bird for neither, and the rider's reactions to everything else, the bends and the pigs, live in the rider's own chapters.
 
@@ -2483,7 +2485,7 @@ Each segment has one encounter at most: a cat, a bird, or a quiet road. A cat as
 
 The rider has no steering wheel. Nothing tells it where to go. Each step, it has to choose a lean, and it does that by working out what would happen. Call this *rehearsal*: run the real rules on a pretend copy, read the result, and throw it away.
 
-Safari Ride's rider steers by rehearsing. Each step it tries twelve leans, each narrowing its bounds, and then takes the lean halfway between the bounds the twelfth try left.
+Safari Ride's rider steers by rehearsing. Each step it tries twelve leans. It keeps a low and a high bound on the lean, and each try moves one of them in. After the twelfth try, it takes the lean halfway between the two bounds.
 
 ```widget rehearsal
 Click a mark to see that try at a lean.
@@ -2522,7 +2524,7 @@ digraph rehearsal {
 
 {{code Coast.coast_outcome}}
 
-`coast_outcome` is a coast that drops the path it took. The loop itself is in `coast_keeping`:
+`coast_keeping` runs the coast, and it can keep the path the motorcycle took, which is what the widget draws as the white arc. `coast_outcome` asks it to drop the path, since the ride only needs where the coast ended. The loop is in `coast_keeping`:
 
 {{code Coast.coast_keeping}}
 
@@ -2530,11 +2532,11 @@ The coast's bounds are the road's edges, 5 centimetres in, or wherever it starts
 
 {{code Coast.Outcome}}
 
-`LeanSearch` asks `Coast` that question at a dozen different leans. The rider wants the coast to end near the middle of the road, and more lean to the right moves the end of a coast to the right, so this is a bisection. It's a `for` loop, with `$bounds.low` and `$bounds.high` closing in on each other. `tried_motorcycle` is the motorcycle with the lean halfway between the bounds, a motorcycle that doesn't exist, handed to `Coast`, which gives it a future that didn't happen:
+`LeanSearch` asks `Coast` that question at twelve different leans. The rider wants the coast to end near the middle of the road. More lean to the right always moves the end of a coast to the right, so each try can rule out half the leans left between the bounds. That's a bisection, a binary search over leans. It's a `for` loop, with `$bounds.low` and `$bounds.high` closing in on each other. `LeanSearch.tried_motorcycle` is the motorcycle with the lean halfway between the bounds. It doesn't exist, and `Coast` gives it a future that didn't happen:
 
 {{code LeanSearch.search_tries from "lean_try = {" to "$bounds = bounds_after(lean_try)"}}
 
-The search starts with bounds a degree either side of the current lean, `max_lean_change`, so the lean it picks is never more than a degree from the last. That's what stops the bike flicking from one lean to another. Which way each try sends the next is a `match` on what the rehearsal found. Running off the left means more right, running off the right means less, and staying on the road compares the end of the coast with the target:
+The search starts with bounds a degree either side of the current lean, `max_lean_change`, so the lean it picks is never more than a degree from the last. That's what stops the bike flicking from one lean to another. Which way each try sends the next is a `match` on what the rehearsal found. Running off the left means more right, and running off the right means more left. A coast that stays on the road compares where it ends with `aimed_across`, the road's middle:
 
 {{code LeanSearch.lean_correction}}
 
@@ -2546,7 +2548,7 @@ After the last try, the lean it keeps is the midpoint of the bounds that try nar
 
 Each real step of the ride runs thirteen coasts that never happen: twelve for the lean, and one more in `Throttle`, which uses `Coast` to ask whether the road is about to run out.
 
-In a language with mutable objects, a rehearsal has a problem to solve before it starts. It needs to copy the rider, or save it and restore it, and it needs to be sure the copy really is one, all the way down. It needs to know that the physics doesn't quietly update something global, like a scoreboard or a random number generator. In Roc, none of that comes up. `Motorcycle.motorcycle_at_next_step` has a `->`, so it can't reach anything but its arguments. The old motorcycle stays intact because every value does. A rehearsal that goes wrong costs nothing, and `LeanSearch` is about 100 lines above its tests.
+In a language with mutable objects, a rehearsal has a problem to solve before it starts. It needs to copy the rider, or save it and restore it, and it needs to be sure the copy shares nothing with the original, all the way down. It needs to know that the physics doesn't quietly update something global, like a scoreboard or a random number generator. In Roc, none of that comes up. `Motorcycle.motorcycle_at_next_step` has a `->`, so it can't reach anything but its arguments. The old motorcycle stays intact because every value does. A rehearsal that goes wrong costs nothing, and `LeanSearch` is about 100 lines above its tests.
 
 The last limit of the throttle is the same idea with one rehearsal in it. It runs the coast, and brakes only if the coast leaves the road:
 
