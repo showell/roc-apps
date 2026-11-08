@@ -23,14 +23,20 @@ BookText := [].{
 	}
 
 	## A line of Markdown as HTML that can sit inside a caption, so without the
-	## paragraph the renderer puts around it.
+	## paragraph the renderer puts around it. Text that renders as anything but
+	## one paragraph stops the build.
 	inline_html : Str -> Str
 	inline_html = |text| {
 		rendered = Md.render_document(text.to_utf8(), { fence: |_| Pass, images: AsLinks })
-		BookText.text_from_bytes(rendered.html).replace_each("<p>", "").replace_each(
-			"</p>",
-			"",
-		).trim()
+		html = BookText.text_from_bytes(rendered.html).trim()
+		one_paragraph = match html.split_on("<p>") {
+			["", opened] => opened.split_on("</p>")
+			_ => []
+		}
+		match one_paragraph {
+			[inside, ""] => inside.trim()
+			_ => crash "book: a caption isn't one paragraph of Markdown: ${text}"
+		}
 	}
 }
 
