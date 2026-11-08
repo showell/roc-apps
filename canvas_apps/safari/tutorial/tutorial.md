@@ -1254,67 +1254,113 @@ We've seen the things that never change. The beacons are next, because they foll
 
 ## The beacons
 
-Some things in Safari Ride are worked out from the clock alone, with nothing stored. The beacons on the radio towers are the simplest of them, and they blink over and over.
+Every radio tower has a beacon on top, and the beacons blink. A beacon is the simplest thing in Safari Ride that moves. How bright it is depends on two things: which beacon it is, and which step of the ride it is. Nothing else.
 
 ```widget beacon
-Press play and watch the towers blink out of step.
+Press play and watch the two towers blink out of step.
 ```
 
-Play it, and the clock runs through two whole blinks, from step 5,400 to step 5,640. The left tower starts dark and the right one at full brightness. At step 5,430 both read 49%, and by step 5,460 they've changed places. By the end the towers are back where they began.
+The widget plays two whole blinks, from step 5,400 to step 5,640, one step a frame. The left tower's beacon starts dark and the right one's starts at full brightness. At step 5,430 they meet in the middle, and by step 5,460 they've changed places. At the end they're back where they began.
 
 New in this chapter:
 
-- Roc: a pair of opaque types with only the sums that make sense
-- Modules: `Steps`
+- Roc: places and distances, a pair of opaque types with only the sums that make sense
+- Modules: `Beacon`, `Clock`, `Steps`
 
-### A blink
+### Three rules
+
+A beacon follows three rules:
+
+1. A blink takes 120 steps, from dark up to full brightness and back down.
+2. Neighbouring towers start their blinks at different points, so the towers along a road don't blink together.
+3. A long segment's two towers blink exactly opposite each other. Those are the two in the widget.
+
+None of those rules needs a memory. Ask a beacon about step 5,430 cold, and it can answer. So Safari Ride stores nothing about beacons at all. That's *worked out, not stored*, in its purest form.
+
+### The types
+
+A beacon needs four types, and all four are opaque:
+
+| Type | What it is | Under it |
+|---|---|---|
+| `Clock` | Which step of the ride it is | A `U32` |
+| `Steps` | How many steps something lasts | A `U32` |
+| `Beacon` | Which beacon, by a key | A `U32` |
+| `Fraction` | How bright, from 0 to 1 | An `F64` |
+
+Three of them are the same number underneath, and that's the point. A step of the ride, a length of time and a beacon's key are three different questions, and the types won't let one answer stand in for another.
+
+`Clock` and `Steps` are a pair. A clock is a place in time, and `Steps` is a distance between two of them. These are all the sums a clock can do:
+
+{{signatures Clock.steps_since Clock.plus Clock.minus}}
+
+Two clocks give the steps between them. A clock and some steps give a later clock, or an earlier one. Two clocks can't be added, because step 5,400 plus step 30 means nothing, so there's no function for it. Only `Clock` can open a clock, so nobody else can write one. `Steps` add to `Steps`, which does mean something. Call this *places and distances*: one opaque type for where something is, a second for how far apart two of them are, and only the sums that make sense. It comes back again and again.
+
+Two of those sums can crash. `steps_since` refuses a clock earlier than the one it counts from, and `minus` refuses to go back past step 0, because the ride has no step before it. A `U32` that quietly wrapped around would be far worse than a crash.
+
+A `Beacon` is a key that nobody outside `Beacon` can read. You get one from a segment, you can ask for the one opposite it, and you can ask how bright it is:
+
+{{signatures Beacon.of_segment Beacon.opposite Beacon.brightness_at}}
+
+`Beacon` has never heard of a tower. It takes a segment's index and hands back a beacon, and a beacon and a clock make a `Fraction`.
+
+### The functions
 
 The modules behind a beacon
 ```dot
 digraph beacon {
   node [shape=box, fontname="Helvetica"];
-  TowerSighting [style=bold];
-  SceneShapes -> Scene;
-  SceneShapes -> TowerSighting;
-  SceneShapes -> Tower;
+  Beacon [style=bold];
   Scene -> TowerSighting;
+  TowerSighting -> Beacon;
+  TowerSighting -> Tower;
   TowerSighting -> Clock;
-  TowerSighting -> Steps;
-  TowerSighting -> Fraction;
+  Beacon -> Clock;
+  Beacon -> Steps;
+  Beacon -> Fraction;
+  Beacon -> Route;
   Clock -> Steps;
   Tower -> Fraction;
 }
 ```
 
-A beacon is the only thing in Safari Ride that repeats on the clock, so it's the first thing that needs to ask how far into a cycle it is. That question isn't about an instant of the ride. It's about a length of time, and Safari Ride keeps those two apart.
-
-`Clock` says which step it is. `Steps` says how long something lasts. Both are opaque `U32`s, and `Clock.minus` turns two clocks into `Steps`, the same way two `Angle.Bearing`s make an `Angle.Turn`. Adding two clocks means nothing, so `Clock` has no `plus`, and no other code can add one. Call this *places and distances*: one opaque type for where something is, a second for how far apart two of them are, and only the sums that make sense.
-
-Here, `wrapped_to` is `Steps`'s one way to reach `%`. The result is a `Fraction` built with `of`, because `(1 - cos) / 2` can only be in range:
-
-{{code Beacon.beacon_brightness}}
-
-Each tower starts somewhere else in the cycle, so the towers along a road don't blink together. This function is one line of method calls, and every call in it is on a `Steps`:
-
-{{code Beacon.beacon_offset_for}}
-
-The sighting calls both, adding the two `Steps`. `clock.minus(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride.
-
-{{code Beacon.brightness_at}}
-
-Its caller gives each tower its key, the segment's index. Records with named fields stand in for what would otherwise be six arguments in a row, and `Ahead(position)` is a tag carrying a payload, saying where the segment lies from the rider:
+A box is a module, and an arrow is an import. Each frame, `Scene` hands the clock to `TowerSighting`, which finds the towers in view. Here's the tower past the end of a segment:
 
 {{code TowerSighting.end_tower}}
 
-A tower halfway along a segment takes the key plus 60. That's a small piece of number theory hiding in a constant: 60 staggers of 37 steps come to 2,220, which is 18 periods of 120 and 60 left over, so the mid-tower blinks exactly opposite the end tower.
+Its first line is the whole of the beacon, as far as the tower is concerned. The segment's index makes a beacon, and the clock makes a brightness. Back in the radio towers chapter, `mid_tower` had the same line with `.opposite()` in the middle.
 
-Notice where the clock stops. `beacon_brightness` on a `TowerSighting` is a `Fraction`, and neither `Tower` nor `SceneShapes` imports `Clock`. A beacon's blink is decided in the same place as whether the tower is in view at all.
+Now down into `Beacon`:
+
+{{code Beacon.brightness_at}}
+
+`clock.steps_since(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride. Adding the beacon's own offset gives how far into its blink that beacon is. A cosine turns that into a brightness:
+
+{{code Beacon.beacon_brightness}}
+
+`wrapped_to` is `Steps`'s one way to reach `%`, so a phase of 130 is a phase of 10. `(1 - cos) / 2` runs from 0 up to 1 and back to 0 over one period, and it can't leave that range, so the answer is built with `Fraction.of`. `of` crashes on a ratio outside 0 to 1, because a ratio like that would mean the sum behind it is wrong.
+
+Each beacon's offset comes from its key:
+
+{{code Beacon.beacon_offset_for}}
+
+This function is one line of method calls, and every call in it is on a `Steps`. The stagger is 37 steps, and 37 shares no factor with 120, so the first 120 keys all start their blinks at different points. Neighbours are 37 steps apart, close to a third of a blink.
+
+The tower halfway along a segment blinks opposite the one at its end:
+
+{{code Beacon.opposite}}
+
+That's a small piece of number theory hiding in a constant. 60 staggers of 37 steps come to 2,220, which is 18 whole blinks and 60 steps left over, so the opposite beacon is always exactly half a blink away. The widget's two beacons are the first segment's, key 0, and its opposite, key 60. Step 5,400 is 45 whole blinks in, so one is dark there and the other is at full brightness.
+
+### Where the clock stops
+
+Notice how far the clock reaches. `Tower` holds its beacon's brightness as a `Fraction`, and it doesn't import `Clock`. `Beacon` knows the clock but not the tower. `TowerSighting` is the one place where both meet.
 
 There's no blink abstraction, because nothing else in the game blinks.
 
-The clock counts steps, not seconds, so pausing the ride freezes the beacons, and stepping back runs them backward.
+The clock counts steps, not seconds, so pausing the ride freezes the beacons, and stepping back runs them backward. No code does either of those things.
 
-A beacon repeats. The sun only goes one way, and a lot more hangs on it.
+A beacon goes round and round. The sun goes one way, and a lot more hangs on it.
 
 ## The setting sun
 
