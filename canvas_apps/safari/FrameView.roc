@@ -20,17 +20,22 @@ import Sun
 import lib.Shapes
 
 ## What the camera shows at one instant of the ride, worked out from the
-## instant RideInstant keeps: the backdrop, the ride's shapes in paint order,
-## and the roll the camera is held at. It is nominal, not opaque: other
-## modules read its fields.
+## instant RideInstant keeps: the backdrop, the ride's layers, and the roll the
+## camera is held at. `FrameView.ride_shape_lists` puts the layers in paint
+## order. It is nominal, not opaque: other modules read its fields, and the
+## frame widget builds a view of some of the layers to draw them alone.
 FrameView := {
 	## What the ride is drawn over.
 	backdrop : FrameView.Backdrop,
 
-	## The ride's shapes in paint order, drawn over the backdrop, in the lists
-	## they are made in: the skyline, the ground, then each thing beside the
-	## road. The frame joins them with the backdrop's, copying each shape once.
-	ride_shape_lists : List(List(Shapes.Shape)),
+	## The mountains, darkened as far as the sky is.
+	mountain_shapes : List(Shapes.Shape),
+
+	## The road itself and its ponds.
+	ground_patch_shapes : List(Shapes.Shape),
+
+	## The things beside the road.
+	scene : Scene,
 
 	## The camera's roll: the whole frame, backdrop and shapes, turns by minus
 	## this about the screen's centre.
@@ -51,15 +56,27 @@ FrameView := {
 	frame_view_at : Route, RideInstant -> FrameView
 	frame_view_at = |route, instant| {
 		camera = FrameView.camera_at(route, instant)
+		road = RoadAhead.RoadView.ahead_of(route, camera.route_place.segment_index)
 		{
 			backdrop: {
 				sky_colors: Sky.colors_at(instant.clock),
 				sun_sighting: Sun.sun_in_view(camera, instant.clock),
 			},
-			ride_shape_lists: ride_shape_lists(camera, { instant, route }),
+			mountain_shapes: FrameView.skyline_shapes(camera, instant.clock),
+			ground_patch_shapes: FrameView.ground_shapes(road, camera),
+			scene: Scene.scene_in_view(
+				road,
+				{ camera: camera.sighting_camera(), facts: FrameView.ride_facts(instant) },
+			),
 			roll: camera.roll,
 		}
 	}
+
+	## The ride's shapes in paint order, in the lists they are made in: the
+	## skyline, the ground, then each thing beside the road, far to near.
+	ride_shape_lists : FrameView -> List(List(Shapes.Shape))
+	ride_shape_lists = |view|
+		[view.mountain_shapes, view.ground_patch_shapes].concat(Scene.scene_shape_lists(view.scene))
 
 	## The camera the frame at `instant` is seen through.
 	camera_at : Route, RideInstant -> RiderCamera
@@ -71,20 +88,34 @@ FrameView := {
 
 	## The backdrop's shapes in paint order: the sky, the sun, then the grass,
 	## which covers whatever of the sun has set.
-	backdrop_shapes : FrameView -> List(Shapes.Shape)
-	backdrop_shapes = |view|
+	backdrop_shapes : FrameView.Backdrop -> List(Shapes.Shape)
+	backdrop_shapes = |backdrop|
 		[
-			[Sky.sky_shape(view.backdrop.sky_colors)],
-			Sun.sun_shapes(view.backdrop.sun_sighting),
+			[Sky.sky_shape(backdrop.sky_colors)],
+			Sun.sun_shapes(backdrop.sun_sighting),
 			[Grass.grass_shape],
 		].join()
 
 	## The whole frame in `space`, in paint order: the backdrop, then the
 	## ride's shapes, which start with the mountains.
 	framed_shapes : FrameView, Shapes.Space -> List(Shapes.Shape)
-	framed_shapes = |view, space| {
-		backdrop = FrameView.backdrop_shapes(view)
-		Shapes.lists_in_space(space, [backdrop].concat(view.ride_shape_lists))
+	framed_shapes = |view, space|
+		FrameView.painted_shapes({
+			backdrop: view.backdrop,
+			ride_shape_lists: FrameView.ride_shape_lists(view),
+			space,
+		})
+
+	## `ride_shape_lists`, already in paint order, over `backdrop`, all in
+	## `space`.
+	painted_shapes : {
+		backdrop : FrameView.Backdrop,
+		ride_shape_lists : List(List(Shapes.Shape)),
+		space : Shapes.Space,
+	} -> List(Shapes.Shape)
+	painted_shapes = |painted| {
+		backdrop = FrameView.backdrop_shapes(painted.backdrop)
+		Shapes.lists_in_space(painted.space, [backdrop].concat(painted.ride_shape_lists))
 	}
 
 	## The space the whole frame leans in, at the camera's `roll`.
@@ -126,19 +157,4 @@ FrameView := {
 		GroundSighting.patches_in_view(road, { vantage: camera.vantage() }).keep_oks(
 			|patch| GroundPatch.patch_shape(patch, camera.focal_length),
 		)
-}
-
-## The ride's shapes in paint order, in the lists they are made in: the
-## skyline, the ground, then each thing beside the road.
-ride_shape_lists : RiderCamera, { instant : RideInstant, route : Route } -> List(List(Shapes.Shape))
-ride_shape_lists = |camera, { instant, route }| {
-	road = RoadAhead.RoadView.ahead_of(route, camera.route_place.segment_index)
-	scene = Scene.scene_in_view(
-		road,
-		{ camera: camera.sighting_camera(), facts: FrameView.ride_facts(instant) },
-	)
-	[
-		FrameView.skyline_shapes(camera, instant.clock),
-		FrameView.ground_shapes(road, camera),
-	].concat(Scene.scene_shape_lists(scene))
 }

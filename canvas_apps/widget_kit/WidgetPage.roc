@@ -6,7 +6,6 @@
 ## into words for those lines, VcrButtons reads a widget's buttons into its
 ## state, Click reads where the pointer was pressed, and PlanView holds the colors
 ## and the one mapping of the pictures that look down on the road.
-import game.Angle
 import game.FrameView
 import game.Lens
 import game.Picture
@@ -174,20 +173,17 @@ WidgetPage :: [].{
 		ride_shapes : List(Shapes.Shape),
 	} -> List(Shapes.Shape)
 	picture_shapes = |{ backdrop, ride_shapes }| {
-		view : FrameView
-		view = { backdrop, ride_shape_lists: [ride_shapes], roll: Angle.upright }
 		corner = { x: 0.0, y: 0.0 }
-		# The module call, because `view.framed_shapes(...)` here crashes the
-		# pinned Roc's wasm build (findings/widget-method-segv/).
-		FrameView.framed_shapes(
-			view,
-			World({
+		FrameView.painted_shapes({
+			backdrop,
+			ride_shape_lists: [ride_shapes],
+			space: World({
 				target: corner,
 				offset: corner,
 				rotation: 0.0,
 				zoom: canvas_per_screen,
 			}),
-		)
+		})
 	}
 
 	## What `sighting` shows through the lens at rest, with `context` for whatever

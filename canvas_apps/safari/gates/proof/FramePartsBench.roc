@@ -80,7 +80,7 @@ part_size = |part, { route, instant }| {
 		view = FrameView.frame_view_at(route, instant)
 		view.framed_shapes(FrameView.lean_space(view.roll)).len()
 	} else if part == "view" {
-		FrameView.frame_view_at(route, instant).ride_shape_lists.join().len()
+		FrameView.ride_shape_lists(FrameView.frame_view_at(route, instant)).join().len()
 	} else if part == "camera" {
 		FrameView.camera_at(route, instant).focal_length.to_f64().to_u64_try() ?? crash "FramePartsBench: a focal length is a finite number"
 	} else {
@@ -181,12 +181,14 @@ prepared_size : Str,
 	reps : U64,
 } -> U64
 prepared_size = |part, { route, instant, reps }| {
-	camera = FrameView.camera_at(route, instant)
-	road = RoadAhead.RoadView.ahead_of(route, camera.route_place.segment_index)
-	cam = RiderCamera.sighting_camera(camera)
-	scene = Scene.scene_in_view(road, { camera: cam, facts: FrameView.ride_facts(instant) })
 	view = FrameView.frame_view_at(route, instant)
+	scene = view.scene
 	sorted = Scene.scene_renderings(scene)
+	painted = {
+		backdrop: view.backdrop,
+		ride_shape_lists: FrameView.ride_shape_lists(view),
+		space: FrameView.lean_space(view.roll),
+	}
 	var $sum = 0
 	for _ in 0..<reps {
 		$sum = $sum
@@ -196,7 +198,7 @@ prepared_size = |part, { route, instant, reps }| {
 				} else if part == "flatten_only" {
 					sorted.join_map(|rendering| rendering.picture().to_shapes()).len()
 				} else {
-					view.framed_shapes(FrameView.lean_space(view.roll)).len()
+					FrameView.painted_shapes(painted).len()
 				}
 			)
 	}
