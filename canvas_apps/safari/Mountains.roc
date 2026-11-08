@@ -351,7 +351,7 @@ west_by : F64 -> Angle.Bearing
 west_by = |radians| west_range_bearing.plus(Angle.Turn.radians(radians))
 
 aim_at_rest : { heading : Angle.Bearing, focal_length : Pixels }
-aim_at_rest = { heading: Angle.north, focal_length: Lens.resting_focal }
+aim_at_rest = { heading: Angle.north, focal_length: Lens.resting_focal_length }
 
 expect rock_color_at_darkness(north_rock, Fraction.zero) == RgbColor.of(0x5B6A8F)
 expect rock_color_at_darkness(west_rock, Fraction.zero) == RgbColor.of(0x39435F)

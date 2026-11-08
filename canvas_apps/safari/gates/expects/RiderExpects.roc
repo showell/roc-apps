@@ -131,8 +131,8 @@ expect {
 # rider's attention is caught, by the cat on the road or by a look to the side.
 ## The focal length of the camera for `rider` on the cat route, before any
 ## encounter is planned.
-focal_of : Rider -> Pixels
-focal_of = |rider|
+focal_length_of : Rider -> Pixels
+focal_length_of = |rider|
 	RiderCamera.of(rider, { route: Fixtures.cat_route, encounter_timing: Unplanned }).focal_length
 
 ## An encounter ten steps in.
@@ -141,8 +141,8 @@ ten_steps_in = EncounterPlan.timing_of(StartsAt(Clock.at_step(100)), Clock.at_st
 
 ## The focal length of the camera for `rider` on the cat route, with the
 ## encounter on their segment ten steps in.
-focal_ten_steps_in : Rider -> Pixels
-focal_ten_steps_in = |rider| RiderCamera.of(
+focal_length_ten_steps_in : Rider -> Pixels
+focal_length_ten_steps_in = |rider| RiderCamera.of(
 	rider,
 	{ route: Fixtures.cat_route, encounter_timing: ten_steps_in },
 ).focal_length
@@ -180,9 +180,9 @@ encounter_attention_of = |rider, encounter_timing|
 		encounter_timing,
 	).to_f64()
 
-expect focal_of(upright).minus(Lens.resting_focal) == Pixels.zero
+expect focal_length_of(upright).minus(Lens.resting_focal_length) == Pixels.zero
 
-focal_at_lean = |lean| focal_of(leaning(upright, lean))
+focal_length_at_lean = |lean| focal_length_of(leaning(upright, lean))
 
 no_lean = upright.motorcycle.lean
 
@@ -194,27 +194,28 @@ full_left = no_lean.minus(full_change)
 
 expect {
 	half = no_lean.halfway_to(RiderCamera.full_lean)
-	focal_at_lean(half) < focal_at_lean(no_lean)
-		and focal_at_lean(RiderCamera.full_lean) < focal_at_lean(half)
-		and focal_at_lean(full_left) < focal_at_lean(no_lean)
-		and focal_at_lean(no_lean) <= Lens.resting_focal
+	focal_length_at_lean(half) < focal_length_at_lean(no_lean)
+		and focal_length_at_lean(RiderCamera.full_lean) < focal_length_at_lean(half)
+		and focal_length_at_lean(full_left) < focal_length_at_lean(no_lean)
+		and focal_length_at_lean(no_lean) <= Lens.resting_focal_length
 }
 
 # A lean past the greatest one widens the view no further.
-expect focal_at_lean(RiderCamera.full_lean) == focal_at_lean(full_left)
+expect focal_length_at_lean(RiderCamera.full_lean) == focal_length_at_lean(full_left)
 
 expect {
 	twice = RiderCamera.full_lean.plus(full_change)
 	twice_change = Angle.LeanChange.degrees(40.0)
 	ten_times = twice.plus(twice_change).plus(twice_change).plus(twice_change).plus(twice_change)
-	focal_at_lean(twice).minus(focal_at_lean(RiderCamera.full_lean)) == Pixels.zero
-		and focal_at_lean(ten_times).minus(focal_at_lean(RiderCamera.full_lean)) == Pixels.zero
+	at_full_lean = focal_length_at_lean(RiderCamera.full_lean)
+	focal_length_at_lean(twice).minus(at_full_lean) == Pixels.zero
+		and focal_length_at_lean(ten_times).minus(at_full_lean) == Pixels.zero
 }
 
 expect encounter_attention_of(rider_on(1), ten_steps_in) > 0.0
 expect !(encounter_attention_of(rider_on(1), Unplanned) > 0.0)
 expect !(encounter_attention_of(rider_on(0), ten_steps_in) > 0.0)
-expect focal_ten_steps_in(rider_on(1)) < focal_ten_steps_in(rider_on(0))
+expect focal_length_ten_steps_in(rider_on(1)) < focal_length_ten_steps_in(rider_on(0))
 
 # While a cat crosses, the rider eases off: the throttle holds the acceleration
 # at none. Before the crossing it opens.
@@ -240,26 +241,29 @@ expect {
 	before_it = EncounterPlan.timing_of(StartsAt(Clock.at_step(100)), Clock.at_step(99))
 	cat_throttle_change(before_it) > 0.0
 }
-expect focal_of(looking_hard(upright)) < focal_of(upright)
+expect focal_length_of(looking_hard(upright)) < focal_length_of(upright)
 expect {
 	half_look = { ..upright, eyes: { ..upright.eyes, look_depth: Fraction.of(0.5) } }
-	focal_of(looking_hard(upright)) < focal_of(half_look)
+	focal_length_of(looking_hard(upright)) < focal_length_of(half_look)
 }
 
-focal_leaning_and_looking : Pixels
-focal_leaning_and_looking = focal_of(looking_hard(leaning(upright, RiderCamera.full_lean)))
+focal_length_leaning_and_looking : Pixels
+focal_length_leaning_and_looking = {
+	leaning_hard = leaning(upright, RiderCamera.full_lean)
+	focal_length_of(looking_hard(leaning_hard))
+}
 
-focal_leaning : Pixels
-focal_leaning = focal_of(leaning(upright, RiderCamera.full_lean))
+focal_length_leaning : Pixels
+focal_length_leaning = focal_length_of(leaning(upright, RiderCamera.full_lean))
 
-focal_looking : Pixels
-focal_looking = focal_of(looking_hard(upright))
+focal_length_looking : Pixels
+focal_length_looking = focal_length_of(looking_hard(upright))
 
 # A full lean and a hard look together widen the view as far as the wider of the
 # two alone, and no further.
 expect
-	focal_leaning_and_looking.to_f64().to_bits()
-		== focal_leaning.to_f64().min(focal_looking.to_f64()).to_bits()
+	focal_length_leaning_and_looking.to_f64().to_bits()
+		== focal_length_leaning.to_f64().min(focal_length_looking.to_f64()).to_bits()
 
 # Coast's projections. Coast imports neither Angle nor Speed, which these need.
 

@@ -191,7 +191,7 @@ is_cow_seen_from = |forward| {
 		yaw: Angle.straight_ahead,
 	}
 	cow_road = Fixtures.crafted_road([one_cow_segment])
-	camera = { vantage: rider, focal_length: Lens.resting_focal }
+	camera = { vantage: rider, focal_length: Lens.resting_focal_length }
 	BillboardSighting.billboards_in_view(cow_road, camera).len() == 1
 }
 

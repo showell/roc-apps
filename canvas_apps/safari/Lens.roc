@@ -17,8 +17,8 @@ import Screen
 Lens :: [].{
 
 	## The focal length at rest, in pixels.
-	resting_focal : Pixels
-	resting_focal = {
+	resting_focal_length : Pixels
+	resting_focal_length = {
 		half_view = field_of_view.times(0.5)
 		Screen.width.divided_by(2.0).divided_by(half_view.to_radians().tan())
 	}
@@ -29,7 +29,7 @@ Lens :: [].{
 	## a far height here, once, so it is measured as the skyline is.
 	height_at_elevation : Angle.Turn -> FarHeight
 	height_at_elevation = |elevation|
-		FarHeight.of(resting_focal.times(elevation.to_radians().tan()).to_f64())
+		FarHeight.of(resting_focal_length.times(elevation.to_radians().tan()).to_f64())
 
 	## Where something infinitely far away lands on the screen, through a lens
 	## of `focal_length`: `turn` to the right of where the camera faces, and
@@ -80,13 +80,13 @@ Lens :: [].{
 	## widens, so it is never drawn longer than at rest.
 	size_on_screen : { size : FarHeight, focal_length : Pixels } -> Pixels
 	size_on_screen = |{ size, focal_length }|
-		Pixels.of(size.to_f64() * scale_for(focal_length).to_f64())
+		Pixels.of(size.to_f64() * lens_scale(focal_length).to_f64())
 }
 
-## How large a lens of focal length `focal` draws things beside the lens at
-## rest. The lens only ever widens, so that is never larger.
-scale_for : Pixels -> Fraction
-scale_for = |focal| Fraction.of(focal.ratio_to(Lens.resting_focal))
+## How large a lens of `focal_length` draws things beside the lens at rest.
+## The lens only ever widens, so that is never larger.
+lens_scale : Pixels -> Fraction
+lens_scale = |focal_length| Fraction.of(focal_length.ratio_to(Lens.resting_focal_length))
 
 field_of_view : Angle.Turn
 field_of_view = Angle.Turn.degrees(70.0)
@@ -106,10 +106,10 @@ expect Lens.height_at_elevation(Angle.Turn.degrees(-5.0)) < FarHeight.zero
 # it nearer the horizon.
 expect
 	[
-		((100.0, Lens.resting_focal), 200.0),
-		((0.0, Lens.resting_focal), 300.0),
-		((-40.0, Lens.resting_focal), 340.0),
-		((100.0, Lens.resting_focal.times(0.5)), 250.0),
+		((100.0, Lens.resting_focal_length), 200.0),
+		((0.0, Lens.resting_focal_length), 300.0),
+		((-40.0, Lens.resting_focal_length), 340.0),
+		((100.0, Lens.resting_focal_length.times(0.5)), 250.0),
 	].all(
 		|((height, focal_length), y)| {
 			got = Lens.y_for_height({ height: FarHeight.of(height), focal_length })
@@ -121,7 +121,7 @@ expect
 x_at_turn : F64 -> Pixels
 x_at_turn = |radians| {
 	turn = Angle.Turn.radians(radians)
-	Lens.far_point({ turn, height: FarHeight.zero, focal_length: Lens.resting_focal }).x
+	Lens.far_point({ turn, height: FarHeight.zero, focal_length: Lens.resting_focal_length }).x
 }
 
 # A far direction at an elevation lands the focal length times the elevation's
@@ -134,15 +134,15 @@ expect
 		(-4.0, 600.0),
 		(25.0, 300.0),
 	].all(
-		|(degrees, focal)| {
+		|(degrees, focal_length)| {
 			elevation = Angle.Turn.degrees(degrees)
 			height = Lens.height_at_elevation(elevation)
 			got = Lens.far_point({
 				turn: Angle.straight_ahead,
 				height,
-				focal_length: Pixels.of(focal),
+				focal_length: Pixels.of(focal_length),
 			})
-			want = Screen.horizon_y.minus(Pixels.of(focal * elevation.to_radians().tan()))
+			want = Screen.horizon_y.minus(Pixels.of(focal_length * elevation.to_radians().tan()))
 			got.y.minus(want).abs() <= Pixels.of(0.000000001) and got.x == Screen.center_x
 		},
 	)
@@ -158,7 +158,10 @@ expect Lens.turn_at_x({ x: Screen.center_x, focal_length: Pixels.of(800.0) }).to
 expect
 	[-1.2, -0.3, 0.0, 0.4, 1.3].all(
 		|radians| {
-			back = Lens.turn_at_x({ x: x_at_turn(radians), focal_length: Lens.resting_focal })
+			back = Lens.turn_at_x({
+				x: x_at_turn(radians),
+				focal_length: Lens.resting_focal_length,
+			})
 			(back.to_radians() - radians).abs() <= 0.000000001
 		},
 	)

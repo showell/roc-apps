@@ -2530,13 +2530,13 @@ From there to the screen is a pinhole camera, which is similar triangles. Dividi
 
 The focal length comes from a lens. `resting_focal` is a value computed from other values, with no function in sight, and `field_of_view` is a `Turn`, so taking half of it needs no comment about radians. [check: whether a value like this inside a `.{ }` block is evaluated at compile time, as top-level values are.]
 
-{{code Lens.resting_focal}}
+{{code Lens.resting_focal_length}}
 
 The view widens as the rider leans. One `Fraction` goes in, and a focal length comes out. `RideFocal.ride_focal`, from the chapter on what a cat does to the rider, calls this through `cam_focal`, taking the wider of what the lean and the rider's attention ask for:
 
-{{code RiderCamera.focal_for_lean}}
+{{code RiderCamera.focal_length_for_lean}}
 
-{{code RiderCamera.focal_for}}
+{{code RiderCamera.focal_length_for}}
 
 ### Round the bends
 
