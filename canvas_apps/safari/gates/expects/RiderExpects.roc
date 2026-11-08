@@ -187,28 +187,28 @@ focal_at_lean = |lean| focal_of(leaning(upright, lean))
 no_lean = upright.motorcycle.lean
 
 ## The change from upright to the full lean.
-full_change = Angle.LeanChange.radians(Lens.full_lean.to_radians() - no_lean.to_radians())
+full_change = Angle.LeanChange.radians(RiderCamera.full_lean.to_radians() - no_lean.to_radians())
 
 ## The full lean, to the left.
 full_left = no_lean.minus(full_change)
 
 expect {
-	half = no_lean.halfway_to(Lens.full_lean)
+	half = no_lean.halfway_to(RiderCamera.full_lean)
 	focal_at_lean(half) < focal_at_lean(no_lean)
-		and focal_at_lean(Lens.full_lean) < focal_at_lean(half)
+		and focal_at_lean(RiderCamera.full_lean) < focal_at_lean(half)
 		and focal_at_lean(full_left) < focal_at_lean(no_lean)
 		and focal_at_lean(no_lean) <= Lens.resting_focal
 }
 
 # A lean past the greatest one widens the view no further.
-expect focal_at_lean(Lens.full_lean) == focal_at_lean(full_left)
+expect focal_at_lean(RiderCamera.full_lean) == focal_at_lean(full_left)
 
 expect {
-	twice = Lens.full_lean.plus(full_change)
+	twice = RiderCamera.full_lean.plus(full_change)
 	twice_change = Angle.LeanChange.radians(twice.to_radians() - no_lean.to_radians())
 	ten_times = twice.plus(twice_change).plus(twice_change).plus(twice_change).plus(twice_change)
-	focal_at_lean(twice).minus(focal_at_lean(Lens.full_lean)) == Pixels.zero
-		and focal_at_lean(ten_times).minus(focal_at_lean(Lens.full_lean)) == Pixels.zero
+	focal_at_lean(twice).minus(focal_at_lean(RiderCamera.full_lean)) == Pixels.zero
+		and focal_at_lean(ten_times).minus(focal_at_lean(RiderCamera.full_lean)) == Pixels.zero
 }
 
 expect encounter_attention_of(rider_on(1), ten_steps_in) > 0.0
@@ -247,10 +247,10 @@ expect {
 }
 
 both : Pixels
-both = focal_of(looking_hard(leaning(upright, Lens.full_lean)))
+both = focal_of(looking_hard(leaning(upright, RiderCamera.full_lean)))
 
 lean_only : Pixels
-lean_only = focal_of(leaning(upright, Lens.full_lean))
+lean_only = focal_of(leaning(upright, RiderCamera.full_lean))
 
 gaze_only : Pixels
 gaze_only = focal_of(looking_hard(upright))

@@ -1,10 +1,9 @@
-## The camera's lens: a 70° view across the screen at rest. The view
-## widens as the rider leans into a turn, and as something catches the
-## rider's attention; the camera takes the wider of the two.
+## The camera's lens: a 70° view across the screen at rest, and where a far
+## height lands on the screen through a lens of any focal length. How far the
+## view widens from rest is the rider camera's to say.
 import Pixels
 import Angle
 import FarHeight
-import Attention
 import Fraction
 import Screen
 
@@ -15,25 +14,6 @@ Lens :: [].{
 	resting_focal = {
 		half_view = field_of_view.times(0.5)
 		Screen.width.divided_by(2.0).divided_by(half_view.to_radians().tan())
-	}
-
-	## The lean that widens the view all it can. Nothing holds the bike to it:
-	## a deeper lean just widens the view no further.
-	full_lean : Angle.Lean
-	full_lean = Angle.Lean.degrees(20.0)
-
-	## The focal length the camera uses: the shorter of the two, which
-	## gives the wider view. A lean to either side widens it alike.
-	focal_for : { lean : Angle.Lean, attention : Attention } -> Pixels
-	focal_for = |{ lean, attention }| {
-		lean_fraction = Fraction.clamp(lean.abs().portion(full_lean))
-		for_lean = focal_for_lean(lean_fraction)
-		for_attention = focal_for_attention(attention)
-		if for_lean < for_attention {
-			for_lean
-		} else {
-			for_attention
-		}
 	}
 
 	## The screen's y for something infinitely far away, `height` above the
@@ -61,68 +41,6 @@ scale_for = |focal| Fraction.of(focal.portion(Lens.resting_focal))
 
 field_of_view : Angle.Turn
 field_of_view = Angle.Turn.degrees(70.0)
-
-## How much of the resting focal length is left at `Lens.full_lean`.
-focal_factor_at_full_lean : Fraction
-focal_factor_at_full_lean = Fraction.of(0.35)
-
-## How much of the resting focal length is left at an attention of 1. It is no
-## minimum, because a cat in the road holds the eye harder than that.
-focal_factor_at_full_attention : Fraction
-focal_factor_at_full_attention = Fraction.of(0.61)
-
-## The focal length for a lean, from 0 (upright) to 1 (`Lens.full_lean`).
-focal_for_lean : Fraction -> Pixels
-focal_for_lean = |lean_fraction| {
-	lean = lean_fraction.to_f64()
-	Lens.resting_focal.times(1.0 - focal_factor_at_full_lean.less().to_f64() * lean * lean)
-}
-
-## The focal length for the rider's attention.
-focal_for_attention : Attention -> Pixels
-focal_for_attention = |attention| {
-	lost_at_full_attention = focal_factor_at_full_attention.less().to_f64()
-	Lens.resting_focal.times(1.0 - lost_at_full_attention * attention.to_f64())
-}
-
-## Whether `got` is within 1e-9 of `want`, scaled up by a want past 1.
-is_close : F64, F64 -> Bool
-is_close = |got, want| (got - want).abs() <= 0.000000001 * want.abs().max(1.0)
-
-expect
-	[
-		(0.0, 685.5110432362151),
-		(0.25, 657.6621571047439),
-		(0.5, 574.1154987103301),
-		(0.75, 434.8710680529739),
-		(1.0, 239.92886513267527),
-	].all(|(lean, want)| is_close(focal_for_lean(Fraction.of(lean)).to_f64(), want))
-
-expect
-	[
-		(0.0, 685.5110432362151),
-		(0.5, 551.8363898051531),
-		(1.0, 418.16173637409116),
-		(1.5, 284.4870829430293),
-	].all(|(strength, want)| is_close(focal_for_attention(Attention.of(strength)).to_f64(), want))
-
-expect
-	[
-		((0.0, 0.0), 685.5110432362151),
-		((1.0, 0.0), 239.92886513267527),
-		((0.0, 1.0), 418.16173637409116),
-		((0.5, 0.3), 574.1154987103301),
-		((0.9, 1.4), 311.2220136292417),
-		((0.6, 0.5), 525.1014591189407),
-	].all(
-		|((lean, strength), want)| {
-			got = Lens.focal_for({
-				lean: Angle.Lean.degrees(lean * 20.0),
-				attention: Attention.of(strength),
-			})
-			is_close(got.to_f64(), want)
-		},
-	)
 
 # A height lands above the horizon, on it, or below it, and a wider lens draws
 # it nearer the horizon.

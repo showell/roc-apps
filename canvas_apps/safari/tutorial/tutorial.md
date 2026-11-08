@@ -2485,9 +2485,9 @@ The focal length comes from a lens. `resting_focal` is a value computed from oth
 
 The view widens as the rider leans. One `Fraction` goes in, and a focal length comes out. `RideFocal.ride_focal`, from the chapter on what a cat does to the rider, calls this through `cam_focal`, taking the wider of what the lean and the rider's attention ask for:
 
-{{code Lens.focal_for_lean}}
+{{code RiderCamera.focal_for_lean}}
 
-{{code Lens.focal_for}}
+{{code RiderCamera.focal_for}}
 
 ### Round the bends
 
