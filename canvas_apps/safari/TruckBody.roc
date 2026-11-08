@@ -1,4 +1,4 @@
-## TruckBody gives the shapes of the truck's body: the five faces of its
+## TruckBody gives the shapes of the truck's body: the six faces of its
 ## trailer and cab, and its tires. The shapes come sorted far to near, so a
 ## nearer face drawn later covers a farther one.
 import DepthSort

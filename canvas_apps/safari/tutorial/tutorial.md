@@ -1821,14 +1821,16 @@ That's the pig's part of the rider's step. The truck is the other stepped thing.
 
 ## The truck
 
-The truck is what the rider chases. It starts 500 metres up the road, and over the whole ride the rider closes in on it, but not steadily:
+The truck is what the rider chases. It starts 500 metres up the road, and for most of the ride the rider closes in on it, but not steadily:
 
 | Step | Rider, along the route | Truck, along the route | Lead |
 |---|---|---|---|
 | 0 | 0 metres | 500 metres | 500 metres |
-| 2,000 | 1,819 metres | 2,186 metres | 366 metres |
-| 4,000 | 4,607 metres | 4,968 metres | 362 metres |
-| 6,000 | 6,481 metres | 6,632 metres | 151 metres |
+| 2,000 | 1,831 metres | 2,274 metres | 443 metres |
+| 4,000 | 4,796 metres | 5,051 metres | 255 metres |
+| 6,000 | 6,790 metres | 6,931 metres | 141 metres |
+
+The closest the rider gets is 50 metres, at step 6,374. After that the rider slows to stop at the route's end, at step 6,746, and the truck drives on past it.
 
 New in this chapter:
 
@@ -1838,7 +1840,7 @@ New in this chapter:
 
 The truck's driver is teasing the rider: staying ahead, but letting him gain. That's the hand of god, and it's one function, `tease_position`. Given how far the rider has come, it says where the truck would like to be. The lead it aims for shrinks from 500 metres at the start of the route to 100 at the end.
 
-Everything else is plain physics. The truck speeds up while it's short of that mark and holds its speed once it's past it. It never slows down to keep to the mark, so it can run well past it on a long straight. It brakes for every turn, and that's where the rider gains. The lead closes, but in jumps.
+Everything else is plain physics. The truck speeds up while it's short of that mark and holds its speed once it's past it. It never slows down to keep to the mark, so it can run well past it on a long straight. It brakes for every turn, and that's where the rider gains: the lead shrinks while the truck brakes and grows a little the rest of the time.
 
 The truck can always pull away, because it outdoes the rider by 10%, in both its acceleration and its top speed.
 
@@ -1851,6 +1853,8 @@ The truck's state is three fields:
 `route_position` is a `Distance` along the whole route, the same measure as the rider's progress, so the two can be compared directly. `Pace` says whether the truck's last step slowed it down. Nothing in this chapter reads it; the truck's lights do, in the next.
 
 A turn ahead of the truck is its own type, and so is the answer to "is there one":
+
+{{code Truck.ComingBend}}
 
 {{code Truck.NextBend}}
 
@@ -1904,11 +1908,11 @@ Then the two ways to take a step. Both sit below the type's block, so they're pr
 
 ### Drawing the truck
 
-`TruckSighting` finds the truck on the road ahead, the way the other sightings find trees and towers. Unlike the trees, the truck has no size test: it's drawn however small it stands, because the rider is always looking for it.
+`TruckSighting` finds the truck on the road ahead, the way the other sightings find trees and towers. What it finds is a `LitTruck`, the truck with its lights, which the next chapter covers; with the lights off, that's just the body. Unlike the trees, the truck has no size test: it's drawn however small it stands, because the rider is always looking for it.
 
 The truck's shape lives in `TruckShape`. It's a box measured in the truck's own frame, from the back of the trailer to the nose of the cab, with a point on it given as how far ahead, how far right, and how high. `TruckBody` turns that box into the faces of the trailer and the cab and the tires, sorted far to near, so a nearer face drawn later covers a farther one.
 
-That's a truck you can chase, and for a long time it was the whole truck. The lights came later.
+That's a truck you can chase. The next chapter lights it.
 
 ## The truck's lights
 
@@ -1944,13 +1948,13 @@ The headlights' threshold is a measured number with a plain reason:
 
 {{code LitTruck.headlights_on_darkness}}
 
-On this ride, that's step 3,555 of about 7,000. The headlights never go off again on the way down, because the sky only gets darker.
+On this ride, that's step 3,555 of 6,746. The headlights never go off again on the way down, because the sky only gets darker.
 
 The drawing does what the lamps say, with each `match` covering both tags. The beams go first, then the body, then the brake lights, so each paints over the one before:
 
 {{code LitTruck.truck_shapes}}
 
-`TruckLights` paints the beams and the brake lights, each with its glow. `TruckBody`, from the last chapter, is untouched: the lights are drawn around it.
+`TruckLights` paints the beams as wedges that fade toward their edges, and the brake lights, each with a glow around it. `TruckBody`, from the last chapter, is untouched: the lights are drawn around it.
 
 The sun and the beacons follow the clock alone. The cat has a more nuanced rule: the timing of its crossing depends on where the rider is.
 
