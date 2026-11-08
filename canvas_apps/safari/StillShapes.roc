@@ -9,6 +9,7 @@ import Pixels
 import Polygon
 import Still
 import Screen
+import lib.Brush
 import lib.Shapes
 
 StillShapes :: [].{
@@ -26,14 +27,14 @@ StillShapes :: [].{
 	}
 
 	## Where a point of the still lands on screen.
-	screen_point : StillShapes.Anchor, Still.Vertex -> Screen.Point
+	screen_point : StillShapes.Anchor, Still.FramePoint -> Screen.Point
 	screen_point = |anchor, point| {
 		x: anchor.foot.x.plus(anchor.height_on_screen.times(x_sign(anchor.flip) * point.x)),
 		y: anchor.foot.y.minus(anchor.height_on_screen.times(point.y)),
 	}
 
 	## Where each of a still's `points` lands on screen, in order.
-	screen_points : StillShapes.Anchor, List(Still.Vertex) -> List(Screen.Point)
+	screen_points : StillShapes.Anchor, List(Still.FramePoint) -> List(Screen.Point)
 	screen_points = |anchor, points| points.map(|point| StillShapes.screen_point(anchor, point))
 
 	## A whole still, its polygons in order.
@@ -76,7 +77,7 @@ x_sign = |flip|
 	}
 
 ## How far, and which way, a step in the still goes on screen.
-screen_vector : StillShapes.Anchor, Still.Vertex -> Screen.Point
+screen_vector : StillShapes.Anchor, Still.Step -> Screen.Point
 screen_vector = |anchor, step| {
 	x: anchor.height_on_screen.times(x_sign(anchor.flip) * step.x),
 	y: anchor.height_on_screen.times(step.y).opposite(),
@@ -103,7 +104,7 @@ still_gradient_polygon = |anchor, { gradient, points }|
 			Polygon.linear_gradient_polygon(
 				points,
 				{
-					color_stops: stops,
+					stops: brush_stops(stops),
 					start_point: StillShapes.screen_point(anchor, start),
 					end_point: StillShapes.screen_point(anchor, end),
 				},
@@ -112,13 +113,22 @@ still_gradient_polygon = |anchor, { gradient, points }|
 			Polygon.elliptical_gradient_polygon(
 				points,
 				{
-					color_stops: stops,
+					stops: brush_stops(stops),
 					center_point: StillShapes.screen_point(anchor, center),
 					axis_u: screen_vector(anchor, axis_u),
 					axis_v: screen_vector(anchor, axis_v),
 				},
 			)
 	}
+
+## A still's colour stops as a brush takes them.
+brush_stops : Still.ColorStops -> Brush.TwoStops
+brush_stops = |stops| {
+	start_color: Brush.translucent(stops.start_color),
+	end_color: Brush.translucent(stops.end_color),
+	start_offset: stops.start_offset.to_f64(),
+	end_offset: stops.end_offset.to_f64(),
+}
 
 sample_foot : Screen.Point
 sample_foot = Screen.point(100.0, 200.0)
