@@ -46,13 +46,10 @@ blinks = VcrButtons.clock_range({
 	steps_a_frame: 1.0,
 })
 
-## The beacons of a tower past a segment's end, and of the tower halfway along
-## the same segment, which blinks opposite it.
-first_beacon : Beacon
-first_beacon = Beacon.of_segment(Route.SegmentIndex.first)
-
-second_beacon : Beacon
-second_beacon = first_beacon.opposite()
+## The beacon at `clock` of a tower on the first segment: past its end for the
+## first tower, and halfway along it, blinking opposite, for the second.
+beacon_at : [AtEnd, Midway], Clock -> Beacon
+beacon_at = |place, clock| Beacon.at({ segment: Route.SegmentIndex.first, place }, clock)
 
 ## How far down the road from the picture's eye the towers stand, so that their
 ## tops fit.
@@ -81,8 +78,8 @@ picture_shapes = |clock|
 	WidgetPage.picture_shapes({
 		backdrop: { sky_colors: Sky.colors_at(clock), sun_sighting: OutOfView },
 		ride_shapes: [
-			tower_shapes(tower_right.opposite(), first_beacon.lit_at(clock)),
-			tower_shapes(tower_right, second_beacon.lit_at(clock)),
+			tower_shapes(tower_right.opposite(), beacon_at(AtEnd, clock)),
+			tower_shapes(tower_right, beacon_at(Midway, clock)),
 		].join(),
 	})
 
@@ -96,7 +93,7 @@ eye = {
 
 ## A tower standing `right` of the road's middle, unturned, with `beacon` on
 ## top, or nothing if it stood behind the camera.
-tower_shapes : Distance, Beacon.LitBeacon -> List(Shapes.Shape)
+tower_shapes : Distance, Beacon -> List(Shapes.Shape)
 tower_shapes = |right, beacon| {
 	placed_tower : Geom.Placed(Tower)
 	placed_tower = {
@@ -117,8 +114,8 @@ status_lines : Clock -> List(Str)
 status_lines = |clock| {
 	period = Beacon.beacon_period
 	into_blink = clock.steps_since(Clock.start).wrapped_to(period)
-	first_tower = ReadoutText.percent_text(first_beacon.lit_at(clock).brightness())
-	second_tower = ReadoutText.percent_text(second_beacon.lit_at(clock).brightness())
+	first_tower = ReadoutText.percent_text(beacon_at(AtEnd, clock).brightness())
+	second_tower = ReadoutText.percent_text(beacon_at(Midway, clock).brightness())
 	[
 		"Clock: step ${clock.to_str()}",
 		"Blink: ${ReadoutText.whole_text(into_blink.to_f64())} of ${ReadoutText.whole_text(period.to_f64())} steps",

@@ -256,7 +256,7 @@ expect
 shapes_of_tower_100_ahead : List(Shapes.Shape)
 shapes_of_tower_100_ahead = {
 	tower_road = Fixtures.crafted_road([Fixtures.segment_of([])])
-	dark_beacon = Beacon.of_segment(Route.SegmentIndex.first).lit_at(Clock.start)
+	dark_beacon = Beacon.at({ segment: Route.SegmentIndex.first, place: AtEnd }, Clock.start)
 	plain_tower : Tower
 	plain_tower = Tower.standing({ yaw: Angle.straight_ahead, beacon: dark_beacon })
 	sighted =
