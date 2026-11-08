@@ -30,6 +30,18 @@ BirdFlight := { from : Trees.RoadsideTree, to : Trees.RoadsideTree }.{
 		Diving,
 	]
 
+	## Every pose a bird takes, in the order of a flight, each wing beat up
+	## before down.
+	all_poses : List(BirdFlight.BirdPose)
+	all_poses = [
+		Perched,
+		Side(WingsUp),
+		Side(WingsDown),
+		Away(WingsUp),
+		Away(WingsDown),
+		Diving,
+	]
+
 	## A bird at one instant: how it looks, and where it is.
 	BirdInstant : Animation.Instant(BirdFlight.BirdPose)
 
@@ -132,6 +144,22 @@ flap_poses = |{ up, down }| {
 	half_up = List.repeat(up, frames_a_half_flap)
 	half_up.concat(List.repeat(down, frames_a_half_flap))
 }
+
+## Each bird pose's place in `BirdFlight.all_poses`. The match names every
+## pose and wing beat, so a new one doesn't compile until it has a place, and
+## the expect below fails until the list holds it there.
+pose_place : BirdFlight.BirdPose -> U64
+pose_place = |pose|
+	match pose {
+		Perched => 0
+		Side(WingsUp) => 1
+		Side(WingsDown) => 2
+		Away(WingsUp) => 3
+		Away(WingsDown) => 4
+		Diving => 5
+	}
+
+expect BirdFlight.all_poses.map(pose_place) == [0, 1, 2, 3, 4, 5]
 
 ## The location `through` a flight between `from` and `to`, easing out and in along
 ## a straight line, and raised by an arc over it.

@@ -531,15 +531,7 @@ expect
 
 # Each cat pose draws every polygon of its still.
 expect
-	[
-		Rest,
-		Stride,
-		Frozen,
-		Coil,
-		Flight,
-		Land,
-		Collapse,
-	].all(
+	CatCrossing.all_poses.all(
 		|pose| {
 			shapes = sample_cat_shapes({ pose: pose }, Distance.zero)
 			shapes.len() == Cat.pose_still(pose).polygons().len()
@@ -623,14 +615,7 @@ expect {
 		flip: AsDrawn,
 		height_on_screen: Pixels.of(50.0),
 	}
-	bird_stills = [
-		Perched,
-		Side(WingsUp),
-		Side(WingsDown),
-		Away(WingsUp),
-		Away(WingsDown),
-		Diving,
-	].map(Bird.pose_still)
+	bird_stills = BirdFlight.all_poses.map(Bird.pose_still)
 	emoji_stills = [
 		EmojiStills.duck,
 		EmojiStills.elephant,
