@@ -143,14 +143,7 @@ rail_points = |road, { vantage, bend_in_view }| {
 	outer_edge = bend_in_view.outer_edge()
 	place_after = Ahead(BendInView.position_after(bend_in_view))
 	length_before = bend_in_view.length_before()
-	corner = bend_in_view.outer_corner()
-	rider_point_before = |road_point| RoadAhead.rider_point_at(
-		road,
-		{ vantage, place: bend_in_view.place_before(), road_point },
-	)
-	end_before = rider_point_before(corner.end_before)
-	apex = rider_point_before(corner.apex)
-	start_after = rider_point_before(corner.start_after)
+	{ end_before, apex, start_after } = bend_in_view.outer_corner_in_view({ road, vantage })
 	[
 		runup_points(
 			road,
