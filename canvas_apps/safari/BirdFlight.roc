@@ -23,15 +23,6 @@ BirdFlight :: [].{
 	## A bird at one instant: how it looks, and where it is.
 	BirdInstant : Animation.Instant(PosedBird.BirdPose)
 
-	## How the bird looks through a flight, a frame a step: a flap side on as
-	## it takes off, seven flaps seen from behind, and a flap's length of diving.
-	flight_poses : List(PosedBird.BirdPose)
-	flight_poses = [
-		flap_poses({ up: Side(WingsUp), down: Side(WingsDown) }),
-		List.repeat(flap_poses({ up: Away(WingsUp), down: Away(WingsDown) }), 7).join(),
-		List.repeat(Diving, frames_a_flap),
-	].join()
-
 	## What the ride plans a flight by: its length, and the gap from the rider
 	## to the tree it left at which it has landed.
 	flight_span : EncounterPlan.StepSpan
@@ -112,16 +103,25 @@ fifth_left_tree = |trees|
 sitting_on : Trees.RoadsideTree -> BirdFlight.BirdInstant
 sitting_on = |tree| { pose: Perched, location: tree_top(tree) }
 
+## How the bird looks through a flight, a frame a step: a flap side on as it
+## takes off, seven flaps seen from behind, and a flap's length of diving.
+flight_poses : List(PosedBird.BirdPose)
+flight_poses = [
+	flap_poses({ up: Side(WingsUp), down: Side(WingsDown) }),
+	List.repeat(flap_poses({ up: Away(WingsUp), down: Away(WingsDown) }), 7).join(),
+	List.repeat(Diving, frames_a_flap),
+].join()
+
 ## The whole of a flight: `flight_poses`, on one smooth path that rises in
 ## the middle, from the tip of the tree it leaves to the tip of the one it
 ## lands on.
 flight_timeline : BirdFlight.Flight -> Animation.Timeline(PosedBird.BirdPose, PosedBird.BirdPose)
 flight_timeline = |{ from, to }| {
 	ends = { from: tree_top(from), to: tree_top(to) }
-	last_frame = (BirdFlight.flight_poses.len() - 1).to_f64()
+	last_frame = (flight_poses.len() - 1).to_f64()
 	Animation.Timeline.of({
 		before: sitting_on(from),
-		frames: BirdFlight.flight_poses,
+		frames: flight_poses,
 		frame_instant: |pose, frame_number| {
 			through = Fraction.of(frame_number.to_f64() / last_frame)
 			{ pose, location: flight_location({ from: ends.from, to: ends.to, through }) }
