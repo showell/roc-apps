@@ -30,7 +30,7 @@ TreeShapes :: [].{
 		foliage_color : RgbColor,
 	} -> Picture
 	tree_picture = |{ spot, focal_length, context }, { height, foliage_color }| {
-		inputs = tier_inputs_of(spot.base(), { height, focal_length, foliage_color })
+		inputs = tier_inputs_of(spot, { height, focal_length, foliage_color })
 		trunk = trunk_shape(inputs.outline, trunk_finish_of(context.nearer_tree_count))
 		Picture.from_shapes([trunk].concat(tiers.map(|tier| tier_shape(tier, inputs))))
 	}
@@ -118,21 +118,24 @@ TierInputs : {
 	crown : TreeShapes.Crown,
 }
 
-## What every tier of the tree at `base` needs, its outline and its crown
+## What every tier of the tree at `spot` needs, its base, outline and crown
 ## worked out from the rest.
-tier_inputs_of : RiderView.RaisedPointAhead,
+tier_inputs_of : Spot,
 {
 	height : Distance,
 	focal_length : Pixels,
 	foliage_color : RgbColor,
 } -> TierInputs
-tier_inputs_of = |base, { height, focal_length, foliage_color }| {
-	base,
-	height,
-	focal_length,
-	outline: Camera.upright_on_screen(base, { height, focal_length }),
-	foliage_color,
-	crown: TreeShapes.crown_of(base.forward()),
+tier_inputs_of = |spot, { height, focal_length, foliage_color }| {
+	base = spot.base()
+	{
+		base,
+		height,
+		focal_length,
+		outline: TreeShapes.tree_outline(spot, { height, focal_length }),
+		foliage_color,
+		crown: TreeShapes.crown_of(base.forward()),
+	}
 }
 
 ## The tiers, top to bottom. Each overlaps the next.
@@ -378,15 +381,18 @@ sample_outline = Camera.upright_on_screen(
 
 # A lifted tree's cones measure from its foot: the ring under the bottom tier
 # sits the trunk's share of the height above the foot, which here is 2 m up.
+# The ring reads only the base and the height, so the outline is the
+# unlifted sample's.
 expect {
-	inputs = tier_inputs_of(
-		sample_base(Distance.metres(2.0)),
-		{
-			height: sample_height,
-			focal_length: Pixels.of(500.0),
-			foliage_color: RgbColor.of(7),
-		},
-	)
+	base = sample_base(Distance.metres(2.0))
+	inputs = {
+		base,
+		height: sample_height,
+		focal_length: Pixels.of(500.0),
+		outline: sample_outline,
+		foliage_color: RgbColor.of(7),
+		crown: TreeShapes.crown_of(base.forward()),
+	}
 	bottom_tier = tiers.last() ?? crash "a tree has tiers"
 	want = 2.0 + 4.352 * 55.0 / 136.0
 	is_at_want = |point| (point.height().to_metres() - want).abs() <= 0.000000001
