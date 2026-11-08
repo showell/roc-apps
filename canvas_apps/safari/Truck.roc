@@ -70,13 +70,18 @@ turn_caution = Fraction.of(0.8)
 brake_distance : Distance
 brake_distance = Distance.metres(60.0)
 
-## 10% over the rider's own cruise acceleration.
-chase_acceleration : Acceleration
-chase_acceleration = VehicleLimits.cruise_acceleration.times(1.1)
+## The truck outdoes the rider by 10%, in both its acceleration and its top
+## speed.
+chase_margin : F64
+chase_margin = 1.1
 
-## 10% over the rider's own top speed.
+## The rider's own cruise acceleration, outdone by `chase_margin`.
+chase_acceleration : Acceleration
+chase_acceleration = VehicleLimits.cruise_acceleration.times(chase_margin)
+
+## The rider's own top speed, outdone by `chase_margin`.
 chase_top_speed : Speed
-chase_top_speed = VehicleLimits.top_speed.times(1.1)
+chase_top_speed = VehicleLimits.top_speed.times(chase_margin)
 
 ## The next turn of `route` past `route_position`.
 next_bend : Route, Distance -> NextBend
