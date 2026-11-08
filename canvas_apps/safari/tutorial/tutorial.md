@@ -1071,7 +1071,7 @@ A rail is never stored. Every frame works out its bars and posts again, from the
 
 The radio towers stand well back from the road. One stands past the end of every segment, off to the right, and a long segment has one more halfway along, off to the left. Each is a lattice of thin rods, 80 metres tall.
 
-A tower raises two problems a tree doesn't. Far off, it should sink over the horizon, and up close, it can stand partly behind the camera. It comes in three parts: a place by the road, worked out each frame from its segment; one deliberate cheat, an earth that curves much faster than ours; and a shape, a lattice of rods on a square footprint.
+A tower raises two problems a tree doesn't. Far off, it should sink over the horizon, and up close, it can stand partly behind the camera. It comes in three parts: a place by the road, worked out each frame from its segment; the horizon, which hides it from the bottom up as it recedes; and a shape, a lattice of rods on a square footprint.
 
 New in this chapter:
 
@@ -1084,7 +1084,7 @@ The tower itself is two facts: which way it's turned, and its beacon. The tower 
 
 {{code Tower.Tower from "A tower in a frame" to "Tower :: {"}}
 
-While its shapes are worked out, a tower's measurements for this frame travel together, including how far the earth's curve has sunk it:
+While its shapes are worked out, a tower's measurements for this frame travel together, including how far the ground has dropped beneath it and how much of it the horizon hides:
 
 {{code Tower.TowerGeometry}}
 
@@ -1094,7 +1094,7 @@ Each step of the job is a signature:
 |---|---|---|
 {{types row TowerSighting.end_tower Place a tower past a segment's end}}
 {{types row Tower.scenery_picture Draw it}}
-{{types row EarthCurve.exaggerated_drop Sink it}}
+{{types row EarthCurve.lowest_visible_height Hide its foot}}
 {{types row RiderView.line_ahead Make one rod}}
 
 ### Where a tower stands
@@ -1111,15 +1111,19 @@ To draw a tower, `scenery_picture` also needs the road and where the camera stan
 
 ### Over the horizon
 
-As a tower gets further away, it sinks below the horizon from the bottom up:
+The ride's ground curves away, with a radius of 100 km, and everything stands on it: a tower is lowered by how far the ground has dropped beneath its foot, like a tree or the truck. From the rider's eye, 1.2 metres up, the ground curves out of sight 490 metres out, and that's the horizon. Past it, the lowest thing the rider can see is on the line from the eye that grazes the ground there:
 
-{{code EarthCurve.exaggerated_drop}}
+{{code EarthCurve.lowest_visible_height}}
 
-The ride's ground already curves, with a radius of 100 km. Towers sink over a tighter curve, 20 km, so an 80-metre tower is gone by 1.8 km instead of 4 km, and you can watch it go. Once the curve has sunk all of it, its sighting refuses it with `BelowHorizon`, as a tree too small to see is refused with `TooSmall`. So a sighted tower always has something to draw.
+A tower hides whatever part of it is under that line, so as it gets further away, it sinks below the horizon from the bottom up. An 80-metre tower shows its tip until about 4.5 km. Once all of it is under the line, its sighting refuses it with `BelowHorizon`, as a tree too small to see is refused with `TooSmall`. The rule is the same for every kind with a height:
+
+{{code Pipeline.sighting_above_horizon_of}}
+
+So a sighted tower always has something to draw.
 
 ### Rods
 
-Here's the whole tower, from the top. A tower the curve hides wholly never gets here, so that case is a crash. Otherwise come the legs, the rings and the braces, and the beacon's disc last, at the top:
+Here's the whole tower, from the top. A tower the horizon hides wholly never gets here, so that case is a crash. Otherwise come the legs, the rings and the braces, and the beacon's disc last, at the top:
 
 {{code Tower.tower_shapes}}
 
@@ -1127,7 +1131,7 @@ A tower's footprint is a square, and four tags name its corners. Going round the
 
 {{code Tower.next_corner}}
 
-Four legs run from the corners up to the top. Each starts at the geometry's `sunk`, the height the curve has hidden, so nothing below the horizon is drawn:
+Four legs run from the corners up to the top. Each starts at the geometry's `hidden`, the height the horizon hides, so nothing below the horizon is drawn:
 
 {{code Tower.leg_shapes}}
 
@@ -1937,8 +1941,7 @@ digraph truck_drawing {
   Scene -> TruckSighting [label="  finds it with truck_in_view"];
   TruckSighting -> Truck [label="  sights a Truck"];
   Truck -> TruckBody [label="  draws its body with body_picture"];
-  TruckBody -> TruckShape [label="  places each corner with road_point_on_truck"];
-  TruckBody -> EarthCurve [label="  lowers it with raised_ground_point"];
+  TruckBody -> TruckShape [label="  places each corner with raised_point_on_truck"];
 }
 ```
 
@@ -1951,7 +1954,7 @@ The truck is a real box, with a back, two sides, a roof, a windshield and a nose
 | Stage | What it does |
 |---|---|
 | Shape | Says where each corner is in the truck's own frame, measured from the middle of the trailer |
-| Placement | Carries one point onto the road at the truck's spot, then lowers it for the earth's curve |
+| Placement | Carries one point onto the road at the truck's spot, then lowers it by the ground's drop beneath the spot |
 | Projection | Turns one whole face into a polygon on the screen |
 
 Placement works a point at a time, because each corner stands at its own place on the road. Projection works a face at a time, for two reasons. A face that reaches behind the camera is clipped, and clipping can cut corners off a face and add new ones, so it needs the whole outline. And the faces are sorted by depth before they're drawn, and the sort orders faces, not points.
@@ -1974,13 +1977,11 @@ The truck's context is the road its points are measured on, and the camera's van
 
 ### The functions
 
-Placement is two functions. `TruckShape` moves one point along and across the road from the truck's spot, and lifts it:
+Placement is one function. `TruckShape` moves one point along and across the road from the truck's spot, finds where that lands in the rider's view, and lifts it. The headlights and the brake lights use it too:
 
-{{code TruckShape.road_point_on_truck}}
+{{code TruckShape.raised_point_on_truck}}
 
-`EarthCurve` finds where that lands in the rider's view, and lowers it by however far the ground has curved away beneath it. The headlights and the brake lights use it too:
-
-{{code EarthCurve.raised_ground_point}}
+The truck can stand across a bend, so each corner finds its own place on the road. But every corner is lowered by the same drop, how far the ground has curved away beneath the truck's spot. Across a 12-metre truck the drop changes by a few centimetres at most, far less than a pixel.
 
 `TruckBody.face` places each corner of a face that way. So a face is just a color and a list of `TruckPoint`s. Here's a side, walked around its outline from the back of the trailer to the nose and back:
 
@@ -2130,7 +2131,7 @@ The headlights come on at this darkness:
 
 On this ride, that's step 3,555 of 6,746. Once on, they stay on, because from there the sky only darkens.
 
-Each lamp's `picture` matches both tags, and an `Off` lamp is an empty picture. `TruckHeadlights` paints the beams as wedges that fade from the lamp toward their far end. `TruckBrakeLights` paints two lamps on the back of the trailer, each with a glow around it. Both place their points the way the body does, with `TruckShape.road_point_on_truck` and `EarthCurve.raised_ground_point`.
+Each lamp's `picture` matches both tags, and an `Off` lamp is an empty picture. `TruckHeadlights` paints the beams as wedges that fade from the lamp toward their far end. `TruckBrakeLights` paints two lamps on the back of the trailer, each with a glow around it. Both place their points the way the body does, with `TruckShape.raised_point_on_truck`.
 
 `Truck` puts the three pictures together. `Picture.composite` makes one picture of several, each painted over the ones before:
 
@@ -2710,9 +2711,9 @@ The rotation itself is one formula. Where the next segment starts was worked out
 
 This is what lets the sightings not care where a segment is. They hand `RoadAhead.rider_point_at` a place on the road ahead and a point on that segment, and they get back a `RiderPoint`.
 
-The ground also curves away. That's one formula, the small-angle drop of a sphere, with a record destructured in the parameter list and `right` and `forward` taken out to metres before they're squared. There are two radii in `EarthCurve`, and neither is the earth's. The ground's curve, 100 km, is the surface the road and the truck stand on, and it puts the horizon 490 metres out. The exaggerated curve, 20 km, only sets how soon a far tower goes: an 80 m tower is gone at 1.8 km, where the ground's curve would leave it in view to 4 km.
+The ground also curves away. That's one formula, the small-angle drop of a sphere, with `right` and `forward` taken out to metres before they're squared. Its radius, 100 km, isn't the earth's. It's the surface everything by the road stands on, and it puts the horizon 490 metres out. A sighting asks it once per object, at the object's foot, and the whole object is lowered by that one drop.
 
-{{code EarthCurve.drop_over_radius}}
+{{code EarthCurve.ground_drop}}
 
 ### Cutting a polygon
 

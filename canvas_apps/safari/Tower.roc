@@ -517,13 +517,13 @@ expect metre_ahead(50.0) == 10.0
 ## How far up a tower standing on the ground `forward` metres straight ahead
 ## the horizon hides it, and whether its sighting refuses it as below the
 ## horizon.
-hidden_ahead : F64 -> { hidden : F64, is_below_horizon : Bool }
+hidden_ahead : F64 -> { hidden : Distance, is_below_horizon : Bool }
 hidden_ahead = |forward| {
 	foot = { right: Distance.zero, forward: Distance.metres(forward) }
 	base_height = EarthCurve.ground_drop(foot).opposite()
 	top = base_height.plus(tower_height)
 	{
-		hidden: hidden_height({ foot, base_height }).to_metres(),
+		hidden: hidden_height({ foot, base_height }),
 		is_below_horizon: EarthCurve.is_below_horizon({ point: foot, top }),
 	}
 }
@@ -531,15 +531,15 @@ hidden_ahead = |forward| {
 # Within the horizon nothing of a tower is hidden. 4 km out the horizon hides
 # its lowest 61.6 m. Its tip shows to 4489 m, and a metre further the whole
 # tower is hidden, which is where its sighting refuses it.
-expect hidden_ahead(400.0) == { hidden: 0.0, is_below_horizon: False }
-expect (hidden_ahead(4000.0).hidden - 61.604082).abs() <= 0.000001
+expect hidden_ahead(400.0) == { hidden: Distance.zero, is_below_horizon: False }
+expect (hidden_ahead(4000.0).hidden.to_metres() - 61.604082).abs() <= 0.000001
 expect {
 	shown = hidden_ahead(4489.0)
-	shown.hidden < 80.0 and !shown.is_below_horizon
+	shown.hidden < tower_height and !shown.is_below_horizon
 }
 expect {
 	sunk = hidden_ahead(4490.0)
-	sunk.hidden >= 80.0 and sunk.is_below_horizon
+	sunk.hidden >= tower_height and sunk.is_below_horizon
 }
 
 rod_shape_along_road : F64, F64 -> Try(Shapes.Shape, [BehindCamera])
