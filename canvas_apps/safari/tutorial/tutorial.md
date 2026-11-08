@@ -1446,7 +1446,11 @@ Now down into `Beacon`:
 
 {{code Beacon.at}}
 
-Inside the module, `Beacon.(...)` builds a beacon from its brightness. No other module can. `clock.steps_since(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride. Adding the beacon's head start gives its phase, and a cosine turns that into a brightness:
+Inside the module, `Beacon.(...)` builds a beacon from its brightness. No other module can. The brightness comes from the beacon's phase, how far it is into its blink:
+
+{{code Beacon.blink_phase}}
+
+`clock.steps_since(Clock.start)` is how a place becomes a distance, and it says which distance: the one from the start of the ride. Adding the beacon's head start gives its phase, and a cosine turns that into a brightness:
 
 {{code Beacon.beacon_brightness}}
 
@@ -2526,9 +2530,9 @@ The coast's bounds are the road's edges, 5 centimetres in, or wherever it starts
 
 {{code Coast.Outcome}}
 
-`LeanSearch` asks `Coast` that question at a dozen different leans. The rider wants the coast to end near the middle of the road, and more lean to the right moves the end of a coast to the right, so this is a bisection. It's a `for` loop, with `$bounds.low` and `$bounds.high` closing in on each other. `motorcycle.with_lean(mid)` is a motorcycle that doesn't exist, handed to `Coast`, which gives it a future that didn't happen:
+`LeanSearch` asks `Coast` that question at a dozen different leans. The rider wants the coast to end near the middle of the road, and more lean to the right moves the end of a coast to the right, so this is a bisection. It's a `for` loop, with `$bounds.low` and `$bounds.high` closing in on each other. `tried_motorcycle` is the motorcycle with the lean halfway between the bounds, a motorcycle that doesn't exist, handed to `Coast`, which gives it a future that didn't happen:
 
-{{code LeanSearch.search_tries from "mid = middle_lean($bounds)" to "$bounds = bounds_after(lean_try)"}}
+{{code LeanSearch.search_tries from "lean_try = {" to "$bounds = bounds_after(lean_try)"}}
 
 The search starts with bounds a degree either side of the current lean, `max_lean_change`, so the lean it picks is never more than a degree from the last. That's what stops the bike flicking from one lean to another. Which way each try sends the next is a `match` on what the rehearsal found. Running off the left means more right, running off the right means less, and staying on the road compares the end of the coast with the target:
 

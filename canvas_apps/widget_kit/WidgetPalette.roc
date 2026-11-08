@@ -39,12 +39,4 @@ WidgetPalette :: [].{
 	## the arc kept, the stretch read out.
 	highlight_color : RgbColor
 	highlight_color = RgbColor.of(0xf2efe4)
-
-	## The road in a picture seen level with it, rather than from above.
-	side_road_color : RgbColor
-	side_road_color = RgbColor.of(0x8a8a8a)
-
-	## The grass either side of the road, seen level with it.
-	side_ground_color : RgbColor
-	side_ground_color = RgbColor.of(0x7fa650)
 }

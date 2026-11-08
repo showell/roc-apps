@@ -16,7 +16,8 @@ import game.Distance
 import game.Lens
 import game.Bird
 import game.Geom
-import game.Polygon
+import game.GroundPatch
+import game.GroundSighting
 import game.Pipeline
 import game.SegmentFromRider
 import game.Speed
@@ -27,7 +28,6 @@ import lib.CanvasApp
 import lib.Shapes
 import widget.ReadoutText
 import widget.WidgetPage
-import widget.WidgetPalette
 import widget.VcrButtons
 
 BirdWidgetApp :: [].{
@@ -73,10 +73,6 @@ stage_at = |gap| BirdFlight.flight_stage(flight_timing(gap))
 eye_to_first_tree : Distance
 eye_to_first_tree = Distance.metres(18.0)
 
-## How far ahead the road is drawn.
-road_end_forward : Distance
-road_end_forward = Distance.metres(2000.0)
-
 ## Everything on the canvas.
 shapes_at : BirdWidgetApp.Model -> List(Shapes.Shape)
 shapes_at = |transport|
@@ -102,25 +98,13 @@ picture_shapes = |gap|
 		].join(),
 	})
 
-## The road, running up the picture from under the eye.
+## The road the eye sees, as the game lays it: the bird's segment, the bend
+## at its end and the road beyond, up to the horizon.
 road_shapes : List(Shapes.Shape)
-road_shapes = {
-	half = Geom.road_half_width
-	road_start = Distance.metres(1.0)
-	on_ground = |right, forward| { right, forward, height: Distance.zero }
-	corners = [
-		on_ground(half.opposite(), road_start),
-		on_ground(half, road_start),
-		on_ground(half, road_end_forward),
-		on_ground(half.opposite(), road_end_forward),
-	]
-	[
-		Polygon.clipped_polygon(
-			{ color: WidgetPalette.side_road_color, corners },
-			Lens.resting_focal_length,
-		),
-	].keep_oks(|shape| shape)
-}
+road_shapes =
+	GroundSighting.patches_in_view(World.road_at_start, { vantage: eye }).keep_oks(
+		|patch| GroundPatch.patch_shape(patch, Lens.resting_focal_length),
+	)
 
 ## The picture's eye, on the middle of the road `eye_to_first_tree` short of
 ## the first tree, looking down the road.
@@ -174,6 +158,14 @@ status_lines = |gap| {
 ## it lands at and 45 m for its 36 steps.
 takeoff_gap : Distance
 takeoff_gap = EncounterPlan.planning_gap(BirdFlight.flight_span, rider_speed)
+
+# The bird flies on the route's first segment, the one `World.road_at_start`
+# and the eye's `Ahead(SegmentFromRider.Position.first)` stand on.
+expect
+	match World.route.route_segments() {
+		[first, ..] => first.has_bird()
+		[] => False
+	}
 
 # The whole flight is on the range, with some road to spare at the far end.
 expect takeoff_gap < closing_gap.first
