@@ -194,7 +194,7 @@ Segment := {
 	encounter_span = |segment|
 		match segment.encounter {
 			CatCrosses(crossing) =>
-				Ok({ span: CatCrossing.crossing_span, planned_along: crossing.along() })
+				Ok({ span: CatCrossing.crossing_span, planned_along: crossing.planned_along() })
 			BirdHere(flight) =>
 				Ok({ span: BirdFlight.flight_span, planned_along: flight.planned_along() })
 			QuietRoad => Err(QuietRoad)

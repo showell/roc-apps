@@ -17,6 +17,9 @@ import Steps
 
 CatCrossing :: { tree : Geom.RoadPoint }.{
 
+	## A cat at one instant: how it looks, and where it is.
+	CatInstant : Animation.Instant(PosedCat.CatPose)
+
 	## Where the tree the cat crosses by stands.
 	tree : CatCrossing -> Geom.RoadPoint
 	tree = |CatCrossing.(crossing)| crossing.tree
@@ -46,11 +49,16 @@ CatCrossing :: { tree : Geom.RoadPoint }.{
 
 	## What the ride plans a crossing by: its length, and the gap it ends at.
 	crossing_span : EncounterPlan.StepSpan
-	crossing_span = { length: crossing_steps, ends_at: clear_gap }
+	crossing_span = { length: Steps.of(crossing_frames.len().to_u32_wrap()), ends_at: clear_gap }
+
+	## Where along its segment the ride plans `crossing` by: where the cat
+	## crosses.
+	planned_along : CatCrossing -> Along
+	planned_along = |crossing| crossing.along()
 
 	## Where the crossing has got to at `timing`.
 	crossing_stage : EncounterPlan.Timing -> Animation.Stage
-	crossing_stage = |timing| EncounterPlan.stage_at(timing, crossing_steps)
+	crossing_stage = |timing| EncounterPlan.stage_at(timing, crossing_span.length)
 
 	## How eye-catching a crossing cat is: how hard it holds the rider's eye at
 	## its strongest.
@@ -58,7 +66,7 @@ CatCrossing :: { tree : Geom.RoadPoint }.{
 	peak_attention = Attention.of(1.8)
 
 	## The cat at `stage` of its crossing.
-	instant_at : CatCrossing, Animation.Stage -> Animation.Instant(PosedCat.CatPose)
+	instant_at : CatCrossing, Animation.Stage -> CatCrossing.CatInstant
 	instant_at = |crossing, stage| crossing_timeline(crossing).instant(stage)
 }
 
@@ -73,10 +81,6 @@ cat_beyond_tree = Distance.metres(2.0)
 ## How far onto the far verge's grass the collapsed cat's hips lie.
 grass_toehold : Distance
 grass_toehold = Distance.metres(0.3)
-
-## How long a crossing takes, at a frame a step.
-crossing_steps : Steps
-crossing_steps = Steps.of(crossing_frames.len().to_u32_wrap())
 
 ## How far short of the cat the rider is when its crossing ends.
 clear_gap : Distance
