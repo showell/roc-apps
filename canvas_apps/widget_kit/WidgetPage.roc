@@ -9,6 +9,7 @@
 import game.FrameView
 import game.Lens
 import game.Picture
+import game.Pixels
 import game.Pipeline
 import game.Screen
 import lib.Brush
@@ -26,9 +27,13 @@ WidgetPage :: [].{
 	canvas_height : F64
 	canvas_height = 360.0
 
-	## How many canvas pixels the picture gives a pixel of the ride's screen.
-	canvas_per_screen : F64
-	canvas_per_screen = canvas_width / Screen.width.to_f64()
+	## The x on the ride's screen that the picture shows at `canvas_x`.
+	screen_x_at_canvas_x : F64 -> Pixels
+	screen_x_at_canvas_x = |canvas_x| Pixels.of(canvas_x / canvas_per_screen)
+
+	## Where the picture shows a point of the ride's screen, given in pixels.
+	canvas_point_of_screen : Point.Point -> Point.Point
+	canvas_point_of_screen = |{ x, y }| { x: x * canvas_per_screen, y: y * canvas_per_screen }
 
 	## Where the ride's horizon crosses the picture.
 	horizon_y : F64
@@ -210,6 +215,10 @@ WidgetPage :: [].{
 			Err(BehindCamera) => []
 		}
 }
+
+## How many canvas pixels the picture gives a pixel of the ride's screen.
+canvas_per_screen : F64
+canvas_per_screen = WidgetPage.canvas_width / Screen.width.to_f64()
 
 ## How often a still picture is painted: seldom, since it never changes, but
 ## often enough that a page's check, which runs a page for a few frames, sees

@@ -10,7 +10,6 @@ import game.Distance
 import game.Geom
 import game.Lens
 import game.Pipeline
-import game.Pixels
 import game.RoadAhead
 import game.Route
 import game.SegmentPlace
@@ -111,7 +110,7 @@ view_vantage : TruckView -> Geom.Vantage
 view_vantage = |view| {
 	middle_along = truck_road_point.along.plus(truck_middle_ahead)
 	seen_from_radians = view.seen_from.to_radians()
-	middle_x = Pixels.of(view.canvas_x / WidgetPage.canvas_per_screen)
+	middle_x = WidgetPage.screen_x_at_canvas_x(view.canvas_x)
 	middle_turn = Lens.turn_at_x({ x: middle_x, focal_length: Lens.resting_focal_length })
 	{
 		along: middle_along.minus(view.distance.times(seen_from_radians.cos())),
@@ -186,7 +185,7 @@ canvas_corners : List(Shapes.Shape) -> List(Point.Point)
 canvas_corners = |shapes| {
 	corner_of = |pair|
 		match pair {
-			[x, y] => { x: x * WidgetPage.canvas_per_screen, y: y * WidgetPage.canvas_per_screen }
+			[x, y] => WidgetPage.canvas_point_of_screen({ x, y })
 			_ => crash "TruckWidgetApp.canvas_corners: a polygon's coordinates come in pairs"
 		}
 	polygon_coordinates(shapes).join_map(|coordinates| coordinates.chunks_of(2).map(corner_of))
