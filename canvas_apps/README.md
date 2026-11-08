@@ -148,18 +148,18 @@ own model:
 ```roc
 CanvasApp(model) : {
     size : { width : F64, height : F64 },
-    fps : I32,
+    frames_a_second : U32,
     init : model,
     model_at_next_step : model, Input.Snapshot, F32 -> model,
     frame_shapes : model -> List(Shapes.Shape),
     sounds : model -> U32,
-    tones : List({ freq : I32, ms : I32 }),
+    tones : List({ hertz : U32, milliseconds : U32 }),
     title : Str,
 }
 ```
 
 `model_at_next_step` takes one step, given what the keyboard and pointer look like now and
-how many seconds the step covers — always `1 / fps`, since each runner paces to
+how many seconds the step covers — always `1 / frames_a_second`, since each runner paces to
 the app's own rate. An app whose rules count steps writes
 `model_at_next_step: CanvasApp.untimed_model_at_next_step(step)`, and its `step` takes no seconds at
 all. `frame_shapes` answers what to draw. `sounds` answers a bit per tone the last
@@ -245,7 +245,7 @@ names match at all: `input.mouse.position()` is how roc-ray is read.
 
 The native side is a spike, not kept current (see the top of this file).
 `native/CanvasAppRunner.roc` opens a window at the app's `size`, paces to its
-`fps`, converts roc-ray's snapshot into an `Input.Snapshot`, and paints.
+`frames_a_second`, converts roc-ray's snapshot into an `Input.Snapshot`, and paints.
 
 Painting walks the frame once and cuts it into runs at every mark, because
 raylib takes a blend and a camera as scopes; each run is drawn inside the
@@ -302,7 +302,7 @@ back before asking for the next, so Roc drops it using the layout it already
 has.
 
 The clock is the app's: elapsed time is banked and steps are taken as they fall
-due, so an app runs at its own `fps` whatever the display does. One animation
+due, so an app runs at its own `frames_a_second` whatever the display does. One animation
 frame may take up to four steps or none, four being where the bank is capped so
 a tab that was in the background does not then race.
 

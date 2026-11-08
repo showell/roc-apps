@@ -32,7 +32,7 @@ TrickOrTreatApp :: [].{
 		# **THE MOVIE SETS THE RATE**, as it always did: its motion is written
 		# per tick, so a runner that paces to anything else plays it at the
 		# wrong speed.
-		fps: 60,
+		frames_a_second: 60,
 		init: { tick: 0, paused: Bool.False },
 		model_at_next_step: |m, input, _dt| step(m, input),
 		frame_shapes: |m| Halloween.shapes({ tick: m.tick }),

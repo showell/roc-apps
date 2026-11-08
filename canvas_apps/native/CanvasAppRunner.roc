@@ -73,7 +73,7 @@ CanvasAppRunner :: [].{
 	init! = |game| App.init(
 		# The game sets the frame rate, as it does on a page: the rules are a
 		# function of the ticks and the keys, not of how long a frame took.
-		App.default.with_title(game.title).with_size({ width: F64.to_i32_wrap(game.size.width), height: F64.to_i32_wrap(game.size.height) }).with_frame_pacing(Capped(game.fps.to_i32_try() ?? crash "CanvasAppRunner: an fps too large for roc-ray's frame pacing")),
+		App.default.with_title(game.title).with_size({ width: F64.to_i32_wrap(game.size.width), height: F64.to_i32_wrap(game.size.height) }).with_frame_pacing(Capped(game.frames_a_second.to_i32_try() ?? crash "CanvasAppRunner: a frame rate too large for roc-ray's frame pacing")),
 		|_io| {
 			target = Draw.RenderTexture.load!(target_size(game))?
 			Assets.set_texture_filter!(target.texture(), Bilinear)
@@ -208,7 +208,7 @@ CanvasAppRunner :: [].{
 			# The step is the rate the game asked for, not however long the
 			# last frame happened to take, so a rally is the same rally
 			# whatever the machine is doing.
-			dt = 1.0 / game.fps.to_f32()
+			dt = 1.0 / game.frames_a_second.to_f32()
 			fps = if input.devices.key_pressed(KeyF) {
 				!model.fps
 			} else {

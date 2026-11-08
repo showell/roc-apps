@@ -13,7 +13,7 @@ ParticlesApp :: [].{
 	canvas_app : CanvasApp.CanvasApp(ParticlesApp.Model)
 	canvas_app = {
 		size: { width: Particles.width, height: Particles.height },
-		fps: 60,
+		frames_a_second: 60,
 		init: Particles.start,
 		model_at_next_step: |m, input, _dt| step(m, input),
 		frame_shapes: |m| Particles.shapes(m),

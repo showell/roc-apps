@@ -18,17 +18,17 @@ WorkshopApp :: [].{
 	canvas_app : CanvasApp.CanvasApp(WorkshopApp.Model)
 	canvas_app = {
 		size: { width: 800.0, height: 600.0 },
-		fps: 60,
+		frames_a_second: 60,
 		init: { world: Rules.start, sounds: 0 },
 		model_at_next_step: |m, input, _dt| step(m, input),
 		frame_shapes: |m| WorkshopDraw.frame(m.world),
 		sounds: |m| m.sounds,
 		tones: [
-			{ freq: 364, ms: 35 },
-			{ freq: 416, ms: 35 },
-			{ freq: 510, ms: 35 },
-			{ freq: 603, ms: 35 },
-			{ freq: 697, ms: 35 },
+			{ hertz: 364, milliseconds: 35 },
+			{ hertz: 416, milliseconds: 35 },
+			{ hertz: 510, milliseconds: 35 },
+			{ hertz: 603, milliseconds: 35 },
+			{ hertz: 697, milliseconds: 35 },
 		],
 		title: "Pixel Workshop",
 	}
