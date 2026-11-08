@@ -46,6 +46,16 @@ The most interesting box is the middle one: looking around. On a real safari, a 
 
 Only four things carry over from one step to the next: the rider, the truck, the clock, and the encounter plan, which says when the next cat or bird encounter starts. Everything else is worked out again each frame.
 
+Everything in the picture is one of three kinds, sorted by what it lacks:
+
+| Kind | Examples | Has | Lacks |
+|---|---|---|---|
+| Solids | the truck, the radio towers, the guard rails, the road and its ponds | every corner has its own place along, across and above the road | nothing |
+| Cards | the cat, the bird, the cows, pigs and other animals by the road, the far trees | a foot on the road, and a width and a height on the screen | depth: they're flat, and always face you |
+| Far scenery | the sun, the mountains, the rolling land | a direction and a height above the horizon | distance: they never come nearer |
+
+Each kind is drawn its own way, and the rest of the book keeps to these three.
+
 Next, let's look at what one of those boxes looks like in Roc.
 
 ## One whole module
@@ -2658,6 +2668,16 @@ From there to the screen is a pinhole camera, which is similar triangles. Dividi
 A thing standing on the ground is projected twice, at its feet and at its head. `StillShapes.standing_anchor` calls `upright_on_screen` with a record of the height and focal length built on the spot:
 
 {{code Camera.upright_on_screen}}
+
+These two functions cover two of the three kinds of thing from The problem, and the third needs neither:
+
+| Kind | Examples | Has | Lacks |
+|---|---|---|---|
+| Solids | the truck, the towers, the guard rails, the ground patches | every corner has its own place along, across and above the road | nothing |
+| Cards | the cat, the bird, the billboards, the far trees | a foot on the road, and a width and a height on the screen | depth: they're flat, and always face you |
+| Far scenery | the sun, the mountains, the rolling land | a direction and a height above the horizon | distance: they never come nearer |
+
+A solid is projected corner by corner, each corner through `project`, as `Polygon.clipped_polygon` does for the truck's faces, the rails and the ground. A card is one projected foot plus a size, which is `upright_on_screen`. Far scenery needs no projection of distance at all: its direction picks a place across the screen, and its height above the horizon is already in pixels. A tree is the one thing that changes kind. Far off it's a card, but up close its crown is cones, and every point of a cone's ring goes through `project` like a solid's corner.
 
 The focal length comes from a lens. `resting_focal_length` is a value computed from other values, with no function in sight, and `field_of_view` is a `Turn`, so taking half of it needs no comment about radians.
 
