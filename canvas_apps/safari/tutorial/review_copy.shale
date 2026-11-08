@@ -14,6 +14,7 @@
 -- reviewer how far a read has to go.
 const SOURCE = "canvas_apps/safari/tutorial/build/tutorial.md"
 const BOOK = "canvas_apps/safari/tutorial/Book.roc"
+const DRAFT_NOTES = "canvas_apps/safari/tutorial/DraftNotes.roc"
 const OUT = "canvas_apps/safari/tutorial/build/review"
 const TUTORIAL_HTML = "scratch:roc-tutorial/tutorial.html"
 
@@ -46,17 +47,27 @@ function headings_before(found, title)
   return out
 end
 
--- The line without its [check: ...] notes. A note holds no closing bracket
--- but its own, and the notes the book has are all on one line.
-function without_checks(l)
+-- How a check note opens, read from DraftNotes.roc's `check_open`, its one
+-- home, so this copy drops the notes the book marks.
+function check_open()
+  local mark = "check_open = \""
+  for l in lines(read(DRAFT_NOTES)) do
+    if starts_with(l, mark) and #l > #mark + 1 and sub(l, #l) == "\"" then return sub(l, #mark + 1, #l - 1) end
+  end
+  fail("review_copy: no " .. mark .. "...\" line in " .. DRAFT_NOTES)
+end
+
+-- The line without its check notes, which open with `open`. A note holds no
+-- closing bracket but its own, and the notes the book has are all on one line.
+function without_checks(l, open)
   local text = l
-  local at = find(text, "[check:")
+  local at = find(text, open)
   while at ~= nil do
     local rest = sub(text, at)
     local close = find(rest, "]")
     if close == nil then fail("review_copy: a check note doesn't close: " .. sub(l, 1, 80)) end
     text = trim_end(sub(text, 1, at - 1)) .. sub(rest, close + 1)
-    at = find(text, "[check:")
+    at = find(text, open)
   end
   return text
 end
@@ -74,6 +85,7 @@ function review_lines(text, found)
   local caption = {}
   local last_prose = ""
   local chapters = {}
+  local open = check_open()
   for l in split(text, "\n") do
     if fence == nil then
       if l == "```dot" or starts_with(l, "```dot ") then
@@ -90,7 +102,7 @@ function review_lines(text, found)
         push(chapters, {title = title, line = #out + 1})
         push(out, l)
       else
-        local kept = without_checks(l)
+        local kept = without_checks(l, open)
         push(out, kept)
         if trim(kept) ~= "" then last_prose = kept end
       end
