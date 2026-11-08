@@ -114,7 +114,10 @@ FrameView := {
 
 	## The skyline `camera` sees at `clock`, darkened as far as the sky is.
 	skyline_shapes : RiderCamera, Clock -> List(Shapes.Shape)
-	skyline_shapes = |camera, clock| Mountains.mountain_shapes(camera, Sky.darkness_at(clock))
+	skyline_shapes = |camera, clock| {
+		sky_darkness = Sky.darkness_at(clock)
+		Mountains.mountain_shapes(camera, { darkness: sky_darkness })
+	}
 
 	## The road's ground that `camera` sees of `road`: the road itself and its
 	## ponds.

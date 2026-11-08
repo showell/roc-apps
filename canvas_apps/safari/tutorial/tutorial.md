@@ -783,7 +783,7 @@ Opaque types do the most work from here on. A `Bearing` and a `Turn` are both fl
 
 `turn_from_view.abs() >= visible_turn_limit` compares two `Turn`s. The code never touches radians until `Sun.place` has to do trigonometry, because `.tan()` works on a float.
 
-{{code Sun.sun_on_screen}}
+{{code Lens.far_point}}
 
 Its caller, `RideInstant.sun`, is short enough to read whole:
 

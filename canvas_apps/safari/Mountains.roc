@@ -36,10 +36,13 @@ Mountains :: [].{
 
 	## The skyline, back to front, for a camera facing `heading` through a lens
 	## of `focal_length`: the west range, the north range, the north's snow, then the
-	## land.
-	mountain_shapes :
-		{ heading : Angle.Bearing, focal_length : Pixels, .. }, Fraction -> List(Shapes.Shape)
-	mountain_shapes = |aim, darkness| {
+	## land. `darkness` is how far the sky has darkened, and the rock and snow
+	## darken as far.
+	mountain_shapes : { heading : Angle.Bearing, focal_length : Pixels, .. },
+	{
+		darkness : Fraction,
+	} -> List(Shapes.Shape)
+	mountain_shapes = |aim, { darkness }| {
 		sky_columns = sky_columns_for(aim)
 		snow_shapes =
 			match snow_shape(
@@ -150,13 +153,15 @@ snow_dip = FarHeight.of(10.0)
 column_step : Pixels
 column_step = Pixels.of(2.0)
 
-## The height of the north range's highest peak, as its samples find it.
+## The height of the north range's highest peak, as its samples across the
+## whole range find it.
 snow_peak_height : FarHeight
 snow_peak_height = {
-	first = Angle.Bearing.radians(-0.5)
+	first = north_range.center.plus(Angle.straight_ahead.minus(north_range.half_width))
+	last = north_range.center.plus(north_range.half_width)
 	var $highest = Mountains.north_range_height(first)
 	var $at = first.plus(peak_sample_step)
-	while $at <= Angle.Bearing.radians(0.5) {
+	while $at <= last {
 		$highest = $highest.max(Mountains.north_range_height($at))
 		$at = $at.plus(peak_sample_step)
 	}

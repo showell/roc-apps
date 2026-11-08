@@ -258,7 +258,7 @@ skyline_height = |bearing| {
 is_sun_behind_mountains : Clock -> Bool
 is_sun_behind_mountains = |clock| {
 	sun = Sun.direction_at(clock)
-	sun.height.plus(Sun.radius_as_height) < skyline_height(sun.bearing)
+	sun.height.plus(Sun.radius) < skyline_height(sun.bearing)
 }
 
 expect !is_sun_behind_mountains(Clock.at_step(0))
@@ -273,8 +273,8 @@ expect is_sun_behind_mountains(Clock.at_step(6000))
 sunset_climax : Clock
 sunset_climax = {
 	hidden_at = first_step_where(is_sun_behind_mountains)
-	range_top = Sun.height_at(hidden_at).plus(Sun.radius_as_height)
-	first_step_where(|clock| Sun.height_at(clock).minus(Sun.radius_as_height) < range_top)
+	range_top = Sun.height_at(hidden_at).plus(Sun.radius)
+	first_step_where(|clock| Sun.height_at(clock).minus(Sun.radius) < range_top)
 }
 
 ## How many steps before and after the sunset's climax the rider must be on the
