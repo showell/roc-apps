@@ -16,7 +16,10 @@ TruckBody :: [].{
 	## mean of its corners' distances ahead.
 	body_shapes : TruckShape.TruckSetting -> List(Shapes.Shape)
 	body_shapes = |truck|
-		DepthSort.sort_by(faces(truck), |face| mean_forward(face.corners))
+		DepthSort.sort_by(
+			faces(truck),
+			|face| DepthSort.mean_depth(face.corners.map(|corner| corner.forward)),
+		)
 			.keep_oks(|face| Polygon.clipped_polygon(face, truck.focal_length))
 }
 
@@ -48,15 +51,6 @@ axle_pair_gap = Distance.metres(1.2)
 ## cab's length.
 cab_axle_fraction : Fraction
 cab_axle_fraction = Fraction.of(0.55)
-
-## The mean of the corners' distances ahead, negative for a face behind the
-## rider. The sum runs from the last corner to the first; a float sum's
-## rounding depends on its order, and another order can move a pixel.
-mean_forward : List(RiderView.RaisedPoint) -> Distance
-mean_forward = |corners|
-	corners
-		.fold_rev(Distance.zero, |corner, sum| corner.forward.plus(sum))
-		.divided_by(corners.len().to_f64())
 
 ## How far ahead of the trailer's centre each of the truck's axles is, back
 ## to front: a pair under the back of the trailer, a pair under its front,
@@ -221,13 +215,3 @@ tire = |truck, { axle, rightward }| {
 		},
 	)
 }
-
-point_ahead : F64 -> RiderView.RaisedPoint
-point_ahead = |forward| {
-	right: Distance.zero,
-	forward: Distance.metres(forward),
-	height: Distance.zero,
-}
-
-expect mean_forward([10.0, 20.0, 30.0, 40.0].map(point_ahead)).to_metres() == 25.0
-expect mean_forward([1.0, 2.0, 6.0].map(point_ahead)).to_metres() == 3.0

@@ -19,7 +19,23 @@ DepthSort :: [].{
 				depth_of,
 			})
 		}
+
+	## How deep a flat polygon stands, for the sort: the mean of its corners'
+	## `depths`. The sum runs from the first depth to the last, since a float
+	## sum's rounding depends on its order, and another order can move a pixel.
+	mean_depth : List(Distance) -> Distance
+	mean_depth = |depths|
+		depths
+			.fold(Distance.zero, |sum, depth| sum.plus(depth))
+			.divided_by(depths.len().to_f64())
 }
+
+expect DepthSort.mean_depth([10.0, 20.0, 30.0, 40.0].map(Distance.metres)).to_metres() == 25.0
+expect DepthSort.mean_depth([1.0, 2.0, 6.0].map(Distance.metres)).to_metres() == 3.0
+
+# Summed first to last, the 1 is lost in the rounding next to 1e16; summed last
+# to first, it would survive and the mean would be a third.
+expect DepthSort.mean_depth([1.0, 1.0e16, -1.0e16].map(Distance.metres)).to_metres() == 0.0
 
 ## Whether depth `this` is farther than `that` by more than a tie's
 ## slack. The slack is relative to `that`, but never less than it is at

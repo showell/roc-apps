@@ -3,6 +3,7 @@
 ## each post, is a flat quad, which the depth sort places among the frame's
 ## other things.
 import Pixels
+import DepthSort
 import Distance
 import RiderView
 import Polygon
@@ -40,13 +41,12 @@ GuardRail :: [].{
 }
 
 ## How far ahead a quad is, for the depth sort: the mean of its corners'
-## distances, summed round the quad from its low start, since a float sum's
-## rounding depends on its order. It is negative for a quad behind the rider.
+## distances, taken round the quad from its low start. It is negative for a
+## quad behind the rider.
 quad_depth : GuardRail.RailQuad -> Distance
 quad_depth = |quad| {
 	{ low_start, low_end, high_end, high_start } = quad.corners
-	sum = low_start.forward.plus(low_end.forward).plus(high_end.forward).plus(high_start.forward)
-	sum.divided_by(4.0)
+	DepthSort.mean_depth([low_start, low_end, high_end, high_start].map(|corner| corner.forward))
 }
 
 ## A quad on screen, cut at the camera's near plane, unless it's wholly
