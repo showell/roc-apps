@@ -32,6 +32,7 @@ Still: traced pictures, in units of the still's own height
 
 # Trigonometry.
 TreeShapes.ring_angles: radians for Trig
+TreeShapes.ring_units: the cosines and sines of ring_angles, worked out once
 TruckShape.circle_angles: radians for Trig
 Scatter.offset: phases, radians per animal, for Trig
 

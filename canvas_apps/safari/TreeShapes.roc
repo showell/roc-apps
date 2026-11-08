@@ -253,10 +253,116 @@ convex_hull_points = |points|
 	if points.len() < 3 {
 		points
 	} else {
-		sorted = points.sort_with(left_to_right)
-		top_chain = sorted.fold([], |hull, point| trim_hull(hull, point).append(point))
-		bottom_chain = sorted.fold_rev([], |point, hull| trim_hull(hull, point).append(point))
-		top_chain.drop_last(1).concat(bottom_chain.drop_last(1))
+		hull_points_of_sorted(points.sort_with(left_to_right))
+	}
+
+## The hull of three or more points already in `left_to_right` order.
+hull_points_of_sorted : List(Screen.Point) -> List(Screen.Point)
+hull_points_of_sorted = |sorted| {
+	room = sorted.len()
+	add_point = |hull, point| trim_hull(hull, point).append(point)
+	top_chain = sorted.fold(List.with_capacity(room), add_point)
+	bottom_chain = sorted.fold_rev(List.with_capacity(room), |point, hull| add_point(hull, point))
+	top_chain.drop_last(1).concat(bottom_chain.drop_last(1))
+}
+
+## The convex hull of a cone's ring on the screen and its apex, as
+## `convex_hull_points` gives it. The ring is convex on the screen and keeps
+## its angle order there, so each of its two arcs from the leftmost point to
+## the rightmost is already left to right, and merging the arcs and the apex
+## puts the points in the hull's order without a sort. Where rounding leaves
+## the merge out of that order, the points are sorted as usual.
+cone_hull_points : List(Screen.Point), Screen.Point -> List(Screen.Point)
+cone_hull_points = |ring_points, apex| {
+	count = ring_points.len()
+	if count < 2 {
+		convex_hull_points(ring_points.append(apex))
+	} else {
+		ring_hull_points({ ring_points, count, apex })
+	}
+}
+
+## What `cone_hull_points` gives for a ring of `count` points, two or more.
+ring_hull_points : {
+	ring_points : List(Screen.Point),
+	count : U64,
+	apex : Screen.Point,
+} -> List(Screen.Point)
+ring_hull_points = |{ ring_points, count, apex }| {
+	point_at = |index| ring_points.get(index % count) ?? crash "TreeShapes: a ring index wraps round the ring"
+	first_point = point_at(0)
+	var $leftmost = 0
+	var $left_point = first_point
+	var $rightmost = 0
+	var $right_point = first_point
+	for index in 1..<count {
+		point = point_at(index)
+		if is_before(point, $left_point) {
+			$leftmost = index
+			$left_point = point
+		} else if is_before($right_point, point) {
+			$rightmost = index
+			$right_point = point
+		} else {
+			{}
+		}
+	}
+	forward_count = ($rightmost + count - $leftmost) % count + 1
+	back_count = count - forward_count
+	var $sorted = List.with_capacity(count + 1)
+	var $forward_at = 0
+	var $back_at = 0
+	var $apex_placement = Unplaced
+	var $order = InOrder
+	var $previous = $left_point
+	while $forward_at < forward_count or $back_at < back_count {
+		forward_point = point_at($leftmost + $forward_at)
+		back_point = point_at($leftmost + count - 1 - $back_at)
+		is_forward_done = $forward_at == forward_count
+		is_back_before = $back_at < back_count and is_before(back_point, forward_point)
+		takes_back = is_forward_done or is_back_before
+		point =
+			if takes_back {
+				$back_at = $back_at + 1
+				back_point
+			} else {
+				$forward_at = $forward_at + 1
+				forward_point
+			}
+		if $apex_placement == Unplaced and is_before(apex, point) {
+			$order = order_after($order, { previous: $previous, point: apex })
+			$sorted = $sorted.append(apex)
+			$previous = apex
+			$apex_placement = Placed
+		} else {
+			{}
+		}
+		$order = order_after($order, { previous: $previous, point })
+		$sorted = $sorted.append(point)
+		$previous = point
+	}
+	if $apex_placement == Unplaced {
+		$order = order_after($order, { previous: $previous, point: apex })
+		$sorted = $sorted.append(apex)
+	} else {
+		{}
+	}
+	match $order {
+		InOrder => hull_points_of_sorted($sorted)
+		OutOfOrder => convex_hull_points(ring_points.append(apex))
+	}
+}
+
+## Whether a merge of points has kept them left to right so far.
+MergeOrder : [InOrder, OutOfOrder]
+
+## Whether the merge is still in order once `point` follows `previous`.
+order_after : MergeOrder, { previous : Screen.Point, point : Screen.Point } -> MergeOrder
+order_after = |order, { previous, point }|
+	if is_before(point, previous) {
+		OutOfOrder
+	} else {
+		order
 	}
 
 ## The order the hull walks points in: left to right, and top to bottom where
@@ -310,6 +416,11 @@ ring_angles = {
 	$angles
 }
 
+## The cosine and sine of each of the ring's angles, worked out once rather
+## than for every tier of every tree.
+ring_units : List({ cos : F64, sin : F64 })
+ring_units = ring_angles.map(|angle| { cos: angle.cos(), sin: angle.sin() })
+
 ## A tier, as a cone when the tree is near and the ring round the cone's base
 ## is at or past the near plane, else as a triangle.
 tier_shape : Tier, TierInputs -> Shapes.Shape
@@ -349,10 +460,10 @@ cone_ring_points = |tier, { inputs, cone_radius }| {
 	base = inputs.base
 	ring_height = height_down_crown(inputs, tier.bottom)
 	Geom.ahead_points(
-		ring_angles.map(
-			|angle| {
-				right: base.right().plus(cone_radius.times(angle.cos())),
-				forward: base.forward().plus(cone_radius.times(angle.sin())),
+		ring_units.map(
+			|unit| {
+				right: base.right().plus(cone_radius.times(unit.cos)),
+				forward: base.forward().plus(cone_radius.times(unit.sin)),
 				height: ring_height,
 			},
 		),
@@ -371,7 +482,7 @@ tier_cone = |tier, { inputs, ring_points, shade }| {
 	apex = Camera.project(inputs.base.at_height(apex_height), inputs.cam_focal)
 	ring_on_screen = Camera.projected_points(ring_points, inputs.cam_focal)
 	Polygon.shaded_polygon(
-		convex_hull_points(ring_on_screen.append(apex)),
+		cone_hull_points(ring_on_screen, apex),
 		{ color: inputs.foliage_color, strength: shade },
 	)
 }
@@ -577,6 +688,41 @@ expect
 			Screen.point(4.0, 0.0),
 			Screen.point(4.0, 4.0),
 		]
+
+## A ring of 16 points on an ellipse, in angle order from `start`, as a cone's
+## ring looks on the screen.
+sample_ring_points : U64 -> List(Screen.Point)
+sample_ring_points = |start| {
+	ring = ring_units.map(|unit| Screen.point(100.0 + 40.0 * unit.cos, 50.0 + 10.0 * unit.sin))
+	ring.drop_first(start).concat(ring.take_first(start))
+}
+
+# The ring's hull with its apex is the convex hull of the points: with the apex
+# above the ring, inside it, and below it, from any first point round the ring,
+# and with the ring in a shuffled order, where the merge falls back to the sort.
+expect {
+	apexes = [
+		Screen.point(100.0, 0.0),
+		Screen.point(100.0, 50.0),
+		Screen.point(130.0, 90.0),
+	]
+	[0, 5, 11].all(
+		|start| {
+			ring_points = sample_ring_points(start)
+			is_hull = |apex| {
+				hull_points = cone_hull_points(ring_points, apex)
+				hull_points == convex_hull_points(ring_points.append(apex))
+			}
+			apexes.all(is_hull)
+		},
+	)
+}
+expect {
+	top_to_bottom = |a, b| left_to_right({ x: a.y, y: a.x }, { x: b.y, y: b.x })
+	shuffled = sample_ring_points(0).sort_with(top_to_bottom)
+	apex = Screen.point(100.0, 0.0)
+	cone_hull_points(shuffled, apex) == convex_hull_points(shuffled.append(apex))
+}
 
 expect left_to_right(Screen.point(1.0, 9.0), Screen.point(2.0, 0.0)) == Before
 expect left_to_right(Screen.point(2.0, 0.0), Screen.point(1.0, 9.0)) == After
