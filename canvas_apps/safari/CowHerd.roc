@@ -18,13 +18,16 @@ CowHerd := {
 	## has one cow in each row, so a column holds one more cow than this.
 	rows_behind_front : U64,
 
-	## How far along the road behind the bull's place the first column stands.
+	## How far along the road behind the bull's place the first column's place
+	## is.
 	gap_behind_bull : Distance,
 
 	## The distance between the herd's columns, along the road.
 	column_spacing : Distance,
 
 	## How far along the road each row back is moved from the one in front.
+	## A column's place is where its second row stands, so its front row
+	## stands this far short of it, toward the bull.
 	row_stagger : Distance,
 
 	## The distance between the herd's rows, away from the road.
@@ -98,7 +101,8 @@ herd_cow = |herd, { herd_along, cow_number }| {
 	row = cow_number.rem_by(cows_per_column).to_f64()
 	herd_front = herd_along.plus(herd.gap_behind_bull)
 	column_place = herd_front.plus(herd.column_spacing.times(column))
-	in_line = column_place.plus(herd.row_stagger.times(row - 1.0))
+	rows_behind_second = row - 1.0
+	in_line = column_place.plus(herd.row_stagger.times(rows_behind_second))
 	row_place = front_row_distance.plus(herd.row_depth.times(row))
 	stray = Scatter.stray_of(
 		cow_number,
