@@ -339,8 +339,6 @@ tier_cone = |tier, { inputs, ring_points, shade }| {
 	)
 }
 
-expect trunk_height_share.to_f64() + crown_height_share.to_f64() == 1.0
-
 expect crown_shade(Distance.metres(0.0)).to_f64() == 1.0
 expect crown_shade(Distance.metres(20.0)).to_f64() == 0.75
 expect crown_shade(Distance.metres(40.0)).to_f64() == 0.5

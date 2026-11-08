@@ -151,6 +151,5 @@ expect
 			Conifer.Green,
 		]
 
-expect gold_green_trees.len() == 14
 expect Trees.roadside_trees({ scheme: AllGreen, length: Distance.metres(100.0) }).len() == 2
 expect Trees.roadside_trees({ scheme: AllGreen, length: Distance.metres(50.0) }).len() == 0

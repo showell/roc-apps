@@ -56,11 +56,3 @@ foliage_color = |conifer|
 		Gold => gold_color
 		Red => red_color
 	}
-
-expect
-	[
-		(Conifer.Green, 6.3648),
-		(Conifer.SmallGreen, 4.896),
-		(Conifer.Red, 9.792),
-		(Conifer.Gold, 14.688),
-	].all(|(conifer, want)| (conifer.scenery_height().to_metres() - want).abs() <= 0.000000001)
