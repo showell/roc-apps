@@ -26,6 +26,10 @@ WidgetPage :: [].{
 	canvas_height : F64
 	canvas_height = 360.0
 
+	## How many canvas pixels the picture gives a pixel of the ride's screen.
+	canvas_per_screen : F64
+	canvas_per_screen = canvas_width / Screen.width.to_f64()
+
 	## The picture fills the canvas above this line.
 	picture_bottom_y : F64
 	picture_bottom_y = 216.0
@@ -173,7 +177,7 @@ WidgetPage :: [].{
 				target: corner,
 				offset: corner,
 				rotation: 0.0,
-				zoom: canvas_width / Screen.width.to_f64(),
+				zoom: canvas_per_screen,
 			}),
 		)
 	}
