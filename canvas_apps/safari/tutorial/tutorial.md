@@ -1182,12 +1182,36 @@ Now that we can draw a critter, we can stand one by the road.
 
 ## The elephant
 
-The critters in this stretch of the book are billboards: flat pictures that stand in one place and never change. The code calls them billboards too. We'll start with the elephant. It stands at 14 of the route's 18 bends, so it's the bend animal you'll see most. A grown elephant waits beyond the guard rail on the outside of the bend, and its baby stands 14 metres straight on past the bend, where the road would run if it didn't turn.
+The critters in this stretch of the book are billboards: one emoji still, standing in one place, always facing the camera. The code calls them billboards too. We'll start with the elephant. It stands at 14 of the route's 18 bends, so it's the bend animal you'll see most. A grown elephant waits beyond the guard rail on the outside of the bend, and its baby stands 14 metres straight on past the bend, where the road would run if it didn't turn.
 
 New in this chapter:
 
-- Roc: a `match` that answers with a list
-- Modules: `BendAnimal`, `Billboard`
+- Roc: a wrapper only one module can build; a `match` that answers with a list
+- Modules: `Billboard`, `BendAnimal`
+
+### Get the types right
+
+A billboard is three facts: its still, its height, and which way it faces.
+
+{{code Billboard.Billboard from "Billboard := {" to "}.{"}}
+
+Where it stands isn't one of them. That's the `Geom.Placed` around it. A kind of animal is its emoji and how tall a grown one stands, so a baby is the same species at half the height:
+
+{{code Billboard.Species}}
+
+The emoji is a named still, such as `EmojiStills.elephant`, and only `EmojiStills` can make one:
+
+{{code EmojiStills.EmojiStill}}
+
+So a billboard always holds a still that exists.
+
+### Drawing one
+
+An emoji faces left, so a billboard facing right is its still mirrored. `StillShapes.standing_anchor` makes the `Anchor` from the Stills chapter, and `still_shapes` draws it:
+
+{{code Billboard.scenery_picture}}
+
+### Placing one at a bend
 
 A segment's ending carries its `bend_life`, what's at its bend. The segment turns that into billboards:
 
@@ -1199,9 +1223,7 @@ A quiet bend and the route's end give nothing, a pond gives its ducks, and an an
 
 A `match` on the bend's outer side picks which side of the road the grown animal stands on, and which way it faces. It stands just beyond the rail, a metre and a half past the road's edge plus half its own width.
 
-An elephant has no state. A billboard is three facts: its still, its height and which way it faces. Where it stands is the `Geom.Placed` around it. The baby is the same still at half the height.
-
-Nothing in that function says "elephant". That's what makes the next chapter short.
+An elephant has no state. Nothing in that function says "elephant". That's what makes the next chapter short.
 
 ## Rhinos, giraffes and the other corner critters
 
@@ -1213,26 +1235,7 @@ Each animal is a tag, and each answers with its emoji and how tall it stands. Th
 
 To add a lion, we'd add a tag, a row here and a still in `EmojiStills`. The compiler would point at every `match` that needs the new tag.
 
-These animals stand at the bends. Most of the others come in crowds, and a crowd starts with a single pig.
-
-## A pig
-
-A pig is the simplest critter in Safari Ride. It isn't tied to a bend. Here's its species:
-
-{{code PigHerd.pig_species}}
-
-New in this chapter:
-
-- Roc: a wrapper only one module can build
-- Modules: `PigHerd`
-
-That's the same shape as each animal's row in `species_of`: an emoji and a height. `Billboard.adult_billboard` turns it, with a facing, into a billboard. The emoji is a named still, such as `EmojiStills.elephant`, and only `EmojiStills` can make one:
-
-{{code EmojiStills.EmojiStill}}
-
-So a billboard always holds a still that exists.
-
-That's a pig. One pig doesn't look like much of a farm, though.
+These animals stand at the bends. Most of the others come in crowds.
 
 ## Herds: cows and pigs
 
@@ -1260,6 +1263,10 @@ A bull may stand in front of the herd, by the trees. It's the same record again,
 {{code CowHerd.herd_bull}}
 
 ### Pigs
+
+A pig is a species, like the elephant's:
+
+{{code PigHerd.pig_species}}
 
 Pigs graze on the right of the road, near the end of a segment. The first two segments with pigs get a big herd, 7 rows of 7. After that, it's two short rows.
 
