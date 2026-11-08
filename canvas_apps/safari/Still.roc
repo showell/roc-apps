@@ -2,6 +2,8 @@
 ## colour or a gradient. It is drawn in its own frame, in units of its height:
 ## its feet at y 0, y up, and its height 1, with x across from its middle. A
 ## still that is wider than it is tall, such as a flying bird, has x past 1.
+## The frame is a convention, not a rule: a set of poses, such as the cat's,
+## shares one frame so that they line up, and a pose may reach past it.
 ## EmojiStills, CatStills and BirdStills hold the pictures, and StillShapes
 ## puts them on screen.
 import Fraction
@@ -13,9 +15,11 @@ Still :: List(Still.Polygon).{
 	## The still made of `polygons`, drawn in their order. Each polygon is
 	## checked once, here, and a flawed one crashes with a reason that says
 	## where it is in the still's frame: a polygon of fewer than three
-	## corners, colour stops whose start offset is past their end offset, a
-	## linear gradient that starts where it ends, or a radial one whose axes
-	## span less than `min_axes_area`.
+	## corners, a corner that repeats its neighbour (the last corner's
+	## neighbour is the first, as the polygon closes by itself), colour stops
+	## whose start offset is past their end offset, a linear gradient that
+	## starts where it ends, or a radial one whose axes span less than
+	## `min_axes_area`.
 	of : List(Still.Polygon) -> Still
 	of = |polygons| {
 		for polygon in polygons {
@@ -101,11 +105,19 @@ polygon_flaw = |polygon|
 		[] => Flawed("a polygon has no corners, and it needs three")
 		[first, .. as rest] if rest.len() < 2 =>
 			Flawed("the polygon from ${place(first)} has ${(rest.len() + 1).to_str()} corners, and it needs three")
-		_ =>
-			match polygon.fill {
-				Flat(_) => Sound
-				Shaded(gradient) => gradient_flaw(gradient)
+		[first, ..] => {
+			next_corners = polygon.points.drop_first(1).concat([first])
+			edges = polygon.points.map2(next_corners, |from, to| { from, to })
+			match edges.find_first(|{ from, to }| from == to) {
+				Ok({ from, .. }) =>
+					Flawed("the polygon from ${place(first)} repeats its corner ${place(from)}")
+				Err(NotFound) =>
+					match polygon.fill {
+						Flat(_) => Sound
+						Shaded(gradient) => gradient_flaw(gradient)
+					}
 			}
+		}
 	}
 
 gradient_flaw : Still.Gradient -> Flaw
@@ -189,6 +201,16 @@ expect
 	polygon_flaw(flat_polygon(sample_corners.take_first(2)))
 		== Flawed("the polygon from (0.5, 0) has 2 corners, and it needs three")
 expect polygon_flaw(flat_polygon([])) == Flawed("a polygon has no corners, and it needs three")
+
+# A corner that repeats its neighbour is a flaw, the last beside the first
+# too, and corners that differ are sound (above).
+expect {
+	doubled = [{ x: 0.5, y: 0.0 }, { x: 1.0, y: 0.0 }, { x: 1.0, y: 0.0 }, { x: 0.5, y: 1.0 }]
+	polygon_flaw(flat_polygon(doubled)) == Flawed("the polygon from (0.5, 0) repeats its corner (1, 0)")
+}
+expect
+	polygon_flaw(flat_polygon(sample_corners.concat([{ x: 0.5, y: 0.0 }])))
+		== Flawed("the polygon from (0.5, 0) repeats its corner (0.5, 0)")
 
 # Stops whose offsets meet are sound, and a start past the end is not.
 expect stops_flaw({ ..sample_stops, end_offset: Fraction.of(0.25) }, "g") == Sound

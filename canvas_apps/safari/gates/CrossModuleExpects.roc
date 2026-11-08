@@ -3129,19 +3129,19 @@ upright_still_anchor = {
 	height_on_screen: Pixels.of(50.0),
 }
 
-# A still of one flat polygon of colour 7, its three points all at the foot, is
-# drawn as one opaque polygon there.
-expect
-	StillShapes.still_shapes(
-		upright_still_anchor,
-		Still.of([{ fill: Flat(RgbColor.of(7)), points: List.repeat({ x: 0.0, y: 0.0 }, 3) }]),
-	)
+# A still of one flat polygon of colour 7, a corner at the foot, is drawn as one
+# opaque polygon there.
+expect {
+	corners = [{ x: 0.0, y: 0.0 }, { x: 1.0, y: 0.0 }, { x: 0.0, y: 1.0 }]
+	still = Still.of([{ fill: Flat(RgbColor.of(7)), points: corners }])
+	StillShapes.still_shapes(upright_still_anchor, still)
 		== [
 			Poly({
-				coordinates: [100.0, 200.0, 100.0, 200.0, 100.0, 200.0],
+				coordinates: [100.0, 200.0, 150.0, 200.0, 100.0, 150.0],
 				fill: Flat(Brush.opaque(RgbColor.of(7))),
 			}),
 		]
+}
 
 ## Colour stops with an alpha byte and offsets inside 0 to 1, as a still holds
 ## them.
