@@ -1340,7 +1340,7 @@ Inside the module, `Beacon.(key)` opens a beacon to read its key, and `Beacon.Li
 
 Each beacon's offset comes from its key:
 
-{{code Beacon.beacon_offset_for}}
+{{code Beacon.of_segment}}
 
 This function is one line of method calls, and every call in it is on a `Steps`. The stagger is 37 steps, and 37 shares no factor with 120, so the first 120 keys all start their blinks at different points. Neighbors are 37 steps apart, close to a third of a blink.
 

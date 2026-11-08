@@ -1,8 +1,9 @@
 ## Beacon is the light on top of a radio tower: how it blinks and how it looks.
 ## A beacon blinks by the ride's clock, each a little apart from the last, and
 ## lit, it is a magenta disc 3 m in radius, seen through as far as it is dim. A
-## beacon is known by its key. Whatever holds it says where its middle is on
-## screen and how many pixels a metre spans there.
+## beacon is known by its head start: how far into its blink it is when the
+## ride starts. Whatever holds it says where its middle is on screen and how
+## many pixels a metre spans there.
 import Clock
 import Distance
 import Fraction
@@ -14,13 +15,17 @@ import lib.Brush
 import lib.RgbColor
 import lib.Shapes
 
-## A tower's beacon, by its key. Beacons with neighbouring keys blink apart.
-Beacon :: U32.{
+## A tower's beacon, by how far into its blink it is when the ride starts.
+Beacon :: Steps.{
 
-	## The beacon of the tower past the end of the segment at `index`, keyed by
-	## that segment's number, so neighbouring segments' beacons blink apart.
+	## The beacon of the tower past the end of the segment at `index`. Each
+	## segment's beacon starts a stagger further into its blink than the last
+	## one's, so neighbouring segments' beacons blink apart.
 	of_segment : Route.SegmentIndex -> Beacon
-	of_segment = |index| Beacon.(index.to_u32())
+	of_segment = |index| {
+		head_start = beacon_stagger.times(index.to_u32())
+		Beacon.(head_start.wrapped_to(Beacon.beacon_period))
+	}
 
 	## A beacon blinks once in this many steps of the ride.
 	beacon_period : Steps
@@ -28,15 +33,18 @@ Beacon :: U32.{
 
 	## `beacon` as it shines at `clock`.
 	lit_at : Beacon, Clock -> Beacon.LitBeacon
-	lit_at = |Beacon.(key), clock| {
-		phase = clock.steps_since(Clock.start).plus(beacon_offset_for(key))
+	lit_at = |Beacon.(head_start), clock| {
+		phase = clock.steps_since(Clock.start).plus(head_start)
 		Beacon.LitBeacon.(beacon_brightness(phase))
 	}
 
-	## The beacon that blinks exactly opposite `beacon`. Its key is
-	## `opposite_key_offset` past this one's.
+	## The beacon that blinks exactly opposite `beacon`, half a blink ahead of
+	## it.
 	opposite : Beacon -> Beacon
-	opposite = |Beacon.(key)| Beacon.(key + opposite_key_offset)
+	opposite = |Beacon.(head_start)| {
+		half_a_blink_on = head_start.plus(half_period)
+		Beacon.(half_a_blink_on.wrapped_to(Beacon.beacon_period))
+	}
 
 	## A beacon at one moment of its blink, by how bright it is.
 	LitBeacon :: Fraction.{
@@ -66,20 +74,15 @@ Beacon :: U32.{
 	}
 }
 
-## Each beacon's blink starts this many steps past the last one's, a number
-## that shares no factor with the period, so neighbours blink apart.
+## Each segment's beacon starts this many steps further into its blink than the
+## last one's. The number shares no factor with the period, so the first
+## period's worth of segments' beacons all start at different points of the
+## blink.
 beacon_stagger : Steps
 beacon_stagger = Steps.of(37)
 
-## How far past a beacon's key the key of the beacon opposite it is. That many
-## staggers come to half a period past a whole number of periods.
-opposite_key_offset : U32
-opposite_key_offset = 60
-
-## How far into its blink the beacon with key `n` is when the ride's clock is
-## 0.
-beacon_offset_for : U32 -> Steps
-beacon_offset_for = |n| beacon_stagger.times(n).wrapped_to(Beacon.beacon_period)
+half_period : Steps
+half_period = Steps.of(Beacon.beacon_period.to_u32() // 2)
 
 ## How bright a beacon is `phase` steps into its blink.
 beacon_brightness : Steps -> Fraction
@@ -122,15 +125,50 @@ beacon_disc = |{ center, radius_on_screen, brightness }| {
 	})
 }
 
-expect beacon_offset_for(0).to_f64() == 0.0
-expect beacon_offset_for(1).to_f64() == 37.0
-expect beacon_offset_for(2).to_f64() == 74.0
-expect beacon_offset_for(3).to_f64() == 111.0
-expect beacon_offset_for(4).to_f64() == 28.0
-expect beacon_offset_for(5).to_f64() == 65.0
-expect beacon_offset_for(10).to_f64() == 10.0
-expect beacon_offset_for(60).to_f64() == 60.0
-expect beacon_offset_for(120).to_f64() == 0.0
+## How far into its blink the beacon of the segment numbered `n` is when the
+## ride starts.
+segment_head_start : U32 -> F64
+segment_head_start = |n| {
+	Beacon.(head_start) = Beacon.of_segment(Route.SegmentIndex.number(n))
+	head_start.to_f64()
+}
+
+## How far into its blink the beacon opposite the segment numbered `n`'s is
+## when the ride starts.
+opposite_head_start : U32 -> F64
+opposite_head_start = |n| {
+	Beacon.(head_start) = Beacon.of_segment(Route.SegmentIndex.number(n)).opposite()
+	head_start.to_f64()
+}
+
+expect segment_head_start(0) == 0.0
+expect segment_head_start(1) == 37.0
+expect segment_head_start(2) == 74.0
+expect segment_head_start(3) == 111.0
+expect segment_head_start(4) == 28.0
+expect segment_head_start(5) == 65.0
+expect segment_head_start(10) == 10.0
+expect segment_head_start(60) == 60.0
+expect segment_head_start(120) == 0.0
+
+# The opposite beacon starts half a blink further on, wrapped to the blink, and
+# the beacon opposite that is the one it started from.
+expect
+	[
+		(opposite_head_start(0), 60.0),
+		(opposite_head_start(1), 97.0),
+		(opposite_head_start(2), 14.0),
+		(opposite_head_start(3), 51.0),
+		(opposite_head_start(60), 0.0),
+	].all(|(got, want)| got == want)
+expect
+	[0, 1, 2, 3, 59, 60, 119].all(
+		|n| {
+			beacon = Beacon.of_segment(Route.SegmentIndex.number(n))
+			Beacon.(back_again) = beacon.opposite().opposite()
+			back_again.to_f64() == segment_head_start(n)
+		},
+	)
 expect
 	[
 		(beacon_brightness(Steps.of(0)).to_f64(), 0.0),
