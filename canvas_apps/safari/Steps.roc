@@ -23,6 +23,14 @@ Steps :: U32.{
 	times : Steps, U32 -> Steps
 	times = |Steps.(n), factor| Steps.(n * factor)
 
+	## This many steps as a share of `whole`.
+	ratio_to : Steps, Steps -> F64
+	ratio_to = |Steps.(n), Steps.(whole)| n.to_f64() / whole.to_f64()
+
+	## The fewer of this many steps and `other`.
+	min : Steps, Steps -> Steps
+	min = |Steps.(n), Steps.(other)| Steps.(n.min(other))
+
 	## How far into a cycle of `period` steps this many steps land.
 	wrapped_to : Steps, Steps -> Steps
 	wrapped_to = |Steps.(n), Steps.(period)| Steps.(n % period)
@@ -38,3 +46,9 @@ Steps :: U32.{
 
 	is_eq : _
 }
+
+expect Steps.of(3).ratio_to(Steps.of(4)) == 0.75
+expect Steps.of(8).ratio_to(Steps.of(4)) == 2.0
+expect Steps.of(3).min(Steps.of(4)) == Steps.of(3)
+expect Steps.of(5).min(Steps.of(4)) == Steps.of(4)
+expect Steps.of(4).min(Steps.of(4)) == Steps.of(4)

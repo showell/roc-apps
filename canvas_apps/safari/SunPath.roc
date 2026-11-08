@@ -99,7 +99,7 @@ hour_angle_at_start = Angle.Turn.degrees(10.0)
 ## horizon and lingers near noon.
 hour_angle_at : Clock -> Angle.Turn
 hour_angle_at = |clock| {
-	hours_in = clock.steps_since(Clock.start).to_f64() / steps_an_hour.to_f64()
+	hours_in = clock.steps_since(Clock.start).ratio_to(steps_an_hour)
 	hour_angle_at_start.plus(Angle.Turn.degrees(15.0).times(hours_in))
 }
 

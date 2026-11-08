@@ -13,6 +13,7 @@ Fraction: a unit type
 Pixels: a unit type
 Speed: a unit type
 Steps.to_f64: a whole count's way into float sums
+Steps.ratio_to: a count of steps over another, which has no unit
 
 # Factors and ratios, which have no unit.
 Motorcycle.turn_per_lean: a turn per radian of lean, an angle over an angle
