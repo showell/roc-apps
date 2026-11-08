@@ -14,6 +14,7 @@ import lib.RgbColor
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
+import lib.Point
 import widget.Click
 import widget.ReadoutText
 import widget.WidgetPage
@@ -263,11 +264,11 @@ large_anchor = |still| {
 	)
 }
 
-middle_of : Click.Area -> { x : F64, y : F64 }
+middle_of : Click.Area -> Point.Point
 middle_of = |area| { x: area.left + area.width / 2.0, y: area.top + area.height / 2.0 }
 
 ## `model` after a click at `spot`, which does nothing off the stills.
-model_after_click : StillsWidgetApp.Model, { x : F64, y : F64 } -> StillsWidgetApp.Model
+model_after_click : StillsWidgetApp.Model, Point.Point -> StillsWidgetApp.Model
 model_after_click = |model, spot|
 	match cells.find_first(|cell| cell.area.contains(spot)) {
 		Ok(cell) => { ..model, large_pose: cell.pose }
@@ -421,7 +422,7 @@ shapes_at = |model|
 		.concat(grid_shapes)
 
 ## Where a point of a still lands, as plain numbers.
-landing_spot : StillShapes.Anchor, Still.FramePoint -> { x : F64, y : F64 }
+landing_spot : StillShapes.Anchor, Still.FramePoint -> Point.Point
 landing_spot = |anchor, point| {
 	on_screen = StillShapes.screen_point(anchor, point)
 	{ x: on_screen.x.to_f64(), y: on_screen.y.to_f64() }
@@ -442,7 +443,7 @@ start : StillsWidgetApp.Model
 start = StillsWidgetApp.canvas_app.init
 
 ## A left click at `spot` from `model`.
-left_click : StillsWidgetApp.Model, { x : F64, y : F64 } -> StillsWidgetApp.Model
+left_click : StillsWidgetApp.Model, Point.Point -> StillsWidgetApp.Model
 left_click = |model, spot| next_model(model, Click.click_at(spot))
 
 ## Whether `model` is unchanged from the start.

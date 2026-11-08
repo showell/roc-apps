@@ -10,6 +10,7 @@ import lib.CanvasApp
 import lib.Input
 import lib.Shapes
 import lib.RgbColor
+import lib.Point
 import Click
 import PlanView
 import WidgetPage
@@ -257,7 +258,7 @@ pressed_control = |input|
 	}
 
 ## The control at `spot`.
-control_at : { x : F64, y : F64 } -> Try(VcrButtons.Control, [NoButton])
+control_at : Point.Point -> Try(VcrButtons.Control, [NoButton])
 control_at = |spot|
 	match buttons.keep_if(|button| button_area(button).contains(spot)) {
 		[button, ..] => Ok(button.control)
@@ -340,8 +341,8 @@ hint_shapes = |transport, range|
 		range,
 		transport.at,
 	) == place_in(range, range.first) {
-		gaps_before_last = (buttons.len() - 1).to_f64()
-		last_button_right = WidgetPage.side_margin + gaps_before_last * button_spacing + button_width
+		last_button = buttons.last() ?? crash "VcrButtons: the buttons are never empty"
+		last_button_right = last_button.left + button_width
 		[
 			WidgetPage.label({
 				text: "Press play",
@@ -387,7 +388,7 @@ clock_after_press = |transport, control|
 	)
 
 ## What a click at `spot` on the sample clock does, after that frame.
-clock_after_click : VcrButtons.Transport(Clock), { x : F64, y : F64 } -> VcrButtons.Transport(Clock)
+clock_after_click : VcrButtons.Transport(Clock), Point.Point -> VcrButtons.Transport(Clock)
 clock_after_click = |transport, spot|
 	VcrButtons.next_transport(transport, { input: Click.click_at(spot), range: sample_clock_run })
 

@@ -1,4 +1,4 @@
-## The words a widget's readout gives a number: a distance to a tenth, a fraction
+## The words a widget's readout gives a number: any number to a tenth, a fraction
 ## as a percentage, a count with commas, a turn in degrees, and where an
 ## animation has got to.
 import game.Angle

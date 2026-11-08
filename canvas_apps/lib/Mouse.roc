@@ -6,6 +6,8 @@
 ## Position is in the game's own coordinates, so a game never learns how big the
 ## window is or how the page scaled the canvas.
 
+import Math
+
 Mouse :: [].{
 	Button := [Left, Right, Middle].{
 		is_eq : _
@@ -23,7 +25,7 @@ Mouse :: [].{
 	## does on roc-ray: `input.mouse.wheel`, positive away from the hand. It is
 	## not called `wheel_delta`, because roc-ray's `wheel_delta` means both
 	## axes, as a Vec2.
-	Snapshot := { held : U32, struck : U32, at : { x : F32, y : F32 }, wheel : F32 }.{
+	Snapshot := { held : U32, struck : U32, at : Math.Vec2, wheel : F32 }.{
 
 		## Whether a button is down now, however long it has been.
 		button_down : Snapshot, Mouse.Button -> Bool
@@ -34,17 +36,17 @@ Mouse :: [].{
 		button_pressed = |snapshot, button| snapshot.struck.bitwise_and(bit(button)) != 0
 
 		## Where the pointer is, in the game's coordinates.
-		position : Snapshot -> { x : F32, y : F32 }
+		position : Snapshot -> Math.Vec2
 		position = |snapshot| snapshot.at
 
 		## Say that a button is held, as `Mouse.none.with_button_down(Left)`.
 		with_button_down : Snapshot, Mouse.Button -> Snapshot
-		with_button_down = |s, button| Snapshot.{ held: s.held.bitwise_or(bit(button)), struck: s.struck, at: s.at, wheel: s.wheel }
+		with_button_down = |snapshot, button| Snapshot.{ held: snapshot.held.bitwise_or(bit(button)), struck: snapshot.struck, at: snapshot.at, wheel: snapshot.wheel }
 
 		## Say that a button was struck, which is also held.
 		with_button_pressed : Snapshot, Mouse.Button -> Snapshot
-		with_button_pressed = |s, button|
-			Snapshot.{ held: s.held.bitwise_or(bit(button)), struck: s.struck.bitwise_or(bit(button)), at: s.at, wheel: s.wheel }
+		with_button_pressed = |snapshot, button|
+			Snapshot.{ held: snapshot.held.bitwise_or(bit(button)), struck: snapshot.struck.bitwise_or(bit(button)), at: snapshot.at, wheel: snapshot.wheel }
 	}
 
 	## No button down, the pointer at the origin and the wheel still: the
@@ -55,6 +57,6 @@ Mouse :: [].{
 	## What a runner packs a tick's pointer into: the buttons held and struck
 	## as bits, where the pointer is, and how far the wheel turned. A struck
 	## button is held too.
-	of : { held : U32, struck : U32, at : { x : F32, y : F32 }, wheel : F32 } -> Mouse.Snapshot
+	of : { held : U32, struck : U32, at : Math.Vec2, wheel : F32 } -> Mouse.Snapshot
 	of = |{ held, struck, at, wheel }| Snapshot.{ held: held.bitwise_or(struck), struck, at, wheel }
 }

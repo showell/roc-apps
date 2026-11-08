@@ -58,7 +58,7 @@ Brush :: [].{
 	shade : Brush.Fill, Point.Point -> Brush.Rgba
 	shade = |fill, { x, y }|
 		match fill {
-			Flat(col) => col
+			Flat(color) => color
 			Span(p) => {
 				t = if p.right_x != p.left_x {
 					clamp01((x - p.left_x) / (p.right_x - p.left_x))
@@ -71,18 +71,12 @@ Brush :: [].{
 					mix({ from: p.middle_color, to: p.edge_color, fraction: (t - 0.5) * 2.0 })
 				}
 			}
-			Radial(p) => {
-				d = ((x - p.center.x) * (x - p.center.x) + (y - p.center.y) * (y - p.center.y)).sqrt()
+			Radial(p) =>
 				mix({
 					from: p.inner_color,
 					to: p.outer_color,
-					fraction: if p.outer_radius > p.inner_radius {
-						clamp01((d - p.inner_radius) / (p.outer_radius - p.inner_radius))
-					} else {
-						1.0
-					},
+					fraction: radial_fraction({ x, y }, { center: p.center, inner_radius: p.inner_radius, outer_radius: p.outer_radius }),
 				})
-			}
 			Linear(p) => {
 				dx = p.end_point.x - p.start_point.x
 				dy = p.end_point.y - p.start_point.y
@@ -105,12 +99,7 @@ Brush :: [].{
 				two_stop(p.stops, clamp01((ux * ux + uy * uy).sqrt()))
 			}
 			Glow(p) => {
-				d = ((x - p.center.x) * (x - p.center.x) + (y - p.center.y) * (y - p.center.y)).sqrt()
-				t = if p.outer_radius > p.inner_radius {
-					clamp01((d - p.inner_radius) / (p.outer_radius - p.inner_radius))
-				} else {
-					1.0
-				}
+				t = radial_fraction({ x, y }, { center: p.center, inner_radius: p.inner_radius, outer_radius: p.outer_radius })
 				m = p.middle_offset
 				if t <= m {
 					mix({ from: p.inner_color, to: p.middle_color, fraction: t / m })
@@ -195,6 +184,18 @@ clamp01 = |t| if t < 0.0 {
 	1.0
 } else {
 	t
+}
+
+## How far a point lies from the inner radius to the outer one, clamped to 0..1,
+## or 1 when the radii meet.
+radial_fraction : Point.Point, { center : Point.Point, inner_radius : F64, outer_radius : F64 } -> F64
+radial_fraction = |{ x, y }, ring| {
+	distance = ((x - ring.center.x) * (x - ring.center.x) + (y - ring.center.y) * (y - ring.center.y)).sqrt()
+	if ring.outer_radius > ring.inner_radius {
+		clamp01((distance - ring.inner_radius) / (ring.outer_radius - ring.inner_radius))
+	} else {
+		1.0
+	}
 }
 
 ## The determinant of the matrix whose columns are an ellipse's axes. Near

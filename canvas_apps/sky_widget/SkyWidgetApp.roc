@@ -16,6 +16,7 @@ import lib.CanvasApp
 import lib.Input
 import lib.Shapes
 import lib.RgbColor
+import lib.Point
 import widget.ReadoutText
 import widget.WidgetPage
 import widget.VcrButtons
@@ -226,7 +227,7 @@ warmth_level : Clock -> F64
 warmth_level = |clock| Sky.horizon_warmth_at(clock).to_f64()
 
 ## Where the chart shows `level_at` at `clock`.
-chart_point : Clock, (Clock -> F64) -> { x : F64, y : F64 }
+chart_point : Clock, (Clock -> F64) -> Point.Point
 chart_point = |clock, level_at| {
 	steps_in = clock.steps_since(Clock.start).to_f64()
 	steps_in_sunset = sunset.last.steps_since(Clock.start).to_f64()
@@ -271,7 +272,7 @@ cursor_shapes = |job, clock| {
 	job_curves(job).map(|curve| curve_dot(chart_point(clock, curve.level_at), curve.color)).prepend(cursor)
 }
 
-curve_dot : { x : F64, y : F64 }, RgbColor -> Shapes.Shape
+curve_dot : Point.Point, RgbColor -> Shapes.Shape
 curve_dot = |{ x, y }, color|
 	Disc({
 		x,

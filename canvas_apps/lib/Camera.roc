@@ -13,6 +13,7 @@
 # to the F64 a frame is made of.
 import Math
 import Shapes
+import Trig
 
 Camera :: [].{
 
@@ -34,7 +35,7 @@ Camera :: [].{
 		## and the canvas both take it.
 		world_to_screen : Camera2D, Math.Vec2 -> Math.Vec2
 		world_to_screen = |camera, world| {
-			radians = camera.rotation * degree
+			radians = camera.rotation * Trig.degree.to_f32_wrap()
 			cosine = radians.cos()
 			sine = radians.sin()
 			dx = world.x - camera.target.x
@@ -53,7 +54,7 @@ Camera :: [].{
 		## zoom of zero through.
 		screen_to_world : Camera2D, Math.Vec2 -> Math.Vec2
 		screen_to_world = |camera, screen| {
-			radians = 0 - camera.rotation * degree
+			radians = 0 - camera.rotation * Trig.degree.to_f32_wrap()
 			cosine = radians.cos()
 			sine = radians.sin()
 			dx = (screen.x - camera.offset.x) / camera.zoom
@@ -105,13 +106,9 @@ Camera :: [].{
 	## The player-follow camera: `target` in the middle of a screen of that
 	## size, at a zoom.
 	follow : Math.Vec2, { screen : Math.Vec2, zoom : F32 } -> Camera.Camera2D
-	follow = |target, cfg|
-		new({ target, offset: { x: cfg.screen.x / 2, y: cfg.screen.y / 2 }, rotation: 0, zoom: cfg.zoom })
+	follow = |target, { screen, zoom }|
+		new({ target, offset: { x: screen.x / 2, y: screen.y / 2 }, rotation: 0, zoom })
 }
-
-# Radians per degree.
-degree : F32
-degree = 0.017453292519943295
 
 # A number that is not finite has no place on a camera, and comes only from a
 # bug in the game.

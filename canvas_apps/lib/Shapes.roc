@@ -147,16 +147,11 @@ Shapes :: [].{
 				# A mirror sends a rectangle's left edge to its right, and a width is never
 				# negative.
 				Rect(r) => {
-					a = axis + (r.x - axis) * k
-					b = axis + (r.x + r.width - axis) * k
+					span = pulled_span({ x: r.x, width: r.width }, { axis, cosine: k })
 					Rect({
-						x: a.min(b),
+						x: span.x,
 						y: r.y,
-						width: if b < a {
-							a - b
-						} else {
-							b - a
-						},
+						width: span.width,
 						height: r.height,
 						fill: squashable_fill(r.fill),
 					})
@@ -165,17 +160,8 @@ Shapes :: [].{
 				View(l) => View(l)
 				# A mirror sends a picture's left edge to its right, as it does a rectangle's.
 				Image(i) => {
-					a = axis + (i.x - axis) * k
-					b = axis + (i.x + i.width - axis) * k
-					Image({
-						..i,
-						x: a.min(b),
-						width: if b < a {
-							a - b
-						} else {
-							b - a
-						},
-					})
+					span = pulled_span({ x: i.x, width: i.width }, { axis, cosine: k })
+					Image({ ..i, x: span.x, width: span.width })
 				}
 				# Type keeps its letterforms, so only its place moves.
 				Text(t) => Text({ ..t, x: axis + (t.x - axis) * k })
@@ -246,6 +232,16 @@ pulled = |xs, { axis, cosine: k }| {
 		$i = $i + 2
 	}
 	$out
+}
+
+## A span across x pulled toward `axis` by `cosine`, each edge on its own. A
+## mirror sends the left edge to the right, so the span starts at whichever
+## edge lands leftmost.
+pulled_span : { x : F64, width : F64 }, { axis : F64, cosine : F64 } -> { x : F64, width : F64 }
+pulled_span = |{ x, width }, { axis, cosine: k }| {
+	start_x = axis + (x - axis) * k
+	end_x = axis + (x + width - axis) * k
+	{ x: start_x.min(end_x), width: (end_x - start_x).abs() }
 }
 
 at : List(F64), U64 -> F64
@@ -327,7 +323,7 @@ sector_corners : Shapes.Shape -> List(F64)
 sector_corners = |shape|
 	match shape {
 		Poly({ coordinates, fill: _ }) => coordinates
-		_ => []
+		Disc(_) | Rect(_) | Blend(_) | View(_) | Image(_) | Text(_) => crash "Shapes: a ring's sectors are all polygons"
 	}
 
 # Each sector starts where the one before it ends, outer corner and inner
@@ -335,10 +331,10 @@ sector_corners = |shape|
 # the center than its outer ones, by the line's width.
 expect {
 	sectors = Shapes.ring_shapes({ center: { x: 3.0, y: 4.0 }, radius: 10.0, line_width: 2.0, sides: 7 }, ink).map(sector_corners)
-	following = sectors.drop_first(1).append(sectors.first() ?? [])
+	first = sectors.first() ?? crash "Shapes: a ring of seven sides has sectors"
+	following = sectors.drop_first(1).append(first)
 	shared = sectors.map2(following, |sector, next| sector.sublist({ start: 2, len: 2 }) == next.sublist({ start: 0, len: 2 }) and sector.sublist({ start: 4, len: 2 }) == next.sublist({ start: 6, len: 2 }))
-	first = sectors.first() ?? []
-	outer_x = first.get(0) ?? 0.0
-	inner_x = first.get(6) ?? 0.0
+	outer_x = first.get(0) ?? crash "Shapes: a sector has an outer start corner"
+	inner_x = first.get(6) ?? crash "Shapes: a sector has an inner start corner"
 	sectors.len() == 7 and first.len() == 8 and shared.all(|same| same) and outer_x - inner_x == 2.0
 }

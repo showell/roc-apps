@@ -17,6 +17,7 @@ import lib.CanvasApp
 import lib.Input
 import lib.Shapes
 import lib.RgbColor
+import lib.Point
 import widget.Click
 import widget.PlanView
 import widget.ReadoutText
@@ -170,7 +171,7 @@ across_stretch : F64
 across_stretch = 2.0
 
 ## The right of the road is down the canvas, for a rider heading across it.
-canvas_point : ArcPoint -> { x : F64, y : F64 }
+canvas_point : ArcPoint -> Point.Point
 canvas_point = |{ forward, across }|
 	road_plan.canvas_point({ metres_right: forward, metres_down: across * across_stretch })
 
@@ -391,7 +392,7 @@ mark_x = |number| WidgetPage.side_margin + 8.0 + (number.to_f64() - 1.0) * mark_
 
 ## The stop whose mark is at `spot`. Each mark's reach ends halfway to the next
 ## one, so no click is on two.
-mark_under : { x : F64, y : F64 } -> Try(Stop, [NoMark])
+mark_under : Point.Point -> Try(Stop, [NoMark])
 mark_under = |{ x, y }| {
 	number = ((x - mark_x(1)) / mark_spacing + 1.5).to_i64_wrap()
 	if (y - marks_y).abs() > marks_reach or number < 1 or number > last_stop.to_i64_wrap() {
@@ -496,7 +497,7 @@ expect previous_stop(Shown(1)) == Start
 expect previous_stop(Start) == Start
 
 ## The stop after a click at `spot` from the third try.
-clicked_from_three : { x : F64, y : F64 } -> Stop
+clicked_from_three : Point.Point -> Stop
 clicked_from_three = |spot| stepped(Shown(3), Click.click_at(spot))
 
 # A click on a mark goes straight to that stop, either way along the row.

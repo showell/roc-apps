@@ -29,27 +29,27 @@ WasmApp :: [].{
 	}
 	program = |game| {
 		# The step a tick covers, which is the rate the game asked to be run at.
-		dt = 1.0 / game.fps.to_f32()
+		seconds_a_step = 1.0 / game.fps.to_f32()
 		model_at_next_step = game.model_at_next_step
-		frame_of = game.frame_shapes
+		frame_shapes = game.frame_shapes
 		sounds = game.sounds
 		{
 			init: |{}| Box.box(game.init),
-			model_at_next_step: |b, held, struck, buttons, clicks, x, y, wheel|
-				Box.box(model_at_next_step(Box.unbox(b), Input.of({ held, struck, mouse: Mouse.of({ held: buttons, struck: clicks, at: { x, y }, wheel }) }), dt)),
-			frame_shapes: |b| frame_of(Box.unbox(b)),
+			model_at_next_step: |boxed_model, held, struck, buttons, clicks, x, y, wheel|
+				Box.box(model_at_next_step(Box.unbox(boxed_model), Input.of({ held, struck, mouse: Mouse.of({ held: buttons, struck: clicks, at: { x, y }, wheel }) }), seconds_a_step)),
+			frame_shapes: |boxed_model| frame_shapes(Box.unbox(boxed_model)),
 			# The host hands the frame back and Roc drops it. Releasing a
 			# List(Shape) means decrementing each element's inner lists, which
 			# needs the tag union's layout. Roc has that layout and the host
 			# doesn't, so the host returns the frame rather than freeing it.
 			release: |_frame| {},
-			sounds: |b| sounds(Box.unbox(b)),
-			tone_count: |_b| game.tones.len().to_u32_try() ?? crash "WasmApp.program: more tones than a U32 can count",
-			tone_freq: |_b, i| tone_at(game.tones, i).freq,
-			tone_ms: |_b, i| tone_at(game.tones, i).ms,
-			width: |_b| game.size.width.to_u32_try() ?? crash "WasmApp.program: a width outside a U32's range",
-			height: |_b| game.size.height.to_u32_try() ?? crash "WasmApp.program: a height outside a U32's range",
-			fps: |_b| game.fps,
+			sounds: |boxed_model| sounds(Box.unbox(boxed_model)),
+			tone_count: |_boxed_model| game.tones.len().to_u32_try() ?? crash "WasmApp.program: more tones than a U32 can count",
+			tone_freq: |_boxed_model, i| tone_at(game.tones, i).freq,
+			tone_ms: |_boxed_model, i| tone_at(game.tones, i).ms,
+			width: |_boxed_model| game.size.width.to_u32_try() ?? crash "WasmApp.program: a width outside a U32's range",
+			height: |_boxed_model| game.size.height.to_u32_try() ?? crash "WasmApp.program: a height outside a U32's range",
+			fps: |_boxed_model| game.fps,
 		}
 	}
 }
