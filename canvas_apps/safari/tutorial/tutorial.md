@@ -93,7 +93,7 @@ digraph system {
   app [label="the app\nweb.roc, SafariApp, Tour", style=dashed];
   subgraph cluster_ride {
     label="the ride";
-    Rider; Truck; World;
+    Rider; TruckJourney; World;
     critters [label="the critters\nCat, BirdFlight, Animation", style=dashed];
     scenery [label="the scenery\nTrees, Cows, Pigs", style=dashed];
   }
@@ -105,7 +105,7 @@ digraph system {
   }
   app -> RideInstant;
   RideInstant -> Rider;
-  RideInstant -> Truck;
+  RideInstant -> TruckJourney;
   Rider -> World;
   World -> critters;
   World -> scenery;
@@ -121,7 +121,7 @@ New in this chapter:
 - Roc: imports that can't form a cycle
 - Modules: `SafariApp`, `Scene`, `SceneShapes`, `CrossingSighting`
 
-There are two halves. The ride is `Rider`, `Truck` and `World`. `World` puts the route together from its scenery and critters. Nothing in the ride knows anything about drawing.
+There are two halves. The ride is `Rider`, `TruckJourney` and `World`. `World` puts the route together from its scenery and critters. Nothing in the ride knows anything about drawing.
 
 The view is everything that turns the ride into a picture. The sightings work out what's visible, and the drawing code makes its shapes. The dotted arrow shows the view reading the ride. No arrow goes the other way.
 
@@ -165,7 +165,7 @@ At step 1,570 of the ride, a cat is frozen in the lane. This is what `CrossingSi
 
 That's a sighting: where the rider sees something, and how it should look.
 
-Most things in the view come in pairs, and the names say which half is which: `CrossingSighting` and `PosedCat`, `TreeSighting` and `TreeShapes`, `TowerSighting` and `Tower`, `TruckSighting` and `LitTruck`.
+Most things in the view come in pairs, and the names say which half is which: `CrossingSighting` and `Cat`, `TreeSighting` and `TreeShapes`, `TowerSighting` and `Tower`, `TruckSighting` and `Truck`.
 
 A sighting answers one question each frame: which of these can the rider see right now, and how should each one look? `CrossingSighting` goes through the stretches of road ahead, which Safari Ride calls segments, asks `Cat` where it is, works out where that lands in the rider's view, and drops any cat behind the camera or too small to matter. What it hands back is a plain record with no drawing in it:
 
@@ -1569,7 +1569,7 @@ digraph stepped {
   node [shape=box, fontname="Helvetica"];
   RideInstant [style=bold];
   RideInstant -> RiderMind;
-  RideInstant -> Truck;
+  RideInstant -> TruckJourney;
   RideInstant -> Rider;
   RiderMind -> Bike;
   RiderMind -> Throttle;
@@ -1577,7 +1577,7 @@ digraph stepped {
   RiderMind -> Gaze;
   RiderMind -> Rider;
   RiderMind -> VehicleLimits;
-  Truck -> VehicleLimits;
+  TruckJourney -> VehicleLimits;
   Throttle -> Gaze;
   Throttle -> VehicleLimits;
   LeanSearch -> Bike;
@@ -1588,7 +1588,7 @@ Here's the step again, this time whole. Its body is a block: names, then a recor
 
 {{code RideInstant.next}}
 
-`Clock.next`, `Rider.next` and `Truck.truck_at_next_step` all have the same shape: a value goes in, and the next value comes out. Call that *the step function*. There's no mutable rider being nudged. There's a rider, and another rider one step on.
+`Clock.next`, `Rider.next` and `TruckJourney.truck_at_next_step` all have the same shape: a value goes in, and the next value comes out. Call that *the step function*. There's no mutable rider being nudged. There's a rider, and another rider one step on.
 
 Stepping has a cost, which shows up when we compare it with the sun:
 
@@ -1747,7 +1747,7 @@ Each limit takes the lower of two opaque `Acceleration`s with `min`. `NoAccelera
 
 {{code Speed.acceleration_to}}
 
-The first limit, `bend_brake`, makes the `a1` that the chain above starts from. It calls this for the distance left to the point where the rider commits to the turn. Three modules use that one line of physics: this one, `Gaze` to slow for a pig, and `Truck`.
+The first limit, `bend_brake`, makes the `a1` that the chain above starts from. It calls this for the distance left to the point where the rider commits to the turn. Three modules use that one line of physics: this one, `Gaze` to slow for a pig, and `TruckJourney`.
 
 {{code Throttle.bend_limit}}
 
@@ -2827,7 +2827,7 @@ It's called like any other value, and the steps that follow are named, so three 
 
 The gate makes `expect` honest in one further way. The gate takes its count from the source: every line that starts `expect`, in a module that one of its `roc test` runs compiles, has to print `PASS` exactly once. An `expect` that nothing compiles fails, and so does one that's indented out of reach. One more consequence: an `expect` can only name what its module imports, so a check sits where its test data can be seen, and a module doesn't take on an import for a test's sake. `Coast`'s projections are checked in `Throttle`, which can see a `Speed`, and `LeanSearch`'s search in `RiderMind`, which can see a `Rider`.
 
-Even a truck can be checked this way, though it can't be asked about step 4,000 cold. A `TruckState` is a record, so a test writes one down and calls `Truck.truck_state_at_next_step` once.
+Even a truck can be checked this way, though it can't be asked about step 4,000 cold. A `TruckJourney` is a record, so a test writes one down and calls `TruckJourney.truck_at_next_step` once.
 
 ### Crashes that help
 
@@ -2989,7 +2989,7 @@ The tour named nine patterns in passing. They're patterns in the loose sense: sh
 | A sighting decides, drawing paints | A pure function answers with plain data, and something else draws it | `CrossingSighting`, `TowerSighting` |
 | Places and distances | One opaque type for where, a second for how far apart, and only the sums that make sense | `Clock` and `Steps`, `Bearing` and `Turn`, `Along` and `Distance`, `Speed` and `Acceleration` |
 | Rule and timeline | One function says how far along, and one piece of data says what that looks like | `stage_over_gap` and `flight_timeline` |
-| The step function | A value goes in, and the next value comes out | `Rider.rider_state_at_next_step`, `Truck.truck_state_at_next_step`, `Tour.step_forward` |
+| The step function | A value goes in, and the next value comes out | `Rider.next`, `TruckJourney.truck_at_next_step`, `Tour.step_forward` |
 | A narrow view of a wide record | An open record names the fields it uses and carries the rest through | `Bike.Motion(others)` |
 | The chain of limits | One value passes through independent rules, each of which can only lower it | `Throttle.acceleration` |
 | One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `RaisedPoint`, `Screen.Point` |
