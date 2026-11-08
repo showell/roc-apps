@@ -1727,8 +1727,8 @@ So the job is a short list:
 | Job | Function | Its type |
 |---|---|---|
 {{types row Gaze.desired_gaze Choose where to look}}
-{{types row Gaze.next_gaze_yaw Turn the head}}
-{{types row Gaze.next_look_depth Keep the depth of the look}}
+{{types row RiderEyes.next_gaze_yaw Turn the head}}
+{{types row RiderEyes.next_look_depth Keep the depth of the look}}
 {{types row Gawking.is_gawking Know whether the rider is gawking}}
 {{types row Gawking.gawk_brake Work out the brake}}
 
@@ -1750,7 +1750,7 @@ The chain from `desired_gaze` is the look, and the chain from `is_gawking` is th
 
 `Rider.rider_state_at_next_step` moves the eyes last, after the bike has moved:
 
-{{code Gaze.eyes_at_next_step}}
+{{code RiderEyes.eyes_at_next_step}}
 
 Choosing where to look comes first:
 
@@ -1764,7 +1764,7 @@ That's the direction to the pig, less the way the bike points. The pig stands be
 
 ### Turning the head
 
-{{code Gaze.next_gaze_yaw}}
+{{code RiderEyes.next_gaze_yaw}}
 
 Toward a pig, the gaze turns by at most 4 degrees a step, and `clamped_within` holds the change to that limit on either side. On the way back it gives up a twentieth of its angle each step, and never more than 0.2 degrees.
 
@@ -1778,7 +1778,7 @@ The second term is the rider's head going with the lean. So when the rider looks
 
 ### The depth of a look
 
-{{code Gaze.next_look_depth}}
+{{code RiderEyes.next_look_depth}}
 
 While the gaze is off straight ahead, the depth rises with how far it has turned, and it doesn't drop. Once the gaze is home, the depth fades by 0.0012 a step. That's why the table in the rider chapter has a `look_depth` of 0.67 at step 1,570, with no pig in sight. The gaze came home 262 steps before.
 

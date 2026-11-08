@@ -159,10 +159,10 @@ crossing_frames = {
 ## of the road, freezes there, and leaps clear to the far verge.
 crossing_timeline : CatCrossing -> Animation.Timeline(CrossingFrame, PosedCat.CatPose)
 crossing_timeline = |cat| {
-	on_road = |across| { along: cat.along, across, lift: Distance.zero }
-	start = on_road(cat.start_across)
+	on_road = |across| { along: cat.along(), across, lift: Distance.zero }
+	start = on_road(cat.start_across())
 	middle = on_road(CatCrossing.mid_across)
-	end = on_road(cat.end_across)
+	end = on_road(cat.end_across())
 	location_of = |way|
 		match way {
 			WalkingOut(fraction) =>

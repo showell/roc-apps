@@ -444,8 +444,8 @@ expect
 			behind = CatCrossing.cat_behind_tree
 			seg(index).trees.any(
 				|{ road_point, .. }|
-					road_point.along.plus(beyond) == crossing.along
-						and road_point.across.plus(behind) == crossing.start_across,
+					road_point.along.plus(beyond) == crossing.along()
+						and road_point.across.plus(behind) == crossing.start_across(),
 			)
 		},
 	)
