@@ -46,10 +46,10 @@ third_width : F64
 third_width = WidgetPage.canvas_width / 3.0
 
 ## The picture ends `WidgetPage.ground_depth` below the horizon, so a truck's nearest
-## tires stand above the panel only once they are about 34 metres ahead of the
-## camera, measured along the way it faces. A truck toward the canvas's edge is
-## seen at a slant, so it must stand further off still. This is far enough for
-## every view, with a little to spare.
+## tires stand above the panel only once they are far enough ahead of the camera,
+## and a truck toward the canvas's edge, seen at a slant, must stand further off
+## still. This is far enough for every view, and 32 metres is too near for the
+## view from behind, as the expects below hold.
 view_distance : Distance
 view_distance = Distance.metres(45.0)
 

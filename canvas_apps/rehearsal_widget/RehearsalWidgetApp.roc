@@ -6,12 +6,14 @@
 ## physics run on a rider who doesn't exist. After the twelfth, the picture
 ## shows the lean the real rider took.
 import game.Across
+import game.Along
 import game.Angle
 import game.Clock
 import game.Coast
 import game.Distance
 import game.Motorcycle
 import game.LeanSearch
+import game.Route
 import game.Geom
 import game.Tour
 import lib.Brush
@@ -565,6 +567,11 @@ expect
 				(_, Err(ListWasEmpty)) => False
 			},
 	)
+
+# The step shown is just after the first bend: the rider is on the second
+# segment, under 10 metres along it.
+expect motorcycle.route_place.segment_index == Route.SegmentIndex.number(1)
+expect motorcycle.route_place.road_point.along < Along.metres(10.0)
 
 # An arc is drawn by fewer points than it has, and it still ends at its end.
 expect

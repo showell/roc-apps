@@ -169,6 +169,12 @@ is_plain_to_see = |stand|
 	}
 
 # Each tree shows one of the three things `crown_of` can say.
+# Gold is the tallest kind.
+expect
+	[Conifer.Green, Conifer.SmallGreen, Conifer.Red].all(
+		|kind| kind.scenery_height() < conifer.scenery_height(),
+	)
+
 expect TreeShapes.crown_of(far_stand.forward) == Triangles
 expect
 	match TreeShapes.crown_of(middle_stand.forward) {
