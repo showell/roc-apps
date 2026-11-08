@@ -1579,19 +1579,17 @@ The modules that do the stepping
 digraph stepped {
   node [shape=box, fontname="Helvetica"];
   RideInstant [style=bold];
-  RideInstant -> RiderMind;
-  RideInstant -> TruckJourney;
-  RideInstant -> Rider;
-  RiderMind -> Bike;
-  RiderMind -> Throttle;
-  RiderMind -> LeanSearch;
-  RiderMind -> Gaze;
-  RiderMind -> Rider;
-  RiderMind -> VehicleLimits;
-  TruckJourney -> VehicleLimits;
-  Throttle -> Gaze;
-  Throttle -> VehicleLimits;
-  LeanSearch -> Bike;
+  RideInstant -> Rider [label="  steps the rider"];
+  RideInstant -> TruckJourney [label="  steps the truck"];
+  Rider -> RiderMind [label="  asks for its controls"];
+  Rider -> Motorcycle [label="  moves the bike"];
+  Rider -> RiderEyes [label="  moves the eyes"];
+  RiderMind -> Throttle [label="  asks for an acceleration"];
+  RiderMind -> LeanSearch [label="  asks for a lean"];
+  RiderMind -> Gaze [label="  asks where to look"];
+  Throttle -> VehicleLimits [label="  keeps to the limits"];
+  TruckJourney -> VehicleLimits [label="  keeps to the limits"];
+  LeanSearch -> Motorcycle [label="  tries leans on it"];
 }
 ```
 
@@ -2772,7 +2770,7 @@ The second of these two proofs is here because of a real bug:
 
 The rest of the testing is ordinary `expect`s. An `expect` sits at the top level of a module, under the code it checks, and `roc test` runs it. There are over a thousand, and they're Safari Ride's only other tests. The tour has already shown twenty-six of them, in the whole of `Clock` and `Pond`. A pure function needs nothing else: literal arguments, literal answer. Each `expect` asserts one thing, and they cover both sides. `Clock`'s check that a clock equals itself one step on is false, so it's written with `!`.
 
-A test's data can sit beside it as a plain definition. `Bike` doesn't import `Rider`, and `Motion` is open, so its fixture is a record that has the six fields and makes up the rest. `segment` and `attention` are bare numbers here, because `Bike` carries them through and never looks. A narrow view of a wide record pays off twice: the test needs nothing the module doesn't.
+A test's data can sit beside it as a plain definition. Here's a motorcycle to step, with no rider around it, because `Motorcycle` doesn't import `Rider`. The test needs nothing the module doesn't:
 
 {{code Motorcycle.riding}}
 
@@ -2909,7 +2907,7 @@ That's the last of the parts. Next, we'll put them back together by returning to
 
 ## Zooming back out
 
-Safari Ride is a loop. It designs a world once, and each time the clock ticks, it moves what moves, finds what's near enough to see, and draws it. Every box on that loop has now been opened.
+Safari Ride is a loop. It designs a world once, and each time the clock steps, it moves what moves, finds what's near enough to see, and draws it. Every box on that loop has now been opened.
 
 ```widget ride
 The ride again, with nothing in it left unexplained.
@@ -2920,7 +2918,7 @@ The loop, and the chapters that opened it
 digraph opened {
   node [shape=box, fontname="Helvetica"];
   world [label="design the world (once)\nThe world, The road"];
-  tick [label="the clock ticks\nOne whole module"];
+  tick [label="the clock steps\nOne whole module"];
   move [label="move the rider and the truck\nStepping through the ride to The truck,\nRehearsal"];
   look [label="look around\nThe modules, The cat, The bird"];
   draw [label="draw it against the backdrop\nThe sky, The platform"];
@@ -2932,25 +2930,24 @@ digraph opened {
 }
 ```
 
-*[This chapter ties the tour together once the stepped things, the proof and the platform are written. It returns to the flipbook and the first diagram: the clock steps, and everything composes from three stored fields.]*
+*[This chapter is still to be written. It returns to the flipbook and the first diagram: the clock steps, and everything composes from the four stored fields.]*
 
 ## Appendix: the patterns
 
-The tour named nine patterns in passing. They're patterns in the loose sense: shapes that kept turning up, and that Roc makes easy to write and hard to break.
+Eight patterns kept turning up in the tour. They're patterns in the loose sense: shapes that kept turning up, and that Roc makes easy to write and hard to break.
 
 | Name | What it is | Where to see it |
 |---|---|---|
 | Worked out, not stored | Keep the few things that must persist, and derive the rest each frame | `RideInstant`, `Cat`, `Sky` |
-| A sighting decides, drawing paints | A pure function answers with plain data, and something else draws it | `CrossingSighting`, `TowerSighting` |
+| A sighting decides, drawing paints | A pure function answers with plain data, and something else draws it | `EncounterSighting`, `TowerSighting` |
 | Places and distances | One opaque type for where, a second for how far apart, and only the sums that make sense | `Clock` and `Steps`, `Bearing` and `Turn`, `Along` and `Distance`, `Speed` and `Acceleration` |
-| Rule and timeline | One function says how far along, and one piece of data says what that looks like | `stage_over_gap` and `flight_timeline` |
+| Rule and timeline | One function says how far along, and one piece of data says what that looks like | `BirdFlight.flight_stage` and `BirdFlight.flight_timeline` |
 | The step function | A value goes in, and the next value comes out | `Rider.next`, `TruckJourney.truck_at_next_step`, `Tour.step_forward` |
-| A narrow view of a wide record | An open record names the fields it uses and carries the rest through | `Bike.Motion(others)` |
-| The chain of limits | One value passes through independent rules, each of which can only lower it | `Throttle.acceleration` |
+| The chain of limits | One value passes through independent rules, each of which can only lower it | `Throttle.next_acceleration` |
 | One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `RaisedPoint`, `Screen.Point` |
-| Rehearsal | Run the real rules on a pretend copy, read the result, and throw it away | `Coast`, `LeanSearch`, `Rider.cross_if_on_road` |
+| Rehearsal | Run the real rules on a pretend copy, read the result, and throw it away | `Coast`, `LeanSearch`, `Motorcycle.cross_bend_if_on_road` |
 
-Code that reads like configuration deserves a line of its own, because the tour kept stopping to admire it: `Pond`, `World.plans`, the timelines, and `SafariApp.canvas_app`. None of them is a config format. They're ordinary Roc values, so the compiler checks them, and a tag that's misspelled is a compile-time error.
+Code that reads like configuration deserves a line of its own, because the tour kept stopping to admire it: `Pond`, `World.bending_plans`, the timelines, and `SafariApp.canvas_app`. None of them is a config format. They're ordinary Roc values, so the compiler checks them, and a tag that's misspelled is a compile-time error.
 
 ## Appendix: what catches you out
 
@@ -2962,25 +2959,21 @@ This page lists what catches a reader of Roc out in Safari Ride, sorted by what 
 |---|---|---|
 | A method call with no import | Static dispatch finds `next` from the type of the value | One whole module |
 | A helper with no keyword to say it's private | Anything outside the module's block is private | The setting sun |
-| A `match` that looks like a leaf and isn't | `<=` on an opaque type is a call to its `is_lte`, so an operator can run code of the program's own | The cat |
-| `var` and `for` under a `->` | A local that nothing outside can see, with `$` marking what changes. The function is still pure | The cat |
+| `var` and `for` under a `->` | A local that nothing outside can see, with `$` marking what changes. The function is still pure | Roadside trees, Rehearsal |
 | `?? crash` on a lookup | It isn't error handling. It states a belief about the program, and every gate run tests it | The world, Proving it |
 
 ### Getting it to compile
 
 | What you see | What's going on | Chapter |
 |---|---|---|
-| An open record that has to be named | `..others` needs a name when it appears twice, because the name promises that the same fields come out as went in | The bike |
-| An `expect` that can't see a type | It can only name what its module imports, so `Coast`'s projections are checked in `Throttle` | Proving it |
+| An `expect` that can't see a type | It can only name what its module imports, so `Coast`'s projections are checked in the gate's `RiderExpects` | Proving it |
 
 ### Running it
 
 | What you see | What's going on | Chapter |
 |---|---|---|
-| A crash with a sentence about a sum | `Fraction.of` takes a ratio that can only be in range. A ratio that can rightly fall outside wants `Fraction.clamp` | The sky, Proving it |
-| A pose cut on the wrong side of its beat | The leap's beats sum to a float just under the beat they stand for, so a cut says `Through` or `Before` | The cat |
+| A crash with a sentence about a sum | `Fraction.of` takes a ratio that can only be in range. A ratio that can rightly fall outside the range has to be held to it first | The sky, Proving it |
 | The first frame of an animation shown too soon | `Waiting` and `Past` aren't progress of 0 and 1, because a critter can rest where no part of its animation reaches | The cat |
-| A bird hanging in the air | `stage_over_gap` doesn't know a bird can't hover. A stopped rider would leave one there, and on this route the rider doesn't stop inside a bird's 45 metres | The bird |
 | Beacons that stop, or run backward | The clock counts steps, not seconds, so pausing freezes them and stepping back reverses them | The beacons |
 | A frame hash that moves after a sum was reordered | Float addition isn't associative, so a sum's order is part of its meaning | Proving it |
 | A green gate over a wrong brake light | The gate is blind to whatever no listed frame shows | Proving it |
@@ -3005,8 +2998,8 @@ This book uses these words in one sense only.
 | Kind | Which sort of object something is, like `Conifer`. |
 | Look | What the eyes do for a pig: they follow it until it's too far round. |
 | Motion critter | A hand-drawn critter that moves, like the cat and the bird. |
-| Object | A thing in the picture with a place of its own: a tree, a tower or a critter. |
-| Painter | What puts shapes on the canvas. It's never Roc. |
+| Object | A thing in the picture with a place of its own: a tree, a tower, a critter or the truck. |
+| Painter | What puts shapes on the canvas. The page's painter is the browser's canvas, and the proof's is written in Roc. |
 | Picture | How one object looks in one frame. A frame holds a series of pictures, so the app never draws "a new picture" at each step. |
 | Placed | Put on the road, measured `along` and `across` a segment, and `lift` off the ground. |
 | Polygon | A shape with three or more corners, and nearly every shape in a frame is one. |
