@@ -527,10 +527,16 @@ end
 -- the stale names are counted and printed, loudly, but no count is held: a held
 -- count only tracked how broken the parked prose was, and churned at every merge.
 function book_names()
+  -- A crash prints no counts, so the run fails without them: the counts go
+  -- unheld, but the lint must still run to its verdict.
   local r = run({"shale", "--root", ".", BOOK_NAMES, "held=0", "held_diagram=0"}, {timeout_ms = 60000, tail = 100})
-  local summary = "no summary line"
+  local summary = nil
   for line in lines(r.out) do
-    if starts_with(line, "book_names:") then summary = line end
+    if re_match(line, "^book_names: stale_name [0-9]+, ") then summary = line end
+  end
+  if r.ended ~= "exit" or summary == nil then
+    print(trim(r.out))
+    fail("safari gates: book_names ended " .. r.ended .. " " .. get(r, "code", -1) .. " with no `book_names: stale_name N, ...` line")
   end
   print("book_names: SKIPPED while the book is parked: " .. summary)
   return nil
@@ -563,7 +569,7 @@ function all()
   end
   print("safari gates: " .. join(times, ", "))
   if #bad > 0 then fail("safari gates: " .. #bad .. " failed: " .. join(bad, ", ")) end
-  print("safari gates: expects held, widgets checked, tutorial built, book names held, proof tools ok, page drawn")
+  print("safari gates: expects held, widgets checked, tutorial built, book names SKIPPED (the book is parked), proof tools ok, page drawn")
   if not COLD then print("NOT RUN, left to publish: check.shale, cold caches, release wasm, the widgets' page builds") end
 end
 
