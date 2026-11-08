@@ -1599,7 +1599,7 @@ Here's the step again, this time whole. Its body is a block: names, then a recor
 
 {{code RideInstant.next}}
 
-`Clock.next`, `Rider.next` and `TruckJourney.truck_at_next_step` all have the same shape: a value goes in, and the next value comes out. Call that *the step function*. There's no mutable rider being nudged. There's a rider, and another rider one step on.
+`Clock.next`, `Rider.rider_at_next_step` and `TruckJourney.truck_at_next_step` all have the same shape: a value goes in, and the next value comes out. Call that *the step function*. There's no mutable rider being nudged. There's a rider, and another rider one step on.
 
 Stepping has a cost, which shows up when we compare it with the sun:
 
@@ -1633,7 +1633,7 @@ Nothing in the rider is a bare float. Three of the fields under it are angles, o
 
 The step does its work in order, and the code reads that way: decide, move, cross a bend or stop, then choose where to look:
 
-{{code Rider.next}}
+{{code Rider.rider_at_next_step}}
 
 Static dispatch finds `segment_on` on the `RoutePlace`. The `match` on `segment.segment_ending()` has two tags, and `..` in `Bends({ bend, .. })` ignores the rest of its payload.
 
@@ -2940,7 +2940,7 @@ The tour named nine patterns in passing. They're patterns in the loose sense: sh
 | A sighting decides, drawing paints | A pure function answers with plain data, and something else draws it | `CrossingSighting`, `TowerSighting` |
 | Places and distances | One opaque type for where, a second for how far apart, and only the sums that make sense | `Clock` and `Steps`, `Bearing` and `Turn`, `Along` and `Distance`, `Speed` and `Acceleration` |
 | Rule and timeline | One function says how far along, and one piece of data says what that looks like | `stage_over_gap` and `flight_timeline` |
-| The step function | A value goes in, and the next value comes out | `Rider.next`, `TruckJourney.truck_at_next_step`, `Tour.step_forward` |
+| The step function | A value goes in, and the next value comes out | `Rider.rider_at_next_step`, `TruckJourney.truck_at_next_step`, `Tour.step_forward` |
 | A narrow view of a wide record | An open record names the fields it uses and carries the rest through | `Bike.Motion(others)` |
 | The chain of limits | One value passes through independent rules, each of which can only lower it | `Throttle.acceleration` |
 | One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `RaisedPoint`, `Screen.Point` |

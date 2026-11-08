@@ -20,8 +20,8 @@ Rider := { motorcycle : Motorcycle, eyes : RiderEyes }.{
 	## The rider a step on along `route`, with the encounter on their segment at
 	## `encounter_stage`: the move, the crossing onto the next segment, the stop
 	## at the route's end, and then where the rider looks.
-	next : Rider, { route : Route, encounter_stage : Animation.Stage } -> Rider
-	next = |rider, { route, encounter_stage }| {
+	rider_at_next_step : Rider, { route : Route, encounter_stage : Animation.Stage } -> Rider
+	rider_at_next_step = |rider, { route, encounter_stage }| {
 		segment = rider.motorcycle.route_place.segment_on(route)
 		moved = rider.motorcycle.motorcycle_at_next_step(
 			RiderMind.controls(rider.motorcycle, { segment, encounter_stage }),

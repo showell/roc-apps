@@ -117,7 +117,7 @@ played_on = |model| {
 	var $played = model.played
 	while $played.len() < reach {
 		latest = $played.last() ?? crash "GazeWidgetApp.played_on: the stretch starts with a state"
-		next = latest.next({ route: World.route, encounter_stage: Waiting })
+		next = latest.rider_at_next_step({ route: World.route, encounter_stage: Waiting })
 		$played = $played.append(next)
 	}
 	{ ..model, played: $played }
