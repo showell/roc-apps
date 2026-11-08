@@ -78,7 +78,8 @@ FrameView := {
 	ride_shape_lists = |view|
 		[view.mountain_shapes, view.ground_patch_shapes].concat(Scene.scene_shape_lists(view.scene))
 
-	## The camera the frame at `instant` is seen through.
+	## The camera the frame at `instant` is seen through. It is public for
+	## FramePartsBench, which times the camera alone.
 	camera_at : Route, RideInstant -> RiderCamera
 	camera_at = |route, instant|
 		RiderCamera.of(
@@ -96,16 +97,6 @@ FrameView := {
 			[Grass.grass_shape],
 		].join()
 
-	## The whole frame in `space`, in paint order: the backdrop, then the
-	## ride's shapes, which start with the mountains.
-	framed_shapes : FrameView, Shapes.Space -> List(Shapes.Shape)
-	framed_shapes = |view, space|
-		FrameView.painted_shapes({
-			backdrop: view.backdrop,
-			ride_shape_lists: FrameView.ride_shape_lists(view),
-			space,
-		})
-
 	## The whole frame turned by the camera's roll.
 	##
 	## The whole frame leans, backdrop and all, so the world banks into a turn.
@@ -113,7 +104,7 @@ FrameView := {
 	## screen and whose rotation is the roll, the other way round: a space
 	## around everything else.
 	leaned_shapes : FrameView -> List(Shapes.Shape)
-	leaned_shapes = |view| view.framed_shapes(Screen.leaned_by(view.roll))
+	leaned_shapes = |view| framed_shapes(view, Screen.leaned_by(view.roll))
 
 	## `ride_shape_lists`, already in paint order, over `backdrop`, all in
 	## `space`.
@@ -129,7 +120,8 @@ FrameView := {
 
 	## What the sightings read from `instant` on `route` beyond the road: where
 	## the encounter on the rider's segment has got to, where the truck is and
-	## which of its lights are on, and the clock.
+	## which of its lights are on, and the clock. It is public for
+	## FramePartsBench, which times each kind beside the road alone.
 	ride_facts : Route, RideInstant -> Scene.RideFacts
 	ride_facts = |route, instant| {
 		encounter_stage: RideInstant.encounter_stage(route, instant),
@@ -143,7 +135,8 @@ FrameView := {
 		clock: instant.clock,
 	}
 
-	## The skyline `camera` sees at `clock`, darkened as far as the sky is.
+	## The skyline `camera` sees at `clock`, darkened as far as the sky is. It
+	## is public for FramePartsBench, which times the skyline alone.
 	skyline_shapes : RiderCamera, Clock -> List(Shapes.Shape)
 	skyline_shapes = |camera, clock| {
 		sky_darkness = Sky.darkness_at(clock)
@@ -151,10 +144,20 @@ FrameView := {
 	}
 
 	## The road's ground that `camera` sees of `road`: the road itself and its
-	## ponds.
+	## ponds. It is public for FramePartsBench, which times the ground alone.
 	ground_shapes : RoadAhead.RoadView, RiderCamera -> List(Shapes.Shape)
 	ground_shapes = |road, camera|
 		GroundSighting.patches_in_view(road, { vantage: camera.vantage() }).keep_oks(
 			|patch| GroundPatch.patch_shape(patch, camera.focal_length),
 		)
 }
+
+## The whole frame in `space`, in paint order: the backdrop, then the
+## ride's shapes, which start with the mountains.
+framed_shapes : FrameView, Shapes.Space -> List(Shapes.Shape)
+framed_shapes = |view, space|
+	FrameView.painted_shapes({
+		backdrop: view.backdrop,
+		ride_shape_lists: FrameView.ride_shape_lists(view),
+		space,
+	})
