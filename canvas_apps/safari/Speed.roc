@@ -9,8 +9,15 @@ import Steps
 
 Speed :: F64.{
 
+	## A speed of this many metres a step. Nothing in the ride goes backwards,
+	## so a negative speed means the sum behind it is wrong.
 	metres_a_step : F64 -> Speed
-	metres_a_step = |metres| Speed.(metres)
+	metres_a_step = |metres|
+		if metres < 0.0 {
+			crash "Speed.metres_a_step: this speed is below zero, so the sum behind it is wrong"
+		} else {
+			Speed.(metres)
+		}
 
 	to_metres_a_step : Speed -> F64
 	to_metres_a_step = |Speed.(s)| s
@@ -45,10 +52,6 @@ Speed :: F64.{
 	scaled_by : Speed, Fraction -> Speed
 	scaled_by = |Speed.(s), fraction| Speed.(s * fraction.to_f64())
 
-	## How many of `whole` this speed is, which can pass 1.
-	portion : Speed, Speed -> F64
-	portion = |Speed.(s), Speed.(whole)| s / whole
-
 	## How far this speed covers in `length`.
 	distance_in : Speed, Steps -> Distance
 	distance_in = |Speed.(s), length| Distance.metres(s * length.to_f64())
@@ -80,6 +83,9 @@ Speed :: F64.{
 expect Speed.metres_a_step(2.0).distance_in(Steps.of(38)).to_metres() == 76.0
 expect Speed.at_rest.distance_in(Steps.of(38)).to_metres() == 0.0
 expect Speed.metres_a_step(0.5).step_length().to_metres() == 0.5
+# Rest is the slowest speed, and still a speed.
+expect Speed.metres_a_step(0.0) == Speed.at_rest
+
 half_metre_a_step : Speed
 half_metre_a_step = Speed.metres_a_step(0.5)
 
@@ -93,5 +99,3 @@ expect {
 	loss = Acceleration.metres_a_step_each_step(-0.5)
 	half_metre_a_step.accelerated_by(loss) == Speed.at_rest
 }
-expect Speed.metres_a_step(1.0).portion(Speed.metres_a_step(4.0)) == 0.25
-expect Speed.metres_a_step(6.0).portion(Speed.metres_a_step(4.0)) == 1.5

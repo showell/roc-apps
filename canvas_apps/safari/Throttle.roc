@@ -96,10 +96,9 @@ shoulder_brake = |speed, steps_to_shoulder| {
 	Acceleration.metres_a_step_each_step(even_braking * F64.e.pow(-n / brake_decay.to_f64()))
 }
 
-## The speed the rider may reach: `next_speed`, held between rest and the top
-## speed.
+## The speed the rider may reach: `next_speed`, held to the top speed.
 allowed_speed : Speed -> Speed
-allowed_speed = |next_speed| next_speed.min(VehicleLimits.top_speed).max(Speed.at_rest)
+allowed_speed = |next_speed| next_speed.min(VehicleLimits.top_speed)
 
 ## This many metres a step, each step.
 acceleration_of : F64 -> Acceleration
@@ -126,11 +125,9 @@ expect brake_after(1) < Acceleration.steady
 clamped_speed : F64 -> F64
 clamped_speed = |next_speed| allowed_speed(Speed.metres_a_step(next_speed)).to_metres_a_step()
 
-# Within its bounds the speed is as asked, at the top speed it is held, and
-# outside them it is held to the nearer bound.
+# Up to the top speed the speed is as asked, and past it it is held there.
 expect clamped_speed(1.0) == 1.0
 expect clamped_speed(0.1) == 0.1
 expect clamped_speed(2.5) == 2.5
 expect clamped_speed(3.0) == 2.5
 expect clamped_speed(0.0) == 0.0
-expect clamped_speed(-1.0) == 0.0
