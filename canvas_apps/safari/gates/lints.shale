@@ -14,9 +14,23 @@
 const SAFARI = "canvas_apps/safari"
 const FILES = arg("files", "")
 
+-- The globs of the widgets' sources, which the merge gate holds.
+function widget_globs()
+  local r = run({"shale", "--root", ".", SAFARI .. "/gates/run.shale", "part=widget_globs"}, {timeout_ms = 30000, whole = 10000})
+  local globs = {}
+  for l in lines(trim(r.out)) do
+    if not starts_with(l, "──") then push(globs, l) end
+  end
+  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 or #globs == 0 then
+    print(trim(r.out))
+    fail("safari lints: the merge gate named no widget globs")
+  end
+  return globs
+end
+
 -- The game's clients, which import its modules: a member only a widget calls
 -- has a real caller. The gates test the game, so their calls are a test's.
-const CLIENT_GLOBS = {"canvas_apps/*_widget/**/*.roc", "canvas_apps/widget_kit/**/*.roc"}
+const CLIENT_GLOBS = widget_globs()
 const GATE_GLOB = SAFARI .. "/gates/**/*.roc"
 
 -- Every file any lint here reads, as globs from the checkout's root. With
