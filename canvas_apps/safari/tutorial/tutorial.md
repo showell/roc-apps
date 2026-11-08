@@ -2501,11 +2501,11 @@ The road has no global coordinates. A point on it is measured within one segment
 
 So to see something three segments ahead, a point has to be carried back round each bend between it and the rider, one at a time. That's one rotation per bend, and `fold_rev` is the shape of it. The accumulator is a `RoadPoint`, it starts on the far segment, and each step moves it onto the segment before. `segments_before` gives the segments between, and the closure is the only thing the loop does. The last line does the one translation and rotation from above:
 
-{{code RoadAhead.rider_point_ahead from "on_rider_segment =" to "to_rider_point(on_rider_segment, vantage)"}}
+{{code RoadAhead.rider_point_ahead from "var $point = road_point" to "to_rider_point($point, vantage)"}}
 
 The rotation itself is plain, with two cases, because a right-hand bend pivots on the far side of the lane:
 
-{{code Geom.point_in_segment_before}}
+{{code Geom.point_before_worked_bend}}
 
 This is what lets `CrossingSighting`, `TowerSighting`, `TreeSighting` and the rest not care where a segment is. They name a position on the road ahead and a point on that segment, and they get back a `RiderPoint`. That's why `RoadAhead` has sixteen importers.
 

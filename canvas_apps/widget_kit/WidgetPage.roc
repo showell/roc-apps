@@ -174,7 +174,7 @@ WidgetPage :: [].{
 	} -> List(Shapes.Shape)
 	picture_shapes = |{ backdrop, ride_shapes }| {
 		view : FrameView
-		view = { backdrop, ride_shapes, roll: Angle.upright }
+		view = { backdrop, ride_shape_lists: [ride_shapes], roll: Angle.upright }
 		corner = { x: 0.0, y: 0.0 }
 		view.framed_shapes(
 			World({

@@ -46,58 +46,25 @@ merge : {
 	second_items : List(item),
 	depth_of : (item -> Distance),
 } -> List(item)
-merge = |{ first_items, second_items, depth_of }|
-	merge_onto(
-		[],
-		{
-			first_items,
-			second_items,
-			depth_of,
-			at_first: 0,
-			at_second: 0,
-		},
-	)
-
-## The merge carried on from `merged`, with `first_items` taken up to `at_first`
-## and `second_items` up to `at_second`.
-merge_onto : List(item),
-{
-	first_items : List(item),
-	second_items : List(item),
-	depth_of : (item -> Distance),
-	at_first : U64,
-	at_second : U64,
-} -> List(item)
-merge_onto = |merged, { first_items, second_items, depth_of, at_first, at_second }|
-	match (first_items.get(at_first), second_items.get(at_second)) {
-		(Ok(from_first), Ok(from_second)) =>
-			if is_farther({ this: depth_of(from_second), that: depth_of(from_first) }) {
-				merge_onto(
-					merged.append(from_second),
-					{
-						first_items,
-						second_items,
-						depth_of,
-						at_first,
-						at_second: at_second + 1,
-					},
-				)
-			} else {
-				merge_onto(
-					merged.append(from_first),
-					{
-						first_items,
-						second_items,
-						depth_of,
-						at_first: at_first + 1,
-						at_second,
-					},
-				)
-			}
-		(Ok(_), Err(OutOfBounds)) => merged.concat(first_items.drop_first(at_first))
-		(Err(OutOfBounds), Ok(_)) => merged.concat(second_items.drop_first(at_second))
-		(Err(OutOfBounds), Err(OutOfBounds)) => merged
+merge = |{ first_items, second_items, depth_of }| {
+	first_count = first_items.len()
+	second_count = second_items.len()
+	var $merged = List.with_capacity(first_count + second_count)
+	var $at_first = 0
+	var $at_second = 0
+	while $at_first < first_count and $at_second < second_count {
+		from_first = first_items.get($at_first) ?? crash "DepthSort.merge: past the first list's end"
+		from_second = second_items.get($at_second) ?? crash "DepthSort.merge: past the second list's end"
+		if is_farther({ this: depth_of(from_second), that: depth_of(from_first) }) {
+			$merged = $merged.append(from_second)
+			$at_second = $at_second + 1
+		} else {
+			$merged = $merged.append(from_first)
+			$at_first = $at_first + 1
+		}
 	}
+	$merged.concat(first_items.drop_first($at_first)).concat(second_items.drop_first($at_second))
+}
 
 # Ten keys, each with its own place, so the order they come out in shows
 # whether ties kept theirs.

@@ -27,8 +27,10 @@ FrameView := {
 	## view.
 	backdrop : { sky_colors : Sky.Colors, sun_sighting : Sun.Sighting },
 
-	## The ride's shapes in paint order, drawn over the backdrop.
-	ride_shapes : List(Shapes.Shape),
+	## The ride's shapes in paint order, drawn over the backdrop, in the lists
+	## they are made in: the skyline, the ground, then each thing beside the
+	## road. The frame joins them with the backdrop's, copying each shape once.
+	ride_shape_lists : List(List(Shapes.Shape)),
 
 	## The camera's roll: the whole frame, backdrop and shapes, turns by minus
 	## this about the screen's centre.
@@ -45,7 +47,7 @@ FrameView := {
 				sky_colors: Sky.colors_at(instant.clock),
 				sun_sighting: Sun.sighting(camera, instant.clock),
 			},
-			ride_shapes: ride_shapes(camera, { instant, route }),
+			ride_shape_lists: ride_shape_lists(camera, { instant, route }),
 			roll: camera.roll,
 		}
 	}
@@ -71,8 +73,10 @@ FrameView := {
 	## The whole frame in `space`, in paint order: the backdrop, then the
 	## ride's shapes, which start with the mountains.
 	framed_shapes : FrameView, Shapes.Space -> List(Shapes.Shape)
-	framed_shapes = |view, space|
-		Shapes.in_space(space, FrameView.backdrop_shapes(view).concat(view.ride_shapes))
+	framed_shapes = |view, space| {
+		backdrop = FrameView.backdrop_shapes(view)
+		Shapes.lists_in_space(space, [backdrop].concat(view.ride_shape_lists))
+	}
 
 	## What the sightings read from `instant` beyond the road: where the
 	## encounter on the rider's segment stands, where the truck is and which of
@@ -100,10 +104,10 @@ FrameView := {
 		)
 }
 
-## The ride's shapes in paint order: the skyline, the ground, then the things
-## beside the road.
-ride_shapes : RiderCamera, { instant : RideInstant, route : Route } -> List(Shapes.Shape)
-ride_shapes = |camera, { instant, route }| {
+## The ride's shapes in paint order, in the lists they are made in: the
+## skyline, the ground, then each thing beside the road.
+ride_shape_lists : RiderCamera, { instant : RideInstant, route : Route } -> List(List(Shapes.Shape))
+ride_shape_lists = |camera, { instant, route }| {
 	road = RoadAhead.RoadView.ahead_of(route, camera.route_place.segment_index)
 	scene = Scene.scene_in_view(
 		road,
@@ -115,6 +119,5 @@ ride_shapes = |camera, { instant, route }| {
 	[
 		FrameView.skyline_shapes(camera, instant.clock),
 		FrameView.ground_shapes(road, camera),
-		Scene.scene_shapes(scene),
-	].join()
+	].concat(Scene.scene_shape_lists(scene))
 }
