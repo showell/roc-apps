@@ -113,7 +113,7 @@ picture_shapes = |job, clock|
 	WidgetPage.picture_shapes({
 		backdrop: {
 			sky_colors: sky_colors(job, clock),
-			sun_sighting: Sun.sighting({ heading: Sun.bearing, cam_focal: Lens.resting_focal }, clock),
+			sun_sighting: Sun.sighting({ heading: Sun.bearing_at(clock), cam_focal: Lens.resting_focal }, clock),
 		},
 		ride_shapes: [],
 	})
@@ -288,7 +288,7 @@ expect
 	row_texts(HorizonWarms, Clock.start)
 		== [
 			"clock = step 0",
-			"Sun.height_at(clock) = 244.0 px",
+			"Sun.height_at(clock) = 262.5 px",
 			"Sky.darkness_at(clock) = 0%",
 			"Sky.horizon_warmth_at(clock) = 0%",
 		]

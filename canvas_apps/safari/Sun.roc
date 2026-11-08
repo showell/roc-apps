@@ -1,7 +1,8 @@
-## The sun through the ride: it sinks a little with every step, and it's drawn
-## only while the rider faces it. Its height is what the rest of the sunset
-## follows: the sky, the mountains and the truck's headlights. It knows its own
-## look too, a glow and a disc over it.
+## The sun through the ride: the sky turns about its pole as the earth does,
+## carrying the sun down an arc into the southwest, and it's drawn only while
+## the rider faces it. Its height is what the rest of the sunset follows: the
+## sky, the mountains and the truck's headlights. It knows its own look too, a
+## glow and a disc over it.
 import Angle
 import Camera
 import Clock
@@ -9,6 +10,7 @@ import FarHeight
 import Lens
 import Pixels
 import Screen
+import Steps
 import lib.Brush
 import lib.RgbColor
 import lib.Shapes
@@ -23,6 +25,10 @@ Sun :: [].{
 		cam_focal : Pixels,
 	}
 
+	## The direction the sun stands in: its bearing, and its height above the
+	## horizon, a far height, which is how the resting lens holds an elevation.
+	Direction : { bearing : Angle.Bearing, height : FarHeight }
+
 	## The sun in a frame: in view at its place, or out of view, too far to
 	## the side of where the rider faces.
 	Sighting : [InView(Sun.Place), OutOfView]
@@ -30,11 +36,37 @@ Sun :: [].{
 	## The sun's paint where it stands: a wide glow, and over it a disc.
 	Look : { glow : Brush.Fill, disc : Brush.Fill }
 
-	## The direction the sun stands in, about 127° left of north: the
-	## southwest, a little to the left of the west range's middle. The ride
-	## starts facing away from it.
-	bearing : Angle.Bearing
-	bearing = Angle.Bearing.radians(-2.2176)
+	## The sun's direction at `clock`, from where the turning sky has carried
+	## it. In the frame of the sky's pole the sun stands `declination` from the
+	## sky's equator and `hour_angle_at(clock)` west of the meridian; the pole
+	## stands `latitude` above the north horizon. Turning that into the
+	## rider's frame is the one piece of spherical trig: the sun's direction
+	## as a unit vector, up, north and east.
+	direction_at : Clock -> Sun.Direction
+	direction_at = |clock| {
+		pole = latitude.to_radians()
+		from_equator = declination.to_radians()
+		hour = hour_angle_at(clock).to_radians()
+		up = pole.sin() * from_equator.sin() + pole.cos() * from_equator.cos() * hour.cos()
+		north = pole.cos() * from_equator.sin() - pole.sin() * from_equator.cos() * hour.cos()
+		east = 0.0 - from_equator.cos() * hour.sin()
+		level = (north * north + east * east).sqrt()
+		elevation = Angle.Turn.radians(F64.atan2({ x: level, y: up }))
+		{
+			bearing: Angle.Bearing.radians(F64.atan2({ x: north, y: east })),
+			height: Lens.height_at_elevation(elevation),
+		}
+	}
+
+	## The sun's bearing at `clock`. It starts a little west of south and
+	## swings west as it sinks.
+	bearing_at : Clock -> Angle.Bearing
+	bearing_at = |clock| direction_at(clock).bearing
+
+	## How high the sun stands above the horizon at `clock`; below it once
+	## negative.
+	height_at : Clock -> FarHeight
+	height_at = |clock| direction_at(clock).height
 
 	## The sun's radius as a far height: how far its top stands above its
 	## middle, and its bottom below.
@@ -43,26 +75,22 @@ Sun :: [].{
 
 	## How high the sun stands above the horizon as the ride starts.
 	height_at_start : FarHeight
-	height_at_start = FarHeight.of(244.0)
+	height_at_start = height_at(Clock.start)
 
 	## How high the sun stands once it has fully set: its top on the horizon.
 	height_when_set : FarHeight
 	height_when_set = radius_as_height.opposite()
 
-	## The step at which the sun has fully set, its whole disc below the
-	## horizon, in a ride of about 7,000 steps. The sun sinks at one steady
-	## rate, so this step places the sunset in the ride. It is chosen so the
-	## sunset's climax falls on the long road west, which `sunset_climax` in
-	## gates/expects/RideExpects.roc holds.
+	## The first step at which the sun has fully set, its whole disc below the
+	## horizon. The sky's turning places it; `sunset_climax` in
+	## gates/expects/RideExpects.roc holds where the sunset falls in the ride.
 	fully_set_at : Clock
-	fully_set_at = Clock.at_step(4735)
-
-	## How high the sun stands above the horizon at `clock`; below it once
-	## negative.
-	height_at : Clock -> FarHeight
-	height_at = |clock| {
-		steps_in = clock.steps_since(Clock.start).to_f64()
-		height_at_start.minus(drop_per_step.times(steps_in))
+	fully_set_at = {
+		var $clock = Clock.start
+		while height_at($clock) > height_when_set {
+			$clock = $clock.next()
+		}
+		$clock
 	}
 
 	## The sun in a frame, for a camera facing `heading` through a lens of
@@ -70,11 +98,12 @@ Sun :: [].{
 	## reaches the screen.
 	sighting : { heading : Angle.Bearing, cam_focal : Pixels, .. }, Clock -> Sun.Sighting
 	sighting = |camera, clock| {
-		turn_from_view = bearing.turn_from(camera.heading)
+		direction = direction_at(clock)
+		turn_from_view = direction.bearing.turn_from(camera.heading)
 		if turn_from_view.abs() >= quarter_turn {
 			OutOfView
 		} else {
-			sun = place({ turn_from_view, clock, cam_focal: camera.cam_focal })
+			sun = place({ turn_from_view, height: direction.height, cam_focal: camera.cam_focal })
 			if is_glow_on_screen(sun) {
 				InView(sun)
 			} else {
@@ -141,12 +170,35 @@ size_drawn : Pixels, Sun.Place -> Pixels
 size_drawn = |size_at_rest, sun|
 	Lens.size_on_screen({ size: FarHeight.of(size_at_rest.to_f64()), cam_focal: sun.cam_focal })
 
-## How far the sun sinks with each step, to fall from where it starts to
-## where it has fully set by `fully_set_at`.
-drop_per_step : FarHeight
-drop_per_step = {
-	steps_to_set = Sun.fully_set_at.steps_since(Clock.start).to_f64()
-	Sun.height_at_start.minus(Sun.height_when_set).divided_by(steps_to_set)
+## How far the sky's pole stands above the north horizon, which is the
+## latitude the ride is at: 45°, halfway from the equator to the pole. The
+## further from the equator, the more slantwise the sun goes down.
+latitude : Angle.Turn
+latitude = Angle.Turn.degrees(45.0)
+
+## How far the sun stands south of the sky's equator: as far as it goes, at
+## the winter solstice. It makes the year's shortest day, with the sun low at
+## noon and setting in the southwest.
+declination : Angle.Turn
+declination = Angle.Turn.degrees(-23.44)
+
+## How many steps the sky takes to turn an hour, a 24th of a whole turn. The
+## ride of about 7,000 steps lasts most of an afternoon and evening.
+steps_an_hour : Steps
+steps_an_hour = Steps.of(1000)
+
+## How far past noon the ride starts: 10°, forty minutes at the sky's 15° an
+## hour.
+hour_angle_at_start : Angle.Turn
+hour_angle_at_start = Angle.Turn.degrees(10.0)
+
+## How far west of the meridian the sky has turned the sun at `clock`. It
+## turns at one steady rate, so the sun climbs and sinks fastest near the
+## horizon and lingers near noon.
+hour_angle_at : Clock -> Angle.Turn
+hour_angle_at = |clock| {
+	hours_in = clock.steps_since(Clock.start).to_f64() / steps_an_hour.to_f64()
+	hour_angle_at_start.plus(Angle.Turn.degrees(15.0).times(hours_in))
 }
 
 ## A quarter turn. The camera sees only what is less than this to either side
@@ -180,47 +232,98 @@ glow_inner_radius = Pixels.of(8.0)
 disc_inner_radius : Pixels
 disc_inner_radius = Pixels.of(4.0)
 
-## Where the sun stands at `clock`, `turn_from_view` to the right of where
-## the camera faces, through a lens of `cam_focal`.
+## Where the sun stands on the screen, `turn_from_view` to the right of where
+## the camera faces and `height` above the horizon, through a lens of
+## `cam_focal`.
 place : {
 	turn_from_view : Angle.Turn,
-	clock : Clock,
+	height : FarHeight,
 	cam_focal : Pixels,
 } -> Sun.Place
-place = |{ turn_from_view, clock, cam_focal }| {
-	{
-		x: Camera.x_for_turn({ turn: turn_from_view, cam_focal }),
-		y: Lens.y_for_height({ height: Sun.height_at(clock), cam_focal }),
-		cam_focal,
-	}
+place = |{ turn_from_view, height, cam_focal }| {
+	on_screen = Camera.far_point({ turn: turn_from_view, height, cam_focal })
+	{ x: on_screen.x, y: on_screen.y, cam_focal }
 }
 
-# The whole disc is below the horizon from `fully_set_at`, and not a step
-# before, which gates/expects/RideExpects.roc holds.
-expect Sun.height_at(Sun.fully_set_at) == Sun.height_when_set
+# Part of the disc is still above the horizon a step before `fully_set_at`,
+# which gates/expects/RideExpects.roc holds, and none of it from then on.
+expect Sun.height_at(Sun.fully_set_at) <= Sun.height_when_set
 
-# The rider faces the sun, then away from it.
-expect
-	Sun.sighting({ heading: Sun.bearing, cam_focal: Lens.resting_focal }, Clock.start)
-		== InView({
-			x: Pixels.of(480.0),
-			y: Pixels.of(56.0),
+# At noon the sun stands due south, as high as it climbs: 90° less the
+# latitude, less the declination south of the equator, so 21.56°. The ride
+# starts forty minutes later, a little lower and west of south.
+expect {
+	noon = Lens.height_at_elevation(Angle.Turn.degrees(21.56))
+	a_little_lower = Lens.height_at_elevation(Angle.Turn.degrees(20.5))
+	start = Sun.direction_at(Clock.start)
+	west_of_south = start.bearing.turn_from(Angle.Bearing.radians(F64.pi))
+	start.height < noon and start.height > a_little_lower and west_of_south > Angle.straight_ahead
+}
+
+# The sun swings west as it sinks, and sinks faster the lower it is: the
+# second hour of the ride takes it further down than the first.
+expect {
+	at_hour = |hour| Sun.direction_at(Clock.at_step(hour * 1000))
+	first_drop = at_hour(0).height.minus(at_hour(1).height)
+	second_drop = at_hour(1).height.minus(at_hour(2).height)
+	at_hour(2).bearing.turn_from(at_hour(1).bearing) > Angle.straight_ahead
+		and second_drop > first_drop
+}
+
+## Whether `sun_sighting` is in view at `x` across the screen and within a
+## thousandth of a pixel of `y` up it, as `cam_focal` draws it.
+is_in_view_at : Sun.Sighting,
+{
+	x : F64,
+	y : F64,
+	cam_focal : Pixels,
+} -> Bool
+is_in_view_at = |sun_sighting, { x, y, cam_focal }|
+	match sun_sighting {
+		InView(sun) => {
+			is_near_y = sun.y.minus(Pixels.of(y)).abs() < Pixels.of(0.001)
+			sun.x == Pixels.of(x) and is_near_y and sun.cam_focal == cam_focal
+		}
+		OutOfView => False
+	}
+
+# The rider faces the sun at the start, 262.5 pixels above the horizon through
+# the lens at rest.
+expect {
+	facing_sun = { heading: Sun.bearing_at(Clock.start), cam_focal: Lens.resting_focal }
+	is_in_view_at(
+		Sun.sighting(facing_sun, Clock.start),
+		{
+			x: 480.0,
+			y: 37.487,
 			cam_focal: Lens.resting_focal,
-		})
+		},
+	)
+}
 
 # A lens at half its focal length draws the sun nearer the horizon, and at
 # half its size.
 expect {
 	half_focal = Lens.resting_focal.times(0.5)
-	sighting = Sun.sighting({ heading: Sun.bearing, cam_focal: half_focal }, Clock.start)
+	facing_sun = { heading: Sun.bearing_at(Clock.start), cam_focal: half_focal }
+	sighting = Sun.sighting(facing_sun, Clock.start)
 	half_place = {
 		x: Pixels.of(480.0),
-		y: Pixels.of(178.0),
+		y: Pixels.of(168.744),
 		cam_focal: half_focal,
 	}
-	sighting == InView(half_place) and Sun.disc_radius_drawn(half_place) == radius.times(0.5)
+	is_in_view_at(
+		sighting,
+		{
+			x: 480.0,
+			y: 168.744,
+			cam_focal: half_focal,
+		},
+	)
+		and Sun.disc_radius_drawn(half_place) == radius.times(0.5)
 }
 
+# Facing north at the start, the rider faces away from the sun.
 expect {
 	facing_north = { heading: Angle.north, cam_focal: Lens.resting_focal }
 	Sun.sighting(facing_north, Clock.start) == OutOfView
@@ -230,7 +333,7 @@ expect {
 ## faces `radians` to the left of it.
 is_in_view_beside : F64 -> Bool
 is_in_view_beside = |radians| {
-	heading = Sun.bearing.plus(Angle.Turn.radians(0.0 - radians))
+	heading = Sun.bearing_at(Clock.start).plus(Angle.Turn.radians(0.0 - radians))
 	match Sun.sighting({ heading, cam_focal: Lens.resting_focal }, Clock.start) {
 		InView(_) => True
 		OutOfView => False

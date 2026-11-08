@@ -2,6 +2,8 @@
 ## puts a point in the rider's view onto the screen.
 import Angle
 import Distance
+import FarHeight
+import Lens
 import Pixels
 import Geom
 import Polygon
@@ -27,14 +29,29 @@ Camera :: [].{
 		}
 	}
 
-	## The screen's x for something infinitely far away, `turn` to the right of
-	## where the camera faces, through a lens of `cam_focal`. The turn stays
-	## under a quarter turn either way, in front of the camera.
-	x_for_turn : { turn : Angle.Turn, cam_focal : Pixels } -> Pixels
-	x_for_turn = |{ turn, cam_focal }| x_for_slope(turn.to_radians().tan(), cam_focal)
+	## Where something infinitely far away lands on the screen, through a lens
+	## of `cam_focal`: `turn` to the right of where the camera faces, and
+	## `height` above the horizon. This is the one projection for far
+	## directions, the sun's and the skyline's. A far height is an elevation as
+	## the resting lens holds it, its tangent times the resting focal length
+	## (`Lens.height_at_elevation`), so both axes follow one rule: the focal
+	## length times the tangent of the angle off the middle of the view. The
+	## height isn't stretched toward the screen's sides, as a pinhole would
+	## stretch it, so a far height stays level across the view as the rider
+	## turns. The turn stays under a quarter turn either way, in front of the
+	## camera.
+	far_point : {
+		turn : Angle.Turn,
+		height : FarHeight,
+		cam_focal : Pixels,
+	} -> Screen.Point
+	far_point = |{ turn, height, cam_focal }| {
+		x: x_for_slope(turn.to_radians().tan(), cam_focal),
+		y: Lens.y_for_height({ height, cam_focal }),
+	}
 
 	## How far to the right of where the camera faces the screen's `x` looks,
-	## through a lens of `cam_focal`: the way back from `x_for_turn`.
+	## through a lens of `cam_focal`: the way back from `far_point`'s x.
 	turn_at_x : { x : Pixels, cam_focal : Pixels } -> Angle.Turn
 	turn_at_x = |{ x, cam_focal }| {
 		slope = x.minus(Screen.center_x).portion(cam_focal)
@@ -216,12 +233,35 @@ expect
 
 expect Camera.projected_points([], Pixels.of(800.0)).len() == 0
 
-## The screen's x at a turn of `radians`, through a lens of 800 pixels.
+## The screen's x at a turn of `radians`, through the lens at rest.
 x_at_turn : F64 -> Pixels
 x_at_turn = |radians| {
 	turn = Angle.Turn.radians(radians)
-	Camera.x_for_turn({ turn, cam_focal: Pixels.of(800.0) })
+	Camera.far_point({ turn, height: FarHeight.zero, cam_focal: Lens.resting_focal }).x
 }
+
+# A far direction at an elevation lands the focal length times the elevation's
+# tangent above the horizon through any lens, as a turn lands the focal length
+# times its tangent beside the middle: the sun's elevation and the skyline's far
+# heights are one measure on the screen.
+expect
+	[
+		(10.0, 600.0),
+		(-4.0, 600.0),
+		(25.0, 300.0),
+	].all(
+		|(degrees, focal)| {
+			elevation = Angle.Turn.degrees(degrees)
+			height = Lens.height_at_elevation(elevation)
+			got = Camera.far_point({
+				turn: Angle.straight_ahead,
+				height,
+				cam_focal: Pixels.of(focal),
+			})
+			want = Screen.horizon_y.minus(Pixels.of(focal * elevation.to_radians().tan()))
+			got.y.minus(want).abs() <= Pixels.of(0.000000001) and got.x == Screen.center_x
+		},
+	)
 
 # Straight ahead is the middle of the screen, a turn to the right lands right of
 # it, and a turn to the left left of it.
@@ -234,7 +274,7 @@ expect Camera.turn_at_x({ x: Screen.center_x, cam_focal: Pixels.of(800.0) }).to_
 expect
 	[-1.2, -0.3, 0.0, 0.4, 1.3].all(
 		|radians| {
-			back = Camera.turn_at_x({ x: x_at_turn(radians), cam_focal: Pixels.of(800.0) })
+			back = Camera.turn_at_x({ x: x_at_turn(radians), cam_focal: Lens.resting_focal })
 			(back.to_radians() - radians).abs() <= 0.000000001
 		},
 	)

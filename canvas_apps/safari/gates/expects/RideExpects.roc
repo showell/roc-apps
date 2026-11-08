@@ -246,10 +246,11 @@ sunset_climax = {
 sunset_margin : Steps
 sunset_margin = Steps.of(150)
 
-# The route's longest segment heads within 20° of the sun, as the rider enters it.
+# The route's longest segment, as the rider enters it, heads within 20° of the
+# sun at the sunset's climax.
 expect {
 	bearing = World.route.bearing_of(Fixtures.longest_segment_index)
-	Sun.bearing.turn_from(bearing).abs() < Angle.Turn.degrees(20.0)
+	Sun.bearing_at(sunset_climax).turn_from(bearing).abs() < Angle.Turn.degrees(20.0)
 }
 
 # Steve's rule: the climax of the sunset happens on the really long road segment
