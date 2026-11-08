@@ -47,7 +47,7 @@ EncounterExpects :: [].{}
 ## rider's segment at `encounter_timing`.
 birds_seen_on : RoadAhead.RoadView,
 {
-	camera : { vantage : Geom.Vantage, cam_focal : Pixels },
+	camera : Pipeline.SightingCamera,
 	encounter_timing : EncounterPlan.Timing,
 } -> List(Pipeline.Sighted(PosedBird))
 birds_seen_on = |road_view, { camera, encounter_timing }|
@@ -124,19 +124,22 @@ flight_at_step : U32 -> EncounterPlan.Timing
 flight_at_step = |now| EncounterPlan.timing_of(StartsAt(Clock.at_step(100)), Clock.at_step(now))
 
 ## The birds on `segment`, alone on its route, for a rider `rider_along` metres
-## into it, seen through a focal length of `cam_focal`, with the bird's flight
+## into it, seen through a focal length of `focal_length`, with the bird's flight
 ## at `encounter_timing`.
 birds_on : Segment,
 {
 	rider_along : F64,
-	cam_focal : Pixels,
+	focal_length : Pixels,
 	encounter_timing : EncounterPlan.Timing,
 } -> List(Pipeline.Sighted(PosedBird))
-birds_on = |segment, { rider_along, cam_focal, encounter_timing }|
+birds_on = |segment, { rider_along, focal_length, encounter_timing }|
 	birds_seen_on(
 		Fixtures.crafted_road([segment]),
 		{
-			camera: { vantage: { ..Fixtures.origin, along: Along.metres(rider_along) }, cam_focal },
+			camera: {
+				vantage: { ..Fixtures.origin, along: Along.metres(rider_along) },
+				focal_length,
+			},
 			encounter_timing,
 		},
 	)
@@ -145,7 +148,10 @@ birds_on = |segment, { rider_along, cam_focal, encounter_timing }|
 ## `encounter_timing`.
 bird_at : F64, EncounterPlan.Timing -> Pipeline.Sighted(PosedBird)
 bird_at = |rider_along, encounter_timing|
-	birds_on(bird_segment, { rider_along, cam_focal: Pixels.of(500.0), encounter_timing }).first()
+	birds_on(
+		bird_segment,
+		{ rider_along, focal_length: Pixels.of(500.0), encounter_timing },
+	).first()
 		?? crash "EncounterExpects: this rider sees a bird"
 
 ## How far off a bird is: right of the camera, forward of it, and its lift.
@@ -177,9 +183,9 @@ expect {
 
 ## How many birds a rider sees on `bird_segment` for each rider and focal
 ## length, before the flight.
-bird_count : { rider_along : F64, cam_focal : Pixels } -> I64
-bird_count = |{ rider_along, cam_focal }| {
-	birds = birds_on(bird_segment, { rider_along, cam_focal, encounter_timing: Unplanned })
+bird_count : { rider_along : F64, focal_length : Pixels } -> I64
+bird_count = |{ rider_along, focal_length }| {
+	birds = birds_on(bird_segment, { rider_along, focal_length, encounter_timing: Unplanned })
 	birds.len().to_i64_wrap()
 }
 
@@ -190,12 +196,12 @@ segment_with_cat = {
 	encounter: World.route.segment_at(Route.SegmentIndex.number(3)).encounter,
 }
 
-expect bird_count({ rider_along: 0.0, cam_focal: Pixels.of(500.0) }) == 1
-expect bird_count({ rider_along: 99.5, cam_focal: Pixels.of(500.0) }) == 1
-expect bird_count({ rider_along: 99.7, cam_focal: Pixels.of(500.0) }) == 0
-expect bird_count({ rider_along: 120.0, cam_focal: Pixels.of(500.0) }) == 0
-expect bird_count({ rider_along: 0.0, cam_focal: Pixels.of(91.0) }) == 1
-expect bird_count({ rider_along: 0.0, cam_focal: Pixels.of(90.0) }) == 0
+expect bird_count({ rider_along: 0.0, focal_length: Pixels.of(500.0) }) == 1
+expect bird_count({ rider_along: 99.5, focal_length: Pixels.of(500.0) }) == 1
+expect bird_count({ rider_along: 99.7, focal_length: Pixels.of(500.0) }) == 0
+expect bird_count({ rider_along: 120.0, focal_length: Pixels.of(500.0) }) == 0
+expect bird_count({ rider_along: 0.0, focal_length: Pixels.of(91.0) }) == 1
+expect bird_count({ rider_along: 0.0, focal_length: Pixels.of(90.0) }) == 0
 expect
 	birds_seen_on(
 		Fixtures.crafted_road([segment_with_cat]),
@@ -474,7 +480,7 @@ sample_cat_shapes = |cat, lift|
 			right: Distance.zero,
 			lift,
 		}),
-		cam_focal: Pixels.of(500.0),
+		focal_length: Pixels.of(500.0),
 		context: {},
 	}).to_shapes()
 
@@ -525,18 +531,18 @@ expect
 bird_shapes_at : PosedBird, { right : Distance, lift : Distance } -> List(Shapes.Shape)
 bird_shapes_at = |bird, { right, lift }| {
 	spot = posed_spot_at({ forward: Distance.metres(110.0), right, lift })
-	bird.scenery_picture({ spot, cam_focal: Pixels.of(500.0), context: {} }).to_shapes()
+	bird.scenery_picture({ spot, focal_length: Pixels.of(500.0), context: {} }).to_shapes()
 }
 
 ## How many pixels tall a perched bird `forward` ahead, on the ground, is
-## through `cam_focal`.
+## through `focal_length`.
 bird_height_on_screen : Distance, Pixels -> F64
-bird_height_on_screen = |forward, cam_focal| {
+bird_height_on_screen = |forward, focal_length| {
 	spot = posed_spot_at({ forward, right: Distance.zero, lift: Distance.zero })
 	bird : PosedBird
 	bird = { pose: Perched }
 	anchor = StillShapes.standing_anchor(
-		{ spot, cam_focal, context: {} },
+		{ spot, focal_length, context: {} },
 		{ height: bird.scenery_height(), flip: AsDrawn },
 	)
 	anchor.height_on_screen.to_f64()

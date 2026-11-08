@@ -29,16 +29,16 @@ Mountains :: [].{
 	}
 
 	## The skyline, back to front, for a camera facing `heading` through a lens
-	## of `cam_focal`: the west range, the north range, the north's snow, then the
+	## of `focal_length`: the west range, the north range, the north's snow, then the
 	## land.
 	mountain_shapes :
-		{ heading : Angle.Bearing, cam_focal : Pixels, .. }, Fraction -> List(Shapes.Shape)
+		{ heading : Angle.Bearing, focal_length : Pixels, .. }, Fraction -> List(Shapes.Shape)
 	mountain_shapes = |aim, darkness| {
 		sky_columns = sky_columns_for(aim)
 		snow_shapes =
 			match snow_shape(
 				sky_columns,
-				{ cam_focal: aim.cam_focal, color: snow_color(darkness) },
+				{ focal_length: aim.focal_length, color: snow_color(darkness) },
 			) {
 				Ok(snow) => [snow]
 				Err(NoSnow) => []
@@ -48,7 +48,7 @@ Mountains :: [].{
 				silhouette(
 					sky_columns,
 					{
-						cam_focal: aim.cam_focal,
+						focal_length: aim.focal_length,
 						height_at: |column| west_range_height(column.bearing),
 						color: rock_color_at_darkness(west_rock, darkness),
 						base_y: range_base_y,
@@ -57,7 +57,7 @@ Mountains :: [].{
 				silhouette(
 					sky_columns,
 					{
-						cam_focal: aim.cam_focal,
+						focal_length: aim.focal_length,
 						height_at: |column| column.north_height,
 						color: rock_color_at_darkness(north_rock, darkness),
 						base_y: range_base_y,
@@ -69,7 +69,7 @@ Mountains :: [].{
 				silhouette(
 					sky_columns,
 					{
-						cam_focal: aim.cam_focal,
+						focal_length: aim.focal_length,
 						height_at: |column| land_height(column.bearing),
 						color: Grass.grass_color,
 						base_y: land_base_y,
@@ -91,8 +91,8 @@ SkyColumn : {
 
 ## The skyline's columns, every `column_step` pixels from `Screen.drawn_left` to
 ## `Screen.drawn_right`, for a camera facing `heading` through a lens of
-## `cam_focal`.
-sky_columns_for : { heading : Angle.Bearing, cam_focal : Pixels, .. } -> List(SkyColumn)
+## `focal_length`.
+sky_columns_for : { heading : Angle.Bearing, focal_length : Pixels, .. } -> List(SkyColumn)
 sky_columns_for = |aim|
 	columns({ from: Screen.drawn_left, to: Screen.drawn_right }).map(
 		|x| {
@@ -182,8 +182,8 @@ snowline_under = |north_height| {
 }
 
 ## The bearing seen at `x` across the screen.
-bearing_at : { heading : Angle.Bearing, cam_focal : Pixels, .. }, Pixels -> Angle.Bearing
-bearing_at = |aim, x| aim.heading.plus(Camera.turn_at_x({ x, cam_focal: aim.cam_focal }))
+bearing_at : { heading : Angle.Bearing, focal_length : Pixels, .. }, Pixels -> Angle.Bearing
+bearing_at = |aim, x| aim.heading.plus(Camera.turn_at_x({ x, focal_length: aim.focal_length }))
 
 ## The skyline's height at `bearing`: the highest of the land and the two
 ## ranges.
@@ -272,22 +272,22 @@ land_base_y : Pixels
 land_base_y = Screen.horizon_y
 
 ## A silhouette across the screen, its top at `height_at` each of `sky_columns`
-## through a lens of `cam_focal`, but never below `base_y`, closed along
+## through a lens of `focal_length`, but never below `base_y`, closed along
 ## `base_y`.
 silhouette :
 	List(SkyColumn),
 	{
-		cam_focal : Pixels,
+		focal_length : Pixels,
 		height_at : SkyColumn -> FarHeight,
 		color : RgbColor,
 		base_y : Pixels,
 	} -> Shapes.Shape
-silhouette = |sky_columns, { cam_focal, height_at, color, base_y }| {
+silhouette = |sky_columns, { focal_length, height_at, color, base_y }| {
 	left = Screen.drawn_left
 	right = Screen.drawn_right
 	crest = sky_columns.map(
 		|column| {
-			top_y = Lens.y_for_height({ height: height_at(column), cam_focal })
+			top_y = Lens.y_for_height({ height: height_at(column), focal_length })
 			{
 				x: column.x,
 				y: if top_y > base_y {
@@ -310,8 +310,8 @@ thinnest_snow = FarHeight.of(0.01)
 ## snowline, then back along the snowline, unless fewer than two of
 ## `sky_columns` on the screen itself show snow.
 snow_shape :
-	List(SkyColumn), { cam_focal : Pixels, color : RgbColor } -> Try(Shapes.Shape, [NoSnow])
-snow_shape = |sky_columns, { cam_focal, color }| {
+	List(SkyColumn), { focal_length : Pixels, color : RgbColor } -> Try(Shapes.Shape, [NoSnow])
+snow_shape = |sky_columns, { focal_length, color }| {
 	snowy =
 		sky_columns
 			.keep_if(|column| column.x >= Pixels.zero and column.x <= Screen.width)
@@ -329,14 +329,14 @@ snow_shape = |sky_columns, { cam_focal, color }| {
 		crest = snowy.map(
 			|column| {
 				height = column.north_height
-				{ x: column.x, y: Lens.y_for_height({ height, cam_focal }) }
+				{ x: column.x, y: Lens.y_for_height({ height, focal_length }) }
 			},
 		)
 		snowline_points = snowy.fold_rev(
 			[],
 			|column, back| {
 				height = column.snowline_height
-				back.append({ x: column.x, y: Lens.y_for_height({ height, cam_focal }) })
+				back.append({ x: column.x, y: Lens.y_for_height({ height, focal_length }) })
 			},
 		)
 		Ok(Polygon.flat_polygon(crest.concat(snowline_points), color))
@@ -351,8 +351,8 @@ north_by = |radians| Angle.Bearing.radians(radians)
 west_by : F64 -> Angle.Bearing
 west_by = |radians| west_range_bearing.plus(Angle.Turn.radians(radians))
 
-aim_at_rest : { heading : Angle.Bearing, cam_focal : Pixels }
-aim_at_rest = { heading: Angle.north, cam_focal: Lens.resting_focal }
+aim_at_rest : { heading : Angle.Bearing, focal_length : Pixels }
+aim_at_rest = { heading: Angle.north, focal_length: Lens.resting_focal }
 
 expect rock_color_at_darkness(north_rock, Fraction.zero) == RgbColor.of(0x5B6A8F)
 expect rock_color_at_darkness(west_rock, Fraction.zero) == RgbColor.of(0x39435F)
@@ -430,22 +430,22 @@ lowest_y = |shape| corner_ys(shape).fold(-F64.infinity, |low, y| low.max(y))
 highest_y : Shapes.Shape -> F64
 highest_y = |shape| corner_ys(shape).fold(F64.infinity, |high, y| high.min(y))
 
-range_silhouette : { heading : Angle.Bearing, cam_focal : Pixels } -> Shapes.Shape
+range_silhouette : { heading : Angle.Bearing, focal_length : Pixels } -> Shapes.Shape
 range_silhouette = |aim| silhouette(
 	sky_columns_for(aim),
 	{
-		cam_focal: aim.cam_focal,
+		focal_length: aim.focal_length,
 		height_at: |column| column.north_height,
 		color: north_rock,
 		base_y: range_base_y,
 	},
 )
 
-land_silhouette : { heading : Angle.Bearing, cam_focal : Pixels } -> Shapes.Shape
+land_silhouette : { heading : Angle.Bearing, focal_length : Pixels } -> Shapes.Shape
 land_silhouette = |aim| silhouette(
 	sky_columns_for(aim),
 	{
-		cam_focal: aim.cam_focal,
+		focal_length: aim.focal_length,
 		height_at: |column| land_height(column.bearing),
 		color: Grass.grass_color,
 		base_y: land_base_y,

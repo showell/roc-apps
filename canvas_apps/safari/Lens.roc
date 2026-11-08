@@ -26,22 +26,22 @@ Lens :: [].{
 		FarHeight.of(resting_focal.times(elevation.to_radians().tan()).to_f64())
 
 	## The screen's y for something infinitely far away, `height` above the
-	## horizon, through a lens of `cam_focal`. A height below the horizon is
+	## horizon, through a lens of `focal_length`. A height below the horizon is
 	## negative, and lands below it. This is the one place a far height
 	## becomes pixels, and the y of `Camera.far_point`; the skyline asks for
 	## it alone, since it walks the screen's columns and already has each x.
-	y_for_height : { height : FarHeight, cam_focal : Pixels } -> Pixels
-	y_for_height = |{ height, cam_focal }|
-		Screen.horizon_y.minus(size_on_screen({ size: height, cam_focal }))
+	y_for_height : { height : FarHeight, focal_length : Pixels } -> Pixels
+	y_for_height = |{ height, focal_length }|
+		Screen.horizon_y.minus(size_on_screen({ size: height, focal_length }))
 
 	## How long something infinitely far away is drawn through a lens of
-	## `cam_focal`, when the lens at rest draws it `size` pixels long. It takes
+	## `focal_length`, when the lens at rest draws it `size` pixels long. It takes
 	## any such length as a far height: a height above the horizon, or a size
 	## kept in pixels at rest, such as the sun's radii. The lens only ever
 	## widens, so it is never drawn longer than at rest.
-	size_on_screen : { size : FarHeight, cam_focal : Pixels } -> Pixels
-	size_on_screen = |{ size, cam_focal }|
-		Pixels.of(size.to_f64() * scale_for(cam_focal).to_f64())
+	size_on_screen : { size : FarHeight, focal_length : Pixels } -> Pixels
+	size_on_screen = |{ size, focal_length }|
+		Pixels.of(size.to_f64() * scale_for(focal_length).to_f64())
 }
 
 ## How large a lens of focal length `focal` draws things beside the lens at
@@ -72,8 +72,8 @@ expect
 		((-40.0, Lens.resting_focal), 340.0),
 		((100.0, Lens.resting_focal.times(0.5)), 250.0),
 	].all(
-		|((height, cam_focal), y)| {
-			got = Lens.y_for_height({ height: FarHeight.of(height), cam_focal })
+		|((height, focal_length), y)| {
+			got = Lens.y_for_height({ height: FarHeight.of(height), focal_length })
 			got == Pixels.of(y)
 		},
 	)

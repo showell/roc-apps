@@ -22,6 +22,10 @@ Pipeline :: [].{
 	## frame.
 	Sighted(kind) : { spot : Spot, kind : kind }
 
+	## The camera a sighting is made through: where it stands and faces, and
+	## the focal length of its lens.
+	SightingCamera : { vantage : Geom.Vantage, focal_length : Pixels }
+
 	## `placed` as the camera at `vantage` sees it, on the segment at `place`,
 	## if it is at or past the camera's near plane.
 	sighting_of : Geom.Placed(kind),
@@ -44,7 +48,7 @@ Pipeline :: [].{
 	scenery_sighting_of : Geom.Placed(kind),
 	{
 		road : RoadAhead.RoadView,
-		camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
+		camera : Pipeline.SightingCamera,
 		place : SegmentPlace,
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera, TooSmall])
 		where [kind.scenery_height : kind -> Distance]
@@ -52,7 +56,7 @@ Pipeline :: [].{
 		sighting = sighting_of(placed, { road, vantage: camera.vantage, place })?
 		height_on_screen = Camera.height_on_screen(
 			{ height: placed.kind.scenery_height(), forward: sighting.spot.foot().forward() },
-			camera.cam_focal,
+			camera.focal_length,
 		)
 		if height_on_screen < smallest_height_on_screen {
 			Err(TooSmall)
@@ -61,14 +65,14 @@ Pipeline :: [].{
 		}
 	}
 
-	## `sighting` drawn through a lens of focal length `cam_focal`, with `context`
+	## `sighting` drawn through a lens of `focal_length`, with `context`
 	## for whatever else its kind needs.
-	rendering_of : Pipeline.Sighted(kind), { cam_focal : Pixels, context : context } -> Rendered
+	rendering_of : Pipeline.Sighted(kind), { focal_length : Pixels, context : context } -> Rendered
 		where [kind.scenery_picture : kind, Picture.Setting(context) -> Picture]
-	rendering_of = |sighting, { cam_focal, context }|
+	rendering_of = |sighting, { focal_length, context }|
 		Rendered.of(
 			sighting.spot.foot().forward(),
-			sighting.kind.scenery_picture({ spot: sighting.spot, cam_focal, context }),
+			sighting.kind.scenery_picture({ spot: sighting.spot, focal_length, context }),
 		)
 }
 

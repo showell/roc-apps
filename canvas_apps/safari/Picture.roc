@@ -12,7 +12,7 @@ Picture :: List(Shapes.Shape).{
 	## that kind needs. A kind that needs nothing more takes `{}`.
 	Setting(context) : {
 		spot : Spot,
-		cam_focal : Pixels,
+		focal_length : Pixels,
 		context : context,
 	}
 

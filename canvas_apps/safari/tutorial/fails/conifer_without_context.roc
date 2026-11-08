@@ -6,7 +6,7 @@ import game.Pixels
 import game.Rendered
 
 tree_rendering : Pipeline.Sighted(Conifer) -> Rendered
-tree_rendering = |tree| Pipeline.rendering_of(tree, { cam_focal: Pixels.of(500.0), context: {} })
+tree_rendering = |tree| Pipeline.rendering_of(tree, { focal_length: Pixels.of(500.0), context: {} })
 
 main! = |_args| {
 	trees : List(Pipeline.Sighted(Conifer))

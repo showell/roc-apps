@@ -28,9 +28,9 @@ Tower := { yaw : Angle.Turn, beacon_brightness : Fraction }.{
 	Picture.Setting(
 		{ road : RoadAhead.RoadView, vantage : Geom.Vantage },
 	) -> Picture
-	scenery_picture = |tower, { spot, cam_focal, context: { road, vantage } }| {
+	scenery_picture = |tower, { spot, focal_length, context: { road, vantage } }| {
 		footprint = tower_footprint(tower, { road, vantage, spot })
-		Picture.from_shapes(tower_shapes(tower, { footprint, spot, cam_focal }))
+		Picture.from_shapes(tower_shapes(tower, { footprint, spot, focal_length }))
 	}
 
 }
@@ -74,9 +74,9 @@ tower_shapes : Tower,
 {
 	footprint : Footprint,
 	spot : Spot,
-	cam_focal : Pixels,
+	focal_length : Pixels,
 } -> List(Shapes.Shape)
-tower_shapes = |tower, { footprint, spot, cam_focal }| {
+tower_shapes = |tower, { footprint, spot, focal_length }| {
 	foot = spot.foot()
 	lift = spot.lift()
 	sunk = EarthCurve.exaggerated_drop(foot.to_rider())
@@ -88,8 +88,8 @@ tower_shapes = |tower, { footprint, spot, cam_focal }| {
 			foot,
 			lift,
 			sunk,
-			metre_on_screen: metre_on_screen({ at: foot, cam_focal }),
-			cam_focal,
+			metre_on_screen: metre_on_screen({ at: foot, focal_length }),
+			focal_length,
 		}
 		apex = foot.at_height(lift.plus(tower_height.minus(sunk)))
 		rods = [
@@ -152,7 +152,7 @@ SunkTower : {
 	lift : Distance,
 	sunk : Distance,
 	metre_on_screen : Pixels,
-	cam_focal : Pixels,
+	focal_length : Pixels,
 }
 
 ## How far a corner lies from the footprint's centre, across the route and
@@ -279,19 +279,19 @@ rod_shape = |tower, line| {
 	ahead = Geom.ahead_line(line)?
 	Ok(
 		screen_rod({
-			from: Camera.project(ahead.from, tower.cam_focal),
-			to: Camera.project(ahead.to, tower.cam_focal),
+			from: Camera.project(ahead.from, tower.focal_length),
+			to: Camera.project(ahead.to, tower.focal_length),
 			width: tower.metre_on_screen.times(rod_width.to_metres()),
 		}),
 	)
 }
 
 ## How many pixels one metre across spans as far ahead as `at`.
-metre_on_screen : { at : Geom.LevelPoint, cam_focal : Pixels } -> Pixels
-metre_on_screen = |{ at, cam_focal }| {
+metre_on_screen : { at : Geom.LevelPoint, focal_length : Pixels } -> Pixels
+metre_on_screen = |{ at, focal_length }| {
 	on_level = at.at_height(Distance.zero)
-	p1 = Camera.project(on_level.at_right(Distance.metres(1.0)), cam_focal)
-	p0 = Camera.project(on_level.at_right(Distance.zero), cam_focal)
+	p1 = Camera.project(on_level.at_right(Distance.metres(1.0)), focal_length)
+	p0 = Camera.project(on_level.at_right(Distance.zero), focal_length)
 	p1.x.minus(p0.x)
 }
 
@@ -402,7 +402,7 @@ beacon_shape : SunkTower,
 	brightness : Fraction,
 } -> Try(Shapes.Shape, [TooDim, TooSmall])
 beacon_shape = |tower, { apex, brightness }| {
-	apex_on_screen = Camera.project(apex, tower.cam_focal)
+	apex_on_screen = Camera.project(apex, tower.focal_length)
 	if brightness < dimmest_beacon {
 		Err(TooDim)
 	} else {
@@ -462,7 +462,7 @@ sample_tower = {
 	lift: Distance.zero,
 	sunk: Distance.metres(1.0),
 	metre_on_screen: Pixels.of(5.0),
-	cam_focal: Pixels.of(500.0),
+	focal_length: Pixels.of(500.0),
 }
 
 expect
@@ -529,7 +529,7 @@ expect
 metre_ahead : F64 -> F64
 metre_ahead = |forward| {
 	at = ahead({ right: Distance.metres(3.0), forward: Distance.metres(forward) })
-	metre_on_screen({ at, cam_focal: Pixels.of(500.0) }).to_f64()
+	metre_on_screen({ at, focal_length: Pixels.of(500.0) }).to_f64()
 }
 
 expect metre_ahead(10.0) == 50.0

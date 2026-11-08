@@ -138,7 +138,7 @@ paused_scene : Scene
 paused_scene = Scene.scene_in_view(
 	paused_road,
 	{
-		camera: { vantage: paused_camera.vantage(), cam_focal: paused_camera.cam_focal },
+		camera: paused_camera.sighting_camera(),
 		facts: FrameView.ride_facts(paused_tour.instant()),
 	},
 )

@@ -9,6 +9,7 @@ import game.BirdFlight
 import game.Conifer
 import game.Distance
 import game.Geom
+import game.Pipeline
 import game.Pixels
 import game.RoadAhead
 import game.Route
@@ -30,8 +31,8 @@ Fixtures :: [].{
 	}
 
 	## The camera at `origin`, with a focal length of 500 pixels.
-	origin_camera : { vantage : Geom.Vantage, cam_focal : Pixels }
-	origin_camera = { vantage: origin, cam_focal: Pixels.of(500.0) }
+	origin_camera : Pipeline.SightingCamera
+	origin_camera = { vantage: origin, focal_length: Pixels.of(500.0) }
 
 	## The road ahead of a rider on the world's segment `number`.
 	world_road_at : U32 -> RoadAhead.RoadView

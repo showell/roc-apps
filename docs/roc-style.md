@@ -142,7 +142,7 @@ Roc's own rules are in the langref's
   holds this.
 
   ```roc
-  rendering_of : Pipeline.Sighted(kind), { cam_focal : Pixels, context : context } -> Rendered
+  rendering_of : Pipeline.Sighted(kind), { focal_length : Pixels, context : context } -> Rendered
   	where [kind.scenery_picture : kind, Picture.Setting(context) -> Picture]
   ```
 - **Prefer a two-part name that says what a thing is to a short one that

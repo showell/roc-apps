@@ -33,8 +33,8 @@ GuardRail :: [].{
 	## behind the camera. A rail quad has no kind for `Pipeline` to ask, so it
 	## renders itself.
 	quad_rendering : GuardRail.RailQuad, Pixels -> Try(Rendered, [BehindCamera])
-	quad_rendering = |quad, cam_focal|
-		quad_shape(quad, cam_focal).map_ok(
+	quad_rendering = |quad, focal_length|
+		quad_shape(quad, focal_length).map_ok(
 			|shape| Rendered.of(quad_depth(quad), Picture.from_shapes([shape])),
 		)
 }
@@ -52,11 +52,11 @@ quad_depth = |quad| {
 ## A quad on screen, cut at the camera's near plane, unless it's wholly
 ## behind the camera.
 quad_shape : GuardRail.RailQuad, Pixels -> Try(Shapes.Shape, [BehindCamera])
-quad_shape = |quad, cam_focal|
+quad_shape = |quad, focal_length|
 	{
 		{ low_start, low_end, high_end, high_start } = quad.corners
 		corners = [low_start, low_end, high_end, high_start]
-		Camera.clipped_polygon({ color: quad.color, corners }, cam_focal)
+		Camera.clipped_polygon({ color: quad.color, corners }, focal_length)
 	}
 
 rail_height : Distance

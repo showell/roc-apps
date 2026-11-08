@@ -82,7 +82,7 @@ part_size = |part, { route, instant }| {
 	} else if part == "view" {
 		FrameView.frame_view_at(route, instant).ride_shape_lists.join().len()
 	} else if part == "camera" {
-		FrameView.camera_at(route, instant).cam_focal.to_f64().to_u64_try() ?? crash "FramePartsBench: a focal length is a finite number"
+		FrameView.camera_at(route, instant).focal_length.to_f64().to_u64_try() ?? crash "FramePartsBench: a focal length is a finite number"
 	} else {
 		camera = FrameView.camera_at(route, instant)
 		if part == "sky" {
@@ -113,8 +113,8 @@ kind_size : Str,
 	instant : RideInstant,
 } -> U64
 kind_size = |part, { road, camera, instant }| {
-	cam = { vantage: RiderCamera.vantage(camera), cam_focal: camera.cam_focal }
-	cam_focal = cam.cam_focal
+	cam = RiderCamera.sighting_camera(camera)
+	focal_length = cam.focal_length
 	facts = FrameView.ride_facts(instant)
 	if part == "scene" {
 		Scene.scene_shapes(Scene.scene_in_view(road, { camera: cam, facts })).len()
@@ -123,14 +123,14 @@ kind_size = |part, { road, camera, instant }| {
 	} else if part == "trees_sight" {
 		TreeSighting.trees_in_view(road, cam).len()
 	} else if part == "trees" {
-		shape_count(Scene.tree_renderings(TreeSighting.trees_in_view(road, cam), cam_focal))
+		shape_count(Scene.tree_renderings(TreeSighting.trees_in_view(road, cam), focal_length))
 	} else if part == "towers_sight" {
 		TowerSighting.towers_in_view(road, { camera: cam, clock: facts.clock }).len()
 	} else if part == "towers" {
 		on_road = { road, vantage: cam.vantage }
 		shape_count(
 			TowerSighting.towers_in_view(road, { camera: cam, clock: facts.clock }).map(
-				|tower| Pipeline.rendering_of(tower, { cam_focal, context: on_road }),
+				|tower| Pipeline.rendering_of(tower, { focal_length, context: on_road }),
 			),
 		)
 	} else if part == "billboards_sight" {
@@ -138,21 +138,21 @@ kind_size = |part, { road, camera, instant }| {
 	} else if part == "billboards" {
 		shape_count(
 			BillboardSighting.billboards_in_view(road, cam).map(
-				|billboard| Pipeline.rendering_of(billboard, { cam_focal, context: {} }),
+				|billboard| Pipeline.rendering_of(billboard, { focal_length, context: {} }),
 			),
 		)
 	} else if part == "cats" {
 		cats = EncounterPoses.cat_poses(road, facts.encounter_timing)
 		shape_count(
 			EncounterSighting.animals_in_view(road, { camera: cam, animals: cats }).map(
-				|cat| Pipeline.rendering_of(cat, { cam_focal, context: {} }),
+				|cat| Pipeline.rendering_of(cat, { focal_length, context: {} }),
 			),
 		)
 	} else if part == "birds" {
 		birds = EncounterPoses.bird_poses(road, facts.encounter_timing)
 		shape_count(
 			EncounterSighting.animals_in_view(road, { camera: cam, animals: birds }).map(
-				|bird| Pipeline.rendering_of(bird, { cam_focal, context: {} }),
+				|bird| Pipeline.rendering_of(bird, { focal_length, context: {} }),
 			),
 		)
 	} else if part == "truck" {
@@ -160,7 +160,7 @@ kind_size = |part, { road, camera, instant }| {
 	} else if part == "rails" {
 		shape_count(
 			RailSighting.rail_quads_in_view(road, cam).keep_oks(
-				|quad| GuardRail.quad_rendering(quad, cam_focal),
+				|quad| GuardRail.quad_rendering(quad, focal_length),
 			),
 		)
 	} else {
@@ -182,7 +182,7 @@ prepared_size : Str,
 prepared_size = |part, { route, instant, reps }| {
 	camera = FrameView.camera_at(route, instant)
 	road = RoadAhead.RoadView.ahead_of(route, camera.route_place.segment_index)
-	cam = { vantage: RiderCamera.vantage(camera), cam_focal: camera.cam_focal }
+	cam = RiderCamera.sighting_camera(camera)
 	scene = Scene.scene_in_view(road, { camera: cam, facts: FrameView.ride_facts(instant) })
 	view = FrameView.frame_view_at(route, instant)
 	sorted = Scene.scene_renderings(scene)
@@ -204,13 +204,14 @@ prepared_size = |part, { route, instant, reps }| {
 
 truck_renderings : RoadAhead.RoadView,
 {
-	cam : { vantage : _, cam_focal : _ },
+	cam : Pipeline.SightingCamera,
 	facts : Scene.RideFacts,
 } -> List(Rendered)
 truck_renderings = |road, { cam, facts }| {
 	on_road = { road, vantage: cam.vantage }
 	match TruckSighting.truck_in_view(road, { camera: cam, truck: facts.truck }) {
-		Ok(truck) => [Pipeline.rendering_of(truck, { cam_focal: cam.cam_focal, context: on_road })]
+		Ok(truck) =>
+			[Pipeline.rendering_of(truck, { focal_length: cam.focal_length, context: on_road })]
 		Err(NoTruck) | Err(BehindCamera) => []
 	}
 }
@@ -246,7 +247,7 @@ counts_line : Route, RideInstant -> Str
 counts_line = |route, instant| {
 	camera = FrameView.camera_at(route, instant)
 	road = RoadAhead.RoadView.ahead_of(route, camera.route_place.segment_index)
-	cam = { vantage: RiderCamera.vantage(camera), cam_focal: camera.cam_focal }
+	cam = RiderCamera.sighting_camera(camera)
 	scene = Scene.scene_in_view(road, { camera: cam, facts: FrameView.ride_facts(instant) })
 	kinds = [
 		("trees", scene.trees),

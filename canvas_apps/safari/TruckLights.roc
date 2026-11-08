@@ -159,8 +159,8 @@ headlight_beam = |truck, rightward| {
 	far_bottom = at_far_end(beam_far_center.minus(beam_far_half_height))
 	corners = Geom.ahead_points([lamp_bottom, lamp_top, far_top, far_bottom])?
 	lamp = Geom.ahead_point(at_lamp(headlight_height))?
-	on_screen = Camera.projected_points(corners, truck.cam_focal)
-	lamp_on_screen = Camera.project(lamp, truck.cam_focal)
+	on_screen = Camera.projected_points(corners, truck.focal_length)
+	lamp_on_screen = Camera.project(lamp, truck.focal_length)
 	Polygon.circular_gradient_polygon(
 		on_screen,
 		{
@@ -187,7 +187,7 @@ brake_shapes = |truck, lamp_sides| {
 			},
 		).map(|corner| TruckShape.raised_point_on_truck(truck, corner))
 	glow = [brake_glow(truck, lamp)].keep_oks(|shape| shape)
-	match Camera.clipped_polygon({ color: brake_color, corners: lamp }, truck.cam_focal) {
+	match Camera.clipped_polygon({ color: brake_color, corners: lamp }, truck.focal_length) {
 		Ok(lamp_polygon) => glow.append(lamp_polygon)
 		Err(BehindCamera) => glow
 	}
@@ -202,7 +202,7 @@ List(Geom.RaisedPoint) -> Try(
 )
 brake_glow = |truck, lamp_points| {
 	lamp_ahead = Geom.ahead_points(lamp_points)?
-	on_screen = Camera.projected_points(lamp_ahead, truck.cam_focal)
+	on_screen = Camera.projected_points(lamp_ahead, truck.focal_length)
 	center = center_of(on_screen)
 	radius = glow_radius(on_screen, center)
 	Polygon.circular_gradient_polygon(

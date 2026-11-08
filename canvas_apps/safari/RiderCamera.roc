@@ -10,6 +10,7 @@ import Fraction
 import Gaze
 import Geom
 import Lens
+import Pipeline
 import Pixels
 import Rider
 import Route
@@ -29,7 +30,7 @@ RiderCamera := {
 	heading : Angle.Bearing,
 
 	## The lens's focal length.
-	cam_focal : Pixels,
+	focal_length : Pixels,
 
 	## The roll the camera is held at: the whole frame turns by minus this about
 	## the screen's centre.
@@ -47,7 +48,7 @@ RiderCamera := {
 			route_place,
 			yaw,
 			heading: route.bearing_of(route_place.segment_index).plus(yaw),
-			cam_focal: ride_focal(rider, { route, encounter_timing }),
+			focal_length: ride_focal(rider, { route, encounter_timing }),
 			roll: rider_roll(rider.motorcycle.lean),
 		}
 	}
@@ -60,6 +61,10 @@ RiderCamera := {
 		across: camera.route_place.across,
 		yaw: camera.yaw,
 	}
+
+	## This camera as a sighting takes it: its vantage and its lens.
+	sighting_camera : RiderCamera -> Pipeline.SightingCamera
+	sighting_camera = |camera| { vantage: camera.vantage(), focal_length: camera.focal_length }
 
 	## The lean that widens the view all it can. Nothing holds the bike to it:
 	## a deeper lean just widens the view no further.

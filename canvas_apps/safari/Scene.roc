@@ -9,7 +9,6 @@ import Distance
 import EncounterPoses
 import EncounterSighting
 import BillboardSighting
-import Geom
 import RoadAhead
 import GuardRail
 import Pipeline
@@ -46,34 +45,37 @@ Scene := {
 	## Everything `camera` sees of `road`, each thing rendered as it is sighted.
 	scene_in_view : RoadAhead.RoadView,
 	{
-		camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
+		camera : Pipeline.SightingCamera,
 		facts : Scene.RideFacts,
 	} -> Scene
 	scene_in_view = |road, { camera, facts }| {
-		cam_focal = camera.cam_focal
+		focal_length = camera.focal_length
 		on_road = { road, vantage: camera.vantage }
 		cats = EncounterPoses.cat_poses(road, facts.encounter_timing)
 		birds = EncounterPoses.bird_poses(road, facts.encounter_timing)
 		birds_seen = EncounterSighting.animals_in_view(road, { camera, animals: birds })
 		cats_seen = EncounterSighting.animals_in_view(road, { camera, animals: cats })
+		trees_seen = TreeSighting.trees_in_view(road, camera)
 		trucks =
 			match TruckSighting.truck_in_view(road, { camera, truck: facts.truck }) {
-				Ok(truck) => [Pipeline.rendering_of(truck, { cam_focal, context: on_road })]
+				Ok(truck) => [Pipeline.rendering_of(truck, { focal_length, context: on_road })]
 				Err(NoTruck) | Err(BehindCamera) => []
 			}
 		{
-			trees: Scene.tree_renderings(TreeSighting.trees_in_view(road, camera), cam_focal),
-			birds: birds_seen.map(|bird| Pipeline.rendering_of(bird, { cam_focal, context: {} })),
+			trees: Scene.tree_renderings(trees_seen, focal_length),
+			birds: birds_seen.map(
+				|bird| Pipeline.rendering_of(bird, { focal_length, context: {} }),
+			),
 			towers: TowerSighting.towers_in_view(road, { camera, clock: facts.clock }).map(
-				|tower| Pipeline.rendering_of(tower, { cam_focal, context: on_road }),
+				|tower| Pipeline.rendering_of(tower, { focal_length, context: on_road }),
 			),
 			billboards: BillboardSighting.billboards_in_view(road, camera).map(
-				|billboard| Pipeline.rendering_of(billboard, { cam_focal, context: {} }),
+				|billboard| Pipeline.rendering_of(billboard, { focal_length, context: {} }),
 			),
-			cats: cats_seen.map(|cat| Pipeline.rendering_of(cat, { cam_focal, context: {} })),
+			cats: cats_seen.map(|cat| Pipeline.rendering_of(cat, { focal_length, context: {} })),
 			trucks,
 			rails: RailSighting.rail_quads_in_view(road, camera).keep_oks(
-				|quad| GuardRail.quad_rendering(quad, cam_focal),
+				|quad| GuardRail.quad_rendering(quad, focal_length),
 			),
 		}
 	}
@@ -111,14 +113,14 @@ Scene := {
 	## all a tree needs of them. It is public for FramePartsBench, which times
 	## the trees alone.
 	tree_renderings : List(Pipeline.Sighted(Conifer)), Pixels -> List(Rendered)
-	tree_renderings = |trees, cam_focal| {
+	tree_renderings = |trees, focal_length| {
 		forwards = trees.map(|tree| tree.spot.foot().forward())
 		trees.map(
 			|tree| {
 				nearer_count = nearer_tree_count(forwards, tree.spot.foot().forward())
 				Pipeline.rendering_of(
 					tree,
-					{ cam_focal, context: { nearer_tree_count: nearer_count } },
+					{ focal_length, context: { nearer_tree_count: nearer_count } },
 				)
 			},
 		)

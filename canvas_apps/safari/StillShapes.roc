@@ -50,8 +50,8 @@ StillShapes :: [].{
 		height : Distance,
 		flip : StillShapes.Flip,
 	} -> StillShapes.Anchor
-	standing_anchor = |{ spot, cam_focal, .. }, { height, flip }| {
-		upright = Camera.upright_on_screen(spot.base(), { height, cam_focal })
+	standing_anchor = |{ spot, focal_length, .. }, { height, flip }| {
+		upright = Camera.upright_on_screen(spot.base(), { height, focal_length })
 		{ foot: upright.foot, flip, height_on_screen: upright.height_on_screen }
 	}
 

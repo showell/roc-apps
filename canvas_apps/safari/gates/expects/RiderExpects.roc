@@ -133,7 +133,7 @@ expect {
 ## encounter is planned.
 focal_of : Rider -> Pixels
 focal_of = |rider|
-	RiderCamera.of(rider, { route: Fixtures.cat_route, encounter_timing: Unplanned }).cam_focal
+	RiderCamera.of(rider, { route: Fixtures.cat_route, encounter_timing: Unplanned }).focal_length
 
 ## An encounter ten steps in.
 ten_steps_in : EncounterPlan.Timing
@@ -145,7 +145,7 @@ focal_ten_steps_in : Rider -> Pixels
 focal_ten_steps_in = |rider| RiderCamera.of(
 	rider,
 	{ route: Fixtures.cat_route, encounter_timing: ten_steps_in },
-).cam_focal
+).focal_length
 
 ## A rider at the start of the first segment, upright and looking ahead.
 upright : Rider

@@ -130,12 +130,12 @@ expect {
 # leaving out those behind the camera and those too small to draw, and goes
 # through the segments in view in turn.
 ## Where each tree in view stands for a rider 10 m into `segments`, seen through
-## `cam_focal`: right of the camera, then ahead of it.
+## `focal_length`: right of the camera, then ahead of it.
 tree_places : List(Segment), Pixels -> List((F64, F64))
-tree_places = |segments, cam_focal|
+tree_places = |segments, focal_length|
 	TreeSighting.trees_in_view(
 		Fixtures.crafted_road(segments),
-		{ vantage: { ..Fixtures.origin, along: Along.metres(10.0) }, cam_focal },
+		{ vantage: { ..Fixtures.origin, along: Along.metres(10.0) }, focal_length },
 	).map(|tree| (tree.spot.foot().right().to_metres(), tree.spot.foot().forward().to_metres()))
 
 ## A tree behind the rider, then a far one, then a near pair.
@@ -190,7 +190,7 @@ is_cow_seen_from = |forward| {
 		yaw: Angle.straight_ahead,
 	}
 	cow_road = Fixtures.crafted_road([one_cow_segment])
-	camera = { vantage: rider, cam_focal: Lens.resting_focal }
+	camera = { vantage: rider, focal_length: Lens.resting_focal }
 	BillboardSighting.billboards_in_view(cow_road, camera).len() == 1
 }
 
@@ -276,7 +276,7 @@ shapes_of_tower_100_ahead = {
 			?? crash "SightingExpects: a tower 100 m ahead is past the near plane"
 	sighted.kind.scenery_picture({
 		spot: sighted.spot,
-		cam_focal: Fixtures.origin_camera.cam_focal,
+		focal_length: Fixtures.origin_camera.focal_length,
 		context: { road: tower_road, vantage: Fixtures.origin },
 	}).to_shapes()
 }

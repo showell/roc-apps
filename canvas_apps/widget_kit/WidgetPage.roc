@@ -187,7 +187,7 @@ WidgetPage :: [].{
 	resting_lens_shapes = |sighting, context|
 		match sighting {
 			Ok(sighted) =>
-				Pipeline.rendering_of(sighted, { cam_focal: Lens.resting_focal, context }).picture().to_shapes()
+				Pipeline.rendering_of(sighted, { focal_length: Lens.resting_focal, context }).picture().to_shapes()
 			Err(BehindCamera) => []
 		}
 }

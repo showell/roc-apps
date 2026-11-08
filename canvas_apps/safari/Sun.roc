@@ -22,7 +22,7 @@ Sun :: [].{
 	Place : {
 		x : Pixels,
 		y : Pixels,
-		cam_focal : Pixels,
+		focal_length : Pixels,
 	}
 
 	## The direction the sun stands in: its bearing, and its height above the
@@ -94,16 +94,20 @@ Sun :: [].{
 	}
 
 	## The sun in a frame, for a camera facing `heading` through a lens of
-	## `cam_focal`. It is in view while it is in front of the camera and its glow
+	## `focal_length`. It is in view while it is in front of the camera and its glow
 	## reaches the screen.
-	sighting : { heading : Angle.Bearing, cam_focal : Pixels, .. }, Clock -> Sun.Sighting
+	sighting : { heading : Angle.Bearing, focal_length : Pixels, .. }, Clock -> Sun.Sighting
 	sighting = |camera, clock| {
 		direction = direction_at(clock)
 		turn_from_view = direction.bearing.turn_from(camera.heading)
 		if turn_from_view.abs() >= quarter_turn {
 			OutOfView
 		} else {
-			sun = place({ turn_from_view, height: direction.height, cam_focal: camera.cam_focal })
+			sun = place({
+				turn_from_view,
+				height: direction.height,
+				focal_length: camera.focal_length,
+			})
 			if is_glow_on_screen(sun) {
 				InView(sun)
 			} else {
@@ -168,7 +172,10 @@ Sun :: [].{
 ## it, is drawn where `sun` stands.
 size_drawn : Pixels, Sun.Place -> Pixels
 size_drawn = |size_at_rest, sun|
-	Lens.size_on_screen({ size: FarHeight.of(size_at_rest.to_f64()), cam_focal: sun.cam_focal })
+	Lens.size_on_screen({
+		size: FarHeight.of(size_at_rest.to_f64()),
+		focal_length: sun.focal_length,
+	})
 
 ## How far the sky's pole stands above the north horizon, which is the
 ## latitude the ride is at: 45°, halfway from the equator to the pole. The
@@ -234,15 +241,15 @@ disc_inner_radius = Pixels.of(4.0)
 
 ## Where the sun stands on the screen, `turn_from_view` to the right of where
 ## the camera faces and `height` above the horizon, through a lens of
-## `cam_focal`.
+## `focal_length`.
 place : {
 	turn_from_view : Angle.Turn,
 	height : FarHeight,
-	cam_focal : Pixels,
+	focal_length : Pixels,
 } -> Sun.Place
-place = |{ turn_from_view, height, cam_focal }| {
-	on_screen = Camera.far_point({ turn: turn_from_view, height, cam_focal })
-	{ x: on_screen.x, y: on_screen.y, cam_focal }
+place = |{ turn_from_view, height, focal_length }| {
+	on_screen = Camera.far_point({ turn: turn_from_view, height, focal_length })
+	{ x: on_screen.x, y: on_screen.y, focal_length }
 }
 
 # Part of the disc is still above the horizon a step before `fully_set_at`,
@@ -271,18 +278,18 @@ expect {
 }
 
 ## Whether `sun_sighting` is in view at `x` across the screen and within a
-## thousandth of a pixel of `y` up it, as `cam_focal` draws it.
+## thousandth of a pixel of `y` up it, as `focal_length` draws it.
 is_in_view_at : Sun.Sighting,
 {
 	x : F64,
 	y : F64,
-	cam_focal : Pixels,
+	focal_length : Pixels,
 } -> Bool
-is_in_view_at = |sun_sighting, { x, y, cam_focal }|
+is_in_view_at = |sun_sighting, { x, y, focal_length }|
 	match sun_sighting {
 		InView(sun) => {
 			is_near_y = sun.y.minus(Pixels.of(y)).abs() < Pixels.of(0.001)
-			sun.x == Pixels.of(x) and is_near_y and sun.cam_focal == cam_focal
+			sun.x == Pixels.of(x) and is_near_y and sun.focal_length == focal_length
 		}
 		OutOfView => False
 	}
@@ -290,13 +297,13 @@ is_in_view_at = |sun_sighting, { x, y, cam_focal }|
 # The rider faces the sun at the start, 262.5 pixels above the horizon through
 # the lens at rest.
 expect {
-	facing_sun = { heading: Sun.bearing_at(Clock.start), cam_focal: Lens.resting_focal }
+	facing_sun = { heading: Sun.bearing_at(Clock.start), focal_length: Lens.resting_focal }
 	is_in_view_at(
 		Sun.sighting(facing_sun, Clock.start),
 		{
 			x: 480.0,
 			y: 37.487,
-			cam_focal: Lens.resting_focal,
+			focal_length: Lens.resting_focal,
 		},
 	)
 }
@@ -305,19 +312,19 @@ expect {
 # half its size.
 expect {
 	half_focal = Lens.resting_focal.times(0.5)
-	facing_sun = { heading: Sun.bearing_at(Clock.start), cam_focal: half_focal }
+	facing_sun = { heading: Sun.bearing_at(Clock.start), focal_length: half_focal }
 	sighting = Sun.sighting(facing_sun, Clock.start)
 	half_place = {
 		x: Pixels.of(480.0),
 		y: Pixels.of(168.744),
-		cam_focal: half_focal,
+		focal_length: half_focal,
 	}
 	is_in_view_at(
 		sighting,
 		{
 			x: 480.0,
 			y: 168.744,
-			cam_focal: half_focal,
+			focal_length: half_focal,
 		},
 	)
 		and Sun.disc_radius_drawn(half_place) == radius.times(0.5)
@@ -325,7 +332,7 @@ expect {
 
 # Facing north at the start, the rider faces away from the sun.
 expect {
-	facing_north = { heading: Angle.north, cam_focal: Lens.resting_focal }
+	facing_north = { heading: Angle.north, focal_length: Lens.resting_focal }
 	Sun.sighting(facing_north, Clock.start) == OutOfView
 }
 
@@ -334,7 +341,7 @@ expect {
 is_in_view_beside : F64 -> Bool
 is_in_view_beside = |radians| {
 	heading = Sun.bearing_at(Clock.start).plus(Angle.Turn.radians(0.0 - radians))
-	match Sun.sighting({ heading, cam_focal: Lens.resting_focal }, Clock.start) {
+	match Sun.sighting({ heading, focal_length: Lens.resting_focal }, Clock.start) {
 		InView(_) => True
 		OutOfView => False
 	}

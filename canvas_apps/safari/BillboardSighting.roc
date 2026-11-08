@@ -7,19 +7,14 @@ import Segment
 import SegmentPlace
 import Geom
 import Pipeline
-import Pixels
 import Pond
 import Wildlife
 
 BillboardSighting :: [].{
 
 	## The billboards in view, in the order of `RoadAhead.segments_in_view`.
-	billboards_in_view : RoadAhead.RoadView,
-	{
-		vantage : Geom.Vantage,
-		cam_focal : Pixels,
-		..,
-	} -> List(Pipeline.Sighted(Billboard))
+	billboards_in_view :
+		RoadAhead.RoadView, Pipeline.SightingCamera -> List(Pipeline.Sighted(Billboard))
 	billboards_in_view = |road, camera|
 		billboard_fates(road, camera).keep_oks(|fate| fate)
 }
@@ -37,12 +32,7 @@ Fate : Try(Pipeline.Sighted(Billboard), [BehindCamera, TooSmall])
 
 ## What became of every billboard on the segments in view, in the order of
 ## `RoadAhead.segments_in_view`.
-billboard_fates : RoadAhead.RoadView,
-{
-	vantage : Geom.Vantage,
-	cam_focal : Pixels,
-	..,
-} -> List(Fate)
+billboard_fates : RoadAhead.RoadView, Pipeline.SightingCamera -> List(Fate)
 billboard_fates = |road, camera|
 	RoadAhead.segments_in_view(road)
 		.join_map(|in_view| segment_billboards(road, { camera, in_view }))
@@ -51,7 +41,7 @@ billboard_fates = |road, camera|
 ## its end.
 segment_billboards : RoadAhead.RoadView,
 {
-	camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
+	camera : Pipeline.SightingCamera,
 	in_view : RoadAhead.SegmentInView,
 } -> List(Fate)
 segment_billboards = |road, { camera, in_view }|
@@ -61,7 +51,7 @@ segment_billboards = |road, { camera, in_view }|
 ## The cows, then the pigs, of a segment in view.
 farm_sightings : RoadAhead.RoadView,
 {
-	camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
+	camera : Pipeline.SightingCamera,
 	in_view : RoadAhead.SegmentInView,
 } -> List(Fate)
 farm_sightings = |road, { camera, in_view }| {
@@ -79,7 +69,7 @@ farm_sightings = |road, { camera, in_view }| {
 ## its bend, or the ducks on its pond. The road's last segment ends quiet.
 bend_sightings : RoadAhead.RoadView,
 {
-	camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
+	camera : Pipeline.SightingCamera,
 	in_view : RoadAhead.SegmentInView,
 } -> List(Fate)
 bend_sightings = |road, { camera, in_view }| {
@@ -95,7 +85,7 @@ bend_sightings = |road, { camera, in_view }| {
 ## A billboard, placed through `place` on the road's map, as the rider sees it.
 sight_billboard : RoadAhead.RoadView,
 {
-	camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
+	camera : Pipeline.SightingCamera,
 	place : SegmentPlace,
 	billboard : Geom.Placed(Billboard),
 } -> Fate

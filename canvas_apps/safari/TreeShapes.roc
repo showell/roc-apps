@@ -32,13 +32,13 @@ TreeShapes :: [].{
 		height : Distance,
 		foliage_color : RgbColor,
 	} -> Picture
-	tree_picture = |{ spot, cam_focal, context }, { height, foliage_color }| {
+	tree_picture = |{ spot, focal_length, context }, { height, foliage_color }| {
 		base = spot.base()
-		outline = TreeShapes.tree_outline(spot, { height, cam_focal })
+		outline = TreeShapes.tree_outline(spot, { height, focal_length })
 		inputs = {
 			base,
 			height,
-			cam_focal,
+			focal_length,
 			outline,
 			foliage_color,
 			crown: crown_of(base.forward()),
@@ -60,10 +60,10 @@ TreeShapes :: [].{
 		}
 
 	## Where the tree at `spot` is on the screen, `height` tall, through a lens
-	## of focal length `cam_focal`.
-	tree_outline : Spot, { height : Distance, cam_focal : Pixels } -> TreeShapes.TreeOutline
-	tree_outline = |spot, { height, cam_focal }|
-		Camera.upright_on_screen(spot.base(), { height, cam_focal })
+	## of `focal_length`.
+	tree_outline : Spot, { height : Distance, focal_length : Pixels } -> TreeShapes.TreeOutline
+	tree_outline = |spot, { height, focal_length }|
+		Camera.upright_on_screen(spot.base(), { height, focal_length })
 }
 
 ## The tree is drawn 136 parts tall, and the shares below are parts of that.
@@ -120,7 +120,7 @@ Tier : {
 TierInputs : {
 	base : Geom.AheadPoint,
 	height : Distance,
-	cam_focal : Pixels,
+	focal_length : Pixels,
 	outline : TreeShapes.TreeOutline,
 	foliage_color : RgbColor,
 	crown : TreeShapes.Crown,
@@ -323,8 +323,8 @@ tier_cone : Tier,
 } -> Shapes.Shape
 tier_cone = |tier, { inputs, ring_points, shade }| {
 	apex_height = height_down_crown(inputs, tier.top)
-	apex = Camera.project(inputs.base.at_height(apex_height), inputs.cam_focal)
-	ring_on_screen = Camera.projected_points(ring_points, inputs.cam_focal)
+	apex = Camera.project(inputs.base.at_height(apex_height), inputs.focal_length)
+	ring_on_screen = Camera.projected_points(ring_points, inputs.focal_length)
 	Polygon.shaded_polygon(
 		ConvexHull.cone_hull_points(ring_on_screen, apex),
 		{ color: inputs.foliage_color, strength: shade },
@@ -364,7 +364,7 @@ sample_height = Distance.metres(4.352)
 sample_outline : TreeShapes.TreeOutline
 sample_outline = Camera.upright_on_screen(
 	sample_base(Distance.zero),
-	{ height: sample_height, cam_focal: Pixels.of(500.0) },
+	{ height: sample_height, focal_length: Pixels.of(500.0) },
 )
 
 # A lifted tree's cones measure from its foot: the ring under the bottom tier
@@ -373,7 +373,7 @@ expect {
 	inputs = {
 		base: sample_base(Distance.metres(2.0)),
 		height: sample_height,
-		cam_focal: Pixels.of(500.0),
+		focal_length: Pixels.of(500.0),
 		outline: sample_outline,
 		foliage_color: RgbColor.of(7),
 		crown: Cones({ shade: Fraction.whole }),

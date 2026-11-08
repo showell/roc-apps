@@ -17,7 +17,7 @@ TruckBody :: [].{
 	body_shapes : TruckShape.TruckSetting -> List(Shapes.Shape)
 	body_shapes = |truck|
 		DepthSort.sort_by(faces(truck), |face| mean_forward(face.corners))
-			.keep_oks(|face| Camera.clipped_polygon(face, truck.cam_focal))
+			.keep_oks(|face| Camera.clipped_polygon(face, truck.focal_length))
 }
 
 body_color : RgbColor

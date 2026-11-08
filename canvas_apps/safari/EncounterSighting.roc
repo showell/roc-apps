@@ -4,9 +4,7 @@
 ## posed is decided before any camera looks; this is only the camera's part.
 import Distance
 import EncounterPoses
-import Geom
 import Pipeline
-import Pixels
 import RoadAhead
 
 EncounterSighting :: [].{
@@ -14,7 +12,7 @@ EncounterSighting :: [].{
 	## Those of `animals` the camera sees, in their order.
 	animals_in_view : RoadAhead.RoadView,
 	{
-		camera : { vantage : Geom.Vantage, cam_focal : Pixels, .. },
+		camera : Pipeline.SightingCamera,
 		animals : List(EncounterPoses.PosedAnimal(kind)),
 	} -> List(Pipeline.Sighted(kind))
 		where [kind.scenery_height : kind -> Distance]

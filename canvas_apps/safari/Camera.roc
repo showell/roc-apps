@@ -18,19 +18,19 @@ Camera :: [].{
 	eye_height = Distance.metres(1.2)
 
 	## Where a point in front of the camera lands on the screen, through a
-	## lens of focal length `cam_focal` in pixels.
+	## lens of `focal_length` in pixels.
 	project : Geom.AheadPoint, Pixels -> Screen.Point
-	project = |p, cam_focal| {
+	project = |p, focal_length| {
 		slope_right = p.right().ratio_to(p.forward())
 		slope_up = p.height().minus(eye_height).ratio_to(p.forward())
 		{
-			x: x_for_slope(slope_right, cam_focal),
-			y: Screen.horizon_y.minus(cam_focal.times(slope_up)),
+			x: x_for_slope(slope_right, focal_length),
+			y: Screen.horizon_y.minus(focal_length.times(slope_up)),
 		}
 	}
 
 	## Where something infinitely far away lands on the screen, through a lens
-	## of `cam_focal`: `turn` to the right of where the camera faces, and
+	## of `focal_length`: `turn` to the right of where the camera faces, and
 	## `height` above the horizon. This is the one projection for far
 	## directions, the sun's and the skyline's. A far height is an elevation as
 	## the resting lens holds it, its tangent times the resting focal length
@@ -43,25 +43,26 @@ Camera :: [].{
 	far_point : {
 		turn : Angle.Turn,
 		height : FarHeight,
-		cam_focal : Pixels,
+		focal_length : Pixels,
 	} -> Screen.Point
-	far_point = |{ turn, height, cam_focal }| {
-		x: x_for_slope(turn.to_radians().tan(), cam_focal),
-		y: Lens.y_for_height({ height, cam_focal }),
+	far_point = |{ turn, height, focal_length }| {
+		x: x_for_slope(turn.to_radians().tan(), focal_length),
+		y: Lens.y_for_height({ height, focal_length }),
 	}
 
 	## How far to the right of where the camera faces the screen's `x` looks,
-	## through a lens of `cam_focal`: the way back from `far_point`'s x.
-	turn_at_x : { x : Pixels, cam_focal : Pixels } -> Angle.Turn
-	turn_at_x = |{ x, cam_focal }| {
-		slope = x.minus(Screen.center_x).ratio_to(cam_focal)
+	## through a lens of `focal_length`: the way back from `far_point`'s x.
+	turn_at_x : { x : Pixels, focal_length : Pixels } -> Angle.Turn
+	turn_at_x = |{ x, focal_length }| {
+		slope = x.minus(Screen.center_x).ratio_to(focal_length)
 		Angle.Turn.radians(slope.atan())
 	}
 
 	## How tall something of `height` stands on the screen, `forward` of the
-	## camera, through a lens of focal length `cam_focal` in pixels.
+	## camera, through a lens of `focal_length` in pixels.
 	height_on_screen : { height : Distance, forward : Distance }, Pixels -> Pixels
-	height_on_screen = |{ height, forward }, cam_focal| cam_focal.times(height.ratio_to(forward))
+	height_on_screen = |{ height, forward }, focal_length|
+		focal_length.times(height.ratio_to(forward))
 
 	## Where an upright object stands on the screen: `foot`, its foot at `base`
 	## put on the screen, and `height_on_screen`, how far up the screen its top
@@ -70,18 +71,18 @@ Camera :: [].{
 	upright_on_screen : Geom.AheadPoint,
 	{
 		height : Distance,
-		cam_focal : Pixels,
+		focal_length : Pixels,
 	} -> { foot : Screen.Point, height_on_screen : Pixels }
-	upright_on_screen = |base, { height, cam_focal }| {
-		foot = project(base, cam_focal)
-		top = project(base.at_height(base.height().plus(height)), cam_focal)
+	upright_on_screen = |base, { height, focal_length }| {
+		foot = project(base, focal_length)
+		top = project(base.at_height(base.height().plus(height)), focal_length)
 		{ foot, height_on_screen: foot.y.minus(top.y) }
 	}
 
 	## Each of `points` put on the screen, in order, through a lens of focal
-	## length `cam_focal`.
+	## length `focal_length`.
 	projected_points : List(Geom.AheadPoint), Pixels -> List(Screen.Point)
-	projected_points = |points, cam_focal| points.map(|p| project(p, cam_focal))
+	projected_points = |points, focal_length| points.map(|p| project(p, focal_length))
 
 	## A polygon of one color, in the rider's view.
 	FlatPolygon : { color : RgbColor, corners : List(Geom.RaisedPoint) }
@@ -89,21 +90,21 @@ Camera :: [].{
 	## A polygon on screen, cut at the near plane, unless it's wholly behind the
 	## camera.
 	clipped_polygon : Camera.FlatPolygon, Pixels -> Try(Shapes.Shape, [BehindCamera])
-	clipped_polygon = |{ color, corners }, cam_focal| {
+	clipped_polygon = |{ color, corners }, focal_length| {
 		in_front = Geom.clipped_points(corners)
 		if in_front.is_empty() {
 			Err(BehindCamera)
 		} else {
-			Ok(Polygon.flat_polygon(projected_points(in_front, cam_focal), color))
+			Ok(Polygon.flat_polygon(projected_points(in_front, focal_length), color))
 		}
 	}
 }
 
 ## The pinhole's rule across the screen: the x for a line of sight that goes
-## `slope` to the right for every unit forward, through a lens of `cam_focal`.
+## `slope` to the right for every unit forward, through a lens of `focal_length`.
 ## A near point's slope and a far direction's both land here.
 x_for_slope : F64, Pixels -> Pixels
-x_for_slope = |slope, cam_focal| Screen.center_x.plus(cam_focal.times(slope))
+x_for_slope = |slope, focal_length| Screen.center_x.plus(focal_length.times(slope))
 
 ## `point` past the near plane, which every point in these tests is.
 ahead : Geom.RaisedPoint -> Geom.AheadPoint
@@ -196,10 +197,10 @@ expect
 		(2.0, 8.0, 800.0, 200.0),
 		(1.0, 4.0, 400.0, 100.0),
 	].all(
-		|(height, forward, cam_focal, on_screen)|
+		|(height, forward, focal_length, on_screen)|
 			Camera.height_on_screen(
 				{ height: Distance.metres(height), forward: Distance.metres(forward) },
-				Pixels.of(cam_focal),
+				Pixels.of(focal_length),
 			)
 				== Pixels.of(on_screen),
 	)
@@ -237,7 +238,7 @@ expect Camera.projected_points([], Pixels.of(800.0)).len() == 0
 x_at_turn : F64 -> Pixels
 x_at_turn = |radians| {
 	turn = Angle.Turn.radians(radians)
-	Camera.far_point({ turn, height: FarHeight.zero, cam_focal: Lens.resting_focal }).x
+	Camera.far_point({ turn, height: FarHeight.zero, focal_length: Lens.resting_focal }).x
 }
 
 # A far direction at an elevation lands the focal length times the elevation's
@@ -256,7 +257,7 @@ expect
 			got = Camera.far_point({
 				turn: Angle.straight_ahead,
 				height,
-				cam_focal: Pixels.of(focal),
+				focal_length: Pixels.of(focal),
 			})
 			want = Screen.horizon_y.minus(Pixels.of(focal * elevation.to_radians().tan()))
 			got.y.minus(want).abs() <= Pixels.of(0.000000001) and got.x == Screen.center_x
@@ -268,13 +269,13 @@ expect
 expect x_at_turn(0.0) == Screen.center_x
 expect x_at_turn(0.3) > Screen.center_x
 expect x_at_turn(-0.3) < Screen.center_x
-expect Camera.turn_at_x({ x: Screen.center_x, cam_focal: Pixels.of(800.0) }).to_radians() == 0.0
+expect Camera.turn_at_x({ x: Screen.center_x, focal_length: Pixels.of(800.0) }).to_radians() == 0.0
 
 # The turn at an x is the way back from the x at a turn.
 expect
 	[-1.2, -0.3, 0.0, 0.4, 1.3].all(
 		|radians| {
-			back = Camera.turn_at_x({ x: x_at_turn(radians), cam_focal: Lens.resting_focal })
+			back = Camera.turn_at_x({ x: x_at_turn(radians), focal_length: Lens.resting_focal })
 			(back.to_radians() - radians).abs() <= 0.000000001
 		},
 	)

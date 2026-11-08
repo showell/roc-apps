@@ -114,7 +114,7 @@ FrameView := {
 	ground_shapes : RoadAhead.RoadView, RiderCamera -> List(Shapes.Shape)
 	ground_shapes = |road, camera|
 		GroundSighting.patches_in_view(road, { vantage: camera.vantage() }).keep_oks(
-			|patch| GroundPatch.patch_shape(patch, camera.cam_focal),
+			|patch| GroundPatch.patch_shape(patch, camera.focal_length),
 		)
 }
 
@@ -125,10 +125,7 @@ ride_shape_lists = |camera, { instant, route }| {
 	road = RoadAhead.RoadView.ahead_of(route, camera.route_place.segment_index)
 	scene = Scene.scene_in_view(
 		road,
-		{
-			camera: { vantage: camera.vantage(), cam_focal: camera.cam_focal },
-			facts: FrameView.ride_facts(instant),
-		},
+		{ camera: camera.sighting_camera(), facts: FrameView.ride_facts(instant) },
 	)
 	[
 		FrameView.skyline_shapes(camera, instant.clock),

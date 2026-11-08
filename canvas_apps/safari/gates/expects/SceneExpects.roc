@@ -143,7 +143,7 @@ expect
 				},
 				{
 					road: one_segment_road,
-					camera: { vantage: Fixtures.origin, cam_focal: Pixels.of(128.0) },
+					camera: { vantage: Fixtures.origin, focal_length: Pixels.of(128.0) },
 					place: Ahead(SegmentPlace.Position.first),
 				},
 			).map_ok(|_| Seen)
@@ -165,7 +165,10 @@ lone_tree_scene = |forward| {
 	trees: [
 		Pipeline.rendering_of(
 			green_tree_ahead(forward),
-			{ cam_focal: Fixtures.origin_camera.cam_focal, context: { nearer_tree_count: 0 } },
+			{
+				focal_length: Fixtures.origin_camera.focal_length,
+				context: { nearer_tree_count: 0 },
+			},
 		),
 	],
 }
@@ -177,7 +180,7 @@ lone_bird_scene = |forward| {
 	birds: [
 		Pipeline.rendering_of(
 			perched_bird_ahead(forward),
-			{ cam_focal: Fixtures.origin_camera.cam_focal, context: {} },
+			{ focal_length: Fixtures.origin_camera.focal_length, context: {} },
 		),
 	],
 }

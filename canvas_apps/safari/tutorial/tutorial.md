@@ -2536,7 +2536,7 @@ A fold's step is a plain function of the list so far and one edge:
 
 `Ground`, `GuardRail` and `TruckShape` call it the same way. `patch.corners.map(...)` makes the `RaisedPoint`s, and what comes back is a shorter or longer list of the same type:
 
-{{code Camera.clipped_polygon from "in_front = Geom.clipped_points(" to "Ok(Polygon.flat_polygon(projected_points(in_front, cam_focal), color))"}}
+{{code Camera.clipped_polygon from "in_front = Geom.clipped_points(" to "Ok(Polygon.flat_polygon(projected_points(in_front, focal_length), color))"}}
 
 ### Arithmetic all the way down
 

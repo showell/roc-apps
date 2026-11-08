@@ -22,13 +22,13 @@ GroundPatch :: { corners : List(Geom.RiderPoint), color : RgbColor }.{
 	## A patch on screen, cut at the horizon and at the camera's near plane,
 	## unless nothing of it is left.
 	patch_shape : GroundPatch, Pixels -> Try(Shapes.Shape, [PastHorizon, BehindCamera])
-	patch_shape = |GroundPatch.(patch), cam_focal| {
+	patch_shape = |GroundPatch.(patch), focal_length| {
 		before_horizon = EarthCurve.points_before_horizon(patch.corners)
 		if before_horizon.is_empty() {
 			Err(PastHorizon)
 		} else {
 			polygon = { color: patch.color, corners: before_horizon }
-			shape = Camera.clipped_polygon(polygon, cam_focal)?
+			shape = Camera.clipped_polygon(polygon, focal_length)?
 			Ok(shape)
 		}
 	}
