@@ -3,8 +3,6 @@
 import Angle
 import Fraction
 import Gaze
-import Motorcycle
-import Route
 
 ## The rider's eyes at one step. `gaze_yaw` is the look away from the way the
 ## motorcycle points, and `look_depth` how far into a look the rider has gone,
@@ -14,12 +12,11 @@ RiderEyes := { gaze_yaw : Angle.Turn, look_depth : Fraction }.{
 	initial : RiderEyes
 	initial = { gaze_yaw: Angle.straight_ahead, look_depth: Fraction.zero }
 
-	## These eyes moved on a step, for a rider on `motorcycle` on `route`: the
-	## gaze, and the look depth it leaves.
-	eyes_at_next_step : RiderEyes, { motorcycle : Motorcycle, route : Route } -> RiderEyes
-	eyes_at_next_step = |eyes, { motorcycle, route }| {
-		segment = motorcycle.route_place.segment_on(route)
-		gaze_yaw = next_gaze_yaw(eyes, Gaze.desired_gaze(motorcycle, segment))
+	## These eyes moved on a step toward `target`: the gaze, and the look depth
+	## it leaves.
+	eyes_at_next_step : RiderEyes, Gaze.GazeTarget -> RiderEyes
+	eyes_at_next_step = |eyes, target| {
+		gaze_yaw = next_gaze_yaw(eyes, target)
 		{ gaze_yaw, look_depth: next_look_depth(eyes, gaze_yaw) }
 	}
 

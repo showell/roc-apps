@@ -54,10 +54,10 @@ Gawking :: [].{
 				gap = pig.road_point.along.distance_from(motorcycle.route_place.along)
 				room = gap.minus(gawk_settle_distance)
 				AtMost(
-					motorcycle.speed.acceleration_to({
-						target: gawk_speed,
-						within: room.max(gawk_least_distance),
-					}),
+					VehicleLimits.braking_to(
+						motorcycle.speed,
+						{ target: gawk_speed, within: room.max(gawk_least_distance) },
+					),
 				)
 			}
 			NotGawking => NoLimit

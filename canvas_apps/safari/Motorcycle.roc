@@ -2,6 +2,7 @@
 ## points, how fast it goes and how far it leans, and the physics that moves it
 ## a step. The lean steers the motorcycle, and it moves along the middle of the
 ## step's turn, in its segment's frame.
+import Acceleration
 import Along
 import Angle
 import Distance
@@ -28,13 +29,15 @@ Motorcycle := {
 		lean: Angle.upright,
 	}
 
-	## What the rider sets for a step: the lean the motorcycle takes, and the
-	## speed it goes.
-	Controls : { lean : Angle.Lean, speed : Speed }
+	## What the rider sets for a step: the lean the motorcycle takes, and how
+	## hard it accelerates.
+	Controls : { lean : Angle.Lean, acceleration : Acceleration }
 
-	## The motorcycle one step on, at the lean and speed its controls set.
+	## The motorcycle one step on, at the lean its controls set and the speed
+	## their acceleration gives, held to the top speed.
 	motorcycle_at_next_step : Motorcycle, Motorcycle.Controls -> Motorcycle
-	motorcycle_at_next_step = |motorcycle, { lean, speed }| {
+	motorcycle_at_next_step = |motorcycle, { lean, acceleration }| {
+		speed = allowed_speed(motorcycle.speed.accelerated_by(acceleration))
 		step_length = speed.step_length()
 		turn = lean.steer(turn_per_lean)
 		mid = motorcycle.yaw.plus(turn.times(0.5)).to_radians()
@@ -53,7 +56,7 @@ Motorcycle := {
 
 	## The controls that keep this motorcycle's lean and speed as they are.
 	steady_controls : Motorcycle -> Motorcycle.Controls
-	steady_controls = |motorcycle| { lean: motorcycle.lean, speed: motorcycle.speed }
+	steady_controls = |motorcycle| { lean: motorcycle.lean, acceleration: Acceleration.steady }
 
 	with_lean : Motorcycle, Angle.Lean -> Motorcycle
 	with_lean = |motorcycle, lean| { ..motorcycle, lean }
@@ -94,6 +97,21 @@ Motorcycle := {
 turn_per_lean : F64
 turn_per_lean = 0.1
 
+## The speed the rider may reach: `next_speed`, held to the top speed.
+allowed_speed : Speed -> Speed
+allowed_speed = |next_speed| next_speed.min(VehicleLimits.top_speed)
+
+## The speed the clamp allows for `next_speed` metres a step.
+clamped_speed : F64 -> F64
+clamped_speed = |next_speed| allowed_speed(Speed.metres_a_step(next_speed)).to_metres_a_step()
+
+# Up to the top speed the speed is as asked, and past it it is held there.
+expect clamped_speed(1.0) == 1.0
+expect clamped_speed(0.1) == 0.1
+expect clamped_speed(2.5) == 2.5
+expect clamped_speed(3.0) == 2.5
+expect clamped_speed(0.0) == 0.0
+
 ## A motorcycle well along a segment, leaning a little to the right.
 riding : Motorcycle
 riding = {
@@ -112,13 +130,13 @@ riding = {
 first_step : Motorcycle
 first_step = riding.motorcycle_at_next_step({
 	lean: Angle.Lean.radians(0.175),
-	speed: Speed.metres_a_step(0.81),
+	acceleration: Acceleration.metres_a_step_each_step(0.01),
 })
 
 second_step : Motorcycle
 second_step = first_step.motorcycle_at_next_step({
 	lean: Angle.Lean.radians(0.155),
-	speed: Speed.metres_a_step(0.8150000000000001),
+	acceleration: Acceleration.metres_a_step_each_step(0.005),
 })
 
 third_step : Motorcycle
@@ -152,7 +170,7 @@ expect {
 	a = Motorcycle.initial.motorcycle_at_next_step(Motorcycle.initial.steady_controls())
 	b = Motorcycle.motorcycle_at_next_step(
 		Motorcycle.initial,
-		{ lean: Angle.Lean.radians(0.5), speed: Speed.metres_a_step(0.55) },
+		{ lean: Angle.Lean.radians(0.5), acceleration: Acceleration.metres_a_step_each_step(0.25) },
 	)
 	[
 		(a.route_place.across.to_metres(), 0.0),

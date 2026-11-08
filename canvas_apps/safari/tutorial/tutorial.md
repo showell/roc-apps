@@ -1677,7 +1677,7 @@ digraph limits {
 
 The rider has several reasons to slow down, and they don't know about each other. A turn is coming. A cat is in the lane. There's a pig to look at. The road is about to run out. `Throttle` writes them as a line of limits. An `Acceleration` goes in, a limit lets it through or lowers it, and the next limit gets what's left:
 
-{{code Throttle.next_speed from "limits = [" to "limited = limits.fold(offered, held_to)"}}
+{{code Throttle.next_acceleration from "limits = [" to "limits.fold(offered, held_to)"}}
 
 Call this *the chain of limits*. Each limit has the same shape and can be read alone, and adding a reason is one more line. It reads like a list of rules because that's what it is.
 
@@ -1808,7 +1808,7 @@ It starts at the same 150 metres, but it only asks where the rider is. There's n
 
 `pig_limit` is the third link in the throttle's chain. It asks `Gaze` for a brake, and takes it if that's harder than what it was offered:
 
-{{code Throttle.next_speed from "Gawking.gawk_brake(motorcycle, segment)," to "Gawking.gawk_brake(motorcycle, segment),"}}
+{{code Throttle.next_acceleration from "Gawking.gawk_brake(motorcycle, segment)," to "Gawking.gawk_brake(motorcycle, segment),"}}
 
 {{code Gawking.gawk_brake}}
 

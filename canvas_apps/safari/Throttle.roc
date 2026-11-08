@@ -1,4 +1,4 @@
-## Throttle decides the rider's speed for the next step. Each limit
+## Throttle decides how hard the rider accelerates on the next step. Each limit
 ## asks for nothing or for an acceleration no harder than its own, and the
 ## acceleration offered is held to the least of them.
 import Acceleration
@@ -9,7 +9,6 @@ import Distance
 import EncounterReaction
 import Gawking
 import Motorcycle
-import Route
 import Segment
 import Speed
 import Steps
@@ -17,11 +16,14 @@ import VehicleLimits
 
 Throttle :: [].{
 
-	## The speed the motorcycle goes on the next step, on `route`, with the
-	## encounter on the motorcycle's segment at `encounter_timing`.
-	next_speed : Motorcycle, { route : Route, encounter_timing : EncounterPlan.Timing } -> Speed
-	next_speed = |motorcycle, { route, encounter_timing }| {
-		segment = motorcycle.route_place.segment_on(route)
+	## The acceleration the motorcycle takes on the next step, on `segment`, the
+	## one it is on, with the segment's encounter at `encounter_timing`.
+	next_acceleration : Motorcycle,
+	{
+		segment : Segment,
+		encounter_timing : EncounterPlan.Timing,
+	} -> Acceleration
+	next_acceleration = |motorcycle, { segment, encounter_timing }| {
 		offered = VehicleLimits.cruise_acceleration
 		limits = [
 			bend_limit(motorcycle, segment),
@@ -29,8 +31,7 @@ Throttle :: [].{
 			Gawking.gawk_brake(motorcycle, segment),
 			shoulder_limit(motorcycle),
 		]
-		limited = limits.fold(offered, held_to)
-		allowed_speed(motorcycle.speed.accelerated_by(limited))
+		limits.fold(offered, held_to)
 	}
 }
 
@@ -101,10 +102,6 @@ shoulder_brake = |speed, steps_to_shoulder| {
 	Acceleration.metres_a_step_each_step(even_braking * F64.e.pow(-n / brake_decay.to_f64()))
 }
 
-## The speed the rider may reach: `next_speed`, held to the top speed.
-allowed_speed : Speed -> Speed
-allowed_speed = |next_speed| next_speed.min(VehicleLimits.top_speed)
-
 ## This many metres a step, each step.
 acceleration_of : F64 -> Acceleration
 acceleration_of = |metres| Acceleration.metres_a_step_each_step(metres)
@@ -125,14 +122,3 @@ expect brake_after(40) > brake_after(2)
 
 # A coast that leaves the road on its first step still brakes.
 expect brake_after(1) < Acceleration.steady
-
-## The speed the clamp allows for `next_speed` metres a step.
-clamped_speed : F64 -> F64
-clamped_speed = |next_speed| allowed_speed(Speed.metres_a_step(next_speed)).to_metres_a_step()
-
-# Up to the top speed the speed is as asked, and past it it is held there.
-expect clamped_speed(1.0) == 1.0
-expect clamped_speed(0.1) == 0.1
-expect clamped_speed(2.5) == 2.5
-expect clamped_speed(3.0) == 2.5
-expect clamped_speed(0.0) == 0.0
