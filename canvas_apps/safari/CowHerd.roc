@@ -100,7 +100,7 @@ herd_cow = |herd, { herd_along, cow_number }| {
 	column_place = herd_front.plus(herd.column_spacing.times(column))
 	in_line = column_place.plus(herd.row_stagger.times(row - 1.0))
 	row_place = front_row_distance.plus(herd.row_depth.times(row))
-	stray = Scatter.offset(
+	stray = Scatter.stray_of(
 		cow_number,
 		{
 			along_phase: 2.7,

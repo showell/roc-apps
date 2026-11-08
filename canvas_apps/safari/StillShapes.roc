@@ -40,7 +40,7 @@ StillShapes :: [].{
 	## A whole still, its polygons in order.
 	still_shapes : StillShapes.Anchor, Still -> List(Shapes.Shape)
 	still_shapes = |anchor, still|
-		still.polygons().map(|poly| still_polygon(anchor, poly))
+		still.polygons().map(|polygon| still_polygon(anchor, polygon))
 
 	## Where a still `height` tall stands on screen at the setting's spot: its
 	## foot raised as high as the spot says, and its height on screen from
@@ -85,9 +85,9 @@ screen_vector = |anchor, step| {
 
 ## One polygon of a still, filled with its colour or its gradient.
 still_polygon : StillShapes.Anchor, Still.Polygon -> Shapes.Shape
-still_polygon = |anchor, poly| {
-	points = StillShapes.screen_points(anchor, poly.points)
-	match poly.fill {
+still_polygon = |anchor, polygon| {
+	points = StillShapes.screen_points(anchor, polygon.points)
+	match polygon.fill {
 		Flat(color) => Polygon.flat_polygon(points, color)
 		Shaded(gradient) => still_gradient_polygon(anchor, { gradient, points })
 	}

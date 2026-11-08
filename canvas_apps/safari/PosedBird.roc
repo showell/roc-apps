@@ -30,8 +30,8 @@ PosedBird := { pose : PosedBird.BirdPose }.{
 	scenery_picture : PosedBird, Picture.Setting({}) -> Picture
 	scenery_picture = |bird, setting|
 		Picture.from_shapes(
-			# As drawn, because birds start on left-hand trees; facing joins the
-			# pose when they fly both ways.
+			# As drawn, never mirrored, because every bird starts on a left-hand
+			# tree.
 			StillShapes.standing_still_shapes(
 				setting,
 				{ height: bird_height, still: PosedBird.pose_still(bird.pose) },

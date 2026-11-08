@@ -96,21 +96,21 @@ min_axes_area : F64
 min_axes_area = 0.000025
 
 ## A place in the still's frame, written as `(x, y)`.
-place : Still.FramePoint -> Str
-place = |point| "(${point.x.to_str()}, ${point.y.to_str()})"
+point_text : Still.FramePoint -> Str
+point_text = |point| "(${point.x.to_str()}, ${point.y.to_str()})"
 
 polygon_flaw : Still.Polygon -> Flaw
 polygon_flaw = |polygon|
 	match polygon.points {
 		[] => Flawed("a polygon has no corners, and it needs three")
 		[first, .. as rest] if rest.len() < 2 =>
-			Flawed("the polygon from ${place(first)} has ${(rest.len() + 1).to_str()} corners, and it needs three")
+			Flawed("the polygon from ${point_text(first)} has ${(rest.len() + 1).to_str()} corners, and it needs three")
 		[first, ..] => {
 			next_corners = polygon.points.drop_first(1).concat([first])
 			edges = polygon.points.map2(next_corners, |from, to| { from, to })
 			match edges.find_first(|{ from, to }| from == to) {
 				Ok({ from, .. }) =>
-					Flawed("the polygon from ${place(first)} repeats its corner ${place(from)}")
+					Flawed("the polygon from ${point_text(first)} repeats its corner ${point_text(from)}")
 				Err(NotFound) =>
 					match polygon.fill {
 						Flat(_) => Sound
@@ -125,17 +125,17 @@ gradient_flaw = |gradient|
 	match gradient {
 		Linear({ stops, start, end }) =>
 			if start == end {
-				Flawed("the linear gradient from ${place(start)} ends where it starts")
+				Flawed("the linear gradient from ${point_text(start)} ends where it starts")
 			} else {
-				stops_flaw(stops, "the linear gradient from ${place(start)}")
+				stops_flaw(stops, "the linear gradient from ${point_text(start)}")
 			}
 		Radial({ stops, center, axis_u, axis_v }) => {
 			area = (axis_u.x * axis_v.y - axis_u.y * axis_v.x).abs()
 			if area < min_axes_area {
 				least = min_axes_area.to_str()
-				Flawed("the radial gradient about ${place(center)} has axes that span ${area.to_str()}, under ${least}")
+				Flawed("the radial gradient about ${point_text(center)} has axes that span ${area.to_str()}, under ${least}")
 			} else {
-				stops_flaw(stops, "the radial gradient about ${place(center)}")
+				stops_flaw(stops, "the radial gradient about ${point_text(center)}")
 			}
 		}
 	}

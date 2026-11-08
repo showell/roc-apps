@@ -1153,7 +1153,7 @@ These animals stand at the bends. Most of the others come in crowds, and a crowd
 
 A pig is the simplest critter in Safari Ride. It isn't tied to a bend. Here's how we build one:
 
-{{code Pig.pig}}
+{{code PigHerd.pig_species}}
 
 New in this chapter:
 
