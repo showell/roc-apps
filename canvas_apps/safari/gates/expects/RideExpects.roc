@@ -51,7 +51,7 @@ finished_ride = {
 		pace: Slowing,
 	},
 	clock: Clock.at_step(12345),
-	encounter_start: StartsAt(Clock.at_step(12300)),
+	encounter_plan: StartsAt(Clock.at_step(12300)),
 }
 
 ## The world's ride a step on from `instant`, whether it went on or restarted.
@@ -80,7 +80,7 @@ expect
 				and instant.rider.eyes.look_depth == initial.rider.eyes.look_depth
 				and instant.truck.route_position == initial.truck.route_position
 				and instant.truck.pace == initial.truck.pace
-				and instant.encounter_start == initial.encounter_start
+				and instant.encounter_plan == initial.encounter_plan
 		}
 		Continued(_) => False
 	}

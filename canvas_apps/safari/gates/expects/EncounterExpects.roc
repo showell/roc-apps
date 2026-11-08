@@ -121,7 +121,7 @@ bird_segment = { ..Fixtures.segment_of(bird_trees), encounter: BirdHere(bird_fli
 
 ## A flight that started at step 100, at step `now`.
 flight_at_step : U32 -> EncounterPlan.Timing
-flight_at_step = |now| EncounterPlan.timing_of(StartsAt(Clock.at_step(100)), Clock.at_step(now))
+flight_at_step = |now| EncounterPlan.timing_at(StartsAt(Clock.at_step(100)), Clock.at_step(now))
 
 ## The birds on `segment`, alone on its route, for a rider `rider_along` metres
 ## into it, seen through a focal length of `focal_length`, with the bird's flight
