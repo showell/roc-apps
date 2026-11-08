@@ -148,7 +148,7 @@ status_lines = |{ gap, timing }| {
 	throttle = EncounterReaction.encounter_throttle(World.first_cat_segment, stage)
 	[
 		ReadoutText.stage_text(stage),
-		"Pose: ${ReadoutText.cat_pose_text(instant.pose)}",
+		"Pose: ${Cat.pose_name(instant.pose)}",
 		"Gap: ${ReadoutText.tenths_text(gap.to_metres())} m",
 		throttle_text(throttle),
 	]

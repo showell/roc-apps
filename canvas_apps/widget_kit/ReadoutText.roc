@@ -1,11 +1,10 @@
 ## The words a widget's readout gives a number: any number to a tenth, to a
 ## hundredth or to a whole one, a fraction
 ## as a percentage, a count with commas, a turn in degrees, and where an
-## animation has got to, and the cat's pose.
+## animation has got to.
 import game.Angle
 import game.Animation
 import game.Fraction
-import game.CatCrossing
 
 ReadoutText :: [].{
 
@@ -62,19 +61,6 @@ ReadoutText :: [].{
 		}
 		"${(degrees + 0.5).to_i64_wrap().to_str()} deg ${side}"
 	}
-
-	## The cat's pose, by its name.
-	cat_pose_text : CatCrossing.CatPose -> Str
-	cat_pose_text = |pose|
-		match pose {
-			Rest => "Rest"
-			Stride => "Stride"
-			Frozen => "Frozen"
-			Coil => "Coil"
-			Flight => "Flight"
-			Land => "Land"
-			Collapse => "Collapse"
-		}
 }
 
 ## A number to `places` decimal places, a half rounding away from zero, with a
