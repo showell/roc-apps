@@ -10,7 +10,10 @@ import TruckShape
 import lib.Shapes
 
 ## Which of the truck's lights are on.
-Truck := { headlights : [On, Off], brake_lights : [On, Off] }.{
+Truck := { headlights : Truck.Lamp, brake_lights : Truck.Lamp }.{
+
+	## Whether one of the truck's lamps is lit.
+	Lamp : [On, Off]
 
 	is_eq : _
 
