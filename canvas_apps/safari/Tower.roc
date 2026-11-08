@@ -105,7 +105,7 @@ tower_shapes = |tower, { footprint, spot, focal_length }| {
 			metre_on_screen: metre_on_screen({ at: foot, focal_length }),
 			focal_length,
 		}
-		apex = foot.at_height(lift.plus(tower_height.minus(sunk)))
+		apex = foot.at_height(height_in_view(geometry, tower_height))
 		rods = [
 			leg_shapes(geometry, apex.to_raised()),
 			ring_shapes(geometry),
@@ -208,6 +208,12 @@ base_corner_on_road = |corner, { center, yaw }| {
 	}
 }
 
+## How high a point `height_on_tower` up the tower stands in the rider's
+## view: raised by the tower's lift, and lowered by how far it has sunk.
+height_in_view : TowerGeometry, Distance -> Distance
+height_in_view = |geometry, height_on_tower|
+	geometry.lift.plus(height_on_tower.minus(geometry.sunk))
+
 ## A corner of the tower at `height_on_tower`: drawn in toward the foot as
 ## the tower tapers, raised by the tower's lift, and lowered by how far the
 ## tower has sunk.
@@ -219,7 +225,7 @@ corner_at = |geometry, { corner, height_on_tower }| {
 	{
 		right: tapered(bottom.right, geometry.foot.right()),
 		forward: tapered(bottom.forward, geometry.foot.forward()),
-		height: geometry.lift.plus(height_on_tower.minus(geometry.sunk)),
+		height: height_in_view(geometry, height_on_tower),
 	}
 }
 
