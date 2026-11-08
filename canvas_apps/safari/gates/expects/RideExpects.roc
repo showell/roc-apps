@@ -365,8 +365,11 @@ ride_encounters = {
 				}
 			}
 			CatCrosses(_) => {
-				if Cat.is_crossing(Cat.crossing_stage(timing)) {
-					$crossing_step_count = $crossing_step_count + 1
+				match Cat.crossing_stage(timing) {
+					Playing(_) => {
+						$crossing_step_count = $crossing_step_count + 1
+					}
+					Waiting | Past(_) => {}
 				}
 				if is_leaving {
 					$cat_exits = $cat_exits + 1

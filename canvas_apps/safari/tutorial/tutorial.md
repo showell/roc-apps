@@ -2360,11 +2360,11 @@ Let's follow this back to `Cat`, to two small questions about the same `Stage`.
 
 `is_crossing` asks whether the crossing is playing. `_` ignores a payload.
 
-{{code Cat.is_crossing}}
+{{code EncounterReaction.encounter_throttle from "CatCrosses(_) =>" to "Waiting | Past(_) => NoLimit"}}
 
 `attention` is where `Past`'s payload is used. A cat in the lane also draws the rider's attention, which widens the view. `beyond` is how far past the end of the crossing the rider has come, and that attention fades over that distance, counted in beats. `beats_to_cover` divides by the speed, so a rider at a standstill gets an answer first. `Attention` is another opaque type.
 
-{{code Cat.cat_attention}}
+{{code EncounterReaction.cat_attention}}
 
 `CrossingReaction.reaction_to` calls both. `..` in the argument's type makes it an open record, like `Bike.Motion`, though this one is only read and nothing comes back. This function needs `along` and `speed`, and accepts any record that has them, so it doesn't depend on `Rider`, the rider's record. `speed` here is the opaque `Speed` again, and `match` on `segment.crossing` has to name every tag.
 

@@ -4,10 +4,14 @@
 ## the throttle, without braking, and draws their eye. A bird asks nothing. The
 ## pigs' gaze is no encounter, and is Gaze's.
 import Acceleration
+import Animation
 import EncounterPlan
 import Attention
 import Cat
+import Easing
+import Fraction
 import Segment
+import Steps
 import VehicleLimits
 
 EncounterReaction :: [].{
@@ -19,10 +23,9 @@ EncounterReaction :: [].{
 	encounter_throttle = |segment, timing|
 		match segment.encounter {
 			CatCrosses(_) =>
-				if Cat.is_crossing(Cat.crossing_stage(timing)) {
-					AtMost(Acceleration.steady)
-				} else {
-					NoLimit
+				match Cat.crossing_stage(timing) {
+					Playing(_) => AtMost(Acceleration.steady)
+					Waiting | Past(_) => NoLimit
 				}
 			BirdHere(_) | QuietRoad => NoLimit
 		}
@@ -32,7 +35,43 @@ EncounterReaction :: [].{
 	encounter_attention : Segment, EncounterPlan.Timing -> Attention
 	encounter_attention = |segment, timing|
 		match segment.encounter {
-			CatCrosses(_) => Cat.cat_attention(Cat.crossing_stage(timing))
+			CatCrosses(_) => cat_attention(Cat.crossing_stage(timing))
 			BirdHere(_) | QuietRoad => Attention.none
 		}
 }
+
+## How hard a crossing cat holds the rider's eye at `stage`: rising to the
+## cat's peak as it crosses, then fading once it is across.
+cat_attention : Animation.Stage -> Attention
+cat_attention = |stage|
+	match stage {
+		Waiting => Attention.none
+		Playing(steps_in) => {
+			progress = Fraction.of(steps_in.to_f64() / Cat.crossing_span.length.to_f64())
+			Cat.peak_attention.scaled_by(Easing.smoothstep(progress))
+		}
+		Past(steps_past) => {
+			faded = Fraction.clamp(steps_past.to_f64() / attention_fade.to_f64())
+			Cat.peak_attention.scaled_by(Easing.smoothstep(faded).complement())
+		}
+	}
+
+## Over how many steps the rider's eye lets a cat go. The fade starts when the
+## crossing ends, with the rider the crossing's `ends_at` gap short of the cat,
+## so at the rider's nominal metre a step the eye lets go about 80 metres past
+## the cat: 80 metres plus that 3-metre gap.
+attention_fade : Steps
+attention_fade = Steps.of(83)
+
+## How hard the cat holds the eye at `stage`.
+attention_at : Animation.Stage -> F64
+attention_at = |stage| cat_attention(stage).to_f64()
+
+expect attention_at(Waiting) == 0.0
+expect attention_at(Playing(Steps.zero)) == 0.0
+expect attention_at(Playing(Steps.of(19))) == 0.9
+expect attention_at(Past(Steps.zero)) == 1.8
+expect attention_at(Past(Steps.of(42))) > 0.0
+expect attention_at(Past(Steps.of(42))) < 1.8
+expect attention_at(Past(Steps.of(83))) == 0.0
+expect attention_at(Past(Steps.of(200))) == 0.0

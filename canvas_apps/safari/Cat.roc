@@ -1,14 +1,12 @@
 ## A cat that crosses the road ahead of the rider. It waits by a roadside
 ## tree, then walks out into the road, freezes there, and leaps clear to the
 ## far verge, a frame a step at its own pace. The ride plans its start so that
-## it is across as the rider comes within `clear_gap` of it. The rider's eye is
-## drawn to it while it crosses, and lets it go after.
+## it is across as the rider comes within `clear_gap` of it.
 import Animation
 import EncounterPlan
 import Attention
 import CatCrossing
 import Distance
-import Easing
 import Fraction
 import PosedCat
 import Steps
@@ -23,31 +21,10 @@ Cat :: [].{
 	crossing_stage : EncounterPlan.Timing -> Animation.Stage
 	crossing_stage = |timing| EncounterPlan.stage_at(timing, crossing_steps)
 
-	## Whether the cat is crossing in front of the rider at `stage`. The rider
-	## eases off while it does, which is the rider reacting to the cat; the cat
-	## never reacts to the rider.
-	is_crossing : Animation.Stage -> Bool
-	is_crossing = |stage|
-		match stage {
-			Playing(_) => True
-			Waiting | Past(_) => False
-		}
-
-	## How hard the cat holds the rider's eye at `stage`: rising as it crosses,
-	## then fading once it is across.
-	cat_attention : Animation.Stage -> Attention
-	cat_attention = |stage|
-		match stage {
-			Waiting => Attention.none
-			Playing(steps_in) => {
-				progress = Fraction.of(steps_in.to_f64() / crossing_steps.to_f64())
-				peak_attention.scaled_by(Easing.smoothstep(progress))
-			}
-			Past(steps_past) => {
-				faded = Fraction.clamp(steps_past.to_f64() / attention_fade.to_f64())
-				peak_attention.scaled_by(Easing.smoothstep(faded).complement())
-			}
-		}
+	## How eye-catching a crossing cat is: how hard it holds the rider's eye at
+	## its strongest.
+	peak_attention : Attention
+	peak_attention = Attention.of(1.8)
 
 	## The cat at `stage` of its crossing.
 	instant_at : CatCrossing, Animation.Stage -> Animation.Instant(PosedCat.CatPose)
@@ -95,16 +72,6 @@ leap_frames = [
 	},
 	{ pose: Land, way: Leaping({ way_to_verge: Fraction.whole, lift: Distance.zero }) },
 ]
-
-## How hard the cat holds the rider's eye at its strongest.
-peak_attention : Attention
-peak_attention = Attention.of(1.8)
-
-## Over how many steps its hold fades. The fade starts when the crossing ends,
-## with the rider `clear_gap` short of the cat, so at a metre a step the cat
-## lets go 80 metres past itself.
-attention_fade : Steps
-attention_fade = Steps.of(83)
 
 ## Where a cat is on its way across in one frame: walking out, this much of
 ## the way to the middle of the road; standing frozen there; or leaping, this
@@ -162,24 +129,3 @@ crossing_timeline = |cat| {
 		after: { pose: Collapse, location: end },
 	})
 }
-
-expect
-	[
-		(Waiting, False),
-		(Playing(Steps.zero), True),
-		(Playing(Steps.of(37)), True),
-		(Past(Steps.zero), False),
-	].all(|(stage, want)| Cat.is_crossing(stage) == want)
-
-## How hard the cat holds the eye at `stage`.
-attention_at : Animation.Stage -> F64
-attention_at = |stage| Cat.cat_attention(stage).to_f64()
-
-expect attention_at(Waiting) == 0.0
-expect attention_at(Playing(Steps.zero)) == 0.0
-expect attention_at(Playing(Steps.of(19))) == 0.9
-expect attention_at(Past(Steps.zero)) == 1.8
-expect attention_at(Past(Steps.of(42))) > 0.0
-expect attention_at(Past(Steps.of(42))) < 1.8
-expect attention_at(Past(Steps.of(83))) == 0.0
-expect attention_at(Past(Steps.of(200))) == 0.0

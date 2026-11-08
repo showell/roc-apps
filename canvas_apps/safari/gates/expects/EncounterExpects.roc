@@ -16,6 +16,7 @@ import game.Distance
 import game.EmojiStills
 import game.EncounterPlan
 import game.EncounterPoses
+import game.EncounterReaction
 import game.EncounterSighting
 import game.Fraction
 import game.RiderView
@@ -361,6 +362,26 @@ expect (
 		Past(Steps.zero),
 	).location.across.to_metres() - -3.49
 ).abs() <= 0.000000000001
+
+## Whether `segment`'s encounter holds back the throttle at step `now`, its
+## animation having started at step 100.
+is_throttle_held : Segment, U32 -> Bool
+is_throttle_held = |segment, now|
+	match EncounterReaction.encounter_throttle(segment, flight_at_step(now)) {
+		AtMost(_) => True
+		NoLimit => False
+	}
+
+# The rider eases off for a cat for exactly the steps it crosses, and never for a
+# bird.
+expect
+	[
+		(99, False),
+		(100, True),
+		(137, True),
+		(138, False),
+	].all(|(now, want)| is_throttle_held(World.first_cat_segment, now) == want)
+expect [99, 100, 137, 138].all(|now| !is_throttle_held(bird_segment, now))
 
 # BirdFlight: the tree a bird flies to, and its flight frame by frame.
 ## The tree a sample bird leaves.
