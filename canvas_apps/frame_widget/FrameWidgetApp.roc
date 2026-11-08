@@ -287,18 +287,19 @@ status_lines = |{ last_layer_on, .. }| {
 	["Shapes so far: ${so_far} of ${total}", "Added: ${layer_name(last_layer_on)}"]
 }
 
-status_line : Str, U64 -> Shapes.Shape
-status_line = |text, row|
-	Text({
-		text,
-		x: 24.0,
-		y: 640.0 + row.to_f64() * 36.0,
-		size: 22.0,
-		face: Code,
-		align: Left,
-		color: Brush.opaque_rgba(WidgetPage.ink_color),
-	})
+## The panel's rows of text, in type sized for the whole frame, larger than a
+## widget page's.
+status_readout : WidgetPage.ReadoutStyle
+status_readout = {
+	x: WidgetPage.side_margin,
+	first_baseline: picture_height + 40.0,
+	row_spacing: 36.0,
+	size: 22.0,
+	align: Left,
+}
 
+status_line : Str, U64 -> Shapes.Shape
+status_line = |text, row| WidgetPage.readout({ text, color: WidgetPage.ink_color, row, style: status_readout })
 ## The layers on, in the game's paint order.
 picture_shapes : List(Layer) -> List(Shapes.Shape)
 picture_shapes = |on_layers| Shapes.shapes_in_space(lean_space, frame_shapes_on(on_layers))
