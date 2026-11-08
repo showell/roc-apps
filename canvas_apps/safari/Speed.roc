@@ -26,18 +26,25 @@ Speed :: F64.{
 	at_rest : Speed
 	at_rest = Speed.(0.0)
 
+	## This speed after `acceleration`, the change over one step, or `BelowRest`
+	## when that would take it below zero.
+	accelerated_by_try : Speed, Acceleration -> Try(Speed, [BelowRest])
+	accelerated_by_try = |Speed.(s), acceleration| {
+		after = s + acceleration.to_metres_a_step_each_step()
+		if after < 0.0 {
+			Err(BelowRest)
+		} else {
+			Ok(Speed.(after))
+		}
+	}
+
 	## This speed after `acceleration`, the change over one step. Nothing in the
 	## ride goes backwards, so a speed below zero means the braking behind it is
 	## wrong.
 	accelerated_by : Speed, Acceleration -> Speed
-	accelerated_by = |Speed.(s), acceleration| {
-		after = s + acceleration.to_metres_a_step_each_step()
-		if after < 0.0 {
-			crash "Speed.accelerated_by: this acceleration takes the speed below zero, so the braking behind it is wrong"
-		} else {
-			Speed.(after)
-		}
-	}
+	accelerated_by = |speed, acceleration|
+		Speed.accelerated_by_try(speed, acceleration)
+			?? crash "Speed.accelerated_by: this acceleration takes the speed below zero, so the braking behind it is wrong"
 
 	## The steady acceleration that brings this speed to `target` within this
 	## distance.
@@ -46,7 +53,7 @@ Speed :: F64.{
 		Acceleration.metres_a_step_each_step((t * t - s * s) / (2.0 * within.to_metres()))
 
 	times : Speed, F64 -> Speed
-	times = |Speed.(s), factor| Speed.(s * factor)
+	times = |Speed.(s), factor| Speed.metres_a_step(s * factor)
 
 	## This fraction of this speed.
 	scaled_by : Speed, Fraction -> Speed
@@ -119,8 +126,20 @@ expect
 half_metre_a_step : Speed
 half_metre_a_step = Speed.metres_a_step(0.5)
 
-# Braking to a stop exactly is still a speed.
-expect {
-	loss = Acceleration.metres_a_step_each_step(-0.5)
-	half_metre_a_step.accelerated_by(loss) == Speed.at_rest
-}
+# Braking to rest exactly, or short of it, is a speed, and a hair harder goes
+# below rest.
+expect
+	[
+		(-0.25, Ok(Speed.metres_a_step(0.25))),
+		(-0.5, Ok(Speed.at_rest)),
+		(-0.5000001, Err(BelowRest)),
+	].all(
+		|(loss, want)| {
+			acceleration = Acceleration.metres_a_step_each_step(loss)
+			half_metre_a_step.accelerated_by_try(acceleration) == want
+		},
+	)
+
+# Scaling by nothing is rest, and by a positive factor a speed.
+expect half_metre_a_step.times(0.0) == Speed.at_rest
+expect half_metre_a_step.times(3.0) == Speed.metres_a_step(1.5)
