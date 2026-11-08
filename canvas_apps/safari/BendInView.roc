@@ -91,10 +91,12 @@ BendInView :: { before : SegmentPlace, bend : Geom.Bend }.{
 		start_after = Geom.point_in_segment_before({ along: Along.start, across }, bend)
 		turn_radians = bend.turn.to_radians()
 		toward_edge = across.distance_from(start_after.across).to_metres()
-		run_to_edge = toward_edge * turn_radians.cos() / turn_radians.sin()
+		# Negative below a right angle, where the apex is back from start_after,
+		# and positive past one.
+		along_to_apex = toward_edge * turn_radians.cos() / turn_radians.sin()
 		{
 			end_before: { along: Along.at(bend.segment_length), across },
-			apex: { along: start_after.along.plus(Distance.metres(run_to_edge)), across },
+			apex: { along: start_after.along.plus(Distance.metres(along_to_apex)), across },
 			start_after,
 		}
 	}
