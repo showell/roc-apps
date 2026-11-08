@@ -32,6 +32,7 @@ Tour :: {
 	past_instant_count : Tour -> U64
 	past_instant_count = |Tour.(tour)| tour.past_instants.len()
 
+	## The tour a step on. A ride that has finished starts again.
 	step_forward : Tour -> Tour
 	step_forward = |tour|
 		match tour_after_step(tour) {
@@ -75,6 +76,8 @@ Tour :: {
 		$tour
 	}
 
+	## The tour a step back. At the ride's start there is nothing behind it,
+	## so it stays there.
 	step_back : Tour -> Tour
 	step_back = |Tour.(tour)| {
 		match tour.past_instants.last() {

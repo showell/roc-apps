@@ -4,7 +4,7 @@
 ##
 ## The ride plays on its own. Space pauses it. Left steps back through the ride's
 ## history and Right forward, a frame at a time while paused and faster while it
-## runs. J jumps to the next of the route's nineteen segments, and R starts the
+## runs. J jumps to the next of the route's segments, and R starts the
 ## ride again.
 import lib.CanvasApp
 import lib.Input
@@ -55,7 +55,7 @@ model_at_next_step = |m, input|
 			} else {
 				match motion {
 					Paused => m.tour
-					Playing => Tour.step_forward(m.tour)
+					Playing => m.tour.step_forward()
 				}
 			}
 		tour = if input.key_pressed(KeyJ) {

@@ -12,8 +12,8 @@
 ## (`Shapes.Mode`), which paints over it or adds light to it, in proportion to
 ## that alpha either way.
 ##
-## Safari's ScanlineFill shades a brush on the CPU, BrushGlsl on the GPU and
-## shapes_canvas.js on a canvas, all from what is here. The tags are the ones
+## A CPU painter shades a brush with `shade`, BrushGlsl does it on the GPU
+## and shapes_canvas.js on a canvas, all from what is here. The tags are the ones
 ## shapes_canvas.js reads, and so is what they mean: gradients mix
 ## unpremultiplied, as the canvas specification says, and an offset outside
 ## [0, 1] is clamped as shapes_canvas.js clamps it. Every canvas app paints
