@@ -47,7 +47,7 @@ TruckView : {
 third_width : F64
 third_width = WidgetPage.canvas_width / 3.0
 
-## The picture ends 16 canvas pixels below the horizon, so a truck's nearest
+## The picture ends `WidgetPage.ground_depth` below the horizon, so a truck's nearest
 ## tires stand above the panel only once they are about 34 metres ahead of the
 ## camera, measured along the way it faces. A truck toward the canvas's edge is
 ## seen at a slant, so it must stand further off still. This is far enough for
@@ -198,8 +198,7 @@ is_in_its_third : TruckView -> Bool
 is_in_its_third = |view| {
 	half_third = third_width / 2.0
 	is_inside = |corner|
-		corner.y >= 0.0
-			and corner.y <= WidgetPage.picture_bottom_y
+		WidgetPage.is_in_picture(corner)
 			and (corner.x - view.canvas_x).abs() <= half_third
 	corners = canvas_corners(truck_shapes(view))
 	!corners.is_empty() and corners.all(is_inside)

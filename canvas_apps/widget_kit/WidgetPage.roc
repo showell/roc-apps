@@ -15,6 +15,7 @@ import lib.Brush
 import lib.RgbColor
 import lib.CanvasApp
 import lib.Input
+import lib.Point
 import lib.Shapes
 
 WidgetPage :: [].{
@@ -29,9 +30,21 @@ WidgetPage :: [].{
 	canvas_per_screen : F64
 	canvas_per_screen = canvas_width / Screen.width.to_f64()
 
+	## Where the ride's horizon crosses the picture.
+	horizon_y : F64
+	horizon_y = Screen.horizon_y.to_f64() * canvas_per_screen
+
+	## How much ground shows below the horizon, chosen by eye.
+	ground_depth : F64
+	ground_depth = 16.0
+
 	## The picture fills the canvas above this line.
 	picture_bottom_y : F64
-	picture_bottom_y = 216.0
+	picture_bottom_y = horizon_y + ground_depth
+
+	## Whether `point` is in the picture, edges included.
+	is_in_picture : Point.Point -> Bool
+	is_in_picture = |{ x, y }| x >= 0.0 and x <= canvas_width and y >= 0.0 and y <= picture_bottom_y
 
 	## The space left and right of what sits on the panel.
 	side_margin : F64

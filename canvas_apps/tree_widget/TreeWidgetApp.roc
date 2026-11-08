@@ -165,8 +165,8 @@ is_plain_to_see = |stand|
 			foot_y = outline.foot.y.to_f64() * WidgetPage.canvas_per_screen
 			tip_y = foot_y - outline.height_on_screen.to_f64() * WidgetPage.canvas_per_screen
 			x = outline.foot.x.to_f64() * WidgetPage.canvas_per_screen
-			tip_y >= 0.0
-				and foot_y <= WidgetPage.picture_bottom_y
+			WidgetPage.is_in_picture({ x, y: tip_y })
+				and WidgetPage.is_in_picture({ x, y: foot_y })
 				and foot_y - tip_y >= 30.0
 				and (x - stand.canvas_x).abs() <= 0.000000001
 		}

@@ -294,10 +294,7 @@ expect {
 }
 
 # The road stays inside the picture, on all four sides.
-expect corners.all(|corner| canvas_point(corner).x >= 0.0)
-expect corners.all(|corner| canvas_point(corner).x <= WidgetPage.canvas_width)
-expect corners.all(|corner| canvas_point(corner).y >= 0.0)
-expect corners.all(|corner| canvas_point(corner).y <= WidgetPage.picture_bottom_y)
+expect corners.all(|corner| WidgetPage.is_in_picture(canvas_point(corner)))
 
 # It is the longest segment, so it is plain on the map.
 expect {
