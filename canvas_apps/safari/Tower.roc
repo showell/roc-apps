@@ -277,7 +277,7 @@ rod_shape : SunkTower,
 	to : RiderView.RaisedPoint,
 } -> Try(Shapes.Shape, [BehindCamera])
 rod_shape = |tower, line| {
-	ahead = RiderView.ahead_line(line)?
+	ahead = RiderView.line_ahead(line)?
 	Ok(
 		screen_rod({
 			from: Camera.project(ahead.from, tower.focal_length),

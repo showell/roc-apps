@@ -1,11 +1,12 @@
 ## DepthSort orders the things in a frame from far to near, so each is
-## painted over the ones behind it. Things about as far away as each other
-## keep the order they came in.
+## painted over the ones behind it.
 import Distance
 
 DepthSort :: [].{
 
-	## `items` from far to near, by `depth_of`: a stable merge sort.
+	## `items` from far to near, by `depth_of`: a stable merge sort. Things about
+	## as far away as each other, within `tie_slack`, keep the order they came
+	## in, so that order decides which is painted over the other.
 	sort_by : List(item), (item -> Distance) -> List(item)
 	sort_by = |items, depth_of|
 		if items.len() <= 1 {
@@ -39,8 +40,7 @@ is_farther = |{ this, that }| {
 tie_slack : F64
 tie_slack = F64.from_bits(4499125899939309867)
 
-## Two lists, each far to near, merged into one. Of two items about as far
-## away, the one from `first_items` goes first.
+## Two lists, each far to near, merged into one.
 merge : {
 	first_items : List(item),
 	second_items : List(item),
