@@ -37,14 +37,13 @@ LitTruck := { headlights : [On, Off], brake_lights : [On, Off] }.{
 	scenery_picture = |lit_truck, setting| Picture.from_shapes(truck_shapes(lit_truck, setting))
 }
 
-## The headlights come on at 41.2% of dusk. The value was measured once, so the
-## lights come on at the very step they did when they waited for the sun to sink
-## behind the west range: the sky is a little darker than this there, and a
-## little lighter a step before. gates/expects/RideExpects.roc pins that step.
+## The headlights come on once the sky is 41.2% dark, about when the sun sinks
+## behind the west range. The value was measured once, on this ride;
+## gates/expects/RideExpects.roc pins the step.
 headlights_on_darkness : Fraction
 headlights_on_darkness = Fraction.of(0.412)
 
-## The truck, filling its box.
+## The truck's shapes: the beams under the body, the brake lights over it.
 truck_shapes : LitTruck, TruckShape.TruckSetting -> List(Shapes.Shape)
 truck_shapes = |lit_truck, setting| {
 	beams =

@@ -1837,9 +1837,9 @@ New in this chapter:
 
 ### A tease, carried out by physics
 
-The truck's driver is teasing the rider: staying ahead, but letting the rider gain. That's the hand of god, and it's one function, `tease_position`. Given how far the rider has come, it says where the truck would like to be. The lead it aims for shrinks from 500 metres at the start of the route to 100 at the end.
+The truck's driver is teasing the rider: staying ahead, but letting the rider gain. That's the hand of god, a rule that bends the world on purpose, for the story. Here it's one function, `tease_position`. Given how far the rider has come, it says where the truck would like to be. The lead it aims for shrinks from 500 metres at the start of the route to 100 at the end.
 
-Everything else is plain physics. The truck speeds up while it's short of that mark and holds its speed once it's past it. It never slows down to keep to the mark, so it can run well past it on a long straight. It slows for the turns, and that's mostly where the rider gains.
+Everything else is plain physics. The truck speeds up while it's short of that mark and holds its speed once it's past it. It never slows down to keep to the mark, so it can run well past it on a long straight. It slows for the bends, and that's mostly where the rider gains. The tease only ever speeds the truck up, so near the end the rider can get closer than the 100 metres it aims for.
 
 The truck can always pull away, because it outdoes the rider by 10%, in both its acceleration and its top speed.
 
@@ -1849,15 +1849,17 @@ The truck's state is three fields:
 
 {{code Truck.Truck from "How far along" to "pace : Truck.Pace,"}}
 
-`route_position` is a `Distance` along the whole route, the same measure as the rider's progress, so the two can be compared directly. `Pace` says whether the truck's last step slowed it down. Nothing in this chapter reads it; the truck's lights do, in the next.
+`route_position` is a `Distance` along the whole route, the same measure as the rider's progress, so the two can be compared directly. `Pace` says whether the truck's last step slowed it down:
 
-A turn ahead of the truck is its own type, and so is the answer to "is there one":
+{{code Truck.Pace}}
+
+A bend ahead of the truck is its own type, and so is the answer to "is there one":
 
 {{code Truck.ComingBend}}
 
 {{code Truck.NextBend}}
 
-`BendAhead` carries a `ComingBend`, how far off the turn is and how fast it can be taken. `NoBendAhead` carries nothing: the route ends before another turn, or the truck is already past the end. The only way to read a turn's distance is inside the branch where there is a turn.
+`BendAhead` carries a `ComingBend`, how far off the bend is and how fast it can be taken. `NoBendAhead` carries nothing: the route ends before another bend, or the truck is already past the end. The only way to read a bend's distance is inside the branch where there is a bend.
 
 ### The functions
 
@@ -1886,7 +1888,7 @@ digraph truck {
 
 That record is the whole of the chase. `Truck` imports none of the rider's modules, and the rider's modules don't import `Truck`. What the two share is `VehicleLimits`, the limits both keep to, which is where the truck's 10% comes from.
 
-The step works out the tease, then looks for the next turn:
+The step works out the tease, then looks for the next bend:
 
 {{code Truck.truck_at_next_step}}
 
@@ -1894,21 +1896,21 @@ Here's the tease itself. The lead shrinks in step with the rider's progress alon
 
 {{code Truck.tease_position}}
 
-Finding the next turn walks the route's segments with their ends, and takes the first one that ends past the truck:
+Finding the next bend walks the route's segments with their ends, and takes the first one that ends past the truck:
 
 {{code Truck.next_bend}}
 
-Then the two ways to take a step. Both sit below the type's block, so they're private, and both are arithmetic on `Speed`. Within 60 metres of a turn, the truck aims to reach it at 80% of the speed it allows, and brakes if it's going faster than that:
+Then the two ways to take a step. Both sit below the type's block, so they're private, and both are arithmetic on `Speed`. Within 60 metres of a bend, the truck aims to reach it at 80% of the bend's top speed, to leave a margin, and brakes if it's going faster than that:
 
 {{code Truck.braking_truck_at_next_step}}
 
-`target_speed.max(...)` keeps the truck from braking past its target. `VehicleLimits.braking_to` works out a steady brake, and it crashes, rather than pretend, if a brake would ever take the speed below zero. Otherwise, the truck chases:
+`VehicleLimits.braking_to` works out one steady brake that reaches the target speed at the bend. A steady brake can land a little under the target, so `target_speed.max(...)` holds the truck there. A brake that would take the speed below zero is a bug, and `braking_to` crashes on one. Otherwise, the truck chases:
 
 {{code Truck.chasing_truck_at_next_step}}
 
 ### Drawing the truck
 
-`TruckSighting` finds the truck on the road ahead, the way the other sightings find trees and towers. What it finds is a `LitTruck`, the truck with its lights, which the next chapter covers; with the lights off, that's just the body. Unlike the trees, the truck has no size test: it's drawn however small it stands, because the rider is always looking for it.
+`TruckSighting` finds the truck on the road ahead, the way the other sightings find trees and towers. What it finds is a `LitTruck`: which of the truck's lights are on. This chapter draws the body, which is all there is with the lights off. Unlike the trees, the truck has no size test: it's drawn however small it stands, because the rider is always looking for it.
 
 The truck is a real box, with a back, two sides, a roof, a windshield and a nose. Each corner of it goes through three maps on its way to the screen:
 
@@ -1920,7 +1922,7 @@ A point in the truck's own frame is three distances, measured from the middle of
 
 {{code TruckShape.TruckPoint}}
 
-One function does the first two maps. It moves the point along and across the road from the truck's spot, finds where that lands in the rider's view, and lowers it by however far the ground has curved away beneath it:
+A `TruckSetting` holds what a point is drawn from: the truck's spot on the road, including how far the road under it is lifted, and the camera's vantage. One function does the first two maps. It moves the point along and across the road from the truck's spot, finds where that lands in the rider's view, and lowers it by however far the ground has curved away beneath it:
 
 {{code TruckShape.raised_point_on_truck}}
 
@@ -1952,7 +1954,7 @@ The brake lights come on while the truck is slowing down. That's a fact about th
 
 ### Get the types right
 
-Two independent lamps aren't one state with four values, so they're two fields:
+Each lamp switches on its own, so each gets its own field:
 
 {{code LitTruck.LitTruck from "Which of" to "LitTruck := {"}}
 
@@ -1966,19 +1968,17 @@ Each frame, `FrameView` reads the truck's pace and the sky's darkness, and hands
 
 {{code LitTruck.at}}
 
-The headlights' threshold is a measured number with a plain reason:
+The headlights' threshold was measured once:
 
 {{code LitTruck.headlights_on_darkness}}
 
-On this ride, that's step 3,555 of 6,746. The headlights never go off again on the way down, because the sky only gets darker.
+On this ride, that's step 3,555 of 6,746. Once on, they stay on, because from there the sky only darkens.
 
 The drawing does what the lamps say, with each `match` covering both tags. The beams go first, then the body, then the brake lights, so each paints over the one before:
 
 {{code LitTruck.truck_shapes}}
 
-`TruckLights` paints the beams as wedges that fade from the lamp toward their far end, and the brake lights, each with a glow around it. `TruckBody`, from the last chapter, is untouched: the lights are drawn around it.
-
-The sun and the beacons follow the clock alone. The cat has a more nuanced rule: the timing of its crossing depends on where the rider is.
+`TruckLights` paints the beams as wedges that fade from the lamp toward their far end, and the brake lights, each with a glow around it. `TruckBody` knows nothing of the lights: they're drawn around it.
 
 ## The cat
 
