@@ -1573,7 +1573,7 @@ The horizon is the same sky, warmed toward red:
 
 {{code Sky.horizon_warmth_at}}
 
-The horizon is warmest when the sun's height is zero. `ratio_to` says how far away the sun is, as a share of 110 pixels, and `abs` makes the two sides match, which gives the red line its tent. `Fraction.clamp` holds everything past 110 pixels at no warmth at all.
+The horizon is warmest when the sun's height is zero. `ratio_to` says how far away the sun is, as a share of 110 pixels, and `abs` makes the two sides match, which gives the red line its tent. `Fraction.clamp` holds that share at one for everything past 110 pixels. The share measures distance, and the horizon gets cooler with distance, so `complement` turns it into warmth: one minus the share. A height of zero gives full warmth, and anything past 110 pixels gives no warmth at all.
 
 ### Going backward
 
@@ -1583,7 +1583,7 @@ The sun and the beacons can be asked about any step, cold. Hand `Sky.darkness_at
 
 ## Stepping through the ride: RideInstant
 
-Where the rider and the truck are depends on where they were, so their state has to be kept, and it's the only state there is. This chapter and the next few are about the rider and the truck, the two of `RideInstant`'s fields that move by their own physics.
+Where the rider and the truck are depends on where they were, so their state has to be kept. `RideInstant` keeps four things from one step to the next: the rider, the truck, the clock, and the plan for the encounter on the rider's segment. Two of those, the rider and the truck, move by their own physics. This chapter and the next few are about them.
 
 ```widget step
 Press the last button, then the first.
@@ -1593,7 +1593,7 @@ Going forward, the ride has to be played, because each step starts from the one 
 
 New in this chapter:
 
-- Roc: a block that ends in a record
+- Roc: nothing new
 - Modules: none yet. This chapter shows what calls the modules below, and the next few open them.
 
 The modules that do the stepping
@@ -1615,7 +1615,7 @@ digraph stepped {
 }
 ```
 
-Here's the step again, this time whole. Its body is a block: names, then a record, which is the value of the block. The rider moves first, and the truck reads where the rider has just got to, so the order of those lines is a rule of the game, and `to` is what carries it.
+Here's the step again, this time whole. Its body is a block: names, then a record, which is the value of the block. The order of those names is a rule of the game. First the rider reads the stage of the encounter on its segment, at the old clock. Then the rider steps, and then the clock ticks. Then the truck and the encounter plan answer the rider who has just moved. The rider never reads the truck.
 
 {{code RideInstant.next}}
 
@@ -1778,7 +1778,7 @@ Each limit is a `ThrottleLimit`: nothing, or at most some acceleration. `held_to
 
 The throttle answers an acceleration, and the motorcycle turns it into a speed.
 
-`Speed` and `Acceleration` are places and distances again: two speeds and a distance make an acceleration, and an acceleration moves a speed. The formula behind braking for a bend is the first line of a physics textbook, v² = u² + 2as, solved for a. In the code the speed goes from `s` to `t` within a distance. `target: Speed.(t)` opens the field's `Speed` where it's destructured:
+`Speed` and `Acceleration` are places and distances again. A speed is the place, and an acceleration is the change from one speed to another, so an acceleration moves a speed. The `Distance` in `acceleration_to` is a different thing: it's how much road the change has to happen in. The formula behind braking for a bend is the first line of a physics textbook, v² = u² + 2as, solved for a. In the code the speed goes from `s` to `t` within a distance. `target: Speed.(t)` opens the field's `Speed` where it's destructured:
 
 {{code Speed.acceleration_to}}
 
@@ -1800,7 +1800,7 @@ Press play to ride the stretch around the first distracting pig, seen from above
 
 ### Get the types right
 
-The rider's record has two fields we skipped:
+The rider's record has two fields we haven't used yet:
 
 | Field | Type | What it is |
 |---|---|---|
@@ -1817,9 +1817,7 @@ The rider looks at a pig or at the road, and only a pig has an angle:
 
 {{code Gaze.GazeTarget}}
 
-A pig asks something of the throttle, or it doesn't:
-
-{{code ThrottleLimit.ThrottleLimit}}
+A pig asks something of the throttle, or it doesn't, and that's the `ThrottleLimit` from The throttle.
 
 So the job is a short list:
 
@@ -1915,7 +1913,7 @@ Here's all of that on the third segment of the route:
 | 1,050 | The rider lets the pig go | 0.2 metres a step | 34.75 degrees | 0.999 |
 | 1,224 | The gaze is back on the road | 0.2 metres a step | 0 degrees | 0.997 |
 
-The look takes 165 steps, and getting the eyes back takes 174. The rider crawls for 173 steps more with nothing to look at, and reaches the next segment at step 1,397. The gaze is home at every one of the ride's 18 crossings, and an expect holds that. A crossing needs no reset anyway: the bike doesn't turn at a seam, and `gaze_yaw` is measured from the bike.
+The look takes 165 steps, and getting the eyes back takes 174. The rider crawls for 173 steps more with nothing to look at, and reaches the next segment at step 1,397. The gaze is home at every one of the ride's 18 seams between segments, and an expect holds that. A seam needs no reset anyway: the bike doesn't turn at a seam, and `gaze_yaw` is measured from the bike.
 
 That's the pig's part of the rider's step. The truck is the other stepped thing.
 
@@ -2437,9 +2435,7 @@ Once planned, the cat never reads the rider again. The rider's speed sets the ca
 
 ### Hold the throttle
 
-A limit on the throttle is either nothing, or at most some acceleration:
-
-{{code ThrottleLimit.ThrottleLimit}}
+A limit on the throttle is a `ThrottleLimit`, from The throttle: either nothing, or at most some acceleration.
 
 While a cat crosses, the rider may not speed up. That's `AtMost(Acceleration.steady)`, which caps the acceleration at zero without braking:
 
@@ -2451,7 +2447,11 @@ The cat's limit is one of four that the throttle folds together, with the bends,
 
 ### Look
 
-How hard something holds the rider's eye is an `Attention`. A full look to the side is 1, and a crossing cat holds the eye harder than that:
+How hard something holds the rider's eye is an `Attention`. A full look to the side is 1, and a crossing cat holds the eye harder than that, so underneath it's an `F64`, not a `Fraction`:
+
+{{code Attention.Attention from "Attention :: F64.{" to "Attention :: F64.{"}}
+
+The encounter on the rider's segment answers one:
 
 {{code EncounterReaction.encounter_attention}}
 
@@ -2467,6 +2467,8 @@ Each segment has one encounter at most: a cat, a bird, or a quiet road. A cat as
 
 ## Rehearsal
 
+The rider has no steering wheel. Nothing tells it where to go. Each step, it has to choose a lean, and it does that by working out what would happen. Call this *rehearsal*: run the real rules on a pretend copy, read the result, and throw it away.
+
 Safari Ride's rider steers by rehearsing. Each step it tries twelve leans, each narrowing its bounds, and then takes the lean halfway between the bounds the twelfth try left.
 
 ```widget rehearsal
@@ -2479,8 +2481,6 @@ New in this chapter:
 
 - Roc: a `while` that stops early, with `return`; `for` over a range
 - Modules: `Coast`, `LeanSearch`
-
-The rider has no steering wheel. Nothing tells it where to go. Each step, it has to choose a lean, and it does that by working out what would happen.
 
 The calls of one rehearsal
 ```dot
@@ -2528,9 +2528,9 @@ After the last try, the lean it keeps is the midpoint of the bounds that try nar
 
 {{code LeanSearch.best_lean}}
 
-`RiderMind.controls` calls that on its first line, and on its second asks the throttle about the motorcycle at that lean. The walk up the stack ends there.
+`RiderMind.controls` calls that on its first line, and on its second asks the throttle about the motorcycle at that lean. That's where the rehearsals start: `RiderMind.controls` is the top of the calls in the picture above.
 
-Call this *rehearsal*: run the real rules on a pretend copy, read the result, and throw it away. Each real step of the ride runs thirteen coasts that never happen: twelve for the lean, and one more in `Throttle`, which uses `Coast` to ask whether the road is about to run out.
+Each real step of the ride runs thirteen coasts that never happen: twelve for the lean, and one more in `Throttle`, which uses `Coast` to ask whether the road is about to run out.
 
 In a language with mutable objects, a rehearsal has a problem to solve before it starts. It needs to copy the rider, or save it and restore it, and it needs to be sure the copy really is one, all the way down. It needs to know that the physics doesn't quietly update something global, like a scoreboard or a random number generator. In Roc, none of that comes up. `Motorcycle.motorcycle_at_next_step` has a `->`, so it can't reach anything but its arguments. The old motorcycle stays intact because every value does. A rehearsal that goes wrong costs nothing, and `LeanSearch` is about 100 lines above its tests.
 
