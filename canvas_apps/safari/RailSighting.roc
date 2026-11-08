@@ -4,11 +4,9 @@
 ## back, and follows the next segment's outer edge for as far again. Unlike its
 ## sibling sightings, it doesn't go through `Pipeline`: a rail is a path in the
 ## rider's frame, not an object standing at a spot.
-import Across
 import Along
 import Distance
 import RoadAhead
-import SegmentPlace
 import Geom
 import RiderView
 import GuardRail
@@ -36,52 +34,42 @@ RailSighting :: [].{
 		)
 }
 
-## The rail along the last `rail_run_on` of a segment `length` long,
-## which lies at `place`, at `across`: a point a metre, ending at the
-## segment's end.
+## The rail along the last `rail_run_on` of the segment before a bend, at
+## the bend's outer edge: a point a metre, ending at the segment's end.
 runup_points : RoadAhead.RoadView,
 {
 	vantage : Geom.Vantage,
-	place : SegmentPlace,
-	length : Distance,
-	across : Across,
+	bend_in_view : BendInView,
 } -> List(RiderView.RiderPoint)
-runup_points = |road, { vantage, place, length, across }| {
+runup_points = |road, { vantage, bend_in_view }| {
+	length = bend_in_view.length_before()
+	across = bend_in_view.outer_edge()
 	run_on_metres = leg_pieces(rail_run_on)
 	List.from_iter(U32.to(0, run_on_metres)).map(
 		|metres_in| {
 			metres_left = Distance.metres((run_on_metres - metres_in).to_f64())
-			RoadAhead.rider_point_at(
-				road,
-				{
-					vantage,
-					place,
-					road_point: { along: Along.at(length.minus(metres_left)), across },
-				},
-			)
+			road_point = { along: Along.at(length.minus(metres_left)), across }
+			bend_in_view.rider_point_before({ road, vantage, road_point })
 		},
 	)
 }
 
-## The rail along the first `rail_run_on` of a segment at `place`, at
-## `across`: a point a metre, the first a metre in.
+## The rail along the first `rail_run_on` of the segment after a bend, at
+## the bend's outer edge: a point a metre, the first a metre in.
 runout_points : RoadAhead.RoadView,
 {
 	vantage : Geom.Vantage,
-	place : SegmentPlace,
-	across : Across,
+	bend_in_view : BendInView,
 } -> List(RiderView.RiderPoint)
-runout_points = |road, { vantage, place, across }|
+runout_points = |road, { vantage, bend_in_view }| {
+	across = bend_in_view.outer_edge()
 	List.from_iter(U32.to(1, leg_pieces(rail_run_on))).map(
-		|metres_in| RoadAhead.rider_point_at(
-			road,
-			{
-				vantage,
-				place,
-				road_point: { along: Along.metres(metres_in.to_f64()), across },
-			},
-		),
+		|metres_in| {
+			road_point = { along: Along.metres(metres_in.to_f64()), across }
+			bend_in_view.rider_point_after({ road, vantage, road_point })
+		},
 	)
+}
 
 ## How far the rail runs on, a post a metre, past each end of a bend.
 rail_run_on : Distance
@@ -140,22 +128,12 @@ rail_points : RoadAhead.RoadView,
 	bend_in_view : BendInView,
 } -> List(RiderView.RiderPoint)
 rail_points = |road, { vantage, bend_in_view }| {
-	outer_edge = bend_in_view.outer_edge()
-	length_before = bend_in_view.length_before()
 	{ end_before, apex, start_after } = bend_in_view.outer_corner_in_view({ road, vantage })
 	[
-		runup_points(
-			road,
-			{
-				vantage,
-				place: bend_in_view.place_before(),
-				length: length_before,
-				across: outer_edge,
-			},
-		),
+		runup_points(road, { vantage, bend_in_view }),
 		leg_points({ from: end_before, to: apex }),
 		leg_points({ from: apex, to: start_after }),
-		runout_points(road, { vantage, place: bend_in_view.place_after(), across: outer_edge }),
+		runout_points(road, { vantage, bend_in_view }),
 	].join()
 }
 
