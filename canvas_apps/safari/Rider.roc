@@ -1,7 +1,10 @@
 ## The rider from one step to the next: the motorcycle they ride, which knows
 ## where on the route it is, and where their eyes are.
 import Along
+import Angle
+import Attention
 import EncounterPlan
+import EncounterReaction
 import Motorcycle
 import RiderEyes
 import RiderMind
@@ -41,7 +44,24 @@ Rider := { motorcycle : Motorcycle, eyes : RiderEyes }.{
 			RouteEnds => rider.motorcycle.has_reached(segment.length)
 		}
 	}
+
+	## How strongly something holds the rider's eye on `segment`, with its
+	## encounter at `encounter_timing`: the stronger of what the encounter asks
+	## and what the rider's own look holds.
+	attention : Rider, { segment : Segment, encounter_timing : EncounterPlan.Timing } -> Attention
+	attention = |rider, { segment, encounter_timing }|
+		EncounterReaction.encounter_attention(segment, encounter_timing)
+			.max(rider.eyes.attention())
+
+	## How far the rider's head turns from the way the motorcycle points: the
+	## gaze, and a little more with the lean, as a rider's head turns into a bend.
+	head_yaw : Rider -> Angle.Turn
+	head_yaw = |rider| rider.eyes.gaze_yaw.plus(rider.motorcycle.lean.steer(head_turn_per_lean))
 }
+
+## How far the head turns for each radian of lean.
+head_turn_per_lean : F64
+head_turn_per_lean = 0.15
 
 ## The motorcycle held at the route's end once it reaches it. The throttle
 ## brakes it to rest there, and this catches the last step's overrun.
@@ -52,3 +72,13 @@ stop_at_route_end = |moved, segment|
 	} else {
 		moved
 	}
+
+# With no lean, the head turns from the way the motorcycle points exactly as
+# far as the rider looks.
+expect {
+	gaze_yaw = Angle.Turn.radians(0.375)
+	upright = { ..Rider.initial.motorcycle, lean: Angle.Lean.radians(0.0) }
+	eyes = { ..Rider.initial.eyes, gaze_yaw }
+	looking = { ..Rider.initial, motorcycle: upright, eyes }
+	looking.head_yaw() == gaze_yaw
+}

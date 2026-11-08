@@ -12,6 +12,7 @@ import Motorcycle
 import Segment
 import Speed
 import Steps
+import ThrottleLimit
 import VehicleLimits
 
 Throttle :: [].{
@@ -50,7 +51,7 @@ brake_decay : Steps
 brake_decay = Steps.of(20)
 
 ## The acceleration `a`, held to what `limit` asks.
-held_to : Acceleration, VehicleLimits.Limit -> Acceleration
+held_to : Acceleration, ThrottleLimit -> Acceleration
 held_to = |a, limit|
 	match limit {
 		AtMost(most) => a.min(most)
@@ -69,7 +70,7 @@ bend_approach = Distance.metres(60.0)
 ## Near the end of the segment, the brake that brings the rider to the exit
 ## speed at the point where they commit to the turn. Past that point there is
 ## no road left to brake on, and the limit holds the acceleration at none.
-bend_limit : Motorcycle, Segment -> VehicleLimits.Limit
+bend_limit : Motorcycle, Segment -> ThrottleLimit
 bend_limit = |motorcycle, segment|
 	if is_near_end(motorcycle, segment) {
 		segment_exit_speed = exit_speed(segment)
@@ -86,7 +87,7 @@ bend_limit = |motorcycle, segment|
 
 ## Nothing, unless a coast from here leaves the road; then the brake for the
 ## shoulder it reaches.
-shoulder_limit : Motorcycle -> VehicleLimits.Limit
+shoulder_limit : Motorcycle -> ThrottleLimit
 shoulder_limit = |motorcycle|
 	match Coast.project(motorcycle) {
 		EndsAt(_) => NoLimit

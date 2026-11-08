@@ -80,6 +80,7 @@ package
 		Sun,
 		SunPath,
 		Throttle,
+		ThrottleLimit,
 		Tour,
 		Tower,
 		TowerSighting,

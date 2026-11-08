@@ -6,6 +6,7 @@ import Gaze
 import Motorcycle
 import Segment
 import Speed
+import ThrottleLimit
 import VehicleLimits
 
 Gawking :: [].{
@@ -22,7 +23,7 @@ Gawking :: [].{
 	## The brake for a gawking rider, who aims to be down to `gawk_speed` by
 	## the settle distance before the pig. The noticing lasts to the end of
 	## the segment, so the brake holds the rider down until the next one.
-	gawk_brake : Motorcycle, Segment -> VehicleLimits.Limit
+	gawk_brake : Motorcycle, Segment -> ThrottleLimit
 	gawk_brake = |motorcycle, segment|
 		match Gaze.noticed_pig(motorcycle, segment) {
 			Noticed(pig) => {

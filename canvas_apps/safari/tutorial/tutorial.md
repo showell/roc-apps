@@ -1788,7 +1788,7 @@ The rider looks at a pig or at the road, and only a pig has an angle:
 
 A pig asks something of the throttle, or it doesn't:
 
-{{code VehicleLimits.Limit}}
+{{code ThrottleLimit.ThrottleLimit}}
 
 So the job is a short list:
 
@@ -1840,7 +1840,7 @@ A twentieth of what's left never gets to zero, so the `OnRoad` branch first chec
 
 Nothing here turns the bike. The gaze goes to the camera, and to nothing else that moves:
 
-{{code RiderCamera.view_yaw_for}}
+{{code Rider.head_yaw}}
 
 The second term is the rider's head going with the lean. So when the rider looks right, the road slides left on the page, and the bike keeps going where it was going.
 
@@ -1852,7 +1852,7 @@ While the gaze is off straight ahead, the depth rises with how far it has turned
 
 The depth has one job. It widens the view:
 
-{{code Gaze.gaze_attention}}
+{{code RiderEyes.attention}}
 
 `RideFocal.ride_focal`, which sets how wide the view is, takes the stronger of this and what a crossing on the road asks for, which we'll meet with the cat. So a pig widens the view, and the view stays wide for a while after.
 

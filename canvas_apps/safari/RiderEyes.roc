@@ -1,6 +1,8 @@
 ## Where the rider's eyes are: the look away from the way the motorcycle
 ## points, and how far into a look the rider has gone.
 import Angle
+import Attention
+import Easing
 import Fraction
 import Gaze
 
@@ -19,6 +21,11 @@ RiderEyes := { gaze_yaw : Angle.Turn, look_depth : Fraction }.{
 		gaze_yaw = next_gaze_yaw(eyes, target)
 		{ gaze_yaw, look_depth: next_look_depth(eyes, gaze_yaw) }
 	}
+
+	## How strongly the depth of these eyes' look holds the rider's eye. The
+	## easing keeps a shallow look from widening the view much.
+	attention : RiderEyes -> Attention
+	attention = |eyes| Attention.from_fraction(Easing.smoothstep(eyes.look_depth))
 
 	is_eq : _
 }
@@ -132,6 +139,8 @@ expect {
 # The depth holds until the gaze is exactly straight ahead, and fades from there.
 expect depth_after(eyes_at_depth(0.9, 0.0), return_rate / 10.0) == 0.9
 expect (depth_after(eyes_at_depth(0.9, 0.0), 0.0) - 0.8988).abs() <= 0.000000000001
+
+expect eyes_at_depth(0.25, 0.0).attention().to_f64() == 0.15625
 
 expect depth_after(eyes_at_depth(0.0, 0.0), 0.0) == 0.0
 expect depth_after(eyes_at_depth(0.0, radians_of_degrees(90.0)), radians_of_degrees(90.0)) == 1.0
