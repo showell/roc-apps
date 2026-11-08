@@ -26,12 +26,26 @@ VehicleLimits :: [].{
 	## braking to rest at the route's end closes on the end geometrically, each
 	## step covering a share of what is left, and never gets there. Holding the
 	## speed once the end is that close is what lets the rider arrive.
+	##
+	## The brake is steady over the whole distance left, so in the last steps
+	## before a target one step of it can land a little under the target. At the
+	## first bend the rider goes 0.239 m a step with 0.115 m left to a bend taken
+	## at 0.222, and lands on 0.205. Nobody sees an undershoot that small, and a
+	## brake that never undershoots would move the whole ride, so the brake stays
+	## steady and the ride stays as it is. A brake
+	## that would take the speed below zero in one step crashes here, with its
+	## reason, rather than in `Speed`.
 	braking_to : Speed, { target : Speed, within : Distance } -> Acceleration
 	braking_to = |speed, { target, within }|
 		if within <= least_braking_distance {
 			Acceleration.steady
 		} else {
-			speed.acceleration_to({ target, within })
+			acceleration = speed.acceleration_to({ target, within })
+			if speed.to_metres_a_step() + acceleration.to_metres_a_step_each_step() < 0.0 {
+				crash "VehicleLimits.braking_to: a brake that would take the speed below zero; the ride never brakes this hard"
+			} else {
+				acceleration
+			}
 		}
 
 	## The speed a turn can be taken at, to the right or the left alike. A turn
@@ -63,6 +77,30 @@ turn_speeds = [
 	{ whole_degrees: 70, speed: Speed.metres_a_step(0.139) },
 	{ whole_degrees: 80, speed: Speed.metres_a_step(0.117) },
 ]
+
+## One step of `braking_to`'s brake, from `speed`.
+speed_after_braking : F64, { target : F64, within : F64 } -> F64
+speed_after_braking = |speed, { target, within }| {
+	start = Speed.metres_a_step(speed)
+	brake = VehicleLimits.braking_to(
+		start,
+		{ target: Speed.metres_a_step(target), within: Distance.metres(within) },
+	)
+	start.accelerated_by(brake).to_metres_a_step()
+}
+
+# A brake that lands exactly at rest is the hardest one allowed, and it
+# returns its acceleration. One harder would go below zero, which crashes, and
+# an expect can't test a crash, so this is the boundary from the side that
+# holds.
+expect speed_after_braking(0.5, { target: 0.0, within: 0.25 }) == 0.0
+
+# At the first bend the steady brake lands a little under the bend's speed,
+# and that undershoot is kept.
+expect {
+	landed = speed_after_braking(0.239, { target: 0.222, within: 0.115 })
+	landed < 0.222 and landed > 0.204
+}
 
 ## The speed for a turn of this many degrees.
 speed_for_turn : F64 -> F64
