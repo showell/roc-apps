@@ -116,7 +116,10 @@ Scene := {
 		trees.map(
 			|tree| {
 				nearer_count = nearer_tree_count(forwards, tree.spot.foot().forward())
-				Pipeline.rendering_of(tree, { cam_focal, context: { nearer_tree_count: nearer_count } })
+				Pipeline.rendering_of(
+					tree,
+					{ cam_focal, context: { nearer_tree_count: nearer_count } },
+				)
 			},
 		)
 	}
