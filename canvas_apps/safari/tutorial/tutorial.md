@@ -1135,8 +1135,8 @@ The stills are the least readable code in Safari Ride, and nobody is meant to re
 | Stills | Kind | Pictures | Polygons | Points |
 |---|---|---|---|---|
 | `BirdStills` | Hand-drawn | 6 poses | 32 | 119 |
-| `CatStills` | Hand-drawn | 7 poses | 275 | 13,453 |
-| `EmojiStills` | Emoji-based | one for each animal by the road | 129 | 5,267 |
+| `CatStills` | Hand-drawn | 7 poses | 275 | 13,219 |
+| `EmojiStills` | Emoji-based | one for each animal by the road | 129 | 4,998 |
 
 The distinction matters. The cat and the bird were drawn for this game, and they have poses. The animals by the road started as emoji, and each has one picture.
 
@@ -1144,7 +1144,7 @@ A polygon is one record: its fill, which is either one flat color or a gradient,
 
 {{code Still.Polygon}}
 
-The bird is the smallest set, because the perched bird is Roc's logo, and the logo is made of a few straight-edged shapes. The cat has far more points, because its curves are made of many short straight lines. Its seven stills fit in a 73-line file, and those lines are very long.
+The bird is the smallest set, because the perched bird is Roc's logo, and the logo is made of a few straight-edged shapes. The cat has far more points, because its curves are made of many short straight lines. Its seven stills fit in a 31-line file, and those lines are very long.
 
 Every point is measured in units of the still's height. Its feet are at `y` 0, and a standing critter is about 1 tall. That's why no pixels or metres appear here. The same numbers draw a cat in the distance and a cat in the lane.
 
@@ -1170,7 +1170,7 @@ So the developer wrote a baker, a small program that ran the real drawing code o
 
 The emoji-based animals took a different route. They come from Microsoft's Fluent Emoji, in its Flat style. That set draws every animal whole and from the side, where another set draws a rhino as a face, which looks like a bug beside a road. A second baker read each SVG file, walked its shapes in painting order, and cut each curve into short straight lines.
 
-The bull is a hybrid. It comes from the same emoji set, but in its Color style, which is shaded. It's the only still with gradients, on 40 of its 43 polygons, which is why a polygon's fill can be `Shaded`. Its 2,309 points are nearly half of `EmojiStills`.
+The bull is a hybrid. It comes from the same emoji set, but in its Color style, which is shaded. It's the only still with gradients, on 40 of its 43 polygons, which is why a polygon's fill can be `Shaded`. Its 2,212 points are nearly half of `EmojiStills`.
 
 The Roc bird came last. Its perched pose is the logo, and Claude drew the five flight poses to match, directly as polygons, in the logo's two purples.
 
@@ -1182,7 +1182,7 @@ Now that we can draw a critter, we can stand one by the road.
 
 ## The elephant
 
-The critters in this stretch of the book are billboards: flat pictures that stand in one place and never change. The code calls them billboards too. We'll start with the elephant. It stands at 14 of the route's 18 bends, so it's the animal you'll see most. A grown elephant waits beyond the guard rail on the outside of the bend, and its baby stands 14 metres straight on past the bend, where the road would run if it didn't turn.
+The critters in this stretch of the book are billboards: flat pictures that stand in one place and never change. The code calls them billboards too. We'll start with the elephant. It stands at 14 of the route's 18 bends, so it's the bend animal you'll see most. A grown elephant waits beyond the guard rail on the outside of the bend, and its baby stands 14 metres straight on past the bend, where the road would run if it didn't turn.
 
 New in this chapter:
 
@@ -1226,7 +1226,7 @@ New in this chapter:
 - Roc: a wrapper only one module can build
 - Modules: `PigHerd`
 
-That's the same shape as each animal's row in `species_of`: an emoji and a height. `Billboard.adult_billboard` turns it into a billboard. The emoji is a named still, such as `EmojiStills.elephant`, and only `EmojiStills` can make one:
+That's the same shape as each animal's row in `species_of`: an emoji and a height. `Billboard.adult_billboard` turns it, with a facing, into a billboard. The emoji is a named still, such as `EmojiStills.elephant`, and only `EmojiStills` can make one:
 
 {{code EmojiStills.EmojiStill}}
 
@@ -1245,7 +1245,7 @@ New in this chapter:
 
 ### Cows
 
-A herd of 14 cows grazes on the left of the road, in columns of three. Every fourth cow is a calf, at half the height.
+A herd of 14 cows grazes on the left of the road, in columns of three. Every fourth cow, from the second, is a calf, at half the height.
 
 {{code CowHerd.herd_cows}}
 
@@ -1265,7 +1265,7 @@ Pigs graze on the right of the road, near the end of a segment. The first two se
 
 {{code PigHerd.herd_pigs}}
 
-The `match` is on the herd's two shapes. How the rider takes a herd is a separate choice the route makes, `Unnoticed` or `Distracting`, and `Distracting` is one a cow doesn't have. One pig in a big herd catches the rider's eye, and the rider slows down to look. That's about the rider more than the pig, so it waits for the rider's chapters.
+The `match` is on the herd's two shapes. How the rider takes a herd is a separate choice the route makes, `Unnoticed` or `Distracting`, and `Distracting` is one a cow doesn't have. On the first two herds, the standout pig catches the rider's eye, and the rider slows down to look. That's about the rider more than the pig, so it waits for the rider's chapters.
 
 That's every critter that stands still, and the end of what we can say about one frame.
 
