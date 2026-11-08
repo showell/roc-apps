@@ -19,6 +19,17 @@ function pinned_roc(who, pin_file?)
   return real(roc)
 end
 
+-- The text of a piece of HTML: its tags dropped and the entities it uses
+-- decoded, `&amp;` last so a decoded `&` never starts another. The tutorial's
+-- scripts read the official Roc tutorial with it.
+function plain_text(html)
+  local text = re_replace(html, "<[^>]+>", "")
+  for pair in {{"&lt;", "<"}, {"&gt;", ">"}, {"&quot;", "\""}, {"&#39;", "'"}, {"&#x27;", "'"}, {"&amp;", "&"}} do
+    text = re_replace(text, pair[1], pair[2])
+  end
+  return text
+end
+
 -- Nothing, or a stop when `said`, what `roc version` printed, isn't the pin.
 function check_roc_version(who, roc, pin, said)
   if trim(said) ~= "Roc compiler version " .. pin then
