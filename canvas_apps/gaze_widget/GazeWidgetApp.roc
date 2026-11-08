@@ -56,7 +56,7 @@ last_step : U32
 last_step = 1320
 
 ## The steps of the look, from its first to the first without it.
-## CrossModuleExpects holds them to the ride.
+## gates/expects/RiderExpects.roc holds them to the ride.
 look_first_step : U32
 look_first_step = 885
 
@@ -339,7 +339,7 @@ expect {
 expect World.route.route_segments().take_first(2).all(|segment| segment.pigs == NoPigs)
 
 # Each of the four phases shows on the stretch, at the steps above.
-# CrossModuleExpects holds where each starts on the ride.
+# gates/expects/RiderExpects.roc holds where each starts on the ride.
 expect
 	[
 		(first_step, EyesOnRoad),

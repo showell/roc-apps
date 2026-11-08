@@ -45,7 +45,7 @@ Polygon.flat_coordinates: the flat list lib.Shapes takes
 Polygon.polygon_coordinates: the flat list lib.Shapes takes
 
 # The gates: test code, and the raster past lib.Shapes.
-CrossModuleExpects: an app holding only expects and their helpers
+Fixtures: the expects' shared roads and helpers
 PixelColor: raster code past lib.Shapes, where numbers are plain
 PixelGrid: raster code past lib.Shapes, where numbers are plain
 ScanlineFill: raster code past lib.Shapes, where numbers are plain

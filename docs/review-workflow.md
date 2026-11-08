@@ -39,7 +39,7 @@ The process makes code right one module at a time, types first. Cold agents revi
   - The shared modules are Geom, Pipeline, Picture, RoadAhead, World, Segment, Route, Scene, lib and the unit types.
   - The orchestrator gives each lane its shared modules by name, and only one lane at a time may touch a given one.
   - A fix that needs another lane's shared module waits.
-- **Conflicts:** most are in `gates/CrossModuleExpects.roc` (imports and tests from two lanes) and in widgets two lanes touched. Keep both sides.
+- **Conflicts:** most are in `gates/expects/` (imports and tests from two lanes) and in widgets two lanes touched. Keep both sides.
 - **Shale lanes need their own mounts file:** copy `~/.config/shale/mounts` with `cookbook` pointed at the lane, and run through `SHALE_MOUNTS`. Without it, `cookbook:` resolves to master's plants. Don't print that file: it names the secrets folder. Delete it when the lane goes.
 
 ## Checks

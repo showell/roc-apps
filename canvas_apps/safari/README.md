@@ -44,7 +44,7 @@ The rest have been rewritten by hand.
 | `Animation.roc` | what the cat and the bird share: a timeline that turns a stage into an instant |
 | `EncounterPlan.roc` | the ride's plan for the encounter on the rider's segment: when its animation starts, and so the stage it has got to |
 | `EncounterReaction.roc` | what a segment's encounter does to the rider, the one place that matches on it for `Throttle` and `RiderCamera`'s focal length |
-| `gates/` | test code the game never runs: the tiers `fast.shale`, `run.shale` and `publish.shale`, and the lints; `CrossModuleExpects.roc`, the expects that need more than the module they check imports; and, in `proof/`, the proof tools and the modules only they use. They reach the game's modules through the package `game.roc` |
+| `gates/` | test code the game never runs: the tiers `fast.shale`, `run.shale` and `publish.shale`, and the lints; in `expects/`, the expects that need more than the module they check imports, one module a topic under one package root; and, in `proof/`, the proof tools and the modules only they use. They reach the game's modules through the package `game.roc` |
 
 **The rider's lean is a camera.** The whole frame, backdrop and all, turns by
 minus the roll about the middle of the screen, so the world banks into a turn.
@@ -106,7 +106,8 @@ cleared past run.shale's `CHECKOUT_CEILING_MB`, and a removed worktree's goes at
 in any checkout.
 
 An `expect` sits below the block of the module it checks. Where it needs a
-module that one doesn't import, it sits in `gates/CrossModuleExpects.roc`.
+module that one doesn't import, it sits in its topic's module in `gates/expects/`,
+and a helper two of those modules need sits in `gates/expects/Fixtures.roc`.
 
 `emitted.sh` and `retest.sh`, which emitted the Roc from Codex, refuse to run:
 the modules they would rewrite are source now.

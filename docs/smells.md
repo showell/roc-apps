@@ -156,7 +156,7 @@ kinds.
 TreeSighting and TruckSighting, and SceneShapes imported six modules only for
 those tests. A test that needs nothing the module doesn't already import sits
 beside the function it tests. A test that needs more (a road, a route, another
-module's types) goes in `gates/CrossModuleExpects.roc`, so no game module
+module's types) goes in its topic's module in `gates/expects/`, so no game module
 imports anything for a test. Steve: "cluttering up imports is ugly." The walk's
 "Imported but not in any printed type" line is the lead.
 

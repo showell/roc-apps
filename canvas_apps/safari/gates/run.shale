@@ -143,7 +143,7 @@ const TUTORIAL = "canvas_apps/safari/tutorial/build.shale"
 const BOOK_NAMES = "canvas_apps/safari/gates/book_names.shale"
 const INPUT_BITS = "canvas_apps/safari/gates/input_bits.shale"
 -- The root that reaches nearly every expect, the one fast.shale runs.
-const MAIN_EXPECT_ROOT = "gates/CrossModuleExpects.roc"
+const MAIN_EXPECT_ROOT = "gates/expects/main.roc"
 const EXPECT_ROOTS = {MAIN_EXPECT_ROOT, "web.roc", "../lib/main.roc", "tutorial/make_book.roc"}
 -- The packages of other repos that a root reaches. Their expects run, and are
 -- that repo's to count, so they are neither held here nor a failure. A `PASS`
@@ -354,7 +354,7 @@ function format()
 end
 
 -- `roc test --verbose` from each of EXPECT_ROOTS, whose reach together is
--- every expect: gates/CrossModuleExpects.roc reaches nearly all of them,
+-- every expect: gates/expects/main.roc reaches nearly all of them,
 -- web.roc the game's modules that only the running game imports, lib's
 -- package root all of lib, and make_book.roc the tutorial's. The source is the
 -- count, so no number needs keeping: every line of a `.roc` file in

@@ -120,7 +120,7 @@ darkness_after_set = |height| {
 }
 
 # The sky is at darkness_at_set as the sun fully sets, and darker a step later.
-# A step earlier is in CrossModuleExpects, which counts steps.
+# A step earlier is in gates/expects/RideExpects.roc, which counts steps.
 expect Sky.darkness_at(Sun.fully_set_at) == darkness_at_set
 expect darkness_at_set < Sky.darkness_at(Sun.fully_set_at.next())
 expect Sky.darkness_at(Clock.at_step(0)).to_f64() == 0.0

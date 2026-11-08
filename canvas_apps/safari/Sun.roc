@@ -53,7 +53,7 @@ Sun :: [].{
 	## horizon, in a ride of about 7,000 steps. The sun sinks at one steady
 	## rate, so this step places the sunset in the ride. It is chosen so the
 	## sunset's climax falls on the long road west, which `sunset_climax` in
-	## CrossModuleExpects holds.
+	## gates/expects/RideExpects.roc holds.
 	fully_set_at : Clock
 	fully_set_at = Clock.at_step(4735)
 
@@ -190,7 +190,7 @@ place = |{ turn_from_view, clock, cam_focal }| {
 }
 
 # The whole disc is below the horizon from `fully_set_at`, and not a step
-# before, which CrossModuleExpects holds.
+# before, which gates/expects/RideExpects.roc holds.
 expect Sun.height_at(Sun.fully_set_at) == Sun.height_when_set
 
 # The rider faces the sun, then away from it.

@@ -31,7 +31,7 @@ Shale is a small Lua-like language:
   - `read` and `replace` paths are relative to the folder you `cd` to, or a mount such as `repos:` or `scratch:`, never absolute.
   - Map keys must be strings.
   - Loop over a list with `for x in list do ... end`, and over a map with `for k in keys(m) do`. `ipairs` and `for i, x in` are refused.
-  - A module must be listed in `game.roc` before `gates/CrossModuleExpects.roc` can import it.
+  - A module must be listed in `game.roc` before a module in `gates/expects/` can import it, and a new module in `gates/expects/` must be listed in its `main.roc`, or its expects never run.
 - **Files:** read with the Read tool, and edit with Edit and Write.
 - **Not in the language:** `table.*`, `local function`, and `type()`.
   - Declare a function with `function name()` at the top level.
@@ -94,7 +94,7 @@ The walk has more than the types (the recipe's header lists every setting):
   function bodies, which the walk can't show. Read them.
 - **"Imported for tests only":** imports used only by `expect`s and the
   top-level values only expects reach. Each one breaks Steve's rule and is a
-  finding: its tests move to `gates/CrossModuleExpects.roc` and the import goes.
+  finding: its tests move to their topic's module in `gates/expects/` and the import goes.
 
 ### 2. Read the code behind what smells
 
@@ -168,7 +168,7 @@ report.
 
 **Tests (Steve's rule):**
 - A new test that needs nothing its module doesn't already import sits beside the code.
-- A test that needs more goes in `gates/CrossModuleExpects.roc`. Never add an import only a test uses.
+- A test that needs more goes in its topic's module in `gates/expects/` (RoadExpects, SightingExpects, SceneExpects, EncounterExpects, RideExpects or RiderExpects). A helper two of them need goes in `Fixtures.roc`, and no module there imports another but Fixtures. Never add an import only a test uses.
 - Don't write a test that restates a constant or could never fail usefully. Roc's types already catch most of it.
 
 ### Where you work
