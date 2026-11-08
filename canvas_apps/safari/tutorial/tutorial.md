@@ -569,7 +569,7 @@ Three functions carry the decision:
 |---|---|---|
 {{types row TreeShapes.crown_of Decide, once for the tree}}
 {{types row TreeShapes.tier_shape Act on it, for each tier}}
-{{types row ConvexHull.convex_hull_points Outline a cone}}
+{{types row ConvexHull.cone_hull_points Outline a cone}}
 
 A near tree's tiers
 ```dot
@@ -580,8 +580,9 @@ digraph cone {
   "tier_shape" -> "tier_triangle";
   "tier_shape" -> "tier_cone";
   "tier_cone" -> "Camera.project";
-  "tier_cone" -> "convex_hull_points";
-  "convex_hull_points" -> "trim_hull";
+  "tier_cone" -> "cone_hull_points";
+  "cone_hull_points" -> "hull_points_of_sorted";
+  "hull_points_of_sorted" -> "trim_hull";
   "trim_hull" -> "trim_hull";
   "crown_of" [style=bold];
 }
@@ -615,9 +616,17 @@ A frame has no cones, only polygons, so we work out the polygon a cone would mak
 
 That leaves 17 points on the screen, and a cone's outline is whatever wraps around them. That's a convex hull:
 
+{{code ConvexHull.cone_hull_points}}
+
+This is Andrew's monotone chain, which A. M. Andrew published in 1979. Put the points in order from left to right, walk along the top, and walk back along the bottom. Any points can be sorted into that order, and `convex_hull_points` does that for a ring too small to have two arcs:
+
 {{code ConvexHull.convex_hull_points}}
 
-This is Andrew's monotone chain, which A. M. Andrew published in 1979. Sort the points from left to right, walk along the top, and walk back along the bottom. `sort_with` sorts by a function that compares two points and answers `Before`, `Same` or `After`, and `left_to_right` is that function: left first, and the higher of two at one x. The top walk ends on the rightmost point, where the bottom walk starts, and the bottom walk ends on the leftmost, where the top walk started. So each walk drops its last point before the `concat`, and no corner appears twice. `fold` walks a list from the front, carrying an answer from item to item, and `fold_rev` is the same from the far end, with its arguments the other way around. `trim_hull` serves both walks: before a point goes on, it drops the last point of the hull while that point would make a dent, and it calls itself until none does. `[.., a, b]` is a list pattern that takes the last two items.
+`sort_with` sorts by a function that compares two points and answers `Before`, `Same` or `After`, and `left_to_right` is that function: left first, and the higher of two at one x. A cone's ring doesn't need the sort. It's convex on the screen and keeps its order around the circle, so `ring_hull_points` merges its two arcs from the leftmost point to the rightmost, slots the apex in, and has the points in order already. If rounding leaves the merge out of order, it sorts after all. Either way, the walks are `hull_points_of_sorted`:
+
+{{code ConvexHull.hull_points_of_sorted}}
+
+The top walk ends on the rightmost point, where the bottom walk starts, and the bottom walk ends on the leftmost, where the top walk started. So each walk drops its last point before the `concat`, and no corner appears twice. `fold` walks a list from the front, carrying an answer from item to item, and `fold_rev` is the same from the far end, with its arguments the other way around. `trim_hull` serves both walks: before a point goes on, it drops the last point of the hull while that point would make a dent, and it calls itself until none does. `[.., a, b]` is a list pattern that takes the last two items.
 
 {{code ConvexHull.trim_hull}}
 
@@ -839,10 +848,10 @@ The sky is two colors, the top of the sky and the horizon. Here they are at five
 | Step | Top of the sky | Horizon |
 |---|---|---|
 | 0 | `0x8ecae6` | `0x8ecae6` |
-| 3,000 | `0x75a8c6` | `0x9d898e` |
-| 3,980 | `0x618ead` | `0xcb6046` |
-| 4,730 | `0x4f7595` | `0x966765` |
-| 6,000 | `0x243a5e` | `0x243a5e` |
+| 2,000 | `0x86bfdb` | `0x86bfdb` |
+| 3,000 | `0x73a6c4` | `0x9a898f` |
+| 4,000 | `0x517697` | `0x9c6662` |
+| 5,000 | `0x243a5e` | `0x243a5e` |
 
 Every color in the sky is a blend of two others, and a blend needs a ratio. `Fraction` is another small opaque type, a ratio from 0 to 1, and only its own block can build one, so a `Fraction` is always in range. It has two ways in. `Fraction.of` takes a ratio that can only be in range and crashes on anything else, because that would be a bug in the sum. `Fraction.clamp` takes a ratio that can rightly fall outside, and holds it at the nearest end.
 
@@ -1214,7 +1223,7 @@ So a billboard always holds a still that exists.
 
 ### Drawing one
 
-An emoji faces left, so a billboard facing right is its still mirrored. `StillShapes.standing_anchor` makes the `Anchor` from the Stills chapter, and `still_shapes` draws it:
+An emoji faces left, so a billboard facing right is its still mirrored. A `match` on which way it faces picks the `flip`, and `StillShapes.standing_still_shapes` draws the still standing at the billboard's spot:
 
 {{code Billboard.scenery_picture}}
 
@@ -1535,7 +1544,7 @@ This widget adds one call, `Sky.darkness_at`, and the sky finally does something
 
 {{code Sky.darkness_at}}
 
-It asks for the sun's height, then picks one of two shapes. They meet when the sun has fully set, one radius below the horizon, and you can see the join in the blue line at step 4,735. Before that, dusk grows with the square of how far the sun has fallen. After that, it runs on in a straight line to full dark.
+It asks for the sun's height, then picks one of two shapes. They meet when the sun has fully set, one radius below the horizon, and you can see the join in the blue line. Before that, dusk grows with the square of how far the sun has fallen. After that, it runs on in a straight line to full dark.
 
 {{signatures Sky.darkness_while_up Sky.darkness_after_set}}
 
@@ -2741,7 +2750,7 @@ Everything here lives in `gates/`, and the game never runs any of it. The merge 
 
 ### A fixture is a value
 
-Getting a test to step 1,570 of a game normally takes some doing. Here it takes a loop. `Tour.initial` is a value, and `Tour.step_forward` is the outermost step function. It wraps `RideInstant.next_or_restart`, quoted below, and it also trims the list of past instants. An `if` chain does the trimming, and its comment says why half of the list goes at once:
+Getting a test to step 1,570 of a game normally takes some doing. Here it takes a loop. `Tour.initial` is a value, and `Tour.step_forward` is the outermost step function. It wraps `RideInstant.next_or_restart`, quoted below, which either continues the ride or starts it again. A `match` takes the next tour either way:
 
 {{code Tour.step_forward}}
 
@@ -2780,7 +2789,7 @@ The second of these two proofs is here because of a real bug:
 
 `ShapesFrame` paints each frame twice: once with its polygons whole, as the browser gets them, and once cut into triangles, as the native program gets them. It counts the pixels that differ, and the gate requires zero of 576,000, at every step in the table.
 
-`StepBack` checks that one step back goes back exactly one step, at depths either side of the history's cap. It's in the gate because the answer was once no, and its header says how: the list stopped recording when full, so a step back from frame 3,000 landed on 2,047. Holding the first 2,048 instants was a perfectly consistent thing for a list to do. The test works by asking `Tour.step_back` and comparing clocks, and since `Tour.step_back` is this small, there isn't much else to ask:
+`StepBack` checks that one step back goes back exactly one step, at every depth of the whole ride, and that as many steps back as the ride took land on step 0. It's in the gate because the answer was once no: the list stopped recording when full, so a step back from frame 3,000 landed on 2,047. Holding the first 2,048 instants was a perfectly consistent thing for a list to do. The test works by asking `Tour.step_back` and comparing clocks, and since `Tour.step_back` is this small, there isn't much else to ask:
 
 {{code Tour.step_back}}
 
@@ -2871,13 +2880,13 @@ An app here is a record, handed to a runner. `CanvasApp(model)` has a type param
 
 ### Keys
 
-The ride instant chapter showed `SafariApp.model_at_next_step` reading a snapshot of the keys. A snapshot is a value, so a test could write one down. Everything the keys do is a function from `Tour` to `Tour`, so moving four steps or one, forward or back, is one helper with a function in a record field. `var` is back, in a function that's still pure. `$tour` can't be seen from outside.
+The ride instant chapter showed `SafariApp.model_at_next_step` reading a snapshot of the keys. A snapshot is a value, so a test could write one down. Everything the keys do is a function from `Tour` to `Tour`, so moving four steps or one is a loop of single steps. `Tour.steps_forward` takes the count as `Steps` and steps forward that many times. `var` is back, in a function that's still pure. `$tour` can't be seen from outside.
 
 {{code Tour.steps_forward}}
 
-`Tour.step_forward` and `Tour.step_back` are plain values to pass here:
+`Tour.steps_back` is the same loop around `Tour.step_back`. The app passes four steps a frame while playing and one while paused:
 
-{{code SafariApp.model_at_next_step from "if input.key_down(KeyRight) {" to "m.tour.steps_forward(steps_a_frame)"}}
+{{code SafariApp.model_at_next_step from "steps_a_frame = match motion {" to "m.tour.steps_back(steps_a_frame)"}}
 
 ### A frame is a list
 
