@@ -91,28 +91,24 @@ Book := [].{
 	## build, so renaming a chapter can't quietly lose one.
 	pages : Manuscript.Contents, List(Book.Divider) -> List(Book.Page)
 	pages = |manuscript, dividers_wanted| {
-		fence = BookFence.hook(manuscript)
+		fence = BookFence.fence_hook(manuscript)
 		match manuscript.pages.map(|text| chapter_of(text, fence)) {
 			[] => crash "book: no pages"
 			[front, .. as unnumbered] => {
 				numbered = unnumbered.map_with_index(with_number)
 				has_its_chapter = |divider| numbered.any(|chapter| chapter.title == divider.before)
-				if !dividers_wanted.all(has_its_chapter) {
-					crash "book: a divider stands above a chapter that isn't in the book"
+				match dividers_wanted.find_first(|divider| !has_its_chapter(divider)) {
+					Ok(divider) => crash "book: the divider `${divider.title}` stands above `${divider.before}`, a chapter that isn't in the book"
+					Err(NotFound) => {}
 				}
 				chapters = numbered.map(|chapter| with_opening(chapter, dividers_wanted))
-				in_order = [{ ..front, file: front_file }].concat(chapters)
 				chapter_pages = chapters.map_with_index(
 					|chapter, i| {
-						file: chapter.file,
-						html: chapter_html(
-							chapter,
-							{
-								chapters,
-								previous: in_order.get(i),
-								next: in_order.get(i + 2),
-							},
-						),
+						{ previous, next } = neighbours(chapters, i)
+						{
+							file: chapter.file,
+							html: chapter_html(chapter, { chapters, previous, next }),
+						}
 					},
 				)
 				[{ file: front_file, html: front_html(front, chapters) }].concat(chapter_pages)
@@ -138,7 +134,26 @@ Chapter : {
 	opening : Str,
 }
 
-Neighbour : Try(Chapter, [OutOfBounds])
+## The page a chapter's turn link goes to on one side.
+Neighbour : [Front, Chapter(Chapter), NoChapter]
+
+## The pages on either side of chapter `i`: the front comes before the first
+## chapter, and nothing comes after the last.
+neighbours : List(Chapter), U64 -> { previous : Neighbour, next : Neighbour }
+neighbours = |chapters, i| {
+	previous = if i == 0 {
+		Front
+	} else {
+		neighbour_at(chapters, i - 1)
+	}
+	{ previous, next: neighbour_at(chapters, i + 1) }
+}
+
+neighbour_at : List(Chapter), U64 -> Neighbour
+neighbour_at = |chapters, i| match chapters.get(i) {
+	Ok(chapter) => Chapter(chapter)
+	Err(OutOfBounds) => NoChapter
+}
 
 ## A chapter's source has one top heading, and the rest of its headings are its
 ## sections. Anything else means the split went wrong, so it stops the build.
@@ -148,11 +163,13 @@ chapter_of = |text, fence| {
 	html = BookText.text_from_bytes(rendered.html)
 	match rendered.headings {
 		[top, .. as rest] if top.level == 1 and rest.all(|heading| heading.level == 2) => {
+			notes_marked = DraftNotes.highlight(html)
+			sections_linked = with_section_links(notes_marked)
 			{
 				file: "${BookText.text_from_bytes(top.id)}.html",
 				title: BookText.text_from_bytes(top.text),
 				number: Unnumbered,
-				body: BookTable.with_break_points(with_section_links(DraftNotes.highlight(html))),
+				body: BookTable.with_break_points(sections_linked),
 				sections: rest.map(section_of),
 				opening: "",
 			}
@@ -172,12 +189,10 @@ section_open = "<h2 id=\""
 
 ## Each section's heading with a link to itself, for a reader to copy.
 with_section_links : Str -> Str
-with_section_links = |html| match html.split_on(section_open) {
-	[before_any, .. as sections] => {
-		Str.join_with([before_any].concat(sections.map(section_with_link)), section_open)
-	}
-	[] => html
-}
+with_section_links = |html| BookText.rewritten_after(
+	html,
+	{ opening: section_open, rewrite: section_with_link },
+)
 
 ## One piece after a heading's opening: its id, the heading, and what follows.
 section_with_link : Str -> Str
@@ -187,9 +202,9 @@ section_with_link = |piece| match piece.split_first("\">") {
 			link = "<a class=\"section-link\" href=\"#${id}\" aria-label=\"Link to this section\">§</a>"
 			"${id}\">${heading} ${link}</h2>${rest}"
 		}
-		Err(_) => crash "book: a section heading with no end: ${piece}"
+		Err(NotFound) => crash "book: a section heading with no end: ${piece}"
 	}
-	Err(_) => crash "book: a section heading with no id: ${piece}"
+	Err(NotFound) => crash "book: a section heading with no id: ${piece}"
 }
 
 section_of : MdDocument.Heading -> Section
@@ -330,9 +345,9 @@ section_entry = |chapter, section| {
 ## span, which keeps the other link on its own side.
 turn_link : Neighbour, { rel : Str, word : Str } -> Str
 turn_link = |neighbour, { rel, word }| match neighbour {
-	Ok(chapter) if chapter.file == front_file => "<a rel=\"${rel}\" href=\"${front_file}\"><small>${word}</small>Contents</a>"
-	Ok(chapter) => "<a rel=\"${rel}\" href=\"${chapter.file}\"><small>${word}</small>${BookText.escaped_text(chapter.title)}</a>"
-	Err(_) => "<span></span>"
+	Front => "<a rel=\"${rel}\" href=\"${front_file}\"><small>${word}</small>Contents</a>"
+	Chapter(chapter) => "<a rel=\"${rel}\" href=\"${chapter.file}\"><small>${word}</small>${BookText.escaped_text(chapter.title)}</a>"
+	NoChapter => "<span></span>"
 }
 
 page_html :
@@ -344,7 +359,7 @@ page_html :
 	} -> Str
 page_html = |{ title, body_class, nav, main }| {
 	embed =
-		if main.contains("class=\"canvas-app\"") {
+		if main.contains("class=\"${BookFence.widget_frame_class}\"") {
 			"<script src=\"embed.js\"></script>"
 		} else {
 			""
@@ -378,6 +393,9 @@ one_section = {
 	opening: "",
 }
 
+other_section : Chapter
+other_section = { ..one_section, file: "b.html", title: "B" }
+
 a_part : Book.Divider
 a_part = {
 	before: "A",
@@ -406,6 +424,13 @@ plain_book = {
 	widget_folders: [],
 }
 
+widget_book : Manuscript.Contents
+widget_book = {
+	pages: ["# Front\n", "# One\n\n```widget sky\nThe sky.\n```\n"],
+	diagrams: [],
+	widget_folders: ["sky_widget"],
+}
+
 expect nav_entry(
 	one_section,
 	one_section,
@@ -423,6 +448,10 @@ expect Book.pages(plain_book, []).map(|page| page.file) == [
 	"appendix-more.html",
 ]
 expect Book.pages(plain_book, []).all(|page| !page.html.contains("embed.js"))
+expect Book.pages(widget_book, []).map(|page| page.html.contains("embed.js")) == [
+	Bool.False,
+	Bool.True,
+]
 expect Book.pages(
 	plain_book,
 	[{ ..a_part, before: "One" }],
@@ -445,12 +474,24 @@ expect with_section_links("<p>no sections</p>") == "<p>no sections</p>"
 expect
 	with_section_links("<h1 id=\"a\">A</h1><h2 id=\"b\">B <code>c</code></h2>d<h2 id=\"e\">E</h2>")
 		== "<h1 id=\"a\">A</h1><h2 id=\"b\">B <code>c</code> <a class=\"section-link\" href=\"#b\" aria-label=\"Link to this section\">§</a></h2>d<h2 id=\"e\">E <a class=\"section-link\" href=\"#e\" aria-label=\"Link to this section\">§</a></h2>"
-expect turn_link(Err(OutOfBounds), { rel: "next", word: "Next" }) == "<span></span>"
+expect turn_link(NoChapter, { rel: "next", word: "Next" }) == "<span></span>"
 expect turn_link(
-	Ok(one_section),
+	Chapter(one_section),
 	{ rel: "next", word: "Next" },
 ) == "<a rel=\"next\" href=\"a.html\"><small>Next</small>A</a>"
 expect turn_link(
-	Ok({ ..one_section, file: "index.html" }),
+	Front,
 	{ rel: "prev", word: "Previous" },
 ) == "<a rel=\"prev\" href=\"index.html\"><small>Previous</small>Contents</a>"
+expect neighbours([one_section], 0) == { previous: Front, next: NoChapter }
+expect
+	neighbours([one_section, other_section, one_section], 1)
+		== { previous: Chapter(one_section), next: Chapter(one_section) }
+expect neighbours([one_section, other_section], 1) == {
+	previous: Chapter(one_section),
+	next: NoChapter,
+}
+expect neighbours([one_section, other_section], 0) == {
+	previous: Front,
+	next: Chapter(other_section),
+}

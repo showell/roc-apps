@@ -2,16 +2,16 @@
 ## places where a name may break, after a `.` or a `_`, so a narrow table wraps a
 ## long name there and never mid-word. It works on rendered HTML because the
 ## renderer writes no markup a chapter can reach.
+import BookText
+
 BookTable := [].{
 
 	## Each table's code with its break points marked.
 	with_break_points : Str -> Str
-	with_break_points = |html| match html.split_on(table_open) {
-		[before_any, .. as tables] => {
-			Str.join_with([before_any].concat(tables.map(marked_table)), table_open)
-		}
-		[] => html
-	}
+	with_break_points = |html| BookText.rewritten_after(
+		html,
+		{ opening: table_open, rewrite: marked_table },
+	)
 }
 
 table_open : Str
@@ -23,14 +23,11 @@ code_open = "<code>"
 ## One piece after a `<table>`: the table up to its end, then the page after it.
 marked_table : Str -> Str
 marked_table = |piece| match piece.split_first("</table>") {
-	Ok({ before: cells, after }) => match cells.split_on(code_open) {
-		[before_any, .. as codes] => {
-			marked = Str.join_with([before_any].concat(codes.map(marked_code)), code_open)
-			"${marked}</table>${after}"
-		}
-		[] => piece
+	Ok({ before: cells, after }) => {
+		marked = BookText.rewritten_after(cells, { opening: code_open, rewrite: marked_code })
+		"${marked}</table>${after}"
 	}
-	Err(_) => crash "book: a table with no end: ${piece}"
+	Err(NotFound) => crash "book: a table with no end: ${piece}"
 }
 
 ## One piece after a `<code>`: the code up to its end, then the cell after it.
@@ -40,7 +37,7 @@ marked_code = |piece| match piece.split_first("</code>") {
 		marked = code.replace_each("_", "_<wbr>").replace_each(".", ".<wbr>")
 		"${marked}</code>${after}"
 	}
-	Err(_) => crash "book: code with no end in a table: ${piece}"
+	Err(NotFound) => crash "book: code with no end in a table: ${piece}"
 }
 
 expect BookTable.with_break_points("<p><code>a_b.c</code></p>") == "<p><code>a_b.c</code></p>"
