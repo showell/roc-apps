@@ -244,7 +244,7 @@ expect
 		== [-4.9, 0.0, 5.75, 0.0, -4.3, 0.0, 4.6, 0.0]
 
 expect
-	billboards_at_four_bends.map(|billboard| billboard.kind.facing)
+	billboards_at_four_bends.map(|billboard| billboard.kind.facing())
 		== [
 			FacesRight,
 			FacesRight,
@@ -405,9 +405,9 @@ expect
 # Mirrored to the other side of the road at a left turn, each duck faces the
 # other way.
 expect
-	Pond.placed_ducks(right_pond_bend).map(|placed| placed.kind.facing)
+	Pond.placed_ducks(right_pond_bend).map(|placed| placed.kind.facing())
 		== [FacesRight, FacesLeft, FacesRight, FacesRight, FacesLeft, FacesRight]
-		and Pond.placed_ducks(left_pond_bend).map(|placed| placed.kind.facing)
+		and Pond.placed_ducks(left_pond_bend).map(|placed| placed.kind.facing())
 			== [FacesLeft, FacesRight, FacesLeft, FacesLeft, FacesRight, FacesLeft]
 
 # The pond's water and bank lie off the road on the outside of the bend,

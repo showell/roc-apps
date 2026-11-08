@@ -1193,7 +1193,7 @@ New in this chapter:
 
 A billboard is three facts: its still, its height, and which way it faces.
 
-{{code Billboard.Billboard from "Billboard := {" to "}.{"}}
+{{code Billboard.Billboard from "Billboard :: {" to "}.{"}}
 
 Where it stands isn't one of them. That's the `Geom.Placed` around it. A kind of animal is its emoji and how tall a grown one stands, so a baby is the same species at half the height:
 

@@ -132,7 +132,10 @@ herd_cow = |herd, { herd_along, cow_number }| {
 	}
 }
 
-expect (herd_bull(Along.metres(24.0)).kind.height.to_metres() - 1.61).abs() <= 0.000000000001
+expect {
+	bull_height = herd_bull(Along.metres(24.0)).kind.scenery_height()
+	(bull_height.to_metres() - 1.61).abs() <= 0.000000000001
+}
 
 expect
 	[
@@ -160,11 +163,19 @@ expect cows_without_bull.len() == 5
 # The bull leads, facing left, and the cows follow him in their own order, facing
 # right.
 expect cows_with_bull.take_first(1).map(|leader| leader.road_point.along) == [Along.metres(24.0)]
-expect cows_with_bull.take_first(1).map(|leader| leader.kind.emoji) == [EmojiStills.bull]
+expect
+	cows_with_bull.take_first(1).map(|leader| leader.kind)
+		== [Billboard.adult_billboard(bull, FacesLeft)]
 expect cows_with_bull.drop_first(1) == cows_without_bull
-expect cows_with_bull.take_first(2).map(|critter| critter.kind.facing) == [FacesLeft, FacesRight]
-expect cows_without_bull.all(|member| member.kind.facing == FacesRight)
-expect cows_without_bull.all(|member| member.kind.emoji == EmojiStills.cow)
+expect cows_with_bull.take_first(2).map(|critter| critter.kind.facing()) == [FacesLeft, FacesRight]
+expect cows_without_bull.all(|member| member.kind.facing() == FacesRight)
+expect {
+	calf_or_cow = [
+		Billboard.young_billboard(cow, FacesRight),
+		Billboard.adult_billboard(cow, FacesRight),
+	]
+	cows_without_bull.all(|member| calf_or_cow.contains(member.kind))
+}
 
 # Column by column from the front, each cow strays from its place by no more
 # than the jitter: along the road and across it.
