@@ -210,7 +210,7 @@ shapes_from_behind_rider = |{ across, lean }| {
 	[
 		[
 			WidgetPage.label({
-				text: "from behind, lean x${lean_shown_at.to_i64_wrap().to_str()}",
+				text: "from behind, lean x${ReadoutText.whole_text(lean_shown_at)}",
 				x: 20.0,
 				y: surface_y - 12.0,
 			}),

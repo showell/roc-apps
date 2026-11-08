@@ -261,7 +261,7 @@ rider_mark = {
 caption_shapes : List(Shapes.Shape)
 caption_shapes = [
 	WidgetPage.label({
-		text: "from above, stretched x${across_stretch.to_i64_wrap().to_str()} across the road",
+		text: "from above, stretched x${ReadoutText.whole_text(across_stretch)} across the road",
 		x: 10.0,
 		y: 213.0,
 	}),
@@ -291,27 +291,14 @@ arcs_shown = |stop|
 		Choice => tries_shapes(rehearsals, 1.0).concat(arc_shapes(chosen_points, { color: kept_color, width: 4.0 }))
 	}
 
-## A number of at least zero, to two decimal places.
-hundredths_text : F64 -> Str
-hundredths_text = |number| {
-	hundredths = (number * 100.0 + 0.5).to_i64_wrap()
-	whole = (hundredths // 100).to_str()
-	part = hundredths % 100
-	if part < 10 {
-		"${whole}.0${part.to_str()}"
-	} else {
-		"${whole}.${part.to_str()}"
-	}
-}
-
 ## A lean in degrees, and which way.
 lean_text : Angle.Lean -> Str
 lean_text = |lean| {
 	degrees = lean.to_degrees()
 	if degrees < 0.0 {
-		"${hundredths_text(0.0 - degrees)} left"
+		"${ReadoutText.hundredths_text(degrees.abs())} left"
 	} else {
-		"${hundredths_text(degrees)} right"
+		"${ReadoutText.hundredths_text(degrees)} right"
 	}
 }
 

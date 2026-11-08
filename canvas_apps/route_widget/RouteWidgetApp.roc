@@ -262,9 +262,9 @@ picture_shapes =
 status_lines : List(Str)
 status_lines = {
 	plan = read_out_plan.segment_plan
-	metres = (plan.length.to_metres() + 0.5).to_i64_wrap()
+	metres = ReadoutText.whole_text(plan.length.to_metres())
 	[
-		"Segment ${read_out_number.to_str()} of ${segments.len().to_str()}: ${metres.to_str()} m, ${ReadoutText.turn_text(read_out_plan.turn)}",
+		"Segment ${read_out_number.to_str()} of ${segments.len().to_str()}: ${metres} m, ${ReadoutText.turn_text(read_out_plan.turn)}",
 		"encounter: ${Str.inspect(plan.encounter)}, pigs: ${Str.inspect(plan.pigs)}",
 		"bull: ${Str.inspect(plan.bull)}, scheme: ${Str.inspect(plan.scheme)}",
 		"bend_life: ${Str.inspect(read_out_plan.bend_life)}",
