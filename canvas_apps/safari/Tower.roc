@@ -222,6 +222,12 @@ corner_at = |tower, { corner, height_on_tower }| {
 	}
 }
 
+## The shortest rod on screen that has a direction to turn its width across.
+## A shorter one is drawn as if one pixel long, so its quad shrinks to its
+## point rather than dividing by nearly nothing.
+shortest_rod_with_direction : Pixels
+shortest_rod_with_direction = Pixels.of(0.0001)
+
 ## A rod between two points on screen, `width` wide.
 screen_rod : {
 	from : Screen.Point,
@@ -233,7 +239,7 @@ screen_rod = |{ from, to, width }| {
 	y_change = to.y.minus(from.y).to_f64()
 	across = width.to_f64()
 	measured_length = Screen.distance({ from, to }).to_f64()
-	rod_length = if measured_length < 0.0001 {
+	rod_length = if measured_length < shortest_rod_with_direction.to_f64() {
 		1.0
 	} else {
 		measured_length
