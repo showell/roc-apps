@@ -1260,7 +1260,7 @@ Every radio tower has a beacon on top, and the beacons blink. A beacon is the si
 Press play and watch the two towers blink out of step.
 ```
 
-The widget plays two whole blinks, from step 5,400 to step 5,640, one step a frame. The left tower's beacon starts dark and the right one's starts at full brightness. At step 5,430 they meet in the middle, and by step 5,460 they've changed places. At the end they're back where they began.
+The widget stands two towers side by side, with beacons that blink opposite each other. It plays two whole blinks, from step 5,400 to step 5,640, one step a frame. The left tower's beacon starts dark and the right one's starts at full brightness. At step 5,430 they meet in the middle, and by step 5,460 they've changed places. At the end they're back where they began.
 
 New in this chapter:
 
@@ -1273,7 +1273,7 @@ A beacon follows three rules:
 
 1. A blink takes 120 steps, from dark up to full brightness and back down.
 2. Neighbouring towers start their blinks at different points, so the towers along a road don't blink together.
-3. A long segment's two towers blink exactly opposite each other. Those are the two in the widget.
+3. A segment longer than a kilometre has a second tower halfway along, and its beacon blinks exactly opposite the one at the segment's end. Only one segment on the route is that long.
 
 None of those rules needs a memory. Ask a beacon about step 5,430 cold, and it can answer. So Safari Ride stores nothing about beacons at all. That's *worked out, not stored*, in its purest form.
 
@@ -1290,13 +1290,13 @@ A beacon needs four types, and all four are opaque:
 
 Three of them are the same number underneath, and that's the point. A step of the ride, a length of time and a beacon's key are three different questions, and the types won't let one answer stand in for another.
 
-`Clock` and `Steps` are a pair. A clock is a place in time, and `Steps` is a distance between two of them. These are all the sums a clock can do:
+`Clock` and `Steps` are a pair. A clock is a place in time, and `Steps` is a distance between two of them. These are a clock's sums with `Steps`:
 
 {{signatures Clock.steps_since Clock.plus Clock.minus}}
 
-Two clocks give the steps between them. A clock and some steps give a later clock, or an earlier one. Two clocks can't be added, because step 5,400 plus step 30 means nothing, so there's no function for it. Only `Clock` can open a clock, so nobody else can write one. `Steps` add to `Steps`, which does mean something. Call this *places and distances*: one opaque type for where something is, a second for how far apart two of them are, and only the sums that make sense. It comes back again and again.
+Two clocks give the steps between them. A clock and some steps give a later clock, or an earlier one. Two clocks can't be added, because step 5,400 plus step 30 means nothing, so there's no function for it, and because `Clock` is opaque, nobody outside it can add the numbers underneath. `Steps` add to `Steps`, which does mean something. Call this *places and distances*: one opaque type for where something is, a second for how far apart two of them are, and only the sums that make sense. It comes back again and again.
 
-Two of those sums can crash. `steps_since` refuses a clock earlier than the one it counts from, and `minus` refuses to go back past step 0, because the ride has no step before it. A `U32` that quietly wrapped around would be far worse than a crash.
+`steps_since` refuses a clock earlier than the one it counts from, and `minus` refuses to go back past step 0, because the ride has no step before it. A `U32` that quietly wrapped around would be far worse than a crash.
 
 A `Beacon` is a key that nobody outside `Beacon` can read. You get one from a segment, you can ask for the one opposite it, and you can ask how bright it is:
 
@@ -1312,6 +1312,7 @@ digraph beacon {
   node [shape=box, fontname="Helvetica"];
   Beacon [style=bold];
   Scene -> TowerSighting;
+  Scene -> Clock;
   TowerSighting -> Beacon;
   TowerSighting -> Tower;
   TowerSighting -> Clock;
@@ -1350,11 +1351,11 @@ The tower halfway along a segment blinks opposite the one at its end:
 
 {{code Beacon.opposite}}
 
-That's a small piece of number theory hiding in a constant. 60 staggers of 37 steps come to 2,220, which is 18 whole blinks and 60 steps left over, so the opposite beacon is always exactly half a blink away. The widget's two beacons are the first segment's, key 0, and its opposite, key 60. Step 5,400 is 45 whole blinks in, so one is dark there and the other is at full brightness.
+That's a small piece of number theory hiding in a constant. 60 staggers of 37 steps come to 2,220, which is 18 whole blinks and 60 steps left over, so the opposite beacon is always exactly half a blink away. The widget's two beacons are the first segment's, key 0, and the one opposite it, key 60. Step 5,400 is 45 whole blinks in, so one is dark there and the other is at full brightness.
 
 ### Where the clock stops
 
-Notice how far the clock reaches. `Tower` holds its beacon's brightness as a `Fraction`, and it doesn't import `Clock`. `Beacon` knows the clock but not the tower. `TowerSighting` is the one place where both meet.
+Notice how far the clock reaches. `Tower` holds its beacon's brightness as a `Fraction`, and it doesn't import `Clock`. `Beacon` knows the clock but not the tower. In the game, `TowerSighting` is the one place where both meet.
 
 There's no blink abstraction, because nothing else in the game blinks.
 
