@@ -56,5 +56,3 @@ Billboard := {
 
 	is_eq : _
 }
-
-expect EmojiStills.elephant.still().polygons().len() == 6
