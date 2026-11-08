@@ -172,9 +172,10 @@ expect place_numbers(bird_at(85.0, flight_at_step(136))) == [6.0, 45.0, far_top]
 expect {
 	bird = bird_at(40.0, flight_at_step(118))
 	frame = bird_flight.instant_at(Playing(Steps.of(18)))
+	frame_point = frame.location.road_point
 	[
-		(bird.spot.foot().right().to_metres(), frame.location.across.to_metres()),
-		(bird.spot.foot().forward().to_metres(), frame.location.along.to_metres() - 40.0),
+		(bird.spot.foot().right().to_metres(), frame_point.across.to_metres()),
+		(bird.spot.foot().forward().to_metres(), frame_point.along.to_metres() - 40.0),
 		(bird.spot.lift().to_metres(), frame.location.lift.to_metres()),
 	].all(|(got, want)| (got - want).abs() <= 0.000000001)
 		and bird.kind.pose == frame.pose
@@ -327,7 +328,7 @@ expect crossing_cat.instant_at(Past(Steps.zero)).pose == Collapse
 
 ## How far across the road the cat is `steps_in` steps into its crossing.
 crossing_across_at : U32 -> F64
-crossing_across_at = |steps_in| crossing_frame_of(steps_in).location.across.to_metres()
+crossing_across_at = |steps_in| crossing_frame_of(steps_in).location.road_point.across.to_metres()
 
 ## How high the cat is `steps_in` steps into its crossing.
 crossing_lift_at : U32 -> F64
@@ -356,7 +357,7 @@ expect
 
 expect (crossing_across_at(37) - -3.49).abs() <= 0.000000000001
 expect {
-	across_after = crossing_cat.instant_at(Past(Steps.zero)).location.across.to_metres()
+	across_after = crossing_cat.instant_at(Past(Steps.zero)).location.road_point.across.to_metres()
 	(across_after - -3.49).abs() <= 0.000000000001
 }
 
@@ -421,15 +422,15 @@ flight_frame_of = |steps_in| sample_flight.instant_at(Playing(Steps.of(steps_in)
 
 expect {
 	location = sample_flight.instant_at(Waiting).location
-	location.along.to_metres() == 100.0
-		and location.across.to_metres() == -6.0
+	location.road_point.along.to_metres() == 100.0
+		and location.road_point.across.to_metres() == -6.0
 		and location.lift.to_metres() == left_top
 }
 
 expect {
 	location = sample_flight.instant_at(Past(Steps.zero)).location
-	location.along.to_metres() == 140.0
-		and location.across.to_metres() == 6.0
+	location.road_point.along.to_metres() == 140.0
+		and location.road_point.across.to_metres() == 6.0
 		and location.lift.to_metres() == far_top
 }
 
@@ -457,8 +458,8 @@ expect flight_frame_of(0).location == sample_flight.instant_at(Waiting).location
 expect {
 	last = flight_frame_of(35).location
 	[
-		(last.along.to_metres(), 140.0),
-		(last.across.to_metres(), 6.0),
+		(last.road_point.along.to_metres(), 140.0),
+		(last.road_point.across.to_metres(), 6.0),
 		(last.lift.to_metres(), far_top),
 	].all(|(got, want)| (got - want).abs() <= 0.000000001)
 }

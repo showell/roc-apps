@@ -123,10 +123,11 @@ crossing_timing = |gap|
 cat_shapes : EncounterPlan.Timing -> List(Shapes.Shape)
 cat_shapes = |timing| {
 	instant = World.first_cat_crossing.instant_at(CatCrossing.crossing_stage(timing))
+	across = instant.location.road_point.across
 	StillShapes.still_shapes(
 		{
 			foot: {
-				x: Pixels.of(road_middle_x + instant.location.across.to_metres() * pixels_a_metre),
+				x: Pixels.of(road_middle_x + across.to_metres() * pixels_a_metre),
 				y: Pixels.of(feet_y - instant.location.lift.to_metres() * pixels_a_metre),
 			},
 			flip: AsDrawn,
