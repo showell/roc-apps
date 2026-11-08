@@ -21,11 +21,12 @@ BillboardSighting :: [].{
 			.keep_oks(|fate| fate)
 }
 
-## Farm animals are sighted on this many segments of the road ahead.
+## Farm animals are sighted on this many segments of the road ahead, chosen by
+## eye.
 farm_reach : U32
 farm_reach = 3
 
-## Safari animals and ducks are sighted on this many.
+## Safari animals and ducks are sighted on this many, chosen by eye.
 wildlife_reach : U32
 wildlife_reach = 5
 

@@ -577,7 +577,7 @@ is_big_herd : PigHerd -> Bool
 is_big_herd = |herd|
 	match herd {
 		BigHerd(_) => True
-		TwoRows(_) => False
+		TwoRows => False
 	}
 
 ## The route's first herd of `shape`.

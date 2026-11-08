@@ -16,25 +16,6 @@ CowHerd := {
 	## How many rows stand behind the front row, nearest the road. Each column
 	## has one cow in each row, so a column holds one more cow than this.
 	rows_behind_front : U64,
-
-	## How far along the road behind the bull's place the first column's place
-	## is.
-	gap_behind_bull : Distance,
-
-	## The distance between the herd's columns, along the road.
-	column_spacing : Distance,
-
-	## How far along the road each row back is moved from the one in front.
-	## A column's place is where its second row stands, so its front row
-	## stands this far short of it, toward the bull.
-	row_stagger : Distance,
-
-	## The distance between the herd's rows, away from the road.
-	row_depth : Distance,
-
-	## How far a cow strays from its place, along the road and across it.
-	jitter_along : Distance,
-	jitter_across : Distance,
 }.{
 
 	## Whether a bull leads the herd.
@@ -86,6 +67,32 @@ herd_bull = |herd_along| {
 front_row_distance : Distance
 front_row_distance = Geom.road_half_width.plus(Distance.metres(10.0))
 
+## How far along the road behind the bull's place the first column's place is,
+## chosen by eye.
+gap_behind_bull : Distance
+gap_behind_bull = Distance.metres(4.0)
+
+## The distance between the herd's columns, along the road, chosen by eye.
+column_spacing : Distance
+column_spacing = Distance.metres(6.0)
+
+## How far along the road each row back is moved from the one in front, chosen
+## by eye. A column's place is where its front row stands.
+row_stagger : Distance
+row_stagger = Distance.metres(2.0)
+
+## The distance between the herd's rows, away from the road, chosen by eye.
+row_depth : Distance
+row_depth = Distance.metres(5.0)
+
+## How far a cow strays from its place along the road, chosen by eye.
+jitter_along : Distance
+jitter_along = Distance.metres(1.5)
+
+## How far a cow strays from its place across the road, chosen by eye.
+jitter_across : Distance
+jitter_across = Distance.metres(1.2)
+
 ## Every fourth cow, from the second, is a calf.
 is_calf : U64 -> Bool
 is_calf = |cow_number| cow_number.rem_by(4) == 1
@@ -97,18 +104,17 @@ herd_cow = |herd, { herd_along, cow_number }| {
 	cows_per_column = herd.rows_behind_front + 1
 	column = cow_number.div_trunc_by(cows_per_column).to_f64()
 	row = cow_number.rem_by(cows_per_column).to_f64()
-	herd_front = herd_along.plus(herd.gap_behind_bull)
-	column_place = herd_front.plus(herd.column_spacing.times(column))
-	rows_behind_second = row - 1.0
-	in_line = column_place.plus(herd.row_stagger.times(rows_behind_second))
-	row_place = front_row_distance.plus(herd.row_depth.times(row))
+	herd_front = herd_along.plus(gap_behind_bull)
+	column_place = herd_front.plus(column_spacing.times(column))
+	in_line = column_place.plus(row_stagger.times(row))
+	row_place = front_row_distance.plus(row_depth.times(row))
 	stray = Scatter.stray_of(
 		cow_number,
 		{
 			along_phase: 2.7,
 			across_phase: 1.9,
-			jitter_along: herd.jitter_along,
-			jitter_across: herd.jitter_across,
+			jitter_along,
+			jitter_across,
 		},
 	)
 	out_from_road = row_place.plus(stray.across)
@@ -138,20 +144,9 @@ expect
 		(13, True),
 	].all(|(cow_number, want)| is_calf(cow_number) == want)
 
-## A herd of five cows in columns of two, its last column one cow short. Its
-## gap behind the bull, column spacing, row stagger and row depth all differ,
-## so a mix-up of any two shows.
+## A herd of five cows in columns of two, its last column one cow short.
 five_cows : CowHerd
-five_cows = {
-	cow_count: 5,
-	rows_behind_front: 1,
-	gap_behind_bull: Distance.metres(4.0),
-	column_spacing: Distance.metres(10.0),
-	row_stagger: Distance.metres(3.0),
-	row_depth: Distance.metres(5.0),
-	jitter_along: Distance.metres(1.5),
-	jitter_across: Distance.metres(1.2),
-}
+five_cows = { cow_count: 5, rows_behind_front: 1 }
 
 cows_with_bull : List(Geom.Placed(Billboard))
 cows_with_bull = five_cows.herd_cows({ herd_along: Along.metres(24.0), bull: WithBull })
@@ -175,11 +170,11 @@ expect cows_without_bull.all(|member| member.kind.emoji == EmojiStills.cow)
 # than the jitter: along the road and across it.
 expect {
 	places = [
-		(25.0, -12.0),
-		(28.0, -17.0),
-		(35.0, -12.0),
-		(38.0, -17.0),
-		(45.0, -12.0),
+		(28.0, -12.0),
+		(30.0, -17.0),
+		(34.0, -12.0),
+		(36.0, -17.0),
+		(40.0, -12.0),
 	]
 	misses = cows_without_bull.map2(
 		places,
