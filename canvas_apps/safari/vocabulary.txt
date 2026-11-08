@@ -1,6 +1,6 @@
 lean: tilt
 road: lane
 tower: mast
-tour: drive, journey
+tour: drive
 step: tick
 billboard: cutout, cutouts
