@@ -1936,9 +1936,17 @@ digraph truck_drawing {
 
 `TruckSighting` finds the truck on the road ahead. What it finds is a `Truck`, the truck with its lights, and with the lights off that's just the body this chapter draws. The truck is drawn however small it stands, because the rider is always looking for it.
 
-### Three maps
+### Shape, placement, projection
 
-The truck is a real box, with a back, two sides, a roof, a windshield and a nose. Each corner of it goes through three maps on its way to the screen. Its shape is written in the truck's own frame. Its placement carries that frame onto the road at the truck's spot. Its projection is the camera turning the result into a point on the screen.
+The truck is a real box, with a back, two sides, a roof, a windshield and a nose. It gets to the screen in three stages:
+
+| Stage | What it does |
+|---|---|
+| Shape | Says where each corner is in the truck's own frame, measured from the middle of the trailer |
+| Placement | Carries one point onto the road at the truck's spot, then lowers it for the earth's curve |
+| Projection | Turns one whole face into a polygon on the screen |
+
+Placement works a point at a time, because each corner stands at its own place on the road. Projection works a face at a time, for two reasons. A face that reaches behind the camera is clipped, and clipping can cut corners off a face and add new ones, so it needs the whole outline. And the faces are sorted by depth before they're drawn, and the sort orders faces, not points.
 
 ### Get the types right
 
@@ -1946,25 +1954,33 @@ A point in the truck's own frame is three distances, measured from the middle of
 
 {{code TruckShape.TruckPoint}}
 
-A `TruckSetting` holds what a point is drawn from: the truck's spot on the road, including how far the road under it is lifted, and the camera's vantage.
+A `TruckSetting` is what the truck is drawn from. It's a `Picture.Setting`, the setting every kind of thing beside the road draws from:
+
+{{code Picture.Setting}}
+
+{{code TruckShape.TruckSetting}}
+
+The truck's context is the road its points are measured on, and the camera's vantage:
+
+{{code TruckShape.TruckOnRoad}}
 
 ### The functions
 
-Two functions do the first two maps. `TruckShape` moves the point along and across the road from the truck's spot:
+Placement is two functions. `TruckShape` moves one point along and across the road from the truck's spot, and lifts it:
 
 {{code TruckShape.road_point_on_truck}}
 
-`EarthCurve` finds where that lands in the rider's view, and lowers it by however far the ground has curved away beneath it:
+`EarthCurve` finds where that lands in the rider's view, and lowers it by however far the ground has curved away beneath it. The headlights and the brake lights use it too:
 
 {{code EarthCurve.raised_ground_point}}
 
-So a face is just a list of `TruckPoint`s. Here's a side, walked around its outline from the back of the trailer to the nose and back:
+`TruckBody.face` places each corner of a face that way. So a face is just a color and a list of `TruckPoint`s. Here's a side, walked around its outline from the back of the trailer to the nose and back:
 
 {{code TruckBody.side}}
 
 The back, the roof, the windshield and the nose are each a strip across the truck, so they share `TruckShape.strip_corners`. The tires are circles standing on the road.
 
-The third map happens last. `TruckBody` sorts the faces far to near, so a nearer face drawn later covers a farther one, and then projects each one, clipping whatever is behind the camera:
+Projection comes last. `TruckBody` sorts the faces far to near, so a nearer face drawn later covers a farther one, and then clips and projects each one:
 
 {{code TruckBody.body_picture}}
 
@@ -1993,6 +2009,14 @@ The truck's driver is teasing the rider: staying ahead, but letting the rider ga
 
 Everything else is plain physics. The truck speeds up while it's short of that mark and holds its speed once it's past it. It slows for the bends, and that's mostly where the rider gains. The tease only ever speeds the truck up, so near the end the rider can get closer than the 100 metres it aims for. The truck can always pull away again, because it outdoes the rider by 10%, in both its acceleration and its top speed.
 
+### Remembered, not worked out
+
+The sun is worked out from the clock. `sun_direction_at` takes a clock, so you can ask about any step and get an answer, without running the ride up to it.
+
+The truck can't be worked out that way, because where it is depends on where the rider has been. So the truck is carried forward. Its step, `truck_progress_at_next_step`, takes a `TruckProgress` and returns the next one. The ride remembers four things from one step to the next, the rider, the truck, the clock and the encounter plan, and the truck is one of them.
+
+That's what makes the order of a step matter. The rider moves first, and then the truck reads where the rider has got to. The rider never reads the truck.
+
 ### Get the types right
 
 The truck's state is three fields:
@@ -2009,7 +2033,7 @@ A bend ahead of the truck is its own type, and so is the answer to "is there one
 
 {{code TruckJourney.NextBend}}
 
-`BendAhead` carries a `ComingBend`, how far off the bend is and how sharply it turns. `NoBendAhead` carries nothing: the route ends before another bend, or the truck is already past the end. The only way to read a bend's distance is inside the branch where there is a bend.
+`BendAhead` carries a `ComingBend`: how far off the bend is, and its turn, an angle. `NoBendAhead` carries nothing: the route ends before another bend, or the truck is already past the end. The only way to read a bend's distance is inside the branch where there is a bend.
 
 ### The functions
 
@@ -2018,11 +2042,11 @@ The modules around `TruckJourney`
 digraph truck_motion {
   node [shape=box, fontname="Helvetica"];
   TruckJourney [style=bold];
-  RideInstant -> TruckJourney;
-  TruckJourney -> Route;
-  TruckJourney -> VehicleLimits;
-  TruckJourney -> Speed;
-  TruckJourney -> Acceleration;
+  RideInstant -> TruckJourney [label="  steps it"];
+  TruckJourney -> Route [label="  finds the next bend on"];
+  TruckJourney -> VehicleLimits [label="  keeps to the limits"];
+  TruckJourney -> Speed [label="  measures how fast it goes in"];
+  TruckJourney -> Acceleration [label="  measures speeding up in"];
 }
 ```
 
@@ -2044,7 +2068,9 @@ Finding the next bend walks the route's segments with their ends, and takes the 
 
 {{code TruckJourney.next_bend}}
 
-Then the two ways to take a step. Both sit below the module's block, so they're private, and both are arithmetic on `Speed`. Within 60 metres of a bend, the truck aims to reach it at 80% of the bend's top speed, to leave a margin, and brakes if it's going faster than that:
+Read its signature out loud: `next_bend : Route, Distance -> NextBend`. The next bend, on a route, past a distance. That's what a signature should do: say what the function is for, before you read its body.
+
+Then the two ways to take a step. Both sit below the module's block, so they're private, and both are arithmetic on `Speed`. Within 60 metres of a bend, the truck brakes so it reaches the bend at its cautious speed. `VehicleLimits.turn_speed` is the speed a turn allows, and the rider's throttle asks it too. The truck's own rule is that limit times its caution, 80%, to leave a margin:
 
 {{code TruckJourney.cautious_turn_speed}}
 
@@ -2058,27 +2084,29 @@ That's a truck you can chase. The next chapter lights it.
 
 ## The truck's lights
 
-The truck drives exactly the same with its lights on or off. The lights are a layer on top: two kinds of lamp, each with its own rule.
+The ride runs from day into night, so the truck's headlights come on near the end. The truck brakes for bends, so its brake lights show whenever you're close to it, even by day. The truck drives exactly the same with its lights on or off.
 
 New in this chapter:
 
 - Modules: `Truck`, `TruckHeadlights`, `TruckBrakeLights`
 
-### Two lamps, two rules
+### One module per lamp
 
-The headlights come on when it gets dark. They work like a light sensor on the lamps themselves: once the sky is dark enough, they're on. The sky knows how dark it is: `Sky.darkness_at` answers a `Fraction`, 0 by day and 1 at full dark. The sensor reads that.
+Each kind of lamp gets a module, and each module owns two things: whether its lamp is on, and how the lamp looks.
+
+The headlights work like a light sensor on the lamps themselves: once the sky is dark enough, they're on. The Sky module tells us how dark it is: `Sky.darkness_at` answers a `Fraction`, 0 by day and 1 at full dark. The sensor reads that.
 
 The brake lights come on while the truck is slowing down. That's a fact about the truck's own last step, its `Pace`, so they follow the truck.
 
 ### Get the types right
 
-Each lamp switches on its own, so each gets its own field:
+`TruckHeadlights` and `TruckBrakeLights` are each `[On, Off]`. A `Truck` is the truck as the scene draws it this frame, so it holds one field per lamp:
 
 {{code Truck.Truck from "Which of" to "Truck := {"}}
 
 ### The functions
 
-Each frame, `FrameView` hands the sky's darkness to `TruckHeadlights` and the truck's pace to `TruckBrakeLights`:
+Each frame, `FrameView` builds the `Truck`. It hands the sky's darkness to `TruckHeadlights` and the truck's pace to `TruckBrakeLights`:
 
 {{code FrameView.ride_facts from "headlights: TruckHeadlights.at(" to "brake_lights: TruckBrakeLights.at("}}
 
@@ -2094,11 +2122,17 @@ The headlights come on at this darkness:
 
 On this ride, that's step 3,555 of 6,746. Once on, they stay on, because from there the sky only darkens.
 
-The drawing does what the lamps say, with each lamp's `picture` matching both tags. The beams go first, then the body, then the brake lights, so each paints over the one before:
+Each lamp's `picture` matches both tags, and an `Off` lamp is an empty picture. `TruckHeadlights` paints the beams as wedges that fade from the lamp toward their far end. `TruckBrakeLights` paints two lamps on the back of the trailer, each with a glow around it. Both place their points the way the body does, with `TruckShape.road_point_on_truck` and `EarthCurve.raised_ground_point`.
+
+`Truck` puts the three pictures together. `Picture.composite` makes one picture of several, each painted over the ones before:
+
+{{code Picture.composite}}
+
+The beams go first, then the body, then the brake lights:
 
 {{code Truck.scenery_picture}}
 
-`TruckHeadlights` paints the beams as wedges that fade from the lamp toward their far end, and `TruckBrakeLights` paints the brake lights, each with a glow around it. `TruckBody` knows nothing of the lights: they're drawn around it.
+`TruckBody` knows nothing of the lights: they're drawn around it.
 
 Step the ride back past step 3,555, and the headlights go off again. Nothing turns them off; they only ever read the sky. The brake lights read the truck's last step, which the ride keeps, so they come back with it.
 
