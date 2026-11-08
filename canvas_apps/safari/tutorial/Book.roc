@@ -182,9 +182,9 @@ section_with_link = |piece| match piece.split_first("\">") {
 			link = "<a class=\"section-link\" href=\"#${id}\" aria-label=\"Link to this section\">§</a>"
 			"${id}\">${heading} ${link}</h2>${rest}"
 		}
-		Err(_) => crash "book: a section heading with no end: ${piece}"
+		Err(NotFound) => crash "book: a section heading with no end: ${piece}"
 	}
-	Err(_) => crash "book: a section heading with no id: ${piece}"
+	Err(NotFound) => crash "book: a section heading with no id: ${piece}"
 }
 
 section_of : MdDocument.Heading -> Section
@@ -327,7 +327,7 @@ turn_link : Neighbour, { rel : Str, word : Str } -> Str
 turn_link = |neighbour, { rel, word }| match neighbour {
 	Ok(chapter) if chapter.file == front_file => "<a rel=\"${rel}\" href=\"${front_file}\"><small>${word}</small>Contents</a>"
 	Ok(chapter) => "<a rel=\"${rel}\" href=\"${chapter.file}\"><small>${word}</small>${BookText.escaped_text(chapter.title)}</a>"
-	Err(_) => "<span></span>"
+	Err(OutOfBounds) => "<span></span>"
 }
 
 page_html :

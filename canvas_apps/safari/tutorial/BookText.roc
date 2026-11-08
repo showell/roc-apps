@@ -7,7 +7,7 @@ BookText := [].{
 	text_from_bytes : List(U8) -> Str
 	text_from_bytes = |bytes| match Str.from_utf8(bytes) {
 		Ok(text) => text
-		Err(_) => crash "book: text that isn't UTF-8"
+		Err(BadUtf8({ index, .. })) => crash "book: text that isn't UTF-8 at byte ${index.to_str()}"
 	}
 
 	## Text made safe for a page, an element's content or an attribute's value.

@@ -24,8 +24,13 @@ check_open = "[check: "
 ## the prose after it. The span's start goes in front of each `[check: ` after.
 check_note_end : Str -> Str
 check_note_end = |piece| match piece.split_first("]") {
-	Ok({ before, after }) if !before.contains("[") => "${before}]</span>${after}"
-	_ => crash "book: a [check: note needs one closing bracket and no bracket inside it: ${piece}"
+	Ok({ before, after }) =>
+		if before.contains("[") {
+			crash "book: a [check: note has a [ inside it: ${piece}"
+		} else {
+			"${before}]</span>${after}"
+		}
+	Err(NotFound) => crash "book: a [check: note never closes with a ]: ${piece}"
 }
 
 expect DraftNotes.highlight("<p>plain [text] here</p>") == "<p>plain [text] here</p>"

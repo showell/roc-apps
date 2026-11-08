@@ -24,7 +24,7 @@ marked_table = |piece| match piece.split_first("</table>") {
 		marked = BookText.rewritten_after(cells, { opening: code_open, rewrite: marked_code })
 		"${marked}</table>${after}"
 	}
-	Err(_) => crash "book: a table with no end: ${piece}"
+	Err(NotFound) => crash "book: a table with no end: ${piece}"
 }
 
 ## One piece after a `<code>`: the code up to its end, then the cell after it.
@@ -34,7 +34,7 @@ marked_code = |piece| match piece.split_first("</code>") {
 		marked = code.replace_each("_", "_<wbr>").replace_each(".", ".<wbr>")
 		"${marked}</code>${after}"
 	}
-	Err(_) => crash "book: code with no end in a table: ${piece}"
+	Err(NotFound) => crash "book: code with no end in a table: ${piece}"
 }
 
 expect BookTable.with_break_points("<p><code>a_b.c</code></p>") == "<p><code>a_b.c</code></p>"
