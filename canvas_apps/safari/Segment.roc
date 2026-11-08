@@ -2,8 +2,8 @@
 ## next: its length, its trees, its herds, what the rider meets on it, and how
 ## it ends. It is built once, from choices the route has already made, and this
 ## module answers the questions asked of one segment: where its herds stand,
-## where the rider commits to its bend, and whether a tower stands halfway
-## along it.
+## where the rider commits to its bend, whether a tower stands halfway along
+## it, and what on it may catch the rider's eye.
 import Across
 import Along
 import Angle
@@ -154,6 +154,30 @@ Segment := {
 	## Whether `segment` has a tower halfway along.
 	has_mid_tower : Segment -> Bool
 	has_mid_tower = |segment| segment.length > mid_tower_min_length
+
+	## Whether a segment has a cat waiting by the road.
+	has_cat : Segment -> Bool
+	has_cat = |segment|
+		match segment.encounter {
+			CatCrosses(_) => True
+			BirdHere(_) | QuietRoad => False
+		}
+
+	## Whether a segment has a bird in it.
+	has_bird : Segment -> Bool
+	has_bird = |segment|
+		match segment.encounter {
+			BirdHere(_) => True
+			CatCrosses(_) | QuietRoad => False
+		}
+
+	## Whether a segment's pigs draw the rider's eye.
+	is_distracting : Segment -> Bool
+	is_distracting = |segment|
+		match segment.pigs {
+			Herd({ interest: Distracting, .. }) => True
+			Herd({ interest: Unnoticed, .. }) | NoPigs => False
+		}
 }
 
 ## A segment longer than this has a tower halfway along.
