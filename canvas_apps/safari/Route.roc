@@ -76,19 +76,35 @@ Route :: List(Segment).{
 		segments.get(index.count_before())
 			?? crash "Route.segment_at: the route has no segment there"
 
-	## The route's length, end to end.
+	## The route's length, end to end: where its last segment ends.
 	route_length : Route -> Distance
-	route_length = |Route.(segments)| length_of(segments)
+	route_length = |route|
+		match route.segments_with_ends().last() {
+			Ok(last) => last.end
+			Err(_) => crash "Route.route_length: a route has a segment"
+		}
 
 	## How far along the route the point at `along` on the segment at `index`
-	## is.
+	## is: where the segment before it ends, plus `along`.
 	distance_along_route : Route, { index : Route.SegmentIndex, along : Along } -> Distance
-	distance_along_route = |Route.(segments), { index, along }|
-		length_of(segments.take_first(index.count_before())).plus(along.from_start())
+	distance_along_route = |route, { index, along }| {
+		start =
+			match index.previous() {
+				AtRouteStart => Distance.zero
+				Previous(before) =>
+					match route.segments_with_ends().get(before.count_before()) {
+						Ok(stretch) => stretch.end
+						Err(_) => crash "Route.distance_along_route: the route has no segment there"
+					}
+			}
+		start.plus(along.from_start())
+	}
 
 	## Each of the route's segments, in order, with how far along the route it
-	## ends. The lengths are added from the first segment on: a float sum's
-	## rounding depends on its order, and another order can move a pixel.
+	## ends. It is the one sum of the route's lengths, which every other
+	## distance along the route reads. The lengths are added from the first
+	## segment on: a float sum's rounding depends on its order, and another order
+	## can move a pixel.
 	segments_with_ends : Route -> List({ segment : Segment, end : Distance })
 	segments_with_ends = |Route.(segments)|
 		segments
@@ -111,9 +127,3 @@ Route :: List(Segment).{
 			.take_first(index.count_before())
 			.fold(Angle.north, |bearing, segment| bearing.plus(segment.bend_out_of().turn))
 }
-
-## The length of `segments`, end to end. It is summed from the last segment to
-## the first: a float sum's rounding depends on its order, and another order can
-## move a pixel.
-length_of : List(Segment) -> Distance
-length_of = |segments| segments.fold_rev(Distance.zero, |segment, sum| segment.length.plus(sum))

@@ -66,6 +66,48 @@ EncounterPlan := [Unplanned, StartsAt(Clock)].{
 			Unplanned
 		}
 
+	## How the rider comes at the encounter on their segment: `gap` short of
+	## its animal at `speed`, for an animation `span` long, or none on a quiet
+	## road.
+	Approach : [
+		Approaching(
+			{
+				span : EncounterPlan.StepSpan,
+				gap : Distance,
+				speed : Speed,
+			},
+		),
+		QuietRoad,
+	]
+
+	## The plan a step after `plan`, for a rider who has just come onto a new
+	## segment or stayed on the same one, coming at its encounter by
+	## `approach` with the ride's clock at `now`. A new segment forgets the
+	## plan. A plan once made is kept, and an unplanned encounter is planned by
+	## `plan_for`.
+	plan_at_next_step : EncounterPlan,
+	{
+		segment_change : [SameSegment, NewSegment],
+		approach : EncounterPlan.Approach,
+		now : Clock,
+	} -> EncounterPlan
+	plan_at_next_step = |plan, { segment_change, approach, now }| {
+		kept_plan =
+			match segment_change {
+				SameSegment => plan
+				NewSegment => Unplanned
+			}
+		match kept_plan {
+			StartsAt(_) => kept_plan
+			Unplanned =>
+				match approach {
+					Approaching({ span, gap, speed }) =>
+						EncounterPlan.plan_for(span, { gap, speed, now })
+					QuietRoad => Unplanned
+				}
+		}
+	}
+
 	## The timing of an animation `span` long, for a rider `gap` short of its
 	## animal, coming at a steady `speed` from `gap_at_start` at step 0 of the
 	## ride's clock. It is planned by `plan_for`, on the first step that such a
@@ -143,6 +185,54 @@ expect planned_at(2.0, 0.0) == Unplanned
 # At 2.5 m a step the plan is made 3 + 2.5 × 10 = 28 m off.
 expect EncounterPlan.planning_gap(ten_step_span, Speed.metres_a_step(2.5)) == Distance.metres(28.0)
 expect planned_at(28.0, 2.5) == StartsAt(Clock.at_step(100))
+
+## A rider 8 m off the animal at 1 m a step, whom `plan_for` plans for at
+## step 100.
+near_approach : EncounterPlan.Approach
+near_approach = Approaching({
+	span: ten_step_span,
+	gap: Distance.metres(8.0),
+	speed: Speed.metres_a_step(1.0),
+})
+
+## The plan a step after `plan`, at step 100, for a rider on the same segment
+## with `approach`.
+plan_on_same_segment : EncounterPlan, EncounterPlan.Approach -> EncounterPlan
+plan_on_same_segment = |plan, approach|
+	EncounterPlan.plan_at_next_step(
+		plan,
+		{
+			segment_change: SameSegment,
+			approach,
+			now: Clock.at_step(100),
+		},
+	)
+
+## The plan a step after `plan`, at step 100, for a rider just come onto a new
+## segment with `approach`.
+plan_on_new_segment : EncounterPlan, EncounterPlan.Approach -> EncounterPlan
+plan_on_new_segment = |plan, approach|
+	EncounterPlan.plan_at_next_step(
+		plan,
+		{
+			segment_change: NewSegment,
+			approach,
+			now: Clock.at_step(100),
+		},
+	)
+
+## A plan made at step 40.
+made_plan : EncounterPlan
+made_plan = StartsAt(Clock.at_step(40))
+
+# A plan once made is kept on its segment, and forgotten at a new one, where
+# the new encounter is planned afresh.
+expect plan_on_same_segment(made_plan, near_approach) == made_plan
+expect plan_on_same_segment(made_plan, QuietRoad) == made_plan
+expect plan_on_new_segment(made_plan, near_approach) == StartsAt(Clock.at_step(100))
+expect plan_on_new_segment(made_plan, QuietRoad) == Unplanned
+expect plan_on_same_segment(Unplanned, near_approach) == StartsAt(Clock.at_step(100))
+expect plan_on_same_segment(Unplanned, QuietRoad) == Unplanned
 
 ## The stage at step `now` of a 10-step animation starting at step 50.
 stage_now : U32 -> Animation.Stage

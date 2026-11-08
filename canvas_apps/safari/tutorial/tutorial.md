@@ -2008,7 +2008,7 @@ digraph truck_motion {
 
 `RideInstant` moves the truck once a step. All it hands over is how far along the route the rider has just got to, and the route itself:
 
-{{code RideInstant.next from "truck: TruckJourney.truck_at_next_step(" to "{ rider_distance: to.distance_along(route), route },"}}
+{{code RideInstant.next from "truck = TruckJourney.truck_at_next_step(" to "{ rider_distance: rider_place.distance_along(route), route },"}}
 
 That record is the whole of the chase. `TruckJourney` imports none of the rider's modules, and the rider's modules don't import `TruckJourney`. What the two share is `VehicleLimits`, the limits both keep to, which is where the truck's 10% comes from.
 
@@ -2713,7 +2713,7 @@ We add a frame whenever something could go wrong without any listed frame changi
 
 Exact hashes have a consequence that reaches into the code. Float addition isn't associative, so a sum's order is part of its meaning here. `World.route_length` says so in its doc comment, and it's one of the few places in Safari Ride where the direction of a fold is a decision:
 
-{{code Route.length_of}}
+{{code Route.segments_with_ends}}
 
 That's also why each operation on `Speed`, `Fraction`, `Angle` and the rest does the plain float arithmetic its name says. An opaque type adds names and takes nothing away. A retyping that adds `Speed` to a module changes the types throughout, and if it leaves the arithmetic alone, every hash stays where it is. If a hash moves, the retyping changed the program, and the gate says so.
 
