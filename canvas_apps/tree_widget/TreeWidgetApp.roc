@@ -19,6 +19,7 @@ import lib.CanvasApp
 import lib.Shapes
 import widget.ReadoutText
 import widget.WidgetPage
+import widget.WidgetPalette
 
 TreeWidgetApp :: [].{
 
@@ -114,7 +115,7 @@ caption_line : Stand, { text : Str, row : U64 } -> Shapes.Shape
 caption_line = |stand, { text, row }|
 	WidgetPage.readout_line({
 		text,
-		color: WidgetPage.ink_color,
+		color: WidgetPalette.ink_color,
 		row,
 		style: {
 			x: stand.canvas_x,

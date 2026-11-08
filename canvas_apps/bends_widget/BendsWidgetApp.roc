@@ -24,6 +24,7 @@ import lib.Point
 import widget.PlanView
 import widget.ReadoutText
 import widget.WidgetPage
+import widget.WidgetPalette
 
 BendsWidgetApp :: [].{
 
@@ -150,7 +151,7 @@ patch_shape = |bend, corners|
 				[x, y]
 			},
 		),
-		fill: Brush.flat(PlanView.road_color),
+		fill: Brush.flat(WidgetPalette.plan_road_color),
 	})
 
 ## The low edge of a rail's quad, which lies along the ground.
@@ -190,7 +191,7 @@ bend_shapes = |bend| {
 		RailSighting.rail_quads_in_view(road, camera).map(|rail| foot_shape(bend, rail.corners)),
 		[
 			spot(bend, { at: apex_of(bend.turn), color: apex_color }),
-			spot(bend, { at: rider, color: PlanView.standout_color }),
+			spot(bend, { at: rider, color: WidgetPalette.highlight_color }),
 		],
 	].join()
 }
@@ -229,7 +230,7 @@ caption_line : ShownBend, { text : Str, row : U64 } -> Shapes.Shape
 caption_line = |bend, { text, row }|
 	WidgetPage.readout_line({
 		text,
-		color: WidgetPage.ink_color,
+		color: WidgetPalette.ink_color,
 		row,
 		style: {
 			..WidgetPage.panel_rows,
@@ -246,7 +247,7 @@ caption_shapes = |bend|
 
 still_shapes : List(Shapes.Shape)
 still_shapes = {
-	backdrop = WidgetPage.picture_backdrop(PlanView.ground_color)
+	backdrop = WidgetPage.picture_backdrop(WidgetPalette.plan_ground_color)
 	picture_shapes = [backdrop].concat(shown_bends.join_map(bend_shapes))
 	WidgetPage.frame_shapes({
 		picture_shapes,

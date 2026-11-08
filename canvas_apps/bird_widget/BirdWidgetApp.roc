@@ -27,6 +27,7 @@ import lib.CanvasApp
 import lib.Shapes
 import widget.ReadoutText
 import widget.WidgetPage
+import widget.WidgetPalette
 import widget.VcrButtons
 
 BirdWidgetApp :: [].{
@@ -115,7 +116,7 @@ road_shapes = {
 	]
 	[
 		Polygon.clipped_polygon(
-			{ color: WidgetPage.side_road_color, corners },
+			{ color: WidgetPalette.side_road_color, corners },
 			Lens.resting_focal_length,
 		),
 	].keep_oks(|shape| shape)

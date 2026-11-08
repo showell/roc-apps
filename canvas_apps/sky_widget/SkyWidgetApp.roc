@@ -21,6 +21,7 @@ import lib.RgbColor
 import lib.Point
 import widget.ReadoutText
 import widget.WidgetPage
+import widget.WidgetPalette
 import widget.VcrButtons
 
 SkyWidgetApp :: [].{
@@ -169,7 +170,7 @@ job_curves = |job|
 ## The clock, then each call `job` makes at `clock` and its answer, a row each.
 call_rows : SkyWidgetApp.Job, Clock -> List(CallRow)
 call_rows = |job, clock| {
-	clock_row = { text: "clock = step ${clock.to_str()}", color: WidgetPage.ink_color }
+	clock_row = { text: "clock = step ${clock.to_str()}", color: WidgetPalette.ink_color }
 	job_curves(job).map(
 		|curve| { text: (curve.call_line)(clock), color: curve.color },
 	).prepend(clock_row)
@@ -289,7 +290,7 @@ cursor_shapes = |job, clock| {
 				to: { x, y: chart_bottom },
 				width: 1.0,
 			},
-			Brush.flat(WidgetPage.ink_color),
+			Brush.flat(WidgetPalette.ink_color),
 		)
 	job_curves(job).map(
 		|curve| curve_dot(chart_point(clock, curve.level_at), curve.color),

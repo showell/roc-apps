@@ -20,6 +20,7 @@ import lib.Point
 import widget.Click
 import widget.ReadoutText
 import widget.WidgetPage
+import widget.WidgetPalette
 
 StillsWidgetApp :: [].{
 
@@ -293,7 +294,7 @@ picture_color : RgbColor
 picture_color = RgbColor.of(0xf7f5ef)
 
 ink : Brush.Rgba
-ink = Brush.opaque_rgba(WidgetPage.ink_color)
+ink = Brush.opaque_rgba(WidgetPalette.ink_color)
 
 point_count : Still -> U64
 point_count = |still| still.polygons().fold(0, |sum, polygon| sum + polygon.points.len())
@@ -316,7 +317,7 @@ read_out_line : Str, U64 -> Shapes.Shape
 read_out_line = |text, row|
 	WidgetPage.readout_line({
 		text,
-		color: WidgetPage.ink_color,
+		color: WidgetPalette.ink_color,
 		row,
 		style: { ..WidgetPage.panel_rows, first_baseline: 42.0, size: read_out_size },
 	})

@@ -19,6 +19,7 @@ import lib.CanvasApp
 import lib.Point
 import lib.Shapes
 import widget.WidgetPage
+import widget.WidgetPalette
 
 TruckWidgetApp :: [].{
 
@@ -145,7 +146,7 @@ caption_shape : TruckView -> Shapes.Shape
 caption_shape = |view|
 	WidgetPage.readout_line({
 		text: view.caption,
-		color: WidgetPage.ink_color,
+		color: WidgetPalette.ink_color,
 		row: 0,
 		style: { ..WidgetPage.panel_rows, x: view.canvas_x, align: Center },
 	})
