@@ -14,8 +14,13 @@ Still :: List(Still.Polygon).{
 	of : List(Still.Polygon) -> Still
 	of = |polygons| Still.(polygons)
 
-	## A corner of a still's polygon, in the still's frame.
-	Vertex : { x : F64, y : F64 }
+	## A place in the still's frame: a corner of a polygon, or where a
+	## gradient starts, ends or is centred.
+	Point : { x : F64, y : F64 }
+
+	## A step across the still's frame, a direction and a length but not a
+	## place: one of a radial gradient's axes, measured from its center.
+	Step : { x : F64, y : F64 }
 
 	## A gradient's two colours, and where each sits along it: the start
 	## colour up to `start_offset`, the end colour from `end_offset`, and a
@@ -35,22 +40,25 @@ Still :: List(Still.Polygon).{
 		Linear(
 			{
 				stops : Still.ColorStops,
-				start : Still.Vertex,
-				end : Still.Vertex,
+				start : Still.Point,
+				end : Still.Point,
 			},
 		),
 		Radial(
 			{
 				stops : Still.ColorStops,
-				center : Still.Vertex,
-				axis_u : Still.Vertex,
-				axis_v : Still.Vertex,
+				center : Still.Point,
+				axis_u : Still.Step,
+				axis_v : Still.Step,
 			},
 		),
 	]
 
+	## How a polygon of a still is filled: with one colour, or with a gradient.
+	Fill : [Flat(RgbColor), Shaded(Still.Gradient)]
+
 	## One polygon of a still: how it is filled, and its corners.
-	Polygon : { fill : [Flat(RgbColor), Shaded(Still.Gradient)], points : List(Still.Vertex) }
+	Polygon : { fill : Still.Fill, points : List(Still.Point) }
 
 	## The still's polygons, in the order they are drawn.
 	polygons : Still -> List(Still.Polygon)

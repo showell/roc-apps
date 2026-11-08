@@ -424,7 +424,7 @@ shapes_at = |model|
 		.concat(grid_shapes)
 
 ## Where a point of a still lands, as plain numbers.
-landing_spot : StillShapes.Anchor, Still.Vertex -> { x : F64, y : F64 }
+landing_spot : StillShapes.Anchor, Still.Point -> { x : F64, y : F64 }
 landing_spot = |anchor, point| {
 	on_screen = StillShapes.screen_point(anchor, point)
 	{ x: on_screen.x.to_f64(), y: on_screen.y.to_f64() }

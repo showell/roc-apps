@@ -27,14 +27,14 @@ StillShapes :: [].{
 	}
 
 	## Where a point of the still lands on screen.
-	screen_point : StillShapes.Anchor, Still.Vertex -> Screen.Point
+	screen_point : StillShapes.Anchor, Still.Point -> Screen.Point
 	screen_point = |anchor, point| {
 		x: anchor.foot.x.plus(anchor.height_on_screen.times(x_sign(anchor.flip) * point.x)),
 		y: anchor.foot.y.minus(anchor.height_on_screen.times(point.y)),
 	}
 
 	## Where each of a still's `points` lands on screen, in order.
-	screen_points : StillShapes.Anchor, List(Still.Vertex) -> List(Screen.Point)
+	screen_points : StillShapes.Anchor, List(Still.Point) -> List(Screen.Point)
 	screen_points = |anchor, points| points.map(|point| StillShapes.screen_point(anchor, point))
 
 	## A whole still, its polygons in order.
@@ -77,7 +77,7 @@ x_sign = |flip|
 	}
 
 ## How far, and which way, a step in the still goes on screen.
-screen_vector : StillShapes.Anchor, Still.Vertex -> Screen.Point
+screen_vector : StillShapes.Anchor, Still.Step -> Screen.Point
 screen_vector = |anchor, step| {
 	x: anchor.height_on_screen.times(x_sign(anchor.flip) * step.x),
 	y: anchor.height_on_screen.times(step.y).opposite(),
