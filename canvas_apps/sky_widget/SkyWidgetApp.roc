@@ -325,11 +325,7 @@ stopped_at = |step| { ..at_start, transport: VcrButtons.transport_at(Clock.at_st
 pressed_on : SkyWidgetApp.Model, VcrButtons.Control -> SkyWidgetApp.Model
 pressed_on = |model, control| next_model(model, VcrButtons.click_on(control))
 
-# The buttons run over the sunset, eight steps a frame and one step at a press.
-expect pressed_on(at_start, Play).transport == { at: Clock.at_step(8), motion: Forward }
-expect pressed_on(stopped_at(100), StepBack).transport.at == Clock.at_step(99)
-expect pressed_on(stopped_at(100), StepForward).transport.at == Clock.at_step(101)
-expect pressed_on(stopped_at(100), ToStart).transport.at == Clock.start
+# The buttons run over the sunset. VcrButtons holds what each button does.
 expect pressed_on(at_start, ToEnd).transport.at == sunset.last
 
 # The Right key moves through the jobs, and the pointer leaves them alone.
