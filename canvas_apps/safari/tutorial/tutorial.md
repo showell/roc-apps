@@ -2403,13 +2403,13 @@ Each segment has exactly one encounter. A cat asks for both, a bird for neither,
 
 ## Rehearsal
 
-Safari Ride's rider steers by rehearsing. Each step it tries twelve leans, and keeps one.
+Safari Ride's rider steers by rehearsing. Each step it tries twelve leans, then takes the one halfway between where the last try left its bounds.
 
 ```widget rehearsal
 Click a mark to see that try at a lean.
 ```
 
-Each try lets a rider who doesn't exist coast down the road with one lean, and the white arc is where that rider goes. The yellow line is where the real rider wants to end up. A try that ends on the wrong side of it sends the next try the other way, and by the twelfth they've closed in. This is step 370 of the ride, just after the first bend.
+Each try lets a motorcycle that doesn't exist coast down the road with one lean, and the white arc is where it goes. The yellow line is where the real rider wants to end up. A try that ends on the wrong side of it sends the next try the other way, and by the twelfth they've closed in. This is step 374 of the ride, just after a bend.
 
 New in this chapter:
 
@@ -2423,41 +2423,45 @@ The calls of one rehearsal
 digraph rehearsal {
   rankdir=LR;
   node [shape=box, fontname="Helvetica"];
-  decide [label="RiderMind.decide"];
+  controls [label="RiderMind.controls"];
   best [label="LeanSearch.best_lean"];
   project [label="Coast.project"];
-  advance [label="Bike.bike_motion_at_next_step"];
-  decide -> best;
-  best -> project [label="  12 tries  "];
-  project -> advance [label="  a step at a time  "];
+  advance [label="Motorcycle.motorcycle_at_next_step"];
+  controls -> best [label="  asks for a lean"];
+  best -> project [label="  coasts each of 12 tries"];
+  project -> advance [label="  a step at a time"];
 }
 ```
 
-`Coast` answers one question. If the rider stopped changing anything now, and coasted, what would happen? It takes the rider, and it runs the physics. The call is the same `Bike.bike_motion_at_next_step` that moves the real rider, with no lean change and steady speed. That's why `Bike` has to be a function. A method that changed a bike in place couldn't be tried out like this.
+`Coast` answers one question. If the rider stopped changing anything now, and coasted, what would happen? It takes the motorcycle alone, never the eyes, and runs the physics. The step is the same `Motorcycle.motorcycle_at_next_step` that moves the real rider, handed `steady_controls()`: the current lean, and no acceleration. The step is a function, so a pretend motorcycle can be stepped as easily as the real one.
 
 {{code Coast.project}}
 
-`Coast.project` takes a `Bike.Motion(others)`: a narrow view of a wide record again, so `Coast` can take the whole rider without knowing what's in it. The road's edges are its bounds. The `while` moves the bike a step at a time until the coast reaches the shoulder, makes 25 metres of progress, or runs for 2,000 steps, and `return` leaves the function from inside the loop. The answer says where the coast went:
+`project` is a coast that drops the path it took. The loop itself is in `coast_keeping`:
+
+{{code Coast.coast_keeping}}
+
+The coast's bounds are the road's edges, 5 centimetres in, or wherever it starts if that's further out. The `while` moves the motorcycle a step at a time until the coast reaches the shoulder, makes 25 metres of progress along the road, or runs for 2,000 steps, and `return` leaves the function from inside the loop. The answer says where the coast went:
 
 {{code Coast.Outcome}}
 
-`LeanSearch` asks `Coast` that question at a dozen different leans. The rider wants the coast to end somewhere near the middle of the lane, and more lean to the right moves the end of a coast to the right, so this is a bisection. It's a `for` loop, with `$low` and `$high` closing in on each other. `Bike.with_lean(state, mid)` is a rider who doesn't exist, handed to `Coast`, who gets a future that didn't happen:
+`LeanSearch` asks `Coast` that question at a dozen different leans. The rider wants the coast to end near the middle of the road, and more lean to the right moves the end of a coast to the right, so this is a bisection. It's a `for` loop, with `$bounds.low` and `$bounds.high` closing in on each other. `motorcycle.with_lean(mid)` is a motorcycle that doesn't exist, handed to `Coast`, which gives it a future that didn't happen:
 
 {{code LeanSearch.search_tries from "mid = $bounds.low.halfway_to($bounds.high)" to "$bounds = bounds_after(lean_try)"}}
 
-The decision about which way to go is a `match` on what the rehearsal found. Running off the left means more right, running off the right means less, and staying on the road compares the end of the coast with the target:
+The search starts with bounds of at most a degree either side of the current lean, `max_lean_change`. That's what stops the bike flicking from one lean to another. Which way each try sends the next is a `match` on what the rehearsal found. Running off the left means more right, running off the right means less, and staying on the road compares the end of the coast with the target:
 
 {{code LeanSearch.lean_correction}}
 
-Its caller gives the search its bounds, at most a degree either side of the current lean. That's what stops the bike flicking from one lean to another:
+After the last try, the lean it keeps is the midpoint of the bounds that try narrowed to:
 
 {{code LeanSearch.best_lean}}
 
-And `RiderMind.decide` calls that, on its first line. The walk up the stack ends there.
+`RiderMind.controls` calls that on its first line, and on its second asks the throttle about the motorcycle at that lean. The walk up the stack ends there.
 
-Call this *rehearsal*: run the real rules on a pretend copy, read the result, and throw it away. The numbers are worth stating. Twelve coasts for the lean and one more in `Throttle`, which uses `Coast` to ask whether the road is about to run out. Over the whole ride, a coast averages about 44 simulated steps. So each real step of the ride runs about 570 steps of bike physics that never happen, and the 7,071 steps of the ride come to about four million. With no drawing, on the dev backend, the whole ride takes about 1.6 seconds: about a quarter of a millisecond a step, against a budget of 33. [check: the 44 is `forward / speed` from one coast per step, measured at 9aa3814, not a counter inside `Coast.project`; the 1.6 seconds is one native run, and the page runs wasm.]
+Call this *rehearsal*: run the real rules on a pretend copy, read the result, and throw it away. Each real step of the ride runs thirteen coasts that never happen: twelve for the lean, and one more in `Throttle`, which uses `Coast` to ask whether the road is about to run out.
 
-In a language with mutable objects, a rehearsal has a problem to solve before it starts. It needs to copy the rider, or save it and restore it, and it needs to be sure the copy really is one, all the way down. It needs to know that the physics doesn't quietly update something global, like a scoreboard or a random number generator. In Roc, none of that comes up. `Bike.bike_motion_at_next_step` has a `->`, so it can't reach anything but its arguments. The old rider stays intact because every rider does. A rehearsal that goes wrong costs nothing, and all of `LeanSearch` is 105 lines.
+In a language with mutable objects, a rehearsal has a problem to solve before it starts. It needs to copy the rider, or save it and restore it, and it needs to be sure the copy really is one, all the way down. It needs to know that the physics doesn't quietly update something global, like a scoreboard or a random number generator. In Roc, none of that comes up. `Motorcycle.motorcycle_at_next_step` has a `->`, so it can't reach anything but its arguments. The old motorcycle stays intact because every value does. A rehearsal that goes wrong costs nothing, and `LeanSearch` is about 100 lines above its tests.
 
 The last limit of the throttle is the same idea with one rehearsal in it. It runs the coast, and brakes only if the coast leaves the road:
 
