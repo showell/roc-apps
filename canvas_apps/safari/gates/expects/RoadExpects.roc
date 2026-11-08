@@ -81,6 +81,20 @@ expect
 		(3, JustBehind(Route.SegmentIndex.number(2))),
 	].all(|(input, want)| index_behind(input) == want)
 
+# On the road ahead of a rider on the world's third segment, the rider's own is
+# the first position and the next is the second. The one behind, and one seven
+# on, past the most the road ahead holds, are not ahead.
+expect {
+	road_view = Fixtures.world_road_at(2)
+	position_on_road = |number| RoadAhead.position_of(road_view, Route.SegmentIndex.number(number))
+	[
+		(1, Err(NotAhead)),
+		(2, Ok(SegmentPlace.Position.first)),
+		(3, Ok(Fixtures.second_position)),
+		(9, Err(NotAhead)),
+	].all(|(number, want)| position_on_road(number) == want)
+}
+
 ## A camera 100 m along the rider's segment, 1 m right of the middle, turned
 ## 0.2 radians to the right.
 turned_vantage : Geom.Vantage

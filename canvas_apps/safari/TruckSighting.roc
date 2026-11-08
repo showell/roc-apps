@@ -5,7 +5,6 @@
 import Distance
 import RoadAhead
 import RoutePlace
-import SegmentPlace
 import Geom
 import Pipeline
 import Truck
@@ -24,7 +23,7 @@ TruckSighting :: [].{
 	} -> TruckSighting.TruckFate
 	truck_in_view = |road, { camera, truck }| {
 		place = RoutePlace.at_distance(road.route(), truck.route_position) ? |PastRouteEnd| NoTruck
-		position = position_ahead(road, place) ? |NotFound| NoTruck
+		position = RoadAhead.position_of(road, place.segment_index) ? |NotAhead| NoTruck
 		placed_truck : Geom.Placed(Truck)
 		placed_truck = {
 			road_point: place.road_point(),
@@ -34,11 +33,3 @@ TruckSighting :: [].{
 		Pipeline.sighting_of(placed_truck, { road, camera, place: Ahead(position) })
 	}
 }
-
-## Where `place`'s segment is on the road ahead, unless the road ahead doesn't
-## hold it.
-position_ahead : RoadAhead.RoadView, RoutePlace -> Try(SegmentPlace.Position, [NotFound])
-position_ahead = |road, place|
-	SegmentPlace.Position.positions_in(road.segments_ahead()).find_first(
-		|position| RoadAhead.segment_in_view_at(road, position).index == place.segment_index,
-	)

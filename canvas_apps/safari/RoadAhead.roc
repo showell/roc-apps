@@ -81,6 +81,17 @@ RoadAhead :: [].{
 		}
 	}
 
+	## Where the route's segment at `index` is on the road ahead, unless the
+	## road ahead doesn't hold it.
+	position_of : RoadAhead.RoadView, Route.SegmentIndex -> Try(SegmentPlace.Position, [NotAhead])
+	position_of = |road, index| {
+		positions = SegmentPlace.Position.positions_in(road.segments_ahead())
+		match positions.find_first(|position| index_at(road, position) == index) {
+			Ok(position) => Ok(position)
+			Err(NotFound) => Err(NotAhead)
+		}
+	}
+
 	## The segment at `position` on the road ahead, as a segment in view.
 	segment_in_view_at : RoadAhead.RoadView, SegmentPlace.Position -> RoadAhead.SegmentInView
 	segment_in_view_at = |road, position| {
