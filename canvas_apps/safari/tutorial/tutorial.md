@@ -2426,7 +2426,7 @@ digraph rehearsal {
   controls [label="RiderMind.controls"];
   best [label="LeanSearch.best_lean"];
   search [label="LeanSearch.search_tries"];
-  project [label="Coast.project"];
+  project [label="Coast.coast_outcome"];
   keeping [label="Coast.coast_keeping"];
   advance [label="Motorcycle.motorcycle_at_next_step"];
   throttle [label="Throttle.next_acceleration"];
@@ -2442,9 +2442,9 @@ digraph rehearsal {
 
 `Coast` answers one question. If the rider stopped changing anything now, and coasted, what would happen? It takes the motorcycle alone, never the eyes, and runs the physics. The step is the same `Motorcycle.motorcycle_at_next_step` that moves the real rider, handed `steady_controls()`: the current lean, and no acceleration. The step is a function, so a pretend motorcycle can be stepped as easily as the real one.
 
-{{code Coast.project}}
+{{code Coast.coast_outcome}}
 
-`project` is a coast that drops the path it took. The loop itself is in `coast_keeping`:
+`coast_outcome` is a coast that drops the path it took. The loop itself is in `coast_keeping`:
 
 {{code Coast.coast_keeping}}
 

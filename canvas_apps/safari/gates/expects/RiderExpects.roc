@@ -281,23 +281,26 @@ expect
 	focal_length_leaning_and_looking.to_f64().to_bits()
 		== focal_length_leaning.to_f64().min(focal_length_looking.to_f64()).to_bits()
 
-# Coast's projections. Coast imports neither Angle nor Speed, which these need.
+# Coast's outcomes. Coast imports neither Angle nor Speed, which these need.
 
 ## The coast of a motorcycle at the start of the segment, going the base speed.
 coast_of : F64, F64 -> Coast.Outcome
 coast_of = |across, lean_radians|
-	Coast.project({
+	Coast.coast_outcome({
 		..Motorcycle.initial,
 		route_place: { ..Motorcycle.initial.route_place, across: Across.metres(across) },
 		lean: Angle.Lean.radians(lean_radians),
 	})
 
 expect coast_of(3.0, 0.0) == EndsAt(Across.metres(3.0))
-expect Coast.project({ ..Motorcycle.initial, speed: Speed.at_rest }) == EndsAt(Across.metres(0.0))
+expect {
+	resting = { ..Motorcycle.initial, speed: Speed.at_rest }
+	Coast.coast_outcome(resting) == EndsAt(Across.metres(0.0))
+}
 
 # A rider this slow and this far over circles on the road, and the coast still ends.
 expect {
-	circling = Coast.project({
+	circling = Coast.coast_outcome({
 		..Motorcycle.initial,
 		speed: Speed.metres_a_step(0.01),
 		lean: Angle.Lean.radians(0.5),
@@ -309,7 +312,7 @@ expect {
 }
 
 # A coast's path has a motorcycle for each step it ran and ends where its
-# outcome says, clear of the start when it stays on the road, and `project`
+# outcome says, clear of the start when it stays on the road, and `coast_outcome`
 # gives the same outcome without the path.
 expect {
 	state = {
@@ -321,7 +324,7 @@ expect {
 	match coast.outcome {
 		Leaves({ side: Left, after }) =>
 			coast.path_motorcycles.len() == after.to_u32().to_u64()
-				and coast.outcome == Coast.project(state)
+				and coast.outcome == Coast.coast_outcome(state)
 		Leaves({ side: Right, .. }) | EndsAt(_) => False
 	}
 }
@@ -336,7 +339,7 @@ expect {
 			travelled = last.route_place.along.distance_from(state.route_place.along)
 			last.route_place.across == end_across
 				and travelled >= Coast.clear_distance
-				and coast.outcome == Coast.project(state)
+				and coast.outcome == Coast.coast_outcome(state)
 		}
 		(Leaves(_), _) | (EndsAt(_), Err(_)) => False
 	}
@@ -451,7 +454,7 @@ off_left = |speed| { ..centered_motorcycle(0.0, speed), yaw: Angle.Turn.radians(
 
 # Its coast leaves the road on the third step, and the throttle gives it the
 # shoulder brake for three steps at 0.7 m a step, within 1e-12.
-expect Coast.project(off_left(0.7)) == Leaves({ side: Left, after: Steps.of(3) })
+expect Coast.coast_outcome(off_left(0.7)) == Leaves({ side: Left, after: Steps.of(3) })
 expect (throttle_change(off_left(0.7)) - -0.10041593058292341).abs() <= 0.000000000001
 
 # A gawking rider brakes. On segment 2 the rider opens the throttle short of

@@ -61,7 +61,7 @@ LeanSearch :: [].{
 			lean_try = {
 				low: $bounds.low,
 				high: $bounds.high,
-				outcome: Coast.project(motorcycle.with_lean(mid)),
+				outcome: Coast.coast_outcome(motorcycle.with_lean(mid)),
 			}
 			$tries = $tries.append(lean_try)
 			$bounds = bounds_after(lean_try)

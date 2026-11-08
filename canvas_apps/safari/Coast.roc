@@ -26,11 +26,11 @@ Coast :: [].{
 	coast_path = |motorcycle| coast_keeping(motorcycle, KeepPath)
 
 	## Where a coast from `motorcycle` ends up.
-	project : Motorcycle -> Coast.Outcome
-	project = |motorcycle| coast_keeping(motorcycle, DropPath).outcome
+	coast_outcome : Motorcycle -> Coast.Outcome
+	coast_outcome = |motorcycle| coast_keeping(motorcycle, DropPath).outcome
 }
 
-## A coast from `motorcycle`, with its path or with an empty one. `project` runs
+## A coast from `motorcycle`, with its path or with an empty one. `coast_outcome` runs
 ## inside every step of the ride, and building the path there makes a
 ## release-built ride two and a half times as slow, so only `coast_path` keeps
 ## it.

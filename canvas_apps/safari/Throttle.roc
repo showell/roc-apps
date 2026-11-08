@@ -89,7 +89,7 @@ bend_limit = |motorcycle, segment|
 ## shoulder it reaches.
 shoulder_limit : Motorcycle -> ThrottleLimit
 shoulder_limit = |motorcycle|
-	match Coast.project(motorcycle) {
+	match Coast.coast_outcome(motorcycle) {
 		EndsAt(_) => NoLimit
 		Leaves({ after, .. }) => AtMost(shoulder_brake(motorcycle.speed, after))
 	}
