@@ -27,7 +27,6 @@ import game.Sky
 import game.World
 import lib.CanvasApp
 import lib.Shapes
-import lib.RgbColor
 import widget.ReadoutText
 import widget.WidgetPage
 import widget.VcrButtons
@@ -118,7 +117,7 @@ road_shapes = {
 	]
 	[
 		Polygon.clipped_polygon(
-			{ color: RgbColor.of(0x8a8a8a), corners },
+			{ color: WidgetPage.side_road_color, corners },
 			Lens.resting_focal_length,
 		),
 	].keep_oks(|shape| shape)
