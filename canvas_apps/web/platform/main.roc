@@ -12,12 +12,12 @@ platform ""
 			frame_shapes : Box(model) -> List(Frame.Shape),
 			release : List(Frame.Shape) -> {},
 			sounds : Box(model) -> U32,
-			tone_count : Box(model) -> U32,
-			tone_freq : Box(model), U32 -> U32,
-			tone_ms : Box(model), U32 -> U32,
-			width : Box(model) -> U32,
-			height : Box(model) -> U32,
-			fps : Box(model) -> U32,
+			tone_count : {} -> U32,
+			tone_freq : U32 -> U32,
+			tone_ms : U32 -> U32,
+			width : {} -> U32,
+			height : {} -> U32,
+			fps : {} -> U32,
 		}
 	}
 	exposes [Frame]

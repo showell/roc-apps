@@ -20,12 +20,12 @@ WasmApp :: [].{
 		frame_shapes : Box(model) -> List(Shapes.Shape),
 		release : List(Shapes.Shape) -> {},
 		sounds : Box(model) -> U32,
-		tone_count : Box(model) -> U32,
-		tone_freq : Box(model), U32 -> U32,
-		tone_ms : Box(model), U32 -> U32,
-		width : Box(model) -> U32,
-		height : Box(model) -> U32,
-		fps : Box(model) -> U32,
+		tone_count : {} -> U32,
+		tone_freq : U32 -> U32,
+		tone_ms : U32 -> U32,
+		width : {} -> U32,
+		height : {} -> U32,
+		fps : {} -> U32,
 	}
 	program = |game| {
 		# The step a tick covers, which is the rate the game asked to be run at.
@@ -44,12 +44,12 @@ WasmApp :: [].{
 			# doesn't, so the host returns the frame rather than freeing it.
 			release: |_frame| {},
 			sounds: |boxed_model| sounds(Box.unbox(boxed_model)),
-			tone_count: |_boxed_model| game.tones.len().to_u32_try() ?? crash "WasmApp.program: more tones than a U32 can count",
-			tone_freq: |_boxed_model, i| tone_at(game.tones, i).hertz,
-			tone_ms: |_boxed_model, i| tone_at(game.tones, i).milliseconds,
-			width: |_boxed_model| game.size.width.to_u32_try() ?? crash "WasmApp.program: a width outside a U32's range",
-			height: |_boxed_model| game.size.height.to_u32_try() ?? crash "WasmApp.program: a height outside a U32's range",
-			fps: |_boxed_model| game.frames_a_second,
+			tone_count: |{}| game.tones.len().to_u32_try() ?? crash "WasmApp.program: more tones than a U32 can count",
+			tone_freq: |i| tone_at(game.tones, i).hertz,
+			tone_ms: |i| tone_at(game.tones, i).milliseconds,
+			width: |{}| game.size.width.to_u32_try() ?? crash "WasmApp.program: a width outside a U32's range",
+			height: |{}| game.size.height.to_u32_try() ?? crash "WasmApp.program: a height outside a U32's range",
+			fps: |{}| game.frames_a_second,
 		}
 	}
 }

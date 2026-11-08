@@ -29,14 +29,14 @@ const RocList = builtins.list.RocList;
 extern fn roc_init() callconv(.c) ?[*]u8;
 extern fn roc_advance(model: ?[*]u8, key_held: u32, key_struck: u32, button_held: u32, button_struck: u32, x: f32, y: f32, wheel: f32) callconv(.c) ?[*]u8;
 extern fn roc_sounds(model: ?[*]u8) callconv(.c) u32;
-extern fn roc_tone_count(model: ?[*]u8) callconv(.c) u32;
-extern fn roc_tone_freq(model: ?[*]u8, index: u32) callconv(.c) u32;
-extern fn roc_tone_ms(model: ?[*]u8, index: u32) callconv(.c) u32;
+extern fn roc_tone_count() callconv(.c) u32;
+extern fn roc_tone_freq(index: u32) callconv(.c) u32;
+extern fn roc_tone_ms(index: u32) callconv(.c) u32;
 extern fn roc_frame(model: ?[*]u8) callconv(.c) RocList;
 extern fn roc_release(frame: RocList) callconv(.c) void;
-extern fn roc_width(model: ?[*]u8) callconv(.c) u32;
-extern fn roc_height(model: ?[*]u8) callconv(.c) u32;
-extern fn roc_fps(model: ?[*]u8) callconv(.c) u32;
+extern fn roc_width() callconv(.c) u32;
+extern fn roc_height() callconv(.c) u32;
+extern fn roc_fps() callconv(.c) u32;
 
 // NO IMPORTS. web/canvas_app_runner.js instantiates the module with an empty import
 // object, as it does the Codex-built one, so a panic is a wasm trap -- the
@@ -164,17 +164,17 @@ pub export fn advance(key_held: u32, key_struck: u32, button_held: u32, button_s
 // How big a frame is, in the game's own coordinates. The page sizes its
 // canvas from this rather than knowing one movie's numbers.
 pub export fn width() u32 {
-    return roc_width(borrowed());
+    return roc_width();
 }
 
 pub export fn height() u32 {
-    return roc_height(borrowed());
+    return roc_height();
 }
 
 // How often the movie means to be stepped. The page paces itself by this
 // rather than by however often the display happens to refresh.
 pub export fn fps() u32 {
-    return roc_fps(borrowed());
+    return roc_fps();
 }
 
 // A bit per tone the last step set off. The runner decides whether that is a
@@ -186,16 +186,16 @@ pub export fn sounds() u32 {
 // How many tones the game HAS, so a runner never has to guess the width of
 // the word above.
 pub export fn toneCount() u32 {
-    return roc_tone_count(borrowed());
+    return roc_tone_count();
 }
 
 // What one of them sounds like: a pitch in hertz and a length in
 // milliseconds, which is what roc-ray's Audio.gen_tone takes as well.
 pub export fn toneFreq(index: u32) u32 {
-    return roc_tone_freq(borrowed(), index);
+    return roc_tone_freq(index);
 }
 
 pub export fn toneMs(index: u32) u32 {
-    return roc_tone_ms(borrowed(), index);
+    return roc_tone_ms(index);
 }
 
