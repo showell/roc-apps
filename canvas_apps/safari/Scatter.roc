@@ -10,14 +10,14 @@ Scatter :: [].{
 	## place: along the road, `jitter_along` times the sine of `index` times
 	## `along_phase`, and across it, `jitter_across` times the cosine of `index`
 	## times `across_phase`. Each herd chooses its own phases by eye.
-	offset : U64,
+	stray_of : U64,
 	{
 		along_phase : F64,
 		across_phase : F64,
 		jitter_along : Distance,
 		jitter_across : Distance,
 	} -> { along : Distance, across : Distance }
-	offset = |index, { along_phase, across_phase, jitter_along, jitter_across }| {
+	stray_of = |index, { along_phase, across_phase, jitter_along, jitter_across }| {
 		i = index.to_f64()
 		{
 			along: jitter_along.times((i * along_phase).sin()),
@@ -26,9 +26,9 @@ Scatter :: [].{
 	}
 }
 
-stray_of : U64 -> { along : Distance, across : Distance }
-stray_of = |index|
-	Scatter.offset(
+sample_stray : U64 -> { along : Distance, across : Distance }
+sample_stray = |index|
+	Scatter.stray_of(
 		index,
 		{
 			along_phase: 2.0,
@@ -43,7 +43,7 @@ is_near = |got, want| (got.to_metres() - want).abs() <= 0.000000001
 
 # The first animal strays only across the road, its whole reach: the sine of 0
 # is 0 and the cosine is 1.
-expect stray_of(0) == { along: Distance.metres(0.0), across: Distance.metres(0.6) }
+expect sample_stray(0) == { along: Distance.metres(0.0), across: Distance.metres(0.6) }
 
 # Later animals stray by the sine and cosine of their number times the phases,
 # each phase on its own side.
@@ -54,7 +54,7 @@ expect
 		(5, 0.4 * -0.5440211108893698, 0.6 * -0.7596879128588213),
 	].all(
 		|(index, along, across)| {
-			stray = stray_of(index)
+			stray = sample_stray(index)
 			is_near(stray.along, along) and is_near(stray.across, across)
 		},
 	)

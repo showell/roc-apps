@@ -158,7 +158,7 @@ herd_pig = |herd, { herd_along, row, column }| {
 	in_column = first_column.plus(herd.column_spacing.times(columns_along))
 	in_line = in_column.plus(herd.row_depth.times(rows_back))
 	in_row = front_row_across.plus(herd.row_depth.times(rows_back))
-	stray = Scatter.offset(
+	stray = Scatter.stray_of(
 		row * column_count(herd) + column,
 		{
 			along_phase: 2.3,
