@@ -67,7 +67,7 @@ next = |route, instant| {
 		}
 	{
 		rider: nx,
-		truck: Truck.at_next_step(
+		truck: Truck.truck_at_next_step(
 			instant.truck,
 			{ rider_distance: to.distance_along(route), route },
 		),

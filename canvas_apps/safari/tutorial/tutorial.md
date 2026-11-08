@@ -1861,7 +1861,7 @@ The schedule is a straight line, and a pure function of the rider's progress, de
 
 Its one caller is the truck's step function, the same shape as the rider's. `NextBend` is a tag union with a payload on one side, so the only way to read a `distance` is to be inside the branch where there is one:
 
-{{code Truck.at_next_step from "tease = tease_position(" to "NoBendAhead => chasing_state_at_next_step(truck, tease)"}}
+{{code Truck.truck_at_next_step from "tease = tease_position(" to "NoBendAhead => chasing_truck_at_next_step(truck, tease)"}}
 
 And that's called from `RideInstant.next`, in the chapter on stepping, with the rider's distance as the only thing the truck knows of the rider. Nothing in `Rider` imports `Truck`, and nothing in `Truck` imports `Rider`. The chase is one record literal in `RideInstant`.
 
@@ -1875,9 +1875,9 @@ It's called through a smaller function, which supplies the 0 so nobody else has 
 
 Then the two ways to take a step. Both sit below the block, private, and both are arithmetic on `Speed` by name. `target_speed.max(...)` keeps braking from undershooting, and `speed < truck.speed` is the whole of what turns on the brake lights. They're on while the truck is slowing down, and they go off when it's settled at the speed for the turn, even with the turn still ahead.
 
-{{code Truck.braking_state_at_next_step}}
+{{code Truck.braking_truck_at_next_step}}
 
-{{code Truck.chasing_state_at_next_step}}
+{{code Truck.chasing_truck_at_next_step}}
 
 `brake_lights` is state because it's a fact about the last step. Headlights aren't, and they stay out of `TruckState`. That's three of the four kinds in one vehicle: the place and speed are stepped, the headlights are clock-driven, and the tires don't change.
 
