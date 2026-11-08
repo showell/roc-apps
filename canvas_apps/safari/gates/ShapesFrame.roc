@@ -61,7 +61,7 @@ Comparison : { pixels : List(U32), counts : Str }
 compare : Tour -> Comparison
 compare = |tour| {
 	view = Tour.frame_view(tour)
-	instant_shapes = view.ride_shapes()
+	instant_shapes = view.ride_shape_lists.join()
 	cut_shapes = ConvexCut.cut_shapes(instant_shapes)
 	a = SafariFrame.picture_pixels(view)
 	backdrop = SafariFrame.picture_pixels({ ..view, ride_shape_lists: [] })

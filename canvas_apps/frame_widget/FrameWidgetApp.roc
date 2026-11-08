@@ -156,9 +156,10 @@ ground_parts = {
 backdrop_parts : List(Piece)
 backdrop_parts = backdrop_pieces(paused_frame_view)
 
-## The part of `Tour.frame_view(tour).ride_shapes` on `on_layers`, in its order.
-## `FrameView.frame_view_at` joins its parts into one list, so this asks for them one
-## at a time, and an `expect` below holds the join to the real list.
+## The part of the ride's shapes in `Tour.frame_view(tour)` on `on_layers`, in
+## their order. The frame view keeps them in the lists they are made in, so this
+## asks for them one at a time, and an `expect` below holds them to those lists
+## joined.
 ride_shapes_on : List(Layer) -> List(Shapes.Shape)
 ride_shapes_on = |on_layers| shapes_in(ground_parts, on_layers).concat(scene_shapes_on(on_layers))
 
@@ -318,13 +319,13 @@ shapes_at = |model|
 expect picture_shapes(layers) == SafariApp.frame_shapes(paused_tour)
 
 # The ride's parts are the game's own shapes, in the game's order.
-expect ride_shapes_on(layers) == paused_frame_view.ride_shapes()
+expect ride_shapes_on(layers) == paused_frame_view.ride_shape_lists.join()
 
 # The backdrop's parts are the game's own backdrop, in its order.
 expect shapes_in(backdrop_parts, layers) == FrameView.backdrop_shapes(paused_frame_view)
 
 # The frame's total is the game's own count of its shapes.
-expect ride_count(layers) == paused_frame_view.ride_shapes().len()
+expect ride_count(layers) == paused_frame_view.ride_shape_lists.join().len()
 
 # Every layer has shapes of its own at this step but the sun, which is behind the
 # rider.

@@ -1887,7 +1887,7 @@ expect ride_encounters.is_faded_at_each_exit
 # A frame of the ride draws.
 expect {
 	frame = FrameView.frame_view_at(World.route, RideInstant.initial)
-	first_shape = frame.ride_shapes().first() ?? crash "CrossModuleExpects: a frame draws"
+	first_shape = frame.ride_shape_lists.join().first() ?? crash "CrossModuleExpects: a frame draws"
 	coordinates_of(first_shape).len() >= 6
 }
 
@@ -2238,7 +2238,7 @@ expect {
 	)
 }
 
-expect FrameView.frame_view_at(World.route, ride_at_step_one).ride_shapes().len() > 0
+expect FrameView.frame_view_at(World.route, ride_at_step_one).ride_shape_lists.join().len() > 0
 
 # The ride starts facing away from the sun.
 expect FrameView.frame_view_at(World.route, RideInstant.initial).backdrop.sun_sighting == OutOfView

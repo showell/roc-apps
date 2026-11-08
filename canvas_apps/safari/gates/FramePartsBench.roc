@@ -81,7 +81,7 @@ part_size = |part, { route, instant }| {
 		view = FrameView.frame_view_at(route, instant)
 		view.framed_shapes(SafariApp.lean_space(view.roll)).len()
 	} else if part == "view" {
-		FrameView.frame_view_at(route, instant).ride_shapes().len()
+		FrameView.frame_view_at(route, instant).ride_shape_lists.join().len()
 	} else if part == "camera" {
 		FrameView.camera_at(route, instant).cam_focal.to_f64().to_u64_try() ?? crash "FramePartsBench: a focal length is a finite number"
 	} else {

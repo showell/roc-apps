@@ -66,10 +66,6 @@ FrameView := {
 			[Grass.grass_shape],
 		].join()
 
-	## The ride's shapes in paint order, as one list.
-	ride_shapes : FrameView -> List(Shapes.Shape)
-	ride_shapes = |view| view.ride_shape_lists.join()
-
 	## The whole frame in `space`, in paint order: the backdrop, then the
 	## ride's shapes, which start with the mountains.
 	framed_shapes : FrameView, Shapes.Space -> List(Shapes.Shape)
