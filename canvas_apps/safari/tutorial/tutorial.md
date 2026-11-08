@@ -2454,7 +2454,7 @@ The coast's bounds are the road's edges, 5 centimetres in, or wherever it starts
 
 `LeanSearch` asks `Coast` that question at a dozen different leans. The rider wants the coast to end near the middle of the road, and more lean to the right moves the end of a coast to the right, so this is a bisection. It's a `for` loop, with `$bounds.low` and `$bounds.high` closing in on each other. `motorcycle.with_lean(mid)` is a motorcycle that doesn't exist, handed to `Coast`, which gives it a future that didn't happen:
 
-{{code LeanSearch.search_tries from "mid = $bounds.low.halfway_to($bounds.high)" to "$bounds = bounds_after(lean_try)"}}
+{{code LeanSearch.search_tries from "mid = middle_lean($bounds)" to "$bounds = bounds_after(lean_try)"}}
 
 The search starts with bounds a degree either side of the current lean, `max_lean_change`, so the lean it picks is never more than a degree from the last. That's what stops the bike flicking from one lean to another. Which way each try sends the next is a `match` on what the rehearsal found. Running off the left means more right, running off the right means less, and staying on the road compares the end of the coast with the target:
 
