@@ -16,7 +16,6 @@ package
 		BirdFlight,
 		BirdStills,
 		Camera,
-		Cat,
 		CatCrossing,
 		CatStills,
 		Clock,

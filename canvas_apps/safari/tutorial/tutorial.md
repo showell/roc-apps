@@ -2016,7 +2016,7 @@ digraph cat {
 
 The widget isn't playing a video. Every gap it shows is a call to `Cat.instant_at`. The arrow is `->` again, so the type already says there's no hidden cat being updated somewhere. A timeline is a record of what the cat does at each point. Method syntax chains the two jobs: `.instant(...)` is defined on the `Timeline` that `crossing_timeline` returns.
 
-{{code Cat.instant_at}}
+{{code CatCrossing.instant_at}}
 
 A crossing and an approach go in, and the cat at that instant comes out. The same crossing at the same approach gives the same cat, a thousand frames apart.
 
@@ -2085,7 +2085,7 @@ A faster rider sets the cat off sooner, so it's clear of the lane in time.
 
 `Cat.crossing_stage` calls the rule with the cat's own numbers. A crossing takes 38 beats: 10 to walk out, 24 frozen, and 4 for the escape. A beat is the animation's own unit of progress, and it's tied to no clock.
 
-{{code Cat.crossing_stage}}
+{{code CatCrossing.crossing_stage}}
 
 The rule lives in `Animation`. It takes the cat's numbers and an `Approach`, which says how the rider is coming:
 
@@ -2153,7 +2153,7 @@ Finding the stretch that's playing shows one more Roc idea. In `playing_at`, `va
 
 Back at the top, nothing in `instant_at` is unknown any more.
 
-{{code Cat.instant_at}}
+{{code CatCrossing.instant_at}}
 
 `crossing_stage(approach)` is the rule with the cat's numbers, `crossing_timeline(cat)` is the timeline, and `.instant` plays the one at the other. A `Stage` is all that passes between them.
 
@@ -2264,7 +2264,7 @@ Now the one-liners, side by side. A bird's and a cat's `instant_at` have the sam
 
 {{code BirdFlight.instant_at}}
 
-{{code Cat.instant_at}}
+{{code CatCrossing.instant_at}}
 
 Each is a rule's `Stage` handed to a timeline's `instant`. Neither half knows which other half it's been paired with. Call this *rule and timeline*: one function says how far along things are, and one piece of data says what that looks like. A third critter can take either rule with a timeline of its own, and a new rule would work with both timelines already written.
 

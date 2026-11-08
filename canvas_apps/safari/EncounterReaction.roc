@@ -7,7 +7,7 @@ import Acceleration
 import Animation
 import EncounterPlan
 import Attention
-import Cat
+import CatCrossing
 import Easing
 import Fraction
 import Segment
@@ -23,7 +23,7 @@ EncounterReaction :: [].{
 	encounter_throttle = |segment, timing|
 		match segment.encounter {
 			CatCrosses(_) =>
-				match Cat.crossing_stage(timing) {
+				match CatCrossing.crossing_stage(timing) {
 					Playing(_) => AtMost(Acceleration.steady)
 					Waiting | Past(_) => NoLimit
 				}
@@ -35,7 +35,7 @@ EncounterReaction :: [].{
 	encounter_attention : Segment, EncounterPlan.Timing -> Attention
 	encounter_attention = |segment, timing|
 		match segment.encounter {
-			CatCrosses(_) => cat_attention(Cat.crossing_stage(timing))
+			CatCrosses(_) => cat_attention(CatCrossing.crossing_stage(timing))
 			BirdHere(_) | QuietRoad => Attention.none
 		}
 }
@@ -47,12 +47,12 @@ cat_attention = |stage|
 	match stage {
 		Waiting => Attention.none
 		Playing(steps_in) => {
-			progress = Fraction.of(steps_in.to_f64() / Cat.crossing_span.length.to_f64())
-			Cat.peak_attention.scaled_by(Easing.smoothstep(progress))
+			progress = Fraction.of(steps_in.to_f64() / CatCrossing.crossing_span.length.to_f64())
+			CatCrossing.peak_attention.scaled_by(Easing.smoothstep(progress))
 		}
 		Past(steps_past) => {
 			faded = Fraction.clamp(steps_past.to_f64() / attention_fade.to_f64())
-			Cat.peak_attention.scaled_by(Easing.smoothstep(faded).complement())
+			CatCrossing.peak_attention.scaled_by(Easing.smoothstep(faded).complement())
 		}
 	}
 

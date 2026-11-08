@@ -8,7 +8,6 @@ import game.Animation
 import game.BirdFlight
 import game.BirdStills
 import game.Camera
-import game.Cat
 import game.CatCrossing
 import game.Clock
 import game.Conifer
@@ -274,7 +273,7 @@ route_cats = World.route.route_segments().join_map(
 
 ## How far short of a cat its crossing is planned for the fastest rider.
 cat_planning_gap : Distance
-cat_planning_gap = EncounterPlan.planning_gap(Cat.crossing_span, VehicleLimits.top_speed)
+cat_planning_gap = EncounterPlan.planning_gap(CatCrossing.crossing_span, VehicleLimits.top_speed)
 
 ## How far short of a bird's perch its flight is planned for the fastest rider.
 bird_planning_gap : Distance
@@ -321,10 +320,10 @@ crossing_cat = CatCrossing.by_tree({
 
 ## The cat `steps_in` steps into its crossing.
 crossing_frame_of : U32 -> Animation.Instant(PosedCat.CatPose)
-crossing_frame_of = |steps_in| Cat.instant_at(crossing_cat, Playing(Steps.of(steps_in)))
+crossing_frame_of = |steps_in| crossing_cat.instant_at(Playing(Steps.of(steps_in)))
 
-expect Cat.instant_at(crossing_cat, Waiting).pose == Rest
-expect Cat.instant_at(crossing_cat, Past(Steps.zero)).pose == Collapse
+expect crossing_cat.instant_at(Waiting).pose == Rest
+expect crossing_cat.instant_at(Past(Steps.zero)).pose == Collapse
 
 ## How far across the road the cat is `steps_in` steps into its crossing.
 crossing_across_at : U32 -> F64
@@ -356,12 +355,10 @@ expect
 	)
 
 expect (crossing_across_at(37) - -3.49).abs() <= 0.000000000001
-expect (
-	Cat.instant_at(
-		crossing_cat,
-		Past(Steps.zero),
-	).location.across.to_metres() - -3.49
-).abs() <= 0.000000000001
+expect {
+	across_after = crossing_cat.instant_at(Past(Steps.zero)).location.across.to_metres()
+	(across_after - -3.49).abs() <= 0.000000000001
+}
 
 ## Whether `segment`'s encounter holds back the throttle at step `now`, its
 ## animation having started at step 100.
