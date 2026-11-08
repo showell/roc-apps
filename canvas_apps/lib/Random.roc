@@ -5,9 +5,9 @@
 ## `value` and `state`. A game ported from an example changes its import line
 ## and nothing else.
 ##
-## The sequence is not roc-random's, so a game's food lands somewhere other
-## than where it does upstream. It is reproducible from its seed, which is all
-## the rules ask of it.
+## The sequence is not roc-random's, so the same seed draws different numbers
+## here than upstream. It is reproducible from its seed, which is all the rules
+## ask of it.
 ##
 ## It is a linear congruential generator with Numerical Recipes' constants,
 ## kept in a U64 and masked back to 32 bits. The mask keeps the multiply from
