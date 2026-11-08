@@ -147,10 +147,10 @@ is_lit = |control, motion|
 		_ => False
 	}
 
-## `wanted`, or stopped if the number is already running that way.
-toggle : VcrButtons.Motion, VcrButtons.Motion -> VcrButtons.Motion
-toggle = |motion, wanted|
-	if motion == wanted {
+## `wanted`, or stopped if the number is already `running` that way.
+toggle : { running : VcrButtons.Motion, wanted : VcrButtons.Motion } -> VcrButtons.Motion
+toggle = |{ running, wanted }|
+	if running == wanted {
 		Stopped
 	} else {
 		wanted
@@ -192,7 +192,7 @@ transport_after_press : VcrButtons.Transport(number),
 transport_after_press = |transport, { control, range }|
 	match control {
 		ToStart => VcrButtons.transport_at(range.first)
-		PlayBack => { ..transport, motion: toggle(transport.motion, Backward) }
+		PlayBack => { ..transport, motion: toggle({ running: transport.motion, wanted: Backward }) }
 		StepBack => transport_moved_by(
 			{ ..transport, motion: Stopped },
 			{ by: -1.0, range },
@@ -205,7 +205,7 @@ transport_after_press = |transport, { control, range }|
 			if place_in(range, transport.at) == place_in(range, range.last) {
 				{ at: range.first, motion: Forward }
 			} else {
-				{ ..transport, motion: toggle(transport.motion, Forward) }
+				{ ..transport, motion: toggle({ running: transport.motion, wanted: Forward }) }
 			}
 		ToEnd => VcrButtons.transport_at(range.last)
 	}
