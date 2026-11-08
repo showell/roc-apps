@@ -392,7 +392,7 @@ ride_encounters = {
 # rider.
 expect
 	ride_encounters.flying_step_count
-		== Fixtures.route_flights.len() * BirdFlight.flight_poses.len()
+		== Fixtures.route_flights.len() * BirdFlight.flight_span.length.to_u32().to_u64()
 expect ride_encounters.is_bird_ahead_throughout
 
 # Each of the three cats crosses on the ride. The reaction ends with its

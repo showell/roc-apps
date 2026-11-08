@@ -1,9 +1,11 @@
-## Where a Roc bird is and how it looks. A bird sits on the fifth tree on the
-## left of a segment until its flight starts, then flies diagonally ahead,
-## across the road, to the next tree on the far side, and perches there. Its
-## flight plays a frame a step at its own pace, and the ride plans its start so
-## that it lands as the rider comes within `landing_gap` of the tree it left.
+## A Roc bird's flight: the trees it flies between, and where it is and how it
+## looks along the way. A segment's bird sits on the fifth tree on the left
+## until its flight starts, then flies diagonally ahead, across the road, to the
+## first tree on the far side far enough along, and perches there. Its flight
+## plays a frame a step at its own pace, and the ride plans its start so that it
+## lands as the rider comes within `landing_gap` of the tree it left.
 import Across
+import Along
 import Animation
 import EncounterPlan
 import Distance
@@ -21,19 +23,18 @@ BirdFlight :: [].{
 	## A bird at one instant: how it looks, and where it is.
 	BirdInstant : Animation.Instant(PosedBird.BirdPose)
 
-	## How the bird looks through a flight, a frame a step: a flap side on as
-	## it takes off, seven flaps seen from behind, and a flap's length of diving.
-	flight_poses : List(PosedBird.BirdPose)
-	flight_poses = [
-		flap_poses({ up: Side(WingsUp), down: Side(WingsDown) }),
-		List.repeat(flap_poses({ up: Away(WingsUp), down: Away(WingsDown) }), 7).join(),
-		List.repeat(Diving, frames_a_flap),
-	].join()
-
 	## What the ride plans a flight by: its length, and the gap from the rider
 	## to the tree it left at which it has landed.
 	flight_span : EncounterPlan.StepSpan
 	flight_span = { length: Steps.of(flight_poses.len().to_u32_wrap()), ends_at: landing_gap }
+
+	## The flight of the bird on a segment of `trees`: from its fifth tree on
+	## the left to the first tree on the far side far enough along.
+	segment_flight : List(Trees.RoadsideTree) -> Try(BirdFlight.Flight, [NoPerch, NoTreeToFlyTo])
+	segment_flight = |trees| {
+		perch = fifth_left_tree(trees)?
+		BirdFlight.flight_from(trees, perch)
+	}
 
 	## The flight of a bird perched on the tree at `perch`, among a segment's
 	## `trees`: to the first tree on the other side of the road far enough along.
@@ -44,12 +45,16 @@ BirdFlight :: [].{
 	)
 	flight_from = |trees, perch| {
 		is_far_enough = |tree| tree.road_point.along >= perch.road_point.along.plus(shortest_hop)
-		is_far_side = |tree| tree.road_point.across > Across.middle
 		match trees.find_first(|tree| is_far_side(tree) and is_far_enough(tree)) {
 			Ok(to) => Ok({ from: perch, to })
 			Err(NotFound) => Err(NoTreeToFlyTo)
 		}
 	}
+
+	## Where along its segment the ride plans `flight` by: the tree the bird
+	## leaves.
+	planned_along : BirdFlight.Flight -> Along
+	planned_along = |flight| flight.from.road_point.along
 
 	## Where the flight has got to at `timing`.
 	flight_stage : EncounterPlan.Timing -> Animation.Stage
@@ -60,26 +65,55 @@ BirdFlight :: [].{
 	instant_at = |flight, stage| flight_timeline(flight).instant(stage)
 }
 
-## How far short of the tree it left the rider is when the bird lands.
+## How far short of the tree it left the rider is when the bird lands, so
+## that the rider sees the landing before passing the tree.
 landing_gap : Distance
 landing_gap = Distance.metres(15.0)
 
-## How far above a straight line the top of its path is.
+## How far above a straight line the top of its path is, chosen by eye.
 flight_arc : Distance
 flight_arc = Distance.metres(5.0)
 
 ## The bird flies to a tree at least this far along from the one it left,
-## so that its path runs ahead of the rider as well as across the road.
+## so that its path runs ahead of the rider as well as across the road. The
+## length is chosen by eye.
 shortest_hop : Distance
 shortest_hop = Distance.metres(25.0)
 
-## How many steps one flap of the wings takes, half up and half down.
-frames_a_flap : U64
-frames_a_flap = 4
+## How many steps each half of a flap of the wings takes, up or down.
+frames_a_half_flap : U64
+frames_a_half_flap = 2
+
+## Whether `tree` stands on the far side of the road from where a bird starts:
+## on the right, with a positive `across`. A bird starts on the left, because
+## its stills are never mirrored and an unmirrored still's beak points toward
+## +x, so from the left the bird faces the road, and it flies across to the
+## right.
+is_far_side : Trees.RoadsideTree -> Bool
+is_far_side = |tree| tree.road_point.across > Across.middle
+
+## The tree a segment's bird starts on: the fifth on the left, with a negative
+## `across`, among `trees`.
+fifth_left_tree : List(Trees.RoadsideTree) -> Try(Trees.RoadsideTree, [NoPerch])
+fifth_left_tree = |trees|
+	match trees.keep_if(|tree| tree.road_point.across < Across.middle).drop_first(4).first() {
+		Ok(tree) => Ok(tree)
+		Err(ListWasEmpty) => Err(NoPerch)
+	}
 
 ## The bird as it sits on top of `tree`.
 sitting_on : Trees.RoadsideTree -> BirdFlight.BirdInstant
 sitting_on = |tree| { pose: Perched, location: tree_top(tree) }
+
+## How the bird looks through a flight, a frame a step: a flap side on as it
+## takes off, seven flaps seen from behind, and a flap's length of diving. The
+## seven is chosen by eye.
+flight_poses : List(PosedBird.BirdPose)
+flight_poses = [
+	flap_poses({ up: Side(WingsUp), down: Side(WingsDown) }),
+	List.repeat(flap_poses({ up: Away(WingsUp), down: Away(WingsDown) }), 7).join(),
+	List.repeat(Diving, 2 * frames_a_half_flap),
+].join()
 
 ## The whole of a flight: `flight_poses`, on one smooth path that rises in
 ## the middle, from the tip of the tree it leaves to the tip of the one it
@@ -87,10 +121,10 @@ sitting_on = |tree| { pose: Perched, location: tree_top(tree) }
 flight_timeline : BirdFlight.Flight -> Animation.Timeline(PosedBird.BirdPose, PosedBird.BirdPose)
 flight_timeline = |{ from, to }| {
 	ends = { from: tree_top(from), to: tree_top(to) }
-	last_frame = (BirdFlight.flight_poses.len() - 1).to_f64()
+	last_frame = (flight_poses.len() - 1).to_f64()
 	Animation.Timeline.of({
 		before: sitting_on(from),
-		frames: BirdFlight.flight_poses,
+		frames: flight_poses,
 		frame_instant: |pose, frame_number| {
 			through = Fraction.of(frame_number.to_f64() / last_frame)
 			{ pose, location: flight_location({ from: ends.from, to: ends.to, through }) }
@@ -107,11 +141,11 @@ tree_top = |tree| {
 	lift: tree.kind.scenery_height(),
 }
 
-## One flap of the wings: `up` for half its frames and `down` for the rest.
+## One flap of the wings: `up` for its first half and `down` for its second.
 flap_poses : { up : PosedBird.BirdPose, down : PosedBird.BirdPose } -> List(PosedBird.BirdPose)
 flap_poses = |{ up, down }| {
-	half = frames_a_flap // 2
-	List.repeat(up, half).concat(List.repeat(down, half))
+	half_up = List.repeat(up, frames_a_half_flap)
+	half_up.concat(List.repeat(down, frames_a_half_flap))
 }
 
 ## The location `through` a flight between `from` and `to`, easing out and in along
@@ -127,4 +161,39 @@ flight_location = |{ from, to, through }| {
 	# 4t(1 - t) is 0 at both ends and 1 halfway, so the arc tops out at `flight_arc`.
 	above_line = flight_arc.times(4.0 * share * (1.0 - share))
 	{ ..on_line, lift: on_line.lift.plus(above_line) }
+}
+
+## A tree at `along` and `across` metres, of whatever kind a gold segment starts
+## with.
+tree_at : F64, F64 -> Trees.RoadsideTree
+tree_at = |along, across| {
+	gold_trees = Trees.roadside_trees({ scheme: GoldGreen, length: Distance.metres(300.0) })
+	{
+		..(gold_trees.first() ?? crash "BirdFlight.tree_at: a gold segment has trees"),
+		road_point: { along: Along.metres(along), across: Across.metres(across) },
+	}
+}
+
+## A left and a right tree at each of `alongs`.
+pairs_at : List(F64) -> List(Trees.RoadsideTree)
+pairs_at = |alongs| alongs.join_map(|along| [tree_at(along, -6.0), tree_at(along, 6.0)])
+
+## How far along the fifth left tree of `trees` is, if there is one.
+fifth_along : List(Trees.RoadsideTree) -> Try(F64, [NoPerch])
+fifth_along = |trees|
+	match fifth_left_tree(trees) {
+		Ok(tree) => Ok(tree.road_point.along.to_metres())
+		Err(NoPerch) => Err(NoPerch)
+	}
+
+# Only trees on the left count toward the fifth, and a segment too short for five
+# of them has none.
+expect fifth_along([]) == Err(NoPerch)
+expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0])) == Err(NoPerch)
+expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0])) == Ok(50.0)
+expect fifth_along(pairs_at([10.0, 20.0, 30.0, 40.0, 50.0, 60.0])) == Ok(50.0)
+expect fifth_along([50.0, 60.0, 70.0, 80.0, 90.0].map(|along| tree_at(along, 6.0))) == Err(NoPerch)
+expect {
+	short_trees = Trees.roadside_trees({ scheme: RedGreen, length: Distance.metres(50.0) })
+	fifth_along(short_trees) == Err(NoPerch)
 }
