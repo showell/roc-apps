@@ -62,7 +62,7 @@ Scene := {
 				Err(NoTruck) | Err(BehindCamera) => []
 			}
 		{
-			trees: tree_renderings(TreeSighting.trees_in_view(road, camera), cam_focal),
+			trees: Scene.tree_renderings(TreeSighting.trees_in_view(road, camera), cam_focal),
 			birds: birds_seen.map(|bird| Pipeline.rendering_of(bird, { cam_focal, context: {} })),
 			towers: TowerSighting.towers_in_view(road, { camera, clock: facts.clock }).map(
 				|tower| Pipeline.rendering_of(tower, { cam_focal, context: on_road }),
@@ -85,39 +85,41 @@ Scene := {
 	## The scene's things as shapes, far to near: a list for each thing.
 	scene_shape_lists : Scene -> List(List(Shapes.Shape))
 	scene_shape_lists = |scene|
-		scene_renderings(scene).map(|rendering| rendering.picture().to_shapes())
-}
+		Scene.scene_renderings(scene).map(|rendering| rendering.picture().to_shapes())
 
-## The scene's renderings far to near. Two about as far away as each other
-## keep the order of the fields they come from, so that order decides which
-## of two tied things is drawn over the other. A critter perched on a tree is
-## drawn over it: a perched bird stands at its tree's own depth, so the trees
-## come before the birds.
-scene_renderings : Scene -> List(Rendered)
-scene_renderings = |scene|
-	Rendered.depth_sorted_renderings(
-		[
-			scene.trees,
-			scene.birds,
-			scene.towers,
-			scene.billboards,
-			scene.cats,
-			scene.trucks,
-			scene.rails,
-		].join(),
-	)
+	## The scene's renderings far to near. Two about as far away as each other
+	## keep the order of the fields they come from, so that order decides which
+	## of two tied things is drawn over the other. A critter perched on a tree is
+	## drawn over it: a perched bird stands at its tree's own depth, so the trees
+	## come before the birds. It is public for FramePartsBench, which times the
+	## sort alone.
+	scene_renderings : Scene -> List(Rendered)
+	scene_renderings = |scene|
+		Rendered.depth_sorted_renderings(
+			[
+				scene.trees,
+				scene.birds,
+				scene.towers,
+				scene.billboards,
+				scene.cats,
+				scene.trucks,
+				scene.rails,
+			].join(),
+		)
 
-## Each of `trees` rendered, told how many of the others are nearer, which is
-## all a tree needs of them.
-tree_renderings : List(Pipeline.Sighted(Conifer)), Pixels -> List(Rendered)
-tree_renderings = |trees, cam_focal| {
-	forwards = trees.map(|tree| tree.spot.foot().forward())
-	trees.map(
-		|tree| {
-			nearer_count = nearer_tree_count(forwards, tree.spot.foot().forward())
-			Pipeline.rendering_of(tree, { cam_focal, context: { nearer_tree_count: nearer_count } })
-		},
-	)
+	## Each of `trees` rendered, told how many of the others are nearer, which is
+	## all a tree needs of them. It is public for FramePartsBench, which times
+	## the trees alone.
+	tree_renderings : List(Pipeline.Sighted(Conifer)), Pixels -> List(Rendered)
+	tree_renderings = |trees, cam_focal| {
+		forwards = trees.map(|tree| tree.spot.foot().forward())
+		trees.map(
+			|tree| {
+				nearer_count = nearer_tree_count(forwards, tree.spot.foot().forward())
+				Pipeline.rendering_of(tree, { cam_focal, context: { nearer_tree_count: nearer_count } })
+			},
+		)
+	}
 }
 
 ## How many of the trees at `forwards` are nearer than `forward`.
