@@ -81,19 +81,19 @@ Still :: List(Still.Polygon).{
 	polygons : Still -> List(Still.Polygon)
 	polygons = |Still.(still_polygons)| still_polygons
 
+	## The least area, in the still's square units, that a radial gradient's
+	## two axes may span. A still is never drawn shorter than Pipeline's
+	## `smallest_height_on_screen`, and at that height this area grows to the
+	## least that Brush can invert. EncounterExpects holds the three together.
+	min_axes_area : F64
+	min_axes_area = 0.000025
+
 	is_eq : _
 }
 
 ## What is wrong with a polygon, if anything, as a reason that names where it
 ## is in the still's frame.
 Flaw : [Sound, Flawed(Str)]
-
-## The least area, in the still's square units, that a radial gradient's two
-## axes may span. A still is never drawn under 2 pixels tall (Pipeline's
-## smallest height on screen), where this area is 4 times as many square
-## pixels: 0.0001, the least that Brush can invert.
-min_axes_area : F64
-min_axes_area = 0.000025
 
 ## A place in the still's frame, written as `(x, y)`.
 point_text : Still.FramePoint -> Str
@@ -131,8 +131,8 @@ gradient_flaw = |gradient|
 			}
 		Radial({ stops, center, axis_u, axis_v }) => {
 			area = (axis_u.x * axis_v.y - axis_u.y * axis_v.x).abs()
-			if area < min_axes_area {
-				least = min_axes_area.to_str()
+			if area < Still.min_axes_area {
+				least = Still.min_axes_area.to_str()
 				Flawed("the radial gradient about ${point_text(center)} has axes that span ${area.to_str()}, under ${least}")
 			} else {
 				stops_flaw(stops, "the radial gradient about ${point_text(center)}")
@@ -238,7 +238,7 @@ expect {
 
 # Axes that span the least area are sound, and ones just under it, or
 # parallel, are not.
-expect polygon_flaw(radial_of_area(min_axes_area)) == Sound
+expect polygon_flaw(radial_of_area(Still.min_axes_area)) == Sound
 expect polygon_flaw(radial_of_area(0.00002)) != Sound
 expect
 	polygon_flaw(radial_polygon({ x: 0.5, y: 0.5 }, { x: 0.25, y: 0.25 }))

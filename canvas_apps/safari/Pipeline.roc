@@ -75,9 +75,9 @@ Pipeline :: [].{
 			sighting.spot.foot().forward(),
 			sighting.kind.scenery_picture({ spot: sighting.spot, focal_length, context }),
 		)
-}
 
-## The smallest thing worth drawing: an object that would stand less than
-## this tall on the screen isn't drawn.
-smallest_height_on_screen : Pixels
-smallest_height_on_screen = Pixels.of(2.0)
+	## The smallest thing worth drawing: an object that would stand less than
+	## this tall on the screen isn't drawn.
+	smallest_height_on_screen : Pixels
+	smallest_height_on_screen = Pixels.of(2.0)
+}
