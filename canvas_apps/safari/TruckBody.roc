@@ -1,6 +1,6 @@
-## TruckBody draws the truck's body: the five faces of its trailer and cab,
-## and its tires. They are painted far to near, so a nearer face covers a
-## farther one.
+## TruckBody gives the shapes of the truck's body: the five faces of its
+## trailer and cab, and its tires. They are painted far to near, so a nearer
+## face covers a farther one.
 import Across
 import Along
 import Camera
@@ -52,10 +52,6 @@ axle_pair_gap = Distance.metres(1.2)
 cab_axle_fraction : Fraction
 cab_axle_fraction = Fraction.of(0.55)
 
-## Where the windshield meets the nose: half the truck's height.
-hood_height : Distance
-hood_height = TruckShape.truck_height.divided_by(2.0)
-
 ## The mean of the corners' distances ahead, negative for a face behind the
 ## rider. The sum runs from the last corner to the first; a float sum's
 ## rounding depends on its order, and another order can move a pixel.
@@ -68,8 +64,9 @@ mean_forward = |corners|
 ## Where the truck's axles are along the road, back to front: a pair
 ## under the back of the trailer, a pair under its front, and one under
 ## the cab.
-axles : TruckShape.TruckBox -> List(Along)
-axles = |box| {
+axles : List(Along)
+axles = {
+	box = TruckShape.truck_box
 	back_pair = box.rear.plus(trailer_axle_inset)
 	front_pair = box.trailer_front.minus(trailer_axle_inset)
 	half_gap = axle_pair_gap.divided_by(2.0)
@@ -86,8 +83,7 @@ axles = |box| {
 ## nose, then its tires, the left side's and then the right's.
 faces : Picture.Setting(TruckShape.TruckOnRoad) -> List(Camera.FlatPolygon)
 faces = |truck| {
-	box = truck.context.box
-	truck_axles = axles(box)
+	box = TruckShape.truck_box
 	[
 		[
 			side(truck, box.left),
@@ -97,8 +93,8 @@ faces = |truck| {
 			windshield(truck),
 			nose(truck),
 		],
-		truck_axles.map(|axle| tire(truck, { axle, across: box.left })),
-		truck_axles.map(|axle| tire(truck, { axle, across: box.right })),
+		axles.map(|axle| tire(truck, { axle, across: box.left })),
+		axles.map(|axle| tire(truck, { axle, across: box.right })),
 	].join()
 }
 
@@ -110,7 +106,7 @@ face : Picture.Setting(TruckShape.TruckOnRoad),
 } -> Camera.FlatPolygon
 face = |truck, { color, corners }| {
 	color,
-	corners: corners.map(|corner| TruckShape.point(truck, corner)),
+	corners: corners.map(|corner| TruckShape.raised_point_on_truck(truck, corner)),
 }
 
 ## A side of the truck at `across`: up the back of the trailer, along its
@@ -118,7 +114,7 @@ face = |truck, { color, corners }| {
 ## the cab's floor, and down to the trailer's floor.
 side : Picture.Setting(TruckShape.TruckOnRoad), Across -> Camera.FlatPolygon
 side = |truck, across| {
-	box = truck.context.box
+	box = TruckShape.truck_box
 	face(
 		truck,
 		{
@@ -127,7 +123,7 @@ side = |truck, across| {
 				{ along: box.rear, across, height: TruckShape.trailer_bottom },
 				{ along: box.rear, across, height: TruckShape.truck_height },
 				{ along: box.roof_front, across, height: TruckShape.truck_height },
-				{ along: box.nose, across, height: hood_height },
+				{ along: box.nose, across, height: TruckShape.hood_height },
 				{ along: box.nose, across, height: TruckShape.cab_bottom },
 				{ along: box.trailer_front, across, height: TruckShape.cab_bottom },
 				{ along: box.trailer_front, across, height: TruckShape.trailer_bottom },
@@ -138,7 +134,7 @@ side = |truck, across| {
 
 back : Picture.Setting(TruckShape.TruckOnRoad) -> Camera.FlatPolygon
 back = |truck| {
-	box = truck.context.box
+	box = TruckShape.truck_box
 	face(
 		truck,
 		{
@@ -157,7 +153,7 @@ back = |truck| {
 ## The roof of the trailer and the cab, one flat face.
 roof : Picture.Setting(TruckShape.TruckOnRoad) -> Camera.FlatPolygon
 roof = |truck| {
-	box = truck.context.box
+	box = TruckShape.truck_box
 	face(
 		truck,
 		{
@@ -175,7 +171,7 @@ roof = |truck| {
 
 windshield : Picture.Setting(TruckShape.TruckOnRoad) -> Camera.FlatPolygon
 windshield = |truck| {
-	box = truck.context.box
+	box = TruckShape.truck_box
 	face(
 		truck,
 		{
@@ -184,7 +180,7 @@ windshield = |truck| {
 				{ left: box.left, right: box.right },
 				{
 					near: { along: box.roof_front, height: TruckShape.truck_height },
-					far: { along: box.nose, height: hood_height },
+					far: { along: box.nose, height: TruckShape.hood_height },
 				},
 			),
 		},
@@ -193,7 +189,7 @@ windshield = |truck| {
 
 nose : Picture.Setting(TruckShape.TruckOnRoad) -> Camera.FlatPolygon
 nose = |truck| {
-	box = truck.context.box
+	box = TruckShape.truck_box
 	face(
 		truck,
 		{
@@ -201,7 +197,7 @@ nose = |truck| {
 			corners: TruckShape.strip_corners(
 				{ left: box.left, right: box.right },
 				{
-					near: { along: box.nose, height: hood_height },
+					near: { along: box.nose, height: TruckShape.hood_height },
 					far: { along: box.nose, height: TruckShape.cab_bottom },
 				},
 			),
@@ -232,16 +228,6 @@ tire = |truck, { axle, across }| {
 		},
 	)
 }
-
-axles_at : { along : Along, across : Across } -> List(F64)
-axles_at = |center| axles(TruckShape.truck_box(center)).map(Along.to_metres)
-
-expect
-	axles_at({ along: Along.metres(0.0), across: Across.metres(0.0) })
-		== [-3.2, -2.0, 2.0, 3.2, 6.125]
-expect
-	axles_at({ along: Along.metres(40.0), across: Across.metres(2.0) })
-		== [36.8, 38.0, 42.0, 43.2, 46.125]
 
 point_ahead : F64 -> Geom.RaisedPoint
 point_ahead = |forward| {

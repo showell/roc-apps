@@ -23,6 +23,8 @@ import TruckSighting
 import lib.Shapes
 
 ## The things in view, rendered, one field for each sighting that found them.
+## It is nominal, not opaque: other modules read its fields, and the frame
+## widget builds a scene of some of them to draw a few layers alone.
 Scene := {
 	trees : List(Rendered),
 	birds : List(Rendered),
@@ -55,19 +57,12 @@ Scene := {
 		birds_seen = EncounterSighting.animals_in_view(road, { camera, animals: birds })
 		cats_seen = EncounterSighting.animals_in_view(road, { camera, animals: cats })
 		trucks =
-			match TruckSighting.truck_in_view(
-				road,
-				{
-					camera,
-					route_position: facts.truck.route_position,
-					lit_truck: facts.truck.lit_truck,
-				},
-			) {
+			match TruckSighting.truck_in_view(road, { camera, truck: facts.truck }) {
 				Ok(truck) => [Pipeline.rendering_of(truck, { cam_focal, context: on_road })]
 				Err(NoTruck) | Err(BehindCamera) => []
 			}
 		{
-			trees: Scene.tree_renderings(TreeSighting.trees_in_view(road, camera), cam_focal),
+			trees: tree_renderings(TreeSighting.trees_in_view(road, camera), cam_focal),
 			birds: birds_seen.map(|bird| Pipeline.rendering_of(bird, { cam_focal, context: {} })),
 			towers: TowerSighting.towers_in_view(road, { camera, clock: facts.clock }).map(
 				|tower| Pipeline.rendering_of(tower, { cam_focal, context: on_road }),
@@ -83,45 +78,42 @@ Scene := {
 		}
 	}
 
-	## The scene's renderings far to near. Two about as far away as each other
-	## keep the order of the fields they come from, so that order decides which
-	## of two tied things is drawn over the other. A critter perched on a tree is
-	## drawn over it: a perched bird stands at its tree's own depth, so the trees
-	## come before the birds.
-	scene_renderings : Scene -> List(Rendered)
-	scene_renderings = |scene|
-		Rendered.depth_sorted_renderings(
-			[
-				scene.trees,
-				scene.birds,
-				scene.towers,
-				scene.billboards,
-				scene.cats,
-				scene.trucks,
-				scene.rails,
-			].join(),
-		)
-
 	## The scene's things as shapes, far to near.
 	scene_shapes : Scene -> List(Shapes.Shape)
 	scene_shapes = |scene|
-		Scene.scene_renderings(scene).join_map(|rendering| rendering.picture().to_shapes())
+		scene_renderings(scene).join_map(|rendering| rendering.picture().to_shapes())
+}
 
-	## Each of `trees` rendered, told how many of the others are nearer, which is
-	## all a tree needs of them.
-	tree_renderings : List(Pipeline.Sighted(Conifer)), Pixels -> List(Rendered)
-	tree_renderings = |trees, cam_focal| {
-		forwards = trees.map(|tree| tree.spot.foot().forward())
-		trees.map(
-			|tree| {
-				nearer_count = nearer_tree_count(forwards, tree.spot.foot().forward())
-				Pipeline.rendering_of(
-					tree,
-					{ cam_focal, context: { nearer_tree_count: nearer_count } },
-				)
-			},
-		)
-	}
+## The scene's renderings far to near. Two about as far away as each other
+## keep the order of the fields they come from, so that order decides which
+## of two tied things is drawn over the other. A critter perched on a tree is
+## drawn over it: a perched bird stands at its tree's own depth, so the trees
+## come before the birds.
+scene_renderings : Scene -> List(Rendered)
+scene_renderings = |scene|
+	Rendered.depth_sorted_renderings(
+		[
+			scene.trees,
+			scene.birds,
+			scene.towers,
+			scene.billboards,
+			scene.cats,
+			scene.trucks,
+			scene.rails,
+		].join(),
+	)
+
+## Each of `trees` rendered, told how many of the others are nearer, which is
+## all a tree needs of them.
+tree_renderings : List(Pipeline.Sighted(Conifer)), Pixels -> List(Rendered)
+tree_renderings = |trees, cam_focal| {
+	forwards = trees.map(|tree| tree.spot.foot().forward())
+	trees.map(
+		|tree| {
+			nearer_count = nearer_tree_count(forwards, tree.spot.foot().forward())
+			Pipeline.rendering_of(tree, { cam_focal, context: { nearer_tree_count: nearer_count } })
+		},
+	)
 }
 
 ## How many of the trees at `forwards` are nearer than `forward`.

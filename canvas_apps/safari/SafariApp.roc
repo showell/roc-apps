@@ -15,7 +15,7 @@ import Screen
 import Tour
 
 SafariApp :: [].{
-	Model : { tour : Tour, paused : Bool }
+	Model : { tour : Tour, motion : [Playing, Paused] }
 
 	canvas_app : CanvasApp.CanvasApp(SafariApp.Model)
 	canvas_app = {
@@ -23,7 +23,7 @@ SafariApp :: [].{
 		# The ride's motion is written per step, and thirty steps a second is the
 		# speed it is meant to look like, chosen by eye.
 		fps: 30,
-		init: { tour: Tour.initial, paused: False },
+		init: initial_model,
 		model_at_next_step: CanvasApp.untimed_model_at_next_step(model_at_next_step),
 		frame_shapes: |m| frame_shapes(m.tour),
 		sounds: |_m| 0,
@@ -54,81 +54,44 @@ SafariApp :: [].{
 			zoom: 1.0,
 		})
 	}
-
-	model_at_next_step : SafariApp.Model, Input.Snapshot -> SafariApp.Model
-	model_at_next_step = |m, input|
-		if input.key_pressed(KeyR) {
-			{ tour: Tour.initial, paused: False }
-		} else {
-			paused = if input.key_pressed(KeySpace) {
-				!m.paused
-			} else {
-				m.paused
-			}
-			moved =
-				if input.key_down(KeyRight) {
-					repeat(
-						m.tour,
-						{
-							step_count: if paused {
-								1
-							} else {
-								4
-							},
-							step_once: Tour.step_forward,
-						},
-					)
-				} else if input.key_down(KeyLeft) {
-					repeat(
-						m.tour,
-						{
-							step_count: if paused {
-								1
-							} else {
-								4
-							},
-							step_once: Tour.step_back,
-						},
-					)
-				} else if paused {
-					m.tour
-				} else {
-					Tour.step_forward(m.tour)
-				}
-			tour = if input.key_pressed(KeyJ) {
-				next_segment(moved)
-			} else {
-				moved
-			}
-			{ tour, paused }
-		}
-
-	## The tour after `step_once` has moved it `step_count` times.
-	repeat : Tour, { step_count : I64, step_once : Tour -> Tour } -> Tour
-	repeat = |tour, { step_count: n, step_once: move }| {
-		var $tour = tour
-		for _ in 0..<n {
-			$tour = move($tour)
-		}
-		$tour
-	}
-
-	# The route's segments are its scenes, and reaching the next one means
-	# stepping until the segment changes.
-	next_segment : Tour -> Tour
-	next_segment = |tour| {
-		segment_of = |at| at.instant.rider.motorcycle.route_place.segment_index
-		from = segment_of(tour)
-		var $tour = Tour.step_forward(tour)
-		var $guard = 0
-		while segment_of($tour) == from and $guard < step_guard {
-			$tour = Tour.step_forward($tour)
-			$guard = $guard + 1
-		}
-		$tour
-	}
-
-	# A segment is long, but not unbounded.
-	step_guard : I64
-	step_guard = 200000
 }
+
+model_at_next_step : SafariApp.Model, Input.Snapshot -> SafariApp.Model
+model_at_next_step = |m, input|
+	if input.key_pressed(KeyR) {
+		initial_model
+	} else {
+		motion = if input.key_pressed(KeySpace) {
+			match m.motion {
+				Playing => Paused
+				Paused => Playing
+			}
+		} else {
+			m.motion
+		}
+		steps_a_press = match motion {
+			Paused => 1
+			Playing => 4
+		}
+		moved =
+			if input.key_down(KeyRight) {
+				m.tour.steps_forward(steps_a_press)
+			} else if input.key_down(KeyLeft) {
+				m.tour.steps_back(steps_a_press)
+			} else {
+				match motion {
+					Paused => m.tour
+					Playing => Tour.step_forward(m.tour)
+				}
+			}
+		tour = if input.key_pressed(KeyJ) {
+			moved.at_next_segment()
+		} else {
+			moved
+		}
+		{ tour, motion }
+	}
+
+## The ride at its start, playing.
+initial_model : SafariApp.Model
+initial_model = { tour: Tour.initial, motion: Playing }

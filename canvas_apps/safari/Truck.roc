@@ -15,8 +15,13 @@ import VehicleLimits
 Truck := {
 	route_position : Distance,
 	speed : Speed,
-	pace : [Slowing, NotSlowing],
+	pace : Truck.Pace,
 }.{
+
+	## Whether the truck's last step slowed it.
+	Pace := [Slowing, NotSlowing].{
+		is_eq : _
+	}
 
 	initial : Truck
 	initial = {

@@ -28,24 +28,17 @@ TruckShape :: [].{
 	}
 
 	## What a truck is drawn from beyond its spot and the camera's lens: the road
-	## its points are measured on, the camera's vantage, and the box it fills
-	## there.
-	TruckOnRoad : {
-		road : RoadAhead.RoadView,
-		vantage : Geom.Vantage,
-		box : TruckShape.TruckBox,
-	}
+	## its points are measured on, and the camera's vantage.
+	TruckOnRoad : { road : RoadAhead.RoadView, vantage : Geom.Vantage }
 
-	## A point on the truck: how far along the road, how far across it, and
-	## how high above the truck's own bottom.
+	## A point on the truck, in the truck's own frame: how far along the road
+	## and how far across it from where the trailer is centred, and how high
+	## above the road under the truck.
 	TruckPoint : {
 		along : Along,
 		across : Across,
 		height : Distance,
 	}
-
-	trailer_length : Distance
-	trailer_length = Distance.metres(8.4)
 
 	truck_width : Distance
 	truck_width = Distance.metres(2.4)
@@ -67,33 +60,46 @@ TruckShape :: [].{
 	cab_bottom : Distance
 	cab_bottom = tire_radius
 
-	## The box of a truck whose trailer is centred at `along` and `across`;
-	## the cab is ahead of the trailer.
-	truck_box : { along : Along, across : Across } -> TruckShape.TruckBox
-	truck_box = |center| {
-		trailer_front = center.along.plus(trailer_length.divided_by(2.0))
+	## Where the windshield meets the nose: half the truck's height.
+	hood_height : Distance
+	hood_height = truck_height.divided_by(2.0)
+
+	## How tall the trailer is, from its floor to its roof.
+	trailer_height : Distance
+	trailer_height = truck_height.minus(trailer_bottom)
+
+	## The box the truck fills, in its own frame, centred where its trailer
+	## is; the cab is ahead of the trailer.
+	truck_box : TruckShape.TruckBox
+	truck_box = {
+		trailer_front = Along.start.plus(trailer_length.divided_by(2.0))
 		{
-			rear: center.along.minus(trailer_length.divided_by(2.0)),
+			rear: Along.start.minus(trailer_length.divided_by(2.0)),
 			trailer_front,
 			roof_front: trailer_front.plus(cab_length.times(cab_roof_fraction.to_f64())),
 			nose: trailer_front.plus(cab_length),
-			left: center.across.minus(truck_width.divided_by(2.0)),
-			right: center.across.plus(truck_width.divided_by(2.0)),
+			left: Across.middle.minus(truck_width.divided_by(2.0)),
+			right: Across.middle.plus(truck_width.divided_by(2.0)),
 		}
 	}
 
 	## Where a point on the truck lands in the rider's view, raised as far as
-	## the truck is off the ground. The ground curves away from the rider, so
-	## the point is lowered by how far the ground has dropped beneath it.
-	point : Picture.Setting(TruckShape.TruckOnRoad), TruckShape.TruckPoint -> Geom.RaisedPoint
-	point = |truck, { along, across, height }| {
+	## the truck is off the ground. The point is carried from the truck's frame
+	## onto the road at the truck's spot. The ground curves away from the rider,
+	## so the point is lowered by how far the ground has dropped beneath it.
+	raised_point_on_truck : TruckSetting, TruckShape.TruckPoint -> Geom.RaisedPoint
+	raised_point_on_truck = |truck, { along, across, height }| {
 		place = truck.spot.place()
+		center = truck.spot.road_point()
 		on_ground = RoadAhead.rider_point_at(
 			truck.context.road,
 			{
 				vantage: truck.context.vantage,
 				place,
-				road_point: { along, across },
+				road_point: {
+					along: center.along.plus(along.from_start()),
+					across: center.across.plus(across.distance_from(Across.middle)),
+				},
 			},
 		)
 		{
@@ -143,38 +149,21 @@ TruckShape :: [].{
 
 	## A flat-coloured polygon on the truck, cut at the near plane and
 	## projected, unless it's wholly behind the camera.
-	truck_polygon : Picture.Setting(TruckShape.TruckOnRoad),
-	Camera.FlatPolygon -> Try(
-		Shapes.Shape,
-		[BehindCamera],
-	)
+	truck_polygon : TruckSetting, Camera.FlatPolygon -> Try(Shapes.Shape, [BehindCamera])
 	truck_polygon = |truck, polygon| Camera.clipped_polygon(polygon, truck.cam_focal)
 }
+
+## How a truck is drawn: its spot, the camera's lens, and the road and vantage
+## its points are seen from.
+TruckSetting : Picture.Setting(TruckShape.TruckOnRoad)
+
+trailer_length : Distance
+trailer_length = Distance.metres(8.4)
 
 ## How far forward of the trailer the cab's flat roof reaches, as a fraction
 ## of the cab's length, a proportion chosen by eye.
 cab_roof_fraction : Fraction
 cab_roof_fraction = Fraction.of(0.3)
-
-centered_box : TruckShape.TruckBox
-centered_box = TruckShape.truck_box({ along: Along.metres(0.0), across: Across.metres(0.0) })
-
-offset_box : TruckShape.TruckBox
-offset_box = TruckShape.truck_box({ along: Along.metres(40.0), across: Across.metres(2.0) })
-
-expect centered_box.rear.to_metres() == -4.2
-expect centered_box.trailer_front.to_metres() == 4.2
-expect centered_box.nose.to_metres() == 7.7
-expect centered_box.roof_front.to_metres() == 5.25
-expect centered_box.left.to_metres() == -1.2
-expect centered_box.right.to_metres() == 1.2
-
-expect offset_box.rear.to_metres() == 35.8
-expect offset_box.trailer_front.to_metres() == 44.2
-expect offset_box.nose.to_metres() == 47.7
-expect offset_box.roof_front.to_metres() == 45.25
-expect offset_box.left.to_metres() == 0.8
-expect offset_box.right.to_metres() == 3.2
 
 expect
 	TruckShape.strip_corners(

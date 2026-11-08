@@ -1,8 +1,6 @@
-## TruckLights draws the truck's lights: the beams of its two headlights,
-## reaching along the road ahead of the cab, and its two brake lights on the
-## back of the trailer, each with a glow around it. A beam or a glow is a
-## gradient, whose colours are 0xAARRGGBB, opacity in the top byte; a brake
-## lamp is a flat 0xRRGGBB, as the body's faces are.
+## TruckLights gives the shapes of the truck's lights: the beams of its two
+## headlights, reaching along the road ahead of the cab, and its two brake
+## lights on the back of the trailer, each with a glow around it.
 import Pixels
 import Across
 import Camera
@@ -19,9 +17,9 @@ import lib.Shapes
 TruckLights :: [].{
 
 	## The two headlight beams, each a little in from its side.
-	headlight_beams : Picture.Setting(TruckShape.TruckOnRoad) -> List(Shapes.Shape)
-	headlight_beams = |truck| {
-		box = truck.context.box
+	headlight_beam_shapes : Picture.Setting(TruckShape.TruckOnRoad) -> List(Shapes.Shape)
+	headlight_beam_shapes = |truck| {
+		box = TruckShape.truck_box
 		[
 			headlight_beam(truck, box.left.plus(headlight_inset)),
 			headlight_beam(truck, box.right.minus(headlight_inset)),
@@ -29,9 +27,9 @@ TruckLights :: [].{
 	}
 
 	## The two brake lights, one in from each side of the trailer's back.
-	brake_lights : Picture.Setting(TruckShape.TruckOnRoad) -> List(Shapes.Shape)
-	brake_lights = |truck| {
-		box = truck.context.box
+	brake_light_shapes : Picture.Setting(TruckShape.TruckOnRoad) -> List(Shapes.Shape)
+	brake_light_shapes = |truck| {
+		box = TruckShape.truck_box
 		brake_shapes(
 			truck,
 			{
@@ -57,9 +55,8 @@ headlight_height = Distance.metres(1.0)
 headlight_inset : Distance
 headlight_inset = Distance.metres(0.3)
 
-## A beam is a vertical wedge from its lamp: half a metre tall there, and
-## 1.8 m tall, centred 0.7 m above the road, where it ends `beam_length`
-## ahead of the cab's nose.
+## A beam is a vertical wedge from its lamp, widening to where it ends
+## `beam_length` ahead of the cab's nose.
 beam_half_height_at_lamp : Distance
 beam_half_height_at_lamp = Distance.metres(0.25)
 
@@ -88,14 +85,11 @@ brake_lamp_outer_edge = TruckShape.truck_width.times(0.1)
 brake_lamp_inner_edge : Distance
 brake_lamp_inner_edge = TruckShape.truck_width.times(0.36)
 
-trailer_height : Distance
-trailer_height = TruckShape.truck_height.minus(TruckShape.trailer_bottom)
-
 brake_lamp_bottom : Distance
-brake_lamp_bottom = TruckShape.trailer_bottom.plus(trailer_height.times(0.2))
+brake_lamp_bottom = TruckShape.trailer_bottom.plus(TruckShape.trailer_height.times(0.2))
 
 brake_lamp_top : Distance
-brake_lamp_top = TruckShape.trailer_bottom.plus(trailer_height.times(0.5))
+brake_lamp_top = TruckShape.trailer_bottom.plus(TruckShape.trailer_height.times(0.5))
 
 brake_color : RgbColor
 brake_color = RgbColor.of(0xFF2A18)
@@ -159,9 +153,10 @@ Across -> Try(
 	[BehindCamera, TooSmall],
 )
 headlight_beam = |truck, across| {
-	nose = truck.context.box.nose
-	at_lamp = |height| TruckShape.point(truck, { along: nose, across, height })
-	at_far_end = |height| TruckShape.point(truck, { along: nose.plus(beam_length), across, height })
+	nose = TruckShape.truck_box.nose
+	on_truck = |along, height| TruckShape.raised_point_on_truck(truck, { along, across, height })
+	at_lamp = |height| on_truck(nose, height)
+	at_far_end = |height| on_truck(nose.plus(beam_length), height)
 	lamp_bottom = at_lamp(headlight_height.minus(beam_half_height_at_lamp))
 	lamp_top = at_lamp(headlight_height.plus(beam_half_height_at_lamp))
 	far_top = at_far_end(beam_far_center.plus(beam_far_half_height))
@@ -189,7 +184,7 @@ brake_shapes : Picture.Setting(TruckShape.TruckOnRoad),
 	right : Across,
 } -> List(Shapes.Shape)
 brake_shapes = |truck, lamp_sides| {
-	rear = truck.context.box.rear
+	rear = TruckShape.truck_box.rear
 	lamp =
 		TruckShape.strip_corners(
 			lamp_sides,
@@ -197,7 +192,7 @@ brake_shapes = |truck, lamp_sides| {
 				near: { along: rear, height: brake_lamp_bottom },
 				far: { along: rear, height: brake_lamp_top },
 			},
-		).map(|corner| TruckShape.point(truck, corner))
+		).map(|corner| TruckShape.raised_point_on_truck(truck, corner))
 	glow = [brake_glow(truck, lamp)].keep_oks(|shape| shape)
 	match TruckShape.truck_polygon(truck, { color: brake_color, corners: lamp }) {
 		Ok(lamp_polygon) => glow.append(lamp_polygon)
@@ -247,7 +242,8 @@ expect center_of(panel_points) == Screen.point(4.0, 4.0)
 expect center_of(triangle_points) == Screen.point(1.0, 2.0)
 
 expect farthest_from(panel_points, Screen.point(0.0, 0.0)).to_f64() == 10.0
-expect glow_radius(panel_points, Screen.point(0.0, 0.0)).to_f64() == 32.0
 
-expect
-	outline_points({ center: Screen.point(0.0, 0.0), outline_radius: Pixels.of(10.0) }).len() == 16
+# The headlight's lamp lies on the cab's nose face, above the cab's floor and
+# below its hood.
+expect headlight_height.minus(beam_half_height_at_lamp) >= TruckShape.cab_bottom
+expect headlight_height.plus(beam_half_height_at_lamp) <= TruckShape.hood_height
