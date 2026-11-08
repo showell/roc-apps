@@ -7,8 +7,8 @@ import Throttle
 
 RiderMind :: [].{
 
-	## The lean toward the best line, and the speed the throttle gives the
-	## motorcycle once it leans so, on `route` with the encounter on the
+	## The lean toward the best line, and the acceleration the throttle gives
+	## the motorcycle once it leans so, on `route` with the encounter on the
 	## motorcycle's segment at `encounter_timing`.
 	controls : Motorcycle,
 	{
@@ -17,6 +17,6 @@ RiderMind :: [].{
 	} -> Motorcycle.Controls
 	controls = |motorcycle, ride| {
 		lean = LeanSearch.best_lean(motorcycle)
-		{ lean, speed: Throttle.next_speed(motorcycle.with_lean(lean), ride) }
+		{ lean, acceleration: Throttle.next_acceleration(motorcycle.with_lean(lean), ride) }
 	}
 }

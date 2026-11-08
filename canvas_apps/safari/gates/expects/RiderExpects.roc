@@ -231,8 +231,17 @@ cat_throttle_change = |encounter_timing| {
 		},
 		speed: Speed.metres_a_step(0.3),
 	}
-	next = Throttle.next_speed(motorcycle, { route: World.route, encounter_timing })
-	next.to_metres_a_step() - motorcycle.speed.to_metres_a_step()
+	throttle_change_at(motorcycle, encounter_timing)
+}
+
+## The change of speed Throttle makes for this motorcycle in a step on the real
+## route, with its encounter at `encounter_timing`, held to the top speed, in
+## metres a step each step.
+throttle_change_at : Motorcycle, EncounterPlan.Timing -> F64
+throttle_change_at = |motorcycle, encounter_timing| {
+	acceleration = Throttle.next_acceleration(motorcycle, { route: World.route, encounter_timing })
+	next = motorcycle.motorcycle_at_next_step({ lean: motorcycle.lean, acceleration })
+	next.speed.to_metres_a_step() - motorcycle.speed.to_metres_a_step()
 }
 
 expect cat_throttle_change(ten_steps_in) == 0.0
@@ -360,7 +369,7 @@ wide_of_road = |lean| {
 # throttle however far they lean. Each is within 1e-12 of its want.
 expect [-0.001, -0.035, -0.535].all(|lean| (wide_of_road(lean) - 0.01).abs() <= 0.000000000001)
 
-# Throttle's decisions on the real route, through Throttle.next_speed. Throttle
+# Throttle's decisions on the real route, through Throttle.next_acceleration. Throttle
 # imports neither World nor Angle, which these need.
 
 ## A motorcycle on the middle of the road, upright, `along` metres down the
@@ -383,8 +392,7 @@ with_segment = |motorcycle, index| {
 ## before its encounter is planned, in metres a step each step.
 throttle_change : Motorcycle -> F64
 throttle_change = |motorcycle| {
-	next = Throttle.next_speed(motorcycle, { route: World.route, encounter_timing: Unplanned })
-	next.to_metres_a_step() - motorcycle.speed.to_metres_a_step()
+	throttle_change_at(motorcycle, Unplanned)
 }
 
 # The rider brakes for the bend from 60 m short of the segment's end, and not a
