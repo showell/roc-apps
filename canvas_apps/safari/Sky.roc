@@ -111,11 +111,15 @@ darkness_while_up = |height| {
 	darkness_at_set.times(set_so_far).times(set_so_far)
 }
 
+## How far below fully set the sun sinks before the sky is full night.
+night_depth : FarHeight
+night_depth = FarHeight.of(46.0)
+
 ## How dark the sky is once the sun has fully set, darkening on to full
-## night as it sinks a further radius.
+## night as it sinks a further `night_depth`.
 darkness_after_set : FarHeight -> Fraction
 darkness_after_set = |height| {
-	sunk_past_set = Sun.height_when_set.minus(height).ratio_to(Sun.radius)
+	sunk_past_set = Sun.height_when_set.minus(height).ratio_to(night_depth)
 	Fraction.clamp(darkness_at_set.to_f64() + sunk_past_set * darkness_at_set.complement().to_f64())
 }
 
