@@ -27,7 +27,7 @@ Gawking :: [].{
 	gawk_brake = |motorcycle, segment|
 		match Gaze.noticed_pig(motorcycle, segment) {
 			Noticed(pig) => {
-				gap = pig.road_point.along.distance_from(motorcycle.route_place.along)
+				gap = pig.road_point.along.distance_from(motorcycle.route_place.road_point.along)
 				room = gap.minus(gawk_settle_distance)
 				AtMost(
 					VehicleLimits.braking_to(

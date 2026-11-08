@@ -320,7 +320,7 @@ crossing_cat = CatCrossing.by_tree({
 })
 
 ## The cat `steps_in` steps into its crossing.
-crossing_frame_of : U32 -> Animation.Instant(Cat.CatPose)
+crossing_frame_of : U32 -> Animation.Instant(CatCrossing.CatPose)
 crossing_frame_of = |steps_in| crossing_cat.cat_instant_at(Playing(Steps.of(steps_in)))
 
 expect crossing_cat.cat_instant_at(Waiting).pose == Rest

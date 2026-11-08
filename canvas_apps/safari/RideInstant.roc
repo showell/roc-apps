@@ -96,7 +96,7 @@ encounter_approach = |segment, rider|
 		Ok({ span, planned_along }) =>
 			Approaching({
 				span,
-				gap: planned_along.distance_from(rider.motorcycle.route_place.along),
+				gap: planned_along.distance_from(rider.motorcycle.route_place.road_point.along),
 				speed: rider.motorcycle.speed,
 			})
 		Err(QuietRoad) => QuietRoad

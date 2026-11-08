@@ -124,7 +124,7 @@ digraph system {
   sightings -> RoadAhead [label="  finds segments with"];
   RoadAhead -> Segment [label="  reads"];
   sightings -> drawing [label="  draws with"];
-  critters -> drawing [label="  borrows pose names from", style=dotted];
+  drawing -> critters [label="  takes pose names from", style=dotted];
 }
 ```
 
@@ -135,7 +135,7 @@ New in this chapter:
 
 There are two halves. The ride is `RideInstant`, `Rider`, `TruckJourney` and `World`. `RideInstant` holds one instant of the ride and steps to the next. `World` puts the route together from segments, and the segments hold the critters.
 
-The view is everything that turns the ride into a picture. `Scene` gathers the sightings, which work out what's visible, and the drawing code makes its shapes. The dotted arrow is the one place the ride reaches into the view: the critters borrow their pose names, and a few of the cat's sizes, from the drawing side.
+The view is everything that turns the ride into a picture. `Scene` gathers the sightings, which work out what's visible, and the drawing code makes its shapes. Every arrow between the halves points one way, from the view to the ride. The view reads the ride, and the dotted arrow is the drawing taking its pose names, and the cat's height, from the critters. The ride never imports the view.
 
 `FrameView` joins the two halves. It reads one instant of the ride and draws it. `Tour` steps the ride. The browser only ever sees `SafariApp`, which gives it a list of shapes each frame.
 
@@ -1625,7 +1625,7 @@ The rider is two things: a motorcycle, and a pair of eyes.
 
 | Part | Its parts' fields | Type | What it is |
 |---|---|---|---|
-| motorcycle | `route_place` | `RoutePlace` | which segment, and where along and across it |
+| motorcycle | `route_place` | `RoutePlace` | which segment, and its `road_point` on it, along and across |
 | | `yaw` | `Angle.Turn` | which way the bike points |
 | | `speed` | `Speed` | how far it goes in a step |
 | | `lean` | `Angle.Lean` | how far it leans |
@@ -1634,7 +1634,7 @@ The rider is two things: a motorcycle, and a pair of eyes.
 
 New in this chapter:
 
-- Roc: a nominal record of nominal records, record update two levels deep, a value for a motorcycle that doesn't exist
+- Roc: a nominal record of nominal records, record update three levels deep, a value for a motorcycle that doesn't exist
 - Modules: `Rider`, `Motorcycle`, `RiderEyes`, `RiderMind`, `RiderCamera`
 
 {{code Rider.Rider from "Rider := {" to "}.{"}}
@@ -1655,7 +1655,7 @@ The Rehearsal chapter takes that idea much further. A small version of it decide
 
 {{code Motorcycle.cross_bend_if_on_road}}
 
-Record update does most of the writing here. Stopping dead updates two levels deep: `..motorcycle` keeps everything but the fields named, and `route_place` is itself an update of the old place:
+Record update does most of the writing here. Stopping dead updates three levels deep: `..motorcycle` keeps everything but the fields named, `route_place` is itself an update of the old place, and its `road_point` is an update of the old point:
 
 {{code Motorcycle.stopped_at}}
 
@@ -1708,7 +1708,7 @@ The step is the whole of the physics, in order:
 
 {{code Motorcycle.motorcycle_at_next_step}}
 
-First the speed: the acceleration is applied, and the result is held to the top speed. Then the turn: a `Lean` changes only by a `LeanChange`, and it reaches direction only through `lean.steer(turn_per_lean)`, the single door from roll to yaw. Then the move: the bike goes along the middle of the step's turn, and `speed.step_length()` is a `Distance`, so the move is places and distances. The new place is a record update of `route_place`, inside a new motorcycle.
+First the speed: the acceleration is applied, and the result is held to the top speed. Then the turn: a `Lean` changes only by a `LeanChange`, and it reaches direction only through `lean.steer(turn_per_lean)`, the single door from roll to yaw. Then the move: the bike goes along the middle of the step's turn, and `speed.step_length()` is a `Distance`, so the move is places and distances. The new place is a record update of `route_place` with a new `road_point`, inside a new motorcycle.
 
 The bike turns the same amount per step at any speed. That's a cheat, chosen by eye, and it's fine here because the rider chooses each step's lean by trying it out on this same physics.
 
@@ -1842,7 +1842,7 @@ The chain from `desired_gaze` is the look, and `gawk_brake` is the gawking. Noth
 
 {{code RiderEyes.eyes_at_next_step}}
 
-Choosing where to look comes first:
+Choosing where to look comes first. The rider asks `RiderMind.gaze_target`, since every decision is `RiderMind`'s, and it hands the question to the gaze's own rule:
 
 {{code Gaze.desired_gaze}}
 
@@ -2153,7 +2153,7 @@ New in this chapter:
 
 ### Two halves, and one fact remembered
 
-A crossing comes in two halves. `CatCrossing` is what the cat does: where it crosses, and what it does at each step of its crossing. `Cat` is how it looks this frame, which is just its pose:
+A crossing comes in two halves. `CatCrossing` is what the cat does: where it crosses, and what it does at each step of its crossing. `Cat` is how it looks this frame, which is just its pose. The poses are `CatCrossing`'s, because the crossing is what changes them:
 
 {{code Cat.Cat from "Cat := {" to "}.{"}}
 
@@ -2174,7 +2174,7 @@ digraph cat {
   EncounterReaction -> CatCrossing [label="  reacts to it"];
   EncounterSighting -> EncounterPoses [label="  asks where it stands"];
   EncounterPoses -> CatCrossing [label="  asks for its instant"];
-  CatCrossing -> Cat [label="  picks a pose"];
+  Cat -> CatCrossing [label="  takes its poses from"];
   CatCrossing -> Animation [label="  plays its frames"];
   CatCrossing -> EncounterPlan [label="  is planned by its span"];
   EncounterPlan -> Animation [label="  answers a Stage"];
@@ -2303,9 +2303,9 @@ A bird comes in the same two halves as a cat. `BirdFlight` is what it does: the 
 
 {{code Bird.Bird from "Bird := {" to "}.{"}}
 
-A pose can carry a tag of its own. A bird side on or seen from behind has its wings up or down, so those tags carry a `WingBeat`:
+A pose can carry a tag of its own. A bird side on or seen from behind has its wings up or down, so those tags carry a `WingBeat`. As with the cat, the poses are the flight's:
 
-{{code Bird.BirdPose}}
+{{code BirdFlight.BirdPose}}
 
 The modules around `BirdFlight`
 ```dot
@@ -2318,7 +2318,7 @@ digraph bird {
   RideInstant -> EncounterPlan [label="  keeps the plan"];
   EncounterSighting -> EncounterPoses [label="  asks where it stands"];
   EncounterPoses -> BirdFlight [label="  asks for its instant"];
-  BirdFlight -> Bird [label="  picks a pose"];
+  Bird -> BirdFlight [label="  takes its poses from"];
   BirdFlight -> Animation [label="  plays its frames"];
   BirdFlight -> EncounterPlan [label="  is planned by its span"];
   Bird -> BirdStills [label="  draws a still"];

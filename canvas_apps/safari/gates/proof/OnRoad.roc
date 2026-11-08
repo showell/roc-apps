@@ -39,7 +39,7 @@ broken_rules = |tour, { step, last_segment }| {
 	place_on_route = tour.instant().rider.motorcycle.route_place
 	segment = tour.instant().rider_segment_index().to_u32()
 	segment_end = Along.at(place_on_route.segment_on(tour.route()).length)
-	from_middle = place_on_route.across.distance_from_middle()
+	from_middle = place_on_route.road_point.across.distance_from_middle()
 	place = place_of(step, tour)
 	off_road =
 		if from_middle >= Geom.road_half_width {
@@ -54,8 +54,8 @@ broken_rules = |tour, { step, last_segment }| {
 			[]
 		}
 	past_end =
-		if place_on_route.along > segment_end {
-			["${place}: ${place_on_route.along.to_metres().to_str()} m along, past the segment's end without crossing"]
+		if place_on_route.road_point.along > segment_end {
+			["${place}: ${place_on_route.road_point.along.to_metres().to_str()} m along, past the segment's end without crossing"]
 		} else {
 			[]
 		}
@@ -79,7 +79,8 @@ main! = |_args| {
 			}
 			$bad = $bad + 1
 		}
-		from_middle = $tour.instant().rider.motorcycle.route_place.across.distance_from_middle()
+		rider_point = $tour.instant().rider.motorcycle.route_place.road_point
+		from_middle = rider_point.across.distance_from_middle()
 		if from_middle > $widest {
 			$widest = from_middle
 			$widest_place = place_of($step, $tour)

@@ -36,8 +36,7 @@ finished_ride = {
 		motorcycle: {
 			route_place: {
 				segment_index: Route.SegmentIndex.number(last_segment_index),
-				along: Along.metres(400.0),
-				across: Across.metres(0.0),
+				road_point: { along: Along.metres(400.0), across: Across.metres(0.0) },
 			},
 			yaw: Angle.Turn.radians(0.0),
 			speed: Speed.at_rest,
@@ -63,7 +62,7 @@ instant_after = |instant|
 
 ## How far along their segment the rider of `instant` is.
 rider_along : RideInstant -> Along
-rider_along = |instant| instant.rider.motorcycle.route_place.along
+rider_along = |instant| instant.rider.motorcycle.route_place.road_point.along
 
 # A ride that has finished starts again.
 expect
@@ -127,7 +126,7 @@ placed_rider = |index, along| {
 		route_place: {
 			..Motorcycle.initial.route_place,
 			segment_index: Route.SegmentIndex.number(index),
-			along: Along.metres(along),
+			road_point: { ..Motorcycle.initial.route_place.road_point, along: Along.metres(along) },
 		},
 	},
 }
@@ -162,11 +161,11 @@ expect {
 # leaves the rider moving.
 expect {
 	stopped = ride_at_finish.rider.motorcycle
-	stopped.route_place.along.to_metres() == 300.0 and stopped.speed == Speed.at_rest
+	stopped.route_place.road_point.along.to_metres() == 300.0 and stopped.speed == Speed.at_rest
 }
 expect {
 	short = rider_a_step_after(last_segment_index, 290.0).motorcycle
-	short.route_place.along.to_metres() < 300.0 and short.speed > Speed.at_rest
+	short.route_place.road_point.along.to_metres() < 300.0 and short.speed > Speed.at_rest
 }
 
 ## A motorcycle just short of the first bend, a little off the middle and
@@ -175,8 +174,7 @@ motorcycle_at_first_seam : Motorcycle
 motorcycle_at_first_seam = {
 	route_place: {
 		..Motorcycle.initial.route_place,
-		along: Along.metres(499.0),
-		across: Across.metres(0.5),
+		road_point: { along: Along.metres(499.0), across: Across.metres(0.5) },
 	},
 	yaw: Angle.Turn.radians(0.1),
 	speed: Speed.metres_a_step(1.25),

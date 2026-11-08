@@ -14,6 +14,7 @@ import game.Gawking
 import game.Gaze
 import game.Geom
 import game.Rider
+import game.RiderMind
 import game.Segment
 import game.Steps
 import game.Tour
@@ -145,7 +146,7 @@ phase_of = |rider|
 	if !Gawking.is_gawking(rider.motorcycle, pig_segment) {
 		EyesOnRoad
 	} else {
-		match Gaze.desired_gaze(rider.motorcycle, pig_segment) {
+		match RiderMind.gaze_target(rider.motorcycle, pig_segment) {
 			OnPig(_) => LookingAtPig
 			OnRoad if rider.eyes.gaze_yaw == Angle.straight_ahead => EyesBack
 			OnRoad => TurningBack
@@ -258,7 +259,7 @@ pigs = {
 ## road by the bike's yaw and the rider's gaze.
 sight_line : Rider -> Shapes.Shape
 sight_line = |rider| {
-	{ x, y } = canvas_point(rider.motorcycle.route_place.road_point())
+	{ x, y } = canvas_point(rider.motorcycle.route_place.road_point)
 	turn = rider.motorcycle.yaw.plus(rider.eyes.gaze_yaw).to_radians()
 	reach = Gaze.notice_distance.to_metres() * road_plan.pixels_a_metre
 	Shapes.line(
@@ -280,8 +281,8 @@ picture_shapes = |rider|
 		[
 			sight_line(rider),
 			plan_disc({
-				along: rider.motorcycle.route_place.along,
-				across: rider.motorcycle.route_place.across,
+				along: rider.motorcycle.route_place.road_point.along,
+				across: rider.motorcycle.route_place.road_point.across,
 				radius: 5.0,
 				color: PlanView.standout_color,
 			}),
@@ -338,7 +339,7 @@ expect {
 	played_place = played.motorcycle.route_place
 	ridden_place = ridden.motorcycle.route_place
 	played_place.segment_index == ridden_place.segment_index
-		and played_place.along.to_metres() == ridden_place.along.to_metres()
+		and played_place.road_point.along.to_metres() == ridden_place.road_point.along.to_metres()
 		and played.motorcycle.speed.to_metres_a_step() == ridden.motorcycle.speed.to_metres_a_step()
 		and played.eyes.gaze_yaw == ridden.eyes.gaze_yaw
 		and played.eyes.look_depth.to_f64() == ridden.eyes.look_depth.to_f64()
@@ -363,7 +364,7 @@ expect
 	stretch_states.all(
 		|rider| {
 			place = rider.motorcycle.route_place
-			canvas_x = canvas_point(place.road_point()).x
+			canvas_x = canvas_point(place.road_point).x
 			place.segment_index == first_rider.motorcycle.route_place.segment_index
 				and canvas_x > 0.0
 				and canvas_x < WidgetPage.canvas_width
@@ -462,7 +463,13 @@ expect {
 		..first_rider,
 		motorcycle: {
 			..first_rider.motorcycle,
-			route_place: { ..first_rider.motorcycle.route_place, along: Along.metres(200.0) },
+			route_place: {
+				..first_rider.motorcycle.route_place,
+				road_point: {
+					..first_rider.motorcycle.route_place.road_point,
+					along: Along.metres(200.0),
+				},
+			},
 		},
 	}
 	picture_shapes(first_rider) != picture_shapes(further)

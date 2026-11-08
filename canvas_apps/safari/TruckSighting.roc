@@ -26,7 +26,7 @@ TruckSighting :: [].{
 		position = RoadAhead.position_of(road, place.segment_index) ? |NotAhead| NoTruck
 		placed_truck : Geom.Placed(Truck)
 		placed_truck = {
-			road_point: place.road_point(),
+			road_point: place.road_point,
 			lift: Distance.zero,
 			kind: truck.truck,
 		}

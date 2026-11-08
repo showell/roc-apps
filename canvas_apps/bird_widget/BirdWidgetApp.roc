@@ -169,7 +169,7 @@ status_lines = |gap| {
 	]
 }
 
-pose_name : Bird.BirdPose -> Str
+pose_name : BirdFlight.BirdPose -> Str
 pose_name = |pose|
 	match pose {
 		Perched => "Perched"
@@ -178,7 +178,7 @@ pose_name = |pose|
 		Diving => "Diving"
 	}
 
-beat_name : Bird.WingBeat -> Str
+beat_name : BirdFlight.WingBeat -> Str
 beat_name = |beat|
 	match beat {
 		WingsUp => "wings up"

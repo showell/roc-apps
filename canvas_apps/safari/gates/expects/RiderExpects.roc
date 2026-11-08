@@ -22,6 +22,7 @@ import game.Pixels
 import game.RideInstant
 import game.RiderCamera
 import game.Rider
+import game.RiderMind
 import game.Route
 import game.Segment
 import game.Speed
@@ -251,7 +252,13 @@ coast_of : F64, F64 -> Coast.Outcome
 coast_of = |across, lean_radians|
 	Coast.coast_outcome({
 		..Motorcycle.initial,
-		route_place: { ..Motorcycle.initial.route_place, across: Across.metres(across) },
+		route_place: {
+			..Motorcycle.initial.route_place,
+			road_point: {
+				..Motorcycle.initial.route_place.road_point,
+				across: Across.metres(across),
+			},
+		},
 		lean: Angle.Lean.radians(lean_radians),
 	})
 
@@ -294,13 +301,17 @@ expect {
 expect {
 	state = {
 		..Motorcycle.initial,
-		route_place: { ..Motorcycle.initial.route_place, across: Across.metres(1.0) },
+		route_place: {
+			..Motorcycle.initial.route_place,
+			road_point: { ..Motorcycle.initial.route_place.road_point, across: Across.metres(1.0) },
+		},
 	}
 	coast = Coast.coast_path(state)
 	match (coast.outcome, coast.path_motorcycles.last()) {
 		(EndsAt(end_across), Ok(last)) => {
-			travelled = last.route_place.along.distance_from(state.route_place.along)
-			last.route_place.across == end_across
+			start_along = state.route_place.road_point.along
+			travelled = last.route_place.road_point.along.distance_from(start_along)
+			last.route_place.road_point.across == end_across
 				and travelled >= Coast.clear_distance
 				and coast.outcome == Coast.coast_outcome(state)
 		}
@@ -332,7 +343,13 @@ wide_of_road : F64 -> F64
 wide_of_road = |lean| {
 	motorcycle = {
 		..Motorcycle.initial,
-		route_place: { ..Motorcycle.initial.route_place, across: Across.metres(100.0) },
+		route_place: {
+			..Motorcycle.initial.route_place,
+			road_point: {
+				..Motorcycle.initial.route_place.road_point,
+				across: Across.metres(100.0),
+			},
+		},
 		lean: Angle.Lean.radians(lean),
 	}
 	throttle_change(motorcycle)
@@ -350,7 +367,10 @@ expect [-0.001, -0.035, -0.535].all(|lean| (wide_of_road(lean) - 0.01).abs() <= 
 centered_motorcycle : F64, F64 -> Motorcycle
 centered_motorcycle = |along, speed| {
 	..Motorcycle.initial,
-	route_place: { ..Motorcycle.initial.route_place, along: Along.metres(along) },
+	route_place: {
+		..Motorcycle.initial.route_place,
+		road_point: { ..Motorcycle.initial.route_place.road_point, along: Along.metres(along) },
+	},
 	speed: Speed.metres_a_step(speed),
 }
 
@@ -460,7 +480,10 @@ motorcycle_at = |along| {
 	..Motorcycle.initial,
 	route_place: {
 		..Motorcycle.initial.route_place,
-		along: Motorcycle.initial.route_place.along.plus(Distance.metres(along)),
+		road_point: {
+			..Motorcycle.initial.route_place.road_point,
+			along: Motorcycle.initial.route_place.road_point.along.plus(Distance.metres(along)),
+		},
 	},
 }
 
@@ -470,7 +493,10 @@ short_of_pig = |metres| {
 	..Motorcycle.initial,
 	route_place: {
 		..Motorcycle.initial.route_place,
-		along: watched_pig.road_point.along.minus(Distance.metres(metres)),
+		road_point: {
+			..Motorcycle.initial.route_place.road_point,
+			along: watched_pig.road_point.along.minus(Distance.metres(metres)),
+		},
 	},
 }
 
@@ -519,7 +545,7 @@ expect
 ## How far this motorcycle on the distracting segment wants to turn to the pig.
 turn_to_pig : Motorcycle -> F64
 turn_to_pig = |motorcycle|
-	match Gaze.desired_gaze(motorcycle, distracting_segment) {
+	match RiderMind.gaze_target(motorcycle, distracting_segment) {
 		OnPig(turn) => turn.to_radians()
 		OnRoad => crash "RiderExpects: no pig in sight"
 	}
@@ -530,21 +556,22 @@ expect {
 	far > 0.0 and near > far
 }
 
-expect Gaze.desired_gaze(motorcycle_at(200.0), pigless_segment) == OnRoad
-expect Gaze.desired_gaze(motorcycle_at(100.0), distracting_segment) == OnRoad
+expect RiderMind.gaze_target(motorcycle_at(200.0), pigless_segment) == OnRoad
+expect RiderMind.gaze_target(motorcycle_at(100.0), distracting_segment) == OnRoad
 
 # The gawking outlasts the look: at 341 m the rider still gawks, but no longer
 # looks.
-expect Gaze.desired_gaze(motorcycle_at(341.0), distracting_segment) == OnRoad
+expect RiderMind.gaze_target(motorcycle_at(341.0), distracting_segment) == OnRoad
 
 ## A motorcycle 100 m short of the pig, turned so the pig is `degrees` off.
 motorcycle_with_pig_off : F64 -> Motorcycle
 motorcycle_with_pig_off = |degrees| {
 	straight = short_of_pig(100.0)
+	rider_point = straight.route_place.road_point
 	turn_to_watched_pig = Angle.Turn.radians(
 		F64.atan2({
-			x: watched_pig.road_point.along.distance_from(straight.route_place.along).to_metres(),
-			y: watched_pig.road_point.across.distance_from(straight.route_place.across).to_metres(),
+			x: watched_pig.road_point.along.distance_from(rider_point.along).to_metres(),
+			y: watched_pig.road_point.across.distance_from(rider_point.across).to_metres(),
 		}),
 	).minus(straight.yaw)
 	{ ..straight, yaw: turn_to_watched_pig.minus(Angle.Turn.degrees(degrees)) }
@@ -554,7 +581,7 @@ motorcycle_with_pig_off = |degrees| {
 ## the pig.
 is_looking : Motorcycle -> Bool
 is_looking = |motorcycle|
-	match Gaze.desired_gaze(motorcycle, distracting_segment) {
+	match RiderMind.gaze_target(motorcycle, distracting_segment) {
 		OnPig(_) => True
 		OnRoad => False
 	}

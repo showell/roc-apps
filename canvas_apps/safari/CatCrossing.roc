@@ -12,13 +12,21 @@ import Distance
 import EncounterPlan
 import Fraction
 import Geom
-import Cat
 import Steps
 
 CatCrossing :: { tree : Geom.RoadPoint }.{
 
+	## How the cat holds itself: walking, it is at rest or mid-stride; then
+	## frozen; then its leap, from the coil through flight and landing to the
+	## collapse after.
+	CatPose : [Rest, Stride, Frozen, Coil, Flight, Land, Collapse]
+
 	## A cat at one instant: how it looks, and where it is.
-	CatInstant : Animation.Instant(Cat.CatPose)
+	CatInstant : Animation.Instant(CatCrossing.CatPose)
+
+	## How tall a cat stands.
+	cat_height : Distance
+	cat_height = Distance.metres(1.7)
 
 	## Where the tree the cat crosses by stands.
 	tree : CatCrossing -> Geom.RoadPoint
@@ -37,11 +45,11 @@ CatCrossing :: { tree : Geom.RoadPoint }.{
 	end_across : Across
 	end_across =
 		Across.left_of_middle(Geom.road_half_width.plus(grass_toehold))
-			.minus(Cat.collapsed_hip_reach)
+			.minus(collapsed_hip_reach)
 
 	## Where every cat freezes across the road: with its head over the middle.
 	mid_across : Across
-	mid_across = Across.right_of_middle(Cat.frozen_head_reach)
+	mid_across = Across.right_of_middle(frozen_head_reach)
 
 	## The crossing of a cat by `tree`, on the right of the road.
 	by_tree : { tree : Geom.RoadPoint } -> CatCrossing
@@ -70,6 +78,16 @@ CatCrossing :: { tree : Geom.RoadPoint }.{
 	cat_instant_at = |crossing, stage| crossing_timeline(crossing).instant(stage)
 }
 
+## How far ahead of its feet the frozen cat's head is. Its still's head runs
+## from 0.02 to 0.49 of its height ahead of them, so this is the head's centre.
+frozen_head_reach : Distance
+frozen_head_reach = CatCrossing.cat_height.times(0.25)
+
+## How far behind its feet the collapsed cat's hips lie: about 0.7 of its
+## height in its still, with the hind feet themselves nearer 0.6.
+collapsed_hip_reach : Distance
+collapsed_hip_reach = CatCrossing.cat_height.times(0.7)
+
 ## How far behind its tree, away from the road, the cat starts.
 cat_behind_tree : Distance
 cat_behind_tree = Distance.metres(1.5)
@@ -87,7 +105,7 @@ clear_gap : Distance
 clear_gap = Distance.metres(3.0)
 
 ## How the cat looks walking out: two strides, a frame each step.
-walking_poses : List(Cat.CatPose)
+walking_poses : List(CatCrossing.CatPose)
 walking_poses = [
 	Stride,
 	Stride,
@@ -131,7 +149,7 @@ CrossingWay : [
 
 ## One frame of any crossing before it is put on a road: how the cat looks, and
 ## where it is on its way across.
-CrossingFrame : { pose : Cat.CatPose, way : CrossingWay }
+CrossingFrame : { pose : CatCrossing.CatPose, way : CrossingWay }
 
 ## The frames of any crossing, one a step. Both the crossing's length and its
 ## timeline come from this one list, so the two can't disagree.
@@ -149,7 +167,7 @@ crossing_frames = {
 
 ## The whole of a crossing, a frame a step: the cat walks out to the middle
 ## of the road, freezes there, and leaps clear to the far verge.
-crossing_timeline : CatCrossing -> Animation.Timeline(CrossingFrame, Cat.CatPose)
+crossing_timeline : CatCrossing -> Animation.Timeline(CrossingFrame, CatCrossing.CatPose)
 crossing_timeline = |crossing| {
 	on_road = |across| { road_point: { along: crossing.along(), across }, lift: Distance.zero }
 	start = on_road(crossing.start_across())

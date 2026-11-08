@@ -71,13 +71,16 @@ Gaze :: [].{
 ## Whether the motorcycle has reached the place where `pig` is noticed.
 is_past_notice : Motorcycle, Geom.Placed(Billboard) -> Bool
 is_past_notice = |motorcycle, pig|
-	motorcycle.route_place.along >= pig.road_point.along.minus(Gaze.notice_distance)
+	motorcycle.route_place.road_point.along >= pig.road_point.along.minus(Gaze.notice_distance)
 
 ## How far `pig` stands from the way the motorcycle points.
 turn_to : Motorcycle, Geom.Placed(Billboard) -> Angle.Turn
-turn_to = |motorcycle, pig| Angle.Turn.radians(
-	F64.atan2({
-		x: pig.road_point.along.distance_from(motorcycle.route_place.along).to_metres(),
-		y: pig.road_point.across.distance_from(motorcycle.route_place.across).to_metres(),
-	}),
-).minus(motorcycle.yaw)
+turn_to = |motorcycle, pig| {
+	rider_point = motorcycle.route_place.road_point
+	Angle.Turn.radians(
+		F64.atan2({
+			x: pig.road_point.along.distance_from(rider_point.along).to_metres(),
+			y: pig.road_point.across.distance_from(rider_point.across).to_metres(),
+		}),
+	).minus(motorcycle.yaw)
+}

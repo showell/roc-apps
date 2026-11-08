@@ -5,7 +5,7 @@
 import game.Angle
 import game.Animation
 import game.Fraction
-import game.Cat
+import game.CatCrossing
 
 ReadoutText :: [].{
 
@@ -64,7 +64,7 @@ ReadoutText :: [].{
 	}
 
 	## The cat's pose, by its name.
-	cat_pose_text : Cat.CatPose -> Str
+	cat_pose_text : CatCrossing.CatPose -> Str
 	cat_pose_text = |pose|
 		match pose {
 			Rest => "Rest"
