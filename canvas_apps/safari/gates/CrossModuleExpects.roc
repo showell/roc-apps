@@ -1069,14 +1069,8 @@ expect scene.rails.len() == RailSighting.rail_quads_in_view(road, origin_camera)
 expect
 	depths_of(scene.trucks)
 		== sighted_depths(
-			TruckSighting.truck_in_view(
-				road,
-				{
-					camera: origin_camera,
-					route_position: scene_facts.truck.route_position,
-					lit_truck: scene_facts.truck.lit_truck,
-				},
-			).map_ok(|truck| [truck]) ?? [],
+			TruckSighting.truck_in_view(road, { camera: origin_camera, truck: scene_facts.truck })
+				.map_ok(|truck| [truck]) ?? [],
 		)
 expect scene.trucks.len() == 1
 expect scene.birds.len() > 0
@@ -3086,8 +3080,10 @@ truck_seen_from = |vantage, lead|
 		truck_road,
 		{
 			camera: { vantage: vantage },
-			route_position: Distance.metres(vantage.along.to_metres() + lead),
-			lit_truck: { headlights: Off, brake_lights: Off },
+			truck: {
+				route_position: Distance.metres(vantage.along.to_metres() + lead),
+				lit_truck: { headlights: Off, brake_lights: Off },
+			},
 		},
 	)
 

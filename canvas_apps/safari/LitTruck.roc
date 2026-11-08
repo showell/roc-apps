@@ -17,16 +17,17 @@ LitTruck := { headlights : [On, Off], brake_lights : [On, Off] }.{
 
 	is_eq : _
 
-	## The lights `truck` has on at `clock`: its headlights once the sun is
-	## behind the mountains, and its brake lights while its last step slowed it.
-	at : Truck, Clock -> LitTruck
-	at = |truck, clock| {
+	## The lights a truck going at `pace` has on at `clock`: its headlights once
+	## the sun is behind the mountains, and its brake lights while its last step
+	## slowed it.
+	at : Truck.Pace, Clock -> LitTruck
+	at = |pace, clock| {
 		headlights: if Mountains.is_sun_behind_mountains(clock) {
 			On
 		} else {
 			Off
 		},
-		brake_lights: match truck.pace {
+		brake_lights: match pace {
 			Slowing => On
 			NotSlowing => Off
 		},
@@ -62,11 +63,7 @@ truck_shapes = |lit_truck, truck| {
 after_sunset : Clock
 after_sunset = Clock.at_step(5700)
 
-## The truck's lights at `clock`, with the truck's pace as given.
-lights_at : { clock : Clock, pace : [Slowing, NotSlowing] } -> LitTruck
-lights_at = |{ clock, pace }| LitTruck.at({ ..Truck.initial, pace }, clock)
-
-expect lights_at({ clock: Clock.start, pace: NotSlowing }) == { headlights: Off, brake_lights: Off }
-expect lights_at({ clock: Clock.start, pace: Slowing }) == { headlights: Off, brake_lights: On }
-expect lights_at({ clock: after_sunset, pace: NotSlowing }) == { headlights: On, brake_lights: Off }
-expect lights_at({ clock: after_sunset, pace: Slowing }) == { headlights: On, brake_lights: On }
+expect LitTruck.at(NotSlowing, Clock.start) == { headlights: Off, brake_lights: Off }
+expect LitTruck.at(Slowing, Clock.start) == { headlights: Off, brake_lights: On }
+expect LitTruck.at(NotSlowing, after_sunset) == { headlights: On, brake_lights: Off }
+expect LitTruck.at(Slowing, after_sunset) == { headlights: On, brake_lights: On }
