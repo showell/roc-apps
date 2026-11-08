@@ -34,7 +34,11 @@ Cat := { pose : Cat.CatPose }.{
 		Picture.from_shapes(
 			StillShapes.standing_still_shapes(
 				setting,
-				{ height: cat_height, still: Cat.pose_still(cat.pose) },
+				{
+					height: cat_height,
+					still: Cat.pose_still(cat.pose),
+					flip: AsDrawn,
+				},
 			),
 		)
 

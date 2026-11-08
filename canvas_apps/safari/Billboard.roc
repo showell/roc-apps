@@ -54,8 +54,12 @@ Billboard :: {
 				FacesLeft => AsDrawn
 				FacesRight => Mirrored
 			}
-		anchor = StillShapes.standing_anchor(setting, { height: billboard.height, flip })
-		Picture.from_shapes(StillShapes.still_shapes(anchor, billboard.emoji.still()))
+		Picture.from_shapes(
+			StillShapes.standing_still_shapes(
+				setting,
+				{ height: billboard.height, still: billboard.emoji.still(), flip },
+			),
+		)
 	}
 
 	is_eq : _

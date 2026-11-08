@@ -26,11 +26,12 @@ StillShapes :: [].{
 		height_on_screen : Pixels,
 	}
 
-	## Where a point of the still lands on screen.
+	## Where a point of the still lands on screen: the foot, and the point's
+	## step from it.
 	screen_point : StillShapes.Anchor, Still.FramePoint -> Screen.Point
 	screen_point = |anchor, point| {
-		x: anchor.foot.x.plus(anchor.height_on_screen.times(x_sign(anchor.flip) * point.x)),
-		y: anchor.foot.y.minus(anchor.height_on_screen.times(point.y)),
+		step = screen_vector(anchor, point)
+		{ x: anchor.foot.x.plus(step.x), y: anchor.foot.y.plus(step.y) }
 	}
 
 	## Where each of a still's `points` lands on screen, in order.
@@ -55,15 +56,16 @@ StillShapes :: [].{
 		{ foot: upright.foot, flip, height_on_screen: upright.height_on_screen }
 	}
 
-	## A still `height` tall, as drawn, standing on its foot at the setting's
-	## spot.
+	## A still `height` tall, drawn as `flip` says, standing on its foot at the
+	## setting's spot.
 	standing_still_shapes : Picture.Setting({}),
 	{
 		height : Distance,
 		still : Still,
+		flip : StillShapes.Flip,
 	} -> List(Shapes.Shape)
-	standing_still_shapes = |setting, { height, still }| {
-		anchor = StillShapes.standing_anchor(setting, { height, flip: AsDrawn })
+	standing_still_shapes = |setting, { height, still, flip }| {
+		anchor = StillShapes.standing_anchor(setting, { height, flip })
 		StillShapes.still_shapes(anchor, still)
 	}
 }
@@ -156,13 +158,6 @@ expect StillShapes.screen_point(upright, { x: 0.0, y: 0.0 }) == Screen.point(100
 expect screen_vector(upright, { x: 0.5, y: 0.4 }) == Screen.point(25.0, -20.0)
 expect screen_vector(mirrored, { x: 0.5, y: 0.4 }) == Screen.point(-25.0, -20.0)
 expect screen_vector(upright, { x: 0.0, y: 0.0 }) == Screen.point(0.0, 0.0)
-
-# A point is the foot plus its vector.
-expect {
-	point = StillShapes.screen_point(upright, { x: 0.5, y: 0.4 })
-	vector = screen_vector(upright, { x: 0.5, y: 0.4 })
-	point.x.minus(vector.x).to_f64() == 100.0 and point.y.minus(vector.y).to_f64() == 200.0
-}
 
 expect
 	StillShapes.screen_points(

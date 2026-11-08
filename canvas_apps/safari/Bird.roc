@@ -33,7 +33,11 @@ Bird := { pose : Bird.BirdPose }.{
 			# As drawn, never mirrored: BirdFlight's `is_far_side` says why.
 			StillShapes.standing_still_shapes(
 				setting,
-				{ height: bird_height, still: Bird.pose_still(bird.pose) },
+				{
+					height: bird_height,
+					still: Bird.pose_still(bird.pose),
+					flip: AsDrawn,
+				},
 			),
 		)
 
