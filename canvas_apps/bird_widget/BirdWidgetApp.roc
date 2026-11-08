@@ -93,7 +93,7 @@ picture_shapes = |gap|
 	WidgetPage.picture_shapes({
 		backdrop: { sky_colors: Sky.colors_at(Clock.start), sun_sighting: OutOfView },
 		ride_shapes: [
-			road,
+			road_shapes,
 			tree_shapes(World.first_bird_flight.to),
 			tree_shapes(World.first_bird_flight.from),
 			bird_shapes(gap),
@@ -101,8 +101,8 @@ picture_shapes = |gap|
 	})
 
 ## The road, running up the picture from under the eye.
-road : List(Shapes.Shape)
-road = {
+road_shapes : List(Shapes.Shape)
+road_shapes = {
 	half = Geom.road_half_width
 	road_start = Distance.metres(1.0)
 	on_ground = |right, forward| { right, forward, height: Distance.zero }

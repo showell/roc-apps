@@ -160,11 +160,11 @@ backdrop_parts = backdrop_pieces(paused_frame_view)
 ## asks for them one at a time, and an `expect` below holds them to those lists
 ## joined.
 ride_shapes_on : List(Layer) -> List(Shapes.Shape)
-ride_shapes_on = |on_layers| shapes_in(ground_parts, on_layers).concat(scene_shapes_on(on_layers))
+ride_shapes_on = |on_layers| piece_shapes(ground_parts, on_layers).concat(scene_shapes_on(on_layers))
 
 ## The frame's shapes on `on_layers`, backdrop and all, in paint order.
 frame_shapes_on : List(Layer) -> List(Shapes.Shape)
-frame_shapes_on = |on_layers| shapes_in(backdrop_parts, on_layers).concat(ride_shapes_on(on_layers))
+frame_shapes_on = |on_layers| piece_shapes(backdrop_parts, on_layers).concat(ride_shapes_on(on_layers))
 
 ## The space the paused frame leans in, which the game puts the whole frame in.
 lean_space : Shapes.Space
@@ -188,8 +188,8 @@ layer_after = |layer|
 	}
 
 ## The shapes of `parts` in `on_layers`, in paint order.
-shapes_in : List(Piece), List(Layer) -> List(Shapes.Shape)
-shapes_in = |parts, on_layers|
+piece_shapes : List(Piece), List(Layer) -> List(Shapes.Shape)
+piece_shapes = |parts, on_layers|
 	parts.keep_if(|piece| on_layers.contains(piece.layer)).join_map(|piece| piece.shapes)
 
 ## How many of the ride's shapes are in `on_layers`.
@@ -321,7 +321,7 @@ expect picture_shapes(layers) == paused_frame_view.framed_shapes(lean_space)
 expect ride_shapes_on(layers) == paused_frame_view.ride_shape_lists.join()
 
 # The backdrop's parts are the game's own backdrop, in its order.
-expect shapes_in(backdrop_parts, layers) == FrameView.backdrop_shapes(paused_frame_view)
+expect piece_shapes(backdrop_parts, layers) == FrameView.backdrop_shapes(paused_frame_view)
 
 # The frame's total is the game's own count of its shapes.
 expect ride_count(layers) == paused_frame_view.ride_shape_lists.join().len()

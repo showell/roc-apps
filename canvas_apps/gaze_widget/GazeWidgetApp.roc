@@ -212,7 +212,7 @@ plan_disc = |{ along, across, radius, color }| {
 	Disc({
 		x,
 		y,
-		radius: radius,
+		radius,
 		fill: Brush.flat(color),
 	})
 }
