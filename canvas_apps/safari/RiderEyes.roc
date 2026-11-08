@@ -125,22 +125,24 @@ expect gaze_returning(head(0.0)) == 0.0
 # A pig dead ahead is still a pig: the gaze swivels to it, and doesn't ease.
 expect gaze_after(head(radians_of_degrees(2.0)), 0.0) == 0.0
 
-## Eyes with this look depth, looking `gaze_yaw` radians from straight ahead.
-eyes_at_depth : { look_depth : F64, gaze_yaw : F64 } -> RiderEyes
-eyes_at_depth = |{ look_depth, gaze_yaw }| { ..head(gaze_yaw), look_depth: Fraction.of(look_depth) }
+## Eyes `look_depth` into a look, looking `gaze_radians` from straight ahead.
+eyes_at_depth : { look_depth : Fraction, gaze_radians : F64 } -> RiderEyes
+eyes_at_depth = |{ look_depth, gaze_radians }| { ..head(gaze_radians), look_depth }
 
 expect {
 	wide_gaze = radians_of_degrees(20.0)
 	small_gaze = radians_of_degrees(1.0)
-	rising = depth_after(eyes_at_depth({ look_depth: 0.0, gaze_yaw: wide_gaze }), wide_gaze)
-	held = depth_after(eyes_at_depth({ look_depth: 0.9, gaze_yaw: small_gaze }), small_gaze)
-	easing = depth_after(eyes_at_depth({ look_depth: 0.9, gaze_yaw: 0.0 }), 0.0)
+	fresh_eyes = eyes_at_depth({ look_depth: Fraction.zero, gaze_radians: wide_gaze })
+	deep_eyes = eyes_at_depth({ look_depth: Fraction.of(0.9), gaze_radians: small_gaze })
+	rising = depth_after(fresh_eyes, wide_gaze)
+	held = depth_after(deep_eyes, small_gaze)
+	easing = depth_after(eyes_ahead_at_depth(0.9), 0.0)
 	rising > 0.0 and held >= 0.9 and easing < 0.9 and easing > 0.0
 }
 
 ## Eyes this deep into a look, looking straight ahead.
 eyes_ahead_at_depth : F64 -> RiderEyes
-eyes_ahead_at_depth = |look_depth| eyes_at_depth({ look_depth, gaze_yaw: 0.0 })
+eyes_ahead_at_depth = |depth| eyes_at_depth({ look_depth: Fraction.of(depth), gaze_radians: 0.0 })
 
 # The depth holds until the gaze is exactly straight ahead, and fades from there.
 expect depth_after(eyes_ahead_at_depth(0.9), return_rate / 10.0) == 0.9
@@ -151,5 +153,6 @@ expect eyes_ahead_at_depth(0.25).attention().to_f64() == 0.15625
 expect depth_after(eyes_ahead_at_depth(0.0), 0.0) == 0.0
 expect {
 	right_angle = radians_of_degrees(90.0)
-	depth_after(eyes_at_depth({ look_depth: 0.0, gaze_yaw: right_angle }), right_angle) == 1.0
+	eyes = eyes_at_depth({ look_depth: Fraction.zero, gaze_radians: right_angle })
+	depth_after(eyes, right_angle) == 1.0
 }
