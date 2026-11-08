@@ -97,8 +97,9 @@ Book := [].{
 			[front, .. as unnumbered] => {
 				numbered = unnumbered.map_with_index(with_number)
 				has_its_chapter = |divider| numbered.any(|chapter| chapter.title == divider.before)
-				if !dividers_wanted.all(has_its_chapter) {
-					crash "book: a divider stands above a chapter that isn't in the book"
+				match dividers_wanted.find_first(|divider| !has_its_chapter(divider)) {
+					Ok(divider) => crash "book: the divider `${divider.title}` stands above `${divider.before}`, a chapter that isn't in the book"
+					Err(NotFound) => {}
 				}
 				chapters = numbered.map(|chapter| with_opening(chapter, dividers_wanted))
 				chapter_pages = chapters.map_with_index(
@@ -169,11 +170,13 @@ chapter_of = |text, fence| {
 	html = BookText.text_from_bytes(rendered.html)
 	match rendered.headings {
 		[top, .. as rest] if top.level == 1 and rest.all(|heading| heading.level == 2) => {
+			notes_marked = DraftNotes.highlight(html)
+			sections_linked = with_section_links(notes_marked)
 			{
 				file: "${BookText.text_from_bytes(top.id)}.html",
 				title: BookText.text_from_bytes(top.text),
 				number: Unnumbered,
-				body: BookTable.with_break_points(with_section_links(DraftNotes.highlight(html))),
+				body: BookTable.with_break_points(sections_linked),
 				sections: rest.map(section_of),
 				opening: "",
 			}
