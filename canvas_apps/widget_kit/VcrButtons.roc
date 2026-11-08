@@ -341,8 +341,8 @@ hint_shapes = |transport, range|
 		range,
 		transport.at,
 	) == place_in(range, range.first) {
-		gaps_before_last = (buttons.len() - 1).to_f64()
-		last_button_right = WidgetPage.side_margin + gaps_before_last * button_spacing + button_width
+		last_button = buttons.last() ?? crash "VcrButtons: the buttons are never empty"
+		last_button_right = last_button.left + button_width
 		[
 			WidgetPage.label({
 				text: "Press play",
