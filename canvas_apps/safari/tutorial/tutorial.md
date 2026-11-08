@@ -1095,7 +1095,7 @@ Trees get their spots once, when the world is built. A tower doesn't: each frame
 
 {{code TowerSighting.end_tower}}
 
-The `beacon` line lights the beacon for this step. The tower halfway along is the same, with `Midway` for its beacon, a square yaw, and a second way to fail, `NoMidTower`. `Segment.mid_tower_point` says whether a segment is longer than a kilometre, and where its halfway tower stands, and that's all the world knows about towers.
+The `beacon` line lights the beacon for this step. The tower halfway along is the same, with `Midway` for its beacon, a square yaw, and a second way to fail, `NoMidTower`. `mid_tower_point` says whether a segment is longer than a kilometre, and where its halfway tower stands, and that's all the world knows about towers.
 
 To draw a tower, `scenery_picture` also needs the road and where the camera stands, to find the four corners of its base in the rider's view. So those two go in as its extra input, its context:
 
