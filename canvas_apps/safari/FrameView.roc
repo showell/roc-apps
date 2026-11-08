@@ -24,10 +24,8 @@ import lib.Shapes
 ## and the roll the camera is held at. It is nominal, not opaque: other
 ## modules read its fields.
 FrameView := {
-	## What the ride is drawn over: the sky's colors, at the top of the frame
-	## and at the horizon, and where the sun stands in the sky, if it is in
-	## view.
-	backdrop : { sky_colors : Sky.Colors, sun_sighting : Sun.Sighting },
+	## What the ride is drawn over.
+	backdrop : FrameView.Backdrop,
 
 	## The ride's shapes in paint order, drawn over the backdrop, in the lists
 	## they are made in: the skyline, the ground, then each thing beside the
@@ -38,6 +36,15 @@ FrameView := {
 	## this about the screen's centre.
 	roll : Angle.Lean,
 }.{
+
+	## What the ride is drawn over: the sky and the sun.
+	Backdrop : {
+		## The sky's colors, at the top of the frame and at the horizon.
+		sky_colors : Sky.Colors,
+
+		## Where the sun stands in the sky, if it is in view.
+		sun_sighting : Sun.Sighting,
+	}
 
 	## The frame at `instant`. The camera is worked out once, for the shapes,
 	## the sun and the roll.

@@ -12,8 +12,6 @@ import game.Lens
 import game.Picture
 import game.Pipeline
 import game.Screen
-import game.Sky
-import game.Sun
 import lib.Brush
 import lib.RgbColor
 import lib.CanvasApp
@@ -163,7 +161,7 @@ WidgetPage :: [].{
 	## Safari's screen, so a widget's picture is what the ride's frame shows.
 	## A widget's picture is never rolled.
 	picture_shapes : {
-		backdrop : { sky_colors : Sky.Colors, sun_sighting : Sun.Sighting },
+		backdrop : FrameView.Backdrop,
 		ride_shapes : List(Shapes.Shape),
 	} -> List(Shapes.Shape)
 	picture_shapes = |{ backdrop, ride_shapes }| {
