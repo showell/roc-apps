@@ -8,24 +8,24 @@ import Screen
 
 Camera :: [].{
 
-	## The camera's height above the ground, in metres.
+	## The camera's height above the ground.
 	eye_height : Distance
 	eye_height = Distance.metres(1.2)
 
 	## Where a point in front of the camera lands on the screen, through a
-	## lens of `focal_length` in pixels.
+	## lens of `focal_length`.
 	project : RiderView.RaisedPointAhead, Pixels -> Screen.Point
 	project = |p, focal_length| {
 		slope_right = p.right().ratio_to(p.forward())
-		slope_up = p.height().minus(eye_height).ratio_to(p.forward())
+		above_eye = { height: p.height().minus(eye_height), forward: p.forward() }
 		{
 			x: Lens.x_for_slope({ slope: slope_right, focal_length }),
-			y: Screen.horizon_y.minus(focal_length.times(slope_up)),
+			y: Screen.horizon_y.minus(height_on_screen(above_eye, focal_length)),
 		}
 	}
 
 	## How tall something of `height` stands on the screen, `forward` of the
-	## camera, through a lens of `focal_length` in pixels.
+	## camera, through a lens of `focal_length`.
 	height_on_screen : { height : Distance, forward : Distance }, Pixels -> Pixels
 	height_on_screen = |{ height, forward }, focal_length|
 		focal_length.times(height.ratio_to(forward))

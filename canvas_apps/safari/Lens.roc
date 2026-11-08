@@ -16,7 +16,7 @@ import Screen
 
 Lens :: [].{
 
-	## The focal length at rest, in pixels.
+	## The focal length at rest.
 	resting_focal_length : Pixels
 	resting_focal_length = {
 		half_view = field_of_view.times(0.5)
