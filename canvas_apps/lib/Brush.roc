@@ -146,7 +146,12 @@ Brush :: [].{
 
 	## An opaque colour as a brush paints it.
 	opaque : RgbColor -> Brush.Rgba
-	opaque = |color| { r: color.red().to_f64(), g: color.green().to_f64(), b: color.blue().to_f64(), a: 1.0 }
+	opaque = |color| {
+		r: color.red().to_f64(),
+		g: color.green().to_f64(),
+		b: color.blue().to_f64(),
+		a: 1.0,
+	}
 
 	## An opaque colour as a flat fill.
 	flat : RgbColor -> Brush.Fill
@@ -155,10 +160,7 @@ Brush :: [].{
 	## A colour with its alpha byte as a brush paints it, the alpha as a share
 	## of 255.
 	translucent : ArgbColor -> Brush.Rgba
-	translucent = |color| {
-		argb = color.to_i64()
-		{ ..opaque(RgbColor.of(argb.bitwise_and(0xFFFFFF))), a: argb.shr_wrap(24).bitwise_and(255).to_f64() / 255.0 }
-	}
+	translucent = |color| { ..opaque(color.rgb()), a: color.alpha().to_f64() / 255.0 }
 
 	## An opaque colour made part way see-through by an alpha from 0 to 1, for
 	## an alpha chosen as a share rather than as a byte. An alpha byte belongs
