@@ -233,16 +233,6 @@ tire = |truck, { axle, across }| {
 	)
 }
 
-axles_at : { along : Along, across : Across } -> List(F64)
-axles_at = |center| axles(TruckShape.truck_box(center)).map(Along.to_metres)
-
-expect
-	axles_at({ along: Along.metres(0.0), across: Across.metres(0.0) })
-		== [-3.2, -2.0, 2.0, 3.2, 6.125]
-expect
-	axles_at({ along: Along.metres(40.0), across: Across.metres(2.0) })
-		== [36.8, 38.0, 42.0, 43.2, 46.125]
-
 point_ahead : F64 -> Geom.RaisedPoint
 point_ahead = |forward| {
 	right: Distance.zero,

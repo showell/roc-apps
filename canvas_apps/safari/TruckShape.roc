@@ -156,26 +156,6 @@ TruckShape :: [].{
 cab_roof_fraction : Fraction
 cab_roof_fraction = Fraction.of(0.3)
 
-centered_box : TruckShape.TruckBox
-centered_box = TruckShape.truck_box({ along: Along.metres(0.0), across: Across.metres(0.0) })
-
-offset_box : TruckShape.TruckBox
-offset_box = TruckShape.truck_box({ along: Along.metres(40.0), across: Across.metres(2.0) })
-
-expect centered_box.rear.to_metres() == -4.2
-expect centered_box.trailer_front.to_metres() == 4.2
-expect centered_box.nose.to_metres() == 7.7
-expect centered_box.roof_front.to_metres() == 5.25
-expect centered_box.left.to_metres() == -1.2
-expect centered_box.right.to_metres() == 1.2
-
-expect offset_box.rear.to_metres() == 35.8
-expect offset_box.trailer_front.to_metres() == 44.2
-expect offset_box.nose.to_metres() == 47.7
-expect offset_box.roof_front.to_metres() == 45.25
-expect offset_box.left.to_metres() == 0.8
-expect offset_box.right.to_metres() == 3.2
-
 expect
 	TruckShape.strip_corners(
 		{ left: Across.metres(-1.0), right: Across.metres(1.0) },

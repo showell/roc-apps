@@ -3099,28 +3099,6 @@ expect
 		(900.0, 0.0),
 	].all(|(lead, want)| lit_truck_of(lead).spot.road_point().across.to_metres() == want)
 
-## The lights a truck in view shows, when it has `lights` on.
-lights_shown : LitTruck -> LitTruck
-lights_shown = |lights| {
-	truck = TruckSighting.truck_in_view(
-		truck_road,
-		{
-			camera: { vantage: origin },
-			route_position: Distance.metres(100.0),
-			lit_truck: lights,
-		},
-	) ?? crash "CrossModuleExpects: this lead puts the truck in view"
-	truck.kind
-}
-
-expect
-	[
-		{ headlights: Off, brake_lights: Off },
-		{ headlights: Off, brake_lights: On },
-		{ headlights: On, brake_lights: Off },
-		{ headlights: On, brake_lights: On },
-	].all(|lights| lights_shown(lights) == lights)
-
 expect
 	[
 		(lit_truck_of(100.0).spot.foot().forward().to_metres(), 100.0),

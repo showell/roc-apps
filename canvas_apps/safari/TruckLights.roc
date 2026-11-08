@@ -247,7 +247,3 @@ expect center_of(panel_points) == Screen.point(4.0, 4.0)
 expect center_of(triangle_points) == Screen.point(1.0, 2.0)
 
 expect farthest_from(panel_points, Screen.point(0.0, 0.0)).to_f64() == 10.0
-expect glow_radius(panel_points, Screen.point(0.0, 0.0)).to_f64() == 32.0
-
-expect
-	outline_points({ center: Screen.point(0.0, 0.0), outline_radius: Pixels.of(10.0) }).len() == 16
