@@ -86,16 +86,10 @@ CanvasAppRunner :: [].{
 	# the canvas apps know, asked of roc-ray's snapshot and written into ours. The arms
 	# look tautological because the tags are spelled the same on purpose; they
 	# are two different types, and this is the bridge.
-	watched_keys : List(Keys.Key)
-	watched_keys = [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEnter, KeyP, KeyR, KeyQ, KeyE, KeyC, KeyJ, Key1, Key2, Key3, Key4]
-
 	input_of : Devices.Snapshot -> Input.Snapshot
 	input_of = |devices| {
-		n = List.len(watched_keys)
 		var $keys = Input.none
-		var $i = 0
-		while $i < n {
-			key = List.get(watched_keys, $i) ?? KeyUp
+		for key in Keys.all_keys {
 			$keys = if host_key_pressed(devices, key) {
 				$keys.with_key_pressed(key)
 			} else if host_key_down(devices, key) {
@@ -103,7 +97,6 @@ CanvasAppRunner :: [].{
 			} else {
 				$keys
 			}
-			$i = $i + 1
 		}
 		pointer = devices.mouse
 		at = pointer.position()

@@ -1,13 +1,5 @@
 ## Input is what the keyboard and the mouse looked like at one tick.
 ##
-## It mirrors roc-ray's Devices.Snapshot but is named for roc-ray's App.Input,
-## a tick's whole input, which on roc-ray also carries the window, the time
-## and messages. CanvasAppRunner imports both modules, and two nominal types
-## with the same qualified name are ambiguous to the compiler, which still
-## reports two `Devices.Snapshot`s when roc-ray's module is imported under
-## another name. Mouse can share roc-ray's name because its type never has to
-## be named on both sides of one signature.
-##
 ## It is shaped like roc-ray's `Devices.Snapshot` on purpose. A game's
 ## `read_controls` is the one function that touches input, and it takes a
 ## snapshot as a value rather than performing an effect, so with `key_down`,
@@ -20,6 +12,14 @@
 ##
 ## `pressed` is the edge, struck since the last tick, and implies `down`.
 ## Snake turns on the edge, and Pong's paddle moves while a key is held.
+##
+## It mirrors roc-ray's Devices.Snapshot but is named for roc-ray's App.Input,
+## a tick's whole input, which on roc-ray also carries the window, the time
+## and messages. CanvasAppRunner imports both modules, and two nominal types
+## with the same qualified name are ambiguous to the compiler, which still
+## reports two `Devices.Snapshot`s when roc-ray's module is imported under
+## another name. Mouse can share roc-ray's name because its type never has to
+## be named on both sides of one signature.
 import Keys
 import Mouse
 

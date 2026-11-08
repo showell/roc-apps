@@ -1319,7 +1319,7 @@ Mostly, Safari Ride is a screensaver: you sit back and watch it. You can also ta
 
 `SafariApp.model_at_next_step` handles all of that. It takes the model, which is the `Tour` and a pause flag, and a snapshot of the input. It returns the next model:
 
-{{code SafariApp.model_at_next_step from "motion = if input.key_pressed(KeySpace)" to "Tour.step_forward(m.tour)"}}
+{{code SafariApp.model_at_next_step from "motion = if input.key_pressed(KeySpace)" to "m.tour.step_forward()"}}
 
 There's no event handler here. Each frame, the platform hands `model_at_next_step` a snapshot, and `model_at_next_step` reads it. `key_pressed` says a key went down since the last frame, so one tap of Space pauses the ride once. `key_down` says a key is being held, so holding Right keeps the ride moving.
 
@@ -2870,7 +2870,7 @@ What the game hands back each frame is a `List(Shapes.Shape)`. A shape is a tag:
 
 The rider's lean is one of those marks. The whole picture banks into a turn, backdrop included, so `SafariApp.frame_shapes` builds a camera out of nested tags and puts it at the front. The rest is `Tour` answering questions, each a one-liner:
 
-{{code SafariApp.frame_shapes}}
+{{code FrameView.leaned_shapes}}
 
 {{code Screen.leaned_by}}
 

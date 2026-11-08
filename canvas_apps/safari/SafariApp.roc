@@ -4,11 +4,10 @@
 ##
 ## The ride plays on its own. Space pauses it. Left steps back through the ride's
 ## history and Right forward, a frame at a time while paused and faster while it
-## runs. J jumps to the next of the route's nineteen segments, and R starts the
+## runs. J jumps to the next of the route's segments, and R starts the
 ## ride again.
 import lib.CanvasApp
 import lib.Input
-import lib.Shapes
 import FrameView
 import Screen
 import Tour
@@ -24,22 +23,10 @@ SafariApp :: [].{
 		frames_a_second: 30,
 		init: initial_model,
 		model_at_next_step: CanvasApp.untimed_model_at_next_step(model_at_next_step),
-		frame_shapes: |m| frame_shapes(m.tour),
+		frame_shapes: |m| FrameView.frame_view_at(m.tour.route(), m.tour.instant()).leaned_shapes(),
 		sounds: |_m| 0,
 		tones: [],
 		title: "Safari",
-	}
-
-	## What to draw, turned by the rider's lean.
-	##
-	## The whole frame leans, backdrop and all, so the world banks into a turn.
-	## That is a camera whose target and offset are both the middle of the
-	## screen and whose rotation is the roll, the other way round: a space
-	## around everything else.
-	frame_shapes : Tour -> List(Shapes.Shape)
-	frame_shapes = |tour| {
-		view = FrameView.frame_view_at(tour.route(), tour.instant())
-		view.framed_shapes(Screen.leaned_by(view.roll))
 	}
 }
 
@@ -68,7 +55,7 @@ model_at_next_step = |m, input|
 			} else {
 				match motion {
 					Paused => m.tour
-					Playing => Tour.step_forward(m.tour)
+					Playing => m.tour.step_forward()
 				}
 			}
 		tour = if input.key_pressed(KeyJ) {

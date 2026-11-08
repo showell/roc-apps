@@ -1,23 +1,19 @@
-//! The canvas_apps wasm host: the nine exports web/canvas_app_runner.js binds, over a Roc
-//! model the host holds as one boxed pointer.
+//! The canvas_apps wasm host. It has nine exports, which
+//! web/canvas_app_runner.js binds: computeFrame, advance, sounds, toneCount,
+//! toneFreq, toneMs, width, height and fps. The app's model is a Roc value that
+//! the host holds as one boxed pointer, which `roc_init` makes on the first
+//! call. Roc's reference counting keeps it alive between calls.
 //!
-//! Where poc/drive_shim.zig in safari-codex had to keep the rider, the truck,
-//! the clock and a history ring as flat zig statics -- a Codex record is a
-//! pointer into an arena the shim rewinds every frame -- here the whole model
-//! is a Roc value. Roc's reference counting keeps it alive between calls and
-//! the app's `advance` returns the next model; this file stores the pointer it
-//! is handed and hands it back.
+//! A Roc function that takes the `Box` owns that reference. `advance` hands the
+//! host's reference to Roc and keeps the one Roc returns. `sounds` and the
+//! frame keep nothing, so the host increments the count before the call and
+//! Roc's decrement on the way out restores it. The readouts that are the same
+//! for every model, the size, the pace and the tones, take no model at all.
 //!
-//! OWNERSHIP AT THE BOUNDARY. A Roc function that takes a `Box` takes it by
-//! value and owns that reference. `advance` and `back` return the model, so
-//! the host's reference moves out and a new one comes back. A readout keeps
-//! nothing, so the host increments the count before the call and Roc's
-//! decrement on the way out restores it. `render` returns a List the host
-//! owns until the next frame, when it is released.
-//!
-//! The draw buffer the runner reads is the List's own bytes: tag, colour,
-//! count and f32 bit patterns as 32-bit words, packed in Roc (SafariApp.roc),
-//! exactly the stream the zig shim wrote.
+//! The frame is a Roc list of shapes. `computeFrame` answers the address of the
+//! list itself, and the page's generated glue (roc_glue.js, which `roc glue`
+//! writes from web/platform/Frame.roc) reads the shapes out of wasm memory. The
+//! host keeps the list until the next frame, then hands it back to Roc to free.
 
 const std = @import("std");
 const builtins = @import("builtins");
@@ -27,20 +23,20 @@ const RocOps = builtins.host_abi.RocOps;
 const RocList = builtins.list.RocList;
 
 extern fn roc_init() callconv(.c) ?[*]u8;
-extern fn roc_advance(model: ?[*]u8, held: u32, struck: u32, buttons: u32, clicks: u32, x: f32, y: f32, wheel: f32) callconv(.c) ?[*]u8;
+extern fn roc_advance(model: ?[*]u8, key_held: u32, key_struck: u32, button_held: u32, button_struck: u32, x: f32, y: f32, wheel: f32) callconv(.c) ?[*]u8;
 extern fn roc_sounds(model: ?[*]u8) callconv(.c) u32;
-extern fn roc_tone_count(model: ?[*]u8) callconv(.c) u32;
-extern fn roc_tone_freq(model: ?[*]u8, index: u32) callconv(.c) u32;
-extern fn roc_tone_ms(model: ?[*]u8, index: u32) callconv(.c) u32;
+extern fn roc_tone_count() callconv(.c) u32;
+extern fn roc_tone_freq(index: u32) callconv(.c) u32;
+extern fn roc_tone_ms(index: u32) callconv(.c) u32;
 extern fn roc_frame(model: ?[*]u8) callconv(.c) RocList;
 extern fn roc_release(frame: RocList) callconv(.c) void;
-extern fn roc_width(model: ?[*]u8) callconv(.c) u32;
-extern fn roc_height(model: ?[*]u8) callconv(.c) u32;
-extern fn roc_fps(model: ?[*]u8) callconv(.c) u32;
+extern fn roc_width() callconv(.c) u32;
+extern fn roc_height() callconv(.c) u32;
+extern fn roc_fps() callconv(.c) u32;
 
-// NO IMPORTS. web/canvas_app_runner.js instantiates the module with an empty import
-// object, as it does the Codex-built one, so a panic is a wasm trap -- the
-// page sees a RuntimeError -- and dbg output goes nowhere.
+// The module has no imports. web/canvas_app_runner.js instantiates it with an
+// empty import object, so a panic is a wasm trap, which the page sees as a
+// RuntimeError, and dbg output goes nowhere.
 const env = struct {
     fn roc_panic(_: [*]const u8, _: usize) noreturn {
         @trap();
@@ -112,9 +108,10 @@ var roc_ops = RocOps{
     .hosted_fns = builtins.host_abi.emptyHostedFunctions(),
 };
 
-// THE MODEL, one reference the host owns.
+// The model, one reference the host owns.
 var model: ?[*]u8 = null;
-// The last frame's words, owned until the next frame replaces them.
+// The last frame, owned until the next frame replaces it. Its header stays at
+// this address while the list it points to is a fresh one every frame.
 var packed_frame: RocList = RocList.empty();
 
 fn ensure() void {
@@ -130,51 +127,45 @@ fn borrowed() ?[*]u8 {
 
 fn noDec(_: ?*anyopaque, _: ?[*]u8) callconv(.c) void {}
 
-// Where the last frame is and how big it is, in two words at an address that
-// never moves. **THE FRAME ITSELF MOVES** -- it is a fresh Roc list every
-// tick -- so a caller that reads its address before asking for it gets the
-// previous frame's start with this frame's length, which misreads far enough
-// in to look like corrupt data rather than a mistake.
+// Nothing reads this.
 var frame_where: [2]u32 = .{ 0, 0 };
 
-// **THIS IS THE EFFECT**, which is why it is a verb: it releases the last
-// frame, asks Roc for a new one, and answers where the two words above are.
-// There is ONE call, so there is no order to get wrong. It used to be two --
-// `computeFrame` then `frameAt` -- and the trap that arrangement left caught
-// two people who each wrote the natural spelling, `decode(memory, frameAt(),
-// computeFrame())`, which JavaScript evaluates left to right.
+// This is the effect, which is why its name is a verb. It releases the last
+// frame, asks Roc for a new one, and answers where the list is. Asking and
+// answering are one call, so a caller can't read the address of the previous
+// frame by calling them in the wrong order.
 pub export fn computeFrame() u32 {
-    // **ROC FREES THE FRAME, NOT THIS.** Decrementing a List(Shape) means
+    // Roc frees the frame, not the host. Decrementing a List(Shape) means
     // walking each element's inner lists, which needs the tag union's layout.
     // Roc has that layout and the host does not, so the host hands the last
-    // frame back and lets Roc drop it. No layout knowledge in Zig at all.
+    // frame back and lets Roc drop it.
     roc_release(packed_frame);
     packed_frame = roc_frame(borrowed());
     return @intCast(@intFromPtr(&packed_frame));
 }
-// **THE INPUT ARRIVES WITH THE TICK.** One Input.Snapshot, flattened: the keys
-// down and the keys struck, the same pair for mouse buttons, then where the
-// pointer is and how far the wheel turned. The page's event loop owns all of
-// it and packs it; nothing here remembers anything between ticks.
-pub export fn advance(held: u32, struck: u32, buttons: u32, clicks: u32, x: f32, y: f32, wheel: f32) void {
+// The input arrives with the tick: one Input.Snapshot, flattened into the keys
+// held and struck, the same pair for the mouse buttons, then where the pointer
+// is and how far the wheel turned. The page's event loop owns all of it and
+// packs it, and nothing here remembers anything between ticks.
+pub export fn advance(key_held: u32, key_struck: u32, button_held: u32, button_struck: u32, x: f32, y: f32, wheel: f32) void {
     ensure();
-    model = roc_advance(model, held, struck, buttons, clicks, x, y, wheel);
+    model = roc_advance(model, key_held, key_struck, button_held, button_struck, x, y, wheel);
 }
 
 // How big a frame is, in the game's own coordinates. The page sizes its
-// canvas from this rather than knowing one movie's numbers.
+// canvas from this rather than knowing one app's numbers.
 pub export fn width() u32 {
-    return roc_width(borrowed());
+    return roc_width();
 }
 
 pub export fn height() u32 {
-    return roc_height(borrowed());
+    return roc_height();
 }
 
-// How often the movie means to be stepped. The page paces itself by this
+// How often the app means to be stepped. The page paces itself by this
 // rather than by however often the display happens to refresh.
 pub export fn fps() u32 {
-    return roc_fps(borrowed());
+    return roc_fps();
 }
 
 // A bit per tone the last step set off. The runner decides whether that is a
@@ -183,19 +174,19 @@ pub export fn sounds() u32 {
     return roc_sounds(borrowed());
 }
 
-// How many tones the game HAS, so a runner never has to guess the width of
+// How many tones the app has, so a runner never has to guess the width of
 // the word above.
 pub export fn toneCount() u32 {
-    return roc_tone_count(borrowed());
+    return roc_tone_count();
 }
 
 // What one of them sounds like: a pitch in hertz and a length in
 // milliseconds, which is what roc-ray's Audio.gen_tone takes as well.
 pub export fn toneFreq(index: u32) u32 {
-    return roc_tone_freq(borrowed(), index);
+    return roc_tone_freq(index);
 }
 
 pub export fn toneMs(index: u32) u32 {
-    return roc_tone_ms(borrowed(), index);
+    return roc_tone_ms(index);
 }
 

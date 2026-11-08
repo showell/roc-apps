@@ -298,7 +298,7 @@ shapes_at = |model|
 	].join()
 
 # All the layers on is the game's own frame, shape for shape and in its order.
-expect picture_shapes(layers) == paused_frame_view.framed_shapes(lean_space)
+expect picture_shapes(layers) == paused_frame_view.leaned_shapes()
 
 # The backdrop's parts are the game's own backdrop, in its order.
 expect piece_shapes(backdrop_parts, layers) == FrameView.backdrop_shapes(paused_frame_view.backdrop)

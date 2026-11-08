@@ -77,8 +77,7 @@ part_size = |part, { route, instant }| {
 	if part == "none" {
 		0
 	} else if part == "full" {
-		view = FrameView.frame_view_at(route, instant)
-		view.framed_shapes(Screen.leaned_by(view.roll)).len()
+		FrameView.frame_view_at(route, instant).leaned_shapes().len()
 	} else if part == "view" {
 		FrameView.ride_shape_lists(FrameView.frame_view_at(route, instant)).join().len()
 	} else if part == "camera" {
