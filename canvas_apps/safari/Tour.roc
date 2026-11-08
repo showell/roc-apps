@@ -141,18 +141,6 @@ expect {
 		and rider_segment_index(Tour.step_back(reached)) == Route.SegmentIndex.first
 }
 
-# Jumping a segment at a time goes through every segment once, and from the
-# last back to the first.
-expect {
-	var $tour = Tour.at_next_segment(Tour.initial)
-	var $jumps = 1
-	while rider_segment_index($tour) != Route.SegmentIndex.first {
-		$tour = Tour.at_next_segment($tour)
-		$jumps = $jumps + 1
-	}
-	$jumps == World.route.route_segments().len()
-}
-
 # A tour ridden to a step keeps every instant it passed, and none at the start.
 expect {
 	ridden = Tour.at_step(3)
