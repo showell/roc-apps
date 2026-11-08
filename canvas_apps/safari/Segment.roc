@@ -30,7 +30,7 @@ Segment := {
 	## What the rider meets on the road here, at most one thing, so that the
 	## rider has one experience at a time. Most of the road is quiet, so that an
 	## encounter stands out.
-	encounter : [CatCrosses(CatCrossing), BirdHere(BirdFlight.Flight), QuietRoad],
+	encounter : [CatCrosses(CatCrossing), BirdHere(BirdFlight), QuietRoad],
 
 	ending : Segment.Ending,
 }.{

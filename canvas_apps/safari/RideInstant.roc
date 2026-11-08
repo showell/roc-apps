@@ -96,7 +96,7 @@ planned_start = |segment, { rider, now }| {
 		)
 	match segment.encounter {
 		CatCrosses(crossing) => plan_for(CatCrossing.crossing_span, crossing.along())
-		BirdHere(flight) => plan_for(BirdFlight.flight_span, BirdFlight.planned_along(flight))
+		BirdHere(flight) => plan_for(BirdFlight.flight_span, flight.planned_along())
 		QuietRoad => Unplanned
 	}
 }

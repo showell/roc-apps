@@ -283,7 +283,7 @@ World :: [].{
 		}
 
 	## The bird's flight on the route's first segment with a bird.
-	first_bird_flight : BirdFlight.Flight
+	first_bird_flight : BirdFlight
 	first_bird_flight =
 		match first_bird_segment.encounter {
 			BirdHere(flight) => flight

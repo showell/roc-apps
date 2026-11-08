@@ -103,7 +103,7 @@ Fixtures :: [].{
 	cat_road = RoadAhead.RoadView.ahead_of(cat_route, Route.SegmentIndex.first)
 
 	## The flights of the route.
-	route_flights : List(BirdFlight.Flight)
+	route_flights : List(BirdFlight)
 	route_flights = World.route.route_segments().join_map(
 		|segment|
 			match segment.encounter {

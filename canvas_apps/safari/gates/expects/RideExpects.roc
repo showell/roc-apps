@@ -356,7 +356,7 @@ ride_encounters = {
 				stage = BirdFlight.flight_stage(timing)
 				match stage {
 					Playing(_) => {
-						bird = BirdFlight.instant_at(flight, stage)
+						bird = flight.instant_at(stage)
 						$flying_step_count = $flying_step_count + 1
 						$is_bird_ahead_throughout = $is_bird_ahead_throughout
 							and bird.location.along > rider_along($instant)

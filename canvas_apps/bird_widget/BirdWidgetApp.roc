@@ -134,7 +134,7 @@ straight_road = RoadAhead.RoadView.ahead_of(World.route, Route.SegmentIndex.firs
 ## the first tree, looking down the road.
 eye : Geom.Vantage
 eye = {
-	along: BirdFlight.planned_along(World.first_bird_flight).minus(eye_to_first_tree),
+	along: World.first_bird_flight.planned_along().minus(eye_to_first_tree),
 	across: Across.middle,
 	yaw: Angle.straight_ahead,
 }
@@ -160,7 +160,7 @@ tree_shapes = |tree| WidgetPage.resting_lens_shapes(
 ## The bird as `gap` finds it, drawn by Safari's own stills.
 bird_shapes : Distance -> List(Shapes.Shape)
 bird_shapes = |gap| {
-	instant = BirdFlight.instant_at(World.first_bird_flight, stage_at(gap))
+	instant = World.first_bird_flight.instant_at(stage_at(gap))
 	location = instant.location
 	bird : PosedBird
 	bird = { pose: instant.pose }
@@ -176,7 +176,7 @@ bird_shapes = |gap| {
 status_lines : Distance -> List(Str)
 status_lines = |gap| {
 	stage = stage_at(gap)
-	instant = BirdFlight.instant_at(World.first_bird_flight, stage)
+	instant = World.first_bird_flight.instant_at(stage)
 	[
 		ReadoutText.stage_text(stage),
 		"Pose: ${pose_name(instant.pose)}",

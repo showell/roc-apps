@@ -15,10 +15,8 @@ import PosedBird
 import Steps
 import Trees
 
-BirdFlight :: [].{
-
-	## The tree a bird leaves, and the one it flies to.
-	Flight : { from : Trees.RoadsideTree, to : Trees.RoadsideTree }
+## A bird's flight is the tree it leaves, and the one it flies to.
+BirdFlight := { from : Trees.RoadsideTree, to : Trees.RoadsideTree }.{
 
 	## A bird at one instant: how it looks, and where it is.
 	BirdInstant : Animation.Instant(PosedBird.BirdPose)
@@ -30,7 +28,7 @@ BirdFlight :: [].{
 
 	## The flight of the bird on a segment of `trees`: from its fifth tree on
 	## the left to the first tree on the far side far enough along.
-	segment_flight : List(Trees.RoadsideTree) -> Try(BirdFlight.Flight, [NoPerch, NoTreeToFlyTo])
+	segment_flight : List(Trees.RoadsideTree) -> Try(BirdFlight, [NoPerch, NoTreeToFlyTo])
 	segment_flight = |trees| {
 		perch = fifth_left_tree(trees)?
 		BirdFlight.flight_from(trees, perch)
@@ -38,22 +36,18 @@ BirdFlight :: [].{
 
 	## The flight of a bird perched on the tree at `perch`, among a segment's
 	## `trees`: to the first tree on the other side of the road far enough along.
-	flight_from : List(Trees.RoadsideTree),
-	Trees.RoadsideTree -> Try(
-		BirdFlight.Flight,
-		[NoTreeToFlyTo],
-	)
+	flight_from : List(Trees.RoadsideTree), Trees.RoadsideTree -> Try(BirdFlight, [NoTreeToFlyTo])
 	flight_from = |trees, perch| {
 		is_far_enough = |tree| tree.road_point.along >= perch.road_point.along.plus(shortest_hop)
 		match trees.find_first(|tree| is_far_side(tree) and is_far_enough(tree)) {
-			Ok(to) => Ok({ from: perch, to })
+			Ok(to) => Ok(BirdFlight.({ from: perch, to }))
 			Err(NotFound) => Err(NoTreeToFlyTo)
 		}
 	}
 
 	## Where along its segment the ride plans `flight` by: the tree the bird
 	## leaves.
-	planned_along : BirdFlight.Flight -> Along
+	planned_along : BirdFlight -> Along
 	planned_along = |flight| flight.from.road_point.along
 
 	## Where the flight has got to at `timing`.
@@ -61,7 +55,7 @@ BirdFlight :: [].{
 	flight_stage = |timing| EncounterPlan.stage_at(timing, flight_span.length)
 
 	## The bird at `stage` of its flight.
-	instant_at : BirdFlight.Flight, Animation.Stage -> BirdFlight.BirdInstant
+	instant_at : BirdFlight, Animation.Stage -> BirdFlight.BirdInstant
 	instant_at = |flight, stage| flight_timeline(flight).instant(stage)
 }
 
@@ -118,7 +112,7 @@ flight_poses = [
 ## The whole of a flight: `flight_poses`, on one smooth path that rises in
 ## the middle, from the tip of the tree it leaves to the tip of the one it
 ## lands on.
-flight_timeline : BirdFlight.Flight -> Animation.Timeline(PosedBird.BirdPose, PosedBird.BirdPose)
+flight_timeline : BirdFlight -> Animation.Timeline(PosedBird.BirdPose, PosedBird.BirdPose)
 flight_timeline = |{ from, to }| {
 	ends = { from: tree_top(from), to: tree_top(to) }
 	last_frame = (flight_poses.len() - 1).to_f64()
