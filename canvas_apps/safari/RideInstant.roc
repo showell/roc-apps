@@ -4,7 +4,7 @@
 ## that has finished starts again from the beginning.
 import EncounterPlan
 import BirdFlight
-import Cat
+import CatCrossing
 import Clock
 import Distance
 import Route
@@ -95,8 +95,8 @@ planned_start = |segment, { rider, now }| {
 			},
 		)
 	match segment.encounter {
-		CatCrosses(crossing) => plan_for(Cat.crossing_span, crossing.along())
-		BirdHere(flight) => plan_for(BirdFlight.flight_span, BirdFlight.planned_along(flight))
+		CatCrosses(crossing) => plan_for(CatCrossing.crossing_span, crossing.along())
+		BirdHere(flight) => plan_for(BirdFlight.flight_span, flight.planned_along())
 		QuietRoad => Unplanned
 	}
 }

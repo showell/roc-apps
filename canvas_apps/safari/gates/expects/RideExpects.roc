@@ -7,7 +7,7 @@ import game.Along
 import game.Angle
 import game.Attention
 import game.BirdFlight
-import game.Cat
+import game.CatCrossing
 import game.Clock
 import game.Distance
 import game.EncounterReaction
@@ -356,7 +356,7 @@ ride_encounters = {
 				stage = BirdFlight.flight_stage(timing)
 				match stage {
 					Playing(_) => {
-						bird = BirdFlight.instant_at(flight, stage)
+						bird = flight.instant_at(stage)
 						$flying_step_count = $flying_step_count + 1
 						$is_bird_ahead_throughout = $is_bird_ahead_throughout
 							and bird.location.along > rider_along($instant)
@@ -365,8 +365,11 @@ ride_encounters = {
 				}
 			}
 			CatCrosses(_) => {
-				if Cat.is_crossing(Cat.crossing_stage(timing)) {
-					$crossing_step_count = $crossing_step_count + 1
+				match CatCrossing.crossing_stage(timing) {
+					Playing(_) => {
+						$crossing_step_count = $crossing_step_count + 1
+					}
+					Waiting | Past(_) => {}
 				}
 				if is_leaving {
 					$cat_exits = $cat_exits + 1
@@ -398,7 +401,7 @@ expect ride_encounters.is_bird_ahead_throughout
 # Each of the three cats crosses on the ride. The reaction ends with its
 # segment, so the cat's hold has to have faded by then or it would snap to
 # nothing there.
-expect ride_encounters.crossing_step_count == 3 * Cat.crossing_span.length.to_u32().to_u64()
+expect ride_encounters.crossing_step_count == 3 * CatCrossing.crossing_span.length.to_u32().to_u64()
 expect ride_encounters.cat_exits == 3
 expect ride_encounters.is_faded_at_each_exit
 

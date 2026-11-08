@@ -7,7 +7,7 @@
 import Animation
 import EncounterPlan
 import BirdFlight
-import Cat
+import CatCrossing
 import Geom
 import PosedBird
 import PosedCat
@@ -51,10 +51,10 @@ segment_cat : {
 segment_cat = |{ in_view, encounter_timing }|
 	match in_view.segment.encounter {
 		CatCrosses(crossing) => {
-			stage = segment_stage(in_view, Cat.crossing_stage(encounter_timing))?
+			stage = segment_stage(in_view, CatCrossing.crossing_stage(encounter_timing))?
 			Ok({
 				place: in_view.place,
-				animal: Animation.placed_instant(Cat.instant_at(crossing, stage)),
+				animal: Animation.placed_instant(crossing.instant_at(stage)),
 			})
 		}
 		BirdHere(_) | QuietRoad => Err(NoCat)
@@ -69,10 +69,7 @@ segment_bird = |{ in_view, encounter_timing }|
 	match in_view.segment.encounter {
 		BirdHere(flight) => {
 			stage = segment_stage(in_view, BirdFlight.flight_stage(encounter_timing))?
-			Ok({
-				place: in_view.place,
-				animal: Animation.placed_instant(BirdFlight.instant_at(flight, stage)),
-			})
+			Ok({ place: in_view.place, animal: Animation.placed_instant(flight.instant_at(stage)) })
 		}
 		CatCrosses(_) | QuietRoad => Err(NoBird)
 	}

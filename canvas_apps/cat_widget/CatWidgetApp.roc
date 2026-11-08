@@ -6,7 +6,7 @@
 ## it, the buttons and four lines of text that say what Cat and EncounterReaction
 ## make of the gap.
 import game.EncounterPlan
-import game.Cat
+import game.CatCrossing
 import game.EncounterReaction
 import game.Distance
 import game.Pixels
@@ -115,14 +115,14 @@ road_shapes = {
 crossing_timing : Distance -> EncounterPlan.Timing
 crossing_timing = |gap|
 	EncounterPlan.steady_approach_timing(
-		Cat.crossing_span,
+		CatCrossing.crossing_span,
 		{ gap_at_start: closing_gap.first, speed: rider_speed, gap },
 	)
 
 ## The cat at the crossing's `timing`, drawn by Safari's own stills.
 cat_shapes : EncounterPlan.Timing -> List(Shapes.Shape)
 cat_shapes = |timing| {
-	instant = Cat.instant_at(World.first_cat_crossing, Cat.crossing_stage(timing))
+	instant = World.first_cat_crossing.instant_at(CatCrossing.crossing_stage(timing))
 	StillShapes.still_shapes(
 		{
 			foot: {
@@ -140,8 +140,8 @@ cat_shapes = |timing| {
 ## crossing at `timing`, a line each.
 status_lines : { gap : Distance, timing : EncounterPlan.Timing } -> List(Str)
 status_lines = |{ gap, timing }| {
-	stage = Cat.crossing_stage(timing)
-	instant = Cat.instant_at(World.first_cat_crossing, stage)
+	stage = CatCrossing.crossing_stage(timing)
+	instant = World.first_cat_crossing.instant_at(stage)
 	throttle = EncounterReaction.encounter_throttle(World.first_cat_segment, timing)
 	[
 		ReadoutText.stage_text(stage),
@@ -161,8 +161,8 @@ throttle_text = |throttle|
 	}
 
 # The whole crossing is on the range, with some road to spare at the far end.
-expect EncounterPlan.planning_gap(Cat.crossing_span, rider_speed) < closing_gap.first
-expect Cat.crossing_span.ends_at > closing_gap.last
+expect EncounterPlan.planning_gap(CatCrossing.crossing_span, rider_speed) < closing_gap.first
+expect CatCrossing.crossing_span.ends_at > closing_gap.last
 
 ## The lines at `gap`, with the crossing timed as the widget times it.
 lines_at : Distance -> List(Str)

@@ -8,7 +8,6 @@ import game.Animation
 import game.BirdFlight
 import game.BirdStills
 import game.Camera
-import game.Cat
 import game.CatCrossing
 import game.Clock
 import game.Conifer
@@ -16,6 +15,7 @@ import game.Distance
 import game.EmojiStills
 import game.EncounterPlan
 import game.EncounterPoses
+import game.EncounterReaction
 import game.EncounterSighting
 import game.Fraction
 import game.RiderView
@@ -112,8 +112,8 @@ bird_trees = left_trees.append(far_tree)
 
 ## The flight of a bird on `bird_trees`, from the fifth left tree to the far
 ## one.
-bird_flight : BirdFlight.Flight
-bird_flight = { from: Fixtures.tree_at(100.0, -6.0), to: far_tree }
+bird_flight : BirdFlight
+bird_flight = BirdFlight.({ from: Fixtures.tree_at(100.0, -6.0), to: far_tree })
 
 ## A segment of `bird_trees` with its bird.
 bird_segment : Segment
@@ -171,7 +171,7 @@ expect place_numbers(bird_at(85.0, flight_at_step(136))) == [6.0, 45.0, far_top]
 # In flight, the bird is where its flight's frame for the step says.
 expect {
 	bird = bird_at(40.0, flight_at_step(118))
-	frame = BirdFlight.instant_at(bird_flight, Playing(Steps.of(18)))
+	frame = bird_flight.instant_at(Playing(Steps.of(18)))
 	[
 		(bird.spot.foot().right().to_metres(), frame.location.across.to_metres()),
 		(bird.spot.foot().forward().to_metres(), frame.location.along.to_metres() - 40.0),
@@ -273,7 +273,7 @@ route_cats = World.route.route_segments().join_map(
 
 ## How far short of a cat its crossing is planned for the fastest rider.
 cat_planning_gap : Distance
-cat_planning_gap = EncounterPlan.planning_gap(Cat.crossing_span, VehicleLimits.top_speed)
+cat_planning_gap = EncounterPlan.planning_gap(CatCrossing.crossing_span, VehicleLimits.top_speed)
 
 ## How far short of a bird's perch its flight is planned for the fastest rider.
 bird_planning_gap : Distance
@@ -320,10 +320,10 @@ crossing_cat = CatCrossing.by_tree({
 
 ## The cat `steps_in` steps into its crossing.
 crossing_frame_of : U32 -> Animation.Instant(PosedCat.CatPose)
-crossing_frame_of = |steps_in| Cat.instant_at(crossing_cat, Playing(Steps.of(steps_in)))
+crossing_frame_of = |steps_in| crossing_cat.instant_at(Playing(Steps.of(steps_in)))
 
-expect Cat.instant_at(crossing_cat, Waiting).pose == Rest
-expect Cat.instant_at(crossing_cat, Past(Steps.zero)).pose == Collapse
+expect crossing_cat.instant_at(Waiting).pose == Rest
+expect crossing_cat.instant_at(Past(Steps.zero)).pose == Collapse
 
 ## How far across the road the cat is `steps_in` steps into its crossing.
 crossing_across_at : U32 -> F64
@@ -355,12 +355,30 @@ expect
 	)
 
 expect (crossing_across_at(37) - -3.49).abs() <= 0.000000000001
-expect (
-	Cat.instant_at(
-		crossing_cat,
-		Past(Steps.zero),
-	).location.across.to_metres() - -3.49
-).abs() <= 0.000000000001
+expect {
+	across_after = crossing_cat.instant_at(Past(Steps.zero)).location.across.to_metres()
+	(across_after - -3.49).abs() <= 0.000000000001
+}
+
+## Whether `segment`'s encounter holds back the throttle at step `now`, its
+## animation having started at step 100.
+is_throttle_held : Segment, U32 -> Bool
+is_throttle_held = |segment, now|
+	match EncounterReaction.encounter_throttle(segment, flight_at_step(now)) {
+		AtMost(_) => True
+		NoLimit => False
+	}
+
+# The rider eases off for a cat for exactly the steps it crosses, and never for a
+# bird.
+expect
+	[
+		(99, False),
+		(100, True),
+		(137, True),
+		(138, False),
+	].all(|(now, want)| is_throttle_held(World.first_cat_segment, now) == want)
+expect [99, 100, 137, 138].all(|now| !is_throttle_held(bird_segment, now))
 
 # BirdFlight: the tree a bird flies to, and its flight frame by frame.
 ## The tree a sample bird leaves.
@@ -378,10 +396,10 @@ flight_sample_trees = [
 ]
 
 ## A flight from the left tree to a gold one 40 m on, across the road.
-sample_flight : BirdFlight.Flight
+sample_flight : BirdFlight
 sample_flight = {
-	from: flight_left_tree,
-	to: { ..Fixtures.tree_at(140.0, 6.0), kind: Conifer.Gold },
+	to = { ..Fixtures.tree_at(140.0, 6.0), kind: Conifer.Gold }
+	BirdFlight.({ from: flight_left_tree, to })
 }
 
 ## Where the tree a bird on the left tree flies to stands, among `choices`.
@@ -399,24 +417,24 @@ expect chosen_tree_numbers([flight_left_tree, Fixtures.tree_at(140.0, -6.0)]) ==
 
 ## The sample bird `steps_in` steps into its flight.
 flight_frame_of : U32 -> BirdFlight.BirdInstant
-flight_frame_of = |steps_in| BirdFlight.instant_at(sample_flight, Playing(Steps.of(steps_in)))
+flight_frame_of = |steps_in| sample_flight.instant_at(Playing(Steps.of(steps_in)))
 
 expect {
-	location = BirdFlight.instant_at(sample_flight, Waiting).location
+	location = sample_flight.instant_at(Waiting).location
 	location.along.to_metres() == 100.0
 		and location.across.to_metres() == -6.0
 		and location.lift.to_metres() == left_top
 }
 
 expect {
-	location = BirdFlight.instant_at(sample_flight, Past(Steps.zero)).location
+	location = sample_flight.instant_at(Past(Steps.zero)).location
 	location.along.to_metres() == 140.0
 		and location.across.to_metres() == 6.0
 		and location.lift.to_metres() == far_top
 }
 
-expect BirdFlight.instant_at(sample_flight, Waiting).pose == Perched
-expect BirdFlight.instant_at(sample_flight, Past(Steps.zero)).pose == Perched
+expect sample_flight.instant_at(Waiting).pose == Perched
+expect sample_flight.instant_at(Past(Steps.zero)).pose == Perched
 
 # A flap side on, seven from behind, and one of diving, four steps to a flap.
 expect
@@ -435,7 +453,7 @@ expect
 
 # The flight starts on the first tree's tip and ends on the second's, and its
 # path rises over the straight line between them.
-expect flight_frame_of(0).location == BirdFlight.instant_at(sample_flight, Waiting).location
+expect flight_frame_of(0).location == sample_flight.instant_at(Waiting).location
 expect {
 	last = flight_frame_of(35).location
 	[
