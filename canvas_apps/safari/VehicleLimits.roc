@@ -7,10 +7,6 @@ import Speed
 
 VehicleLimits :: [].{
 
-	## What one limit on the throttle asks: nothing, or to accelerate no harder
-	## than this.
-	Limit : [NoLimit, AtMost(Acceleration)]
-
 	cruise_acceleration : Acceleration
 	cruise_acceleration = Acceleration.metres_a_step_each_step(0.01)
 

@@ -12,14 +12,14 @@ import Easing
 import Fraction
 import Segment
 import Steps
-import VehicleLimits
+import ThrottleLimit
 
 EncounterReaction :: [].{
 
 	## What `segment`'s encounter, at `timing`, asks of the throttle of a rider
 	## on that segment: while a cat crosses, the rider eases off, holding the
 	## acceleration at none, which stops them speeding up and never brakes.
-	encounter_throttle : Segment, EncounterPlan.Timing -> VehicleLimits.Limit
+	encounter_throttle : Segment, EncounterPlan.Timing -> ThrottleLimit
 	encounter_throttle = |segment, timing|
 		match segment.encounter {
 			CatCrosses(_) =>

@@ -1778,7 +1778,7 @@ The rider looks at a pig or at the road, and only a pig has an angle:
 
 A pig asks something of the throttle, or it doesn't:
 
-{{code VehicleLimits.Limit}}
+{{code ThrottleLimit.ThrottleLimit}}
 
 So the job is a short list:
 

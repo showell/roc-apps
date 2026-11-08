@@ -14,7 +14,7 @@ import game.PosedCat
 import game.Geom
 import game.Speed
 import game.StillShapes
-import game.VehicleLimits
+import game.ThrottleLimit
 import game.World
 import lib.Brush
 import lib.CanvasApp
@@ -154,7 +154,7 @@ status_lines = |{ gap, timing }| {
 
 ## What the crossing asks of the throttle, in words. A crossing only ever holds
 ## the acceleration at none.
-throttle_text : VehicleLimits.Limit -> Str
+throttle_text : ThrottleLimit -> Str
 throttle_text = |throttle|
 	match throttle {
 		NoLimit => "The rider may accelerate"
