@@ -37,7 +37,7 @@ EncounterSighting :: [].{
 animals_in_view : RoadAhead.RoadView,
 {
 	camera : Pipeline.SightingCamera,
-	animals : List(EncounterPoses.PosedAnimal(kind)),
+	animals : List(EncounterPoses.PlacedAnimal(kind)),
 } -> List(Pipeline.Sighted(kind))
 	where [kind.scenery_height : kind -> Distance]
 animals_in_view = |road, { camera, animals }|
