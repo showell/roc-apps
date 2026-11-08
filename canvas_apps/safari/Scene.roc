@@ -14,7 +14,7 @@ import RailSighting
 import Rendered
 import TowerSighting
 import TreeSighting
-import LitTruck
+import Truck
 import TruckSighting
 import lib.Shapes
 
@@ -36,7 +36,7 @@ Scene := {
 	## clock.
 	RideFacts : {
 		encounter_stage : Animation.Stage,
-		truck : { route_position : Distance, lit_truck : LitTruck },
+		truck : { route_position : Distance, lit_truck : Truck },
 		clock : Clock,
 	}
 

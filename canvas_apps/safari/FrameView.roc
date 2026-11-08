@@ -6,7 +6,6 @@ import Clock
 import Grass
 import GroundPatch
 import GroundSighting
-import LitTruck
 import RideInstant
 import RoadAhead
 import RiderCamera
@@ -15,6 +14,7 @@ import Scene
 import Sky
 import Skyline
 import Sun
+import Truck
 import lib.Shapes
 
 ## What the camera shows at one instant of the ride, worked out from the
@@ -124,7 +124,7 @@ FrameView := {
 		encounter_stage: RideInstant.encounter_stage(route, instant),
 		truck: {
 			route_position: instant.truck.route_position,
-			lit_truck: LitTruck.at(instant.truck.pace, Sky.darkness_at(instant.clock)),
+			lit_truck: Truck.at(instant.truck.pace, Sky.darkness_at(instant.clock)),
 		},
 		clock: instant.clock,
 	}

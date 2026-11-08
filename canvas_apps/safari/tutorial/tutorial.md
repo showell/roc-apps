@@ -1905,13 +1905,13 @@ digraph truck_drawing {
   node [shape=box, fontname="Helvetica"];
   TruckBody [style=bold];
   Scene -> TruckSighting;
-  TruckSighting -> LitTruck;
-  LitTruck -> TruckBody;
+  TruckSighting -> Truck;
+  Truck -> TruckBody;
   TruckBody -> TruckShape;
 }
 ```
 
-`TruckSighting` finds the truck on the road ahead. What it finds is a `LitTruck`, the truck with its lights, and with the lights off that's just the body this chapter draws. The truck is drawn however small it stands, because the rider is always looking for it.
+`TruckSighting` finds the truck on the road ahead. What it finds is a `Truck`, the truck with its lights, and with the lights off that's just the body this chapter draws. The truck is drawn however small it stands, because the rider is always looking for it.
 
 ### Three maps
 
@@ -2033,7 +2033,7 @@ The truck drives exactly the same with its lights on or off. The lights are a la
 
 New in this chapter:
 
-- Modules: `LitTruck`, `TruckLights`
+- Modules: `Truck`, `TruckLights`
 
 ### Two lamps, two rules
 
@@ -2045,27 +2045,27 @@ The brake lights come on while the truck is slowing down. That's a fact about th
 
 Each lamp switches on its own, so each gets its own field:
 
-{{code LitTruck.LitTruck from "Which of" to "LitTruck := {"}}
+{{code Truck.Truck from "Which of" to "Truck := {"}}
 
 ### The functions
 
-Each frame, `FrameView` reads the truck's pace and the sky's darkness, and hands both to `LitTruck`:
+Each frame, `FrameView` reads the truck's pace and the sky's darkness, and hands both to `Truck`:
 
-{{code FrameView.ride_facts from "lit_truck: LitTruck.at(" to "lit_truck: LitTruck.at("}}
+{{code FrameView.ride_facts from "lit_truck: Truck.at(" to "lit_truck: Truck.at("}}
 
-`LitTruck` applies both rules to what it's handed, in one function:
+`Truck` applies both rules to what it's handed, in one function:
 
-{{code LitTruck.at}}
+{{code Truck.at}}
 
 The headlights come on at this darkness:
 
-{{code LitTruck.headlights_on_darkness}}
+{{code Truck.headlights_on_darkness}}
 
 On this ride, that's step 3,555 of 6,746. Once on, they stay on, because from there the sky only darkens.
 
 The drawing does what the lamps say, with each `match` covering both tags. The beams go first, then the body, then the brake lights, so each paints over the one before:
 
-{{code LitTruck.truck_shapes}}
+{{code Truck.truck_shapes}}
 
 `TruckLights` paints the beams as wedges that fade from the lamp toward their far end, and the brake lights, each with a glow around it. `TruckBody` knows nothing of the lights: they're drawn around it.
 

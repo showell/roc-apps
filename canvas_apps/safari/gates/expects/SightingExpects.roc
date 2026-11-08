@@ -15,7 +15,6 @@ import game.Distance
 import game.Geom
 import game.RiderView
 import game.Lens
-import game.LitTruck
 import game.Pipeline
 import game.PigHerd
 import game.Pixels
@@ -30,6 +29,7 @@ import game.Speed
 import game.Tower
 import game.TowerSighting
 import game.TreeSighting
+import game.Truck
 import game.TruckJourney
 import game.TruckSighting
 import game.World
@@ -518,7 +518,7 @@ truck_lead_of : F64 -> TruckSighting.TruckFate
 truck_lead_of = |lead| truck_seen_from(Fixtures.origin, lead)
 
 ## Where the truck is, for a lead that puts it in view.
-lit_truck_of : F64 -> Pipeline.Sighted(LitTruck)
+lit_truck_of : F64 -> Pipeline.Sighted(Truck)
 lit_truck_of = |lead| truck_lead_of(lead) ?? crash "SightingExpects: this lead puts the truck in view"
 
 # The truck is in view on the road ahead, and not past its end or behind the

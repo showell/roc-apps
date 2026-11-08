@@ -8,24 +8,24 @@ import RoutePlace
 import SegmentPlace
 import Geom
 import Pipeline
-import LitTruck
+import Truck
 
 TruckSighting :: [].{
 
 	## What became of the truck in a frame.
-	TruckFate : Try(Pipeline.Sighted(LitTruck), [NoTruck, BehindCamera])
+	TruckFate : Try(Pipeline.Sighted(Truck), [NoTruck, BehindCamera])
 
 	## The truck at its `route_position` along the route, looking as its
 	## `lit_truck` says, if it is on the road ahead and in front of the camera.
 	truck_in_view : RoadAhead.RoadView,
 	{
 		camera : Pipeline.SightingCamera,
-		truck : { route_position : Distance, lit_truck : LitTruck },
+		truck : { route_position : Distance, lit_truck : Truck },
 	} -> TruckSighting.TruckFate
 	truck_in_view = |road, { camera, truck }| {
 		place = RoutePlace.at_distance(road.route(), truck.route_position) ? |PastRouteEnd| NoTruck
 		position = position_ahead(road, place) ? |NotFound| NoTruck
-		placed_truck : Geom.Placed(LitTruck)
+		placed_truck : Geom.Placed(Truck)
 		placed_truck = {
 			road_point: place.road_point(),
 			lift: Distance.zero,

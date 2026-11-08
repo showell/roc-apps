@@ -1,23 +1,23 @@
-## LitTruck is how the truck on the road looks in a frame: which of its lights
-## are on. Its picture is its headlight beams first, then its body, then its
-## brake lights, so each paints over the one before.
+## Truck is the truck as the scene draws it this frame: its lamps' states, and
+## its picture. Its picture is its headlight beams first, then its body, then
+## its brake lights, so each paints over the one before.
 import Fraction
 import Picture
-import TruckJourney
 import TruckBody
+import TruckJourney
 import TruckLights
 import TruckShape
 import lib.Shapes
 
 ## Which of the truck's lights are on.
-LitTruck := { headlights : [On, Off], brake_lights : [On, Off] }.{
+Truck := { headlights : [On, Off], brake_lights : [On, Off] }.{
 
 	is_eq : _
 
 	## The lights a truck going at `pace` has on under a sky of `darkness`: its
 	## headlights once the sky is dark enough, like a light sensor on the lamps,
 	## and its brake lights while its last step slowed it.
-	at : TruckJourney.Pace, Fraction -> LitTruck
+	at : TruckJourney.Pace, Fraction -> Truck
 	at = |pace, darkness| {
 		headlights: if darkness >= headlights_on_darkness {
 			On
@@ -33,7 +33,7 @@ LitTruck := { headlights : [On, Off], brake_lights : [On, Off] }.{
 	## How the truck looks. Every point on it is measured on the road, from where
 	## its trailer is centered, and seen from the camera's vantage, so those are
 	## its context.
-	scenery_picture : LitTruck, TruckShape.TruckSetting -> Picture
+	scenery_picture : Truck, TruckShape.TruckSetting -> Picture
 	scenery_picture = |lit_truck, setting| Picture.from_shapes(truck_shapes(lit_truck, setting))
 }
 
@@ -44,7 +44,7 @@ headlights_on_darkness : Fraction
 headlights_on_darkness = Fraction.of(0.412)
 
 ## The truck's shapes: the beams under the body, the brake lights over it.
-truck_shapes : LitTruck, TruckShape.TruckSetting -> List(Shapes.Shape)
+truck_shapes : Truck, TruckShape.TruckSetting -> List(Shapes.Shape)
 truck_shapes = |lit_truck, setting| {
 	beams =
 		match lit_truck.headlights {
@@ -59,10 +59,10 @@ truck_shapes = |lit_truck, setting| {
 	[beams, TruckBody.body_shapes(setting), brake_lights].join()
 }
 
-expect LitTruck.at(NotSlowing, Fraction.of(0.4119)) == { headlights: Off, brake_lights: Off }
-expect LitTruck.at(Slowing, Fraction.of(0.4119)) == { headlights: Off, brake_lights: On }
-expect LitTruck.at(NotSlowing, headlights_on_darkness) == { headlights: On, brake_lights: Off }
-expect LitTruck.at(Slowing, headlights_on_darkness) == { headlights: On, brake_lights: On }
-expect LitTruck.at(NotSlowing, Fraction.of(0.4121)) == { headlights: On, brake_lights: Off }
-expect LitTruck.at(Slowing, Fraction.zero) == { headlights: Off, brake_lights: On }
-expect LitTruck.at(NotSlowing, Fraction.whole) == { headlights: On, brake_lights: Off }
+expect Truck.at(NotSlowing, Fraction.of(0.4119)) == { headlights: Off, brake_lights: Off }
+expect Truck.at(Slowing, Fraction.of(0.4119)) == { headlights: Off, brake_lights: On }
+expect Truck.at(NotSlowing, headlights_on_darkness) == { headlights: On, brake_lights: Off }
+expect Truck.at(Slowing, headlights_on_darkness) == { headlights: On, brake_lights: On }
+expect Truck.at(NotSlowing, Fraction.of(0.4121)) == { headlights: On, brake_lights: Off }
+expect Truck.at(Slowing, Fraction.zero) == { headlights: Off, brake_lights: On }
+expect Truck.at(NotSlowing, Fraction.whole) == { headlights: On, brake_lights: Off }
