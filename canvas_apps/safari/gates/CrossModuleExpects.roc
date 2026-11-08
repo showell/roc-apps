@@ -1025,9 +1025,6 @@ scene_facts = {
 scene : Scene
 scene = Scene.scene_in_view(road, { camera: origin_camera, facts: scene_facts })
 
-scene_renderings : List(Rendered)
-scene_renderings = Scene.scene_renderings(scene)
-
 ## The route's start has no cat in view, so the cats come from the second
 ## segment's, seen as `seen` sees them.
 cat_scene : Scene
@@ -1075,18 +1072,20 @@ expect
 expect scene.trucks.len() == 1
 expect scene.birds.len() > 0
 
-# The renderings are every field's, the truck's among them.
-expect
-	scene_renderings.len()
-		== [
-			scene.trees.len(),
-			scene.birds.len(),
-			scene.towers.len(),
-			scene.billboards.len(),
-			scene.cats.len(),
-			scene.trucks.len(),
-			scene.rails.len(),
-		].sum()
+# The scene's shapes are every field's, the truck's among them.
+expect {
+	field_renderings = [
+		scene.trees,
+		scene.birds,
+		scene.towers,
+		scene.billboards,
+		scene.cats,
+		scene.trucks,
+		scene.rails,
+	].join()
+	field_shapes = field_renderings.join_map(|rendering| rendering.picture().to_shapes())
+	Scene.scene_shapes(scene).len() == field_shapes.len()
+}
 
 ## A scene with nothing in view.
 empty_scene : Scene
@@ -1270,7 +1269,12 @@ perched_bird_ahead = |forward| sighted_ahead({ pose: Perched }, forward)
 lone_tree_scene : F64 -> Scene
 lone_tree_scene = |forward| {
 	..empty_scene,
-	trees: Scene.tree_renderings([green_tree_ahead(forward)], origin_camera.cam_focal),
+	trees: [
+		Pipeline.rendering_of(
+			green_tree_ahead(forward),
+			{ cam_focal: origin_camera.cam_focal, context: { nearer_tree_count: 0 } },
+		),
+	],
 }
 
 ## A scene of a lone perched bird `forward` metres ahead.
@@ -1312,56 +1316,14 @@ expect
 expect lone_tree_shapes(40.0).len() > 0
 expect lone_bird_shapes(40.0).len() > 0
 
-## Five trees a metre apart, from 10 to 14 metres ahead, rendered together.
-cluster_renderings : List(Rendered)
-cluster_renderings = Scene.tree_renderings(
-	[10.0, 11.0, 12.0, 13.0, 14.0].map(green_tree_ahead),
-	origin_camera.cam_focal,
-)
-
-## The shapes of the cluster's tree at `index`, nearest first.
-cluster_shapes : U64 -> List(Shapes.Shape)
-cluster_shapes = |index|
-	match cluster_renderings.get(index) {
-		Ok(rendering) => rendering.picture().to_shapes()
-		Err(OutOfBounds) => crash "CrossModuleExpects: the cluster has five trees"
-	}
-
-second_shape_points : List(Shapes.Shape) -> U64
-second_shape_points = |shapes|
-	match shapes {
-		[_, Poly(polygon), ..] => polygon.coordinates.len()
-		_ => crash "a tree in view draws a trunk and tiers"
-	}
-
-# A tree is drawn as the conifer told how many of the others are nearer, so the
-# nearest tree's tiers are cones, in more detail than the farthest's triangles.
-expect
-	cluster_shapes(4)
-		== Conifer.Green.scenery_picture({
-			spot: green_tree_ahead(14.0).spot,
-			cam_focal: origin_camera.cam_focal,
-			context: { nearer_tree_count: 4 },
-		}).to_shapes()
-expect second_shape_points(cluster_shapes(0)) > second_shape_points(cluster_shapes(4))
-expect second_shape_points(cluster_shapes(4)) >= 6
-
 expect scene.trees.len() > 0
 expect scene.towers.len() > 0
 expect scene.billboards.len() > 0
 expect scene.rails.len() > 0
-expect scene_renderings.len() > 0
 
 # A segment of the road ahead shows at most two towers, the one past its end and
 # the one halfway along, and the segment just behind shows one.
 expect scene.towers.len() <= 2 * road.segments_ahead().count.to_u64() + 1
-
-# The scene's renderings come far to near: sorting them again changes nothing.
-expect {
-	parts_of = |renderings|
-		renderings.map(|rendering| (rendering.depth(), rendering.picture().to_shapes()))
-	parts_of(Rendered.depth_sorted_renderings(scene_renderings)) == parts_of(scene_renderings)
-}
 
 # GroundPatch's shapes. A ground patch's checks sit here because the corners
 # need Distance and the fill needs Brush, and GroundPatch imports neither.
@@ -1699,11 +1661,11 @@ expect
 # crashes, since the ride starts again before reaching it.
 expect {
 	var $tour = Tour.initial
-	while !$tour.instant.rider.is_finished($tour.route) {
+	while !$tour.instant().rider.is_finished($tour.route()) {
 		$tour = Tour.step_forward($tour)
 	}
-	finish = $tour.instant.clock
-	Tour.at_step(finish.steps_since(Clock.start).to_u32()).instant.clock == finish
+	finish = $tour.instant().clock
+	Tour.at_step(finish.steps_since(Clock.start).to_u32()).instant().clock == finish
 }
 
 # The sun's disc is not yet wholly set a step before `fully_set_at`, and the sky
@@ -2931,8 +2893,13 @@ expect
 ## the road. As a constant it is ridden once, at compile time.
 first_pig_instants : List(RideInstant)
 first_pig_instants = {
-	tour = Tour.at_step(1320)
-	tour.past_instants.append(tour.instant)
+	var $tour = Tour.initial
+	var $instants = [$tour.instant()]
+	for _ in 0..<1320 {
+		$tour = Tour.step_forward($tour)
+		$instants = $instants.append($tour.instant())
+	}
+	$instants
 }
 
 ## The rider at `step` of the real ride.

@@ -83,9 +83,9 @@ Piece : { layer : Layer, shapes : List(Shapes.Shape) }
 frame_step : U32
 frame_step = 1529
 
-## The ride at `frame_step`, with no history to step back through.
+## The ride at `frame_step`.
 paused_tour : Tour
-paused_tour = { ..Tour.at_step(frame_step), past_instants: [] }
+paused_tour = Tour.at_step(frame_step)
 
 ## `things` if `layer` is one of `on_layers`, else none.
 things_on : List(thing), { on_layers : List(Layer), layer : Layer } -> List(thing)
@@ -124,11 +124,11 @@ backdrop_pieces = |view| [
 
 ## The camera the ride sees through at the step on show.
 paused_camera : RiderCamera
-paused_camera = FrameView.camera_at(paused_tour.route, paused_tour.instant)
+paused_camera = FrameView.camera_at(paused_tour.route(), paused_tour.instant())
 
 ## The road ahead of the rider at the step on show.
 paused_road : RoadAhead.RoadView
-paused_road = RoadAhead.RoadView.ahead_of(paused_tour.route, paused_camera.route_place.segment_index)
+paused_road = RoadAhead.RoadView.ahead_of(paused_tour.route(), paused_camera.route_place.segment_index)
 
 ## What the camera shows at the step on show.
 paused_frame_view : FrameView
@@ -140,7 +140,7 @@ paused_scene = Scene.scene_in_view(
 	paused_road,
 	{
 		camera: { vantage: paused_camera.vantage(), cam_focal: paused_camera.cam_focal },
-		facts: FrameView.ride_facts(paused_tour.instant),
+		facts: FrameView.ride_facts(paused_tour.instant()),
 	},
 )
 
@@ -148,7 +148,7 @@ paused_scene = Scene.scene_in_view(
 ## beside the road, each with its layer.
 ground_parts : List(Piece)
 ground_parts = {
-	skyline = FrameView.skyline_shapes(paused_camera, paused_tour.instant.clock)
+	skyline = FrameView.skyline_shapes(paused_camera, paused_tour.instant().clock)
 	ground = FrameView.ground_shapes(paused_road, paused_camera)
 	[{ layer: Mountains, shapes: skyline }, { layer: Road, shapes: ground }]
 }

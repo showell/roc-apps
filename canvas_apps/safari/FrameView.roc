@@ -1,3 +1,6 @@
+## FrameView works out what the camera shows at one instant of the ride: the
+## backdrop, the ride's shapes in paint order, and the roll, from the camera it
+## places for the rider.
 import Angle
 import Clock
 import Grass
@@ -16,7 +19,8 @@ import lib.Shapes
 
 ## What the camera shows at one instant of the ride, worked out from the
 ## instant RideInstant keeps: the backdrop, the ride's shapes in paint order,
-## and the roll the camera is held at.
+## and the roll the camera is held at. It is nominal, not opaque: other
+## modules read its fields.
 FrameView := {
 	## What the ride is drawn over: the sky's colors, at the top of the frame
 	## and at the horizon, and where the sun stands in the sky, if it is in
