@@ -23,6 +23,7 @@ import lib.CanvasApp
 import lib.Input
 import lib.Shapes
 import lib.RgbColor
+import lib.Point
 import widget.PlanView
 import widget.ReadoutText
 import widget.WidgetPage
@@ -183,7 +184,7 @@ road_plan = { origin: { x: 0.0, y: 52.0 }, pixels_a_metre: 2.4 }
 
 ## Where a point on the segment falls on the canvas. The road runs left to right,
 ## so the rider's right is down the canvas.
-canvas_point : { along : Along, across : Across } -> { x : F64, y : F64 }
+canvas_point : { along : Along, across : Across } -> Point.Point
 canvas_point = |{ along, across }|
 	road_plan.canvas_point({ metres_right: along.to_metres() - left_edge_metres, metres_down: across.to_metres() })
 

@@ -20,6 +20,7 @@ import lib.Brush
 import lib.RgbColor
 import lib.CanvasApp
 import lib.Shapes
+import lib.Point
 import widget.PlanView
 import widget.ReadoutText
 import widget.WidgetPage
@@ -126,7 +127,7 @@ rider_y = 198.0
 
 ## Where `point` falls on the canvas. The rider faces up the picture, so the
 ## rider's right is the reader's right.
-canvas_point : ShownBend, RiderView.RiderPoint -> { x : F64, y : F64 }
+canvas_point : ShownBend, RiderView.RiderPoint -> Point.Point
 canvas_point = |{ canvas_x, .. }, { right, forward }| {
 	plan : PlanView
 	plan = { origin: { x: canvas_x, y: rider_y }, pixels_a_metre }

@@ -5,6 +5,7 @@
 ## button, at a spot.
 import lib.Input
 import lib.Mouse
+import lib.Point
 
 Click :: [].{
 
@@ -18,13 +19,13 @@ Click :: [].{
 	}.{
 
 		## Whether `spot` is in the area.
-		contains : Click.Area, { x : F64, y : F64 } -> Bool
+		contains : Click.Area, Point.Point -> Bool
 		contains = |area, { x, y }|
 			x >= area.left and x < area.left + area.width and y >= area.top and y < area.top + area.height
 	}
 
 	## Where this frame's click is, if there is one.
-	click_point : Input.Snapshot -> Try({ x : F64, y : F64 }, [NoClick])
+	click_point : Input.Snapshot -> Try(Point.Point, [NoClick])
 	click_point = |input|
 		if input.mouse.button_pressed(Left) {
 			{ x, y } = input.mouse.position()
@@ -34,17 +35,17 @@ Click :: [].{
 		}
 
 	## A frame's snapshot with the left button pressed just now at `spot`.
-	click_at : { x : F64, y : F64 } -> Input.Snapshot
+	click_at : Point.Point -> Input.Snapshot
 	click_at = |spot| Input.none.with_mouse(pointer_at(spot).with_button_pressed(Left))
 
 	## A frame's snapshot with the left button held at `spot` since an earlier
 	## frame.
-	held_at : { x : F64, y : F64 } -> Input.Snapshot
+	held_at : Point.Point -> Input.Snapshot
 	held_at = |spot| Input.none.with_mouse(pointer_at(spot).with_button_down(Left))
 }
 
 ## The pointer at `spot`, with no button down.
-pointer_at : { x : F64, y : F64 } -> Mouse.Snapshot
+pointer_at : Point.Point -> Mouse.Snapshot
 pointer_at = |{ x, y }| Mouse.of({ held: 0, struck: 0, at: { x: x.to_f32_wrap(), y: y.to_f32_wrap() }, wheel: 0.0 })
 
 ## An area whose edges a spot can be tried on.

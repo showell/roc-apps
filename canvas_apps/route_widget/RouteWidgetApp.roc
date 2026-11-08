@@ -9,6 +9,7 @@ import lib.CanvasApp
 import lib.Shapes
 import lib.RgbColor
 import lib.Trig
+import lib.Point
 import widget.PlanView
 import widget.ReadoutText
 import widget.WidgetPage
@@ -143,7 +144,7 @@ map_plan = {
 }
 
 ## Where `point` falls on the canvas. North is up the picture.
-canvas_point : MapPoint -> { x : F64, y : F64 }
+canvas_point : MapPoint -> Point.Point
 canvas_point = |{ east, north }|
 	map_plan.canvas_point({
 		metres_right: east - (extent.west + extent.east) / 2.0,
