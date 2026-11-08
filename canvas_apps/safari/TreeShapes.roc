@@ -27,17 +27,8 @@ TreeShapes :: [].{
 		foliage_color : RgbColor,
 	} -> Picture
 	tree_picture = |{ spot, focal_length, context }, { height, foliage_color }| {
-		base = spot.base()
-		outline = TreeShapes.tree_outline(spot, { height, focal_length })
-		inputs = {
-			base,
-			height,
-			focal_length,
-			outline,
-			foliage_color,
-			crown: crown_of(base.forward()),
-		}
-		trunk = trunk_shape(outline, trunk_finish_of(context.nearer_tree_count))
+		inputs = tier_inputs_of(spot.base(), { height, focal_length, foliage_color })
+		trunk = trunk_shape(inputs.outline, trunk_finish_of(context.nearer_tree_count))
 		Picture.from_shapes([trunk].concat(tiers.map(|tier| tier_shape(tier, inputs))))
 	}
 
@@ -118,6 +109,23 @@ TierInputs : {
 	outline : Camera.Upright,
 	foliage_color : RgbColor,
 	crown : TreeShapes.Crown,
+}
+
+## What every tier of the tree at `base` needs, its outline and its crown
+## worked out from the rest.
+tier_inputs_of : RiderView.RaisedPointAhead,
+{
+	height : Distance,
+	focal_length : Pixels,
+	foliage_color : RgbColor,
+} -> TierInputs
+tier_inputs_of = |base, { height, focal_length, foliage_color }| {
+	base,
+	height,
+	focal_length,
+	outline: Camera.upright_on_screen(base, { height, focal_length }),
+	foliage_color,
+	crown: TreeShapes.crown_of(base.forward()),
 }
 
 ## The tiers, top to bottom. Each overlaps the next.
@@ -364,14 +372,14 @@ sample_outline = Camera.upright_on_screen(
 # A lifted tree's cones measure from its foot: the ring under the bottom tier
 # sits the trunk's share of the height above the foot, which here is 2 m up.
 expect {
-	inputs = {
-		base: sample_base(Distance.metres(2.0)),
-		height: sample_height,
-		focal_length: Pixels.of(500.0),
-		outline: sample_outline,
-		foliage_color: RgbColor.of(7),
-		crown: Cones({ shade: Fraction.whole }),
-	}
+	inputs = tier_inputs_of(
+		sample_base(Distance.metres(2.0)),
+		{
+			height: sample_height,
+			focal_length: Pixels.of(500.0),
+			foliage_color: RgbColor.of(7),
+		},
+	)
 	bottom_tier = tiers.last() ?? crash "a tree has tiers"
 	want = 2.0 + 4.352 * 55.0 / 136.0
 	is_at_want = |point| (point.height().to_metres() - want).abs() <= 0.000000001
