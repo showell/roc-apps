@@ -16,11 +16,11 @@ import game.Fraction
 import game.FrameView
 import game.LitTruck
 import game.Motorcycle
-import game.Mountains
 import game.RideInstant
 import game.Rider
 import game.Route
 import game.Sky
+import game.Skyline
 import game.Speed
 import game.Steps
 import game.SunPath
@@ -250,8 +250,8 @@ expect {
 ## its own.
 skyline_height : Angle.Bearing -> FarHeight
 skyline_height = |bearing| {
-	north_or_land = Mountains.north_range_height(bearing).max(Mountains.land_height(bearing))
-	Mountains.west_range_height(bearing).max(north_or_land)
+	north_or_land = Skyline.north_range_height(bearing).max(Skyline.land_height(bearing))
+	Skyline.west_range_height(bearing).max(north_or_land)
 }
 
 ## Whether the sun, at `clock`, has sunk behind the skyline.

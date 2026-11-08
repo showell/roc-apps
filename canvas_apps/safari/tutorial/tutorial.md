@@ -873,25 +873,25 @@ New in this chapter:
 
 There are two ranges, one to the north with snow on its peaks, and a lower one to the west. A range is a record:
 
-{{code Mountains.MountainRange}}
+{{code Skyline.MountainRange}}
 
 It's measured in bearings and pixels, not metres. There's no terrain behind it. All a mountain has is a height at a bearing:
 
-{{code Mountains.range_height}}
+{{code Skyline.range_height}}
 
 A range is highest in its middle and falls to nothing at its ends. Two waves on top of that make the ridges. The rolling land in front of the ranges is a single wave of its own, in the same green as the grass.
 
 To draw a range, we go across the screen two pixels at a time and ask how high the skyline is at each bearing. The caller passes in `height_at`, a function in a record field, so one `silhouette` draws all three:
 
-{{code Mountains.silhouette}}
+{{code Skyline.silhouette}}
 
 `Mountains.mountain_shapes` paints them back to front:
 
-{{code Mountains.mountain_shapes}}
+{{code Skyline.skyline_shapes}}
 
 The rock darkens with `dusk`, the same `Fraction` that darkens the sky, and the snow goes blue. `snow_color` uses the sky's own `color_between`:
 
-{{code Mountains.snow_color}}
+{{code Skyline.snow_color}}
 
 That's nature. Next come the things people built.
 
