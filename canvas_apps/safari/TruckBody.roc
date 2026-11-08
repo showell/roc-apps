@@ -1,6 +1,6 @@
-## TruckBody draws the truck's body: the five faces of its trailer and cab,
-## and its tires. They are painted far to near, so a nearer face covers a
-## farther one.
+## TruckBody gives the shapes of the truck's body: the five faces of its
+## trailer and cab, and its tires. They are painted far to near, so a nearer
+## face covers a farther one.
 import Across
 import Along
 import Camera

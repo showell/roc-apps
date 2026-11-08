@@ -33,7 +33,7 @@ TruckShape :: [].{
 
 	## A point on the truck, in the truck's own frame: how far along the road
 	## and how far across it from where the trailer is centred, and how high
-	## above the truck's own bottom.
+	## above the road under the truck.
 	TruckPoint : {
 		along : Along,
 		across : Across,

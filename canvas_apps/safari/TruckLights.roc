@@ -1,8 +1,6 @@
-## TruckLights draws the truck's lights: the beams of its two headlights,
-## reaching along the road ahead of the cab, and its two brake lights on the
-## back of the trailer, each with a glow around it. A beam or a glow is a
-## gradient, whose colours are 0xAARRGGBB, opacity in the top byte; a brake
-## lamp is a flat 0xRRGGBB, as the body's faces are.
+## TruckLights gives the shapes of the truck's lights: the beams of its two
+## headlights, reaching along the road ahead of the cab, and its two brake
+## lights on the back of the trailer, each with a glow around it.
 import Pixels
 import Across
 import Camera
@@ -57,9 +55,8 @@ headlight_height = Distance.metres(1.0)
 headlight_inset : Distance
 headlight_inset = Distance.metres(0.3)
 
-## A beam is a vertical wedge from its lamp: half a metre tall there, and
-## 1.8 m tall, centred 0.7 m above the road, where it ends `beam_length`
-## ahead of the cab's nose.
+## A beam is a vertical wedge from its lamp, widening to where it ends
+## `beam_length` ahead of the cab's nose.
 beam_half_height_at_lamp : Distance
 beam_half_height_at_lamp = Distance.metres(0.25)
 
