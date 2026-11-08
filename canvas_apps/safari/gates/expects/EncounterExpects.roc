@@ -21,7 +21,7 @@ import game.Fraction
 import game.RiderView
 import game.Pipeline
 import game.Pixels
-import game.PosedBird
+import game.Bird
 import game.Cat
 import game.RoadAhead
 import game.Route
@@ -49,7 +49,7 @@ birds_seen_on : RoadAhead.RoadView,
 {
 	camera : Pipeline.SightingCamera,
 	encounter_timing : EncounterPlan.Timing,
-} -> List(Pipeline.Sighted(PosedBird))
+} -> List(Pipeline.Sighted(Bird))
 birds_seen_on = |road_view, { camera, encounter_timing }| {
 	rider_segment = RoadAhead.segment_at(road_view, SegmentPlace.Position.first)
 	encounter_stage = rider_segment.encounter_stage(encounter_timing)
@@ -131,7 +131,7 @@ birds_on : Segment,
 	rider_along : F64,
 	focal_length : Pixels,
 	encounter_timing : EncounterPlan.Timing,
-} -> List(Pipeline.Sighted(PosedBird))
+} -> List(Pipeline.Sighted(Bird))
 birds_on = |segment, { rider_along, focal_length, encounter_timing }|
 	birds_seen_on(
 		Fixtures.crafted_road([segment]),
@@ -146,7 +146,7 @@ birds_on = |segment, { rider_along, focal_length, encounter_timing }|
 
 ## The one bird that a rider `rider_along` metres in sees, with its flight at
 ## `encounter_timing`.
-bird_at : F64, EncounterPlan.Timing -> Pipeline.Sighted(PosedBird)
+bird_at : F64, EncounterPlan.Timing -> Pipeline.Sighted(Bird)
 bird_at = |rider_along, encounter_timing|
 	birds_on(
 		bird_segment,
@@ -155,7 +155,7 @@ bird_at = |rider_along, encounter_timing|
 		?? crash "EncounterExpects: this rider sees a bird"
 
 ## How far off a bird is: right of the camera, forward of it, and its lift.
-place_numbers : Pipeline.Sighted(PosedBird) -> List(F64)
+place_numbers : Pipeline.Sighted(Bird) -> List(F64)
 place_numbers = |bird| [
 	bird.spot.foot().right().to_metres(),
 	bird.spot.foot().forward().to_metres(),
@@ -212,7 +212,7 @@ expect
 
 ## The birds on two segments on the road ahead, the rider at the start of the
 ## first, whose bird is in flight.
-birds_on_two_segments : List(Pipeline.Sighted(PosedBird))
+birds_on_two_segments : List(Pipeline.Sighted(Bird))
 birds_on_two_segments = birds_seen_on(
 	Fixtures.crafted_road([Fixtures.going_straight_on(bird_segment), bird_segment]),
 	{ camera: Fixtures.origin_camera, encounter_timing: flight_at_step(118) },
@@ -467,7 +467,7 @@ expect {
 }
 expect flight_frame_of(18).location.lift.to_metres() > (left_top + far_top) / 2.0 + 4.0
 
-# Cat and PosedBird on screen.
+# Cat and Bird on screen.
 ## The spot `forward` ahead on the rider's own segment, `right` of the camera
 ## and `lift` off the ground.
 posed_spot_at : {
@@ -548,7 +548,7 @@ expect
 ## `bird` 110 m ahead, `right` of the camera and `lift` off the ground, through
 ## a 500 px focal length. A lift of the camera's height puts its feet on the
 ## horizon.
-bird_shapes_at : PosedBird, { right : Distance, lift : Distance } -> List(Shapes.Shape)
+bird_shapes_at : Bird, { right : Distance, lift : Distance } -> List(Shapes.Shape)
 bird_shapes_at = |bird, { right, lift }| {
 	spot = posed_spot_at({ forward: Distance.metres(110.0), right, lift })
 	bird.scenery_picture({ spot, focal_length: Pixels.of(500.0), context: {} }).to_shapes()
@@ -559,7 +559,7 @@ bird_shapes_at = |bird, { right, lift }| {
 bird_height_on_screen : Distance, Pixels -> F64
 bird_height_on_screen = |forward, focal_length| {
 	spot = posed_spot_at({ forward, right: Distance.zero, lift: Distance.zero })
-	bird : PosedBird
+	bird : Bird
 	bird = { pose: Perched }
 	anchor = StillShapes.standing_anchor(
 		{ spot, focal_length, context: {} },
@@ -629,7 +629,7 @@ expect {
 		Away(WingsUp),
 		Away(WingsDown),
 		Diving,
-	].map(PosedBird.pose_still)
+	].map(Bird.pose_still)
 	emoji_stills = [
 		EmojiStills.duck,
 		EmojiStills.elephant,

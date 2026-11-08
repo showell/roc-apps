@@ -4,7 +4,7 @@
 ## there are no video recorder buttons. A click on a small still makes it the large one, and a click
 ## on the large one shows or hides the outline of each polygon.
 import game.Pixels
-import game.PosedBird
+import game.Bird
 import game.Cat
 import game.Screen
 import game.StillShapes
@@ -22,7 +22,7 @@ import widget.WidgetPage
 StillsWidgetApp :: [].{
 
 	## A pose of the cat or of the bird, each of which has its own still.
-	Pose : [Cat(Cat.CatPose), Bird(PosedBird.BirdPose)]
+	Pose : [Cat(Cat.CatPose), Bird(Bird.BirdPose)]
 
 	## The whole state of the widget: the pose shown large, and whether the
 	## outlines of its still's polygons show.
@@ -59,7 +59,7 @@ StillCell : {
 	anchor : StillShapes.Anchor,
 }
 
-bird_pose_name : PosedBird.BirdPose -> Str
+bird_pose_name : Bird.BirdPose -> Str
 bird_pose_name = |pose|
 	match pose {
 		Perched => "Perched"
@@ -83,7 +83,7 @@ pose_still : StillsWidgetApp.Pose -> Still
 pose_still = |pose|
 	match pose {
 		Cat(cat_pose) => Cat.pose_still(cat_pose)
-		Bird(bird_pose) => PosedBird.pose_still(bird_pose)
+		Bird(bird_pose) => Bird.pose_still(bird_pose)
 	}
 
 cat_poses : List(StillsWidgetApp.Pose)

@@ -4,7 +4,7 @@
 ## the step of the ride it is, and the start the ride plans for the flight, so the
 ## flight plays forward and backward. The picture stays still, looking up the
 ## road from a place short of the first tree, so the bird shrinks as it flies
-## off. It is drawn by Safari's own Tree and PosedBird. Below it, the buttons
+## off. It is drawn by Safari's own Tree and Bird. Below it, the buttons
 ## and four lines of text that say what BirdFlight makes of the gap.
 import game.Across
 import game.Angle
@@ -14,7 +14,7 @@ import game.BirdFlight
 import game.Clock
 import game.Distance
 import game.Lens
-import game.PosedBird
+import game.Bird
 import game.Geom
 import game.Polygon
 import game.Pipeline
@@ -160,7 +160,7 @@ tree_shapes = |tree| WidgetPage.resting_lens_shapes(
 ## The bird as `gap` finds it, drawn by Safari's own stills.
 bird_shapes : Distance -> List(Shapes.Shape)
 bird_shapes = |gap| {
-	placed_bird : Geom.Placed(PosedBird)
+	placed_bird : Geom.Placed(Bird)
 	placed_bird = Animation.placed_instant(World.first_bird_flight.instant_at(stage_at(gap)))
 	WidgetPage.resting_lens_shapes(sighting_from_eye(placed_bird), {})
 }
@@ -178,7 +178,7 @@ status_lines = |gap| {
 	]
 }
 
-pose_name : PosedBird.BirdPose -> Str
+pose_name : Bird.BirdPose -> Str
 pose_name = |pose|
 	match pose {
 		Perched => "Perched"
@@ -187,7 +187,7 @@ pose_name = |pose|
 		Diving => "Diving"
 	}
 
-beat_name : PosedBird.WingBeat -> Str
+beat_name : Bird.WingBeat -> Str
 beat_name = |beat|
 	match beat {
 		WingsUp => "wings up"

@@ -1,4 +1,4 @@
-## A Roc bird at one moment of its flight: how it looks. The Roc bird is
+## The Roc bird as the scene draws it this frame: how it looks. The Roc bird is
 ## roc-lang.org's logo, sitting on treetops beside the road and flying off as
 ## the rider comes. BirdFlight says where a bird is and how it looks,
 ## EncounterSighting finds the birds in view, and BirdStills holds their
@@ -9,7 +9,7 @@ import StillShapes
 import Still
 import Distance
 
-PosedBird := { pose : PosedBird.BirdPose }.{
+Bird := { pose : Bird.BirdPose }.{
 
 	## Where the wings are in a beat.
 	WingBeat : [WingsUp, WingsDown]
@@ -18,27 +18,27 @@ PosedBird := { pose : PosedBird.BirdPose }.{
 	## as it flies off; and dropping onto its tree.
 	BirdPose : [
 		Perched,
-		Side(PosedBird.WingBeat),
-		Away(PosedBird.WingBeat),
+		Side(Bird.WingBeat),
+		Away(Bird.WingBeat),
 		Diving,
 	]
 
-	scenery_height : PosedBird -> Distance
+	scenery_height : Bird -> Distance
 	scenery_height = |_bird| bird_height
 
 	## A bird on screen, its feet where it is.
-	scenery_picture : PosedBird, Picture.Setting({}) -> Picture
+	scenery_picture : Bird, Picture.Setting({}) -> Picture
 	scenery_picture = |bird, setting|
 		Picture.from_shapes(
 			# As drawn, never mirrored: BirdFlight's `is_far_side` says why.
 			StillShapes.standing_still_shapes(
 				setting,
-				{ height: bird_height, still: PosedBird.pose_still(bird.pose) },
+				{ height: bird_height, still: Bird.pose_still(bird.pose) },
 			),
 		)
 
 	## The drawing for a pose.
-	pose_still : PosedBird.BirdPose -> Still
+	pose_still : Bird.BirdPose -> Still
 	pose_still = |pose|
 		match pose {
 			Perched => BirdStills.perched_still

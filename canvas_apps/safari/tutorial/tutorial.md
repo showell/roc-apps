@@ -2304,7 +2304,7 @@ Play it, and the gap falls from 75 metres to 0. The bird sits on the tip of the 
 New in this chapter:
 
 - Roc: record update, tags inside tags, opening a `Try` by hand, `match` as an expression
-- Modules: `BirdFlight`, `CrossingSighting`, `PosedBird`
+- Modules: `BirdFlight`, `CrossingSighting`, `Bird`
 
 The modules around `BirdFlight`
 ```dot
@@ -2313,11 +2313,11 @@ digraph bird {
   BirdFlight [style=bold];
   World -> BirdFlight;
   CrossingSighting -> BirdFlight;
-  CrossingSighting -> PosedBird;
+  CrossingSighting -> Bird;
   CrossingSighting -> Animation;
-  PosedBird -> BirdFlight;
-  PosedBird -> BirdStills;
-  PosedBird -> StillShapes;
+  Bird -> BirdFlight;
+  Bird -> BirdStills;
+  Bird -> StillShapes;
   BirdStills -> BirdFlight;
   BirdStills -> Stills;
   StillShapes -> Stills;
@@ -2325,7 +2325,7 @@ digraph bird {
 }
 ```
 
-The family has the cat's shape. `BirdFlight` says what a bird does and imports nothing that draws it. `CrossingSighting` finds it, `PosedBird` draws it, and `BirdStills` holds its pictures. `Animation` is underneath, and most of what the bird does is ask `Animation` for something.
+The family has the cat's shape. `BirdFlight` says what a bird does and imports nothing that draws it. `CrossingSighting` finds it, `Bird` draws it, and `BirdStills` holds its pictures. `Animation` is underneath, and most of what the bird does is ask `Animation` for something.
 
 `BirdFlight` does one addition, a tree's place plus `shortest_hop`, the shortest flight a bird will make. The rest is constants, tags and one timeline.
 
@@ -2389,9 +2389,9 @@ That `Arc` is a tag. `path_spot` is where it's played. `{ ..on_line, lift: ... }
 
 The stills are data too. Nested tags get checked all the way down, so a `match` that forgets `Away(WingsDown)` is a compile-time error. The function reads as a table, and there's nothing else in it:
 
-{{code PosedBird.pose_still}}
+{{code Bird.pose_still}}
 
-`PosedBird.scenery_picture` hands that to `StillShapes.still_shapes`, the function that also draws a cow. A bird's feet reach the screen through `Camera.project`, as a tree's top does, and the math layer chapter shows how. That's the drawing.
+`Bird.scenery_picture` hands that to `StillShapes.still_shapes`, the function that also draws a cow. A bird's feet reach the screen through `Camera.project`, as a tree's top does, and the math layer chapter shows how. That's the drawing.
 
 ### Finding a tree
 

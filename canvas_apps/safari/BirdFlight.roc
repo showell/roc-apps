@@ -11,7 +11,7 @@ import EncounterPlan
 import Distance
 import Easing
 import Fraction
-import PosedBird
+import Bird
 import Steps
 import Trees
 
@@ -19,7 +19,7 @@ import Trees
 BirdFlight := { from : Trees.RoadsideTree, to : Trees.RoadsideTree }.{
 
 	## A bird at one instant: how it looks, and where it is.
-	BirdInstant : Animation.Instant(PosedBird.BirdPose)
+	BirdInstant : Animation.Instant(Bird.BirdPose)
 
 	## What the ride plans a flight by: its length, and the gap from the rider
 	## to the tree it left at which it has landed.
@@ -102,7 +102,7 @@ sitting_on = |tree| { pose: Perched, location: tree_top(tree) }
 ## How the bird looks through a flight, a frame a step: a flap side on as it
 ## takes off, seven flaps seen from behind, and a flap's length of diving. The
 ## seven is chosen by eye.
-flight_poses : List(PosedBird.BirdPose)
+flight_poses : List(Bird.BirdPose)
 flight_poses = [
 	flap_poses({ up: Side(WingsUp), down: Side(WingsDown) }),
 	List.repeat(flap_poses({ up: Away(WingsUp), down: Away(WingsDown) }), 7).join(),
@@ -112,7 +112,7 @@ flight_poses = [
 ## The whole of a flight: `flight_poses`, on one smooth path that rises in
 ## the middle, from the tip of the tree it leaves to the tip of the one it
 ## lands on.
-flight_timeline : BirdFlight -> Animation.Timeline(PosedBird.BirdPose, PosedBird.BirdPose)
+flight_timeline : BirdFlight -> Animation.Timeline(Bird.BirdPose, Bird.BirdPose)
 flight_timeline = |{ from, to }| {
 	ends = { from: tree_top(from), to: tree_top(to) }
 	last_frame = (flight_poses.len() - 1).to_f64()
@@ -132,7 +132,7 @@ tree_top : Trees.RoadsideTree -> Animation.Location
 tree_top = |tree| { road_point: tree.road_point, lift: tree.kind.scenery_height() }
 
 ## One flap of the wings: `up` for its first half and `down` for its second.
-flap_poses : { up : PosedBird.BirdPose, down : PosedBird.BirdPose } -> List(PosedBird.BirdPose)
+flap_poses : { up : Bird.BirdPose, down : Bird.BirdPose } -> List(Bird.BirdPose)
 flap_poses = |{ up, down }| {
 	half_up = List.repeat(up, frames_a_half_flap)
 	half_up.concat(List.repeat(down, frames_a_half_flap))

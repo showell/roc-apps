@@ -6,7 +6,7 @@
 ## holds one encounter at most, a cat's or a bird's.
 import Animation
 import Geom
-import PosedBird
+import Bird
 import Cat
 import RoadAhead
 import SegmentPlace
@@ -27,7 +27,7 @@ EncounterPoses :: [].{
 
 	## The birds on `road`, with the encounter on the rider's segment at
 	## `encounter_stage`, in the order of `RoadAhead.segments_in_view`.
-	bird_poses : RoadAhead.RoadView, Animation.Stage -> List(EncounterPoses.PosedAnimal(PosedBird))
+	bird_poses : RoadAhead.RoadView, Animation.Stage -> List(EncounterPoses.PosedAnimal(Bird))
 	bird_poses = |road, encounter_stage|
 		RoadAhead.segments_in_view(road).keep_oks(
 			|in_view| segment_bird({ in_view, encounter_stage }),
@@ -50,7 +50,7 @@ segment_cat = |{ in_view, encounter_stage }|
 segment_bird : {
 	in_view : RoadAhead.SegmentInView,
 	encounter_stage : Animation.Stage,
-} -> Try(EncounterPoses.PosedAnimal(PosedBird), [NoPose])
+} -> Try(EncounterPoses.PosedAnimal(Bird), [NoPose])
 segment_bird = |{ in_view, encounter_stage }|
 	match in_view.segment.encounter {
 		BirdHere(flight) =>

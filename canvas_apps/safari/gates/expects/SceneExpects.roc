@@ -10,7 +10,7 @@ import game.Distance
 import game.Picture
 import game.Pipeline
 import game.Pixels
-import game.PosedBird
+import game.Bird
 import game.RoadAhead
 import game.Scene
 import game.SegmentPlace
@@ -155,7 +155,7 @@ green_tree_ahead : F64 -> Pipeline.Sighted(Conifer)
 green_tree_ahead = |forward| sighted_ahead(Conifer.Green, forward)
 
 ## A perched bird `forward` metres straight ahead of the route's start.
-perched_bird_ahead : F64 -> Pipeline.Sighted(PosedBird)
+perched_bird_ahead : F64 -> Pipeline.Sighted(Bird)
 perched_bird_ahead = |forward| sighted_ahead({ pose: Perched }, forward)
 
 ## A scene of a lone tree `forward` metres ahead.
