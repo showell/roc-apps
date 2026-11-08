@@ -13,6 +13,7 @@ import game.Distance
 import game.EncounterReaction
 import game.Fraction
 import game.FrameView
+import game.LitTruck
 import game.Motorcycle
 import game.Mountains
 import game.RideInstant
@@ -224,6 +225,23 @@ first_step_where = |holds| {
 		$clock = $clock.next()
 	}
 	$clock
+}
+
+## Whether the truck's headlights are on at `clock`.
+headlights_on : Clock -> Bool
+headlights_on = |clock| {
+	lit_truck = LitTruck.at(NotSlowing, Sky.darkness_at(clock))
+	lit_truck == { headlights: On, brake_lights: Off }
+}
+
+# The headlights come on at step 3,555, the first step the sun is behind the
+# mountains, and are off the step before. Their threshold was measured to keep
+# that step, so this holds the threshold and the step together.
+expect {
+	onset = Clock.at_step(3555)
+	headlights_on(onset)
+		and !headlights_on(onset.minus(Steps.one_step))
+		and first_step_where(Mountains.is_sun_behind_mountains) == onset
 }
 
 ## The climax of the sunset: the step the sun's lower edge meets the west range,
