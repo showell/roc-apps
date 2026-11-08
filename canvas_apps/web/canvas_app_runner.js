@@ -227,6 +227,11 @@ function bindApp(exports) {
   }
   return {
     ...exports,
+    // The tick's input arrives as named fields, and this is the one call that
+    // puts them in the export's order. safari/gates/input_bits.shale holds
+    // that order to host.zig's and lib/WasmApp.roc's.
+    advance: ({ key_held, key_struck, button_held, button_struck, x, y, wheel }) =>
+      exports.advance(key_held, key_struck, button_held, button_struck, x, y, wheel),
     // **ONE CALL, SO THERE IS NO ORDER TO GET WRONG.** `computeFrame` is the
     // effect and answers where it put the answer: two words, the frame's
     // start and its length. Reading the start from a second export is what
@@ -353,7 +358,15 @@ async function main(show) {
   const step = (now) => {
     const keys = keyboard();
     const mouse = pointer();
-    game.advance(keys.held, keys.struck, mouse.held, mouse.struck, mouse.x, mouse.y, mouse.wheel);
+    game.advance({
+      key_held: keys.held,
+      key_struck: keys.struck,
+      button_held: mouse.held,
+      button_struck: mouse.struck,
+      x: mouse.x,
+      y: mouse.y,
+      wheel: mouse.wheel,
+    });
     const rung = game.sounds();
     if (rung) {
       ringing.at = now;
@@ -435,7 +448,7 @@ async function main(show) {
   };
 
   for (let press = pressesToOpen(show); press > 0; press--) {
-    game.advance(0, KEY_BIT.ArrowRight, 0, 0, 0, 0, 0);
+    game.advance({ key_held: 0, key_struck: KEY_BIT.ArrowRight, button_held: 0, button_struck: 0, x: 0, y: 0, wheel: 0 });
   }
 
   timer?.loaded(performance.now() - loadStart);

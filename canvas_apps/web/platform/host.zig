@@ -27,7 +27,7 @@ const RocOps = builtins.host_abi.RocOps;
 const RocList = builtins.list.RocList;
 
 extern fn roc_init() callconv(.c) ?[*]u8;
-extern fn roc_advance(model: ?[*]u8, held: u32, struck: u32, buttons: u32, clicks: u32, x: f32, y: f32, wheel: f32) callconv(.c) ?[*]u8;
+extern fn roc_advance(model: ?[*]u8, key_held: u32, key_struck: u32, button_held: u32, button_struck: u32, x: f32, y: f32, wheel: f32) callconv(.c) ?[*]u8;
 extern fn roc_sounds(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_tone_count(model: ?[*]u8) callconv(.c) u32;
 extern fn roc_tone_freq(model: ?[*]u8, index: u32) callconv(.c) u32;
@@ -156,9 +156,9 @@ pub export fn computeFrame() u32 {
 // down and the keys struck, the same pair for mouse buttons, then where the
 // pointer is and how far the wheel turned. The page's event loop owns all of
 // it and packs it; nothing here remembers anything between ticks.
-pub export fn advance(held: u32, struck: u32, buttons: u32, clicks: u32, x: f32, y: f32, wheel: f32) void {
+pub export fn advance(key_held: u32, key_struck: u32, button_held: u32, button_struck: u32, x: f32, y: f32, wheel: f32) void {
     ensure();
-    model = roc_advance(model, held, struck, buttons, clicks, x, y, wheel);
+    model = roc_advance(model, key_held, key_struck, button_held, button_struck, x, y, wheel);
 }
 
 // How big a frame is, in the game's own coordinates. The page sizes its

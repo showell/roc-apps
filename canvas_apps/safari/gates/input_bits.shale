@@ -1,8 +1,10 @@
--- This holds the page's input bits equal to lib's. lib/Keys.roc and
+-- This holds the page's input equal to lib's. lib/Keys.roc and
 -- lib/Mouse.roc number each key and button by hand in their `bit`, and
 -- web/canvas_app_runner.js copies the numbers into KEY_BIT and MOUSE_BIT. A
 -- number that differs would bind the wrong key, silently, so this reads both
--- sides and fails on any difference.
+-- sides and fails on any difference. It also holds `Keys.all`, which the
+-- native runner walks, to the keys `bit` numbers, and the names of the tick's
+-- seven numbers, in order, equal on every side of the wasm edge.
 --
 --   cd <roc-apps checkout> && shale canvas_apps/safari/gates/input_bits.shale
 --
@@ -102,10 +104,133 @@ function differences(what, roc, page, rename)
   return wrong
 end
 
+-- The tags of the list `all` in `path`, in order.
+function roc_all(path)
+  local nodes = roc_tree({path})[1].nodes
+  for n in nodes do
+    if n.kind == "p-ident" and get(n, "raw", "") == "all" and nodes[n.parent].kind == "s-decl" then
+      local list = nodes[nodes[n.parent].kids[2]]
+      if list.kind ~= "e-list" then fail("input_bits: " .. path .. "'s all is not a list") end
+      local tags = {}
+      for k in list.kids do
+        if nodes[k].kind ~= "e-tag" then fail("input_bits: " .. path .. "'s all holds something that isn't a tag") end
+        tags[#tags + 1] = nodes[k].raw
+      end
+      return tags
+    end
+  end
+  fail("input_bits: no all in " .. path)
+end
+
+-- How many ways Keys.all and the branches of `bit` differ: a key in one and
+-- not the other, or a key twice in `all`; each is printed.
+function all_differences(all, bits)
+  local wrong = 0
+  local seen = {}
+  for tag in all do
+    if has_key(seen, tag) then
+      wrong = wrong + 1
+      print("FAIL keys: Keys.all names " .. tag .. " twice")
+    end
+    seen[tag] = true
+    if not has_key(bits, tag) then
+      wrong = wrong + 1
+      print("FAIL keys: Keys.all names " .. tag .. ", and bit has no branch for it")
+    end
+  end
+  for tag in sort(keys(bits)) do
+    if not has_key(seen, tag) then
+      wrong = wrong + 1
+      print("FAIL keys: bit has a branch for " .. tag .. ", and Keys.all leaves it out")
+    end
+  end
+  return wrong
+end
+
+-- The tick's seven numbers cross three languages by position, so a swap of two
+-- same-typed ones (the key bits for the button bits, say) would type-check on
+-- every side and bind the wrong input. Each side names them, and this holds
+-- the names, in order, equal everywhere.
+const HOST = "canvas_apps/web/platform/host.zig"
+const WASM_APP = "canvas_apps/lib/WasmApp.roc"
+const PAGE_CHECK = "canvas_apps/web/page_check.mjs"
+
+-- The names in a comma-separated list, each cut at its first `:` (a Zig
+-- parameter's type), with `skip` names dropped from the front.
+function names_in(list_text, skip)
+  local names = {}
+  local i = 0
+  for part in split(list_text, ",") do
+    i = i + 1
+    if i > skip then names[#names + 1] = trim(split(part, ":")[1]) end
+  end
+  return names
+end
+
+-- The text between `open` and the next `)` in `path`'s text, or a failure.
+function inside(text, path, open)
+  local body = between(text, open, ")")
+  if body == nil then fail("input_bits: no `" .. open .. "` in " .. path) end
+  return body
+end
+
+-- The parameters after the boxed model of the lambda that WasmApp.program
+-- gives as `model_at_next_step`, read with Roc's parser.
+function wasm_app_names()
+  local nodes = roc_tree({WASM_APP})[1].nodes
+  for n in nodes do
+    if n.kind == "field" and get(n, "field", "") == "model_at_next_step" and nodes[n.kids[1]].kind == "e-lambda" then
+      local lambda = nodes[n.kids[1]]
+      local args = nodes[lambda.kids[1]]
+      if args.kind ~= "args" then fail("input_bits: " .. WASM_APP .. "'s model_at_next_step lambda has no args") end
+      local names = {}
+      local i = 0
+      for k in args.kids do
+        i = i + 1
+        if nodes[k].kind ~= "p-ident" then fail("input_bits: a parameter of " .. WASM_APP .. "'s model_at_next_step that isn't a name") end
+        if i > 1 then names[#names + 1] = nodes[k].raw end
+      end
+      return names
+    end
+  end
+  fail("input_bits: no model_at_next_step lambda in " .. WASM_APP)
+end
+
+-- How many of `sides` name the tick's numbers differently from the first.
+function advance_differences(sides)
+  local wrong = 0
+  local first = sides[1]
+  local want = join(first.names, ", ")
+  for side in sides do
+    local got = join(side.names, ", ")
+    if got ~= want then
+      wrong = wrong + 1
+      print("FAIL advance: " .. side.where .. " takes (" .. got .. "), and " .. first.where .. " takes (" .. want .. ")")
+    end
+  end
+  return wrong
+end
+
 local runner = read(RUNNER)
+local host = read(HOST)
 local keys_roc = roc_bits(KEYS)
 local mouse_roc = roc_bits(MOUSE)
+local keys_all = roc_all(KEYS)
 local wrong = differences("keys", keys_roc, js_bits(runner, "KEY_BIT"), true)
 wrong = wrong + differences("mouse", mouse_roc, js_bits(runner, "MOUSE_BIT"), false)
-print("input_bits: " .. #keys(keys_roc) .. " keys and " .. #keys(mouse_roc) .. " buttons, " .. wrong .. " different")
-if wrong > 0 then fail("input_bits: the page's bits are not lib's") end
+wrong = wrong + all_differences(keys_all, keys_roc)
+local sides = {
+  {where = HOST .. "'s advance", names = names_in(inside(host, HOST, "pub export fn advance("), 0)},
+  {where = HOST .. "'s roc_advance", names = names_in(inside(host, HOST, "extern fn roc_advance("), 1)},
+  {where = HOST .. "'s call of roc_advance", names = names_in(inside(host, HOST, "model = roc_advance("), 1)},
+  {where = WASM_APP .. "'s model_at_next_step", names = wasm_app_names()},
+  {where = RUNNER .. "'s call of exports.advance", names = names_in(inside(runner, RUNNER, "exports.advance("), 0)},
+  {where = PAGE_CHECK .. "'s tellingAdvance", names = names_in(inside(read(PAGE_CHECK), PAGE_CHECK, "(advance) => ("), 0)},
+}
+if #sides[1].names ~= 7 then
+  wrong = wrong + 1
+  print("FAIL advance: " .. sides[1].where .. " takes " .. #sides[1].names .. " numbers, not 7")
+end
+wrong = wrong + advance_differences(sides)
+print("input_bits: " .. #keys(keys_roc) .. " keys and " .. #keys(mouse_roc) .. " buttons, Keys.all of " .. #keys_all .. ", advance named alike on " .. #sides .. " sides, " .. wrong .. " different")
+if wrong > 0 then fail("input_bits: the page's input is not lib's") end

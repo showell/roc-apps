@@ -35,8 +35,8 @@ WasmApp :: [].{
 		sounds = game.sounds
 		{
 			init: |{}| Box.box(game.init),
-			model_at_next_step: |boxed_model, held, struck, buttons, clicks, x, y, wheel|
-				Box.box(model_at_next_step(Box.unbox(boxed_model), Input.of({ held, struck, mouse: Mouse.of({ held: buttons, struck: clicks, at: { x, y }, wheel }) }), seconds_a_step)),
+			model_at_next_step: |boxed_model, key_held, key_struck, button_held, button_struck, x, y, wheel|
+				Box.box(model_at_next_step(Box.unbox(boxed_model), Input.of({ held: key_held, struck: key_struck, mouse: Mouse.of({ held: button_held, struck: button_struck, at: { x, y }, wheel }) }), seconds_a_step)),
 			frame_shapes: |boxed_model| frame_shapes(Box.unbox(boxed_model)),
 			# The host hands the frame back and Roc drops it. Releasing a
 			# List(Shape) means decrementing each element's inner lists, which

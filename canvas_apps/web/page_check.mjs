@@ -251,10 +251,10 @@ sandbox.globalThis = sandbox;
 
 // What the runner last told the app, with the strikes since checkPointer asked.
 const told = { steps: 0, held: 0, struck: 0, x: 0, y: 0 };
-const tellingAdvance = (advance) => (keysHeld, keysStruck, held, struck, x, y, wheel) => {
+const tellingAdvance = (advance) => (key_held, key_struck, button_held, button_struck, x, y, wheel) => {
   told.steps++;
-  Object.assign(told, { held, x, y, struck: told.struck | struck });
-  return advance(keysHeld, keysStruck, held, struck, x, y, wheel);
+  Object.assign(told, { held: button_held, x, y, struck: told.struck | button_struck });
+  return advance(key_held, key_struck, button_held, button_struck, x, y, wheel);
 };
 
 // The one thing a page cannot do here: stream a module over fetch.
