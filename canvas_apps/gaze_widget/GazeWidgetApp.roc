@@ -14,6 +14,7 @@ import game.Gawking
 import game.Gaze
 import game.Geom
 import game.Rider
+import game.RiderMind
 import game.Segment
 import game.Steps
 import game.Tour
@@ -145,7 +146,7 @@ phase_of = |rider|
 	if !Gawking.is_gawking(rider.motorcycle, pig_segment) {
 		EyesOnRoad
 	} else {
-		match Gaze.desired_gaze(rider.motorcycle, pig_segment) {
+		match RiderMind.gaze_target(rider.motorcycle, pig_segment) {
 			OnPig(_) => LookingAtPig
 			OnRoad if rider.eyes.gaze_yaw == Angle.straight_ahead => EyesBack
 			OnRoad => TurningBack

@@ -1847,7 +1847,7 @@ The chain from `desired_gaze` is the look, and `gawk_brake` is the gawking. Noth
 
 {{code RiderEyes.eyes_at_next_step}}
 
-Choosing where to look comes first:
+Choosing where to look comes first. The rider asks `RiderMind.gaze_target`, since every decision is `RiderMind`'s, and it hands the question to the gaze's own rule:
 
 {{code Gaze.desired_gaze}}
 

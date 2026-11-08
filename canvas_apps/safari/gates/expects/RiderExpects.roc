@@ -22,6 +22,7 @@ import game.Pixels
 import game.RideInstant
 import game.RiderCamera
 import game.Rider
+import game.RiderMind
 import game.Route
 import game.Segment
 import game.Speed
@@ -522,7 +523,7 @@ expect
 ## How far this motorcycle on the distracting segment wants to turn to the pig.
 turn_to_pig : Motorcycle -> F64
 turn_to_pig = |motorcycle|
-	match Gaze.desired_gaze(motorcycle, distracting_segment) {
+	match RiderMind.gaze_target(motorcycle, distracting_segment) {
 		OnPig(turn) => turn.to_radians()
 		OnRoad => crash "RiderExpects: no pig in sight"
 	}
@@ -533,12 +534,12 @@ expect {
 	far > 0.0 and near > far
 }
 
-expect Gaze.desired_gaze(motorcycle_at(200.0), pigless_segment) == OnRoad
-expect Gaze.desired_gaze(motorcycle_at(100.0), distracting_segment) == OnRoad
+expect RiderMind.gaze_target(motorcycle_at(200.0), pigless_segment) == OnRoad
+expect RiderMind.gaze_target(motorcycle_at(100.0), distracting_segment) == OnRoad
 
 # The gawking outlasts the look: at 341 m the rider still gawks, but no longer
 # looks.
-expect Gaze.desired_gaze(motorcycle_at(341.0), distracting_segment) == OnRoad
+expect RiderMind.gaze_target(motorcycle_at(341.0), distracting_segment) == OnRoad
 
 ## A motorcycle 100 m short of the pig, turned so the pig is `degrees` off.
 motorcycle_with_pig_off : F64 -> Motorcycle
@@ -557,7 +558,7 @@ motorcycle_with_pig_off = |degrees| {
 ## the pig.
 is_looking : Motorcycle -> Bool
 is_looking = |motorcycle|
-	match Gaze.desired_gaze(motorcycle, distracting_segment) {
+	match RiderMind.gaze_target(motorcycle, distracting_segment) {
 		OnPig(_) => True
 		OnRoad => False
 	}
