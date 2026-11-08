@@ -196,7 +196,7 @@ brake_shapes = |truck, lamp_sides| {
 			},
 		).map(|corner| TruckShape.raised_point_on_truck(truck, corner))
 	glow = [brake_glow(truck, lamp)].keep_oks(|shape| shape)
-	match TruckShape.truck_polygon(truck, { color: brake_color, corners: lamp }) {
+	match Camera.clipped_polygon({ color: brake_color, corners: lamp }, truck.cam_focal) {
 		Ok(lamp_polygon) => glow.append(lamp_polygon)
 		Err(BehindCamera) => glow
 	}

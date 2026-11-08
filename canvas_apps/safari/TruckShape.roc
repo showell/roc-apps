@@ -1,14 +1,12 @@
 ## A truck's shape: its size, the box it fills on the road, and where a
 ## point on it lands in the rider's view. TruckBody and TruckLights build
-## their polygons from these, and `truck_polygon` makes a shape of one.
-import Camera
+## their polygons from these.
 import Distance
 import RoadAhead
 import Fraction
 import Geom
 import EarthCurve
 import Picture
-import lib.Shapes
 
 TruckShape :: [].{
 
@@ -145,11 +143,6 @@ TruckShape :: [].{
 	circle_angles = |sides| List.from_iter(
 		I64.until(0, sides),
 	).map(|corner| corner.to_f64() / sides.to_f64() * F64.tau)
-
-	## A flat-coloured polygon on the truck, cut at the near plane and
-	## projected, unless it's wholly behind the camera.
-	truck_polygon : TruckSetting, Camera.FlatPolygon -> Try(Shapes.Shape, [BehindCamera])
-	truck_polygon = |truck, polygon| Camera.clipped_polygon(polygon, truck.cam_focal)
 }
 
 ## How a truck is drawn: its spot, the camera's lens, and the road and vantage
