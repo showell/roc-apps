@@ -14,7 +14,6 @@ import game.EncounterReaction
 import game.FarHeight
 import game.Fraction
 import game.FrameView
-import game.LitTruck
 import game.Motorcycle
 import game.RideInstant
 import game.Rider
@@ -25,6 +24,7 @@ import game.Speed
 import game.Steps
 import game.SunPath
 import game.Tour
+import game.Truck
 import game.World
 
 RideExpects :: [].{}
@@ -231,7 +231,7 @@ first_step_where = |holds| {
 ## Whether the truck's headlights are on at `clock`.
 headlights_on : Clock -> Bool
 headlights_on = |clock| {
-	lit_truck = LitTruck.at(NotSlowing, Sky.darkness_at(clock))
+	lit_truck = Truck.at(NotSlowing, Sky.darkness_at(clock))
 	lit_truck == { headlights: On, brake_lights: Off }
 }
 

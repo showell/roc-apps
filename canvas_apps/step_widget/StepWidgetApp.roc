@@ -8,10 +8,10 @@ import game.Angle
 import game.Clock
 import game.Distance
 import game.Geom
-import game.LitTruck
 import game.RideInstant
 import game.Sky
 import game.Tour
+import game.Truck
 import game.World
 import lib.Brush
 import lib.CanvasApp
@@ -286,7 +286,7 @@ status_lines = |model| {
 	rider_speed = ReadoutText.tenths_text(rider.motorcycle.speed.to_metres_a_step())
 	truck_along = ReadoutText.tenths_text(truck.route_position.to_metres())
 	truck_speed = ReadoutText.tenths_text(truck.speed.to_metres_a_step())
-	brake_lights = LitTruck.at(truck.pace, Sky.darkness_at(clock)).brake_lights
+	brake_lights = Truck.at(truck.pace, Sky.darkness_at(clock)).brake_lights
 	[
 		"clock: step ${clock.to_str()}",
 		"rider: segment ${rider_segment}, ${rider_along} m, speed ${rider_speed}",

@@ -93,7 +93,7 @@ digraph system {
   app [label="the app\nweb.roc, SafariApp, Tour", style=dashed];
   subgraph cluster_ride {
     label="the ride";
-    Rider; Truck; World;
+    Rider; TruckJourney; World;
     critters [label="the critters\nCat, BirdFlight, Animation", style=dashed];
     scenery [label="the scenery\nTrees, Cows, Pigs", style=dashed];
   }
@@ -105,7 +105,7 @@ digraph system {
   }
   app -> RideInstant;
   RideInstant -> Rider;
-  RideInstant -> Truck;
+  RideInstant -> TruckJourney;
   Rider -> World;
   World -> critters;
   World -> scenery;
@@ -121,7 +121,7 @@ New in this chapter:
 - Roc: imports that can't form a cycle
 - Modules: `SafariApp`, `Scene`, `SceneShapes`, `CrossingSighting`
 
-There are two halves. The ride is `Rider`, `Truck` and `World`. `World` puts the route together from its scenery and critters. Nothing in the ride knows anything about drawing.
+There are two halves. The ride is `Rider`, `TruckJourney` and `World`. `World` puts the route together from its scenery and critters. Nothing in the ride knows anything about drawing.
 
 The view is everything that turns the ride into a picture. The sightings work out what's visible, and the drawing code makes its shapes. The dotted arrow shows the view reading the ride. No arrow goes the other way.
 
@@ -165,7 +165,7 @@ At step 1,570 of the ride, a cat is frozen in the lane. This is what `CrossingSi
 
 That's a sighting: where the rider sees something, and how it should look.
 
-Most things in the view come in pairs, and the names say which half is which: `CrossingSighting` and `Cat`, `TreeSighting` and `TreeShapes`, `TowerSighting` and `Tower`, `TruckSighting` and `LitTruck`.
+Most things in the view come in pairs, and the names say which half is which: `CrossingSighting` and `Cat`, `TreeSighting` and `TreeShapes`, `TowerSighting` and `Tower`, `TruckSighting` and `Truck`.
 
 A sighting answers one question each frame: which of these can the rider see right now, and how should each one look? `CrossingSighting` goes through the stretches of road ahead, which Safari Ride calls segments, asks `Cat` where it is, works out where that lands in the rider's view, and drops any cat behind the camera or too small to matter. What it hands back is a plain record with no drawing in it:
 
@@ -1569,7 +1569,7 @@ digraph stepped {
   node [shape=box, fontname="Helvetica"];
   RideInstant [style=bold];
   RideInstant -> RiderMind;
-  RideInstant -> Truck;
+  RideInstant -> TruckJourney;
   RideInstant -> Rider;
   RiderMind -> Bike;
   RiderMind -> Throttle;
@@ -1577,7 +1577,7 @@ digraph stepped {
   RiderMind -> Gaze;
   RiderMind -> Rider;
   RiderMind -> VehicleLimits;
-  Truck -> VehicleLimits;
+  TruckJourney -> VehicleLimits;
   Throttle -> Gaze;
   Throttle -> VehicleLimits;
   LeanSearch -> Bike;
@@ -1588,7 +1588,7 @@ Here's the step again, this time whole. Its body is a block: names, then a recor
 
 {{code RideInstant.next}}
 
-`Clock.next`, `Rider.next` and `Truck.truck_at_next_step` all have the same shape: a value goes in, and the next value comes out. Call that *the step function*. There's no mutable rider being nudged. There's a rider, and another rider one step on.
+`Clock.next`, `Rider.next` and `TruckJourney.truck_at_next_step` all have the same shape: a value goes in, and the next value comes out. Call that *the step function*. There's no mutable rider being nudged. There's a rider, and another rider one step on.
 
 Stepping has a cost, which shows up when we compare it with the sun:
 
@@ -1747,7 +1747,7 @@ Each limit takes the lower of two opaque `Acceleration`s with `min`. `NoAccelera
 
 {{code Speed.acceleration_to}}
 
-The first limit, `bend_brake`, makes the `a1` that the chain above starts from. It calls this for the distance left to the point where the rider commits to the turn. Three modules use that one line of physics: this one, `Gaze` to slow for a pig, and `Truck`.
+The first limit, `bend_brake`, makes the `a1` that the chain above starts from. It calls this for the distance left to the point where the rider commits to the turn. Three modules use that one line of physics: this one, `Gaze` to slow for a pig, and `TruckJourney`.
 
 {{code Throttle.bend_limit}}
 
@@ -1905,13 +1905,13 @@ digraph truck_drawing {
   node [shape=box, fontname="Helvetica"];
   TruckBody [style=bold];
   Scene -> TruckSighting;
-  TruckSighting -> LitTruck;
-  LitTruck -> TruckBody;
+  TruckSighting -> Truck;
+  Truck -> TruckBody;
   TruckBody -> TruckShape;
 }
 ```
 
-`TruckSighting` finds the truck on the road ahead. What it finds is a `LitTruck`, the truck with its lights, and with the lights off that's just the body this chapter draws. The truck is drawn however small it stands, because the rider is always looking for it.
+`TruckSighting` finds the truck on the road ahead. What it finds is a `Truck`, the truck with its lights, and with the lights off that's just the body this chapter draws. The truck is drawn however small it stands, because the rider is always looking for it.
 
 ### Three maps
 
@@ -1958,7 +1958,7 @@ The closest the rider gets is 50 metres, at step 6,374. After that the rider slo
 
 New in this chapter:
 
-- Modules: `Truck`
+- Modules: `TruckJourney`
 
 ### A tease, carried out by physics
 
@@ -1970,60 +1970,60 @@ Everything else is plain physics. The truck speeds up while it's short of that m
 
 The truck's state is three fields:
 
-{{code Truck.Truck from "How far along" to "pace : Truck.Pace,"}}
+{{code TruckJourney.TruckJourney from "How far along" to "pace : TruckJourney.Pace,"}}
 
 `route_position` is a `Distance` along the whole route, the same measure as the rider's progress, so the two can be compared directly. `Pace` says whether the truck's last step slowed it down:
 
-{{code Truck.Pace}}
+{{code TruckJourney.Pace}}
 
 A bend ahead of the truck is its own type, and so is the answer to "is there one":
 
-{{code Truck.ComingBend}}
+{{code TruckJourney.ComingBend}}
 
-{{code Truck.NextBend}}
+{{code TruckJourney.NextBend}}
 
 `BendAhead` carries a `ComingBend`, how far off the bend is and how fast it can be taken. `NoBendAhead` carries nothing: the route ends before another bend, or the truck is already past the end. The only way to read a bend's distance is inside the branch where there is a bend.
 
 ### The functions
 
-The modules around `Truck`
+The modules around `TruckJourney`
 ```dot
 digraph truck_motion {
   node [shape=box, fontname="Helvetica"];
-  Truck [style=bold];
-  RideInstant -> Truck;
-  Truck -> Route;
-  Truck -> VehicleLimits;
-  Truck -> Speed;
-  Truck -> Acceleration;
+  TruckJourney [style=bold];
+  RideInstant -> TruckJourney;
+  TruckJourney -> Route;
+  TruckJourney -> VehicleLimits;
+  TruckJourney -> Speed;
+  TruckJourney -> Acceleration;
 }
 ```
 
 `RideInstant` moves the truck once a step. All it hands over is how far along the route the rider has just got to, and the route itself:
 
-{{code RideInstant.next from "truck: Truck.truck_at_next_step(" to "{ rider_distance: to.distance_along(route), route },"}}
+{{code RideInstant.next from "truck: TruckJourney.truck_at_next_step(" to "{ rider_distance: to.distance_along(route), route },"}}
 
-That record is the whole of the chase. `Truck` imports none of the rider's modules, and the rider's modules don't import `Truck`. What the two share is `VehicleLimits`, the limits both keep to, which is where the truck's 10% comes from.
+That record is the whole of the chase. `TruckJourney` imports none of the rider's modules, and the rider's modules don't import `TruckJourney`. What the two share is `VehicleLimits`, the limits both keep to, which is where the truck's 10% comes from.
 
 The step works out the tease, then looks for the next bend:
 
-{{code Truck.truck_at_next_step}}
+{{code TruckJourney.truck_at_next_step}}
 
 Here's the tease itself. The lead shrinks in step with the rider's progress along the route:
 
-{{code Truck.tease_position}}
+{{code TruckJourney.tease_position}}
 
 Finding the next bend walks the route's segments with their ends, and takes the first one that ends past the truck:
 
-{{code Truck.next_bend}}
+{{code TruckJourney.next_bend}}
 
 Then the two ways to take a step. Both sit below the type's block, so they're private, and both are arithmetic on `Speed`. Within 60 metres of a bend, the truck aims to reach it at 80% of the bend's top speed, to leave a margin, and brakes if it's going faster than that:
 
-{{code Truck.braking_truck_at_next_step}}
+{{code TruckJourney.braking_truck_at_next_step}}
 
 `VehicleLimits.braking_to` works out one steady brake that reaches the target speed at the bend. A steady brake can land a little under the target, so `target_speed.max(...)` holds the truck there. A brake that would take the speed below zero is a bug, and `braking_to` crashes on one. Otherwise, the truck chases:
 
-{{code Truck.chasing_truck_at_next_step}}
+{{code TruckJourney.chasing_truck_at_next_step}}
 
 That's a truck you can chase. The next chapter lights it.
 
@@ -2033,7 +2033,7 @@ The truck drives exactly the same with its lights on or off. The lights are a la
 
 New in this chapter:
 
-- Modules: `LitTruck`, `TruckLights`
+- Modules: `Truck`, `TruckLights`
 
 ### Two lamps, two rules
 
@@ -2045,27 +2045,27 @@ The brake lights come on while the truck is slowing down. That's a fact about th
 
 Each lamp switches on its own, so each gets its own field:
 
-{{code LitTruck.LitTruck from "Which of" to "LitTruck := {"}}
+{{code Truck.Truck from "Which of" to "Truck := {"}}
 
 ### The functions
 
-Each frame, `FrameView` reads the truck's pace and the sky's darkness, and hands both to `LitTruck`:
+Each frame, `FrameView` reads the truck's pace and the sky's darkness, and hands both to `Truck`:
 
-{{code FrameView.ride_facts from "lit_truck: LitTruck.at(" to "lit_truck: LitTruck.at("}}
+{{code FrameView.ride_facts from "lit_truck: Truck.at(" to "lit_truck: Truck.at("}}
 
-`LitTruck` applies both rules to what it's handed, in one function:
+`Truck` applies both rules to what it's handed, in one function:
 
-{{code LitTruck.at}}
+{{code Truck.at}}
 
 The headlights come on at this darkness:
 
-{{code LitTruck.headlights_on_darkness}}
+{{code Truck.headlights_on_darkness}}
 
 On this ride, that's step 3,555 of 6,746. Once on, they stay on, because from there the sky only darkens.
 
 The drawing does what the lamps say, with each `match` covering both tags. The beams go first, then the body, then the brake lights, so each paints over the one before:
 
-{{code LitTruck.truck_shapes}}
+{{code Truck.truck_shapes}}
 
 `TruckLights` paints the beams as wedges that fade from the lamp toward their far end, and the brake lights, each with a glow around it. `TruckBody` knows nothing of the lights: they're drawn around it.
 
@@ -2827,7 +2827,7 @@ It's called like any other value, and the steps that follow are named, so three 
 
 The gate makes `expect` honest in one further way. The gate takes its count from the source: every line that starts `expect`, in a module that one of its `roc test` runs compiles, has to print `PASS` exactly once. An `expect` that nothing compiles fails, and so does one that's indented out of reach. One more consequence: an `expect` can only name what its module imports, so a check sits where its test data can be seen, and a module doesn't take on an import for a test's sake. `Coast`'s projections are checked in `Throttle`, which can see a `Speed`, and `LeanSearch`'s search in `RiderMind`, which can see a `Rider`.
 
-Even a truck can be checked this way, though it can't be asked about step 4,000 cold. A `TruckState` is a record, so a test writes one down and calls `Truck.truck_state_at_next_step` once.
+Even a truck can be checked this way, though it can't be asked about step 4,000 cold. A `TruckJourney` is a record, so a test writes one down and calls `TruckJourney.truck_at_next_step` once.
 
 ### Crashes that help
 
@@ -2989,7 +2989,7 @@ The tour named nine patterns in passing. They're patterns in the loose sense: sh
 | A sighting decides, drawing paints | A pure function answers with plain data, and something else draws it | `CrossingSighting`, `TowerSighting` |
 | Places and distances | One opaque type for where, a second for how far apart, and only the sums that make sense | `Clock` and `Steps`, `Bearing` and `Turn`, `Along` and `Distance`, `Speed` and `Acceleration` |
 | Rule and timeline | One function says how far along, and one piece of data says what that looks like | `stage_over_gap` and `flight_timeline` |
-| The step function | A value goes in, and the next value comes out | `Rider.rider_state_at_next_step`, `Truck.truck_state_at_next_step`, `Tour.step_forward` |
+| The step function | A value goes in, and the next value comes out | `Rider.next`, `TruckJourney.truck_at_next_step`, `Tour.step_forward` |
 | A narrow view of a wide record | An open record names the fields it uses and carries the rest through | `Bike.Motion(others)` |
 | The chain of limits | One value passes through independent rules, each of which can only lower it | `Throttle.acceleration` |
 | One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `RaisedPoint`, `Screen.Point` |
