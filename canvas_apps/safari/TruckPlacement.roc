@@ -1,38 +1,43 @@
-## TruckPlacement stands the truck's shape at its spot in the rider's view:
-## where a point on the truck lands, and where a whole face does.
-import Geom
-import Picture
+## TruckPlacement stands the truck's shape at its spot in the rider's view, as
+## one rigid body: where a point on the truck lands, and where a whole face does.
+import Angle
+import Distance
+import Pixels
 import Polygon
-import RoadAhead
 import RiderView
+import Spot
 import TruckShape
 
 TruckPlacement :: [].{
 
-	## What a truck is drawn from beyond its spot and the camera's lens: the road
-	## its points are measured on, and the camera's vantage.
-	TruckOnRoad : { road : RoadAhead.RoadView, vantage : Geom.Vantage }
+	## How a truck is drawn: its spot, which way it heads against the camera,
+	## and the camera's lens. A heading of zero runs straight away from the
+	## camera, and a positive one turns to the right.
+	TruckSetting : {
+		spot : Spot,
+		heading : Angle.Turn,
+		focal_length : Pixels,
+	}
 
-	## How a truck is drawn: its spot, the camera's lens, and the road and
-	## vantage its points are seen from.
-	TruckSetting : Picture.Setting(TruckPlacement.TruckOnRoad)
-
-	## Where a point on the truck stands in the rider's view: carried from the
-	## truck's frame onto the road at the truck's spot, which can lie across a
-	## bend, then raised as far as the truck is off the ground and lowered by
-	## the ground's drop beneath the truck's spot.
+	## Where a point on the truck stands in the rider's view: turned by the
+	## truck's heading about its foot, carried out from the foot, raised as far
+	## as the truck is off the ground and lowered by the ground's drop beneath
+	## the truck's spot.
 	raised_point : TruckPlacement.TruckSetting, TruckShape.TruckPoint -> RiderView.RaisedPoint
 	raised_point = |truck, { ahead, rightward, height }| {
 		spot = truck.spot
-		center = spot.road_point()
-		road_point = { along: center.along.plus(ahead), across: center.across.plus(rightward) }
-		on_level = RoadAhead.rider_point_at(
-			truck.context.road,
-			{ vantage: truck.context.vantage, place: spot.place(), road_point },
-		)
+		foot = spot.foot()
+		cos_heading = truck.heading.to_radians().cos()
+		sin_heading = truck.heading.to_radians().sin()
+		ahead_metres = ahead.to_metres()
+		rightward_metres = rightward.to_metres()
 		{
-			right: on_level.right,
-			forward: on_level.forward,
+			forward: foot.forward().plus(
+				Distance.metres(ahead_metres * cos_heading - rightward_metres * sin_heading),
+			),
+			right: foot.right().plus(
+				Distance.metres(ahead_metres * sin_heading + rightward_metres * cos_heading),
+			),
 			height: spot.lift().plus(height).minus(spot.drop()),
 		}
 	}

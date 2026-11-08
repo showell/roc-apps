@@ -1972,10 +1972,6 @@ A `TruckSetting` is what the truck is drawn from. It's a `Picture.Setting`, the 
 
 {{code TruckPlacement.TruckSetting}}
 
-The truck's context is the road its points are measured on, and the camera's vantage:
-
-{{code TruckPlacement.TruckOnRoad}}
-
 ### The functions
 
 Placement is one function. `TruckPlacement` moves one point along and across the road from the truck's spot, finds where that lands in the rider's view, and lifts it. The headlights and the brake lights use it too:
@@ -2140,7 +2136,7 @@ Each lamp's `picture` matches both tags, and an `Off` lamp is an empty picture. 
 
 The beams go first, then the body, then the brake lights:
 
-{{code Truck.scenery_picture}}
+{{code Truck.truck_picture}}
 
 `TruckBody` knows nothing of the lights: they're drawn around it.
 

@@ -31,6 +31,8 @@ import game.TowerSighting
 import game.TreeSighting
 import game.Truck
 import game.TruckJourney
+import game.TruckPlacement
+import game.TruckShape
 import game.TruckSighting
 import game.World
 import lib.Shapes
@@ -541,7 +543,7 @@ truck_lead_of : F64 -> TruckSighting.TruckFate
 truck_lead_of = |lead| truck_seen_from(Fixtures.origin, lead)
 
 ## Where the truck is, for a lead that puts it in view.
-sighted_truck_of : F64 -> Pipeline.Sighted(Truck)
+sighted_truck_of : F64 -> Truck.SightedTruck
 sighted_truck_of = |lead| truck_lead_of(lead) ?? crash "SightingExpects: this lead puts the truck in view"
 
 # The truck is in view on the road ahead, and not past its end or behind the
@@ -574,6 +576,77 @@ expect
 		(600.0, 100.0),
 		(900.0, 80.0),
 	].all(|(lead, want)| sighted_truck_of(lead).spot.road_point().along.to_metres() == want)
+
+## How far, in degrees, the truck `lead` metres ahead heads to the right of the
+## camera at `origin`.
+truck_heading_degrees_of : F64 -> F64
+truck_heading_degrees_of = |lead| sighted_truck_of(lead).heading.to_degrees()
+
+# Each segment bends 15 degrees right into the next, so a truck heads straight
+# away on the rider's own segment, 15 degrees right on the next and 30 on the
+# one after.
+expect
+	[
+		(100.0, 0.0),
+		(499.0, 0.0),
+		(600.0, 15.0),
+		(900.0, 30.0),
+	].all(|(lead, want)| (truck_heading_degrees_of(lead) - want).abs() < 0.000001)
+
+## How far, in metres, the point `on_truck` is placed from where the road
+## itself carries that point, for the truck `lead` metres ahead.
+truck_point_off_road : F64, TruckShape.TruckPoint -> F64
+truck_point_off_road = |lead, on_truck| {
+	sighting = sighted_truck_of(lead)
+	spot = sighting.spot
+	setting = {
+		spot,
+		heading: sighting.heading,
+		focal_length: Pixels.of(500.0),
+	}
+	placed = TruckPlacement.raised_point(setting, on_truck)
+	road_point = spot.road_point()
+	on_road = RoadAhead.rider_point_at(
+		Fixtures.three_segment_road,
+		{
+			vantage: Fixtures.origin,
+			place: spot.place(),
+			road_point: {
+				along: road_point.along.plus(on_truck.ahead),
+				across: road_point.across.plus(on_truck.rightward),
+			},
+		},
+	)
+	RiderView.ground_distance({
+		from: { right: placed.right, forward: placed.forward },
+		to: on_road,
+	})
+		.to_metres()
+}
+
+# Placed as one rigid body, a point ahead of the truck's middle or to one side
+# of it lies where the road carries that point from the truck's spot, on the
+# rider's segment and past each bend. A truck turned the wrong way, or not
+# turned at all, would put it metres off.
+expect
+	[100.0, 600.0, 900.0].all(
+		|lead|
+			[
+				(10.0, 0.0),
+				(0.0, 1.2),
+				(-4.2, -1.2),
+				(0.0, 0.0),
+			].all(
+				|(ahead, rightward)| {
+					on_truck = {
+						ahead: Distance.metres(ahead),
+						rightward: Distance.metres(rightward),
+						height: Distance.zero,
+					}
+					truck_point_off_road(lead, on_truck) < 0.000001
+				},
+			),
+	)
 
 # The route's herds, through World. PigHerd and CowHerd don't import World. The
 # route's big herd is seven rows of seven, and its two-row herd four pigs in front
