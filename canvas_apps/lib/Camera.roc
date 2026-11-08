@@ -106,8 +106,8 @@ Camera :: [].{
 	## The player-follow camera: `target` in the middle of a screen of that
 	## size, at a zoom.
 	follow : Math.Vec2, { screen : Math.Vec2, zoom : F32 } -> Camera.Camera2D
-	follow = |target, cfg|
-		new({ target, offset: { x: cfg.screen.x / 2, y: cfg.screen.y / 2 }, rotation: 0, zoom: cfg.zoom })
+	follow = |target, { screen, zoom }|
+		new({ target, offset: { x: screen.x / 2, y: screen.y / 2 }, rotation: 0, zoom })
 }
 
 # A number that is not finite has no place on a camera, and comes only from a

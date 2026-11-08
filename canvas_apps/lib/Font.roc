@@ -25,21 +25,21 @@ Font :: [].{
 	# of a capital letter; the stroke is a fourteenth of it, which is about what
 	# a plotter would give you.
 	text_shapes : Str, { top_left : Point.Point, size : F64, color : Brush.Rgba } -> List(Shapes.Shape)
-	text_shapes = |str, { top_left, size, color }| {
+	text_shapes = |words, { top_left, size, color }| {
 		unit = size / units
 		stroke_width = (size / 14.0).max(1.0)
-		str.to_utf8().map_with_index(|b, i| glyph_shapes(b, { top_left: { x: top_left.x + i.to_f64() * advance * unit, y: top_left.y }, unit, stroke_width, color })).join()
+		words.to_utf8().map_with_index(|byte, i| glyph_shapes(byte, { top_left: { x: top_left.x + i.to_f64() * advance * unit, y: top_left.y }, unit, stroke_width, color })).join()
 	}
 
 	# How wide a string is, for a caller that wants to place one.
 	width_of : Str, F64 -> F64
-	width_of = |str, size| str.to_utf8().len().to_f64() * advance * (size / units)
+	width_of = |words, size| words.to_utf8().len().to_f64() * advance * (size / units)
 
 	## A string centred on `top_center`, the middle of its top edge, which is
 	## what a title, a banner and a hint all want.
 	centered : Str, { top_center : Point.Point, size : F64, color : Brush.Rgba } -> List(Shapes.Shape)
-	centered = |str, { top_center, size, color }|
-		text_shapes(str, { top_left: { x: top_center.x - width_of(str, size) / 2.0, y: top_center.y }, size, color })
+	centered = |words, { top_center, size, color }|
+		text_shapes(words, { top_left: { x: top_center.x - width_of(words, size) / 2.0, y: top_center.y }, size, color })
 
 	## A line of type as strokes. The strokes' capitals stand as tall as a real
 	## typeface's do at the line's size.
@@ -62,7 +62,7 @@ Font :: [].{
 	## Whether every byte of `words` has a glyph. Plotting a byte with none
 	## crashes, so the words a widget shows are held to this.
 	can_plot : Str -> Bool
-	can_plot = |words| words.to_utf8().all(|b| glyph_strokes(b).is_ok())
+	can_plot = |words| words.to_utf8().all(|byte| glyph_strokes(byte).is_ok())
 }
 
 # How far the pen moves between glyph origins, in grid units.
@@ -83,8 +83,8 @@ cap_height_share = 0.72
 # One glyph's strokes, placed and thickened. `unit` is the pixels in one unit
 # of the grid.
 glyph_shapes : U8, { top_left : Point.Point, unit : F64, stroke_width : F64, color : Brush.Rgba } -> List(Shapes.Shape)
-glyph_shapes = |b, { top_left, unit, stroke_width, color }| {
-	strokes = strokes_for(b)
+glyph_shapes = |byte, { top_left, unit, stroke_width, color }| {
+	strokes = strokes_for(byte)
 	var $out = List.with_capacity(strokes.len())
 	for coordinates in strokes {
 		for j in 1..<(coordinates.len() // 2) {
@@ -109,13 +109,13 @@ at = |xs, i| xs.get(i) ?? crash "Font.at: an index past the end of the stroke"
 # The strokes of one glyph. A byte with no glyph crashes, because `width_of`
 # would still leave room for it.
 strokes_for : U8 -> List(List(F64))
-strokes_for = |b| glyph_strokes(b) ?? crash "Font.strokes_for: no glyph for the byte ${b.to_str()}"
+strokes_for = |byte| glyph_strokes(byte) ?? crash "Font.strokes_for: no glyph for the byte ${byte.to_str()}"
 
 # The strokes of a byte's glyph, if it has one. Each stroke is a polyline, x
 # and y alternating, on the grid above, and a curve is a few segments of one.
 glyph_strokes : U8 -> Try(List(List(F64)), [NoGlyph])
-glyph_strokes = |b|
-	match b {
+glyph_strokes = |byte|
+	match byte {
 		' ' => Ok([])
 		'!' => Ok([[2.0, 0.0, 2.0, 4.2], [2.0, 5.4, 2.0, 6.0]])
 		'|' => Ok([[2.0, 0.0, 2.0, 6.0]])

@@ -35,13 +35,13 @@ ConvexCut :: [].{
 ## Each triangle wound as roc-ray's convex fill winds one: its second and third
 ## corners swapped when its signed area is positive.
 wound_triangles : List(F64) -> List(F64)
-wound_triangles = |tris| {
-	m = tris.len() // 6
-	var $out = List.with_capacity(6 * m)
-	for k in 0..<m {
-		a = corner(tris, 3 * k)
-		b = corner(tris, 3 * k + 1)
-		c = corner(tris, 3 * k + 2)
+wound_triangles = |triangle_coordinates| {
+	triangle_count = triangle_coordinates.len() // 6
+	var $out = List.with_capacity(6 * triangle_count)
+	for k in 0..<triangle_count {
+		a = corner(triangle_coordinates, 3 * k)
+		b = corner(triangle_coordinates, 3 * k + 1)
+		c = corner(triangle_coordinates, 3 * k + 2)
 		$out = if cross3({ a, b, c }) > 0.0 {
 			$out.append(a.x).append(a.y).append(c.x).append(c.y).append(b.x).append(b.y)
 		} else {
@@ -69,12 +69,12 @@ twice_area = |coordinates| {
 	n = coordinates.len() // 2
 	var $sum = 0.0
 	for k in 0..<n {
-		k1 = if k + 1 == n {
+		next_k = if k + 1 == n {
 			0
 		} else {
 			k + 1
 		}
-		$sum = $sum + at(coordinates, 2 * k) * at(coordinates, 2 * k1 + 1) - at(coordinates, 2 * k1) * at(coordinates, 2 * k + 1)
+		$sum = $sum + at(coordinates, 2 * k) * at(coordinates, 2 * next_k + 1) - at(coordinates, 2 * next_k) * at(coordinates, 2 * k + 1)
 	}
 	$sum
 }
@@ -97,19 +97,19 @@ is_convex = |coordinates| {
 	var $ydir = 0.0
 	var $k = 0
 	while $k < n and !$bad {
-		k1 = if $k + 1 >= n {
+		next_k = if $k + 1 >= n {
 			$k + 1 - n
 		} else {
 			$k + 1
 		}
-		k2 = if $k + 2 >= n {
+		after_next_k = if $k + 2 >= n {
 			$k + 2 - n
 		} else {
 			$k + 2
 		}
 		here = corner(coordinates, $k)
-		next = corner(coordinates, k1)
-		turn = cross3({ a: here, b: next, c: corner(coordinates, k2) })
+		next = corner(coordinates, next_k)
+		turn = cross3({ a: here, b: next, c: corner(coordinates, after_next_k) })
 		$bad = turn * $sign < 0.0
 		$sign = if $sign == 0.0 {
 			turn
@@ -149,7 +149,7 @@ is_convex = |coordinates| {
 triangles : List(F64) -> List(F64)
 triangles = |coordinates| {
 	n = coordinates.len() // 2
-	orient = if twice_area(coordinates) >= 0.0 {
+	winding = if twice_area(coordinates) >= 0.0 {
 		1.0
 	} else {
 		-1.0
@@ -159,27 +159,27 @@ triangles = |coordinates| {
 	var $i = 0
 	var $misses = 0
 	while $indices.len() > 3 and $misses < $indices.len() {
-		m = $indices.len()
-		ip = if $i == 0 {
-			m - 1
+		corner_count = $indices.len()
+		previous_i = if $i == 0 {
+			corner_count - 1
 		} else {
 			$i - 1
 		}
-		inx = if $i + 1 >= m {
+		next_i = if $i + 1 >= corner_count {
 			0
 		} else {
 			$i + 1
 		}
-		a = $indices.get(ip) ?? crash "ConvexCut.triangles: a corner index out of range"
+		a = $indices.get(previous_i) ?? crash "ConvexCut.triangles: a corner index out of range"
 		b = $indices.get($i) ?? crash "ConvexCut.triangles: a corner index out of range"
-		c = $indices.get(inx) ?? crash "ConvexCut.triangles: a corner index out of range"
-		pa = corner(coordinates, a)
-		pb = corner(coordinates, b)
-		pc = corner(coordinates, c)
-		turn = cross3({ a: pa, b: pb, c: pc }) * orient
-		ear = turn >= 0.0 and !any_inside({ coordinates, indices: $indices, a, b, c, orient })
+		c = $indices.get(next_i) ?? crash "ConvexCut.triangles: a corner index out of range"
+		corner_a = corner(coordinates, a)
+		corner_b = corner(coordinates, b)
+		corner_c = corner(coordinates, c)
+		turn = cross3({ a: corner_a, b: corner_b, c: corner_c }) * winding
+		ear = turn >= 0.0 and !any_inside({ coordinates, indices: $indices, a, b, c, winding })
 		$out = if ear and turn > 0.0 {
-			$out.append(pa.x).append(pa.y).append(pb.x).append(pb.y).append(pc.x).append(pc.y)
+			$out.append(corner_a.x).append(corner_a.y).append(corner_b.x).append(corner_b.y).append(corner_c.x).append(corner_c.y)
 		} else {
 			$out
 		}
@@ -200,7 +200,7 @@ triangles = |coordinates| {
 				$i
 			}
 		} else {
-			inx
+			next_i
 		}
 	}
 	fan({ coordinates, indices: $indices, out: $out })
@@ -214,16 +214,16 @@ any_inside : {
 	a : U64,
 	b : U64,
 	c : U64,
-	orient : F64,
+	winding : F64,
 } -> Bool
-any_inside = |{ coordinates, indices, a, b, c, orient }| {
-	pa = corner(coordinates, a)
-	pb = corner(coordinates, b)
-	pc = corner(coordinates, c)
+any_inside = |{ coordinates, indices, a, b, c, winding }| {
+	corner_a = corner(coordinates, a)
+	corner_b = corner(coordinates, b)
+	corner_c = corner(coordinates, c)
 	indices.any(
 		|p| {
-			pp = corner(coordinates, p)
-			p != a and p != b and p != c and cross3({ a: pa, b: pb, c: pp }) * orient > 0.0 and cross3({ a: pb, b: pc, c: pp }) * orient > 0.0 and cross3({ a: pc, b: pa, c: pp }) * orient > 0.0
+			corner_p = corner(coordinates, p)
+			p != a and p != b and p != c and cross3({ a: corner_a, b: corner_b, c: corner_p }) * winding > 0.0 and cross3({ a: corner_b, b: corner_c, c: corner_p }) * winding > 0.0 and cross3({ a: corner_c, b: corner_a, c: corner_p }) * winding > 0.0
 		},
 	)
 }
@@ -234,11 +234,11 @@ fan = |{ coordinates, indices, out }|
 	match indices {
 		[] => out
 		[first, ..] => {
-			m = indices.len()
+			corner_count = indices.len()
 			pf = corner(coordinates, first)
 			var $out = out
 			var $k = 1
-			while $k + 1 < m {
+			while $k + 1 < corner_count {
 				p = corner(coordinates, indices.get($k) ?? crash "ConvexCut.fan: a corner index out of range")
 				q = corner(coordinates, indices.get($k + 1) ?? crash "ConvexCut.fan: a corner index out of range")
 				$out = $out.append(pf.x).append(pf.y).append(p.x).append(p.y).append(q.x).append(q.y)

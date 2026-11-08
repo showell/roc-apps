@@ -41,16 +41,16 @@ Input :: [].{
 		## runner builds a tick's snapshot with this and `with_key_pressed`, and
 		## tests build theirs the same way.
 		with_key_down : Snapshot, Keys.Key -> Snapshot
-		with_key_down = |s, key| Snapshot.{ held: s.held.bitwise_or(Keys.bit(key)), struck: s.struck, mouse: s.mouse }
+		with_key_down = |snapshot, key| Snapshot.{ held: snapshot.held.bitwise_or(Keys.bit(key)), struck: snapshot.struck, mouse: snapshot.mouse }
 
 		## Say that a key was struck, which is also held.
 		with_key_pressed : Snapshot, Keys.Key -> Snapshot
-		with_key_pressed = |s, key|
-			Snapshot.{ held: s.held.bitwise_or(Keys.bit(key)), struck: s.struck.bitwise_or(Keys.bit(key)), mouse: s.mouse }
+		with_key_pressed = |snapshot, key|
+			Snapshot.{ held: snapshot.held.bitwise_or(Keys.bit(key)), struck: snapshot.struck.bitwise_or(Keys.bit(key)), mouse: snapshot.mouse }
 
 		## Give a snapshot its pointer, as roc-ray's `with_mouse_*` do.
 		with_mouse : Snapshot, Mouse.Snapshot -> Snapshot
-		with_mouse = |s, pointer| Snapshot.{ held: s.held, struck: s.struck, mouse: pointer }
+		with_mouse = |snapshot, pointer| Snapshot.{ held: snapshot.held, struck: snapshot.struck, mouse: pointer }
 
 	}
 

@@ -58,7 +58,7 @@ Brush :: [].{
 	shade : Brush.Fill, Point.Point -> Brush.Rgba
 	shade = |fill, { x, y }|
 		match fill {
-			Flat(col) => col
+			Flat(color) => color
 			Span(p) => {
 				t = if p.right_x != p.left_x {
 					clamp01((x - p.left_x) / (p.right_x - p.left_x))

@@ -41,12 +41,12 @@ Mouse :: [].{
 
 		## Say that a button is held, as `Mouse.none.with_button_down(Left)`.
 		with_button_down : Snapshot, Mouse.Button -> Snapshot
-		with_button_down = |s, button| Snapshot.{ held: s.held.bitwise_or(bit(button)), struck: s.struck, at: s.at, wheel: s.wheel }
+		with_button_down = |snapshot, button| Snapshot.{ held: snapshot.held.bitwise_or(bit(button)), struck: snapshot.struck, at: snapshot.at, wheel: snapshot.wheel }
 
 		## Say that a button was struck, which is also held.
 		with_button_pressed : Snapshot, Mouse.Button -> Snapshot
-		with_button_pressed = |s, button|
-			Snapshot.{ held: s.held.bitwise_or(bit(button)), struck: s.struck.bitwise_or(bit(button)), at: s.at, wheel: s.wheel }
+		with_button_pressed = |snapshot, button|
+			Snapshot.{ held: snapshot.held.bitwise_or(bit(button)), struck: snapshot.struck.bitwise_or(bit(button)), at: snapshot.at, wheel: snapshot.wheel }
 	}
 
 	## No button down, the pointer at the origin and the wheel still: the
