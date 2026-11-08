@@ -25,7 +25,8 @@ Shale is a small Lua-like language:
 - **A scratch Roc module** must declare a type named after its file.
 - **Shale gaps agents keep hitting:**
   - There's no `write` or `write_file`: `replace(path, text)` writes a file.
-  - `substitute(text, old, new)` replaces in a string, and `find(text, pattern)` searches it. There's no `string.*` or `gsub`.
+  - `substitute(text, old, new)` replaces every occurrence in a string, stops on a miss unless given `{missing_ok = true}`, and is **not word-bounded**. `find(text, pattern)` is a plain substring search, not a pattern. There's no `string.*` or `gsub`.
+  - **To rename a Roc identifier, use `cookbook:roc/rename.shale`** (word-bounded; `module=` for a qualified name; `skip=`, `fields=1`, `book=`, `dry=1`; it fails when nothing matched), never a hand-rolled `substitute`, which hits `proportion` when you meant `portion`.
   - A long string holding `]]` needs `[=[ ... ]=]`.
   - A function sees only `const`s, not the script's locals.
   - `read` and `replace` paths are relative to the folder you `cd` to, or a mount such as `repos:` or `scratch:`, never absolute.
