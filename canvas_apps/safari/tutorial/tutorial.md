@@ -1103,7 +1103,7 @@ Trees get their spots once, when the world is built. A tower doesn't: each frame
 
 {{code TowerSighting.end_tower}}
 
-The `beacon` line lights the beacon for this step. The tower halfway along is the same, with `Midway` for its beacon, a square yaw, and a second way to fail, `NoMidTower`. `mid_tower_point` says whether a segment is longer than a kilometre, and where its halfway tower stands. It sits in `TowerSighting` beside the end tower's numbers, so where towers stand has one home, and the world itself knows nothing about towers.
+The `beacon` line lights the beacon for this step. The tower halfway along is the same, with `Midway` for its beacon, a square yaw, and one more way to fail, `NoMidTower`. `mid_tower_point` says whether a segment is longer than a kilometre, and where its halfway tower stands. It sits in `TowerSighting` beside the end tower's numbers, so where towers stand has one home, and the world itself knows nothing about towers.
 
 To draw a tower, `scenery_picture` also needs the road and where the camera stands, to find the four corners of its base in the rider's view. So those two go in as its extra input, its context:
 
@@ -1115,11 +1115,11 @@ As a tower gets further away, it sinks below the horizon from the bottom up:
 
 {{code EarthCurve.exaggerated_drop}}
 
-The ride's ground already curves, with a radius of 100 km. Towers sink over a tighter curve, 20 km, so an 80-metre tower is gone by 1.8 km instead of 4 km, and you can watch it go.
+The ride's ground already curves, with a radius of 100 km. Towers sink over a tighter curve, 20 km, so an 80-metre tower is gone by 1.8 km instead of 4 km, and you can watch it go. Once the curve has sunk all of it, its sighting refuses it with `BelowHorizon`, as a tree too small to see is refused with `TooSmall`. So a sighted tower always has something to draw.
 
 ### Rods
 
-Here's the whole tower, from the top. Nothing is drawn once the curve has hidden it all. Otherwise come the legs, the rings and the braces, and the beacon's disc last, at the top:
+Here's the whole tower, from the top. A tower the curve hides wholly never gets here, so that case is a crash. Otherwise come the legs, the rings and the braces, and the beacon's disc last, at the top:
 
 {{code Tower.tower_shapes}}
 

@@ -41,7 +41,29 @@ Bird := { pose : BirdFlight.BirdPose }.{
 			Away(WingsDown) => BirdStills.away_wings_down_still
 			Diving => BirdStills.diving_still
 		}
+
+	## A pose's name, as a widget captions it.
+	pose_name : BirdFlight.BirdPose -> Str
+	pose_name = |pose|
+		match pose {
+			Perched => "Perched"
+			Side(WingsUp) => "Side on, wings up"
+			Side(WingsDown) => "Side on, wings down"
+			Away(WingsUp) => "Flying away, wings up"
+			Away(WingsDown) => "Flying away, wings down"
+			Diving => "Diving"
+		}
 }
+
+expect
+	[
+		(Perched, "Perched"),
+		(Side(WingsUp), "Side on, wings up"),
+		(Side(WingsDown), "Side on, wings down"),
+		(Away(WingsUp), "Flying away, wings up"),
+		(Away(WingsDown), "Flying away, wings down"),
+		(Diving, "Diving"),
+	].all(|(pose, name)| Bird.pose_name(pose) == name)
 
 ## How tall a bird stands, chosen by eye.
 bird_height : Distance

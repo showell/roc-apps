@@ -60,26 +60,30 @@ StillCell : {
 	pose : StillsWidgetApp.Pose,
 	area : Click.Area,
 	anchor : StillShapes.Anchor,
+
+	## How far down the canvas the top of its name stands.
+	name_top : F64,
 }
 
-bird_pose_name : BirdFlight.BirdPose -> Str
-bird_pose_name = |pose|
-	match pose {
-		Perched => "Perched"
-		Side(WingsUp) => "Side up"
-		Side(WingsDown) => "Side down"
-		Away(WingsUp) => "Away up"
-		Away(WingsDown) => "Away down"
-		Diving => "Diving"
+## A pose's name, which its kind gives it, as the widget sets it: broken after
+## its comma onto a second line, so a long name fits a small still's cell and
+## the room left of the large still.
+pose_name_lines : StillsWidgetApp.Pose -> List(Str)
+pose_name_lines = |pose| {
+	name =
+		match pose {
+			Cat(cat_pose) => Cat.pose_name(cat_pose)
+			Bird(bird_pose) => Bird.pose_name(bird_pose)
+		}
+	match name.split_on(", ") {
+		[whole] => [whole]
+		[first, second] => ["${first},", second]
+		_ => crash "StillsWidgetApp.pose_name_lines: a pose's name has one comma at most"
 	}
+}
 
-## The name the widget gives a pose.
-pose_name : StillsWidgetApp.Pose -> Str
-pose_name = |pose|
-	match pose {
-		Cat(cat_pose) => ReadoutText.cat_pose_text(cat_pose)
-		Bird(bird_pose) => bird_pose_name(bird_pose)
-	}
+expect pose_name_lines(Cat(Rest)) == ["Rest"]
+expect pose_name_lines(Bird(Away(WingsDown))) == ["Flying away,", "wings down"]
 
 ## A pose's still.
 pose_still : StillsWidgetApp.Pose -> Still
@@ -134,17 +138,9 @@ extent_of = |still|
 extent_width : StillExtent -> F64
 extent_width = |extent| extent.right - extent.left
 
-## How high a cell is. Two rows of them fill the panel under the picture.
-cell_height : F64
-cell_height = (WidgetPage.canvas_height - WidgetPage.picture_bottom_y) / 2.0
-
-## How far down a cell the stills stand, which leaves room under them for a name.
-cell_ground : F64
-cell_ground = 54.0
-
-## How far down a cell a name starts.
-cell_name_top : F64
-cell_name_top = 57.0
+## The space between a still's ground and the top of its name.
+name_gap : F64
+name_gap = 3.0
 
 ## What a still keeps clear of its neighbours, on each side and above.
 cell_padding : F64
@@ -157,17 +153,35 @@ name_size = 13.0
 name_rise : F64
 name_rise = 10.0
 
+## From one line of a still's name to the next.
+name_line_spacing : F64
+name_line_spacing = 13.0
+
+## The room under a name's last baseline for a letter that hangs below it.
+name_descent : F64
+name_descent = name_size / 4.0
+
+## How much of a cell its name takes, below the still's ground: the gap, the
+## name's `line_count` lines, and the room for a descender under the last.
+name_room : U64 -> F64
+name_room = |line_count|
+	name_gap + name_rise + (line_count - 1).to_f64() * name_line_spacing + name_descent
+
 ## The height on screen that lets every still of a row fit a cell `cell_width`
 ## wide. A row shares one height, so a pose keeps its true size beside the
 ## others.
 row_height_on_screen : List(StillsWidgetApp.Pose), F64 -> Pixels
 row_height_on_screen = |poses, cell_width| {
-	extents = poses.map(|pose| extent_of(pose_still(pose)))
-	widest = extents.fold(0.0, |most, extent| most.max(extent_width(extent)))
-	tallest = extents.fold(0.0, |most, extent| most.max(extent.top))
-	Pixels.of(
-		F64.min((cell_width - 2.0 * cell_padding) / widest, (cell_ground - cell_padding) / tallest),
-	)
+	widest = poses.map(|pose| extent_width(extent_of(pose_still(pose)))).max() ?? crash "StillsWidgetApp.row_height_on_screen: a row has poses"
+	Pixels.of((cell_width - 2.0 * cell_padding) / widest)
+}
+
+## How far down a row's cells its stills stand, at `height_on_screen`: as far
+## as its tallest still reaches, and the padding above it.
+row_ground : List(StillsWidgetApp.Pose), Pixels -> F64
+row_ground = |poses, height_on_screen| {
+	tallest = poses.map(|pose| extent_of(pose_still(pose)).top).max() ?? crash "StillsWidgetApp.row_ground: a row has poses"
+	height_on_screen.to_f64() * tallest + cell_padding
 }
 
 ## Where a still stands with its middle at `mid_x` and its y 0 at `ground_y`.
@@ -189,11 +203,15 @@ standing_at = |still, { mid_x, ground_y, height_on_screen }| {
 	}
 }
 
-## A row of stills across the canvas, between its side margins.
+## A row of stills across the canvas, between its side margins, its top at
+## `row_top`. Its stills fill their cells' width, and it is as tall as they
+## stand and its longest name reaches below them.
 row_cells : List(StillsWidgetApp.Pose), F64 -> List(StillCell)
 row_cells = |poses, row_top| {
 	cell_width = WidgetPage.panel_width / poses.len().to_f64()
 	height_on_screen = row_height_on_screen(poses, cell_width)
+	ground = row_ground(poses, height_on_screen)
+	line_count = poses.map(|pose| pose_name_lines(pose).len()).max() ?? crash "StillsWidgetApp.row_cells: a row has poses"
 	poses.map_with_index(
 		|pose, column| {
 			left = WidgetPage.side_margin + column.to_f64() * cell_width
@@ -203,26 +221,42 @@ row_cells = |poses, row_top| {
 					left,
 					top: row_top,
 					width: cell_width,
-					height: cell_height,
+					height: ground + name_room(line_count),
 				},
 				anchor: standing_at(
 					pose_still(pose),
 					{
 						mid_x: left + cell_width / 2.0,
-						ground_y: row_top + cell_ground,
+						ground_y: row_top + ground,
 						height_on_screen,
 					},
 				),
+				name_top: row_top + ground + name_gap,
 			}
 		},
 	)
 }
 
-## The cat's poses on the first row, and the bird's on the second.
+## The cat's poses on the first row, and the bird's on the second, under it.
+## The bird's row takes the rest of the panel.
 cells : List(StillCell)
-cells =
-	row_cells(cat_poses, WidgetPage.picture_bottom_y)
-		.concat(row_cells(bird_poses, WidgetPage.picture_bottom_y + cell_height))
+cells = {
+	cat_cells = row_cells(cat_poses, WidgetPage.picture_bottom_y)
+	cat_row_bottom =
+		match cat_cells {
+			[first, ..] => first.area.top + first.area.height
+			[] => crash "StillsWidgetApp.cells: the cat has poses"
+		}
+	panel_left = WidgetPage.canvas_height - cat_row_bottom
+	bird_cells = row_cells(bird_poses, cat_row_bottom)
+	match bird_cells {
+		[first, ..] if first.area.height > panel_left => crash "StillsWidgetApp.cells: the bird's row needs more of the panel than the cat's row leaves"
+		_ => {
+			stretched = |cell| { ..cell, area: { ..cell.area, height: panel_left } }
+			cat_cells.concat(bird_cells.map(stretched))
+		}
+	}
+}
 
 ## Where the words stop and the large still starts.
 large_area_left : F64
@@ -303,11 +337,10 @@ point_count = |still| still.polygons().fold(0, |sum, polygon| sum + polygon.poin
 read_out_lines : StillsWidgetApp.Pose -> List(Str)
 read_out_lines = |pose| {
 	still = pose_still(pose)
-	[
-		pose_name(pose),
+	pose_name_lines(pose).concat([
 		"${ReadoutText.count_text(still.polygons().len())} polygons",
 		"${ReadoutText.count_text(point_count(still))} points",
-	]
+	])
 }
 
 read_out_size : F64
@@ -379,18 +412,20 @@ picture_shapes = |model|
 
 ## One small still with its pose's name under it.
 cell_shapes : StillCell -> List(Shapes.Shape)
-cell_shapes = |{ pose, area, anchor }|
-	StillShapes.still_shapes(anchor, pose_still(pose)).append(
+cell_shapes = |{ pose, area, anchor, name_top }| {
+	name_line = |text, row|
 		Text({
-			text: pose_name(pose),
+			text,
 			x: area.left + area.width / 2.0,
-			y: area.top + cell_name_top + name_rise,
+			y: name_top + name_rise + row.to_f64() * name_line_spacing,
 			size: name_size,
 			face: Prose,
 			align: Center,
 			color: ink,
-		}),
-	)
+		})
+	name_lines = pose_name_lines(pose).map_with_index(name_line)
+	StillShapes.still_shapes(anchor, pose_still(pose)).concat(name_lines)
+}
 
 ## The grid never changes, so it's worked out once, when the widget is built.
 grid_shapes : List(Shapes.Shape)
@@ -476,18 +511,35 @@ expect {
 	last_height = last_cell.anchor.height_on_screen
 	cells.drop_first(cat_poses.len()).all(|cell| cell.anchor.height_on_screen == last_height)
 }
-expect cells.all(|{ pose, area, anchor }| stays_in(anchor, { still: pose_still(pose), area }))
+expect cells.all(|{ pose, area, anchor, .. }| stays_in(anchor, { still: pose_still(pose), area }))
 expect
 	cells.all(
-		|{ pose, area, anchor }| {
-			above_name = { ..area, height: cell_name_top }
+		|{ pose, area, anchor, name_top }| {
+			above_name = { ..area, height: name_top - area.top }
 			stays_in(anchor, { still: pose_still(pose), area: above_name })
 		},
 	)
 
+# The bird's row stands right under the cat's.
+expect first_cell.area.top + first_cell.area.height == last_cell.area.top
+
+# Every line of every name, with a descender's room below its baseline, ends
+# inside its cell.
+expect
+	cells.all(
+		|cell|
+			cell_shapes(cell).all(
+				|shape|
+					match shape {
+						Text(line) => line.y + name_descent <= cell.area.top + cell.area.height
+						Poly(_) | Disc(_) | Rect(_) | Blend(_) | View(_) | Image(_) => True
+					},
+			),
+	)
+
 ## Whether a cell's still fills the cell's width, up to the padding.
 is_full_width : StillCell -> Bool
-is_full_width = |{ pose, area, anchor }| {
+is_full_width = |{ pose, area, anchor, .. }| {
 	still_width = anchor.height_on_screen.to_f64() * extent_width(extent_of(pose_still(pose)))
 	area.width - still_width <= 2.0 * cell_padding + 0.000001
 }

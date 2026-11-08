@@ -164,27 +164,11 @@ status_lines = |gap| {
 	instant = World.first_bird_flight.bird_instant_at(stage)
 	[
 		ReadoutText.stage_text(stage),
-		"Pose: ${pose_name(instant.pose)}",
+		"Pose: ${Bird.pose_name(instant.pose)}",
 		"Gap: ${ReadoutText.tenths_text(gap.to_metres())} m",
 		"Height: ${ReadoutText.tenths_text(instant.location.lift.to_metres())} m",
 	]
 }
-
-pose_name : BirdFlight.BirdPose -> Str
-pose_name = |pose|
-	match pose {
-		Perched => "Perched"
-		Side(beat) => "Side on, ${beat_name(beat)}"
-		Away(beat) => "Flying away, ${beat_name(beat)}"
-		Diving => "Diving"
-	}
-
-beat_name : BirdFlight.WingBeat -> Str
-beat_name = |beat|
-	match beat {
-		WingsUp => "wings up"
-		WingsDown => "wings down"
-	}
 
 ## The gap the flight starts at, for a rider at `rider_speed`: 15 m for the gap
 ## it lands at and 45 m for its 36 steps.

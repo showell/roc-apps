@@ -390,6 +390,21 @@ expect
 	).len()
 		== 0
 
+## The yaw in degrees of each tower in view from the origin of a lone segment
+## `length` long: 30 for the one past its end, 0 for the one halfway along.
+tower_yaws_on_lone_segment : Distance -> List(I64)
+tower_yaws_on_lone_segment = |length|
+	TowerSighting.towers_in_view(
+		Fixtures.crafted_road([{ ..Fixtures.segment_of([]), length }]),
+		{ camera: Fixtures.origin_camera, clock: Clock.start },
+	).map(|tower| (tower.kind.yaw().to_degrees() + 0.5).to_i64_wrap())
+
+# The tower past the end of a segment 1640 m long stands 1800 m ahead, where
+# the curve has sunk all 80 m of it, so only the tower halfway along is
+# sighted. Past a segment 1620 m long, 1780 m ahead, its tip still shows.
+expect tower_yaws_on_lone_segment(Distance.metres(1640.0)) == [0]
+expect tower_yaws_on_lone_segment(Distance.metres(1620.0)) == [30, 0]
+
 ## A pond's bend at the end of a segment 100 m long, turning 15° right.
 right_pond_bend : Geom.Bend
 right_pond_bend = { segment_length: Distance.metres(100.0), turn: Angle.Turn.degrees(15.0) }

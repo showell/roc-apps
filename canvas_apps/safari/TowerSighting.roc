@@ -3,7 +3,8 @@
 ## segment has one more halfway along, off to the left. Each tower's beacon
 ## blinks on the ride's clock, and the sighting lights it for the frame.
 ## Unlike the trees and the critters, a tower has no size test: it is
-## drawn however small it stands, until the earth's curve sinks it.
+## sighted however small it stands, until the earth's curve sinks it wholly
+## below the horizon, and then it is refused.
 import Across
 import Along
 import Angle
@@ -84,13 +85,13 @@ segment_towers = |road, { camera, in_view, clock }|
 	].keep_oks(|tower| tower)
 
 ## The tower past the end of a segment in view, if it is in front of the
-## camera.
+## camera and above the horizon.
 end_tower : RoadAhead.RoadView,
 {
 	camera : Pipeline.SightingCamera,
 	in_view : RoadAhead.SegmentInView,
 	clock : Clock,
-} -> Try(Pipeline.Sighted(Tower), [BehindCamera])
+} -> Try(Pipeline.Sighted(Tower), [BehindCamera, BelowHorizon])
 end_tower = |road, { camera, in_view, clock }| {
 	beacon = Beacon.at({ segment: in_view.index, place: AtEnd }, clock)
 	tower_if_ahead(
@@ -108,13 +109,13 @@ end_tower = |road, { camera, in_view, clock }| {
 }
 
 ## The tower halfway along a segment in view, if it has one and it is in
-## front of the camera.
+## front of the camera and above the horizon.
 mid_tower : RoadAhead.RoadView,
 {
 	camera : Pipeline.SightingCamera,
 	in_view : RoadAhead.SegmentInView,
 	clock : Clock,
-} -> Try(Pipeline.Sighted(Tower), [BehindCamera, NoMidTower])
+} -> Try(Pipeline.Sighted(Tower), [BehindCamera, BelowHorizon, NoMidTower])
 mid_tower = |road, { camera, in_view, clock }| {
 	road_point = mid_tower_point(in_view.segment.length)?
 	beacon = Beacon.at({ segment: in_view.index, place: Midway }, clock)
@@ -130,16 +131,21 @@ mid_tower = |road, { camera, in_view, clock }| {
 }
 
 ## `tower` standing on the ground at `road_point` in the segment that `place`
-## maps, if it is in front of `camera`.
+## maps, if it is in front of `camera` and some of it shows above the horizon.
 tower_if_ahead : RoadAhead.RoadView,
 {
 	camera : Pipeline.SightingCamera,
 	place : SegmentFromRider,
 	road_point : Geom.RoadPoint,
 	tower : Tower,
-} -> Try(Pipeline.Sighted(Tower), [BehindCamera])
+} -> Try(Pipeline.Sighted(Tower), [BehindCamera, BelowHorizon])
 tower_if_ahead = |road, { camera, place, road_point, tower }| {
 	placed_tower : Geom.Placed(Tower)
 	placed_tower = { road_point, lift: Distance.zero, kind: tower }
-	Pipeline.sighting_of(placed_tower, { road, camera, place })
+	sighting = Pipeline.sighting_of(placed_tower, { road, camera, place })?
+	if Tower.is_wholly_sunk(sighting.spot.foot()) {
+		Err(BelowHorizon)
+	} else {
+		Ok(sighting)
+	}
 }

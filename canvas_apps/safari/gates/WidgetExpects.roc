@@ -107,9 +107,20 @@ expect {
 		and words.contains("Cones({ shade: 0.5 })")
 }
 
-## The names under the stills widget's small stills, the only lines it centers.
+## Every line of the names under the stills widget's small stills, the only
+## lines it centers. A long name takes two.
+still_name_lines : List(Shapes.Shape) -> List(Shapes.TextLine)
+still_name_lines = |shapes| lines_of_type(shapes).keep_if(|line| line.align == Center)
+
+## The first line of each name under the stills widget's small stills: a line
+## that doesn't go on from a line above it ending in a comma.
 still_names : List(Shapes.Shape) -> List(Shapes.TextLine)
-still_names = |shapes| lines_of_type(shapes).keep_if(|line| line.align == Center)
+still_names = |shapes| {
+	lines = still_name_lines(shapes)
+	goes_on_from = |line, other|
+		other.x == line.x and other.y < line.y and other.text.ends_with(",")
+	lines.keep_if(|line| !lines.any(|other| goes_on_from(line, other)))
+}
 
 ## Whether `text`, set as `name` is, fits the cell `name` stands under. The
 ## cells of a row are all one width, so a cell is as wide as its name is far
@@ -186,10 +197,13 @@ is_type_left_of_still = |shapes| {
 	}
 }
 
-# Each name under a small still fits its cell, and one much longer would not.
+# Each line of each name under a small still fits its cell, and one much
+# longer would not.
 expect {
-	names = still_names(stills_first_frame_shapes)
-	names.len() == 13 and names.all(|name| fits_cell_of(names, { name, text: name.text }))
+	lines = still_name_lines(stills_first_frame_shapes)
+	still_names(stills_first_frame_shapes).len()
+		== 13
+		and lines.all(|name| fits_cell_of(lines, { name, text: name.text }))
 }
 expect
 	match still_names(stills_first_frame_shapes) {

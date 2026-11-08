@@ -40,4 +40,28 @@ Cat := { pose : CatCrossing.CatPose }.{
 			Land => CatStills.land_still
 			Collapse => CatStills.collapse_still
 		}
+
+	## A pose's name, as a widget captions it.
+	pose_name : CatCrossing.CatPose -> Str
+	pose_name = |pose|
+		match pose {
+			Rest => "Rest"
+			Stride => "Stride"
+			Frozen => "Frozen"
+			Coil => "Coil"
+			Flight => "Flight"
+			Land => "Land"
+			Collapse => "Collapse"
+		}
 }
+
+expect
+	[
+		(Rest, "Rest"),
+		(Stride, "Stride"),
+		(Frozen, "Frozen"),
+		(Coil, "Coil"),
+		(Flight, "Flight"),
+		(Land, "Land"),
+		(Collapse, "Collapse"),
+	].all(|(pose, name)| Cat.pose_name(pose) == name)
