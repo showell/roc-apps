@@ -1811,7 +1811,7 @@ digraph truck {
 
 The truck is what the rider chases. It starts 500 metres ahead and keeps to a schedule that brings it to within 100 at the route's end. Its state is three fields:
 
-{{code Truck.Truck from "How far along" to "pace : [Slowing, NotSlowing],"}}
+{{code Truck.Truck from "How far along" to "pace : Truck.Pace,"}}
 
 The schedule is a straight line, and a pure function of the rider's progress, destructured from a record so the call site has to name both `Distance`s:
 

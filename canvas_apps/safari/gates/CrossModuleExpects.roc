@@ -36,6 +36,7 @@ import game.Gawking
 import game.Gaze
 import game.RoadAhead
 import game.Route
+import game.RoutePlace
 import game.Segment
 import game.SegmentPlace
 import game.Geom
@@ -1068,14 +1069,8 @@ expect scene.rails.len() == RailSighting.rail_quads_in_view(road, origin_camera)
 expect
 	depths_of(scene.trucks)
 		== sighted_depths(
-			TruckSighting.truck_in_view(
-				road,
-				{
-					camera: origin_camera,
-					route_position: scene_facts.truck.route_position,
-					lit_truck: scene_facts.truck.lit_truck,
-				},
-			).map_ok(|truck| [truck]) ?? [],
+			TruckSighting.truck_in_view(road, { camera: origin_camera, truck: scene_facts.truck })
+				.map_ok(|truck| [truck]) ?? [],
 		)
 expect scene.trucks.len() == 1
 expect scene.birds.len() > 0
@@ -3040,6 +3035,44 @@ truck_road = crafted_road([
 	{ ..segment_of([]), length: Distance.metres(400.0) },
 ])
 
+## The place `metres` along the truck road's route.
+truck_route_place : F64 -> Try(RoutePlace, [PastRouteEnd])
+truck_route_place = |metres| RoutePlace.at_distance(truck_road.route(), Distance.metres(metres))
+
+## The place on the truck road's segment at `count_before`, `along` metres
+## from its start, on the middle of the road.
+truck_route_place_on : U32, F64 -> RoutePlace
+truck_route_place_on = |count_before, along| {
+	segment_index: Route.SegmentIndex.number(count_before),
+	along: Along.metres(along),
+	across: Across.middle,
+}
+
+# A place found by its distance is on the segment it falls on, and a distance at
+# a segment's end is that segment's end, not the next one's start; just past the
+# route's end is past it.
+expect
+	[
+		(0.0, Ok(truck_route_place_on(0, 0.0))),
+		(250.0, Ok(truck_route_place_on(0, 250.0))),
+		(500.0, Ok(truck_route_place_on(0, 500.0))),
+		(500.5, Ok(truck_route_place_on(1, 0.5))),
+		(660.0, Ok(truck_route_place_on(1, 160.0))),
+		(820.0, Ok(truck_route_place_on(1, 320.0))),
+		(1000.0, Ok(truck_route_place_on(2, 180.0))),
+		(1220.0, Ok(truck_route_place_on(2, 400.0))),
+		(1220.5, Err(PastRouteEnd)),
+	].all(|(metres, want)| truck_route_place(metres) == want)
+
+# `distance_along` undoes `at_distance`, at each segment's end and in its middle.
+expect
+	[0.0, 250.0, 500.0, 660.0, 820.0, 1000.0, 1220.0].all(
+		|metres| {
+			place = truck_route_place(metres) ?? crash "CrossModuleExpects: the place is on the truck road"
+			place.distance_along(truck_road.route()).to_metres() == metres
+		},
+	)
+
 ## What becomes of a truck `lead` metres ahead of a rider on the truck road's
 ## first segment, seen from `vantage`, with its lights off. On the first
 ## segment the rider's distance along the route is the vantage's `along`.
@@ -3049,8 +3082,10 @@ truck_seen_from = |vantage, lead|
 		truck_road,
 		{
 			camera: { vantage: vantage },
-			route_position: Distance.metres(vantage.along.to_metres() + lead),
-			lit_truck: { headlights: Off, brake_lights: Off },
+			truck: {
+				route_position: Distance.metres(vantage.along.to_metres() + lead),
+				lit_truck: { headlights: Off, brake_lights: Off },
+			},
 		},
 	)
 
@@ -3100,28 +3135,6 @@ expect
 		(600.0, 0.0),
 		(900.0, 0.0),
 	].all(|(lead, want)| lit_truck_of(lead).spot.road_point().across.to_metres() == want)
-
-## The lights a truck in view shows, when it has `lights` on.
-lights_shown : LitTruck -> LitTruck
-lights_shown = |lights| {
-	truck = TruckSighting.truck_in_view(
-		truck_road,
-		{
-			camera: { vantage: origin },
-			route_position: Distance.metres(100.0),
-			lit_truck: lights,
-		},
-	) ?? crash "CrossModuleExpects: this lead puts the truck in view"
-	truck.kind
-}
-
-expect
-	[
-		{ headlights: Off, brake_lights: Off },
-		{ headlights: Off, brake_lights: On },
-		{ headlights: On, brake_lights: Off },
-		{ headlights: On, brake_lights: On },
-	].all(|lights| lights_shown(lights) == lights)
 
 expect
 	[

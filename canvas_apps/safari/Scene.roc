@@ -55,14 +55,7 @@ Scene := {
 		birds_seen = EncounterSighting.animals_in_view(road, { camera, animals: birds })
 		cats_seen = EncounterSighting.animals_in_view(road, { camera, animals: cats })
 		trucks =
-			match TruckSighting.truck_in_view(
-				road,
-				{
-					camera,
-					route_position: facts.truck.route_position,
-					lit_truck: facts.truck.lit_truck,
-				},
-			) {
+			match TruckSighting.truck_in_view(road, { camera, truck: facts.truck }) {
 				Ok(truck) => [Pipeline.rendering_of(truck, { cam_focal, context: on_road })]
 				Err(NoTruck) | Err(BehindCamera) => []
 			}
