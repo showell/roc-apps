@@ -21,7 +21,7 @@ TruckLights :: [].{
 	## The two headlight beams, each a little in from its side.
 	headlight_beams : Picture.Setting(TruckShape.TruckOnRoad) -> List(Shapes.Shape)
 	headlight_beams = |truck| {
-		box = truck.context.box
+		box = TruckShape.truck_box
 		[
 			headlight_beam(truck, box.left.plus(headlight_inset)),
 			headlight_beam(truck, box.right.minus(headlight_inset)),
@@ -31,7 +31,7 @@ TruckLights :: [].{
 	## The two brake lights, one in from each side of the trailer's back.
 	brake_lights : Picture.Setting(TruckShape.TruckOnRoad) -> List(Shapes.Shape)
 	brake_lights = |truck| {
-		box = truck.context.box
+		box = TruckShape.truck_box
 		brake_shapes(
 			truck,
 			{
@@ -159,7 +159,7 @@ Across -> Try(
 	[BehindCamera, TooSmall],
 )
 headlight_beam = |truck, across| {
-	nose = truck.context.box.nose
+	nose = TruckShape.truck_box.nose
 	at_lamp = |height| TruckShape.point(truck, { along: nose, across, height })
 	at_far_end = |height| TruckShape.point(truck, { along: nose.plus(beam_length), across, height })
 	lamp_bottom = at_lamp(headlight_height.minus(beam_half_height_at_lamp))
@@ -189,7 +189,7 @@ brake_shapes : Picture.Setting(TruckShape.TruckOnRoad),
 	right : Across,
 } -> List(Shapes.Shape)
 brake_shapes = |truck, lamp_sides| {
-	rear = truck.context.box.rear
+	rear = TruckShape.truck_box.rear
 	lamp =
 		TruckShape.strip_corners(
 			lamp_sides,

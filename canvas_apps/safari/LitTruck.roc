@@ -39,19 +39,7 @@ LitTruck := { headlights : [On, Off], brake_lights : [On, Off] }.{
 	Picture.Setting(
 		{ road : RoadAhead.RoadView, vantage : Geom.Vantage },
 	) -> Picture
-	scenery_picture = |lit_truck, { spot, cam_focal, context: { road, vantage } }| {
-		box = TruckShape.truck_box(spot.road_point())
-		Picture.from_shapes(
-			truck_shapes(
-				lit_truck,
-				{
-					spot,
-					cam_focal,
-					context: { road, vantage, box },
-				},
-			),
-		)
-	}
+	scenery_picture = |lit_truck, truck| Picture.from_shapes(truck_shapes(lit_truck, truck))
 }
 
 ## The truck, filling its box.

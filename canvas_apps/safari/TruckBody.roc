@@ -68,8 +68,9 @@ mean_forward = |corners|
 ## Where the truck's axles are along the road, back to front: a pair
 ## under the back of the trailer, a pair under its front, and one under
 ## the cab.
-axles : TruckShape.TruckBox -> List(Along)
-axles = |box| {
+axles : List(Along)
+axles = {
+	box = TruckShape.truck_box
 	back_pair = box.rear.plus(trailer_axle_inset)
 	front_pair = box.trailer_front.minus(trailer_axle_inset)
 	half_gap = axle_pair_gap.divided_by(2.0)
@@ -86,8 +87,7 @@ axles = |box| {
 ## nose, then its tires, the left side's and then the right's.
 faces : Picture.Setting(TruckShape.TruckOnRoad) -> List(Camera.FlatPolygon)
 faces = |truck| {
-	box = truck.context.box
-	truck_axles = axles(box)
+	box = TruckShape.truck_box
 	[
 		[
 			side(truck, box.left),
@@ -97,8 +97,8 @@ faces = |truck| {
 			windshield(truck),
 			nose(truck),
 		],
-		truck_axles.map(|axle| tire(truck, { axle, across: box.left })),
-		truck_axles.map(|axle| tire(truck, { axle, across: box.right })),
+		axles.map(|axle| tire(truck, { axle, across: box.left })),
+		axles.map(|axle| tire(truck, { axle, across: box.right })),
 	].join()
 }
 
@@ -118,7 +118,7 @@ face = |truck, { color, corners }| {
 ## the cab's floor, and down to the trailer's floor.
 side : Picture.Setting(TruckShape.TruckOnRoad), Across -> Camera.FlatPolygon
 side = |truck, across| {
-	box = truck.context.box
+	box = TruckShape.truck_box
 	face(
 		truck,
 		{
@@ -138,7 +138,7 @@ side = |truck, across| {
 
 back : Picture.Setting(TruckShape.TruckOnRoad) -> Camera.FlatPolygon
 back = |truck| {
-	box = truck.context.box
+	box = TruckShape.truck_box
 	face(
 		truck,
 		{
@@ -157,7 +157,7 @@ back = |truck| {
 ## The roof of the trailer and the cab, one flat face.
 roof : Picture.Setting(TruckShape.TruckOnRoad) -> Camera.FlatPolygon
 roof = |truck| {
-	box = truck.context.box
+	box = TruckShape.truck_box
 	face(
 		truck,
 		{
@@ -175,7 +175,7 @@ roof = |truck| {
 
 windshield : Picture.Setting(TruckShape.TruckOnRoad) -> Camera.FlatPolygon
 windshield = |truck| {
-	box = truck.context.box
+	box = TruckShape.truck_box
 	face(
 		truck,
 		{
@@ -193,7 +193,7 @@ windshield = |truck| {
 
 nose : Picture.Setting(TruckShape.TruckOnRoad) -> Camera.FlatPolygon
 nose = |truck| {
-	box = truck.context.box
+	box = TruckShape.truck_box
 	face(
 		truck,
 		{

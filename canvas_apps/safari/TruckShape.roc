@@ -28,16 +28,12 @@ TruckShape :: [].{
 	}
 
 	## What a truck is drawn from beyond its spot and the camera's lens: the road
-	## its points are measured on, the camera's vantage, and the box it fills
-	## there.
-	TruckOnRoad : {
-		road : RoadAhead.RoadView,
-		vantage : Geom.Vantage,
-		box : TruckShape.TruckBox,
-	}
+	## its points are measured on, and the camera's vantage.
+	TruckOnRoad : { road : RoadAhead.RoadView, vantage : Geom.Vantage }
 
-	## A point on the truck: how far along the road, how far across it, and
-	## how high above the truck's own bottom.
+	## A point on the truck, in the truck's own frame: how far along the road
+	## and how far across it from where the trailer is centred, and how high
+	## above the truck's own bottom.
 	TruckPoint : {
 		along : Along,
 		across : Across,
@@ -67,33 +63,38 @@ TruckShape :: [].{
 	cab_bottom : Distance
 	cab_bottom = tire_radius
 
-	## The box of a truck whose trailer is centred at `along` and `across`;
-	## the cab is ahead of the trailer.
-	truck_box : { along : Along, across : Across } -> TruckShape.TruckBox
-	truck_box = |center| {
-		trailer_front = center.along.plus(trailer_length.divided_by(2.0))
+	## The box the truck fills, in its own frame, centred where its trailer
+	## is; the cab is ahead of the trailer.
+	truck_box : TruckShape.TruckBox
+	truck_box = {
+		trailer_front = Along.start.plus(trailer_length.divided_by(2.0))
 		{
-			rear: center.along.minus(trailer_length.divided_by(2.0)),
+			rear: Along.start.minus(trailer_length.divided_by(2.0)),
 			trailer_front,
 			roof_front: trailer_front.plus(cab_length.times(cab_roof_fraction.to_f64())),
 			nose: trailer_front.plus(cab_length),
-			left: center.across.minus(truck_width.divided_by(2.0)),
-			right: center.across.plus(truck_width.divided_by(2.0)),
+			left: Across.middle.minus(truck_width.divided_by(2.0)),
+			right: Across.middle.plus(truck_width.divided_by(2.0)),
 		}
 	}
 
 	## Where a point on the truck lands in the rider's view, raised as far as
-	## the truck is off the ground. The ground curves away from the rider, so
-	## the point is lowered by how far the ground has dropped beneath it.
+	## the truck is off the ground. The point is carried from the truck's frame
+	## onto the road at the truck's spot. The ground curves away from the rider,
+	## so the point is lowered by how far the ground has dropped beneath it.
 	point : Picture.Setting(TruckShape.TruckOnRoad), TruckShape.TruckPoint -> Geom.RaisedPoint
 	point = |truck, { along, across, height }| {
 		place = truck.spot.place()
+		center = truck.spot.road_point()
 		on_ground = RoadAhead.rider_point_at(
 			truck.context.road,
 			{
 				vantage: truck.context.vantage,
 				place,
-				road_point: { along, across },
+				road_point: {
+					along: center.along.plus(along.from_start()),
+					across: center.across.plus(across.distance_from(Across.middle)),
+				},
 			},
 		)
 		{
