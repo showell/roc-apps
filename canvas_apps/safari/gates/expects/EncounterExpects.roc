@@ -280,7 +280,7 @@ bird_planning_gap : Distance
 bird_planning_gap = EncounterPlan.planning_gap(BirdFlight.flight_span, VehicleLimits.top_speed)
 
 expect route_cats.len() == 3
-expect route_cats.all(|{ crossing, .. }| cat_planning_gap < crossing.along.from_start())
+expect route_cats.all(|{ crossing, .. }| cat_planning_gap < crossing.along().from_start())
 expect Fixtures.route_flights.len() == 4
 expect Fixtures.route_flights.all(
 	|{ from, .. }| bird_planning_gap < from.road_point.along.from_start(),
