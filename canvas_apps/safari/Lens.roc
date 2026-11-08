@@ -67,7 +67,15 @@ Lens :: [].{
 	## `slope` for every unit forward, through a lens of `focal_length`. A near
 	## point's height above the eye (`Camera.project`) lands here.
 	y_for_slope : { slope : F64, focal_length : Pixels } -> Pixels
-	y_for_slope = |{ slope, focal_length }| Screen.horizon_y.minus(focal_length.times(slope))
+	y_for_slope = |{ slope, focal_length }|
+		Screen.horizon_y.minus(height_for_slope({ slope, focal_length }))
+
+	## How far up the screen a line of sight that climbs `slope` for every unit
+	## forward lands above the horizon, through a lens of `focal_length`: the
+	## pinhole's rule up the screen, measured from the horizon. How tall a
+	## near thing stands (`Camera.height_on_screen`) is this too.
+	height_for_slope : { slope : F64, focal_length : Pixels } -> Pixels
+	height_for_slope = |{ slope, focal_length }| focal_length.times(slope)
 
 	## The slope to the right, for every unit forward, of the line of sight
 	## through the screen's `x`, through a lens of `focal_length`: the way back
