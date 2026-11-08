@@ -1016,12 +1016,6 @@ if arg("self_test", "") == "1" then
 else
   local expanded = build(SOURCE, OUTPUT, SAFARI)
   print("tutorial: " .. expanded .. " includes expanded into " .. OUTPUT)
-  -- The book is parked until its chapters are rewritten, so the rule that it
-  -- names every module is reported, loudly, but doesn't stop the build.
-  local named = attempt(check_modules_named, SAFARI, read(SOURCE))
-  if named.ok then
-    print("tutorial: the book names every module")
-  else
-    print(named.error .. ": SKIPPED while the book is parked")
-  end
+  check_modules_named(SAFARI, read(SOURCE))
+  print("tutorial: the book names every module")
 end
