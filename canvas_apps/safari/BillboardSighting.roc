@@ -16,7 +16,9 @@ BillboardSighting :: [].{
 	billboards_in_view :
 		RoadAhead.RoadView, Pipeline.SightingCamera -> List(Pipeline.Sighted(Billboard))
 	billboards_in_view = |road, camera|
-		billboard_fates(road, camera).keep_oks(|fate| fate)
+		RoadAhead.segments_in_view(road)
+			.join_map(|in_view| segment_billboards(road, { camera, in_view }))
+			.keep_oks(|fate| fate)
 }
 
 ## Farm animals are sighted on this many segments of the road ahead.
@@ -29,13 +31,6 @@ wildlife_reach = 5
 
 ## What became of a billboard placed in the rider's view.
 Fate : Try(Pipeline.Sighted(Billboard), [BehindCamera, TooSmall])
-
-## What became of every billboard on the segments in view, in the order of
-## `RoadAhead.segments_in_view`.
-billboard_fates : RoadAhead.RoadView, Pipeline.SightingCamera -> List(Fate)
-billboard_fates = |road, camera|
-	RoadAhead.segments_in_view(road)
-		.join_map(|in_view| segment_billboards(road, { camera, in_view }))
 
 ## The billboards of a segment in view: its farm animals, then what lives at
 ## its end.
@@ -59,7 +54,7 @@ farm_sightings = |road, { camera, in_view }| {
 	if is_within_reach(place, farm_reach) {
 		in_view.segment.segment_cows()
 			.concat(in_view.segment.segment_pigs())
-			.map(|billboard| sight_billboard(road, { camera, place, billboard }))
+			.map(|billboard| Pipeline.scenery_sighting_of(billboard, { road, camera, place }))
 	} else {
 		[]
 	}
@@ -76,21 +71,11 @@ bend_sightings = |road, { camera, in_view }| {
 	place = in_view.place
 	if is_within_reach(place, wildlife_reach) {
 		bend_life_billboards(in_view.segment)
-			.map(|billboard| sight_billboard(road, { camera, place, billboard }))
+			.map(|billboard| Pipeline.scenery_sighting_of(billboard, { road, camera, place }))
 	} else {
 		[]
 	}
 }
-
-## A billboard, placed through `place` on the road's map, as the rider sees it.
-sight_billboard : RoadAhead.RoadView,
-{
-	camera : Pipeline.SightingCamera,
-	place : SegmentPlace,
-	billboard : Geom.Placed(Billboard),
-} -> Fate
-sight_billboard = |road, { camera, place, billboard }|
-	Pipeline.scenery_sighting_of(billboard, { road, camera, place })
 
 ## Whether a segment at `place` is in reach: among the first `reach` of the
 ## road ahead, or the segment just behind, which meets the rider's own at its
