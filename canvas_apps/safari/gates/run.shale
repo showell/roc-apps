@@ -414,9 +414,23 @@ function check_widget(roc, env, folder)
   return 1
 end
 
--- The web platform's host, which canvas_apps/build.sh builds with Zig, and
--- which every widget's wasm links against.
+-- The web platform's host, which every widget's wasm links against, and the
+-- script that builds it, which canvas_apps/build.sh runs too.
 const WEB_HOST = "canvas_apps/web/platform/targets/wasm32/host.wasm"
+const BUILD_WEB_HOST = "canvas_apps/web/build_host.sh"
+
+-- Builds WEB_HOST when it is missing, as in a fresh worktree; a build that
+-- fails, or leaves no host, fails the gate.
+function ensure_web_host()
+  if exists(WEB_HOST) then return nil end
+  local h = run({"bash", BUILD_WEB_HOST}, {timeout_ms = 600000, tail = 40, want = "script: canvas_apps/web/build_host.sh builds the canvas_apps' wasm host with Zig"})
+  print("build_host.sh: " .. h.ms .. " ms")
+  if h.ended ~= "exit" or get(h, "code", -1) ~= 0 or not exists(WEB_HOST) then
+    print(trim(h.out))
+    fail("safari gates: " .. BUILD_WEB_HOST .. " ended " .. h.ended .. " " .. get(h, "code", -1) .. ", and the widgets' wasm links against " .. WEB_HOST)
+  end
+  return nil
+end
 
 -- One widget's web.roc built to wasm on the dev backend into the folder `bin`:
 -- how many things went wrong. `roc check` passing says nothing about this, since
@@ -465,7 +479,7 @@ end
 -- path included, and has no way to run only some, so the game's expects run
 -- here too, once. A widget that doesn't check isn't tested, so the test waits
 -- for them all. Last, each widget's web.roc is built to wasm on the dev
--- backend, which links against WEB_HOST, because a widget can check clean and
+-- backend, which links against WEB_HOST, built first if missing, because a widget can check clean and
 -- still crash the compiler's build. The page check build.sh adds is left to
 -- publish: it took 146 s for the 13 widgets (2026-11-08).
 function widgets()
@@ -479,7 +493,7 @@ function widgets()
   if wrong == 0 then wrong = test_root(roc, env, WIDGET_ROOT_FROM_SAFARI, passed) end
   local built = 0
   if wrong == 0 then
-    if not exists(WEB_HOST) then fail("safari gates: no " .. WEB_HOST .. ", which the widgets' wasm links against: build it once with `canvas_apps/build.sh safari`") end
+    ensure_web_host()
     local bin = fresh_dir("scratch:", "safari-widget-wasm")
     for folder in folders do
       local bad = build_widget(roc, env, bin, folder)
