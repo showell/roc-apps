@@ -65,16 +65,18 @@ BirdFlight :: [].{
 	instant_at = |flight, stage| flight_timeline(flight).instant(stage)
 }
 
-## How far short of the tree it left the rider is when the bird lands.
+## How far short of the tree it left the rider is when the bird lands, so
+## that the rider sees the landing before passing the tree.
 landing_gap : Distance
 landing_gap = Distance.metres(15.0)
 
-## How far above a straight line the top of its path is.
+## How far above a straight line the top of its path is, chosen by eye.
 flight_arc : Distance
 flight_arc = Distance.metres(5.0)
 
 ## The bird flies to a tree at least this far along from the one it left,
-## so that its path runs ahead of the rider as well as across the road.
+## so that its path runs ahead of the rider as well as across the road. The
+## length is chosen by eye.
 shortest_hop : Distance
 shortest_hop = Distance.metres(25.0)
 
@@ -104,7 +106,8 @@ sitting_on : Trees.RoadsideTree -> BirdFlight.BirdInstant
 sitting_on = |tree| { pose: Perched, location: tree_top(tree) }
 
 ## How the bird looks through a flight, a frame a step: a flap side on as it
-## takes off, seven flaps seen from behind, and a flap's length of diving.
+## takes off, seven flaps seen from behind, and a flap's length of diving. The
+## seven is chosen by eye.
 flight_poses : List(PosedBird.BirdPose)
 flight_poses = [
 	flap_poses({ up: Side(WingsUp), down: Side(WingsDown) }),

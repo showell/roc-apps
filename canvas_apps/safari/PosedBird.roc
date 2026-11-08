@@ -50,6 +50,6 @@ PosedBird := { pose : PosedBird.BirdPose }.{
 		}
 }
 
-## How tall a bird stands.
+## How tall a bird stands, chosen by eye.
 bird_height : Distance
 bird_height = Distance.metres(2.2)
