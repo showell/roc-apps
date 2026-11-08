@@ -24,7 +24,8 @@
 -- prints a line for a large change, and holds a cold run to no budget.
 --
 -- Roc is roc-apps' pin, the nightly named in `roc-version`, installed at
--- `tools:roc-<pin>/roc` (`~/tools/` on the box). Every Roc here runs on the
+-- `tools:roc-<pin>/roc` (`~/tools/` on the box), which the repository's
+-- prelude, `.shale/prelude.shale`, finds and checks. Every Roc here runs on the
 -- checkout's warm cache, under `build:` (CACHES); `cold=1`, which
 -- publish.shale gives it, runs each child on an empty cache instead.
 -- Each child's binaries and outputs go in a folder of its own under `scratch:`
@@ -78,16 +79,6 @@ end
 -- This checkout's folder, for a gate run from its root.
 function checkout_caches()
   return CACHES .. "/" .. cache_folder_name(real("."))
-end
-
-function roc_path()
-  if not exists("roc-version") then fail("safari gates: no roc-version here: run from the roc-apps root") end
-  local pin = trim(read("roc-version"))
-  local roc = "tools:roc-" .. pin .. "/roc"
-  if not exists(roc) then fail("safari gates: no " .. roc .. ": install roc-apps' pinned nightly " .. pin .. " at ~/tools/roc-" .. pin .. "/") end
-  local v = run({real(roc), "version"}, {timeout_ms = 30000, whole = 4000, want = WANT})
-  if trim(v.out) ~= "Roc compiler version " .. pin then fail("safari gates: " .. roc .. " is " .. trim(v.out) .. ", not " .. pin) end
-  return real(roc)
 end
 
 -- The environment that points a Roc at the cache `folder`.
@@ -373,7 +364,7 @@ function format_wrong(roc)
 end
 
 function format()
-  if format_wrong(roc_path()) > 0 then fail("safari gates: roc fmt would change a file") end
+  if format_wrong(pinned_roc("safari gates")) > 0 then fail("safari gates: roc fmt would change a file") end
   print("roc fmt --check: clean")
   return nil
 end
@@ -389,7 +380,7 @@ end
 -- so does one in a module no root reaches. The roots overlap, so a line that
 -- two roots reach counts once. It also runs `part=format`'s check.
 function expects()
-  local roc = roc_path()
+  local roc = pinned_roc("safari gates")
   local cache = child_cache("expects")
   local env = cache_env(cache)
   local passed = {}
@@ -448,7 +439,7 @@ end
 -- here too, once. A widget that doesn't check isn't tested, so the test waits
 -- for them all.
 function widgets()
-  local roc = roc_path()
+  local roc = pinned_roc("safari gates")
   local cache = child_cache("widgets")
   local env = cache_env(cache)
   local passed = {}
@@ -492,7 +483,7 @@ end
 -- check` with no error or warning, so a change to the game can't leave them
 -- broken unseen.
 function proof()
-  local roc = roc_path()
+  local roc = pinned_roc("safari gates")
   local scratch = fresh_dir("scratch:", "safari-proof")
   local bin = scratch .. "/bin"
   mkdir(bin)
@@ -606,7 +597,7 @@ function fast_cache()
 end
 
 function fast_check()
-  local roc = roc_path()
+  local roc = pinned_roc("safari gates")
   local checked = roc_check(roc, cache_env(fast_cache()), SAFARI, "web.roc")
   if not checked.is_clean then
     print(trim(checked.run.out))
@@ -617,7 +608,7 @@ function fast_check()
 end
 
 function fast_expects()
-  local roc = roc_path()
+  local roc = pinned_roc("safari gates")
   local r = run({roc, "test", MAIN_EXPECT_ROOT}, {timeout_ms = 120000, cwd = SAFARI, whole = 4000000, want = WANT, env = cache_env(fast_cache())})
   local summary = re_find(r.out, ROC_TEST_PASSED)
   if r.ended ~= "exit" or get(r, "code", -1) ~= 0 or summary == nil or tonumber(summary.group) == 0 then
@@ -638,7 +629,7 @@ function held_fast_frame()
 end
 
 function fast_frame()
-  local roc = roc_path()
+  local roc = pinned_roc("safari gates")
   local folder = fast_cache()
   local env = cache_env(folder)
   local tool = folder .. "/RasterFrame"
@@ -656,7 +647,7 @@ end
 -- Every gate, each a child run; a child that fails is named, and the rest
 -- still run.
 function all()
-  roc_path()
+  pinned_roc("safari gates")
   prune_removed_checkouts()
   local is_cold = clear_full_caches() or COLD
   local bad = {}
