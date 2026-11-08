@@ -87,27 +87,53 @@ Geom :: [].{
 	## A point on the segment after `bend`, measured on the segment before it:
 	## turned by the bend, then moved to where the segment after starts.
 	point_in_segment_before : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
-	point_in_segment_before = |point, bend| {
-		start = start_after(bend)
-		along = point.along.to_metres()
-		across = point.across.to_metres()
+	point_in_segment_before = |point, bend|
+		Geom.point_before_worked_bend(point, Geom.worked_bend(bend))
+
+	## A point on the segment before `bend`, measured on the segment after it.
+	## This is `point_in_segment_before` undone.
+	point_in_segment_after : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
+	point_in_segment_after = |point, bend|
+		Geom.point_after_worked_bend(point, Geom.worked_bend(bend))
+
+	## A bend with what carrying a point across it needs worked out once: where
+	## the segment after it starts, measured on the segment before, and the
+	## cosine and sine of its turn. The road ahead keeps its bends this way, so
+	## the many points of a frame don't each work them out again.
+	WorkedBend : {
+		start_after : Geom.RoadPoint,
+		cos_turn : F64,
+		sin_turn : F64,
+	}
+
+	## `bend`, worked out.
+	worked_bend : Geom.Bend -> Geom.WorkedBend
+	worked_bend = |bend| {
 		cos_turn = bend.turn.to_radians().cos()
 		sin_turn = bend.turn.to_radians().sin()
+		{
+			start_after: start_after(bend, { cos_turn, sin_turn }),
+			cos_turn,
+			sin_turn,
+		}
+	}
+
+	## What `point_in_segment_before` gives, for a bend already worked out.
+	point_before_worked_bend : Geom.RoadPoint, Geom.WorkedBend -> Geom.RoadPoint
+	point_before_worked_bend = |point, { start_after: start, cos_turn, sin_turn }| {
+		along = point.along.to_metres()
+		across = point.across.to_metres()
 		{
 			along: start.along.plus(Distance.metres(cos_turn * along - sin_turn * across)),
 			across: start.across.plus(Distance.metres(sin_turn * along + cos_turn * across)),
 		}
 	}
 
-	## A point on the segment before `bend`, measured on the segment after it.
-	## This is `point_in_segment_before` undone.
-	point_in_segment_after : Geom.RoadPoint, Geom.Bend -> Geom.RoadPoint
-	point_in_segment_after = |point, bend| {
-		start = start_after(bend)
+	## What `point_in_segment_after` gives, for a bend already worked out.
+	point_after_worked_bend : Geom.RoadPoint, Geom.WorkedBend -> Geom.RoadPoint
+	point_after_worked_bend = |point, { start_after: start, cos_turn, sin_turn }| {
 		past_start = point.along.distance_from(start.along).to_metres()
 		aside = point.across.distance_from(start.across).to_metres()
-		cos_turn = bend.turn.to_radians().cos()
-		sin_turn = bend.turn.to_radians().sin()
 		{
 			along: Along.metres(cos_turn * past_start + sin_turn * aside),
 			across: Across.metres((0.0 - sin_turn) * past_start + cos_turn * aside),
@@ -284,11 +310,10 @@ near_plane_crossing = |{ from, to }| {
 ## the segment before it. The two segments share the corner on the inside of
 ## the bend, so this lies past the end of the segment before, and toward the
 ## turn.
-start_after : Geom.Bend -> Geom.RoadPoint
-start_after = |bend| {
+## The cosine and sine of the bend's turn are `cos_turn` and `sin_turn`.
+start_after : Geom.Bend, { cos_turn : F64, sin_turn : F64 } -> Geom.RoadPoint
+start_after = |bend, { cos_turn, sin_turn }| {
 	half_width = Geom.road_half_width.to_metres()
-	cos_turn = bend.turn.to_radians().cos()
-	sin_turn = bend.turn.to_radians().sin()
 	toward_turn = half_width * (1.0 - cos_turn)
 	{
 		along: Along.metres(bend.segment_length.to_metres() + half_width * sin_turn.abs()),

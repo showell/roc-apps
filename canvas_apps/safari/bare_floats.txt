@@ -34,6 +34,8 @@ Still: traced pictures, in units of the still's own height
 TreeShapes.ring_angles: radians for Trig
 TreeShapes.ring_units: the cosines and sines of ring_angles, worked out once
 TruckShape.circle_angles: radians for Trig
+Geom.WorkedBend: the cosine and sine of a bend's turn, worked out once
+Geom.start_after: the cosine and sine of a bend's turn, handed in by worked_bend
 Scatter.offset: phases, radians per animal, for Trig
 
 # The edge of lib.Shapes, which takes plain numbers.
