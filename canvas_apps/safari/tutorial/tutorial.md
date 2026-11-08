@@ -1460,15 +1460,15 @@ The modules that do the stepping
 digraph stepped {
   node [shape=box, fontname="Helvetica"];
   RideInstant [style=bold];
-  RideInstant -> Rider;
+  RideInstant -> RiderMind;
   RideInstant -> Truck;
   RideInstant -> RiderState;
-  Rider -> Bike;
-  Rider -> Throttle;
-  Rider -> LeanSearch;
-  Rider -> Gaze;
-  Rider -> RiderState;
-  Rider -> VehicleLimits;
+  RiderMind -> Bike;
+  RiderMind -> Throttle;
+  RiderMind -> LeanSearch;
+  RiderMind -> Gaze;
+  RiderMind -> RiderState;
+  RiderMind -> VehicleLimits;
   Truck -> VehicleLimits;
   Throttle -> Gaze;
   Throttle -> VehicleLimits;
@@ -1509,7 +1509,7 @@ This is the rider at step 1,570, with the cat ahead:
 New in this chapter:
 
 - Roc: a nominal record with no bare floats, a value for a bike that doesn't exist
-- Modules: `RiderState`, `RiderEyes`, `Rider`, `CanvasRoll`, `Speed`
+- Modules: `RiderState`, `RiderEyes`, `RiderMind`, `CanvasRoll`, `Speed`
 
 A nominal record holds the rider, and `RideInstant` stores one. Count the opaque types: `SegmentIndex`, `Along`, `Across`, `Turn`, `Speed`, `Lean`, `Bearing` and `Fraction`. Nothing in it is a bare float. Four fields of this one record are angles, of three different types, and passing one type where another is wanted is a compile-time error. The last two fields say where the rider is looking, and they get a chapter of their own.
 
@@ -1521,7 +1521,7 @@ The step does four things in order, and the code reads that way. Static dispatch
 
 The rider steers by leaning, so a decision is a record of two opaque values: a change of lean and an acceleration. There's something to notice in the last line of this next function. `Throttle`, which picks the acceleration, is asked about a bike that doesn't exist yet: the rider as it would be with the new lean, which `Bike.with_lean` makes by building a new record. The real rider isn't touched, because nothing can touch it.
 
-{{code Rider.controls}}
+{{code RiderMind.controls}}
 
 The Rehearsal chapter takes that idea much further. A small version of it decides what happens at the end of a segment. `cross_if_on_road` works out the rider on the next segment and keeps that only if it lands inside the lane. The rejected rider simply stops being referred to, and nothing has to be undone:
 
@@ -1561,8 +1561,8 @@ The modules around `Bike`
 digraph bike {
   node [shape=box, fontname="Helvetica"];
   Bike [style=bold];
-  Rider -> Bike;
-  Rider -> LeanSearch;
+  RiderMind -> Bike;
+  RiderMind -> LeanSearch;
   Coast -> Bike;
   LeanSearch -> Bike;
   LeanSearch -> Coast;
@@ -1583,7 +1583,7 @@ Call this *a narrow view of a wide record*. A module says exactly which fields i
 
 {{code Motorcycle.with_lean}}
 
-`{ ..s, lean }` is record update with a shorthand: the field and the local have the same name. `Rider.decide` called it in the last chapter. Here's the step, which `Rider.rider_state_at_next_step` called:
+`{ ..s, lean }` is record update with a shorthand: the field and the local have the same name. `RiderMind.decide` called it in the last chapter. Here's the step, which `Rider.rider_state_at_next_step` called:
 
 {{code Motorcycle.motorcycle_at_next_step}}
 
@@ -1604,7 +1604,7 @@ The modules around `Throttle`
 digraph throttle {
   node [shape=box, fontname="Helvetica"];
   Throttle [style=bold];
-  Rider -> Throttle;
+  RiderMind -> Throttle;
   Throttle -> Coast;
   Throttle -> CrossingReaction;
   Throttle -> Gaze;
@@ -2294,7 +2294,7 @@ This is the only feedback loop in the design. The rider's speed decides where th
 
 Each stretch of road has exactly one `crossing`: `CatCrosses`, `BirdHere` or `QuietRoad`. A cat and a bird in the same place can't be written down.
 
-One question about the rider is still open: how `Rider.decide` picks a lean.
+One question about the rider is still open: how `RiderMind.decide` picks a lean.
 
 ## Rehearsal
 
@@ -2318,7 +2318,7 @@ The calls of one rehearsal
 digraph rehearsal {
   rankdir=LR;
   node [shape=box, fontname="Helvetica"];
-  decide [label="Rider.decide"];
+  decide [label="RiderMind.decide"];
   best [label="LeanSearch.best_lean"];
   project [label="Coast.project"];
   advance [label="Bike.bike_motion_at_next_step"];
@@ -2348,7 +2348,7 @@ Its caller gives the search its bounds, at most a degree either side of the curr
 
 {{code LeanSearch.best_lean}}
 
-And `Rider.decide` calls that, on its first line. The walk up the stack ends there.
+And `RiderMind.decide` calls that, on its first line. The walk up the stack ends there.
 
 Call this *rehearsal*: run the real rules on a pretend copy, read the result, and throw it away. The numbers are worth stating. Twelve coasts for the lean and one more in `Throttle`, which uses `Coast` to ask whether the road is about to run out. Over the whole ride, a coast averages about 44 simulated steps. So each real step of the ride runs about 570 steps of bike physics that never happen, and the 7,071 steps of the ride come to about four million. With no drawing, on the dev backend, the whole ride takes about 1.6 seconds: about a quarter of a millisecond a step, against a budget of 33. [check: the 44 is `forward / speed` from one coast per step, measured at 9aa3814, not a counter inside `Coast.project`; the 1.6 seconds is one native run, and the page runs wasm.]
 
@@ -2644,7 +2644,7 @@ It's called like any other value, and the steps that follow are named, so three 
 
 {{code Motorcycle.first_step}}
 
-The gate makes `expect` honest in one further way. The gate takes its count from the source: every line that starts `expect`, in a module that one of its `roc test` runs compiles, has to print `PASS` exactly once. An `expect` that nothing compiles fails, and so does one that's indented out of reach. One more consequence: an `expect` can only name what its module imports, so a check sits where its test data can be seen, and a module doesn't take on an import for a test's sake. `Coast`'s projections are checked in `Throttle`, which can see a `Speed`, and `LeanSearch`'s search in `Rider`, which can see a `RiderState`.
+The gate makes `expect` honest in one further way. The gate takes its count from the source: every line that starts `expect`, in a module that one of its `roc test` runs compiles, has to print `PASS` exactly once. An `expect` that nothing compiles fails, and so does one that's indented out of reach. One more consequence: an `expect` can only name what its module imports, so a check sits where its test data can be seen, and a module doesn't take on an import for a test's sake. `Coast`'s projections are checked in `Throttle`, which can see a `Speed`, and `LeanSearch`'s search in `RiderMind`, which can see a `RiderState`.
 
 Even a truck can be checked this way, though it can't be asked about step 4,000 cold. A `TruckState` is a record, so a test writes one down and calls `Truck.truck_state_at_next_step` once.
 

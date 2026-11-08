@@ -4,7 +4,7 @@ import Along
 import EncounterPlan
 import Gaze
 import Motorcycle
-import Rider
+import RiderMind
 import RiderEyes
 import Route
 import Segment
@@ -22,7 +22,7 @@ RiderState := { motorcycle : Motorcycle, eyes : RiderEyes }.{
 	next = |state, { route, encounter_timing }| {
 		seg = state.motorcycle.route_place.segment_on(route)
 		moved = state.motorcycle.motorcycle_at_next_step(
-			Rider.controls(state.motorcycle, { route, encounter_timing }),
+			RiderMind.controls(state.motorcycle, { route, encounter_timing }),
 		)
 		motorcycle =
 			match seg.segment_ending() {

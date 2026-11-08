@@ -5,7 +5,7 @@ import Motorcycle
 import Route
 import Throttle
 
-Rider :: [].{
+RiderMind :: [].{
 
 	## The lean toward the best line, and the speed the throttle gives the
 	## motorcycle once it leans so, on `route` with the encounter on the
