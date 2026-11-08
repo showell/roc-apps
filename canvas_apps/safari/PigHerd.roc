@@ -24,7 +24,7 @@ PigHerd := [BigHerd(PigHerd.BigPigHerd), TwoRows(PigHerd.TwoRowPigHerd)].{
 		rows_behind_front : U64,
 
 		## Where the first column is along the road, from the herd's place.
-		first_column : Distance,
+		first_column_offset : Distance,
 
 		## The distance between columns, along the road.
 		column_spacing : Distance,
@@ -62,7 +62,7 @@ PigHerd := [BigHerd(PigHerd.BigPigHerd), TwoRows(PigHerd.TwoRowPigHerd)].{
 		back_offsets : List(Distance),
 
 		## How much farther from the road the back row stands than the front.
-		back_row_offset : Distance,
+		back_row_depth : Distance,
 	}.{
 
 		## The herd's pig that stands out, about `herd_along`.
@@ -138,7 +138,7 @@ front_offsets = |herd| {
 ## The two-row herd's pigs about `herd_along`, front row first.
 two_row_pigs : PigHerd.TwoRowPigHerd, Along -> List(Geom.Placed(Billboard))
 two_row_pigs = |herd, herd_along| {
-	back_across = front_row_across.plus(herd.back_row_offset)
+	back_across = front_row_across.plus(herd.back_row_depth)
 	row_pigs(herd_along, { across: front_row_across, offsets: front_offsets(herd) })
 		.concat(row_pigs(herd_along, { across: back_across, offsets: herd.back_offsets }))
 }
@@ -154,7 +154,7 @@ herd_pig : PigHerd.BigPigHerd,
 herd_pig = |herd, { herd_along, row, column }| {
 	rows_back = row.to_f64()
 	columns_along = column.to_f64()
-	first_column = herd_along.plus(herd.first_column)
+	first_column = herd_along.plus(herd.first_column_offset)
 	in_column = first_column.plus(herd.column_spacing.times(columns_along))
 	in_line = in_column.plus(herd.row_depth.times(rows_back))
 	in_row = front_row_across.plus(herd.row_depth.times(rows_back))
@@ -182,7 +182,7 @@ three_rows_of_four = {
 	columns_before_standout: 1,
 	columns_after_standout: 2,
 	rows_behind_front: 2,
-	first_column: Distance.metres(-4.0),
+	first_column_offset: Distance.metres(-4.0),
 	column_spacing: Distance.metres(4.0),
 	row_depth: Distance.metres(6.0),
 	jitter_along: Distance.metres(1.2),
@@ -199,7 +199,7 @@ three_in_front_two_behind = {
 		offsets_after: [Distance.metres(5.0)],
 	},
 	back_offsets: [-1.0, 3.0].map(Distance.metres),
-	back_row_offset: Distance.metres(6.0),
+	back_row_depth: Distance.metres(6.0),
 }
 
 ## Where these herds stand along the road.

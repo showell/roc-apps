@@ -360,7 +360,7 @@ big_pig_herd = {
 	columns_before_standout: 2,
 	columns_after_standout: 4,
 	rows_behind_front: 6,
-	first_column: Distance.metres(-6.0),
+	first_column_offset: Distance.metres(-6.0),
 	column_spacing: Distance.metres(4.0),
 	row_depth: Distance.metres(6.0),
 	jitter_along: Distance.metres(1.2),
@@ -384,7 +384,7 @@ two_row_pig_herd = {
 		6.0,
 		10.0,
 	].map(Distance.metres),
-	back_row_offset: Distance.metres(6.0),
+	back_row_depth: Distance.metres(6.0),
 }
 
 ## The route's cow herd, fourteen cows in columns of three.
