@@ -113,7 +113,7 @@ tower_shapes = |right, beacon| {
 status_lines : Clock -> List(Str)
 status_lines = |clock| {
 	period = Beacon.beacon_period
-	into_blink = clock.steps_since(Clock.start).wrapped_to(period)
+	into_blink = Beacon.steps_into_blink({ segment: Route.SegmentIndex.first, place: AtEnd }, clock)
 	first_tower = ReadoutText.percent_text(beacon_at(AtEnd, clock).brightness())
 	second_tower = ReadoutText.percent_text(beacon_at(Midway, clock).brightness())
 	[
