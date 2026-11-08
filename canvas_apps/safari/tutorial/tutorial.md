@@ -100,7 +100,7 @@ digraph system {
   subgraph cluster_view {
     label="the view";
     sky [label="the sky\nSky, Mountains", style=dashed];
-    drawing [label="the drawing\nSceneShapes, PosedCat, PosedBird, TreeShapes, ...", style=dashed];
+    drawing [label="the drawing\nSceneShapes, Cat, Bird, TreeShapes, ...", style=dashed];
     sightings [label="the sightings\nScene, CrossingSighting, TreeSighting, ...", style=dashed];
   }
   app -> RideInstant;
@@ -165,7 +165,7 @@ At step 1,570 of the ride, a cat is frozen in the lane. This is what `CrossingSi
 
 That's a sighting: where the rider sees something, and how it should look.
 
-Most things in the view come in pairs, and the names say which half is which: `CrossingSighting` and `PosedCat`, `TreeSighting` and `TreeShapes`, `TowerSighting` and `Tower`, `TruckSighting` and `LitTruck`.
+Most things in the view come in pairs, and the names say which half is which: `CrossingSighting` and `Cat`, `TreeSighting` and `TreeShapes`, `TowerSighting` and `Tower`, `TruckSighting` and `LitTruck`.
 
 A sighting answers one question each frame: which of these can the rider see right now, and how should each one look? `CrossingSighting` goes through the stretches of road ahead, which Safari Ride calls segments, asks `Cat` where it is, works out where that lands in the rider's view, and drops any cat behind the camera or too small to matter. What it hands back is a plain record with no drawing in it:
 
@@ -2088,20 +2088,20 @@ New in this chapter:
 
 The cat is one function, `Cat.instant_at`, with two jobs: work out how far along the crossing is, and look up what the cat does at that point. The module `Animation` sits under both.
 
-The modules around `Cat`
+The modules around `CatCrossing`
 ```dot
 digraph cat {
   node [shape=box, fontname="Helvetica"];
-  Cat [style=bold];
-  World -> Cat;
-  CrossingReaction -> Cat;
+  CatCrossing [style=bold];
+  World -> CatCrossing;
+  CrossingReaction -> CatCrossing;
   CrossingReaction -> World;
   CrossingSighting -> Cat;
-  Cat -> Cat;
+  CatCrossing -> Cat;
   Cat -> CatStills;
   CatStills -> Cat;
-  Cat -> Animation;
-  Cat -> Easing;
+  CatCrossing -> Animation;
+  CatCrossing -> Easing;
   Animation -> Easing;
   Animation -> Speed;
 }
@@ -2269,7 +2269,7 @@ digraph screen {
   CrossingSighting -> Cat;
   CrossingSighting -> RoadAhead;
   CrossingSighting -> DepthSort;
-  Cat -> Cat;
+  CatCrossing -> Cat;
   Cat -> CatStills;
   CatStills -> Cat;
 }
@@ -2658,7 +2658,7 @@ From there to the screen is a pinhole camera, which is similar triangles. Dividi
 
 {{code Camera.project}}
 
-`PosedBird.scenery_picture` calls it with a record built on the spot for the bird's feet:
+`Bird.scenery_picture` calls it with a record built on the spot for the bird's feet:
 
 {{code Camera.upright_on_screen}}
 
