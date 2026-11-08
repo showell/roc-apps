@@ -933,6 +933,18 @@ digraph road {
 
 A point at a bend can be measured two ways. On the road, a point is a `Geom.RoadPoint`, measured along and across the segment before the bend. From the rider, it's a `RiderView.RiderPoint`, right and forward of the camera. `RoadAhead.rider_point_at` is the one map between them. The corner is worked out on the road first, then seen from the rider, and the paving and the rail only ever take rider points.
 
+A bend is a small record:
+
+{{code BendInView.BendInView from "A bend as the rider sees it" to "}.{"}}
+
+`before` says where the first segment lies from the rider, and `bend` holds its length and its turn. The turn is positive to the right. Where the segment after lies comes from `place_after`.
+
+The outer corner is three points. Its type takes the kind of point as a type variable, so the same record holds road points or rider points:
+
+{{code BendInView.OuterCorner}}
+
+Each step of the job is a signature:
+
 | Job | Function | Its type |
 |---|---|---|
 {{types row BendInView.outer_edge Find the outer edge}}
@@ -942,19 +954,9 @@ A point at a bend can be measured two ways. On the road, a point is a `Geom.Road
 
 ### Where two segments meet
 
-A bend is a small record.
-
-{{code BendInView.BendInView from "A bend as the rider sees it" to "}.{"}}
-
-`before` says where the first segment lies from the rider, and `bend` holds its length and its turn. The turn is positive to the right. Where the segment after lies comes from `place_after`.
-
 {{code BendInView.outer_edge}}
 
 A bend to the right has its outer edge on the left. That's why the rail changes sides between the first two bends.
-
-The outer corner is three points, and its type takes the kind of point as a type variable, so the same record holds road points or rider points:
-
-{{code BendInView.OuterCorner}}
 
 {{code BendInView.outer_corner}}
 
@@ -970,11 +972,13 @@ A piece of ground is a list of corners and a color.
 
 {{code GroundSighting.road_patch}}
 
-That's what `GroundPatch` paints. It's plain data, so it can be checked with numbers. The widget counts 3 patches, and here's where they come from.
+That's what `GroundPatch` paints. It's plain data, so it can be checked with numbers. The widget counts three patches, and here's where they come from.
 
 {{code GroundSighting.road_along}}
 
 A segment's road is one patch. Its edges are cut into chunks of 25 metres or less, which keeps each straight cut within a pixel of the curve where the road meets the horizon. The widget's two segments make two patches, and the bend makes the third.
+
+`corner` is a closure: it captures `road`, `vantage` and `place`, so each call names only a chunk and an edge.
 
 {{code GroundSighting.lead_in_length}}
 
@@ -982,28 +986,20 @@ The bend's patch also lays the last 40 metres of the road before it, so the bend
 
 {{code GroundSighting.bend_paving}}
 
-The patch goes round in order: up the left edge, across the end of the next segment's first chunk, and back down the right. The side on the outside of the turn takes a detour through the outer corner's three points. `before` and `after` are closures: they capture `road` and `vantage`, so each call names only its point, and the two lists read alike.
+The patch goes round in order: up the left edge, across the end of the next segment's first chunk, and back down the right. The side on the outside of the turn takes a detour through the outer corner's three points. `before` and `after` are two more closures, so the two lists read alike.
 
-{{code GroundSighting.pond_patches}}
-
-A pond is ground too. A segment that ends at a pond gets two more patches: its bank, then the water over it. `Pond` lays their outlines on the road, and `rider_point`, another closure, moves each of their corners into the rider's view.
+A pond is ground too. A segment that ends at a pond adds two more patches, its bank and then its water, laid out by `Pond.pond_outlines`.
 
 The corner has its paving. Next, it needs a rail.
 
 ## Rails
 
-A guard rail is a metal bar on thin posts, along a path on the ground. At each bend, the path runs along the outer edge, out to the apex, back, and on along the next segment.
+A guard rail is a metal bar on thin posts, along a path on the ground. At each bend, the path runs along the road's outer edge, out to the apex, where the outer edges of the two segments meet, back, and on along the next segment.
 
 New in this chapter:
 
 - Roc: nothing new
 - Modules: `RailSighting`, `GuardRail`
-
-For every bend in view, `RailSighting` finds the rail's path and cuts it into quads: flat four-cornered pieces, one for each stretch of bar and one for each post. Each quad goes into the depth sort on its own, so a tree can stand in front of one post and behind the next.
-
-{{code RailSighting.rail_quads_in_view}}
-
-The bends come from the road ahead, and then from the segment just behind, whose bend may still be in sight.
 
 The path of a guard rail
 ```dot
@@ -1018,6 +1014,22 @@ digraph rail {
 }
 ```
 
+### Get the types right
+
+A quad is a flat piece with four corners: one for each stretch of bar, and one for each post.
+
+{{code GuardRail.RailQuad}}
+
+Each quad goes into the frame's depth sort on its own, so a tree can stand in front of one post and behind the next. A quad has no kind for `Pipeline` to ask about, so it makes its own `Rendered`, at its own depth:
+
+{{code GuardRail.quad_rendering}}
+
+### The functions
+
+For every bend in view, `RailSighting` finds the rail's path and cuts it into quads:
+
+{{code RailSighting.rail_quads_in_view}}
+
 {{code RailSighting.rail_points}}
 
 The four parts of the list are the four boxes.
@@ -1026,9 +1038,9 @@ The four parts of the list are the four boxes.
 
 A leg gets a point about every metre, because a post stands at every point. It leaves out its first point, which is the last point of the leg before it.
 
-`GuardRail.quads_along` turns the path into quads: the bars between neighbouring points, then a post at each point. At a turn of 45 degrees, the path has 25 points, so the rail is 24 bars and 25 posts.
+`GuardRail.quads_along` turns the path into quads: the bars between neighbouring points, then a post at each point. At a turn of 45 degrees, the path has 25 points, so the rail is 24 bars and 25 posts: 49 quads, each in the depth sort on its own.
 
-All of this is worked out again on every frame, from the route and the rider. A bend's corner lasts one frame.
+A rail is never stored. Every frame works out its bars and posts again, from the route and the rider, and throws them away.
 
 ## Radio towers
 
