@@ -1613,7 +1613,7 @@ The rider's step is the bigger of the two, and it takes up the next four chapter
 
 The rider is two things: a motorcycle, and a pair of eyes.
 
-| Part | Field | Type | What it is |
+| Part | Its parts' fields | Type | What it is |
 |---|---|---|---|
 | motorcycle | `route_place` | `RoutePlace` | which segment, and where along and across it |
 | | `yaw` | `Angle.Turn` | which way the bike points |
@@ -1624,12 +1624,12 @@ The rider is two things: a motorcycle, and a pair of eyes.
 
 New in this chapter:
 
-- Roc: a nominal record of nominal records, a value for a motorcycle that doesn't exist
-- Modules: `Rider`, `Motorcycle`, `RiderEyes`, `RiderMind`, `Speed`
+- Roc: a nominal record of nominal records, record update two levels deep, a value for a motorcycle that doesn't exist
+- Modules: `Rider`, `Motorcycle`, `RiderEyes`, `RiderMind`, `RiderCamera`
 
 {{code Rider.Rider from "Rider := {" to "}.{"}}
 
-Nothing in the rider is a bare float. Three of its fields are angles, of two different types, and passing a `Lean` where a `Turn` is wanted is a compile-time error. The eyes get a chapter of their own.
+Nothing in the rider is a bare float. Three of the fields under it are angles, of two different types, and passing a `Lean` where a `Turn` is wanted is a compile-time error. The eyes get a chapter of their own.
 
 The step does its work in order, and the code reads that way: decide, move, cross a bend or stop, then choose where to look:
 
@@ -1645,7 +1645,7 @@ The Rehearsal chapter takes that idea much further. A small version of it decide
 
 {{code Motorcycle.cross_bend_if_on_road}}
 
-Record update does most of the writing here. Its plainest use is stopping dead, where `..motorcycle` keeps everything but the fields named, and `route_place` is updated one level down:
+Record update does most of the writing here. Stopping dead updates two levels deep: `..motorcycle` keeps everything but the fields named, and `route_place` is itself an update of the old place:
 
 {{code Motorcycle.stopped_at}}
 
@@ -1671,8 +1671,7 @@ A lean of 1 degree turns the bike by a tenth of a degree each step, so at a metr
 
 New in this chapter:
 
-- Roc: record update two levels deep
-- Modules: `Motorcycle`
+- Roc: nothing new
 
 The modules around `Motorcycle`
 ```dot
@@ -1699,7 +1698,7 @@ The step is the whole of the physics, in order:
 
 {{code Motorcycle.motorcycle_at_next_step}}
 
-First the speed: the acceleration is applied, and the result is held to the top speed. Then the turn: a `Lean` can't be added to anything but a `Lean`, and it only reaches direction through `lean.steer(turn_per_lean)`, the single door from roll to yaw. Then the move: the bike goes along the middle of the step's turn, and `speed.step_length()` is a `Distance`, so the move is places and distances. The new place is written with record update two levels deep, inside `route_place`.
+First the speed: the acceleration is applied, and the result is held to the top speed. Then the turn: a `Lean` changes only by a `LeanChange`, and it reaches direction only through `lean.steer(turn_per_lean)`, the single door from roll to yaw. Then the move: the bike goes along the middle of the step's turn, and `speed.step_length()` is a `Distance`, so the move is places and distances. The new place is a record update of `route_place`, inside a new motorcycle.
 
 The bike turns the same amount per step at any speed. That's a cheat, chosen by eye, and it's fine here because the rider chooses each step's lean by trying it out on this same physics.
 
@@ -1709,7 +1708,7 @@ Two small helpers let the rest of the program pretend:
 
 {{code Motorcycle.steady_controls}}
 
-`{ ..motorcycle, lean }` is record update with a shorthand: the field and the local have the same name. Both of these make values for a motorcycle that doesn't exist, and the Rehearsal chapter runs thousands of them.
+`{ ..motorcycle, lean }` is record update with a shorthand: the field and the local have the same name. Both of these make values for a motorcycle that doesn't exist, and the Rehearsal chapter runs hundreds of them every step.
 
 So the work is split. The throttle chooses an acceleration, and the bike turns it into a speed. Choosing the lean has to wait for the Rehearsal chapter.
 
@@ -1719,7 +1718,7 @@ The rider is always deciding whether to accelerate, brake or hold steady. `Throt
 
 New in this chapter:
 
-- Modules: `Throttle`, `ThrottleLimit`, `Acceleration`, `VehicleLimits`
+- Modules: `Throttle`, `ThrottleLimit`, `Speed`, `Acceleration`, `VehicleLimits`
 
 The modules around `Throttle`
 ```dot
@@ -1745,11 +1744,11 @@ digraph limits {
 }
 ```
 
-The rider has several reasons to slow down, and they don't know about each other. A bend is coming. A cat is in the lane. There's a pig to look at. The road is about to run out. `Throttle` writes them as a line of limits. It starts from the cruise acceleration, and each limit lets that through or lowers it:
+The rider has several reasons to slow down, and they don't know about each other. A bend is coming. A cat is in the lane. There's a pig to look at. Coasting on would carry the bike off the road. `Throttle` writes them as a line of limits. It starts from the cruise acceleration, and each limit lets that through or lowers it:
 
 {{code Throttle.next_acceleration from "limits = [" to "limits.fold(offered, held_to)"}}
 
-Call this *the chain of limits*. Each limit has the same shape and can be read alone, and adding a reason is one more line. It reads like a list of rules because that's what it is.
+Call this *the chain of limits*. Each limit answers the same type and can be read alone, and adding a reason is one more line. It reads like a list of rules because that's what it is.
 
 Each limit is a `ThrottleLimit`: nothing, or at most some acceleration. `held_to` takes the lower:
 
@@ -1759,7 +1758,7 @@ Each limit is a `ThrottleLimit`: nothing, or at most some acceleration. `held_to
 
 The throttle answers an acceleration, and the motorcycle turns it into a speed.
 
-`Speed` and `Acceleration` are places and distances again: two speeds make an acceleration, and an acceleration moves a speed. The formula behind braking for a bend is the first line of a physics textbook, `v² = u² + 2as`, solved for `a`. `target: Speed.(t)` opens the field's `Speed` where it's destructured:
+`Speed` and `Acceleration` are places and distances again: two speeds and a distance make an acceleration, and an acceleration moves a speed. The formula behind braking for a bend is the first line of a physics textbook, `v² = u² + 2as`, solved for `a`. `target: Speed.(t)` opens the field's `Speed` where it's destructured:
 
 {{code Speed.acceleration_to}}
 
@@ -2349,7 +2348,7 @@ A crossing cat asks two things of the rider: hold the throttle, and look. Both a
 New in this chapter:
 
 - Roc: a `match` inside a `match`
-- Modules: `EncounterReaction`, `ThrottleLimit`, `Attention`
+- Modules: `EncounterReaction`, `Attention`
 
 The modules around `EncounterReaction`
 ```dot
