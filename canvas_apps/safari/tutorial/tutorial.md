@@ -2094,9 +2094,8 @@ digraph cat {
   node [shape=box, fontname="Helvetica"];
   CatCrossing [style=bold];
   World -> CatCrossing;
-  CrossingReaction -> CatCrossing;
-  CrossingReaction -> World;
-  CrossingSighting -> Cat;
+  EncounterReaction -> CatCrossing;
+  EncounterSighting -> Cat;
   CatCrossing -> Cat;
   Cat -> CatStills;
   CatStills -> Cat;
@@ -2260,22 +2259,18 @@ The modules that put a cat on screen
 ```dot
 digraph screen {
   node [shape=box, fontname="Helvetica"];
-  CrossingSighting [style=bold];
+  EncounterSighting [style=bold];
   Cat [style=bold];
-  SceneShapes -> Scene;
-  SceneShapes -> Cat;
-  SceneShapes -> CrossingSighting;
-  Scene -> CrossingSighting;
-  CrossingSighting -> Cat;
-  CrossingSighting -> RoadAhead;
-  CrossingSighting -> DepthSort;
+  Scene -> EncounterSighting;
+  EncounterSighting -> Cat;
+  EncounterSighting -> RoadAhead;
   CatCrossing -> Cat;
   Cat -> CatStills;
   CatStills -> Cat;
 }
 ```
 
-`CrossingSighting` and `Cat` never import each other. `SceneShapes` is what carries a sighting's answer to the drawing.
+`EncounterSighting` and `Cat` never import each other. `Scene` is what carries a sighting's answer to the drawing.
 
 `cat_in_view` places the cat and decides whether it's big enough to draw. An empty list or a list of one is how it says "maybe".
 
