@@ -48,21 +48,6 @@ Lens :: [].{
 	## rest. The lens only ever widens, so that is never larger.
 	scale_for : Pixels -> Fraction
 	scale_for = |focal| Fraction.of(focal.portion(resting_focal))
-
-	## The screen's x for something `turn` to the right of where the camera
-	## faces, through a lens of `cam_focal`. The turn stays under a quarter
-	## turn either way, in front of the camera.
-	x_for_turn : { turn : Angle.Turn, cam_focal : Pixels } -> Pixels
-	x_for_turn = |{ turn, cam_focal: focal }|
-		Screen.center_x.plus(focal.times(turn.to_radians().tan()))
-
-	## How far to the right of where the camera faces the screen's `x` looks,
-	## through a lens of `cam_focal`: the way back from `x_for_turn`.
-	turn_at_x : { x : Pixels, cam_focal : Pixels } -> Angle.Turn
-	turn_at_x = |{ x, cam_focal: focal }| {
-		slope = x.minus(Screen.center_x).portion(focal)
-		Angle.Turn.radians(slope.atan())
-	}
 }
 
 field_of_view : Angle.Turn
@@ -142,29 +127,5 @@ expect
 		|((height, cam_focal), y)| {
 			got = Lens.y_for_height({ height: FarHeight.of(height), cam_focal })
 			got == Pixels.of(y)
-		},
-	)
-
-## The screen's x at a turn of `radians`, through the lens at rest.
-x_at_rest : F64 -> Pixels
-x_at_rest = |radians| {
-	turn = Angle.Turn.radians(radians)
-	Lens.x_for_turn({ turn, cam_focal: Lens.resting_focal })
-}
-
-# Straight ahead is the middle of the screen, a turn to the right lands right of
-# it, and a turn to the left left of it.
-expect x_at_rest(0.0) == Screen.center_x
-expect x_at_rest(0.3) > Screen.center_x
-expect x_at_rest(-0.3) < Screen.center_x
-expect Lens.turn_at_x({ x: Screen.center_x, cam_focal: Lens.resting_focal }).to_radians() == 0.0
-
-# The turn at an x is the way back from the x at a turn.
-expect
-	[-1.2, -0.3, 0.0, 0.4, 1.3].all(
-		|radians| {
-			x = x_at_rest(radians)
-			back = Lens.turn_at_x({ x, cam_focal: Lens.resting_focal })
-			is_close(back.to_radians(), radians)
 		},
 	)

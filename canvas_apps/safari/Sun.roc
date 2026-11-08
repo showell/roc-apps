@@ -3,6 +3,7 @@
 ## follows: the sky, the mountains and the truck's headlights. It knows its own
 ## look too, a glow and a disc over it.
 import Angle
+import Camera
 import Clock
 import FarHeight
 import Fraction
@@ -179,7 +180,7 @@ place : {
 } -> Sun.Place
 place = |{ turn_from_view, clock, cam_focal }| {
 	{
-		x: Lens.x_for_turn({ turn: turn_from_view, cam_focal }),
+		x: Camera.x_for_turn({ turn: turn_from_view, cam_focal }),
 		y: Lens.y_for_height({ height: Sun.height_at(clock), cam_focal }),
 		scale: Lens.scale_for(cam_focal),
 	}
