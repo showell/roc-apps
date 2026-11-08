@@ -1054,11 +1054,15 @@ New in this chapter:
 
 ### Get the types right
 
-A tower is a shape, a placement and an honest cheat. Its shape is a lattice of rods on a square footprint. Its placement is worked out each frame from its segment, and never stored. The cheat is an earth that curves much faster than ours, so a tower visibly sinks as it gets further away.
+A tower comes in three parts: a shape, a place by the road, and one deliberate cheat. Its shape is a lattice of rods on a square footprint. Its place is worked out each frame from its segment, and never stored. The cheat is an earth that curves much faster than ours, so a tower visibly sinks as it gets further away.
 
-The tower itself is two facts: which way it's turned, and its beacon.
+The tower itself is two facts: which way it's turned, and its beacon. The tower at a segment's end is turned to the road, and the one halfway along stands square with it.
 
 {{code Tower.Tower}}
+
+While its shapes are worked out, a tower also carries what every rod needs for this frame, including how far the earth's curve has sunk it:
+
+{{code Tower.SunkTower}}
 
 Each step of the job is a signature:
 
@@ -1071,27 +1075,13 @@ Each step of the job is a signature:
 
 ### Where a tower stands
 
-A tower isn't placed when the world is built. Its sighting works out where it stands from the segment. When it's drawn, `scenery_picture` measures its footprint on the road around that spot, which is why its context is the road and the camera's vantage. This one is for the tower halfway along:
+Trees get their spots once, when the world is built. A tower doesn't: each frame, its sighting works out its spot from its segment. This one is for the tower halfway along, whose answer has a second way to fail, `NoMidTower`:
 
 {{code TowerSighting.mid_tower}}
 
-`Segment.has_mid_tower` asks whether the segment is longer than a kilometre, and that's all the world knows about towers. The `beacon` line lights the beacon for this step, which the beacons chapter explains.
+`Segment.has_mid_tower` asks whether the segment is longer than a kilometre, and that's all the world knows about towers. The `beacon` line lights the beacon for this step.
 
-### Rods
-
-A tower's footprint is a square, and four tags name its corners. Going round the square is a `match`:
-
-{{code Tower.next_corner}}
-
-Everything above the footprint is rods, with the beacon's disc on top. Four legs run from the corners up to a point, starting as high as the earth's curve lets them show:
-
-{{code Tower.leg_shapes}}
-
-A ring of rods goes round the tower at each storey, 20 metres apart, below the top, and crossed braces fill the lowest two storeys. Each rod is a line between two points in the rider's view, and it needs some care, because a near tower can stand partly behind the camera:
-
-{{code RiderView.line_ahead}}
-
-The `match` is on a pair, so it has to cover all four combinations. A rod with one end behind the near plane, 0.4 metres ahead of the camera, is cut where it crosses that plane, and a rod with both ends behind it isn't drawn.
+To draw a tower, `scenery_picture` also needs the road and where the camera stands, to find the four corners of its base in the rider's view. So those two go in as its extra input, its context.
 
 ### Over the horizon
 
@@ -1099,11 +1089,29 @@ As a tower gets further away, it sinks below the horizon from the bottom up:
 
 {{code EarthCurve.exaggerated_drop}}
 
-A real tower wouldn't go so soon. `exaggerated_curve_radius` is 20 km, a fifth of the radius of the ground's own curve and far smaller than our earth's, so a tower is gone at 1.8 km. That way, you can see it sink.
+The ride's ground already curves, with a radius of 100 km. Towers sink over a tighter curve, 20 km, so an 80-metre tower is gone by 1.8 km instead of 4 km, and you can watch it go.
 
-Each tower has a beacon on top, the `beacon` field beside its `yaw`. Beacons blink, so we'll leave them until things start to move.
+### Rods
 
-The truck is man-made too, and it waits for the same reason. That leaves the animals.
+Here is the whole tower, top-down. Nothing is drawn once the curve has hidden it all. Otherwise come the legs, the rings and the braces, and the beacon's disc last, at the top:
+
+{{code Tower.tower_shapes}}
+
+A tower's footprint is a square, and four tags name its corners. Going round the square is a `match`:
+
+{{code Tower.next_corner}}
+
+Four legs run from the corners up to the top. Each starts at `tower.sunk`, the height the curve has hidden, so nothing below the horizon is drawn:
+
+{{code Tower.leg_shapes}}
+
+Every 20 metres up, short of the top, a ring of four rods joins each corner to the next, which is what `next_corner` is for. Crossed braces fill the lowest two storeys.
+
+Each rod is a line between two points in the rider's view, and it needs some care, because a near tower can stand partly behind the camera:
+
+{{code RiderView.line_ahead}}
+
+The `match` is on a pair, so it has to cover all four combinations. A rod with one end behind the near plane, 0.4 metres ahead of the camera, is cut where it crosses that plane, and a rod with both ends behind it isn't drawn.
 
 ## Stills: how we draw a critter
 
