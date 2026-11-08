@@ -73,7 +73,7 @@ words_shown = |canvas_app, inputs| {
 	var $model = canvas_app.init
 	var $words = words_in(frame_of($model))
 	for input in inputs {
-		$model = model_at_next_step($model, input, 1.0 / canvas_app.frames_a_second.to_f32())
+		$model = model_at_next_step($model, input, CanvasApp.seconds_a_step(canvas_app))
 		$words = $words.concat(words_in(frame_of($model)))
 	}
 	$words
@@ -140,7 +140,7 @@ stills_models : List(StillsWidgetApp.Model)
 stills_models = {
 	stills_app = StillsWidgetApp.canvas_app
 	model_at_next_step = stills_app.model_at_next_step
-	seconds = 1.0 / stills_app.frames_a_second.to_f32()
+	seconds = CanvasApp.seconds_a_step(stills_app)
 	still_names(stills_first_frame_shapes).map(
 		|name| {
 			click = Click.click_at({ x: name.x, y: name.y })

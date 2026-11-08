@@ -46,6 +46,17 @@ CanvasApp :: [].{
 		title : Str,
 	}
 
+	## The seconds one step covers, `1 / frames_a_second`, which every runner
+	## passes to `model_at_next_step`. An app stepped zero times a second never
+	## moves and its step would be infinite, so a rate of zero crashes.
+	seconds_a_step : CanvasApp.CanvasApp(model) -> F32
+	seconds_a_step = |canvas_app|
+		if canvas_app.frames_a_second == 0 {
+			crash "CanvasApp.seconds_a_step: an app is stepped at least once a second, never zero times"
+		} else {
+			1.0 / canvas_app.frames_a_second.to_f32()
+		}
+
 	# A `model_at_next_step` for an app that needs no seconds: a runner passes
 	# them as ever, and `step` never sees them. A game whose rules count steps
 	# uses it, so real time has no way in.

@@ -201,7 +201,7 @@ CanvasAppRunner :: [].{
 			# The step is the rate the game asked for, not however long the
 			# last frame happened to take, so a rally is the same rally
 			# whatever the machine is doing.
-			dt = 1.0 / game.frames_a_second.to_f32()
+			dt = CanvasApp.seconds_a_step(game)
 			fps = if input.devices.key_pressed(KeyF) {
 				!model.fps
 			} else {

@@ -29,7 +29,7 @@ WasmApp :: [].{
 	}
 	program = |game| {
 		# The step a tick covers, which is the rate the game asked to be run at.
-		seconds_a_step = 1.0 / game.frames_a_second.to_f32()
+		seconds_a_step = CanvasApp.seconds_a_step(game)
 		model_at_next_step = game.model_at_next_step
 		frame_shapes = game.frame_shapes
 		sounds = game.sounds
