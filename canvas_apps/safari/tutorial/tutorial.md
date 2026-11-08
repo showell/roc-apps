@@ -1630,7 +1630,7 @@ The rider is two things: a motorcycle, and a pair of eyes.
 
 | Part | Its parts' fields | Type | What it is |
 |---|---|---|---|
-| motorcycle | `route_place` | `RoutePlace` | which segment, and where along and across it |
+| motorcycle | `route_place` | `RoutePlace` | which segment, and its `road_point` on it, along and across |
 | | `yaw` | `Angle.Turn` | which way the bike points |
 | | `speed` | `Speed` | how far it goes in a step |
 | | `lean` | `Angle.Lean` | how far it leans |
@@ -1639,7 +1639,7 @@ The rider is two things: a motorcycle, and a pair of eyes.
 
 New in this chapter:
 
-- Roc: a nominal record of nominal records, record update two levels deep, a value for a motorcycle that doesn't exist
+- Roc: a nominal record of nominal records, record update three levels deep, a value for a motorcycle that doesn't exist
 - Modules: `Rider`, `Motorcycle`, `RiderEyes`, `RiderMind`, `RiderCamera`
 
 {{code Rider.Rider from "Rider := {" to "}.{"}}
@@ -1660,7 +1660,7 @@ The Rehearsal chapter takes that idea much further. A small version of it decide
 
 {{code Motorcycle.cross_bend_if_on_road}}
 
-Record update does most of the writing here. Stopping dead updates two levels deep: `..motorcycle` keeps everything but the fields named, and `route_place` is itself an update of the old place:
+Record update does most of the writing here. Stopping dead updates three levels deep: `..motorcycle` keeps everything but the fields named, `route_place` is itself an update of the old place, and its `road_point` is an update of the old point:
 
 {{code Motorcycle.stopped_at}}
 
@@ -1713,7 +1713,7 @@ The step is the whole of the physics, in order:
 
 {{code Motorcycle.motorcycle_at_next_step}}
 
-First the speed: the acceleration is applied, and the result is held to the top speed. Then the turn: a `Lean` changes only by a `LeanChange`, and it reaches direction only through `lean.steer(turn_per_lean)`, the single door from roll to yaw. Then the move: the bike goes along the middle of the step's turn, and `speed.step_length()` is a `Distance`, so the move is places and distances. The new place is a record update of `route_place`, inside a new motorcycle.
+First the speed: the acceleration is applied, and the result is held to the top speed. Then the turn: a `Lean` changes only by a `LeanChange`, and it reaches direction only through `lean.steer(turn_per_lean)`, the single door from roll to yaw. Then the move: the bike goes along the middle of the step's turn, and `speed.step_length()` is a `Distance`, so the move is places and distances. The new place is a record update of `route_place` with a new `road_point`, inside a new motorcycle.
 
 The bike turns the same amount per step at any speed. That's a cheat, chosen by eye, and it's fine here because the rider chooses each step's lean by trying it out on this same physics.
 

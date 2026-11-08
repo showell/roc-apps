@@ -55,8 +55,8 @@ RiderCamera := {
 	## projection onto the screen takes them.
 	vantage : RiderCamera -> Geom.Vantage
 	vantage = |camera| {
-		along: camera.route_place.along,
-		across: camera.route_place.across,
+		along: camera.route_place.road_point.along,
+		across: camera.route_place.road_point.across,
 		yaw: camera.yaw,
 	}
 

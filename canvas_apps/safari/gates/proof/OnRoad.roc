@@ -79,7 +79,8 @@ main! = |_args| {
 			}
 			$bad = $bad + 1
 		}
-		from_middle = $tour.instant().rider.motorcycle.route_place.across.distance_from_middle()
+		rider_point = $tour.instant().rider.motorcycle.route_place.road_point
+		from_middle = rider_point.across.distance_from_middle()
 		if from_middle > $widest {
 			$widest = from_middle
 			$widest_place = place_of($step, $tour)

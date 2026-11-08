@@ -259,7 +259,7 @@ picture_shapes = |tour| {
 			name_y: route_y + 16.0,
 		}),
 		shapes_from_behind_rider({
-			across: rider.motorcycle.route_place.across,
+			across: rider.motorcycle.route_place.road_point.across,
 			lean: rider.motorcycle.lean,
 		}),
 	].join()
@@ -282,7 +282,7 @@ status_lines = |model| {
 	clock = model.tour.instant().clock
 	rider_place = rider.motorcycle.route_place
 	rider_segment = (rider_place.segment_index.to_u32() + 1).to_str()
-	rider_along = ReadoutText.tenths_text(rider_place.along.to_metres())
+	rider_along = ReadoutText.tenths_text(rider_place.road_point.along.to_metres())
 	rider_speed = ReadoutText.tenths_text(rider.motorcycle.speed.to_metres_a_step())
 	truck_along = ReadoutText.tenths_text(truck.route_position.to_metres())
 	truck_speed = ReadoutText.tenths_text(truck.speed.to_metres_a_step())
@@ -353,7 +353,8 @@ expect {
 	back = move_tour(head_for_step(past_it, 16))
 	back_motorcycle = back.tour.instant().rider.motorcycle
 	on_the_way_motorcycle = on_the_way.tour.instant().rider.motorcycle
-	back_motorcycle.route_place.along == on_the_way_motorcycle.route_place.along
+	back_along = back_motorcycle.route_place.road_point.along
+	back_along == on_the_way_motorcycle.route_place.road_point.along
 		and back_motorcycle.speed == on_the_way_motorcycle.speed
 }
 

@@ -45,8 +45,10 @@ Motorcycle := {
 		{
 			route_place: {
 				..place,
-				along: place.along.plus(step_length.times(mid.cos())),
-				across: place.across.plus(step_length.times(mid.sin())),
+				road_point: {
+					along: place.road_point.along.plus(step_length.times(mid.cos())),
+					across: place.road_point.across.plus(step_length.times(mid.sin())),
+				},
 			},
 			yaw: motorcycle.yaw.plus(turn),
 			speed,
@@ -81,14 +83,17 @@ Motorcycle := {
 	## This motorcycle stopped dead at `at` on its segment.
 	stopped_at : Motorcycle, Along -> Motorcycle
 	stopped_at = |motorcycle, at| {
-		..motorcycle,
-		route_place: { ..motorcycle.route_place, along: at },
-		speed: Speed.at_rest,
+		place = motorcycle.route_place
+		{
+			..motorcycle,
+			route_place: { ..place, road_point: { ..place.road_point, along: at } },
+			speed: Speed.at_rest,
+		}
 	}
 
 	## Whether this motorcycle has come to `at` on its segment, or gone past.
 	has_reached : Motorcycle, Along -> Bool
-	has_reached = |motorcycle, at| motorcycle.route_place.along >= at
+	has_reached = |motorcycle, at| motorcycle.route_place.road_point.along >= at
 
 	is_eq : _
 }
@@ -121,8 +126,10 @@ riding : Motorcycle
 riding = {
 	route_place: {
 		..RoutePlace.route_start,
-		along: Along.metres(120.5),
-		across: RoutePlace.route_start.across.plus(Distance.metres(2.25)),
+		road_point: {
+			along: Along.metres(120.5),
+			across: RoutePlace.route_start.road_point.across.plus(Distance.metres(2.25)),
+		},
 	},
 	yaw: Angle.Turn.radians(0.375),
 	speed: Speed.metres_a_step(0.8),
@@ -162,12 +169,12 @@ expect
 # Each is within 1e-9 of its want, scaled up by a want past 1.
 expect
 	[
-		(first_step.route_place.along.to_metres(), 121.25108639750266),
-		(first_step.route_place.across.to_metres(), 2.5532642799382796),
-		(second_step.route_place.along.to_metres(), 122.00167174017032),
-		(second_step.route_place.across.to_metres(), 2.8708278851774045),
-		(third_step.route_place.along.to_metres(), 122.7472448817898),
-		(third_step.route_place.across.to_metres(), 3.1999869508214647),
+		(first_step.route_place.road_point.along.to_metres(), 121.25108639750266),
+		(first_step.route_place.road_point.across.to_metres(), 2.5532642799382796),
+		(second_step.route_place.road_point.along.to_metres(), 122.00167174017032),
+		(second_step.route_place.road_point.across.to_metres(), 2.8708278851774045),
+		(third_step.route_place.road_point.along.to_metres(), 122.7472448817898),
+		(third_step.route_place.road_point.across.to_metres(), 3.1999869508214647),
 	].all(|(got, want)| (got - want).abs() <= 0.000000001 * want.abs().max(1.0))
 
 expect {
@@ -177,7 +184,7 @@ expect {
 		{ lean: Angle.Lean.radians(0.5), acceleration: Acceleration.metres_a_step_each_step(0.25) },
 	)
 	[
-		(a.route_place.across.to_metres(), 0.0),
+		(a.route_place.road_point.across.to_metres(), 0.0),
 		(a.yaw.to_radians(), 0.0),
 		(a.lean.to_radians(), 0.0),
 		(a.speed.to_metres_a_step(), 0.3),
@@ -195,7 +202,10 @@ gentle_bend = { segment_length: Distance.metres(500.0), turn: Angle.Turn.radians
 motorcycle_at : F64 -> Motorcycle
 motorcycle_at = |along| {
 	..Motorcycle.initial,
-	route_place: { ..RoutePlace.route_start, along: Along.metres(along) },
+	route_place: {
+		..RoutePlace.route_start,
+		road_point: { ..RoutePlace.route_start.road_point, along: Along.metres(along) },
+	},
 }
 
 ## The place of a motorcycle `along` metres down its segment, carried over the
@@ -206,7 +216,7 @@ place_past_bend = |along| motorcycle_at(along).route_place.route_place_past_bend
 # Carried over the bend from well short of it, a place lands far off the next
 # segment's road, and from the bend itself it lands on it. Either way it is on
 # the next segment.
-expect place_past_bend(100.0).across.distance_from_middle() > Distance.metres(100.0)
+expect place_past_bend(100.0).road_point.across.distance_from_middle() > Distance.metres(100.0)
 expect place_past_bend(500.0).is_on_road()
 expect {
 	next_index = RoutePlace.route_start.segment_index.next()

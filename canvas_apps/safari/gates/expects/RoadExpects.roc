@@ -398,8 +398,7 @@ three_segment_route_place = |metres|
 three_segment_route_place_on : U32, F64 -> RoutePlace
 three_segment_route_place_on = |count_before, along| {
 	segment_index: Route.SegmentIndex.number(count_before),
-	along: Along.metres(along),
-	across: Across.middle,
+	road_point: { along: Along.metres(along), across: Across.middle },
 }
 
 # A place found by its distance is on the segment it falls on, and a distance at
