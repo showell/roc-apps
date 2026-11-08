@@ -100,8 +100,11 @@ widget_html = |folders, { words, caption }| {
 }
 
 ## The drawing, or a phone's and a desktop's for a wide diagram, over its title.
+## The drawing goes into the page as it is, so one holding a comment's opening
+## stops the build: it could close the page early with a forged page mark.
 diagram_html : List(Manuscript.Diagram), Str -> Str
 diagram_html = |diagrams, id| match diagrams.find_first(|diagram| diagram.id == id) {
+	Ok({ svg, .. }) if svg.contains("<!--") => crash "book: the drawing for the diagram `${id}` holds an HTML comment"
 	Ok({ title, svg, .. }) => {
 		named = svg.replace_each(
 			"role=\"img\"",
