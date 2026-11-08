@@ -323,7 +323,7 @@ sector_corners : Shapes.Shape -> List(F64)
 sector_corners = |shape|
 	match shape {
 		Poly({ coordinates, fill: _ }) => coordinates
-		_ => []
+		Disc(_) | Rect(_) | Blend(_) | View(_) | Image(_) | Text(_) => crash "Shapes: a ring's sectors are all polygons"
 	}
 
 # Each sector starts where the one before it ends, outer corner and inner
@@ -331,10 +331,10 @@ sector_corners = |shape|
 # the center than its outer ones, by the line's width.
 expect {
 	sectors = Shapes.ring_shapes({ center: { x: 3.0, y: 4.0 }, radius: 10.0, line_width: 2.0, sides: 7 }, ink).map(sector_corners)
-	following = sectors.drop_first(1).append(sectors.first() ?? [])
+	first = sectors.first() ?? crash "Shapes: a ring of seven sides has sectors"
+	following = sectors.drop_first(1).append(first)
 	shared = sectors.map2(following, |sector, next| sector.sublist({ start: 2, len: 2 }) == next.sublist({ start: 0, len: 2 }) and sector.sublist({ start: 4, len: 2 }) == next.sublist({ start: 6, len: 2 }))
-	first = sectors.first() ?? []
-	outer_x = first.get(0) ?? 0.0
-	inner_x = first.get(6) ?? 0.0
+	outer_x = first.get(0) ?? crash "Shapes: a sector has an outer start corner"
+	inner_x = first.get(6) ?? crash "Shapes: a sector has an inner start corner"
 	sectors.len() == 7 and first.len() == 8 and shared.all(|same| same) and outer_x - inner_x == 2.0
 }
