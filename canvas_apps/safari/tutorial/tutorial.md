@@ -2342,65 +2342,63 @@ The bird asks nothing of the rider, so the rider's reactions pass it by. All it 
 
 ## What a cat does to the rider
 
-The loop between the cat and the rider
-```dot
-digraph reaction_loop {
-  rankdir=LR;
-  node [shape=box, fontname="Helvetica"];
-  speed [label="the rider's speed"];
-  cat [label="where the cat\nhas got to"];
-  speed -> cat [label="  Cat.crossing_stage  "];
-  cat -> speed [label="  CrossingReaction  "];
-}
-```
-
-The cat chapter promised this. A cat in the lane has a say in what the throttle does, and `CrossingReaction` is where it speaks.
+A crossing cat asks two things of the rider: hold the throttle, and look. Both are the rider's own reactions, and they live on the rider's side, in one module that knows which encounters ask anything of the rider at all.
 
 New in this chapter:
 
-- Roc: an open record that's only read
-- Modules: `CrossingReaction`, `RideFocal`
+- Roc: a `match` inside a `match`; `|` to give two patterns one branch
+- Modules: `EncounterReaction`, `ThrottleLimit`, `Attention`
 
-The modules around `CrossingReaction`
+The modules around `EncounterReaction`
 ```dot
 digraph reaction {
   node [shape=box, fontname="Helvetica"];
-  CrossingReaction [style=bold];
-  Throttle -> CrossingReaction;
-  RideFocal -> CrossingReaction;
-  CrossingReaction -> Cat;
-  CrossingReaction -> World;
-  World -> Cat;
+  EncounterReaction [style=bold];
+  Throttle -> EncounterReaction [label="  asks for a throttle limit"];
+  Rider -> EncounterReaction [label="  asks how hard it's held"];
+  RiderCamera -> Rider [label="  reads its attention"];
+  EncounterReaction -> Segment [label="  reads its encounter"];
+  EncounterReaction -> CatCrossing [label="  reads its peak and span"];
+  EncounterReaction -> ThrottleLimit [label="  answers one"];
+  EncounterReaction -> Attention [label="  answers one"];
 }
 ```
 
-`Throttle` sets the rider's acceleration, and `RideFocal` sets how wide the rider's view is. Neither knows anything of cats. They ask `CrossingReaction`, which is the only part of the rider's code that does.
+### When the rider feels it
 
-Let's follow this back to `Cat`, to two small questions about the same `Stage`.
+The order inside a step matters here. The rider reacts to the cat as it stood at the start of the step, then moves. Only after the move does the ride make its plan, if the rider has just come within reach. So on the step the crossing is planned, the rider hasn't felt it yet; the hold starts on the next step. The camera, drawing the frame, reads the cat as it stands now.
 
-`is_crossing` asks whether the crossing is playing. `_` ignores a payload.
+Once planned, the cat never reads the rider again. The rider's speed sets the cat off once, and from then on the effect runs one way: the cat holds the rider back, and nothing the rider does moves the cat.
 
-{{code EncounterReaction.encounter_throttle from "CatCrosses(_) =>" to "Waiting | Past(_) => NoLimit"}}
+### Hold the throttle
 
-`attention` is where `Past`'s payload is used. A cat in the lane also draws the rider's attention, which widens the view. `beyond` is how far past the end of the crossing the rider has come, and that attention fades over that distance, counted in beats. `beats_to_cover` divides by the speed, so a rider at a standstill gets an answer first. `Attention` is another opaque type.
+A limit on the throttle is either nothing, or at most some acceleration:
 
-{{code EncounterReaction.cat_attention}}
+{{code ThrottleLimit.ThrottleLimit}}
 
-`CrossingReaction.reaction_to` calls both. `..` in the argument's type makes it an open record, like `Bike.Motion`, though this one is only read and nothing comes back. This function needs `along` and `speed`, and accepts any record that has them, so it doesn't depend on `Rider`, the rider's record. `speed` here is the opaque `Speed` again, and `match` on `segment.crossing` has to name every tag.
+While a cat crosses, the rider may not speed up. That's `AtMost(Acceleration.steady)`, which caps the acceleration at zero without braking:
 
 {{code EncounterReaction.encounter_throttle}}
 
-A cat in the lane stops the rider opening the throttle, without braking, and widens the view as it pulls the rider's eye. Two tags, `MayAccelerate` and `NoAcceleration`, stand where a boolean might have gone. The next call up, `crossing_attention`, is one line, and its caller, `ride_focal`, works out the view's focal length:
+The outer `match` asks what's on the segment, and the inner one asks where the crossing has got to. `Waiting | Past(_)` gives two patterns one branch, and `_` ignores a payload. A bird and a quiet road both answer `NoLimit`.
+
+The cat's limit is one of four that the throttle folds together, with the bends, the gawking and the road's shoulder, and the lowest wins. Holding at steady also keeps the rider close to the steady speed the plan assumed, so the cat is across about when the rider arrives.
+
+### Look
+
+How hard something holds the rider's eye is an `Attention`. A full look to the side is 1, and a crossing cat holds the eye harder than that:
 
 {{code EncounterReaction.encounter_attention}}
 
-{{code RiderCamera.ride_focal}}
+The cat's pull rises as it crosses, up to its peak of 1.8, then fades over 83 steps once it's across, about 80 metres past the cat at a metre a step:
 
-This is the only feedback loop in the design. The rider's speed decides where the cat has got to, and the cat holds the rider's speed down. The loop settles, and it's why `stage_over_step_span` has to stay the cat's rule. A bird asks nothing of the rider, so it falls through to the same answer as an empty road.
+{{code EncounterReaction.cat_attention}}
 
-Each stretch of road has exactly one `crossing`: `CatCrosses`, `BirdHere` or `QuietRoad`. A cat and a bird in the same place can't be written down.
+`Playing` and `Past` both carry a step count, and this is where both are used: one says how far into the crossing, the other how long since it ended.
 
-One question about the rider is still open: how `RiderMind.decide` picks a lean.
+The rider takes the stronger of the cat's pull and the pull of wherever the eyes are already turned, and the camera widens its view to match. That's how a crossing cat seems to fill more of the picture.
+
+Each segment has exactly one encounter. A cat asks for both, a bird for neither, and the rider's reactions to everything else, the bends and the pigs, live in the rider's own chapters.
 
 ## Rehearsal
 
