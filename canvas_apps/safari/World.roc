@@ -239,16 +239,6 @@ World :: [].{
 		},
 	]
 
-	## The route's last segment, which ends it.
-	last_plan : World.SegmentPlan
-	last_plan = {
-		length: Distance.metres(300.0),
-		scheme: RedGreen,
-		encounter: CatCrosses,
-		pigs: WithPigs,
-		bull: WithBull,
-	}
-
 	## Every segment's plan, in order.
 	segment_plans : List(World.SegmentPlan)
 	segment_plans = bending_plans.map(|bending| bending.segment_plan).append(last_plan)
@@ -295,6 +285,16 @@ World :: [].{
 	first_distracting_segment =
 		World.route.route_segments().find_first(Segment.is_distracting)
 			?? crash "World.first_distracting_segment: the route has a distracting herd"
+}
+
+## The route's last segment, which ends it.
+last_plan : World.SegmentPlan
+last_plan = {
+	length: Distance.metres(300.0),
+	scheme: RedGreen,
+	encounter: CatCrosses,
+	pigs: WithPigs,
+	bull: WithBull,
 }
 
 ## The route's first segment with a bird.
