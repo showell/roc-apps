@@ -7,6 +7,8 @@ import game.Along
 import game.Clock
 import game.Conifer
 import game.Distance
+import game.EncounterSighting
+import game.FrameView
 import game.Picture
 import game.Pipeline
 import game.Pixels
@@ -14,6 +16,7 @@ import game.Bird
 import game.RoadAhead
 import game.Scene
 import game.SegmentFromRider
+import game.Tour
 import lib.Shapes
 
 SceneExpects :: [].{}
@@ -234,3 +237,61 @@ expect
 		== lone_tree_shapes(40.0).concat(lone_bird_shapes(30.0))
 expect lone_tree_shapes(40.0).len() > 0
 expect lone_bird_shapes(40.0).len() > 0
+
+## Step 1,529 of the ride, the frame the book shows with a cat frozen in the
+## road. The book states these numbers, and the expects below hold them.
+book_tour : Tour
+book_tour = Tour.at_step(Clock.at_step(1529))
+
+book_view : FrameView
+book_view = FrameView.frame_view_at(book_tour.route(), book_tour.instant())
+
+book_shapes : List(Shapes.Shape)
+book_shapes = FrameView.ride_shape_lists(book_view).join()
+
+is_polygon : Shapes.Shape -> Bool
+is_polygon = |shape|
+	match shape {
+		Poly(_) => True
+		Disc(_) | Rect(_) | Blend(_) | View(_) | Image(_) | Text(_) => False
+	}
+
+is_disc : Shapes.Shape -> Bool
+is_disc = |shape|
+	match shape {
+		Disc(_) => True
+		Poly(_) | Rect(_) | Blend(_) | View(_) | Image(_) | Text(_) => False
+	}
+
+# The Roadside trees chapter: 184 trees in view. The platform chapter's shapes
+# by tag: every one of them is a Poly or a Disc.
+expect book_view.scene.trees.len() == 184
+expect book_shapes.len() == 2474
+expect book_shapes.keep_if(is_polygon).len() == 2467
+expect book_shapes.keep_if(is_disc).len() == 7
+
+# The modules chapter's sighting: one cat, frozen on the ground about 0.38 m
+# right of the camera and 23.63 m ahead.
+expect {
+	route = book_tour.route()
+	instant = book_tour.instant()
+	camera = FrameView.camera_at(route, instant)
+	road = RoadAhead.RoadView.ahead_of(route, camera.route_place.segment_index)
+	encounter = {
+		camera: camera.sighting_camera(),
+		encounter_stage: FrameView.ride_facts(route, instant).encounter_stage,
+	}
+	match EncounterSighting.cats_in_view(road, encounter) {
+		[cat] => {
+			right = cat.spot.foot().right().to_metres()
+			forward = cat.spot.foot().forward().to_metres()
+			cat.kind.pose == Frozen
+				and cat.spot.lift() == Distance.zero
+				and right > 0.375
+				and right < 0.385
+				and forward > 23.625
+				and forward < 23.635
+		}
+		_ => False
+	}
+}

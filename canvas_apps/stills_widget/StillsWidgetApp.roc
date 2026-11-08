@@ -94,25 +94,10 @@ pose_still = |pose|
 	}
 
 cat_poses : List(StillsWidgetApp.Pose)
-cat_poses = [
-	Cat(Rest),
-	Cat(Stride),
-	Cat(Frozen),
-	Cat(Coil),
-	Cat(Flight),
-	Cat(Land),
-	Cat(Collapse),
-]
+cat_poses = CatCrossing.all_poses.map(|pose| Cat(pose))
 
 bird_poses : List(StillsWidgetApp.Pose)
-bird_poses = [
-	Bird(Perched),
-	Bird(Side(WingsUp)),
-	Bird(Side(WingsDown)),
-	Bird(Away(WingsUp)),
-	Bird(Away(WingsDown)),
-	Bird(Diving),
-]
+bird_poses = BirdFlight.all_poses.map(|pose| Bird(pose))
 
 extent_of : Still -> StillExtent
 extent_of = |still|
@@ -365,6 +350,27 @@ hint_line = |text, row|
 		x: WidgetPage.side_margin,
 		y: 138.0 + row.to_f64() * 18.0,
 	})
+
+## How far a line of text reaches above and below its baseline: a capital
+## about three quarters of its size up, and a descender a quarter of it down.
+text_reach : Shapes.Shape -> { top : F64, bottom : F64 }
+text_reach = |shape|
+	match shape {
+		Text({ y, size, .. }) => { top: y - size * 0.75, bottom: y + size / 4.0 }
+		_ => crash "StillsWidgetApp.text_reach: a readout or hint line is text"
+	}
+
+# Every pose's readout, four lines for a name broken in two, ends above the
+# hint's first line.
+expect {
+	hint_top = text_reach(hint_line("", 0)).top
+	cat_poses.concat(bird_poses).all(
+		|pose| {
+			lines = read_out_lines(pose).map_with_index(read_out_line)
+			lines.all(|line| text_reach(line).bottom < hint_top)
+		},
+	)
+}
 
 ## The lines round one polygon.
 outline_shapes : StillShapes.Anchor, Still.Polygon -> List(Shapes.Shape)

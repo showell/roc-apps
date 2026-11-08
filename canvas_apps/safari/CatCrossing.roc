@@ -21,6 +21,10 @@ CatCrossing :: { tree : Geom.RoadPoint }.{
 	## collapse after.
 	CatPose : [Rest, Stride, Frozen, Coil, Flight, Land, Collapse]
 
+	## Every pose a cat takes, in the order of a crossing.
+	all_poses : List(CatCrossing.CatPose)
+	all_poses = [Rest, Stride, Frozen, Coil, Flight, Land, Collapse]
+
 	## A cat at one instant: how it looks, and where it is.
 	CatInstant : Animation.Instant(CatCrossing.CatPose)
 
@@ -203,6 +207,23 @@ the_cat_by_a_far_tree : CatCrossing
 the_cat_by_a_far_tree = CatCrossing.by_tree({
 	tree: { along: Along.metres(100.0), across: Across.metres(8.0) },
 })
+
+## Each cat pose's place in `CatCrossing.all_poses`. The match names every
+## pose, so a new one doesn't compile until it has a place, and the expect below
+## fails until the list holds it there.
+pose_place : CatCrossing.CatPose -> U64
+pose_place = |pose|
+	match pose {
+		Rest => 0
+		Stride => 1
+		Frozen => 2
+		Coil => 3
+		Flight => 4
+		Land => 5
+		Collapse => 6
+	}
+
+expect CatCrossing.all_poses.map(pose_place) == [0, 1, 2, 3, 4, 5, 6]
 
 expect the_cat.along().to_metres() == 102.0
 expect the_cat.start_across().to_metres() == 4.5

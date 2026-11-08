@@ -1,8 +1,9 @@
 ## The widget for the Safari tutorial's chapters on what's stored and on the
-## stepped things. It holds a real Tour, and the lines of text read out the
-## three fields of its current RideInstant. Video recorder buttons set a step to
-## reach. Going forward the ride has to be played, a few steps a frame, so the end
-## takes a while to reach. Going back it's a list lookup, so the start doesn't.
+## stepped things. It holds a real Tour, and the lines of text read out three of
+## the four fields of its current RideInstant. Video recorder buttons set a step
+## to reach. Going forward the ride has to be played, a few steps a frame, so the
+## end takes a while to reach. Going back it's a list lookup, so the start
+## doesn't.
 import game.Across
 import game.Angle
 import game.Clock

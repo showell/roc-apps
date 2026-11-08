@@ -205,10 +205,10 @@ edge_text = |bend_in_view|
 	}
 
 ## How far past the end of the segment before `bend_in_view` its apex lies.
-apex_past_end : BendInView -> F64
+apex_past_end : BendInView -> Distance
 apex_past_end = |bend_in_view| {
 	corner = bend_in_view.outer_corner()
-	corner.apex.along.distance_from(corner.end_before.along).to_metres()
+	corner.apex.along.distance_from(corner.end_before.along)
 }
 
 ## What the three modules say of a bend, a line each.
@@ -220,7 +220,7 @@ caption_lines = |turn| {
 	[
 		ReadoutText.turn_text(turn),
 		"rail on the ${edge_text(bend_of(road))} edge",
-		"apex ${ReadoutText.tenths_text(apex_past_end(bend_of(road)))} m past the end",
+		"apex ${ReadoutText.tenths_text(apex_past_end(bend_of(road)).to_metres())} m past the end",
 		"${patches.to_str()} patches, ${rail_pieces.to_str()} rail pieces",
 	]
 }
