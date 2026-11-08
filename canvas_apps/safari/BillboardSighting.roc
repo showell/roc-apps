@@ -14,7 +14,6 @@ BillboardSighting :: [].{
 	billboards_in_view = |road, camera|
 		RoadAhead.segments_in_view(road)
 			.join_map(|in_view| segment_billboards(road, { camera, in_view }))
-			.keep_oks(|fate| fate)
 }
 
 ## Farm animals are sighted on this many segments of the road ahead, chosen by
@@ -26,16 +25,13 @@ farm_reach = 3
 wildlife_reach : U32
 wildlife_reach = 5
 
-## What became of a billboard placed in the rider's view.
-Fate : Try(Pipeline.Sighted(Billboard), [BehindCamera, TooSmall])
-
 ## The billboards of a segment in view: its farm animals, then what lives at
 ## its end.
 segment_billboards : RoadAhead.RoadView,
 {
 	camera : Pipeline.SightingCamera,
 	in_view : RoadAhead.SegmentInView,
-} -> List(Fate)
+} -> List(Pipeline.Sighted(Billboard))
 segment_billboards = |road, { camera, in_view }|
 	farm_sightings(road, { camera, in_view })
 		.concat(bend_sightings(road, { camera, in_view }))
@@ -45,13 +41,13 @@ farm_sightings : RoadAhead.RoadView,
 {
 	camera : Pipeline.SightingCamera,
 	in_view : RoadAhead.SegmentInView,
-} -> List(Fate)
+} -> List(Pipeline.Sighted(Billboard))
 farm_sightings = |road, { camera, in_view }| {
 	place = in_view.place
 	if is_within_reach(place, farm_reach) {
 		in_view.segment.segment_cows()
 			.concat(in_view.segment.segment_pigs())
-			.map(|billboard| Pipeline.scenery_sighting_of(billboard, { road, camera, place }))
+			.keep_oks(|billboard| Pipeline.scenery_sighting_of(billboard, { road, camera, place }))
 	} else {
 		[]
 	}
@@ -63,12 +59,12 @@ bend_sightings : RoadAhead.RoadView,
 {
 	camera : Pipeline.SightingCamera,
 	in_view : RoadAhead.SegmentInView,
-} -> List(Fate)
+} -> List(Pipeline.Sighted(Billboard))
 bend_sightings = |road, { camera, in_view }| {
 	place = in_view.place
 	if is_within_reach(place, wildlife_reach) {
 		in_view.segment.segment_bend_billboards()
-			.map(|billboard| Pipeline.scenery_sighting_of(billboard, { road, camera, place }))
+			.keep_oks(|billboard| Pipeline.scenery_sighting_of(billboard, { road, camera, place }))
 	} else {
 		[]
 	}
