@@ -202,7 +202,7 @@ The `focal_length` sets how much the camera's lens magnifies, in `Pixels`, the s
 
 The `spot` comes from a camera: it's what a sighting holds. So to draw one cow alone, the picture above puts the cow on the road, 10 metres ahead and 5 metres left of the middle, and lets a camera at the start of the road sight it. The rider's own camera comes in when the book reaches the rider's view.
 
-What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, drawn as polygons. Most of the ride's shapes are polygons. At step 1,529, the ride draws 2,121 shapes over the sky and the grass: 1,977 polygons, 136 rectangles, one for each tree's trunk, and 8 discs.
+What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, drawn as polygons. Most of the ride's shapes have straight edges. At step 1,529, the ride draws 2,121 shapes over the sky and the grass: 864 triangles, 1,113 other polygons, 136 rectangles, one for each tree's trunk, and 8 discs.
 
 So we start with shapes, and the simplest shape is a triangle. Then we build the things from shapes, starting with a tree.
 
@@ -210,11 +210,11 @@ So we start with shapes, and the simplest shape is a triangle. Then we build the
 
 A far tree in the ride is a rectangle of trunk under eight triangles. So before the tree, we draw its two shapes: a triangle and a rectangle.
 
-In Roc, a shape is a value that describes something to paint. The `Shape` type lists the shapes the platform knows how to paint, one tag for each. Here are the three the ride draws with:
+In Roc, a shape is a value that describes something to paint: a region of the screen, and a fill for it. The `Shape` type lists the regions the platform paints, one tag for each:
 
 {{code Shapes.Shape from "Shape : [" to "Polygon({ corners"}}
 
-Each tag carries a record of its data. A `Poly` is a polygon: its `coordinates` list the corners, an `x` and then a `y` for each, and its `fill` colors the inside. A `Disc` is a circle, with a center and a radius. A `Rect` is a rectangle. The numbers are pixels, measured from the top left of the screen, with `y` growing downward.
+Each tag carries a record of its data, and every record ends with a `fill`, the paint for the inside. A `Triangle` holds three corners, so every triangle has exactly three, by construction. A `Rectangle` is an upright box, a `Disc` is a circle, and a `Polygon` is any other shape with straight edges. A corner is a `Point.Point`: an `x` and a `y`, measured from the top left of the screen, with `y` growing downward.
 
 ### A triangle
 
@@ -228,13 +228,9 @@ And here's the code that makes it:
 
 {{code ShapesWidgetApp.green_triangle}}
 
-`0x2e8b57` is the color, the six hex digits a web page writes after its `#`. A triangle is a polygon with three corners, so it's a `Poly`. The `Polygon.triangle` function takes the three corners and builds that `Poly`:
+The value is a `Triangle` tag with its record, and it's a `Shapes.Shape`, because a `Shape` is what the platform paints. `Point.at` makes a corner from two numbers, and `Brush.flat` makes a fill of one color. `0x2e8b57` is the color, the six hex digits a web page writes after its `#`.
 
-{{code Shapes.Shape from "Triangle({" to "Triangle({"}}
-
-The parameter `{ first_corner, second_corner, third_corner }` takes the record apart into three names. Every caller names all three corners, so every triangle has exactly three, by construction. The body lists the six numbers and fills the inside with one flat color. It gives back a `Shapes.Shape`, because a `Shape` is what the platform paints.
-
-Each corner is a `Screen.Point`, and its `x` and `y` are each a `Pixels`: an opaque type around an `F64`, like `Distance`. The ride works in metres on the road and pixels on the screen, so two types keep the two apart, and a reader always knows which one a number is. The `to_f64` calls take the plain numbers out for the `Poly`. Roc is just as happy with plain numbers, as the `Shape` type shows.
+A point's `x` and `y` are each a `Pixels`: an opaque type around an `F64`, like `Distance`. The ride works in metres on the road and pixels on the screen, so two types keep the two apart, and a reader always knows which one a number is. Roc is just as happy with plain `F64`s, if you prefer that style. In a program that moves between the road and the screen all the time, the types earn their keep.
 
 So what draws the triangle? The picture is a small Roc app of its own. For each frame, it hands the platform a list of two shapes: the background, which is a rectangle the size of the picture, and then the triangle. The platform paints the list from first to last, so the triangle lands on the background.
 
@@ -248,7 +244,7 @@ A brown rectangle on a plain background.
 
 {{code ShapesWidgetApp.brown_rectangle}}
 
-`Rect` is the `Shape` type's tag for a rectangle, and `Rect({ ... })` makes a `Shape` value from the record. The record holds the top left corner, a width and a height, so a `Rect` is always upright, its sides square to the screen. The picture hands the platform the background and then this rectangle, just as it did the triangle.
+`Rectangle` is the tag for an upright box. Its record holds the top left corner, a width and a height, so its sides are always square to the screen. The picture hands the platform the background and then this rectangle, just as it did the triangle.
 
 That's both of a far tree's shapes. Next, we put them together.
 
@@ -607,7 +603,7 @@ Here's all of `Conifer`:
 
 `scenery_sprite` takes the kind and a setting, and hands the setting whole to `TreeShapes.tree_sprite`, with the tree's height and color in the record that function wants.
 
-`tree_sprite` finds the tree on the screen, then makes a trunk and eight tiers. Its bars take the setting apart into `spot`, `focal_length` and `context`, as `Polygon.triangle` did with its corners.
+`tree_sprite` finds the tree on the screen, then makes a trunk and eight tiers. Its bars take the setting apart into `spot`, `focal_length` and `context`, as a function's bars can take any record apart.
 
 {{code TreeShapes.tree_sprite}}
 
@@ -719,7 +715,7 @@ A frame holds only polygons, so we work out the polygon a cone would make. We le
 
 {{code TreeShapes.tier_cone}}
 
-`shaded_polygon` makes a polygon whose fill is darker at its edges and lighter in its middle, and `strength` says how much, so a near cone looks rounder than a far one. The shade from `crown_of` goes in as that strength.
+`Brush.corners_shade` makes a fill that is darker at its edges and lighter in its middle, and `strength` says how much, so a near cone looks rounder than a far one. The shade from `crown_of` goes in as that strength.
 
 That leaves 17 points on the screen: the ring's 16, and the apex. A cone's outline is the shape that wraps around them all, with no dents. That's called a convex hull:
 
@@ -2872,7 +2868,7 @@ These two functions cover two of the three sorts of thing from the problem chapt
 | Cards | the cat, the bird, the cows, pigs and other animals by the road, the far trees | a foot on the road, and a width and a height on the screen | depth: they're flat, and always face you |
 | Far scenery | the sun, the mountains, the rolling land | a direction and a height above the horizon | distance: they never come nearer |
 
-A solid is projected corner by corner, each corner through `project`, as `Polygon.clipped_polygon` does for the truck's faces, the rails and the ground. A card is one projected foot plus a size, which is `upright_on_screen`. Far scenery needs no projection of distance at all: its direction picks a place across the screen, and its height above the horizon is already in pixels. A tree is the one thing that changes sort. Far off it's a card, but up close its crown is cones, and every point of a cone's ring goes through `project` like a solid's corner.
+A solid is projected corner by corner, each corner through `project`, as `Camera.clipped_polygon` does for the truck's faces, the rails and the ground. A card is one projected foot plus a size, which is `upright_on_screen`. Far scenery needs no projection of distance at all: its direction picks a place across the screen, and its height above the horizon is already in pixels. A tree is the one thing that changes sort. Far off it's a card, but up close its crown is cones, and every point of a cone's ring goes through `project` like a solid's corner.
 
 The focal length comes from a lens. `resting_focal_length` is a value computed from other values, with no function in sight, and `field_of_view` is a `Turn`, so taking half of it needs no comment about radians.
 
@@ -2939,7 +2935,7 @@ The ground's horizon is a second region, a circle round the rider.
 
 The cut can change the type of point as well as the count. The near plane takes `RaisedPoint`s and gives back `RaisedPointAhead`s, the type `project` takes, while the horizon gives back `RaisedPoint`s. That's what the type variable is for.
 
-`GroundPatch`, `GuardRail`, `TruckBody` and `TruckBrakeLights` all cut through `Polygon.clipped_polygon`. `GroundPatch` first cuts its corners at the horizon, with `EarthCurve.points_before_horizon`:
+`GroundPatch`, `GuardRail`, `TruckBody` and `TruckBrakeLights` all cut through `Camera.clipped_polygon`. `GroundPatch` first cuts its corners at the horizon, with `EarthCurve.points_before_horizon`:
 
 {{code Camera.clipped_polygon from "in_front = RiderView.clipped_points(" to "fill: Brush.flat(color),"}}
 
@@ -3136,11 +3132,12 @@ The ride instant chapter showed `SafariApp.model_at_next_step` reading a snapsho
 
 | What's in the shapes of step 1,529 | How many |
 |---|---|
-| `Poly` | 1,977 |
-| `Rect` | 136 |
+| `Triangle` | 864 |
+| `Polygon` | 1,113 |
+| `Rectangle` | 136 |
 | `Disc` | 8 |
 
-What the game hands back each frame is a `List(Shapes.Shape)`. A shape is a tag: `Poly`, `Disc`, `Rect` and a few more, each with its fill. The table counts the shapes of step 1,529, the cat frozen in the road: 2,474 in all, the count in the proving chapter's table, and nearly all of them polygons. Two of the tags aren't shapes. `Blend` and `View` are marks in the list that change how what comes after them is painted. A frame is a flat list, so a mark is the cheapest way to say that.
+What the game hands back each frame is a `List(Shapes.Shape)`. A shape is a tag: `Triangle`, `Rectangle`, `Disc`, `Polygon` and a few more, each with its fill. The table counts the shapes of step 1,529, the cat frozen in the road: 2,474 in all, the count in the proving chapter's table, and nearly all of them polygons. Two of the tags aren't shapes. `Blend` and `View` are marks in the list that change how what comes after them is painted. A frame is a flat list, so a mark is the cheapest way to say that.
 
 The rider's lean is one of those marks. The whole picture banks into a turn, backdrop included, so `FrameView.leaned_shapes` puts the whole frame, backdrop first, inside one view: a camera built from nested tags by `Screen.leaned_by`, turned by the rider's roll:
 
@@ -3259,7 +3256,7 @@ Eight patterns kept turning up in the tour. They're patterns in a loose sense: s
 | Rule and timeline | One function says how far along an animation is, and a timeline, plain data, says what the animal looks like at each stage | `BirdFlight.flight_stage` and `BirdFlight.flight_timeline` |
 | The step function | A value goes in, and the next value comes out | `Rider.rider_at_next_step`, `TruckJourney.truck_progress_at_next_step`, `Tour.step_forward` |
 | The chain of limits | One value passes through independent rules, each of which can only lower it | `Throttle.next_acceleration` |
-| One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `RaisedPoint`, `Screen.Point` |
+| One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `RaisedPoint`, `Point.Point` |
 | Rehearsal | Run the real rules on a pretend copy, read the result, and throw it away | `Coast`, `LeanSearch`, `Motorcycle.cross_bend_if_on_road` |
 
 Code that reads like configuration deserves a line of its own, because the tour kept stopping to admire it: `Pond`, `World.bending_plans`, the timelines, and `SafariApp.canvas_app`. None of them is a config format. They're ordinary Roc values, so the compiler checks them, and a tag that's misspelled is a compile-time error.

@@ -3,10 +3,12 @@
 
 # Roc's own words, which the parser's tree holds as syntax and not as names.
 _: Roc's wildcard, in a pattern or an annotation
+app: a Roc keyword, the header of an app
 crash: a Roc keyword
 expect: a Roc keyword
 for: a Roc keyword
 if: a Roc keyword
+import: a Roc keyword
 match: a Roc keyword
 return: a Roc keyword
 var: a Roc keyword
@@ -34,6 +36,7 @@ canvas_app_runner.js: a file of the JavaScript platform
 game.roc: the package file that lists the game's modules
 main.roc: the native app's root file
 roc_glue.js: the file `roc glue` generates
+SafariApp.roc: the file that holds the SafariApp module
 shapes_canvas.js: a file of the JavaScript platform
 turn_as_bearing: a failing program in tutorial/fails, which the build runs
 web.roc: the web app's root file
