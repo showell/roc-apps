@@ -4,8 +4,9 @@
 ## paints every proof frame through this module, and ShapesFrame paints each
 ## one a second time with its polygons cut into triangles.
 ##
-## It paints only what Safari's ride draws: polygons, discs and rectangles, each
-## laid over what is there. Any other shape crashes, naming what it got.
+## It paints only what Safari's ride draws: triangles, rectangles, discs and
+## polygons, each laid over what is there. Any other shape crashes, naming what
+## it got.
 import lib.Shapes
 import ScanlineFill
 import ScreenRoll
@@ -26,38 +27,48 @@ ShapesPixels :: [].{
 pixels_with_shape : List(U32), { roll : ScreenRoll, shape : Shapes.Shape } -> List(U32)
 pixels_with_shape = |pixels, { roll, shape }|
 	match shape {
-		Poly(p) => ScanlineFill.polygon_pixels(
+		# A canvas traces a triangle as the path round its three corners, so it
+		# fills as that polygon does.
+		Triangle(t) => ScanlineFill.polygon_pixels(
 			pixels,
-			{ roll, coordinates: p.coordinates, fill: p.fill },
+			{
+				roll,
+				corners: [t.first, t.second, t.third],
+				fill: t.fill,
+			},
+		)
+		Polygon(p) => ScanlineFill.polygon_pixels(
+			pixels,
+			{ roll, corners: p.corners, fill: p.fill },
 		)
 		Disc(d) => ScanlineFill.disc_pixels(
 			pixels,
 			{
 				roll,
-				center: ScreenRoll.ScenePoint.({ x: d.x, y: d.y }),
+				center: ScreenRoll.ScenePoint.({ x: d.center.x, y: d.center.y }),
 				radius: d.radius,
 				fill: d.fill,
 			},
 		)
 		# A canvas traces a rectangle as the path round its four corners, so it
 		# fills as that polygon does.
-		Rect(r) => ScanlineFill.polygon_pixels(
-			pixels,
-			{
-				roll,
-				coordinates: [
-					r.x,
-					r.y,
-					r.x + r.width,
-					r.y,
-					r.x + r.width,
-					r.y + r.height,
-					r.x,
-					r.y + r.height,
-				],
-				fill: r.fill,
-			},
-		)
+		Rectangle(r) => {
+			left = r.top_left.x
+			top = r.top_left.y
+			ScanlineFill.polygon_pixels(
+				pixels,
+				{
+					roll,
+					corners: [
+						{ x: left, y: top },
+						{ x: left + r.width, y: top },
+						{ x: left + r.width, y: top + r.height },
+						{ x: left, y: top + r.height },
+					],
+					fill: r.fill,
+				},
+			)
+		}
 		# ScanlineFill lays every pixel over what is there, so Over is the mode
 		# it is always in, and Add is light it can't paint.
 		Blend(Over) => pixels

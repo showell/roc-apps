@@ -38,6 +38,7 @@ import lib.Font
 import lib.Input
 import lib.Keys
 import lib.Mouse
+import lib.Point
 import lib.Shapes
 
 CanvasAppRunner :: [].{
@@ -351,12 +352,15 @@ CanvasAppRunner :: [].{
 	draw_shape! : Shader(CanvasAppRunner.BrushUniforms), Draw.Frame, ConvexCut.CutShape => {}
 	draw_shape! = |shader, frame, cut_shape|
 		match cut_shape {
-			Triangles(t) => with_fill!(shader, frame, t.fill, |f, col| draw_triangles!(f, t.triangle_coordinates, col))
+			Triangles(t) => with_fill!(shader, frame, t.fill, |f, col| draw_triangles!(f, t.triangle_corners, col))
 			Uncut(shape) =>
 				match shape {
-					Poly(p) => with_fill!(shader, frame, p.fill, |f, col| f.convex_polygon!({ points: points(p.coordinates), style: Draw.filled(col) }))
-					Disc(d) => with_fill!(shader, frame, d.fill, |f, col| f.circle!({ center: point(d.x, d.y), radius: F64.to_f32_wrap(d.radius), style: Draw.filled(col) }))
-					Rect(r) => with_fill!(shader, frame, r.fill, |f, col| f.rectangle!({ x: F64.to_f32_wrap(r.x), y: F64.to_f32_wrap(r.y), width: F64.to_f32_wrap(r.width), height: F64.to_f32_wrap(r.height), style: Draw.filled(col) }))
+					# A triangle goes through the convex fill, as a polygon does,
+					# because that fill winds its corners itself.
+					Triangle(t) => with_fill!(shader, frame, t.fill, |f, col| f.convex_polygon!({ points: [t.first, t.second, t.third].map(host_point), style: Draw.filled(col) }))
+					Polygon(p) => with_fill!(shader, frame, p.fill, |f, col| f.convex_polygon!({ points: p.corners.map(host_point), style: Draw.filled(col) }))
+					Disc(d) => with_fill!(shader, frame, d.fill, |f, col| f.circle!({ center: host_point(d.center), radius: F64.to_f32_wrap(d.radius), style: Draw.filled(col) }))
+					Rectangle(r) => with_fill!(shader, frame, r.fill, |f, col| f.rectangle!({ x: F64.to_f32_wrap(r.top_left.x), y: F64.to_f32_wrap(r.top_left.y), width: F64.to_f32_wrap(r.width), height: F64.to_f32_wrap(r.height), style: Draw.filled(col) }))
 					# **roc-ray IS HANDED THE RECTANGLES**, as it is handed triangles
 					# for a concave polygon: each painter gets a frame in the form it
 					# can paint. A canvas has `putImageData`; here a texture would be
@@ -472,35 +476,24 @@ CanvasAppRunner :: [].{
 		)
 	}
 
-	draw_triangles! : Draw.Frame, List(F64), Color.Rgba => {}
-	draw_triangles! = |frame, tris, col| {
-		m = List.len(tris) // 6
+	draw_triangles! : Draw.Frame, List(Point.Point), Color.Rgba => {}
+	draw_triangles! = |frame, triangle_corners, col| {
+		m = List.len(triangle_corners) // 3
 		var $k = 0
 		while $k < m {
-			b = 6 * $k
-			frame.triangle!({ a: point(at(tris, b), at(tris, b + 1)), b: point(at(tris, b + 2), at(tris, b + 3)), c: point(at(tris, b + 4), at(tris, b + 5)), style: Draw.filled(col) })
+			b = 3 * $k
+			frame.triangle!({ a: host_point(corner_at(triangle_corners, b)), b: host_point(corner_at(triangle_corners, b + 1)), c: host_point(corner_at(triangle_corners, b + 2)), style: Draw.filled(col) })
 			$k = $k + 1
 		}
 		{}
 	}
 
-	at : List(F64), U64 -> F64
-	at = |xs, i| List.get(xs, i) ?? 0.0
+	corner_at : List(Point.Point), U64 -> Point.Point
+	corner_at = |corners, i| List.get(corners, i) ?? crash "CanvasAppRunner.corner_at: a cut triangle has three corners"
 
-	point : F64, F64 -> { x : F32, y : F32 }
-	point = |x, y| { x: F64.to_f32_wrap(x), y: F64.to_f32_wrap(y) }
-
-	points : List(F64) -> List({ x : F32, y : F32 })
-	points = |xs| {
-		n = List.len(xs) // 2
-		var $out = List.with_capacity(n)
-		var $k = 0
-		while $k < n {
-			$out = List.append($out, point(at(xs, 2 * $k), at(xs, 2 * $k + 1)))
-			$k = $k + 1
-		}
-		$out
-	}
+	## A frame's point in roc-ray's 32-bit floats.
+	host_point : Point.Point -> { x : F32, y : F32 }
+	host_point = |{ x, y }| { x: F64.to_f32_wrap(x), y: F64.to_f32_wrap(y) }
 
 	show_fps! : Bool, Draw.Frame => {}
 	show_fps! = |shown, frame|

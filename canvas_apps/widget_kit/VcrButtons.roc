@@ -274,24 +274,18 @@ button_middle_y = button_top + button_height / 2.0
 ## A triangle pointing right when `reach` is positive, and left when it's not.
 triangle : { tip_x : F64, reach : F64 } -> Shapes.Shape
 triangle = |{ tip_x, reach }|
-	Poly({
-		coordinates: [
-			tip_x - reach,
-			button_middle_y - 7.0,
-			tip_x,
-			button_middle_y,
-			tip_x - reach,
-			button_middle_y + 7.0,
-		],
+	Triangle({
+		first: { x: tip_x - reach, y: button_middle_y - 7.0 },
+		second: { x: tip_x, y: button_middle_y },
+		third: { x: tip_x - reach, y: button_middle_y + 7.0 },
 		fill: Brush.flat(WidgetPalette.button_icon_color),
 	})
 
 ## A bar across a button's height, for a pause or a stop at either end.
 bar : F64 -> Shapes.Shape
 bar = |x|
-	Rect({
-		x,
-		y: button_middle_y - 7.0,
+	Rectangle({
+		top_left: { x, y: button_middle_y - 7.0 },
 		width: 3.0,
 		height: 14.0,
 		fill: Brush.flat(WidgetPalette.button_icon_color),
@@ -323,9 +317,8 @@ button_shapes = |button, motion| {
 			Unlit => WidgetPalette.unlit_button_color
 		}
 	[
-		Rect({
-			x: button.left,
-			y: button_top,
+		Rectangle({
+			top_left: { x: button.left, y: button_top },
 			width: button_width,
 			height: button_height,
 			fill: Brush.flat(color),

@@ -8,27 +8,21 @@
 ## PixelGrid's `blend`. A list threaded down a recursion would be copied on
 ## the next store (docs/roc-notes.md, "Speed and copying").
 import lib.Brush
+import lib.Point
 import PixelGrid
 import ScreenRoll
 
 ScanlineFill :: [].{
 
-	## A polygon, as scene coordinates x0, y0, x1, y1, ..., filled by the
-	## nonzero rule.
+	## A polygon, as its corners in the scene, filled by the nonzero rule.
 	polygon_pixels : List(U32),
 	{
 		roll : ScreenRoll,
-		coordinates : List(F64),
+		corners : List(Point.Point),
 		fill : Brush.Fill,
 	} -> List(U32)
-	polygon_pixels = |pixels, { roll, coordinates, fill }| {
-		corners = coordinates.chunks_of(2).map(
-			|pair|
-				match pair {
-					[x, y] => roll.to_screen(ScreenRoll.ScenePoint.({ x, y }))
-					_ => crash "ScanlineFill.polygon_pixels: a polygon's coordinates come in pairs"
-				},
-		)
+	polygon_pixels = |pixels, { roll, corners: scene_corners, fill }| {
+		corners = scene_corners.map(|{ x, y }| roll.to_screen(ScreenRoll.ScenePoint.({ x, y })))
 		match corners {
 			[first, _, _, ..] => {
 				next_corners = corners.drop_first(1).concat(corners.take_first(1))

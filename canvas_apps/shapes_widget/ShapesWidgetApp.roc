@@ -38,9 +38,8 @@ ShapesWidgetApp :: [].{
 
 	## A brown rectangle.
 	brown_rectangle : Shapes.Shape
-	brown_rectangle = Rect({
-		x: 240.0,
-		y: 100.0,
+	brown_rectangle = Rectangle({
+		top_left: { x: 240.0, y: 100.0 },
 		width: 120.0,
 		height: 160.0,
 		fill: Brush.flat(RgbColor.of(0x8b5a2b)),

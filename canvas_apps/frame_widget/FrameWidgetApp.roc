@@ -180,9 +180,8 @@ plain_background_color = RgbColor.of(0xE8E6DF)
 
 ## Behind whatever is on, so a frame with no sky has something to be seen against.
 plain_background : Shapes.Shape
-plain_background = Rect({
-	x: 0.0,
-	y: 0.0,
+plain_background = Rectangle({
+	top_left: { x: 0.0, y: 0.0 },
 	width: canvas_width,
 	height: canvas_height,
 	fill: Brush.flat(plain_background_color),

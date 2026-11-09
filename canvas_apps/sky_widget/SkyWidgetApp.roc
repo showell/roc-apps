@@ -300,8 +300,7 @@ cursor_shapes = |job, clock| {
 curve_dot : Point.Point, RgbColor -> Shapes.Shape
 curve_dot = |{ x, y }, color|
 	Disc({
-		x,
-		y,
+		center: { x, y },
 		radius: 4.0,
 		fill: Brush.flat(color),
 	})

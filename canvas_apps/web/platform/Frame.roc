@@ -30,10 +30,13 @@ Frame :: [].{
 
 	Align : [Left, Center]
 
+	Point : { x : F64, y : F64 }
+
 	Shape : [
-		Poly({ coordinates : List(F64), fill : Frame.Fill }),
-		Disc({ x : F64, y : F64, radius : F64, fill : Frame.Fill }),
-		Rect({ x : F64, y : F64, width : F64, height : F64, fill : Frame.Fill }),
+		Triangle({ first : Frame.Point, second : Frame.Point, third : Frame.Point, fill : Frame.Fill }),
+		Rectangle({ top_left : Frame.Point, width : F64, height : F64, fill : Frame.Fill }),
+		Disc({ center : Frame.Point, radius : F64, fill : Frame.Fill }),
+		Polygon({ corners : List(Frame.Point), fill : Frame.Fill }),
 		Blend(Frame.Mode),
 		View(Frame.Space),
 		Image({ x : F64, y : F64, width : F64, height : F64, cols : U64, rows : U64, pixels : List(Frame.Rgba) }),

@@ -69,8 +69,7 @@ Sun :: [].{
 				[
 					Screen.above_horizon_rect(look.glow),
 					Disc({
-						x: sun.center.x.to_f64(),
-						y: sun.center.y.to_f64(),
+						center: { x: sun.center.x.to_f64(), y: sun.center.y.to_f64() },
 						radius: Sun.disc_radius_on_screen(sun).to_f64(),
 						fill: look.disc,
 					}),

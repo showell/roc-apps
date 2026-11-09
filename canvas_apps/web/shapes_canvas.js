@@ -96,10 +96,12 @@ function fillShape(ctx, fill) {
   else { ctx.fillStyle = paint; ctx.fill(); }
 }
 
-function tracePoly(ctx, coordinates) {
+// A triangle and any other polygon are traced alike, as the path round their
+// corners in order.
+function tracePolygon(ctx, corners) {
   ctx.beginPath();
-  ctx.moveTo(coordinates[0], coordinates[1]);
-  for (let i = 2; i < coordinates.length; i += 2) ctx.lineTo(coordinates[i], coordinates[i + 1]);
+  ctx.moveTo(corners[0].x, corners[0].y);
+  for (let i = 1; i < corners.length; i++) ctx.lineTo(corners[i].x, corners[i].y);
   ctx.closePath();
 }
 
@@ -179,19 +181,23 @@ function paintFrame(ctx, shapes, scale = 1) {
       case "Text":
         paintText(ctx, p);
         break;
-      case "Poly":
-        tracePoly(ctx, p.coordinates);
+      case "Triangle":
+        tracePolygon(ctx, [p.first, p.second, p.third]);
         fillShape(ctx, p.fill);
         break;
-      case "Rect":
+      case "Polygon":
+        tracePolygon(ctx, p.corners);
+        fillShape(ctx, p.fill);
+        break;
+      case "Rectangle":
         ctx.beginPath();
-        ctx.rect(p.x, p.y, p.width, p.height);
+        ctx.rect(p.top_left.x, p.top_left.y, p.width, p.height);
         ctx.closePath();
         fillShape(ctx, p.fill);
         break;
       case "Disc":
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.arc(p.center.x, p.center.y, p.radius, 0, Math.PI * 2);
         ctx.closePath();
         fillShape(ctx, p.fill);
         break;

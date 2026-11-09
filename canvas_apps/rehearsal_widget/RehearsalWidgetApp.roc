@@ -213,9 +213,8 @@ road_shapes = {
 	half_road = Geom.road_half_width.to_metres()
 	[
 		WidgetPage.picture_backdrop(WidgetPalette.plan_ground_color),
-		Rect({
-			x: 0.0,
-			y: canvas_point({ forward: Distance.zero, across: left_edge }).y,
+		Rectangle({
+			top_left: { x: 0.0, y: canvas_point({ forward: Distance.zero, across: left_edge }).y },
 			width: WidgetPage.canvas_width,
 			height: 2.0 * half_road * across_stretch * road_plan.pixels_a_metre,
 			fill: Brush.flat(WidgetPalette.plan_road_color),
@@ -290,8 +289,7 @@ rider_mark = {
 	rider_across = motorcycle.route_place.road_point.across
 	{ x, y } = canvas_point({ forward: Distance.zero, across: rider_across })
 	Disc({
-		x,
-		y,
+		center: { x, y },
 		radius: 7.0,
 		fill: Brush.flat(kept_color),
 	})
@@ -456,8 +454,7 @@ current_color = WidgetPalette.accent_color
 try_mark : MarkAndStop -> Shapes.Shape
 try_mark = |{ mark, current }|
 	Disc({
-		x: mark_x(stop_number(mark)),
-		y: marks_y,
+		center: { x: mark_x(stop_number(mark)), y: marks_y },
 		radius: if mark == current {
 			9.0
 		} else {
@@ -474,9 +471,8 @@ choice_mark = |current| {
 	} else {
 		6.0
 	}
-	Rect({
-		x: mark_x(last_stop) - half,
-		y: marks_y - half,
+	Rectangle({
+		top_left: { x: mark_x(last_stop) - half, y: marks_y - half },
 		width: 2.0 * half,
 		height: 2.0 * half,
 		fill: Brush.flat(mark_color({ mark: Choice, current })),

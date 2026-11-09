@@ -409,8 +409,13 @@ expect
 		to: Screen.point(30.0, 40.0),
 		width: Pixels.of(10.0),
 	})
-		== Poly({
-			coordinates: [-4.0, 3.0, 26.0, 43.0, 34.0, 37.0, 4.0, -3.0],
+		== Polygon({
+			corners: [
+				{ x: -4.0, y: 3.0 },
+				{ x: 26.0, y: 43.0 },
+				{ x: 34.0, y: 37.0 },
+				{ x: 4.0, y: -3.0 },
+			],
 			fill: Flat(Brush.opaque_rgba(tower_color)),
 		})
 
@@ -421,8 +426,13 @@ expect
 		to: Screen.point(5.0, 6.0),
 		width: Pixels.of(10.0),
 	})
-		== Poly({
-			coordinates: [5.0, 6.0, 5.0, 6.0, 5.0, 6.0, 5.0, 6.0],
+		== Polygon({
+			corners: [
+				{ x: 5.0, y: 6.0 },
+				{ x: 5.0, y: 6.0 },
+				{ x: 5.0, y: 6.0 },
+				{ x: 5.0, y: 6.0 },
+			],
 			fill: Flat(Brush.opaque_rgba(tower_color)),
 		})
 

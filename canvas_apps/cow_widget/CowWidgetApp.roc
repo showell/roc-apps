@@ -140,16 +140,12 @@ picture_shapes = FrameView.painted_shapes({
 ## Every corner of `shapes`' polygons, or none if any shape isn't a polygon.
 polygon_corners : List(Shapes.Shape) -> Try(List(Point.Point), [NotPolygon])
 polygon_corners = |shapes| {
-	corner_of = |pair|
-		match pair {
-			[x, y] => { x, y }
-			_ => crash "CowWidgetApp.polygon_corners: a polygon's coordinates come in pairs"
-		}
 	polygons = shapes.keep_oks(
 		|shape|
 			match shape {
-				Poly({ coordinates, .. }) => Ok(coordinates.chunks_of(2).map(corner_of))
-				Text(_) | Disc(_) | Rect(_) | Blend(_) | View(_) | Image(_) => Err(NotPolygon)
+				Triangle(t) => Ok([t.first, t.second, t.third])
+				Polygon({ corners, .. }) => Ok(corners)
+				Text(_) | Disc(_) | Rectangle(_) | Blend(_) | View(_) | Image(_) => Err(NotPolygon)
 			},
 	)
 	if polygons.len() == shapes.len() {

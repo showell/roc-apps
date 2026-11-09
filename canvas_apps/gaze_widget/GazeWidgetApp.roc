@@ -193,9 +193,8 @@ canvas_point = |{ along, across }|
 road : Shapes.Shape
 road = {
 	half_width = Geom.road_half_width.to_metres() * road_plan.pixels_a_metre
-	Rect({
-		x: 0.0,
-		y: road_plan.origin.y - half_width,
+	Rectangle({
+		top_left: { x: 0.0, y: road_plan.origin.y - half_width },
 		width: WidgetPage.canvas_width,
 		height: 2.0 * half_width,
 		fill: Brush.flat(WidgetPalette.plan_road_color),
@@ -212,8 +211,7 @@ plan_disc : {
 plan_disc = |{ along, across, radius, color }| {
 	{ x, y } = canvas_point({ along, across })
 	Disc({
-		x,
-		y,
+		center: { x, y },
 		radius,
 		fill: Brush.flat(color),
 	})

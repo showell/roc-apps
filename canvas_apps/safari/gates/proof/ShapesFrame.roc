@@ -32,25 +32,25 @@ triangles = |cut_shapes| cut_shapes.fold(
 	0,
 	|n, cut_shape|
 		match cut_shape {
-			Triangles(t) => n + t.triangle_coordinates.len() // 6
+			Triangles(t) => n + t.triangle_corners.len() // 3
 			Uncut(_) => n
 		},
 )
 
-## The cut frame as shapes ShapesPixels paints: each triangle a polygon of its
+## The cut frame as shapes ShapesPixels paints: each triangle a shape of its
 ## own, with its polygon's fill.
 shapes_of_cut : List(ConvexCut.CutShape) -> List(Shapes.Shape)
 shapes_of_cut = |cut_shapes| cut_shapes.join_map(
 	|cut_shape|
 		match cut_shape {
 			Uncut(shape) => [shape]
-			Triangles(t) =>
-				List.from_iter(U64.until(0, t.triangle_coordinates.len() // 6)).map(
-					|k|
-						Poly({
-							coordinates: t.triangle_coordinates.sublist({ start: 6 * k, len: 6 }),
-							fill: t.fill,
-						}),
+			Triangles({ triangle_corners, fill }) =>
+				triangle_corners.chunks_of(3).map(
+					|corners|
+						match corners {
+							[first, second, third] => Triangle({ first, second, third, fill })
+							_ => crash "ShapesFrame.shapes_of_cut: a cut polygon's triangles have three corners each"
+						},
 				)
 		},
 )

@@ -137,9 +137,8 @@ route_x = |distance| route_left_x + route_width * distance.ratio_to(route_length
 bar_shapes : List(Shapes.Shape)
 bar_shapes =
 	[
-		Rect({
-			x: route_left_x,
-			y: route_y - 4.0,
+		Rectangle({
+			top_left: { x: route_left_x, y: route_y - 4.0 },
 			width: route_width,
 			height: 8.0,
 			fill: Brush.flat(WidgetPalette.plan_road_color),
@@ -147,9 +146,8 @@ bar_shapes =
 	].concat(
 		World.route.segments_with_ends().map(
 			|stretch|
-				Rect({
-					x: route_x(stretch.end) - 1.0,
-					y: route_y - 8.0,
+				Rectangle({
+					top_left: { x: route_x(stretch.end) - 1.0, y: route_y - 8.0 },
 					width: 2.0,
 					height: 16.0,
 					fill: Brush.flat(WidgetPalette.plan_road_color),
@@ -167,8 +165,7 @@ marker_shapes : {
 marker_shapes = |{ at, color, name, name_y }|
 	[
 		Disc({
-			x: route_x(at),
-			y: route_y,
+			center: { x: route_x(at), y: route_y },
 			radius: 8.0,
 			fill: Brush.flat(color),
 		}),
@@ -214,9 +211,8 @@ shapes_from_behind_rider = |{ across, lean }| {
 			}),
 		],
 		[
-			Rect({
-				x: middle - road_half_width_on_canvas,
-				y: surface_y,
+			Rectangle({
+				top_left: { x: middle - road_half_width_on_canvas, y: surface_y },
 				width: 2.0 * road_half_width_on_canvas,
 				height: 8.0,
 				fill: Brush.flat(WidgetPalette.plan_road_color),
@@ -230,8 +226,7 @@ shapes_from_behind_rider = |{ across, lean }| {
 				Brush.flat(rider_color),
 			),
 			Disc({
-				x: head_x,
-				y: head_y,
+				center: { x: head_x, y: head_y },
 				radius: 9.0,
 				fill: Brush.flat(rider_color),
 			}),

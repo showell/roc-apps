@@ -156,27 +156,21 @@ fixed_picture_shapes = {
 	}).concat(truck_views.map(caption_shape))
 }
 
-## The coordinates of each polygon among `shapes`, in the ride's screen pixels.
-polygon_coordinates : List(Shapes.Shape) -> List(List(F64))
-polygon_coordinates = |shapes|
+## The corners of each polygon among `shapes`, in the ride's screen pixels.
+polygon_corner_lists : List(Shapes.Shape) -> List(List(Point.Point))
+polygon_corner_lists = |shapes|
 	shapes.keep_oks(
 		|shape|
 			match shape {
-				Poly({ coordinates, .. }) => Ok(coordinates)
-				Text(_) | Disc(_) | Rect(_) | Blend(_) | View(_) | Image(_) => Err(NotPoly)
+				Triangle(t) => Ok([t.first, t.second, t.third])
+				Polygon({ corners, .. }) => Ok(corners)
+				Text(_) | Disc(_) | Rectangle(_) | Blend(_) | View(_) | Image(_) => Err(NotPolygon)
 			},
 	)
 
 ## The corners of the polygons among `shapes`, on the canvas.
 canvas_corners : List(Shapes.Shape) -> List(Point.Point)
-canvas_corners = |shapes| {
-	corner_of = |pair|
-		match pair {
-			[x, y] => WidgetPage.canvas_point_of_screen({ x, y })
-			_ => crash "TruckWidgetApp.canvas_corners: a polygon's coordinates come in pairs"
-		}
-	polygon_coordinates(shapes).join_map(|coordinates| coordinates.chunks_of(2).map(corner_of))
-}
+canvas_corners = |shapes| polygon_corner_lists(shapes).join().map(WidgetPage.canvas_point_of_screen)
 
 ## Whether `view`'s truck is all in the picture, above the panel and inside its
 ## own third of the canvas.
@@ -193,7 +187,7 @@ is_in_its_third = |view| {
 # Each truck draws its six faces and its ten tires, none of them clipped away,
 # and the picture holds those three trucks' polygons and no others.
 expect truck_views.all(|view| truck_shapes(view).len() == 16)
-expect polygon_coordinates(fixed_picture_shapes).len() == 3 * 16
+expect polygon_corner_lists(fixed_picture_shapes).len() == 3 * 16
 
 # Every truck is all in its third, above the panel. A truck nearer than the
 # views' distance loses its tires under the panel, and one seen from the side

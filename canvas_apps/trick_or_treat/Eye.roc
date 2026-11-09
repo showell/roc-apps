@@ -42,18 +42,10 @@ Eye :: [].{
 		}
 	}
 
-	## A polygon of world points as screen coordinates: turned, cut to what is
-	## in front of the eye, and projected. Empty when none of it is.
-	screen_coordinates : Eye.Eye, List(Eye.At) -> List(F64)
-	screen_coordinates = |eye, points| {
-		kept = clipped(turned(eye, points))
-		var $out = List.with_capacity(2 * kept.len())
-		for point in kept {
-			p = flat(eye, point)
-			$out = $out.append(p.x).append(p.y)
-		}
-		$out
-	}
+	## A polygon of world points as corners on the screen: turned, cut to what
+	## is in front of the eye, and projected. Empty when none of it is.
+	screen_corners : Eye.Eye, List(Eye.At) -> List(Point.Point)
+	screen_corners = |eye, points| clipped(turned(eye, points)).map(|point| flat(eye, point))
 }
 
 # The point as this eye has it: the world turned the other way by the heading,

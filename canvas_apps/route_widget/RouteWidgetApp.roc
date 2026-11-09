@@ -163,8 +163,7 @@ spot : MapPoint, { radius : F64, color : RgbColor } -> Shapes.Shape
 spot = |point, { radius, color }| {
 	{ x, y } = canvas_point(point)
 	Disc({
-		x,
-		y,
+		center: { x, y },
 		radius,
 		fill: Brush.flat(color),
 	})
@@ -226,8 +225,7 @@ row_shapes : {
 row_shapes = |{ y, color, word }|
 	[
 		Disc({
-			x: 470.0,
-			y,
+			center: { x: 470.0, y },
 			radius: 6.0,
 			fill: Brush.flat(color),
 		}),
@@ -257,9 +255,8 @@ road_shapes : List(Shapes.Shape)
 road_shapes = segments.join_map(piece_shapes)
 
 ground : Shapes.Shape
-ground = Rect({
-	x: 0.0,
-	y: 0.0,
+ground = Rectangle({
+	top_left: { x: 0.0, y: 0.0 },
 	width: canvas_width,
 	height: canvas_height,
 	fill: Brush.flat(WidgetPalette.plan_ground_color),

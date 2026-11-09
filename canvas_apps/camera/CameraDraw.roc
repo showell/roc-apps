@@ -34,9 +34,8 @@ CameraDraw :: [].{
 
 	backdrop : Shapes.Shape
 	backdrop =
-		Rect({
-			x: 0.0,
-			y: 0.0,
+		Rectangle({
+			top_left: { x: 0.0, y: 0.0 },
 			width: 800.0,
 			height: 600.0,
 			fill: Linear({ stops: { start_color: hex(0x101a24), end_color: hex(0x060a0f), start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: 600.0 } }),
@@ -51,7 +50,7 @@ CameraDraw :: [].{
 		right = f(Rules.world_right)
 		bottom = f(Rules.world_bottom)
 
-		var $out = [Rect({ x: left, y: top, width: right - left, height: bottom - top, fill: Flat(hex(0x16222b)) })]
+		var $out = [Rectangle({ top_left: { x: left, y: top }, width: right - left, height: bottom - top, fill: Flat(hex(0x16222b)) })]
 		$out = List.concat($out, box({ left, top, right, bottom, line_width: 3.0 }, dim(0x5a5fa8d3)))
 		$out = List.concat($out, grid(seen))
 
@@ -73,9 +72,9 @@ CameraDraw :: [].{
 	landmark : F64, F64, F64, F64, Brush.Rgba -> List(Shapes.Shape)
 	landmark = |x, y, w, h, color|
 		[
-			Rect({ x: x + 10.0, y: y + 14.0, width: w, height: h, fill: Flat(dim(0x5A000000)) }),
-			Rect({ x, y, width: w, height: h, fill: Flat(color) }),
-			Rect({ x, y, width: w, height: 10.0, fill: Flat(dim(0x2Dffffff)) }),
+			Rectangle({ top_left: { x: x + 10.0, y: y + 14.0 }, width: w, height: h, fill: Flat(dim(0x5A000000)) }),
+			Rectangle({ top_left: { x, y }, width: w, height: h, fill: Flat(color) }),
+			Rectangle({ top_left: { x, y }, width: w, height: 10.0, fill: Flat(dim(0x2Dffffff)) }),
 		]
 
 	# The player: a shadow, the disc, its white rim, and the cross that shows
@@ -84,8 +83,8 @@ CameraDraw :: [].{
 	marker = |x, y| {
 		white = hex(0xffffff)
 		var $out = [
-			Disc({ x, y: y + 6.0, radius: 26.0, fill: Flat(dim(0x6E000000)) }),
-			Disc({ x, y, radius: 26.0, fill: Flat(hex(0xef476f)) }),
+			Disc({ center: { x, y: y + 6.0 }, radius: 26.0, fill: Flat(dim(0x6E000000)) }),
+			Disc({ center: { x, y }, radius: 26.0, fill: Flat(hex(0xef476f)) }),
 		]
 		$out = List.concat($out, Shapes.ring_shapes({ center: { x, y }, radius: 26.0, line_width: 4.0, sides: 28 }, Flat(white)))
 		$out = List.append($out, Shapes.line({ from: { x: x - 42.0, y }, to: { x: x + 42.0, y }, width: 3.0 }, Flat(white)))

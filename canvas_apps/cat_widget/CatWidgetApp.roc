@@ -100,16 +100,14 @@ road_shapes = {
 	ground_height = ground_bottom_y - ground_top_y
 	[
 		WidgetPage.picture_backdrop(sky_color),
-		Rect({
-			x: 0.0,
-			y: ground_top_y,
+		Rectangle({
+			top_left: { x: 0.0, y: ground_top_y },
 			width: WidgetPage.canvas_width,
 			height: ground_height,
 			fill: Brush.flat(side_ground_color),
 		}),
-		Rect({
-			x: road_middle_x - road_width / 2.0,
-			y: ground_top_y,
+		Rectangle({
+			top_left: { x: road_middle_x - road_width / 2.0, y: ground_top_y },
 			width: road_width,
 			height: ground_height,
 			fill: Brush.flat(side_road_color),

@@ -40,7 +40,7 @@ BreakoutDraw :: [].{
 	## One complete Breakout frame, back to front.
 	frame : Rules.World, F64 -> List(Shapes.Shape)
 	frame = |world, elapsed| {
-		var $out = [Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Linear({ stops: { start_color: Brush.opaque_rgba(field_top), end_color: Brush.opaque_rgba(field_bottom), start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: h } }) })]
+		var $out = [Rectangle({ top_left: { x: 0.0, y: 0.0 }, width: w, height: h, fill: Linear({ stops: { start_color: Brush.opaque_rgba(field_top), end_color: Brush.opaque_rgba(field_bottom), start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: h } }) })]
 		$out = List.concat($out, hud(world))
 		$out = List.concat($out, bricks(world.bricks))
 		$out = List.concat($out, glow(world))
@@ -74,7 +74,7 @@ BreakoutDraw :: [].{
 			bw = F32.to_f64(b.rect.width)
 			bh = F32.to_f64(b.rect.height)
 			$out = List.append($out, Shapes.rounded_rect({ x, y, width: bw, height: bh, corner_radius: 5.0, corner_steps: 6 }, Flat(Brush.with_alpha(b.color, 0.92))))
-			$out = List.append($out, Rect({ x: x + 5.0, y: y + 3.0, width: bw - 10.0, height: 3.0, fill: Flat(Brush.with_alpha(white, 0.43)) }))
+			$out = List.append($out, Rectangle({ top_left: { x: x + 5.0, y: y + 3.0 }, width: bw - 10.0, height: 3.0, fill: Flat(Brush.with_alpha(white, 0.43)) }))
 			$i = $i + 1
 		}
 		$out
@@ -106,9 +106,9 @@ BreakoutDraw :: [].{
 		r = F32.to_f64(Ball.radius)
 		[
 			Shapes.rounded_rect({ x: px, y: py, width: pw, height: ph, corner_radius: ph / 2.0, corner_steps: 8 }, Brush.flat(paddle_neon)),
-			Rect({ x: px + 8.0, y: py + 3.0, width: pw - 16.0, height: 3.0, fill: Flat(Brush.with_alpha(white, 0.59)) }),
-			Disc({ x: bx, y: by, radius: r, fill: Brush.flat(ball_neon) }),
-			Disc({ x: bx - 2.0, y: by - 2.0, radius: r * 0.4, fill: Flat(Brush.with_alpha(white, 0.82)) }),
+			Rectangle({ top_left: { x: px + 8.0, y: py + 3.0 }, width: pw - 16.0, height: 3.0, fill: Flat(Brush.with_alpha(white, 0.59)) }),
+			Disc({ center: { x: bx, y: by }, radius: r, fill: Brush.flat(ball_neon) }),
+			Disc({ center: { x: bx - 2.0, y: by - 2.0 }, radius: r * 0.4, fill: Flat(Brush.with_alpha(white, 0.82)) }),
 		]
 	}
 

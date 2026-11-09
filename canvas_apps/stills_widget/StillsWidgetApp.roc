@@ -439,9 +439,8 @@ mark_shapes : StillsWidgetApp.Pose -> List(Shapes.Shape)
 mark_shapes = |large_pose|
 	cells.keep_if(|cell| cell.pose == large_pose).map(
 		|{ area, .. }|
-			Rect({
-				x: area.left,
-				y: area.top,
+			Rectangle({
+				top_left: { x: area.left, y: area.top },
 				width: area.width,
 				height: area.height,
 				fill: Brush.flat(WidgetPalette.picture_background_color),
@@ -535,7 +534,13 @@ expect
 				|shape|
 					match shape {
 						Text(line) => line.y + name_descent <= cell.area.top + cell.area.height
-						Poly(_) | Disc(_) | Rect(_) | Blend(_) | View(_) | Image(_) => True
+						Triangle(_)
+						| Polygon(_)
+						| Disc(_)
+						| Rectangle(_)
+						| Blend(_)
+						| View(_)
+						| Image(_) => True
 					},
 			),
 	)
@@ -700,9 +705,14 @@ expect {
 		flip: AsDrawn,
 		height_on_screen: Pixels.of(10.0),
 	}
-	flipped_square = [-0.5, 0.0, -0.5, 10.0, 0.5, 10.0, 0.5, 0.0]
+	flipped_square = [
+		{ x: -0.5, y: 0.0 },
+		{ x: -0.5, y: 10.0 },
+		{ x: 0.5, y: 10.0 },
+		{ x: 0.5, y: 0.0 },
+	]
 	match outline_shapes(anchor, square) {
-		[_, _, _, Poly({ coordinates, .. })] => coordinates == flipped_square
+		[_, _, _, Polygon({ corners, .. })] => corners == flipped_square
 		_ => False
 	}
 }

@@ -408,18 +408,7 @@ expect snow_peak_height > snow_threshold
 corner_ys : Shapes.Shape -> List(F64)
 corner_ys = |shape|
 	match shape {
-		Poly(p) =>
-			p.coordinates.fold(
-				{ ys: [], is_y: False },
-				|walk, n| {
-					ys: if walk.is_y {
-						walk.ys.append(n)
-					} else {
-						walk.ys
-					},
-					is_y: !walk.is_y,
-				},
-			).ys
+		Polygon(p) => p.corners.map(|corner| corner.y)
 		_ => crash "Skyline: a silhouette is a polygon"
 	}
 

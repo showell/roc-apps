@@ -252,35 +252,43 @@ book_view = FrameView.frame_view_at(book_tour.route(), book_tour.instant())
 book_shapes : List(Shapes.Shape)
 book_shapes = FrameView.ride_shape_lists(book_view).join()
 
+is_triangle : Shapes.Shape -> Bool
+is_triangle = |shape|
+	match shape {
+		Triangle(_) => True
+		Polygon(_) | Disc(_) | Rectangle(_) | Blend(_) | View(_) | Image(_) | Text(_) => False
+	}
+
 is_polygon : Shapes.Shape -> Bool
 is_polygon = |shape|
 	match shape {
-		Poly(_) => True
-		Disc(_) | Rect(_) | Blend(_) | View(_) | Image(_) | Text(_) => False
+		Polygon(_) => True
+		Triangle(_) | Disc(_) | Rectangle(_) | Blend(_) | View(_) | Image(_) | Text(_) => False
 	}
 
 is_disc : Shapes.Shape -> Bool
 is_disc = |shape|
 	match shape {
 		Disc(_) => True
-		Poly(_) | Rect(_) | Blend(_) | View(_) | Image(_) | Text(_) => False
+		Triangle(_) | Polygon(_) | Rectangle(_) | Blend(_) | View(_) | Image(_) | Text(_) => False
 	}
 
-is_rect : Shapes.Shape -> Bool
-is_rect = |shape|
+is_rectangle : Shapes.Shape -> Bool
+is_rectangle = |shape|
 	match shape {
-		Rect(_) => True
-		Poly(_) | Disc(_) | Blend(_) | View(_) | Image(_) | Text(_) => False
+		Rectangle(_) => True
+		Triangle(_) | Polygon(_) | Disc(_) | Blend(_) | View(_) | Image(_) | Text(_) => False
 	}
 
 # The Roadside trees chapter: 136 trees in view. The platform chapter's shapes
-# by tag: every one of them is a Poly, a Disc or a Rect, and the Rects are the
-# trees' trunks, one each.
+# by tag: every one of them is a Triangle, a Polygon, a Disc or a Rectangle,
+# and the Rectangles are the trees' trunks, one each.
 expect book_view.scene.trees.len() == 136
 expect book_shapes.len() == 2121
-expect book_shapes.keep_if(is_polygon).len() == 1977
+expect book_shapes.keep_if(is_triangle).len() == 864
+expect book_shapes.keep_if(is_polygon).len() == 1113
 expect book_shapes.keep_if(is_disc).len() == 8
-expect book_shapes.keep_if(is_rect).len() == 136
+expect book_shapes.keep_if(is_rectangle).len() == 136
 
 # The modules chapter's sighting: one cat, frozen on the ground about 0.38 m
 # right of the camera and 23.63 m ahead.

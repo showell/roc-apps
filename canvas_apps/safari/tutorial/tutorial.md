@@ -206,7 +206,7 @@ A far tree in the ride is a rectangle of trunk under eight triangles. So before 
 
 In Roc, a shape is a value that describes something to paint. The `Shape` type lists the shapes the platform knows how to paint, one tag for each. Here are the three the ride draws with:
 
-{{code Shapes.Shape from "Shape : [" to "Rect("}}
+{{code Shapes.Shape from "Shape : [" to "Polygon({ corners"}}
 
 Each tag carries a record of its data. A `Poly` is a polygon: its `coordinates` list the corners, an `x` and then a `y` for each, and its `fill` colors the inside. A `Disc` is a circle, with a center and a radius. A `Rect` is a rectangle. The numbers are pixels, measured from the top left of the screen, with `y` growing downward.
 

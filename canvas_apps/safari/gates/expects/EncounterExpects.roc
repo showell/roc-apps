@@ -39,6 +39,7 @@ import game.VehicleLimits
 import game.World
 import lib.ArgbColor
 import lib.Brush
+import lib.Point
 import lib.RgbColor
 import lib.Shapes
 
@@ -509,7 +510,7 @@ sample_cat_shapes = |cat, lift|
 first_cat_corner_coordinates : Cat, Distance -> List(F64)
 first_cat_corner_coordinates = |cat, lift|
 	match sample_cat_shapes(cat, lift) {
-		[Poly(polygon), ..] => polygon.coordinates.take_first(2)
+		[Polygon({ corners: [first, ..], .. }), ..] => [first.x, first.y]
 		_ => crash "EncounterExpects: a cat draws polygons"
 	}
 
@@ -574,7 +575,7 @@ expect
 expect {
 	first_corner = |perch|
 		match bird_shapes_at({ pose: Perched }, perch) {
-			[Poly(polygon), ..] => polygon.coordinates.take_first(2)
+			[Polygon({ corners: [first, ..], .. }), ..] => [first.x, first.y]
 			_ => crash "EncounterExpects: a bird draws polygons"
 		}
 	raised = { right: Distance.metres(11.0), lift: Camera.eye_height.plus(Distance.metres(11.0)) }
@@ -588,7 +589,7 @@ expect {
 expect {
 	fill_of = |shape|
 		match shape {
-			Poly(polygon) => polygon.fill
+			Polygon(polygon) => polygon.fill
 			_ => crash "EncounterExpects: a bird's still is polygons"
 		}
 	level = { right: Distance.metres(0.0), lift: Camera.eye_height }
@@ -646,8 +647,8 @@ expect {
 	still = Still.of([{ fill: Flat(RgbColor.of(7)), points: corners }])
 	StillShapes.still_shapes(upright_still_anchor, still)
 		== [
-			Poly({
-				coordinates: [100.0, 200.0, 150.0, 200.0, 100.0, 150.0],
+			Polygon({
+				corners: [{ x: 100.0, y: 200.0 }, { x: 150.0, y: 200.0 }, { x: 100.0, y: 150.0 }],
 				fill: Flat(Brush.opaque_rgba(RgbColor.of(7))),
 			}),
 		]
@@ -702,8 +703,8 @@ shaded_still_shapes = |gradient|
 	)
 
 ## Where `still_corners` land on screen.
-still_corner_coordinates : List(F64)
-still_corner_coordinates = [100.0, 200.0, 125.0, 200.0, 100.0, 150.0]
+still_corners_on_screen : List(Point.Point)
+still_corners_on_screen = [{ x: 100.0, y: 200.0 }, { x: 125.0, y: 200.0 }, { x: 100.0, y: 150.0 }]
 
 # A linear gradient keeps its stops' alphas and offsets, and runs between its
 # two points on screen.
@@ -718,7 +719,7 @@ expect {
 		start_point: { x: 100.0, y: 200.0 },
 		end_point: { x: 100.0, y: 150.0 },
 	})
-	shaded_still_shapes(gradient) == [Poly({ coordinates: still_corner_coordinates, fill })]
+	shaded_still_shapes(gradient) == [Polygon({ corners: still_corners_on_screen, fill })]
 }
 
 # A radial gradient keeps its stops the same way, its axes as steps on screen.
@@ -735,5 +736,5 @@ expect {
 		axis_u: { x: 25.0, y: 0.0 },
 		axis_v: { x: 0.0, y: -25.0 },
 	})
-	shaded_still_shapes(gradient) == [Poly({ coordinates: still_corner_coordinates, fill })]
+	shaded_still_shapes(gradient) == [Polygon({ corners: still_corners_on_screen, fill })]
 }

@@ -140,13 +140,8 @@ rail_color = RgbColor.of(0xe8805a)
 ## A patch of paving, as a polygon on the canvas.
 patch_shape : ShownBend, List(RiderView.RiderPoint) -> Shapes.Shape
 patch_shape = |bend, corners|
-	Poly({
-		coordinates: corners.join_map(
-			|corner| {
-				{ x, y } = canvas_point(bend, corner)
-				[x, y]
-			},
-		),
+	Polygon({
+		corners: corners.map(|corner| canvas_point(bend, corner)),
 		fill: Brush.flat(WidgetPalette.plan_road_color),
 	})
 
@@ -168,8 +163,7 @@ spot : ShownBend, { at : RiderView.RiderPoint, color : RgbColor } -> Shapes.Shap
 spot = |bend, { at, color }| {
 	{ x, y } = canvas_point(bend, at)
 	Disc({
-		x,
-		y,
+		center: { x, y },
 		radius: 4.0,
 		fill: Brush.flat(color),
 	})

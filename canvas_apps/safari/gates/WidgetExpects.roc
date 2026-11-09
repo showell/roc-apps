@@ -58,7 +58,13 @@ lines_of_type = |shapes|
 		|shape|
 			match shape {
 				Text(line) => Ok(line)
-				Poly(_) | Disc(_) | Rect(_) | Blend(_) | View(_) | Image(_) => Err(NotText)
+				Triangle(_)
+				| Polygon(_)
+				| Disc(_)
+				| Rectangle(_)
+				| Blend(_)
+				| View(_)
+				| Image(_) => Err(NotText)
 			},
 	)
 
@@ -161,20 +167,16 @@ stills_models = {
 	)
 }
 
-## The corners of a frame's polygons that lie wholly above the panel. A
-## polygon's coordinates are its corners' x and y, two at a time.
+## The corners of a frame's triangles and polygons that lie wholly above the
+## panel.
 picture_points : List(Shapes.Shape) -> List(Point.Point)
 picture_points = |shapes| {
-	corner_of = |pair|
-		match pair {
-			[x, y] => { x, y }
-			_ => crash "WidgetExpects.picture_points: a polygon's coordinates come in pairs"
-		}
 	polygons = shapes.keep_oks(
 		|shape|
 			match shape {
-				Poly({ coordinates, .. }) => Ok(coordinates.chunks_of(2).map(corner_of))
-				Text(_) | Disc(_) | Rect(_) | Blend(_) | View(_) | Image(_) => Err(NotPoly)
+				Triangle(t) => Ok([t.first, t.second, t.third])
+				Polygon({ corners, .. }) => Ok(corners)
+				Text(_) | Disc(_) | Rectangle(_) | Blend(_) | View(_) | Image(_) => Err(NotPolygon)
 			},
 	)
 	is_above_panel = |point| point.y < WidgetPage.picture_bottom_y

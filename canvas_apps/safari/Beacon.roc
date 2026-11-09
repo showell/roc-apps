@@ -125,8 +125,7 @@ beacon_disc : {
 beacon_disc = |{ center, radius_on_screen, brightness }| {
 	opaque = Brush.opaque_rgba(beacon_color)
 	Disc({
-		x: center.x.to_f64(),
-		y: center.y.to_f64(),
+		center: { x: center.x.to_f64(), y: center.y.to_f64() },
 		radius: radius_on_screen.to_f64(),
 		fill: Flat({ ..opaque, a: brightness.to_f64() }),
 	})
@@ -245,8 +244,7 @@ expect
 	disc_of(0.25, 10.0)
 		== Ok(
 			Disc({
-				x: 10.0,
-				y: 20.0,
+				center: { x: 10.0, y: 20.0 },
 				radius: 30.0,
 				fill: Flat(Brush.with_alpha(beacon_color, 0.25)),
 			}),

@@ -27,7 +27,7 @@ PongDraw :: [].{
 	frame = |world| {
 		var $out = List.with_capacity(140)
 		# The field, a dark vertical gradient rather than flat black.
-		$out = List.append($out, Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Linear({ stops: { start_color: Brush.opaque_rgba(Rules.field_top), end_color: Brush.opaque_rgba(Rules.field_bottom), start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: h } }) }))
+		$out = List.append($out, Rectangle({ top_left: { x: 0.0, y: 0.0 }, width: w, height: h, fill: Linear({ stops: { start_color: Brush.opaque_rgba(Rules.field_top), end_color: Brush.opaque_rgba(Rules.field_bottom), start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: h } }) }))
 		$out = List.concat($out, center_line({}))
 		$out = List.concat($out, scores(world))
 		$out = List.concat($out, Shapes.added_light_shapes([trail(world), glow(world), wash(world)].join()))
@@ -58,7 +58,7 @@ PongDraw :: [].{
 			p = List.get(world.trail, $i) ?? { x: 0, y: 0 }
 			fade = 1.0 - U64.to_f64($i) / 14.0
 			r = 10.0 * (0.35 + 0.55 * fade)
-			$out = List.append($out, Disc({ x: F32.to_f64(p.x), y: F32.to_f64(p.y), radius: r, fill: Flat(Brush.with_alpha(Rules.ball_neon, fade * fade * 0.51)) }))
+			$out = List.append($out, Disc({ center: { x: F32.to_f64(p.x), y: F32.to_f64(p.y) }, radius: r, fill: Flat(Brush.with_alpha(Rules.ball_neon, fade * fade * 0.51)) }))
 			$i = $i + 1
 		}
 		$out
@@ -85,7 +85,7 @@ PongDraw :: [].{
 		if world.flash.intensity <= 0.0 {
 			[]
 		} else {
-			[Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Flat(Brush.with_alpha(world.flash.color, F32.to_f64(world.flash.intensity) * 0.27)) })]
+			[Rectangle({ top_left: { x: 0.0, y: 0.0 }, width: w, height: h, fill: Flat(Brush.with_alpha(world.flash.color, F32.to_f64(world.flash.intensity) * 0.27)) })]
 		}
 
 	## The solid bodies, over their own glow so the edges stay crisp.
@@ -98,8 +98,8 @@ PongDraw :: [].{
 		[
 			Shapes.rounded_rect({ x: F32.to_f64(l.x), y: F32.to_f64(l.y), width: F32.to_f64(l.width), height: F32.to_f64(l.height), corner_radius: 7.0, corner_steps: 8 }, Brush.flat(Rules.left_neon)),
 			Shapes.rounded_rect({ x: F32.to_f64(r.x), y: F32.to_f64(r.y), width: F32.to_f64(r.width), height: F32.to_f64(r.height), corner_radius: 7.0, corner_steps: 8 }, Brush.flat(Rules.right_neon)),
-			Disc({ x: bx, y: by, radius: 10.0, fill: Brush.flat(Rules.ball_neon) }),
-			Disc({ x: bx - 2.0, y: by - 3.0, radius: 4.2, fill: Brush.flat(RgbColor.of(0xffffff)) }),
+			Disc({ center: { x: bx, y: by }, radius: 10.0, fill: Brush.flat(Rules.ball_neon) }),
+			Disc({ center: { x: bx - 2.0, y: by - 3.0 }, radius: 4.2, fill: Brush.flat(RgbColor.of(0xffffff)) }),
 		]
 	}
 
@@ -132,7 +132,7 @@ PongDraw :: [].{
 			} else {
 				Rules.right_neon
 			}
-			$out = List.concat([Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Flat(Brush.with_alpha(Rules.field_bottom, 0.75)) })], $out)
+			$out = List.concat([Rectangle({ top_left: { x: 0.0, y: 0.0 }, width: w, height: h, fill: Flat(Brush.with_alpha(Rules.field_bottom, 0.75)) })], $out)
 			$out = List.concat($out, Font.centered_text_shapes(won, { top_center: { x: w / 2.0, y: 248.0 }, size: 40.0, color: Brush.opaque_rgba(tint) }))
 			List.concat($out, Font.centered_text_shapes(again, { top_center: { x: w / 2.0, y: 316.0 }, size: 19.0, color: Brush.opaque_rgba(Rules.hint_color) }))
 		} else {

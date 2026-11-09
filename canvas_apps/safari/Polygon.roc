@@ -14,6 +14,7 @@ import ColorShade
 import Screen
 import lib.ArgbColor
 import lib.Brush
+import lib.Point
 import lib.RgbColor
 import lib.Shapes
 
@@ -22,7 +23,7 @@ Polygon :: [].{
 	## Makes a polygon of one flat color.
 	flat_polygon : List(Screen.Point), RgbColor -> Shapes.Shape
 	flat_polygon = |corners, color|
-		Poly({ coordinates: polygon_coordinates(corners), fill: Brush.flat(color) })
+		Polygon({ corners: polygon_corners(corners), fill: Brush.flat(color) })
 
 	## Makes a triangle of one flat color.
 	triangle : {
@@ -32,15 +33,10 @@ Polygon :: [].{
 	},
 	RgbColor -> Shapes.Shape
 	triangle = |{ first_corner, second_corner, third_corner }, color|
-		Poly({
-			coordinates: [
-				first_corner.x.to_f64(),
-				first_corner.y.to_f64(),
-				second_corner.x.to_f64(),
-				second_corner.y.to_f64(),
-				third_corner.x.to_f64(),
-				third_corner.y.to_f64(),
-			],
+		Triangle({
+			first: frame_point(first_corner),
+			second: frame_point(second_corner),
+			third: frame_point(third_corner),
 			fill: Brush.flat(color),
 		})
 
@@ -48,8 +44,10 @@ Polygon :: [].{
 	## its middle, or a solid one where it has no strength or is too narrow.
 	shaded_polygon : List(Screen.Point), { color : RgbColor, strength : Fraction } -> Shapes.Shape
 	shaded_polygon = |corners, shade| {
-		coordinates = polygon_coordinates(corners)
-		Poly({ coordinates, fill: Polygon.width_shade(x_span(corners), shade) })
+		Polygon({
+			corners: polygon_corners(corners),
+			fill: Polygon.width_shade(x_span(corners), shade),
+		})
 	}
 
 	## The span of x a shape covers. Either end is negative for a shape off the
@@ -81,7 +79,7 @@ Polygon :: [].{
 	)
 	circular_gradient_polygon = |corners, gradient| {
 		fill = Polygon.circular_gradient_fill(gradient)?
-		Ok(Poly({ coordinates: polygon_coordinates(corners), fill }))
+		Ok(Polygon({ corners: polygon_corners(corners), fill }))
 	}
 
 	## A gradient that spreads in a circle from `gradient_center`, from
@@ -127,8 +125,8 @@ Polygon :: [].{
 		if dx * dx + dy * dy == 0.0 {
 			crash "Polygon.linear_gradient_polygon: a gradient has a length"
 		} else {
-			Poly({
-				coordinates: polygon_coordinates(corners),
+			Polygon({
+				corners: polygon_corners(corners),
 				fill: Linear({
 					stops,
 					start_point: { x: start_point.x.to_f64(), y: start_point.y.to_f64() },
@@ -161,7 +159,7 @@ Polygon :: [].{
 				Ok(gradient) => gradient
 				Err(TooThin) => crash "Polygon.elliptical_gradient_polygon: an ellipse too thin for Brush to invert"
 			}
-		Poly({ coordinates: polygon_coordinates(corners), fill })
+		Polygon({ corners: polygon_corners(corners), fill })
 	}
 
 	## A polygon of one color, in the rider's view.
@@ -180,16 +178,19 @@ Polygon :: [].{
 	}
 }
 
-## A polygon's corners as the painter reads them: one flat list of numbers, an
-## `x` and then a `y` for each corner. Fewer than three corners enclose nothing,
-## so asking for that is a bug, and it crashes.
-polygon_coordinates : List(Screen.Point) -> List(F64)
-polygon_coordinates = |corners|
+## A polygon's corners as the painter reads them. Fewer than three corners
+## enclose nothing, so asking for that is a bug, and it crashes.
+polygon_corners : List(Screen.Point) -> List(Point.Point)
+polygon_corners = |corners|
 	if corners.len() < 3 {
 		crash "Polygon: a polygon needs at least three corners"
 	} else {
-		corners.join_map(|corner| [corner.x.to_f64(), corner.y.to_f64()])
+		corners.map(frame_point)
 	}
+
+## A screen point as a frame's point.
+frame_point : Screen.Point -> Point.Point
+frame_point = |{ x, y }| { x: x.to_f64(), y: y.to_f64() }
 
 ## A radial gradient smaller than this is too small to see.
 smallest_gradient_radius : Pixels
@@ -251,8 +252,8 @@ three_corners = [
 	Screen.point(5.0, 6.0),
 ]
 
-triangle_coordinates : List(F64)
-triangle_coordinates = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+triangle_corners : List(Point.Point)
+triangle_corners = [{ x: 1.0, y: 2.0 }, { x: 3.0, y: 4.0 }, { x: 5.0, y: 6.0 }]
 
 origin : Screen.Point
 origin = Screen.point(0.0, 0.0)
@@ -277,7 +278,7 @@ radial_polygon = |corners, gradient_radius|
 		},
 	)
 
-expect polygon_coordinates(three_corners) == triangle_coordinates
+expect polygon_corners(three_corners) == triangle_corners
 
 # A triangle keeps its corners in the order given.
 expect
@@ -289,16 +290,18 @@ expect
 		},
 		RgbColor.of(111),
 	)
-		== Poly({
-			coordinates: triangle_coordinates,
+		== Triangle({
+			first: { x: 1.0, y: 2.0 },
+			second: { x: 3.0, y: 4.0 },
+			third: { x: 5.0, y: 6.0 },
 			fill: Flat(Brush.opaque_rgba(RgbColor.of(111))),
 		})
 
 # A gradient is too small just under the limit, and not at it.
 expect radial_polygon(three_corners, Pixels.of(0.49)) == Err(TooSmall)
 expect radial_polygon(three_corners, Pixels.of(0.5)) == Ok(
-	Poly({
-		coordinates: triangle_coordinates,
+	Polygon({
+		corners: triangle_corners,
 		fill: Radial({
 			inner_color: Brush.translucent(ArgbColor.of(7)),
 			outer_color: Brush.translucent(ArgbColor.of(8)),
@@ -309,15 +312,15 @@ expect radial_polygon(three_corners, Pixels.of(0.5)) == Ok(
 	}),
 )
 
-expect Polygon.flat_polygon(three_corners, RgbColor.of(111)) == Poly({
-	coordinates: triangle_coordinates,
+expect Polygon.flat_polygon(three_corners, RgbColor.of(111)) == Polygon({
+	corners: triangle_corners,
 	fill: Flat(Brush.opaque_rgba(RgbColor.of(111))),
 })
 
 expect
 	Polygon.shaded_polygon(three_corners, { color: RgbColor.of(222), strength: Fraction.of(0.75) })
-		== Poly({
-			coordinates: triangle_coordinates,
+		== Polygon({
+			corners: triangle_corners,
 			fill: Span({
 				edge_color: Brush.opaque_rgba(RgbColor.of(155)),
 				middle_color: Brush.opaque_rgba(RgbColor.of(255)),
@@ -337,8 +340,8 @@ expect
 		},
 	)
 		== Ok(
-			Poly({
-				coordinates: triangle_coordinates,
+			Polygon({
+				corners: triangle_corners,
 				fill: Radial({
 					inner_color: Brush.translucent(ArgbColor.of(444)),
 					outer_color: Brush.translucent(ArgbColor.of(445)),
@@ -363,8 +366,8 @@ expect
 			end_point: Screen.point(3.0, 4.0),
 		},
 	)
-		== Poly({
-			coordinates: triangle_coordinates,
+		== Polygon({
+			corners: triangle_corners,
 			fill: Linear({
 				stops: {
 					start_color: Brush.translucent(ArgbColor.of(555)),
@@ -387,8 +390,8 @@ expect
 			axis_v: Screen.point(5.0, 6.0),
 		},
 	)
-		== Poly({
-			coordinates: triangle_coordinates,
+		== Polygon({
+			corners: triangle_corners,
 			fill: Ellipse({
 				stops: {
 					start_color: Brush.translucent(ArgbColor.of(666)),
@@ -438,8 +441,8 @@ narrow_corners = [
 
 expect
 	Polygon.shaded_polygon(wide_corners, { color: sample_color, strength: Fraction.whole })
-		== Poly({
-			coordinates: [10.0, 1.0, 30.0, 2.0, 20.0, 3.0],
+		== Polygon({
+			corners: [{ x: 10.0, y: 1.0 }, { x: 30.0, y: 2.0 }, { x: 20.0, y: 3.0 }],
 			fill: Span({
 				edge_color: Brush.opaque_rgba(RgbColor.of(0x4D2613)),
 				middle_color: Brush.opaque_rgba(RgbColor.of(0xA05028)),
@@ -451,28 +454,14 @@ expect
 # No strength, or too narrow a polygon, is a solid fill.
 expect
 	Polygon.shaded_polygon(wide_corners, { color: sample_color, strength: Fraction.zero })
-		== Poly({
-			coordinates: [
-				10.0,
-				1.0,
-				30.0,
-				2.0,
-				20.0,
-				3.0,
-			],
+		== Polygon({
+			corners: [{ x: 10.0, y: 1.0 }, { x: 30.0, y: 2.0 }, { x: 20.0, y: 3.0 }],
 			fill: Flat(Brush.opaque_rgba(sample_color)),
 		})
 
 expect
 	Polygon.shaded_polygon(narrow_corners, { color: sample_color, strength: Fraction.whole })
-		== Poly({
-			coordinates: [
-				10.0,
-				1.0,
-				10.5,
-				2.0,
-				10.2,
-				3.0,
-			],
+		== Polygon({
+			corners: [{ x: 10.0, y: 1.0 }, { x: 10.5, y: 2.0 }, { x: 10.2, y: 3.0 }],
 			fill: Flat(Brush.opaque_rgba(sample_color)),
 		})

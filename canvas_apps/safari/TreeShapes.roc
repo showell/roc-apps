@@ -242,9 +242,8 @@ trunk_shape = |outline, finish| {
 			)
 			Flat => Brush.flat(trunk_color)
 		}
-	Rect({
-		x: left.to_f64(),
-		y: outline.foot.y.minus(height).to_f64(),
+	Rectangle({
+		top_left: { x: left.to_f64(), y: outline.foot.y.minus(height).to_f64() },
 		width: width.to_f64(),
 		height: height.to_f64(),
 		fill,
@@ -438,9 +437,9 @@ expect {
 		a: 1.0,
 	}
 	match trunk_shape(sample_outline, Flat) {
-		Rect({ x, y, width, height, fill }) =>
+		Rectangle({ top_left, width, height, fill }) =>
 			fill == Flat(trunk_brown)
-				and is_near([x, y, width, height], [440.0, 110.0, 80.0, 490.0])
+				and is_near([top_left.x, top_left.y, width, height], [440.0, 110.0, 80.0, 490.0])
 		_ => False
 	}
 }
@@ -460,10 +459,9 @@ expect {
 		a: 1.0,
 	}
 	match trunk_shape(sample_outline, Shaded) {
-		Rect(
+		Rectangle(
 			{
-				x,
-				y,
+				top_left,
 				width,
 				height,
 				fill: Span({ edge_color, middle_color, left_x, right_x }),
@@ -472,7 +470,7 @@ expect {
 			edge_color == edge_brown
 				and middle_color == middle_brown
 				and is_near([left_x, right_x], [440.0, 520.0])
-				and is_near([x, y, width, height], [440.0, 110.0, 80.0, 490.0])
+				and is_near([top_left.x, top_left.y, width, height], [440.0, 110.0, 80.0, 490.0])
 		_ => False
 	}
 }
@@ -480,8 +478,8 @@ expect {
 expect {
 	corners_of = |tier|
 		match tier_triangle(sample_outline, { tier, foliage_color: RgbColor.of(7) }) {
-			Poly(polygon) => polygon.coordinates
-			_ => crash "a tier is one polygon"
+			Triangle(t) => [t.first, t.second, t.third].join_map(|corner| [corner.x, corner.y])
+			_ => crash "a tier is one triangle"
 		}
 	top_tier = tiers.first() ?? crash "a tree has tiers"
 	bottom_tier = tiers.last() ?? crash "a tree has tiers"

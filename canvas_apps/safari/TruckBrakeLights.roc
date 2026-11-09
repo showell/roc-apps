@@ -151,8 +151,7 @@ brake_glow = |truck, lamp_points| {
 	})?
 	Ok(
 		Disc({
-			x: center.x.to_f64(),
-			y: center.y.to_f64(),
+			center: { x: center.x.to_f64(), y: center.y.to_f64() },
 			radius: radius.to_f64(),
 			fill,
 		}),

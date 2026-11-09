@@ -104,9 +104,8 @@ WidgetPage :: [].{
 	## the canvas, and a widget's panel covers its lower part.
 	picture_backdrop : RgbColor -> Shapes.Shape
 	picture_backdrop = |color|
-		Rect({
-			x: 0.0,
-			y: 0.0,
+		Rectangle({
+			top_left: { x: 0.0, y: 0.0 },
 			width: canvas_width,
 			height: canvas_height,
 			fill: Brush.flat(color),
@@ -221,9 +220,8 @@ label_size = 14.0
 
 ## The text sits on this, and a widget's buttons do too.
 panel : Shapes.Shape
-panel = Rect({
-	x: 0.0,
-	y: WidgetPage.picture_bottom_y,
+panel = Rectangle({
+	top_left: { x: 0.0, y: WidgetPage.picture_bottom_y },
 	width: WidgetPage.canvas_width,
 	height: WidgetPage.canvas_height - WidgetPage.picture_bottom_y,
 	fill: Brush.flat(WidgetPalette.panel_color),

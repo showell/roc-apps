@@ -47,14 +47,18 @@ Fixtures :: [].{
 	second_position : SegmentFromRider.Position
 	second_position = SegmentFromRider.Position.first.next()
 
-	## A polygon's coordinates, flat as x0, y0, x1, y1, ...
+	## A triangle's or a polygon's corners, flat as x0, y0, x1, y1, ...
 	coordinates_of : Shapes.Shape -> List(F64)
-	coordinates_of = |shape|
-		match shape {
-			Poly(polygon) => polygon.coordinates
-			Disc(_) | Rect(_) | Blend(_) | View(_) | Image(_) | Text(_) =>
-				crash "Fixtures.coordinates_of: this shape is not a polygon"
-		}
+	coordinates_of = |shape| {
+		corners =
+			match shape {
+				Triangle(t) => [t.first, t.second, t.third]
+				Polygon(polygon) => polygon.corners
+				Disc(_) | Rectangle(_) | Blend(_) | View(_) | Image(_) | Text(_) =>
+					crash "Fixtures.coordinates_of: this shape is not a polygon"
+			}
+		corners.join_map(|corner| [corner.x, corner.y])
+	}
 
 	tree_at : F64, F64 -> Trees.RoadsideTree
 	tree_at = |along, across| {
