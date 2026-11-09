@@ -1,26 +1,22 @@
 # Safari Ride: a tour of a real Roc program
 
-Thirty times a second, Safari Ride draws a whole world from four small things. This book reads the program with you, and shows how Roc keeps a program this busy simple.
+Thirty times a second, Safari Ride draws a whole world from four small things. This book reads the program with you, and teaches Roc through its code.
 
 ## Introduction
 
-The program is Safari Ride, and it's running in the page below. Give it a moment to load, and the ride starts by itself.
+Safari Ride is running in the page below. Give it a moment to load, and the ride starts by itself.
 
 ```widget ride
 The ride, running as you read. Click it to give it the keyboard: Space pauses it, and the arrow keys step it.
 ```
 
-A rider on a motorcycle follows a long road through open country. Trees line the road. Cows and pigs graze beside it. A truck drives on ahead. Radio towers blink on the horizon. A bird takes off as the rider comes near, and a cat crosses the road. The sun sets behind the mountains, the truck turns on its headlights, and night falls. At the end of the road the rider stops, and the ride starts over.
+Watch it for a minute. A motorcycle carries its rider down a long country road. Cows and pigs graze in the fields, and trees crowd the roadside. A truck runs on ahead. A cat waits by the road for its moment to cross, and a bird takes off as the rider comes near. As the sun sets behind the mountains, the truck turns on its headlights. At the end of the road the rider stops, and the ride starts over.
 
-Nobody steers and nothing keeps score, so Safari Ride isn't a game. It has a game's hard parts, though: terrain, a camera, physics, and things that react to the rider.
+All of that comes from four small things: the rider, the truck, the clock and the plan for the encounter ahead. Safari Ride carries those four from one step to the next. It works out everything else from them, every frame. The book shows how that one design keeps a busy program simple.
 
-Safari Ride stays simple because of one design, and it starts with those four small things. They are the rider, the truck, the clock and the plan for the encounter ahead. Each step of the ride carries those four to the next, and everything else is derived from them. The sky's color, the sun's height, the trees in view and the cat's pose are all calculated fresh, every frame. The same four things always give the same picture. The types hold the design together: each one describes only the values that make sense.
+The book shows a lot of Roc, and all of it is the real code behind something on the screen. We start with the problem Safari Ride solves. Then we hold one frame still and draw everything in it, from a single triangle up to a herd of cows. Then we let the clock run, and the rider, the truck and the cat start to move. At the end we step back and look at the whole program again.
 
-Most of the code is plain Roc: records, tags and functions. That's a feature.
-
-A safari is a guided tour, so this book is a tour of a tour. We start with the whole program. Then we hold one frame still and build everything in it, from a single triangle up to a herd of cows. Then we let the clock run, and the rider, the truck and the cat start to move. At the end we zoom back out.
-
-You should be able to read a little Roc. If you can't yet, start with the official Roc tutorial. This book explains each Roc idea where it first comes up.
+You'll need to read a little Roc. If you're new to it, the official Roc tutorial is the place to start. The book explains each new Roc idea where the code first needs it.
 
 
 ## The problem

@@ -56,6 +56,7 @@ Each axis fails in its own way, and catching each failure takes a different kind
 - **C8.** Show the code, then describe it. Never describe a function the reader hasn't seen.
 - **C10.** **Put yourself in the reader's shoes.** Read every draft as someone who has read only the chapters before it. At each paragraph, ask: do I know why I'm reading this, and could I explain it back? A chapter that follows the drawing of a triangle with a map of a hundred modules fails that reader, however true the map is. The thread the reader just picked up comes first.
 - **C11.** Every item in "New in this chapter" is really taught: what it is, the line of code that shows it, and why it matters here. A list of four Roc ideas waved at in passing is worse than no list. Fewer ideas, each explained properly.
+- **C12.** Orient the reader, then summarize. Readers think well in concepts, but their memories are short and their attention wanders. So say what's coming, say it, then say what you said, and keep the three in sync: an opening promises only what the chapter delivers. When in doubt, get straight to the point. The book teaches Roc, so it shows a lot of Roc; that goes without saying. Don't brag about what the reader should expect anyway ("That's a feature"), and don't mention games.
 - **C9.** Name other chapters rarely. When you must, put the title in quotes ("A simple tree"), and say what it holds.
 
 ### Axis D. Voice: the sentences themselves
