@@ -1,5 +1,5 @@
 ## Camera is a 2D camera as a value, with roc-ray's own name and surface. A game
-## ported from a roc-ray example says `import lib.Camera` in place of
+## that starts from a roc-ray example says `import lib.Camera` in place of
 ## `import rr.Camera`, as it does for Keys, Math and Random, and every `Camera.`
 ## in it stays as it is. Only what a game here asks for is written; roc-ray's
 ## camera does more.
