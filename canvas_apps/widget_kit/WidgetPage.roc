@@ -62,6 +62,12 @@ WidgetPage :: [].{
 	moving_frames_a_second : U32
 	moving_frames_a_second = 60
 
+	## How often a fixed picture is painted: seldom, since it never changes, but
+	## often enough that a page's check, which runs a page for a few frames, sees
+	## it painted more than once.
+	fixed_picture_frames_a_second : U32
+	fixed_picture_frames_a_second = 20
+
 	## A canvas app from a widget's model, what a frame does to it and what it
 	## draws, painted `frames_a_second` times a second.
 	canvas_app : {
@@ -208,12 +214,6 @@ canvas_per_screen = WidgetPage.canvas_width / Screen.width.to_f64()
 ## Where the ride's horizon crosses the picture.
 horizon_y : F64
 horizon_y = Screen.horizon_y.to_f64() * canvas_per_screen
-
-## How often a fixed picture is painted: seldom, since it never changes, but
-## often enough that a page's check, which runs a page for a few frames, sees
-## it painted more than once.
-fixed_picture_frames_a_second : U32
-fixed_picture_frames_a_second = 20
 
 ## The size of a label's words, on a canvas of the usual width.
 label_size : F64
