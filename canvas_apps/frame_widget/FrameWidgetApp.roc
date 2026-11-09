@@ -4,8 +4,8 @@
 ## shapes are the game's own for that step, sorted into layers and painted in the
 ## game's order, because depth sorting interleaves the things beside the road.
 ## The address picks how many layers are on, and from there it's a fixed picture
-## with no controls. The first line of text counts the shapes so far against the
-## frame's total, and the second names the last layer on.
+## with no controls. The book's caption says what's on, so the canvas holds the
+## picture alone.
 import game.Clock
 import game.FrameView
 import game.Grass
@@ -18,9 +18,6 @@ import lib.RgbColor
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
-import widget.ReadoutText
-import widget.WidgetPage
-import widget.WidgetPalette
 import "page.html" as page_html : Str
 
 FrameWidgetApp :: [].{
@@ -171,25 +168,12 @@ piece_shapes : List(Piece), List(Layer) -> List(Shapes.Shape)
 piece_shapes = |parts, on_layers|
 	parts.keep_if(|piece| on_layers.contains(piece.layer)).join_map(|piece| piece.shapes)
 
-## How many of the ride's shapes are in `on_layers`.
-ride_count : List(Layer) -> U64
-ride_count = |on_layers| ride_shapes_on(on_layers).len()
-
-## The real frame's size in pixels, and the panel's below it.
-picture_width : F64
-picture_width = Screen.width.to_f64()
-
-picture_height : F64
-picture_height = Screen.height.to_f64()
-
-panel_height : F64
-panel_height = 100.0
-
+## The real frame's size in pixels.
 canvas_width : F64
-canvas_width = picture_width
+canvas_width = Screen.width.to_f64()
 
 canvas_height : F64
-canvas_height = picture_height + panel_height
+canvas_height = Screen.height.to_f64()
 
 plain_background_color : RgbColor
 plain_background_color = RgbColor.of(0xE8E6DF)
@@ -199,18 +183,9 @@ plain_background : Shapes.Shape
 plain_background = Rect({
 	x: 0.0,
 	y: 0.0,
-	width: picture_width,
-	height: picture_height,
-	fill: Brush.flat(plain_background_color),
-})
-
-panel : Shapes.Shape
-panel = Rect({
-	x: 0.0,
-	y: picture_height,
 	width: canvas_width,
-	height: panel_height,
-	fill: Brush.flat(WidgetPalette.panel_color),
+	height: canvas_height,
+	fill: Brush.flat(plain_background_color),
 })
 
 ## An address that names a layer has the page press Right once for each layer
@@ -244,50 +219,6 @@ layer_word = |layer|
 		MovingThings => "moving"
 	}
 
-## What the second line of text calls a layer. The sky, the grass and the sun are
-## the backdrop, which the frame's total leaves out.
-layer_name : Layer -> Str
-layer_name = |layer|
-	match layer {
-		Trees => "Trees"
-		Grass => "Grass, in the backdrop"
-		Sun => "The sun, out of view here"
-		Sky => "The sky, in the backdrop"
-		Mountains => "Mountains and land"
-		Road => "The road and pond"
-		Rails => "Rails"
-		Towers => "Radio towers"
-		Critters => "Critters"
-		MovingThings => "The moving things"
-	}
-
-## The two lines under the picture.
-status_lines : FrameWidgetApp.Model -> List(Str)
-status_lines = |{ last_layer_on, .. }| {
-	so_far = ReadoutText.count_text(ride_count(layers_to(last_layer_on)))
-	total = ReadoutText.count_text(ride_count(layers))
-	["Shapes so far: ${so_far} of ${total}", "Added: ${layer_name(last_layer_on)}"]
-}
-
-## The panel's rows of text, in type sized for the whole frame, larger than a
-## widget page's.
-status_readout : WidgetPage.ReadoutRows
-status_readout = {
-	x: WidgetPage.side_margin,
-	first_baseline: picture_height + 40.0,
-	row_spacing: 36.0,
-	size: 22.0,
-	align: Left,
-}
-
-status_line : Str, U64 -> Shapes.Shape
-status_line = |text, row| WidgetPage.readout_line({
-	text,
-	color: WidgetPalette.ink_color,
-	row,
-	style: status_readout,
-})
-
 ## The layers on, in the game's paint order.
 picture_shapes : List(Layer) -> List(Shapes.Shape)
 picture_shapes = |on_layers| Shapes.shapes_in_space(lean_space, frame_shapes_on(on_layers))
@@ -295,12 +226,7 @@ picture_shapes = |on_layers| Shapes.shapes_in_space(lean_space, frame_shapes_on(
 ## Everything on the canvas.
 shapes_at : FrameWidgetApp.Model -> List(Shapes.Shape)
 shapes_at = |model|
-	[
-		[plain_background],
-		picture_shapes(layers_to(model.last_layer_on)),
-		[panel],
-		status_lines(model).map_with_index(status_line),
-	].join()
+	[[plain_background], picture_shapes(layers_to(model.last_layer_on))].join()
 
 # All the layers on is the game's own frame, shape for shape and in its order.
 expect picture_shapes(layers) == paused_frame_view.leaned_shapes()
@@ -312,9 +238,6 @@ expect piece_shapes(backdrop_parts, layers) == FrameView.backdrop_shapes(paused_
 # rider.
 expect layers.keep_if(|layer| frame_shapes_on([layer]).is_empty()) == [Sun]
 expect paused_frame_view.backdrop.sun_sighting == OutOfView
-
-# The backdrop stays out of the running count.
-expect ride_count([Grass, Sun, Sky]) == 0
 
 # A layer with shapes of its own always changes the picture, and the sun doesn't.
 expect picture_shapes(layers_to(Trees)) != picture_shapes(layers_to(Grass))
@@ -369,13 +292,6 @@ expect next_model(all_on, Input.none.with_key_pressed(KeyLeft)) == all_on
 # A press of any other key during the opening doesn't count as a layer.
 expect next_model(start, Input.none.with_key_pressed(KeyLeft)) == opened_after(0)
 
-expect
-	status_lines(start)
-		== ["Shapes so far: 1,224 of 2,121", "Added: Trees"]
-
-# The canvas answers the layers, and the panel stays over whatever leans past it.
+# The canvas answers the layers.
 expect shapes_at(start) != shapes_at(all_on)
-expect
-	shapes_at(all_on).first() == Ok(plain_background)
-		and shapes_at(all_on).contains(panel)
-		and shapes_at(all_on).contains(View(Screen))
+expect shapes_at(all_on) == [plain_background].concat(picture_shapes(layers))

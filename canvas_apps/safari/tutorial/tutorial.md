@@ -51,10 +51,12 @@ So every piece we build, from a triangle to the cat, lives in a module, and the 
 
 ## The pieces as types
 
-"The problem" framed Safari Ride as five pieces of work: things, the world, the rider's view, motion and the person watching. A programmer's first question about each piece is what it looks like as data, and in Roc the answer is a type. Each of the five pieces has its types.
+Types are at the heart of every Roc program. A type says what a value holds, and the compiler checks every value against its type before the program runs. So a good way to meet a Roc program is to read its types.
+
+This chapter takes one tour across Safari Ride, with a stop for each of the five pieces from "The problem": things, the world, the rider's view, motion and the person watching. At each stop we read the types that answer the piece, and look at what they describe. Along the way, you learn to read the kinds of type Roc programs are built from: records, tags, type variables and the types of functions. The functions themselves come later, piece by piece.
 
 ```widget frame moving
-Step 1,529 of the ride, held still. The line under it counts the shapes painted over the backdrop.
+Step 1,529 of the ride, held still: the frame these types describe.
 ```
 
 ### Things
@@ -127,7 +129,7 @@ So stepping back is as quick as stepping forward: the tour takes the moment befo
 
 ### Where we start
 
-That's five pieces, and the types that answer them. The book builds the pieces in order, and each one's functions come in its own chapters. So we start with things, and with the simplest shape. Of the 2,121 shapes at step 1,529, all but eight are polygons, and the simplest polygon is a triangle. We start there.
+That's five pieces, and the types that answer them. On the way, you've read a record, an opaque type and a nominal one, tags, a type variable, and a function's type. You'll meet all of them again on almost every page from here on. The book now builds the pieces in order, and each piece's functions come in its own part. So we start with things: what a tree, a cow or a tower is in the code, and how each one becomes a sprite.
 
 ## Shapes
 
