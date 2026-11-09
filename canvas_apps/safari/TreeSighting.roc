@@ -1,6 +1,7 @@
 ## TreeSighting finds the roadside trees the rider can see in a frame: those
 ## placed along the segments in view that stand in front of the camera and are
-## tall enough on screen to draw.
+## tall enough on screen to draw. They are worked out each frame from the
+## rider's camera and the route.
 import Conifer
 import Distance
 import RoadAhead

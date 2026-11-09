@@ -1,6 +1,7 @@
 ## TruckHeadlights is whether the truck's headlights are on, and how they look:
 ## two beams reaching along the road ahead of the cab, each a little in from
-## its side.
+## its side. They are worked out each frame from the clock, by way of the sky's
+## darkness.
 import Camera
 import Distance
 import Fraction

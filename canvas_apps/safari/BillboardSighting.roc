@@ -1,6 +1,7 @@
 ## BillboardSighting sights every billboard on the segments in view from where
 ## the rider is: the farm animals of the nearest segments, the safari animal and
-## its baby at each bend, and the ducks on each pond.
+## its baby at each bend, and the ducks on each pond. The sightings are worked
+## out each frame from the rider's camera and the route.
 import Billboard
 import RoadAhead
 import SegmentFromRider

@@ -1,5 +1,7 @@
 ## TruckBrakeLights is whether the truck's brake lights are on, and how they
-## look: two lamps on the back of the trailer, each with a glow around it.
+## look: two lamps on the back of the trailer, each with a glow around it. They
+## are worked out each frame from the truck's progress, which says whether its
+## last step slowed it.
 import Distance
 import Picture
 import Pixels

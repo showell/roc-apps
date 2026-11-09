@@ -1,5 +1,6 @@
 ## Where the rider's eyes are: the look away from the way the motorcycle
-## points, and how far into a look the rider has gone.
+## points, and how far into a look the rider has gone. They are kept from one
+## step to the next, as part of the `Rider`.
 import Angle
 import Attention
 import Easing

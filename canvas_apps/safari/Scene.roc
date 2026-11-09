@@ -1,7 +1,8 @@
 ## Scene gathers what one frame shows beside the road: the trees, towers,
 ## billboards, cats, guard rails, the truck and the birds in view, each found by
 ## its own sighting and rendered as soon as it is found. Past the sighting
-## nothing asks what kind a thing is, so each field holds only renderings.
+## nothing asks what kind a thing is, so each field holds only renderings. A
+## scene is worked out each frame from the ride's instant and the route.
 import Animation
 import Clock
 import Distance

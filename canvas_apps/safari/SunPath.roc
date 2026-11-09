@@ -1,7 +1,8 @@
 ## The sun's path across the sky through the ride: the sky turns about its
 ## pole as the earth does, carrying the sun down an arc into the southwest.
-## The clock says where the sun stands, and its height is what the rest of the
-## sunset follows: the sky, the mountains and the truck's headlights.
+## The sun's place is worked out each frame from the clock, and its height is
+## what the rest of the sunset follows: the sky, the mountains and the truck's
+## headlights.
 import Angle
 import Clock
 import FarHeight

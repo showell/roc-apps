@@ -3,7 +3,8 @@
 ## whole route, unevenly, as if the driver saw him. The tease is
 ## `tease_position`, and plain physics carries it out: the truck speeds up while
 ## it is short of the tease, holds its speed otherwise, and slows for a turn when
-## one is close.
+## one is close. Its `TruckJourney.TruckProgress` is kept from one step to the
+## next, one of the four things the ride remembers.
 import Acceleration
 import Angle
 import Distance

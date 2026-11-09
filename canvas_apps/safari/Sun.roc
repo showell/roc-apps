@@ -1,6 +1,7 @@
 ## The sun as the rider sees it: where `SunPath` puts it in the sky lands on
 ## the screen, and it's drawn only while the rider faces it. It knows its own
-## look too, a glow and a disc over it.
+## look too, a glow and a disc over it. It is worked out each frame from the
+## clock and the camera's heading and lens.
 import Angle
 import Clock
 import FarRise

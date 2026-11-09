@@ -1,5 +1,6 @@
 ## The sky through the ride: it darkens toward dusk as the sun sinks, and the
-## horizon warms red while the sun is near it.
+## horizon warms red while the sun is near it. Its colors are worked out each
+## frame from the clock.
 import Clock
 import FarHeight
 import FarRise

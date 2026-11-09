@@ -2,7 +2,8 @@
 ## patches: the road, in chunks along each segment in view; the paved corner
 ## where one segment bends into the next; and the pond beside a segment that
 ## ends at one. It is never depth sorted, because the ground is painted first,
-## under everything.
+## under everything. The patches are worked out each frame from the rider's
+## camera and the route.
 import Along
 import Distance
 import RoadAhead

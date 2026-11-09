@@ -2,6 +2,8 @@
 ## and Roc bird that `EncounterPoses` has placed, if it is in front of the
 ## camera and tall enough on screen to draw. Where an animal stands and how it is
 ## posed is decided before any camera looks; this is only the camera's part.
+## The sightings are worked out each frame from the rider's camera, the route,
+## the encounter plan and the clock.
 import Animation
 import Distance
 import EncounterPoses

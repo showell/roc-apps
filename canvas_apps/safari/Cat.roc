@@ -1,7 +1,8 @@
 ## The cat as the scene draws it this frame: how it holds itself. It draws as
 ## the still for its pose, its feet at its spot, raised as high as the spot
 ## says while it leaps. Its poses and its height are the ride's, in
-## CatCrossing.
+## CatCrossing. Its pose is worked out each frame from the encounter plan and
+## the clock.
 import CatCrossing
 import CatStills
 import Distance

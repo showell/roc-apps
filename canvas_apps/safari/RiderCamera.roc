@@ -1,5 +1,6 @@
-## The camera the ride is seen through at one instant, worked out once a frame
-## from the rider: where it stands, which way it faces, its lens, and its roll.
+## The camera the ride is seen through at one instant, worked out each frame
+## from the rider, the route, the encounter plan and the clock: where it stands,
+## which way it faces, its lens, and its roll.
 ## It turns with the rider's gaze, and a little with the motorcycle's lean, as a
 ## rider's head turns into a bend.
 import Angle
