@@ -247,7 +247,7 @@ cat_right = |along| first_cat(along).spot.foot().right()
 
 # The cat route's one cat is on its second segment.
 expect
-	EncounterPoses.cat_poses(Fixtures.cat_road, Waiting).map(|cat| cat.place)
+	EncounterPoses.cat_poses(Fixtures.cat_road, Waiting).map(|cat| cat.from_rider)
 		== [Ahead(Fixtures.second_position)]
 expect
 	[
@@ -486,7 +486,7 @@ posed_spot_at = |{ forward, right, lift }| {
 		RiderView.rider_point_ahead({ right, forward })
 			?? crash "EncounterExpects: a test's animal is past the near plane"
 	Spot.at({
-		place: Ahead(SegmentFromRider.Position.first),
+		from_rider: Ahead(SegmentFromRider.Position.first),
 		road_point: {
 			along: Along.metres(forward.to_metres()),
 			across: Across.metres(right.to_metres()),

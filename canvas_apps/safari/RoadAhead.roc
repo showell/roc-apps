@@ -60,7 +60,7 @@ RoadAhead :: [].{
 	SegmentInView : {
 		index : Route.SegmentIndex,
 		segment : Segment,
-		place : SegmentFromRider,
+		from_rider : SegmentFromRider,
 	}
 
 	## The segment at `position` on the road ahead.
@@ -77,7 +77,7 @@ RoadAhead :: [].{
 		match previous_segment_index(road) {
 			Previous(index) => {
 				segment = road.route().segment_at(index)
-				segments_ahead.append({ index, segment, place: JustBehind })
+				segments_ahead.append({ index, segment, from_rider: JustBehind })
 			}
 			AtRouteStart => segments_ahead
 		}
@@ -101,20 +101,20 @@ RoadAhead :: [].{
 		{
 			index,
 			segment: road.route().segment_at(index),
-			place: Ahead(position),
+			from_rider: Ahead(position),
 		}
 	}
 
-	## A point on the segment at `place`, as the camera at `vantage` on the
-	## rider's segment sees it.
+	## A point on the segment that lies at `from_rider`, as the camera at
+	## `vantage` on the rider's segment sees it.
 	rider_point_at : RoadAhead.RoadView,
 	{
 		vantage : Geom.Vantage,
-		place : SegmentFromRider,
+		from_rider : SegmentFromRider,
 		road_point : Geom.RoadPoint,
 	} -> RiderView.RiderPoint
-	rider_point_at = |road, { vantage, place, road_point }|
-		match place {
+	rider_point_at = |road, { vantage, from_rider, road_point }|
+		match from_rider {
 			Ahead(position) =>
 				rider_point_ahead(road, { vantage, position, road_point })
 			JustBehind =>

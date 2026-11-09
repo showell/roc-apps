@@ -34,33 +34,36 @@ TruckSighting :: [].{
 			lift: Distance.zero,
 			kind: truck.truck,
 		}
-		sighting = Pipeline.sighting_of(placed_truck, { road, vantage, place: Ahead(position) })?
+		sighting = Pipeline.sighting_of(
+			placed_truck,
+			{ road, vantage, from_rider: Ahead(position) },
+		)?
 		heading = TruckSighting.road_heading(
 			road,
 			{
 				vantage,
-				place: Ahead(position),
+				from_rider: Ahead(position),
 				road_point: place.road_point,
 			},
 		)
 		Ok({ spot: sighting.spot, heading, lights: sighting.kind })
 	}
 
-	## Which way the road runs at `road_point` on the segment at `place`, against
-	## the camera at `vantage`: zero straight away from it, positive to the
-	## right. A segment is carried into the rider's view by turns and shifts
+	## Which way the road runs at `road_point` on the segment at `from_rider`,
+	## against the camera at `vantage`: zero straight away from it, positive to
+	## the right. A segment is carried into the rider's view by turns and shifts
 	## alone, so the way from the point to one a metre further along is the
 	## road's way all along the segment.
 	road_heading : RoadAhead.RoadView,
 	{
 		vantage : Geom.Vantage,
-		place : SegmentFromRider,
+		from_rider : SegmentFromRider,
 		road_point : Geom.RoadPoint,
 	} -> Angle.Turn
-	road_heading = |road, { vantage, place, road_point }| {
+	road_heading = |road, { vantage, from_rider, road_point }| {
 		further_along = { ..road_point, along: road_point.along.plus(Distance.metres(1.0)) }
-		here = RoadAhead.rider_point_at(road, { vantage, place, road_point })
-		there = RoadAhead.rider_point_at(road, { vantage, place, road_point: further_along })
+		here = RoadAhead.rider_point_at(road, { vantage, from_rider, road_point })
+		there = RoadAhead.rider_point_at(road, { vantage, from_rider, road_point: further_along })
 		Angle.Turn.radians(
 			F64.atan2({
 				x: there.forward.minus(here.forward).to_metres(),

@@ -17,7 +17,7 @@ EncounterPoses :: [].{
 
 	## An animal on a segment in view: where that segment lies from the rider,
 	## and where on it the animal stands and how it is posed.
-	PlacedAnimal(kind) : { place : SegmentFromRider, animal : Geom.Placed(kind) }
+	PlacedAnimal(kind) : { from_rider : SegmentFromRider, animal : Geom.Placed(kind) }
 
 	## The cats on `road`, with the encounter on the rider's segment at
 	## `encounter_stage`, in the order of `RoadAhead.segments_in_view`.
@@ -45,7 +45,7 @@ segment_cat = |{ in_view, encounter_stage }|
 	match in_view.segment.encounter {
 		CatCrosses(crossing) =>
 			posed_in_view(
-				in_view.place,
+				in_view.from_rider,
 				{
 					rider_stage: encounter_stage,
 					animal_instant_at: |stage| crossing.cat_instant_at(stage),
@@ -63,7 +63,7 @@ segment_bird = |{ in_view, encounter_stage }|
 	match in_view.segment.encounter {
 		BirdHere(flight) =>
 			posed_in_view(
-				in_view.place,
+				in_view.from_rider,
 				{
 					rider_stage: encounter_stage,
 					animal_instant_at: |stage| flight.bird_instant_at(stage),
@@ -72,18 +72,19 @@ segment_bird = |{ in_view, encounter_stage }|
 		CatCrosses(_) | QuietRoad => Err(NoPose)
 	}
 
-## The animal on the segment in view at `place`, shown by `animal_instant_at`,
-## with the encounter on the rider's own segment at `rider_stage`: one ahead
-## hasn't begun, and one behind is over, so it has no pose.
+## The animal on the segment in view at `from_rider`, shown by
+## `animal_instant_at`, with the encounter on the rider's own segment at
+## `rider_stage`: one ahead hasn't begun, and one behind is over, so it has no
+## pose.
 posed_in_view : SegmentFromRider,
 {
 	rider_stage : Animation.Stage,
 	animal_instant_at : Animation.Stage -> Animation.Instant(pose),
 } -> Try(EncounterPoses.PlacedAnimal({ pose : pose }), [NoPose])
-posed_in_view = |place, { rider_stage, animal_instant_at }| {
+posed_in_view = |from_rider, { rider_stage, animal_instant_at }| {
 	posed = |stage|
-		Ok({ place, animal: Animation.placed_instant(animal_instant_at(stage)) })
-	match place {
+		Ok({ from_rider, animal: Animation.placed_instant(animal_instant_at(stage)) })
+	match from_rider {
 		Ahead(position) =>
 			if position == SegmentFromRider.Position.first {
 				posed(rider_stage)

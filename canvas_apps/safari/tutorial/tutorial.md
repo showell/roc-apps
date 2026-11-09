@@ -449,7 +449,7 @@ A lowercase name in parentheses, like `(kind)`, is a type variable; this chapter
 | Type | What it is |
 |---|---|
 | `Geom.Placed(kind)` | An object on the road: its `road_point` on its segment, its `lift` off the ground, and its `kind` |
-| `Spot` | Where an object stands in one frame: its segment's `place` from the rider, its `road_point`, its `lift`, and its `foot` in the rider's view |
+| `Spot` | Where an object stands in one frame: its `from_rider`, where its segment lies from the rider, then its `road_point`, its `lift`, and its `foot` in the rider's view |
 | `Pipeline.Sighted(kind)` | An object in view: its `spot` and its `kind` |
 | `Picture.Setting(context)` | What a kind draws from: its `spot`, the lens's `focal_length`, and a `context` for whatever else the kind needs |
 | `Picture` | The object's shapes, in order, from the Shapes chapter |
@@ -779,7 +779,7 @@ From here on, things are measured from the camera, which travels with the rider.
 
 `Pipeline.scenery_sighting_of`, from the Nature types chapter, starts with `Pipeline.sighting_of`, which asks `RoadAhead.rider_point_at` where the tree's spot on the road lies from the rider. The math layer chapter shows how. If that spot is no farther ahead than the near plane from the chapter A conifer, the answer is `BehindCamera`. Otherwise it's a sighting.
 
-`place` says which segment of the road ahead the tree stands on. It's usually `Ahead(position)`: a segment so many ahead of the rider's.
+`from_rider` says which segment of the road ahead the tree stands on, counted from the rider's. It's usually `Ahead(position)`: a segment so many ahead of the rider's.
 
 Then `scenery_sighting_of` calls a tree under 2 pixels tall on the screen `TooSmall`, measured with the camera's focal length. So the answer is a `Try`: a sighting, or one of those two reasons. `keep_oks`, in `segment_trees`, keeps the sightings and drops the reasons.
 
@@ -1020,7 +1020,7 @@ A bend is a small record:
 
 {{code BendInView.BendInView from "A bend as the rider sees it" to "}.{"}}
 
-`before` says where the first segment lies from the rider, and `bend` holds its length and its turn. The turn is positive to the right. Where the segment after lies comes from `place_after`.
+`before` says where the first segment lies from the rider, and `bend` holds its length and its turn. The turn is positive to the right. Where the segment after lies comes from `from_rider_after`.
 
 The outer corner is three points. Its type takes the kind of point as a type variable, so the same record holds road points or rider points:
 
@@ -1063,7 +1063,7 @@ Every whole-number type has an `until`, like `U64.until`, and the `U32` one here
 
 A segment's road is one patch. Its edges are cut into chunks of 25 metres or less, which keeps each straight cut within a pixel of the curve where the road meets the horizon. The widget's two segments make two patches, and the bend makes the third.
 
-`corner` is a closure: it captures `road`, `vantage` and `place`, so each call names only a chunk and an edge.
+`corner` is a closure: it captures `road`, `vantage` and `from_rider`, so each call names only a chunk and an edge.
 
 {{code GroundSighting.lead_in_length}}
 

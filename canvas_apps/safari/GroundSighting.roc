@@ -47,12 +47,12 @@ road_along : RoadAhead.RoadView,
 	in_view : RoadAhead.SegmentInView,
 } -> GroundPatch
 road_along = |road, { vantage, in_view }| {
-	place = in_view.place
+	from_rider = in_view.from_rider
 	segment_length = in_view.segment.length
 	segment_chunk_count = chunk_count(segment_length)
 	corner = |chunk_number, across| {
 		along = chunk_end(segment_length, chunk_number)
-		RoadAhead.rider_point_at(road, { vantage, place, road_point: { along, across } })
+		RoadAhead.rider_point_at(road, { vantage, from_rider, road_point: { along, across } })
 	}
 	up_right_edge =
 		List.from_iter(U32.until(0, segment_chunk_count + 1))
@@ -102,7 +102,7 @@ ground_patches : RoadAhead.RoadView,
 } -> List(GroundPatch)
 ground_patches = |road, { vantage, in_view }| {
 	along_segment =
-		match in_view.place {
+		match in_view.from_rider {
 			Ahead(_) => [road_along(road, { vantage, in_view })]
 			JustBehind => []
 		}
@@ -179,7 +179,7 @@ pond_patches : RoadAhead.RoadView,
 } -> List(GroundPatch)
 pond_patches = |road, { vantage, in_view }| {
 	rider_point = |road_point|
-		RoadAhead.rider_point_at(road, { vantage, place: in_view.place, road_point })
+		RoadAhead.rider_point_at(road, { vantage, from_rider: in_view.from_rider, road_point })
 	match in_view.segment.segment_ending() {
 		Bends({ bend, bend_life: DuckPond }) =>
 			Pond.pond_outlines(bend).map(

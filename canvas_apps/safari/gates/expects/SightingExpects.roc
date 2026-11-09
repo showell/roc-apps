@@ -65,7 +65,7 @@ past_bend_trees = |degrees| {
 ## Whether `trees` is one tree, sighted on the segment just behind the rider.
 is_one_tree_behind : List(Pipeline.Sighted(Conifer)) -> Bool
 is_one_tree_behind = |trees|
-	match trees.map(|tree| tree.spot.place()) {
+	match trees.map(|tree| tree.spot.from_rider()) {
 		[JustBehind] => True
 		_ => False
 	}
@@ -105,15 +105,15 @@ rail_ends = {
 	{ start: corners_of(0).low_start, end: corners_of(last_bar).low_end }
 }
 
-## The point on the left edge `along` metres into the segment at `place` on the
-## right-angle road, as the rider sees it.
+## The point on the left edge `along` metres into the segment at `from_rider`
+## on the right-angle road, as the rider sees it.
 left_edge_point : SegmentFromRider, F64 -> RiderView.RiderPoint
-left_edge_point = |place, along|
+left_edge_point = |from_rider, along|
 	RoadAhead.rider_point_at(
 		right_angle_road,
 		{
 			vantage: Fixtures.origin,
-			place,
+			from_rider,
 			road_point: { along: Along.metres(along), across: Geom.left_edge },
 		},
 	)
@@ -279,7 +279,7 @@ shapes_of_tower_100_ahead = {
 			{
 				road: tower_road,
 				vantage: Fixtures.origin,
-				place: Ahead(SegmentFromRider.Position.first),
+				from_rider: Ahead(SegmentFromRider.Position.first),
 			},
 		)
 			?? crash "SightingExpects: a tower 100 m ahead is past the near plane"
@@ -360,7 +360,7 @@ expect {
 		-100.0,
 		0.0,
 	]
-	towers.map(|tower| tower.spot.place())
+	towers.map(|tower| tower.spot.from_rider())
 		== [
 			Ahead(SegmentFromRider.Position.first),
 			Ahead(Fixtures.second_position),
@@ -373,7 +373,7 @@ expect {
 # The segment just behind shows its end tower, which stands past the bend, and
 # a rider far past every tower sees none.
 expect
-	towers_on_short_then_long(1, Clock.start).map(|tower| tower.spot.place())
+	towers_on_short_then_long(1, Clock.start).map(|tower| tower.spot.from_rider())
 		== [
 			Ahead(SegmentFromRider.Position.first),
 			Ahead(SegmentFromRider.Position.first),
@@ -562,7 +562,7 @@ expect
 		(499.0, SegmentFromRider.Position.first),
 		(600.0, Fixtures.second_position),
 		(900.0, Fixtures.second_position.next()),
-	].all(|(lead, want)| sighted_truck_of(lead).spot.place() == Ahead(want))
+	].all(|(lead, want)| sighted_truck_of(lead).spot.from_rider() == Ahead(want))
 
 expect
 	[
@@ -600,7 +600,7 @@ truck_point_off_road = |lead, on_truck| {
 		Fixtures.three_segment_road,
 		{
 			vantage: Fixtures.origin,
-			place: spot.place(),
+			from_rider: spot.from_rider(),
 			road_point: {
 				along: road_point.along.plus(on_truck.ahead),
 				across: road_point.across.plus(on_truck.rightward),

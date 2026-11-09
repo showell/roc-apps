@@ -120,19 +120,19 @@ view_vantage = |view| {
 view_setting : TruckView -> TruckPlacement.TruckSetting
 view_setting = |view| {
 	vantage = view_vantage(view)
-	place = Ahead(SegmentFromRider.Position.first)
+	from_rider = Ahead(SegmentFromRider.Position.first)
 	placed_truck : Geom.Placed({})
 	placed_truck = { road_point: truck_road_point, lift: Distance.zero, kind: {} }
 	sighting_result = Pipeline.sighting_of(
 		placed_truck,
-		{ road: World.road_at_start, vantage, place },
+		{ road: World.road_at_start, vantage, from_rider },
 	)
 	match sighting_result {
 		Ok(sighting) => {
 			spot: sighting.spot,
 			heading: TruckSighting.road_heading(
 				World.road_at_start,
-				{ vantage, place, road_point: truck_road_point },
+				{ vantage, from_rider, road_point: truck_road_point },
 			),
 			focal_length: Lens.resting_focal_length,
 		}

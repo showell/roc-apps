@@ -46,7 +46,7 @@ segment_trees : RoadAhead.RoadView,
 } -> List(Pipeline.Sighted(Conifer))
 segment_trees = |road, { camera, in_view }|
 	in_view.segment.trees.keep_oks(
-		|tree| Pipeline.scenery_sighting_of(tree, { road, camera, place: in_view.place }),
+		|tree| Pipeline.scenery_sighting_of(tree, { road, camera, from_rider: in_view.from_rider }),
 	)
 
 ## How many of the trees at `forwards` are nearer than `forward`.

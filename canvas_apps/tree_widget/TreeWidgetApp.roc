@@ -86,7 +86,7 @@ stand_sighting = |stand| {
 		{
 			road: World.road_at_start,
 			vantage: eye,
-			place: Ahead(SegmentFromRider.Position.first),
+			from_rider: Ahead(SegmentFromRider.Position.first),
 		},
 	)
 }

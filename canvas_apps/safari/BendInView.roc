@@ -19,7 +19,7 @@ BendInView :: { before : SegmentFromRider, bend : Geom.Bend }.{
 	of_in_view : RoadAhead.SegmentInView -> BendInView
 	of_in_view = |in_view| {
 		bend = in_view.segment.bend_out_of()
-		BendInView.({ before: in_view.place, bend })
+		BendInView.({ before: in_view.from_rider, bend })
 	}
 
 	## The bend at the end of `in_view`, unless the road in view ends there. It
@@ -28,7 +28,7 @@ BendInView :: { before : SegmentFromRider, bend : Geom.Bend }.{
 	bend_after : RoadAhead.RoadView, RoadAhead.SegmentInView -> Try(BendInView, [RoadEndsInView])
 	bend_after = |road, in_view| {
 		has_bend_in_view =
-			match in_view.place {
+			match in_view.from_rider {
 				Ahead(position) => !position.is_last_in(road.segments_ahead())
 				JustBehind => True
 			}
@@ -44,12 +44,12 @@ BendInView :: { before : SegmentFromRider, bend : Geom.Bend }.{
 	turn = |BendInView.(bend_in_view)| bend_in_view.bend.turn
 
 	## Where the segment before the bend lies from the rider.
-	place_before : BendInView -> SegmentFromRider
-	place_before = |BendInView.(bend_in_view)| bend_in_view.before
+	from_rider_before : BendInView -> SegmentFromRider
+	from_rider_before = |BendInView.(bend_in_view)| bend_in_view.before
 
 	## Where the segment after the bend lies from the rider.
-	place_after : BendInView -> SegmentFromRider
-	place_after = |bend_in_view| Ahead(BendInView.position_after(bend_in_view))
+	from_rider_after : BendInView -> SegmentFromRider
+	from_rider_after = |bend_in_view| Ahead(BendInView.position_after(bend_in_view))
 
 	## How long the segment before the bend is.
 	length_before : BendInView -> Distance
@@ -69,7 +69,10 @@ BendInView :: { before : SegmentFromRider, bend : Geom.Bend }.{
 		road_point : Geom.RoadPoint,
 	} -> RiderView.RiderPoint
 	rider_point_before = |bend_in_view, { road, vantage, road_point }|
-		RoadAhead.rider_point_at(road, { vantage, place: bend_in_view.place_before(), road_point })
+		RoadAhead.rider_point_at(
+			road,
+			{ vantage, from_rider: bend_in_view.from_rider_before(), road_point },
+		)
 
 	## A point on the segment after the bend, as the camera at `vantage` on the
 	## rider's segment of `road` sees it.
@@ -80,7 +83,10 @@ BendInView :: { before : SegmentFromRider, bend : Geom.Bend }.{
 		road_point : Geom.RoadPoint,
 	} -> RiderView.RiderPoint
 	rider_point_after = |bend_in_view, { road, vantage, road_point }|
-		RoadAhead.rider_point_at(road, { vantage, place: bend_in_view.place_after(), road_point })
+		RoadAhead.rider_point_at(
+			road,
+			{ vantage, from_rider: bend_in_view.from_rider_after(), road_point },
+		)
 
 	## Where on the road ahead the segment after a bend lies: next after the
 	## segment before, or the rider's own when the segment before is just behind

@@ -100,9 +100,9 @@ tower_shapes = |right, beacon| {
 		lift: Distance.zero,
 		kind: Tower.standing({ yaw: Angle.straight_ahead, beacon }),
 	}
-	place = Ahead(SegmentFromRider.Position.first)
+	from_rider = Ahead(SegmentFromRider.Position.first)
 	WidgetPage.resting_lens_shapes(
-		Pipeline.sighting_of(placed_tower, { road: World.road_at_start, vantage: eye, place }),
+		Pipeline.sighting_of(placed_tower, { road: World.road_at_start, vantage: eye, from_rider }),
 		{ road: World.road_at_start, vantage: eye },
 	)
 }

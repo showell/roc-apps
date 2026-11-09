@@ -87,7 +87,7 @@ sighted_ahead = |kind, forward|
 		{
 			road: Fixtures.road,
 			vantage: Fixtures.origin,
-			place: Ahead(SegmentFromRider.Position.first),
+			from_rider: Ahead(SegmentFromRider.Position.first),
 		},
 	)
 		?? crash "SceneExpects: a test's thing is past the near plane"
@@ -120,7 +120,7 @@ post_sighting = |along|
 		{
 			road: one_segment_road,
 			vantage: Fixtures.origin,
-			place: Ahead(SegmentFromRider.Position.first),
+			from_rider: Ahead(SegmentFromRider.Position.first),
 		},
 	)
 
@@ -150,7 +150,7 @@ expect
 				{
 					road: one_segment_road,
 					camera: { vantage: Fixtures.origin, focal_length: Pixels.of(128.0) },
-					place: Ahead(SegmentFromRider.Position.first),
+					from_rider: Ahead(SegmentFromRider.Position.first),
 				},
 			).map_ok(|_| Seen)
 				== outcome,
@@ -171,7 +171,7 @@ expect
 				{
 					road: one_segment_road,
 					vantage: Fixtures.origin,
-					place: Ahead(SegmentFromRider.Position.first),
+					from_rider: Ahead(SegmentFromRider.Position.first),
 				},
 			).map_ok(|_| Seen)
 				== outcome,
@@ -329,14 +329,18 @@ book_trees = RoadAhead.segments_in_view(book_road).join_map(
 	|in_view|
 		in_view.segment.trees.map(
 			|tree| {
-				place = in_view.place
+				from_rider = in_view.from_rider
 				seen = RoadAhead.rider_point_at(
 					book_road,
-					{ vantage: book_sighting_camera.vantage, place, road_point: tree.road_point },
+					{
+						vantage: book_sighting_camera.vantage,
+						from_rider,
+						road_point: tree.road_point,
+					},
 				)
 				sighting = Pipeline.scenery_sighting_of(
 					tree,
-					{ road: book_road, camera: book_sighting_camera, place },
+					{ road: book_road, camera: book_sighting_camera, from_rider },
 				)
 				fate =
 					match sighting {

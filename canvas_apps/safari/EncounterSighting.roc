@@ -45,7 +45,7 @@ animals_in_view : RoadAhead.RoadView,
 animals_in_view = |road, { camera, animals }|
 	animals.keep_oks(
 		|posed| {
-			seen_on = { road, camera, place: posed.place }
+			seen_on = { road, camera, from_rider: posed.from_rider }
 			Pipeline.scenery_sighting_of(posed.animal, seen_on)
 		},
 	)

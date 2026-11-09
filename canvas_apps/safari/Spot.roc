@@ -12,18 +12,19 @@ import RiderView
 import SegmentFromRider
 
 Spot :: {
-	place : SegmentFromRider,
+	from_rider : SegmentFromRider,
 	road_point : Geom.RoadPoint,
 	lift : Distance,
 	foot : RiderView.RiderPointAhead,
 }.{
 
-	## The spot of an object standing at `road_point` on the segment at `place`,
-	## `lift` off the ground, its foot at `foot` in the rider's view. A sighting
-	## builds each spot in play from the road, so the foot follows from the
-	## place. A kind's test builds one here, to draw from a foot it chooses.
+	## The spot of an object standing at `road_point` on the segment that lies
+	## at `from_rider`, `lift` off the ground, its foot at `foot` in the rider's
+	## view. A sighting builds each spot in play from the road, so the foot
+	## follows from where the object stands. A kind's test builds one here, to
+	## draw from a foot it chooses.
 	at : {
-		place : SegmentFromRider,
+		from_rider : SegmentFromRider,
 		road_point : Geom.RoadPoint,
 		lift : Distance,
 		foot : RiderView.RiderPointAhead,
@@ -31,8 +32,8 @@ Spot :: {
 	at = |parts| Spot.(parts)
 
 	## Where the object's segment lies, seen from the rider.
-	place : Spot -> SegmentFromRider
-	place = |Spot.(spot)| spot.place
+	from_rider : Spot -> SegmentFromRider
+	from_rider = |Spot.(spot)| spot.from_rider
 
 	## Where the object stands on its segment.
 	road_point : Spot -> Geom.RoadPoint

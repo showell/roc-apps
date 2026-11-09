@@ -63,7 +63,7 @@ index_behind : U32 -> [JustBehind(Route.SegmentIndex), NoneBehind]
 index_behind = |first| {
 	behind = RoadAhead.segments_in_view(Fixtures.world_road_at(first)).find_last(
 		|in_view|
-			match in_view.place {
+			match in_view.from_rider {
 				JustBehind => True
 				Ahead(_) => False
 			},
@@ -104,15 +104,15 @@ turned_vantage = {
 	yaw: Angle.Turn.radians(0.2),
 }
 
-## The point 50 m along and 1 m right on the segment at `place` on `road_view`,
-## as `turned_vantage` sees it.
+## The point 50 m along and 1 m right on the segment at `from_rider` on
+## `road_view`, as `turned_vantage` sees it.
 turned_point_at : RoadAhead.RoadView, SegmentFromRider -> RiderView.RiderPoint
-turned_point_at = |road_view, place|
+turned_point_at = |road_view, from_rider|
 	RoadAhead.rider_point_at(
 		road_view,
 		{
 			vantage: turned_vantage,
-			place,
+			from_rider,
 			road_point: { along: Along.metres(50.0), across: Across.metres(1.0) },
 		},
 	)
@@ -175,7 +175,7 @@ expect
 segment_in_view_behind : RoadAhead.RoadView -> RoadAhead.SegmentInView
 segment_in_view_behind = |road_view|
 	match RoadAhead.segments_in_view(road_view).last() {
-		Ok(in_view) if in_view.place == JustBehind => in_view
+		Ok(in_view) if in_view.from_rider == JustBehind => in_view
 		_ => crash "RoadExpects.segment_in_view_behind: this rider has a segment behind"
 	}
 
@@ -189,7 +189,7 @@ apex_after_turn = |turn| {
 		road_view,
 		{
 			vantage: turned_vantage,
-			place: bend_in_view.place_before(),
+			from_rider: bend_in_view.from_rider_before(),
 			road_point: bend_in_view.outer_corner().apex,
 		},
 	)
@@ -229,7 +229,7 @@ expect {
 					across: Across.metres(0.5),
 					yaw: Angle.Turn.radians(yaw),
 				},
-				place: Ahead(SegmentFromRider.Position.first),
+				from_rider: Ahead(SegmentFromRider.Position.first),
 				road_point,
 			},
 		)

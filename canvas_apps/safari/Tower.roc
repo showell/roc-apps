@@ -81,7 +81,10 @@ tower_footprint = |tower, { road, vantage, spot }| {
 	center = spot.road_point()
 	corner_point = |corner| {
 		on_road = base_corner_on_road(corner, { center, yaw: tower.yaw() })
-		RoadAhead.rider_point_at(road, { vantage, place: spot.place(), road_point: on_road })
+		RoadAhead.rider_point_at(
+			road,
+			{ vantage, from_rider: spot.from_rider(), road_point: on_road },
+		)
 	}
 	{
 		back_left: corner_point(BackLeft),
@@ -440,7 +443,7 @@ sample_geometry = {
 		front_left: { right: Distance.metres(-6.0), forward: Distance.metres(106.0) },
 	},
 	spot: Spot.at({
-		place: Ahead(SegmentFromRider.Position.first),
+		from_rider: Ahead(SegmentFromRider.Position.first),
 		road_point: { along: Along.metres(100.0), across: Across.middle },
 		lift: Distance.zero,
 		foot: ahead({ right: Distance.metres(0.0), forward: Distance.metres(100.0) }),

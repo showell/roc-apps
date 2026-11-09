@@ -100,7 +100,7 @@ end_tower = |road, { vantage, in_view, clock }| {
 		road,
 		{
 			vantage,
-			place: in_view.place,
+			from_rider: in_view.from_rider,
 			road_point: {
 				along: Along.at(in_view.segment.length.plus(end_tower_beyond_end)),
 				across: Across.right_of_middle(end_tower_right_of_middle),
@@ -125,25 +125,25 @@ mid_tower = |road, { vantage, in_view, clock }| {
 		road,
 		{
 			vantage,
-			place: in_view.place,
+			from_rider: in_view.from_rider,
 			road_point,
 			tower: Tower.standing({ yaw: Angle.straight_ahead, beacon }),
 		},
 	)
 }
 
-## `tower` standing on the ground at `road_point` in the segment that `place`
-## maps, if it is in front of a camera at `vantage` and some of it shows above
-## the horizon.
+## `tower` standing on the ground at `road_point` in the segment that lies at
+## `from_rider`, if it is in front of a camera at `vantage` and some of it
+## shows above the horizon.
 tower_if_ahead : RoadAhead.RoadView,
 {
 	vantage : Geom.Vantage,
-	place : SegmentFromRider,
+	from_rider : SegmentFromRider,
 	road_point : Geom.RoadPoint,
 	tower : Tower,
 } -> Try(Pipeline.Sighted(Tower), [BehindCamera, BelowHorizon])
-tower_if_ahead = |road, { vantage, place, road_point, tower }| {
+tower_if_ahead = |road, { vantage, from_rider, road_point, tower }| {
 	placed_tower : Geom.Placed(Tower)
 	placed_tower = { road_point, lift: Distance.zero, kind: tower }
-	Pipeline.sighting_above_horizon_of(placed_tower, { road, vantage, place })
+	Pipeline.sighting_above_horizon_of(placed_tower, { road, vantage, from_rider })
 }

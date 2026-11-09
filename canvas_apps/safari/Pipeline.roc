@@ -51,22 +51,23 @@ Pipeline :: [].{
 	## the focal length of its lens.
 	SightingCamera : { vantage : Geom.Vantage, focal_length : Pixels }
 
-	## `placed` as a camera at `vantage` sees it, on the segment at `place`, if
-	## it is at or past the camera's near plane.
+	## `placed` as a camera at `vantage` sees it, on the segment that lies at
+	## `from_rider`, if it is at or past the camera's near plane.
 	sighting_of : Geom.Placed(kind),
 	{
 		road : RoadAhead.RoadView,
 		vantage : Geom.Vantage,
-		place : SegmentFromRider,
+		from_rider : SegmentFromRider,
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera])
-	sighting_of = |placed, { road, vantage, place }| {
+	sighting_of = |placed, { road, vantage, from_rider }| {
 		road_point = placed.road_point
-		rider_point = RoadAhead.rider_point_at(road, { vantage, place, road_point })
+		rider_point = RoadAhead.rider_point_at(road, { vantage, from_rider, road_point })
 		foot = RiderView.rider_point_ahead(rider_point)?
-		Ok({ spot: Spot.at({ place, road_point, lift: placed.lift, foot }), kind: placed.kind })
+		spot = Spot.at({ from_rider, road_point, lift: placed.lift, foot })
+		Ok({ spot, kind: placed.kind })
 	}
 
-	## The sighting of `placed` on the segment at `place`, if some of it shows
+	## The sighting of `placed` on the segment at `from_rider`, if some of it shows
 	## over the horizon: its top, its kind's height above its lift and lowered
 	## by the ground's drop, is not hidden behind the curve of the ground. Every
 	## kind with a height takes this test here.
@@ -74,11 +75,11 @@ Pipeline :: [].{
 	{
 		road : RoadAhead.RoadView,
 		vantage : Geom.Vantage,
-		place : SegmentFromRider,
+		from_rider : SegmentFromRider,
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera, BelowHorizon])
 		where [kind.scenery_height : kind -> Distance]
-	sighting_above_horizon_of = |placed, { road, vantage, place }| {
-		sighting = sighting_of(placed, { road, vantage, place })?
+	sighting_above_horizon_of = |placed, { road, vantage, from_rider }| {
+		sighting = sighting_of(placed, { road, vantage, from_rider })?
 		spot = sighting.spot
 		top = spot.lift().plus(placed.kind.scenery_height()).minus(spot.drop())
 		if EarthCurve.is_below_horizon({ point: spot.foot().to_rider(), top }) {
@@ -88,7 +89,7 @@ Pipeline :: [].{
 		}
 	}
 
-	## The sighting of scenery `placed` on the segment at `place`, if it shows
+	## The sighting of scenery `placed` on the segment at `from_rider`, if it shows
 	## over the horizon and stands at least `smallest_height_on_screen` tall
 	## through the camera's own lens, so that what is at the edge of sight
 	## comes and goes as the camera widens. Every kind with a size test takes
@@ -97,11 +98,11 @@ Pipeline :: [].{
 	{
 		road : RoadAhead.RoadView,
 		camera : Pipeline.SightingCamera,
-		place : SegmentFromRider,
+		from_rider : SegmentFromRider,
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera, BelowHorizon, TooSmall])
 		where [kind.scenery_height : kind -> Distance]
-	scenery_sighting_of = |placed, { road, camera, place }| {
-		sighting = sighting_above_horizon_of(placed, { road, vantage: camera.vantage, place })?
+	scenery_sighting_of = |placed, { road, camera, from_rider }| {
+		sighting = sighting_above_horizon_of(placed, { road, vantage: camera.vantage, from_rider })?
 		height_on_screen = Camera.height_on_screen(
 			{ height: placed.kind.scenery_height(), forward: sighting.spot.foot().forward() },
 			camera.focal_length,

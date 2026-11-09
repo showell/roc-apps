@@ -44,11 +44,13 @@ farm_sightings : RoadAhead.RoadView,
 	in_view : RoadAhead.SegmentInView,
 } -> List(Pipeline.Sighted(Billboard))
 farm_sightings = |road, { camera, in_view }| {
-	place = in_view.place
-	if is_within_reach(place, farm_reach) {
+	from_rider = in_view.from_rider
+	if is_within_reach(from_rider, farm_reach) {
 		in_view.segment.segment_cows()
 			.concat(in_view.segment.segment_pigs())
-			.keep_oks(|billboard| Pipeline.scenery_sighting_of(billboard, { road, camera, place }))
+			.keep_oks(
+				|billboard| Pipeline.scenery_sighting_of(billboard, { road, camera, from_rider }),
+			)
 	} else {
 		[]
 	}
@@ -62,21 +64,23 @@ bend_sightings : RoadAhead.RoadView,
 	in_view : RoadAhead.SegmentInView,
 } -> List(Pipeline.Sighted(Billboard))
 bend_sightings = |road, { camera, in_view }| {
-	place = in_view.place
-	if is_within_reach(place, wildlife_reach) {
+	from_rider = in_view.from_rider
+	if is_within_reach(from_rider, wildlife_reach) {
 		in_view.segment.segment_bend_billboards()
-			.keep_oks(|billboard| Pipeline.scenery_sighting_of(billboard, { road, camera, place }))
+			.keep_oks(
+				|billboard| Pipeline.scenery_sighting_of(billboard, { road, camera, from_rider }),
+			)
 	} else {
 		[]
 	}
 }
 
-## Whether a segment at `place` is in reach: among the first `reach` of the
-## road ahead, or the segment just behind, which meets the rider's own at its
-## bend.
+## Whether a segment at `from_rider` is in reach: among the first `reach` of
+## the road ahead, or the segment just behind, which meets the rider's own at
+## its bend.
 is_within_reach : SegmentFromRider, U32 -> Bool
-is_within_reach = |place, reach|
-	match place {
+is_within_reach = |from_rider, reach|
+	match from_rider {
 		Ahead(position) => position.is_within_first(reach)
 		JustBehind => True
 	}
