@@ -111,6 +111,7 @@ Each axis fails in its own way, and catching each failure takes a different kind
 - **H2.** In the One frame half, a widget is a static frame. VCR controls come only once time passes. There are no sliders.
 - **H3.** A widget gets one sentence of explanation, not a listing of its code. It says which call it adds and what it shows.
 - **H4.** A table is welcome wherever it shows data the program really produced.
+- **H6.** **Be relentless about cruft.** Anything pulled in from prior work, a widget above all, has to fit this page completely. A readout made for another chapter ("Added: The moving things") is cruft here. When the picture does the job, show the picture alone, and change the widget's code to do so.
 - **H5.** Lay pages out for a desktop reader. A diagram is sized for a wide screen. On a phone it may be small or scroll; that's acceptable.
 
 ### Axis I. Completeness: what "done" means for a chapter
