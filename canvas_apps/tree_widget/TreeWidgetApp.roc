@@ -150,7 +150,7 @@ is_plain_to_see = |stand|
 	match stand_sighting(stand) {
 		Ok(sighting) => {
 			outline = TreeShapes.tree_outline(
-				sighting.spot,
+				sighting.spot.base(),
 				{ height: conifer.scenery_height(), focal_length: Lens.resting_focal_length },
 			)
 			foot_on_screen = { x: outline.foot.x.to_f64(), y: outline.foot.y.to_f64() }
