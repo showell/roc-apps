@@ -152,7 +152,7 @@ The work is a linear pass, one chapter at a time, in book order, starting again 
 | 2 | Shapes, Nature types, A simple tree, A conifer, Roadside trees, Grass |
 | 3 | The sun, The sky, Mountains, The road, Rails, Radio towers |
 | 4 | Stills, The elephant, the corner critters, Herds |
-| 5 | The ride instant, The beacons, The setting sun, Stepping through the ride |
+| 5 | The clock (merge its overlap with The beacons), The ride instant, The beacons, The setting sun, Stepping through the ride |
 | 6 | The rider, The bike, The throttle, The rider's gaze |
 | 7 | The truck, The truck's motion, The truck's lights |
 | 8 | The cat, The bird, What a cat does to the rider, Rehearsal |

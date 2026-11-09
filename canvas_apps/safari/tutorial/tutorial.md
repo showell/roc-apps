@@ -81,48 +81,7 @@ Everything on the screen is one of three sorts: a solid, a card or far scenery. 
 
 A solid costs the most, because every corner is placed on its own. A card is flat, so one point, its foot, places all of it. Far scenery is so far away that it never comes nearer, however far the rider goes, so it needs no distance at all. The rest of the book keeps to these three sorts.
 
-Next, one piece of that loop in Roc: the clock.
-
-## One whole module
-
-The ride's clock is a single number, and it still gets a module of its own. In this chapter we read that module, `Clock`, from top to bottom. It's small, and most modules in Safari Ride follow its pattern.
-
-New in this chapter:
-
-- Roc: opaque types, operators as method calls, static dispatch, `expect`
-- Modules: `Clock`, `Steps`
-
-Everyone knows what a clock does. The news is what this one refuses to do. Here is a line that adds 7 to a clock:
-
-{{fails clock_plus_seven}}
-
-Roc won't compile it. In Roc, `a + b` calls `a.plus(b)`. `Clock.plus` takes a `Steps`, a count of steps, and a bare 7 isn't one. The error says exactly that.
-
-Here is the whole module:
-
-{{module Clock}}
-
-### Get the types right
-
-`Clock :: U32.{ ... }` says what a clock is: a `U32` underneath. The `::` makes the type opaque, so only `Clock`'s own code sees the number inside. Every other module moves a clock through the functions in its block. `Clock.(n)` builds a clock from a number. In a parameter list it works the other way, and takes the number out.
-
-A clock comes with a partner, `Steps`. A clock is a moment, and a `Steps` is a length of time. A clock plus some steps is a later clock. A clock minus some steps is an earlier one. `steps_since` gives the steps between two clocks. Nothing adds two clocks together, because two moments don't add up to anything.
-
-### The functions
-
-The block after the type holds the clock's methods. `next` moves a clock on by one step, and Safari Ride calls it once a step:
-
-{{code RideInstant.next from "clock = instant.clock.next()" to "clock = instant.clock.next()"}}
-
-`instant.clock.next()` uses static dispatch. Roc finds `next` from the type of `instant.clock`, so the call needs no `Clock.` in front.
-
-Operators work the same way. `+` calls `plus`, and `<` calls `is_lt`. `is_eq : _` asks Roc to derive equality, so `==` works on clocks too.
-
-Two functions crash. `minus` crashes when it would go back past step 0, and `steps_since` crashes when it would count backward. Either one means the caller has a bug, so the clock stops the program and says why.
-
-Below the block, each `expect` is a test, and `roc test` runs them all. A clock is a plain value, so a test builds one directly. `Clock.at_step(9).plus(Steps.of(3))` starts at step 9 without riding nine steps first.
-
-That's the pattern: a comment saying what the thing is, a few imports, one type named after the module, its functions, and its tests. Next, we see how the modules fit together.
+Next, a map of the modules that do all this.
 
 ## The modules
 
@@ -248,28 +207,28 @@ All of this happens within one frame. The next frame sights everything again, fr
 
 ## The world
 
-Some of Safari Ride never changes. Before the ride starts, the program builds the road, its trees, the cows, the pond, and where each cat and bird waits. After that, it only reads them. That makes them the easiest part of the program to read, so the tour starts there.
+Safari Ride builds its whole world before the rider moves an inch, and from then on it only reads it. In this chapter we read that world: a route made of road segments, and the plan for each one. It's the easiest part of the program to read, because none of it changes.
 
 ```widget route
-The whole route in one picture. The white stretch is segment 7, and the lines under the map read out its record.
+The whole route in one picture. The white stretch is segment 7, the longest, and the lines under the map read out its plan.
 ```
 
-Each stretch of this map is one record of a list called `World.segment_plans`, and the lines under the map read out the one in white. The marks on the map are the seven segments with a cat or a bird. We drew the map for this page: the ride itself never has one, and it never needs one, because the road has no global coordinates. A place on the road is always measured within one segment.
+Each stretch of the map is one segment: the road from one bend to the next. The ride itself draws no map, and it never needs one. A place on the road is always measured within its own segment, as how far along and how far across. We drew this map for the book.
 
 New in this chapter:
 
-- Roc: small tag unions in place of booleans, `match` that has to cover every tag, `var`, `crash`, void modules, record update, tuples
-- Modules: `World`, `Route`, `Segment`, `Trees`, `Pond`
+- Roc: tag unions in place of booleans, `match` covering every tag, void modules, static dispatch, `var`, record update, opaque types, `crash`
+- Modules: `World`, `Route`, `Segment`, `Trees`
 
 ### Get the types right
 
-A segment is one stretch of road, from one bend to the next. It's planned with a record, and the route is a list of them:
+Each segment starts as a plan, and a plan is a record:
 
 {{code World.SegmentPlan}}
 
-The plan's fields are small tag unions, and they say more than booleans would. `CowHerd.Bull` is just `[WithBull, NoBull]`. A segment written with `bull: NoBull` says what it means, where a `False` in that place would send the reader to look up which field it is.
+The fields are small tag unions. `CowHerd.Bull` is `[WithBull, NoBull]`, so a plan says `bull: WithBull`, and the value names itself.
 
-Here are the route's first six segments as rows. It's the same data `World.bending_plans` declares, shown as a table. Each plan also says how its segment turns into the next.
+Here are the route's first six plans, from `World.bending_plans`. Each one also says how its segment turns into the next.
 
 | Segment | Length | Turn at the end | Trees | Encounter | Herds |
 |---|---|---|---|---|---|
@@ -280,52 +239,52 @@ Here are the route's first six segments as rows. It's the same data `World.bendi
 | 5 | 300 metres | 70 degrees left | all green | quiet | cows, with a bull |
 | 6 | 300 metres | 70 degrees left | all green | a bird | cows, with a bull |
 
-`World` turns that list of plans into the route's segments: it derives their trees, herds, pond and encounter once, before the ride.
+`World.route` builds the route from these plans, once, before the first step. Each plan becomes a `Segment`, and the segment plants its trees, places its herds and plans its encounter.
 
-The modules around `World`
+The modules that build the world
 ```dot
 digraph world {
   node [shape=box, fontname="Helvetica"];
   World [style=bold];
-  World -> Route [label="  puts together"];
-  World -> Segment [label="  builds"];
-  World -> Trees [label="  picks a tree scheme from"];
-  World -> CowHerd [label="  plans the cows with"];
-  World -> PigHerd [label="  plans the pigs with"];
-  World -> CatCrossing [label="  plans the cats' crossings"];
-  World -> BirdFlight [label="  plans the birds' flights"];
-  Route -> Segment [label="  holds"];
-  Segment -> Pond [label="  places the ducks of"];
+  World -> Route [label="  puts the segments together in"];
+  World -> Segment [label="  builds each plan into"];
+  World -> PigHerd [label="  picks each pig herd's shape from"];
+  Route -> Segment [label="  holds, in order"];
+  Segment -> Trees [label="  plants its trees with"];
+  Segment -> CatCrossing [label="  places its cat by a tree with"];
+  Segment -> BirdFlight [label="  plans its bird's flight with"];
 }
 ```
 
+Even the world keeps as little as it can. A segment keeps its herd of cows, not each cow: a cow's place is worked out from the herd whenever something asks for it. Radio towers aren't kept at all. One stands past the end of every segment, and one halfway along any segment longer than a kilometre, so the segment is all a tower needs.
+
 ### The functions
 
-A `match` has to cover every tag of the union it matches on. Leave one out, and it's a compile-time error. Trees stand in pairs along the road, and after a green pair, `accent_conifer` picks which conifer the next pair is, from the segment's tree scheme:
+`Trees` plants a segment's trees. It's a void module: `Trees :: [].{ ... }` is a type with no values, because `[]` is a tag union with no tags. The type is only a home for the definitions in its block. Here is how it plants a segment:
+
+{{code Trees.roadside_trees}}
+
+The trees stand in pairs, a left tree and a right tree, every few metres along the segment. Four Roc ideas show up here.
+
+`$trees.append(left_tree)` uses static dispatch. Roc finds `append` from the type of `$trees`, a list, so the call needs no `List.` in front.
+
+`$along`, `$conifer` and `$trees` are each a `var`, a name the loop gives a new value each time around. The `$` marks it. `roadside_trees` is still a pure function, because no code outside it sees a `var` change.
+
+`{ ..left_tree, road_point: ... }` is a record update. It makes a copy of `left_tree` with a new `road_point`, so the right tree matches the left one in everything but its place.
+
+The last `match` picks the next pair's conifer. A green pair is followed by the segment's accent, and any accent is followed by green. `accent_conifer` turns the segment's scheme into its accent:
 
 {{code Trees.accent_conifer}}
 
-Here's where it's called. `$conifer` is a `var`, a name the loop around it gives a new value each time, and the `$` marks it. The function is still pure: nothing outside can see `$conifer` change.
+A `match` covers every tag of the union it matches on. Leave one out and the program doesn't compile, so a new scheme can't slip past this function unnoticed.
 
-{{code Trees.roadside_trees from "match $conifer {" to "Green => accent_conifer(scheme)"}}
-
-A segment's place in the route is a `Route.SegmentIndex`, another small opaque type over a `U32`. It can't be confused with a count of trees, because nothing outside `Route` can do arithmetic on it. Looking one up shows `crash`, which isn't error handling: an index that isn't in the route is a bug in Safari Ride, not a case to handle, so the program stops and says so.
+A segment's place in the route is a `Route.SegmentIndex`. It's a `U32` underneath, and it's opaque: only `Route`'s own code sees the number inside, so no other code can mistake an index for a count of trees. `Route.segment_at` looks a segment up:
 
 {{code Route.segment_at}}
 
-### A piece of the world as a value
+An index past the end of the route is a bug in Safari Ride, so `crash` stops the program and says so. `crash` is for bugs, never for a case the program should handle.
 
-A piece of the world can be just a value, with no function to build it. Here's the second whole module, the pond and its ducks:
-
-{{module Pond}}
-
-`Pond :: [].{ ... }` makes `Pond` a type with no values: `[]` is a tag union with no tags, so nothing can ever be a `Pond`. The type is only a home for the definitions in its block. A module like this is a void module. This one names three record types and places six ducks.
-
-Its block holds one record type and two functions: the pond's outlines, and its ducks placed at a bend. Only what's in the block can be used from other modules, and everything below the block is private to `Pond`. `bank_inner_points`, below the block, uses a record update: `{ ..point, past_end: ... }` is a copy of `point` with a new `past_end`, and `point` itself doesn't change. The ducks are read in `Segment.BendLife`, whose `DuckPond` case calls `Pond.placed_ducks`.
-
-A value that never changes can be checked once, whole. `Pond` keeps one function for its tests, `is_inside_water`, below its block, and it says whether a point lies inside the water. The first `expect` under it runs it over all six ducks, so one line covers the whole pond. A later `expect` checks a list of pairs. Each pair in parentheses is a tuple, a fixed group of values whose types needn't match, and `all` checks every pair.
-
-Nothing in this chapter moves, and nothing in the next few chapters does either: we're looking at one page of the flipbook. First, what a page is made of.
+Nothing in this chapter moves, and nothing in the next few chapters does either. We hold one frame still and look at everything in it. First, what a picture is made of.
 
 ## Shapes
 
@@ -366,7 +325,7 @@ A polygon's corners are places on the canvas. The canvas is measured from its to
 
 {{code Screen.Point}}
 
-Both are `Pixels`, a length on the screen. `Pixels` is opaque, like `Clock`, so the compiler keeps screen lengths and road lengths apart. Underneath it's an `F64`, because a corner can land between two pixels. `Screen.point(x, y)` makes a point from two plain numbers.
+Both are `Pixels`, a length on the screen. `Pixels` is opaque, like `Route.SegmentIndex`, so the compiler keeps screen lengths and road lengths apart. Underneath it's an `F64`, because a corner can land between two pixels. `Screen.point(x, y)` makes a point from two plain numbers.
 
 ### A triangle
 
@@ -492,7 +451,7 @@ We've used types that take an argument since the Shapes chapter. A `Picture` is 
 
 The `kind` in its head, `Placed(kind)`, is lowercase, and that makes it a type variable: a name for whatever type goes in the parentheses. The fields use it like any other type. So `Geom.Placed(Conifer)` is a record of a `road_point`, a `lift`, and a `kind` that holds a `Conifer`, just as `List(Shapes.Shape)` is a list that holds shapes. A cow is a `Geom.Placed(Billboard)`.
 
-A `Geom.Placed`'s `road_point` is made of two such types. `Along` is a place along a segment, and `Across` is a place across the road, measured from its middle. Both are opaque, like `Clock`, so passing one as the other is a compile-time error. One place minus another is a `Distance`, a length in metres, and a length is a different thing from a place, and Roc's `-` always gives back its left side's type, so that subtraction is a named method, `distance_from`, rather than `-`.
+A `Geom.Placed`'s `road_point` is made of two such types. `Along` is a place along a segment, and `Across` is a place across the road, measured from its middle. Both are opaque, like `Pixels`, so passing one as the other is a compile-time error. One place minus another is a `Distance`, a length in metres, and a length is a different thing from a place, and Roc's `-` always gives back its left side's type, so that subtraction is a named method, `distance_from`, rather than `-`.
 
 A type's head declares its variables. A function's annotation needs no head: a lowercase name in it is a type variable, and it means one type wherever it appears in that annotation. `Pipeline.sighting_of` takes a `Geom.Placed(kind)` and answers with a `Try` that holds a `Pipeline.Sighted(kind)` when the object stands in front of the camera. A `Try` is one of two tags: `Ok`, holding the answer, or `Err`, holding the reason there is none, here `BehindCamera`. Both are in the type, so every caller handles the object behind the camera. The placed object and its sighting name the same `kind`, so a placed conifer can only come back as a sighted conifer, never as a sighted cow.
 
@@ -538,7 +497,7 @@ A tree passes through these types on its way to the screen:
 | Type | What it is |
 |---|---|
 | `Conifer` | A tree's kind: `Green`, `SmallGreen`, `Red` or `Gold` |
-| `Distance` | A length in metres, opaque like `Clock` and an `F64` underneath |
+| `Distance` | A length in metres, opaque like `Pixels` and an `F64` underneath |
 | `RiderView.RaisedPointAhead` | A point in front of the camera: `right` and `forward` of it, and `height` above the rider's level. `spot.base()` gives the middle of a tree's foot as one |
 | `Camera.Upright` | Where an upright thing lands on the screen: its `foot`, and its `height_on_screen` in `Pixels` |
 | `TreeShapes.Tier` | One layer of the crown, as fractions of the crown |
@@ -577,7 +536,7 @@ Here's all of `Conifer`:
 
 {{module Conifer}}
 
-`Conifer := [Green, SmallGreen, Red, Gold].{ ... }` is a nominal type. Like `Clock`, it carries a block of definitions. Unlike `Clock`, its insides are open to other modules. One symbol makes the difference: `:=` makes a nominal type, whose tags other modules can use, and `::` makes an opaque one. `Trees.accent_conifer`, back in The world chapter, picks `Gold` for a scheme of gold and green.
+`Conifer := [Green, SmallGreen, Red, Gold].{ ... }` is a nominal type. Like `Pixels`, it carries a block of definitions. Unlike `Pixels`, its insides are open to other modules. One symbol makes the difference: `:=` makes a nominal type, whose tags other modules can use, and `::` makes an opaque one. `Trees.accent_conifer`, back in The world chapter, picks `Gold` for a scheme of gold and green.
 
 `scenery_height` derives a tree's height from its kind, so the kind is the one home for it. In `foliage_color`, `Green | SmallGreen =>` is one branch for two tags, because both greens share one color.
 
@@ -1394,6 +1353,45 @@ Pigs graze on the right of the road, near the end of a segment. The first two se
 The `match` is on the herd's two shapes. How the rider takes a herd is a separate choice, which the route makes: `Unnoticed` or `Distracting`. Only pigs can be `Distracting`, never cows. On the first two herds, the standout pig catches the rider's eye, and the rider slows down to look. That's about the rider more than the pig, so it waits for the rider's chapters.
 
 That's every critter that stands still, and the end of what we can say about one frame.
+
+## The clock
+
+The ride's clock is a single number, and it still gets a module of its own. From here on the clock runs, so we read that module, `Clock`, from top to bottom before we let it go.
+
+New in this chapter:
+
+- Roc: operators as method calls, `expect`
+- Modules: `Clock`, `Steps`
+
+Everyone knows what a clock does. The news is what this one refuses to do. Here is a line that adds 7 to a clock:
+
+{{fails clock_plus_seven}}
+
+Roc won't compile it. In Roc, `a + b` calls `a.plus(b)`. `Clock.plus` takes a `Steps`, a count of steps, and a bare 7 isn't one. The error says exactly that.
+
+Here is the whole module:
+
+{{module Clock}}
+
+### Get the types right
+
+`Clock :: U32.{ ... }` says what a clock is: a `U32` underneath, and opaque, so only `Clock`'s own code sees the number inside. `Clock.(n)` builds a clock from a number. In a parameter list it works the other way, and takes the number out.
+
+A clock comes with a partner, `Steps`. A clock is a moment, and a `Steps` is a length of time. A clock plus some steps is a later clock. A clock minus some steps is an earlier one. `steps_since` gives the steps between two clocks. Nothing adds two clocks together, because two moments don't add up to anything.
+
+### The functions
+
+`next` moves a clock on by one step, and Safari Ride calls it once a step:
+
+{{code RideInstant.next from "clock = instant.clock.next()" to "clock = instant.clock.next()"}}
+
+Operators are method calls. `+` calls `plus`, and `<` calls `is_lt`. `is_eq : _` asks Roc to derive equality, so `==` works on clocks too.
+
+Two functions crash. `minus` crashes when it would go back past step 0, and `steps_since` crashes when it would count backward. Either one means the caller has a bug, so the clock stops the program and says why.
+
+Below the block, each `expect` is a test, and `roc test` runs them all. A clock is a plain value, so a test builds one directly. `Clock.at_step(9).plus(Steps.of(3))` starts at step 9 without riding nine steps first.
+
+Next, the clock starts to tick.
 
 ## The ride instant
 
