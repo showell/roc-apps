@@ -92,6 +92,7 @@ Each axis fails in its own way, and catching each failure takes a different kind
 - **F2.** Every term goes in the glossary, and the book uses the glossary's word.
 - **F3.** Write "math", not "maths". "Metres" and "colour" are fine. Write "forward" and "backward", never the "-s" forms.
 - **F4.** Types name numbers. Never say a `Pixels` isn't a number.
+- **F6.** Always say what a name is. "`FrameView`" alone leaves the reader guessing whether it's a module or a type. Say "the `next_or_restart` function takes…", "the `World` module holds…", "a value of the `SegmentPlan` record type goes to…".
 - **F5.** "Picture" means one thing: the program draws a series of pictures for each step, against a backdrop.
 
 ### Axis G. The code behind the prose
