@@ -36,6 +36,10 @@ const EXPANDED = "canvas_apps/safari/tutorial/build/tutorial.md"
 const NEXT = "build:roc-apps/next"
 const STAGE = arg("stage", "")
 const LOOKS = arg("looks", "") == "1"
+-- `chapters=N` keeps only the first N chapters, for a book that holds just the
+-- chapters that have passed the loop in MISSION.md.
+const CHAPTERS_ARG = arg("chapters", "")
+const CHAPTERS = CHAPTERS_ARG ~= "" and tonumber(CHAPTERS_ARG) or nil
 -- A Shale run holds 64 programs, so the widgets' release builds run as a run of
 -- their own, and the diagrams are drawn in runs of their own, DIAGRAMS_PER_RUN
 -- at a time, as each takes Graphviz once or twice.
@@ -220,6 +224,26 @@ function manuscript(text)
   return {pages = pages, diagrams = draw_all(diagrams)}
 end
 
+-- The expanded tutorial cut after its first CHAPTERS chapters, or all of it
+-- when CHAPTERS is unset. It finds `## ` headings by line outside fences, as
+-- manuscript does, since a Roc doc comment starts the same way.
+function first_chapters(text)
+  if CHAPTERS == nil then return text end
+  local kept = {}
+  local seen = 0
+  local in_fence = false
+  for l in split(text, "\n") do
+    if starts_with(l, "```") then
+      in_fence = not in_fence
+    elseif not in_fence and starts_with(l, "## ") then
+      seen = seen + 1
+    end
+    if seen > CHAPTERS then return join(kept, "\n") .. "\n" end
+    push(kept, l)
+  end
+  return text
+end
+
 function widget_folders()
   local folders = {"safari"}
   for page in glob("canvas_apps/*_widget/page.html") do push(folders, basename(dirname(page))) end
@@ -242,6 +266,7 @@ function make_book_argv(tool, book, folders)
     push(argv, "widget")
     push(argv, folder)
   end
+  if CHAPTERS ~= nil then push(argv, "first_chapters") end
   return argv
 end
 
@@ -334,12 +359,13 @@ function main()
     fail("book: make_book.roc didn't build")
   end
 
-  local book = manuscript(read(EXPANDED))
+  local book = manuscript(first_chapters(read(EXPANDED)))
   local folders = widget_folders()
   local rendered = must(run(make_book_argv(tool, book, folders), {timeout_ms = 60000, whole = 20000000, want = ROC_WANT}), "make_book")
   local files = write_pages(rendered.out)
   must(run({"shale", "--root", ".", COLOR, "self_test=1"}, {timeout_ms = 30000, tail = 20}), "color_roc's self test")
-  print(trim(must(run({"shale", "--root", ".", COLOR, "pages=" .. STAGING, "order=" .. join(files, " ")}, {timeout_ms = 30000, tail = 300}), "color_roc").out))
+  local extent = CHAPTERS == nil and "whole_book" or "first_chapters"
+  print(trim(must(run({"shale", "--root", ".", COLOR, "pages=" .. STAGING, "order=" .. join(files, " "), "extent=" .. extent}, {timeout_ms = 30000, tail = 300}), "color_roc").out))
   local sizes = page_sizes(files)
 
   if STAGE == "" then

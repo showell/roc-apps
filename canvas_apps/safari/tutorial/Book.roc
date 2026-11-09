@@ -422,6 +422,7 @@ plain_book = {
 	pages: ["# Front\n", "# One\n\n## Part\n", "# Appendix: more\n"],
 	diagrams: [],
 	widget_folders: [],
+	extent: WholeBook,
 }
 
 widget_book : Manuscript.Contents
@@ -429,6 +430,7 @@ widget_book = {
 	pages: ["# Front\n", "# One\n\n```widget sky\nThe sky.\n```\n"],
 	diagrams: [],
 	widget_folders: ["sky_widget"],
+	extent: WholeBook,
 }
 
 expect nav_entry(

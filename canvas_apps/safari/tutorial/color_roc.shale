@@ -339,8 +339,9 @@ function read_notes(text)
 end
 
 -- Colors the pages named in `order`, in `folder`, and gives the count of each
--- outcome.
-function color_pages(folder, order, notes)
+-- outcome. The whole book uses every block in the note. The first chapters,
+-- as book.shale's `chapters=N` cuts them, use the note's first blocks.
+function color_pages(folder, order, notes, extent)
   local files = parsed_files(notes)
   local tally = {colored = 0, plain = {}, noted = 0}
   for name in order do
@@ -352,7 +353,8 @@ function color_pages(folder, order, notes)
       replace(page, after)
     end
   end
-  if tally.noted ~= #notes then fail("color_roc: the note has " .. #notes .. " blocks, and the pages " .. tally.noted) end
+  local short = extent == "first_chapters" and tally.noted < #notes
+  if tally.noted ~= #notes and not short then fail("color_roc: the note has " .. #notes .. " blocks, and the pages " .. tally.noted) end
   return tally
 end
 
@@ -401,7 +403,7 @@ end
 
 function color_one(folder, title, block, parts)
   replace(folder .. "/page.html", page_with(title, block))
-  local tally = color_pages(folder, {"page.html"}, {{path = folder .. "/Zoo.roc", parts = parts}})
+  local tally = color_pages(folder, {"page.html"}, {{path = folder .. "/Zoo.roc", parts = parts}}, "whole_book")
   return {tally = tally, html = read(folder .. "/page.html")}
 end
 
@@ -435,18 +437,20 @@ end
 function check_counts(checks, folder)
   local note = {path = folder .. "/Zoo.roc", parts = {{from = 19, to = 19, indent = 1, end_col = 10}}}
   replace(folder .. "/page.html", page_with(caption("Zoo.roc"), "bare = 1"))
-  local too_few = attempt(color_pages, folder, {"page.html"}, {note, note})
+  local too_few = attempt(color_pages, folder, {"page.html"}, {note, note}, "whole_book")
   if too_few.ok or too_few.error ~= "color_roc: the note has 2 blocks, and the pages 1" then fail("self_test: a note with a block too many gave " .. json_write(too_few)) end
+  replace(folder .. "/page.html", page_with(caption("Zoo.roc"), "bare = 1"))
+  if not attempt(color_pages, folder, {"page.html"}, {note, note}, "first_chapters").ok then fail("self_test: the first chapters stopped on a block of the note they don't hold") end
   push(checks, "a note with a block the pages lack")
 
   replace(folder .. "/page.html", page_with(caption("Zoo.roc"), "bare = 1") .. page_with(caption("Zoo.roc"), "bare = 1"))
-  local too_many = attempt(color_pages, folder, {"page.html"}, {note})
+  local too_many = attempt(color_pages, folder, {"page.html"}, {note}, "whole_book")
   if too_many.ok or not contains(too_many.error, "has a block past the note's last, of 1") then fail("self_test: a page with a block too many gave " .. json_write(too_many)) end
   push(checks, "a page with a block the note lacks")
 
   replace(folder .. "/other.html", page_with(caption("Zoo.roc"), "bare = 1"))
   replace(folder .. "/page.html", page_with(caption("Zoo.roc"), "wide"))
-  local misordered = attempt(color_pages, folder, {"page.html", "other.html"}, {note, {path = note.path, parts = {{from = 21, to = 21, indent = 1, end_col = 6}}}})
+  local misordered = attempt(color_pages, folder, {"page.html", "other.html"}, {note, {path = note.path, parts = {{from = 21, to = 21, indent = 1, end_col = 6}}}}, "whole_book")
   if misordered.ok or not contains(misordered.error, "page.html disagrees with the note for") then fail("self_test: pages out of order gave " .. json_write(misordered)) end
   push(checks, "pages out of the note's order")
   remove(folder .. "/other.html")
@@ -516,16 +520,15 @@ function self_test()
   check_counts(checks, folder)
 
   replace(folder .. "/page.html", page_with(caption("Broken.roc"), "x = = 1"))
-  local refused = color_pages(folder, {"page.html"}, {{path = folder .. "/Broken.roc", parts = {{from = 2, to = 2, indent = 1, end_col = 9}}}})
+  local refused = color_pages(folder, {"page.html"}, {{path = folder .. "/Broken.roc", parts = {{from = 2, to = 2, indent = 1, end_col = 9}}}}, "whole_book")
   if refused.colored ~= 0 or #refused.plain ~= 1 or not contains(refused.plain[1], "parse problem") then fail("self_test: a file roc-ast refuses counted " .. json_write(refused)) end
   if read(folder .. "/page.html") ~= page_with(caption("Broken.roc"), "x = = 1") then fail("self_test: a file roc-ast refuses changed the page") end
   push(checks, "a file roc-ast refuses")
 
   replace(folder .. "/page.html", caption("Zoo.roc") .. "<pre><code class=\"language-zig\">bare = 1\n</code></pre>\n")
-  local other = color_pages(folder, {"page.html"}, {})
+  local other = color_pages(folder, {"page.html"}, {}, "whole_book")
   if other.colored ~= 0 or #other.plain ~= 0 or not contains(read(folder .. "/page.html"), ">bare = 1\n<") then fail("self_test: a Zig block was touched") end
   push(checks, "a block in another language")
-
   local same = "<p>a " .. span("type", "B") .. " c</p>"
   if not attempt(check_text, "p", "<p>a B c</p>", same).ok then fail("self_test: added spans changed the text") end
   local changed = attempt(check_text, "p", "<p>a B c</p>", "<p>a " .. span("type", "B") .. " d</p>")
@@ -546,7 +549,7 @@ else
   if pages == "" then fail("color_roc: pages= names the folder of the staged pages") end
   local order = arg("order", "")
   if order == "" then fail("color_roc: order= names the pages, in book order") end
-  local tally = color_pages(pages, split(order, " "), read_notes(read(NOTES)))
+  local tally = color_pages(pages, split(order, " "), read_notes(read(NOTES)), arg("extent", "whole_book"))
   for line in tally.plain do print("color_roc: plain, " .. line) end
   print("color_roc: " .. tally.colored .. " blocks colored, " .. #tally.plain .. " plain")
 end

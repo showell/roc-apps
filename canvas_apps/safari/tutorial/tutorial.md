@@ -14,7 +14,7 @@ Watch it all the way through. A motorcycle carries its rider down a long country
 
 All of that comes from four small things: the rider, the truck, the clock and the plan for the encounter ahead. Safari Ride carries those four from one step to the next. It works out everything else from them, every frame. The book shows how that one design keeps a busy program simple.
 
-The book shows a lot of Roc, and all of it is the real code behind something on the screen. We start with the problem Safari Ride solves. Then we hold one frame still and build it up: a single triangle, then a tree and a cow, then the whole road as the rider sees it, with the sky and the mountains behind. Then we let the clock run, and things start to move. The rider rides on, the truck drives ahead, and the cat and the bird make their moves. At the end we look at the math under it all, how we prove the program right, and the platform it runs on. Then we step back and look at the whole program again.
+The book shows a lot of Roc, and all of it is the real code behind something on the screen. We start with the problem Safari Ride solves. Then we hold one frame still and build it up: a single triangle, then a tree and a cow, then the whole road as the rider sees it, with the sky and the mountains behind. Then we let the clock run, and things start to move. The rider rides on, the truck drives ahead, and the cat and the bird make their moves, and you take the controls. At the end we look at the math under it all, how we prove the program right, and the platform it runs on. Then we step back and look at the whole program again.
 
 Roc is fun to read, and this book gives you plenty of it. If you're brand new to Roc, the [official Roc tutorial](https://www.roc-lang.org/tutorial) makes a quick first stop. The book explains each new Roc idea where the code first needs it.
 
@@ -27,7 +27,7 @@ That's what you see. For us, it's an engineering problem, and our first job is t
 
 The first is things. A tree, a cow and a radio tower each have to become shapes the screen can show. Every frame starts from a blank screen, so every frame needs all of its shapes, every time.
 
-The second is the world. A long road runs through open country, past trees, herds, ponds, radio towers and mountains. Something has to say where every one of them stands.
+The second is the world. A long road runs through open country, past trees, herds, ponds and radio towers. Something has to say where every one of them stands.
 
 The third is the rider's view. The screen shows only what the rider sees. A tree far down the road looks small, a tree close by looks big, and a tree behind the rider doesn't show at all. For everything in the world, the program has to work out where it lands on the screen, and how big, if the rider sees it at all. Where two things overlap, the nearer one has to cover the farther one.
 
@@ -43,7 +43,11 @@ The last chapter framed Safari Ride as five pieces of work: things, the world, t
 
 Start with what changes. Not much happens in Safari Ride. A rider rides down a road. Now and then a cat or a bird crosses the rider's path. The beacons blink on the radio towers, and the sun goes down. Four small things tell that whole story at any moment: where the rider is, where the truck is, the time on the clock, and when the cat or the bird ahead starts to move.
 
-The picture is another matter. At step 1,529 of the ride, the frame paints 2,121 shapes over its backdrop of sky and grass. While the ride plays, it takes thirty steps a second. One step later the rider has moved on, and the road, the trees and the cows all shift on the screen. So Safari Ride keeps the small story, and describes the rich picture fresh, every frame.
+The picture is another matter. At step 1,529 of the ride, the frame paints 2,121 shapes over its backdrop of sky, sun and grass. While the ride plays, it takes thirty steps a second. One step later the rider has moved on, and the road, the trees and the cows all shift on the screen. So Safari Ride keeps the small story, and describes the rich picture fresh, every frame.
+
+```widget frame moving
+Step 1,529 of the ride, held still. The line under it counts the frame's shapes.
+```
 
 Most of Safari Ride's Roc code lives in modules. A module is one file, named for what it holds: `World.roc` holds the module `World`. A name like `World.route` means `route`, from the module `World`.
 
@@ -57,7 +61,9 @@ A Roc program runs on a platform, the layer underneath it that talks to the outs
 
 {{code SafariApp.canvas_app from "model_at_next_step: CanvasApp" to "frame_shapes: |m|"}}
 
-The model `m` holds the ride's whole state. The `frame_shapes` field is a function, written `|m| …`, that gives the list of shapes for the ride's current moment. The `model_at_next_step` field gives the next model, from the keys that were pressed. The rest of this chapter says where each part of those two lines comes from.
+The platform hands each of those functions the model, which holds the ride's whole state. The `frame_shapes` field is a function, written `|m| …`, that takes the model `m` and gives the list of shapes for the ride's current moment. A dot after a value calls a function from the module of that value's type. The model's tour is a `Tour`, so `m.tour.instant()` calls the `instant` function from the `Tour` module, and gives the moment the tour is at. The `leaned_shapes` call at the end tips the whole frame as the rider leans into a bend.
+
+The `model_at_next_step` field gives the next model, from the keys that were pressed. Safari Ride's own `model_at_next_step` function does that work. `CanvasApp.untimed_model_at_next_step` fits it to the platform, which also offers the time, and Safari Ride doesn't need it. The sections below follow both fields into the code they call.
 
 In this page, the ride runs as WebAssembly, and JavaScript paints each list on a canvas. The same Roc code also runs as a native program, on a platform called roc-ray. Safari Ride is the top layer, and it's the same on both.
 
@@ -67,17 +73,21 @@ The world is a value in the Roc code. The `World` module holds a short list of s
 
 {{code World.SegmentPlan}}
 
-Each field's type comes from the module that owns it, so the `Scheme` type from the `Trees` module is written `Trees.Scheme`. Even inside `World`, its own types carry the prefix, as `World.PigPresence` does. The first plan fills in 500 metres of road, with `AllGreen` trees and a bird to meet (`BirdHere`). The list wraps each plan with its bend: this one turns 50° into the next segment, and an elephant and its baby stand at the bend.
+A record holds named fields. Each line names one field and gives its type after the colon. Each field's type comes from the module that owns it, so the `Scheme` type from the `Trees` module is written `Trees.Scheme`. Even inside `World`, its own types carry the prefix, as `World.PigPresence` does. The first plan fills in 500 metres of road, with the `AllGreen` tree scheme and a bird to meet, `BirdHere`. Roc calls plain names like these tags. A second list in the module, `World.bending_plans`, gives each plan but the last a bend. The first one turns 50° into the next segment, and an elephant and its baby stand at the bend.
 
-The plans never say where a single tree stands. `World.route` is the whole route, built from the plans once, before the ride starts, and the trees, the herds and the towers all follow from it. The plans are Roc code, so the compiler checks them: a plan that leaves out its length doesn't compile.
+The plans never say where a single tree stands. `World.route` is a value: the whole route, built from the plans once, before the ride starts. The trees, the herds, the ponds and the towers all follow from it. The plans are Roc code, so the compiler checks them: a plan that leaves out its length doesn't compile.
+
+```widget route
+The whole route from above, one stretch for each plan. The lines under the map read out the plan of the stretch in white.
+```
 
 ### The rider's view
 
-For every frame, a value of the `RiderCamera` type puts a camera where the rider is, facing where the rider looks. The trees, the animals, the towers and the truck then go through the same three forms: placed on the road, sighted by the camera, and turned into shapes. The `Pipeline` module writes the steps between those forms once, for all of them.
+For every frame, a value of the `RiderCamera` type puts a camera where the rider is, facing where the rider looks. The trees, the animals, the towers and the truck then go through the same three forms: placed on the road, sighted by the camera, and turned into shapes. The `Pipeline` module holds those three forms, and the steps between them. The `Scene` module sends the things beside the road through them.
 
 One rule gives both where a thing lands on the screen and how big it looks there. It's the rule a pinhole camera follows: twice as far away looks half as big. A thing the rider can't see is refused, with a tag that says why. `BehindCamera` means it's behind the rider, and `BelowHorizon` means the curve of the earth hides it.
 
-The `frame_view_at` function in the `FrameView` module puts it all together, and it's the function `frame_shapes` calls. It lists the frame's shapes in the order they're painted: the mountains, then the ground, then the things beside the road, sorted far to near. Each shape is painted over the ones before it, so near things cover far ones.
+The `frame_view_at` function in the `FrameView` module puts it all together, and it's the function `frame_shapes` calls. It gives the frame in layers, and the layers are painted in order: the backdrop of sky, sun and grass, then the mountains, then the ground, then the things beside the road, sorted far to near. Each shape is painted over the ones before it, so near things cover far ones.
 
 ### Motion
 
@@ -85,7 +95,7 @@ One function moves the ride on. The `next_or_restart` function in the `RideInsta
 
 {{code RideInstant.next_or_restart}}
 
-Its first line is its type. It takes a `Route` and a `RideInstant`, and gives back one of two tags, each carrying a `RideInstant`. Once the rider has finished the route, it gives `Restarted`, with `initial`, the ride's first moment. Otherwise it gives `Continued`, with the moment `next` works out. `instant.rider.is_finished(route)` calls the `is_finished` function from the `Rider` module on the moment's rider, so it reads from left to right.
+Its first line is its type. It takes a `Route` and a `RideInstant`, and gives back one of two tags, each carrying a `RideInstant`. Once the rider has finished the route, it gives `Restarted`, with `initial`, the ride's first moment. Otherwise it gives `Continued`, with the moment `next` works out. `instant.rider.is_finished(route)` is a dot call like the ones in `frame_shapes`. The moment's rider is a `Rider`, so it calls the `is_finished` function from the `Rider` module.
 
 The module's own `next` function moves only the four small things, in a fixed order. The rider reads where the cat or the bird ahead has got to, then moves, and the clock ticks. Then the truck and the encounter plan answer the rider's new place. That order is how a cat in the road stops the rider speeding up, and how the cat times its crossing to where the rider has just arrived. We read `next` line by line once the clock starts to run, in the second half of the book.
 
@@ -96,6 +106,32 @@ Everything else that seems to move is worked out from those four things. The sun
 The controls are a handful of keys, named beside the ride. The `model_at_next_step` function in the `SafariApp` module answers them. Its model holds a value of the `Tour` type, and whether the ride is `Playing` or `Paused`. Stepping back has to be as quick as stepping forward, so the tour keeps every moment since the ride last started. To step back, it takes the moment before, and `frame_shapes` describes the frame from it like any other.
 
 ### Where we start
+
+The two fields the platform calls reach every answer. `frame_shapes` leads to the things and the rider's view. `model_at_next_step` leads to motion and the person watching. The tour carries the world to both.
+
+How the platform's two fields reach the five answers
+```dot
+digraph answers {
+  node [shape=box, fontname="Helvetica"];
+  edge [fontname="Helvetica"];
+  app [label="SafariApp.canvas_app"];
+  view [label="FrameView.frame_view_at"];
+  camera [label="RiderCamera"];
+  Scene; Pipeline;
+  shapes [label="Shapes.Shape"];
+  tour [label="Tour"];
+  next [label="RideInstant.next_or_restart"];
+  route [label="World.route"];
+  app -> view [label="  frame_shapes calls"];
+  app -> tour [label="  model_at_next_step steps"];
+  view -> camera [label="  puts the camera in place with"];
+  view -> Scene [label="  finds the things in view with"];
+  Scene -> Pipeline [label="  sights and renders things with"];
+  view -> shapes [label="  gives the frame as a list of"];
+  tour -> next [label="  takes each next moment from"];
+  tour -> route [label="  starts on"];
+}
+```
 
 The five answers come in the order of the five pieces, and the book builds them in that order. So we start with things, and with the simplest shape. Of the 2,121 shapes at step 1,529, all but eight are polygons, and the simplest polygon is a triangle. We start there.
 

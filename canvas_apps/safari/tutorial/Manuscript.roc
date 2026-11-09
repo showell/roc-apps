@@ -15,12 +15,21 @@ Manuscript := [].{
 		pages : List(Str),
 		diagrams : List(Diagram),
 		widget_folders : List(Str),
+		extent : Extent,
 	}
 
-	## The arguments are a run of `page TEXT`, `diagram ID TITLE SVG` and
-	## `widget FOLDER`, in any order, though pages keep theirs.
+	## Whether the pages are the whole book, or only its first chapters, as
+	## book.shale's `chapters=N` cuts it.
+	Extent : [WholeBook, FirstChapters]
+
+	## The arguments are a run of `page TEXT`, `diagram ID TITLE SVG`,
+	## `widget FOLDER` and `first_chapters`, in any order, though pages keep theirs.
 	read : List(Str) -> Contents
-	read = |args| contents_of(args, { pages: [], diagrams: [], widget_folders: [] })
+	read = |args| contents_of(args, Manuscript.empty)
+
+	## No pages, diagrams or widgets, for the whole book.
+	empty : Contents
+	empty = { pages: [], diagrams: [], widget_folders: [], extent: WholeBook }
 }
 
 contents_of : List(Str), Manuscript.Contents -> Manuscript.Contents
@@ -39,10 +48,12 @@ contents_of = |args, so_far| match args {
 	["widget", folder, .. as rest] => {
 		contents_of(rest, { ..so_far, widget_folders: so_far.widget_folders.append(folder) })
 	}
-	[stray, ..] => crash "book: an argument that isn't a page, a diagram or a widget: ${stray}"
+	["first_chapters", .. as rest] => contents_of(rest, { ..so_far, extent: FirstChapters })
+	[stray, ..] => crash "book: an argument that isn't a page, a diagram, a widget or first_chapters: ${stray}"
 }
 
-expect Manuscript.read([]) == { pages: [], diagrams: [], widget_folders: [] }
+expect Manuscript.read([]) == Manuscript.empty
+expect Manuscript.read(["first_chapters"]).extent == FirstChapters
 expect Manuscript.read([
 	"page",
 	"a",
@@ -64,4 +75,5 @@ expect Manuscript.read([
 		},
 	],
 	widget_folders: ["sky_widget"],
+	extent: WholeBook,
 }
