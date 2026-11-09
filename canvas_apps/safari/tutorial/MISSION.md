@@ -134,6 +134,7 @@ The work is a linear pass, one chapter at a time, in book order, starting again 
 
 **The loop, for one chapter:**
 
+0. Before drafting, pause and ask Steve three questions, each a why: "Why did we put Clock so early in the original drafts?" A why digs out the reason a chapter, a section or a piece of code exists, and his answers shape the draft.
 1. Read the chapter and the code it quotes.
 2. If the prose exposes a smell (G1), fix the code first. A small fix lands now. A bigger one goes in the queue, and the chapter describes the code as it stands.
 3. Write a clean draft from scratch, with a strong voice, from the reader's questions: what is this for, why now, what does it show? Close the old draft before you write. It is a source of facts and of includes, never of sentences. Then check it against axes B through I. The writer writes the prose; nobody else does. Check every diagram edge against the code, and give every edge its label (H1).
