@@ -5,7 +5,8 @@
 ## Unlike the trees and the critters, a tower has no size test: it is
 ## sighted however small it stands, until the earth's curve sinks it wholly
 ## below the horizon, and then it is refused. The sightings are worked out each
-## frame from the rider's camera, the route and the clock.
+## frame from where the rider's camera stands, the route and the clock: with no
+## size test, they need no lens.
 import Across
 import Along
 import Angle
@@ -23,12 +24,12 @@ TowerSighting :: [].{
 	## The towers in view, in the order of `RoadAhead.segments_in_view`.
 	towers_in_view : RoadAhead.RoadView,
 	{
-		camera : Pipeline.SightingCamera,
+		vantage : Geom.Vantage,
 		clock : Clock,
 	} -> List(Pipeline.Sighted(Tower))
-	towers_in_view = |road, { camera, clock }|
+	towers_in_view = |road, { vantage, clock }|
 		RoadAhead.segments_in_view(road).join_map(
-			|in_view| segment_towers(road, { camera, in_view, clock }),
+			|in_view| segment_towers(road, { vantage, in_view, clock }),
 		)
 }
 
@@ -75,30 +76,30 @@ expect
 ## one halfway along.
 segment_towers : RoadAhead.RoadView,
 {
-	camera : Pipeline.SightingCamera,
+	vantage : Geom.Vantage,
 	in_view : RoadAhead.SegmentInView,
 	clock : Clock,
 } -> List(Pipeline.Sighted(Tower))
-segment_towers = |road, { camera, in_view, clock }|
+segment_towers = |road, { vantage, in_view, clock }|
 	[
-		end_tower(road, { camera, in_view, clock }),
-		mid_tower(road, { camera, in_view, clock }),
+		end_tower(road, { vantage, in_view, clock }),
+		mid_tower(road, { vantage, in_view, clock }),
 	].keep_oks(|tower| tower)
 
 ## The tower past the end of a segment in view, if it is in front of the
 ## camera and above the horizon.
 end_tower : RoadAhead.RoadView,
 {
-	camera : Pipeline.SightingCamera,
+	vantage : Geom.Vantage,
 	in_view : RoadAhead.SegmentInView,
 	clock : Clock,
 } -> Try(Pipeline.Sighted(Tower), [BehindCamera, BelowHorizon])
-end_tower = |road, { camera, in_view, clock }| {
+end_tower = |road, { vantage, in_view, clock }| {
 	beacon = Beacon.at({ segment: in_view.index, place: AtEnd }, clock)
 	tower_if_ahead(
 		road,
 		{
-			camera,
+			vantage,
 			place: in_view.place,
 			road_point: {
 				along: Along.at(in_view.segment.length.plus(end_tower_beyond_end)),
@@ -113,17 +114,17 @@ end_tower = |road, { camera, in_view, clock }| {
 ## front of the camera and above the horizon.
 mid_tower : RoadAhead.RoadView,
 {
-	camera : Pipeline.SightingCamera,
+	vantage : Geom.Vantage,
 	in_view : RoadAhead.SegmentInView,
 	clock : Clock,
 } -> Try(Pipeline.Sighted(Tower), [BehindCamera, BelowHorizon, NoMidTower])
-mid_tower = |road, { camera, in_view, clock }| {
+mid_tower = |road, { vantage, in_view, clock }| {
 	road_point = mid_tower_point(in_view.segment.length)?
 	beacon = Beacon.at({ segment: in_view.index, place: Midway }, clock)
 	tower_if_ahead(
 		road,
 		{
-			camera,
+			vantage,
 			place: in_view.place,
 			road_point,
 			tower: Tower.standing({ yaw: Angle.straight_ahead, beacon }),
@@ -132,16 +133,17 @@ mid_tower = |road, { camera, in_view, clock }| {
 }
 
 ## `tower` standing on the ground at `road_point` in the segment that `place`
-## maps, if it is in front of `camera` and some of it shows above the horizon.
+## maps, if it is in front of a camera at `vantage` and some of it shows above
+## the horizon.
 tower_if_ahead : RoadAhead.RoadView,
 {
-	camera : Pipeline.SightingCamera,
+	vantage : Geom.Vantage,
 	place : SegmentFromRider,
 	road_point : Geom.RoadPoint,
 	tower : Tower,
 } -> Try(Pipeline.Sighted(Tower), [BehindCamera, BelowHorizon])
-tower_if_ahead = |road, { camera, place, road_point, tower }| {
+tower_if_ahead = |road, { vantage, place, road_point, tower }| {
 	placed_tower : Geom.Placed(Tower)
 	placed_tower = { road_point, lift: Distance.zero, kind: tower }
-	Pipeline.sighting_above_horizon_of(placed_tower, { road, camera, place })
+	Pipeline.sighting_above_horizon_of(placed_tower, { road, vantage, place })
 }

@@ -2,8 +2,8 @@
 ## patches: the road, in chunks along each segment in view; the paved corner
 ## where one segment bends into the next; and the pond beside a segment that
 ## ends at one. It is never depth sorted, because the ground is painted first,
-## under everything. The patches are worked out each frame from the rider's
-## camera and the route.
+## under everything. The patches are worked out each frame from where the
+## rider's camera stands and the route.
 import Along
 import Distance
 import RoadAhead
@@ -18,10 +18,10 @@ GroundSighting :: [].{
 
 	## The ground in view, in paint order: each segment in view in the order of
 	## `RoadAhead.segments_in_view`.
-	patches_in_view : RoadAhead.RoadView, { vantage : Geom.Vantage, .. } -> List(GroundPatch)
-	patches_in_view = |road, camera|
+	patches_in_view : RoadAhead.RoadView, Geom.Vantage -> List(GroundPatch)
+	patches_in_view = |road, vantage|
 		RoadAhead.segments_in_view(road).join_map(
-			|in_view| ground_patches(road, { vantage: camera.vantage, in_view }),
+			|in_view| ground_patches(road, { vantage, in_view }),
 		)
 
 }

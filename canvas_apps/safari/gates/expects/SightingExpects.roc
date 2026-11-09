@@ -95,7 +95,7 @@ right_angle_road = Fixtures.crafted_road([
 ## a path of `n` points makes `2n - 1` quads, and the last bar ends the path.
 rail_ends : { start : RiderView.RaisedPoint, end : RiderView.RaisedPoint }
 rail_ends = {
-	quads = RailSighting.rail_quads_in_view(right_angle_road, { vantage: Fixtures.origin })
+	quads = RailSighting.rail_quads_in_view(right_angle_road, Fixtures.origin)
 	last_bar = (quads.len() - 1) / 2 - 1
 	corners_of = |quad_index|
 		match quads.get(quad_index) {
@@ -278,7 +278,7 @@ shapes_of_tower_100_ahead = {
 			},
 			{
 				road: tower_road,
-				camera: Fixtures.origin_camera,
+				vantage: Fixtures.origin,
 				place: Ahead(SegmentFromRider.Position.first),
 			},
 		)
@@ -333,7 +333,7 @@ towers_on_short_then_long = |rider_number, clock|
 			Route.from_segments([Fixtures.bending_right(Fixtures.segment_of([])), long_segment]),
 			Route.SegmentIndex.number(rider_number),
 		),
-		{ camera: Fixtures.origin_camera, clock },
+		{ vantage: Fixtures.origin, clock },
 	)
 
 ## Where a tower stands on its segment, and how it is turned: along, across,
@@ -382,13 +382,7 @@ expect
 expect
 	TowerSighting.towers_in_view(
 		Fixtures.crafted_road([Fixtures.segment_of([])]),
-		{
-			camera: {
-				..Fixtures.origin_camera,
-				vantage: { ..Fixtures.origin, along: Along.metres(5000.0) },
-			},
-			clock: Clock.start,
-		},
+		{ vantage: { ..Fixtures.origin, along: Along.metres(5000.0) }, clock: Clock.start },
 	).len()
 		== 0
 
@@ -398,7 +392,7 @@ tower_yaws_on_lone_segment : Distance -> List(I64)
 tower_yaws_on_lone_segment = |length|
 	TowerSighting.towers_in_view(
 		Fixtures.crafted_road([{ ..Fixtures.segment_of([]), length }]),
-		{ camera: Fixtures.origin_camera, clock: Clock.start },
+		{ vantage: Fixtures.origin, clock: Clock.start },
 	).map(|tower| (tower.kind.yaw().to_degrees() + 0.5).to_i64_wrap())
 
 # The tower past the end of a segment 4340 m long stands 4500 m ahead, where
@@ -531,7 +525,7 @@ truck_seen_from = |vantage, lead|
 	TruckSighting.truck_in_view(
 		Fixtures.three_segment_road,
 		{
-			camera: { ..Fixtures.origin_camera, vantage },
+			vantage,
 			truck: {
 				route_position: Distance.metres(vantage.along.to_metres() + lead),
 				truck: { headlights: Off, brake_lights: Off },
@@ -600,12 +594,7 @@ truck_point_off_road : F64, TruckShape.TruckPoint -> F64
 truck_point_off_road = |lead, on_truck| {
 	sighting = sighted_truck_of(lead)
 	spot = sighting.spot
-	setting = {
-		spot,
-		heading: sighting.heading,
-		focal_length: Pixels.of(500.0),
-	}
-	placed = TruckPlacement.raised_point(setting, on_truck)
+	placed = TruckPlacement.raised_point({ spot, heading: sighting.heading }, on_truck)
 	road_point = spot.road_point()
 	on_road = RoadAhead.rider_point_at(
 		Fixtures.three_segment_road,

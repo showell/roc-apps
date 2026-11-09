@@ -130,6 +130,7 @@ brake_shapes : TruckPlacement.TruckSetting,
 } -> List(Shapes.Shape)
 brake_shapes = |truck, lamp_sides| {
 	rear = TruckShape.truck_box.rear
+	stance = { spot: truck.spot, heading: truck.heading }
 	lamp =
 		TruckShape.strip_corners(
 			lamp_sides,
@@ -137,7 +138,7 @@ brake_shapes = |truck, lamp_sides| {
 				near: { ahead: rear, height: brake_lamp_bottom },
 				far: { ahead: rear, height: brake_lamp_top },
 			},
-		).map(|corner| TruckPlacement.raised_point(truck, corner))
+		).map(|corner| TruckPlacement.raised_point(stance, corner))
 	glow = [brake_glow(truck, lamp)].keep_oks(|shape| shape)
 	match Polygon.clipped_polygon({ color: brake_color, corners: lamp }, truck.focal_length) {
 		Ok(lamp_polygon) => glow.append(lamp_polygon)

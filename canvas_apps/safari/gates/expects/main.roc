@@ -16,5 +16,6 @@ package
 		RoadExpects,
 		SceneExpects,
 		SightingExpects,
+		WorldExpects,
 	]
 	{ game: "../../game.roc", lib: "../../../lib/main.roc" }

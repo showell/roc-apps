@@ -19,16 +19,19 @@ TruckPlacement :: [].{
 		focal_length : Pixels,
 	}
 
+	## Where the truck stands and which way it heads against the camera, as
+	## in its `TruckSetting`: all that placing a point on it reads.
+	TruckStance : { spot : Spot, heading : Angle.Turn }
+
 	## Where a point on the truck stands in the rider's view: turned by the
 	## truck's heading about its foot, carried out from the foot, raised as far
 	## as the truck is off the ground and lowered by the ground's drop beneath
 	## the truck's spot.
-	raised_point : TruckPlacement.TruckSetting, TruckShape.TruckPoint -> RiderView.RaisedPoint
-	raised_point = |truck, { ahead, rightward, height }| {
-		spot = truck.spot
+	raised_point : TruckPlacement.TruckStance, TruckShape.TruckPoint -> RiderView.RaisedPoint
+	raised_point = |{ spot, heading }, { ahead, rightward, height }| {
 		foot = spot.foot()
-		cos_heading = truck.heading.to_radians().cos()
-		sin_heading = truck.heading.to_radians().sin()
+		cos_heading = heading.to_radians().cos()
+		sin_heading = heading.to_radians().sin()
 		ahead_metres = ahead.to_metres()
 		rightward_metres = rightward.to_metres()
 		{
@@ -43,9 +46,9 @@ TruckPlacement :: [].{
 	}
 
 	## A face of the truck in the rider's view, every corner placed.
-	placed_face : TruckPlacement.TruckSetting, TruckShape.TruckFace -> Polygon.FlatPolygon
-	placed_face = |truck, { color, corners }| {
+	placed_face : TruckPlacement.TruckStance, TruckShape.TruckFace -> Polygon.FlatPolygon
+	placed_face = |stance, { color, corners }| {
 		color,
-		corners: corners.map(|corner| TruckPlacement.raised_point(truck, corner)),
+		corners: corners.map(|corner| TruckPlacement.raised_point(stance, corner)),
 	}
 }

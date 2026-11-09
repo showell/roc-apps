@@ -51,17 +51,17 @@ Pipeline :: [].{
 	## the focal length of its lens.
 	SightingCamera : { vantage : Geom.Vantage, focal_length : Pixels }
 
-	## `placed` as `camera` sees it, on the segment at `place`, if it is at or
-	## past the camera's near plane.
+	## `placed` as a camera at `vantage` sees it, on the segment at `place`, if
+	## it is at or past the camera's near plane.
 	sighting_of : Geom.Placed(kind),
 	{
 		road : RoadAhead.RoadView,
-		camera : Pipeline.SightingCamera,
+		vantage : Geom.Vantage,
 		place : SegmentFromRider,
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera])
-	sighting_of = |placed, { road, camera, place }| {
+	sighting_of = |placed, { road, vantage, place }| {
 		road_point = placed.road_point
-		rider_point = RoadAhead.rider_point_at(road, { vantage: camera.vantage, place, road_point })
+		rider_point = RoadAhead.rider_point_at(road, { vantage, place, road_point })
 		foot = RiderView.rider_point_ahead(rider_point)?
 		Ok({ spot: Spot.at({ place, road_point, lift: placed.lift, foot }), kind: placed.kind })
 	}
@@ -73,12 +73,12 @@ Pipeline :: [].{
 	sighting_above_horizon_of : Geom.Placed(kind),
 	{
 		road : RoadAhead.RoadView,
-		camera : Pipeline.SightingCamera,
+		vantage : Geom.Vantage,
 		place : SegmentFromRider,
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera, BelowHorizon])
 		where [kind.scenery_height : kind -> Distance]
-	sighting_above_horizon_of = |placed, { road, camera, place }| {
-		sighting = sighting_of(placed, { road, camera, place })?
+	sighting_above_horizon_of = |placed, { road, vantage, place }| {
+		sighting = sighting_of(placed, { road, vantage, place })?
 		spot = sighting.spot
 		top = spot.lift().plus(placed.kind.scenery_height()).minus(spot.drop())
 		if EarthCurve.is_below_horizon({ point: spot.foot().to_rider(), top }) {
@@ -101,7 +101,7 @@ Pipeline :: [].{
 	} -> Try(Pipeline.Sighted(kind), [BehindCamera, BelowHorizon, TooSmall])
 		where [kind.scenery_height : kind -> Distance]
 	scenery_sighting_of = |placed, { road, camera, place }| {
-		sighting = sighting_above_horizon_of(placed, { road, camera, place })?
+		sighting = sighting_above_horizon_of(placed, { road, vantage: camera.vantage, place })?
 		height_on_screen = Camera.height_on_screen(
 			{ height: placed.kind.scenery_height(), forward: sighting.spot.foot().forward() },
 			camera.focal_length,

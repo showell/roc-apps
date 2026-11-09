@@ -47,11 +47,15 @@ TreeShapes :: [].{
 			Triangles
 		}
 
-	## Where the tree at `spot` is on the screen, `height` tall, through a lens
-	## of `focal_length`.
-	tree_outline : Spot, { height : Distance, focal_length : Pixels } -> Camera.Upright
-	tree_outline = |spot, { height, focal_length }|
-		Camera.upright_on_screen(spot.base(), { height, focal_length })
+	## Where the tree whose foot's middle is at `base` is on the screen,
+	## `height` tall, through a lens of `focal_length`.
+	tree_outline : RiderView.RaisedPointAhead,
+	{
+		height : Distance,
+		focal_length : Pixels,
+	} -> Camera.Upright
+	tree_outline = |base, { height, focal_length }|
+		Camera.upright_on_screen(base, { height, focal_length })
 }
 
 ## The tree is drawn 136 parts tall, and the shares below are parts of that,
@@ -132,7 +136,7 @@ tier_inputs_of = |spot, { height, focal_length, foliage_color }| {
 		base,
 		height,
 		focal_length,
-		outline: TreeShapes.tree_outline(spot, { height, focal_length }),
+		outline: TreeShapes.tree_outline(base, { height, focal_length }),
 		foliage_color,
 		crown: TreeShapes.crown_of(base.forward()),
 	}

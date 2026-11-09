@@ -102,7 +102,7 @@ picture_shapes = |gap|
 ## at its end and the road beyond, up to the horizon.
 road_shapes : List(Shapes.Shape)
 road_shapes =
-	GroundSighting.patches_in_view(World.road_at_start, { vantage: eye }).keep_oks(
+	GroundSighting.patches_in_view(World.road_at_start, eye).keep_oks(
 		|patch| GroundPatch.patch_shape(patch, Lens.resting_focal_length),
 	)
 
@@ -122,7 +122,7 @@ sighting_from_eye = |placed|
 		placed,
 		{
 			road: World.road_at_start,
-			camera: { vantage: eye, focal_length: Lens.resting_focal_length },
+			vantage: eye,
 			place: Ahead(SegmentFromRider.Position.first),
 		},
 	)

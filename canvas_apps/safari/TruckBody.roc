@@ -12,12 +12,14 @@ TruckBody :: [].{
 	## The truck's body, its farthest faces first. A face is ordered by the
 	## mean of its corners' distances ahead.
 	body_picture : TruckPlacement.TruckSetting -> Picture
-	body_picture = |truck|
+	body_picture = |truck| {
+		stance = { spot: truck.spot, heading: truck.heading }
 		Picture.from_shapes(
 			DepthSort.sort_by(
-				TruckShape.truck_faces.map(|face| TruckPlacement.placed_face(truck, face)),
+				TruckShape.truck_faces.map(|face| TruckPlacement.placed_face(stance, face)),
 				|face| DepthSort.mean_depth(face.corners.map(|corner| corner.forward)),
 			)
 				.keep_oks(|face| Polygon.clipped_polygon(face, truck.focal_length)),
 		)
+	}
 }

@@ -6,6 +6,8 @@ import Clock
 import Grass
 import GroundPatch
 import GroundSighting
+import Pipeline
+import Pixels
 import RideInstant
 import RoadAhead
 import RiderCamera
@@ -57,16 +59,18 @@ FrameView := {
 	frame_view_at = |route, instant| {
 		camera = FrameView.camera_at(route, instant)
 		road = RoadAhead.RoadView.ahead_of(route, camera.route_place.segment_index)
+		sighting_camera = camera.sighting_camera()
+		aim = { heading: camera.heading, focal_length: camera.focal_length }
 		{
 			backdrop: {
 				sky_colors: Sky.colors_at(instant.clock),
 				sun_sighting: Sun.sun_in_view(camera, instant.clock),
 			},
-			mountain_shapes: FrameView.skyline_shapes(camera, instant.clock),
-			ground_patch_shapes: FrameView.ground_shapes(road, camera),
+			mountain_shapes: FrameView.skyline_shapes(aim, instant.clock),
+			ground_patch_shapes: FrameView.ground_shapes(road, sighting_camera),
 			scene: Scene.scene_in_view(
 				road,
-				{ camera: camera.sighting_camera(), facts: FrameView.ride_facts(route, instant) },
+				{ camera: sighting_camera, facts: FrameView.ride_facts(route, instant) },
 			),
 			roll: camera.roll,
 		}
@@ -135,19 +139,20 @@ FrameView := {
 		clock: instant.clock,
 	}
 
-	## The skyline `camera` sees at `clock`, darkened as far as the sky is. It
-	## is public for FramePartsBench, which times the skyline alone.
-	skyline_shapes : RiderCamera, Clock -> List(Shapes.Shape)
-	skyline_shapes = |camera, clock| {
+	## The skyline a camera aimed at `heading` through a lens of `focal_length`
+	## sees at `clock`, darkened as far as the sky is. It is public for
+	## FramePartsBench, which times the skyline alone.
+	skyline_shapes : { heading : Angle.Bearing, focal_length : Pixels }, Clock -> List(Shapes.Shape)
+	skyline_shapes = |aim, clock| {
 		sky_darkness = Sky.darkness_at(clock)
-		Skyline.skyline_shapes(camera, { darkness: sky_darkness })
+		Skyline.skyline_shapes(aim, { darkness: sky_darkness })
 	}
 
 	## The road's ground that `camera` sees of `road`: the road itself and its
 	## ponds. It is public for FramePartsBench, which times the ground alone.
-	ground_shapes : RoadAhead.RoadView, RiderCamera -> List(Shapes.Shape)
+	ground_shapes : RoadAhead.RoadView, Pipeline.SightingCamera -> List(Shapes.Shape)
 	ground_shapes = |road, camera|
-		GroundSighting.patches_in_view(road, { vantage: camera.vantage() }).keep_oks(
+		GroundSighting.patches_in_view(road, camera.vantage).keep_oks(
 			|patch| GroundPatch.patch_shape(patch, camera.focal_length),
 		)
 }

@@ -4,7 +4,7 @@
 ## back, and follows the next segment's outer edge for as far again. Unlike its
 ## sibling sightings, it doesn't go through `Pipeline`: a rail is a path in the
 ## rider's frame, not an object standing at a spot. The rail is worked out each
-## frame from the rider's camera and the route.
+## frame from where the rider's camera stands and the route.
 import Along
 import Distance
 import RoadAhead
@@ -17,17 +17,13 @@ RailSighting :: [].{
 
 	## The quads of the rails at every bend in view: the bends along the road
 	## ahead, then the bend from the segment behind.
-	rail_quads_in_view : RoadAhead.RoadView,
-	{
-		vantage : Geom.Vantage,
-		..,
-	} -> List(GuardRail.RailQuad)
-	rail_quads_in_view = |road, camera|
+	rail_quads_in_view : RoadAhead.RoadView, Geom.Vantage -> List(GuardRail.RailQuad)
+	rail_quads_in_view = |road, vantage|
 		RoadAhead.segments_in_view(road).join_map(
 			|in_view|
 				match BendInView.bend_after(road, in_view) {
 					Ok(bend_in_view) => {
-						path_points = rail_points(road, { vantage: camera.vantage, bend_in_view })
+						path_points = rail_points(road, { vantage, bend_in_view })
 						GuardRail.quads_along(path_points)
 					}
 					Err(RoadEndsInView) => []

@@ -7,6 +7,7 @@
 ## and it ends once the pig is too far round. Gawking is what the speed does,
 ## and it lasts to the end of the segment; it is Gawking's, which reads the
 ## noticing from here.
+import Along
 import Angle
 import Billboard
 import Distance
@@ -35,11 +36,13 @@ Gaze :: [].{
 	## where the motorcycle is, so it lasts past the pig to the end of the
 	## segment.
 	noticed_pig : Motorcycle, Segment -> [Noticed(Geom.Placed(Billboard)), NothingNoticed]
-	noticed_pig = |motorcycle, segment|
+	noticed_pig = |motorcycle, segment| {
+		rider_along = motorcycle.route_place.road_point.along
 		match eye_catching_pig(segment) {
-			CatchesEye(pig) if is_past_notice(motorcycle, pig) => Noticed(pig)
+			CatchesEye(pig) if is_past_notice(rider_along, pig) => Noticed(pig)
 			CatchesEye(_) | NoPigCatchesEye => NothingNoticed
 		}
+	}
 
 	## Where the rider wants to look: at the pig in sight, this far from the
 	## way the motorcycle points, or at the road.
@@ -57,7 +60,8 @@ Gaze :: [].{
 	desired_gaze = |motorcycle, segment|
 		match Gaze.noticed_pig(motorcycle, segment) {
 			Noticed(pig) => {
-				turn = turn_to(motorcycle, pig)
+				rider_point = motorcycle.route_place.road_point
+				turn = turn_to({ rider_point, yaw: motorcycle.yaw }, pig)
 				if turn.abs() < look_release_angle {
 					OnPig(turn)
 				} else {
@@ -68,19 +72,19 @@ Gaze :: [].{
 		}
 }
 
-## Whether the motorcycle has reached the place where `pig` is noticed.
-is_past_notice : Motorcycle, Geom.Placed(Billboard) -> Bool
-is_past_notice = |motorcycle, pig|
-	motorcycle.route_place.road_point.along >= pig.road_point.along.minus(Gaze.notice_distance)
+## Whether a motorcycle at `rider_along` has reached the place where `pig` is
+## noticed.
+is_past_notice : Along, Geom.Placed(Billboard) -> Bool
+is_past_notice = |rider_along, pig|
+	rider_along >= pig.road_point.along.minus(Gaze.notice_distance)
 
-## How far `pig` stands from the way the motorcycle points.
-turn_to : Motorcycle, Geom.Placed(Billboard) -> Angle.Turn
-turn_to = |motorcycle, pig| {
-	rider_point = motorcycle.route_place.road_point
+## How far `pig` stands from the way a motorcycle at `rider_point` points, its
+## `yaw`.
+turn_to : { rider_point : Geom.RoadPoint, yaw : Angle.Turn }, Geom.Placed(Billboard) -> Angle.Turn
+turn_to = |{ rider_point, yaw }, pig|
 	Angle.Turn.radians(
 		F64.atan2({
 			x: pig.road_point.along.distance_from(rider_point.along).to_metres(),
 			y: pig.road_point.across.distance_from(rider_point.across).to_metres(),
 		}),
-	).minus(motorcycle.yaw)
-}
+	).minus(yaw)

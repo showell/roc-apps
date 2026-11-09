@@ -324,7 +324,7 @@ patch_shapes = |patches| patches.keep_oks(|patch| GroundPatch.patch_shape(patch,
 ## first segment. Its first patch is the road along that segment.
 patches_seen_from : Geom.Vantage -> List(GroundPatch)
 patches_seen_from = |rider_vantage|
-	GroundSighting.patches_in_view(Fixtures.road, { vantage: rider_vantage })
+	GroundSighting.patches_in_view(Fixtures.road, rider_vantage)
 
 first_road : GroundPatch
 first_road = patches_seen_from(Fixtures.origin).first() ?? crash "RoadExpects: the first segment lays road"
@@ -379,7 +379,7 @@ expect Fixtures.coordinates_of(last_shape).len() == 2 * (2 * 19 + 4)
 # The paving of the first bend takes in 40 m of road on either side of it, so
 # its corners reach back to 460 m along the first segment.
 expect
-	match GroundSighting.patches_in_view(Fixtures.road, Fixtures.origin_camera).get(1) {
+	match GroundSighting.patches_in_view(Fixtures.road, Fixtures.origin).get(1) {
 		Ok(paving) => {
 			paving_corners = paving.corners()
 			paving_corners.len() == 8
