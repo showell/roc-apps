@@ -29,7 +29,7 @@ The second is the rider's view. The screen shows only what the rider sees. A tre
 
 The third is motion. The rider rides on, the truck drives ahead, the cat crosses the road and the sun goes down. At every step, something has to move each of them on, and the moves have to fit together. The cat times its crossing to the rider coming toward it, and a cat in the road stops the rider speeding up.
 
-The fourth is the screen. Every frame is drawn whole, from nothing, and nearer things have to cover farther ones.
+The fourth is the screen. Every frame has to reach the screen whole, built from nothing, with nearer things covering farther ones.
 
 The fifth is you. The ride is interactive. You'll mostly sit back and watch, but you can also pause the ride, step it forward and rewind it.
 
