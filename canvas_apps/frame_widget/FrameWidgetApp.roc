@@ -119,10 +119,10 @@ view_on = |on_layers| {
 
 ## The frame's backdrop, layer by layer in `FrameView.backdrop_shapes`'s order:
 ## the sky, what the sun adds when it's in view, and the grass.
-backdrop_pieces : FrameView -> List(Piece)
-backdrop_pieces = |view| [
-	{ layer: Sky, shapes: [Sky.sky_shape(view.backdrop.sky_colors)] },
-	{ layer: Sun, shapes: Sun.sun_shapes(view.backdrop.sun_sighting) },
+backdrop_pieces : FrameView.Backdrop -> List(Piece)
+backdrop_pieces = |backdrop| [
+	{ layer: Sky, shapes: [Sky.sky_shape(backdrop.sky_colors)] },
+	{ layer: Sun, shapes: Sun.sun_shapes(backdrop.sun_sighting) },
 	{ layer: Grass, shapes: [Grass.grass_shape] },
 ]
 
@@ -131,7 +131,7 @@ paused_frame_view : FrameView
 paused_frame_view = FrameView.frame_view_at(paused_tour.route(), paused_tour.instant())
 
 backdrop_parts : List(Piece)
-backdrop_parts = backdrop_pieces(paused_frame_view)
+backdrop_parts = backdrop_pieces(paused_frame_view.backdrop)
 
 ## The part of the ride's shapes in `paused_frame_view` on `on_layers`, in
 ## the game's paint order.
