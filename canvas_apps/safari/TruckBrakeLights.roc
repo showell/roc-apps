@@ -3,7 +3,7 @@
 ## are worked out each frame from the truck's progress, which says whether its
 ## last step slowed it.
 import Distance
-import Picture
+import Sprite
 import Pixels
 import Polygon
 import RiderView
@@ -32,11 +32,11 @@ TruckBrakeLights := [On, Off].{
 
 	## How the brake lights look: the two lamps and their glows while they are
 	## on, and nothing while they are off.
-	picture : TruckBrakeLights, TruckPlacement.TruckSetting -> Picture
-	picture = |brake_lights, truck|
+	sprite : TruckBrakeLights, TruckPlacement.TruckSetting -> Sprite
+	sprite = |brake_lights, truck|
 		match brake_lights {
-			On => Picture.from_shapes(lamp_pair_shapes(truck))
-			Off => Picture.from_shapes([])
+			On => Sprite.from_shapes(lamp_pair_shapes(truck))
+			Off => Sprite.from_shapes([])
 		}
 }
 

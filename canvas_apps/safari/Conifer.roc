@@ -2,7 +2,7 @@
 ## tip where a bird perches, and its color. TreeShapes draws it, and Trees places
 ## it beside the road.
 import Distance
-import Picture
+import Sprite
 import TreeShapes
 import lib.RgbColor
 
@@ -21,9 +21,9 @@ Conifer := [Green, SmallGreen, Red, Gold].{
 
 	## How a conifer looks. How much detail it gets depends on how many trees
 	## are nearer than it, which it can't know alone, so that is its context.
-	scenery_picture : Conifer, Picture.Setting(TreeShapes.Detail) -> Picture
-	scenery_picture = |conifer, setting|
-		TreeShapes.tree_picture(
+	scenery_sprite : Conifer, Sprite.Setting(TreeShapes.Detail) -> Sprite
+	scenery_sprite = |conifer, setting|
+		TreeShapes.tree_sprite(
 			setting,
 			{ height: conifer.scenery_height(), foliage_color: foliage_color(conifer) },
 		)

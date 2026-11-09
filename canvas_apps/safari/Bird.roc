@@ -6,7 +6,7 @@
 ## clock.
 import BirdFlight
 import BirdStills
-import Picture
+import Sprite
 import StillShapes
 import Still
 import Distance
@@ -17,9 +17,9 @@ Bird := { pose : BirdFlight.BirdPose }.{
 	scenery_height = |_bird| bird_height
 
 	## A bird on screen, its feet where it is.
-	scenery_picture : Bird, Picture.Setting({}) -> Picture
-	scenery_picture = |bird, setting|
-		Picture.from_shapes(
+	scenery_sprite : Bird, Sprite.Setting({}) -> Sprite
+	scenery_sprite = |bird, setting|
+		Sprite.from_shapes(
 			# As drawn, never mirrored: BirdFlight's `is_far_side` says why.
 			StillShapes.standing_still_shapes(
 				setting,

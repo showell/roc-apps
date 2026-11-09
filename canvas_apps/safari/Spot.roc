@@ -1,13 +1,13 @@
 ## A Spot is where an object stands in one frame: its height off the ground,
 ## where its foot is in the rider's view, and which way the road runs there.
 ## `Pipeline.sighting_of` works one out for each object in view from its place
-## on the road, and every picture is drawn from it.
+## on the road, and every sprite is drawn from it.
 ##
 ## Every object stands on the road through its spot. A card, which faces the
 ## camera, stands at its foot (`base`). A solid thing stands each of its points
 ## with `standing_point`, turned the way it faces against the road.
 ##
-## It has a module of its own because a kind's picture names it, and Segment
+## It has a module of its own because a kind's sprite names it, and Segment
 ## and Trees, which hold the kinds, sit under RoadAhead and Pipeline.
 import Angle
 import Distance

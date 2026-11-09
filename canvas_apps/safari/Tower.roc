@@ -12,7 +12,7 @@ import Spot
 import Distance
 import Fraction
 import RiderView
-import Picture
+import Sprite
 import Polygon
 import lib.Brush
 import lib.RgbColor
@@ -33,10 +33,10 @@ Tower :: { yaw : Angle.Turn, beacon : Beacon }.{
 
 	## How a tower looks. Its footprint stands at its spot, so it needs no
 	## context.
-	scenery_picture : Tower, Picture.Setting({}) -> Picture
-	scenery_picture = |tower, { spot, focal_length, .. }| {
+	scenery_sprite : Tower, Sprite.Setting({}) -> Sprite
+	scenery_sprite = |tower, { spot, focal_length, .. }| {
 		footprint = tower_footprint(tower, spot)
-		Picture.from_shapes(tower_shapes(tower, { footprint, spot, focal_length }))
+		Sprite.from_shapes(tower_shapes(tower, { footprint, spot, focal_length }))
 	}
 
 	## How tall a tower stands, from its foot to its apex.

@@ -62,7 +62,7 @@ Scene := {
 					[
 						Rendered.of(
 							truck.spot.foot().forward(),
-							Truck.truck_picture(truck, focal_length),
+							Truck.truck_sprite(truck, focal_length),
 						),
 					]
 				Err(NoTruck) | Err(BehindCamera) => []
@@ -89,7 +89,7 @@ Scene := {
 	## The scene's things as shapes, far to near: a list for each thing.
 	scene_shape_lists : Scene -> List(List(Shapes.Shape))
 	scene_shape_lists = |scene|
-		Scene.scene_renderings(scene).map(|rendering| rendering.picture().to_shapes())
+		Scene.scene_renderings(scene).map(|rendering| rendering.sprite().to_shapes())
 
 	## The scene's renderings far to near. The order of the fields they come
 	## from breaks ties, so the trees go before the birds: a perched bird stands

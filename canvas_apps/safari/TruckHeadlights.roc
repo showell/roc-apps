@@ -5,7 +5,7 @@
 import Camera
 import Distance
 import Fraction
-import Picture
+import Sprite
 import Polygon
 import RiderView
 import Screen
@@ -31,11 +31,11 @@ TruckHeadlights := [On, Off].{
 
 	## How the headlights look: their two beams while they are on, and nothing
 	## while they are off.
-	picture : TruckHeadlights, TruckPlacement.TruckSetting -> Picture
-	picture = |headlights, truck|
+	sprite : TruckHeadlights, TruckPlacement.TruckSetting -> Sprite
+	sprite = |headlights, truck|
 		match headlights {
-			On => Picture.from_shapes(beam_shapes(truck))
-			Off => Picture.from_shapes([])
+			On => Sprite.from_shapes(beam_shapes(truck))
+			Off => Sprite.from_shapes([])
 		}
 }
 

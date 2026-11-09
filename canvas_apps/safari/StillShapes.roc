@@ -1,10 +1,10 @@
-## StillShapes draws a still, a picture made of polygons, standing on screen.
+## StillShapes draws a still, a sprite made of polygons, standing on screen.
 ## A still is drawn in its own frame, which Still.roc describes. StillShapes
 ## scales it to its height on screen, stands it on its feet, and mirrors it when
 ## asked.
 import Camera
 import Distance
-import Picture
+import Sprite
 import Pixels
 import Polygon
 import Still
@@ -46,7 +46,7 @@ StillShapes :: [].{
 	## Where a still `height` tall stands on screen at the setting's spot: its
 	## foot raised as high as the spot says, and its height on screen from
 	## there to its top.
-	standing_anchor : Picture.Setting({}),
+	standing_anchor : Sprite.Setting({}),
 	{
 		height : Distance,
 		flip : StillShapes.Flip,
@@ -58,7 +58,7 @@ StillShapes :: [].{
 
 	## A still `height` tall, drawn as `flip` says, standing on its foot at the
 	## setting's spot.
-	standing_still_shapes : Picture.Setting({}),
+	standing_still_shapes : Sprite.Setting({}),
 	{
 		height : Distance,
 		still : Still,

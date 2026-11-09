@@ -494,7 +494,7 @@ posed_spot_at = |{ forward, right, lift }| {
 ## land at (480, 306.25), and it stands 8.5 px tall.
 sample_cat_shapes : Cat, Distance -> List(Shapes.Shape)
 sample_cat_shapes = |cat, lift|
-	cat.scenery_picture({
+	cat.scenery_sprite({
 		spot: posed_spot_at({
 			forward: Distance.metres(100.0),
 			right: Distance.zero,
@@ -543,7 +543,7 @@ expect
 bird_shapes_at : Bird, { right : Distance, lift : Distance } -> List(Shapes.Shape)
 bird_shapes_at = |bird, { right, lift }| {
 	spot = posed_spot_at({ forward: Distance.metres(110.0), right, lift })
-	bird.scenery_picture({ spot, focal_length: Pixels.of(500.0), context: {} }).to_shapes()
+	bird.scenery_sprite({ spot, focal_length: Pixels.of(500.0), context: {} }).to_shapes()
 }
 
 ## How many pixels tall a perched bird `forward` ahead, on the ground, is

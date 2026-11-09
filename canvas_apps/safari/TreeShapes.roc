@@ -9,7 +9,7 @@ import ConvexHull
 import Distance
 import Fraction
 import RiderView
-import Picture
+import Sprite
 import Polygon
 import Pixels
 import Spot
@@ -24,16 +24,16 @@ TreeShapes :: [].{
 	## The tree on the screen: its trunk, then its tiers top to bottom. The
 	## nearest trees have a shaded trunk. The crown is cones, shaded by how near
 	## they are, within cone_reach, and triangles beyond it.
-	tree_picture : Picture.Setting(TreeShapes.Detail),
+	tree_sprite : Sprite.Setting(TreeShapes.Detail),
 	{
 		height : Distance,
 		foliage_color : RgbColor,
-	} -> Picture
-	tree_picture = |{ spot, focal_length, context }, { height, foliage_color }| {
+	} -> Sprite
+	tree_sprite = |{ spot, focal_length, context }, { height, foliage_color }| {
 		inputs = tier_inputs_of(spot, { height, focal_length, foliage_color })
 		crown = TreeShapes.crown_of(inputs.base.forward())
 		trunk = trunk_shape(inputs.outline, trunk_finish_of(context.nearer_tree_count))
-		Picture.from_shapes([trunk].concat(tiers.map(|tier| tier_shape(tier, { inputs, crown }))))
+		Sprite.from_shapes([trunk].concat(tiers.map(|tier| tier_shape(tier, { inputs, crown }))))
 	}
 
 	## How a crown is drawn: cones, shaded by how near they are, or flat triangles.

@@ -2,7 +2,7 @@
 ## camera: an emoji's still, at a height, facing left or right.
 import Distance
 import EmojiStills
-import Picture
+import Sprite
 import StillShapes
 
 Billboard :: {
@@ -47,14 +47,14 @@ Billboard :: {
 
 	## How a billboard looks. An emoji faces left, so a billboard facing right
 	## is its still mirrored.
-	scenery_picture : Billboard, Picture.Setting({}) -> Picture
-	scenery_picture = |Billboard.(billboard), setting| {
+	scenery_sprite : Billboard, Sprite.Setting({}) -> Sprite
+	scenery_sprite = |Billboard.(billboard), setting| {
 		flip =
 			match billboard.facing {
 				FacesLeft => AsDrawn
 				FacesRight => Mirrored
 			}
-		Picture.from_shapes(
+		Sprite.from_shapes(
 			StillShapes.standing_still_shapes(
 				setting,
 				{ height: billboard.height, still: billboard.emoji.still(), flip },

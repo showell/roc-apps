@@ -173,7 +173,7 @@ kind_size = |part, { road, camera, facts }| {
 
 ## A last step of the frame alone, `reps` times over what comes before it,
 ## which is worked out once: the depth sort of the scene's renderings, the
-## sorted pictures joined into one list of shapes, or the whole frame's shapes
+## sorted sprites joined into one list of shapes, or the whole frame's shapes
 ## put together from a frame view (the backdrop joined to the ride's shapes,
 ## in the leaning space).
 prepared_size : Str,
@@ -198,7 +198,7 @@ prepared_size = |part, { route, instant, reps }| {
 				if part == "sort_only" {
 					Scene.scene_renderings(scene).len()
 				} else if part == "flatten_only" {
-					sorted.join_map(|rendering| rendering.picture().to_shapes()).len()
+					sorted.join_map(|rendering| rendering.sprite().to_shapes()).len()
 				} else {
 					FrameView.painted_shapes(painted).len()
 				}
@@ -215,7 +215,7 @@ truck_renderings : RoadAhead.RoadView,
 truck_renderings = |road, { cam, facts }| {
 	match TruckSighting.truck_in_view(road, { vantage: cam.vantage, truck: facts.truck }) {
 		Ok(truck) =>
-			[Rendered.of(truck.spot.foot().forward(), Truck.truck_picture(truck, cam.focal_length))]
+			[Rendered.of(truck.spot.foot().forward(), Truck.truck_sprite(truck, cam.focal_length))]
 		Err(NoTruck) | Err(BehindCamera) => []
 	}
 }
@@ -233,7 +233,7 @@ scene_rendering_count = |scene|
 	].sum()
 
 shape_count : List(Rendered) -> U64
-shape_count = |renderings| renderings.map(|r| r.picture().to_shapes().len()).sum()
+shape_count = |renderings| renderings.map(|r| r.sprite().to_shapes().len()).sum()
 
 ## The polygon points in `shapes`.
 point_count : List(Shapes.Shape) -> U64
@@ -269,7 +269,7 @@ counts_line = |route, instant| {
 	coned = sighted.count_if(|tree| tree.spot.foot().forward() < Distance.metres(200.0))
 	var $text = ""
 	for (name, renderings) in kinds {
-		shapes = renderings.join_map(|r| r.picture().to_shapes())
+		shapes = renderings.join_map(|r| r.sprite().to_shapes())
 		things = renderings.len().to_str()
 		points = point_count(shapes).to_str()
 		$text = $text.concat("${step} ${name}: ${things} things, ${shapes.len().to_str()} shapes, ${points} points\n")

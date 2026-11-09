@@ -27,7 +27,7 @@
 --
 -- The diagrams are the ```dot fences, and their names are read by line too. A
 -- node ID that is quoted counts when the whole of it is a name, so
--- `"TreeShapes.tree_picture"` and `"tier_shape"` count and `"width of the
+-- `"TreeShapes.tree_sprite"` and `"tier_shape"` count and `"width of the
 -- view"` doesn't. A bare node ID counts unless it is one of dot's own words,
 -- such as `digraph` or `node`. Graph and subgraph names, and every `key=value`
 -- attribute, are skipped. An ID given a `label` is only a handle, since the

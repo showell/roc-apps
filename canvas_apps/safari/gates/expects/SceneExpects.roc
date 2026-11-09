@@ -9,7 +9,7 @@ import game.Conifer
 import game.Distance
 import game.EncounterSighting
 import game.FrameView
-import game.Picture
+import game.Sprite
 import game.Pipeline
 import game.Pixels
 import game.Bird
@@ -57,7 +57,7 @@ expect {
 		cat_scene.trucks,
 		cat_scene.rails,
 	]
-	field_shapes = fields.join().join_map(|rendering| rendering.picture().to_shapes())
+	field_shapes = fields.join().join_map(|rendering| rendering.sprite().to_shapes())
 	fields.all(|field| !field.is_empty())
 		and Scene.scene_shape_lists(cat_scene).join().len() == field_shapes.len()
 }
@@ -99,8 +99,8 @@ Post := { height : Distance }.{
 	scenery_height : Post -> Distance
 	scenery_height = |post| post.height
 
-	scenery_picture : Post, Picture.Setting({}) -> Picture
-	scenery_picture = |_post, _setting| Picture.from_shapes([])
+	scenery_sprite : Post, Sprite.Setting({}) -> Sprite
+	scenery_sprite = |_post, _setting| Sprite.from_shapes([])
 }
 
 ## The road ahead of a rider on a straight route of one segment.

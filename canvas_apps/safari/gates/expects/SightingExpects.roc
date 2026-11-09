@@ -311,7 +311,7 @@ shapes_of_tower_100_ahead = {
 			},
 		)
 			?? crash "SightingExpects: a tower 100 m ahead is past the near plane"
-	sighted.kind.scenery_picture({
+	sighted.kind.scenery_sprite({
 		spot: sighted.spot,
 		focal_length: Fixtures.origin_camera.focal_length,
 		context: {},

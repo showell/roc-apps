@@ -430,9 +430,9 @@ A lowercase name in parentheses, like `(kind)`, is a type variable; this chapter
 | `Geom.Placed(kind)` | An object on the road: its `road_point` on its segment, its `lift` off the ground, and its `kind` |
 | `Spot` | Where an object stands in one frame: its `lift` off the ground, its `foot` in the rider's view, and the `road_heading`, which way the road runs there |
 | `Pipeline.Sighted(kind)` | An object in view: its `spot` and its `kind` |
-| `Picture.Setting(context)` | What a kind draws from: its `spot`, the lens's `focal_length`, and a `context` for whatever else the kind needs |
-| `Picture` | The object's shapes, in order, from the Shapes chapter |
-| `Rendered` | The object's `picture`, and its `depth`: how far ahead of the camera it stands |
+| `Sprite.Setting(context)` | What a kind draws from: its `spot`, the lens's `focal_length`, and a `context` for whatever else the kind needs |
+| `Sprite` | The object's shapes, in order, from the Shapes chapter |
+| `Rendered` | The object's `sprite`, and its `depth`: how far ahead of the camera it stands |
 
 One object through one frame
 ```dot
@@ -443,7 +443,7 @@ digraph forms {
   rendered [label="Rendered\ndepth, picture"];
   sorted [label="List(Rendered)\nfar to near"];
   placed -> sighted [label="  Pipeline.scenery_sighting_of\n  asks the kind's scenery_height"];
-  sighted -> rendered [label="  Pipeline.rendering_of\n  asks the kind's scenery_picture"];
+  sighted -> rendered [label="  Pipeline.rendering_of\n  asks the kind's scenery_sprite"];
   rendered -> sorted [label="  Rendered.depth_sorted_renderings"];
 }
 ```
@@ -452,7 +452,7 @@ A box is a type, and an arrow is a function that makes the next one. The kind go
 
 ### A type with a type variable
 
-We've used types that take an argument since the Shapes chapter. A `Picture` is a `List(Shapes.Shape)` underneath, and a `List` can hold any one type, named in its parentheses. `Geom.Placed` is a type of our own that works the same way:
+We've used types that take an argument since the Shapes chapter. A `Sprite` is a `List(Shapes.Shape)` underneath, and a `List` can hold any one type, named in its parentheses. `Geom.Placed` is a type of our own that works the same way:
 
 {{code Geom.Placed}}
 
@@ -462,7 +462,7 @@ A `Geom.Placed`'s `road_point` is made of two such types. `Along` is a place alo
 
 A type's head declares its variables. A function's annotation needs no head: a lowercase name in it is a type variable, and it means one type wherever it appears in that annotation. `Pipeline.sighting_of` takes a `Geom.Placed(kind)` and answers with a `Try` that holds a `Pipeline.Sighted(kind)` when the object stands in front of the camera. A `Try` is one of two tags: `Ok`, holding the answer, or `Err`, holding the reason there is none, here `BehindCamera`. Both are in the type, so every caller handles the object behind the camera. The placed object and its sighting name the same `kind`, so a placed conifer can only come back as a sighted conifer, never as a sighted cow.
 
-`Picture.Setting(context)` has a variable named `context`. A conifer's context is a `TreeShapes.Detail`. That's the record `{ nearer_tree_count : U64 }`: how many trees are nearer than this one. A billboard needs nothing more, so its context is `{}`, the empty record.
+`Sprite.Setting(context)` has a variable named `context`. A conifer's context is a `TreeShapes.Detail`. That's the record `{ nearer_tree_count : U64 }`: how many trees are nearer than this one. A billboard needs nothing more, so its context is `{}`, the empty record.
 
 ### Asking a kind by name
 
@@ -470,17 +470,17 @@ A type's head declares its variables. A function's annotation needs no head: a l
 
 {{code Pipeline.rendering_of}}
 
-It hands the sighting's whole `spot`, the lens and the context to the kind's own `scenery_picture`. It answers with a `Rendered`: the picture it gets back, and a depth. Its depth is how far forward the spot's foot is: `spot.foot().forward()`.
+It hands the sighting's whole `spot`, the lens and the context to the kind's own `scenery_sprite`. It answers with a `Rendered`: the picture it gets back, and a depth. Its depth is how far forward the spot's foot is: `spot.foot().forward()`.
 
-The second line of the annotation, indented under the first, is a `where` clause. Its square brackets hold a list of requirements on the annotation's type variables, here one. `kind.scenery_picture : kind, Picture.Setting(context) -> Picture` says that the type `kind` has a method named `scenery_picture`, of the type after the colon. A kind meets it by having a method of that name and that type. `Conifer` has one, and so does `Billboard`. Neither says it meets a requirement, and no interface names the two. The name and the type are the whole contract, and the compiler checks them wherever `rendering_of` is called.
+The second line of the annotation, indented under the first, is a `where` clause. Its square brackets hold a list of requirements on the annotation's type variables, here one. `kind.scenery_sprite : kind, Sprite.Setting(context) -> Sprite` says that the type `kind` has a method named `scenery_sprite`, of the type after the colon. A kind meets it by having a method of that name and that type. `Conifer` has one, and so does `Billboard`. Neither says it meets a requirement, and no interface names the two. The name and the type are the whole contract, and the compiler checks them wherever `rendering_of` is called.
 
-`context` appears twice in the annotation, in the record and in the `where`, so the context a caller passes has to be the one its kind's `scenery_picture` wants. Pass `{}` as a conifer's context, and Safari Ride doesn't compile:
+`context` appears twice in the annotation, in the record and in the `where`, so the context a caller passes has to be the one its kind's `scenery_sprite` wants. Pass `{}` as a conifer's context, and Safari Ride doesn't compile:
 
 {{fails conifer_without_context}}
 
 `Pipeline.scenery_sighting_of` asks for a kind's height the same way, with `where [kind.scenery_height : kind -> Distance]`. It finds the sighting, then asks the kind for its `scenery_height`, to see whether the object stands tall enough on the screen to draw, and answers `TooSmall` when it stands shorter. The towers and the truck are drawn however small they look. A tower calls `Pipeline.sighting_above_horizon_of`, which asks for its height only to see whether the horizon hides it. The truck calls `Pipeline.sighting_of`, the plainest of the three, which needs no `where` at all.
 
-Because a name and a type are the whole contract, the name has to say what it's for. A kind could well have a method called `height`, of type `kind -> Distance`, that measures something else, and a `where` clause that asked for `height` would take it without a word. The first word of `scenery_height` and `scenery_picture` says that the method is there for the objects along the road, so a kind meets the contract only on purpose.
+Because a name and a type are the whole contract, the name has to say what it's for. A kind could well have a method called `height`, of type `kind -> Distance`, that measures something else, and a `where` clause that asked for `height` would take it without a word. The first word of `scenery_height` and `scenery_sprite` says that the method is there for the objects along the road, so a kind meets the contract only on purpose.
 
 Trees, towers and critters go through all three forms. The truck is sighted by `Pipeline.sighting_of`, then has a sighting type of its own, `Truck.SightedTruck`, and makes its `Rendered` by hand, as the rails do. The grass, the sky, the sun, the mountains and the road take simpler paths. The next three chapters are about trees.
 
@@ -509,14 +509,14 @@ A tree passes through these types on its way to the screen:
 | `Camera.Upright` | Where an upright thing lands on the screen: its `foot`, and its `height_on_screen` in `Pixels` |
 | `TreeShapes.Tier` | One layer of the crown, as fractions of the crown |
 
-A conifer draws from a `Picture.Setting(TreeShapes.Detail)`, the setting from the Nature types chapter, with the count of nearer trees as its context.
+A conifer draws from a `Sprite.Setting(TreeShapes.Detail)`, the setting from the Nature types chapter, with the count of nearer trees as its context.
 
 Each step of the job is a signature:
 
 | Job | Function | Its type |
 |---|---|---|
-{{types row Conifer.scenery_picture Draw a conifer}}
-{{types row TreeShapes.tree_picture Draw a tree of any height and color}}
+{{types row Conifer.scenery_sprite Draw a conifer}}
+{{types row TreeShapes.tree_sprite Draw a tree of any height and color}}
 {{types row TreeShapes.tree_outline Find it on the screen}}
 {{types row TreeShapes.tier_triangle Make one tier}}
 
@@ -524,18 +524,18 @@ One tree, from the top
 ```dot
 digraph tree {
   node [shape=box, fontname="Helvetica"];
-  "Conifer.scenery_picture" [style=bold];
-  "Conifer.scenery_picture" -> "TreeShapes.tree_picture" [label="  hands the height and color to"];
-  "TreeShapes.tree_picture" -> "tier_inputs_of" [label="  calls"];
+  "Conifer.scenery_sprite" [style=bold];
+  "Conifer.scenery_sprite" -> "TreeShapes.tree_sprite" [label="  hands the height and color to"];
+  "TreeShapes.tree_sprite" -> "tier_inputs_of" [label="  calls"];
   "tier_inputs_of" -> "TreeShapes.tree_outline" [label="  finds the outline with"];
   "TreeShapes.tree_outline" -> "Camera.upright_on_screen" [label="  projects the foot and top with"];
-  "TreeShapes.tree_picture" -> "trunk_shape" [label="  calls"];
-  "TreeShapes.tree_picture" -> "tier_shape" [label="  calls"];
+  "TreeShapes.tree_sprite" -> "trunk_shape" [label="  calls"];
+  "TreeShapes.tree_sprite" -> "tier_shape" [label="  calls"];
   "tier_shape" -> "tier_triangle" [label="  calls"];
 }
 ```
 
-A box is a function, and an arrow is a call. `Conifer.scenery_picture` is the only box that knows the kind. It derives a height and a color from the kind, and everything below it works from those two. `Conifer` imports `TreeShapes`, and the import runs one way, so `TreeShapes` would draw a fifth kind of tree unchanged.
+A box is a function, and an arrow is a call. `Conifer.scenery_sprite` is the only box that knows the kind. It derives a height and a color from the kind, and everything below it works from those two. `Conifer` imports `TreeShapes`, and the import runs one way, so `TreeShapes` would draw a fifth kind of tree unchanged.
 
 ### The functions
 
@@ -547,11 +547,11 @@ Here's all of `Conifer`:
 
 `scenery_height` derives a tree's height from its kind, so the kind is the one home for it. In `foliage_color`, `Green | SmallGreen =>` is one branch for two tags, because both greens share one color.
 
-`scenery_picture` takes the kind and a setting, and hands the setting whole to `TreeShapes.tree_picture`, with the tree's height and color in the record that function wants.
+`scenery_sprite` takes the kind and a setting, and hands the setting whole to `TreeShapes.tree_sprite`, with the tree's height and color in the record that function wants.
 
-`tree_picture` finds the tree on the screen, then makes a trunk and eight tiers. Its bars take the setting apart into `spot`, `focal_length` and `context`, as `Polygon.triangle` did with its corners.
+`tree_sprite` finds the tree on the screen, then makes a trunk and eight tiers. Its bars take the setting apart into `spot`, `focal_length` and `context`, as `Polygon.triangle` did with its corners.
 
-{{code TreeShapes.tree_picture}}
+{{code TreeShapes.tree_sprite}}
 
 `tier_inputs_of` starts from `spot.base()`, the middle of the tree's foot as a point in front of the camera, and works out what every tier needs, among them the tree's `outline` on the screen. `trunk_shape` makes the trunk, a rectangle. `tier_shape` makes each tier. `tiers.map(...)` calls it for every tier and gives back the list of answers. `[trunk].concat(...)` puts the trunk first, so the tiers paint over it. For a far tree, `tier_shape` answers with `tier_triangle`, and the next chapter shows the rest of it.
 
@@ -620,8 +620,8 @@ A near tree's tiers
 ```dot
 digraph cone {
   node [shape=box, fontname="Helvetica"];
-  "TreeShapes.tree_picture" -> "crown_of" [label="  decides the crown with"];
-  "TreeShapes.tree_picture" -> "tier_shape" [label="  makes each tier with"];
+  "TreeShapes.tree_sprite" -> "crown_of" [label="  decides the crown with"];
+  "TreeShapes.tree_sprite" -> "tier_shape" [label="  makes each tier with"];
   "tier_shape" -> "tier_triangle" [label="  far off, calls"];
   "tier_shape" -> "cone_ring_points" [label="  up close, rings the base with"];
   "tier_shape" -> "tier_cone" [label="  up close, calls"];
@@ -637,7 +637,7 @@ digraph cone {
 }
 ```
 
-`tree_picture` asks `crown_of` once, and hands the answer to `tier_shape` for every tier. The arrow from `trim_hull` to itself is a function calling itself, and we'll see why.
+`tree_sprite` asks `crown_of` once, and hands the answer to `tier_shape` for every tier. The arrow from `trim_hull` to itself is a function calling itself, and we'll see why.
 
 ### The functions
 
@@ -648,10 +648,10 @@ digraph cone {
 Two `TreeShapes` thresholds decide how much of a tree gets drawn: `cone_reach`, 200 metres, and `round_trunk_limit`, 4 nearer trees. Shade fades from full at the camera to none at 80 metres.
 
 ```widget tree
-Three gold trees, each drawn by `Conifer.scenery_picture`. Under each are its distance and what `crown_of` said.
+Three gold trees, each drawn by `Conifer.scenery_sprite`. Under each are its distance and what `crown_of` said.
 ```
 
-`tier_shape` acts on that decision. It takes the `crown`, beside a `TierInputs`, the record that `tree_picture` built as `inputs`. That record holds what every tier of one tree needs: the tree's base and height, the lens, its outline on the screen, and its color.
+`tier_shape` acts on that decision. It takes the `crown`, beside a `TierInputs`, the record that `tree_sprite` built as `inputs`. That record holds what every tier of one tree needs: the tree's base and height, the lens, its outline on the screen, and its color.
 
 {{code TreeShapes.tier_shape}}
 
@@ -685,7 +685,7 @@ So much for one tree. The road has hundreds.
 
 ## Roadside trees
 
-Here's the other tree problem. Safari Ride places 392 trees along its road, and only some of them are in view at any moment. For each frame, it has to find those, and say where each one stands from the camera. Once a tree is found, `Conifer.scenery_picture` from the chapter A simple tree draws it. The kind still matters here in two places: a gold tree is placed farther from the road, and a tree's height decides whether it's tall enough on the screen to draw.
+Here's the other tree problem. Safari Ride places 392 trees along its road, and only some of them are in view at any moment. For each frame, it has to find those, and say where each one stands from the camera. Once a tree is found, `Conifer.scenery_sprite` from the chapter A simple tree draws it. The kind still matters here in two places: a gold tree is placed farther from the road, and a tree's height decides whether it's tall enough on the screen to draw.
 
 ```widget frame trees
 Step 1,529 of the ride, with only the trees on.
@@ -727,15 +727,15 @@ digraph roadside {
     "Pipeline.scenery_sighting_of" -> "Pipeline.sighting_above_horizon_of" [label="  starts with"];
     "Pipeline.sighting_above_horizon_of" -> "Pipeline.sighting_of" [label="  starts with"];
     "TreeSighting.tree_renderings" -> "Pipeline.rendering_of" [label="  renders each tree with"];
-    "Pipeline.rendering_of" -> "Conifer.scenery_picture" [label="  calls through its where clause"];
+    "Pipeline.rendering_of" -> "Conifer.scenery_sprite" [label="  calls through its where clause"];
   }
   "Trees.roadside_trees" -> "TreeSighting.trees_in_view" [style=dotted, label="  the trees, read again"];
   "TreeSighting.trees_in_view" -> "TreeSighting.tree_renderings" [style=dotted, label="  the sightings, handed on by Scene"];
-  "Conifer.scenery_picture" [style=bold];
+  "Conifer.scenery_sprite" [style=bold];
 }
 ```
 
-A box is a function, and a solid arrow is a call. A dotted arrow is a step's answer going on to the next step: the trees that `World` placed, read again for each frame, and then the sightings, which go on to be rendered. `Conifer.scenery_picture`, in bold, is where the chapter A simple tree began.
+A box is a function, and a solid arrow is a call. A dotted arrow is a step's answer going on to the next step: the trees that `World` placed, read again for each frame, and then the sightings, which go on to be rendered. `Conifer.scenery_sprite`, in bold, is where the chapter A simple tree began.
 
 ### Placing
 
@@ -783,7 +783,7 @@ Far trees are cheap. They get eight triangles and a plain trunk. A cone costs a 
 
 `count_if` answers a `U64`, and that's the type the context wants, so the count goes in as it is.
 
-`Pipeline.rendering_of` hands that context to `Conifer.scenery_picture`, and the tree's `Rendered` joins the towers' and the critters' in the frame's one list.
+`Pipeline.rendering_of` hands that context to `Conifer.scenery_sprite`, and the tree's `Rendered` joins the towers' and the critters' in the frame's one list.
 
 So `World` holds every tree's place for the whole ride. Each frame derives its sightings fresh, from those places and the camera, and the next frame derives them all again.
 
@@ -1142,7 +1142,7 @@ Each step of the job is a signature:
 | Job | Function | Its type |
 |---|---|---|
 {{types row TowerSighting.end_tower Place a tower past a segment's end}}
-{{types row Tower.scenery_picture Draw it}}
+{{types row Tower.scenery_sprite Draw it}}
 {{types row EarthCurve.lowest_visible_height Hide its foot}}
 {{types row RiderView.line_ahead Make one rod}}
 
@@ -1154,9 +1154,9 @@ Trees get their spots once, when the world is built. A tower doesn't: each frame
 
 The `beacon` line lights the beacon for this step. The tower halfway along is the same, with `Midway` for its beacon, a square yaw, and one more way to fail, `NoMidTower`. `mid_tower_point` says whether a segment is longer than a kilometre, and where its halfway tower stands. It sits in `TowerSighting` beside the end tower's numbers, so where towers stand has one home, and the world itself knows nothing about towers.
 
-To draw a tower, `scenery_picture` needs nothing beyond its spot and the lens, so its context is empty, as a cat's is:
+To draw a tower, `scenery_sprite` needs nothing beyond its spot and the lens, so its context is empty, as a cat's is:
 
-{{code Tower.scenery_picture}}
+{{code Tower.scenery_sprite}}
 
 The four corners of its base come from the spot. Each corner is an offset in the tower's own frame, and it stands on the road through the spot, turned by the tower's yaw. The truck, later on, stands its corners the same way:
 
@@ -1290,7 +1290,7 @@ So a billboard always holds a still that exists.
 
 An emoji faces left, so a billboard facing right is its still mirrored. A `match` on which way it faces picks the `flip`, and `StillShapes.standing_still_shapes` draws the still standing at the billboard's spot:
 
-{{code Billboard.scenery_picture}}
+{{code Billboard.scenery_sprite}}
 
 ### Placing one at a bend
 
@@ -2039,11 +2039,11 @@ New in this chapter:
 
 Here's the whole job in one function. Given a sighted truck and the camera's lens, it works out the truck's setting, then draws its headlight beams, its body and its brake lights, each painted over the one before:
 
-{{code Truck.truck_picture}}
+{{code Truck.truck_sprite}}
 
 The body is drawn the same way, one level down. It takes the truck's spot, places each face, sorts the faces far to near so that a nearer face covers a farther one, and clips and projects each one:
 
-{{code TruckBody.body_picture}}
+{{code TruckBody.body_sprite}}
 
 The modules that draw the truck
 ```dot
@@ -2051,8 +2051,8 @@ digraph truck_drawing {
   node [shape=box, fontname="Helvetica"];
   Truck [style=bold];
   Scene -> TruckSighting [label="  finds it with truck_in_view"];
-  Scene -> Truck [label="  draws it with truck_picture"];
-  Truck -> TruckBody [label="  draws its body with body_picture"];
+  Scene -> Truck [label="  draws it with truck_sprite"];
+  Truck -> TruckBody [label="  draws its body with body_sprite"];
   TruckBody -> TruckShape [label="  reads the faces of"];
   TruckBody -> TruckPlacement [label="  places each face with placed_face"];
 }
@@ -2122,9 +2122,9 @@ The truck is drawn from its spot and the camera's lens:
 
 {{code TruckPlacement.TruckSetting}}
 
-Every corner is lowered by the same drop, how far the ground has curved away beneath the truck's spot. Across a 12-metre truck the drop changes by a few centimetres at most, far less than a pixel. `TruckPlacement.placed_face` places every corner of a face this way, and that's what `body_picture` sorts and draws.
+Every corner is lowered by the same drop, how far the ground has curved away beneath the truck's spot. Across a 12-metre truck the drop changes by a few centimetres at most, far less than a pixel. `TruckPlacement.placed_face` places every corner of a face this way, and that's what `body_sprite` sorts and draws.
 
-With the lights off, the beams and the brake lights are empty pictures, and `truck_picture` draws just the body. The truck is drawn however small it stands, because the rider is always looking for it.
+With the lights off, the beams and the brake lights are empty pictures, and `truck_sprite` draws just the body. The truck is drawn however small it stands, because the rider is always looking for it.
 
 That's a truck. Next, it moves.
 
@@ -2252,9 +2252,9 @@ They come on at this darkness:
 
 On this ride, that's step 3,555 of 6,746. Once on, they stay on, because from there the sky only darkens.
 
-Their `picture` matches both tags, and an `Off` lamp is an empty picture. When they're on, it paints two beams as wedges that fade from the lamp toward their far end. Their points are placed the way the body's are, with `TruckPlacement.raised_point`:
+Their `sprite` matches both tags, and an `Off` lamp is an empty sprite. When they're on, it paints two beams as wedges that fade from the lamp toward their far end. Their points are placed the way the body's are, with `TruckPlacement.raised_point`:
 
-{{code TruckHeadlights.picture}}
+{{code TruckHeadlights.sprite}}
 
 ### The brake lights
 
@@ -2264,17 +2264,17 @@ The brake lights have a twist: they don't read the light at all. They follow the
 
 Their picture works the same way as the headlights': two lamps on the back of the trailer, each with a glow around it, and nothing when they're off:
 
-{{code TruckBrakeLights.picture}}
+{{code TruckBrakeLights.sprite}}
 
 ### All together
 
-`Picture.composite` makes one picture of several, each painted over the ones before:
+`Sprite.composite` makes one picture of several, each painted over the ones before:
 
-{{code Picture.composite}}
+{{code Sprite.composite}}
 
-`Truck.truck_picture`, from the chapter that drew the truck, puts the beams first, then the body, then the brake lights:
+`Truck.truck_sprite`, from the chapter that drew the truck, puts the beams first, then the body, then the brake lights:
 
-{{code Truck.truck_picture from "Picture.composite([" to "lights.brake_lights.picture(setting),"}}
+{{code Truck.truck_sprite from "Sprite.composite([" to "lights.brake_lights.sprite(setting),"}}
 
 `TruckBody` knows nothing of the lights: they're drawn around it.
 
@@ -2533,7 +2533,7 @@ The bird reaches the screen the way the cat does: `EncounterPoses` places it wit
 
 `Bird` draws it from its still, at its height:
 
-{{code Bird.scenery_picture}}
+{{code Bird.scenery_sprite}}
 
 A perched bird stands exactly where its tree's top is, at the same depth, and the scene paints trees before birds when depths tie, so the bird is drawn over its tree.
 
@@ -2709,7 +2709,7 @@ Safari Ride has 96 modules, not counting `web.roc`, `main.roc` and `game.roc`. T
 | `RiderView` | 15 | 249 | Points measured from the rider, and the near plane |
 | `Screen` | 15 | 113 | The canvas: its size, its middle, its horizon |
 
-`Picture` is imported by 15 as well. It's how one object looks in one frame, so every kind of object that draws one imports it. `Shapes` is imported about as widely as the modules in the table, but the table leaves it out because it's in `lib/`, a folder of modules shared with the repository's other canvas apps. After those the count drops to 13, for `Animation` and `Steps`, and then 11, for `Segment`. Most modules are imported by one, two or three others.
+`Sprite` is imported by 15 as well. It's how one object looks in one frame, so every kind of object that draws one imports it. `Shapes` is imported about as widely as the modules in the table, but the table leaves it out because it's in `lib/`, a folder of modules shared with the repository's other canvas apps. After those the count drops to 13, for `Animation` and `Steps`, and then 11, for `Segment`. Most modules are imported by one, two or three others.
 
 These ten are the core utility modules, and nearly everything else is a small module that takes one of them and adds a single idea. Six of the ten are nothing but numbers with rules, and most of those are under 100 lines. Two modules carry every object to the screen: `RoadAhead` finds a cat, a tower or a truck on the road, and `Camera`, which isn't in the table, puts it on the screen.
 
@@ -3256,7 +3256,7 @@ This book uses these words in one sense only.
 | Near plane | The closest the camera can see, 0.4 metres ahead. Anything that crosses it is cut there. |
 | Object | A thing in the picture with a place of its own: a tree, a tower, a critter or the truck. |
 | Painter | What puts shapes on the canvas. The page's painter is the browser's canvas, and the proof's is written in Roc. |
-| Picture | How one object looks in one frame. A frame holds many pictures, one for each object in view, so "a picture" never means the whole frame. |
+| Sprite | How one object looks in one frame. A frame holds many pictures, one for each object in view, so "a picture" never means the whole frame. |
 | Placed | Put on the road, measured `along` and `across` a segment, and `lift` off the ground. |
 | Polygon | A shape with three or more corners, and nearly every shape in a frame is one. |
 | Rendered | Made into a picture, with its depth attached. |

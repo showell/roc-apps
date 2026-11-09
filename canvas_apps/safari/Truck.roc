@@ -1,8 +1,8 @@
 ## Truck is the truck as the scene draws it this frame: its lights' states, and
-## its picture. Its picture is its headlight beams first, then its body, then
+## its sprite. Its sprite is its headlight beams first, then its body, then
 ## its brake lights, so each paints over the one before. It is worked out each
 ## frame from the clock and the truck's progress.
-import Picture
+import Sprite
 import Pixels
 import Spot
 import TruckBody
@@ -22,13 +22,13 @@ Truck := { headlights : TruckHeadlights, brake_lights : TruckBrakeLights }.{
 	## `focal_length`. The lens is passed beside the sighting, as every
 	## sighting's is: a sighting says where a thing is, and the frame's lens
 	## draws it.
-	truck_picture : Truck.SightedTruck, Pixels -> Picture
-	truck_picture = |{ spot, lights }, focal_length| {
+	truck_sprite : Truck.SightedTruck, Pixels -> Sprite
+	truck_sprite = |{ spot, lights }, focal_length| {
 		setting = { spot, focal_length }
-		Picture.composite([
-			lights.headlights.picture(setting),
-			TruckBody.body_picture(setting),
-			lights.brake_lights.picture(setting),
+		Sprite.composite([
+			lights.headlights.sprite(setting),
+			TruckBody.body_sprite(setting),
+			lights.brake_lights.sprite(setting),
 		])
 	}
 }

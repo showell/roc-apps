@@ -50,7 +50,7 @@ package
 		LeanSearch,
 		Lens,
 		Motorcycle,
-		Picture,
+		Sprite,
 		PigHerd,
 		Pipeline,
 		Pixels,

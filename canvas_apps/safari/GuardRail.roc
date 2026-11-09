@@ -7,7 +7,7 @@ import DepthSort
 import Distance
 import RiderView
 import Polygon
-import Picture
+import Sprite
 import Rendered
 import lib.RgbColor
 import lib.Shapes
@@ -36,7 +36,7 @@ GuardRail :: [].{
 	quad_rendering : GuardRail.RailQuad, Pixels -> Try(Rendered, [BehindCamera])
 	quad_rendering = |quad, focal_length|
 		quad_shape(quad, focal_length).map_ok(
-			|shape| Rendered.of(quad_depth(quad), Picture.from_shapes([shape])),
+			|shape| Rendered.of(quad_depth(quad), Sprite.from_shapes([shape])),
 		)
 }
 
