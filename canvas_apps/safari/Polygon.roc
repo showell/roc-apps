@@ -32,11 +32,39 @@ Polygon :: [].{
 	},
 	RgbColor -> Shapes.Shape
 	triangle = |{ first_corner, second_corner, third_corner }, color|
-		flat_polygon([first_corner, second_corner, third_corner], color)
+		Poly({
+			coordinates: [
+				first_corner.x.to_f64(),
+				first_corner.y.to_f64(),
+				second_corner.x.to_f64(),
+				second_corner.y.to_f64(),
+				third_corner.x.to_f64(),
+				third_corner.y.to_f64(),
+			],
+			fill: Brush.flat(color),
+		})
 
 	## Makes a rectangle of one flat color. Its sides run along the screen's edges.
 	rectangle : { top_left : Screen.Point, bottom_right : Screen.Point }, RgbColor -> Shapes.Shape
-	rectangle = |opposite_corners, color| flat_polygon(rectangle_corners(opposite_corners), color)
+	rectangle = |{ top_left, bottom_right }, color| {
+		left = top_left.x.to_f64()
+		top = top_left.y.to_f64()
+		right = bottom_right.x.to_f64()
+		bottom = bottom_right.y.to_f64()
+		Poly({
+			coordinates: [
+				left,
+				top,
+				right,
+				top,
+				right,
+				bottom,
+				left,
+				bottom,
+			],
+			fill: Brush.flat(color),
+		})
+	}
 
 	## A rectangle's four corners, clockwise on the screen from its top left.
 	rectangle_corners : {

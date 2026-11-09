@@ -374,31 +374,17 @@ Let's draw the triangle first. A triangle is three corners and a color:
 
 {{code Polygon.triangle}}
 
-The bars, `|…|`, hold the function's parameters. The first parameter, `{ first_corner, second_corner, third_corner }`, takes the record apart into three names. A caller names all three corners, in any order, and the compiler checks that all three are there.
+The bars, `|…|`, hold the function's parameters. The first parameter, `{ first_corner, second_corner, third_corner }`, takes the record apart into three names. A caller names all three corners, in any order, and the compiler checks that all three are there. So every triangle has exactly three corners, by construction.
 
-The triangle hands its corners, as a list, to `flat_polygon`. That's the maker for a polygon of any number of corners, in one color:
-
-{{code Polygon.flat_polygon}}
-
-A `Poly` holds two things. Its `fill` is the color, made fully opaque by `Brush.flat`. Its `coordinates` are the corners in the form the painter reads, made here:
-
-{{code Polygon.polygon_coordinates}}
-
-`join_map` turns each corner into two numbers, its `x` and its `y`, and joins them into one list. Fewer than three corners enclose nothing, so a call like that is a bug, and the program stops.
-
-That's a triangle: three corners in, one `Poly` out.
+The triangle is a `Poly` with two fields. `coordinates` lists the corners the way the painter reads them, an `x` and then a `y` for each, six numbers in all. `to_f64` takes the plain number out of each `Pixels`. `fill` is the color, made fully opaque by `Brush.flat`.
 
 ### A rectangle
 
-Next, let's build a rectangle. A rectangle is a polygon of one color too, so it also ends in `flat_polygon`. It takes two opposite corners and a color:
+Next, let's build a rectangle. Its sides run along the screen's edges, so two opposite corners pin it down:
 
 {{code Polygon.rectangle}}
 
-All the rectangle adds is its other two corners. Each one takes its `x` from one given corner and its `y` from the other:
-
-{{code Polygon.rectangle_corners}}
-
-That's a rectangle: two corners in, four corners found, one `Poly` out.
+The rectangle names its four edges, `left`, `top`, `right` and `bottom`. Then it lists its corners clockwise from the top left, each one an edge for its `x` and an edge for its `y`.
 
 ### Pictures
 
