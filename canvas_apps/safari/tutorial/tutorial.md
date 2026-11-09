@@ -35,7 +35,7 @@ The first three pieces give us one frame, held still. The last two set it moving
 
 ## Platforms, packages and modules
 
-A Roc program runs on a platform, it's made of modules, and it can draw on packages. Those three words say where Safari Ride's code lives.
+A Roc program runs on a platform, it's made of modules, and it can use packages. Those three words say where Safari Ride's code lives.
 
 A platform is the layer underneath a Roc program that deals with the outside world. For Safari Ride, that's the screen and the keyboard. The Roc code describes each frame, and the platform paints it. In this page, the platform is WebAssembly and a little JavaScript. On a desktop, the same Roc code runs on a native platform called roc-ray.
 
@@ -47,7 +47,7 @@ Lines that start with `#` are comments. The first line of code names the platfor
 
 A module is one file of Roc, named for what it holds. `SafariApp.roc` holds the `SafariApp` module, and `import SafariApp` brings it in. `import lib.WasmApp` brings in the `WasmApp` module from the `lib` package.
 
-The brackets after `app` name the two things the app hands the platform, and the last two lines define them. `Model` is the type of what the app keeps as it runs, and here it's the one in `SafariApp`. The `program` value is `SafariApp.canvas_app`, the whole ride as one value, fitted to the web platform by `WasmApp.program`.
+The brackets after `app` name the two things the app hands the platform, and the last two lines define them. `Model` is the type of what the app keeps as it runs, and here it's the one in `SafariApp`. `SafariApp.canvas_app` is the whole ride as one value, and the `WasmApp.program` function fits it to the web platform. What it gives back is the app's `program`.
 
 Every piece we build, from a tree to the cat, lives in a module, and the platform paints whatever those modules describe. Next, we read the types those modules hold.
 
@@ -88,7 +88,7 @@ Here's what each piece of it says:
 | `facing : Billboard.Facing,` | `facing` names a field, and `Billboard.Facing` names its type: the `Facing` type in the `Billboard` module. |
 | `.{` | The type's own functions and types start here, where the listing stops. |
 
-A module's main type has the module's own name, as `Billboard` and `Distance` do. Every other type a module offers carries the module's name in front, as `EmojiStills.EmojiStill` and `Billboard.Facing` do.
+A module's main type has the module's own name, as `Billboard` and `Distance` do. Wherever it's used, every other type a module offers carries the module's name in front, as `EmojiStills.EmojiStill` and `Billboard.Facing` do.
 
 A `Billboard.Facing` is one of two tags, `FacesLeft` or `FacesRight`. A tag is a name the compiler knows, and a type made of tags lists every one it allows.
 
@@ -106,7 +106,7 @@ A sprite says how a thing looks. Where it stands is the world's job. The `World`
 
 {{code World.SegmentPlan}}
 
-Lines that start with `##` are doc comments. A plain `:` gives a type a name, so any module can build a plan and read its fields. Here's the plan for the last stretch of road:
+Lines that start with `##` are doc comments. A plain `:` gives the record type a short name: any record with these fields is a `SegmentPlan`, so any module can build a plan and read its fields. Here's the plan for the last stretch of road:
 
 {{code World.last_plan}}
 
@@ -118,7 +118,7 @@ The whole route from above, one stretch of road for each plan. A mark in the mid
 
 ### The rider's view
 
-The screen shows only what the rider sees. So the camera sits where the rider sits, and faces where the rider looks. For every frame, each thing takes three forms on its way to the screen, and each form is a type. First, the thing is placed on the road:
+The screen shows only what the rider sees. So the camera sits where the rider sits, and faces where the rider looks. Each thing takes three forms on its way to the screen, and each form is a type. First, the thing is placed on the road:
 
 {{code Geom.Placed}}
 
@@ -144,7 +144,7 @@ So far the ride stands still. To set it moving, one record holds the whole ride 
 
 {{code RideInstant.RideInstant from "RideInstant := {" to "}.{"}}
 
-The `:=` makes `RideInstant` nominal. A nominal type has a name of its own, as an opaque type does, but any module can read its fields. Those four fields are everything the ride carries from one step to the next: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. We derive everything else that changes from them. The sun goes down because the clock says so.
+The `:=` makes `RideInstant` nominal: a new type, apart from every other record with the same fields, as an opaque type is. Any module can read a nominal type's fields. Those four fields are everything the ride carries from one step to the next: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. We derive everything else that changes from them. The sun goes down because the clock says so.
 
 A step is one function's job, and its type tells the story:
 
@@ -168,7 +168,7 @@ Because the tour keeps every past moment, stepping back is as quick as stepping 
 
 ### Where we start
 
-That's five pieces, and the types for each. On the way, you've read a number type, records, tags, a type variable and a function's type. You've also read three ways to name a type. A `:` gives a type a name, and anyone can build one. A `::` makes an opaque type, and only its module reads its fields. A `:=` makes a nominal type, and any module reads its fields. You'll meet all of them on almost every page from here on.
+That's five pieces, and the types for each. On the way, you've read a number type, records, tags, a type variable and a function's type. You've also read three ways to name a type. A `:` gives a type a short name, and any value of that shape fits it. A `::` makes a new, opaque type, and only its module reads inside it. A `:=` makes a new, nominal type, and any module reads its fields. You'll meet all of them on almost every page from here on.
 
 The rest of the book builds the pieces in order. So we start with things: what a cow, a tree or a tower is in the code, and how a thing becomes a sprite.
 
