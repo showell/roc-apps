@@ -25,7 +25,7 @@
 ## ducks, like the animal, are placed from that bend.
 ## Towers aren't kept at all: each follows from its segment, one past the end of
 ## every segment and one halfway along a segment longer than a kilometre, so a
-## tower is known by its segment and its `Beacon.TowerPlace`.
+## tower is known by its segment and its place on it, a `Beacon.TowerKey`.
 import Angle
 import BirdFlight
 import CatCrossing
