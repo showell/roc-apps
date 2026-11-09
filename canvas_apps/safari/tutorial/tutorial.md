@@ -14,7 +14,7 @@ A rider on a motorcycle follows a long road through open country. Trees line the
 
 Nobody steers and nothing keeps score, so Safari Ride isn't a game. It has a game's hard parts, though: terrain, a camera, physics, and things that react to the rider.
 
-Safari Ride stays simple because of one design. Each step of the ride carries four things: the rider, the truck, the clock and the plan for the encounter ahead. Everything else is derived from those four. The sky's color, the sun's height, the trees in view and the cat's pose are all calculated fresh, every frame. The same four things always give the same picture. The types hold the design together: each one describes only the values that make sense.
+Safari Ride stays simple because of one design, and it starts with those four small things. They are the rider, the truck, the clock and the plan for the encounter ahead. Each step of the ride carries those four to the next, and everything else is derived from them. The sky's color, the sun's height, the trees in view and the cat's pose are all calculated fresh, every frame. The same four things always give the same picture. The types hold the design together: each one describes only the values that make sense.
 
 Most of the code is plain Roc: records, tags and functions. That's a feature.
 
@@ -85,44 +85,50 @@ Next, one piece of that loop in Roc: the clock.
 
 ## One whole module
 
-A module in Safari Ride is one file of Roc, and most of them are small. This chapter reads one from top to bottom.
+The ride's clock is a single number, and it still gets a module of its own. In this chapter we read that module, `Clock`, from top to bottom. It's small, and most modules in Safari Ride follow its pattern.
 
 New in this chapter:
 
 - Roc: opaque types, operators as method calls, static dispatch, `expect`
 - Modules: `Clock`, `Steps`
 
-A clock is the ride's own time. It counts the steps the ride has taken, from 0 at the start, and thirty frames a second keep it roughly in step with real time. Here's a line that tries to add 7 to one, and doesn't compile:
+Everyone knows what a clock does. The news is what this one refuses to do. Here is a line that adds 7 to a clock:
 
 {{fails clock_plus_seven}}
 
-In Roc, `a + b` is a call to `a.plus(b)`. `Clock.plus` takes a `Steps`, a count of steps, so a bare 7 doesn't fit, and the error says so. Here's the whole module that refuses that line:
+Roc won't compile it. In Roc, `a + b` calls `a.plus(b)`. `Clock.plus` takes a `Steps`, a count of steps, and a bare 7 isn't one. The error says exactly that.
+
+Here is the whole module:
 
 {{module Clock}}
 
 ### Get the types right
 
-`Clock :: U32.{ ... }` says what a clock is: underneath, a `U32`. The `::` makes the type opaque. Only this module can see the number inside, so no other module can add 7 to a clock, or pass a count of trees where a clock belongs. `Clock.(n)` makes a clock from a number, and in a parameter list it does the reverse and takes the number out.
+`Clock :: U32.{ ... }` says what a clock is: a `U32` underneath. The `::` makes the type opaque, so only `Clock`'s own code sees the number inside. Every other module moves a clock through the functions in its block. `Clock.(n)` builds a clock from a number. In a parameter list it works the other way, and takes the number out.
 
-A clock and a `Steps` are a pair you'll meet again. A clock is a moment, and a `Steps` is a length of time. A clock plus some steps is a later clock, a clock minus some steps is an earlier one, and `steps_since` gives the steps between two clocks. There's no way to add two clocks, because that sum would mean nothing.
+A clock comes with a partner, `Steps`. A clock is a moment, and a `Steps` is a length of time. A clock plus some steps is a later clock. A clock minus some steps is an earlier one. `steps_since` gives the steps between two clocks. Nothing adds two clocks together, because two moments don't add up to anything.
 
 ### The functions
 
-The block after the type holds its methods. `is_eq : _` asks Roc to derive equality, so `==` works on clocks. `is_lt` is what `<` calls, the same way `plus` is what `+` calls.
-
-Safari Ride moves the clock on once a step, with `next`:
+The block after the type holds the clock's methods. `next` moves a clock on by one step, and Safari Ride calls it once a step:
 
 {{code RideInstant.next from "clock = instant.clock.next()" to "clock = instant.clock.next()"}}
 
-`instant.clock.next()` is static dispatch: Roc finds `next` from the type of `instant.clock`, so the call needs no `Clock.` in front.
+`instant.clock.next()` uses static dispatch. Roc finds `next` from the type of `instant.clock`, so the call needs no `Clock.` in front.
 
-Below the block, each `expect` is a test, and `roc test` runs them all. A clock is an ordinary value, so a test of one fits on a line. The test of `Clock.at_step(9).plus(Steps.of(3))` starts at step 9 directly, without running the ride for nine steps first.
+Operators work the same way. `+` calls `plus`, and `<` calls `is_lt`. `is_eq : _` asks Roc to derive equality, so `==` works on clocks too.
 
-Most of Safari Ride's small modules look like this one: a comment saying what the thing is, a few imports, one type named after the module, and its tests. That's one module of about ninety. Next, how they fit together.
+Two functions crash. `minus` crashes when it would go back past step 0, and `steps_since` crashes when it would count backward. Either one means the caller has a bug, so the clock stops the program and says why.
+
+Below the block, each `expect` is a test, and `roc test` runs them all. A clock is a plain value, so a test builds one directly. `Clock.at_step(9).plus(Steps.of(3))` starts at step 9 without riding nine steps first.
+
+That's the pattern: a comment saying what the thing is, a few imports, one type named after the module, its functions, and its tests. Next, we see how the modules fit together.
 
 ## The modules
 
-About ninety modules make up Safari Ride. Here's the whole system, simplified. Each arrow points from a module to a module it imports, and its label says what the import is for. A dashed box stands for a family of modules. Roc doesn't allow import cycles, so the arrows never loop back.
+Safari Ride splits cleanly in two: the ride, and the view of the ride. In this chapter we map the modules on both sides, look at the thin layer of JavaScript that runs them, and open up one sighting.
+
+Here is the whole system, simplified. Each arrow points from a module to a module it imports, and its label says what for. A dashed box stands for a family of modules. Roc forbids import cycles, so no path of arrows loops back.
 
 The whole system, simplified
 ```dot
@@ -168,13 +174,15 @@ New in this chapter:
 - Roc: imports that can't form a cycle
 - Modules: `SafariApp`, `Tour`, `FrameView`, `Scene`, `EncounterSighting`
 
-### Two halves
+### The ride and the view
 
-The system has two halves, the diagram's two labelled groups. The ride is what happens. `RideInstant` holds the four things each step carries, and steps them, with `Rider` and `TruckJourney` moving the rider and the truck. `World` builds the route the ride runs on, out of segments, and the segments hold the critters: the cat and the bird.
+The ride is what happens. `RideInstant` holds the four things a step carries, and moves them on: `Rider` moves the rider, and `TruckJourney` moves the truck. `World` lays out the route as a list of segments, and each segment holds its critters, such as the cat and the bird.
 
-The view is what the rider sees. `Scene` gathers the sightings, which work out what's visible, and the drawing modules make the shapes. Every arrow between the halves points one way, from the view to the ride: the view reads the ride, and the ride never imports the view. The one dotted arrow is the drawing code taking the pose names, and the cat's height, from the critters' modules.
+The view is what the rider sees. `FrameView` reads one instant of the ride and builds its frame. It paints the backdrop of sky, land and sun, and asks `Scene` for everything else. `Scene` gathers the sightings, and each kind of thing has a sighting module that finds it and a drawing module that draws it.
 
-`FrameView` joins the halves: it reads one instant of the ride and makes the frame. `Tour` steps the ride forward and back. The browser only ever sees `SafariApp`, which hands it a list of shapes for each frame.
+Every arrow between the two halves points the same way: the view reads the ride. The dotted arrow is the one place where drawing code reads a critter's module. `Cat` takes the cat's pose type and its height from `CatCrossing`, because the crossing decides the pose and the drawing only paints it.
+
+`SafariApp` sits on top of both halves. It steps the ride with `Tour`, which can move the ride forward or back, and it draws each frame with `FrameView`.
 
 ### The part that isn't Roc
 
@@ -199,11 +207,11 @@ digraph tick {
 }
 ```
 
-Safari Ride runs in a browser, and that takes a thin layer of JavaScript. The Roc compiles to WebAssembly, wasm for short, which a browser runs. For each frame, the JS keeps time, gathers the keys, and calls into Roc. Roc answers with a list of shapes, and the JS paints them on a canvas. The JS knows nothing of cats, and the Roc knows nothing of canvases. The whole game is on the Roc side of that line, and the same app also runs natively. `canvas_apps/ARCHITECTURE.md` has the details, and the platform chapter comes back to it.
+Safari Ride runs in a browser. The Roc compiles to WebAssembly, or wasm, and a thin layer of JavaScript runs it. Each frame, the JavaScript keeps time, gathers the keys and calls into Roc. Roc answers with a list of shapes, and the JavaScript paints them on a canvas. Everything about the ride lives on the Roc side of that line. The JavaScript paints shapes and never hears of a cat. "The platform" comes back to this line.
 
 ### What's a sighting?
 
-A sighting answers one question about one thing, for one frame: can the rider see it, and how should it look? At step 1,529 of the ride, a cat is frozen in the road. This is what `EncounterSighting` answers about it on that frame:
+"The problem" said we need machinery to work out what the rider sees. A sighting is that machinery's answer for one thing, on one frame. Here is a real one. At step 1,529 of the ride, a cat is frozen in the road, and `EncounterSighting` sights it:
 
 | Field | Value |
 |---|---|
@@ -212,17 +220,17 @@ A sighting answers one question about one thing, for one frame: can the rider se
 | `pose` | `Frozen` |
 | `lift` | 0 |
 
-`right` and `forward` are measured from the camera, in metres. That's all a sighting is: where the rider sees something, and how it should look.
-
-Most things in the view come in pairs: a sighting module that finds the thing, and a drawing module that draws it. `EncounterSighting` pairs with `Cat` and `Bird`, `TreeSighting` with `TreeShapes`, `TowerSighting` with `Tower`, and `TruckSighting` with `Truck`.
-
-`EncounterSighting` finds the cats in a few moves. It goes through the segments of road ahead, where a segment is one stretch of road between two bends. It asks `EncounterPoses.cat_poses` where each cat is and how it stands. It works out where that lands in the rider's view, and drops any cat behind the camera or too small to matter. What it hands back is a plain record, with no drawing in it:
+`right` and `forward` place the cat's foot in the rider's view, in metres from the camera. `lift` is its height off the ground. `pose` tells the drawing how the cat stands. In code, a sighting is a small record:
 
 {{code Pipeline.Sighted}}
 
-A sighting decides what's visible, and the drawing code only paints what it's told. `Scene.scene_in_view` gathers every sighting and turns each one into a `Rendered`: a picture, plus its depth. It gets the picture from the object's own drawing module. Then `Scene.scene_renderings` puts the renderings in order, far to near. A sighting is plain data, so it can be checked with numbers, without drawing anything. The Nature types chapter comes back to this.
+The `spot` says where the thing stands in the rider's view, and the `kind` says what it is. It holds no drawing at all. Since a sighting is plain data, a test can check it with numbers. The gate checks this very cat's numbers without drawing a pixel.
 
-Here are a few more things from step 1,529, and what their sightings decide. A `forward` below zero is behind the camera.
+`EncounterSighting` finds the cat in a few moves. It goes through the segments of road ahead. A segment is one stretch of road between two bends. It asks `EncounterPoses.cat_poses` where each cat is and how it stands. Then it works out where each cat lands in the rider's view, and keeps only the ones in front of the camera and tall enough on the screen to draw.
+
+Each kind of thing pairs a sighting module with a drawing module. `EncounterSighting` pairs with `Cat` and `Bird`, `TreeSighting` with `TreeShapes`, `TowerSighting` with `Tower`, `TruckSighting` with `Truck`, and `BillboardSighting` with `Billboard`, which draws the farm animals, the safari animals at the bends and the ducks. `Scene.scene_in_view` gathers every sighting and turns each one into a `Rendered`: a picture from the thing's drawing module, plus its depth. `Scene.scene_renderings` then sorts the renderings far to near, so nearer things paint over farther ones.
+
+A sighting also decides what doesn't get drawn. Here are more things from step 1,529, and what their sightings decide. A `forward` below zero is behind the camera.
 
 | What it is | `right` | `forward` | What its sighting decides |
 |---|---|---|---|
@@ -234,11 +242,9 @@ Here are a few more things from step 1,529, and what their sightings decide. A `
 | The radio tower past the end of the rider's segment | 20.40 | 355.61 | drawn |
 | The truck | 92.19 | 489.15 | drawn |
 
-A small tree can sink below the horizon while a taller one behind it still shows its top. Of the 214 trees on the segments in view, 136 are drawn, 30 are behind the camera, and 48 are below the horizon. None is too small. Those 78 never reach the screen.
+The earth curves, so a small tree far away sinks below the horizon, while a taller one just past it still shows its top. Of the 214 trees on the segments in view, 136 are drawn, 30 are behind the camera, and 48 are below the horizon. None is too small. The other 78 never reach the screen.
 
-Cows, pigs and the other animals by the road are all sighted the same way, by `BillboardSighting`, which decides which of them get drawn. Each threshold for what gets drawn lives in the module that uses it. `Pipeline.smallest_height_on_screen`, 2 pixels, is how short something may look and still be drawn. `TreeShapes.cone_reach` and `TreeShapes.round_trunk_limit` decide how near a tree shows its full detail.
-
-Everything in this chapter happens within one frame, and the next frame makes it all again. Each step carries just the four: the clock, the rider, the truck and the encounter plan. Next, we hold one frame still and look at what's in it, starting with the parts that never change.
+All of this happens within one frame. The next frame sights everything again, from its own step's four carried things. Next, we hold one frame still and look at what's in it, starting with the parts that never change.
 
 ## The world
 
