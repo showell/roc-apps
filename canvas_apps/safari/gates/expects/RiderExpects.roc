@@ -178,7 +178,7 @@ encounter_attention_of : Rider, EncounterPlan.Timing -> F64
 encounter_attention_of = |rider, encounter_timing| {
 	segment = Fixtures.cat_route.segment_at(rider.motorcycle.route_place.segment_index)
 	stage = segment.encounter_stage(encounter_timing)
-	EncounterReaction.encounter_attention(segment, stage).to_f64()
+	EncounterReaction.encounter_attention(segment.encounter, stage).to_f64()
 }
 
 expect focal_length_of(upright).minus(Lens.resting_focal_length) == Pixels.zero

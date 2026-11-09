@@ -2458,7 +2458,7 @@ The segment puts the two together. A route that plans a bird on a segment with n
 
 {{code Segment.from_choices from "BirdHere =>" to "QuietRoad => QuietRoad"}}
 
-`match` is an expression here. Its answer is the value of the `encounter` field.
+`match` is an expression here. Its answer is the value of the `encounter` field, an `Encounter`: a cat crossing, a bird's flight, or a quiet road, in a module of its own.
 
 ### Getting it on screen
 
@@ -2489,7 +2489,7 @@ digraph reaction {
   Throttle -> EncounterReaction [label="  asks for a throttle limit"];
   Rider -> EncounterReaction [label="  asks how hard it's held"];
   RiderCamera -> Rider [label="  reads its attention"];
-  EncounterReaction -> Segment [label="  reads its encounter"];
+  EncounterReaction -> Encounter [label="  asks which it is"];
   EncounterReaction -> CatCrossing [label="  reads its peak and span"];
   EncounterReaction -> ThrottleLimit [label="  answers one"];
   EncounterReaction -> Attention [label="  answers one"];

@@ -151,7 +151,7 @@ status_lines : { gap : Distance, timing : EncounterPlan.Timing } -> List(Str)
 status_lines = |{ gap, timing }| {
 	stage = CatCrossing.crossing_stage(timing)
 	instant = World.first_cat_crossing.cat_instant_at(stage)
-	throttle = EncounterReaction.encounter_throttle(World.first_cat_segment, stage)
+	throttle = EncounterReaction.encounter_throttle(World.first_cat_segment.encounter, stage)
 	[
 		ReadoutText.stage_text(stage),
 		"Pose: ${Cat.pose_name(instant.pose)}",

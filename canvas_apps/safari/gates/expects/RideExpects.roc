@@ -363,8 +363,8 @@ ride_encounters = {
 				}
 				if is_leaving {
 					$cat_exits = $cat_exits + 1
-					$is_faded_at_each_exit = $is_faded_at_each_exit
-						and EncounterReaction.encounter_attention(segment, stage) == Attention.none
+					attention = EncounterReaction.encounter_attention(segment.encounter, stage)
+					$is_faded_at_each_exit = $is_faded_at_each_exit and attention == Attention.none
 				}
 			}
 			QuietRoad => {}

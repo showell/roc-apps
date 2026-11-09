@@ -31,6 +31,7 @@ package
 		Distance,
 		EarthCurve,
 		EmojiStills,
+		Encounter,
 		EncounterPlan,
 		EncounterPoses,
 		EncounterReaction,

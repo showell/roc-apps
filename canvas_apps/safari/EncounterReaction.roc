@@ -8,19 +8,19 @@ import Animation
 import Attention
 import CatCrossing
 import Easing
+import Encounter
 import Fraction
-import Segment
 import Steps
 import ThrottleLimit
 
 EncounterReaction :: [].{
 
-	## What `segment`'s encounter, at `stage`, asks of the throttle of a rider
-	## on that segment: while a cat crosses, the rider eases off, holding the
+	## What `encounter`, at `stage`, asks of the throttle of a rider on its
+	## segment: while a cat crosses, the rider eases off, holding the
 	## acceleration at none, which stops them speeding up and never brakes.
-	encounter_throttle : Segment, Animation.Stage -> ThrottleLimit
-	encounter_throttle = |segment, stage|
-		match segment.encounter {
+	encounter_throttle : Encounter, Animation.Stage -> ThrottleLimit
+	encounter_throttle = |encounter, stage|
+		match encounter {
 			CatCrosses(_) =>
 				match stage {
 					Playing(_) => AtMost(Acceleration.steady)
@@ -29,11 +29,11 @@ EncounterReaction :: [].{
 			BirdHere(_) | QuietRoad => NoLimit
 		}
 
-	## How hard `segment`'s encounter, at `stage`, holds the eye of a rider on
-	## that segment.
-	encounter_attention : Segment, Animation.Stage -> Attention
-	encounter_attention = |segment, stage|
-		match segment.encounter {
+	## How hard `encounter`, at `stage`, holds the eye of a rider on its
+	## segment.
+	encounter_attention : Encounter, Animation.Stage -> Attention
+	encounter_attention = |encounter, stage|
+		match encounter {
 			CatCrosses(_) => cat_attention(stage)
 			BirdHere(_) | QuietRoad => Attention.none
 		}

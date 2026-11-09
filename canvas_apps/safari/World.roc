@@ -290,7 +290,13 @@ World :: [].{
 	## The route's first segment with a cat.
 	first_cat_segment : Segment
 	first_cat_segment =
-		World.route.route_segments().find_first(Segment.has_cat)
+		World.route.route_segments().find_first(
+			|segment|
+				match segment.encounter {
+					CatCrosses(_) => True
+					BirdHere(_) | QuietRoad => False
+				},
+		)
 			?? crash "World.first_cat_segment: the route has a cat"
 
 	## The cat crossing on the route's first segment with a cat.
@@ -329,7 +335,13 @@ last_plan = {
 ## The route's first segment with a bird.
 first_bird_segment : Segment
 first_bird_segment =
-	World.route.route_segments().find_first(Segment.has_bird)
+	World.route.route_segments().find_first(
+		|segment|
+			match segment.encounter {
+				BirdHere(_) => True
+				CatCrosses(_) | QuietRoad => False
+			},
+	)
 		?? crash "World.first_bird_segment: the route has a bird"
 
 ## The segment at `index` of the route, built from its plan once the route's
