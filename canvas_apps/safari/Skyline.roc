@@ -12,7 +12,7 @@ import FarRise
 import lib.Fraction
 import Grass
 import Lens
-import ColorShade
+import lib.ColorShade
 import Polygon
 import Screen
 import lib.RgbColor

@@ -17,7 +17,11 @@
 ## shapes_canvas.js reads, and so is what they mean: gradients mix
 ## unpremultiplied, as the canvas specification says, and an offset outside
 ## [0, 1] is clamped as shapes_canvas.js clamps it.
+##
+## Every kind of fill has a maker here, and any region takes any of them.
 import ArgbColor
+import ColorShade
+import Fraction
 import Pixels
 import Point
 import RgbColor
@@ -130,8 +134,8 @@ Brush :: [].{
 	## The gradient out from `center` to the ellipse whose half-axes are `axis_u`
 	## and `axis_v`, or `TooThin` when the axes are so nearly parallel that the
 	## ellipse has no sound inverse to shade with.
-	ellipse : { stops : Brush.TwoStops, center : Point.Point, axis_u : Point.Point, axis_v : Point.Point } -> Try(Brush.Fill, [TooThin])
-	ellipse = |look|
+	elliptical_gradient : { stops : Brush.TwoStops, center : Point.Point, axis_u : Point.Point, axis_v : Point.Point } -> Try(Brush.Fill, [TooThin])
+	elliptical_gradient = |look|
 		if ellipse_determinant({ axis_u: look.axis_u, axis_v: look.axis_v }).abs() < min_ellipse_determinant {
 			Err(TooThin)
 		} else {
@@ -190,6 +194,74 @@ Brush :: [].{
 			Glow(look)
 		}
 
+	## How a fill is shaded across a width: its colour, darker at the edges and
+	## lighter in the middle by `strength`.
+	WidthShade : { color : RgbColor, strength : Fraction }
+
+	## The span of x a region covers. Either end is negative for a region off
+	## the left of the screen.
+	XSpan : { min_x : Pixels, max_x : Pixels }
+
+	## The fill of a region spanning `span`, shaded across its width, or a flat
+	## one where it has no strength or is too narrow to shade.
+	width_shade : Brush.XSpan, Brush.WidthShade -> Brush.Fill
+	width_shade = |span, { color, strength }|
+		if strength <= Fraction.zero or is_too_narrow_to_shade(span) {
+			Brush.flat(color)
+		} else {
+			Span({
+				edge_color: Brush.opaque_rgba(width_shade_edge(color, strength)),
+				middle_color: Brush.opaque_rgba(width_shade_middle(color, strength)),
+				left_x: span.min_x,
+				right_x: span.max_x,
+			})
+		}
+
+	## The fill of the region with these corners, shaded across its width as
+	## `width_shade` shades it. A region has a corner, so none crashes.
+	corners_shade : List(Point.Point), Brush.WidthShade -> Brush.Fill
+	corners_shade = |corners, width_shading| Brush.width_shade(x_span(corners), width_shading)
+
+	## A gradient that spreads in a circle from `center`, from `center_color`
+	## there to `edge_color` at `radius`.
+	CircularGradient : {
+		center_color : ArgbColor,
+		edge_color : ArgbColor,
+		center : Point.Point,
+		radius : Pixels,
+	}
+
+	## The fill of a circular gradient, or `TooSmall` when its radius is too
+	## small to see, as a distant one can shrink.
+	circular_gradient : Brush.CircularGradient -> Try(Brush.Fill, [TooSmall])
+	circular_gradient = |gradient|
+		if gradient.radius < smallest_gradient_radius {
+			Err(TooSmall)
+		} else {
+			Ok(
+				Radial({
+					inner_color: Brush.translucent(gradient.center_color),
+					outer_color: Brush.translucent(gradient.edge_color),
+					center: gradient.center,
+					inner_radius: Pixels.zero,
+					outer_radius: gradient.radius,
+				}),
+			)
+		}
+
+	## A gradient along the line from `start_point` to `end_point`. A line from
+	## a point to itself has no direction, so it crashes.
+	linear_gradient : { stops : Brush.TwoStops, start_point : Point.Point, end_point : Point.Point } -> Brush.Fill
+	linear_gradient = |{ stops, start_point, end_point }| {
+		dx = end_point.x.minus(start_point.x).to_f64()
+		dy = end_point.y.minus(start_point.y).to_f64()
+		if dx * dx + dy * dy == 0.0 {
+			crash "Brush.linear_gradient: a gradient has a length"
+		} else {
+			Linear({ stops, start_point, end_point })
+		}
+	}
+
 	## The colour `fraction` of the way from one colour to another.
 	mix : { from : Brush.Rgba, to : Brush.Rgba, fraction : F64 } -> Brush.Rgba
 	mix = |{ from: p, to: q, fraction: t }| { r: p.r + (q.r - p.r) * t, g: p.g + (q.g - p.g) * t, b: p.b + (q.b - p.b) * t, a: p.a + (q.a - p.a) * t }
@@ -226,13 +298,66 @@ ellipse_determinant : { axis_u : Point.Point, axis_v : Point.Point } -> F64
 ellipse_determinant = |{ axis_u, axis_v }| axis_u.x.to_f64() * axis_v.y.to_f64() - axis_u.y.to_f64() * axis_v.x.to_f64()
 
 ## The least area, in square units of the shape's coordinates, that an
-## ellipse's two axes may span for `Brush.ellipse` to give the gradient. Below
+## ellipse's two axes may span for `Brush.elliptical_gradient` to give the gradient. Below
 ## it the axes are all but parallel, the ellipse covers far less than a pixel,
 ## and its inverse, which divides by this area, has nothing sound to give.
 ## 0.0001 is a round number chosen well under a pixel, not one tuned to a
 ## picture.
 min_ellipse_determinant : F64
 min_ellipse_determinant = 0.0001
+
+## A radial gradient smaller than this is too small to see.
+smallest_gradient_radius : Pixels
+smallest_gradient_radius = Pixels.of(0.5)
+
+shade_edge_darken : Fraction
+shade_edge_darken = Fraction.of(0.4)
+
+shade_middle_lift : Fraction
+shade_middle_lift = Fraction.of(0.25)
+
+## A width-shaded fill's colour at its edges.
+width_shade_edge : RgbColor, Fraction -> RgbColor
+width_shade_edge = |color, strength|
+	ColorShade.shade_color(color, Darkened(shade_edge_darken.times(strength)))
+
+## A width-shaded fill's colour in its middle.
+width_shade_middle : RgbColor, Fraction -> RgbColor
+width_shade_middle = |color, strength|
+	ColorShade.shade_color(color, Lightened(shade_middle_lift.times(strength)))
+
+narrowest_shaded_width : Pixels
+narrowest_shaded_width = Pixels.of(1.0)
+
+is_too_narrow_to_shade : Brush.XSpan -> Bool
+is_too_narrow_to_shade = |span| span.max_x.minus(span.min_x) < narrowest_shaded_width
+
+## The span of x over a region's corners. It has at least one corner.
+x_span : List(Point.Point) -> Brush.XSpan
+x_span = |corners|
+	match corners.map(|corner| corner.x) {
+		[first, .. as rest] => {
+			min_x: rest.fold(
+				first,
+				|least, x|
+					if x < least {
+						x
+					} else {
+						least
+					},
+			),
+			max_x: rest.fold(
+				first,
+				|most, x|
+					if x > most {
+						x
+					} else {
+						most
+					},
+			),
+		}
+		[] => crash "Brush.x_span: a region has a corner"
+	}
 
 ## The colour the stops give at `t`, for offsets start_offset <= end_offset.
 two_stop : Brush.TwoStops, F64 -> Brush.Rgba
@@ -260,10 +385,10 @@ expect {
 	under = { ..at_least, axis_u: Point.at(0.00009, 0.0) }
 	under_flipped = { ..under, axis_v: Point.at(0.0, -1.0) }
 	parallel = { ..at_least, axis_u: Point.at(2.0, 4.0), axis_v: Point.at(1.0, 2.0) }
-	Brush.ellipse(at_least) == Ok(Ellipse(at_least))
-		and Brush.ellipse(under) == Err(TooThin)
-		and Brush.ellipse(under_flipped) == Err(TooThin)
-		and Brush.ellipse(parallel) == Err(TooThin)
+	Brush.elliptical_gradient(at_least) == Ok(Ellipse(at_least))
+		and Brush.elliptical_gradient(under) == Err(TooThin)
+		and Brush.elliptical_gradient(under_flipped) == Err(TooThin)
+		and Brush.elliptical_gradient(parallel) == Err(TooThin)
 }
 
 expect Brush.translucent(ArgbColor.of(0x80FFE9A8)) == { r: 255.0, g: 233.0, b: 168.0, a: 128.0 / 255.0 }
@@ -298,4 +423,87 @@ expect {
 	point = Linear({ stops, start_point: Point.at(1.0, 1.0), end_point: Point.at(1.0, 1.0) })
 	line = Linear({ stops, start_point: Point.at(1.0, 1.0), end_point: Point.at(1.0, 3.0) })
 	Brush.shade(point, Point.at(1.0, 1.0)) == stops.end_color and Brush.shade(line, Point.at(1.0, 1.0)) == stops.start_color
+}
+
+sample_color : RgbColor
+sample_color = RgbColor.of(0x804020)
+
+expect width_shade_edge(sample_color, Fraction.whole) == RgbColor.of(0x4D2613)
+expect width_shade_middle(sample_color, Fraction.whole) == RgbColor.of(0xA05028)
+expect width_shade_edge(sample_color, Fraction.of(0.5)) == RgbColor.of(0x66331A)
+expect width_shade_middle(sample_color, Fraction.of(0.5)) == RgbColor.of(0x904824)
+expect width_shade_edge(sample_color, Fraction.zero) == sample_color
+expect width_shade_middle(sample_color, Fraction.zero) == sample_color
+
+# A lift past 255 holds at white.
+expect width_shade_middle(RgbColor.of(0xFAFAFA), Fraction.whole) == RgbColor.of(0xFFFFFF)
+
+expect is_too_narrow_to_shade({ min_x: Pixels.of(10.0), max_x: Pixels.of(10.5) })
+expect !is_too_narrow_to_shade({ min_x: Pixels.of(10.0), max_x: Pixels.of(11.0) })
+expect !is_too_narrow_to_shade({ min_x: Pixels.of(10.0), max_x: Pixels.of(30.0) })
+
+expect x_span(wide_corners) == { min_x: Pixels.of(10.0), max_x: Pixels.of(30.0) }
+expect x_span([Point.at(5.0, 99.0)]) == { min_x: Pixels.of(5.0), max_x: Pixels.of(5.0) }
+
+wide_corners : List(Point.Point)
+wide_corners = [
+	Point.at(10.0, 1.0),
+	Point.at(30.0, 2.0),
+	Point.at(20.0, 3.0),
+]
+
+narrow_corners : List(Point.Point)
+narrow_corners = [
+	Point.at(10.0, 1.0),
+	Point.at(10.5, 2.0),
+	Point.at(10.2, 3.0),
+]
+
+expect
+	Brush.corners_shade(wide_corners, { color: sample_color, strength: Fraction.whole })
+		== Span({
+			edge_color: Brush.opaque_rgba(RgbColor.of(0x4D2613)),
+			middle_color: Brush.opaque_rgba(RgbColor.of(0xA05028)),
+			left_x: Pixels.of(10.0),
+			right_x: Pixels.of(30.0),
+		})
+
+# No strength, or too narrow a region, is a flat fill.
+expect Brush.corners_shade(wide_corners, { color: sample_color, strength: Fraction.zero }) == Brush.flat(sample_color)
+expect Brush.corners_shade(narrow_corners, { color: sample_color, strength: Fraction.whole }) == Brush.flat(sample_color)
+
+## A circular gradient about the origin, of radius `radius`.
+circle_of : Pixels -> Try(Brush.Fill, [TooSmall])
+circle_of = |radius|
+	Brush.circular_gradient({
+		center_color: ArgbColor.of(7),
+		edge_color: ArgbColor.of(8),
+		center: Point.at(0.0, 0.0),
+		radius,
+	})
+
+# A gradient is too small just under the limit, and not at it.
+expect circle_of(Pixels.of(0.49)) == Err(TooSmall)
+expect
+	circle_of(Pixels.of(0.5))
+		== Ok(
+			Radial({
+				inner_color: Brush.translucent(ArgbColor.of(7)),
+				outer_color: Brush.translucent(ArgbColor.of(8)),
+				center: Point.at(0.0, 0.0),
+				inner_radius: Pixels.zero,
+				outer_radius: Pixels.of(0.5),
+			}),
+		)
+
+# A line with a length is a linear gradient between its two points.
+expect {
+	stops = {
+		start_color: Brush.translucent(ArgbColor.of(555)),
+		end_color: Brush.translucent(ArgbColor.of(556)),
+		start_offset: 0.25,
+		end_offset: 0.75,
+	}
+	line = { stops, start_point: Point.at(1.0, 2.0), end_point: Point.at(3.0, 4.0) }
+	Brush.linear_gradient(line) == Linear(line)
 }

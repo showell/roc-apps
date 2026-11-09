@@ -237,7 +237,7 @@ trunk_shape = |outline, finish| {
 	left = outline.foot.x.minus(width.divided_by(2.0))
 	fill =
 		match finish {
-			Shaded => Polygon.width_shade(
+			Shaded => Brush.width_shade(
 				{ min_x: left, max_x: left.plus(width) },
 				{ color: trunk_color, strength: Fraction.whole },
 			)

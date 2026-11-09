@@ -23,7 +23,6 @@ package
 		CatStills,
 		Clock,
 		Coast,
-		ColorShade,
 		Conifer,
 		ConvexHull,
 		CowHerd,

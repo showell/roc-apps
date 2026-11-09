@@ -682,7 +682,7 @@ brush_stops = {
 expect {
 	height = Pipeline.smallest_height_on_screen.to_f64()
 	ellipse_spanning = |area|
-		Brush.ellipse({
+		Brush.elliptical_gradient({
 			stops: brush_stops,
 			center: Point.at(0.0, 0.0),
 			axis_u: Point.at(area * height, 0.0),

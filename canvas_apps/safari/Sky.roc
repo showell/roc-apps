@@ -5,7 +5,7 @@ import Clock
 import FarHeight
 import FarRise
 import lib.Fraction
-import ColorShade
+import lib.ColorShade
 import Screen
 import SunPath
 import lib.Brush

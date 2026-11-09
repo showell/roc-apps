@@ -14,6 +14,7 @@ import TruckJourney
 import TruckPlacement
 import TruckShape
 import lib.ArgbColor
+import lib.Brush
 import lib.RgbColor
 import lib.Shapes
 
@@ -144,11 +145,11 @@ brake_glow = |truck, lamp_points| {
 	on_screen = Camera.projected_points(lamp_ahead, truck.focal_length)
 	center = center_of(on_screen)
 	radius = glow_radius(on_screen, center)
-	fill = Polygon.circular_gradient_fill({
+	fill = Brush.circular_gradient({
 		center_color: glow_core,
 		edge_color: glow_edge,
-		gradient_center: center,
-		gradient_radius: radius,
+		center,
+		radius,
 	})?
 	Ok(Disc({ center, radius, fill }))
 }

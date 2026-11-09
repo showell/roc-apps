@@ -109,8 +109,8 @@ headlight_beam = |truck, rightward| {
 		{
 			center_color: beam_core,
 			edge_color: beam_edge,
-			gradient_center: lamp_on_screen,
-			gradient_radius: Screen.farthest_distance(on_screen, lamp_on_screen),
+			center: lamp_on_screen,
+			radius: Screen.farthest_distance(on_screen, lamp_on_screen),
 		},
 	)
 }
