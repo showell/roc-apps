@@ -171,9 +171,6 @@ shapes_at = |model| {
 herd_color : RgbColor
 herd_color = RgbColor.of(0xe9b7b0)
 
-sight_color : RgbColor
-sight_color = RgbColor.of(0xf6d743)
-
 ## Where the canvas's left edge is along the segment, in metres.
 left_edge_metres : F64
 left_edge_metres = 130.0
@@ -269,7 +266,7 @@ sight_line = |rider| {
 			to: { x: x + reach * turn.cos(), y: y + reach * turn.sin() },
 			width: 2.0,
 		},
-		Brush.flat(sight_color),
+		Brush.flat(WidgetPalette.aim_color),
 	)
 }
 

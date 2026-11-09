@@ -191,6 +191,9 @@ canvas_width = picture_width
 canvas_height : F64
 canvas_height = picture_height + panel_height
 
+plain_background_color : RgbColor
+plain_background_color = RgbColor.of(0xE8E6DF)
+
 ## Behind whatever is on, so a frame with no sky has something to be seen against.
 plain_background : Shapes.Shape
 plain_background = Rect({
@@ -198,7 +201,7 @@ plain_background = Rect({
 	y: 0.0,
 	width: picture_width,
 	height: picture_height,
-	fill: Brush.flat(RgbColor.of(0xE8E6DF)),
+	fill: Brush.flat(plain_background_color),
 })
 
 panel : Shapes.Shape

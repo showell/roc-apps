@@ -138,9 +138,6 @@ canvas_point = |{ canvas_x, .. }, { right, forward }| {
 rail_color : RgbColor
 rail_color = RgbColor.of(0xe8805a)
 
-apex_color : RgbColor
-apex_color = RgbColor.of(0xf0d040)
-
 ## A patch of paving, as a polygon on the canvas.
 patch_shape : ShownBend, List(RiderView.RiderPoint) -> Shapes.Shape
 patch_shape = |bend, corners|
@@ -190,7 +187,7 @@ bend_shapes = |bend| {
 		),
 		RailSighting.rail_quads_in_view(road, camera).map(|rail| foot_shape(bend, rail.corners)),
 		[
-			spot(bend, { at: apex_of(bend.turn), color: apex_color }),
+			spot(bend, { at: apex_of(bend.turn), color: WidgetPalette.aim_color }),
 			spot(bend, { at: rider, color: WidgetPalette.highlight_color }),
 		],
 	].join()

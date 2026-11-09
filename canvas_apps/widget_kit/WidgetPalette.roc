@@ -39,4 +39,14 @@ WidgetPalette :: [].{
 	## the arc kept, the stretch read out.
 	highlight_color : RgbColor
 	highlight_color = RgbColor.of(0xf2efe4)
+
+	## Where the rider aims or looks, in a picture from above: a bend's apex, the
+	## line of sight, the line a rehearsal aims for.
+	aim_color : RgbColor
+	aim_color = RgbColor.of(0xf6d743)
+
+	## Behind a picture that has no ground or sky of its own, such as the two
+	## shapes and the stills.
+	picture_background_color : RgbColor
+	picture_background_color = RgbColor.of(0xf7f5f0)
 }
