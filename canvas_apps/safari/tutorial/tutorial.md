@@ -37,10 +37,6 @@ The first three pieces give us one frame, held still. The last two set it moving
 
 The last chapter framed Safari Ride as five pieces of work: things, the world, the rider's view, motion and the person watching. Now we take the programmer's seat. A programmer's first question about a problem is what it looks like as data, and in Roc the answer is a type. Each of the five pieces has its types.
 
-The story is small. A rider rides down a road. Now and then a cat or a bird crosses the rider's path. The beacons blink on the radio towers, and the sun goes down.
-
-The picture is another matter. At step 1,529 of the ride, the frame paints 2,121 shapes over its backdrop of sky, sun and grass. While the ride plays, it takes thirty steps a second. One step later the rider has moved on, and the road, the trees and the cows all shift on the screen. So Safari Ride keeps the small story, and describes the rich picture fresh, every frame.
-
 ```widget frame moving
 Step 1,529 of the ride, held still. The line under it counts the shapes painted over the backdrop.
 ```
