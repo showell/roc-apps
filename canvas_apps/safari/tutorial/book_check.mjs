@@ -2,8 +2,9 @@
 // and exits non-zero if any page is wrong. It holds every page to six things:
 // no console errors, no failed requests, every widget running in its frame,
 // every diagram drawn, every link in the book reaching a real place, and at each
-// of VIEWS, a phone's width among them, nothing running past the window, no code
-// block scrolling, and a phone's diagrams legible.
+// of VIEWS, nothing running past the window and no code block scrolling. The book
+// is made for the desktop (MISSION.md), so the views are desktop, tablet and print
+// widths; a phone is extremely low priority and isn't checked.
 //
 //   node book_check.mjs http://127.0.0.1:9210/tutorial.staging/ <shots folder>
 //
@@ -23,15 +24,11 @@ const WIDTH = 1400;
 const HEIGHT = 900;
 // The ways a reader sees a page besides the desktop window it's driven in.
 const VIEWS = [
-  { name: "phone", width: 390, height: 844, mobile: true },
-  { name: "phone-dark", width: 390, height: 844, mobile: true, scheme: "dark" },
   { name: "tablet", width: 820, height: 1100 },
   { name: "narrow", width: 1000, height: 800 },
   { name: "dark", width: WIDTH, height: HEIGHT, scheme: "dark" },
   { name: "print", width: 794, height: 1123, media: "print" },
 ];
-// A phone's diagram must keep its labels at least this many pixels tall.
-const SMALLEST_TEXT = 10;
 const [base, shots, mode] = process.argv.slice(2);
 if (!base || !shots || (mode && mode !== "looks")) { console.error("usage: book_check.mjs <book url> <shots folder> [looks]"); process.exit(2); }
 for (const folder of [shots, ...VIEWS.map((view) => join(shots, view.name))]) mkdirSync(folder, { recursive: true });
@@ -99,13 +96,11 @@ const READ_PAGE = `(() => ({
   diagrams: [...document.querySelectorAll('figure.diagram')].map((figure) => {
     const shown = [...figure.querySelectorAll('svg.diagram')].filter((svg) => getComputedStyle(svg).display !== 'none');
     const box = shown[0]?.getBoundingClientRect();
-    const sizes = [...(shown[0]?.querySelectorAll('text') ?? [])].map((text) => parseFloat(text.getAttribute('font-size')));
     return {
       drawings: shown.length,
       width: box?.width ?? 0,
       height: box?.height ?? 0,
       shapes: shown[0]?.querySelectorAll('.node').length ?? 0,
-      textPixels: shown[0] ? Math.min(...sizes) * box.width / shown[0].viewBox.baseVal.width : 0,
     };
   }),
   frames: document.querySelectorAll('iframe.canvas-app').length,
@@ -198,6 +193,7 @@ const CLICKED_AT = {
   "../step_widget/": PLAY,
   "../stills_widget/": { x: 0.114, y: 0.883 },
   "../tree_widget/": FIXED_PICTURE,
+  "../truck_widget/": FIXED_PICTURE,
 };
 
 // A widget proves it runs by changing its picture: a click moves a widget, and the
@@ -239,7 +235,6 @@ async function checkView(page, file, view) {
   if (held.pres > 0) fail(file, `${held.pres} code blocks scroll in ${view.name}`);
   for (const diagram of held.diagrams) {
     if (diagram.drawings !== 1) fail(file, `${diagram.drawings} drawings of a diagram show in ${view.name}`);
-    if (view.mobile && diagram.textPixels < SMALLEST_TEXT) fail(file, `a diagram's text is ${diagram.textPixels.toFixed(1)} pixels in ${view.name}`);
   }
   await shoot(page, join(shots, view.name, shotName(file)));
   return held;

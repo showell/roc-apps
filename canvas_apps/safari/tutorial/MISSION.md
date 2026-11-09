@@ -12,6 +12,8 @@ The reader is a working programmer, probably coming from TypeScript or something
 
 The book is honest about the code. It quotes the real code, its numbers come from the real program, and when a sentence is hard to write, we fix the code first.
 
+The book is a book-like experience, made for the desktop: a reader at a wide screen, with the ride and the widgets running beside the text. The phone is extremely low priority.
+
 ## 2. The requirements, axis by axis
 
 Each axis fails in its own way, and catching each failure takes a different kind of read. Truth needs the code open beside the page. Order needs a reader who has seen only the pages before. Voice and tone need an ear. Vocabulary needs the glossary. The code axis needs a smell-hunter. Pictures need eyes. Completeness needs a checklist. Purpose needs the whole book in view.
@@ -35,6 +37,7 @@ Each axis fails in its own way, and catching each failure takes a different kind
 - **B3.** No old bugs, no history and no "used to". Write in the present tense. "By construction" says enough.
 - **B4.** No complicated design reasons inferred for simple choices. Give a constant its plain reason, and a computed one its calculation.
 - **B5.** An argument is earned by what the reader has seen. Don't defend a feature the book hasn't shown.
+- **B6.** A rewritten sentence is a new claim. Check it against the code before it lands, above all when it turns a "doesn't" into a "does". In batch 2, three of the twelve false sentences came from rewrites like that.
 
 ### Axis C. Order: a reader who has read only what's above
 
@@ -91,6 +94,7 @@ Each axis fails in its own way, and catching each failure takes a different kind
 - **H2.** In the One frame half, a widget is a static frame. VCR controls come only once time passes. There are no sliders.
 - **H3.** A widget gets one sentence of explanation, not a listing of its code. It says which call it adds and what it shows.
 - **H4.** A table is welcome wherever it shows data the program really produced.
+- **H5.** Lay pages out for a desktop reader. A diagram is sized for a wide screen. On a phone it may be small or scroll; that's acceptable.
 
 ### Axis I. Completeness: what "done" means for a chapter
 
@@ -102,13 +106,23 @@ Each axis fails in its own way, and catching each failure takes a different kind
 
 ## 3. How the book gets finished
 
+### Who does what
+
+Claude is the author and the coder. Claude writes every sentence and every line of code, and Claude runs the project plan: what comes next, what waits, and who is doing what.
+
+Steve is the editor and the customer. He reads, he marks what's wrong, and he has the final word on everything. He is also a member of the project, so the plan keeps him on one task at a time and never pulls him off it for something that can wait. Every message to him ends with one line: what he is working on now, or the one thing to do next.
+
+On the things that matter most, the two of us are collaborators. Together we refine this mission, and together we decide how to improve the code's internals.
+
+### The loop
+
 The work is a linear pass, one chapter at a time, in book order. Every chapter already has a draft that has had at least one round.
 
 **The loop, for one chapter:**
 
 1. Read the chapter and the code it quotes.
 2. If the prose exposes a smell (G1), fix the code first. A small fix lands now. A bigger one goes in the queue, and the chapter describes the code as it stands.
-3. Rewrite the chapter against axes B through I. The writer writes the prose; nobody else does.
+3. Rewrite the chapter against axes B through I. The writer writes the prose; nobody else does. Check every diagram edge against the code, and give every edge its label (H1).
 4. Gate, commit, push, and rebuild the book.
 5. Every four or five chapters, post a proofread note with the new text, and Steve reads it while the work goes on. His replies come first whenever they arrive.
 
