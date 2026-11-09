@@ -58,10 +58,11 @@ held_to = |a, limit|
 		NoLimit => a
 	}
 
-## Whether the motorcycle is near enough the end of `segment` to brake for its bend.
-is_near_end : Motorcycle, Segment -> Bool
-is_near_end = |motorcycle, segment|
-	Along.at(segment.length).distance_from(motorcycle.route_place.road_point.along) <= bend_approach
+## Whether a motorcycle at `rider_along` is near enough the end of a segment
+## `segment_length` long to brake for its bend.
+is_near_end : Along, Distance -> Bool
+is_near_end = |rider_along, segment_length|
+	Along.at(segment_length).distance_from(rider_along) <= bend_approach
 
 ## How far short of a segment's end the rider starts to brake for its bend.
 bend_approach : Distance
@@ -71,10 +72,10 @@ bend_approach = Distance.metres(60.0)
 ## speed at the point where they commit to the turn. Past that point there is
 ## no road left to brake on, and the limit holds the acceleration at none.
 bend_limit : Motorcycle, Segment -> ThrottleLimit
-bend_limit = |motorcycle, segment|
-	if is_near_end(motorcycle, segment) {
+bend_limit = |motorcycle, segment| {
+	rider_along = motorcycle.route_place.road_point.along
+	if is_near_end(rider_along, segment.length) {
 		segment_exit_speed = exit_speed(segment)
-		rider_along = motorcycle.route_place.road_point.along
 		room_to_commit = segment.commit_along().distance_from(rider_along)
 		AtMost(
 			VehicleLimits.braking_to(
@@ -85,6 +86,7 @@ bend_limit = |motorcycle, segment|
 	} else {
 		NoLimit
 	}
+}
 
 ## Nothing, unless a coast from here leaves the road; then the brake for the
 ## shoulder it reaches.
