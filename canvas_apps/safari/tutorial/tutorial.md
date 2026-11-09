@@ -21,63 +21,17 @@ Roc is fun to read, and this book gives you plenty of it. If you're brand new to
 
 ## The problem
 
-Safari Ride has one job. Thirty times a second, it draws the world as the rider sees it. That job comes with four needs.
+Safari Ride shows a world in motion, seen from the rider's seat, and draws it on the screen frame by frame, thirty frames a second. That one sentence holds four problems.
 
-We need a world. The road and everything along it are laid out once, before the ride starts.
+The first is the world itself. A long road runs through open country, past trees, fields, herds, ponds, radio towers and mountains. Something has to say where every one of them is.
 
-We need motion. At every step the rider rides on, the truck drives on, and the clock ticks.
+The second is motion. The rider rides on, the truck drives ahead, the cat crosses the road and the sun goes down. The moving things act on each other, too: a cat in the road keeps the rider off the throttle.
 
-We need to know what the rider sees. The screen shows the world from the rider's seat, so for every tree, cow, cat and tower we have to work out three things: whether the rider can see it, where it stands in the rider's view, and how big it looks. We need machinery for that. Its answer for one thing is called a sighting.
+The third is the rider's view. The screen shows only what the rider sees. A tree far down the road looks small, a tree close by looks big, and a tree behind the rider doesn't show at all. For everything in the world, the program has to work out whether the rider sees it, where it appears, and how big it looks.
 
-We need to draw. Each frame paints the sky, and then everything the rider sees.
+The fourth is the screen. Every frame is drawn whole, from nothing, and nearer things have to cover farther ones.
 
-The problem, as a loop
-```dot
-digraph problem {
-  node [shape=box, fontname="Helvetica"];
-  world [label="lay out the world\n(once)"];
-  step [label="take a step"];
-  sight [label="sight everything\nnear enough to see"];
-  draw [label="draw a frame"];
-  world -> step [label="  starts the ride"];
-  step -> sight [label="  from where the rider is now"];
-  sight -> draw [label="  hands over the sightings"];
-  draw -> step [label="  thirty times a second"];
-}
-```
-
-A turn of this loop is a step. While the ride plays, the program draws a frame for each step, and it draws every frame whole, from nothing.
-
-### Carried and derived
-
-We carry a small state from one step to the next. It holds four things:
-
-| What we carry | What it holds |
-|---|---|
-| The rider | where the motorcycle is on the road, which way it points, its speed and its lean, and where the rider is looking |
-| The truck | how far along the road it is, its speed, and whether its last step slowed it |
-| The clock | how many steps the ride has taken |
-| The encounter plan | when the cat or the bird ahead starts to move |
-
-During each step, we derive everything else from those four. The color of the sky comes from the clock. The trees in view come from where the rider is. The cat's pose comes from the clock and the encounter plan. A derived value comes straight from this step's state, so it always matches it. Every value in the program is one or the other, and the book keeps asking which: is it carried, or derived?
-
-### The rider and the world change each other
-
-The four things depend on each other. A cat in the road keeps the rider off the throttle. The cat plans its crossing from how far away the rider is, and how fast the rider is coming. The truck aims for a point ahead of the rider. So a step runs in a fixed order. First the rider reads the world: where the encounter ahead has got to. Then the rider moves, and the clock ticks. Then the world answers the rider who has just moved. The truck aims from the rider's new place, and the encounter plan is made from the rider's new place and speed. The rider never reads the truck. "Stepping through the ride: RideInstant" shows this order in its code.
-
-### Three sorts of thing
-
-Everything on the screen is one of three sorts: a solid, a card or far scenery. Each sort is placed its own way, with as little work as still looks right.
-
-| Sort | Examples | How it's placed |
-|---|---|---|
-| Solid | the road, its guard rails, the ponds, the radio towers, the truck, a tree up close | every corner at its own place along, across and above the road |
-| Card | the cat, the bird, the cows and pigs, the ducks, a far tree | by its foot on the road, standing upright and facing the rider |
-| Far scenery | the sun, the mountains, the rolling land | by a direction and a height above the horizon |
-
-A solid costs the most, because every corner is placed on its own. A card is flat, so one point, its foot, places all of it. Far scenery is so far away that it never comes nearer, however far the rider goes, so it needs no distance at all. The rest of the book keeps to these three sorts.
-
-Before any of that machinery, we learn to draw.
+Each of the four is a fair amount of work. Safari Ride solves all of them thirty times a second, and its code stays simple. The next chapter breaks the problem into pieces, and picks the piece we start with.
 
 ## Shapes
 
