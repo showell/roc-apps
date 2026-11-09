@@ -43,7 +43,6 @@ Scatter.stray_of: phases, radians per animal, for Trig
 
 # The edge of lib.Shapes, which takes plain numbers.
 Screen.point: the plain numbers a point is written with, on the way into Pixels
-Polygon.flat_coordinates: the flat list lib.Shapes takes
 Polygon.polygon_coordinates: the flat list lib.Shapes takes
 
 # The gates: test code, and the raster past lib.Shapes.

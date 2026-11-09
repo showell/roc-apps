@@ -317,7 +317,9 @@ Nothing in this chapter moves, and nothing in the next few chapters does either:
 
 Thirty times a second, Safari Ride answers one question: what goes on the canvas? The answer is a list of shapes. Roc builds the list, and a painter on the other side, JavaScript on this page, paints it from the first shape to the last. A painter is a bit like a printer: it does exactly what the list says.
 
-That split is the whole drawing model. Roc decides every corner and every color. The painter only follows orders. This chapter builds a list by hand, with one triangle and one rectangle in it. Everything Safari Ride draws later, from a pine tree to the truck, is the same idea with more corners.
+That split is the whole drawing model. Roc decides every corner and every color, and the painter follows orders.
+
+In this chapter we build the two most essential shapes in Safari Ride, the triangle and the rectangle. A far tree is just these two: eight triangles of foliage on a rectangle of trunk. The code is the plainest Roc there is, made of types, records and functions.
 
 New in this chapter:
 
@@ -366,52 +368,37 @@ Colors are whole numbers in hex, the same six digits a web page writes after its
 
 ### A triangle
 
-`triangle` and `rectangle` are each one call into `Polygon`, whose functions make shapes. A maker returns a value that describes a shape, and the painter draws it later.
+`triangle` and `rectangle` each call a maker in `Polygon`. A maker returns a value that describes a shape, and the painter draws it later.
 
-Let's draw the triangle first. It's three corners and a color:
+Let's draw the triangle first. A triangle is three corners and a color:
 
 {{code Polygon.triangle}}
 
 The bars, `|…|`, hold the function's parameters. The first parameter, `{ first_corner, second_corner, third_corner }`, takes the record apart into three names. A caller names all three corners, in any order, and the compiler checks that all three are there.
 
-The triangle puts its corners in a list and hands them to `flat_polygon`:
+The triangle hands its corners, as a list, to `flat_polygon`. That's the maker for a polygon of any number of corners, in one color:
 
 {{code Polygon.flat_polygon}}
 
-`flat_polygon` makes the `Poly`. `Brush.flat` makes its fill, the color fully opaque. `polygon_coordinates` makes its coordinates, one flat list of numbers, an `x` and then a `y` for each corner. First, it checks that there are at least three corners:
+A `Poly` holds two things. Its `fill` is the color, made fully opaque by `Brush.flat`. Its `coordinates` are the corners in the form the painter reads, made here:
 
 {{code Polygon.polygon_coordinates}}
 
-Two corners enclose nothing, so a call like that is a bug in Safari Ride, and the program stops. `maker` names the function that asked, so the crash points at the bug.
+`join_map` turns each corner into two numbers, its `x` and its `y`, and joins them into one list. Fewer than three corners enclose nothing, so a call like that is a bug, and the program stops.
 
 That's a triangle: three corners in, one `Poly` out.
 
 ### A rectangle
 
-Next, let's build a rectangle. A rectangle is a polygon of one color too, so it ends in the same `flat_polygon`. All it has to do is find its four corners. It takes two opposite corners and a color:
+Next, let's build a rectangle. A rectangle is a polygon of one color too, so it also ends in `flat_polygon`. It takes two opposite corners and a color:
 
 {{code Polygon.rectangle}}
 
-`rectangle_corners` finds the other two, and lists all four clockwise from the top left:
+All the rectangle adds is its other two corners. Each one takes its `x` from one given corner and its `y` from the other:
 
 {{code Polygon.rectangle_corners}}
 
-The two makers take different inputs and finish in the same place:
-
-How the two shapes are made
-```dot
-digraph shapes {
-  node [shape=box, fontname="Helvetica"];
-  "Polygon.triangle" -> "Polygon.flat_polygon" [label="  hands three corners and a color to"];
-  "Polygon.rectangle" -> "Polygon.rectangle_corners" [label="  gets four corners from"];
-  "Polygon.rectangle" -> "Polygon.flat_polygon" [label="  hands four corners and a color to"];
-  "Polygon.flat_polygon" -> "a Poly" [label="  makes"];
-  "Polygon.flat_polygon" [style=bold];
-  "a Poly" [shape=ellipse];
-}
-```
-
-So the triangle and the rectangle reach the painter in the same form: a `Poly` with a `Flat` fill.
+That's a rectangle: two corners in, four corners found, one `Poly` out.
 
 ### Pictures
 

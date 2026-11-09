@@ -1,8 +1,8 @@
 ## Polygon makes Safari's polygons as values, from screen points and colors.
-## Nothing here paints: what a maker gives back is data for the page to paint. A
-## color is an `RgbColor` for a flat or a shaded polygon, and an `ArgbColor` for
-## a gradient. Each maker gives one shape. A polygon of fewer than
-## three corners is a bug in the code that asked for it, so a maker crashes on one.
+## What a maker gives back is data for the page to paint. A color is an
+## `RgbColor` for a flat or a shaded polygon, and an `ArgbColor` for a gradient.
+## A polygon of fewer than three corners is a bug in the code that asked for it,
+## so a maker crashes on one.
 ## A circular gradient can shrink out of sight as it goes away, so that maker
 ## answers a `Try`. It also cuts a polygon in the rider's view at the near plane
 ## and puts it on the screen.
@@ -22,10 +22,7 @@ Polygon :: [].{
 	## Makes a polygon of one flat color.
 	flat_polygon : List(Screen.Point), RgbColor -> Shapes.Shape
 	flat_polygon = |corners, color|
-		Poly({
-			coordinates: polygon_coordinates("Polygon.flat_polygon", corners),
-			fill: Brush.flat(color),
-		})
+		Poly({ coordinates: polygon_coordinates(corners), fill: Brush.flat(color) })
 
 	## Makes a triangle of one flat color.
 	triangle : {
@@ -57,7 +54,7 @@ Polygon :: [].{
 	## its middle, or a solid one where it has no strength or is too narrow.
 	shaded_polygon : List(Screen.Point), { color : RgbColor, strength : Fraction } -> Shapes.Shape
 	shaded_polygon = |corners, shade| {
-		coordinates = polygon_coordinates("Polygon.shaded_polygon", corners)
+		coordinates = polygon_coordinates(corners)
 		Poly({ coordinates, fill: width_shade(corners, shade) })
 	}
 
@@ -77,7 +74,7 @@ Polygon :: [].{
 		} else {
 			Ok(
 				Poly({
-					coordinates: polygon_coordinates("Polygon.circular_gradient_polygon", corners),
+					coordinates: polygon_coordinates(corners),
 					fill: Radial({
 						inner_color: Brush.translucent(gradient.center_color),
 						outer_color: Brush.translucent(gradient.edge_color),
@@ -105,7 +102,7 @@ Polygon :: [].{
 			crash "Polygon.linear_gradient_polygon: a gradient has a length"
 		} else {
 			Poly({
-				coordinates: polygon_coordinates("Polygon.linear_gradient_polygon", corners),
+				coordinates: polygon_coordinates(corners),
 				fill: Linear({
 					stops,
 					start_point: { x: start_point.x.to_f64(), y: start_point.y.to_f64() },
@@ -138,7 +135,7 @@ Polygon :: [].{
 				Ok(gradient) => gradient
 				Err(TooThin) => crash "Polygon.elliptical_gradient_polygon: an ellipse too thin for Brush to invert"
 			}
-		Poly({ coordinates: polygon_coordinates("Polygon.elliptical_gradient_polygon", corners), fill })
+		Poly({ coordinates: polygon_coordinates(corners), fill })
 	}
 
 	## A polygon of one color, in the rider's view.
@@ -157,24 +154,15 @@ Polygon :: [].{
 	}
 }
 
-## The flat list of numbers that lib.Shapes takes for a polygon's corners.
-flat_coordinates : List(Screen.Point) -> List(F64)
-flat_coordinates = |corners| {
-	var $flat = List.with_capacity(2 * corners.len())
-	for corner in corners {
-		$flat = $flat.append(corner.x.to_f64()).append(corner.y.to_f64())
-	}
-	$flat
-}
-
-## The numbers of a polygon's corners. Fewer than three corners enclose nothing,
-## so that crashes, naming the `maker` that was asked.
-polygon_coordinates : Str, List(Screen.Point) -> List(F64)
-polygon_coordinates = |maker, corners|
+## A polygon's corners as the painter reads them: one flat list of numbers, an
+## `x` and then a `y` for each corner. Fewer than three corners enclose nothing,
+## so asking for that is a bug, and it crashes.
+polygon_coordinates : List(Screen.Point) -> List(F64)
+polygon_coordinates = |corners|
 	if corners.len() < 3 {
-		crash "${maker}: a polygon needs three corners"
+		crash "Polygon: a polygon needs at least three corners"
 	} else {
-		flat_coordinates(corners)
+		corners.join_map(|corner| [corner.x.to_f64(), corner.y.to_f64()])
 	}
 
 ## A radial gradient smaller than this is too small to see.
@@ -283,8 +271,7 @@ radial_polygon = |corners, gradient_radius|
 		},
 	)
 
-expect flat_coordinates(three_corners) == triangle_coordinates
-expect flat_coordinates([]) == []
+expect polygon_coordinates(three_corners) == triangle_coordinates
 
 # A triangle keeps its corners in the order given.
 expect
