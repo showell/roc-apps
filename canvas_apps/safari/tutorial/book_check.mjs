@@ -184,6 +184,7 @@ const CLICKED_AT = {
   "../bends_widget/": FIXED_PICTURE,
   "../bird_widget/": PLAY,
   "../cat_widget/": PLAY,
+  "../cow_widget/": FIXED_PICTURE,
   "../frame_widget/": FIXED_PICTURE,
   "../gaze_widget/": PLAY,
   "../rehearsal_widget/": { x: 0.12, y: 0.644 },
