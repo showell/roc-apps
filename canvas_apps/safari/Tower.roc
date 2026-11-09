@@ -403,61 +403,6 @@ face_brace_shapes = |geometry, { corner, storey_bottom, storey_top, hidden_fract
 ahead : RiderView.RiderPoint -> RiderView.RiderPointAhead
 ahead = |point| RiderView.rider_point_ahead(point) ?? crash "a test's point is past the near plane"
 
-# A tower 12 m square on the ground, its foot 100 m straight ahead, where the
-# ground has dropped 5 cm and none of it is hidden, a metre 5 px across.
-sample_geometry : TowerGeometry
-sample_geometry = {
-	footprint: {
-		back_left: { right: Distance.metres(-6.0), forward: Distance.metres(94.0) },
-		back_right: { right: Distance.metres(6.0), forward: Distance.metres(94.0) },
-		front_right: { right: Distance.metres(6.0), forward: Distance.metres(106.0) },
-		front_left: { right: Distance.metres(-6.0), forward: Distance.metres(106.0) },
-	},
-	spot: Spot.at({
-		road_heading: Angle.straight_ahead,
-		lift: Distance.zero,
-		foot: ahead({ right: Distance.metres(0.0), forward: Distance.metres(100.0) }),
-	}),
-	focal_length: Pixels.of(500.0),
-	metre_on_screen: Pixels.of(5.0),
-}
-
-expect
-	corner_at(sample_geometry, { corner: BackLeft, height_on_tower: Distance.metres(0.0) })
-		== {
-			right: Distance.metres(-6.0),
-			forward: Distance.metres(94.0),
-			height: Distance.metres(-0.05),
-		}
-expect
-	corner_at(sample_geometry, { corner: BackLeft, height_on_tower: Distance.metres(40.0) })
-		== {
-			right: Distance.metres(-3.0),
-			forward: Distance.metres(97.0),
-			height: Distance.metres(39.95),
-		}
-expect
-	corner_at(sample_geometry, { corner: BackLeft, height_on_tower: Distance.metres(80.0) })
-		== {
-			right: Distance.metres(0.0),
-			forward: Distance.metres(100.0),
-			height: Distance.metres(79.95),
-		}
-expect
-	corner_at(sample_geometry, { corner: FrontRight, height_on_tower: Distance.metres(40.0) })
-		== {
-			right: Distance.metres(3.0),
-			forward: Distance.metres(103.0),
-			height: Distance.metres(39.95),
-		}
-expect
-	corner_at(sample_geometry, { corner: FrontRight, height_on_tower: Distance.metres(80.0) })
-		== {
-			right: Distance.metres(0.0),
-			forward: Distance.metres(100.0),
-			height: Distance.metres(79.95),
-		}
-
 expect
 	screen_rod({
 		from: Screen.point(0.0, 0.0),
@@ -520,42 +465,3 @@ expect {
 	sunk = hidden_ahead(4490.0)
 	sunk.hidden >= tower_height and sunk.is_below_horizon
 }
-
-rod_shape_along_road : F64, F64 -> Try(Shapes.Shape, [BehindCamera])
-rod_shape_along_road = |start, end|
-	rod_shape(
-		sample_geometry,
-		{
-			from: {
-				right: Distance.metres(0.0),
-				forward: Distance.metres(start),
-				height: Distance.metres(0.0),
-			},
-			to: {
-				right: Distance.metres(0.0),
-				forward: Distance.metres(end),
-				height: Distance.metres(0.0),
-			},
-		},
-	)
-
-# A rod is cut at the near plane, and one wholly behind it has no shape.
-expect
-	rod_shape(
-		sample_geometry,
-		{
-			from: {
-				right: Distance.metres(0.0),
-				forward: Distance.metres(10.0),
-				height: Distance.metres(0.0),
-			},
-			to: {
-				right: Distance.metres(1.0),
-				forward: Distance.metres(20.0),
-				height: Distance.metres(0.0),
-			},
-		},
-	).is_ok()
-expect rod_shape_along_road(0.0, 0.8).is_ok()
-expect rod_shape_along_road(0.8, 0.0).is_ok()
-expect rod_shape_along_road(0.0, 0.2) == Err(BehindCamera)

@@ -9,6 +9,7 @@ import game.Beacon
 import game.BendAnimal
 import game.Billboard
 import game.BillboardSighting
+import game.Camera
 import game.Clock
 import game.Conifer
 import game.CowHerd
@@ -343,6 +344,86 @@ expect
 		(leg_foot_x(2), 500.0 * foot_offset / (100.0 + foot_offset)),
 		(leg_foot_x(3), -500.0 * foot_offset / (100.0 + foot_offset)),
 	].all(|(got, want)| (got - want).abs() <= 0.000001)
+
+## Where on the screen one end of rod `index` of the tower 100 m ahead is: the
+## middle of the quad's side at that end.
+rod_end : U64, [From, To] -> (F64, F64)
+rod_end = |index, end| {
+	coordinates = Fixtures.coordinates_of(
+		shapes_of_tower_100_ahead.get(index) ?? crash "SightingExpects: the tower has this rod",
+	)
+	coordinate = |at| coordinates.get(at) ?? crash "SightingExpects: a rod is a quad"
+	(first, second) = match end {
+		From => (0, 6)
+		To => (2, 4)
+	}
+	(
+		(coordinate(first) + coordinate(second)) / 2.0,
+		(coordinate(first + 1) + coordinate(second + 1)) / 2.0,
+	)
+}
+
+## Where `point` in the rider's view lands on the screen, through the 500 px
+## lens.
+screen_place_of : RiderView.RaisedPoint -> (F64, F64)
+screen_place_of = |point| {
+	ahead = RiderView.raised_point_ahead(point) ?? crash "SightingExpects: the point is past the near plane"
+	projected = Camera.project(ahead, Fixtures.origin_camera.focal_length)
+	(projected.x.to_f64(), projected.y.to_f64())
+}
+
+# The tower tapers from its footprint to its apex, lowered by the ground's 5 cm
+# drop 100 m ahead: halfway up, a corner has come halfway in toward the foot.
+# The legs come first, back left to front left, rising to the apex, then the
+# rings, 20 m up, 40 m and 60 m, each starting from the back left corner.
+expect
+	[
+		(
+			rod_end(0, From),
+			{
+				right: Distance.metres(-6.0),
+				forward: Distance.metres(94.0),
+				height: Distance.metres(-0.05),
+			},
+		),
+		(
+			rod_end(8, From),
+			{
+				right: Distance.metres(-3.0),
+				forward: Distance.metres(97.0),
+				height: Distance.metres(39.95),
+			},
+		),
+		(
+			rod_end(0, To),
+			{
+				right: Distance.metres(0.0),
+				forward: Distance.metres(100.0),
+				height: Distance.metres(79.95),
+			},
+		),
+		(
+			rod_end(10, From),
+			{
+				right: Distance.metres(3.0),
+				forward: Distance.metres(103.0),
+				height: Distance.metres(39.95),
+			},
+		),
+		(
+			rod_end(2, To),
+			{
+				right: Distance.metres(0.0),
+				forward: Distance.metres(100.0),
+				height: Distance.metres(79.95),
+			},
+		),
+	].all(
+		|((got_x, got_y), corner)| {
+			(want_x, want_y) = screen_place_of(corner)
+			(got_x - want_x).abs() <= 0.000001 and (got_y - want_y).abs() <= 0.000001
+		},
+	)
 
 # TowerSighting: a tower stands 160 m past the end of every segment, 20 m right
 # and turned 30 degrees left, and a segment longer than 1000 m has one more halfway
