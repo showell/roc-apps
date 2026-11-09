@@ -82,7 +82,11 @@ A module's main type has the module's own name, as `Billboard` and `Distance` do
 
 A `Billboard.Facing` is one of two tags, `FacesLeft` or `FacesRight`. A tag is a name the compiler knows, and a type made of tags lists every one it allows.
 
-For each frame, a thing gives the shapes that draw it, in the order they're painted. We call those shapes its sprite, and we use the word loosely: in Safari Ride, a sprite is a list of shapes, and nearly every shape is a polygon. A far tree's sprite is one rectangle of trunk under eight triangles.
+For each frame, a thing gives the shapes that draw it, in the order they're painted. We call those shapes its sprite, and we use the word loosely. Here's the `Sprite` type:
+
+{{code Sprite.Sprite from "Sprite ::" to ").{"}}
+
+A `Sprite` is opaque, like `Billboard`, and it holds a `List(Shapes.Shape)`: a list whose items are each a `Shape`, from the `Shapes` module. Nearly every shape is a polygon. A far tree's sprite is one rectangle of trunk under eight triangles.
 
 A frame's picture is the sky and the ground, with the sprites of everything in view on top, as one list of shapes, made fresh every frame. The Roc code describes that list, and the platform paints it. Seeing works this way in the real world, too. The world doesn't paint itself onto your eyes: light brings you information, and your mind makes the picture.
 
@@ -156,33 +160,33 @@ Because the tour keeps every past moment, stepping back is as quick as stepping 
 
 That's five pieces, and the types for each. On the way, you've read records, tags, a type variable and a function's type. You've also read three ways to name a type. A `:` gives a type a name, and anyone can build one. A `::` makes an opaque type, and only its module reads its fields. A `:=` makes a nominal type, and any module reads its fields. You'll meet all of them on almost every page from here on.
 
-The rest of the book builds the pieces in order, one chapter at a time. So we start with things: what a cow, a tree or a tower is in the code, and how each one becomes a sprite.
+The rest of the book builds the pieces in order. So we start with things: what a cow, a tree or a tower is in the code, and how a thing becomes a sprite.
 
 ## Things
 
-The next chapters draw the picture one thing at a time: the trees, the road, the radio towers and the animals. Here's one of them, a cow on the grass, drawn by Safari Ride's own code:
+The things beside the road are its trees, its radio towers and its animals, and each one draws itself. Here's a cow on the grass, drawn by Safari Ride's own code:
 
 ```widget cow
 A cow on the grass beside the road.
 ```
 
-Every kind of thing beside the road draws itself with a function of the same name, `scenery_sprite`. Here's the cow's:
+Each kind of thing has a function called `scenery_sprite` in its own module. Here's the cow's, from the `Billboard` module:
 
 {{signatures Billboard.scenery_sprite}}
 
-It takes a `Billboard` and a setting, and gives back the cow's sprite. A tree's `scenery_sprite` takes a `Conifer` instead, and a tower's takes a `Tower`, but each one takes a setting and gives back a sprite. So every kind answers the same question: in this setting, how do you look?
+It takes a `Billboard` and a setting, and gives back a sprite. The `Conifer` module's `scenery_sprite` takes a tree instead, and the `Tower` module's takes a tower, but every one takes a setting and gives back a sprite. So the code that draws a frame treats every kind alike, as the book shows when it reaches the rider's view.
 
 A setting is a record with a type variable of its own:
 
 {{code Sprite.Setting}}
 
-The `context` field's type is the variable, so each kind chooses its own. The cow's is `{}`, the empty record, as its `Sprite.Setting({})` says. A tree's is a `TreeShapes.Detail`, because how much detail a tree gets depends on how many trees stand nearer than it.
+The `focal_length` sets how much the camera's lens magnifies, in `Pixels`, the screen's unit of length. The `context` field's type is the variable, so each kind chooses its own. The cow's is `{}`, the empty record, as its `Sprite.Setting({})` says, and a tree's is a `TreeShapes.Detail`.
 
-The `spot` comes from the rider's view, the third piece, but things come first. So in these chapters we place each thing ourselves, at a spot we choose. When the book reaches the rider's view, the camera places every thing for real.
+The `spot` comes from a camera: it's what a sighting holds. So to draw one cow alone, the picture above puts the cow on the road, 10 metres ahead and 5 metres left of the middle, and lets a camera at the start of the road sight it. The rider's own camera comes in when the book reaches the rider's view.
 
-What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, drawn as polygons. Nearly every shape in the ride is a polygon: the frame at step 1,529 holds 2,121 shapes, and all but eight of them are polygons. The other eight are discs.
+What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, drawn as polygons. Nearly every shape in the ride is a polygon. At step 1,529, the ride draws 2,121 shapes over the sky and the grass, and all but eight of them are polygons. The other eight are discs.
 
-So we start with shapes, and the simplest shape is a triangle. Then the picture builds up in order: the trees and the grass, then the road, the rails and the radio towers, then the animals that stand still, the cow among them. The sky, the sun and the mountains come last, as the backdrop behind everything.
+So we start with shapes, and the simplest shape is a triangle. Then we build the things from shapes, starting with a tree.
 
 ## Shapes
 
