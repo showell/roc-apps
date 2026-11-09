@@ -439,14 +439,16 @@ expect
 # first, and the truck.
 expect {
 	clock = book_tour.instant().clock
-	match TowerSighting.towers_in_view(book_road, { camera: book_sighting_camera, clock }) {
+	vantage = book_sighting_camera.vantage
+	match TowerSighting.towers_in_view(book_road, { vantage, clock }) {
 		[tower, ..] => is_seen_at(tower.spot, { metres_right: 20.4, metres_forward: 355.61 })
 		[] => False
 	}
 }
 expect {
 	truck = FrameView.ride_facts(book_tour.route(), book_tour.instant()).truck
-	match TruckSighting.truck_in_view(book_road, { camera: book_sighting_camera, truck }) {
+	vantage = book_sighting_camera.vantage
+	match TruckSighting.truck_in_view(book_road, { vantage, truck }) {
 		Ok(sighted) => is_seen_at(sighted.spot, { metres_right: 92.19, metres_forward: 489.15 })
 		Err(_) => False
 	}
