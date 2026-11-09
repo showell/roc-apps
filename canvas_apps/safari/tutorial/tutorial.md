@@ -25,9 +25,9 @@ Safari Ride shows a world in motion, seen from the rider's seat. It draws that w
 
 The first is the world itself. A long road runs through open country, past trees, herds, ponds, radio towers and mountains. Something has to say where every one of them is.
 
-The second is motion. The rider rides on, the truck drives ahead, the cat crosses the road and the sun goes down. At every step, something has to move each of them on, and the moves have to fit together. The cat times its crossing to the rider coming toward it, and a cat in the road stops the rider speeding up.
+The second is the rider's view. The screen shows only what the rider sees. A tree far down the road looks small, a tree close by looks big, and a tree behind the rider doesn't show at all. For everything in the world, the program has to work out whether the rider sees it, where it appears, and how big it looks.
 
-The third is the rider's view. The screen shows only what the rider sees. A tree far down the road looks small, a tree close by looks big, and a tree behind the rider doesn't show at all. For everything in the world, the program has to work out whether the rider sees it, where it appears, and how big it looks.
+The third is motion. The rider rides on, the truck drives ahead, the cat crosses the road and the sun goes down. At every step, something has to move each of them on, and the moves have to fit together. The cat times its crossing to the rider coming toward it, and a cat in the road stops the rider speeding up.
 
 The fourth is the screen. Every frame is drawn whole, from nothing, and nearer things have to cover farther ones.
 
@@ -45,9 +45,9 @@ Safari Ride's design falls out of that difference. It has three pieces.
 
 The stage is the world: the road, the trees, the herds and the towers, and the places where a cat or a bird waits. The stage never changes. The rider moves through it. So we build the world once, before the ride starts, and from then on we only read it. The stage answers the first problem.
 
-The story is the four small things, and we carry it from each step to the next. A step reads the stage and the story, and gives the story's next moment. The story is small enough to keep every moment of it, back to the start of the ride. That's how rewinding works: to go back a step, we take the moment before. The story answers the second problem, and the fifth.
+The story is the four small things, and we carry it from each step to the next. A step reads the stage and the story, and gives the story's next moment. The story is small enough to keep every moment of it, back to the start of the ride. That's how rewinding works: to go back a step, we take the moment before. The story answers the third problem, and the fifth.
 
-The picture is everything on the screen, and we never keep it. For every frame, the Roc code describes the whole picture fresh from the stage and the story, as a list of shapes. Then the page paints the list. The Roc code never draws. Seeing works this way in the real world, too. The world doesn't paint itself onto your eyes: light brings you information, and your mind makes the picture. To describe the picture, the Roc code works out what the rider sees, and lists far things before near ones, so the near ones are painted over them. The picture answers the third problem and the fourth.
+The picture is everything on the screen, and we never keep it. For every frame, the Roc code describes the whole picture fresh from the stage and the story, as a list of shapes. Then the page paints the list. The Roc code never draws. Seeing works this way in the real world, too. The world doesn't paint itself onto your eyes: light brings you information, and your mind makes the picture. To describe the picture, the Roc code works out what the rider sees, and lists far things before near ones, so the near ones are painted over them. The picture answers the second problem and the fourth.
 
 Because each picture comes fresh from its moment, pausing, stepping and rewinding need no drawing code of their own. We describe whichever moment you've asked for.
 
