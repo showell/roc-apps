@@ -182,6 +182,12 @@ A cow on the grass beside the road.
 
 The ride has a lot of animals: herds of cows and pigs, ducks on the ponds, and an elephant at a bend in the road. Each one is a billboard: a flat picture of its emoji, standing on the grass and turned square to the camera, like a cardboard cutout. That takes far less code than modelling an animal, and it's charming. A billboard faces left or right, and one that faces right is its emoji mirrored. That's the `Billboard` type from "The pieces as types": an emoji, a height and a facing. Each emoji was traced into polygons ahead of time, and the `EmojiStills` module holds them as plain data. The tracing itself is beyond this book.
 
+Some of the cows are calves, and a calf is a billboard half as tall as its mother. One small function picks the calves, and it's the first function in this book with a body:
+
+{{code CowHerd.is_calf}}
+
+The first line is its type: it takes a `U64`, a whole number from zero up, and gives back a `Bool`, `True` or `False`. The second line is the function itself. `|cow_number|` names what it takes, and everything after it is the body, whose value is what the function gives back. `cow_number.rem_by(4)` is the remainder after dividing by 4, so cows 1, 5, 9 and so on are calves: every fourth cow, from the second. The cow herd asks `is_calf` about each cow it places, and makes each calf a young billboard.
+
 Each kind of thing has a function called `scenery_sprite` in its own module. Here's the type annotation of the cow's, from the `Billboard` module:
 
 {{signatures Billboard.scenery_sprite}}
