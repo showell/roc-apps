@@ -379,7 +379,7 @@ Here's the whole of `TwoShapes`:
 
 A color is a whole number in hex, with the six digits a web page writes after its `#`. `0x2e8b57` is a green, and `0xe8a33d` is an amber.
 
-`Polygon.triangle` makes a value that describes a triangle, and the painter draws it later. Every maker in `Polygon` works this way, and each gives back one shape. The triangle hands its three corners to `flat_polygon`:
+`Polygon.triangle` makes a value that describes a triangle, and the painter draws it later. Every maker in `Polygon` works this way. The triangle hands its three corners to `flat_polygon`:
 
 {{code Polygon.triangle}}
 
@@ -403,7 +403,7 @@ Some things can rightly have nothing to show. A `GroundPatch` is a patch of grou
 
 {{signatures GroundPatch.patch_shape}}
 
-Its second argument is the lens's focal length, in pixels, which turns corners on the ground into places on the screen. The chapter A simple tree says more about the lens. A `Try` is either `Ok` holding a shape, or `Err` holding a reason, here `BehindCamera` or `PastHorizon`. Both answers are in the type, so whoever calls `patch_shape` has to handle the ground behind the camera.
+Its second argument is the lens's focal length, in pixels, which turns corners on the ground into places on the screen. The chapter A simple tree puts the lens to work, projecting a tree's foot and top onto the screen. A `Try` is either `Ok` holding a shape, or `Err` holding a reason, here `BehindCamera` or `PastHorizon`. Both answers are in the type, so whoever calls `patch_shape` has to handle the ground behind the camera.
 
 ### Pictures
 
@@ -419,12 +419,12 @@ For the next few chapters, the work is choosing corners and choosing their order
 
 ## Nature types
 
-The objects along the road come in six kinds: trees, radio towers, billboards (the cows, the pigs, the ducks and the other animals by the road), the cat, the bird and the truck. Each kind is drawn its own way, and each kind's sighting module finds its own objects on the road. After that, every object takes the same steps. The camera sees it, its kind draws it, and it gets a depth, so that it can be painted in order with all the others, far to near. Written once for each kind, those steps would be the same code six times over. Safari Ride writes them once, in `Pipeline`, and each kind says only how tall it is and how it looks.
+The objects along the road come in six kinds: trees, radio towers, billboards (the cows, the pigs, the ducks and the other animals by the road), the cat, the bird and the truck. Each kind is drawn its own way, and each kind's sighting module finds its own objects on the road. After that, nearly every object takes the same steps. The camera sees it, its kind draws it, and it gets a depth, so that it can be painted in order with all the others, far to near. Written once for each kind, those steps would be the same code six times over. Safari Ride writes them once, in `Pipeline`, and each kind says only how tall it is and how it looks.
 
 New in this chapter:
 
 - Roc: defining a type with a type variable, `where`
-- Modules: `Geom`, `Along`, `Across`
+- Modules: `Pipeline`, `Spot`, `Rendered`, `Geom`, `Along`, `Across`, `Distance`
 
 `Pipeline` and `Rendered` came up in The modules chapter, and here we look at them properly.
 
@@ -479,7 +479,7 @@ We've used types that take an argument since the Shapes chapter. A `Picture` is 
 
 The `kind` in its head, `Placed(kind)`, is lowercase, and that makes it a type variable: a name for whatever type goes in the parentheses. The fields use it like any other type. So `Geom.Placed(Conifer)` is a record of a `road_point`, a `lift`, and a `kind` that holds a `Conifer`, just as `List(Shapes.Shape)` is a list that holds shapes. A cow is a `Geom.Placed(Billboard)`.
 
-A `Geom.Placed`'s `road_point` is made of two such types. `Along` is a place along a segment, and `Across` is a place across the road, measured from its middle. Both are opaque, like `Clock`, so passing one as the other is a compile-time error. One place minus another is a `Distance`, not a place, and Roc's `-` always gives back its left side's type, so that subtraction is a named method, `distance_from`, rather than `-`.
+A `Geom.Placed`'s `road_point` is made of two such types. `Along` is a place along a segment, and `Across` is a place across the road, measured from its middle. Both are opaque, like `Clock`, so passing one as the other is a compile-time error. One place minus another is a `Distance`, a length in metres, and a length is a different thing from a place, and Roc's `-` always gives back its left side's type, so that subtraction is a named method, `distance_from`, rather than `-`.
 
 A type's head declares its variables. A function's annotation needs no head: a lowercase name in it is a type variable, and it means one type wherever it appears in that annotation. `Pipeline.sighting_of` takes a `Geom.Placed(kind)` and answers with a `Try` that holds a `Pipeline.Sighted(kind)` when the object stands in front of the camera. Both name the same `kind`, so a placed conifer can only come back as a sighted conifer, never as a sighted cow.
 
@@ -499,11 +499,11 @@ The second line of the annotation, indented under the first, is a `where` clause
 
 {{fails conifer_without_context}}
 
-`Pipeline.scenery_sighting_of` asks for a kind's height the same way, with `where [kind.scenery_height : kind -> Distance]`, where a `Distance` is a length in metres. It finds the sighting, then asks the kind for its `scenery_height`, to see whether the object stands tall enough on the screen to draw, and answers `TooSmall` when it stands shorter. The towers and the truck are drawn however small they look. A tower calls `Pipeline.sighting_above_horizon_of`, which asks for its height only to see whether the horizon hides it. The truck calls `Pipeline.sighting_of`, the plainest of the three, which needs no `where` at all.
+`Pipeline.scenery_sighting_of` asks for a kind's height the same way, with `where [kind.scenery_height : kind -> Distance]`. It finds the sighting, then asks the kind for its `scenery_height`, to see whether the object stands tall enough on the screen to draw, and answers `TooSmall` when it stands shorter. The towers and the truck are drawn however small they look. A tower calls `Pipeline.sighting_above_horizon_of`, which asks for its height only to see whether the horizon hides it. The truck calls `Pipeline.sighting_of`, the plainest of the three, which needs no `where` at all.
 
 Because a name and a type are the whole contract, the name has to say what it's for. A kind could well have a method called `height`, of type `kind -> Distance`, that measures something else, and a `where` clause that asked for `height` would take it without a word. The first word of `scenery_height` and `scenery_picture` says that the method is there for the objects along the road, so a kind meets the contract only on purpose.
 
-Trees, towers, critters and the truck all go through these forms. The grass, the sky, the sun, the mountains and the road take simpler paths, and the rails make their `Rendered` by hand. The next three chapters are about trees.
+Trees, towers and critters go through all three forms. The truck is sighted by `Pipeline.sighting_of`, then has a sighting type of its own, `Truck.SightedTruck`, and makes its `Rendered` by hand, as the rails do. The grass, the sky, the sun, the mountains and the road take simpler paths. The next three chapters are about trees.
 
 ## A simple tree
 
@@ -516,7 +516,7 @@ A tree is a trunk under eight tiers of foliage, and a far tree's tiers are flat 
 New in this chapter:
 
 - Roc: nominal types, one branch for two tags
-- Modules: `Conifer`, `TreeShapes`, `Distance`, `Fraction`, `Camera`
+- Modules: `Conifer`, `TreeShapes`, `Fraction`, `Camera`
 
 ### Get the types right
 
@@ -548,14 +548,15 @@ digraph tree {
   "Conifer.scenery_picture" [style=bold];
   "Conifer.scenery_picture" -> "TreeShapes.tree_picture" [label="  hands the height and color to"];
   "TreeShapes.tree_picture" -> "tier_inputs_of" [label="  calls"];
-  "tier_inputs_of" -> "Camera.upright_on_screen" [label="  finds the outline with"];
+  "tier_inputs_of" -> "TreeShapes.tree_outline" [label="  finds the outline with"];
+  "TreeShapes.tree_outline" -> "Camera.upright_on_screen" [label="  projects the foot and top with"];
   "TreeShapes.tree_picture" -> "trunk_shape" [label="  calls"];
   "TreeShapes.tree_picture" -> "tier_shape" [label="  calls"];
   "tier_shape" -> "tier_triangle" [label="  calls"];
 }
 ```
 
-A box is a function, and an arrow is a call. `Conifer.scenery_picture` is the only box that knows the kind. It derives a height and a color from the kind, and everything below it works from those two. `Conifer` imports `TreeShapes`, and the import runs one way, so a fifth kind of tree is a change to `Conifer` alone.
+A box is a function, and an arrow is a call. `Conifer.scenery_picture` is the only box that knows the kind. It derives a height and a color from the kind, and everything below it works from those two. `Conifer` imports `TreeShapes`, and the import runs one way, so `TreeShapes` would draw a fifth kind of tree unchanged.
 
 ### The functions
 
@@ -573,7 +574,7 @@ Here's all of `Conifer`:
 
 {{code TreeShapes.tree_picture}}
 
-`spot.base()` is the middle of the tree's foot, as a point in front of the camera. `tier_inputs_of` works out from it what every tier needs, among them the tree's `outline` on the screen. `trunk_shape` makes the trunk, a rectangle. `tier_shape` makes each tier. `tiers.map(...)` calls it for every tier and gives back the list of answers. `[trunk].concat(...)` puts the trunk first, so the tiers paint over it. For a far tree, `tier_shape` answers with `tier_triangle`, and the next chapter shows the rest of it.
+`tier_inputs_of` starts from `spot.base()`, the middle of the tree's foot as a point in front of the camera, and works out what every tier needs, among them the tree's `outline` on the screen. `trunk_shape` makes the trunk, a rectangle. `tier_shape` makes each tier. `tiers.map(...)` calls it for every tier and gives back the list of answers. `[trunk].concat(...)` puts the trunk first, so the tiers paint over it. For a far tree, `tier_shape` answers with `tier_triangle`, and the next chapter shows the rest of it.
 
 What `trunk_finish_of` and the crown do for near trees can wait, but notice the tags of `TrunkFinish`, `[Shaded, Flat]`. This `Flat` is a different tag from the fill `Flat` in the Shapes chapter. Two tags with one name in two unrelated unions are two different tags.
 
@@ -640,15 +641,19 @@ A near tree's tiers
 ```dot
 digraph cone {
   node [shape=box, fontname="Helvetica"];
-  "TreeShapes.tree_picture" -> "crown_of";
-  "TreeShapes.tree_picture" -> "tier_shape";
-  "tier_shape" -> "tier_triangle";
-  "tier_shape" -> "tier_cone";
-  "tier_cone" -> "Camera.project";
-  "tier_cone" -> "cone_hull_points";
-  "cone_hull_points" -> "hull_points_of_sorted";
-  "hull_points_of_sorted" -> "trim_hull";
-  "trim_hull" -> "trim_hull";
+  "TreeShapes.tree_picture" -> "crown_of" [label="  decides the crown with"];
+  "TreeShapes.tree_picture" -> "tier_shape" [label="  makes each tier with"];
+  "tier_shape" -> "tier_triangle" [label="  far off, calls"];
+  "tier_shape" -> "cone_ring_points" [label="  up close, rings the base with"];
+  "tier_shape" -> "tier_cone" [label="  up close, calls"];
+  "tier_cone" -> "Camera.project" [label="  projects the ring with"];
+  "tier_cone" -> "cone_hull_points" [label="  outlines the cone with"];
+  "cone_hull_points" -> "ring_hull_points" [label="  merges the ring's arcs with"];
+  "cone_hull_points" -> "convex_hull_points" [label="  for a tiny ring, sorts with"];
+  "ring_hull_points" -> "hull_points_of_sorted" [label="  walks with"];
+  "convex_hull_points" -> "hull_points_of_sorted" [label="  walks with"];
+  "hull_points_of_sorted" -> "trim_hull" [label="  drops dents with"];
+  "trim_hull" -> "trim_hull" [label="  calls itself"];
   "crown_of" [style=bold];
 }
 ```
@@ -713,7 +718,7 @@ A tree goes through the three forms from the Nature types chapter, with a `Conif
 
 New in this chapter:
 
-- Roc: `var` and `while` in a pure function
+- Roc: `while` in a pure function
 - Modules: `TreeSighting`, `RoadAhead`
 
 ### Get the types right
@@ -759,9 +764,9 @@ Placing a segment's trees walks along the segment and keeps a list, and a loop s
 
 {{code Trees.roadside_trees}}
 
-`var` makes a name that can change, and a `$` marks every use of one, so the names that change stand out. The function is still pure, because nothing outside it can see them change.
+Guess which Roc idea from The world chapter comes back? `var` makes a name that can change, and a `$` marks every use of one, so the names that change stand out. The `while` loop changes them, and the function is still pure, because the changes stay inside it.
 
-Trees stand in pairs, one on each side of the road, every 30 metres. `{ ..left_tree, across: ... }` makes the right tree from the left one, with the record update from The world chapter. The pairs take turns: a big green pair, then a pair of the segment's accent, which is small green, red or gold, then big green again. A gold pair stands farther from the road, because it's so much taller:
+Trees stand in pairs, one on each side of the road, every 30 metres. `{ ..left_tree, road_point: ... }` makes the right tree from the left one, with a new place across the road, by the record update from The world chapter. The pairs take turns: a big green pair, then a pair of the segment's accent, which is small green, red or gold, then big green again. A gold pair stands farther from the road, because it's so much taller:
 
 {{code Trees.tree_line_distance}}
 
@@ -779,7 +784,7 @@ From here on, things are measured from the camera, which travels with the rider.
 
 `Pipeline.scenery_sighting_of`, from the Nature types chapter, puts each tree through three tests, one inside the next:
 
-1. `Pipeline.sighting_of` asks `RoadAhead.rider_point_at` where the tree's place on the road lies from the rider. The math layer chapter shows how. A tree no farther ahead than the near plane, from the chapter A conifer, is `BehindCamera`.
+1. `Pipeline.sighting_of` asks `RoadAhead.rider_point_at` where the tree's place on the road lies from the rider. The math layer chapter shows how. A tree nearer than the near plane, from the chapter A conifer, is `BehindCamera`.
 2. `Pipeline.sighting_above_horizon_of` asks whether the curve of the ground hides the whole tree. If it does, the tree is `BelowHorizon`.
 3. `scenery_sighting_of` itself measures the tree on the screen, through the camera's focal length. A tree under 2 pixels tall is `TooSmall`.
 
@@ -807,7 +812,7 @@ Most things in a frame work this way: placed once, then sighted and rendered for
 
 ## Grass
 
-The grass is one rectangle, behind everything else in the frame.
+The grass is one rectangle. It paints over the bottom of the sky, and everything along the road paints over it.
 
 New in this chapter:
 
