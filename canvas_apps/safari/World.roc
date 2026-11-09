@@ -408,6 +408,38 @@ expect
 		},
 	)
 
+# Every segment is longer than zero. Route.segments_with_ends and each bend's geometry
+# measure from it.
+expect World.segment_plans.all(|plan| plan.length > Distance.zero)
+
+# Every bend really turns: its sine isn't zero. BendInView.outer_corner crashes on a bend
+# that turns 0 or 180 degrees.
+expect World.bending_plans.all(|{ turn, .. }| turn.to_radians().sin() != 0.0)
+
+# Each encounter's animal waits before its segment's commit_along, because
+# EncounterPlan.plan_at_next_step forgets the plan once the rider leaves the segment.
+expect
+	World.route.route_segments().all(
+		|segment|
+			match segment.encounter_span() {
+				Ok({ planned_along, .. }) => planned_along < segment.commit_along()
+				Err(QuietRoad) => True
+			},
+	)
+
+# Every pig and cow stands on its own segment, between its start and its length, where
+# Segment's pig_distance_before_end and cow_herd_along mean to place the herds.
+expect
+	World.route.route_segments().all(
+		|segment| {
+			is_on_segment = |placed| {
+				along = placed.road_point.along.from_start()
+				along >= Distance.zero and along <= segment.length
+			}
+			segment.segment_pigs().all(is_on_segment) and segment.segment_cows().all(is_on_segment)
+		},
+	)
+
 ## Whether `segment` ends the route.
 is_last_segment : Segment -> Bool
 is_last_segment = |segment|
