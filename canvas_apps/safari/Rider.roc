@@ -55,8 +55,8 @@ Rider := { motorcycle : Motorcycle, eyes : RiderEyes }.{
 	## encounter asks and what the rider's own look holds.
 	attention : Rider, { route : Route, encounter_stage : Animation.Stage } -> Attention
 	attention = |rider, { route, encounter_stage }| {
-		segment = rider.motorcycle.route_place.segment_on(route)
-		EncounterReaction.encounter_attention(segment, encounter_stage)
+		encounter = rider.motorcycle.route_place.segment_on(route).encounter
+		EncounterReaction.encounter_attention(encounter, encounter_stage)
 			.max(rider.eyes.attention())
 	}
 

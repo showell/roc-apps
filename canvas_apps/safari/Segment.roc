@@ -18,6 +18,7 @@ import BirdFlight
 import CatCrossing
 import CowHerd
 import Distance
+import Encounter
 import EncounterPlan
 import Geom
 import PigHerd
@@ -34,13 +35,12 @@ Segment := {
 	## The segment's herd of cows, led by a bull or not.
 	cows : Segment.Cows,
 
-	## What the rider meets on the road here, at most one thing, so that the
-	## rider has one experience at a time. Most of the road is quiet, so that an
-	## encounter stands out. The cat crosses by one of `trees`, and the bird's
-	## flight holds copies of two of them, its perch and the tree it flies to.
-	## In play `from_choices` is the one builder of a segment, and it picks those
-	## trees from `trees`, so the flight's trees always stand among them.
-	encounter : [CatCrosses(CatCrossing), BirdHere(BirdFlight), QuietRoad],
+	## What the rider meets on the road here. The cat crosses by one of
+	## `trees`, and the bird's flight holds copies of two of them, its perch and
+	## the tree it flies to. In play `from_choices` is the one builder of a
+	## segment, and it picks those trees from `trees`, so the flight's trees
+	## always stand among them.
+	encounter : Encounter,
 
 	ending : Segment.Ending,
 }.{
@@ -170,22 +170,6 @@ Segment := {
 		match segment.segment_ending() {
 			Bends({ bend, .. }) => Geom.commit_along(bend)
 			RouteEnds => Along.at(segment.length)
-		}
-
-	## Whether a segment has a cat waiting by the road.
-	has_cat : Segment -> Bool
-	has_cat = |segment|
-		match segment.encounter {
-			CatCrosses(_) => True
-			BirdHere(_) | QuietRoad => False
-		}
-
-	## Whether a segment has a bird in it.
-	has_bird : Segment -> Bool
-	has_bird = |segment|
-		match segment.encounter {
-			BirdHere(_) => True
-			CatCrosses(_) | QuietRoad => False
 		}
 
 	## What the ride plans `segment`'s encounter by: its animation's span, and

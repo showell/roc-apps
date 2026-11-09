@@ -23,18 +23,21 @@ Beacon :: Fraction.{
 	## along it.
 	TowerPlace : [AtEnd, Midway]
 
-	## The beacon of the tower at `place` on the segment at `segment`, as it
-	## shines at `clock`.
-	at : { segment : Route.SegmentIndex, place : Beacon.TowerPlace }, Clock -> Beacon
+	## Which tower a beacon tops: the segment it stands on, and its place
+	## there. Towers aren't kept, so this pair is all that tells one from
+	## another.
+	TowerKey : { segment : Route.SegmentIndex, place : Beacon.TowerPlace }
+
+	## The beacon of `tower`, as it shines at `clock`.
+	at : Beacon.TowerKey, Clock -> Beacon
 	at = |tower, clock| Beacon.(beacon_brightness(Beacon.blink_phase(tower, clock)))
 
-	## The phase of the beacon of the tower at `place` on the segment at
-	## `segment` at `clock`: the steps since the ride's start, plus the
-	## beacon's head start. Each whole `beacon_period` on is the same point of
-	## the blink, counted from where it starts dark.
-	blink_phase : { segment : Route.SegmentIndex, place : Beacon.TowerPlace }, Clock -> Steps
-	blink_phase = |{ segment, place }, clock|
-		clock.steps_since(Clock.start).plus(head_start({ segment, place }))
+	## The phase of the beacon of `tower` at `clock`: the steps since the
+	## ride's start, plus the beacon's head start. Each whole `beacon_period`
+	## on is the same point of the blink, counted from where it starts dark.
+	blink_phase : Beacon.TowerKey, Clock -> Steps
+	blink_phase = |tower, clock|
+		clock.steps_since(Clock.start).plus(head_start(tower))
 
 	## A beacon blinks once in this many steps of the ride.
 	beacon_period : Steps
@@ -69,7 +72,7 @@ Beacon :: Fraction.{
 ## further into its blink than the last one's, so neighbouring segments'
 ## beacons blink apart, and the tower halfway along starts half a blink on
 ## from the one at the end, so the two blink opposite each other.
-head_start : { segment : Route.SegmentIndex, place : Beacon.TowerPlace } -> Steps
+head_start : Beacon.TowerKey -> Steps
 head_start = |{ segment, place }| {
 	at_end = beacon_stagger.times(segment.to_u32()).wrapped_to(Beacon.beacon_period)
 	match place {

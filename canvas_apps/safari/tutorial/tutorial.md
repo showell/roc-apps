@@ -1465,9 +1465,13 @@ A `Clock` is the ride's own time. It counts the ride's steps, from 0 at the star
 
 A clock is a place in time, and `Steps` is a distance between two of them. Two clocks give the steps between them, and a clock and some steps give a later clock, or an earlier one. Adding two clocks means nothing, so there's no function for it. Adding two `Steps` does mean something, so `Steps` has a `plus`. This book calls the pattern *places and distances*: one opaque type says where something is, a second says how far apart two of them are, and only the sums that make sense get a function.
 
-A `Beacon` is the light on a tower as the scene draws it: a magenta disc, at a brightness. You ask for one by the index of the tower's segment, whether the tower stands at the segment's end or midway along it, and the step of the ride:
+A `Beacon` is the light on a tower as the scene draws it: a magenta disc, at a brightness. You ask for one by its tower and the step of the ride:
 
 {{signatures Beacon.at}}
+
+A `Beacon.TowerKey` says which tower: the index of its segment, and whether it stands at the segment's end or midway along it.
+
+{{code Beacon.TowerKey}}
 
 A beacon knows how bright it is, and it draws itself. Give it where its middle goes on the screen and how many pixels a metre spans there, and it gives back a magenta disc, whose transparency follows its brightness, or says it's too dim or too small to draw.
 
@@ -2485,7 +2489,7 @@ The segment puts the two together. A route that plans a bird on a segment with n
 
 {{code Segment.from_choices from "BirdHere =>" to "QuietRoad => QuietRoad"}}
 
-`match` is an expression here. Its answer is the value of the `encounter` field.
+`match` is an expression here. Its answer is the value of the `encounter` field, an `Encounter`: a cat crossing, a bird's flight, or a quiet road, in a module of its own.
 
 ### Getting it on screen
 
@@ -2516,7 +2520,7 @@ digraph reaction {
   Throttle -> EncounterReaction [label="  asks for a throttle limit"];
   Rider -> EncounterReaction [label="  asks how hard it's held"];
   RiderCamera -> Rider [label="  reads its attention"];
-  EncounterReaction -> Segment [label="  reads its encounter"];
+  EncounterReaction -> Encounter [label="  asks which it is"];
   EncounterReaction -> CatCrossing [label="  reads its peak and span"];
   EncounterReaction -> ThrottleLimit [label="  answers one"];
   EncounterReaction -> Attention [label="  answers one"];

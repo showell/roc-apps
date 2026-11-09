@@ -371,7 +371,7 @@ expect {
 is_throttle_held : Segment, U32 -> Bool
 is_throttle_held = |segment, now| {
 	stage = segment.encounter_stage(flight_at_step(now))
-	match EncounterReaction.encounter_throttle(segment, stage) {
+	match EncounterReaction.encounter_throttle(segment.encounter, stage) {
 		AtMost(_) => True
 		NoLimit => False
 	}

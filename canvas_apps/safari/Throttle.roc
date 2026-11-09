@@ -28,7 +28,7 @@ Throttle :: [].{
 		offered = VehicleLimits.cruise_acceleration
 		limits = [
 			bend_limit(motorcycle, segment),
-			EncounterReaction.encounter_throttle(segment, encounter_stage),
+			EncounterReaction.encounter_throttle(segment.encounter, encounter_stage),
 			Gawking.gawk_brake(motorcycle, segment),
 			shoulder_limit(motorcycle),
 		]
