@@ -1,6 +1,6 @@
 # Safari Ride: a tour of a real Roc program
 
-A program with a lot going on can stay simple, and Roc makes that natural. This book shows you both, by reading one complete Roc program with you.
+Thirty times a second, Safari Ride draws a whole world from four small things. This book reads the program with you, and shows how Roc keeps a program this busy simple.
 
 ## Introduction
 

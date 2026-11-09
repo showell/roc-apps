@@ -10,6 +10,8 @@ The book walks a programmer through one real Roc program, Safari Ride, from the 
 
 The reader is a working programmer, probably coming from TypeScript or something like it, who can read a little Roc. The book never compares Roc to another language. It explains each Roc idea on its own terms, where it first bites.
 
+Take Moby Dick as an inspiration, alongside Hemingway. One theme rides through the whole book: a small carried state, with everything else derived from it. Each chapter is still a strong vignette on its own.
+
 The book is honest about the code. It quotes the real code, its numbers come from the real program, and when a sentence is hard to write, we fix the code first.
 
 The book is a book-like experience, made for the desktop: a reader at a wide screen, with the ride and the widgets running beside the text. The phone is extremely low priority.
@@ -59,7 +61,7 @@ Each axis fails in its own way, and catching each failure takes a different kind
 - **D1.** **Active voice.** "We carry a small amount of state… we derive values from it", never "four things are remembered" or "everything else is worked out".
 - **D2.** **Say what happens.** Never define a thing by what it isn't, can't do or doesn't remember ("can't go stale", "has never heard of a tower"). Say what it does.
 - **D3.** Short sentences: Hemingway, not Faulkner. A strong sentence stands alone. Don't join two sentences that could stand on their own with a comma or ", but".
-- **D4.** Talk to the reader with "we", "you" and contractions. Start the book, and each chapter, with a full sentence, never a fragment.
+- **D4.** Talk to the reader with "we", "you" and contractions. Start the book, and each chapter, with a full sentence, never a fragment. The first sentence makes a strong first impression. It doesn't have to be "Call me Ishmael", but it earns the reader's attention.
 - **D5.** Code first, then one plain sentence on what it does, then why, in ordinary causal words ("That's because…").
 - **D6.** Use plain verbs (is, does, gives, takes), not abstract nouns. Keep prepositions ("For each frame it calls", not "Each frame it calls").
 - **D7.** No agent-speak:
