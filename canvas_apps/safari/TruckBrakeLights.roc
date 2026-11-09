@@ -6,7 +6,6 @@ import Distance
 import Sprite
 import lib.Point
 import lib.Pixels
-import Polygon
 import RiderView
 import Camera
 import Screen
@@ -127,7 +126,7 @@ brake_shapes = |truck, lamp_sides| {
 			},
 		).map(|corner| TruckPlacement.raised_point(truck.spot, corner))
 	glow = [brake_glow(truck, lamp)].keep_oks(|shape| shape)
-	match Polygon.clipped_polygon({ color: brake_color, corners: lamp }, truck.focal_length) {
+	match Camera.clipped_polygon({ color: brake_color, corners: lamp }, truck.focal_length) {
 		Ok(lamp_polygon) => glow.append(lamp_polygon)
 		Err(BehindCamera) => glow
 	}

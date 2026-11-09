@@ -1,7 +1,6 @@
 ## The pictures for the Safari tutorial's first look at shapes: a triangle,
 ## then a rectangle, each on a plain background. The Right key steps from one
 ## to the other, which is how the page opens at each.
-import game.Polygon
 import lib.Pixels
 import lib.Point
 import lib.Brush
@@ -28,14 +27,12 @@ ShapesWidgetApp :: [].{
 
 	## A green triangle.
 	green_triangle : Shapes.Shape
-	green_triangle = Polygon.triangle(
-		{
-			first_corner: Point.at(180.0, 280.0),
-			second_corner: Point.at(420.0, 280.0),
-			third_corner: Point.at(300.0, 60.0),
-		},
-		RgbColor.of(0x2e8b57),
-	)
+	green_triangle = Triangle({
+		first: Point.at(180.0, 280.0),
+		second: Point.at(420.0, 280.0),
+		third: Point.at(300.0, 60.0),
+		fill: Brush.flat(RgbColor.of(0x2e8b57)),
+	})
 
 	## A brown rectangle.
 	brown_rectangle : Shapes.Shape

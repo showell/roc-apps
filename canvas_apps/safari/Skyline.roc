@@ -13,9 +13,9 @@ import lib.Fraction
 import Grass
 import Lens
 import lib.ColorShade
-import Polygon
 import Screen
 import lib.RgbColor
+import lib.Brush
 import lib.Shapes
 
 Skyline :: [].{
@@ -290,7 +290,10 @@ silhouette = |sky_columns, { focal_length, height_at, color, base_y }| {
 			}
 		},
 	)
-	Polygon.flat_polygon(crest.concat([{ x: right, y: base_y }, { x: left, y: base_y }]), color)
+	Polygon({
+		corners: crest.concat([{ x: right, y: base_y }, { x: left, y: base_y }]),
+		fill: Brush.flat(color),
+	})
 }
 
 ## Snow thinner than this, between the range's crest and the snowline, isn't
@@ -331,7 +334,7 @@ snow_shape = |sky_columns, { focal_length, color }| {
 				back.append({ x: column.x, y: Lens.y_for_height({ height, focal_length }) })
 			},
 		)
-		Ok(Polygon.flat_polygon(crest.concat(snowline_points), color))
+		Ok(Polygon({ corners: crest.concat(snowline_points), fill: Brush.flat(color) }))
 	}
 }
 

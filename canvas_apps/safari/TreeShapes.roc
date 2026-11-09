@@ -10,7 +10,6 @@ import Distance
 import lib.Fraction
 import RiderView
 import Sprite
-import Polygon
 import lib.Pixels
 import Spot
 import lib.Brush
@@ -259,14 +258,12 @@ tier_triangle = |outline, { tier, foliage_color }| {
 	bottom_y = crown_top.plus(crown_height(outline).scaled_by(tier.bottom))
 	top_y = crown_top.plus(crown_height(outline).scaled_by(tier.top))
 	half_base = crown_half_width(outline).scaled_by(tier.width)
-	Polygon.triangle(
-		{
-			first_corner: { x: outline.foot.x, y: top_y },
-			second_corner: { x: outline.foot.x.plus(half_base), y: bottom_y },
-			third_corner: { x: outline.foot.x.minus(half_base), y: bottom_y },
-		},
-		foliage_color,
-	)
+	Triangle({
+		first: { x: outline.foot.x, y: top_y },
+		second: { x: outline.foot.x.plus(half_base), y: bottom_y },
+		third: { x: outline.foot.x.minus(half_base), y: bottom_y },
+		fill: Brush.flat(foliage_color),
+	})
 }
 
 ## The angles of a cone's ring, from 0 round a whole turn. Each is the one
@@ -348,10 +345,9 @@ tier_cone = |tier, { inputs, ring_points, shade }| {
 	apex_height = height_down_crown(inputs, tier.top)
 	apex = Camera.project(inputs.base.at_height(apex_height), inputs.focal_length)
 	ring_on_screen = Camera.projected_points(ring_points, inputs.focal_length)
-	Polygon.shaded_polygon(
-		ConvexHull.cone_hull_points(ring_on_screen, apex),
-		{ color: inputs.foliage_color, strength: shade },
-	)
+	corners = ConvexHull.cone_hull_points(ring_on_screen, apex)
+	fill = Brush.corners_shade(corners, { color: inputs.foliage_color, strength: shade })
+	Polygon({ corners, fill })
 }
 
 expect crown_shade(Distance.metres(0.0)).to_f64() == 1.0

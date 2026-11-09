@@ -187,7 +187,7 @@ Roc's own rules are in the langref's
 - **A top-level value or a field is never one letter.** `board_width`, not
   `w`; `row`, not `y`. It is read far from where it is set, so its name is
   all the reader has. Coordinates are the exception: `x` and `y` on a point
-  like `Screen.Point` are the words for what they hold. A local or a lambda's
+  like lib's `Point.Point` are the words for what they hold. A local or a lambda's
   parameter can be short: its definition is in view.
 - **A type or a field is named for what it holds, not where it sits.**
   `Entry`, `Item`, `Node`, `Data` and `Info` say only that a value is in a list
@@ -700,8 +700,8 @@ is the base; these rules sharpen it.
   User data, a file on disk, the end of a walk.
 - **A function that makes one thing answers that thing, not a list of it.**
   A list that is empty on bad input turns a bug into nothing drawn, and every
-  caller joins it without a look. Safari's `Polygon.flat_polygon` answers one
-  shape and crashes on two corners; `circular_gradient_polygon` answers a `Try`,
+  caller joins it without a look. Safari's `Camera.clipped_polygon` answers one
+  shape and crashes on two corners; `Brush.circular_gradient` answers a `Try`,
   because a distant gradient really can shrink out of sight. The caller that has
   nothing to draw says so in its own list.
 - **A placeholder is not a value.** `?? "bogus"`, `?? "?"`, or `?? 4` for
@@ -980,9 +980,9 @@ is the base; these rules sharpen it.
   ```roc
   triangle : I64,
   {
-  	first_corner : Screen.Point,
-  	second_corner : Screen.Point,
-  	third_corner : Screen.Point,
+  	first_corner : Point.Point,
+  	second_corner : Point.Point,
+  	third_corner : Point.Point,
   } -> Shapes.Shape
   triangle = |color, { first_corner, second_corner, third_corner }|
   ```

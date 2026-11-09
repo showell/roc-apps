@@ -6,12 +6,12 @@ import Camera
 import Distance
 import lib.Fraction
 import Sprite
-import Polygon
 import RiderView
 import Screen
 import TruckPlacement
 import TruckShape
 import lib.ArgbColor
+import lib.Brush
 import lib.Shapes
 
 ## Whether the truck's headlights are lit.
@@ -104,15 +104,13 @@ headlight_beam = |truck, rightward| {
 	lamp = RiderView.raised_point_ahead(at_lamp(headlight_height))?
 	on_screen = Camera.projected_points(corners, truck.focal_length)
 	lamp_on_screen = Camera.project(lamp, truck.focal_length)
-	Polygon.circular_gradient_polygon(
-		on_screen,
-		{
-			center_color: beam_core,
-			edge_color: beam_edge,
-			center: lamp_on_screen,
-			radius: Screen.farthest_distance(on_screen, lamp_on_screen),
-		},
-	)
+	fill = Brush.circular_gradient({
+		center_color: beam_core,
+		edge_color: beam_edge,
+		center: lamp_on_screen,
+		radius: Screen.farthest_distance(on_screen, lamp_on_screen),
+	})?
+	Ok(Polygon({ corners: on_screen, fill }))
 }
 
 expect TruckHeadlights.at(Fraction.of(0.4119)) == Off

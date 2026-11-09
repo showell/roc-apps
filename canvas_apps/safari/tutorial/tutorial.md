@@ -224,7 +224,7 @@ And here's the code that makes it:
 
 `0x2e8b57` is the color, the six hex digits a web page writes after its `#`. A triangle is a polygon with three corners, so it's a `Poly`. The `Polygon.triangle` function takes the three corners and builds that `Poly`:
 
-{{code Polygon.triangle}}
+{{code Shapes.Shape from "Triangle({" to "Triangle({"}}
 
 The parameter `{ first_corner, second_corner, third_corner }` takes the record apart into three names. Every caller names all three corners, so every triangle has exactly three, by construction. The body lists the six numbers and fills the inside with one flat color. It gives back a `Shapes.Shape`, because a `Shape` is what the platform paints.
 
@@ -2935,7 +2935,7 @@ The cut can change the type of point as well as the count. The near plane takes 
 
 `GroundPatch`, `GuardRail`, `TruckBody` and `TruckBrakeLights` all cut through `Polygon.clipped_polygon`. `GroundPatch` first cuts its corners at the horizon, with `EarthCurve.points_before_horizon`:
 
-{{code Polygon.clipped_polygon from "in_front = RiderView.clipped_points(" to "Ok(Polygon.flat_polygon(Camera.projected_points(in_front, focal_length), color))"}}
+{{code Camera.clipped_polygon from "in_front = RiderView.clipped_points(" to "fill: Brush.flat(color),"}}
 
 ### Arithmetic all the way down
 

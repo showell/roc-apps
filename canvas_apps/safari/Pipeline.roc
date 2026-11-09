@@ -27,7 +27,7 @@
 ## Only the segments of `RoadAhead.segments_in_view` are looked at at all. Below
 ## a sighting, a shape can be dropped too: a part of the guard rail, a ground
 ## patch or a face of the truck cut away whole at the near plane
-## (`Polygon.clipped_polygon`), a ground patch `PastHorizon`, or a beacon that is
+## (`Camera.clipped_polygon`), a ground patch `PastHorizon`, or a beacon that is
 ## `TooDim` or `TooSmall` (`Beacon.disc`).
 import RoadAhead
 import SegmentFromRider

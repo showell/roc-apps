@@ -14,7 +14,6 @@ import Distance
 import lib.Fraction
 import RiderView
 import Sprite
-import Polygon
 import lib.Brush
 import lib.RgbColor
 import Screen
@@ -260,15 +259,16 @@ rod_quad : {
 	offset_x : Pixels,
 	offset_y : Pixels,
 } -> Shapes.Shape
-rod_quad = |{ from, to, offset_x, offset_y }| Polygon.flat_polygon(
-	[
-		{ x: from.x.plus(offset_x), y: from.y.plus(offset_y) },
-		{ x: to.x.plus(offset_x), y: to.y.plus(offset_y) },
-		{ x: to.x.minus(offset_x), y: to.y.minus(offset_y) },
-		{ x: from.x.minus(offset_x), y: from.y.minus(offset_y) },
-	],
-	tower_color,
-)
+rod_quad = |{ from, to, offset_x, offset_y }|
+	Polygon({
+		corners: [
+			{ x: from.x.plus(offset_x), y: from.y.plus(offset_y) },
+			{ x: to.x.plus(offset_x), y: to.y.plus(offset_y) },
+			{ x: to.x.minus(offset_x), y: to.y.minus(offset_y) },
+			{ x: from.x.minus(offset_x), y: from.y.minus(offset_y) },
+		],
+		fill: Brush.flat(tower_color),
+	})
 
 ## A rod between two points in the rider's view, cut where it crosses the
 ## near plane. A rod wholly behind the near plane has no shape.

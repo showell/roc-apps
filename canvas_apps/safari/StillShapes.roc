@@ -7,7 +7,6 @@ import Distance
 import Sprite
 import lib.Point
 import lib.Pixels
-import Polygon
 import Still
 import lib.Brush
 import lib.Shapes
@@ -90,7 +89,7 @@ still_polygon : StillShapes.Anchor, Still.Polygon -> Shapes.Shape
 still_polygon = |anchor, polygon| {
 	points = StillShapes.screen_points(anchor, polygon.points)
 	match polygon.fill {
-		Flat(color) => Polygon.flat_polygon(points, color)
+		Flat(color) => Polygon({ corners: points, fill: Brush.flat(color) })
 		Shaded(gradient) => still_gradient_polygon(anchor, { gradient, points })
 	}
 }
@@ -102,25 +101,30 @@ still_gradient_polygon : StillShapes.Anchor,
 } -> Shapes.Shape
 still_gradient_polygon = |anchor, { gradient, points }|
 	match gradient {
-		Linear({ stops, start, end }) =>
-			Polygon.linear_gradient_polygon(
-				points,
-				{
-					stops: brush_stops(stops),
-					start_point: StillShapes.screen_point(anchor, start),
-					end_point: StillShapes.screen_point(anchor, end),
-				},
-			)
-		Radial({ stops, center, axis_u, axis_v }) =>
-			Polygon.elliptical_gradient_polygon(
-				points,
-				{
-					stops: brush_stops(stops),
-					center_point: StillShapes.screen_point(anchor, center),
-					axis_u: screen_vector(anchor, axis_u),
-					axis_v: screen_vector(anchor, axis_v),
-				},
-			)
+		Linear({ stops, start, end }) => {
+			fill = Brush.linear_gradient({
+				stops: brush_stops(stops),
+				start_point: StillShapes.screen_point(anchor, start),
+				end_point: StillShapes.screen_point(anchor, end),
+			})
+			Polygon({ corners: points, fill })
+		}
+		Radial({ stops, center, axis_u, axis_v }) => {
+			ellipse = Brush.elliptical_gradient({
+				stops: brush_stops(stops),
+				center: StillShapes.screen_point(anchor, center),
+				axis_u: screen_vector(anchor, axis_u),
+				axis_v: screen_vector(anchor, axis_v),
+			})
+			# A still is never drawn small enough to thin its ellipses past
+			# Brush's limit, as `Still.of` checks.
+			fill =
+				match ellipse {
+					Ok(gradient_fill) => gradient_fill
+					Err(TooThin) => crash "StillShapes.still_gradient_polygon: an ellipse too thin for Brush to invert"
+				}
+			Polygon({ corners: points, fill })
+		}
 	}
 
 ## A still's colour stops as a brush takes them.

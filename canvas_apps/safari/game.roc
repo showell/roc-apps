@@ -50,7 +50,6 @@ package
 		Motorcycle,
 		PigHerd,
 		Pipeline,
-		Polygon,
 		Pond,
 		RailSighting,
 		Rendered,

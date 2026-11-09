@@ -6,10 +6,10 @@ import lib.Pixels
 import DepthSort
 import Distance
 import RiderView
-import Polygon
 import Sprite
 import Rendered
 import lib.RgbColor
+import Camera
 import lib.Shapes
 
 GuardRail :: [].{
@@ -56,7 +56,7 @@ quad_shape = |quad, focal_length|
 	{
 		{ low_start, low_end, high_end, high_start } = quad.corners
 		corners = [low_start, low_end, high_end, high_start]
-		Polygon.clipped_polygon({ color: quad.color, corners }, focal_length)
+		Camera.clipped_polygon({ color: quad.color, corners }, focal_length)
 	}
 
 bar_middle_height : Distance

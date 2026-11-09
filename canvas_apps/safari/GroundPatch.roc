@@ -3,9 +3,9 @@
 ## it goes away from the rider.
 import lib.Pixels
 import RiderView
-import Polygon
 import EarthCurve
 import lib.RgbColor
+import Camera
 import lib.Shapes
 
 ## A patch of ground: its corners and its colour.
@@ -27,9 +27,9 @@ GroundPatch :: { corners : List(RiderView.RiderPoint), color : RgbColor }.{
 		if before_horizon.is_empty() {
 			Err(PastHorizon)
 		} else {
-			polygon : Polygon.FlatPolygon
+			polygon : Camera.FlatPolygon
 			polygon = { color: patch.color, corners: before_horizon }
-			shape = Polygon.clipped_polygon(polygon, focal_length)?
+			shape = Camera.clipped_polygon(polygon, focal_length)?
 			Ok(shape)
 		}
 	}

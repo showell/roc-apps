@@ -1,9 +1,13 @@
 ## The rider's camera: a pinhole at eye height, looking straight ahead. It
-## puts a point in the rider's view onto the screen.
+## puts a point in the rider's view onto the screen, and a polygon there once
+## it is cut at the camera's near plane.
 import Distance
 import Lens
+import lib.Brush
 import lib.Point
 import lib.Pixels
+import lib.RgbColor
+import lib.Shapes
 import RiderView
 
 Camera :: [].{
@@ -51,6 +55,29 @@ Camera :: [].{
 	## length `focal_length`.
 	projected_points : List(RiderView.RaisedPointAhead), Pixels -> List(Point.Point)
 	projected_points = |points, focal_length| points.map(|p| project(p, focal_length))
+
+	## A polygon of one color, in the rider's view.
+	FlatPolygon : { color : RgbColor, corners : List(RiderView.RaisedPoint) }
+
+	## A polygon on screen, cut at the near plane, unless it's wholly behind the
+	## camera. What is left of a polygon of three corners or more has three or
+	## more, so fewer is a bug in the code that asked, and it crashes.
+	clipped_polygon : Camera.FlatPolygon, Pixels -> Try(Shapes.Shape, [BehindCamera])
+	clipped_polygon = |{ color, corners }, focal_length| {
+		in_front = RiderView.clipped_points(corners)
+		if in_front.is_empty() {
+			Err(BehindCamera)
+		} else if in_front.len() < 3 {
+			crash "Camera.clipped_polygon: a polygon needs at least three corners"
+		} else {
+			Ok(
+				Polygon({
+					corners: projected_points(in_front, focal_length),
+					fill: Brush.flat(color),
+				}),
+			)
+		}
+	}
 }
 
 ## `point` past the near plane, which every point in these tests is.
