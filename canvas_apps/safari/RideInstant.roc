@@ -3,13 +3,13 @@
 ## encounter on the rider's segment is planned as the rider nears it. A ride
 ## that has finished starts again from the beginning.
 import Animation
+import Encounter
 import EncounterPlan
 import Clock
 import Distance
 import Motorcycle
 import Route
 import Rider
-import Segment
 import TruckJourney
 
 ## One instant of the ride, and all that is kept from one step to the next: the
@@ -84,16 +84,16 @@ next = |route, instant| {
 		}
 	encounter_plan = instant.encounter_plan.plan_at_next_step({
 		segment_change,
-		approach: encounter_approach(rider_place.segment_on(route), rider.motorcycle),
+		approach: encounter_approach(rider_place.segment_on(route).encounter, rider.motorcycle),
 		now: clock,
 	})
 	{ rider, truck, clock, encounter_plan }
 }
 
-## How `motorcycle` comes at `segment`'s encounter, or none on a quiet road.
-encounter_approach : Segment, Motorcycle -> EncounterPlan.Approach
-encounter_approach = |segment, motorcycle|
-	match segment.encounter.encounter_span() {
+## How `motorcycle` comes at `encounter`, or none on a quiet road.
+encounter_approach : Encounter, Motorcycle -> EncounterPlan.Approach
+encounter_approach = |encounter, motorcycle|
+	match encounter.encounter_span() {
 		Ok({ span, planned_along }) =>
 			Approaching({
 				span,
