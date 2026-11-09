@@ -1,6 +1,6 @@
 # Safari Ride: a tour of a real Roc program
 
-A long walk through one program of about ninety Roc modules: the big picture, the details, and the big picture again.
+This book walks you through one real Roc program, about ninety modules of it. You'll see the big picture first, then the details, and then the big picture again.
 
 ## Introduction
 
@@ -21,7 +21,7 @@ We assume you can read a little Roc. If you can't yet, the official tutorial is 
 
 ## The problem
 
-Here's the problem Safari Ride solves. It designs a world once. Then, thirty times a second, it moves what moves, finds everything near enough to see, and draws it.
+Here's the problem Safari Ride solves. It needs a world, designed once. Then, thirty times a second, it needs to move what moves, find everything near enough to see, and draw it.
 
 The problem, as a loop
 ```dot
@@ -42,24 +42,24 @@ digraph problem {
 
 It works like a flipbook, the little stack of drawings that seems to move when you riffle the pages with your thumb. Each page is drawn whole, from scratch. The code calls a page a frame, and a turn of the loop a step. While the ride plays, there's one step for each frame.
 
-The most interesting box is "look around". On a real safari, a guide scans the land and calls out what's there: a cat by the third tree, a bird on the far side. We'll call each of those a sighting. A sighting is true only for the moment it's made, so Safari Ride throws them all away and makes new ones for every frame.
+The most interesting box is "look around". The screen has to show the world from the rider's seat. So for every tree, cow, cat and tower, the program needs to know where it stands in the rider's view, whether the rider can see it at all, and how big it looks. On a real safari, a guide does this job: they scan the land and call out what's there, a cat by the third tree, a bird on the far side. Safari Ride needs machinery that does the same, for every thing, every frame. Its answer for one thing is a sighting. A sighting holds for the moment it's made, so Safari Ride makes fresh ones for every frame.
 
-### Four things are remembered
+### Four things carry over
 
-A flipbook page doesn't remember the page before it, and Safari Ride nearly works that way. Only four things carry over from one step to the next:
+Safari Ride carries four things from one step to the next:
 
-| Remembered | What it holds |
+| What it carries | What it holds |
 |---|---|
 | The clock | how many steps the ride has taken |
 | The rider | where the motorcycle is, which way it points, how fast it goes and how far it leans, and where the rider is looking |
 | The truck | how far along the road it is, how fast it goes, and whether its last step slowed it |
 | The encounter plan | when the cat or the bird on the rider's stretch of road starts to move |
 
-Everything else is worked out again for every frame: the color of the sky, where the sun stands, which trees are in view, how the cat is posed. A value that's worked out can't go stale. A value that's remembered has to be carried forward, step by step, so the book keeps asking which is which.
+That's the whole of its state, and it's small. During each frame, the program derives everything else from it: the color of the sky, where the sun stands, which trees are in view, how the cat is posed. A derived value always matches this step's state, because it comes straight from it. The state is what each step has to carry forward, so the book keeps asking of every value: is it carried, or derived?
 
 ### The rider and the world change each other
 
-The four aren't independent. The rider slows for a cat in the lane. The cat's crossing is planned from how fast the rider is coming. The truck aims to stay a little ahead of wherever the rider has got to. So within one step, order matters: the rider reads the world first, then moves, and then the truck and the encounter plan answer the rider who has just moved. That order is what makes the ride hang together, and the chapter on stepping through the ride shows it in full.
+The four depend on each other. The rider slows for a cat in the lane. The cat's crossing is planned from how fast the rider is coming. The truck aims to stay a little ahead of wherever the rider has got to. So within one step, order matters: the rider reads the world first, then moves, and then the truck and the encounter plan answer the rider who has just moved. That order is what makes the ride hang together, and the chapter on stepping through the ride shows it in full.
 
 ### Three sorts of thing
 
@@ -162,7 +162,7 @@ New in this chapter:
 
 ### Two halves
 
-The system has two halves, the diagram's two labelled groups. The ride is what happens. `RideInstant` holds the four remembered things and steps them, with `Rider` and `TruckJourney` moving the rider and the truck. `World` builds the route the ride runs on, out of segments, and the segments hold the critters: the cat and the bird.
+The system has two halves, the diagram's two labelled groups. The ride is what happens. `RideInstant` holds the four things each step carries, and steps them, with `Rider` and `TruckJourney` moving the rider and the truck. `World` builds the route the ride runs on, out of segments, and the segments hold the critters: the cat and the bird.
 
 The view is what the rider sees. `Scene` gathers the sightings, which work out what's visible, and the drawing modules make the shapes. Every arrow between the halves points one way, from the view to the ride: the view reads the ride, and the ride never imports the view. The one dotted arrow is the drawing code taking the pose names, and the cat's height, from the critters' modules.
 
@@ -230,11 +230,11 @@ A small tree can sink below the horizon while a taller one behind it still shows
 
 Cows, pigs and the other animals by the road are all sighted the same way, by `BillboardSighting`, which decides which of them get drawn. Each threshold for what gets drawn lives in the module that uses it. `Pipeline.smallest_height_on_screen`, 2 pixels, is how short something may look and still be drawn. `TreeShapes.cone_reach` and `TreeShapes.round_trunk_limit` decide how near a tree shows its full detail.
 
-Everything in this chapter happens within one frame, and none of it survives to the next. Only the four remembered things carry over: the clock, the rider, the truck and the encounter plan. Next, we hold one frame still and look at what's in it, starting with the parts that never change.
+Everything in this chapter happens within one frame, and the next frame makes it all again. Each step carries just the four: the clock, the rider, the truck and the encounter plan. Next, we hold one frame still and look at what's in it, starting with the parts that never change.
 
 ## The world
 
-Some of Safari Ride never changes. The road, its trees, the cows, the pond and where each cat and bird waits are all built once, before the ride starts, and only read after that. That makes them the easiest part of the program to read, so the tour starts there.
+Some of Safari Ride never changes. Before the ride starts, the program builds the road, its trees, the cows, the pond, and where each cat and bird waits. After that, it only reads them. That makes them the easiest part of the program to read, so the tour starts there.
 
 ```widget route
 The whole route in one picture. The white stretch is segment 7, and the lines under the map read out its record.
@@ -266,7 +266,7 @@ Here are the route's first six segments as rows. It's the same data `World.bendi
 | 5 | 300 metres | 70 degrees left | all green | quiet | cows, with a bull |
 | 6 | 300 metres | 70 degrees left | all green | a bird | cows, with a bull |
 
-`World` turns that list of plans into the route's segments: their trees, herds, pond and encounter, all worked out once.
+`World` turns that list of plans into the route's segments: it derives their trees, herds, pond and encounter once, before the ride.
 
 The modules around `World`
 ```dot
