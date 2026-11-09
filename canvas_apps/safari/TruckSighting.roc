@@ -1,8 +1,9 @@
 ## TruckSighting finds the truck ahead of the rider in a frame: which segment of
 ## the road ahead it is on, whether it is in front of the camera, and which way
 ## it heads. Unlike the trees and the animals, the truck has no size test: it
-## is drawn however small it stands. The sighting is worked out each frame from
-## the rider's camera, the route, the truck's progress and the clock.
+## is drawn however small it stands, so the sighting needs no lens. It is worked
+## out each frame from where the rider's camera stands, the route, the truck's
+## progress and the clock.
 import Angle
 import Distance
 import Geom

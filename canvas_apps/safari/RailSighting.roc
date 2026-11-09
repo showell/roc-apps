@@ -4,7 +4,7 @@
 ## back, and follows the next segment's outer edge for as far again. Unlike its
 ## sibling sightings, it doesn't go through `Pipeline`: a rail is a path in the
 ## rider's frame, not an object standing at a spot. The rail is worked out each
-## frame from the rider's camera and the route.
+## frame from where the rider's camera stands and the route.
 import Along
 import Distance
 import RoadAhead

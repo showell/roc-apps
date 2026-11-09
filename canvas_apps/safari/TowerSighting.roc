@@ -5,7 +5,8 @@
 ## Unlike the trees and the critters, a tower has no size test: it is
 ## sighted however small it stands, until the earth's curve sinks it wholly
 ## below the horizon, and then it is refused. The sightings are worked out each
-## frame from the rider's camera, the route and the clock.
+## frame from where the rider's camera stands, the route and the clock: with no
+## size test, they need no lens.
 import Across
 import Along
 import Angle
