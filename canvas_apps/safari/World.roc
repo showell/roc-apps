@@ -393,7 +393,7 @@ big_pig_herd = {
 
 ## The route's cow herd, fourteen cows in columns of three.
 cow_herd : CowHerd
-cow_herd = { cow_count: 14, rows_behind_front: 2 }
+cow_herd = CowHerd.herd({ cow_count: 14, rows_behind_front: 2 })
 
 ## How many of the segments before `index` have pigs.
 herd_count_before : Route.SegmentIndex -> U64
