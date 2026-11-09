@@ -204,11 +204,11 @@ So we start with shapes, and the simplest shape is a triangle. Then we build the
 
 A far tree in the ride is a rectangle of trunk under eight triangles. So before the tree, we draw its two shapes: a triangle and a rectangle.
 
-A shape is a tag. Here are the three the ride draws with:
+In Roc, a shape is a value that describes something to paint. The `Shape` type lists the shapes the platform knows how to paint, one tag for each. Here are the three the ride draws with:
 
 {{code Shapes.Shape from "Shape : [" to "Rect("}}
 
-Each tag carries a record of its data. A `Poly` is a polygon: its `coordinates` list the corners, an `x` and then a `y` for each, and its `fill` colors the inside. A `Disc` is a circle, and a `Rect` is a rectangle with its sides along the screen's edges. Their numbers are pixels, measured from the top left of the screen, with `y` growing downward.
+Each tag carries a record of its data. A `Poly` is a polygon: its `coordinates` list the corners, an `x` and then a `y` for each, and its `fill` colors the inside. A `Disc` is a circle, with a center and a radius. A `Rect` is a rectangle. The numbers are pixels, measured from the top left of the screen, with `y` growing downward.
 
 ### A triangle
 
@@ -222,13 +222,15 @@ And here's the code that makes it:
 
 {{code ShapesWidgetApp.green_triangle}}
 
-`0x2e8b57` is the color, the six hex digits a web page writes after its `#`. The `Polygon.triangle` function builds the `Poly`:
+`0x2e8b57` is the color, the six hex digits a web page writes after its `#`. The `Shape` type has no tag for a triangle, because a triangle is a polygon with three corners. So the `Polygon.triangle` function takes three corners and builds the `Poly`:
 
 {{code Polygon.triangle}}
 
-The parameter `{ first_corner, second_corner, third_corner }` takes the record apart into three names. Every caller names all three corners, so every triangle has exactly three, by construction. The body lists the six numbers and fills the inside with one flat color.
+The parameter `{ first_corner, second_corner, third_corner }` takes the record apart into three names. Every caller names all three corners, so every triangle has exactly three, by construction. The body lists the six numbers and fills the inside with one flat color. It gives back a `Shapes.Shape`, because a `Shape` is what the platform paints.
 
 Each corner is a `Screen.Point`, and its `x` and `y` are each a `Pixels`: an opaque type around an `F64`, like `Distance`. The ride works in metres on the road and pixels on the screen, so two types keep the two apart, and a reader always knows which one a number is. The `to_f64` calls take the plain numbers out for the `Poly`. Roc is just as happy with plain numbers, as the `Shape` type shows.
+
+So what draws the triangle? The picture is a small Roc app of its own. For each frame, it hands the platform a list of two shapes: the background, which is a rectangle the size of the picture, and then the triangle. The platform paints the list from first to last, so the triangle lands on the background.
 
 ### A rectangle
 
@@ -240,7 +242,7 @@ A brown rectangle on a plain background.
 
 {{code ShapesWidgetApp.brown_rectangle}}
 
-A `Rect` takes its top left corner, its width and its height, all plain numbers, so the picture builds one directly.
+`Rect` is the `Shape` type's tag for a rectangle, and `Rect({ ... })` makes a `Shape` value from the record. The record holds the top left corner, a width and a height, so a `Rect` is always upright, its sides square to the screen. The picture hands the platform the background and then this rectangle, just as it did the triangle.
 
 That's both of a far tree's shapes. Next, we put them together.
 
