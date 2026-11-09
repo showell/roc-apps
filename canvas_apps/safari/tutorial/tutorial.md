@@ -37,37 +37,65 @@ Each of the five is a fair amount of work. Safari Ride solves all five with simp
 
 ## A small story, a rich picture
 
-Not much happens in Safari Ride. A rider rides down a road. Now and then a cat or a bird crosses the rider's path. The beacons blink on the radio towers, and the sun goes down. Four small things tell that whole story at any moment: where the rider is, where the truck is, the time on the clock, and when the cat or the bird ahead starts to move.
+The last chapter looked at Safari Ride from the seat of the person watching it. They see a world, the rider's view of it, things in motion, a frame on the screen, and a few controls. Now we take the programmer's seat. Each of those five problems has an answer, and each answer has a home in the code.
 
-The picture is another matter. At step 1,529 of the ride, the frame paints 2,121 shapes over its backdrop of sky and grass. While the ride plays, each frame shows the story one step on. The rider moves a little, and the road, the trees and the cows all shift on the screen. The story barely changes from one step to the next. The picture changes all over.
+Start with what changes. Not much happens in Safari Ride. A rider rides down a road. Now and then a cat or a bird crosses the rider's path. The beacons blink on the radio towers, and the sun goes down. Four small things tell that whole story at any moment: where the rider is, where the truck is, the time on the clock, and when the cat or the bird ahead starts to move.
 
-Safari Ride's design falls out of that difference. It has three pieces.
+The picture is another matter. At step 1,529 of the ride, the frame paints 2,121 shapes over its backdrop of sky and grass. One step later the rider has moved on, and the road, the trees and the cows all shift on the screen. So Safari Ride keeps the small story, and describes the rich picture fresh, every frame. The five answers all follow from that.
 
-The stage is the world: the road, the trees, the herds and the towers, and the places where a cat or a bird waits. The stage never changes. The rider moves through it. So we build the world once, before the ride starts, and from then on we only read it. The stage answers the first problem.
+Safari Ride's Roc code is split into modules. A module is one file, and the file's name is the module's name: `World.roc` holds the module `World`. A name with a dot in it, like `World.route`, means `route` from the module `World`. Each answer below names the module that gives it.
 
-The story is the four small things, and we carry it from each step to the next. A step reads the stage and the story, and gives the story's next moment. The story is small enough to keep every moment of it, back to the start of the ride. That's how rewinding works: to go back a step, we take the moment before. The story answers the third problem, and the fifth.
+### The world
 
-The picture is everything on the screen, and we never keep it. For every frame, the Roc code describes the whole picture fresh from the stage and the story, as a list of shapes. Then the page paints the list. The Roc code never draws. Seeing works this way in the real world, too. The world doesn't paint itself onto your eyes: light brings you information, and your mind makes the picture. To describe the picture, the Roc code works out what the rider sees, and lists far things before near ones, so the near ones are painted over them. The picture answers the second problem and the fourth.
+The world is a value in the Roc code. `World` holds a short list of segment plans, one for each stretch of road. Each plan is a record of this type:
 
-Because each picture comes fresh from its moment, pausing, stepping and rewinding need no drawing code of their own. We describe whichever moment you've asked for.
+{{code World.SegmentPlan}}
 
-The three pieces of the design
+The first plan says its segment is 500 metres long, lined with green trees, with a bird to meet along the way. Beside the plan, the route says the segment turns 50° into the next, and an elephant and its baby stand at the bend. The plan never says where a single tree stands. `World.route` builds the whole route from the plans, once, before the ride starts, and the trees, the herds and the towers all follow from them. The plans are Roc code, so the compiler checks them: a plan that leaves out its length doesn't compile.
+
+### The rider's view
+
+Every frame, `RiderCamera` places a camera where the rider is, facing where the rider looks. Each thing on the road ahead then goes through the same three forms, written once in `Pipeline` for every kind of thing: placed on the road, sighted by the camera, and turned into shapes. One rule, the pinhole's, gives both where a thing lands on the screen and how big it looks there. Twice as far away looks half as big. A thing the rider can't see is refused, with a tag that says why, such as `BehindCamera` or `BelowHorizon`.
+
+### Motion
+
+One function moves the ride on. `RideInstant.next_or_restart` takes the world and one moment of the ride, and gives the next moment. It moves only the four small things, in a fixed order. The rider reads where the cat or the bird ahead has got to, then moves, and the clock ticks. Then the truck and the encounter plan answer the rider's new place. Everything else that seems to move is worked out from those four. The sun goes down because the clock says so, and no code moves a sun.
+
+### The screen
+
+The Roc code never draws. `FrameView` describes each frame as a list of shapes, ordered far to near, so the near ones are painted over the far ones. Seeing works this way in the real world, too. The world doesn't paint itself onto your eyes: light brings you information, and your mind makes the picture.
+
+The painting belongs to the platform. A Roc program runs on a platform, the layer underneath it that talks to the outside world: here, the screen and the keyboard. Safari Ride hands itself to its platform as one value:
+
+{{code SafariApp.canvas_app}}
+
+`model_at_next_step` takes the ride one step on, given the keys that were pressed, and `frame_shapes` gives a frame's list of shapes. The platform does the rest. In this page, the ride runs as WebAssembly, and JavaScript paints each list on a canvas. The same Roc code also runs as a native program on a platform called roc-ray. Safari Ride is the top layer, and it's the same on both.
+
+### The person watching
+
+The controls are a handful of keys, named beside the ride, and `SafariApp` answers them. The ride itself never knows it's paused. To answer every key straight away, `Tour` keeps every moment of the ride, back to its start. Stepping back takes the moment before, and the next frame is described from it like any other.
+
+### The whole design
+
+The design, module by module
 ```dot
 digraph design {
   node [shape=box, fontname="Helvetica"];
-  stage [label="the stage\nthe world, laid out once"];
-  story [label="the story\nfour small things"];
-  picture [label="the picture\na list of shapes"];
-  page [label="the page"];
-  stage -> story [label="  is read by each step"];
-  story -> story [label="  steps to its next moment"];
-  stage -> picture [label="  is read for every frame"];
-  story -> picture [label="  gives, fresh every frame"];
-  picture -> page [label="  is painted by"];
+  world [label="World\nthe route, built once"];
+  instant [label="RideInstant\nthe four small things"];
+  tour [label="Tour\nevery moment so far"];
+  frame [label="FrameView\none frame's shapes"];
+  platform [label="the platform\nthe web page, or roc-ray"];
+  world -> instant [label="  is read by next_or_restart"];
+  instant -> instant [label="  steps to its next moment"];
+  tour -> instant [label="  keeps every one"];
+  world -> frame [label="  is read for every frame"];
+  instant -> frame [label="  gives, through frame_view_at"];
+  frame -> platform [label="  is painted by"];
 }
 ```
 
-The first half of the book holds one frame still, and builds the stage and the picture for it. The second half lets the story move. We start with the picture, and a picture is a list of shapes. The simplest shape is a triangle.
+From here, the book builds that design piece by piece. The first half holds one frame still and builds everything in it, starting with the smallest piece of the picture: a single triangle. By the end of the next chapter, it's on the screen.
 
 ## Shapes
 
