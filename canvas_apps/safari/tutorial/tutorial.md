@@ -641,7 +641,7 @@ Two `TreeShapes` thresholds decide how much of a tree gets drawn: `cone_reach`, 
 Three gold trees, each drawn by `Conifer.scenery_picture`. Under each are its distance and what `crown_of` said.
 ```
 
-`tier_shape` acts on that decision. It takes a `TierInputs`, the record that `tree_picture` built as `inputs`. That record holds what every tier of one tree needs: the tree's base and height, the lens, its outline on the screen, its color and its crown.
+`tier_shape` acts on that decision. It takes the `crown`, beside a `TierInputs`, the record that `tree_picture` built as `inputs`. That record holds what every tier of one tree needs: the tree's base and height, the lens, its outline on the screen, and its color.
 
 {{code TreeShapes.tier_shape}}
 

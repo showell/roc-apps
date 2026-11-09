@@ -31,8 +31,9 @@ TreeShapes :: [].{
 	} -> Picture
 	tree_picture = |{ spot, focal_length, context }, { height, foliage_color }| {
 		inputs = tier_inputs_of(spot, { height, focal_length, foliage_color })
+		crown = TreeShapes.crown_of(inputs.base.forward())
 		trunk = trunk_shape(inputs.outline, trunk_finish_of(context.nearer_tree_count))
-		Picture.from_shapes([trunk].concat(tiers.map(|tier| tier_shape(tier, inputs))))
+		Picture.from_shapes([trunk].concat(tiers.map(|tier| tier_shape(tier, { inputs, crown }))))
 	}
 
 	## How a crown is drawn: cones, shaded by how near they are, or flat triangles.
@@ -112,18 +113,19 @@ Tier : {
 }
 
 ## What every tier of one tree needs. `base` is the middle of the tree's foot,
-## and `height` how far its tip stands above that.
+## and `height` how far its tip stands above that. `outline` is a cache: the
+## tree's outline through `focal_length`, worked out once per tree from `base`
+## and `height` for all eight tiers.
 TierInputs : {
 	base : RiderView.RaisedPointAhead,
 	height : Distance,
 	focal_length : Pixels,
 	outline : Camera.Upright,
 	foliage_color : RgbColor,
-	crown : TreeShapes.Crown,
 }
 
-## What every tier of the tree at `spot` needs, its base, outline and crown
-## worked out from the rest.
+## What every tier of the tree at `spot` needs, its base and outline worked
+## out from the rest.
 tier_inputs_of : Spot,
 {
 	height : Distance,
@@ -138,7 +140,6 @@ tier_inputs_of = |spot, { height, focal_length, foliage_color }| {
 		focal_length,
 		outline: TreeShapes.tree_outline(base, { height, focal_length }),
 		foliage_color,
-		crown: TreeShapes.crown_of(base.forward()),
 	}
 }
 
@@ -283,12 +284,12 @@ ring_angles = {
 ring_units : List({ cos : F64, sin : F64 })
 ring_units = ring_angles.map(|angle| { cos: angle.cos(), sin: angle.sin() })
 
-## A tier, as a cone when the tree is near and the ring round the cone's base
-## is at or past the near plane, else as a triangle.
-tier_shape : Tier, TierInputs -> Shapes.Shape
-tier_shape = |tier, inputs| {
+## A tier, as a cone when the tree's `crown` is cones and the ring round the
+## cone's base is at or past the near plane, else as a triangle.
+tier_shape : Tier, { inputs : TierInputs, crown : TreeShapes.Crown } -> Shapes.Shape
+tier_shape = |tier, { inputs, crown }| {
 	colored_tier = { tier, foliage_color: inputs.foliage_color }
-	match inputs.crown {
+	match crown {
 		Cones({ shade }) => {
 			radius_share = crown_half_width_share.to_f64() * tier.width.to_f64()
 			cone_radius = inputs.height.times(radius_share)
@@ -385,17 +386,16 @@ sample_outline = Camera.upright_on_screen(
 
 # A lifted tree's cones measure from its foot: the ring under the bottom tier
 # sits the trunk's share of the height above the foot, which here is 2 m up.
-# The ring reads only the base and the height, so the outline is the
-# unlifted sample's.
 expect {
 	base = sample_base(Distance.metres(2.0))
+	height = sample_height
+	focal_length = Pixels.of(500.0)
 	inputs = {
 		base,
-		height: sample_height,
-		focal_length: Pixels.of(500.0),
-		outline: sample_outline,
+		height,
+		focal_length,
+		outline: TreeShapes.tree_outline(base, { height, focal_length }),
 		foliage_color: RgbColor.of(7),
-		crown: TreeShapes.crown_of(base.forward()),
 	}
 	bottom_tier = tiers.last() ?? crash "a tree has tiers"
 	want = 2.0 + 4.352 * 55.0 / 136.0
