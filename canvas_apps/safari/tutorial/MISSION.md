@@ -62,7 +62,7 @@ Each axis fails in its own way, and catching each failure takes a different kind
 ### Axis D. Voice: the sentences themselves
 
 - **D1.** **Active voice.** "We carry a small amount of state… we derive values from it", never "four things are remembered" or "everything else is worked out".
-- **D2.** **Say what happens.** Never define a thing by what it isn't, can't do or doesn't remember ("can't go stale", "has never heard of a tower"). Say what it does.
+- **D2.** **Say what happens. Never say what something isn't.** No sentence describes a thing by what it isn't, can't do, doesn't do, never says or doesn't remember: "The plans never say where a single tree stands", "can't go stale", "has never heard of a tower". Say what it does, or cut the sentence; usually the sentence wasn't needed. Negative contractions (can't, isn't, doesn't) are a smell: a run of them, such as "We can't place a tree we can't draw", is always rewritten or struck. A negative is fine only where the program's own behavior is a refusal, such as a tag that says why a thing isn't drawn.
 - **D3.** Short sentences: Hemingway, not Faulkner. A strong sentence stands alone. Don't join two sentences that could stand on their own with a comma or ", but".
 - **D4.** Talk to the reader with "we", "you" and contractions. Start the book, and each chapter, with a full sentence, never a fragment. The first sentence makes a strong first impression. It doesn't have to be "Call me Ishmael", but it earns the reader's attention.
 - **D5.** Code first, then one plain sentence on what it does, then why, in ordinary causal words ("That's because…").
@@ -88,12 +88,12 @@ Each axis fails in its own way, and catching each failure takes a different kind
 
 ### Axis F. Vocabulary: one word for one thing
 
-- **F1.** These words keep their meanings: frame, step, sighting, spot, kind, picture, rendering, segment, critter (an English word, never a type), solid, card, far scenery, carried, derived.
+- **F1.** These words keep their meanings: frame, step, sighting, spot, kind, picture, sprite, rendering, segment, critter (an English word, never a type), solid, card, far scenery, carried, derived.
 - **F2.** Every term goes in the glossary, and the book uses the glossary's word.
 - **F3.** Write "math", not "maths". "Metres" and "colour" are fine. Write "forward" and "backward", never the "-s" forms.
 - **F4.** Types name numbers. Never say a `Pixels` isn't a number.
 - **F6.** Always say what a name is. "`FrameView`" alone leaves the reader guessing whether it's a module or a type. Say "the `next_or_restart` function takes…", "the `World` module holds…", "a value of the `SegmentPlan` record type goes to…".
-- **F5.** "Picture" means one thing: the program draws a series of pictures for each step, against a backdrop.
+- **F5.** "Picture" means everything on the screen in one frame, what the camera takes in. One thing's shapes in a frame are its **sprite** (the `Sprite` type), a word we use in the loose sense. Introduce it once with authority ("We call these sprites"), with no apology.
 
 ### Axis G. The code behind the prose
 
