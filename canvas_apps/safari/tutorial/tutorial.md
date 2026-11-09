@@ -180,6 +180,8 @@ The things beside the road are its trees, its radio towers and its animals, and 
 A cow on the grass beside the road.
 ```
 
+The ride has a lot of animals: herds of cows and pigs, ducks on the ponds, and an elephant at a bend in the road. Each one is a billboard: a flat picture of its emoji, standing on the grass and turned square to the camera, like a cardboard cutout. That takes far less code than modelling an animal, and it's charming. A billboard faces left or right, and one that faces right is its emoji mirrored. That's the `Billboard` type from "The pieces as types": an emoji, a height and a facing. Each emoji was traced into polygons ahead of time, and the `EmojiStills` module holds them as plain data. The tracing itself is beyond this book.
+
 Each kind of thing has a function called `scenery_sprite` in its own module. Here's the type annotation of the cow's, from the `Billboard` module:
 
 {{signatures Billboard.scenery_sprite}}
