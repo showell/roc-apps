@@ -7,14 +7,14 @@
 import Camera
 import ConvexHull
 import Distance
-import Fraction
+import lib.Fraction
 import RiderView
 import Sprite
-import Polygon
-import Pixels
+import lib.Pixels
 import Spot
 import lib.Brush
 import lib.RgbColor
+import lib.Point
 import lib.Shapes
 
 TreeShapes :: [].{
@@ -236,17 +236,16 @@ trunk_shape = |outline, finish| {
 	left = outline.foot.x.minus(width.divided_by(2.0))
 	fill =
 		match finish {
-			Shaded => Polygon.width_shade(
+			Shaded => Brush.width_shade(
 				{ min_x: left, max_x: left.plus(width) },
 				{ color: trunk_color, strength: Fraction.whole },
 			)
 			Flat => Brush.flat(trunk_color)
 		}
-	Rect({
-		x: left.to_f64(),
-		y: outline.foot.y.minus(height).to_f64(),
-		width: width.to_f64(),
-		height: height.to_f64(),
+	Rectangle({
+		top_left: { x: left, y: outline.foot.y.minus(height) },
+		width,
+		height,
 		fill,
 	})
 }
@@ -259,14 +258,12 @@ tier_triangle = |outline, { tier, foliage_color }| {
 	bottom_y = crown_top.plus(crown_height(outline).scaled_by(tier.bottom))
 	top_y = crown_top.plus(crown_height(outline).scaled_by(tier.top))
 	half_base = crown_half_width(outline).scaled_by(tier.width)
-	Polygon.triangle(
-		{
-			first_corner: { x: outline.foot.x, y: top_y },
-			second_corner: { x: outline.foot.x.plus(half_base), y: bottom_y },
-			third_corner: { x: outline.foot.x.minus(half_base), y: bottom_y },
-		},
-		foliage_color,
-	)
+	Triangle({
+		first: { x: outline.foot.x, y: top_y },
+		second: { x: outline.foot.x.plus(half_base), y: bottom_y },
+		third: { x: outline.foot.x.minus(half_base), y: bottom_y },
+		fill: Brush.flat(foliage_color),
+	})
 }
 
 ## The angles of a cone's ring, from 0 round a whole turn. Each is the one
@@ -348,10 +345,9 @@ tier_cone = |tier, { inputs, ring_points, shade }| {
 	apex_height = height_down_crown(inputs, tier.top)
 	apex = Camera.project(inputs.base.at_height(apex_height), inputs.focal_length)
 	ring_on_screen = Camera.projected_points(ring_points, inputs.focal_length)
-	Polygon.shaded_polygon(
-		ConvexHull.cone_hull_points(ring_on_screen, apex),
-		{ color: inputs.foliage_color, strength: shade },
-	)
+	corners = ConvexHull.cone_hull_points(ring_on_screen, apex)
+	fill = Brush.corners_shade(corners, { color: inputs.foliage_color, strength: shade })
+	Polygon({ corners, fill })
 }
 
 expect crown_shade(Distance.metres(0.0)).to_f64() == 1.0
@@ -430,6 +426,14 @@ expect
 		[480.0, 600.0, 1088.0, 648.0, 288.0],
 	)
 
+## A rectangle's left, top, width and height, as plain numbers.
+box_numbers : {
+	top_left : Point.Point,
+	width : Pixels,
+	height : Pixels,
+} -> List(F64)
+box_numbers = |box| [box.top_left.x, box.top_left.y, box.width, box.height].map(Pixels.to_f64)
+
 expect {
 	trunk_brown = {
 		r: 0x5A,
@@ -438,9 +442,9 @@ expect {
 		a: 1.0,
 	}
 	match trunk_shape(sample_outline, Flat) {
-		Rect({ x, y, width, height, fill }) =>
+		Rectangle({ top_left, width, height, fill }) =>
 			fill == Flat(trunk_brown)
-				and is_near([x, y, width, height], [440.0, 110.0, 80.0, 490.0])
+				and is_near(box_numbers({ top_left, width, height }), [440.0, 110.0, 80.0, 490.0])
 		_ => False
 	}
 }
@@ -460,10 +464,9 @@ expect {
 		a: 1.0,
 	}
 	match trunk_shape(sample_outline, Shaded) {
-		Rect(
+		Rectangle(
 			{
-				x,
-				y,
+				top_left,
 				width,
 				height,
 				fill: Span({ edge_color, middle_color, left_x, right_x }),
@@ -471,8 +474,8 @@ expect {
 		) =>
 			edge_color == edge_brown
 				and middle_color == middle_brown
-				and is_near([left_x, right_x], [440.0, 520.0])
-				and is_near([x, y, width, height], [440.0, 110.0, 80.0, 490.0])
+				and is_near([left_x, right_x].map(Pixels.to_f64), [440.0, 520.0])
+				and is_near(box_numbers({ top_left, width, height }), [440.0, 110.0, 80.0, 490.0])
 		_ => False
 	}
 }
@@ -480,8 +483,10 @@ expect {
 expect {
 	corners_of = |tier|
 		match tier_triangle(sample_outline, { tier, foliage_color: RgbColor.of(7) }) {
-			Poly(polygon) => polygon.coordinates
-			_ => crash "a tier is one polygon"
+			Triangle(t) => [t.first, t.second, t.third].join_map(
+				|corner| [corner.x.to_f64(), corner.y.to_f64()],
+			)
+			_ => crash "a tier is one triangle"
 		}
 	top_tier = tiers.first() ?? crash "a tree has tiers"
 	bottom_tier = tiers.last() ?? crash "a tree has tiers"

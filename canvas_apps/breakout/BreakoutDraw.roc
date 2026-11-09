@@ -4,6 +4,8 @@
 # Draw.Frame. Here a frame is a value, so this answers a list of shapes.
 #
 # The halos are additive, as upstream's are: they are a run of added light.
+import lib.Pixels
+import lib.Point
 import lib.Shapes
 import lib.Brush
 import lib.RgbColor
@@ -40,7 +42,7 @@ BreakoutDraw :: [].{
 	## One complete Breakout frame, back to front.
 	frame : Rules.World, F64 -> List(Shapes.Shape)
 	frame = |world, elapsed| {
-		var $out = [Rect({ x: 0.0, y: 0.0, width: w, height: h, fill: Linear({ stops: { start_color: Brush.opaque_rgba(field_top), end_color: Brush.opaque_rgba(field_bottom), start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: h } }) })]
+		var $out = [Rectangle({ top_left: Point.at(0.0, 0.0), width: Pixels.of(w), height: Pixels.of(h), fill: Linear({ stops: { start_color: Brush.opaque_rgba(field_top), end_color: Brush.opaque_rgba(field_bottom), start_offset: 0.0, end_offset: 1.0 }, start_point: Point.at(0.0, 0.0), end_point: Point.at(0.0, h) }) })]
 		$out = List.concat($out, hud(world))
 		$out = List.concat($out, bricks(world.bricks))
 		$out = List.concat($out, glow(world))
@@ -54,11 +56,11 @@ BreakoutDraw :: [].{
 		score = Str.concat("SCORE ", U64.to_str(world.score))
 		lives = Str.concat("LIVES ", U64.to_str(world.lives))
 		hint = "LEFT / RIGHT MOVE    SPACE LAUNCH"
-		var $out = Font.text_shapes("BREAKOUT", { top_left: { x: 44.0, y: 22.0 }, size: 26.0, color: Brush.opaque_rgba(paddle_neon) })
-		$out = List.concat($out, Font.text_shapes(score, { top_left: { x: 330.0, y: 26.0 }, size: 22.0, color: Brush.opaque_rgba(hud_color) }))
-		$out = List.concat($out, Font.text_shapes(lives, { top_left: { x: 560.0, y: 26.0 }, size: 22.0, color: Brush.opaque_rgba(hud_color) }))
-		$out = List.append($out, Shapes.line({ from: { x: 44.0, y: 58.0 }, to: { x: 756.0, y: 58.0 }, width: 2.0 }, Brush.flat(rule_color)))
-		List.concat($out, Font.centered_text_shapes(hint, { top_center: { x: w / 2.0, y: 572.0 }, size: 17.0, color: Brush.opaque_rgba(hint_color) }))
+		var $out = Font.text_shapes("BREAKOUT", { top_left: Point.at(44.0, 22.0), size: 26.0, color: Brush.opaque_rgba(paddle_neon) })
+		$out = List.concat($out, Font.text_shapes(score, { top_left: Point.at(330.0, 26.0), size: 22.0, color: Brush.opaque_rgba(hud_color) }))
+		$out = List.concat($out, Font.text_shapes(lives, { top_left: Point.at(560.0, 26.0), size: 22.0, color: Brush.opaque_rgba(hud_color) }))
+		$out = List.append($out, Shapes.line({ from: Point.at(44.0, 58.0), to: Point.at(756.0, 58.0), width: Pixels.of(2.0) }, Brush.flat(rule_color)))
+		List.concat($out, Font.centered_text_shapes(hint, { top_center: Point.at(w / 2.0, 572.0), size: 17.0, color: Brush.opaque_rgba(hint_color) }))
 	}
 
 	## Every brick still standing, each with a bright top-edge sheen.
@@ -73,8 +75,8 @@ BreakoutDraw :: [].{
 			y = F32.to_f64(b.rect.y)
 			bw = F32.to_f64(b.rect.width)
 			bh = F32.to_f64(b.rect.height)
-			$out = List.append($out, Shapes.rounded_rect({ x, y, width: bw, height: bh, corner_radius: 5.0, corner_steps: 6 }, Flat(Brush.with_alpha(b.color, 0.92))))
-			$out = List.append($out, Rect({ x: x + 5.0, y: y + 3.0, width: bw - 10.0, height: 3.0, fill: Flat(Brush.with_alpha(white, 0.43)) }))
+			$out = List.append($out, Shapes.rounded_rect({ top_left: Point.at(x, y), width: Pixels.of(bw), height: Pixels.of(bh), corner_radius: Pixels.of(5.0), corner_steps: 6 }, Flat(Brush.with_alpha(b.color, 0.92))))
+			$out = List.append($out, Rectangle({ top_left: Point.at(x + 5.0, y + 3.0), width: Pixels.of(bw - 10.0), height: Pixels.of(3.0), fill: Flat(Brush.with_alpha(white, 0.43)) }))
 			$i = $i + 1
 		}
 		$out
@@ -91,7 +93,7 @@ BreakoutDraw :: [].{
 	}
 
 	halo : F64, F64, F64, RgbColor -> Shapes.Shape
-	halo = |x, y, radius, color| Shapes.halo({ center: { x, y }, radius }, Brush.with_alpha(color, 0.37))
+	halo = |x, y, radius, color| Shapes.halo({ center: Point.at(x, y), radius: Pixels.of(radius) }, Brush.with_alpha(color, 0.37))
 
 	## The solid paddle and ball, over their glows.
 	bodies : Rules.World -> List(Shapes.Shape)
@@ -105,10 +107,10 @@ BreakoutDraw :: [].{
 		by = F32.to_f64(world.ball.pos.y)
 		r = F32.to_f64(Ball.radius)
 		[
-			Shapes.rounded_rect({ x: px, y: py, width: pw, height: ph, corner_radius: ph / 2.0, corner_steps: 8 }, Brush.flat(paddle_neon)),
-			Rect({ x: px + 8.0, y: py + 3.0, width: pw - 16.0, height: 3.0, fill: Flat(Brush.with_alpha(white, 0.59)) }),
-			Disc({ x: bx, y: by, radius: r, fill: Brush.flat(ball_neon) }),
-			Disc({ x: bx - 2.0, y: by - 2.0, radius: r * 0.4, fill: Flat(Brush.with_alpha(white, 0.82)) }),
+			Shapes.rounded_rect({ top_left: Point.at(px, py), width: Pixels.of(pw), height: Pixels.of(ph), corner_radius: Pixels.of(ph / 2.0), corner_steps: 8 }, Brush.flat(paddle_neon)),
+			Rectangle({ top_left: Point.at(px + 8.0, py + 3.0), width: Pixels.of(pw - 16.0), height: Pixels.of(3.0), fill: Flat(Brush.with_alpha(white, 0.59)) }),
+			Disc({ center: Point.at(bx, by), radius: Pixels.of(r), fill: Brush.flat(ball_neon) }),
+			Disc({ center: Point.at(bx - 2.0, by - 2.0), radius: Pixels.of(r * 0.4), fill: Flat(Brush.with_alpha(white, 0.82)) }),
 		]
 	}
 
@@ -122,7 +124,7 @@ BreakoutDraw :: [].{
 		match world.state {
 			Ready => {
 				line = "PRESS SPACE TO LAUNCH"
-				Font.centered_text_shapes(line, { top_center: { x: w / 2.0, y: 340.0 }, size: 22.0, color: Brush.with_alpha(hud_color, prompt_alpha(elapsed)) })
+				Font.centered_text_shapes(line, { top_center: Point.at(w / 2.0, 340.0), size: 22.0, color: Brush.with_alpha(hud_color, prompt_alpha(elapsed)) })
 			}
 			Playing => []
 			Won => banner("WALL CLEARED", RgbColor.of(0x4ce0b3), elapsed)
@@ -133,10 +135,10 @@ BreakoutDraw :: [].{
 	banner = |line, accent, elapsed| {
 		again = "PRESS SPACE TO PLAY AGAIN"
 		var $out = [
-			Shapes.rounded_rect({ x: 188.0, y: 274.0, width: 424.0, height: 128.0, corner_radius: 18.0, corner_steps: 8 }, Flat(Brush.with_alpha(accent, 0.47))),
-			Shapes.rounded_rect({ x: 190.0, y: 276.0, width: 420.0, height: 124.0, corner_radius: 17.0, corner_steps: 8 }, Flat(Brush.with_alpha(field_bottom, 0.91))),
+			Shapes.rounded_rect({ top_left: Point.at(188.0, 274.0), width: Pixels.of(424.0), height: Pixels.of(128.0), corner_radius: Pixels.of(18.0), corner_steps: 8 }, Flat(Brush.with_alpha(accent, 0.47))),
+			Shapes.rounded_rect({ top_left: Point.at(190.0, 276.0), width: Pixels.of(420.0), height: Pixels.of(124.0), corner_radius: Pixels.of(17.0), corner_steps: 8 }, Flat(Brush.with_alpha(field_bottom, 0.91))),
 		]
-		$out = List.concat($out, Font.centered_text_shapes(line, { top_center: { x: w / 2.0, y: 304.0 }, size: 30.0, color: Brush.opaque_rgba(accent) }))
-		List.concat($out, Font.centered_text_shapes(again, { top_center: { x: w / 2.0, y: 356.0 }, size: 17.0, color: Brush.with_alpha(hint_color, prompt_alpha(elapsed)) }))
+		$out = List.concat($out, Font.centered_text_shapes(line, { top_center: Point.at(w / 2.0, 304.0), size: 30.0, color: Brush.opaque_rgba(accent) }))
+		List.concat($out, Font.centered_text_shapes(again, { top_center: Point.at(w / 2.0, 356.0), size: 17.0, color: Brush.with_alpha(hint_color, prompt_alpha(elapsed)) }))
 	}
 }

@@ -12,14 +12,14 @@ import game.Geom
 import game.RiderView
 import game.GroundPatch
 import game.GroundSighting
-import game.Pixels
-import game.Polygon
+import lib.Pixels
 import game.RoadAhead
 import game.Route
 import game.RoutePlace
 import game.SegmentFromRider
 import game.World
 import lib.RgbColor
+import game.Camera
 import lib.Shapes
 
 RoadExpects :: [].{}
@@ -429,7 +429,7 @@ expect
 # A triangle at these distances ahead, on the ground.
 sample_clipped_polygon : List(F64) -> Try(Shapes.Shape, [BehindCamera])
 sample_clipped_polygon = |forwards|
-	Polygon.clipped_polygon(
+	Camera.clipped_polygon(
 		{
 			color: RgbColor.of(0x2F7E8C),
 			corners: forwards.map(
@@ -443,15 +443,15 @@ sample_clipped_polygon = |forwards|
 		Pixels.of(800.0),
 	)
 
-# The number of coordinates a triangle's polygon holds, 2 to a corner.
-clipped_coordinate_count : List(F64) -> U64
-clipped_coordinate_count = |forwards|
+# The number of corners a triangle's polygon holds once it is cut.
+clipped_corner_count : List(F64) -> U64
+clipped_corner_count = |forwards|
 	match sample_clipped_polygon(forwards) {
-		Ok(Poly(polygon)) => polygon.coordinates.len()
+		Ok(Polygon(polygon)) => polygon.corners.len()
 		_ => 0
 	}
 
-expect clipped_coordinate_count([5.0, 6.0, 7.0]) == 6
-expect clipped_coordinate_count([-1.0, 5.0, 6.0]) == 8
-expect clipped_coordinate_count([-3.0, -2.0, -1.0]) == 0
+expect clipped_corner_count([5.0, 6.0, 7.0]) == 3
+expect clipped_corner_count([-1.0, 5.0, 6.0]) == 4
+expect clipped_corner_count([-3.0, -2.0, -1.0]) == 0
 expect sample_clipped_polygon([-3.0, -2.0, -1.0]).is_err()

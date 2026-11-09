@@ -6,11 +6,11 @@
 import Angle
 import Animation
 import Attention
-import Fraction
+import lib.Fraction
 import Geom
 import Lens
 import Pipeline
-import Pixels
+import lib.Pixels
 import Rider
 import Route
 import RoutePlace

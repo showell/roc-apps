@@ -13,6 +13,8 @@
 # A sprite becomes a disc: theirs is an 8-by-8 white texture with a tint and a
 # rotation, so nothing is lost but the spin, which at three to nine pixels
 # across is not visible anyway.
+import lib.Pixels
+import lib.Point
 import lib.Shapes
 import lib.Brush
 import lib.RgbColor
@@ -136,13 +138,13 @@ Particles :: [].{
 	shapes = |m| {
 		n = List.len(m.particles)
 		var $out = List.with_capacity(n + 1)
-		$out = List.append($out, Rect({ x: 0.0, y: 0.0, width: width, height: height, fill: Brush.flat(RgbColor.of(0x0b0e17)) }))
+		$out = List.append($out, Rectangle({ top_left: Point.at(0.0, 0.0), width: Pixels.of(width), height: Pixels.of(height), fill: Brush.flat(RgbColor.of(0x0b0e17)) }))
 		var $i = 0
 		while $i < n {
 			p = List.get(m.particles, $i) ?? crash ("particle")
 			# Their sprite is 3 to 9 pixels across, sized by the same seed.
 			r = (3.0 + 6.0 * p.seed) / 2.0
-			$out = List.append($out, Disc({ x: p.x, y: p.y, radius: r, fill: Flat(palette(p.tint)) }))
+			$out = List.append($out, Disc({ center: Point.at(p.x, p.y), radius: Pixels.of(r), fill: Flat(palette(p.tint)) }))
 			$i = $i + 1
 		}
 		$out

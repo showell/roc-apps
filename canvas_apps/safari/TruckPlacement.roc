@@ -2,8 +2,8 @@
 ## thing that faces along the road, so each of its points stands through
 ## `Spot.standing_point`, turned by nothing beyond the road's own heading.
 import Angle
-import Pixels
-import Polygon
+import Camera
+import lib.Pixels
 import RiderView
 import Spot
 import TruckShape
@@ -20,7 +20,7 @@ TruckPlacement :: [].{
 		spot.standing_point({ facing: Angle.straight_ahead, offset: point })
 
 	## A face of the truck in the rider's view, every corner placed.
-	placed_face : Spot, TruckShape.TruckFace -> Polygon.FlatPolygon
+	placed_face : Spot, TruckShape.TruckFace -> Camera.FlatPolygon
 	placed_face = |spot, { color, corners }| {
 		color,
 		corners: corners.map(|corner| TruckPlacement.raised_point(spot, corner)),

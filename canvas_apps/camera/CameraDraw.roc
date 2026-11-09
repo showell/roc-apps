@@ -15,6 +15,8 @@ import lib.ArgbColor
 import lib.Font
 import lib.Math
 import lib.RgbColor
+import lib.Pixels
+import lib.Point
 import lib.Shapes
 import Rules
 
@@ -34,12 +36,11 @@ CameraDraw :: [].{
 
 	backdrop : Shapes.Shape
 	backdrop =
-		Rect({
-			x: 0.0,
-			y: 0.0,
-			width: 800.0,
-			height: 600.0,
-			fill: Linear({ stops: { start_color: hex(0x101a24), end_color: hex(0x060a0f), start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: 600.0 } }),
+		Rectangle({
+			top_left: Point.at(0.0, 0.0),
+			width: Pixels.of(800.0),
+			height: Pixels.of(600.0),
+			fill: Linear({ stops: { start_color: hex(0x101a24), end_color: hex(0x060a0f), start_offset: 0.0, end_offset: 1.0 }, start_point: Point.at(0.0, 0.0), end_point: Point.at(0.0, 600.0) }),
 		})
 
 	# ── the world ──────────────────────────────────────────────────────────
@@ -51,7 +52,7 @@ CameraDraw :: [].{
 		right = f(Rules.world_right)
 		bottom = f(Rules.world_bottom)
 
-		var $out = [Rect({ x: left, y: top, width: right - left, height: bottom - top, fill: Flat(hex(0x16222b)) })]
+		var $out = [Rectangle({ top_left: Point.at(left, top), width: Pixels.of(right - left), height: Pixels.of(bottom - top), fill: Flat(hex(0x16222b)) })]
 		$out = List.concat($out, box({ left, top, right, bottom, line_width: 3.0 }, dim(0x5a5fa8d3)))
 		$out = List.concat($out, grid(seen))
 
@@ -60,12 +61,12 @@ CameraDraw :: [].{
 		$out = List.concat($out, landmark(860.0, -280.0, 420.0, 460.0, hex(0x8f6540)))
 
 		axis_color = dim(0xc8ffd166)
-		$out = List.append($out, Shapes.line({ from: { x: left, y: 0.0 }, to: { x: right, y: 0.0 }, width: 3.0 }, Flat(axis_color)))
-		$out = List.append($out, Shapes.line({ from: { x: 0.0, y: top }, to: { x: 0.0, y: bottom }, width: 3.0 }, Flat(axis_color)))
+		$out = List.append($out, Shapes.line({ from: Point.at(left, 0.0), to: Point.at(right, 0.0), width: Pixels.of(3.0) }, Flat(axis_color)))
+		$out = List.append($out, Shapes.line({ from: Point.at(0.0, top), to: Point.at(0.0, bottom), width: Pixels.of(3.0) }, Flat(axis_color)))
 
 		$out = List.concat($out, marker(f(player.x), f(player.y)))
 		# The pointer, where it actually is in the world.
-		List.concat($out, Shapes.ring_shapes({ center: { x: f(mouse_world.x), y: f(mouse_world.y) }, radius: 10.0, line_width: 2.0, sides: 20 }, Flat(hex(0xffd166))))
+		List.concat($out, Shapes.ring_shapes({ center: Point.at(f(mouse_world.x), f(mouse_world.y)), radius: Pixels.of(10.0), line_width: Pixels.of(2.0), sides: 20 }, Flat(hex(0xffd166))))
 	}
 
 	# A world landmark: a soft shadow, the slab, and a lighter cap so the world
@@ -73,9 +74,9 @@ CameraDraw :: [].{
 	landmark : F64, F64, F64, F64, Brush.Rgba -> List(Shapes.Shape)
 	landmark = |x, y, w, h, color|
 		[
-			Rect({ x: x + 10.0, y: y + 14.0, width: w, height: h, fill: Flat(dim(0x5A000000)) }),
-			Rect({ x, y, width: w, height: h, fill: Flat(color) }),
-			Rect({ x, y, width: w, height: 10.0, fill: Flat(dim(0x2Dffffff)) }),
+			Rectangle({ top_left: Point.at(x + 10.0, y + 14.0), width: Pixels.of(w), height: Pixels.of(h), fill: Flat(dim(0x5A000000)) }),
+			Rectangle({ top_left: Point.at(x, y), width: Pixels.of(w), height: Pixels.of(h), fill: Flat(color) }),
+			Rectangle({ top_left: Point.at(x, y), width: Pixels.of(w), height: Pixels.of(10.0), fill: Flat(dim(0x2Dffffff)) }),
 		]
 
 	# The player: a shadow, the disc, its white rim, and the cross that shows
@@ -84,12 +85,12 @@ CameraDraw :: [].{
 	marker = |x, y| {
 		white = hex(0xffffff)
 		var $out = [
-			Disc({ x, y: y + 6.0, radius: 26.0, fill: Flat(dim(0x6E000000)) }),
-			Disc({ x, y, radius: 26.0, fill: Flat(hex(0xef476f)) }),
+			Disc({ center: Point.at(x, y + 6.0), radius: Pixels.of(26.0), fill: Flat(dim(0x6E000000)) }),
+			Disc({ center: Point.at(x, y), radius: Pixels.of(26.0), fill: Flat(hex(0xef476f)) }),
 		]
-		$out = List.concat($out, Shapes.ring_shapes({ center: { x, y }, radius: 26.0, line_width: 4.0, sides: 28 }, Flat(white)))
-		$out = List.append($out, Shapes.line({ from: { x: x - 42.0, y }, to: { x: x + 42.0, y }, width: 3.0 }, Flat(white)))
-		List.append($out, Shapes.line({ from: { x, y: y - 42.0 }, to: { x, y: y + 42.0 }, width: 3.0 }, Flat(white)))
+		$out = List.concat($out, Shapes.ring_shapes({ center: Point.at(x, y), radius: Pixels.of(26.0), line_width: Pixels.of(4.0), sides: 28 }, Flat(white)))
+		$out = List.append($out, Shapes.line({ from: Point.at(x - 42.0, y), to: Point.at(x + 42.0, y), width: Pixels.of(3.0) }, Flat(white)))
+		List.append($out, Shapes.line({ from: Point.at(x, y - 42.0), to: Point.at(x, y + 42.0), width: Pixels.of(3.0) }, Flat(white)))
 	}
 
 	# **THE GRID IS WHY THE CAMERA HAS TO BE A VALUE THE GAME HOLDS.** Every
@@ -108,7 +109,7 @@ CameraDraw :: [].{
 		var $x = left
 		while $x <= right {
 			if $x >= f(seen.x) and $x <= f(seen.x) + f(seen.width) {
-				$out = List.append($out, Shapes.line({ from: { x: $x, y: top }, to: { x: $x, y: bottom }, width: 1.0 }, faint))
+				$out = List.append($out, Shapes.line({ from: Point.at($x, top), to: Point.at($x, bottom), width: Pixels.of(1.0) }, faint))
 			} else {
 				{}
 			}
@@ -117,7 +118,7 @@ CameraDraw :: [].{
 		var $y = top
 		while $y <= bottom {
 			if $y >= f(seen.y) and $y <= f(seen.y) + f(seen.height) {
-				$out = List.append($out, Shapes.line({ from: { x: left, y: $y }, to: { x: right, y: $y }, width: 1.0 }, faint))
+				$out = List.append($out, Shapes.line({ from: Point.at(left, $y), to: Point.at(right, $y), width: Pixels.of(1.0) }, faint))
 			} else {
 				{}
 			}
@@ -135,23 +136,23 @@ CameraDraw :: [].{
 		x = f(at.x)
 		y = f(at.y)
 		arm = Flat(dim(0x8Cffd166))
-		var $out = Shapes.ring_shapes({ center: { x, y }, radius: 7.0, line_width: 2.0, sides: 16 }, Flat(hex(0xffd166)))
-		$out = List.append($out, Shapes.line({ from: { x: x - 14.0, y }, to: { x: x + 14.0, y }, width: 1.0 }, arm))
-		List.append($out, Shapes.line({ from: { x, y: y - 14.0 }, to: { x, y: y + 14.0 }, width: 1.0 }, arm))
+		var $out = Shapes.ring_shapes({ center: Point.at(x, y), radius: Pixels.of(7.0), line_width: Pixels.of(2.0), sides: 16 }, Flat(hex(0xffd166)))
+		$out = List.append($out, Shapes.line({ from: Point.at(x - 14.0, y), to: Point.at(x + 14.0, y), width: Pixels.of(1.0) }, arm))
+		List.append($out, Shapes.line({ from: Point.at(x, y - 14.0), to: Point.at(x, y + 14.0), width: Pixels.of(1.0) }, arm))
 	}
 
 	hud : Rules.World, Math.Vec2 -> List(Shapes.Shape)
 	hud = |world, mouse_world| {
 		var $out = [
-			Shapes.rounded_rect({ x: 15.0, y: 15.0, width: 462.0, height: 128.0, corner_radius: 13.0, corner_steps: 8 }, Flat(dim(0x28ffffff))),
-			Shapes.rounded_rect({ x: 16.0, y: 16.0, width: 460.0, height: 126.0, corner_radius: 12.0, corner_steps: 8 }, Flat(dim(0xD70b1219))),
+			Shapes.rounded_rect({ top_left: Point.at(15.0, 15.0), width: Pixels.of(462.0), height: Pixels.of(128.0), corner_radius: Pixels.of(13.0), corner_steps: 8 }, Flat(dim(0x28ffffff))),
+			Shapes.rounded_rect({ top_left: Point.at(16.0, 16.0), width: Pixels.of(460.0), height: Pixels.of(126.0), corner_radius: Pixels.of(12.0), corner_steps: 8 }, Flat(dim(0xD70b1219))),
 		]
-		$out = List.concat($out, Font.text_shapes("Camera world", { top_left: { x: 32.0, y: 28.0 }, size: 20.0, color: hex(0xffffff) }))
-		$out = List.concat($out, Font.text_shapes("world-space draw, screen-space HUD", { top_left: { x: 32.0, y: 58.0 }, size: 12.0, color: hex(0x8fa3b8) }))
-		$out = List.append($out, Shapes.line({ from: { x: 32.0, y: 80.0 }, to: { x: 460.0, y: 80.0 }, width: 1.0 }, Flat(dim(0x1Effffff))))
+		$out = List.concat($out, Font.text_shapes("Camera world", { top_left: Point.at(32.0, 28.0), size: 20.0, color: hex(0xffffff) }))
+		$out = List.concat($out, Font.text_shapes("world-space draw, screen-space HUD", { top_left: Point.at(32.0, 58.0), size: 12.0, color: hex(0x8fa3b8) }))
+		$out = List.append($out, Shapes.line({ from: Point.at(32.0, 80.0), to: Point.at(460.0, 80.0), width: Pixels.of(1.0) }, Flat(dim(0x1Effffff))))
 		# The pointer in both spaces at once, which is the whole demonstration.
-		$out = List.concat($out, Font.text_shapes(readout(world, mouse_world), { top_left: { x: 32.0, y: 88.0 }, size: 13.0, color: hex(0xffd166) }))
-		List.concat($out, Font.text_shapes("WASD move, wheel zoom, Q/E rotate, R reset", { top_left: { x: 32.0, y: 112.0 }, size: 10.0, color: hex(0x8fa3b8) }))
+		$out = List.concat($out, Font.text_shapes(readout(world, mouse_world), { top_left: Point.at(32.0, 88.0), size: 13.0, color: hex(0xffd166) }))
+		List.concat($out, Font.text_shapes("WASD move, wheel zoom, Q/E rotate, R reset", { top_left: Point.at(32.0, 112.0), size: 10.0, color: hex(0x8fa3b8) }))
 	}
 
 	readout : Rules.World, Math.Vec2 -> Str
@@ -171,15 +172,15 @@ CameraDraw :: [].{
 	box : { left : F64, top : F64, right : F64, bottom : F64, line_width : F64 }, Brush.Rgba -> List(Shapes.Shape)
 	box = |{ left, top, right, bottom, line_width }, color| {
 		fill = Flat(color)
-		top_left = { x: left, y: top }
-		top_right = { x: right, y: top }
-		bottom_right = { x: right, y: bottom }
-		bottom_left = { x: left, y: bottom }
+		top_left = Point.at(left, top)
+		top_right = Point.at(right, top)
+		bottom_right = Point.at(right, bottom)
+		bottom_left = Point.at(left, bottom)
 		[
-			Shapes.line({ from: top_left, to: top_right, width: line_width }, fill),
-			Shapes.line({ from: top_right, to: bottom_right, width: line_width }, fill),
-			Shapes.line({ from: bottom_right, to: bottom_left, width: line_width }, fill),
-			Shapes.line({ from: bottom_left, to: top_left, width: line_width }, fill),
+			Shapes.line({ from: top_left, to: top_right, width: Pixels.of(line_width) }, fill),
+			Shapes.line({ from: top_right, to: bottom_right, width: Pixels.of(line_width) }, fill),
+			Shapes.line({ from: bottom_right, to: bottom_left, width: Pixels.of(line_width) }, fill),
+			Shapes.line({ from: bottom_left, to: top_left, width: Pixels.of(line_width) }, fill),
 		]
 	}
 

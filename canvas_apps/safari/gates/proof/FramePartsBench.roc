@@ -241,7 +241,8 @@ point_count = |shapes|
 	shapes.map(
 		|shape|
 			match shape {
-				Poly({ coordinates, fill: _ }) => coordinates.len() // 2
+				Triangle(_) => 3
+				Polygon({ corners, fill: _ }) => corners.len()
 				_ => 0
 			},
 	).sum()

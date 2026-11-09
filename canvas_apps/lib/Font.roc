@@ -18,6 +18,7 @@
 ## width, and they look like what they are.
 import Shapes
 import Brush
+import Pixels
 import Point
 
 Font :: [].{
@@ -28,7 +29,8 @@ Font :: [].{
 	text_shapes = |words, { top_left, size, color }| {
 		unit = size / units
 		stroke_width = (size / 14.0).max(1.0)
-		words.to_utf8().map_with_index(|byte, i| glyph_shapes(byte, { top_left: { x: top_left.x + i.to_f64() * advance * unit, y: top_left.y }, unit, stroke_width, color })).join()
+		left = top_left.x.to_f64()
+		words.to_utf8().map_with_index(|byte, i| glyph_shapes(byte, { top_left: { x: Pixels.of(left + i.to_f64() * advance * unit), y: top_left.y }, unit, stroke_width, color })).join()
 	}
 
 	# How wide a string is, for a caller that wants to place one.
@@ -39,7 +41,7 @@ Font :: [].{
 	## what a title, a banner and a hint all want.
 	centered_text_shapes : Str, { top_center : Point.Point, size : F64, color : Brush.Rgba } -> List(Shapes.Shape)
 	centered_text_shapes = |words, { top_center, size, color }|
-		text_shapes(words, { top_left: { x: top_center.x - width_of(words, size) / 2.0, y: top_center.y }, size, color })
+		text_shapes(words, { top_left: { x: Pixels.of(top_center.x.to_f64() - width_of(words, size) / 2.0), y: top_center.y }, size, color })
 
 	## A line of type as strokes. The strokes' capitals stand as tall as a real
 	## typeface's do at the line's size.
@@ -48,8 +50,8 @@ Font :: [].{
 		cap_height = size * cap_height_share
 		top = y - cap_height
 		match align {
-			Left => text_shapes(words, { top_left: { x, y: top }, size: cap_height, color })
-			Center => centered_text_shapes(words, { top_center: { x, y: top }, size: cap_height, color })
+			Left => text_shapes(words, { top_left: Point.at(x, top), size: cap_height, color })
+			Center => centered_text_shapes(words, { top_center: Point.at(x, top), size: cap_height, color })
 		}
 	}
 
@@ -85,15 +87,17 @@ cap_height_share = 0.72
 glyph_shapes : U8, { top_left : Point.Point, unit : F64, stroke_width : F64, color : Brush.Rgba } -> List(Shapes.Shape)
 glyph_shapes = |byte, { top_left, unit, stroke_width, color }| {
 	strokes = strokes_for(byte)
+	left = top_left.x.to_f64()
+	top = top_left.y.to_f64()
 	var $out = List.with_capacity(strokes.len())
 	for coordinates in strokes {
 		for j in 1..<(coordinates.len() // 2) {
 			$out = $out.append(
 				Shapes.line(
 					{
-						from: { x: top_left.x + coordinate_at(coordinates, 2 * (j - 1)) * unit, y: top_left.y + coordinate_at(coordinates, 2 * (j - 1) + 1) * unit },
-						to: { x: top_left.x + coordinate_at(coordinates, 2 * j) * unit, y: top_left.y + coordinate_at(coordinates, 2 * j + 1) * unit },
-						width: stroke_width,
+						from: Point.at(left + coordinate_at(coordinates, 2 * (j - 1)) * unit, top + coordinate_at(coordinates, 2 * (j - 1) + 1) * unit),
+						to: Point.at(left + coordinate_at(coordinates, 2 * j) * unit, top + coordinate_at(coordinates, 2 * j + 1) * unit),
+						width: Pixels.of(stroke_width),
 					},
 					Flat(color),
 				),
@@ -210,10 +214,10 @@ sample_line = {
 
 expect
 	Font.plotted_shapes(sample_line)
-		== Font.text_shapes("Hi", { top_left: { x: 100.0, y: 164.0 }, size: 36.0, color: sample_line.color })
+		== Font.text_shapes("Hi", { top_left: Point.at(100.0, 164.0), size: 36.0, color: sample_line.color })
 expect
 	Font.plotted_shapes({ ..sample_line, align: Center })
-		== Font.centered_text_shapes("Hi", { top_center: { x: 100.0, y: 164.0 }, size: 36.0, color: sample_line.color })
+		== Font.centered_text_shapes("Hi", { top_center: Point.at(100.0, 164.0), size: 36.0, color: sample_line.color })
 
 # A line's face is for a real typeface, and the strokes have only one.
 expect Font.plotted_shapes({ ..sample_line, face: Code }) == Font.plotted_shapes(sample_line)

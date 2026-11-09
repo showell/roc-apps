@@ -5,17 +5,17 @@
 ## is seen at and on the lens, so the skyline turns with the rider but never comes
 ## nearer. The rock darkens at dusk, and the snow goes blue. It is worked out
 ## each frame from the clock and the camera's heading and lens.
-import Pixels
+import lib.Pixels
 import Angle
 import FarHeight
 import FarRise
-import Fraction
+import lib.Fraction
 import Grass
 import Lens
-import ColorShade
-import Polygon
+import lib.ColorShade
 import Screen
 import lib.RgbColor
+import lib.Brush
 import lib.Shapes
 
 Skyline :: [].{
@@ -290,7 +290,10 @@ silhouette = |sky_columns, { focal_length, height_at, color, base_y }| {
 			}
 		},
 	)
-	Polygon.flat_polygon(crest.concat([{ x: right, y: base_y }, { x: left, y: base_y }]), color)
+	Polygon({
+		corners: crest.concat([{ x: right, y: base_y }, { x: left, y: base_y }]),
+		fill: Brush.flat(color),
+	})
 }
 
 ## Snow thinner than this, between the range's crest and the snowline, isn't
@@ -331,7 +334,7 @@ snow_shape = |sky_columns, { focal_length, color }| {
 				back.append({ x: column.x, y: Lens.y_for_height({ height, focal_length }) })
 			},
 		)
-		Ok(Polygon.flat_polygon(crest.concat(snowline_points), color))
+		Ok(Polygon({ corners: crest.concat(snowline_points), fill: Brush.flat(color) }))
 	}
 }
 
@@ -408,18 +411,7 @@ expect snow_peak_height > snow_threshold
 corner_ys : Shapes.Shape -> List(F64)
 corner_ys = |shape|
 	match shape {
-		Poly(p) =>
-			p.coordinates.fold(
-				{ ys: [], is_y: False },
-				|walk, n| {
-					ys: if walk.is_y {
-						walk.ys.append(n)
-					} else {
-						walk.ys
-					},
-					is_y: !walk.is_y,
-				},
-			).ys
+		Polygon(p) => p.corners.map(|corner| corner.y.to_f64())
 		_ => crash "Skyline: a silhouette is a polygon"
 	}
 

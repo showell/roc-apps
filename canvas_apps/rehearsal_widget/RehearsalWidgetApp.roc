@@ -21,6 +21,7 @@ import lib.CanvasApp
 import lib.Input
 import lib.Shapes
 import lib.RgbColor
+import lib.Pixels
 import lib.Point
 import widget.Click
 import widget.PlanView
@@ -174,7 +175,7 @@ kept_color = WidgetPalette.highlight_color
 ## The road from above, with the rider on the road's middle line at the left of
 ## the picture, and 23 pixels to a metre along the road.
 road_plan : PlanView
-road_plan = { origin: { x: 30.0, y: WidgetPage.picture_bottom_y / 2.0 }, pixels_a_metre: 23.0 }
+road_plan = { origin: Point.at(30.0, WidgetPage.picture_bottom_y / 2.0), pixels_a_metre: 23.0 }
 
 ## How many times its true width the road is drawn across. At its true width
 ## the arcs would be too close together to tell apart.
@@ -195,12 +196,12 @@ road_line : {
 	width : F64,
 } -> Shapes.Shape
 road_line = |{ across, color, width }| {
-	y = canvas_point({ forward: Distance.zero, across }).y
+	y = canvas_point({ forward: Distance.zero, across }).y.to_f64()
 	Shapes.line(
 		{
-			from: { x: 0.0, y },
-			to: { x: WidgetPage.canvas_width, y },
-			width,
+			from: Point.at(0.0, y),
+			to: Point.at(WidgetPage.canvas_width, y),
+			width: Pixels.of(width),
 		},
 		Brush.flat(color),
 	)
@@ -213,11 +214,13 @@ road_shapes = {
 	half_road = Geom.road_half_width.to_metres()
 	[
 		WidgetPage.picture_backdrop(WidgetPalette.plan_ground_color),
-		Rect({
-			x: 0.0,
-			y: canvas_point({ forward: Distance.zero, across: left_edge }).y,
-			width: WidgetPage.canvas_width,
-			height: 2.0 * half_road * across_stretch * road_plan.pixels_a_metre,
+		Rectangle({
+			top_left: {
+				x: Pixels.zero,
+				y: canvas_point({ forward: Distance.zero, across: left_edge }).y,
+			},
+			width: Pixels.of(WidgetPage.canvas_width),
+			height: Pixels.of(2.0 * half_road * across_stretch * road_plan.pixels_a_metre),
 			fill: Brush.flat(WidgetPalette.plan_road_color),
 		}),
 		road_line({
@@ -263,7 +266,7 @@ arc_shapes = |path_points, { color, width }| {
 	points
 		.map2(points.drop_first(1), |from, to| { from, to })
 		.keep_if(|{ from, to }| from != to)
-		.map(|{ from, to }| Shapes.line({ from, to, width }, Brush.flat(color)))
+		.map(|{ from, to }| Shapes.line({ from, to, width: Pixels.of(width) }, Brush.flat(color)))
 }
 
 ## The colour that says where an arc ended.
@@ -288,11 +291,9 @@ tries_shapes = |tries, width|
 rider_mark : Shapes.Shape
 rider_mark = {
 	rider_across = motorcycle.route_place.road_point.across
-	{ x, y } = canvas_point({ forward: Distance.zero, across: rider_across })
 	Disc({
-		x,
-		y,
-		radius: 7.0,
+		center: canvas_point({ forward: Distance.zero, across: rider_across }),
+		radius: Pixels.of(7.0),
 		fill: Brush.flat(kept_color),
 	})
 }
@@ -425,7 +426,9 @@ mark_x = |number| WidgetPage.side_margin + 8.0 + (number.to_f64() - 1.0) * mark_
 ## The stop whose mark is at `spot`. Each mark's reach ends halfway to the next
 ## one, so no click is on two.
 mark_under : Point.Point -> Try(Stop, [NoMark])
-mark_under = |{ x, y }| {
+mark_under = |spot| {
+	x = spot.x.to_f64()
+	y = spot.y.to_f64()
 	number = ((x - mark_x(1)) / mark_spacing + 1.5).to_i64_wrap()
 	if (y - marks_y).abs() > marks_reach or number < 1 or number > last_stop.to_i64_wrap() {
 		Err(NoMark)
@@ -456,13 +459,14 @@ current_color = WidgetPalette.accent_color
 try_mark : MarkAndStop -> Shapes.Shape
 try_mark = |{ mark, current }|
 	Disc({
-		x: mark_x(stop_number(mark)),
-		y: marks_y,
-		radius: if mark == current {
-			9.0
-		} else {
-			6.0
-		},
+		center: Point.at(mark_x(stop_number(mark)), marks_y),
+		radius: Pixels.of(
+			if mark == current {
+				9.0
+			} else {
+				6.0
+			},
+		),
 		fill: Brush.flat(mark_color({ mark, current })),
 	})
 
@@ -474,11 +478,10 @@ choice_mark = |current| {
 	} else {
 		6.0
 	}
-	Rect({
-		x: mark_x(last_stop) - half,
-		y: marks_y - half,
-		width: 2.0 * half,
-		height: 2.0 * half,
+	Rectangle({
+		top_left: Point.at(mark_x(last_stop) - half, marks_y - half),
+		width: Pixels.of(2.0 * half),
+		height: Pixels.of(2.0 * half),
 		fill: Brush.flat(mark_color({ mark: Choice, current })),
 	})
 }
@@ -533,28 +536,31 @@ clicked_from_three : Point.Point -> Stop
 clicked_from_three = |spot| stop_after_input(Shown(3), Click.click_at(spot))
 
 # A click on a mark goes straight to that stop, either way along the row.
-expect clicked_from_three({ x: mark_x(9), y: marks_y }) == Shown(9)
-expect clicked_from_three({ x: mark_x(1), y: marks_y }) == Shown(1)
-expect clicked_from_three({ x: mark_x(last_stop), y: marks_y }) == Choice
-expect clicked_from_three({ x: mark_x(3), y: marks_y }) == Shown(3)
+expect clicked_from_three(Point.at(mark_x(9), marks_y)) == Shown(9)
+expect clicked_from_three(Point.at(mark_x(1), marks_y)) == Shown(1)
+expect clicked_from_three(Point.at(mark_x(last_stop), marks_y)) == Choice
+expect clicked_from_three(Point.at(mark_x(3), marks_y)) == Shown(3)
 
 # A click anywhere else leaves it alone: on the picture, on the text, past
 # either end of the row.
-expect clicked_from_three({ x: 320.0, y: 100.0 }) == Shown(3)
-expect clicked_from_three({ x: 320.0, y: 300.0 }) == Shown(3)
-expect clicked_from_three({ x: 2.0, y: marks_y }) == Shown(3)
-expect clicked_from_three({ x: 620.0, y: marks_y }) == Shown(3)
+expect clicked_from_three(Point.at(320.0, 100.0)) == Shown(3)
+expect clicked_from_three(Point.at(320.0, 300.0)) == Shown(3)
+expect clicked_from_three(Point.at(2.0, marks_y)) == Shown(3)
+expect clicked_from_three(Point.at(620.0, marks_y)) == Shown(3)
 
 # Holding the button on another mark isn't a click, and nor is nothing at all.
-expect stop_after_input(Shown(3), Click.held_at({ x: mark_x(9), y: marks_y })) == Shown(3)
+expect {
+	held = Click.held_at(Point.at(mark_x(9), marks_y))
+	stop_after_input(Shown(3), held) == Shown(3)
+}
 expect stop_after_input(Shown(3), Input.none) == Shown(3)
 
 # Each mark reaches halfway to the next, and the row's reach ends above and below.
-expect mark_under({ x: mark_x(5) + 10.0, y: marks_y }) == Ok(Shown(5))
-expect mark_under({ x: mark_x(5) + 12.0, y: marks_y }) == Ok(Shown(6))
-expect mark_under({ x: mark_x(5), y: marks_y + marks_reach }) == Ok(Shown(5))
-expect mark_under({ x: mark_x(5), y: marks_y + marks_reach + 1.0 }) == Err(NoMark)
-expect mark_under({ x: mark_x(5), y: marks_y - marks_reach - 1.0 }) == Err(NoMark)
+expect mark_under(Point.at(mark_x(5) + 10.0, marks_y)) == Ok(Shown(5))
+expect mark_under(Point.at(mark_x(5) + 12.0, marks_y)) == Ok(Shown(6))
+expect mark_under(Point.at(mark_x(5), marks_y + marks_reach)) == Ok(Shown(5))
+expect mark_under(Point.at(mark_x(5), marks_y + marks_reach + 1.0)) == Err(NoMark)
+expect mark_under(Point.at(mark_x(5), marks_y - marks_reach - 1.0)) == Err(NoMark)
 
 # Each try's drawn path ends where the search's own coast of that try said it
 # would: across the road where it stayed on, or after as many steps as it took

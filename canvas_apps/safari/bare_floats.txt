@@ -10,8 +10,6 @@ Attention: a unit type
 Distance: a unit type
 FarHeight: a unit type
 FarRise: a unit type
-Fraction: a unit type
-Pixels: a unit type
 Speed: a unit type
 Steps.to_f64: a whole count's way into float sums
 Steps.ratio_to: a count of steps over another, which has no unit
@@ -41,9 +39,6 @@ Geom.WorkedBend: the cosine and sine of a bend's turn, worked out once
 Geom.start_after: the cosine and sine of a bend's turn, handed in by worked_bend
 Scatter.stray_of: phases, radians per animal, for Trig
 
-# The edge of lib.Shapes, which takes plain numbers.
-Screen.point: the plain numbers a point is written with, on the way into Pixels
-Polygon.polygon_coordinates: the flat list lib.Shapes takes
 
 # The gates: test code, and the raster past lib.Shapes.
 Fixtures: the expects' shared roads and helpers

@@ -11,7 +11,7 @@ import Animation
 import EncounterPlan
 import Distance
 import Easing
-import Fraction
+import lib.Fraction
 import Steps
 import Trees
 

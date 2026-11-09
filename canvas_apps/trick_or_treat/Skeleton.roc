@@ -15,6 +15,8 @@
 # A pose is angles. Every joint below is an angle from straight down, positive
 # to the right, and a bone is where two of them meet; the dance is four sine
 # waves on one phase.
+import lib.Pixels
+import lib.Point
 import lib.Shapes
 import lib.Brush
 import lib.RgbColor
@@ -31,10 +33,10 @@ Skeleton :: [].{
 	end_of = |x, y, angle, len| { x: x + angle.sin() * len, y: y + angle.cos() * len }
 
 	rib : F64, F64, F64, F64, F64 -> Shapes.Shape
-	rib = |x0, y0, x1, y1, w| Shapes.line({ from: { x: x0, y: y0 }, to: { x: x1, y: y1 }, width: w }, Flat(bone))
+	rib = |x0, y0, x1, y1, w| Shapes.line({ from: Point.at(x0, y0), to: Point.at(x1, y1), width: Pixels.of(w) }, Flat(bone))
 
 	joint : F64, F64, F64 -> Shapes.Shape
-	joint = |x, y, r| Disc({ x: x, y: y, radius: r, fill: Flat(bone) })
+	joint = |x, y, r| Disc({ center: Point.at(x, y), radius: Pixels.of(r), fill: Flat(bone) })
 
 	# **A FIGURE IS A PHASE, A PLACE AND A SIZE.** It was pixels at a fixed
 	# spot on a fixed screen until a scene wanted six of them at six distances;
@@ -75,10 +77,10 @@ Skeleton :: [].{
 
 		# The skull: a disc, two sockets, and a jaw that opens on the beat.
 		$out = List.append($out, joint(skull.x, skull.y, 26.0 * s))
-		$out = List.append($out, Disc({ x: skull.x - 9.0 * s, y: skull.y - 4.0 * s, radius: 6.0 * s, fill: Flat(night) }))
-		$out = List.append($out, Disc({ x: skull.x + 9.0 * s, y: skull.y - 4.0 * s, radius: 6.0 * s, fill: Flat(night) }))
+		$out = List.append($out, Disc({ center: Point.at(skull.x - 9.0 * s, skull.y - 4.0 * s), radius: Pixels.of(6.0 * s), fill: Flat(night) }))
+		$out = List.append($out, Disc({ center: Point.at(skull.x + 9.0 * s, skull.y - 4.0 * s), radius: Pixels.of(6.0 * s), fill: Flat(night) }))
 		gape = (3.0 + 3.0 * (1.0 + (2.0 * t).cos()) / 2.0) * s
-		$out = List.append($out, Rect({ x: skull.x - 11.0 * s, y: skull.y + 12.0 * s, width: 22.0 * s, height: gape, fill: Flat(night) }))
+		$out = List.append($out, Rectangle({ top_left: Point.at(skull.x - 11.0 * s, skull.y + 12.0 * s), width: Pixels.of(22.0 * s), height: Pixels.of(gape), fill: Flat(night) }))
 
 		# The arms, alternating: one up while the other is down.
 		$out = arm($out, cx - 26.0 * s, shoulder_y + 4.0 * s, s, 0.0 - 1.9 - swing * 0.9, 0.0 - 0.7 - swing * 0.5)

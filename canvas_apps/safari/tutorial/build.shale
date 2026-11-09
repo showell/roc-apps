@@ -93,7 +93,7 @@ const NOT_AN_INCLUDE = "not a line of the form {{code Module.name}}, {{code Modu
 const NO_TITLE = "a diagram needs a title line directly above it"
 const CUT = "# ..."
 const PROOF_FILE = "/gates/proof.expected"
-const NOT_NAMED = {"web", "main", "game"}
+const NOT_NAMED = {"web", "main", "game", "types_root"}
 const NOT_NAMED_ENDINGS = {"Stills", "App"}
 
 function stop(entry, why)

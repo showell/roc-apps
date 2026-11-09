@@ -3,8 +3,8 @@
 ## is measured from the corner, so a point off the left of the screen is
 ## negative.
 ##
-## Pixels stop at the edge of `lib.Shapes`, which takes plain numbers, and at
-## trigonometry.
+## Every shape is measured in Pixels. They stop at the painters, which take
+## plain numbers, and at trigonometry.
 import Fraction
 
 Pixels :: F64.{

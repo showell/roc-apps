@@ -179,20 +179,22 @@ program = WasmApp.program(SnakeApp.canvas_app)          # snake/web.roc
 
 ## What a frame is
 
-A list of `Shapes.Shape` in the app's own coordinates. Five shapes and two
-marks:
+A list of `Shapes.Shape` in the app's own coordinates, in `Pixels`. A shape is
+a region and a fill: four regions, each with any `Brush.Fill`, then two more
+shapes and two marks:
 
 | | |
 |---|---|
-| `Poly` | coordinates and a `Brush.Fill` |
+| `Triangle` | three corners and a fill |
+| `Rectangle` | a top left corner, a width, a height and a fill |
 | `Disc` | centre, radius and a fill |
-| `Rect` | a box and a fill |
+| `Polygon` | its corners, in order, and a fill |
 | `Image` | `cols × rows` of `Brush.Rgba`, stretched over a box without smoothing |
 | `Text` | a line of words, its baseline, a size, `Prose` or `Code`, `Left` or `Center`, and a colour |
 | `Blend` | `Over` or `Add` |
 | `View` | `Screen`, or `World` with a camera's four settings |
 
-An app writes `Poly`, any polygon. The native runner has `ConvexCut` cut each
+A `Polygon` can be any polygon. The native runner has `ConvexCut` cut each
 concave one into triangles, a type of its own that no app builds, because
 roc-ray fills convex polygons only. The canvas fills a concave one itself.
 
@@ -205,7 +207,9 @@ the marks in pairs around a run of shapes, with `Shapes.added_light_shapes` and
 
 A `Brush.Fill` is a flat colour or one of five gradients — `Span`,
 `Radial`, `Linear`, `Ellipse`, `Glow` — each carrying its geometry in scene
-coordinates, which is what lets every painter shade it the same way.
+coordinates, which is what lets every painter shade it the same way. `Brush`
+has a maker for each: `flat`, `width_shade` and `corners_shade`,
+`linear_gradient`, `circular_gradient`, `elliptical_gradient` and `glow`.
 
 A thick line, a rounded rectangle and a ring are polygons, and `lib/Shapes.roc`
 builds them, so no painter has to learn a stroke. `lib/Font.roc` draws a string
@@ -268,11 +272,11 @@ runner ignores what it reports.
 ## The web end
 
 `web/platform/` is a Roc platform. `main.roc` declares what it needs from an
-app; `Frame.roc` declares what a frame is; `host.zig` is the wasm host and
-holds the model and the current frame.
+app, and names lib's `Shapes.Shape` as what a frame is; `host.zig` is the wasm
+host and holds the model and the current frame.
 
 ```roc
-frame : Box(model) -> List(Frame.Shape)
+frame : Box(model) -> List(Shapes.Shape)
 ```
 
 Because `Frame.Shape` is a structural union, `lib/Shapes.roc`'s `Shape`

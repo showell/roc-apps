@@ -17,6 +17,8 @@ import game.World
 import lib.Brush
 import lib.CanvasApp
 import lib.Input
+import lib.Pixels
+import lib.Point
 import lib.Shapes
 import lib.RgbColor
 import widget.ReadoutText
@@ -137,21 +139,19 @@ route_x = |distance| route_left_x + route_width * distance.ratio_to(route_length
 bar_shapes : List(Shapes.Shape)
 bar_shapes =
 	[
-		Rect({
-			x: route_left_x,
-			y: route_y - 4.0,
-			width: route_width,
-			height: 8.0,
+		Rectangle({
+			top_left: Point.at(route_left_x, route_y - 4.0),
+			width: Pixels.of(route_width),
+			height: Pixels.of(8.0),
 			fill: Brush.flat(WidgetPalette.plan_road_color),
 		}),
 	].concat(
 		World.route.segments_with_ends().map(
 			|stretch|
-				Rect({
-					x: route_x(stretch.end) - 1.0,
-					y: route_y - 8.0,
-					width: 2.0,
-					height: 16.0,
+				Rectangle({
+					top_left: Point.at(route_x(stretch.end) - 1.0, route_y - 8.0),
+					width: Pixels.of(2.0),
+					height: Pixels.of(16.0),
 					fill: Brush.flat(WidgetPalette.plan_road_color),
 				}),
 		),
@@ -167,9 +167,8 @@ marker_shapes : {
 marker_shapes = |{ at, color, name, name_y }|
 	[
 		Disc({
-			x: route_x(at),
-			y: route_y,
-			radius: 8.0,
+			center: Point.at(route_x(at), route_y),
+			radius: Pixels.of(8.0),
 			fill: Brush.flat(color),
 		}),
 		WidgetPage.label({
@@ -214,25 +213,23 @@ shapes_from_behind_rider = |{ across, lean }| {
 			}),
 		],
 		[
-			Rect({
-				x: middle - road_half_width_on_canvas,
-				y: surface_y,
-				width: 2.0 * road_half_width_on_canvas,
-				height: 8.0,
+			Rectangle({
+				top_left: Point.at(middle - road_half_width_on_canvas, surface_y),
+				width: Pixels.of(2.0 * road_half_width_on_canvas),
+				height: Pixels.of(8.0),
 				fill: Brush.flat(WidgetPalette.plan_road_color),
 			}),
 			Shapes.line(
 				{
-					from: { x: foot, y: surface_y },
-					to: { x: head_x, y: head_y },
-					width: 6.0,
+					from: Point.at(foot, surface_y),
+					to: Point.at(head_x, head_y),
+					width: Pixels.of(6.0),
 				},
 				Brush.flat(rider_color),
 			),
 			Disc({
-				x: head_x,
-				y: head_y,
-				radius: 9.0,
+				center: Point.at(head_x, head_y),
+				radius: Pixels.of(9.0),
 				fill: Brush.flat(rider_color),
 			}),
 		],

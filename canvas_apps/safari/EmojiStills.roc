@@ -2,7 +2,7 @@
 ## `pose_still`: an animal here has one drawing, and no poses.
 import lib.ArgbColor
 import lib.RgbColor
-import Fraction
+import lib.Fraction
 import Still
 
 EmojiStills :: [].{

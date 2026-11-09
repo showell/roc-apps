@@ -7,10 +7,10 @@
 ## tower it tops.
 import Clock
 import Distance
-import Fraction
-import Pixels
+import lib.Point
+import lib.Fraction
+import lib.Pixels
 import Route
-import Screen
 import Steps
 import lib.Brush
 import lib.RgbColor
@@ -51,7 +51,7 @@ Beacon :: Fraction.{
 	## `metre_on_screen`, unless it is too dim or too small to draw.
 	disc : Beacon,
 	{
-		center : Screen.Point,
+		center : Point.Point,
 		metre_on_screen : Pixels,
 	} -> Try(Shapes.Shape, [TooDim, TooSmall])
 	disc = |Beacon.(fraction), { center, metre_on_screen }|
@@ -118,16 +118,15 @@ smallest_beacon_radius = Pixels.of(0.5)
 
 ## A beacon's disc, seen through as far as `brightness` says.
 beacon_disc : {
-	center : Screen.Point,
+	center : Point.Point,
 	radius_on_screen : Pixels,
 	brightness : Fraction,
 } -> Shapes.Shape
 beacon_disc = |{ center, radius_on_screen, brightness }| {
 	opaque = Brush.opaque_rgba(beacon_color)
 	Disc({
-		x: center.x.to_f64(),
-		y: center.y.to_f64(),
-		radius: radius_on_screen.to_f64(),
+		center,
+		radius: radius_on_screen,
 		fill: Flat({ ..opaque, a: brightness.to_f64() }),
 	})
 }
@@ -235,7 +234,7 @@ expect
 disc_of : F64, F64 -> Try(Shapes.Shape, [TooDim, TooSmall])
 disc_of = |brightness, metre|
 	Beacon.(Fraction.of(brightness)).disc({
-		center: Screen.point(10.0, 20.0),
+		center: Point.at(10.0, 20.0),
 		metre_on_screen: Pixels.of(metre),
 	})
 
@@ -245,9 +244,8 @@ expect
 	disc_of(0.25, 10.0)
 		== Ok(
 			Disc({
-				x: 10.0,
-				y: 20.0,
-				radius: 30.0,
+				center: Point.at(10.0, 20.0),
+				radius: Pixels.of(30.0),
 				fill: Flat(Brush.with_alpha(beacon_color, 0.25)),
 			}),
 		)
@@ -268,7 +266,7 @@ expect disc_of(0.0, 0.16) == Err(TooDim)
 # The first segment's beacon, at the start of the ride, is too dark to draw.
 expect
 	Beacon.at({ segment: Route.SegmentIndex.first, place: AtEnd }, Clock.start).disc({
-		center: Screen.point(10.0, 20.0),
+		center: Point.at(10.0, 20.0),
 		metre_on_screen: Pixels.of(10.0),
 	})
 		== Err(TooDim)

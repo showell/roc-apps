@@ -25,7 +25,7 @@ const here = new URL(".", import.meta.url).pathname;
 // the other is generated. So this says the shapes directly, in the shape the
 // generated reader answers.
 const viewMark = (camera) => ({ tag: "View", value: { tag: "World", value: camera } });
-const aRect = { tag: "Rect", value: { x: 0, y: 0, w: 0, h: 0, fill: { tag: "Flat", value: { r: 255, g: 255, b: 255, a: 1 } } } };
+const aRect = { tag: "Rectangle", value: { top_left: { x: 0, y: 0 }, width: 0, height: 0, fill: { tag: "Flat", value: { r: 255, g: 255, b: 255, a: 1 } } } };
 
 function transformFor(shapes) {
   // **THE LAST setTransform IS THE ONE THAT RESETS THE CANVAS** when the frame

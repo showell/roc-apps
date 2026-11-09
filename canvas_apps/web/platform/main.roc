@@ -9,8 +9,8 @@ platform ""
 		[Model : model] for program : {
 			init : {} -> Box(model),
 			model_at_next_step : Box(model), U32, U32, U32, U32, F32, F32, F32 -> Box(model),
-			frame_shapes : Box(model) -> List(Frame.Shape),
-			release : List(Frame.Shape) -> {},
+			frame_shapes : Box(model) -> List(Shapes.Shape),
+			release : List(Shapes.Shape) -> {},
 			sounds : Box(model) -> U32,
 			tone_count : {} -> U32,
 			tone_freq : U32 -> U32,
@@ -20,8 +20,8 @@ platform ""
 			fps : {} -> U32,
 		}
 	}
-	exposes [Frame]
-	packages {}
+	exposes []
+	packages { lib: "../../lib/main.roc" }
 	provides {
 		"roc_advance": advance_for_host,
 		"roc_fps": fps_for_host,
@@ -43,7 +43,7 @@ platform ""
 		},
 	}
 
-import Frame
+import lib.Shapes
 
 init_for_host = program.init
 

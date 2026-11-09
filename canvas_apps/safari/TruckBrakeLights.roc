@@ -4,8 +4,8 @@
 ## last step slowed it.
 import Distance
 import Sprite
-import Pixels
-import Polygon
+import lib.Point
+import lib.Pixels
 import RiderView
 import Camera
 import Screen
@@ -13,6 +13,7 @@ import TruckJourney
 import TruckPlacement
 import TruckShape
 import lib.ArgbColor
+import lib.Brush
 import lib.RgbColor
 import lib.Shapes
 
@@ -92,7 +93,7 @@ lamp_pair_shapes = |truck| {
 ## The center of a polygon on screen: the mean of its corners. Each sum
 ## runs from the last corner to the first; a float sum's rounding depends
 ## on its order, and another order can move a pixel.
-center_of : List(Screen.Point) -> Screen.Point
+center_of : List(Point.Point) -> Point.Point
 center_of = |corners| {
 	count = corners.len().to_f64()
 	{
@@ -103,7 +104,7 @@ center_of = |corners| {
 
 ## How far a brake light's glow reaches from `center`, the lamp's
 ## center.
-glow_radius : List(Screen.Point), Screen.Point -> Pixels
+glow_radius : List(Point.Point), Point.Point -> Pixels
 glow_radius = |lamp_points, center| Screen.farthest_distance(lamp_points, center).times(glow_reach)
 
 ## A brake light on the back of the trailer, its sides `left` and `right`
@@ -125,7 +126,7 @@ brake_shapes = |truck, lamp_sides| {
 			},
 		).map(|corner| TruckPlacement.raised_point(truck.spot, corner))
 	glow = [brake_glow(truck, lamp)].keep_oks(|shape| shape)
-	match Polygon.clipped_polygon({ color: brake_color, corners: lamp }, truck.focal_length) {
+	match Camera.clipped_polygon({ color: brake_color, corners: lamp }, truck.focal_length) {
 		Ok(lamp_polygon) => glow.append(lamp_polygon)
 		Err(BehindCamera) => glow
 	}
@@ -143,39 +144,32 @@ brake_glow = |truck, lamp_points| {
 	on_screen = Camera.projected_points(lamp_ahead, truck.focal_length)
 	center = center_of(on_screen)
 	radius = glow_radius(on_screen, center)
-	fill = Polygon.circular_gradient_fill({
+	fill = Brush.circular_gradient({
 		center_color: glow_core,
 		edge_color: glow_edge,
-		gradient_center: center,
-		gradient_radius: radius,
+		center,
+		radius,
 	})?
-	Ok(
-		Disc({
-			x: center.x.to_f64(),
-			y: center.y.to_f64(),
-			radius: radius.to_f64(),
-			fill,
-		}),
-	)
+	Ok(Disc({ center, radius, fill }))
 }
 
 expect TruckBrakeLights.at(Slowing) == On
 expect TruckBrakeLights.at(NotSlowing) == Off
 
-panel_points : List(Screen.Point)
+panel_points : List(Point.Point)
 panel_points = [
-	Screen.point(3.0, 4.0),
-	Screen.point(6.0, 8.0),
-	Screen.point(0.0, 0.0),
-	Screen.point(7.0, 4.0),
+	Point.at(3.0, 4.0),
+	Point.at(6.0, 8.0),
+	Point.at(0.0, 0.0),
+	Point.at(7.0, 4.0),
 ]
 
-triangle_points : List(Screen.Point)
+triangle_points : List(Point.Point)
 triangle_points = [
-	Screen.point(0.0, 0.0),
-	Screen.point(3.0, 0.0),
-	Screen.point(0.0, 6.0),
+	Point.at(0.0, 0.0),
+	Point.at(3.0, 0.0),
+	Point.at(0.0, 6.0),
 ]
 
-expect center_of(panel_points) == Screen.point(4.0, 4.0)
-expect center_of(triangle_points) == Screen.point(1.0, 2.0)
+expect center_of(panel_points) == Point.at(4.0, 4.0)
+expect center_of(triangle_points) == Point.at(1.0, 2.0)

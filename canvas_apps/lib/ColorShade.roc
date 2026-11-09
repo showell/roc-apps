@@ -1,7 +1,7 @@
 ## An opaque color, an `RgbColor`, shaded or blended toward another, channel by
 ## channel.
 import Fraction
-import lib.RgbColor
+import RgbColor
 
 ColorShade :: [].{
 

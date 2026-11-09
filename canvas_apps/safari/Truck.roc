@@ -3,7 +3,7 @@
 ## its brake lights, so each paints over the one before. It is worked out each
 ## frame from the clock and the truck's progress.
 import Sprite
-import Pixels
+import lib.Pixels
 import Spot
 import TruckBody
 import TruckBrakeLights

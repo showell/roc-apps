@@ -140,16 +140,12 @@ picture_shapes = FrameView.painted_shapes({
 ## Every corner of `shapes`' polygons, or none if any shape isn't a polygon.
 polygon_corners : List(Shapes.Shape) -> Try(List(Point.Point), [NotPolygon])
 polygon_corners = |shapes| {
-	corner_of = |pair|
-		match pair {
-			[x, y] => { x, y }
-			_ => crash "CowWidgetApp.polygon_corners: a polygon's coordinates come in pairs"
-		}
 	polygons = shapes.keep_oks(
 		|shape|
 			match shape {
-				Poly({ coordinates, .. }) => Ok(coordinates.chunks_of(2).map(corner_of))
-				Text(_) | Disc(_) | Rect(_) | Blend(_) | View(_) | Image(_) => Err(NotPolygon)
+				Triangle(t) => Ok([t.first, t.second, t.third])
+				Polygon({ corners, .. }) => Ok(corners)
+				Text(_) | Disc(_) | Rectangle(_) | Blend(_) | View(_) | Image(_) => Err(NotPolygon)
 			},
 	)
 	if polygons.len() == shapes.len() {
@@ -166,9 +162,12 @@ is_plain_to_see = |forward| {
 	shapes = cow_shapes_at(forward)
 	match polygon_corners(shapes) {
 		Ok(corners) => {
-			is_on_canvas = |{ x, y }|
+			is_on_canvas = |corner| {
+				x = corner.x.to_f64()
+				y = corner.y.to_f64()
 				x >= 0.0 and x <= canvas_width and y >= 0.0 and y <= canvas_height
-			ys = corners.map(|corner| corner.y)
+			}
+			ys = corners.map(|corner| corner.y.to_f64())
 			match (ys.min(), ys.max()) {
 				(Ok(top), Ok(bottom)) => corners.all(is_on_canvas) and bottom - top >= 80.0
 				_ => False
@@ -187,7 +186,7 @@ expect !is_plain_to_see(Distance.metres(6.0))
 # The cow stands left of the middle of the screen, where the road runs.
 expect
 	match polygon_corners(cow_shapes) {
-		Ok(corners) => corners.all(|corner| corner.x < Screen.center_x.to_f64())
+		Ok(corners) => corners.all(|corner| corner.x < Screen.center_x)
 		Err(NotPolygon) => False
 	}
 

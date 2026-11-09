@@ -8,7 +8,7 @@
 import Acceleration
 import Angle
 import Distance
-import Fraction
+import lib.Fraction
 import Route
 import Speed
 import VehicleLimits

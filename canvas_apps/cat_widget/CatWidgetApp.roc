@@ -9,7 +9,7 @@ import game.EncounterPlan
 import game.CatCrossing
 import game.EncounterReaction
 import game.Distance
-import game.Pixels
+import lib.Pixels
 import game.Cat
 import game.Geom
 import game.Speed
@@ -19,6 +19,7 @@ import game.World
 import lib.Brush
 import lib.CanvasApp
 import lib.RgbColor
+import lib.Point
 import lib.Shapes
 import widget.ReadoutText
 import widget.WidgetPage
@@ -100,18 +101,16 @@ road_shapes = {
 	ground_height = ground_bottom_y - ground_top_y
 	[
 		WidgetPage.picture_backdrop(sky_color),
-		Rect({
-			x: 0.0,
-			y: ground_top_y,
-			width: WidgetPage.canvas_width,
-			height: ground_height,
+		Rectangle({
+			top_left: Point.at(0.0, ground_top_y),
+			width: Pixels.of(WidgetPage.canvas_width),
+			height: Pixels.of(ground_height),
 			fill: Brush.flat(side_ground_color),
 		}),
-		Rect({
-			x: road_middle_x - road_width / 2.0,
-			y: ground_top_y,
-			width: road_width,
-			height: ground_height,
+		Rectangle({
+			top_left: Point.at(road_middle_x - road_width / 2.0, ground_top_y),
+			width: Pixels.of(road_width),
+			height: Pixels.of(ground_height),
 			fill: Brush.flat(side_road_color),
 		}),
 	]

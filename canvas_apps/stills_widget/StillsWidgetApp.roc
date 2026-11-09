@@ -3,12 +3,11 @@
 ## stands large with its polygons and points counted. Nothing here moves, so
 ## there are no video recorder buttons. A click on a small still makes it the large one, and a click
 ## on the large one shows or hides the outline of each polygon.
-import game.Pixels
+import lib.Pixels
 import game.Bird
 import game.BirdFlight
 import game.Cat
 import game.CatCrossing
-import game.Screen
 import game.StillShapes
 import game.Still
 import lib.Brush
@@ -179,7 +178,7 @@ standing_at : Still,
 standing_at = |still, { mid_x, ground_y, height_on_screen }| {
 	extent = extent_of(still)
 	{
-		foot: Screen.point(
+		foot: Point.at(
 			mid_x - height_on_screen.to_f64() * (extent.left + extent.right) / 2.0,
 			ground_y,
 		),
@@ -272,15 +271,15 @@ large_anchor = |still| {
 	standing_at(
 		still,
 		{
-			mid_x: middle.x,
-			ground_y: middle.y + still_height * (extent.top + extent.bottom) / 2.0,
+			mid_x: middle.x.to_f64(),
+			ground_y: middle.y.to_f64() + still_height * (extent.top + extent.bottom) / 2.0,
 			height_on_screen: Pixels.of(still_height),
 		},
 	)
 }
 
 middle_of : Click.Area -> Point.Point
-middle_of = |area| { x: area.left + area.width / 2.0, y: area.top + area.height / 2.0 }
+middle_of = |area| Point.at(area.left + area.width / 2.0, area.top + area.height / 2.0)
 
 ## `model` after a click at `spot`, which does nothing off the stills.
 model_after_click : StillsWidgetApp.Model, Point.Point -> StillsWidgetApp.Model
@@ -379,9 +378,9 @@ outline_shapes = |anchor, polygon| {
 			|{ from, to }|
 				Shapes.line(
 					{
-						from: { x: from.x.to_f64(), y: from.y.to_f64() },
-						to: { x: to.x.to_f64(), y: to.y.to_f64() },
-						width: 1.0,
+						from: Point.at(from.x.to_f64(), from.y.to_f64()),
+						to: Point.at(to.x.to_f64(), to.y.to_f64()),
+						width: Pixels.of(1.0),
 					},
 					Flat(ink),
 				),
@@ -439,11 +438,10 @@ mark_shapes : StillsWidgetApp.Pose -> List(Shapes.Shape)
 mark_shapes = |large_pose|
 	cells.keep_if(|cell| cell.pose == large_pose).map(
 		|{ area, .. }|
-			Rect({
-				x: area.left,
-				y: area.top,
-				width: area.width,
-				height: area.height,
+			Rectangle({
+				top_left: Point.at(area.left, area.top),
+				width: Pixels.of(area.width),
+				height: Pixels.of(area.height),
 				fill: Brush.flat(WidgetPalette.picture_background_color),
 			}),
 	)
@@ -455,12 +453,9 @@ shapes_at = |model|
 		.concat(mark_shapes(model.large_pose))
 		.concat(grid_shapes)
 
-## Where a point of a still lands, as plain numbers.
+## Where a point of a still lands on the canvas.
 landing_spot : StillShapes.Anchor, Still.FramePoint -> Point.Point
-landing_spot = |anchor, point| {
-	on_screen = StillShapes.screen_point(anchor, point)
-	{ x: on_screen.x.to_f64(), y: on_screen.y.to_f64() }
-}
+landing_spot = |anchor, point| StillShapes.screen_point(anchor, point)
 
 ## Whether every point of a still lands in `area`.
 stays_in : StillShapes.Anchor, { still : Still, area : Click.Area } -> Bool
@@ -535,7 +530,13 @@ expect
 				|shape|
 					match shape {
 						Text(line) => line.y + name_descent <= cell.area.top + cell.area.height
-						Poly(_) | Disc(_) | Rect(_) | Blend(_) | View(_) | Image(_) => True
+						Triangle(_)
+						| Polygon(_)
+						| Disc(_)
+						| Rectangle(_)
+						| Blend(_)
+						| View(_)
+						| Image(_) => True
 					},
 			),
 	)
@@ -588,8 +589,8 @@ expect
 			low = landing_spot(anchor, { x: extent.left, y: extent.bottom })
 			high = landing_spot(anchor, { x: extent.right, y: extent.top })
 			middle = middle_of(large_area)
-			miss_x = (low.x + high.x) / 2.0 - middle.x
-			miss_y = (low.y + high.y) / 2.0 - middle.y
+			miss_x = (low.x.to_f64() + high.x.to_f64()) / 2.0 - middle.x.to_f64()
+			miss_y = (low.y.to_f64() + high.y.to_f64()) / 2.0 - middle.y.to_f64()
 			miss_x.abs() <= 0.000001 and miss_y.abs() <= 0.000001
 		},
 	)
@@ -629,11 +630,11 @@ expect
 
 # So does a click at a cell's corner, and the corner just past it is the next cell's.
 expect {
-	corner = { x: last_cell.area.left, y: last_cell.area.top }
+	corner = Point.at(last_cell.area.left, last_cell.area.top)
 	model_after_click(start, corner).large_pose == Bird(Diving)
 		and model_after_click(
 			start,
-			{ ..corner, x: corner.x - 1.0 },
+			{ ..corner, x: corner.x.minus(Pixels.of(1.0)) },
 		).large_pose == Bird(Away(WingsDown))
 }
 
@@ -650,19 +651,19 @@ expect {
 expect left_click(start, middle_of(large_area)).large_pose == Cat(Rest)
 
 # The large still's area ends where the words and the panel start.
-expect left_click(start, { x: large_area.left, y: large_area.top }).outlines == Shown
-expect is_as_started(left_click(start, { x: large_area.left - 1.0, y: large_area.top }))
-expect is_as_started(left_click(start, { x: 620.0, y: 100.0 }))
-expect is_as_started(left_click(start, { x: 400.0, y: 5.0 }))
+expect left_click(start, Point.at(large_area.left, large_area.top)).outlines == Shown
+expect is_as_started(left_click(start, Point.at(large_area.left - 1.0, large_area.top)))
+expect is_as_started(left_click(start, Point.at(620.0, 100.0)))
+expect is_as_started(left_click(start, Point.at(400.0, 5.0)))
 
 # A click anywhere else does nothing: on the words, past either end of a row.
-expect is_as_started(left_click(start, { x: 100.0, y: 60.0 }))
-expect is_as_started(left_click(start, { x: 10.0, y: 300.0 }))
-expect is_as_started(left_click(start, { x: 630.0, y: 300.0 }))
+expect is_as_started(left_click(start, Point.at(100.0, 60.0)))
+expect is_as_started(left_click(start, Point.at(10.0, 300.0)))
+expect is_as_started(left_click(start, Point.at(630.0, 300.0)))
 
 # page_check.mjs presses here to learn whether the pointer changes the picture, and
 # a page where a finger scrolls has to answer no.
-expect is_as_started(left_click(start, { x: 128.0, y: 144.0 }))
+expect is_as_started(left_click(start, Point.at(128.0, 144.0)))
 
 # Only a click changes the widget: not a button held from before, and not
 # nothing at all.
@@ -696,13 +697,18 @@ expect {
 		],
 	}
 	anchor = {
-		foot: Screen.point(0.0, 10.0),
+		foot: Point.at(0.0, 10.0),
 		flip: AsDrawn,
 		height_on_screen: Pixels.of(10.0),
 	}
-	flipped_square = [-0.5, 0.0, -0.5, 10.0, 0.5, 10.0, 0.5, 0.0]
+	flipped_square = [
+		Point.at(-0.5, 0.0),
+		Point.at(-0.5, 10.0),
+		Point.at(0.5, 10.0),
+		Point.at(0.5, 0.0),
+	]
 	match outline_shapes(anchor, square) {
-		[_, _, _, Poly({ coordinates, .. })] => coordinates == flipped_square
+		[_, _, _, Polygon({ corners, .. })] => corners == flipped_square
 		_ => False
 	}
 }
@@ -710,7 +716,7 @@ expect {
 # The picture answers each click.
 expect shapes_at(start) != shapes_at(left_click(start, middle_of(last_cell.area)))
 expect shapes_at(start) != shapes_at(left_click(start, middle_of(large_area)))
-expect shapes_at(start) == shapes_at(left_click(start, { x: 100.0, y: 60.0 }))
+expect shapes_at(start) == shapes_at(left_click(start, Point.at(100.0, 60.0)))
 
 # One cell is lit, the one shown large.
 expect mark_shapes(Cat(Land)).len() == 1

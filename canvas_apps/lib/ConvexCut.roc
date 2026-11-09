@@ -9,11 +9,11 @@ import Shapes
 ConvexCut :: [].{
 
 	## One shape of a cut frame: a shape the cut leaves as it is, or the
-	## triangles of one concave polygon, six numbers each. Only `cut_shapes`
+	## triangles of one concave polygon, three corners each. Only `cut_shapes`
 	## makes these, and only the native runner paints them.
 	CutShape : [
 		Uncut(Shapes.Shape),
-		Triangles({ triangle_coordinates : List(F64), fill : Brush.Fill }),
+		Triangles({ triangle_corners : List(Point.Point), fill : Brush.Fill }),
 	]
 
 	## The frame with each concave polygon cut into triangles.
@@ -21,52 +21,58 @@ ConvexCut :: [].{
 	cut_shapes = |shapes| shapes.map(
 		|shape|
 			match shape {
-				Poly(p) =>
-					if is_convex(p.coordinates) {
-						Uncut(Poly(p))
+				Polygon(p) =>
+					if is_convex(p.corners.map(plain_point)) {
+						Uncut(Polygon(p))
 					} else {
-						Triangles({ triangle_coordinates: wound_triangles(triangles(p.coordinates)), fill: p.fill })
+						Triangles({ triangle_corners: wound_triangles(triangles(p.corners.map(plain_point))).map(frame_point), fill: p.fill })
 					}
 				other => Uncut(other)
 			},
 	)
 }
 
+## A corner as plain numbers, which the cut's arithmetic is done in.
+PlainPoint : { x : F64, y : F64 }
+
+plain_point : Point.Point -> PlainPoint
+plain_point = |{ x, y }| { x: x.to_f64(), y: y.to_f64() }
+
+frame_point : PlainPoint -> Point.Point
+frame_point = |{ x, y }| Point.at(x, y)
+
 ## Each triangle wound as roc-ray's convex fill winds one: its second and third
 ## corners swapped when its signed area is positive.
-wound_triangles : List(F64) -> List(F64)
-wound_triangles = |triangle_coordinates| {
-	triangle_count = triangle_coordinates.len() // 6
-	var $out = List.with_capacity(6 * triangle_count)
+wound_triangles : List(PlainPoint) -> List(PlainPoint)
+wound_triangles = |triangle_corners| {
+	triangle_count = triangle_corners.len() // 3
+	var $out = List.with_capacity(3 * triangle_count)
 	for k in 0..<triangle_count {
-		a = corner(triangle_coordinates, 3 * k)
-		b = corner(triangle_coordinates, 3 * k + 1)
-		c = corner(triangle_coordinates, 3 * k + 2)
+		a = corner(triangle_corners, 3 * k)
+		b = corner(triangle_corners, 3 * k + 1)
+		c = corner(triangle_corners, 3 * k + 2)
 		$out = if cross3({ a, b, c }) > 0.0 {
-			$out.append(a.x).append(a.y).append(c.x).append(c.y).append(b.x).append(b.y)
+			$out.append(a).append(c).append(b)
 		} else {
-			$out.append(a.x).append(a.y).append(b.x).append(b.y).append(c.x).append(c.y)
+			$out.append(a).append(b).append(c)
 		}
 	}
 	$out
 }
 
-coordinate_at : List(F64), U64 -> F64
-coordinate_at = |xs, i| xs.get(i) ?? crash "ConvexCut.coordinate_at:an index past the end of the coordinates"
-
-## Corner `i` of a polygon written as x0, y0, x1, y1 and so on.
-corner : List(F64), U64 -> Point.Point
-corner = |coordinates, i| { x: coordinate_at(coordinates, 2 * i), y: coordinate_at(coordinates, 2 * i + 1) }
+## Corner `i` of a polygon.
+corner : List(PlainPoint), U64 -> PlainPoint
+corner = |corners, i| corners.get(i) ?? crash "ConvexCut.corner: an index past the end of the corners"
 
 ## Twice the signed area of the triangle a b c: positive when it turns one
 ## way, negative the other, and zero when its corners are in line.
-cross3 : { a : Point.Point, b : Point.Point, c : Point.Point } -> F64
+cross3 : { a : PlainPoint, b : PlainPoint, c : PlainPoint } -> F64
 cross3 = |{ a, b, c }| (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)
 
 ## Twice the signed area, summed as roc-ray's host sums it.
-twice_area : List(F64) -> F64
-twice_area = |coordinates| {
-	n = coordinates.len() // 2
+twice_area : List(PlainPoint) -> F64
+twice_area = |corners| {
+	n = corners.len()
 	var $sum = 0.0
 	for k in 0..<n {
 		next_k = if k + 1 == n {
@@ -74,7 +80,9 @@ twice_area = |coordinates| {
 		} else {
 			k + 1
 		}
-		$sum = $sum + coordinate_at(coordinates, 2 * k) * coordinate_at(coordinates, 2 * next_k + 1) - coordinate_at(coordinates, 2 * next_k) * coordinate_at(coordinates, 2 * k + 1)
+		here = corner(corners, k)
+		next = corner(corners, next_k)
+		$sum = $sum + here.x * next.y - next.x * here.y
 	}
 	$sum
 }
@@ -86,9 +94,9 @@ flip_limit = 2
 
 ## Convex when every corner turns the same way and the boundary stays within
 ## `flip_limit`, which rules out a star whose corners all turn one way.
-is_convex : List(F64) -> Bool
-is_convex = |coordinates| {
-	n = coordinates.len() // 2
+is_convex : List(PlainPoint) -> Bool
+is_convex = |corners| {
+	n = corners.len()
 	var $sign = 0.0
 	var $bad = False
 	var $xflips = 0
@@ -107,9 +115,9 @@ is_convex = |coordinates| {
 		} else {
 			$k + 2
 		}
-		here = corner(coordinates, $k)
-		next = corner(coordinates, next_k)
-		turn = cross3({ a: here, b: next, c: corner(coordinates, after_next_k) })
+		here = corner(corners, $k)
+		next = corner(corners, next_k)
+		turn = cross3({ a: here, b: next, c: corner(corners, after_next_k) })
 		$bad = turn * $sign < 0.0
 		$sign = if $sign == 0.0 {
 			turn
@@ -143,19 +151,19 @@ is_convex = |coordinates| {
 	!$bad and $xflips <= flip_limit and $yflips <= flip_limit
 }
 
-## The polygon cut into triangles by ear clipping, six numbers a triangle. A
+## The polygon cut into triangles by ear clipping, three corners a triangle. A
 ## corner in line with its neighbors is dropped without a triangle. A polygon
 ## that crosses itself can run out of ears, and what is left is fanned.
-triangles : List(F64) -> List(F64)
-triangles = |coordinates| {
-	n = coordinates.len() // 2
-	winding = if twice_area(coordinates) >= 0.0 {
+triangles : List(PlainPoint) -> List(PlainPoint)
+triangles = |corners| {
+	n = corners.len()
+	winding = if twice_area(corners) >= 0.0 {
 		1.0
 	} else {
 		-1.0
 	}
 	var $indices = List.from_iter(U64.until(0, n))
-	var $out = List.with_capacity(6 * n)
+	var $out = List.with_capacity(3 * n)
 	var $i = 0
 	var $misses = 0
 	while $indices.len() > 3 and $misses < $indices.len() {
@@ -173,13 +181,13 @@ triangles = |coordinates| {
 		a = $indices.get(previous_i) ?? crash "ConvexCut.triangles: a corner index out of range"
 		b = $indices.get($i) ?? crash "ConvexCut.triangles: a corner index out of range"
 		c = $indices.get(next_i) ?? crash "ConvexCut.triangles: a corner index out of range"
-		corner_a = corner(coordinates, a)
-		corner_b = corner(coordinates, b)
-		corner_c = corner(coordinates, c)
+		corner_a = corner(corners, a)
+		corner_b = corner(corners, b)
+		corner_c = corner(corners, c)
 		turn = cross3({ a: corner_a, b: corner_b, c: corner_c }) * winding
-		ear = turn >= 0.0 and !any_inside({ coordinates, indices: $indices, a, b, c, winding })
+		ear = turn >= 0.0 and !any_inside({ corners, indices: $indices, a, b, c, winding })
 		$out = if ear and turn > 0.0 {
-			$out.append(corner_a.x).append(corner_a.y).append(corner_b.x).append(corner_b.y).append(corner_c.x).append(corner_c.y)
+			$out.append(corner_a).append(corner_b).append(corner_c)
 		} else {
 			$out
 		}
@@ -203,45 +211,45 @@ triangles = |coordinates| {
 			next_i
 		}
 	}
-	fan({ coordinates, indices: $indices, out: $out })
+	fan({ corners, indices: $indices, out: $out })
 }
 
 ## Whether a remaining corner other than a, b and c lies strictly inside the
 ## triangle a b c.
 any_inside : {
-	coordinates : List(F64),
+	corners : List(PlainPoint),
 	indices : List(U64),
 	a : U64,
 	b : U64,
 	c : U64,
 	winding : F64,
 } -> Bool
-any_inside = |{ coordinates, indices, a, b, c, winding }| {
-	corner_a = corner(coordinates, a)
-	corner_b = corner(coordinates, b)
-	corner_c = corner(coordinates, c)
+any_inside = |{ corners, indices, a, b, c, winding }| {
+	corner_a = corner(corners, a)
+	corner_b = corner(corners, b)
+	corner_c = corner(corners, c)
 	indices.any(
 		|p| {
-			corner_p = corner(coordinates, p)
+			corner_p = corner(corners, p)
 			p != a and p != b and p != c and cross3({ a: corner_a, b: corner_b, c: corner_p }) * winding > 0.0 and cross3({ a: corner_b, b: corner_c, c: corner_p }) * winding > 0.0 and cross3({ a: corner_c, b: corner_a, c: corner_p }) * winding > 0.0
 		},
 	)
 }
 
 ## The remaining corners as a fan from the first, onto `out`.
-fan : { coordinates : List(F64), indices : List(U64), out : List(F64) } -> List(F64)
-fan = |{ coordinates, indices, out }|
+fan : { corners : List(PlainPoint), indices : List(U64), out : List(PlainPoint) } -> List(PlainPoint)
+fan = |{ corners, indices, out }|
 	match indices {
 		[] => out
 		[first, ..] => {
 			corner_count = indices.len()
-			pf = corner(coordinates, first)
+			pf = corner(corners, first)
 			var $out = out
 			var $k = 1
 			while $k + 1 < corner_count {
-				p = corner(coordinates, indices.get($k) ?? crash "ConvexCut.fan: a corner index out of range")
-				q = corner(coordinates, indices.get($k + 1) ?? crash "ConvexCut.fan: a corner index out of range")
-				$out = $out.append(pf.x).append(pf.y).append(p.x).append(p.y).append(q.x).append(q.y)
+				p = corner(corners, indices.get($k) ?? crash "ConvexCut.fan: a corner index out of range")
+				q = corner(corners, indices.get($k + 1) ?? crash "ConvexCut.fan: a corner index out of range")
+				$out = $out.append(pf).append(p).append(q)
 				$k = $k + 1
 			}
 			$out
@@ -253,15 +261,25 @@ ink = Flat({ r: 32.0, g: 32.0, b: 32.0, a: 1.0 })
 
 # A square is convex, and the cut leaves it as it is.
 expect {
-	square = Poly({ coordinates: [0.0, 0.0, 2.0, 0.0, 2.0, 2.0, 0.0, 2.0], fill: ink })
+	square = Polygon({ corners: [Point.at(0.0, 0.0), Point.at(2.0, 0.0), Point.at(2.0, 2.0), Point.at(0.0, 2.0)], fill: ink })
 	ConvexCut.cut_shapes([square]) == [Uncut(square)]
 }
 
 # An L of six corners is concave, and the cut makes it four triangles.
 expect {
-	ell = Poly({ coordinates: [0.0, 0.0, 2.0, 0.0, 2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 0.0, 2.0], fill: ink })
+	ell = Polygon({
+		corners: [
+			Point.at(0.0, 0.0),
+			Point.at(2.0, 0.0),
+			Point.at(2.0, 1.0),
+			Point.at(1.0, 1.0),
+			Point.at(1.0, 2.0),
+			Point.at(0.0, 2.0),
+		],
+		fill: ink,
+	})
 	match ConvexCut.cut_shapes([ell]) {
-		[Triangles(t)] => t.triangle_coordinates.len() == 24 and t.fill == ink
+		[Triangles(t)] => t.triangle_corners.len() == 12 and t.fill == ink
 		_ => False
 	}
 }

@@ -8,26 +8,22 @@
 ## PixelGrid's `blend`. A list threaded down a recursion would be copied on
 ## the next store (docs/roc-notes.md, "Speed and copying").
 import lib.Brush
+import lib.Point
 import PixelGrid
 import ScreenRoll
 
 ScanlineFill :: [].{
 
-	## A polygon, as scene coordinates x0, y0, x1, y1, ..., filled by the
-	## nonzero rule.
+	## A polygon, as its corners in the scene, filled by the nonzero rule.
 	polygon_pixels : List(U32),
 	{
 		roll : ScreenRoll,
-		coordinates : List(F64),
+		corners : List(Point.Point),
 		fill : Brush.Fill,
 	} -> List(U32)
-	polygon_pixels = |pixels, { roll, coordinates, fill }| {
-		corners = coordinates.chunks_of(2).map(
-			|pair|
-				match pair {
-					[x, y] => roll.to_screen(ScreenRoll.ScenePoint.({ x, y }))
-					_ => crash "ScanlineFill.polygon_pixels: a polygon's coordinates come in pairs"
-				},
+	polygon_pixels = |pixels, { roll, corners: scene_corners, fill }| {
+		corners = scene_corners.map(
+			|{ x, y }| roll.to_screen(ScreenRoll.ScenePoint.({ x: x.to_f64(), y: y.to_f64() })),
 		)
 		match corners {
 			[first, _, _, ..] => {
@@ -205,7 +201,7 @@ pixels_with_span = |pixels, { roll, fill, row, from, to }| {
 			Flat(flat) => flat
 			Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) => {
 				p = roll.to_scene(ScreenRoll.pixel_point({ row, column }))
-				Brush.shade(fill, p)
+				Brush.shade(fill, Point.at(p.x, p.y))
 			}
 		}
 		$px = PixelGrid.blended_pixels($px, { at, color })

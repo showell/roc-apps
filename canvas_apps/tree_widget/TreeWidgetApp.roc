@@ -153,17 +153,15 @@ is_plain_to_see = |stand|
 				sighting.spot.base(),
 				{ height: conifer.scenery_height(), focal_length: Lens.resting_focal_length },
 			)
-			foot_on_screen = { x: outline.foot.x.to_f64(), y: outline.foot.y.to_f64() }
-			foot = WidgetPage.canvas_point_of_screen(foot_on_screen)
-			tip_on_screen = {
-				x: foot_on_screen.x,
-				y: foot_on_screen.y - outline.height_on_screen.to_f64(),
-			}
-			tip = WidgetPage.canvas_point_of_screen(tip_on_screen)
+			foot = WidgetPage.canvas_point_of_screen(outline.foot)
+			tip = WidgetPage.canvas_point_of_screen({
+				x: outline.foot.x,
+				y: outline.foot.y - outline.height_on_screen,
+			})
 			WidgetPage.is_in_picture(tip)
 				and WidgetPage.is_in_picture(foot)
-				and foot.y - tip.y >= 30.0
-				and (foot.x - stand.canvas_x).abs() <= 0.000000001
+				and foot.y.to_f64() - tip.y.to_f64() >= 30.0
+				and (foot.x.to_f64() - stand.canvas_x).abs() <= 0.000000001
 		}
 		Err(BehindCamera) => False
 	}

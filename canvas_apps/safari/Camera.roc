@@ -1,10 +1,14 @@
 ## The rider's camera: a pinhole at eye height, looking straight ahead. It
-## puts a point in the rider's view onto the screen.
+## puts a point in the rider's view onto the screen, and a polygon there once
+## it is cut at the camera's near plane.
 import Distance
 import Lens
-import Pixels
+import lib.Brush
+import lib.Point
+import lib.Pixels
+import lib.RgbColor
+import lib.Shapes
 import RiderView
-import Screen
 
 Camera :: [].{
 
@@ -14,7 +18,7 @@ Camera :: [].{
 
 	## Where a point in front of the camera lands on the screen, through a
 	## lens of `focal_length`.
-	project : RiderView.RaisedPointAhead, Pixels -> Screen.Point
+	project : RiderView.RaisedPointAhead, Pixels -> Point.Point
 	project = |p, focal_length| {
 		slope_right = p.right().ratio_to(p.forward())
 		slope_up = p.height().minus(eye_height).ratio_to(p.forward())
@@ -33,7 +37,7 @@ Camera :: [].{
 	## An upright object on the screen: where its foot is, and how far up the
 	## screen its top is from there. A tree, a still and a billboard all stand
 	## this way.
-	Upright : { foot : Screen.Point, height_on_screen : Pixels }
+	Upright : { foot : Point.Point, height_on_screen : Pixels }
 
 	## The object standing at `base`, `height` tall, on the screen.
 	upright_on_screen : RiderView.RaisedPointAhead,
@@ -49,15 +53,38 @@ Camera :: [].{
 
 	## Each of `points` put on the screen, in order, through a lens of focal
 	## length `focal_length`.
-	projected_points : List(RiderView.RaisedPointAhead), Pixels -> List(Screen.Point)
+	projected_points : List(RiderView.RaisedPointAhead), Pixels -> List(Point.Point)
 	projected_points = |points, focal_length| points.map(|p| project(p, focal_length))
+
+	## A polygon of one color, in the rider's view.
+	FlatPolygon : { color : RgbColor, corners : List(RiderView.RaisedPoint) }
+
+	## A polygon on screen, cut at the near plane, unless it's wholly behind the
+	## camera. What is left of a polygon of three corners or more has three or
+	## more, so fewer is a bug in the code that asked, and it crashes.
+	clipped_polygon : Camera.FlatPolygon, Pixels -> Try(Shapes.Shape, [BehindCamera])
+	clipped_polygon = |{ color, corners }, focal_length| {
+		in_front = RiderView.clipped_points(corners)
+		if in_front.is_empty() {
+			Err(BehindCamera)
+		} else if in_front.len() < 3 {
+			crash "Camera.clipped_polygon: a polygon needs at least three corners"
+		} else {
+			Ok(
+				Polygon({
+					corners: projected_points(in_front, focal_length),
+					fill: Brush.flat(color),
+				}),
+			)
+		}
+	}
 }
 
 ## `point` past the near plane, which every point in these tests is.
 ahead : RiderView.RaisedPoint -> RiderView.RaisedPointAhead
 ahead = |point| RiderView.raised_point_ahead(point) ?? crash "a test's point is past the near plane"
 
-screen_point : RiderView.RaisedPoint -> Screen.Point
+screen_point : RiderView.RaisedPoint -> Point.Point
 screen_point = |point| Camera.project(ahead(point), Pixels.of(800.0))
 
 expect screen_point({
@@ -174,9 +201,9 @@ expect
 		Pixels.of(800.0),
 	)
 		== [
-			Screen.point(480.0, 300.0),
-			Screen.point(1280.0, 300.0),
-			Screen.point(480.0, -500.0),
+			Point.at(480.0, 300.0),
+			Point.at(1280.0, 300.0),
+			Point.at(480.0, -500.0),
 		]
 
 expect Camera.projected_points([], Pixels.of(800.0)).len() == 0

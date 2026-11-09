@@ -3,7 +3,7 @@
 # Hand-written. Every solid thing in this movie is one of three: a polygon
 # whose corners are anywhere (`world`), a polygon on one plane a fixed distance
 # away (`face`, and `panel` for its rectangle), or a strip of flat ground
-# (`strip`). Each goes through Eye.screen_coordinates, which turns the points into the eye's
+# (`strip`). Each goes through Eye.screen_corners, which turns the points into the eye's
 # own frame, cuts what is behind it against the near plane, and projects the
 # rest.
 #
@@ -18,11 +18,11 @@ Panels :: [].{
 	# its own plane on its hinge, and a floor lies flat.
 	world : Eye.Eye, List(Eye.At), Brush.Fill -> List(Shapes.Shape)
 	world = |v, ats, fill| {
-		coordinates = Eye.screen_coordinates(v, ats)
-		if coordinates.len() < 6 {
+		corners = Eye.screen_corners(v, ats)
+		if corners.len() < 3 {
 			[]
 		} else {
-			[Poly({ coordinates, fill })]
+			[Polygon({ corners, fill })]
 		}
 	}
 

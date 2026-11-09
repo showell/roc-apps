@@ -5,10 +5,9 @@
 import Camera
 import Distance
 import Sprite
-import Pixels
-import Polygon
+import lib.Point
+import lib.Pixels
 import Still
-import Screen
 import lib.Brush
 import lib.Shapes
 
@@ -21,21 +20,21 @@ StillShapes :: [].{
 	## Where a still stands on screen: its foot, which way it is drawn, and
 	## its height on screen.
 	Anchor : {
-		foot : Screen.Point,
+		foot : Point.Point,
 		flip : StillShapes.Flip,
 		height_on_screen : Pixels,
 	}
 
 	## Where a point of the still lands on screen: the foot, and the point's
 	## step from it.
-	screen_point : StillShapes.Anchor, Still.FramePoint -> Screen.Point
+	screen_point : StillShapes.Anchor, Still.FramePoint -> Point.Point
 	screen_point = |anchor, point| {
 		step = screen_vector(anchor, point)
 		{ x: anchor.foot.x.plus(step.x), y: anchor.foot.y.plus(step.y) }
 	}
 
 	## Where each of a still's `points` lands on screen, in order.
-	screen_points : StillShapes.Anchor, List(Still.FramePoint) -> List(Screen.Point)
+	screen_points : StillShapes.Anchor, List(Still.FramePoint) -> List(Point.Point)
 	screen_points = |anchor, points| points.map(|point| StillShapes.screen_point(anchor, point))
 
 	## A whole still, its polygons in order.
@@ -79,7 +78,7 @@ x_sign = |flip|
 	}
 
 ## How far, and which way, a step in the still goes on screen.
-screen_vector : StillShapes.Anchor, Still.FrameVector -> Screen.Point
+screen_vector : StillShapes.Anchor, Still.FrameVector -> Point.Point
 screen_vector = |anchor, step| {
 	x: anchor.height_on_screen.times(x_sign(anchor.flip) * step.x),
 	y: anchor.height_on_screen.times(step.y).opposite(),
@@ -90,7 +89,7 @@ still_polygon : StillShapes.Anchor, Still.Polygon -> Shapes.Shape
 still_polygon = |anchor, polygon| {
 	points = StillShapes.screen_points(anchor, polygon.points)
 	match polygon.fill {
-		Flat(color) => Polygon.flat_polygon(points, color)
+		Flat(color) => Polygon({ corners: points, fill: Brush.flat(color) })
 		Shaded(gradient) => still_gradient_polygon(anchor, { gradient, points })
 	}
 }
@@ -98,29 +97,34 @@ still_polygon = |anchor, polygon| {
 still_gradient_polygon : StillShapes.Anchor,
 {
 	gradient : Still.Gradient,
-	points : List(Screen.Point),
+	points : List(Point.Point),
 } -> Shapes.Shape
 still_gradient_polygon = |anchor, { gradient, points }|
 	match gradient {
-		Linear({ stops, start, end }) =>
-			Polygon.linear_gradient_polygon(
-				points,
-				{
-					stops: brush_stops(stops),
-					start_point: StillShapes.screen_point(anchor, start),
-					end_point: StillShapes.screen_point(anchor, end),
-				},
-			)
-		Radial({ stops, center, axis_u, axis_v }) =>
-			Polygon.elliptical_gradient_polygon(
-				points,
-				{
-					stops: brush_stops(stops),
-					center_point: StillShapes.screen_point(anchor, center),
-					axis_u: screen_vector(anchor, axis_u),
-					axis_v: screen_vector(anchor, axis_v),
-				},
-			)
+		Linear({ stops, start, end }) => {
+			fill = Brush.linear_gradient({
+				stops: brush_stops(stops),
+				start_point: StillShapes.screen_point(anchor, start),
+				end_point: StillShapes.screen_point(anchor, end),
+			})
+			Polygon({ corners: points, fill })
+		}
+		Radial({ stops, center, axis_u, axis_v }) => {
+			ellipse = Brush.elliptical_gradient({
+				stops: brush_stops(stops),
+				center: StillShapes.screen_point(anchor, center),
+				axis_u: screen_vector(anchor, axis_u),
+				axis_v: screen_vector(anchor, axis_v),
+			})
+			# A still is never drawn small enough to thin its ellipses past
+			# Brush's limit, as `Still.of` checks.
+			fill =
+				match ellipse {
+					Ok(gradient_fill) => gradient_fill
+					Err(TooThin) => crash "StillShapes.still_gradient_polygon: an ellipse too thin for Brush to invert"
+				}
+			Polygon({ corners: points, fill })
+		}
 	}
 
 ## A still's colour stops as a brush takes them.
@@ -132,8 +136,8 @@ brush_stops = |stops| {
 	end_offset: stops.end_offset.to_f64(),
 }
 
-sample_foot : Screen.Point
-sample_foot = Screen.point(100.0, 200.0)
+sample_foot : Point.Point
+sample_foot = Point.at(100.0, 200.0)
 
 # A still 50 pixels tall, standing on the foot, as drawn.
 upright : StillShapes.Anchor
@@ -151,13 +155,13 @@ mirrored = {
 	height_on_screen: Pixels.of(50.0),
 }
 
-expect StillShapes.screen_point(upright, { x: 0.5, y: 0.4 }) == Screen.point(125.0, 180.0)
-expect StillShapes.screen_point(mirrored, { x: 0.5, y: 0.4 }) == Screen.point(75.0, 180.0)
-expect StillShapes.screen_point(upright, { x: 0.0, y: 0.0 }) == Screen.point(100.0, 200.0)
+expect StillShapes.screen_point(upright, { x: 0.5, y: 0.4 }) == Point.at(125.0, 180.0)
+expect StillShapes.screen_point(mirrored, { x: 0.5, y: 0.4 }) == Point.at(75.0, 180.0)
+expect StillShapes.screen_point(upright, { x: 0.0, y: 0.0 }) == Point.at(100.0, 200.0)
 
-expect screen_vector(upright, { x: 0.5, y: 0.4 }) == Screen.point(25.0, -20.0)
-expect screen_vector(mirrored, { x: 0.5, y: 0.4 }) == Screen.point(-25.0, -20.0)
-expect screen_vector(upright, { x: 0.0, y: 0.0 }) == Screen.point(0.0, 0.0)
+expect screen_vector(upright, { x: 0.5, y: 0.4 }) == Point.at(25.0, -20.0)
+expect screen_vector(mirrored, { x: 0.5, y: 0.4 }) == Point.at(-25.0, -20.0)
+expect screen_vector(upright, { x: 0.0, y: 0.0 }) == Point.at(0.0, 0.0)
 
 expect
 	StillShapes.screen_points(
@@ -169,7 +173,7 @@ expect
 		],
 	)
 		== [
-			Screen.point(100.0, 200.0),
-			Screen.point(125.0, 180.0),
-			Screen.point(150.0, 150.0),
+			Point.at(100.0, 200.0),
+			Point.at(125.0, 180.0),
+			Point.at(150.0, 150.0),
 		]

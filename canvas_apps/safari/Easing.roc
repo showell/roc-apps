@@ -1,6 +1,6 @@
 ## The sums for moving smoothly between two values. A fraction runs from 0 at
 ## the start of a move to 1 at its end.
-import Fraction
+import lib.Fraction
 
 Easing :: [].{
 

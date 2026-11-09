@@ -212,7 +212,7 @@ A far tree in the ride is a rectangle of trunk under eight triangles. So before 
 
 In Roc, a shape is a value that describes something to paint. The `Shape` type lists the shapes the platform knows how to paint, one tag for each. Here are the three the ride draws with:
 
-{{code Shapes.Shape from "Shape : [" to "Rect("}}
+{{code Shapes.Shape from "Shape : [" to "Polygon({ corners"}}
 
 Each tag carries a record of its data. A `Poly` is a polygon: its `coordinates` list the corners, an `x` and then a `y` for each, and its `fill` colors the inside. A `Disc` is a circle, with a center and a radius. A `Rect` is a rectangle. The numbers are pixels, measured from the top left of the screen, with `y` growing downward.
 
@@ -230,7 +230,7 @@ And here's the code that makes it:
 
 `0x2e8b57` is the color, the six hex digits a web page writes after its `#`. A triangle is a polygon with three corners, so it's a `Poly`. The `Polygon.triangle` function takes the three corners and builds that `Poly`:
 
-{{code Polygon.triangle}}
+{{code Shapes.Shape from "Triangle({" to "Triangle({"}}
 
 The parameter `{ first_corner, second_corner, third_corner }` takes the record apart into three names. Every caller names all three corners, so every triangle has exactly three, by construction. The body lists the six numbers and fills the inside with one flat color. It gives back a `Shapes.Shape`, because a `Shape` is what the platform paints.
 
@@ -982,7 +982,7 @@ Every color in the sky is a blend of two others, and a blend needs a ratio. `Fra
 
 `Sky.sky_shape` paints the two as a gradient, down to the horizon. It stays on the top color for the first fifth of the way, then fades:
 
-{{code Sky.sky_shape from "Linear({" to "end_point: { x: 0.0, y: Screen.horizon_y.to_f64() },"}}
+{{code Sky.sky_shape from "Linear({" to "end_point: { x: Pixels.zero, y: Screen.horizon_y },"}}
 
 A color is one integer all along, `0xRRGGBB`, the form a `Brush` wants. `RgbColor.from_channels` builds one from three channels with method calls on plain numbers. Static dispatch finds `to_i64`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `from_channels` a leaf: it calls nothing of Safari Ride's own.
 
@@ -2846,7 +2846,7 @@ The points are plain records. They don't need to be opaque, since a record's typ
 
 {{code RiderView.RaisedPoint}}
 
-{{code Screen.Point}}
+{{module Point}}
 
 Roc's records are structural: a record's type is just its field names and their types. That gives *one record per space* at no cost: `along` and `across` are on the road, `right` and `forward` are from the rider, `right`, `forward` and `height` are from the rider with a height, and `x` and `y` are pixels. Reading any function, the field names say where it is.
 
@@ -2941,7 +2941,7 @@ The cut can change the type of point as well as the count. The near plane takes 
 
 `GroundPatch`, `GuardRail`, `TruckBody` and `TruckBrakeLights` all cut through `Polygon.clipped_polygon`. `GroundPatch` first cuts its corners at the horizon, with `EarthCurve.points_before_horizon`:
 
-{{code Polygon.clipped_polygon from "in_front = RiderView.clipped_points(" to "Ok(Polygon.flat_polygon(Camera.projected_points(in_front, focal_length), color))"}}
+{{code Camera.clipped_polygon from "in_front = RiderView.clipped_points(" to "fill: Brush.flat(color),"}}
 
 ### Arithmetic all the way down
 

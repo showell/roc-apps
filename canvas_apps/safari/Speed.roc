@@ -4,7 +4,7 @@
 ## takes one, and `acceleration_to` gives one.
 import Acceleration
 import Distance
-import Fraction
+import lib.Fraction
 import Steps
 
 Speed :: F64.{
