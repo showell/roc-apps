@@ -364,9 +364,39 @@ And here is the whole module behind it:
 
 Colors are whole numbers in hex, the same six digits a web page writes after its `#`. `0x2e8b57` is a sea green, and `0xe8a33d` is an amber.
 
-### The makers
+### A triangle
 
-`triangle` and `rectangle` are each one call into `Polygon`. A function in `Polygon` makes a shape: it returns a value that describes the shape, and the painter draws it later. The two makers here take different inputs and finish in the same place:
+`triangle` and `rectangle` are each one call into `Polygon`, whose functions make shapes. A maker returns a value that describes a shape, and the painter draws it later.
+
+Let's draw the triangle first. It's three corners and a color:
+
+{{code Polygon.triangle}}
+
+The bars, `|…|`, hold the function's parameters. The first parameter, `{ first_corner, second_corner, third_corner }`, takes the record apart into three names. A caller names all three corners, in any order, and the compiler checks that all three are there.
+
+The triangle puts its corners in a list and hands them to `flat_polygon`:
+
+{{code Polygon.flat_polygon}}
+
+`flat_polygon` makes the `Poly`. `Brush.flat` makes its fill, the color fully opaque. `polygon_coordinates` makes its coordinates, one flat list of numbers, an `x` and then a `y` for each corner. First, it checks that there are at least three corners:
+
+{{code Polygon.polygon_coordinates}}
+
+Two corners enclose nothing, so a call like that is a bug in Safari Ride, and the program stops. `maker` names the function that asked, so the crash points at the bug.
+
+That's a triangle: three corners in, one `Poly` out.
+
+### A rectangle
+
+Next, let's build a rectangle. A rectangle is a polygon of one color too, so it ends in the same `flat_polygon`. All it has to do is find its four corners. It takes two opposite corners and a color:
+
+{{code Polygon.rectangle}}
+
+`rectangle_corners` finds the other two, and lists all four clockwise from the top left:
+
+{{code Polygon.rectangle_corners}}
+
+The two makers take different inputs and finish in the same place:
 
 How the two shapes are made
 ```dot
@@ -381,25 +411,7 @@ digraph shapes {
 }
 ```
 
-A triangle is three corners and a color:
-
-{{code Polygon.triangle}}
-
-The bars, `|…|`, hold the function's parameters. The first parameter, `{ first_corner, second_corner, third_corner }`, takes the record apart into three names. A caller names all three corners, in any order, and the compiler checks that all three are there.
-
-A rectangle is two opposite corners and a color:
-
-{{code Polygon.rectangle}}
-
-`rectangle_corners` turns the two corners into four, clockwise from the top left. Now both makers hold a list of corners and a color, and both hand them to `flat_polygon`:
-
-{{code Polygon.flat_polygon}}
-
-This is where a polygon of one color becomes a `Poly`. `Brush.flat` makes the fill: the color, fully opaque, as a `Flat`. `polygon_coordinates` makes the coordinates: one flat list of numbers, an `x` and then a `y` for each corner. It refuses a polygon with fewer than three corners:
-
-{{code Polygon.polygon_coordinates}}
-
-Two corners enclose nothing, so a call like that is a bug in Safari Ride, and the program stops. `maker` names the function that asked, so the crash points at the bug.
+So the triangle and the rectangle reach the painter in the same form: a `Poly` with a `Flat` fill.
 
 ### Pictures
 

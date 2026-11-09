@@ -46,7 +46,7 @@ Each axis fails in its own way, and catching each failure takes a different kind
 - **C2.** Inside a chapter: the problem first, as needs. Then "Get the types right", with the flowchart right after it. Then the functions.
 - **C3.** Never lean on something unseen. A forward pointer names what's coming and why, or it goes.
 - **C4.** Every chapter's opening stands alone, usually by restating the premise. A chapter's end may leave a question hanging. Readers land anywhere, so avoid "remember the first chapter" callbacks for simple ideas: explain them in place.
-- **C5.** Handle each job discretely. One job gets one section, and the job comes before its details.
+- **C5.** **Finish one thing before you start the next.** Take the triangle all the way from its call to its `Poly`. Only then say "Next, let's build a rectangle", and let the rectangle lean on what the triangle taught. Two things explained side by side make the reader hold both at once. The headlights and the brake lights taught this first. One job gets one section, and the job comes before its details.
 - **C6.** Difficulty rises, tempered by categories: nature, man-made, critters. One frame is held still for the first half, and motion starts at The ride instant. Teasing an idea early is fine.
 - **C7.** Everything that appears says why the reader needs it now. A type or module with no reason to be in this chapter moves to the chapter that needs it. Telling the reader that a `GroundPatch` is a patch of ground, with no reason it's here, leaves them disoriented.
 - **C8.** Show the code, then describe it. Never describe a function the reader hasn't seen.
