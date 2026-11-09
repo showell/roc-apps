@@ -21,7 +21,7 @@ Roc is fun to read, and this book gives you plenty of it. If you're brand new to
 
 ## The problem
 
-Safari Ride shows a world in motion, seen from the rider's seat, and draws it on the screen frame by frame, thirty frames a second. That one sentence holds four problems.
+Safari Ride shows a world in motion, seen from the rider's seat. It draws that world on the screen frame by frame, thirty frames a second, and you can take the controls at any moment. Those two sentences hold five problems.
 
 The first is the world itself. A long road runs through open country, past trees, herds, ponds, radio towers and mountains. Something has to say where every one of them is.
 
@@ -31,7 +31,9 @@ The third is the rider's view. The screen shows only what the rider sees. A tree
 
 The fourth is the screen. Every frame is drawn whole, from nothing, and nearer things have to cover farther ones.
 
-Each of the four is a fair amount of work. Safari Ride solves all four with simple code, and this book shows how. The next chapter breaks the problem into pieces, and picks the piece we start with.
+The fifth is you. The ride is interactive. You'll mostly sit back and watch, but you can also pause the ride, step it forward and rewind it.
+
+Each of the five is a fair amount of work. Safari Ride solves all five with simple code, and this book shows how. The next chapter breaks the problem into pieces, and picks the piece we start with.
 
 ## Shapes
 
