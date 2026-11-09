@@ -6,6 +6,29 @@
 ## needs, and it matches them by name alone, so those names say what they are
 ## for. A kind holds how the object looks right now, and the form around it holds
 ## where the object is.
+##
+## A sighting can be refused, and the refusal's tag says why the object isn't
+## drawn this frame.
+## `BehindCamera` means its foot is short of the camera's near plane, as
+## `RiderView.rider_point_ahead` decides for `Pipeline.sighting_of`, and every
+## sighting takes this test.
+## `BelowHorizon` means the earth's curve hides the whole of it, as
+## `EarthCurve.is_below_horizon` decides for `Pipeline.sighting_above_horizon_of`,
+## which every kind with a height takes, the towers among them.
+## `TooSmall` means it would stand less than `Pipeline.smallest_height_on_screen`
+## tall, as `Pipeline.scenery_sighting_of` decides for the trees, the
+## billboards, the cats and the birds, though not for the towers or the truck.
+## `NoTruck` means the truck is past the route's end or off the road ahead, as
+## `TruckSighting.truck_in_view` decides before it sights the truck.
+## `NoPose` means a segment in view has no cat or bird, or its encounter is
+## over, as `EncounterPoses` decides before any camera looks.
+## `NoMidTower` means the segment is too short for a tower halfway along, as
+## `TowerSighting` decides from its length.
+## Only the segments of `RoadAhead.segments_in_view` are looked at at all. Below
+## a sighting, a shape can be dropped too: a part of the guard rail, a ground
+## patch or a face of the truck cut away whole at the near plane
+## (`Polygon.clipped_polygon`), a ground patch `PastHorizon`, or a beacon that is
+## `TooDim` or `TooSmall` (`Beacon.disc`).
 import RoadAhead
 import SegmentFromRider
 import Camera

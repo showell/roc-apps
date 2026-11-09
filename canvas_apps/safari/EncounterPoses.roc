@@ -3,7 +3,9 @@
 ## encounter, never a camera: the encounter on the rider's own segment is where
 ## its animation has got to, one on a segment ahead hasn't begun, and one on the
 ## segment behind ended before the rider left it, so it has no pose. A segment
-## holds one encounter at most, a cat's or a bird's.
+## holds one encounter at most, a cat's or a bird's. The poses are worked out
+## each frame from the encounter plan and the clock, on the road ahead of the
+## rider.
 import Animation
 import Geom
 import Bird

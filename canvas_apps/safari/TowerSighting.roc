@@ -4,7 +4,8 @@
 ## blinks on the ride's clock, and the sighting lights it for the frame.
 ## Unlike the trees and the critters, a tower has no size test: it is
 ## sighted however small it stands, until the earth's curve sinks it wholly
-## below the horizon, and then it is refused.
+## below the horizon, and then it is refused. The sightings are worked out each
+## frame from the rider's camera, the route and the clock.
 import Across
 import Along
 import Angle

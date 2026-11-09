@@ -3,7 +3,8 @@
 ## its peaks, a lower range to the west, and the rolling land in front of both.
 ## Each is a silhouette across the screen whose height depends on the bearing it
 ## is seen at and on the lens, so the skyline turns with the rider but never comes
-## nearer. The rock darkens at dusk, and the snow goes blue.
+## nearer. The rock darkens at dusk, and the snow goes blue. It is worked out
+## each frame from the clock and the camera's heading and lens.
 import Pixels
 import Angle
 import FarHeight

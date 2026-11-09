@@ -4,7 +4,9 @@
 ## rider. The ride picks that step once, when the rider first comes within
 ## reach, from how the rider is coming then, so that the animation ends as the
 ## rider arrives. A `Timing` says where the animation has got to as an
-## `Animation.Stage`, which the animal's timeline turns into what it shows.
+## `Animation.Stage`, which the animal's timeline turns into what it shows. The
+## plan is kept from one step to the next, one of the four things the ride
+## remembers.
 import Animation
 import Clock
 import Distance

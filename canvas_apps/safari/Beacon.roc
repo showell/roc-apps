@@ -3,7 +3,8 @@
 ## blinks by the ride's clock, each segment's a little apart from the last, and
 ## a tower halfway along a segment blinks opposite the one at its end. Whatever
 ## holds a beacon says where its middle is on screen and how many pixels a
-## metre spans there.
+## metre spans there. A beacon is worked out each frame from the clock and the
+## tower it tops.
 import Clock
 import Distance
 import Fraction

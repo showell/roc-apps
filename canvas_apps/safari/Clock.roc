@@ -1,5 +1,6 @@
 ## The ride's clock: which step of the ride this is. It starts at zero and
-## moves on by one with every step, so it is always whole.
+## moves on by one with every step, so it is always whole. It is kept from one
+## step to the next, one of the four things the ride remembers.
 import Steps
 
 Clock :: U32.{

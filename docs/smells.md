@@ -80,6 +80,24 @@ disagree with them, which makes it a wrong state the type allows.
 expect to keep the two equal. The truck's `brake_lights` repeated what its two
 speeds say. Store the source, and work the rest out where it's needed.
 
+A database designer calls this a derived column, and keeps it out of the tables:
+a value is either a fact or a view, never both. When the sighting learned how far
+the ground had dropped beneath a spot, `Spot.drop` became a method worked out from
+the foot the spot already holds, not a stored field beside it. The honest
+exception is a cache kept for speed and labelled as one, like the worked bends
+`RoadAhead.RoadView` keeps beside its route.
+
+**A function takes more than it reads.** A signature should name what the
+function depends on, as a database view names the columns it reads. A function
+that takes a wide record and reads one field of it hides its real inputs, and a
+test has to build the whole record to call it. Steve called these overly fat
+APIs. The sightings each took the whole camera, `{ vantage, focal_length }`, and
+passed it down through four or five functions, though only the size test reads
+the focal length: towers, the truck, rails and the ground never did. Taking just
+the vantage made "this kind has no size test" visible in the signature.
+`EncounterReaction` took a whole `Segment` to read only its encounter. When most
+callers of a type read only part of it, ask whether the type is really two.
+
 **A field means nothing in some cases.** If readers must check a tag before a
 field means anything, the field belongs inside that tag. The route's last
 segment carried a planned 0° `exit_turn` that every reader matched past, and a

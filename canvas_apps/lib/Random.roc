@@ -2,7 +2,7 @@
 ## `Random` re-exports the roc-random package, and the canvas apps' wasm build
 ## is a flat pile of Roc with no package manifest, so this offers the same
 ## names: `seed`, `step`, `next`, `bounded_i32`, and a `Generation` carrying
-## `value` and `state`. A game ported from an example changes its import line
+## `value` and `state`. A game that starts from an example changes its import line
 ## and nothing else.
 ##
 ## The sequence is not roc-random's, so the same seed draws different numbers

@@ -1,5 +1,6 @@
 ## The rider from one step to the next: the motorcycle they ride, which knows
-## where on the route it is, and where their eyes are.
+## where on the route it is, and where their eyes are. It is kept from one step
+## to the next, one of the four things the ride remembers.
 import Along
 import Angle
 import Animation

@@ -1,6 +1,7 @@
 ## Truck is the truck as the scene draws it this frame: its lights' states, and
 ## its picture. Its picture is its headlight beams first, then its body, then
-## its brake lights, so each paints over the one before.
+## its brake lights, so each paints over the one before. It is worked out each
+## frame from the clock and the truck's progress.
 import Angle
 import Picture
 import Pixels

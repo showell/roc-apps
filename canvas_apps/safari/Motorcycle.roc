@@ -1,7 +1,8 @@
 ## The motorcycle the rider sits on: where it is on the route, which way it
 ## points, how fast it goes and how far it leans, and the physics that moves it
 ## a step. The lean steers the motorcycle, and it moves along the middle of the
-## step's turn, in its segment's frame.
+## step's turn, in its segment's frame. It is kept from one step to the next,
+## as part of the `Rider`.
 import Acceleration
 import Along
 import Angle

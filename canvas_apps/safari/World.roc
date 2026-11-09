@@ -3,6 +3,29 @@
 ## on it, and how it turns into the next. The route makes some choices across
 ## its segments, such as which herds are big and which the rider finds
 ## distracting, and this module resolves them before each segment is built.
+##
+## The world is built once and never changes during the ride. It holds these.
+## The route is a list of segments, each known by its place in the list, a
+## `Route.SegmentIndex` counted from 0; `World.route` builds it from
+## `World.segment_plans`, and `Route.from_segments` checks that every segment
+## but the last bends.
+## A segment's trees are a list, each tree known by where it stands on its
+## segment, along and across the road; `Trees.roadside_trees` plants them from
+## the segment's scheme and length.
+## A segment has at most one herd of pigs, whose shape and whether it distracts
+## the rider `built_segment` chooses here, and one herd of cows, led by a bull or
+## not; each animal's place is worked out from its herd when it is asked for
+## (`Segment.segment_pigs`, `Segment.segment_cows`), not kept.
+## A segment has one encounter, a cat crossing, a bird's flight or a quiet road,
+## and `Segment.from_choices` places the cat by one of its trees and the bird on
+## another.
+## A segment ends by bending into the next, with its turn and what lives at the
+## bend (an animal and its baby, a pond with its ducks, or nothing), or by ending
+## the route; a pond is known by the segment whose bend it lies at, and its
+## ducks, like the animal, are placed from that bend.
+## Towers aren't kept at all: each follows from its segment, one past the end of
+## every segment and one halfway along a segment longer than a kilometre, so a
+## tower is known by its segment and its `Beacon.TowerPlace`.
 import Angle
 import BirdFlight
 import CatCrossing
@@ -405,6 +428,38 @@ expect
 		|index| {
 			cat_tree = crossing_at(index).tree()
 			route_segment_at(index).trees.any(|tree| tree.road_point == cat_tree)
+		},
+	)
+
+# Every segment is longer than zero. Route.segments_with_ends and each bend's geometry
+# measure from it.
+expect World.segment_plans.all(|plan| plan.length > Distance.zero)
+
+# Every bend really turns: its sine isn't zero. BendInView.outer_corner crashes on a bend
+# that turns 0 or 180 degrees.
+expect World.bending_plans.all(|{ turn, .. }| turn.to_radians().sin() != 0.0)
+
+# Each encounter's animal waits before its segment's commit_along, because
+# EncounterPlan.plan_at_next_step forgets the plan once the rider leaves the segment.
+expect
+	World.route.route_segments().all(
+		|segment|
+			match segment.encounter_span() {
+				Ok({ planned_along, .. }) => planned_along < segment.commit_along()
+				Err(QuietRoad) => True
+			},
+	)
+
+# Every pig and cow stands on its own segment, between its start and its length, where
+# Segment's pig_distance_before_end and cow_herd_along mean to place the herds.
+expect
+	World.route.route_segments().all(
+		|segment| {
+			is_on_segment = |placed| {
+				along = placed.road_point.along.from_start()
+				along >= Distance.zero and along <= segment.length
+			}
+			segment.segment_pigs().all(is_on_segment) and segment.segment_cows().all(is_on_segment)
 		},
 	)
 
