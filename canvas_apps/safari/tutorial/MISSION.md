@@ -20,6 +20,8 @@ Each axis fails in its own way, and catching each failure takes a different kind
 
 ### Axis A. Purpose: every chapter teaches something real
 
+- **A0.** **Keep simple things simple.** The reader already knows what a triangle, a tree and a cow are. The code's job is to express those concepts plainly. The book's job is to add only what the reader can't guess: the choices Safari Ride made, and why. Every reader knows a triangle has three corners; what they can't guess is that Roc describes the triangle instead of painting it. Everyone knows a tree is a trunk and a crown; the news is that the ride draws two versions of a tree, and why. A cow is a cow; the news is that the ride draws it as a billboard emoji, because that's less code and it's charming. When a simple thing takes long to explain, the code is too complicated: fix the code first (G1). This rule governs every other one.
+
 - **A1.** A chapter teaches one idea about writing clear Roc, or one axis of difficulty from the axes note (essay-repl-server notes/axes-of-difficulty.md), or a harder case of one. The axes are shapes, placement and projection; motion; the camera; rider physics; what covers what; honest cheats; the platform edge; proving it.
 - **A2.** "Who owns this behavior?" is the question every chapter answers again. It is not a chapter of its own.
 - **A3.** The spine shows through every chapter:
@@ -93,6 +95,7 @@ Each axis fails in its own way, and catching each failure takes a different kind
 - **G2.** Quote code that reads more or less like English. Code should answer to its name.
 - **G3.** Coordinate transforms belong in one home. A chapter that has to explain the same transform twice is a smell.
 - **G4.** The smells in `docs/smells.md` apply: a fat API, a derived value stored beside its source, a name that needs a comment to translate it.
+- **G5.** Keep a fact in the type rather than checking for it later. A triangle that passes its corners through a list loses their count, then needs a crash to win it back. A record of three corners is a triangle by construction, and needs no check. A one-line wrapper that adds no meaning goes: inline it.
 
 ### Axis H. Pictures: diagrams, tables and widgets
 
