@@ -12,24 +12,24 @@ The ride, running as you read. Click it to give it the keyboard: Space pauses it
 
 Watch it all the way through. A motorcycle carries its rider down a long country road. Cows and pigs graze in the fields, and trees crowd the roadside. A truck runs on ahead. A cat waits by the road for its moment to cross, and a bird takes off as the rider comes near. As the sun sets behind the mountains, the truck turns on its headlights. At the end of the road the rider stops, and the ride starts over.
 
-Safari Ride is written in Roc, and this is a book about Roc. Roc is fun to read, and the book gives you plenty of it: the real code behind everything on the screen. If you're brand new to Roc, the [official Roc tutorial](https://www.roc-lang.org/tutorial) makes a quick first stop. The book explains each new Roc idea where the code first needs it.
+Safari Ride is written in Roc, and this is a book about Roc. Roc is fun to read, and the book quotes the real code behind everything on the screen. If you're brand new to Roc, the [official Roc tutorial](https://www.roc-lang.org/tutorial) makes a quick first stop. The book explains each new Roc idea where the code first needs it.
 
 
 ## The problem
 
 Safari Ride shows a world in motion, seen from the rider's seat. It draws that world on the screen thirty frames a second, and whoever is watching can take the controls at any moment.
 
-That's what you see. For us, it's an engineering problem, and our first job is to frame it so we can make progress right away. So we frame it like this: a screen shows things from a world. We hold one frame still, and get it right, before anything moves. The controls come last. That framing has a cost: the first half of the book holds one frame still. In return, every piece we build stands on a piece that already works. Framed that way, the problem has five pieces.
+That's what you see. For us, it's an engineering problem, and our first job is to break it into pieces we can build right away. A screen shows things from a world. So we hold one frame still and get it right before anything moves, and the controls come last. That plan costs something: the first half of the book holds one frame still. In return, every piece we build stands on a piece that already works. The plan gives the problem five pieces.
 
-The first is things. A tree, a cow and a radio tower each have to become shapes the screen can show. Every frame starts from a blank screen, so every frame needs all of its shapes, every time.
+The first is things. A tree, a cow and a radio tower each become shapes the screen can show. Every frame starts from a blank screen, so every frame needs all of its shapes, every time.
 
 The second is the world. A long road runs through open country, past trees, herds, ponds and radio towers. Something has to say where every one of them stands.
 
-The third is the rider's view. The screen shows only what the rider sees. A tree far down the road looks small, a tree close by looks big, and a tree behind the rider doesn't show at all. For everything in the world, the program has to work out where it lands on the screen, and how big, if the rider sees it at all. Where two things overlap, the nearer one has to cover the farther one.
+The third is the rider's view. The screen shows only what the rider sees. A tree far down the road looks small, a tree close by looks big, and a tree behind the rider doesn't show at all. For everything in the world, the program works out where it lands on the screen, and how big, if the rider sees it at all. Where two things overlap, the nearer one covers the farther one.
 
-The fourth is motion. The rider rides on, the truck drives ahead, the cat crosses the road and the sun goes down. At every step, something has to move each of them on, and the moves have to fit together. The cat times its crossing to the rider coming toward it, and a cat in the road stops the rider speeding up.
+The fourth is motion. The rider rides on, the truck drives ahead, the cat crosses the road and the sun goes down. At every step, something has to move each of them on, and the moves fit together. The cat times its crossing to the rider coming toward it, and a cat in the road stops the rider speeding up.
 
-The fifth is the person watching. A viewer mostly sits back and watches, but they also need to pause the ride, step it forward and rewind it. So the program has to give them controls they can find, and answer each one straight away.
+The fifth is the person watching. A viewer mostly sits back and watches, but they also need to pause the ride, step it forward and rewind it. So the program gives them controls they can find, and answers each one straight away.
 
 The first three pieces give us one frame, held still. The last two set it moving. Next, we see where Roc code lives, and then we give each piece its types.
 
@@ -43,17 +43,19 @@ Each Roc program is an app, and the app's first line names its platform. Here's 
 
 {{module web}}
 
-Lines that start with `#` are comments. The first line of code names the platform, and gives it the short name `pf`. It also names a package, `lib`. A package is a bundle of modules: the app gives it a short name, and the path says where it is. The `lib` package holds what Safari Ride shares with this book's widgets, such as what a shape is and what a key press is. The brackets after `app` name what the app hands the platform: its `Model` type and its `program`.
+Lines that start with `#` are comments. The first line of code names the platform, and gives it the short name `pf`. It also names a package, `lib`. A package is a bundle of modules: the app gives it a short name, and the path says where it is. The `lib` package holds what Safari Ride shares with the live pictures in this book, such as what a shape is and what a key press is.
 
-A module is one file of Roc, named for what it holds. `SafariApp.roc` holds the `SafariApp` module, and `import SafariApp` brings it in. `import lib.WasmApp` brings in the `WasmApp` module from the `lib` package. The last two lines say the app's `Model` type is the one in `SafariApp`, and define the `program` value. `SafariApp.canvas_app` is the whole ride, as one value, and `WasmApp.program` fits it to the web platform.
+A module is one file of Roc, named for what it holds. `SafariApp.roc` holds the `SafariApp` module, and `import SafariApp` brings it in. `import lib.WasmApp` brings in the `WasmApp` module from the `lib` package.
 
-So every piece we build, from a triangle to the cat, lives in a module, and the platform paints whatever those modules describe.
+The brackets after `app` name the two things the app hands the platform, and the last two lines define them. `Model` is the type of what the app keeps as it runs, and here it's the one in `SafariApp`. The `program` value is `SafariApp.canvas_app`, the whole ride as one value, fitted to the web platform by `WasmApp.program`.
+
+Every piece we build, from a triangle to the cat, lives in a module, and the platform paints whatever those modules describe. Next, we read the types those modules hold.
 
 ## The pieces as types
 
 Types are at the heart of every Roc program. A type says what a value holds, and the compiler checks every value against its type before the program runs. So a good way to meet a Roc program is to read its types.
 
-This chapter takes one tour across Safari Ride, with a stop for each of the five pieces from "The problem": things, the world, the rider's view, motion and the person watching. At each stop we read the types that answer the piece, and look at what they describe. Along the way, you learn to read the kinds of type Roc programs are built from: records, tags, type variables and the types of functions. The functions themselves come later, piece by piece.
+This chapter takes one tour across Safari Ride, with a stop for each of the five pieces from "The problem": things, the world, the rider's view, motion and the person watching. At each stop we read the types for that piece. On the way, you learn to read the types Roc programs are built from: records, tags, type variables and the types of functions. The functions come later, piece by piece.
 
 ```widget frame moving
 Step 1,529 of the ride, held still: the frame these types describe.
@@ -65,59 +67,71 @@ Every thing beside the road has a kind, and each kind is a type. A tree is a `Co
 
 {{code Billboard.Billboard from "Billboard ::" to "}.{"}}
 
-The `::` makes `Billboard` a type of its own, a record with three fields, and only the `Billboard` module looks inside it. Roc calls such a type opaque. The `.{` opens the functions and types that come with it, cut here. Each line of the record names one field and gives its type after the colon.
+A `Billboard` is a record with three fields. Each line names a field and gives its type after the colon. The `::` makes the type opaque: only the `Billboard` module reads its fields. The listing stops at the `.{`, where the type's own functions begin.
 
-A field's type comes from the module that owns it, so `EmojiStills.EmojiStill` is the `EmojiStill` type from the `EmojiStills` module. A module like `Distance` is also a type of the same name, so `Distance` alone names it. Even inside its own module, a type carries the prefix, as `Billboard.Facing` does. A `Billboard.Facing` is one of two tags, `FacesLeft` or `FacesRight`. A tag is a plain name that the compiler knows, and a type made of tags lists every one it allows.
+A module's main type has the module's own name, so `Billboard` is the main type of the `Billboard` module, and `Distance` of `Distance`. Every other type's name starts with its module's: `EmojiStills.EmojiStill` is the `EmojiStill` type in the `EmojiStills` module, and `Billboard.Facing` is the `Facing` type in `Billboard`. A `Billboard.Facing` is one of two tags, `FacesLeft` or `FacesRight`. A tag is a plain name the compiler knows, and a type made of tags lists every one it allows.
 
-For each frame, a thing gives the shapes that draw it, in the order they're painted. We call those shapes its sprite. The word is used loosely here: a sprite in Safari Ride is a list of shapes, and nearly every shape is a polygon. A far tree's sprite is one rectangle of trunk under eight triangles.
+For each frame, a thing gives the shapes that draw it, in the order they're painted. We call those shapes its sprite, and we use the word loosely: in Safari Ride, a sprite is a list of shapes, and nearly every shape is a polygon. A far tree's sprite is one rectangle of trunk under eight triangles.
 
 A frame's picture is the sprites of everything in view, as one list of shapes, made fresh every frame. The Roc code describes that list, and the platform paints it. Seeing works this way in the real world, too. The world doesn't paint itself onto your eyes: light brings you information, and your mind makes the picture.
 
 ### The world
 
-The `World` module holds a short list of segment plans, one for each stretch of road. Each plan is a record of the `SegmentPlan` type:
+A sprite says how a thing looks. Where it stands is the world's job. The `World` module plans the road as a short list of stretches, called segments, and each segment's plan is a record of the `SegmentPlan` type:
 
 {{code World.SegmentPlan}}
 
-Lines that start with `##` are doc comments. A plain `:` gives this record type a name, and any module can build a plan and read its fields. `World.route`, a value of the `Route` type, builds the whole road from the plans, once, before the ride starts, and every tree, herd, pond and tower takes its place along it.
+Lines that start with `##` are doc comments. A plain `:` gives a type a name, so any module can build a plan and read its fields. Here's the plan for the last stretch of road:
+
+{{code World.last_plan}}
+
+The first line gives the `last_plan` value its type, and the rest defines it. Each field holds a value of its own type: 300 metres of `Distance`, and a tag for each of the others. On this stretch, a cat crosses the road. The `World.route` value is the whole road, built from the plans once, before the ride starts, and every tree, herd, pond and tower takes its place along it.
 
 ```widget route
-The whole route from above, one stretch for each plan. The lines under the map read out the plan of the stretch in white.
+The whole route from above, one stretch of road for each plan. A mark shows where a cat crosses or a bird flies.
 ```
 
 ### The rider's view
 
-The camera sits where the rider sits, and faces where the rider looks. For every frame, each thing takes three forms on its way to the screen, and each form is a type. First it's placed on the road:
+The screen shows only what the rider sees. So the camera sits where the rider sits, and faces where the rider looks. For every frame, each thing takes three forms on its way to the screen, and each form is a type. First, the thing is placed on the road:
 
 {{code Geom.Placed}}
 
-Then the camera sights it:
+The `kind` in parentheses is a type variable. It stands for whichever kind of thing is placed, and the field named `kind` holds a value of that type. So a cow on the road is a `Geom.Placed(Billboard)`, and a tree is a `Geom.Placed(Conifer)`. One type serves every kind.
+
+Then the camera sights the thing:
 
 {{code Pipeline.Sighted}}
 
-The `kind` in parentheses is a type variable. In `kind : kind`, the field named `kind` has that type. It stands for whichever kind the form holds, so a cow on the road is a `Geom.Placed(Billboard)`, and a tree is a `Geom.Placed(Conifer)`. One type serves every kind.
+A sighting keeps the kind, and adds a `Spot`: where the thing stands in the rider's view. From the spot, the thing's height and the camera's lens, we get where the thing lands on the screen, and how big it looks there. One rule gives both, the rule a pinhole camera follows: twice as far away looks half as big.
 
-A sighting's `Spot` holds where the thing stands in the rider's view. From it, with the thing's height and the camera's lens, come where the thing lands on the screen, and how big it looks there. One rule gives both, the rule a pinhole camera follows: twice as far away looks half as big. A thing the rider can't see is refused, with a tag that says why. `BehindCamera` means it's behind the rider, and `BelowHorizon` means the curve of the earth hides it.
+The camera refuses a thing out of the rider's sight, with a tag that says why. `BehindCamera` means it's behind the rider, and `BelowHorizon` means the curve of the earth hides it.
 
-Last, a thing is rendered: its sprite, with how far ahead of the camera it stands. The frame sorts the renderings far to near and paints them in that order, so nearer things cover farther ones.
+Last, the thing is rendered:
+
+{{code Rendered.Rendered from "Rendered ::" to "}.{"}}
+
+A rendering holds the thing's sprite, and its depth: how far ahead of the camera it stands. The kind is gone, so trees, cows and towers all meet in one list of renderings. The frame sorts that list far to near and paints it in that order, so nearer things cover farther ones.
 
 ### Motion
 
-One record holds the whole ride at one moment:
+So far the ride stands still. To set it moving, one record holds the whole ride at one moment:
 
 {{code RideInstant.RideInstant from "RideInstant := {" to "}.{"}}
 
-The `:=` makes `RideInstant` a type of its own, like `Billboard`, but one whose fields other modules can read. Roc calls such a type nominal. Those four fields are everything the ride carries from one step to the next: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. Everything else that changes is worked out from them. The sun goes down because the clock says so.
+The `:=` makes `RideInstant` nominal: a type of its own, like `Billboard`, but one whose fields any module can read. Those four fields are everything the ride carries from one step to the next: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. We derive everything else that changes from them. The sun goes down because the clock says so.
 
 A step is one function's job, and its type tells the story:
 
 {{signatures RideInstant.next_or_restart}}
 
-After the colon comes the function's type: the types it takes, then an arrow, then the type it gives back. It takes the route and one moment of the ride, and gives back one of two tags. A tag can carry a value, and each of these carries the next moment. `Continued` carries the moment one step on, and `Restarted` carries the ride's first moment, once the rider has finished the route. Inside the step, the four fields move in a fixed order, so that the moves fit together: the rider reads where the cat has got to, and then moves. We read that order line by line in the second half of the book.
+After the colon comes the function's type: the types it takes, then an arrow, then the type it gives back. The `next_or_restart` function takes the route and one moment of the ride, and gives back one of two tags. Each tag carries the next moment. `Continued` carries the moment one step on, and `Restarted` carries the ride's first moment, once the rider has finished the route.
+
+Inside the step, the four fields move in a fixed order, so the moves fit together: the rider reads where the cat is, and then moves. The second half of the book reads that order line by line.
 
 ### The person watching
 
-The controls are a handful of keys, named beside the ride. The model behind them is one line:
+The controls are a handful of keys, named beside the ride. The app's model, what it keeps as it runs, is one line:
 
 {{code SafariApp.Model}}
 
@@ -125,11 +139,13 @@ A type made of tags can be written in place, as `[Playing, Paused]` is here. The
 
 {{code Tour.Tour from "Tour :: {" to "}.{"}}
 
-So stepping back is as quick as stepping forward: the tour takes the moment before, and the frame is drawn from it like any other.
+Because the tour keeps every past moment, stepping back is as quick as stepping forward: the tour takes the moment before, and the frame is drawn from it like any other.
 
 ### Where we start
 
-That's five pieces, and the types that answer them. On the way, you've read a record, an opaque type and a nominal one, tags, a type variable, and a function's type. You'll meet all of them again on almost every page from here on. The book now builds the pieces in order, and each piece's functions come in its own part. So we start with things: what a tree, a cow or a tower is in the code, and how each one becomes a sprite.
+That's five pieces, and the types for each. On the way, you've read records, tags, a type variable and a function's type. You've also read three ways to name a type. A `:` gives a type a name, and anyone can build one. A `::` makes an opaque type, and only its module reads its fields. A `:=` makes a nominal type, and any module reads its fields. You'll meet all of them on almost every page from here on.
+
+The rest of the book builds the pieces in order, one chapter at a time. So we start with things: what a cow, a tree or a tower is in the code, and how each one becomes a sprite.
 
 ## Shapes
 
@@ -317,7 +333,7 @@ All of this happens within one frame. The next frame sights everything again, fr
 Safari Ride builds its whole world before the rider moves an inch, and from then on it only reads it. In this chapter we read that world: a route made of road segments, and the plan for each one. It's the easiest part of the program to read, because none of it changes.
 
 ```widget route
-The whole route in one picture. The white stretch is segment 7, the longest, and the lines under the map read out its plan.
+The whole route in one picture, one stretch of road for each plan.
 ```
 
 Each stretch of the map is one segment: the road from one bend to the next. The ride itself draws no map, and it never needs one. A place on the road is always measured within its own segment, as how far along and how far across. We drew this map for the book.
@@ -2825,7 +2841,7 @@ The view widens as the rider leans. `focal_length_for_lean` takes the lean as a 
 ### Round the bends
 
 ```widget route
-The route again. This map comes from adding up the turns, which the ride itself never does. The white stretch is the record quoted below.
+The route again. This map comes from adding up the turns, which the ride itself never does.
 ```
 
 The road has no global coordinates. A point on it is measured within one segment, `along` and `across`, and nothing in the game holds a world coordinate for it. Each segment knows only its length and the turn at its end. Those come from `World.bending_plans`, a list of eighteen records like the one below, and a last plan ends the route. It reads like configuration, but it's ordinary Roc: plain values, tags whose types `SegmentPlan` and `BendingPlan` declare, and a `Distance` and a `Turn` built from their units. So a misspelled tag is a compile-time error. Here's the inside of one plan:
