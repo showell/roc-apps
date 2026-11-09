@@ -16,7 +16,10 @@ import game.Bird
 import game.RoadAhead
 import game.Scene
 import game.SegmentFromRider
+import game.Spot
 import game.Tour
+import game.TowerSighting
+import game.TruckSighting
 import lib.Shapes
 
 SceneExpects :: [].{}
@@ -293,5 +296,158 @@ expect {
 				and forward < 23.635
 		}
 		_ => False
+	}
+}
+
+## The road ahead at step 1,529.
+book_road : RoadAhead.RoadView
+book_road = RoadAhead.RoadView.ahead_of(
+	book_tour.route(),
+	FrameView.camera_at(book_tour.route(), book_tour.instant()).route_place.segment_index,
+)
+
+## The camera the sightings of step 1,529 are made through.
+book_sighting_camera : Pipeline.SightingCamera
+book_sighting_camera = FrameView.camera_at(book_tour.route(), book_tour.instant()).sighting_camera()
+
+## Whether `got` rounds to `want` at the book's two places.
+is_near : F64, F64 -> Bool
+is_near = |got, want| (got - want).abs() < 0.005
+
+## Every tree on the segments in view at step 1,529: the segment it stands on,
+## its kind, where the camera sees its foot, and what its sighting decides.
+book_trees : List(
+	{
+		segments_before : U64,
+		kind : Conifer,
+		metres_right : F64,
+		metres_forward : F64,
+		fate : [Drawn, BehindCamera, BelowHorizon, TooSmall],
+	},
+)
+book_trees = RoadAhead.segments_in_view(book_road).join_map(
+	|in_view|
+		in_view.segment.trees.map(
+			|tree| {
+				place = in_view.place
+				seen = RoadAhead.rider_point_at(
+					book_road,
+					{ vantage: book_sighting_camera.vantage, place, road_point: tree.road_point },
+				)
+				sighting = Pipeline.scenery_sighting_of(
+					tree,
+					{ road: book_road, camera: book_sighting_camera, place },
+				)
+				fate =
+					match sighting {
+						Ok(_) => Drawn
+						Err(BehindCamera) => BehindCamera
+						Err(BelowHorizon) => BelowHorizon
+						Err(TooSmall) => TooSmall
+					}
+				{
+					segments_before: in_view.index.count_before(),
+					kind: tree.kind,
+					metres_right: seen.right.to_metres(),
+					metres_forward: seen.forward.to_metres(),
+					fate,
+				}
+			},
+		),
+)
+
+## Whether one of the book's trees stands where the sightings table says.
+has_book_tree : {
+	segments_before : U64,
+	kind : Conifer,
+	metres_right : F64,
+	metres_forward : F64,
+	fate : [Drawn, BehindCamera, BelowHorizon, TooSmall],
+} -> Bool
+has_book_tree = |want|
+	book_trees.any(
+		|tree|
+			tree.segments_before == want.segments_before
+				and tree.kind == want.kind
+				and is_near(tree.metres_right, want.metres_right)
+				and is_near(tree.metres_forward, want.metres_forward)
+				and tree.fate == want.fate,
+	)
+
+## Whether no tree of the book's that met `fate` stands nearer ahead than
+## `metres_forward`, at the book's rounding.
+is_nearest_ahead : [Drawn, BehindCamera, BelowHorizon, TooSmall], F64 -> Bool
+is_nearest_ahead = |fate, metres_forward|
+	book_trees.all(|tree| tree.fate != fate or tree.metres_forward > metres_forward - 0.005)
+
+## Whether `spot` is `metres_right` and `metres_forward` from the camera, at
+## the book's rounding.
+is_seen_at : Spot, { metres_right : F64, metres_forward : F64 } -> Bool
+is_seen_at = |spot, { metres_right, metres_forward }| {
+	foot = spot.foot()
+	is_near(foot.right().to_metres(), metres_right)
+		and is_near(foot.forward().to_metres(), metres_forward)
+}
+
+# The modules chapter's table of step 1,529: 214 trees on the segments in view,
+# 136 drawn, 30 behind the camera, 48 below the horizon and none too small.
+expect book_trees.len() == 214
+expect book_trees.count_if(|tree| tree.fate == Drawn) == 136
+expect book_trees.count_if(|tree| tree.fate == BehindCamera) == 30
+expect book_trees.count_if(|tree| tree.fate == BelowHorizon) == 48
+expect book_trees.count_if(|tree| tree.fate == TooSmall) == 0
+
+# The table's trees: the nearest drawn, the nearest behind the camera, the
+# nearest below the horizon, and a taller one just past it that shows.
+expect
+	has_book_tree({
+		segments_before: 3,
+		kind: Conifer.Green,
+		metres_right: 3.45,
+		metres_forward: 21.63,
+		fate: Drawn,
+	})
+expect is_nearest_ahead(Drawn, 21.63)
+expect
+	has_book_tree({
+		segments_before: 3,
+		kind: Conifer.Gold,
+		metres_right: -8.09,
+		metres_forward: -8.36,
+		fate: BehindCamera,
+	})
+expect book_trees.all(|tree| tree.fate != BehindCamera or tree.metres_forward < -8.36 + 0.005)
+expect
+	has_book_tree({
+		segments_before: 8,
+		kind: Conifer.SmallGreen,
+		metres_right: -1433.43,
+		metres_forward: 446.0,
+		fate: BelowHorizon,
+	})
+expect is_nearest_ahead(BelowHorizon, 446.0)
+expect
+	has_book_tree({
+		segments_before: 8,
+		kind: Conifer.Green,
+		metres_right: -1446.07,
+		metres_forward: 473.21,
+		fate: Drawn,
+	})
+
+# The table's tower, the one past the end of the rider's segment, which comes
+# first, and the truck.
+expect {
+	clock = book_tour.instant().clock
+	match TowerSighting.towers_in_view(book_road, { camera: book_sighting_camera, clock }) {
+		[tower, ..] => is_seen_at(tower.spot, { metres_right: 20.4, metres_forward: 355.61 })
+		[] => False
+	}
+}
+expect {
+	truck = FrameView.ride_facts(book_tour.route(), book_tour.instant()).truck
+	match TruckSighting.truck_in_view(book_road, { camera: book_sighting_camera, truck }) {
+		Ok(sighted) => is_seen_at(sighted.spot, { metres_right: 92.19, metres_forward: 489.15 })
+		Err(_) => False
 	}
 }
