@@ -147,6 +147,32 @@ That's five pieces, and the types for each. On the way, you've read records, tag
 
 The rest of the book builds the pieces in order, one chapter at a time. So we start with things: what a cow, a tree or a tower is in the code, and how each one becomes a sprite.
 
+## Things
+
+The next chapters draw the picture one thing at a time: the trees, the road, the radio towers and the animals. Here's one of them, a cow on the grass, drawn by Safari Ride's own code:
+
+```widget cow
+A cow on the grass beside the road.
+```
+
+Every kind of thing draws itself with a function of the same name, `scenery_sprite`. Here's the cow's:
+
+{{signatures Billboard.scenery_sprite}}
+
+It takes a `Billboard` and a setting, and gives back the cow's sprite. A tree's `scenery_sprite` takes a `Conifer` instead, and a tower's takes a `Tower`, but each one takes a setting and gives back a sprite. So every kind answers the same question: in this setting, how do you look?
+
+A setting is a record with a type variable of its own:
+
+{{code Sprite.Setting}}
+
+The `context` field's type is the variable, so each kind chooses its own. The cow's is `{}`, the empty record, as its `Sprite.Setting({})` says. A tree's is a `TreeShapes.Detail`, because how much detail a tree gets depends on how many trees stand nearer than it.
+
+But a spot comes from the rider's view, the third piece, and things come first. So in these chapters we place each thing ourselves, at a spot we choose. When the book reaches the rider's view, the camera places every thing for real.
+
+What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, drawn as polygons, and nearly every other shape in the ride is a polygon too. The frame at step 1,529 holds 2,121 shapes, and all but eight of them are polygons. The other eight are discs.
+
+So we start with shapes, and the simplest shape is a triangle. Then the picture builds up in order: the trees and the grass, then the road, the rails and the radio towers, then the animals that stand still, the cow among them. The sky, the sun and the mountains come last, as the backdrop behind everything.
+
 ## Shapes
 
 Every frame of Safari Ride is a list of shapes, and nearly every shape is a polygon. Roc builds the list, and JavaScript on this page paints it, from the first shape to the last. In this chapter we draw the two polygons a tree is made of: a triangle and a rectangle.
