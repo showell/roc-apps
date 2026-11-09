@@ -114,7 +114,7 @@ expect
 				rider_facing(facing),
 				{ route: World.route, encounter_stage: Waiting },
 			)
-			camera.heading.to_radians() == heading
+			camera.aim(World.route).heading.to_radians() == heading
 		},
 	)
 
