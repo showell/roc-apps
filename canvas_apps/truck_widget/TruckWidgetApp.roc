@@ -15,7 +15,6 @@ import game.Sky
 import game.TruckBody
 import game.TruckPlacement
 import game.TruckShape
-import game.TruckSighting
 import game.World
 import lib.CanvasApp
 import lib.Point
@@ -115,8 +114,7 @@ view_vantage = |view| {
 	}
 }
 
-## How the truck is drawn for `view`: its spot and its heading as that view's
-## camera sees them.
+## How the truck is drawn for `view`: its spot as that view's camera sees it.
 view_setting : TruckView -> TruckPlacement.TruckSetting
 view_setting = |view| {
 	vantage = view_vantage(view)
@@ -128,14 +126,7 @@ view_setting = |view| {
 		{ road: World.road_at_start, vantage, from_rider },
 	)
 	match sighting_result {
-		Ok(sighting) => {
-			spot: sighting.spot,
-			heading: TruckSighting.road_heading(
-				World.road_at_start,
-				{ vantage, from_rider, road_point: truck_road_point },
-			),
-			focal_length: Lens.resting_focal_length,
-		}
+		Ok(sighting) => { spot: sighting.spot, focal_length: Lens.resting_focal_length }
 		Err(BehindCamera) => crash "TruckWidgetApp.view_setting: every camera faces the truck"
 	}
 }

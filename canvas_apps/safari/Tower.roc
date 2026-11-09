@@ -3,19 +3,14 @@
 ## crossed braces in the lowest storeys) with a blinking beacon on top.
 ## The earth curves away under a far tower, so it sinks below the horizon
 ## from the bottom up.
-import Across
-import Along
 import Pixels
 import Angle
 import Beacon
 import Camera
 import EarthCurve
-import RoadAhead
-import SegmentFromRider
 import Spot
 import Distance
 import Fraction
-import Geom
 import RiderView
 import Picture
 import Polygon
@@ -31,18 +26,16 @@ Tower :: { yaw : Angle.Turn, beacon : Beacon }.{
 	standing : { yaw : Angle.Turn, beacon : Beacon } -> Tower
 	standing = |{ yaw, beacon }| Tower.({ yaw, beacon })
 
-	## How far the tower is turned from square with the road.
+	## How far the tower is turned from square with the road, positive to the
+	## right.
 	yaw : Tower -> Angle.Turn
 	yaw = |Tower.(tower)| tower.yaw
 
-	## How a tower looks. Its footprint is measured on the road and seen from the
-	## camera's vantage, so those are its context.
-	scenery_picture : Tower,
-	Picture.Setting(
-		{ road : RoadAhead.RoadView, vantage : Geom.Vantage },
-	) -> Picture
-	scenery_picture = |tower, { spot, focal_length, context: { road, vantage } }| {
-		footprint = tower_footprint(tower, { road, vantage, spot })
+	## How a tower looks. Its footprint stands at its spot, so it needs no
+	## context.
+	scenery_picture : Tower, Picture.Setting({}) -> Picture
+	scenery_picture = |tower, { spot, focal_length, .. }| {
+		footprint = tower_footprint(tower, spot)
 		Picture.from_shapes(tower_shapes(tower, { footprint, spot, focal_length }))
 	}
 
@@ -69,22 +62,17 @@ Footprint : {
 	front_left : RiderView.RiderPoint,
 }
 
-## Where the four footprint corners of a tower standing at `spot` on `road`
-## are in the view of the camera at `vantage`.
-tower_footprint : Tower,
-{
-	road : RoadAhead.RoadView,
-	vantage : Geom.Vantage,
-	spot : Spot,
-} -> Footprint
-tower_footprint = |tower, { road, vantage, spot }| {
-	center = spot.road_point()
+## Where the four footprint corners of a tower standing at `spot` are in the
+## rider's view, on the rider's level.
+tower_footprint : Tower, Spot -> Footprint
+tower_footprint = |tower, spot| {
 	corner_point = |corner| {
-		on_road = base_corner_on_road(corner, { center, yaw: tower.yaw() })
-		RoadAhead.rider_point_at(
-			road,
-			{ vantage, from_rider: spot.from_rider(), road_point: on_road },
-		)
+		{ ahead, rightward } = corner_offset(corner)
+		standing = spot.standing_point({
+			facing: tower.yaw(),
+			offset: { ahead, rightward, height: Distance.zero },
+		})
+		{ forward: standing.forward, right: standing.right }
 	}
 	{
 		back_left: corner_point(BackLeft),
@@ -169,15 +157,15 @@ hidden_on_tower : TowerGeometry -> Distance
 hidden_on_tower = |{ spot, .. }|
 	hidden_height({ foot: spot.foot().to_rider(), base_height: spot.lift().minus(spot.drop()) })
 
-## How far a corner lies from the footprint's centre, across the route and
-## along it. Left and back are the negative ways.
-corner_offset : Corner -> { across : Distance, along : Distance }
+## How far a corner lies from the footprint's centre, ahead and to the right,
+## in the tower's own frame. Left and back are the negative ways.
+corner_offset : Corner -> { ahead : Distance, rightward : Distance }
 corner_offset = |corner|
 	match corner {
-		BackLeft => { across: tower_half_width.opposite(), along: tower_half_width.opposite() }
-		BackRight => { across: tower_half_width, along: tower_half_width.opposite() }
-		FrontRight => { across: tower_half_width, along: tower_half_width }
-		FrontLeft => { across: tower_half_width.opposite(), along: tower_half_width }
+		BackLeft => { ahead: tower_half_width.opposite(), rightward: tower_half_width.opposite() }
+		BackRight => { ahead: tower_half_width.opposite(), rightward: tower_half_width }
+		FrontRight => { ahead: tower_half_width, rightward: tower_half_width }
+		FrontLeft => { ahead: tower_half_width, rightward: tower_half_width.opposite() }
 	}
 
 ## The corners in drawing order, going round the square.
@@ -211,23 +199,6 @@ footprint_corner = |footprint, corner|
 		FrontRight => footprint.front_right
 		FrontLeft => footprint.front_left
 	}
-
-## Where a footprint corner stands on the map, for a tower centred at
-## `center` and turned by `yaw`.
-base_corner_on_road : Corner, { center : Geom.RoadPoint, yaw : Angle.Turn } -> Geom.RoadPoint
-base_corner_on_road = |corner, { center, yaw }| {
-	offset = corner_offset(corner)
-	across_metres = offset.across.to_metres()
-	along_metres = offset.along.to_metres()
-	yaw_cos = yaw.to_radians().cos()
-	yaw_sin = yaw.to_radians().sin()
-	along_shift = across_metres * yaw_sin + along_metres * yaw_cos
-	across_shift = across_metres * yaw_cos - along_metres * yaw_sin
-	{
-		along: center.along.plus(Distance.metres(along_shift)),
-		across: center.across.plus(Distance.metres(across_shift)),
-	}
-}
 
 ## How high a point `height_on_tower` up the tower stands in the rider's
 ## view: raised by the tower's lift, and lowered by the ground's drop.
@@ -443,8 +414,7 @@ sample_geometry = {
 		front_left: { right: Distance.metres(-6.0), forward: Distance.metres(106.0) },
 	},
 	spot: Spot.at({
-		from_rider: Ahead(SegmentFromRider.Position.first),
-		road_point: { along: Along.metres(100.0), across: Across.middle },
+		road_heading: Angle.straight_ahead,
 		lift: Distance.zero,
 		foot: ahead({ right: Distance.metres(0.0), forward: Distance.metres(100.0) }),
 	}),

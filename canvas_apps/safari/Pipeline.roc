@@ -63,7 +63,8 @@ Pipeline :: [].{
 		road_point = placed.road_point
 		rider_point = RoadAhead.rider_point_at(road, { vantage, from_rider, road_point })
 		foot = RiderView.rider_point_ahead(rider_point)?
-		spot = Spot.at({ from_rider, road_point, lift: placed.lift, foot })
+		road_heading = RoadAhead.road_heading_at(road, { vantage, from_rider, road_point })
+		spot = Spot.at({ lift: placed.lift, foot, road_heading })
 		Ok({ spot, kind: placed.kind })
 	}
 

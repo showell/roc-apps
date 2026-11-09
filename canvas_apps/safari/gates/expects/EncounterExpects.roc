@@ -4,6 +4,7 @@
 import Fixtures
 import game.Across
 import game.Along
+import game.Angle
 import game.Animation
 import game.BirdFlight
 import game.BirdStills
@@ -474,8 +475,8 @@ expect {
 expect flight_frame_of(18).location.lift.to_metres() > (left_top + far_top) / 2.0 + 4.0
 
 # Cat and Bird on screen.
-## The spot `forward` ahead on the rider's own segment, `right` of the camera
-## and `lift` off the ground.
+## The spot `forward` ahead of the camera, `right` of it and `lift` off the
+## ground, where the road runs straight away.
 posed_spot_at : {
 	forward : Distance,
 	right : Distance,
@@ -485,15 +486,7 @@ posed_spot_at = |{ forward, right, lift }| {
 	foot =
 		RiderView.rider_point_ahead({ right, forward })
 			?? crash "EncounterExpects: a test's animal is past the near plane"
-	Spot.at({
-		from_rider: Ahead(SegmentFromRider.Position.first),
-		road_point: {
-			along: Along.metres(forward.to_metres()),
-			across: Across.metres(right.to_metres()),
-		},
-		lift,
-		foot,
-	})
+	Spot.at({ lift, foot, road_heading: Angle.straight_ahead })
 }
 
 ## `cat` 100 m straight ahead through a 500 px focal length, `lift` off the

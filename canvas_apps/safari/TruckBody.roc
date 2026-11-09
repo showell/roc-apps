@@ -13,10 +13,9 @@ TruckBody :: [].{
 	## mean of its corners' distances ahead.
 	body_picture : TruckPlacement.TruckSetting -> Picture
 	body_picture = |truck| {
-		stance = { spot: truck.spot, heading: truck.heading }
 		Picture.from_shapes(
 			DepthSort.sort_by(
-				TruckShape.truck_faces.map(|face| TruckPlacement.placed_face(stance, face)),
+				TruckShape.truck_faces.map(|face| TruckPlacement.placed_face(truck.spot, face)),
 				|face| DepthSort.mean_depth(face.corners.map(|corner| corner.forward)),
 			)
 				.keep_oks(|face| Polygon.clipped_polygon(face, truck.focal_length)),

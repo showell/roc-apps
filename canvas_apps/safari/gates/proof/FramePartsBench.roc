@@ -131,10 +131,9 @@ kind_size = |part, { road, camera, facts }| {
 	} else if part == "towers_sight" {
 		TowerSighting.towers_in_view(road, { vantage: cam.vantage, clock: facts.clock }).len()
 	} else if part == "towers" {
-		on_road = { road, vantage: cam.vantage }
 		shape_count(
 			TowerSighting.towers_in_view(road, { vantage: cam.vantage, clock: facts.clock }).map(
-				|tower| Pipeline.rendering_of(tower, { focal_length, context: on_road }),
+				|tower| Pipeline.rendering_of(tower, { focal_length, context: {} }),
 			),
 		)
 	} else if part == "billboards_sight" {

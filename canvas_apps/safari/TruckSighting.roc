@@ -1,16 +1,14 @@
 ## TruckSighting finds the truck ahead of the rider in a frame: which segment of
-## the road ahead it is on, whether it is in front of the camera, and which way
-## it heads. Unlike the trees and the animals, the truck has no size test: it
-## is drawn however small it stands, so the sighting needs no lens. It is worked
-## out each frame from where the rider's camera stands, the route, the truck's
-## progress and the clock.
-import Angle
+## the road ahead it is on, and whether it is in front of the camera. Unlike the
+## trees and the animals, the truck has no size test: it is drawn however small
+## it stands, so the sighting needs no lens. It is worked out each frame from
+## where the rider's camera stands, the route, the truck's progress and the
+## clock.
 import Distance
 import Geom
 import Pipeline
 import RoadAhead
 import RoutePlace
-import SegmentFromRider
 import Truck
 
 TruckSighting :: [].{
@@ -38,37 +36,6 @@ TruckSighting :: [].{
 			placed_truck,
 			{ road, vantage, from_rider: Ahead(position) },
 		)?
-		heading = TruckSighting.road_heading(
-			road,
-			{
-				vantage,
-				from_rider: Ahead(position),
-				road_point: place.road_point,
-			},
-		)
-		Ok({ spot: sighting.spot, heading, lights: sighting.kind })
-	}
-
-	## Which way the road runs at `road_point` on the segment at `from_rider`,
-	## against the camera at `vantage`: zero straight away from it, positive to
-	## the right. A segment is carried into the rider's view by turns and shifts
-	## alone, so the way from the point to one a metre further along is the
-	## road's way all along the segment.
-	road_heading : RoadAhead.RoadView,
-	{
-		vantage : Geom.Vantage,
-		from_rider : SegmentFromRider,
-		road_point : Geom.RoadPoint,
-	} -> Angle.Turn
-	road_heading = |road, { vantage, from_rider, road_point }| {
-		further_along = { ..road_point, along: road_point.along.plus(Distance.metres(1.0)) }
-		here = RoadAhead.rider_point_at(road, { vantage, from_rider, road_point })
-		there = RoadAhead.rider_point_at(road, { vantage, from_rider, road_point: further_along })
-		Angle.Turn.radians(
-			F64.atan2({
-				x: there.forward.minus(here.forward).to_metres(),
-				y: there.right.minus(here.right).to_metres(),
-			}),
-		)
+		Ok({ spot: sighting.spot, lights: sighting.kind })
 	}
 }

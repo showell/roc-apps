@@ -27,6 +27,7 @@ import game.Screen
 import game.Segment
 import game.SegmentFromRider
 import game.Speed
+import game.Spot
 import game.Tower
 import game.TowerSighting
 import game.TreeSighting
@@ -40,38 +41,64 @@ import lib.Shapes
 
 SightingExpects :: [].{}
 
+## Whether `spot`'s foot is where `road` carries `road_point` on the segment at
+## `from_rider`, as the camera at the origin sees it: whether the thing was
+## sighted there.
+is_standing_at : Spot,
+{
+	road : RoadAhead.RoadView,
+	from_rider : SegmentFromRider,
+	road_point : Geom.RoadPoint,
+} -> Bool
+is_standing_at = |spot, { road, from_rider, road_point }| {
+	carried = RoadAhead.rider_point_at(road, { vantage: Fixtures.origin, from_rider, road_point })
+	RiderView.ground_distance({ from: spot.foot().to_rider(), to: carried }).to_metres() < 0.000001
+}
+
 # TreeSighting looks at the segment just behind the rider too. A tree 5 m short
 # of the bend out of it stands in front of a rider at the bend once the bend is
 # sharper than a right angle, and behind the rider at a gentle bend.
 ## The trees in view of a rider at the start of the second of two segments,
 ## the first holding one tree 5 m short of its bend of `degrees`.
 past_bend_trees : F64 -> List(Pipeline.Sighted(Conifer))
-past_bend_trees = |degrees| {
+past_bend_trees = |degrees|
+	TreeSighting.trees_in_view(past_bend_road(degrees), Fixtures.origin_camera)
+
+## The road ahead of a rider at the start of the second of two segments, the
+## first holding one tree 5 m short of its bend of `degrees`.
+past_bend_road : F64 -> RoadAhead.RoadView
+past_bend_road = |degrees| {
 	segment_road_past_segment = {
 		..Fixtures.segment_of([Fixtures.tree_at(195.0, 0.0)]),
 		ending: Bends({ turn: Angle.Turn.degrees(degrees), bend_life: Animal(Elephant) }),
 		encounter: QuietRoad,
 	}
 	rider_segment = { ..Fixtures.segment_of([]), encounter: QuietRoad }
-	TreeSighting.trees_in_view(
-		RoadAhead.RoadView.ahead_of(
-			Route.from_segments([segment_road_past_segment, rider_segment]),
-			Route.SegmentIndex.number(1),
-		),
-		Fixtures.origin_camera,
+	RoadAhead.RoadView.ahead_of(
+		Route.from_segments([segment_road_past_segment, rider_segment]),
+		Route.SegmentIndex.number(1),
 	)
 }
 
-## Whether `trees` is one tree, sighted on the segment just behind the rider.
-is_one_tree_behind : List(Pipeline.Sighted(Conifer)) -> Bool
-is_one_tree_behind = |trees|
-	match trees.map(|tree| tree.spot.from_rider()) {
-		[JustBehind] => True
+## Whether the rider past a bend of `degrees` sees one tree, sighted where it
+## stands on the segment just behind.
+is_one_tree_behind : F64 -> Bool
+is_one_tree_behind = |degrees|
+	match past_bend_trees(degrees) {
+		[tree] =>
+			is_standing_at(
+				tree.spot,
+				{
+					road: past_bend_road(degrees),
+					from_rider: JustBehind,
+					road_point: { along: Along.metres(195.0), across: Across.middle },
+				},
+			)
 		_ => False
 	}
 
-expect is_one_tree_behind(past_bend_trees(150.0))
-expect is_one_tree_behind(past_bend_trees(-150.0))
+expect is_one_tree_behind(150.0)
+expect is_one_tree_behind(-150.0)
 expect past_bend_trees(30.0).len() == 0
 expect past_bend_trees(-80.0).len() == 0
 
@@ -286,7 +313,7 @@ shapes_of_tower_100_ahead = {
 	sighted.kind.scenery_picture({
 		spot: sighted.spot,
 		focal_length: Fixtures.origin_camera.focal_length,
-		context: { road: tower_road, vantage: Fixtures.origin },
+		context: {},
 	}).to_shapes()
 }
 
@@ -318,7 +345,7 @@ expect
 	].all(|(got, want)| (got - want).abs() <= 0.000001)
 
 # TowerSighting: a tower stands 160 m past the end of every segment, 20 m right
-# and turned 30 degrees, and a segment longer than 1000 m has one more halfway
+# and turned 30 degrees left, and a segment longer than 1000 m has one more halfway
 # along, 100 m left and not turned.
 ## A segment 1200 m long, holding nothing, which ends a route.
 long_segment : Segment
@@ -329,56 +356,56 @@ long_segment = { ..Fixtures.segment_of([]), length: Distance.metres(1200.0) }
 towers_on_short_then_long : U32, Clock -> List(Pipeline.Sighted(Tower))
 towers_on_short_then_long = |rider_number, clock|
 	TowerSighting.towers_in_view(
-		RoadAhead.RoadView.ahead_of(
-			Route.from_segments([Fixtures.bending_right(Fixtures.segment_of([])), long_segment]),
-			Route.SegmentIndex.number(rider_number),
-		),
+		short_then_long_road(rider_number),
 		{ vantage: Fixtures.origin, clock },
 	)
 
-## Where a tower stands on its segment, and how it is turned: along, across,
-## and its turn in radians.
-tower_numbers : Pipeline.Sighted(Tower) -> List(F64)
-tower_numbers = |tower| [
-	tower.spot.road_point().along.to_metres(),
-	tower.spot.road_point().across.to_metres(),
-	tower.kind.yaw().to_radians(),
-]
+## The road ahead of a rider on the segment at `rider_number`, on a route of a
+## 200 m segment bending right into the long one.
+short_then_long_road : U32 -> RoadAhead.RoadView
+short_then_long_road = |rider_number|
+	RoadAhead.RoadView.ahead_of(
+		Route.from_segments([Fixtures.bending_right(Fixtures.segment_of([])), long_segment]),
+		Route.SegmentIndex.number(rider_number),
+	)
 
-expect {
-	towers = towers_on_short_then_long(0, Clock.start)
-	thirty = Angle.Turn.degrees(30.0).to_radians()
-	got = towers.map(tower_numbers).join()
-	want = [
-		360.0,
-		20.0,
-		thirty,
-		1360.0,
-		20.0,
-		thirty,
-		600.0,
-		-100.0,
-		0.0,
-	]
-	towers.map(|tower| tower.spot.from_rider())
-		== [
-			Ahead(SegmentFromRider.Position.first),
-			Ahead(Fixtures.second_position),
-			Ahead(Fixtures.second_position),
-		]
-		and got.len() == want.len()
-		and got.map2(want, |one, wanted| (one - wanted).abs() <= 0.000000001).all(|is_near| is_near)
+## Whether the towers in view from the origin of the segment at `rider_number`
+## stand where `wants` says, in order: each the segment it stands on, how far
+## along and across it, and its yaw in degrees.
+are_towers_at : U32, List((SegmentFromRider, F64, F64, F64)) -> Bool
+are_towers_at = |rider_number, wants| {
+	towers = towers_on_short_then_long(rider_number, Clock.start)
+	road = short_then_long_road(rider_number)
+	is_tower_at = |tower, (from_rider, along, across, yaw_degrees)| {
+		road_point = { along: Along.metres(along), across: Across.metres(across) }
+		yaw_gap = tower.kind.yaw().to_degrees() - yaw_degrees
+		is_standing = is_standing_at(tower.spot, { road, from_rider, road_point })
+		is_standing and yaw_gap.abs() <= 0.000000001
+	}
+	towers.len() == wants.len() and towers.map2(wants, is_tower_at).all(|is_at| is_at)
 }
+
+expect
+	are_towers_at(
+		0,
+		[
+			(Ahead(SegmentFromRider.Position.first), 360.0, 20.0, -30.0),
+			(Ahead(Fixtures.second_position), 1360.0, 20.0, -30.0),
+			(Ahead(Fixtures.second_position), 600.0, -100.0, 0.0),
+		],
+	)
 
 # The segment just behind shows its end tower, which stands past the bend, and
 # a rider far past every tower sees none.
 expect
-	towers_on_short_then_long(1, Clock.start).map(|tower| tower.spot.from_rider())
-		== [
-			Ahead(SegmentFromRider.Position.first),
-			Ahead(SegmentFromRider.Position.first),
-			JustBehind,
-		]
+	are_towers_at(
+		1,
+		[
+			(Ahead(SegmentFromRider.Position.first), 1360.0, 20.0, -30.0),
+			(Ahead(SegmentFromRider.Position.first), 600.0, -100.0, 0.0),
+			(JustBehind, 360.0, 20.0, -30.0),
+		],
+	)
 expect
 	TowerSighting.towers_in_view(
 		Fixtures.crafted_road([Fixtures.segment_of([])]),
@@ -387,19 +414,24 @@ expect
 		== 0
 
 ## The yaw in degrees of each tower in view from the origin of a lone segment
-## `length` long: 30 for the one past its end, 0 for the one halfway along.
+## `length` long: -30, turned left, for the one past its end, and 0 for the one
+## halfway along.
 tower_yaws_on_lone_segment : Distance -> List(I64)
 tower_yaws_on_lone_segment = |length|
 	TowerSighting.towers_in_view(
 		Fixtures.crafted_road([{ ..Fixtures.segment_of([]), length }]),
 		{ vantage: Fixtures.origin, clock: Clock.start },
-	).map(|tower| (tower.kind.yaw().to_degrees() + 0.5).to_i64_wrap())
+	).map(
+		|tower|
+			tower.kind.yaw().to_degrees().round_to_i64_try()
+				?? crash "SightingExpects: a tower's yaw is a finite number",
+	)
 
 # The tower past the end of a segment 4340 m long stands 4500 m ahead, where
 # the horizon hides all 80 m of it, so only the tower halfway along is
 # sighted. Past a segment 4320 m long, 4480 m ahead, its tip still shows.
 expect tower_yaws_on_lone_segment(Distance.metres(4340.0)) == [0]
-expect tower_yaws_on_lone_segment(Distance.metres(4320.0)) == [30, 0]
+expect tower_yaws_on_lone_segment(Distance.metres(4320.0)) == [-30, 0]
 
 ## A pond's bend at the end of a segment 100 m long, turning 15° right.
 right_pond_bend : Geom.Bend
@@ -554,28 +586,44 @@ expect
 		(-50.0, False),
 	].all(|(lead, want)| truck_lead_of(lead).is_ok() == want)
 
-# A truck past a segment's end stands on a later segment, measured from its
-# start.
-expect
-	[
-		(100.0, SegmentFromRider.Position.first),
-		(499.0, SegmentFromRider.Position.first),
-		(600.0, Fixtures.second_position),
-		(900.0, Fixtures.second_position.next()),
-	].all(|(lead, want)| sighted_truck_of(lead).spot.from_rider() == Ahead(want))
+## Where a truck `lead` metres ahead stands on the road ahead, for leads that
+## put it in view: the lead, its segment, and how far along that segment.
+## A truck past a segment's end stands on a later segment, measured from its
+## start.
+truck_places : List((F64, SegmentFromRider.Position, F64))
+truck_places = [
+	(100.0, SegmentFromRider.Position.first, 100.0),
+	(499.0, SegmentFromRider.Position.first, 499.0),
+	(600.0, Fixtures.second_position, 100.0),
+	(900.0, Fixtures.second_position.next(), 80.0),
+]
+
+## The middle of the road at `along` on the segment at `position`.
+road_middle_at : SegmentFromRider.Position,
+F64 -> {
+	from_rider : SegmentFromRider,
+	road_point : Geom.RoadPoint,
+}
+road_middle_at = |position, along| {
+	from_rider: Ahead(position),
+	road_point: { along: Along.metres(along), across: Across.middle },
+}
 
 expect
-	[
-		(100.0, 100.0),
-		(499.0, 499.0),
-		(600.0, 100.0),
-		(900.0, 80.0),
-	].all(|(lead, want)| sighted_truck_of(lead).spot.road_point().along.to_metres() == want)
+	truck_places.all(
+		|(lead, position, along)| {
+			{ from_rider, road_point } = road_middle_at(position, along)
+			is_standing_at(
+				sighted_truck_of(lead).spot,
+				{ road: Fixtures.three_segment_road, from_rider, road_point },
+			)
+		},
+	)
 
 ## How far, in degrees, the truck `lead` metres ahead heads to the right of the
 ## camera at `origin`.
 truck_heading_degrees_of : F64 -> F64
-truck_heading_degrees_of = |lead| sighted_truck_of(lead).heading.to_degrees()
+truck_heading_degrees_of = |lead| sighted_truck_of(lead).spot.road_heading().to_degrees()
 
 # Each segment bends 15 degrees right into the next, so a truck heads straight
 # away on the rider's own segment, 15 degrees right on the next and 30 on the
@@ -589,18 +637,17 @@ expect
 	].all(|(lead, want)| (truck_heading_degrees_of(lead) - want).abs() < 0.000001)
 
 ## How far, in metres, the point `on_truck` is placed from where the road
-## itself carries that point, for the truck `lead` metres ahead.
-truck_point_off_road : F64, TruckShape.TruckPoint -> F64
-truck_point_off_road = |lead, on_truck| {
-	sighting = sighted_truck_of(lead)
-	spot = sighting.spot
-	placed = TruckPlacement.raised_point({ spot, heading: sighting.heading }, on_truck)
-	road_point = spot.road_point()
+## itself carries that point, for the truck `lead` metres ahead, which stands
+## `along` the segment at `position`.
+truck_point_off_road : (F64, SegmentFromRider.Position, F64), TruckShape.TruckPoint -> F64
+truck_point_off_road = |(lead, position, along), on_truck| {
+	placed = TruckPlacement.raised_point(sighted_truck_of(lead).spot, on_truck)
+	{ from_rider, road_point } = road_middle_at(position, along)
 	on_road = RoadAhead.rider_point_at(
 		Fixtures.three_segment_road,
 		{
 			vantage: Fixtures.origin,
-			from_rider: spot.from_rider(),
+			from_rider,
 			road_point: {
 				along: road_point.along.plus(on_truck.ahead),
 				across: road_point.across.plus(on_truck.rightward),
@@ -619,8 +666,8 @@ truck_point_off_road = |lead, on_truck| {
 # rider's segment and past each bend. A truck turned the wrong way, or not
 # turned at all, would put it metres off.
 expect
-	[100.0, 600.0, 900.0].all(
-		|lead|
+	truck_places.all(
+		|place|
 			[
 				(10.0, 0.0),
 				(0.0, 1.2),
@@ -633,7 +680,7 @@ expect
 						rightward: Distance.metres(rightward),
 						height: Distance.zero,
 					}
-					truck_point_off_road(lead, on_truck) < 0.000001
+					truck_point_off_road(place, on_truck) < 0.000001
 				},
 			),
 	)

@@ -52,7 +52,6 @@ Scene := {
 	scene_in_view = |road, { camera, facts }| {
 		focal_length = camera.focal_length
 		vantage = camera.vantage
-		on_road = { road, vantage }
 		encounter = { camera, encounter_stage: facts.encounter_stage }
 		birds_seen = EncounterSighting.birds_in_view(road, encounter)
 		cats_seen = EncounterSighting.cats_in_view(road, encounter)
@@ -74,7 +73,7 @@ Scene := {
 				|bird| Pipeline.rendering_of(bird, { focal_length, context: {} }),
 			),
 			towers: TowerSighting.towers_in_view(road, { vantage, clock: facts.clock }).map(
-				|tower| Pipeline.rendering_of(tower, { focal_length, context: on_road }),
+				|tower| Pipeline.rendering_of(tower, { focal_length, context: {} }),
 			),
 			billboards: BillboardSighting.billboards_in_view(road, camera).map(
 				|billboard| Pipeline.rendering_of(billboard, { focal_length, context: {} }),

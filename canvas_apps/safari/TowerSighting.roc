@@ -41,9 +41,10 @@ end_tower_beyond_end = Distance.metres(160.0)
 end_tower_right_of_middle : Distance
 end_tower_right_of_middle = Distance.metres(20.0)
 
-## How far a tower past a segment's end is turned from square with the road.
+## How far a tower past a segment's end is turned from square with the road:
+## a turn to the left, as a positive turn is to the right.
 end_tower_yaw : Angle.Turn
-end_tower_yaw = Angle.Turn.degrees(30.0)
+end_tower_yaw = Angle.Turn.degrees(-30.0)
 
 ## A segment longer than this has a tower halfway along.
 mid_tower_min_length : Distance

@@ -1167,9 +1167,13 @@ Trees get their spots once, when the world is built. A tower doesn't: each frame
 
 The `beacon` line lights the beacon for this step. The tower halfway along is the same, with `Midway` for its beacon, a square yaw, and one more way to fail, `NoMidTower`. `mid_tower_point` says whether a segment is longer than a kilometre, and where its halfway tower stands. It sits in `TowerSighting` beside the end tower's numbers, so where towers stand has one home, and the world itself knows nothing about towers.
 
-To draw a tower, `scenery_picture` also needs the road and where the camera stands, to find the four corners of its base in the rider's view. So those two go in as its extra input, its context:
+To draw a tower, `scenery_picture` needs nothing beyond its spot and the lens, so its context is empty, as a cat's is:
 
 {{code Tower.scenery_picture}}
+
+The four corners of its base come from the spot. Each corner is an offset in the tower's own frame, and it stands on the road through the spot, turned by the tower's yaw. The truck, later on, stands its corners the same way:
+
+{{code Tower.tower_footprint}}
 
 ### Over the horizon
 
@@ -2011,7 +2015,7 @@ Here's the whole job in one function. Given a sighted truck and the camera's len
 
 {{code Truck.truck_picture}}
 
-The body is drawn the same way, one level down. It takes the truck's stance, places each face, sorts the faces far to near so that a nearer face covers a farther one, and clips and projects each one:
+The body is drawn the same way, one level down. It takes the truck's spot, places each face, sorts the faces far to near so that a nearer face covers a farther one, and clips and projects each one:
 
 {{code TruckBody.body_picture}}
 
@@ -2065,28 +2069,32 @@ That shape gets to the screen in three stages:
 | Stage | What it does |
 |---|---|
 | Shape | Says where each corner of each face is in the truck's own frame |
-| Placement | Turns one point by the truck's heading, carries it out from the truck's foot, and lowers it by the ground's drop |
+| Placement | Turns one point by the road's heading, carries it out from the truck's foot, and lowers it by the ground's drop |
 | Projection | Turns one whole face into a polygon on the screen |
 
 Placement works a point at a time. Projection works a face at a time, for two reasons. A face that reaches behind the camera is clipped, and clipping can cut corners off a face and add new ones, so it needs the whole outline. And the faces are sorted by depth before they're drawn, and the sort orders faces, not points.
 
 ### Placement: one rigid body
 
-A truck doesn't bend, so every corner moves together. `TruckSighting` finds the truck on the road ahead and works out three things once: the truck's spot, which holds its foot in the rider's view and the ground's drop beneath it; which way the truck heads, seen from the camera; and which of its lights are on.
+A truck doesn't bend, so every corner moves together. `TruckSighting` finds the truck on the road ahead and works out two things once: the truck's spot, and which of its lights are on.
 
 {{code Truck.SightedTruck}}
 
-The truck heads the way the road runs at its spot. `road_heading` finds that direction from two points on the road: the truck's spot, and a point one metre further along. It brings both into the rider's view, and the angle between them is the heading.
+Every sighting's spot holds the object's foot in the rider's view, and which way the road runs there. `road_heading_at` finds that direction from two points on the road: the object's own, and a point one metre further along. It brings both into the rider's view, and the angle between them is the heading.
 
-{{code TruckSighting.road_heading}}
+{{code RoadAhead.road_heading_at}}
 
-The truck is drawn from that sighting and the camera's lens:
+A solid thing stands each of its points through its spot. A point is an offset in the thing's own frame. It is turned by the road's heading and by how the thing faces against the road, carried out from the foot, and lowered by the ground's drop. The tower stands its footprint this way, turned by its yaw:
 
-{{code TruckPlacement.TruckSetting}}
+{{code Spot.standing_point}}
 
-Placement is one function. It turns a point by the heading, carries it out from the foot, and lifts it. The headlights and the brake lights use it too:
+The truck faces straight along the road, so its placement is one line. The headlights and the brake lights use it too:
 
 {{code TruckPlacement.raised_point}}
+
+The truck is drawn from its spot and the camera's lens:
+
+{{code TruckPlacement.TruckSetting}}
 
 Every corner is lowered by the same drop, how far the ground has curved away beneath the truck's spot. Across a 12-metre truck the drop changes by a few centimetres at most, far less than a pixel. `TruckPlacement.placed_face` places every corner of a face this way, and that's what `body_picture` sorts and draws.
 

@@ -3,6 +3,7 @@
 ## rider's own first, and a point on any of them, or on the segment just behind,
 ## is carried back round the bends between to the rider's own segment and into
 ## the view of a camera standing there.
+import Angle
 import Distance
 import Geom
 import RiderView
@@ -126,6 +127,29 @@ RoadAhead :: [].{
 					AtRouteStart => crash "RoadAhead.rider_point_at: a rider on the route's first segment has no segment behind"
 				}
 		}
+
+	## Which way the road runs at `road_point` on the segment that lies at
+	## `from_rider`, as the camera at `vantage` sees it: zero straight away from
+	## the camera, positive to the right. A segment comes into the rider's view
+	## by a turn and a shift, so the road runs the same way all along it, and
+	## two points a metre apart are enough to find which way that is.
+	road_heading_at : RoadAhead.RoadView,
+	{
+		vantage : Geom.Vantage,
+		from_rider : SegmentFromRider,
+		road_point : Geom.RoadPoint,
+	} -> Angle.Turn
+	road_heading_at = |road, { vantage, from_rider, road_point }| {
+		further_along = { ..road_point, along: road_point.along.plus(Distance.metres(1.0)) }
+		here = RoadAhead.rider_point_at(road, { vantage, from_rider, road_point })
+		there = RoadAhead.rider_point_at(road, { vantage, from_rider, road_point: further_along })
+		Angle.Turn.radians(
+			F64.atan2({
+				x: there.forward.minus(here.forward).to_metres(),
+				y: there.right.minus(here.right).to_metres(),
+			}),
+		)
+	}
 }
 
 ## The road ahead of a rider on the segment at `start`: as far as the rider can
