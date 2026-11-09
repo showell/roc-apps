@@ -186,6 +186,8 @@ const drag = dragArg.length === 4 ? dragArg : null;
 // How many distinct pictures the run produced. One means it drew once and
 // then repeated itself, or froze.
 let moved = 0;
+// How many frames painted something after their clear.
+let paintedFrames = 0;
 let lastPicture = null;
 let frames = 0;
 // **THE CLOCK IS VIRTUAL, OR THE PAGE TAKES NO STEPS.** The runner paces the
@@ -212,7 +214,9 @@ const sandbox = {
       virtualNow += STEP_MS;
       picture = 2166136261;
       live = Boolean(SHOT) && frames > limit - LIVE_CALLBACKS;
+      const fillsBefore = fills;
       fn(virtualNow);
+      if (fills - fillsBefore > 1) paintedFrames++;
       if (picture !== lastPicture) { moved++; lastPicture = picture; }
     });
   },
@@ -287,9 +291,12 @@ if (frames < 2) { console.error(`${name}: the page never asked for a second fram
 // at all reported 29 fills over 31 frames and passed. So the two ways a page
 // can be dead are asked about separately.
 //
-// One clear per draw, so no more fills than frames means nothing but clears.
-if (fills <= frames) {
-  console.error(`${name}: ${fills} fills over ${frames} frames is the background and nothing else`);
+// A draw is one clear and then the shapes, so a frame that fills more than
+// once has painted something. Totals can't tell: the runner draws only on a
+// frame that takes a step, so a plain two-shape picture fills no more times
+// than there are frames.
+if (paintedFrames === 0) {
+  console.error(`${name}: no frame of ${frames} filled more than its clear: the background and nothing else`);
   process.exit(1);
 }
 // And a page can paint a great deal and still be stuck: `fps` of zero steps
