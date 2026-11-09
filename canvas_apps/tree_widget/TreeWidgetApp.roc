@@ -1,4 +1,4 @@
-## The widget for the Safari tutorial's chapter on the conifer: a still picture of
+## The widget for the Safari tutorial's chapter on the conifer: a fixed picture of
 ## three trees of one kind at three distances, with no controls. TreeShapes draws
 ## each one and picks its crown, and under each tree are its distance and the
 ## crown `TreeShapes.crown_of` gives there.
@@ -23,11 +23,11 @@ import widget.WidgetPalette
 
 TreeWidgetApp :: [].{
 
-	## A still picture has no state.
+	## A fixed picture has no state.
 	Model : {}
 
 	canvas_app : CanvasApp.CanvasApp(TreeWidgetApp.Model)
-	canvas_app = WidgetPage.still_app({ title: "Three conifers", shapes: still_shapes })
+	canvas_app = WidgetPage.fixed_picture_app({ title: "Three conifers", shapes: fixed_picture_shapes })
 }
 
 ## A tree in the picture: how far off it stands, and the x on the canvas of the
@@ -130,8 +130,8 @@ caption_shapes : Stand -> List(Shapes.Shape)
 caption_shapes = |stand|
 	caption_lines(stand.forward).map_with_index(|text, row| caption_line(stand, { text, row }))
 
-still_shapes : List(Shapes.Shape)
-still_shapes = {
+fixed_picture_shapes : List(Shapes.Shape)
+fixed_picture_shapes = {
 	trees = stands.join_map(tree_shapes)
 	picture_shapes = WidgetPage.picture_shapes({
 		backdrop: { sky_colors: Sky.colors_at(Clock.start), sun_sighting: OutOfView },
@@ -194,4 +194,4 @@ expect !is_plain_to_see({ ..near_stand, forward: Distance.metres(30.0) })
 expect !is_plain_to_see({ ..far_stand, forward: Distance.metres(300.0) })
 
 # The captions go down last, so they show over the panel.
-expect still_shapes.ends_with(stands.join_map(caption_shapes))
+expect fixed_picture_shapes.ends_with(stands.join_map(caption_shapes))

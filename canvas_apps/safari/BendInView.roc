@@ -119,7 +119,7 @@ BendInView :: { before : SegmentFromRider, bend : Geom.Bend }.{
 		turn_radians = bend.turn.to_radians()
 		turn_sine = turn_radians.sin()
 		# Edges that run on straight, or fold straight back, never meet.
-		if turn_sine == 0.0 {
+		if bend.turn.is_straight_or_back() {
 			crash "BendInView.outer_corner: a bend that turns 0 or 180 degrees has no apex"
 		}
 		toward_edge = across.distance_from(start_after.across).to_metres()

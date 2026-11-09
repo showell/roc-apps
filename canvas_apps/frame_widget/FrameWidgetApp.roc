@@ -3,7 +3,7 @@
 ## the cat frozen in the road, and shows that frame one layer at a time. The
 ## shapes are the game's own for that step, sorted into layers and painted in the
 ## game's order, because depth sorting interleaves the things beside the road.
-## The address picks how many layers are on, and from there it's a still picture
+## The address picks how many layers are on, and from there it's a fixed picture
 ## with no controls. The first line of text counts the shapes so far against the
 ## frame's total, and the second names the last layer on.
 import game.Clock
@@ -191,6 +191,9 @@ canvas_width = picture_width
 canvas_height : F64
 canvas_height = picture_height + panel_height
 
+plain_background_color : RgbColor
+plain_background_color = RgbColor.of(0xE8E6DF)
+
 ## Behind whatever is on, so a frame with no sky has something to be seen against.
 plain_background : Shapes.Shape
 plain_background = Rect({
@@ -198,7 +201,7 @@ plain_background = Rect({
 	y: 0.0,
 	width: picture_width,
 	height: picture_height,
-	fill: Brush.flat(RgbColor.of(0xE8E6DF)),
+	fill: Brush.flat(plain_background_color),
 })
 
 panel : Shapes.Shape

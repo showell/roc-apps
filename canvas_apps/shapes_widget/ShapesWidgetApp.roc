@@ -1,18 +1,19 @@
 ## The widget for the Safari tutorial's first look at shapes: the frame TwoShapes
-## makes, on a plain background, as a still picture with no controls.
+## makes, on a plain background, as a fixed picture with no controls.
 import lib.CanvasApp
-import lib.RgbColor
 import widget.WidgetPage
+import widget.WidgetPalette
 import TwoShapes
 
 ShapesWidgetApp :: [].{
 
-	## A still picture has no state.
+	## A fixed picture has no state.
 	Model : {}
 
 	canvas_app : CanvasApp.CanvasApp(ShapesWidgetApp.Model)
-	canvas_app = WidgetPage.still_app({
+	canvas_app = WidgetPage.fixed_picture_app({
 		title: "Two shapes",
-		shapes: [WidgetPage.picture_backdrop(RgbColor.of(0xf7f5f0))].concat(TwoShapes.shapes),
+		shapes: [WidgetPage.picture_backdrop(WidgetPalette.picture_background_color)]
+			.concat(TwoShapes.shapes),
 	})
 }

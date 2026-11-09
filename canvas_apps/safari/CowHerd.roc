@@ -10,24 +10,24 @@ import Geom
 import Scatter
 import Trees
 
-CowHerd := {
-	cow_count : U64,
-
-	## How many rows stand behind the front row, nearest the road. Each column
-	## has one cow in each row, so a column holds one more cow than this.
-	rows_behind_front : U64,
-}.{
+CowHerd :: { cow_count : U64, rows_behind_front : U64 }.{
 
 	## Whether a bull leads the herd.
 	Bull : [WithBull, NoBull]
 
+	## A herd of `cow_count` cows. `rows_behind_front` is how many rows stand
+	## behind the front row, nearest the road. Each column has one cow in each
+	## row, so a column holds one more cow than this.
+	herd : { cow_count : U64, rows_behind_front : U64 } -> CowHerd
+	herd = |shape| CowHerd.(shape)
+
 	## The herd's cows behind `herd_along`, column by column from the front,
 	## led by the bull at `herd_along` if the herd has one.
 	herd_cows : CowHerd, { herd_along : Along, bull : CowHerd.Bull } -> List(Geom.Placed(Billboard))
-	herd_cows = |herd, { herd_along, bull }| {
+	herd_cows = |CowHerd.({ cow_count, rows_behind_front }), { herd_along, bull }| {
 		cows =
-			List.from_iter(U64.until(0, herd.cow_count))
-				.map(|cow_number| herd_cow(herd, { herd_along, cow_number }))
+			List.from_iter(U64.until(0, cow_count))
+				.map(|cow_number| herd_cow({ herd_along, cow_number, rows_behind_front }))
 		match bull {
 			WithBull => [herd_bull(herd_along)].concat(cows)
 			NoBull => cows
@@ -99,9 +99,13 @@ is_calf = |cow_number| cow_number.rem_by(4) == 1
 
 ## The herd's cow at `cow_number`, counting from 0. The scatter's phases, 2.7
 ## along the road and 1.9 across it, are chosen by eye.
-herd_cow : CowHerd, { herd_along : Along, cow_number : U64 } -> Geom.Placed(Billboard)
-herd_cow = |herd, { herd_along, cow_number }| {
-	cows_per_column = herd.rows_behind_front + 1
+herd_cow : {
+	herd_along : Along,
+	cow_number : U64,
+	rows_behind_front : U64,
+} -> Geom.Placed(Billboard)
+herd_cow = |{ herd_along, cow_number, rows_behind_front }| {
+	cows_per_column = rows_behind_front + 1
 	column = cow_number.div_trunc_by(cows_per_column).to_f64()
 	row = cow_number.rem_by(cows_per_column).to_f64()
 	herd_front = herd_along.plus(gap_behind_bull)
@@ -149,7 +153,7 @@ expect
 
 ## A herd of five cows in columns of two, its last column one cow short.
 five_cows : CowHerd
-five_cows = { cow_count: 5, rows_behind_front: 1 }
+five_cows = CowHerd.herd({ cow_count: 5, rows_behind_front: 1 })
 
 cows_with_bull : List(Geom.Placed(Billboard))
 cows_with_bull = five_cows.herd_cows({ herd_along: Along.metres(24.0), bull: WithBull })

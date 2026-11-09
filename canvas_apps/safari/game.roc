@@ -26,6 +26,7 @@ package
 		ColorShade,
 		Conifer,
 		ConvexHull,
+		CowHerd,
 		DepthSort,
 		Distance,
 		EarthCurve,

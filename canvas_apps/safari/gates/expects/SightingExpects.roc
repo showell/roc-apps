@@ -11,6 +11,7 @@ import game.Billboard
 import game.BillboardSighting
 import game.Clock
 import game.Conifer
+import game.CowHerd
 import game.Distance
 import game.Geom
 import game.RiderView
@@ -183,7 +184,7 @@ one_cow_segment : Segment
 one_cow_segment = {
 	..Fixtures.segment_of([]),
 	pigs: NoPigs,
-	cows: { herd: { ..Fixtures.segment_of([]).cows.herd, cow_count: 1 }, bull: NoBull },
+	cows: { herd: CowHerd.herd({ cow_count: 1, rows_behind_front: 2 }), bull: NoBull },
 }
 
 lone_cow : Geom.RoadPoint

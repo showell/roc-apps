@@ -1,4 +1,4 @@
-## The widget for the Safari tutorial's chapter on what never changes: a still
+## The widget for the Safari tutorial's chapter on what never changes: a fixed
 ## map of the whole route, with no controls. Each stretch is one record of
 ## `World.segment_plans`, and the lines of text read out the record of the stretch in
 ## white. The route gives the bearing each segment sets off on
@@ -20,11 +20,11 @@ import widget.WidgetPalette
 
 RouteWidgetApp :: [].{
 
-	## A still picture has no state.
+	## A fixed picture has no state.
 	Model : {}
 
 	canvas_app : CanvasApp.CanvasApp(RouteWidgetApp.Model)
-	canvas_app = WidgetPage.still_app({ title: "The route", shapes: still_shapes })
+	canvas_app = WidgetPage.fixed_picture_app({ title: "The route", shapes: fixed_picture_shapes })
 }
 
 ## A place on the map, by how far east and north of the route's start it is;
@@ -301,8 +301,8 @@ status_lines = {
 	]
 }
 
-still_shapes : List(Shapes.Shape)
-still_shapes = WidgetPage.frame_shapes({ picture_shapes, status_lines })
+fixed_picture_shapes : List(Shapes.Shape)
+fixed_picture_shapes = WidgetPage.frame_shapes({ picture_shapes, status_lines })
 
 expect segments.len() == World.segment_plans.len()
 
@@ -326,4 +326,4 @@ expect {
 expect picture_shapes.drop_first(1 + road_shapes.len()).starts_with(read_out_shapes)
 
 # The lines go on the panel, over the picture.
-expect still_shapes.starts_with(picture_shapes)
+expect fixed_picture_shapes.starts_with(picture_shapes)

@@ -171,9 +171,6 @@ off_right_color = RgbColor.of(0xe8805a)
 kept_color : RgbColor
 kept_color = WidgetPalette.highlight_color
 
-target_color : RgbColor
-target_color = RgbColor.of(0xe8c84a)
-
 ## The road from above, with the rider on the road's middle line at the left of
 ## the picture, and 23 pixels to a metre along the road.
 road_plan : PlanView
@@ -235,7 +232,7 @@ road_shapes = {
 		}),
 		road_line({
 			across: LeanSearch.aimed_across,
-			color: target_color,
+			color: WidgetPalette.aim_color,
 			width: 1.0,
 		}),
 	]

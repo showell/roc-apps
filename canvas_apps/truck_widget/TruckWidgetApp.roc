@@ -1,4 +1,4 @@
-## The widget for the Safari tutorial's chapter on the truck: a still picture of
+## The widget for the Safari tutorial's chapter on the truck: a fixed picture of
 ## one plain truck seen three ways, in daytime, with no controls. Each truck is
 ## `TruckBody.body_picture`, drawn from a camera set round it at its own angle, and
 ## under each is the way it is seen from.
@@ -25,11 +25,11 @@ import widget.WidgetPalette
 
 TruckWidgetApp :: [].{
 
-	## A still picture has no state.
+	## A fixed picture has no state.
 	Model : {}
 
 	canvas_app : CanvasApp.CanvasApp(TruckWidgetApp.Model)
-	canvas_app = WidgetPage.still_app({ title: "A truck three ways", shapes: still_shapes })
+	canvas_app = WidgetPage.fixed_picture_app({ title: "A truck three ways", shapes: fixed_picture_shapes })
 }
 
 ## One truck in the picture: the words under it, how far round toward the
@@ -153,8 +153,8 @@ caption_shape = |view|
 		style: { ..WidgetPage.panel_rows, x: view.canvas_x, align: Center },
 	})
 
-still_shapes : List(Shapes.Shape)
-still_shapes = {
+fixed_picture_shapes : List(Shapes.Shape)
+fixed_picture_shapes = {
 	picture_shapes = WidgetPage.picture_shapes({
 		backdrop: { sky_colors: Sky.colors_at(Clock.start), sun_sighting: OutOfView },
 		ride_shapes: truck_views.join_map(truck_shapes),
@@ -202,7 +202,7 @@ is_in_its_third = |view| {
 # Each truck draws its six faces and its ten tires, none of them clipped away,
 # and the picture holds those three trucks' polygons and no others.
 expect truck_views.all(|view| truck_shapes(view).len() == 16)
-expect polygon_coordinates(still_shapes).len() == 3 * 16
+expect polygon_coordinates(fixed_picture_shapes).len() == 3 * 16
 
 # Every truck is all in its third, above the panel. A truck nearer than the
 # views' distance loses its tires under the panel, and one seen from the side

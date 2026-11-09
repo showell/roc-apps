@@ -309,9 +309,6 @@ next_model = |model, input|
 		Err(NoClick) => model
 	}
 
-picture_color : RgbColor
-picture_color = RgbColor.of(0xf7f5ef)
-
 ink : Brush.Rgba
 ink = Brush.opaque_rgba(WidgetPalette.ink_color)
 
@@ -410,7 +407,7 @@ large_shapes = |{ large_pose, outlines }| {
 picture_shapes : StillsWidgetApp.Model -> List(Shapes.Shape)
 picture_shapes = |model|
 	[
-		[WidgetPage.picture_backdrop(picture_color)],
+		[WidgetPage.picture_backdrop(WidgetPalette.picture_background_color)],
 		read_out_lines(model.large_pose).map_with_index(read_out_line),
 		hint_lines.map_with_index(hint_line),
 		large_shapes(model),
@@ -447,7 +444,7 @@ mark_shapes = |large_pose|
 				y: area.top,
 				width: area.width,
 				height: area.height,
-				fill: Brush.flat(picture_color),
+				fill: Brush.flat(WidgetPalette.picture_background_color),
 			}),
 	)
 

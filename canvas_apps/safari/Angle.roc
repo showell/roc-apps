@@ -102,6 +102,15 @@ Angle :: [].{
 		is_right : Angle.Turn -> Bool
 		is_right = |Angle.Turn.(t)| t >= 0.0
 
+		## Whether this turn leaves the road on one line: within
+		## `straight_or_back_tolerance` of 0 degrees, where it runs straight on, or
+		## of 180 either way, where it folds straight back.
+		is_straight_or_back : Angle.Turn -> Bool
+		is_straight_or_back = |Angle.Turn.(t)| {
+			tolerance_sine = straight_or_back_tolerance.to_radians().sin()
+			t.sin().abs() <= tolerance_sine
+		}
+
 		is_gt : Angle.Turn, Angle.Turn -> Bool
 		is_gt = |Angle.Turn.(t), Angle.Turn.(other)| t > other
 
@@ -198,6 +207,33 @@ Angle :: [].{
 }
 
 expect Angle.Lean.radians(-0.5).ratio_to(Angle.Lean.radians(2.0)) == -0.25
+
+## How near 0 or 180 degrees a turn may come and still turn the road off its
+## line: a millionth of a degree. Rounding leaves the sine of a 180-degree turn
+## at about 1.2e-16 rather than 0, which this is far above, and every turn a
+## route makes is many degrees, which this is far below.
+straight_or_back_tolerance : Angle.Turn
+straight_or_back_tolerance = Angle.Turn.degrees(0.000001)
+
+# Exactly straight, exactly back either way, and within the tolerance of each,
+# leave the road on one line; twice the tolerance off, or a real bend, doesn't.
+expect
+	[
+		(0.0, True),
+		(0.0000005, True),
+		(-0.0000005, True),
+		(180.0, True),
+		(-180.0, True),
+		(179.9999995, True),
+		(-179.9999995, True),
+		(0.000002, False),
+		(-0.000002, False),
+		(179.999998, False),
+		(-179.999998, False),
+		(15.0, False),
+		(90.0, False),
+		(-120.0, False),
+	].all(|(degrees, want)| Angle.Turn.degrees(degrees).is_straight_or_back() == want)
 
 # A turn inside the limit stays, one past it is held to it on either side, and
 # a limit of zero holds every turn straight ahead.

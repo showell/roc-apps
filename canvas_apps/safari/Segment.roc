@@ -4,6 +4,10 @@
 ## module answers the questions asked of one segment: where its herds stand,
 ## which trees its cat and its bird wait by, where the rider commits to its
 ## bend, and what on it may catch the rider's eye.
+##
+## Segment is nominal, not opaque, because many modules read its fields (its
+## length, its trees, its herds, its encounter and its ending) and every value
+## of them is a valid segment, so there is nothing for a maker to check.
 import Across
 import Along
 import Angle
