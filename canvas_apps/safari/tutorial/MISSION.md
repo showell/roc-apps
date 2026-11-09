@@ -139,6 +139,10 @@ The work is a linear pass, one chapter at a time, in book order, starting again 
 
 **We're starting over from scratch.** The book is the chapters that have passed this loop, and nothing else. The rest of tutorial.md was written by another team, old Steve and old Claude. It's a source of facts and includes, never a structure we owe anything to. We're bound by what the new chapters promise, not by the old book's order.
 
+**Know which assets are durable.** Two things go wrong with assets, and we're far more prone to the second. Forgetting a good asset, such as rebuilding by hand what a debugged script already does, means doing the same thing twice. Trusting a bad one means shoddy work never dies. So assets come in two classes:
+- **Durable:** tools whose job doesn't depend on the book's content. That's the gates, `build.shale` and its includes, `book.shale`, `color_roc.shale`, `book_check.mjs`, the lints, and this document. Use them every time.
+- **Provisional:** anything that carries old content or old structure. That's widgets and everything they draw, captions, the code comments an include quotes, `Book.dividers`, the glossary, the appendices, and the old chapters' sentences and order. A provisional asset is wrong until re-read. Its first appearance in the new book is a critical review: keep it only if it fits this page completely, change it or its code if it doesn't, and cut it if it can't (H6, C13). This session's cruft all came from this class: the flipbook and route readouts, `Book.dividers`, the `Picture` name, a false comment in `Geom.Placed`, and a chapter shaped by an outline built for another purpose.
+
 **Write a clean draft every time.** Every chapter gets a clean draft, written fresh, every round. Don't regurgitate the old text, and don't edit it yet. Editing comes later, once a clean draft has earned it. Reworded old sentences are the old draft in disguise, and Steve can tell.
 
 **The loop, for one chapter:**
