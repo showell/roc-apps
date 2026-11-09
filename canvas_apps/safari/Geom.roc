@@ -14,8 +14,9 @@ Geom :: [].{
 	RoadPoint : { along : Along, across : Across }
 
 	## An object on one segment of the road, `lift` off the ground, and what
-	## kind of object it is. A tree or a cow is placed once for the whole ride;
-	## a cat, a tower or the truck is placed anew for each frame.
+	## kind of object it is. A tree is placed once for the whole ride, a cow
+	## from its herd whenever something asks for it, and a cat, a tower or the
+	## truck anew for each frame.
 	## `Pipeline.sighting_of` turns it into a `Pipeline.Sighted` for a frame.
 	Placed(kind) : {
 		road_point : Geom.RoadPoint,

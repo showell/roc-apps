@@ -31,18 +31,18 @@ The fourth is motion. The rider rides on, the truck drives ahead, the cat crosse
 
 The fifth is the person watching. A viewer mostly sits back and watches, but they also need to pause the ride, step it forward and rewind it. So the program has to give them controls they can find, and answer each one straight away.
 
-The first three pieces give us one frame, held still. The last two set it moving. Safari Ride solves all five with simple code. The next chapter gives each piece its type, and picks the place we start.
+The first three pieces give us one frame, held still. The last two set it moving. The next chapter gives each piece its type, and picks the place we start.
 
 ## A small story, a rich picture
 
-The last chapter framed Safari Ride as five pieces of work: things, the world, the rider's view, motion and the person watching. Now we take the programmer's seat. A programmer's first question about a problem is what it looks like as data, and in Roc the answer is a type. Each of the five pieces has one.
+The last chapter framed Safari Ride as five pieces of work: things, the world, the rider's view, motion and the person watching. Now we take the programmer's seat. A programmer's first question about a problem is what it looks like as data, and in Roc the answer is a type. Each of the five pieces has its types.
 
 The story is small. A rider rides down a road. Now and then a cat or a bird crosses the rider's path. The beacons blink on the radio towers, and the sun goes down.
 
 The picture is another matter. At step 1,529 of the ride, the frame paints 2,121 shapes over its backdrop of sky, sun and grass. While the ride plays, it takes thirty steps a second. One step later the rider has moved on, and the road, the trees and the cows all shift on the screen. So Safari Ride keeps the small story, and describes the rich picture fresh, every frame.
 
 ```widget frame moving
-Step 1,529 of the ride, held still. The line under it counts the frame's shapes.
+Step 1,529 of the ride, held still. The line under it counts the shapes painted over the backdrop.
 ```
 
 ### Things
@@ -51,9 +51,9 @@ Every thing beside the road has a kind, and each kind is a type. A tree is a `Co
 
 {{code Billboard.Billboard from "Billboard ::" to "}.{"}}
 
-The `::` makes `Billboard` a type of its own, a record with three fields, and only the `Billboard` module looks inside it. The `.{` opens the functions that come with the type, cut here. Each line of the record names one field and gives its type after the colon.
+The `::` makes `Billboard` a type of its own, a record with three fields, and only the `Billboard` module looks inside it. Roc calls such a type opaque. The `.{` opens the functions and types that come with it, cut here. Each line of the record names one field and gives its type after the colon.
 
-Most of Safari Ride's Roc code lives in modules. A module is one file, named for what it holds: `Billboard.roc` holds the module `Billboard`. A field's type comes from the module that owns it, so `EmojiStills.EmojiStill` is the `EmojiStill` type from the `EmojiStills` module. Even inside its own module, a type carries the prefix, as `Billboard.Facing` does. A `Billboard.Facing` is one of two tags, `FacesLeft` or `FacesRight`. A tag is a plain name that the compiler knows, and a type made of tags lists every one it allows.
+Most of Safari Ride's Roc code lives in modules. A module is one file, named for what it holds: `Billboard.roc` holds the module `Billboard`. A field's type comes from the module that owns it, so `EmojiStills.EmojiStill` is the `EmojiStill` type from the `EmojiStills` module. A module like `Distance` is also a type of the same name, so `Distance` alone names it. Even inside its own module, a type carries the prefix, as `Billboard.Facing` does. A `Billboard.Facing` is one of two tags, `FacesLeft` or `FacesRight`. A tag is a plain name that the compiler knows, and a type made of tags lists every one it allows.
 
 For each frame, a thing gives the shapes that draw it, in the order they're painted. We call those shapes its sprite. The word is used loosely here: a sprite in Safari Ride is a list of shapes, and nearly every shape is a polygon. A far tree's sprite is one rectangle of trunk under eight triangles.
 
@@ -65,7 +65,7 @@ The `World` module holds a short list of segment plans, one for each stretch of 
 
 {{code World.SegmentPlan}}
 
-A plain `:` gives this record type a name, and any module can build a plan and read its fields. The first plan fills in 500 metres of road, with the `AllGreen` tree scheme and a bird to meet, `BirdHere`.
+Lines that start with `##` are doc comments. A plain `:` gives this record type a name, and any module can build a plan and read its fields. `World.route`, a value of the `Route` type, builds the whole road from the plans, once, before the ride starts, and every tree, herd, pond and tower takes its place along it.
 
 ```widget route
 The whole route from above, one stretch for each plan. The lines under the map read out the plan of the stretch in white.
@@ -81,25 +81,25 @@ Then the camera sights it:
 
 {{code Pipeline.Sighted}}
 
-The `kind` in each is a type variable. It stands for whichever kind the form holds, so a cow on the road is a `Geom.Placed(Billboard)`, and a tree is a `Geom.Placed(Conifer)`. One type serves every kind.
+The `kind` in parentheses is a type variable. In `kind : kind`, the field named `kind` has that type. It stands for whichever kind the form holds, so a cow on the road is a `Geom.Placed(Billboard)`, and a tree is a `Geom.Placed(Conifer)`. One type serves every kind.
 
-A sighting's `Spot` holds where the thing stands in the rider's view. From it come where the thing lands on the screen, and how big it looks there. One rule gives both, the rule a pinhole camera follows: twice as far away looks half as big. A thing the rider can't see is refused, with a tag that says why. `BehindCamera` means it's behind the rider, and `BelowHorizon` means the curve of the earth hides it.
+A sighting's `Spot` holds where the thing stands in the rider's view. From it, with the thing's height and the camera's lens, come where the thing lands on the screen, and how big it looks there. One rule gives both, the rule a pinhole camera follows: twice as far away looks half as big. A thing the rider can't see is refused, with a tag that says why. `BehindCamera` means it's behind the rider, and `BelowHorizon` means the curve of the earth hides it.
 
-Last, a thing is rendered: a value of the `Rendered` type holds its sprite, and how far ahead of the camera it stands. The frame sorts the renderings far to near and paints them in that order, so nearer things cover farther ones.
+Last, a thing is rendered: its sprite, with how far ahead of the camera it stands. The frame sorts the renderings far to near and paints them in that order, so nearer things cover farther ones.
 
 ### Motion
 
 One record holds the whole ride at one moment:
 
-{{code RideInstant.RideInstant from "RideInstant := {" to "encounter_plan : EncounterPlan,"}}
+{{code RideInstant.RideInstant from "RideInstant := {" to "}.{"}}
 
-The `:=` makes `RideInstant` a type of its own, like `Billboard`, but one whose fields other modules can read. Those four fields are everything the ride carries from one step to the next: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. Everything else that changes is worked out from them. The sun goes down because the clock says so.
+The `:=` makes `RideInstant` a type of its own, like `Billboard`, but one whose fields other modules can read. Roc calls such a type nominal. Those four fields are everything the ride carries from one step to the next: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. Everything else that changes is worked out from them. The sun goes down because the clock says so.
 
 A step is one function's job, and its type tells the story:
 
 {{signatures RideInstant.next_or_restart}}
 
-It takes the route and one moment of the ride, and gives back one of two tags. A tag can carry a value, and each of these carries the next moment. `Continued` carries the moment one step on, and `Restarted` carries the ride's first moment, once the rider has finished the route. Inside the step, the four fields move in a fixed order, so that the moves fit together: the rider reads where the cat has got to, and then moves. We read that order line by line in the second half of the book.
+After the colon comes the function's type: the types it takes, then an arrow, then the type it gives back. It takes the route and one moment of the ride, and gives back one of two tags. A tag can carry a value, and each of these carries the next moment. `Continued` carries the moment one step on, and `Restarted` carries the ride's first moment, once the rider has finished the route. Inside the step, the four fields move in a fixed order, so that the moves fit together: the rider reads where the cat has got to, and then moves. We read that order line by line in the second half of the book.
 
 ### The person watching
 
@@ -107,11 +107,15 @@ The controls are a handful of keys, named beside the ride. The model behind them
 
 {{code SafariApp.Model}}
 
-A type made of tags can be written in place, as `[Playing, Paused]` is here. The `Tour` type keeps every moment since the ride last started, so stepping back is as quick as stepping forward: the tour takes the moment before, and the frame is drawn from it like any other.
+A type made of tags can be written in place, as `[Playing, Paused]` is here. The tour holds the route, the moment on show, and every moment before it since the ride last started:
+
+{{code Tour.Tour from "Tour :: {" to "}.{"}}
+
+So stepping back is as quick as stepping forward: the tour takes the moment before, and the frame is drawn from it like any other.
 
 ### Where we start
 
-That's five pieces and five types. The book builds the pieces in order, and each one's functions come in its own chapters. So we start with things, and with the simplest shape. Of the 2,121 shapes at step 1,529, all but eight are polygons, and the simplest polygon is a triangle. We start there.
+That's five pieces, and the types that answer them. The book builds the pieces in order, and each one's functions come in its own chapters. So we start with things, and with the simplest shape. Of the 2,121 shapes at step 1,529, all but eight are polygons, and the simplest polygon is a triangle. We start there.
 
 ## Shapes
 
