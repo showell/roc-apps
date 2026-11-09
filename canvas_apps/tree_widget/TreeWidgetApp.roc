@@ -85,7 +85,7 @@ stand_sighting = |stand| {
 		placed_tree,
 		{
 			road: World.road_at_start,
-			camera: { vantage: eye, focal_length: Lens.resting_focal_length },
+			vantage: eye,
 			place: Ahead(SegmentFromRider.Position.first),
 		},
 	)

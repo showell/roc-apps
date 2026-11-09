@@ -127,7 +127,7 @@ view_setting = |view| {
 		placed_truck,
 		{
 			road: World.road_at_start,
-			camera: { vantage, focal_length: Lens.resting_focal_length },
+			vantage,
 			place,
 		},
 	)

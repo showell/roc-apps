@@ -84,14 +84,13 @@ two_segments = |turn|
 road_with : Angle.Turn -> RoadAhead.RoadView
 road_with = |turn| RoadAhead.RoadView.ahead_of(two_segments(turn), Route.SegmentIndex.first)
 
-## The camera the road is seen from, on the first segment, looking along it.
-camera : { vantage : Geom.Vantage }
-camera = {
-	vantage: {
-		along: Along.at(segment_length.minus(rider_before_bend)),
-		across: Across.middle,
-		yaw: Angle.straight_ahead,
-	},
+## Where the camera the road is seen from stands, on the first segment, looking
+## along it.
+vantage : Geom.Vantage
+vantage = {
+	along: Along.at(segment_length.minus(rider_before_bend)),
+	across: Across.middle,
+	yaw: Angle.straight_ahead,
 }
 
 ## The one bend on that road.
@@ -107,7 +106,7 @@ apex_of = |turn| {
 	RoadAhead.rider_point_at(
 		road,
 		{
-			vantage: camera.vantage,
+			vantage,
 			place: bend_in_view.place_before(),
 			road_point: bend_in_view.outer_corner().apex,
 		},
@@ -185,10 +184,10 @@ bend_shapes : ShownBend -> List(Shapes.Shape)
 bend_shapes = |bend| {
 	road = road_with(bend.turn)
 	[
-		GroundSighting.patches_in_view(road, camera).map(
+		GroundSighting.patches_in_view(road, vantage).map(
 			|patch| patch_shape(bend, patch.corners()),
 		),
-		RailSighting.rail_quads_in_view(road, camera).map(|rail| foot_shape(bend, rail.corners)),
+		RailSighting.rail_quads_in_view(road, vantage).map(|rail| foot_shape(bend, rail.corners)),
 		[
 			spot(bend, { at: apex_of(bend.turn), color: apex_color }),
 			spot(bend, { at: rider, color: WidgetPalette.highlight_color }),
@@ -215,8 +214,8 @@ apex_past_end = |bend_in_view| {
 caption_lines : Angle.Turn -> List(Str)
 caption_lines = |turn| {
 	road = road_with(turn)
-	patches = GroundSighting.patches_in_view(road, camera).len()
-	rail_pieces = RailSighting.rail_quads_in_view(road, camera).len()
+	patches = GroundSighting.patches_in_view(road, vantage).len()
+	rail_pieces = RailSighting.rail_quads_in_view(road, vantage).len()
 	[
 		ReadoutText.turn_text(turn),
 		"rail on the ${edge_text(bend_of(road))} edge",

@@ -16,17 +16,13 @@ RailSighting :: [].{
 
 	## The quads of the rails at every bend in view: the bends along the road
 	## ahead, then the bend from the segment behind.
-	rail_quads_in_view : RoadAhead.RoadView,
-	{
-		vantage : Geom.Vantage,
-		..,
-	} -> List(GuardRail.RailQuad)
-	rail_quads_in_view = |road, camera|
+	rail_quads_in_view : RoadAhead.RoadView, Geom.Vantage -> List(GuardRail.RailQuad)
+	rail_quads_in_view = |road, vantage|
 		RoadAhead.segments_in_view(road).join_map(
 			|in_view|
 				match BendInView.bend_after(road, in_view) {
 					Ok(bend_in_view) => {
-						path_points = rail_points(road, { vantage: camera.vantage, bend_in_view })
+						path_points = rail_points(road, { vantage, bend_in_view })
 						GuardRail.quads_along(path_points)
 					}
 					Err(RoadEndsInView) => []

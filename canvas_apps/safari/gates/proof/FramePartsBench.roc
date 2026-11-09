@@ -93,13 +93,14 @@ part_size = |part, { route, instant }| {
 				sun_sighting: Sun.sun_in_view(camera, instant.clock),
 			}).len()
 		} else if part == "skyline" {
-			FrameView.skyline_shapes(camera, instant.clock).len()
+			aim = { heading: camera.heading, focal_length: camera.focal_length }
+			FrameView.skyline_shapes(aim, instant.clock).len()
 		} else {
 			road = RoadAhead.RoadView.ahead_of(route, camera.route_place.segment_index)
 			if part == "road" {
 				RoadAhead.segments_in_view(road).len()
 			} else if part == "ground" {
-				FrameView.ground_shapes(road, camera).len()
+				FrameView.ground_shapes(road, camera.sighting_camera()).len()
 			} else {
 				facts = FrameView.ride_facts(route, instant)
 				kind_size(part, { road, camera, facts })
@@ -129,11 +130,11 @@ kind_size = |part, { road, camera, facts }| {
 		trees_seen = TreeSighting.trees_in_view(road, cam)
 		shape_count(TreeSighting.tree_renderings(trees_seen, focal_length))
 	} else if part == "towers_sight" {
-		TowerSighting.towers_in_view(road, { camera: cam, clock: facts.clock }).len()
+		TowerSighting.towers_in_view(road, { vantage: cam.vantage, clock: facts.clock }).len()
 	} else if part == "towers" {
 		on_road = { road, vantage: cam.vantage }
 		shape_count(
-			TowerSighting.towers_in_view(road, { camera: cam, clock: facts.clock }).map(
+			TowerSighting.towers_in_view(road, { vantage: cam.vantage, clock: facts.clock }).map(
 				|tower| Pipeline.rendering_of(tower, { focal_length, context: on_road }),
 			),
 		)
@@ -163,7 +164,7 @@ kind_size = |part, { road, camera, facts }| {
 		shape_count(truck_renderings(road, { cam, facts }))
 	} else if part == "rails" {
 		shape_count(
-			RailSighting.rail_quads_in_view(road, cam).keep_oks(
+			RailSighting.rail_quads_in_view(road, cam.vantage).keep_oks(
 				|quad| GuardRail.quad_rendering(quad, focal_length),
 			),
 		)
@@ -214,7 +215,7 @@ truck_renderings : RoadAhead.RoadView,
 	facts : Scene.RideFacts,
 } -> List(Rendered)
 truck_renderings = |road, { cam, facts }| {
-	match TruckSighting.truck_in_view(road, { camera: cam, truck: facts.truck }) {
+	match TruckSighting.truck_in_view(road, { vantage: cam.vantage, truck: facts.truck }) {
 		Ok(truck) =>
 			[Rendered.of(truck.spot.foot().forward(), Truck.truck_picture(truck, cam.focal_length))]
 		Err(NoTruck) | Err(BehindCamera) => []
@@ -263,8 +264,9 @@ counts_line = |route, instant| {
 		("truck", scene.trucks),
 		("rails", scene.rails),
 	]
-	skyline = FrameView.skyline_shapes(camera, instant.clock)
-	ground = FrameView.ground_shapes(road, camera)
+	aim = { heading: camera.heading, focal_length: camera.focal_length }
+	skyline = FrameView.skyline_shapes(aim, instant.clock)
+	ground = FrameView.ground_shapes(road, cam)
 	step = instant.clock.to_str()
 	sighted = TreeSighting.trees_in_view(road, cam)
 	coned = sighted.count_if(|tree| tree.spot.foot().forward() < Distance.metres(200.0))

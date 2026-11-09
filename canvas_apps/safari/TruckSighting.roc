@@ -20,10 +20,10 @@ TruckSighting :: [].{
 	## `truck` says, if it is on the road ahead and in front of the camera.
 	truck_in_view : RoadAhead.RoadView,
 	{
-		camera : Pipeline.SightingCamera,
+		vantage : Geom.Vantage,
 		truck : { route_position : Distance, truck : Truck },
 	} -> TruckSighting.TruckFate
-	truck_in_view = |road, { camera, truck }| {
+	truck_in_view = |road, { vantage, truck }| {
 		place = RoutePlace.at_distance(road.route(), truck.route_position) ? |PastRouteEnd| NoTruck
 		position = RoadAhead.position_of(road, place.segment_index) ? |NotAhead| NoTruck
 		placed_truck : Geom.Placed(Truck)
@@ -32,11 +32,11 @@ TruckSighting :: [].{
 			lift: Distance.zero,
 			kind: truck.truck,
 		}
-		sighting = Pipeline.sighting_of(placed_truck, { road, camera, place: Ahead(position) })?
+		sighting = Pipeline.sighting_of(placed_truck, { road, vantage, place: Ahead(position) })?
 		heading = TruckSighting.road_heading(
 			road,
 			{
-				vantage: camera.vantage,
+				vantage,
 				place: Ahead(position),
 				road_point: place.road_point,
 			},

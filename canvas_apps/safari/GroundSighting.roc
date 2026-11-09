@@ -17,10 +17,10 @@ GroundSighting :: [].{
 
 	## The ground in view, in paint order: each segment in view in the order of
 	## `RoadAhead.segments_in_view`.
-	patches_in_view : RoadAhead.RoadView, { vantage : Geom.Vantage, .. } -> List(GroundPatch)
-	patches_in_view = |road, camera|
+	patches_in_view : RoadAhead.RoadView, Geom.Vantage -> List(GroundPatch)
+	patches_in_view = |road, vantage|
 		RoadAhead.segments_in_view(road).join_map(
-			|in_view| ground_patches(road, { vantage: camera.vantage, in_view }),
+			|in_view| ground_patches(road, { vantage, in_view }),
 		)
 
 }

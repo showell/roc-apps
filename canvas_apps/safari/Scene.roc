@@ -54,7 +54,7 @@ Scene := {
 		cats_seen = EncounterSighting.cats_in_view(road, encounter)
 		trees_seen = TreeSighting.trees_in_view(road, camera)
 		trucks =
-			match TruckSighting.truck_in_view(road, { camera, truck: facts.truck }) {
+			match TruckSighting.truck_in_view(road, { vantage: camera.vantage, truck: facts.truck }) {
 				Ok(truck) =>
 					[
 						Rendered.of(
@@ -69,7 +69,7 @@ Scene := {
 			birds: birds_seen.map(
 				|bird| Pipeline.rendering_of(bird, { focal_length, context: {} }),
 			),
-			towers: TowerSighting.towers_in_view(road, { camera, clock: facts.clock }).map(
+			towers: TowerSighting.towers_in_view(road, { vantage: camera.vantage, clock: facts.clock }).map(
 				|tower| Pipeline.rendering_of(tower, { focal_length, context: on_road }),
 			),
 			billboards: BillboardSighting.billboards_in_view(road, camera).map(
@@ -77,7 +77,7 @@ Scene := {
 			),
 			cats: cats_seen.map(|cat| Pipeline.rendering_of(cat, { focal_length, context: {} })),
 			trucks,
-			rails: RailSighting.rail_quads_in_view(road, camera).keep_oks(
+			rails: RailSighting.rail_quads_in_view(road, camera.vantage).keep_oks(
 				|quad| GuardRail.quad_rendering(quad, focal_length),
 			),
 		}
