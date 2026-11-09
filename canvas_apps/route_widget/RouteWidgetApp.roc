@@ -13,6 +13,7 @@ import lib.Brush
 import lib.CanvasApp
 import lib.Shapes
 import lib.RgbColor
+import lib.Pixels
 import lib.Point
 import widget.PlanView
 import widget.WidgetPage
@@ -131,7 +132,7 @@ map_plan = {
 	road_width = extent.east.minus(extent.west).to_metres()
 	road_height = extent.north.minus(extent.south).to_metres()
 	{
-		origin: { x: canvas_width / 2.0, y: canvas_height / 2.0 },
+		origin: Point.at(canvas_width / 2.0, canvas_height / 2.0),
 		pixels_a_metre: F64.min(
 			(canvas_width - 2.0 * map_margin) / road_width,
 			(canvas_height - 2.0 * map_margin) / road_height,
@@ -161,10 +162,9 @@ bird_color = RgbColor.of(0x7a5cc0)
 ## A disc on the map.
 spot : MapPoint, { radius : F64, color : RgbColor } -> Shapes.Shape
 spot = |point, { radius, color }| {
-	{ x, y } = canvas_point(point)
 	Disc({
-		center: { x, y },
-		radius,
+		center: canvas_point(point),
+		radius: Pixels.of(radius),
 		fill: Brush.flat(color),
 	})
 }
@@ -183,7 +183,7 @@ piece_shapes = |{ start, end, .. }| {
 			{
 				from: canvas_point(start),
 				to: canvas_point(end),
-				width: road_width_pixels,
+				width: Pixels.of(road_width_pixels),
 			},
 			Brush.flat(color),
 		),
@@ -225,8 +225,8 @@ row_shapes : {
 row_shapes = |{ y, color, word }|
 	[
 		Disc({
-			center: { x: 470.0, y },
-			radius: 6.0,
+			center: Point.at(470.0, y),
+			radius: Pixels.of(6.0),
 			fill: Brush.flat(color),
 		}),
 		WidgetPage.label({
@@ -256,9 +256,9 @@ road_shapes = segments.join_map(piece_shapes)
 
 ground : Shapes.Shape
 ground = Rectangle({
-	top_left: { x: 0.0, y: 0.0 },
-	width: canvas_width,
-	height: canvas_height,
+	top_left: Point.at(0.0, 0.0),
+	width: Pixels.of(canvas_width),
+	height: Pixels.of(canvas_height),
 	fill: Brush.flat(WidgetPalette.plan_ground_color),
 })
 
@@ -268,7 +268,11 @@ picture_shapes =
 
 ## Whether `point` is on the canvas, edges included.
 is_on_canvas : Point.Point -> Bool
-is_on_canvas = |{ x, y }| x >= 0.0 and x <= canvas_width and y >= 0.0 and y <= canvas_height
+is_on_canvas = |point| {
+	x = point.x.to_f64()
+	y = point.y.to_f64()
+	x >= 0.0 and x <= canvas_width and y >= 0.0 and y <= canvas_height
+}
 
 expect segments.len() == World.segment_plans.len()
 

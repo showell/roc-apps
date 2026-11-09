@@ -1,7 +1,7 @@
 ## A Sprite is how one object looks in one frame: the shapes that paint it,
 ## in order. Outside this module a sprite is a single thing, handed along
 ## whole until something paints it.
-import Pixels
+import lib.Pixels
 import Spot
 import lib.Shapes
 

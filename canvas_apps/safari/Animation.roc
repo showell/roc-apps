@@ -9,7 +9,7 @@ import Across
 import Along
 import Distance
 import Easing
-import Fraction
+import lib.Fraction
 import Geom
 import Steps
 

@@ -45,8 +45,8 @@ pixels_with_shape = |pixels, { roll, shape }|
 			pixels,
 			{
 				roll,
-				center: ScreenRoll.ScenePoint.({ x: d.center.x, y: d.center.y }),
-				radius: d.radius,
+				center: ScreenRoll.ScenePoint.({ x: d.center.x.to_f64(), y: d.center.y.to_f64() }),
+				radius: d.radius.to_f64(),
 				fill: d.fill,
 			},
 		)
@@ -55,15 +55,17 @@ pixels_with_shape = |pixels, { roll, shape }|
 		Rectangle(r) => {
 			left = r.top_left.x
 			top = r.top_left.y
+			right = left + r.width
+			bottom = top + r.height
 			ScanlineFill.polygon_pixels(
 				pixels,
 				{
 					roll,
 					corners: [
 						{ x: left, y: top },
-						{ x: left + r.width, y: top },
-						{ x: left + r.width, y: top + r.height },
-						{ x: left, y: top + r.height },
+						{ x: right, y: top },
+						{ x: right, y: bottom },
+						{ x: left, y: bottom },
 					],
 					fill: r.fill,
 				},

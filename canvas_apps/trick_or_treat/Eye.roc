@@ -19,6 +19,9 @@ import lib.Point
 Eye :: [].{
 	Eye : { width : F64, height : F64, eye_height : F64, focal : F64, heading : F64 }
 
+	## A place on the screen in plain pixels, for the walk's own arithmetic.
+	OnScreen : { x : F64, y : F64 }
+
 	At : { right : F64, forward : F64, height : F64 }
 
 	## Nothing nearer than this is drawn: at the eye it would be infinite.
@@ -26,13 +29,13 @@ Eye :: [].{
 	near = 0.35
 
 	## A point on the screen.
-	project : Eye.Eye, Eye.At -> Point.Point
+	project : Eye.Eye, Eye.At -> Eye.OnScreen
 	project = |eye, at| flat(eye, turn(eye, at))
 
 	## A point on the screen, with how many pixels a metre is at its distance,
 	## or `BehindEye` when it is not in front of the eye. Anything drawn as a
 	## disc or a line is sighted this way, because only a polygon can be cut.
-	sighting : Eye.Eye, Eye.At -> Try({ point : Point.Point, pixels_per_metre : F64 }, [BehindEye])
+	sighting : Eye.Eye, Eye.At -> Try({ point : Eye.OnScreen, pixels_per_metre : F64 }, [BehindEye])
 	sighting = |eye, at| {
 		turned_at = turn(eye, at)
 		if turned_at.forward > near {
@@ -45,7 +48,13 @@ Eye :: [].{
 	## A polygon of world points as corners on the screen: turned, cut to what
 	## is in front of the eye, and projected. Empty when none of it is.
 	screen_corners : Eye.Eye, List(Eye.At) -> List(Point.Point)
-	screen_corners = |eye, points| clipped(turned(eye, points)).map(|point| flat(eye, point))
+	screen_corners = |eye, points|
+		clipped(turned(eye, points)).map(
+			|point| {
+				spot = flat(eye, point)
+				Point.at(spot.x, spot.y)
+			},
+		)
 }
 
 # The point as this eye has it: the world turned the other way by the heading,
@@ -58,7 +67,7 @@ turn = |eye, p| {
 }
 
 # A point the eye has already turned, on the screen.
-flat : Eye.Eye, Eye.At -> Point.Point
+flat : Eye.Eye, Eye.At -> Eye.OnScreen
 flat = |eye, p| {
 	x: eye.width / 2.0 + p.right / p.forward * eye.focal,
 	y: eye.height / 2.0 - (p.height - eye.eye_height) / p.forward * eye.focal,

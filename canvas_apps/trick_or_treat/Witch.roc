@@ -12,6 +12,8 @@
 #
 # She knows nothing about a house or a clock: a distance, and how far along
 # coming to the door she is.
+import lib.Pixels
+import lib.Point
 import lib.Shapes
 import lib.Brush
 import lib.RgbColor
@@ -57,16 +59,16 @@ Witch :: [].{
 					# The robe, flaring to the hem.
 					$out = List.concat($out, Panels.face(v, fwd, [0.0 - 0.19, 1.10, 0.19, 1.10, 0.30, 0.66, 0.42, 0.24, 0.0 - 0.42, 0.24, 0.0 - 0.30, 0.66], Flat(witch_c)))
 					# Two arms, held out from it.
-					$out = List.append($out, Shapes.line({ from: shoulder_l, to: hand_l, width: 0.075 * ppm }, Flat(witch_c)))
-					$out = List.append($out, Shapes.line({ from: shoulder_r, to: hand_r, width: 0.075 * ppm }, Flat(witch_c)))
-					$out = List.append($out, Disc({ center: { x: head.x, y: head.y }, radius: 0.115 * ppm, fill: Flat(witch_c) }))
+					$out = List.append($out, Shapes.line({ from: Point.at(shoulder_l.x, shoulder_l.y), to: Point.at(hand_l.x, hand_l.y), width: Pixels.of(0.075 * ppm) }, Flat(witch_c)))
+					$out = List.append($out, Shapes.line({ from: Point.at(shoulder_r.x, shoulder_r.y), to: Point.at(hand_r.x, hand_r.y), width: Pixels.of(0.075 * ppm) }, Flat(witch_c)))
+					$out = List.append($out, Disc({ center: Point.at(head.x, head.y), radius: Pixels.of(0.115 * ppm), fill: Flat(witch_c) }))
 					# The hat: a brim, and a point that leans.
 					$out = List.concat($out, Panels.face(v, fwd, [0.0 - 0.32, 1.37, 0.32, 1.37, 0.30, 1.31, 0.0 - 0.30, 1.31], Flat(witch_c)))
 					$out = List.concat($out, Panels.face(v, fwd, [0.0 - 0.25, 1.36, 0.25, 1.36, 0.12, 1.86], Flat(witch_c)))
 					# **THE ONLY PART OF HER THAT IS NOT DARK.** A silhouette says
 					# somebody; two eyes say who.
-					$out = List.append($out, Disc({ center: { x: eye_l.x, y: eye_l.y }, radius: 0.022 * ppm, fill: Flat(eye_c) }))
-					List.append($out, Disc({ center: { x: eye_r.x, y: eye_r.y }, radius: 0.022 * ppm, fill: Flat(eye_c) }))
+					$out = List.append($out, Disc({ center: Point.at(eye_l.x, eye_l.y), radius: Pixels.of(0.022 * ppm), fill: Flat(eye_c) }))
+					List.append($out, Disc({ center: Point.at(eye_r.x, eye_r.y), radius: Pixels.of(0.022 * ppm), fill: Flat(eye_c) }))
 				}
 			}
 		}

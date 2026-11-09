@@ -2,7 +2,7 @@
 ## on the ground. Each stretch of bar between two points of the path, and
 ## each post, is a flat quad, which the depth sort places among the frame's
 ## other things.
-import Pixels
+import lib.Pixels
 import DepthSort
 import Distance
 import RiderView

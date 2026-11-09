@@ -1,7 +1,7 @@
 ## The convex hull of points on the screen: what wraps around them, clockwise
 ## from the leftmost. A cone's ring and its apex have a faster way to their
 ## hull, which keeps the ring's own order rather than sorting it.
-import Screen
+import lib.Point
 
 ConvexHull :: [].{
 
@@ -11,7 +11,7 @@ ConvexHull :: [].{
 	## the rightmost is already left to right, and merging the arcs and the apex
 	## puts the points in the hull's order without a sort. Where rounding leaves
 	## the merge out of that order, the points are sorted as usual.
-	cone_hull_points : List(Screen.Point), Screen.Point -> List(Screen.Point)
+	cone_hull_points : List(Point.Point), Point.Point -> List(Point.Point)
 	cone_hull_points = |ring_points, apex| {
 		count = ring_points.len()
 		if count < 2 {
@@ -25,7 +25,7 @@ ConvexHull :: [].{
 ## The convex hull of `points`, clockwise on the screen from the leftmost:
 ## Andrew's monotone chain, along the hull's top and back along its bottom.
 ## Fewer than three points are their own hull.
-convex_hull_points : List(Screen.Point) -> List(Screen.Point)
+convex_hull_points : List(Point.Point) -> List(Point.Point)
 convex_hull_points = |points|
 	if points.len() < 3 {
 		points
@@ -34,7 +34,7 @@ convex_hull_points = |points|
 	}
 
 ## The hull of three or more points already in `left_to_right` order.
-hull_points_of_sorted : List(Screen.Point) -> List(Screen.Point)
+hull_points_of_sorted : List(Point.Point) -> List(Point.Point)
 hull_points_of_sorted = |sorted| {
 	room = sorted.len()
 	add_point = |hull, point| trim_hull(hull, point).append(point)
@@ -44,7 +44,7 @@ hull_points_of_sorted = |sorted| {
 }
 
 ## What `cone_hull_points` gives for a ring of two or more points.
-ring_hull_points : { ring_points : List(Screen.Point), apex : Screen.Point } -> List(Screen.Point)
+ring_hull_points : { ring_points : List(Point.Point), apex : Point.Point } -> List(Point.Point)
 ring_hull_points = |{ ring_points, apex }| {
 	count = ring_points.len()
 	point_at = |index| ring_points.get(index % count) ?? crash "ConvexHull: a ring index wraps round the ring"
@@ -115,7 +115,7 @@ ring_hull_points = |{ ring_points, apex }| {
 MergeOrder : [InOrder, OutOfOrder]
 
 ## Whether the merge is still in order once `point` follows `previous`.
-order_after : MergeOrder, { previous : Screen.Point, point : Screen.Point } -> MergeOrder
+order_after : MergeOrder, { previous : Point.Point, point : Point.Point } -> MergeOrder
 order_after = |order, { previous, point }|
 	if is_before(point, previous) {
 		OutOfOrder
@@ -125,7 +125,7 @@ order_after = |order, { previous, point }|
 
 ## The order the hull walks points in: left to right, and top to bottom where
 ## they share an x.
-left_to_right : Screen.Point, Screen.Point -> [Before, Same, After]
+left_to_right : Point.Point, Point.Point -> [Before, Same, After]
 left_to_right = |a, b|
 	if is_before(a, b) {
 		Before
@@ -136,13 +136,13 @@ left_to_right = |a, b|
 	}
 
 ## Whether `a` comes before `b`: left of it, or above it at the same x.
-is_before : Screen.Point, Screen.Point -> Bool
+is_before : Point.Point, Point.Point -> Bool
 is_before = |a, b| a.x < b.x or (a.x == b.x and a.y < b.y)
 
 ## The hull with its last points taken off while they don't turn clockwise on
 ## the way to `point`. The screen's y grows downward, so a positive `turn` is
 ## clockwise as the eye sees it.
-trim_hull : List(Screen.Point), Screen.Point -> List(Screen.Point)
+trim_hull : List(Point.Point), Point.Point -> List(Point.Point)
 trim_hull = |hull_corners, point|
 	match hull_corners {
 		[.., a, b] => {
@@ -161,89 +161,89 @@ trim_hull = |hull_corners, point|
 	}
 
 # Of two points at one x the higher comes first, and of two equal points neither does.
-expect is_before(Screen.point(1.0, 9.0), Screen.point(2.0, 0.0))
-expect !is_before(Screen.point(2.0, 0.0), Screen.point(1.0, 9.0))
-expect is_before(Screen.point(1.0, 2.0), Screen.point(1.0, 3.0))
-expect !is_before(Screen.point(1.0, 3.0), Screen.point(1.0, 2.0))
-expect !is_before(Screen.point(1.0, 2.0), Screen.point(1.0, 2.0))
+expect is_before(Point.at(1.0, 9.0), Point.at(2.0, 0.0))
+expect !is_before(Point.at(2.0, 0.0), Point.at(1.0, 9.0))
+expect is_before(Point.at(1.0, 2.0), Point.at(1.0, 3.0))
+expect !is_before(Point.at(1.0, 3.0), Point.at(1.0, 2.0))
+expect !is_before(Point.at(1.0, 2.0), Point.at(1.0, 2.0))
 
-square_and_inside_points : List(Screen.Point)
+square_and_inside_points : List(Point.Point)
 square_and_inside_points = [
-	Screen.point(0.0, 0.0),
-	Screen.point(4.0, 0.0),
-	Screen.point(4.0, 4.0),
-	Screen.point(0.0, 4.0),
-	Screen.point(2.0, 2.0),
-	Screen.point(2.0, 0.0),
+	Point.at(0.0, 0.0),
+	Point.at(4.0, 0.0),
+	Point.at(4.0, 4.0),
+	Point.at(0.0, 4.0),
+	Point.at(2.0, 2.0),
+	Point.at(2.0, 0.0),
 ]
 
-triangle_points : List(Screen.Point)
+triangle_points : List(Point.Point)
 triangle_points = [
-	Screen.point(0.0, 0.0),
-	Screen.point(4.0, 0.0),
-	Screen.point(2.0, 3.0),
+	Point.at(0.0, 0.0),
+	Point.at(4.0, 0.0),
+	Point.at(2.0, 3.0),
 ]
 
-line_points : List(Screen.Point)
+line_points : List(Point.Point)
 line_points = [
-	Screen.point(0.0, 0.0),
-	Screen.point(1.0, 1.0),
-	Screen.point(2.0, 2.0),
-	Screen.point(3.0, 3.0),
+	Point.at(0.0, 0.0),
+	Point.at(1.0, 1.0),
+	Point.at(2.0, 2.0),
+	Point.at(3.0, 3.0),
 ]
 
-pair_points : List(Screen.Point)
-pair_points = [Screen.point(1.0, 2.0), Screen.point(0.0, 0.0)]
+pair_points : List(Point.Point)
+pair_points = [Point.at(1.0, 2.0), Point.at(0.0, 0.0)]
 
-repeated_points : List(Screen.Point)
+repeated_points : List(Point.Point)
 repeated_points = [
-	Screen.point(0.0, 0.0),
-	Screen.point(0.0, 0.0),
-	Screen.point(4.0, 0.0),
-	Screen.point(4.0, 4.0),
+	Point.at(0.0, 0.0),
+	Point.at(0.0, 0.0),
+	Point.at(4.0, 0.0),
+	Point.at(4.0, 4.0),
 ]
 
 expect convex_hull_points(square_and_inside_points) == [
-	Screen.point(0.0, 0.0),
-	Screen.point(4.0, 0.0),
-	Screen.point(4.0, 4.0),
-	Screen.point(0.0, 4.0),
+	Point.at(0.0, 0.0),
+	Point.at(4.0, 0.0),
+	Point.at(4.0, 4.0),
+	Point.at(0.0, 4.0),
 ]
 expect convex_hull_points(triangle_points) == [
-	Screen.point(0.0, 0.0),
-	Screen.point(4.0, 0.0),
-	Screen.point(2.0, 3.0),
+	Point.at(0.0, 0.0),
+	Point.at(4.0, 0.0),
+	Point.at(2.0, 3.0),
 ]
-expect convex_hull_points(line_points) == [Screen.point(0.0, 0.0), Screen.point(3.0, 3.0)]
-expect convex_hull_points(pair_points) == [Screen.point(1.0, 2.0), Screen.point(0.0, 0.0)]
-expect convex_hull_points([Screen.point(9.0, 9.0)]) == [Screen.point(9.0, 9.0)]
+expect convex_hull_points(line_points) == [Point.at(0.0, 0.0), Point.at(3.0, 3.0)]
+expect convex_hull_points(pair_points) == [Point.at(1.0, 2.0), Point.at(0.0, 0.0)]
+expect convex_hull_points([Point.at(9.0, 9.0)]) == [Point.at(9.0, 9.0)]
 expect convex_hull_points([]) == []
 expect convex_hull_points(repeated_points) == [
-	Screen.point(0.0, 0.0),
-	Screen.point(4.0, 0.0),
-	Screen.point(4.0, 4.0),
+	Point.at(0.0, 0.0),
+	Point.at(4.0, 0.0),
+	Point.at(4.0, 4.0),
 ]
 
 expect
 	square_and_inside_points.sort_with(left_to_right)
 		== [
-			Screen.point(0.0, 0.0),
-			Screen.point(0.0, 4.0),
-			Screen.point(2.0, 0.0),
-			Screen.point(2.0, 2.0),
-			Screen.point(4.0, 0.0),
-			Screen.point(4.0, 4.0),
+			Point.at(0.0, 0.0),
+			Point.at(0.0, 4.0),
+			Point.at(2.0, 0.0),
+			Point.at(2.0, 2.0),
+			Point.at(4.0, 0.0),
+			Point.at(4.0, 4.0),
 		]
 
 ## A ring of 16 points on an ellipse, in angle order from `start`, as a cone's
 ## ring looks on the screen.
-sample_ring_points : U64 -> List(Screen.Point)
+sample_ring_points : U64 -> List(Point.Point)
 sample_ring_points = |start| {
 	step = F64.tau / 16.0
 	var $angle = 0.0
 	var $ring = []
 	for _ in 0..<16 {
-		$ring = $ring.append(Screen.point(100.0 + 40.0 * $angle.cos(), 50.0 + 10.0 * $angle.sin()))
+		$ring = $ring.append(Point.at(100.0 + 40.0 * $angle.cos(), 50.0 + 10.0 * $angle.sin()))
 		$angle = $angle + step
 	}
 	$ring.drop_first(start).concat($ring.take_first(start))
@@ -254,9 +254,9 @@ sample_ring_points = |start| {
 # and with the ring in a shuffled order, where the merge falls back to the sort.
 expect {
 	apexes = [
-		Screen.point(100.0, 0.0),
-		Screen.point(100.0, 50.0),
-		Screen.point(130.0, 90.0),
+		Point.at(100.0, 0.0),
+		Point.at(100.0, 50.0),
+		Point.at(130.0, 90.0),
 	]
 	[0, 5, 11].all(
 		|start| {
@@ -272,6 +272,6 @@ expect {
 expect {
 	top_to_bottom = |a, b| left_to_right({ x: a.y, y: a.x }, { x: b.y, y: b.x })
 	shuffled = sample_ring_points(0).sort_with(top_to_bottom)
-	apex = Screen.point(100.0, 0.0)
+	apex = Point.at(100.0, 0.0)
 	ConvexHull.cone_hull_points(shuffled, apex) == convex_hull_points(shuffled.append(apex))
 }

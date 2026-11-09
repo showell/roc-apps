@@ -24,6 +24,7 @@ import lib.CanvasApp
 import lib.Input
 import lib.Shapes
 import lib.RgbColor
+import lib.Pixels
 import lib.Point
 import widget.PlanView
 import widget.ReadoutText
@@ -179,7 +180,7 @@ left_edge_metres = 130.0
 ## the segment, the road's middle a little below the top of the picture, and
 ## both directions to one scale.
 road_plan : PlanView
-road_plan = { origin: { x: 0.0, y: 52.0 }, pixels_a_metre: 2.4 }
+road_plan = { origin: Point.at(0.0, 52.0), pixels_a_metre: 2.4 }
 
 ## Where a point on the segment falls on the canvas. The road runs left to right,
 ## so the rider's right is down the canvas.
@@ -194,9 +195,9 @@ road : Shapes.Shape
 road = {
 	half_width = Geom.road_half_width.to_metres() * road_plan.pixels_a_metre
 	Rectangle({
-		top_left: { x: 0.0, y: road_plan.origin.y - half_width },
-		width: WidgetPage.canvas_width,
-		height: 2.0 * half_width,
+		top_left: Point.at(0.0, road_plan.origin.y.to_f64() - half_width),
+		width: Pixels.of(WidgetPage.canvas_width),
+		height: Pixels.of(2.0 * half_width),
 		fill: Brush.flat(WidgetPalette.plan_road_color),
 	})
 }
@@ -209,10 +210,12 @@ plan_disc : {
 	color : RgbColor,
 } -> Shapes.Shape
 plan_disc = |{ along, across, radius, color }| {
-	{ x, y } = canvas_point({ along, across })
+	on_canvas = canvas_point({ along, across })
+	x = on_canvas.x.to_f64()
+	y = on_canvas.y.to_f64()
 	Disc({
-		center: { x, y },
-		radius,
+		center: Point.at(x, y),
+		radius: Pixels.of(radius),
 		fill: Brush.flat(color),
 	})
 }
@@ -245,8 +248,8 @@ pigs = {
 		.append(
 			WidgetPage.label({
 				text: "the pig",
-				x: pig_on_canvas.x - 62.0,
-				y: pig_on_canvas.y + 20.0,
+				x: pig_on_canvas.x.to_f64() - 62.0,
+				y: pig_on_canvas.y.to_f64() + 20.0,
 			}),
 		)
 }
@@ -255,14 +258,16 @@ pigs = {
 ## road by the bike's yaw and the rider's gaze.
 sight_line : Rider -> Shapes.Shape
 sight_line = |rider| {
-	{ x, y } = canvas_point(rider.motorcycle.route_place.road_point)
+	on_canvas = canvas_point(rider.motorcycle.route_place.road_point)
+	x = on_canvas.x.to_f64()
+	y = on_canvas.y.to_f64()
 	turn = rider.motorcycle.yaw.plus(rider.eyes.gaze_yaw).to_radians()
 	reach = Gaze.notice_distance.to_metres() * road_plan.pixels_a_metre
 	Shapes.line(
 		{
-			from: { x, y },
-			to: { x: x + reach * turn.cos(), y: y + reach * turn.sin() },
-			width: 2.0,
+			from: Point.at(x, y),
+			to: Point.at(x + reach * turn.cos(), y + reach * turn.sin()),
+			width: Pixels.of(2.0),
 		},
 		Brush.flat(WidgetPalette.aim_color),
 	)
@@ -360,7 +365,7 @@ expect
 	stretch_states.all(
 		|rider| {
 			place = rider.motorcycle.route_place
-			canvas_x = canvas_point(place.road_point).x
+			canvas_x = canvas_point(place.road_point).x.to_f64()
 			place.segment_index == first_rider.motorcycle.route_place.segment_index
 				and canvas_x > 0.0
 				and canvas_x < WidgetPage.canvas_width
@@ -425,8 +430,8 @@ expect {
 }
 
 # The pig that catches the eye is in the picture, and is one of the herd.
-expect canvas_point(gaze_pig.road_point).x < WidgetPage.canvas_width
-expect canvas_point(gaze_pig.road_point).y < WidgetPage.picture_bottom_y
+expect canvas_point(gaze_pig.road_point).x.to_f64() < WidgetPage.canvas_width
+expect canvas_point(gaze_pig.road_point).y.to_f64() < WidgetPage.picture_bottom_y
 expect pig_segment.segment_pigs().count_if(|pig| pig == gaze_pig) == 1
 
 expect

@@ -4,6 +4,8 @@
 # four seconds of nothing once the house is behind you, so there is a lamp
 # where the child is going: a pole on the plane it stands in, the lamp, and
 # the glow around it, which is the one warm thing on the way out.
+import lib.Pixels
+import lib.Point
 import lib.Shapes
 import lib.ArgbColor
 import lib.Brush
@@ -32,8 +34,8 @@ Streetlight :: [].{
 				List.concat(
 					Panels.face(v, fwd, [stands_at - 0.06, 0.0, stands_at + 0.06, 0.0, stands_at + 0.06, lamp_high, stands_at - 0.06, lamp_high], Flat(pole_c)),
 					[
-						Disc({ center: { x: p.x, y: p.y }, radius: 1.4 * ppm, fill: Radial({ inner_color: Brush.translucent(ArgbColor.of(0x80ffe9a8)), outer_color: Brush.translucent(ArgbColor.of(0x00ffe9a8)), center: { x: p.x, y: p.y }, inner_radius: 0.0, outer_radius: 1.4 * ppm }) }),
-						Disc({ center: { x: p.x, y: p.y }, radius: 0.24 * ppm, fill: Flat(lamp_c) }),
+						Disc({ center: Point.at(p.x, p.y), radius: Pixels.of(1.4 * ppm), fill: Radial({ inner_color: Brush.translucent(ArgbColor.of(0x80ffe9a8)), outer_color: Brush.translucent(ArgbColor.of(0x00ffe9a8)), center: Point.at(p.x, p.y), inner_radius: Pixels.of(0.0), outer_radius: Pixels.of(1.4 * ppm) }) }),
+						Disc({ center: Point.at(p.x, p.y), radius: Pixels.of(0.24 * ppm), fill: Flat(lamp_c) }),
 					],
 				)
 		}

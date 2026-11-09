@@ -10,11 +10,12 @@
 ## is only scaled with the focal length: it isn't stretched toward the screen's
 ## sides, as a pinhole would stretch it, so a far height stays level across the
 ## view as the rider turns.
-import Pixels
+import lib.Point
+import lib.Pixels
 import Angle
 import FarHeight
 import FarRise
-import Fraction
+import lib.Fraction
 import Screen
 
 Lens :: [].{
@@ -46,7 +47,7 @@ Lens :: [].{
 		turn : Angle.Turn,
 		height : FarHeight,
 		focal_length : Pixels,
-	} -> Try(Screen.Point, [BehindCamera])
+	} -> Try(Point.Point, [BehindCamera])
 	far_point = |{ turn, height, focal_length }|
 		if turn.abs() >= quarter_turn {
 			Err(BehindCamera)
@@ -150,7 +151,7 @@ expect
 
 ## Where a far point on the horizon lands at a turn of `radians`, through the
 ## lens at rest.
-far_point_at_turn : F64 -> Try(Screen.Point, [BehindCamera])
+far_point_at_turn : F64 -> Try(Point.Point, [BehindCamera])
 far_point_at_turn = |radians|
 	Lens.far_point({
 		turn: Angle.Turn.radians(radians),

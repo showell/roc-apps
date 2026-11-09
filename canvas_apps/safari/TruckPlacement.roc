@@ -2,7 +2,7 @@
 ## thing that faces along the road, so each of its points stands through
 ## `Spot.standing_point`, turned by nothing beyond the road's own heading.
 import Angle
-import Pixels
+import lib.Pixels
 import Polygon
 import RiderView
 import Spot

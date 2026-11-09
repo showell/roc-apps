@@ -6,7 +6,7 @@ import Conifer
 import Distance
 import RoadAhead
 import Pipeline
-import Pixels
+import lib.Pixels
 import Rendered
 import TreeShapes
 

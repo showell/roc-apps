@@ -8,6 +8,7 @@
 # every x toward the figure's own middle by the cosine of the angle it is
 # turned through, and a negative factor mirrors it as well, so the two files
 # flanking the path face each other rather than both facing right.
+import lib.Pixels
 import lib.Shapes
 import Eye
 import Skeleton
@@ -73,7 +74,7 @@ Guards :: [].{
 					[]
 				} else {
 					k = facing(sx, sz, now, lag, tilt, side)
-					Shapes.squashed_shapes(Skeleton.figure(t, feet.x, feet.y, s), { axis: feet.x, cosine: k })
+					Shapes.squashed_shapes(Skeleton.figure(t, feet.x, feet.y, s), { axis: Pixels.of(feet.x), cosine: k })
 				}
 			}
 			Err(BehindEye) => []

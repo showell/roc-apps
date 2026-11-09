@@ -6,7 +6,8 @@ import Angle
 import Clock
 import FarRise
 import Lens
-import Pixels
+import lib.Point
+import lib.Pixels
 import Screen
 import SunPath
 import lib.Brush
@@ -17,7 +18,7 @@ Sun :: [].{
 
 	## Where the sun stands on the screen, and the focal length of the lens it
 	## is seen through, which sizes its glow and disc.
-	OnScreen : { center : Screen.Point, focal_length : Pixels }
+	OnScreen : { center : Point.Point, focal_length : Pixels }
 
 	## The sun in a frame: in view at its place, or out of view, too far to
 	## the side of where the rider faces.
@@ -69,8 +70,8 @@ Sun :: [].{
 				[
 					Screen.above_horizon_rect(look.glow),
 					Disc({
-						center: { x: sun.center.x.to_f64(), y: sun.center.y.to_f64() },
-						radius: Sun.disc_radius_on_screen(sun).to_f64(),
+						center: sun.center,
+						radius: Sun.disc_radius_on_screen(sun),
 						fill: look.disc,
 					}),
 				]
@@ -87,16 +88,16 @@ Sun :: [].{
 				middle_color: Brush.with_alpha(RgbColor.of(0xFF965C), 0.32),
 				outer_color: Brush.with_alpha(RgbColor.of(0xFF965C), 0.0),
 				middle_offset: 0.4,
-				center: { x: sun.center.x.to_f64(), y: sun.center.y.to_f64() },
-				inner_radius: sun_size_on_screen(glow_inner_radius, sun).to_f64(),
-				outer_radius: Sun.glow_radius_on_screen(sun).to_f64(),
+				center: sun.center,
+				inner_radius: sun_size_on_screen(glow_inner_radius, sun),
+				outer_radius: Sun.glow_radius_on_screen(sun),
 			}),
 			disc: Radial({
 				inner_color: Brush.opaque_rgba(RgbColor.of(0xFFE6A3)),
 				outer_color: Brush.opaque_rgba(RgbColor.of(0xFF9D5C)),
-				center: { x: sun.center.x.to_f64(), y: sun.center.y.to_f64() },
-				inner_radius: sun_size_on_screen(disc_inner_radius, sun).to_f64(),
-				outer_radius: Sun.disc_radius_on_screen(sun).to_f64(),
+				center: sun.center,
+				inner_radius: sun_size_on_screen(disc_inner_radius, sun),
+				outer_radius: Sun.disc_radius_on_screen(sun),
 			}),
 		}
 }
@@ -167,7 +168,7 @@ expect {
 	half_focal_length = Lens.resting_focal_length.times(0.5)
 	facing_sun = { heading: SunPath.bearing_at(Clock.start), focal_length: half_focal_length }
 	sighting = Sun.sun_in_view(facing_sun, Clock.start)
-	half_on_screen = { center: Screen.point(480.0, 168.744), focal_length: half_focal_length }
+	half_on_screen = { center: Point.at(480.0, 168.744), focal_length: half_focal_length }
 	is_in_view_at(
 		sighting,
 		{

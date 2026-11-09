@@ -5,6 +5,8 @@
 # whatever the eye is doing, so the sky and the lawn are screen rectangles;
 # the street and the walkway are ground, and go through the camera like
 # anything else.
+import lib.Pixels
+import lib.Point
 import lib.Shapes
 import lib.Brush
 import lib.RgbColor
@@ -40,11 +42,11 @@ Night :: [].{
 	backdrop = |v| {
 		horizon = v.height / 2.0
 		var $out = [
-			Rectangle({ top_left: { x: 0.0, y: 0.0 }, width: v.width, height: horizon + 1.0, fill: Linear({ stops: { start_color: sky_high, end_color: sky_low, start_offset: 0.0, end_offset: 1.0 }, start_point: { x: 0.0, y: 0.0 }, end_point: { x: 0.0, y: horizon } }) }),
-			Rectangle({ top_left: { x: 0.0, y: horizon }, width: v.width, height: v.height - horizon, fill: Flat(lawn) }),
+			Rectangle({ top_left: Point.at(0.0, 0.0), width: Pixels.of(v.width), height: Pixels.of(horizon + 1.0), fill: Linear({ stops: { start_color: sky_high, end_color: sky_low, start_offset: 0.0, end_offset: 1.0 }, start_point: Point.at(0.0, 0.0), end_point: Point.at(0.0, horizon) }) }),
+			Rectangle({ top_left: Point.at(0.0, horizon), width: Pixels.of(v.width), height: Pixels.of(v.height - horizon), fill: Flat(lawn) }),
 		]
 		match Eye.sighting(v, moon_at) {
-			Ok({ point: p, pixels_per_metre }) => List.append($out, Disc({ center: { x: p.x, y: p.y }, radius: 32.0 * pixels_per_metre, fill: Flat(moon_c) }))
+			Ok({ point: p, pixels_per_metre }) => List.append($out, Disc({ center: Point.at(p.x, p.y), radius: Pixels.of(32.0 * pixels_per_metre), fill: Flat(moon_c) }))
 			Err(BehindEye) => $out
 		}
 	}

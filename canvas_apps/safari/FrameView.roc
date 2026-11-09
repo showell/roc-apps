@@ -7,7 +7,7 @@ import Grass
 import GroundPatch
 import GroundSighting
 import Pipeline
-import Pixels
+import lib.Pixels
 import RideInstant
 import RoadAhead
 import RiderCamera
@@ -19,7 +19,7 @@ import Skyline
 import Sun
 import TruckBrakeLights
 import TruckHeadlights
-import Pixels
+import lib.Pixels
 import lib.Shapes
 
 ## What the camera shows at one instant of the ride, worked out from the

@@ -85,10 +85,10 @@ A generator can only emit what the type table carries, and the type table
 carries what the platform declares. `canvas_apps/web/platform/main.roc` says
 
 ```roc
-frame : Box(model) -> List(Frame.Shape)
+frame : Box(model) -> List(Shapes.Shape)
 ```
 
-and `Frame.roc` spells that type out, so the table holds every shape, every
+and lib's `Shapes.roc` spells that type out, so the table holds every shape, every
 brush and their exact layouts. A platform that flattened its frame to
 `List(U32)` first would get a reader for a list of integers and nothing more,
 however much of the type system the generator understood.

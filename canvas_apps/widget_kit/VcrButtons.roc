@@ -9,6 +9,7 @@ import lib.Brush
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
+import lib.Pixels
 import lib.Point
 import Click
 import WidgetPage
@@ -78,7 +79,10 @@ VcrButtons :: [].{
 			title,
 			frames_a_second: WidgetPage.moving_frames_a_second,
 			init: VcrButtons.transport_at(opens_at),
-			model_at_next_step: |transport, input| VcrButtons.next_transport(transport, { input, range }),
+			model_at_next_step: |transport, input| VcrButtons.next_transport(
+				transport,
+				{ input, range },
+			),
 			frame_shapes,
 		})
 
@@ -117,7 +121,7 @@ VcrButtons :: [].{
 	click_on = |control| {
 		button = buttons.find_first(|each| each.control == control)
 			?? crash "VcrButtons.click_on: every control has a button"
-		Click.click_at({ x: button.left + button_width / 2.0, y: button_middle_y })
+		Click.click_at(Point.at(button.left + button_width / 2.0, button_middle_y))
 	}
 
 	## Everything on the canvas: the page, with the buttons on it.
@@ -197,14 +201,8 @@ transport_after_press = |transport, { control, range }|
 	match control {
 		ToStart => VcrButtons.transport_at(range.first)
 		PlayBack => { ..transport, motion: toggle({ running: transport.motion, wanted: Backward }) }
-		StepBack => transport_moved_by(
-			{ ..transport, motion: Stopped },
-			{ by: -1.0, range },
-		)
-		StepForward => transport_moved_by(
-			{ ..transport, motion: Stopped },
-			{ by: 1.0, range },
-		)
+		StepBack => transport_moved_by({ ..transport, motion: Stopped }, { by: -1.0, range })
+		StepForward => transport_moved_by({ ..transport, motion: Stopped }, { by: 1.0, range })
 		Play =>
 			if place_in(range, transport.at) == place_in(range, range.last) {
 				{ at: range.first, motion: Forward }
@@ -275,9 +273,9 @@ button_middle_y = button_top + button_height / 2.0
 triangle : { tip_x : F64, reach : F64 } -> Shapes.Shape
 triangle = |{ tip_x, reach }|
 	Triangle({
-		first: { x: tip_x - reach, y: button_middle_y - 7.0 },
-		second: { x: tip_x, y: button_middle_y },
-		third: { x: tip_x - reach, y: button_middle_y + 7.0 },
+		first: Point.at(tip_x - reach, button_middle_y - 7.0),
+		second: Point.at(tip_x, button_middle_y),
+		third: Point.at(tip_x - reach, button_middle_y + 7.0),
 		fill: Brush.flat(WidgetPalette.button_icon_color),
 	})
 
@@ -285,9 +283,9 @@ triangle = |{ tip_x, reach }|
 bar : F64 -> Shapes.Shape
 bar = |x|
 	Rectangle({
-		top_left: { x, y: button_middle_y - 7.0 },
-		width: 3.0,
-		height: 14.0,
+		top_left: Point.at(x, button_middle_y - 7.0),
+		width: Pixels.of(3.0),
+		height: Pixels.of(14.0),
 		fill: Brush.flat(WidgetPalette.button_icon_color),
 	})
 
@@ -318,9 +316,9 @@ button_shapes = |button, motion| {
 		}
 	[
 		Rectangle({
-			top_left: { x: button.left, y: button_top },
-			width: button_width,
-			height: button_height,
+			top_left: Point.at(button.left, button_top),
+			width: Pixels.of(button_width),
+			height: Pixels.of(button_height),
 			fill: Brush.flat(color),
 		}),
 	].concat(icon_shapes(button.control, { middle: button.left + button_width / 2.0, light }))
@@ -399,20 +397,20 @@ expect clock_after_press(stopped_at(100), ToEnd) == stopped_at(6000)
 
 # A click off the buttons does nothing: above, below and between them, and at the
 # first pixel past each edge.
-expect clock_after_click(stopped_at(0), { x: 320.0, y: 100.0 }) == stopped_at(0)
-expect clock_after_click(stopped_at(0), { x: 320.0, y: 300.0 }) == stopped_at(0)
-expect clock_after_click(stopped_at(0), { x: 70.0, y: 234.0 }) == stopped_at(0)
-expect clock_after_click(stopped_at(0), { x: 23.0, y: 234.0 }) == stopped_at(0)
-expect clock_after_click(stopped_at(100), { x: 196.0, y: 221.0 }) == stopped_at(100)
-expect clock_after_click(stopped_at(100), { x: 196.0, y: 246.0 }) == stopped_at(100)
-expect clock_after_click(stopped_at(100), { x: 268.0, y: 234.0 }) == stopped_at(100)
-expect clock_after_click(stopped_at(100), { x: 196.0, y: 222.0 }) == stopped_at(101)
-expect clock_after_click(stopped_at(100), { x: 174.0, y: 245.0 }) == stopped_at(101)
+expect clock_after_click(stopped_at(0), Point.at(320.0, 100.0)) == stopped_at(0)
+expect clock_after_click(stopped_at(0), Point.at(320.0, 300.0)) == stopped_at(0)
+expect clock_after_click(stopped_at(0), Point.at(70.0, 234.0)) == stopped_at(0)
+expect clock_after_click(stopped_at(0), Point.at(23.0, 234.0)) == stopped_at(0)
+expect clock_after_click(stopped_at(100), Point.at(196.0, 221.0)) == stopped_at(100)
+expect clock_after_click(stopped_at(100), Point.at(196.0, 246.0)) == stopped_at(100)
+expect clock_after_click(stopped_at(100), Point.at(268.0, 234.0)) == stopped_at(100)
+expect clock_after_click(stopped_at(100), Point.at(196.0, 222.0)) == stopped_at(101)
+expect clock_after_click(stopped_at(100), Point.at(174.0, 245.0)) == stopped_at(101)
 
 # A click off the buttons leaves a running number running.
 expect clock_after_click(
 	running_at(100, Forward),
-	{ x: 320.0, y: 100.0 },
+	Point.at(320.0, 100.0),
 ) == running_at(108, Forward)
 
 # A lit play button pauses, the other one turns the number round, and a step stops
@@ -438,10 +436,7 @@ expect clock_after_press(stopped_at(5999), StepForward) == stopped_at(6000)
 expect
 	VcrButtons.next_transport(
 		stopped_at(100),
-		{
-			input: Click.held_at({ x: 196.0, y: 234.0 }),
-			range: sample_clock_run,
-		},
+		{ input: Click.held_at(Point.at(196.0, 234.0)), range: sample_clock_run },
 	)
 		== stopped_at(100)
 
@@ -510,9 +505,9 @@ expect gap_after_press(Distance.metres(50.0), StepBack).at == Distance.metres(50
 expect gap_after_press(Distance.zero, StepForward).at == Distance.zero
 
 # A spot picks the button under it, and a spot past the last button picks none.
-expect control_at({ x: 90.0, y: 234.0 }) == Ok(PlayBack)
-expect control_at({ x: 240.0, y: 234.0 }) == Ok(Play)
-expect control_at({ x: 340.0, y: 234.0 }) == Err(NoButton)
+expect control_at(Point.at(90.0, 234.0)) == Ok(PlayBack)
+expect control_at(Point.at(240.0, 234.0)) == Ok(Play)
+expect control_at(Point.at(340.0, 234.0)) == Err(NoButton)
 
 ## The sample clock caught up with a picture at step 40.
 caught_up_to_forty : Input.Snapshot -> VcrButtons.Transport(Clock)
@@ -522,8 +517,8 @@ caught_up_to_forty = |input|
 # A press counts from what's on show, and only a press on a button does.
 expect caught_up_to_forty(VcrButtons.click_on(StepBack)) == stopped_at(40)
 expect caught_up_to_forty(Input.none) == stopped_at(6000)
-expect caught_up_to_forty(Click.click_at({ x: 320.0, y: 100.0 })) == stopped_at(6000)
-expect caught_up_to_forty(Click.held_at({ x: 196.0, y: 234.0 })) == stopped_at(6000)
+expect caught_up_to_forty(Click.click_at(Point.at(320.0, 100.0))) == stopped_at(6000)
+expect caught_up_to_forty(Click.held_at(Point.at(196.0, 234.0))) == stopped_at(6000)
 
 # The hint shows until the number has moved or started to.
 expect hint_shapes(stopped_at(0), sample_clock_run).len() == 1

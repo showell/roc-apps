@@ -4,11 +4,12 @@
 import Clock
 import FarHeight
 import FarRise
-import Fraction
+import lib.Fraction
 import ColorShade
 import Screen
 import SunPath
 import lib.Brush
+import lib.Pixels
 import lib.RgbColor
 import lib.Shapes
 
@@ -58,8 +59,8 @@ Sky :: [].{
 					start_offset: sky_top_stop.to_f64(),
 					end_offset: 1.0,
 				},
-				start_point: { x: 0.0, y: 0.0 },
-				end_point: { x: 0.0, y: Screen.horizon_y.to_f64() },
+				start_point: { x: Pixels.zero, y: Pixels.zero },
+				end_point: { x: Pixels.zero, y: Screen.horizon_y },
 			}),
 		)
 }

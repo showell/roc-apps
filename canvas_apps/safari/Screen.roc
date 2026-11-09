@@ -2,21 +2,15 @@
 ## crosses it before the camera rolls, and the space the frame leans in once it
 ## does.
 import Angle
-import Pixels
+import lib.Point
+import lib.Pixels
 import lib.Brush
 import lib.Shapes
 
 Screen :: [].{
 
-	## A point on the screen, in pixels from its top left corner. Either can be
-	## negative, or past the far edge, for a point off the screen.
-	Point : { x : Pixels, y : Pixels }
-
-	point : F64, F64 -> Screen.Point
-	point = |x, y| { x: Pixels.of(x), y: Pixels.of(y) }
-
 	## The distance between two points on the screen.
-	distance : { from : Screen.Point, to : Screen.Point } -> Pixels
+	distance : { from : Point.Point, to : Point.Point } -> Pixels
 	distance = |{ from, to }| {
 		dx = from.x.minus(to.x).to_f64()
 		dy = from.y.minus(to.y).to_f64()
@@ -25,7 +19,7 @@ Screen :: [].{
 
 	## How far the farthest of `points` is from `center`, or zero for no
 	## points.
-	farthest_distance : List(Screen.Point), Screen.Point -> Pixels
+	farthest_distance : List(Point.Point), Point.Point -> Pixels
 	farthest_distance = |points, center|
 		points.fold_rev(
 			Pixels.zero,
@@ -46,7 +40,7 @@ Screen :: [].{
 	height = Pixels.of(height_px.to_f64())
 
 	## The middle of the screen, halfway across it and halfway down.
-	middle : Screen.Point
+	middle : Point.Point
 	middle = { x: width.divided_by(2.0), y: height.divided_by(2.0) }
 
 	## The camera looks at the middle of the screen, across its width.
@@ -84,9 +78,9 @@ Screen :: [].{
 	margin_rect : { top : Pixels, bottom : Pixels }, Brush.Fill -> Shapes.Shape
 	margin_rect = |{ top, bottom }, fill|
 		Rectangle({
-			top_left: { x: drawn_left.to_f64(), y: top.to_f64() },
-			width: drawn_right.minus(drawn_left).to_f64(),
-			height: bottom.minus(top).to_f64(),
+			top_left: { x: drawn_left, y: top },
+			width: drawn_right.minus(drawn_left),
+			height: bottom.minus(top),
 			fill,
 		})
 
@@ -100,29 +94,28 @@ Screen :: [].{
 	## the screen turns by minus the roll about its middle.
 	leaned_by : Angle.Lean -> Shapes.Space
 	leaned_by = |roll| {
-		middle_coordinates = { x: middle.x.to_f64(), y: middle.y.to_f64() }
 		Shapes.world_space({
-			target: middle_coordinates,
-			offset: middle_coordinates,
+			target: middle,
+			offset: middle,
 			rotation: 0.0 - roll.to_degrees(),
 			zoom: 1.0,
 		})
 	}
 }
 
-expect Screen.distance({ from: Screen.point(3.0, 4.0), to: Screen.point(0.0, 0.0) }).to_f64() == 5.0
-expect Screen.distance({ from: Screen.point(0.0, 0.0), to: Screen.point(3.0, 4.0) }).to_f64() == 5.0
-expect Screen.distance({ from: Screen.point(0.0, 0.0), to: Screen.point(0.0, 0.0) }).to_f64() == 0.0
+expect Screen.distance({ from: Point.at(3.0, 4.0), to: Point.at(0.0, 0.0) }).to_f64() == 5.0
+expect Screen.distance({ from: Point.at(0.0, 0.0), to: Point.at(3.0, 4.0) }).to_f64() == 5.0
+expect Screen.distance({ from: Point.at(0.0, 0.0), to: Point.at(0.0, 0.0) }).to_f64() == 0.0
 
 expect
 	Screen.farthest_distance(
 		[
-			Screen.point(3.0, 4.0),
-			Screen.point(6.0, 8.0),
-			Screen.point(0.0, 0.0),
-			Screen.point(7.0, 4.0),
+			Point.at(3.0, 4.0),
+			Point.at(6.0, 8.0),
+			Point.at(0.0, 0.0),
+			Point.at(7.0, 4.0),
 		],
-		Screen.point(0.0, 0.0),
+		Point.at(0.0, 0.0),
 	).to_f64()
 		== 10.0
 

@@ -22,7 +22,9 @@ ScanlineFill :: [].{
 		fill : Brush.Fill,
 	} -> List(U32)
 	polygon_pixels = |pixels, { roll, corners: scene_corners, fill }| {
-		corners = scene_corners.map(|{ x, y }| roll.to_screen(ScreenRoll.ScenePoint.({ x, y })))
+		corners = scene_corners.map(
+			|{ x, y }| roll.to_screen(ScreenRoll.ScenePoint.({ x: x.to_f64(), y: y.to_f64() })),
+		)
 		match corners {
 			[first, _, _, ..] => {
 				next_corners = corners.drop_first(1).concat(corners.take_first(1))
@@ -199,7 +201,7 @@ pixels_with_span = |pixels, { roll, fill, row, from, to }| {
 			Flat(flat) => flat
 			Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) => {
 				p = roll.to_scene(ScreenRoll.pixel_point({ row, column }))
-				Brush.shade(fill, p)
+				Brush.shade(fill, Point.at(p.x, p.y))
 			}
 		}
 		$px = PixelGrid.blended_pixels($px, { at, color })

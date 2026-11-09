@@ -161,7 +161,7 @@ stills_models = {
 	seconds = CanvasApp.seconds_a_step(stills_app)
 	still_names(stills_first_frame_shapes).map(
 		|name| {
-			click = Click.click_at({ x: name.x, y: name.y })
+			click = Click.click_at(Point.at(name.x, name.y))
 			model_at_next_step(stills_app.init, click, seconds)
 		},
 	)
@@ -179,7 +179,7 @@ picture_points = |shapes| {
 				Text(_) | Disc(_) | Rectangle(_) | Blend(_) | View(_) | Image(_) => Err(NotPolygon)
 			},
 	)
-	is_above_panel = |point| point.y < WidgetPage.picture_bottom_y
+	is_above_panel = |point| point.y.to_f64() < WidgetPage.picture_bottom_y
 	polygons.keep_if(|corners| corners.all(is_above_panel)).join()
 }
 
@@ -188,7 +188,7 @@ picture_points = |shapes| {
 is_type_left_of_still : List(Shapes.Shape) -> Bool
 is_type_left_of_still = |shapes| {
 	lines = lines_of_type(shapes).keep_if(|line| line.y < WidgetPage.picture_bottom_y)
-	match picture_points(shapes).map(|point| point.x).min() {
+	match picture_points(shapes).map(|point| point.x.to_f64()).min() {
 		Ok(still_left) => {
 			is_left_of_still = |line| {
 				line_end = line.x + Font.room_for(line.text, line.size)
@@ -210,7 +210,10 @@ expect {
 }
 expect
 	match still_names(stills_first_frame_shapes) {
-		[first, ..] as names => !fits_cell_of(names, { name: first, text: "Collapse, and then some" })
+		[first, ..] as names => !fits_cell_of(
+			names,
+			{ name: first, text: "Collapse, and then some" },
+		)
 		[] => False
 	}
 

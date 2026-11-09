@@ -13,6 +13,8 @@ import lib.Brush
 import lib.Font
 import lib.Math
 import lib.RgbColor
+import lib.Pixels
+import lib.Point
 import lib.Shapes
 import Rules
 
@@ -33,12 +35,12 @@ WorkshopDraw :: [].{
 
 	frame : Rules.World -> List(Shapes.Shape)
 	frame = |world| {
-		var $out = [Rectangle({ top_left: { x: 0.0, y: 0.0 }, width: 800.0, height: 600.0, fill: Flat(theme.bg) })]
-		$out = List.concat($out, Font.text_shapes("Pixel Workshop", { top_left: { x: 72.0, y: 12.0 }, size: 20.0, color: theme.ink }))
-		$out = List.concat($out, Font.text_shapes("Canvas, palette and brush sound all generated at startup", { top_left: { x: 72.0, y: 44.0 }, size: 12.0, color: theme.muted }))
+		var $out = [Rectangle({ top_left: Point.at(0.0, 0.0), width: Pixels.of(800.0), height: Pixels.of(600.0), fill: Flat(theme.bg) })]
+		$out = List.concat($out, Font.text_shapes("Pixel Workshop", { top_left: Point.at(72.0, 12.0), size: 20.0, color: theme.ink }))
+		$out = List.concat($out, Font.text_shapes("Canvas, palette and brush sound all generated at startup", { top_left: Point.at(72.0, 44.0), size: 12.0, color: theme.muted }))
 		$out = List.concat($out, canvas(world))
 		$out = List.concat($out, palette(world))
-		List.concat($out, Font.text_shapes("Drag to paint  |  1-4 pick a colour  |  C restores the design", { top_left: { x: 72.0, y: 562.0 }, size: 11.0, color: theme.faint }))
+		List.concat($out, Font.text_shapes("Drag to paint  |  1-4 pick a colour  |  C restores the design", { top_left: Point.at(72.0, 562.0), size: 11.0, color: theme.faint }))
 	}
 
 	# ── the canvas ─────────────────────────────────────────────────────────
@@ -90,7 +92,7 @@ WorkshopDraw :: [].{
 	palette : Rules.World -> List(Shapes.Shape)
 	palette = |world| {
 		var $out = card({ x: 594.0, y: 108.0, width: 150.0, height: 348.0, corner_radius: 12.0 })
-		$out = List.concat($out, Font.text_shapes("Palette", { top_left: { x: 610.0, y: 126.0 }, size: 16.0, color: theme.ink }))
+		$out = List.concat($out, Font.text_shapes("Palette", { top_left: Point.at(610.0, 126.0), size: 16.0, color: theme.ink }))
 		var $i = 0
 		while $i < 4 {
 			$out = List.concat($out, swatch($i, world.palette, world.mouse))
@@ -122,8 +124,8 @@ WorkshopDraw :: [].{
 		# exact because what it sits on is the panel's flat colour.
 		var $out = []
 		if chosen {
-			$out = List.append($out, Shapes.rounded_rect({ x: x - 5.0, y: y - 5.0, width: w + 10.0, height: h + 10.0, corner_radius: 11.0, corner_steps: 8 }, Flat(theme.accent)))
-			$out = List.append($out, Shapes.rounded_rect({ x: x - 3.0, y: y - 3.0, width: w + 6.0, height: h + 6.0, corner_radius: 9.0, corner_steps: 8 }, Flat(theme.panel)))
+			$out = List.append($out, Shapes.rounded_rect({ top_left: Point.at(x - 5.0, y - 5.0), width: Pixels.of(w + 10.0), height: Pixels.of(h + 10.0), corner_radius: Pixels.of(11.0), corner_steps: 8 }, Flat(theme.accent)))
+			$out = List.append($out, Shapes.rounded_rect({ top_left: Point.at(x - 3.0, y - 3.0), width: Pixels.of(w + 6.0), height: Pixels.of(h + 6.0), corner_radius: Pixels.of(9.0), corner_steps: 8 }, Flat(theme.panel)))
 		} else {
 			{}
 		}
@@ -132,8 +134,8 @@ WorkshopDraw :: [].{
 		} else {
 			2.0
 		}
-		$out = List.append($out, Shapes.rounded_rect({ x: x - lip, y: y - lip, width: w + lip * 2.0, height: h + lip * 2.0, corner_radius: 8.0 + lip, corner_steps: 8 }, Flat(edge)))
-		$out = List.append($out, Shapes.rounded_rect({ x, y, width: w, height: h, corner_radius: 8.0, corner_steps: 8 }, Brush.flat(Rules.palette_color(index))))
+		$out = List.append($out, Shapes.rounded_rect({ top_left: Point.at(x - lip, y - lip), width: Pixels.of(w + lip * 2.0), height: Pixels.of(h + lip * 2.0), corner_radius: Pixels.of(8.0 + lip), corner_steps: 8 }, Flat(edge)))
+		$out = List.append($out, Shapes.rounded_rect({ top_left: Point.at(x, y), width: Pixels.of(w), height: Pixels.of(h), corner_radius: Pixels.of(8.0), corner_steps: 8 }, Brush.flat(Rules.palette_color(index))))
 
 		# The number beside the swatch, centred on upstream's anchor.
 		digit = U64.to_str(index + 1)
@@ -142,7 +144,7 @@ WorkshopDraw :: [].{
 		} else {
 			theme.faint
 		}
-		List.concat($out, Font.text_shapes(digit, { top_left: { x: 752.0 - Font.width_of(digit, 18.0) / 2.0, y: y + 25.0 - 9.0 }, size: 18.0, color: ink }))
+		List.concat($out, Font.text_shapes(digit, { top_left: Point.at(752.0 - Font.width_of(digit, 18.0) / 2.0, y + 25.0 - 9.0), size: 18.0, color: ink }))
 	}
 
 	# ── the small arithmetic ───────────────────────────────────────────────
@@ -151,23 +153,23 @@ WorkshopDraw :: [].{
 	card : { x : F64, y : F64, width : F64, height : F64, corner_radius : F64 } -> List(Shapes.Shape)
 	card = |{ x, y, width, height, corner_radius }|
 		[
-			Shapes.rounded_rect({ x: x - 1.0, y: y - 1.0, width: width + 2.0, height: height + 2.0, corner_radius: corner_radius + 1.0, corner_steps: 8 }, Flat(theme.edge)),
-			Shapes.rounded_rect({ x, y, width, height, corner_radius, corner_steps: 8 }, Flat(theme.panel)),
+			Shapes.rounded_rect({ top_left: Point.at(x - 1.0, y - 1.0), width: Pixels.of(width + 2.0), height: Pixels.of(height + 2.0), corner_radius: Pixels.of(corner_radius + 1.0), corner_steps: 8 }, Flat(theme.edge)),
+			Shapes.rounded_rect({ top_left: Point.at(x, y), width: Pixels.of(width), height: Pixels.of(height), corner_radius: Pixels.of(corner_radius), corner_steps: 8 }, Flat(theme.panel)),
 		]
 
 	# A rectangle's outline, as the four lines it is, drawn on the edge itself.
 	outline : { x : F64, y : F64, width : F64, height : F64, thickness : F64 }, Brush.Rgba -> List(Shapes.Shape)
 	outline = |{ x, y, width, height, thickness }, colour| {
 		fill = Flat(colour)
-		top_left = { x, y }
-		top_right = { x: x + width, y }
-		bottom_right = { x: x + width, y: y + height }
-		bottom_left = { x, y: y + height }
+		top_left = Point.at(x, y)
+		top_right = Point.at(x + width, y)
+		bottom_right = Point.at(x + width, y + height)
+		bottom_left = Point.at(x, y + height)
 		[
-			Shapes.line({ from: top_left, to: top_right, width: thickness }, fill),
-			Shapes.line({ from: top_right, to: bottom_right, width: thickness }, fill),
-			Shapes.line({ from: bottom_right, to: bottom_left, width: thickness }, fill),
-			Shapes.line({ from: bottom_left, to: top_left, width: thickness }, fill),
+			Shapes.line({ from: top_left, to: top_right, width: Pixels.of(thickness) }, fill),
+			Shapes.line({ from: top_right, to: bottom_right, width: Pixels.of(thickness) }, fill),
+			Shapes.line({ from: bottom_right, to: bottom_left, width: Pixels.of(thickness) }, fill),
+			Shapes.line({ from: bottom_left, to: top_left, width: Pixels.of(thickness) }, fill),
 		]
 	}
 

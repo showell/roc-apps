@@ -1,7 +1,7 @@
 ## The grass, from just above the horizon down past the foot of the screen.
 ## It is one colour, and nothing else in the ride draws grass: the grass is
 ## whatever the rest of the frame doesn't paint over.
-import Pixels
+import lib.Pixels
 import Screen
 import lib.Brush
 import lib.RgbColor

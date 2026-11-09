@@ -7,14 +7,15 @@
 import Camera
 import ConvexHull
 import Distance
-import Fraction
+import lib.Fraction
 import RiderView
 import Sprite
 import Polygon
-import Pixels
+import lib.Pixels
 import Spot
 import lib.Brush
 import lib.RgbColor
+import lib.Point
 import lib.Shapes
 
 TreeShapes :: [].{
@@ -243,9 +244,9 @@ trunk_shape = |outline, finish| {
 			Flat => Brush.flat(trunk_color)
 		}
 	Rectangle({
-		top_left: { x: left.to_f64(), y: outline.foot.y.minus(height).to_f64() },
-		width: width.to_f64(),
-		height: height.to_f64(),
+		top_left: { x: left, y: outline.foot.y.minus(height) },
+		width,
+		height,
 		fill,
 	})
 }
@@ -429,6 +430,14 @@ expect
 		[480.0, 600.0, 1088.0, 648.0, 288.0],
 	)
 
+## A rectangle's left, top, width and height, as plain numbers.
+box_numbers : {
+	top_left : Point.Point,
+	width : Pixels,
+	height : Pixels,
+} -> List(F64)
+box_numbers = |box| [box.top_left.x, box.top_left.y, box.width, box.height].map(Pixels.to_f64)
+
 expect {
 	trunk_brown = {
 		r: 0x5A,
@@ -439,7 +448,7 @@ expect {
 	match trunk_shape(sample_outline, Flat) {
 		Rectangle({ top_left, width, height, fill }) =>
 			fill == Flat(trunk_brown)
-				and is_near([top_left.x, top_left.y, width, height], [440.0, 110.0, 80.0, 490.0])
+				and is_near(box_numbers({ top_left, width, height }), [440.0, 110.0, 80.0, 490.0])
 		_ => False
 	}
 }
@@ -469,8 +478,8 @@ expect {
 		) =>
 			edge_color == edge_brown
 				and middle_color == middle_brown
-				and is_near([left_x, right_x], [440.0, 520.0])
-				and is_near([top_left.x, top_left.y, width, height], [440.0, 110.0, 80.0, 490.0])
+				and is_near([left_x, right_x].map(Pixels.to_f64), [440.0, 520.0])
+				and is_near(box_numbers({ top_left, width, height }), [440.0, 110.0, 80.0, 490.0])
 		_ => False
 	}
 }
@@ -478,7 +487,9 @@ expect {
 expect {
 	corners_of = |tier|
 		match tier_triangle(sample_outline, { tier, foliage_color: RgbColor.of(7) }) {
-			Triangle(t) => [t.first, t.second, t.third].join_map(|corner| [corner.x, corner.y])
+			Triangle(t) => [t.first, t.second, t.third].join_map(
+				|corner| [corner.x.to_f64(), corner.y.to_f64()],
+			)
 			_ => crash "a tier is one triangle"
 		}
 	top_tier = tiers.first() ?? crash "a tree has tiers"

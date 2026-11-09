@@ -268,11 +268,11 @@ runner ignores what it reports.
 ## The web end
 
 `web/platform/` is a Roc platform. `main.roc` declares what it needs from an
-app; `Frame.roc` declares what a frame is; `host.zig` is the wasm host and
-holds the model and the current frame.
+app, and names lib's `Shapes.Shape` as what a frame is; `host.zig` is the wasm
+host and holds the model and the current frame.
 
 ```roc
-frame : Box(model) -> List(Frame.Shape)
+frame : Box(model) -> List(Shapes.Shape)
 ```
 
 Because `Frame.Shape` is a structural union, `lib/Shapes.roc`'s `Shape`

@@ -10,7 +10,7 @@ import game.Conifer
 import game.Distance
 import game.Geom
 import game.Pipeline
-import game.Pixels
+import lib.Pixels
 import game.RoadAhead
 import game.Route
 import game.Segment
@@ -57,7 +57,7 @@ Fixtures :: [].{
 				Disc(_) | Rectangle(_) | Blend(_) | View(_) | Image(_) | Text(_) =>
 					crash "Fixtures.coordinates_of: this shape is not a polygon"
 			}
-		corners.join_map(|corner| [corner.x, corner.y])
+		corners.join_map(|corner| [corner.x.to_f64(), corner.y.to_f64()])
 	}
 
 	tree_at : F64, F64 -> Trees.RoadsideTree

@@ -976,7 +976,7 @@ Every color in the sky is a blend of two others, and a blend needs a ratio. `Fra
 
 `Sky.sky_shape` paints the two as a gradient, down to the horizon. It stays on the top color for the first fifth of the way, then fades:
 
-{{code Sky.sky_shape from "Linear({" to "end_point: { x: 0.0, y: Screen.horizon_y.to_f64() },"}}
+{{code Sky.sky_shape from "Linear({" to "end_point: { x: Pixels.zero, y: Screen.horizon_y },"}}
 
 A color is one integer all along, `0xRRGGBB`, the form a `Brush` wants. `RgbColor.from_channels` builds one from three channels with method calls on plain numbers. Static dispatch finds `to_i64`, `shl_wrap` and `bitwise_or` on Roc's own types. That makes `from_channels` a leaf: it calls nothing of Safari Ride's own.
 
@@ -2840,7 +2840,7 @@ The points are plain records. They don't need to be opaque, since a record's typ
 
 {{code RiderView.RaisedPoint}}
 
-{{code Screen.Point}}
+{{module Point}}
 
 Roc's records are structural: a record's type is just its field names and their types. That gives *one record per space* at no cost: `along` and `across` are on the road, `right` and `forward` are from the rider, `right`, `forward` and `height` are from the rider with a height, and `x` and `y` are pixels. Reading any function, the field names say where it is.
 

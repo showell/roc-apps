@@ -12,7 +12,7 @@
 //!
 //! The frame is a Roc list of shapes. `computeFrame` answers the address of the
 //! list itself, and the page's generated glue (roc_glue.js, which `roc glue`
-//! writes from web/platform/Frame.roc) reads the shapes out of wasm memory. The
+//! writes from lib/Shapes.roc's `Shape`) reads the shapes out of wasm memory. The
 //! host keeps the list until the next frame, then hands it back to Roc to free.
 
 const std = @import("std");

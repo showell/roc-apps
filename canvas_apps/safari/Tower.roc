@@ -3,14 +3,15 @@
 ## crossed braces in the lowest storeys) with a blinking beacon on top.
 ## The earth curves away under a far tower, so it sinks below the horizon
 ## from the bottom up.
-import Pixels
+import lib.Point
+import lib.Pixels
 import Angle
 import Beacon
 import Camera
 import EarthCurve
 import Spot
 import Distance
-import Fraction
+import lib.Fraction
 import RiderView
 import Sprite
 import Polygon
@@ -229,8 +230,8 @@ shortest_rod_with_direction = Pixels.of(0.0001)
 
 ## A rod between two points on screen, `width` wide.
 screen_rod : {
-	from : Screen.Point,
-	to : Screen.Point,
+	from : Point.Point,
+	to : Point.Point,
 	width : Pixels,
 } -> Shapes.Shape
 screen_rod = |{ from, to, width }| {
@@ -254,8 +255,8 @@ screen_rod = |{ from, to, width }| {
 ## The quad of a rod from `from` to `to`, its sides `offset_x` and
 ## `offset_y` either side of the line between them.
 rod_quad : {
-	from : Screen.Point,
-	to : Screen.Point,
+	from : Point.Point,
+	to : Point.Point,
 	offset_x : Pixels,
 	offset_y : Pixels,
 } -> Shapes.Shape
@@ -405,16 +406,16 @@ ahead = |point| RiderView.rider_point_ahead(point) ?? crash "a test's point is p
 
 expect
 	screen_rod({
-		from: Screen.point(0.0, 0.0),
-		to: Screen.point(30.0, 40.0),
+		from: Point.at(0.0, 0.0),
+		to: Point.at(30.0, 40.0),
 		width: Pixels.of(10.0),
 	})
 		== Polygon({
 			corners: [
-				{ x: -4.0, y: 3.0 },
-				{ x: 26.0, y: 43.0 },
-				{ x: 34.0, y: 37.0 },
-				{ x: 4.0, y: -3.0 },
+				Point.at(-4.0, 3.0),
+				Point.at(26.0, 43.0),
+				Point.at(34.0, 37.0),
+				Point.at(4.0, -3.0),
 			],
 			fill: Flat(Brush.opaque_rgba(tower_color)),
 		})
@@ -422,16 +423,16 @@ expect
 # A rod of no length is still one quad, all at its one point.
 expect
 	screen_rod({
-		from: Screen.point(5.0, 6.0),
-		to: Screen.point(5.0, 6.0),
+		from: Point.at(5.0, 6.0),
+		to: Point.at(5.0, 6.0),
 		width: Pixels.of(10.0),
 	})
 		== Polygon({
 			corners: [
-				{ x: 5.0, y: 6.0 },
-				{ x: 5.0, y: 6.0 },
-				{ x: 5.0, y: 6.0 },
-				{ x: 5.0, y: 6.0 },
+				Point.at(5.0, 6.0),
+				Point.at(5.0, 6.0),
+				Point.at(5.0, 6.0),
+				Point.at(5.0, 6.0),
 			],
 			fill: Flat(Brush.opaque_rgba(tower_color)),
 		})

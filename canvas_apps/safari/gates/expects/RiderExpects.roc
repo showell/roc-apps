@@ -11,14 +11,14 @@ import game.Coast
 import game.Distance
 import game.EncounterPlan
 import game.EncounterReaction
-import game.Fraction
+import lib.Fraction
 import game.Gawking
 import game.Gaze
 import game.Geom
 import game.LeanSearch
 import game.Lens
 import game.Motorcycle
-import game.Pixels
+import lib.Pixels
 import game.RideInstant
 import game.RiderCamera
 import game.Rider

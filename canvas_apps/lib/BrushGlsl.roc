@@ -12,6 +12,8 @@
 ## here, beside the shader that reads them, so both ends of the contract are in
 ## this one file.
 import Brush
+import Pixels
+import Point
 
 BrushGlsl :: [].{
 
@@ -42,20 +44,25 @@ BrushGlsl :: [].{
 				..blank,
 				color_a: color_quad(p.edge_color),
 				color_b: color_quad(p.middle_color),
-				geom_a: { x: p.left_x, y: p.right_x, z: 0.0, w: 0.0 },
+				geom_a: { x: p.left_x.to_f64(), y: p.right_x.to_f64(), z: 0.0, w: 0.0 },
 			}
 			Radial(p) => {
 				..blank,
 				color_a: color_quad(p.inner_color),
 				color_b: color_quad(p.outer_color),
-				geom_a: { x: p.center.x, y: p.center.y, z: p.inner_radius, w: p.outer_radius },
+				geom_a: ring_quad(p),
 			}
 			Linear(p) => {
 				..blank,
 				color_a: color_quad(p.stops.start_color),
 				color_b: color_quad(p.stops.end_color),
 				geom_a: { x: p.stops.start_offset, y: p.stops.end_offset, z: 0.0, w: 0.0 },
-				geom_b: { x: p.start_point.x, y: p.start_point.y, z: p.end_point.x - p.start_point.x, w: p.end_point.y - p.start_point.y },
+				geom_b: {
+					x: p.start_point.x.to_f64(),
+					y: p.start_point.y.to_f64(),
+					z: p.end_point.x.to_f64() - p.start_point.x.to_f64(),
+					w: p.end_point.y.to_f64() - p.start_point.y.to_f64(),
+				},
 			}
 			Ellipse(p) => {
 				inverse = Brush.ellipse_inverse({ axis_u: p.axis_u, axis_v: p.axis_v })
@@ -64,7 +71,7 @@ BrushGlsl :: [].{
 					color_a: color_quad(p.stops.start_color),
 					color_b: color_quad(p.stops.end_color),
 					geom_a: { x: p.stops.start_offset, y: p.stops.end_offset, z: 0.0, w: 0.0 },
-					geom_b: { x: p.center.x, y: p.center.y, z: 0.0, w: 0.0 },
+					geom_b: { x: p.center.x.to_f64(), y: p.center.y.to_f64(), z: 0.0, w: 0.0 },
 					geom_c: { x: inverse.top_row.x, y: inverse.top_row.y, z: inverse.bottom_row.x, w: inverse.bottom_row.y },
 				}
 			}
@@ -73,7 +80,7 @@ BrushGlsl :: [].{
 				color_a: color_quad(p.inner_color),
 				color_b: color_quad(p.middle_color),
 				color_c: color_quad(p.outer_color),
-				geom_a: { x: p.center.x, y: p.center.y, z: p.inner_radius, w: p.outer_radius },
+				geom_a: ring_quad(p),
 				geom_b: { x: p.middle_offset, y: 0.0, z: 0.0, w: 0.0 },
 			}
 		}
@@ -199,6 +206,10 @@ blank_uniforms = {
 color_quad : Brush.Rgba -> BrushGlsl.Quad
 color_quad = |c| { x: c.r / 255.0, y: c.g / 255.0, z: c.b / 255.0, w: c.a }
 
+## A radial gradient's center and its two radii, as `ringT` reads them.
+ring_quad : { center : Point.Point, inner_radius : Pixels, outer_radius : Pixels, .. } -> BrushGlsl.Quad
+ring_quad = |ring| { x: ring.center.x.to_f64(), y: ring.center.y.to_f64(), z: ring.inner_radius.to_f64(), w: ring.outer_radius.to_f64() }
+
 # A glow fills all three colours and its middle offset, with each colour's red,
 # green and blue as a share of 255 and its alpha as it is.
 expect {
@@ -207,9 +218,9 @@ expect {
 		middle_color: { r: 0.0, g: 51.0, b: 0.0, a: 0.5 },
 		outer_color: { r: 0.0, g: 0.0, b: 255.0, a: 0.0 },
 		middle_offset: 0.25,
-		center: { x: 3.0, y: 4.0 },
-		inner_radius: 1.0,
-		outer_radius: 9.0,
+		center: Point.at(3.0, 4.0),
+		inner_radius: Pixels.of(1.0),
+		outer_radius: Pixels.of(9.0),
 	}
 	BrushGlsl.uniforms(Glow(look))
 		== {
@@ -227,8 +238,8 @@ expect {
 # the inverse of its axes, in the order the shader reads them.
 expect {
 	stops = { start_color: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 }, end_color: { r: 255.0, g: 255.0, b: 255.0, a: 1.0 }, start_offset: 0.1, end_offset: 0.9 }
-	line = BrushGlsl.uniforms(Linear({ stops, start_point: { x: 1.0, y: 2.0 }, end_point: { x: 4.0, y: 6.0 } }))
-	ellipse = BrushGlsl.uniforms(Ellipse({ stops, center: { x: 7.0, y: 8.0 }, axis_u: { x: 3.0, y: 4.0 }, axis_v: { x: 5.0, y: 6.0 } }))
+	line = BrushGlsl.uniforms(Linear({ stops, start_point: Point.at(1.0, 2.0), end_point: Point.at(4.0, 6.0) }))
+	ellipse = BrushGlsl.uniforms(Ellipse({ stops, center: Point.at(7.0, 8.0), axis_u: Point.at(3.0, 4.0), axis_v: Point.at(5.0, 6.0) }))
 	line.mode == 3.0
 		and line.geom_b == { x: 1.0, y: 2.0, z: 3.0, w: 4.0 }
 		and ellipse.mode == 4.0

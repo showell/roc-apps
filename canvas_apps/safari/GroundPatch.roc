@@ -1,7 +1,7 @@
 ## GroundPatch is a patch of ground, such as a stretch of road or a pond, and
 ## how it shows on screen as one polygon that follows the earth's curve down as
 ## it goes away from the rider.
-import Pixels
+import lib.Pixels
 import RiderView
 import Polygon
 import EarthCurve

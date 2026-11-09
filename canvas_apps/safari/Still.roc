@@ -6,7 +6,7 @@
 ## shares one frame so that they line up, and a pose may reach past it.
 ## EmojiStills, CatStills and BirdStills hold the pictures, and StillShapes
 ## puts them on screen.
-import Fraction
+import lib.Fraction
 import lib.ArgbColor
 import lib.RgbColor
 

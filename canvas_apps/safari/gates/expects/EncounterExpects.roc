@@ -18,15 +18,14 @@ import game.EncounterPlan
 import game.EncounterPoses
 import game.EncounterReaction
 import game.EncounterSighting
-import game.Fraction
+import lib.Fraction
 import game.RiderView
 import game.Pipeline
-import game.Pixels
+import lib.Pixels
 import game.Bird
 import game.Cat
 import game.RoadAhead
 import game.Route
-import game.Screen
 import game.Segment
 import game.SegmentFromRider
 import game.Speed
@@ -510,7 +509,7 @@ sample_cat_shapes = |cat, lift|
 first_cat_corner_coordinates : Cat, Distance -> List(F64)
 first_cat_corner_coordinates = |cat, lift|
 	match sample_cat_shapes(cat, lift) {
-		[Polygon({ corners: [first, ..], .. }), ..] => [first.x, first.y]
+		[Polygon({ corners: [first, ..], .. }), ..] => [first.x.to_f64(), first.y.to_f64()]
 		_ => crash "EncounterExpects: a cat draws polygons"
 	}
 
@@ -575,7 +574,7 @@ expect
 expect {
 	first_corner = |perch|
 		match bird_shapes_at({ pose: Perched }, perch) {
-			[Polygon({ corners: [first, ..], .. }), ..] => [first.x, first.y]
+			[Polygon({ corners: [first, ..], .. }), ..] => [first.x.to_f64(), first.y.to_f64()]
 			_ => crash "EncounterExpects: a bird draws polygons"
 		}
 	raised = { right: Distance.metres(11.0), lift: Camera.eye_height.plus(Distance.metres(11.0)) }
@@ -612,7 +611,7 @@ expect {
 # Polygon's own checks judge the data. The cat's poses are drawn above.
 expect {
 	anchor = {
-		foot: Screen.point(100.0, 200.0),
+		foot: Point.at(100.0, 200.0),
 		flip: AsDrawn,
 		height_on_screen: Pixels.of(50.0),
 	}
@@ -635,7 +634,7 @@ expect {
 ## A still 50 pixels tall, standing as drawn on a foot at (100, 200).
 upright_still_anchor : StillShapes.Anchor
 upright_still_anchor = {
-	foot: Screen.point(100.0, 200.0),
+	foot: Point.at(100.0, 200.0),
 	flip: AsDrawn,
 	height_on_screen: Pixels.of(50.0),
 }
@@ -648,7 +647,11 @@ expect {
 	StillShapes.still_shapes(upright_still_anchor, still)
 		== [
 			Polygon({
-				corners: [{ x: 100.0, y: 200.0 }, { x: 150.0, y: 200.0 }, { x: 100.0, y: 150.0 }],
+				corners: [
+					Point.at(100.0, 200.0),
+					Point.at(150.0, 200.0),
+					Point.at(100.0, 150.0),
+				],
 				fill: Flat(Brush.opaque_rgba(RgbColor.of(7))),
 			}),
 		]
@@ -681,9 +684,9 @@ expect {
 	ellipse_spanning = |area|
 		Brush.ellipse({
 			stops: brush_stops,
-			center: { x: 0.0, y: 0.0 },
-			axis_u: { x: area * height, y: 0.0 },
-			axis_v: { x: 0.0, y: height },
+			center: Point.at(0.0, 0.0),
+			axis_u: Point.at(area * height, 0.0),
+			axis_v: Point.at(0.0, height),
 		})
 	least = Still.min_axes_area
 	ellipse_spanning(least).is_ok() and ellipse_spanning(least * 0.99).is_err()
@@ -704,7 +707,11 @@ shaded_still_shapes = |gradient|
 
 ## Where `still_corners` land on screen.
 still_corners_on_screen : List(Point.Point)
-still_corners_on_screen = [{ x: 100.0, y: 200.0 }, { x: 125.0, y: 200.0 }, { x: 100.0, y: 150.0 }]
+still_corners_on_screen = [
+	Point.at(100.0, 200.0),
+	Point.at(125.0, 200.0),
+	Point.at(100.0, 150.0),
+]
 
 # A linear gradient keeps its stops' alphas and offsets, and runs between its
 # two points on screen.
@@ -716,8 +723,8 @@ expect {
 	})
 	fill = Linear({
 		stops: brush_stops,
-		start_point: { x: 100.0, y: 200.0 },
-		end_point: { x: 100.0, y: 150.0 },
+		start_point: Point.at(100.0, 200.0),
+		end_point: Point.at(100.0, 150.0),
 	})
 	shaded_still_shapes(gradient) == [Polygon({ corners: still_corners_on_screen, fill })]
 }
@@ -732,9 +739,9 @@ expect {
 	})
 	fill = Ellipse({
 		stops: brush_stops,
-		center: { x: 100.0, y: 175.0 },
-		axis_u: { x: 25.0, y: 0.0 },
-		axis_v: { x: 0.0, y: -25.0 },
+		center: Point.at(100.0, 175.0),
+		axis_u: Point.at(25.0, 0.0),
+		axis_v: Point.at(0.0, -25.0),
 	})
 	shaded_still_shapes(gradient) == [Polygon({ corners: still_corners_on_screen, fill })]
 }

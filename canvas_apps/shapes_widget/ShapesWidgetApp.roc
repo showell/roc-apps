@@ -2,7 +2,8 @@
 ## then a rectangle, each on a plain background. The Right key steps from one
 ## to the other, which is how the page opens at each.
 import game.Polygon
-import game.Screen
+import lib.Pixels
+import lib.Point
 import lib.Brush
 import lib.CanvasApp
 import lib.Input
@@ -29,9 +30,9 @@ ShapesWidgetApp :: [].{
 	green_triangle : Shapes.Shape
 	green_triangle = Polygon.triangle(
 		{
-			first_corner: Screen.point(180.0, 280.0),
-			second_corner: Screen.point(420.0, 280.0),
-			third_corner: Screen.point(300.0, 60.0),
+			first_corner: Point.at(180.0, 280.0),
+			second_corner: Point.at(420.0, 280.0),
+			third_corner: Point.at(300.0, 60.0),
 		},
 		RgbColor.of(0x2e8b57),
 	)
@@ -39,9 +40,9 @@ ShapesWidgetApp :: [].{
 	## A brown rectangle.
 	brown_rectangle : Shapes.Shape
 	brown_rectangle = Rectangle({
-		top_left: { x: 240.0, y: 100.0 },
-		width: 120.0,
-		height: 160.0,
+		top_left: Point.at(240.0, 100.0),
+		width: Pixels.of(120.0),
+		height: Pixels.of(160.0),
 		fill: Brush.flat(RgbColor.of(0x8b5a2b)),
 	})
 }

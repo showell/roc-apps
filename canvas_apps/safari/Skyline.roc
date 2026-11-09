@@ -5,11 +5,11 @@
 ## is seen at and on the lens, so the skyline turns with the rider but never comes
 ## nearer. The rock darkens at dusk, and the snow goes blue. It is worked out
 ## each frame from the clock and the camera's heading and lens.
-import Pixels
+import lib.Pixels
 import Angle
 import FarHeight
 import FarRise
-import Fraction
+import lib.Fraction
 import Grass
 import Lens
 import ColorShade
@@ -408,7 +408,7 @@ expect snow_peak_height > snow_threshold
 corner_ys : Shapes.Shape -> List(F64)
 corner_ys = |shape|
 	match shape {
-		Polygon(p) => p.corners.map(|corner| corner.y)
+		Polygon(p) => p.corners.map(|corner| corner.y.to_f64())
 		_ => crash "Skyline: a silhouette is a polygon"
 	}
 

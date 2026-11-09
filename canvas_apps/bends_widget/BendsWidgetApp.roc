@@ -20,6 +20,7 @@ import lib.Brush
 import lib.RgbColor
 import lib.CanvasApp
 import lib.Shapes
+import lib.Pixels
 import lib.Point
 import widget.PlanView
 import widget.ReadoutText
@@ -130,7 +131,7 @@ rider_y = 198.0
 canvas_point : ShownBend, RiderView.RiderPoint -> Point.Point
 canvas_point = |{ canvas_x, .. }, { right, forward }| {
 	plan : PlanView
-	plan = { origin: { x: canvas_x, y: rider_y }, pixels_a_metre }
+	plan = { origin: Point.at(canvas_x, rider_y), pixels_a_metre }
 	plan.canvas_point({ metres_right: right.to_metres(), metres_down: 0.0 - forward.to_metres() })
 }
 
@@ -155,16 +156,18 @@ foot_shape : ShownBend,
 foot_shape = |bend, { low_start, low_end, .. }| {
 	from = canvas_point(bend, { right: low_start.right, forward: low_start.forward })
 	to = canvas_point(bend, { right: low_end.right, forward: low_end.forward })
-	Shapes.line({ from, to, width: 2.0 }, Brush.flat(rail_color))
+	Shapes.line({ from, to, width: Pixels.of(2.0) }, Brush.flat(rail_color))
 }
 
 ## A disc at a place on the road.
 spot : ShownBend, { at : RiderView.RiderPoint, color : RgbColor } -> Shapes.Shape
 spot = |bend, { at, color }| {
-	{ x, y } = canvas_point(bend, at)
+	on_canvas = canvas_point(bend, at)
+	x = on_canvas.x.to_f64()
+	y = on_canvas.y.to_f64()
 	Disc({
-		center: { x, y },
-		radius: 4.0,
+		center: Point.at(x, y),
+		radius: Pixels.of(4.0),
 		fill: Brush.flat(color),
 	})
 }
@@ -267,9 +270,9 @@ expect
 			apex = canvas_point(bend, apex_of(bend.turn))
 			rider_on_canvas = canvas_point(bend, rider)
 			third = WidgetPage.canvas_width / 3.0
-			(apex.x - bend.canvas_x).abs() < third / 2.0
-				and apex.y > 0.0
-				and rider_on_canvas.y < WidgetPage.picture_bottom_y
+			(apex.x.to_f64() - bend.canvas_x).abs() < third / 2.0
+				and apex.y.to_f64() > 0.0
+				and rider_on_canvas.y.to_f64() < WidgetPage.picture_bottom_y
 		},
 	)
 

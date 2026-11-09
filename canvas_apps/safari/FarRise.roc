@@ -6,7 +6,7 @@
 ## (`FarHeight.plus`). It is signed, and a span measured downward is negative.
 ##
 ## A far rise becomes pixels on the screen only through `Lens.size_on_screen`.
-import Fraction
+import lib.Fraction
 
 FarRise :: F64.{
 

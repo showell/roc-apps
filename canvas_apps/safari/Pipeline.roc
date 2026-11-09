@@ -37,7 +37,7 @@ import EarthCurve
 import Geom
 import RiderView
 import Sprite
-import Pixels
+import lib.Pixels
 import Rendered
 import Spot
 

@@ -8,7 +8,7 @@ Each tick goes round this loop:
 
 1. `web/canvas_app_runner.js` paces the clock and gathers the keys and the pointer.
 2. It calls into the app's wasm, which advances the model and answers a list of `lib/Shapes.roc` shapes.
-3. `roc_glue.js` reads those shapes out of wasm memory. `roc glue` generates it from `web/platform/Frame.roc` at every build, so it's never edited.
+3. `roc_glue.js` reads those shapes out of wasm memory. `roc glue` generates it from the platform's type, `lib/Shapes.roc`'s `Shape`, at every build, so it's never edited.
 4. `web/shapes_canvas.js` paints them on a canvas.
 
 | Layer | Language | Knows about |

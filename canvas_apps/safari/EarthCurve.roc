@@ -3,7 +3,7 @@
 ## out of sight, which hides what stands low enough beyond it.
 import Camera
 import Distance
-import Fraction
+import lib.Fraction
 import RiderView
 
 EarthCurve :: [].{

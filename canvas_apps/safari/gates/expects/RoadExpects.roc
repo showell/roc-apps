@@ -12,7 +12,7 @@ import game.Geom
 import game.RiderView
 import game.GroundPatch
 import game.GroundSighting
-import game.Pixels
+import lib.Pixels
 import game.Polygon
 import game.RoadAhead
 import game.Route

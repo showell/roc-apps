@@ -10,7 +10,7 @@
 import game.FrameView
 import game.Lens
 import game.Sprite
-import game.Pixels
+import lib.Pixels
 import game.Pipeline
 import game.Screen
 import lib.Brush
@@ -35,7 +35,10 @@ WidgetPage :: [].{
 
 	## Where the picture shows a point of the ride's screen, given in pixels.
 	canvas_point_of_screen : Point.Point -> Point.Point
-	canvas_point_of_screen = |{ x, y }| { x: x * canvas_per_screen, y: y * canvas_per_screen }
+	canvas_point_of_screen = |{ x, y }| {
+		x: x.times(canvas_per_screen),
+		y: y.times(canvas_per_screen),
+	}
 
 	## How much ground shows below the horizon, chosen by eye.
 	ground_depth : F64
@@ -47,7 +50,11 @@ WidgetPage :: [].{
 
 	## Whether `point` is in the picture, edges included.
 	is_in_picture : Point.Point -> Bool
-	is_in_picture = |{ x, y }| x >= 0.0 and x <= canvas_width and y >= 0.0 and y <= picture_bottom_y
+	is_in_picture = |point| {
+		x = point.x.to_f64()
+		y = point.y.to_f64()
+		x >= 0.0 and x <= canvas_width and y >= 0.0 and y <= picture_bottom_y
+	}
 
 	## The space left and right of what sits on the panel.
 	side_margin : F64
@@ -105,9 +112,9 @@ WidgetPage :: [].{
 	picture_backdrop : RgbColor -> Shapes.Shape
 	picture_backdrop = |color|
 		Rectangle({
-			top_left: { x: 0.0, y: 0.0 },
-			width: canvas_width,
-			height: canvas_height,
+			top_left: Point.at(0.0, 0.0),
+			width: Pixels.of(canvas_width),
+			height: Pixels.of(canvas_height),
 			fill: Brush.flat(color),
 		})
 
@@ -169,7 +176,10 @@ WidgetPage :: [].{
 		})
 
 	## The picture, and the panel with the lines of text on it.
-	frame_shapes : { picture_shapes : List(Shapes.Shape), status_lines : List(Str) } -> List(Shapes.Shape)
+	frame_shapes : {
+		picture_shapes : List(Shapes.Shape),
+		status_lines : List(Str),
+	} -> List(Shapes.Shape)
 	frame_shapes = |{ picture_shapes, status_lines }|
 		[picture_shapes, [panel], status_lines.map_with_index(status_line)].join()
 
@@ -181,7 +191,7 @@ WidgetPage :: [].{
 		ride_shapes : List(Shapes.Shape),
 	} -> List(Shapes.Shape)
 	picture_shapes = |{ backdrop, ride_shapes }| {
-		corner = { x: 0.0, y: 0.0 }
+		corner = Point.at(0.0, 0.0)
 		FrameView.painted_shapes({
 			backdrop,
 			ride_shape_lists: [ride_shapes],
@@ -201,7 +211,10 @@ WidgetPage :: [].{
 	resting_lens_shapes = |sighting, context|
 		match sighting {
 			Ok(sighted) =>
-				Pipeline.rendering_of(sighted, { focal_length: Lens.resting_focal_length, context }).sprite().to_shapes()
+				Pipeline.rendering_of(
+					sighted,
+					{ focal_length: Lens.resting_focal_length, context },
+				).sprite().to_shapes()
 			Err(BehindCamera) => []
 		}
 }
@@ -221,14 +234,19 @@ label_size = 14.0
 ## The text sits on this, and a widget's buttons do too.
 panel : Shapes.Shape
 panel = Rectangle({
-	top_left: { x: 0.0, y: WidgetPage.picture_bottom_y },
-	width: WidgetPage.canvas_width,
-	height: WidgetPage.canvas_height - WidgetPage.picture_bottom_y,
+	top_left: Point.at(0.0, WidgetPage.picture_bottom_y),
+	width: Pixels.of(WidgetPage.canvas_width),
+	height: Pixels.of(WidgetPage.canvas_height - WidgetPage.picture_bottom_y),
 	fill: Brush.flat(WidgetPalette.panel_color),
 })
 
 status_line : Str, U64 -> Shapes.Shape
-status_line = |text, row| WidgetPage.readout_line({ text, color: WidgetPalette.ink_color, row, style: WidgetPage.panel_rows })
+status_line = |text, row| WidgetPage.readout_line({
+	text,
+	color: WidgetPalette.ink_color,
+	row,
+	style: WidgetPage.panel_rows,
+})
 
 # A page is the panel and its text.
 expect WidgetPage.frame_shapes({ picture_shapes: [], status_lines: [] }).len() == 1

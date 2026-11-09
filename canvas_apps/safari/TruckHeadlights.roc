@@ -4,7 +4,7 @@
 ## darkness.
 import Camera
 import Distance
-import Fraction
+import lib.Fraction
 import Sprite
 import Polygon
 import RiderView

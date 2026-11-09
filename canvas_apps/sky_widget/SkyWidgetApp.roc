@@ -18,6 +18,7 @@ import lib.CanvasApp
 import lib.Input
 import lib.Shapes
 import lib.RgbColor
+import lib.Pixels
 import lib.Point
 import widget.ReadoutText
 import widget.WidgetPage
@@ -241,7 +242,7 @@ chart_point : Clock, (Clock -> F64) -> Point.Point
 chart_point = |clock, level_at| {
 	steps_in = clock.steps_since(Clock.start).to_f64()
 	steps_in_sunset = sunset.last.steps_since(Clock.start).to_f64()
-	{ x: chart_x(steps_in / steps_in_sunset), y: chart_y(level_at(clock)) }
+	Point.at(chart_x(steps_in / steps_in_sunset), chart_y(level_at(clock)))
 }
 
 ## How far apart the clocks a curve is drawn through are.
@@ -268,7 +269,7 @@ curve_shapes = |{ level_at, color, .. }| {
 			{
 				from: a,
 				to: b,
-				width: 2.0,
+				width: Pixels.of(2.0),
 			},
 			Brush.flat(color),
 		),
@@ -282,13 +283,13 @@ chart_shapes = |job| job_curves(job).join_map(curve_shapes)
 ## A line down the chart at `clock`, with a dot on each curve.
 cursor_shapes : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
 cursor_shapes = |job, clock| {
-	x = chart_point(clock, darkness_level).x
+	x = chart_point(clock, darkness_level).x.to_f64()
 	cursor =
 		Shapes.line(
 			{
-				from: { x, y: chart_top },
-				to: { x, y: chart_bottom },
-				width: 1.0,
+				from: Point.at(x, chart_top),
+				to: Point.at(x, chart_bottom),
+				width: Pixels.of(1.0),
 			},
 			Brush.flat(WidgetPalette.ink_color),
 		)
@@ -298,10 +299,10 @@ cursor_shapes = |job, clock| {
 }
 
 curve_dot : Point.Point, RgbColor -> Shapes.Shape
-curve_dot = |{ x, y }, color|
+curve_dot = |center, color|
 	Disc({
-		center: { x, y },
-		radius: 4.0,
+		center,
+		radius: Pixels.of(4.0),
 		fill: Brush.flat(color),
 	})
 
@@ -361,10 +362,10 @@ expect next_model({ ..at_start, job: SkyDarkens }, Input.none).job == SkyDarkens
 expect pressed_on({ ..at_start, job: SkyDarkens }, Play).job == SkyDarkens
 
 # The chart's two ends are the sunset's two ends.
-expect chart_point(Clock.start, darkness_level).x == chart_left
-expect chart_point(sunset.last, darkness_level).x == chart_right
-expect chart_point(Clock.start, darkness_level).y == chart_bottom
-expect chart_point(Clock.start, sun_level).y == chart_top
+expect chart_point(Clock.start, darkness_level).x.to_f64() == chart_left
+expect chart_point(sunset.last, darkness_level).x.to_f64() == chart_right
+expect chart_point(Clock.start, darkness_level).y.to_f64() == chart_bottom
+expect chart_point(Clock.start, sun_level).y.to_f64() == chart_top
 
 # The cursor is a line and three dots.
 expect cursor_shapes(HorizonWarms, Clock.at_step(3000)).len() == 4

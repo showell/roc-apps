@@ -67,14 +67,15 @@ for f in SHARED_FOLDERS do push(shared_and_widgets, f) end
 push(shared_and_widgets, WIDGETS)
 const SHARED_AND_WIDGETS = shared_and_widgets
 
--- `bool_param` has types only for what web.roc reaches, which is every game
--- module. roc-types can't read the rest, so a file here is judged without
--- types, and a game module web.roc stops reaching fails the run. The gates and
--- the book's apps have no platform, and their `game:` package has a `lib:` of
--- its own, which roc-types doesn't follow. The tutorial's fails/ don't compile,
--- on purpose. game.roc is only a package header, and main.roc needs roc-ray
--- beside the checkout.
-const UNTYPED_PATHS = {"game.roc", "main.roc", "gates/", "tutorial/"}
+-- `bool_param` has types only for what types_root.roc reaches, which is every
+-- game module. roc-types can't read the rest, so a file here is judged without
+-- types, and a game module types_root.roc stops reaching fails the run. The
+-- gates and the book's apps have no platform, and their `game:` package has a
+-- `lib:` of its own, which roc-types doesn't follow; nor does it follow the
+-- web platform's own `lib:`, so web.roc, which reaches what types_root.roc does,
+-- has no types. The tutorial's fails/ don't compile, on purpose. game.roc is
+-- only a package header, and main.roc needs roc-ray beside the checkout.
+const UNTYPED_PATHS = {"game.roc", "main.roc", "web.roc", "gates/", "tutorial/"}
 
 -- `whole_tree` names the checks that one file can't answer, because they read
 -- across files. The fast tier skips them, and a recipe with nothing else in it.
@@ -101,7 +102,7 @@ const LINTS = {
   {recipe = "nest_depth", args = {"min=4"}, budget = {}, counts = {{"nested", 0}}, folders = {WIDGETS}},
   {recipe = "parens", args = {}, budget = {}, counts = {{"paren_if", 0}, {"wrapped_body", 0}, {"else_block", 0}, {"lambda_if", 0}},
     folders = {WIDGETS}},
-  {recipe = "boundaries", args = {"types=1", "root=" .. SAFARI .. "/web.roc", "clients=" .. join(CLIENT_GLOBS, ","), "tests=" .. GATE_GLOB, "test_reach=dead"}, budget = {}, from_repo_root = true, counts = {
+  {recipe = "boundaries", args = {"types=1", "root=" .. SAFARI .. "/types_root.roc", "clients=" .. join(CLIENT_GLOBS, ","), "tests=" .. GATE_GLOB, "test_reach=dead"}, budget = {}, from_repo_root = true, counts = {
     {"single", 0}, {"fixed", 0}, {"entry", 0}, {"constant", 0}, {"bool_param", 0}, {"dead", 0},
   }, whole_tree = {"single", "fixed", "entry", "constant", "bool_param", "dead"}},
   {recipe = "stack", args = {}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 0}, {"to unstack", 0}, {"long", 0}},
@@ -341,7 +342,7 @@ function judge_tree()
     local summary = lint_summary(r.out)
     judge_reach(lint, r.out, summary, wrong)
     -- A recipe that stopped before its counts says why, as when Roc's checker
-    -- rejects web.roc.
+    -- rejects types_root.roc.
     local stopped = find(r.out, "── stopped")
     if stopped ~= nil and count_in_summary(summary, lint.counts[1][1]) == nil then print(sub(r.out, stopped)) end
     local said = {}

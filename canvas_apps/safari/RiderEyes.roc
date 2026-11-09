@@ -4,7 +4,7 @@
 import Angle
 import Attention
 import Easing
-import Fraction
+import lib.Fraction
 import Gaze
 
 ## The rider's eyes at one step. `gaze_yaw` is the look away from the way the

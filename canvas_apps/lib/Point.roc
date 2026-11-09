@@ -1,6 +1,13 @@
-## Point is a place in a frame's own coordinates, x across and y down, for the
-## modules that build shapes and the brushes that fill them. It is a module of
-## its own so that Brush, which Shapes imports, can name it too.
+## Point is a place in a frame's own coordinates, in pixels, x across and y
+## down from the top left. Either can be negative, or past the far edge, for a
+## point off the screen. It is a module of its own so that Brush, which Shapes
+## imports, can name it too.
+import Pixels
+
 Point :: [].{
-	Point : { x : F64, y : F64 }
+	Point : { x : Pixels, y : Pixels }
+
+	## The point `x` pixels across and `y` pixels down.
+	at : F64, F64 -> Point.Point
+	at = |x, y| { x: Pixels.of(x), y: Pixels.of(y) }
 }

@@ -10,7 +10,7 @@ import Animation
 import Attention
 import Distance
 import EncounterPlan
-import Fraction
+import lib.Fraction
 import Geom
 import Steps
 

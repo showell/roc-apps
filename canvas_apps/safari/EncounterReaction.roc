@@ -9,7 +9,7 @@ import Attention
 import CatCrossing
 import Easing
 import Encounter
-import Fraction
+import lib.Fraction
 import Steps
 import ThrottleLimit
 

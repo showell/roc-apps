@@ -4,7 +4,7 @@
 ## camera can see; only a point past the near plane can go on the screen. This
 ## module cuts lines and polygons at the near plane.
 import Distance
-import Fraction
+import lib.Fraction
 
 RiderView :: [].{
 

@@ -331,8 +331,8 @@ CanvasAppRunner :: [].{
 			Screen => camera(size, 0.0, supersample)
 			World(c) =>
 				Camera.new({
-					target: { x: F64.to_f32_wrap(c.target.x), y: F64.to_f32_wrap(c.target.y) },
-					offset: { x: F64.to_f32_wrap(c.offset.x) * supersample, y: F64.to_f32_wrap(c.offset.y) * supersample },
+					target: host_point(c.target),
+					offset: { x: F64.to_f32_wrap(c.offset.x.to_f64()) * supersample, y: F64.to_f32_wrap(c.offset.y.to_f64()) * supersample },
 					rotation: F64.to_f32_wrap(c.rotation),
 					zoom: F64.to_f32_wrap(c.zoom) * supersample,
 				})
@@ -359,8 +359,8 @@ CanvasAppRunner :: [].{
 					# because that fill winds its corners itself.
 					Triangle(t) => with_fill!(shader, frame, t.fill, |f, col| f.convex_polygon!({ points: [t.first, t.second, t.third].map(host_point), style: Draw.filled(col) }))
 					Polygon(p) => with_fill!(shader, frame, p.fill, |f, col| f.convex_polygon!({ points: p.corners.map(host_point), style: Draw.filled(col) }))
-					Disc(d) => with_fill!(shader, frame, d.fill, |f, col| f.circle!({ center: host_point(d.center), radius: F64.to_f32_wrap(d.radius), style: Draw.filled(col) }))
-					Rectangle(r) => with_fill!(shader, frame, r.fill, |f, col| f.rectangle!({ x: F64.to_f32_wrap(r.top_left.x), y: F64.to_f32_wrap(r.top_left.y), width: F64.to_f32_wrap(r.width), height: F64.to_f32_wrap(r.height), style: Draw.filled(col) }))
+					Disc(d) => with_fill!(shader, frame, d.fill, |f, col| f.circle!({ center: host_point(d.center), radius: F64.to_f32_wrap(d.radius.to_f64()), style: Draw.filled(col) }))
+					Rectangle(r) => with_fill!(shader, frame, r.fill, |f, col| f.rectangle!({ x: F64.to_f32_wrap(r.top_left.x.to_f64()), y: F64.to_f32_wrap(r.top_left.y.to_f64()), width: F64.to_f32_wrap(r.width.to_f64()), height: F64.to_f32_wrap(r.height.to_f64()), style: Draw.filled(col) }))
 					# **roc-ray IS HANDED THE RECTANGLES**, as it is handed triangles
 					# for a concave polygon: each painter gets a frame in the form it
 					# can paint. A canvas has `putImageData`; here a texture would be
@@ -493,7 +493,7 @@ CanvasAppRunner :: [].{
 
 	## A frame's point in roc-ray's 32-bit floats.
 	host_point : Point.Point -> { x : F32, y : F32 }
-	host_point = |{ x, y }| { x: F64.to_f32_wrap(x), y: F64.to_f32_wrap(y) }
+	host_point = |{ x, y }| { x: F64.to_f32_wrap(x.to_f64()), y: F64.to_f32_wrap(y.to_f64()) }
 
 	show_fps! : Bool, Draw.Frame => {}
 	show_fps! = |shown, frame|

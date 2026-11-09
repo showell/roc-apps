@@ -22,19 +22,28 @@ ConvexCut :: [].{
 		|shape|
 			match shape {
 				Polygon(p) =>
-					if is_convex(p.corners) {
+					if is_convex(p.corners.map(plain_point)) {
 						Uncut(Polygon(p))
 					} else {
-						Triangles({ triangle_corners: wound_triangles(triangles(p.corners)), fill: p.fill })
+						Triangles({ triangle_corners: wound_triangles(triangles(p.corners.map(plain_point))).map(frame_point), fill: p.fill })
 					}
 				other => Uncut(other)
 			},
 	)
 }
 
+## A corner as plain numbers, which the cut's arithmetic is done in.
+PlainPoint : { x : F64, y : F64 }
+
+plain_point : Point.Point -> PlainPoint
+plain_point = |{ x, y }| { x: x.to_f64(), y: y.to_f64() }
+
+frame_point : PlainPoint -> Point.Point
+frame_point = |{ x, y }| Point.at(x, y)
+
 ## Each triangle wound as roc-ray's convex fill winds one: its second and third
 ## corners swapped when its signed area is positive.
-wound_triangles : List(Point.Point) -> List(Point.Point)
+wound_triangles : List(PlainPoint) -> List(PlainPoint)
 wound_triangles = |triangle_corners| {
 	triangle_count = triangle_corners.len() // 3
 	var $out = List.with_capacity(3 * triangle_count)
@@ -52,16 +61,16 @@ wound_triangles = |triangle_corners| {
 }
 
 ## Corner `i` of a polygon.
-corner : List(Point.Point), U64 -> Point.Point
+corner : List(PlainPoint), U64 -> PlainPoint
 corner = |corners, i| corners.get(i) ?? crash "ConvexCut.corner: an index past the end of the corners"
 
 ## Twice the signed area of the triangle a b c: positive when it turns one
 ## way, negative the other, and zero when its corners are in line.
-cross3 : { a : Point.Point, b : Point.Point, c : Point.Point } -> F64
+cross3 : { a : PlainPoint, b : PlainPoint, c : PlainPoint } -> F64
 cross3 = |{ a, b, c }| (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)
 
 ## Twice the signed area, summed as roc-ray's host sums it.
-twice_area : List(Point.Point) -> F64
+twice_area : List(PlainPoint) -> F64
 twice_area = |corners| {
 	n = corners.len()
 	var $sum = 0.0
@@ -85,7 +94,7 @@ flip_limit = 2
 
 ## Convex when every corner turns the same way and the boundary stays within
 ## `flip_limit`, which rules out a star whose corners all turn one way.
-is_convex : List(Point.Point) -> Bool
+is_convex : List(PlainPoint) -> Bool
 is_convex = |corners| {
 	n = corners.len()
 	var $sign = 0.0
@@ -145,7 +154,7 @@ is_convex = |corners| {
 ## The polygon cut into triangles by ear clipping, three corners a triangle. A
 ## corner in line with its neighbors is dropped without a triangle. A polygon
 ## that crosses itself can run out of ears, and what is left is fanned.
-triangles : List(Point.Point) -> List(Point.Point)
+triangles : List(PlainPoint) -> List(PlainPoint)
 triangles = |corners| {
 	n = corners.len()
 	winding = if twice_area(corners) >= 0.0 {
@@ -208,7 +217,7 @@ triangles = |corners| {
 ## Whether a remaining corner other than a, b and c lies strictly inside the
 ## triangle a b c.
 any_inside : {
-	corners : List(Point.Point),
+	corners : List(PlainPoint),
 	indices : List(U64),
 	a : U64,
 	b : U64,
@@ -228,7 +237,7 @@ any_inside = |{ corners, indices, a, b, c, winding }| {
 }
 
 ## The remaining corners as a fan from the first, onto `out`.
-fan : { corners : List(Point.Point), indices : List(U64), out : List(Point.Point) } -> List(Point.Point)
+fan : { corners : List(PlainPoint), indices : List(U64), out : List(PlainPoint) } -> List(PlainPoint)
 fan = |{ corners, indices, out }|
 	match indices {
 		[] => out
@@ -252,7 +261,7 @@ ink = Flat({ r: 32.0, g: 32.0, b: 32.0, a: 1.0 })
 
 # A square is convex, and the cut leaves it as it is.
 expect {
-	square = Polygon({ corners: [{ x: 0.0, y: 0.0 }, { x: 2.0, y: 0.0 }, { x: 2.0, y: 2.0 }, { x: 0.0, y: 2.0 }], fill: ink })
+	square = Polygon({ corners: [Point.at(0.0, 0.0), Point.at(2.0, 0.0), Point.at(2.0, 2.0), Point.at(0.0, 2.0)], fill: ink })
 	ConvexCut.cut_shapes([square]) == [Uncut(square)]
 }
 
@@ -260,12 +269,12 @@ expect {
 expect {
 	ell = Polygon({
 		corners: [
-			{ x: 0.0, y: 0.0 },
-			{ x: 2.0, y: 0.0 },
-			{ x: 2.0, y: 1.0 },
-			{ x: 1.0, y: 1.0 },
-			{ x: 1.0, y: 2.0 },
-			{ x: 0.0, y: 2.0 },
+			Point.at(0.0, 0.0),
+			Point.at(2.0, 0.0),
+			Point.at(2.0, 1.0),
+			Point.at(1.0, 1.0),
+			Point.at(1.0, 2.0),
+			Point.at(0.0, 2.0),
 		],
 		fill: ink,
 	})

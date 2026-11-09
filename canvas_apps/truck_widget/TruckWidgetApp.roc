@@ -179,7 +179,7 @@ is_in_its_third = |view| {
 	half_third = third_width / 2.0
 	is_inside = |corner|
 		WidgetPage.is_in_picture(corner)
-			and (corner.x - view.canvas_x).abs() <= half_third
+			and (corner.x.to_f64() - view.canvas_x).abs() <= half_third
 	corners = canvas_corners(truck_shapes(view))
 	!corners.is_empty() and corners.all(is_inside)
 }

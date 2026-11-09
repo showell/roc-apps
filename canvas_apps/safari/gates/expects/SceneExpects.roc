@@ -11,7 +11,7 @@ import game.EncounterSighting
 import game.FrameView
 import game.Sprite
 import game.Pipeline
-import game.Pixels
+import lib.Pixels
 import game.Bird
 import game.RoadAhead
 import game.Scene

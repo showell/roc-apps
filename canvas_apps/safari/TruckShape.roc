@@ -3,7 +3,7 @@
 ## and a lighter roof, on near-black tires. TruckPlacement stands it at its
 ## spot, and TruckBody, TruckHeadlights and TruckBrakeLights draw from these.
 import Distance
-import Fraction
+import lib.Fraction
 import lib.RgbColor
 
 TruckShape :: [].{

@@ -20,8 +20,11 @@ Click :: [].{
 
 		## Whether `spot` is in the area.
 		contains : Click.Area, Point.Point -> Bool
-		contains = |area, spot|
-			spot.x >= area.left and spot.x < area.left + area.width and spot.y >= area.top and spot.y < area.top + area.height
+		contains = |area, spot| {
+			x = spot.x.to_f64()
+			y = spot.y.to_f64()
+			x >= area.left and x < area.left + area.width and y >= area.top and y < area.top + area.height
+		}
 	}
 
 	## Where this frame's click is, if there is one.
@@ -29,7 +32,7 @@ Click :: [].{
 	click_point = |input|
 		if input.mouse.button_pressed(Left) {
 			{ x, y } = input.mouse.position()
-			Ok({ x: x.to_f64(), y: y.to_f64() })
+			Ok(Point.at(x.to_f64(), y.to_f64()))
 		} else {
 			Err(NoClick)
 		}
@@ -46,7 +49,12 @@ Click :: [].{
 
 ## The pointer at `spot`, with no button down.
 pointer_at : Point.Point -> Mouse.Snapshot
-pointer_at = |{ x, y }| Mouse.of({ held: 0, struck: 0, at: { x: x.to_f32_wrap(), y: y.to_f32_wrap() }, wheel: 0.0 })
+pointer_at = |{ x, y }| Mouse.of({
+	held: 0,
+	struck: 0,
+	at: { x: x.to_f64().to_f32_wrap(), y: y.to_f64().to_f32_wrap() },
+	wheel: 0.0,
+})
 
 ## An area whose edges a spot can be tried on.
 sample_area : Click.Area
@@ -59,19 +67,19 @@ sample_area = {
 
 # An area holds its top left corner and its last pixel, and stops short of its far
 # edges on every side.
-expect sample_area.contains({ x: 10.0, y: 20.0 })
-expect sample_area.contains({ x: 39.0, y: 59.0 })
-expect !sample_area.contains({ x: 40.0, y: 20.0 })
-expect !sample_area.contains({ x: 10.0, y: 60.0 })
-expect !sample_area.contains({ x: 9.0, y: 20.0 })
-expect !sample_area.contains({ x: 10.0, y: 19.0 })
+expect sample_area.contains(Point.at(10.0, 20.0))
+expect sample_area.contains(Point.at(39.0, 59.0))
+expect !sample_area.contains(Point.at(40.0, 20.0))
+expect !sample_area.contains(Point.at(10.0, 60.0))
+expect !sample_area.contains(Point.at(9.0, 20.0))
+expect !sample_area.contains(Point.at(10.0, 19.0))
 
 # A press of the left button is a click where it lands; a held button, a press
 # of the right button and no button are none.
-expect Click.click_point(Click.click_at({ x: 3.0, y: 4.0 })) == Ok({ x: 3.0, y: 4.0 })
-expect Click.click_point(Click.held_at({ x: 3.0, y: 4.0 })) == Err(NoClick)
+expect Click.click_point(Click.click_at(Point.at(3.0, 4.0))) == Ok(Point.at(3.0, 4.0))
+expect Click.click_point(Click.held_at(Point.at(3.0, 4.0))) == Err(NoClick)
 expect {
-	right_press = Input.none.with_mouse(pointer_at({ x: 3.0, y: 4.0 }).with_button_pressed(Right))
+	right_press = Input.none.with_mouse(pointer_at(Point.at(3.0, 4.0)).with_button_pressed(Right))
 	Click.click_point(right_press) == Err(NoClick)
 }
 expect Click.click_point(Input.none) == Err(NoClick)

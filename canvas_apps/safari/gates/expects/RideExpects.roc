@@ -12,7 +12,7 @@ import game.Clock
 import game.Distance
 import game.EncounterReaction
 import game.FarHeight
-import game.Fraction
+import lib.Fraction
 import game.FrameView
 import game.Motorcycle
 import game.RideInstant

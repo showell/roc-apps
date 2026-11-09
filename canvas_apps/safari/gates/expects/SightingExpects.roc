@@ -19,7 +19,7 @@ import game.RiderView
 import game.Lens
 import game.Pipeline
 import game.PigHerd
-import game.Pixels
+import lib.Pixels
 import game.Pond
 import game.RailSighting
 import game.RoadAhead

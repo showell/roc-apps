@@ -4,7 +4,7 @@
 ## animation has got to.
 import game.Angle
 import game.Animation
-import game.Fraction
+import lib.Fraction
 
 ReadoutText :: [].{
 
