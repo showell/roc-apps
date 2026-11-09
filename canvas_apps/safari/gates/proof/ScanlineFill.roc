@@ -50,15 +50,15 @@ ScanlineFill :: [].{
 		}
 	}
 
-	## A disc of one colour: the pixels whose centres are strictly inside.
+	## A disc: the pixels whose centres are strictly inside.
 	disc_pixels : List(U32),
 	{
 		roll : ScreenRoll,
 		center : ScreenRoll.ScenePoint,
 		radius : F64,
-		color : Brush.Rgba,
+		fill : Brush.Fill,
 	} -> List(U32)
-	disc_pixels = |pixels, { roll, center, radius, color }| {
+	disc_pixels = |pixels, { roll, center, radius, fill }| {
 		on_screen = roll.to_screen(center)
 		rows = PixelGrid.pixels_between({
 			from: on_screen.y - radius,
@@ -75,7 +75,7 @@ ScanlineFill :: [].{
 					$px,
 					{
 						roll,
-						fill: Flat(color),
+						fill,
 						row,
 						from: on_screen.x - half,
 						to: on_screen.x + half,

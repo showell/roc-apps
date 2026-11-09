@@ -266,12 +266,21 @@ is_disc = |shape|
 		Poly(_) | Rect(_) | Blend(_) | View(_) | Image(_) | Text(_) => False
 	}
 
+is_rect : Shapes.Shape -> Bool
+is_rect = |shape|
+	match shape {
+		Rect(_) => True
+		Poly(_) | Disc(_) | Blend(_) | View(_) | Image(_) | Text(_) => False
+	}
+
 # The Roadside trees chapter: 136 trees in view. The platform chapter's shapes
-# by tag: every one of them is a Poly or a Disc.
+# by tag: every one of them is a Poly, a Disc or a Rect, and the Rects are the
+# trees' trunks, one each.
 expect book_view.scene.trees.len() == 136
 expect book_shapes.len() == 2121
-expect book_shapes.keep_if(is_polygon).len() == 2113
+expect book_shapes.keep_if(is_polygon).len() == 1977
 expect book_shapes.keep_if(is_disc).len() == 8
+expect book_shapes.keep_if(is_rect).len() == 136
 
 # The modules chapter's sighting: one cat, frozen on the ground about 0.38 m
 # right of the camera and 23.63 m ahead.

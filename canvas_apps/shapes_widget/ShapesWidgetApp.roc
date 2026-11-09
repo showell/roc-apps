@@ -3,6 +3,7 @@
 ## to the other, which is how the page opens at each.
 import game.Polygon
 import game.Screen
+import lib.Brush
 import lib.CanvasApp
 import lib.Input
 import lib.RgbColor
@@ -37,10 +38,13 @@ ShapesWidgetApp :: [].{
 
 	## A brown rectangle.
 	brown_rectangle : Shapes.Shape
-	brown_rectangle = Polygon.rectangle(
-		{ top_left: Screen.point(240.0, 100.0), bottom_right: Screen.point(360.0, 260.0) },
-		RgbColor.of(0x8b5a2b),
-	)
+	brown_rectangle = Rect({
+		x: 240.0,
+		y: 100.0,
+		width: 120.0,
+		height: 160.0,
+		fill: Brush.flat(RgbColor.of(0x8b5a2b)),
+	})
 }
 
 ## The picture after one frame: the Right key shows the other shape.

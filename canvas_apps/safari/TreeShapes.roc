@@ -13,6 +13,7 @@ import Sprite
 import Polygon
 import Pixels
 import Spot
+import lib.Brush
 import lib.RgbColor
 import lib.Shapes
 
@@ -233,18 +234,21 @@ trunk_shape = |outline, finish| {
 	below_crown = outline.height_on_screen.scaled_by(trunk_height_share)
 	height = below_crown.plus(outline.height_on_screen.scaled_by(trunk_overlap_share))
 	left = outline.foot.x.minus(width.divided_by(2.0))
-	top = outline.foot.y.minus(height)
-	trunk_box = {
-		top_left: { x: left, y: top },
-		bottom_right: { x: left.plus(width), y: outline.foot.y },
-	}
-	match finish {
-		Shaded => Polygon.shaded_polygon(
-			Polygon.rectangle_corners(trunk_box),
-			{ color: trunk_color, strength: Fraction.whole },
-		)
-		Flat => Polygon.rectangle(trunk_box, trunk_color)
-	}
+	fill =
+		match finish {
+			Shaded => Polygon.width_shade(
+				{ min_x: left, max_x: left.plus(width) },
+				{ color: trunk_color, strength: Fraction.whole },
+			)
+			Flat => Brush.flat(trunk_color)
+		}
+	Rect({
+		x: left.to_f64(),
+		y: outline.foot.y.minus(height).to_f64(),
+		width: width.to_f64(),
+		height: height.to_f64(),
+		fill,
+	})
 }
 
 ## A tier as a flat triangle: its apex at the tier's top, its base across its
@@ -434,21 +438,9 @@ expect {
 		a: 1.0,
 	}
 	match trunk_shape(sample_outline, Flat) {
-		Poly(polygon) =>
-			polygon.fill == Flat(trunk_brown)
-				and is_near(
-					polygon.coordinates,
-					[
-						440.0,
-						110.0,
-						520.0,
-						110.0,
-						520.0,
-						600.0,
-						440.0,
-						600.0,
-					],
-				)
+		Rect({ x, y, width, height, fill }) =>
+			fill == Flat(trunk_brown)
+				and is_near([x, y, width, height], [440.0, 110.0, 80.0, 490.0])
 		_ => False
 	}
 }
@@ -468,11 +460,19 @@ expect {
 		a: 1.0,
 	}
 	match trunk_shape(sample_outline, Shaded) {
-		Poly({ coordinates, fill: Span({ edge_color, middle_color, left_x, right_x }) }) =>
+		Rect(
+			{
+				x,
+				y,
+				width,
+				height,
+				fill: Span({ edge_color, middle_color, left_x, right_x }),
+			},
+		) =>
 			edge_color == edge_brown
 				and middle_color == middle_brown
 				and is_near([left_x, right_x], [440.0, 520.0])
-				and is_near(coordinates, [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0])
+				and is_near([x, y, width, height], [440.0, 110.0, 80.0, 490.0])
 		_ => False
 	}
 }

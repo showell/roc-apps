@@ -71,10 +71,6 @@ glow_edge = ArgbColor.from_rgb(brake_color, { alpha: 0 })
 glow_reach : F64
 glow_reach = 3.2
 
-## A glow is drawn as a polygon with this many corners.
-glow_sides : I64
-glow_sides = 16
-
 ## The two brake lights, one in from each side of the trailer's back.
 lamp_pair_shapes : TruckPlacement.TruckSetting -> List(Shapes.Shape)
 lamp_pair_shapes = |truck| {
@@ -109,16 +105,6 @@ center_of = |corners| {
 ## center.
 glow_radius : List(Screen.Point), Screen.Point -> Pixels
 glow_radius = |lamp_points, center| Screen.farthest_distance(lamp_points, center).times(glow_reach)
-
-## A circle round `center`, as a polygon of `glow_sides` corners.
-outline_points : { center : Screen.Point, outline_radius : Pixels } -> List(Screen.Point)
-outline_points = |{ center, outline_radius }|
-	TruckShape.circle_angles(glow_sides).map(
-		|angle| {
-			x: center.x.plus(outline_radius.times(angle.cos())),
-			y: center.y.plus(outline_radius.times(angle.sin())),
-		},
-	)
 
 ## A brake light on the back of the trailer, its sides `left` and `right`
 ## measured rightward of the truck's centre line: its glow, then the lamp
@@ -157,14 +143,19 @@ brake_glow = |truck, lamp_points| {
 	on_screen = Camera.projected_points(lamp_ahead, truck.focal_length)
 	center = center_of(on_screen)
 	radius = glow_radius(on_screen, center)
-	Polygon.circular_gradient_polygon(
-		outline_points({ center, outline_radius: radius }),
-		{
-			center_color: glow_core,
-			edge_color: glow_edge,
-			gradient_center: center,
-			gradient_radius: radius,
-		},
+	fill = Polygon.circular_gradient_fill({
+		center_color: glow_core,
+		edge_color: glow_edge,
+		gradient_center: center,
+		gradient_radius: radius,
+	})?
+	Ok(
+		Disc({
+			x: center.x.to_f64(),
+			y: center.y.to_f64(),
+			radius: radius.to_f64(),
+			fill,
+		}),
 	)
 }
 

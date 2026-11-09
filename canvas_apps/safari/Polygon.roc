@@ -44,72 +44,70 @@ Polygon :: [].{
 			fill: Brush.flat(color),
 		})
 
-	## Makes a rectangle of one flat color. Its sides run along the screen's edges.
-	rectangle : { top_left : Screen.Point, bottom_right : Screen.Point }, RgbColor -> Shapes.Shape
-	rectangle = |{ top_left, bottom_right }, color| {
-		left = top_left.x.to_f64()
-		top = top_left.y.to_f64()
-		right = bottom_right.x.to_f64()
-		bottom = bottom_right.y.to_f64()
-		Poly({
-			coordinates: [
-				left,
-				top,
-				right,
-				top,
-				right,
-				bottom,
-				left,
-				bottom,
-			],
-			fill: Brush.flat(color),
-		})
-	}
-
-	## A rectangle's four corners, clockwise on the screen from its top left.
-	rectangle_corners : {
-		top_left : Screen.Point,
-		bottom_right : Screen.Point,
-	} -> List(Screen.Point)
-	rectangle_corners = |{ top_left, bottom_right }| [
-		top_left,
-		{ x: bottom_right.x, y: top_left.y },
-		bottom_right,
-		{ x: top_left.x, y: bottom_right.y },
-	]
-
 	## Makes a polygon shaded across its width, darker at its edges and lighter in
 	## its middle, or a solid one where it has no strength or is too narrow.
 	shaded_polygon : List(Screen.Point), { color : RgbColor, strength : Fraction } -> Shapes.Shape
 	shaded_polygon = |corners, shade| {
 		coordinates = polygon_coordinates(corners)
-		Poly({ coordinates, fill: width_shade(corners, shade) })
+		Poly({ coordinates, fill: Polygon.width_shade(x_span(corners), shade) })
 	}
+
+	## The span of x a shape covers. Either end is negative for a shape off the
+	## left of the screen.
+	Span : { min_x : Pixels, max_x : Pixels }
+
+	## The fill of a shape spanning `span`, shaded across its width as
+	## `shaded_polygon` shades a polygon. A rectangle takes it too, so that the
+	## two shade alike.
+	width_shade : Polygon.Span, { color : RgbColor, strength : Fraction } -> Brush.Fill
+	width_shade = |span, { color, strength }|
+		if strength <= Fraction.zero or is_too_narrow_to_shade(span) {
+			Brush.flat(color)
+		} else {
+			Span({
+				edge_color: Brush.opaque_rgba(width_shade_edge(color, strength)),
+				middle_color: Brush.opaque_rgba(width_shade_middle(color, strength)),
+				left_x: span.min_x.to_f64(),
+				right_x: span.max_x.to_f64(),
+			})
+		}
 
 	## Makes a polygon filled by a gradient that spreads in a circle from
 	## `gradient_center`, or `TooSmall` when the radius is too small to see.
 	circular_gradient_polygon : List(Screen.Point),
-	{
+	Polygon.CircularGradient -> Try(
+		Shapes.Shape,
+		[TooSmall],
+	)
+	circular_gradient_polygon = |corners, gradient| {
+		fill = Polygon.circular_gradient_fill(gradient)?
+		Ok(Poly({ coordinates: polygon_coordinates(corners), fill }))
+	}
+
+	## A gradient that spreads in a circle from `gradient_center`, from
+	## `center_color` there to `edge_color` at `gradient_radius`.
+	CircularGradient : {
 		center_color : ArgbColor,
 		edge_color : ArgbColor,
 		gradient_center : Screen.Point,
 		gradient_radius : Pixels,
-	} -> Try(Shapes.Shape, [TooSmall])
-	circular_gradient_polygon = |corners, gradient| {
+	}
+
+	## The fill of a circular gradient, or `TooSmall` when its radius is too
+	## small to see. A disc takes it as well as a polygon.
+	circular_gradient_fill : Polygon.CircularGradient -> Try(Brush.Fill, [TooSmall])
+	circular_gradient_fill = |gradient| {
 		center = gradient.gradient_center
 		if gradient.gradient_radius < smallest_gradient_radius {
 			Err(TooSmall)
 		} else {
 			Ok(
-				Poly({
-					coordinates: polygon_coordinates(corners),
-					fill: Radial({
-						inner_color: Brush.translucent(gradient.center_color),
-						outer_color: Brush.translucent(gradient.edge_color),
-						center: { x: center.x.to_f64(), y: center.y.to_f64() },
-						inner_radius: 0.0,
-						outer_radius: gradient.gradient_radius.to_f64(),
-					}),
+				Radial({
+					inner_color: Brush.translucent(gradient.center_color),
+					outer_color: Brush.translucent(gradient.edge_color),
+					center: { x: center.x.to_f64(), y: center.y.to_f64() },
+					inner_radius: 0.0,
+					outer_radius: gradient.gradient_radius.to_f64(),
 				}),
 			)
 		}
@@ -197,10 +195,6 @@ polygon_coordinates = |corners|
 smallest_gradient_radius : Pixels
 smallest_gradient_radius = Pixels.of(0.5)
 
-## The span of x a polygon covers. Either end is negative for a polygon off the
-## left of the screen.
-Span : { min_x : Pixels, max_x : Pixels }
-
 shade_edge_darken : Fraction
 shade_edge_darken = Fraction.of(0.4)
 
@@ -220,11 +214,11 @@ width_shade_middle = |color, strength|
 narrowest_shaded_width : Pixels
 narrowest_shaded_width = Pixels.of(1.0)
 
-is_too_narrow_to_shade : Span -> Bool
+is_too_narrow_to_shade : Polygon.Span -> Bool
 is_too_narrow_to_shade = |span| span.max_x.minus(span.min_x) < narrowest_shaded_width
 
 ## The span of x over a polygon's corners. It has at least one corner.
-x_span : List(Screen.Point) -> Span
+x_span : List(Screen.Point) -> Polygon.Span
 x_span = |corners|
 	match corners.map(|corner| corner.x) {
 		[first, .. as rest] => {
@@ -249,22 +243,6 @@ x_span = |corners|
 		}
 		[] => crash "Polygon.x_span: a polygon has a corner"
 	}
-
-## The fill of a polygon shaded across its width.
-width_shade : List(Screen.Point), { color : RgbColor, strength : Fraction } -> Brush.Fill
-width_shade = |corners, { color, strength }| {
-	span = x_span(corners)
-	if strength <= Fraction.zero or is_too_narrow_to_shade(span) {
-		Brush.flat(color)
-	} else {
-		Span({
-			edge_color: Brush.opaque_rgba(width_shade_edge(color, strength)),
-			middle_color: Brush.opaque_rgba(width_shade_middle(color, strength)),
-			left_x: span.min_x.to_f64(),
-			right_x: span.max_x.to_f64(),
-		})
-	}
-}
 
 three_corners : List(Screen.Point)
 three_corners = [
@@ -313,32 +291,6 @@ expect
 	)
 		== Poly({
 			coordinates: triangle_coordinates,
-			fill: Flat(Brush.opaque_rgba(RgbColor.of(111))),
-		})
-
-sample_rectangle : { top_left : Screen.Point, bottom_right : Screen.Point }
-sample_rectangle = { top_left: Screen.point(1.0, 2.0), bottom_right: Screen.point(5.0, 8.0) }
-
-expect Polygon.rectangle_corners(sample_rectangle) == [
-	Screen.point(1.0, 2.0),
-	Screen.point(5.0, 2.0),
-	Screen.point(5.0, 8.0),
-	Screen.point(1.0, 8.0),
-]
-
-expect Polygon.rectangle(sample_rectangle, RgbColor.of(111)) == Poly({
-	coordinates: [1.0, 2.0, 5.0, 2.0, 5.0, 8.0, 1.0, 8.0],
-	fill: Flat(Brush.opaque_rgba(RgbColor.of(111))),
-})
-
-# A rectangle of no size still has its four corners.
-expect
-	Polygon.rectangle(
-		{ top_left: Screen.point(1.0, 2.0), bottom_right: Screen.point(1.0, 2.0) },
-		RgbColor.of(111),
-	)
-		== Poly({
-			coordinates: [1.0, 2.0, 1.0, 2.0, 1.0, 2.0, 1.0, 2.0],
 			fill: Flat(Brush.opaque_rgba(RgbColor.of(111))),
 		})
 

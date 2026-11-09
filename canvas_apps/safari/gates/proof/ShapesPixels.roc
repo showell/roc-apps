@@ -4,8 +4,8 @@
 ## paints every proof frame through this module, and ShapesFrame paints each
 ## one a second time with its polygons cut into triangles.
 ##
-## It paints only what Safari's ride draws: polygons and flat discs, each laid
-## over what is there. Any other shape crashes, naming what it got.
+## It paints only what Safari's ride draws: polygons, discs and rectangles, each
+## laid over what is there. Any other shape crashes, naming what it got.
 import lib.Shapes
 import ScanlineFill
 import ScreenRoll
@@ -30,23 +30,34 @@ pixels_with_shape = |pixels, { roll, shape }|
 			pixels,
 			{ roll, coordinates: p.coordinates, fill: p.fill },
 		)
-		Disc(d) => {
-			color = match d.fill {
-				Flat(flat) => flat
-				Span(_) | Radial(_) | Linear(_) | Ellipse(_) | Glow(_) =>
-					crash "ShapesPixels: a disc with a gradient"
-			}
-			ScanlineFill.disc_pixels(
-				pixels,
-				{
-					roll,
-					center: ScreenRoll.ScenePoint.({ x: d.x, y: d.y }),
-					radius: d.radius,
-					color,
-				},
-			)
-		}
-		Rect(_) => crash "ShapesPixels: a rectangle among the ride's shapes"
+		Disc(d) => ScanlineFill.disc_pixels(
+			pixels,
+			{
+				roll,
+				center: ScreenRoll.ScenePoint.({ x: d.x, y: d.y }),
+				radius: d.radius,
+				fill: d.fill,
+			},
+		)
+		# A canvas traces a rectangle as the path round its four corners, so it
+		# fills as that polygon does.
+		Rect(r) => ScanlineFill.polygon_pixels(
+			pixels,
+			{
+				roll,
+				coordinates: [
+					r.x,
+					r.y,
+					r.x + r.width,
+					r.y,
+					r.x + r.width,
+					r.y + r.height,
+					r.x,
+					r.y + r.height,
+				],
+				fill: r.fill,
+			},
+		)
 		# ScanlineFill lays every pixel over what is there, so Over is the mode
 		# it is always in, and Add is light it can't paint.
 		Blend(Over) => pixels
