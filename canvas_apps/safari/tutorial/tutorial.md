@@ -25,7 +25,7 @@ Safari Ride shows a world in motion, seen from the rider's seat. It draws that w
 
 The first is the world itself. A long road runs through open country, past trees, herds, ponds, radio towers and mountains. Something has to say where every one of them is.
 
-The second is the rider's view. The screen shows only what the rider sees. A tree far down the road looks small, a tree close by looks big, and a tree behind the rider doesn't show at all. For everything in the world, the program has to work out whether the rider sees it, where it appears, and how big it looks.
+The second is the rider's view. The screen shows only what the rider sees. A tree far down the road looks small, a tree close by looks big, and a tree behind the rider doesn't show at all. For everything in the world, the program has to work out where it lands on the screen, and how big, if the rider sees it at all.
 
 The third is motion. The rider rides on, the truck drives ahead, the cat crosses the road and the sun goes down. At every step, something has to move each of them on, and the moves have to fit together. The cat times its crossing to the rider coming toward it, and a cat in the road stops the rider speeding up.
 
