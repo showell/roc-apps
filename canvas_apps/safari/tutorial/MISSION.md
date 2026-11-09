@@ -126,13 +126,15 @@ On the things that matter most, the two of us are collaborators. Together we ref
 
 ### The loop
 
-The work is a linear pass, one chapter at a time, in book order. Every chapter already has a draft that has had at least one round.
+The work is a linear pass, one chapter at a time, in book order, starting again from the Introduction.
+
+**Write a clean draft every time.** Every chapter gets a clean draft, written fresh, every round. Don't regurgitate the old text, and don't edit it yet. Editing comes later, once a clean draft has earned it. Reworded old sentences are the old draft in disguise, and Steve can tell.
 
 **The loop, for one chapter:**
 
 1. Read the chapter and the code it quotes.
 2. If the prose exposes a smell (G1), fix the code first. A small fix lands now. A bigger one goes in the queue, and the chapter describes the code as it stands.
-3. Write the chapter mostly from scratch, with a strong voice, from the reader's questions: what is this for, why now, what does it show? The old draft is a source of facts and of includes, never of sentences; keep only the lines Steve has praised. An edit pass over the old sentences is not a rewrite. Then check it against axes B through I. The writer writes the prose; nobody else does. Check every diagram edge against the code, and give every edge its label (H1).
+3. Write a clean draft from scratch, with a strong voice, from the reader's questions: what is this for, why now, what does it show? Close the old draft before you write. It is a source of facts and of includes, never of sentences. Then check it against axes B through I. The writer writes the prose; nobody else does. Check every diagram edge against the code, and give every edge its label (H1).
 4. Gate, commit, push, and rebuild the book.
 5. Every four or five chapters, post a proofread note with the new text, and Steve reads it while the work goes on. His replies come first whenever they arrive.
 
