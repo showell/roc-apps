@@ -55,13 +55,23 @@ Every piece we build, from a tree to the cat, lives in a module, and the platfor
 
 Types are at the heart of every Roc program. A type says what a value holds, and the compiler checks every value against its type before the program runs. So a good way to meet a Roc program is to read its types.
 
-This chapter takes one tour across Safari Ride, with a stop for each of the five pieces from "The problem": things, the world, the rider's view, motion and the person watching. At each stop we read the types for that piece. On the way, you learn to read the types Roc programs are built from: records, tags, type variables and the types of functions. The functions come later, piece by piece.
+This chapter takes one tour across Safari Ride, with a stop for each of the five pieces from "The problem": things, the world, the rider's view, motion and the person watching. At each stop we read the types for that piece. On the way, you learn to read the types Roc programs are built from: numbers, records, tags, type variables and the types of functions. The functions come later, piece by piece.
+
+### Numbers at the bottom
+
+Every type is built from smaller ones, and at the bottom are Roc's own primitive types. Safari Ride's are nearly all numbers. Here's a small type built around one:
+
+{{code Distance.Distance from "Distance ::" to "F64.{"}}
+
+`F64` is one of Roc's number types, a 64-bit floating-point number. A `Distance` wraps one, a length in metres, and the `::` makes it opaque: only the `Distance` module reads the number inside. Everywhere else, a length is a `Distance`, and the compiler keeps it apart from every other number.
+
+Roc has text too, in its `Str` type. Safari Ride describes pictures, so its types are numbers and the records and tags built on them, and `Str` appears in it only rarely.
+
+### Things
 
 ```widget frame moving
 Step 1,529 of the ride, held still: the frame these types describe.
 ```
-
-### Things
 
 Every thing beside the road has a kind, and each kind is a type. A tree is a `Conifer`, a cat is a `Cat`, and a radio tower is a `Tower`. A cow is a `Billboard`, an emoji that stands on the grass, square to the rider, looking left or right:
 
@@ -71,7 +81,7 @@ Here's what each piece of it says:
 
 | Code | What it says |
 |---|---|
-| `Billboard ::` | `Billboard` names the type. The `::` makes it opaque: only the `Billboard` module reads its fields. |
+| `Billboard ::` | `Billboard` names the type. The `::` makes it opaque, as it does `Distance`: only the `Billboard` module reads its fields. |
 | `{` and `}` | The curly braces hold a record type's fields together. |
 | `emoji : EmojiStills.EmojiStill,` | `emoji` names a field, and `EmojiStills.EmojiStill` names its type: the `EmojiStill` type in the `EmojiStills` module. |
 | `height : Distance,` | `height` names a field, and `Distance` names its type: the main type of the `Distance` module. |
@@ -158,7 +168,7 @@ Because the tour keeps every past moment, stepping back is as quick as stepping 
 
 ### Where we start
 
-That's five pieces, and the types for each. On the way, you've read records, tags, a type variable and a function's type. You've also read three ways to name a type. A `:` gives a type a name, and anyone can build one. A `::` makes an opaque type, and only its module reads its fields. A `:=` makes a nominal type, and any module reads its fields. You'll meet all of them on almost every page from here on.
+That's five pieces, and the types for each. On the way, you've read a number type, records, tags, a type variable and a function's type. You've also read three ways to name a type. A `:` gives a type a name, and anyone can build one. A `::` makes an opaque type, and only its module reads its fields. A `:=` makes a nominal type, and any module reads its fields. You'll meet all of them on almost every page from here on.
 
 The rest of the book builds the pieces in order. So we start with things: what a cow, a tree or a tower is in the code, and how a thing becomes a sprite.
 
