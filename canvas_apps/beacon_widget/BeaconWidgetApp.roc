@@ -10,7 +10,6 @@ import game.Beacon
 import game.Clock
 import game.Distance
 import game.Geom
-import game.Lens
 import game.Pipeline
 import game.Route
 import game.SegmentFromRider

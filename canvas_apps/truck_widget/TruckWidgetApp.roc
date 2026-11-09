@@ -125,11 +125,7 @@ view_setting = |view| {
 	placed_truck = { road_point: truck_road_point, lift: Distance.zero, kind: {} }
 	sighting_result = Pipeline.sighting_of(
 		placed_truck,
-		{
-			road: World.road_at_start,
-			vantage,
-			place,
-		},
+		{ road: World.road_at_start, vantage, place },
 	)
 	match sighting_result {
 		Ok(sighting) => {
