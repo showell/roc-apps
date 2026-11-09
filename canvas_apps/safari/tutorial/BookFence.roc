@@ -61,7 +61,7 @@ frame_of = |word| match word {
 	}
 	"frame" => {
 		folder: "frame_widget",
-		aspect: "960 / 700",
+		aspect: "960 / 600",
 		loading: Lazy,
 	}
 	widget => {
@@ -143,7 +143,7 @@ listing_html = |{ language, title, code }| {
 expect frame_of("ride").folder == "safari"
 expect frame_of("sky").folder == "sky_widget"
 expect frame_of("frame").folder == "frame_widget"
-expect frame_of("frame").aspect == "960 / 700"
+expect frame_of("frame").aspect == "960 / 600"
 expect [
 	frame_of("ride"),
 	frame_of("frame"),
