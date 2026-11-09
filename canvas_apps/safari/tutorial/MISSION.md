@@ -135,6 +135,8 @@ On the things that matter most, the two of us are collaborators. Together we ref
 
 The work is a linear pass, one chapter at a time, in book order, starting again from the Introduction.
 
+**We're starting over from scratch.** The book is the chapters that have passed this loop, and nothing else. The rest of tutorial.md was written by another team, old Steve and old Claude. It's a source of facts and includes, never a structure we owe anything to. We're bound by what the new chapters promise, not by the old book's order.
+
 **Write a clean draft every time.** Every chapter gets a clean draft, written fresh, every round. Don't regurgitate the old text, and don't edit it yet. Editing comes later, once a clean draft has earned it. Reworded old sentences are the old draft in disguise, and Steve can tell.
 
 **The loop, for one chapter:**
