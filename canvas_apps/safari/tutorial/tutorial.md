@@ -196,50 +196,39 @@ The `focal_length` sets how much the camera's lens magnifies, in `Pixels`, the s
 
 The `spot` comes from a camera: it's what a sighting holds. So to draw one cow alone, the picture above puts the cow on the road, 10 metres ahead and 5 metres left of the middle, and lets a camera at the start of the road sight it. The rider's own camera comes in when the book reaches the rider's view.
 
-What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, drawn as polygons. Nearly every shape in the ride is a polygon. At step 1,529, the ride draws 2,121 shapes over the sky and the grass, and all but eight of them are polygons. The other eight are discs.
+What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, drawn as polygons. Most of the ride's shapes are polygons. At step 1,529, the ride draws 2,121 shapes over the sky and the grass: 1,977 polygons, 136 rectangles, one for each tree's trunk, and 8 discs.
 
 So we start with shapes, and the simplest shape is a triangle. Then we build the things from shapes, starting with a tree.
 
 ## Shapes
 
-Every frame of Safari Ride is a list of shapes, and nearly every shape is a polygon. Roc builds the list, and JavaScript on this page paints it, from the first shape to the last. In this chapter we draw the two polygons a tree is made of: a triangle and a rectangle.
+A far tree in the ride is a rectangle of trunk under eight triangles. So before the tree, we draw its two shapes: a triangle and a rectangle.
 
-New in this chapter:
+A shape is a tag. Here are the three the ride draws with:
 
-- Roc: tags with payloads, a record taken apart in a parameter list, opaque types, static dispatch
-- Modules: `Shapes`, `Screen`, `Pixels`, `Polygon`
+{{code Shapes.Shape from "Shape : [" to "Rect("}}
 
-### The polygon
-
-A shape is one of a handful of tags:
-
-{{code Shapes.Shape}}
-
-Each tag carries its data in parentheses. `Poly` is a polygon. Its `coordinates` list the corners as plain numbers, an `x` and then a `y` for each, and its `fill` colors the inside. A polygon can be any flat surface: a tier of a tree, a stretch of road, a side of the truck. So the ride draws nearly everything as a `Poly`. At step 1,529, 2,113 of the frame's 2,121 shapes are polygons.
+Each tag carries a record of its data. A `Poly` is a polygon: its `coordinates` list the corners, an `x` and then a `y` for each, and its `fill` colors the inside. A `Disc` is a circle, and a `Rect` is a rectangle with its sides along the screen's edges. Their numbers are pixels, measured from the top left of the screen, with `y` growing downward.
 
 ### A triangle
 
-Here is a triangle:
+Here's a triangle:
 
 ```widget shapes triangle
 A green triangle on a plain background.
 ```
 
-And here is the code that makes it:
+And here's the code that makes it:
 
 {{code ShapesWidgetApp.green_triangle}}
 
-Each corner is a `Screen.Point`, an `x` and a `y` on the canvas. The canvas is measured from its top left, and `y` grows downward. `0x2e8b57` is the color, the same six hex digits a web page writes after its `#`.
-
-`Polygon.triangle` builds the `Poly`:
+`0x2e8b57` is the color, the six hex digits a web page writes after its `#`. The `Polygon.triangle` function builds the `Poly`:
 
 {{code Polygon.triangle}}
 
 The parameter `{ first_corner, second_corner, third_corner }` takes the record apart into three names. Every caller names all three corners, so every triangle has exactly three, by construction. The body lists the six numbers and fills the inside with one flat color.
 
-`first_corner.x` is a `Pixels`, a length on the screen. `Pixels` is an opaque type: an `F64` underneath, but only its own module sees the number. Screen lengths and road lengths never mix. `first_corner.x.to_f64()` takes the number out, and it uses static dispatch: Roc finds `to_f64` from the type of `first_corner.x`, so the call needs no `Pixels.` in front.
-
-`triangle` is a thin wrapper, and it earns its place. A `Poly` takes a bare list of numbers. `triangle` takes three named corners.
+Each corner is a `Screen.Point`, and its `x` and `y` are each a `Pixels`: an opaque type around an `F64`, like `Distance`. The ride works in metres on the road and pixels on the screen, so two types keep the two apart, and a reader always knows which one a number is. The `to_f64` calls take the plain numbers out for the `Poly`. Roc is just as happy with plain numbers, as the `Shape` type shows.
 
 ### A rectangle
 
@@ -251,13 +240,9 @@ A brown rectangle on a plain background.
 
 {{code ShapesWidgetApp.brown_rectangle}}
 
-A rectangle's sides run along the canvas's edges, so two opposite corners pin it down. `Polygon.rectangle` takes just those two:
+A `Rect` takes its top left corner, its width and its height, all plain numbers, so the picture builds one directly.
 
-{{code Polygon.rectangle}}
-
-It names the four edges, then lists the corners clockwise from the top left, each one an edge for its `x` and an edge for its `y`.
-
-A far tree in the ride is one rectangle of trunk under eight of these triangles.
+That's both of a far tree's shapes. Next, we put them together.
 
 ## The modules
 
@@ -3143,7 +3128,8 @@ The ride instant chapter showed `SafariApp.model_at_next_step` reading a snapsho
 
 | What's in the shapes of step 1,529 | How many |
 |---|---|
-| `Poly` | 2,113 |
+| `Poly` | 1,977 |
+| `Rect` | 136 |
 | `Disc` | 8 |
 
 What the game hands back each frame is a `List(Shapes.Shape)`. A shape is a tag: `Poly`, `Disc`, `Rect` and a few more, each with its fill. The table counts the shapes of step 1,529, the cat frozen in the road: 2,474 in all, the count in the proving chapter's table, and nearly all of them polygons. Two of the tags aren't shapes. `Blend` and `View` are marks in the list that change how what comes after them is painted. A frame is a flat list, so a mark is the cheapest way to say that.
