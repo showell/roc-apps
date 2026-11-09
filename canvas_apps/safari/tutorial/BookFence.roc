@@ -44,8 +44,8 @@ BookFence := [].{
 }
 
 ## The page behind a widget's word, and the shape of its canvas: `Screen.roc`
-## sets the ride's, `FrameWidgetApp.roc` the paused frame's, and `WidgetPage.roc`
-## the other widgets'.
+## sets the ride's, `FrameWidgetApp.roc` the paused frame's, `RouteWidgetApp.roc`
+## the map's, and `WidgetPage.roc` the other widgets'.
 Frame : {
 	folder : Str,
 	aspect : Str,
@@ -62,6 +62,11 @@ frame_of = |word| match word {
 	"frame" => {
 		folder: "frame_widget",
 		aspect: "960 / 600",
+		loading: Lazy,
+	}
+	"route" => {
+		folder: "route_widget",
+		aspect: "640 / 220",
 		loading: Lazy,
 	}
 	widget => {
@@ -144,6 +149,13 @@ expect frame_of("ride").folder == "safari"
 expect frame_of("sky").folder == "sky_widget"
 expect frame_of("frame").folder == "frame_widget"
 expect frame_of("frame").aspect == "960 / 600"
+expect
+	frame_of("route")
+		== {
+			folder: "route_widget",
+			aspect: "640 / 220",
+			loading: Lazy,
+		}
 expect [
 	frame_of("ride"),
 	frame_of("frame"),

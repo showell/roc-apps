@@ -1,9 +1,10 @@
-## The widget for the Safari tutorial's chapter on what never changes: a fixed
-## map of the whole route, with no controls. Each stretch is one record of
-## `World.segment_plans`, and the lines of text read out the record of the stretch in
-## white. The route gives the bearing each segment sets off on
+## The widget for the Safari tutorial's tour of the world: a fixed map of the
+## whole route, with no controls. Each stretch is one record of
+## `World.segment_plans`, and a mark shows where a plan has a cat cross or a
+## bird fly. The route gives the bearing each segment sets off on
 ## (`Route.bearing_of`), and the widget lays the road out along those bearings,
-## with the whole map turned so the road lies along the wide picture.
+## with the whole map turned so the road lies along the wide picture. The book
+## shows a plan's record as Roc code, so the canvas holds the map alone.
 import game.Angle
 import game.Distance
 import game.Route
@@ -14,7 +15,6 @@ import lib.Shapes
 import lib.RgbColor
 import lib.Point
 import widget.PlanView
-import widget.ReadoutText
 import widget.WidgetPage
 import widget.WidgetPalette
 
@@ -24,8 +24,19 @@ RouteWidgetApp :: [].{
 	Model : {}
 
 	canvas_app : CanvasApp.CanvasApp(RouteWidgetApp.Model)
-	canvas_app = WidgetPage.fixed_picture_app({ title: "The route", shapes: fixed_picture_shapes })
+	canvas_app = {
+		..WidgetPage.fixed_picture_app({ title: "The route", shapes: picture_shapes }),
+		size: { width: canvas_width, height: canvas_height },
+	}
 }
+
+canvas_width : F64
+canvas_width = WidgetPage.canvas_width
+
+## As tall as the road needs when it spans the canvas's width, margins
+## included. The book's frame for this widget has the same aspect.
+canvas_height : F64
+canvas_height = 220.0
 
 ## A place on the map, by how far east and north of the route's start it is;
 ## either can be negative.
@@ -79,35 +90,6 @@ segments =
 		)
 		.laid
 
-## The segment read out under the map, counted from 1. It's the longest on the
-## route, the first of them if two tie, and the one the book quotes in its
-## chapter on the math layer.
-read_out_number : U64
-read_out_number = {
-	longest = segments.fold_with_index(
-		{ number: 0, metres: 0.0 },
-		|best, segment, index| {
-			metres = segment.plan.length.to_metres()
-			if metres > best.metres {
-				{ number: index + 1, metres }
-			} else {
-				best
-			}
-		},
-	)
-	longest.number
-}
-
-read_out_segment : LaidSegment
-read_out_segment =
-	segments.get(read_out_number - 1) ?? crash "RouteWidgetApp.read_out_segment: the route has this segment"
-
-## The plan of the segment read out, with the bend at its end.
-read_out_plan : World.BendingPlan
-read_out_plan =
-	World.bending_plans.get(read_out_number - 1)
-		?? crash "RouteWidgetApp.read_out_plan: the segment read out bends into the next"
-
 ## Every corner of the road.
 corners : List(MapPoint)
 corners = segments.map(|segment| segment.end).prepend(map_start)
@@ -149,10 +131,10 @@ map_plan = {
 	road_width = extent.east.minus(extent.west).to_metres()
 	road_height = extent.north.minus(extent.south).to_metres()
 	{
-		origin: { x: WidgetPage.canvas_width / 2.0, y: WidgetPage.picture_bottom_y / 2.0 },
+		origin: { x: canvas_width / 2.0, y: canvas_height / 2.0 },
 		pixels_a_metre: F64.min(
-			(WidgetPage.canvas_width - 2.0 * map_margin) / road_width,
-			(WidgetPage.picture_bottom_y - 2.0 * map_margin) / road_height,
+			(canvas_width - 2.0 * map_margin) / road_width,
+			(canvas_height - 2.0 * map_margin) / road_height,
 		),
 	}
 }
@@ -169,9 +151,6 @@ canvas_point = |{ east, north }| {
 		metres_down: (south_edge + north_edge) / 2.0 - north.to_metres(),
 	})
 }
-
-read_out_color : RgbColor
-read_out_color = WidgetPalette.highlight_color
 
 cat_color : RgbColor
 cat_color = WidgetPalette.accent_color
@@ -191,15 +170,26 @@ spot = |point, { radius, color }| {
 	})
 }
 
-## One segment of road, `width` pixels wide with a round end at each corner.
-piece_shapes : LaidSegment, { width : F64, color : RgbColor } -> List(Shapes.Shape)
-piece_shapes = |{ start, end, .. }, { width, color }| {
-	a = canvas_point(start)
-	b = canvas_point(end)
+## How many pixels wide the road is drawn.
+road_width_pixels : F64
+road_width_pixels = 5.0
+
+## One segment of road, with a round end at each corner.
+piece_shapes : LaidSegment -> List(Shapes.Shape)
+piece_shapes = |{ start, end, .. }| {
+	color = WidgetPalette.plan_road_color
+	radius = road_width_pixels / 2.0
 	[
-		Shapes.line({ from: a, to: b, width }, Brush.flat(color)),
-		spot(start, { radius: width / 2.0, color }),
-		spot(end, { radius: width / 2.0, color }),
+		Shapes.line(
+			{
+				from: canvas_point(start),
+				to: canvas_point(end),
+				width: road_width_pixels,
+			},
+			Brush.flat(color),
+		),
+		spot(start, { radius, color }),
+		spot(end, { radius, color }),
 	]
 }
 
@@ -252,11 +242,6 @@ legend_shapes : List(Shapes.Shape)
 legend_shapes =
 	[
 		row_shapes({
-			y: 160.0,
-			color: read_out_color,
-			word: "segment ${read_out_number.to_str()}",
-		}),
-		row_shapes({
 			y: 178.0,
 			color: cat_color,
 			word: "a cat crosses",
@@ -269,40 +254,24 @@ legend_shapes =
 	].join()
 
 road_shapes : List(Shapes.Shape)
-road_shapes = segments.join_map(
-	|each| piece_shapes(each, { width: 5.0, color: WidgetPalette.plan_road_color }),
-)
+road_shapes = segments.join_map(piece_shapes)
 
-## The stretch that the lines under the map read out.
-read_out_shapes : List(Shapes.Shape)
-read_out_shapes = piece_shapes(read_out_segment, { width: 7.0, color: read_out_color })
+ground : Shapes.Shape
+ground = Rect({
+	x: 0.0,
+	y: 0.0,
+	width: canvas_width,
+	height: canvas_height,
+	fill: Brush.flat(WidgetPalette.plan_ground_color),
+})
 
 picture_shapes : List(Shapes.Shape)
 picture_shapes =
-	[
-		[WidgetPage.picture_backdrop(WidgetPalette.plan_ground_color)],
-		road_shapes,
-		read_out_shapes,
-		segments.join_map(mark_shapes),
-		legend_shapes,
-	].join()
+	[[ground], road_shapes, segments.join_map(mark_shapes), legend_shapes].join()
 
-## The segment's record, a few fields a line, with its tags as Roc writes them.
-status_lines : List(Str)
-status_lines = {
-	plan = read_out_plan.segment_plan
-	metres = ReadoutText.whole_text(plan.length.to_metres())
-	turn = ReadoutText.turn_text(read_out_plan.turn)
-	[
-		"Segment ${read_out_number.to_str()} of ${segments.len().to_str()}: ${metres} m, ${turn}",
-		"encounter: ${Str.inspect(plan.encounter)}, pigs: ${Str.inspect(plan.pigs)}",
-		"bull: ${Str.inspect(plan.bull)}, scheme: ${Str.inspect(plan.scheme)}",
-		"bend_life: ${Str.inspect(read_out_plan.bend_life)}",
-	]
-}
-
-fixed_picture_shapes : List(Shapes.Shape)
-fixed_picture_shapes = WidgetPage.frame_shapes({ picture_shapes, status_lines })
+## Whether `point` is on the canvas, edges included.
+is_on_canvas : Point.Point -> Bool
+is_on_canvas = |{ x, y }| x >= 0.0 and x <= canvas_width and y >= 0.0 and y <= canvas_height
 
 expect segments.len() == World.segment_plans.len()
 
@@ -313,17 +282,25 @@ expect {
 	starts.drop_first(1) == ends.drop_last(1)
 }
 
-# The road stays inside the picture, on all four sides.
-expect corners.all(|corner| WidgetPage.is_in_picture(canvas_point(corner)))
+# The road stays on the canvas, on all four sides.
+expect corners.all(|corner| is_on_canvas(canvas_point(corner)))
 
-# It is the longest segment, so it is plain on the map.
+# The road spans the canvas's width, between its margins, so the canvas is no
+# wider than the map needs.
 expect {
-	longest = read_out_segment.plan.length.to_metres()
-	segments.all(|segment| segment.plan.length.to_metres() <= longest)
+	road_width = extent.east.minus(extent.west).to_metres()
+	map_plan.pixels_a_metre == (canvas_width - 2.0 * map_margin) / road_width
 }
 
-# The stretch that's read out goes down over the road.
-expect picture_shapes.drop_first(1 + road_shapes.len()).starts_with(read_out_shapes)
+# Nor is it much taller: less than one margin is left over above and below.
+expect {
+	road_height = extent.north.minus(extent.south).to_metres() * map_plan.pixels_a_metre
+	canvas_height - 2.0 * map_margin - road_height < map_margin
+}
 
-# The lines go on the panel, over the picture.
-expect fixed_picture_shapes.starts_with(picture_shapes)
+# The canvas is the map alone, at the size the app gives the page.
+expect {
+	frame_shapes = RouteWidgetApp.canvas_app.frame_shapes
+	frame_shapes({}) == picture_shapes
+}
+expect RouteWidgetApp.canvas_app.size == { width: 640.0, height: 220.0 }

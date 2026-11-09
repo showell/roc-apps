@@ -13,7 +13,7 @@ the Safari tutorial: drag across it and the cat's crossing plays under the
 pointer, from Safari's own modules. `sky_widget`, `bird_widget` and `beacon_widget`
 are three more: drag the clock and the sun sets, drag the gap and the bird
 flies, drag the clock and two masts blink opposite each other. `route_widget`
-is a fixed map of the whole route with one segment's record read out,
+is a fixed map of the whole route, marking where a cat crosses or a bird flies,
 `bends_widget` is a fixed picture of three bends side by side, `step_widget` plays the ride forward and reads it back, `rehearsal_widget`
 clicks through one step's twelve tries at a lean, `stills_widget` lays out
 every pose of the cat and the bird and shows the one clicked large, with its
