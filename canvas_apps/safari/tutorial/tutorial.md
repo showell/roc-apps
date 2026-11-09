@@ -315,107 +315,103 @@ Nothing in this chapter moves, and nothing in the next few chapters does either:
 
 ## Shapes
 
-Before we draw a tree, we need to know what drawing means here. For each frame, the Roc app answers with a list of shapes, and a painter puts them on a canvas. The painter on this page is JavaScript. It could as well be a wasm host, written in Odin or Zig, say, and the same Roc would serve it. A painter is a bit like a printer: it does exactly what the list says.
+Thirty times a second, Safari Ride answers one question: what goes on the canvas? The answer is a list of shapes. Roc builds the list, and a painter on the other side, JavaScript on this page, paints it from the first shape to the last. A painter is a bit like a printer: it does exactly what the list says.
+
+That split is the whole drawing model. Roc decides every corner and every color. The painter only follows orders. This chapter builds a list by hand, with one triangle and one rectangle in it. Everything Safari Ride draws later, from a pine tree to the truck, is the same idea with more corners.
 
 New in this chapter:
 
-- Roc: a record taken apart in a parameter list, `Try`
-- Modules: `TwoShapes`, `Shapes`, `Polygon`, `Screen`, `Pixels`, `Picture`, `GroundPatch`
+- Roc: a record taken apart in a parameter list
+- Modules: `TwoShapes`, `Shapes`, `Polygon`, `Screen`, `Pixels`, `Picture`
 
 ### Get the types right
 
-Three types carry everything a frame paints:
+Three types do the work. One says where, one says what, and one says which shapes belong together.
 
-| Type | What it is |
+| Type | What it says |
 |---|---|
-| `Screen.Point` | A place on the canvas, as an `x` and a `y` in `Pixels` from its top left |
-| `Shapes.Shape` | One item in a frame's list, such as a polygon |
-| `Picture` | The shapes that paint one object, in the order they're painted |
+| `Screen.Point` | Where: a place on the canvas |
+| `Shapes.Shape` | What: one item in the frame's list, such as a polygon |
+| `Picture` | Which belong together: the shapes that form one full object, in painting order |
 
-Safari Ride's frames are for a canvas 960 pixels wide and 600 pixels tall, and `y` grows downward. `Pixels` is a length on the screen. It's opaque like `Clock`, and it's an `F64` underneath, because a corner can fall between two pixels. A `Screen.Point` is a record of two of them:
+The canvas is 960 pixels wide and 600 tall. Its points are measured from the top left corner, and `y` grows downward. A `Screen.Point` is an `x` and a `y`:
 
 {{code Screen.Point}}
 
-`Screen.point(x, y)` makes one from two plain numbers.
+Both are `Pixels`, a length on the screen. `Pixels` is opaque, like `Clock`, so the compiler keeps screen lengths and road lengths apart. Underneath it's an `F64`, because a corner can land between two pixels. `Screen.point(x, y)` makes a point from two plain numbers.
 
-A frame is a list of `Shapes.Shape`:
+A frame is a list of `Shapes.Shape`, and a shape is one of a handful of tags:
 
 {{code Shapes.Shape}}
 
-Each tag here carries a value in parentheses, called its payload. A `Poly` carries a record of its coordinates and its fill, and a `Disc` carries its center, as an `x` and a `y`, its radius and its fill. The chapter A conifer comes back to payloads. A fill is a `Brush.Fill`, another tag union: `Flat` with one color, or one of several kinds of shading and gradient.
+Each tag carries its data in parentheses, its payload. A `Poly` is a polygon, and its payload is the coordinates of its corners and its fill. A fill is a `Brush.Fill`. `Flat` is a single color, and the other fills are gradients, running from one color to another across the shape. `Blend` and `View` are marks in the list that change how the shapes after them are painted.
 
-Every canvas app in this repository, under `canvas_apps`, shares `Shapes.Shape`. Two of its tags, `Blend` and `View`, are marks that change how the shapes after them are painted. A frame of Safari Ride often holds more than 2,000 shapes, and nearly all of them are `Poly`.
+Safari Ride paints nearly everything as polygons. A frame often holds more than 2,000 shapes, and nearly all of them are `Poly`.
 
-Here's a frame with a triangle and a rectangle in it:
+### A frame of two shapes
+
+Here is a frame small enough to read whole:
 
 ```widget shapes
 The list `TwoShapes.shapes`, painted over a plain background, on a smaller canvas than the ride's.
 ```
 
-It's made like this:
-
-The two shapes, from the top
-```dot
-digraph shapes {
-  node [shape=box, fontname="Helvetica"];
-  "TwoShapes.shapes" -> "triangle" [label="  lists"];
-  "TwoShapes.shapes" -> "rectangle" [label="  lists"];
-  "triangle" -> "Polygon.triangle" [label="  calls"];
-  "rectangle" -> "Polygon.rectangle" [label="  calls"];
-  "Polygon.rectangle" -> "rectangle_corners" [label="  calls"];
-  "Polygon.triangle" -> "Polygon.flat_polygon" [label="  calls"];
-  "Polygon.rectangle" -> "Polygon.flat_polygon" [label="  calls"];
-  "Polygon.flat_polygon" [style=bold];
-}
-```
-
-A box is a definition, and an arrow points to a definition it uses. The top three are values, made once. The rest are functions in `Polygon`. The widget adds one more shape of its own, the plain background, at the front of the list.
-
-### The functions
-
-Here's the whole of `TwoShapes`:
+And here is the whole module behind it:
 
 {{module TwoShapes}}
 
-A color is a whole number in hex, with the six digits a web page writes after its `#`. `0x2e8b57` is a green, and `0xe8a33d` is an amber.
+`shapes` is the frame: a list of two values. The order of the list is the order of painting. The rectangle comes second, so where the two overlap, it covers the triangle. The widget puts one more shape at the front of the list, the plain background, so both paint over it.
 
-`Polygon.triangle` makes a value that describes a triangle, and the painter draws it later. Every maker in `Polygon` works this way. The triangle hands its three corners to `flat_polygon`:
+Colors are whole numbers in hex, the same six digits a web page writes after its `#`. `0x2e8b57` is a sea green, and `0xe8a33d` is an amber.
+
+### The makers
+
+`triangle` and `rectangle` are each one call into `Polygon`. A function in `Polygon` makes a shape: it returns a value that describes the shape, and the painter draws it later. The two makers here take different inputs and finish in the same place:
+
+How the two shapes are made
+```dot
+digraph shapes {
+  node [shape=box, fontname="Helvetica"];
+  "Polygon.triangle" -> "Polygon.flat_polygon" [label="  hands three corners and a color to"];
+  "Polygon.rectangle" -> "Polygon.rectangle_corners" [label="  gets four corners from"];
+  "Polygon.rectangle" -> "Polygon.flat_polygon" [label="  hands four corners and a color to"];
+  "Polygon.flat_polygon" -> "a Poly" [label="  makes"];
+  "Polygon.flat_polygon" [style=bold];
+  "a Poly" [shape=ellipse];
+}
+```
+
+A triangle is three corners and a color:
 
 {{code Polygon.triangle}}
 
-`Polygon.triangle` takes two arguments: a record of three corners, and a color. Between the bars, `|…|`, which hold a function's parameters, `{ first_corner, second_corner, third_corner }` takes that record apart into three names. A caller gives all three by name, in any order, and the compiler checks that all three are there.
+The bars, `|…|`, hold the function's parameters. The first parameter, `{ first_corner, second_corner, third_corner }`, takes the record apart into three names. A caller names all three corners, in any order, and the compiler checks that all three are there.
 
-`Polygon.rectangle` takes two opposite corners, and `rectangle_corners` works out all four, clockwise from the top left. Either way, `flat_polygon` makes a `Poly` of one color from a list of corners:
+A rectangle is two opposite corners and a color:
+
+{{code Polygon.rectangle}}
+
+`rectangle_corners` turns the two corners into four, clockwise from the top left. Now both makers hold a list of corners and a color, and both hand them to `flat_polygon`:
 
 {{code Polygon.flat_polygon}}
 
-`Brush.flat` turns a hex color into the color a painter wants, with no transparency, and wraps it in `Flat`, a fill of one color.
-
-So our rectangle is a `Poly`. A rectangle is a polygon with four corners, so it goes through the same `flat_polygon` as a triangle, and every polygon reaches the painter the same way.
-
-A polygon needs at least three corners, and `polygon_coordinates` checks:
+This is where a polygon of one color becomes a `Poly`. `Brush.flat` makes the fill: the color, fully opaque, as a `Flat`. `polygon_coordinates` makes the coordinates: one flat list of numbers, an `x` and then a `y` for each corner. It refuses a polygon with fewer than three corners:
 
 {{code Polygon.polygon_coordinates}}
 
-Fewer than three is a bug in Safari Ride, so it crashes, loudly. `maker` names the function that asked, so the crash says where the bug is.
-
-Some things can rightly have nothing to show. A `GroundPatch` is a patch of ground: a list of corners on the ground, and a color. A patch wholly behind the camera shows nothing. So `GroundPatch.patch_shape` answers a `Try`:
-
-{{signatures GroundPatch.patch_shape}}
-
-Its second argument is the lens's focal length, in pixels, which turns corners on the ground into places on the screen. The chapter A simple tree puts the lens to work, projecting a tree's foot and top onto the screen. A `Try` is either `Ok` holding a shape, or `Err` holding a reason, here `BehindCamera` or `PastHorizon`. Both answers are in the type, so whoever calls `patch_shape` has to handle the ground behind the camera.
+Two corners enclose nothing, so a call like that is a bug in Safari Ride, and the program stops. `maker` names the function that asked, so the crash points at the bug.
 
 ### Pictures
 
-Something made of several shapes is a list of them. A tree is nine: a trunk and eight tiers of foliage. The shapes that paint one object, in order, make a `Picture`:
+One object is often many shapes. A tree is nine: a trunk and eight tiers of foliage. Those nine travel together, from the code that draws the tree to the frame that paints it, as one `Picture`:
 
 {{signatures Picture.from_shapes Picture.to_shapes}}
 
-`Picture` is opaque, and a `List(Shapes.Shape)` underneath. Outside its module, a picture is one thing, handed along whole until something paints it.
+`Picture` is opaque, with a `List(Shapes.Shape)` underneath. Outside its module, a picture is a single thing, passed along whole. Only `Scene`, as it builds the frame's list, opens a picture to take out its shapes.
 
-The order of a list is the order of painting, so in our frame the rectangle covers part of the triangle. A frame paints the backdrop, the mountains and the ground first, then a series of pictures, far to near.
+A frame paints the backdrop, the mountains and the ground first. Then it paints a series of pictures, from the farthest object to the nearest, so that near things cover far ones.
 
-For the next few chapters, the work is choosing corners and choosing their order. Before the first tree, though, we need the few types that every object along the road goes through.
+The rest of the book is about choosing those corners, and choosing their order. Every object along the road takes the same few steps on its way to a picture, and those steps come next.
 
 ## Nature types
 
@@ -423,7 +419,7 @@ The objects along the road come in six kinds: trees, radio towers, billboards (t
 
 New in this chapter:
 
-- Roc: defining a type with a type variable, `where`
+- Roc: defining a type with a type variable, `Try`, `where`
 - Modules: `Pipeline`, `Spot`, `Rendered`, `Geom`, `Along`, `Across`, `Distance`
 
 `Pipeline` and `Rendered` came up in The modules chapter, and here we look at them properly.
@@ -481,7 +477,7 @@ The `kind` in its head, `Placed(kind)`, is lowercase, and that makes it a type v
 
 A `Geom.Placed`'s `road_point` is made of two such types. `Along` is a place along a segment, and `Across` is a place across the road, measured from its middle. Both are opaque, like `Clock`, so passing one as the other is a compile-time error. One place minus another is a `Distance`, a length in metres, and a length is a different thing from a place, and Roc's `-` always gives back its left side's type, so that subtraction is a named method, `distance_from`, rather than `-`.
 
-A type's head declares its variables. A function's annotation needs no head: a lowercase name in it is a type variable, and it means one type wherever it appears in that annotation. `Pipeline.sighting_of` takes a `Geom.Placed(kind)` and answers with a `Try` that holds a `Pipeline.Sighted(kind)` when the object stands in front of the camera. Both name the same `kind`, so a placed conifer can only come back as a sighted conifer, never as a sighted cow.
+A type's head declares its variables. A function's annotation needs no head: a lowercase name in it is a type variable, and it means one type wherever it appears in that annotation. `Pipeline.sighting_of` takes a `Geom.Placed(kind)` and answers with a `Try` that holds a `Pipeline.Sighted(kind)` when the object stands in front of the camera. A `Try` is one of two tags: `Ok`, holding the answer, or `Err`, holding the reason there is none, here `BehindCamera`. Both are in the type, so every caller handles the object behind the camera. The placed object and its sighting name the same `kind`, so a placed conifer can only come back as a sighted conifer, never as a sighted cow.
 
 `Picture.Setting(context)` has a variable named `context`. A conifer's context is a `TreeShapes.Detail`. That's the record `{ nearer_tree_count : U64 }`: how many trees are nearer than this one. A billboard needs nothing more, so its context is `{}`, the empty record.
 

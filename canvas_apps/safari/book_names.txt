@@ -31,7 +31,6 @@ JavaScript: the language of the platform's runner, which a diagram's cluster nam
 
 # Files and folders the book names, which aren't Roc names.
 canvas_app_runner.js: a file of the JavaScript platform
-canvas_apps: the folder of every canvas app
 game.roc: the package file that lists the game's modules
 main.roc: the native app's root file
 roc_glue.js: the file `roc glue` generates

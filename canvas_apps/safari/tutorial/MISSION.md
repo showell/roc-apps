@@ -29,6 +29,7 @@ Each axis fails in its own way, and catching each failure takes a different kind
   - each tick is a pipeline.
 - **A4.** Really teach something without forcing the issue. Most of the code is vanilla, and that's a feature. Don't invent a new Roc concept for every chapter.
 - **A5.** Say what Roc *is*. Don't bash OO or any other style.
+- **A6.** The scope is Safari Ride. The repository's other canvas apps are completely out of scope: never mention them.
 
 ### Axis B. Truth: every sentence matches the code today
 
@@ -47,6 +48,9 @@ Each axis fails in its own way, and catching each failure takes a different kind
 - **C4.** Every chapter's opening stands alone, usually by restating the premise. A chapter's end may leave a question hanging. Readers land anywhere, so avoid "remember the first chapter" callbacks for simple ideas: explain them in place.
 - **C5.** Handle each job discretely. One job gets one section, and the job comes before its details.
 - **C6.** Difficulty rises, tempered by categories: nature, man-made, critters. One frame is held still for the first half, and motion starts at The ride instant. Teasing an idea early is fine.
+- **C7.** Everything that appears says why the reader needs it now. A type or module with no reason to be in this chapter moves to the chapter that needs it. Telling the reader that a `GroundPatch` is a patch of ground, with no reason it's here, leaves them disoriented.
+- **C8.** Show the code, then describe it. Never describe a function the reader hasn't seen.
+- **C9.** Name other chapters rarely. When you must, put the title in quotes ("A simple tree"), and say what it holds.
 
 ### Axis D. Voice: the sentences themselves
 
@@ -64,6 +68,8 @@ Each axis fails in its own way, and catching each failure takes a different kind
   - a "this" or "that" where a name belongs. After the cat's code, "This is why the cat waits" makes the reader hunt for what "this" is. "`plan_crossing` is why the cat waits" names it;
   - aphorisms, "not X but Y" drumbeats, or a closing moral.
 - **D8.** Explain a type precisely rather than apologizing for its name.
+- **D9.** A paragraph makes one point and holds together. A connective such as "Either way" or "So" points at something named in that paragraph, or it goes. A claim is complete: "checks" says what it checks.
+- **D10.** Write with the authority of this document: confident, declarative claims, in a simple, clear structure. The book is warmer and slower than a rules document, but just as sure of itself.
 
 ### Axis E. Tone: how it feels to read
 
@@ -91,6 +97,7 @@ Each axis fails in its own way, and catching each failure takes a different kind
 ### Axis H. Pictures: diagrams, tables and widgets
 
 - **H1.** Put a diagram early. Every edge has a label, a verb and often the function that does the work ("finds it with truck_in_view"). An edge whose only honest verb is "imports" is worth a look.
+- **H1a.** Every box stands for something real in the code, and the diagram shows the reader something the prose needs. A box labelled "triangle" pointing at `Polygon.triangle` shows nothing. A diagram that illustrates no point goes.
 - **H2.** In the One frame half, a widget is a static frame. VCR controls come only once time passes. There are no sliders.
 - **H3.** A widget gets one sentence of explanation, not a listing of its code. It says which call it adds and what it shows.
 - **H4.** A table is welcome wherever it shows data the program really produced.
@@ -122,7 +129,7 @@ The work is a linear pass, one chapter at a time, in book order. Every chapter a
 
 1. Read the chapter and the code it quotes.
 2. If the prose exposes a smell (G1), fix the code first. A small fix lands now. A bigger one goes in the queue, and the chapter describes the code as it stands.
-3. Rewrite the chapter against axes B through I. The writer writes the prose; nobody else does. Check every diagram edge against the code, and give every edge its label (H1).
+3. Write the chapter mostly from scratch, with a strong voice, from the reader's questions: what is this for, why now, what does it show? The old draft is a source of facts and of includes, never of sentences; keep only the lines Steve has praised. An edit pass over the old sentences is not a rewrite. Then check it against axes B through I. The writer writes the prose; nobody else does. Check every diagram edge against the code, and give every edge its label (H1).
 4. Gate, commit, push, and rebuild the book.
 5. Every four or five chapters, post a proofread note with the new text, and Steve reads it while the work goes on. His replies come first whenever they arrive.
 
