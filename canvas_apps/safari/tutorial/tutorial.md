@@ -222,7 +222,7 @@ And here's the code that makes it:
 
 {{code ShapesWidgetApp.green_triangle}}
 
-`0x2e8b57` is the color, the six hex digits a web page writes after its `#`. The `Shape` type has no tag for a triangle, because a triangle is a polygon with three corners. So the `Polygon.triangle` function takes three corners and builds the `Poly`:
+`0x2e8b57` is the color, the six hex digits a web page writes after its `#`. A triangle is a polygon with three corners, so it's a `Poly`. The `Polygon.triangle` function takes the three corners and builds that `Poly`:
 
 {{code Polygon.triangle}}
 
