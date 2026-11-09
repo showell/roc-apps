@@ -456,7 +456,7 @@ expect World.bending_plans.all(|{ turn, .. }| !turn.is_straight_or_back())
 expect
 	World.route.route_segments().all(
 		|segment|
-			match segment.encounter_span() {
+			match segment.encounter.encounter_span() {
 				Ok({ planned_along, .. }) => planned_along < segment.commit_along()
 				Err(QuietRoad) => True
 			},

@@ -52,7 +52,7 @@ birds_seen_on : RoadAhead.RoadView,
 } -> List(Pipeline.Sighted(Bird))
 birds_seen_on = |road_view, { camera, encounter_timing }| {
 	rider_segment = RoadAhead.segment_at(road_view, SegmentFromRider.Position.first)
-	encounter_stage = rider_segment.encounter_stage(encounter_timing)
+	encounter_stage = rider_segment.encounter.encounter_stage(encounter_timing)
 	EncounterSighting.birds_in_view(road_view, { camera, encounter_stage })
 }
 
@@ -370,7 +370,7 @@ expect {
 ## animation having started at step 100.
 is_throttle_held : Segment, U32 -> Bool
 is_throttle_held = |segment, now| {
-	stage = segment.encounter_stage(flight_at_step(now))
+	stage = segment.encounter.encounter_stage(flight_at_step(now))
 	match EncounterReaction.encounter_throttle(segment.encounter, stage) {
 		AtMost(_) => True
 		NoLimit => False

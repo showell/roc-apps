@@ -54,7 +54,7 @@ RideInstant := {
 	## `instant`.
 	encounter_stage : Route, RideInstant -> Animation.Stage
 	encounter_stage = |route, instant|
-		instant.rider.motorcycle.route_place.segment_on(route).encounter_stage(
+		instant.rider.motorcycle.route_place.segment_on(route).encounter.encounter_stage(
 			instant.encounter_plan.timing_at(instant.clock),
 		)
 }
@@ -93,7 +93,7 @@ next = |route, instant| {
 ## How `motorcycle` comes at `segment`'s encounter, or none on a quiet road.
 encounter_approach : Segment, Motorcycle -> EncounterPlan.Approach
 encounter_approach = |segment, motorcycle|
-	match segment.encounter_span() {
+	match segment.encounter.encounter_span() {
 		Ok({ span, planned_along }) =>
 			Approaching({
 				span,

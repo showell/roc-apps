@@ -141,10 +141,10 @@ ten_steps_in = EncounterPlan.timing_at(StartsAt(Clock.at_step(100)), Clock.at_st
 ## encounter on their segment ten steps in.
 focal_length_ten_steps_in : Rider -> Pixels
 focal_length_ten_steps_in = |rider| {
-	segment = rider.motorcycle.route_place.segment_on(Fixtures.cat_route)
+	encounter = rider.motorcycle.route_place.segment_on(Fixtures.cat_route).encounter
 	RiderCamera.of(
 		rider,
-		{ route: Fixtures.cat_route, encounter_stage: segment.encounter_stage(ten_steps_in) },
+		{ route: Fixtures.cat_route, encounter_stage: encounter.encounter_stage(ten_steps_in) },
 	).focal_length
 }
 
@@ -177,7 +177,7 @@ looking_hard = |rider| { ..rider, eyes: { ..rider.eyes, look_depth: Fraction.who
 encounter_attention_of : Rider, EncounterPlan.Timing -> F64
 encounter_attention_of = |rider, encounter_timing| {
 	segment = Fixtures.cat_route.segment_at(rider.motorcycle.route_place.segment_index)
-	stage = segment.encounter_stage(encounter_timing)
+	stage = segment.encounter.encounter_stage(encounter_timing)
 	EncounterReaction.encounter_attention(segment.encounter, stage).to_f64()
 }
 
@@ -227,7 +227,7 @@ throttle_change_at = |motorcycle, encounter_timing| {
 	segment = motorcycle.route_place.segment_on(World.route)
 	acceleration = Throttle.next_acceleration(
 		motorcycle,
-		{ segment, encounter_stage: segment.encounter_stage(encounter_timing) },
+		{ segment, encounter_stage: segment.encounter.encounter_stage(encounter_timing) },
 	)
 	next = motorcycle.motorcycle_at_next_step({ lean: motorcycle.lean, acceleration })
 	next.speed.to_metres_a_step() - motorcycle.speed.to_metres_a_step()
