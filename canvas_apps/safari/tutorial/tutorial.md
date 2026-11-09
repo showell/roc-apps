@@ -31,7 +31,7 @@ The third is motion. The rider rides on, the truck drives ahead, the cat crosses
 
 The fourth is the screen. Every frame has to reach the screen whole, built from nothing, with nearer things covering farther ones.
 
-The fifth is the person watching. The ride has to be interactive. A viewer mostly sits back and watches, but at any moment they can pause the ride, step it forward or rewind it, and the program has to answer straight away.
+The fifth is the person watching. The ride has to be interactive. A viewer mostly sits back and watches, but they also need to pause the ride, step it forward and rewind it. So the program has to give them controls they can find, and answer each one straight away.
 
 Each of the five is a fair amount of work. Safari Ride solves all five with simple code, and this book shows how. The next chapter breaks the problem into pieces, and picks the piece we start with.
 
