@@ -155,7 +155,7 @@ The next chapters draw the picture one thing at a time: the trees, the road, the
 A cow on the grass beside the road.
 ```
 
-Every kind of thing draws itself with a function of the same name, `scenery_sprite`. Here's the cow's:
+Every kind of thing beside the road draws itself with a function of the same name, `scenery_sprite`. Here's the cow's:
 
 {{signatures Billboard.scenery_sprite}}
 
@@ -167,9 +167,9 @@ A setting is a record with a type variable of its own:
 
 The `context` field's type is the variable, so each kind chooses its own. The cow's is `{}`, the empty record, as its `Sprite.Setting({})` says. A tree's is a `TreeShapes.Detail`, because how much detail a tree gets depends on how many trees stand nearer than it.
 
-But a spot comes from the rider's view, the third piece, and things come first. So in these chapters we place each thing ourselves, at a spot we choose. When the book reaches the rider's view, the camera places every thing for real.
+The `spot` comes from the rider's view, the third piece, but things come first. So in these chapters we place each thing ourselves, at a spot we choose. When the book reaches the rider's view, the camera places every thing for real.
 
-What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, drawn as polygons, and nearly every other shape in the ride is a polygon too. The frame at step 1,529 holds 2,121 shapes, and all but eight of them are polygons. The other eight are discs.
+What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, drawn as polygons. Nearly every shape in the ride is a polygon: the frame at step 1,529 holds 2,121 shapes, and all but eight of them are polygons. The other eight are discs.
 
 So we start with shapes, and the simplest shape is a triangle. Then the picture builds up in order: the trees and the grass, then the road, the rails and the radio towers, then the animals that stand still, the cow among them. The sky, the sun and the mountains come last, as the backdrop behind everything.
 
