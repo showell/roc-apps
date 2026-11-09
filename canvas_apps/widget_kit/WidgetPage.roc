@@ -84,11 +84,11 @@ WidgetPage :: [].{
 
 	## A canvas app for a widget that draws one picture that never changes. Such a
 	## picture needn't be painted again sixty times a second.
-	still_app : { title : Str, shapes : List(Shapes.Shape) } -> CanvasApp.CanvasApp({})
-	still_app = |{ title, shapes }|
+	fixed_picture_app : { title : Str, shapes : List(Shapes.Shape) } -> CanvasApp.CanvasApp({})
+	fixed_picture_app = |{ title, shapes }|
 		canvas_app({
 			title,
-			frames_a_second: still_frames_a_second,
+			frames_a_second: fixed_picture_frames_a_second,
 			init: {},
 			model_at_next_step: |model, _input| model,
 			frame_shapes: |_model| shapes,
@@ -209,11 +209,11 @@ canvas_per_screen = WidgetPage.canvas_width / Screen.width.to_f64()
 horizon_y : F64
 horizon_y = Screen.horizon_y.to_f64() * canvas_per_screen
 
-## How often a still picture is painted: seldom, since it never changes, but
+## How often a fixed picture is painted: seldom, since it never changes, but
 ## often enough that a page's check, which runs a page for a few frames, sees
 ## it painted more than once.
-still_frames_a_second : U32
-still_frames_a_second = 20
+fixed_picture_frames_a_second : U32
+fixed_picture_frames_a_second = 20
 
 ## The size of a label's words, on a canvas of the usual width.
 label_size : F64

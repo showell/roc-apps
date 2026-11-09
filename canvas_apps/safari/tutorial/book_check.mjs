@@ -178,26 +178,26 @@ async function pictureChanges(page, i, before) {
 // The play button of VcrButtons, as shares of the frame.
 const PLAY = { x: 0.384, y: 0.65 };
 
-// A widget that is a still picture has nothing to click, so it proves it runs
+// A widget that is a fixed picture has nothing to click, so it proves it runs
 // by having drawn at all.
-const STILL = "still";
+const FIXED_PICTURE = "fixed picture";
 
 // Where a widget wants its click, as shares of the frame: the buttons, rehearsal's
 // third mark, and the first bird among the stills.
 const CLICKED_AT = {
   "../beacon_widget/": PLAY,
-  "../bends_widget/": STILL,
+  "../bends_widget/": FIXED_PICTURE,
   "../bird_widget/": PLAY,
   "../cat_widget/": PLAY,
-  "../frame_widget/": STILL,
+  "../frame_widget/": FIXED_PICTURE,
   "../gaze_widget/": PLAY,
   "../rehearsal_widget/": { x: 0.12, y: 0.644 },
-  "../route_widget/": STILL,
-  "../shapes_widget/": STILL,
+  "../route_widget/": FIXED_PICTURE,
+  "../shapes_widget/": FIXED_PICTURE,
   "../sky_widget/": PLAY,
   "../step_widget/": PLAY,
   "../stills_widget/": { x: 0.114, y: 0.883 },
-  "../tree_widget/": STILL,
+  "../tree_widget/": FIXED_PICTURE,
 };
 
 // A widget proves it runs by changing its picture: a click moves a widget, and the
@@ -211,7 +211,7 @@ async function checkFrame(page, file, i) {
   const isRide = frame.src === "../safari/";
   const clicked = CLICKED_AT[frame.src.split("?")[0]];
   if (!isRide && !clicked) { fail(file, `CLICKED_AT doesn't say where to click ${frame.src}`); return frame.src; }
-  if (clicked === STILL) return frame.src;
+  if (clicked === FIXED_PICTURE) return frame.src;
   const y = frame.top + frame.height * (clicked?.y ?? 0.5);
   const mouse = (type, share, buttons) => page.send("Input.dispatchMouseEvent",
     { type, x: frame.left + frame.width * share, y, button: "left", buttons, clickCount: 1 }, page.session);

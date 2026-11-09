@@ -1,4 +1,4 @@
-## The widget for the Safari tutorial's chapter on the road: a still picture of
+## The widget for the Safari tutorial's chapter on the road: a fixed picture of
 ## three bends side by side, with no controls. Each is a two-segment road seen
 ## from above, with the rider's way up the picture. The paving and the guard rail
 ## come from GroundSighting and RailSighting, and the apex from BendInView's outer
@@ -28,11 +28,11 @@ import widget.WidgetPalette
 
 BendsWidgetApp :: [].{
 
-	## A still picture has no state.
+	## A fixed picture has no state.
 	Model : {}
 
 	canvas_app : CanvasApp.CanvasApp(BendsWidgetApp.Model)
-	canvas_app = WidgetPage.still_app({ title: "Three bends in the road", shapes: still_shapes })
+	canvas_app = WidgetPage.fixed_picture_app({ title: "Three bends in the road", shapes: fixed_picture_shapes })
 }
 
 ## A bend in the picture: how far it turns, and the x on the canvas of the
@@ -242,8 +242,8 @@ caption_shapes : ShownBend -> List(Shapes.Shape)
 caption_shapes = |bend|
 	caption_lines(bend.turn).map_with_index(|text, row| caption_line(bend, { text, row }))
 
-still_shapes : List(Shapes.Shape)
-still_shapes = {
+fixed_picture_shapes : List(Shapes.Shape)
+fixed_picture_shapes = {
 	backdrop = WidgetPage.picture_backdrop(WidgetPalette.plan_ground_color)
 	picture_shapes = [backdrop].concat(shown_bends.join_map(bend_shapes))
 	WidgetPage.frame_shapes({
@@ -281,4 +281,4 @@ expect
 	)
 
 # The captions go down last, so they show over the panel.
-expect still_shapes.ends_with(shown_bends.join_map(caption_shapes))
+expect fixed_picture_shapes.ends_with(shown_bends.join_map(caption_shapes))

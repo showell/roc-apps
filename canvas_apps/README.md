@@ -13,16 +13,16 @@ the Safari tutorial: drag across it and the cat's crossing plays under the
 pointer, from Safari's own modules. `sky_widget`, `bird_widget` and `beacon_widget`
 are three more: drag the clock and the sun sets, drag the gap and the bird
 flies, drag the clock and two masts blink opposite each other. `route_widget`
-is a still map of the whole route with one segment's record read out,
-`bends_widget` is a still picture of three bends side by side, `step_widget` plays the ride forward and reads it back, `rehearsal_widget`
+is a fixed map of the whole route with one segment's record read out,
+`bends_widget` is a fixed picture of three bends side by side, `step_widget` plays the ride forward and reads it back, `rehearsal_widget`
 clicks through one step's twelve tries at a lean, `stills_widget` lays out
 every pose of the cat and the bird and shows the one clicked large, with its
 polygons counted, `gaze_widget` drags the rider past the pig that catches
-the eye, `tree_widget` is a still picture of three conifers at the three
-distances where their crowns differ, `truck_widget` is a still picture of the
+the eye, `tree_widget` is a fixed picture of three conifers at the three
+distances where their crowns differ, `truck_widget` is a fixed picture of the
 plain truck seen from behind, from behind and to the left, and from the left,
-`frame_widget` is a still of step 1,570 of the ride
-with the layers its address names, and `shapes_widget` is a still picture
+`frame_widget` is a fixed picture of step 1,570 of the ride
+with the layers its address names, and `shapes_widget` is a fixed picture
 of a triangle and a rectangle, for the book to quote the code under it.
 
 Six of the twenty-two — all but `safari`, `trick_or_treat` and the widgets — are
