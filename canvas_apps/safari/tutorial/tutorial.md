@@ -31,11 +31,27 @@ The fourth is motion. The rider rides on, the truck drives ahead, the cat crosse
 
 The fifth is the person watching. A viewer mostly sits back and watches, but they also need to pause the ride, step it forward and rewind it. So the program has to give them controls they can find, and answer each one straight away.
 
-The first three pieces give us one frame, held still. The last two set it moving. The next chapter gives each piece its type, and picks the place we start.
+The first three pieces give us one frame, held still. The last two set it moving. Next, we see where Roc code lives, and then we give each piece its types.
 
-## A small story, a rich picture
+## Platforms, packages and modules
 
-The last chapter framed Safari Ride as five pieces of work: things, the world, the rider's view, motion and the person watching. Now we take the programmer's seat. A programmer's first question about a problem is what it looks like as data, and in Roc the answer is a type. Each of the five pieces has its types.
+A Roc program runs on a platform, it's made of modules, and it can draw on packages. Those three words say where Safari Ride's code lives.
+
+A platform is the layer underneath a Roc program that deals with the outside world. For Safari Ride, that's the screen and the keyboard. The Roc code describes each frame, and the platform paints it. In this page, the platform is WebAssembly and a little JavaScript. On a desktop, the same Roc code runs on a native platform called roc-ray.
+
+Each Roc program is an app, and the app's first line names its platform. Here's Safari Ride's app for the web, the whole file:
+
+{{module web}}
+
+Lines that start with `#` are comments. The first line of code names the platform, and gives it the short name `pf`. It also names a package, `lib`. A package is a bundle of modules: the app gives it a short name, and the path says where it is. The `lib` package holds what Safari Ride shares with this book's widgets, such as what a shape is and what a key press is. The brackets after `app` name what the app hands the platform: its `Model` type and its `program`.
+
+A module is one file of Roc, named for what it holds. `SafariApp.roc` holds the `SafariApp` module, and `import SafariApp` brings it in. `import lib.WasmApp` brings in the `WasmApp` module from the `lib` package. The last two lines say the app's `Model` type is the one in `SafariApp`, and define the `program` value. `SafariApp.canvas_app` is the whole ride, as one value, and `WasmApp.program` fits it to the web platform.
+
+So every piece we build, from a triangle to the cat, lives in a module, and the platform paints whatever those modules describe.
+
+## The pieces as types
+
+"The problem" framed Safari Ride as five pieces of work: things, the world, the rider's view, motion and the person watching. A programmer's first question about each piece is what it looks like as data, and in Roc the answer is a type. Each of the five pieces has its types.
 
 ```widget frame moving
 Step 1,529 of the ride, held still. The line under it counts the shapes painted over the backdrop.
@@ -49,11 +65,11 @@ Every thing beside the road has a kind, and each kind is a type. A tree is a `Co
 
 The `::` makes `Billboard` a type of its own, a record with three fields, and only the `Billboard` module looks inside it. Roc calls such a type opaque. The `.{` opens the functions and types that come with it, cut here. Each line of the record names one field and gives its type after the colon.
 
-Most of Safari Ride's Roc code lives in modules. A module is one file, named for what it holds: `Billboard.roc` holds the module `Billboard`. A field's type comes from the module that owns it, so `EmojiStills.EmojiStill` is the `EmojiStill` type from the `EmojiStills` module. A module like `Distance` is also a type of the same name, so `Distance` alone names it. Even inside its own module, a type carries the prefix, as `Billboard.Facing` does. A `Billboard.Facing` is one of two tags, `FacesLeft` or `FacesRight`. A tag is a plain name that the compiler knows, and a type made of tags lists every one it allows.
+A field's type comes from the module that owns it, so `EmojiStills.EmojiStill` is the `EmojiStill` type from the `EmojiStills` module. A module like `Distance` is also a type of the same name, so `Distance` alone names it. Even inside its own module, a type carries the prefix, as `Billboard.Facing` does. A `Billboard.Facing` is one of two tags, `FacesLeft` or `FacesRight`. A tag is a plain name that the compiler knows, and a type made of tags lists every one it allows.
 
 For each frame, a thing gives the shapes that draw it, in the order they're painted. We call those shapes its sprite. The word is used loosely here: a sprite in Safari Ride is a list of shapes, and nearly every shape is a polygon. A far tree's sprite is one rectangle of trunk under eight triangles.
 
-A frame's picture is the sprites of everything in view, as one list of shapes, made fresh every frame. The Roc code describes that list, and the platform under it paints it. In this page, JavaScript paints it on a canvas. Seeing works this way in the real world, too. The world doesn't paint itself onto your eyes: light brings you information, and your mind makes the picture.
+A frame's picture is the sprites of everything in view, as one list of shapes, made fresh every frame. The Roc code describes that list, and the platform paints it. Seeing works this way in the real world, too. The world doesn't paint itself onto your eyes: light brings you information, and your mind makes the picture.
 
 ### The world
 
