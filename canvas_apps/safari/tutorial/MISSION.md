@@ -142,27 +142,27 @@ The work is a linear pass, one chapter at a time, in book order, starting again 
 1. Read the chapter and the code it quotes.
 2. If the prose exposes a smell (G1), fix the code first. A small fix lands now. A bigger one goes in the queue, and the chapter describes the code as it stands.
 3. Write a clean draft from scratch, with a strong voice, from the reader's questions: what is this for, why now, what does it show? Close the old draft before you write. It is a source of facts and of includes, never of sentences. Then check it against axes B through I. The writer writes the prose; nobody else does. Check every diagram edge against the code, and give every edge its label (H1).
-4. Gate, commit, push, and rebuild the book.
+4. Run the quick gates (`part=tutorial` and the lints), commit, push, and rebuild the book. The long gates (`part=expects`, the widget release builds) are the only thing a chapter defers: they run in the background and catch up with it.
 5. **The promise check.** Before Steve sees anything, a cold agent reads the draft for promises (C12). It lists every promise the text makes to the reader, and for each it says where it's paid: in this chapter, or later, framed as later, in a chapter that really pays it. A promise that's unpaid, or paid later without saying so, gets fixed before the note goes out. Phrase every fix yourself. We run this check on every draft until keeping promises is a habit.
 6. A note to Steve says up front which chapters it holds, in book order, and marks where each chapter starts, so he always knows whether he's reading a chapter or a section.
-7. Every four or five chapters, post a proofread note with the new text, and Steve reads it while the work goes on. His replies come first whenever they arrive.
+7. Steve reviews the chapter. His replies are answered, and the chapter is done (I4), before the next chapter's whys begin.
 
-**Cold readers.** After each batch, one cold reader checks just two things: truth against the code (B), and order for a reader who has seen only the pages before (C). Those are the two axes where the writer can't see past their own outline. Take its findings with restraint, and phrase every fix yourself.
+**One chapter at a time.** Each chapter goes through the whole loop, Steve's review included, before the next one starts. Nothing batches up but the long gates.
 
-**The vocabulary.** The carried-and-derived wording reaches each chapter as its batch comes up, not in one sweep, so every change lands in a chapter Steve is about to read.
+**Cold readers.** Every chapter also gets one cold reader that checks just two things: truth against the code (B), and order for a reader who has seen only the pages before (C). Those are the two axes where the writer can't see past their own outline. It runs alongside the promise check, before the note goes out. Take its findings with restraint, and phrase every fix yourself.
 
-**The batches:**
+**The vocabulary.** The carried-and-derived wording reaches each chapter as it comes up, not in one sweep, so every change lands in a chapter Steve is about to read.
 
-| Batch | Chapters |
-|---|---|
-| 1 | Introduction through The world |
-| 2 | Shapes, Nature types, A simple tree, A conifer, Roadside trees, Grass |
-| 3 | The sun, The sky, Mountains, The road, Rails, Radio towers |
-| 4 | Stills, The elephant, the corner critters, Herds |
-| 5 | The clock (merge its overlap with The beacons), The ride instant, The beacons, The setting sun, Stepping through the ride |
-| 6 | The rider, The bike, The throttle, The rider's gaze |
-| 7 | The truck, The truck's motion, The truck's lights |
-| 8 | The cat, The bird, What a cat does to the rider, Rehearsal |
-| 9 | The math layer, Proving it, The platform, Zooming back out, the appendices, the credits |
+**The order of the pass:**
+
+1. Introduction, The problem, then the chapters after it, whose order is being settled chapter by chapter (Shapes comes next; The modules and The world are open)
+2. Nature types, A simple tree, A conifer, Roadside trees, Grass
+3. The sun, The sky, Mountains, The road, Rails, Radio towers
+4. Stills, The elephant, the corner critters, Herds
+5. The clock (merge its overlap with The beacons), The ride instant, The beacons, The setting sun, Stepping through the ride
+6. The rider, The bike, The throttle, The rider's gaze
+7. The truck, The truck's motion, The truck's lights
+8. The cat, The bird, What a cat does to the rider, Rehearsal
+9. The math layer, Proving it, The platform, Zooming back out, the appendices, the credits
 
 When the day runs short, the chapters Steve has already read get the lightest pass, and the rest wait at the same standard. Never lower the standard to make a date.
