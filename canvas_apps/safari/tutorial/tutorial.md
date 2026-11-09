@@ -1,10 +1,10 @@
 # Safari Ride: a tour of a real Roc program
 
-This book reads one whole Roc program with you, from the top down and back up.
+A program with a lot going on can stay simple, and Roc makes that natural. This book shows you both, by reading one complete Roc program with you.
 
 ## Introduction
 
-You are about to read a complete program. It's called Safari Ride, and it's running in the page below. Give it a moment to load, and the ride starts by itself.
+The program is Safari Ride, and it's running in the page below. Give it a moment to load, and the ride starts by itself.
 
 ```widget ride
 The ride, running as you read. Click it to give it the keyboard: Space pauses it, and the arrow keys step it.
@@ -14,9 +14,9 @@ A rider on a motorcycle follows a long road through open country. Trees line the
 
 Nobody steers and nothing keeps score, so Safari Ride isn't a game. It has a game's hard parts, though: terrain, a camera, physics, and things that react to the rider.
 
-The program handles all of that with one simple design. Each step of the ride carries four things: the rider, the truck, the clock and the plan for the encounter ahead. Everything else is derived from those four. The sky's color, the sun's height, the trees in view and the cat's pose are all calculated fresh, every frame. The same four things always give the same picture.
+Safari Ride stays simple because of one design. Each step of the ride carries four things: the rider, the truck, the clock and the plan for the encounter ahead. Everything else is derived from those four. The sky's color, the sun's height, the trees in view and the cat's pose are all calculated fresh, every frame. The same four things always give the same picture. The types hold the design together: each one describes only the values that make sense.
 
-This book shows how that design keeps a busy program simple, and how Roc makes it natural. Most of the code is plain Roc: records, tags and functions. That's a feature.
+Most of the code is plain Roc: records, tags and functions. That's a feature.
 
 A safari is a guided tour, so this book is a tour of a tour. We start with the whole program. Then we hold one frame still and build everything in it, from a single triangle up to a herd of cows. Then we let the clock run, and the rider, the truck and the cat start to move. At the end we zoom back out.
 
