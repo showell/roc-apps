@@ -435,9 +435,9 @@ expect
 # measure from it.
 expect World.segment_plans.all(|plan| plan.length > Distance.zero)
 
-# Every bend really turns: its sine isn't zero. BendInView.outer_corner crashes on a bend
-# that turns 0 or 180 degrees.
-expect World.bending_plans.all(|{ turn, .. }| turn.to_radians().sin() != 0.0)
+# Every bend really turns the road off its line. BendInView.outer_corner crashes on
+# a bend that turns 0 or 180 degrees.
+expect World.bending_plans.all(|{ turn, .. }| !turn.is_straight_or_back())
 
 # Each encounter's animal waits before its segment's commit_along, because
 # EncounterPlan.plan_at_next_step forgets the plan once the rider leaves the segment.
