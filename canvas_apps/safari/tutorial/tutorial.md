@@ -67,9 +67,20 @@ Every thing beside the road has a kind, and each kind is a type. A tree is a `Co
 
 {{code Billboard.Billboard from "Billboard ::" to "}.{"}}
 
-A `Billboard` is a record with three fields. Each line names a field and gives its type after the colon. The `::` makes the type opaque: only the `Billboard` module reads its fields. The listing stops at the `.{`, where the type's own functions begin.
+Here's what each piece of it says:
 
-A module's main type has the module's own name. The `Billboard` type is the main type of the `Billboard` module, and the `height` field's `Distance` type is the main type of the `Distance` module. Every other type a module offers is written with the module's name in front: `EmojiStills.EmojiStill` is the `EmojiStill` type in the `EmojiStills` module, and `Billboard.Facing` is the `Facing` type in `Billboard`. A `Billboard.Facing` is one of two tags, `FacesLeft` or `FacesRight`. A tag is a name the compiler knows, and a type made of tags lists every one it allows.
+| Code | What it says |
+|---|---|
+| `Billboard ::` | `Billboard` names the type. The `::` makes it opaque: only the `Billboard` module reads its fields. |
+| `{` and `}` | The curly braces hold a record type's fields together. |
+| `emoji : EmojiStills.EmojiStill,` | `emoji` names a field, and `EmojiStills.EmojiStill` names its type: the `EmojiStill` type in the `EmojiStills` module. |
+| `height : Distance,` | `height` names a field, and `Distance` names its type: the main type of the `Distance` module. |
+| `facing : Billboard.Facing,` | `facing` names a field, and `Billboard.Facing` names its type: the `Facing` type in the `Billboard` module. |
+| `.{` | The type's own functions and types start here, where the listing stops. |
+
+A module's main type has the module's own name, as `Billboard` and `Distance` do. Every other type a module offers carries the module's name in front, as `EmojiStills.EmojiStill` and `Billboard.Facing` do.
+
+A `Billboard.Facing` is one of two tags, `FacesLeft` or `FacesRight`. A tag is a name the compiler knows, and a type made of tags lists every one it allows.
 
 For each frame, a thing gives the shapes that draw it, in the order they're painted. We call those shapes its sprite, and we use the word loosely: in Safari Ride, a sprite is a list of shapes, and nearly every shape is a polygon. A far tree's sprite is one rectangle of trunk under eight triangles.
 
