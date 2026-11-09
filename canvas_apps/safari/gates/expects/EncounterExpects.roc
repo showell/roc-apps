@@ -111,9 +111,13 @@ bird_trees : List(Trees.RoadsideTree)
 bird_trees = left_trees.append(far_tree)
 
 ## The flight of a bird on `bird_trees`, from the fifth left tree to the far
-## one.
+## one, as a segment's builder plans it.
 bird_flight : BirdFlight
-bird_flight = BirdFlight.({ from: Fixtures.tree_at(100.0, -6.0), to: far_tree })
+bird_flight = {
+	perch = left_trees.last() ?? crash "EncounterExpects: a bird segment has left trees"
+	BirdFlight.flight_from(bird_trees, perch)
+		?? crash "EncounterExpects: a bird on the fifth left tree has the far tree to fly to"
+}
 
 ## A segment of `bird_trees` with its bird.
 bird_segment : Segment
@@ -389,22 +393,23 @@ expect [99, 100, 137, 138].all(|now| !is_throttle_held(bird_segment, now))
 flight_left_tree : Trees.RoadsideTree
 flight_left_tree = Fixtures.tree_at(100.0, -6.0)
 
-## A tree on the far side too near to fly to, and two far enough.
+## A tree on the far side too near to fly to, and two far enough, the nearer
+## of them gold.
 flight_sample_trees : List(Trees.RoadsideTree)
 flight_sample_trees = [
 	flight_left_tree,
 	Fixtures.tree_at(100.0, 6.0),
 	Fixtures.tree_at(140.0, -6.0),
-	Fixtures.tree_at(140.0, 6.0),
+	{ ..Fixtures.tree_at(140.0, 6.0), kind: Conifer.Gold },
 	Fixtures.tree_at(180.0, 6.0),
 ]
 
-## A flight from the left tree to a gold one 40 m on, across the road.
+## The flight of a bird on the left tree among `flight_sample_trees`: to the
+## gold one 40 m on, across the road.
 sample_flight : BirdFlight
-sample_flight = {
-	to = { ..Fixtures.tree_at(140.0, 6.0), kind: Conifer.Gold }
-	BirdFlight.({ from: flight_left_tree, to })
-}
+sample_flight =
+	BirdFlight.flight_from(flight_sample_trees, flight_left_tree)
+		?? crash "EncounterExpects: a bird on the left tree has a tree to fly to"
 
 ## Where the tree a bird on the left tree flies to stands, among `choices`.
 chosen_tree_numbers : List(Trees.RoadsideTree) -> List(F64)

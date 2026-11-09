@@ -90,11 +90,10 @@ part_size = |part, { route, instant }| {
 		if part == "sky" {
 			FrameView.backdrop_shapes({
 				sky_colors: Sky.colors_at(instant.clock),
-				sun_sighting: Sun.sun_in_view(camera, instant.clock),
+				sun_sighting: Sun.sun_in_view(camera.aim(route), instant.clock),
 			}).len()
 		} else if part == "skyline" {
-			aim = { heading: camera.heading, focal_length: camera.focal_length }
-			FrameView.skyline_shapes(aim, instant.clock).len()
+			FrameView.skyline_shapes(camera.aim(route), instant.clock).len()
 		} else {
 			road = RoadAhead.RoadView.ahead_of(route, camera.route_place.segment_index)
 			if part == "road" {
@@ -264,8 +263,7 @@ counts_line = |route, instant| {
 		("truck", scene.trucks),
 		("rails", scene.rails),
 	]
-	aim = { heading: camera.heading, focal_length: camera.focal_length }
-	skyline = FrameView.skyline_shapes(aim, instant.clock)
+	skyline = FrameView.skyline_shapes(camera.aim(route), instant.clock)
 	ground = FrameView.ground_shapes(road, cam)
 	step = instant.clock.to_str()
 	sighted = TreeSighting.trees_in_view(road, cam)

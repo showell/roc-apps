@@ -1094,7 +1094,7 @@ The tower itself is two facts: which way it's turned, and its beacon. The tower 
 
 {{code Tower.Tower from "A tower in a frame" to "Tower :: {"}}
 
-While its shapes are worked out, a tower's measurements for this frame travel together, including how far the ground has dropped beneath it and how much of it the horizon hides:
+While its shapes are worked out, a tower's measurements for this frame travel together. Its spot says how far the ground has dropped beneath it, and how much of it the horizon hides is worked out from that spot:
 
 {{code Tower.TowerGeometry}}
 

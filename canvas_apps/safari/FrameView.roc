@@ -19,6 +19,7 @@ import Skyline
 import Sun
 import TruckBrakeLights
 import TruckHeadlights
+import Pixels
 import lib.Shapes
 
 ## What the camera shows at one instant of the ride, worked out from the
@@ -60,13 +61,12 @@ FrameView := {
 		camera = FrameView.camera_at(route, instant)
 		road = RoadAhead.RoadView.ahead_of(route, camera.route_place.segment_index)
 		sighting_camera = camera.sighting_camera()
-		aim = { heading: camera.heading, focal_length: camera.focal_length }
 		{
 			backdrop: {
 				sky_colors: Sky.colors_at(instant.clock),
-				sun_sighting: Sun.sun_in_view(camera, instant.clock),
+				sun_sighting: Sun.sun_in_view(camera.aim(route), instant.clock),
 			},
-			mountain_shapes: FrameView.skyline_shapes(aim, instant.clock),
+			mountain_shapes: FrameView.skyline_shapes(camera.aim(route), instant.clock),
 			ground_patch_shapes: FrameView.ground_shapes(road, sighting_camera),
 			scene: Scene.scene_in_view(
 				road,
@@ -139,9 +139,8 @@ FrameView := {
 		clock: instant.clock,
 	}
 
-	## The skyline a camera aimed at `heading` through a lens of `focal_length`
-	## sees at `clock`, darkened as far as the sky is. It is public for
-	## FramePartsBench, which times the skyline alone.
+	## The skyline seen along `aim` at `clock`, darkened as far as the sky is. It
+	## is public for FramePartsBench, which times the skyline alone.
 	skyline_shapes : { heading : Angle.Bearing, focal_length : Pixels }, Clock -> List(Shapes.Shape)
 	skyline_shapes = |aim, clock| {
 		sky_darkness = Sky.darkness_at(clock)

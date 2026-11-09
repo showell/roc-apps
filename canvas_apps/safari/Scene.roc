@@ -34,7 +34,9 @@ Scene := {
 
 	## What the sightings read beyond the road: where the encounter on the
 	## rider's segment has got to, where the truck is and how it looks, and the
-	## clock.
+	## clock. The truck's lights are worked out from the clock and the truck's
+	## pace, and in play `FrameView.ride_facts` is the one builder of these
+	## facts, so the headlights always agree with `clock`.
 	RideFacts : {
 		encounter_stage : Animation.Stage,
 		truck : { route_position : Distance, truck : Truck },

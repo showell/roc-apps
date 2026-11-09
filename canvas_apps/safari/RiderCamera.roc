@@ -16,17 +16,13 @@ import Route
 import RoutePlace
 
 ## Where the camera stands, which way it faces, its lens and its roll. It is
-## nominal, not opaque: other modules read its fields, and Sun and Skyline
-## take it as an open record of the heading and the lens.
+## nominal, not opaque: other modules read its fields.
 RiderCamera := {
 	## Where the camera stands on the route, which is where the rider is.
 	route_place : RoutePlace,
 
 	## Which way the camera faces, as a turn from its segment's axis.
 	yaw : Angle.Turn,
-
-	## The camera's bearing in the world.
-	heading : Angle.Bearing,
 
 	## The lens's focal length.
 	focal_length : Pixels,
@@ -37,19 +33,22 @@ RiderCamera := {
 }.{
 
 	## The camera for `rider` on `route`, with the encounter on their segment at
-	## `encounter_stage`. Its heading is the bearing the rider's segment sets off on,
-	## turned by the camera's yaw.
+	## `encounter_stage`.
 	of : Rider, { route : Route, encounter_stage : Animation.Stage } -> RiderCamera
 	of = |rider, { route, encounter_stage }| {
-		route_place = rider.motorcycle.route_place
-		yaw = rider.motorcycle.yaw.plus(rider.head_yaw())
-		{
-			route_place,
-			yaw,
-			heading: route.bearing_of(route_place.segment_index).plus(yaw),
-			focal_length: ride_focal_length(rider, { route, encounter_stage }),
-			roll: rider_roll(rider.motorcycle.lean),
-		}
+		route_place: rider.motorcycle.route_place,
+		yaw: rider.motorcycle.yaw.plus(rider.head_yaw()),
+		focal_length: ride_focal_length(rider, { route, encounter_stage }),
+		roll: rider_roll(rider.motorcycle.lean),
+	}
+
+	## Where this camera points in the world on `route`, and its lens, as the sun
+	## and the skyline take them. Its heading is the bearing its segment sets off
+	## on, turned by its yaw.
+	aim : RiderCamera, Route -> { heading : Angle.Bearing, focal_length : Pixels }
+	aim = |camera, route| {
+		heading: route.bearing_of(camera.route_place.segment_index).plus(camera.yaw),
+		focal_length: camera.focal_length,
 	}
 
 	## Where this camera stands on its segment, and which way it faces, as the

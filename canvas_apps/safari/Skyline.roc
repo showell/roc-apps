@@ -93,7 +93,8 @@ Skyline :: [].{
 
 ## A column of the skyline: where it is across the screen, the bearing seen
 ## there, and the north range's height at that bearing, which the north range's
-## silhouette and its snow both need.
+## silhouette and its snow both need. That height is worked out once per column,
+## from its bearing, by `sky_columns_for`, the one builder of a column.
 SkylineColumn : {
 	x : Pixels,
 	bearing : Angle.Bearing,
