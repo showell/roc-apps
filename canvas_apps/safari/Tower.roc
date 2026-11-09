@@ -3,12 +3,15 @@
 ## crossed braces in the lowest storeys) with a blinking beacon on top.
 ## The earth curves away under a far tower, so it sinks below the horizon
 ## from the bottom up.
+import Across
+import Along
 import Pixels
 import Angle
 import Beacon
 import Camera
 import EarthCurve
 import RoadAhead
+import SegmentFromRider
 import Spot
 import Distance
 import Fraction
@@ -98,21 +101,16 @@ tower_shapes : Tower,
 	focal_length : Pixels,
 } -> List(Shapes.Shape)
 tower_shapes = |Tower.(tower), { footprint, spot, focal_length }| {
-	foot = spot.foot()
-	hidden = hidden_height({ foot: foot.to_rider(), base_height: spot.lift().minus(spot.drop()) })
-	if hidden >= tower_height {
+	geometry = {
+		footprint,
+		spot,
+		focal_length,
+		metre_on_screen: metre_on_screen({ at: spot.foot(), focal_length }),
+	}
+	if hidden_on_tower(geometry) >= tower_height {
 		crash "Tower.tower_shapes: a tower hidden wholly below the horizon is refused at its sighting"
 	} else {
-		geometry = {
-			footprint,
-			foot,
-			lift: spot.lift(),
-			drop: spot.drop(),
-			hidden,
-			metre_on_screen: metre_on_screen({ at: foot, focal_length }),
-			focal_length,
-		}
-		apex = foot.at_height(height_in_view(geometry, tower_height))
+		apex = spot.foot().at_height(height_in_view(geometry, tower_height))
 		rods = [
 			leg_shapes(geometry, apex.to_raised()),
 			ring_shapes(geometry),
@@ -151,19 +149,22 @@ tower_color : RgbColor
 tower_color = RgbColor.of(0x9AA0A8)
 
 ## A tower's measurements in this frame, which its rods are worked out from:
-## where its footprint and foot stand, how high off the ground it is, how far
-## the ground has dropped beneath it, how far up it the horizon hides it, and
-## how many pixels a metre across spans as far ahead as its foot, which sizes
-## its rods and its beacon.
+## where its footprint stands, its spot (which gives its foot, its lift and the
+## ground's drop beneath it), and the focal length it is seen through.
+## `metre_on_screen`, how many pixels a metre across spans as far ahead as its
+## foot, sizes its rods and its beacon. It is a cache, worked out once per tower
+## from the foot and the focal length, because every rod reads it.
 TowerGeometry : {
 	footprint : Footprint,
-	foot : RiderView.RiderPointAhead,
-	lift : Distance,
-	drop : Distance,
-	hidden : Distance,
-	metre_on_screen : Pixels,
+	spot : Spot,
 	focal_length : Pixels,
+	metre_on_screen : Pixels,
 }
+
+## How far up the tower the horizon hides it.
+hidden_on_tower : TowerGeometry -> Distance
+hidden_on_tower = |{ spot, .. }|
+	hidden_height({ foot: spot.foot().to_rider(), base_height: spot.lift().minus(spot.drop()) })
 
 ## How far a corner lies from the footprint's centre, across the route and
 ## along it. Left and back are the negative ways.
@@ -229,7 +230,7 @@ base_corner_on_road = |corner, { center, yaw }| {
 ## view: raised by the tower's lift, and lowered by the ground's drop.
 height_in_view : TowerGeometry, Distance -> Distance
 height_in_view = |geometry, height_on_tower|
-	geometry.lift.plus(height_on_tower.minus(geometry.drop))
+	geometry.spot.lift().plus(height_on_tower.minus(geometry.spot.drop()))
 
 ## A corner of the tower at `height_on_tower`: drawn in toward the foot as
 ## the tower tapers, raised by the tower's lift, and lowered by the ground's
@@ -240,8 +241,8 @@ corner_at = |geometry, { corner, height_on_tower }| {
 	bottom = footprint_corner(geometry.footprint, corner)
 	tapered = |start, end| start.plus(end.minus(start).times(taper_fraction))
 	{
-		right: tapered(bottom.right, geometry.foot.right()),
-		forward: tapered(bottom.forward, geometry.foot.forward()),
+		right: tapered(bottom.right, geometry.spot.foot().right()),
+		forward: tapered(bottom.forward, geometry.spot.foot().forward()),
 		height: height_in_view(geometry, height_on_tower),
 	}
 }
@@ -326,7 +327,10 @@ leg_shapes : TowerGeometry, RiderView.RaisedPoint -> List(Shapes.Shape)
 leg_shapes = |geometry, apex| corners.keep_oks(
 	|corner| rod_shape(
 		geometry,
-		{ from: corner_at(geometry, { corner, height_on_tower: geometry.hidden }), to: apex },
+		{
+			from: corner_at(geometry, { corner, height_on_tower: hidden_on_tower(geometry) }),
+			to: apex,
+		},
 	),
 )
 
@@ -347,7 +351,7 @@ ring_shapes_at = |geometry, ring_height| corners.keep_oks(
 ring_shapes : TowerGeometry -> List(Shapes.Shape)
 ring_shapes = |geometry| ring_heights.join_map(
 	|ring_height|
-		if ring_height <= geometry.hidden {
+		if ring_height <= hidden_on_tower(geometry) {
 			[]
 		} else {
 			ring_shapes_at(geometry, ring_height)
@@ -376,10 +380,10 @@ storey_shapes : TowerGeometry, U64 -> List(Shapes.Shape)
 storey_shapes = |geometry, storey| {
 	storey_bottom = storey_height.times(storey.to_f64())
 	storey_top = storey_bottom.plus(storey_height)
-	if storey_top <= geometry.hidden {
+	if storey_top <= hidden_on_tower(geometry) {
 		[]
 	} else {
-		hidden_in_storey = storey_bottom.max(geometry.hidden).minus(storey_bottom)
+		hidden_in_storey = storey_bottom.max(hidden_on_tower(geometry)).minus(storey_bottom)
 		hidden_fraction = Fraction.of(hidden_in_storey.ratio_to(storey_height))
 		corners.join_map(
 			|corner| face_brace_shapes(
@@ -425,8 +429,8 @@ face_brace_shapes = |geometry, { corner, storey_bottom, storey_top, hidden_fract
 ahead : RiderView.RiderPoint -> RiderView.RiderPointAhead
 ahead = |point| RiderView.rider_point_ahead(point) ?? crash "a test's point is past the near plane"
 
-# A tower 12 m square, its foot 100 m ahead, the ground dropped 1 m beneath it
-# and none of it hidden, a metre 5 px across.
+# A tower 12 m square on the ground, its foot 100 m straight ahead, where the
+# ground has dropped 5 cm and none of it is hidden, a metre 5 px across.
 sample_geometry : TowerGeometry
 sample_geometry = {
 	footprint: {
@@ -435,12 +439,14 @@ sample_geometry = {
 		front_right: { right: Distance.metres(6.0), forward: Distance.metres(106.0) },
 		front_left: { right: Distance.metres(-6.0), forward: Distance.metres(106.0) },
 	},
-	foot: ahead({ right: Distance.metres(0.0), forward: Distance.metres(100.0) }),
-	lift: Distance.zero,
-	drop: Distance.metres(1.0),
-	hidden: Distance.zero,
-	metre_on_screen: Pixels.of(5.0),
+	spot: Spot.at({
+		place: Ahead(SegmentFromRider.Position.first),
+		road_point: { along: Along.metres(100.0), across: Across.middle },
+		lift: Distance.zero,
+		foot: ahead({ right: Distance.metres(0.0), forward: Distance.metres(100.0) }),
+	}),
 	focal_length: Pixels.of(500.0),
+	metre_on_screen: Pixels.of(5.0),
 }
 
 expect
@@ -448,35 +454,35 @@ expect
 		== {
 			right: Distance.metres(-6.0),
 			forward: Distance.metres(94.0),
-			height: Distance.metres(-1.0),
+			height: Distance.metres(-0.05),
 		}
 expect
 	corner_at(sample_geometry, { corner: BackLeft, height_on_tower: Distance.metres(40.0) })
 		== {
 			right: Distance.metres(-3.0),
 			forward: Distance.metres(97.0),
-			height: Distance.metres(39.0),
+			height: Distance.metres(39.95),
 		}
 expect
 	corner_at(sample_geometry, { corner: BackLeft, height_on_tower: Distance.metres(80.0) })
 		== {
 			right: Distance.metres(0.0),
 			forward: Distance.metres(100.0),
-			height: Distance.metres(79.0),
+			height: Distance.metres(79.95),
 		}
 expect
 	corner_at(sample_geometry, { corner: FrontRight, height_on_tower: Distance.metres(40.0) })
 		== {
 			right: Distance.metres(3.0),
 			forward: Distance.metres(103.0),
-			height: Distance.metres(39.0),
+			height: Distance.metres(39.95),
 		}
 expect
 	corner_at(sample_geometry, { corner: FrontRight, height_on_tower: Distance.metres(80.0) })
 		== {
 			right: Distance.metres(0.0),
 			forward: Distance.metres(100.0),
-			height: Distance.metres(79.0),
+			height: Distance.metres(79.95),
 		}
 
 expect
