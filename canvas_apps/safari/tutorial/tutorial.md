@@ -19,7 +19,7 @@ Safari Ride is written in Roc, and this is a book about Roc. Roc is fun to read,
 
 Safari Ride shows a world in motion, seen from the rider's seat. It draws that world on the screen thirty frames a second, and whoever is watching can take the controls at any moment.
 
-That's what you see. For us, it's an engineering problem, and our first job is to break it into pieces we can build right away. A screen shows things from a world. So we hold one frame still and get it right before anything moves, and the controls come last. That plan costs something: the first half of the book holds one frame still. In return, every piece we build stands on a piece that already works. The plan gives the problem five pieces.
+That's what you see. For us, it's an engineering problem, and our first job is to break it into pieces we can build one at a time. A screen shows things from a world, and those come first. We hold one frame still and get it right before anything moves, and the controls come last. That plan costs something: the first half of the book holds one frame still. In return, every piece we build stands on a piece that already works. The plan gives the problem five pieces.
 
 The first is things. A tree, a cow and a radio tower each become shapes the screen can show. Every frame starts from a blank screen, so every frame needs all of its shapes, every time.
 
@@ -31,7 +31,7 @@ The fourth is motion. The rider rides on, the truck drives ahead, the cat crosse
 
 The fifth is the person watching. A viewer mostly sits back and watches, but they also need to pause the ride, step it forward and rewind it. So the program gives them controls they can find, and answers each one straight away.
 
-The first three pieces give us one frame, held still. The last two set it moving. Next, we see where Roc code lives, and then we give each piece its types.
+The first three pieces give us one frame, held still. The last two set it moving, and put it in the viewer's hands. Next, we see where Roc code lives, and then we give each piece its types.
 
 ## Platforms, packages and modules
 
@@ -39,7 +39,7 @@ A Roc program runs on a platform, it's made of modules, and it can draw on packa
 
 A platform is the layer underneath a Roc program that deals with the outside world. For Safari Ride, that's the screen and the keyboard. The Roc code describes each frame, and the platform paints it. In this page, the platform is WebAssembly and a little JavaScript. On a desktop, the same Roc code runs on a native platform called roc-ray.
 
-Each Roc program is an app, and the app's first line names its platform. Here's Safari Ride's app for the web, the whole file:
+Each Roc program is an app, and the app's first line of code names its platform. Here's Safari Ride's app for the web, the whole file:
 
 {{module web}}
 
@@ -49,7 +49,7 @@ A module is one file of Roc, named for what it holds. `SafariApp.roc` holds the 
 
 The brackets after `app` name the two things the app hands the platform, and the last two lines define them. `Model` is the type of what the app keeps as it runs, and here it's the one in `SafariApp`. The `program` value is `SafariApp.canvas_app`, the whole ride as one value, fitted to the web platform by `WasmApp.program`.
 
-Every piece we build, from a triangle to the cat, lives in a module, and the platform paints whatever those modules describe. Next, we read the types those modules hold.
+Every piece we build, from a tree to the cat, lives in a module, and the platform paints whatever those modules describe. Next, we read the types those modules hold.
 
 ## The pieces as types
 
@@ -63,17 +63,17 @@ Step 1,529 of the ride, held still: the frame these types describe.
 
 ### Things
 
-Every thing beside the road has a kind, and each kind is a type. A tree is a `Conifer`, a cat is a `Cat`, and a radio tower is a `Tower`. A cow is a `Billboard`, an emoji that stands on the grass, always turned toward the rider:
+Every thing beside the road has a kind, and each kind is a type. A tree is a `Conifer`, a cat is a `Cat`, and a radio tower is a `Tower`. A cow is a `Billboard`, an emoji that stands on the grass, square to the rider, looking left or right:
 
 {{code Billboard.Billboard from "Billboard ::" to "}.{"}}
 
 A `Billboard` is a record with three fields. Each line names a field and gives its type after the colon. The `::` makes the type opaque: only the `Billboard` module reads its fields. The listing stops at the `.{`, where the type's own functions begin.
 
-A module's main type has the module's own name, so `Billboard` is the main type of the `Billboard` module, and `Distance` of `Distance`. Every other type's name starts with its module's: `EmojiStills.EmojiStill` is the `EmojiStill` type in the `EmojiStills` module, and `Billboard.Facing` is the `Facing` type in `Billboard`. A `Billboard.Facing` is one of two tags, `FacesLeft` or `FacesRight`. A tag is a plain name the compiler knows, and a type made of tags lists every one it allows.
+A module's main type has the module's own name. The `Billboard` type is the main type of the `Billboard` module, and the `height` field's `Distance` type is the main type of the `Distance` module. Every other type a module offers is written with the module's name in front: `EmojiStills.EmojiStill` is the `EmojiStill` type in the `EmojiStills` module, and `Billboard.Facing` is the `Facing` type in `Billboard`. A `Billboard.Facing` is one of two tags, `FacesLeft` or `FacesRight`. A tag is a name the compiler knows, and a type made of tags lists every one it allows.
 
 For each frame, a thing gives the shapes that draw it, in the order they're painted. We call those shapes its sprite, and we use the word loosely: in Safari Ride, a sprite is a list of shapes, and nearly every shape is a polygon. A far tree's sprite is one rectangle of trunk under eight triangles.
 
-A frame's picture is the sprites of everything in view, as one list of shapes, made fresh every frame. The Roc code describes that list, and the platform paints it. Seeing works this way in the real world, too. The world doesn't paint itself onto your eyes: light brings you information, and your mind makes the picture.
+A frame's picture is the sky and the ground, with the sprites of everything in view on top, as one list of shapes, made fresh every frame. The Roc code describes that list, and the platform paints it. Seeing works this way in the real world, too. The world doesn't paint itself onto your eyes: light brings you information, and your mind makes the picture.
 
 ### The world
 
@@ -85,10 +85,10 @@ Lines that start with `##` are doc comments. A plain `:` gives a type a name, so
 
 {{code World.last_plan}}
 
-The first line gives the `last_plan` value its type, and the rest defines it. Each field holds a value of its own type: 300 metres of `Distance`, and a tag for each of the others. On this stretch, a cat crosses the road. The `World.route` value is the whole road, built from the plans once, before the ride starts, and every tree, herd, pond and tower takes its place along it.
+After a value's name, a `:` gives the value its type, so the first line says `last_plan` is a `SegmentPlan`, and the rest defines it. `Distance.metres(300.0)` calls the `metres` function in the `Distance` module. Each field holds a value of its own type: 300 metres of `Distance`, and a tag for each of the others. On this stretch, a cat crosses the road. The `World.route` value is the whole road, built from the plans once, before the ride starts, and every tree, herd, pond and tower takes its place along it.
 
 ```widget route
-The whole route from above, one stretch of road for each plan. A mark shows where a cat crosses or a bird flies.
+The whole route from above, one stretch of road for each plan. A mark in the middle of a stretch shows that its plan has a cat cross or a bird fly.
 ```
 
 ### The rider's view
@@ -97,7 +97,7 @@ The screen shows only what the rider sees. So the camera sits where the rider si
 
 {{code Geom.Placed}}
 
-The `kind` in parentheses is a type variable. It stands for whichever kind of thing is placed, and the field named `kind` holds a value of that type. So a cow on the road is a `Geom.Placed(Billboard)`, and a tree is a `Geom.Placed(Conifer)`. One type serves every kind.
+The `kind` in parentheses is a type variable: it stands for whatever type fills it. So a cow on the road is a `Geom.Placed(Billboard)`, whose `kind` field holds a `Billboard`, and a tree is a `Geom.Placed(Conifer)`. One type serves every kind.
 
 Then the camera sights the thing:
 
@@ -105,13 +105,13 @@ Then the camera sights the thing:
 
 A sighting keeps the kind, and adds a `Spot`: where the thing stands in the rider's view. From the spot, the thing's height and the camera's lens, we get where the thing lands on the screen, and how big it looks there. One rule gives both, the rule a pinhole camera follows: twice as far away looks half as big.
 
-The camera refuses a thing out of the rider's sight, with a tag that says why. `BehindCamera` means it's behind the rider, and `BelowHorizon` means the curve of the earth hides it.
+The camera refuses a thing out of the rider's sight, with a tag that says why. `BehindCamera` means it's behind the camera, or too close to it to draw, and `BelowHorizon` means the curve of the earth hides it.
 
 Last, the thing is rendered:
 
 {{code Rendered.Rendered from "Rendered ::" to "}.{"}}
 
-A rendering holds the thing's sprite, and its depth: how far ahead of the camera it stands. The kind is gone, so trees, cows and towers all meet in one list of renderings. The frame sorts that list far to near and paints it in that order, so nearer things cover farther ones.
+A rendering holds the thing's sprite, and its depth: how far ahead of the camera it stands. The kind is gone, so trees, cows and towers all meet in one list of renderings. We sort that list far to near and paint it in that order, so nearer things cover farther ones.
 
 ### Motion
 
@@ -119,15 +119,15 @@ So far the ride stands still. To set it moving, one record holds the whole ride 
 
 {{code RideInstant.RideInstant from "RideInstant := {" to "}.{"}}
 
-The `:=` makes `RideInstant` nominal: a type of its own, like `Billboard`, but one whose fields any module can read. Those four fields are everything the ride carries from one step to the next: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. We derive everything else that changes from them. The sun goes down because the clock says so.
+The `:=` makes `RideInstant` nominal. A nominal type has a name of its own, as an opaque type does, but any module can read its fields. Those four fields are everything the ride carries from one step to the next: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. We derive everything else that changes from them. The sun goes down because the clock says so.
 
 A step is one function's job, and its type tells the story:
 
 {{signatures RideInstant.next_or_restart}}
 
-After the colon comes the function's type: the types it takes, then an arrow, then the type it gives back. The `next_or_restart` function takes the route and one moment of the ride, and gives back one of two tags. Each tag carries the next moment. `Continued` carries the moment one step on, and `Restarted` carries the ride's first moment, once the rider has finished the route.
+After the colon comes the function's type: the types it takes, then an arrow, then the type it gives back. The `next_or_restart` function takes the route and one moment of the ride. It gives back a type written in place, in square brackets: one of two tags. A tag can carry a value, and each of these carries the next moment. `Continued` carries the moment one step on, and `Restarted` carries the ride's first moment, once the rider has finished the route.
 
-Inside the step, the four fields move in a fixed order, so the moves fit together: the rider reads where the cat is, and then moves. The second half of the book reads that order line by line.
+Inside the step, the four fields move in a fixed order, so the moves fit together: the rider reads what the cat or bird ahead is doing, and then moves. The second half of the book reads that order line by line.
 
 ### The person watching
 
@@ -135,7 +135,7 @@ The controls are a handful of keys, named beside the ride. The app's model, what
 
 {{code SafariApp.Model}}
 
-A type made of tags can be written in place, as `[Playing, Paused]` is here. The tour holds the route, the moment on show, and every moment before it since the ride last started:
+The `motion` field's type is written in place, as two tags. The tour holds the route, the moment on show, and every moment before it since the ride last started:
 
 {{code Tour.Tour from "Tour :: {" to "}.{"}}
 
