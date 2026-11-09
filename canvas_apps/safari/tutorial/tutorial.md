@@ -195,6 +195,20 @@ A sighting answers one question each frame: which of these can the rider see rig
 
 A sighting decides what's visible, and the drawing code only paints what it's told. `Scene.scene_in_view` gathers every sighting and turns each one into a `Rendered`: a picture, plus its depth. It gets the picture from the object's own drawing module. Then `Scene.scene_renderings` puts the renderings in order, far to near. A sighting is plain data, so it can be checked with numbers, without drawing anything. The Nature types chapter comes back to this.
 
+Here are a few more things from step 1,529, and what their sightings decide. `right` and `forward` are in metres from the camera, and a `forward` below zero is behind it.
+
+| What it is | `right` | `forward` | What its sighting decides |
+|---|---|---|---|
+| The cat, frozen | 0.38 | 23.63 | drawn |
+| The nearest tree, a big green one | 3.45 | 21.63 | drawn |
+| The nearest tree behind the camera, a gold one | -8.09 | -8.36 | `BehindCamera` |
+| The nearest tree the earth's curve hides, a small green one five segments on | -1,433.43 | 446.00 | `BelowHorizon` |
+| A big green tree just past it | -1,446.07 | 473.21 | drawn |
+| The radio tower past the end of the rider's segment | 20.40 | 355.61 | drawn |
+| The truck | 92.19 | 489.15 | drawn |
+
+A small tree can sink below the horizon while a taller one behind it still shows its top. Of the 214 trees on the segments in view, 136 are drawn, 30 are behind the camera, and 48 are below the horizon. None is too small. Those 78 never reach the screen.
+
 Cows, pigs and the other animals by the road are all sighted the same way, by `BillboardSighting`, which decides which of them get drawn. Each threshold for what gets drawn lives in the module that uses it. `Pipeline.smallest_height_on_screen`, 2 pixels, is how short something may look and still be drawn. `TreeShapes.cone_reach` and `TreeShapes.round_trunk_limit` decide how near a tree shows its full detail.
 
 Everything in this chapter happens within a single frame, and none of it survives to the next one. Only the four things from The problem chapter carry over from step to step: the rider, the truck, the clock and the encounter plan. First, let's hold one frame still and see what's in it.
@@ -244,6 +258,17 @@ Its block holds one record type and two functions: the pond's outlines, and its 
 {{code World.SegmentPlan}}
 
 A segment written with `bull: NoBull` says what it means. A `False` in that place would send the reader to look up which field it is.
+
+Here are the route's first six segments as rows. It's the same data `World.bending_plans` declares, shown as a table. Each plan also says how its segment turns into the next. Every segment has its cows.
+
+| Segment | Length | Turn at the end | Trees | Encounter | Herds |
+|---|---|---|---|---|---|
+| 1 | 500 metres | 50 degrees right | all green | a bird | cows |
+| 2 | 320 metres | 70 degrees left | all green | quiet | cows |
+| 3 | 400 metres | 20 degrees right | all green | a bird | cows and pigs |
+| 4 | 300 metres | 20 degrees right | gold and green | a cat | cows |
+| 5 | 300 metres | 70 degrees left | all green | quiet | cows, with a bull |
+| 6 | 300 metres | 70 degrees left | all green | a bird | cows, with a bull |
 
 A `match` has to cover every tag of the union it matches on. Leave one out, and it's a compile-time error.
 
@@ -3078,6 +3103,21 @@ Swap two of those lines and you get a different ride: a truck that read the ride
 | The truck | `TruckJourney.TruckProgress` | `TruckJourney.truck_progress_at_next_step`, reading how far along the new rider is | `TruckSighting`, and the brake lights |
 | The clock | `Clock` | `Clock.next` | The sky, the sun, the mountains, the beacons, the headlights, and the encounter's stage |
 | The encounter plan | `EncounterPlan` | `EncounterPlan.plan_at_next_step`: kept, forgotten at a new segment, or made from the new rider at the new clock | With the clock, the encounter's stage: the cat's and the bird's poses, and the rider's held throttle and look |
+
+Turn it around, and ask of each thing on the screen where it comes from:
+
+| What you see | Kept, or worked out from |
+|---|---|
+| The rider's view | Worked out from the rider, the route, the encounter plan and the clock |
+| The sky | Worked out from the clock |
+| The sun | Worked out from the clock, and the camera's heading and lens |
+| The mountains | Worked out from the clock, and the camera's heading and lens |
+| The beacons | Worked out from the clock and the tower each one tops |
+| The trees, the cows, the pigs and the ducks | Worked out from the world, built once, and the camera |
+| The cat and the bird | Worked out from the encounter plan and the clock, and the camera |
+| The truck | Kept: one of the four |
+| Its headlights | Worked out from the clock, by way of the sky's darkness |
+| Its brake lights | Worked out from the truck, which says whether its last step slowed it |
 
 That's the loop from the start of the tour. The patterns that kept turning up along the way are gathered in the appendix that follows.
 
