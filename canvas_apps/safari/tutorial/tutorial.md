@@ -37,17 +37,19 @@ Each of the five is a fair amount of work. Safari Ride solves all five with simp
 
 ## A small story, a rich picture
 
-Not much happens in Safari Ride. A rider rides down a road. Now and then a cat or a bird crosses the rider's path. The beacons blink on the radio towers, and the sun goes down. Four small things tell that whole story at any moment: where the rider is, where the truck is, the time on the clock, and the plan for the cat or the bird ahead.
+Not much happens in Safari Ride. A rider rides down a road. Now and then a cat or a bird crosses the rider's path. The beacons blink on the radio towers, and the sun goes down. Four small things tell that whole story at any moment: where the rider is, where the truck is, the time on the clock, and when the cat or the bird ahead starts to move.
 
-The picture is another matter. At step 1,529 of the ride, the frame paints 2,121 shapes over the sky. At the next step the rider has moved on, so the road, the trees and the cows all shift on the screen. The story barely changes from one step to the next. The picture changes all over.
+The picture is another matter. At step 1,529 of the ride, the frame paints 2,121 shapes over its backdrop of sky and grass. While the ride plays, each frame shows the story one step on. The rider moves a little, and the road, the trees and the cows all shift on the screen. The story barely changes from one step to the next. The picture changes all over.
 
 Safari Ride's design falls out of that difference. It has three pieces.
 
-The stage is the world: the road, the trees, the herds and the towers, and the places where a cat or a bird waits. The stage never changes. The rider moves through it. So we lay the world out once, before the ride starts, and from then on we only read it.
+The stage is the world: the road, the trees, the herds and the towers, and the places where a cat or a bird waits. The stage never changes. The rider moves through it. So we build the world once, before the ride starts, and from then on we only read it. The stage answers the first problem.
 
-The story is the four small things, and we carry it from each step to the next. A step reads the stage and the story, and gives the story's next moment. The story is small enough to keep every moment of it, back to the start of the ride. That's how rewinding works: to go back a step, we take the moment before.
+The story is the four small things, and we carry it from each step to the next. A step reads the stage and the story, and gives the story's next moment. The story is small enough to keep every moment of it, back to the start of the ride. That's how rewinding works: to go back a step, we take the moment before. The story answers the second problem, and the fifth.
 
-The picture is everything on the screen, and we never keep it. For every frame, the Roc code describes the whole picture fresh from the stage and the story, as a list of shapes. Then the page paints the list. The Roc code never draws. Because each picture comes fresh from its moment, pausing, stepping and rewinding need no drawing code of their own. We describe whichever moment you've asked for.
+The picture is everything on the screen, and we never keep it. For every frame, the Roc code describes the whole picture fresh from the stage and the story, as a list of shapes. Then the page paints the list. The Roc code never draws. To describe the picture, it works out what the rider sees, and lists far things before near ones, so the near ones are painted over them. The picture answers the third problem and the fourth.
+
+Because each picture comes fresh from its moment, pausing, stepping and rewinding need no drawing code of their own. We describe whichever moment you've asked for.
 
 The three pieces of the design
 ```dot
@@ -60,12 +62,12 @@ digraph design {
   stage -> story [label="  is read by each step"];
   story -> story [label="  steps to its next moment"];
   stage -> picture [label="  is read for every frame"];
-  story -> picture [label="  is described fresh, every frame"];
+  story -> picture [label="  gives, fresh every frame"];
   picture -> page [label="  is painted by"];
 }
 ```
 
-We start with the picture, and with one frame of it, held still. A picture is a list of shapes, and the simplest shape is a triangle.
+The first half of the book holds one frame still, and builds the stage and the picture for it. The second half lets the story move. We start with the picture, and a picture is a list of shapes. The simplest shape is a triangle.
 
 ## Shapes
 
