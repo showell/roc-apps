@@ -101,6 +101,7 @@ Each axis fails in its own way, and catching each failure takes a different kind
 
 ### Axis H. Pictures: diagrams, tables and widgets
 
+- **H0.** A widget is just a picture. It keeps the reader engaged, and shows what the code produces, in a tiny bit of context. A chapter about cows shows a cow standing on the grass by the road, seen from an angle. Don't overcomplicate it: a picture's code is a thin wrapper around Safari Ride's own code, never a project of its own.
 - **H1.** Put a diagram early. Every edge has a label, a verb and often the function that does the work ("finds it with truck_in_view"). An edge whose only honest verb is "imports" is worth a look.
 - **H1a.** Every box stands for something real in the code, and the diagram shows the reader something the prose needs. A box labelled "triangle" pointing at `Polygon.triangle` shows nothing. A diagram that illustrates no point goes.
 - **H2.** In the One frame half, a widget is a static frame. VCR controls come only once time passes. There are no sliders.

@@ -81,7 +81,66 @@ Everything on the screen is one of three sorts: a solid, a card or far scenery. 
 
 A solid costs the most, because every corner is placed on its own. A card is flat, so one point, its foot, places all of it. Far scenery is so far away that it never comes nearer, however far the rider goes, so it needs no distance at all. The rest of the book keeps to these three sorts.
 
-Next, a map of the modules that do all this.
+Before any of that machinery, we learn to draw.
+
+## Shapes
+
+Every frame of Safari Ride is a list of shapes, and nearly every shape is a polygon. Roc builds the list, and JavaScript on this page paints it, from the first shape to the last. In this chapter we draw the two polygons a tree is made of: a triangle and a rectangle.
+
+New in this chapter:
+
+- Roc: tags with payloads, a record taken apart in a parameter list, opaque types, static dispatch
+- Modules: `Shapes`, `Screen`, `Pixels`, `Polygon`
+
+### The polygon
+
+A shape is one of a handful of tags:
+
+{{code Shapes.Shape}}
+
+Each tag carries its data in parentheses. `Poly` is a polygon. Its `coordinates` list the corners as plain numbers, an `x` and then a `y` for each, and its `fill` colors the inside. A polygon can be any flat surface: a tier of a tree, a stretch of road, a side of the truck. So the ride draws nearly everything as a `Poly`. At step 1,529, 2,113 of the frame's 2,121 shapes are polygons.
+
+### A triangle
+
+Here is a triangle:
+
+```widget shapes triangle
+A green triangle on a plain background.
+```
+
+And here is the code that makes it:
+
+{{code ShapesWidgetApp.green_triangle}}
+
+Each corner is a `Screen.Point`, an `x` and a `y` on the canvas. The canvas is measured from its top left, and `y` grows downward. `0x2e8b57` is the color, the same six hex digits a web page writes after its `#`.
+
+`Polygon.triangle` builds the `Poly`:
+
+{{code Polygon.triangle}}
+
+The parameter `{ first_corner, second_corner, third_corner }` takes the record apart into three names. Every caller names all three corners, so every triangle has exactly three, by construction. The body lists the six numbers and fills the inside with one flat color.
+
+`first_corner.x` is a `Pixels`, a length on the screen. `Pixels` is an opaque type: an `F64` underneath, but only its own module sees the number. Screen lengths and road lengths never mix. `first_corner.x.to_f64()` takes the number out, and it uses static dispatch: Roc finds `to_f64` from the type of `first_corner.x`, so the call needs no `Pixels.` in front.
+
+`triangle` is a thin wrapper, and it earns its place. A `Poly` takes a bare list of numbers. `triangle` takes three named corners.
+
+### A rectangle
+
+Next, let's build a rectangle:
+
+```widget shapes rectangle
+A brown rectangle on a plain background.
+```
+
+{{code ShapesWidgetApp.brown_rectangle}}
+
+A rectangle's sides run along the canvas's edges, so two opposite corners pin it down. `Polygon.rectangle` takes just those two:
+
+{{code Polygon.rectangle}}
+
+It names the four edges, then lists the corners clockwise from the top left, each one an edge for its `x` and an edge for its `y`.
+
+A far tree in the ride is one rectangle of trunk under eight of these triangles.
 
 ## The modules
 
@@ -217,7 +276,7 @@ Each stretch of the map is one segment: the road from one bend to the next. The 
 
 New in this chapter:
 
-- Roc: tag unions in place of booleans, `match` covering every tag, void modules, static dispatch, `var`, record update, opaque types, `crash`
+- Roc: tag unions in place of booleans, `match` covering every tag, void modules, `var`, record update, `crash`
 - Modules: `World`, `Route`, `Segment`, `Trees`
 
 ### Get the types right
@@ -264,9 +323,7 @@ Even the world keeps as little as it can. A segment keeps its herd of cows, not 
 
 {{code Trees.roadside_trees}}
 
-The trees stand in pairs, a left tree and a right tree, every few metres along the segment. Four Roc ideas show up here.
-
-`$trees.append(left_tree)` uses static dispatch. Roc finds `append` from the type of `$trees`, a list, so the call needs no `List.` in front.
+The trees stand in pairs, a left tree and a right tree, every few metres along the segment. Three Roc ideas show up here.
 
 `$along`, `$conifer` and `$trees` are each a `var`, a name the loop gives a new value each time around. The `$` marks it. `roadside_trees` is still a pure function, because no code outside it sees a `var` change.
 
@@ -278,7 +335,7 @@ The last `match` picks the next pair's conifer. A green pair is followed by the 
 
 A `match` covers every tag of the union it matches on. Leave one out and the program doesn't compile, so a new scheme can't slip past this function unnoticed.
 
-A segment's place in the route is a `Route.SegmentIndex`. It's a `U32` underneath, and it's opaque: only `Route`'s own code sees the number inside, so no other code can mistake an index for a count of trees. `Route.segment_at` looks a segment up:
+A segment's place in the route is a `Route.SegmentIndex`, an opaque type like `Pixels`, with a `U32` underneath. No other code can mistake an index for a count of trees. `Route.segment_at` looks a segment up:
 
 {{code Route.segment_at}}
 
@@ -286,108 +343,6 @@ An index past the end of the route is a bug in Safari Ride, so `crash` stops the
 
 Nothing in this chapter moves, and nothing in the next few chapters does either. We hold one frame still and look at everything in it. First, what a picture is made of.
 
-## Shapes
-
-Thirty times a second, Safari Ride answers one question: what goes on the canvas? The answer is a list of shapes. Roc builds the list, and a painter on the other side, JavaScript on this page, paints it from the first shape to the last. A painter is a bit like a printer: it does exactly what the list says. That split is the whole drawing model. Roc decides every corner and every color, and the painter follows orders.
-
-In this chapter we build a simple tree: a green triangle of foliage on a brown rectangle of trunk. Every far tree in the ride grows from this one. We start from the one shape the painter knows best, the polygon. Then we make the triangle, then the rectangle, and then we put the two together as one tree. The code is the plainest Roc there is, made of types, records and functions.
-
-New in this chapter:
-
-- Roc: a record taken apart in a parameter list
-- Modules: `Shapes`, `Screen`, `Pixels`, `Polygon`, `SimpleTree`, `Picture`
-
-### Get the types right
-
-Three types carry the chapter, in the order we meet them:
-
-| Type | What it is |
-|---|---|
-| `Shapes.Shape` | One item in the painter's list, such as a polygon |
-| `Screen.Point` | A place on the canvas |
-| `Picture` | The shapes that form one full object, in painting order |
-
-### The polygon
-
-The painter's list holds `Shapes.Shape` values, and a shape is one of a handful of tags:
-
-{{code Shapes.Shape}}
-
-Each tag carries its data in parentheses, its payload. The tag that matters here is `Poly`, a polygon. Its payload has two fields. `coordinates` is the corners, as one flat list of numbers: an `x` and then a `y` for each corner. `fill` is how to color the inside.
-
-`Poly` is the primitive because a polygon can stand for any flat surface: a tier of a tree, a stretch of road, a face of the truck. A painter fills a polygon in one call, and the payload is nothing but numbers and a color, the painter's own terms. So Safari Ride builds nearly everything out of polygons. A frame often holds more than 2,000 shapes, and nearly all of them are `Poly`.
-
-A fill is a `Brush.Fill`. `Flat` is a single color, and the other fills are gradients, running from one color to another across the shape. Of the other tags, `Disc` is a circle, and `Blend` and `View` are marks that change how the shapes after them are painted.
-
-### Points on the screen
-
-A polygon's corners are places on the canvas. The canvas is measured from its top left corner, and `y` grows downward. A place on it is a `Screen.Point`, an `x` and a `y`:
-
-{{code Screen.Point}}
-
-Both are `Pixels`, a length on the screen. `Pixels` is opaque, like `Route.SegmentIndex`, so the compiler keeps screen lengths and road lengths apart. Underneath it's an `F64`, because a corner can land between two pixels. `Screen.point(x, y)` makes a point from two plain numbers.
-
-### A triangle
-
-Here is the tree's foliage, one green triangle:
-
-```widget shapes foliage
-The simple tree's foliage, a triangle, on a plain background.
-```
-
-`SimpleTree` makes it with one call:
-
-{{code SimpleTree.foliage}}
-
-A color is a whole number in hex, the same six digits a web page writes after its `#`. `0x2e8b57` is a sea green.
-
-`Polygon.triangle` does the work:
-
-{{code Polygon.triangle}}
-
-The bars, `|…|`, hold the function's parameters. The first parameter, `{ first_corner, second_corner, third_corner }`, takes the record apart into three names. A caller names all three corners, in any order, and the compiler checks that all three are there. So every triangle has exactly three corners, by construction.
-
-The body is the `Poly` itself. Its six coordinates are the three corners, an `x` and a `y` each, and `to_f64` takes the plain number out of each `Pixels`. Its fill is the color, made fully opaque by `Brush.flat`.
-
-`triangle` is a thin wrapper around `Poly`, and it carries weight. A `Poly`'s coordinates are a bare list of numbers, which says nothing about how many corners there are or which number belongs to which. A call to `triangle` names its three corners, and the type fixes their count.
-
-### A rectangle
-
-Next, the trunk, one brown rectangle:
-
-```widget shapes trunk
-The simple tree's trunk, a rectangle, on a plain background.
-```
-
-It's one call too:
-
-{{code SimpleTree.trunk}}
-
-`0x8b5a2b` is a brown. A rectangle's sides run along the screen's edges, so two opposite corners pin it down, and `Polygon.rectangle` takes just those two:
-
-{{code Polygon.rectangle}}
-
-The rectangle names its four edges, `left`, `top`, `right` and `bottom`. Then it lists its corners clockwise from the top left, each one an edge for its `x` and an edge for its `y`.
-
-### A simple tree
-
-Now the two shapes become one object:
-
-```widget shapes tree
-The simple tree, its trunk and its foliage, on a plain background.
-```
-
-{{code SimpleTree.tree}}
-
-The tree is a `Picture`: the shapes that form one full object, in the order they're painted. The trunk comes first and the foliage second, so the foliage paints over the top of the trunk, and the trunk shows only below the branches.
-
-{{signatures Picture.from_shapes Picture.to_shapes}}
-
-`Picture` is opaque, with a `List(Shapes.Shape)` underneath. Outside its module, a picture is a single thing, passed along whole, so the code that draws a tree hands back one value, the tree. Only `Scene`, as it builds the frame's list, opens a picture to take out its shapes.
-
-A frame paints the backdrop, the mountains and the ground first. Then it paints a series of pictures, from the farthest object to the nearest, so that near trees cover far ones.
-
-Every object along the road takes the same few steps on its way to a picture, and those steps come next. After them, this little tree grows its foliage into eight tiers.
 
 ## Nature types
 

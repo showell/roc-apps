@@ -1,54 +1,77 @@
-## The widget for the Safari tutorial's first look at shapes: the simple tree's
-## foliage, its trunk, or the whole tree, each a fixed picture on a plain
-## background. The Right key steps from one to the next, which is how the page
-## opens at each.
+## The pictures for the Safari tutorial's first look at shapes: a triangle,
+## then a rectangle, each on a plain background. The Right key steps from one
+## to the other, which is how the page opens at each.
+import game.Polygon
+import game.Screen
 import lib.CanvasApp
 import lib.Input
+import lib.RgbColor
 import lib.Shapes
 import widget.WidgetPage
 import widget.WidgetPalette
-import SimpleTree
 
 ShapesWidgetApp :: [].{
 
-	## Which part of the simple tree the widget shows.
-	Model : [Foliage, Trunk, Tree]
+	## Which shape the picture shows.
+	Model : [Triangle, Rectangle]
 
 	canvas_app : CanvasApp.CanvasApp(ShapesWidgetApp.Model)
 	canvas_app = WidgetPage.canvas_app({
-		title: "A simple tree",
+		title: "A triangle and a rectangle",
 		frames_a_second: WidgetPage.fixed_picture_frames_a_second,
-		init: Foliage,
+		init: Triangle,
 		model_at_next_step: next_model,
 		frame_shapes: shapes_of,
 	})
+
+	## A green triangle.
+	green_triangle : Shapes.Shape
+	green_triangle = Polygon.triangle(
+		{
+			first_corner: Screen.point(180.0, 280.0),
+			second_corner: Screen.point(420.0, 280.0),
+			third_corner: Screen.point(300.0, 60.0),
+		},
+		RgbColor.of(0x2e8b57),
+	)
+
+	## A brown rectangle.
+	brown_rectangle : Shapes.Shape
+	brown_rectangle = Polygon.rectangle(
+		{ top_left: Screen.point(240.0, 100.0), bottom_right: Screen.point(360.0, 260.0) },
+		RgbColor.of(0x8b5a2b),
+	)
 }
 
-## The widget after one frame: the Right key shows the next part.
+## The picture after one frame: the Right key shows the other shape.
 next_model : ShapesWidgetApp.Model, Input.Snapshot -> ShapesWidgetApp.Model
 next_model = |shown, input|
 	if input.key_pressed(KeyRight) {
 		match shown {
-			Foliage => Trunk
-			Trunk => Tree
-			Tree => Foliage
+			Triangle => Rectangle
+			Rectangle => Triangle
 		}
 	} else {
 		shown
 	}
 
-## Everything on the canvas: the background, then the part shown.
+## Everything on the canvas: the background, then the shape shown.
 shapes_of : ShapesWidgetApp.Model -> List(Shapes.Shape)
 shapes_of = |shown| {
-	part =
+	shape =
 		match shown {
-			Foliage => [SimpleTree.foliage]
-			Trunk => [SimpleTree.trunk]
-			Tree => SimpleTree.tree.to_shapes()
+			Triangle => ShapesWidgetApp.green_triangle
+			Rectangle => ShapesWidgetApp.brown_rectangle
 		}
-	[WidgetPage.picture_backdrop(WidgetPalette.picture_background_color)].concat(part)
+	[WidgetPage.picture_backdrop(WidgetPalette.picture_background_color), shape]
 }
 
-expect shapes_of(Tree).len() == 3
-expect next_model(Tree, Input.none.with_key_pressed(KeyRight)) == Foliage
-expect next_model(Foliage, Input.none) == Foliage
+expect
+	shapes_of(Triangle)
+		== [
+			WidgetPage.picture_backdrop(WidgetPalette.picture_background_color),
+			ShapesWidgetApp.green_triangle,
+		]
+expect next_model(Triangle, Input.none.with_key_pressed(KeyRight)) == Rectangle
+expect next_model(Rectangle, Input.none.with_key_pressed(KeyRight)) == Triangle
+expect next_model(Triangle, Input.none) == Triangle
