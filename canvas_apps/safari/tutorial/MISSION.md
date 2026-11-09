@@ -54,6 +54,8 @@ Each axis fails in its own way, and catching each failure takes a different kind
 - **C6.** Difficulty rises, tempered by categories: nature, man-made, critters. One frame is held still for the first half, and motion starts at The ride instant. Teasing an idea early is fine.
 - **C7.** Everything that appears says why the reader needs it now. A type or module with no reason to be in this chapter moves to the chapter that needs it. Telling the reader that a `GroundPatch` is a patch of ground, with no reason it's here, leaves them disoriented.
 - **C8.** Show the code, then describe it. Never describe a function the reader hasn't seen.
+- **C10.** **Put yourself in the reader's shoes.** Read every draft as someone who has read only the chapters before it. At each paragraph, ask: do I know why I'm reading this, and could I explain it back? A chapter that follows the drawing of a triangle with a map of a hundred modules fails that reader, however true the map is. The thread the reader just picked up comes first.
+- **C11.** Every item in "New in this chapter" is really taught: what it is, the line of code that shows it, and why it matters here. A list of four Roc ideas waved at in passing is worse than no list. Fewer ideas, each explained properly.
 - **C9.** Name other chapters rarely. When you must, put the title in quotes ("A simple tree"), and say what it holds.
 
 ### Axis D. Voice: the sentences themselves
@@ -140,7 +142,8 @@ The work is a linear pass, one chapter at a time, in book order, starting again 
 2. If the prose exposes a smell (G1), fix the code first. A small fix lands now. A bigger one goes in the queue, and the chapter describes the code as it stands.
 3. Write a clean draft from scratch, with a strong voice, from the reader's questions: what is this for, why now, what does it show? Close the old draft before you write. It is a source of facts and of includes, never of sentences. Then check it against axes B through I. The writer writes the prose; nobody else does. Check every diagram edge against the code, and give every edge its label (H1).
 4. Gate, commit, push, and rebuild the book.
-5. Every four or five chapters, post a proofread note with the new text, and Steve reads it while the work goes on. His replies come first whenever they arrive.
+5. A note to Steve says up front which chapters it holds, in book order, and marks where each chapter starts, so he always knows whether he's reading a chapter or a section.
+6. Every four or five chapters, post a proofread note with the new text, and Steve reads it while the work goes on. His replies come first whenever they arrive.
 
 **Cold readers.** After each batch, one cold reader checks just two things: truth against the code (B), and order for a reader who has seen only the pages before (C). Those are the two axes where the writer can't see past their own outline. Take its findings with restraint, and phrase every fix yourself.
 
