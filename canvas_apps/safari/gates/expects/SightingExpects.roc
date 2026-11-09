@@ -381,10 +381,7 @@ expect
 expect
 	TowerSighting.towers_in_view(
 		Fixtures.crafted_road([Fixtures.segment_of([])]),
-		{
-			vantage: { ..Fixtures.origin, along: Along.metres(5000.0) },
-			clock: Clock.start,
-		},
+		{ vantage: { ..Fixtures.origin, along: Along.metres(5000.0) }, clock: Clock.start },
 	).len()
 		== 0
 
@@ -596,12 +593,7 @@ truck_point_off_road : F64, TruckShape.TruckPoint -> F64
 truck_point_off_road = |lead, on_truck| {
 	sighting = sighted_truck_of(lead)
 	spot = sighting.spot
-	setting = {
-		spot,
-		heading: sighting.heading,
-		focal_length: Pixels.of(500.0),
-	}
-	placed = TruckPlacement.raised_point(setting, on_truck)
+	placed = TruckPlacement.raised_point({ spot, heading: sighting.heading }, on_truck)
 	road_point = spot.road_point()
 	on_road = RoadAhead.rider_point_at(
 		Fixtures.three_segment_road,

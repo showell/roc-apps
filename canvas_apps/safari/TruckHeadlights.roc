@@ -92,7 +92,8 @@ Distance -> Try(
 )
 headlight_beam = |truck, rightward| {
 	nose = TruckShape.truck_box.nose
-	on_truck = |ahead, height| TruckPlacement.raised_point(truck, { ahead, rightward, height })
+	stance = { spot: truck.spot, heading: truck.heading }
+	on_truck = |ahead, height| TruckPlacement.raised_point(stance, { ahead, rightward, height })
 	at_lamp = |height| on_truck(nose, height)
 	at_far_end = |height| on_truck(nose.plus(beam_length), height)
 	lamp_bottom = at_lamp(headlight_height.minus(beam_half_height_at_lamp))
