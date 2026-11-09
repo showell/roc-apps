@@ -35,17 +35,17 @@ TruckShape :: [].{
 	TruckFace : { color : RgbColor, corners : List(TruckShape.TruckPoint) }
 
 	## The truck's body, its back, nose and windshield.
-	truck_blue : RgbColor
-	truck_blue = RgbColor.of(0x1C2E66)
+	body_color : RgbColor
+	body_color = RgbColor.of(0x1C2E66)
 
-	roof_blue : RgbColor
-	roof_blue = RgbColor.of(0x3A52A8)
+	roof_color : RgbColor
+	roof_color = RgbColor.of(0x3A52A8)
 
-	side_blue : RgbColor
-	side_blue = RgbColor.of(0x152150)
+	side_color : RgbColor
+	side_color = RgbColor.of(0x152150)
 
-	tire_black : RgbColor
-	tire_black = RgbColor.of(0x15151A)
+	tire_color : RgbColor
+	tire_color = RgbColor.of(0x15151A)
 
 	## The whole truck as it is built: its two sides, the trailer's back, its
 	## roof, the cab's windshield and nose, then its tires.
@@ -65,7 +65,7 @@ TruckShape :: [].{
 		box = truck_box
 		[box.left, box.right].map(
 			|rightward| {
-				color: side_blue,
+				color: side_color,
 				corners: [
 					{ ahead: box.rear, rightward, height: trailer_bottom },
 					{ ahead: box.rear, rightward, height: truck_height },
@@ -82,7 +82,7 @@ TruckShape :: [].{
 	## The back of the trailer, from its floor to its roof.
 	trailer_back : TruckShape.TruckFace
 	trailer_back = across_truck(
-		truck_blue,
+		body_color,
 		{
 			near: { ahead: truck_box.rear, height: trailer_bottom },
 			far: { ahead: truck_box.rear, height: truck_height },
@@ -92,7 +92,7 @@ TruckShape :: [].{
 	## The roof of the trailer and the cab, one flat face.
 	roof : TruckShape.TruckFace
 	roof = across_truck(
-		roof_blue,
+		roof_color,
 		{
 			near: { ahead: truck_box.rear, height: truck_height },
 			far: { ahead: truck_box.roof_front, height: truck_height },
@@ -100,10 +100,10 @@ TruckShape :: [].{
 	)
 
 	## The cab's windshield, sloping down from the roof to the nose. It is
-	## painted the truck's blue: there is no glass.
+	## the body's color: there is no glass.
 	windshield : TruckShape.TruckFace
 	windshield = across_truck(
-		truck_blue,
+		body_color,
 		{
 			near: { ahead: truck_box.roof_front, height: truck_height },
 			far: { ahead: truck_box.nose, height: hood_height },
@@ -113,7 +113,7 @@ TruckShape :: [].{
 	## The cab's nose, from the hood down to the cab's floor.
 	nose : TruckShape.TruckFace
 	nose = across_truck(
-		truck_blue,
+		body_color,
 		{
 			near: { ahead: truck_box.nose, height: hood_height },
 			far: { ahead: truck_box.nose, height: cab_bottom },
@@ -126,7 +126,7 @@ TruckShape :: [].{
 	tires = {
 		box = truck_box
 		tire = |{ axle, rightward }| {
-			color: tire_black,
+			color: tire_color,
 			corners: TruckShape.circle_angles(tire_sides).map(
 				|angle| {
 					ahead: axle.plus(tire_radius.times(angle.cos())),

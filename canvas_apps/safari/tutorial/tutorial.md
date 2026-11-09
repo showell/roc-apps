@@ -2003,11 +2003,36 @@ A truck from behind, from behind and to one side, and from the side.
 
 New in this chapter:
 
-- Modules: `TruckShape`, `TruckSighting`, `TruckPlacement`, `TruckBody`, `Truck`
+- Modules: `Truck`, `TruckBody`, `TruckShape`, `TruckSighting`, `TruckPlacement`
+
+### How to draw a truck
+
+Here's the whole job in one function. Given a sighted truck and the camera's lens, it works out the truck's setting, then draws its headlight beams, its body and its brake lights, each painted over the one before:
+
+{{code Truck.truck_picture}}
+
+The body is drawn the same way, one level down. It takes the truck's stance, places each face, sorts the faces far to near so that a nearer face covers a farther one, and clips and projects each one:
+
+{{code TruckBody.body_picture}}
+
+The modules that draw the truck
+```dot
+digraph truck_drawing {
+  node [shape=box, fontname="Helvetica"];
+  Truck [style=bold];
+  Scene -> TruckSighting [label="  finds it with truck_in_view"];
+  Scene -> Truck [label="  draws it with truck_picture"];
+  Truck -> TruckBody [label="  draws its body with body_picture"];
+  TruckBody -> TruckShape [label="  reads the faces of"];
+  TruckBody -> TruckPlacement [label="  places each face with placed_face"];
+}
+```
+
+The rest of this chapter opens those pieces: what the truck looks like, and how it's placed on the road.
 
 ### What the truck looks like
 
-The truck is blue. `truck_blue`, a navy, paints the back of its trailer, its windshield and its nose. Its sides are `side_blue`, a darker navy, and its roof is `roof_blue`, a lighter blue. Its tires are `tire_black`. There's no glass: the windshield is painted the truck's blue.
+The truck is blue: a dark blue body, darker blue sides, a lighter blue roof, and black tires. There's no glass, so the windshield is the body's color.
 
 `TruckShape` says what the truck looks like, and nothing else. It doesn't know where the truck is, or that there's a road. Each part of the truck is a face, a color and its corners:
 
@@ -2045,30 +2070,17 @@ That shape gets to the screen in three stages:
 
 Placement works a point at a time. Projection works a face at a time, for two reasons. A face that reaches behind the camera is clipped, and clipping can cut corners off a face and add new ones, so it needs the whole outline. And the faces are sorted by depth before they're drawn, and the sort orders faces, not points.
 
-The modules that draw the truck
-```dot
-digraph truck_drawing {
-  node [shape=box, fontname="Helvetica"];
-  TruckPlacement [style=bold];
-  Scene -> TruckSighting [label="  finds it with truck_in_view"];
-  Scene -> Truck [label="  draws it with truck_picture"];
-  Truck -> TruckBody [label="  draws its body with body_picture"];
-  TruckBody -> TruckShape [label="  reads the faces of"];
-  TruckBody -> TruckPlacement [label="  places each face with placed_face"];
-}
-```
-
 ### Placement: one rigid body
 
-A truck doesn't bend. So it's placed the way any 3D program places a rigid thing: every corner moves together. `TruckSighting` finds the truck on the road ahead, and works out three things once. The truck's spot, which holds its foot in the rider's view and the ground's drop beneath it. Which way it heads against the camera. And which of its lights are on:
+A truck doesn't bend, so every corner moves together. `TruckSighting` finds the truck on the road ahead and works out three things once: the truck's spot, which holds its foot in the rider's view and the ground's drop beneath it; which way the truck heads, seen from the camera; and which of its lights are on.
 
 {{code Truck.SightedTruck}}
 
-The heading is the road's direction at the truck's spot. A segment comes into the rider's view by turns and shifts alone, so the way from the spot to a point one metre further along is the road's way all along the segment:
+The truck heads the way the road runs at its spot. `road_heading` finds that direction from two points on the road: the truck's spot, and a point one metre further along. It brings both into the rider's view, and the angle between them is the heading.
 
 {{code TruckSighting.road_heading}}
 
-What the truck is drawn from is that sighting and the camera's lens:
+The truck is drawn from that sighting and the camera's lens:
 
 {{code TruckPlacement.TruckSetting}}
 
@@ -2076,19 +2088,9 @@ Placement is one function. It turns a point by the heading, carries it out from 
 
 {{code TruckPlacement.raised_point}}
 
-Every corner is lowered by the same drop, how far the ground has curved away beneath the truck's spot. Across a 12-metre truck the drop changes by a few centimetres at most, far less than a pixel.
+Every corner is lowered by the same drop, how far the ground has curved away beneath the truck's spot. Across a 12-metre truck the drop changes by a few centimetres at most, far less than a pixel. `TruckPlacement.placed_face` places every corner of a face this way, and that's what `body_picture` sorts and draws.
 
-### Drawing it
-
-`TruckPlacement.placed_face` places each corner of a face. Then `TruckBody` sorts the faces far to near, so a nearer face drawn later covers a farther one, and clips and projects each one:
-
-{{code TruckBody.body_picture}}
-
-One function draws the whole truck from its sighting. The lens goes beside the sighting, as it does for every sighting in the game: a sighting says where a thing is, and the frame's lens draws it.
-
-{{code Truck.truck_picture}}
-
-With the lights off, the beams and the brake lights are empty pictures, and that's just the body. The truck is drawn however small it stands, because the rider is always looking for it.
+With the lights off, the beams and the brake lights are empty pictures, and `truck_picture` draws just the body. The truck is drawn however small it stands, because the rider is always looking for it.
 
 That's a truck. Next, it moves.
 
