@@ -6,6 +6,7 @@ import Animation
 import EncounterPlan
 import Clock
 import Distance
+import Motorcycle
 import Route
 import Rider
 import Segment
@@ -83,21 +84,21 @@ next = |route, instant| {
 		}
 	encounter_plan = instant.encounter_plan.plan_at_next_step({
 		segment_change,
-		approach: encounter_approach(rider_place.segment_on(route), rider),
+		approach: encounter_approach(rider_place.segment_on(route), rider.motorcycle),
 		now: clock,
 	})
 	{ rider, truck, clock, encounter_plan }
 }
 
-## How `rider` comes at `segment`'s encounter, or none on a quiet road.
-encounter_approach : Segment, Rider -> EncounterPlan.Approach
-encounter_approach = |segment, rider|
+## How `motorcycle` comes at `segment`'s encounter, or none on a quiet road.
+encounter_approach : Segment, Motorcycle -> EncounterPlan.Approach
+encounter_approach = |segment, motorcycle|
 	match segment.encounter_span() {
 		Ok({ span, planned_along }) =>
 			Approaching({
 				span,
-				gap: planned_along.distance_from(rider.motorcycle.route_place.road_point.along),
-				speed: rider.motorcycle.speed,
+				gap: planned_along.distance_from(motorcycle.route_place.road_point.along),
+				speed: motorcycle.speed,
 			})
 		Err(QuietRoad) => QuietRoad
 	}
