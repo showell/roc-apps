@@ -150,7 +150,7 @@ A step is one function's job, and its type tells the story:
 
 {{signatures RideInstant.next_or_restart}}
 
-After the colon comes the function's type: the types it takes, then an arrow, then the type it gives back. The `next_or_restart` function takes the route and one moment of the ride. It gives back a type written in place, in square brackets: one of two tags. A tag can carry a value, and each of these carries the next moment. `Continued` carries the moment one step on, and `Restarted` carries the ride's first moment, once the rider has finished the route.
+That's the function's type annotation, the line above its body. When a function's body is long, the book shows the annotation alone, until the body's turn comes. After the colon comes the function's type: the types it takes, then an arrow, then the type it gives back. The `next_or_restart` function takes the route and one moment of the ride. It gives back a type written in place, in square brackets: one of two tags. A tag can carry a value, and each of these carries the next moment. `Continued` carries the moment one step on, and `Restarted` carries the ride's first moment, once the rider has finished the route.
 
 Inside the step, the four fields move in a fixed order, so the moves fit together: the rider reads what the cat or bird ahead is doing, and then moves. The second half of the book reads that order line by line.
 
@@ -180,7 +180,7 @@ The things beside the road are its trees, its radio towers and its animals, and 
 A cow on the grass beside the road.
 ```
 
-Each kind of thing has a function called `scenery_sprite` in its own module. Here's the cow's, from the `Billboard` module:
+Each kind of thing has a function called `scenery_sprite` in its own module. Here's the type annotation of the cow's, from the `Billboard` module:
 
 {{signatures Billboard.scenery_sprite}}
 
