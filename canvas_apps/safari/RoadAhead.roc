@@ -15,8 +15,10 @@ RoadAhead :: [].{
 	## The road in view: the route, and the run of its segments ahead of the
 	## rider. Only `ahead_of` builds one, so a road holds just what a rider on
 	## its route can see.
-	## It keeps the bends between its segments, and the bend from the segment
-	## just behind, worked out once for all the points carried across them.
+	## It keeps how many segments lie ahead, the bends between them, and the
+	## bend from the segment just behind, each worked out once from the route
+	## by `ahead_of`: the count for every walk along the road ahead, and the
+	## bends for all the points carried across them.
 	RoadView :: {
 		route : Route,
 		segments_ahead : RoadAhead.SegmentsAhead,

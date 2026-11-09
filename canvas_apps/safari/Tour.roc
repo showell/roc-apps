@@ -10,6 +10,9 @@ import RideInstant
 import Steps
 
 ## The route, the instant the ride has reached, and the instants before it.
+## There is one past instant for each step the clock has taken since the ride
+## last started, so `past_instants` is as long as the clock's count of steps:
+## a step forward appends one, a step back drops one, and a restart empties it.
 Tour :: {
 	route : Route,
 	instant : RideInstant,

@@ -32,7 +32,10 @@ Segment := {
 
 	## What the rider meets on the road here, at most one thing, so that the
 	## rider has one experience at a time. Most of the road is quiet, so that an
-	## encounter stands out.
+	## encounter stands out. The cat crosses by one of `trees`, and the bird's
+	## flight holds copies of two of them, its perch and the tree it flies to.
+	## In play `from_choices` is the one builder of a segment, and it picks those
+	## trees from `trees`, so the flight's trees always stand among them.
 	encounter : [CatCrosses(CatCrossing), BirdHere(BirdFlight), QuietRoad],
 
 	ending : Segment.Ending,
