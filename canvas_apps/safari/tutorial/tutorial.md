@@ -226,7 +226,7 @@ The `focal_length` says how strong the camera's lens is, in `Pixels`, the screen
 
 The `spot` comes from a camera: it's what a sighting holds. So to draw the cow and the bull, the picture at the top of this chapter puts each one on the road by hand, the cow 10 metres ahead and 5 metres left of the middle, and lets a camera at the start of the road sight them. The rider's own camera comes in a later chapter.
 
-What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, drawn as polygons. Most of the ride's shapes have straight edges. At step 1,529, the ride draws 2,121 shapes on top of the sky and the grass: 864 triangles, 1,113 polygons, 136 rectangles and 8 discs. The rectangles are the trees' trunks.
+What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, drawn as polygons. Most of the ride's shapes have straight edges. At step 1,529, the ride draws 2,121 shapes on top of the sky and the grass: 868 triangles, 727 quads, 518 polygons and 8 discs. 136 of the quads are the trees' trunks.
 
 At the bends in the road stand four more kinds of billboard animal: elephants, giraffes, zebras and rhinos. They come next, with the `match` that mirrors the ones that face right.
 
@@ -3045,7 +3045,7 @@ The cut can change the type of point as well as the count. The near plane takes 
 
 `GroundPatch`, `GuardRail`, `TruckBody` and `TruckBrakeLights` all cut through `Camera.clipped_polygon`. `GroundPatch` first cuts its corners at the horizon, with `EarthCurve.points_before_horizon`:
 
-{{code Camera.clipped_polygon from "in_front = RiderView.clipped_points(" to "fill: Brush.flat(color),"}}
+{{code Camera.clipped_polygon from "in_front = RiderView.clipped_points(" to "Brush.flat(color),"}}
 
 ### Arithmetic all the way down
 
@@ -3240,12 +3240,12 @@ The ride instant chapter showed `SafariApp.model_at_next_step` reading a snapsho
 
 | What's in the shapes of step 1,529 | How many |
 |---|---|
-| `Triangle` | 864 |
-| `Polygon` | 1,113 |
-| `Rectangle` | 136 |
+| `Triangle` | 868 |
+| `Quad` | 727 |
+| `Polygon` | 518 |
 | `Disc` | 8 |
 
-What the game hands back each frame is a `List(Shapes.Shape)`. A shape is a tag: `Triangle`, `Rectangle`, `Disc`, `Polygon` and a few more, each with its fill. The table counts the shapes of step 1,529, the cat frozen in the road: 2,121 in all, nearly all of them triangles and polygons. Two of the tags aren't shapes. `Blend` and `View` are marks in the list that change how what comes after them is painted. A frame is a flat list, so a mark is the cheapest way to say that.
+What the game hands back each frame is a `List(Shapes.Shape)`. A shape is a tag: `Triangle`, `Quad`, `Disc`, `Polygon` and a few more, each with its fill. The table counts the shapes of step 1,529, the cat frozen in the road: 2,121 in all, nearly all of them triangles, quads and polygons. Two of the tags aren't shapes. `Blend` and `View` are marks in the list that change how what comes after them is painted. A frame is a flat list, so a mark is the cheapest way to say that.
 
 The rider's lean is one of those marks. The whole picture banks into a turn, backdrop included, so `FrameView.leaned_shapes` puts the whole frame, backdrop first, inside one view: a camera built from nested tags by `Screen.leaned_by`, turned by the rider's roll:
 
@@ -3422,7 +3422,7 @@ This book uses these words in one sense only.
 | Painter | What puts shapes on the canvas. The page's painter is the browser's canvas, and the proof's is written in Roc. |
 | Sprite | How one object looks in one frame. A frame holds many pictures, one for each object in view, so "a picture" never means the whole frame. |
 | Placed | Put on the road, measured `along` and `across` a segment, and `lift` off the ground. |
-| Polygon | A shape with three or more corners, and nearly every shape in a frame is one. |
+| Polygon | A shape with five or more corners. A frame's shapes with three or four are triangles and quads. |
 | Rendered | Made into a picture, with its depth attached. |
 | Road ahead | The rider's segment and the segments after it, as far as the rider can see. |
 | Route | The list of segments that makes up the whole ride. |

@@ -29,7 +29,7 @@ PongDraw :: [].{
 	frame = |world| {
 		var $out = List.with_capacity(140)
 		# The field, a dark vertical gradient rather than flat black.
-		$out = List.append($out, Rectangle({ top_left: Point.at(0.0, 0.0), width: Pixels.of(w), height: Pixels.of(h), fill: Linear({ stops: { start_color: Brush.opaque_rgba(Rules.field_top), end_color: Brush.opaque_rgba(Rules.field_bottom), start_offset: 0.0, end_offset: 1.0 }, start_point: Point.at(0.0, 0.0), end_point: Point.at(0.0, h) }) }))
+		$out = List.append($out, Shapes.rectangle({ top_left: Point.at(0.0, 0.0), width: Pixels.of(w), height: Pixels.of(h), fill: Linear({ stops: { start_color: Brush.opaque_rgba(Rules.field_top), end_color: Brush.opaque_rgba(Rules.field_bottom), start_offset: 0.0, end_offset: 1.0 }, start_point: Point.at(0.0, 0.0), end_point: Point.at(0.0, h) }) }))
 		$out = List.concat($out, center_line({}))
 		$out = List.concat($out, scores(world))
 		$out = List.concat($out, Shapes.added_light_shapes([trail(world), glow(world), wash(world)].join()))
@@ -87,7 +87,7 @@ PongDraw :: [].{
 		if world.flash.intensity <= 0.0 {
 			[]
 		} else {
-			[Rectangle({ top_left: Point.at(0.0, 0.0), width: Pixels.of(w), height: Pixels.of(h), fill: Flat(Brush.with_alpha(world.flash.color, F32.to_f64(world.flash.intensity) * 0.27)) })]
+			[Shapes.rectangle({ top_left: Point.at(0.0, 0.0), width: Pixels.of(w), height: Pixels.of(h), fill: Flat(Brush.with_alpha(world.flash.color, F32.to_f64(world.flash.intensity) * 0.27)) })]
 		}
 
 	## The solid bodies, over their own glow so the edges stay crisp.
@@ -134,7 +134,7 @@ PongDraw :: [].{
 			} else {
 				Rules.right_neon
 			}
-			$out = List.concat([Rectangle({ top_left: Point.at(0.0, 0.0), width: Pixels.of(w), height: Pixels.of(h), fill: Flat(Brush.with_alpha(Rules.field_bottom, 0.75)) })], $out)
+			$out = List.concat([Shapes.rectangle({ top_left: Point.at(0.0, 0.0), width: Pixels.of(w), height: Pixels.of(h), fill: Flat(Brush.with_alpha(Rules.field_bottom, 0.75)) })], $out)
 			$out = List.concat($out, Font.centered_text_shapes(won, { top_center: Point.at(w / 2.0, 248.0), size: 40.0, color: Brush.opaque_rgba(tint) }))
 			List.concat($out, Font.centered_text_shapes(again, { top_center: Point.at(w / 2.0, 316.0), size: 19.0, color: Brush.opaque_rgba(Rules.hint_color) }))
 		} else {

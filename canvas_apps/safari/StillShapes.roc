@@ -89,7 +89,7 @@ still_polygon : StillShapes.Anchor, Still.Polygon -> Shapes.Shape
 still_polygon = |anchor, polygon| {
 	points = StillShapes.screen_points(anchor, polygon.points)
 	match polygon.fill {
-		Flat(color) => Polygon({ corners: points, fill: Brush.flat(color) })
+		Flat(color) => Shapes.region_from_corners(points, Brush.flat(color))
 		Shaded(gradient) => still_gradient_polygon(anchor, { gradient, points })
 	}
 }
@@ -107,7 +107,7 @@ still_gradient_polygon = |anchor, { gradient, points }|
 				start_point: StillShapes.screen_point(anchor, start),
 				end_point: StillShapes.screen_point(anchor, end),
 			})
-			Polygon({ corners: points, fill })
+			Shapes.region_from_corners(points, fill)
 		}
 		Radial({ stops, center, axis_u, axis_v }) => {
 			ellipse = Brush.elliptical_gradient({
@@ -123,7 +123,7 @@ still_gradient_polygon = |anchor, { gradient, points }|
 					Ok(gradient_fill) => gradient_fill
 					Err(TooThin) => crash "StillShapes.still_gradient_polygon: an ellipse too thin for Brush to invert"
 				}
-			Polygon({ corners: points, fill })
+			Shapes.region_from_corners(points, fill)
 		}
 	}
 

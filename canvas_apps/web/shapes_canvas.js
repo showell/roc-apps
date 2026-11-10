@@ -96,7 +96,7 @@ function fillShape(ctx, fill) {
   else { ctx.fillStyle = paint; ctx.fill(); }
 }
 
-// A triangle and any other polygon are traced alike, as the path round their
+// A triangle, a quad and a polygon are traced alike, as the path round their
 // corners in order.
 function tracePolygon(ctx, corners) {
   ctx.beginPath();
@@ -185,14 +185,12 @@ function paintFrame(ctx, shapes, scale = 1) {
         tracePolygon(ctx, [p.first, p.second, p.third]);
         fillShape(ctx, p.fill);
         break;
-      case "Polygon":
-        tracePolygon(ctx, p.corners);
+      case "Quad":
+        tracePolygon(ctx, [p.first, p.second, p.third, p.fourth]);
         fillShape(ctx, p.fill);
         break;
-      case "Rectangle":
-        ctx.beginPath();
-        ctx.rect(p.top_left.x, p.top_left.y, p.width, p.height);
-        ctx.closePath();
+      case "Polygon":
+        tracePolygon(ctx, p.corners);
         fillShape(ctx, p.fill);
         break;
       case "Disc":

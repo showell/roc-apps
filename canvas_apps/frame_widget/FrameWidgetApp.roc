@@ -182,7 +182,7 @@ plain_background_color = RgbColor.of(0xE8E6DF)
 
 ## Behind whatever is on, so a frame with no sky has something to be seen against.
 plain_background : Shapes.Shape
-plain_background = Rectangle({
+plain_background = Shapes.rectangle({
 	top_left: Point.at(0.0, 0.0),
 	width: Pixels.of(canvas_width),
 	height: Pixels.of(canvas_height),

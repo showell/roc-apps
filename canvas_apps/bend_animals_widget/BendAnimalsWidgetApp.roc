@@ -214,14 +214,7 @@ Extent : {
 canvas_corners : List(Shapes.Shape) -> List(Point.Point)
 canvas_corners = |shapes|
 	shapes
-		.map(
-			|shape|
-				match shape {
-					Triangle(t) => [t.first, t.second, t.third]
-					Polygon({ corners, .. }) => corners
-					Text(_) | Disc(_) | Rectangle(_) | Blend(_) | View(_) | Image(_) => crash "BendAnimalsWidgetApp.canvas_corners: a billboard is drawn in polygons"
-				},
-		)
+		.map(|shape| Shapes.region_corners(shape) ?? crash "BendAnimalsWidgetApp.canvas_corners: a billboard is drawn in polygons")
 		.join()
 		.map(canvas_point_of_screen)
 

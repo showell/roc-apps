@@ -426,7 +426,7 @@ expect
 		},
 	)
 
-# A triangle at these distances ahead, on the ground.
+# A polygon with a corner at each of these distances ahead, on the ground.
 sample_clipped_polygon : List(F64) -> Try(Shapes.Shape, [BehindCamera])
 sample_clipped_polygon = |forwards|
 	Camera.clipped_polygon(
@@ -443,15 +443,23 @@ sample_clipped_polygon = |forwards|
 		Pixels.of(800.0),
 	)
 
-# The number of corners a triangle's polygon holds once it is cut.
-clipped_corner_count : List(F64) -> U64
-clipped_corner_count = |forwards|
-	match sample_clipped_polygon(forwards) {
-		Ok(Polygon(polygon)) => polygon.corners.len()
-		_ => 0
+## What is left of the polygon once it is cut: its region's tag and how many
+## corners it holds.
+clipped_region : List(F64) -> Try(([Triangle, Quad, Polygon], U64), [BehindCamera])
+clipped_region = |forwards|
+	match sample_clipped_polygon(forwards)? {
+		Triangle(_) => Ok((Triangle, 3))
+		Quad(_) => Ok((Quad, 4))
+		Polygon({ corners, .. }) => Ok((Polygon, corners.len()))
+		Disc(_) | Blend(_) | View(_) | Image(_) | Text(_) => crash "RoadExpects.clipped_region: a clipped polygon is a straight-edged region"
 	}
 
-expect clipped_corner_count([5.0, 6.0, 7.0]) == 3
-expect clipped_corner_count([-1.0, 5.0, 6.0]) == 4
-expect clipped_corner_count([-3.0, -2.0, -1.0]) == 0
-expect sample_clipped_polygon([-3.0, -2.0, -1.0]).is_err()
+# A triangle wholly ahead stays a triangle, and one with a corner behind the
+# near plane loses it and gains two, a quad. A quad with a corner behind becomes
+# five corners, a polygon, and with three behind, a triangle.
+expect clipped_region([5.0, 6.0, 7.0]) == Ok((Triangle, 3))
+expect clipped_region([-1.0, 5.0, 6.0]) == Ok((Quad, 4))
+expect clipped_region([5.0, 6.0, 7.0, 8.0]) == Ok((Quad, 4))
+expect clipped_region([-1.0, 5.0, 6.0, 7.0]) == Ok((Polygon, 5))
+expect clipped_region([-3.0, -2.0, -1.0, 5.0]) == Ok((Triangle, 3))
+expect sample_clipped_polygon([-3.0, -2.0, -1.0]) == Err(BehindCamera)

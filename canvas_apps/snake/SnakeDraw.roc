@@ -61,7 +61,7 @@ SnakeDraw :: [].{
 	frame = |world, elapsed| {
 		var $out = List.with_capacity(220)
 		# The field, a dark vertical gradient rather than flat black.
-		$out = List.append($out, Rectangle({ top_left: Point.at(0.0, 0.0), width: Pixels.of(w), height: Pixels.of(h), fill: Linear({ stops: { start_color: field_top, end_color: field_bottom, start_offset: 0.0, end_offset: 1.0 }, start_point: Point.at(0.0, 0.0), end_point: Point.at(0.0, h) }) }))
+		$out = List.append($out, Shapes.rectangle({ top_left: Point.at(0.0, 0.0), width: Pixels.of(w), height: Pixels.of(h), fill: Linear({ stops: { start_color: field_top, end_color: field_bottom, start_offset: 0.0, end_offset: 1.0 }, start_point: Point.at(0.0, 0.0), end_point: Point.at(0.0, h) }) }))
 		$out = List.concat($out, hud(world))
 		$out = List.concat($out, board({}))
 		$out = List.concat($out, glow(world, elapsed))
@@ -170,7 +170,7 @@ SnakeDraw :: [].{
 				over = "GAME OVER"
 				again = "PRESS SPACE TO PLAY AGAIN"
 				alpha = 0.59 + 0.41 * Trig.pulse(elapsed)
-				var $out = [Rectangle({ top_left: Point.at(left - 8.0, 236.0), width: Pixels.of(board_w + 16.0), height: Pixels.of(140.0), fill: Flat(Brush.translucent(ArgbColor.of(0xe1060810))) })]
+				var $out = [Shapes.rectangle({ top_left: Point.at(left - 8.0, 236.0), width: Pixels.of(board_w + 16.0), height: Pixels.of(140.0), fill: Flat(Brush.translucent(ArgbColor.of(0xe1060810))) })]
 				$out = List.concat($out, Font.centered_text_shapes(over, { top_center: Point.at(w / 2.0, 262.0), size: 40.0, color: food_neon }))
 				List.concat($out, Font.centered_text_shapes(again, { top_center: Point.at(w / 2.0, 326.0), size: 19.0, color: Brush.with_alpha(hint_color, alpha) }))
 			}

@@ -290,10 +290,10 @@ silhouette = |sky_columns, { focal_length, height_at, color, base_y }| {
 			}
 		},
 	)
-	Polygon({
-		corners: crest.concat([{ x: right, y: base_y }, { x: left, y: base_y }]),
-		fill: Brush.flat(color),
-	})
+	Shapes.region_from_corners(
+		crest.concat([{ x: right, y: base_y }, { x: left, y: base_y }]),
+		Brush.flat(color),
+	)
 }
 
 ## Snow thinner than this, between the range's crest and the snowline, isn't
@@ -334,7 +334,7 @@ snow_shape = |sky_columns, { focal_length, color }| {
 				back.append({ x: column.x, y: Lens.y_for_height({ height, focal_length }) })
 			},
 		)
-		Ok(Polygon({ corners: crest.concat(snowline_points), fill: Brush.flat(color) }))
+		Ok(Shapes.region_from_corners(crest.concat(snowline_points), Brush.flat(color)))
 	}
 }
 
@@ -410,9 +410,9 @@ expect snow_peak_height > snow_threshold
 # The y of each corner of a silhouette.
 corner_ys : Shapes.Shape -> List(F64)
 corner_ys = |shape|
-	match shape {
-		Polygon(p) => p.corners.map(|corner| corner.y.to_f64())
-		_ => crash "Skyline: a silhouette is a polygon"
+	match Shapes.region_corners(shape) {
+		Ok(corners) => corners.map(|corner| corner.y.to_f64())
+		Err(NoCorners) => crash "Skyline: a silhouette has corners"
 	}
 
 lowest_y : Shapes.Shape -> F64

@@ -138,7 +138,7 @@ Particles :: [].{
 	shapes = |m| {
 		n = List.len(m.particles)
 		var $out = List.with_capacity(n + 1)
-		$out = List.append($out, Rectangle({ top_left: Point.at(0.0, 0.0), width: Pixels.of(width), height: Pixels.of(height), fill: Brush.flat(RgbColor.of(0x0b0e17)) }))
+		$out = List.append($out, Shapes.rectangle({ top_left: Point.at(0.0, 0.0), width: Pixels.of(width), height: Pixels.of(height), fill: Brush.flat(RgbColor.of(0x0b0e17)) }))
 		var $i = 0
 		while $i < n {
 			p = List.get(m.particles, $i) ?? crash ("particle")
