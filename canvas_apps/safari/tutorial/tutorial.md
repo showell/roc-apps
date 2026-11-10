@@ -182,6 +182,8 @@ A cow on the grass beside the road.
 
 The ride has a lot of animals: herds of cows and pigs, ducks on the ponds, and an elephant at a bend in the road. Each one is a billboard: a flat picture of its emoji, standing on the grass and turned square to the camera, like a cardboard cutout. That takes far less code than modelling an animal, and it's charming. A billboard faces left or right, and one that faces right is its emoji mirrored. That's the `Billboard` type from "The pieces as types": an emoji, a height and a facing. Each emoji was traced into polygons ahead of time, and the `EmojiStills` module holds them as plain data. The tracing itself is beyond this book.
 
+### Calves
+
 A herd looks better with a few calves in it. The ride's rule is simple: number a herd's cows from 0, and make every fourth cow, from the second, a calf, a billboard half as tall as its mother. Here are twenty cows in a row, numbered:
 
 ```widget herd
@@ -194,7 +196,9 @@ How does the code pick the calves? With one small function, the first in this bo
 
 The first line is its type: it takes a `U64`, a whole number from zero up, and gives back a `Bool`, `True` or `False`. The second line is the function itself. `|cow_number|` names what it takes, and everything after it is the body, whose value is what the function gives back. `cow_number.rem_by(4)` is the remainder after dividing by 4, so a cow whose number leaves 1 is a calf. The herd asks `is_calf` about each cow it places, and makes each calf a young billboard.
 
-Each kind of thing has a function called `scenery_sprite` in its own module. Here's the type annotation of the cow's, from the `Billboard` module:
+### How a thing draws itself
+
+Calf or cow, a billboard draws itself the way every thing beside the road does: each kind has a function called `scenery_sprite` in its own module. The cow's body is long, so here's its type annotation alone, from the `Billboard` module:
 
 {{signatures Billboard.scenery_sprite}}
 
@@ -206,7 +210,7 @@ A setting is a record with a type variable of its own:
 
 The `focal_length` sets how much the camera's lens magnifies, in `Pixels`, the screen's unit of length. The `context` field's type is the variable, so each kind chooses its own. The cow's is `{}`, the empty record, as its `Sprite.Setting({})` says, and a tree's is a `TreeShapes.Detail`.
 
-The `spot` comes from a camera: it's what a sighting holds. So to draw one cow alone, the picture above puts the cow on the road, 10 metres ahead and 5 metres left of the middle, and lets a camera at the start of the road sight it. The rider's own camera comes in when the book reaches the rider's view.
+The `spot` comes from a camera: it's what a sighting holds. So to draw one cow alone, the picture at the top of this chapter puts the cow on the road, 10 metres ahead and 5 metres left of the middle, and lets a camera at the start of the road sight it. The rider's own camera comes in when the book reaches the rider's view.
 
 What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, drawn as polygons. Most of the ride's shapes have straight edges. At step 1,529, the ride draws 2,121 shapes over the sky and the grass: 864 triangles, 1,113 other polygons, 136 rectangles, one for each tree's trunk, and 8 discs.
 
