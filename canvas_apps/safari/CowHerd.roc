@@ -93,7 +93,7 @@ jitter_along = Distance.metres(1.5)
 jitter_across : Distance
 jitter_across = Distance.metres(1.2)
 
-## Every fourth cow, from the second, is a calf.
+## Every fourth cow, starting with cow 1, is a calf.
 is_calf : U64 -> Bool
 is_calf = |cow_number| cow_number.rem_by(4) == 1
 
