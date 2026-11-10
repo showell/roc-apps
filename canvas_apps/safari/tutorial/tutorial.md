@@ -238,7 +238,7 @@ Four big animals stand at the bends in the ride's road: an elephant, a giraffe, 
 The four bend animals and their babies. Two face left and two face right.
 ```
 
-Every one of them has a face, and a face looks somewhere. So a billboard faces left or right, and the rider's eyes follow it.
+Every one of them has a face, and a face looks somewhere. So a billboard faces left or right, and your eye follows where it looks. At a bend, the animal and its baby both face the way the road turns.
 
 ### Two ways to face
 
@@ -252,9 +252,11 @@ The type is a list of tags in square brackets. A tag is a name that stands for i
 
 {{code Billboard.scenery_sprite}}
 
-`|Billboard.(billboard), setting|` names what the function takes. A `Billboard` is opaque, and `Billboard.(billboard)` opens it, so the function can read its fields.
+`|Billboard.(billboard), setting|` names the function's two arguments. A `Billboard` is opaque, and `Billboard.(billboard)` opens it, so the function can read its fields.
 
-Every emoji is drawn facing left, so a billboard that faces right needs its emoji mirrored. The `match` makes that choice. It looks at `billboard.facing`, and each line under it takes one tag and gives back what to do: `FacesLeft` gives `AsDrawn`, and `FacesRight` gives `Mirrored`. Those two are tags as well. `flip` names the one the `match` picks, and `StillShapes.standing_still_shapes` draws the emoji with it.
+The body is a block, in braces. Its first line names a value, `flip`, and its last line is the function's answer: a sprite of the shapes that `StillShapes.standing_still_shapes` makes from the emoji's traced still, at the billboard's height. In that last record, `flip` alone is short for `flip: flip`.
+
+Every emoji is drawn facing left, so a billboard that faces right needs its emoji mirrored. The `match` makes that choice. It looks at `billboard.facing`, and each line under it takes one tag and gives back what to do: `FacesLeft` gives `AsDrawn`, and `FacesRight` gives `Mirrored`. Those two are tags as well, and `flip` names the one the `match` picks.
 
 A `match` handles every tag of its type, and the compiler checks that it does. Leave out the `FacesRight` line, and the compiler stops with an error that names it:
 
@@ -277,7 +279,7 @@ Each tag is an animal. The `species_of` function turns each one into its species
 
 {{code BendAnimal.species_of}}
 
-This `match` is about as plain as one gets: a tag in, a record out, one line per animal. Its four lines are the four tags, so every bend animal has a species, and a giraffe is always 4.5 metres tall.
+This `match` is about as plain as one gets: a tag in, a record out, one line per animal. Its four lines are the four tags, so every bend animal has a species, and a grown giraffe is always 4.5 metres tall.
 
 ### One thing at a bend
 
@@ -306,11 +308,11 @@ digraph bend_life {
 }
 ```
 
-The function that gives a bend its billboards takes a `BendLife` apart with a `match`:
+The function that gives a bend its billboards takes the bend's life and the bend itself, a `Geom.Bend`, and takes the life apart with a `match`:
 
 {{code Segment.bend_billboards}}
 
-The `Animal(animal)` line matches a bend with any animal at it, and names the animal it carries `animal`, ready to use. Then `animal.bend_billboards(bend)` calls the `BendAnimal` module's own `bend_billboards` function, which places the animal and its baby. A duck pond gets its ducks, and a quiet bend gets the empty list. The code has the same shape as the type: one line for each tag, and the value a tag carries named right where the line needs it. Where each animal stands at its bend belongs to the road, which gets its own chapter later.
+The `Animal(animal)` line matches a bend with any animal at it, and names the animal it carries `animal`, ready to use. Then `animal.bend_billboards(bend)` calls the `BendAnimal` module's own `bend_billboards` function, which places the animal and its baby. A duck pond gets its ducks from the `Pond` module, and a quiet bend gets the empty list, `[]`. The code has the same shape as the type: one line for each tag, and the value a tag carries named right where the line needs it.
 
 ### Elephants, mostly
 
