@@ -433,6 +433,18 @@ turn_link = |neighbour, { rel, word }| match neighbour {
 	NoChapter => "<span></span>"
 }
 
+repo_url : Str
+repo_url = "https://github.com/showell/roc-apps"
+
+## The bar across the top of every page says the book is a draft, and leads to
+## the code the book reads.
+top_bar : Str
+top_bar =
+	\\<header class="top-bar">
+	\\<p class="draft-notice">This is an early draft.</p>
+	\\<a class="repo-link" href="${repo_url}">roc-apps on GitHub</a>
+	\\</header>
+
 page_html :
 	{
 		title : Str,
@@ -458,6 +470,7 @@ page_html = |{ title, body_class, nav, main }| {
 		\\<link rel="stylesheet" href="book.css">
 		\\</head>
 		\\<body class="${body_class}">
+		\\${top_bar}
 		\\${nav}
 		\\${main}
 		\\${embed}
@@ -545,6 +558,7 @@ expect Book.pages(
 	plain_book,
 	{ ..empty_outline, slugs: [{ chapter: "One", slug: "first" }] },
 ).map(|page| page.file) == ["index.html", "first.html", "appendix-more.html"]
+expect Book.pages(plain_book, empty_outline).all(|page| page.html.contains(top_bar))
 expect Book.pages(plain_book, empty_outline).all(|page| !page.html.contains("embed.js"))
 expect Book.pages(widget_book, empty_outline).map(|page| page.html.contains("embed.js")) == [
 	Bool.False,
