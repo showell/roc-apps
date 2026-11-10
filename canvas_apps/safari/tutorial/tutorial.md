@@ -35,6 +35,8 @@ digraph pieces {
   }
   motion [label="motion"];
   person [label="the person watching"];
+  { rank=same; things; world; view; }
+  { rank=same; motion; person; }
   things -> world [label="  stand in"];
   world -> view [label="  is seen in"];
   motion -> world [label="  moves"];
