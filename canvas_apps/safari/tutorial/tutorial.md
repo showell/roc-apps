@@ -212,7 +212,7 @@ Its answer is an `if`, which picks one of two values: a young billboard when `is
 
 ### What drawing a thing takes
 
-Calf, cow or bull, the ride draws a billboard the way it draws every kind of thing beside the road: with a function called `scenery_sprite`, in that kind's module. The `Billboard` module's `scenery_sprite` has a longer definition, built around a `match`, a way of choosing between tags that a later chapter teaches. So here's its annotation alone, the line that sits above the definition, from the `Billboard` module:
+Calf, cow or bull, the ride draws a billboard the way it draws every kind of thing beside the road: with a function called `scenery_sprite`, in that kind's module. The `Billboard` module's `scenery_sprite` has a longer definition, built around a `match`, a way of choosing between tags that the next chapter teaches. So here's its annotation alone, the line that sits above the definition, from the `Billboard` module:
 
 {{signatures Billboard.scenery_sprite}}
 
@@ -228,7 +228,7 @@ The `spot` comes from a camera: it's what a sighting holds. So to draw the cow a
 
 What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, drawn as polygons. Most of the ride's shapes have straight edges. At step 1,529, the ride draws 2,121 shapes on top of the sky and the grass: 864 triangles, 1,113 polygons, 136 rectangles and 8 discs. The rectangles are the trees' trunks.
 
-A sprite is shapes, so shapes come next: a triangle and a rectangle. Then we build things from them, starting with a tree.
+The cow and the bull are two of the ride's eight billboard animals. Next, we meet the other six, and the `match` that turns each one to face its own way.
 
 ## Shapes
 
