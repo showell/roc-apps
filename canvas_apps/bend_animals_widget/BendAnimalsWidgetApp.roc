@@ -152,10 +152,7 @@ placed_billboard_shapes = |placed|
 		},
 	) {
 		Ok(sighting) => {
-			rendered = Pipeline.rendering_of(
-				sighting,
-				{ focal_length: camera.focal_length, context: {} },
-			)
+			rendered = Pipeline.rendering_of(sighting, camera.focal_length)
 			rendered.sprite().to_shapes()
 		}
 		Err(BehindCamera) | Err(BelowHorizon) | Err(TooSmall) => crash "BendAnimalsWidgetApp.placed_billboard_shapes: every billboard stands in plain sight"
