@@ -181,6 +181,7 @@ const FIXED_PICTURE = "fixed picture";
 // third mark, and the first bird among the stills.
 const CLICKED_AT = {
   "../beacon_widget/": PLAY,
+  "../bend_animals_widget/": FIXED_PICTURE,
   "../bends_widget/": FIXED_PICTURE,
   "../bird_widget/": PLAY,
   "../cat_widget/": PLAY,
