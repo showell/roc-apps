@@ -19,9 +19,8 @@ Conifer := [Green, SmallGreen, Red, Gold].{
 			Gold => small_height.times(3.0)
 		}
 
-	## How a conifer looks. How much detail it gets depends on how many trees
-	## are nearer than it, which it can't know alone, so that is its context.
-	scenery_sprite : Conifer, Sprite.Setting(TreeShapes.Detail) -> Sprite
+	## How a conifer looks.
+	scenery_sprite : Conifer, Sprite.Setting({}) -> Sprite
 	scenery_sprite = |conifer, setting|
 		TreeShapes.tree_sprite(
 			setting,

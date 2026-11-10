@@ -2,8 +2,8 @@
 ## triangles on the screen. A near one's are cones seen from the camera: the
 ## hull of a ring of points round each tier's base and its apex, so the
 ## tiers fatten as the camera passes under them. It works from what it is
-## handed: a tree's height and color, where it stands from the camera, how many
-## trees are nearer, and the lens.
+## handed: a tree's height and color, where it stands from the camera, and the
+## lens.
 import Camera
 import ConvexHull
 import Distance
@@ -19,21 +19,15 @@ import lib.Shapes
 
 TreeShapes :: [].{
 
-	## What a tree's detail depends on beyond itself: how many trees are nearer.
-	Detail : { nearer_tree_count : U64 }
-
-	## The tree on the screen: its trunk, then its tiers top to bottom. The
-	## nearest trees have a shaded trunk. The crown is cones, shaded by how near
-	## they are, within cone_reach, and triangles beyond it.
-	tree_sprite : Sprite.Setting(TreeShapes.Detail),
-	{
-		height : Distance,
-		foliage_color : RgbColor,
-	} -> Sprite
-	tree_sprite = |{ spot, focal_length, context }, { height, foliage_color }| {
+	## The tree on the screen: its trunk, then its tiers top to bottom. A tree
+	## within round_trunk_reach has a shaded trunk. The crown is cones, shaded by
+	## how near they are, within cone_reach, and triangles beyond it.
+	tree_sprite : Sprite.Setting({}), { height : Distance, foliage_color : RgbColor } -> Sprite
+	tree_sprite = |{ spot, focal_length, context: _ }, { height, foliage_color }| {
 		inputs = tier_inputs_of(spot, { height, focal_length, foliage_color })
-		crown = TreeShapes.crown_of(inputs.base.forward())
-		trunk = trunk_shape(inputs.outline, trunk_finish_of(context.nearer_tree_count))
+		forward = inputs.base.forward()
+		crown = TreeShapes.crown_of(forward)
+		trunk = trunk_shape(inputs.outline, trunk_finish_of(forward))
 		Sprite.from_shapes([trunk].concat(tiers.map(|tier| tier_shape(tier, { inputs, crown }))))
 	}
 
@@ -74,18 +68,20 @@ cone_reach = Distance.metres(200.0)
 crown_shade_reach : Distance
 crown_shade_reach = Distance.metres(80.0)
 
-## A tree with fewer than this many trees nearer than it gets a shaded
-## trunk, which looks round.
-round_trunk_limit : U64
-round_trunk_limit = 4
+## A tree nearer than this gets a shaded trunk, which looks round. Past it, a
+## trunk is only a few pixels wide on the screen, too narrow for the shading
+## to show, so it is drawn flat. The reach is two pairs of trees deep, chosen
+## by eye.
+round_trunk_reach : Distance
+round_trunk_reach = Distance.metres(60.0)
 
 ## How a tree's trunk is drawn: shaded, which looks round, or flat.
 TrunkFinish : [Shaded, Flat]
 
-## How a tree's trunk is drawn, with `nearer_tree_count` trees nearer than it.
-trunk_finish_of : U64 -> TrunkFinish
-trunk_finish_of = |nearer_tree_count|
-	if nearer_tree_count < round_trunk_limit {
+## How a tree's trunk is drawn at distance `forward`.
+trunk_finish_of : Distance -> TrunkFinish
+trunk_finish_of = |forward|
+	if forward < round_trunk_reach {
 		Shaded
 	} else {
 		Flat
@@ -361,9 +357,8 @@ expect TreeShapes.crown_of(Distance.metres(40.0)) == Cones({ shade: Fraction.of(
 expect TreeShapes.crown_of(Distance.metres(199.0)) == Cones({ shade: Fraction.zero })
 expect TreeShapes.crown_of(Distance.metres(200.0)) == Triangles
 
-# The four nearest trees have a shaded trunk, and the fifth has a flat one.
-expect [0, 3].all(|count| trunk_finish_of(count) == Shaded)
-expect [4, 9].all(|count| trunk_finish_of(count) == Flat)
+expect [0.0, 59.9].all(|metres| trunk_finish_of(Distance.metres(metres)) == Shaded)
+expect [60.0, 60.1].all(|metres| trunk_finish_of(Distance.metres(metres)) == Flat)
 
 ## The sample tree's base, the middle of its foot, at `lift` off the ground.
 sample_base : Distance -> RiderView.RaisedPointAhead

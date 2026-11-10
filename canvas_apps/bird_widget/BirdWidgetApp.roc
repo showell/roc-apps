@@ -128,10 +128,7 @@ sighting_from_eye = |placed|
 	)
 
 tree_shapes : Trees.RoadsideTree -> List(Shapes.Shape)
-tree_shapes = |tree| WidgetPage.resting_lens_shapes(
-	sighting_from_eye(tree),
-	{ nearer_tree_count: 0 },
-)
+tree_shapes = |tree| WidgetPage.resting_lens_shapes(sighting_from_eye(tree), {})
 
 ## The bird as `gap` finds it, drawn by Safari's own stills.
 bird_shapes : Distance -> List(Shapes.Shape)

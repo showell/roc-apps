@@ -192,10 +192,7 @@ lone_tree_scene = |forward| {
 	trees: [
 		Pipeline.rendering_of(
 			green_tree_ahead(forward),
-			{
-				focal_length: Fixtures.origin_camera.focal_length,
-				context: { nearer_tree_count: 0 },
-			},
+			{ focal_length: Fixtures.origin_camera.focal_length, context: {} },
 		),
 	],
 }
