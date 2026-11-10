@@ -45,7 +45,7 @@ StillShapes :: [].{
 	## Where a still `height` tall stands on screen at the setting's spot: its
 	## foot raised as high as the spot says, and its height on screen from
 	## there to its top.
-	standing_anchor : Sprite.Setting({}),
+	standing_anchor : Sprite.Setting,
 	{
 		height : Distance,
 		flip : StillShapes.Flip,
@@ -57,7 +57,7 @@ StillShapes :: [].{
 
 	## A still `height` tall, drawn as `flip` says, standing on its foot at the
 	## setting's spot.
-	standing_still_shapes : Sprite.Setting({}),
+	standing_still_shapes : Sprite.Setting,
 	{
 		height : Distance,
 		still : Still,

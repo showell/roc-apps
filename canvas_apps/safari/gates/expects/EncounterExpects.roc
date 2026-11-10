@@ -501,7 +501,6 @@ sample_cat_shapes = |cat, lift|
 			lift,
 		}),
 		focal_length: Pixels.of(500.0),
-		context: {},
 	}).to_shapes()
 
 ## The first corner `cat` draws, `lift` off the ground: its still's first
@@ -543,7 +542,7 @@ expect
 bird_shapes_at : Bird, { right : Distance, lift : Distance } -> List(Shapes.Shape)
 bird_shapes_at = |bird, { right, lift }| {
 	spot = posed_spot_at({ forward: Distance.metres(110.0), right, lift })
-	bird.scenery_sprite({ spot, focal_length: Pixels.of(500.0), context: {} }).to_shapes()
+	bird.scenery_sprite({ spot, focal_length: Pixels.of(500.0) }).to_shapes()
 }
 
 ## How many pixels tall a perched bird `forward` ahead, on the ground, is
@@ -554,7 +553,7 @@ bird_height_on_screen = |forward, focal_length| {
 	bird : Bird
 	bird = { pose: Perched }
 	anchor = StillShapes.standing_anchor(
-		{ spot, focal_length, context: {} },
+		{ spot, focal_length },
 		{ height: bird.scenery_height(), flip: AsDrawn },
 	)
 	anchor.height_on_screen.to_f64()

@@ -115,14 +115,13 @@ Pipeline :: [].{
 		}
 	}
 
-	## `sighting` drawn through a lens of `focal_length`, with `context`
-	## for whatever else its kind needs.
-	rendering_of : Pipeline.Sighted(kind), { focal_length : Pixels, context : context } -> Rendered
-		where [kind.scenery_sprite : kind, Sprite.Setting(context) -> Sprite]
-	rendering_of = |sighting, { focal_length, context }|
+	## `sighting` drawn through a lens of `focal_length`.
+	rendering_of : Pipeline.Sighted(kind), Pixels -> Rendered
+		where [kind.scenery_sprite : kind, Sprite.Setting -> Sprite]
+	rendering_of = |sighting, focal_length|
 		Rendered.of(
 			sighting.spot.foot().forward(),
-			sighting.kind.scenery_sprite({ spot: sighting.spot, focal_length, context }),
+			sighting.kind.scenery_sprite({ spot: sighting.spot, focal_length }),
 		)
 
 	## The smallest thing worth drawing: an object that would stand less than

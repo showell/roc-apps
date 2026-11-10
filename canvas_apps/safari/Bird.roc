@@ -17,7 +17,7 @@ Bird := { pose : BirdFlight.BirdPose }.{
 	scenery_height = |_bird| bird_height
 
 	## A bird on screen, its feet where it is.
-	scenery_sprite : Bird, Sprite.Setting({}) -> Sprite
+	scenery_sprite : Bird, Sprite.Setting -> Sprite
 	scenery_sprite = |bird, setting|
 		Sprite.from_shapes(
 			# As drawn, never mirrored: BirdFlight's `is_far_side` says why.

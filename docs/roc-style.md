@@ -136,14 +136,14 @@ Roc's own rules are in the langref's
   whatever it means by it, and the name is the whole contract: a one-word
   `bark` would take a tree's bark for a dog's. `Pipeline.roc` is the worked
   example. It asks a kind of scenery for its `scenery_height` and its
-  `scenery_picture`, and `Conifer` gives both without knowing `Pipeline`. The
+  `scenery_sprite`, and `Conifer` gives both without knowing `Pipeline`. The
   methods Roc calls by name, for operators and the like (`is_eq`, `plus`),
   have a fixed meaning and keep their names. The name hunt's `where_name`
   holds this.
 
   ```roc
-  rendering_of : Pipeline.Sighted(kind), { focal_length : Pixels, context : context } -> Rendered
-  	where [kind.scenery_picture : kind, Picture.Setting(context) -> Picture]
+  rendering_of : Pipeline.Sighted(kind), Pixels -> Rendered
+  	where [kind.scenery_sprite : kind, Sprite.Setting -> Sprite]
   ```
 - **Prefer a two-part name that says what a thing is to a short one that
   is cute or sounds like something else.** One word saves a few letters
@@ -175,7 +175,7 @@ Roc's own rules are in the langref's
   like `point_in_segment_before` and `point_in_segment_after`. The name hunt's
   `preposition_split` holds this.
 - **A name's last word promises its type.** A `*_count` is an integer
-  (`nearer_tree_count : U64`) and a `*_path` is a `Str` or a path type. A project
+  (`ring_point_count : U64`) and a `*_path` is a `Str` or a path type. A project
   adds its own words in a table: safari's `name_types.txt` ties `fraction` to
   `Fraction` and `steps` to `Steps`. Both are checked as `name_type`.
 - **Modules that look alike are spelled alike, and one type name means one

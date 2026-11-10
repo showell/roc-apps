@@ -204,17 +204,14 @@ WidgetPage :: [].{
 		})
 	}
 
-	## What `sighting` shows through the lens at rest, with `context` for whatever
-	## else its kind needs, or nothing if it stood behind the camera.
-	resting_lens_shapes : Try(Pipeline.Sighted(kind), [BehindCamera]), context -> List(Shapes.Shape)
-		where [kind.scenery_sprite : kind, Sprite.Setting(context) -> Sprite]
-	resting_lens_shapes = |sighting, context|
+	## What `sighting` shows through the lens at rest, or nothing if it stood
+	## behind the camera.
+	resting_lens_shapes : Try(Pipeline.Sighted(kind), [BehindCamera]) -> List(Shapes.Shape)
+		where [kind.scenery_sprite : kind, Sprite.Setting -> Sprite]
+	resting_lens_shapes = |sighting|
 		match sighting {
 			Ok(sighted) =>
-				Pipeline.rendering_of(
-					sighted,
-					{ focal_length: Lens.resting_focal_length, context },
-				).sprite().to_shapes()
+				Pipeline.rendering_of(sighted, Lens.resting_focal_length).sprite().to_shapes()
 			Err(BehindCamera) => []
 		}
 }

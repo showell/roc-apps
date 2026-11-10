@@ -130,10 +130,7 @@ billboard_shapes : Geom.Placed(Billboard) -> List(Shapes.Shape)
 billboard_shapes = |placed|
 	match billboard_sighting(placed) {
 		Ok(sighting) => {
-			rendered = Pipeline.rendering_of(
-				sighting,
-				{ focal_length: camera.focal_length, context: {} },
-			)
+			rendered = Pipeline.rendering_of(sighting, camera.focal_length)
 			rendered.sprite().to_shapes()
 		}
 		Err(BehindCamera) | Err(BelowHorizon) | Err(TooSmall) => []
@@ -227,7 +224,7 @@ expect
 expect
 	match billboard_sighting(cow_at(cow_forward)) {
 		Ok(sighting) => {
-			setting = { spot: sighting.spot, focal_length: camera.focal_length, context: {} }
+			setting = { spot: sighting.spot, focal_length: camera.focal_length }
 			sprite_shapes = cow.scenery_sprite(setting).to_shapes()
 			!sprite_shapes.is_empty() and cow_shapes == sprite_shapes
 		}

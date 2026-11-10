@@ -99,7 +99,7 @@ Post := { height : Distance }.{
 	scenery_height : Post -> Distance
 	scenery_height = |post| post.height
 
-	scenery_sprite : Post, Sprite.Setting({}) -> Sprite
+	scenery_sprite : Post, Sprite.Setting -> Sprite
 	scenery_sprite = |_post, _setting| Sprite.from_shapes([])
 }
 
@@ -189,27 +189,14 @@ perched_bird_ahead = |forward| sighted_ahead({ pose: Perched }, forward)
 lone_tree_scene : F64 -> Scene
 lone_tree_scene = |forward| {
 	..empty_scene,
-	trees: [
-		Pipeline.rendering_of(
-			green_tree_ahead(forward),
-			{
-				focal_length: Fixtures.origin_camera.focal_length,
-				context: { nearer_tree_count: 0 },
-			},
-		),
-	],
+	trees: [Pipeline.rendering_of(green_tree_ahead(forward), Fixtures.origin_camera.focal_length)],
 }
 
 ## A scene of a lone perched bird `forward` metres ahead.
 lone_bird_scene : F64 -> Scene
 lone_bird_scene = |forward| {
-	..empty_scene,
-	birds: [
-		Pipeline.rendering_of(
-			perched_bird_ahead(forward),
-			{ focal_length: Fixtures.origin_camera.focal_length, context: {} },
-		),
-	],
+	bird = perched_bird_ahead(forward)
+	{ ..empty_scene, birds: [Pipeline.rendering_of(bird, Fixtures.origin_camera.focal_length)] }
 }
 
 ## The shapes of a tree and a bird, these many metres ahead, in the order the

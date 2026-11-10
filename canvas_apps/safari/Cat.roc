@@ -16,7 +16,7 @@ Cat := { pose : CatCrossing.CatPose }.{
 	scenery_height = |_cat| CatCrossing.cat_height
 
 	## A cat on screen, its feet where it is.
-	scenery_sprite : Cat, Sprite.Setting({}) -> Sprite
+	scenery_sprite : Cat, Sprite.Setting -> Sprite
 	scenery_sprite = |cat, setting|
 		Sprite.from_shapes(
 			StillShapes.standing_still_shapes(
