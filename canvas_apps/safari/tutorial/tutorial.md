@@ -228,7 +228,7 @@ The `spot` comes from a camera: it's what a sighting holds. So to draw the cow a
 
 What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, drawn as polygons. Most of the ride's shapes have straight edges. At step 1,529, the ride draws 2,121 shapes on top of the sky and the grass: 864 triangles, 1,113 polygons, 136 rectangles and 8 discs. The rectangles are the trees' trunks.
 
-The cow and the bull are two of the ride's eight billboard animals. Next, we meet the other six, and the `match` that turns each one to face its own way.
+At the bends in the road stand four more billboard animals: an elephant, a giraffe, a zebra and a rhino. They come next, with the `match` that turns each one to face its own way.
 
 ## Shapes
 
