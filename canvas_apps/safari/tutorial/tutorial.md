@@ -230,6 +230,92 @@ What comes back is a sprite, and every sprite is a list of shapes. The cow's spr
 
 At the bends in the road stand four more billboard animals: an elephant, a giraffe, a zebra and a rhino. They come next, with the `match` that turns each one to face its own way.
 
+## Billboards
+
+Four big animals stand at the bends in the ride's road: an elephant, a giraffe, a zebra and a rhino. Each one has its baby with it:
+
+```widget bend_animals
+The four bend animals and their babies. Two face left and two face right.
+```
+
+Every one of them has a face, and a face looks somewhere. So a billboard faces left or right, and the rider's eyes follow it.
+
+### Two ways to face
+
+The `Billboard` module gives those two ways a type of their own:
+
+{{code Billboard.Facing}}
+
+The type is a list of tags in square brackets. A tag is a name that stands for itself: `FacesLeft` is a value, and so is `FacesRight`. A type made of tags is a tag union, and a value of a tag union is always exactly one of its tags. So a `Facing` is `FacesLeft` or `FacesRight`.
+
+"Things" showed the annotation of `Billboard.scenery_sprite` alone. Here's the whole function:
+
+{{code Billboard.scenery_sprite}}
+
+`|Billboard.(billboard), setting|` names what the function takes. The `Billboard.(billboard)` part opens the opaque billboard, so the function can read its fields. Every emoji is drawn facing left, so a billboard that faces right needs its emoji mirrored. The `match` makes that choice. It looks at `billboard.facing`, and each line under it takes one tag and gives back what to do: `FacesLeft` gives `AsDrawn`, and `FacesRight` gives `Mirrored`. Those two are tags as well, and `flip` takes one of them to `StillShapes.standing_still_shapes`, which draws the emoji.
+
+A `match` handles every tag of its type, and the compiler checks that it does. Leave out the `FacesRight` line, and `roc check` stops with an error that names it:
+
+```text
+This match expression doesn't cover all possible cases.
+
+Missing patterns:
+        FacesRight
+```
+
+So every billboard faces one of two ways, and the code that draws it handles both, by construction.
+
+### Four animals
+
+The bend animals are a tag union too, with four tags:
+
+{{code BendAnimal.BendAnimal from "BendAnimal :=" to "Rhino]"}}
+
+Each tag is an animal. The `species_of` function turns each one into its species record, an emoji and a grown height, like the cow's in "Things":
+
+{{code BendAnimal.species_of}}
+
+This `match` is about as plain as one gets: a tag in, a record out, one line per animal. Its four lines are the four tags, so every bend animal has a species, and a giraffe is always 4.5 metres tall.
+
+### One thing at a bend
+
+A bend has room for one thing at most: an animal and its baby, a pond of ducks, or nothing. The `Segment` module's `BendLife` type says what's at a bend, and it says exactly that:
+
+{{code Segment.BendLife}}
+
+`Quiet` and `DuckPond` are plain tags, like the ones above. `Animal(BendAnimal)` is a tag that carries a value: an `Animal` always comes with one `BendAnimal`. So `Animal(Giraffe)` is a whole value, a bend with a giraffe at it. A list of billboards would let a bend hold three giraffes. A `BendLife` holds one animal at most.
+
+What a bend's life can be
+```dot
+digraph bend_life {
+  rankdir=LR;
+  node [shape=box, fontname="Helvetica"];
+  edge [fontname="Helvetica", fontsize=10];
+  BendLife;
+  Quiet; DuckPond;
+  Animal [label="Animal(BendAnimal)"];
+  BendLife -> Quiet [label="  is one of"];
+  BendLife -> Animal [label="  is one of"];
+  BendLife -> DuckPond [label="  is one of"];
+  Animal -> Elephant [label="  carries one of"];
+  Animal -> Giraffe [label="  carries one of"];
+  Animal -> Zebra [label="  carries one of"];
+  Animal -> Rhino [label="  carries one of"];
+}
+```
+
+The function that gives a bend its billboards takes a `BendLife` apart with a `match`:
+
+{{code Segment.bend_billboards}}
+
+The `Animal(animal)` line matches a bend with any animal at it, and names the animal it carries `animal`, ready to use. Then `animal.bend_billboards(bend)` calls the `BendAnimal` module's own `bend_billboards` function, which places the animal and its baby. A duck pond gets its ducks, and a quiet bend gets the empty list. The code has the same shape as the type: one line for each tag, and the value a tag carries named right where the line needs it. Where each animal stands at its bend belongs to the road, which gets its own chapter later.
+
+### Elephants, mostly
+
+The route's plans say what lives at each bend, and most of them say `Animal(Elephant)`. Only a handful say `Animal(Giraffe)`, `Animal(Zebra)`, `Animal(Rhino)` or `DuckPond`. That's on purpose. The ride is more interesting when most of it is ordinary: the elephants are the fixture, so the rare animal is a surprise.
+
+A tag union lists everything a value can be, and a `match` handles each case. The emojis came ready-made, traced ahead of time. Next, we draw with shapes of our own: a triangle and a rectangle.
+
 ## Shapes
 
 A far tree in the ride is a rectangle of trunk under eight triangles. So before the tree, we draw its two shapes: a triangle and a rectangle.
