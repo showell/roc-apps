@@ -328,9 +328,9 @@ A tag union lists everything a value can be, and a `match` handles each case. Th
 
 A far tree in the ride is a box of trunk under eight triangles. So before we draw a tree, we draw its two shapes: a triangle and a rectangle.
 
-In Safari Ride, a shape is a value that describes a region of the screen and a fill for it. The `Shapes` module's `Shape` type has one tag for each kind of region the ride needs:
+In Safari Ride, a shape is a value that describes something to paint. The `Shapes` module's `Shape` type has a tag for each kind of region the ride paints, a region of the screen with a fill:
 
-{{code Shapes.Shape from "Shape : [" to "Polygon({ corners"}}
+{{code Shapes.Shapes from "Shape : [" to "Polygon({ corners :"}}
 
 Each tag carries a record, and every record ends with a `fill`, the paint for the inside. The ride draws a great many triangles, plenty of four-cornered things, a few round lights, and outlines traced from emoji and mountains, so those are its four regions. More tags follow them in the type, for other jobs, such as a line of text.
 
@@ -346,13 +346,13 @@ And here's the code that makes it:
 
 {{code ShapesWidgetApp.green_triangle}}
 
-The value is a `Triangle` tag with its record. The record names three corners, `first`, `second` and `third`, so every triangle has exactly three, by construction. A corner's type is `Point.Point`, a record with an `x` and a `y`. The `Point` module's main type is named `Point`, as the naming rule says, and the record is another type the module offers, so it carries the module's name in front. `Point.at` makes a corner from two plain numbers, measured from the top left of the picture, with `y` growing downward.
+The value is a `Triangle` tag with its record. The record names three corners, `first`, `second` and `third`, so every triangle has exactly three, by construction. A corner is a `Point.Point`, a record with an `x` and a `y`. `Point.at` makes one from two plain numbers, measured from the top left of the picture, with `y` growing downward.
 
 `Point.at` turns each of those numbers into a `Pixels`, an opaque type around an `F64`, like `Distance`. The ride works in metres on the road and in pixels on the screen, and two types keep the two apart, so each number says which one it is. Roc is just as happy with plain `F64`s, if you prefer that style. In a program that moves between the road and the screen all the time, the types earn their keep.
 
-The `fill` is green. `RgbColor.of` makes a color from `0x2e8b57`, the six hex digits a web page writes after its `#`, and `Brush.flat` makes a fill of that one color.
+The `fill` is green. `RgbColor.of` makes a color from `0x2e8b57`, a number in hex, as `0x` says: the six digits a web page writes after its `#`, and `Brush.flat` makes a fill of that one color.
 
-A shape only describes. So what paints the triangle? The picture is a small Roc app of its own. For each frame, it hands the platform a list of two shapes: the background, a rectangle the size of the picture, and then the triangle. The platform paints the list from first to last, so the triangle lands on the background.
+A shape only describes. So what paints the triangle? The picture is a small Roc app of its own. It hands the platform a list of two shapes: the background, a rectangle the size of the picture, and then the triangle. The platform paints the list from first to last, so the triangle lands on the background.
 
 ### A rectangle
 
@@ -368,7 +368,7 @@ A brown rectangle on a plain background.
 
 {{code Shapes.rectangle}}
 
-`|{ top_left, width, height, fill }|` takes the record apart, naming each of its fields. The body works out where the right and bottom edges are, with `plus`, which adds two `Pixels`. Then it gives the quad its four corners, clockwise from the top left, each a record of an `x` and a `y`. Each side's two corners share an `x` or a `y`, so the sides are always square to the screen. The picture hands the platform the background and then this quad, just as it did the triangle.
+`|{ top_left, width, height, fill }|` takes the record apart, naming each of its fields. The body works out where the right and bottom edges are, with `plus`, which adds two `Pixels`. Then it gives the quad its four corners, clockwise from the top left. Each corner is a plain record of an `x` and a `y`, which is all a `Point.Point` is; `Point.at` is a shorthand for one. Each side's two corners share an `x` or a `y`, so the sides are always square to the screen. The same picture app, showing its rectangle, hands the platform the background and then this quad.
 
 That's both of a far tree's shapes. Next, we put them together, with functions of our own.
 

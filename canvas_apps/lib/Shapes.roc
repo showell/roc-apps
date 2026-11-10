@@ -17,6 +17,7 @@ Shapes :: [].{
 		## upright one.
 		Quad({ first : Point.Point, second : Point.Point, third : Point.Point, fourth : Point.Point, fill : Brush.Fill }),
 
+		## A circle, `radius` out from `center`.
 		Disc({ center : Point.Point, radius : Pixels, fill : Brush.Fill }),
 
 		## An outline of any other number of corners, in order around its edge: a
