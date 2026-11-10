@@ -126,7 +126,11 @@ view_setting = |view| {
 		{ road: World.road_at_start, vantage, from_rider },
 	)
 	match sighting_result {
-		Ok(sighting) => { spot: sighting.spot, focal_length: Lens.resting_focal_length }
+		Ok(sighting) => {
+			spot: sighting.spot,
+			focal_length: Lens.resting_focal_length,
+			darkness: Sky.darkness_at(Clock.start),
+		}
 		Err(BehindCamera) => crash "TruckWidgetApp.view_setting: every camera faces the truck"
 	}
 }
@@ -147,7 +151,11 @@ caption_shape = |view|
 fixed_picture_shapes : List(Shapes.Shape)
 fixed_picture_shapes = {
 	picture_shapes = WidgetPage.picture_shapes({
-		backdrop: { sky_colors: Sky.colors_at(Clock.start), sun_sighting: OutOfView },
+		backdrop: {
+			sky_colors: Sky.colors_at(Clock.start),
+			sun_sighting: OutOfView,
+			darkness: Sky.darkness_at(Clock.start),
+		},
 		ride_shapes: truck_views.join_map(truck_shapes),
 	})
 	WidgetPage.frame_shapes({

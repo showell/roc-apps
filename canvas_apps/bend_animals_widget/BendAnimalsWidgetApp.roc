@@ -152,7 +152,10 @@ placed_billboard_shapes = |placed|
 		},
 	) {
 		Ok(sighting) => {
-			rendered = Pipeline.rendering_of(sighting, camera.focal_length)
+			rendered = Pipeline.rendering_of(
+				sighting,
+				{ focal_length: camera.focal_length, darkness: Sky.darkness_at(Clock.start) },
+			)
 			rendered.sprite().to_shapes()
 		}
 		Err(BehindCamera) | Err(BelowHorizon) | Err(TooSmall) => crash "BendAnimalsWidgetApp.placed_billboard_shapes: every billboard stands in plain sight"
@@ -191,7 +194,11 @@ canvas_point_of_screen = |{ x, y }| {
 
 ## The ride's sky at the start of the ride, with the sun out of the picture.
 backdrop : FrameView.Backdrop
-backdrop = { sky_colors: Sky.colors_at(Clock.start), sun_sighting: OutOfView }
+backdrop = {
+	sky_colors: Sky.colors_at(Clock.start),
+	sun_sighting: OutOfView,
+	darkness: Sky.darkness_at(Clock.start),
+}
 
 ## The row over the backdrop in `row_space`.
 picture_shapes : List(Shapes.Shape)

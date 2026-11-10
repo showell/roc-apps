@@ -52,7 +52,7 @@ SafariFrame :: [].{
 	backdrop_pixels : FrameView -> List(U32)
 	backdrop_pixels = |view| {
 		roll = SafariFrame.screen_roll(view.roll)
-		px = SkyAndGrassPixels.sky_and_grass_pixels(roll, view.backdrop.sky_colors)
+		px = SkyAndGrassPixels.sky_and_grass_pixels(roll, view.backdrop)
 		SunPixels.pixels_with_sun(px, { roll, sun: view.backdrop.sun_sighting })
 	}
 

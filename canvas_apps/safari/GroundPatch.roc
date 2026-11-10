@@ -1,11 +1,12 @@
 ## GroundPatch is a patch of ground, such as a stretch of road or a pond, and
 ## how it shows on screen as one polygon that follows the earth's curve down as
 ## it goes away from the rider.
-import lib.Pixels
 import RiderView
 import EarthCurve
 import lib.RgbColor
 import Camera
+import Sky
+import Sprite
 import lib.Shapes
 
 ## A patch of ground: its corners and its colour.
@@ -19,16 +20,20 @@ GroundPatch :: { corners : List(RiderView.RiderPoint), color : RgbColor }.{
 	corners : GroundPatch -> List(RiderView.RiderPoint)
 	corners = |GroundPatch.(patch)| patch.corners
 
-	## A patch on screen, cut at the horizon and at the camera's near plane,
-	## unless nothing of it is left.
-	patch_shape : GroundPatch, Pixels -> Try(Shapes.Shape, [PastHorizon, BehindCamera])
-	patch_shape = |GroundPatch.(patch), focal_length| {
+	## A patch on screen through the frame's lens, dimmed by its light, cut at
+	## the horizon and at the camera's near plane, unless nothing of it is
+	## left.
+	patch_shape : GroundPatch, Sprite.LensAndLight -> Try(Shapes.Shape, [PastHorizon, BehindCamera])
+	patch_shape = |GroundPatch.(patch), { focal_length, darkness }| {
 		before_horizon = EarthCurve.points_before_horizon(patch.corners)
 		if before_horizon.is_empty() {
 			Err(PastHorizon)
 		} else {
 			polygon : Camera.FlatPolygon
-			polygon = { color: patch.color, corners: before_horizon }
+			polygon = {
+				color: Sky.color_at_darkness(patch.color, darkness),
+				corners: before_horizon,
+			}
 			shape = Camera.clipped_polygon(polygon, focal_length)?
 			Ok(shape)
 		}

@@ -38,6 +38,13 @@ Sky :: [].{
 		Fraction.clamp(from_horizon.ratio_to(warmth_reach)).complement()
 	}
 
+	## `color` under a sky `darkness` dark: itself by day, and losing up to
+	## `night_dim` of its light as night falls. Everything the sky lights,
+	## from the rock and the grass to the truck, is dimmed here.
+	color_at_darkness : RgbColor, Fraction -> RgbColor
+	color_at_darkness = |color, darkness|
+		ColorShade.shade_color(color, Darkened(night_dim.times(darkness)))
+
 	## The sky's two colors at `clock`.
 	colors_at : Clock -> Sky.Colors
 	colors_at = |clock| { top: sky_top_color(clock), horizon: sky_horizon_color(clock) }
@@ -74,6 +81,12 @@ darkness_at_set = Fraction.of(0.6)
 ## further away than this, the horizon has the sky's own color.
 warmth_reach : FarRise
 warmth_reach = FarRise.of(110.0)
+
+## How much of its light a thing the sky lights loses at full night: half.
+## Night then reads as night, and the trees, the truck and the rails stay
+## dark shapes on darker ground, under a sky lighter than either.
+night_dim : Fraction
+night_dim = Fraction.of(0.5)
 
 day_sky : RgbColor
 day_sky = RgbColor.of(0x8ECAE6)
@@ -135,6 +148,19 @@ expect Sky.darkness_at(Clock.at_step(0)).to_f64() == 0.0
 expect Sky.horizon_warmth_at(Clock.at_step(0)).to_f64() == 0.0
 expect Sky.darkness_at(Clock.at_step(6000)).to_f64() == 1.0
 expect Sky.horizon_warmth_at(Clock.at_step(6000)).to_f64() == 0.0
+
+# A color is itself by day, half itself at full night, and between at dusk.
+expect
+	[
+		(0.0, RgbColor.of(0x4A8F43)),
+		(0.5, RgbColor.of(0x386B32)),
+		(1.0, RgbColor.of(0x254822)),
+	].all(
+		|(darkness, want)| Sky.color_at_darkness(
+			RgbColor.of(0x4A8F43),
+			Fraction.of(darkness),
+		) == want,
+	)
 
 # The sky and the horizon at each thousandth step of the ride.
 expect

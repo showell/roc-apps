@@ -5,7 +5,9 @@
 import lib.Pixels
 import DepthSort
 import Distance
+import lib.Fraction
 import RiderView
+import Sky
 import Sprite
 import Rendered
 import lib.RgbColor
@@ -33,11 +35,13 @@ GuardRail :: [].{
 	## A quad as the frame draws it, at its own depth, unless it's wholly
 	## behind the camera. A rail quad has no kind for `Pipeline` to ask, so it
 	## renders itself.
-	quad_rendering : GuardRail.RailQuad, Pixels -> Try(Rendered, [BehindCamera])
-	quad_rendering = |quad, focal_length|
-		quad_shape(quad, focal_length).map_ok(
+	quad_rendering : GuardRail.RailQuad, Sprite.LensAndLight -> Try(Rendered, [BehindCamera])
+	quad_rendering = |quad, { focal_length, darkness }| {
+		dimmed_quad = { ..quad, color: Sky.color_at_darkness(quad.color, darkness) }
+		quad_shape(dimmed_quad, focal_length).map_ok(
 			|shape| Rendered.of(quad_depth(quad), Sprite.from_shapes([shape])),
 		)
+	}
 }
 
 ## How far ahead a quad is, for the depth sort: the mean of its corners'
@@ -184,12 +188,16 @@ behind_bar = bar({
 
 # A quad stands at its own depth, and one wholly behind the camera isn't drawn.
 expect {
-	first_bar_depth = GuardRail.quad_rendering(first_bar, Pixels.of(500.0)).map_ok(
+	first_bar_depth = GuardRail.quad_rendering(first_bar, by_day).map_ok(
 		|rendering| rendering.depth().to_metres(),
 	)
 	first_bar_depth == Ok(15.0)
 }
-expect GuardRail.quad_rendering(behind_bar, Pixels.of(500.0)).is_err()
+expect GuardRail.quad_rendering(behind_bar, by_day).is_err()
+
+## The test lens, by day.
+by_day : Sprite.LensAndLight
+by_day = { focal_length: Pixels.of(500.0), darkness: Fraction.zero }
 
 # The first bar runs from one post to the next, between the bar's two heights.
 expect first_bar.corners.low_start.forward.to_metres() == 10.0

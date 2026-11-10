@@ -222,7 +222,7 @@ A setting is a record:
 
 {{code Sprite.Setting}}
 
-The `focal_length` says how strong the camera's lens is, in `Pixels`, the screen's unit of length: the longer it is, the bigger everything looks.
+The `focal_length` says how strong the camera's lens is, in `Pixels`, the screen's unit of length: the longer it is, the bigger everything looks. The `darkness` says how dark the sky is, from 0 by day to 1 at night, so everything beside the road can dim as night falls.
 
 The `spot` comes from a camera: it's what a sighting holds. So to draw the cow and the bull, the picture at the top of this chapter puts each one on the road by hand, the cow 10 metres ahead and 5 metres left of the middle, and lets a camera at the start of the road sight them. The rider's own camera comes in a later chapter.
 
@@ -602,7 +602,7 @@ A lowercase name in parentheses, like `(kind)`, is a type variable; this chapter
 | `Geom.Placed(kind)` | An object on the road: its `road_point` on its segment, its `lift` off the ground, and its `kind` |
 | `Spot` | Where an object stands in one frame: its `lift` off the ground, its `foot` in the rider's view, and the `road_heading`, which way the road runs there |
 | `Pipeline.Sighted(kind)` | An object in view: its `spot` and its `kind` |
-| `Sprite.Setting` | What a kind draws from: its `spot` and the lens's `focal_length` |
+| `Sprite.Setting` | What a kind draws from: its `spot`, the lens's `focal_length` and the sky's `darkness` |
 | `Sprite` | The object's shapes, in order, from the Shapes chapter |
 | `Rendered` | The object's `sprite`, and its `depth`: how far ahead of the camera it stands |
 
@@ -715,7 +715,7 @@ Here's all of `Conifer`:
 
 `scenery_sprite` takes the kind and a setting, and hands the setting whole to `TreeShapes.tree_sprite`, with the tree's height and color in the record that function wants.
 
-`tree_sprite` finds the tree on the screen, then makes a trunk and eight tiers. Its bars take the setting apart into `spot` and `focal_length`, as a function's bars can take any record apart.
+`tree_sprite` finds the tree on the screen, then makes a trunk and eight tiers. Its bars take the setting apart into `spot`, `focal_length` and `darkness`, as a function's bars can take any record apart.
 
 {{code TreeShapes.tree_sprite}}
 
@@ -959,11 +959,11 @@ New in this chapter:
 
 - Modules: `Grass`
 
-`Grass` has one color:
+`Grass` has one color by day:
 
 {{code Grass.grass_color}}
 
-The backdrop is what's behind the ride. `FrameView.backdrop_shapes` paints it as the sky, the sun and the grass, and this is the grass:
+The backdrop is what's behind the ride. `FrameView.backdrop_shapes` paints it as the sky, the sun and the grass, and this is the grass, its color dimmed as far as the sky is dark:
 
 {{code Grass.grass_shape}}
 
@@ -2280,7 +2280,7 @@ The truck faces straight along the road, so its placement is one line. The headl
 
 {{code TruckPlacement.raised_point}}
 
-The truck is drawn from its spot and the camera's lens:
+The truck is drawn from its spot, the camera's lens and the sky's darkness:
 
 {{code TruckPlacement.TruckSetting}}
 

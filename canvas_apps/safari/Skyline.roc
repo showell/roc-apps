@@ -14,6 +14,7 @@ import Grass
 import Lens
 import lib.ColorShade
 import Screen
+import Sky
 import lib.RgbColor
 import lib.Brush
 import lib.Shapes
@@ -61,7 +62,7 @@ Skyline :: [].{
 					{
 						focal_length: aim.focal_length,
 						height_at: |column| Skyline.west_range_height(column.bearing),
-						color: rock_color_at_darkness(west_rock, darkness),
+						color: Sky.color_at_darkness(west_rock, darkness),
 						base_y: range_base_y,
 					},
 				),
@@ -70,7 +71,7 @@ Skyline :: [].{
 					{
 						focal_length: aim.focal_length,
 						height_at: |column| column.north_height,
-						color: rock_color_at_darkness(north_rock, darkness),
+						color: Sky.color_at_darkness(north_rock, darkness),
 						base_y: range_base_y,
 					},
 				),
@@ -82,7 +83,7 @@ Skyline :: [].{
 					{
 						focal_length: aim.focal_length,
 						height_at: |column| Skyline.land_height(column.bearing),
-						color: Grass.grass_color,
+						color: Grass.grass_color_at(darkness),
 						base_y: land_base_y,
 					},
 				),
@@ -119,20 +120,11 @@ north_rock = RgbColor.of(0x5B6A8F)
 west_rock : RgbColor
 west_rock = RgbColor.of(0x39435F)
 
-## How much of its light the rock loses at full darkness.
-rock_night_dim : Fraction
-rock_night_dim = Fraction.of(0.5)
-
 snow_day : RgbColor
 snow_day = RgbColor.of(0xEEF3F8)
 
 snow_night : RgbColor
 snow_night = RgbColor.of(0x465468)
-
-## A rock colour at `darkness`, from 0 (day) to 1 (night).
-rock_color_at_darkness : RgbColor, Fraction -> RgbColor
-rock_color_at_darkness = |color, darkness|
-	ColorShade.shade_color(color, Darkened(rock_night_dim.times(darkness)))
 
 snow_color : Fraction -> RgbColor
 snow_color = |darkness| ColorShade.color_between({
@@ -349,11 +341,11 @@ west_by = |radians| west_range_bearing.plus(Angle.Turn.radians(radians))
 aim_at_rest : { heading : Angle.Bearing, focal_length : Pixels }
 aim_at_rest = { heading: Angle.north, focal_length: Lens.resting_focal_length }
 
-expect rock_color_at_darkness(north_rock, Fraction.zero) == RgbColor.of(0x5B6A8F)
-expect rock_color_at_darkness(west_rock, Fraction.zero) == RgbColor.of(0x39435F)
-expect rock_color_at_darkness(north_rock, Fraction.whole) == RgbColor.of(0x2E3548)
-expect rock_color_at_darkness(west_rock, Fraction.whole) == RgbColor.of(0x1D2230)
-expect rock_color_at_darkness(north_rock, Fraction.of(0.5)) == RgbColor.of(0x44506B)
+expect Sky.color_at_darkness(north_rock, Fraction.zero) == RgbColor.of(0x5B6A8F)
+expect Sky.color_at_darkness(west_rock, Fraction.zero) == RgbColor.of(0x39435F)
+expect Sky.color_at_darkness(north_rock, Fraction.whole) == RgbColor.of(0x2E3548)
+expect Sky.color_at_darkness(west_rock, Fraction.whole) == RgbColor.of(0x1D2230)
+expect Sky.color_at_darkness(north_rock, Fraction.of(0.5)) == RgbColor.of(0x44506B)
 
 expect snow_color(Fraction.zero) == RgbColor.of(0xEEF3F8)
 expect snow_color(Fraction.whole) == RgbColor.of(0x465468)
@@ -368,7 +360,7 @@ brightness = |color| color.red().to_i64() + color.green().to_i64() + color.blue(
 expect
 	[Fraction.zero, Fraction.whole].all(
 		|darkness| {
-			rock = rock_color_at_darkness(north_rock, darkness)
+			rock = Sky.color_at_darkness(north_rock, darkness)
 			brightness(snow_color(darkness)) > brightness(rock)
 		},
 	)

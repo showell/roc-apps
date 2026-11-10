@@ -89,7 +89,11 @@ shapes_at = |transport|
 picture_shapes : Distance -> List(Shapes.Shape)
 picture_shapes = |gap|
 	WidgetPage.picture_shapes({
-		backdrop: { sky_colors: Sky.colors_at(Clock.start), sun_sighting: OutOfView },
+		backdrop: {
+			sky_colors: Sky.colors_at(Clock.start),
+			sun_sighting: OutOfView,
+			darkness: Sky.darkness_at(Clock.start),
+		},
 		ride_shapes: [
 			road_shapes,
 			tree_shapes(World.first_bird_flight.to),
@@ -103,7 +107,10 @@ picture_shapes = |gap|
 road_shapes : List(Shapes.Shape)
 road_shapes =
 	GroundSighting.patches_in_view(World.road_at_start, eye).keep_oks(
-		|patch| GroundPatch.patch_shape(patch, Lens.resting_focal_length),
+		|patch| GroundPatch.patch_shape(
+			patch,
+			{ focal_length: Lens.resting_focal_length, darkness: Sky.darkness_at(Clock.start) },
+		),
 	)
 
 ## The picture's eye, on the middle of the road `eye_to_first_tree` short of
@@ -128,14 +135,17 @@ sighting_from_eye = |placed|
 	)
 
 tree_shapes : Trees.RoadsideTree -> List(Shapes.Shape)
-tree_shapes = |tree| WidgetPage.resting_lens_shapes(sighting_from_eye(tree))
+tree_shapes = |tree| WidgetPage.resting_lens_shapes(
+	sighting_from_eye(tree),
+	Sky.darkness_at(Clock.start),
+)
 
 ## The bird as `gap` finds it, drawn by Safari's own stills.
 bird_shapes : Distance -> List(Shapes.Shape)
 bird_shapes = |gap| {
 	placed_bird : Geom.Placed(Bird)
 	placed_bird = Animation.placed_instant(World.first_bird_flight.bird_instant_at(stage_at(gap)))
-	WidgetPage.resting_lens_shapes(sighting_from_eye(placed_bird))
+	WidgetPage.resting_lens_shapes(sighting_from_eye(placed_bird), Sky.darkness_at(Clock.start))
 }
 
 ## What BirdFlight says at `gap`, a line each.

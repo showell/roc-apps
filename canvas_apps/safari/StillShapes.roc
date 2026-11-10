@@ -4,9 +4,13 @@
 ## asked.
 import Camera
 import Distance
+import Sky
 import Sprite
+import lib.ArgbColor
+import lib.Fraction
 import lib.Point
 import lib.Pixels
+import lib.RgbColor
 import Still
 import lib.Brush
 import lib.Shapes
@@ -56,7 +60,7 @@ StillShapes :: [].{
 	}
 
 	## A still `height` tall, drawn as `flip` says, standing on its foot at the
-	## setting's spot.
+	## setting's spot, its colours dimmed as far as the setting's sky is dark.
 	standing_still_shapes : Sprite.Setting,
 	{
 		height : Distance,
@@ -65,8 +69,39 @@ StillShapes :: [].{
 	} -> List(Shapes.Shape)
 	standing_still_shapes = |setting, { height, still, flip }| {
 		anchor = StillShapes.standing_anchor(setting, { height, flip })
-		StillShapes.still_shapes(anchor, still)
+		still.polygons().map(
+			|polygon| still_polygon(anchor, polygon_at_darkness(polygon, setting.darkness)),
+		)
 	}
+}
+
+## A still's polygon under a sky `darkness` dark: every colour dimmed, each
+## gradient stop keeping its alpha.
+polygon_at_darkness : Still.Polygon, Fraction -> Still.Polygon
+polygon_at_darkness = |polygon, darkness| {
+	dimmed = |color| Sky.color_at_darkness(color, darkness)
+	dimmed_stops = |stops| {
+		..stops,
+		start_color: ArgbColor.from_rgb(
+			dimmed(stops.start_color.rgb()),
+			{ alpha: stops.start_color.alpha() },
+		),
+		end_color: ArgbColor.from_rgb(
+			dimmed(stops.end_color.rgb()),
+			{ alpha: stops.end_color.alpha() },
+		),
+	}
+	fill =
+		match polygon.fill {
+			Flat(color) => Flat(dimmed(color))
+			Shaded(Linear(gradient)) => Shaded(
+				Linear({ ..gradient, stops: dimmed_stops(gradient.stops) }),
+			)
+			Shaded(Radial(gradient)) => Shaded(
+				Radial({ ..gradient, stops: dimmed_stops(gradient.stops) }),
+			)
+		}
+	{ ..polygon, fill }
 }
 
 ## The sign that a still's x is multiplied by.
@@ -154,6 +189,47 @@ mirrored = {
 	flip: Mirrored,
 	height_on_screen: Pixels.of(50.0),
 }
+
+## A shaded polygon whose stops are half see-through grey and opaque white.
+shaded_sample : Still.Polygon
+shaded_sample = {
+	fill: Shaded(
+		Linear({
+			stops: {
+				start_color: ArgbColor.of(0x80808080),
+				end_color: ArgbColor.of(0xFFFFFFFF),
+				start_offset: Fraction.zero,
+				end_offset: Fraction.whole,
+			},
+			start: { x: 0.0, y: 0.0 },
+			end: { x: 1.0, y: 0.0 },
+		}),
+	),
+	points: [{ x: 0.0, y: 0.0 }, { x: 1.0, y: 0.0 }, { x: 0.0, y: 1.0 }],
+}
+
+## The two stops' colours of `polygon`, as whole numbers, if it is shaded.
+stop_colors : Still.Polygon -> List(I64)
+stop_colors = |polygon|
+	match polygon.fill {
+		Shaded(Linear({ stops, .. })) | Shaded(Radial({ stops, .. })) => [
+			stops.start_color.to_i64(),
+			stops.end_color.to_i64(),
+		]
+		Flat(_) => []
+	}
+
+# By day a still keeps its colours; at full night a flat colour and each stop
+# lose half their light, and the stops keep their alpha.
+expect
+	[shaded_sample, { ..shaded_sample, fill: Flat(RgbColor.of(0x4A8F43)) }].all(
+		|polygon| polygon_at_darkness(polygon, Fraction.zero) == polygon,
+	)
+expect polygon_at_darkness(
+	{ ..shaded_sample, fill: Flat(RgbColor.of(0x4A8F43)) },
+	Fraction.whole,
+).fill == Flat(RgbColor.of(0x254822))
+expect stop_colors(polygon_at_darkness(shaded_sample, Fraction.whole)) == [0x80404040, 0xFF808080]
 
 expect StillShapes.screen_point(upright, { x: 0.5, y: 0.4 }) == Point.at(125.0, 180.0)
 expect StillShapes.screen_point(mirrored, { x: 0.5, y: 0.4 }) == Point.at(75.0, 180.0)

@@ -3,6 +3,7 @@
 ## `Spot.standing_point`, turned by nothing beyond the road's own heading.
 import Angle
 import Camera
+import lib.Fraction
 import lib.Pixels
 import RiderView
 import Spot
@@ -10,8 +11,13 @@ import TruckShape
 
 TruckPlacement :: [].{
 
-	## How a truck is drawn: where it stands, and the camera's lens.
-	TruckSetting : { spot : Spot, focal_length : Pixels }
+	## How a truck is drawn: where it stands, the camera's lens, and how dark
+	## the sky is, which dims its body but never its lights.
+	TruckSetting : {
+		spot : Spot,
+		focal_length : Pixels,
+		darkness : Fraction,
+	}
 
 	## Where a point on the truck stands in the rider's view, for a truck at
 	## `spot` facing along the road.

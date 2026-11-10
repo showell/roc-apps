@@ -2,13 +2,14 @@
 ## triangles on the screen. A near one's are cones seen from the camera: the
 ## hull of a ring of points round each tier's base and its apex, so the
 ## tiers fatten as the camera passes under them. It works from what it is
-## handed: a tree's height and color, where it stands from the camera, and the
-## lens.
+## handed: a tree's height and color, where it stands from the camera, the
+## lens, and how dark the sky is, which dims its trunk and its foliage.
 import Camera
 import ConvexHull
 import Distance
 import lib.Fraction
 import RiderView
+import Sky
 import Sprite
 import lib.Pixels
 import Spot
@@ -23,11 +24,18 @@ TreeShapes :: [].{
 	## within round_trunk_reach has a shaded trunk. The crown is cones, shaded by
 	## how near they are, within cone_reach, and triangles beyond it.
 	tree_sprite : Sprite.Setting, { height : Distance, foliage_color : RgbColor } -> Sprite
-	tree_sprite = |{ spot, focal_length }, { height, foliage_color }| {
-		inputs = tier_inputs_of(spot, { height, focal_length, foliage_color })
+	tree_sprite = |{ spot, focal_length, darkness }, { height, foliage_color }| {
+		dimmed_foliage = Sky.color_at_darkness(foliage_color, darkness)
+		inputs = tier_inputs_of(spot, { height, focal_length, foliage_color: dimmed_foliage })
 		forward = inputs.base.forward()
 		crown = TreeShapes.crown_of(forward)
-		trunk = trunk_shape(inputs.outline, trunk_finish_of(forward))
+		trunk = trunk_shape(
+			inputs.outline,
+			{
+				finish: trunk_finish_of(forward),
+				color: Sky.color_at_darkness(trunk_color, darkness),
+			},
+		)
 		Sprite.from_shapes([trunk].concat(tiers.map(|tier| tier_shape(tier, { inputs, crown }))))
 	}
 
@@ -224,8 +232,9 @@ ring_point_count = 16
 crown_shade : Distance -> Fraction
 crown_shade = |forward| Fraction.clamp(forward.ratio_to(crown_shade_reach)).complement()
 
-trunk_shape : Camera.Upright, TrunkFinish -> Shapes.Shape
-trunk_shape = |outline, finish| {
+## A trunk of `color` under the crown of the tree whose outline is `outline`.
+trunk_shape : Camera.Upright, { finish : TrunkFinish, color : RgbColor } -> Shapes.Shape
+trunk_shape = |outline, { finish, color }| {
 	width = outline.height_on_screen.scaled_by(trunk_width_share).max(min_trunk_width)
 	below_crown = outline.height_on_screen.scaled_by(trunk_height_share)
 	height = below_crown.plus(outline.height_on_screen.scaled_by(trunk_overlap_share))
@@ -234,9 +243,9 @@ trunk_shape = |outline, finish| {
 		match finish {
 			Shaded => Brush.width_shade(
 				{ min_x: left, max_x: left.plus(width) },
-				{ color: trunk_color, strength: Fraction.whole },
+				{ color, strength: Fraction.whole },
 			)
-			Flat => Brush.flat(trunk_color)
+			Flat => Brush.flat(color)
 		}
 	Rectangle({
 		top_left: { x: left, y: outline.foot.y.minus(height) },
@@ -436,7 +445,7 @@ expect {
 		b: 0x22,
 		a: 1.0,
 	}
-	match trunk_shape(sample_outline, Flat) {
+	match trunk_shape(sample_outline, { finish: Flat, color: trunk_color }) {
 		Rectangle({ top_left, width, height, fill }) =>
 			fill == Flat(trunk_brown)
 				and is_near(box_numbers({ top_left, width, height }), [440.0, 110.0, 80.0, 490.0])
@@ -458,7 +467,7 @@ expect {
 		b: 0x2B,
 		a: 1.0,
 	}
-	match trunk_shape(sample_outline, Shaded) {
+	match trunk_shape(sample_outline, { finish: Shaded, color: trunk_color }) {
 		Rectangle(
 			{
 				top_left,

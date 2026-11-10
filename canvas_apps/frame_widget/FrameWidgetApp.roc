@@ -122,7 +122,7 @@ backdrop_pieces : FrameView.Backdrop -> List(Piece)
 backdrop_pieces = |backdrop| [
 	{ layer: Sky, shapes: [Sky.sky_shape(backdrop.sky_colors)] },
 	{ layer: Sun, shapes: Sun.sun_shapes(backdrop.sun_sighting) },
-	{ layer: Grass, shapes: [Grass.grass_shape] },
+	{ layer: Grass, shapes: [Grass.grass_shape(backdrop.darkness)] },
 ]
 
 ## What the camera shows at the step on show.

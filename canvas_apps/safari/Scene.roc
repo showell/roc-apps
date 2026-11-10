@@ -13,6 +13,7 @@ import GuardRail
 import Pipeline
 import RailSighting
 import Rendered
+import Sky
 import TowerSighting
 import TreeSighting
 import Truck
@@ -50,7 +51,10 @@ Scene := {
 		facts : Scene.RideFacts,
 	} -> Scene
 	scene_in_view = |road, { camera, facts }| {
-		focal_length = camera.focal_length
+		lens_and_light = {
+			focal_length: camera.focal_length,
+			darkness: Sky.darkness_at(facts.clock),
+		}
 		vantage = camera.vantage
 		encounter = { camera, encounter_stage: facts.encounter_stage }
 		birds_seen = EncounterSighting.birds_in_view(road, encounter)
@@ -62,24 +66,24 @@ Scene := {
 					[
 						Rendered.of(
 							truck.spot.foot().forward(),
-							Truck.truck_sprite(truck, focal_length),
+							Truck.truck_sprite(truck, lens_and_light),
 						),
 					]
 				Err(NoTruck) | Err(BehindCamera) => []
 			}
 		{
-			trees: TreeSighting.tree_renderings(trees_seen, focal_length),
-			birds: birds_seen.map(|bird| Pipeline.rendering_of(bird, focal_length)),
+			trees: TreeSighting.tree_renderings(trees_seen, lens_and_light),
+			birds: birds_seen.map(|bird| Pipeline.rendering_of(bird, lens_and_light)),
 			towers: TowerSighting.towers_in_view(road, { vantage, clock: facts.clock }).map(
-				|tower| Pipeline.rendering_of(tower, focal_length),
+				|tower| Pipeline.rendering_of(tower, lens_and_light),
 			),
 			billboards: BillboardSighting.billboards_in_view(road, camera).map(
-				|billboard| Pipeline.rendering_of(billboard, focal_length),
+				|billboard| Pipeline.rendering_of(billboard, lens_and_light),
 			),
-			cats: cats_seen.map(|cat| Pipeline.rendering_of(cat, focal_length)),
+			cats: cats_seen.map(|cat| Pipeline.rendering_of(cat, lens_and_light)),
 			trucks,
 			rails: RailSighting.rail_quads_in_view(road, vantage).keep_oks(
-				|quad| GuardRail.quad_rendering(quad, focal_length),
+				|quad| GuardRail.quad_rendering(quad, lens_and_light),
 			),
 		}
 	}
