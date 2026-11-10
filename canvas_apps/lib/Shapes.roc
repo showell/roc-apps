@@ -11,11 +11,26 @@ Shapes :: [].{
 	## A shape is a region and a fill: any of the four regions takes any fill.
 	Shape : [
 		## Three corners, which is every triangle and nothing else.
-		Triangle({ first : Point.Point, second : Point.Point, third : Point.Point, fill : Brush.Fill }),
+		Triangle(
+			{
+				first : Point.Point,
+				second : Point.Point,
+				third : Point.Point,
+				fill : Brush.Fill,
+			},
+		),
 
 		## Four corners in order around the edge. `Shapes.rectangle` makes an
 		## upright one.
-		Quad({ first : Point.Point, second : Point.Point, third : Point.Point, fourth : Point.Point, fill : Brush.Fill }),
+		Quad(
+			{
+				first : Point.Point,
+				second : Point.Point,
+				third : Point.Point,
+				fourth : Point.Point,
+				fill : Brush.Fill,
+			},
+		),
 
 		## A circle, `radius` out from `center`.
 		Disc({ center : Point.Point, radius : Pixels, fill : Brush.Fill }),

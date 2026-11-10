@@ -86,6 +86,11 @@ frame_of = |word| match word {
 		aspect: "640 / 160",
 		loading: Lazy,
 	}
+	"shapes" => {
+		folder: "shapes_widget",
+		aspect: "640 / 324",
+		loading: Lazy,
+	}
 	widget => {
 		folder: "${widget}_widget",
 		aspect: "640 / 360",

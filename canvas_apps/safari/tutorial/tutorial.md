@@ -326,7 +326,7 @@ A tag union lists everything a value can be, and a `match` handles each case. Th
 
 ## Shapes
 
-A far tree in the ride is a box of trunk under eight triangles. So before we draw a tree, we draw its two shapes: a triangle and a rectangle.
+A far tree in the ride is a trunk under eight triangles. So before we draw a tree, we draw its two shapes: a triangle and a rectangle.
 
 In Safari Ride, a shape is a value that describes something to paint. The first four tags of the `Shapes` module's `Shape` type are the kinds of region the ride paints, each a region of the screen with a fill:
 
@@ -346,13 +346,13 @@ And here's the code that makes it:
 
 {{code ShapesWidgetApp.green_triangle}}
 
-The value is a `Triangle` tag with its record. The record names three corners, `first`, `second` and `third`, so every triangle has exactly three, by construction. A corner is a `Point.Point`, a record with an `x` and a `y`. `Point.at` makes one from two plain numbers, measured from the top left of the picture, with `y` growing downward. The picture is 640 pixels wide and 360 tall.
+The value is a `Triangle` tag with its record. The record names three corners, `first`, `second` and `third`, so every triangle has exactly three, by construction. A corner is a `Point.Point`, a record with an `x` and a `y`. `Point.at` makes one from two plain numbers, measured from the top left of the picture, with `y` growing downward. The picture is 640 pixels wide and 324 tall.
 
 `Point.at` turns each of those numbers into a `Pixels`, an opaque type around an `F64`, like `Distance`. The ride works in metres on the road and in pixels on the screen, and two types keep the two apart, so each number says which one it is. Roc is just as happy with plain `F64`s, if you prefer that style. In a program that moves between the road and the screen all the time, the types earn their keep.
 
 The `fill` is green. `RgbColor.of` makes a color from `0x2e8b57`, a number in hex, as `0x` says: the six digits a web page writes after its `#`, and `Brush.flat` makes a fill of that one color.
 
-A shape only describes. So what paints the triangle? The platform does. The picture is a small Roc app of its own, and it hands the platform a list of two shapes: the background, a rectangle the size of the picture, and then the triangle. The platform paints the list from first to last, so the triangle lands on the background.
+A shape only describes. So what paints the triangle? The platform does. The picture is a small Roc app of its own, and it hands the platform a list of two shapes: the background, a rectangle that fills the picture, and then the triangle. The platform paints the list from first to last, so the triangle lands on the background.
 
 ### A rectangle
 
@@ -364,7 +364,16 @@ A brown rectangle on a plain background.
 
 {{code ShapesWidgetApp.brown_rectangle}}
 
-`Shapes.rectangle` is a function. It takes one record, with a top left corner, a width, a height and a fill, and gives back a `Shape`, a `Quad`. `Pixels.of` makes the width and the height from plain numbers. Here's the function:
+Look how closely the rectangle's structure echoes the triangle's, as it should:
+
+| | The triangle | The rectangle |
+|---|---|---|
+| Its type | `Shapes.Shape` | `Shapes.Shape` |
+| What builds it | the `Triangle` tag | the `Shapes.rectangle` function, which gives back a `Quad` |
+| Where it is | three corners, each from `Point.at` | a top left corner from `Point.at`, and a width and a height from `Pixels.of` |
+| Its fill | `Brush.flat(RgbColor.of(0x2e8b57))`, green | `Brush.flat(RgbColor.of(0x8b5a2b))`, brown |
+
+Here's the function:
 
 {{code Shapes.rectangle}}
 

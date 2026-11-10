@@ -17,32 +17,40 @@ ShapesWidgetApp :: [].{
 	Model : [Triangle, Rectangle]
 
 	canvas_app : CanvasApp.CanvasApp(ShapesWidgetApp.Model)
-	canvas_app = WidgetPage.canvas_app({
-		title: "A triangle and a rectangle",
+	canvas_app = {
+		size: { width: WidgetPage.canvas_width, height: canvas_height },
 		frames_a_second: WidgetPage.fixed_picture_frames_a_second,
 		init: Triangle,
-		model_at_next_step: next_model,
+		model_at_next_step: CanvasApp.untimed_model_at_next_step(next_model),
 		frame_shapes: shapes_of,
-	})
+		sounds: |_model| 0,
+		tones: [],
+		title: "A triangle and a rectangle",
+	}
 
 	## A green triangle.
 	green_triangle : Shapes.Shape
 	green_triangle = Triangle({
-		first: Point.at(180.0, 280.0),
-		second: Point.at(420.0, 280.0),
-		third: Point.at(300.0, 60.0),
+		first: Point.at(180.0, 262.0),
+		second: Point.at(420.0, 262.0),
+		third: Point.at(300.0, 42.0),
 		fill: Brush.flat(RgbColor.of(0x2e8b57)),
 	})
 
 	## A brown rectangle.
 	brown_rectangle : Shapes.Shape
 	brown_rectangle = Shapes.rectangle({
-		top_left: Point.at(240.0, 100.0),
+		top_left: Point.at(240.0, 82.0),
 		width: Pixels.of(120.0),
 		height: Pixels.of(160.0),
 		fill: Brush.flat(RgbColor.of(0x8b5a2b)),
 	})
 }
+
+## A little shorter than the usual widget page, since one shape needs less room
+## around it.
+canvas_height : F64
+canvas_height = 324.0
 
 ## The picture after one frame: the Right key shows the other shape.
 next_model : ShapesWidgetApp.Model, Input.Snapshot -> ShapesWidgetApp.Model
