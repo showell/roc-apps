@@ -230,7 +230,7 @@ What comes back is a sprite, and every sprite is a list of shapes. The cow's spr
 
 At the bends in the road stand four more kinds of billboard animal: elephants, giraffes, zebras and rhinos. They come next, with the `match` that mirrors the ones that face right.
 
-## Billboards
+## Billboard Critters
 
 Four kinds of big animal stand at the bends in the ride's road: elephants, giraffes, zebras and rhinos. Each animal stands with its baby:
 

@@ -51,7 +51,7 @@ Each axis fails in its own way, and catching each failure takes a different kind
 - **C3.** Never lean on something unseen. A forward pointer names what's coming and why, or it goes.
 - **C4.** Every chapter's opening stands alone, usually by restating the premise. A chapter's end may leave a question hanging. Readers land anywhere, so avoid "remember the first chapter" callbacks for simple ideas: explain them in place.
 - **C5.** **Finish one thing before you start the next.** Take the triangle all the way from its call to its `Poly`. Only then say "Next, let's build a rectangle", and let the rectangle lean on what the triangle taught. Two things explained side by side make the reader hold both at once. The headlights and the brake lights taught this first. One job gets one section, and the job comes before its details.
-- **C6.** Difficulty rises, tempered by categories: nature, man-made, critters. The exception is the opening: critters standing still come first (Things, then Billboards), because a billboard is the simplest thing the ride draws, and the most charming. One frame is held still for the first half, and motion starts at The ride instant. Teasing an idea early is fine.
+- **C6.** Difficulty rises, tempered by categories: nature, man-made, critters. The exception is the opening: critters standing still come first (Things, then Billboard Critters), because a billboard is the simplest thing the ride draws, and the most charming. One frame is held still for the first half, and motion starts at The ride instant. Teasing an idea early is fine.
 - **C7.** Everything that appears says why the reader needs it now. A type or module with no reason to be in this chapter moves to the chapter that needs it. Telling the reader that a `GroundPatch` is a patch of ground, with no reason it's here, leaves them disoriented.
 - **C8.** Show the code, then describe it. Never describe a function the reader hasn't seen. A function with a long body shows its type annotation alone (`{{signatures M.f}}`) until the body's turn comes, and the prose calls it an annotation. A very small function shows whole.
 - **C10.** **Put yourself in the reader's shoes.** Read every draft as someone who has read only the chapters before it. At each paragraph, ask: do I know why I'm reading this, and could I explain it back? A chapter that follows the drawing of a triangle with a map of a hundred modules fails that reader, however true the map is. The thread the reader just picked up comes first.
@@ -179,7 +179,7 @@ The work is a linear pass, one chapter at a time, in book order, starting again 
 
 **The order of the pass:**
 
-1. Introduction, The problem, Platforms, The pieces as types, Things (the cow), Billboards (tag unions and `match`), then the far tree (functions: a body, local names, `map`, paint order). Shapes is its own chapter before the far tree, or the far tree's opening; Steve decides when we get there. The modules and The world are open.
+1. Introduction, The problem, Platforms, The pieces as types, Things (the cow), Billboard Critters (tag unions and `match`), then the far tree (functions: a body, local names, `map`, paint order). Shapes is its own chapter before the far tree, or the far tree's opening; Steve decides when we get there. The modules and The world are open.
 2. Nature types, Grass. Trees get only the far-tree chapter, plus a paragraph that tells the reader what the rest of the tree code does.
 3. The sun, The sky, Mountains, The road, Rails, Radio towers
 4. Stills, The elephant, the corner critters, Herds
