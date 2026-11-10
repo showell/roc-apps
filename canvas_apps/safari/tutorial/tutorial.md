@@ -228,17 +228,17 @@ The `spot` comes from a camera: it's what a sighting holds. So to draw the cow a
 
 What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, drawn as polygons. Most of the ride's shapes have straight edges. At step 1,529, the ride draws 2,121 shapes on top of the sky and the grass: 864 triangles, 1,113 polygons, 136 rectangles and 8 discs. The rectangles are the trees' trunks.
 
-At the bends in the road stand four more billboard animals: an elephant, a giraffe, a zebra and a rhino. They come next, with the `match` that mirrors the ones that face right.
+At the bends in the road stand four more kinds of billboard animal: elephants, giraffes, zebras and rhinos. They come next, with the `match` that mirrors the ones that face right.
 
 ## Billboards
 
-Four big animals stand at the bends in the ride's road: an elephant, a giraffe, a zebra and a rhino. Each one has its baby with it:
+Four kinds of big animal stand at the bends in the ride's road: elephants, giraffes, zebras and rhinos. Each animal stands with its baby:
 
 ```widget bend_animals
 The four bend animals and their babies, lined up on the grass: two pairs face right, and two face left.
 ```
 
-Each emoji shows its animal from the side, face and all. So a billboard faces left or right, and your eye follows where it looks.
+Each emoji shows its animal from the side, so a billboard faces left or right, and your eye follows its gaze.
 
 ### Two ways to face
 
@@ -254,7 +254,9 @@ The type is a list of tags in square brackets. A tag is a name the compiler know
 
 `|Billboard.(billboard), setting|` says what the function takes: a billboard and a setting. A `Billboard` is opaque, and `Billboard.(billboard)` opens it: it unwraps the billboard into a record named `billboard`, so the function can read `billboard.facing` and the other fields. Only the `Billboard` module can write that.
 
-The body is a block, in braces. Its first line names a value, `flip`, and its last line is the function's answer. `billboard.emoji.still()` calls the `still` function that comes with the emoji, which gives its traced still. `StillShapes.standing_still_shapes` makes shapes from it at the billboard's height, and `Sprite.from_shapes` makes those shapes a sprite. In that last record, `flip` alone is short for `flip: flip`.
+The body is a block, in braces. A block holds lines of code, where a record holds fields with colons. Its first line names a value, `flip`, and its last line is the function's answer.
+
+In that answer, `billboard.emoji.still()` calls the `still` function that comes with the emoji, which gives its traced still. `StillShapes.standing_still_shapes` makes shapes from it at the billboard's height, and `Sprite.from_shapes` makes those shapes a sprite. In that last record, `flip` alone is short for `flip: flip`.
 
 Every emoji is drawn facing left, so a billboard that faces right needs its emoji mirrored. The `match` makes that choice. It looks at `billboard.facing`, and each line under it takes one tag and gives back what to do: `FacesLeft` gives `AsDrawn`, and `FacesRight` gives `Mirrored`. Those two are the tags of another tag union, `StillShapes.Flip`, and `flip` names the one the `match` picks. `flip` needs no annotation: the compiler works out its type from where it's used.
 
@@ -287,7 +289,9 @@ A bend has room for one thing at most: an animal and its baby, a pond of ducks, 
 
 {{code Segment.BendLife}}
 
-`Quiet` and `DuckPond` are plain tags, like the ones above. `Animal(BendAnimal)` is a tag that carries a value: an `Animal` always comes with one `BendAnimal`. So `Animal(Giraffe)` is a whole value, a bend with a giraffe at it. A plain list of billboards would let a giraffe and a duck pond share one bend. A `BendLife` is exactly one of its three tags, so a bend gets one thing, and its billboards all come from that one thing.
+`Quiet` and `DuckPond` are plain tags, like the ones above. `Animal(BendAnimal)` is a tag that carries a value: an `Animal` always comes with one `BendAnimal`. So `Animal(Giraffe)` is a whole value, a bend with a giraffe at it.
+
+The route's plan stores a `BendLife` for each bend. A plain list of billboards there would let a giraffe and a duck pond share one bend. A `BendLife` is exactly one of its three tags, so a bend gets one thing, and the list of its billboards is worked out from that one thing.
 
 What a bend's life can be
 ```dot
@@ -312,7 +316,7 @@ The function that gives a bend its billboards takes the bend's life and the bend
 
 {{code Segment.bend_billboards}}
 
-The `Animal(animal)` line matches a bend with any animal at it, and names the animal it carries `animal`, ready to use. Then `animal.bend_billboards(bend)` calls a different function with the same name: the one that comes with `BendAnimal`, which places the animal and its baby. A duck pond gets its ducks from the `Pond` module, and a quiet bend gets the empty list, `[]`. The code has the same shape as the type: one line for each tag, and the value a tag carries named right where the line needs it.
+The `Animal(animal)` line matches a bend with any animal at it, and names the animal it carries `animal`, ready to use. Then `animal.bend_billboards(bend)` calls a different function with the same name. `animal` is a `BendAnimal`, so the call goes to the `bend_billboards` that comes with `BendAnimal`, which places the animal and its baby. A duck pond gets its ducks from the `Pond` module, and a quiet bend gets the empty list, `[]`. The code has the same shape as the type: one line for each tag, and the value a tag carries named right where the line needs it.
 
 ### Elephants, mostly
 
