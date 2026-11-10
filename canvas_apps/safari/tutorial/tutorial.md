@@ -174,13 +174,13 @@ The rest of the book builds the pieces in order. So we start with things: what a
 
 ## Things
 
-The things beside the road are its trees, its radio towers and its animals, and each one draws itself. Here's a cow on the grass, drawn by Safari Ride's own code:
+The things beside the road are its trees, its radio towers and its animals. Here's a cow on the grass, drawn by Safari Ride's own code:
 
 ```widget cow
 A cow on the grass beside the road.
 ```
 
-The ride has a lot of animals: herds of cows and pigs, ducks on the ponds, and an elephant at a bend in the road. Each one is a billboard: a flat picture of its emoji, standing on the grass and turned square to the camera, like a cardboard cutout. That takes far less code than modelling an animal, and it's charming. A billboard faces left or right, and one that faces right is its emoji mirrored. That's the `Billboard` type from "The pieces as types": an emoji, a height and a facing. Each emoji was traced into polygons ahead of time, and the `EmojiStills` module holds them as plain data. The tracing itself is beyond this book.
+The ride has a lot of animals: herds of cows and pigs, ducks on the ponds, and an elephant at a bend in the road. The cat and the bird move, and they get chapters of their own. Every other animal is a billboard: a flat picture of its emoji, standing on the grass and turned square to the camera, like a cardboard cutout. That takes far less code than modelling an animal, and it's charming. A billboard faces left or right, and one that faces right is its emoji mirrored. That's the `Billboard` type from "The pieces as types": an emoji, a height and a facing. Each emoji was traced into polygons ahead of time, and the `EmojiStills` module holds them as plain data. The tracing itself is beyond this book.
 
 ### Calves
 
@@ -190,19 +190,25 @@ A herd looks better with a few calves in it. The ride's rule is simple: number a
 Twenty cows, numbered from 0. Cows 1, 5, 9, 13 and 17 are calves.
 ```
 
-How does the code pick the calves? With one small function, the first in this book with a body:
+How does the code pick the calves? With a function. A Roc function usually comes in two parts. On top is its type annotation: its name, a colon, and its type. Under it is its definition: its name again, an `=`, and the function itself. Here's the function that picks the calves, with a doc comment above both:
 
 {{code CowHerd.is_calf}}
 
-The first line is its type: it takes a `U64`, a whole number from zero up, and gives back a `Bool`, `True` or `False`. The second line is the function itself. `|cow_number|` names what it takes, and everything after it is the body, whose value is what the function gives back. `cow_number.rem_by(4)` is the remainder after dividing by 4, so a cow whose number leaves 1 is a calf. The herd asks `is_calf` about each cow it places, and makes each calf a young billboard.
+The annotation says `is_calf` takes a `U64`, a whole number from zero up, and gives back a `Bool`, `True` or `False`. In the definition, `|cow_number|` names what the function takes, and what follows is its answer. `cow_number.rem_by(4)` is the remainder after dividing `cow_number` by 4, and `==` compares it with 1, which gives the `Bool`. So a cow whose number leaves a remainder of 1 is a calf.
 
-### How a thing draws itself
+A second function puts `is_calf` to work. It gives each cow in a herd its billboard:
 
-Calf or cow, a billboard draws itself the way every thing beside the road does: each kind has a function called `scenery_sprite` in its own module. The cow's body is long, so here's its type annotation alone, from the `Billboard` module:
+{{code CowHerd.cow_billboard}}
+
+Its answer is an `if`, which picks one of two values: a young billboard when `is_calf` says `True`, and a grown one when it says `False`. Both are cows, facing right. The herd calls `cow_billboard` for every cow it places.
+
+### What drawing a thing takes
+
+Calf or cow, the ride draws a billboard the way it draws every kind of thing beside the road: with a function called `scenery_sprite`, in that kind's module. The billboard's has a longer definition, and its centerpiece is a Roc feature a later chapter teaches. So here's its annotation alone, the line that sits above the definition, from the `Billboard` module:
 
 {{signatures Billboard.scenery_sprite}}
 
-It takes a `Billboard` and a setting, and gives back a sprite. The `Conifer` module's `scenery_sprite` takes a tree instead, and the `Tower` module's takes a tower, but every one takes a setting and gives back a sprite. So the code that draws a frame treats every kind alike, as the book shows when it reaches the rider's view.
+It takes a `Billboard` and a setting, and gives back a sprite. The `Conifer` module's `scenery_sprite` takes a tree instead, and the `Tower` module's takes a tower, but every one takes a setting and gives back a sprite. So whatever its kind, a thing in a frame comes out as a sprite.
 
 A setting is a record with a type variable of its own:
 
@@ -210,7 +216,7 @@ A setting is a record with a type variable of its own:
 
 The `focal_length` sets how much the camera's lens magnifies, in `Pixels`, the screen's unit of length. The `context` field's type is the variable, so each kind chooses its own. The cow's is `{}`, the empty record, as its `Sprite.Setting({})` says, and a tree's is a `TreeShapes.Detail`.
 
-The `spot` comes from a camera: it's what a sighting holds. So to draw one cow alone, the picture at the top of this chapter puts the cow on the road, 10 metres ahead and 5 metres left of the middle, and lets a camera at the start of the road sight it. The rider's own camera comes in when the book reaches the rider's view.
+The `spot` comes from a camera: it's what a sighting holds. So to draw one cow alone, the picture at the top of this chapter puts the cow on the road, 10 metres ahead and 5 metres left of the middle, and lets a camera at the start of the road sight it. The rider's own camera comes in a later chapter.
 
 What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, drawn as polygons. Most of the ride's shapes have straight edges. At step 1,529, the ride draws 2,121 shapes over the sky and the grass: 864 triangles, 1,113 other polygons, 136 rectangles, one for each tree's trunk, and 8 discs.
 

@@ -128,13 +128,19 @@ herd_cow = |{ herd_along, cow_number, rows_behind_front }| {
 			across: Across.left_of_middle(out_from_road),
 		},
 		lift: Distance.zero,
-		kind: if is_calf(cow_number) {
-			Billboard.young_billboard(cow, FacesRight)
-		} else {
-			Billboard.adult_billboard(cow, FacesRight)
-		},
+		kind: cow_billboard(cow_number),
 	}
 }
+
+## The billboard for the herd's cow at `cow_number`: young for a calf, grown
+## for the rest.
+cow_billboard : U64 -> Billboard
+cow_billboard = |cow_number|
+	if is_calf(cow_number) {
+		Billboard.young_billboard(cow, FacesRight)
+	} else {
+		Billboard.adult_billboard(cow, FacesRight)
+	}
 
 expect {
 	bull_height = herd_bull(Along.metres(24.0)).kind.scenery_height()
