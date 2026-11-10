@@ -32,16 +32,16 @@ digraph pieces {
     things [label="things"];
     world [label="the world"];
     view [label="the rider's view"];
+    { rank=same; things; world; view; }
   }
   motion [label="motion"];
   person [label="the person watching"];
-  { rank=same; things; world; view; }
   { rank=same; motion; person; }
   things -> world [label="  stand in"];
   world -> view [label="  is seen in"];
-  motion -> world [label="  moves"];
+  world -> motion [dir=back, label="  moves"];
   view -> person [label="  shows a frame to"];
-  person -> motion [label="  pauses, steps"];
+  motion -> person [dir=back, label="  pauses, steps"];
 }
 ```
 
