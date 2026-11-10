@@ -15,7 +15,7 @@ BendAnimal := [Elephant, Giraffe, Zebra, Rhino].{
 	## The animal and its baby at `bend`, the bend that ends a segment.
 	bend_billboards : BendAnimal, Geom.Bend -> List(Geom.Placed(Billboard))
 	bend_billboards = |animal, bend| {
-		species = species_of(animal)
+		species = BendAnimal.species_of(animal)
 		bend_along = Along.at(bend.segment_length)
 		{ out_on_outside, facing } =
 			match Geom.outer_side(bend.turn) {
@@ -38,6 +38,16 @@ BendAnimal := [Elephant, Giraffe, Zebra, Rhino].{
 			},
 		]
 	}
+
+	## The species of a bend's animal.
+	species_of : BendAnimal -> Billboard.Species
+	species_of = |animal|
+		match animal {
+			Elephant => { emoji: EmojiStills.elephant, adult_height: Distance.metres(2.8) }
+			Giraffe => { emoji: EmojiStills.giraffe, adult_height: Distance.metres(4.5) }
+			Zebra => { emoji: EmojiStills.zebra, adult_height: Distance.metres(1.6) }
+			Rhino => { emoji: EmojiStills.rhino, adult_height: Distance.metres(2.2) }
+		}
 }
 
 ## How far beyond the guard rail the grown animal stands.
@@ -48,13 +58,3 @@ adult_rail_buffer = Distance.metres(1.5)
 ## ends there, in the middle of where its road would run.
 baby_beyond : Distance
 baby_beyond = Distance.metres(14.0)
-
-## The species of a bend's animal.
-species_of : BendAnimal -> Billboard.Species
-species_of = |animal|
-	match animal {
-		Elephant => { emoji: EmojiStills.elephant, adult_height: Distance.metres(2.8) }
-		Giraffe => { emoji: EmojiStills.giraffe, adult_height: Distance.metres(4.5) }
-		Zebra => { emoji: EmojiStills.zebra, adult_height: Distance.metres(1.6) }
-		Rhino => { emoji: EmojiStills.rhino, adult_height: Distance.metres(2.2) }
-	}
