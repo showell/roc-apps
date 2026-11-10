@@ -42,8 +42,8 @@ Night :: [].{
 	backdrop = |v| {
 		horizon = v.height / 2.0
 		var $out = [
-			Rectangle({ top_left: Point.at(0.0, 0.0), width: Pixels.of(v.width), height: Pixels.of(horizon + 1.0), fill: Linear({ stops: { start_color: sky_high, end_color: sky_low, start_offset: 0.0, end_offset: 1.0 }, start_point: Point.at(0.0, 0.0), end_point: Point.at(0.0, horizon) }) }),
-			Rectangle({ top_left: Point.at(0.0, horizon), width: Pixels.of(v.width), height: Pixels.of(v.height - horizon), fill: Flat(lawn) }),
+			Shapes.rectangle({ top_left: Point.at(0.0, 0.0), width: Pixels.of(v.width), height: Pixels.of(horizon + 1.0), fill: Linear({ stops: { start_color: sky_high, end_color: sky_low, start_offset: 0.0, end_offset: 1.0 }, start_point: Point.at(0.0, 0.0), end_point: Point.at(0.0, horizon) }) }),
+			Shapes.rectangle({ top_left: Point.at(0.0, horizon), width: Pixels.of(v.width), height: Pixels.of(v.height - horizon), fill: Flat(lawn) }),
 		]
 		match Eye.sighting(v, moon_at) {
 			Ok({ point: p, pixels_per_metre }) => List.append($out, Disc({ center: Point.at(p.x, p.y), radius: Pixels.of(32.0 * pixels_per_metre), fill: Flat(moon_c) }))

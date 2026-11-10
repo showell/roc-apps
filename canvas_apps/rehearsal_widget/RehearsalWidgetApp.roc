@@ -214,7 +214,7 @@ road_shapes = {
 	half_road = Geom.road_half_width.to_metres()
 	[
 		WidgetPage.picture_backdrop(WidgetPalette.plan_ground_color),
-		Rectangle({
+		Shapes.rectangle({
 			top_left: {
 				x: Pixels.zero,
 				y: canvas_point({ forward: Distance.zero, across: left_edge }).y,
@@ -478,7 +478,7 @@ choice_mark = |current| {
 	} else {
 		6.0
 	}
-	Rectangle({
+	Shapes.rectangle({
 		top_left: Point.at(mark_x(last_stop) - half, marks_y - half),
 		width: Pixels.of(2.0 * half),
 		height: Pixels.of(2.0 * half),

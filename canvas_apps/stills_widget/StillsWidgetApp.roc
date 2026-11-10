@@ -438,7 +438,7 @@ mark_shapes : StillsWidgetApp.Pose -> List(Shapes.Shape)
 mark_shapes = |large_pose|
 	cells.keep_if(|cell| cell.pose == large_pose).map(
 		|{ area, .. }|
-			Rectangle({
+			Shapes.rectangle({
 				top_left: Point.at(area.left, area.top),
 				width: Pixels.of(area.width),
 				height: Pixels.of(area.height),
@@ -533,7 +533,7 @@ expect
 						Triangle(_)
 						| Polygon(_)
 						| Disc(_)
-						| Rectangle(_)
+						| Quad(_)
 						| Blend(_)
 						| View(_)
 						| Image(_) => True
@@ -708,7 +708,7 @@ expect {
 		Point.at(0.5, 0.0),
 	]
 	match outline_shapes(anchor, square) {
-		[_, _, _, Polygon({ corners, .. })] => corners == flipped_square
+		[_, _, _, last_line] => Shapes.region_corners(last_line) == Ok(flipped_square)
 		_ => False
 	}
 }

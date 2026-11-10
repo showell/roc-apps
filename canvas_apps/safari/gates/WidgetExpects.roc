@@ -65,7 +65,7 @@ lines_of_type = |shapes|
 				Triangle(_)
 				| Polygon(_)
 				| Disc(_)
-				| Rectangle(_)
+				| Quad(_)
 				| Blend(_)
 				| View(_)
 				| Image(_) => Err(NotText)
@@ -173,20 +173,13 @@ stills_models = {
 	)
 }
 
-## The corners of a frame's triangles and polygons that lie wholly above the
+## The corners of a frame's straight-edged regions that lie wholly above the
 ## panel.
 picture_points : List(Shapes.Shape) -> List(Point.Point)
 picture_points = |shapes| {
-	polygons = shapes.keep_oks(
-		|shape|
-			match shape {
-				Triangle(t) => Ok([t.first, t.second, t.third])
-				Polygon({ corners, .. }) => Ok(corners)
-				Text(_) | Disc(_) | Rectangle(_) | Blend(_) | View(_) | Image(_) => Err(NotPolygon)
-			},
-	)
+	regions = shapes.keep_oks(Shapes.region_corners)
 	is_above_panel = |point| point.y.to_f64() < WidgetPage.picture_bottom_y
-	polygons.keep_if(|corners| corners.all(is_above_panel)).join()
+	regions.keep_if(|corners| corners.all(is_above_panel)).join()
 }
 
 ## Whether every line of type above the panel ends left of every polygon there,

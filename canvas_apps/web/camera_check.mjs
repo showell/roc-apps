@@ -25,7 +25,8 @@ const here = new URL(".", import.meta.url).pathname;
 // the other is generated. So this says the shapes directly, in the shape the
 // generated reader answers.
 const viewMark = (camera) => ({ tag: "View", value: { tag: "World", value: camera } });
-const aRect = { tag: "Rectangle", value: { top_left: { x: 0, y: 0 }, width: 0, height: 0, fill: { tag: "Flat", value: { r: 255, g: 255, b: 255, a: 1 } } } };
+const origin = { x: 0, y: 0 };
+const aQuad = { tag: "Quad", value: { first: origin, second: origin, third: origin, fourth: origin, fill: { tag: "Flat", value: { r: 255, g: 255, b: 255, a: 1 } } } };
 
 function transformFor(shapes) {
   // **THE LAST setTransform IS THE ONE THAT RESETS THE CANVAS** when the frame
@@ -74,7 +75,7 @@ const POINTS = [{ x: 0, y: 0 }, { x: 800, y: 0 }, { x: 0, y: 600 }, { x: 1600, y
 
 let worst = 0;
 for (const camera of CAMERAS) {
-  const matrix = transformFor([viewMark(camera), aRect]);
+  const matrix = transformFor([viewMark(camera), aQuad]);
   if (!matrix) throw new Error(`camera_check: no transform for ${JSON.stringify(camera)}`);
   for (const point of POINTS) {
     const canvas = through(matrix, point);
@@ -89,7 +90,7 @@ if (worst > 1e-9) {
 }
 
 // And the screen mark is the identity, or a HUD is drawn through the world.
-const identity = transformFor([{ tag: "View", value: { tag: "Screen" } }, aRect]);
+const identity = transformFor([{ tag: "View", value: { tag: "Screen" } }, aQuad]);
 if (String(identity) !== "1,0,0,1,0,0") {
   console.error(`camera_check: the screen mark is ${identity}, not the identity`);
   process.exit(1);

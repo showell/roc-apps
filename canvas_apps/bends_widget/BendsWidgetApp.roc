@@ -141,10 +141,10 @@ rail_color = RgbColor.of(0xe8805a)
 ## A patch of paving, as a polygon on the canvas.
 patch_shape : ShownBend, List(RiderView.RiderPoint) -> Shapes.Shape
 patch_shape = |bend, corners|
-	Polygon({
-		corners: corners.map(|corner| canvas_point(bend, corner)),
-		fill: Brush.flat(WidgetPalette.plan_road_color),
-	})
+	Shapes.region_from_corners(
+		corners.map(|corner| canvas_point(bend, corner)),
+		Brush.flat(WidgetPalette.plan_road_color),
+	)
 
 ## The low edge of a rail's quad, which lies along the ground.
 foot_shape : ShownBend,

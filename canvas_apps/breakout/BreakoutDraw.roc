@@ -42,7 +42,7 @@ BreakoutDraw :: [].{
 	## One complete Breakout frame, back to front.
 	frame : Rules.World, F64 -> List(Shapes.Shape)
 	frame = |world, elapsed| {
-		var $out = [Rectangle({ top_left: Point.at(0.0, 0.0), width: Pixels.of(w), height: Pixels.of(h), fill: Linear({ stops: { start_color: Brush.opaque_rgba(field_top), end_color: Brush.opaque_rgba(field_bottom), start_offset: 0.0, end_offset: 1.0 }, start_point: Point.at(0.0, 0.0), end_point: Point.at(0.0, h) }) })]
+		var $out = [Shapes.rectangle({ top_left: Point.at(0.0, 0.0), width: Pixels.of(w), height: Pixels.of(h), fill: Linear({ stops: { start_color: Brush.opaque_rgba(field_top), end_color: Brush.opaque_rgba(field_bottom), start_offset: 0.0, end_offset: 1.0 }, start_point: Point.at(0.0, 0.0), end_point: Point.at(0.0, h) }) })]
 		$out = List.concat($out, hud(world))
 		$out = List.concat($out, bricks(world.bricks))
 		$out = List.concat($out, glow(world))
@@ -76,7 +76,7 @@ BreakoutDraw :: [].{
 			bw = F32.to_f64(b.rect.width)
 			bh = F32.to_f64(b.rect.height)
 			$out = List.append($out, Shapes.rounded_rect({ top_left: Point.at(x, y), width: Pixels.of(bw), height: Pixels.of(bh), corner_radius: Pixels.of(5.0), corner_steps: 6 }, Flat(Brush.with_alpha(b.color, 0.92))))
-			$out = List.append($out, Rectangle({ top_left: Point.at(x + 5.0, y + 3.0), width: Pixels.of(bw - 10.0), height: Pixels.of(3.0), fill: Flat(Brush.with_alpha(white, 0.43)) }))
+			$out = List.append($out, Shapes.rectangle({ top_left: Point.at(x + 5.0, y + 3.0), width: Pixels.of(bw - 10.0), height: Pixels.of(3.0), fill: Flat(Brush.with_alpha(white, 0.43)) }))
 			$i = $i + 1
 		}
 		$out
@@ -108,7 +108,7 @@ BreakoutDraw :: [].{
 		r = F32.to_f64(Ball.radius)
 		[
 			Shapes.rounded_rect({ top_left: Point.at(px, py), width: Pixels.of(pw), height: Pixels.of(ph), corner_radius: Pixels.of(ph / 2.0), corner_steps: 8 }, Brush.flat(paddle_neon)),
-			Rectangle({ top_left: Point.at(px + 8.0, py + 3.0), width: Pixels.of(pw - 16.0), height: Pixels.of(3.0), fill: Flat(Brush.with_alpha(white, 0.59)) }),
+			Shapes.rectangle({ top_left: Point.at(px + 8.0, py + 3.0), width: Pixels.of(pw - 16.0), height: Pixels.of(3.0), fill: Flat(Brush.with_alpha(white, 0.59)) }),
 			Disc({ center: Point.at(bx, by), radius: Pixels.of(r), fill: Brush.flat(ball_neon) }),
 			Disc({ center: Point.at(bx - 2.0, by - 2.0), radius: Pixels.of(r * 0.4), fill: Flat(Brush.with_alpha(white, 0.82)) }),
 		]

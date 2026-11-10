@@ -194,7 +194,7 @@ canvas_point = |{ along, across }|
 road : Shapes.Shape
 road = {
 	half_width = Geom.road_half_width.to_metres() * road_plan.pixels_a_metre
-	Rectangle({
+	Shapes.rectangle({
 		top_left: Point.at(0.0, road_plan.origin.y.to_f64() - half_width),
 		width: Pixels.of(WidgetPage.canvas_width),
 		height: Pixels.of(2.0 * half_width),

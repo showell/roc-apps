@@ -139,7 +139,7 @@ route_x = |distance| route_left_x + route_width * distance.ratio_to(route_length
 bar_shapes : List(Shapes.Shape)
 bar_shapes =
 	[
-		Rectangle({
+		Shapes.rectangle({
 			top_left: Point.at(route_left_x, route_y - 4.0),
 			width: Pixels.of(route_width),
 			height: Pixels.of(8.0),
@@ -148,7 +148,7 @@ bar_shapes =
 	].concat(
 		World.route.segments_with_ends().map(
 			|stretch|
-				Rectangle({
+				Shapes.rectangle({
 					top_left: Point.at(route_x(stretch.end) - 1.0, route_y - 8.0),
 					width: Pixels.of(2.0),
 					height: Pixels.of(16.0),
@@ -213,7 +213,7 @@ shapes_from_behind_rider = |{ across, lean }| {
 			}),
 		],
 		[
-			Rectangle({
+			Shapes.rectangle({
 				top_left: Point.at(middle - road_half_width_on_canvas, surface_y),
 				width: Pixels.of(2.0 * road_half_width_on_canvas),
 				height: Pixels.of(8.0),
