@@ -235,7 +235,7 @@ At the bends in the road stand four more billboard animals: an elephant, a giraf
 Four big animals stand at the bends in the ride's road: an elephant, a giraffe, a zebra and a rhino. Each one has its baby with it:
 
 ```widget bend_animals
-The four bend animals and their babies. Two face left and two face right.
+The four bend animals and their babies. The elephants and giraffes face right, and the zebras and rhinos face left.
 ```
 
 Every one of them has a face, and a face looks somewhere. So a billboard faces left or right, and your eye follows where it looks. At a bend, the animal and its baby both face the way the road turns.
