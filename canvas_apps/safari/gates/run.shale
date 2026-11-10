@@ -159,7 +159,7 @@ const BOOK_NAMES = GATES .. "/book_names.shale"
 const INPUT_BITS = GATES .. "/input_bits.shale"
 -- The root that reaches nearly every expect, the one fast.shale runs.
 const MAIN_EXPECT_ROOT = "gates/expects/main.roc"
-const EXPECT_ROOTS = {MAIN_EXPECT_ROOT, "web.roc", "../lib/main.roc", "tutorial/make_book.roc"}
+const EXPECT_ROOTS = {MAIN_EXPECT_ROOT, "web.roc", "../lib/main.roc", "tutorial/make_book.roc", "gates/proof/main.roc"}
 -- The packages of other repos that a root reaches. Their expects run, and are
 -- that repo's to count, so they are neither held here nor a failure. A `PASS`
 -- outside the checkout from any other folder fails.
@@ -374,7 +374,8 @@ end
 -- `roc test --verbose` from each of EXPECT_ROOTS, whose reach together is
 -- every expect: gates/expects/main.roc reaches nearly all of them,
 -- web.roc the game's modules that only the running game imports, lib's
--- package root all of lib, and make_book.roc the tutorial's. The source is the
+-- package root all of lib, make_book.roc the tutorial's, and
+-- gates/proof/main.roc the proof tools' modules that hold expects. The source is the
 -- count, so no number needs keeping: every line of a `.roc` file in
 -- SAFARI_SOURCES that starts `expect` must print `PASS` once in a run that
 -- reaches it, and a `PASS` must name such a line. An expect sits at the top

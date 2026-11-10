@@ -998,7 +998,7 @@ The fill makes it look like a sun. `Sun.look` builds two fills: one for the disc
 
 {{code Sun.look}}
 
-`Radial` runs from pale yellow in the middle to orange at the edge. `Glow` is a wide haze that fades to nothing. Both are tags with records inside, so a fill is plain data, and the browser does the painting. The lens's `focal_length` sets how large the sun is drawn, because a wider view makes it look smaller.
+`Radial` runs from pale yellow in the middle to orange at the edge, and `warmed` reddens both as the sun nears the horizon. `Glow` is a wide haze that fades to nothing, and `sun_shapes` adds its light to the sky rather than painting over it. Both are tags with records inside, so a fill is plain data, and the browser does the painting. The lens's `focal_length` sets how large the sun is drawn, because a wider view makes it look smaller.
 
 ### Angles that can't be mixed up
 

@@ -6,6 +6,7 @@
 ## which would copy the whole list on every store (docs/roc-notes.md, "Speed
 ## and copying").
 import lib.Brush
+import lib.Shapes
 import PixelColor
 
 PixelGrid :: [].{
@@ -74,11 +75,20 @@ PixelGrid :: [].{
 	} -> U64
 	pixel_index = |{ row, column, width }| row.to_u64() * width.to_u64() + column.to_u64()
 
-	## `color` laid over the pixel at `at`.
-	blended_pixels : List(U32), { at : U64, color : Brush.Rgba } -> List(U32)
-	blended_pixels = |pixels, { at, color }| {
+	## `color` laid on the pixel at `at` in `mode`: over it, or added to it.
+	blended_pixels : List(U32),
+	{
+		at : U64,
+		color : Brush.Rgba,
+		mode : Shapes.Mode,
+	} -> List(U32)
+	blended_pixels = |pixels, { at, color, mode }| {
 		pixel = pixels.get(at) ?? crash "PixelGrid.blend: a pixel off the grid"
-		new_pixel = PixelColor.blended_pixel(pixel, color)
+		new_pixel =
+			match mode {
+				Over => PixelColor.blended_pixel(pixel, color)
+				Add => PixelColor.added_pixel(pixel, color)
+			}
 		pixels.set(at, new_pixel) ?? crash "PixelGrid.blend: a pixel off the grid"
 	}
 }

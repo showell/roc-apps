@@ -1,4 +1,5 @@
-## Polygons and discs filled into a grid of 0xRRGGBB pixels a row at a time.
+## Polygons and discs filled into a grid of 0xRRGGBB pixels a row at a time,
+## each laid over what is there or added to it, as its mode says.
 ## A shape's points are in the scene, and a ScreenRoll turns them onto the
 ## screen. A pixel is painted when its centre is inside the shape, and a
 ## polygon fills by the nonzero rule, as a canvas fills one. There is no
@@ -9,6 +10,7 @@
 ## the next store (docs/roc-notes.md, "Speed and copying").
 import lib.Brush
 import lib.Point
+import lib.Shapes
 import PixelGrid
 import ScreenRoll
 
@@ -20,8 +22,9 @@ ScanlineFill :: [].{
 		roll : ScreenRoll,
 		corners : List(Point.Point),
 		fill : Brush.Fill,
+		mode : Shapes.Mode,
 	} -> List(U32)
-	polygon_pixels = |pixels, { roll, corners: scene_corners, fill }| {
+	polygon_pixels = |pixels, { roll, corners: scene_corners, fill, mode }| {
 		corners = scene_corners.map(
 			|{ x, y }| roll.to_screen(ScreenRoll.ScenePoint.({ x: x.to_f64(), y: y.to_f64() })),
 		)
@@ -37,7 +40,7 @@ ScanlineFill :: [].{
 				var $px = pixels
 				for row in rows.start.until(rows.end) {
 					edge_crossings = row_edge_crossings(edges, PixelGrid.pixel_center(row))
-					$px = row_pixels($px, { roll, fill, row, edge_crossings })
+					$px = row_pixels($px, { roll, fill, mode, row, edge_crossings })
 				}
 				$px
 			}
@@ -53,8 +56,9 @@ ScanlineFill :: [].{
 		center : ScreenRoll.ScenePoint,
 		radius : F64,
 		fill : Brush.Fill,
+		mode : Shapes.Mode,
 	} -> List(U32)
-	disc_pixels = |pixels, { roll, center, radius, fill }| {
+	disc_pixels = |pixels, { roll, center, radius, fill, mode }| {
 		on_screen = roll.to_screen(center)
 		rows = PixelGrid.pixels_between({
 			from: on_screen.y - radius,
@@ -72,6 +76,7 @@ ScanlineFill :: [].{
 					{
 						roll,
 						fill,
+						mode,
 						row,
 						from: on_screen.x - half,
 						to: on_screen.x + half,
@@ -136,10 +141,11 @@ row_pixels : List(U32),
 {
 	roll : ScreenRoll,
 	fill : Brush.Fill,
+	mode : Shapes.Mode,
 	row : PixelGrid.Coordinate,
 	edge_crossings : List(EdgeCrossing),
 } -> List(U32)
-row_pixels = |pixels, { roll, fill, row, edge_crossings }| {
+row_pixels = |pixels, { roll, fill, mode, row, edge_crossings }| {
 	var $px = pixels
 	for row_span in inside_spans(edge_crossings) {
 		$px = pixels_with_span(
@@ -147,6 +153,7 @@ row_pixels = |pixels, { roll, fill, row, edge_crossings }| {
 			{
 				roll,
 				fill,
+				mode,
 				row,
 				from: row_span.from,
 				to: row_span.to,
@@ -187,11 +194,22 @@ pixels_with_span : List(U32),
 {
 	roll : ScreenRoll,
 	fill : Brush.Fill,
+	mode : Shapes.Mode,
 	row : PixelGrid.Coordinate,
 	from : F64,
 	to : F64,
 } -> List(U32)
-pixels_with_span = |pixels, { roll, fill, row, from, to }| {
+pixels_with_span = |
+	pixels,
+	{
+		roll,
+		fill,
+		mode,
+		row,
+		from,
+		to,
+	},
+| {
 	columns = PixelGrid.pixels_between({ from, to, extent: roll.width_px() })
 	width = roll.width_px()
 	var $px = pixels
@@ -204,7 +222,7 @@ pixels_with_span = |pixels, { roll, fill, row, from, to }| {
 				Brush.shade(fill, Point.at(p.x, p.y))
 			}
 		}
-		$px = PixelGrid.blended_pixels($px, { at, color })
+		$px = PixelGrid.blended_pixels($px, { at, color, mode })
 	}
 	$px
 }
