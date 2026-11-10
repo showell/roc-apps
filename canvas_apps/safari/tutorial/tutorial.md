@@ -228,17 +228,17 @@ The `spot` comes from a camera: it's what a sighting holds. So to draw the cow a
 
 What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, drawn as polygons. Most of the ride's shapes have straight edges. At step 1,529, the ride draws 2,121 shapes on top of the sky and the grass: 864 triangles, 1,113 polygons, 136 rectangles and 8 discs. The rectangles are the trees' trunks.
 
-At the bends in the road stand four more billboard animals: an elephant, a giraffe, a zebra and a rhino. They come next, with the `match` that turns each one to face its own way.
+At the bends in the road stand four more billboard animals: an elephant, a giraffe, a zebra and a rhino. They come next, with the `match` that mirrors the ones that face right.
 
 ## Billboards
 
 Four big animals stand at the bends in the ride's road: an elephant, a giraffe, a zebra and a rhino. Each one has its baby with it:
 
 ```widget bend_animals
-The four bend animals and their babies. The elephants and giraffes face right, and the zebras and rhinos face left.
+The four bend animals and their babies, lined up on the grass. Here the elephants and giraffes face right, and the zebras and rhinos face left.
 ```
 
-Every one of them has a face, and a face looks somewhere. So a billboard faces left or right, and your eye follows where it looks. At a bend, the animal and its baby both face the way the road turns.
+Every one of them has a face, and a face looks somewhere. So a billboard faces left or right, and your eye follows where it looks. In the ride, an animal and its baby both face the way their bend turns, whatever the animal.
 
 ### Two ways to face
 
@@ -246,17 +246,17 @@ The `Billboard` module gives those two ways a type of their own:
 
 {{code Billboard.Facing}}
 
-The type is a list of tags in square brackets. A tag is a name that stands for itself: `FacesLeft` is a value, and so is `FacesRight`. A type made of tags is a tag union, and a value of a tag union is always exactly one of its tags. So a `Facing` is `FacesLeft` or `FacesRight`.
+The type is a list of tags in square brackets. A tag is a name the compiler knows, and it's a value in its own right: `FacesLeft` is a value, and so is `FacesRight`. A type made of tags is a tag union, and a value of a tag union is always exactly one of its tags. So a `Facing` is `FacesLeft` or `FacesRight`.
 
 "Things" showed the annotation of `Billboard.scenery_sprite` alone. Here's the whole function:
 
 {{code Billboard.scenery_sprite}}
 
-`|Billboard.(billboard), setting|` names the function's two arguments. A `Billboard` is opaque, and `Billboard.(billboard)` opens it, so the function can read its fields.
+`|Billboard.(billboard), setting|` says what the function takes: a billboard and a setting. A `Billboard` is opaque, and `Billboard.(billboard)` opens it, so the function can read its fields.
 
-The body is a block, in braces. Its first line names a value, `flip`, and its last line is the function's answer: a sprite of the shapes that `StillShapes.standing_still_shapes` makes from the emoji's traced still, at the billboard's height. In that last record, `flip` alone is short for `flip: flip`.
+The body is a block, in braces. Its first line names a value, `flip`, and its last line is the function's answer: a sprite, drawn from the emoji's traced still at the billboard's height. In that last record, `flip` alone is short for `flip: flip`.
 
-Every emoji is drawn facing left, so a billboard that faces right needs its emoji mirrored. The `match` makes that choice. It looks at `billboard.facing`, and each line under it takes one tag and gives back what to do: `FacesLeft` gives `AsDrawn`, and `FacesRight` gives `Mirrored`. Those two are tags as well, and `flip` names the one the `match` picks.
+Every emoji is drawn facing left, so a billboard that faces right needs its emoji mirrored. The `match` makes that choice. It looks at `billboard.facing`, and each line under it takes one tag and gives back what to do: `FacesLeft` gives `AsDrawn`, and `FacesRight` gives `Mirrored`. Those two are the tags of another tag union, `StillShapes.Flip`, and `flip` names the one the `match` picks.
 
 A `match` handles every tag of its type, and the compiler checks that it does. Leave out the `FacesRight` line, and the compiler stops with an error that names it:
 
@@ -275,7 +275,7 @@ The bend animals are a tag union too, with four tags:
 
 {{code BendAnimal.BendAnimal from "BendAnimal :=" to "Rhino]"}}
 
-Each tag is an animal. The `species_of` function turns each one into its species record, an emoji and a grown height, like the cow's in "Things":
+Each tag is an animal. `BendAnimal` uses `:=`, so it's a type of its own, and the functions in its braces come with it. The `species_of` function turns each one into its species record, an emoji and a grown height, like the cow's in "Things":
 
 {{code BendAnimal.species_of}}
 
@@ -287,7 +287,7 @@ A bend has room for one thing at most: an animal and its baby, a pond of ducks, 
 
 {{code Segment.BendLife}}
 
-`Quiet` and `DuckPond` are plain tags, like the ones above. `Animal(BendAnimal)` is a tag that carries a value: an `Animal` always comes with one `BendAnimal`. So `Animal(Giraffe)` is a whole value, a bend with a giraffe at it. A list of billboards would let a bend hold three giraffes. A `BendLife` holds one animal at most.
+`Quiet` and `DuckPond` are plain tags, like the ones above. `Animal(BendAnimal)` is a tag that carries a value: an `Animal` always comes with one `BendAnimal`. So `Animal(Giraffe)` is a whole value, a bend with a giraffe at it. A plain list of billboards would let a giraffe and a duck pond share one bend. A `BendLife` is exactly one of its three tags, so a bend gets one thing, and its billboards all come from that one thing.
 
 What a bend's life can be
 ```dot
@@ -312,7 +312,7 @@ The function that gives a bend its billboards takes the bend's life and the bend
 
 {{code Segment.bend_billboards}}
 
-The `Animal(animal)` line matches a bend with any animal at it, and names the animal it carries `animal`, ready to use. Then `animal.bend_billboards(bend)` calls the `BendAnimal` module's own `bend_billboards` function, which places the animal and its baby. A duck pond gets its ducks from the `Pond` module, and a quiet bend gets the empty list, `[]`. The code has the same shape as the type: one line for each tag, and the value a tag carries named right where the line needs it.
+The `Animal(animal)` line matches a bend with any animal at it, and names the animal it carries `animal`, ready to use. Then `animal.bend_billboards(bend)` calls a different function with the same name: the one that comes with `BendAnimal`, which places the animal and its baby. A duck pond gets its ducks from the `Pond` module, and a quiet bend gets the empty list, `[]`. The code has the same shape as the type: one line for each tag, and the value a tag carries named right where the line needs it.
 
 ### Elephants, mostly
 
