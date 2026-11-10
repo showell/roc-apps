@@ -19,9 +19,8 @@ Shapes :: [].{
 
 		Disc({ center : Point.Point, radius : Pixels, fill : Brush.Fill }),
 
-		## An outline of five or more corners, in order round its edge: a traced
-		## still, a mountain, a cone's hull, the road. `Shapes.region_from_corners`
-		## keeps the count.
+		## An outline of any other count of corners, in order round its edge: a
+		## traced still, a mountain, the road.
 		Polygon({ corners : List(Point.Point), fill : Brush.Fill }),
 
 		## A mark, not a shape: how the shapes after it combine, until the next `Blend`.
