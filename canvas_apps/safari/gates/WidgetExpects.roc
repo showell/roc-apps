@@ -12,6 +12,7 @@ app [main!] {
 	frame: "../../frame_widget/package.roc",
 	game: "../game.roc",
 	gaze: "../../gaze_widget/package.roc",
+	herd: "../../herd_widget/package.roc",
 	lib: "../../lib/main.roc",
 	rehearsal: "../../rehearsal_widget/package.roc",
 	route: "../../route_widget/package.roc",
@@ -31,6 +32,7 @@ import cat.CatWidgetApp
 import cow.CowWidgetApp
 import frame.FrameWidgetApp
 import gaze.GazeWidgetApp
+import herd.HerdWidgetApp
 import rehearsal.RehearsalWidgetApp
 import route.RouteWidgetApp
 import shapes.ShapesWidgetApp
@@ -100,6 +102,7 @@ expect {
 		words_shown(CowWidgetApp.canvas_app, []),
 		words_shown(FrameWidgetApp.canvas_app, []),
 		words_shown(GazeWidgetApp.canvas_app, []),
+		words_shown(HerdWidgetApp.canvas_app, []),
 		words_shown(RehearsalWidgetApp.canvas_app, []),
 		words_shown(RouteWidgetApp.canvas_app, []),
 		words_shown(ShapesWidgetApp.canvas_app, []),
