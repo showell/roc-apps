@@ -3,6 +3,7 @@
 ## places for the rider.
 import Angle
 import Clock
+import lib.Fraction
 import Grass
 import GroundPatch
 import GroundSighting
@@ -45,13 +46,16 @@ FrameView := {
 	roll : Angle.Lean,
 }.{
 
-	## What the ride is drawn over: the sky and the sun.
+	## What the ride is drawn over: the sky, the sun and the grass.
 	Backdrop : {
 		## The sky's colors, at the top of the frame and at the horizon.
 		sky_colors : Sky.Colors,
 
 		## Where the sun stands in the sky, if it is in view.
 		sun_sighting : Sun.Sighting,
+
+		## How dark the sky is, which dims the grass.
+		darkness : Fraction,
 	}
 
 	## The frame at `instant`. The camera is worked out once, for the shapes,
@@ -61,13 +65,18 @@ FrameView := {
 		camera = FrameView.camera_at(route, instant)
 		road = RoadAhead.RoadView.ahead_of(route, camera.route_place.segment_index)
 		sighting_camera = camera.sighting_camera()
+		darkness = Sky.darkness_at(instant.clock)
 		{
 			backdrop: {
 				sky_colors: Sky.colors_at(instant.clock),
 				sun_sighting: Sun.sun_in_view(camera.aim(route), instant.clock),
+				darkness,
 			},
 			mountain_shapes: FrameView.skyline_shapes(camera.aim(route), instant.clock),
-			ground_patch_shapes: FrameView.ground_shapes(road, sighting_camera),
+			ground_patch_shapes: FrameView.ground_shapes(
+				road,
+				{ camera: sighting_camera, darkness },
+			),
 			scene: Scene.scene_in_view(
 				road,
 				{ camera: sighting_camera, facts: FrameView.ride_facts(route, instant) },
@@ -98,7 +107,7 @@ FrameView := {
 		[
 			[Sky.sky_shape(backdrop.sky_colors)],
 			Sun.sun_shapes(backdrop.sun_sighting),
-			[Grass.grass_shape],
+			[Grass.grass_shape(backdrop.darkness)],
 		].join()
 
 	## The whole frame turned by the camera's roll.
@@ -147,13 +156,20 @@ FrameView := {
 		Skyline.skyline_shapes(aim, { darkness: sky_darkness })
 	}
 
-	## The road's ground that `camera` sees of `road`: the road itself and its
-	## ponds. It is public for FramePartsBench, which times the ground alone.
-	ground_shapes : RoadAhead.RoadView, Pipeline.SightingCamera -> List(Shapes.Shape)
-	ground_shapes = |road, camera|
+	## The road's ground that `camera` sees of `road`, under a sky `darkness`
+	## dark: the road itself and its ponds. It is public for FramePartsBench,
+	## which times the ground alone.
+	ground_shapes : RoadAhead.RoadView,
+	{
+		camera : Pipeline.SightingCamera,
+		darkness : Fraction,
+	} -> List(Shapes.Shape)
+	ground_shapes = |road, { camera, darkness }| {
+		lens_and_light = { focal_length: camera.focal_length, darkness }
 		GroundSighting.patches_in_view(road, camera.vantage).keep_oks(
-			|patch| GroundPatch.patch_shape(patch, camera.focal_length),
+			|patch| GroundPatch.patch_shape(patch, lens_and_light),
 		)
+	}
 }
 
 ## The whole frame in `space`, in paint order: the backdrop, then the

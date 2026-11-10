@@ -13,6 +13,7 @@ import Spot
 import Distance
 import lib.Fraction
 import RiderView
+import Sky
 import Sprite
 import lib.Brush
 import lib.RgbColor
@@ -33,9 +34,10 @@ Tower :: { yaw : Angle.Turn, beacon : Beacon }.{
 
 	## How a tower looks.
 	scenery_sprite : Tower, Sprite.Setting -> Sprite
-	scenery_sprite = |tower, { spot, focal_length }| {
+	scenery_sprite = |tower, { spot, focal_length, darkness }| {
 		footprint = tower_footprint(tower, spot)
-		Sprite.from_shapes(tower_shapes(tower, { footprint, spot, focal_length }))
+		rod_color = Sky.color_at_darkness(tower_color, darkness)
+		Sprite.from_shapes(tower_shapes(tower, { footprint, spot, focal_length, rod_color }))
 	}
 
 	## How tall a tower stands, from its foot to its apex.
@@ -82,20 +84,22 @@ tower_footprint = |tower, spot| {
 }
 
 ## The whole tower standing on `footprint`: legs, rings, braces and beacon, in
-## that order. Its sighting refuses a tower hidden wholly below the horizon, so
-## there is always something to draw.
+## that order, its rods in `rod_color`. Its sighting refuses a tower hidden
+## wholly below the horizon, so there is always something to draw.
 tower_shapes : Tower,
 {
 	footprint : Footprint,
 	spot : Spot,
 	focal_length : Pixels,
+	rod_color : RgbColor,
 } -> List(Shapes.Shape)
-tower_shapes = |Tower.(tower), { footprint, spot, focal_length }| {
+tower_shapes = |Tower.(tower), { footprint, spot, focal_length, rod_color }| {
 	geometry = {
 		footprint,
 		spot,
 		focal_length,
 		metre_on_screen: metre_on_screen({ at: spot.foot(), focal_length }),
+		rod_color,
 	}
 	if hidden_on_tower(geometry) >= tower_height {
 		crash "Tower.tower_shapes: a tower hidden wholly below the horizon is refused at its sighting"
@@ -144,11 +148,14 @@ tower_color = RgbColor.of(0x9AA0A8)
 ## `metre_on_screen`, how many pixels a metre across spans as far ahead as its
 ## foot, sizes its rods and its beacon. It is a cache, worked out once per tower
 ## from the foot and the focal length, because every rod reads it.
+## `rod_color` is the rods' color, dimmed as far as the sky has darkened; the
+## beacon is a light, and never dims.
 TowerGeometry : {
 	footprint : Footprint,
 	spot : Spot,
 	focal_length : Pixels,
 	metre_on_screen : Pixels,
+	rod_color : RgbColor,
 }
 
 ## How far up the tower the horizon hides it.
@@ -226,13 +233,14 @@ corner_at = |geometry, { corner, height_on_tower }| {
 shortest_rod_with_direction : Pixels
 shortest_rod_with_direction = Pixels.of(0.0001)
 
-## A rod between two points on screen, `width` wide.
+## A rod between two points on screen, `width` wide, in `color`.
 screen_rod : {
 	from : Point.Point,
 	to : Point.Point,
 	width : Pixels,
+	color : RgbColor,
 } -> Shapes.Shape
-screen_rod = |{ from, to, width }| {
+screen_rod = |{ from, to, width, color }| {
 	x_change = to.x.minus(from.x).to_f64()
 	y_change = to.y.minus(from.y).to_f64()
 	across = width.to_f64()
@@ -247,24 +255,26 @@ screen_rod = |{ from, to, width }| {
 		to,
 		offset_x: Pixels.of(across * ((0.0 - y_change) / rod_length) / 2.0),
 		offset_y: Pixels.of(across * (x_change / rod_length) / 2.0),
+		color,
 	})
 }
 
 ## The quad of a rod from `from` to `to`, its sides `offset_x` and
-## `offset_y` either side of the line between them.
+## `offset_y` either side of the line between them, in `color`.
 rod_quad : {
 	from : Point.Point,
 	to : Point.Point,
 	offset_x : Pixels,
 	offset_y : Pixels,
+	color : RgbColor,
 } -> Shapes.Shape
-rod_quad = |{ from, to, offset_x, offset_y }|
+rod_quad = |{ from, to, offset_x, offset_y, color }|
 	Quad({
 		first: { x: from.x.plus(offset_x), y: from.y.plus(offset_y) },
 		second: { x: to.x.plus(offset_x), y: to.y.plus(offset_y) },
 		third: { x: to.x.minus(offset_x), y: to.y.minus(offset_y) },
 		fourth: { x: from.x.minus(offset_x), y: from.y.minus(offset_y) },
-		fill: Brush.flat(tower_color),
+		fill: Brush.flat(color),
 	})
 
 ## A rod between two points in the rider's view, cut where it crosses the
@@ -281,6 +291,7 @@ rod_shape = |geometry, line| {
 			from: Camera.project(ahead.from, geometry.focal_length),
 			to: Camera.project(ahead.to, geometry.focal_length),
 			width: geometry.metre_on_screen.times(rod_width.to_metres()),
+			color: geometry.rod_color,
 		}),
 	)
 }
@@ -406,6 +417,7 @@ expect
 		from: Point.at(0.0, 0.0),
 		to: Point.at(30.0, 40.0),
 		width: Pixels.of(10.0),
+		color: tower_color,
 	})
 		== Quad({
 			first: Point.at(-4.0, 3.0),
@@ -421,6 +433,7 @@ expect
 		from: Point.at(5.0, 6.0),
 		to: Point.at(5.0, 6.0),
 		width: Pixels.of(10.0),
+		color: tower_color,
 	})
 		== Quad({
 			first: Point.at(5.0, 6.0),

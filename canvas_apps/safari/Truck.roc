@@ -3,7 +3,6 @@
 ## its brake lights, so each paints over the one before. It is worked out each
 ## frame from the clock and the truck's progress.
 import Sprite
-import lib.Pixels
 import Spot
 import TruckBody
 import TruckBrakeLights
@@ -18,13 +17,13 @@ Truck := { headlights : TruckHeadlights, brake_lights : TruckBrakeLights }.{
 	## of its lights are on.
 	SightedTruck : { spot : Spot, lights : Truck }
 
-	## How the truck looks from its sighting, through a lens of
-	## `focal_length`. The lens is passed beside the sighting, as every
-	## sighting's is: a sighting says where a thing is, and the frame's lens
+	## How the truck looks from its sighting, through the frame's lens and in
+	## its light. The lens and the light are passed beside the sighting, as
+	## every sighting's are: a sighting says where a thing is, and the frame
 	## draws it.
-	truck_sprite : Truck.SightedTruck, Pixels -> Sprite
-	truck_sprite = |{ spot, lights }, focal_length| {
-		setting = { spot, focal_length }
+	truck_sprite : Truck.SightedTruck, Sprite.LensAndLight -> Sprite
+	truck_sprite = |{ spot, lights }, { focal_length, darkness }| {
+		setting = { spot, focal_length, darkness }
 		Sprite.composite([
 			lights.headlights.sprite(setting),
 			TruckBody.body_sprite(setting),

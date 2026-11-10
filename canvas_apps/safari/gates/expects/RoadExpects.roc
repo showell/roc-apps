@@ -8,6 +8,7 @@ import game.Along
 import game.Angle
 import game.BendInView
 import game.Distance
+import lib.Fraction
 import game.Geom
 import game.RiderView
 import game.GroundPatch
@@ -273,7 +274,7 @@ expect {
 sample_patch_shape : List(RiderView.RiderPoint) -> Try(Shapes.Shape, [PastHorizon, BehindCamera])
 sample_patch_shape = |corners| GroundPatch.patch_shape(
 	GroundPatch.of(corners, RgbColor.of(0x2F7E8C)),
-	Pixels.of(685.5110432362151),
+	{ focal_length: Pixels.of(685.5110432362151), darkness: Fraction.zero },
 )
 
 ## What became of a patch: drawn, or why not.
@@ -318,7 +319,9 @@ expect
 # edges laid in 20 chunks of 25 m.
 ## A list of patches as a camera the drawing checks read paints them.
 patch_shapes : List(GroundPatch) -> List(Shapes.Shape)
-patch_shapes = |patches| patches.keep_oks(|patch| GroundPatch.patch_shape(patch, Pixels.of(500.0)))
+patch_shapes = |patches| patches.keep_oks(
+	|patch| GroundPatch.patch_shape(patch, Fixtures.origin_lens_by_day),
+)
 
 ## The ground in view from `rider_vantage` on the road ahead of the route's
 ## first segment. Its first patch is the road along that segment.

@@ -91,6 +91,7 @@ part_size = |part, { route, instant }| {
 			FrameView.backdrop_shapes({
 				sky_colors: Sky.colors_at(instant.clock),
 				sun_sighting: Sun.sun_in_view(camera.aim(route), instant.clock),
+				darkness: Sky.darkness_at(instant.clock),
 			}).len()
 		} else if part == "skyline" {
 			FrameView.skyline_shapes(camera.aim(route), instant.clock).len()
@@ -99,7 +100,11 @@ part_size = |part, { route, instant }| {
 			if part == "road" {
 				RoadAhead.segments_in_view(road).len()
 			} else if part == "ground" {
-				FrameView.ground_shapes(road, camera.sighting_camera()).len()
+				ground_seen = {
+					camera: camera.sighting_camera(),
+					darkness: Sky.darkness_at(instant.clock),
+				}
+				FrameView.ground_shapes(road, ground_seen).len()
 			} else {
 				facts = FrameView.ride_facts(route, instant)
 				kind_size(part, { road, camera, facts })
@@ -118,7 +123,7 @@ kind_size : Str,
 } -> U64
 kind_size = |part, { road, camera, facts }| {
 	cam = RiderCamera.sighting_camera(camera)
-	focal_length = cam.focal_length
+	lens_and_light = { focal_length: cam.focal_length, darkness: Sky.darkness_at(facts.clock) }
 	if part == "scene" {
 		Scene.scene_shape_lists(Scene.scene_in_view(road, { camera: cam, facts })).join().len()
 	} else if part == "scene_in_view" {
@@ -127,13 +132,13 @@ kind_size = |part, { road, camera, facts }| {
 		TreeSighting.trees_in_view(road, cam).len()
 	} else if part == "trees" {
 		trees_seen = TreeSighting.trees_in_view(road, cam)
-		shape_count(TreeSighting.tree_renderings(trees_seen, focal_length))
+		shape_count(TreeSighting.tree_renderings(trees_seen, lens_and_light))
 	} else if part == "towers_sight" {
 		TowerSighting.towers_in_view(road, { vantage: cam.vantage, clock: facts.clock }).len()
 	} else if part == "towers" {
 		shape_count(
 			TowerSighting.towers_in_view(road, { vantage: cam.vantage, clock: facts.clock }).map(
-				|tower| Pipeline.rendering_of(tower, focal_length),
+				|tower| Pipeline.rendering_of(tower, lens_and_light),
 			),
 		)
 	} else if part == "billboards_sight" {
@@ -141,21 +146,21 @@ kind_size = |part, { road, camera, facts }| {
 	} else if part == "billboards" {
 		shape_count(
 			BillboardSighting.billboards_in_view(road, cam).map(
-				|billboard| Pipeline.rendering_of(billboard, focal_length),
+				|billboard| Pipeline.rendering_of(billboard, lens_and_light),
 			),
 		)
 	} else if part == "cats" {
 		encounter = { camera: cam, encounter_stage: facts.encounter_stage }
 		shape_count(
 			EncounterSighting.cats_in_view(road, encounter).map(
-				|cat| Pipeline.rendering_of(cat, focal_length),
+				|cat| Pipeline.rendering_of(cat, lens_and_light),
 			),
 		)
 	} else if part == "birds" {
 		encounter = { camera: cam, encounter_stage: facts.encounter_stage }
 		shape_count(
 			EncounterSighting.birds_in_view(road, encounter).map(
-				|bird| Pipeline.rendering_of(bird, focal_length),
+				|bird| Pipeline.rendering_of(bird, lens_and_light),
 			),
 		)
 	} else if part == "truck" {
@@ -163,7 +168,7 @@ kind_size = |part, { road, camera, facts }| {
 	} else if part == "rails" {
 		shape_count(
 			RailSighting.rail_quads_in_view(road, cam.vantage).keep_oks(
-				|quad| GuardRail.quad_rendering(quad, focal_length),
+				|quad| GuardRail.quad_rendering(quad, lens_and_light),
 			),
 		)
 	} else {
@@ -215,7 +220,15 @@ truck_renderings : RoadAhead.RoadView,
 truck_renderings = |road, { cam, facts }| {
 	match TruckSighting.truck_in_view(road, { vantage: cam.vantage, truck: facts.truck }) {
 		Ok(truck) =>
-			[Rendered.of(truck.spot.foot().forward(), Truck.truck_sprite(truck, cam.focal_length))]
+			[
+				Rendered.of(
+					truck.spot.foot().forward(),
+					Truck.truck_sprite(
+						truck,
+						{ focal_length: cam.focal_length, darkness: Sky.darkness_at(facts.clock) },
+					),
+				),
+			]
 		Err(NoTruck) | Err(BehindCamera) => []
 	}
 }
@@ -263,7 +276,10 @@ counts_line = |route, instant| {
 		("rails", scene.rails),
 	]
 	skyline = FrameView.skyline_shapes(camera.aim(route), instant.clock)
-	ground = FrameView.ground_shapes(road, cam)
+	ground = FrameView.ground_shapes(
+		road,
+		{ camera: cam, darkness: Sky.darkness_at(instant.clock) },
+	)
 	step = instant.clock.to_str()
 	sighted = TreeSighting.trees_in_view(road, cam)
 	coned = sighted.count_if(|tree| tree.spot.foot().forward() < Distance.metres(200.0))

@@ -6,9 +6,12 @@ import Angle
 import Clock
 import FarRise
 import Lens
+import lib.ColorShade
+import lib.Fraction
 import lib.Point
 import lib.Pixels
 import Screen
+import Sky
 import SunPath
 import lib.Brush
 import lib.RgbColor
@@ -16,9 +19,14 @@ import lib.Shapes
 
 Sun :: [].{
 
-	## Where the sun stands on the screen, and the focal length of the lens it
-	## is seen through, which sizes its glow and disc.
-	OnScreen : { center : Point.Point, focal_length : Pixels }
+	## Where the sun stands on the screen, the focal length of the lens it is
+	## seen through, which sizes its glow and disc, and how warm the horizon
+	## is, which reddens them as the sun nears it.
+	OnScreen : {
+		center : Point.Point,
+		focal_length : Pixels,
+		warmth : Fraction,
+	}
 
 	## The sun in a frame: in view at its place, or out of view, too far to
 	## the side of where the rider faces.
@@ -40,7 +48,11 @@ Sun :: [].{
 		})
 		match far_point {
 			Ok(point) => {
-				sun = { center: point, focal_length: camera.focal_length }
+				sun = {
+					center: point,
+					focal_length: camera.focal_length,
+					warmth: Sky.horizon_warmth_at(clock),
+				}
 				if is_glow_on_screen(sun) {
 					InView(sun)
 				} else {
@@ -60,47 +72,77 @@ Sun :: [].{
 	disc_radius_on_screen = |sun| sun_size_on_screen(SunPath.radius, sun)
 
 	## The sun's shapes in a frame: while it is in view, its glow over the
-	## rectangle above the horizon and its disc over that, and nothing while it
-	## isn't.
+	## rectangle above the horizon, adding its light to the sky, and its disc
+	## over that, and nothing while it isn't.
 	sun_shapes : Sun.Sighting -> List(Shapes.Shape)
 	sun_shapes = |sun_sighting|
 		match sun_sighting {
 			InView(sun) => {
 				look = Sun.look(sun)
-				[
-					Screen.above_horizon_rect(look.glow),
+				Shapes.added_light_shapes([Screen.above_horizon_rect(look.glow)]).append(
 					Disc({
 						center: sun.center,
 						radius: Sun.disc_radius_on_screen(sun),
 						fill: look.disc,
 					}),
-				]
+				)
 			}
 			OutOfView => []
 		}
 
-	## The sun's glow and disc where it stands, sized by its lens.
+	## The sun's glow and disc where it stands, sized by its lens and warmed
+	## from their noon colors toward their setting ones as far as the horizon
+	## is warm.
 	look : Sun.OnScreen -> Sun.Look
-	look = |sun|
+	look = |sun| {
+		warmed = |colors| ColorShade.color_between({
+			from: colors.noon,
+			to: colors.setting,
+			fraction: sun.warmth,
+		})
 		{
 			glow: Brush.glow({
-				inner_color: Brush.with_alpha(RgbColor.of(0xFFC980), 0.85),
-				middle_color: Brush.with_alpha(RgbColor.of(0xFF965C), 0.32),
-				outer_color: Brush.with_alpha(RgbColor.of(0xFF965C), 0.0),
+				inner_color: Brush.with_alpha(warmed(glow_core), 0.85),
+				middle_color: Brush.with_alpha(warmed(glow_haze), 0.32),
+				outer_color: Brush.with_alpha(warmed(glow_haze), 0.0),
 				middle_offset: 0.4,
 				center: sun.center,
 				inner_radius: sun_size_on_screen(glow_inner_radius, sun),
 				outer_radius: Sun.glow_radius_on_screen(sun),
 			}),
 			disc: Radial({
-				inner_color: Brush.opaque_rgba(RgbColor.of(0xFFE6A3)),
-				outer_color: Brush.opaque_rgba(RgbColor.of(0xFF9D5C)),
+				inner_color: Brush.opaque_rgba(warmed(disc_core)),
+				outer_color: Brush.opaque_rgba(warmed(disc_rim)),
 				center: sun.center,
 				inner_radius: sun_size_on_screen(disc_inner_radius, sun),
 				outer_radius: Sun.disc_radius_on_screen(sun),
 			}),
 		}
+	}
 }
+
+## One of the sun's colors at noon, and as it sets, with the horizon at its
+## warmest.
+SunColors : { noon : RgbColor, setting : RgbColor }
+
+## The light the middle of the glow adds to the sky: a soft gold at noon,
+## which the pale sky takes nearly to white, and deep orange as the sun sets.
+## The glow adds light, so a dim color here is a gentle glow, not a dark one.
+glow_core : SunColors
+glow_core = { noon: RgbColor.of(0xA08060), setting: RgbColor.of(0xFF8A3C) }
+
+## The light of the haze the glow fades through: a faint warmth at noon, red
+## as the sun sets.
+glow_haze : SunColors
+glow_haze = { noon: RgbColor.of(0x806048), setting: RgbColor.of(0xE04A28) }
+
+## The middle of the disc: pale yellow at noon, orange as the sun sets.
+disc_core : SunColors
+disc_core = { noon: RgbColor.of(0xFFE6A3), setting: RgbColor.of(0xFFA860) }
+
+## The disc's rim: orange at noon, red as the sun sets.
+disc_rim : SunColors
+disc_rim = { noon: RgbColor.of(0xFF9D5C), setting: RgbColor.of(0xD83A22) }
 
 ## How long `size`, one of the sun's sizes, is drawn where `sun` stands.
 sun_size_on_screen : FarRise, Sun.OnScreen -> Pixels
@@ -168,7 +210,11 @@ expect {
 	half_focal_length = Lens.resting_focal_length.times(0.5)
 	facing_sun = { heading: SunPath.bearing_at(Clock.start), focal_length: half_focal_length }
 	sighting = Sun.sun_in_view(facing_sun, Clock.start)
-	half_on_screen = { center: Point.at(480.0, 168.744), focal_length: half_focal_length }
+	half_on_screen = {
+		center: Point.at(480.0, 168.744),
+		focal_length: half_focal_length,
+		warmth: Fraction.zero,
+	}
 	is_in_view_at(
 		sighting,
 		{
@@ -178,6 +224,55 @@ expect {
 		},
 	)
 		and Sun.disc_radius_on_screen(half_on_screen).to_f64() == SunPath.radius.times(0.5).to_f64()
+}
+
+## The sun in the middle of the screen through the lens at rest, with the
+## horizon `warmth` warm.
+sun_with_warmth : F64 -> Sun.OnScreen
+sun_with_warmth = |warmth| {
+	center: Point.at(480.0, 200.0),
+	focal_length: Lens.resting_focal_length,
+	warmth: Fraction.of(warmth),
+}
+
+## The disc's middle and rim colors in `look`.
+disc_colors : Sun.Look -> List(Brush.Rgba)
+disc_colors = |look|
+	match look.disc {
+		Radial({ inner_color, outer_color, .. }) => [inner_color, outer_color]
+		_ => crash "Sun: the disc is a radial gradient"
+	}
+
+## The glow's middle color in `look`.
+glow_core_color : Sun.Look -> Brush.Rgba
+glow_core_color = |look|
+	match look.glow {
+		Glow({ inner_color, .. }) => inner_color
+		_ => crash "Sun: the glow is a glow"
+	}
+
+# The sun keeps its noon colors with the horizon cold, takes its setting ones
+# with the horizon at its warmest, and lies between them in between.
+expect
+	[
+		(0.0, brush_color(0xFFE6A3), brush_color(0xFF9D5C)),
+		(0.5, brush_color(0xFFC782), brush_color(0xEC6C3F)),
+		(1.0, brush_color(0xFFA860), brush_color(0xD83A22)),
+	].all(|(warmth, core, rim)| disc_colors(Sun.look(sun_with_warmth(warmth))) == [core, rim])
+expect
+	[
+		(0.0, Brush.with_alpha(RgbColor.of(0xA08060), 0.85)),
+		(1.0, Brush.with_alpha(RgbColor.of(0xFF8A3C), 0.85)),
+	].all(|(warmth, core)| glow_core_color(Sun.look(sun_with_warmth(warmth))) == core)
+
+## An opaque color as a brush paints it, from its hex digits.
+brush_color : I64 -> Brush.Rgba
+brush_color = |rgb| Brush.opaque_rgba(RgbColor.of(rgb))
+
+# The glow adds its light to the sky, and the disc paints over it.
+expect {
+	drawn = Sun.sun_shapes(InView(sun_with_warmth(0.0)))
+	drawn.len() == 4 and drawn.first() == Ok(Blend(Add)) and drawn.get(2) == Ok(Blend(Over))
 }
 
 # Facing north at the start, the rider faces away from the sun.

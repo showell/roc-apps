@@ -130,7 +130,10 @@ billboard_shapes : Geom.Placed(Billboard) -> List(Shapes.Shape)
 billboard_shapes = |placed|
 	match billboard_sighting(placed) {
 		Ok(sighting) => {
-			rendered = Pipeline.rendering_of(sighting, camera.focal_length)
+			rendered = Pipeline.rendering_of(
+				sighting,
+				{ focal_length: camera.focal_length, darkness: Sky.darkness_at(Clock.start) },
+			)
 			rendered.sprite().to_shapes()
 		}
 		Err(BehindCamera) | Err(BelowHorizon) | Err(TooSmall) => []
@@ -148,11 +151,18 @@ bull_shapes = billboard_shapes(placed_bull)
 
 ## The road ahead as the ride draws its ground.
 road_shapes : List(Shapes.Shape)
-road_shapes = FrameView.ground_shapes(World.road_at_start, camera)
+road_shapes = FrameView.ground_shapes(
+	World.road_at_start,
+	{ camera, darkness: Sky.darkness_at(Clock.start) },
+)
 
 ## The ride's sky at the start of the ride, with the sun out of the picture.
 backdrop : FrameView.Backdrop
-backdrop = { sky_colors: Sky.colors_at(Clock.start), sun_sighting: OutOfView }
+backdrop = {
+	sky_colors: Sky.colors_at(Clock.start),
+	sun_sighting: OutOfView,
+	darkness: Sky.darkness_at(Clock.start),
+}
 
 ## The ride's space for a frame with no roll.
 upright_space : Shapes.Space
@@ -218,7 +228,11 @@ expect
 expect
 	match billboard_sighting(cow_at(cow_forward)) {
 		Ok(sighting) => {
-			setting = { spot: sighting.spot, focal_length: camera.focal_length }
+			setting = {
+				spot: sighting.spot,
+				focal_length: camera.focal_length,
+				darkness: Sky.darkness_at(Clock.start),
+			}
 			sprite_shapes = cow.scenery_sprite(setting).to_shapes()
 			!sprite_shapes.is_empty() and cow_shapes == sprite_shapes
 		}

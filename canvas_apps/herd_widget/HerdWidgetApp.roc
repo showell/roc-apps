@@ -115,7 +115,10 @@ placed_cow_shapes = |placed|
 		},
 	) {
 		Ok(sighting) => {
-			rendered = Pipeline.rendering_of(sighting, camera.focal_length)
+			rendered = Pipeline.rendering_of(
+				sighting,
+				{ focal_length: camera.focal_length, darkness: Sky.darkness_at(Clock.start) },
+			)
 			rendered.sprite().to_shapes()
 		}
 		Err(BehindCamera) | Err(BelowHorizon) | Err(TooSmall) => crash "HerdWidgetApp.placed_cow_shapes: every cow stands in plain sight"
@@ -187,7 +190,11 @@ label_shapes = List.from_iter(U64.until(0, cow_count)).map(cow_label)
 
 ## The ride's sky at the start of the ride, with the sun out of the picture.
 backdrop : FrameView.Backdrop
-backdrop = { sky_colors: Sky.colors_at(Clock.start), sun_sighting: OutOfView }
+backdrop = {
+	sky_colors: Sky.colors_at(Clock.start),
+	sun_sighting: OutOfView,
+	darkness: Sky.darkness_at(Clock.start),
+}
 
 ## The herd over the backdrop in `herd_space`, and the numbers on top.
 picture_shapes : List(Shapes.Shape)

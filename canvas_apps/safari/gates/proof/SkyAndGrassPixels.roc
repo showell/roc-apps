@@ -3,6 +3,7 @@
 ## are not part of it: they are shapes, which the game and SafariFrame both
 ## paint on top.
 import lib.Brush
+import lib.Fraction
 import PixelColor
 import PixelGrid
 import game.Grass
@@ -13,14 +14,22 @@ import ScreenRoll
 SkyAndGrassPixels :: [].{
 
 	## The sky and the grass, given the sky's two colors, at the top of the
-	## screen and at the horizon.
+	## screen and at the horizon, and how dark the sky is, which dims the
+	## grass.
 	##
 	## The sky holds its top colour to Sky's stop on the way down to
 	## the horizon, then fades to the horizon colour; the grass is below it.
 	## The fade divides by the horizon rather than shading a Linear brush,
 	## whose arithmetic rounds differently.
-	sky_and_grass_pixels : ScreenRoll, Sky.Colors -> List(U32)
-	sky_and_grass_pixels = |roll, sky_colors| {
+	sky_and_grass_pixels : ScreenRoll,
+	{
+		sky_colors : Sky.Colors,
+		darkness : Fraction,
+		..,
+	} -> List(U32)
+	sky_and_grass_pixels = |roll, backdrop| {
+		sky_colors = backdrop.sky_colors
+		grass_pixel = Grass.grass_color_at(backdrop.darkness).to_i64().to_u32_wrap()
 		top_color = Brush.opaque_rgba(sky_colors.top)
 		horizon_color = Brush.opaque_rgba(sky_colors.horizon)
 		width = roll.width_px()
@@ -55,6 +64,3 @@ SkyAndGrassPixels :: [].{
 		$px
 	}
 }
-
-grass_pixel : U32
-grass_pixel = Grass.grass_color.to_i64().to_u32_wrap()

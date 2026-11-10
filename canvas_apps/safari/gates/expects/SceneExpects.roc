@@ -189,14 +189,14 @@ perched_bird_ahead = |forward| sighted_ahead({ pose: Perched }, forward)
 lone_tree_scene : F64 -> Scene
 lone_tree_scene = |forward| {
 	..empty_scene,
-	trees: [Pipeline.rendering_of(green_tree_ahead(forward), Fixtures.origin_camera.focal_length)],
+	trees: [Pipeline.rendering_of(green_tree_ahead(forward), Fixtures.origin_lens_by_day)],
 }
 
 ## A scene of a lone perched bird `forward` metres ahead.
 lone_bird_scene : F64 -> Scene
 lone_bird_scene = |forward| {
 	bird = perched_bird_ahead(forward)
-	{ ..empty_scene, birds: [Pipeline.rendering_of(bird, Fixtures.origin_camera.focal_length)] }
+	{ ..empty_scene, birds: [Pipeline.rendering_of(bird, Fixtures.origin_lens_by_day)] }
 }
 
 ## The shapes of a tree and a bird, these many metres ahead, in the order the

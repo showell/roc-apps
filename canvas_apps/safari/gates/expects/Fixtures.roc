@@ -8,6 +8,7 @@ import game.Angle
 import game.BirdFlight
 import game.Conifer
 import game.Distance
+import lib.Fraction
 import game.Geom
 import game.Pipeline
 import lib.Pixels
@@ -15,6 +16,7 @@ import game.RoadAhead
 import game.Route
 import game.Segment
 import game.SegmentFromRider
+import game.Sprite
 import game.Trees
 import game.World
 import lib.Shapes
@@ -33,6 +35,13 @@ Fixtures :: [].{
 	## The camera at `origin`, with a focal length of 500 pixels.
 	origin_camera : Pipeline.SightingCamera
 	origin_camera = { vantage: origin, focal_length: Pixels.of(500.0) }
+
+	## The origin camera's lens, by day.
+	origin_lens_by_day : Sprite.LensAndLight
+	origin_lens_by_day = {
+		focal_length: Fixtures.origin_camera.focal_length,
+		darkness: Fraction.zero,
+	}
 
 	## The road ahead of a rider on the world's segment `number`.
 	world_road_at : U32 -> RoadAhead.RoadView

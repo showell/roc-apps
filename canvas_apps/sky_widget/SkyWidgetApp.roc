@@ -14,6 +14,7 @@ import game.Steps
 import game.Sun
 import game.SunPath
 import lib.Brush
+import lib.Fraction
 import lib.CanvasApp
 import lib.Input
 import lib.Shapes
@@ -112,16 +113,41 @@ sky_colors = |job, clock|
 		HorizonWarms => Sky.colors_at(clock)
 	}
 
-## The ride's sky at `clock`, for a rider facing the sun.
+## How dark the sky is, as far as `job` goes: day all through while the sun
+## only sets.
+sky_darkness : SkyWidgetApp.Job, Clock -> Fraction
+sky_darkness = |job, clock|
+	match job {
+		SunSets => Sky.darkness_at(Clock.start)
+		SkyDarkens | HorizonWarms => Sky.darkness_at(clock)
+	}
+
+## The sun at `clock`, for a rider facing it, reddened by the horizon's warmth
+## only once `job` warms the horizon, and by a horizon as cold as at the start
+## before that.
+sun_sighting : SkyWidgetApp.Job, Clock -> Sun.Sighting
+sun_sighting = |job, clock| {
+	facing_sun = { heading: SunPath.bearing_at(clock), focal_length: Lens.resting_focal_length }
+	sighting = Sun.sun_in_view(facing_sun, clock)
+	match job {
+		HorizonWarms => sighting
+		SunSets | SkyDarkens =>
+			match sighting {
+				InView(sun) => InView({ ..sun, warmth: Sky.horizon_warmth_at(Clock.start) })
+				OutOfView => OutOfView
+			}
+	}
+}
+
+## The ride's sky at `clock`, for a rider facing the sun. The grass dims with
+## the sky, once `job` darkens it.
 picture_shapes : SkyWidgetApp.Job, Clock -> List(Shapes.Shape)
 picture_shapes = |job, clock|
 	WidgetPage.picture_shapes({
 		backdrop: {
 			sky_colors: sky_colors(job, clock),
-			sun_sighting: Sun.sun_in_view(
-				{ heading: SunPath.bearing_at(clock), focal_length: Lens.resting_focal_length },
-				clock,
-			),
+			sun_sighting: sun_sighting(job, clock),
+			darkness: sky_darkness(job, clock),
 		},
 		ride_shapes: [],
 	})

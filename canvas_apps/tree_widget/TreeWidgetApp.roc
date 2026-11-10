@@ -27,7 +27,10 @@ TreeWidgetApp :: [].{
 	Model : {}
 
 	canvas_app : CanvasApp.CanvasApp(TreeWidgetApp.Model)
-	canvas_app = WidgetPage.fixed_picture_app({ title: "Three conifers", shapes: fixed_picture_shapes })
+	canvas_app = WidgetPage.fixed_picture_app({
+		title: "Three conifers",
+		shapes: fixed_picture_shapes,
+	})
 }
 
 ## A tree in the picture: how far off it stands, and the x on the canvas of the
@@ -92,7 +95,10 @@ stand_sighting = |stand| {
 }
 
 tree_shapes : Stand -> List(Shapes.Shape)
-tree_shapes = |stand| WidgetPage.resting_lens_shapes(stand_sighting(stand))
+tree_shapes = |stand| WidgetPage.resting_lens_shapes(
+	stand_sighting(stand),
+	Sky.darkness_at(Clock.start),
+)
 
 ## What `TreeShapes.crown_of` says at `forward`, as Roc would write it.
 crown_text : Distance -> Str
@@ -131,7 +137,11 @@ fixed_picture_shapes : List(Shapes.Shape)
 fixed_picture_shapes = {
 	trees = stands.join_map(tree_shapes)
 	picture_shapes = WidgetPage.picture_shapes({
-		backdrop: { sky_colors: Sky.colors_at(Clock.start), sun_sighting: OutOfView },
+		backdrop: {
+			sky_colors: Sky.colors_at(Clock.start),
+			sun_sighting: OutOfView,
+			darkness: Sky.darkness_at(Clock.start),
+		},
 		ride_shapes: trees,
 	})
 	WidgetPage.frame_shapes({

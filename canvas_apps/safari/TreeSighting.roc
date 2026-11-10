@@ -5,8 +5,8 @@
 import Conifer
 import RoadAhead
 import Pipeline
-import lib.Pixels
 import Rendered
+import Sprite
 
 TreeSighting :: [].{
 
@@ -19,11 +19,11 @@ TreeSighting :: [].{
 			|in_view| segment_trees(road, { camera, in_view }),
 		)
 
-	## Each of `trees` rendered through a lens of `focal_length`. It is public
-	## for FramePartsBench, which times the trees alone.
-	tree_renderings : List(Pipeline.Sighted(Conifer)), Pixels -> List(Rendered)
-	tree_renderings = |trees, focal_length|
-		trees.map(|tree| Pipeline.rendering_of(tree, focal_length))
+	## Each of `trees` rendered through the frame's lens, in its light. It is
+	## public for FramePartsBench, which times the trees alone.
+	tree_renderings : List(Pipeline.Sighted(Conifer)), Sprite.LensAndLight -> List(Rendered)
+	tree_renderings = |trees, lens_and_light|
+		trees.map(|tree| Pipeline.rendering_of(tree, lens_and_light))
 }
 
 ## The trees in view on a segment in view.

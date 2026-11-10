@@ -75,10 +75,14 @@ shapes_at = |transport|
 picture_shapes : Clock -> List(Shapes.Shape)
 picture_shapes = |clock|
 	WidgetPage.picture_shapes({
-		backdrop: { sky_colors: Sky.colors_at(clock), sun_sighting: OutOfView },
+		backdrop: {
+			sky_colors: Sky.colors_at(clock),
+			sun_sighting: OutOfView,
+			darkness: Sky.darkness_at(clock),
+		},
 		ride_shapes: [
-			tower_shapes(tower_right.opposite(), beacon_at(AtEnd, clock)),
-			tower_shapes(tower_right, beacon_at(Midway, clock)),
+			tower_shapes(tower_right.opposite(), { beacon: beacon_at(AtEnd, clock), clock }),
+			tower_shapes(tower_right, { beacon: beacon_at(Midway, clock), clock }),
 		].join(),
 	})
 
@@ -91,9 +95,9 @@ eye = {
 }
 
 ## A tower standing `right` of the road's middle, unturned, with `beacon` on
-## top, or nothing if it stood behind the camera.
-tower_shapes : Distance, Beacon -> List(Shapes.Shape)
-tower_shapes = |right, beacon| {
+## top, under the sky at `clock`, or nothing if it stood behind the camera.
+tower_shapes : Distance, { beacon : Beacon, clock : Clock } -> List(Shapes.Shape)
+tower_shapes = |right, { beacon, clock }| {
 	placed_tower : Geom.Placed(Tower)
 	placed_tower = {
 		road_point: { along: Along.at(tower_forward), across: Across.right_of_middle(right) },
@@ -103,6 +107,7 @@ tower_shapes = |right, beacon| {
 	from_rider = Ahead(SegmentFromRider.Position.first)
 	WidgetPage.resting_lens_shapes(
 		Pipeline.sighting_of(placed_tower, { road: World.road_at_start, vantage: eye, from_rider }),
+		Sky.darkness_at(clock),
 	)
 }
 

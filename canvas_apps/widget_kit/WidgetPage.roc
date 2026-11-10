@@ -8,6 +8,7 @@
 ## mapping of the pictures that look down on the road, and WidgetPalette holds
 ## the colors the widgets share.
 import game.FrameView
+import lib.Fraction
 import game.Lens
 import game.Sprite
 import lib.Pixels
@@ -204,14 +205,16 @@ WidgetPage :: [].{
 		})
 	}
 
-	## What `sighting` shows through the lens at rest, or nothing if it stood
-	## behind the camera.
-	resting_lens_shapes : Try(Pipeline.Sighted(kind), [BehindCamera]) -> List(Shapes.Shape)
+	## What `sighting` shows through the lens at rest under a sky `darkness`
+	## dark, or nothing if it stood behind the camera.
+	resting_lens_shapes : Try(Pipeline.Sighted(kind), [BehindCamera]), Fraction -> List(Shapes.Shape)
 		where [kind.scenery_sprite : kind, Sprite.Setting -> Sprite]
-	resting_lens_shapes = |sighting|
+	resting_lens_shapes = |sighting, darkness|
 		match sighting {
-			Ok(sighted) =>
-				Pipeline.rendering_of(sighted, Lens.resting_focal_length).sprite().to_shapes()
+			Ok(sighted) => {
+				lens_and_light = { focal_length: Lens.resting_focal_length, darkness }
+				Pipeline.rendering_of(sighted, lens_and_light).sprite().to_shapes()
+			}
 			Err(BehindCamera) => []
 		}
 }
