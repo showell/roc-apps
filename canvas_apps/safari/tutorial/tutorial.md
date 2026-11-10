@@ -3245,7 +3245,7 @@ The ride instant chapter showed `SafariApp.model_at_next_step` reading a snapsho
 | `Rectangle` | 136 |
 | `Disc` | 8 |
 
-What the game hands back each frame is a `List(Shapes.Shape)`. A shape is a tag: `Triangle`, `Rectangle`, `Disc`, `Polygon` and a few more, each with its fill. The table counts the shapes of step 1,529, the cat frozen in the road: 2,474 in all, the count in the proving chapter's table, and nearly all of them polygons. Two of the tags aren't shapes. `Blend` and `View` are marks in the list that change how what comes after them is painted. A frame is a flat list, so a mark is the cheapest way to say that.
+What the game hands back each frame is a `List(Shapes.Shape)`. A shape is a tag: `Triangle`, `Rectangle`, `Disc`, `Polygon` and a few more, each with its fill. The table counts the shapes of step 1,529, the cat frozen in the road: 2,121 in all, nearly all of them triangles and polygons. Two of the tags aren't shapes. `Blend` and `View` are marks in the list that change how what comes after them is painted. A frame is a flat list, so a mark is the cheapest way to say that.
 
 The rider's lean is one of those marks. The whole picture banks into a turn, backdrop included, so `FrameView.leaned_shapes` puts the whole frame, backdrop first, inside one view: a camera built from nested tags by `Screen.leaned_by`, turned by the rider's roll:
 
