@@ -13,7 +13,8 @@
 --
 -- The lints (gates/lints.shale) run first. Then each gate is a child run of
 -- this script, `part=expects`, `part=widgets`, `part=tutorial`,
--- `part=book_names`, `part=proof` and `part=page`, which also runs alone
+-- `part=book_names`, `part=book_negatives`, `part=proof` and `part=page`,
+-- which also runs alone
 -- (`... run.shale part=proof`); each part's function says what it holds.
 -- fast.shale and lints.shale ask this script for what they share with it, by
 -- the parts at the bottom.
@@ -156,6 +157,7 @@ const SELF_PATH = GATES .. "/run.shale"
 const TUTORIAL = "canvas_apps/safari/tutorial/build.shale"
 const COLOR_ROC = "canvas_apps/safari/tutorial/color_roc.shale"
 const BOOK_NAMES = GATES .. "/book_names.shale"
+const BOOK_NEGATIVES = GATES .. "/book_negatives.shale"
 const INPUT_BITS = GATES .. "/input_bits.shale"
 -- The root that reaches nearly every expect, the one fast.shale runs.
 const MAIN_EXPECT_ROOT = "gates/expects/main.roc"
@@ -189,7 +191,7 @@ const FAST_FRAME_DEPTH = "5700"
 -- widgets' checks, their one test run and their 13 wasm builds, which cost about
 -- 7 s of it, measured 2026-11-08. A cold run of the checks and the test took
 -- 23 s on 2026-11-07, before the builds.
-const CPU_BUDGET_MS = {lints = 25000, expects = 50000, widgets = 50000, tutorial = 5000, book_names = 2000, proof = 60000, page = 25000}
+const CPU_BUDGET_MS = {lints = 25000, expects = 50000, widgets = 50000, tutorial = 5000, book_names = 2000, book_negatives = 1000, proof = 60000, page = 25000}
 const COLD = arg("cold", "") == "1"
 const RELEASE = arg("release", "") == "1"
 
@@ -633,6 +635,21 @@ function book_names()
   return nil
 end
 
+-- gates/book_negatives.shale finds a negative sentence in the new chapters'
+-- prose that canvas_apps/safari/book_negatives.txt doesn't keep. The count is
+-- held at zero, so a new negative fails here until it's rewritten or kept.
+function book_negatives()
+  local r = run({"shale", "--root", ".", BOOK_NEGATIVES, "held=0"}, {timeout_ms = 60000, tail = 100})
+  if r.ended ~= "exit" or get(r, "code", -1) ~= 0 then
+    print(trim(r.out))
+    fail("safari gates: book_negatives ended " .. r.ended .. " " .. get(r, "code", -1) .. ": the book holds a negative sentence its table doesn't keep")
+  end
+  for line in lines(r.out) do
+    if re_match(line, "^book_negatives: negative [0-9]+, ") then print(line) end
+  end
+  return nil
+end
+
 -- fast.shale's parts. Each runs on the checkout's fast cache, which also
 -- holds fast's record of its last green and its RasterFrame.
 function fast_cache()
@@ -701,7 +718,7 @@ function all()
   end
   push(times, "lints " .. (lints.ms // 1000) .. " s")
   if lints.ended ~= "exit" or lints.code ~= 0 then push(bad, "lints") end
-  for part in {"expects", "widgets", "tutorial", "book_names", "proof", "page"} do
+  for part in {"expects", "widgets", "tutorial", "book_names", "book_negatives", "proof", "page"} do
     -- A child, and every roc under it, inherits this run's niceness.
     local argv = {"shale", "--root", ".", SELF_PATH, "part=" .. part}
     if COLD then push(argv, "cold=1") end
@@ -714,7 +731,7 @@ function all()
   end
   print("safari gates: " .. join(times, ", "))
   if #bad > 0 then fail("safari gates: " .. #bad .. " failed: " .. join(bad, ", ")) end
-  print("safari gates: expects held, widgets checked, tutorial built, book names held, proof tools ok, page drawn")
+  print("safari gates: expects held, widgets checked, tutorial built, book names held, book negatives held, proof tools ok, page drawn")
   if not COLD then print("NOT RUN, left to publish: check.shale, cold caches, release wasm, the widgets' page builds") end
 end
 
@@ -734,6 +751,8 @@ elseif PART == "tutorial" then
   tutorial()
 elseif PART == "book_names" then
   book_names()
+elseif PART == "book_negatives" then
+  book_negatives()
 elseif PART == "page" then
   page()
 elseif PART == "widget_globs" then
@@ -750,5 +769,5 @@ elseif PART == "caches" then
   prune_removed_checkouts()
   if clear_full_caches() then print("safari gates: caches empty, a run would be cold") else print("safari gates: caches warm, under " .. CHECKOUT_CEILING_MB .. " MB") end
 else
-  fail("safari gates: part= is expects, widgets, format, proof, tutorial, book_names, page, caches, lints.shale's widget_globs, or fast.shale's fast_cache, fast_check, fast_expects or fast_frame (none runs them all)")
+  fail("safari gates: part= is expects, widgets, format, proof, tutorial, book_names, book_negatives, page, caches, lints.shale's widget_globs, or fast.shale's fast_cache, fast_check, fast_expects or fast_frame (none runs them all)")
 end

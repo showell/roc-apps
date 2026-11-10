@@ -25,7 +25,7 @@ The first is things. A tree, a cow and a radio tower each become shapes the scre
 
 The second is the world. A long road runs through open country, past trees, herds, ponds and radio towers. Something has to say where every one of them stands.
 
-The third is the rider's view. The screen shows only what the rider sees. A tree far down the road looks small, a tree close by looks big, and a tree behind the rider doesn't show at all. For everything in the world, the program works out where it lands on the screen, and how big, if the rider sees it at all. Where two things overlap, the nearer one covers the farther one.
+The third is the rider's view. The screen shows only what the rider sees. A tree far down the road looks small, and a tree close by looks big. For everything in the world, the program works out where it lands on the screen, and how big, if the rider sees it at all. Where two things overlap, the nearer one covers the farther one.
 
 The fourth is motion. The rider rides on, the truck drives ahead, the cat crosses the road and the sun goes down. At every step, something has to move each of them on, and the moves fit together. The cat times its crossing to the rider coming toward it, and a cat in the road stops the rider speeding up.
 
@@ -98,7 +98,7 @@ For each frame, a thing gives the shapes that draw it, in the order they're pain
 
 A `Sprite` is opaque, like `Billboard`, and it holds a `List(Shapes.Shape)`: a list whose items are each a `Shape`, from the `Shapes` module. Nearly every shape is a polygon. A far tree's sprite is one rectangle of trunk under eight triangles.
 
-A frame's picture is the sky and the ground, with the sprites of everything in view on top, as one list of shapes, made fresh every frame. The Roc code describes that list, and the platform paints it. Seeing works this way in the real world, too. The world doesn't paint itself onto your eyes: light brings you information, and your mind makes the picture.
+A frame's picture is the sky and the ground, with the sprites of everything in view on top, as one list of shapes, made fresh every frame. The Roc code describes that list, and the platform paints it. Seeing works this way in the real world, too. Light brings your eyes information, and your mind makes the picture.
 
 ### The world
 
@@ -258,7 +258,7 @@ The body is a block, in braces. A block holds lines of code, where a record hold
 
 In that answer, `billboard.emoji.still()` calls the `still` function that comes with the emoji, which gives its traced still. `StillShapes.standing_still_shapes` makes shapes from it at the billboard's height, and `Sprite.from_shapes` makes those shapes a sprite. In that last record, `flip` alone is short for `flip: flip`.
 
-Every emoji is drawn facing left, so a billboard that faces right needs its emoji mirrored. The `match` makes that choice. It looks at `billboard.facing`, and each line under it takes one tag and gives back what to do: `FacesLeft` gives `AsDrawn`, and `FacesRight` gives `Mirrored`. Those two are the tags of another tag union, `StillShapes.Flip`, and `flip` names the one the `match` picks. `flip` needs no annotation: the compiler works out its type from where it's used.
+Every emoji is drawn facing left, so a billboard that faces right needs its emoji mirrored. The `match` makes that choice. It looks at `billboard.facing`, and each line under it takes one tag and gives back what to do: `FacesLeft` gives `AsDrawn`, and `FacesRight` gives `Mirrored`. Those two are the tags of another tag union, `StillShapes.Flip`, and `flip` names the one the `match` picks. The compiler works out the type of `flip` from where it's used.
 
 A `match` handles every tag of its type, and the compiler checks that it does. Leave out the `FacesRight` line, and the compiler stops with an error that names it:
 
@@ -285,7 +285,7 @@ This `match` is about as plain as one gets: a tag in, a record out, one line per
 
 ### One thing at a bend
 
-A bend has room for one thing at most: an animal and its baby, a pond of ducks, or nothing. The `Segment` module's `BendLife` type says what's at a bend, and it says exactly that:
+A bend is quiet, or it holds one thing: an animal and its baby, or a pond of ducks. The `Segment` module's `BendLife` type says what's at a bend, and it says exactly that:
 
 {{code Segment.BendLife}}
 

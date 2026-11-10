@@ -1,0 +1,23 @@
+# The negative sentences the book's prose keeps. The rule is MISSION D2: say
+# what happens, never what something isn't. gates/book_negatives.shale finds
+# every sentence of the new chapters that holds a negative word, and each one
+# is rewritten or listed here with its kind.
+#
+# The kinds. A `fix` kind is rewritten: cut the sentence or the clause first,
+# if the paragraph stands without it (C13), and only then say what happens. A
+# rewrite is a new claim, so check it against the code (B6). A `keep` kind may
+# be listed below, and still has to earn its place: a caution names a real
+# trap, and an authority states a rule the code or the compiler really holds.
+#
+# fix extraneous: the paragraph says it already, or needs none of it: "and a tree behind the rider doesn't show at all", after "The screen shows only what the rider sees".
+# fix contrast: says what a thing is by what it isn't, "X, not Y": "Every function in this chapter has a `->` arrow, not `=>`."
+# fix hidden-positive: a negation that hides a positive fact: "The rods never change." for "The rods stay the same", or "`flip` needs no annotation" for "the compiler works out its type".
+# fix presumed-worry: answers a doubt the reader never raised: "There's no event handler here."
+# fix hedge: softens or apologizes for a claim: "there isn't much else to ask".
+# fix double-negative: two negatives where one positive does: "The test needs nothing the module doesn't".
+# keep refusal: the program's own behavior is a refusal, and the sentence says so: "a rod with both ends behind it isn't drawn".
+# keep cautionary: warns of a real trap in the code or the language: "Float addition isn't associative, so a sum's order is part of its meaning here."
+# keep authoritative: a rule the compiler or a type enforces, where the "no" is the guarantee: "Roc forbids import cycles, so no path of arrows loops back."
+#
+# Each line below is `kind: the sentence`, the sentence exactly as the lint
+# prints it, and its kind is a `keep` kind. The new chapters hold none today.
