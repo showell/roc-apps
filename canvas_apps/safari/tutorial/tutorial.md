@@ -96,7 +96,7 @@ For each frame, a thing gives the shapes that draw it, in the order they're pain
 
 {{code Sprite.Sprite from "Sprite ::" to ").{"}}
 
-A `Sprite` is opaque, like `Billboard`, and it holds a `List(Shapes.Shape)`: a list whose items are each a `Shape`, from the `Shapes` module. Nearly every shape is a polygon. A far tree's sprite is one rectangle of trunk under eight triangles.
+A `Sprite` is opaque, like `Billboard`, and it holds a `List(Shapes.Shape)`: a list whose items are each a `Shape`, from the `Shapes` module. Nearly every shape has straight edges. A far tree's sprite is one rectangle of trunk under eight triangles.
 
 A frame's picture is the sky and the ground, with the sprites of everything in view on top, as one list of shapes, made fresh every frame. The Roc code describes that list, and the platform paints it. Seeing works this way in the real world, too. Light brings your eyes information, and your mind makes the picture.
 
