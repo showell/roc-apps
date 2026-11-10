@@ -47,7 +47,7 @@ The ports announced before the site redirect: :9201 to prod's `safari/`;
 | `site/web/index.html` | the landing page: Canvas apps, Interpreters, In progress, and the date each app on the channel was published | hand |
 | `site/web/shared/home.js` | the link home, and the banner on dev (whose root alone has a `channel` file); every page loads it with one relative line | hand |
 | `site/build.sh` | the landing page, `shared/` and the `channel` file into dev | hand |
-| `site/publish.sh` | THE SIGN-OFF: one app's dev directory over `site/live/<app>/` whole, with a `PROVENANCE`, committed and pushed; `site/publish.sh home` for the landing page and `shared/` | hand |
+| `site/publish.sh` | THE SIGN-OFF: one app's dev directory over `site/live/<app>/` whole, with a `PROVENANCE`, committed and pushed; `site/publish.sh home` for the landing page and `shared/`; `site/publish.sh tutorial` for the Safari Ride book, after the widgets it frames, and never dropping a page staging has | hand |
 | `site/live/` | what staging serves, and what prod serves | `site/publish.sh` |
 | `site/deploy.sh` | THE PROD DEPLOY: `site/live/` to the droplet with `rsync --delete`, each file's sha256 checked against staging's; the site block installed and validated when it changed; the landing page checked over HTTPS | hand |
 | `ops/roc.lynrummy.com.caddy` | prod's site block, imported by the droplet's Caddyfile (angry-gopher's `deploy/Caddyfile`) from `/etc/caddy/sites/` | hand |
@@ -55,6 +55,7 @@ The ports announced before the site redirect: :9201 to prod's `safari/`;
     site/build.sh                  # the root into dev, http://<box>:9210/
     canvas_apps/build.sh safari release   # or safari's gates/publish.shale: release wasm into dev
     site/publish.sh safari         # when dev looks right: staging, http://<box>:9200/safari/
+    site/publish.sh tutorial       # the book, once each widget it frames is published
     site/deploy.sh                 # when staging looks right: prod, https://roc.lynrummy.com/
 
 Staging never changes under you: a build goes to dev, and only a publish, a

@@ -10,7 +10,8 @@ import Manuscript
 
 main! = |args| {
 	manuscript = Manuscript.read(args)
-	for page in Book.pages(manuscript, dividers_of(manuscript)) {
+	outline = { dividers: dividers_of(manuscript), slugs: slugs_of(manuscript) }
+	for page in Book.pages(manuscript, outline) {
 		echo!("<!-- book page: ${page.file} -->\n${page.html}")
 	}
 	Ok({})
@@ -22,6 +23,14 @@ dividers_of : Manuscript.Contents -> List(Book.Divider)
 dividers_of = |manuscript| match manuscript.extent {
 	WholeBook => Book.dividers
 	FirstChapters => Book.dividers.keep_if(|divider| has_chapter(manuscript, divider.before))
+}
+
+## The slugs go as the dividers do. A slug left behind by a retitle still stops
+## the first chapters, whose retitled chapter then has none.
+slugs_of : Manuscript.Contents -> List(Book.Slug)
+slugs_of = |manuscript| match manuscript.extent {
+	WholeBook => Book.slugs
+	FirstChapters => Book.slugs.keep_if(|slug| has_chapter(manuscript, slug.chapter))
 }
 
 ## Whether `manuscript` holds the chapter titled `title`.

@@ -5,13 +5,16 @@
 --   cd <roc-apps checkout> && nice -n 19 shale canvas_apps/safari/gates/publish.shale
 --
 -- It runs the merge gate from cold caches, then check.shale from a cold cache,
--- then builds the book, which builds safari's page and every widget's as
+-- then builds the book's published chapters, which builds safari's page and every widget's as
 -- release wasm, each from a cold cache, into the dev channel, where
 -- site/publish.sh takes them. Safari's page must draw the hash the dev page
 -- draws. It moves nothing to staging. It takes about six minutes.
 
 const RUN = "canvas_apps/safari/gates/run.shale"
 const BOOK = "canvas_apps/safari/tutorial/book.shale"
+-- The chapters that have passed the loop in MISSION.md, which are the ones
+-- published. Each needs a slug in Book.slugs, or the book stops.
+const PUBLISHED_CHAPTERS = 7
 
 function report_stage(r, what)
   for l in lines(trim(r.out)) do
@@ -27,7 +30,8 @@ function main()
   local cache = fresh_dir("scratch:", "safari-check-cache")
   report_stage(run({"shale", "--root", ".", "check.shale"}, {timeout_ms = 1800000, tail = 40, env = {XDG_CACHE_HOME = real(cache)}}), "check.shale, cold")
   remove_tree(cache)
-  report_stage(run({"shale", "--root", ".", BOOK}, {timeout_ms = 1800000, tail = 60}), "the book, with safari's page and every widget's as release")
+  local book = {"shale", "--root", ".", BOOK, "chapters=" .. PUBLISHED_CHAPTERS}
+  report_stage(run(book, {timeout_ms = 1800000, tail = 60}), "the book's first " .. PUBLISHED_CHAPTERS .. " chapters, with safari's page and every widget's as release")
   print("safari publish: every stage passed; site/publish.sh takes each page from the dev channel")
   return nil
 end
