@@ -45,11 +45,11 @@ digraph pieces {
 
 | Piece | The problem |
 |---|---|
-| Things | A tree, a cow and a radio tower each become shapes the screen can show. Every frame starts from a blank screen, so every frame needs all of its shapes, every time. |
-| The world | A long road runs through open country, past trees, herds, ponds and radio towers. Something has to say where every one of them stands. |
+| Things | A tree, a cow and a radio tower each become shapes the screen can show. Every frame starts from a blank screen, so every frame must hold all of its shapes, every time. |
+| The world | A long road runs through open country, past trees, herds, ponds and radio towers. Something must say where every one of them stands. |
 | The rider's view | The screen shows only what the rider sees. A tree far down the road looks small, and a tree close by looks big. For everything in the world, the program works out where it lands on the screen, and how big, if the rider sees it at all. Where two things overlap, the nearer one covers the farther one. |
-| Motion | The rider rides on, the truck drives ahead, the cat crosses the road and the sun goes down. At every step, something has to move each of them on, and the moves fit together. The cat times its crossing to the rider coming toward it, and a cat in the road stops the rider speeding up. |
-| The person watching | A viewer mostly sits back and watches, but they also need to pause the ride, step it forward and rewind it. So the program gives them controls they can find, and answers each one straight away. |
+| Motion | The rider rides on, the truck drives ahead, the cat crosses the road and the sun goes down. At every step, something must move each of them on, and the moves must fit together. The cat times its crossing to the rider coming toward it, and a cat in the road stops the rider speeding up. |
+| The person watching | A viewer mostly sits back and watches, but they also need to pause the ride, step it forward and rewind it. So the program must give them controls they can find, and answer each one straight away. |
 
 The first three pieces give us one frame, held still. The last two set it moving, and put it in the viewer's hands. Next, we see where Roc code lives, and then we give each piece its types.
 
