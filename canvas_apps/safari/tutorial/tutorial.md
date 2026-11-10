@@ -226,7 +226,7 @@ The `focal_length` says how strong the camera's lens is, in `Pixels`, the screen
 
 The `spot` comes from a camera: it's what a sighting holds. So to draw the cow and the bull, the picture at the top of this chapter puts each one on the road by hand, the cow 10 metres ahead and 5 metres left of the middle, and lets a camera at the start of the road sight them. The rider's own camera comes in a later chapter.
 
-What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, drawn as polygons. Most of the ride's shapes have straight edges. At step 1,529, the ride draws 2,121 shapes on top of the sky and the grass: 868 triangles, 727 quads, 518 polygons and 8 discs. 136 of the quads are the trees' trunks.
+What comes back is a sprite, and every sprite is a list of shapes. The cow's sprite is its emoji, drawn as polygons. Most of the ride's shapes have straight edges. At step 1,529, the ride draws 2,121 shapes on top of the sky and the grass: 868 triangles, 727 quads, 518 polygons and 8 discs. The trees' trunks are 136 of the quads.
 
 At the bends in the road stand four more kinds of billboard animal: elephants, giraffes, zebras and rhinos. They come next, with the `match` that mirrors the ones that face right.
 
@@ -326,13 +326,13 @@ A tag union lists everything a value can be, and a `match` handles each case. Th
 
 ## Shapes
 
-A far tree in the ride is a rectangle of trunk under eight triangles. So before the tree, we draw its two shapes: a triangle and a rectangle.
+A far tree in the ride is a box of trunk under eight triangles. So before we draw a tree, we draw its two shapes: a triangle and a rectangle.
 
-In Roc, a shape is a value that describes something to paint: a region of the screen, and a fill for it. The `Shape` type lists the regions the platform paints, one tag for each:
+In Roc, a shape is a value that describes a region of the screen and a fill for it. The `Shapes` module's `Shape` type has one tag for each kind of region the ride needs:
 
 {{code Shapes.Shape from "Shape : [" to "Polygon({ corners"}}
 
-Each tag carries a record of its data, and every record ends with a `fill`, the paint for the inside. A `Triangle` holds three corners, so every triangle has exactly three, by construction. A `Rectangle` is an upright box, a `Disc` is a circle, and a `Polygon` is any other shape with straight edges. A corner is a `Point.Point`: an `x` and a `y`, measured from the top left of the screen, with `y` growing downward.
+Each tag carries a record, and every record ends with a `fill`, the paint for the inside. The ride draws a great many triangles, plenty of four-cornered things, a few round lights, and outlines traced from emoji and mountains, so those are its four tags.
 
 ### A triangle
 
@@ -346,15 +346,15 @@ And here's the code that makes it:
 
 {{code ShapesWidgetApp.green_triangle}}
 
-The value is a `Triangle` tag with its record, and it's a `Shapes.Shape`, because a `Shape` is what the platform paints. `Point.at` makes a corner from two numbers, and `Brush.flat` makes a fill of one color. `0x2e8b57` is the color, the six hex digits a web page writes after its `#`.
+The value is a `Triangle` tag with its record. The record names three corners, `first`, `second` and `third`, so every triangle has exactly three, by construction. `Point.at` makes a corner from two numbers, measured from the top left of the picture, with `y` growing downward. `Brush.flat` makes a fill of one color, and `0x2e8b57` is the color, the six hex digits a web page writes after its `#`.
 
-A point's `x` and `y` are each a `Pixels`: an opaque type around an `F64`, like `Distance`. The ride works in metres on the road and pixels on the screen, so two types keep the two apart, and a reader always knows which one a number is. Roc is just as happy with plain `F64`s, if you prefer that style. In a program that moves between the road and the screen all the time, the types earn their keep.
+A corner's `x` and `y` are each a `Pixels`, an opaque type around an `F64`, like `Distance`. The ride works in metres on the road and in pixels on the screen, and two types keep the two apart, so a number always says which one it is. Roc is just as happy with plain `F64`s, if you prefer that style. In a program that moves between the road and the screen all the time, the types earn their keep.
 
-So what draws the triangle? The picture is a small Roc app of its own. For each frame, it hands the platform a list of two shapes: the background, which is a rectangle the size of the picture, and then the triangle. The platform paints the list from first to last, so the triangle lands on the background.
+A shape only describes. So what paints the triangle? The picture is a small Roc app of its own. For each frame, it hands the platform a list of two shapes: the background, a rectangle the size of the picture, and then the triangle. The platform paints the list from first to last, so the triangle lands on the background.
 
 ### A rectangle
 
-Next, let's build a rectangle:
+Next, a rectangle:
 
 ```widget shapes rectangle
 A brown rectangle on a plain background.
@@ -362,9 +362,13 @@ A brown rectangle on a plain background.
 
 {{code ShapesWidgetApp.brown_rectangle}}
 
-`Rectangle` is the tag for an upright box. Its record holds the top left corner, a width and a height, so its sides are always square to the screen. The picture hands the platform the background and then this rectangle, just as it did the triangle.
+`Shapes.rectangle` is a function. It takes one record, with a top left corner, a width, a height and a fill, and gives back a `Quad`. Here it is:
 
-That's both of a far tree's shapes. Next, we put them together.
+{{code Shapes.rectangle}}
+
+`|{ top_left, width, height, fill }|` takes the record apart, naming each of its fields. The body works out where the right and bottom edges are, then gives the quad its four corners, clockwise from the top left. A corner is a record of an `x` and a `y`, the same record `Point.at` makes. So the sides are always square to the screen. The picture hands the platform the background and then this quad, just as it did the triangle.
+
+That's both of a far tree's shapes. Next, we put them together, with functions of our own.
 
 ## The modules
 

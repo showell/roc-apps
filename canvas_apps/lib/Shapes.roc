@@ -13,18 +13,15 @@ Shapes :: [].{
 		## Three corners, which is every triangle and nothing else.
 		Triangle({ first : Point.Point, second : Point.Point, third : Point.Point, fill : Brush.Fill }),
 
-		## Four corners in order round the edge. Four corners don't make a quad
-		## convex: one can be concave, and a traced still's can even cross itself,
-		## so a painter that fills only convex polygons has `ConvexCut` check it.
-		## `Shapes.rectangle` makes an upright one.
+		## Four corners in order round the edge. `Shapes.rectangle` makes an
+		## upright one.
 		Quad({ first : Point.Point, second : Point.Point, third : Point.Point, fourth : Point.Point, fill : Brush.Fill }),
 
 		Disc({ center : Point.Point, radius : Pixels, fill : Brush.Fill }),
 
 		## An outline of five or more corners, in order round its edge: a traced
-		## still, a mountain, a cone's hull, the road. The count is a convention,
-		## not a type; `Shapes.region_from_corners` keeps it. A painter that fills
-		## only convex polygons has `ConvexCut` cut the concave ones into triangles.
+		## still, a mountain, a cone's hull, the road. `Shapes.region_from_corners`
+		## keeps the count.
 		Polygon({ corners : List(Point.Point), fill : Brush.Fill }),
 
 		## A mark, not a shape: how the shapes after it combine, until the next `Blend`.
