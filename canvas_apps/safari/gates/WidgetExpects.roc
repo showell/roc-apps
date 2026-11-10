@@ -5,6 +5,7 @@
 ## package.roc exposes its app module for this root.
 app [main!] {
 	beacon: "../../beacon_widget/package.roc",
+	bend_animals: "../../bend_animals_widget/package.roc",
 	bends: "../../bends_widget/package.roc",
 	bird: "../../bird_widget/package.roc",
 	cat: "../../cat_widget/package.roc",
@@ -26,6 +27,7 @@ app [main!] {
 }
 
 import beacon.BeaconWidgetApp
+import bend_animals.BendAnimalsWidgetApp
 import bends.BendsWidgetApp
 import bird.BirdWidgetApp
 import cat.CatWidgetApp
@@ -96,6 +98,7 @@ words_shown = |canvas_app, inputs| {
 expect {
 	words = [
 		words_shown(BeaconWidgetApp.canvas_app, []),
+		words_shown(BendAnimalsWidgetApp.canvas_app, []),
 		words_shown(BendsWidgetApp.canvas_app, []),
 		words_shown(BirdWidgetApp.canvas_app, []),
 		words_shown(CatWidgetApp.canvas_app, []),
