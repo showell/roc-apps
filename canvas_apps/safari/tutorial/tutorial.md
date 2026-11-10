@@ -252,9 +252,11 @@ The type is a list of tags in square brackets. A tag is a name that stands for i
 
 {{code Billboard.scenery_sprite}}
 
-`|Billboard.(billboard), setting|` names what the function takes. The `Billboard.(billboard)` part opens the opaque billboard, so the function can read its fields. Every emoji is drawn facing left, so a billboard that faces right needs its emoji mirrored. The `match` makes that choice. It looks at `billboard.facing`, and each line under it takes one tag and gives back what to do: `FacesLeft` gives `AsDrawn`, and `FacesRight` gives `Mirrored`. Those two are tags as well, and `flip` takes one of them to `StillShapes.standing_still_shapes`, which draws the emoji.
+`|Billboard.(billboard), setting|` names what the function takes. A `Billboard` is opaque, and `Billboard.(billboard)` opens it, so the function can read its fields.
 
-A `match` handles every tag of its type, and the compiler checks that it does. Leave out the `FacesRight` line, and `roc check` stops with an error that names it:
+Every emoji is drawn facing left, so a billboard that faces right needs its emoji mirrored. The `match` makes that choice. It looks at `billboard.facing`, and each line under it takes one tag and gives back what to do: `FacesLeft` gives `AsDrawn`, and `FacesRight` gives `Mirrored`. Those two are tags as well. `flip` names the one the `match` picks, and `StillShapes.standing_still_shapes` draws the emoji with it.
+
+A `match` handles every tag of its type, and the compiler checks that it does. Leave out the `FacesRight` line, and the compiler stops with an error that names it:
 
 ```text
 This match expression doesn't cover all possible cases.
