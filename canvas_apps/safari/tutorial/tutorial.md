@@ -235,10 +235,10 @@ At the bends in the road stand four more billboard animals: an elephant, a giraf
 Four big animals stand at the bends in the ride's road: an elephant, a giraffe, a zebra and a rhino. Each one has its baby with it:
 
 ```widget bend_animals
-The four bend animals and their babies, lined up on the grass. Here the elephants and giraffes face right, and the zebras and rhinos face left.
+The four bend animals and their babies, lined up on the grass: two pairs face right, and two face left.
 ```
 
-Every one of them has a face, and a face looks somewhere. So a billboard faces left or right, and your eye follows where it looks. In the ride, an animal and its baby both face the way their bend turns, whatever the animal.
+Each emoji shows its animal from the side, face and all. So a billboard faces left or right, and your eye follows where it looks.
 
 ### Two ways to face
 
@@ -252,11 +252,11 @@ The type is a list of tags in square brackets. A tag is a name the compiler know
 
 {{code Billboard.scenery_sprite}}
 
-`|Billboard.(billboard), setting|` says what the function takes: a billboard and a setting. A `Billboard` is opaque, and `Billboard.(billboard)` opens it, so the function can read its fields.
+`|Billboard.(billboard), setting|` says what the function takes: a billboard and a setting. A `Billboard` is opaque, and `Billboard.(billboard)` opens it: it unwraps the billboard into a record named `billboard`, so the function can read `billboard.facing` and the other fields. Only the `Billboard` module can write that.
 
-The body is a block, in braces. Its first line names a value, `flip`, and its last line is the function's answer: a sprite, drawn from the emoji's traced still at the billboard's height. In that last record, `flip` alone is short for `flip: flip`.
+The body is a block, in braces. Its first line names a value, `flip`, and its last line is the function's answer. `billboard.emoji.still()` calls the `still` function that comes with the emoji, which gives its traced still. `StillShapes.standing_still_shapes` makes shapes from it at the billboard's height, and `Sprite.from_shapes` makes those shapes a sprite. In that last record, `flip` alone is short for `flip: flip`.
 
-Every emoji is drawn facing left, so a billboard that faces right needs its emoji mirrored. The `match` makes that choice. It looks at `billboard.facing`, and each line under it takes one tag and gives back what to do: `FacesLeft` gives `AsDrawn`, and `FacesRight` gives `Mirrored`. Those two are the tags of another tag union, `StillShapes.Flip`, and `flip` names the one the `match` picks.
+Every emoji is drawn facing left, so a billboard that faces right needs its emoji mirrored. The `match` makes that choice. It looks at `billboard.facing`, and each line under it takes one tag and gives back what to do: `FacesLeft` gives `AsDrawn`, and `FacesRight` gives `Mirrored`. Those two are the tags of another tag union, `StillShapes.Flip`, and `flip` names the one the `match` picks. `flip` needs no annotation: the compiler works out its type from where it's used.
 
 A `match` handles every tag of its type, and the compiler checks that it does. Leave out the `FacesRight` line, and the compiler stops with an error that names it:
 
@@ -275,7 +275,7 @@ The bend animals are a tag union too, with four tags:
 
 {{code BendAnimal.BendAnimal from "BendAnimal :=" to "Rhino]"}}
 
-Each tag is an animal. `BendAnimal` uses `:=`, so it's a type of its own, and the functions in its braces come with it. The `species_of` function turns each one into its species record, an emoji and a grown height, like the cow's in "Things":
+Each tag is an animal. `BendAnimal` uses `:=`, so it's a nominal type: a new type, apart from any other tag union with the same tags. The `species_of` function turns each one into its species record, an emoji and a grown height, like the cow's in "Things":
 
 {{code BendAnimal.species_of}}
 
