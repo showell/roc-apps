@@ -13,14 +13,56 @@ Keys :: [].{
 	## native window and F shows its frame rate, and a page can do neither.
 	## A key a game could bind on one end and not the other would behave
 	## differently on the two, so no game is given them at all.
-	Key := [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEnter, KeyP, KeyR, KeyQ, KeyE, KeyC, KeyJ, Key1, Key2, Key3, Key4].{
+	Key := [
+		KeyUp,
+		KeyDown,
+		KeyLeft,
+		KeyRight,
+		KeyW,
+		KeyA,
+		KeyS,
+		KeyD,
+		KeySpace,
+		KeyEnter,
+		KeyP,
+		KeyR,
+		KeyQ,
+		KeyE,
+		KeyC,
+		KeyJ,
+		Key1,
+		Key2,
+		Key3,
+		Key4,
+	].{
 		is_eq : _
 	}
 
 	## Every key, once each. A gate holds it to the branches of `bit`, so a key
 	## added to the enum is added here too.
 	all_keys : List(Keys.Key)
-	all_keys = [KeyUp, KeyDown, KeyLeft, KeyRight, KeyW, KeyA, KeyS, KeyD, KeySpace, KeyEnter, KeyP, KeyR, KeyQ, KeyE, KeyC, KeyJ, Key1, Key2, Key3, Key4]
+	all_keys = [
+		KeyUp,
+		KeyDown,
+		KeyLeft,
+		KeyRight,
+		KeyW,
+		KeyA,
+		KeyS,
+		KeyD,
+		KeySpace,
+		KeyEnter,
+		KeyP,
+		KeyR,
+		KeyQ,
+		KeyE,
+		KeyC,
+		KeyJ,
+		Key1,
+		Key2,
+		Key3,
+		Key4,
+	]
 
 	bit : Keys.Key -> U32
 	bit = |key|

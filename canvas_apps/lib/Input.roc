@@ -27,7 +27,11 @@ Input :: [].{
 
 	## `mouse` is a field rather than a method, so a game reaches the pointer
 	## exactly as it does on roc-ray: `input.mouse.position()`.
-	Snapshot := { held : U32, struck : U32, mouse : Mouse.Snapshot }.{
+	Snapshot := {
+		held : U32,
+		struck : U32,
+		mouse : Mouse.Snapshot,
+	}.{
 
 		## Whether a key is held down now, however long it has been.
 		key_down : Snapshot, Keys.Key -> Bool
@@ -41,27 +45,47 @@ Input :: [].{
 		## runner builds a tick's snapshot with this and `with_key_pressed`, and
 		## tests build theirs the same way.
 		with_key_down : Snapshot, Keys.Key -> Snapshot
-		with_key_down = |snapshot, key| Snapshot.{ held: snapshot.held.bitwise_or(Keys.bit(key)), struck: snapshot.struck, mouse: snapshot.mouse }
+		with_key_down = |snapshot, key| Snapshot.{
+			held: snapshot.held.bitwise_or(Keys.bit(key)),
+			struck: snapshot.struck,
+			mouse: snapshot.mouse,
+		}
 
 		## Say that a key was struck, which is also held.
 		with_key_pressed : Snapshot, Keys.Key -> Snapshot
 		with_key_pressed = |snapshot, key|
-			Snapshot.{ held: snapshot.held.bitwise_or(Keys.bit(key)), struck: snapshot.struck.bitwise_or(Keys.bit(key)), mouse: snapshot.mouse }
+			Snapshot.{
+				held: snapshot.held.bitwise_or(Keys.bit(key)),
+				struck: snapshot.struck.bitwise_or(Keys.bit(key)),
+				mouse: snapshot.mouse,
+			}
 
 		## Give a snapshot its pointer, as roc-ray's `with_mouse_*` do.
 		with_mouse : Snapshot, Mouse.Snapshot -> Snapshot
-		with_mouse = |snapshot, pointer| Snapshot.{ held: snapshot.held, struck: snapshot.struck, mouse: pointer }
+		with_mouse = |snapshot, pointer| Snapshot.{
+			held: snapshot.held,
+			struck: snapshot.struck,
+			mouse: pointer,
+		}
 
 	}
 
 	## Nothing touched: where the native runner starts each tick's snapshot,
 	## and where a test starts.
 	none : Input.Snapshot
-	none = Snapshot.{ held: 0, struck: 0, mouse: Mouse.none }
+	none = Snapshot.{
+		held: 0,
+		struck: 0,
+		mouse: Mouse.none,
+	}
 
 	## A tick's input from the keys held and struck, as bits, and the pointer,
-	## which is how WasmApp packs what the page hands it. The native runner packs its input the other way, from
-	## `none` with the `with_*` makers.
-	of : { held : U32, struck : U32, mouse : Mouse.Snapshot } -> Input.Snapshot
+	## which is how WasmApp packs what the page hands it. The native runner packs
+	## its input the other way, from `none` with the `with_*` makers.
+	of : {
+		held : U32,
+		struck : U32,
+		mouse : Mouse.Snapshot,
+	} -> Input.Snapshot
 	of = |{ held, struck, mouse }| Snapshot.{ held: held.bitwise_or(struck), struck, mouse }
 }

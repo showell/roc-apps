@@ -8,7 +8,12 @@
 
 Math :: [].{
 	Vec2 : { x : F32, y : F32 }
-	Rect : { x : F32, y : F32, width : F32, height : F32 }
+	Rect : {
+		x : F32,
+		y : F32,
+		width : F32,
+		height : F32,
+	}
 	Circle : { center : Math.Vec2, radius : F32 }
 
 	zero : Math.Vec2

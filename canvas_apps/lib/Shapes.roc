@@ -33,7 +33,13 @@ Shapes :: [].{
 		),
 
 		## A circle, `radius` out from `center`.
-		Disc({ center : Point.Point, radius : Pixels, fill : Brush.Fill }),
+		Disc(
+			{
+				center : Point.Point,
+				radius : Pixels,
+				fill : Brush.Fill,
+			},
+		),
 
 		## An outline of any other number of corners, in order around its edge: a
 		## traced still, a mountain, the road.
@@ -51,7 +57,17 @@ Shapes :: [].{
 
 		## `cols` by `rows` pixels stretched over the box without smoothing. It carries
 		## the pixels, not a handle, so there is no second copy of them to keep in step.
-		Image({ x : F64, y : F64, width : F64, height : F64, cols : U64, rows : U64, pixels : List(Brush.Rgba) }),
+		Image(
+			{
+				x : F64,
+				y : F64,
+				width : F64,
+				height : F64,
+				cols : U64,
+				rows : U64,
+				pixels : List(Brush.Rgba),
+			},
+		),
 
 		## A line of words in a real typeface. `Font.plotted_shapes` gives a painter that has
 		## no typefaces the strokes of the same line.
@@ -90,13 +106,25 @@ Shapes :: [].{
 	## way to make a `World`, because it checks the zoom.
 	Space : [
 		Screen,
-		World({ target : Point.Point, offset : Point.Point, rotation : F64, zoom : F64 }),
+		World(
+			{
+				target : Point.Point,
+				offset : Point.Point,
+				rotation : F64,
+				zoom : F64,
+			},
+		),
 	]
 
 	## A `World` space, its zoom checked. A zoom of zero has no inverse, so a
 	## painter could not map the screen back into this space, and a zoom that is
 	## not finite comes only from a bug; either crashes.
-	world_space : { target : Point.Point, offset : Point.Point, rotation : F64, zoom : F64 } -> Shapes.Space
+	world_space : {
+		target : Point.Point,
+		offset : Point.Point,
+		rotation : F64,
+		zoom : F64,
+	} -> Shapes.Space
 	world_space = |world|
 		if world.zoom == 0.0 or !world.zoom.is_finite() {
 			crash "Shapes.world_space: a zoom must be finite and not zero"
@@ -117,7 +145,10 @@ Shapes :: [].{
 	## to the screen after them: what `shapes_in_space` gives for the lists joined, with
 	## every shape copied once.
 	lists_in_space : Shapes.Space, List(List(Shapes.Shape)) -> List(Shapes.Shape)
-	lists_in_space = |space, shape_lists| [[View(space)]].concat(shape_lists).append([View(Screen)]).join()
+	lists_in_space = |
+		space,
+		shape_lists,
+	| [[View(space)]].concat(shape_lists).append([View(Screen)]).join()
 
 	## The region round `corners`, in order, tagged by how many there are: three
 	## make a `Triangle`, four a `Quad`, and any other number a `Polygon`. Every
@@ -144,7 +175,12 @@ Shapes :: [].{
 
 	## An upright box, `width` across and `height` down from `top_left`, as the
 	## quad it is: clockwise on the screen from its top left corner.
-	rectangle : { top_left : Point.Point, width : Pixels, height : Pixels, fill : Brush.Fill } -> Shapes.Shape
+	rectangle : {
+		top_left : Point.Point,
+		width : Pixels,
+		height : Pixels,
+		fill : Brush.Fill,
+	} -> Shapes.Shape
 	rectangle = |{ top_left, width, height, fill }| {
 		right = top_left.x.plus(width)
 		bottom = top_left.y.plus(height)
@@ -161,7 +197,12 @@ Shapes :: [].{
 	## painter has to learn a stroke. It has no cap and no join, which suits a
 	## gridline. A line from a point to itself has no direction to be wide
 	## across, and crashes.
-	line : { from : Point.Point, to : Point.Point, width : Pixels }, Brush.Fill -> Shapes.Shape
+	line : {
+		from : Point.Point,
+		to : Point.Point,
+		width : Pixels,
+	},
+	Brush.Fill -> Shapes.Shape
 	line = |{ from, to, width }, fill| {
 		x0 = from.x.to_f64()
 		y0 = from.y.to_f64()
@@ -192,7 +233,13 @@ Shapes :: [].{
 	## exactly, so the band has no gap at a corner. A disc under a smaller disc
 	## makes a ring too, but only on a background of a known flat color. Fewer
 	## than three sides enclose nothing, and crash.
-	ring_shapes : { center : Point.Point, radius : Pixels, line_width : Pixels, sides : U64 }, Brush.Fill -> List(Shapes.Shape)
+	ring_shapes : {
+		center : Point.Point,
+		radius : Pixels,
+		line_width : Pixels,
+		sides : U64,
+	},
+	Brush.Fill -> List(Shapes.Shape)
 	ring_shapes = |{ center, radius, line_width, sides }, fill|
 		if sides < 3 {
 			crash "Shapes.ring_shapes: a ring needs at least three sides"
@@ -247,14 +294,24 @@ Shapes :: [].{
 						fourth: pulled_point(q.fourth, { axis, cosine: k }),
 						fill: squashable_fill(q.fill),
 					})
-				Polygon(p) => Polygon({ corners: p.corners.map(|corner| pulled_point(corner, { axis, cosine: k })), fill: squashable_fill(p.fill) })
-				Disc(d) => Disc({ center: pulled_point(d.center, { axis, cosine: k }), radius: d.radius, fill: squashable_fill(d.fill) })
+				Polygon(p) => Polygon({
+					corners: p.corners.map(|corner| pulled_point(corner, { axis, cosine: k })),
+					fill: squashable_fill(p.fill),
+				})
+				Disc(d) => Disc({
+					center: pulled_point(d.center, { axis, cosine: k }),
+					radius: d.radius,
+					fill: squashable_fill(d.fill),
+				})
 				Blend(m) => Blend(m)
 				View(l) => View(l)
 				# A mirror sends a picture's left edge to its right, and a width is
 				# never negative.
 				Image(i) => {
-					span = pulled_span({ x: i.x, width: i.width }, { axis: axis.to_f64(), cosine: k })
+					span = pulled_span(
+						{ x: i.x, width: i.width },
+						{ axis: axis.to_f64(), cosine: k },
+					)
 					Image({ ..i, x: span.x, width: span.width })
 				}
 				# Type keeps its letterforms, so only its place moves.
@@ -265,7 +322,15 @@ Shapes :: [].{
 	## A picture `cols` by `rows` pixels, row by row, stretched over the box. A
 	## pixel list of any other length crashes: a painter would read past its end
 	## or leave some of it out.
-	image : { x : F64, y : F64, width : F64, height : F64, cols : U64, rows : U64, pixels : List(Brush.Rgba) } -> Shapes.Shape
+	image : {
+		x : F64,
+		y : F64,
+		width : F64,
+		height : F64,
+		cols : U64,
+		rows : U64,
+		pixels : List(Brush.Rgba),
+	} -> Shapes.Shape
 	image = |picture|
 		if picture.pixels.len() != picture.cols * picture.rows {
 			crash "Shapes.image: a picture's pixels number its cols times its rows"
@@ -280,13 +345,26 @@ Shapes :: [].{
 		Disc({
 			center,
 			radius,
-			fill: Radial({ inner_color: color, outer_color: { ..color, a: 0.0 }, center, inner_radius: Pixels.zero, outer_radius: radius }),
+			fill: Radial({
+				inner_color: color,
+				outer_color: { ..color, a: 0.0 },
+				center,
+				inner_radius: Pixels.zero,
+				outer_radius: radius,
+			}),
 		})
 
 	## A rectangle whose corners are rounded by `corner_radius`, each corner drawn in
 	## `corner_steps` steps. A radius of zero or no steps gives the plain box, and a
 	## radius too big for the box is held to half its shorter side.
-	rounded_rect : { top_left : Point.Point, width : Pixels, height : Pixels, corner_radius : Pixels, corner_steps : U64 }, Brush.Fill -> Shapes.Shape
+	rounded_rect : {
+		top_left : Point.Point,
+		width : Pixels,
+		height : Pixels,
+		corner_radius : Pixels,
+		corner_steps : U64,
+	},
+	Brush.Fill -> Shapes.Shape
 	rounded_rect = |box, fill| {
 		x = box.top_left.x.to_f64()
 		y = box.top_left.y.to_f64()
@@ -295,14 +373,51 @@ Shapes :: [].{
 		corner_steps = box.corner_steps
 		radius = box.corner_radius.to_f64().min((width / 2.0).min(height / 2.0))
 		if radius <= 0.0 or corner_steps == 0 {
-			Shapes.rectangle({ top_left: box.top_left, width: box.width, height: box.height, fill })
+			Shapes.rectangle({
+				top_left: box.top_left,
+				width: box.width,
+				height: box.height,
+				fill,
+			})
 		} else {
 			var $corners = List.with_capacity(4 * (corner_steps + 1))
 			# Clockwise from the top-left corner, each swept from its own start angle.
-			$corners = quarter_turn_corners($corners, { center: { x: x + radius, y: y + radius }, radius, start_angle: half_pi * 2.0, steps: corner_steps })
-			$corners = quarter_turn_corners($corners, { center: { x: x + width - radius, y: y + radius }, radius, start_angle: -half_pi, steps: corner_steps })
-			$corners = quarter_turn_corners($corners, { center: { x: x + width - radius, y: y + height - radius }, radius, start_angle: 0.0, steps: corner_steps })
-			$corners = quarter_turn_corners($corners, { center: { x: x + radius, y: y + height - radius }, radius, start_angle: half_pi, steps: corner_steps })
+			$corners = quarter_turn_corners(
+				$corners,
+				{
+					center: { x: x + radius, y: y + radius },
+					radius,
+					start_angle: half_pi * 2.0,
+					steps: corner_steps,
+				},
+			)
+			$corners = quarter_turn_corners(
+				$corners,
+				{
+					center: { x: x + width - radius, y: y + radius },
+					radius,
+					start_angle: -half_pi,
+					steps: corner_steps,
+				},
+			)
+			$corners = quarter_turn_corners(
+				$corners,
+				{
+					center: { x: x + width - radius, y: y + height - radius },
+					radius,
+					start_angle: 0.0,
+					steps: corner_steps,
+				},
+			)
+			$corners = quarter_turn_corners(
+				$corners,
+				{
+					center: { x: x + radius, y: y + height - radius },
+					radius,
+					start_angle: half_pi,
+					steps: corner_steps,
+				},
+			)
 			Polygon({ corners: $corners, fill })
 		}
 	}
@@ -320,7 +435,10 @@ squashable_fill = |fill|
 
 ## A point's x pulled toward `axis` by `cosine`.
 pulled_point : Point.Point, { axis : Pixels, cosine : F64 } -> Point.Point
-pulled_point = |{ x, y }, { axis, cosine: k }| { x: Pixels.of(axis.to_f64() + (x.to_f64() - axis.to_f64()) * k), y }
+pulled_point = |{ x, y }, { axis, cosine: k }| {
+	x: Pixels.of(axis.to_f64() + (x.to_f64() - axis.to_f64()) * k),
+	y,
+}
 
 ## A span across x pulled toward `axis` by `cosine`, each edge on its own. A
 ## mirror sends the left edge to the right, so the span starts at whichever
@@ -337,7 +455,13 @@ half_pi = F64.pi / 2.0
 
 ## The corners of a quarter turn about `center`, starting at `start_angle`,
 ## onto `corners`.
-quarter_turn_corners : List(Point.Point), { center : { x : F64, y : F64 }, radius : F64, start_angle : F64, steps : U64 } -> List(Point.Point)
+quarter_turn_corners : List(Point.Point),
+{
+	center : { x : F64, y : F64 },
+	radius : F64,
+	start_angle : F64,
+	steps : U64,
+} -> List(Point.Point)
 quarter_turn_corners = |corners, { center, radius, start_angle, steps }| {
 	var $out = corners
 	for k in 0..=steps {
@@ -356,74 +480,193 @@ line_of_type = {
 	size: 16.0,
 	face: Code,
 	align: Center,
-	color: { r: 32.0, g: 32.0, b: 32.0, a: 1.0 },
+	color: {
+		r: 32.0,
+		g: 32.0,
+		b: 32.0,
+		a: 1.0,
+	},
 }
 
-expect Shapes.squashed_shapes([Text(line_of_type)], { axis: Pixels.of(0.0), cosine: 0.5 }) == [Text({ ..line_of_type, x: 50.0 })]
-expect Shapes.squashed_shapes([Text(line_of_type)], { axis: Pixels.of(0.0), cosine: -1.0 }) == [Text({ ..line_of_type, x: -100.0 })]
-expect Shapes.squashed_shapes([Text(line_of_type)], { axis: Pixels.of(100.0), cosine: 0.5 }) == [Text(line_of_type)]
+expect Shapes.squashed_shapes(
+	[Text(line_of_type)],
+	{ axis: Pixels.of(0.0), cosine: 0.5 },
+) == [Text({ ..line_of_type, x: 50.0 })]
+expect Shapes.squashed_shapes(
+	[Text(line_of_type)],
+	{ axis: Pixels.of(0.0), cosine: -1.0 },
+) == [Text({ ..line_of_type, x: -100.0 })]
+expect Shapes.squashed_shapes(
+	[Text(line_of_type)],
+	{ axis: Pixels.of(100.0), cosine: 0.5 },
+) == [Text(line_of_type)]
 
 ## The fill the shapes below are drawn in.
 ink : Brush.Fill
-ink = Flat({ r: 32.0, g: 32.0, b: 32.0, a: 1.0 })
+ink = Flat({
+	r: 32.0,
+	g: 32.0,
+	b: 32.0,
+	a: 1.0,
+})
 
 ## A dot of light, as the shape both brackets hold.
 dot : Shapes.Shape
-dot = Disc({ center: Point.at(1.0, 2.0), radius: Pixels.of(3.0), fill: ink })
+dot = Disc({
+	center: Point.at(1.0, 2.0),
+	radius: Pixels.of(3.0),
+	fill: ink,
+})
 
 expect Shapes.added_light_shapes([dot]) == [Blend(Add), dot, Blend(Over)]
 expect Shapes.added_light_shapes([]) == [Blend(Add), Blend(Over)]
 expect Shapes.shapes_in_space(Screen, [dot]) == [View(Screen), dot, View(Screen)]
 expect Shapes.shapes_in_space(Screen, []) == [View(Screen), View(Screen)]
-expect Shapes.lists_in_space(Screen, [[dot], [], [ink_dot, dot]]) == [View(Screen), dot, ink_dot, dot, View(Screen)]
+expect Shapes.lists_in_space(Screen, [[dot], [], [ink_dot, dot]]) == [
+	View(Screen),
+	dot,
+	ink_dot,
+	dot,
+	View(Screen),
+]
 expect Shapes.lists_in_space(Screen, []) == [View(Screen), View(Screen)]
 
 ## A second dot, so an order shows.
 ink_dot : Shapes.Shape
-ink_dot = Disc({ center: Point.at(5.0, 6.0), radius: Pixels.of(1.0), fill: ink })
+ink_dot = Disc({
+	center: Point.at(5.0, 6.0),
+	radius: Pixels.of(1.0),
+	fill: ink,
+})
 
 # A small zoom, near the zero it refuses, makes a world space.
 expect {
 	corner = Point.at(0.0, 0.0)
-	world = { target: corner, offset: corner, rotation: 0.0, zoom: 0.001 }
+	world = {
+		target: corner,
+		offset: corner,
+		rotation: 0.0,
+		zoom: 0.001,
+	}
 	Shapes.world_space(world) == World(world)
 }
 
 # A picture two pixels wide and one high holds two pixels.
 expect {
-	white = { r: 255.0, g: 255.0, b: 255.0, a: 1.0 }
-	picture = { x: 0.0, y: 0.0, width: 4.0, height: 2.0, cols: 2, rows: 1, pixels: [white, white] }
+	white = {
+		r: 255.0,
+		g: 255.0,
+		b: 255.0,
+		a: 1.0,
+	}
+	picture = {
+		x: 0.0,
+		y: 0.0,
+		width: 4.0,
+		height: 2.0,
+		cols: 2,
+		rows: 1,
+		pixels: [white, white],
+	}
 	Shapes.image(picture) == Image(picture)
 }
 
 ## Five corners round a house's end: up a wall, the roof's two slopes, down the
 ## other wall, and back along the floor.
 house_corners : List(Point.Point)
-house_corners = [Point.at(10.0, 1.0), Point.at(10.0, 5.0), Point.at(20.0, 9.0), Point.at(30.0, 5.0), Point.at(30.0, 1.0)]
+house_corners = [
+	Point.at(10.0, 1.0),
+	Point.at(10.0, 5.0),
+	Point.at(20.0, 9.0),
+	Point.at(30.0, 5.0),
+	Point.at(30.0, 1.0),
+]
 
 # A flat polygon and a flat disc are squashed toward the axis with their fills.
 expect
-	Shapes.squashed_shapes([Polygon({ corners: house_corners, fill: ink }), dot], { axis: Pixels.of(10.0), cosine: 0.5 })
+	Shapes.squashed_shapes(
+		[Polygon({ corners: house_corners, fill: ink }), dot],
+		{ axis: Pixels.of(10.0), cosine: 0.5 },
+	)
 		== [
-			Polygon({ corners: [Point.at(10.0, 1.0), Point.at(10.0, 5.0), Point.at(15.0, 9.0), Point.at(20.0, 5.0), Point.at(20.0, 1.0)], fill: ink }),
-			Disc({ center: Point.at(5.5, 2.0), radius: Pixels.of(3.0), fill: ink }),
+			Polygon({
+				corners: [
+					Point.at(10.0, 1.0),
+					Point.at(10.0, 5.0),
+					Point.at(15.0, 9.0),
+					Point.at(20.0, 5.0),
+					Point.at(20.0, 1.0),
+				],
+				fill: ink,
+			}),
+			Disc({
+				center: Point.at(5.5, 2.0),
+				radius: Pixels.of(3.0),
+				fill: ink,
+			}),
 		]
 
 # A triangle's corners are squashed as a polygon's are.
 expect
-	Shapes.squashed_shapes([Triangle({ first: Point.at(10.0, 1.0), second: Point.at(20.0, 2.0), third: Point.at(30.0, 3.0), fill: ink })], { axis: Pixels.of(10.0), cosine: 0.5 })
-		== [Triangle({ first: Point.at(10.0, 1.0), second: Point.at(15.0, 2.0), third: Point.at(20.0, 3.0), fill: ink })]
+	Shapes.squashed_shapes(
+		[
+			Triangle({
+				first: Point.at(10.0, 1.0),
+				second: Point.at(20.0, 2.0),
+				third: Point.at(30.0, 3.0),
+				fill: ink,
+			}),
+		],
+		{ axis: Pixels.of(10.0), cosine: 0.5 },
+	)
+		== [
+			Triangle({
+				first: Point.at(10.0, 1.0),
+				second: Point.at(15.0, 2.0),
+				third: Point.at(20.0, 3.0),
+				fill: ink,
+			}),
+		]
 
 # A mirrored rectangle keeps its corners in their order, so its left corners
 # land on the right: the quad goes round the other way.
 expect
-	Shapes.squashed_shapes([Shapes.rectangle({ top_left: Point.at(20.0, 1.0), width: Pixels.of(10.0), height: Pixels.of(4.0), fill: ink })], { axis: Pixels.of(10.0), cosine: -0.5 })
-		== [Quad({ first: Point.at(5.0, 1.0), second: Point.at(0.0, 1.0), third: Point.at(0.0, 5.0), fourth: Point.at(5.0, 5.0), fill: ink })]
+	Shapes.squashed_shapes(
+		[
+			Shapes.rectangle({
+				top_left: Point.at(20.0, 1.0),
+				width: Pixels.of(10.0),
+				height: Pixels.of(4.0),
+				fill: ink,
+			}),
+		],
+		{ axis: Pixels.of(10.0), cosine: -0.5 },
+	)
+		== [
+			Quad({
+				first: Point.at(5.0, 1.0),
+				second: Point.at(0.0, 1.0),
+				third: Point.at(0.0, 5.0),
+				fourth: Point.at(5.0, 5.0),
+				fill: ink,
+			}),
+		]
 
 # A rectangle is the quad clockwise on the screen from its top left corner.
 expect
-	Shapes.rectangle({ top_left: Point.at(2.0, 3.0), width: Pixels.of(4.0), height: Pixels.of(5.0), fill: ink })
-		== Quad({ first: Point.at(2.0, 3.0), second: Point.at(6.0, 3.0), third: Point.at(6.0, 8.0), fourth: Point.at(2.0, 8.0), fill: ink })
+	Shapes.rectangle({
+		top_left: Point.at(2.0, 3.0),
+		width: Pixels.of(4.0),
+		height: Pixels.of(5.0),
+		fill: ink,
+	})
+		== Quad({
+			first: Point.at(2.0, 3.0),
+			second: Point.at(6.0, 3.0),
+			third: Point.at(6.0, 8.0),
+			fourth: Point.at(2.0, 8.0),
+			fill: ink,
+		})
 
 # Three corners make a triangle, four a quad, and five a polygon, and each
 # gives back the corners it was made from.
@@ -432,8 +675,16 @@ expect {
 	four = house_corners.take_first(4)
 	tagged = [three, four, house_corners].map(|corners| Shapes.region_from_corners(corners, ink))
 	match tagged {
-		[Triangle(_), Quad(_), Polygon(_)] =>
-			tagged.map(Shapes.region_corners) == [Ok(three), Ok(four), Ok(house_corners)]
+		[
+			Triangle(_),
+			Quad(_),
+			Polygon(_),
+		] =>
+			tagged.map(Shapes.region_corners) == [
+				Ok(three),
+				Ok(four),
+				Ok(house_corners),
+			]
 		_ => False
 	}
 }
@@ -450,11 +701,32 @@ expect [dot, Blend(Add)].map(Shapes.region_corners) == [Err(NoCorners), Err(NoCo
 
 # A horizontal line two wide stands one each side of its axis.
 expect
-	Shapes.line({ from: Point.at(0.0, 0.0), to: Point.at(10.0, 0.0), width: Pixels.of(2.0) }, ink)
-		== Quad({ first: Point.at(0.0, 1.0), second: Point.at(10.0, 1.0), third: Point.at(10.0, -1.0), fourth: Point.at(0.0, -1.0), fill: ink })
+	Shapes.line(
+		{
+			from: Point.at(0.0, 0.0),
+			to: Point.at(10.0, 0.0),
+			width: Pixels.of(2.0),
+		},
+		ink,
+	)
+		== Quad({
+			first: Point.at(0.0, 1.0),
+			second: Point.at(10.0, 1.0),
+			third: Point.at(10.0, -1.0),
+			fourth: Point.at(0.0, -1.0),
+			fill: ink,
+		})
 
 # The fewest sides a ring may have make three sectors.
-expect Shapes.ring_shapes({ center: Point.at(0.0, 0.0), radius: Pixels.of(5.0), line_width: Pixels.of(1.0), sides: 3 }, ink).len() == 3
+expect Shapes.ring_shapes(
+	{
+		center: Point.at(0.0, 0.0),
+		radius: Pixels.of(5.0),
+		line_width: Pixels.of(1.0),
+		sides: 3,
+	},
+	ink,
+).len() == 3
 
 ## A ring sector's corners: outer start, outer end, inner end, inner start.
 sector_corners : Shapes.Shape -> List(Point.Point)
@@ -468,10 +740,21 @@ sector_corners = |shape|
 # corner, all the way round to the first again. Its inner corners sit nearer
 # the center than its outer ones, by the line's width.
 expect {
-	sectors = Shapes.ring_shapes({ center: Point.at(3.0, 4.0), radius: Pixels.of(10.0), line_width: Pixels.of(2.0), sides: 7 }, ink).map(sector_corners)
+	sectors = Shapes.ring_shapes(
+		{
+			center: Point.at(3.0, 4.0),
+			radius: Pixels.of(10.0),
+			line_width: Pixels.of(2.0),
+			sides: 7,
+		},
+		ink,
+	).map(sector_corners)
 	first = sectors.first() ?? crash "Shapes: a ring of seven sides has sectors"
 	following = sectors.drop_first(1).append(first)
-	shared = sectors.map2(following, |sector, next| sector.get(1) == next.get(0) and sector.get(2) == next.get(3))
+	shared = sectors.map2(
+		following,
+		|sector, next| sector.get(1) == next.get(0) and sector.get(2) == next.get(3),
+	)
 	outer = first.get(0) ?? crash "Shapes: a sector has an outer start corner"
 	inner = first.get(3) ?? crash "Shapes: a sector has an inner start corner"
 	sectors.len() == 7 and shared.all(|same| same) and outer.x - inner.x == Pixels.of(2.0)

@@ -81,11 +81,25 @@ This chapter takes one tour across Safari Ride, with a stop for each of the five
 
 ### Numbers at the bottom
 
-Every type is built from smaller ones, and at the bottom are Roc's own primitive types. Safari Ride's are nearly all numbers. Here's a small type built around one:
+Every type is built from smaller ones, and at the bottom are Roc's own primitive types. Safari Ride's are nearly all numbers. Here's a type built around one, `Distance`, in full:
 
-{{code Distance.Distance from "Distance ::" to "F64.{"}}
+{{code Distance.Distance}}
 
-`F64` is one of Roc's number types, a 64-bit floating-point number. A `Distance` wraps one, a length in metres, and the `::` makes it opaque: only the `Distance` module reads the number inside. Everywhere else, a length is a `Distance`, and the compiler keeps it apart from every other number.
+Here's what its parts say:
+
+| Code | What it says |
+|---|---|
+| `Distance ::` | `Distance` names the type. The `::` makes it opaque: only the `Distance` module reads what's inside. |
+| `F64` | What's inside: one of Roc's number types, a 64-bit floating-point number. A `Distance` is a length in metres. |
+| `.{` and `}` | The type's own functions sit between these braces. |
+| `metres : F64 -> Distance` | `metres` names a function, and after the colon comes its type: it takes an `F64` and gives back a `Distance`. |
+| `metres = \|metres\| Distance.(metres)` | The function itself. Between the bars is what it's given, and `Distance.(metres)` wraps that number as a `Distance`. |
+| `to_metres = \|Distance.(d)\| d` | The other way round: `Distance.(d)` opens a `Distance`, and the function gives back the number inside. |
+| `##` | A line that starts with `##` is a doc comment, which describes the code under it, as the one above `zero` does. |
+| `is_gt` to `is_lte` | These four let `>`, `>=`, `<` and `<=` compare two lengths. |
+| `is_eq : _` | This lets `==` compare two lengths, and the `_` asks the compiler to write its definition from the number inside. |
+
+Everywhere outside this module, a length is a `Distance`, and the compiler keeps it apart from every other number. The functions between the braces are the only ways to make a length, change one or read one. Each is a line for its type and a line for its definition. We read functions properly with the pieces that use them.
 
 Roc has text too, in its `Str` type. Safari Ride describes pictures, so its types are numbers and the records and tags built on them, and `Str` appears in it only rarely.
 
@@ -108,7 +122,7 @@ Here's what each piece of it says:
 | `emoji : EmojiStills.EmojiStill,` | `emoji` names a field, and `EmojiStills.EmojiStill` names its type: the `EmojiStill` type in the `EmojiStills` module. |
 | `height : Distance,` | `height` names a field, and `Distance` names its type: the main type of the `Distance` module. |
 | `facing : Billboard.Facing,` | `facing` names a field, and `Billboard.Facing` names its type: the `Facing` type in the `Billboard` module. |
-| `.{` | The type's own functions and types start here, where the listing stops. |
+| `.{` | The type's own functions and types start here, as they do in `Distance`. The listing stops here. |
 
 A module's main type has the module's own name, as `Billboard` and `Distance` do. Wherever it's used, every other type a module offers carries the module's name in front, as `EmojiStills.EmojiStill` and `Billboard.Facing` do.
 
@@ -128,7 +142,7 @@ A sprite says how a thing looks. Where it stands is the world's job. The `World`
 
 {{code World.SegmentPlan}}
 
-Lines that start with `##` are doc comments. A plain `:` gives the record type a short name: any record with these fields is a `SegmentPlan`, so any module can build a plan and read its fields. Here's the plan for the last stretch of road:
+As in `Distance`, the lines that start with `##` are doc comments. A plain `:` gives the record type a short name: any record with these fields is a `SegmentPlan`, so any module can build a plan and read its fields. Here's the plan for the last stretch of road:
 
 {{code World.last_plan}}
 

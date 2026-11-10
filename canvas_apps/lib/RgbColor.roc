@@ -56,15 +56,58 @@ sample_color = RgbColor.of(0x804020)
 expect sample_color.red() == 128
 expect sample_color.green() == 64
 expect sample_color.blue() == 32
-expect [RgbColor.of(0xFFFFFF).red(), RgbColor.of(0xFFFFFF).green(), RgbColor.of(0xFFFFFF).blue()].all(|channel| channel == 255)
-expect [RgbColor.of(0).red(), RgbColor.of(0).green(), RgbColor.of(0).blue()].all(|channel| channel == 0)
+expect [
+	RgbColor.of(0xFFFFFF).red(),
+	RgbColor.of(0xFFFFFF).green(),
+	RgbColor.of(0xFFFFFF).blue(),
+].all(|channel| channel == 255)
+expect [
+	RgbColor.of(0).red(),
+	RgbColor.of(0).green(),
+	RgbColor.of(0).blue(),
+].all(|channel| channel == 0)
 
 # Each channel lands in its own byte, at either end and between.
 expect
 	[
-		({ red: 128, green: 64, blue: 32 }, 0x804020),
-		({ red: 0, green: 0, blue: 0 }, 0),
-		({ red: 255, green: 255, blue: 255 }, 0xFFFFFF),
-		({ red: 0, green: 0, blue: 255 }, 0x0000FF),
-		({ red: 0, green: 255, blue: 0 }, 0x00FF00),
+		(
+			{
+				red: 128,
+				green: 64,
+				blue: 32,
+			},
+			0x804020,
+		),
+		(
+			{
+				red: 0,
+				green: 0,
+				blue: 0,
+			},
+			0,
+		),
+		(
+			{
+				red: 255,
+				green: 255,
+				blue: 255,
+			},
+			0xFFFFFF,
+		),
+		(
+			{
+				red: 0,
+				green: 0,
+				blue: 255,
+			},
+			0x0000FF,
+		),
+		(
+			{
+				red: 0,
+				green: 255,
+				blue: 0,
+			},
+			0x00FF00,
+		),
 	].all(|(channels, rgb)| RgbColor.from_channels(channels) == RgbColor.of(rgb))

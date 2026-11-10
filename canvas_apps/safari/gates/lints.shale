@@ -87,6 +87,16 @@ const UNTYPED_PATHS = {"game.roc", "main.roc", "web.roc", "gates/", "tutorial/"}
 -- unused import, and the widgets import the game. `folders` names the shared
 -- folders a lint also judges, each in a run of its own, since these recipes
 -- take one glob and a glob can't climb out of safari's folder.
+-- The stack lint judges lib once CanvasApp's step takes a record in place of
+-- its three bare arguments, its last two findings there.
+-- `folder_args` gives a folder's run arguments of its own: lib's Font.roc is
+-- a table of glyph strokes, and lib's functions whose arguments something
+-- outside the file dictates are in STACK_DICTATED.
+--
+-- The table, in lib beside the files it names, of lib's functions whose bare
+-- arguments are dictated: roc-ray's Math API, and the wasm edge, which has no
+-- records. lib's run reads it from lib's folder.
+const STACK_DICTATED = "stack_dictated.txt"
 const LINTS = {
   {recipe = "name_hunt", args = {}, budget = {}, counts = {
     {"state_effect", 0}, {"question", 0}, {"vague", 0}, {"name_type", 0}, {"negative", 0},
@@ -106,7 +116,8 @@ const LINTS = {
     {"single", 0}, {"fixed", 0}, {"entry", 0}, {"constant", 0}, {"bool_param", 0}, {"dead", 0},
   }, whole_tree = {"single", "fixed", "entry", "constant", "bool_param", "dead"}},
   {recipe = "stack", args = {}, budget = {"--budget", "steps=4000000000"}, counts = {{"to stack", 0}, {"to unstack", 0}, {"long", 0}},
-    skip = {"BirdStills.roc", "CatStills.roc", "EmojiStills.roc"}, folders = {WIDGETS}},
+    skip = {"BirdStills.roc", "CatStills.roc", "EmojiStills.roc"}, folders = {"canvas_apps/widget_kit", WIDGETS},
+    folder_args = {{"canvas_apps/lib", {"skip=Font.roc", "dictated=" .. STACK_DICTATED}}}},
   {recipe = "vocabulary", args = {"words=vocabulary.txt"}, budget = {}, counts = {{"retired_name", 0}, {"retired_comment", 0}},
     folders = {WIDGETS}},
   {recipe = "name_types", args = {"table=name_types.txt"}, budget = {}, counts = {{"name_type", 0}, {"bare_beside_unit", 0}, {"no_value", 0}},
@@ -132,6 +143,7 @@ function rule_files()
       if m ~= nil then push(rules, SAFARI .. "/" .. m.group) end
     end
   end
+  push(rules, "canvas_apps/lib/" .. STACK_DICTATED)
   for f in rules do
     if not exists(f) then fail("safari lints: no rule file " .. f) end
   end
@@ -186,6 +198,11 @@ function folder_run(lint, folder)
   end
   push(argv, "glob=*.roc")
   for a in lint.args do push(argv, a) end
+  for fa in get(lint, "folder_args", {}) do
+    if fa[1] == folder then
+      for a in fa[2] do push(argv, a) end
+    end
+  end
   return run(argv, {timeout_ms = 600000, whole = 4000000, cwd = folder})
 end
 

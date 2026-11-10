@@ -25,12 +25,27 @@ Font :: [].{
 	# A string, as shapes, with its top-left at `top_left`. `size` is the height
 	# of a capital letter; the stroke is a fourteenth of it, which is about what
 	# a plotter would give you.
-	text_shapes : Str, { top_left : Point.Point, size : F64, color : Brush.Rgba } -> List(Shapes.Shape)
+	text_shapes : Str,
+	{
+		top_left : Point.Point,
+		size : F64,
+		color : Brush.Rgba,
+	} -> List(Shapes.Shape)
 	text_shapes = |words, { top_left, size, color }| {
 		unit = size / units
 		stroke_width = (size / 14.0).max(1.0)
 		left = top_left.x.to_f64()
-		words.to_utf8().map_with_index(|byte, i| glyph_shapes(byte, { top_left: { x: Pixels.of(left + i.to_f64() * advance * unit), y: top_left.y }, unit, stroke_width, color })).join()
+		words.to_utf8().map_with_index(
+			|byte, i| glyph_shapes(
+				byte,
+				{
+					top_left: { x: Pixels.of(left + i.to_f64() * advance * unit), y: top_left.y },
+					unit,
+					stroke_width,
+					color,
+				},
+			),
+		).join()
 	}
 
 	# How wide a string is, for a caller that wants to place one.
@@ -39,19 +54,58 @@ Font :: [].{
 
 	## A string centred on `top_center`, the middle of its top edge, which is
 	## what a title, a banner and a hint all want.
-	centered_text_shapes : Str, { top_center : Point.Point, size : F64, color : Brush.Rgba } -> List(Shapes.Shape)
+	centered_text_shapes : Str,
+	{
+		top_center : Point.Point,
+		size : F64,
+		color : Brush.Rgba,
+	} -> List(Shapes.Shape)
 	centered_text_shapes = |words, { top_center, size, color }|
-		text_shapes(words, { top_left: { x: Pixels.of(top_center.x.to_f64() - width_of(words, size) / 2.0), y: top_center.y }, size, color })
+		text_shapes(
+			words,
+			{
+				top_left: {
+					x: Pixels.of(top_center.x.to_f64() - width_of(words, size) / 2.0),
+					y: top_center.y,
+				},
+				size,
+				color,
+			},
+		)
 
 	## A line of type as strokes. The strokes' capitals stand as tall as a real
 	## typeface's do at the line's size.
 	plotted_shapes : Shapes.TextLine -> List(Shapes.Shape)
-	plotted_shapes = |{ text: words, x, y, size, align, color, .. }| {
+	plotted_shapes = |
+		{
+			text: words,
+			x,
+			y,
+			size,
+			align,
+			color,
+			..,
+		},
+	| {
 		cap_height = size * cap_height_share
 		top = y - cap_height
 		match align {
-			Left => text_shapes(words, { top_left: Point.at(x, top), size: cap_height, color })
-			Center => centered_text_shapes(words, { top_center: Point.at(x, top), size: cap_height, color })
+			Left => text_shapes(
+				words,
+				{
+					top_left: Point.at(x, top),
+					size: cap_height,
+					color,
+				},
+			)
+			Center => centered_text_shapes(
+				words,
+				{
+					top_center: Point.at(x, top),
+					size: cap_height,
+					color,
+				},
+			)
 		}
 	}
 
@@ -84,7 +138,13 @@ cap_height_share = 0.72
 
 # One glyph's strokes, placed and thickened. `unit` is the pixels in one unit
 # of the grid.
-glyph_shapes : U8, { top_left : Point.Point, unit : F64, stroke_width : F64, color : Brush.Rgba } -> List(Shapes.Shape)
+glyph_shapes : U8,
+{
+	top_left : Point.Point,
+	unit : F64,
+	stroke_width : F64,
+	color : Brush.Rgba,
+} -> List(Shapes.Shape)
 glyph_shapes = |byte, { top_left, unit, stroke_width, color }| {
 	strokes = strokes_for(byte)
 	left = top_left.x.to_f64()
@@ -95,8 +155,14 @@ glyph_shapes = |byte, { top_left, unit, stroke_width, color }| {
 			$out = $out.append(
 				Shapes.line(
 					{
-						from: Point.at(left + coordinate_at(coordinates, 2 * (j - 1)) * unit, top + coordinate_at(coordinates, 2 * (j - 1) + 1) * unit),
-						to: Point.at(left + coordinate_at(coordinates, 2 * j) * unit, top + coordinate_at(coordinates, 2 * j + 1) * unit),
+						from: Point.at(
+							left + coordinate_at(coordinates, 2 * (j - 1)) * unit,
+							top + coordinate_at(coordinates, 2 * (j - 1) + 1) * unit,
+						),
+						to: Point.at(
+							left + coordinate_at(coordinates, 2 * j) * unit,
+							top + coordinate_at(coordinates, 2 * j + 1) * unit,
+						),
 						width: Pixels.of(stroke_width),
 					},
 					Flat(color),
@@ -152,10 +218,22 @@ glyph_strokes = |byte|
 		'E' => Ok([[4.0, 0.0, 0.0, 0.0, 0.0, 6.0, 4.0, 6.0], [0.0, 3.0, 3.0, 3.0]])
 		'F' => Ok([[4.0, 0.0, 0.0, 0.0, 0.0, 6.0], [0.0, 3.0, 3.0, 3.0]])
 		'G' => Ok([[4.0, 1.0, 3.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 5.0, 1.0, 6.0, 3.0, 6.0, 4.0, 5.0, 4.0, 3.5, 2.5, 3.5]])
-		'H' => Ok([[0.0, 0.0, 0.0, 6.0], [4.0, 0.0, 4.0, 6.0], [0.0, 3.0, 4.0, 3.0]])
-		'I' => Ok([[1.0, 0.0, 3.0, 0.0], [2.0, 0.0, 2.0, 6.0], [1.0, 6.0, 3.0, 6.0]])
+		'H' => Ok([
+			[0.0, 0.0, 0.0, 6.0],
+			[4.0, 0.0, 4.0, 6.0],
+			[0.0, 3.0, 4.0, 3.0],
+		])
+		'I' => Ok([
+			[1.0, 0.0, 3.0, 0.0],
+			[2.0, 0.0, 2.0, 6.0],
+			[1.0, 6.0, 3.0, 6.0],
+		])
 		'J' => Ok([[3.0, 0.0, 3.0, 5.0, 2.0, 6.0, 1.0, 6.0, 0.0, 5.0]])
-		'K' => Ok([[0.0, 0.0, 0.0, 6.0], [4.0, 0.0, 0.4, 3.6], [1.4, 2.8, 4.0, 6.0]])
+		'K' => Ok([
+			[0.0, 0.0, 0.0, 6.0],
+			[4.0, 0.0, 0.4, 3.6],
+			[1.4, 2.8, 4.0, 6.0],
+		])
 		'L' => Ok([[0.0, 0.0, 0.0, 6.0, 4.0, 6.0]])
 		'M' => Ok([[0.0, 6.0, 0.0, 0.0, 2.0, 2.5, 4.0, 0.0, 4.0, 6.0]])
 		'N' => Ok([[0.0, 6.0, 0.0, 0.0, 4.0, 6.0, 4.0, 0.0]])
@@ -181,7 +259,11 @@ glyph_strokes = |byte|
 		'h' => Ok([[0.0, 0.0, 0.0, 6.0], [0.0, 4.0, 1.0, 3.0, 3.0, 3.0, 4.0, 4.0, 4.0, 6.0]])
 		'i' => Ok([[2.0, 1.4, 2.0, 2.0], [2.0, 3.0, 2.0, 6.0]])
 		'j' => Ok([[3.0, 1.4, 3.0, 2.0], [3.0, 3.0, 3.0, 7.0, 2.0, 8.0, 1.0, 8.0, 0.4, 7.4]])
-		'k' => Ok([[0.0, 0.0, 0.0, 6.0], [3.6, 3.0, 0.6, 5.0], [1.6, 4.3, 4.0, 6.0]])
+		'k' => Ok([
+			[0.0, 0.0, 0.0, 6.0],
+			[3.6, 3.0, 0.6, 5.0],
+			[1.6, 4.3, 4.0, 6.0],
+		])
 		'l' => Ok([[1.6, 0.0, 1.6, 5.2, 2.6, 6.0]])
 		'm' => Ok([[0.0, 6.0, 0.0, 3.0], [0.0, 4.0, 1.0, 3.0, 2.0, 4.0, 2.0, 6.0], [2.0, 4.0, 3.0, 3.0, 4.0, 4.0, 4.0, 6.0]])
 		'n' => Ok([[0.0, 6.0, 0.0, 3.0], [0.0, 4.0, 1.0, 3.0, 3.0, 3.0, 4.0, 4.0, 4.0, 6.0]])
@@ -209,15 +291,34 @@ sample_line = {
 	size: 50.0,
 	face: Prose,
 	align: Left,
-	color: { r: 32.0, g: 32.0, b: 32.0, a: 1.0 },
+	color: {
+		r: 32.0,
+		g: 32.0,
+		b: 32.0,
+		a: 1.0,
+	},
 }
 
 expect
 	Font.plotted_shapes(sample_line)
-		== Font.text_shapes("Hi", { top_left: Point.at(100.0, 164.0), size: 36.0, color: sample_line.color })
+		== Font.text_shapes(
+			"Hi",
+			{
+				top_left: Point.at(100.0, 164.0),
+				size: 36.0,
+				color: sample_line.color,
+			},
+		)
 expect
 	Font.plotted_shapes({ ..sample_line, align: Center })
-		== Font.centered_text_shapes("Hi", { top_center: Point.at(100.0, 164.0), size: 36.0, color: sample_line.color })
+		== Font.centered_text_shapes(
+			"Hi",
+			{
+				top_center: Point.at(100.0, 164.0),
+				size: 36.0,
+				color: sample_line.color,
+			},
+		)
 
 # A line's face is for a real typeface, and the strokes have only one.
 expect Font.plotted_shapes({ ..sample_line, face: Code }) == Font.plotted_shapes(sample_line)
@@ -227,5 +328,10 @@ expect Font.room_for("Hi", 50.0) == 62.0
 expect Font.room_for("Hi", 100.0) == 124.0
 
 # The alphabet's words plot, and one byte outside it is enough to refuse a line.
-expect ["", "Cones({ shade: 0.5 })", "Shapes so far: 1,656 of 2,569", "Look depth: 52%"].all(Font.can_plot)
+expect [
+	"",
+	"Cones({ shade: 0.5 })",
+	"Shapes so far: 1,656 of 2,569",
+	"Look depth: 52%",
+].all(Font.can_plot)
 expect ["The rider's gaze", "Why?", "21\u(b0)", "a+b"].all(|words| !Font.can_plot(words))

@@ -207,7 +207,11 @@ WidgetPage :: [].{
 
 	## What `sighting` shows through the lens at rest under a sky `darkness`
 	## dark, or nothing if it stood behind the camera.
-	resting_lens_shapes : Try(Pipeline.Sighted(kind), [BehindCamera]), Fraction -> List(Shapes.Shape)
+	resting_lens_shapes : Try(
+		Pipeline.Sighted(kind),
+		[BehindCamera],
+	),
+	Fraction -> List(Shapes.Shape)
 		where [kind.scenery_sprite : kind, Sprite.Setting -> Sprite]
 	resting_lens_shapes = |sighting, darkness|
 		match sighting {

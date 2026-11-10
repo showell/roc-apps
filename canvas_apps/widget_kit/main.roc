@@ -11,7 +11,4 @@ package
 		WidgetPage,
 		WidgetPalette,
 	]
-	{
-		game: "../safari/game.roc",
-		lib: "../lib/main.roc",
-	}
+	{ game: "../safari/game.roc", lib: "../lib/main.roc" }

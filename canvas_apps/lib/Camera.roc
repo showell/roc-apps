@@ -79,7 +79,12 @@ Camera :: [].{
 			right = top_left.x.max(top_right.x).max(bottom_left.x.max(bottom_right.x))
 			top = top_left.y.min(top_right.y).min(bottom_left.y.min(bottom_right.y))
 			bottom = top_left.y.max(top_right.y).max(bottom_left.y.max(bottom_right.y))
-			Math.rect(left, top, right - left, bottom - top)
+			Math.rect(
+				left,
+				top,
+				right - left,
+				bottom - top,
+			)
 		}
 
 		## This camera's world, as the space `Shapes.shapes_in_space` puts shapes in.
@@ -95,7 +100,12 @@ Camera :: [].{
 
 	## A camera, its numbers checked: a value that is not finite, or a zoom of
 	## zero, crashes.
-	new : { target : Math.Vec2, offset : Math.Vec2, rotation : F32, zoom : F32 } -> Camera.Camera2D
+	new : {
+		target : Math.Vec2,
+		offset : Math.Vec2,
+		rotation : F32,
+		zoom : F32,
+	} -> Camera.Camera2D
 	new = |{ target, offset, rotation, zoom }|
 		{
 			target: finite_vec(target),
@@ -108,7 +118,12 @@ Camera :: [].{
 	## size, at a zoom.
 	follow : Math.Vec2, { screen : Math.Vec2, zoom : F32 } -> Camera.Camera2D
 	follow = |target, { screen, zoom }|
-		new({ target, offset: { x: screen.x / 2, y: screen.y / 2 }, rotation: 0, zoom })
+		new({
+			target,
+			offset: { x: screen.x / 2, y: screen.y / 2 },
+			rotation: 0,
+			zoom,
+		})
 }
 
 ## `v`, widened to the F64 a frame is made of.
@@ -139,12 +154,20 @@ invertible_zoom = |zoom|
 
 # A point taken into the world and back is the point it started as.
 expect {
-	camera = Camera.new({ target: { x: 120, y: -40 }, offset: { x: 400, y: 300 }, rotation: 37, zoom: 2.5 })
+	camera = Camera.new({
+		target: { x: 120, y: -40 },
+		offset: { x: 400, y: 300 },
+		rotation: 37,
+		zoom: 2.5,
+	})
 	there = camera.screen_to_world({ x: 210, y: 160 })
 	back = camera.world_to_screen(there)
 	(back.x - 210).abs() < 0.01 and (back.y - 160).abs() < 0.01
 }
 
 # A follow camera puts its target under the middle of the screen.
-expect Camera.follow({ x: 900, y: 700 }, { screen: { x: 800, y: 600 }, zoom: 2 }).world_to_screen({ x: 900, y: 700 })
+expect Camera.follow(
+	{ x: 900, y: 700 },
+	{ screen: { x: 800, y: 600 }, zoom: 2 },
+).world_to_screen({ x: 900, y: 700 })
 	== { x: 400, y: 300 }

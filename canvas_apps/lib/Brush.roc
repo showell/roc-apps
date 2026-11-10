@@ -29,22 +29,60 @@ import RgbColor
 Brush :: [].{
 
 	## Red, green and blue in 0..255, alpha in 0..1.
-	Rgba : { r : F64, g : F64, b : F64, a : F64 }
+	Rgba : {
+		r : F64,
+		g : F64,
+		b : F64,
+		a : F64,
+	}
 
 	## The start colour up to `start_offset`, the end colour from `end_offset`,
 	## and a mix of the two between.
-	TwoStops : { start_color : Brush.Rgba, end_color : Brush.Rgba, start_offset : F64, end_offset : F64 }
+	TwoStops : {
+		start_color : Brush.Rgba,
+		end_color : Brush.Rgba,
+		start_offset : F64,
+		end_offset : F64,
+	}
 
 	Fill : [
 		Flat(Brush.Rgba),
 
 		## The edge colour at `left_x` and `right_x`, and the middle colour halfway.
-		Span({ edge_color : Brush.Rgba, middle_color : Brush.Rgba, left_x : Pixels, right_x : Pixels }),
-		Radial({ inner_color : Brush.Rgba, outer_color : Brush.Rgba, center : Point.Point, inner_radius : Pixels, outer_radius : Pixels }),
-		Linear({ stops : Brush.TwoStops, start_point : Point.Point, end_point : Point.Point }),
+		Span(
+			{
+				edge_color : Brush.Rgba,
+				middle_color : Brush.Rgba,
+				left_x : Pixels,
+				right_x : Pixels,
+			},
+		),
+		Radial(
+			{
+				inner_color : Brush.Rgba,
+				outer_color : Brush.Rgba,
+				center : Point.Point,
+				inner_radius : Pixels,
+				outer_radius : Pixels,
+			},
+		),
+		Linear(
+			{
+				stops : Brush.TwoStops,
+				start_point : Point.Point,
+				end_point : Point.Point,
+			},
+		),
 
 		## Out from `center` to the ellipse whose half-axes are `axis_u` and `axis_v`.
-		Ellipse({ stops : Brush.TwoStops, center : Point.Point, axis_u : Point.Point, axis_v : Point.Point }),
+		Ellipse(
+			{
+				stops : Brush.TwoStops,
+				center : Point.Point,
+				axis_u : Point.Point,
+				axis_v : Point.Point,
+			},
+		),
 
 		## A radial gradient of three stops: the inner colour at `inner_radius`,
 		## the outer colour at `outer_radius`, and the middle colour at
@@ -85,16 +123,31 @@ Brush :: [].{
 					1.0
 				}
 				if t <= 0.5 {
-					mix({ from: p.edge_color, to: p.middle_color, fraction: t * 2.0 })
+					mix({
+						from: p.edge_color,
+						to: p.middle_color,
+						fraction: t * 2.0,
+					})
 				} else {
-					mix({ from: p.middle_color, to: p.edge_color, fraction: (t - 0.5) * 2.0 })
+					mix({
+						from: p.middle_color,
+						to: p.edge_color,
+						fraction: (t - 0.5) * 2.0,
+					})
 				}
 			}
 			Radial(p) =>
 				mix({
 					from: p.inner_color,
 					to: p.outer_color,
-					fraction: radial_fraction({ x, y }, { center: p.center, inner_radius: p.inner_radius, outer_radius: p.outer_radius }),
+					fraction: radial_fraction(
+						{ x, y },
+						{
+							center: p.center,
+							inner_radius: p.inner_radius,
+							outer_radius: p.outer_radius,
+						},
+					),
 				})
 			Linear(p) => {
 				start_x = p.start_point.x.to_f64()
@@ -120,12 +173,27 @@ Brush :: [].{
 				two_stop(p.stops, clamp01((ux * ux + uy * uy).sqrt()))
 			}
 			Glow(p) => {
-				t = radial_fraction({ x, y }, { center: p.center, inner_radius: p.inner_radius, outer_radius: p.outer_radius })
+				t = radial_fraction(
+					{ x, y },
+					{
+						center: p.center,
+						inner_radius: p.inner_radius,
+						outer_radius: p.outer_radius,
+					},
+				)
 				m = p.middle_offset
 				if t <= m {
-					mix({ from: p.inner_color, to: p.middle_color, fraction: t / m })
+					mix({
+						from: p.inner_color,
+						to: p.middle_color,
+						fraction: t / m,
+					})
 				} else {
-					mix({ from: p.middle_color, to: p.outer_color, fraction: (t - m) / (1.0 - m) })
+					mix({
+						from: p.middle_color,
+						to: p.outer_color,
+						fraction: (t - m) / (1.0 - m),
+					})
 				}
 			}
 		}
@@ -134,9 +202,17 @@ Brush :: [].{
 	## The gradient out from `center` to the ellipse whose half-axes are `axis_u`
 	## and `axis_v`, or `TooThin` when the axes are so nearly parallel that the
 	## ellipse has no sound inverse to shade with.
-	elliptical_gradient : { stops : Brush.TwoStops, center : Point.Point, axis_u : Point.Point, axis_v : Point.Point } -> Try(Brush.Fill, [TooThin])
+	elliptical_gradient : {
+		stops : Brush.TwoStops,
+		center : Point.Point,
+		axis_u : Point.Point,
+		axis_v : Point.Point,
+	} -> Try(Brush.Fill, [TooThin])
 	elliptical_gradient = |look|
-		if ellipse_determinant({ axis_u: look.axis_u, axis_v: look.axis_v }).abs() < min_ellipse_determinant {
+		if ellipse_determinant({
+			axis_u: look.axis_u,
+			axis_v: look.axis_v,
+		}).abs() < min_ellipse_determinant {
 			Err(TooThin)
 		} else {
 			Ok(Ellipse(look))
@@ -146,7 +222,10 @@ Brush :: [].{
 	## circle, the inverse of the one whose columns are its axes. An offset
 	## (dx, dy) goes to (top_row.x * dx + top_row.y * dy, bottom_row.x * dx +
 	## bottom_row.y * dy). Brush.shade and BrushGlsl's uniforms both use it.
-	ellipse_inverse : { axis_u : Point.Point, axis_v : Point.Point } -> { top_row : Brush.MatrixRow, bottom_row : Brush.MatrixRow }
+	ellipse_inverse : { axis_u : Point.Point, axis_v : Point.Point } -> {
+		top_row : Brush.MatrixRow,
+		bottom_row : Brush.MatrixRow,
+	}
 	ellipse_inverse = |{ axis_u, axis_v }| {
 		det = ellipse_determinant({ axis_u, axis_v })
 		{
@@ -251,7 +330,11 @@ Brush :: [].{
 
 	## A gradient along the line from `start_point` to `end_point`. A line from
 	## a point to itself has no direction, so it crashes.
-	linear_gradient : { stops : Brush.TwoStops, start_point : Point.Point, end_point : Point.Point } -> Brush.Fill
+	linear_gradient : {
+		stops : Brush.TwoStops,
+		start_point : Point.Point,
+		end_point : Point.Point,
+	} -> Brush.Fill
 	linear_gradient = |{ stops, start_point, end_point }| {
 		dx = end_point.x.minus(start_point.x).to_f64()
 		dy = end_point.y.minus(start_point.y).to_f64()
@@ -263,8 +346,23 @@ Brush :: [].{
 	}
 
 	## The colour `fraction` of the way from one colour to another.
-	mix : { from : Brush.Rgba, to : Brush.Rgba, fraction : F64 } -> Brush.Rgba
-	mix = |{ from: p, to: q, fraction: t }| { r: p.r + (q.r - p.r) * t, g: p.g + (q.g - p.g) * t, b: p.b + (q.b - p.b) * t, a: p.a + (q.a - p.a) * t }
+	mix : {
+		from : Brush.Rgba,
+		to : Brush.Rgba,
+		fraction : F64,
+	} -> Brush.Rgba
+	mix = |
+		{
+			from: p,
+			to: q,
+			fraction: t,
+		},
+	| {
+		r: p.r + (q.r - p.r) * t,
+		g: p.g + (q.g - p.g) * t,
+		b: p.b + (q.b - p.b) * t,
+		a: p.a + (q.a - p.a) * t,
+	}
 }
 
 clamp01 : F64 -> F64
@@ -278,7 +376,12 @@ clamp01 = |t| if t < 0.0 {
 
 ## How far a point lies from the inner radius to the outer one, clamped to 0..1,
 ## or 1 when the radii meet.
-radial_fraction : { x : F64, y : F64 }, { center : Point.Point, inner_radius : Pixels, outer_radius : Pixels } -> F64
+radial_fraction : { x : F64, y : F64 },
+{
+	center : Point.Point,
+	inner_radius : Pixels,
+	outer_radius : Pixels,
+} -> F64
 radial_fraction = |{ x, y }, ring| {
 	cx = ring.center.x.to_f64()
 	cy = ring.center.y.to_f64()
@@ -295,7 +398,9 @@ radial_fraction = |{ x, y }, ring| {
 ## The determinant of the matrix whose columns are an ellipse's axes. Near
 ## zero, the axes are nearly parallel and the ellipse has no inverse.
 ellipse_determinant : { axis_u : Point.Point, axis_v : Point.Point } -> F64
-ellipse_determinant = |{ axis_u, axis_v }| axis_u.x.to_f64() * axis_v.y.to_f64() - axis_u.y.to_f64() * axis_v.x.to_f64()
+ellipse_determinant = |
+	{ axis_u, axis_v },
+| axis_u.x.to_f64() * axis_v.y.to_f64() - axis_u.y.to_f64() * axis_v.x.to_f64()
 
 ## The least area, in square units of the shape's coordinates, that an
 ## ellipse's two axes may span for `Brush.elliptical_gradient` to give the gradient. Below
@@ -366,7 +471,11 @@ two_stop = |stops, t| if t <= stops.start_offset {
 } else if t >= stops.end_offset {
 	stops.end_color
 } else {
-	Brush.mix({ from: stops.start_color, to: stops.end_color, fraction: (t - stops.start_offset) / (stops.end_offset - stops.start_offset) })
+	Brush.mix({
+		from: stops.start_color,
+		to: stops.end_color,
+		fraction: (t - stops.start_offset) / (stops.end_offset - stops.start_offset),
+	})
 }
 
 ## The ellipse with axes (3, 4) and (5, 6) has determinant -2, and its inverse
@@ -380,29 +489,68 @@ expect sample_inverse == { top_row: { x: -3.0, y: 2.5 }, bottom_row: { x: 2.0, y
 # An ellipse whose axes span the least area is a gradient, one just under it
 # is too thin, either way round, and parallel axes are too thin.
 expect {
-	stops = { start_color: Brush.opaque_rgba(RgbColor.of(0x000000)), end_color: Brush.opaque_rgba(RgbColor.of(0xFFFFFF)), start_offset: 0.0, end_offset: 1.0 }
-	at_least = { stops, center: Point.at(0.0, 0.0), axis_u: Point.at(0.0001, 0.0), axis_v: Point.at(0.0, 1.0) }
+	stops = {
+		start_color: Brush.opaque_rgba(RgbColor.of(0x000000)),
+		end_color: Brush.opaque_rgba(RgbColor.of(0xFFFFFF)),
+		start_offset: 0.0,
+		end_offset: 1.0,
+	}
+	at_least = {
+		stops,
+		center: Point.at(0.0, 0.0),
+		axis_u: Point.at(0.0001, 0.0),
+		axis_v: Point.at(0.0, 1.0),
+	}
 	under = { ..at_least, axis_u: Point.at(0.00009, 0.0) }
 	under_flipped = { ..under, axis_v: Point.at(0.0, -1.0) }
-	parallel = { ..at_least, axis_u: Point.at(2.0, 4.0), axis_v: Point.at(1.0, 2.0) }
+	parallel = {
+		..at_least,
+		axis_u: Point.at(2.0, 4.0),
+		axis_v: Point.at(1.0, 2.0),
+	}
 	Brush.elliptical_gradient(at_least) == Ok(Ellipse(at_least))
 		and Brush.elliptical_gradient(under) == Err(TooThin)
 		and Brush.elliptical_gradient(under_flipped) == Err(TooThin)
 		and Brush.elliptical_gradient(parallel) == Err(TooThin)
 }
 
-expect Brush.translucent(ArgbColor.of(0x80FFE9A8)) == { r: 255.0, g: 233.0, b: 168.0, a: 128.0 / 255.0 }
-expect Brush.translucent(ArgbColor.of(0xFF000000)) == { r: 0.0, g: 0.0, b: 0.0, a: 1.0 }
+expect Brush.translucent(ArgbColor.of(0x80FFE9A8)) == {
+	r: 255.0,
+	g: 233.0,
+	b: 168.0,
+	a: 128.0 / 255.0,
+}
+expect Brush.translucent(ArgbColor.of(0xFF000000)) == {
+	r: 0.0,
+	g: 0.0,
+	b: 0.0,
+	a: 1.0,
+}
 
 # A colour with no alpha byte is invisible.
 expect Brush.translucent(ArgbColor.of(0x00FFE9A8)).a == 0.0
 
-expect Brush.opaque_rgba(RgbColor.of(0xFFE9A8)) == { r: 255.0, g: 233.0, b: 168.0, a: 1.0 }
+expect Brush.opaque_rgba(RgbColor.of(0xFFE9A8)) == {
+	r: 255.0,
+	g: 233.0,
+	b: 168.0,
+	a: 1.0,
+}
 
-expect Brush.flat(RgbColor.of(0xFFE9A8)) == Flat({ r: 255.0, g: 233.0, b: 168.0, a: 1.0 })
+expect Brush.flat(RgbColor.of(0xFFE9A8)) == Flat({
+	r: 255.0,
+	g: 233.0,
+	b: 168.0,
+	a: 1.0,
+})
 
 # An alpha share is kept as it is, at either end and between.
-expect Brush.with_alpha(RgbColor.of(0xFFC980), 0.85) == { r: 255.0, g: 201.0, b: 128.0, a: 0.85 }
+expect Brush.with_alpha(RgbColor.of(0xFFC980), 0.85) == {
+	r: 255.0,
+	g: 201.0,
+	b: 128.0,
+	a: 0.85,
+}
 expect Brush.with_alpha(RgbColor.of(0xFFC980), 0.0).a == 0.0
 expect Brush.with_alpha(RgbColor.of(0xFFC980), 1.0) == Brush.opaque_rgba(RgbColor.of(0xFFC980))
 
@@ -411,18 +559,44 @@ expect Brush.with_alpha(RgbColor.of(0xFFC980), 1.0) == Brush.opaque_rgba(RgbColo
 expect {
 	edge = Brush.opaque_rgba(RgbColor.of(0x000000))
 	middle = Brush.opaque_rgba(RgbColor.of(0xFFFFFF))
-	met = Span({ edge_color: edge, middle_color: middle, left_x: Pixels.of(5.0), right_x: Pixels.of(5.0) })
-	wide = Span({ edge_color: edge, middle_color: middle, left_x: Pixels.of(4.0), right_x: Pixels.of(6.0) })
+	met = Span({
+		edge_color: edge,
+		middle_color: middle,
+		left_x: Pixels.of(5.0),
+		right_x: Pixels.of(5.0),
+	})
+	wide = Span({
+		edge_color: edge,
+		middle_color: middle,
+		left_x: Pixels.of(4.0),
+		right_x: Pixels.of(6.0),
+	})
 	Brush.shade(met, Point.at(5.0, 0.0)) == edge and Brush.shade(wide, Point.at(5.0, 0.0)) == middle
 }
 
 # A line from a point to itself gives its end colour everywhere, and a line
 # with any length gives its start colour at its start.
 expect {
-	stops = { start_color: Brush.opaque_rgba(RgbColor.of(0x000000)), end_color: Brush.opaque_rgba(RgbColor.of(0xFFFFFF)), start_offset: 0.0, end_offset: 1.0 }
-	point = Linear({ stops, start_point: Point.at(1.0, 1.0), end_point: Point.at(1.0, 1.0) })
-	line = Linear({ stops, start_point: Point.at(1.0, 1.0), end_point: Point.at(1.0, 3.0) })
-	Brush.shade(point, Point.at(1.0, 1.0)) == stops.end_color and Brush.shade(line, Point.at(1.0, 1.0)) == stops.start_color
+	stops = {
+		start_color: Brush.opaque_rgba(RgbColor.of(0x000000)),
+		end_color: Brush.opaque_rgba(RgbColor.of(0xFFFFFF)),
+		start_offset: 0.0,
+		end_offset: 1.0,
+	}
+	point = Linear({
+		stops,
+		start_point: Point.at(1.0, 1.0),
+		end_point: Point.at(1.0, 1.0),
+	})
+	line = Linear({
+		stops,
+		start_point: Point.at(1.0, 1.0),
+		end_point: Point.at(1.0, 3.0),
+	})
+	Brush.shade(
+		point,
+		Point.at(1.0, 1.0),
+	) == stops.end_color and Brush.shade(line, Point.at(1.0, 1.0)) == stops.start_color
 }
 
 sample_color : RgbColor
@@ -469,8 +643,14 @@ expect
 		})
 
 # No strength, or too narrow a region, is a flat fill.
-expect Brush.corners_shade(wide_corners, { color: sample_color, strength: Fraction.zero }) == Brush.flat(sample_color)
-expect Brush.corners_shade(narrow_corners, { color: sample_color, strength: Fraction.whole }) == Brush.flat(sample_color)
+expect Brush.corners_shade(
+	wide_corners,
+	{ color: sample_color, strength: Fraction.zero },
+) == Brush.flat(sample_color)
+expect Brush.corners_shade(
+	narrow_corners,
+	{ color: sample_color, strength: Fraction.whole },
+) == Brush.flat(sample_color)
 
 ## A circular gradient about the origin, of radius `radius`.
 circle_of : Pixels -> Try(Brush.Fill, [TooSmall])
@@ -504,6 +684,10 @@ expect {
 		start_offset: 0.25,
 		end_offset: 0.75,
 	}
-	line = { stops, start_point: Point.at(1.0, 2.0), end_point: Point.at(3.0, 4.0) }
+	line = {
+		stops,
+		start_point: Point.at(1.0, 2.0),
+		end_point: Point.at(3.0, 4.0),
+	}
 	Brush.linear_gradient(line) == Linear(line)
 }

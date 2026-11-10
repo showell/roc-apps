@@ -35,8 +35,32 @@ WasmApp :: [].{
 		sounds = game.sounds
 		{
 			init: |{}| Box.box(game.init),
-			model_at_next_step: |boxed_model, key_held, key_struck, button_held, button_struck, x, y, wheel|
-				Box.box(model_at_next_step(Box.unbox(boxed_model), Input.of({ held: key_held, struck: key_struck, mouse: Mouse.of({ held: button_held, struck: button_struck, at: { x, y }, wheel }) }), seconds_a_step)),
+			model_at_next_step: |
+				boxed_model,
+				key_held,
+				key_struck,
+				button_held,
+				button_struck,
+				x,
+				y,
+				wheel,
+			|
+				Box.box(
+					model_at_next_step(
+						Box.unbox(boxed_model),
+						Input.of({
+							held: key_held,
+							struck: key_struck,
+							mouse: Mouse.of({
+								held: button_held,
+								struck: button_struck,
+								at: { x, y },
+								wheel,
+							}),
+						}),
+						seconds_a_step,
+					),
+				),
 			frame_shapes: |boxed_model| frame_shapes(Box.unbox(boxed_model)),
 			# The host hands the frame back and Roc drops it. Releasing a
 			# List(Shape) means decrementing each element's inner lists, which
@@ -75,4 +99,7 @@ expect tone_count_of(List.repeat({ hertz: 440, milliseconds: 80 }, 32)) == 32
 # The host asks only for a tone below the count it was given, so one past the
 # end is a bug on the host's side.
 tone_at : List(CanvasApp.Tone), U32 -> CanvasApp.Tone
-tone_at = |tones, i| tones.get(i.to_u64()) ?? crash "WasmApp.tone_at: the host asked for a tone past the end of the app's tones"
+tone_at = |
+	tones,
+	i,
+| tones.get(i.to_u64()) ?? crash "WasmApp.tone_at: the host asked for a tone past the end of the app's tones"

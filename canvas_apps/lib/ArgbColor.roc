@@ -48,4 +48,9 @@ expect
 		(1, 0x01FF2A18),
 		(254, 0xFEFF2A18),
 		(255, 0xFFFF2A18),
-	].all(|(alpha, argb)| ArgbColor.from_rgb(RgbColor.of(0xFF2A18), { alpha: alpha }) == ArgbColor.of(argb))
+	].all(
+		|(alpha, argb)| ArgbColor.from_rgb(
+			RgbColor.of(0xFF2A18),
+			{ alpha: alpha },
+		) == ArgbColor.of(argb),
+	)

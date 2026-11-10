@@ -1,0 +1,6 @@
+# lib's functions whose bare arguments something outside the file dictates,
+# for the stack lint (gates/lints.shale). Each line is a file in
+# canvas_apps/lib, a function, and after ` -- ` who dictates its arguments.
+Math.roc rect -- roc-ray's Math API, which a game ported from its examples calls unchanged
+Math.roc clamp -- roc-ray's Math API, which a game ported from its examples calls unchanged
+WasmApp.roc model_at_next_step -- the wasm edge, which has no records, so a tick's input arrives as numbers

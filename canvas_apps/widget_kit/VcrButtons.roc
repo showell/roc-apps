@@ -182,7 +182,8 @@ transport_moved_by = |transport, { by, range }| {
 }
 
 ## `transport` after a frame of its own run.
-run_on : VcrButtons.Transport(number), VcrButtons.NumberRange(number) -> VcrButtons.Transport(number)
+run_on :
+	VcrButtons.Transport(number), VcrButtons.NumberRange(number) -> VcrButtons.Transport(number)
 run_on = |transport, range|
 	match transport.motion {
 		Stopped => transport

@@ -23,7 +23,9 @@ Click :: [].{
 		contains = |area, spot| {
 			x = spot.x.to_f64()
 			y = spot.y.to_f64()
-			x >= area.left and x < area.left + area.width and y >= area.top and y < area.top + area.height
+			within_width = x >= area.left and x < area.left + area.width
+			within_height = y >= area.top and y < area.top + area.height
+			within_width and within_height
 		}
 	}
 
