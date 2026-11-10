@@ -205,18 +205,11 @@ picture_shapes =
 		space: herd_space,
 	}).concat(label_shapes)
 
-## Every corner of `shapes`' polygons on the canvas, or none if any shape isn't
-## a polygon.
+## Every corner of `shapes`' straight-edged regions on the canvas, or none if
+## any shape has no corners.
 canvas_corners : List(Shapes.Shape) -> Try(List(Point.Point), [NotPolygon])
 canvas_corners = |shapes| {
-	polygons = shapes.keep_oks(
-		|shape|
-			match shape {
-				Triangle(t) => Ok([t.first, t.second, t.third])
-				Polygon({ corners, .. }) => Ok(corners)
-				Text(_) | Disc(_) | Rectangle(_) | Blend(_) | View(_) | Image(_) => Err(NotPolygon)
-			},
-	)
+	polygons = shapes.keep_oks(Shapes.region_corners)
 	if polygons.len() == shapes.len() and !polygons.is_empty() {
 		Ok(polygons.join().map(canvas_point_of_screen))
 	} else {
@@ -277,7 +270,7 @@ is_label_on_canvas = |label|
 				Err(ListWasEmpty) => False
 			}
 		}
-		Triangle(_) | Polygon(_) | Disc(_) | Rectangle(_) | Blend(_) | View(_) | Image(_) => False
+		Triangle(_) | Polygon(_) | Disc(_) | Quad(_) | Blend(_) | View(_) | Image(_) => False
 	}
 
 ## The words of `shapes`' lines of type.
@@ -290,7 +283,7 @@ label_texts = |shapes|
 				Triangle(_)
 				| Polygon(_)
 				| Disc(_)
-				| Rectangle(_)
+				| Quad(_)
 				| Blend(_)
 				| View(_)
 				| Image(_) => Err(NotText)

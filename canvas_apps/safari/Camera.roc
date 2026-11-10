@@ -61,7 +61,9 @@ Camera :: [].{
 
 	## A polygon on screen, cut at the near plane, unless it's wholly behind the
 	## camera. What is left of a polygon of three corners or more has three or
-	## more, so fewer is a bug in the code that asked, and it crashes.
+	## more, so fewer is a bug in the code that asked, and it crashes. The cut
+	## can add a corner or take some away, so a quad can come out a triangle, a
+	## quad or a polygon of five, and the corners left decide which.
 	clipped_polygon : Camera.FlatPolygon, Pixels -> Try(Shapes.Shape, [BehindCamera])
 	clipped_polygon = |{ color, corners }, focal_length| {
 		in_front = RiderView.clipped_points(corners)
@@ -71,10 +73,10 @@ Camera :: [].{
 			crash "Camera.clipped_polygon: a polygon needs at least three corners"
 		} else {
 			Ok(
-				Polygon({
-					corners: projected_points(in_front, focal_length),
-					fill: Brush.flat(color),
-				}),
+				Shapes.region_from_corners(
+					projected_points(in_front, focal_length),
+					Brush.flat(color),
+				),
 			)
 		}
 	}

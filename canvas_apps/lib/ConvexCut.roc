@@ -1,7 +1,8 @@
-## ConvexCut cuts each concave polygon of a frame into triangles, for a painter
-## that fills only convex polygons, as roc-ray does. A canvas fills a concave
-## polygon itself and doesn't ask for this. A frame paints the same either way,
-## which the gates' ShapesFrame checks.
+## ConvexCut cuts each concave quad and polygon of a frame into triangles, for a
+## painter that fills only convex polygons, as roc-ray does. A triangle is always
+## convex, and passes through. A canvas fills a concave polygon itself and
+## doesn't ask for this. A frame paints the same either way, which the gates'
+## ShapesFrame checks.
 import Brush
 import Point
 import Shapes
@@ -9,27 +10,34 @@ import Shapes
 ConvexCut :: [].{
 
 	## One shape of a cut frame: a shape the cut leaves as it is, or the
-	## triangles of one concave polygon, three corners each. Only `cut_shapes`
-	## makes these, and only the native runner paints them.
+	## triangles of one concave quad or polygon, three corners each. Only
+	## `cut_shapes` makes these, and only the native runner paints them.
 	CutShape : [
 		Uncut(Shapes.Shape),
 		Triangles({ triangle_corners : List(Point.Point), fill : Brush.Fill }),
 	]
 
-	## The frame with each concave polygon cut into triangles.
+	## The frame with each concave quad and polygon cut into triangles.
 	cut_shapes : List(Shapes.Shape) -> List(ConvexCut.CutShape)
 	cut_shapes = |shapes| shapes.map(
 		|shape|
 			match shape {
-				Polygon(p) =>
-					if is_convex(p.corners.map(plain_point)) {
-						Uncut(Polygon(p))
-					} else {
-						Triangles({ triangle_corners: wound_triangles(triangles(p.corners.map(plain_point))).map(frame_point), fill: p.fill })
-					}
-				other => Uncut(other)
+				Quad(q) => cut_shape(shape, { corners: [q.first, q.second, q.third, q.fourth], fill: q.fill })
+				Polygon(p) => cut_shape(shape, { corners: p.corners, fill: p.fill })
+				Triangle(_) | Disc(_) | Blend(_) | View(_) | Image(_) | Text(_) => Uncut(shape)
 			},
 	)
+}
+
+## `shape` as it is when its `corners` are convex, else their triangles.
+cut_shape : Shapes.Shape, { corners : List(Point.Point), fill : Brush.Fill } -> ConvexCut.CutShape
+cut_shape = |shape, { corners, fill }| {
+	plain_corners = corners.map(plain_point)
+	if is_convex(plain_corners) {
+		Uncut(shape)
+	} else {
+		Triangles({ triangle_corners: wound_triangles(triangles(plain_corners)).map(frame_point), fill })
+	}
 }
 
 ## A corner as plain numbers, which the cut's arithmetic is done in.
@@ -261,8 +269,44 @@ ink = Flat({ r: 32.0, g: 32.0, b: 32.0, a: 1.0 })
 
 # A square is convex, and the cut leaves it as it is.
 expect {
-	square = Polygon({ corners: [Point.at(0.0, 0.0), Point.at(2.0, 0.0), Point.at(2.0, 2.0), Point.at(0.0, 2.0)], fill: ink })
+	square = Quad({ first: Point.at(0.0, 0.0), second: Point.at(2.0, 0.0), third: Point.at(2.0, 2.0), fourth: Point.at(0.0, 2.0), fill: ink })
 	ConvexCut.cut_shapes([square]) == [Uncut(square)]
+}
+
+# An arrowhead is a concave quad, and the cut makes it two triangles.
+expect {
+	arrowhead = Quad({
+		first: Point.at(0.0, 0.0),
+		second: Point.at(4.0, 2.0),
+		third: Point.at(0.0, 4.0),
+		fourth: Point.at(1.0, 2.0),
+		fill: ink,
+	})
+	match ConvexCut.cut_shapes([arrowhead]) {
+		[Triangles(t)] => t.triangle_corners.len() == 6 and t.fill == ink
+		_ => False
+	}
+}
+
+# A triangle is convex by construction, and passes through.
+expect {
+	triangle = Triangle({ first: Point.at(0.0, 0.0), second: Point.at(4.0, 2.0), third: Point.at(0.0, 4.0), fill: ink })
+	ConvexCut.cut_shapes([triangle]) == [Uncut(triangle)]
+}
+
+# A pentagon is convex, and the cut leaves it as it is.
+expect {
+	pentagon = Polygon({
+		corners: [
+			Point.at(2.0, 0.0),
+			Point.at(4.0, 1.5),
+			Point.at(3.0, 4.0),
+			Point.at(1.0, 4.0),
+			Point.at(0.0, 1.5),
+		],
+		fill: ink,
+	})
+	ConvexCut.cut_shapes([pentagon]) == [Uncut(pentagon)]
 }
 
 # An L of six corners is concave, and the cut makes it four triangles.

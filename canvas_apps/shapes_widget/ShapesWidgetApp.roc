@@ -36,7 +36,7 @@ ShapesWidgetApp :: [].{
 
 	## A brown rectangle.
 	brown_rectangle : Shapes.Shape
-	brown_rectangle = Rectangle({
+	brown_rectangle = Shapes.rectangle({
 		top_left: Point.at(240.0, 100.0),
 		width: Pixels.of(120.0),
 		height: Pixels.of(160.0),

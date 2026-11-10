@@ -20,7 +20,9 @@ import game.RiderView
 import game.Lens
 import game.Pipeline
 import game.PigHerd
+import lib.Brush
 import lib.Pixels
+import lib.Point
 import game.Pond
 import game.RailSighting
 import game.RoadAhead
@@ -319,17 +321,27 @@ shapes_of_tower_100_ahead = {
 	}).to_shapes()
 }
 
+## Rod `index` of the tower 100 m ahead: its legs come first, then its rings
+## and its braces.
+tower_rod : U64 -> {
+	first : Point.Point,
+	second : Point.Point,
+	third : Point.Point,
+	fourth : Point.Point,
+	fill : Brush.Fill,
+}
+tower_rod = |index|
+	match shapes_of_tower_100_ahead.get(index) {
+		Ok(Quad(rod)) => rod
+		_ => crash "SightingExpects: the tower has this rod, and a rod is a quad"
+	}
+
 ## How far right of the screen's middle the foot of leg `index` is: the middle
 ## of the rod's end at its corner.
 leg_foot_x : U64 -> F64
 leg_foot_x = |index| {
-	coordinates = Fixtures.coordinates_of(
-		shapes_of_tower_100_ahead.get(index) ?? crash "SightingExpects: a tower has four legs",
-	)
-	match (coordinates.get(0), coordinates.get(6)) {
-		(Ok(near_side), Ok(far_side)) => (near_side + far_side) / 2.0 - Screen.center_x.to_f64()
-		_ => crash "SightingExpects: a leg is a quad"
-	}
+	leg = tower_rod(index)
+	(leg.first.x.to_f64() + leg.fourth.x.to_f64()) / 2.0 - Screen.center_x.to_f64()
 }
 
 ## How far a leg's foot is to the side of the tower's middle, and before or
@@ -350,17 +362,14 @@ expect
 ## middle of the quad's side at that end.
 rod_end : U64, [From, To] -> (F64, F64)
 rod_end = |index, end| {
-	coordinates = Fixtures.coordinates_of(
-		shapes_of_tower_100_ahead.get(index) ?? crash "SightingExpects: the tower has this rod",
-	)
-	coordinate = |at| coordinates.get(at) ?? crash "SightingExpects: a rod is a quad"
-	(first, second) = match end {
-		From => (0, 6)
-		To => (2, 4)
+	rod = tower_rod(index)
+	(near_side, far_side) = match end {
+		From => (rod.first, rod.fourth)
+		To => (rod.second, rod.third)
 	}
 	(
-		(coordinate(first) + coordinate(second)) / 2.0,
-		(coordinate(first + 1) + coordinate(second + 1)) / 2.0,
+		(near_side.x.to_f64() + far_side.x.to_f64()) / 2.0,
+		(near_side.y.to_f64() + far_side.y.to_f64()) / 2.0,
 	)
 }
 

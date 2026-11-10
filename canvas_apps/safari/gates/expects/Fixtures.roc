@@ -56,16 +56,10 @@ Fixtures :: [].{
 	second_position : SegmentFromRider.Position
 	second_position = SegmentFromRider.Position.first.next()
 
-	## A triangle's or a polygon's corners, flat as x0, y0, x1, y1, ...
+	## A straight-edged region's corners, flat as x0, y0, x1, y1, ...
 	coordinates_of : Shapes.Shape -> List(F64)
 	coordinates_of = |shape| {
-		corners =
-			match shape {
-				Triangle(t) => [t.first, t.second, t.third]
-				Polygon(polygon) => polygon.corners
-				Disc(_) | Rectangle(_) | Blend(_) | View(_) | Image(_) | Text(_) =>
-					crash "Fixtures.coordinates_of: this shape is not a polygon"
-			}
+		corners = Shapes.region_corners(shape) ?? crash "Fixtures.coordinates_of: this shape has no corners"
 		corners.join_map(|corner| [corner.x.to_f64(), corner.y.to_f64()])
 	}
 

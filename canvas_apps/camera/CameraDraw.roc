@@ -36,7 +36,7 @@ CameraDraw :: [].{
 
 	backdrop : Shapes.Shape
 	backdrop =
-		Rectangle({
+		Shapes.rectangle({
 			top_left: Point.at(0.0, 0.0),
 			width: Pixels.of(800.0),
 			height: Pixels.of(600.0),
@@ -52,7 +52,7 @@ CameraDraw :: [].{
 		right = f(Rules.world_right)
 		bottom = f(Rules.world_bottom)
 
-		var $out = [Rectangle({ top_left: Point.at(left, top), width: Pixels.of(right - left), height: Pixels.of(bottom - top), fill: Flat(hex(0x16222b)) })]
+		var $out = [Shapes.rectangle({ top_left: Point.at(left, top), width: Pixels.of(right - left), height: Pixels.of(bottom - top), fill: Flat(hex(0x16222b)) })]
 		$out = List.concat($out, box({ left, top, right, bottom, line_width: 3.0 }, dim(0x5a5fa8d3)))
 		$out = List.concat($out, grid(seen))
 
@@ -74,9 +74,9 @@ CameraDraw :: [].{
 	landmark : F64, F64, F64, F64, Brush.Rgba -> List(Shapes.Shape)
 	landmark = |x, y, w, h, color|
 		[
-			Rectangle({ top_left: Point.at(x + 10.0, y + 14.0), width: Pixels.of(w), height: Pixels.of(h), fill: Flat(dim(0x5A000000)) }),
-			Rectangle({ top_left: Point.at(x, y), width: Pixels.of(w), height: Pixels.of(h), fill: Flat(color) }),
-			Rectangle({ top_left: Point.at(x, y), width: Pixels.of(w), height: Pixels.of(10.0), fill: Flat(dim(0x2Dffffff)) }),
+			Shapes.rectangle({ top_left: Point.at(x + 10.0, y + 14.0), width: Pixels.of(w), height: Pixels.of(h), fill: Flat(dim(0x5A000000)) }),
+			Shapes.rectangle({ top_left: Point.at(x, y), width: Pixels.of(w), height: Pixels.of(h), fill: Flat(color) }),
+			Shapes.rectangle({ top_left: Point.at(x, y), width: Pixels.of(w), height: Pixels.of(10.0), fill: Flat(dim(0x2Dffffff)) }),
 		]
 
 	# The player: a shadow, the disc, its white rim, and the cross that shows

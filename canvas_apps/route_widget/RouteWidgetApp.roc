@@ -255,7 +255,7 @@ road_shapes : List(Shapes.Shape)
 road_shapes = segments.join_map(piece_shapes)
 
 ground : Shapes.Shape
-ground = Rectangle({
+ground = Shapes.rectangle({
 	top_left: Point.at(0.0, 0.0),
 	width: Pixels.of(canvas_width),
 	height: Pixels.of(canvas_height),

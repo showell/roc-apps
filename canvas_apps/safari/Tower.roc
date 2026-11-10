@@ -269,13 +269,11 @@ rod_quad : {
 	color : RgbColor,
 } -> Shapes.Shape
 rod_quad = |{ from, to, offset_x, offset_y, color }|
-	Polygon({
-		corners: [
-			{ x: from.x.plus(offset_x), y: from.y.plus(offset_y) },
-			{ x: to.x.plus(offset_x), y: to.y.plus(offset_y) },
-			{ x: to.x.minus(offset_x), y: to.y.minus(offset_y) },
-			{ x: from.x.minus(offset_x), y: from.y.minus(offset_y) },
-		],
+	Quad({
+		first: { x: from.x.plus(offset_x), y: from.y.plus(offset_y) },
+		second: { x: to.x.plus(offset_x), y: to.y.plus(offset_y) },
+		third: { x: to.x.minus(offset_x), y: to.y.minus(offset_y) },
+		fourth: { x: from.x.minus(offset_x), y: from.y.minus(offset_y) },
 		fill: Brush.flat(color),
 	})
 
@@ -421,13 +419,11 @@ expect
 		width: Pixels.of(10.0),
 		color: tower_color,
 	})
-		== Polygon({
-			corners: [
-				Point.at(-4.0, 3.0),
-				Point.at(26.0, 43.0),
-				Point.at(34.0, 37.0),
-				Point.at(4.0, -3.0),
-			],
+		== Quad({
+			first: Point.at(-4.0, 3.0),
+			second: Point.at(26.0, 43.0),
+			third: Point.at(34.0, 37.0),
+			fourth: Point.at(4.0, -3.0),
 			fill: Flat(Brush.opaque_rgba(tower_color)),
 		})
 
@@ -439,13 +435,11 @@ expect
 		width: Pixels.of(10.0),
 		color: tower_color,
 	})
-		== Polygon({
-			corners: [
-				Point.at(5.0, 6.0),
-				Point.at(5.0, 6.0),
-				Point.at(5.0, 6.0),
-				Point.at(5.0, 6.0),
-			],
+		== Quad({
+			first: Point.at(5.0, 6.0),
+			second: Point.at(5.0, 6.0),
+			third: Point.at(5.0, 6.0),
+			fourth: Point.at(5.0, 6.0),
 			fill: Flat(Brush.opaque_rgba(tower_color)),
 		})
 

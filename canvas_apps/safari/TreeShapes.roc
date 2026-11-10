@@ -247,7 +247,7 @@ trunk_shape = |outline, { finish, color }| {
 			)
 			Flat => Brush.flat(color)
 		}
-	Rectangle({
+	Shapes.rectangle({
 		top_left: { x: left, y: outline.foot.y.minus(height) },
 		width,
 		height,
@@ -352,7 +352,7 @@ tier_cone = |tier, { inputs, ring_points, shade }| {
 	ring_on_screen = Camera.projected_points(ring_points, inputs.focal_length)
 	corners = ConvexHull.cone_hull_points(ring_on_screen, apex)
 	fill = Brush.corners_shade(corners, { color: inputs.foliage_color, strength: shade })
-	Polygon({ corners, fill })
+	Shapes.region_from_corners(corners, fill)
 }
 
 expect crown_shade(Distance.metres(0.0)).to_f64() == 1.0
@@ -430,13 +430,21 @@ expect
 		[480.0, 600.0, 1088.0, 648.0, 288.0],
 	)
 
-## A rectangle's left, top, width and height, as plain numbers.
-box_numbers : {
-	top_left : Point.Point,
-	width : Pixels,
-	height : Pixels,
+## A quad's four corners in order, each as its x and its y, as plain numbers.
+quad_numbers : {
+	first : Point.Point,
+	second : Point.Point,
+	third : Point.Point,
+	fourth : Point.Point,
+	..,
 } -> List(F64)
-box_numbers = |box| [box.top_left.x, box.top_left.y, box.width, box.height].map(Pixels.to_f64)
+quad_numbers = |{ first, second, third, fourth, .. }|
+	[first, second, third, fourth].join_map(|corner| [corner.x.to_f64(), corner.y.to_f64()])
+
+## The sample trunk's corners, clockwise from its top left: 80 px wide from 440
+## px across, and 490 px tall from 110 px down.
+sample_trunk_numbers : List(F64)
+sample_trunk_numbers = [440.0, 110.0, 520.0, 110.0, 520.0, 600.0, 440.0, 600.0]
 
 expect {
 	trunk_brown = {
@@ -446,9 +454,8 @@ expect {
 		a: 1.0,
 	}
 	match trunk_shape(sample_outline, { finish: Flat, color: trunk_color }) {
-		Rectangle({ top_left, width, height, fill }) =>
-			fill == Flat(trunk_brown)
-				and is_near(box_numbers({ top_left, width, height }), [440.0, 110.0, 80.0, 490.0])
+		Quad(trunk) =>
+			trunk.fill == Flat(trunk_brown) and is_near(quad_numbers(trunk), sample_trunk_numbers)
 		_ => False
 	}
 }
@@ -468,18 +475,15 @@ expect {
 		a: 1.0,
 	}
 	match trunk_shape(sample_outline, { finish: Shaded, color: trunk_color }) {
-		Rectangle(
-			{
-				top_left,
-				width,
-				height,
-				fill: Span({ edge_color, middle_color, left_x, right_x }),
-			},
-		) =>
-			edge_color == edge_brown
-				and middle_color == middle_brown
-				and is_near([left_x, right_x].map(Pixels.to_f64), [440.0, 520.0])
-				and is_near(box_numbers({ top_left, width, height }), [440.0, 110.0, 80.0, 490.0])
+		Quad(trunk) =>
+			match trunk.fill {
+				Span({ edge_color, middle_color, left_x, right_x }) =>
+					edge_color == edge_brown
+						and middle_color == middle_brown
+						and is_near([left_x, right_x].map(Pixels.to_f64), [440.0, 520.0])
+						and is_near(quad_numbers(trunk), sample_trunk_numbers)
+				_ => False
+			}
 		_ => False
 	}
 }

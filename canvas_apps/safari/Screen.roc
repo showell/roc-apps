@@ -77,7 +77,7 @@ Screen :: [].{
 	## `drawn_left` across to `drawn_right`.
 	margin_rect : { top : Pixels, bottom : Pixels }, Brush.Fill -> Shapes.Shape
 	margin_rect = |{ top, bottom }, fill|
-		Rectangle({
+		Shapes.rectangle({
 			top_left: { x: drawn_left, y: top },
 			width: drawn_right.minus(drawn_left),
 			height: bottom.minus(top),

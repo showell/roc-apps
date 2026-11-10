@@ -22,7 +22,7 @@ Panels :: [].{
 		if corners.len() < 3 {
 			[]
 		} else {
-			[Polygon({ corners, fill })]
+			[Shapes.region_from_corners(corners, fill)]
 		}
 	}
 

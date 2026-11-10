@@ -4,7 +4,7 @@
 ## paints every proof frame through this module, and ShapesFrame paints each
 ## one a second time with its polygons cut into triangles.
 ##
-## It paints only what Safari's ride draws: triangles, rectangles, discs and
+## It paints only what Safari's ride draws: triangles, quads, discs and
 ## polygons, each laid over what is there, or added to it after a `Blend(Add)`
 ## mark until a `Blend(Over)`. Any other shape crashes, naming what it got.
 import game.Angle
@@ -57,6 +57,16 @@ pixels_with_shape = |pixels, { roll, shape, mode }|
 				mode,
 			},
 		)
+		# A quad, likewise, as the path round its four corners.
+		Quad(q) => ScanlineFill.polygon_pixels(
+			pixels,
+			{
+				roll,
+				corners: [q.first, q.second, q.third, q.fourth],
+				fill: q.fill,
+				mode,
+			},
+		)
 		Polygon(p) => ScanlineFill.polygon_pixels(
 			pixels,
 			{
@@ -76,28 +86,6 @@ pixels_with_shape = |pixels, { roll, shape, mode }|
 				mode,
 			},
 		)
-		# A canvas traces a rectangle as the path round its four corners, so it
-		# fills as that polygon does.
-		Rectangle(r) => {
-			left = r.top_left.x
-			top = r.top_left.y
-			right = left + r.width
-			bottom = top + r.height
-			ScanlineFill.polygon_pixels(
-				pixels,
-				{
-					roll,
-					corners: [
-						{ x: left, y: top },
-						{ x: right, y: top },
-						{ x: right, y: bottom },
-						{ x: left, y: bottom },
-					],
-					fill: r.fill,
-					mode,
-				},
-			)
-		}
 		# `pixels_with_shapes` keeps the mode a mark sets, so no mark reaches here.
 		Blend(_) => crash "ShapesPixels: a blend mark is the list's to keep"
 		Image(_) => crash "ShapesPixels: an image among the ride's shapes"

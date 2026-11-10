@@ -507,11 +507,17 @@ sample_cat_shapes = |cat, lift|
 ## The first corner `cat` draws, `lift` off the ground: its still's first
 ## corner's coordinates, on screen.
 first_cat_corner_coordinates : Cat, Distance -> List(F64)
-first_cat_corner_coordinates = |cat, lift|
-	match sample_cat_shapes(cat, lift) {
-		[Polygon({ corners: [first, ..], .. }), ..] => [first.x.to_f64(), first.y.to_f64()]
-		_ => crash "EncounterExpects: a cat draws polygons"
+first_cat_corner_coordinates = |cat, lift| first_corner_coordinates(sample_cat_shapes(cat, lift))
+
+## The first corner of a still's first region, as its x and its y.
+first_corner_coordinates : List(Shapes.Shape) -> List(F64)
+first_corner_coordinates = |shapes| {
+	first_shape = shapes.first() ?? crash "EncounterExpects: a still draws shapes"
+	match Shapes.region_corners(first_shape) {
+		Ok([first, ..]) => [first.x.to_f64(), first.y.to_f64()]
+		_ => crash "EncounterExpects: a still draws straight-edged regions"
 	}
+}
 
 ## Whether each of `got` is within a billionth of its `expected`.
 is_near_each : List(F64), List(F64) -> Bool
@@ -576,11 +582,7 @@ expect
 # right and 11 m above the camera, at 110 m, is 50 px each way, and the drop
 # there lowers the feet 0.27775 px.
 expect {
-	first_corner = |perch|
-		match bird_shapes_at({ pose: Perched }, perch) {
-			[Polygon({ corners: [first, ..], .. }), ..] => [first.x.to_f64(), first.y.to_f64()]
-			_ => crash "EncounterExpects: a bird draws polygons"
-		}
+	first_corner = |perch| first_corner_coordinates(bird_shapes_at({ pose: Perched }, perch))
 	raised = { right: Distance.metres(11.0), lift: Camera.eye_height.plus(Distance.metres(11.0)) }
 	[
 		({ right: Distance.metres(0.0), lift: Camera.eye_height }, [479.656, 294.56]),
@@ -592,8 +594,10 @@ expect {
 expect {
 	fill_of = |shape|
 		match shape {
+			Triangle(triangle) => triangle.fill
+			Quad(quad) => quad.fill
 			Polygon(polygon) => polygon.fill
-			_ => crash "EncounterExpects: a bird's still is polygons"
+			Disc(_) | Blend(_) | View(_) | Image(_) | Text(_) => crash "EncounterExpects: a bird's still is straight-edged regions"
 		}
 	level = { right: Distance.metres(0.0), lift: Camera.eye_height }
 	drawn = [Side(WingsDown), Diving].join_map(
@@ -643,22 +647,46 @@ upright_still_anchor = {
 	height_on_screen: Pixels.of(50.0),
 }
 
-# A still of one flat polygon of color 7, a corner at the foot, is drawn as one
-# opaque polygon there.
+# A still of one flat polygon of three corners in color 7, a corner at the
+# foot, is drawn as one opaque triangle there.
 expect {
 	corners = [{ x: 0.0, y: 0.0 }, { x: 1.0, y: 0.0 }, { x: 0.0, y: 1.0 }]
 	still = Still.of([{ fill: Flat(RgbColor.of(7)), points: corners }])
 	StillShapes.still_shapes(upright_still_anchor, still)
 		== [
-			Polygon({
-				corners: [
-					Point.at(100.0, 200.0),
-					Point.at(150.0, 200.0),
-					Point.at(100.0, 150.0),
-				],
+			Triangle({
+				first: Point.at(100.0, 200.0),
+				second: Point.at(150.0, 200.0),
+				third: Point.at(100.0, 150.0),
 				fill: Flat(Brush.opaque_rgba(RgbColor.of(7))),
 			}),
 		]
+}
+
+# One of four corners is drawn as a quad, and one of five as a polygon.
+expect {
+	square_corners = [
+		{ x: 0.0, y: 0.0 },
+		{ x: 1.0, y: 0.0 },
+		{ x: 1.0, y: 1.0 },
+		{ x: 0.0, y: 1.0 },
+	]
+	house_corners = [
+		{ x: 0.0, y: 0.0 },
+		{ x: 1.0, y: 0.0 },
+		{ x: 1.0, y: 1.0 },
+		{ x: 0.5, y: 1.5 },
+		{ x: 0.0, y: 1.0 },
+	]
+	still_of = |corners| Still.of([{ fill: Flat(RgbColor.of(7)), points: corners }])
+	drawn = [square_corners, house_corners].join_map(
+		|corners| StillShapes.still_shapes(upright_still_anchor, still_of(corners)),
+	)
+	match drawn {
+		[Quad(square), Polygon(house)] =>
+			square.third == Point.at(150.0, 150.0) and house.corners.len() == 5
+		_ => False
+	}
 }
 
 ## Color stops with an alpha byte and offsets inside 0 to 1, as a still holds
@@ -709,13 +737,15 @@ shaded_still_shapes = |gradient|
 		Still.of([{ fill: Shaded(gradient), points: still_corners }]),
 	)
 
-## Where `still_corners` land on screen.
-still_corners_on_screen : List(Point.Point)
-still_corners_on_screen = [
-	Point.at(100.0, 200.0),
-	Point.at(125.0, 200.0),
-	Point.at(100.0, 150.0),
-]
+## The triangle `still_corners` make on screen, filled with `fill`.
+still_triangle_on_screen : Brush.Fill -> Shapes.Shape
+still_triangle_on_screen = |fill|
+	Triangle({
+		first: Point.at(100.0, 200.0),
+		second: Point.at(125.0, 200.0),
+		third: Point.at(100.0, 150.0),
+		fill,
+	})
 
 # A linear gradient keeps its stops' alphas and offsets, and runs between its
 # two points on screen.
@@ -730,7 +760,7 @@ expect {
 		start_point: Point.at(100.0, 200.0),
 		end_point: Point.at(100.0, 150.0),
 	})
-	shaded_still_shapes(gradient) == [Polygon({ corners: still_corners_on_screen, fill })]
+	shaded_still_shapes(gradient) == [still_triangle_on_screen(fill)]
 }
 
 # A radial gradient keeps its stops the same way, its axes as steps on screen.
@@ -747,5 +777,5 @@ expect {
 		axis_u: Point.at(25.0, 0.0),
 		axis_v: Point.at(0.0, -25.0),
 	})
-	shaded_still_shapes(gradient) == [Polygon({ corners: still_corners_on_screen, fill })]
+	shaded_still_shapes(gradient) == [still_triangle_on_screen(fill)]
 }

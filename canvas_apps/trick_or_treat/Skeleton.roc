@@ -80,7 +80,7 @@ Skeleton :: [].{
 		$out = List.append($out, Disc({ center: Point.at(skull.x - 9.0 * s, skull.y - 4.0 * s), radius: Pixels.of(6.0 * s), fill: Flat(night) }))
 		$out = List.append($out, Disc({ center: Point.at(skull.x + 9.0 * s, skull.y - 4.0 * s), radius: Pixels.of(6.0 * s), fill: Flat(night) }))
 		gape = (3.0 + 3.0 * (1.0 + (2.0 * t).cos()) / 2.0) * s
-		$out = List.append($out, Rectangle({ top_left: Point.at(skull.x - 11.0 * s, skull.y + 12.0 * s), width: Pixels.of(22.0 * s), height: Pixels.of(gape), fill: Flat(night) }))
+		$out = List.append($out, Shapes.rectangle({ top_left: Point.at(skull.x - 11.0 * s, skull.y + 12.0 * s), width: Pixels.of(22.0 * s), height: Pixels.of(gape), fill: Flat(night) }))
 
 		# The arms, alternating: one up while the other is down.
 		$out = arm($out, cx - 26.0 * s, shoulder_y + 4.0 * s, s, 0.0 - 1.9 - swing * 0.9, 0.0 - 0.7 - swing * 0.5)

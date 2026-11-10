@@ -149,14 +149,19 @@ caption_shape = |view|
 	})
 
 fixed_picture_shapes : List(Shapes.Shape)
-fixed_picture_shapes = {
+fixed_picture_shapes = framed_ride_shapes(truck_views.join_map(truck_shapes))
+
+## The shapes of the widget's whole picture around `ride_shapes`: its backdrop
+## under them, and its panel and captions over them.
+framed_ride_shapes : List(Shapes.Shape) -> List(Shapes.Shape)
+framed_ride_shapes = |ride_shapes| {
 	picture_shapes = WidgetPage.picture_shapes({
 		backdrop: {
 			sky_colors: Sky.colors_at(Clock.start),
 			sun_sighting: OutOfView,
 			darkness: Sky.darkness_at(Clock.start),
 		},
-		ride_shapes: truck_views.join_map(truck_shapes),
+		ride_shapes,
 	})
 	WidgetPage.frame_shapes({
 		picture_shapes,
@@ -164,21 +169,12 @@ fixed_picture_shapes = {
 	}).concat(truck_views.map(caption_shape))
 }
 
-## The corners of each polygon among `shapes`, in the ride's screen pixels.
-polygon_corner_lists : List(Shapes.Shape) -> List(List(Point.Point))
-polygon_corner_lists = |shapes|
-	shapes.keep_oks(
-		|shape|
-			match shape {
-				Triangle(t) => Ok([t.first, t.second, t.third])
-				Polygon({ corners, .. }) => Ok(corners)
-				Text(_) | Disc(_) | Rectangle(_) | Blend(_) | View(_) | Image(_) => Err(NotPolygon)
-			},
-	)
-
-## The corners of the polygons among `shapes`, on the canvas.
+## The corners of the straight-edged regions among `shapes`, on the canvas.
 canvas_corners : List(Shapes.Shape) -> List(Point.Point)
-canvas_corners = |shapes| polygon_corner_lists(shapes).join().map(WidgetPage.canvas_point_of_screen)
+canvas_corners = |shapes| {
+	region_corner_lists = shapes.keep_oks(Shapes.region_corners)
+	region_corner_lists.join().map(WidgetPage.canvas_point_of_screen)
+}
 
 ## Whether `view`'s truck is all in the picture, above the panel and inside its
 ## own third of the canvas.
@@ -193,9 +189,13 @@ is_in_its_third = |view| {
 }
 
 # Each truck draws its six faces and its ten tires, none of them clipped away,
-# and the picture holds those three trucks' polygons and no others.
+# and the picture holds those three trucks' regions and no others but the
+# backdrop's and the panel's.
 expect truck_views.all(|view| truck_shapes(view).len() == 16)
-expect polygon_corner_lists(fixed_picture_shapes).len() == 3 * 16
+expect {
+	region_count = |shapes| shapes.keep_oks(Shapes.region_corners).len()
+	region_count(fixed_picture_shapes) == 3 * 16 + region_count(framed_ride_shapes([]))
+}
 
 # Every truck is all in its third, above the panel. A truck nearer than the
 # views' distance loses its tires under the panel, and one seen from the side

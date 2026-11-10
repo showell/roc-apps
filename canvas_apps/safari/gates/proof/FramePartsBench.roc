@@ -248,15 +248,14 @@ scene_rendering_count = |scene|
 shape_count : List(Rendered) -> U64
 shape_count = |renderings| renderings.map(|r| r.sprite().to_shapes().len()).sum()
 
-## The polygon points in `shapes`.
+## The corners of the straight-edged regions in `shapes`.
 point_count : List(Shapes.Shape) -> U64
 point_count = |shapes|
 	shapes.map(
 		|shape|
-			match shape {
-				Triangle(_) => 3
-				Polygon({ corners, fill: _ }) => corners.len()
-				_ => 0
+			match Shapes.region_corners(shape) {
+				Ok(corners) => corners.len()
+				Err(NoCorners) => 0
 			},
 	).sum()
 

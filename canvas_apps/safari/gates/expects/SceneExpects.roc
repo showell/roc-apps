@@ -243,39 +243,65 @@ is_triangle : Shapes.Shape -> Bool
 is_triangle = |shape|
 	match shape {
 		Triangle(_) => True
-		Polygon(_) | Disc(_) | Rectangle(_) | Blend(_) | View(_) | Image(_) | Text(_) => False
+		Quad(_) | Polygon(_) | Disc(_) | Blend(_) | View(_) | Image(_) | Text(_) => False
+	}
+
+is_quad : Shapes.Shape -> Bool
+is_quad = |shape|
+	match shape {
+		Quad(_) => True
+		Triangle(_) | Polygon(_) | Disc(_) | Blend(_) | View(_) | Image(_) | Text(_) => False
 	}
 
 is_polygon : Shapes.Shape -> Bool
 is_polygon = |shape|
 	match shape {
 		Polygon(_) => True
-		Triangle(_) | Disc(_) | Rectangle(_) | Blend(_) | View(_) | Image(_) | Text(_) => False
+		Triangle(_) | Quad(_) | Disc(_) | Blend(_) | View(_) | Image(_) | Text(_) => False
 	}
 
 is_disc : Shapes.Shape -> Bool
 is_disc = |shape|
 	match shape {
 		Disc(_) => True
-		Triangle(_) | Polygon(_) | Rectangle(_) | Blend(_) | View(_) | Image(_) | Text(_) => False
+		Triangle(_) | Quad(_) | Polygon(_) | Blend(_) | View(_) | Image(_) | Text(_) => False
 	}
 
-is_rectangle : Shapes.Shape -> Bool
-is_rectangle = |shape|
+## Whether `shape` is an upright box, as `Shapes.rectangle` makes one: a quad
+## whose top and bottom are level and whose sides are plumb.
+is_upright_quad : Shapes.Shape -> Bool
+is_upright_quad = |shape|
 	match shape {
-		Rectangle(_) => True
+		Quad({ first, second, third, fourth, .. }) => {
+			is_level = first.y == second.y and third.y == fourth.y
+			is_plumb = second.x == third.x and fourth.x == first.x
+			is_level and is_plumb
+		}
 		Triangle(_) | Polygon(_) | Disc(_) | Blend(_) | View(_) | Image(_) | Text(_) => False
 	}
 
+## The shapes of each tree in view at step 1,529, a list for each tree.
+book_tree_shape_lists : List(List(Shapes.Shape))
+book_tree_shape_lists = book_view.scene.trees.map(|tree| tree.sprite().to_shapes())
+
 # The Roadside trees chapter: 136 trees in view. The platform chapter's shapes
-# by tag: every one of them is a Triangle, a Polygon, a Disc or a Rectangle,
-# and the Rectangles are the trees' trunks, one each.
+# by tag: every one of them is a Triangle, a Quad, a Polygon or a Disc. Each
+# tree draws its trunk first, as an upright quad, and no other quad, so 136 of
+# the quads are the trees' trunks, one each.
 expect book_view.scene.trees.len() == 136
 expect book_shapes.len() == 2121
-expect book_shapes.keep_if(is_triangle).len() == 864
-expect book_shapes.keep_if(is_polygon).len() == 1113
+expect book_shapes.keep_if(is_triangle).len() == 868
+expect book_shapes.keep_if(is_quad).len() == 727
+expect book_shapes.keep_if(is_polygon).len() == 518
 expect book_shapes.keep_if(is_disc).len() == 8
-expect book_shapes.keep_if(is_rectangle).len() == 136
+expect
+	book_tree_shape_lists.all(
+		|tree_shapes|
+			match tree_shapes {
+				[trunk, .. as tiers] => is_upright_quad(trunk) and !tiers.any(is_quad)
+				[] => False
+			},
+	)
 
 # The modules chapter's sighting: one cat, frozen on the ground about 0.38 m
 # right of the camera and 23.63 m ahead.

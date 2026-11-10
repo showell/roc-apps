@@ -110,7 +110,7 @@ headlight_beam = |truck, rightward| {
 		center: lamp_on_screen,
 		radius: Screen.farthest_distance(on_screen, lamp_on_screen),
 	})?
-	Ok(Polygon({ corners: on_screen, fill }))
+	Ok(Shapes.region_from_corners(on_screen, fill))
 }
 
 expect TruckHeadlights.at(Fraction.of(0.4119)) == Off

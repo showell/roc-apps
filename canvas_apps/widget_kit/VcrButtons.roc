@@ -282,7 +282,7 @@ triangle = |{ tip_x, reach }|
 ## A bar across a button's height, for a pause or a stop at either end.
 bar : F64 -> Shapes.Shape
 bar = |x|
-	Rectangle({
+	Shapes.rectangle({
 		top_left: Point.at(x, button_middle_y - 7.0),
 		width: Pixels.of(3.0),
 		height: Pixels.of(14.0),
@@ -315,7 +315,7 @@ button_shapes = |button, motion| {
 			Unlit => WidgetPalette.unlit_button_color
 		}
 	[
-		Rectangle({
+		Shapes.rectangle({
 			top_left: Point.at(button.left, button_top),
 			width: Pixels.of(button_width),
 			height: Pixels.of(button_height),

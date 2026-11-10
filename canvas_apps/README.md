@@ -189,17 +189,20 @@ shapes and two marks:
 | | |
 |---|---|
 | `Triangle` | three corners and a fill |
-| `Rectangle` | a top left corner, a width, a height and a fill |
+| `Quad` | four corners, in order, and a fill |
 | `Disc` | centre, radius and a fill |
-| `Polygon` | its corners, in order, and a fill |
+| `Polygon` | five or more corners, in order, and a fill |
 | `Image` | `cols × rows` of `Brush.Rgba`, stretched over a box without smoothing |
 | `Text` | a line of words, its baseline, a size, `Prose` or `Code`, `Left` or `Center`, and a colour |
 | `Blend` | `Over` or `Add` |
 | `View` | `Screen`, or `World` with a camera's four settings |
 
-A `Polygon` can be any polygon. The native runner has `ConvexCut` cut each
-concave one into triangles, a type of its own that no app builds, because
-roc-ray fills convex polygons only. The canvas fills a concave one itself.
+`Shapes.rectangle` makes an upright `Quad`, and `Shapes.region_from_corners`
+tags a list of corners by its length, so the count always matches the tag. A
+quad or a polygon can be concave, and a quad can even cross itself. The native
+runner has `ConvexCut` cut each concave one into triangles, a type of its own
+that no app builds, because roc-ray fills convex polygons only. The canvas
+fills a concave one itself.
 
 A mark is not drawn. It changes how the shapes after it are painted, until the
 next mark of its kind. `Blend(Add)` lights rather than paints. `View(World(c))`
@@ -214,8 +217,8 @@ coordinates, which is what lets every painter shade it the same way. `Brush`
 has a maker for each: `flat`, `width_shade` and `corners_shade`,
 `linear_gradient`, `circular_gradient`, `elliptical_gradient` and `glow`.
 
-A thick line, a rounded rectangle and a ring are polygons, and `lib/Shapes.roc`
-builds them, so no painter has to learn a stroke. `lib/Font.roc` draws a string
+A thick line is a quad, a ring is a band of quads and a rounded rectangle is a
+polygon, and `lib/Shapes.roc` builds them, so no painter has to learn a stroke. `lib/Font.roc` draws a string
 out of the same quads, which is how the games write.
 
 `Text` is for words that should read well, and the widgets use it. The canvas
