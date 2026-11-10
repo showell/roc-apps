@@ -148,50 +148,35 @@ tier_inputs_of = |spot, { height, focal_length, foliage_color }| {
 	}
 }
 
-## The tiers, top to bottom. Each overlaps the next.
+## How wide each tier's bottom is, top tier first, as a fraction of the crown's
+## width, chosen by eye.
+tier_widths : List(Fraction)
+tier_widths = [0.35, 0.44, 0.53, 0.63, 0.72, 0.81, 0.91, 1.0].map(Fraction.of)
+
+## The tiers, top to bottom. Each starts a tenth of the crown lower than the
+## one above and runs three tenths down, so each overlaps the next.
 tiers : List(Tier)
-tiers = [
-	{
-		top: Fraction.of(0.0),
-		bottom: Fraction.of(0.3),
-		width: Fraction.of(0.35),
+tiers = tier_widths.map_with_index(
+	|width, index| {
+		top: Fraction.of(index.to_f64() / 10.0),
+		bottom: Fraction.of((index.to_f64() + 3.0) / 10.0),
+		width,
 	},
-	{
-		top: Fraction.of(0.1),
-		bottom: Fraction.of(0.4),
-		width: Fraction.of(0.44),
-	},
-	{
-		top: Fraction.of(0.2),
-		bottom: Fraction.of(0.5),
-		width: Fraction.of(0.53),
-	},
-	{
-		top: Fraction.of(0.3),
-		bottom: Fraction.of(0.6),
-		width: Fraction.of(0.63),
-	},
-	{
-		top: Fraction.of(0.4),
-		bottom: Fraction.of(0.7),
-		width: Fraction.of(0.72),
-	},
-	{
-		top: Fraction.of(0.5),
-		bottom: Fraction.of(0.8),
-		width: Fraction.of(0.81),
-	},
-	{
-		top: Fraction.of(0.6),
-		bottom: Fraction.of(0.9),
-		width: Fraction.of(0.91),
-	},
-	{
-		top: Fraction.of(0.7),
-		bottom: Fraction.of(1.0),
-		width: Fraction.of(1.0),
-	},
-]
+)
+
+# The tiers are exactly the hand-written table they replaced.
+expect
+	tiers.map(|tier| [tier.top.to_f64(), tier.bottom.to_f64(), tier.width.to_f64()])
+		== [
+			[0.0, 0.3, 0.35],
+			[0.1, 0.4, 0.44],
+			[0.2, 0.5, 0.53],
+			[0.3, 0.6, 0.63],
+			[0.4, 0.7, 0.72],
+			[0.5, 0.8, 0.81],
+			[0.6, 0.9, 0.91],
+			[0.7, 1.0, 1.0],
+		]
 
 trunk_color : RgbColor
 trunk_color = RgbColor.of(0x5A3E22)
