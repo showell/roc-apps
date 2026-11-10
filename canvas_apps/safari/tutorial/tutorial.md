@@ -218,11 +218,11 @@ Calf, cow or bull, the ride draws a billboard the way it draws every kind of thi
 
 It takes a `Billboard` and a setting, and gives back a sprite. The `Conifer` module's `scenery_sprite` takes a tree instead, and the `Tower` module's takes a tower, but every one takes a setting and gives back a sprite. So whatever its kind, a thing in a frame comes out as a sprite.
 
-A setting is a record. Its type, `Setting`, takes a type variable, as `Placed` does:
+A setting is a record:
 
 {{code Sprite.Setting}}
 
-The `focal_length` says how strong the camera's lens is, in `Pixels`, the screen's unit of length: the longer it is, the bigger everything looks. The `context` field's type is the variable, so each kind chooses its own. The cow's is `{}`, the empty record, as its `Sprite.Setting({})` says.
+The `focal_length` says how strong the camera's lens is, in `Pixels`, the screen's unit of length: the longer it is, the bigger everything looks.
 
 The `spot` comes from a camera: it's what a sighting holds. So to draw the cow and the bull, the picture at the top of this chapter puts each one on the road by hand, the cow 10 metres ahead and 5 metres left of the middle, and lets a camera at the start of the road sight them. The rider's own camera comes in a later chapter.
 
@@ -508,7 +508,7 @@ A lowercase name in parentheses, like `(kind)`, is a type variable; this chapter
 | `Geom.Placed(kind)` | An object on the road: its `road_point` on its segment, its `lift` off the ground, and its `kind` |
 | `Spot` | Where an object stands in one frame: its `lift` off the ground, its `foot` in the rider's view, and the `road_heading`, which way the road runs there |
 | `Pipeline.Sighted(kind)` | An object in view: its `spot` and its `kind` |
-| `Sprite.Setting(context)` | What a kind draws from: its `spot`, the lens's `focal_length`, and a `context` for whatever else the kind needs |
+| `Sprite.Setting` | What a kind draws from: its `spot` and the lens's `focal_length` |
 | `Sprite` | The object's shapes, in order, from the Shapes chapter |
 | `Rendered` | The object's `sprite`, and its `depth`: how far ahead of the camera it stands |
 
@@ -540,17 +540,15 @@ A `Geom.Placed`'s `road_point` is made of two such types. `Along` is a place alo
 
 A type's head declares its variables. A function's annotation needs no head: a lowercase name in it is a type variable, and it means one type wherever it appears in that annotation. `Pipeline.sighting_of` takes a `Geom.Placed(kind)` and answers with a `Try` that holds a `Pipeline.Sighted(kind)` when the object stands in front of the camera. A `Try` is one of two tags: `Ok`, holding the answer, or `Err`, holding the reason there is none, here `BehindCamera`. Both are in the type, so every caller handles the object behind the camera. The placed object and its sighting name the same `kind`, so a placed conifer can only come back as a sighted conifer, never as a sighted cow.
 
-`Sprite.Setting(context)` has a variable named `context`. No kind needs anything more, so every kind's context is `{}`, the empty record.
-
 ### Asking a kind by name
 
 `Pipeline` imports neither `Conifer` nor `Billboard`, and neither of them imports `Pipeline`. Yet `Pipeline.rendering_of`, the one function this chapter shows in full, gets a picture out of either one:
 
 {{code Pipeline.rendering_of}}
 
-It hands the sighting's whole `spot`, the lens and the context to the kind's own `scenery_sprite`. It answers with a `Rendered`: the picture it gets back, and a depth. Its depth is how far forward the spot's foot is: `spot.foot().forward()`.
+It hands the sighting's whole `spot` and the lens to the kind's own `scenery_sprite`. It answers with a `Rendered`: the picture it gets back, and a depth. Its depth is how far forward the spot's foot is: `spot.foot().forward()`.
 
-The second line of the annotation, indented under the first, is a `where` clause. Its square brackets hold a list of requirements on the annotation's type variables, here one. `kind.scenery_sprite : kind, Sprite.Setting(context) -> Sprite` says that the type `kind` has a method named `scenery_sprite`, of the type after the colon. A kind meets it by having a method of that name and that type. `Conifer` has one, and so does `Billboard`. Neither says it meets a requirement, and no interface names the two. The name and the type are the whole contract, and the compiler checks them wherever `rendering_of` is called.
+The second line of the annotation, indented under the first, is a `where` clause. Its square brackets hold a list of requirements on the annotation's type variables, here one. `kind.scenery_sprite : kind, Sprite.Setting -> Sprite` says that the type `kind` has a method named `scenery_sprite`, of the type after the colon. A kind meets it by having a method of that name and that type. `Conifer` has one, and so does `Billboard`. Neither says it meets a requirement, and no interface names the two. The name and the type are the whole contract, and the compiler checks them wherever `rendering_of` is called.
 
 `Pipeline.scenery_sighting_of` asks for a kind's height the same way, with `where [kind.scenery_height : kind -> Distance]`. It finds the sighting, then asks the kind for its `scenery_height`, to see whether the object stands tall enough on the screen to draw, and answers `TooSmall` when it stands shorter. The towers and the truck are drawn however small they look. A tower calls `Pipeline.sighting_above_horizon_of`, which asks for its height only to see whether the horizon hides it. The truck calls `Pipeline.sighting_of`, the plainest of the three, which needs no `where` at all.
 
@@ -583,7 +581,7 @@ A tree passes through these types on its way to the screen:
 | `Camera.Upright` | Where an upright thing lands on the screen: its `foot`, and its `height_on_screen` in `Pixels` |
 | `TreeShapes.Tier` | One layer of the crown, as fractions of the crown |
 
-A conifer draws from a `Sprite.Setting({})`, the setting from the Nature types chapter.
+A conifer draws from a `Sprite.Setting`, the setting from the Nature types chapter.
 
 Each step of the job is a signature:
 
@@ -623,7 +621,7 @@ Here's all of `Conifer`:
 
 `scenery_sprite` takes the kind and a setting, and hands the setting whole to `TreeShapes.tree_sprite`, with the tree's height and color in the record that function wants.
 
-`tree_sprite` finds the tree on the screen, then makes a trunk and eight tiers. Its bars take the setting apart into `spot`, `focal_length` and `context`, as a function's bars can take any record apart.
+`tree_sprite` finds the tree on the screen, then makes a trunk and eight tiers. Its bars take the setting apart into `spot` and `focal_length`, as a function's bars can take any record apart.
 
 {{code TreeShapes.tree_sprite}}
 
@@ -1224,7 +1222,7 @@ Trees get their spots once, when the world is built. A tower doesn't: each frame
 
 The `beacon` line lights the beacon for this step. The tower halfway along is the same, with `Midway` for its beacon, a square yaw, and one more way to fail, `NoMidTower`. `mid_tower_point` says whether a segment is longer than a kilometre, and where its halfway tower stands. It sits in `TowerSighting` beside the end tower's numbers, so where towers stand has one home, and the world itself knows nothing about towers.
 
-To draw a tower, `scenery_sprite` needs nothing beyond its spot and the lens, so its context is empty, as a cat's is:
+To draw a tower, `scenery_sprite` takes its spot and the lens from the setting, as a cat's does:
 
 {{code Tower.scenery_sprite}}
 

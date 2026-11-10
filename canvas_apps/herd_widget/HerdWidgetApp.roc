@@ -115,10 +115,7 @@ placed_cow_shapes = |placed|
 		},
 	) {
 		Ok(sighting) => {
-			rendered = Pipeline.rendering_of(
-				sighting,
-				{ focal_length: camera.focal_length, context: {} },
-			)
+			rendered = Pipeline.rendering_of(sighting, camera.focal_length)
 			rendered.sprite().to_shapes()
 		}
 		Err(BehindCamera) | Err(BelowHorizon) | Err(TooSmall) => crash "HerdWidgetApp.placed_cow_shapes: every cow stands in plain sight"

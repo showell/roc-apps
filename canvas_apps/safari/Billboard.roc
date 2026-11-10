@@ -47,7 +47,7 @@ Billboard :: {
 
 	## How a billboard looks. An emoji faces left, so a billboard facing right
 	## is its still mirrored.
-	scenery_sprite : Billboard, Sprite.Setting({}) -> Sprite
+	scenery_sprite : Billboard, Sprite.Setting -> Sprite
 	scenery_sprite = |Billboard.(billboard), setting| {
 		flip =
 			match billboard.facing {

@@ -69,16 +69,14 @@ Scene := {
 			}
 		{
 			trees: TreeSighting.tree_renderings(trees_seen, focal_length),
-			birds: birds_seen.map(
-				|bird| Pipeline.rendering_of(bird, { focal_length, context: {} }),
-			),
+			birds: birds_seen.map(|bird| Pipeline.rendering_of(bird, focal_length)),
 			towers: TowerSighting.towers_in_view(road, { vantage, clock: facts.clock }).map(
-				|tower| Pipeline.rendering_of(tower, { focal_length, context: {} }),
+				|tower| Pipeline.rendering_of(tower, focal_length),
 			),
 			billboards: BillboardSighting.billboards_in_view(road, camera).map(
-				|billboard| Pipeline.rendering_of(billboard, { focal_length, context: {} }),
+				|billboard| Pipeline.rendering_of(billboard, focal_length),
 			),
-			cats: cats_seen.map(|cat| Pipeline.rendering_of(cat, { focal_length, context: {} })),
+			cats: cats_seen.map(|cat| Pipeline.rendering_of(cat, focal_length)),
 			trucks,
 			rails: RailSighting.rail_quads_in_view(road, vantage).keep_oks(
 				|quad| GuardRail.quad_rendering(quad, focal_length),

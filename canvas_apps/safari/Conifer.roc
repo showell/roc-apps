@@ -20,7 +20,7 @@ Conifer := [Green, SmallGreen, Red, Gold].{
 		}
 
 	## How a conifer looks.
-	scenery_sprite : Conifer, Sprite.Setting({}) -> Sprite
+	scenery_sprite : Conifer, Sprite.Setting -> Sprite
 	scenery_sprite = |conifer, setting|
 		TreeShapes.tree_sprite(
 			setting,

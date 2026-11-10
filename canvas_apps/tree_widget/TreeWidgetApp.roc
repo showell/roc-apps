@@ -92,7 +92,7 @@ stand_sighting = |stand| {
 }
 
 tree_shapes : Stand -> List(Shapes.Shape)
-tree_shapes = |stand| WidgetPage.resting_lens_shapes(stand_sighting(stand), {})
+tree_shapes = |stand| WidgetPage.resting_lens_shapes(stand_sighting(stand))
 
 ## What `TreeShapes.crown_of` says at `forward`, as Roc would write it.
 crown_text : Distance -> Str

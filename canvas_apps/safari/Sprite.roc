@@ -8,13 +8,8 @@ import lib.Shapes
 Sprite :: List(Shapes.Shape).{
 
 	## What a kind of object draws its sprite from: where it stands in the
-	## frame, the camera's focal length, and `context`, which is whatever else
-	## that kind needs. A kind that needs nothing more takes `{}`.
-	Setting(context) : {
-		spot : Spot,
-		focal_length : Pixels,
-		context : context,
-	}
+	## frame, and the camera's focal length.
+	Setting : { spot : Spot, focal_length : Pixels }
 
 	from_shapes : List(Shapes.Shape) -> Sprite
 	from_shapes = |shapes| Sprite.(shapes)

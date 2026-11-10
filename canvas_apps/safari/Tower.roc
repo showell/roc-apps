@@ -31,10 +31,9 @@ Tower :: { yaw : Angle.Turn, beacon : Beacon }.{
 	yaw : Tower -> Angle.Turn
 	yaw = |Tower.(tower)| tower.yaw
 
-	## How a tower looks. Its footprint stands at its spot, so it needs no
-	## context.
-	scenery_sprite : Tower, Sprite.Setting({}) -> Sprite
-	scenery_sprite = |tower, { spot, focal_length, .. }| {
+	## How a tower looks.
+	scenery_sprite : Tower, Sprite.Setting -> Sprite
+	scenery_sprite = |tower, { spot, focal_length }| {
 		footprint = tower_footprint(tower, spot)
 		Sprite.from_shapes(tower_shapes(tower, { footprint, spot, focal_length }))
 	}

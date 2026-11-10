@@ -23,7 +23,7 @@ TreeSighting :: [].{
 	## for FramePartsBench, which times the trees alone.
 	tree_renderings : List(Pipeline.Sighted(Conifer)), Pixels -> List(Rendered)
 	tree_renderings = |trees, focal_length|
-		trees.map(|tree| Pipeline.rendering_of(tree, { focal_length, context: {} }))
+		trees.map(|tree| Pipeline.rendering_of(tree, focal_length))
 }
 
 ## The trees in view on a segment in view.

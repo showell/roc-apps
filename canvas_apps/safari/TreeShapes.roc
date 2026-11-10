@@ -22,8 +22,8 @@ TreeShapes :: [].{
 	## The tree on the screen: its trunk, then its tiers top to bottom. A tree
 	## within round_trunk_reach has a shaded trunk. The crown is cones, shaded by
 	## how near they are, within cone_reach, and triangles beyond it.
-	tree_sprite : Sprite.Setting({}), { height : Distance, foliage_color : RgbColor } -> Sprite
-	tree_sprite = |{ spot, focal_length, context: _ }, { height, foliage_color }| {
+	tree_sprite : Sprite.Setting, { height : Distance, foliage_color : RgbColor } -> Sprite
+	tree_sprite = |{ spot, focal_length }, { height, foliage_color }| {
 		inputs = tier_inputs_of(spot, { height, focal_length, foliage_color })
 		forward = inputs.base.forward()
 		crown = TreeShapes.crown_of(forward)

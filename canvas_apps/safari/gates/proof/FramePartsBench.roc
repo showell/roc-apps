@@ -133,7 +133,7 @@ kind_size = |part, { road, camera, facts }| {
 	} else if part == "towers" {
 		shape_count(
 			TowerSighting.towers_in_view(road, { vantage: cam.vantage, clock: facts.clock }).map(
-				|tower| Pipeline.rendering_of(tower, { focal_length, context: {} }),
+				|tower| Pipeline.rendering_of(tower, focal_length),
 			),
 		)
 	} else if part == "billboards_sight" {
@@ -141,21 +141,21 @@ kind_size = |part, { road, camera, facts }| {
 	} else if part == "billboards" {
 		shape_count(
 			BillboardSighting.billboards_in_view(road, cam).map(
-				|billboard| Pipeline.rendering_of(billboard, { focal_length, context: {} }),
+				|billboard| Pipeline.rendering_of(billboard, focal_length),
 			),
 		)
 	} else if part == "cats" {
 		encounter = { camera: cam, encounter_stage: facts.encounter_stage }
 		shape_count(
 			EncounterSighting.cats_in_view(road, encounter).map(
-				|cat| Pipeline.rendering_of(cat, { focal_length, context: {} }),
+				|cat| Pipeline.rendering_of(cat, focal_length),
 			),
 		)
 	} else if part == "birds" {
 		encounter = { camera: cam, encounter_stage: facts.encounter_stage }
 		shape_count(
 			EncounterSighting.birds_in_view(road, encounter).map(
-				|bird| Pipeline.rendering_of(bird, { focal_length, context: {} }),
+				|bird| Pipeline.rendering_of(bird, focal_length),
 			),
 		)
 	} else if part == "truck" {

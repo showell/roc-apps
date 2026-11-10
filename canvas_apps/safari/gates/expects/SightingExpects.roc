@@ -314,7 +314,6 @@ shapes_of_tower_100_ahead = {
 	sighted.kind.scenery_sprite({
 		spot: sighted.spot,
 		focal_length: Fixtures.origin_camera.focal_length,
-		context: {},
 	}).to_shapes()
 }
 
