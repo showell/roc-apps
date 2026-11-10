@@ -14,10 +14,6 @@ Watch it all the way through. A motorcycle carries its rider down a long country
 
 Safari Ride is written in Roc, and this is a book about Roc. Roc is fun to read, and the book quotes the real code behind everything on the screen. If you're brand new to Roc, the [official Roc tutorial](https://www.roc-lang.org/tutorial) makes a quick first stop. The book explains each new Roc idea where the code first needs it.
 
-For now, the ride is a screensaver, and a dependable one. The same step always draws the same picture, down to the pixel, and the program's tests hold it to that. That comes naturally in Roc. A function's answer comes only from what it's handed, and the platform underneath the program handles the screen and the keyboard. The keys are handed in too: at every step, the program gets a snapshot of the keyboard.
-
-Now imagine taking the handlebars. Today the ride steers itself: it slows for every bend, and the cat times its crossing to the rider. Ease off before a bend yourself, and the elephant slides by at a stately pace. Brake too late for the cat, and you tumble into a field of very surprised cows. A game like that is about the feel of the ride, the timing and the near misses, more than a score. The player's presses would be one more thing each step is handed, so the same presses at the same steps would give the same ride. Every run could be replayed, and every bug played back until it's fixed.
-
 
 ## The problem
 
