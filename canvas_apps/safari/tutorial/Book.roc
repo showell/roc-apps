@@ -86,22 +86,45 @@ Book := [].{
 		},
 	]
 
+	## A chapter's page is named for its slug, never for its title, so a
+	## published page keeps its address when its chapter is retitled. To retitle
+	## a chapter, change its `chapter` here and keep its `slug`.
+	Slug : { chapter : Str, slug : Str }
+
+	## The slugs of the published chapters, which are the first chapters.
+	slugs : List(Book.Slug)
+	slugs = [
+		{ chapter: "Introduction", slug: "introduction" },
+		{ chapter: "The problem", slug: "the-problem" },
+		{ chapter: "Platforms, packages and modules", slug: "platforms-packages-and-modules" },
+		{ chapter: "The pieces as types", slug: "the-pieces-as-types" },
+		{ chapter: "Things", slug: "things" },
+		{ chapter: "Billboard Critters", slug: "billboard-critters" },
+		{ chapter: "Shapes", slug: "shapes" },
+	]
+
+	## The dividers and the slugs a book is cut with.
+	Outline : { dividers : List(Book.Divider), slugs : List(Book.Slug) }
+
 	## The source's first page is the front of the book and the rest are its
-	## chapters, in order. A divider with no chapter to stand above stops the
-	## build, so renaming a chapter can't quietly lose one.
-	pages : Manuscript.Contents, List(Book.Divider) -> List(Book.Page)
-	pages = |manuscript, dividers_wanted| {
+	## chapters, in order. A divider or a slug with no chapter stops the build, so
+	## renaming a chapter can't quietly lose one, and so does a slug that isn't
+	## plain or two pages with one name.
+	pages : Manuscript.Contents, Book.Outline -> List(Book.Page)
+	pages = |manuscript, outline| {
 		fence = BookFence.fence_hook(manuscript)
 		match manuscript.pages.map(|text| chapter_of(text, fence)) {
 			[] => crash "book: no pages"
 			[front, .. as unnumbered] => {
 				numbered = unnumbered.map_with_index(with_number)
 				has_its_chapter = |divider| numbered.any(|chapter| chapter.title == divider.before)
-				match dividers_wanted.find_first(|divider| !has_its_chapter(divider)) {
+				match outline.dividers.find_first(|divider| !has_its_chapter(divider)) {
 					Ok(divider) => crash "book: the divider `${divider.title}` stands above `${divider.before}`, a chapter that isn't in the book"
 					Err(NotFound) => {}
 				}
-				chapters = numbered.map(|chapter| with_opening(chapter, dividers_wanted))
+				naming = { extent: manuscript.extent, slugs: outline.slugs }
+				named = named_chapters(numbered, naming)
+				chapters = named.map(|chapter| with_opening(chapter, outline.dividers))
 				chapter_pages = chapters.map_with_index(
 					|chapter, i| {
 						{ previous, next } = neighbours(chapters, i)
@@ -212,6 +235,66 @@ section_of = |heading| {
 	title = BookText.text_from_bytes(heading.text)
 	{ id: BookText.text_from_bytes(heading.id), title }
 }
+
+## What names the chapters' pages: the slugs, and whether the book is the first
+## chapters, which are the ones published.
+Naming : { extent : Manuscript.Extent, slugs : List(Book.Slug) }
+
+## The chapters with their pages named for their slugs. A slug that isn't plain
+## or has no chapter stops the build, and so do two pages with one name and a
+## published chapter with no slug.
+named_chapters : List(Chapter), Naming -> List(Chapter)
+named_chapters = |chapters, naming| {
+	match naming.slugs.find_first(|slug| !is_plain_slug(slug.slug)) {
+		Ok(slug) => crash "book: the slug `${slug.slug}` isn't plain: lowercase letters, digits and hyphens"
+		Err(NotFound) => {}
+	}
+	has_its_chapter = |slug| chapters.any(|chapter| chapter.title == slug.chapter)
+	match naming.slugs.find_first(|slug| !has_its_chapter(slug)) {
+		Ok(slug) => crash "book: the slug `${slug.slug}` names `${slug.chapter}`, a chapter that isn't in the book"
+		Err(NotFound) => {}
+	}
+	named = chapters.map(
+		|chapter| match named_for_slug(chapter, naming) {
+			Ok(slugged) => slugged
+			Err(NoSlug) => crash "book: the chapter `${chapter.title}` is published and has no slug; give it one in Book.slugs"
+		},
+	)
+	match repeated_file([front_file].concat(named.map(|chapter| chapter.file))) {
+		Ok(file) => crash "book: two pages are named ${file}"
+		Err(NotFound) => {}
+	}
+	named
+}
+
+## The chapter with its page named for its slug. Only the first chapters are
+## published, so in the whole book a chapter with no slug keeps the name its
+## heading gives it, and in the first chapters it has none.
+named_for_slug : Chapter, Naming -> Try(Chapter, [NoSlug])
+named_for_slug = |chapter, { extent, slugs }|
+	match slugs.find_first(|slug| slug.chapter == chapter.title) {
+		Ok({ slug, .. }) => Ok({ ..chapter, file: "${slug}.html" })
+		Err(NotFound) => match extent {
+			WholeBook => Ok(chapter)
+			FirstChapters => Err(NoSlug)
+		}
+	}
+
+## A slug is a page's name for good, so it holds only lowercase letters, digits
+## and hyphens.
+is_plain_slug : Str -> Bool
+is_plain_slug = |slug| {
+	bytes = slug.to_utf8()
+	!bytes.is_empty() and bytes.all(is_slug_byte)
+}
+
+## Bytes 97 to 122 are `a` to `z`, 48 to 57 are the digits, and 45 is the hyphen.
+is_slug_byte : U8 -> Bool
+is_slug_byte = |byte| (byte >= 97 and byte <= 122) or (byte >= 48 and byte <= 57) or byte == 45
+
+## The first file named twice.
+repeated_file : List(Str) -> Try(Str, [NotFound])
+repeated_file = |files| files.find_first(|file| files.keep_if(|other| other == file).len() > 1)
 
 ## The chapters count from one. An appendix and the credits have no number.
 with_number : Chapter, U64 -> Chapter
@@ -444,20 +527,46 @@ expect nav_entry(
 expect with_number(one_section, 2).number == Numbered(3)
 expect with_number({ ..one_section, title: "Appendix: x" }, 2).number == Unnumbered
 expect with_number({ ..one_section, title: "Credits" }, 2).number == Unnumbered
-expect Book.pages(plain_book, []).map(|page| page.file) == [
+empty_outline : Book.Outline
+empty_outline = { dividers: [], slugs: [] }
+
+slug_a : Book.Slug
+slug_a = { chapter: "A", slug: "a-slug" }
+
+slug_b : Book.Slug
+slug_b = { chapter: "B", slug: "b" }
+
+expect Book.pages(plain_book, empty_outline).map(|page| page.file) == [
 	"index.html",
 	"one.html",
 	"appendix-more.html",
 ]
-expect Book.pages(plain_book, []).all(|page| !page.html.contains("embed.js"))
-expect Book.pages(widget_book, []).map(|page| page.html.contains("embed.js")) == [
+expect Book.pages(
+	plain_book,
+	{ ..empty_outline, slugs: [{ chapter: "One", slug: "first" }] },
+).map(|page| page.file) == ["index.html", "first.html", "appendix-more.html"]
+expect Book.pages(plain_book, empty_outline).all(|page| !page.html.contains("embed.js"))
+expect Book.pages(widget_book, empty_outline).map(|page| page.html.contains("embed.js")) == [
 	Bool.False,
 	Bool.True,
 ]
 expect Book.pages(
 	plain_book,
-	[{ ..a_part, before: "One" }],
+	{ ..empty_outline, dividers: [{ ..a_part, before: "One" }] },
 ).all(|page| page.html.contains("<li class=\"part\">P &amp; Q</li>"))
+expect
+	named_for_slug(one_section, { extent: FirstChapters, slugs: [slug_a] })
+		== Ok({ ..one_section, file: "a-slug.html" })
+expect
+	named_for_slug(one_section, { extent: WholeBook, slugs: [slug_a] })
+		== Ok({ ..one_section, file: "a-slug.html" })
+expect named_for_slug(one_section, { extent: WholeBook, slugs: [slug_b] }) == Ok(one_section)
+expect named_for_slug(one_section, { extent: FirstChapters, slugs: [slug_b] }) == Err(NoSlug)
+expect ["billboard-critters", "a1", "x"].all(is_plain_slug)
+expect ["", "Shapes", "two words", "under_score", "a.html", "é"].all(|slug| !is_plain_slug(slug))
+expect Book.slugs.all(|slug| is_plain_slug(slug.slug))
+expect repeated_file(["index.html", "a.html", "b.html"]) == Err(NotFound)
+expect repeated_file(["index.html", "a.html", "index.html"]) == Ok("index.html")
 expect with_opening(one_section, [elsewhere]).opening == ""
 expect with_opening(
 	one_section,
