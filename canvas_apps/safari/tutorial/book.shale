@@ -270,6 +270,13 @@ function make_book_argv(tool, book, folders)
   return argv
 end
 
+-- What this build holds, for site/publish.sh to require of a book and fold into
+-- its PROVENANCE.
+function built_record()
+  if CHAPTERS == nil then return "book: every chapter\n" end
+  return "book: the first " .. CHAPTERS .. " chapters\n"
+end
+
 function write_pages(output)
   remove_if_there(STAGING)
   mkdir(STAGING)
@@ -285,6 +292,7 @@ function write_pages(output)
   end
   replace(STAGING .. "/book.css", read(TUTORIAL .. "/book.css"))
   replace(STAGING .. "/embed.js", read("canvas_apps/widget_kit/embed.js"))
+  replace(STAGING .. "/BUILT", built_record())
   return files
 end
 
