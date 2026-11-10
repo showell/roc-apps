@@ -346,9 +346,9 @@ And here's the code that makes it:
 
 {{code ShapesWidgetApp.green_triangle}}
 
-The value is a `Triangle` tag with its record. The record names three corners, `first`, `second` and `third`, so every triangle has exactly three, by construction. A corner's type is `Point.Point`: the `Point` module holds a record type also named `Point`, with an `x` and a `y`. `Point.at` makes a corner from two numbers, measured from the top left of the picture, with `y` growing downward.
+The value is a `Triangle` tag with its record. The record names three corners, `first`, `second` and `third`, so every triangle has exactly three, by construction. A corner's type is `Point.Point`, a record with an `x` and a `y`. The `Point` module's main type is named `Point`, as the naming rule says, and the record is another type the module offers, so it carries the module's name in front. `Point.at` makes a corner from two plain numbers, measured from the top left of the picture, with `y` growing downward.
 
-A corner's `x` and `y` are each a `Pixels`, an opaque type around an `F64`, like `Distance`. The ride works in metres on the road and in pixels on the screen, and two types keep the two apart, so each number says which one it is. Roc is just as happy with plain `F64`s, if you prefer that style. In a program that moves between the road and the screen all the time, the types earn their keep.
+`Point.at` turns each of those numbers into a `Pixels`, an opaque type around an `F64`, like `Distance`. The ride works in metres on the road and in pixels on the screen, and two types keep the two apart, so each number says which one it is. Roc is just as happy with plain `F64`s, if you prefer that style. In a program that moves between the road and the screen all the time, the types earn their keep.
 
 The `fill` is green. `RgbColor.of` makes a color from `0x2e8b57`, the six hex digits a web page writes after its `#`, and `Brush.flat` makes a fill of that one color.
 
@@ -364,11 +364,11 @@ A brown rectangle on a plain background.
 
 {{code ShapesWidgetApp.brown_rectangle}}
 
-`Shapes.rectangle` is a function. It takes one record, with a top left corner, a width, a height and a fill, and gives back a `Quad`. `Pixels.of` makes the width and the height from plain numbers. Here's the function:
+`Shapes.rectangle` is a function. It takes one record, with a top left corner, a width, a height and a fill, and gives back a `Shape`, a `Quad`. `Pixels.of` makes the width and the height from plain numbers. Here's the function:
 
 {{code Shapes.rectangle}}
 
-`|{ top_left, width, height, fill }|` takes the record apart, naming each of its fields. The body works out where the right and bottom edges are, then gives the quad its four corners, clockwise from the top left, each a record of an `x` and a `y`. Each side's two corners share an `x` or a `y`, so the sides are always square to the screen. The picture hands the platform the background and then this quad, just as it did the triangle.
+`|{ top_left, width, height, fill }|` takes the record apart, naming each of its fields. The body works out where the right and bottom edges are, with `plus`, which adds two `Pixels`. Then it gives the quad its four corners, clockwise from the top left, each a record of an `x` and a `y`. Each side's two corners share an `x` or a `y`, so the sides are always square to the screen. The picture hands the platform the background and then this quad, just as it did the triangle.
 
 That's both of a far tree's shapes. Next, we put them together, with functions of our own.
 

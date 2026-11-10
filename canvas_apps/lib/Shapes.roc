@@ -13,13 +13,13 @@ Shapes :: [].{
 		## Three corners, which is every triangle and nothing else.
 		Triangle({ first : Point.Point, second : Point.Point, third : Point.Point, fill : Brush.Fill }),
 
-		## Four corners in order round the edge. `Shapes.rectangle` makes an
+		## Four corners in order around the edge. `Shapes.rectangle` makes an
 		## upright one.
 		Quad({ first : Point.Point, second : Point.Point, third : Point.Point, fourth : Point.Point, fill : Brush.Fill }),
 
 		Disc({ center : Point.Point, radius : Pixels, fill : Brush.Fill }),
 
-		## An outline of any other count of corners, in order round its edge: a
+		## An outline of any other number of corners, in order around its edge: a
 		## traced still, a mountain, the road.
 		Polygon({ corners : List(Point.Point), fill : Brush.Fill }),
 
