@@ -182,6 +182,14 @@ A cow on the grass beside the road.
 
 The ride has a lot of animals: herds of cows and pigs, ducks on the ponds, and an elephant at a bend in the road. The cat and the bird move, and they get chapters of their own. Every other animal is a billboard: a flat picture of its emoji, standing on the grass and turned square to the camera, like a cardboard cutout. That takes far less code than modelling an animal, and it's charming. A billboard faces left or right, and one that faces right is its emoji mirrored. That's the `Billboard` type from "The pieces as types": an emoji, a height and a facing. Each emoji was traced into polygons ahead of time, and the `EmojiStills` module holds them as plain data. The tracing itself is beyond this book.
 
+A billboard animal starts from a record: its emoji, and how tall a grown one stands. Here are the cow's and the bull's, from the `CowHerd` module:
+
+{{code CowHerd.cow}}
+
+{{code CowHerd.bull}}
+
+The bull's height comes from the cow's. `cow.adult_height` reads a field of the `cow` record, and `.times(1.15)` calls the `times` function that comes with the field's type, `Distance`. So a bull stands 15% taller than a cow.
+
 ### Calves
 
 A herd looks better with a few calves in it. The ride's rule is simple: number a herd's cows from 0, and make cows 1, 5, 9 and so on calves: every fourth cow, starting with cow 1. A calf is a billboard half as tall as its mother. Here are twenty cows in a row, numbered:
@@ -194,13 +202,13 @@ How does the code pick the calves? With a function. A Roc function usually comes
 
 {{code CowHerd.is_calf}}
 
-The annotation says `is_calf` takes a `U64`, a whole number from zero up, and gives back a `Bool`, `True` or `False`. In the definition, `|cow_number|` names what the function takes, and what follows is its answer. `cow_number.rem_by(4)` calls the `rem_by` function that comes with `cow_number`'s type, `U64`, and gives the remainder after dividing by 4. Then `==` compares that remainder with 1, which gives the `Bool`. So a cow whose number leaves a remainder of 1 is a calf.
+The annotation says `is_calf` takes a `U64`, a whole number from zero up, and gives back a `Bool`, `True` or `False`. In the definition, `|cow_number|` names what the function takes, and what follows is its answer. `cow_number.rem_by(4)` likewise calls the `rem_by` function that comes with a `U64`, and gives the remainder after dividing by 4. Then `==` compares that remainder with 1, which gives the `Bool`. So a cow whose number leaves a remainder of 1 is a calf.
 
 A second function puts `is_calf` to work. It gives each cow in a herd its billboard:
 
 {{code CowHerd.cow_billboard}}
 
-Its answer is an `if`, which picks one of two values: a young billboard when `is_calf` says `True`, and a grown one when it says `False`. Both are cows, facing right: `cow` is the cow's species, its emoji and how tall a grown one stands. A `Billboard` is opaque, so only the `Billboard` module can build one, and `young_billboard` and `adult_billboard` are two of the ways it offers. The herd calls `cow_billboard` for every cow it places.
+Its answer is an `if`, which picks one of two values: a young billboard when `is_calf` says `True`, and a grown one when it says `False`. Both are cows, facing right, built from the `cow` record above. A `Billboard` is opaque, so only the `Billboard` module can build one, and `young_billboard` and `adult_billboard` are two of the ways it offers. The herd calls `cow_billboard` for every cow it places.
 
 ### What drawing a thing takes
 
