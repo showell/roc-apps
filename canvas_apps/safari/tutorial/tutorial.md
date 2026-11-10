@@ -19,17 +19,37 @@ Safari Ride is written in Roc, and this is a book about Roc. Roc is fun to read,
 
 Safari Ride shows a world in motion, seen from the rider's seat. It draws that world on the screen thirty frames a second, and whoever is watching can take the controls at any moment.
 
-That's what you see. For us, it's an engineering problem, and our first job is to break it into pieces we can build one at a time. A screen shows things from a world, and those come first. We hold one frame still and get it right before anything moves, and the controls come last. That plan costs something: the first half of the book holds one frame still. In return, every piece we build stands on a piece that already works. The plan gives the problem five pieces.
+That's what you see. For us, it's an engineering problem, and our first job is to break it into pieces we can build one at a time. A screen shows things from a world, and those come first. We hold one frame still and get it right before anything moves, and the controls come last. That plan costs something: the first half of the book holds one frame still. In return, every piece we build stands on a piece that already works. The plan gives the problem five pieces:
 
-The first is things. A tree, a cow and a radio tower each become shapes the screen can show. Every frame starts from a blank screen, so every frame needs all of its shapes, every time.
+The five pieces
+```dot
+digraph pieces {
+  rankdir=LR;
+  node [shape=box, style=rounded, fontname="Helvetica"];
+  edge [fontname="Helvetica", fontsize=10];
+  subgraph cluster_frame {
+    label="one frame, held still"; style="rounded,dashed"; fontname="Helvetica";
+    things [label="things"];
+    world [label="the world"];
+    view [label="the rider's view"];
+  }
+  motion [label="motion"];
+  person [label="the person watching"];
+  things -> world [label="  stand in"];
+  world -> view [label="  is seen in"];
+  motion -> world [label="  moves"];
+  view -> person [label="  shows a frame to"];
+  person -> motion [label="  pauses, steps"];
+}
+```
 
-The second is the world. A long road runs through open country, past trees, herds, ponds and radio towers. Something has to say where every one of them stands.
-
-The third is the rider's view. The screen shows only what the rider sees. A tree far down the road looks small, and a tree close by looks big. For everything in the world, the program works out where it lands on the screen, and how big, if the rider sees it at all. Where two things overlap, the nearer one covers the farther one.
-
-The fourth is motion. The rider rides on, the truck drives ahead, the cat crosses the road and the sun goes down. At every step, something has to move each of them on, and the moves fit together. The cat times its crossing to the rider coming toward it, and a cat in the road stops the rider speeding up.
-
-The fifth is the person watching. A viewer mostly sits back and watches, but they also need to pause the ride, step it forward and rewind it. So the program gives them controls they can find, and answers each one straight away.
+| Piece | What it is | What the program does |
+|---|---|---|
+| Things | A tree, a cow, a radio tower. | Turns each one into shapes the screen can show. Every frame starts from a blank screen, so every frame needs all of its shapes, every time. |
+| The world | A long road through open country, past trees, herds, ponds and radio towers. | Says where every one of them stands. |
+| The rider's view | Only what the rider sees: a tree far down the road looks small, and a tree close by looks big. | Works out where everything lands on the screen, and how big, if the rider sees it at all. Where two things overlap, the nearer one covers the farther one. |
+| Motion | The rider rides on, the truck drives ahead, the cat crosses the road and the sun goes down. | Moves each of them on at every step, so the moves fit together. The cat times its crossing to the rider, and a cat in the road stops the rider speeding up. |
+| The person watching | A viewer who mostly sits back, but also pauses the ride, steps it forward and rewinds it. | Gives them controls they can find, and answers each one straight away. |
 
 The first three pieces give us one frame, held still. The last two set it moving, and put it in the viewer's hands. Next, we see where Roc code lives, and then we give each piece its types.
 
