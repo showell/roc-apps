@@ -580,12 +580,13 @@ widget_book = {
 }
 
 ## The front refers to a chapter with a slug, and the chapter to one that isn't
-## in the book and to one that has no slug.
+## in the book and to one that has no slug. The title holds what the renderer
+## escapes, so the link needs Md.escape to escape it alike.
 linked_book : Manuscript.Contents
 linked_book = {
 	pages: [
-		"# Front\n\nSee {{chapter One & two}}.\n",
-		"# One & two\n\nSee {{chapter Gone}} and {{chapter Unslugged}}.\n",
+		"# Front\n\nSee {{chapter Bo's \"one\" & two}}.\n",
+		"# Bo's \"one\" & two\n\nSee {{chapter Gone}} and {{chapter Unslugged}}.\n",
 		"# Unslugged\n",
 	],
 	diagrams: [],
@@ -596,10 +597,10 @@ linked_book = {
 linked_pages : List(Book.Page)
 linked_pages = Book.pages(
 	linked_book,
-	{ dividers: [], slugs: [{ chapter: "One & two", slug: "one" }] },
+	{ dividers: [], slugs: [{ chapter: "Bo's \"one\" & two", slug: "one" }] },
 )
 
-expect linked_pages.map(|page| page.html.contains("<p>See <a class=\"chapter-link\" href=\"one.html\">“One &amp; two”</a>.</p>")) == [
+expect linked_pages.map(|page| page.html.contains("<p>See <a class=\"chapter-link\" href=\"one.html\">“Bo&#39;s &quot;one&quot; &amp; two”</a>.</p>")) == [
 	Bool.True,
 	Bool.False,
 	Bool.False,
