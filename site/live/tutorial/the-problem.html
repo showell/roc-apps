@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The problem · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="here"><a href="the-problem.html"><span class="number">2</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">3</span>Platforms, packages and modules</a></li>
+<li><a href="the-pieces-as-types.html"><span class="number">4</span>The pieces as types</a></li>
+<li><a href="things.html"><span class="number">5</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">6</span>Billboard Critters</a></li>
+<li><a href="shapes.html"><span class="number">7</span>Shapes</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 2</p>
+<h1 id="the-problem">The problem</h1>
+<p>Safari Ride shows a world in motion, seen from the rider&#39;s seat. It draws that world on the screen thirty frames a second, and whoever is watching can take the controls at any moment.</p>
+<p>That&#39;s what you see. For us, it&#39;s an engineering problem, and our first job is to break it into pieces we can build one at a time. A screen shows things from a world, and those come first. We hold one frame still and get it right before anything moves, and the controls come last. That plan costs something: the first half of the book holds one frame still. In return, every piece we build stands on a piece that already works. The plan gives the problem five pieces:</p>
+<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="The five pieces" width="467pt" height="165pt"
+ viewBox="0.00 0.00 467.00 165.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 161)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-161 463,-161 463,4 -4,4"/>
+<g id="clust1" class="cluster">
+<path fill="none" stroke="black" stroke-dasharray="5,2" d="M20,-76C20,-76 401,-76 401,-76 407,-76 413,-82 413,-88 413,-88 413,-137 413,-137 413,-143 407,-149 401,-149 401,-149 20,-149 20,-149 14,-149 8,-143 8,-137 8,-137 8,-88 8,-88 8,-82 14,-76 20,-76"/>
+<text text-anchor="middle" x="210.5" y="-135.4" font-family="Helvetica,sans-Serif" font-size="12.00">one frame, held still</text>
+</g>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M59.5,-120C59.5,-120 28.5,-120 28.5,-120 22.5,-120 16.5,-114 16.5,-108 16.5,-108 16.5,-96 16.5,-96 16.5,-90 22.5,-84 28.5,-84 28.5,-84 59.5,-84 59.5,-84 65.5,-84 71.5,-90 71.5,-96 71.5,-96 71.5,-108 71.5,-108 71.5,-114 65.5,-120 59.5,-120"/>
+<text text-anchor="middle" x="44" y="-98.9" font-family="Helvetica,sans-Serif" font-size="12.00">things</text>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M204.5,-120C204.5,-120 153.5,-120 153.5,-120 147.5,-120 141.5,-114 141.5,-108 141.5,-108 141.5,-96 141.5,-96 141.5,-90 147.5,-84 153.5,-84 153.5,-84 204.5,-84 204.5,-84 210.5,-84 216.5,-90 216.5,-96 216.5,-96 216.5,-108 216.5,-108 216.5,-114 210.5,-120 204.5,-120"/>
+<text text-anchor="middle" x="179" y="-98.9" font-family="Helvetica,sans-Serif" font-size="12.00">the world</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M71.65,-102C88.79,-102 111.28,-102 131.24,-102"/>
+<polygon fill="black" stroke="black" points="131.41,-105.5 141.41,-102 131.41,-98.5 131.41,-105.5"/>
+<text text-anchor="middle" x="106.5" y="-108.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;stand in</text>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M393,-120C393,-120 307,-120 307,-120 301,-120 295,-114 295,-108 295,-108 295,-96 295,-96 295,-90 301,-84 307,-84 307,-84 393,-84 393,-84 399,-84 405,-90 405,-96 405,-96 405,-108 405,-108 405,-114 399,-120 393,-120"/>
+<text text-anchor="middle" x="350" y="-98.9" font-family="Helvetica,sans-Serif" font-size="12.00">the rider&#39;s view</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M216.53,-102C236.48,-102 261.59,-102 284.63,-102"/>
+<polygon fill="black" stroke="black" points="284.7,-105.5 294.7,-102 284.7,-98.5 284.7,-105.5"/>
+<text text-anchor="middle" x="255.75" y="-108.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;is seen in</text>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M173.5,-36C173.5,-36 136.5,-36 136.5,-36 130.5,-36 124.5,-30 124.5,-24 124.5,-24 124.5,-12 124.5,-12 124.5,-6 130.5,0 136.5,0 136.5,0 173.5,0 173.5,0 179.5,0 185.5,-6 185.5,-12 185.5,-12 185.5,-24 185.5,-24 185.5,-30 179.5,-36 173.5,-36"/>
+<text text-anchor="middle" x="155" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">motion</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M171.02,-73.73C167.38,-61.3 163.18,-46.96 160,-36.08"/>
+<polygon fill="black" stroke="black" points="167.74,-75 173.91,-83.61 174.46,-73.03 167.74,-75"/>
+<text text-anchor="middle" x="191.5" y="-57.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;moves</text>
+</g>
+<g id="node5" class="node">
+<path fill="none" stroke="black" d="M417.5,-36C417.5,-36 300.5,-36 300.5,-36 294.5,-36 288.5,-30 288.5,-24 288.5,-24 288.5,-12 288.5,-12 288.5,-6 294.5,0 300.5,0 300.5,0 417.5,0 417.5,0 423.5,0 429.5,-6 429.5,-12 429.5,-12 429.5,-24 429.5,-24 429.5,-30 423.5,-36 417.5,-36"/>
+<text text-anchor="middle" x="359" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">the person watching</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M351.91,-83.61C353.1,-72.77 354.65,-58.6 356,-46.29"/>
+<polygon fill="black" stroke="black" points="359.51,-46.41 357.12,-36.08 352.55,-45.64 359.51,-46.41"/>
+<text text-anchor="middle" x="407" y="-57.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;shows a frame to</text>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M195.6,-18C222.12,-18 257.45,-18 288.47,-18"/>
+<polygon fill="black" stroke="black" points="195.54,-14.5 185.54,-18 195.54,-21.5 195.54,-14.5"/>
+<text text-anchor="middle" x="237" y="-24.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;pauses, steps</text>
+</g>
+</g>
+</svg><svg class="diagram diagram-phone" role="img" aria-label="The five pieces" width="427pt" height="169pt"
+ viewBox="0.00 0.00 427.00 169.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 165)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-165 423,-165 423,4 -4,4"/>
+<g id="clust1" class="cluster">
+<path fill="none" stroke="black" stroke-dasharray="5,2" d="M20,-67C20,-67 361,-67 361,-67 367,-67 373,-73 373,-79 373,-79 373,-141 373,-141 373,-147 367,-153 361,-153 361,-153 20,-153 20,-153 14,-153 8,-147 8,-141 8,-141 8,-79 8,-79 8,-73 14,-67 20,-67"/>
+<text text-anchor="middle" x="190.5" y="-139.4" font-family="Helvetica,sans-Serif" font-size="12.00">one frame,</text>
+<text text-anchor="middle" x="190.5" y="-126.4" font-family="Helvetica,sans-Serif" font-size="12.00">held still</text>
+</g>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M58,-111C58,-111 28,-111 28,-111 22,-111 16,-105 16,-99 16,-99 16,-87 16,-87 16,-81 22,-75 28,-75 28,-75 58,-75 58,-75 64,-75 70,-81 70,-87 70,-87 70,-99 70,-99 70,-105 64,-111 58,-111"/>
+<text text-anchor="middle" x="43" y="-89.9" font-family="Helvetica,sans-Serif" font-size="12.00">things</text>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M183.5,-111C183.5,-111 142.5,-111 142.5,-111 136.5,-111 130.5,-105 130.5,-99 130.5,-99 130.5,-87 130.5,-87 130.5,-81 136.5,-75 142.5,-75 142.5,-75 183.5,-75 183.5,-75 189.5,-75 195.5,-81 195.5,-87 195.5,-87 195.5,-99 195.5,-99 195.5,-105 189.5,-111 183.5,-111"/>
+<text text-anchor="middle" x="163" y="-89.9" font-family="Helvetica,sans-Serif" font-size="12.00">the world</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M70.23,-93C85,-93 103.6,-93 120.26,-93"/>
+<polygon fill="black" stroke="black" points="120.33,-96.5 130.33,-93 120.33,-89.5 120.33,-96.5"/>
+<text text-anchor="middle" x="100.25" y="-99.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;stand in</text>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M353,-111C353,-111 277,-111 277,-111 271,-111 265,-105 265,-99 265,-99 265,-87 265,-87 265,-81 271,-75 277,-75 277,-75 353,-75 353,-75 359,-75 365,-81 365,-87 365,-87 365,-99 365,-99 365,-105 359,-111 353,-111"/>
+<text text-anchor="middle" x="315" y="-89.9" font-family="Helvetica,sans-Serif" font-size="12.00">the rider&#39;s view</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M195.61,-93C212.85,-93 234.56,-93 254.73,-93"/>
+<polygon fill="black" stroke="black" points="254.8,-96.5 264.8,-93 254.8,-89.5 254.8,-96.5"/>
+<text text-anchor="middle" x="230.25" y="-99.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;is seen in</text>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M178,-36C178,-36 148,-36 148,-36 142,-36 136,-30 136,-24 136,-24 136,-12 136,-12 136,-6 142,0 148,0 148,0 178,0 178,0 184,0 190,-6 190,-12 190,-12 190,-24 190,-24 190,-30 184,-36 178,-36"/>
+<text text-anchor="middle" x="163" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">motion</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M163,-64.49C163,-54.98 163,-44.61 163,-36.18"/>
+<polygon fill="black" stroke="black" points="159.5,-64.7 163,-74.7 166.5,-64.7 159.5,-64.7"/>
+<text text-anchor="middle" x="185.5" y="-50.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;moves</text>
+</g>
+<g id="node5" class="node">
+<path fill="none" stroke="black" d="M368.5,-36C368.5,-36 261.5,-36 261.5,-36 255.5,-36 249.5,-30 249.5,-24 249.5,-24 249.5,-12 249.5,-12 249.5,-6 255.5,0 261.5,0 261.5,0 368.5,0 368.5,0 374.5,0 380.5,-6 380.5,-12 380.5,-12 380.5,-24 380.5,-24 380.5,-30 374.5,-36 368.5,-36"/>
+<text text-anchor="middle" x="315" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">the person watching</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M315,-74.7C315,-66.25 315,-55.87 315,-46.37"/>
+<polygon fill="black" stroke="black" points="318.5,-46.18 315,-36.18 311.5,-46.18 318.5,-46.18"/>
+<text text-anchor="middle" x="367" y="-50.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;shows a frame to</text>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M200.39,-18C215.13,-18 232.5,-18 249.21,-18"/>
+<polygon fill="black" stroke="black" points="200.17,-14.5 190.17,-18 200.17,-21.5 200.17,-14.5"/>
+<text text-anchor="middle" x="219.75" y="-36.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;pauses,</text>
+<text text-anchor="middle" x="219.75" y="-24.2" font-family="Helvetica,sans-Serif" font-size="11.00">steps</text>
+</g>
+</g>
+</svg><figcaption>The five pieces</figcaption></figure><table>
+<thead>
+<tr>
+<th>Piece</th>
+<th>Challenge</th>
+<th>The problem</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Things</td>
+<td>Components</td>
+<td>A tree, a cow and a radio tower must each be built from shapes the screen can show. Every frame starts from a blank screen, so every frame must hold all of its shapes, every time.</td>
+</tr>
+<tr>
+<td>The world</td>
+<td>Structure</td>
+<td>A long road runs through open country, past trees, herds, ponds and radio towers. Something must lay it all out, and say where every one of them stands.</td>
+</tr>
+<tr>
+<td>The rider&#39;s view</td>
+<td>Perception</td>
+<td>The screen shows only what the rider sees. A tree far down the road looks small, and a tree close by looks big. For everything in the world, the program must work out what the rider perceives: where it lands on the screen, and how big, if the rider sees it at all. Where two things overlap, the nearer one covers the farther one.</td>
+</tr>
+<tr>
+<td>Motion</td>
+<td>Persistence</td>
+<td>The rider rides on, the truck drives ahead, the cat crosses the road and the sun goes down. At every step, something must carry each of them on from where it was, and the moves must fit together. The cat times its crossing to the rider coming toward it, and a cat in the road stops the rider speeding up.</td>
+</tr>
+<tr>
+<td>The person watching</td>
+<td>Interaction</td>
+<td>A viewer mostly sits back and watches, but they also need to pause the ride, step it forward and rewind it. So the program must give them controls they can find, and answer each one straight away.</td>
+</tr>
+</tbody>
+</table>
+<p>The first three pieces give us one frame, held still. The last two set it moving, and put it in the viewer&#39;s hands. Next, we see where Roc code lives, and then we give each piece its types.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="introduction.html"><small>Previous</small>Introduction</a>
+<a rel="next" href="platforms-packages-and-modules.html"><small>Next</small>Platforms, packages and modules</a>
+</nav>
+</main>
+
+</body>
+</html>

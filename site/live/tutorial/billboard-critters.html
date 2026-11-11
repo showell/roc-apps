@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Billboard Critters · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="the-problem.html"><span class="number">2</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">3</span>Platforms, packages and modules</a></li>
+<li><a href="the-pieces-as-types.html"><span class="number">4</span>The pieces as types</a></li>
+<li><a href="things.html"><span class="number">5</span>Things</a></li>
+<li class="here"><a href="billboard-critters.html"><span class="number">6</span>Billboard Critters</a><ol class="sections"><li><a href="billboard-critters.html#two-ways-to-face">Two ways to face</a></li><li><a href="billboard-critters.html#four-animals">Four animals</a></li><li><a href="billboard-critters.html#one-thing-at-a-bend">One thing at a bend</a></li><li><a href="billboard-critters.html#elephants-mostly">Elephants, mostly</a></li></ol></li>
+<li><a href="shapes.html"><span class="number">7</span>Shapes</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 6</p>
+<h1 id="billboard-critters">Billboard Critters</h1>
+<p>Four kinds of big animal stand at the bends in the ride&#39;s road: elephants, giraffes, zebras and rhinos. Each animal stands with its baby:</p>
+<figure class="widget"><iframe class="canvas-app" src="../bend_animals_widget/" title="The four bend animals and their babies, lined up on the grass: two pairs face right, and two face left." loading="lazy" style="aspect-ratio: 640 / 160"></iframe><figcaption>The four bend animals and their babies, lined up on the grass: two pairs face right, and two face left.</figcaption></figure><p>Each emoji shows its animal from the side, so a billboard faces left or right, and your eye follows its gaze.</p>
+<h2 id="two-ways-to-face">Two ways to face <a class="section-link" href="#two-ways-to-face" aria-label="Link to this section">§</a></h2>
+<p>The <code>Billboard</code> module gives those two ways a type of their own:</p>
+<figure class="listing"><figcaption>Billboard.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## Which way a billboard faces on screen.</span>
+<span class="syn-type">Facing</span> : [<span class="syn-type">FacesLeft</span>, <span class="syn-type">FacesRight</span>]
+</code></pre></figure><p>The type is a list of tags in square brackets. A tag is a name the compiler knows, and it&#39;s a value in its own right: <code>FacesLeft</code> is a value, and so is <code>FacesRight</code>. A type made of tags is a tag union, and a value of a tag union is always exactly one of its tags. So a <code>Facing</code> is <code>FacesLeft</code> or <code>FacesRight</code>.</p>
+<p>&quot;Things&quot; showed the annotation of <code>Billboard.scenery_sprite</code> alone. Here&#39;s the whole function:</p>
+<figure class="listing"><figcaption>Billboard.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## How a billboard looks. An emoji faces left, so a billboard facing right</span>
+<span class="syn-comment">## is its still mirrored.</span>
+<span class="syn-name">scenery_sprite</span> : <span class="syn-type">Billboard</span>, <span class="syn-type">Sprite.Setting</span> -&gt; <span class="syn-type">Sprite</span>
+<span class="syn-name">scenery_sprite</span> = |<span class="syn-type">Billboard</span>.(billboard), setting| {
+	flip =
+		<span class="syn-keyword">match</span> billboard.facing {
+			<span class="syn-type">FacesLeft</span> =&gt; <span class="syn-type">AsDrawn</span>
+			<span class="syn-type">FacesRight</span> =&gt; <span class="syn-type">Mirrored</span>
+		}
+	<span class="syn-type">Sprite</span>.from_shapes(
+		<span class="syn-type">StillShapes</span>.standing_still_shapes(
+			setting,
+			{ height: billboard.height, still: billboard.emoji.still(), flip },
+		),
+	)
+}
+</code></pre></figure><p><code>|Billboard.(billboard), setting|</code> says what the function takes: a billboard and a setting. A <code>Billboard</code> is opaque, and <code>Billboard.(billboard)</code> opens it: it unwraps the billboard into a record named <code>billboard</code>, so the function can read <code>billboard.facing</code> and the other fields. Only the <code>Billboard</code> module can write that.</p>
+<p>The body is a block, in braces. A block holds lines of code, where a record holds fields with colons. Its first line names a value, <code>flip</code>, and its last line is the function&#39;s answer.</p>
+<p>In that answer, <code>billboard.emoji.still()</code> calls the <code>still</code> function that comes with the emoji, which gives its traced still. <code>StillShapes.standing_still_shapes</code> makes shapes from it at the billboard&#39;s height, and <code>Sprite.from_shapes</code> makes those shapes a sprite. In that last record, <code>flip</code> alone is short for <code>flip: flip</code>.</p>
+<p>Every emoji is drawn facing left, so a billboard that faces right needs its emoji mirrored. The <code>match</code> makes that choice. It looks at <code>billboard.facing</code>, and each line under it takes one tag and gives back what to do: <code>FacesLeft</code> gives <code>AsDrawn</code>, and <code>FacesRight</code> gives <code>Mirrored</code>. Those two are the tags of another tag union, <code>StillShapes.Flip</code>, and <code>flip</code> names the one the <code>match</code> picks. The compiler works out the type of <code>flip</code> from where it&#39;s used.</p>
+<p>A <code>match</code> handles every tag of its type, and the compiler checks that it does. Leave out the <code>FacesRight</code> line, and the compiler stops with an error that names it:</p>
+<pre><code class="language-text">This match expression doesn&#39;t cover all possible cases.
+
+Missing patterns:
+        FacesRight
+</code></pre>
+<p>So every billboard faces one of two ways, and the code that draws it handles both, by construction.</p>
+<h2 id="four-animals">Four animals <a class="section-link" href="#four-animals" aria-label="Link to this section">§</a></h2>
+<p>The bend animals are a tag union too, with four tags:</p>
+<figure class="listing"><figcaption>BendAnimal.roc, in BendAnimal</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
+<span class="syn-type">BendAnimal</span> := [<span class="syn-type">Elephant</span>, <span class="syn-type">Giraffe</span>, <span class="syn-type">Zebra</span>, <span class="syn-type">Rhino</span>].{
+<span class="syn-comment"># ...</span>
+</code></pre></figure><p>Each tag is an animal. <code>BendAnimal</code> uses <code>:=</code>, so it&#39;s a nominal type: a new type, apart from any other tag union with the same tags. The <code>species_of</code> function turns each one into its species record, an emoji and a grown height, like the cow&#39;s in &quot;Things&quot;:</p>
+<figure class="listing"><figcaption>BendAnimal.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The species of a bend&#39;s animal.</span>
+<span class="syn-name">species_of</span> : <span class="syn-type">BendAnimal</span> -&gt; <span class="syn-type">Billboard.Species</span>
+<span class="syn-name">species_of</span> = |animal|
+	<span class="syn-keyword">match</span> animal {
+		<span class="syn-type">Elephant</span> =&gt; { emoji: <span class="syn-type">EmojiStills</span>.elephant, adult_height: <span class="syn-type">Distance</span>.metres(<span class="syn-number">2.8</span>) }
+		<span class="syn-type">Giraffe</span> =&gt; { emoji: <span class="syn-type">EmojiStills</span>.giraffe, adult_height: <span class="syn-type">Distance</span>.metres(<span class="syn-number">4.5</span>) }
+		<span class="syn-type">Zebra</span> =&gt; { emoji: <span class="syn-type">EmojiStills</span>.zebra, adult_height: <span class="syn-type">Distance</span>.metres(<span class="syn-number">1.6</span>) }
+		<span class="syn-type">Rhino</span> =&gt; { emoji: <span class="syn-type">EmojiStills</span>.rhino, adult_height: <span class="syn-type">Distance</span>.metres(<span class="syn-number">2.2</span>) }
+	}
+</code></pre></figure><p>This <code>match</code> is about as plain as one gets: a tag in, a record out, one line per animal. Its four lines are the four tags, so every bend animal has a species, and a grown giraffe is always 4.5 metres tall.</p>
+<h2 id="one-thing-at-a-bend">One thing at a bend <a class="section-link" href="#one-thing-at-a-bend" aria-label="Link to this section">§</a></h2>
+<p>A bend is quiet, or it holds one thing: an animal and its baby, or a pond of ducks. The <code>Segment</code> module&#39;s <code>BendLife</code> type says what&#39;s at a bend, and it says exactly that:</p>
+<figure class="listing"><figcaption>Segment.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## What lives at the bend that ends a segment: nothing, a safari animal and</span>
+<span class="syn-comment">## its baby, or a pond with its ducks.</span>
+<span class="syn-type">BendLife</span> := [<span class="syn-type">Quiet</span>, <span class="syn-type">Animal</span>(<span class="syn-type">BendAnimal</span>), <span class="syn-type">DuckPond</span>]
+</code></pre></figure><p><code>Quiet</code> and <code>DuckPond</code> are plain tags, like the ones above. <code>Animal(BendAnimal)</code> is a tag that carries a value: an <code>Animal</code> always comes with one <code>BendAnimal</code>. So <code>Animal(Giraffe)</code> is a whole value, a bend with a giraffe at it.</p>
+<p>The route&#39;s plan stores a <code>BendLife</code> for each bend. A plain list of billboards there would let a giraffe and a duck pond share one bend. A <code>BendLife</code> is exactly one of its three tags, so a bend gets one thing, and the list of its billboards is worked out from that one thing.</p>
+<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="What a bend&#39;s life can be" width="502pt" height="233pt"
+ viewBox="0.00 0.00 502.00 233.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 229)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-229 498,-229 498,4 -4,4"/>
+<g id="node1" class="node">
+<polygon fill="none" stroke="black" points="71,-171 0,-171 0,-135 71,-135 71,-171"/>
+<text text-anchor="middle" x="35.5" y="-149.9" font-family="Helvetica,sans-Serif" font-size="12.00">BendLife</text>
+</g>
+<g id="node2" class="node">
+<polygon fill="none" stroke="black" points="259.5,-225 205.5,-225 205.5,-189 259.5,-189 259.5,-225"/>
+<text text-anchor="middle" x="232.5" y="-203.9" font-family="Helvetica,sans-Serif" font-size="12.00">Quiet</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M71.18,-163.76C77.12,-165.55 83.23,-167.35 89,-169 125.07,-179.3 166.53,-190.26 195.39,-197.75"/>
+<polygon fill="black" stroke="black" points="194.86,-201.22 205.42,-200.34 196.62,-194.45 194.86,-201.22"/>
+<text text-anchor="middle" x="116.5" y="-187.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;is one of</text>
+</g>
+<g id="node3" class="node">
+<polygon fill="none" stroke="black" points="271.5,-171 193.5,-171 193.5,-135 271.5,-135 271.5,-171"/>
+<text text-anchor="middle" x="232.5" y="-149.9" font-family="Helvetica,sans-Serif" font-size="12.00">DuckPond</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M71.36,-153C102.44,-153 148.23,-153 182.9,-153"/>
+<polygon fill="black" stroke="black" points="183.27,-156.5 193.27,-153 183.27,-149.5 183.27,-156.5"/>
+<text text-anchor="middle" x="116.5" y="-156.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;is one of</text>
+</g>
+<g id="node4" class="node">
+<polygon fill="none" stroke="black" points="303,-117 162,-117 162,-81 303,-81 303,-117"/>
+<text text-anchor="middle" x="232.5" y="-95.9" font-family="Helvetica,sans-Serif" font-size="12.00">Animal(BendAnimal)</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M71.18,-142.24C77.12,-140.45 83.23,-138.65 89,-137 109.31,-131.2 131.33,-125.19 151.85,-119.71"/>
+<polygon fill="black" stroke="black" points="153.02,-123.02 161.78,-117.07 151.22,-116.26 153.02,-123.02"/>
+<text text-anchor="middle" x="116.5" y="-140.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;is one of</text>
+</g>
+<g id="node5" class="node">
+<polygon fill="none" stroke="black" points="494,-198 423,-198 423,-162 494,-162 494,-198"/>
+<text text-anchor="middle" x="458.5" y="-176.9" font-family="Helvetica,sans-Serif" font-size="12.00">Elephant</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M281.6,-117.01C288.81,-119.91 296.14,-122.96 303,-126 311.18,-129.62 312.73,-131.59 321,-135 351.07,-147.4 385.91,-158.84 412.86,-167.08"/>
+<polygon fill="black" stroke="black" points="412.19,-170.53 422.78,-170.08 414.22,-163.83 412.19,-170.53"/>
+<text text-anchor="middle" x="363" y="-167.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;carries one of</text>
+</g>
+<g id="node6" class="node">
+<polygon fill="none" stroke="black" points="488,-144 429,-144 429,-108 488,-108 488,-144"/>
+<text text-anchor="middle" x="458.5" y="-122.9" font-family="Helvetica,sans-Serif" font-size="12.00">Giraffe</text>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M303.15,-107.39C341.22,-111.98 386.96,-117.5 418.72,-121.33"/>
+<polygon fill="black" stroke="black" points="418.57,-124.83 428.92,-122.56 419.41,-117.88 418.57,-124.83"/>
+<text text-anchor="middle" x="363" y="-122.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;carries one of</text>
+</g>
+<g id="node7" class="node">
+<polygon fill="none" stroke="black" points="486,-90 431,-90 431,-54 486,-54 486,-90"/>
+<text text-anchor="middle" x="458.5" y="-68.9" font-family="Helvetica,sans-Serif" font-size="12.00">Zebra</text>
+</g>
+<g id="edge6" class="edge">
+<path fill="none" stroke="black" d="M303.15,-90.61C342.03,-85.92 388.9,-80.27 420.72,-76.43"/>
+<polygon fill="black" stroke="black" points="421.39,-79.88 430.9,-75.21 420.55,-72.93 421.39,-79.88"/>
+<text text-anchor="middle" x="363" y="-90.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;carries one of</text>
+</g>
+<g id="node8" class="node">
+<polygon fill="none" stroke="black" points="485.5,-36 431.5,-36 431.5,0 485.5,0 485.5,-36"/>
+<text text-anchor="middle" x="458.5" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">Rhino</text>
+</g>
+<g id="edge7" class="edge">
+<path fill="none" stroke="black" d="M274.15,-80.93C288.81,-74.65 305.54,-67.75 321,-62 354.78,-49.44 393.99,-37.02 421.7,-28.59"/>
+<polygon fill="black" stroke="black" points="422.79,-31.92 431.35,-25.68 420.77,-25.22 422.79,-31.92"/>
+<text text-anchor="middle" x="363" y="-65.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;carries one of</text>
+</g>
+</g>
+</svg><svg class="diagram diagram-phone" role="img" aria-label="What a bend&#39;s life can be" width="435pt" height="184pt"
+ viewBox="0.00 0.00 435.00 184.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 180)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-180 431,-180 431,4 -4,4"/>
+<g id="node1" class="node">
+<polygon fill="none" stroke="black" points="127.5,-176 66.5,-176 66.5,-140 127.5,-140 127.5,-176"/>
+<text text-anchor="middle" x="97" y="-154.9" font-family="Helvetica,sans-Serif" font-size="12.00">BendLife</text>
+</g>
+<g id="node2" class="node">
+<polygon fill="none" stroke="black" points="54,-106 0,-106 0,-70 54,-70 54,-106"/>
+<text text-anchor="middle" x="27" y="-84.9" font-family="Helvetica,sans-Serif" font-size="12.00">Quiet</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M66.46,-147.37C56.89,-143.06 47.01,-137.08 40,-129 36.71,-125.2 34.24,-120.55 32.4,-115.78"/>
+<polygon fill="black" stroke="black" points="35.7,-114.6 29.43,-106.06 29.01,-116.65 35.7,-114.6"/>
+<text text-anchor="middle" x="67.5" y="-120.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;is one of</text>
+</g>
+<g id="node3" class="node">
+<polygon fill="none" stroke="black" points="131,-106 63,-106 63,-70 131,-70 131,-106"/>
+<text text-anchor="middle" x="97" y="-84.9" font-family="Helvetica,sans-Serif" font-size="12.00">DuckPond</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M97,-139.84C97,-132.81 97,-124.49 97,-116.64"/>
+<polygon fill="black" stroke="black" points="100.5,-116.39 97,-106.39 93.5,-116.39 100.5,-116.39"/>
+<text text-anchor="middle" x="124.5" y="-120.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;is one of</text>
+</g>
+<g id="node4" class="node">
+<polygon fill="none" stroke="black" points="271.5,-106 140.5,-106 140.5,-70 271.5,-70 271.5,-106"/>
+<text text-anchor="middle" x="206" y="-84.9" font-family="Helvetica,sans-Serif" font-size="12.00">Animal(BendAnimal)</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M127.78,-143.27C136.45,-139.03 145.76,-134.12 154,-129 161.79,-124.16 169.82,-118.41 177.17,-112.8"/>
+<polygon fill="black" stroke="black" points="179.71,-115.25 185.43,-106.34 175.4,-109.74 179.71,-115.25"/>
+<text text-anchor="middle" x="198.5" y="-120.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;is one of</text>
+</g>
+<g id="node5" class="node">
+<polygon fill="none" stroke="black" points="89.5,-36 28.5,-36 28.5,0 89.5,0 89.5,-36"/>
+<text text-anchor="middle" x="59" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">Elephant</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M140.27,-71.1C138.5,-70.72 136.74,-70.35 135,-70 106.29,-64.14 91.73,-78.65 70,-59 66.26,-55.62 63.74,-51.09 62.06,-46.3"/>
+<polygon fill="black" stroke="black" points="65.41,-45.26 59.65,-36.37 58.6,-46.91 65.41,-45.26"/>
+<text text-anchor="middle" x="112" y="-50.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;carries one of</text>
+</g>
+<g id="node6" class="node">
+<polygon fill="none" stroke="black" points="184,-36 130,-36 130,0 184,0 184,-36"/>
+<text text-anchor="middle" x="157" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">Giraffe</text>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M169.76,-69.89C165.94,-66.76 162.54,-63.15 160,-59 157.67,-55.19 156.32,-50.78 155.6,-46.31"/>
+<polygon fill="black" stroke="black" points="159.07,-45.77 154.92,-36.02 152.09,-46.23 159.07,-45.77"/>
+<text text-anchor="middle" x="202" y="-50.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;carries one of</text>
+</g>
+<g id="node7" class="node">
+<polygon fill="none" stroke="black" points="282,-36 228,-36 228,0 282,0 282,-36"/>
+<text text-anchor="middle" x="255" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">Zebra</text>
+</g>
+<g id="edge6" class="edge">
+<path fill="none" stroke="black" d="M232.19,-69.73C235.84,-66.49 239.27,-62.89 242,-59 244.72,-55.13 246.89,-50.66 248.62,-46.14"/>
+<polygon fill="black" stroke="black" points="252.03,-46.97 251.75,-36.38 245.36,-44.83 252.03,-46.97"/>
+<text text-anchor="middle" x="290" y="-50.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;carries one of</text>
+</g>
+<g id="node8" class="node">
+<polygon fill="none" stroke="black" points="380,-36 326,-36 326,0 380,0 380,-36"/>
+<text text-anchor="middle" x="353" y="-14.9" font-family="Helvetica,sans-Serif" font-size="12.00">Rhino</text>
+</g>
+<g id="edge7" class="edge">
+<path fill="none" stroke="black" d="M271.81,-84.07C293.46,-80.3 316.46,-72.94 334,-59 338.51,-55.41 342.01,-50.49 344.71,-45.33"/>
+<polygon fill="black" stroke="black" points="347.98,-46.58 348.73,-36.01 341.55,-43.81 347.98,-46.58"/>
+<text text-anchor="middle" x="385" y="-50.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;carries one of</text>
+</g>
+</g>
+</svg><figcaption>What a bend&#39;s life can be</figcaption></figure><p>The function that gives a bend its billboards takes the bend&#39;s life and the bend itself, a <code>Geom.Bend</code>, and takes the life apart with a <code>match</code>:</p>
+<figure class="listing"><figcaption>Segment.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The billboards of `bend_life`, placed on the segment that ends at `bend`:</span>
+<span class="syn-comment">## the animal and its baby, or the ducks on the pond, whose places are measured</span>
+<span class="syn-comment">## from the bend.</span>
+<span class="syn-name">bend_billboards</span> : <span class="syn-type">Segment.BendLife</span>, <span class="syn-type">Geom.Bend</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Geom.Placed</span>(<span class="syn-type">Billboard</span>))
+<span class="syn-name">bend_billboards</span> = |bend_life, bend|
+	<span class="syn-keyword">match</span> bend_life {
+		<span class="syn-type">Animal</span>(animal) =&gt; animal.bend_billboards(bend)
+		<span class="syn-type">DuckPond</span> =&gt; <span class="syn-type">Pond</span>.placed_ducks(bend)
+		<span class="syn-type">Quiet</span> =&gt; []
+	}
+</code></pre></figure><p>The <code>Animal(animal)</code> line matches a bend with any animal at it, and names the animal it carries <code>animal</code>, ready to use. Then <code>animal.bend_billboards(bend)</code> calls a different function with the same name. <code>animal</code> is a <code>BendAnimal</code>, so the call goes to the <code>bend_billboards</code> that comes with <code>BendAnimal</code>, which places the animal and its baby. A duck pond gets its ducks from the <code>Pond</code> module, and a quiet bend gets the empty list, <code>[]</code>. The code has the same shape as the type: one line for each tag, and the value a tag carries named right where the line needs it.</p>
+<h2 id="elephants-mostly">Elephants, mostly <a class="section-link" href="#elephants-mostly" aria-label="Link to this section">§</a></h2>
+<p>The route&#39;s plans say what lives at each bend, and most of them say <code>Animal(Elephant)</code>. Only a handful say <code>Animal(Giraffe)</code>, <code>Animal(Zebra)</code>, <code>Animal(Rhino)</code> or <code>DuckPond</code>. That&#39;s on purpose. The ride is more interesting when most of it is ordinary: the elephants are the fixture, so the rare animal is a surprise.</p>
+<p>A tag union lists everything a value can be, and a <code>match</code> handles each case. The emojis came ready-made, traced ahead of time. Next, we draw with shapes of our own: a triangle and a rectangle.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="things.html"><small>Previous</small>Things</a>
+<a rel="next" href="shapes.html"><small>Next</small>Shapes</a>
+</nav>
+</main>
+<script src="embed.js"></script>
+</body>
+</html>

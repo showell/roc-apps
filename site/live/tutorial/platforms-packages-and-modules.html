@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Platforms, packages and modules · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="the-problem.html"><span class="number">2</span>The problem</a></li>
+<li class="here"><a href="platforms-packages-and-modules.html"><span class="number">3</span>Platforms, packages and modules</a></li>
+<li><a href="the-pieces-as-types.html"><span class="number">4</span>The pieces as types</a></li>
+<li><a href="things.html"><span class="number">5</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">6</span>Billboard Critters</a></li>
+<li><a href="shapes.html"><span class="number">7</span>Shapes</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 3</p>
+<h1 id="platforms-packages-and-modules">Platforms, packages and modules</h1>
+<p>A Roc program runs on a platform, it&#39;s made of modules, and it can use packages. Those three words say where Safari Ride&#39;s code lives.</p>
+<p>A platform is the layer underneath a Roc program that deals with the outside world. For Safari Ride, that&#39;s the screen and the keyboard. The Roc code describes each frame, and the platform paints it. In this page, the platform is WebAssembly and a little JavaScript. On a desktop, the same Roc code runs on a native platform called roc-ray.</p>
+<p>Each Roc program is an app, and the app&#39;s first line of code names its platform. Here&#39;s Safari Ride&#39;s app for the web, the whole file:</p>
+<figure class="listing"><figcaption>web.roc, the whole file</figcaption><pre><code class="language-roc"># Safari, as a page: the wasm module a browser runs. main.roc beside it
+# is the same app on roc-ray.
+app [Model, program] { lib: &quot;../lib/main.roc&quot;, pf: platform &quot;../web/platform/main.roc&quot; }
+
+import lib.WasmApp
+import SafariApp
+
+Model : SafariApp.Model
+
+program = WasmApp.program(SafariApp.canvas_app)
+</code></pre></figure><p>Lines that start with <code>#</code> are comments. The first line of code names the platform, and gives it the short name <code>pf</code>. It also names a package, <code>lib</code>. A package is a bundle of modules: the app gives it a short name, and the path says where it is. The <code>lib</code> package holds what Safari Ride shares with the live pictures in this book, such as what a shape is and what a key press is.</p>
+<p>A module is one file of Roc, named for what it holds. <code>SafariApp.roc</code> holds the <code>SafariApp</code> module, and <code>import SafariApp</code> brings it in. <code>import lib.WasmApp</code> brings in the <code>WasmApp</code> module from the <code>lib</code> package.</p>
+<p>The brackets after <code>app</code> name the two things the app hands the platform, and the last two lines define them. <code>Model</code> is the type of what the app keeps as it runs, and here it&#39;s the one in <code>SafariApp</code>. <code>SafariApp.canvas_app</code> is the whole ride as one value, and the <code>WasmApp.program</code> function fits it to the web platform. What it gives back is the app&#39;s <code>program</code>.</p>
+<p>Every piece we build, from a tree to the cat, lives in a module, and the platform paints whatever those modules describe. Next, we read the types those modules hold.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-problem.html"><small>Previous</small>The problem</a>
+<a rel="next" href="the-pieces-as-types.html"><small>Next</small>The pieces as types</a>
+</nav>
+</main>
+
+</body>
+</html>

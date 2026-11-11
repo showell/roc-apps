@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shapes · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="the-problem.html"><span class="number">2</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">3</span>Platforms, packages and modules</a></li>
+<li><a href="the-pieces-as-types.html"><span class="number">4</span>The pieces as types</a></li>
+<li><a href="things.html"><span class="number">5</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">6</span>Billboard Critters</a></li>
+<li class="here"><a href="shapes.html"><span class="number">7</span>Shapes</a><ol class="sections"><li><a href="shapes.html#a-triangle">A triangle</a></li><li><a href="shapes.html#a-rectangle">A rectangle</a></li></ol></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 7</p>
+<h1 id="shapes">Shapes</h1>
+<p>A far tree in the ride is a trunk under eight triangles. So before we draw a tree, we draw its two shapes: a triangle and a rectangle.</p>
+<p>In Safari Ride, a shape is a value that describes something to paint. The first four tags of the <code>Shapes</code> module&#39;s <code>Shape</code> type are the kinds of region the ride paints, each a region of the screen with a fill:</p>
+<figure class="listing"><figcaption>lib/Shapes.roc, in Shapes</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
+<span class="syn-type">Shape</span> : [
+	<span class="syn-comment">## Three corners, which is every triangle and nothing else.</span>
+	<span class="syn-type">Triangle</span>(
+		{
+			first : <span class="syn-type">Point.Point</span>,
+			second : <span class="syn-type">Point.Point</span>,
+			third : <span class="syn-type">Point.Point</span>,
+			fill : <span class="syn-type">Brush.Fill</span>,
+		},
+	),
+
+	<span class="syn-comment">## Four corners in order around the edge. `Shapes.rectangle` makes an</span>
+	<span class="syn-comment">## upright one.</span>
+	<span class="syn-type">Quad</span>(
+		{
+			first : <span class="syn-type">Point.Point</span>,
+			second : <span class="syn-type">Point.Point</span>,
+			third : <span class="syn-type">Point.Point</span>,
+			fourth : <span class="syn-type">Point.Point</span>,
+			fill : <span class="syn-type">Brush.Fill</span>,
+		},
+	),
+
+	<span class="syn-comment">## A circle, `radius` out from `center`.</span>
+	<span class="syn-type">Disc</span>(
+		{
+			center : <span class="syn-type">Point.Point</span>,
+			radius : <span class="syn-type">Pixels</span>,
+			fill : <span class="syn-type">Brush.Fill</span>,
+		},
+	),
+
+	<span class="syn-comment">## An outline of any other number of corners, in order around its edge: a</span>
+	<span class="syn-comment">## traced still, a mountain, the road.</span>
+	<span class="syn-type">Polygon</span>({ corners : <span class="syn-type">List</span>(<span class="syn-type">Point.Point</span>), fill : <span class="syn-type">Brush.Fill</span> }),
+	<span class="syn-comment"># ...</span>
+</code></pre></figure><p>Each tag carries a record, and every record ends with a <code>fill</code>, the paint for the inside. The ride draws a great many triangles, plenty of four-cornered things, a few round lights, and outlines traced from emoji and mountains, so those are its four regions. More tags follow them in the type, for other jobs, such as a line of text.</p>
+<h2 id="a-triangle">A triangle <a class="section-link" href="#a-triangle" aria-label="Link to this section">§</a></h2>
+<p>Here&#39;s a triangle:</p>
+<figure class="widget"><iframe class="canvas-app" src="../shapes_widget/?start=triangle" title="A green triangle on a plain background." loading="lazy" style="aspect-ratio: 640 / 324"></iframe><figcaption>A green triangle on a plain background.</figcaption></figure><p>And here&#39;s the code that makes it:</p>
+<figure class="listing"><figcaption>shapes_widget/ShapesWidgetApp.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## A green triangle.</span>
+<span class="syn-name">green_triangle</span> : <span class="syn-type">Shapes.Shape</span>
+<span class="syn-name">green_triangle</span> = <span class="syn-type">Triangle</span>({
+	first: <span class="syn-type">Point</span>.at(<span class="syn-number">180.0</span>, <span class="syn-number">262.0</span>),
+	second: <span class="syn-type">Point</span>.at(<span class="syn-number">420.0</span>, <span class="syn-number">262.0</span>),
+	third: <span class="syn-type">Point</span>.at(<span class="syn-number">300.0</span>, <span class="syn-number">42.0</span>),
+	fill: <span class="syn-type">Brush</span>.flat(<span class="syn-type">RgbColor</span>.of(<span class="syn-number">0x2e8b57</span>)),
+})
+</code></pre></figure><p>The value is a <code>Triangle</code> tag with its record. The record names three corners, <code>first</code>, <code>second</code> and <code>third</code>, so every triangle has exactly three, by construction. A corner is a <code>Point.Point</code>, a record with an <code>x</code> and a <code>y</code>. <code>Point.at</code> makes one from two plain numbers, measured from the top left of the picture, with <code>y</code> growing downward. The picture is 640 pixels wide and 324 tall.</p>
+<p><code>Point.at</code> turns each of those numbers into a <code>Pixels</code>, an opaque type around an <code>F64</code>, like <code>Distance</code>. The ride works in metres on the road and in pixels on the screen, and two types keep the two apart, so each number says which one it is. Roc is just as happy with plain <code>F64</code>s, if you prefer that style. In a program that moves between the road and the screen all the time, the types earn their keep.</p>
+<p>The <code>fill</code> is green. <code>RgbColor.of</code> makes a color from <code>0x2e8b57</code>, a number in hex, as <code>0x</code> says: the six digits a web page writes after its <code>#</code>, and <code>Brush.flat</code> makes a fill of that one color.</p>
+<p>A shape only describes. So what paints the triangle? The platform does. The picture is a small Roc app of its own, and it hands the platform a list of two shapes: the background, a rectangle that fills the picture, and then the triangle. The platform paints the list from first to last, so the triangle lands on the background.</p>
+<h2 id="a-rectangle">A rectangle <a class="section-link" href="#a-rectangle" aria-label="Link to this section">§</a></h2>
+<p>Next, a rectangle:</p>
+<figure class="widget"><iframe class="canvas-app" src="../shapes_widget/?start=rectangle" title="A brown rectangle on a plain background." loading="lazy" style="aspect-ratio: 640 / 324"></iframe><figcaption>A brown rectangle on a plain background.</figcaption></figure><figure class="listing"><figcaption>shapes_widget/ShapesWidgetApp.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## A brown rectangle.</span>
+<span class="syn-name">brown_rectangle</span> : <span class="syn-type">Shapes.Shape</span>
+<span class="syn-name">brown_rectangle</span> = <span class="syn-type">Shapes</span>.rectangle({
+	top_left: <span class="syn-type">Point</span>.at(<span class="syn-number">240.0</span>, <span class="syn-number">82.0</span>),
+	width: <span class="syn-type">Pixels</span>.of(<span class="syn-number">120.0</span>),
+	height: <span class="syn-type">Pixels</span>.of(<span class="syn-number">160.0</span>),
+	fill: <span class="syn-type">Brush</span>.flat(<span class="syn-type">RgbColor</span>.of(<span class="syn-number">0x8b5a2b</span>)),
+})
+</code></pre></figure><p>Look how closely the rectangle&#39;s structure echoes the triangle&#39;s, as it should:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>The triangle</th>
+<th>The rectangle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Its type</td>
+<td><code>Shapes.<wbr>Shape</code></td>
+<td><code>Shapes.<wbr>Shape</code></td>
+</tr>
+<tr>
+<td>What builds it</td>
+<td>the <code>Triangle</code> tag</td>
+<td>the <code>Shapes.<wbr>rectangle</code> function, which gives back a <code>Quad</code></td>
+</tr>
+<tr>
+<td>Where it is</td>
+<td>three corners, each from <code>Point.<wbr>at</code></td>
+<td>a top left corner from <code>Point.<wbr>at</code>, and a width and a height from <code>Pixels.<wbr>of</code></td>
+</tr>
+<tr>
+<td>Its fill</td>
+<td><code>Brush.<wbr>flat(RgbColor.<wbr>of(0x2e8b57))</code>, green</td>
+<td><code>Brush.<wbr>flat(RgbColor.<wbr>of(0x8b5a2b))</code>, brown</td>
+</tr>
+</tbody>
+</table>
+<p>Here&#39;s the function:</p>
+<figure class="listing"><figcaption>lib/Shapes.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## An upright box, `width` across and `height` down from `top_left`, as the</span>
+<span class="syn-comment">## quad it is: clockwise on the screen from its top left corner.</span>
+<span class="syn-name">rectangle</span> : {
+	top_left : <span class="syn-type">Point.Point</span>,
+	width : <span class="syn-type">Pixels</span>,
+	height : <span class="syn-type">Pixels</span>,
+	fill : <span class="syn-type">Brush.Fill</span>,
+} -&gt; <span class="syn-type">Shapes.Shape</span>
+<span class="syn-name">rectangle</span> = |{ top_left, width, height, fill }| {
+	right = top_left.x.plus(width)
+	bottom = top_left.y.plus(height)
+	<span class="syn-type">Quad</span>({
+		first: top_left,
+		second: { x: right, y: top_left.y },
+		third: { x: right, y: bottom },
+		fourth: { x: top_left.x, y: bottom },
+		fill,
+	})
+}
+</code></pre></figure><p><code>|{ top_left, width, height, fill }|</code> takes the record apart, naming each of its fields. The body works out where the right and bottom edges are, with <code>plus</code>, which adds two <code>Pixels</code>. Then it gives the quad its four corners, clockwise from the top left. Each corner is a record of an <code>x</code> and a <code>y</code>, each a <code>Pixels</code>, which is all a <code>Point.Point</code> is. <code>Point.at</code> builds the same record from two plain numbers. Each side&#39;s two corners share an <code>x</code> or a <code>y</code>, so the sides are always square to the screen. The same picture app, showing its rectangle, hands the platform the background and then this quad.</p>
+<p>That&#39;s both of a far tree&#39;s shapes. Next, we put them together, with functions of our own.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="billboard-critters.html"><small>Previous</small>Billboard Critters</a>
+<span></span>
+</nav>
+</main>
+<script src="embed.js"></script>
+</body>
+</html>
