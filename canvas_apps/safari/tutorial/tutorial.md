@@ -534,9 +534,11 @@ Here's the trip, with what makes each move. Each kind has a sighting module, suc
 The pipeline
 ```dot
 digraph pipeline {
-  rankdir=LR;
-  node [shape=box, fontname="Helvetica"];
-  edge [fontname="Helvetica", fontsize=10];
+  rankdir=TB;
+  nodesep=0.6;
+  ranksep=0.7;
+  node [shape=box, fontname="Helvetica", fontsize=18, margin="0.25,0.12"];
+  edge [fontname="Helvetica", fontsize=16];
   finder [label="each kind's\nsighting module"];
   placed [label="Geom.Placed(kind)"];
   sighted [label="Pipeline.Sighted(kind)"];
@@ -569,7 +571,13 @@ A `Spot` holds the thing's height off the ground, where its foot is in the camer
 
 ### Refused
 
-Some placed things stay off the screen, so a sighting can be refused. The answer is a `Try`, Roc's type for an answer that can fail. A `Try` is one of two tags: `Ok`, holding the sighting, or `Err`, holding a tag that says why the thing is refused. So a sighting function answers with a `Try(Pipeline.Sighted(kind), …)`, and `Pipeline`'s sighting functions refuse a thing with one of three tags:
+Some placed things stay off the screen, so a sighting can be refused. The answer is a `Try`, Roc's type for an answer that can fail. A `Try` is one of two tags: `Ok`, holding the sighting, or `Err`, holding a tag that says why the thing is refused. Here's the first sighting function, whole:
+
+{{code Pipeline.sighting_of}}
+
+Its answer is a `Try(Pipeline.Sighted(kind), [BehindCamera])`: a sighting, or the one refusal it can give. The body finds where the thing's foot lies from the rider, and the `?` after `RiderView.rider_point_ahead(rider_point)` is the refusal. That call gives back a `Try` of its own. When it's an `Err(BehindCamera)`, the `?` ends `sighting_of` right there with that `Err`. When it's an `Ok`, the `?` unwraps it, and `foot` is the point ahead. The last line wraps the spot and the kind in an `Ok`.
+
+`Pipeline`'s other sighting functions start from `sighting_of` and add tests of their own, so between them they refuse a thing with one of three tags:
 
 | Refusal | Why |
 |---|---|
@@ -589,9 +597,9 @@ Here are some things from step 1,529, the frame in the picture, and what their s
 | The radio tower past the end of the rider's segment | 20.40 | 355.61 | drawn |
 | The truck | 92.19 | 489.15 | drawn |
 
-A small tree far off sinks below the horizon, while a taller one just past it still shows its top. Of the 214 trees on the segments in view, 136 are drawn, 30 are behind the camera, and 48 are below the horizon. Each sighting module keeps its sightings with `keep_oks`, which keeps the `Ok` values of a list of `Try`s and drops the `Err`s. The truck's module hands its one `Try` on to the scene.
+A small tree far off sinks below the horizon, while a taller one just past it still shows its top. Of the 214 trees on the segments in view, 136 are drawn, 30 are behind the camera, and 48 are below the horizon. Each sighting module keeps its sightings with `keep_oks`, which keeps the `Ok` values of a list of `Try`s and drops the `Err`s. The truck's module hands its one `Try` to `Scene`, which renders the truck only for an `Ok`.
 
-The trees, the billboard critters, the cat and the bird are sighted by `Pipeline.scenery_sighting_of`, which takes all three tests. A radio tower and the truck are drawn however small they look. So a tower is sighted by `Pipeline.sighting_above_horizon_of`, which skips the `TooSmall` test, and the truck by `Pipeline.sighting_of`, which skips the `BelowHorizon` test too. `sighting_of` is the first test on its own, and the other two functions start from it.
+The trees, the billboard critters, the cat and the bird are sighted by `Pipeline.scenery_sighting_of`, which takes all three tests. A radio tower and the truck are drawn however small they look. So a tower is sighted by `Pipeline.sighting_above_horizon_of`, which skips the `TooSmall` test, and the truck by `Pipeline.sighting_of`, which skips the `BelowHorizon` test too.
 
 ### Rendered
 
@@ -599,7 +607,7 @@ Each sighting that's kept is rendered by `Pipeline.rendering_of`, which "Asking 
 
 {{code Rendered.Rendered from "Rendered ::" to "of = "}}
 
-A `Rendered` holds a depth and a sprite, and those two alone. The sprite is what "Things" and "A far tree" drew from a setting, and the depth is how far ahead of the camera the thing stands. The kind has done its job by now, and it's gone: a tree's rendering and a cow's have the same type. `Rendered.({ depth, sprite })` wraps the record in the opaque type, the reverse of the `Billboard.(billboard)` that opens a billboard.
+A `Rendered` holds a depth and a sprite, and those two alone. The `::` makes it opaque, as it does `Distance`. The sprite is what "Things" and "A far tree" drew from a setting, and the depth is how far ahead of the camera the thing stands. The kind has done its job by now, and it's gone: a tree's rendering and a cow's have the same type. `Rendered.({ depth, sprite })` wraps the record in the opaque type, the reverse of the `Billboard.(billboard)` that opens a billboard.
 
 ### One list
 

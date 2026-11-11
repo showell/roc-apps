@@ -5,7 +5,8 @@
 ## is in view at that step. The
 ## guard rail is left out, because its pieces have no kind, and so are the sky,
 ## the sun, the grass, the mountains and the road. What's left stands on a plain
-## background at the real frame's size, leaned as the game leans the frame.
+## background, leaned as the game leans the frame, and the picture keeps only
+## the part of the frame they stand in.
 import game.Clock
 import game.FrameView
 import game.Rendered
@@ -58,12 +59,14 @@ pipeline_scene = {
 scene_shapes : List(Shapes.Shape)
 scene_shapes = Scene.scene_shape_lists(pipeline_scene).join()
 
-## The real frame's size in pixels.
+## The part of the frame the picture keeps, from its top left corner: at this
+## step every thing the pipeline renders stands in it, and the rest of the frame
+## is empty.
 canvas_width : F64
-canvas_width = Screen.width.to_f64()
+canvas_width = 640.0
 
 canvas_height : F64
-canvas_height = Screen.height.to_f64()
+canvas_height = 340.0
 
 ## Behind the things, where the frame's sky and grass would be.
 plain_background : Shapes.Shape

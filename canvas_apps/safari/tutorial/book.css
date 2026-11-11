@@ -58,7 +58,8 @@ body.chapter main { padding: 3rem 3rem 4rem 4rem; }
 body.front main { max-width: calc(var(--measure) + 4rem); margin: 0 auto; padding: 4rem 2rem; }
 
 article > * { max-width: var(--measure); }
-article > table, article > figure.diagram { max-width: var(--wide); }
+article > table { max-width: var(--wide); }
+article > figure.diagram { max-width: var(--measure); }
 
 /* A code listing matches the prose, and widens only for the lines that need it. */
 article > figure.listing { width: fit-content; min-width: min(100%, var(--measure)); max-width: var(--wide); }

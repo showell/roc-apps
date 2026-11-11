@@ -105,7 +105,7 @@ frame_of = |word| match word {
 	}
 	"pipeline" => {
 		folder: "pipeline_widget",
-		aspect: "960 / 600",
+		aspect: "640 / 340",
 		loading: Lazy,
 	}
 	"shapes" => {
@@ -234,7 +234,7 @@ expect
 	frame_of("pipeline")
 		== {
 			folder: "pipeline_widget",
-			aspect: "960 / 600",
+			aspect: "640 / 340",
 			loading: Lazy,
 		}
 expect
