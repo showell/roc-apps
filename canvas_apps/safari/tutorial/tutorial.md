@@ -703,85 +703,67 @@ Nothing in this chapter moves, and nothing in the next few chapters does either.
 
 ## Nature types
 
-The objects along the road come in six kinds: trees, radio towers, billboards (the cows, the pigs, the ducks and the other animals by the road), the cat, the bird and the truck. Each kind is drawn its own way, and each kind's sighting module finds its own objects on the road. After that, nearly every object takes the same steps. The camera sees it, its kind draws it, and it gets a depth, so that it can be painted in order with all the others, far to near. Written once for each kind, those steps would be the same code six times over. Safari Ride writes them once, in `Pipeline`, and each kind says only how tall it is and how it looks.
+The far tree's code draws whatever tree it's handed: a height and a color. So something has to say which tree. That's the `Conifer` type, and here's its whole module:
 
-New in this chapter:
+{{module Conifer}}
 
-- Roc: defining a type with a type variable, `Try`, `where`
-- Modules: `Pipeline`, `Spot`, `Rendered`, `Geom`, `Along`, `Across`, `Distance`
+A `Conifer` is one of four tags, and it describes a kind of tree, nothing more. `scenery_height` and `foliage_color` give each kind its height and its color, chosen by eye, and `Green | SmallGreen =>` is one branch for two tags, because both greens share a color. `scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that drew the far tree.
 
-`Pipeline` and `Rendered` came up in The modules chapter, and here we look at them properly.
-
-### Three forms and a kind
-
-An object takes three forms on its way to the screen:
-
-1. Placed: it stands at a place on the road, measured along and across a segment.
-2. Sighted: the camera sees it some distance to the right and forward.
-3. Rendered: it's a picture, with a depth that says how far ahead of the camera it stands.
-
-A sighting and a rendering last one frame. How long a placing lasts depends on the object. A tree or a cow is placed on the road once, when the world is built, and stays there for the whole ride. A cat moves, so it's placed anew for each frame.
-
-Each object has a kind, such as `Conifer` or `Billboard`. A kind says how the object looks, never where it is. The first two forms hold the kind, and the fields around it say where the object is. A kind is asked for its height, to see whether the object stands tall enough on the screen to draw, and for its picture, which goes into the rendering. A rendering keeps the picture and not the kind.
-
-`Conifer` is one of four tags, `Green`, `SmallGreen`, `Red` or `Gold`, and the tag alone settles a tree's height and color. `Billboard` is a record with three fields: a still (an emoji drawn as polygons), a height, and which way it faces. A cow, a pig and a duck on the pond are all billboards. Where the object stands lives in the forms around the kind.
-
-### Get the types right
-
-A lowercase name in parentheses, like `(kind)`, is a type variable; this chapter comes to them below.
-
-| Type | What it is |
-|---|---|
-| `Geom.Placed(kind)` | An object on the road: its `road_point` on its segment, its `lift` off the ground, and its `kind` |
-| `Spot` | Where an object stands in one frame: its `lift` off the ground, its `foot` in the rider's view, and the `road_heading`, which way the road runs there |
-| `Pipeline.Sighted(kind)` | An object in view: its `spot` and its `kind` |
-| `Sprite.Setting` | What a kind draws from: its `spot`, the lens's `focal_length` and the sky's `darkness` |
-| `Sprite` | The object's shapes, in order, from the Shapes chapter |
-| `Rendered` | The object's `sprite`, and its `depth`: how far ahead of the camera it stands |
-
-One object through one frame
-```dot
-digraph forms {
-  node [shape=box, fontname="Helvetica"];
-  placed [label="Geom.Placed(kind)\nroad_point, lift, kind"];
-  sighted [label="Pipeline.Sighted(kind)\nspot, kind"];
-  rendered [label="Rendered\ndepth, picture"];
-  sorted [label="List(Rendered)\nfar to near"];
-  placed -> sighted [label="  Pipeline.scenery_sighting_of\n  asks the kind's scenery_height"];
-  sighted -> rendered [label="  Pipeline.rendering_of\n  asks the kind's scenery_sprite"];
-  rendered -> sorted [label="  Rendered.depth_sorted_renderings"];
-}
+```widget conifers
+The four conifers, left to right: Green, SmallGreen, Red and Gold.
 ```
 
-A box is a type, and an arrow is a function that makes the next one. The kind goes in at the top and comes out of `Pipeline.rendering_of` as a picture. `Rendered` has no kind, so a tree's rendering and a cow's are the same type, and every rendering in the frame goes in one list for the depth sort. That sort is `DepthSort`, a stable merge sort that orders the list from far to near.
+### A place on the road
 
-### A type with a type variable
-
-We've used types that take an argument since the Shapes chapter. A `Sprite` is a `List(Shapes.Shape)` underneath, and a `List` can hold any one type, named in its parentheses. `Geom.Placed` is a type of our own that works the same way:
+A tree in the ride also stands somewhere. Safari Ride keeps that in a record that wraps the kind:
 
 {{code Geom.Placed}}
 
-The `kind` in its head, `Placed(kind)`, is lowercase, and that makes it a type variable: a name for whatever type goes in the parentheses. The fields use it like any other type. So `Geom.Placed(Conifer)` is a record of a `road_point`, a `lift`, and a `kind` that holds a `Conifer`, just as `List(Shapes.Shape)` is a list that holds shapes. A cow is a `Geom.Placed(Billboard)`.
+`road_point` says where the thing stands on its stretch of road, and `lift` how high it stands off the ground. The `(kind)` after `Placed` is a type variable, a name for whatever type fills the parentheses, and the `kind` field holds one of it. So a placed tree is a `Geom.Placed(Conifer)`, and a placed cow is a `Geom.Placed(Billboard)`. One wrapper places every kind of thing.
 
-A `Geom.Placed`'s `road_point` is made of two such types. `Along` is a place along a segment, and `Across` is a place across the road, measured from its middle. Both are opaque, like `Pixels`, so passing one as the other is a compile-time error. One place minus another is a `Distance`, a length in metres, and a length is a different thing from a place, and Roc's `-` always gives back its left side's type, so that subtraction is a named method, `distance_from`, rather than `-`.
+### Three forms
 
-A type's head declares its variables. A function's annotation needs no head: a lowercase name in it is a type variable, and it means one type wherever it appears in that annotation. `Pipeline.sighting_of` takes a `Geom.Placed(kind)` and answers with a `Try` that holds a `Pipeline.Sighted(kind)` when the object stands in front of the camera. A `Try` is one of two tags: `Ok`, holding the answer, or `Err`, holding the reason there is none, here `BehindCamera`. Both are in the type, so every caller handles the object behind the camera. The placed object and its sighting name the same `kind`, so a placed conifer can only come back as a sighted conifer, never as a sighted cow.
+Every thing takes three forms on its way to the screen:
 
-### Asking a kind by name
+One thing through one frame
+```dot
+digraph forms {
+  rankdir=LR;
+  node [shape=box, style=rounded, fontname="Helvetica"];
+  edge [fontname="Helvetica"];
+  placed [label="Geom.Placed(kind)\nwhere it stands"];
+  sighted [label="Pipeline.Sighted(kind)\nwhere the camera sees it"];
+  rendered [label="Rendered\nits sprite and depth"];
+  sorted [label="List(Rendered)\nfar to near"];
+  placed -> sighted [label="  sighted by\n  scenery_sighting_of"];
+  sighted -> rendered [label="  drawn by\n  rendering_of"];
+  rendered -> sorted [label="  sorted by\n  depth_sorted_renderings"];
+}
+```
 
-`Pipeline` imports neither `Conifer` nor `Billboard`, and neither of them imports `Pipeline`. Yet `Pipeline.rendering_of`, the one function this chapter shows in full, gets a picture out of either one:
+A placed thing stands on the road. A sighted thing is where the camera sees it, in one frame. A rendered thing is its sprite, with its depth: how far ahead of the camera it stands. That's how Safari Ride is built. Each form comes from the one before it, and the renderings are sorted before they're painted.
+
+### A sighting can fail
+
+A placed thing may not show at all, so sighting it answers with a `Try`:
+
+{{signatures Pipeline.scenery_sighting_of}}
+
+It takes the placed thing, with the road, the camera and the thing's segment. A `Try` is one of two tags: `Ok`, holding the answer, or `Err`, holding the reason there's none. Here the answer is a `Pipeline.Sighted(kind)`, and the reasons are tags of their own: the thing stands behind the camera, below the horizon, or too small on the screen to draw. Every caller handles each reason the type lists.
+
+The annotation's last line is new. A `where` clause asks something of a type variable, and this one asks that `kind` have a `scenery_height` function of that type. The sighting needs the height to tell whether the thing's top shows over the horizon, and whether it stands tall enough on the screen. `Conifer` has a `scenery_height`, and so does every other kind that goes through here. Roc matches a `where` by name and type alone, so the word "scenery" at the front of each name keeps a match deliberate.
+
+### One function draws them all
+
+Rendering asks each kind for its sprite the same way:
 
 {{code Pipeline.rendering_of}}
 
-It hands the sighting's whole `spot` and the lens to the kind's own `scenery_sprite`. It answers with a `Rendered`: the picture it gets back, and a depth. Its depth is how far forward the spot's foot is: `spot.foot().forward()`.
+`rendering_of` hands the sighting's spot, the lens and the light to the kind's own `scenery_sprite`. It gives back a `Rendered`: the sprite, and how far ahead of the camera the thing's foot stands. One function draws a tree, a cow or a cat, and the `Rendered` it gives back has no kind.
 
-The second line of the annotation, indented under the first, is a `where` clause. Its square brackets hold a list of requirements on the annotation's type variables, here one. `kind.scenery_sprite : kind, Sprite.Setting -> Sprite` says that the type `kind` has a method named `scenery_sprite`, of the type after the colon. A kind meets it by having a method of that name and that type. `Conifer` has one, and so does `Billboard`. Neither says it meets a requirement, and no interface names the two. The name and the type are the whole contract, and the compiler checks them wherever `rendering_of` is called.
+So every rendering in a frame goes into one list, whatever it shows, and `Rendered.depth_sorted_renderings` sorts the list far to near, with the `DepthSort` module. The platform paints it in that order, so a near thing covers a far one, just as each tier of a far tree covers the one above it.
 
-`Pipeline.scenery_sighting_of` asks for a kind's height the same way, with `where [kind.scenery_height : kind -> Distance]`. It finds the sighting, then asks the kind for its `scenery_height`, to see whether the object stands tall enough on the screen to draw, and answers `TooSmall` when it stands shorter. The towers and the truck are drawn however small they look. A tower calls `Pipeline.sighting_above_horizon_of`, which asks for its height only to see whether the horizon hides it. The truck calls `Pipeline.sighting_of`, the plainest of the three, which needs no `where` at all.
-
-Because a name and a type are the whole contract, the name has to say what it's for. A kind could well have a method called `height`, of type `kind -> Distance`, that measures something else, and a `where` clause that asked for `height` would take it without a word. The first word of `scenery_height` and `scenery_sprite` says that the method is there for the objects along the road, so a kind meets the contract only on purpose.
-
-Trees, towers and critters go through all three forms. The truck is sighted by `Pipeline.sighting_of`, then has a sighting type of its own, `Truck.SightedTruck`, and makes its `Rendered` by hand, as the rails do. The grass, the sky, the sun, the mountains and the road take simpler paths. The next three chapters are about trees.
+So a kind describes a thing, `Geom.Placed` puts it on the road, and `Pipeline` sights and renders any kind that can give its height and its sprite.
 
 ## A simple tree
 
