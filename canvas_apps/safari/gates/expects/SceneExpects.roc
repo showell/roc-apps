@@ -303,7 +303,7 @@ expect
 			},
 	)
 
-# The modules chapter's sighting: one cat, frozen on the ground about 0.38 m
+# The pipeline chapter's sighting: one cat, frozen on the ground about 0.38 m
 # right of the camera and 23.63 m ahead.
 expect {
 	route = book_tour.route()
@@ -423,7 +423,7 @@ is_seen_at = |spot, { metres_right, metres_forward }| {
 		and is_near(foot.forward().to_metres(), metres_forward)
 }
 
-# The modules chapter's table of step 1,529: 214 trees on the segments in view,
+# The pipeline chapter's table of step 1,529: 214 trees on the segments in view,
 # 136 drawn, 30 behind the camera, 48 below the horizon and none too small.
 expect book_trees.len() == 214
 expect book_trees.count_if(|tree| tree.fate == Drawn) == 136

@@ -521,9 +521,99 @@ Cones take far more work to draw, and far off they look just like triangles, so 
 
 So a far tree is a handful of small functions over one list of tiers. The `expect` pins the tiers, each tier becomes a triangle, and one list puts the trunk first and the tiers over it. Every tree beside the road runs through this same code, wherever it stands.
 
+## The pipeline
+
+Every frame, every thing beside the road takes the same trip to the screen. A tree, a cow, the cat and the truck each start from a place on the road and end as a sprite in one list, the frame's. The `Pipeline` module carries them along that trip, so we call it the pipeline.
+
+```widget frame moving
+Step 1,529 of the ride, held still. Its trees, critters and tower, and the truck, all came through the pipeline.
+```
+
+Here's the trip, with the function that makes each move:
+
+The pipeline
+```dot
+digraph pipeline {
+  rankdir=LR;
+  node [shape=box, fontname="Helvetica"];
+  edge [fontname="Helvetica", fontsize=10];
+  finder [label="each kind's\nsighting module"];
+  placed [label="Geom.Placed(kind)"];
+  sighted [label="Pipeline.Sighted(kind)"];
+  refused [label="a refusal:\nBehindCamera, BelowHorizon\nor TooSmall"];
+  rendered [label="Rendered"];
+  list [label="the frame's list,\nfar to near"];
+  finder -> placed [label="  finds the ones in play"];
+  placed -> sighted [label="  is sighted by\n  Pipeline.scenery_sighting_of"];
+  placed -> refused [label="  or refused by it"];
+  sighted -> rendered [label="  is rendered by\n  Pipeline.rendering_of"];
+  rendered -> list [label="  is sorted by\n  Rendered.depth_sorted_renderings"];
+}
+```
+
+### Placed
+
+The trip starts from where a thing stands on the road:
+
+{{code Geom.Placed}}
+
+`road_point` says where the thing stands along the road and across it, and `lift` says how far off the ground. `kind` says what the thing is. Its type is the type variable `kind`, so a placed tree is a `Geom.Placed(Conifer)`, and a placed cow is a `Geom.Placed(Billboard)`. The next chapter looks inside `Conifer`.
+
+### Sighted
+
+The screen shows what the camera sees. So for each frame, the pipeline sights every placed thing in play, and works out where it stands from the camera:
+
+{{code Pipeline.Sighted}}
+
+A `Spot` holds the thing's height off the ground, where its foot is in the camera's view, and which way the road runs there. The kind rides along as it was. A place on the road stays put for the whole ride, while a spot moves every frame with the rider. So the two are different types, one measured on the road and one from the camera.
+
+### Refused
+
+Some placed things stay off the screen, so a sighting can be refused. The answer is a `Try`, Roc's type for an answer that can fail. A `Try` is one of two tags: `Ok`, holding the sighting, or `Err`, holding a tag that says why the thing is refused:
+
+| Refusal | Why |
+|---|---|
+| `BehindCamera` | It stands behind the camera, or too close in front of it to show. |
+| `BelowHorizon` | It's so far off that the horizon hides all of it. |
+| `TooSmall` | It would stand too small on the screen to be worth drawing. |
+
+Here are some things from step 1,529, the frame in the picture, and what their sightings decide. `right` and `forward` are metres from the camera, and a `forward` below zero is behind it:
+
+| What it is | `right` | `forward` | What its sighting decides |
+|---|---|---|---|
+| The cat, frozen in the road | 0.38 | 23.63 | drawn |
+| The nearest tree, a big green one | 3.45 | 21.63 | drawn |
+| The nearest tree behind the camera, a gold one | -8.09 | -8.36 | `BehindCamera` |
+| The nearest tree the horizon hides, a small green one | -1,433.43 | 446.00 | `BelowHorizon` |
+| A big green tree just past it | -1,446.07 | 473.21 | drawn |
+| The radio tower past the end of the rider's segment | 20.40 | 355.61 | drawn |
+| The truck | 92.19 | 489.15 | drawn |
+
+A small tree far off sinks below the horizon, while a taller one just past it still shows its top. Of the 214 trees on the segments in view, 136 are drawn, 30 are behind the camera, and 48 are below the horizon. Each kind's sighting module keeps the `Ok`s with `keep_oks`, and drops the rest.
+
+A radio tower and the truck are drawn however small they look, so they skip the size test, and the truck skips the horizon test too.
+
+### Rendered
+
+Each sighting that's kept is rendered:
+
+{{code Rendered.Rendered from "Rendered ::" to "of = "}}
+
+A `Rendered` holds a depth and a sprite, and those two alone. The sprite is what "Things" and "A far tree" drew from a setting, and the depth is how far ahead of the camera the thing stands. The kind has done its job by now, and it's gone: a tree's rendering and a cow's have the same type. `Rendered.({ depth, sprite })` wraps the record in the opaque type, the reverse of the `Billboard.(billboard)` that opens a billboard.
+
+### One list
+
+Every rendering has that one type, so a frame gathers them all in one list:
+
+{{code Scene.scene_renderings}}
+
+A `Scene` holds a list of renderings for each sort of thing, and `join` makes one list of them all. The guard rail's pieces join it too, as renderings of their own. `Rendered.depth_sorted_renderings` sorts the list from far to near, and the platform paints it in that order, so a near thing covers a far one.
+
+So every thing beside the road makes the same trip: placed on the road, sighted by the camera, rendered as a sprite with a depth, and sorted into the frame's one list. Its kind rides through the first two types and is gone by the third. That leaves two questions, and the next two chapters answer them: what is a kind, and how does `rendering_of`, written once, get a sprite out of every kind?
+
 ## Nature types
 
-Every thing beside the road takes three forms on its way to the screen: placed on the road, sighted by the camera, and rendered as a sprite with a depth. Its kind rides inside the first two. The `Pipeline` module takes every thing through those forms, so we call it the pipeline. In this chapter we look inside one kind.
+Every thing beside the road carries its kind through the first two types of the pipeline, a `Geom.Placed` and a `Pipeline.Sighted`. In this chapter we look inside one kind, the tree's.
 
 ```widget conifers
 The four conifers, left to right: Green, SmallGreen, Red and Gold.
@@ -560,15 +650,9 @@ A tree, a cow, a radio tower, the cat and the bird, each rendered by `Pipeline.r
 
 One function can render every kind because of this chapter's new Roc idea, the `where` clause, which constrains a type variable to types that have certain methods.
 
-`rendering_of` takes a sighting, with the focal length and the darkness that the whole frame shares, and it gives back a rendering: the thing's sprite, and how far ahead of the camera it stands. The sprite comes from the kind, so `rendering_of` calls the kind's own `scenery_sprite` method.
+`rendering_of` takes a sighting, with the focal length and the darkness that the whole frame shares, and it gives back a `Rendered`, the thing's sprite and its depth. The sprite comes from the kind, so `rendering_of` calls the kind's own `scenery_sprite` method.
 
-A rendering is a value of the `Rendered` type, which ends each thing's trip through the pipeline:
-
-{{code Rendered.Rendered from "Rendered ::" to "of = "}}
-
-A `Rendered` holds a depth and a sprite, and those two alone. `Rendered.of` builds one, and `Rendered.({ depth, sprite })` wraps the record in the opaque type, the reverse of the `Billboard.(billboard)` that opens a billboard.
-
-The sighting going in is another matter. A sighting is a `Pipeline.Sighted(kind)`, and `kind` is a type variable, so it stands for any type at all: a number, a record or a `Conifer`. Only some types have a `scenery_sprite`. So `rendering_of` needs a constraint on `kind`: any type, as long as that type has a `scenery_sprite`.
+The `Rendered` coming out is the same type for every kind. The sighting going in carries its kind: it's a `Pipeline.Sighted(kind)`, and `kind` is a type variable, so it stands for any type at all: a number, a record or a `Conifer`. Only some types have a `scenery_sprite`. So `rendering_of` needs a constraint on `kind`: any type, as long as that type has a `scenery_sprite`.
 
 Roc writes that constraint as a `where` clause, on the line after the annotation:
 
