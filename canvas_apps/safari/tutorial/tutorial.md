@@ -533,7 +533,7 @@ Roc says that with a `where` clause:
 
 {{code Pipeline.rendering_of}}
 
-The annotation's second line is the clause. Its square brackets hold a list of requirements on the type variable `kind`, here one: the type that fills `kind` must have a `scenery_sprite` inside its braces, of the type after the colon. That's why `Conifer` keeps its `scenery_sprite` inside its braces. In the body, `sighting.kind` holds a value of that type, for a tree one of `Conifer`'s tags, and `sighting.kind.scenery_sprite(...)` calls the kind's own function. `Sprite.LensAndLight` is the lens's focal length and the sky's darkness. `rendering_of` gives back a `Rendered`: the sprite, and how far ahead of the camera the thing stands.
+The annotation's second line is the clause. Its square brackets hold a list of requirements on the type variable `kind`, here one: the type that fills `kind` must have a `scenery_sprite` inside its braces, of the type after the colon. That's why `Conifer` keeps its `scenery_sprite` inside its braces. Roc calls a function inside a type's braces a method, the word the compiler uses below. In the body, `sighting.kind` holds a value of that type, for a tree one of `Conifer`'s tags, and `sighting.kind.scenery_sprite(...)` calls the kind's own function. `Sprite.LensAndLight` is the lens's focal length and the sky's darkness. `rendering_of` gives back a `Rendered`: the sprite, and how far ahead of the camera the thing stands.
 
 ### The compiler checks every call
 
@@ -543,7 +543,7 @@ The ride renders its trees in one line:
 
 Here `kind` is `Conifer`. The compiler looks inside `Conifer`'s braces, finds a `scenery_sprite` of the right type, and the call compiles. It checks every other call the same way, one kind at a time.
 
-A call compiles only when its kind has the function. Here's a `Rock` with only a height, handed to `rendering_of`. The program is a small app of its own, which uses Safari Ride's modules as its `game` package, and only the `Rock` and the call matter here:
+A call compiles only when its kind has the function. Here's a `Rock` with only a height, handed to `rendering_of`. The program is a small app of its own, which uses Safari Ride's modules as its `game` package. Its first and last lines only make it an app, and a `_` names an argument it leaves unused. Only the `Rock` and the call matter here:
 
 {{fails kind_without_sprite}}
 
@@ -553,15 +553,15 @@ Wherever a real type fills `kind`, such as `Conifer` in `tree_renderings`, the c
 
 ### Asking for a height
 
-Sighting a tree, a critter, the cat or the bird asks for the kind's height the same way. The sighting needs the height to tell whether the thing's top shows over the horizon, and whether it stands tall enough on the screen to draw:
+Sighting a tree, a critter, the cat or the bird asks for the kind's height the same way. The sighting needs the height to tell whether the thing's top shows over the horizon, and whether it stands tall enough on the screen to draw. That's why `Conifer` keeps `scenery_height` inside its braces too:
 
 {{signatures Pipeline.scenery_sighting_of}}
 
-It takes the placed thing, and a record of the road ahead, the camera, and where the thing's segment lies from the rider. Its answer is a `Try`, one of two tags: `Ok`, holding a `Pipeline.Sighted(kind)`, or `Err`, holding the reason the sighting failed. The reasons are tags: `BehindCamera` and `BelowHorizon`, the refusals from "The pieces as types", and `TooSmall`, for a thing too small on the screen to draw. The ride's callers keep the `Ok`s and drop the rest. A radio tower is sighted by `sighting_above_horizon_of`, which asks for its height too, for the horizon test alone. That's why `Conifer` keeps `scenery_height` inside its braces, beside `scenery_sprite`.
+It takes the placed thing, and a record of the road ahead, the camera, and where the thing's segment lies from the rider. Its answer is a `Try`, one of two tags: `Ok`, holding a `Pipeline.Sighted(kind)`, or `Err`, holding the reason the sighting failed. The reasons are tags: `BehindCamera` and `BelowHorizon`, the refusals from "The pieces as types", and `TooSmall`, for a thing too small on the screen to draw. The ride's callers keep the `Ok`s and drop the rest. A radio tower is sighted by `sighting_above_horizon_of`, which asks for its height too, for the horizon test alone.
 
 ### Names that say what they're for
 
-Roc matches a `where` by name and type alone, so any type with a function of that name and that type inside its braces meets it. A clause that asked for a plain height would take any type with a height function of that type, whatever that height measures, and the pipeline would draw with the wrong number. So the names say what they're for. The word "scenery" at the front of each one makes an accidental match unlikely, and a kind meets the pipeline on purpose.
+Roc matches a `where` by name and type alone, so any type with a function of that name and that type inside its braces meets it. Suppose the clause asked for a method called just height. The bird might well have one that says how high it flies, and the sighting would test the bird against the wrong number, with no complaint from the compiler. So the names say what they're for. The word "scenery" at the front of each one makes an accidental match unlikely, and a kind meets the pipeline on purpose.
 
 So a kind meets the pipeline by having two functions inside its braces, a height and a sprite. The tree, the cow, the radio tower, the cat and the bird all do, and one function draws them all.
 
