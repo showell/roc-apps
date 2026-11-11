@@ -79,6 +79,8 @@ article > figure.listing { width: fit-content; min-width: min(100%, var(--measur
 }
 body.chapter > .top-bar { grid-column: 1 / -1; }
 .draft-notice { margin: 0; padding: 0.1em 0.5em; border-radius: 3px; background: var(--draft); color: var(--draft-ink); }
+/* The same pill every app page has, from site/web/shared/home.js. */
+.home-link { padding: 3px 8px; border-radius: 4px; background: rgba(24, 24, 24, 0.72); color: #fff; text-decoration: none; }
 .repo-link { color: var(--quiet); text-decoration: none; }
 .repo-link:hover { color: var(--accent); }
 
