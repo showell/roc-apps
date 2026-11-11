@@ -597,9 +597,9 @@ Here are some things from step 1,529, the frame in the picture, and what their s
 | The radio tower past the end of the rider's segment | 20.40 | 355.61 | drawn |
 | The truck | 92.19 | 489.15 | drawn |
 
-A small tree far off sinks below the horizon, while a taller one just past it still shows its top. Of the 214 trees on the segments in view, 136 are drawn, 30 are behind the camera, and 48 are below the horizon. Each sighting module keeps its sightings with `keep_oks`, which keeps the `Ok` values of a list of `Try`s and drops the `Err`s. The truck's module hands its one `Try` to `Scene`, which renders the truck only for an `Ok`.
+A small tree far off sinks below the horizon, while a taller one just past it still shows its top. Of the 214 trees on the segments in view, 136 are drawn, 30 are behind the camera, and 48 are below the horizon. Each sighting module keeps its sightings with `keep_oks`, a `List` function, which keeps the `Ok` values of a list of `Try`s and drops the `Err`s. The truck's module hands its one `Try` to `Scene`, which renders the truck only for an `Ok`.
 
-The trees, the billboard critters, the cat and the bird are sighted by `Pipeline.scenery_sighting_of`, which takes all three tests. A radio tower and the truck are drawn however small they look. So a tower is sighted by `Pipeline.sighting_above_horizon_of`, which skips the `TooSmall` test, and the truck by `Pipeline.sighting_of`, which skips the `BelowHorizon` test too.
+The trees, the billboard critters, the cat and the bird are sighted by `Pipeline.scenery_sighting_of`, which takes all three tests. A radio tower and the truck are drawn however small they look. So a tower is sighted by `Pipeline.sighting_above_horizon_of`, which skips the `TooSmall` test, and the truck by `Pipeline.sighting_of`, which takes only the `BehindCamera` test.
 
 ### Rendered
 
@@ -607,7 +607,7 @@ Each sighting that's kept is rendered by `Pipeline.rendering_of`, which "Asking 
 
 {{code Rendered.Rendered from "Rendered ::" to "of = "}}
 
-A `Rendered` holds a depth and a sprite, and those two alone. The `::` makes it opaque, as it does `Distance`. The sprite is what "Things" and "A far tree" drew from a setting, and the depth is how far ahead of the camera the thing stands. The kind has done its job by now, and it's gone: a tree's rendering and a cow's have the same type. `Rendered.({ depth, sprite })` wraps the record in the opaque type, the reverse of the `Billboard.(billboard)` that opens a billboard.
+A `Rendered` holds a depth and a sprite, and those two alone. The `::` makes it opaque, as it does `Distance`. The sprite is what "Things" and "A far tree" drew from a setting, and the depth is how far ahead of the camera the thing stands. The kind has done its job by now, and it's gone: a tree's rendering and a cow's have the same type. In a body, as here, `Rendered.({ depth, sprite })` builds a `Rendered` by wrapping the record. Among a function's arguments, as `Billboard.(billboard)` was, the same form takes one apart.
 
 ### One list
 
@@ -615,7 +615,7 @@ Every rendering has that one type, so a frame gathers them all in one list:
 
 {{code Scene.scene_renderings}}
 
-A `Scene` holds a list of renderings for each sort of thing, and `join` makes one list of them all. The guard rail along the road takes a shorter trip of its own: a later chapter renders its pieces straight into the list. `Rendered.depth_sorted_renderings` sorts the list from far to near, and the platform paints it in that order, so a near thing covers a far one.
+A `Scene` holds a list of renderings for each sort of thing, and `join` makes one list of them all. The guard rail along the road makes its own `Rendered`s, as a later chapter shows, and `scene.rails` joins them to the list. `Rendered.depth_sorted_renderings` sorts the list from far to near, and the platform paints it in that order, so a near thing covers a far one.
 
 So every thing beside the road makes the same trip: placed on the road, sighted by the camera, rendered as a sprite with a depth, and sorted into the frame's one list. Its kind rides through the first two types and is gone by the third. That leaves two questions, and the next two chapters answer them: what is a kind, and how does `rendering_of`, written once, get a sprite out of every kind?
 
