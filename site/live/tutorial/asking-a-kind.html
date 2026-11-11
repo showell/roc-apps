@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asking a kind · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="the-problem.html"><span class="number">2</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">3</span>Platforms, packages and modules</a></li>
+<li><a href="the-pieces-as-types.html"><span class="number">4</span>The pieces as types</a></li>
+<li><a href="things.html"><span class="number">5</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">6</span>Billboard Critters</a></li>
+<li><a href="shapes.html"><span class="number">7</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">8</span>A far tree</a></li>
+<li><a href="types-for-places.html"><span class="number">9</span>Types for places</a></li>
+<li><a href="the-pipeline.html"><span class="number">10</span>The pipeline</a></li>
+<li><a href="nature-types.html"><span class="number">11</span>Nature types</a></li>
+<li class="here"><a href="asking-a-kind.html"><span class="number">12</span>Asking a kind</a><ol class="sections"><li><a href="asking-a-kind.html#the-compiler-checks-each-call">The compiler checks each call</a></li><li><a href="asking-a-kind.html#asking-for-a-height">Asking for a height</a></li><li><a href="asking-a-kind.html#names-that-say-what-theyre-for">Names that say what they&#39;re for</a></li></ol></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 12</p>
+<h1 id="asking-a-kind">Asking a kind</h1>
+<p>One function, <code>Pipeline.rendering_of</code>, renders every kind of thing beside the road. Here it renders five of them:</p>
+<figure class="widget"><iframe class="canvas-app" src="../kinds_widget/" title="A tree, a cow, a radio tower, the cat and the bird, each rendered by `Pipeline.rendering_of`, and each at its own distance so that it shows clearly." loading="lazy" style="aspect-ratio: 640 / 240"></iframe><figcaption>A tree, a cow, a radio tower, the cat and the bird, each rendered by <code>Pipeline.rendering_of</code>, and each at its own distance so that it shows clearly.</figcaption></figure><p>One function can render every kind because of this chapter&#39;s new Roc idea, the <code>where</code> clause, which constrains a type variable to types that have certain methods.</p>
+<p><code>rendering_of</code> takes a sighting, with the focal length and the darkness that the whole frame shares, and it gives back a <code>Rendered</code>, the thing&#39;s sprite and its depth. The sprite comes from the kind, so <code>rendering_of</code> calls the kind&#39;s own <code>scenery_sprite</code> method.</p>
+<p>The <code>Rendered</code> coming out is the same type for every kind. The sighting going in carries its kind: it&#39;s a <code>Pipeline.Sighted(kind)</code>, and <code>kind</code> is a type variable, so it stands for any type at all: a number, a record or a <code>Conifer</code>. Only some types have a <code>scenery_sprite</code>. So <code>rendering_of</code> needs a constraint on <code>kind</code>: any type, as long as that type has a <code>scenery_sprite</code>.</p>
+<p>Roc writes that constraint as a <code>where</code> clause, on the line after the annotation:</p>
+<figure class="listing"><figcaption>Pipeline.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The rendering of `sighting` through the frame&#39;s lens, in its light.</span>
+<span class="syn-name">rendering_of</span> : <span class="syn-type">Pipeline.Sighted</span>(kind), <span class="syn-type">Sprite.LensAndLight</span> -&gt; <span class="syn-type">Rendered</span>
+	<span class="syn-keyword">where</span> [kind.scenery_sprite : kind, <span class="syn-type">Sprite.Setting</span> -&gt; <span class="syn-type">Sprite</span>]
+<span class="syn-name">rendering_of</span> = |sighting, { focal_length, darkness }|
+	<span class="syn-type">Rendered</span>.of(
+		sighting.spot.foot().forward(),
+		sighting.kind.scenery_sprite({ spot: sighting.spot, focal_length, darkness }),
+	)
+</code></pre></figure><p>This table explains the code&#39;s concepts:</p>
+<table>
+<thead>
+<tr>
+<th>Concept</th>
+<th>Purpose</th>
+<th>Explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A type variable</td>
+<td>Generality</td>
+<td><code>kind</code> in <code>Pipeline.<wbr>Sighted(kind)</code> stands for whatever type the caller&#39;s sighting holds.</td>
+</tr>
+<tr>
+<td>A <code>where</code> clause</td>
+<td>Constraint</td>
+<td><code>where [kind.<wbr>scenery_<wbr>sprite : kind, Sprite.<wbr>Setting -&gt; Sprite]</code> constrains <code>kind</code> to types that have a method named <code>scenery_<wbr>sprite</code>, which takes a <code>kind</code> and a <code>Sprite.<wbr>Setting</code> and gives back a <code>Sprite</code>. The square brackets hold a list of constraints, here just one.</td>
+</tr>
+<tr>
+<td>A method</td>
+<td>Placement</td>
+<td>A method is a function inside a type&#39;s braces, and only a method meets a <code>where</code> clause. That&#39;s why <code>Conifer</code> keeps <code>scenery_<wbr>sprite</code> inside, with <code>scenery_<wbr>height</code>, while its private helpers sit outside.</td>
+</tr>
+<tr>
+<td>A method call</td>
+<td>Dispatch</td>
+<td><code>sighting.<wbr>kind</code> is the sighting&#39;s <code>kind</code> field, which holds a value of the type <code>kind</code>. <code>.<wbr>scenery_<wbr>sprite(.<wbr>.<wbr>.<wbr>)</code> calls that type&#39;s method, with the value before the dot as its first argument.</td>
+</tr>
+</tbody>
+</table>
+<p>The rest of the body builds the setting. A <code>Sprite.LensAndLight</code> holds the shared part of a <code>Sprite.Setting</code>, the focal length and the darkness, and the body adds the sighting&#39;s own spot. In a record, <code>focal_length</code> alone is short for <code>focal_length: focal_length</code>, a field filled from the value of the same name. <code>sighting.spot.foot().forward()</code> is how far ahead of the camera the thing&#39;s foot stands.</p>
+<h2 id="the-compiler-checks-each-call">The compiler checks each call <a class="section-link" href="#the-compiler-checks-each-call" aria-label="Link to this section">§</a></h2>
+<p>Each call to <code>rendering_of</code> fills <code>kind</code> with one particular type. The ride renders its trees in one line of <code>Scene.scene_in_view</code>. There <code>trees_seen</code> is a <code>List(Pipeline.Sighted(Conifer))</code>, so the type is <code>Conifer</code>:</p>
+<figure class="listing"><figcaption>Scene.roc, in scene_in_view</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
+trees: trees_seen.map(|tree| <span class="syn-type">Pipeline</span>.rendering_of(tree, lens_and_light)),
+<span class="syn-comment"># ...</span>
+</code></pre></figure><p>The compiler looks inside <code>Conifer</code>&#39;s braces, finds a <code>scenery_sprite</code> of the right type, and the call compiles. The compiler checks every other call the same way, one type at a time. So the choice of which <code>scenery_sprite</code> runs is made when the program compiles, once for each type. Every call gives back a <code>Rendered</code>, whatever the kind, so a frame&#39;s renderings of trees, cows and towers all go in one list.</p>
+<p>Every type that fills <code>kind</code> has to pass the compiler&#39;s check. Here a <code>Rock</code>, a kind that is just one tag, is handed to <code>rendering_of</code>. The program is a small app of its own, which uses Safari Ride&#39;s modules as its <code>game</code> package. Only <code>Rock</code> and <code>rock_rendering</code> matter here. The rest makes the program an app, and the <code>_</code> names an argument that <code>main!</code> leaves unused:</p>
+<figure class="listing"><figcaption>kind_without_sprite.roc (doesn&#39;t compile)</figcaption><pre><code class="language-roc"><span class="syn-keyword">app</span> [main!, rock_rendering] { game: <span class="syn-string">&quot;../../game.roc&quot;</span>, lib: <span class="syn-string">&quot;../../../lib/main.roc&quot;</span> }
+
+<span class="syn-keyword">import</span> game.<span class="syn-type">Pipeline</span>
+<span class="syn-keyword">import</span> game.<span class="syn-type">Rendered</span>
+<span class="syn-keyword">import</span> game.<span class="syn-type">Sprite</span>
+
+<span class="syn-comment">## A kind of thing beside the road, with one tag and no methods.</span>
+<span class="syn-type">Rock</span> := [<span class="syn-type">Boulder</span>]
+
+<span class="syn-name">rock_rendering</span> : <span class="syn-type">Pipeline.Sighted</span>(<span class="syn-type">Rock</span>), <span class="syn-type">Sprite.LensAndLight</span> -&gt; <span class="syn-type">Rendered</span>
+<span class="syn-name">rock_rendering</span> = |sighting, lens_and_light| <span class="syn-type">Pipeline</span>.rendering_of(sighting, lens_and_light)
+
+<span class="syn-name">main!</span> = |_| <span class="syn-type">Ok</span>({})
+</code></pre></figure><figure class="listing"><figcaption>roc check on kind_without_sprite.roc</figcaption><pre><code class="language-text">── ✗ missing method ────────────────────────────── kind_without_sprite.roc:11:45
+
+A where clause requires the scenery_sprite method here, but the type being used
+doesn&#39;t have that method.
+
+rock_rendering = |sighting, lens_and_light| Pipeline.rendering_of(sighting, lens_and_light)
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The value&#39;s type, which does not have a method named scenery_sprite, is:
+
+    Rock
+
+Hint: For this to work, the type would need to have a method named
+scenery_sprite associated with it in the type&#39;s declaration.
+
+── 1 error and 0 warnings ────────────────────────────── kind_without_sprite.roc
+</code></pre></figure><p>The message names the method the clause requires, and the type the compiler checked. The fix is a <code>.{ }</code> after <code>Rock</code>&#39;s tags with a <code>scenery_sprite</code> inside, as <code>Conifer</code> has.</p>
+<h2 id="asking-for-a-height">Asking for a height <a class="section-link" href="#asking-for-a-height" aria-label="Link to this section">§</a></h2>
+<p>Sighting a thing needs its height. A far thing shows only when its top clears the horizon, and only when it stands tall enough on the screen to be worth showing. So <code>Pipeline.scenery_sighting_of</code>, which sights the trees, the billboard critters, the cat and the bird, constrains its kind with a <code>where</code> clause of its own, to types that have a <code>scenery_height</code>:</p>
+<figure class="listing"><figcaption>Pipeline.roc, in scenery_sighting_of</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
+<span class="syn-keyword">where</span> [kind.scenery_height : kind -&gt; <span class="syn-type">Distance</span>]
+<span class="syn-comment"># ...</span>
+</code></pre></figure><p>A radio tower is kept however small it looks, so a tower is sighted by <code>Pipeline.sighting_above_horizon_of</code>, which skips the size test and carries the same constraint.</p>
+<h2 id="names-that-say-what-theyre-for">Names that say what they&#39;re for <a class="section-link" href="#names-that-say-what-theyre-for" aria-label="Link to this section">§</a></h2>
+<p>Roc matches a <code>where</code> clause by the method&#39;s name and type alone. Suppose the clause named a method called just <code>height</code>. The bird could well have one that says how high it flies, and the sighting would test the bird against the wrong number, while the compiler stays quiet. So every method the pipeline&#39;s clauses name starts with &quot;scenery&quot;, which makes an accidental match unlikely.</p>
+<p>So a kind meets the pipeline with two methods inside its braces, <code>scenery_height</code> and <code>scenery_sprite</code>. The tree, the cow, the radio tower, the cat and the bird each have both, and the compiler checks both methods of every kind when the program compiles.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="nature-types.html"><small>Previous</small>Nature types</a>
+<span></span>
+</nav>
+</main>
+<script src="embed.js"></script>
+</body>
+</html>

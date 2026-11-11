@@ -58,7 +58,8 @@ body.chapter main { padding: 3rem 3rem 4rem 4rem; }
 body.front main { max-width: calc(var(--measure) + 4rem); margin: 0 auto; padding: 4rem 2rem; }
 
 article > * { max-width: var(--measure); }
-article > table, article > figure.diagram { max-width: var(--wide); }
+article > table { max-width: var(--wide); }
+article > figure.diagram { max-width: var(--measure); }
 
 /* A code listing matches the prose, and widens only for the lines that need it. */
 article > figure.listing { width: fit-content; min-width: min(100%, var(--measure)); max-width: var(--wide); }
@@ -97,6 +98,11 @@ h3 { font-size: 1.1rem; margin: 2rem 0 0.6rem; }
 h2:hover .section-link, .section-link:focus { opacity: 1; }
 .section-link:hover { color: var(--accent); }
 @media (hover: none) { .section-link { opacity: 0.5; } }
+
+/* A chapter named in the prose is a cross-reference, so it reads as text with a
+   faint dotted line under it until it is pointed at. */
+.chapter-link { color: inherit; text-decoration: underline dotted var(--quiet); text-decoration-thickness: 1px; }
+.chapter-link:hover, .chapter-link:focus { color: var(--accent); text-decoration-color: currentColor; }
 
 .chapter-number {
   margin: 0 0 0.3rem;
@@ -184,6 +190,9 @@ th { text-align: left; border-bottom: 1px solid var(--quiet); }
 td { border-bottom: 1px solid var(--rule); }
 th, td { padding: 0.35rem 1rem 0.35rem 0; vertical-align: top; }
 th:last-child, td:last-child { padding-right: 0; }
+/* book.js marks a column of sentences as prose, and it wraps at a reading
+   width, about sixty characters a line. */
+th.prose, td.prose { width: 30em; }
 
 /* Draft notes stay in sight, and they look like notes rather than the book. */
 
@@ -283,6 +292,7 @@ ol.contents .sections a { color: var(--quiet); text-decoration: none; }
   figure.listing pre { padding-inline: 0.6rem; font-size: 0.72rem; tab-size: 2; }
   article > table { width: 100%; font-size: 0.76rem; }
   th, td { padding-right: 0.6rem; }
+  th.prose, td.prose { width: auto; }
 }
 
 /* A printed book: black on white, with no navigation and nothing split that can

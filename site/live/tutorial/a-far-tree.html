@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A far tree · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="the-problem.html"><span class="number">2</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">3</span>Platforms, packages and modules</a></li>
+<li><a href="the-pieces-as-types.html"><span class="number">4</span>The pieces as types</a></li>
+<li><a href="things.html"><span class="number">5</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">6</span>Billboard Critters</a></li>
+<li><a href="shapes.html"><span class="number">7</span>Shapes</a></li>
+<li class="here"><a href="a-far-tree.html"><span class="number">8</span>A far tree</a><ol class="sections"><li><a href="a-far-tree.html#eight-tiers">Eight tiers</a></li><li><a href="a-far-tree.html#tops-and-bottoms">Tops and bottoms</a></li><li><a href="a-far-tree.html#freezing-the-tiers">Freezing the tiers</a></li><li><a href="a-far-tree.html#a-triangle-for-each-tier">A triangle for each tier</a></li><li><a href="a-far-tree.html#painting-the-tree">Painting the tree</a></li><li><a href="a-far-tree.html#what-youre-missing">What you&#39;re missing</a></li></ol></li>
+<li><a href="types-for-places.html"><span class="number">9</span>Types for places</a></li>
+<li><a href="the-pipeline.html"><span class="number">10</span>The pipeline</a></li>
+<li><a href="nature-types.html"><span class="number">11</span>Nature types</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Asking a kind</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 8</p>
+<h1 id="a-far-tree">A far tree</h1>
+<p>A far tree in Safari Ride is a trunk under eight triangles. In this chapter we build one from small functions: the tiers of its crown, a test that pins them, a triangle for each tier, and the order the trunk and the tiers are painted in.</p>
+<figure class="widget"><iframe class="canvas-app" src="../far_tree_widget/" title="One far tree, magnified so that it stands tall in the picture." loading="lazy" style="aspect-ratio: 640 / 240"></iframe><figcaption>One far tree, magnified so that it stands tall in the picture.</figcaption></figure><h2 id="eight-tiers">Eight tiers <a class="section-link" href="#eight-tiers" aria-label="Link to this section">§</a></h2>
+<p>The crown is eight tiers, stacked from the tip down. Each tier is a record of three fractions:</p>
+<figure class="listing"><figcaption>TreeShapes.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## One tier of the crown: where its top and its bottom are, as fractions of</span>
+<span class="syn-comment">## the crown&#39;s height down from its top, and how wide its bottom is, as a</span>
+<span class="syn-comment">## fraction of the crown&#39;s width.</span>
+<span class="syn-type">Tier</span> : {
+	top : <span class="syn-type">Fraction</span>,
+	bottom : <span class="syn-type">Fraction</span>,
+	width : <span class="syn-type">Fraction</span>,
+}
+</code></pre></figure><p>A <code>Fraction</code> is a number from 0 to 1. <code>top</code> and <code>bottom</code> say where the tier starts and ends, as shares of the crown&#39;s height, measured down from the tip. <code>width</code> says how wide the tier&#39;s bottom is, as a share of the crown at its widest.</p>
+<p>The widths start as a list of eight plain numbers:</p>
+<figure class="listing"><figcaption>TreeShapes.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## How wide each tier&#39;s bottom is, top tier first, as a fraction of the crown&#39;s</span>
+<span class="syn-comment">## width, chosen by eye.</span>
+<span class="syn-name">tier_widths</span> : <span class="syn-type">List</span>(<span class="syn-type">Fraction</span>)
+<span class="syn-name">tier_widths</span> = [<span class="syn-number">0.35</span>, <span class="syn-number">0.44</span>, <span class="syn-number">0.53</span>, <span class="syn-number">0.63</span>, <span class="syn-number">0.72</span>, <span class="syn-number">0.81</span>, <span class="syn-number">0.91</span>, <span class="syn-number">1.0</span>].map(<span class="syn-type">Fraction</span>.of)
+</code></pre></figure><p>In a type, square brackets list tags. In a value, as here, they make a list, and every item in a list has the same type. These eight are <code>F64</code>s, chosen by eye, from the narrow top tier to the full-width bottom one.</p>
+<p><code>map</code> calls a function on each item of a list and gives back a list of the answers. Here we hand it <code>Fraction.of</code> by name, and <code>Fraction.of</code> turns an <code>F64</code> into a <code>Fraction</code>, so <code>tier_widths</code> is a <code>List(Fraction)</code>. <code>Fraction.of</code> crashes on a number outside 0 to 1, because a share out of range means the sum behind it is wrong.</p>
+<h2 id="tops-and-bottoms">Tops and bottoms <a class="section-link" href="#tops-and-bottoms" aria-label="Link to this section">§</a></h2>
+<p>Each tier also needs a top and a bottom. They follow a rule, so another <code>map</code> works them out:</p>
+<figure class="listing"><figcaption>TreeShapes.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The tiers, top to bottom. Each starts a tenth of the crown lower than the</span>
+<span class="syn-comment">## one above and runs three tenths down, so each overlaps the next.</span>
+<span class="syn-name">tiers</span> : <span class="syn-type">List</span>(<span class="syn-type">Tier</span>)
+<span class="syn-name">tiers</span> = tier_widths.map_with_index(
+	|width, index| {
+		top: <span class="syn-type">Fraction</span>.of(index.to_f64() / <span class="syn-number">10.0</span>),
+		bottom: <span class="syn-type">Fraction</span>.of((index.to_f64() + <span class="syn-number">3.0</span>) / <span class="syn-number">10.0</span>),
+		width,
+	},
+)
+</code></pre></figure><p><code>map_with_index</code> is <code>map</code> with one more thing for the function: the item&#39;s place in the list, counting from 0. The function here is written in place, right where <code>map_with_index</code> takes it. <code>|width, index|</code> says it takes a width and its index, and it gives back a record. Each tier&#39;s top is a tenth of the crown lower than the top of the tier above, and its bottom is three tenths below its top, so each tier overlaps the next. <code>index</code> is a <code>U64</code>, a whole number, and <code>to_f64</code> turns it into an <code>F64</code> for the division.</p>
+<h2 id="freezing-the-tiers">Freezing the tiers <a class="section-link" href="#freezing-the-tiers" aria-label="Link to this section">§</a></h2>
+<p><code>tiers</code> is a constant, the same eight records every time the program runs. So we can write all eight down, and have Roc check them:</p>
+<figure class="listing"><figcaption>TreeShapes.roc, the expect after tiers</figcaption><pre><code class="language-roc"><span class="syn-comment"># Each tier&#39;s top, bottom and width, top tier first.</span>
+<span class="syn-keyword">expect</span>
+	tiers.map(|tier| [tier.top.to_f64(), tier.bottom.to_f64(), tier.width.to_f64()])
+		== [
+			[<span class="syn-number">0.0</span>, <span class="syn-number">0.3</span>, <span class="syn-number">0.35</span>],
+			[<span class="syn-number">0.1</span>, <span class="syn-number">0.4</span>, <span class="syn-number">0.44</span>],
+			[<span class="syn-number">0.2</span>, <span class="syn-number">0.5</span>, <span class="syn-number">0.53</span>],
+			[<span class="syn-number">0.3</span>, <span class="syn-number">0.6</span>, <span class="syn-number">0.63</span>],
+			[<span class="syn-number">0.4</span>, <span class="syn-number">0.7</span>, <span class="syn-number">0.72</span>],
+			[<span class="syn-number">0.5</span>, <span class="syn-number">0.8</span>, <span class="syn-number">0.81</span>],
+			[<span class="syn-number">0.6</span>, <span class="syn-number">0.9</span>, <span class="syn-number">0.91</span>],
+			[<span class="syn-number">0.7</span>, <span class="syn-number">1.0</span>, <span class="syn-number">1.0</span>],
+		]
+</code></pre></figure><p>An <code>expect</code> is a test. Its body is a <code>Bool</code>, and <code>roc test</code> runs every <code>expect</code> in a program and reports each one that comes out <code>False</code>. This one turns each tier into a list of its three numbers, so that the table can be plain numbers. The table is the tiers, written out by hand. Change a width or the rule, and the test reports it.</p>
+<h2 id="a-triangle-for-each-tier">A triangle for each tier <a class="section-link" href="#a-triangle-for-each-tier" aria-label="Link to this section">§</a></h2>
+<p>A tier is a set of shares. A triangle is corners on the screen. Between the two stands the tree&#39;s outline: where its foot lands on the screen, and how tall the tree looks there.</p>
+<figure class="listing"><figcaption>Camera.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## An upright object on the screen: where its foot is, and how far up the</span>
+<span class="syn-comment">## screen its top is from there. A tree, a still and a billboard all stand</span>
+<span class="syn-comment">## this way.</span>
+<span class="syn-type">Upright</span> : { foot : <span class="syn-type">Point</span>, height_on_screen : <span class="syn-type">Pixels</span> }
+</code></pre></figure><p>Three small functions read the crown&#39;s place from the outline:</p>
+<figure class="listing"><figcaption>TreeShapes.roc</figcaption><pre><code class="language-roc"><span class="syn-name">crown_top_y</span> : <span class="syn-type">Camera.Upright</span> -&gt; <span class="syn-type">Pixels</span>
+<span class="syn-name">crown_height</span> : <span class="syn-type">Camera.Upright</span> -&gt; <span class="syn-type">Pixels</span>
+<span class="syn-name">crown_half_width</span> : <span class="syn-type">Camera.Upright</span> -&gt; <span class="syn-type">Pixels</span>
+</code></pre></figure><p><code>crown_top_y</code> gives the tree&#39;s tip, <code>height_on_screen</code> above its foot. The other two scale the outline&#39;s height: the crown&#39;s height is a fixed share of the tree&#39;s height, and so is its widest half-width, both chosen by eye. Then <code>tier_triangle</code> makes one tier:</p>
+<figure class="listing"><figcaption>TreeShapes.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## A tier as a flat triangle: its apex at the tier&#39;s top, its base across its</span>
+<span class="syn-comment">## bottom.</span>
+<span class="syn-name">tier_triangle</span> : <span class="syn-type">Camera.Upright</span>, { tier : <span class="syn-type">Tier</span>, foliage_color : <span class="syn-type">RgbColor</span> } -&gt; <span class="syn-type">Shapes.Shape</span>
+<span class="syn-name">tier_triangle</span> = |outline, { tier, foliage_color }| {
+	crown_top = crown_top_y(outline)
+	bottom_y = crown_top.plus(crown_height(outline).scaled_by(tier.bottom))
+	top_y = crown_top.plus(crown_height(outline).scaled_by(tier.top))
+	half_base = crown_half_width(outline).scaled_by(tier.width)
+	<span class="syn-type">Triangle</span>({
+		first: { x: outline.foot.x, y: top_y },
+		second: { x: outline.foot.x.plus(half_base), y: bottom_y },
+		third: { x: outline.foot.x.minus(half_base), y: bottom_y },
+		fill: <span class="syn-type">Brush</span>.flat(foliage_color),
+	})
+}
+</code></pre></figure><p>It takes the outline and a record, and <code>|outline, { tier, foliage_color }|</code> takes the record apart into its fields, as <code>Shapes.rectangle</code> did. The body names four values on the way, each on a line of its own: <code>crown_top</code>, <code>bottom_y</code>, <code>top_y</code> and <code>half_base</code>. A name holds its value for the rest of the body, and the last expression, the <code>Triangle</code>, is what the function gives back. Like <code>Distance</code>, <code>Pixels</code> has its own <code>plus</code>, <code>minus</code> and <code>scaled_by</code>. <code>scaled_by</code> multiplies a length by a <code>Fraction</code>, and <code>minus</code> subtracts one length from another.</p>
+<p>On the screen, <code>y</code> grows downward, as it did in the <a class="chapter-link" href="shapes.html">“Shapes”</a> chapter, so <code>plus</code> moves down from the tip. The triangle&#39;s first corner sits on the tree&#39;s middle line at the tier&#39;s top. The other two sit at the tier&#39;s bottom, <code>half_base</code> to either side.</p>
+<h2 id="painting-the-tree">Painting the tree <a class="section-link" href="#painting-the-tree" aria-label="Link to this section">§</a></h2>
+<p>The trunk is a rectangle:</p>
+<figure class="listing"><figcaption>TreeShapes.roc</figcaption><pre><code class="language-roc"><span class="syn-name">trunk_shape</span> : <span class="syn-type">Camera.Upright</span>, { finish : <span class="syn-type">TrunkFinish</span>, color : <span class="syn-type">RgbColor</span> } -&gt; <span class="syn-type">Shapes.Shape</span>
+</code></pre></figure><p>Its body works out the trunk&#39;s width, its height and its top left corner from the outline, and hands them to <code>Shapes.rectangle</code>. Its <code>finish</code> says whether the trunk is shaded, which we come to at the end of the chapter.</p>
+<p>The order of the shapes matters as much as the shapes. <code>tree_sprite</code> produces the whole tree&#39;s sprite:</p>
+<figure class="listing"><figcaption>TreeShapes.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The tree on the screen: its trunk, then its tiers top to bottom. A tree</span>
+<span class="syn-comment">## within round_trunk_reach has a shaded trunk. The crown is cones, shaded by</span>
+<span class="syn-comment">## how near they are, within cone_reach, and triangles beyond it.</span>
+<span class="syn-name">tree_sprite</span> : <span class="syn-type">Sprite.Setting</span>, { height : <span class="syn-type">Distance</span>, foliage_color : <span class="syn-type">RgbColor</span> } -&gt; <span class="syn-type">Sprite</span>
+<span class="syn-name">tree_sprite</span> = |{ spot, focal_length, darkness }, { height, foliage_color }| {
+	dimmed_foliage = <span class="syn-type">Sky</span>.color_at_darkness(foliage_color, darkness)
+	inputs = tier_inputs_of(spot, { height, focal_length, foliage_color: dimmed_foliage })
+	forward = inputs.base.forward()
+	crown = <span class="syn-type">TreeShapes</span>.crown_of(forward)
+	trunk = trunk_shape(
+		inputs.outline,
+		{
+			finish: trunk_finish_of(forward),
+			color: <span class="syn-type">Sky</span>.color_at_darkness(trunk_color, darkness),
+		},
+	)
+	<span class="syn-type">Sprite</span>.from_shapes([trunk].concat(tiers.map(|tier| tier_shape(tier, { inputs, crown }))))
+}
+</code></pre></figure><p>It takes the tree&#39;s setting and a record, and <code>|{ spot, focal_length, darkness }, { height, foliage_color }|</code> takes each one apart into its fields. <code>crown_of</code> sits inside the <code>TreeShapes</code> type&#39;s braces, with the type&#39;s own functions, and every use of it carries the type&#39;s name, as <code>Billboard.Facing</code> does.</p>
+<p>The body first darkens the foliage and the trunk&#39;s brown as dusk falls. Then <code>tier_inputs_of</code> works out what every tier needs, the tree&#39;s outline among them, once for the whole tree. <code>inputs.base.forward()</code> is how far ahead of the camera the tree&#39;s foot stands. From that distance, <code>crown_of</code> and <code>trunk_finish_of</code> choose how much detail the tree gets. For a far tree, <code>crown</code> is <code>Triangles</code>, and the trunk&#39;s finish is <code>Flat</code>. The end of the chapter says what nearer trees get.</p>
+<p>The last line puts the list together. <code>[trunk]</code> is a list of one shape, and <code>concat</code> joins two lists into one, so the trunk comes first. The platform paints a list from first to last, so the tiers land on the trunk. Each tier also lands on the tier above it and covers that tier&#39;s bottom, which is where the overlap goes. <code>Sprite.from_shapes</code> makes the list the tree&#39;s sprite.</p>
+<p><code>tiers.map(...)</code> makes one shape for each tier, top tier first, with <code>tier_shape</code>. A <code>match</code> in <code>tier_shape</code> reads the crown, and its <code>Triangles</code> branch is the far tree&#39;s:</p>
+<figure class="listing"><figcaption>TreeShapes.roc, in tier_shape</figcaption><pre><code class="language-roc"><span class="syn-comment"># ...</span>
+<span class="syn-type">Triangles</span> =&gt; tier_triangle(inputs.outline, colored_tier)
+<span class="syn-comment"># ...</span>
+</code></pre></figure><p><code>colored_tier</code> is the tier with the tree&#39;s foliage color, so a far tree&#39;s tier goes straight to <code>tier_triangle</code>. The other branch builds the near tree&#39;s tiers, and the end of this chapter says what it does.</p>
+<h2 id="what-youre-missing">What you&#39;re missing <a class="section-link" href="#what-youre-missing" aria-label="Link to this section">§</a></h2>
+<p>Every tree 200 metres or more ahead of the camera is built this way: 200 metres is <code>cone_reach</code>. Nearer than that, the ride builds more. Each tier becomes a cone, which looks round and fattens as the rider passes under it, and the nearest cones are shaded. <code>crown_of</code> makes that choice, and <code>tier_shape</code> builds the cones.</p>
+<p><code>round_trunk_reach</code> is 60 metres. Within it, <code>trunk_finish_of</code> gives <code>Shaded</code> in place of <code>Flat</code>, and the trunk looks round.</p>
+<p>Cones take far more work to build, and far off they look just like triangles, so the ride spends that work only where it shows.</p>
+<p>So a far tree is a handful of small functions over one list of tiers. The <code>expect</code> pins the tiers, each tier becomes a triangle, and one list puts the trunk first and the tiers over it. Every tree beside the road runs through this same code, wherever it stands.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="shapes.html"><small>Previous</small>Shapes</a>
+<a rel="next" href="types-for-places.html"><small>Next</small>Types for places</a>
+</nav>
+</main>
+<script src="embed.js"></script>
+</body>
+</html>

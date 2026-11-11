@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nature types · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="the-problem.html"><span class="number">2</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">3</span>Platforms, packages and modules</a></li>
+<li><a href="the-pieces-as-types.html"><span class="number">4</span>The pieces as types</a></li>
+<li><a href="things.html"><span class="number">5</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">6</span>Billboard Critters</a></li>
+<li><a href="shapes.html"><span class="number">7</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">8</span>A far tree</a></li>
+<li><a href="types-for-places.html"><span class="number">9</span>Types for places</a></li>
+<li><a href="the-pipeline.html"><span class="number">10</span>The pipeline</a></li>
+<li class="here"><a href="nature-types.html"><span class="number">11</span>Nature types</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Asking a kind</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 11</p>
+<h1 id="nature-types">Nature types</h1>
+<p>Every thing beside the road carries its kind through the first two types of the pipeline, a <code>Geom.Placed</code> and a <code>Pipeline.Sighted</code>. In this chapter we look inside one kind, the tree&#39;s.</p>
+<figure class="widget"><iframe class="canvas-app" src="../conifers_widget/" title="The four conifers, left to right: Green, SmallGreen, Red and Gold." loading="lazy" style="aspect-ratio: 640 / 240"></iframe><figcaption>The four conifers, left to right: Green, SmallGreen, Red and Gold.</figcaption></figure><p>A tree needs a height and a color. Where it stands is the job of the forms around it. So the <code>Conifer</code> type says which tree it is, and its methods give the height and the color:</p>
+<figure class="listing"><figcaption>Conifer.roc, the whole file</figcaption><pre><code class="language-roc"><span class="syn-comment">## Conifer is a kind of tree. It sets the tree&#39;s height, from the ground to its</span>
+<span class="syn-comment">## tip, and its color, and TreeShapes draws it.</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Distance</span>
+<span class="syn-keyword">import</span> <span class="syn-type">Sprite</span>
+<span class="syn-keyword">import</span> <span class="syn-type">TreeShapes</span>
+<span class="syn-keyword">import</span> lib.<span class="syn-type">RgbColor</span>
+
+<span class="syn-type">Conifer</span> := [<span class="syn-type">Green</span>, <span class="syn-type">SmallGreen</span>, <span class="syn-type">Red</span>, <span class="syn-type">Gold</span>].{
+
+	<span class="syn-comment">## A red tree is twice a small one&#39;s height and a gold one three times,</span>
+	<span class="syn-comment">## sizes chosen by eye.</span>
+	<span class="syn-name">scenery_height</span> : <span class="syn-type">Conifer</span> -&gt; <span class="syn-type">Distance</span>
+	<span class="syn-name">scenery_height</span> = |conifer|
+		<span class="syn-keyword">match</span> conifer {
+			<span class="syn-type">Green</span> =&gt; green_height
+			<span class="syn-type">SmallGreen</span> =&gt; small_height
+			<span class="syn-type">Red</span> =&gt; small_height.times(<span class="syn-number">2.0</span>)
+			<span class="syn-type">Gold</span> =&gt; small_height.times(<span class="syn-number">3.0</span>)
+		}
+
+	<span class="syn-comment">## How a conifer looks.</span>
+	<span class="syn-name">scenery_sprite</span> : <span class="syn-type">Conifer</span>, <span class="syn-type">Sprite.Setting</span> -&gt; <span class="syn-type">Sprite</span>
+	<span class="syn-name">scenery_sprite</span> = |conifer, setting|
+		<span class="syn-type">TreeShapes</span>.tree_sprite(
+			setting,
+			{ height: conifer.scenery_height(), foliage_color: foliage_color(conifer) },
+		)
+
+	<span class="syn-name">is_eq</span> : _
+}
+
+<span class="syn-comment">## A small green tree&#39;s height, chosen by eye.</span>
+<span class="syn-name">small_height</span> : <span class="syn-type">Distance</span>
+<span class="syn-name">small_height</span> = <span class="syn-type">Distance</span>.metres(<span class="syn-number">4.896</span>)
+
+<span class="syn-comment">## A green tree&#39;s height, 1.3 times a small one&#39;s, a size chosen by eye.</span>
+<span class="syn-name">green_height</span> : <span class="syn-type">Distance</span>
+<span class="syn-name">green_height</span> = small_height.times(<span class="syn-number">1.3</span>)
+
+<span class="syn-name">green_color</span> : <span class="syn-type">RgbColor</span>
+<span class="syn-name">green_color</span> = <span class="syn-type">RgbColor</span>.of(<span class="syn-number">0x1C5A22</span>)
+
+<span class="syn-name">gold_color</span> : <span class="syn-type">RgbColor</span>
+<span class="syn-name">gold_color</span> = <span class="syn-type">RgbColor</span>.of(<span class="syn-number">0xCF9A18</span>)
+
+<span class="syn-name">red_color</span> : <span class="syn-type">RgbColor</span>
+<span class="syn-name">red_color</span> = <span class="syn-type">RgbColor</span>.of(<span class="syn-number">0xB23A2A</span>)
+
+<span class="syn-comment">## A conifer&#39;s foliage color.</span>
+<span class="syn-name">foliage_color</span> : <span class="syn-type">Conifer</span> -&gt; <span class="syn-type">RgbColor</span>
+<span class="syn-name">foliage_color</span> = |conifer|
+	<span class="syn-keyword">match</span> conifer {
+		<span class="syn-type">Green</span> | <span class="syn-type">SmallGreen</span> =&gt; green_color
+		<span class="syn-type">Gold</span> =&gt; gold_color
+		<span class="syn-type">Red</span> =&gt; red_color
+	}
+</code></pre></figure><p><code>Conifer</code> is a nominal type. A nominal type has a name, and Roc treats it as different from every other type, even one with exactly the same shape. Another union of <code>Green</code>, <code>SmallGreen</code>, <code>Red</code> and <code>Gold</code> would be a different type, and only a <code>Conifer</code> fits where a <code>Conifer</code> is expected. Its set of tags is fixed, too: the four the definition lists, and only those.</p>
+<p>The module&#39;s code shows these Roc concepts:</p>
+<table>
+<thead>
+<tr>
+<th>Concept</th>
+<th>Purpose</th>
+<th>Explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A nominal type</td>
+<td>Identity</td>
+<td><code>Conifer :=</code> gives <code>Conifer</code> a name of its own. Roc keeps it apart from every other type, even another union of the same four tags.</td>
+</tr>
+<tr>
+<td>A tag union</td>
+<td>Variants</td>
+<td>The backing type, <code>[Green, SmallGreen, Red, Gold]</code>, lists every sort of tree a <code>Conifer</code> can be, and the list is fixed.</td>
+</tr>
+<tr>
+<td>Methods</td>
+<td>Behavior</td>
+<td>Functions inside the type&#39;s braces: <code>scenery_<wbr>height</code> and <code>scenery_<wbr>sprite</code>. A value calls one with a dot, as in <code>conifer.<wbr>scenery_<wbr>height()</code>. The next chapter shows why they sit inside the braces.</td>
+</tr>
+<tr>
+<td>Privacy</td>
+<td>Hiding</td>
+<td>Everything outside the braces stays private to the module: the heights, the colors and <code>foliage_<wbr>color</code>. A call names a private function plainly: <code>foliage_<wbr>color(conifer)</code>.</td>
+</tr>
+<tr>
+<td>One branch, two tags</td>
+<td>Grouping</td>
+<td>In a <code>match</code>, <code>Green | SmallGreen =&gt;</code> gives both greens one color.</td>
+</tr>
+<tr>
+<td>Equality</td>
+<td>Comparison</td>
+<td><code>is_<wbr>eq : _<wbr></code> asks the compiler to write <code>==</code>, as it did for <code>Distance</code>, and here <code>==</code> compares tags.</td>
+</tr>
+</tbody>
+</table>
+<p><code>scenery_sprite</code> hands the height and the color to <code>TreeShapes.tree_sprite</code>, the function that produces the far tree&#39;s sprite. A module&#39;s definitions can come in any order, so the methods use values defined below them.</p>
+<p>So a kind describes a thing, and the pipeline does the rest. But the pipeline is one piece of code for every kind alike. So how does it get a height and a sprite out of a <code>Conifer</code>?</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-pipeline.html"><small>Previous</small>The pipeline</a>
+<a rel="next" href="asking-a-kind.html"><small>Next</small>Asking a kind</a>
+</nav>
+</main>
+<script src="embed.js"></script>
+</body>
+</html>

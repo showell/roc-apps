@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The pipeline · Safari Ride</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
+</head>
+<body class="chapter">
+<header class="top-bar">
+<a class="home-link" href="https://roc.lynrummy.com/">Steve's Roc Apps</a>
+<p class="draft-notice">This is an early draft.</p>
+<a class="repo-link" href="https://github.com/showell/roc-apps">roc-apps on GitHub</a>
+</header>
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Safari Ride</a>
+<ol>
+<li class="part">The big picture</li><li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="the-problem.html"><span class="number">2</span>The problem</a></li>
+<li><a href="platforms-packages-and-modules.html"><span class="number">3</span>Platforms, packages and modules</a></li>
+<li><a href="the-pieces-as-types.html"><span class="number">4</span>The pieces as types</a></li>
+<li><a href="things.html"><span class="number">5</span>Things</a></li>
+<li><a href="billboard-critters.html"><span class="number">6</span>Billboard Critters</a></li>
+<li><a href="shapes.html"><span class="number">7</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">8</span>A far tree</a></li>
+<li><a href="types-for-places.html"><span class="number">9</span>Types for places</a></li>
+<li class="here"><a href="the-pipeline.html"><span class="number">10</span>The pipeline</a><ol class="sections"><li><a href="the-pipeline.html#placed">Placed</a></li><li><a href="the-pipeline.html#sighted">Sighted</a></li><li><a href="the-pipeline.html#refused">Refused</a></li><li><a href="the-pipeline.html#rendered">Rendered</a></li><li><a href="the-pipeline.html#one-list">One list</a></li></ol></li>
+<li><a href="nature-types.html"><span class="number">11</span>Nature types</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Asking a kind</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Safari Ride</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 10</p>
+<h1 id="the-pipeline">The pipeline</h1>
+<p>Every frame, every thing beside the road takes the same trip to the screen. In the <a class="chapter-link" href="a-far-tree.html">“A far tree”</a> chapter, <code>TreeShapes.tree_sprite</code> takes a setting and gives back a tree&#39;s sprite. This chapter follows the trip around that function: where the setting comes from, and where the sprite goes. A tree, a cow, a radio tower, the cat, the bird and the truck each start from a place on the road and end as a rendering, a sprite with a depth, in the frame&#39;s one list. The <code>Pipeline</code> module holds the trip&#39;s types and the functions that sight and render, so we call the trip the pipeline.</p>
+<figure class="widget"><iframe class="canvas-app" src="../pipeline_widget/" title="Step 1,529 of the ride, with only what came through the pipeline: its trees, critters and towers, the cat and the truck." loading="lazy" style="aspect-ratio: 640 / 340"></iframe><figcaption>Step 1,529 of the ride, with only what came through the pipeline: its trees, critters and towers, the cat and the truck.</figcaption></figure><p>Here&#39;s the trip. The sections below follow its boxes, from <code>Geom.Placed</code> down:</p>
+<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="The pipeline" width="395pt" height="495pt"
+ viewBox="0.00 0.00 395.00 495.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 491)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-491 391,-491 391,4 -4,4"/>
+<g id="node1" class="node">
+<polygon fill="none" stroke="black" points="242.5,-487 128.5,-487 128.5,-451 242.5,-451 242.5,-487"/>
+<text text-anchor="middle" x="185.5" y="-472.4" font-family="Helvetica,sans-Serif" font-size="12.00">each kind&#39;s</text>
+<text text-anchor="middle" x="185.5" y="-459.4" font-family="Helvetica,sans-Serif" font-size="12.00">sighting module</text>
+</g>
+<g id="node2" class="node">
+<polygon fill="none" stroke="black" points="251.5,-377 119.5,-377 119.5,-341 251.5,-341 251.5,-377"/>
+<text text-anchor="middle" x="185.5" y="-355.9" font-family="Helvetica,sans-Serif" font-size="12.00">Geom.Placed(kind)</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M185.5,-450.65C185.5,-433.56 185.5,-407.22 185.5,-387.32"/>
+<polygon fill="black" stroke="black" points="189,-387.31 185.5,-377.31 182,-387.31 189,-387.31"/>
+<text text-anchor="middle" x="240" y="-417.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;gathers the ones</text>
+<text text-anchor="middle" x="240" y="-405.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;on the road ahead</text>
+</g>
+<g id="node3" class="node">
+<polygon fill="none" stroke="black" points="147,-261.5 0,-261.5 0,-225.5 147,-225.5 147,-261.5"/>
+<text text-anchor="middle" x="73.5" y="-240.4" font-family="Helvetica,sans-Serif" font-size="12.00">Pipeline.Sighted(kind)</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M119.44,-347.08C102.03,-340.88 85.15,-331.18 74.5,-316 65.61,-303.32 65.15,-286.03 67.01,-271.62"/>
+<polygon fill="black" stroke="black" points="70.46,-272.19 68.69,-261.75 63.56,-271.02 70.46,-272.19"/>
+<text text-anchor="middle" x="153" y="-307.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;is sighted by</text>
+<text text-anchor="middle" x="153" y="-295.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;a Pipeline sighting function</text>
+</g>
+<g id="node4" class="node">
+<polygon fill="none" stroke="black" points="387,-267 190,-267 190,-220 387,-220 387,-267"/>
+<text text-anchor="middle" x="288.5" y="-253.4" font-family="Helvetica,sans-Serif" font-size="12.00">a refusal:</text>
+<text text-anchor="middle" x="288.5" y="-240.4" font-family="Helvetica,sans-Serif" font-size="12.00">BehindCamera, BelowHorizon</text>
+<text text-anchor="middle" x="288.5" y="-227.4" font-family="Helvetica,sans-Serif" font-size="12.00">or TooSmall</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M212.13,-340.9C221.98,-333.87 232.84,-325.21 241.5,-316 252.74,-304.04 263.04,-289.08 271.1,-275.94"/>
+<polygon fill="black" stroke="black" points="274.2,-277.58 276.32,-267.2 268.19,-273.99 274.2,-277.58"/>
+<text text-anchor="middle" x="307" y="-301.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;or refused by it</text>
+</g>
+<g id="node5" class="node">
+<polygon fill="none" stroke="black" points="111.5,-146 35.5,-146 35.5,-110 111.5,-110 111.5,-146"/>
+<text text-anchor="middle" x="73.5" y="-124.9" font-family="Helvetica,sans-Serif" font-size="12.00">Rendered</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M73.5,-225.26C73.5,-206.91 73.5,-177.6 73.5,-156.14"/>
+<polygon fill="black" stroke="black" points="77,-156.03 73.5,-146.03 70,-156.03 77,-156.03"/>
+<text text-anchor="middle" x="135" y="-186.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;is rendered by</text>
+<text text-anchor="middle" x="135" y="-174.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;Pipeline.rendering_of</text>
+</g>
+<g id="node6" class="node">
+<polygon fill="none" stroke="black" points="115,-36 32,-36 32,0 115,0 115,-36"/>
+<text text-anchor="middle" x="73.5" y="-21.4" font-family="Helvetica,sans-Serif" font-size="12.00">one list,</text>
+<text text-anchor="middle" x="73.5" y="-8.4" font-family="Helvetica,sans-Serif" font-size="12.00">far to near</text>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M73.5,-109.65C73.5,-92.56 73.5,-66.22 73.5,-46.32"/>
+<polygon fill="black" stroke="black" points="77,-46.31 73.5,-36.31 70,-46.31 77,-46.31"/>
+<text text-anchor="middle" x="173.5" y="-76.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;is sorted by</text>
+<text text-anchor="middle" x="173.5" y="-64.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;Rendered.depth_sorted_renderings</text>
+</g>
+</g>
+</svg><svg class="diagram diagram-phone" role="img" aria-label="The pipeline" width="338pt" height="394pt"
+ viewBox="0.00 0.00 337.50 394.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 390)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-390 333.5,-390 333.5,4 -4,4"/>
+<g id="node1" class="node">
+<polygon fill="none" stroke="black" points="205.5,-386 101.5,-386 101.5,-350 205.5,-350 205.5,-386"/>
+<text text-anchor="middle" x="153.5" y="-371.4" font-family="Helvetica,sans-Serif" font-size="12.00">each kind&#39;s</text>
+<text text-anchor="middle" x="153.5" y="-358.4" font-family="Helvetica,sans-Serif" font-size="12.00">sighting module</text>
+</g>
+<g id="node2" class="node">
+<polygon fill="none" stroke="black" points="214.5,-304 92.5,-304 92.5,-268 214.5,-268 214.5,-304"/>
+<text text-anchor="middle" x="153.5" y="-282.9" font-family="Helvetica,sans-Serif" font-size="12.00">Geom.Placed(kind)</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M153.5,-349.64C153.5,-339.3 153.5,-325.94 153.5,-314.22"/>
+<polygon fill="black" stroke="black" points="157,-314.05 153.5,-304.05 150,-314.05 157,-314.05"/>
+<text text-anchor="middle" x="208" y="-330.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;gathers the ones</text>
+<text text-anchor="middle" x="208" y="-318.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;on the road ahead</text>
+</g>
+<g id="node3" class="node">
+<polygon fill="none" stroke="black" points="137,-211 0,-211 0,-175 137,-175 137,-211"/>
+<text text-anchor="middle" x="68.5" y="-189.9" font-family="Helvetica,sans-Serif" font-size="12.00">Pipeline.Sighted(kind)</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M92.44,-273.58C84.31,-269.59 76.92,-264.21 71.5,-257 63.97,-246.98 62.57,-233.33 63.33,-221.29"/>
+<polygon fill="black" stroke="black" points="66.82,-221.59 64.45,-211.26 59.86,-220.81 66.82,-221.59"/>
+<text text-anchor="middle" x="150" y="-248.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;is sighted by</text>
+<text text-anchor="middle" x="150" y="-236.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;a Pipeline sighting function</text>
+</g>
+<g id="node4" class="node">
+<polygon fill="none" stroke="black" points="290.5,-222 188.5,-222 188.5,-164 290.5,-164 290.5,-222"/>
+<text text-anchor="middle" x="239.5" y="-209.4" font-family="Helvetica,sans-Serif" font-size="12.00">a refusal:</text>
+<text text-anchor="middle" x="239.5" y="-196.4" font-family="Helvetica,sans-Serif" font-size="12.00">BehindCamera,</text>
+<text text-anchor="middle" x="239.5" y="-183.4" font-family="Helvetica,sans-Serif" font-size="12.00">BelowHorizon</text>
+<text text-anchor="middle" x="239.5" y="-170.4" font-family="Helvetica,sans-Serif" font-size="12.00">or TooSmall</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M213.86,-267.9C218.58,-264.84 222.9,-261.24 226.5,-257 232.43,-250.01 235.9,-241.02 237.87,-232.04"/>
+<polygon fill="black" stroke="black" points="241.35,-232.44 239.51,-222.01 234.44,-231.31 241.35,-232.44"/>
+<text text-anchor="middle" x="283" y="-242.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;or refused by it</text>
+</g>
+<g id="node5" class="node">
+<polygon fill="none" stroke="black" points="101.5,-118 35.5,-118 35.5,-82 101.5,-82 101.5,-118"/>
+<text text-anchor="middle" x="68.5" y="-96.9" font-family="Helvetica,sans-Serif" font-size="12.00">Rendered</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M68.5,-174.88C68.5,-161.79 68.5,-143.48 68.5,-128.36"/>
+<polygon fill="black" stroke="black" points="72,-128.04 68.5,-118.04 65,-128.04 72,-128.04"/>
+<text text-anchor="middle" x="130" y="-144.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;is rendered by</text>
+<text text-anchor="middle" x="130" y="-132.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;Pipeline.rendering_of</text>
+</g>
+<g id="node6" class="node">
+<polygon fill="none" stroke="black" points="105,-36 32,-36 32,0 105,0 105,-36"/>
+<text text-anchor="middle" x="68.5" y="-21.4" font-family="Helvetica,sans-Serif" font-size="12.00">one list,</text>
+<text text-anchor="middle" x="68.5" y="-8.4" font-family="Helvetica,sans-Serif" font-size="12.00">far to near</text>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M68.5,-81.64C68.5,-71.3 68.5,-57.94 68.5,-46.22"/>
+<polygon fill="black" stroke="black" points="72,-46.05 68.5,-36.05 65,-46.05 72,-46.05"/>
+<text text-anchor="middle" x="168.5" y="-62.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;is sorted by</text>
+<text text-anchor="middle" x="168.5" y="-50.2" font-family="Helvetica,sans-Serif" font-size="11.00"> &#160;Rendered.depth_sorted_renderings</text>
+</g>
+</g>
+</svg><figcaption>The pipeline</figcaption></figure><p>Each kind has a sighting module, such as <code>TreeSighting</code>. It gathers the placed things of its kind on the road ahead, and hands each one to a <code>Pipeline</code> function that sights it.</p>
+<h2 id="placed">Placed <a class="section-link" href="#placed" aria-label="Link to this section">§</a></h2>
+<p>The trip starts from where a thing stands on the road:</p>
+<figure class="listing"><figcaption>Geom.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## An object on one segment of the road, `lift` off the ground, and what</span>
+<span class="syn-comment">## kind of object it is. A tree is placed once for the whole ride, a cow</span>
+<span class="syn-comment">## from its herd whenever something asks for it, and a cat, a tower or the</span>
+<span class="syn-comment">## truck anew for each frame.</span>
+<span class="syn-comment">## `Pipeline.sighting_of` turns it into a `Pipeline.Sighted` for a frame.</span>
+<span class="syn-type">Placed</span>(kind) : {
+	road_point : <span class="syn-type">Geom.RoadPoint</span>,
+	lift : <span class="syn-type">Distance</span>,
+	kind : kind,
+}
+</code></pre></figure><p><code>road_point</code> is the thing&#39;s place on the road, a <code>RoadPoint</code> from the <a class="chapter-link" href="types-for-places.html">“Types for places”</a> chapter, and <code>lift</code> says how far off the ground it stands. <code>kind</code> says what the thing is. Its type is the type variable <code>kind</code>, so a placed tree is a <code>Geom.Placed(Conifer)</code>, and a placed cow is a <code>Geom.Placed(Billboard)</code>. The next chapter looks inside <code>Conifer</code>.</p>
+<h2 id="sighted">Sighted <a class="section-link" href="#sighted" aria-label="Link to this section">§</a></h2>
+<p>The screen shows what the camera sees. So for each frame, the pipeline sights every placed thing in play, and works out where it stands from the camera:</p>
+<figure class="listing"><figcaption>Pipeline.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## An object in the rider&#39;s view, and what kind of object it is, for one</span>
+<span class="syn-comment">## frame.</span>
+<span class="syn-type">Sighted</span>(kind) : { spot : <span class="syn-type">Spot</span>, kind : kind }
+</code></pre></figure><p>The <code>Spot</code> is the thing&#39;s place seen from the camera, as the <a class="chapter-link" href="types-for-places.html">“Types for places”</a> chapter showed. The kind rides along as it was. This <code>spot</code> is the one <code>tree_sprite</code> took from its setting in the <a class="chapter-link" href="a-far-tree.html">“A far tree”</a> chapter.</p>
+<h2 id="refused">Refused <a class="section-link" href="#refused" aria-label="Link to this section">§</a></h2>
+<p>Some placed things stay off the screen, so a sighting function&#39;s answer is a <code>Try</code>, Roc&#39;s type for an answer that can fail. A <code>Try</code> is one of two tags: <code>Ok</code>, holding the sighting, or <code>Err</code>, holding a tag that says why the thing is refused. Here&#39;s the first sighting function, whole:</p>
+<figure class="listing"><figcaption>Pipeline.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## `placed` as a camera at `vantage` sees it, on the segment that lies at</span>
+<span class="syn-comment">## `from_rider`, if it is at or past the camera&#39;s near plane.</span>
+<span class="syn-name">sighting_of</span> : <span class="syn-type">Geom.Placed</span>(kind),
+{
+	road : <span class="syn-type">RoadAhead.RoadView</span>,
+	vantage : <span class="syn-type">Geom.Vantage</span>,
+	from_rider : <span class="syn-type">SegmentFromRider</span>,
+} -&gt; <span class="syn-type">Try</span>(<span class="syn-type">Pipeline.Sighted</span>(kind), [<span class="syn-type">BehindCamera</span>])
+<span class="syn-name">sighting_of</span> = |placed, { road, vantage, from_rider }| {
+	road_point = placed.road_point
+	rider_point = <span class="syn-type">RoadAhead</span>.rider_point_at(road, { vantage, from_rider, road_point })
+	foot = <span class="syn-type">RiderView</span>.rider_point_ahead(rider_point)?
+	road_heading = <span class="syn-type">RoadAhead</span>.road_heading_at(road, { vantage, from_rider, road_point })
+	spot = <span class="syn-type">Spot</span>.at({ lift: placed.lift, foot, road_heading })
+	<span class="syn-type">Ok</span>({ spot, kind: placed.kind })
+}
+</code></pre></figure><p>Its answer is a <code>Try(Pipeline.Sighted(kind), [BehindCamera])</code>: a sighting, or the one refusal it can give. The body finds where the thing&#39;s foot lies from the rider, and the refusal comes from the <code>?</code> after <code>RiderView.rider_point_ahead(rider_point)</code>. That call gives back a <code>Try</code> of its own. When it&#39;s an <code>Err(BehindCamera)</code>, the <code>?</code> ends <code>sighting_of</code> right there with that <code>Err</code>. When it&#39;s an <code>Ok</code>, the <code>?</code> unwraps it, and <code>foot</code> is the point ahead. The last line wraps the spot and the kind in an <code>Ok</code>.</p>
+<p><code>Pipeline</code>&#39;s other sighting functions start from <code>sighting_of</code> and add tests of their own, so between them they refuse a thing with one of three tags:</p>
+<table>
+<thead>
+<tr>
+<th>Refusal</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BehindCamera</code></td>
+<td>It stands behind the camera, or too close in front of it to show.</td>
+</tr>
+<tr>
+<td><code>BelowHorizon</code></td>
+<td>The ground curves away with distance, so far enough off, the horizon hides all of it.</td>
+</tr>
+<tr>
+<td><code>TooSmall</code></td>
+<td>It would stand too small on the screen to be worth showing.</td>
+</tr>
+</tbody>
+</table>
+<p>The trees, the billboard critters, the cat and the bird are sighted by <code>Pipeline.scenery_sighting_of</code>, which takes all three tests. A radio tower and the truck are kept however small they look. So a tower is sighted by <code>Pipeline.sighting_above_horizon_of</code>, which skips the <code>TooSmall</code> test, and the truck by <code>Pipeline.sighting_of</code>, which takes only the <code>BehindCamera</code> test.</p>
+<p>Here are some things from step 1,529, the frame in the picture, and what their sightings decide. <code>right</code> and <code>forward</code> place each thing&#39;s foot from the camera, in metres, and a <code>forward</code> below zero is behind it. The road bends, so a tree on a segment far ahead can stand far to one side:</p>
+<table>
+<thead>
+<tr>
+<th>What it is</th>
+<th><code>right</code></th>
+<th><code>forward</code></th>
+<th>What its sighting decides</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The cat, frozen in the road</td>
+<td>0.38</td>
+<td>23.63</td>
+<td>kept</td>
+</tr>
+<tr>
+<td>The nearest tree, a big green one</td>
+<td>3.45</td>
+<td>21.63</td>
+<td>kept</td>
+</tr>
+<tr>
+<td>The nearest tree behind the camera, a gold one</td>
+<td>-8.09</td>
+<td>-8.36</td>
+<td><code>BehindCamera</code></td>
+</tr>
+<tr>
+<td>The nearest tree the horizon hides, a small green one</td>
+<td>-1,433.43</td>
+<td>446.00</td>
+<td><code>BelowHorizon</code></td>
+</tr>
+<tr>
+<td>A big green tree just past it</td>
+<td>-1,446.07</td>
+<td>473.21</td>
+<td>kept</td>
+</tr>
+<tr>
+<td>The radio tower past the end of the rider&#39;s segment</td>
+<td>20.40</td>
+<td>355.61</td>
+<td>kept</td>
+</tr>
+<tr>
+<td>The truck</td>
+<td>92.19</td>
+<td>489.15</td>
+<td>kept</td>
+</tr>
+</tbody>
+</table>
+<p>A small tree far off sinks below the horizon, while a taller one just past it still shows its top. Distance counts the whole way, sideways too: the hidden tree stands about 1,500 metres from the camera, and the truck about 500. Of the 214 trees on the segments in view, 136 are kept, 30 are behind the camera, and 48 are below the horizon. Each sighting module keeps its sightings with <code>keep_oks</code>, a <code>List</code> function, which keeps the <code>Ok</code> values of a list of <code>Try</code>s and drops the <code>Err</code>s. The truck&#39;s module hands its one <code>Try</code> to <code>Scene</code>, which renders the truck only for an <code>Ok</code>.</p>
+<h2 id="rendered">Rendered <a class="section-link" href="#rendered" aria-label="Link to this section">§</a></h2>
+<p>Each sighting that&#39;s kept is rendered by <code>Pipeline.rendering_of</code>, which the <a class="chapter-link" href="asking-a-kind.html">“Asking a kind”</a> chapter explains. It gives back a <code>Rendered</code>:</p>
+<figure class="listing"><figcaption>Rendered.roc, in Rendered</figcaption><pre><code class="language-roc"><span class="syn-type">Rendered</span> :: { depth : <span class="syn-type">Distance</span>, sprite : <span class="syn-type">Sprite</span> }.{
+
+	<span class="syn-comment">## The rendering of `sprite`, standing `depth` ahead of the camera.</span>
+	<span class="syn-name">of</span> : <span class="syn-type">Distance</span>, <span class="syn-type">Sprite</span> -&gt; <span class="syn-type">Rendered</span>
+	<span class="syn-name">of</span> = |depth, sprite| <span class="syn-type">Rendered</span>.({ depth, sprite })
+	<span class="syn-comment"># ...</span>
+</code></pre></figure><p>A <code>Rendered</code> holds a depth and a sprite, and those two alone. The <code>::</code> makes it opaque, as it does <code>Distance</code>. The sprite is what a kind&#39;s <code>scenery_sprite</code> gives back from a setting, and the depth is how far ahead of the camera the thing stands. The kind has done its job by now, and it&#39;s gone: a tree&#39;s rendering and a cow&#39;s have the same type.</p>
+<p>In a body, as here, <code>Rendered.({ depth, sprite })</code> builds a <code>Rendered</code> by wrapping the record. Among a function&#39;s arguments, as <code>Billboard.(billboard)</code> was, the same form takes one apart.</p>
+<h2 id="one-list">One list <a class="section-link" href="#one-list" aria-label="Link to this section">§</a></h2>
+<p>Every rendering has that one type, so a frame gathers them all in one list:</p>
+<figure class="listing"><figcaption>Scene.roc</figcaption><pre><code class="language-roc"><span class="syn-comment">## The scene&#39;s renderings far to near. The order of the fields they come</span>
+<span class="syn-comment">## from breaks ties, so the trees go before the birds: a perched bird stands</span>
+<span class="syn-comment">## at its tree&#39;s own depth and is drawn over it. It is public for</span>
+<span class="syn-comment">## FramePartsBench, which times the sort alone.</span>
+<span class="syn-name">scene_renderings</span> : <span class="syn-type">Scene</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Rendered</span>)
+<span class="syn-name">scene_renderings</span> = |scene|
+	<span class="syn-type">Rendered</span>.depth_sorted_renderings(
+		[
+			scene.trees,
+			scene.birds,
+			scene.towers,
+			scene.billboards,
+			scene.cats,
+			scene.trucks,
+			scene.rails,
+		].join(),
+	)
+</code></pre></figure><p>A <code>Scene</code> holds a list of renderings for each sort of thing, and <code>join</code> makes one list of them all. The guard rail along the road makes its own <code>Rendered</code>s, as a later chapter shows, and <code>scene.rails</code> joins them to the list. <code>Rendered.depth_sorted_renderings</code> sorts the list from far to near, and the platform paints it in that order, so a near thing covers a far one.</p>
+<p>So every thing beside the road makes the same trip: placed on the road, sighted by the camera, rendered as a sprite with a depth, and sorted into the frame&#39;s one list. Its kind rides through the first two types and is gone by the third. That leaves two questions, and the next two chapters answer them: what is a kind, and how does <code>rendering_of</code>, written once, get a sprite out of every kind?</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="types-for-places.html"><small>Previous</small>Types for places</a>
+<a rel="next" href="nature-types.html"><small>Next</small>Nature types</a>
+</nav>
+</main>
+<script src="embed.js"></script>
+</body>
+</html>

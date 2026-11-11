@@ -6,6 +6,7 @@
 <title>The problem · Safari Ride</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
+<script src="book.js" defer></script>
 </head>
 <body class="chapter">
 <header class="top-bar">
@@ -23,6 +24,11 @@
 <li><a href="things.html"><span class="number">5</span>Things</a></li>
 <li><a href="billboard-critters.html"><span class="number">6</span>Billboard Critters</a></li>
 <li><a href="shapes.html"><span class="number">7</span>Shapes</a></li>
+<li><a href="a-far-tree.html"><span class="number">8</span>A far tree</a></li>
+<li><a href="types-for-places.html"><span class="number">9</span>Types for places</a></li>
+<li><a href="the-pipeline.html"><span class="number">10</span>The pipeline</a></li>
+<li><a href="nature-types.html"><span class="number">11</span>Nature types</a></li>
+<li><a href="asking-a-kind.html"><span class="number">12</span>Asking a kind</a></li>
 </ol>
 </nav>
 <main>
@@ -30,7 +36,7 @@
 <article>
 <p class="chapter-number">Chapter 2</p>
 <h1 id="the-problem">The problem</h1>
-<p>Safari Ride shows a world in motion, seen from the rider&#39;s seat. It draws that world on the screen thirty frames a second, and whoever is watching can take the controls at any moment.</p>
+<p>Safari Ride shows a world in motion, seen from the rider&#39;s seat. Thirty times a second, it puts a new picture of that world on the screen. Each picture is a frame, and between frames a step moves the world on, so the pictures move. Whoever is watching can take the controls at any moment.</p>
 <p>That&#39;s what you see. For us, it&#39;s an engineering problem, and our first job is to break it into pieces we can build one at a time. A screen shows things from a world, and those come first. We hold one frame still and get it right before anything moves, and the controls come last. That plan costs something: the first half of the book holds one frame still. In return, every piece we build stands on a piece that already works. The plan gives the problem five pieces:</p>
 <figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="The five pieces" width="467pt" height="165pt"
  viewBox="0.00 0.00 467.00 165.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -178,7 +184,6 @@
 </tr>
 </tbody>
 </table>
-<p>The first three pieces give us one frame, held still. The last two set it moving, and put it in the viewer&#39;s hands. Next, we see where Roc code lives, and then we give each piece its types.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
