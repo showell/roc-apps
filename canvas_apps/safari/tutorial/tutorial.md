@@ -527,7 +527,9 @@ A tree needs a height and a color. Where it stands is the job of the forms aroun
 
 {{module Conifer}}
 
-`Conifer` is our third nominal type, after `RideInstant` and `BendAnimal`, and the first to show both halves of what `:=` gives. Like the opaque `Distance`, it's a new type, apart from any other union of the same four tags, and it carries its own methods in braces. Unlike `Distance`, its insides stay open: other modules use its tags directly, as the `Trees` module does when it writes `Conifer.Green`.
+`Conifer` is a nominal type. A nominal type is a new type with a name of its own: Roc keeps it apart from every other type, even one with the same tags or fields, and still lets any module see inside it. `RideInstant` and `BendAnimal` are nominal too.
+
+In the code, the `:=` is what makes `Conifer` nominal. The four tags in the square brackets are its insides, open to every module: the `Trees` module writes `Conifer.Green` to plant a green tree. The braces after them hold its methods, just as the opaque `Distance` holds its own.
 
 `Green | SmallGreen =>` is one branch for two tags, because both greens share a color. `is_eq : _` asks the compiler for `==`, as it did for `Distance`, and here `==` compares tags. `scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that drew the far tree.
 
