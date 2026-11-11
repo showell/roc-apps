@@ -527,7 +527,9 @@ A tree needs a height and a color. Where it stands is the job of the forms aroun
 
 {{module Conifer}}
 
-A kind is a type, and `Conifer` is the trees' kind. A `Conifer` is one of its four tags, one for each sort of tree. The `:=` makes it a nominal type, as it does `BendAnimal`, so other modules can use its tags. `Green | SmallGreen =>` is one branch for two tags, because both greens share a color. `is_eq : _` asks the compiler for `==`, as it did for `Distance`, and here `==` compares tags. `scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that drew the far tree.
+`Conifer` is our third nominal type, after `RideInstant` and `BendAnimal`, and the first to show both halves of what `:=` gives. Like the opaque `Distance`, it's a new type, apart from any other union of the same four tags, and it carries its own methods in braces. Unlike `Distance`, its insides stay open: other modules use its tags directly, as the `Trees` module does when it writes `Conifer.Green`.
+
+`Green | SmallGreen =>` is one branch for two tags, because both greens share a color. `is_eq : _` asks the compiler for `==`, as it did for `Distance`, and here `==` compares tags. `scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that drew the far tree.
 
 Inside the type's braces sit `scenery_height`, `scenery_sprite` and `is_eq`, and a value calls a function there with a dot: `conifer.scenery_height()`. The rest of the module sits outside: values, and a helper, which a call names plainly: `foliage_color(conifer)`. Definitions outside the braces stay private to the module. A module's definitions can come in any order. Why the two scenery functions sit inside the braces is the next chapter's subject.
 
