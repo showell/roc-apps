@@ -507,13 +507,13 @@ Every thing beside the road takes three forms on its way to the screen: placed o
 The four conifers, left to right: Green, SmallGreen, Red and Gold.
 ```
 
-A tree needs a height and a color. Where it stands is the job of the forms around it. So the `Conifer` type holds just the height and the color:
+A tree needs a height and a color. Where it stands is the job of the forms around it. So the `Conifer` type says which tree it is, and its methods give the height and the color:
 
 {{module Conifer}}
 
-A `Conifer` is one of four tags, one for each sort of tree. The `:=` makes it a nominal type, as it does `BendAnimal`, so other modules can use its tags. `Green | SmallGreen =>` is one branch for two tags, because both greens share a color. `is_eq : _` asks the compiler for `==`, as it did for `Distance`, and here `==` compares tags. `scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that drew the far tree.
+A kind is a type, and `Conifer` is the trees' kind. A `Conifer` is one of its four tags, one for each sort of tree. The `:=` makes it a nominal type, as it does `BendAnimal`, so other modules can use its tags. `Green | SmallGreen =>` is one branch for two tags, because both greens share a color. `is_eq : _` asks the compiler for `==`, as it did for `Distance`, and here `==` compares tags. `scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that drew the far tree.
 
-Inside the type's braces sit `scenery_height`, `scenery_sprite` and `is_eq`, and a value calls a function there with a dot: `conifer.scenery_height()`. The rest of the module sits outside: values, and a helper that only this module uses, which a call names plainly: `foliage_color(conifer)`. A module's definitions can come in any order. Why the two scenery functions sit inside the braces is the next chapter's subject.
+Inside the type's braces sit `scenery_height`, `scenery_sprite` and `is_eq`, and a value calls a function there with a dot: `conifer.scenery_height()`. The rest of the module sits outside: values, and a helper, which a call names plainly: `foliage_color(conifer)`. Definitions outside the braces stay private to the module. A module's definitions can come in any order. Why the two scenery functions sit inside the braces is the next chapter's subject.
 
 So a kind describes a thing, and the pipeline does the rest. But the pipeline is one piece of code for every kind alike. So how does it get a height and a sprite out of a `Conifer`?
 
@@ -555,11 +555,11 @@ Wherever a real type fills `kind`, such as `Conifer` in `tree_renderings`, the c
 
 ### Asking for a height
 
-Sighting a tree, a critter, the cat or the bird asks for the kind's height the same way. The sighting needs the height to tell whether the thing's top shows over the horizon, and whether it stands tall enough on the screen to draw. That's why `Conifer` keeps `scenery_height` inside its braces too:
+Sighting a tree, a billboard critter, the cat or the bird asks for the kind's height the same way. The sighting needs the height to tell whether the thing's top shows over the horizon, and whether it stands tall enough on the screen to draw. That's why `Conifer` keeps `scenery_height` inside its braces too:
 
 {{signatures Pipeline.scenery_sighting_of}}
 
-It takes the placed thing, and a record of the road ahead, the camera, and where the thing's segment lies from the rider. Its answer is a `Try`, one of two tags: `Ok`, holding a `Pipeline.Sighted(kind)`, or `Err`, holding the reason the sighting failed. The reasons are tags: `BehindCamera` and `BelowHorizon`, the refusals from "The pieces as types", and `TooSmall`, for a thing too small on the screen to draw. The ride's callers keep the `Ok`s and drop the rest. A radio tower is sighted by `sighting_above_horizon_of`, which carries the same `where` clause and uses the height for the horizon test alone, so the tower meets it too.
+It takes the placed thing, and a record of the road ahead, the camera, and where the thing's segment lies from the rider. Its answer is a `Try`, one of two tags: `Ok`, holding a `Pipeline.Sighted(kind)`, or `Err`, holding the reason the sighting failed. The reasons are tags: `BehindCamera` and `BelowHorizon`, the refusals from "The pieces as types", and `TooSmall`, for a thing too small on the screen to draw. The ride's callers keep the `Ok`s and drop the rest. A radio tower is drawn however small it looks, so it's sighted by `sighting_above_horizon_of`, which carries the same `where` clause and uses the height for the horizon test alone. The tower meets that clause too.
 
 ### Names that say what they're for
 
