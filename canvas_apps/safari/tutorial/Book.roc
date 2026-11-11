@@ -102,6 +102,7 @@ Book := [].{
 		{ chapter: "Billboard Critters", slug: "billboard-critters" },
 		{ chapter: "Shapes", slug: "shapes" },
 		{ chapter: "A far tree", slug: "a-far-tree" },
+		{ chapter: "Types for places", slug: "types-for-places" },
 		{ chapter: "The pipeline", slug: "the-pipeline" },
 		{ chapter: "Nature types", slug: "nature-types" },
 		{ chapter: "Asking a kind", slug: "asking-a-kind" },

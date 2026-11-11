@@ -74,7 +74,7 @@ RiderView :: [].{
 		}
 
 	## A point on the rider's level at or past the near plane, such as where an
-	## object stands. It has no height, so whatever is drawn above it says how
+	## object stands. It has no height, so whatever stands above it says how
 	## high with `at_height`. Only `rider_point_ahead` builds one.
 	RiderPointAhead :: RiderView.RiderPoint.{
 

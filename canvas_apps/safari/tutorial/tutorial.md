@@ -521,6 +521,38 @@ Cones take far more work to build, and far off they look just like triangles, so
 
 So a far tree is a handful of small functions over one list of tiers. The `expect` pins the tiers, each tier becomes a triangle, and one list puts the trunk first and the tiers over it. Every tree beside the road runs through this same code, wherever it stands.
 
+## Types for places
+
+Safari Ride measures a place in two ways: on the road, and from the camera. Each way has types of its own, and this chapter reads them. The next chapter moves every thing beside the road from the first to the second.
+
+### On the road
+
+A place on the road is a `Geom.RoadPoint`:
+
+{{code Geom.RoadPoint}}
+
+`along` is how far the place lies along its segment of road, and `across` is how far it lies from the middle of the road. Each is a type of its own around a number of metres, as `Distance` is:
+
+{{code Distance.Distance from "Distance ::" to "metres = |metres|"}}
+
+{{code Along.Along from "Along ::" to "metres = |metres|"}}
+
+An `Along` counts metres from the start of a segment, and an `Across` counts metres from the middle of the road, growing to the right. The compiler keeps the two apart, so a place along the road always goes where a place along the road belongs.
+
+### From the camera
+
+A place seen from the camera is a `Spot`:
+
+{{code Spot.Spot from "Spot ::" to "}.{"}}
+
+`lift` is how far off the ground the thing stands, and `road_heading` is which way the road runs there. `foot` is where the thing stands in the rider's view, and its type starts from a plain record of two distances:
+
+{{code RiderView.RiderPoint}}
+
+`right` and `forward` count metres from the camera, and a negative `forward` is behind it. A `RiderView.RiderPointAhead` is the same record behind a `::`, and only `RiderView.rider_point_ahead` builds one, from a point in front of the camera. So a spot's foot is always in front of the camera, by construction.
+
+So a place on the road is a `RoadPoint`, and a place seen from the camera is a `Spot`. A thing placed on the road holds the first, and a thing the camera sights holds the second. The {{chapter The pipeline}} chapter follows every thing from one to the other.
+
 ## The pipeline
 
 Every frame, every thing beside the road takes the same trip to the screen. In the {{chapter A far tree}} chapter, `TreeShapes.tree_sprite` takes a setting and gives back a tree's sprite. This chapter follows the trip around that function: where the setting comes from, and where the sprite goes. A tree, a cow, a radio tower, the cat, the bird and the truck each start from a place on the road and end as a rendering, a sprite with a depth, in the frame's one list. The `Pipeline` module holds the trip's types and the functions that sight and render, so we call the trip the pipeline.
