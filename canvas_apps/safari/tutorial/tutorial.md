@@ -485,11 +485,13 @@ The order of the shapes matters as much as the shapes. `tree_sprite` draws the w
 
 It takes the tree's setting and a record, and both come apart in its bars. `dimmed_foliage` darkens the foliage's color as dusk falls, and `trunk_color` is the trunk's brown, darkened the same way. `tier_inputs_of` works out what every tier needs, once for the whole tree. Among those are `base`, the middle of the tree's foot, and the tree's outline. `forward()` gives how far ahead of the camera the foot is. From that distance, `crown_of` and `trunk_finish_of` choose how much detail the tree gets, which we come to at the end of the chapter. For a far tree, `crown` is `Triangles`, and the trunk's finish is `Flat`.
 
-The last line puts the list together. `tiers.map(...)` makes one shape for each tier, top tier first, with `tier_shape`:
+The last line puts the list together. `[trunk]` is a list of one shape, and `concat` joins two lists into one, so the trunk comes first. The platform paints a list from first to last, so the tiers land on the trunk. Each tier also lands on the tier above it and covers that tier's bottom, which is where the overlap goes. `Sprite.from_shapes` makes the list the tree's sprite.
+
+`tiers.map(...)` makes one shape for each tier, top tier first, with `tier_shape`:
 
 {{code TreeShapes.tier_shape}}
 
-For `Triangles`, the last branch, `tier_shape` hands the outline and the tier, with its foliage color, to `tier_triangle`. The `Cones` branch is the near tree's. `[trunk]` is a list of one shape, and `concat` joins two lists into one, so the trunk comes first. The platform paints a list from first to last, so the tiers land on the trunk. Each tier also lands on the tier above it and covers that tier's bottom, which is where the overlap goes. `Sprite.from_shapes` makes the list the tree's sprite.
+For `Triangles`, the last branch, `tier_shape` hands the outline and the tier, with its foliage color, to `tier_triangle`. The `Cones` branch draws the near tree, and you can pass over it for now: the end of this chapter says what it does.
 
 ### What you're missing
 
