@@ -394,7 +394,7 @@ And here's the code that makes it:
 
 {{code ShapesWidgetApp.green_triangle}}
 
-The value is a `Triangle` tag with its record. The record names three corners, `first`, `second` and `third`, so every triangle has exactly three, by construction. A corner is a `Point.Point`, a record with an `x` and a `y`. `Point.at` makes one from two plain numbers, measured from the top left of the picture, with `y` growing downward. The picture is 640 pixels wide and 324 tall.
+The value is a `Triangle` tag with its record. The record names three corners, `first`, `second` and `third`, so every triangle has exactly three, by construction. A corner is a `Point`, a record with an `x` and a `y`. `Point.at` makes one from two plain numbers, measured from the top left of the picture, with `y` growing downward. The picture is 640 pixels wide and 324 tall.
 
 `Point.at` turns each of those numbers into a `Pixels`, an opaque type around an `F64`, like `Distance`. The ride works in metres on the road and in pixels on the screen, and two types keep the two apart, so each number says which one it is. Roc is just as happy with plain `F64`s, if you prefer that style. In a program that moves between the road and the screen all the time, the types earn their keep.
 
@@ -425,7 +425,7 @@ Here's the function:
 
 {{code Shapes.rectangle}}
 
-`|{ top_left, width, height, fill }|` takes the record apart, naming each of its fields. The body works out where the right and bottom edges are, with `plus`, which adds two `Pixels`. Then it gives the quad its four corners, clockwise from the top left. Each corner is a record of an `x` and a `y`, each a `Pixels`, which is all a `Point.Point` is. `Point.at` builds the same record from two plain numbers. Each side's two corners share an `x` or a `y`, so the sides are always square to the screen. The same picture app, showing its rectangle, hands the platform the background and then this quad.
+`|{ top_left, width, height, fill }|` takes the record apart, naming each of its fields. The body works out where the right and bottom edges are, with `plus`, which adds two `Pixels`. Then it gives the quad its four corners, clockwise from the top left. Each corner is a record of an `x` and a `y`, each a `Pixels`, which is all a `Point` is. `Point.at` builds the same record from two plain numbers. Each side's two corners share an `x` or a `y`, so the sides are always square to the screen. The same picture app, showing its rectangle, hands the platform the background and then this quad.
 
 That's both of a far tree's shapes. Next, we put them together, with functions of our own.
 
@@ -552,7 +552,7 @@ So a kind describes a thing, and the pipeline does the rest. But the pipeline is
 
 ## Asking a kind
 
-The pipeline is written once, for every kind of thing beside the road, yet each kind keeps its own look. In the picture below, one function renders five kinds of thing.
+One function, `Pipeline.rendering_of`, renders every kind of thing beside the road. Here it renders five of them:
 
 ```widget kinds
 A tree, a cow, a radio tower, the cat and the bird, each rendered by `Pipeline.rendering_of`, and each at its own distance so that it shows clearly.
@@ -560,7 +560,7 @@ A tree, a cow, a radio tower, the cat and the bird, each rendered by `Pipeline.r
 
 The Roc idea is the `where` clause. It asks a type variable for a method, and the compiler checks every type that fills the variable.
 
-`Pipeline.rendering_of` takes a sighting, with the focal length and the darkness that the whole frame shares, and it gives back a rendering: the thing's sprite, and how far ahead of the camera it stands. Only the kind knows what it looks like, so `rendering_of` asks the kind for its sprite, by calling the kind's own `scenery_sprite` method.
+`rendering_of` takes a sighting, with the focal length and the darkness that the whole frame shares, and it gives back a rendering: the thing's sprite, and how far ahead of the camera it stands. The sprite comes from the kind, so `rendering_of` calls the kind's own `scenery_sprite` method.
 
 Asking a kind for a method takes a new Roc idea. A sighting is a `Pipeline.Sighted(kind)`, and `kind` is a type variable, so it stands for any type at all: a number, a record or a `Conifer`. Only some types have a `scenery_sprite`. So `rendering_of` narrows `kind`: any type, as long as it has a `scenery_sprite`.
 
@@ -3523,7 +3523,7 @@ Eight patterns kept turning up in the tour. They're patterns in a loose sense: s
 | Rule and timeline | One function says how far along an animation is, and a timeline, plain data, says what the animal looks like at each stage | `BirdFlight.flight_stage` and `BirdFlight.flight_timeline` |
 | The step function | A value goes in, and the next value comes out | `Rider.rider_at_next_step`, `TruckJourney.truck_progress_at_next_step`, `Tour.step_forward` |
 | The chain of limits | One value passes through independent rules, each of which can only lower it | `Throttle.next_acceleration` |
-| One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `RaisedPoint`, `Point.Point` |
+| One record per space | Field names say which coordinate system a point is in | `RoadPoint`, `RiderPoint`, `RaisedPoint`, `Point` |
 | Rehearsal | Run the real rules on a pretend copy, read the result, and throw it away | `Coast`, `LeanSearch`, `Motorcycle.cross_bend_if_on_road` |
 
 Code that reads like configuration deserves a line of its own, because the tour kept stopping to admire it: `Pond`, `World.bending_plans`, the timelines, and `SafariApp.canvas_app`. None of them is a config format. They're ordinary Roc values, so the compiler checks them, and a tag that's misspelled is a compile-time error.
