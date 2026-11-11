@@ -522,7 +522,7 @@ So a kind describes a thing, and the pipeline does the rest. But the pipeline is
 The pipeline sights and renders every kind of thing with the same code. Here are five kinds it drew:
 
 ```widget kinds
-A tree, a cow, a radio tower, the cat and the bird, each drawn by the same function.
+A tree, a cow, a radio tower, the cat and the bird, each at its own distance so it shows clearly, and all drawn by the same function.
 ```
 
 The picture holds five kinds of thing, and one function drew all five: `Pipeline.rendering_of`. It takes a sighting of any kind, and it has to call that kind's own `scenery_sprite`. Yet `rendering_of` is written once, for trees, cows, towers, the cat and the bird alike.
