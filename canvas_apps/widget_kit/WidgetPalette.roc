@@ -49,4 +49,9 @@ WidgetPalette :: [].{
 	## shapes and the stills.
 	picture_background_color : RgbColor
 	picture_background_color = RgbColor.of(0xf7f5f0)
+
+	## Behind a frame of the ride drawn with some of its layers left out, so the
+	## things drawn have something to be seen against.
+	frame_background_color : RgbColor
+	frame_background_color = RgbColor.of(0xE8E6DF)
 }

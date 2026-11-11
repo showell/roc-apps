@@ -29,8 +29,9 @@ plain truck seen from behind, from behind and to the left, and from the left,
 `herd_widget` is a fixed picture of twenty numbered cows in a row, the calves
 among them half as tall, `bend_animals_widget` is a fixed picture of the four
 bend animals and their babies in a row, two pairs facing each way,
-`frame_widget` is a fixed picture of step 1,570 of the ride
-with the layers its address names, and `shapes_widget` is a fixed picture
+`frame_widget` is a fixed picture of step 1,529 of the ride
+with the layers its address names, `pipeline_widget` is a fixed picture of the
+same step with only what the pipeline renders, and `shapes_widget` is a fixed picture
 of a triangle and a rectangle, for the book to quote the code under it.
 
 Six of the twenty-eight — all but `safari`, `trick_or_treat` and the widgets — are

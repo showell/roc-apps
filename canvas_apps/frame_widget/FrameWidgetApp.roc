@@ -14,12 +14,12 @@ import game.Sky
 import game.Sun
 import game.Tour
 import lib.Brush
-import lib.RgbColor
 import lib.CanvasApp
 import lib.Input
 import lib.Pixels
 import lib.Point
 import lib.Shapes
+import widget.WidgetPalette
 import "page.html" as page_html : Str
 
 FrameWidgetApp :: [].{
@@ -177,16 +177,13 @@ canvas_width = Screen.width.to_f64()
 canvas_height : F64
 canvas_height = Screen.height.to_f64()
 
-plain_background_color : RgbColor
-plain_background_color = RgbColor.of(0xE8E6DF)
-
 ## Behind whatever is on, so a frame with no sky has something to be seen against.
 plain_background : Shapes.Shape
 plain_background = Shapes.rectangle({
 	top_left: Point.at(0.0, 0.0),
 	width: Pixels.of(canvas_width),
 	height: Pixels.of(canvas_height),
-	fill: Brush.flat(plain_background_color),
+	fill: Brush.flat(WidgetPalette.frame_background_color),
 })
 
 ## An address that names a layer has the page press Right once for each layer

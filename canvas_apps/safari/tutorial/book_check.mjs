@@ -192,6 +192,7 @@ const CLICKED_AT = {
   "../gaze_widget/": PLAY,
   "../herd_widget/": FIXED_PICTURE,
   "../kinds_widget/": FIXED_PICTURE,
+  "../pipeline_widget/": FIXED_PICTURE,
   "../rehearsal_widget/": { x: 0.12, y: 0.644 },
   "../route_widget/": FIXED_PICTURE,
   "../shapes_widget/": FIXED_PICTURE,

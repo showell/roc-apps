@@ -48,7 +48,8 @@ BookFence := [].{
 ## the cow's, `RouteWidgetApp.roc` the map's, `HerdWidgetApp.roc` the herd's,
 ## `BendAnimalsWidgetApp.roc` the bend animals', `FarTreeWidgetApp.roc` the far
 ## tree's, `ConifersWidgetApp.roc` the four conifers', `KindsWidgetApp.roc` the
-## five kinds', and `WidgetPage.roc` the other widgets'.
+## five kinds', `PipelineWidgetApp.roc` the pipeline's, and `WidgetPage.roc` the
+## other widgets'.
 Frame : {
 	folder : Str,
 	aspect : Str,
@@ -100,6 +101,11 @@ frame_of = |word| match word {
 	"kinds" => {
 		folder: "kinds_widget",
 		aspect: "640 / 240",
+		loading: Lazy,
+	}
+	"pipeline" => {
+		folder: "pipeline_widget",
+		aspect: "960 / 600",
 		loading: Lazy,
 	}
 	"shapes" => {
@@ -222,6 +228,13 @@ expect
 		== {
 			folder: "kinds_widget",
 			aspect: "640 / 240",
+			loading: Lazy,
+		}
+expect
+	frame_of("pipeline")
+		== {
+			folder: "pipeline_widget",
+			aspect: "960 / 600",
 			loading: Lazy,
 		}
 expect
