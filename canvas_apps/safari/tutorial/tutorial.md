@@ -511,7 +511,7 @@ A tree needs a height and a color. Where it stands is the job of the forms aroun
 
 {{module Conifer}}
 
-A `Conifer` is one of four tags, one for each sort of tree. The `:=` makes it a nominal type, as it does `BendAnimal`, so other modules can use its tags, and a `match` reads them directly. An opaque `Billboard` opens only inside its own module. `Green | SmallGreen =>` is one branch for two tags, because both greens share a color. `is_eq : _` asks the compiler for `==`, as it did for `Distance`, and here `==` compares tags. `scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that drew the far tree.
+A `Conifer` is one of four tags, one for each sort of tree. The `:=` makes it a nominal type, as it does `BendAnimal`, so other modules can use its tags. `Green | SmallGreen =>` is one branch for two tags, because both greens share a color. `is_eq : _` asks the compiler for `==`, as it did for `Distance`, and here `==` compares tags. `scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that drew the far tree.
 
 Inside the type's braces sit `scenery_height`, `scenery_sprite` and `is_eq`, and a value calls a function there with a dot: `conifer.scenery_height()`. The rest of the module sits outside: values, and a helper that only this module uses, which a call names plainly: `foliage_color(conifer)`. A module's definitions can come in any order. Why the two scenery functions sit inside the braces is the next chapter's subject.
 
@@ -533,7 +533,9 @@ Roc says that with a `where` clause:
 
 {{code Pipeline.rendering_of}}
 
-The annotation's second line is the clause. Its square brackets hold a list of requirements on the type variable `kind`, here one: the type that fills `kind` must have a `scenery_sprite` inside its braces, of the type after the colon. That's why `Conifer` keeps its `scenery_sprite` inside its braces. Roc calls a function inside a type's braces a method, the word the compiler uses below. In the body, `sighting.kind` holds a value of that type, for a tree one of `Conifer`'s tags, and `sighting.kind.scenery_sprite(...)` calls the kind's own function. `Sprite.LensAndLight` is the lens's focal length and the sky's darkness. `rendering_of` gives back a `Rendered`: the sprite, and how far ahead of the camera the thing stands.
+The annotation's second line is the clause. Its square brackets hold a list of requirements on the type variable `kind`, here one: the type that fills `kind` must have a `scenery_sprite` inside its braces, of the type after the colon. That's why `Conifer` keeps its `scenery_sprite` inside its braces. Roc calls a function inside a type's braces a method, the word the compiler uses below.
+
+In the clause, `kind` names the type: the clause says what the type must have. In the body, `sighting.kind` is the sighting's field, which holds a value of that type, for a tree one of `Conifer`'s tags, and `sighting.kind.scenery_sprite(...)` calls that type's own method. `Sprite.LensAndLight` holds what every thing in a frame shares, the lens's focal length and the sky's darkness, and `rendering_of` adds the sighting's own spot to make the `Sprite.Setting` that `scenery_sprite` takes. `rendering_of` gives back a `Rendered`: the sprite, and how far ahead of the camera the thing stands.
 
 ### The compiler checks every call
 
@@ -543,11 +545,11 @@ The ride renders its trees in one line:
 
 Here `kind` is `Conifer`. The compiler looks inside `Conifer`'s braces, finds a `scenery_sprite` of the right type, and the call compiles. It checks every other call the same way, one kind at a time.
 
-A call compiles only when its kind has the function. Here's a `Rock` with only a height, handed to `rendering_of`. The program is a small app of its own, which uses Safari Ride's modules as its `game` package. Its first and last lines only make it an app, and a `_` names an argument it leaves unused. Only the `Rock` and the call matter here:
+A call compiles only when its kind has the function. Here's a `Rock`, a kind that is just one tag, handed to `rendering_of`. The program is a small app of its own, which uses Safari Ride's modules as its `game` package. Its first and last lines only make it an app, and a `_` names an argument it leaves unused. Only the `Rock` and the call matter here:
 
 {{fails kind_without_sprite}}
 
-The message names the function the clause asks for, and the type it checked. The fix is a `scenery_sprite` inside `Rock`'s braces.
+The message names the function the clause asks for, and the type it checked. The fix is a `scenery_sprite` method for `Rock`, inside braces after its tags, as `Conifer` has.
 
 Wherever a real type fills `kind`, such as `Conifer` in `tree_renderings`, the compiler knows which `scenery_sprite` runs. So the choice is settled when the program compiles, once for each type.
 
@@ -557,7 +559,7 @@ Sighting a tree, a critter, the cat or the bird asks for the kind's height the s
 
 {{signatures Pipeline.scenery_sighting_of}}
 
-It takes the placed thing, and a record of the road ahead, the camera, and where the thing's segment lies from the rider. Its answer is a `Try`, one of two tags: `Ok`, holding a `Pipeline.Sighted(kind)`, or `Err`, holding the reason the sighting failed. The reasons are tags: `BehindCamera` and `BelowHorizon`, the refusals from "The pieces as types", and `TooSmall`, for a thing too small on the screen to draw. The ride's callers keep the `Ok`s and drop the rest. A radio tower is sighted by `sighting_above_horizon_of`, which asks for its height too, for the horizon test alone.
+It takes the placed thing, and a record of the road ahead, the camera, and where the thing's segment lies from the rider. Its answer is a `Try`, one of two tags: `Ok`, holding a `Pipeline.Sighted(kind)`, or `Err`, holding the reason the sighting failed. The reasons are tags: `BehindCamera` and `BelowHorizon`, the refusals from "The pieces as types", and `TooSmall`, for a thing too small on the screen to draw. The ride's callers keep the `Ok`s and drop the rest. A radio tower is sighted by `sighting_above_horizon_of`, which carries the same `where` clause and uses the height for the horizon test alone, so the tower meets it too.
 
 ### Names that say what they're for
 
