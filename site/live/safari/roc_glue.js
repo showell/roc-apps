@@ -24,29 +24,30 @@ const RocGlue = (() => {
   // F32
   const read_t4 = (view, at) => view.getFloat32(at, true);
 
-  // Box(t1)
-  const read_t5 = (view, at) => view.getUint32(at, true);
+  // {}
+  const read_t5 = (view, at) => null;
 
   // List(t7)
   const read_t6 = (view, at) => {
     const start = view.getUint32(at, true);
     const length = view.getUint32(at + 4, true);
     const out = [];
-    for (let i = 0; i < length; i++) out.push(read_t7(view, start + i * 184));
+    for (let i = 0; i < length; i++) out.push(read_t7(view, start + i * 216));
     return out;
   };
 
   // a tag union
   const read_t7 = (view, at) => {
-    switch (view.getUint8(at + 176)) {
+    switch (view.getUint8(at + 208)) {
       case 0: return ({ tag: "Blend", value: read_t8(view, at + 0) });
       case 1: return ({ tag: "Disc", value: read_t9(view, at + 0) });
-      case 2: return ({ tag: "Image", value: read_t20(view, at + 0) });
-      case 3: return ({ tag: "Poly", value: read_t23(view, at + 0) });
-      case 4: return ({ tag: "Rect", value: read_t25(view, at + 0) });
-      case 5: return ({ tag: "Text", value: read_t26(view, at + 0) });
-      case 6: return ({ tag: "View", value: read_t30(view, at + 0) });
-      default: throw new Error('roc_glue: no variant ' + view.getUint8(at + 176));
+      case 2: return ({ tag: "Image", value: read_t21(view, at + 0) });
+      case 3: return ({ tag: "Polygon", value: read_t24(view, at + 0) });
+      case 4: return ({ tag: "Quad", value: read_t26(view, at + 0) });
+      case 5: return ({ tag: "Text", value: read_t27(view, at + 0) });
+      case 6: return ({ tag: "Triangle", value: read_t31(view, at + 0) });
+      case 7: return ({ tag: "View", value: read_t32(view, at + 0) });
+      default: throw new Error('roc_glue: no variant ' + view.getUint8(at + 208));
     }
   };
 
@@ -60,56 +61,59 @@ const RocGlue = (() => {
   };
 
   // a record
-  const read_t9 = (view, at) => ({ fill: read_t10(view, at + 0), radius: read_t13(view, at + 144), x: read_t13(view, at + 152), y: read_t13(view, at + 160), });
+  const read_t9 = (view, at) => ({ center: read_t10(view, at + 0), fill: read_t12(view, at + 16), radius: read_t11(view, at + 160), });
+
+  // a record
+  const read_t10 = (view, at) => ({ x: read_t11(view, at + 0), y: read_t11(view, at + 8), });
+
+  // F64
+  const read_t11 = (view, at) => view.getFloat64(at, true);
 
   // a tag union
-  const read_t10 = (view, at) => {
+  const read_t12 = (view, at) => {
     switch (view.getUint8(at + 136)) {
-      case 0: return ({ tag: "Ellipse", value: read_t11(view, at + 0) });
+      case 0: return ({ tag: "Ellipse", value: read_t13(view, at + 0) });
       case 1: return ({ tag: "Flat", value: read_t15(view, at + 0) });
-      case 2: return ({ tag: "Glow", value: read_t16(view, at + 0) });
-      case 3: return ({ tag: "Linear", value: read_t17(view, at + 0) });
-      case 4: return ({ tag: "Radial", value: read_t18(view, at + 0) });
-      case 5: return ({ tag: "Span", value: read_t19(view, at + 0) });
+      case 2: return ({ tag: "Glow", value: read_t17(view, at + 0) });
+      case 3: return ({ tag: "Linear", value: read_t18(view, at + 0) });
+      case 4: return ({ tag: "Radial", value: read_t19(view, at + 0) });
+      case 5: return ({ tag: "Span", value: read_t20(view, at + 0) });
       default: throw new Error('roc_glue: no variant ' + view.getUint8(at + 136));
     }
   };
 
   // a record
-  const read_t11 = (view, at) => ({ axis_u: read_t12(view, at + 0), axis_v: read_t12(view, at + 16), center: read_t12(view, at + 32), stops: read_t14(view, at + 48), });
+  const read_t13 = (view, at) => ({ axis_u: read_t10(view, at + 0), axis_v: read_t10(view, at + 16), center: read_t10(view, at + 32), stops: read_t14(view, at + 48), });
 
   // a record
-  const read_t12 = (view, at) => ({ x: read_t13(view, at + 0), y: read_t13(view, at + 8), });
+  const read_t14 = (view, at) => ({ end_color: read_t15(view, at + 0), end_offset: read_t16(view, at + 32), start_color: read_t15(view, at + 40), start_offset: read_t16(view, at + 72), });
+
+  // a record
+  const read_t15 = (view, at) => ({ a: read_t16(view, at + 0), b: read_t16(view, at + 8), g: read_t16(view, at + 16), r: read_t16(view, at + 24), });
 
   // F64
-  const read_t13 = (view, at) => view.getFloat64(at, true);
+  const read_t16 = (view, at) => view.getFloat64(at, true);
 
   // a record
-  const read_t14 = (view, at) => ({ end_color: read_t15(view, at + 0), end_offset: read_t13(view, at + 32), start_color: read_t15(view, at + 40), start_offset: read_t13(view, at + 72), });
+  const read_t17 = (view, at) => ({ center: read_t10(view, at + 0), inner_color: read_t15(view, at + 16), inner_radius: read_t11(view, at + 48), middle_color: read_t15(view, at + 56), middle_offset: read_t16(view, at + 88), outer_color: read_t15(view, at + 96), outer_radius: read_t11(view, at + 128), });
 
   // a record
-  const read_t15 = (view, at) => ({ a: read_t13(view, at + 0), b: read_t13(view, at + 8), g: read_t13(view, at + 16), r: read_t13(view, at + 24), });
+  const read_t18 = (view, at) => ({ end_point: read_t10(view, at + 0), start_point: read_t10(view, at + 16), stops: read_t14(view, at + 32), });
 
   // a record
-  const read_t16 = (view, at) => ({ center: read_t12(view, at + 0), inner_color: read_t15(view, at + 16), inner_radius: read_t13(view, at + 48), middle_color: read_t15(view, at + 56), middle_offset: read_t13(view, at + 88), outer_color: read_t15(view, at + 96), outer_radius: read_t13(view, at + 128), });
+  const read_t19 = (view, at) => ({ center: read_t10(view, at + 0), inner_color: read_t15(view, at + 16), inner_radius: read_t11(view, at + 48), outer_color: read_t15(view, at + 56), outer_radius: read_t11(view, at + 88), });
 
   // a record
-  const read_t17 = (view, at) => ({ end_point: read_t12(view, at + 0), start_point: read_t12(view, at + 16), stops: read_t14(view, at + 32), });
+  const read_t20 = (view, at) => ({ edge_color: read_t15(view, at + 0), left_x: read_t11(view, at + 32), middle_color: read_t15(view, at + 40), right_x: read_t11(view, at + 72), });
 
   // a record
-  const read_t18 = (view, at) => ({ center: read_t12(view, at + 0), inner_color: read_t15(view, at + 16), inner_radius: read_t13(view, at + 48), outer_color: read_t15(view, at + 56), outer_radius: read_t13(view, at + 88), });
-
-  // a record
-  const read_t19 = (view, at) => ({ edge_color: read_t15(view, at + 0), left_x: read_t13(view, at + 32), middle_color: read_t15(view, at + 40), right_x: read_t13(view, at + 72), });
-
-  // a record
-  const read_t20 = (view, at) => ({ cols: read_t21(view, at + 0), height: read_t13(view, at + 8), rows: read_t21(view, at + 16), width: read_t13(view, at + 24), x: read_t13(view, at + 32), y: read_t13(view, at + 40), pixels: read_t22(view, at + 48), });
+  const read_t21 = (view, at) => ({ cols: read_t22(view, at + 0), height: read_t16(view, at + 8), rows: read_t22(view, at + 16), width: read_t16(view, at + 24), x: read_t16(view, at + 32), y: read_t16(view, at + 40), pixels: read_t23(view, at + 48), });
 
   // U64
-  const read_t21 = (view, at) => view.getBigUint64(at, true);
+  const read_t22 = (view, at) => view.getBigUint64(at, true);
 
   // List(t15)
-  const read_t22 = (view, at) => {
+  const read_t23 = (view, at) => {
     const start = view.getUint32(at, true);
     const length = view.getUint32(at + 4, true);
     const out = [];
@@ -118,25 +122,25 @@ const RocGlue = (() => {
   };
 
   // a record
-  const read_t23 = (view, at) => ({ fill: read_t10(view, at + 0), coordinates: read_t24(view, at + 144), });
+  const read_t24 = (view, at) => ({ fill: read_t12(view, at + 0), corners: read_t25(view, at + 144), });
 
-  // List(t13)
-  const read_t24 = (view, at) => {
+  // List(t10)
+  const read_t25 = (view, at) => {
     const start = view.getUint32(at, true);
     const length = view.getUint32(at + 4, true);
     const out = [];
-    for (let i = 0; i < length; i++) out.push(read_t13(view, start + i * 8));
+    for (let i = 0; i < length; i++) out.push(read_t10(view, start + i * 16));
     return out;
   };
 
   // a record
-  const read_t25 = (view, at) => ({ fill: read_t10(view, at + 0), height: read_t13(view, at + 144), width: read_t13(view, at + 152), x: read_t13(view, at + 160), y: read_t13(view, at + 168), });
+  const read_t26 = (view, at) => ({ fill: read_t12(view, at + 0), first: read_t10(view, at + 144), fourth: read_t10(view, at + 160), second: read_t10(view, at + 176), third: read_t10(view, at + 192), });
 
   // a record
-  const read_t26 = (view, at) => ({ color: read_t15(view, at + 0), size: read_t13(view, at + 32), x: read_t13(view, at + 40), y: read_t13(view, at + 48), text: read_t29(view, at + 56), align: read_t27(view, at + 68), face: read_t28(view, at + 69), });
+  const read_t27 = (view, at) => ({ color: read_t15(view, at + 0), size: read_t16(view, at + 32), x: read_t16(view, at + 40), y: read_t16(view, at + 48), text: read_t30(view, at + 56), align: read_t28(view, at + 68), face: read_t29(view, at + 69), });
 
   // a tag union
-  const read_t27 = (view, at) => {
+  const read_t28 = (view, at) => {
     switch (view.getUint8(at + 0)) {
       case 0: return ({ tag: "Center" });
       case 1: return ({ tag: "Left" });
@@ -145,7 +149,7 @@ const RocGlue = (() => {
   };
 
   // a tag union
-  const read_t28 = (view, at) => {
+  const read_t29 = (view, at) => {
     switch (view.getUint8(at + 0)) {
       case 0: return ({ tag: "Code" });
       case 1: return ({ tag: "Prose" });
@@ -154,59 +158,44 @@ const RocGlue = (() => {
   };
 
   // Str
-  const read_t29 = (view, at) => readStr(view, at);
+  const read_t30 = (view, at) => readStr(view, at);
+
+  // a record
+  const read_t31 = (view, at) => ({ fill: read_t12(view, at + 0), first: read_t10(view, at + 144), second: read_t10(view, at + 160), third: read_t10(view, at + 176), });
 
   // a tag union
-  const read_t30 = (view, at) => {
+  const read_t32 = (view, at) => {
     switch (view.getUint8(at + 48)) {
       case 0: return ({ tag: "Screen" });
-      case 1: return ({ tag: "World", value: read_t31(view, at + 0) });
+      case 1: return ({ tag: "World", value: read_t33(view, at + 0) });
       default: throw new Error('roc_glue: no variant ' + view.getUint8(at + 48));
     }
   };
 
   // a record
-  const read_t31 = (view, at) => ({ offset: read_t12(view, at + 0), rotation: read_t13(view, at + 16), target: read_t12(view, at + 24), zoom: read_t13(view, at + 40), });
-
-  // Box(t1)
-  const read_t32 = (view, at) => view.getUint32(at, true);
-
-  // Box(t1)
-  const read_t33 = (view, at) => view.getUint32(at, true);
+  const read_t33 = (view, at) => ({ offset: read_t10(view, at + 0), rotation: read_t16(view, at + 16), target: read_t10(view, at + 24), zoom: read_t16(view, at + 40), });
 
   // Box(t1)
   const read_t34 = (view, at) => view.getUint32(at, true);
 
-  // {}
-  const read_t35 = (view, at) => null;
+  // Box(t1)
+  const read_t35 = (view, at) => view.getUint32(at, true);
 
   // Box(t1)
   const read_t36 = (view, at) => view.getUint32(at, true);
 
-  // Box(t1)
-  const read_t37 = (view, at) => view.getUint32(at, true);
-
-  // Box(t1)
-  const read_t38 = (view, at) => view.getUint32(at, true);
-
-  // Box(t1)
-  const read_t39 = (view, at) => view.getUint32(at, true);
-
-  // Box(t1)
-  const read_t40 = (view, at) => view.getUint32(at, true);
-
   // What this platform provides:
   //   roc_advance : t2, t3, t3, t3, t3, t4, t4, t4 -> t0
   //   roc_fps : t5 -> t3
-  //   roc_frame : t32 -> t6
-  //   roc_height : t33 -> t3
-  //   roc_init : t35 -> t34
-  //   roc_release : t6 -> t35
+  //   roc_frame : t34 -> t6
+  //   roc_height : t5 -> t3
+  //   roc_init : t5 -> t35
+  //   roc_release : t6 -> t5
   //   roc_sounds : t36 -> t3
-  //   roc_tone_count : t37 -> t3
-  //   roc_tone_freq : t38, t3 -> t3
-  //   roc_tone_ms : t39, t3 -> t3
-  //   roc_width : t40 -> t3
+  //   roc_tone_count : t5 -> t3
+  //   roc_tone_freq : t3 -> t3
+  //   roc_tone_ms : t3 -> t3
+  //   roc_width : t5 -> t3
   // advance reads what roc_advance answers
   // fps reads what roc_fps answers
   // frame reads what roc_frame answers
@@ -219,5 +208,5 @@ const RocGlue = (() => {
   // tone_ms reads what roc_tone_ms answers
   // width reads what roc_width answers
 
-  return { read_t0, read_t2, read_t3, read_t4, read_t5, read_t6, read_t7, read_t8, read_t9, read_t10, read_t11, read_t12, read_t13, read_t14, read_t15, read_t16, read_t17, read_t18, read_t19, read_t20, read_t21, read_t22, read_t23, read_t24, read_t25, read_t26, read_t27, read_t28, read_t29, read_t30, read_t31, read_t32, read_t33, read_t34, read_t35, read_t36, read_t37, read_t38, read_t39, read_t40, advance: read_t0, fps: read_t3, frame: read_t6, height: read_t3, init: read_t34, release: read_t35, sounds: read_t3, tone_count: read_t3, tone_freq: read_t3, tone_ms: read_t3, width: read_t3 };
+  return { read_t0, read_t2, read_t3, read_t4, read_t5, read_t6, read_t7, read_t8, read_t9, read_t10, read_t11, read_t12, read_t13, read_t14, read_t15, read_t16, read_t17, read_t18, read_t19, read_t20, read_t21, read_t22, read_t23, read_t24, read_t25, read_t26, read_t27, read_t28, read_t29, read_t30, read_t31, read_t32, read_t33, read_t34, read_t35, read_t36, advance: read_t0, fps: read_t3, frame: read_t6, height: read_t3, init: read_t35, release: read_t5, sounds: read_t3, tone_count: read_t3, tone_freq: read_t3, tone_ms: read_t3, width: read_t3 };
 })();
