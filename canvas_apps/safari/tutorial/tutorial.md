@@ -19,7 +19,7 @@ You'll learn two things as you read: Roc, and how a ride like this one is animat
 
 ## The problem
 
-Safari Ride shows a world in motion, seen from the rider's seat. It draws that world on the screen thirty frames a second, and whoever is watching can take the controls at any moment.
+Safari Ride shows a world in motion, seen from the rider's seat. It draws that world on the screen thirty times a second. Each drawing is a frame, one still picture, and between frames a step moves the world on, so the pictures move. Whoever is watching can take the controls at any moment.
 
 That's what you see. For us, it's an engineering problem, and our first job is to break it into pieces we can build one at a time. A screen shows things from a world, and those come first. We hold one frame still and get it right before anything moves, and the controls come last. That plan costs something: the first half of the book holds one frame still. In return, every piece we build stands on a piece that already works. The plan gives the problem five pieces:
 
@@ -156,7 +156,7 @@ The whole route from above, one stretch of road for each plan. A mark in the mid
 
 ### The rider's view
 
-The screen shows only what the rider sees. So the camera sits where the rider sits, and faces where the rider looks. Each thing takes three forms on its way to the screen, and each form is a type. First, the thing is placed on the road:
+The screen shows only what the rider sees. So each frame is drawn as if by a camera on the rider: it sits where the rider sits, and faces where the rider looks. Each thing takes three forms on its way to the screen, and each form is a type. First, the thing is placed on the road:
 
 {{code Geom.Placed}}
 
@@ -166,15 +166,19 @@ Then the camera sights the thing:
 
 {{code Pipeline.Sighted}}
 
-A sighting keeps the kind, and adds a `Spot`: where the thing stands in the rider's view. From the spot, the thing's height and the camera's lens, we get where the thing lands on the screen, and how big it looks there. One rule gives both, the rule a pinhole camera follows: twice as far away looks half as big.
+A sighting keeps the kind, and adds a `Spot`: where the thing stands in the rider's view, so far ahead and so far to the side.
 
-The camera refuses a thing out of the rider's sight, with a tag that says why. `BehindCamera` means it's behind the camera, or too close to it to draw, and `BelowHorizon` means the curve of the earth hides it.
+From the spot, we work out where the thing lands on the screen, and how big it looks there. One rule gives both: twice as far away looks half as big.
+
+The camera refuses a thing out of the rider's sight, with a tag that says why. `BehindCamera` means it's behind the camera, or too close to draw, and `BelowHorizon` means it's too far off to show over the horizon.
 
 Last, the thing is rendered:
 
 {{code Rendered.Rendered from "Rendered ::" to "}.{"}}
 
-A rendering holds the thing's sprite, and its depth: how far ahead of the camera it stands. The kind is gone, so trees, cows and towers all meet in one list of renderings. The `DepthSort` module sorts that list far to near, and we paint it in that order, so nearer things cover farther ones.
+A rendering holds the thing's sprite, and its depth: how far ahead of the camera it stands. The kind is gone, so trees, cows and towers all meet in one list of renderings.
+
+To draw the frame, the `DepthSort` module sorts that list far to near, and we paint it in that order, as a painter paints the far hills before the near trees. So nearer things cover farther ones.
 
 ### Motion
 
@@ -182,7 +186,9 @@ So far the ride stands still. To set it moving, one record holds the whole ride 
 
 {{code RideInstant.RideInstant from "RideInstant := {" to "}.{"}}
 
-The `:=` makes `RideInstant` nominal: a new type, apart from every other record with the same fields, as an opaque type is. Any module can read a nominal type's fields. Those four fields are everything the ride carries from one step to the next: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. We derive everything else that changes from them. The sun goes down because the clock says so.
+The `:=` makes `RideInstant` nominal: a new type, apart from every other record with the same fields, as an opaque type is. Any module can read a nominal type's fields.
+
+Those four fields are everything the ride carries from one step to the next: the rider, the truck, the clock, and the plan for when the cat or the bird ahead starts to move. We derive everything else that changes from them. The sun goes down because the clock says so.
 
 A step is one function's job, and its type tells the story:
 
@@ -260,7 +266,7 @@ A setting is a record:
 
 {{code Sprite.Setting}}
 
-The `focal_length` says how strong the camera's lens is, in `Pixels`, the screen's unit of length: the longer it is, the bigger everything looks. The `darkness` says how dark the sky is, from 0 by day to 1 at night, so everything beside the road can dim as night falls.
+The `focal_length` says how strong the camera's lens is: the longer it is, the bigger everything looks, as when a camera zooms in. The `darkness` says how dark the sky is, from 0 by day to 1 at night, so everything beside the road can dim as night falls.
 
 The `spot` comes from a camera: it's what a sighting holds. So to draw the cow and the bull, the picture at the top of this chapter puts each one on the road by hand, the cow 10 metres ahead and 5 metres left of the middle, and lets a camera at the start of the road sight them. The rider's own camera comes in a later chapter.
 
@@ -455,7 +461,7 @@ Each tier also needs a top and a bottom. They follow a rule, so another `map` wo
 
 {{expect TreeShapes.tiers}}
 
-An `expect` is a test. Its body is a `Bool`, and `roc test` runs every `expect` in a program and reports each one that comes out `False`. This one turns each tier into a list of its three numbers, so that the table can be plain numbers. The table is the tiers, written out by hand. A division rounds its answer to the nearest `F64`, just as a written number does, so a whole number divided by 10 gives exactly the `F64` that writing the tenth gives, and `==` holds exactly. Change a width or the rule, and the test reports it.
+An `expect` is a test. Its body is a `Bool`, and `roc test` runs every `expect` in a program and reports each one that comes out `False`. This one turns each tier into a list of its three numbers, so that the table can be plain numbers. The table is the tiers, written out by hand. Change a width or the rule, and the test reports it.
 
 ### A triangle for each tier
 
@@ -471,7 +477,9 @@ Three small functions read the crown's place from the outline:
 
 {{code TreeShapes.tier_triangle}}
 
-It takes the outline and a record, and `|outline, { tier, foliage_color }|` takes the record apart into its fields, as `Shapes.rectangle` did. The body names four values on the way, each on a line of its own: `crown_top`, `bottom_y`, `top_y` and `half_base`. A name holds its value for the rest of the body, and the last expression, the `Triangle`, is what the function gives back. Like `Distance`, `Pixels` has its own `plus`, `minus` and `scaled_by`. `scaled_by` multiplies a length by a `Fraction`, and `minus` subtracts one length from another. On the screen, `y` grows downward, so `plus` moves down from the tip. The triangle's first corner sits on the tree's middle line at the tier's top. The other two sit at the tier's bottom, `half_base` to either side.
+It takes the outline and a record, and `|outline, { tier, foliage_color }|` takes the record apart into its fields, as `Shapes.rectangle` did. The body names four values on the way, each on a line of its own: `crown_top`, `bottom_y`, `top_y` and `half_base`. A name holds its value for the rest of the body, and the last expression, the `Triangle`, is what the function gives back. Like `Distance`, `Pixels` has its own `plus`, `minus` and `scaled_by`. `scaled_by` multiplies a length by a `Fraction`, and `minus` subtracts one length from another.
+
+On the screen, `y` grows downward, as it did in "Shapes", so `plus` moves down from the tip. The triangle's first corner sits on the tree's middle line at the tier's top. The other two sit at the tier's bottom, `half_base` to either side.
 
 ### Painting the tree
 
@@ -485,7 +493,9 @@ The order of the shapes matters as much as the shapes. `tree_sprite` draws the w
 
 {{code TreeShapes.tree_sprite}}
 
-It takes the tree's setting and a record, and `|{ spot, focal_length, darkness }, { height, foliage_color }|` takes each one apart into its fields. `dimmed_foliage` darkens the foliage's color as dusk falls, and `trunk_color` is the trunk's brown, darkened the same way. `tier_inputs_of` works out what every tier needs, once for the whole tree. Among those are `base`, the middle of the tree's foot, and the tree's outline. `forward()` gives how far ahead of the camera the foot is. From that distance, `crown_of` and `trunk_finish_of` choose how much detail the tree gets, which we come to at the end of the chapter. `crown_of` sits inside the `TreeShapes` type's braces, with the type's own functions, and every use of it carries the type's name, as `Billboard.Facing` does. For a far tree, `crown` is `Triangles`, and the trunk's finish is `Flat`.
+It takes the tree's setting and a record, and `|{ spot, focal_length, darkness }, { height, foliage_color }|` takes each one apart into its fields. `crown_of` sits inside the `TreeShapes` type's braces, with the type's own functions, and every use of it carries the type's name, as `Billboard.Facing` does.
+
+The body first darkens the foliage and the trunk's brown as dusk falls. Then `tier_inputs_of` works out what every tier needs, the tree's outline among them, once for the whole tree. `inputs.base.forward()` is how far ahead of the camera the tree's foot stands. From that distance, `crown_of` and `trunk_finish_of` choose how much detail the tree gets. For a far tree, `crown` is `Triangles`, and the trunk's finish is `Flat`. The end of the chapter says what nearer trees get.
 
 The last line puts the list together. `[trunk]` is a list of one shape, and `concat` joins two lists into one, so the trunk comes first. The platform paints a list from first to last, so the tiers land on the trunk. Each tier also lands on the tier above it and covers that tier's bottom, which is where the overlap goes. `Sprite.from_shapes` makes the list the tree's sprite.
 
@@ -497,7 +507,11 @@ The last line puts the list together. `[trunk]` is a list of one shape, and `con
 
 ### What you're missing
 
-Every tree 200 metres or more ahead of the camera is drawn this way: 200 metres is `cone_reach`. Nearer than that, the ride draws more. Each tier becomes a cone seen from the camera, which fattens as the rider passes under it, and the nearest cones are shaded. `round_trunk_reach` is 60 metres. Within it, `trunk_finish_of` gives `Shaded` in place of `Flat`, and the trunk looks round. `crown_of` and `trunk_finish_of` make those choices, and `tier_shape` draws the cones. Cones take far more work to draw, and far off they look just like triangles, so the ride spends that work only where it shows.
+Every tree 200 metres or more ahead of the camera is drawn this way: 200 metres is `cone_reach`. Nearer than that, the ride draws more. Each tier becomes a cone, which looks round and fattens as the rider passes under it, and the nearest cones are shaded. `crown_of` makes that choice, and `tier_shape` draws the cones.
+
+`round_trunk_reach` is 60 metres. Within it, `trunk_finish_of` gives `Shaded` in place of `Flat`, and the trunk looks round.
+
+Cones take far more work to draw, and far off they look just like triangles, so the ride spends that work only where it shows.
 
 So a far tree is a handful of small functions over one list of tiers. The `expect` pins the tiers, each tier becomes a triangle, and one list puts the trunk first and the tiers over it. Every tree beside the road runs through this same code, wherever it stands.
 
@@ -537,7 +551,9 @@ Roc says that with a `where` clause:
 
 The annotation's second line is the clause. Its square brackets hold a list of requirements on the type variable `kind`, here one: the type that fills `kind` must have a `scenery_sprite` inside its braces, of the type after the colon. That's why `Conifer` keeps its `scenery_sprite` inside its braces. Roc calls a function inside a type's braces a method, the word the compiler uses below.
 
-In the clause, `kind` names the type: the clause says what the type must have. In the body, `sighting.kind` is the sighting's field, which holds a value of that type, for a tree one of `Conifer`'s tags, and `sighting.kind.scenery_sprite(...)` calls that type's own method. `Sprite.LensAndLight` holds what every thing in a frame shares, the lens's focal length and the sky's darkness, and `rendering_of` adds the sighting's own spot to make the `Sprite.Setting` that `scenery_sprite` takes. `rendering_of` gives back a `Rendered`: the sprite, and how far ahead of the camera the thing stands.
+In the clause, `kind` names the type: the clause says what the type must have. In the body, `sighting.kind` is the sighting's field, which holds a value of that type, for a tree one of `Conifer`'s tags, and `sighting.kind.scenery_sprite(...)` calls that type's own method.
+
+The rest is the drawing. `Sprite.LensAndLight` holds what every thing in a frame shares, the lens's focal length and the sky's darkness, and `rendering_of` adds the sighting's own spot to make the `Sprite.Setting` that `scenery_sprite` takes. `rendering_of` gives back a `Rendered`: the sprite, and how far ahead of the camera the thing stands.
 
 ### The compiler checks every call
 
@@ -561,7 +577,11 @@ Sighting a tree, a billboard critter, the cat or the bird asks for the kind's he
 
 {{signatures Pipeline.scenery_sighting_of}}
 
-It takes the placed thing, and a record of the road ahead, the camera, and where the thing's segment lies from the rider. Its answer is a `Try`, one of two tags: `Ok`, holding a `Pipeline.Sighted(kind)`, or `Err`, holding the reason the sighting failed. The reasons are tags: `BehindCamera` and `BelowHorizon`, the refusals from "The pieces as types", and `TooSmall`, for a thing too small on the screen to draw. The ride's callers keep the `Ok`s and drop the rest. A radio tower is drawn however small it looks, so it's sighted by `sighting_above_horizon_of`, which carries the same `where` clause and uses the height for the horizon test alone. The tower meets that clause too.
+It takes the placed thing, and a record of the road ahead, the camera, and where the thing's segment lies from the rider.
+
+Its answer is a `Try`, one of two tags: `Ok`, holding a `Pipeline.Sighted(kind)`, or `Err`, holding the reason the sighting failed. The reasons are tags: `BehindCamera` and `BelowHorizon`, the refusals from "The pieces as types", and `TooSmall`, for a thing too small on the screen to draw. The ride's callers keep the `Ok`s and drop the rest.
+
+A radio tower is drawn however small it looks, so it's sighted by `sighting_above_horizon_of`, which carries the same `where` clause and uses the height for the horizon test alone. The tower meets that clause too.
 
 ### Names that say what they're for
 
