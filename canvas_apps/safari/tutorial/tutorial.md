@@ -441,7 +441,7 @@ In a type, square brackets list tags. In a value, as here, they make a list, and
 
 ### Tops and bottoms
 
-Each tier also needs a top and a bottom. They follow a rule, so a function works them out:
+Each tier also needs a top and a bottom. They follow a rule, so another `map` works them out:
 
 {{code TreeShapes.tiers}}
 
@@ -453,7 +453,7 @@ Each tier also needs a top and a bottom. They follow a rule, so a function works
 
 {{expect TreeShapes.tiers}}
 
-An `expect` is a test. Its body is a `Bool`, and `roc test` runs every `expect` in a program and reports each one that comes out `False`. This one turns each tier into a list of its three numbers, so that the table can be plain numbers. The table is the tiers, written out by hand. A whole number divided by 10 gives exactly the `F64` that writing the tenth gives, so `==` holds exactly. Change a width or the rule, and the test reports it.
+An `expect` is a test. Its body is a `Bool`, and `roc test` runs every `expect` in a program and reports each one that comes out `False`. This one turns each tier into a list of its three numbers, so that the table can be plain numbers. The table is the tiers, written out by hand. A division rounds its answer to the nearest `F64`, just as a written number does, so a whole number divided by 10 gives exactly the `F64` that writing the tenth gives, and `==` holds exactly. Change a width or the rule, and the test reports it.
 
 ### A triangle for each tier
 
@@ -469,7 +469,7 @@ Three small functions read the crown's place from the outline:
 
 {{code TreeShapes.tier_triangle}}
 
-It takes the outline and a record, and its bars take the record apart, as `Shapes.rectangle` did. The body names four values on the way, each on a line of its own: `crown_top`, `bottom_y`, `top_y` and `half_base`. A name holds its value for the rest of the body, and the last expression, the `Triangle`, is what the function gives back. `scaled_by` multiplies a length by a `Fraction`, and `minus` subtracts one length from another. On the screen, `y` grows downward, so `plus` moves down from the tip. The triangle's first corner sits on the tree's middle line at the tier's top. The other two sit at the tier's bottom, `half_base` to either side.
+It takes the outline and a record, and its bars take the record apart, as `Shapes.rectangle` did. The body names four values on the way, each on a line of its own: `crown_top`, `bottom_y`, `top_y` and `half_base`. A name holds its value for the rest of the body, and the last expression, the `Triangle`, is what the function gives back. Like `Distance`, `Pixels` has its own `plus`, `minus` and `scaled_by`. `scaled_by` multiplies a length by a `Fraction`, and `minus` subtracts one length from another. On the screen, `y` grows downward, so `plus` moves down from the tip. The triangle's first corner sits on the tree's middle line at the tier's top. The other two sit at the tier's bottom, `half_base` to either side.
 
 ### Painting the tree
 
@@ -483,13 +483,17 @@ The order of the shapes matters as much as the shapes. `tree_sprite` draws the w
 
 {{code TreeShapes.tree_sprite}}
 
-It takes the tree's setting and a record, and both come apart in its bars. `dimmed_foliage` darkens the foliage's color as dusk falls. `tier_inputs_of` works out what every tier needs, the tree's outline among them, once for the whole tree. `crown_of` and `trunk_finish_of` choose how much detail the tree gets at its distance, which we come to at the end of the chapter. For a far tree, `crown` is `Triangles`, and the trunk's finish is `Flat`.
+It takes the tree's setting and a record, and both come apart in its bars. `dimmed_foliage` darkens the foliage's color as dusk falls, and `trunk_color` is the trunk's brown, darkened the same way. `tier_inputs_of` works out what every tier needs, once for the whole tree. Among those are `base`, the middle of the tree's foot, and the tree's outline. `forward()` gives how far ahead of the camera the foot is. From that distance, `crown_of` and `trunk_finish_of` choose how much detail the tree gets, which we come to at the end of the chapter. For a far tree, `crown` is `Triangles`, and the trunk's finish is `Flat`.
 
-The last line puts the list together. `tiers.map(...)` makes one shape for each tier, top tier first, and for a far tree `tier_shape` answers with `tier_triangle`'s triangle. `[trunk]` is a list of one shape, and `concat` joins two lists into one, so the trunk comes first. The platform paints a list from first to last, so the tiers land on the trunk. Each tier also lands on the tier above it and covers that tier's bottom, which is where the overlap goes. `Sprite.from_shapes` makes the list the tree's sprite.
+The last line puts the list together. `tiers.map(...)` makes one shape for each tier, top tier first, with `tier_shape`:
+
+{{code TreeShapes.tier_shape}}
+
+For `Triangles`, the last branch, `tier_shape` hands the outline and the tier, with its foliage color, to `tier_triangle`. The `Cones` branch is the near tree's. `[trunk]` is a list of one shape, and `concat` joins two lists into one, so the trunk comes first. The platform paints a list from first to last, so the tiers land on the trunk. Each tier also lands on the tier above it and covers that tier's bottom, which is where the overlap goes. `Sprite.from_shapes` makes the list the tree's sprite.
 
 ### What you're missing
 
-Every tree 200 metres or more ahead of the camera is drawn this way. Nearer than that, the ride draws more. Each tier becomes a cone seen from the camera, which fattens as the rider passes under it, and the nearest cones are shaded. Within 60 metres, `trunk_finish_of` gives `Shaded` in place of `Flat`, and the trunk looks round. `crown_of` and `trunk_finish_of` make those choices, and `tier_shape` draws the cones. Cones take far more work to draw, and far off they look just like triangles, so the ride spends that work only where it shows.
+Every tree 200 metres or more ahead of the camera is drawn this way: 200 metres is `cone_reach`. Nearer than that, the ride draws more. Each tier becomes a cone seen from the camera, which fattens as the rider passes under it, and the nearest cones are shaded. `round_trunk_reach` is 60 metres. Within it, `trunk_finish_of` gives `Shaded` in place of `Flat`, and the trunk looks round. `crown_of` and `trunk_finish_of` make those choices, and `tier_shape` draws the cones. Cones take far more work to draw, and far off they look just like triangles, so the ride spends that work only where it shows.
 
 So a far tree is a handful of small functions over one list of tiers. The `expect` pins the tiers, each tier becomes a triangle, and one list puts the trunk first and the tiers over it. Every tree beside the road runs through this same code, wherever it stands.
 
