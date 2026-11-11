@@ -561,7 +561,7 @@ It takes the placed thing, and a record of the road ahead, the camera, and where
 
 ### Names that say what they're for
 
-Roc matches a `where` by name and type alone, so any type with a function of that name and that type inside its braces meets it. Suppose the clause asked for a method called just height. The bird might well have one that says how high it flies, and the sighting would test the bird against the wrong number, with no complaint from the compiler. So the names say what they're for. The word "scenery" at the front of each one makes an accidental match unlikely, and a kind meets the pipeline on purpose.
+Roc matches a `where` by name and type alone, so any type with a function of that name and that type inside its braces meets it. Suppose the clause asked for a method called just height. The bird might well have one that says how high it flies, and the sighting would test the bird against the wrong number, while the compiler stays quiet. So the names say what they're for. The word "scenery" at the front of each one makes an accidental match unlikely, and a kind meets the pipeline on purpose.
 
 So a kind meets the pipeline by having two functions inside its braces, a height and a sprite. The tree, the cow, the radio tower, the cat and the bird all do, and one function draws them all.
 
