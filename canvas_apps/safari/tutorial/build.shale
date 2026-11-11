@@ -22,6 +22,11 @@
 --
 -- `{{module Clock}}` becomes one fenced block holding all of Clock.roc.
 --
+-- `{{expect TreeShapes.tiers}}` becomes one fenced block holding the `expect`
+-- that comes right after the definition of `tiers`, with the `#` comment lines
+-- directly above it. A definition with no `expect` right after it stops the
+-- build.
+--
 -- `{{signatures Sky.dusk_while_up Sky.dusk_after_set}}` becomes one fenced block
 -- holding those functions' annotations and nothing else, in the order given. They
 -- come from one module, because a block has one title. A name without an
@@ -85,11 +90,12 @@ const SIGNATURES = "^\\{\\{signatures ([A-Z][A-Za-z0-9_.! ]*[a-zA-Z0-9_!])\\}\\}
 const SIGNATURE_NAME = "^([A-Z][A-Za-z0-9_]*)\\.([a-z_][A-Za-z0-9_]*!?)$"
 const TYPES_ROW = "^\\{\\{types row ([A-Z][A-Za-z0-9_]*)\\.([a-z_][A-Za-z0-9_]*!?)(?: ([^}]+))?\\}\\}$"
 const FAILS = "^\\{\\{fails ([a-z][a-z0-9_]*)\\}\\}$"
+const EXPECT_AFTER = "^\\{\\{expect ([A-Z][A-Za-z0-9_]*)\\.([A-Za-z_][A-Za-z0-9_]*!?)\\}\\}$"
 const WHOLE_MODULE = "^\\{\\{module ([A-Z][A-Za-z0-9_]*|web)\\}\\}$"
 const PROOF_ROW = "^\\{\\{proof row ([0-9]+) ([^}]+)\\}\\}$"
 const PROOF_HASH = "^RasterFrame ([0-9]+): hash ([0-9a-f]+)$"
 const PROOF_SHAPES = "^ShapesFrame ([0-9]+): differ 0 of [0-9]+, triangles [0-9]+, shapes ([0-9]+)$"
-const NOT_AN_INCLUDE = "not a line of the form {{code Module.name}}, {{code Module.name from \"text\" to \"text\"}}, {{module Name}}, {{signatures Module.name Module.name}}, {{types row Module.name words}}, {{proof row N words}} or {{fails name}}"
+const NOT_AN_INCLUDE = "not a line of the form {{code Module.name}}, {{code Module.name from \"text\" to \"text\"}}, {{module Name}}, {{signatures Module.name Module.name}}, {{types row Module.name words}}, {{expect Module.name}}, {{proof row N words}} or {{fails name}}"
 const NO_TITLE = "a diagram needs a title line directly above it"
 const CUT = "# ..."
 const PROOF_FILE = "/gates/proof.expected"
@@ -149,7 +155,12 @@ function read_entries(source, text, folder)
       local proof_row = re_find(l, PROOF_ROW)
       local signatures = re_find(l, SIGNATURES)
       local types_row = re_find(l, TYPES_ROW)
-      if signatures ~= nil then
+      local expect_after = re_find(l, EXPECT_AFTER)
+      if expect_after ~= nil then
+        entry.module = expect_after.groups[1]
+        entry.expect_after = expect_after.groups[2]
+        entry.path = module_path(entry, folder, entry.module)
+      elseif signatures ~= nil then
         entry.signatures = signature_names(entry, signatures.groups[1])
         entry.path = module_path(entry, folder, entry.module)
       elseif types_row ~= nil then
@@ -414,6 +425,41 @@ function fenced_definition(entry, tree, folder, notes)
   return titled_block(title, "roc", text)
 end
 
+-- The `expect` statement right after the definition of `name`, in the block
+-- that defines it, or nil when the statement after it is something else.
+function expect_after_definition(nodes, module, name)
+  for block in searched_blocks(nodes, module) do
+    local found = nil
+    for k in block.kids do
+      local s = nodes[k]
+      if defined_name(nodes, s) == name then
+        found = s
+      elseif found ~= nil then
+        if s.kind == "s-expect" then return s end
+        return nil
+      end
+    end
+  end
+  return nil
+end
+
+function fenced_expect(entry, tree, folder, notes)
+  if tree.err ~= "" then stop(entry, "roc-ast refused " .. entry.path .. ": " .. tree.err) end
+  local name = entry.expect_after
+  local statement = expect_after_definition(tree.nodes, entry.module, name)
+  if statement == nil then stop(entry, "no expect right after " .. name .. " in " .. entry.path) end
+  local source_lines = split(read(entry.path), "\n")
+  local first = statement.line
+  while first > 1 and starts_with(trim(source_lines[first - 1]), "#") and not starts_with(trim(source_lines[first - 1]), "##") do
+    first = first - 1
+  end
+  local kept = span_lines(entry, source_lines, first, statement)
+  local text = join(whole_lines(kept), "\n")
+  check_quoted(entry, text)
+  push(notes, {path = entry.path, parts = {kept_part(kept, 1, #kept, 0)}})
+  return titled_block(shown_path(folder, entry.path) .. ", the expect after " .. name, "roc", text)
+end
+
 function fenced_module(entry, folder, notes)
   local text = trim(read(entry.whole_module))
   check_quoted(entry, text)
@@ -559,6 +605,9 @@ function build(source, output, folder)
     elseif has_key(e, "types_name") then
       push(kept, types_table_row(e, trees[e.path]))
       expanded = expanded + 1
+    elseif has_key(e, "expect_after") then
+      push(kept, fenced_expect(e, trees[e.path], folder, notes))
+      expanded = expanded + 1
     elseif has_key(e, "path") then
       push(kept, fenced_definition(e, trees[e.path], folder, notes))
       expanded = expanded + 1
@@ -618,6 +667,10 @@ top_function = |x| x
 
 ## A constant.
 top_constant = 2.0
+
+# What the constant is.
+expect
+	top_constant == 2.0
 
 ## A type.
 TopType : { a : F64 }
@@ -838,6 +891,9 @@ end
 -- Both sides of the block of signatures and the table's types.
 function check_annotation_rules(checks, folder)
   local zoo = folder .. "/Zoo.roc"
+  expect_block(checks, folder, "{{expect Zoo.top_constant}}", "Zoo.roc, the expect after top_constant", "# What the constant is.\nexpect\n\ttop_constant == 2.0")
+  expect_stop(checks, folder, "{{expect Zoo.top_function}}", "no expect right after top_function in " .. zoo)
+  expect_stop(checks, folder, "{{expect Zoo.nope}}", "no expect right after nope in " .. zoo)
   expect_block(checks, folder, "{{signatures Zoo.feed}}", "Zoo.roc", "feed : Cage -> F64")
   expect_block(checks, folder, "{{signatures Zoo.feed Zoo.top_function}}", "Zoo.roc", "feed : Cage -> F64\ntop_function : F64 -> F64")
   expect_block(checks, folder, "{{signatures Zoo.top_function Zoo.feed}}", "Zoo.roc", "top_function : F64 -> F64\nfeed : Cage -> F64")
@@ -938,7 +994,7 @@ function self_test()
   expect_stop(checks, folder, "{{code Zoo.amount}}", "no such name in " .. zoo)
   expect_stop(checks, folder, "{{code Zoo.inside_pen}}", "no such name in " .. zoo)
   expect_stop(checks, folder, "{{code Zoo.in_wild}}", "no such name in " .. zoo)
-  expect_stop(checks, folder, "{{code Zoo.both}}", "found 2 times in " .. zoo .. ", at lines 25, 45")
+  expect_stop(checks, folder, "{{code Zoo.both}}", "found 2 times in " .. zoo .. ", at lines 25, 49")
   expect_stop(checks, folder, "{{code Gone.feed}}", "no module file " .. folder .. "/Gone.roc")
   expect_stop(checks, folder, "{{module Gone}}", "no module file " .. folder .. "/Gone.roc")
   expect_block(checks, folder, "{{module Tight}}", "Tight.roc, the whole file", trim(TIGHT))

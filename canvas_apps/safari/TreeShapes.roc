@@ -164,7 +164,7 @@ tiers = tier_widths.map_with_index(
 	},
 )
 
-# The tiers are exactly the hand-written table they replaced.
+# Each tier's top, bottom and width, top tier first.
 expect
 	tiers.map(|tier| [tier.top.to_f64(), tier.bottom.to_f64(), tier.width.to_f64()])
 		== [
