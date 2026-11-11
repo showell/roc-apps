@@ -76,6 +76,11 @@ app="$1"
 mkdir -p "$LIVE"
 if [ "$app" = home ]; then
     [ -f "$NEXT/index.html" ] || { echo "no landing page at $NEXT; run site/build.sh first"; exit 2; }
+    # Dev must show the landing page as site/web has it, or this would publish
+    # an older one and say nothing.
+    if ! diff -q "$HERE/web/index.html" "$NEXT/index.html" > /dev/null || ! diff -rq "$HERE/web/shared" "$NEXT/shared" > /dev/null; then
+        echo "dev's landing page is older than site/web/; run site/build.sh, look at http://143.244.172.148:9210/, then publish"; exit 2
+    fi
     cp "$NEXT/index.html" "$LIVE/"
     rm -rf "$LIVE/shared"
     cp -r "$NEXT/shared" "$LIVE/"
@@ -126,6 +131,9 @@ else
 fi
 [ "${PUBLISH_DRY_RUN:-}" = 1 ] && { echo "dry run: nothing committed"; exit 0; }
 git -C "$REPO" add -A -- "${paths[@]}"
+if git -C "$REPO" diff --cached --quiet -- "${paths[@]}"; then
+    echo "staging already has $what as dev shows it; nothing to publish"; exit 0
+fi
 git -C "$REPO" commit -q -m "site: publish $what to staging
 
 $([ "$app" = home ] || cat "$LIVE/$app/PROVENANCE")" -- "${paths[@]}"
