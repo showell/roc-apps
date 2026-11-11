@@ -523,13 +523,13 @@ So a far tree is a handful of small functions over one list of tiers. The `expec
 
 ## The pipeline
 
-Every frame, every thing beside the road takes the same trip to the screen. A tree, a cow, the cat and the truck each start from a place on the road and end as a sprite in one list, the frame's. The `Pipeline` module carries them along that trip, so we call it the pipeline.
+Every frame, every thing beside the road takes the same trip to the screen. A tree, a cow, the cat and the truck each start from a place on the road and end as a rendering, a sprite with a depth, in the frame's one list. The `Pipeline` module holds the trip's types and the functions that sight and render, so we call the trip the pipeline.
 
 ```widget frame moving
-Step 1,529 of the ride, held still. Its trees, critters and tower, and the truck, all came through the pipeline.
+Step 1,529 of the ride, held still. Its trees, critters and towers, and the truck, all came through the pipeline.
 ```
 
-Here's the trip, with the function that makes each move:
+Here's the trip, with what makes each move. Each kind has a sighting module, such as `TreeSighting`, which finds the things of its kind on the road in view:
 
 The pipeline
 ```dot
@@ -544,7 +544,7 @@ digraph pipeline {
   rendered [label="Rendered"];
   list [label="the frame's list,\nfar to near"];
   finder -> placed [label="  finds the ones in play"];
-  placed -> sighted [label="  is sighted by\n  Pipeline.scenery_sighting_of"];
+  placed -> sighted [label="  is sighted by\n  a Pipeline sighting function"];
   placed -> refused [label="  or refused by it"];
   sighted -> rendered [label="  is rendered by\n  Pipeline.rendering_of"];
   rendered -> list [label="  is sorted by\n  Rendered.depth_sorted_renderings"];
@@ -569,15 +569,15 @@ A `Spot` holds the thing's height off the ground, where its foot is in the camer
 
 ### Refused
 
-Some placed things stay off the screen, so a sighting can be refused. The answer is a `Try`, Roc's type for an answer that can fail. A `Try` is one of two tags: `Ok`, holding the sighting, or `Err`, holding a tag that says why the thing is refused:
+Some placed things stay off the screen, so a sighting can be refused. The answer is a `Try`, Roc's type for an answer that can fail. A `Try` is one of two tags: `Ok`, holding the sighting, or `Err`, holding a tag that says why the thing is refused. `Pipeline`'s sighting functions refuse a thing with one of three tags:
 
 | Refusal | Why |
 |---|---|
 | `BehindCamera` | It stands behind the camera, or too close in front of it to show. |
-| `BelowHorizon` | It's so far off that the horizon hides all of it. |
+| `BelowHorizon` | The ground curves away with distance, so far enough off, the horizon hides all of it. |
 | `TooSmall` | It would stand too small on the screen to be worth drawing. |
 
-Here are some things from step 1,529, the frame in the picture, and what their sightings decide. `right` and `forward` are metres from the camera, and a `forward` below zero is behind it:
+Here are some things from step 1,529, the frame in the picture, and what their sightings decide. `right` and `forward` place each thing's foot from the camera, in metres, and a `forward` below zero is behind it. The road bends, so a tree on a segment far ahead can stand far to one side:
 
 | What it is | `right` | `forward` | What its sighting decides |
 |---|---|---|---|
@@ -589,9 +589,9 @@ Here are some things from step 1,529, the frame in the picture, and what their s
 | The radio tower past the end of the rider's segment | 20.40 | 355.61 | drawn |
 | The truck | 92.19 | 489.15 | drawn |
 
-A small tree far off sinks below the horizon, while a taller one just past it still shows its top. Of the 214 trees on the segments in view, 136 are drawn, 30 are behind the camera, and 48 are below the horizon. Each kind's sighting module keeps the `Ok`s with `keep_oks`, and drops the rest.
+A small tree far off sinks below the horizon, while a taller one just past it still shows its top. Of the 214 trees on the segments in view, 136 are drawn, 30 are behind the camera, and 48 are below the horizon. Most sighting modules keep the sightings with `keep_oks`, which keeps the `Ok` values of a list of `Try`s and drops the `Err`s.
 
-A radio tower and the truck are drawn however small they look, so they skip the size test, and the truck skips the horizon test too.
+The trees, the billboard critters, the cat and the bird are sighted by `Pipeline.scenery_sighting_of`, which takes all three tests. A radio tower and the truck are drawn however small they look. So a tower is sighted by `Pipeline.sighting_above_horizon_of`, which skips the `TooSmall` test, and the truck by `Pipeline.sighting_of`, which skips the `BelowHorizon` test too.
 
 ### Rendered
 
@@ -607,7 +607,7 @@ Every rendering has that one type, so a frame gathers them all in one list:
 
 {{code Scene.scene_renderings}}
 
-A `Scene` holds a list of renderings for each sort of thing, and `join` makes one list of them all. The guard rail's pieces join it too, as renderings of their own. `Rendered.depth_sorted_renderings` sorts the list from far to near, and the platform paints it in that order, so a near thing covers a far one.
+A `Scene` holds a list of renderings for each sort of thing, and `join` makes one list of them all. The guard rail along the road joins it too, its pieces rendered on their own in a later chapter. `Rendered.depth_sorted_renderings` sorts the list from far to near, and the platform paints it in that order, so a near thing covers a far one.
 
 So every thing beside the road makes the same trip: placed on the road, sighted by the camera, rendered as a sprite with a depth, and sorted into the frame's one list. Its kind rides through the first two types and is gone by the third. That leaves two questions, and the next two chapters answer them: what is a kind, and how does `rendering_of`, written once, get a sprite out of every kind?
 
