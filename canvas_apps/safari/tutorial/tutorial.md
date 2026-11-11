@@ -573,7 +573,7 @@ This table explains the code's concepts:
 | A type variable | Generality | `kind` in `Pipeline.Sighted(kind)` stands for whatever type the caller's sighting holds. |
 | A `where` clause | Requirement | `where [kind.scenery_sprite : kind, Sprite.Setting -> Sprite]` asks that type for a method named `scenery_sprite`, with the type after the colon. The square brackets hold a list of requirements, here just one. |
 | A method | Location | The clause looks for the method inside the type's braces. That's why `Conifer` keeps `scenery_sprite` there, with `scenery_height`. |
-| A method call | Dispatch | `sighting.kind.scenery_sprite(...)` calls the method of whichever type `kind` turns out to be. |
+| A method call | Dispatch | `sighting.kind` is the sighting's `kind` field, which holds a value of the type `kind`. `.scenery_sprite(...)` calls that type's method, with the value before the dot as its first argument. |
 
 The rest of the body builds the setting. A `Sprite.LensAndLight` holds the shared part of a `Sprite.Setting`, the focal length and the darkness, and the body adds the sighting's own spot. In a record, `focal_length` alone is short for `focal_length: focal_length`, a field filled from the value of the same name. `sighting.spot.foot().forward()` is how far ahead of the camera the thing's foot stands.
 
@@ -589,7 +589,7 @@ Every type has to pass that check. Here a `Rock`, a kind that is just one tag, i
 
 {{fails kind_without_sprite}}
 
-The message names the method the clause asks for, and the type it checked. A `scenery_sprite` inside braces after `Rock`'s tags, as `Conifer` has, fixes it.
+The message names the method the clause asks for, and the type it checked. The fix is a `.{ }` after `Rock`'s tags with a `scenery_sprite` inside, as `Conifer` has.
 
 ### Asking for a height
 
@@ -597,11 +597,11 @@ Sighting a thing needs its height. A far thing shows only when its top clears th
 
 {{code Pipeline.scenery_sighting_of from "where" to "where"}}
 
-A thing that fails either test is refused, and the refusal is a tag that says why: `BelowHorizon` or `TooSmall`. A radio tower is drawn however small it looks, so it's sighted by `Pipeline.sighting_above_horizon_of`, which skips the size test and asks for the height through the same clause.
+A radio tower is drawn however small it looks, so it's sighted by `Pipeline.sighting_above_horizon_of`, which skips the size test and asks for the height through the same clause.
 
 ### Names that say what they're for
 
-Roc matches a `where` clause by the method's name and type alone, whichever type the method belongs to. Suppose the clause asked for a method called just `height`. The bird could well have one that says how high it flies, and the sighting would test the bird against the wrong number, while the compiler stays quiet. So every method the pipeline asks for starts with "scenery", and a kind meets the pipeline on purpose.
+Roc matches a `where` clause by the method's name and type alone, whichever type the method belongs to. Suppose the clause asked for a method called just `height`. The bird could well have one that says how high it flies, and the sighting would test the bird against the wrong number, while the compiler stays quiet. So every method the pipeline asks for starts with "scenery", which makes an accidental match unlikely.
 
 So a kind meets the pipeline with two methods inside its braces, `scenery_height` and `scenery_sprite`. The tree, the cow, the radio tower, the cat and the bird each have both, and the compiler checks every one of them when the program compiles.
 
