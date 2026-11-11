@@ -172,7 +172,7 @@ Last, the thing is rendered:
 
 {{code Rendered.Rendered from "Rendered ::" to "}.{"}}
 
-A rendering holds the thing's sprite, and its depth: how far ahead of the camera it stands. The kind is gone, so trees, cows and towers all meet in one list of renderings. We sort that list far to near and paint it in that order, so nearer things cover farther ones.
+A rendering holds the thing's sprite, and its depth: how far ahead of the camera it stands. The kind is gone, so trees, cows and towers all meet in one list of renderings. The `DepthSort` module sorts that list far to near, and we paint it in that order, so nearer things cover farther ones.
 
 ### Motion
 
@@ -703,7 +703,9 @@ Nothing in this chapter moves, and nothing in the next few chapters does either.
 
 ## Nature types
 
-The far tree's code draws whatever tree it's handed: a height and a color. So something has to say which tree. That's the `Conifer` type, and here's its whole module:
+Every thing beside the road takes three forms on its way to the screen: placed on the road, sighted by the camera, and rendered as a sprite with a depth. Its kind rides inside the first two. In this chapter we open a kind, and see how one pipeline asks any kind for what it needs.
+
+Here's a kind, the `Conifer` type, in its whole module:
 
 {{module Conifer}}
 
@@ -713,57 +715,31 @@ A `Conifer` is one of four tags, and it describes a kind of tree, nothing more. 
 The four conifers, left to right: Green, SmallGreen, Red and Gold.
 ```
 
-### A place on the road
+### One pipeline, many kinds
 
-A tree in the ride also stands somewhere. Safari Ride keeps that in a record that wraps the kind:
+The `Pipeline` module sights and renders things, and it's the same code for every kind that goes through it: trees, critters, radio towers, the cat and the bird. So it has to ask each kind for what it needs, without knowing which kind it holds. That's how Safari Ride is built.
 
-{{code Geom.Placed}}
-
-`road_point` says where the thing stands on its stretch of road, and `lift` how high it stands off the ground. The `(kind)` after `Placed` is a type variable, a name for whatever type fills the parentheses, and the `kind` field holds one of it. So a placed tree is a `Geom.Placed(Conifer)`, and a placed cow is a `Geom.Placed(Billboard)`. One wrapper places every kind of thing.
-
-### Three forms
-
-Every thing takes three forms on its way to the screen:
-
-One thing through one frame
-```dot
-digraph forms {
-  rankdir=LR;
-  node [shape=box, style=rounded, fontname="Helvetica"];
-  edge [fontname="Helvetica"];
-  placed [label="Geom.Placed(kind)\nwhere it stands"];
-  sighted [label="Pipeline.Sighted(kind)\nwhere the camera sees it"];
-  rendered [label="Rendered\nits sprite and depth"];
-  sorted [label="List(Rendered)\nfar to near"];
-  placed -> sighted [label="  sighted by\n  scenery_sighting_of"];
-  sighted -> rendered [label="  drawn by\n  rendering_of"];
-  rendered -> sorted [label="  sorted by\n  depth_sorted_renderings"];
-}
-```
-
-A placed thing stands on the road. A sighted thing is where the camera sees it, in one frame. A rendered thing is its sprite, with its depth: how far ahead of the camera it stands. That's how Safari Ride is built. Each form comes from the one before it, and the renderings are sorted before they're painted.
-
-### A sighting can fail
-
-A placed thing may not show at all, so sighting it answers with a `Try`:
-
-{{signatures Pipeline.scenery_sighting_of}}
-
-It takes the placed thing, with the road, the camera and the thing's segment. A `Try` is one of two tags: `Ok`, holding the answer, or `Err`, holding the reason there's none. Here the answer is a `Pipeline.Sighted(kind)`, and the reasons are tags of their own: the thing stands behind the camera, below the horizon, or too small on the screen to draw. Every caller handles each reason the type lists.
-
-The annotation's last line is new. A `where` clause asks something of a type variable, and this one asks that `kind` have a `scenery_height` function of that type. The sighting needs the height to tell whether the thing's top shows over the horizon, and whether it stands tall enough on the screen. `Conifer` has a `scenery_height`, and so does every other kind that goes through here. Roc matches a `where` by name and type alone, so the word "scenery" at the front of each name keeps a match deliberate.
-
-### One function draws them all
-
-Rendering asks each kind for its sprite the same way:
+Rendering needs the kind's sprite:
 
 {{code Pipeline.rendering_of}}
 
-`rendering_of` hands the sighting's spot, the lens and the light to the kind's own `scenery_sprite`. It gives back a `Rendered`: the sprite, and how far ahead of the camera the thing's foot stands. One function draws a tree, a cow or a cat, and the `Rendered` it gives back has no kind.
+`rendering_of` takes a sighting and a record of the lens and the light. It hands the sighting's spot, the lens and the light to the kind's own `scenery_sprite`, and gives back a `Rendered`: the sprite, and how far ahead of the camera the thing stands.
 
-So every rendering in a frame goes into one list, whatever it shows, and `Rendered.depth_sorted_renderings` sorts the list far to near, with the `DepthSort` module. The platform paints it in that order, so a near thing covers a far one, just as each tier of a far tree covers the one above it.
+The annotation's second line is a `where` clause. It asks something of the type variable `kind`: that it have a `scenery_sprite` function of the type after the colon. `Conifer` has one, and so does every other kind that goes through here, so `rendering_of` draws a tree, a cow or a cat.
 
-So a kind describes a thing, `Geom.Placed` puts it on the road, and `Pipeline` sights and renders any kind that can give its height and its sprite.
+### Asking for a height
+
+Sighting a thing asks the kind for its height the same way:
+
+{{signatures Pipeline.scenery_sighting_of}}
+
+The sighting needs the height to tell whether the thing's top shows over the horizon, and whether it stands tall enough on the screen to draw. Its answer is a `Try`, one of two tags: `Ok`, holding a `Pipeline.Sighted(kind)`, or `Err`, holding the reason there's none. The reasons are the refusal tags from "The pieces as types": `BehindCamera`, `BelowHorizon` and `TooSmall`. The ride's callers keep the `Ok`s and drop the rest.
+
+### Names that say what they're for
+
+Roc matches a `where` by name and type alone. Any type with a function of that name and that type meets it. So the names say what they're for: `scenery_height` and `scenery_sprite` are there for the things beside the road, and a kind meets the pipeline only on purpose.
+
+So a kind meets the pipeline by having two functions, a height and a sprite. `Conifer` is one such kind, and the critters, the towers, the cat and the bird are the others.
 
 ## A simple tree
 
