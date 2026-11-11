@@ -40,3 +40,4 @@ SafariApp.roc: the file that holds the SafariApp module
 shapes_canvas.js: a file of the JavaScript platform
 turn_as_bearing: a failing program in tutorial/fails, which the build runs
 web.roc: the web app's root file
+Rock: the kind of thing in tutorial/fails/kind_without_sprite.roc, which the build runs
