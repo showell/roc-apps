@@ -565,7 +565,7 @@ The screen shows what the camera sees. So for each frame, the pipeline sights ev
 
 {{code Pipeline.Sighted}}
 
-A `Spot` holds the thing's height off the ground, where its foot is in the camera's view, and which way the road runs there. The kind rides along as it was. A place on the road stays put for the whole ride, while a spot moves every frame with the rider. So the two are different types, one measured on the road and one from the camera.
+A `Spot` holds the thing's height off the ground, where its foot is in the camera's view, and which way the road runs there. The kind rides along as it was. A thing's place is measured on the road, and its spot from the camera, which moves with the rider every frame. So the two are different types.
 
 ### Refused
 
