@@ -291,6 +291,7 @@ function write_pages(output)
     push(files, file)
   end
   replace(STAGING .. "/book.css", read(TUTORIAL .. "/book.css"))
+  replace(STAGING .. "/book.js", read(TUTORIAL .. "/book.js"))
   replace(STAGING .. "/embed.js", read("canvas_apps/widget_kit/embed.js"))
   replace(STAGING .. "/BUILT", built_record())
   return files

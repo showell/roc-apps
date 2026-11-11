@@ -184,6 +184,9 @@ th { text-align: left; border-bottom: 1px solid var(--quiet); }
 td { border-bottom: 1px solid var(--rule); }
 th, td { padding: 0.35rem 1rem 0.35rem 0; vertical-align: top; }
 th:last-child, td:last-child { padding-right: 0; }
+/* book.js marks a column of sentences as prose, and it wraps at a reading
+   width, about sixty characters a line. */
+th.prose, td.prose { width: 30em; }
 
 /* Draft notes stay in sight, and they look like notes rather than the book. */
 
@@ -283,6 +286,7 @@ ol.contents .sections a { color: var(--quiet); text-decoration: none; }
   figure.listing pre { padding-inline: 0.6rem; font-size: 0.72rem; tab-size: 2; }
   article > table { width: 100%; font-size: 0.76rem; }
   th, td { padding-right: 0.6rem; }
+  th.prose, td.prose { width: auto; }
 }
 
 /* A printed book: black on white, with no navigation and nothing split that can

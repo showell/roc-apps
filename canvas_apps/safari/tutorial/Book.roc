@@ -477,6 +477,7 @@ page_html = |{ title, body_class, nav, main }| {
 		\\<title>${title}</title>
 		\\<link rel="icon" href="data:,">
 		\\<link rel="stylesheet" href="book.css">
+		\\<script src="book.js" defer></script>
 		\\</head>
 		\\<body class="${body_class}">
 		\\${top_bar}
