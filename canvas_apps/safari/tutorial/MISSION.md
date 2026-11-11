@@ -169,6 +169,8 @@ The work is a linear pass, one chapter at a time, in book order, starting again 
 
 **Cold readers.** Every chapter also gets one cold reader that checks just two things: truth against the code (B), and order for a reader who has seen only the pages before (C). Those are the two axes where the writer can't see past their own outline. It runs alongside the promise check, before the note goes out. Take its findings with restraint, and phrase every fix yourself.
 
+**The animation reader.** The reader learns Roc and animation at once (Anton on Zulip, 2026-11-11), so every chapter also gets a cold reader who knows a little Roc and nothing about animation or graphics. It tags each new idea as Roc or animation, and reports the paragraphs where the two pile up, the animation used before it's explained, and any math that shows through. It runs with the truth-and-order reader. The first audit, of chapters 1 to 10, found "A far tree" and "The pieces as types" the heaviest.
+
 **The think-aloud reader.** A third cold reader reads the whole chapter and narrates its understanding paragraph by paragraph: "Now I know X. I expect Y next. This paragraph gave me Z instead." Where its expectation and the page part, there's a flow break. It proposes no prose.
 
 **Nitpick rounds.** After the fixes from those three, a fresh cold agent reads the built chapter and lists the five things a careful reader would stumble on. Its brief gives no clues: no axes, no worries of ours, no list of past findings. Fix what's real, rebuild, and send a new agent. Stop when a round turns up nothing worth fixing, or after three rounds. Nitpickers find friction well and real-world sense poorly (a bull isn't a cow), so the author's read still checks the world.
