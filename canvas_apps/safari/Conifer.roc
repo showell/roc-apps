@@ -1,6 +1,5 @@
-## Conifer is a kind of tree. It sets the tree's height, from the ground to the
-## tip where a bird perches, and its color. TreeShapes draws it, and Trees places
-## it beside the road.
+## Conifer is a kind of tree. It sets the tree's height, from the ground to its
+## tip, and its color, and TreeShapes draws it.
 import Distance
 import Sprite
 import TreeShapes
