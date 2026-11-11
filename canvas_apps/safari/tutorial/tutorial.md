@@ -503,6 +503,10 @@ So a far tree is a handful of small functions over one list of tiers. The `expec
 
 Every thing beside the road takes three forms on its way to the screen: placed on the road, sighted by the camera, and rendered as a sprite with a depth. Its kind rides inside the first two. In this chapter we look inside a kind, and see how one pipeline asks any kind for what it needs.
 
+```widget conifers
+The four conifers, left to right: Green, SmallGreen, Red and Gold.
+```
+
 Here's a kind, the `Conifer` type, in its whole module:
 
 {{module Conifer}}
@@ -510,10 +514,6 @@ Here's a kind, the `Conifer` type, in its whole module:
 A `Conifer` is one of four tags, one for each sort of tree. The `:=` makes it a nominal type, as it does `BendAnimal`, so other modules can use its tags, and a `match` reads them directly. An opaque `Billboard` has to be unwrapped first. `scenery_height` and `foliage_color` give each tag its height and its color, chosen by eye, and `Green | SmallGreen =>` is one branch for two tags, because both greens share a color. `scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that drew the far tree. `is_eq : _` asks the compiler for `==`, as it did for `Distance`, and here `==` compares tags.
 
 Inside the type's braces sit `scenery_height`, `scenery_sprite` and `is_eq`, and a value calls a function there with a dot: `conifer.scenery_height()`. The rest of the module sits outside: values, and a helper that only this module uses, which a call names plainly: `foliage_color(conifer)`. A module's definitions can come in any order, so the functions inside the braces use values defined below them.
-
-```widget conifers
-The four conifers, left to right: Green, SmallGreen, Red and Gold.
-```
 
 ### One pipeline, many kinds
 
