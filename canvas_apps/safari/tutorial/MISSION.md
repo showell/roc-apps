@@ -75,10 +75,11 @@ Each axis fails in its own way, and catching each failure takes a different kind
   - "the way from X to Y is…";
   - "and that's the point of this chapter";
   - "worth saying again";
-  - a "this" or "that" where a name belongs. After the cat's code, "This is why the cat waits" makes the reader hunt for what "this" is. "`plan_crossing` is why the cat waits" names it;
+  - a pronoun (this, that, it) whose noun the reader has to hunt for. A pronoun points at the nearest noun it can mean, or the name goes back in. A "this" or "that" where a name belongs. After the cat's code, "This is why the cat waits" makes the reader hunt for what "this" is. "`plan_crossing` is why the cat waits" names it;
   - aphorisms, "not X but Y" drumbeats, or a closing moral.
 - **D8.** Explain a type precisely rather than apologizing for its name.
 - **D9.** A paragraph makes one point and holds together. A connective such as "Either way" or "So" points at something named in that paragraph, or it goes. A claim is complete: "checks" says what it checks.
+- **D11.** **Precise verbs for Roc's constructs.** Code isn't a person: a `where` clause constrains a type variable, a type describes values, and a function takes and gives back. When the official tutorial or the langref phrases a concept, say the same thing in our own words, with its core terms. (Steve, 2026-11-11.)
 - **D10.** Write with the authority of this document: confident, declarative claims, in a simple, clear structure. The book is warmer and slower than a rules document, but just as sure of itself.
 
 ### Axis E. Tone: how it feels to read
