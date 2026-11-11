@@ -483,7 +483,7 @@ The order of the shapes matters as much as the shapes. `tree_sprite` draws the w
 
 {{code TreeShapes.tree_sprite}}
 
-It takes the tree's setting and a record, and both come apart in its bars. `dimmed_foliage` darkens the foliage's color as dusk falls, and `trunk_color` is the trunk's brown, darkened the same way. `tier_inputs_of` works out what every tier needs, once for the whole tree. Among those are `base`, the middle of the tree's foot, and the tree's outline. `forward()` gives how far ahead of the camera the foot is. From that distance, `crown_of` and `trunk_finish_of` choose how much detail the tree gets, which we come to at the end of the chapter. For a far tree, `crown` is `Triangles`, and the trunk's finish is `Flat`.
+It takes the tree's setting and a record, and its bars take each one apart into the fields it uses. `dimmed_foliage` darkens the foliage's color as dusk falls, and `trunk_color` is the trunk's brown, darkened the same way. `tier_inputs_of` works out what every tier needs, once for the whole tree. Among those are `base`, the middle of the tree's foot, and the tree's outline. `forward()` gives how far ahead of the camera the foot is. From that distance, `crown_of` and `trunk_finish_of` choose how much detail the tree gets, which we come to at the end of the chapter. For a far tree, `crown` is `Triangles`, and the trunk's finish is `Flat`.
 
 The last line puts the list together. `[trunk]` is a list of one shape, and `concat` joins two lists into one, so the trunk comes first. The platform paints a list from first to last, so the tiers land on the trunk. Each tier also lands on the tier above it and covers that tier's bottom, which is where the overlap goes. `Sprite.from_shapes` makes the list the tree's sprite.
 
