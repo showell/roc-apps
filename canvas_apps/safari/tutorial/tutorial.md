@@ -558,7 +558,7 @@ One function, `Pipeline.rendering_of`, renders every kind of thing beside the ro
 A tree, a cow, a radio tower, the cat and the bird, each rendered by `Pipeline.rendering_of`, and each at its own distance so that it shows clearly.
 ```
 
-The Roc idea is the `where` clause, which constrains a type variable to types that have certain methods.
+One function can render every kind because of this chapter's new Roc idea, the `where` clause, which constrains a type variable to types that have certain methods.
 
 `rendering_of` takes a sighting, with the focal length and the darkness that the whole frame shares, and it gives back a rendering: the thing's sprite, and how far ahead of the camera it stands. The sprite comes from the kind, so `rendering_of` calls the kind's own `scenery_sprite` method.
 
