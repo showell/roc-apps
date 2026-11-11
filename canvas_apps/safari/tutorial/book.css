@@ -99,6 +99,11 @@ h2:hover .section-link, .section-link:focus { opacity: 1; }
 .section-link:hover { color: var(--accent); }
 @media (hover: none) { .section-link { opacity: 0.5; } }
 
+/* A chapter named in the prose is a cross-reference, so it reads as text with a
+   faint dotted line under it until it is pointed at. */
+.chapter-link { color: inherit; text-decoration: underline dotted var(--quiet); text-decoration-thickness: 1px; }
+.chapter-link:hover, .chapter-link:focus { color: var(--accent); text-decoration-color: currentColor; }
+
 .chapter-number {
   margin: 0 0 0.3rem;
   color: var(--quiet);

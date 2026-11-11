@@ -127,8 +127,10 @@ Book := [].{
 					Err(NotFound) => {}
 				}
 				naming = { extent: manuscript.extent, slugs: outline.slugs }
+				linked = |chapter| linked_to_chapters(chapter, outline.slugs)
 				named = named_chapters(numbered, naming)
-				chapters = named.map(|chapter| with_opening(chapter, outline.dividers))
+				chapters = named.map(|chapter| with_opening(linked(chapter), outline.dividers))
+				front_page = { file: front_file, html: front_html(linked(front), chapters) }
 				chapter_pages = chapters.map_with_index(
 					|chapter, i| {
 						{ previous, next } = neighbours(chapters, i)
@@ -138,7 +140,7 @@ Book := [].{
 						}
 					},
 				)
-				[{ file: front_file, html: front_html(front, chapters) }].concat(chapter_pages)
+				[front_page].concat(chapter_pages)
 			}
 		}
 	}
@@ -277,12 +279,49 @@ named_chapters = |chapters, naming| {
 named_for_slug : Chapter, Naming -> Try(Chapter, [NoSlug])
 named_for_slug = |chapter, { extent, slugs }|
 	match slugs.find_first(|slug| slug.chapter == chapter.title) {
-		Ok({ slug, .. }) => Ok({ ..chapter, file: "${slug}.html" })
+		Ok(slug) => Ok({ ..chapter, file: slug_file(slug) })
 		Err(NotFound) => match extent {
 			WholeBook => Ok(chapter)
 			FirstChapters => Err(NoSlug)
 		}
 	}
+
+slug_file : Book.Slug -> Str
+slug_file = |{ slug, .. }| "${slug}.html"
+
+chapter_link_open : Str
+chapter_link_open = "{{chapter "
+
+## Each `{{chapter Title}}` in a page's HTML as the title in quotation marks,
+## linked to the chapter's page when the chapter has a slug in this book.
+## build.shale has stopped on a title that no chapter has, so a title with no
+## slug here is a chapter this book doesn't hold, and it stays plain text.
+with_chapter_links : Str, List(Book.Slug) -> Str
+with_chapter_links = |html, slugs| match html.split_on(chapter_link_open) {
+	[before_any, .. as pieces] => {
+		references = pieces.map(|piece| chapter_reference(piece, slugs))
+		Str.join_with([before_any].concat(references), "")
+	}
+	[] => crash "book: Str.split_on answered no pieces"
+}
+
+## The chapter with its body's chapter references written out.
+linked_to_chapters : Chapter, List(Book.Slug) -> Chapter
+linked_to_chapters = |chapter, slugs| { ..chapter, body: with_chapter_links(chapter.body, slugs) }
+
+## One piece after a `{{chapter `: the title, the `}}`, and the page after it.
+## The title is as the renderer escaped it.
+chapter_reference : Str, List(Book.Slug) -> Str
+chapter_reference = |piece, slugs| match piece.split_first("}}") {
+	Ok({ before: title, after }) => {
+		quoted = "“${title}”"
+		match slugs.find_first(|slug| BookText.escaped_text(slug.chapter) == title) {
+			Ok(slug) => "<a class=\"chapter-link\" href=\"${slug_file(slug)}\">${quoted}</a>${after}"
+			Err(NotFound) => "${quoted}${after}"
+		}
+	}
+	Err(NotFound) => crash "book: a chapter reference with no end: ${piece}"
+}
 
 ## A slug is a page's name for good, so it holds only lowercase letters, digits
 ## and hyphens.
@@ -540,6 +579,41 @@ widget_book = {
 	extent: WholeBook,
 }
 
+## The front refers to a chapter with a slug, and the chapter to one that isn't
+## in the book and to one that has no slug.
+linked_book : Manuscript.Contents
+linked_book = {
+	pages: [
+		"# Front\n\nSee {{chapter One & two}}.\n",
+		"# One & two\n\nSee {{chapter Gone}} and {{chapter Unslugged}}.\n",
+		"# Unslugged\n",
+	],
+	diagrams: [],
+	widget_folders: [],
+	extent: WholeBook,
+}
+
+linked_pages : List(Book.Page)
+linked_pages = Book.pages(
+	linked_book,
+	{ dividers: [], slugs: [{ chapter: "One & two", slug: "one" }] },
+)
+
+expect linked_pages.map(|page| page.html.contains("<p>See <a class=\"chapter-link\" href=\"one.html\">“One &amp; two”</a>.</p>")) == [
+	Bool.True,
+	Bool.False,
+	Bool.False,
+]
+expect linked_pages.map(|page| page.html.contains("<p>See “Gone” and “Unslugged”.</p>")) == [
+	Bool.False,
+	Bool.True,
+	Bool.False,
+]
+expect linked_pages.all(|page| !page.html.contains("{{chapter"))
+expect with_chapter_links("<p>no references {{ here</p>", [slug_a]) == "<p>no references {{ here</p>"
+expect
+	with_chapter_links("{{chapter A}}, {{chapter B}} and {{chapter A}}", [slug_a])
+		== "<a class=\"chapter-link\" href=\"a-slug.html\">“A”</a>, “B” and <a class=\"chapter-link\" href=\"a-slug.html\">“A”</a>"
 expect nav_entry(
 	one_section,
 	one_section,
