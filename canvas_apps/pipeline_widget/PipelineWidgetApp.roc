@@ -28,7 +28,8 @@ PipelineWidgetApp :: [].{
 
 	canvas_app : CanvasApp.CanvasApp(PipelineWidgetApp.Model)
 	canvas_app = {
-		..WidgetPage.fixed_picture_app({ title: "What the pipeline renders", shapes: picture_shapes }),
+		..WidgetPage.fixed_picture_app({ title: "What the pipeline renders", shapes: [] }),
+		frame_shapes: |_model| picture_shapes({}),
 		size: { width: canvas_width, height: canvas_height },
 	}
 }
@@ -78,8 +79,10 @@ plain_background = Shapes.rectangle({
 })
 
 ## The background, then the things in the space the game leans the frame in.
-picture_shapes : List(Shapes.Shape)
-picture_shapes = [plain_background].concat(
+## It is a function, worked out when the page runs: as a constant, a release
+## build would bake the whole frame's simulation into the program.
+picture_shapes : {} -> List(Shapes.Shape)
+picture_shapes = |{}| [plain_background].concat(
 	Shapes.shapes_in_space(Screen.leaned_by(paused_frame_view.roll), scene_shapes),
 )
 
@@ -90,7 +93,7 @@ renderings_shapes = |renderings| renderings.join_map(|rendering| rendering.sprit
 ## The picture's shapes that are drawn, without its background and the marks that
 ## put them in the leaned space.
 drawn_shapes : List(Shapes.Shape)
-drawn_shapes = picture_shapes.drop_first(1).keep_if(
+drawn_shapes = picture_shapes({}).drop_first(1).keep_if(
 	|shape|
 		match shape {
 			View(_) => False
