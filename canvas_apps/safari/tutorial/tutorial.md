@@ -55,8 +55,6 @@ digraph pieces {
 | Motion | Persistence | The rider rides on, the truck drives ahead, the cat crosses the road and the sun goes down. At every step, something must carry each of them on from where it was, and the moves must fit together. The cat times its crossing to the rider coming toward it, and a cat in the road stops the rider speeding up. |
 | The person watching | Interaction | A viewer mostly sits back and watches, but they also need to pause the ride, step it forward and rewind it. So the program must give them controls they can find, and answer each one straight away. |
 
-The first three pieces give us one frame, held still. The last two set it moving, and put it in the viewer's hands. Next, we see where Roc code lives, and then we give each piece its types.
-
 ## Platforms, packages and modules
 
 A Roc program runs on a platform, it's made of modules, and it can use packages. Those three words say where Safari Ride's code lives.
@@ -67,13 +65,15 @@ Each Roc program is an app, and the app's first line of code names its platform.
 
 {{module web}}
 
-Lines that start with `#` are comments. The first line of code names the platform, and gives it the short name `pf`. It also names a package, `lib`. A package is a bundle of modules: the app gives it a short name, and the path says where it is. The `lib` package holds what Safari Ride shares with the live pictures in this book, such as what a shape is and what a key press is.
+Lines that start with `#` are comments. The first line of code names the platform, and gives it the short name `pf`.
+
+The first line also names a package, `lib`. A package is a bundle of modules: the app gives it a short name, and the path says where it is. The `lib` package holds what Safari Ride shares with the live pictures in this book, such as what a shape is and what a key press is.
 
 A module is one file of Roc, named for what it holds. `SafariApp.roc` holds the `SafariApp` module, and `import SafariApp` brings it in. `import lib.WasmApp` brings in the `WasmApp` module from the `lib` package.
 
-The brackets after `app` name the two things the app hands the platform, and the last two lines define them. `Model` is the type of what the app keeps as it runs, and here it's the one in `SafariApp`. `SafariApp.canvas_app` is the whole ride as one value, and the `WasmApp.program` function fits it to the web platform. What it gives back is the app's `program`.
+The brackets after `app` name the two things the app hands the platform, and the last two lines define them. `Model` is the type of what the app keeps as it runs, and here it's the one in `SafariApp`.
 
-Every piece we build, from a tree to the cat, lives in a module, and the platform paints whatever those modules describe. Next, we read the types those modules hold.
+`SafariApp.canvas_app` is the whole ride as one value, and the `WasmApp.program` function fits it to the web platform. What it gives back is the app's `program`.
 
 ## The pieces as types
 
@@ -102,8 +102,6 @@ Here's what its parts say:
 | `is_eq : _` | This lets `==` compare two lengths, and the `_` asks the compiler to write its definition from the number inside. |
 
 Everywhere outside this module, a length is a `Distance`, and the compiler keeps it apart from every other number. The functions between the braces are the only ways to make a length, change one or read one. Each is a line for its type and a line for its definition. We read functions properly with the pieces that use them.
-
-Roc has text too, in its `Str` type. Safari Ride describes pictures, so its types are numbers and the records and tags built on them, and `Str` appears in it only rarely.
 
 ### Things
 
@@ -194,7 +192,9 @@ A step is one function's job, and its type tells the story:
 
 {{signatures RideInstant.next_or_restart}}
 
-That's the function's type annotation, the line above its body. When a function's body is long, the book shows the annotation alone, until the body's turn comes. After the colon comes the function's type: the types it takes, then an arrow, then the type it gives back. The `next_or_restart` function takes the route and one moment of the ride. It gives back a type written in place, in square brackets: one of two tags. A tag can carry a value, and each of these carries the next moment. `Continued` carries the moment one step on, and `Restarted` carries the ride's first moment, once the rider has finished the route.
+That's the function's type annotation, the line above its body. When a function's body is long, the book shows the annotation alone, until the body's turn comes. After the colon comes the function's type: the types it takes, then an arrow, then the type it gives back.
+
+The `next_or_restart` function takes the route and one moment of the ride. It gives back a type written in place, in square brackets: one of two tags. A tag can carry a value, and each of these carries the next moment. `Continued` carries the moment one step on, and `Restarted` carries the ride's first moment, once the rider has finished the route.
 
 Inside the step, the four fields move in a fixed order, so the moves fit together: the rider reads what the cat or bird ahead is doing, and then moves. The second half of the book reads that order line by line.
 
@@ -224,7 +224,11 @@ The things beside the road are its trees, its radio towers and its animals. Here
 A cow and a bull on the grass beside the road.
 ```
 
-The ride has a lot of animals: herds of cows, some led by a bull, herds of pigs, ducks on the ponds, and an elephant at a bend in the road. The cat and the bird move, and they get chapters of their own. Every other animal is a billboard: a flat picture of its emoji, standing on the grass and turned square to the camera, like a cardboard cutout. That takes far less code than modeling an animal, and it's charming. A billboard faces left or right, and one that faces right is its emoji mirrored. That's the `Billboard` type from "The pieces as types": an emoji, a height and a facing. Each emoji was traced into polygons ahead of time, and the `EmojiStills` module holds them as plain data. The tracing itself is beyond this book.
+The ride has a lot of animals: herds of cows, some led by a bull, herds of pigs, ducks on the ponds, and an elephant at a bend in the road. The cat and the bird move, and they get chapters of their own.
+
+Every other animal is a billboard: a flat picture of its emoji, standing on the grass and turned square to the camera, like a cardboard cutout. That takes far less code than modeling an animal, and it's charming.
+
+A billboard faces left or right, and one that faces right is its emoji mirrored. That's the `Billboard` type from "The pieces as types": an emoji, a height and a facing. Each emoji was traced into polygons ahead of time, and the `EmojiStills` module holds them as plain data. The tracing itself is beyond this book.
 
 A billboard animal starts from a record of the `Billboard.Species` type: its emoji, and how tall a grown one stands. A plain `:` names that type, so any module reads its fields. Here are the cow's and the bull's, from the `CowHerd` module:
 
@@ -445,7 +449,9 @@ The widths start as a list of eight plain numbers:
 
 {{code TreeShapes.tier_widths}}
 
-In a type, square brackets list tags. In a value, as here, they make a list, and every item in a list has the same type. These eight are `F64`s, chosen by eye, from the narrow top tier to the full-width bottom one. `map` calls a function on each item of a list and gives back a list of the answers. Here we hand it `Fraction.of` by name, and `Fraction.of` turns an `F64` into a `Fraction`, so `tier_widths` is a `List(Fraction)`. `Fraction.of` crashes on a number outside 0 to 1, because a share out of range means the sum behind it is wrong.
+In a type, square brackets list tags. In a value, as here, they make a list, and every item in a list has the same type. These eight are `F64`s, chosen by eye, from the narrow top tier to the full-width bottom one.
+
+`map` calls a function on each item of a list and gives back a list of the answers. Here we hand it `Fraction.of` by name, and `Fraction.of` turns an `F64` into a `Fraction`, so `tier_widths` is a `List(Fraction)`. `Fraction.of` crashes on a number outside 0 to 1, because a share out of range means the sum behind it is wrong.
 
 ### Tops and bottoms
 
