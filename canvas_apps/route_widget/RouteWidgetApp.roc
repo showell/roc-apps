@@ -141,7 +141,7 @@ map_plan = {
 }
 
 ## Where `point` falls on the canvas. North is up the picture.
-canvas_point : MapPoint -> Point.Point
+canvas_point : MapPoint -> Point
 canvas_point = |{ east, north }| {
 	west_edge = extent.west.to_metres()
 	east_edge = extent.east.to_metres()
@@ -267,7 +267,7 @@ picture_shapes =
 	[[ground], road_shapes, segments.join_map(mark_shapes), legend_shapes].join()
 
 ## Whether `point` is on the canvas, edges included.
-is_on_canvas : Point.Point -> Bool
+is_on_canvas : Point -> Bool
 is_on_canvas = |point| {
 	x = point.x.to_f64()
 	y = point.y.to_f64()

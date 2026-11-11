@@ -186,7 +186,7 @@ row_space = Shapes.world_space({
 })
 
 ## Where `row_space` puts a point of the ride's screen on the canvas.
-canvas_point_of_screen : Point.Point -> Point.Point
+canvas_point_of_screen : Point -> Point
 canvas_point_of_screen = |{ x, y }| {
 	x: x.times(canvas_per_screen),
 	y: Pixels.of(canvas_horizon_y).plus(y.minus(Screen.horizon_y).times(canvas_per_screen)),
@@ -218,7 +218,7 @@ Extent : {
 
 ## Every corner on the canvas of the billboard drawn by `shapes`. A billboard is
 ## drawn in polygons alone.
-canvas_corners : List(Shapes.Shape) -> List(Point.Point)
+canvas_corners : List(Shapes.Shape) -> List(Point)
 canvas_corners = |shapes|
 	shapes
 		.map(|shape| Shapes.region_corners(shape) ?? crash "BendAnimalsWidgetApp.canvas_corners: a billboard is drawn in polygons")

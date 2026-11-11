@@ -170,7 +170,7 @@ framed_ride_shapes = |ride_shapes| {
 }
 
 ## The corners of the straight-edged regions among `shapes`, on the canvas.
-canvas_corners : List(Shapes.Shape) -> List(Point.Point)
+canvas_corners : List(Shapes.Shape) -> List(Point)
 canvas_corners = |shapes| {
 	region_corner_lists = shapes.keep_oks(Shapes.region_corners)
 	region_corner_lists.join().map(WidgetPage.canvas_point_of_screen)

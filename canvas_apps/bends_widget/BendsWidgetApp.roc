@@ -128,7 +128,7 @@ rider_y = 198.0
 
 ## Where `point` falls on the canvas. The rider faces up the picture, so the
 ## rider's right is the reader's right.
-canvas_point : ShownBend, RiderView.RiderPoint -> Point.Point
+canvas_point : ShownBend, RiderView.RiderPoint -> Point
 canvas_point = |{ canvas_x, .. }, { right, forward }| {
 	plan : PlanView
 	plan = { origin: Point.at(canvas_x, rider_y), pixels_a_metre }

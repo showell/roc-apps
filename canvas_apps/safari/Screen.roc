@@ -10,7 +10,7 @@ import lib.Shapes
 Screen :: [].{
 
 	## The distance between two points on the screen.
-	distance : { from : Point.Point, to : Point.Point } -> Pixels
+	distance : { from : Point, to : Point } -> Pixels
 	distance = |{ from, to }| {
 		dx = from.x.minus(to.x).to_f64()
 		dy = from.y.minus(to.y).to_f64()
@@ -19,7 +19,7 @@ Screen :: [].{
 
 	## How far the farthest of `points` is from `center`, or zero for no
 	## points.
-	farthest_distance : List(Point.Point), Point.Point -> Pixels
+	farthest_distance : List(Point), Point -> Pixels
 	farthest_distance = |points, center|
 		points.fold_rev(
 			Pixels.zero,
@@ -40,7 +40,7 @@ Screen :: [].{
 	height = Pixels.of(height_px.to_f64())
 
 	## The middle of the screen, halfway across it and halfway down.
-	middle : Point.Point
+	middle : Point
 	middle = { x: width.divided_by(2.0), y: height.divided_by(2.0) }
 
 	## The camera looks at the middle of the screen, across its width.

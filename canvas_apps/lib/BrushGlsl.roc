@@ -253,7 +253,7 @@ color_quad = |c| {
 
 ## A radial gradient's center and its two radii, as `ringT` reads them.
 ring_quad : {
-	center : Point.Point,
+	center : Point,
 	inner_radius : Pixels,
 	outer_radius : Pixels,
 	..,

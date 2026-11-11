@@ -153,7 +153,7 @@ herd_space = Shapes.world_space({
 })
 
 ## Where `herd_space` puts a point of the ride's screen on the canvas.
-canvas_point_of_screen : Point.Point -> Point.Point
+canvas_point_of_screen : Point -> Point
 canvas_point_of_screen = |{ x, y }| {
 	x: x.times(canvas_per_screen),
 	y: Pixels.of(canvas_horizon_y).plus(y.minus(Screen.horizon_y).times(canvas_per_screen)),
@@ -207,7 +207,7 @@ picture_shapes =
 
 ## Every corner of `shapes`' straight-edged regions on the canvas, or none if
 ## any shape has no corners.
-canvas_corners : List(Shapes.Shape) -> Try(List(Point.Point), [NotPolygon])
+canvas_corners : List(Shapes.Shape) -> Try(List(Point), [NotPolygon])
 canvas_corners = |shapes| {
 	polygons = shapes.keep_oks(Shapes.region_corners)
 	if polygons.len() == shapes.len() and !polygons.is_empty() {

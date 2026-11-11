@@ -23,7 +23,7 @@ Sun :: [].{
 	## seen through, which sizes its glow and disc, and how warm the horizon
 	## is, which reddens them as the sun nears it.
 	OnScreen : {
-		center : Point.Point,
+		center : Point,
 		focal_length : Pixels,
 		warmth : Fraction,
 	}

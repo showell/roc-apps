@@ -27,7 +27,7 @@ Font :: [].{
 	# a plotter would give you.
 	text_shapes : Str,
 	{
-		top_left : Point.Point,
+		top_left : Point,
 		size : F64,
 		color : Brush.Rgba,
 	} -> List(Shapes.Shape)
@@ -56,7 +56,7 @@ Font :: [].{
 	## what a title, a banner and a hint all want.
 	centered_text_shapes : Str,
 	{
-		top_center : Point.Point,
+		top_center : Point,
 		size : F64,
 		color : Brush.Rgba,
 	} -> List(Shapes.Shape)
@@ -140,7 +140,7 @@ cap_height_share = 0.72
 # of the grid.
 glyph_shapes : U8,
 {
-	top_left : Point.Point,
+	top_left : Point,
 	unit : F64,
 	stroke_width : F64,
 	color : Brush.Rgba,

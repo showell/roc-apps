@@ -35,7 +35,7 @@ WidgetPage :: [].{
 	screen_x_at_canvas_x = |canvas_x| Pixels.of(canvas_x / canvas_per_screen)
 
 	## Where the picture shows a point of the ride's screen, given in pixels.
-	canvas_point_of_screen : Point.Point -> Point.Point
+	canvas_point_of_screen : Point -> Point
 	canvas_point_of_screen = |{ x, y }| {
 		x: x.times(canvas_per_screen),
 		y: y.times(canvas_per_screen),
@@ -50,7 +50,7 @@ WidgetPage :: [].{
 	picture_bottom_y = horizon_y + ground_depth
 
 	## Whether `point` is in the picture, edges included.
-	is_in_picture : Point.Point -> Bool
+	is_in_picture : Point -> Bool
 	is_in_picture = |point| {
 		x = point.x.to_f64()
 		y = point.y.to_f64()

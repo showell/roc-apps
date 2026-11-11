@@ -24,21 +24,21 @@ StillShapes :: [].{
 	## Where a still stands on screen: its foot, which way it is drawn, and
 	## its height on screen.
 	Anchor : {
-		foot : Point.Point,
+		foot : Point,
 		flip : StillShapes.Flip,
 		height_on_screen : Pixels,
 	}
 
 	## Where a point of the still lands on screen: the foot, and the point's
 	## step from it.
-	screen_point : StillShapes.Anchor, Still.FramePoint -> Point.Point
+	screen_point : StillShapes.Anchor, Still.FramePoint -> Point
 	screen_point = |anchor, point| {
 		step = screen_vector(anchor, point)
 		{ x: anchor.foot.x.plus(step.x), y: anchor.foot.y.plus(step.y) }
 	}
 
 	## Where each of a still's `points` lands on screen, in order.
-	screen_points : StillShapes.Anchor, List(Still.FramePoint) -> List(Point.Point)
+	screen_points : StillShapes.Anchor, List(Still.FramePoint) -> List(Point)
 	screen_points = |anchor, points| points.map(|point| StillShapes.screen_point(anchor, point))
 
 	## A whole still, its polygons in order.
@@ -113,7 +113,7 @@ x_sign = |flip|
 	}
 
 ## How far, and which way, a step in the still goes on screen.
-screen_vector : StillShapes.Anchor, Still.FrameVector -> Point.Point
+screen_vector : StillShapes.Anchor, Still.FrameVector -> Point
 screen_vector = |anchor, step| {
 	x: anchor.height_on_screen.times(x_sign(anchor.flip) * step.x),
 	y: anchor.height_on_screen.times(step.y).opposite(),
@@ -132,7 +132,7 @@ still_polygon = |anchor, polygon| {
 still_gradient_polygon : StillShapes.Anchor,
 {
 	gradient : Still.Gradient,
-	points : List(Point.Point),
+	points : List(Point),
 } -> Shapes.Shape
 still_gradient_polygon = |anchor, { gradient, points }|
 	match gradient {
@@ -171,7 +171,7 @@ brush_stops = |stops| {
 	end_offset: stops.end_offset.to_f64(),
 }
 
-sample_foot : Point.Point
+sample_foot : Point
 sample_foot = Point.at(100.0, 200.0)
 
 # A still 50 pixels tall, standing on the foot, as drawn.

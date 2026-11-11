@@ -484,7 +484,7 @@ CanvasAppRunner :: [].{
 		)
 	}
 
-	draw_triangles! : Draw.Frame, List(Point.Point), Color.Rgba => {}
+	draw_triangles! : Draw.Frame, List(Point), Color.Rgba => {}
 	draw_triangles! = |frame, triangle_corners, col| {
 		m = List.len(triangle_corners) // 3
 		var $k = 0
@@ -496,11 +496,11 @@ CanvasAppRunner :: [].{
 		{}
 	}
 
-	corner_at : List(Point.Point), U64 -> Point.Point
+	corner_at : List(Point), U64 -> Point
 	corner_at = |corners, i| List.get(corners, i) ?? crash "CanvasAppRunner.corner_at: a cut triangle has three corners"
 
 	## A frame's point in roc-ray's 32-bit floats.
-	host_point : Point.Point -> { x : F32, y : F32 }
+	host_point : Point -> { x : F32, y : F32 }
 	host_point = |{ x, y }| { x: F64.to_f32_wrap(x.to_f64()), y: F64.to_f32_wrap(y.to_f64()) }
 
 	show_fps! : Bool, Draw.Frame => {}

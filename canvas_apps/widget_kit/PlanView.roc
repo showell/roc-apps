@@ -8,7 +8,7 @@ import lib.Point
 
 PlanView := {
 	## Where the plan's chosen place lands on the canvas.
-	origin : Point.Point,
+	origin : Point,
 
 	## How many canvas pixels a metre of the plan takes up, either way.
 	pixels_a_metre : F64,
@@ -16,7 +16,7 @@ PlanView := {
 
 	## Where a point `metres_right` right of the plan's chosen place and
 	## `metres_down` below it lands on the canvas. Either can be negative.
-	canvas_point : PlanView, { metres_right : F64, metres_down : F64 } -> Point.Point
+	canvas_point : PlanView, { metres_right : F64, metres_down : F64 } -> Point
 	canvas_point = |plan, { metres_right, metres_down }|
 		Point.at(
 			plan.origin.x.to_f64() + metres_right * plan.pixels_a_metre,

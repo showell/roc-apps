@@ -183,7 +183,7 @@ across_stretch : F64
 across_stretch = 2.0
 
 ## The right of the road is down the canvas, for a rider heading across it.
-canvas_point : ArcPoint -> Point.Point
+canvas_point : ArcPoint -> Point
 canvas_point = |{ forward, across }| {
 	metres_down = across.to_metres() * across_stretch
 	road_plan.canvas_point({ metres_right: forward.to_metres(), metres_down })
@@ -425,7 +425,7 @@ mark_x = |number| WidgetPage.side_margin + 8.0 + (number.to_f64() - 1.0) * mark_
 
 ## The stop whose mark is at `spot`. Each mark's reach ends halfway to the next
 ## one, so no click is on two.
-mark_under : Point.Point -> Try(Stop, [NoMark])
+mark_under : Point -> Try(Stop, [NoMark])
 mark_under = |spot| {
 	x = spot.x.to_f64()
 	y = spot.y.to_f64()
@@ -532,7 +532,7 @@ expect previous_stop(Shown(1)) == Start
 expect previous_stop(Start) == Start
 
 ## The stop after a click at `spot` from the third try.
-clicked_from_three : Point.Point -> Stop
+clicked_from_three : Point -> Stop
 clicked_from_three = |spot| stop_after_input(Shown(3), Click.click_at(spot))
 
 # A click on a mark goes straight to that stop, either way along the row.

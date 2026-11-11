@@ -61,7 +61,7 @@ Brush :: [].{
 			{
 				inner_color : Brush.Rgba,
 				outer_color : Brush.Rgba,
-				center : Point.Point,
+				center : Point,
 				inner_radius : Pixels,
 				outer_radius : Pixels,
 			},
@@ -69,8 +69,8 @@ Brush :: [].{
 		Linear(
 			{
 				stops : Brush.TwoStops,
-				start_point : Point.Point,
-				end_point : Point.Point,
+				start_point : Point,
+				end_point : Point,
 			},
 		),
 
@@ -78,9 +78,9 @@ Brush :: [].{
 		Ellipse(
 			{
 				stops : Brush.TwoStops,
-				center : Point.Point,
-				axis_u : Point.Point,
-				axis_v : Point.Point,
+				center : Point,
+				axis_u : Point,
+				axis_v : Point,
 			},
 		),
 
@@ -96,7 +96,7 @@ Brush :: [].{
 		middle_color : Brush.Rgba,
 		outer_color : Brush.Rgba,
 		middle_offset : F64,
-		center : Point.Point,
+		center : Point,
 		inner_radius : Pixels,
 		outer_radius : Pixels,
 	}
@@ -108,7 +108,7 @@ Brush :: [].{
 	## span whose two edges meet, a line from a point to itself or a ring whose
 	## radii meet, gives its far colour everywhere, since there is no distance
 	## along it to share out.
-	shade : Brush.Fill, Point.Point -> Brush.Rgba
+	shade : Brush.Fill, Point -> Brush.Rgba
 	shade = |fill, point| {
 		x = point.x.to_f64()
 		y = point.y.to_f64()
@@ -204,9 +204,9 @@ Brush :: [].{
 	## ellipse has no sound inverse to shade with.
 	elliptical_gradient : {
 		stops : Brush.TwoStops,
-		center : Point.Point,
-		axis_u : Point.Point,
-		axis_v : Point.Point,
+		center : Point,
+		axis_u : Point,
+		axis_v : Point,
 	} -> Try(Brush.Fill, [TooThin])
 	elliptical_gradient = |look|
 		if ellipse_determinant({
@@ -222,7 +222,7 @@ Brush :: [].{
 	## circle, the inverse of the one whose columns are its axes. An offset
 	## (dx, dy) goes to (top_row.x * dx + top_row.y * dy, bottom_row.x * dx +
 	## bottom_row.y * dy). Brush.shade and BrushGlsl's uniforms both use it.
-	ellipse_inverse : { axis_u : Point.Point, axis_v : Point.Point } -> {
+	ellipse_inverse : { axis_u : Point, axis_v : Point } -> {
 		top_row : Brush.MatrixRow,
 		bottom_row : Brush.MatrixRow,
 	}
@@ -298,7 +298,7 @@ Brush :: [].{
 
 	## The fill of the region with these corners, shaded across its width as
 	## `width_shade` shades it. A region has a corner, so none crashes.
-	corners_shade : List(Point.Point), Brush.WidthShade -> Brush.Fill
+	corners_shade : List(Point), Brush.WidthShade -> Brush.Fill
 	corners_shade = |corners, width_shading| Brush.width_shade(x_span(corners), width_shading)
 
 	## A gradient that spreads in a circle from `center`, from `center_color`
@@ -306,7 +306,7 @@ Brush :: [].{
 	CircularGradient : {
 		center_color : ArgbColor,
 		edge_color : ArgbColor,
-		center : Point.Point,
+		center : Point,
 		radius : Pixels,
 	}
 
@@ -332,8 +332,8 @@ Brush :: [].{
 	## a point to itself has no direction, so it crashes.
 	linear_gradient : {
 		stops : Brush.TwoStops,
-		start_point : Point.Point,
-		end_point : Point.Point,
+		start_point : Point,
+		end_point : Point,
 	} -> Brush.Fill
 	linear_gradient = |{ stops, start_point, end_point }| {
 		dx = end_point.x.minus(start_point.x).to_f64()
@@ -378,7 +378,7 @@ clamp01 = |t| if t < 0.0 {
 ## or 1 when the radii meet.
 radial_fraction : { x : F64, y : F64 },
 {
-	center : Point.Point,
+	center : Point,
 	inner_radius : Pixels,
 	outer_radius : Pixels,
 } -> F64
@@ -397,7 +397,7 @@ radial_fraction = |{ x, y }, ring| {
 
 ## The determinant of the matrix whose columns are an ellipse's axes. Near
 ## zero, the axes are nearly parallel and the ellipse has no inverse.
-ellipse_determinant : { axis_u : Point.Point, axis_v : Point.Point } -> F64
+ellipse_determinant : { axis_u : Point, axis_v : Point } -> F64
 ellipse_determinant = |
 	{ axis_u, axis_v },
 | axis_u.x.to_f64() * axis_v.y.to_f64() - axis_u.y.to_f64() * axis_v.x.to_f64()
@@ -438,7 +438,7 @@ is_too_narrow_to_shade : Brush.XSpan -> Bool
 is_too_narrow_to_shade = |span| span.max_x.minus(span.min_x) < narrowest_shaded_width
 
 ## The span of x over a region's corners. It has at least one corner.
-x_span : List(Point.Point) -> Brush.XSpan
+x_span : List(Point) -> Brush.XSpan
 x_span = |corners|
 	match corners.map(|corner| corner.x) {
 		[first, .. as rest] => {
@@ -619,14 +619,14 @@ expect !is_too_narrow_to_shade({ min_x: Pixels.of(10.0), max_x: Pixels.of(30.0) 
 expect x_span(wide_corners) == { min_x: Pixels.of(10.0), max_x: Pixels.of(30.0) }
 expect x_span([Point.at(5.0, 99.0)]) == { min_x: Pixels.of(5.0), max_x: Pixels.of(5.0) }
 
-wide_corners : List(Point.Point)
+wide_corners : List(Point)
 wide_corners = [
 	Point.at(10.0, 1.0),
 	Point.at(30.0, 2.0),
 	Point.at(20.0, 3.0),
 ]
 
-narrow_corners : List(Point.Point)
+narrow_corners : List(Point)
 narrow_corners = [
 	Point.at(10.0, 1.0),
 	Point.at(10.5, 2.0),

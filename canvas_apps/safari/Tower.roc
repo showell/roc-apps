@@ -235,8 +235,8 @@ shortest_rod_with_direction = Pixels.of(0.0001)
 
 ## A rod between two points on screen, `width` wide, in `color`.
 screen_rod : {
-	from : Point.Point,
-	to : Point.Point,
+	from : Point,
+	to : Point,
 	width : Pixels,
 	color : RgbColor,
 } -> Shapes.Shape
@@ -262,8 +262,8 @@ screen_rod = |{ from, to, width, color }| {
 ## The quad of a rod from `from` to `to`, its sides `offset_x` and
 ## `offset_y` either side of the line between them, in `color`.
 rod_quad : {
-	from : Point.Point,
-	to : Point.Point,
+	from : Point,
+	to : Point,
 	offset_x : Pixels,
 	offset_y : Pixels,
 	color : RgbColor,

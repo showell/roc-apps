@@ -121,7 +121,7 @@ picture_shapes = WidgetPage.picture_shapes({
 })
 
 ## Whether `point` is on the canvas, edges included.
-is_on_canvas : Point.Point -> Bool
+is_on_canvas : Point -> Bool
 is_on_canvas = |{ x, y }|
 	x.to_f64() >= 0.0
 		and x.to_f64() <= WidgetPage.canvas_width
@@ -129,7 +129,7 @@ is_on_canvas = |{ x, y }|
 		and y.to_f64() <= canvas_height
 
 ## Where a stand's tree has its foot and its tip on the canvas.
-canvas_ends : Stand -> Try({ foot : Point.Point, tip : Point.Point }, [BehindCamera])
+canvas_ends : Stand -> Try({ foot : Point, tip : Point }, [BehindCamera])
 canvas_ends = |stand| {
 	sighting = stand_sighting(stand)?
 	outline = TreeShapes.tree_outline(

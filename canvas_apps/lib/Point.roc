@@ -4,10 +4,12 @@
 ## imports, can name it too.
 import Pixels
 
-Point :: [].{
-	Point : { x : Pixels, y : Pixels }
+Point := { x : Pixels, y : Pixels }.{
+
+	## Two points are equal when both their coordinates are.
+	is_eq : _
 
 	## The point `x` pixels across and `y` pixels down.
-	at : F64, F64 -> Point.Point
+	at : F64, F64 -> Point
 	at = |x, y| { x: Pixels.of(x), y: Pixels.of(y) }
 }

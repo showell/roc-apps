@@ -104,7 +104,7 @@ picture_shapes = WidgetPage.picture_shapes({
 })
 
 ## Whether `point` is on the canvas, edges included.
-is_on_canvas : Point.Point -> Bool
+is_on_canvas : Point -> Bool
 is_on_canvas = |{ x, y }|
 	x.to_f64() >= 0.0
 		and x.to_f64() <= WidgetPage.canvas_width

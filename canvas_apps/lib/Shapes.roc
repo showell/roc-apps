@@ -13,9 +13,9 @@ Shapes :: [].{
 		## Three corners, which is every triangle and nothing else.
 		Triangle(
 			{
-				first : Point.Point,
-				second : Point.Point,
-				third : Point.Point,
+				first : Point,
+				second : Point,
+				third : Point,
 				fill : Brush.Fill,
 			},
 		),
@@ -24,10 +24,10 @@ Shapes :: [].{
 		## upright one.
 		Quad(
 			{
-				first : Point.Point,
-				second : Point.Point,
-				third : Point.Point,
-				fourth : Point.Point,
+				first : Point,
+				second : Point,
+				third : Point,
+				fourth : Point,
 				fill : Brush.Fill,
 			},
 		),
@@ -35,7 +35,7 @@ Shapes :: [].{
 		## A circle, `radius` out from `center`.
 		Disc(
 			{
-				center : Point.Point,
+				center : Point,
 				radius : Pixels,
 				fill : Brush.Fill,
 			},
@@ -43,7 +43,7 @@ Shapes :: [].{
 
 		## An outline of any other number of corners, in order around its edge: a
 		## traced still, a mountain, the road.
-		Polygon({ corners : List(Point.Point), fill : Brush.Fill }),
+		Polygon({ corners : List(Point), fill : Brush.Fill }),
 
 		## A mark, not a shape: how the shapes after it combine, until the next `Blend`.
 		## A painter holds this as a mode, so a mark in the list says it directly.
@@ -108,8 +108,8 @@ Shapes :: [].{
 		Screen,
 		World(
 			{
-				target : Point.Point,
-				offset : Point.Point,
+				target : Point,
+				offset : Point,
 				rotation : F64,
 				zoom : F64,
 			},
@@ -120,8 +120,8 @@ Shapes :: [].{
 	## painter could not map the screen back into this space, and a zoom that is
 	## not finite comes only from a bug; either crashes.
 	world_space : {
-		target : Point.Point,
-		offset : Point.Point,
+		target : Point,
+		offset : Point,
 		rotation : F64,
 		zoom : F64,
 	} -> Shapes.Space
@@ -154,7 +154,7 @@ Shapes :: [].{
 	## make a `Triangle`, four a `Quad`, and any other number a `Polygon`. Every
 	## maker that works through a list of corners comes here, so the count
 	## always matches the tag.
-	region_from_corners : List(Point.Point), Brush.Fill -> Shapes.Shape
+	region_from_corners : List(Point), Brush.Fill -> Shapes.Shape
 	region_from_corners = |corners, fill|
 		match corners {
 			[first, second, third] => Triangle({ first, second, third, fill })
@@ -164,7 +164,7 @@ Shapes :: [].{
 
 	## The corners of a straight-edged region, in order round its edge. A disc,
 	## a picture, a line of type and a mark have no corners to give.
-	region_corners : Shapes.Shape -> Try(List(Point.Point), [NoCorners])
+	region_corners : Shapes.Shape -> Try(List(Point), [NoCorners])
 	region_corners = |shape|
 		match shape {
 			Triangle(t) => Ok([t.first, t.second, t.third])
@@ -176,7 +176,7 @@ Shapes :: [].{
 	## An upright box, `width` across and `height` down from `top_left`, as the
 	## quad it is: clockwise on the screen from its top left corner.
 	rectangle : {
-		top_left : Point.Point,
+		top_left : Point,
 		width : Pixels,
 		height : Pixels,
 		fill : Brush.Fill,
@@ -198,8 +198,8 @@ Shapes :: [].{
 	## gridline. A line from a point to itself has no direction to be wide
 	## across, and crashes.
 	line : {
-		from : Point.Point,
-		to : Point.Point,
+		from : Point,
+		to : Point,
 		width : Pixels,
 	},
 	Brush.Fill -> Shapes.Shape
@@ -234,7 +234,7 @@ Shapes :: [].{
 	## makes a ring too, but only on a background of a known flat color. Fewer
 	## than three sides enclose nothing, and crash.
 	ring_shapes : {
-		center : Point.Point,
+		center : Point,
 		radius : Pixels,
 		line_width : Pixels,
 		sides : U64,
@@ -340,7 +340,7 @@ Shapes :: [].{
 
 	## Light in `color` at the middle, at the colour's own alpha, fading to
 	## nothing at `radius`.
-	halo : { center : Point.Point, radius : Pixels }, Brush.Rgba -> Shapes.Shape
+	halo : { center : Point, radius : Pixels }, Brush.Rgba -> Shapes.Shape
 	halo = |{ center, radius }, color|
 		Disc({
 			center,
@@ -358,7 +358,7 @@ Shapes :: [].{
 	## `corner_steps` steps. A radius of zero or no steps gives the plain box, and a
 	## radius too big for the box is held to half its shorter side.
 	rounded_rect : {
-		top_left : Point.Point,
+		top_left : Point,
 		width : Pixels,
 		height : Pixels,
 		corner_radius : Pixels,
@@ -434,7 +434,7 @@ squashable_fill = |fill|
 	}
 
 ## A point's x pulled toward `axis` by `cosine`.
-pulled_point : Point.Point, { axis : Pixels, cosine : F64 } -> Point.Point
+pulled_point : Point, { axis : Pixels, cosine : F64 } -> Point
 pulled_point = |{ x, y }, { axis, cosine: k }| {
 	x: Pixels.of(axis.to_f64() + (x.to_f64() - axis.to_f64()) * k),
 	y,
@@ -455,13 +455,13 @@ half_pi = F64.pi / 2.0
 
 ## The corners of a quarter turn about `center`, starting at `start_angle`,
 ## onto `corners`.
-quarter_turn_corners : List(Point.Point),
+quarter_turn_corners : List(Point),
 {
 	center : { x : F64, y : F64 },
 	radius : F64,
 	start_angle : F64,
 	steps : U64,
-} -> List(Point.Point)
+} -> List(Point)
 quarter_turn_corners = |corners, { center, radius, start_angle, steps }| {
 	var $out = corners
 	for k in 0..=steps {
@@ -573,7 +573,7 @@ expect {
 
 ## Five corners round a house's end: up a wall, the roof's two slopes, down the
 ## other wall, and back along the floor.
-house_corners : List(Point.Point)
+house_corners : List(Point)
 house_corners = [
 	Point.at(10.0, 1.0),
 	Point.at(10.0, 5.0),
@@ -729,7 +729,7 @@ expect Shapes.ring_shapes(
 ).len() == 3
 
 ## A ring sector's corners: outer start, outer end, inner end, inner start.
-sector_corners : Shapes.Shape -> List(Point.Point)
+sector_corners : Shapes.Shape -> List(Point)
 sector_corners = |shape|
 	match shape {
 		Quad(q) => [q.first, q.second, q.third, q.fourth]

@@ -187,7 +187,7 @@ Roc's own rules are in the langref's
 - **A top-level value or a field is never one letter.** `board_width`, not
   `w`; `row`, not `y`. It is read far from where it is set, so its name is
   all the reader has. Coordinates are the exception: `x` and `y` on a point
-  like lib's `Point.Point` are the words for what they hold. A local or a lambda's
+  like lib's `Point` are the words for what they hold. A local or a lambda's
   parameter can be short: its definition is in view.
 - **A type or a field is named for what it holds, not where it sits.**
   `Entry`, `Item`, `Node`, `Data` and `Info` say only that a value is in a list
@@ -797,6 +797,11 @@ is the base; these rules sharpen it.
   helper : Str -> Str
   helper = |s| s.trim()
   ```
+- **A module that holds one type is that type.** lib's `Point.roc` declares
+  `Point := { x : Pixels, y : Pixels }.{ … }`, so callers write `Point`, not
+  `Point.Point`; a record nominal type still reads `.x` and builds from a
+  plain record literal, and `is_eq : _` gives it `==`. An empty `[].{ }`
+  block with the type nested inside makes every caller say the name twice.
 - **A resource is reached through one module.** In the chat, `Files.roc` is
   the only caller of the host's file functions, and it keeps missing and
   failed apart as a `Try`'s two error tags. Every other module asks it; a
@@ -980,9 +985,9 @@ is the base; these rules sharpen it.
   ```roc
   triangle : I64,
   {
-  	first_corner : Point.Point,
-  	second_corner : Point.Point,
-  	third_corner : Point.Point,
+  	first_corner : Point,
+  	second_corner : Point,
+  	third_corner : Point,
   } -> Shapes.Shape
   triangle = |color, { first_corner, second_corner, third_corner }|
   ```

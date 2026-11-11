@@ -127,7 +127,7 @@ Camera :: [].{
 }
 
 ## `v`, widened to the F64 a frame is made of.
-point_of_vec2 : Math.Vec2 -> Point.Point
+point_of_vec2 : Math.Vec2 -> Point
 point_of_vec2 = |v| Point.at(v.x.to_f64(), v.y.to_f64())
 
 # A number that is not finite has no place on a camera, and comes only from a

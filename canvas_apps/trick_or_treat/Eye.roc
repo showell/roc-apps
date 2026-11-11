@@ -47,7 +47,7 @@ Eye :: [].{
 
 	## A polygon of world points as corners on the screen: turned, cut to what
 	## is in front of the eye, and projected. Empty when none of it is.
-	screen_corners : Eye.Eye, List(Eye.At) -> List(Point.Point)
+	screen_corners : Eye.Eye, List(Eye.At) -> List(Point)
 	screen_corners = |eye, points|
 		clipped(turned(eye, points)).map(
 			|point| {

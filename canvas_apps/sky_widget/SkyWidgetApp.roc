@@ -264,7 +264,7 @@ warmth_level : Clock -> F64
 warmth_level = |clock| Sky.horizon_warmth_at(clock).to_f64()
 
 ## Where the chart shows `level_at` at `clock`.
-chart_point : Clock, (Clock -> F64) -> Point.Point
+chart_point : Clock, (Clock -> F64) -> Point
 chart_point = |clock, level_at| {
 	steps_in = clock.steps_since(Clock.start).to_f64()
 	steps_in_sunset = sunset.last.steps_since(Clock.start).to_f64()
@@ -324,7 +324,7 @@ cursor_shapes = |job, clock| {
 	).prepend(cursor)
 }
 
-curve_dot : Point.Point, RgbColor -> Shapes.Shape
+curve_dot : Point, RgbColor -> Shapes.Shape
 curve_dot = |center, color|
 	Disc({
 		center,

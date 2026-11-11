@@ -324,10 +324,10 @@ shapes_of_tower_100_ahead = {
 ## Rod `index` of the tower 100 m ahead: its legs come first, then its rings
 ## and its braces.
 tower_rod : U64 -> {
-	first : Point.Point,
-	second : Point.Point,
-	third : Point.Point,
-	fourth : Point.Point,
+	first : Point,
+	second : Point,
+	third : Point,
+	fourth : Point,
 	fill : Brush.Fill,
 }
 tower_rod = |index|

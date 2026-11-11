@@ -179,7 +179,7 @@ picture_shapes = FrameView.painted_shapes({
 
 ## Every corner of `shapes`' straight-edged regions, or none if any shape has
 ## no corners.
-polygon_corners : List(Shapes.Shape) -> Try(List(Point.Point), [NotPolygon])
+polygon_corners : List(Shapes.Shape) -> Try(List(Point), [NotPolygon])
 polygon_corners = |shapes| {
 	polygons = shapes.keep_oks(Shapes.region_corners)
 	if polygons.len() == shapes.len() {

@@ -417,10 +417,10 @@ expect
 
 ## A quad's four corners in order, each as its x and its y, as plain numbers.
 quad_numbers : {
-	first : Point.Point,
-	second : Point.Point,
-	third : Point.Point,
-	fourth : Point.Point,
+	first : Point,
+	second : Point,
+	third : Point,
+	fourth : Point,
 	..,
 } -> List(F64)
 quad_numbers = |{ first, second, third, fourth, .. }|

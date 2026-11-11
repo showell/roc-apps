@@ -18,7 +18,7 @@ Camera :: [].{
 
 	## Where a point in front of the camera lands on the screen, through a
 	## lens of `focal_length`.
-	project : RiderView.RaisedPointAhead, Pixels -> Point.Point
+	project : RiderView.RaisedPointAhead, Pixels -> Point
 	project = |p, focal_length| {
 		slope_right = p.right().ratio_to(p.forward())
 		slope_up = p.height().minus(eye_height).ratio_to(p.forward())
@@ -37,7 +37,7 @@ Camera :: [].{
 	## An upright object on the screen: where its foot is, and how far up the
 	## screen its top is from there. A tree, a still and a billboard all stand
 	## this way.
-	Upright : { foot : Point.Point, height_on_screen : Pixels }
+	Upright : { foot : Point, height_on_screen : Pixels }
 
 	## The object standing at `base`, `height` tall, on the screen.
 	upright_on_screen : RiderView.RaisedPointAhead,
@@ -53,7 +53,7 @@ Camera :: [].{
 
 	## Each of `points` put on the screen, in order, through a lens of focal
 	## length `focal_length`.
-	projected_points : List(RiderView.RaisedPointAhead), Pixels -> List(Point.Point)
+	projected_points : List(RiderView.RaisedPointAhead), Pixels -> List(Point)
 	projected_points = |points, focal_length| points.map(|p| project(p, focal_length))
 
 	## A polygon of one color, in the rider's view.
@@ -86,7 +86,7 @@ Camera :: [].{
 ahead : RiderView.RaisedPoint -> RiderView.RaisedPointAhead
 ahead = |point| RiderView.raised_point_ahead(point) ?? crash "a test's point is past the near plane"
 
-screen_point : RiderView.RaisedPoint -> Point.Point
+screen_point : RiderView.RaisedPoint -> Point
 screen_point = |point| Camera.project(ahead(point), Pixels.of(800.0))
 
 expect screen_point({

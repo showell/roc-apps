@@ -20,7 +20,7 @@ ScanlineFill :: [].{
 	polygon_pixels : List(U32),
 	{
 		roll : ScreenRoll,
-		corners : List(Point.Point),
+		corners : List(Point),
 		fill : Brush.Fill,
 		mode : Shapes.Mode,
 	} -> List(U32)

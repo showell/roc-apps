@@ -184,7 +184,7 @@ stills_models = {
 
 ## The corners of a frame's straight-edged regions that lie wholly above the
 ## panel.
-picture_points : List(Shapes.Shape) -> List(Point.Point)
+picture_points : List(Shapes.Shape) -> List(Point)
 picture_points = |shapes| {
 	regions = shapes.keep_oks(Shapes.region_corners)
 	is_above_panel = |point| point.y.to_f64() < WidgetPage.picture_bottom_y

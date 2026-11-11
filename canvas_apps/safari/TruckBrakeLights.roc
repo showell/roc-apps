@@ -93,7 +93,7 @@ lamp_pair_shapes = |truck| {
 ## The center of a polygon on screen: the mean of its corners. Each sum
 ## runs from the last corner to the first; a float sum's rounding depends
 ## on its order, and another order can move a pixel.
-center_of : List(Point.Point) -> Point.Point
+center_of : List(Point) -> Point
 center_of = |corners| {
 	count = corners.len().to_f64()
 	{
@@ -104,7 +104,7 @@ center_of = |corners| {
 
 ## How far a brake light's glow reaches from `center`, the lamp's
 ## center.
-glow_radius : List(Point.Point), Point.Point -> Pixels
+glow_radius : List(Point), Point -> Pixels
 glow_radius = |lamp_points, center| Screen.farthest_distance(lamp_points, center).times(glow_reach)
 
 ## A brake light on the back of the trailer, its sides `left` and `right`
@@ -156,7 +156,7 @@ brake_glow = |truck, lamp_points| {
 expect TruckBrakeLights.at(Slowing) == On
 expect TruckBrakeLights.at(NotSlowing) == Off
 
-panel_points : List(Point.Point)
+panel_points : List(Point)
 panel_points = [
 	Point.at(3.0, 4.0),
 	Point.at(6.0, 8.0),
@@ -164,7 +164,7 @@ panel_points = [
 	Point.at(7.0, 4.0),
 ]
 
-triangle_points : List(Point.Point)
+triangle_points : List(Point)
 triangle_points = [
 	Point.at(0.0, 0.0),
 	Point.at(3.0, 0.0),

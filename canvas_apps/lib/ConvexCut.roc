@@ -14,7 +14,7 @@ ConvexCut :: [].{
 	## `cut_shapes` makes these, and only the native runner paints them.
 	CutShape : [
 		Uncut(Shapes.Shape),
-		Triangles({ triangle_corners : List(Point.Point), fill : Brush.Fill }),
+		Triangles({ triangle_corners : List(Point), fill : Brush.Fill }),
 	]
 
 	## The frame with each concave quad and polygon cut into triangles.
@@ -33,7 +33,7 @@ ConvexCut :: [].{
 }
 
 ## `shape` as it is when its `corners` are convex, else their triangles.
-cut_shape : Shapes.Shape, { corners : List(Point.Point), fill : Brush.Fill } -> ConvexCut.CutShape
+cut_shape : Shapes.Shape, { corners : List(Point), fill : Brush.Fill } -> ConvexCut.CutShape
 cut_shape = |shape, { corners, fill }| {
 	plain_corners = corners.map(plain_point)
 	if is_convex(plain_corners) {
@@ -49,10 +49,10 @@ cut_shape = |shape, { corners, fill }| {
 ## A corner as plain numbers, which the cut's arithmetic is done in.
 PlainPoint : { x : F64, y : F64 }
 
-plain_point : Point.Point -> PlainPoint
+plain_point : Point -> PlainPoint
 plain_point = |{ x, y }| { x: x.to_f64(), y: y.to_f64() }
 
-frame_point : PlainPoint -> Point.Point
+frame_point : PlainPoint -> Point
 frame_point = |{ x, y }| Point.at(x, y)
 
 ## Each triangle wound as roc-ray's convex fill winds one: its second and third

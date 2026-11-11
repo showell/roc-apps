@@ -278,11 +278,11 @@ large_anchor = |still| {
 	)
 }
 
-middle_of : Click.Area -> Point.Point
+middle_of : Click.Area -> Point
 middle_of = |area| Point.at(area.left + area.width / 2.0, area.top + area.height / 2.0)
 
 ## `model` after a click at `spot`, which does nothing off the stills.
-model_after_click : StillsWidgetApp.Model, Point.Point -> StillsWidgetApp.Model
+model_after_click : StillsWidgetApp.Model, Point -> StillsWidgetApp.Model
 model_after_click = |model, spot|
 	match cells.find_first(|cell| cell.area.contains(spot)) {
 		Ok(cell) => { ..model, large_pose: cell.pose }
@@ -454,7 +454,7 @@ shapes_at = |model|
 		.concat(grid_shapes)
 
 ## Where a point of a still lands on the canvas.
-landing_spot : StillShapes.Anchor, Still.FramePoint -> Point.Point
+landing_spot : StillShapes.Anchor, Still.FramePoint -> Point
 landing_spot = |anchor, point| StillShapes.screen_point(anchor, point)
 
 ## Whether every point of a still lands in `area`.
@@ -474,7 +474,7 @@ start : StillsWidgetApp.Model
 start = StillsWidgetApp.canvas_app.init
 
 ## A left click at `spot` from `model`.
-left_click : StillsWidgetApp.Model, Point.Point -> StillsWidgetApp.Model
+left_click : StillsWidgetApp.Model, Point -> StillsWidgetApp.Model
 left_click = |model, spot| next_model(model, Click.click_at(spot))
 
 ## Whether `model` is unchanged from the start.

@@ -51,7 +51,7 @@ Beacon :: Fraction.{
 	## `metre_on_screen`, unless it is too dim or too small to draw.
 	disc : Beacon,
 	{
-		center : Point.Point,
+		center : Point,
 		metre_on_screen : Pixels,
 	} -> Try(Shapes.Shape, [TooDim, TooSmall])
 	disc = |Beacon.(fraction), { center, metre_on_screen }|
@@ -118,7 +118,7 @@ smallest_beacon_radius = Pixels.of(0.5)
 
 ## A beacon's disc, seen through as far as `brightness` says.
 beacon_disc : {
-	center : Point.Point,
+	center : Point,
 	radius_on_screen : Pixels,
 	brightness : Fraction,
 } -> Shapes.Shape

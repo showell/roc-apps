@@ -47,7 +47,7 @@ Lens :: [].{
 		turn : Angle.Turn,
 		height : FarHeight,
 		focal_length : Pixels,
-	} -> Try(Point.Point, [BehindCamera])
+	} -> Try(Point, [BehindCamera])
 	far_point = |{ turn, height, focal_length }|
 		if turn.abs() >= quarter_turn {
 			Err(BehindCamera)
@@ -151,7 +151,7 @@ expect
 
 ## Where a far point on the horizon lands at a turn of `radians`, through the
 ## lens at rest.
-far_point_at_turn : F64 -> Try(Point.Point, [BehindCamera])
+far_point_at_turn : F64 -> Try(Point, [BehindCamera])
 far_point_at_turn = |radians|
 	Lens.far_point({
 		turn: Angle.Turn.radians(radians),
