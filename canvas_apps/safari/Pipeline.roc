@@ -115,7 +115,7 @@ Pipeline :: [].{
 		}
 	}
 
-	## `sighting` drawn through the frame's lens, in its light.
+	## The rendering of `sighting` through the frame's lens, in its light.
 	rendering_of : Pipeline.Sighted(kind), Sprite.LensAndLight -> Rendered
 		where [kind.scenery_sprite : kind, Sprite.Setting -> Sprite]
 	rendering_of = |sighting, { focal_length, darkness }|
