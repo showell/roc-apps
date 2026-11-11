@@ -93,7 +93,7 @@ Here's what its parts say:
 | `F64` | What's inside: one of Roc's number types, a 64-bit floating-point number. A `Distance` is a length in metres. |
 | `.{` and `}` | The type's own functions sit between these braces. |
 | `metres : F64 -> Distance` | `metres` names a function, and after the colon comes its type: it takes an `F64` and gives back a `Distance`. |
-| `metres = \|metres\| Distance.(metres)` | The function itself. Between the bars is what it's given, and `Distance.(metres)` wraps that number as a `Distance`. |
+| `metres = \|metres\| Distance.(metres)` | The function itself. Between the two `\|` characters is what it's given, and `Distance.(metres)` wraps that number as a `Distance`. |
 | `to_metres = \|Distance.(d)\| d` | The other way round: `Distance.(d)` opens a `Distance`, and the function gives back the number inside. |
 | `##` | A line that starts with `##` is a doc comment, which describes the code under it, as the one above `zero` does. |
 | `is_gt` to `is_lte` | These four let `>`, `>=`, `<` and `<=` compare two lengths. |
@@ -445,7 +445,7 @@ Each tier also needs a top and a bottom. They follow a rule, so another `map` wo
 
 {{code TreeShapes.tiers}}
 
-`map_with_index` is `map` with one more thing for the function: the item's place in the list, counting from 0. The function here is written in place, right where `map_with_index` takes it. Between the bars, it takes a width and its index, and it gives back a record. Each tier's top is a tenth of the crown lower than the top of the tier above, and its bottom is three tenths below its top, so each tier overlaps the next. `index` is a `U64`, a whole number, and `to_f64` turns it into an `F64` for the division.
+`map_with_index` is `map` with one more thing for the function: the item's place in the list, counting from 0. The function here is written in place, right where `map_with_index` takes it. `|width, index|` says it takes a width and its index, and it gives back a record. Each tier's top is a tenth of the crown lower than the top of the tier above, and its bottom is three tenths below its top, so each tier overlaps the next. `index` is a `U64`, a whole number, and `to_f64` turns it into an `F64` for the division.
 
 ### Freezing the tiers
 
@@ -469,7 +469,7 @@ Three small functions read the crown's place from the outline:
 
 {{code TreeShapes.tier_triangle}}
 
-It takes the outline and a record, and its bars take the record apart, as `Shapes.rectangle` did. The body names four values on the way, each on a line of its own: `crown_top`, `bottom_y`, `top_y` and `half_base`. A name holds its value for the rest of the body, and the last expression, the `Triangle`, is what the function gives back. Like `Distance`, `Pixels` has its own `plus`, `minus` and `scaled_by`. `scaled_by` multiplies a length by a `Fraction`, and `minus` subtracts one length from another. On the screen, `y` grows downward, so `plus` moves down from the tip. The triangle's first corner sits on the tree's middle line at the tier's top. The other two sit at the tier's bottom, `half_base` to either side.
+It takes the outline and a record, and `|outline, { tier, foliage_color }|` takes the record apart into its fields, as `Shapes.rectangle` did. The body names four values on the way, each on a line of its own: `crown_top`, `bottom_y`, `top_y` and `half_base`. A name holds its value for the rest of the body, and the last expression, the `Triangle`, is what the function gives back. Like `Distance`, `Pixels` has its own `plus`, `minus` and `scaled_by`. `scaled_by` multiplies a length by a `Fraction`, and `minus` subtracts one length from another. On the screen, `y` grows downward, so `plus` moves down from the tip. The triangle's first corner sits on the tree's middle line at the tier's top. The other two sit at the tier's bottom, `half_base` to either side.
 
 ### Painting the tree
 
@@ -483,7 +483,7 @@ The order of the shapes matters as much as the shapes. `tree_sprite` draws the w
 
 {{code TreeShapes.tree_sprite}}
 
-It takes the tree's setting and a record, and its bars take each one apart into the fields it uses. `dimmed_foliage` darkens the foliage's color as dusk falls, and `trunk_color` is the trunk's brown, darkened the same way. `tier_inputs_of` works out what every tier needs, once for the whole tree. Among those are `base`, the middle of the tree's foot, and the tree's outline. `forward()` gives how far ahead of the camera the foot is. From that distance, `crown_of` and `trunk_finish_of` choose how much detail the tree gets, which we come to at the end of the chapter. For a far tree, `crown` is `Triangles`, and the trunk's finish is `Flat`.
+It takes the tree's setting and a record, and `|{ spot, focal_length, darkness }, { height, foliage_color }|` takes each one apart into its fields. `dimmed_foliage` darkens the foliage's color as dusk falls, and `trunk_color` is the trunk's brown, darkened the same way. `tier_inputs_of` works out what every tier needs, once for the whole tree. Among those are `base`, the middle of the tree's foot, and the tree's outline. `forward()` gives how far ahead of the camera the foot is. From that distance, `crown_of` and `trunk_finish_of` choose how much detail the tree gets, which we come to at the end of the chapter. For a far tree, `crown` is `Triangles`, and the trunk's finish is `Flat`.
 
 The last line puts the list together. `[trunk]` is a list of one shape, and `concat` joins two lists into one, so the trunk comes first. The platform paints a list from first to last, so the tiers land on the trunk. Each tier also lands on the tier above it and covers that tier's bottom, which is where the overlap goes. `Sprite.from_shapes` makes the list the tree's sprite.
 
