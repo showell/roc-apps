@@ -661,7 +661,7 @@ truck_lead_of : F64 -> TruckSighting.TruckFate
 truck_lead_of = |lead| truck_seen_from(Fixtures.origin, lead)
 
 ## Where the truck is, for a lead that puts it in view.
-sighted_truck_of : F64 -> Truck.SightedTruck
+sighted_truck_of : F64 -> Pipeline.Sighted(Truck)
 sighted_truck_of = |lead| truck_lead_of(lead) ?? crash "SightingExpects: this lead puts the truck in view"
 
 # The truck is in view on the road ahead, and not past its end or behind the

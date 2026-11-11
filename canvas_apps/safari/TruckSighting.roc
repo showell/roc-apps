@@ -14,7 +14,7 @@ import Truck
 TruckSighting :: [].{
 
 	## What became of the truck in a frame.
-	TruckFate : Try(Truck.SightedTruck, [NoTruck, BehindCamera])
+	TruckFate : Try(Pipeline.Sighted(Truck), [NoTruck, BehindCamera])
 
 	## The truck at its `route_position` along the route, looking as its
 	## `truck` says, if it is on the road ahead and in front of the camera.
@@ -36,6 +36,6 @@ TruckSighting :: [].{
 			placed_truck,
 			{ road, vantage, from_rider: Ahead(position) },
 		)?
-		Ok({ spot: sighting.spot, lights: sighting.kind })
+		Ok(sighting)
 	}
 }

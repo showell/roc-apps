@@ -26,7 +26,6 @@ import game.Sun
 import game.TowerSighting
 import game.TreeSighting
 import game.BillboardSighting
-import game.Truck
 import game.TruckSighting
 import game.World
 import lib.Shapes
@@ -221,12 +220,9 @@ truck_renderings = |road, { cam, facts }| {
 	match TruckSighting.truck_in_view(road, { vantage: cam.vantage, truck: facts.truck }) {
 		Ok(truck) =>
 			[
-				Rendered.of(
-					truck.spot.foot().forward(),
-					Truck.truck_sprite(
-						truck,
-						{ focal_length: cam.focal_length, darkness: Sky.darkness_at(facts.clock) },
-					),
+				Pipeline.rendering_of(
+					truck,
+					{ focal_length: cam.focal_length, darkness: Sky.darkness_at(facts.clock) },
 				),
 			]
 		Err(NoTruck) | Err(BehindCamera) => []

@@ -2365,7 +2365,7 @@ New in this chapter:
 
 Here's the whole job in one function. Given a sighted truck and the camera's lens, it works out the truck's setting, then draws its headlight beams, its body and its brake lights, each painted over the one before:
 
-{{code Truck.truck_sprite}}
+{{code Truck.scenery_sprite}}
 
 The body is drawn the same way, one level down. It takes the truck's spot, places each face, sorts the faces far to near so that a nearer face covers a farther one, and clips and projects each one:
 
@@ -2377,7 +2377,7 @@ digraph truck_drawing {
   node [shape=box, fontname="Helvetica"];
   Truck [style=bold];
   Scene -> TruckSighting [label="  finds it with truck_in_view"];
-  Scene -> Truck [label="  draws it with truck_sprite"];
+  Scene -> Truck [label="  draws it with scenery_sprite"];
   Truck -> TruckBody [label="  draws its body with body_sprite"];
   TruckBody -> TruckShape [label="  reads the faces of"];
   TruckBody -> TruckPlacement [label="  places each face with placed_face"];
@@ -2430,7 +2430,7 @@ Placement works a point at a time. Projection works a face at a time, for two re
 
 A truck doesn't bend, so every corner moves together. `TruckSighting` finds the truck on the road ahead and works out two things once: the truck's spot, and which of its lights are on.
 
-{{code Truck.SightedTruck}}
+{{code Pipeline.Sighted}}
 
 Every sighting's spot holds the object's foot in the rider's view, and which way the road runs there. `road_heading_at` finds that direction from two points on the road: the object's own, and a point one metre further along. It brings both into the rider's view, and the angle between them is the heading.
 
@@ -2450,7 +2450,7 @@ The truck is drawn from its spot, the camera's lens and the sky's darkness:
 
 Every corner is lowered by the same drop, how far the ground has curved away beneath the truck's spot. Across a 12-metre truck the drop changes by a few centimetres at most, far less than a pixel. `TruckPlacement.placed_face` places every corner of a face this way, and that's what `body_sprite` sorts and draws.
 
-With the lights off, the beams and the brake lights are empty pictures, and `truck_sprite` draws just the body. The truck is drawn however small it stands, because the rider is always looking for it.
+With the lights off, the beams and the brake lights are empty pictures, and `scenery_sprite` draws just the body. The truck is drawn however small it stands, because the rider is always looking for it.
 
 That's a truck. Next, it moves.
 
@@ -2598,9 +2598,9 @@ Their picture works the same way as the headlights': two lamps on the back of th
 
 {{code Sprite.composite}}
 
-`Truck.truck_sprite`, from the chapter that drew the truck, puts the beams first, then the body, then the brake lights:
+`Truck.scenery_sprite`, from the chapter that drew the truck, puts the beams first, then the body, then the brake lights:
 
-{{code Truck.truck_sprite from "Sprite.composite([" to "lights.brake_lights.sprite(setting),"}}
+{{code Truck.scenery_sprite from "Sprite.composite([" to "truck.brake_lights.sprite(setting),"}}
 
 `TruckBody` knows nothing of the lights: they're drawn around it.
 

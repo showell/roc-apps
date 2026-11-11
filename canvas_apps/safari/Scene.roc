@@ -62,13 +62,7 @@ Scene := {
 		trees_seen = TreeSighting.trees_in_view(road, camera)
 		trucks =
 			match TruckSighting.truck_in_view(road, { vantage, truck: facts.truck }) {
-				Ok(truck) =>
-					[
-						Rendered.of(
-							truck.spot.foot().forward(),
-							Truck.truck_sprite(truck, lens_and_light),
-						),
-					]
+				Ok(truck) => [Pipeline.rendering_of(truck, lens_and_light)]
 				Err(NoTruck) | Err(BehindCamera) => []
 			}
 		{
