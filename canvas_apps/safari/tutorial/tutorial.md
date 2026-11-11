@@ -224,6 +224,8 @@ The things beside the road are its trees, its radio towers and its animals. Here
 A cow and a bull on the grass beside the road.
 ```
 
+On the Roc side, this chapter shows your first functions: how one is annotated and defined, how a dot calls a function that comes with a value's type, and how an `if` picks between two answers.
+
 The ride has a lot of animals: herds of cows, some led by a bull, herds of pigs, ducks on the ponds, and an elephant at a bend in the road. The cat and the bird move, and they get chapters of their own.
 
 Every other animal is a billboard: a flat picture of its emoji, standing on the grass and turned square to the camera, like a cardboard cutout. That takes far less code than modeling an animal, and it's charming.
@@ -286,11 +288,11 @@ Four kinds of big animal stand at the bends in the ride's road: elephants, giraf
 The four bend animals and their babies, lined up on the grass: two pairs face right, and two face left.
 ```
 
-Each emoji shows its animal from the side, so a billboard faces left or right, and your eye follows its gaze.
+The Roc ideas here are tag unions and `match`: a type that is exactly one of a few tags, and code that handles each tag in turn. A nominal type and a tag that carries a value come along with them.
 
 ### Two ways to face
 
-The `Billboard` module gives those two ways a type of their own:
+Each emoji shows its animal from the side, so a billboard faces left or right, and your eye follows its gaze. The `Billboard` module gives those two ways a type of their own:
 
 {{code Billboard.Facing}}
 
@@ -376,6 +378,8 @@ A tag union lists everything a value can be, and a `match` handles each case. Th
 
 A far tree in the ride is a trunk under eight triangles. So before we draw a tree, we draw its two shapes: a triangle and a rectangle.
 
+On the Roc side, this chapter shows tags that carry records, a function that takes a record apart by its field names, and `Pixels`, a number type for the screen.
+
 In Safari Ride, a shape is a value that describes something to paint. The first four tags of the `Shapes` module's `Shape` type are the kinds of region the ride paints, each a region of the screen with a fill:
 
 {{code Shapes.Shapes from "Shape : [" to "Polygon({ corners :"}}
@@ -436,6 +440,8 @@ A far tree in Safari Ride is a trunk under eight triangles. In this chapter we b
 ```widget far_tree
 One far tree, magnified so that it stands tall in the picture.
 ```
+
+The Roc ideas are a function's body, with names for its values along the way, `map` over a list, and an `expect`, Roc's test.
 
 ### Eight tiers
 
@@ -529,6 +535,8 @@ Every thing beside the road takes three forms on its way to the screen: placed o
 The four conifers, left to right: Green, SmallGreen, Red and Gold.
 ```
 
+The Roc lesson is the nominal type again, this time with methods inside its braces and private functions outside them.
+
 A tree needs a height and a color. Where it stands is the job of the forms around it. So the `Conifer` type says which tree it is, and its methods give the height and the color:
 
 {{module Conifer}}
@@ -557,6 +565,8 @@ The pipeline is written once, for every kind of thing beside the road, yet each 
 ```widget kinds
 A tree, a cow, a radio tower, the cat and the bird, each rendered by `Pipeline.rendering_of`, and each at its own distance so that it shows clearly.
 ```
+
+The Roc idea is the `where` clause. It asks a type variable for a method, and the compiler checks every type that fills the variable.
 
 `Pipeline.rendering_of` takes a sighting, with the focal length and the darkness that the whole frame shares, and it gives back a rendering: the thing's sprite, and how far ahead of the camera it stands. Only the kind knows what it looks like, so `rendering_of` asks the kind for its sprite, by calling the kind's own `scenery_sprite` method.
 
