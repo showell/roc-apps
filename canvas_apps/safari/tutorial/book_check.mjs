@@ -186,6 +186,7 @@ const CLICKED_AT = {
   "../bird_widget/": PLAY,
   "../cat_widget/": PLAY,
   "../cow_widget/": FIXED_PICTURE,
+  "../far_tree_widget/": FIXED_PICTURE,
   "../frame_widget/": FIXED_PICTURE,
   "../gaze_widget/": PLAY,
   "../herd_widget/": FIXED_PICTURE,
