@@ -499,6 +499,46 @@ Every tree 200 metres or more ahead of the camera is drawn this way: 200 metres 
 
 So a far tree is a handful of small functions over one list of tiers. The `expect` pins the tiers, each tier becomes a triangle, and one list puts the trunk first and the tiers over it. Every tree beside the road runs through this same code, wherever it stands.
 
+## Nature types
+
+Every thing beside the road takes three forms on its way to the screen: placed on the road, sighted by the camera, and rendered as a sprite with a depth. Its kind rides inside the first two. In this chapter we open a kind, and see how one pipeline asks any kind for what it needs.
+
+Here's a kind, the `Conifer` type, in its whole module:
+
+{{module Conifer}}
+
+A `Conifer` is one of four tags, and it describes a kind of tree. `scenery_height` and `foliage_color` give each kind its height and its color, chosen by eye, and `Green | SmallGreen =>` is one branch for two tags, because both greens share a color. `scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that drew the far tree.
+
+```widget conifers
+The four conifers, left to right: Green, SmallGreen, Red and Gold.
+```
+
+### One pipeline, many kinds
+
+The `Pipeline` module sights and renders things, and it's the same code for every kind that goes through it: trees, critters, radio towers, the cat and the bird. So it asks each kind for what it needs by name, whatever kind it holds. That's how Safari Ride is built.
+
+Rendering needs the kind's sprite:
+
+{{code Pipeline.rendering_of}}
+
+`rendering_of` takes a sighting and a record of the lens and the light. It hands the sighting's spot, the lens and the light to the kind's own `scenery_sprite`, and gives back a `Rendered`: the sprite, and how far ahead of the camera the thing stands.
+
+The annotation's second line is a `where` clause. It asks something of the type variable `kind`: that it have a `scenery_sprite` function of the type after the colon. `Conifer` has one, and so does every other kind that goes through here, so `rendering_of` draws a tree, a cow or a cat.
+
+### Asking for a height
+
+Sighting a thing asks the kind for its height the same way:
+
+{{signatures Pipeline.scenery_sighting_of}}
+
+The sighting needs the height to tell whether the thing's top shows over the horizon, and whether it stands tall enough on the screen to draw. Its answer is a `Try`, one of two tags: `Ok`, holding a `Pipeline.Sighted(kind)`, or `Err`, holding the reason the sighting failed. The reasons are the refusal tags from "The pieces as types": `BehindCamera`, `BelowHorizon` and `TooSmall`. The ride's callers keep the `Ok`s and drop the rest.
+
+### Names that say what they're for
+
+Roc matches a `where` by name and type alone. Any type with a function of that name and that type meets it. So the names say what they're for: `scenery_height` and `scenery_sprite` are there for the things beside the road, and a kind meets the pipeline only on purpose.
+
+So a kind meets the pipeline by having two functions, a height and a sprite. `Conifer` is one such kind, and the critters, the towers, the cat and the bird are the others.
+
 ## The modules
 
 Safari Ride splits cleanly in two: the ride, and the view of the ride. In this chapter we map the modules on both sides, look at the thin layer of JavaScript that runs them, and open up one sighting.
@@ -700,46 +740,6 @@ An index past the end of the route is a bug in Safari Ride, so `crash` stops the
 
 Nothing in this chapter moves, and nothing in the next few chapters does either. We hold one frame still and look at everything in it. First, what a picture is made of.
 
-
-## Nature types
-
-Every thing beside the road takes three forms on its way to the screen: placed on the road, sighted by the camera, and rendered as a sprite with a depth. Its kind rides inside the first two. In this chapter we open a kind, and see how one pipeline asks any kind for what it needs.
-
-Here's a kind, the `Conifer` type, in its whole module:
-
-{{module Conifer}}
-
-A `Conifer` is one of four tags, and it describes a kind of tree, nothing more. `scenery_height` and `foliage_color` give each kind its height and its color, chosen by eye, and `Green | SmallGreen =>` is one branch for two tags, because both greens share a color. `scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that drew the far tree.
-
-```widget conifers
-The four conifers, left to right: Green, SmallGreen, Red and Gold.
-```
-
-### One pipeline, many kinds
-
-The `Pipeline` module sights and renders things, and it's the same code for every kind that goes through it: trees, critters, radio towers, the cat and the bird. So it has to ask each kind for what it needs, without knowing which kind it holds. That's how Safari Ride is built.
-
-Rendering needs the kind's sprite:
-
-{{code Pipeline.rendering_of}}
-
-`rendering_of` takes a sighting and a record of the lens and the light. It hands the sighting's spot, the lens and the light to the kind's own `scenery_sprite`, and gives back a `Rendered`: the sprite, and how far ahead of the camera the thing stands.
-
-The annotation's second line is a `where` clause. It asks something of the type variable `kind`: that it have a `scenery_sprite` function of the type after the colon. `Conifer` has one, and so does every other kind that goes through here, so `rendering_of` draws a tree, a cow or a cat.
-
-### Asking for a height
-
-Sighting a thing asks the kind for its height the same way:
-
-{{signatures Pipeline.scenery_sighting_of}}
-
-The sighting needs the height to tell whether the thing's top shows over the horizon, and whether it stands tall enough on the screen to draw. Its answer is a `Try`, one of two tags: `Ok`, holding a `Pipeline.Sighted(kind)`, or `Err`, holding the reason there's none. The reasons are the refusal tags from "The pieces as types": `BehindCamera`, `BelowHorizon` and `TooSmall`. The ride's callers keep the `Ok`s and drop the rest.
-
-### Names that say what they're for
-
-Roc matches a `where` by name and type alone. Any type with a function of that name and that type meets it. So the names say what they're for: `scenery_height` and `scenery_sprite` are there for the things beside the road, and a kind meets the pipeline only on purpose.
-
-So a kind meets the pipeline by having two functions, a height and a sprite. `Conifer` is one such kind, and the critters, the towers, the cat and the bird are the others.
 
 ## A simple tree
 
