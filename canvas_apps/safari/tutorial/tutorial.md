@@ -558,9 +558,9 @@ The pipeline is written once, for every kind of thing beside the road, yet each 
 A tree, a cow, a radio tower, the cat and the bird, each rendered by `Pipeline.rendering_of`, and each at its own distance so that it shows clearly.
 ```
 
-The function is `Pipeline.rendering_of`. It takes a sighting, and it gives back a rendering: the thing's sprite, and how far ahead of the camera it stands. Only the kind knows what it looks like, so `rendering_of` asks the kind for its sprite, by calling the kind's own `scenery_sprite` method.
+`Pipeline.rendering_of` takes a sighting, and it gives back a rendering: the thing's sprite, and how far ahead of the camera it stands. Only the kind knows what it looks like, so `rendering_of` asks the kind for its sprite, by calling the kind's own `scenery_sprite` method.
 
-That takes a new Roc idea. A sighting is a `Pipeline.Sighted(kind)`, and `kind` is a type variable, so it stands for any type at all: a number, a string or a `Conifer`. Only some types have a `scenery_sprite`. So `rendering_of` narrows it: any type, as long as it has a `scenery_sprite`.
+Asking a kind for a method takes a new Roc idea. A sighting is a `Pipeline.Sighted(kind)`, and `kind` is a type variable, so it stands for any type at all: a number, a string or a `Conifer`. Only some types have a `scenery_sprite`. So `rendering_of` narrows `kind`: any type, as long as it has a `scenery_sprite`.
 
 Roc writes that requirement as a `where` clause, on the line after the annotation:
 
@@ -577,7 +577,7 @@ This table explains the code's concepts:
 
 ### The compiler checks each call
 
-Each call to `rendering_of` fills `kind` with a real type. The ride renders its trees in one line, and there the type is `Conifer`:
+Each call to `rendering_of` fills `kind` with one particular type. The ride renders its trees in one line, and there the type is `Conifer`:
 
 {{code TreeSighting.tree_renderings from "tree_renderings :" to "trees.map"}}
 
