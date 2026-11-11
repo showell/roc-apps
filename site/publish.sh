@@ -4,7 +4,8 @@
 #   site/publish.sh safari      an app: basic, machine, framebuffer, gpu, games; or a
 #                               canvas app: safari, snake, pong, breakout, camera,
 #                               workshop, particles, trick_or_treat
-#   site/publish.sh tutorial    the Safari Ride book, after the widgets it frames
+#   site/publish.sh tutorial    the Safari Ride book, with every widget and app it
+#                               frames (each published first, if staging differs)
 #   site/publish.sh home        the landing page and shared/
 #
 # An app: copies ~/build/roc-apps/next/<app>/ (what <app>'s build.sh last wrote,
@@ -54,10 +55,11 @@ require_checkout() {
     }
 }
 # The book publishes only a build of book.shale. A page staging has is never
-# taken away, since its address is published. Each widget the book frames must
-# already be in staging as the build the book was checked with, so publish
-# those first.
-check_book() {
+# taken away, since its address is published. The widgets and apps the book
+# frames ship with it: each one whose staged copy isn't the build the book was
+# checked with is published first, from the dev channel, by this same script.
+# The list comes from the built pages' own frames, so it can't go stale.
+publish_book_frames() {
     local book="$NEXT/tutorial" page folder
     [ -f "$book/BUILT" ] || { echo "$book is not a build of canvas_apps/safari/tutorial/book.shale"; exit 2; }
     for page in "$LIVE"/tutorial/*.html; do
@@ -65,10 +67,12 @@ check_book() {
         [ -f "$book/${page##*/}" ] || { echo "staging has tutorial/${page##*/} and this book doesn't: a published page never goes away"; exit 2; }
     done
     for folder in $(grep -oh 'src="\.\./[a-z_]*/' "$book"/*.html | sed 's|^src="\.\./||; s|/$||' | sort -u); do
-        [ -d "$LIVE/$folder" ] || { echo "the book frames $folder, which isn't in staging; run site/publish.sh $folder first"; exit 2; }
-        diff -rq -x BUILT -x PROVENANCE -x BOOK_INPUTS "$NEXT/$folder" "$LIVE/$folder" > /dev/null \
-            || { echo "staging's $folder isn't the build the book was checked with; run site/publish.sh $folder"; exit 2; }
-        echo "the book frames $folder, as staged"
+        if [ -d "$LIVE/$folder" ] && diff -rq -x BUILT -x PROVENANCE -x BOOK_INPUTS "$NEXT/$folder" "$LIVE/$folder" > /dev/null; then
+            echo "the book frames $folder, as staged"
+        else
+            echo "the book frames $folder; publishing it first"
+            "$HERE/publish.sh" "$folder" || { echo "publishing $folder failed, so the book waits"; exit 2; }
+        fi
     done
 }
 [ $# -eq 1 ] || { echo "usage: site/publish.sh <app> | home"; exit 2; }
@@ -91,7 +95,7 @@ else
     # ones, under canvas_apps/ for a canvas app.
     src="$app"
     # The book is built from safari's tutorial folder.
-    if [ "$app" = tutorial ]; then src=canvas_apps/safari/tutorial; check_book; fi
+    if [ "$app" = tutorial ]; then src=canvas_apps/safari/tutorial; publish_book_frames; fi
     [ -d "$REPO/$src" ] || src="canvas_apps/$app"
     [ -d "$REPO/$src" ] || { echo "$app is neither an app nor a canvas app in $REPO"; exit 2; }
     [ -d "$NEXT/$app" ] || { echo "no dev build at $NEXT/$app; run $app's build.sh first"; exit 2; }
