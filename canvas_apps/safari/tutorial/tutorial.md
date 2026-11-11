@@ -558,9 +558,9 @@ The pipeline is written once, for every kind of thing beside the road, yet each 
 A tree, a cow, a radio tower, the cat and the bird, each rendered by `Pipeline.rendering_of`, and each at its own distance so that it shows clearly.
 ```
 
-`Pipeline.rendering_of` takes a sighting, and it gives back a rendering: the thing's sprite, and how far ahead of the camera it stands. Only the kind knows what it looks like, so `rendering_of` asks the kind for its sprite, by calling the kind's own `scenery_sprite` method.
+`Pipeline.rendering_of` takes a sighting and the frame's lens and light, and it gives back a rendering: the thing's sprite, and how far ahead of the camera it stands. Only the kind knows what it looks like, so `rendering_of` asks the kind for its sprite, by calling the kind's own `scenery_sprite` method.
 
-Asking a kind for a method takes a new Roc idea. A sighting is a `Pipeline.Sighted(kind)`, and `kind` is a type variable, so it stands for any type at all: a number, a string or a `Conifer`. Only some types have a `scenery_sprite`. So `rendering_of` narrows `kind`: any type, as long as it has a `scenery_sprite`.
+Asking a kind for a method takes a new Roc idea. A sighting is a `Pipeline.Sighted(kind)`, and `kind` is a type variable, so it stands for any type at all: a number, a record or a `Conifer`. Only some types have a `scenery_sprite`. So `rendering_of` narrows `kind`: any type, as long as it has a `scenery_sprite`.
 
 Roc writes that requirement as a `where` clause, on the line after the annotation:
 
@@ -575,15 +575,17 @@ This table explains the code's concepts:
 | A method | Location | The clause looks for the method inside the type's braces. That's why `Conifer` keeps `scenery_sprite` there, with `scenery_height`. |
 | A method call | Dispatch | `sighting.kind.scenery_sprite(...)` calls the method of whichever type `kind` turns out to be. |
 
+The rest of the body builds the setting. A `Sprite.LensAndLight` holds the part of a `Sprite.Setting` that every thing in a frame shares, the focal length and the darkness, and the body adds the sighting's own spot. `sighting.spot.foot().forward()` is how far ahead of the camera the thing's foot stands.
+
 ### The compiler checks each call
 
-Each call to `rendering_of` fills `kind` with one particular type. The ride renders its trees in one line, and there the type is `Conifer`:
+Each call to `rendering_of` fills `kind` with one particular type. The ride renders its trees in one line of code, and there the type is `Conifer`:
 
 {{code TreeSighting.tree_renderings from "tree_renderings :" to "trees.map"}}
 
 The compiler looks inside `Conifer`'s braces, finds a `scenery_sprite` of the right type, and the call compiles. It checks every other call the same way, one type at a time. So the choice of which `scenery_sprite` runs is made when the program compiles, once for each type.
 
-Every type has to pass that check. Here a `Rock`, a kind that is just one tag, is handed to `rendering_of`. The program is a small app of its own, which uses Safari Ride's modules as its `game` package. Its first and last lines only make it an app, and the `_` names an argument it leaves unused:
+Every type has to pass that check. Here a `Rock`, a kind that is just one tag, is handed to `rendering_of`. The program is a small app of its own, which uses Safari Ride's modules as its `game` package. Only `Rock` and `rock_rendering` matter here. The rest makes it an app, and the `_` names an argument it leaves unused:
 
 {{fails kind_without_sprite}}
 
@@ -591,15 +593,11 @@ The message names the method the clause asks for, and the type it checked. A `sc
 
 ### Asking for a height
 
-The sighting asks the kind a question too: how tall it is. The height tells whether the thing's top shows over the horizon, and whether it stands tall enough on the screen to draw. So `scenery_sighting_of` carries a `where` clause of its own, for `scenery_height`:
+Sighting a thing needs its height. A far thing shows only when its top clears the horizon, and only when it stands tall enough on the screen to be worth drawing. So `Pipeline.scenery_sighting_of`, which sights the trees, the billboard critters, the cat and the bird, asks the kind for its height with a `where` clause of its own:
 
-{{signatures Pipeline.scenery_sighting_of}}
+{{code Pipeline.scenery_sighting_of from "where" to "where"}}
 
-It takes the placed thing, and a record of the road ahead, the camera, and where the thing's segment lies from the rider.
-
-Its answer is a `Try`, one of two tags: `Ok`, holding a `Pipeline.Sighted(kind)`, or `Err`, holding the reason the sighting failed. The reasons are tags: `BehindCamera` and `BelowHorizon`, the refusals from "The pieces as types", and `TooSmall`, for a thing too small on the screen to draw. The ride's callers keep the `Ok`s and drop the rest.
-
-A radio tower is drawn however small it looks, so it takes only the horizon test, from `sighting_above_horizon_of`, with the same clause.
+A thing that fails either test is refused, and the refusal is a tag that says why: `BelowHorizon` or `TooSmall`. A radio tower is drawn however small it looks, so its sighting skips the size test, but it asks for the tower's height through the same clause.
 
 ### Names that say what they're for
 
