@@ -507,7 +507,9 @@ Here's a kind, the `Conifer` type, in its whole module:
 
 {{module Conifer}}
 
-A `Conifer` is one of four tags, and it describes a kind of tree. `scenery_height` and `foliage_color` give each kind its height and its color, chosen by eye, and `Green | SmallGreen =>` is one branch for two tags, because both greens share a color. `scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that drew the far tree.
+A `Conifer` is one of four tags, and it describes a kind of tree. `scenery_height` and `foliage_color` give each tag its height and its color, chosen by eye, and `Green | SmallGreen =>` is one branch for two tags, because both greens share a color. `scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that drew the far tree. `is_eq : _` asks the compiler for `==`, as it did for `Distance`, and here `==` compares tags.
+
+Two of the functions sit inside the type's braces, and a value calls them with a dot: `conifer.scenery_height()`. The rest are plain helpers that only this module uses, so they sit outside, and a call names them plainly: `foliage_color(conifer)`. The braces matter later in this chapter.
 
 ```widget conifers
 The four conifers, left to right: Green, SmallGreen, Red and Gold.
@@ -523,7 +525,7 @@ Rendering needs the kind's sprite:
 
 `rendering_of` takes a sighting and a record of the lens and the light. It hands the sighting's spot, the lens and the light to the kind's own `scenery_sprite`, and gives back a `Rendered`: the sprite, and how far ahead of the camera the thing stands.
 
-The annotation's second line is a `where` clause. It asks something of the type variable `kind`: that it have a `scenery_sprite` function of the type after the colon. `Conifer` has one, and so does every other kind that goes through here, so `rendering_of` draws a tree, a cow or a cat.
+The annotation's second line is a `where` clause. It asks something of the type variable `kind`: that it have a `scenery_sprite` function of the type after the colon. A sighting's `kind` field holds a value of that type, such as `Gold`. `Conifer` has one, and so does every other kind that goes through here, so `rendering_of` draws a tree, a cow or a cat.
 
 ### Asking for a height
 
@@ -531,11 +533,11 @@ Sighting a tree, a critter, the cat or the bird asks the kind for its height the
 
 {{signatures Pipeline.scenery_sighting_of}}
 
-It takes the placed thing, and a record of the road ahead, the camera, and where the thing's segment lies from the rider. A radio tower uses `sighting_above_horizon_of`, which asks for the height only for the horizon test. The sighting needs the height to tell whether the thing's top shows over the horizon, and whether it stands tall enough on the screen to draw. Its answer is a `Try`, one of two tags: `Ok`, holding a `Pipeline.Sighted(kind)`, or `Err`, holding the reason the sighting failed. The reasons are tags: `BehindCamera` and `BelowHorizon`, the refusals from "The pieces as types", and `TooSmall`, for a thing too small on the screen to draw. The ride's callers keep the `Ok`s and drop the rest.
+It takes the placed thing, and a record of the road ahead, the camera, and where the thing's segment lies from the rider. The sighting needs the height to tell whether the thing's top shows over the horizon, and whether it stands tall enough on the screen to draw. A radio tower uses `sighting_above_horizon_of`, which asks for the height only for the horizon test. Its answer is a `Try`, one of two tags: `Ok`, holding a `Pipeline.Sighted(kind)`, or `Err`, holding the reason the sighting failed. The reasons are tags: `BehindCamera` and `BelowHorizon`, the refusals from "The pieces as types", and `TooSmall`, for a thing too small on the screen to draw. The ride's callers keep the `Ok`s and drop the rest.
 
 ### Names that say what they're for
 
-A `where` looks among a type's own functions: the ones inside its braces, which a value calls with a dot, as in `conifer.scenery_height()`. That's why `Conifer` keeps `scenery_height` and `scenery_sprite` inside its braces, and `foliage_color` outside. Roc matches a `where` by name and type alone, so any type with a function of that name and that type inside its braces meets it. So the names say what they're for: `scenery_height` and `scenery_sprite` are there for the things beside the road, and a kind meets the pipeline only on purpose.
+A `where` looks among a type's own functions, the ones inside its braces. That's why `Conifer` keeps `scenery_height` and `scenery_sprite` there. Roc matches a `where` by name and type alone, so any type with a function of that name and that type inside its braces meets it. So the names say what they're for. The word "scenery" at the front of each one makes an accidental match unlikely, and a kind meets the pipeline on purpose.
 
 So a kind meets the pipeline by having two functions, a height and a sprite. `Conifer` is one such kind, and the critters, the towers, the cat and the bird are the others.
 
