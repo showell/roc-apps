@@ -529,17 +529,18 @@ A tree needs a height and a color. Where it stands is the job of the forms aroun
 
 `Conifer` is a nominal type. A nominal type has a name, and Roc treats it as different from every other type, even one with exactly the same shape. Another union of `Green`, `SmallGreen`, `Red` and `Gold` would be a different type, and only a `Conifer` fits where a `Conifer` is expected. Its set of tags is fixed, too: the four the definition lists, and only those.
 
-The module's code shows that idea and a few more:
+The module's code shows these Roc concepts:
 
 | Concept | Purpose | Explanation |
 |---|---|---|
-| `Conifer :=` | Identity | The `:=` declares `Conifer` as a nominal type. |
-| `[Green, SmallGreen, Red, Gold]` | Contents | The backing type: the four tags, and only those. A tag written with the type's name, such as the `Conifer.Green` in the `Trees` module, is always a `Conifer`. |
-| `.{` and `}` | Methods | The braces after the backing type hold `Conifer`'s methods, and a value calls one with a dot: `conifer.scenery_height()`. A nominal type can carry methods because it's a type of its own, and the next chapter shows why that matters. |
-| `scenery_sprite` | Drawing | It hands the height and the color to `TreeShapes.tree_sprite`, the function that drew the far tree. |
-| `Green \| SmallGreen =>` | Sharing | One branch for two tags, because both greens share a color. |
-| `is_eq : _` | Equality | It asks the compiler for `==`, as it did for `Distance`, and here `==` compares tags. |
-| Definitions below the braces | Privacy | The heights, the colors and `foliage_color` stay private to the module, and a call names them plainly: `foliage_color(conifer)`. A module's definitions can come in any order, so the methods use values defined below them. |
+| A nominal type | Identity | `Conifer :=` gives `Conifer` a name of its own. Roc keeps it apart from every other type, even another union of the same four tags. |
+| A tag union | Variants | The backing type, `[Green, SmallGreen, Red, Gold]`, lists every sort of tree a `Conifer` can be, and the list is fixed. |
+| Methods | Behavior | Functions inside the type's braces: `scenery_height` and `scenery_sprite`. A value calls one with a dot, as in `conifer.scenery_height()`. The next chapter shows why they sit inside the braces. |
+| Privacy | Hiding | Everything outside the braces stays private to the module: the heights, the colors and `foliage_color`. A call names a private function plainly: `foliage_color(conifer)`. |
+| One branch, two tags | Grouping | In a `match`, `Green \| SmallGreen =>` gives both greens one color. |
+| Equality | Comparison | `is_eq : _` asks the compiler to write `==`, as it did for `Distance`, and here `==` compares tags. |
+
+`scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that drew the far tree. A module's definitions can come in any order, so the methods use values defined below them.
 
 So a kind describes a thing, and the pipeline does the rest. But the pipeline is one piece of code for every kind alike. So how does it get a height and a sprite out of a `Conifer`?
 
@@ -559,7 +560,7 @@ Roc says that with a `where` clause:
 
 {{code Pipeline.rendering_of}}
 
-The annotation's second line is the clause. Its square brackets hold a list of requirements on the type variable `kind`, here one: the type that fills `kind` must have a `scenery_sprite` inside its braces, of the type after the colon. That's why `Conifer` keeps its `scenery_sprite` inside its braces. Roc calls a function inside a type's braces a method, the word the compiler uses below.
+The annotation's second line is the clause. Its square brackets hold a list of requirements on the type variable `kind`, here one: the type that fills `kind` must have a `scenery_sprite` inside its braces, of the type after the colon. That's why `Conifer` keeps its `scenery_sprite` inside its braces. It's one of the methods from the last chapter, and the compiler's message below uses the same word.
 
 In the clause, `kind` names the type: the clause says what the type must have. In the body, `sighting.kind` is the sighting's field, which holds a value of that type, for a tree one of `Conifer`'s tags, and `sighting.kind.scenery_sprite(...)` calls that type's own method.
 
