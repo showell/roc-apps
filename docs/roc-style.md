@@ -802,6 +802,10 @@ is the base; these rules sharpen it.
   `Point.Point`; a record nominal type still reads `.x` and builds from a
   plain record literal, and `is_eq : _` gives it `==`. An empty `[].{ }`
   block with the type nested inside makes every caller say the name twice.
+  The same holds for a module whose values are all of its one type: safari's
+  `EmojiStill` is the type, and the traced animals are its values
+  (`EmojiStill.cow`). A module of plain values of an outside type, such as
+  `CatStills`, keeps its plural name.
 - **A resource is reached through one module.** In the chat, `Files.roc` is
   the only caller of the host's file functions, and it keeps missing and
   failed apart as a `Try`'s two error tags. Every other module asks it; a
