@@ -593,7 +593,7 @@ The trip starts from where a thing stands on the road:
 
 {{code Geom.Placed}}
 
-`road_point` says where the thing stands along the road and across it, and `lift` says how far off the ground. `kind` says what the thing is. Its type is the type variable `kind`, so a placed tree is a `Geom.Placed(Conifer)`, and a placed cow is a `Geom.Placed(Billboard)`. The next chapter looks inside `Conifer`.
+`road_point` is the thing's place on the road, a `RoadPoint` from the {{chapter Types for places}} chapter, and `lift` says how far off the ground it stands. `kind` says what the thing is. Its type is the type variable `kind`, so a placed tree is a `Geom.Placed(Conifer)`, and a placed cow is a `Geom.Placed(Billboard)`. The next chapter looks inside `Conifer`.
 
 ### Sighted
 
@@ -601,7 +601,7 @@ The screen shows what the camera sees. So for each frame, the pipeline sights ev
 
 {{code Pipeline.Sighted}}
 
-A `Spot` holds the thing's height off the ground, where its foot is in the camera's view, and which way the road runs there. The kind rides along as it was. A thing's place is measured on the road, and its spot from the camera, which moves with the rider every frame. So the two are different types. This `spot` is the one `tree_sprite` took from its setting in the {{chapter A far tree}} chapter.
+The `Spot` is the thing's place seen from the camera, as the {{chapter Types for places}} chapter showed. The kind rides along as it was. This `spot` is the one `tree_sprite` took from its setting in the {{chapter A far tree}} chapter.
 
 ### Refused
 
