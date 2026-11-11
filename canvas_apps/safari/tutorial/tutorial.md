@@ -417,6 +417,84 @@ Here's the function:
 
 That's both of a far tree's shapes. Next, we put them together, with functions of our own.
 
+## A far tree
+
+A far tree in Safari Ride is a trunk under eight triangles. In this chapter we build one from small functions: the tiers of its crown, a triangle for each tier, the trunk, and the order they're painted in.
+
+```widget far_tree
+One far tree, seen through a longer lens so that it fills the picture.
+```
+
+### Eight tiers
+
+The crown is eight tiers, stacked from the tip down. Each tier is a record of three fractions:
+
+{{code TreeShapes.Tier}}
+
+A `Fraction` is a number from 0 to 1. `top` and `bottom` say where the tier starts and ends, as shares of the crown's height, measured down from the tip. `width` says how wide the tier's bottom is, as a share of the crown at its widest.
+
+The widths start as a list of eight plain numbers:
+
+{{code TreeShapes.tier_widths}}
+
+Square brackets make a list, and every item in a list has the same type. These eight are `F64`s, chosen by eye, from the narrow top tier to the full-width bottom one. `map` calls a function on each item of a list and gives back a list of the answers. Here we hand it `Fraction.of` by name, and `Fraction.of` turns an `F64` into a `Fraction`, so `tier_widths` is a `List(Fraction)`. `Fraction.of` crashes on a number outside 0 to 1, because a share out of range means the sum behind it is wrong.
+
+### Tops and bottoms
+
+Each tier also needs a top and a bottom. They follow a rule, so a function works them out:
+
+{{code TreeShapes.tiers}}
+
+`map_with_index` is `map` with one more thing for the function: the item's place in the list, counting from 0. The function here is written in place, right where `map_with_index` takes it. Between the bars, it takes a width and its index, and it gives back a record. Each tier's top is a tenth of the crown lower than the top of the tier above, and its bottom is three tenths below its top, so each tier overlaps the next. `index` is a `U64`, a whole number, and `to_f64` turns it into an `F64` for the division.
+
+### Freezing the tiers
+
+`tiers` is a constant, the same eight records every time the program runs. So we can write all eight down, and have Roc check them:
+
+{{expect TreeShapes.tiers}}
+
+An `expect` is a test. Its body is a `Bool`, and `roc test` runs every `expect` in a program and reports each one that comes out `False`. Safari Ride's gates run it. This one turns each tier into a list of its three numbers, so that `==` can compare all eight tiers with a table at once. The table is the tiers, written out by hand. Change a width or the rule, and the test reports it.
+
+### A triangle for each tier
+
+A tier is a set of shares. A triangle is corners on the screen. Between the two stands the tree's outline: where its foot lands on the screen, and how tall the tree looks there.
+
+{{code Camera.Upright}}
+
+Three small functions read the crown's place from the outline:
+
+{{signatures TreeShapes.crown_top_y TreeShapes.crown_height TreeShapes.crown_half_width}}
+
+`crown_top_y` gives the tree's tip, `height_on_screen` above its foot. The other two scale the outline's height by the crown's shares of the tree, chosen by eye. Then `tier_triangle` makes one tier:
+
+{{code TreeShapes.tier_triangle}}
+
+It takes the outline and a record, and its bars take the record apart, as `Shapes.rectangle` did. The body names four values on the way, each on a line of its own: `crown_top`, `bottom_y`, `top_y` and `half_base`. A name holds its value for the rest of the body, and the last expression, the `Triangle`, is what the function gives back. On the screen, `y` grows downward, so `plus` moves down from the tip. The triangle's first corner sits on the tree's middle line at the tier's top. The other two sit at the tier's bottom, `half_base` to either side.
+
+### Painting the tree
+
+The trunk is a rectangle:
+
+{{signatures TreeShapes.trunk_shape}}
+
+Its body works out the trunk's width, its height and its top left corner from the outline, and hands them to `Shapes.rectangle`. Its `finish` says whether the trunk is shaded, which we come to at the end of the chapter.
+
+The order of the shapes matters as much as the shapes. `tree_sprite` draws the whole tree:
+
+{{signatures TreeShapes.tree_sprite}}
+
+Its last line puts the list together:
+
+{{code TreeShapes.tree_sprite from "Sprite.from_shapes" to "Sprite.from_shapes"}}
+
+`tiers.map(...)` makes one shape for each tier, top tier first, and for a far tree `tier_shape` answers with `tier_triangle`'s triangle. `[trunk]` is a list of one shape, and `concat` joins two lists into one, so the trunk comes first. The platform paints a list from first to last, so the tiers land on the trunk. Each tier also lands on the tier above it and covers that tier's bottom, which is where the overlap goes. `Sprite.from_shapes` makes the list the tree's sprite.
+
+### What you're missing
+
+Every tree 200 metres away or more is drawn this way. Nearer than that, the ride draws more. Each tier becomes a shaded cone seen from the camera, which fattens as the rider passes under it, and within 60 metres the trunk is shaded so that it looks round. `crown_of`, `trunk_finish_of` and the cone branch of `tier_shape` make that choice. Cones take far more work to draw, and far off they look just like triangles, so the ride spends that work only where it shows.
+
+So a far tree is a handful of small functions over one list of tiers. The `expect` pins the tiers, and the triangles come straight from them. The trees beside the road run through the same code, handed a nearer spot.
+
 ## The modules
 
 Safari Ride splits cleanly in two: the ride, and the view of the ride. In this chapter we map the modules on both sides, look at the thin layer of JavaScript that runs them, and open up one sighting.
