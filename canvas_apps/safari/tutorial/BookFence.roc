@@ -47,7 +47,8 @@ BookFence := [].{
 ## sets the ride's, `FrameWidgetApp.roc` the paused frame's, `CowWidgetApp.roc`
 ## the cow's, `RouteWidgetApp.roc` the map's, `HerdWidgetApp.roc` the herd's,
 ## `BendAnimalsWidgetApp.roc` the bend animals', `FarTreeWidgetApp.roc` the far
-## tree's, and `WidgetPage.roc` the other widgets'.
+## tree's, `ConifersWidgetApp.roc` the four conifers', and `WidgetPage.roc` the
+## other widgets'.
 Frame : {
 	folder : Str,
 	aspect : Str,
@@ -88,6 +89,11 @@ frame_of = |word| match word {
 	}
 	"far_tree" => {
 		folder: "far_tree_widget",
+		aspect: "640 / 240",
+		loading: Lazy,
+	}
+	"conifers" => {
+		folder: "conifers_widget",
 		aspect: "640 / 240",
 		loading: Lazy,
 	}
@@ -196,6 +202,13 @@ expect
 	frame_of("far_tree")
 		== {
 			folder: "far_tree_widget",
+			aspect: "640 / 240",
+			loading: Lazy,
+		}
+expect
+	frame_of("conifers")
+		== {
+			folder: "conifers_widget",
 			aspect: "640 / 240",
 			loading: Lazy,
 		}

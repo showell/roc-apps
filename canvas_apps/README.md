@@ -3,7 +3,7 @@
 Small interactive Roc programs that run two ways from one set of files: as a
 native program on roc-ray, and as a page in a browser.
 
-Twenty-six of them, covering a few different kinds of program. `safari` is a
+Twenty-seven of them, covering a few different kinds of program. `safari` is a
 driving screensaver. `snake`, `pong` and `breakout` are arcade games.
 `particles` is a fountain of four thousand sprites that follows the pointer.
 `camera` is a world larger than the window, with a camera over it and a HUD
@@ -20,7 +20,8 @@ every pose of the cat and the bird and shows the one clicked large, with its
 polygons counted, `gaze_widget` drags the rider past the pig that catches
 the eye, `tree_widget` is a fixed picture of three conifers at the three
 distances where their crowns differ, `far_tree_widget` is a fixed picture of one
-far conifer through a lens six times the ride's, `truck_widget` is a fixed picture of the
+far conifer through a lens six times the ride's, `conifers_widget` is a fixed
+picture of the four kinds of conifer side by side through the same lens, `truck_widget` is a fixed picture of the
 plain truck seen from behind, from behind and to the left, and from the left,
 `cow_widget` is a fixed picture of one cow on the grass beside the road,
 `herd_widget` is a fixed picture of twenty numbered cows in a row, the calves
@@ -30,7 +31,7 @@ bend animals and their babies in a row, two pairs facing each way,
 with the layers its address names, and `shapes_widget` is a fixed picture
 of a triangle and a rectangle, for the book to quote the code under it.
 
-Six of the twenty-six — all but `safari`, `trick_or_treat` and the widgets — are
+Six of the twenty-seven — all but `safari`, `trick_or_treat` and the widgets — are
 roc-ray's own examples, by Luke Boswell, taken with only small changes to fit this scheme.
 
 **The native side runs on roc-ray 0.12.0** (`23eec6e`), with the

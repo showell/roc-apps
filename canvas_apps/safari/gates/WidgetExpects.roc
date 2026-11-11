@@ -9,6 +9,7 @@ app [main!] {
 	bends: "../../bends_widget/package.roc",
 	bird: "../../bird_widget/package.roc",
 	cat: "../../cat_widget/package.roc",
+	conifers: "../../conifers_widget/package.roc",
 	cow: "../../cow_widget/package.roc",
 	far_tree: "../../far_tree_widget/package.roc",
 	frame: "../../frame_widget/package.roc",
@@ -32,6 +33,7 @@ import bend_animals.BendAnimalsWidgetApp
 import bends.BendsWidgetApp
 import bird.BirdWidgetApp
 import cat.CatWidgetApp
+import conifers.ConifersWidgetApp
 import cow.CowWidgetApp
 import far_tree.FarTreeWidgetApp
 import frame.FrameWidgetApp
@@ -104,6 +106,7 @@ expect {
 		words_shown(BendsWidgetApp.canvas_app, []),
 		words_shown(BirdWidgetApp.canvas_app, []),
 		words_shown(CatWidgetApp.canvas_app, []),
+		words_shown(ConifersWidgetApp.canvas_app, []),
 		words_shown(CowWidgetApp.canvas_app, []),
 		words_shown(FarTreeWidgetApp.canvas_app, []),
 		words_shown(FrameWidgetApp.canvas_app, []),
