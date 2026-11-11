@@ -501,7 +501,7 @@ So a far tree is a handful of small functions over one list of tiers. The `expec
 
 ## Nature types
 
-Every thing beside the road takes three forms on its way to the screen: placed on the road, sighted by the camera, and rendered as a sprite with a depth. Its kind rides inside the first two. In this chapter we look inside one kind.
+Every thing beside the road takes three forms on its way to the screen: placed on the road, sighted by the camera, and rendered as a sprite with a depth. Its kind rides inside the first two. The `Pipeline` module takes every thing through those forms, so we call it the pipeline. In this chapter we look inside one kind.
 
 ```widget conifers
 The four conifers, left to right: Green, SmallGreen, Red and Gold.
@@ -511,13 +511,15 @@ A tree needs a height and a color. Where it stands is the job of the forms aroun
 
 {{module Conifer}}
 
-A `Conifer` is one of four tags, one for each sort of tree. The `:=` makes it a nominal type, as it does `BendAnimal`, so other modules can use its tags, and a `match` reads them directly. An opaque `Billboard` has to be unwrapped first. `Green | SmallGreen =>` is one branch for two tags, because both greens share a color. `is_eq : _` asks the compiler for `==`, as it did for `Distance`, and here `==` compares tags. `scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that drew the far tree.
+A `Conifer` is one of four tags, one for each sort of tree. The `:=` makes it a nominal type, as it does `BendAnimal`, so other modules can use its tags, and a `match` reads them directly. An opaque `Billboard` opens only inside its own module. `Green | SmallGreen =>` is one branch for two tags, because both greens share a color. `is_eq : _` asks the compiler for `==`, as it did for `Distance`, and here `==` compares tags. `scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that drew the far tree.
 
 Inside the type's braces sit `scenery_height`, `scenery_sprite` and `is_eq`, and a value calls a function there with a dot: `conifer.scenery_height()`. The rest of the module sits outside: values, and a helper that only this module uses, which a call names plainly: `foliage_color(conifer)`. A module's definitions can come in any order. Why the two scenery functions sit inside the braces is the next chapter's subject.
 
 So a kind describes a thing, and the pipeline does the rest. But the pipeline is one piece of code for every kind alike. So how does it get a height and a sprite out of a `Conifer`?
 
 ## Asking a kind
+
+The pipeline sights and renders every kind of thing with the same code. Here are five kinds it drew:
 
 ```widget kinds
 A tree, a cow, a radio tower, the cat and the bird, each drawn by the same function.
@@ -531,7 +533,7 @@ Roc says that with a `where` clause:
 
 {{code Pipeline.rendering_of}}
 
-The annotation's second line is the clause. Its square brackets hold a list of requirements on the type variable `kind`, here one: the type that fills `kind` must have a `scenery_sprite` inside its braces, of the type after the colon. That's why `Conifer` keeps its `scenery_sprite` inside its braces. In the body, `sighting.kind` holds a value of that type, for a tree one of `Conifer`'s tags, and `sighting.kind.scenery_sprite(...)` calls the kind's own function. `rendering_of` gives back a `Rendered`: the sprite, and how far ahead of the camera the thing stands.
+The annotation's second line is the clause. Its square brackets hold a list of requirements on the type variable `kind`, here one: the type that fills `kind` must have a `scenery_sprite` inside its braces, of the type after the colon. That's why `Conifer` keeps its `scenery_sprite` inside its braces. In the body, `sighting.kind` holds a value of that type, for a tree one of `Conifer`'s tags, and `sighting.kind.scenery_sprite(...)` calls the kind's own function. `Sprite.LensAndLight` is the lens's focal length and the sky's darkness. `rendering_of` gives back a `Rendered`: the sprite, and how far ahead of the camera the thing stands.
 
 ### The compiler checks every call
 
@@ -541,13 +543,13 @@ The ride renders its trees in one line:
 
 Here `kind` is `Conifer`. The compiler looks inside `Conifer`'s braces, finds a `scenery_sprite` of the right type, and the call compiles. It checks every other call the same way, one kind at a time.
 
-A call compiles only when its kind has the function. Here's a `Rock` with only a height, handed to `rendering_of`:
+A call compiles only when its kind has the function. Here's a `Rock` with only a height, handed to `rendering_of`. The program is a small app of its own, which uses Safari Ride's modules as its `game` package, and only the `Rock` and the call matter here:
 
 {{fails kind_without_sprite}}
 
-The message names the clause, the function it asks for, and the type it checked. The fix is a `scenery_sprite` inside `Rock`'s braces.
+The message names the function the clause asks for, and the type it checked. The fix is a `scenery_sprite` inside `Rock`'s braces.
 
-At each call, the compiler knows which type fills `kind`, so it knows which `scenery_sprite` that call runs. The choice is settled when the program compiles, once for each call.
+Wherever a real type fills `kind`, such as `Conifer` in `tree_renderings`, the compiler knows which `scenery_sprite` runs. So the choice is settled when the program compiles, once for each type.
 
 ### Asking for a height
 
@@ -555,7 +557,7 @@ Sighting a tree, a critter, the cat or the bird asks for the kind's height the s
 
 {{signatures Pipeline.scenery_sighting_of}}
 
-It takes the placed thing, and a record of the road ahead, the camera, and where the thing's segment lies from the rider. Its answer is a `Try`, one of two tags: `Ok`, holding a `Pipeline.Sighted(kind)`, or `Err`, holding the reason the sighting failed. The reasons are tags: `BehindCamera` and `BelowHorizon`, the refusals from "The pieces as types", and `TooSmall`, for a thing too small on the screen to draw. The ride's callers keep the `Ok`s and drop the rest. A radio tower is sighted by `sighting_above_horizon_of`, which asks for its height too, for the horizon test alone.
+It takes the placed thing, and a record of the road ahead, the camera, and where the thing's segment lies from the rider. Its answer is a `Try`, one of two tags: `Ok`, holding a `Pipeline.Sighted(kind)`, or `Err`, holding the reason the sighting failed. The reasons are tags: `BehindCamera` and `BelowHorizon`, the refusals from "The pieces as types", and `TooSmall`, for a thing too small on the screen to draw. The ride's callers keep the `Ok`s and drop the rest. A radio tower is sighted by `sighting_above_horizon_of`, which asks for its height too, for the horizon test alone. That's why `Conifer` keeps `scenery_height` inside its braces, beside `scenery_sprite`.
 
 ### Names that say what they're for
 
