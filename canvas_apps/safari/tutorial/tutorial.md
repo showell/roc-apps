@@ -529,11 +529,17 @@ A tree needs a height and a color. Where it stands is the job of the forms aroun
 
 `Conifer` is a nominal type. A nominal type has a name, and Roc treats it as different from every other type, even one with exactly the same shape. Another union of `Green`, `SmallGreen`, `Red` and `Gold` would be a different type, and only a `Conifer` fits where a `Conifer` is expected. Its set of tags is fixed, too: the four the definition lists, and only those.
 
-In the code, the `:=` declares `Conifer`, and the square brackets after it are its backing type, the four tags. A tag written with the type's name, such as the `Conifer.Green` in the `Trees` module, is always a `Conifer`. The braces after the backing type hold `Conifer`'s methods. A nominal type can carry methods because it's a type of its own, and the next chapter shows why that matters.
+The module's code shows that idea and a few more:
 
-`Green | SmallGreen =>` is one branch for two tags, because both greens share a color. `is_eq : _` asks the compiler for `==`, as it did for `Distance`, and here `==` compares tags. `scenery_sprite` hands the height and the color to `TreeShapes.tree_sprite`, the function that drew the far tree.
-
-Inside the type's braces sit `scenery_height`, `scenery_sprite` and `is_eq`, and a value calls a function there with a dot: `conifer.scenery_height()`. The rest of the module sits outside: values, and a helper, which a call names plainly: `foliage_color(conifer)`. Definitions outside the braces stay private to the module. A module's definitions can come in any order. Why the two scenery functions sit inside the braces is the next chapter's subject.
+| Concept | Purpose | Explanation |
+|---|---|---|
+| `Conifer :=` | Identity | The `:=` declares `Conifer` as a nominal type. |
+| `[Green, SmallGreen, Red, Gold]` | Contents | The backing type: the four tags, and only those. A tag written with the type's name, such as the `Conifer.Green` in the `Trees` module, is always a `Conifer`. |
+| `.{` and `}` | Methods | The braces after the backing type hold `Conifer`'s methods, and a value calls one with a dot: `conifer.scenery_height()`. A nominal type can carry methods because it's a type of its own, and the next chapter shows why that matters. |
+| `scenery_sprite` | Drawing | It hands the height and the color to `TreeShapes.tree_sprite`, the function that drew the far tree. |
+| `Green \| SmallGreen =>` | Sharing | One branch for two tags, because both greens share a color. |
+| `is_eq : _` | Equality | It asks the compiler for `==`, as it did for `Distance`, and here `==` compares tags. |
+| Definitions below the braces | Privacy | The heights, the colors and `foliage_color` stay private to the module, and a call names them plainly: `foliage_color(conifer)`. A module's definitions can come in any order, so the methods use values defined below them. |
 
 So a kind describes a thing, and the pipeline does the rest. But the pipeline is one piece of code for every kind alike. So how does it get a height and a sprite out of a `Conifer`?
 
