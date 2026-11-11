@@ -531,7 +531,7 @@ Sighting a tree, a critter, the cat or the bird asks the kind for its height the
 
 {{signatures Pipeline.scenery_sighting_of}}
 
-It takes the placed thing, and a record of the road ahead, the camera, and where the thing's segment lies from the rider. A radio tower takes a plainer version, with no size test. The sighting needs the height to tell whether the thing's top shows over the horizon, and whether it stands tall enough on the screen to draw. Its answer is a `Try`, one of two tags: `Ok`, holding a `Pipeline.Sighted(kind)`, or `Err`, holding the reason the sighting failed. The reasons are tags: `BehindCamera` and `BelowHorizon`, the refusals from "The pieces as types", and `TooSmall`, for a thing too small on the screen to draw. The ride's callers keep the `Ok`s and drop the rest.
+It takes the placed thing, and a record of the road ahead, the camera, and where the thing's segment lies from the rider. A radio tower uses `sighting_above_horizon_of`, which asks for the height only for the horizon test. The sighting needs the height to tell whether the thing's top shows over the horizon, and whether it stands tall enough on the screen to draw. Its answer is a `Try`, one of two tags: `Ok`, holding a `Pipeline.Sighted(kind)`, or `Err`, holding the reason the sighting failed. The reasons are tags: `BehindCamera` and `BelowHorizon`, the refusals from "The pieces as types", and `TooSmall`, for a thing too small on the screen to draw. The ride's callers keep the `Ok`s and drop the rest.
 
 ### Names that say what they're for
 
