@@ -515,7 +515,7 @@ The four conifers, left to right: Green, SmallGreen, Red and Gold.
 
 ### One pipeline, many kinds
 
-The `Pipeline` module sights and renders things, and it's the same code for every kind that goes through it: trees, critters, radio towers, the cat and the bird. So it asks each kind for what it needs by name, whatever kind it holds. That's how Safari Ride is built.
+The `Pipeline` module sights and renders things, and it's the same code for every kind that goes through it: trees, critters, radio towers, the cat and the bird. So it asks each kind for what it needs by name, whatever kind it holds.
 
 Rendering needs the kind's sprite:
 
@@ -527,15 +527,15 @@ The annotation's second line is a `where` clause. It asks something of the type 
 
 ### Asking for a height
 
-Sighting a thing asks the kind for its height the same way:
+Sighting a tree, a critter, the cat or the bird asks the kind for its height the same way:
 
 {{signatures Pipeline.scenery_sighting_of}}
 
-The sighting needs the height to tell whether the thing's top shows over the horizon, and whether it stands tall enough on the screen to draw. Its answer is a `Try`, one of two tags: `Ok`, holding a `Pipeline.Sighted(kind)`, or `Err`, holding the reason the sighting failed. The reasons are the refusal tags from "The pieces as types": `BehindCamera`, `BelowHorizon` and `TooSmall`. The ride's callers keep the `Ok`s and drop the rest.
+It takes the placed thing, and a record of the road ahead, the camera, and where the thing's segment lies from the rider. A radio tower takes a plainer version, with no size test. The sighting needs the height to tell whether the thing's top shows over the horizon, and whether it stands tall enough on the screen to draw. Its answer is a `Try`, one of two tags: `Ok`, holding a `Pipeline.Sighted(kind)`, or `Err`, holding the reason the sighting failed. The reasons are tags: `BehindCamera` and `BelowHorizon`, the refusals from "The pieces as types", and `TooSmall`, for a thing too small on the screen to draw. The ride's callers keep the `Ok`s and drop the rest.
 
 ### Names that say what they're for
 
-Roc matches a `where` by name and type alone. Any type with a function of that name and that type meets it. So the names say what they're for: `scenery_height` and `scenery_sprite` are there for the things beside the road, and a kind meets the pipeline only on purpose.
+A `where` looks among a type's own functions: the ones inside its braces, which a value calls with a dot, as in `conifer.scenery_height()`. That's why `Conifer` keeps `scenery_height` and `scenery_sprite` inside its braces, and `foliage_color` outside. Roc matches a `where` by name and type alone, so any type with a function of that name and that type inside its braces meets it. So the names say what they're for: `scenery_height` and `scenery_sprite` are there for the things beside the road, and a kind meets the pipeline only on purpose.
 
 So a kind meets the pipeline by having two functions, a height and a sprite. `Conifer` is one such kind, and the critters, the towers, the cat and the bird are the others.
 
