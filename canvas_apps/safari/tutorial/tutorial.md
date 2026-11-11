@@ -523,13 +523,13 @@ So a far tree is a handful of small functions over one list of tiers. The `expec
 
 ## The pipeline
 
-Every frame, every thing beside the road takes the same trip to the screen. A tree, a cow, a radio tower, the cat and the truck each start from a place on the road and end as a rendering, a sprite with a depth, in the frame's one list. The `Pipeline` module holds the trip's types and the functions that sight and render, so we call the trip the pipeline.
+Every frame, every thing beside the road takes the same trip to the screen. "A far tree" drew a tree's sprite from a setting, and this chapter follows the whole trip around that drawing, from where the tree stands on the road to its place on the screen. A tree, a cow, a radio tower, the cat and the truck each start from a place on the road and end as a rendering, a sprite with a depth, in the frame's one list. The `Pipeline` module holds the trip's types and the functions that sight and render, so we call the trip the pipeline.
 
 ```widget pipeline
 Step 1,529 of the ride, with only what came through the pipeline: its trees, critters and towers, the cat and the truck.
 ```
 
-Here's the trip, with what makes each move. Each kind has a sighting module, such as `TreeSighting`. It gathers the placed things of its kind on the road ahead, and hands each one to a `Pipeline` function that sights it:
+Here's the trip. The sections below follow its boxes, from `Geom.Placed` down:
 
 The pipeline
 ```dot
@@ -544,7 +544,7 @@ digraph pipeline {
   sighted [label="Pipeline.Sighted(kind)"];
   refused [label="a refusal:\nBehindCamera, BelowHorizon\nor TooSmall"];
   rendered [label="Rendered"];
-  list [label="the frame's list,\nfar to near"];
+  list [label="one list,\nfar to near"];
   finder -> placed [label="  gathers the ones\n  on the road ahead"];
   placed -> sighted [label="  is sighted by\n  a Pipeline sighting function"];
   placed -> refused [label="  or refused by it"];
@@ -552,6 +552,8 @@ digraph pipeline {
   rendered -> list [label="  is sorted by\n  Rendered.depth_sorted_renderings"];
 }
 ```
+
+Each kind has a sighting module, such as `TreeSighting`. It gathers the placed things of its kind on the road ahead, and hands each one to a `Pipeline` function that sights it.
 
 ### Placed
 
@@ -571,7 +573,7 @@ A `Spot` holds the thing's height off the ground, where its foot is in the camer
 
 ### Refused
 
-Some placed things stay off the screen, so a sighting can be refused. The answer is a `Try`, Roc's type for an answer that can fail. A `Try` is one of two tags: `Ok`, holding the sighting, or `Err`, holding a tag that says why the thing is refused. Here's the first sighting function, whole:
+Some placed things stay off the screen, so a sighting function's answer is a `Try`, Roc's type for an answer that can fail. A `Try` is one of two tags: `Ok`, holding the sighting, or `Err`, holding a tag that says why the thing is refused. Here's the first sighting function, whole:
 
 {{code Pipeline.sighting_of}}
 
@@ -584,6 +586,8 @@ Its answer is a `Try(Pipeline.Sighted(kind), [BehindCamera])`: a sighting, or th
 | `BehindCamera` | It stands behind the camera, or too close in front of it to show. |
 | `BelowHorizon` | The ground curves away with distance, so far enough off, the horizon hides all of it. |
 | `TooSmall` | It would stand too small on the screen to be worth drawing. |
+
+The trees, the billboard critters, the cat and the bird are sighted by `Pipeline.scenery_sighting_of`, which takes all three tests. A radio tower and the truck are drawn however small they look. So a tower is sighted by `Pipeline.sighting_above_horizon_of`, which skips the `TooSmall` test, and the truck by `Pipeline.sighting_of`, which takes only the `BehindCamera` test.
 
 Here are some things from step 1,529, the frame in the picture, and what their sightings decide. `right` and `forward` place each thing's foot from the camera, in metres, and a `forward` below zero is behind it. The road bends, so a tree on a segment far ahead can stand far to one side:
 
@@ -599,15 +603,15 @@ Here are some things from step 1,529, the frame in the picture, and what their s
 
 A small tree far off sinks below the horizon, while a taller one just past it still shows its top. Of the 214 trees on the segments in view, 136 are drawn, 30 are behind the camera, and 48 are below the horizon. Each sighting module keeps its sightings with `keep_oks`, a `List` function, which keeps the `Ok` values of a list of `Try`s and drops the `Err`s. The truck's module hands its one `Try` to `Scene`, which renders the truck only for an `Ok`.
 
-The trees, the billboard critters, the cat and the bird are sighted by `Pipeline.scenery_sighting_of`, which takes all three tests. A radio tower and the truck are drawn however small they look. So a tower is sighted by `Pipeline.sighting_above_horizon_of`, which skips the `TooSmall` test, and the truck by `Pipeline.sighting_of`, which takes only the `BehindCamera` test.
-
 ### Rendered
 
 Each sighting that's kept is rendered by `Pipeline.rendering_of`, which "Asking a kind" shows. It gives back a `Rendered`:
 
 {{code Rendered.Rendered from "Rendered ::" to "of = "}}
 
-A `Rendered` holds a depth and a sprite, and those two alone. The `::` makes it opaque, as it does `Distance`. The sprite is what "Things" and "A far tree" drew from a setting, and the depth is how far ahead of the camera the thing stands. The kind has done its job by now, and it's gone: a tree's rendering and a cow's have the same type. In a body, as here, `Rendered.({ depth, sprite })` builds a `Rendered` by wrapping the record. Among a function's arguments, as `Billboard.(billboard)` was, the same form takes one apart.
+A `Rendered` holds a depth and a sprite, and those two alone. The `::` makes it opaque, as it does `Distance`. The sprite is what "Things" and "A far tree" drew from a setting, and the depth is how far ahead of the camera the thing stands. The kind has done its job by now, and it's gone: a tree's rendering and a cow's have the same type.
+
+In a body, as here, `Rendered.({ depth, sprite })` builds a `Rendered` by wrapping the record. Among a function's arguments, as `Billboard.(billboard)` was, the same form takes one apart.
 
 ### One list
 
