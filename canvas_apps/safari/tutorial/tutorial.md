@@ -419,10 +419,10 @@ That's both of a far tree's shapes. Next, we put them together, with functions o
 
 ## A far tree
 
-A far tree in Safari Ride is a trunk under eight triangles. In this chapter we build one from small functions: the tiers of its crown, a triangle for each tier, the trunk, and the order they're painted in.
+A far tree in Safari Ride is a trunk under eight triangles. In this chapter we build one from small functions: the tiers of its crown, a test that pins them, a triangle for each tier, and the order the trunk and the tiers are painted in.
 
 ```widget far_tree
-One far tree, seen through a longer lens so that it fills the picture.
+One far tree, magnified so that it stands tall in the picture.
 ```
 
 ### Eight tiers
@@ -453,7 +453,7 @@ Each tier also needs a top and a bottom. They follow a rule, so a function works
 
 {{expect TreeShapes.tiers}}
 
-An `expect` is a test. Its body is a `Bool`, and `roc test` runs every `expect` in a program and reports each one that comes out `False`. Safari Ride's gates run it. This one turns each tier into a list of its three numbers, so that `==` can compare all eight tiers with a table at once. The table is the tiers, written out by hand. Change a width or the rule, and the test reports it.
+An `expect` is a test. Its body is a `Bool`, and `roc test` runs every `expect` in a program and reports each one that comes out `False`. This one turns each tier into a list of its three numbers, so that the table can be plain numbers. The table is the tiers, written out by hand. Change a width or the rule, and the test reports it.
 
 ### A triangle for each tier
 
@@ -469,7 +469,7 @@ Three small functions read the crown's place from the outline:
 
 {{code TreeShapes.tier_triangle}}
 
-It takes the outline and a record, and its bars take the record apart, as `Shapes.rectangle` did. The body names four values on the way, each on a line of its own: `crown_top`, `bottom_y`, `top_y` and `half_base`. A name holds its value for the rest of the body, and the last expression, the `Triangle`, is what the function gives back. On the screen, `y` grows downward, so `plus` moves down from the tip. The triangle's first corner sits on the tree's middle line at the tier's top. The other two sit at the tier's bottom, `half_base` to either side.
+It takes the outline and a record, and its bars take the record apart, as `Shapes.rectangle` did. The body names four values on the way, each on a line of its own: `crown_top`, `bottom_y`, `top_y` and `half_base`. A name holds its value for the rest of the body, and the last expression, the `Triangle`, is what the function gives back. `scaled_by` multiplies a length by a `Fraction`, and `minus` subtracts one length from another. On the screen, `y` grows downward, so `plus` moves down from the tip. The triangle's first corner sits on the tree's middle line at the tier's top. The other two sit at the tier's bottom, `half_base` to either side.
 
 ### Painting the tree
 
@@ -491,9 +491,9 @@ Its last line puts the list together:
 
 ### What you're missing
 
-Every tree 200 metres away or more is drawn this way. Nearer than that, the ride draws more. Each tier becomes a shaded cone seen from the camera, which fattens as the rider passes under it, and within 60 metres the trunk is shaded so that it looks round. `crown_of`, `trunk_finish_of` and the cone branch of `tier_shape` make that choice. Cones take far more work to draw, and far off they look just like triangles, so the ride spends that work only where it shows.
+Every tree 200 metres or more ahead of the camera is drawn this way. Nearer than that, the ride draws more. Each tier becomes a cone seen from the camera, which fattens as the rider passes under it, and the nearest cones are shaded. Within 60 metres, the trunk is shaded too, so that it looks round. `crown_of` and `trunk_finish_of` make those choices, and `tier_shape` draws the cones. Cones take far more work to draw, and far off they look just like triangles, so the ride spends that work only where it shows.
 
-So a far tree is a handful of small functions over one list of tiers. The `expect` pins the tiers, and the triangles come straight from them. The trees beside the road run through the same code, handed a nearer spot.
+So a far tree is a handful of small functions over one list of tiers. The `expect` pins the tiers, each tier becomes a triangle, and one list puts the trunk first and the tiers over it. Every tree beside the road runs through this same code, wherever it stands.
 
 ## The modules
 
