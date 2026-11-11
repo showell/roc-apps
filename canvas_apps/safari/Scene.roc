@@ -72,7 +72,7 @@ Scene := {
 				Err(NoTruck) | Err(BehindCamera) => []
 			}
 		{
-			trees: TreeSighting.tree_renderings(trees_seen, lens_and_light),
+			trees: trees_seen.map(|tree| Pipeline.rendering_of(tree, lens_and_light)),
 			birds: birds_seen.map(|bird| Pipeline.rendering_of(bird, lens_and_light)),
 			towers: TowerSighting.towers_in_view(road, { vantage, clock: facts.clock }).map(
 				|tower| Pipeline.rendering_of(tower, lens_and_light),

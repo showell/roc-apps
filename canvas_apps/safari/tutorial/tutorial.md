@@ -587,9 +587,9 @@ The rest of the body builds the setting. A `Sprite.LensAndLight` holds the share
 
 ### The compiler checks each call
 
-Each call to `rendering_of` fills `kind` with one particular type. The ride renders its trees in one line of code, and there the type is `Conifer`:
+Each call to `rendering_of` fills `kind` with one particular type. The ride renders its trees in one line of `Scene.scene_in_view`. There `trees_seen` is a `List(Pipeline.Sighted(Conifer))`, so the type is `Conifer`:
 
-{{code TreeSighting.tree_renderings from "tree_renderings :" to "trees.map"}}
+{{code Scene.scene_in_view from "trees:" to "trees:"}}
 
 The compiler looks inside `Conifer`'s braces, finds a `scenery_sprite` of the right type, and the call compiles. The compiler checks every other call the same way, one type at a time. So the choice of which `scenery_sprite` runs is made when the program compiles, once for each type. Every call gives back a `Rendered`, whatever the kind, so a frame's renderings of trees, cows and towers all go in one list.
 
@@ -1039,7 +1039,6 @@ A placed tree has a name of its own: `Trees.RoadsideTree` is another name for `G
 |---|---|---|
 {{types row Trees.roadside_trees Place a segment's trees, once}}
 {{types row TreeSighting.trees_in_view Find the trees in view, for each frame}}
-{{types row TreeSighting.tree_renderings Render them, for each frame}}
 
 A tree, once and for each frame
 ```dot
@@ -1057,11 +1056,11 @@ digraph roadside {
     "TreeSighting.segment_trees" -> "Pipeline.scenery_sighting_of" [label="  sights each tree with"];
     "Pipeline.scenery_sighting_of" -> "Pipeline.sighting_above_horizon_of" [label="  starts with"];
     "Pipeline.sighting_above_horizon_of" -> "Pipeline.sighting_of" [label="  starts with"];
-    "TreeSighting.tree_renderings" -> "Pipeline.rendering_of" [label="  renders each tree with"];
+    "Scene.scene_in_view" -> "Pipeline.rendering_of" [label="  renders each tree with"];
     "Pipeline.rendering_of" -> "Conifer.scenery_sprite" [label="  calls through its where clause"];
   }
   "Trees.roadside_trees" -> "TreeSighting.trees_in_view" [style=dotted, label="  the trees, read again"];
-  "TreeSighting.trees_in_view" -> "TreeSighting.tree_renderings" [style=dotted, label="  the sightings, handed on by Scene"];
+  "TreeSighting.trees_in_view" -> "Scene.scene_in_view" [style=dotted, label="  the sightings, handed on to"];
   "Conifer.scenery_sprite" [style=bold];
 }
 ```
@@ -1108,7 +1107,7 @@ Far trees are cheap. They get eight triangles and a plain trunk. A cone costs a 
 
 {{code TreeShapes.trunk_finish_of}}
 
-{{code TreeSighting.tree_renderings}}
+{{code Scene.scene_in_view from "trees:" to "trees:"}}
 
 `Pipeline.rendering_of` hands each tree to `Conifer.scenery_sprite`, and the tree's `Rendered` joins the towers' and the critters' in the frame's one list.
 
