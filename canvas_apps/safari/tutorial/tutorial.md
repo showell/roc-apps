@@ -487,7 +487,7 @@ Its last line puts the list together:
 
 {{code TreeShapes.tree_sprite from "Sprite.from_shapes" to "Sprite.from_shapes"}}
 
-`tiers.map(...)` makes one shape for each tier, top tier first, and for a far tree `tier_shape` answers with `tier_triangle`'s triangle. `[trunk]` is a list of one shape, and `concat` joins two lists into one, so the trunk comes first. The platform paints a list from first to last, so the tiers land on the trunk. Each tier also lands on the tier above it and covers that tier's bottom, which is where the overlap goes. `Sprite.from_shapes` makes the list the tree's sprite.
+`tiers.map(...)` makes one shape for each tier, top tier first. `inputs` holds what every tier needs, the outline among them, and `crown` says how to draw the crown. For a far tree, `crown` is `Triangles`, and `tier_shape` answers with `tier_triangle`'s triangle. `[trunk]` is a list of one shape, and `concat` joins two lists into one, so the trunk comes first. The platform paints a list from first to last, so the tiers land on the trunk. Each tier also lands on the tier above it and covers that tier's bottom, which is where the overlap goes. `Sprite.from_shapes` makes the list the tree's sprite.
 
 ### What you're missing
 
